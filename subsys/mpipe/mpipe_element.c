@@ -170,8 +170,8 @@ static int mpipe_element_change_state_func(struct mpipe_element *element,
 		LOG_DBG("State changed PAUSED -> READY");
 		break;
 	default:
-		LOG_ERR("State changed UNKNOWN");
-		break;
+		LOG_ERR("Element %u: unknown transition %u", element->object.id, transition);
+		return -EINVAL;
 	}
 
 	return 0;

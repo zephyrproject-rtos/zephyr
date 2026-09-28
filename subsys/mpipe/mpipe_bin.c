@@ -40,8 +40,13 @@ int mpipe_bin_add(struct mpipe_bin *bin, struct mpipe_element *element, ...)
 	while (element != NULL) {
 		struct mpipe_object *obj;
 
-		/* Ids are unique within the bin */
+		/* Appending a node already on a list would corrupt that list */
+		if (element->object.container != NULL) {
+			va_end(args);
+			return -EBUSY;
+		}
 
+		/* Ids are unique within the bin */
 		SYS_DLIST_FOR_EACH_CONTAINER(&bin->children, obj, node) {
 			if (element->object.id == obj->id) {
 				va_end(args);
