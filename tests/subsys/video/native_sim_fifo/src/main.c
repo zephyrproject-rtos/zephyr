@@ -297,6 +297,35 @@ ZTEST(video_native_sim_fifo, test_frame_from_a_host_writer)
 	zassert_ok(video_buffer_release(vbuf));
 }
 
+ZTEST(video_native_sim_fifo, test_frame_written_in_pieces)
+{
+	const int half = FIFO_SIZE / 2;
+	struct video_buffer *vbuf = NULL;
+
+	test_stream_start_with_one_buffer();
+
+	test_writer_fd = video_fifo_test_open_writer(FIFO_PATH);
+	zassert_true(test_writer_fd >= 0, "could not attach a host writer to %s", FIFO_PATH);
+
+	/* The host pauses in the middle of a frame, leaving the pipe empty for a few polls */
+	test_frame_fill(0x66);
+	zassert_equal(video_fifo_test_write(test_writer_fd, test_frame, half), half,
+		      "the host writer could not write half a frame");
+	k_sleep(K_MSEC(50));
+	zassert_equal(video_dequeue(fifo_dev, &vbuf, K_NO_WAIT), -EAGAIN,
+		      "half a frame was delivered");
+
+	zassert_equal(video_fifo_test_write(test_writer_fd, &test_frame[half], half), half,
+		      "the host writer could not finish the frame");
+
+	zassert_ok(video_dequeue(fifo_dev, &vbuf, K_MSEC(1000)), "no frame was delivered");
+	zassert_equal(vbuf->bytesused, FIFO_SIZE, "the frame is not a whole frame");
+	zassert_mem_equal(vbuf->buffer, test_frame, FIFO_SIZE,
+			  "the frame was not resumed where the host paused");
+
+	zassert_ok(video_buffer_release(vbuf));
+}
+
 ZTEST(video_native_sim_fifo, test_frame_in_the_selected_format)
 {
 	struct video_buffer *vbuf;
