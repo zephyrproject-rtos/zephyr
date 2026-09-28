@@ -388,6 +388,11 @@ static int mcux_flexcomm_uart_configure(const struct device *dev, const struct u
 
 	/* Set up structure to reconfigure UART */
 	USART_GetDefaultConfig(&usart_config);
+	/* The defaults leave both directions disabled, which would make USART_Init
+	 * skip the FIFO enable and trigger setup that init_common did.
+	 */
+	usart_config.enableTx = true;
+	usart_config.enableRx = true;
 
 	/* Set parity */
 	if (cfg->parity == UART_CFG_PARITY_ODD) {
