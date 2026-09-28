@@ -984,7 +984,7 @@ exit:
 static ssize_t simplelink_sendmsg(void *obj, const struct net_msghdr *msg,
 				  int flags)
 {
-	errno = -ENOTSUP;
+	errno = ENOTSUP;
 	return -1;
 }
 
