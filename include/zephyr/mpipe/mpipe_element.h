@@ -68,7 +68,7 @@ struct mpipe_dispatch;
 struct zbus_channel;
 
 /** @cond INTERNAL_HIDDEN */
-#if defined(CONFIG_MPIPE_DUMP)
+#if defined(CONFIG_MPIPE_ELEMENT_NAME)
 #define MPIPE_ELEMENT_SET_NAME(e, n) ((e)->name = (n))
 #else
 #define MPIPE_ELEMENT_SET_NAME(e, n) ((void)0)
@@ -168,12 +168,12 @@ struct mpipe_element {
 	/** Base object */
 	struct mpipe_object object;
 
-#if defined(CONFIG_MPIPE_DUMP) || defined(__DOXYGEN__)
+#if defined(CONFIG_MPIPE_ELEMENT_NAME) || defined(__DOXYGEN__)
 	/**
 	 * Name of the element, set to its type by the element's init function and
 	 * overridable per instance with @ref mpipe_element_set_name. Debugging only.
 	 *
-	 * @kconfig_dep{CONFIG_MPIPE_DUMP}
+	 * @kconfig_dep{CONFIG_MPIPE_ELEMENT_NAME}
 	 */
 	const char *name;
 #endif
@@ -217,7 +217,7 @@ int mpipe_element_init(struct mpipe_element *self, uint8_t id);
  * mpipe_element_set_name(&queue.transform.element, "video_queue");
  * @endcode
  *
- * Compiles to nothing when @kconfig{CONFIG_MPIPE_DUMP} is disabled, so @p name
+ * Compiles to nothing when @kconfig{CONFIG_MPIPE_ELEMENT_NAME} is disabled, so @p name
  * costs no ROM in a build without the dump.
  *
  * @param self Element to name.
