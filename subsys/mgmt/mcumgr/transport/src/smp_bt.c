@@ -25,7 +25,7 @@
 #include <mgmt/mcumgr/transport/smp_internal.h>
 #include <mgmt/mcumgr/transport/smp_reassembly.h>
 
-#ifdef CONFIG_MCUMGR_GRP_TRANSPORT
+#ifdef CONFIG_MCUMGR_TRANSPORT_BT_CLIENT
 #include <zephyr/mgmt/mcumgr/grp/transport_mgmt/transport_mgmt.h>
 #include <mgmt/mcumgr/util/zcbor_bulk.h>
 #include <zcbor_common.h>
@@ -114,7 +114,7 @@ struct smp_bt_user_data {
 	uint8_t id;
 };
 
-#ifdef CONFIG_MCUMGR_GRP_TRANSPORT
+#ifdef CONFIG_MCUMGR_TRANSPORT_BT_CLIENT
 static uint8_t smp_bt_bridge_discover(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				      struct bt_gatt_discover_params *params);
 
@@ -160,7 +160,8 @@ struct conn_param_data {
 	struct k_work_delayable dwork;
 	struct k_work_delayable ework;
 #endif
-#if defined(CONFIG_MCUMGR_GRP_TRANSPORT) || defined(CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL)
+#if defined(CONFIG_MCUMGR_TRANSPORT_BT_CLIENT) || \
+	defined(CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL)
 	uint8_t state;
 #endif
 	uint8_t id;
@@ -187,7 +188,7 @@ BT_CONN_CB_DEFINE(mcumgr_bt_callbacks) = {
 	.disconnected = disconnected,
 };
 
-#if defined(CONFIG_SMP_CLIENT) || defined(CONFIG_MCUMGR_GRP_TRANSPORT)
+#if defined(CONFIG_MCUMGR_TRANSPORT_BT_CLIENT)
 static struct smp_client_transport_entry smp_client_transport = {
 	.smpt = &smp_bt_transport,
 	.smpt_type = SMP_BLUETOOTH_TRANSPORT,
@@ -206,7 +207,8 @@ static struct conn_param_data *conn_param_data_alloc(struct bt_conn *conn)
 
 			conn_data[i].conn = conn;
 
-#if defined(CONFIG_MCUMGR_GRP_TRANSPORT) || defined(CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL)
+#if defined(CONFIG_MCUMGR_TRANSPORT_BT_CLIENT) || \
+	defined(CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL)
 			conn_data[i].state = 0;
 #endif
 
@@ -253,7 +255,7 @@ static struct conn_param_data *conn_param_data_get(const struct bt_conn *conn)
 	return NULL;
 }
 
-#ifdef CONFIG_MCUMGR_GRP_TRANSPORT
+#ifdef CONFIG_MCUMGR_TRANSPORT_BT_CLIENT
 /* Helper function that returns conn_param_data for an outgoing connection. */
 static struct conn_param_data *outgoing_conn_param_data_get(void)
 {
@@ -660,7 +662,7 @@ int smp_bt_unregister(void)
 }
 #endif
 
-#ifdef CONFIG_MCUMGR_GRP_TRANSPORT
+#ifdef CONFIG_MCUMGR_TRANSPORT_BT_CLIENT
 static uint8_t smp_bt_bridge_notify(struct bt_conn *conn, struct bt_gatt_subscribe_params *params,
 				    const void *data, uint16_t len)
 {
@@ -842,7 +844,7 @@ static uint8_t smp_bt_bridge_discover(struct bt_conn *conn, const struct bt_gatt
 /* BT connected callback. */
 static void connected(struct bt_conn *conn, uint8_t err)
 {
-#ifdef CONFIG_MCUMGR_GRP_TRANSPORT
+#ifdef CONFIG_MCUMGR_TRANSPORT_BT_CLIENT
 	struct conn_param_data *cpd = NULL;
 	int rc;
 
@@ -915,7 +917,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		cpd->id = 0;
 		cpd->conn = NULL;
 
-#ifdef CONFIG_MCUMGR_GRP_TRANSPORT
+#ifdef CONFIG_MCUMGR_TRANSPORT_BT_CLIENT
 		if ((cpd->state & OUTGOING_CONNECTION) != 0) {
 			if ((cpd->state & CONNECTED) == 0) {
 				return;
@@ -932,7 +934,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 			(void)k_work_cancel_delayable(&cpd->ework);
 #endif
 
-#ifdef CONFIG_MCUMGR_GRP_TRANSPORT
+#ifdef CONFIG_MCUMGR_TRANSPORT_BT_CLIENT
 			if ((cpd->state & INCOMING_CONNECTION) != 0) {
 				incoming_bridge_data.conn = NULL;
 				incoming_bridge_data.id = 0;
@@ -942,7 +944,8 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		}
 #endif
 
-#if defined(CONFIG_MCUMGR_GRP_TRANSPORT) || defined(CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL)
+#if defined(CONFIG_MCUMGR_TRANSPORT_BT_CLIENT) || \
+	defined(CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL)
 		cpd->state = 0;
 #endif
 
@@ -981,7 +984,7 @@ static bool smp_bt_query_valid_check(struct net_buf *nb, void *arg)
 	return true;
 }
 
-#ifdef CONFIG_MCUMGR_GRP_TRANSPORT
+#ifdef CONFIG_MCUMGR_TRANSPORT_BT_CLIENT
 static bool smp_bt_bridge_connect(struct smp_transport_bridge *bridge, bool outgoing,
 				  uint32_t mode, bool same_transport, zcbor_state_t *input_data,
 				  zcbor_state_t *output_data)
@@ -1374,7 +1377,7 @@ static void smp_bt_setup(void)
 	smp_bt_transport.functions.ud_free = smp_bt_ud_free;
 	smp_bt_transport.functions.query_valid_check = smp_bt_query_valid_check;
 
-#ifdef CONFIG_MCUMGR_GRP_TRANSPORT
+#ifdef CONFIG_MCUMGR_TRANSPORT_BT_CLIENT
 	smp_bt_transport.functions.bridge_connect = smp_bt_bridge_connect;
 	smp_bt_transport.functions.bridge_disconnect = smp_bt_bridge_disconnect;
 	smp_bt_transport.functions.bridge_output = smp_bt_bridge_tx;
@@ -1390,7 +1393,7 @@ static void smp_bt_setup(void)
 		rc = smp_bt_register();
 	}
 
-#if defined(CONFIG_SMP_CLIENT) || defined(CONFIG_MCUMGR_GRP_TRANSPORT)
+#if defined(CONFIG_MCUMGR_TRANSPORT_BT_CLIENT)
 	if (rc == 0) {
 		smp_client_transport_register(&smp_client_transport);
 	}
