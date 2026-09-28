@@ -253,6 +253,11 @@ static int uart_aesc_init(const struct device *dev)
 	uint32_t clk_freq;
 	int ret;
 
+	if (ip_id_get_id(base_addr) != IP_ID_UART) {
+		LOG_ERR("Unexpected IP core ID %u.", ip_id_get_id(base_addr));
+		return -ENODEV;
+	}
+
 	LOG_DBG("IP core version: %i.%i.%i.",
 		ip_id_get_major_version(base_addr),
 		ip_id_get_minor_version(base_addr),
