@@ -443,6 +443,18 @@ config TRACING_IDLE
 	help
 	  Enable tracing Idle state.
 
+config TRACING_SKIP_INTERNAL_OBJECTS
+	bool "Skip events about the tracing subsystem's own objects"
+	depends on TRACING_ASYNC
+	depends on TRACING_CTF
+	help
+	  Drop events about the asynchronous tracing thread, its flush timer
+	  and its semaphore. These describe the tracer rather than the
+	  application: context switches into the tracing thread, and the
+	  flush timer being re-armed on every first put, can make up a large
+	  share of a trace. Time the tracing thread spends running then shows
+	  as a gap.
+
 endmenu  # Tracing Configuration
 
 endif
