@@ -11,6 +11,10 @@
 	};
 };
 
+&adc12_common {
+	st,adc-ext-trigger = "TIM15_TRGO";
+};
+
 &adc1 {
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -21,5 +25,15 @@
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <12>;
+	};
+};
+
+&timers15 {
+	st,mastermode = "UPDATE";
+	st,prescaler = <50000>;
+	status = "okay";
+
+	test_counter: counter {
+		status = "okay";
 	};
 };
