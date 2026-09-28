@@ -45,13 +45,29 @@
  * @brief JPEG stream parser element.
  *
  * Extends @ref mpipe_parser to reassemble JPEG frames from a byte stream.
+ *
+ * The parser proposes @ref out_pool upstream, and works in one of two modes depending on whether
+ * the producer adopts it:
+ *
+ * - In place: the producer receives @ref partial_frame and appends after the bytes it already
+ *   holds. The buffer goes downstream with its first frame; only the head of
+ *   the next frame is copied, into a fresh new @ref partial_frame.
+ *
+ * - Copy: the producer fills its own buffers, and the parser copies the frames out of them,
+ *   assembling a frame split across buffers in @ref partial_frame.
+ *
+ * At least two buffers are needed at the output, as the buffer being filled
+ * and the head of the next frame are held at once; otherwise the buffer pool query fails with
+ * -ENOMEM.
  */
 struct mpipe_img_jpeg_parser {
 	/** Base parser element */
 	struct mpipe_parser base;
-	/** Partial frame buffer, accumulated with memcpy until EOI */
+	/** Buffer holding the frame being assembled, accumulated until EOI */
 	struct net_buf *partial_frame;
-	/** Output pool used when downstream pool is not available */
+	/** First byte of @ref partial_frame not looked at yet */
+	uint32_t scan_offset;
+	/** Internal output pool, used when downstream pool is not available */
 	struct mpipe_buffer_pool out_pool;
 };
 
