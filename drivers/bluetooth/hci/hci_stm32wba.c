@@ -89,16 +89,21 @@ static bool is_hci_event_discardable(const uint8_t *evt_data)
 	}
 }
 
-static struct net_buf *treat_evt(const uint8_t *data, size_t len)
+/* Returns 0 on success.
+ * *buf_out is NULL if a discardable event was dropped.
+ */
+static int treat_evt(const uint8_t *data, size_t len, struct net_buf **buf_out)
 {
 	bool discardable;
 	struct bt_hci_evt_hdr hdr;
 	struct net_buf *buf;
 	size_t buf_tailroom;
 
+	*buf_out = NULL;
+
 	if (len < sizeof(hdr)) {
 		LOG_ERR("Not enough data for event header");
-		return NULL;
+		return -EBADMSG;
 	}
 
 	discardable = is_hci_event_discardable(data);
@@ -110,7 +115,7 @@ static struct net_buf *treat_evt(const uint8_t *data, size_t len)
 	if (len != hdr.len) {
 		LOG_ERR("Event payload length is not correct.\n");
 		LOG_ERR("len: %d, hdr.len: %d\n", len, hdr.len);
-		return NULL;
+		return -EBADMSG;
 	}
 	LOG_DBG("len %u", hdr.len);
 
@@ -118,12 +123,12 @@ static struct net_buf *treat_evt(const uint8_t *data, size_t len)
 	if (!buf) {
 		if (discardable) {
 			LOG_DBG("Discardable buffer pool full, ignoring event");
+			/* Message discarded: no error reported */
+			return 0;
 		} else {
 			LOG_ERR("No available event buffers!");
-
+			return -ENOMEM;
 		}
-		__ASSERT_NO_MSG(buf);
-		return buf;
 	}
 
 	net_buf_add_mem(buf, &hdr, sizeof(hdr));
@@ -132,24 +137,27 @@ static struct net_buf *treat_evt(const uint8_t *data, size_t len)
 	if (buf_tailroom < len) {
 		LOG_ERR("Not enough space in buffer %zu/%zu", len, buf_tailroom);
 		net_buf_unref(buf);
-		return NULL;
+		return -EMSGSIZE;
 	}
 
 	net_buf_add_mem(buf, data, len);
 
-	return buf;
+	*buf_out = buf;
+	return 0;
 }
 
-static struct net_buf *treat_acl(const uint8_t *data, size_t len,
-				 const uint8_t *ext_data, size_t ext_len)
+static int treat_acl(const uint8_t *data, size_t len, const uint8_t *ext_data,
+		     size_t ext_len, struct net_buf **buf_out)
 {
 	struct bt_hci_acl_hdr hdr;
 	struct net_buf *buf;
 	size_t buf_tailroom;
 
+	*buf_out = NULL;
+
 	if (len < sizeof(hdr)) {
 		LOG_ERR("Not enough data for ACL header");
-		return NULL;
+		return -EBADMSG;
 	}
 
 	buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_NO_WAIT);
@@ -159,13 +167,13 @@ static struct net_buf *treat_acl(const uint8_t *data, size_t len,
 		len -= sizeof(hdr);
 	} else {
 		LOG_ERR("No available ACL buffers!");
-		return NULL;
+		return -ENOMEM;
 	}
 
 	if (ext_len != sys_le16_to_cpu(hdr.len)) {
 		LOG_ERR("ACL payload length is not correct");
 		net_buf_unref(buf);
-		return NULL;
+		return -EBADMSG;
 	}
 
 	net_buf_add_mem(buf, &hdr, sizeof(hdr));
@@ -173,25 +181,28 @@ static struct net_buf *treat_acl(const uint8_t *data, size_t len,
 	if (buf_tailroom < len) {
 		LOG_ERR("Not enough space in buffer %zu/%zu", len, buf_tailroom);
 		net_buf_unref(buf);
-		return NULL;
+		return -EMSGSIZE;
 	}
 
 	LOG_DBG("ext_len %u", ext_len);
 	net_buf_add_mem(buf, ext_data, ext_len);
 
-	return buf;
+	*buf_out = buf;
+	return 0;
 }
 
-static struct net_buf *treat_iso(const uint8_t *data, size_t len,
-				 const uint8_t *ext_data, size_t ext_len)
+static int treat_iso(const uint8_t *data, size_t len, const uint8_t *ext_data,
+		     size_t ext_len, struct net_buf **buf_out)
 {
 	struct bt_hci_iso_hdr hdr;
 	struct net_buf *buf;
 	size_t buf_tailroom;
 
+	*buf_out = NULL;
+
 	if (len < sizeof(hdr)) {
 		LOG_ERR("Not enough data for ISO header");
-		return NULL;
+		return -EBADMSG;
 	}
 
 	buf = bt_buf_get_rx(BT_BUF_ISO_IN, K_NO_WAIT);
@@ -201,13 +212,13 @@ static struct net_buf *treat_iso(const uint8_t *data, size_t len,
 		len -= sizeof(hdr);
 	} else {
 		LOG_ERR("No available ISO buffers!");
-		return NULL;
+		return -ENOMEM;
 	}
 
 	if (ext_len != bt_iso_hdr_len(sys_le16_to_cpu(hdr.len))) {
 		LOG_ERR("ISO payload length is not correct");
 		net_buf_unref(buf);
-		return NULL;
+		return -EBADMSG;
 	}
 
 	net_buf_add_mem(buf, &hdr, sizeof(hdr));
@@ -215,20 +226,21 @@ static struct net_buf *treat_iso(const uint8_t *data, size_t len,
 	if (buf_tailroom < len) {
 		LOG_ERR("Not enough space in buffer %zu/%zu", len, buf_tailroom);
 		net_buf_unref(buf);
-		return NULL;
+		return -EMSGSIZE;
 	}
 
 	LOG_DBG("ext_len %zu", ext_len);
 	net_buf_add_mem(buf, ext_data, ext_len);
 
-	return buf;
+	*buf_out = buf;
+	return 0;
 }
 
 static int receive_data(const struct device *dev, const uint8_t *data, size_t len,
 			const uint8_t *ext_data, size_t ext_len)
 {
 	uint8_t pkt_indicator;
-	struct net_buf *buf;
+	struct net_buf *buf = NULL;
 	int err = 0;
 
 	LOG_HEXDUMP_DBG(data, len, "host packet data:");
@@ -239,35 +251,37 @@ static int receive_data(const struct device *dev, const uint8_t *data, size_t le
 
 	switch (pkt_indicator) {
 	case BT_HCI_H4_EVT:
-		buf = treat_evt(data, len);
+		err = treat_evt(data, len, &buf);
 		break;
 	case BT_HCI_H4_ACL:
-		buf = treat_acl(data, len + 1, ext_data, ext_len);
+		err = treat_acl(data, len + 1, ext_data, ext_len, &buf);
 		break;
 	case BT_HCI_H4_ISO:
 	case BT_HCI_H4_SCO:
-		buf = treat_iso(data, len + 1, ext_data, ext_len);
+		err = treat_iso(data, len + 1, ext_data, ext_len, &buf);
 		break;
 	default:
-		buf = NULL;
+		err = -EINVAL;
 		LOG_ERR("Unknown HCI type %u", pkt_indicator);
 	}
 
-	if (buf) {
+	if (buf != NULL) {
 		bt_hci_recv(dev, buf);
-	} else {
-		err = -ENOMEM;
 	}
 
 	return err;
 }
 
+/* This callback returns 1 when an event cannot be processed due to
+ * a lack of memory buffers, and 0 otherwise.
+ * When 1 is returned, the controller holds the event for later
+ * indication.
+ */
 uint8_t BLECB_Indication(const uint8_t *data, uint16_t length,
 			 const uint8_t *ext_data, uint16_t ext_length)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
 	__maybe_unused int unlock_err;
-	int ret = 0;
 	int err;
 
 	LOG_DBG("length: %d", length);
@@ -284,9 +298,8 @@ uint8_t BLECB_Indication(const uint8_t *data, uint16_t length,
 	err = receive_data(dev, data, (size_t)length,
 			   ext_data, (size_t)ext_length);
 
-	if (err) {
+	if (err == -ENOMEM) {
 		ll_state_busy = 1;
-		ret = 1;
 	}
 
 	unlock_err = k_mutex_unlock(&hci_lock);
@@ -294,7 +307,7 @@ uint8_t BLECB_Indication(const uint8_t *data, uint16_t length,
 
 	HostStack_Process();
 
-	return ret;
+	return (err == -ENOMEM);
 }
 
 static int bt_hci_stm32wba_send(const struct device *dev, struct net_buf *buf)
