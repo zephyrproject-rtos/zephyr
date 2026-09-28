@@ -7,7 +7,6 @@
 / {
 	aliases {
 		i2c-0 = &pmod6_i2c;
-		gy271 = &pmod6_i2c;
 	};
 };
 
