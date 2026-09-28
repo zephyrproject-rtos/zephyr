@@ -2373,6 +2373,10 @@ static struct out_of_order_check_struct out_of_order_check_list[] = {
 	{ 78,  2, 75, 0},
 	{ 77,  3, 75, 0},
 	{ 75,  2, 80, 0}, /* Over lapped in out of order processing, at boundary */
+	{ 90, 10, 80, 0}, /* Two queued segments, the third overlaps the tail */
+	{ 100, 10, 80, 0},
+	{ 105, 10, 80, 0},
+	{ 80, 10, 115, 0}, /* Fill the gap, all queued data is acknowledged */
 };
 
 static void checklist_based_out_of_order_test(struct out_of_order_check_struct *check_list,
@@ -2439,9 +2443,9 @@ static void test_server_recv_out_of_order_data(void)
 
 struct out_of_order_check_struct reorder_timeout_list[] = {
 	/* Wait more then the receive queue timeout */
-	{ 90, 10, 80, CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT * 2},
+	{ 125, 10, 115, CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT * 2},
 	/* First message has been timeout, so only this is acknowledged */
-	{ 80, 10, 90, 0},
+	{ 115, 10, 125, 0},
 };
 
 
