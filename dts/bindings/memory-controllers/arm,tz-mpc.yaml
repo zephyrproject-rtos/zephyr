@@ -1,0 +1,48 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: ARM TrustZone Memory Protection Controller (TZ-MPC)
+
+description: |
+  ARM TrustZone MPC (PL523 or compatible). Programs the block-LUT to mark
+  selected address ranges as Non-Secure on the AHB bus.
+
+  Governed memory regions are expressed as child nodes. Each child's reg
+  property encodes <offset size> in bytes, relative to block 0 of the memory
+  controlled by this MPC instance. The driver marks every block that falls
+  within [offset, offset+size) as Non-Secure in the block-LUT.
+
+  Offsets and sizes should be aligned to the MPC block size, which is read
+  at runtime from the BLK_CFG register (typically 32 B to 256 KB).
+
+  Example (mps2-an521 code SRAM, NS partition at offset 1 MB, 512 KB):
+
+    mpc_sram1: mpc@58007000 {
+        compatible = "arm,tz-mpc";
+        reg = <0x58007000 0x1000>;
+        #address-cells = <1>;
+        #size-cells = <1>;
+        status = "okay";
+
+        region@100000 {
+            reg = <0x00100000 0x00080000>;
+        };
+    };
+
+include: arm,mpc-base.yaml
+
+compatible: "arm,tz-mpc"
+
+child-binding:
+  description: |
+    A Non-Secure memory region governed by this TZ-MPC instance.
+    The reg property encodes <offset size> within the MPC-controlled memory.
+    Every block in this range is marked Non-Secure in the block-LUT.
+
+  properties:
+    reg:
+      type: array
+      required: true
+      description: "<offset size> within the MPC-controlled memory, in bytes."
