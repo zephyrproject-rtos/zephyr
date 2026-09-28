@@ -251,7 +251,54 @@ struct lwan_region_ops {
 	 * @param airtime_ms On-air time in milliseconds.
 	 */
 	void (*record_tx)(uint32_t freq, uint32_t airtime_ms);
+
+	/**
+	 * @brief Get TX parameters while an uplink dwell time limit applies.
+	 *
+	 * Only a region that caps how long a device may hold the channel
+	 * has these, and only such a region takes a TxParamSetupReq. The
+	 * rest leave both dwell ops out, and the command goes unanswered
+	 * the way an unimplemented one does.
+	 *
+	 * Arguments and return match @ref get_tx_params. A datarate whose
+	 * frame cannot fit the limit is refused.
+	 */
+	int (*get_dwell_tx_params)(uint8_t dr, uint8_t tx_power_idx,
+				   struct lwan_dr_params *p, int8_t *power_dbm);
+
+	/**
+	 * @brief Get RX1 parameters while a downlink dwell time limit applies.
+	 *
+	 * Arguments and return match @ref get_rx1_params.
+	 */
+	int (*get_dwell_rx1_params)(uint32_t tx_freq, uint8_t tx_dr,
+				    uint8_t offset, uint32_t *rx1_freq,
+				    struct lwan_dr_params *p);
 };
+
+struct lwan_ctx;
+
+/**
+ * @brief Get TX parameters for the dwell time the session is under.
+ *
+ * Routes to @ref lwan_region_ops.get_dwell_tx_params while an uplink
+ * dwell time limit is in force, and to @ref lwan_region_ops.get_tx_params
+ * otherwise.
+ */
+int lwan_region_tx_params(const struct lwan_ctx *ctx, uint8_t dr,
+			  uint8_t tx_power_idx, struct lwan_dr_params *p,
+			  int8_t *power_dbm);
+
+/**
+ * @brief Get RX1 parameters for the dwell time the session is under.
+ *
+ * Routes to @ref lwan_region_ops.get_dwell_rx1_params while a downlink
+ * dwell time limit is in force, and to @ref lwan_region_ops.get_rx1_params
+ * otherwise.
+ */
+int lwan_region_rx1_params(const struct lwan_ctx *ctx, uint32_t tx_freq,
+			   uint8_t tx_dr, uint8_t offset, uint32_t *rx1_freq,
+			   struct lwan_dr_params *p);
 
 /* Returns NULL if the region is not supported by this backend */
 const struct lwan_region_ops *lwan_region_get(enum lorawan_region region);

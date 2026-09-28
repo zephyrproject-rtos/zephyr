@@ -307,9 +307,9 @@ void lorawan_get_payload_sizes(uint8_t *max_next_payload_size,
 	uint8_t max_payload;
 
 	if (lwan_ctx.region != NULL &&
-	    lwan_ctx.region->get_tx_params((uint8_t)lwan_ctx.current_dr,
-					    lwan_ctx.mac.tx_power_idx,
-					    &dr_params, &power) == 0) {
+	    lwan_region_tx_params(&lwan_ctx, (uint8_t)lwan_ctx.current_dr,
+				  lwan_ctx.mac.tx_power_idx,
+				  &dr_params, &power) == 0) {
 		max_payload = dr_params.max_payload;
 	} else {
 		max_payload = LWAN_DEFAULT_MAX_PAYLOAD;

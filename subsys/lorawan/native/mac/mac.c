@@ -119,7 +119,7 @@ int mac_do_tx_rx(struct lwan_ctx *ctx, const struct mac_tx_params *params)
 	int64_t tx_done_time;
 	int ret;
 
-	ret = region->get_tx_params(params->tx_dr_idx, ctx->mac.tx_power_idx,
+	ret = lwan_region_tx_params(ctx, params->tx_dr_idx, ctx->mac.tx_power_idx,
 				    &tx_dr, &tx_power);
 	if (ret != 0) {
 		return ret;
@@ -151,7 +151,7 @@ int mac_do_tx_rx(struct lwan_ctx *ctx, const struct mac_tx_params *params)
 	}
 
 	/* --- RX1 window --- */
-	ret = region->get_rx1_params(params->tx_freq, params->tx_dr_idx,
+	ret = lwan_region_rx1_params(ctx, params->tx_freq, params->tx_dr_idx,
 				     ctx->session.rx1_dr_offset,
 				     &rx_freq, &rx_dr);
 	if (ret != 0) {
@@ -201,9 +201,8 @@ static void mac_do_set_datarate(struct lwan_ctx *ctx,
 	}
 
 	if (ctx->region == NULL ||
-	    ctx->region->get_tx_params((uint8_t)dr_req->dr,
-				       ctx->mac.tx_power_idx,
-				       &p, &power) != 0) {
+	    lwan_region_tx_params(ctx, (uint8_t)dr_req->dr,
+				  ctx->mac.tx_power_idx, &p, &power) != 0) {
 		ret = -EINVAL;
 	} else {
 		ctx->current_dr = dr_req->dr;
