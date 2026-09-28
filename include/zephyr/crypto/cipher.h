@@ -42,11 +42,13 @@ enum cipher_op {
  * More to be added as required.
  */
 enum cipher_mode {
-	CRYPTO_CIPHER_MODE_ECB = 1,
-	CRYPTO_CIPHER_MODE_CBC = 2,
-	CRYPTO_CIPHER_MODE_CTR = 3,
-	CRYPTO_CIPHER_MODE_CCM = 4,
-	CRYPTO_CIPHER_MODE_GCM = 5,
+	CRYPTO_CIPHER_MODE_ECB = 1, /**< Electronic Codebook mode. */
+	CRYPTO_CIPHER_MODE_CBC = 2, /**< Cipher Block Chaining mode. */
+	CRYPTO_CIPHER_MODE_CTR = 3, /**< Counter mode. */
+	CRYPTO_CIPHER_MODE_CCM = 4, /**< Counter with CBC-MAC mode. */
+	CRYPTO_CIPHER_MODE_GCM = 5, /**< Galois/Counter mode. */
+	CRYPTO_CIPHER_MODE_CFB = 6, /**< Cipher Feedback mode. */
+	CRYPTO_CIPHER_MODE_OFB = 7, /**< Output Feedback mode. */
 };
 
 /* Forward declarations */
@@ -71,6 +73,38 @@ typedef int (*ccm_op_t)(struct cipher_ctx *ctx, struct cipher_aead_pkt *pkt,
 typedef int (*gcm_op_t)(struct cipher_ctx *ctx, struct cipher_aead_pkt *pkt,
 			 uint8_t *nonce);
 
+/**
+ * @brief Perform a CFB cipher operation.
+ *
+ * @param ctx Cipher session context.
+ * @param pkt Packet containing input and output buffers.
+ * @param iv Initialization vector for this operation.
+ *
+ * @retval 0 Operation completed successfully.
+ * @retval -errno Negative errno code on failure.
+ */
+typedef int (*cfb_op_t)(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
+			uint8_t *iv);
+
+/**
+ * @brief Perform an OFB cipher operation.
+ *
+ * @param ctx Cipher session context.
+ * @param pkt Packet containing input and output buffers.
+ * @param iv Initialization vector for this operation.
+ *
+ * @retval 0 Operation completed successfully.
+ * @retval -errno Negative errno code on failure.
+ */
+typedef int (*ofb_op_t)(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
+			uint8_t *iv);
+
+/**
+ * Cipher operation handlers selected for a session.
+ *
+ * The crypto driver populates this structure during cipher_begin_session()
+ * according to the selected algorithm, mode, and operation type.
+ */
 struct cipher_ops {
 
 	enum cipher_mode cipher_mode;
@@ -81,6 +115,10 @@ struct cipher_ops {
 		ctr_op_t	ctr_crypt_hndlr;
 		ccm_op_t	ccm_crypt_hndlr;
 		gcm_op_t	gcm_crypt_hndlr;
+		/** Handler for CFB operations. */
+		cfb_op_t	cfb_crypt_hndlr;
+		/** Handler for OFB operations. */
+		ofb_op_t	ofb_crypt_hndlr;
 	};
 };
 
