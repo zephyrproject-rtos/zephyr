@@ -296,4 +296,10 @@ config BT_NXP_PCM_PINS_DIR_REVERSE
 	help
 	  If enabled, PCM pins direction for the Bluetooth module will be reversed.
 
+config NXP_FLASH_IPED
+	bool "flash IPED enabled"
+	depends on NXP_RW610
+	help
+	  Flash IPED feature enabled.
+
 rsource "mcux-sdk-ng/middleware/Kconfig"
