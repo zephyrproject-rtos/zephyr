@@ -30,6 +30,7 @@
 	};
 
 	aliases {
+		ext-nor0 = &ext_flash_ctrl;
 		led0 = &red_led;
 		led1 = &green_led;
 		led2 = &blue_led;
@@ -184,6 +185,11 @@ zephyr_i2c: &i2c1 {
 };
 
 &quadspi {
+	compatible = "st,stm32-qspi-controller";
+	clock-names = "qspix";
+	clock-frequency = <DT_FREQ_M(40)>;
+	op-mode = "MSPI_OP_MODE_CONTROLLER";
+	st,cs-high-time = <2>; /* >= 30 ns */
 	pinctrl-0 = <&quadspi_bk1_io0_pd11
 		     &quadspi_bk1_io1_pd12
 		     &quadspi_bk1_io2_pf7
@@ -193,18 +199,18 @@ zephyr_i2c: &i2c1 {
 	pinctrl-names = "default";
 	status = "okay";
 
-	qspi_flash: mx25l12833f: qspi-nor-flash@0 {
-		compatible = "st,stm32-qspi-nor";
+	ext_flash_ctrl: qspi_flash: nor-flash-controller@0 {
+		compatible = "jedec,nor";
 		reg = <0>;
-		size = <DT_SIZE_M(128)>; /* 128 Mbits (16 MB) */
-		qspi-max-frequency = <40000000>;
-		cs-high-time = <2>; /* >= 30 ns */
+		size = <DT_SIZE_M(128)>; /* 128 Mbits (16 MB), MX25L12833F */
 		sfdp-bfp = [e5 20 f1 ff ff ff ff 07 44 eb 08 6b 08 3b 04 bb
 			    fe ff ff ff ff ff 00 ff ff ff 44 eb 0c 20 0f 52
 			    10 d8 00 ff 82 41 bd 00 81 e5 7b c6 44 03 67 38
 			    30 b0 30 b0 f7 bd d5 5c 4a be 29 ff e1 d0 ff ff];
-		jedec-id = [66 66 20];
-		spi-bus-width = <4>;
+		mspi-max-frequency = <DT_FREQ_M(40)>;
+		mspi-io-mode = "MSPI_IO_MODE_QUAD_1_4_4";
+		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+		mspi-hardware-ce-num = <0>;
 		status = "okay";
 	};
 };
