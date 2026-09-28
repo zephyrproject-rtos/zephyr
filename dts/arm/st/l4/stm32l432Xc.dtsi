@@ -7,6 +7,17 @@
 
 / {
 	soc {
+		/*
+		 * STM32L432xx exists only in UFQFPN32 package
+		 * where PC13/WKUP2 and PC5/WKUP5 are not available
+		 */
+		power@40007000 {
+			wakeup-controller {
+				/delete-node/ wkup@2;
+				/delete-node/ wkup@5;
+			};
+		};
+
 		flash-controller@40022000 {
 			flash0: flash@8000000 {
 				reg = <0x08000000 DT_SIZE_K(256)>;

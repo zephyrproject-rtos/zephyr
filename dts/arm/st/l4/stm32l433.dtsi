@@ -42,6 +42,14 @@
 			status = "disabled";
 		};
 
+		power@40007000 {
+			wakeup-controller {
+				wkup@3 {
+					wkup-gpios = <&gpioe 6 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				};
+			};
+		};
+
 		sdmmc1: sdmmc@40012800 {
 			compatible = "st,stm32-sdmmc";
 			reg = <0x40012800 0x400>;
