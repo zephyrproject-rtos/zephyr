@@ -129,7 +129,7 @@ int mpipe_transform_client_init(struct mpipe_transform_client *transform_client,
 	mpipe_element_set_name(self, "transform_client");
 
 	/* Only NORMAL mode is supported */
-	transform->mode = MPIPE_MODE_NORMAL;
+	transform->mode = MPIPE_TRANSFORM_MODE_NORMAL;
 
 	transform->sink_pad.process_fn = mpipe_transform_client_process_fn;
 	transform->decide_buffer_pool = mpipe_transform_client_decide_buffer_pool;
