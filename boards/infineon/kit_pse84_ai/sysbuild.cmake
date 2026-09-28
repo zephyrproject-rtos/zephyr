@@ -12,3 +12,16 @@ if(SB_CONFIG_BOARD_KIT_PSE84_AI_PSE846GPS2DBZC4A_M55)
 
   set_config_bool(enable_cm55 CONFIG_SOC_PSE84_M55_ENABLE 1)
 endif()
+
+if(SB_CONFIG_BOARD_KIT_PSE84_AI_PSE846GPS2DBZC4A_M33_NS)
+  set_config_bool(${DEFAULT_IMAGE} CONFIG_BUILD_WITH_TFM 0)
+  set_config_bool(${DEFAULT_IMAGE} CONFIG_SOC_PSE84_M55_START_FROM_NS 1)
+
+  ExternalZephyrProject_Add(
+    APPLICATION cm33_secure
+    SOURCE_DIR ${ZEPHYR_BASE}/samples/basic/minimal
+    BOARD kit_pse84_ai/pse846gps2dbzc4a/m33
+  )
+
+  set_config_bool(cm33_secure CONFIG_SOC_PSE84_S_JUMP_TO_NS 1)
+endif()
