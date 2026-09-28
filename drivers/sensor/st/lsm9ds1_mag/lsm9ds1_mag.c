@@ -415,9 +415,12 @@ static int lsm9ds1_mag_init(const struct device *dev)
 	static struct lsm9ds1_mag_data lsm9ds1_mag_data_##inst = {.mag_gain = 0,                   \
 								  .powered_down = 0};              \
                                                                                                    \
-	static struct lsm9ds1_mag_config lsm9ds1_mag_config_##inst = COND_CODE_1(DT_INST_ON_BUS(inst, spi),\
-									  (LSM9DS1_MAG_CONFIG_SPI(inst)),\
-									  (LSM9DS1_MAG_CONFIG_I2C(inst)));          \
+	static struct lsm9ds1_mag_config lsm9ds1_mag_config_##inst = COND_CODE_1(                  \
+									DT_INST_ON_BUS(inst, spi), \
+									(LSM9DS1_MAG_CONFIG_SPI(   \
+										inst)),            \
+									(LSM9DS1_MAG_CONFIG_I2C(   \
+										inst)));           \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, lsm9ds1_mag_init, NULL, &lsm9ds1_mag_data_##inst,       \
 				     &lsm9ds1_mag_config_##inst, POST_KERNEL,                      \

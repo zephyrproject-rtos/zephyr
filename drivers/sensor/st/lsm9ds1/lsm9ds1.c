@@ -247,7 +247,7 @@ static int lsm9ds1_accel_odr_set(const struct device *dev, uint16_t freq)
 			return ret;
 		}
 
-	/* The gyroscope is off, we have to change the odr of just the accelerometer */
+		/* The gyroscope is off, we have to change the odr of just the accelerometer */
 	} else {
 
 		odr = lsm9ds1_accel_freq_to_odr_val(freq);
@@ -664,8 +664,7 @@ static int lsm9ds1_init(const struct device *dev)
 }
 
 #define LSM9DS1_CONFIG_COMMON(inst)                                                                \
-	.imu_odr = DT_INST_PROP(inst, imu_odr),							   \
-	.accel_range = DT_INST_PROP(inst, accel_range),						   \
+	.imu_odr = DT_INST_PROP(inst, imu_odr), .accel_range = DT_INST_PROP(inst, accel_range),    \
 	.gyro_range = DT_INST_PROP(inst, gyro_range),
 
 /*
@@ -700,8 +699,8 @@ static int lsm9ds1_init(const struct device *dev)
 	};                                                                                         \
                                                                                                    \
 	static struct lsm9ds1_config lsm9ds1_config_##inst = COND_CODE_1(DT_INST_ON_BUS(inst, spi),\
-									  (LSM9DS1_CONFIG_SPI(inst)),\
-									  (LSM9DS1_CONFIG_I2C(inst)));                  \
+								(LSM9DS1_CONFIG_SPI(inst)),        \
+								(LSM9DS1_CONFIG_I2C(inst)));       \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, lsm9ds1_pm_action);                                         \
                                                                                                    \
