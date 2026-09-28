@@ -786,6 +786,13 @@ release_desc:
 #endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
 	if (!pkt) {
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
+		/*
+		 * A frame was consumed but dropped. Schedule RX processing again
+		 * so HAL_ETH_ReadData() can rebuild and re-arm the descriptors.
+		 */
+		k_sem_give(&dev_data->rx_int_sem);
+#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 		goto out;
 	}
 
