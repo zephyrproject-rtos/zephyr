@@ -389,6 +389,8 @@ static int sam_prep_out(const struct device *dev,
 		struct udphs_request req = {0};
 
 		sys_cache_data_invd_range(buf->data, buf->size);
+		barrier_dsync_fence_full();
+
 		req.buf = buf->data;
 		req.len = MIN(buf->size, UDC_SAM_MAX_DMA_LEN);
 
@@ -423,6 +425,7 @@ static int sam_prep_in(const struct device *dev,
 		struct udphs_request req = {0};
 
 		sys_cache_data_flush_range(buf->data, buf->len);
+		barrier_dsync_fence_full();
 
 		req.is_in = true;
 		req.buf = buf->data;
@@ -703,6 +706,7 @@ static int ALWAYS_INLINE dma_out(const struct device *dev, const uint8_t chan, u
 
 	if ((status & UDPHS_DMASTATUS_END_TR_ST_Msk) || (size == 0)) {
 		sys_cache_data_invd_range(buf->data, buf->len);
+		barrier_dsync_fence_full();
 
 		atomic_clear_bit(&priv->xfer_running,
 				 udc_ep_to_bnum(idx | USB_EP_DIR_OUT));
