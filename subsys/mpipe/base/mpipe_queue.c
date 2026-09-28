@@ -74,8 +74,8 @@ static int mpipe_queue_set_property(struct mpipe_object *obj, uint32_t id, const
 	}
 }
 
-static int mpipe_queue_chain_fn(struct mpipe_pad *pad, struct net_buf *in_buf,
-				struct net_buf **out_buf)
+static int mpipe_queue_process_fn(struct mpipe_pad *pad, struct net_buf *in_buf,
+				  struct net_buf **out_buf)
 {
 	struct mpipe_queue *queue = (struct mpipe_queue *)pad->object.container;
 	int ret;
@@ -283,7 +283,7 @@ int mpipe_queue_init(struct mpipe_queue *queue, uint8_t id)
 	self->object.get_property = mpipe_queue_get_property;
 	self->change_state = mpipe_queue_change_state;
 
-	queue->transform.sink_pad.chain_fn = mpipe_queue_chain_fn;
+	queue->transform.sink_pad.process_fn = mpipe_queue_process_fn;
 	queue->transform.sink_pad.event_fn = mpipe_queue_sink_event_fn;
 	queue->size = CONFIG_MPIPE_BASE_QUEUE_MAX_SIZE;
 	queue->leak = MPIPE_BASE_QUEUE_LEAK_NONE;
