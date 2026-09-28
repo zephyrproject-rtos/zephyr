@@ -60,6 +60,7 @@ static struct k_event emu_events;
 static atomic_t emu_registered;    /* status reported on the next AT+CEREG? poll */
 static atomic_t emu_hold_connect;  /* count ATD but withhold CONNECT */
 static atomic_t emu_hold_csq;      /* count AT+CSQ but withhold its answer */
+static atomic_t emu_hold_cfun;     /* withhold OK to AT+CFUN=1 (network script) */
 
 /* ------------------------------------------------------------------------- */
 /* Modem (DCE) emulator                                                      */
@@ -151,6 +152,10 @@ static void dlci1_respond(const char *line)
 	} else if (strncmp(line, "AT+CGDCONT", 10) == 0) {
 		dce_send(dce_dlci1_pipe, "OK\r\n");
 		k_event_post(&emu_events, EV_APN_DONE);
+	} else if (strcmp(line, "AT+CFUN=1") == 0) {
+		if (!atomic_get(&emu_hold_cfun)) {
+			dce_send(dce_dlci1_pipe, "OK\r\n");
+		}
 	} else if (strcmp(line, "AT+CSQ") == 0) {
 		atomic_inc(&csq_count);
 		if (!atomic_get(&emu_hold_csq)) {
@@ -859,58 +864,42 @@ ZTEST(cellular_on_demand_connect, test_08_periodic_survives_pause_resume_while_p
 		      modem_fsm_state());
 }
 
-/* A PPP drop while awaiting registration must re-dial, not be discarded. */
-ZTEST(cellular_on_demand_connect, test_09_ppp_dead_while_awaiting_registration)
+/* A PPP drop on a live call must re-dial, not be discarded. */
+ZTEST(cellular_on_demand_connect, test_09_ppp_dead_while_registered)
 {
 	int dials;
-	int csq;
 
-	/* Entering AWAIT_REGISTERED re-delegates REGISTERED from the cached status,
-	 * so the driver has to observe the deregistration first.
-	 */
 	park_in_await_dial();
-	atomic_set(&emu_registered, 0);
-	csq = atomic_get(&csq_count);
-	zassert_true(wait_for_csq(csq + 1, 4 * CONFIG_MODEM_CELLULAR_PERIODIC_SCRIPT_MS),
-		     "periodic script did not poll while parked");
-
-	/* EG25-G has no network script, so a completed dial rests in AWAIT_REGISTERED. */
+	atomic_set(&emu_registered, 1);
 	admit_iface();
-	zassert_true(wait_for_state(MODEM_CELLULAR_STATE_AWAIT_REGISTERED, 20000),
-		     "modem did not rest in AWAIT_REGISTERED, state is %d", modem_fsm_state());
-	zassert_true(net_if_is_admin_up(ppp_iface), "PPP interface must be admin-up");
+	zassert_true(wait_for_state(MODEM_CELLULAR_STATE_REGISTERED, 20000),
+		     "modem did not reach REGISTERED, state is %d", modem_fsm_state());
 	dials = atomic_get(&atd_count);
 
 	net_mgmt_event_notify(NET_EVENT_PPP_PHASE_DEAD, ppp_iface);
 
 	zassert_true(wait_for_atd(dials + 1, 20000),
-		     "a PPP drop in AWAIT_REGISTERED did not re-dial, state is %d",
-		     modem_fsm_state());
+		     "a PPP drop in REGISTERED did not re-dial, state is %d", modem_fsm_state());
 }
 
 /* An in-band NO CARRIER is how a module reports the network dropping the call.
  * modem_ppp parses it off the PPP channel, so the DCE emits it verbatim.
  */
-ZTEST(cellular_on_demand_connect, test_10_in_band_no_carrier_while_awaiting_registration)
+ZTEST(cellular_on_demand_connect, test_10_in_band_no_carrier_while_registered)
 {
 	int dials;
-	int csq;
 
 	park_in_await_dial();
-	atomic_set(&emu_registered, 0);
-	csq = atomic_get(&csq_count);
-	zassert_true(wait_for_csq(csq + 1, 4 * CONFIG_MODEM_CELLULAR_PERIODIC_SCRIPT_MS),
-		     "periodic script did not poll while parked");
-
+	atomic_set(&emu_registered, 1);
 	admit_iface();
-	zassert_true(wait_for_state(MODEM_CELLULAR_STATE_AWAIT_REGISTERED, 20000),
-		     "modem did not rest in AWAIT_REGISTERED, state is %d", modem_fsm_state());
+	zassert_true(wait_for_state(MODEM_CELLULAR_STATE_REGISTERED, 20000),
+		     "modem did not reach REGISTERED, state is %d", modem_fsm_state());
 	dials = atomic_get(&atd_count);
 
 	dce_send(dce_dlci2_pipe, "\r\nNO CARRIER\r\n");
 
 	zassert_true(wait_for_atd(dials + 1, 20000),
-		     "in-band NO CARRIER in AWAIT_REGISTERED did not re-dial, state is %d",
+		     "in-band NO CARRIER in REGISTERED did not re-dial, state is %d",
 		     modem_fsm_state());
 }
 
@@ -1046,24 +1035,68 @@ ZTEST(cellular_on_demand_connect, test_14_dial_while_periodic_holds_chat)
 	dials = atomic_get(&atd_count);
 
 	admit_iface();
-	zassert_true(wait_for_state(MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT, 5000),
-		     "dial request did not reach RUN_DIAL_SCRIPT, state is %d", modem_fsm_state());
+	zassert_true(wait_for_state(MODEM_CELLULAR_STATE_RUN_NETWORK_SCRIPT, 5000),
+		     "dial request did not reach RUN_NETWORK_SCRIPT, state is %d",
+		     modem_fsm_state());
 
-	/* The answer arrives on the dial channel, so the periodic script completes in the
-	 * dial state.
-	 */
 	atomic_set(&emu_hold_csq, 0);
-	dce_send(dce_dlci2_pipe, "+CSQ: 20,99\r\nOK\r\n");
+	dce_send(dce_dlci1_pipe, "+CSQ: 20,99\r\nOK\r\n");
 	k_msleep(PERIODIC_SCRIPT_SETTLE_MS);
 
-	zassert_equal(MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT, modem_fsm_state(),
-		      "the periodic script result completed the dial, state is %d",
+	zassert_equal(MODEM_CELLULAR_STATE_RUN_NETWORK_SCRIPT, modem_fsm_state(),
+		      "the periodic script result completed the network script, state is %d",
 		      modem_fsm_state());
 	zassert_true(wait_for_atd(dials + 1, 4 * CONFIG_MODEM_CELLULAR_PERIODIC_SCRIPT_MS),
-		     "dial script was not retried after finding the chat busy, state is %d",
+		     "network script was not retried after finding the chat busy, state is %d",
 		     modem_fsm_state());
 	zassert_true(wait_for_call_up(10000), "dial script did not complete, state is %d",
 		     modem_fsm_state());
+}
+
+/* Admitting the interface must not dial until the module reports registration. */
+ZTEST(cellular_on_demand_connect, test_15_dial_waits_for_registration)
+{
+	int dials;
+	int csq;
+
+	park_in_await_dial();
+	atomic_set(&emu_registered, 0);
+	csq = atomic_get(&csq_count);
+	zassert_true(wait_for_csq(csq + 1, 4 * CONFIG_MODEM_CELLULAR_PERIODIC_SCRIPT_MS),
+		     "periodic script did not poll while parked");
+	dials = atomic_get(&atd_count);
+
+	admit_iface();
+	k_msleep(3 * CONFIG_MODEM_CELLULAR_PERIODIC_SCRIPT_MS);
+	zassert_equal(dials, atomic_get(&atd_count),
+		      "modem dialled before registering, state is %d", modem_fsm_state());
+
+	atomic_set(&emu_registered, 1);
+	zassert_true(wait_for_atd(dials + 1, 20000),
+		     "registration did not release the dial, state is %d", modem_fsm_state());
+}
+
+/* A hang-up while the network script runs must park, not dial. */
+ZTEST(cellular_on_demand_connect, test_16_hangup_during_network_script_parks)
+{
+	int dials;
+
+	park_in_await_dial();
+	atomic_set(&emu_hold_cfun, 1);
+	dials = atomic_get(&atd_count);
+
+	admit_iface();
+	zassert_true(wait_for_state(MODEM_CELLULAR_STATE_RUN_NETWORK_SCRIPT, 15000),
+		     "modem did not run the network script, state is %d", modem_fsm_state());
+
+	zassert_ok(net_if_down(ppp_iface), "net_if_down failed");
+	zassert_true(wait_for_state(MODEM_CELLULAR_STATE_AWAIT_DIAL, 15000),
+		     "hang-up during the network script did not park, state is %d",
+		     modem_fsm_state());
+	atomic_set(&emu_hold_cfun, 0);
+
+	k_msleep(2 * CONFIG_MODEM_CELLULAR_PERIODIC_SCRIPT_MS);
+	zassert_equal(dials, atomic_get(&atd_count), "modem dialled after hanging up");
 }
 
 static void *suite_setup(void)
