@@ -302,7 +302,7 @@ static void subscribe(struct bt_gatt_subscribe_params *params, bool subscribe)
 
 }
 
-static void test_main(void)
+static void setup(void)
 {
 	int err;
 
@@ -346,6 +346,11 @@ static void test_main(void)
 	WAIT_FOR_FLAG(flag_subscribed_long);
 
 	printk("Subscribed\n");
+}
+
+static void test_main(void)
+{
+	setup();
 
 	while (num_notifications < NOTIFICATION_COUNT) {
 		k_sleep(K_MSEC(100));
@@ -362,12 +367,27 @@ static void test_main(void)
 	PASS("GATT client Passed\n");
 }
 
+static void test_disconnect(void)
+{
+	setup();
+
+	WAIT_FOR_FLAG_UNSET(flag_is_connected);
+
+	PASS("GATT client Passed\n");
+}
+
 static const struct bst_test_instance test_vcs[] = {
 	{
 		.test_id = "gatt_client",
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
+	},
+	{
+		.test_id = "gatt_client_disconnect",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_disconnect,
 	},
 	BSTEST_END_MARKER,
 };
