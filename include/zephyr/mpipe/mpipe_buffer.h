@@ -168,7 +168,9 @@ void mpipe_buffer_destroy(struct net_buf *buf);
  * @param pool Pointer to the buffer pool to configure
  * @param config Caps structure to configure the buffer pool
  *
- * @return 0 on success, negative errno on failure
+ * @retval 0 Success.
+ * @retval -ENOSYS The pool has no configure hook
+ * @return Any negative errno the hook returns
  */
 int mpipe_buffer_pool_configure(struct mpipe_buffer_pool *pool,
 				const struct mpipe_structure *config);
@@ -221,9 +223,13 @@ int mpipe_buffer_pool_set_config(struct mpipe_buffer_pool *pool,
 /**
  * @brief Start a buffer pool
  *
+ * A pool already started is left alone.
+ *
  * @param pool Pointer to the buffer pool to start
  *
- * @return 0 on success, negative errno on failure
+ * @retval 0 Success.
+ * @retval -ENOSYS The pool has no start hook; it is marked started anyway
+ * @return Any negative errno the hook returns
  */
 int mpipe_buffer_pool_start(struct mpipe_buffer_pool *pool);
 
@@ -237,7 +243,9 @@ int mpipe_buffer_pool_start(struct mpipe_buffer_pool *pool);
  *
  * @param pool Pointer to the buffer pool to stop
  *
- * @return 0 on success, negative errno on failure
+ * @retval 0 Success.
+ * @retval -ENOSYS The pool was started and has no stop hook
+ * @return Any negative errno the hook returns
  */
 int mpipe_buffer_pool_stop(struct mpipe_buffer_pool *pool);
 

@@ -67,8 +67,12 @@ struct mpipe_thread {
 /**
  * @brief Create a new thread reusing the stack from the thread pool
  *
- * The thread is created in a sleeping state (K_FOREVER delay).  Call
- * mpipe_thread_resume() to actually start execution.
+ * The thread starts after @p delay. A pipeline passes K_FOREVER and starts
+ * the thread with mpipe_thread_resume() on PAUSED -> PLAYING: a thread that
+ * was never scheduled cannot preempt the rest of the READY -> PAUSED
+ * transition whatever its priority, holds no CPU time while the pipeline is
+ * paused, and sees a complete graph on its first instruction. Gating on
+ * mpipe_thread_wait() alone would let it run once before parking.
  *
  * @param thread Pointer to an uninitialized struct @ref mpipe_thread
  * @param func Entry function of the thread
@@ -76,8 +80,9 @@ struct mpipe_thread {
  * @param p2 Second parameter to pass to the thread entry function
  * @param p3 Third parameter to pass to the thread entry function
  * @param priority Priority of the thread
- * @param delay Scheduling delay, or K_NO_WAIT
- * @return ID of the newly created thread on success or NULL on failure
+ * @param delay Delay before the thread starts, K_FOREVER to start it on resume
+ *
+ * @return Thread id, or NULL when no stack is free in the pool
  */
 k_tid_t mpipe_thread_create(struct mpipe_thread *thread, k_thread_entry_t func, void *p1, void *p2,
 			    void *p3, int priority, k_timeout_t delay);
@@ -114,13 +119,16 @@ void mpipe_thread_pause(struct mpipe_thread *thread);
 /**
  * @brief Join a thread and release its stack back to the thread stack pool
  *
- * Signals the thread to exit, waits for it to terminate, and releases
- * the stack back to the pool.  If the thread was never woken, it is
- * woken so it can observe the termination request and exit.
+ * Signals the thread to exit, waits for it to terminate, and releases the
+ * stack back to the pool. If the thread was never woken, it is woken so it
+ * can observe the termination request and exit.
  *
  * @param thread Pointer to a struct @ref mpipe_thread to join
  * @param timeout Maximum time to wait for the thread to join
- * @return 0 on success or a negative errno on failure
+ *
+ * @retval 0 Success, the stack is back in the pool.
+ * @return Any negative errno of k_thread_join(), such as -EAGAIN when @p timeout
+ *         expires; the stack then stays claimed
  */
 int mpipe_thread_join(struct mpipe_thread *thread, k_timeout_t timeout);
 
