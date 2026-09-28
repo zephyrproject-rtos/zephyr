@@ -322,6 +322,7 @@ struct nvme_prp_list {
 
 struct nvme_cmd_qpair {
 	struct nvme_controller	*ctrlr;
+	struct nvme_cmd_qpair	*next;
 	uint32_t		id;
 
 	uint32_t		num_entries;
