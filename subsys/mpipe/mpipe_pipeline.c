@@ -51,46 +51,15 @@ static int mpipe_pipeline_get_property(struct mpipe_object *obj, uint32_t key, v
 	}
 }
 
-/**
- * @brief Aggregate End-Of-Stream (EOS) messages for a pipeline.
- *
- * A pipeline with N sinks produces N EOS messages, but the application must
- * receive only one (the last). The owning pipeline is provided by the caller,
- * which recovers it from the message buffer.
- *
- * @param p Pointer to the owning pipeline.
- *
- * @retval true  The EOS is accepted and delivered to subscribers. This is the
- *               case for the final aggregated EOS.
- * @retval false An intermediate EOS that must be dropped so the consumer sees
- *               a single EOS.
- */
+/* Each sink posts an EOS; only the last one of a run reaches the application */
 static inline bool mpipe_pipeline_validate_eos(struct mpipe *p)
 {
 	uint32_t seen = (uint32_t)atomic_inc(&p->eos_count) + 1;
 
-	if (p->num_sinks == 0 || seen >= p->num_sinks) {
-		return true;
-	}
-
-	/* Not the last EOS yet: drop it so the consumer sees a single EOS. */
-	return false;
+	return p->num_sinks == 0 || seen >= p->num_sinks;
 }
 
-/**
- * @brief Message validator for a pipeline's embedded mpipe_message channel.
- *
- * Runs synchronously in the publishing thread (zbus_chan_pub()) before the
- * message is delivered to subscribers. zbus allows a single validator per
- * channel, so this function dispatches by message type to the dedicated
- * per-type helpers.
- *
- * @param msg      Pointer to the mpipe_message being published.
- * @param msg_size Size of the message (unused).
- *
- * @retval true  The message is accepted and delivered to subscribers.
- * @retval false The message is rejected (zbus_chan_pub() returns -ENOMSG).
- */
+/* Bus validator, run in the posting thread before the message is delivered */
 static bool mpipe_pipeline_message_validator(const void *msg, size_t msg_size)
 {
 	const struct mpipe_message *m = msg;
@@ -187,10 +156,7 @@ int mpipe_push_buffer(struct mpipe_pad *src_pad, struct net_buf *buffer)
 			return -ENOTCONN;
 		}
 
-		/*
-		 * Flushing: drop the buffer rather than pushing it into an element
-		 * whose caps have been reset or whose buffer pool has been freed.
-		 */
+		/* Flushing: the element downstream is being torn down */
 		if (atomic_get(&next_sink_pad->flushing) != 0) {
 			net_buf_unref(buffer);
 			return 0;
@@ -213,11 +179,7 @@ int mpipe_push_buffer(struct mpipe_pad *src_pad, struct net_buf *buffer)
 				LOG_ERR("chain_fn failed for element %u (%d)",
 					next_sink_pad->object.container->id, ret);
 
-				/*
-				 * This runs on the pipeline thread, which has no
-				 * caller to return the failure to, so the bus is
-				 * the only way the application hears about it.
-				 */
+				/* No caller to return this to: the bus is the only way out */
 				(void)mpipe_message_post(&msg);
 				return ret;
 			}
@@ -243,11 +205,7 @@ int mpipe_push_buffer(struct mpipe_pad *src_pad, struct net_buf *buffer)
 	return 0;
 }
 
-/*
- * Send the end of stream downstream, and say so if it does not get there. No
- * sink will post it now, and the application is waiting for that or an error,
- * so a failure here has to arrive as the error.
- */
+/* No sink will post EOS after a failed send, so the failure has to arrive as an error */
 static void mpipe_pipeline_send_eos(struct mpipe_src *src)
 {
 	struct mpipe_dispatch eos_event = {.type = MPIPE_DISPATCH_EOS};
@@ -301,10 +259,7 @@ static void mpipe_pipeline_thread_func(void *p1, void *p2, void *p3)
 			acq_ret = src->pool->acquire_buffer(src->pool, &buffer);
 		}
 
-		/*
-		 * EOS: playback sources reach the end of the file or
-		 * live sources reache the limit number of buffers (-ENODATA)
-		 */
+		/* EOS: a playback source ran out of data, or a live source hit its limit */
 		bool is_eos = reached_limit || acq_ret == -ENODATA;
 
 		if (reached_limit || acq_ret != 0) {
@@ -318,7 +273,7 @@ static void mpipe_pipeline_thread_func(void *p1, void *p2, void *p3)
 					.code = acq_ret,
 				};
 
-				/* Not an EOS neither a forced-stop flush: a real error */
+				/* Neither EOS nor a forced-stop flush (-EPIPE): a real error */
 				LOG_ERR("Source failed to acquire a buffer (%d)", acq_ret);
 				(void)mpipe_message_post(&msg);
 			}
@@ -345,32 +300,14 @@ static int mpipe_pipeline_change_state(struct mpipe_element *element,
 	struct mpipe *pipeline = (struct mpipe *)element;
 	int ret;
 
-	/*
-	 * DOWN: Pipeline thread should be handled before children state change, i.e. source needs
-	 * to stop producing buffers first.
-	 */
+	/* Going down, the source stops producing before the children change state */
 	switch (transition) {
 	case MPIPE_STATE_CHANGE_PLAYING_TO_PAUSED:
-		/*
-		 * Only pause the source thread here (no join). Buffers already
-		 * queued downstream are preserved so a subsequent resume to
-		 * PLAYING continues without data loss. The source is guaranteed
-		 * to be paused before this returns, so it stops producing.
-		 *
-		 * Do not set the flushing flag here: this is a pause, not a teardown, so in-flight
-		 * and queued buffers must be kept intact for a subsequent resume.
-		 */
+		/* A pause keeps the queued buffers: nothing is flushed or joined */
 		mpipe_thread_pause(&pipeline->thread);
 		break;
 	case MPIPE_STATE_CHANGE_PAUSED_TO_READY:
-		/*
-		 * Teardown: raise the per-pad flushing gate BEFORE the children dismantle their
-		 * caps and buffer pools. The source thread was paused on PLAYING -> PAUSED but may
-		 * still be parked mid-chain holding a buffer. Once that buffer resumes (e.g.
-		 * threads woke up to extit), the flushing gate in mpipe_push_buffer() drops
-		 * it instead of pushing it through an element whose caps have been reset or whose
-		 * pool has been freed.
-		 */
+		/* Raise the flushing gate before the children tear down their caps and pools */
 		mpipe_pipeline_set_flushing(&pipeline->bin, true);
 		break;
 	default:
@@ -384,24 +321,14 @@ static int mpipe_pipeline_change_state(struct mpipe_element *element,
 		return ret;
 	}
 
-	/*
-	 * DOWN (PAUSED -> READY): join the pipeline thread AFTER the children have
-	 * transitioned. The source is already paused (from PLAYING -> PAUSED), so it
-	 * is not producing new buffers. Draining the children first (each queue drains
-	 * and unrefs its buffers on PAUSED -> READY) frees msgq slots and releases the
-	 * pipeline thread if it was blocked in a full queue's k_msgq_put(K_FOREVER).
-	 * Only then can the join complete, avoiding a teardown deadlock.
-	 */
+	/* Join after the children have drained, which frees a thread blocked in a full queue */
 	if (transition == MPIPE_STATE_CHANGE_PAUSED_TO_READY) {
 		mpipe_thread_join(&pipeline->thread, K_FOREVER);
 		/* Reset EOS counter for a clean re-run. */
 		atomic_set(&pipeline->eos_count, 0);
 	}
 
-	/*
-	 * UP: Pipeline thread should be handled after children state change, i.e., children
-	 * need to be prepared before receiving buffers from source
-	 */
+	/* Going up, the children are ready before the thread produces anything */
 	switch (transition) {
 	case MPIPE_STATE_CHANGE_READY_TO_PAUSED:
 		/* Clear the flushing gate so buffers can flow again */
@@ -414,10 +341,7 @@ static int mpipe_pipeline_change_state(struct mpipe_element *element,
 			return -EAGAIN;
 		}
 
-		/*
-		 * Arm EOS aggregation now that the topology is fully built and before the source
-		 * thread is resumed (i.e. before any EOS can be produced).
-		 */
+		/* Arm the EOS folding before the thread can produce one */
 		pipeline->num_sinks = mpipe_pipeline_count_sinks(&pipeline->bin);
 		atomic_set(&pipeline->eos_count, 0);
 		break;
@@ -456,8 +380,6 @@ int mpipe_pipeline_init(struct mpipe *pipe, uint8_t id)
 	/* Default thread priority; caller may override before the first play. */
 	pipe->thread.priority = CONFIG_MPIPE_THREAD_DEFAULT_PRIORITY;
 
-	/* Only the pipeline knows how many sinks a run must hear from, so the
-	 * EOS aggregator goes on here rather than in the bin underneath.
-	 */
+	/* Only the pipeline knows how many sinks a run must hear from */
 	return mpipe_bin_set_bus_validator(&pipe->bin, mpipe_pipeline_message_validator, pipe);
 }

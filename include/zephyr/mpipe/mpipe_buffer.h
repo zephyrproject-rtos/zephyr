@@ -124,10 +124,8 @@ struct mpipe_buffer_meta {
 	/** Buffer pool this buffer belongs to. */
 	struct mpipe_buffer_pool *pool;
 	/**
-	 * Valid payload in bytes. Mirrors net_buf len, kept because len is 16-bit
-	 * which cannot hold a video buffer exceeding 64 kB: readers should use
-	 * this field, writers set both.
-	 * TODO: Drop it for len once net_buf is 32-bit.
+	 * Valid payload in bytes. Mirrors net_buf len, which is 16-bit and cannot
+	 * hold a video frame: readers use this field, writers set both.
 	 */
 	uint32_t bytes_used;
 	/** Timestamp in milliseconds. */

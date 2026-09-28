@@ -52,13 +52,8 @@ static int mpipe_caps_filter_set_caps(struct mpipe_transform *transform,
 	}
 
 	/*
-	 * After caps negotiation, caps_filter is removed from the pipeline for two reasons:
-	 *  - Gain some small overhead during buffer flow
-	 *  - More importantly, allow buffer pool negotiation to take place between the
-	 *    elements before and after the caps_filter.
-	 *
-	 * The bypassed peers are saved so the caps_filter can re-insert itself into the graph
-	 * when needed, e.g. on teardown (PAUSED -> READY) or on caps re-negotiation
+	 * Take itself out of the graph once negotiated: buffers skip it and the pool
+	 * query reaches its neighbors. The saved peers put it back on PAUSED -> READY.
 	 */
 	if (upstream_src_pad != NULL && downstream_sink_pad != NULL) {
 		filter->saved_sink_peer = upstream_src_pad;
@@ -67,7 +62,7 @@ static int mpipe_caps_filter_set_caps(struct mpipe_transform *transform,
 		mpipe_pad_link(upstream_src_pad, downstream_sink_pad);
 	}
 
-	/* Drop the peer links to avoid cycling graph error */
+	/* Drop the peer links, or the topological sort sees a cycle */
 	transform->sink_pad.peer = NULL;
 	transform->src_pad.peer = NULL;
 
@@ -83,12 +78,7 @@ static int mpipe_caps_filter_change_state(struct mpipe_element *self,
 
 	switch (transition) {
 	case MPIPE_STATE_CHANGE_PAUSED_TO_READY:
-		/*
-		 * Re-insert the caps_filter into the graph so that a subsequent caps
-		 * negotiation (e.g. on replay) can walk through it again. This undoes
-		 * the self-removal performed in mpipe_caps_filter_set_caps() by relinking
-		 * the upstream/downstream peers back to this element's pads.
-		 */
+		/* Put the element back so the next negotiation walks through it */
 		if (filter->saved_sink_peer != NULL && filter->saved_src_peer != NULL) {
 			mpipe_pad_link(filter->saved_sink_peer, &transform->sink_pad);
 			mpipe_pad_link(&transform->src_pad, filter->saved_src_peer);
@@ -103,11 +93,7 @@ static int mpipe_caps_filter_change_state(struct mpipe_element *self,
 
 	ret = mpipe_transform_change_state(self, transition);
 
-	/*
-	 * The base reset above wiped the pads to ANY together with the negotiated
-	 * caps. The configured filter is not a negotiation result, so re-apply it
-	 * for the next negotiation.
-	 */
+	/* The base reset wiped the pads; the configured filter is not a negotiation result */
 	if (transition == MPIPE_STATE_CHANGE_PAUSED_TO_READY) {
 		mpipe_pad_set_caps(&transform->sink_pad, &filter->filter_caps);
 		mpipe_pad_set_caps(&transform->src_pad, &filter->filter_caps);

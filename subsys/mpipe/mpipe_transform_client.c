@@ -41,10 +41,7 @@ static int mpipe_transform_client_chain_fn(struct mpipe_pad *pad, struct net_buf
 	out_meta = mpipe_buffer_get_meta(*out_buf);
 	out_used = out_meta->bytes_used;
 
-	/*
-	 * RPC interface uses 32-bit addresses (remote MCU).
-	 * Cast through uintptr_t to avoid pointer truncation warnings.
-	 */
+	/* The RPC interface carries 32-bit addresses */
 	if (transform_client->chain_fn_rpc((uint32_t)(uintptr_t)in_buf->data, in_used,
 					   (uint32_t)(uintptr_t)(*out_buf)->data, &out_used) != 0) {
 		LOG_ERR("Failed to process buffer via RPC");
@@ -130,7 +127,7 @@ int mpipe_transform_client_init(struct mpipe_transform_client *transform_client,
 
 	mpipe_element_set_name(self, "transform_client");
 
-	/* Support only normal mode for now */
+	/* Only NORMAL mode is supported */
 	transform->mode = MPIPE_MODE_NORMAL;
 
 	transform->sink_pad.chain_fn = mpipe_transform_client_chain_fn;
