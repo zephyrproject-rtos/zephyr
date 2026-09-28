@@ -17,6 +17,12 @@ menuconfig MCUMGR_TRANSPORT_BT
 
 if MCUMGR_TRANSPORT_BT
 
+config MCUMGR_TRANSPORT_BT_CLIENT
+	bool "Bluetooth MCUmgr SMP client transport"
+	depends on BT_CENTRAL && BT_GATT_CLIENT && MCUMGR_GRP_TRANSPORT
+	help
+	  Enables connecting to and issuing commands to a remote Bluetooth MCUmgr server.
+
 config MCUMGR_TRANSPORT_BT_REASSEMBLY
 	bool "Reassemble packets in Bluetooth SMP transport"
 	select MCUMGR_TRANSPORT_REASSEMBLY
