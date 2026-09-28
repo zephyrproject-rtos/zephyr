@@ -1133,6 +1133,9 @@ __comp_west_twister()
 		--scenario --test -s
 		--seed
 		--shuffle-tests-seed
+		--soc
+		--soc-family
+		--soc-series
 		--sub-test
 		--subset -B
 		--tag -t
