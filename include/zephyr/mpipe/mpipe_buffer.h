@@ -90,8 +90,8 @@ struct mpipe_buffer_pool {
 	/** net_buf pool associated with the buffer pool */
 	struct net_buf_pool *nb_pool;
 
-	/** Configure the pool with the given caps structure */
-	int (*configure)(struct mpipe_buffer_pool *pool, const struct mpipe_structure *config);
+	/** Size the pool's buffers for a capability, once the format is settled */
+	int (*configure)(struct mpipe_buffer_pool *pool, const struct mpipe_structure *caps);
 	/**
 	 * Apply a negotiated pool config. The implementation validates @p cfg
 	 * against what the pool can provide, writes the accepted values into
@@ -164,14 +164,13 @@ void mpipe_buffer_destroy(struct net_buf *buf);
  * @brief Configure a buffer pool
  *
  * @param pool Pointer to the buffer pool to configure
- * @param config Caps structure to configure the buffer pool
+ * @param caps Capability the pool's buffers must hold
  *
  * @retval 0 Success.
  * @retval -ENOSYS The pool has no configure hook
  * @return Any negative errno the hook returns
  */
-int mpipe_buffer_pool_configure(struct mpipe_buffer_pool *pool,
-				const struct mpipe_structure *config);
+int mpipe_buffer_pool_configure(struct mpipe_buffer_pool *pool, const struct mpipe_structure *caps);
 
 /**
  * @brief State what a buffer pool requires of its own accord
