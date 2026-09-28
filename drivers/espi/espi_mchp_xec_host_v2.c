@@ -954,7 +954,7 @@ static int init_acpi_ec1(const struct device *dev)
 				       xec_acpi_ec1_cfg.host_mem_addr, true);
 	}
 
-	if (xec_acpi_ec2_cfg.host_io_addr != UINT16_MAX) {
+	if (xec_acpi_ec1_cfg.host_io_addr != UINT16_MAX) {
 		bar_val = MCHP_ESPI_IO_BAR_HOST_ADDR_SET((uint32_t)xec_acpi_ec1_cfg.host_io_addr);
 	}
 #endif
