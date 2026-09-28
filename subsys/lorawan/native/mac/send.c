@@ -812,8 +812,8 @@ static int send_validate_payload_size(struct lwan_ctx *ctx,
 	int8_t tx_power;
 	int ret;
 
-	ret = ctx->region->get_tx_params(state->dr_idx, ctx->mac.tx_power_idx,
-					 &dr_params, &tx_power);
+	ret = lwan_region_tx_params(ctx, state->dr_idx, ctx->mac.tx_power_idx,
+				    &dr_params, &tx_power);
 	if (ret != 0) {
 		LOG_ERR("Invalid datarate DR%u: %d", state->dr_idx, ret);
 		return ret;

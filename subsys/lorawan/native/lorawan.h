@@ -58,6 +58,12 @@ struct lwan_mac_state {
 	/* Current TX power index (0 = region max; set by LinkADRReq) */
 	uint8_t tx_power_idx;
 
+	/* Dwell time limits in force, as last set by TxParamSetupReq.
+	 * Regions that cap neither leave both clear.
+	 */
+	bool ul_dwell_time;
+	bool dl_dwell_time;
+
 	/* UL: a LinkCheckReq is queued and should ride on the next uplink */
 	bool link_check_pending;
 	/* UL: snapshot recorded by mac_cmd_build_ul_fopts() so a successful
