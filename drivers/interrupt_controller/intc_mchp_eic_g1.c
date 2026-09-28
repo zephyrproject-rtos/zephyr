@@ -178,8 +178,12 @@ uint8_t find_eic_line_from_pin(int port, int pin)
 		}
 		break;
 	case MCHP_PORT_ID1:
-		if ((PORTB_SPECIAL_PINS & pin_mask) != 0) {
+		if ((PORTB_UNSUPPORTED_PINS & pin_mask) != 0) {
+			eic_line = INTC_LINE_FREE;
+		} else if ((PORTB_SPECIAL_PINS & pin_mask) != 0) {
 			eic_line += PORTB_SPECIAL_PINS_OFFSET;
+		} else {
+			/* Nothing to be done */
 		}
 		break;
 	case MCHP_PORT_ID2:
