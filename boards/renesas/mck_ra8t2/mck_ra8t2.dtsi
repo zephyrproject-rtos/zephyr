@@ -45,6 +45,7 @@
 
 	aliases {
 		sdhc0 = &sdhc0;
+		i2c-0 = &iic1;
 	};
 };
 
@@ -167,6 +168,17 @@
 &spi0 {
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
+};
+
+&iic1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_M(1)>;
+	pinctrl-0 = <&iic1_default>;
+	pinctrl-names = "default";
+	interrupts = <92 1>, <93 1>, <94 1>, <95 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
 };
 
 &sdhc0 {

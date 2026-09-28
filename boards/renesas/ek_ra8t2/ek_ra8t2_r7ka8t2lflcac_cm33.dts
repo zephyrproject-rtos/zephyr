@@ -23,6 +23,7 @@
 	aliases {
 		led0 = &led2;
 		sw0 = &button1;
+		i2c-0 = &iic0;
 	};
 };
 
@@ -58,6 +59,7 @@
 &iic0 {
 	interrupts = <12 1>, <13 1>, <14 1>, <15 1>;
 	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
 };
 
 &port_irq12 {
