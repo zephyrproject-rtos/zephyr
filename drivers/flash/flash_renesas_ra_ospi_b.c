@@ -171,10 +171,22 @@ static int flash_renesas_ra_ospi_b_spi_mode_init(ospi_b_instance_ctrl_t *p_ctrl,
 		return -EIO;
 	}
 
-	/* Reset flash device by driving OM_RESET pin */
-	R_XSPI0->LIOCTL_b.RSTCS0 = 0;
-	k_sleep(K_USEC(500));
-	R_XSPI0->LIOCTL_b.RSTCS0 = 1;
+	/* Reset flash device by driving the OM_RESET pin of the *configured*
+	 * chip-select. The attached device may be on CS0 or CS1
+	 * (p_ctrl->channel, as used just above for LIOCFGCS). Unconditionally
+	 * driving RSTCS0 never resets a device wired to CS1 (e.g. the S28HL512T
+	 * on the EK-RA8D1, reg = <0x90000000 ...>), so it can be left in a
+	 * non-1S protocol mode across a warm reboot.
+	 */
+	if (p_ctrl->channel == OSPI_B_DEVICE_NUMBER_1) {
+		R_XSPI0->LIOCTL_b.RSTCS1 = 0;
+		k_sleep(K_USEC(500));
+		R_XSPI0->LIOCTL_b.RSTCS1 = 1;
+	} else {
+		R_XSPI0->LIOCTL_b.RSTCS0 = 0;
+		k_sleep(K_USEC(500));
+		R_XSPI0->LIOCTL_b.RSTCS0 = 1;
+	}
 	k_sleep(K_NSEC(50));
 
 	/* Transfer write enable command */
