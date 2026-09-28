@@ -167,8 +167,11 @@ They run nightly instead, from
 :zephyr_file:`.github/workflows/net_conformance.yml`, which can also be started
 by hand from the Actions tab. The job installs the packaged Titan and sets
 ``TTCN3_DIR=/usr``, brings up both interfaces in a container holding
-``NET_ADMIN``, and runs the whole directory as root so that no suite is
-skipped. The Twister report and the harness logs are kept as artifacts.
+``NET_ADMIN`` and the tap device, and runs the whole directory as root so that
+no suite is skipped. It sets ``NET_CONFORMANCE_REQUIRED``, so a suite that
+cannot run fails rather than skips: a run that tested nothing must not look
+like one that passed. The Twister report and the harness logs are kept as
+artifacts.
 
 Other TTCN-3 suites
 *******************
