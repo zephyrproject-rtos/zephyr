@@ -29,6 +29,7 @@
 		sw0 = &sw_1;
 		sw1 = &sw_2;
 		sw2 = &sw_3;
+		i2c-0 = &i2c0;
 	};
 
 	buttons {
@@ -129,4 +130,8 @@
 	status = "okay";
 	rx-max-filters = <32>;
 	phys = <&transceiver0>;
+};
+
+&i2c0 {
+	status = "okay";
 };
