@@ -223,6 +223,8 @@ static int gpio_stm32_port_set_masked_raw(const struct device *dev,
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
 	uint32_t port_value;
 
+	value &= cfg->common.port_pin_mask;
+
 	z_stm32_hsem_lock(CFG_HW_GPIO_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
 	port_value = LL_GPIO_ReadOutputPort(gpio);
@@ -239,6 +241,8 @@ static int gpio_stm32_port_set_bits_raw(const struct device *dev,
 	const struct gpio_stm32_config *cfg = dev->config;
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
 
+	pins &= cfg->common.port_pin_mask;
+
 	/*
 	 * On F1 series, using LL API requires a costly pin mask translation.
 	 * Skip it and use CMSIS API directly. Valid also on other series.
@@ -253,6 +257,8 @@ static int gpio_stm32_port_clear_bits_raw(const struct device *dev,
 {
 	const struct gpio_stm32_config *cfg = dev->config;
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
+
+	pins &= cfg->common.port_pin_mask;
 
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 	/*
@@ -273,6 +279,8 @@ static int gpio_stm32_port_toggle_bits(const struct device *dev,
 {
 	const struct gpio_stm32_config *cfg = dev->config;
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
+
+	pins &= cfg->common.port_pin_mask;
 
 	/*
 	 * On F1 series, using LL API requires a costly pin mask translation.
