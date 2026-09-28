@@ -2405,7 +2405,6 @@ static struct net_buf *nfy_mult[CONFIG_BT_MAX_CONN];
 
 static int gatt_notify_mult_send(struct bt_conn *conn, struct net_buf *buf)
 {
-	int ret;
 	uint8_t *pdu = buf->data;
 	/* PDU structure is [Opcode (1)] [Handle (2)] [Length (2)] [Value (Length)] */
 	uint16_t first_attr_len = sys_get_le16(&pdu[3]);
@@ -2428,12 +2427,7 @@ static int gatt_notify_mult_send(struct bt_conn *conn, struct net_buf *buf)
 		LOG_DBG("Converted BT_ATT_OP_NOTIFY_MULT with single attr to BT_ATT_OP_NOTIFY");
 	}
 
-	ret = bt_att_send(conn, buf);
-	if (ret < 0) {
-		net_buf_unref(buf);
-	}
-
-	return ret;
+	return bt_att_send(conn, buf);
 }
 
 static void notify_mult_process(struct k_work *work)
