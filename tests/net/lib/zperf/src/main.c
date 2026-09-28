@@ -153,6 +153,50 @@ static void zperf_after(void *fixture)
 	(void)zperf_tcp_download_stop();
 }
 
+ZTEST(zperf_api, test_packet_duration_zero_rate)
+{
+	/* 1000 bytes at 10 kbps:
+	 * (1000 * 8 * 1000000) / (10 * 1024) = 781250 us
+	 */
+	zassert_equal(zperf_packet_duration(1000, 10), 781250U,
+		      "Unexpected pacing delay for a non-zero rate");
+	zassert_equal(zperf_packet_duration(1000, 0), 0U,
+		      "A zero rate must not divide and means no pacing");
+	zassert_equal(zperf_packet_duration(1000, 4194304U), 1U,
+		      "A large rate must not wrap the duration divisor");
+}
+
+ZTEST(zperf_api, test_udp_upload_unlimited_rate)
+{
+	struct zperf_download_params download_param = {
+		.port = TEST_PORT,
+	};
+	struct zperf_upload_params upload_param;
+	struct zperf_results client_results = { 0 };
+	int ret;
+
+	ret = zperf_udp_download(&download_param, server_session_cb, NULL);
+	zassert_ok(ret, "Failed to start UDP server (%d)", ret);
+
+	fill_upload_params(&upload_param);
+	upload_param.rate_kbps = 0U;
+	/* Short run: POSIX waits 1 ms/packet; long enough to hit compensation. */
+	upload_param.duration_ms = 200;
+
+	ret = zperf_udp_upload(&upload_param, &client_results);
+	zassert_ok(ret, "Unlimited-rate UDP upload failed (%d)", ret);
+	zassert_true(client_results.nb_packets_sent > 0,
+		     "Unlimited-rate upload did not send any packets");
+
+	ret = k_sem_take(&session_finished, TEST_TIMEOUT);
+	zassert_ok(ret, "Timed out waiting for UDP server session to finish");
+	zassert_equal(server_last_status, ZPERF_SESSION_FINISHED,
+		      "UDP server session did not finish cleanly (status %d)",
+		      server_last_status);
+	zassert_true(server_results.nb_packets_rcvd > 0,
+		     "UDP server did not receive any packets");
+}
+
 ZTEST(zperf_api, test_udp_upload_download)
 {
 	struct zperf_download_params download_param = {
