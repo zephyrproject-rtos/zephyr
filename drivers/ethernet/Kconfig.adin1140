@@ -35,16 +35,26 @@ config ETH_ADIN1140_TIMEOUT
 	  a memory buffer before the Ethernet frame is dropped.
 
 config ETH_ADIN1140_TIMESTAMP
-	bool "RX frame hardware timestamping (FTSE)"
+	bool "RX/TX frame hardware timestamping (FTSE / TSC)"
 	select NET_PKT_TIMESTAMP
+	select NET_PKT_TIMESTAMP_THREAD
 	help
 	  Enable the MAC-PHY's Frame Timestamp Sync Enable/Select
-	  (FTSE/FTSS) feature. When enabled, an 8-byte hardware
-	  timestamp (32-bit seconds + 32-bit nanoseconds) is prepended
-	  to every received frame ahead of the destination MAC address.
-	  The driver strips this prefix before handing the frame to the
-	  network stack and exposes it via net_pkt_set_timestamp()
-	  instead of leaving it in the frame payload.
+	  (FTSE/FTSS) feature for RX, and per-frame Timestamp Capture
+	  (TSC) for TX.
+
+	  RX: an 8-byte hardware timestamp (32-bit seconds + 32-bit
+	  nanoseconds) is prepended to every received frame ahead of
+	  the destination MAC address. The driver strips this prefix
+	  before handing the frame to the network stack and exposes it
+	  via net_pkt_set_timestamp() instead of leaving it in the
+	  frame payload.
+
+	  TX: when a packet requests it (net_pkt_is_tx_timestamping(),
+	  e.g. via a socket's SO_TIMESTAMPING SOF_TIMESTAMPING_TX_HARDWARE
+	  option), the driver requests a hardware capture of the frame's
+	  actual departure onto the wire and reports it via the standard
+	  net_if_add_tx_timestamp() mechanism once available.
 
 config ETH_ADIN1140_PTP
 	bool "ADIN1140 hardware gPTP (IEEE 802.1AS) engine support"
