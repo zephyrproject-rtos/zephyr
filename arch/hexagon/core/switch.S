@@ -126,6 +126,18 @@ SECTION_FUNC(TEXT, z_hexagon_arch_switch)
  * and ARM thread start trampolines.
  */
 SECTION_FUNC(TEXT, z_hexagon_thread_start)
+#ifdef CONFIG_HW_STACK_PROTECTION
+	/*
+	 * arch_switch() normally calls z_arch_stack_protection_switch()
+	 * after z_hexagon_arch_switch() returns, but new threads arrive
+	 * here instead of returning.  Set FRAMELIMIT for this thread now.
+	 * r0 = _kernel.cpus[0].current (i.e., _current)
+	 */
+	r0 = ##_kernel
+	r0 = add(r0, #___kernel_t_cpus_OFFSET)
+	r0 = memw(r0+#___cpu_t_current_OFFSET)
+	call ##z_hexagon_thread_start_stack_protect
+#endif
 	/* Enable interrupts for the new thread (vmsetie(1)) */
 	{
 		r0 = #1
