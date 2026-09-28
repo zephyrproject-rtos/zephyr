@@ -113,6 +113,9 @@ if NET_L2_WIFI_MGMT
 config WIFI_MGMT_AP_MAX_NUM_STA
 	default 8 if NXP_WIFI_SOFTAP_SUPPORT
 
+configdefault WIFI_SHELL_MAX_AP_STA
+	default 8
+
 endif # NET_L2_WIFI_MGMT
 
 if WIFI_NM_HOSTAPD_AP
@@ -134,10 +137,24 @@ endif # SHIELD_NXP_M2_2LL_WIFI_BT || SHIELD_NXP_ADAPTER_M2_2LL_WIFI_BT
 
 if (BT_NXP_IW416) || (BT_NXP_NW612) || (BT_NXP_IW610) || (NXP_IW416) || (NXP_IW61X) || (NXP_IW610)
 
-if BT
+configdefault SYSTEM_WORKQUEUE_STACK_SIZE
+	default 2048 if BT || WIFI
 
-config SYSTEM_WORKQUEUE_STACK_SIZE
-	default 2048
+if SHELL
+
+configdefault SHELL_STACK_SIZE
+	default 6144 if WIFI
+	default 4096 if BT
+
+configdefault SHELL_ARGC_MAX
+	default 48 if WIFI
+
+configdefault SHELL_CMD_BUFF_SIZE
+	default 512 if WIFI
+
+endif # SHELL
+
+if BT
 
 config BT_LONG_WQ_STACK_SIZE
 	default 2560
@@ -155,14 +172,13 @@ configdefault BT_RX_STACK_SIZE
 	default 4096 if LIBLC3
 	default 2800 if (BT_SETTINGS || BT_SMP) && !BT_MESH_GATT_CLIENT
 
-if SHELL
-
-config SHELL_STACK_SIZE
-	default 4096
-
-endif # SHELL
-
 endif # BT
+
+if WIFI
+
+orsource "Kconfig.defconfig.wifi"
+
+endif # WIFI
 
 if WIFI_NXP
 
