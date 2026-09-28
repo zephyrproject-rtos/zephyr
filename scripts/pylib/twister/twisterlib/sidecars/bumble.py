@@ -54,6 +54,10 @@ class BumbleSidecar(Sidecar):
       arguments injected; devices 1.. are peers the sidecar launches from the
       same executable. ``{addrN}`` and ``{ctrlN}`` placeholders expand to
       controller N's address and ``ip:port``.
+    - ``controller_option``: option that gives device N the endpoint of
+      controller N. Defaults to ``--bt-dev``, the one of the HCI user-channel
+      driver. An empty string adds nothing, for a test that passes
+      ``{ctrlN}`` in its arguments itself.
     - ``controllers_script``: path to ``controllers.py``, relative to
       ``ZEPHYR_BASE``. Defaults to the copy in the Bluetooth Classic
       simulation framework.
@@ -82,17 +86,21 @@ class BumbleSidecar(Sidecar):
     PEER_GRACE = 10.0
     #: Lines that only a Ztest run prints, besides those that carry a result.
     ZTEST_MARKS = (Test.test_suite_end_pattern, Test.test_suite_summary_pattern)
+    DEFAULT_CONTROLLER_OPTION = '--bt-dev'
 
     @dataclass
     class Config:
         addresses: list[str] = field(default_factory=list)
         devices: list[str] = field(default_factory=list)
+        controller_option: str | None = None
         controllers_script: str | None = None
 
     def configure(self, instance: TestInstance):
         super().configure(instance)
         self.addresses = list(self.config.addresses or self.DEFAULT_ADDRESSES)
         self.devices = list(self.config.devices or [''])
+        option = self.config.controller_option
+        self.controller_option = self.DEFAULT_CONTROLLER_OPTION if option is None else option
         script = self.config.controllers_script or self.DEFAULT_CONTROLLERS_SCRIPT
         self.script = os.path.join(ZEPHYR_BASE, script)
         self.ports: list[int] = []
@@ -111,6 +119,13 @@ class BumbleSidecar(Sidecar):
             subs[f'addr{i}'] = addr
             subs[f'ctrl{i}'] = f'127.0.0.1:{self.ports[i]}'
         return spec.format(**subs)
+
+    def _device_args(self, index: int, spec: str) -> list[str]:
+        """Arguments of device ``index``, attached to its controller."""
+        args = shlex.split(self._resolve(spec))
+        if not self.controller_option:
+            return args
+        return [f'{self.controller_option}=127.0.0.1:{self.ports[index]}', *args]
 
     def _skip(self, reason: str) -> None:
         self.instance.status = TwisterStatus.SKIP
@@ -161,7 +176,7 @@ class BumbleSidecar(Sidecar):
             return False
 
         try:
-            device_args = [shlex.split(self._resolve(spec)) for spec in self.devices]
+            device_args = [self._device_args(i, spec) for i, spec in enumerate(self.devices)]
         except (KeyError, IndexError, ValueError) as err:
             self._error(f"invalid device arguments: {err!r}")
             return False
@@ -172,17 +187,14 @@ class BumbleSidecar(Sidecar):
         # handler watches.
         self._deadline = time.monotonic() + self.instance.handler.get_test_timeout()
 
-        # Device 0 runs under the harness: inject its --bt-dev and arguments
-        # so the handler launches it against controller 0.
+        # Device 0 runs under the harness: inject its arguments so the
+        # handler launches it against its controller.
         existing = list(self.instance.handler.extra_test_args or [])
-        self.instance.handler.extra_test_args = existing + [
-            f'--bt-dev=127.0.0.1:{self.ports[0]}',
-            *device_args[0],
-        ]
+        self.instance.handler.extra_test_args = existing + device_args[0]
 
         # Devices 1.. are peers the sidecar launches on their own controllers.
         for i, args in enumerate(device_args[1:], start=1):
-            command = [exe, f'--bt-dev=127.0.0.1:{self.ports[i]}', *args]
+            command = [exe, *args]
             log_path = os.path.join(self.instance.build_dir, f'bumble-peer{i}.log')
             log = open(log_path, 'w')  # noqa: SIM115
             proc = subprocess.Popen(
