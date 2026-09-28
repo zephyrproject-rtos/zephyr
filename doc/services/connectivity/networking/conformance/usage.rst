@@ -287,6 +287,10 @@ checked:
    * - ``has to be run as root``
      - Re-run under ``sudo -E``, or use the script
 
+Set ``NET_CONFORMANCE_REQUIRED`` in the environment to turn each of these into
+a failure. That is for a run whose purpose is the suites, such as the nightly
+job, where a test that did not run must not pass for one that did.
+
 Troubleshooting
 ***************
 

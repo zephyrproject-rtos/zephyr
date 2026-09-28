@@ -145,9 +145,16 @@ def needs_l2(suite: str) -> bool:
 
 
 def build_suite(suite: str) -> Path:
-    """Build the suite, skipping the test when it cannot be built at all."""
+    """Build the suite, skipping the test when it cannot be built at all.
+
+    Skipping is for a machine that was never set up to run the suites. Where
+    they are what the run is for, NET_CONFORMANCE_REQUIRED says so, and a
+    missing piece is then a failure.
+    """
     missing = requirements(suite)
     if missing:
+        if os.environ.get('NET_CONFORMANCE_REQUIRED'):
+            pytest.fail(missing)
         pytest.skip(missing)
 
     suites = ttcn3_dir()
