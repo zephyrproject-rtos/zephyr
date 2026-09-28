@@ -16,7 +16,26 @@
 #ifndef INCLUDE_ZEPHYR_DRIVERS_ESPI_MCHP_XEC_ESPI_H_
 #define INCLUDE_ZEPHYR_DRIVERS_ESPI_MCHP_XEC_ESPI_H_
 
+#include <stddef.h>
+#include <stdint.h>
 #include <zephyr/drivers/espi.h>
+
+/** @brief Get the EC buffer backing an eSPI SRAM BAR
+ *
+ * The driver allocates the EC SRAM region of each SRAM BAR enabled in the
+ * "microchip,xec-espi-sram-bar" devicetree node. Host memory cycles to the
+ * BAR host address read and write this buffer.
+ *
+ * @param dev Pointer to the eSPI device
+ * @param id SRAM BAR index (0 or 1)
+ * @param buf Pointer to store the EC buffer address
+ * @param size Pointer to store the buffer size in bytes
+ *
+ * @retval 0 success
+ * @retval -EINVAL if dev, buf or size is NULL
+ * @retval -ENODEV if SRAM BAR id is not enabled in devicetree
+ */
+int mchp_xec_espi_sram_bar_get(const struct device *dev, uint8_t id, uint8_t **buf, size_t *size);
 
 #ifdef CONFIG_ESPI_PERIPHERAL_XEC_MAILBOX
 
