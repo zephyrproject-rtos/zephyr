@@ -4,6 +4,7 @@
 
 '''Runner for flashing with dfu-util.'''
 
+import argparse
 import sys
 import time
 from collections import namedtuple
@@ -16,7 +17,7 @@ DfuSeConfig = namedtuple('DfuSeConfig', ['address', 'options'])
 class DfuUtilBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for dfu-util.'''
 
-    def __init__(self, cfg, dev_id, alt, img, exe='dfu-util', dfuse_config=None):
+    def __init__(self, cfg, dev_id, alt, img, exe='dfu-util', dfuse_config=None, detach=False):
         super().__init__(cfg)
         self.dev_id = dev_id  # Used only for error checking in do_run
         self.alt = alt
@@ -32,6 +33,7 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
         else:
             self.dfuse = True
         self.dfuse_config = dfuse_config
+        self.detach = detach
         self.reset = False
 
     @classmethod
@@ -71,6 +73,12 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
                     requires --dfuse''',
         )
         parser.add_argument(
+            '--detach',
+            action=argparse.BooleanOptionalAction,
+            default=False,
+            help='issue a separate DFU detach request after download',
+        )
+        parser.add_argument(
             '--dfu-util', default='dfu-util', help='dfu-util executable; defaults to "dfu-util"'
         )
 
@@ -89,7 +97,13 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
             dcfg = None
 
         ret = DfuUtilBinaryRunner(
-            cfg, args.dev_id, args.alt, args.img, exe=args.dfu_util, dfuse_config=dcfg
+            cfg,
+            args.dev_id,
+            args.alt,
+            args.img,
+            exe=args.dfu_util,
+            dfuse_config=dcfg,
+            detach=args.detach,
         )
         ret.ensure_device()
         return ret
@@ -127,7 +141,13 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
         cmd.extend(['-a', self.alt, '-D', self.img])
         self.check_call(cmd)
 
-        if self.dfuse and 'leave' in dcfg.options.split(':'):
+        leaves_dfuse = self.dfuse and 'leave' in dcfg.options.split(':')
+
+        if self.detach and not leaves_dfuse:
+            self.check_call(list(self.cmd) + ['-a', self.alt, '-e'])
+            self.reset = False
+
+        if leaves_dfuse:
             # Normal DFU devices generally need to be reset to switch
             # back to the flashed program.
             #
