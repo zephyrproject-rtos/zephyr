@@ -25,6 +25,7 @@ DEFINE_FLAG_STATIC(flag_discover_complete);
 extern enum bst_result_t bst_result;
 
 DEFINE_FLAG_STATIC(flag_is_connected);
+DEFINE_FLAG_STATIC(flag_small_received);
 
 static struct bt_conn *g_conn;
 
@@ -138,6 +139,10 @@ static uint8_t notify_cb(struct bt_conn *conn,
 		return BT_GATT_ITER_STOP;
 	}
 
+	if (length == 1U) {
+		SET_FLAG(flag_small_received);
+	}
+
 	return BT_GATT_ITER_CONTINUE;
 }
 
@@ -217,10 +222,47 @@ static void test_main(void)
 	TEST_PASS("Server Passed");
 }
 
+static void test_mtu(void)
+{
+	int err;
+	const struct bt_data ad[] = {
+		BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR))
+	};
+
+	TEST_ASSERT(bk_sync_init() == 0, "Failed to open backchannel");
+
+	err = bt_enable(NULL);
+	if (err != 0) {
+		TEST_FAIL("Bluetooth init failed (err %d)", err);
+	}
+
+	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), NULL, 0);
+	if (err != 0) {
+		TEST_FAIL("Advertising failed to start (err %d)", err);
+	}
+
+	WAIT_FOR_FLAG(flag_is_connected);
+
+	while (bt_eatt_count(g_conn) < CONFIG_BT_EATT_MAX) {
+		k_sleep(K_TICKS(1));
+	}
+
+	gatt_discover();
+	gatt_subscribe();
+
+	WAIT_FOR_FLAG(flag_small_received);
+
+	TEST_PASS("Server Passed");
+}
+
 static const struct bst_test_instance test_server[] = {
 	{
 		.test_id = "server",
 		.test_main_f = test_main
+	},
+	{
+		.test_id = "server_mtu",
+		.test_main_f = test_mtu
 	},
 	BSTEST_END_MARKER
 };
