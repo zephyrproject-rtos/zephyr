@@ -13,7 +13,7 @@ The kernel requests an amount of time it would like to suspend, then the PM subs
 the appropriate power state to transition to based on the configured power management policy.
 
 It is the application's responsibility to set up a wake-up event. One exception
-is the system timer, which the kernel configures implicitly as necessary.
+is the System Timer which is implicitly configured by the kernel as necessary.
 
 A wake-up event will typically be an interrupt triggered by an SoC peripheral module.
 Examples include a SysTick, RTC, counter, or GPIO.
