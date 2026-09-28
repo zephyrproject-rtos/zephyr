@@ -43,6 +43,7 @@ In the Zephyr console, zperf can be executed as follows:
 
    zperf udp upload 2001:db8::2 5001 10 1K 1M
 
+A UDP baud rate of ``0`` sends as fast as possible, the same as ``iperf -b 0``.
 
 For TCP the zperf command would look like this:
 
@@ -338,7 +339,7 @@ Where:
 - ``header_hex``: User-provided header as hex string (vendor metadata + frame header)
 - ``duration_sec``: Test duration in seconds (default: 1)
 - ``packet_size``: Total packet size including header (default: 256)
-- ``rate_kbps``: Target rate in Kbps, supports K/M suffixes (default: 10)
+- ``rate_kbps``: Target rate in Kbps, supports K/M suffixes (default: 10). ``0`` sends as fast as possible.
 
 Example for sending raw 802.11 frames with vendor metadata:
 
