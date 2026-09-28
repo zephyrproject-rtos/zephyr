@@ -364,8 +364,7 @@ int mpipe_structure_clear(struct mpipe_structure *structure);
  *
  * @param structure Pointer to the structure to check.
  *
- * @return true if the structure is fixed, false otherwise or if @p structure
- *         is NULL
+ * @return true if the structure is fixed, false otherwise
  */
 bool mpipe_structure_is_fixed(const struct mpipe_structure *structure);
 

@@ -18,8 +18,8 @@
  * @ingroup mpipe_framework
  * @brief The common base that gives every type an identity and properties.
  *
- * Every mpipe type embeds an @ref mpipe_object as its first member, which is
- * what makes upcasting a plain C cast. The base carries what the framework
+ * Every element and pad embeds an @ref mpipe_object as its first member, which
+ * is what makes upcasting a plain C cast. The base carries what the framework
  * needs of anything it holds: an id, a pointer to the container that holds it,
  * a list node so a container can keep its children on one list, and a flag
  * field a walker reads to decide whether it may descend.
@@ -73,9 +73,28 @@ struct mpipe_object {
 	uint32_t flags;
 	/** Object node to be used in a linked list */
 	sys_dnode_t node;
-	/** Function to set property */
+	/**
+	 * @brief Set one property
+	 *
+	 * @param self Pointer to the object
+	 * @param key Property identifier from the element's property enumeration
+	 * @param val Value to set, only read during the call
+	 *
+	 * @retval 0 Success.
+	 * @retval -ENOTSUP The object has no such property
+	 * @return Any negative errno for a value the object refuses
+	 */
 	int (*set_property)(struct mpipe_object *self, uint32_t key, const void *val);
-	/** Function to get property */
+	/**
+	 * @brief Read one property
+	 *
+	 * @param self Pointer to the object
+	 * @param key Property identifier from the element's property enumeration
+	 * @param[out] val Storage the value is written to
+	 *
+	 * @retval 0 Success.
+	 * @retval -ENOTSUP The object has no such property
+	 */
 	int (*get_property)(struct mpipe_object *self, uint32_t key, void *val);
 };
 
@@ -98,15 +117,19 @@ void mpipe_object_init(struct mpipe_object *obj);
  * Example usage:
  *
  * @code
- * mpipe_object_set_properties(obj, "key1", val1, "key2", val2, MPIPE_PROP_LIST_END);
+ * mpipe_object_set_properties(&file_src.src.element.object,
+ *                             MY_PROP_PATH, "/SD:/in.bin",
+ *                             MPIPE_PROP_LIST_END);
  * @endcode
  *
  * @param obj Pointer to a @ref mpipe_object.
- * @param ... A variable list of {uint32_t key, const void *val} pairs, terminated by
- * MPIPE_PROP_LIST_END.
+ * @param ... A variable list of {uint32_t key, const void *val} pairs, the keys
+ *            taken from the element's property enumeration, terminated by
+ *            MPIPE_PROP_LIST_END.
  *
  * @return 0 on success, else the first failing setter's error, leaving the
  *         remaining pairs unapplied
+ *
  * @retval -ENOTSUP The object exposes no property setter
  */
 int mpipe_object_set_properties(struct mpipe_object *obj, ...);
@@ -121,7 +144,11 @@ int mpipe_object_set_properties(struct mpipe_object *obj, ...);
  * Example usage:
  *
  * @code
- * mpipe_object_get_properties(obj, "key1", val1, "key2", val2, MPIPE_PROP_LIST_END);
+ * const char *path;
+ *
+ * mpipe_object_get_properties(&file_src.src.element.object,
+ *                             MY_PROP_PATH, &path,
+ *                             MPIPE_PROP_LIST_END);
  * @endcode
  *
  * @param obj Pointer to a @ref mpipe_object.
@@ -129,6 +156,7 @@ int mpipe_object_set_properties(struct mpipe_object *obj, ...);
  *
  * @return 0 on success, else the first failing getter's error, leaving the
  *         remaining pairs unread
+ *
  * @retval -ENOTSUP The object exposes no property getter
  */
 int mpipe_object_get_properties(struct mpipe_object *obj, ...);

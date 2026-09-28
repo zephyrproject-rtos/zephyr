@@ -25,8 +25,8 @@
  *     // process one tile...
  * }
  *
- * static bool my_chain_fn(struct mpipe_pad *pad, struct net_buf *in,
- *                        struct net_buf **out) {
+ * static int my_chain_fn(struct mpipe_pad *pad, struct net_buf *in,
+ *                       struct net_buf **out) {
  *     struct k_p4wq_work tile_work[4];
  *
  *     for (int i = 0; i < 4; i++) {
@@ -42,7 +42,7 @@
  *     }
  *     // assemble output...
  *     *out = result;
- *     return true;
+ *     return 0;
  * }
  * @endcode
  */

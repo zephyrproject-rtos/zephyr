@@ -134,9 +134,7 @@ enum mpipe_state {
 };
 
 /**
- * @brief enum mpipe_state_change
- *
- * Different possible state changes that an element can go through.
+ * @brief Transition between two adjacent states
  */
 enum mpipe_state_change {
 	/** State change from READY to PAUSED */
@@ -196,7 +194,7 @@ struct mpipe_element {
  * Initializes the base @ref mpipe_element structure.
  *
  * @param self Pointer to the @ref mpipe_element to initialize.
- * @param id   Unique element identifier.
+ * @param id   Element identifier, unique within its bin. UINT8_MAX is reserved.
  *
  * @return 0 on success, negative errno otherwise.
  */
@@ -211,8 +209,8 @@ int mpipe_element_init(struct mpipe_element *self, uint8_t id);
  * apart in a dump.
  *
  * @code
- * ret = mpipe_vid_transform_init(&jpeg_dec, JPEG_DEC_ID);
- * mpipe_element_set_name(&jpeg_dec.transform.element, "jpeg_dec");
+ * ret = mpipe_queue_init(&queue, QUEUE_ID);
+ * mpipe_element_set_name(&queue.transform.element, "video_queue");
  * @endcode
  *
  * Compiles to nothing when @kconfig{CONFIG_MPIPE_DUMP} is disabled, so @p name
@@ -259,15 +257,16 @@ void mpipe_element_add_pad(struct mpipe_element *element, struct mpipe_pad *pad)
 /**
  * @brief Link elements together
  *
- * Links multiple elements together in a chain. Elements should have only
- * one source and/or one sink pad. If not, the first src/sink pads will be used.
- * The function takes a variable number of elements and links them sequentially.
+ * Links each element to the next through their first unlinked source and sink
+ * pads. A link whose pad capabilities cannot intersect is refused.
  *
  * @param element_1 First element in the chain
  * @param element_2 Second element in the chain
  * @param ... Additional elements to link (terminated by NULL)
  *
- * @return 0 on success, negative errno on failure
+ * @retval 0 Success.
+ * @retval -EINVAL An element has no unlinked pad in the needed direction
+ * @retval -ENOTSUP The capabilities of the two pads cannot intersect
  */
 int mpipe_element_link(struct mpipe_element *element_1, struct mpipe_element *element_2, ...);
 

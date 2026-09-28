@@ -158,7 +158,9 @@ int mpipe_bin_set_bus_validator(struct mpipe_bin *bin, zbus_validator bus_valida
  * @param element First @ref mpipe_element to add
  * @param ... Additional mpipe_element pointers, terminated by NULL
  *
- * @return 0 on success, negative errno on failure
+ * @retval 0 Success.
+ * @retval -EEXIST An element has the id of one already in the bin
+ * @retval -ENOSPC The bin already holds @kconfig{CONFIG_MPIPE_BIN_MAX_CHILDREN} elements
  */
 int mpipe_bin_add(struct mpipe_bin *bin, struct mpipe_element *element, ...);
 

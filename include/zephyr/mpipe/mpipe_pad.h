@@ -142,25 +142,61 @@ struct mpipe_pad {
 	atomic_t flushing;
 
 	/**
-	 * Chain function for handling buffers. Owns @p in_buf: on failure it
-	 * releases it, and the caller must not touch the buffer afterwards.
+	 * @brief Process a buffer
+	 *
+	 * The element's processing function, called on its sink pad for every
+	 * buffer pushed to it. It owns @p in_buf and releases it whether it
+	 * succeeds or fails, and hands back what it produced: a new buffer from
+	 * its pool, the same buffer transformed in place or passed through, or
+	 * NULL when it consumed the input, which ends the push.
+	 *
+	 * @param pad Sink pad the buffer arrives on
+	 * @param in_buf Buffer to process
+	 * @param[out] out_buf Buffer produced, or NULL when the input was consumed
+	 *
+	 * @return 0 on success, negative errno on failure
 	 */
 	int (*chain_fn)(struct mpipe_pad *pad, struct net_buf *in_buf, struct net_buf **out_buf);
-	/** Query function for handling queries */
+	/**
+	 * @brief Answer a query
+	 *
+	 * @param pad Pad the query arrives on
+	 * @param query Query to answer in place
+	 *
+	 * @return 0 on success, negative errno on failure
+	 */
 	int (*query_fn)(struct mpipe_pad *pad, struct mpipe_dispatch *query);
-	/** Event function for handling events */
+	/**
+	 * @brief Handle an event
+	 *
+	 * @param pad Pad the event arrives on
+	 * @param event Event to act on and forward
+	 *
+	 * @return 0 on success, negative errno on failure
+	 */
 	int (*event_fn)(struct mpipe_pad *pad, struct mpipe_dispatch *event);
 	/**
-	 * Enumerate the pad's supported caps one structure at a time into caller storage.
+	 * @brief Produce one of the pad's supported capabilities
 	 *
-	 * Lets an element whose capabilities come from a device produce them on
-	 * demand instead of holding a structure for each. Defaults to producing
-	 * the pad's own capability, and nothing past index 0.
+	 * This is how an element says what it supports. The framework calls it
+	 * with @p index 0, 1, 2 and so on, one capability per call, until it
+	 * reports -ENOENT, so several formats live on the index rather than in
+	 * a list. A capability known at build time is copied out of a static
+	 * structure; one only known at run time is built by querying the
+	 * driver. When @p filter is given, produce the capability narrowed by
+	 * it, which @ref mpipe_pad_enum_filter does, and report -EAGAIN when
+	 * this index cannot satisfy it, so the walk moves on to the next one.
+	 * The default produces the pad's own capability at index 0 and nothing
+	 * past it.
 	 *
-	 * It has to report -ENOENT once past its last capability: that is what
-	 * ends every search walking it. The framework stops asking past
-	 * UINT16_MAX, which no device comes near, so an implementation that
-	 * never reports the end fails instead of hanging.
+	 * @param pad Pad to enumerate
+	 * @param index Zero-based index of the capability
+	 * @param filter Capability to narrow by, may be NULL
+	 * @param[out] out Caller storage for the capability
+	 *
+	 * @retval 0 Success.
+	 * @retval -EAGAIN This index cannot satisfy @p filter
+	 * @retval -ENOENT Past the last capability
 	 */
 	int (*enum_caps_fn)(struct mpipe_pad *pad, uint32_t index,
 			    const struct mpipe_structure *filter, struct mpipe_structure *out);
@@ -169,14 +205,18 @@ struct mpipe_pad {
 /**
  * @brief Produce one of the pad's supported caps.
  *
+ * Calls the pad's enum_caps_fn, and stops asking past UINT16_MAX so an
+ * implementation that never reports the end fails instead of hanging.
+ *
  * @param pad Pad to enumerate.
  * @param index Zero-based index of the capability.
  * @param filter Optional structure to narrow the capability by, may be NULL.
- * @param[out] out Storage for the capability, released with @ref mpipe_structure_clear.
+ * @param[out] out Caller storage for the capability.
  *
- * @retval 0 on success
+ * @retval 0 Success.
  * @retval -EAGAIN This index cannot satisfy @p filter
  * @retval -ENOENT Past the last capability
+ * @retval -EINVAL The pad has no enum_caps_fn
  */
 int mpipe_pad_enum_caps(struct mpipe_pad *pad, uint32_t index, const struct mpipe_structure *filter,
 			struct mpipe_structure *out);
@@ -186,10 +226,11 @@ int mpipe_pad_enum_caps(struct mpipe_pad *pad, uint32_t index, const struct mpip
  *
  * @param pad Pad to enumerate.
  * @param filter Capability to narrow by, may be NULL or ANY.
- * @param[out] out Storage for the capability, released with @ref mpipe_structure_clear.
+ * @param[out] out Caller storage for the capability.
  *
- * @retval 0 on success
+ * @retval 0 Success.
  * @retval -ENODATA No capability is accepted
+ * @return Any other negative errno the pad's enum_caps_fn returns
  */
 int mpipe_pad_enum_first(struct mpipe_pad *pad, const struct mpipe_structure *filter,
 			 struct mpipe_structure *out);
@@ -248,7 +289,7 @@ void mpipe_pad_init(struct mpipe_pad *pad, uint8_t id, enum mpipe_pad_direction 
  * @param pad Pad to set the capability on.
  * @param caps Capability to copy in, or NULL to reset to ANY.
  *
- * @return 0 on success, negative errno on failure
+ * @retval 0 Success.
  */
 int mpipe_pad_set_caps(struct mpipe_pad *pad, const struct mpipe_structure *caps);
 
@@ -272,7 +313,9 @@ void mpipe_pad_link(struct mpipe_pad *src_pad, struct mpipe_pad *sink_pad);
  * @param pad Pointer to the @ref mpipe_pad where the event should be sent
  * @param event Pointer to the @ref mpipe_dispatch to send
  *
- * @return 0 on success, negative errno on failure
+ * @retval 0 Success.
+ * @retval -ENOTSUP The pad has no event function
+ * @return Any negative errno the pad's event function returns
  */
 int mpipe_pad_send_event(struct mpipe_pad *pad, struct mpipe_dispatch *event);
 
@@ -311,9 +354,9 @@ int mpipe_pad_send_event_default(struct mpipe_pad *pad, struct mpipe_dispatch *e
  *              A caps query must carry the capability storage to answer into.
  *
  * @retval 0 Success.
- * @retval -EINVAL a caps query carries no capability storage to answer into
- * @retval -ENOTSUP the pad has no query function
- * @retval -ENODATA a caps query was answered with an empty capability
+ * @retval -EINVAL A caps query carries no capability storage to answer into
+ * @retval -ENOTSUP The pad has no query function
+ * @retval -ENODATA A caps query was answered with an empty capability
  * @return Any negative errno the pad's query function returns
  */
 int mpipe_pad_query(struct mpipe_pad *pad, struct mpipe_dispatch *query);
