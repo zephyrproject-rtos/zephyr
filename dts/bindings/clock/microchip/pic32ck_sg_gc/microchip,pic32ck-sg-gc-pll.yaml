@@ -12,7 +12,6 @@ include: [base.yaml]
 compatible: "microchip,pic32ck-sg-gc-pll"
 
 child-binding:
-  compatible: "microchip,pic32ck-sg-gc-pllchild"
   properties:
     subsystem:
       type: int
@@ -137,7 +136,6 @@ child-binding:
         input frequency.
 
   child-binding:
-    compatible: "microchip,pic32ck-sg-gc-pll0out"
     properties:
       subsystem:
         type: int
