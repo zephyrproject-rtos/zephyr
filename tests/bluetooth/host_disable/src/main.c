@@ -199,6 +199,9 @@ static unsigned int data_count;
 static unsigned int close_count;
 static int close_err;
 
+/* What the driver's send() is to return for a data packet */
+static int data_err;
+
 /* How long the controller takes to respond to a reset, as one at the other end
  * of a UART or USB link does.
  */
@@ -217,6 +220,48 @@ static void reset_rsp_handler(struct k_work *work)
 
 static K_WORK_DELAYABLE_DEFINE(reset_rsp_work, reset_rsp_handler);
 
+/* How long the controller takes to respond to a disconnect command, what it
+ * responds with, and the connection that the command was for.
+ */
+static k_timeout_t disconnect_rsp_delay;
+static uint8_t disconnect_status;
+static uint16_t disconnect_handle;
+
+/* The controller accepts the command and the connection is gone, unless it is
+ * to reject the command.
+ */
+static void disconnect_rsp_handler(struct k_work *work)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
+	struct bt_hci_evt_disconn_complete *complete;
+	struct bt_hci_evt_cmd_status *status;
+	struct net_buf *evt;
+
+	ARG_UNUSED(work);
+
+	evt = bt_buf_get_evt(BT_HCI_EVT_CMD_STATUS, false, K_FOREVER);
+	evt_create(evt, BT_HCI_EVT_CMD_STATUS, sizeof(*status));
+	status = net_buf_add(evt, sizeof(*status));
+	status->status = disconnect_status;
+	status->ncmd = 1U;
+	status->opcode = sys_cpu_to_le16(BT_HCI_OP_DISCONNECT);
+	bt_hci_recv(dev, evt);
+
+	if (disconnect_status != BT_HCI_ERR_SUCCESS) {
+		return;
+	}
+
+	evt = bt_buf_get_evt(BT_HCI_EVT_DISCONN_COMPLETE, false, K_FOREVER);
+	evt_create(evt, BT_HCI_EVT_DISCONN_COMPLETE, sizeof(*complete));
+	complete = net_buf_add(evt, sizeof(*complete));
+	complete->status = BT_HCI_ERR_SUCCESS;
+	complete->handle = disconnect_handle;
+	complete->reason = BT_HCI_ERR_LOCALHOST_TERM_CONN;
+	bt_hci_recv(dev, evt);
+}
+
+static K_WORK_DELAYABLE_DEFINE(disconnect_rsp_work, disconnect_rsp_handler);
+
 static void cmd_handle(const struct device *dev, struct net_buf *cmd)
 {
 	struct net_buf *evt = NULL;
@@ -227,7 +272,12 @@ static void cmd_handle(const struct device *dev, struct net_buf *cmd)
 	opcode = sys_le16_to_cpu(chdr->opcode);
 
 	if (opcode == BT_HCI_OP_DISCONNECT) {
+		const struct bt_hci_cp_disconnect *cp = (const void *)cmd->data;
+
 		disconnect_count++;
+		disconnect_handle = cp->handle;
+		(void)k_work_schedule(&disconnect_rsp_work, disconnect_rsp_delay);
+		return;
 	}
 
 	if (opcode == BT_HCI_OP_RESET) {
@@ -275,6 +325,11 @@ static int driver_send(const struct device *dev, struct net_buf *buf)
 		cmd_handle(dev, buf);
 	} else {
 		data_count++;
+
+		if (data_err != 0) {
+			/* The buffer stays with the caller */
+			return data_err;
+		}
 	}
 
 	net_buf_unref(buf);
@@ -304,7 +359,10 @@ static void before(void *fixture)
 	ARG_UNUSED(fixture);
 
 	close_err = 0;
+	data_err = 0;
 	reset_rsp_delay = K_NO_WAIT;
+	disconnect_rsp_delay = K_NO_WAIT;
+	disconnect_status = BT_HCI_ERR_SUCCESS;
 	if (!bt_is_ready()) {
 		zassert_ok(bt_enable(NULL), "Bluetooth init failed");
 	}
@@ -381,6 +439,7 @@ static ZTEST(bt_disable, test_enable_disable_cycle)
 #define TEST_CONN_HANDLE 0x0001U
 
 static K_SEM_DEFINE(connected_sem, 0, 1);
+static K_SEM_DEFINE(disconnected_sem, 0, 1);
 static struct bt_conn *test_conn;
 
 static void connected(struct bt_conn *conn, uint8_t err)
@@ -391,8 +450,17 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	k_sem_give(&connected_sem);
 }
 
+static void disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	ARG_UNUSED(conn);
+	ARG_UNUSED(reason);
+
+	k_sem_give(&disconnected_sem);
+}
+
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
+	.disconnected = disconnected,
 };
 
 static void connect_as_peripheral(void)
@@ -496,6 +564,90 @@ static ZTEST(bt_disable, test_data_sent_during_disable)
 	reset_rsp_delay = K_NO_WAIT;
 	zassert_ok(bt_enable(NULL), "Bluetooth init after a disable failed");
 	connect_as_peripheral();
+
+	zassert_ok(bt_disable(), "Bluetooth disable failed");
+	bt_conn_unref(test_conn);
+	test_conn = NULL;
+}
+
+ZTEST_SUITE(bt_conn_tx, NULL, NULL, before, NULL, NULL);
+
+/* When the driver fails to send a data packet the Host gives the connection up.
+ * It finds that out in the TX processor, which is what transmits the command
+ * that disconnects, and so cannot be what waits for it. Nothing more is sent on
+ * the connection while the controller takes its time to respond to the command.
+ */
+static ZTEST(bt_conn_tx, test_data_send_failure)
+{
+	const uint8_t value = 0U;
+
+	if (IS_ENABLED(CONFIG_TEST_DRIVER_NO_CLOSE)) {
+		ztest_test_skip();
+	}
+
+	connect_as_peripheral();
+	(void)k_sem_take(&disconnected_sem, K_NO_WAIT);
+
+	data_err = -EIO;
+	disconnect_rsp_delay = K_MSEC(20);
+	zassert_ok(bt_gatt_write_without_response(test_conn, 1U, &value, sizeof(value), false),
+		   "Failed to queue the first packet");
+
+	k_sleep(K_MSEC(10));
+	zassert_equal(data_count, 1U, "The driver was given %u data packets", data_count);
+	zassert_equal(disconnect_count, 1U, "The controller was told to disconnect %u times",
+		      disconnect_count);
+
+	zassert_ok(bt_gatt_write_without_response(test_conn, 1U, &value, sizeof(value), false),
+		   "Failed to queue the second packet");
+
+	zassert_ok(k_sem_take(&disconnected_sem, K_SECONDS(1)), "No disconnection");
+	zassert_equal(data_count, 1U, "The driver was given %u data packets", data_count);
+	zassert_equal(disconnect_count, 1U, "The controller was told to disconnect %u times",
+		      disconnect_count);
+
+	bt_conn_unref(test_conn);
+	test_conn = NULL;
+}
+
+/* A connection that the controller refuses to disconnect stays, and goes on
+ * sending what was held back while the Host tried.
+ */
+static ZTEST(bt_conn_tx, test_data_send_failure_disconnect_rejected)
+{
+	const uint8_t value = 0U;
+	struct bt_conn_info info;
+
+	if (IS_ENABLED(CONFIG_TEST_DRIVER_NO_CLOSE)) {
+		ztest_test_skip();
+	}
+
+	connect_as_peripheral();
+
+	data_err = -EIO;
+	disconnect_rsp_delay = K_MSEC(20);
+	disconnect_status = BT_HCI_ERR_CMD_DISALLOWED;
+	zassert_ok(bt_gatt_write_without_response(test_conn, 1U, &value, sizeof(value), false),
+		   "Failed to queue the first packet");
+
+	k_sleep(K_MSEC(10));
+	zassert_equal(data_count, 1U, "The driver was given %u data packets", data_count);
+	zassert_equal(disconnect_count, 1U, "The controller was told to disconnect %u times",
+		      disconnect_count);
+
+	/* The driver works again */
+	data_err = 0;
+	zassert_ok(bt_gatt_write_without_response(test_conn, 1U, &value, sizeof(value), false),
+		   "Failed to queue the second packet");
+	zassert_equal(data_count, 1U, "The driver was given %u data packets", data_count);
+
+	k_sleep(K_MSEC(20));
+	zassert_equal(data_count, 2U, "The driver was given %u data packets", data_count);
+	zassert_equal(disconnect_count, 1U, "The controller was told to disconnect %u times",
+		      disconnect_count);
+	zassert_ok(bt_conn_get_info(test_conn, &info), "No connection info");
+	zassert_equal(info.state, BT_CONN_STATE_CONNECTED, "The connection is in state %u",
+		      info.state);
 
 	zassert_ok(bt_disable(), "Bluetooth disable failed");
 	bt_conn_unref(test_conn);
