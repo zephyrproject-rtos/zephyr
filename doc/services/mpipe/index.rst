@@ -196,7 +196,7 @@ that hierarchy:
 
 A :c:struct:`mpipe_pad` is where two elements meet. It carries a direction
 (source or sink), the peer it is linked to, and the capability negotiated on it.
-It also carries the callbacks the framework dispatches to: ``chain_fn`` receives
+It also carries the callbacks the framework dispatches to: ``process_fn`` receives
 a buffer, ``query_fn`` answers a query, and ``event_fn`` handles an event.
 Linking two elements links a source pad to a sink pad, and every hop of the
 stream is one such pair.
@@ -410,9 +410,9 @@ Buffers are Zephyr :c:struct:`net_buf` allocations, with an
 :c:struct:`mpipe_buffer_meta` alongside carrying what the framework needs to
 know about one: the pool that owns it, how much of it is valid, a timestamp.
 
-:c:func:`mpipe_push_buffer` walks a buffer downstream, calling the ``chain_fn``
+:c:func:`mpipe_push_buffer` walks a buffer downstream, calling the ``process_fn``
 of each element in turn and following the buffer it produced. A NULL output
-means the buffer was consumed and the walk stops. The chain function owns the
+means the buffer was consumed and the walk stops. The processing function owns the
 buffer it is given and releases it even when it fails.
 
 Pipeline runtime
@@ -490,9 +490,9 @@ The hooks, in the order a pipeline exercises them:
 * **State change**: ``change_state`` runs what the element does on each
   transition. It must chain to its base, which performs the capability reset
   and the pool teardown every element is expected to do.
-* **Processing function**: ``chain_fn`` on the sink pad is the heart of the
+* **Processing function**: ``process_fn`` on the sink pad is the heart of the
   element. It receives a buffer, owns it, and hands back the buffer it
-  produced, or NULL when it consumed it. A source has no chain function: the
+  produced, or NULL when it consumed it. A source has no processing function: the
   pipeline thread acquires buffers from its pool.
 
 Base elements

@@ -20,7 +20,7 @@
  *     // process one tile...
  * }
  *
- * static int my_chain_fn(struct mpipe_pad *pad, struct net_buf *in,
+ * static int my_process_fn(struct mpipe_pad *pad, struct net_buf *in,
  *                       struct net_buf **out) {
  *     struct k_p4wq_work tile_work[4];
  *

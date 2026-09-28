@@ -86,7 +86,7 @@ struct mpipe_queue {
 	/** Leak policy of a full queue, an @ref mpipe_base_queue_leak */
 	uint8_t leak;
 	/**
-	 * Set on PAUSED -> READY: the chain function drops buffers instead of
+	 * Set on PAUSED -> READY: the processing function drops buffers instead of
 	 * enqueuing them, which releases a producer blocked in k_msgq_put().
 	 */
 	atomic_t flushing;

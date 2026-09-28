@@ -17,8 +17,8 @@ LOG_MODULE_REGISTER(mpipe_transform, CONFIG_MPIPE_LOG_LEVEL);
 #define MPIPE_PAD_SINK_ID 0
 #define MPIPE_PAD_SRC_ID  1
 
-static int mpipe_transform_chain_fn(struct mpipe_pad *pad, struct net_buf *in_buf,
-				    struct net_buf **out_buf)
+static int mpipe_transform_process_fn(struct mpipe_pad *pad, struct net_buf *in_buf,
+				      struct net_buf **out_buf)
 {
 	ARG_UNUSED(pad);
 
@@ -408,7 +408,7 @@ int mpipe_transform_init(struct mpipe_transform *transform, uint8_t id)
 	transform->mode = MPIPE_MODE_PASSTHROUGH;
 	transform->set_caps = mpipe_transform_set_caps;
 	transform->transform_caps = mpipe_transform_transform_caps;
-	transform->sink_pad.chain_fn = mpipe_transform_chain_fn;
+	transform->sink_pad.process_fn = mpipe_transform_process_fn;
 	transform->sink_pad.query_fn = mpipe_transform_query;
 	transform->src_pad.query_fn = mpipe_transform_query;
 	transform->sink_pad.event_fn = mpipe_transform_event;

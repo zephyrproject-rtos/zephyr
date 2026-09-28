@@ -33,7 +33,7 @@
  *
  * Three kinds of traffic cross a link, each with its own hook:
  *
- * - a **buffer** arrives at a sink pad's @c chain_fn. The chain function owns
+ * - a **buffer** arrives at a sink pad's @c process_fn. The processing function owns
  *   the buffer it is given and must release it even when it fails; the caller
  *   never touches it again either way.
  * - an **event** announces something and is sent with
@@ -138,7 +138,7 @@ struct mpipe_pad {
 	struct mpipe_pad *peer;
 	/** Pad's capability. ANY until one is negotiated, reset back to ANY on PAUSED to READY */
 	struct mpipe_structure caps;
-	/** Flushing gate. While set, buffers are dropped instead of chained */
+	/** Flushing gate. While set, buffers are dropped instead of processed */
 	atomic_t flushing;
 
 	/**
@@ -156,7 +156,7 @@ struct mpipe_pad {
 	 *
 	 * @return 0 on success, negative errno on failure
 	 */
-	int (*chain_fn)(struct mpipe_pad *pad, struct net_buf *in_buf, struct net_buf **out_buf);
+	int (*process_fn)(struct mpipe_pad *pad, struct net_buf *in_buf, struct net_buf **out_buf);
 	/**
 	 * @brief Answer a query
 	 *

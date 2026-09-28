@@ -88,15 +88,15 @@ int mpipe_pipeline_init(struct mpipe *pipe, uint8_t id);
 /**
  * @brief Push a buffer downstream starting from a given source pad
  *
- * Walks downstream from an element's @p src_pad, calling each next element's chain_fn
- * until a sink is reached, a chain_fn fails, or the output buffer is NULL.
+ * Walks downstream from an element's @p src_pad, calling each next element's process_fn
+ * until a sink is reached, a process_fn fails, or the output buffer is NULL.
  *
- * The chain function owns the buffer it is given and releases it whether it
- * succeeds or fails, so the walk does not release it on a chain error. The walk
- * does release the buffer itself in the two cases where no chain function is
+ * The processing function owns the buffer it is given and releases it whether it
+ * succeeds or fails, so the walk does not release it on a processing error. The walk
+ * does release the buffer itself in the two cases where no processing function is
  * reached: the source pad has no peer, and the peer pad is flushing.
  *
- * @param src_pad Source pad to start pushing from (its peer's chain_fn is first called)
+ * @param src_pad Source pad to start pushing from (its peer's process_fn is first called)
  * @param buffer Buffer to push (ownership transferred)
  *
  * @return 0 on success, negative errno on failure

@@ -13,8 +13,8 @@
 
 LOG_MODULE_REGISTER(mpipe_transform_client, CONFIG_MPIPE_LOG_LEVEL);
 
-static int mpipe_transform_client_chain_fn(struct mpipe_pad *pad, struct net_buf *in_buf,
-					   struct net_buf **out_buf)
+static int mpipe_transform_client_process_fn(struct mpipe_pad *pad, struct net_buf *in_buf,
+					     struct net_buf **out_buf)
 {
 	struct mpipe_transform *transform = (struct mpipe_transform *)pad->object.container;
 	struct mpipe_transform_client *transform_client =
@@ -42,8 +42,9 @@ static int mpipe_transform_client_chain_fn(struct mpipe_pad *pad, struct net_buf
 	out_used = out_meta->bytes_used;
 
 	/* The RPC interface carries 32-bit addresses */
-	if (transform_client->chain_fn_rpc((uint32_t)(uintptr_t)in_buf->data, in_used,
-					   (uint32_t)(uintptr_t)(*out_buf)->data, &out_used) != 0) {
+	if (transform_client->process_fn_rpc((uint32_t)(uintptr_t)in_buf->data, in_used,
+					     (uint32_t)(uintptr_t)(*out_buf)->data,
+					     &out_used) != 0) {
 		LOG_ERR("Failed to process buffer via RPC");
 		net_buf_unref(*out_buf);
 		*out_buf = NULL;
@@ -130,7 +131,7 @@ int mpipe_transform_client_init(struct mpipe_transform_client *transform_client,
 	/* Only NORMAL mode is supported */
 	transform->mode = MPIPE_MODE_NORMAL;
 
-	transform->sink_pad.chain_fn = mpipe_transform_client_chain_fn;
+	transform->sink_pad.process_fn = mpipe_transform_client_process_fn;
 	transform->decide_buffer_pool = mpipe_transform_client_decide_buffer_pool;
 	transform->propose_buffer_pool = mpipe_transform_client_propose_buffer_pool;
 
