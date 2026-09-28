@@ -742,6 +742,16 @@ config WIFI_NRF70_SCAN_DISABLE_DFS_CHANNELS
 	  This option disables inclusion of the DFS channels in the scan operation.
 	  This is useful to reduce the scan time, as DFS channels are seldom used.
 
+config WIFI_NRF70_11AC_DOWNGRADE_DISABLE
+	bool "Disable fallback from 802.11ac to lower Wi-Fi modes"
+	help
+	  By default, the device may fall back from 802.11ac (VHT) to a lower
+	  Wi-Fi mode (HT) when connecting to an access point that supports
+	  802.11ac with 80 MHz channels. Enable this option to disable that
+	  fallback, so the device stays in VHT mode instead. This only affects
+	  connections to 802.11ac 80 MHz access points; no other modes are
+	  impacted. Intended for certification testing.
+
 config NET_INTERFACE_NAME_LEN
 	# nordic_wlanN
 	default 15
