@@ -239,22 +239,36 @@
 
 				wkup@1 {
 					reg = <0x1>;
+					wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_PIN_NOT_MUXED>;
 				};
 
 				wkup@2 {
 					reg = <0x2>;
+					/*
+					 * PC13 as WKUP2 is not available on products in LQFP32,
+					 * UFQFPN32, WLCSP36 and WLCSP36_SMPS packages.
+					 */
+					wkup-gpios = <&gpioc 13 STM32_PWR_WKUP_PIN_NOT_MUXED>;
 				};
 
 				wkup@3 {
+					/* PE6, only on parts with GPIOE */
 					reg = <0x3>;
 				};
 
 				wkup@4 {
 					reg = <0x4>;
+					wkup-gpios = <&gpioa 2 STM32_PWR_WKUP_PIN_NOT_MUXED>;
 				};
 
 				wkup@5 {
 					reg = <0x5>;
+					/*
+					 * PC5 as WKUP5 is not available on packages:
+					 * - without SMPS, and with less than 64 pins
+					 * - with SMPS, and with less than 132 pins
+					 */
+					wkup-gpios = <&gpioc 5 STM32_PWR_WKUP_PIN_NOT_MUXED>;
 				};
 			};
 		};

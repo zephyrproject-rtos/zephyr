@@ -19,6 +19,14 @@
 	soc {
 		compatible = "st,stm32l431", "st,stm32l4", "simple-bus";
 
+		power@40007000 {
+			wakeup-controller {
+				wkup@3 {
+					wkup-gpios = <&gpioe 6 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				};
+			};
+		};
+
 		timers7: timers@40001400 {
 			compatible = "st,stm32-timers";
 			reg = <0x40001400 0x400>;
