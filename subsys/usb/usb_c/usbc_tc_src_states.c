@@ -36,7 +36,8 @@ void tc_unattached_src_entry(void *obj)
 	struct tc_sm_t *tc = (struct tc_sm_t *)obj;
 
 	/* Start DRP toggle timer with tDRP Source time */
-	usbc_timer_start_with_value(&tc->tc_t_drp_toggle, TC_T_DRP_SRC_MS);
+	tc_drp_cycle_draw(tc);
+	usbc_timer_start_with_value(&tc->tc_t_drp_toggle, tc->drp_src_window_ms);
 #endif
 }
 

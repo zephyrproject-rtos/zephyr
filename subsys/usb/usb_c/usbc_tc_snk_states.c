@@ -87,7 +87,7 @@ void tc_unattached_snk_entry(void *obj)
 
 #ifdef CONFIG_USBC_CSM_DRP
 	/* Start DRP toggle timer with tDRP Sink time */
-	usbc_timer_start_with_value(&tc->tc_t_drp_toggle, TC_T_DRP_SNK_MS);
+	usbc_timer_start_with_value(&tc->tc_t_drp_toggle, tc->drp_snk_window_ms);
 #endif
 
 	/*
