@@ -1,0 +1,6 @@
+board:
+  name: nucode_nu54
+  full_name: NUCODE NU54V DK
+  vendor: nucode
+  socs:
+  - name: nrf54l15
