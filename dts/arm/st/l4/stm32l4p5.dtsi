@@ -203,6 +203,14 @@
 			status = "disabled";
 		};
 
+		power@40007000 {
+			wakeup-controller {
+				wkup@3 {
+					wkup-gpios = <&gpioe 6 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				};
+			};
+		};
+
 		dac1: dac@40007400 {
 			compatible = "st,stm32-dac";
 			reg = <0x40007400 0x400>;
