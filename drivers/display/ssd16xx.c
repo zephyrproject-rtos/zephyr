@@ -566,8 +566,8 @@ static void ssd16xx_get_capabilities(const struct device *dev,
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height -
 			     config->height % EPD_PANEL_NUMOF_ROWS_PER_PAGE;
-	caps->supported_pixel_formats = PIXEL_FORMAT_MONO10;
-	caps->current_pixel_format = PIXEL_FORMAT_MONO10;
+	caps->supported_pixel_formats = PIXEL_FORMAT_MONO01;
+	caps->current_pixel_format = PIXEL_FORMAT_MONO01;
 	caps->screen_info = SCREEN_INFO_MONO_MSB_FIRST | SCREEN_INFO_EPD;
 
 	if (data->orientation == DISPLAY_ORIENTATION_NORMAL ||
@@ -581,7 +581,7 @@ static void ssd16xx_get_capabilities(const struct device *dev,
 static int ssd16xx_set_pixel_format(const struct device *dev,
 				    const enum display_pixel_format pf)
 {
-	if (pf == PIXEL_FORMAT_MONO10) {
+	if (pf == PIXEL_FORMAT_MONO01) {
 		return 0;
 	}
 
