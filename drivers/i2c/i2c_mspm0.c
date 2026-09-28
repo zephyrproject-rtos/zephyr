@@ -17,6 +17,8 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/sys_io.h>
 #include <soc.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 
 #include "i2c-priv.h"
 
@@ -406,6 +408,47 @@ static inline uint8_t i2c_receive_controller_data(mm_reg_t base)
 	return (uint8_t)(sys_read32(base + I2C_REG_CRXDATA) & I2C_CRXDATA_VALUE_MASK);
 }
 
+#if defined(CONFIG_PM_DEVICE)
+static int i2c_mspm0_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	int err;
+	const struct i2c_mspm0_config *config = dev->config;
+	const mm_reg_t base = config->base;
+	i2c_clock_config_t clock_config = config->clock_config;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		/* Set pins to active state */
+		err = pinctrl_apply_state(config->pinctrl, PINCTRL_STATE_DEFAULT);
+		if (err < 0) {
+			return err;
+		}
+
+		/* Restore the parent clock selection. */
+		i2c_set_clock_config(base, &clock_config);
+
+		break;
+
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Move pins to sleep state */
+		err = pinctrl_apply_state(config->pinctrl, PINCTRL_STATE_SLEEP);
+		if ((err < 0) && (err != -ENOENT)) {
+			return err;
+		}
+
+		/* Unselect all parent clocks to gate the peripheral clock. */
+		clock_config.clock_sel = 0;
+		i2c_set_clock_config(base, &clock_config);
+
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif
+
 /* Multi-byte FIFO operations */
 static uint16_t i2c_fill_controller_tx_fifo(mm_reg_t base, const uint8_t *buffer, uint16_t count)
 {
@@ -650,6 +693,11 @@ static int i2c_mspm0_configure(const struct device *dev, uint32_t dev_config)
 		return -ENODEV;
 	}
 
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
 	k_sem_take(&data->i2c_lock, K_FOREVER);
 
 	/* Config I2C speed */
@@ -721,6 +769,7 @@ static int i2c_mspm0_configure(const struct device *dev, uint32_t dev_config)
 
 sem_give:
 	k_sem_give(&data->i2c_lock);
+	pm_device_runtime_put(dev);
 	return ret;
 }
 
@@ -767,7 +816,16 @@ static int i2c_mspm0_init(const struct device *dev)
 	/* Enable interrupts */
 	config->irq_config_func(dev);
 
+#ifdef CONFIG_PM_DEVICE
+	ret = i2c_mspm0_pm_action(dev, PM_DEVICE_ACTION_SUSPEND);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return pm_device_driver_init(dev, i2c_mspm0_pm_action);
+#else
 	return 0;
+#endif
 }
 
 static int i2c_mspm0_get_config(const struct device *dev, uint32_t *dev_config)
@@ -860,6 +918,11 @@ static int i2c_mspm0_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 	uint32_t dev_config;
 	int ret;
 
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
 	k_sem_take(&data->i2c_lock, K_FOREVER);
 
 	data->msgs = msgs;
@@ -896,6 +959,8 @@ static int i2c_mspm0_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 	}
 
 	k_sem_give(&data->i2c_lock);
+
+	pm_device_runtime_put(dev);
 	return ret;
 }
 
@@ -905,6 +970,7 @@ static int i2c_mspm0_target_register(const struct device *dev, struct i2c_target
 	const struct i2c_mspm0_config *config = dev->config;
 	struct i2c_mspm0_data *data = dev->data;
 	const mm_reg_t base = config->base;
+	int ret;
 
 	k_sem_take(&data->i2c_lock, K_FOREVER);
 
@@ -912,6 +978,12 @@ static int i2c_mspm0_target_register(const struct device *dev, struct i2c_target
 	if (data->is_target || data->target_config == cfg) {
 		k_sem_give(&data->i2c_lock);
 		return -EBUSY;
+	}
+
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		k_sem_give(&data->i2c_lock);
+		return ret;
 	}
 
 	data->target_config = cfg;
@@ -968,6 +1040,9 @@ static int i2c_mspm0_target_unregister(const struct device *dev, struct i2c_targ
 	i2c_disable_interrupt(base, TI_MSPM0_TARGET_INTERRUPTS);
 
 	k_sem_give(&data->i2c_lock);
+
+	pm_device_runtime_put(dev);
+
 	return 0;
 }
 
@@ -1324,8 +1399,9 @@ static DEVICE_API(i2c, i2c_mspm0_driver_api) = {
 			.divide_ratio = I2C_CLKDIV_RATIO_DIVIDE_BY_1,                              \
 		}};                                                                                \
 	static struct i2c_mspm0_data i2c_mspm0_data_##index;                                       \
-	I2C_DEVICE_DT_INST_DEFINE(index, i2c_mspm0_init, NULL, &i2c_mspm0_data_##index,            \
-				  &i2c_mspm0_cfg_##index, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,   \
-				  &i2c_mspm0_driver_api);
+	PM_DEVICE_DT_INST_DEFINE(index, i2c_mspm0_pm_action);                                      \
+	I2C_DEVICE_DT_INST_DEFINE(index, i2c_mspm0_init, PM_DEVICE_DT_INST_GET(index),             \
+				  &i2c_mspm0_data_##index, &i2c_mspm0_cfg_##index, POST_KERNEL,    \
+				  CONFIG_I2C_INIT_PRIORITY, &i2c_mspm0_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MSP_I2C_INIT_FN)
