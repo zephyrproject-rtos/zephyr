@@ -162,10 +162,10 @@ int mpipe_push_buffer(struct mpipe_pad *src_pad, struct net_buf *buffer)
 			return 0;
 		}
 
-		if (next_sink_pad->chain_fn != NULL) {
+		if (next_sink_pad->process_fn != NULL) {
 			out_buf = NULL;
 
-			ret = next_sink_pad->chain_fn(next_sink_pad, buffer, &out_buf);
+			ret = next_sink_pad->process_fn(next_sink_pad, buffer, &out_buf);
 			if (ret != 0) {
 				struct mpipe_element *elem =
 					(struct mpipe_element *)next_sink_pad->object.container;
@@ -176,7 +176,7 @@ int mpipe_push_buffer(struct mpipe_pad *src_pad, struct net_buf *buffer)
 					.code = ret,
 				};
 
-				LOG_ERR("chain_fn failed for element %u (%d)",
+				LOG_ERR("process_fn failed for element %u (%d)",
 					next_sink_pad->object.container->id, ret);
 
 				/* No caller to return this to: the bus is the only way out */

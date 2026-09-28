@@ -38,7 +38,7 @@ struct mpipe_transform_client {
 	 */
 	int (*init_rpc)(void);
 	/**
-	 * @brief RPC chain function for processing buffers on the server side
+	 * @brief RPC processing function for processing buffers on the server side
 	 *
 	 * @param in_buf Address of the input buffer to be processed
 	 * @param in_sz Number of valid bytes in the input buffer
@@ -47,13 +47,13 @@ struct mpipe_transform_client {
 	 *
 	 * @return 0 on success, a negative errno on failure
 	 */
-	int (*chain_fn_rpc)(uint32_t in_buf, uint32_t in_sz, uint32_t out_buf, uint32_t *out_sz);
+	int (*process_fn_rpc)(uint32_t in_buf, uint32_t in_sz, uint32_t out_buf, uint32_t *out_sz);
 };
 
 /**
  * @brief Initialize a transform client element
  *
- * Initializes the base transform element and installs the chain function that
+ * Initializes the base transform element and installs the processing function that
  * forwards a buffer over the transport instead of processing it locally.
  *
  * @c init_rpc must already be set when this is called: it runs before the base
