@@ -781,6 +781,7 @@ static uint8_t smp_bt_bridge_discover(struct bt_conn *conn, const struct bt_gatt
 	if (cpd == NULL) {
 		LOG_ERR("Invalid CPD for connection: %p", conn);
 		(void)bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+		return BT_GATT_ITER_STOP;
 	}
 
 	if (!attr) {
@@ -1066,6 +1067,7 @@ static bool smp_bt_bridge_connect(struct smp_transport_bridge *bridge, bool outg
 		 * for use, the ID will be assigned after the connection is initiated
 		 */
 		cpd = conn_param_data_alloc(NULL);
+		outgoing_connection_was_successful = false;
 
 		if (cpd == NULL) {
 			LOG_ERR("Failed to allocate cpd object");
@@ -1079,7 +1081,7 @@ static bool smp_bt_bridge_connect(struct smp_transport_bridge *bridge, bool outg
 			LOG_ERR("Requested LE CODED PHY is not supported");
 			smp_add_cmd_err(output_data, MGMT_GROUP_ID_TRANSPORT,
 					TRANSPORT_MGMT_ERR_CONNECT_UNSUPPORTED_PARAMETER);
-			return false;
+			goto clean_up;
 #else
 			create_param->options |= (BT_CONN_LE_OPT_CODED | BT_CONN_LE_OPT_NO_1M);
 			LOG_DBG("Using LE coded PHY");
@@ -1109,6 +1111,7 @@ static bool smp_bt_bridge_connect(struct smp_transport_bridge *bridge, bool outg
 
 		k_sem_take(&cpd->smp_notify_sem, K_FOREVER);
 
+clean_up:
 		if (outgoing_connection_was_successful == false) {
 			cpd->state = 0;
 			cpd->id = 0;
@@ -1145,10 +1148,10 @@ static void smp_bt_bridge_disconnect(struct smp_transport_bridge *bridge, bool o
 
 			if (rc != 0) {
 				/* Clear cpd. */
+				bt_conn_drop(&cpd->conn);
 				cpd->id = 0;
 				cpd->conn = NULL;
 				cpd->state = 0;
-				bt_conn_drop(&cpd->conn);
 				k_sem_give(&cpd->smp_notify_sem);
 				LOG_ERR("Failed to disconnect BT MCUmgr outgoing bridge: %d", rc);
 			}
