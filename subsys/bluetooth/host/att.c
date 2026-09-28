@@ -527,6 +527,14 @@ static bool att_chan_matches_chan_opt(struct bt_att_chan *chan, enum bt_att_chan
 	}
 }
 
+/* L2CAP refuses an SDU that exceeds the peer's MTU of an EATT bearer, so such
+ * a PDU is left for a bearer it fits instead of blocking this one.
+ */
+static bool att_chan_can_carry(struct bt_att_chan *chan, struct net_buf *buf)
+{
+	return !bt_att_is_enhanced(chan) || buf->len <= chan->chan.tx.mtu;
+}
+
 static struct net_buf *get_first_buf_matching_chan(struct k_fifo *fifo, struct bt_att_chan *chan)
 {
 	if (IS_ENABLED(CONFIG_BT_EATT)) {
@@ -540,7 +548,8 @@ static struct net_buf *get_first_buf_matching_chan(struct k_fifo *fifo, struct b
 		while ((buf = k_fifo_get(fifo, K_NO_WAIT))) {
 			meta = att_get_tx_meta_data(buf);
 			if (!ret &&
-			    att_chan_matches_chan_opt(chan, meta->chan_opt)) {
+			    att_chan_matches_chan_opt(chan, meta->chan_opt) &&
+			    att_chan_can_carry(chan, buf)) {
 				ret = buf;
 			} else {
 				k_fifo_put(&skipped, buf);
@@ -869,10 +878,11 @@ static void att_send_process(struct bt_att *att)
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&att->chans, chan, tmp, node) {
 		if (err == -ENOENT && prev &&
-		    (bt_att_is_enhanced(chan) == bt_att_is_enhanced(prev))) {
+		    (bt_att_is_enhanced(chan) == bt_att_is_enhanced(prev)) &&
+		    (chan->chan.tx.mtu <= prev->chan.tx.mtu)) {
 			/* If there was nothing to send for the previous channel and the current
-			 * channel has the same "enhancedness", there will be nothing to send for
-			 * this channel either.
+			 * channel has the same "enhancedness" and no larger MTU, there will be
+			 * nothing to send for this channel either.
 			 */
 			continue;
 		}
