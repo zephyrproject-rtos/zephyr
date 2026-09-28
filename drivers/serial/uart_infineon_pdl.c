@@ -584,9 +584,6 @@ static int ifx_cat1_uart_configure(const struct device *dev, const struct uart_c
 	struct ifx_cat1_uart_data *data = dev->data;
 	const struct ifx_cat1_uart_config *const config = dev->config;
 
-	/* Store Uart Zephyr configuration (uart config) into data structure */
-	data->cfg = *cfg;
-
 	/* Configure parity, data and stop bits */
 	Cy_SCB_UART_Disable(config->reg_addr, NULL);
 	data->scb_config.dataWidth = convert_uart_data_bits_z_to_cy(cfg->data_bits);
@@ -608,7 +605,16 @@ static int ifx_cat1_uart_configure(const struct device *dev, const struct uart_c
 	/* A failed set_baud leaves the block disabled (never re-enabled). */
 	data->scb_powered = (result == CY_RSLT_SUCCESS);
 
-	return (result == CY_RSLT_SUCCESS) ? 0 : -ENOTSUP;
+	if (result != CY_RSLT_SUCCESS) {
+		return -ENOTSUP;
+	}
+
+	/* Cache the configuration only after it has been applied, so a rejected
+	 * reconfigure does not poison a later uart_config_get().
+	 */
+	data->cfg = *cfg;
+
+	return 0;
 };
 
 static int ifx_cat1_uart_config_get(const struct device *dev, struct uart_config *cfg)
