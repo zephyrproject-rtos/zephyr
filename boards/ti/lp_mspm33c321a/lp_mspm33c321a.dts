@@ -64,6 +64,12 @@
 	status = "okay";
 };
 
+&vref0 {
+	pinctrl-0 = <&analog_pa23>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &wdt0 {
 	status = "okay";
 };
