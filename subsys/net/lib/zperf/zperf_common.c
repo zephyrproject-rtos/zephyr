@@ -287,8 +287,13 @@ error:
 
 uint32_t zperf_packet_duration(uint32_t packet_size, uint32_t rate_in_kbps)
 {
+	/* A rate of 0 means send as fast as possible, matching iperf -b 0. */
+	if (rate_in_kbps == 0U) {
+		return 0U;
+	}
+
 	return (uint32_t)(((uint64_t)packet_size * 8U * USEC_PER_SEC) /
-			  (rate_in_kbps * 1024U));
+			  ((uint64_t)rate_in_kbps * 1024U));
 }
 
 void zperf_async_work_submit(enum session_proto proto, int session_id, struct k_work *work)
