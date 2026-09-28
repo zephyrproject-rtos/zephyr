@@ -1596,7 +1596,7 @@ static DEVICE_API(flash, drv_api) = {
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 BUILD_ASSERT((CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE % 4096) == 0,
-	"MSPI_NOR_FLASH_LAYOUT_PAGE_SIZE must be multiple of 4096");
+	"FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE must be multiple of 4096");
 #define FLASH_PAGE_LAYOUT_DEFINE(inst) \
 	.layout = { \
 		.pages_size = CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE, \
@@ -1605,7 +1605,7 @@ BUILD_ASSERT((CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE % 4096) == 0,
 	},
 #define FLASH_PAGE_LAYOUT_CHECK(inst) \
 BUILD_ASSERT((FLASH_SIZE_INST(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) == 0, \
-	"MSPI_NOR_FLASH_LAYOUT_PAGE_SIZE incompatible with flash size, instance " #inst);
+	"FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE incompatible with flash size, instance " #inst);
 #else
 #define FLASH_PAGE_LAYOUT_DEFINE(inst)
 #define FLASH_PAGE_LAYOUT_CHECK(inst)
