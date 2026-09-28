@@ -70,5 +70,8 @@ extern enum bst_result_t bst_result;
 void test_tick(bs_time_t HW_device_time);
 void test_init(void);
 
+/* Handle and length preceding each value in ATT_MULTIPLE_HANDLE_VALUE_NTF */
+#define NOTIFY_MULT_TUPLE_HDR_LEN 4U
+
 #define NOTIFICATION_COUNT 10
 BUILD_ASSERT(NOTIFICATION_COUNT % 2 == 0);

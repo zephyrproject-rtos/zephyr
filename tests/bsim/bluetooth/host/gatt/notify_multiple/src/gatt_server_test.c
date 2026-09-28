@@ -186,6 +186,63 @@ static void test_main(void)
 	PASS("GATT server passed\n");
 }
 
+/* Send two values in one ATT_MULTIPLE_HANDLE_VALUE_NTF of pdu_len octets:
+ * the opcode, then a handle, a length and the value for each attribute.
+ */
+static int notify_multiple_pdu_len(const struct bt_gatt_attr *attrs[2], uint16_t pdu_len)
+{
+	const uint16_t values_len = pdu_len - 1U - 2U * NOTIFY_MULT_TUPLE_HDR_LEN;
+	struct bt_gatt_notify_params params[] = {
+		{
+			.attr = attrs[0],
+			.data = long_chrc_data,
+			.len = values_len / 2U,
+			.func = notification_sent,
+		},
+		{
+			.attr = attrs[1],
+			.data = long_chrc_data,
+			.len = values_len - values_len / 2U,
+			.func = notification_sent,
+		},
+	};
+
+	if (params[1].len > sizeof(long_chrc_data)) {
+		FAIL("MTU %u too large\n", pdu_len);
+	}
+
+	return bt_gatt_notify_multiple(g_conn, ARRAY_SIZE(params), params);
+}
+
+static void test_mtu(void)
+{
+	const struct bt_gatt_attr *attrs[2];
+	uint16_t mtu;
+	int err;
+
+	setup();
+
+	attrs[0] = bt_gatt_find_by_uuid(NULL, 0, TEST_LONG_CHRC_UUID);
+	attrs[1] = &attr_test_svc[1];
+	mtu = bt_gatt_get_mtu(g_conn);
+
+	err = notify_multiple_pdu_len(attrs, mtu + 1U);
+	if (err != -ERANGE) {
+		FAIL("PDU of %u octets not rejected (err %d)\n", mtu + 1U, err);
+	}
+
+	err = notify_multiple_pdu_len(attrs, mtu);
+	if (err != 0) {
+		FAIL("PDU of %u octets failed (err %d)\n", mtu, err);
+	}
+
+	while (num_notifications_sent < 2) {
+		k_sleep(K_MSEC(10));
+	}
+
+	PASS("GATT server passed\n");
+}
+
 static void batch_sent(struct bt_conn *conn, void *user_data)
 {
 	SET_FLAG(flag_batch_sent);
@@ -238,6 +295,12 @@ static const struct bst_test_instance test_gatt_server[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_disconnect,
+	},
+	{
+		.test_id = "gatt_server_mtu",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_mtu,
 	},
 	BSTEST_END_MARKER,
 };
