@@ -98,7 +98,7 @@ int mpipe_app_src_init(struct mpipe_app_src *app_src, uint8_t id);
  * @param buf Filled with the buffer
  *
  * @retval 0 Success
- * @retval -EINVAL Bad arguments, or @p size above the buffer size
+ * @retval -EINVAL @p size is 0 or above the buffer size
  * @retval -ENOBUFS No buffer became free within @p timeout
  */
 int mpipe_app_src_alloc(struct mpipe_app_src *app_src, uint32_t size, k_timeout_t timeout,
@@ -116,7 +116,7 @@ int mpipe_app_src_alloc(struct mpipe_app_src *app_src, uint32_t size, k_timeout_
  * @param timeout How long to wait for a queue slot
  *
  * @retval 0 Success
- * @retval -EINVAL Bad arguments, or @p size above what the buffer holds
+ * @retval -EINVAL @p size is 0 or above what the buffer holds
  * @retval -EAGAIN The queue stayed full within @p timeout
  */
 int mpipe_app_src_push_buf(struct mpipe_app_src *app_src, struct net_buf *buf, uint32_t size,
@@ -134,7 +134,7 @@ int mpipe_app_src_push_buf(struct mpipe_app_src *app_src, struct net_buf *buf, u
  * @param timeout How long to wait for a free buffer, and for a queue slot
  *
  * @retval 0 Success
- * @retval -EINVAL Bad arguments
+ * @retval -EINVAL @p size is 0 or above the buffer size
  * @retval -ENOBUFS No buffer became free within @p timeout
  * @retval -EAGAIN The queue stayed full within @p timeout
  */
@@ -151,7 +151,6 @@ int mpipe_app_src_push(struct mpipe_app_src *app_src, const void *data, uint32_t
  * @param timeout How long to wait for a queue slot
  *
  * @retval 0 Success
- * @retval -EINVAL @p app_src is NULL
  * @retval -EAGAIN The queue stayed full within @p timeout
  */
 int mpipe_app_src_eos(struct mpipe_app_src *app_src, k_timeout_t timeout);
