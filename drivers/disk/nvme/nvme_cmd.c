@@ -478,9 +478,22 @@ static void nvme_cmd_qpair_process_completion(struct nvme_cmd_qpair *qpair)
 
 static void nvme_cmd_qpair_msi_handler(const void *arg)
 {
-	const struct nvme_cmd_qpair *qpair = arg;
+	const struct nvme_cmd_qpair *irq_qpair = arg;
+	struct nvme_controller *ctrlr = irq_qpair->ctrlr;
+	struct nvme_cmd_qpair *qpair;
+	k_spinlock_key_t key;
 
-	nvme_cmd_qpair_process_completion((struct nvme_cmd_qpair *)qpair);
+	key = k_spin_lock(&ctrlr->qpair_lock);
+	qpair = ctrlr->qpair_list;
+	k_spin_unlock(&ctrlr->qpair_lock, key);
+
+	while (qpair != NULL) {
+		if (qpair->vector == irq_qpair->vector) {
+			nvme_cmd_qpair_process_completion(qpair);
+		}
+
+		qpair = qpair->next;
+	}
 }
 
 int nvme_cmd_qpair_setup(struct nvme_cmd_qpair *qpair,
@@ -489,10 +502,17 @@ int nvme_cmd_qpair_setup(struct nvme_cmd_qpair *qpair,
 {
 	const struct nvme_controller_config *nvme_ctrlr_cfg =
 		ctrlr->dev->config;
+	struct nvme_cmd_qpair *other_qpair;
+	bool vector_connected = false;
+	k_spinlock_key_t key;
+
+	if (ctrlr->num_vectors == 0U) {
+		return -EINVAL;
+	}
 
 	qpair->ctrlr = ctrlr;
 	qpair->id = id;
-	qpair->vector = qpair->id;
+	qpair->vector = (uint16_t)(qpair->id % ctrlr->num_vectors);
 
 	qpair->num_cmds = 0;
 	qpair->num_intr_handler_calls = 0;
@@ -508,12 +528,32 @@ int nvme_cmd_qpair_setup(struct nvme_cmd_qpair *qpair,
 	qpair->cq_hdbl_off = nvme_mmio_offsetof(doorbell) +
 		(qpair->id << (ctrlr->dstrd + 1)) + (1 << ctrlr->dstrd);
 
-	if (!pcie_msi_vector_connect(nvme_ctrlr_cfg->pcie->bdf,
-				     &ctrlr->vectors[qpair->vector],
-				     nvme_cmd_qpair_msi_handler, qpair, 0)) {
-		LOG_ERR("Failed to connect MSI-X vector %u", qpair->id);
-		return -EIO;
+	key = k_spin_lock(&ctrlr->qpair_lock);
+	for (other_qpair = ctrlr->qpair_list; other_qpair != NULL;
+	     other_qpair = other_qpair->next) {
+		if (other_qpair->vector == qpair->vector) {
+			vector_connected = true;
+			break;
+		}
+
 	}
+	k_spin_unlock(&ctrlr->qpair_lock, key);
+
+	if (!vector_connected) {
+		if (!pcie_msi_vector_connect(nvme_ctrlr_cfg->pcie->bdf,
+					     &ctrlr->vectors[qpair->vector],
+					     nvme_cmd_qpair_msi_handler, qpair, 0)) {
+			LOG_ERR("Failed to connect MSI-X vector %u", qpair->vector);
+
+			return -EIO;
+		}
+
+	}
+
+	key = k_spin_lock(&ctrlr->qpair_lock);
+	qpair->next = ctrlr->qpair_list;
+	ctrlr->qpair_list = qpair;
+	k_spin_unlock(&ctrlr->qpair_lock, key);
 
 	LOG_DBG("CMD Qpair created ID %u, %u entries - cmd/cpl addr "
 		"0x%lx/0x%lx - sq/cq offsets %u/%u",
