@@ -1320,13 +1320,13 @@ static int ifx_cat1_i2c_recover_bus(const struct device *dev)
 	k_sem_take(&data->operation_sem, K_FOREVER);
 
 	/* Set up the scl and sda pins for the i2c bus */
-	error = gpio_pin_configure_dt(&config->scl, GPIO_OUTPUT | GPIO_OPEN_DRAIN);
+	error = gpio_pin_configure_dt(&config->scl, GPIO_INPUT | GPIO_OUTPUT | GPIO_OPEN_DRAIN);
 	if (error != 0) {
 		LOG_ERR("failed to configure SCL GPIO (err %d)", error);
 		goto restore;
 	}
 
-	error = gpio_pin_configure_dt(&config->sda, GPIO_OUTPUT | GPIO_OPEN_DRAIN);
+	error = gpio_pin_configure_dt(&config->sda, GPIO_INPUT | GPIO_OUTPUT | GPIO_OPEN_DRAIN);
 	if (error != 0) {
 		LOG_ERR("failed to configure SDA GPIO (err %d)", error);
 		goto restore;
