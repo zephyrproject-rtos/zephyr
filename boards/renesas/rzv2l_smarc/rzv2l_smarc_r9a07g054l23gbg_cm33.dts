@@ -21,6 +21,10 @@
 		zephyr,shell-uart = &scif2;
 	};
 
+	aliases {
+		i2c-0 = &i2c3;
+	};
+
 	ddr: memory@60010000 {
 		compatible = "mmio-sram";
 		reg = <0x60010000 DT_SIZE_M(46)>;
