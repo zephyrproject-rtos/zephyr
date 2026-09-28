@@ -24,11 +24,17 @@ Everything host-side is provisioned by the sidecar, declared in
   ``{addrN}``/``{ctrlN}`` placeholders expand to controller N's address
   and TCP endpoint.
 
+The ``separate_peer`` scenario runs the same exchange against a
+peripheral that is another application, ``acl_peer`` next to this one.
+The scenario lists it under ``required_applications`` and names it as the
+``image`` of its second device. With ``controller_option`` empty, both
+devices are given their controller by the test, as ``--bt-dev={ctrlN}``.
+
 Run it with:
 
 .. code-block:: shell
 
-   ./scripts/twister -p native_sim -T tests/bluetooth/classic/bumble/acl_conn
+   ./scripts/twister -p native_sim -T tests/bluetooth/classic/bumble
 
 Bumble must be importable by the Python interpreter running twister
 (``pip install bumble``); otherwise the test is built but not run.
