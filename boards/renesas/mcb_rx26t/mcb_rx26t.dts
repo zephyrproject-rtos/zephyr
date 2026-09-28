@@ -50,6 +50,7 @@
 		led1 = &led2;
 		led2 = &led3;
 		led3 = &led4;
+		i2c-0 = &i2c0;
 	};
 };
 
