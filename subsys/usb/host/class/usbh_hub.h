@@ -34,6 +34,7 @@ struct usbh_hub_data {
 	const struct usb_ep_descriptor *int_ep;
 	struct uhc_transfer *interrupt_transfer;
 	struct k_work hub_work;
+	struct k_work_delayable rh_status_work;
 	struct k_mutex lock;
 	union {
 		struct usb_hub_descriptor hub_desc;
