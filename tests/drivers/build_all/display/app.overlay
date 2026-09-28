@@ -12,6 +12,7 @@
 
 #include <zephyr/dt-bindings/led/led.h>
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+#include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 #include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
@@ -728,6 +729,27 @@
 					de-active = <1>;
 					pixelclk-active = <0>;
 				};
+			};
+
+			test_adv7535: adv7535@b {
+				reg = <0>;
+				compatible = "adi,adv7535";
+				i2c = <&test_i2c>;
+				i2c-addr = <0x39>;
+				data-lanes = <2>;
+				pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
+				pd-gpios = <&test_gpio 0 GPIO_ACTIVE_HIGH>;
+				int-gpios = <&test_gpio 0 GPIO_ACTIVE_LOW>;
+				status = "okay";
+
+				hactive = <640>;
+				hsync = <96>;
+				hfp = <16>;
+				hbp = <48>;
+				vactive = <480>;
+				vsync = <2>;
+				vfp = <10>;
+				vbp = <33>;
 			};
 		};
 
