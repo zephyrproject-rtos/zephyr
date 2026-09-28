@@ -43,7 +43,7 @@ config EEPROM_AT2X
 	  EEPROMs.
 
 config EEPROM_AT2X_EMUL
-	bool "Emulate an Atmel AT24 I2C chip"
+	bool "Atmel AT24 I2C EEPROM emulator driver"
 	depends on EMUL
 	help
 	  This is an emulator for the Atmel AT24 series of I2C-attached EEPROMs.
@@ -52,7 +52,7 @@ config EEPROM_AT2X_EMUL
 	  is given by the 'size' property. See the binding for further details.
 
 config EEPROM_AT24
-	bool "I2C EEPROMs compatible with Atmel's AT24 family"
+	bool "Atmel AT24 (and compatibles) I2C EEPROM driver"
 	default y
 	depends on DT_HAS_ATMEL_AT24_ENABLED
 	select I2C
@@ -68,7 +68,7 @@ config EEPROM_AT24
 	  - ST M24xxx
 
 config EEPROM_AT25
-	bool "SPI EEPROMs compatible with Atmel's AT25 family"
+	bool "Atmel AT25 (and compatibles) SPI EEPROM driver"
 	default y
 	depends on DT_HAS_ATMEL_AT25_ENABLED
 	select SPI
