@@ -51,12 +51,13 @@
 #define INIT_UART1    NULL
 
 /* Host I/O space addresses for default set of peripherals mapped by eSPI */
-#define ESPI_XEC_KBC_HOST_ADDR      0x60U
-#define ESPI_XEC_FKBC_HOST_ADDR     0x92U
-#define ESPI_XEC_UART_HOST_ADDR     0x3F0U
-#define ESPI_XEC_PORT80_HOST_ADDR   0x80U
-#define ESPI_XEC_PORT81_HOST_ADDR   0x81U
-#define ESPI_XEC_ACPI_EC0_HOST_ADDR 0x62U
+#define ESPI_XEC_KBC_HOST_ADDR          0x60U
+#define ESPI_XEC_FKBC_HOST_ADDR         0x92U
+#define ESPI_XEC_UART_HOST_ADDR         0x3F0U
+#define ESPI_XEC_PORT80_HOST_ADDR       0x80U
+#define ESPI_XEC_PORT81_HOST_ADDR       0x81U
+#define ESPI_XEC_PORT80_ALIAS_HOST_ADDR 0x90U
+#define ESPI_XEC_ACPI_EC0_HOST_ADDR     0x62U
 
 /* Espi peripheral has 3 uart ports */
 #define ESPI_PERIPHERAL_UART_PORT0 0
@@ -1383,15 +1384,32 @@ static int eacpi_shm_wr_req(const struct device *dev, enum lpc_peripheral_opcode
 #define XEC_PBD_SNAP_SHOT_OFS   0x10cu
 #define XEC_PBD_LD_CFG_OFS      0x330u
 #define XEC_PBD_LD_CFG_ACTV_POS 0
+/* Alias logical device: 8-bit Host I/O location mapped to one Port 80 byte lane */
+#define XEC_PBD_ALIAS_LANE_OFS  0x3f0u
+#define XEC_PBD_ALIAS_LANE_MSK  GENMASK(1, 0)
+
+#define XEC_P80BD0_ALIAS_NODE DT_NODELABEL(p80bd0_alias)
 
 struct xec_p80bd_config {
 	uintptr_t regbase;
 	uint32_t ecia_info;
+#if DT_NODE_HAS_STATUS_OKAY(XEC_P80BD0_ALIAS_NODE)
+	uintptr_t alias_regbase;
+	uint16_t alias_host_io_addr;
+	uint8_t alias_lane;
+#endif
 };
 
 static const struct xec_p80bd_config xec_p80bd0_cfg = {
 	.regbase = DT_REG_ADDR(DT_NODELABEL(p80bd0)),
 	.ecia_info = DT_PROP_BY_IDX(DT_NODELABEL(p80bd0), girqs, 0),
+#if DT_NODE_HAS_STATUS_OKAY(XEC_P80BD0_ALIAS_NODE)
+	.alias_regbase = DT_REG_ADDR(XEC_P80BD0_ALIAS_NODE),
+	.alias_host_io_addr =
+		DT_PROP_OR(XEC_P80BD0_ALIAS_NODE, host_io, ESPI_XEC_PORT80_ALIAS_HOST_ADDR),
+	.alias_lane = DT_PROP_OR(XEC_P80BD0_ALIAS_NODE, host_io_addr_mask, 0) &
+		      XEC_PBD_ALIAS_LANE_MSK,
+#endif
 };
 
 /*
@@ -1541,6 +1559,20 @@ static int init_p80bd0(const struct device *dev)
 
 	soc_set_bit8(p80rb + XEC_PBD_LD_CFG_OFS, XEC_PBD_LD_CFG_ACTV_POS);
 	soc_set_bit8(p80rb + XEC_PBD_IER_OFS, XEC_PBD_IER_FTHR_POS);
+
+#if DT_NODE_HAS_STATUS_OKAY(XEC_P80BD0_ALIAS_NODE)
+	/* Host writes to the alias I/O address are captured in the byte lane selected by
+	 * host-io-addr-mask. The alias needs its own ACTIVATE and the Port 80 base
+	 * ACTIVATE, which is set above.
+	 */
+	mm_reg_t p80arb = xec_p80bd0_cfg.alias_regbase;
+
+	bar_val = MCHP_ESPI_IO_BAR_HOST_ADDR_SET(xec_p80bd0_cfg.alias_host_io_addr);
+	cfgregs->IOHBAR[IOB_P80BD_ALIAS] = (bar_val | MCHP_ESPI_IO_BAR_HOST_VALID);
+
+	sys_write8(xec_p80bd0_cfg.alias_lane, p80arb + XEC_PBD_ALIAS_LANE_OFS);
+	soc_set_bit8(p80arb + XEC_PBD_LD_CFG_OFS, XEC_PBD_LD_CFG_ACTV_POS);
+#endif
 
 	return 0;
 }
