@@ -44,7 +44,7 @@ static int mpipe_sink_query(struct mpipe_pad *pad, struct mpipe_dispatch *query)
 	}
 }
 
-int mpipe_sink_event(struct mpipe_pad *pad, struct mpipe_dispatch *event)
+static int mpipe_sink_event(struct mpipe_pad *pad, struct mpipe_dispatch *event)
 {
 	__ASSERT_NO_MSG(pad != NULL);
 	__ASSERT_NO_MSG(event != NULL);

@@ -89,7 +89,7 @@
 #include <zephyr/mpipe/mpipe_structure.h>
 #include <zephyr/mpipe/mpipe_transform.h>
 #include <zephyr/mpipe/mpipe_value.h>
-#if CONFIG_MPIPE_RPC
+#if defined(CONFIG_MPIPE_RPC)
 #include <zephyr/mpipe/mpipe_transform_client.h>
 #endif
 
