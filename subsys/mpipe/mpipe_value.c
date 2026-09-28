@@ -46,11 +46,7 @@ bool mpipe_value_is_primitive(const struct mpipe_value *value)
 static void mpipe_value_set_range(struct mpipe_value *value, enum mpipe_value_type type,
 				  va_list *args)
 {
-	/*
-	 * Reading an argument as a type it was not passed as is undefined, so
-	 * the two range types are read apart even though the bounds share a
-	 * union: a signed range is passed as int, an unsigned one as uint32_t.
-	 */
+	/* A signed range is passed as int, an unsigned one as uint32_t */
 	if (type == MPIPE_TYPE_INT_RANGE) {
 		value->range.min.v_int = va_arg(*args, int);
 		value->range.max.v_int = va_arg(*args, int);
@@ -71,7 +67,6 @@ int mpipe_value_set_va_list(struct mpipe_value *value, enum mpipe_value_type typ
 	/* Any integer type narrower than int arrives as int through the variadic argument list */
 	switch (type) {
 	case MPIPE_TYPE_BOOLEAN:
-		/* A bool was promoted to int so it has to be narrowed here */
 		value->v_boolean = (va_arg(*args, int) != 0);
 		break;
 	case MPIPE_TYPE_INT:
@@ -236,21 +231,17 @@ int mpipe_value_intersect(const struct mpipe_value *val1, const struct mpipe_val
 	const struct mpipe_value *ref_val, *compare_val;
 
 	__ASSERT_NO_MSG(out != NULL);
-
-	/* Only a pair of types the mask allows can have a common value */
 	__ASSERT_NO_MSG(val1 != NULL);
 	__ASSERT_NO_MSG(val2 != NULL);
 
+	/* Only a pair of types the mask allows can have a common value */
 	if (!IN_RANGE(val1->type, MPIPE_TYPE_NONE, MPIPE_TYPE_COUNT - 1) ||
 	    !IN_RANGE(val2->type, MPIPE_TYPE_NONE, MPIPE_TYPE_COUNT - 1) ||
 	    (mpipe_value_intersect_mask[val1->type] & BIT(val2->type)) == 0) {
 		return -ENOENT;
 	}
 
-	/*
-	 * A container type always has a higher ordinal than the scalar type
-	 * it can contain, so the greater of the two is the one to dispatch on.
-	 */
+	/* A range type has a higher ordinal than the scalar it can contain */
 	if (val1->type >= val2->type) {
 		ref_val = val1;
 		compare_val = val2;

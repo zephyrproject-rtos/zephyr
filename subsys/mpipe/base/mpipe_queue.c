@@ -16,18 +16,10 @@
 
 LOG_MODULE_REGISTER(mpipe_queue, CONFIG_MPIPE_LOG_LEVEL);
 
-/*
- * Static EOS sentinel enqueued into the buffer queue to signal end-of-stream.
- * The queue thread recognizes this pointer and propagates EOS downstream only
- * after all preceding buffers have been processed.
- */
+/* Enqueued to signal end of stream once the buffers ahead of it are pushed */
 static uint8_t eos_sentinel;
 
-/*
- * Static pause sentinel enqueued into the buffer queue to unblock the thread
- * from k_msgq_get() when transitioning to paused. The thread does not process
- * this value - it simply exits from k_msgq_get() to return to mpipe_thread_wait().
- */
+/* Enqueued to unblock k_msgq_get() on pause; the thread skips it */
 static uint8_t pause_sentinel;
 
 static int mpipe_queue_get_property(struct mpipe_object *obj, uint32_t id, void *val)
@@ -88,12 +80,7 @@ static int mpipe_queue_chain_fn(struct mpipe_pad *pad, struct net_buf *in_buf,
 	struct mpipe_queue *queue = (struct mpipe_queue *)pad->object.container;
 	int ret;
 
-	/*
-	 * If the queue is flushing (teardown to READY), drop the buffer instead
-	 * of enqueuing it. This keeps a producer that was just released from a
-	 * blocking k_msgq_put() from re-blocking, and prevents a late buffer from
-	 * leaking into an already-drained queue (e.g. behind a tee).
-	 */
+	/* Flushing on teardown: drop, so a released producer does not block again */
 	if (atomic_get(&queue->flushing) != 0) {
 		net_buf_unref(in_buf);
 		*out_buf = NULL;
@@ -105,23 +92,14 @@ static int mpipe_queue_chain_fn(struct mpipe_pad *pad, struct net_buf *in_buf,
 	if (queue->leak == MPIPE_BASE_QUEUE_LEAK_NONE) {
 		ret = k_msgq_put(&queue->msgq, &in_buf, K_FOREVER);
 		if (ret != 0) {
-			/*
-			 * A non-zero return here means the put was interrupted
-			 * (e.g. the queue was purged/started flushing). Drop the
-			 * buffer and report success so the release path unwinds
-			 * cleanly without error spam.
-			 */
+			/* Only a purge fails a K_FOREVER put: drop the buffer, not the stream */
 			net_buf_unref(in_buf);
 		}
 
 		return 0;
 	}
 
-	/*
-	 * Leaking: the configured size is the bound, not the msgq capacity,
-	 * whose two spare slots belong to the sentinels. The consumer may
-	 * dequeue concurrently, which costs at most one needless drop.
-	 */
+	/* Leaking bounds at size: the two spare msgq slots belong to the sentinels */
 	if (queue->leak == MPIPE_BASE_QUEUE_LEAK_NEWEST &&
 	    k_msgq_num_used_get(&queue->msgq) >= queue->size) {
 		net_buf_unref(in_buf);
@@ -168,7 +146,7 @@ static int mpipe_queue_sink_event_fn(struct mpipe_pad *pad, struct mpipe_dispatc
 
 		ret = k_msgq_put(&queue->msgq, &eos_ptr, K_FOREVER);
 		if (ret != 0) {
-			/* Interrupted by a flush; treat as consumed. */
+			/* Only a purge fails a K_FOREVER put; treat the EOS as consumed */
 			return 0;
 		}
 
@@ -229,11 +207,7 @@ static void mpipe_queue_thread_func(void *p1, void *p2, void *p3)
 
 				LOG_ERR("Failed to send EOS event downstream (%d)", ret);
 
-				/*
-				 * No sink downstream of this queue will post the
-				 * end of stream now, and the application is
-				 * waiting for that or an error.
-				 */
+				/* No sink behind this queue will post EOS now: report an error */
 				(void)mpipe_message_post(&msg);
 			}
 			continue;
@@ -253,14 +227,9 @@ static int mpipe_queue_change_state(struct mpipe_element *element,
 
 	switch (transition) {
 	case MPIPE_STATE_CHANGE_READY_TO_PAUSED:
-		/*
-		 * Apply the configured size: the queue is drained and no thread
-		 * runs, so the msgq can be re-initialized in place. Two slots on
-		 * top of the size hold the EOS and pause sentinels.
-		 */
+		/* Apply the configured size; two extra slots hold the sentinels */
 		k_msgq_init(&queue->msgq, queue->msgq_buffer, sizeof(void *), queue->size + 2);
 
-		/* Not flushing while active: accept incoming buffers. */
 		atomic_set(&queue->flushing, 0);
 		if (mpipe_thread_create(&queue->thread, mpipe_queue_thread_func, queue, NULL, NULL,
 					queue->thread.priority, K_FOREVER) == NULL) {
@@ -273,28 +242,17 @@ static int mpipe_queue_change_state(struct mpipe_element *element,
 		mpipe_thread_resume(&queue->thread);
 		break;
 	case MPIPE_STATE_CHANGE_PLAYING_TO_PAUSED:
-		/*
-		 * Mark the thread as paused, then inject a pause sentinel to
-		 * unblock k_msgq_get(). The thread will see the sentinel and
-		 * will continue the loop to block in wait().
-		 */
+		/* The pause sentinel unblocks k_msgq_get(); the thread then parks in wait() */
 		mpipe_thread_pause(&queue->thread);
 		k_msgq_put(&queue->msgq, &pause_ptr, K_NO_WAIT);
 		break;
 	case MPIPE_STATE_CHANGE_PAUSED_TO_READY:
 		struct net_buf *buffer;
 
-		/*
-		 * Enter flushing before joining. Any producer blocked in this
-		 * queue's k_msgq_put() is released once the drain below frees a
-		 * slot; the flushing flag then makes its (and any subsequent)
-		 * chain_fn drop the buffer instead of re-enqueuing or leaking it.
-		 */
+		/* Flush before joining: a producer the drain releases drops its buffer */
 		atomic_set(&queue->flushing, 1);
 		mpipe_thread_join(&queue->thread, K_FOREVER);
 
-		/* Drain any remaining buffers from the message queue */
-		LOG_DBG("Draining remaining buffers");
 		while (k_msgq_get(&queue->msgq, &buffer, K_NO_WAIT) == 0) {
 			if (buffer != (void *)&eos_sentinel && buffer != (void *)&pause_sentinel) {
 				net_buf_unref(buffer);
@@ -305,11 +263,6 @@ static int mpipe_queue_change_state(struct mpipe_element *element,
 		break;
 	}
 
-	/*
-	 * Chain to the base transform change_state. Among other things it resets
-	 * the negotiated pad caps back to the template caps on PAUSED_TO_READY so
-	 * a subsequent re-negotiation starts fresh.
-	 */
 	return mpipe_transform_change_state(element, transition);
 }
 

@@ -88,12 +88,7 @@ static int mpipe_transform_enum_caps(struct mpipe_transform *self,
 	return -ENOENT;
 }
 
-/*
- * Transform the peer's answer back to this pad's side and narrow it by the
- * candidate the attempt started from. The answer may map back to several
- * capabilities, so they are walked and the first that still contains the
- * candidate wins.
- */
+/* Map the peer's answer back to this side and narrow it by the candidate */
 static int mpipe_transform_narrow_to_candidate(struct mpipe_transform *self,
 					       struct mpipe_pad *this_pad,
 					       const struct mpipe_structure *answer,
@@ -117,12 +112,7 @@ static int mpipe_transform_narrow_to_candidate(struct mpipe_transform *self,
 	}
 }
 
-/*
- * Offer one transformation of a candidate to the peer on the other side and
- * keep what comes back when the peer accepts it. Reports -ENODATA when the peer
- * refuses it or its answer does not lead back to the candidate, which is the
- * caller's cue to offer the next transformation.
- */
+/* Offer one transformation to the peer; -ENODATA says try the next one */
 static int mpipe_transform_offer(struct mpipe_transform *self, struct mpipe_pad *this_pad,
 				 struct mpipe_pad *other_pad,
 				 const struct mpipe_structure *candidate,
@@ -136,11 +126,6 @@ static int mpipe_transform_offer(struct mpipe_transform *self, struct mpipe_pad 
 
 	ret = mpipe_pad_query(other_pad->peer, query);
 	if (ret < 0) {
-		/*
-		 * Capabilities are offered one at a time, so a peer refusing one
-		 * of them is an ordinary step of the negotiation and not a
-		 * failure. The source reports the error if none is accepted.
-		 */
 		LOG_DBG("element id = %u: peer refused the transformed caps",
 			self->element.object.id);
 		return -ENODATA;
@@ -155,21 +140,11 @@ static int mpipe_transform_offer(struct mpipe_transform *self, struct mpipe_pad 
 		return ret;
 	}
 
-	/*
-	 * Keep the peer's answer at other_pad: the caps event needs it to narrow
-	 * the transformations of the fixated capability back down. Published only
-	 * now that the attempt has succeeded, so a refused candidate leaves the
-	 * pad as it found it.
-	 */
+	/* Keep the peer's answer at other_pad: the caps event narrows against it */
 	return mpipe_pad_set_caps(other_pad, query->caps);
 }
 
-/*
- * Offer one of this pad's capabilities across the element. The element may map
- * it to several capabilities on the other side, so those are offered to the
- * peer one at a time as well. Reports -ENODATA when this candidate leads
- * nowhere, which is the caller's cue to offer the next one.
- */
+/* Offer one candidate through each of its transformations; -ENODATA says try the next */
 static int mpipe_transform_try_candidate(struct mpipe_transform *self, struct mpipe_pad *this_pad,
 					 struct mpipe_pad *other_pad,
 					 const struct mpipe_structure *candidate,
@@ -220,10 +195,7 @@ static inline int mpipe_transform_query_caps(struct mpipe_transform *self,
 		return -EINVAL;
 	}
 
-	/*
-	 * Keep a copy of the incoming filter: offering a candidate to the peer
-	 * reuses the query and overwrites its caps.
-	 */
+	/* Offering a candidate overwrites the query's caps, so keep the filter */
 	filter = *query->caps;
 
 	for (uint32_t index = 0;; index++) {
@@ -233,10 +205,7 @@ static inline int mpipe_transform_query_caps(struct mpipe_transform *self,
 		}
 
 		if (ret == -ENOENT) {
-			/*
-			 * Same distinction as mpipe_src_negotiate(): an element with no capability
-			 * at all cannot answer any query, which is a caller error.
-			 */
+			/* No capability at all is a caller error, not a failed negotiation */
 			ret = (index == 0) ? -EINVAL : -ENODATA;
 			break;
 		}
@@ -316,12 +285,7 @@ static int mpipe_transform_query(struct mpipe_pad *pad, struct mpipe_dispatch *q
 	}
 }
 
-/*
- * Cross a fixed capability over to the other pad at caps event time. A
- * transformation unfixes it again, so every transformation is narrowed by the
- * peer's answer kept at other_pad during the caps query and the first that
- * survives is fixated.
- */
+/* Cross a fixed capability to the other pad, narrowed by the answer kept there */
 static int mpipe_transform_cross_caps(struct mpipe_transform *self, struct mpipe_pad *other_pad,
 				      const struct mpipe_structure *in, struct mpipe_structure *out)
 {
@@ -370,20 +334,12 @@ static int mpipe_transform_event(struct mpipe_pad *pad, struct mpipe_dispatch *e
 		other_pad = (pad->direction == MPIPE_PAD_SINK) ? &transform->src_pad
 							       : &transform->sink_pad;
 
-		/*
-		 * A caps event carries a fixed format. One carrying none, or one
-		 * that constrains nothing, means the source could not fixate,
-		 * and there is nothing to cross over.
-		 */
+		/* A caps event carries a fixed format; none means the source could not fixate */
 		if (event->caps == NULL || mpipe_structure_is_any(event->caps)) {
 			return -EINVAL;
 		}
 
-		/*
-		 * Take a copy: the event's own capability is replaced below with
-		 * what crosses to the other side, but this side still has to be
-		 * applied afterwards.
-		 */
+		/* Copy: the event's capability is replaced by what crosses over */
 		incoming = *event->caps;
 
 		ret = mpipe_transform_cross_caps(transform, other_pad, &incoming, &fixated);
@@ -394,11 +350,7 @@ static int mpipe_transform_event(struct mpipe_pad *pad, struct mpipe_dispatch *e
 		*event->caps = fixated;
 		ret = mpipe_pad_send_event(other_pad->peer, event);
 
-		/*
-		 * Apply this side only once the peer has accepted, and only then
-		 * the other side: a caps_filter drops itself out of the graph from
-		 * set_caps(), so the event must already have been forwarded.
-		 */
+		/* Apply after forwarding: set_caps() may unlink the element */
 		if (ret == 0) {
 			ret = transform->set_caps(transform, pad->direction, &incoming);
 		}
@@ -421,11 +373,7 @@ int mpipe_transform_change_state(struct mpipe_element *self, enum mpipe_state_ch
 	case MPIPE_STATE_CHANGE_PAUSED_TO_READY:
 		mpipe_element_reset_pad_caps(self);
 
-		/*
-		 * The transform started the pool it draws from - its own or an
-		 * adopted proposal - so it stops it here; otherwise the pool
-		 * stays started across runs and can never be reconfigured.
-		 */
+		/* Stop the pool this element started, or it cannot be reconfigured next run */
 		if (transform->out_pool != NULL) {
 			(void)mpipe_buffer_pool_stop(transform->out_pool);
 		}
