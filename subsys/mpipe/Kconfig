@@ -102,6 +102,12 @@ config MPIPE_NET_BUF_POOL_COUNT
 	  Number of net_buf buffers in the pool shared by every pipeline: the
 	  sum of the buffers each pipeline can have in flight at once.
 
+config MPIPE_ELEMENT_NAME
+	bool
+	help
+	  Keep a name on every element for the debugging tools that print one.
+	  Selected by those tools, not meant to be set by hand.
+
 config MPIPE_BIN_MAX_CHILDREN
 	int "Maximum number of elements in a bin/pipeline"
 	range 2 64

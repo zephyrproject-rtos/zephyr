@@ -66,6 +66,7 @@ endif # MPIPE_PLAYER
 
 config MPIPE_DUMP
 	bool "Pipeline topology dump"
+	select MPIPE_ELEMENT_NAME
 	help
 	  Render a bin as a Graphviz graph for debugging: every element with
 	  its state and pads, the peer of each pad and the capability
