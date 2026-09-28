@@ -539,9 +539,9 @@
 			clocks = <&rcc STM32_CLOCK(APB2, 12)>,
 				 <&rcc STM32_SRC_PLL1_Q SPI1_SEL(0)>;
 			interrupts = <58 0>;
-			dmas = <&gpdma1 1 51
+			dmas = <&gpdma1 51
 				(STM32_DMA_PERIPH_RX | STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)
-				&gpdma1 0 52
+				&gpdma1 52
 				(STM32_DMA_PERIPH_TX | STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 			dma-names = "rx", "tx";
 			status = "disabled";
@@ -569,9 +569,9 @@
 			clocks = <&rcc STM32_CLOCK(APB1, 14)>,
 				 <&rcc STM32_SRC_PLL1_Q SPI23_SEL(0)>;
 			interrupts = <59 0>;
-			dmas = <&gpdma1 1 53
+			dmas = <&gpdma1 53
 				(STM32_DMA_PERIPH_RX | STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)
-				&gpdma1 0 54
+				&gpdma1 54
 				(STM32_DMA_PERIPH_TX | STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 			dma-names = "rx", "tx";
 			status = "disabled";
@@ -599,9 +599,9 @@
 			clocks = <&rcc STM32_CLOCK(APB1, 15)>,
 				 <&rcc STM32_SRC_PLL1_Q SPI23_SEL(0)>;
 			interrupts = <60 0>;
-			dmas = <&gpdma1 1 55
+			dmas = <&gpdma1 55
 				(STM32_DMA_PERIPH_RX | STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)
-				&gpdma1 0 56
+				&gpdma1 56
 				(STM32_DMA_PERIPH_TX | STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 			dma-names = "rx", "tx";
 			status = "disabled";
@@ -653,9 +653,9 @@
 			reg = <0x58001400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB4, 5)>;
 			interrupts = <63 0>;
-			dmas = <&gpdma1 1 61
+			dmas = <&gpdma1 61
 				(STM32_DMA_PERIPH_RX | STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)
-				&gpdma1 0 62
+				&gpdma1 62
 				(STM32_DMA_PERIPH_TX | STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 			dma-names = "rx", "tx";
 			status = "disabled";
@@ -1192,7 +1192,7 @@
 
 		gpdma1: dma@40021000 {
 			compatible = "st,stm32u5-dma";
-			#dma-cells = <3>;
+			#dma-cells = <2>;
 			reg = <0x40021000 0x1000>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 4)>;
 			interrupts = <39 0>, <40 0>, <41 0>, <42 0>, <43 0>, <44 0>, <45 0>, <46 0>,
@@ -1205,7 +1205,7 @@
 
 		hpdma1: dma@52000000 {
 			compatible = "st,stm32u5-dma";
-			#dma-cells = <3>;
+			#dma-cells = <2>;
 			reg = <0x52000000 0x1000>;
 			clocks = <&rcc STM32_CLOCK(AHB5, 0)>;
 			interrupts = <64 0>, <65 0>, <66 0>, <67 0>,
@@ -1230,7 +1230,7 @@
 
 			sai1_a: sai1a@42005804 {
 				reg = <0x42005804 0x20>;
-				dmas = <&gpdma1 1 63 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				dmas = <&gpdma1 63 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
@@ -1238,7 +1238,7 @@
 
 			sai1_b: sai1b@42005824 {
 				reg = <0x42005824 0x20>;
-				dmas = <&gpdma1 0 64 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				dmas = <&gpdma1 64 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
@@ -1258,7 +1258,7 @@
 
 			sai2_a: sai2a@42005c04 {
 				reg = <0x42005c04 0x20>;
-				dmas = <&gpdma1 1 65 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				dmas = <&gpdma1 65 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
@@ -1266,7 +1266,7 @@
 
 			sai2_b: sai2b@42005c24 {
 				reg = <0x42005c24 0x20>;
-				dmas = <&gpdma1 0 66 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				dmas = <&gpdma1 66 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
