@@ -15,8 +15,11 @@ tests:
       - nrf52840dk/nrf52840
       - nrf52833dk/nrf52833
       - tlsr9518adk80d
+      - nucleo_wba55cg
     integration_platforms:
       - nrf52840dk/nrf52840
+    extra_args:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
   sample.net.openthread.coprocessor.usb:
     build_only: true
     platform_allow:
@@ -34,6 +37,18 @@ tests:
       - nrf52840dk/nrf52840
       - nrf52833dk/nrf52833
       - tlsr9518adk80d
+      - nucleo_wba55cg
     integration_platforms:
       - nrf52840dk/nrf52840
-    extra_args: EXTRA_CONF_FILE=overlay-rcp.conf
+    extra_args:
+      - EXTRA_CONF_FILE=overlay-rcp.conf
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+  sample.net.openthread.coprocessor.debug:
+    build_only: true
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52833dk/nrf52833
+      - tlsr9518adk80d
+    integration_platforms:
+      - nrf52840dk/nrf52840
+    extra_args: EXTRA_CONF_FILE=debug.conf
