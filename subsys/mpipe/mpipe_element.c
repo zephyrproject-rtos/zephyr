@@ -221,7 +221,7 @@ int mpipe_element_init(struct mpipe_element *self, uint8_t id)
 	mpipe_object_init(&self->object);
 	self->object.id = id;
 
-	IF_ENABLED(CONFIG_MPIPE_DUMP, (self->name = NULL;))
+	IF_ENABLED(CONFIG_MPIPE_ELEMENT_NAME, (self->name = NULL;))
 
 	sys_dlist_init(&self->src_pads);
 	sys_dlist_init(&self->sink_pads);
