@@ -209,12 +209,12 @@ static int nvme_controller_setup_io_queues(const struct device *dev)
 
 	for (idx = 0; idx < nvme_ctrlr->num_io_queues; idx++) {
 		io_qpair = &nvme_ctrlr->ioq[idx];
+		nvme_cmd_qpair_reset(io_qpair);
+
 		if (nvme_cmd_qpair_setup(io_qpair, nvme_ctrlr, idx+1) != 0) {
 			LOG_ERR("IO cmd qpair %u setup failed", idx+1);
 			return -EIO;
 		}
-
-		nvme_cmd_qpair_reset(io_qpair);
 
 		nvme_cpl_status_poll_init(&status);
 
@@ -323,9 +323,7 @@ static void nvme_controller_gather_info(const struct device *dev)
 static int nvme_controller_pcie_configure(const struct device *dev)
 {
 	const struct nvme_controller_config *nvme_ctrlr_cfg = dev->config;
-	struct nvme_controller *nvme_ctrlr = dev->data;
 	struct pcie_bar mbar_regs;
-	uint8_t n_vectors;
 
 	if (nvme_ctrlr_cfg->pcie->bdf == PCIE_BDF_NONE) {
 		LOG_ERR("Controller not found");
@@ -348,20 +346,26 @@ static int nvme_controller_pcie_configure(const struct device *dev)
 	device_map(DEVICE_MMIO_RAM_PTR(dev), mbar_regs.phys_addr,
 		   mbar_regs.size, K_MEM_CACHE_NONE);
 
-	/* Allocating vectors */
-	n_vectors = pcie_msi_vectors_allocate(nvme_ctrlr_cfg->pcie->bdf,
-					      CONFIG_NVME_INT_PRIORITY,
-					      nvme_ctrlr->vectors,
-					      NVME_PCIE_MSIX_VECTORS);
-	if (n_vectors == 0) {
-		LOG_ERR("Could not allocate %u MSI-X vectors",
-			NVME_PCIE_MSIX_VECTORS);
-		return -EIO;
+	return 0;
+}
+
+static int nvme_controller_setup_vectors(const struct device *dev)
+{
+	const struct nvme_controller_config *cfg = dev->config;
+	struct nvme_controller *ctrlr = dev->data;
+
+	/* A failed initialization may leave vectors mapped and their ISRs connected. */
+	if (ctrlr->num_vectors == 0U) {
+		ctrlr->num_vectors =
+			pcie_msi_vectors_allocate(cfg->pcie->bdf, CONFIG_NVME_INT_PRIORITY,
+						  ctrlr->vectors, NVME_PCIE_MSIX_VECTORS);
+		if (ctrlr->num_vectors == 0U) {
+			LOG_ERR("Could not allocate %u MSI-X vectors", NVME_PCIE_MSIX_VECTORS);
+			return -EIO;
+		}
 	}
 
-	/* Enabling MSI-X and the vectors */
-	if (!pcie_msi_enable(nvme_ctrlr_cfg->pcie->bdf,
-			     nvme_ctrlr->vectors, n_vectors, 0)) {
+	if (!pcie_msi_enable(cfg->pcie->bdf, ctrlr->vectors, ctrlr->num_vectors, 0)) {
 		LOG_ERR("Could not enable MSI-X");
 		return -EIO;
 	}
@@ -373,9 +377,13 @@ static int nvme_controller_identify(struct nvme_controller *nvme_ctrlr)
 {
 	struct nvme_completion_poll_status status =
 		NVME_CPL_STATUS_POLL_INIT(status);
+	int ret;
 
-	nvme_ctrlr_cmd_identify_controller(nvme_ctrlr,
-					   nvme_completion_poll_cb, &status);
+	ret = nvme_ctrlr_cmd_identify_controller(nvme_ctrlr, nvme_completion_poll_cb, &status);
+	if (ret != 0) {
+		return ret;
+	}
+
 	nvme_completion_poll(&status);
 	if (nvme_cpl_status_is_error(&status)) {
 		LOG_ERR("Could not identify the controller");
@@ -420,9 +428,8 @@ static int nvme_controller_init(const struct device *dev)
 	struct nvme_controller *nvme_ctrlr = dev->data;
 	int ret;
 
+	nvme_cmd_quiesce(nvme_ctrlr);
 	k_mutex_init(&nvme_ctrlr->lock);
-
-	nvme_cmd_init();
 
 	nvme_ctrlr->dev = dev;
 
@@ -439,30 +446,43 @@ static int nvme_controller_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = nvme_controller_setup_admin_queues(dev);
+	ret = nvme_controller_setup_vectors(dev);
 	if (ret != 0) {
 		return ret;
+	}
+
+	ret = nvme_controller_setup_admin_queues(dev);
+	if (ret != 0) {
+		goto disable_controller;
 	}
 
 	ret = nvme_controller_enable(dev);
 	if (ret != 0) {
 		LOG_ERR("Controller cannot be enabled");
-		return ret;
+		goto disable_controller;
 	}
 
 	ret = nvme_controller_setup_io_queues(dev);
 	if (ret != 0) {
-		return ret;
+		goto disable_controller;
 	}
 
 	ret = nvme_controller_identify(nvme_ctrlr);
 	if (ret != 0) {
-		return ret;
+		goto disable_controller;
 	}
 
 	nvme_controller_setup_namespaces(nvme_ctrlr);
 
 	return 0;
+
+disable_controller:
+	nvme_cmd_quiesce(nvme_ctrlr);
+	if (nvme_controller_disable(dev) != 0) {
+		LOG_ERR("Failed to disable controller after initialization error");
+	}
+
+	return ret;
 }
 
 #define NVME_CONTROLLER_DEVICE_INIT(n)					\
