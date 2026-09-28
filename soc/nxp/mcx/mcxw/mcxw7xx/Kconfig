@@ -35,3 +35,25 @@ config NXP_MCXW7XX_BOOT_HEADER
 	help
 	  Create data structures required by the boot ROM to boot the
 	  application from flash.
+
+# DT_COMPAT_NXP_MCXW7X_CLOCK := nxp,mcxw7x-clock
+
+# config CLOCK_CONTROL_NXP_MCXW7X_OSC32K_DISABLED
+# 	bool
+# 	default $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_MCXW7X_CLOCK),osc32k-mode,0)
+# 	depends on CLOCK_CONTROL_NXP_MCXW7X
+# 	help
+# 	  Set when the 32 kHz crystal oscillator is disabled in devicetree
+# 	  (osc32k-mode = MCXW_CLK_OSC32K_DISABLE). Read-only, mirrors DT.
+
+# DT_COMPAT_NXP_MCXW7X_CLOCK := nxp,mcxw7x-clock
+
+config CLOCK_CONTROL_NXP_MCXW7X_OSC32K_DISABLED
+	bool
+	default $(dt_compat_any_has_prop,nxp,mcxw7x-clock,osc32k-mode) = 0
+	depends on CLOCK_CONTROL_NXP_MCXW7X
+	help
+	  Set when the 32 kHz crystal oscillator is disabled in devicetree
+	  (osc32k-mode = MCXW_CLK_OSC32K_DISABLE). Read-only, mirrors DT.
+
+
