@@ -886,7 +886,7 @@ static void get_send_ctx_data(struct isotp_send_ctx *sctx, uint8_t *buf, size_t 
 static void pull_send_ctx_data(struct isotp_send_ctx *sctx, size_t len)
 {
 	if (sctx->is_net_buf) {
-		net_buf_pull_mem(sctx->buf, len);
+		sctx->buf = net_buf_skip(sctx->buf, len);
 	} else {
 		sctx->data += len;
 		sctx->len -= len;
