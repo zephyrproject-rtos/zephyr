@@ -21,6 +21,10 @@ family:
       cpuclusters:
       - name: cm7
       - name: cm4
+    - name: mimxrt1175
+      cpuclusters:
+      - name: cm7
+      - name: cm4
     - name: mimxrt1176
       cpuclusters:
       - name: cm7
@@ -112,6 +116,9 @@ runners:
         - mimxrt1166/cm7
         - mimxrt1166/cm4
       - qualifiers:
+        - mimxrt1175/cm7
+        - mimxrt1175/cm4
+      - qualifiers:
         - mimxrt1176/cm7
         - mimxrt1176/cm4
       - qualifiers:
@@ -163,6 +170,9 @@ runners:
       - qualifiers:
         - mimxrt1166/cm7
         - mimxrt1166/cm4
+      - qualifiers:
+        - mimxrt1175/cm7
+        - mimxrt1175/cm4
       - qualifiers:
         - mimxrt1176/cm7
         - mimxrt1176/cm4
