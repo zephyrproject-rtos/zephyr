@@ -189,6 +189,19 @@ static bool modem_cellular_apn_change_allowed(enum modem_cellular_state st)
 	}
 }
 
+/* States whose only chat use is the periodic script, which rearms on a busy chat */
+static bool modem_cellular_neighbor_scan_allowed(enum modem_cellular_state st)
+{
+	switch (st) {
+	case MODEM_CELLULAR_STATE_AWAIT_DIAL:
+	case MODEM_CELLULAR_STATE_AWAIT_REGISTERED:
+	case MODEM_CELLULAR_STATE_REGISTERED:
+		return true;
+	default:
+		return false;
+	}
+}
+
 static bool modem_cellular_has_network_script(const struct modem_cellular_config *config)
 {
 	return config->vendor->scripts.network != NULL;
@@ -259,6 +272,26 @@ static void modem_cellular_invalidate_network_status(struct modem_cellular_data 
 	k_mutex_lock(&data->api_lock, K_FOREVER);
 	data->network_status_valid = false;
 	k_mutex_unlock(&data->api_lock);
+}
+
+void modem_cellular_add_neighbor_cell(struct modem_cellular_data *data,
+				      const struct cellular_neighbor_cell *cell)
+{
+	struct cellular_neighbor_cell *cells;
+
+	/* Runs on the modem work queue, writing into the buffer of the thread
+	 * blocked in modem_cellular_scan_neighbor_cells().
+	 */
+	cells = atomic_ptr_get(&data->neighbor_cells);
+	if (cells == NULL) {
+		return;
+	}
+
+	if (data->neighbor_cell_count < data->neighbor_cell_capacity) {
+		cells[data->neighbor_cell_count] = *cell;
+	}
+
+	data->neighbor_cell_count++;
 }
 
 static void modem_cellular_emit_modem_info(struct modem_cellular_data *data,
@@ -2870,6 +2903,54 @@ static int modem_cellular_get_network_status(const struct device *dev,
 	return ret;
 }
 
+static int modem_cellular_scan_neighbor_cells(const struct device *dev,
+					      struct cellular_neighbor_cell *cells, uint8_t *count)
+{
+	const struct modem_cellular_config *config = dev->config;
+	struct modem_cellular_data *data = dev->data;
+	int ret;
+
+	if (config->vendor->scripts.neighbor_scan == NULL) {
+		return -ENOSYS;
+	}
+
+	if (cells == NULL || count == NULL || *count == 0) {
+		return -EINVAL;
+	}
+
+	if (!modem_cellular_neighbor_scan_allowed(data->state)) {
+		return -ENETDOWN;
+	}
+
+	/* Claiming the buffer slot admits one measurement. Not api_lock: the
+	 * measurement's own serving cell callback takes that on the modem work queue,
+	 * which would deadlock against a caller waiting here.
+	 */
+	if (!atomic_ptr_cas(&data->neighbor_cells, NULL, cells)) {
+		LOG_WRN("neighbour cell measurement already in progress");
+		return -EBUSY;
+	}
+
+	data->neighbor_cell_count = 0;
+	data->neighbor_cell_capacity = *count;
+
+	ret = modem_chat_run_script(&data->chat, config->vendor->scripts.neighbor_scan);
+	if (ret == -EBUSY) {
+		LOG_WRN("neighbour cell measurement busy, modem is mid-command");
+	} else if (ret < 0) {
+		LOG_ERR("neighbour cell measurement failed (%d)", ret);
+	} else {
+		LOG_DBG("neighbour cell measurement complete (%u cells)",
+			data->neighbor_cell_count);
+		*count = data->neighbor_cell_count;
+	}
+
+	data->neighbor_cell_capacity = 0;
+	atomic_ptr_clear(&data->neighbor_cells);
+
+	return ret;
+}
+
 static int modem_cellular_set_apn(const struct device *dev, const char *apn)
 {
 	struct modem_cellular_data *data = dev->data;
@@ -2975,6 +3056,7 @@ DEVICE_API(cellular, modem_cellular_api) = {
 	.get_modem_info = modem_cellular_get_modem_info,
 	.get_registration_status = modem_cellular_get_registration_status,
 	.get_network_status = modem_cellular_get_network_status,
+	.scan_neighbor_cells = modem_cellular_scan_neighbor_cells,
 	.set_apn = modem_cellular_set_apn,
 	.set_callback = modem_cellular_set_callback,
 	IF_ENABLED(CONFIG_MODEM_CELLULAR_STATS, (.get_stats = modem_cellular_get_stats,))
