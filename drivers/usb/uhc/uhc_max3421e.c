@@ -171,6 +171,21 @@ static ALWAYS_INLINE int max3421e_hien_disable(const struct device *dev,
 	return max3421e_write_byte(dev, MAX3421E_REG_HIEN, priv->hien);
 }
 
+/* Write MODE register if the value differs from the cached one */
+static ALWAYS_INLINE int max3421e_mode_update(const struct device *dev,
+					      const uint8_t mode)
+{
+	struct max3421e_data *priv = uhc_get_private(dev);
+
+	if (mode == priv->mode) {
+		return 0;
+	}
+
+	priv->mode = mode;
+
+	return max3421e_write_byte(dev, MAX3421E_REG_MODE, priv->mode);
+}
+
 /* Set peripheral (device) address to be used in next transfer */
 static ALWAYS_INLINE int max3421e_peraddr(const struct device *dev,
 					  const uint8_t addr)
@@ -558,6 +573,8 @@ static void max3421e_handle_condet(const struct device *dev)
 	struct max3421e_data *priv = uhc_get_private(dev);
 	const uint8_t jk = priv->hrsl & MAX3421E_JKSTATUS_MASK;
 	enum uhc_event_type type = UHC_EVT_ERROR;
+	uint8_t mode = priv->mode;
+	int err;
 
 	if (atomic_test_bit(&priv->state, MAX3421E_STATE_BUS_RESET)) {
 		/* NOTE: Resetting the bus triggers a spurious condet event */
@@ -568,23 +585,43 @@ static void max3421e_handle_condet(const struct device *dev)
 	 * JSTATUS:KSTATUS 0:0 - SE0
 	 * JSTATUS:KSTATUS 0:1 - K   (Resume)
 	 * JSTATUS:KSTATUS 1:0 - J   (Idle)
+	 *
+	 * The meaning of J/K depends on the current LOWSPEED bit (AN3785,
+	 * "JSTATUS, KSTATUS"). J is the idle state of a device at the current
+	 * speed, K the idle state of a device at the other speed, in which
+	 * case LOWSPEED is toggled.
+	 *
+	 * Frame markers (SOF or keep-alive) are generated only while a device
+	 * is connected. Without a device, each frame marker is reported as a
+	 * disconnect.
 	 */
 	if (jk == 0) {
 		/* Device disconnected */
+		mode &= ~MAX3421E_SOFKAENAB;
 		type = UHC_EVT_DEV_REMOVED;
 	}
 
 	if (jk == MAX3421E_JSTATUS) {
 		/* Device connected */
-		type = UHC_EVT_DEV_CONNECTED_FS;
+		mode |= MAX3421E_SOFKAENAB;
+		type = (mode & MAX3421E_LOWSPEED) != 0U ?
+		       UHC_EVT_DEV_CONNECTED_LS : UHC_EVT_DEV_CONNECTED_FS;
 	}
 
 	if (jk == MAX3421E_KSTATUS) {
 		/* Device connected */
-		type = UHC_EVT_DEV_CONNECTED_LS;
+		mode ^= MAX3421E_LOWSPEED;
+		mode |= MAX3421E_SOFKAENAB;
+		type = (mode & MAX3421E_LOWSPEED) != 0U ?
+		       UHC_EVT_DEV_CONNECTED_LS : UHC_EVT_DEV_CONNECTED_FS;
 	}
 
-	uhc_submit_event(dev, type, 0);
+	err = max3421e_mode_update(dev, mode);
+	if (unlikely(err)) {
+		type = UHC_EVT_ERROR;
+	}
+
+	uhc_submit_event(dev, type, err);
 }
 
 static void max3421e_bus_event(const struct device *dev)
