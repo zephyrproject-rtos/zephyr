@@ -509,6 +509,11 @@ release_desc:
 	}
 
 	if (!pkt) {
+		/*
+		 * A frame was consumed but dropped. Schedule RX processing again
+		 * so HAL_ETH_ReadData() can rebuild and re-arm the descriptors.
+		 */
+		k_sem_give(&dev_data->rx_int_sem);
 		goto out;
 	}
 
