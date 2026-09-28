@@ -279,11 +279,11 @@ int mpipe_value_intersect(const struct mpipe_value *val1, const struct mpipe_val
 			  struct mpipe_value *out);
 
 /**
- * @brief Check if a value is of a primitive type
+ * @brief Check if a value holds a single boolean or integer rather than a range
  *
  * @param value Pointer to the value to check.
  *
- * @return true if the value is primitive, false otherwise or if @p value is NULL
+ * @return true for a boolean, integer or unsigned integer, false for a range
  */
 bool mpipe_value_is_primitive(const struct mpipe_value *value);
 

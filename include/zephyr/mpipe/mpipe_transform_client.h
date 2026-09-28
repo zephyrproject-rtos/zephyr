@@ -34,17 +34,18 @@ struct mpipe_transform_client {
 	/**
 	 * @brief Initialize RPC communication on the client side
 	 *
-	 * @return 0 on success, an errno on failure
+	 * @return 0 on success, a negative errno on failure
 	 */
 	int (*init_rpc)(void);
 	/**
 	 * @brief RPC chain function for processing buffers on the server side
 	 *
 	 * @param in_buf Address of the input buffer to be processed
-	 * @param in_sz Input buffer size
-	 * @param[out] out_buf Address of the processed output buffer
-	 * @param out_sz Output buffer size
-	 * @return 0 on success, an errno on failure
+	 * @param in_sz Number of valid bytes in the input buffer
+	 * @param out_buf Address of the output buffer to fill
+	 * @param[out] out_sz Number of bytes written to the output buffer
+	 *
+	 * @return 0 on success, a negative errno on failure
 	 */
 	int (*chain_fn_rpc)(uint32_t in_buf, uint32_t in_sz, uint32_t out_buf, uint32_t *out_sz);
 };
