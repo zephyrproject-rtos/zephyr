@@ -29,7 +29,7 @@ struct i2c_wch_config {
 	const struct device *clk_dev;
 	I2C_TypeDef *regs;
 	uint32_t bitrate;
-	uint8_t clk_id;
+	uint32_t clk_id;
 };
 
 struct i2c_wch_data {

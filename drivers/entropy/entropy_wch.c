@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(entropy, CONFIG_ENTROPY_LOG_LEVEL);
 struct entropy_wch_config {
 	RNG_TypeDef *regs;
 	const struct device *clk_dev;
-	uint8_t clk_id;
+	uint32_t clk_id;
 };
 
 static inline uint32_t entropy_wch_get_u32(const struct device *dev)

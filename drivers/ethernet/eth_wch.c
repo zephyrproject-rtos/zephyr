@@ -42,9 +42,9 @@ struct eth_wch_config {
 	const struct device *clk_dev;
 	const struct device *clk_tx_dev;
 	const struct device *clk_rx_dev;
-	uint8_t clk_id;
-	uint8_t clk_tx_id;
-	uint8_t clk_rx_id;
+	uint32_t clk_id;
+	uint32_t clk_tx_id;
+	uint32_t clk_rx_id;
 
 	struct net_eth_mac_config mac_cfg;
 	const char *connection_type;

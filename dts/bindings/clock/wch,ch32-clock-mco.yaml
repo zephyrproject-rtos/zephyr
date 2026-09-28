@@ -1,0 +1,33 @@
+#
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  CH32 Microcontroller Clock Output (MCO)
+
+  Used to output a clock signal from the MCU to a GPIO pin.
+
+  Example:
+      &mco {
+              source = "sysclk";
+              pinctrl-0 = <&rcc_mco_pa8>;
+              pinctrl-names = "default";
+              status = "okay";
+      };
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  clocks:
+    required: true
+
+  source:
+    type: string
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

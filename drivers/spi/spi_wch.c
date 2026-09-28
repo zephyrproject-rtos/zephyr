@@ -26,7 +26,7 @@ struct spi_wch_config {
 	SPI_TypeDef *regs;
 	const struct pinctrl_dev_config *pin_cfg;
 	const struct device *clk_dev;
-	uint8_t clock_id;
+	uint32_t clock_id;
 };
 
 struct spi_wch_data {

@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_CH32V20X_30X_PINCTRL_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_CH32V20X_30X_PINCTRL_H_
 
+/** @cond INTERNAL_HIDDEN */
+
 #define CH32V20X_V30X_PINMUX_PORT_PA 0
 #define CH32V20X_V30X_PINMUX_PORT_PB 1
 #define CH32V20X_V30X_PINMUX_PORT_PC 2
@@ -17,6 +19,8 @@
  * Defines the starting bit for the remap field.
  */
 #define CH32V20X_V30X_PINMUX_SPI1_RM    0
+/** @brief MCO remap function */
+#define CH32V20X_V30X_PINMUX_MCO_RM     0
 #define CH32V20X_V30X_PINMUX_I2C1_RM    1
 #define CH32V20X_V30X_PINMUX_USART1_RM  2
 #define CH32V20X_V30X_PINMUX_USART2_RM  3
@@ -69,6 +73,8 @@
 	 (pin << CH32V20X_V30X_PINCTRL_PIN_SHIFT) |                                                \
 	 (CH32V20X_V30X_PINMUX_##rm##_RM << CH32V20X_V30X_PINCTRL_RM_BASE_SHIFT) |                 \
 	 (remapping << CH32V20X_V30X_PINCTRL_RM_SHIFT))
+
+/** @endcond */
 
 /* Pin swaps.
  * Warning: Some of those do not apply to all packages.
@@ -346,5 +352,8 @@
 #define TIM10_CH3N_PA14_0 CH32V20X_V30X_PINMUX_DEFINE(PA, 14, TIM10, 0) /**< TIM10_CH3N on PA14 */
 #define TIM10_CH3N_PA7_1  CH32V20X_V30X_PINMUX_DEFINE(PA, 7, TIM10, 1)  /**< TIM10_CH3N on PA7 */
 #define TIM10_CH3N_PE5_2  CH32V20X_V30X_PINMUX_DEFINE(PE, 5, TIM10, 2)  /**< TIM10_CH3N on PE5 */
+
+/** @brief MCO pinmux for pin PA8 */
+#define MCO_PA8_0 CH32V20X_V30X_PINMUX_DEFINE(PA, 8, MCO, 0)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_CH32V20X_30X_PINCTRL_H_ */

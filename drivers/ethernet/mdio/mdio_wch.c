@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(mdio_wch, CONFIG_MDIO_LOG_LEVEL);
 struct mdio_wch_config {
 	ETH_TypeDef *regs;
 	const struct device *clk_dev;
-	uint8_t clk_id;
+	uint32_t clk_id;
 	const struct pinctrl_dev_config *pin_cfg;
 };
 
