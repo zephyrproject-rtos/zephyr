@@ -1,0 +1,21 @@
+#
+# SPDX-FileCopyrightText: 2026 Aesc Silicon
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: Aesc Silicon PRNG (Pseudo-Random Number Generator)
+
+description: |
+  The PRNG IP core is a 32-bit Galois LFSR with maximum-period taps
+  (x^32 + x^30 + x^26 + x^25 + 1) that advances once per clock cycle while
+  enabled. It does not provide true entropy and must not be used as a source
+  for cryptographic keys.
+
+compatible: "aesc,prng"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
