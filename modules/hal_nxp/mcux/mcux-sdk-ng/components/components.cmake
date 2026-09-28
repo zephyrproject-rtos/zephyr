@@ -74,6 +74,10 @@ if(CONFIG_NXP_RF_IMU AND CONFIG_SOC_SERIES_MCXW7XX)
   zephyr_compile_definitions(HAL_RPMSG_SELECT_ROLE=0U)
 endif()
 
+if(CONFIG_NXP_FLASH_IPED)
+  zephyr_compile_definitions(CONFIG_FLASH_IPED=1)
+endif()
+
 add_subdirectory(${MCUX_SDK_NG_DIR}/components/osa
   ${CMAKE_CURRENT_BINARY_DIR}/osa
   )
