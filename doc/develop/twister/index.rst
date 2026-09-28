@@ -1291,8 +1291,11 @@ passed take it. A Python exception in the controllers, which they log in
 ``bumble-controllers.log`` in the build directory and survive, or controllers
 that exit before the test ends make the test, and each case that passed, an
 error whatever the devices reported.
+
 ``{addrN}`` and ``{ctrlN}`` placeholders in the device argument strings expand
-to controller N's Bluetooth device address and TCP endpoint. Bumble must be
+to controller N's Bluetooth device address and TCP endpoint. A guest with
+another HCI driver names its option with ``controller_option``; an empty string
+adds nothing, for a test that passes ``{ctrlN}`` itself. Bumble must be
 importable by the Python interpreter running Twister; otherwise the test is
 built but not run:
 
