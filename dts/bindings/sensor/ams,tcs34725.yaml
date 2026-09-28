@@ -1,0 +1,51 @@
+# Copyright (c) 2026 Dotcom IoT LLP
+# SPDX-License-Identifier: Apache-2.0
+
+description: TCS34725 color sensor
+
+compatible: "ams,tcs34725"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  gain:
+    type: int
+    default: 0
+    description: |
+      RGBC analog gain (AGAIN) setting.
+      0 = 1x, 1 = 4x, 2 = 16x, 3 = 60x
+      The default corresponds to the power-on reset value of the CONTROL
+      register (1x gain). This is the most conservative setting to avoid
+      ADC saturation; increase gain explicitly for low-light conditions.
+    enum: [0, 1, 2, 3]
+
+  atime:
+    type: int
+    default: 0xFF
+    description: |
+      RGBC integration time register (ATIME).
+      Integration time (ms) = 2.4 * (256 - ATIME)
+      The default corresponds to the power-on reset value (2.4 ms,
+      shortest integration time). Decrease this value to increase
+      integration time and improve sensitivity in low-light conditions.
+
+  wtime:
+    type: int
+    default: 0xFF
+    description: |
+      Wait time register (WTIME). Only used if wait-enable is set.
+      Wait time (ms) = 2.4 * (256 - WTIME), or x12 if wlong is set.
+      The default corresponds to the power-on reset value (shortest
+      wait, 2.4 ms). Decrease this value to insert a longer wait
+      between conversion cycles to reduce average power consumption.
+
+  wlong:
+    type: boolean
+    description: |
+      Extend wait cycles by 12x.
+
+  wait-enable:
+    type: boolean
+    description: |
+      Enable the Wait state between RGBC conversion cycles to reduce
+      average power consumption.
