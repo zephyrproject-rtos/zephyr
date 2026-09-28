@@ -118,13 +118,14 @@ int mpipe_bin_set_bus_validator(struct mpipe_bin *bin, zbus_validator bus_valida
  * The function accepts a variable number of elements, terminated by NULL.
  *
  * Adding an element leaves its pads alone, so elements may be added before or
- * after they are linked.
+ * after they are linked. The elements before a refused one stay added.
  *
  * @param bin Pointer to the @ref mpipe_bin to add elements to
  * @param element First @ref mpipe_element to add
  * @param ... Additional mpipe_element pointers, terminated by NULL
  *
  * @retval 0 Success.
+ * @retval -EBUSY An element is already in a bin
  * @retval -EEXIST An element has the id of one already in the bin
  * @retval -ENOSPC The bin already holds @kconfig{CONFIG_MPIPE_BIN_MAX_CHILDREN} elements
  */
