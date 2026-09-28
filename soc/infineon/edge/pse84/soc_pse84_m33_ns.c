@@ -233,6 +233,28 @@ static void pse84_srf_relay_start(void)
 #endif /* CONFIG_PSOC_EDGE_M55_SRF_SUPPORT */
 
 /* -------------------------------------------------------------------------- */
+/* CM55 start (no SRF)                                                        */
+/* -------------------------------------------------------------------------- */
+
+#if defined(CONFIG_SOC_PSE84_M55_START_FROM_NS)
+
+#define CM55_BOOT_WAIT_TIME_USEC (10U)
+
+static void pse84_enable_cm55(void)
+{
+	uint32_t cm55_start_address = DT_REG_ADDR(DT_NODELABEL(m55_xip));
+
+#if CONFIG_BOOTLOADER_MCUBOOT
+	/* Skip the MCUboot header to reach the vector table. */
+	cm55_start_address += CONFIG_ROM_START_OFFSET;
+#endif
+
+	Cy_SysEnableCM55(MXCM55, cm55_start_address, CM55_BOOT_WAIT_TIME_USEC);
+}
+
+#endif /* CONFIG_SOC_PSE84_M55_START_FROM_NS */
+
+/* -------------------------------------------------------------------------- */
 /* SoC init hooks                                                             */
 /* -------------------------------------------------------------------------- */
 
@@ -260,5 +282,7 @@ void soc_late_init_hook(void)
 {
 #if defined(CONFIG_PSOC_EDGE_M55_SRF_SUPPORT)
 	pse84_srf_relay_start();
+#elif defined(CONFIG_SOC_PSE84_M55_START_FROM_NS)
+	pse84_enable_cm55();
 #endif
 }

@@ -40,10 +40,27 @@ config PSOC_EDGE_M55_SRF_SUPPORT
 
 if SOC_SERIES_PSE84_M33
 
+config SOC_PSE84_M55_START_FROM_NS
+	bool "Start the M55 core from the non-secure M33 application"
+	depends on !PSOC_EDGE_M55_SRF_SUPPORT
+	help
+	  Start the M55 core from the non-secure M33 application
+	  (soc_late_init_hook), pointing it at the m55_xip partition.
+	  Used with the three image boot flow (M33_s -> M33_ns -> M55).
+
 config SOC_PSE84_M55_ENABLE
 	bool "pse84 m55 core is enabled during setup"
 	help
 	  This option enables the m55 core on pse84, by m33 core.
+
+config SOC_PSE84_S_JUMP_TO_NS
+	bool "Secure M33 opens the system and jumps to the non-secure M33 app"
+	depends on TRUSTED_EXECUTION_SECURE
+	select USE_INFINEON_SMIF
+	help
+	  The secure CM33 image opens up the system (SAU/MPC/PPC, power
+	  domains, SOCMEM, SMIF) and then jumps to the non-secure CM33
+	  application located in the m33_xip partition.
 
 endif # SOC_SERIES_PSE84_M33
 

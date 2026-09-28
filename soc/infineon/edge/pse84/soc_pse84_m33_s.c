@@ -95,7 +95,9 @@ void soc_late_init_hook(void)
 	/* SAU Init */
 	cy_sau_init();
 
-#if defined(CONFIG_SOC_PSE84_M55_ENABLE)
+#if defined(CONFIG_SOC_PSE84_S_JUMP_TO_NS)
+	ifx_pse84_ns_startup();
+#elif defined(CONFIG_SOC_PSE84_M55_ENABLE)
 	ifx_pse84_cm55_startup();
 #endif
 }

@@ -13,7 +13,7 @@
 #include "pse84_s_sau.h"
 #include <cy_pdl.h>
 
-#if defined(CONFIG_SOC_PSE84_M55_ENABLE)
+#if defined(CONFIG_SOC_PSE84_M55_ENABLE) || defined(CONFIG_SOC_PSE84_S_JUMP_TO_NS)
 #include <partition_ARMCM33.h>
 #include <zephyr/drivers/timer/system_timer.h>
 
@@ -22,6 +22,12 @@
 #include "pse84_s_mpc.h"
 
 #define CM55_BOOT_WAIT_TIME_USEC (10U)
+#endif
 
+#if defined(CONFIG_SOC_PSE84_M55_ENABLE)
 void ifx_pse84_cm55_startup(void);
+#endif
+
+#if defined(CONFIG_SOC_PSE84_S_JUMP_TO_NS)
+void ifx_pse84_ns_startup(void);
 #endif

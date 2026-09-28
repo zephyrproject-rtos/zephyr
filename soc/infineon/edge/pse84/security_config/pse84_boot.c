@@ -7,8 +7,8 @@
 
 #include "pse84_boot.h"
 
-#if defined(CONFIG_SOC_PSE84_M55_ENABLE)
-void ifx_pse84_cm55_startup(void)
+#if defined(CONFIG_SOC_PSE84_M55_ENABLE) || defined(CONFIG_SOC_PSE84_S_JUMP_TO_NS)
+static void ifx_pse84_open_system(void)
 {
 	/* Setup System Control Block */
 	SysCtrlBlk_Setup();
@@ -42,12 +42,10 @@ void ifx_pse84_cm55_startup(void)
 
 	/* Clear SYSCPU and APPCPU power domain dependency set by boot code */
 	cy_pd_pdcm_clear_dependency(CY_PD_PDCM_APPCPU, CY_PD_PDCM_SYSCPU);
+}
 
-	uint32_t cm55_start_address = DT_REG_ADDR(DT_NODELABEL(m55_xip));
-
-	/* Enable CM55 */
-	Cy_SysEnableCM55(MXCM55, cm55_start_address, CM55_BOOT_WAIT_TIME_USEC);
-
+static void ifx_pse84_config_ns_protection(void)
+{
 	/* System Domain Idle Power Mode Configuration */
 	Cy_SysPm_SetDeepSleepMode(CY_SYSPM_MODE_DEEPSLEEP);
 
@@ -57,12 +55,43 @@ void ifx_pse84_cm55_startup(void)
 	/* Configure Peripheral Protection Controller for Non-Secure */
 	cy_ppc0_init();
 	cy_ppc1_init();
+}
+#endif /* CONFIG_SOC_PSE84_M55_ENABLE || CONFIG_SOC_PSE84_S_JUMP_TO_NS */
 
-#ifdef CONFIG_CORTEX_M_SYSTICK
-	sys_clock_disable();
+#if defined(CONFIG_SOC_PSE84_M55_ENABLE)
+void ifx_pse84_cm55_startup(void)
+{
+	ifx_pse84_open_system();
+
+	uint32_t cm55_start_address = DT_REG_ADDR(DT_NODELABEL(m55_xip));
+
+	/* Enable CM55 */
+	Cy_SysEnableCM55(MXCM55, cm55_start_address, CM55_BOOT_WAIT_TIME_USEC);
+
+	ifx_pse84_config_ns_protection();
+}
 #endif
 
-	for (;;) {
-	}
+#if defined(CONFIG_SOC_PSE84_S_JUMP_TO_NS)
+/* Non-secure entry: calling through this pointer emits a BLXNS (secure->NS). */
+typedef void (*ifx_ns_funcptr_t)(void) __attribute__((cmse_nonsecure_call));
+
+void ifx_pse84_ns_startup(void)
+{
+	ifx_pse84_open_system();
+	ifx_pse84_config_ns_protection();
+
+	/* The non-secure application's vector table is at the start of m33_xip;
+	 * word 0 is the initial NS MSP, word 1 is the NS reset handler.
+	 */
+	uint32_t ns_vtor = DT_REG_ADDR(DT_NODELABEL(m33_xip));
+	uint32_t ns_msp = *((const uint32_t *)ns_vtor);
+	ifx_ns_funcptr_t ns_reset = (ifx_ns_funcptr_t)(*((const uint32_t *)(ns_vtor + 4U)));
+
+	SCB_NS->VTOR = ns_vtor;
+	__TZ_set_MSP_NS(ns_msp);
+
+	/* Jump to the non-secure CM33 application; does not return. */
+	ns_reset();
 }
 #endif
