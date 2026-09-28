@@ -8,7 +8,7 @@
 
 #include <zephyr/mpipe/base/mpipe_caps_filter.h>
 
-int mpipe_caps_filter_set_property(struct mpipe_object *obj, uint32_t key, const void *val)
+static int mpipe_caps_filter_set_property(struct mpipe_object *obj, uint32_t key, const void *val)
 {
 	struct mpipe_transform *transform = (struct mpipe_transform *)obj;
 	struct mpipe_caps_filter *filter = (struct mpipe_caps_filter *)obj;
@@ -24,7 +24,7 @@ int mpipe_caps_filter_set_property(struct mpipe_object *obj, uint32_t key, const
 	}
 }
 
-int mpipe_caps_filter_get_property(struct mpipe_object *obj, uint32_t key, void *val)
+static int mpipe_caps_filter_get_property(struct mpipe_object *obj, uint32_t key, void *val)
 {
 	struct mpipe_caps_filter *filter = (struct mpipe_caps_filter *)obj;
 
