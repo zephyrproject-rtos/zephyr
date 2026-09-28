@@ -13,7 +13,7 @@ Overview
 The Multimedia Pipeline subsystem (mpipe) builds a media stream out of
 self-contained processing components called **elements**. An application
 declares the elements it needs, links them into a graph, and drives that graph
-through a state machine; mpipe negotiates the data format between neighboring
+through a state machine. mpipe negotiates the data format between neighboring
 elements, settles the buffer configuration, and moves the buffers from one
 element to the next.
 
@@ -35,10 +35,9 @@ element to the next.
    }
 
 mpipe provides the pieces and the rules by which they fit together rather than
-finished solutions, so a pipeline is assembled much like building with LEGO
-bricks: the same graph runs on a different board by binding its elements to
-different devices, and a new requirement is usually one more element rather than
-a rewrite.
+finished solutions. The same graph runs on a different board by binding its
+elements to different devices, and a new requirement is usually one more element
+rather than a rewrite.
 
 The elements themselves live in **plugins**, grouped by media domain. A plugin
 is added on its own, with its own directory, Kconfig and headers, without
@@ -58,8 +57,8 @@ other.
 Building a pipeline
 *******************
 
-An application includes ``<zephyr/mpipe/mpipe.h>``, and only that, for the whole
-framework API; each element it instantiates adds that element's own header.
+An application includes ``<zephyr/mpipe/mpipe.h>`` for the pipeline API; each
+element it instantiates adds that element's own header.
 
 Elements are plain objects the application owns; mpipe allocates none of them.
 Each element type has its own init function taking that type and an id:
@@ -124,6 +123,9 @@ the graph to ``MPIPE_STATE_READY`` tears it down:
    if (mpipe_element_set_state((struct mpipe_element *)&pipe, MPIPE_STATE_PLAYING) != 0) {
            /* the element that refused is still in its previous state */
    }
+
+   const struct zbus_channel *chan;
+   struct mpipe_message msg;
 
    do {
            ret = zbus_sub_wait_msg(&main_sub, &chan, &msg, K_FOREVER);
@@ -193,11 +195,11 @@ that hierarchy:
   message channel.
 
 A :c:struct:`mpipe_pad` is where two elements meet. It carries a direction
-(source or sink), the peer it is linked to, the capability negotiated on it, and the
-callbacks the framework dispatches to: ``chain_fn`` receives a buffer,
-``query_fn`` answers a query, and ``event_fn`` handles an event. Linking two
-elements links a source pad to a sink pad, and every hop of the stream is one
-such pair.
+(source or sink), the peer it is linked to, and the capability negotiated on it.
+It also carries the callbacks the framework dispatches to: ``chain_fn`` receives
+a buffer, ``query_fn`` answers a query, and ``event_fn`` handles an event.
+Linking two elements links a source pad to a sink pad, and every hop of the
+stream is one such pair.
 
 The state machine
 *****************
@@ -261,20 +263,20 @@ the capability above covers every width from 16 to 1280 in steps of 2. Two
 capabilities intersect when they share a media type, have at least one field
 identifier in common, and every shared field has intersecting values. The result
 is the union of both: a shared field holds the intersected value, and a field
-only one side carries passes through unchanged, which is what lets a constraint
+only one side carries passes through unchanged. That is what lets a constraint
 travel down a chain of elements that do not themselves care about it. An *ANY*
-capability constrains nothing and intersects with anything - it is what a pad
-carries before it has negotiated - while an *empty* one carries no field and
-intersects with nothing.
+capability constrains nothing and intersects with anything; it is what a pad
+carries before it has negotiated. An *empty* one carries no field and intersects
+with nothing.
 
 The source drives the negotiation on ``READY`` to ``PAUSED``, in two passes:
 
 .. mermaid::
    :align: center
    :caption: Capability negotiation.
-   :alt: Sequence diagram showing a caps query travelling from the source pad
+   :alt: Sequence diagram showing a caps query traveling from the source pad
        through the transform's two pads to the sink and the answer coming back,
-       then the source fixating the format and a caps event travelling the same
+       then the source fixating the format and a caps event traveling the same
        path while each element applies it with set_caps.
 
    %%{init: {'themeVariables': {'fontSize': '18px'}, 'sequence': {'actorFontSize': 18, 'messageFontSize': 18, 'noteFontSize': 18}}}%%
@@ -318,12 +320,12 @@ what the whole chain has in common. If an element refuses, the source simply
 offers the next format it supports rather than failing the negotiation.
 
 A transform is the interesting case, because its two sides may speak different
-formats: a decoder takes one format in and produces another out. They need not -
-an element working in place rewrites the buffer where it lies, so the same format
-crosses it - but where they do differ, the ``transform_caps`` hook is what maps a
-capability from one side of the element to what the other side could then be. The
-query crosses the element through it in both directions: out to ask the
-downstream peer, and back to express the answer in terms of the input side again.
+formats: a decoder takes one format in and produces another out. An element
+working in place rewrites the buffer where it lies, so the same format crosses
+it. Where the two sides differ, the ``transform_caps`` hook maps a capability
+from one side of the element to the other. The query crosses the element through
+it in both directions: out to ask the downstream peer, and back to express the
+answer in terms of the input side again.
 
 The answer may still hold ranges, so the source **fixates** it - each range
 reduced to a single value - and announces the result downstream as a caps event.
@@ -333,8 +335,7 @@ hardware is actually configured.
 Because a pad holds one capability rather than a set, an element that supports
 several formats is walked by index: the framework asks it for capability 0, then
 1, and so on until it reports there are no more. An element whose formats come
-from a device answers each index by asking its driver, so nothing has to be
-materialized in advance.
+from a device answers each index by asking its driver.
 
 Buffer pool negotiation
 ***********************
@@ -346,7 +347,7 @@ that, immediately after the format is fixed and in the same transition:
 .. mermaid::
    :align: center
    :caption: Buffer pool negotiation.
-   :alt: Sequence diagram showing a buffer pool query travelling downstream to
+   :alt: Sequence diagram showing a buffer pool query traveling downstream to
        the sink, the sink proposing a pool or a config, and each element
        deciding and starting its own pool as the proposals come back upstream.
 
@@ -399,45 +400,34 @@ Buffer flow
 ***********
 
 **Buffer flow is zero-copy.** Each element that produces data owns a
-:c:struct:`mpipe_buffer_pool`, and a pool is a vtable - ``configure``,
-``set_config``, ``start``, ``stop``, ``acquire_buffer``, ``release_buffer`` -
-over whatever backs it. That
-indirection is what lets a plugin hand out the buffer its driver already owns
-rather than a copy of it, so a frame captured by a camera reaches the display
-without ever being moved. What travels between elements is a reference, not the
-pixels.
+:c:struct:`mpipe_buffer_pool`, a vtable (``configure``, ``set_config``,
+``start``, ``stop``, ``acquire_buffer``, ``release_buffer``) over whatever backs
+it. That indirection lets a plugin hand out the buffer its driver already owns
+rather than a copy of it, so a frame captured by a camera can reach the display
+without a copy. What travels between elements is a reference, not the pixels.
 
 Buffers are Zephyr :c:struct:`net_buf` allocations, with an
 :c:struct:`mpipe_buffer_meta` alongside carrying what the framework needs to
 know about one: the pool that owns it, how much of it is valid, a timestamp.
 
-:c:func:`mpipe_push_buffer` walks a buffer downstream: for each hop it takes the
-source pad's peer, checks that pad's flushing gate, calls its ``chain_fn``, and
-follows the buffer the element produced to the next element. A NULL output means
-the buffer was consumed and the walk stops. The chain function owns the buffer
-it is given and releases it even when it fails, so ownership never depends on
-the error path taken.
+:c:func:`mpipe_push_buffer` walks a buffer downstream, calling the ``chain_fn``
+of each element in turn and following the buffer it produced. A NULL output
+means the buffer was consumed and the walk stops. The chain function owns the
+buffer it is given and releases it even when it fails.
 
 Pipeline runtime
 ****************
 
 The pipeline's own thread drives the source: it acquires a buffer and pushes it
-downstream until the source reports the end of its data, at which point it sends
-an end-of-stream event downstream and pauses itself. A pipeline that needs two
+downstream until the source reports the end of its data. It then sends an
+end-of-stream event downstream and pauses itself. A pipeline that needs two
 parts of its graph to run on separate threads places a queue element between
 them.
 
-Tearing a running graph down is ordered carefully, and the order is what keeps
-it from losing data or deadlocking:
-
 * ``PLAYING`` to ``PAUSED`` only pauses the source thread. Whatever is queued is
-  preserved, so resuming continues without loss. This is a pause, not a
-  teardown.
-* ``PAUSED`` to ``READY`` raises a flushing gate on every pad *before* the
-  children dismantle their pools, so a buffer still in flight is dropped rather
-  than pushed into an element that has already been torn down. The streaming
-  thread is joined only *after* the children have drained, because a child still
-  holding that thread in a full queue would otherwise deadlock the join.
+  preserved, so resuming continues without loss.
+* ``PAUSED`` to ``READY`` tears the graph down: buffers still in flight are
+  dropped, the children stop their pools, and the streaming thread is joined.
 
 Messages travel to the application on the pipeline's message channel, a zbus
 channel reachable with :c:func:`mpipe_element_get_bus_chan`. A message carries
@@ -455,8 +445,8 @@ Writing an element
 ******************
 
 An element is written outside the framework and requires no change to it. It
-may embed one of the bases as its first member, calls that base's init with its
-own id, and overrides only the hooks it needs:
+may embed one of the bases as its first member. It calls that base's init with
+its own id and overrides only the hooks it needs:
 
 .. code-block:: c
 
@@ -505,11 +495,40 @@ The hooks, in the order a pipeline exercises them:
   produced, or NULL when it consumed it. A source has no chain function: the
   pipeline thread acquires buffers from its pool.
 
+Base elements
+*************
+
+The base plugin, :kconfig:option:`CONFIG_MPIPE_BASE`, holds the elements that
+belong to no media domain:
+
+* :c:struct:`mpipe_caps_filter` constrains the format negotiated on the link it
+  sits on.
+* :c:struct:`mpipe_tee` pushes each buffer to every branch of a graph.
+* :c:struct:`mpipe_queue` runs the elements downstream of it on a thread of its
+  own.
+* :c:struct:`mpipe_app_src` injects what the application pushes, as a source.
+* :c:struct:`mpipe_app_sink` hands what reaches it to the application, as a sink.
+
+Debugging
+*********
+
+:kconfig:option:`CONFIG_MPIPE_DUMP` renders a pipeline as a Graphviz graph with
+:c:func:`mpipe_dump_bin`: every element with its state and pads, the peer of
+each pad, and the capability negotiated on it.
+
+:kconfig:option:`CONFIG_MPIPE_PLAYER` adds a player that drives a pipeline
+through play, pause, stop and replay from a worker thread, with shell commands
+when the shell is enabled.
+
 Configuration Options
 *********************
 
 * :kconfig:option:`CONFIG_MPIPE` enables the framework. Each plugin has its own
   option and contributes its own Kconfig file.
+* :kconfig:option:`CONFIG_MPIPE_BASE` builds the base elements, each behind its
+  own option.
+* :kconfig:option:`CONFIG_MPIPE_DUMP` and :kconfig:option:`CONFIG_MPIPE_PLAYER`
+  build the debugging utilities.
 * :kconfig:option:`CONFIG_MPIPE_STRUCTURE_MAX_FIELDS` sizes one capability. Size
   it for the largest union of fields that can meet in one intersection, not for
   the number of fields an element sets.
@@ -532,3 +551,9 @@ API Reference
 *************
 
 .. doxygengroup:: mpipe_framework
+
+.. doxygengroup:: mpipe_base
+
+.. doxygengroup:: mpipe_dump
+
+.. doxygengroup:: mpipe_player
