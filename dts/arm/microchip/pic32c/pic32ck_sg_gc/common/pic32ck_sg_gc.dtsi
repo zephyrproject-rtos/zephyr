@@ -76,36 +76,29 @@
 				compatible = "microchip,pic32ck-sg-gc-pll";
 
 				pll0: pll0 {
-					compatible = "microchip,pic32ck-sg-gc-pllchild";
 					subsystem = <CLOCK_MCHP_PLL_ID_PLL0>;
 
 					pll0out0: pll0out0 {
-						compatible = "microchip,pic32ck-sg-gc-pll0out";
 						subsystem = <CLOCK_MCHP_PLL0_ID_OUT0>;
 					};
 
 					pll0out1: pll0out1 {
-						compatible = "microchip,pic32ck-sg-gc-pll0out";
 						subsystem = <CLOCK_MCHP_PLL0_ID_OUT1>;
 					};
 
 					pll0out2: pll0out2 {
-						compatible = "microchip,pic32ck-sg-gc-pll0out";
 						subsystem = <CLOCK_MCHP_PLL0_ID_OUT2>;
 					};
 
 					pll0out3: pll0out3 {
-						compatible = "microchip,pic32ck-sg-gc-pll0out";
 						subsystem = <CLOCK_MCHP_PLL0_ID_OUT3>;
 					};
 
 					pll0out4: pll0out4 {
-						compatible = "microchip,pic32ck-sg-gc-pll0out";
 						subsystem = <CLOCK_MCHP_PLL0_ID_OUT4>;
 					};
 
 					pll0out5: pll0out5 {
-						compatible = "microchip,pic32ck-sg-gc-pll0out";
 						subsystem = <CLOCK_MCHP_PLL0_ID_OUT5>;
 					};
 				};

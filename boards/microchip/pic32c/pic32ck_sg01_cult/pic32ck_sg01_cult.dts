@@ -147,8 +147,6 @@
 		compatible = "microchip,pic32ck-sg-gc-pll";
 
 		pll0: pll0 {
-			compatible = "microchip,pic32ck-sg-gc-pllchild";
-
 			subsystem = <CLOCK_MCHP_PLL_ID_PLL0>;
 			pll-enable = <1>;
 			pll-on-demand-en = <0>;
