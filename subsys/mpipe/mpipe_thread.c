@@ -12,7 +12,7 @@
 static K_THREAD_STACK_ARRAY_DEFINE(mpipe_thread_stacks, CONFIG_MPIPE_THREADS_NUM,
 				   CONFIG_MPIPE_THREAD_STACK_SIZE);
 
-static bool mpipe_thread_stack_pool[CONFIG_MPIPE_THREADS_NUM];
+static ATOMIC_DEFINE(mpipe_thread_stack_pool, CONFIG_MPIPE_THREADS_NUM);
 
 k_tid_t mpipe_thread_create(struct mpipe_thread *thread, k_thread_entry_t func, void *p1, void *p2,
 			    void *p3, int priority, k_timeout_t delay)
@@ -22,9 +22,9 @@ k_tid_t mpipe_thread_create(struct mpipe_thread *thread, k_thread_entry_t func, 
 	char name[CONFIG_THREAD_MAX_NAME_LEN];
 #endif
 
-	/* Find the 1st available slot in the thread pool */
+	/* Claim the first free stack; the test-and-set is what keeps two creators apart */
 	for (id = 0; id < CONFIG_MPIPE_THREADS_NUM; id++) {
-		if (mpipe_thread_stack_pool[id] == false) {
+		if (!atomic_test_and_set_bit(mpipe_thread_stack_pool, id)) {
 			break;
 		}
 	}
@@ -35,7 +35,6 @@ k_tid_t mpipe_thread_create(struct mpipe_thread *thread, k_thread_entry_t func, 
 
 	thread->stack_id = id;
 	atomic_set(&thread->state, MPIPE_THREAD_PAUSED);
-	mpipe_thread_stack_pool[id] = true;
 
 	/* Semaphore starts at 0 to be able to block the thread with mpipe_thread_wait() */
 	k_sem_init(&thread->sem, 0, 1);
@@ -57,7 +56,7 @@ int mpipe_thread_wait(struct mpipe_thread *thread)
 	__ASSERT_NO_MSG(thread != NULL);
 
 	for (;;) {
-		int state = atomic_get(&thread->state);
+		atomic_val_t state = atomic_get(&thread->state);
 
 		if (state == MPIPE_THREAD_RUNNING) {
 			return 0;
@@ -78,7 +77,7 @@ void mpipe_thread_resume(struct mpipe_thread *thread)
 
 	/* Resume must not override a concurrent join(). Only transition PAUSED -> RUNNING */
 	for (;;) {
-		int state = atomic_get(&thread->state);
+		atomic_val_t state = atomic_get(&thread->state);
 
 		if (state == MPIPE_THREAD_TERMINATED) {
 			return;
@@ -102,7 +101,7 @@ void mpipe_thread_pause(struct mpipe_thread *thread)
 
 	/* Pause must not override a concurrent join(). Only transition RUNNING -> PAUSED */
 	for (;;) {
-		int state = atomic_get(&thread->state);
+		atomic_val_t state = atomic_get(&thread->state);
 
 		if (state == MPIPE_THREAD_TERMINATED || state == MPIPE_THREAD_PAUSED ||
 		    atomic_cas(&thread->state, MPIPE_THREAD_RUNNING, MPIPE_THREAD_PAUSED)) {
@@ -128,7 +127,7 @@ int mpipe_thread_join(struct mpipe_thread *thread, k_timeout_t timeout)
 
 	ret = k_thread_join(&thread->thread, timeout);
 	if (ret == 0) {
-		mpipe_thread_stack_pool[thread->stack_id] = false;
+		atomic_clear_bit(mpipe_thread_stack_pool, thread->stack_id);
 	}
 
 	return ret;
