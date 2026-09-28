@@ -107,3 +107,48 @@ tests:
     harness: console
     harness_config:
       fixture: fixture_seeed_xiao_round_display
+  sample.display.lvgl.seeed_xiao_display_0_96:
+    tags: shield
+    min_flash: 320
+    min_ram: 64
+    depends_on:
+      - xiao_gpio
+      - xiao_i2c
+      - xiao_plus_gpio
+      - xiao_spi
+    integration_platforms:
+      - xiao_nrf52840_plus
+    extra_args: SHIELD=seeed_xiao_display_0_96
+    harness: console
+    harness_config:
+      fixture: fixture_seeed_xiao_display_0_96
+  sample.display.lvgl.seeed_xiao_display_1_14:
+    tags: shield
+    min_flash: 320
+    min_ram: 64
+    depends_on:
+      - xiao_gpio
+      - xiao_i2c
+      - xiao_plus_gpio
+      - xiao_spi
+    integration_platforms:
+      - xiao_nrf52840_plus
+    extra_args: SHIELD=seeed_xiao_display_1_14
+    harness: console
+    harness_config:
+      fixture: fixture_seeed_xiao_display_1_14
+  sample.display.lvgl.seeed_xiao_display_1_47:
+    tags: shield
+    min_flash: 320
+    min_ram: 64
+    depends_on:
+      - xiao_gpio
+      - xiao_i2c
+      - xiao_plus_gpio
+      - xiao_spi
+    integration_platforms:
+      - xiao_nrf52840_plus
+    extra_args: SHIELD=seeed_xiao_display_1_47
+    harness: console
+    harness_config:
+      fixture: fixture_seeed_xiao_display_1_47

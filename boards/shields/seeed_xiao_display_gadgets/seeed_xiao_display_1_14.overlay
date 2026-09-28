@@ -1,0 +1,68 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "seeed_xiao_display_gadgets.dtsi"
+
+/ {
+	chosen {
+		zephyr,display = &st7789v_seeed_xiao_display_1_14;
+	};
+
+	aliases {
+		sw0 = &usr1_seeed_xiao_display_1_14;
+		sw1 = &usr2_seeed_xiao_display_1_14;
+		sw2 = &usr3_seeed_xiao_display_1_14;
+	};
+
+	buttons_seeed_xiao_display_1_14: buttons {
+		compatible = "gpio-keys";
+
+		usr1_seeed_xiao_display_1_14: button-usr1 {
+			gpios = <&xiao_d 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "USR1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		usr2_seeed_xiao_display_1_14: button-usr2 {
+			gpios = <&xiao_d 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "USR2";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+
+		usr3_seeed_xiao_display_1_14: button-usr3 {
+			gpios = <&xiao_plus_d 19 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "USR3";
+			zephyr,code = <INPUT_KEY_2>;
+		};
+	};
+};
+
+&mipi_dbi_seeed_xiao_display {
+	st7789v_seeed_xiao_display_1_14: st7789v@0 {
+		compatible = "sitronix,st7789v";
+		reg = <0>;
+		mipi-max-frequency = <DT_FREQ_M(40)>;
+		mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+		width = <135>;
+		height = <240>;
+		x-offset = <52>;
+		y-offset = <40>;
+		mdac = <0x00>;
+		pixel-format = <PANEL_PIXEL_FORMAT_RGB_565X>;
+		porch-param = [0c 0c 00 33 33];
+		gctrl = <0x35>;
+		vcom = <0x28>;
+		lcm = <0x0c>;
+		vrhs = <0x10>;
+		vdvs = <0x20>;
+		pwctrl1-param = [a4 a1];
+		pvgam-param = [d0 00 02 07 0a 28 32 44 42 06 0e 12 14 17];
+		nvgam-param = [d0 00 02 07 0a 28 31 54 47 0e 1c 17 1b 1e];
+		ram-param = [00 f0];
+	};
+};
+
+/* Grove I2C connector */
+zephyr_i2c: &xiao_i2c {};
