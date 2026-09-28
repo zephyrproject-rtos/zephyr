@@ -2349,11 +2349,31 @@ static void deferred_work(struct k_work *work)
 			struct bt_sco_chan *chan = sco->sco.chan;
 
 			if (chan != NULL) {
-				bt_sco_chan_set_state(chan,
-						      BT_SCO_STATE_DISCONNECTING);
+				bt_sco_chan_set_state(chan, BT_SCO_STATE_DISCONNECTING);
 			}
 
-			bt_sco_cleanup_acl(sco);
+			if (sco->state == BT_CONN_CONNECTED ||
+			    sco->state == BT_CONN_DISCONNECTING ||
+			    sco->state == BT_CONN_INITIATING) {
+				/* Inherit the ACL disconnect reason if the SCO disconnect complete
+				 * event is not notified.
+				 */
+				sco->err = conn->err;
+			}
+
+			if (sco->state == BT_CONN_CONNECTED ||
+			    sco->state == BT_CONN_DISCONNECTING) {
+				bt_conn_set_state(sco, BT_CONN_DISCONNECT_COMPLETE);
+			}
+
+			if (sco->state != BT_CONN_DISCONNECTED) {
+				bt_conn_set_state(sco, BT_CONN_DISCONNECTED);
+			} else {
+				bt_sco_cleanup_acl(sco);
+				if (chan != NULL) {
+					bt_sco_chan_set_state(chan, BT_SCO_STATE_DISCONNECTED);
+				}
+			}
 
 			bt_conn_unref(sco);
 			sco = conn_lookup_sco(conn);
