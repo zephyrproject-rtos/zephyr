@@ -125,7 +125,7 @@ int mpipe_caps_filter_init(struct mpipe_caps_filter *caps_filter, uint8_t id)
 	self->object.get_property = mpipe_caps_filter_get_property;
 	self->change_state = mpipe_caps_filter_change_state;
 
-	transform->mode = MPIPE_MODE_PASSTHROUGH;
+	transform->mode = MPIPE_TRANSFORM_MODE_PASSTHROUGH;
 	transform->set_caps = mpipe_caps_filter_set_caps;
 
 	return 0;

@@ -61,8 +61,8 @@ static const char *const dump_field_names[] = {
 	[MPIPE_CAPS_IMAGE_WIDTH] = "width",
 	[MPIPE_CAPS_IMAGE_HEIGHT] = "height",
 	[MPIPE_CAPS_SAMPLE_RATE] = "rate",
-	[MPIPE_CAPS_BITWIDTH] = "bitwidth",
-	[MPIPE_CAPS_NUM_OF_CHANNEL] = "channels",
+	[MPIPE_CAPS_BIT_WIDTH] = "bitwidth",
+	[MPIPE_CAPS_NUM_CHANNELS] = "channels",
 	[MPIPE_CAPS_INTERLEAVED] = "interleaved",
 	[MPIPE_CAPS_FRAME_INTERVAL] = "frame-interval",
 };
