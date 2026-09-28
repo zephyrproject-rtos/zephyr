@@ -234,9 +234,10 @@ def find_v2_board_dirs(args):
     return dirs
 
 
-def find_v2_boards(args):
+def find_v2_boards(args, systems=None):
     root_args = argparse.Namespace(**{'soc_roots': args.soc_roots})
-    systems = list_hardware.find_v2_systems(root_args)
+    if systems is None:
+        systems = list_hardware.find_v2_systems(root_args)
 
     boards = {}
     board_extensions = []

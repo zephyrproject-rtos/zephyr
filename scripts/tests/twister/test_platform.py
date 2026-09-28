@@ -9,6 +9,7 @@ This test file contains tests for platform.py module of twister
 from contextlib import nullcontext
 from unittest import mock
 
+import list_hardware
 import pytest
 from jsonschema.exceptions import ValidationError
 from twisterlib.platform import Platform, Simulator, generate_platforms
@@ -363,9 +364,16 @@ board:
         (tmp_path / filename).write_text(content)
 
     roots = list(map(tmp_path.joinpath, roots))
-    with pytest.raises(expected_exception) if \
-          expected_exception else nullcontext() as exception:
-        platforms = list(generate_platforms(board_roots=roots, soc_roots=roots, arch_roots=roots))
+    with mock.patch(
+        'list_hardware.find_v2_systems',
+        wraps=list_hardware.find_v2_systems
+    ) as find_v2_systems:
+        with pytest.raises(expected_exception) if \
+              expected_exception else nullcontext() as exception:
+            platforms = list(
+                generate_platforms(board_roots=roots, soc_roots=roots, arch_roots=roots)
+            )
+        assert find_v2_systems.call_count == 1
 
     if expected_exception:
         if expected_exception_msg:
@@ -381,6 +389,10 @@ board:
             'aliases': ['p1e1/s1', 'p1e1'],
             # m0/boards/zephyr/p1/board.yml
             'vendor': 'zephyr',
+            # m0/soc/zephyr/soc.yml
+            'soc': 's1',
+            'soc_series': 'zephyr_testing',
+            'soc_family': 'zephyr',
             # m0/boards/zephyr/p1/twister.yaml (base + variant)
             'twister': False,
             'arch': 'x86',
@@ -390,6 +402,10 @@ board:
             'aliases': ['p1e2/s1', 'p1e2'],
             # m0/boards/zephyr/p1/board.yml
             'vendor': 'zephyr',
+            # m0/soc/zephyr/soc.yml
+            'soc': 's1',
+            'soc_series': 'zephyr_testing',
+            'soc_family': 'zephyr',
             # m0/boards/zephyr/p1/twister.yaml (base + variant)
             'sysbuild': True,
             'arch': 'x86',
@@ -399,6 +415,10 @@ board:
             'aliases': ['p1e1/s1/v1'],
             # m0/boards/zephyr/p1/board.yml
             'vendor': 'zephyr',
+            # m0/soc/zephyr/soc.yml
+            'soc': 's1',
+            'soc_series': 'zephyr_testing',
+            'soc_family': 'zephyr',
             # m0/boards/zephyr/p1/twister.yaml (base)
             # m1/boards/zephyr/p1e1/twister.yaml (variant)
             'default': True,
@@ -409,6 +429,10 @@ board:
             'aliases': ['p1e1/s1/v2'],
             # m0/boards/zephyr/p1/board.yml
             'vendor': 'zephyr',
+            # m0/soc/zephyr/soc.yml
+            'soc': 's1',
+            'soc_series': 'zephyr_testing',
+            'soc_family': 'zephyr',
             # m0/boards/zephyr/p1/twister.yaml (base)
             'arch': 'x86',
             'type': 'native',
@@ -417,6 +441,10 @@ board:
             'aliases': ['p1e2/s1/v1'],
             # m0/boards/zephyr/p1/board.yml
             'vendor': 'zephyr',
+            # m0/soc/zephyr/soc.yml
+            'soc': 's1',
+            'soc_series': 'zephyr_testing',
+            'soc_family': 'zephyr',
             # m0/boards/zephyr/p1/twister.yaml (base)
             'arch': 'x86',
             'type': 'native',
@@ -425,6 +453,10 @@ board:
             'aliases': ['p2/s1', 'p2'],
             # m0/boards/zephyr/p2/board.yml
             'vendor': 'zephyr',
+            # m0/soc/zephyr/soc.yml
+            'soc': 's1',
+            'soc_series': 'zephyr_testing',
+            'soc_family': 'zephyr',
             # m0/boards/zephyr/p2/p2.yaml
             'default': True,
             'arch': 'x86',
@@ -434,12 +466,20 @@ board:
             'aliases': ['p2/s1/v1'],
             # m0/boards/zephyr/p2/board.yml
             'vendor': 'zephyr',
+            # m0/soc/zephyr/soc.yml
+            'soc': 's1',
+            'soc_series': 'zephyr_testing',
+            'soc_family': 'zephyr',
             # m1/boards/zephyr/p2/p2_s1_v1.yaml
         },
         'p3@A/s2/c1': {
             'aliases': ['p3@A/s2/c1', 'p3/s2/c1'],
             # m0/boards/arm/p3/board.yml
             'vendor': 'arm',
+            # m0/soc/zephyr/soc.yml
+            'soc': 's2',
+            'soc_series': 'zephyr_testing',
+            'soc_family': 'zephyr',
             # m0/boards/arm/p3/twister.yaml (base + variant)
             'sysbuild': True,
             'timeout_multiplier': 2.71828,
@@ -450,6 +490,10 @@ board:
             'aliases': ['p3@B/s2/c1'],
             # m0/boards/arm/p3/board.yml
             'vendor': 'arm',
+            # m0/soc/zephyr/soc.yml
+            'soc': 's2',
+            'soc_series': 'zephyr_testing',
+            'soc_family': 'zephyr',
             # m0/boards/arm/p3/twister.yaml (base + variant)
             'sysbuild': True,
             'timeout_multiplier': 3.14159,
@@ -460,6 +504,10 @@ board:
             'aliases': ['p3@A/s2/c2', 'p3/s2/c2'],
             # m0/boards/arm/p3/board.yml
             'vendor': 'arm',
+            # m0/soc/zephyr/soc.yml, m2/soc/zephyr/soc.yml
+            'soc': 's2',
+            'soc_series': 'zephyr_testing',
+            'soc_family': 'zephyr',
             # m0/boards/arm/p3/twister.yaml (base)
             # m2/boards/misc/twister.yaml (variant)
             'sysbuild': False,
@@ -470,6 +518,10 @@ board:
             'aliases': ['p3@B/s2/c2'],
             # m0/boards/arm/p3/board.yml
             'vendor': 'arm',
+            # m0/soc/zephyr/soc.yml, m2/soc/zephyr/soc.yml
+            'soc': 's2',
+            'soc_series': 'zephyr_testing',
+            'soc_family': 'zephyr',
             # m0/boards/arm/p3/twister.yaml (base)
             'sysbuild': True,
             'arch': 'arm',
@@ -479,6 +531,10 @@ board:
             'aliases': ['p4/s1', 'p4'],
             # m2/boards/misc/board.yml
             'vendor': 'misc',
+            # m0/soc/zephyr/soc.yml
+            'soc': 's1',
+            'soc_series': 'zephyr_testing',
+            'soc_family': 'zephyr',
             # m2/boards/misc/twister.yaml (base)
             'arch': 'riscv',
             'type': 'qemu',
