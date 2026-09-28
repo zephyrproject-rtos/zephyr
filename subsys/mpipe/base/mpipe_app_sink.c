@@ -54,9 +54,8 @@ static int mpipe_app_sink_process_fn(struct mpipe_pad *pad, struct net_buf *in_b
 
 int mpipe_app_sink_pull(struct mpipe_app_sink *app_sink, struct net_buf **buf, k_timeout_t timeout)
 {
-	if (app_sink == NULL || buf == NULL) {
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(app_sink != NULL);
+	__ASSERT_NO_MSG(buf != NULL);
 
 	if (k_msgq_get(&app_sink->msgq, buf, timeout) != 0) {
 		return -EAGAIN;

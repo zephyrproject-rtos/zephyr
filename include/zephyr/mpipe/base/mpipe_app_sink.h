@@ -117,7 +117,6 @@ int mpipe_app_sink_init(struct mpipe_app_sink *app_sink, uint8_t id);
  * @param timeout How long to wait for a buffer
  *
  * @retval 0 Success
- * @retval -EINVAL Bad arguments
  * @retval -EAGAIN No buffer arrived within @p timeout
  */
 int mpipe_app_sink_pull(struct mpipe_app_sink *app_sink, struct net_buf **buf, k_timeout_t timeout);
