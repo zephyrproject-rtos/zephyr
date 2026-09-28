@@ -21,6 +21,11 @@ config SOC_A320
 	select SOC_SERIES_FVP_AEM
 	select SOC_FAMILY_ARM64
 
+config SOC_A520
+	bool
+	select SOC_SERIES_FVP_AEM
+	select SOC_FAMILY_ARM64
+
 config SOC_V8A_AARCH32
 	bool
 	select SOC_SERIES_FVP_AEM
@@ -30,6 +35,7 @@ config SOC
 	default "v8a" if SOC_V8A
 	default "v9a" if SOC_V9A
 	default "a320" if SOC_A320
+	default "a520" if SOC_A520
 	default "v8a_aarch32" if SOC_V8A_AARCH32
 
 config SOC_SERIES
