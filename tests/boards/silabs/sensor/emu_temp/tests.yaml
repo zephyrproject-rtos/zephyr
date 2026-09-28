@@ -1,0 +1,8 @@
+tests:
+  boards.silabs.sensor.emu_temp:
+    tags:
+      - drivers
+      - sensors
+    platform_allow:
+      - kg100s_rb4332a
+    filter: dt_compat_enabled("silabs,emu-temp")
