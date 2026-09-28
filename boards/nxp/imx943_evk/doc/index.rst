@@ -69,10 +69,8 @@ NETC driver supports to manage the Physical Station Interface (PSI), and TSN swi
 The ENET0, ENETC1, ENETC2 ports could be enabled for M33 by west build option
 ``-DEXTRA_DTC_OVERLAY_FILE=enetc.overlay``.
 
-For A55 Core, ENET0, ENETC1, ENETC2 ports are enabled by default, so no overlay is
-needed, but NETC depends on GIC ITS, so need to make sure to allocate heap memory to
-be larger than 851968 bytes. Enabling GIC ITS raises the system heap minimum to
-that value, so no manual :kconfig:option:`CONFIG_HEAP_MEM_POOL_SIZE` is needed.
+For the A55 core, ENET0, ENETC1, and ENETC2 ports are enabled by default, so no overlay
+is needed. NETC uses GIC ITS for interrupts.
 
 On the EVK board, switch port0 and port2 are connected to both SGMII port (SGMII-swp0
 and SGMII-swp1) and 100M port (swp0 and swp1), currently only 100M port (swp0 and swp1)
