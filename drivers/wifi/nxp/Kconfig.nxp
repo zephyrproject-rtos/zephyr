@@ -978,6 +978,13 @@ config NXP_WIFI_FW_VDLLV2
 	help
 	  This option is to load some firmware features in run-time.
 
+config NXP_FLASH_IPED
+	bool "flash IPED enabled"
+	default n
+	depends on NXP_RW610
+	help
+	  Flash IPED feature enabled.
+
 config NXP_WIFI_AUTO_NULL_TX
 	bool "Auto send null frame"
 	default y if NXP_RW610 || NXP_IW610
