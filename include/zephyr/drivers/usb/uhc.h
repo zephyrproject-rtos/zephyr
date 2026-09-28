@@ -19,6 +19,7 @@
 #include <zephyr/usb/usb_ch9.h>
 #include <zephyr/sys/dlist.h>
 #include <zephyr/sys/ref.h>
+#include <zephyr/sys/byteorder.h>
 
 /**
  * @brief USB host controller (UHC) driver API
@@ -322,6 +323,11 @@ __subsystem struct uhc_driver_api {
 			  struct uhc_transfer *const xfer);
 	int (*ep_dequeue)(const struct device *dev,
 			  struct uhc_transfer *const xfer);
+	int (*root_hub_control)(const struct device *dev,
+				const struct usb_setup_packet *const setup,
+				struct net_buf *const buf);
+	int (*root_hub_status)(const struct device *dev,
+			       struct net_buf_simple *const buf);
 };
 /**
  * @endcond
@@ -556,6 +562,97 @@ int uhc_ep_enqueue(const struct device *dev, struct uhc_transfer *const xfer);
  * @retval -EPERM controller is not initialized
  */
 int uhc_ep_dequeue(const struct device *dev, struct uhc_transfer *const xfer);
+
+/**
+ * @brief USB host root hub control request
+ *
+ * Reference root_hub_control() implementation:
+ *
+ * @code{.c}
+ * switch (USB_HUB_CLASS_REQUEST(setup->bmRequestType, setup->bRequest)) {
+ * case USB_HUB_GET_HUB_DESCRIPTOR:
+ *         ...return the hub class descriptor (USB_HUB_DESCRIPTOR_TYPE only)...
+ *         break;
+ * case USB_HUB_GET_HUB_STATUS:
+ *         ...return hub status/change...
+ *         break;
+ * case USB_HUB_GET_PORT_STATUS:
+ *         ...return port status/change for wIndex...
+ *         break;
+ * case USB_HUB_SET_HUB_FEATURE:
+ *         ...set C_HUB_LOCAL_POWER/C_HUB_OVER_CURRENT change bit...
+ *         break;
+ * case USB_HUB_SET_PORT_FEATURE:
+ *         ...apply port feature (PORT_POWER/RESET/SUSPEND) for wIndex...
+ *         break;
+ * case USB_HUB_CLEAR_HUB_FEATURE:
+ *         ...clear C_HUB_LOCAL_POWER/C_HUB_OVER_CURRENT change bit...
+ *         break;
+ * case USB_HUB_CLEAR_PORT_FEATURE:
+ *         ...clear port feature or port change bit for wIndex...
+ *         break;
+ * case USB_HUB_CLEAR_TT_BUFFER:
+ * case USB_HUB_RESET_TT:
+ * case USB_HUB_GET_TT_STATE:
+ * case USB_HUB_STOP_TT:
+ *         ...handle or reject the TT requests, if the root hub has a TT...
+ *         break;
+ * default:
+ *         ...unsupported request...
+ *         ret = -EPIPE;
+ *         break;
+ * }
+ * @endcode
+ *
+ * @note The caller guarantees that setup is one of the hub class requests
+ *       listed above and that buf's tailroom is at least setup->wLength.
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ * @param[in] setup  Root hub control transfer setup packet
+ * @param[in] buf    Root hub control transfer data
+ *
+ * @return 0 on success, all other values should be treated as error.
+ * @retval -EPERM controller is not initialized
+ * @retval -ENOTSUP not supported by the controller driver
+ * @retval -EPIPE protocol stall
+ */
+int uhc_root_hub_control(const struct device *dev,
+			 const struct usb_setup_packet *const setup,
+			 struct net_buf *const buf);
+
+/**
+ * @brief USB host root hub status request
+ *
+ * Reference root_hub_status() implementation. Bit 0 is the hub's own
+ * change, bits 1..N are ports 1..N (USB 2.0 11.12.4).
+ *
+ * @code{.c}
+ * uint8_t bitmap[...] = {0};
+ * bool changed = false;
+ *
+ * for (each port) {
+ *         if (...port's change bits are set...) {
+ *                 ...set bit (port_index + 1) in bitmap...
+ *                 changed = true;
+ *         }
+ * }
+ *
+ * if (changed) {
+ *         net_buf_simple_add_mem(buf, bitmap, sizeof(bitmap));
+ * }
+ *
+ * return 0;
+ * @endcode
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ * @param[in] buf    Root hub status transfer data
+ *
+ * @return 0 on success, all other values should be treated as error.
+ * @retval -EPERM controller is not initialized
+ * @retval -ENOTSUP not supported by the controller driver
+ */
+int uhc_root_hub_status(const struct device *dev,
+			struct net_buf_simple *const buf);
 
 /**
  * @brief Initialize USB host controller
