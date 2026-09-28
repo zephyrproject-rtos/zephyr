@@ -676,6 +676,8 @@ static int mac_parse_downlink(struct lwan_ctx *ctx, const uint8_t *rx_buf,
 		return -EBADMSG;
 	}
 
+	mac_cmd_dl_received(ctx);
+
 	mac_cmd_process_dl_fopts(ctx, &rx_buf[sizeof(struct pkt_data_hdr)],
 				 frame_info.fopts_len);
 

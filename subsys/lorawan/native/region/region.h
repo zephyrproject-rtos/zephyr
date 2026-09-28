@@ -49,6 +49,16 @@ struct lwan_region_ops {
 	uint8_t default_rx2_dr;
 
 	/**
+	 * @brief Maximum EIRP the band allows, in dBm.
+	 *
+	 * The TXPower index counts down from this, so a TxParamSetupReq that
+	 * lowers it moves the whole ladder rather than trimming its bottom.
+	 * Only a region that takes that command needs the field; leaving it
+	 * out means the command cannot reach it.
+	 */
+	int8_t max_eirp_dbm;
+
+	/**
 	 * @brief Get the default channels for this region.
 	 *
 	 * @param ch Output channel array.

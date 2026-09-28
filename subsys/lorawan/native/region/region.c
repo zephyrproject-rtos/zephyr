@@ -48,11 +48,29 @@ int lwan_region_tx_params(const struct lwan_ctx *ctx, uint8_t dr,
 			  uint8_t tx_power_idx, struct lwan_dr_params *p,
 			  int8_t *power_dbm)
 {
+	int8_t mac_cap = ctx->mac.max_eirp_dbm;
+	int8_t region_cap = ctx->region->max_eirp_dbm;
+	int ret;
+
 	if (ctx->mac.ul_dwell_time && ctx->region->get_dwell_tx_params != NULL) {
-		return ctx->region->get_dwell_tx_params(dr, tx_power_idx, p, power_dbm);
+		ret = ctx->region->get_dwell_tx_params(dr, tx_power_idx, p, power_dbm);
+	} else {
+		ret = ctx->region->get_tx_params(dr, tx_power_idx, p, power_dbm);
 	}
 
-	return ctx->region->get_tx_params(dr, tx_power_idx, p, power_dbm);
+	/*
+	 * TS001 5.8: the device uses the lower of the band's maximum EIRP and
+	 * the one a TxParamSetupReq named. The region counted the TXPower
+	 * index down from the band's, so lowering the ceiling shifts the
+	 * whole ladder down with it.
+	 */
+	if (ret == 0 && mac_cap != 0 && mac_cap < region_cap) {
+		int8_t power_shift = region_cap - mac_cap;
+
+		*power_dbm -= power_shift;
+	}
+
+	return ret;
 }
 
 int lwan_region_rx1_params(const struct lwan_ctx *ctx, uint32_t tx_freq,
