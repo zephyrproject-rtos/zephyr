@@ -33,6 +33,18 @@
 #define ADIN1140_TXC_POLL_MAX_RETRIES       20U
 #define ADIN1140_TXC_POLL_INTERVAL_US       100U
 
+/* Vendor extension bits on the standard OA-TC6 CONFIG0 register (see
+ * OA_CONFIG0 in oa_tc6.h) -- documented in the ADIN1140 TRM's "TIME
+ * SYNCHRONIZATION" chapter, not the generic OA-TC6 spec.
+ */
+#define ADIN1140_CONFIG0_FTSE               BIT(7)
+#define ADIN1140_CONFIG0_FTSS               BIT(6)
+
+/* FTSE RX timestamp prefix: 32-bit seconds + 32-bit nanoseconds, big-endian,
+ * prepended to every received frame ahead of the destination MAC address.
+ */
+#define ADIN1140_RX_TIMESTAMP_LEN           8U
+
 /* ADIN1140 Registers (non-OA) */
 #define ADIN1140_MAC_RST_STATUS            MMS_REG(0x1, 0x3B)
 #define ADIN1140_A0_CFG_FIELDS_1           MMS_REG(0xA, 0xB703)

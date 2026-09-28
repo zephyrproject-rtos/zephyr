@@ -34,4 +34,33 @@ config ETH_ADIN1140_TIMEOUT
 	  that the driver will wait from the IP stack to get
 	  a memory buffer before the Ethernet frame is dropped.
 
+config ETH_ADIN1140_TIMESTAMP
+	bool "RX frame hardware timestamping (FTSE)"
+	select NET_PKT_TIMESTAMP
+	help
+	  Enable the MAC-PHY's Frame Timestamp Sync Enable/Select
+	  (FTSE/FTSS) feature. When enabled, an 8-byte hardware
+	  timestamp (32-bit seconds + 32-bit nanoseconds) is prepended
+	  to every received frame ahead of the destination MAC address.
+	  The driver strips this prefix before handing the frame to the
+	  network stack and exposes it via net_pkt_set_timestamp()
+	  instead of leaving it in the frame payload.
+
+config ETH_ADIN1140_PTP
+	bool "ADIN1140 hardware gPTP (IEEE 802.1AS) engine support"
+	select ETH_ADIN1140_TIMESTAMP
+	help
+	  Enable use of the MAC-PHY's autonomous hardware gPTP engine
+	  (endpoint mode) -- GPTP_LOCKED, GPTP_TIME_ERROR, GPTP_SYNC_COUNT,
+	  etc. in the IO_LV register map. Selecting this option enables
+	  MAC_CONFIG0.FTSE/FTSS (via ETH_ADIN1140_TIMESTAMP) and has the
+	  driver strip the resulting 8-byte RX timestamp prefix before
+	  handing frames to the network stack.
+
+	  MAC_CONFIG0.FTSE must be enabled for the internal gPTP
+	  time-error computation to run at all, but this dependency is
+	  not documented anywhere in the ADIN1140 TRM. Selecting this
+	  option enables FTSE automatically so this undocumented
+	  requirement can't be missed.
+
 endif # ETH_ADIN1140

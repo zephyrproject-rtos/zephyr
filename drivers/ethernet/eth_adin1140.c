@@ -426,9 +426,15 @@ static int adin1140_process_rx_chunks(const struct device *dev, uint8_t num_chun
 	uint32_t ftr;
 	uint16_t len, rx_idx;
 	uint8_t chunk, ebo;
+#ifdef CONFIG_ETH_ADIN1140_TIMESTAMP
+	bool is_start_of_frame;
+#endif
 
 	for (chunk = 0, rx_idx = 0; chunk < num_chunks; chunk++) {
 		ftr = sys_be32_to_cpu(*(uint32_t *)&ctx->oa_rx_buf[rx_idx + tc6->cps]);
+#ifdef CONFIG_ETH_ADIN1140_TIMESTAMP
+		is_start_of_frame = false;
+#endif
 
 		if (oa_tc6_get_parity(ftr)) {
 			LOG_ERR("OA Rx: Footer parity error!");
@@ -461,6 +467,9 @@ static int adin1140_process_rx_chunks(const struct device *dev, uint8_t num_chun
 				return -EIO;
 			}
 
+#ifdef CONFIG_ETH_ADIN1140_TIMESTAMP
+			is_start_of_frame = true;
+#endif
 			adin1140_rx_frame_reset(ctx);
 			ctx->rx_pkt = net_pkt_rx_alloc_on_iface(
 				ctx->iface, K_MSEC(CONFIG_ETH_ADIN1140_TIMEOUT));
@@ -486,7 +495,47 @@ static int adin1140_process_rx_chunks(const struct device *dev, uint8_t num_chun
 			continue;
 		}
 
+#ifdef CONFIG_ETH_ADIN1140_TIMESTAMP
+		{
+			const uint8_t *data = &ctx->oa_rx_buf[rx_idx];
+
+			/* FTSE prepends an 8-byte HW RX timestamp (32-bit
+			 * seconds + 32-bit nanoseconds, big-endian) ahead of
+			 * the frame itself. CPS is always >= 8 (the smallest
+			 * supported chunk payload size), so this always fits
+			 * entirely within the start-of-frame chunk -- no
+			 * cross-chunk/cross-call state needed.
+			 */
+			if (is_start_of_frame) {
+				struct net_ptp_time ts;
+
+				if (len < ADIN1140_RX_TIMESTAMP_LEN) {
+					LOG_ERR("OA Rx: Frame too short for FTSE prefix!");
+					adin1140_rx_frame_reset(ctx);
+					rx_idx += tc6->cps + sizeof(uint32_t);
+					continue;
+				}
+
+				ts.second = sys_get_be32(&data[0]);
+				ts.nanosecond = sys_get_be32(&data[4]);
+
+				net_pkt_set_timestamp(ctx->rx_pkt, &ts);
+				/* Gates delivery via SO_TIMESTAMPING/cmsg in
+				 * recvmsg() -- see sockets_packet.c's
+				 * zpacket_recvmsg_set_control(). Without this,
+				 * net_pkt_timestamp() is set but nothing ever
+				 * hands it to an application socket.
+				 */
+				net_pkt_set_rx_timestamping(ctx->rx_pkt, true);
+				data += ADIN1140_RX_TIMESTAMP_LEN;
+				len -= ADIN1140_RX_TIMESTAMP_LEN;
+			}
+
+			rc = adin1140_rx_frame_append(ctx, data, len);
+		}
+#else
 		rc = adin1140_rx_frame_append(ctx, &ctx->oa_rx_buf[rx_idx], len);
+#endif
 		if (rc < 0) {
 			LOG_WRN("Failed to allocate buffer for Rx packet");
 			adin1140_rx_frame_reset(ctx);
@@ -736,6 +785,14 @@ static int adin1140_configure(const struct device *dev)
 	if (ctx->rx_cut_through_en) {
 		val |= OA_CONFIG0_RXCTE;
 	}
+
+#ifdef CONFIG_ETH_ADIN1140_TIMESTAMP
+	/* Prepend an 8-byte HW RX timestamp to every received frame; stripped
+	 * back out and exposed via net_pkt_set_timestamp() in
+	 * adin1140_process_rx_chunks().
+	 */
+	val |= ADIN1140_CONFIG0_FTSE | ADIN1140_CONFIG0_FTSS;
+#endif
 
 	/* Chunk Payload Size (CPS) */
 	val &= ~GENMASK(2, 0);
