@@ -142,6 +142,7 @@ __weak void clock_init(void)
  * not have FBB on the CM7 core)
  */
 #if defined(CONFIG_SOC_MIMXRT1176_CM4) || defined(CONFIG_SOC_MIMXRT1176_CM7) ||                    \
+	defined(CONFIG_SOC_MIMXRT1175_CM4) || defined(CONFIG_SOC_MIMXRT1175_CM7) ||                \
 	defined(CONFIG_SOC_IMXRT11XX_SINGLE_CORE)
 	/* Check if FBB need to be enabled in OverDrive(OD) mode */
 	if (((OCOTP->FUSEN[7].FUSE & 0x10U) >> 4U) != 1) {
@@ -334,7 +335,7 @@ __weak void clock_init(void)
 
 	/* Configure M7 using ARM_PLL_CLK */
 #if defined(CONFIG_SOC_MIMXRT1176_CM7) || defined(CONFIG_SOC_MIMXRT1166_CM7) ||                    \
-	defined(CONFIG_SOC_IMXRT11XX_SINGLE_CORE)
+	defined(CONFIG_SOC_MIMXRT1175_CM7) || defined(CONFIG_SOC_IMXRT11XX_SINGLE_CORE)
 	rootCfg.mux = kCLOCK_M7_ClockRoot_MuxArmPllOut;
 	rootCfg.div = 1;
 	CLOCK_SetRootClock(kCLOCK_Root_M7, &rootCfg);
@@ -345,14 +346,15 @@ __weak void clock_init(void)
 	rootCfg.mux = kCLOCK_M4_ClockRoot_MuxSysPll3Out;
 	rootCfg.div = 2;
 	CLOCK_SetRootClock(kCLOCK_Root_M4, &rootCfg);
-#elif defined(CONFIG_SOC_MIMXRT1176_CM4)
+#elif defined(CONFIG_SOC_MIMXRT1176_CM4) || defined(CONFIG_SOC_MIMXRT1175_CM4)
 	/* Configure M4 using SYS_PLL3_CLK_PFD3_CLK */
 	rootCfg.mux = kCLOCK_M4_ClockRoot_MuxSysPll3Pfd3;
 	rootCfg.div = 1;
 	CLOCK_SetRootClock(kCLOCK_Root_M4, &rootCfg);
 #endif
 
-#if defined(CONFIG_SOC_MIMXRT1176_CM7) || defined(CONFIG_SOC_IMXRT11XX_SINGLE_CORE)
+#if defined(CONFIG_SOC_MIMXRT1176_CM7) || defined(CONFIG_SOC_MIMXRT1175_CM7) ||                    \
+	defined(CONFIG_SOC_IMXRT11XX_SINGLE_CORE)
 	/* Keep root bus clock at default 240M */
 	rootCfg.mux = kCLOCK_BUS_ClockRoot_MuxSysPll3Out;
 	rootCfg.div = 2;
@@ -365,7 +367,7 @@ __weak void clock_init(void)
 #endif
 
 	/* Configure BUS_LPSR using SYS_PLL3_CLK */
-#if defined(CONFIG_SOC_MIMXRT1176_CM4)
+#if defined(CONFIG_SOC_MIMXRT1176_CM4) || defined(CONFIG_SOC_MIMXRT1175_CM4)
 	rootCfg.mux = kCLOCK_BUS_LPSR_ClockRoot_MuxSysPll3Out;
 	rootCfg.div = 3;
 	CLOCK_SetRootClock(kCLOCK_Root_Bus_Lpsr, &rootCfg);
@@ -374,7 +376,7 @@ __weak void clock_init(void)
 	rootCfg.div = 4;
 	CLOCK_SetRootClock(kCLOCK_Root_Bus_Lpsr, &rootCfg);
 #elif defined(CONFIG_SOC_MIMXRT1176_CM7) || defined(CONFIG_SOC_MIMXRT1166_CM7) ||                  \
-	defined(CONFIG_SOC_IMXRT11XX_SINGLE_CORE)
+	defined(CONFIG_SOC_MIMXRT1175_CM7) || defined(CONFIG_SOC_IMXRT11XX_SINGLE_CORE)
 	rootCfg.mux = kCLOCK_BUS_LPSR_ClockRoot_MuxSysPll3Out;
 	rootCfg.div = 2;
 	CLOCK_SetRootClock(kCLOCK_Root_Bus_Lpsr, &rootCfg);
@@ -391,7 +393,8 @@ __weak void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_Cstrace, &rootCfg);
 
 	/* Configure M4_SYSTICK using OSC_RC_48M_DIV2 */
-#if defined(CONFIG_SOC_MIMXRT1176_CM4) || defined(CONFIG_SOC_MIMXRT1166_CM4)
+#if defined(CONFIG_SOC_MIMXRT1176_CM4) || defined(CONFIG_SOC_MIMXRT1166_CM4) ||                    \
+	defined(CONFIG_SOC_MIMXRT1175_CM4)
 	rootCfg.mux = kCLOCK_M4_SYSTICK_ClockRoot_MuxOscRc48MDiv2;
 	rootCfg.div = 1;
 	CLOCK_SetRootClock(kCLOCK_Root_M4_Systick, &rootCfg);
@@ -399,7 +402,7 @@ __weak void clock_init(void)
 
 	/* Configure M7_SYSTICK using OSC_RC_48M_DIV2 */
 #if defined(CONFIG_SOC_MIMXRT1176_CM7) || defined(CONFIG_SOC_MIMXRT1166_CM7) ||                    \
-	defined(CONFIG_SOC_IMXRT11XX_SINGLE_CORE)
+	defined(CONFIG_SOC_MIMXRT1175_CM7) || defined(CONFIG_SOC_IMXRT11XX_SINGLE_CORE)
 	rootCfg.mux = kCLOCK_M7_SYSTICK_ClockRoot_MuxOscRc48MDiv2;
 	rootCfg.div = 240;
 	CLOCK_SetRootClock(kCLOCK_Root_M7_Systick, &rootCfg);
@@ -853,7 +856,7 @@ static int imxrt_init(void)
 #endif
 
 #if defined(CONFIG_SOC_MIMXRT1176_CM7) || defined(CONFIG_SOC_MIMXRT1166_CM7) ||                    \
-	defined(CONFIG_SOC_IMXRT11XX_SINGLE_CORE)
+	defined(CONFIG_SOC_MIMXRT1175_CM7) || defined(CONFIG_SOC_IMXRT11XX_SINGLE_CORE)
 	sys_cache_instr_enable();
 	sys_cache_data_enable();
 #endif

@@ -1,0 +1,26 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* SOC DTS for the i.MX RT1175 Cortex-M4 core */
+
+#include <nxp/imxrt/imxrt11xx/nxp_rt1170_cm4.dtsi>
+
+/*
+ * The RT1175 has no GPU2D, PXP, parallel CSI, eLCDIF, LCDIFv2,
+ * MIPI CSI or MIPI DSI compared to the RT1176: the whole DISPLAY power
+ * domain is absent.
+ */
+/delete-node/ &csi;
+/delete-node/ &lcdif;
+/delete-node/ &lcdifv2;
+/delete-node/ &pxp;
+/delete-node/ &mipi_dsi;
+/delete-node/ &mipi_csi2rx;
+
+/* RT1175 shares the RT1176 silicon: the CM4 core runs at 400MHz */
+&cpu1 {
+	clock-frequency = <DT_FREQ_M(400)>;
+};
