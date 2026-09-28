@@ -1,63 +1,36 @@
-# Copyright 2022-2026 NXP
+# Copyright 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-choice NXP_WIFI_PART
-	default NXP_RW610
-endchoice # NXP_WIFI_PART
+if SHIELD_NXP_ADAPTER_M2_2LL_WIFI_BT
 
-if NETWORKING
+configdefault NXP_WIFI_SLIM
+	default y
 
-if NET_DHCPV4_SERVER
-
-config NET_DHCPV4_SERVER_ADDR_COUNT
-	default 32
-
-config NET_DHCPV4_SERVER_ICMP_PROBE_TIMEOUT
-	default 100
-
-endif # NET_DHCPV4_SERVER
-
-if NET_L2_WIFI_MGMT
-
-configdefault WIFI_MGMT_AP_MAX_NUM_STA
-	default 8 if NXP_WIFI_SOFTAP_SUPPORT
-
-configdefault WIFI_SHELL_MAX_AP_STA
-	default 8
-
-endif # NET_L2_WIFI_MGMT
-
-endif # NETWORKING
-
-if WIFI_NM_HOSTAPD_AP
-
-config WIFI_NM_HOSTAPD_REGULATORY_REGION
-	default "US"
-
-endif # WIFI_NM_HOSTAPD_AP
-
-if NXP_WIFI_FW_DEBUG
-
-config NXP_FW_DUMP_FLASH_START_ADDR
-	default 0x0B000000
-
-endif # NXP_WIFI_FW_DEBUG
+endif # SHIELD_NXP_ADAPTER_M2_2LL_WIFI_BT
 
 if NXP_WIFI_PRESET
 
 if NETWORKING
 
 configdefault NET_PKT_RX_COUNT
-	default 36
+	default 36 if SHIELD_NXP_M2_2LL_WIFI_BT
+	default 72 if SHIELD_NXP_M2_1XK_WIFI_BT || SHIELD_NXP_M2_2EL_WIFI_BT
+	default 16 if SHIELD_NXP_ADAPTER_M2_2LL_WIFI_BT
 
 configdefault NET_PKT_TX_COUNT
-	default 36
+	default 36 if SHIELD_NXP_M2_2LL_WIFI_BT
+	default 36 if SHIELD_NXP_M2_1XK_WIFI_BT || SHIELD_NXP_M2_2EL_WIFI_BT
+	default 16 if SHIELD_NXP_ADAPTER_M2_2LL_WIFI_BT
 
 configdefault NET_BUF_RX_COUNT
-	default 40
+	default 40 if SHIELD_NXP_M2_2LL_WIFI_BT
+	default 80 if SHIELD_NXP_M2_1XK_WIFI_BT || SHIELD_NXP_M2_2EL_WIFI_BT
+	default 20 if SHIELD_NXP_ADAPTER_M2_2LL_WIFI_BT
 
 configdefault NET_BUF_TX_COUNT
-	default 40
+	default 40 if SHIELD_NXP_M2_2LL_WIFI_BT
+	default 40 if SHIELD_NXP_M2_1XK_WIFI_BT || SHIELD_NXP_M2_2EL_WIFI_BT
+	default 20 if SHIELD_NXP_ADAPTER_M2_2LL_WIFI_BT
 
 configdefault NET_TC_TX_COUNT
 	default 1
@@ -111,7 +84,7 @@ configdefault NET_MGMT_EVENT_STACK_SIZE
 	default 4608
 
 configdefault NET_MGMT_EVENT_QUEUE_SIZE
-	default 20
+	default 40
 
 configdefault NET_MGMT_EVENT_QUEUE_TIMEOUT
 	default 5000
@@ -134,10 +107,14 @@ endif # NET_IP
 if NET_TCP
 
 configdefault NET_TCP_MAX_SEND_WINDOW_SIZE
-	default 46720
+	default 46720 if SHIELD_NXP_M2_2LL_WIFI_BT
+	default 46720 if SHIELD_NXP_M2_1XK_WIFI_BT || SHIELD_NXP_M2_2EL_WIFI_BT
+	default 20440 if SHIELD_NXP_ADAPTER_M2_2LL_WIFI_BT
 
 configdefault NET_TCP_MAX_RECV_WINDOW_SIZE
-	default 46720
+	default 46720 if SHIELD_NXP_M2_2LL_WIFI_BT
+	default 46720 if SHIELD_NXP_M2_1XK_WIFI_BT || SHIELD_NXP_M2_2EL_WIFI_BT
+	default 20440 if SHIELD_NXP_ADAPTER_M2_2LL_WIFI_BT
 
 configdefault NET_TCP_WORKQ_STACK_SIZE
 	default 2048
@@ -278,10 +255,10 @@ configdefault NXP_WIFI_TX_RX_ZERO_COPY
 	default y
 
 configdefault NXP_WIFI_FW_DEBUG
-	default y
+	default y if !NXP_WIFI_SLIM
 
 configdefault NXP_WIFI_WAKE_TIMER_ENABLE
-	default y
+	default y if !NXP_WIFI_SLIM
 
 endif # WIFI_NXP
 
@@ -315,7 +292,7 @@ endif # WIFI_NM_HOSTAPD_AP
 if MBEDTLS_ENABLE_HEAP
 
 configdefault MBEDTLS_HEAP_SIZE
-	default 75072
+	default 90432
 
 endif # MBEDTLS_ENABLE_HEAP
 
@@ -330,9 +307,6 @@ configdefault MBEDTLS_SSL_OUT_CONTENT_LEN
 endif # WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 
 configdefault SAE_PWE_EARLY_EXIT
-	default y
-
-configdefault WIFI_NM_WPA_SUPPLICANT_NAN
 	default y
 
 endif # WIFI_NM_WPA_SUPPLICANT

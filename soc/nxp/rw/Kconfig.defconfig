@@ -1,4 +1,4 @@
-# Copyright 2022-2024 NXP
+# Copyright 2022-2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_RW6XX
@@ -20,6 +20,24 @@ config NXP_MONOLITHIC_NBU
 configdefault NXP_COMPRESSED_WIFI_NB_FW
 	default y
 
+configdefault SYSTEM_WORKQUEUE_STACK_SIZE
+	default 4096 if WIFI && WIFI_NM_WPA_SUPPLICANT
+	default 2048 if BT || WIFI
+
+if SHELL
+
+configdefault SHELL_STACK_SIZE
+	default 6144 if WIFI
+	default 4096 if BT
+
+configdefault SHELL_ARGC_MAX
+	default 48 if WIFI
+
+configdefault SHELL_CMD_BUFF_SIZE
+	default 512 if WIFI
+
+endif # SHELL
+
 if BT
 
 config HCI_NXP_ENABLE_AUTO_SLEEP
@@ -35,21 +53,11 @@ config BT_LONG_WQ_STACK_SIZE
 	default 5120 if (WIFI || IEEE802154)
 	default 2560
 
-config SYSTEM_WORKQUEUE_STACK_SIZE
-	default 2048
-
 config BT_BUF_EVT_RX_COUNT
 	default 12
 
 config BT_BUF_ACL_TX_COUNT
 	default 8
-
-if SHELL
-
-config SHELL_STACK_SIZE
-	default 4096
-
-endif # SHELL
 
 endif # BT
 
@@ -63,7 +71,9 @@ config NXP_RF_IMU
 	default y if (BT || WIFI || IEEE802154)
 
 if WIFI
+
 orsource "Kconfig.defconfig.wifi"
+
 endif # WIFI
 
 if PM
