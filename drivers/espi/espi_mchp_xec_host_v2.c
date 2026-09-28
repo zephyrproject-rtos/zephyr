@@ -1393,6 +1393,7 @@ static int eacpi_shm_wr_req(const struct device *dev, enum lpc_peripheral_opcode
 struct xec_p80bd_config {
 	uintptr_t regbase;
 	uint32_t ecia_info;
+	uint16_t host_io_addr;
 #if DT_NODE_HAS_STATUS_OKAY(XEC_P80BD0_ALIAS_NODE)
 	uintptr_t alias_regbase;
 	uint16_t alias_host_io_addr;
@@ -1400,9 +1401,14 @@ struct xec_p80bd_config {
 #endif
 };
 
+/* Port 80 base is a 4-byte window starting on a 4-byte aligned Host I/O address */
+BUILD_ASSERT((DT_PROP_OR(DT_NODELABEL(p80bd0), host_io, ESPI_XEC_PORT80_HOST_ADDR) & 0x3u) == 0,
+	     "XEC Port 80 p80bd0 host-io must be 4-byte aligned");
+
 static const struct xec_p80bd_config xec_p80bd0_cfg = {
 	.regbase = DT_REG_ADDR(DT_NODELABEL(p80bd0)),
 	.ecia_info = DT_PROP_BY_IDX(DT_NODELABEL(p80bd0), girqs, 0),
+	.host_io_addr = DT_PROP_OR(DT_NODELABEL(p80bd0), host_io, ESPI_XEC_PORT80_HOST_ADDR),
 #if DT_NODE_HAS_STATUS_OKAY(XEC_P80BD0_ALIAS_NODE)
 	.alias_regbase = DT_REG_ADDR(XEC_P80BD0_ALIAS_NODE),
 	.alias_host_io_addr =
@@ -1553,7 +1559,7 @@ static int init_p80bd0(const struct device *dev)
 	struct xec_espi_ioc_cfg_regs *cfgregs =
 		(struct xec_espi_ioc_cfg_regs *)(cfg->ioc_base_addr + MCHP_ESPI_IO_CFG_OFS);
 	mm_reg_t p80rb = xec_p80bd0_cfg.regbase;
-	uint32_t bar_val = MCHP_ESPI_IO_BAR_HOST_ADDR_SET(ESPI_XEC_PORT80_HOST_ADDR);
+	uint32_t bar_val = MCHP_ESPI_IO_BAR_HOST_ADDR_SET(xec_p80bd0_cfg.host_io_addr);
 
 	cfgregs->IOHBAR[IOB_P80BD] = (bar_val | MCHP_ESPI_IO_BAR_HOST_VALID);
 
