@@ -1,0 +1,57 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Two 216 KB application slots + a 40 KB storage partition + 40 KB reserved for boot, 512 KB total.
+ * Valid only for the 512 KB-flash PSC3M6 MPNs (psc3m6ges3a*q1). The 256 KB MPNs
+ * (psc3m6fds2a*q1) must use kit_psc3m6_eval_partition_256k.dtsi instead.
+ */
+/ {
+	reserved-memory {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		sram0_s: sram0_s@34000000 {
+			/* Secure image SRAM */
+			reg = <0x34000000 DT_SIZE_K(128)>;
+		};
+	};
+};
+
+&flash0 {
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		slot0_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0 DT_SIZE_K(216)>;
+			label = "slot0";
+		};
+
+		/*
+		 * In standalone mode (without MCUboot), slot0 starts at 0x0.
+		 * 0x36000-0x3ffff is unallocated so that when MCUboot is added,
+		 * boot_partition can be placed at 0x0..0xa000 and slot0 shifts
+		 * to 0xa000..0x40000 (216 KB) without crossing the bank boundary.
+		 */
+
+		slot1_partition: partition@40000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x40000 DT_SIZE_K(216)>;
+			label = "slot1";
+		};
+
+		storage_partition: partition@76000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x76000 DT_SIZE_K(40)>;
+			label = "storage";
+		};
+	};
+};
