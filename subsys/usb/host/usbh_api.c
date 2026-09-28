@@ -37,6 +37,14 @@ init_exit:
 	return ret;
 }
 
+/* Workaround for hub support not being mandatory, see CONFIG_USBH_HUB_CLASS */
+__weak int usbh_root_hub_init(struct usbh_context *uhs_ctx)
+{
+	ARG_UNUSED(uhs_ctx);
+
+	return 0;
+}
+
 int usbh_enable(struct usbh_context *uhs_ctx)
 {
 	int ret;
@@ -59,6 +67,11 @@ int usbh_enable(struct usbh_context *uhs_ctx)
 	if (ret != 0) {
 		LOG_ERR("Failed to enable controller");
 		goto enable_exit;
+	}
+
+	ret = usbh_root_hub_init(uhs_ctx);
+	if (ret != 0) {
+		uhc_disable(uhs_ctx->dev);
 	}
 
 enable_exit:
