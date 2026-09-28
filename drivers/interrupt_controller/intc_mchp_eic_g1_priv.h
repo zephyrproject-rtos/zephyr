@@ -34,12 +34,15 @@ struct eic_mchp_g1_special_pins {
 	 EIC_MCHP_G1_SPECIAL_PINS(node_id, portc_special_pins_2, true)}
 #else
 #define EIC_MCHP_G1_PORTB_SPECIAL_PINS(node_id)                                                    \
-	{EIC_MCHP_G1_SPECIAL_PINS(node_id, portb_special_pins_1, false)}
+	{EIC_MCHP_G1_SPECIAL_PINS(node_id, portb_special_pins_1, false),                           \
+	 EIC_MCHP_G1_SPECIAL_PINS(node_id, portb_special_pins_2, true),                            \
+	 EIC_MCHP_G1_SPECIAL_PINS(node_id, portb_special_pins_3, true)}
 #define EIC_MCHP_G1_PORTC_SPECIAL_PINS(node_id)                                                    \
 	{EIC_MCHP_G1_SPECIAL_PINS(node_id, portc_special_pins_1, false)}
 #define EIC_MCHP_G1_PORTD_SPECIAL_PINS(node_id)                                                    \
 	{EIC_MCHP_G1_SPECIAL_PINS(node_id, portd_special_pins_2, false),                           \
-	 EIC_MCHP_G1_SPECIAL_PINS(node_id, portd_special_pins_1, true)}
+	 EIC_MCHP_G1_SPECIAL_PINS(node_id, portd_special_pins_1, true),                            \
+	 EIC_MCHP_G1_SPECIAL_PINS(node_id, portd_special_pins_3, true)}
 #endif
 
 /*
