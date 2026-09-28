@@ -30,7 +30,6 @@
 		zephyr,bt-hci = &esp32_bt_hci;
 		zephyr,display = &epd_el040ef1;
 		zephyr,rtc = &rx8130ce_rtc;
-		zephyr,sdhc = &sdcard0;
 	};
 
 	aliases {
