@@ -64,6 +64,14 @@ config MPIPE_PLAYER_DUMP_ON_STATE_CHANGE
 
 endif # MPIPE_PLAYER
 
+config MPIPE_DUMP
+	bool "Pipeline topology dump"
+	help
+	  Render a bin as a Graphviz graph for debugging: every element with
+	  its state and pads, the peer of each pad and the capability
+	  negotiated on it. The DOT text is written through a callback, to the
+	  console by default.
+
 config MPIPE_DUMP_MAX_ELEMENTS
 	int "Maximum number of elements a dump can index"
 	depends on MPIPE_DUMP
