@@ -49,6 +49,15 @@ tests:
       - CONFIG_LLEXT_VENEERS=y
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
       - CONFIG_LLEXT_RODATA_NO_RELOC=y
+      - CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT=y
+      - platform:intel_adsp/ace15_mtpm/sim:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace20_lnl:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace20_lnl/sim:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace30/ptl:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace30/ptl/sim:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace30/wcl/sim:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace40/nvl:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace40/nvl/sim:CONFIG_MP_MAX_NUM_CPUS=1
   llext.readonly.memblk:
     arch_allow:
       - arm
@@ -63,6 +72,15 @@ tests:
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
       - CONFIG_LLEXT_RODATA_NO_RELOC=y
       - CONFIG_LLEXT_HEAP_MEMBLK=y
+      - CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT=y
+      - platform:intel_adsp/ace15_mtpm/sim:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace20_lnl:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace20_lnl/sim:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace30/ptl:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace30/ptl/sim:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace30/wcl/sim:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace40/nvl:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace40/nvl/sim:CONFIG_MP_MAX_NUM_CPUS=1
   llext.readonly_mpu:
     arch_allow:
       - arm # Currently not supported on RISC-V
@@ -73,6 +91,15 @@ tests:
       - CONFIG_USERSPACE=y
       - CONFIG_LLEXT_VENEERS=y
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
+      - CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT=y
+      - platform:intel_adsp/ace15_mtpm/sim:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace20_lnl:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace20_lnl/sim:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace30/ptl:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace30/ptl/sim:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace30/wcl/sim:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace40/nvl:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace40/nvl/sim:CONFIG_MP_MAX_NUM_CPUS=1
   llext.readonly_mpu.memblk:
     arch_allow:
       - arm # Currently not supported on RISC-V
@@ -85,6 +112,15 @@ tests:
       - CONFIG_LLEXT_HEAP_MEMBLK=y
       - CONFIG_LLEXT_EXT_HEAP_SIZE=64
       - CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE=8192
+      - CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT=y
+      - platform:intel_adsp/ace15_mtpm/sim:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace20_lnl:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace20_lnl/sim:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace30/ptl:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace30/ptl/sim:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace30/wcl/sim:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace40/nvl:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace40/nvl/sim:CONFIG_MP_MAX_NUM_CPUS=1
   llext.readonly_mpu.memblk.power_of_two_alignment:
     arch_allow:
       - arm # Currently not supported on RISC-V
@@ -132,6 +168,15 @@ tests:
       - CONFIG_LLEXT_HEAP_SIZE=128 # qemu_cortex_a9 requires larger heap
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
       - CONFIG_LLEXT_RODATA_NO_RELOC=y
+      - CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT=y
+      - platform:intel_adsp/ace15_mtpm/sim:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace20_lnl:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace20_lnl/sim:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace30/ptl:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace30/ptl/sim:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace30/wcl/sim:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace40/nvl:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace40/nvl/sim:CONFIG_MP_MAX_NUM_CPUS=1
       # On RISC-V (no MMU, no userspace) llext copies code into RAM and runs it
       # in machine mode, so the loaded text region must stay executable. DEP
       # installs a locked catch-all PMP entry that makes all RAM non-executable
@@ -153,6 +198,15 @@ tests:
       - CONFIG_LLEXT_HEAP_MEMBLK=y
       - CONFIG_LLEXT_EXT_HEAP_SIZE=64
       - CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE=4096
+      - CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT=y
+      - platform:intel_adsp/ace15_mtpm/sim:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace20_lnl:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace20_lnl/sim:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace30/ptl:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace30/ptl/sim:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace30/wcl/sim:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace40/nvl:CONFIG_MP_MAX_NUM_CPUS=1
+      - platform:intel_adsp/ace40/nvl/sim:CONFIG_MP_MAX_NUM_CPUS=1
       # See note above: RISC-V executes loaded code from RAM in machine mode,
       # which is incompatible with DEP's locked catch-all PMP entry.
       - CONFIG_PMP_DATA_EXECUTION_PREVENTION=n
