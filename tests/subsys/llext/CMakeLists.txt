@@ -29,7 +29,10 @@ set(ext_names
 )
 
 if(CONFIG_ARM)
-  if(NOT CONFIG_CPU_CORTEX_M0 AND NOT CONFIG_CPU_CORTEX_M0PLUS AND NOT CONFIG_CPU_CORTEX_M1)
+  # MOVW/MOVT immediates are absolute (R_ARM_THM_MOVW_ABS_NC). The ARM linker
+  # rejects those in an ET_DYN shared object; they stay an ET_REL/ET_OBJECT test.
+  if(NOT CONFIG_LLEXT_TYPE_ELF_SHAREDLIB AND
+     NOT CONFIG_CPU_CORTEX_M0 AND NOT CONFIG_CPU_CORTEX_M0PLUS AND NOT CONFIG_CPU_CORTEX_M1)
     list(APPEND ext_names movwmovt)
   endif()
 endif()
@@ -80,10 +83,12 @@ endif()
 
 # An extension referencing the thread-local errno, exercising the AArch64
 # local-exec TLS relocations (R_AARCH64_TLSLE_ADD_TPREL_*). Only arm64
-# implements these in arch_elf_relocate(); a libc whose errno is genuinely
-# __thread (toolchain picolibc with thread-local storage) is enabled by the
-# llext.tls scenario.
-if(CONFIG_ARM64 AND CONFIG_THREAD_LOCAL_STORAGE)
+# implements these in arch_elf_relocate(); local-exec TLS relocations are not
+# valid in an ET_DYN shared library. A libc whose errno is genuinely __thread
+# (toolchain picolibc with thread-local storage) is enabled by the llext.tls
+# scenario.
+if(CONFIG_ARM64 AND CONFIG_THREAD_LOCAL_STORAGE AND
+   NOT CONFIG_LLEXT_TYPE_ELF_SHAREDLIB)
   add_llext_target(tls_ext
     OUTPUT  ${PROJECT_BINARY_DIR}/llext/tls.llext
     SOURCES ${PROJECT_SOURCE_DIR}/src/tls_ext.c
@@ -122,7 +127,9 @@ if(CONFIG_LLEXT_TYPE_ELF_RELOCATABLE AND CONFIG_XTENSA AND CONFIG_LLEXT_STORAGE_
   )
 endif()
 
-if(NOT CONFIG_LLEXT_TYPE_ELF_OBJECT AND CONFIG_RISCV AND CONFIG_RISCV_ISA_EXT_C)
+# Non-PIC PCREL_HI20; a shared link rejects these.
+if(NOT CONFIG_LLEXT_TYPE_ELF_OBJECT AND NOT CONFIG_LLEXT_TYPE_ELF_SHAREDLIB AND
+   CONFIG_RISCV AND CONFIG_RISCV_ISA_EXT_C)
   add_llext_target(riscv_edge_case_cb_type_ext
     OUTPUT  ${PROJECT_BINARY_DIR}/llext/riscv_edge_case_cb_type_ext.llext
     SOURCES ${PROJECT_SOURCE_DIR}/src/riscv_edge_case_cb_type.c ${PROJECT_SOURCE_DIR}/src/riscv_edge_case_cb_type_trigger.S
@@ -132,7 +139,7 @@ if(NOT CONFIG_LLEXT_TYPE_ELF_OBJECT AND CONFIG_RISCV AND CONFIG_RISCV_ISA_EXT_C)
   )
 endif()
 
-if(NOT CONFIG_LLEXT_TYPE_ELF_OBJECT AND CONFIG_RISCV)
+if(NOT CONFIG_LLEXT_TYPE_ELF_OBJECT AND NOT CONFIG_LLEXT_TYPE_ELF_SHAREDLIB AND CONFIG_RISCV)
   add_llext_target(riscv_edge_case_non_paired_hi20_lo12_ext
     OUTPUT  ${PROJECT_BINARY_DIR}/llext/riscv_edge_case_non_paired_hi20_lo12_ext.llext
     SOURCES ${PROJECT_SOURCE_DIR}/src/riscv_edge_case_non_paired_hi20_lo12.c ${PROJECT_SOURCE_DIR}/src/riscv_edge_case_non_paired_hi20_lo12_trigger.S
