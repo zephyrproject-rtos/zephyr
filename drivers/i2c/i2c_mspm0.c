@@ -19,6 +19,7 @@
 #include <soc.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/policy.h>
 
 #include "i2c-priv.h"
 
@@ -924,6 +925,7 @@ static int i2c_mspm0_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 	}
 
 	k_sem_take(&data->i2c_lock, K_FOREVER);
+	pm_policy_device_power_lock_get(dev);
 
 	data->msgs = msgs;
 	data->num_msgs = num_msgs;
@@ -958,6 +960,7 @@ static int i2c_mspm0_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 		i2c_mspm0_configure(dev, dev_config);
 	}
 
+	pm_policy_device_power_lock_put(dev);
 	k_sem_give(&data->i2c_lock);
 
 	pm_device_runtime_put(dev);
@@ -985,6 +988,8 @@ static int i2c_mspm0_target_register(const struct device *dev, struct i2c_target
 		k_sem_give(&data->i2c_lock);
 		return ret;
 	}
+
+	pm_policy_device_power_lock_get(dev);
 
 	data->target_config = cfg;
 	data->target_callbacks = cfg->callbacks;
@@ -1039,6 +1044,7 @@ static int i2c_mspm0_target_unregister(const struct device *dev, struct i2c_targ
 	i2c_disable_target(base);
 	i2c_disable_interrupt(base, TI_MSPM0_TARGET_INTERRUPTS);
 
+	pm_policy_device_power_lock_put(dev);
 	k_sem_give(&data->i2c_lock);
 
 	pm_device_runtime_put(dev);
