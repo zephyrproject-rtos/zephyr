@@ -140,7 +140,6 @@ static void nxp_lpcmp_irq_handler(const struct device *dev)
 	config->base->CSR |= (LPCMP_CSR_CFF_MASK | LPCMP_CSR_CFR_MASK);
 
 	if (data->callback == NULL) {
-		LOG_WRN("No callback can be executed.");
 		return;
 	}
 
