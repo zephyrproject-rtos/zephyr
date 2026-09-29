@@ -1141,8 +1141,8 @@ static void intc_connect_irq_event(IRQn_Type irq, IRQSELn_Type event)
 			(                                                                          \
 				COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), dmas),                \
 					(                                                          \
-						.rxi_irq = DT_INST_IRQ_BY_NAME(n, rxi, irq),       \
-						.txi_irq = DT_INST_IRQ_BY_NAME(n, txi, irq),       \
+						.rxi_irq = FSP_INVALID_VECTOR,                     \
+						.txi_irq = FSP_INVALID_VECTOR,                     \
 						.p_transfer_tx = &g_transfer##n##_tx,              \
 						.p_transfer_rx = &g_transfer##n##_rx,              \
 					),                                                         \
