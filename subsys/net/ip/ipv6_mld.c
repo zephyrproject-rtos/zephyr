@@ -378,6 +378,10 @@ out:
 					sizeof(struct net_in6_addr));
 }
 
+/* Respond to a General Query with the current state of every listened to
+ * group, packed into one report (RFC 3810 ch 6.3), including the multicast
+ * routes when so configured.
+ */
 static int send_mld_report(struct net_if *iface)
 {
 	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
@@ -604,19 +608,38 @@ static enum net_verdict handle_mld_query(struct net_icmp_ctx *ctx,
 		goto drop;
 	}
 
-	/* Currently we only support an unspecified address query. */
-	if (!net_ipv6_addr_cmp_raw(mld_query->mcast_address,
-				   (uint8_t *)net_ipv6_unspecified_address())) {
-		NET_DBG("DROP: only supporting unspecified address query");
-		goto drop;
+	if (net_ipv6_addr_cmp_raw(mld_query->mcast_address,
+				  (uint8_t *)net_ipv6_unspecified_address())) {
+		ret = send_mld_report(net_pkt_iface(pkt));
+	} else {
+		/* A Multicast Address Specific Query is answered with the state
+		 * of that address only, and only by its listeners (RFC 3810 ch
+		 * 6.3). Multicast Address and Source Specific Queries are
+		 * answered the same way.
+		 */
+		struct net_if *iface = net_pkt_iface(pkt);
+		struct net_if_mcast_addr *maddr;
+		struct net_in6_addr group;
+
+		net_ipv6_addr_copy_raw(group.s6_addr, mld_query->mcast_address);
+
+		maddr = net_if_ipv6_maddr_lookup(&group, &iface);
+		if (maddr == NULL || !net_if_ipv6_maddr_is_joined(maddr) ||
+		    !mld_is_reported(&group)) {
+			NET_DBG("Ignoring query for group %s", net_sprint_ipv6_addr(&group));
+			ret = 0;
+			goto out;
+		}
+
+		ret = net_ipv6_mld_send_single(iface, &group, NET_IPV6_MLDv2_MODE_IS_EXCLUDE);
 	}
 
-	ret = send_mld_report(net_pkt_iface(pkt));
 	if (ret < 0) {
 		NET_DBG("DROP: failed to send MLD report (%d)", ret);
 		goto drop;
 	}
 
+out:
 	net_pkt_cursor_restore(pkt, &backup);
 	return NET_CONTINUE;
 

@@ -989,6 +989,51 @@ static void verify_query_unanswered(const struct mld_query_opts *opts)
 	test_leave_group();
 }
 
+/* A Multicast Address Specific Query is answered by a listener of that
+ * address with its current state (RFC 3810 ch 6.3).
+ */
+ZTEST(net_mld_test_suite, test_address_specific_query)
+{
+	uint8_t record_type = 0;
+	struct mld_report_handler handler = {
+		.fn = record_mcast_report,
+		.user_data = &record_type
+	};
+	struct mld_query_opts opts = { .max_resp = 3 };
+
+	test_join_group();
+
+	exp_mcast_group_storage = mcast_addr;
+	exp_mcast_group = &exp_mcast_group_storage;
+	report_handler = &handler;
+	k_sem_reset(&wait_report);
+
+	opts.dst = &mcast_addr;
+	opts.group = &mcast_addr;
+	send_mld_query(net_iface, &opts);
+
+	zassert_ok(k_sem_take(&wait_report, K_MSEC(WAIT_TIME)),
+		   "Timeout while waiting for the report");
+	zassert_equal(record_type, NET_IPV6_MLDv2_MODE_IS_EXCLUDE,
+		      "Query not answered with the current state");
+
+	report_handler = NULL;
+	test_leave_group();
+}
+
+/* A query for a group that is not listened to gets no answer */
+ZTEST(net_mld_test_suite, test_address_specific_query_not_listener)
+{
+	struct net_in6_addr other;
+	struct mld_query_opts opts = { .max_resp = 3 };
+
+	net_ipv6_addr_create(&other, 0xff15, 0, 0, 0, 0, 0, 0, 0x0002);
+	opts.dst = &other;
+	opts.group = &other;
+
+	verify_query_unanswered(&opts);
+}
+
 /* A query must come from a link-local address (RFC 3810 ch 5.1.14) */
 ZTEST(net_mld_test_suite, test_query_global_source_ignored)
 {
