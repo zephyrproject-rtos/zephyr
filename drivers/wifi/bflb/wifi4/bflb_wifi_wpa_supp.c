@@ -49,12 +49,13 @@ LOG_MODULE_DECLARE(bflb_wifi, CONFIG_WIFI_LOG_LEVEL);
  * collides with hostap's, so the functions are declared directly below).
  */
 #define BFLB_FW_ALG_CCMP 3
-#define BFLB_FW_ALG_IGTK 7
 
 extern bool bl_wifi_auth_done_internal(uint8_t sta_idx, uint16_t reason_code);
 extern int bl_wifi_set_sta_key_internal(uint8_t vif_idx, uint8_t sta_idx, int alg, int key_idx,
 					int set_tx, uint8_t *seq, size_t seq_len, uint8_t *key,
 					size_t key_len, bool pairwise);
+extern int bl_wifi_set_igtk_internal(uint8_t vif_idx, uint8_t sta_idx, uint16_t key_idx,
+				     const uint8_t *pn, const uint8_t *key);
 
 struct bflb_supp_ctx g_supp_ctx;
 
@@ -397,9 +398,7 @@ static int bflb_wpa_supp_set_key(void *if_priv, const unsigned char *ifname, enu
 		return 0;
 	}
 
-	/* IGTK (management-frame protection, mandatory for WPA3-SAE): install
-	 * as a group key with the firmware's IGTK algorithm.
-	 */
+	/* The generic key API would store the IGTK as CCMP in the station 0 PTK slot on vif 1. */
 	if (alg == WPA_ALG_BIP_CMAC_128) {
 		if (key == NULL || key_len != CCMP_TK_LEN) {
 			return -ENOTSUP;
@@ -408,9 +407,7 @@ static int bflb_wpa_supp_set_key(void *if_priv, const unsigned char *ifname, enu
 			memcpy(rsc, seq, seq_len);
 		}
 		LOG_INF("set_key: IGTK vif=%u key_idx=%d", bflb_wifi.vif_idx, key_idx);
-		ret = bl_wifi_set_sta_key_internal(bflb_wifi.vif_idx, ctx->sta_idx,
-						   BFLB_FW_ALG_IGTK, key_idx, 0, rsc, sizeof(rsc),
-						   (uint8_t *)(uintptr_t)key, key_len, false);
+		ret = bl_wifi_set_igtk_internal(bflb_wifi.vif_idx, ctx->sta_idx, key_idx, rsc, key);
 		if (ret != 0) {
 			LOG_ERR("IGTK install failed: %d", ret);
 			return -EIO;
