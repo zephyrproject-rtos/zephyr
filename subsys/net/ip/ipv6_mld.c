@@ -44,6 +44,50 @@ LOG_MODULE_DECLARE(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 /* Router Alert option value for MLD, RFC 2711 ch 2.1 */
 #define IPV6_OPT_ROUTER_ALERT_MLD 0
 
+/* Query lengths that tell the versions apart, RFC 3810 ch 8.1 */
+#define MLD_V1_QUERY_LEN 24
+#define MLD_V2_QUERY_MIN_LEN 28
+
+/* Query Interval and Query Response Interval, RFC 3810 ch 9.2 and 9.3 */
+#define MLD_QUERY_INTERVAL_S 125U
+#define MLD_QUERY_RESPONSE_INTERVAL_S 10U
+
+/* Older Version Querier Present Timeout, RFC 3810 ch 9.12 */
+#define MLD_OLDER_VERSION_QUERIER_PRESENT_S \
+	(CONFIG_NET_IPV6_MLD_ROBUSTNESS * MLD_QUERY_INTERVAL_S + MLD_QUERY_RESPONSE_INTERVAL_S)
+
+enum mld_version {
+	MLDV1 = 1,
+	MLDV2,
+};
+
+/* The fields shared by MLDv1 and MLDv2 queries */
+struct mld_query_common {
+	uint16_t max_response_code;
+	uint16_t reserved;
+	uint8_t mcast_address[NET_IPV6_ADDR_SIZE];
+} __packed;
+
+/* Host Compatibility Mode of the interface, RFC 3810 ch 8.2.1: MLDv1 while
+ * an MLDv1 querier was heard within the Older Version Querier Present
+ * Timeout, MLDv2 otherwise.
+ */
+static enum mld_version mld_host_version(const struct net_if_ipv6 *ipv6)
+{
+	return sys_timepoint_expired(ipv6->mld_v1_querier_timeout) ? MLDV2 : MLDV1;
+}
+
+/* An MLDv1 query switches the host to MLDv1 for the Older Version Querier
+ * Present Timeout, RFC 3810 ch 8.2.1.
+ */
+static void mld_querier_seen(struct net_if_ipv6 *ipv6, enum mld_version version)
+{
+	if (version == MLDV1) {
+		ipv6->mld_v1_querier_timeout =
+			sys_timepoint_calc(K_SECONDS(MLD_OLDER_VERSION_QUERIER_PRESENT_S));
+	}
+}
+
 /* Internal structure used for appending multicast routes to MLDv2 reports */
 struct mcast_route_appending_info {
 	int status;
@@ -94,18 +138,24 @@ static int mld_create(struct net_pkt *pkt,
 	return 0;
 }
 
-static int mld_create_packet(struct net_pkt *pkt, uint16_t count)
+/* IPv6 header with the Router Alert option in a Hop-by-Hop Options header,
+ * as every MLD message carries (RFC 3810 ch 5, RFC 2710 ch 3).
+ */
+static int mld_create_ipv6(struct net_pkt *pkt, const struct net_in6_addr *dst)
 {
-	struct net_in6_addr dst;
+	const struct net_in6_addr *src;
 
-	/* Sent to all MLDv2-capable routers */
-	net_ipv6_addr_create(&dst, 0xff02, 0, 0, 0, 0, 0, 0, 0x0016);
+	/* MLD messages carry a link-local source, or the unspecified address
+	 * while the interface has no valid one yet (RFC 3810 ch 5.2.13).
+	 */
+	src = net_if_ipv6_get_ll(net_pkt_iface(pkt), NET_ADDR_PREFERRED);
+	if (src == NULL) {
+		src = net_ipv6_unspecified_address();
+	}
 
-	net_pkt_set_ipv6_hop_limit(pkt, 1); /* RFC 3810 ch 7.4 */
+	net_pkt_set_ipv6_hop_limit(pkt, 1); /* RFC 3810 ch 5 */
 
-	if (net_ipv6_create(pkt, net_if_ipv6_select_src_addr(
-				    net_pkt_iface(pkt), &dst),
-			    &dst)) {
+	if (net_ipv6_create(pkt, src, dst)) {
 		return -ENOBUFS;
 	}
 
@@ -127,6 +177,23 @@ static int mld_create_packet(struct net_pkt *pkt, uint16_t count)
 	}
 
 	net_pkt_set_ipv6_ext_len(pkt, IPV6_OPT_HDR_ROUTER_ALERT_LEN);
+	net_pkt_set_ipv6_next_hdr(pkt, NET_IPV6_NEXTHDR_HBHO);
+
+	return 0;
+}
+
+static int mld_create_packet(struct net_pkt *pkt, uint16_t count)
+{
+	struct net_in6_addr dst;
+	int ret;
+
+	/* Sent to all MLDv2-capable routers, RFC 3810 ch 5.2.14 */
+	net_ipv6_addr_create(&dst, 0xff02, 0, 0, 0, 0, 0, 0, 0x0016);
+
+	ret = mld_create_ipv6(pkt, &dst);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* ICMPv6 header + reserved space + count.
 	 * MLDv6 stuff will come right after
@@ -136,8 +203,6 @@ static int mld_create_packet(struct net_pkt *pkt, uint16_t count)
 	    net_pkt_write_be16(pkt, count)) {
 		return -ENOBUFS;
 	}
-
-	net_pkt_set_ipv6_next_hdr(pkt, NET_IPV6_NEXTHDR_HBHO);
 
 	return 0;
 }
@@ -200,15 +265,62 @@ static void append_mcast_routes(struct net_route_ipv6_entry_mcast *entry, void *
 }
 #endif
 
-int net_ipv6_mld_send_single(struct net_if *iface, const struct net_in6_addr *addr, uint8_t mode)
+/* An MLDv1 Report goes to the address it reports, a Done to the link-scope
+ * all-routers address (RFC 2710 ch 8). Both carry the address in their
+ * Multicast Address field.
+ */
+static int mld_v1_send(struct net_if *iface, uint8_t type, const struct net_in6_addr *addr)
 {
+	struct net_in6_addr all_routers;
+	const struct net_in6_addr *dst = addr;
 	struct net_pkt *pkt;
 	int ret;
 
-	if (!mld_is_reported(addr)) {
-		/* No MLD messages for this address, RFC 3810 ch 6 */
-		return 0;
+	if (type == NET_ICMPV6_MLDv1_DONE) {
+		net_ipv6_addr_create_ll_allrouters_mcast(&all_routers);
+		dst = &all_routers;
 	}
+
+	pkt = net_pkt_alloc_with_buffer(iface, IPV6_OPT_HDR_ROUTER_ALERT_LEN +
+					NET_ICMPV6_UNUSED_LEN +
+					sizeof(struct mld_query_common),
+					NET_AF_INET6, NET_IPPROTO_ICMPV6,
+					PKT_WAIT_TIME);
+	if (pkt == NULL) {
+		return -ENOMEM;
+	}
+
+	ret = mld_create_ipv6(pkt, dst);
+	if (ret < 0) {
+		goto drop;
+	}
+
+	/* ICMPv6 header, Maximum Response Delay and Reserved set to zero */
+	if (net_icmpv6_create(pkt, type, 0) ||
+	    net_pkt_write_be16(pkt, 0) ||
+	    net_pkt_write_be16(pkt, 0) ||
+	    net_pkt_write(pkt, addr, sizeof(struct net_in6_addr))) {
+		ret = -ENOBUFS;
+		goto drop;
+	}
+
+	ret = mld_send(pkt);
+	if (ret < 0) {
+		goto drop;
+	}
+
+	return 0;
+
+drop:
+	net_pkt_unref(pkt);
+
+	return ret;
+}
+
+static int mld_v2_send_single(struct net_if *iface, const struct net_in6_addr *addr, uint8_t mode)
+{
+	struct net_pkt *pkt;
+	int ret;
 
 	pkt = net_pkt_alloc_with_buffer(iface, IPV6_OPT_HDR_ROUTER_ALERT_LEN +
 					NET_ICMPV6_UNUSED_LEN +
@@ -237,6 +349,28 @@ drop:
 	net_pkt_unref(pkt);
 
 	return ret;
+}
+
+/* Report one address in the version the host speaks on the interface. In
+ * MLDv1 a change to INCLUDE mode, that is a leave, becomes a Done message
+ * and every other record a Report.
+ */
+int net_ipv6_mld_send_single(struct net_if *iface, const struct net_in6_addr *addr, uint8_t mode)
+{
+	if (!mld_is_reported(addr)) {
+		/* No MLD messages for this address, RFC 3810 ch 6 */
+		return 0;
+	}
+
+	if (mld_host_version(iface->config.ip.ipv6) == MLDV1) {
+		uint8_t type = mode == NET_IPV6_MLDv2_CHANGE_TO_INCLUDE_MODE
+				       ? NET_ICMPV6_MLDv1_DONE
+				       : NET_ICMPV6_MLDv1_REPORT;
+
+		return mld_v1_send(iface, type, addr);
+	}
+
+	return mld_v2_send_single(iface, addr, mode);
 }
 
 int net_ipv6_mld_rejoin(struct net_if *iface, struct net_if_mcast_addr *addr)
@@ -378,6 +512,61 @@ out:
 					sizeof(struct net_in6_addr));
 }
 
+#if defined(CONFIG_NET_IPV6_MCAST_ROUTE_MLD_REPORTS)
+static void send_v1_mcast_route_report(struct net_route_ipv6_entry_mcast *entry, void *user_data)
+{
+	struct mcast_route_appending_info *info = user_data;
+	struct net_if_mcast_addr *maddr;
+	struct net_if *iface = info->iface;
+
+	if (info->status != 0 || entry->prefix_len != 128 || !mld_is_reported(&entry->group)) {
+		return;
+	}
+
+	maddr = net_if_ipv6_maddr_lookup(&entry->group, &iface);
+	if (maddr != NULL && net_if_ipv6_maddr_is_joined(maddr)) {
+		/* Reported with the joined groups already */
+		return;
+	}
+
+	info->status = mld_v1_send(info->iface, NET_ICMPV6_MLDv1_REPORT, &entry->group);
+}
+#endif
+
+/* Respond to a General Query in MLDv1: one Report per listened to group
+ * (RFC 2710 ch 4), plus one per multicast route when so configured.
+ */
+static int send_mld_v1_reports(struct net_if *iface)
+{
+	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
+	int ret = 0;
+
+	ARRAY_FOR_EACH(ipv6->mcast, i) {
+		if (!ipv6->mcast[i].is_used || !ipv6->mcast[i].is_joined ||
+		    !mld_is_reported(&ipv6->mcast[i].address.in6_addr)) {
+			continue;
+		}
+
+		ret = mld_v1_send(iface, NET_ICMPV6_MLDv1_REPORT,
+				  &ipv6->mcast[i].address.in6_addr);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+#if defined(CONFIG_NET_IPV6_MCAST_ROUTE_MLD_REPORTS)
+	struct mcast_route_appending_info info = {
+		.iface = iface,
+	};
+
+	net_route_ipv6_mcast_foreach(send_v1_mcast_route_report, NULL, &info);
+
+	ret = info.status;
+#endif
+
+	return ret;
+}
+
 /* Respond to a General Query with the current state of every listened to
  * group, packed into one report (RFC 3810 ch 6.3), including the multicast
  * routes when so configured.
@@ -390,6 +579,10 @@ static int send_mld_report(struct net_if *iface)
 	int ret;
 
 	NET_ASSERT(ipv6);
+
+	if (mld_host_version(ipv6) == MLDV1) {
+		return send_mld_v1_reports(iface);
+	}
 
 	for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
 		if (!ipv6->mcast[i].is_used || !ipv6->mcast[i].is_joined ||
@@ -549,26 +742,32 @@ static enum net_verdict handle_mld_query(struct net_icmp_ctx *ctx,
 					 struct net_icmp_hdr *icmp_hdr,
 					 void *user_data)
 {
-	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(mld_access,
-					      struct net_icmpv6_mld_query);
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(mld_access, struct mld_query_common);
 	struct net_ipv6_hdr *ip_hdr = hdr->ipv6;
 	uint16_t length = net_pkt_get_len(pkt);
-	struct net_icmpv6_mld_query *mld_query;
+	struct mld_query_common *mld_query;
 	struct net_pkt_cursor backup;
+	enum mld_version version;
+	uint16_t num_sources = 0U;
+	size_t mld_len;
 	uint16_t pkt_len;
 	int ret = -EIO;
 
 	net_pkt_cursor_backup(pkt, &backup);
 
-	if (net_pkt_remaining_data(pkt) < sizeof(struct net_icmpv6_mld_query)) {
-		/* MLDv1 query, drop. */
-		ret = 0;
+	/* The version of a query follows from its length, RFC 3810 ch 8.1 */
+	mld_len = net_pkt_remaining_data(pkt) + sizeof(struct net_icmp_hdr);
+	if (mld_len == MLD_V1_QUERY_LEN) {
+		version = MLDV1;
+	} else if (mld_len >= MLD_V2_QUERY_MIN_LEN) {
+		version = MLDV2;
+	} else {
+		NET_DBG("DROP: unsupported query length %zu", mld_len);
 		goto drop;
 	}
 
-	mld_query = (struct net_icmpv6_mld_query *)
-				net_pkt_get_data(pkt, &mld_access);
-	if (!mld_query) {
+	mld_query = (struct mld_query_common *)net_pkt_get_data(pkt, &mld_access);
+	if (mld_query == NULL) {
 		NET_DBG("DROP: NULL MLD query");
 		goto drop;
 	}
@@ -579,19 +778,27 @@ static enum net_verdict handle_mld_query(struct net_icmp_ctx *ctx,
 		goto drop;
 	}
 
+	if (version == MLDV2) {
+		/* Skip Resv, S, QRV and QQIC, then the Number of Sources */
+		if (net_pkt_skip(pkt, sizeof(uint16_t)) < 0 ||
+		    net_pkt_read_be16(pkt, &num_sources) < 0) {
+			NET_DBG("DROP: cannot read the number of sources");
+			ret = -EIO;
+			goto drop;
+		}
+	}
+
 	dbg_addr_recv("Multicast Listener Query", &ip_hdr->src, &ip_hdr->dst);
 
 	net_stats_update_ipv6_mld_recv(net_pkt_iface(pkt));
 
-	mld_query->num_sources = net_ntohs(mld_query->num_sources);
-
-	pkt_len = sizeof(struct net_ipv6_hdr) +	net_pkt_ipv6_ext_len(pkt) +
-		sizeof(struct net_icmp_hdr) +
-		sizeof(struct net_icmpv6_mld_query) +
-		sizeof(struct net_in6_addr) * mld_query->num_sources;
+	pkt_len = sizeof(struct net_ipv6_hdr) + net_pkt_ipv6_ext_len(pkt) +
+		  (version == MLDV1 ? MLD_V1_QUERY_LEN : MLD_V2_QUERY_MIN_LEN) +
+		  sizeof(struct net_in6_addr) * num_sources;
 
 	if (length < pkt_len || pkt_len > NET_IPV6_MTU ||
 	    ip_hdr->hop_limit != 1U || icmp_hdr->code != 0U) {
+		ret = -EIO;
 		goto drop;
 	}
 
@@ -607,6 +814,8 @@ static enum net_verdict handle_mld_query(struct net_icmp_ctx *ctx,
 		NET_DBG("DROP: query without Router Alert option");
 		goto drop;
 	}
+
+	mld_querier_seen(net_pkt_iface(pkt)->config.ip.ipv6, version);
 
 	if (net_ipv6_addr_cmp_raw(mld_query->mcast_address,
 				  (uint8_t *)net_ipv6_unspecified_address())) {
