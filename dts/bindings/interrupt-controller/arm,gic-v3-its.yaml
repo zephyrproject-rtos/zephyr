@@ -8,5 +8,16 @@ compatible: "arm,gic-v3-its"
 include: base.yaml
 
 properties:
+  zephyr,device-id-bits:
+    type: int
+    min: 1
+    max: 16
+    default: 16
+    description: |
+      Number of DeviceID bits provisioned by the driver. This bounds the
+      statically reserved Device table. The default covers the full 16-bit
+      PCIe RequesterID space. Reduce this value when all DeviceIDs used by
+      the platform fit in a narrower range to reduce static memory usage.
+
   reg:
     required: true
