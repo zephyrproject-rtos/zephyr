@@ -175,12 +175,19 @@
 #define IMU_BOSCH_BMI323_REG_CMD_CMD_SIZE	    (0x10)
 #define IMU_BOSCH_BMI323_REG_CMD_CMD_VAL_SOFT_RESET (0xDEAF)
 
+#define IMU_BOSCH_BMI323_ACC_FIRST_SAMPLE_TIME_MS  20
+#define IMU_BOSCH_BMI323_GYRO_FIRST_SAMPLE_TIME_MS 60
+
 #define IMU_BOSCH_BMI323_REG_MASK(reg, field)                                                      \
 	(BIT_MASK(IMU_BOSCH_BMI323_REG_##reg##_##field##_SIZE)                                     \
 	 << IMU_BOSCH_BMI323_REG_##reg##_##field##_OFFSET)
 
 #define IMU_BOSCH_BMI323_REG_VALUE(reg, field, val)                                                \
 	(IMU_BOSCH_BMI323_REG_##reg##_##field##_VAL_##val                                          \
+	 << IMU_BOSCH_BMI323_REG_##reg##_##field##_OFFSET)
+
+#define IMU_BOSCH_BMI323_REG_FIELD(reg, field, val)                                                \
+	(((val) & BIT_MASK(IMU_BOSCH_BMI323_REG_##reg##_##field##_SIZE))                           \
 	 << IMU_BOSCH_BMI323_REG_##reg##_##field##_OFFSET)
 
 #define IMU_BOSCH_BMI323_REG_VALUE_GET_FIELD(reg_value, reg, field)                                \

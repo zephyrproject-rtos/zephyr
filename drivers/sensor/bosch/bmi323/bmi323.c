@@ -10,6 +10,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/dt-bindings/sensor/bmi323.h>
 
 #include "bmi323.h"
 
@@ -36,6 +37,11 @@ struct bosch_bmi323_config {
 	const struct gpio_dt_spec int_gpio;
 
 	const bosch_bmi323_gpio_callback_ptr int_gpio_callback;
+
+	const uint8_t acc_pwr_mode;
+	const uint8_t acc_odr;
+	const uint8_t gyro_pwr_mode;
+	const uint8_t gyro_odr;
 };
 
 static int bosch_bmi323_bus_init(const struct device *dev)
@@ -1160,6 +1166,44 @@ static void bosch_bmi323_irq_callback_handler(struct k_work *item)
 	k_mutex_unlock(&data->lock);
 }
 
+static int bosch_bmi323_apply_initial_config(const struct device *dev)
+{
+	const struct bosch_bmi323_config *config = (const struct bosch_bmi323_config *)dev->config;
+	uint16_t buf[2];
+	int ret;
+
+	ret = bosch_bmi323_bus_read_words(dev, IMU_BOSCH_BMI323_REG_ACC_CONF, buf, 2);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	buf[0] &= ~(IMU_BOSCH_BMI323_REG_MASK(ACC_CONF, ODR) |
+		    IMU_BOSCH_BMI323_REG_MASK(ACC_CONF, MODE));
+	buf[0] |= IMU_BOSCH_BMI323_REG_FIELD(ACC_CONF, ODR, config->acc_odr) |
+		  IMU_BOSCH_BMI323_REG_FIELD(ACC_CONF, MODE, config->acc_pwr_mode);
+
+	buf[1] &= ~(IMU_BOSCH_BMI323_REG_MASK(GYRO_CONF, ODR) |
+		    IMU_BOSCH_BMI323_REG_MASK(GYRO_CONF, MODE));
+	buf[1] |= IMU_BOSCH_BMI323_REG_FIELD(GYRO_CONF, ODR, config->gyro_odr) |
+		  IMU_BOSCH_BMI323_REG_FIELD(GYRO_CONF, MODE, config->gyro_pwr_mode);
+
+	ret = bosch_bmi323_bus_write_words(dev, IMU_BOSCH_BMI323_REG_ACC_CONF, buf, 2);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* The gyroscope takes the longer of the two, so it covers both. */
+	if (config->gyro_pwr_mode != BMI323_DT_PWR_MODE_DISABLED) {
+		k_msleep(IMU_BOSCH_BMI323_GYRO_FIRST_SAMPLE_TIME_MS);
+	} else if (config->acc_pwr_mode != BMI323_DT_PWR_MODE_DISABLED) {
+		k_msleep(IMU_BOSCH_BMI323_ACC_FIRST_SAMPLE_TIME_MS);
+	}
+
+	return 0;
+}
+
 static int bosch_bmi323_pm_resume(const struct device *dev)
 {
 	const struct bosch_bmi323_config *config = (const struct bosch_bmi323_config *)dev->config;
@@ -1261,6 +1305,14 @@ static int bosch_bmi323_pm_resume(const struct device *dev)
 
 		if (ret < 0) {
 			LOG_WRN("Failed to restore interrupt mapping");
+
+			return ret;
+		}
+	} else {
+		ret = bosch_bmi323_apply_initial_config(dev);
+
+		if (ret < 0) {
+			LOG_WRN("Failed to apply initial config");
 
 			return ret;
 		}
@@ -1460,6 +1512,10 @@ static int bosch_bmi323_init(const struct device *dev)
 		.bus = &bosch_bmi323_bus_api##inst,                                                \
 		.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                                \
 		.int_gpio_callback = bosch_bmi323_irq_callback##inst,                              \
+		.acc_pwr_mode = DT_INST_PROP(inst, accel_pwr_mode),                                \
+		.acc_odr = DT_INST_PROP(inst, accel_odr),                                          \
+		.gyro_pwr_mode = DT_INST_PROP(inst, gyro_pwr_mode),                                \
+		.gyro_odr = DT_INST_PROP(inst, gyro_odr),                                          \
 	};                                                                                         \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, bosch_bmi323_pm_action);                                    \
