@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(dma_esp32_gdma, CONFIG_DMA_LOG_LEVEL);
 #include <hal/dma_types.h>
 #include <hal/gdma_types.h>
 #include <zephyr/cache.h>
+#include <esp_cache.h>
 
 #include <soc.h>
 #include <esp_memory_utils.h>
@@ -257,15 +258,17 @@ static void dma_esp32_cache_flush_data(struct dma_esp32_channel *dma_channel)
  * Invalidating a GDMA-written buffer also drops the rest of any cache line it
  * shares with CPU-owned data. When the buffer is not cache-line aligned or
  * sized, flush the head and tail lines first so adjacent dirty data is written
- * back to memory before the invalidate discards it.
+ * back to memory before the invalidate discards it. The line is that of the
+ * cache in front of the buffer (e.g. the ESP32-S3 PSRAM cache, 16 to 64 bytes),
+ * not the CPU's DCACHE_LINE_SIZE.
  */
 static void dma_esp32_cache_invd_data(struct dma_esp32_channel *dma_channel)
 {
-	const size_t line = sys_cache_data_line_size_get();
 	esp_dma_desc_t *desc = dma_channel->desc_list;
 
 	for (int i = 0; i < ARRAY_SIZE(dma_channel->desc_list) && desc; ++i) {
 		if (desc->buffer && desc->dw0.size) {
+			const size_t line = esp_cache_get_line_size_by_addr(desc->buffer);
 			uintptr_t start = (uintptr_t)desc->buffer;
 			uintptr_t end = start + desc->dw0.size;
 
