@@ -365,8 +365,8 @@ static int mld_send(struct net_pkt *pkt)
 #if defined(CONFIG_NET_IPV6_MCAST_ROUTE_MLD_REPORTS)
 static void count_mcast_routes(struct net_route_ipv6_entry_mcast *entry, void *user_data)
 {
-	/* Only routes to an address that MLD reports */
-	if (mld_is_reported(&entry->group)) {
+	/* Only routes to a single address that MLD reports */
+	if (entry->prefix_len == 128 && mld_is_reported(&entry->group)) {
 		(*((int *)user_data))++;
 	}
 }
@@ -787,7 +787,8 @@ static int send_mld_report(struct net_if *iface)
 	}
 
 	/* We may have skipped duplicated addresses that we reserved space for,
-	 * modify number of records.
+	 * modify number of records. The space itself was never written, so
+	 * the packet holds exactly the records that were added.
 	 */
 	if (info.skipped) {
 		net_pkt_cursor_init(pkt);
@@ -805,8 +806,6 @@ static int send_mld_report(struct net_if *iface)
 		if (ret < 0) {
 			goto drop;
 		}
-
-		net_pkt_remove_tail(pkt, info.skipped * sizeof(struct net_icmpv6_mld_mcast_record));
 	}
 #endif
 
