@@ -183,14 +183,11 @@ static int uart_msp432p4xx_fifo_fill(const struct device *dev,
 	const struct uart_msp432p4xx_config *config = dev->config;
 	unsigned int num_tx = 0U;
 
-	while ((size - num_tx) > 0) {
-		MAP_UART_transmitData(config->base, tx_data[num_tx]);
-		if (MAP_UART_getInterruptStatus(config->base,
-			EUSCI_A_UART_TRANSMIT_COMPLETE_INTERRUPT_FLAG)) {
-			num_tx++;
-		} else {
-			break;
-		}
+	uint32_t txflag = EUSCI_A_UART_TRANSMIT_INTERRUPT_FLAG;
+
+	while ((size - num_tx) > 0 &&
+	       MAP_UART_getInterruptStatus(config->base, txflag)) {
+		MAP_UART_transmitData(config->base, tx_data[num_tx++]);
 	}
 
 	return (int)num_tx;
