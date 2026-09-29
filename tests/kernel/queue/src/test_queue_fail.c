@@ -258,6 +258,22 @@ ZTEST_USER(queue_api, test_queue_peek_tail_null)
 }
 
 /**
+ * @brief Test k_queue_peek_next() failure scenario
+ *
+ * @details Verify that the parameter of the API is
+ * NULL, what will happen.
+ *
+ * @ingroup tests_kernel_queue
+ *
+ * @see k_queue_peek_next()
+ */
+ZTEST_USER(queue_api, test_queue_peek_next_null)
+{
+	ztest_set_fault_valid(true);
+	k_queue_peek_next(NULL, NULL);
+}
+
+/**
  * @brief Test k_queue_merge_slist() failure scenario
  *
  * @details Verify that the parameter of the API is
