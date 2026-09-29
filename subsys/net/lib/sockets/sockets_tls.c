@@ -1078,6 +1078,11 @@ static int wait(int sock, int timeout, int event)
 				return -optval;
 			}
 
+			/* Closed while we waited, which interrupts the call */
+			if (errno == EBADF) {
+				return -EINTR;
+			}
+
 			return -EIO;
 		}
 	}

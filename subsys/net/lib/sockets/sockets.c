@@ -25,35 +25,51 @@ LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 		void *obj;				     \
 		int retval;				     \
 							     \
-		obj = get_sock_vtable(sock, &vtable, &lock); \
+		obj = get_sock_vtable_ref(sock, &vtable, &lock); \
 		if (obj == NULL) {			     \
 			errno = EBADF;			     \
 			return -1;			     \
 		}					     \
 							     \
 		if (vtable->fn == NULL) {		     \
+			zvfs_put_fd(sock);		     \
 			errno = EOPNOTSUPP;		     \
 			return -1;			     \
 		}					     \
 							     \
 		(void)k_mutex_lock(lock, K_FOREVER);         \
 							     \
+		/* Closed while we waited for the lock? */  \
+		if (zvfs_get_fd_obj(sock, NULL, 0) == NULL) {       \
+			k_mutex_unlock(lock);                       \
+			zvfs_put_fd(sock);                          \
+			errno = EBADF;                              \
+			return -1;                                  \
+		}                                                   \
+							     \
 		retval = vtable->fn(obj, __VA_ARGS__);	     \
 							     \
 		k_mutex_unlock(lock);                        \
+		zvfs_put_fd(sock);			     \
 							     \
 		retval;					     \
 	})
 
-static inline void *get_sock_vtable(int sock,
-				    const struct socket_op_vtable **vtable,
-				    struct k_mutex **lock)
+static inline void *get_sock_vtable_common(int sock,
+					   const struct socket_op_vtable **vtable,
+					   struct k_mutex **lock, bool ref)
 {
 	void *ctx;
 
-	ctx = zvfs_get_fd_obj_and_vtable(sock,
-				      (const struct fd_op_vtable **)vtable,
-				      lock);
+	if (ref) {
+		ctx = zvfs_get_fd_obj_and_vtable_ref(sock,
+						     (const struct fd_op_vtable **)vtable,
+						     lock);
+	} else {
+		ctx = zvfs_get_fd_obj_and_vtable(sock,
+						 (const struct fd_op_vtable **)vtable,
+						 lock);
+	}
 
 #ifdef CONFIG_USERSPACE
 	if (ctx != NULL && k_is_in_user_syscall()) {
@@ -62,6 +78,9 @@ static inline void *get_sock_vtable(int sock,
 			 * sufficient permission or there was some other
 			 * problem with the net socket object
 			 */
+			if (ref) {
+				zvfs_put_fd(sock);
+			}
 			ctx = NULL;
 		}
 	}
@@ -73,6 +92,21 @@ static inline void *get_sock_vtable(int sock,
 	}
 
 	return ctx;
+}
+
+static inline void *get_sock_vtable(int sock,
+				    const struct socket_op_vtable **vtable,
+				    struct k_mutex **lock)
+{
+	return get_sock_vtable_common(sock, vtable, lock, false);
+}
+
+/* Same, but on success the fd is held until zvfs_put_fd() */
+static inline void *get_sock_vtable_ref(int sock,
+					const struct socket_op_vtable **vtable,
+					struct k_mutex **lock)
+{
+	return get_sock_vtable_common(sock, vtable, lock, true);
 }
 
 size_t msghdr_non_empty_iov_count(const struct net_msghdr *msg)
@@ -182,7 +216,7 @@ int z_impl_zsock_shutdown(int sock, int how)
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(socket, shutdown, sock, how);
 
-	ctx = get_sock_vtable(sock, &vtable, &lock);
+	ctx = get_sock_vtable_ref(sock, &vtable, &lock);
 	if (ctx == NULL) {
 		errno = EBADF;
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, shutdown, sock, -errno);
@@ -190,6 +224,7 @@ int z_impl_zsock_shutdown(int sock, int how)
 	}
 
 	if (!vtable->shutdown) {
+		zvfs_put_fd(sock);
 		errno = ENOTSUP;
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, shutdown, sock, -errno);
 		return -1;
@@ -197,11 +232,21 @@ int z_impl_zsock_shutdown(int sock, int how)
 
 	(void)k_mutex_lock(lock, K_FOREVER);
 
+	/* Closed while we waited for the lock? */
+	if (zvfs_get_fd_obj(sock, NULL, 0) == NULL) {
+		k_mutex_unlock(lock);
+		zvfs_put_fd(sock);
+		errno = EBADF;
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, shutdown, sock, -errno);
+		return -1;
+	}
+
 	NET_DBG("shutdown: ctx=%p, fd=%d, how=%d", ctx, sock, how);
 
 	ret = vtable->shutdown(ctx, how);
 
 	k_mutex_unlock(lock);
+	zvfs_put_fd(sock);
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, shutdown, sock, ret < 0 ? -errno : ret);
 
@@ -771,7 +816,7 @@ int z_impl_zsock_fcntl_impl(int sock, int cmd, int flags)
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(socket, fcntl, sock, cmd, flags);
 
-	obj = get_sock_vtable(sock, &vtable, &lock);
+	obj = get_sock_vtable_ref(sock, &vtable, &lock);
 	if (obj == NULL) {
 		errno = EBADF;
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, fcntl, sock, -errno);
@@ -780,10 +825,20 @@ int z_impl_zsock_fcntl_impl(int sock, int cmd, int flags)
 
 	(void)k_mutex_lock(lock, K_FOREVER);
 
+	/* Closed while we waited for the lock? */
+	if (zvfs_get_fd_obj(sock, NULL, 0) == NULL) {
+		k_mutex_unlock(lock);
+		zvfs_put_fd(sock);
+		errno = EBADF;
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, fcntl, sock, -errno);
+		return -1;
+	}
+
 	ret = zvfs_fdtable_call_ioctl((const struct fd_op_vtable *)vtable,
 				   obj, cmd, flags);
 
 	k_mutex_unlock(lock);
+	zvfs_put_fd(sock);
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, fcntl, sock,
 				       ret < 0 ? -errno : ret);
@@ -807,7 +862,7 @@ int z_impl_zsock_ioctl_impl(int sock, unsigned long request, va_list args)
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(socket, ioctl, sock, request);
 
-	ctx = get_sock_vtable(sock, &vtable, &lock);
+	ctx = get_sock_vtable_ref(sock, &vtable, &lock);
 	if (ctx == NULL) {
 		errno = EBADF;
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, ioctl, sock, -errno);
@@ -816,11 +871,21 @@ int z_impl_zsock_ioctl_impl(int sock, unsigned long request, va_list args)
 
 	(void)k_mutex_lock(lock, K_FOREVER);
 
+	/* Closed while we waited for the lock? */
+	if (zvfs_get_fd_obj(sock, NULL, 0) == NULL) {
+		k_mutex_unlock(lock);
+		zvfs_put_fd(sock);
+		errno = EBADF;
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, ioctl, sock, -errno);
+		return -1;
+	}
+
 	NET_DBG("ioctl: ctx=%p, fd=%d, request=%lu", ctx, sock, request);
 
 	ret = vtable->fd_vtable.ioctl(ctx, request, args);
 
 	k_mutex_unlock(lock);
+	zvfs_put_fd(sock);
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, ioctl, sock,
 				       ret < 0 ? -errno : ret);
