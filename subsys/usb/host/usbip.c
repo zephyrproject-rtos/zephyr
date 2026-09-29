@@ -93,6 +93,33 @@ static void usbip_ntoh_command(struct usbip_command *const cmd)
 	}
 }
 
+/*
+ * All interfaces are in their default alternate after Set Configuration.
+ * Select them to enable the endpoints the client may submit transfers to.
+ */
+static void apply_default_alternates(struct usb_device *const udev)
+{
+	const struct usb_cfg_descriptor *const cfg_desc = udev->cfg_desc;
+
+	if (cfg_desc == NULL) {
+		return;
+	}
+
+	for (unsigned int i = 0; i < cfg_desc->bNumInterfaces; i++) {
+		const struct usb_if_descriptor *const if_desc =
+			(const void *)udev->ifaces[i].dhp;
+
+		if (if_desc == NULL) {
+			continue;
+		}
+
+		if (usbh_device_interface_set(udev, if_desc->bInterfaceNumber, 0, true)) {
+			LOG_ERR("Failed to select interface %u alternate 0",
+				if_desc->bInterfaceNumber);
+		}
+	}
+}
+
 static void check_ctrl_request(struct usb_device *const udev,
 			       const int ep, const uint8_t *const setup_pkt)
 {
@@ -113,6 +140,7 @@ static void check_ctrl_request(struct usb_device *const udev,
 		break;
 	case USB_SREQ_SET_CONFIGURATION:
 		LOG_INF("Set Configuration");
+		apply_default_alternates(udev);
 		break;
 	case USB_SREQ_SET_INTERFACE:
 		LOG_INF("Set Interface");
