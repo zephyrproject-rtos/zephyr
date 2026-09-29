@@ -22,6 +22,16 @@ description: |
       ...
     };
 
+  A clock source can also be referenced, to query its rate through
+  clock_control_get_rate(). Such an entry is read-only: the clock tree is owned
+  by the Cortex-A35, so it can neither be gated nor re-routed. Example:
+    PERx {
+      ...
+      clocks = <&rcc STM32_CLOCK(PERx, STM32_CLK)>,
+               <&rcc STM32_SRC_PCLK3 NO_SEL>;
+      ...
+    };
+
 compatible: "st,stm32mp2-rcc"
 
 include:
