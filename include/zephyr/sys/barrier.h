@@ -25,6 +25,34 @@
 # endif
 #elif defined(CONFIG_BARRIER_OPERATIONS_BUILTIN)
 #include <zephyr/sys/barrier_builtin.h>
+#else
+/* No backend is available for this architecture and toolchain combination, so
+ * fall back to a compiler barrier. That keeps the compiler from moving
+ * accesses across the barrier, but it emits no instruction, so nothing
+ * constrains the hardware. Architectures where the ordering matters must
+ * select BARRIER_OPERATIONS_BUILTIN or BARRIER_OPERATIONS_ARCH; the barrier
+ * API must never expand to nothing at all.
+ */
+
+static ALWAYS_INLINE void z_barrier_sync_synchronize(void)
+{
+	compiler_barrier();
+}
+
+static ALWAYS_INLINE void z_barrier_dmem_fence_full(void)
+{
+	compiler_barrier();
+}
+
+static ALWAYS_INLINE void z_barrier_dsync_fence_full(void)
+{
+	compiler_barrier();
+}
+
+static ALWAYS_INLINE void z_barrier_isync_fence_full(void)
+{
+	compiler_barrier();
+}
 #endif
 
 #ifdef __cplusplus
@@ -45,12 +73,14 @@ extern "C" {
  * This routine acts as a synchronization fence between threads/cores and
  * prevents re-ordering of data accesses instructions across the barrier
  * instruction.
+ *
+ * @note When no barrier backend is available for the architecture and
+ * toolchain in use, this falls back to a compiler barrier, which orders the
+ * accesses the compiler emits but places no constraint on the hardware.
  */
 static ALWAYS_INLINE void barrier_sync_synchronize(void)
 {
-#if defined(CONFIG_BARRIER_OPERATIONS_ARCH) || defined(CONFIG_BARRIER_OPERATIONS_BUILTIN)
 	z_barrier_sync_synchronize();
-#endif
 }
 
 /**
@@ -58,12 +88,14 @@ static ALWAYS_INLINE void barrier_sync_synchronize(void)
  *
  * This routine acts as a synchronization fence between threads and prevents
  * re-ordering of data accesses instructions across the barrier instruction.
+ *
+ * @note When no barrier backend is available for the architecture and
+ * toolchain in use, this falls back to a compiler barrier, which orders the
+ * accesses the compiler emits but places no constraint on the hardware.
  */
 static ALWAYS_INLINE void barrier_dmem_fence_full(void)
 {
-#if defined(CONFIG_BARRIER_OPERATIONS_ARCH) || defined(CONFIG_BARRIER_OPERATIONS_BUILTIN)
 	z_barrier_dmem_fence_full();
-#endif
 }
 
 /**
@@ -76,13 +108,12 @@ static ALWAYS_INLINE void barrier_dmem_fence_full(void)
  * both, until synchronization is complete.
  *
  * @note When not supported by hardware or architecture, this instruction falls
- * back to a full/sequentially-consistent data memory barrier.
+ * back to a full/sequentially-consistent data memory barrier, and to a
+ * compiler barrier when no backend is available at all.
  */
 static ALWAYS_INLINE void barrier_dsync_fence_full(void)
 {
-#if defined(CONFIG_BARRIER_OPERATIONS_ARCH) || defined(CONFIG_BARRIER_OPERATIONS_BUILTIN)
 	z_barrier_dsync_fence_full();
-#endif
 }
 
 /**
@@ -99,9 +130,7 @@ static ALWAYS_INLINE void barrier_dsync_fence_full(void)
  */
 static ALWAYS_INLINE void barrier_isync_fence_full(void)
 {
-#if defined(CONFIG_BARRIER_OPERATIONS_ARCH) || defined(CONFIG_BARRIER_OPERATIONS_BUILTIN)
 	z_barrier_isync_fence_full();
-#endif
 }
 
 /** @} */
