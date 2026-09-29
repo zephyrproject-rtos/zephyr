@@ -302,26 +302,18 @@ static void uart_msp432p4xx_irq_callback_set(const struct device *dev,
 /**
  * @brief Interrupt service routine.
  *
- * This simply calls the callback function, if one exists.
- *
- * @param arg Argument to ISR.
+ * Invokes the registered callback.  For TX, TXIFG is a level-sensitive flag
+ * that stays set while the TX buffer is empty.  The callback must call
+ * uart_irq_tx_disable() once it has no more data to send; otherwise the ISR
+ * will re-fire continuously until TX interrupts are disabled.
  */
 static void uart_msp432p4xx_isr(const struct device *dev)
 {
-	const struct uart_msp432p4xx_config *config = dev->config;
 	struct uart_msp432p4xx_dev_data_t * const dev_data = dev->data;
-	unsigned int int_status;
-
-	int_status = MAP_UART_getEnabledInterruptStatus(config->base);
 
 	if (dev_data->cb) {
 		dev_data->cb(dev, dev_data->cb_data);
 	}
-	/*
-	 * Clear interrupts only after cb called, as Zephyr UART clients expect
-	 * to check interrupt status during the callback.
-	 */
-	MAP_UART_disableInterrupt(config->base, int_status);
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
