@@ -75,6 +75,7 @@ static bool is_join_msg_ok;
 static bool is_leave_msg_ok;
 static bool is_query_received;
 static bool is_report_sent;
+static bool is_query_resp_ok;
 static bool is_igmpv2_query_sent;
 static bool is_igmpv3_query_sent;
 K_SEM_DEFINE(wait_data, 0, UINT_MAX);
@@ -174,6 +175,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		zassert_true(!IS_ENABLED(CONFIG_NET_IPV4_IGMPV3) || is_igmpv2_query_sent,
 			     "Wrong IGMP report received (IGMPv2)");
 		is_join_msg_ok = true;
+		is_query_resp_ok = true;
 		is_report_sent = true;
 		k_sem_give(&wait_data);
 	} else if (igmp_header->type == NET_IPV4_IGMP_REPORT_V3) {
@@ -195,9 +197,13 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 			is_join_msg_ok = true;
 		} else if (igmp_group_record->type == IGMPV3_CHANGE_TO_INCLUDE_MODE) {
 			is_leave_msg_ok = true;
+		} else if (igmp_group_record->type == IGMPV3_MODE_IS_EXCLUDE) {
+			/* Current-state record, only sent in response to a query */
+			is_query_resp_ok = true;
 		}
 #else
 		is_join_msg_ok = true;
+		is_query_resp_ok = true;
 #endif
 		is_report_sent = true;
 		k_sem_give(&wait_data);
@@ -562,14 +568,16 @@ static void igmp_send_query(bool is_imgpv3)
 {
 	struct net_pkt *pkt;
 
-	is_report_sent = false;
-	is_join_msg_ok = false;
-
 	is_igmpv2_query_sent = false;
 	is_igmpv3_query_sent = false;
 
 	/* Joining group first to get reply on query*/
 	join_group();
+
+	/* Discard the events of the join itself */
+	k_sem_reset(&wait_data);
+	is_report_sent = false;
+	is_query_resp_ok = false;
 
 	is_igmpv2_query_sent = !is_imgpv3;
 	is_igmpv3_query_sent = is_imgpv3;
@@ -583,7 +591,7 @@ static void igmp_send_query(bool is_imgpv3)
 
 	zassert_true(is_report_sent, "Did not catch query event");
 
-	zassert_true(is_join_msg_ok, "Join msg invalid");
+	zassert_true(is_query_resp_ok, "Query response invalid");
 
 	is_igmpv2_query_sent = false;
 	is_igmpv3_query_sent = false;
