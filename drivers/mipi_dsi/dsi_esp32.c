@@ -45,6 +45,9 @@ LOG_MODULE_REGISTER(dsi_esp32, CONFIG_MIPI_DSI_LOG_LEVEL);
 #define MIPI_DSI_LANE_STOP_TIMEOUT_US 10000
 #define MIPI_DSI_POLL_INTERVAL_US     100
 
+/* Reads go out in the blanking periods, so allow several frames. */
+#define MIPI_DSI_READ_TIMEOUT_US 100000
+
 struct mipi_dsi_esp32_config {
 	uintptr_t host_reg;
 	uintptr_t bridge_reg;
@@ -207,15 +210,28 @@ static ssize_t mipi_dsi_esp32_read(mipi_dsi_hal_context_t *hal, uint8_t channel,
 {
 	size_t count = 0;
 
+	if (!WAIT_FOR(mipi_dsi_host_ll_gen_is_cmd_fifo_empty(hal->host) &&
+			      !mipi_dsi_host_ll_gen_is_read_cmd_busy(hal->host),
+		      MIPI_DSI_READ_TIMEOUT_US, k_busy_wait(MIPI_DSI_POLL_INTERVAL_US))) {
+		LOG_ERR("Host busy with a previous request");
+		return -EBUSY;
+	}
+
+	while (!mipi_dsi_host_ll_gen_is_read_fifo_empty(hal->host)) {
+		(void)mipi_dsi_host_ll_gen_read_payload_fifo(hal->host);
+	}
+
 	mipi_dsi_hal_host_gen_write_short_packet(hal, channel, MIPI_DSI_DT_SET_MAXIMUM_RETURN_PKT,
 						 len);
 	mipi_dsi_host_ll_enable_bta(hal->host, true);
 	mipi_dsi_host_ll_gen_set_rx_vcid(hal->host, channel);
 	mipi_dsi_hal_host_gen_write_short_packet(hal, channel, dt, header);
 
-	while (mipi_dsi_host_ll_gen_is_read_cmd_busy(hal->host) ||
-	       mipi_dsi_host_ll_gen_is_read_fifo_empty(hal->host)) {
-		k_busy_wait(MIPI_DSI_POLL_INTERVAL_US);
+	if (!WAIT_FOR(!mipi_dsi_host_ll_gen_is_read_cmd_busy(hal->host) &&
+			      !mipi_dsi_host_ll_gen_is_read_fifo_empty(hal->host),
+		      MIPI_DSI_READ_TIMEOUT_US, k_busy_wait(MIPI_DSI_POLL_INTERVAL_US))) {
+		LOG_ERR("Read of 0x%02x timed out", header);
+		return -ETIMEDOUT;
 	}
 
 	while (!mipi_dsi_host_ll_gen_is_read_fifo_empty(hal->host)) {
