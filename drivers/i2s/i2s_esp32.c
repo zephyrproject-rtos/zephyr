@@ -1808,8 +1808,9 @@ static int i2s_esp32_read(const struct device *dev, void **mem_block, size_t *si
 	}
 
 	err = k_msgq_get(&stream->data->queue, &item,
-			 (state == I2S_STATE_ERROR) ? K_NO_WAIT
-						    : K_MSEC(stream->data->i2s_cfg.timeout));
+			 (state == I2S_STATE_ERROR)
+				 ? K_NO_WAIT
+				 : SYS_TIMEOUT_MS(stream->data->i2s_cfg.timeout));
 	if (err == 0) {
 		*mem_block = item.buffer;
 		*size = item.size;
@@ -1883,7 +1884,7 @@ static int i2s_esp32_write(const struct device *dev, void *mem_block, size_t siz
 #endif /* SOC_GDMA_SUPPORTED */
 
 	err = k_msgq_put(&stream->data->queue, &item,
-			 K_MSEC(stream->data->i2s_cfg.timeout));
+			 SYS_TIMEOUT_MS(stream->data->i2s_cfg.timeout));
 	if (err < 0) {
 		LOG_DBG("TX queue full");
 	}
