@@ -69,7 +69,6 @@ static uint8_t lpi_prop_table[LPI_PROPBASE_SZ(GIC_LPI_ID_BITS)] __aligned(KB(4))
 static uint8_t lpi_pend_tables[CONFIG_MP_MAX_NUM_CPUS][LPI_PENDBASE_SZ(GIC_LPI_ID_BITS)]
 	__aligned(KB(64));
 static unsigned int lpi_intid_limit;
-atomic_t nlpi_intid = ATOMIC_INIT(8192);
 #endif
 
 static inline mem_addr_t gic_get_rdist(void)

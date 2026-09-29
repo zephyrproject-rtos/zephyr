@@ -8,5 +8,13 @@ compatible: "arm,gic-v3-its"
 include: base.yaml
 
 properties:
+  zephyr,device-id-bits:
+    type: int
+    min: 1
+    max: 16
+    description: |
+      Number of DeviceID bits provisioned by the driver. This bounds the
+      statically reserved Device table. Defaults to 16 when omitted.
+
   reg:
     required: true
