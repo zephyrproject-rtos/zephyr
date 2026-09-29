@@ -159,7 +159,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	radio_phy_set(lll->phy, PHY_FLAGS_S8);
 	radio_pkt_configure(8, PDU_AC_LEG_PAYLOAD_SIZE_MAX, (lll->phy << 1));
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
-	radio_phy_set(0, 0);
+	radio_phy_set(PHY_LEGACY, PHY_FLAGS_UNUSED);
 	radio_pkt_configure(8, PDU_AC_LEG_PAYLOAD_SIZE_MAX, 0);
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
@@ -177,7 +177,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 
 	/* setup tIFS switching */
 	radio_tmr_tifs_set(EVENT_IFS_US);
-	radio_switch_complete_and_tx(0, 0, 0, 0);
+	radio_switch_complete_and_tx(PHY_LEGACY, PHY_FLAGS_UNUSED, PHY_LEGACY, PHY_FLAGS_UNUSED);
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (ull_filter_lll_rl_enabled()) {
@@ -224,7 +224,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 #if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 	radio_gpio_lna_setup();
 	radio_gpio_pa_lna_enable(remainder_us +
-				 radio_rx_ready_delay_get(0, 0) -
+				 radio_rx_ready_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED) -
 				 HAL_RADIO_GPIO_LNA_OFFSET);
 #else /* !HAL_RADIO_GPIO_HAVE_LNA_PIN */
 	ARG_UNUSED(remainder_us);
@@ -443,7 +443,7 @@ static void isr_tx(void *param)
 
 	/* setup tIFS switching */
 	radio_tmr_tifs_set(EVENT_IFS_US);
-	radio_switch_complete_and_tx(0, 0, 0, 0);
+	radio_switch_complete_and_tx(PHY_LEGACY, PHY_FLAGS_UNUSED, PHY_LEGACY, PHY_FLAGS_UNUSED);
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
 	LL_ASSERT(node_rx);
@@ -462,9 +462,9 @@ static void isr_tx(void *param)
 
 	/* +/- 2us active clock jitter, +1 us hcto compensation */
 	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US + 4 + 1;
-	hcto += radio_rx_chain_delay_get(0, 0);
+	hcto += radio_rx_chain_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED);
 	hcto += addr_us_get(0);
-	hcto -= radio_tx_chain_delay_get(0, 0);
+	hcto -= radio_tx_chain_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED);
 
 	radio_tmr_hcto_configure(hcto);
 
@@ -473,7 +473,7 @@ static void isr_tx(void *param)
 #if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 	radio_gpio_lna_setup();
 	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + EVENT_IFS_US - 4 -
-				 radio_tx_chain_delay_get(0, 0) -
+				 radio_tx_chain_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED) -
 				 HAL_RADIO_GPIO_LNA_OFFSET);
 #endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
 
@@ -496,7 +496,7 @@ static void isr_common_done(void *param)
 
 	/* setup tIFS switching */
 	radio_tmr_tifs_set(EVENT_IFS_US);
-	radio_switch_complete_and_tx(0, 0, 0, 0);
+	radio_switch_complete_and_tx(PHY_LEGACY, PHY_FLAGS_UNUSED, PHY_LEGACY, PHY_FLAGS_UNUSED);
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
 	LL_ASSERT(node_rx);
@@ -526,7 +526,7 @@ static void isr_done(void *param)
 
 	radio_gpio_lna_setup();
 	radio_gpio_pa_lna_enable(start_us +
-				 radio_rx_ready_delay_get(0, 0) -
+				 radio_rx_ready_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED) -
 				 HAL_RADIO_GPIO_LNA_OFFSET);
 #else /* !HAL_RADIO_GPIO_HAVE_LNA_PIN */
 	ARG_UNUSED(start_us);
@@ -558,7 +558,7 @@ static void isr_window(void *param)
 #if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 	radio_gpio_lna_setup();
 	radio_gpio_pa_lna_enable(remainder_us +
-				 radio_rx_ready_delay_get(0, 0) -
+				 radio_rx_ready_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED) -
 				 HAL_RADIO_GPIO_LNA_OFFSET);
 #else /* !HAL_RADIO_GPIO_HAVE_LNA_PIN */
 	ARG_UNUSED(remainder_us);
@@ -806,7 +806,7 @@ static inline uint32_t isr_rx_pdu(struct lll_scan *lll, uint8_t devmatch_ok,
 		radio_gpio_pa_setup();
 		radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
 					 EVENT_IFS_US -
-					 radio_rx_chain_delay_get(0, 0) -
+					 radio_rx_chain_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED) -
 					 HAL_RADIO_GPIO_PA_OFFSET);
 #endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
 
@@ -848,7 +848,7 @@ static inline uint32_t isr_rx_pdu(struct lll_scan *lll, uint8_t devmatch_ok,
 		ftr->param = lll;
 		ftr->ticks_anchor = radio_tmr_start_get();
 		ftr->radio_end_us = conn_space_us -
-				    radio_tx_chain_delay_get(0, 0);
+				    radio_tx_chain_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED);
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		ftr->rl_idx = irkmatch_ok ? rl_idx : FILTER_IDX_NONE;
@@ -938,7 +938,7 @@ static inline uint32_t isr_rx_pdu(struct lll_scan *lll, uint8_t devmatch_ok,
 		radio_gpio_pa_setup();
 		radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
 					 EVENT_IFS_US -
-					 radio_rx_chain_delay_get(0, 0) -
+					 radio_rx_chain_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED) -
 					 HAL_RADIO_GPIO_PA_OFFSET);
 #endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
 
