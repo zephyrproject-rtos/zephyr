@@ -67,70 +67,27 @@ __noinline void z_critical_section_monitor_irq_unlock(unsigned int key);
 #else /* CONFIG_CRITICAL_SECTION_MONITOR */
 
 #define Z_CRITICAL_SECTION_MONITOR_CALLER() 0U
+#define z_critical_section_monitor_is_ready() false
 
-static ALWAYS_INLINE bool z_critical_section_monitor_is_ready(void)
-{
-	return false;
-}
-
-static ALWAYS_INLINE void z_irq_timing_begin(unsigned int key, uintptr_t caller)
-{
-	ARG_UNUSED(key);
-	ARG_UNUSED(caller);
-}
-
-static ALWAYS_INLINE void z_irq_timing_end(unsigned int key)
-{
-	ARG_UNUSED(key);
-}
-
-static ALWAYS_INLINE void z_irq_timing_idle_enter(void)
-{
-}
+/* Empty inline functions can still retain argument storage at -O0. */
+#define z_irq_timing_begin(key, caller) do { } while (false)
+#define z_irq_timing_end(key) do { } while (false)
+#define z_irq_timing_idle_enter() do { } while (false)
 
 #ifdef CONFIG_SMP
-static ALWAYS_INLINE void z_spinlock_timing_abort(const struct k_spinlock *lock,
-						 unsigned int key)
-{
-	ARG_UNUSED(lock);
-	ARG_UNUSED(key);
-}
+#define z_spinlock_timing_abort(lock, key) do { } while (false)
 #endif /* CONFIG_SMP */
 
-static ALWAYS_INLINE void z_critical_section_monitor_spin_acquired(const struct k_spinlock *lock,
-								   unsigned int key, uint32_t now)
-{
-	ARG_UNUSED(lock);
-	ARG_UNUSED(key);
-	ARG_UNUSED(now);
-}
-
-static ALWAYS_INLINE void z_spinlock_timing_unlocked(const struct k_spinlock *lock,
-						    unsigned int key, uint32_t now)
-{
-	ARG_UNUSED(lock);
-	ARG_UNUSED(key);
-	ARG_UNUSED(now);
-}
-
-static ALWAYS_INLINE void z_spinlock_timing_released(const struct k_spinlock *lock,
-						    uint32_t now)
-{
-	ARG_UNUSED(lock);
-	ARG_UNUSED(now);
-}
+#define z_critical_section_monitor_spin_acquired(lock, key, now) do { } while (false)
+#define z_spinlock_timing_unlocked(lock, key, now) do { } while (false)
+#define z_spinlock_timing_released(lock, now) do { } while (false)
 
 #endif /* CONFIG_CRITICAL_SECTION_MONITOR */
 
 #if defined(CONFIG_CRITICAL_SECTION_MONITOR) && defined(CONFIG_SMP)
 __noinline void z_spinlock_timing_attempt(const struct k_spinlock *lock, unsigned int key);
 #else
-static ALWAYS_INLINE void z_spinlock_timing_attempt(const struct k_spinlock *lock,
-						   unsigned int key)
-{
-	ARG_UNUSED(lock);
-	ARG_UNUSED(key);
-}
+#define z_spinlock_timing_attempt(lock, key) do { } while (false)
 #endif
 
 /** @endcond */

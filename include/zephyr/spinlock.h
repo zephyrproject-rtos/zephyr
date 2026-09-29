@@ -159,22 +159,22 @@ static ALWAYS_INLINE void z_spinlock_validate_post(struct k_spinlock *l)
 
 /** @cond INTERNAL_HIDDEN */
 
+#if defined(CONFIG_CRITICAL_SECTION_MONITOR) || \
+	(defined(CONFIG_SPIN_LOCK_TIME_LIMIT) && (CONFIG_SPIN_LOCK_TIME_LIMIT != 0))
 /* Share hold samples without making time-limit checks depend on monitor state. */
 static ALWAYS_INLINE void z_spinlock_timing_acquired(struct k_spinlock *l, unsigned int key)
 {
+	ARG_UNUSED(key);
 #if defined(CONFIG_SPIN_LOCK_TIME_LIMIT) && (CONFIG_SPIN_LOCK_TIME_LIMIT != 0)
 	uint32_t now = sys_clock_cycle_get_32();
 
 	l->lock_time = now;
 	z_critical_section_monitor_spin_acquired(l, key, now);
-#elif defined(CONFIG_CRITICAL_SECTION_MONITOR)
+#else
 	if (!z_critical_section_monitor_is_ready()) {
 		return;
 	}
 	z_critical_section_monitor_spin_acquired(l, key, sys_clock_cycle_get_32());
-#else
-	ARG_UNUSED(l);
-	ARG_UNUSED(key);
 #endif
 }
 
@@ -198,15 +198,17 @@ static ALWAYS_INLINE uint32_t z_spinlock_timing_releasing(struct k_spinlock *l, 
 			 l, delta, CONFIG_SPIN_LOCK_TIME_LIMIT);
 	}
 	return now;
-#elif defined(CONFIG_CRITICAL_SECTION_MONITOR)
+#else
 	if (!z_critical_section_monitor_is_ready()) {
 		return 0U;
 	}
 	return sys_clock_cycle_get_32();
-#else
-	return 0U;
 #endif
 }
+#else
+#define z_spinlock_timing_acquired(l, key) do { } while (false)
+#define z_spinlock_timing_releasing(l, check_limit) 0U
+#endif
 
 /** @endcond */
 
@@ -371,7 +373,7 @@ static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
 #ifdef CONFIG_SPIN_VALIDATE
 	__ASSERT(z_spin_unlock_valid(l), "Not my spinlock %p", l);
 #endif /* CONFIG_SPIN_VALIDATE */
-	uint32_t now = z_spinlock_timing_releasing(l, true);
+	uint32_t now __maybe_unused = z_spinlock_timing_releasing(l, true);
 
 #ifdef CONFIG_SMP
 #ifdef CONFIG_TICKET_SPINLOCKS
@@ -430,7 +432,7 @@ static ALWAYS_INLINE void k_spin_release(struct k_spinlock *l)
 #ifdef CONFIG_SPIN_VALIDATE
 	__ASSERT(z_spin_unlock_valid(l), "Not my spinlock %p", l);
 #endif
-	uint32_t now = z_spinlock_timing_releasing(l, false);
+	uint32_t now __maybe_unused = z_spinlock_timing_releasing(l, false);
 
 #ifdef CONFIG_SMP
 #ifdef CONFIG_TICKET_SPINLOCKS
