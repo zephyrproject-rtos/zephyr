@@ -1,8 +1,15 @@
+common:
+  tags:
+    - net
+    - can
+  integration_platforms:
+    - native_sim
+    - native_sim/native/64
 tests:
-  net.socket.can:
-    integration_platforms:
+  net.socket.can: {}
+  net.socket.can.sockets:
+    extra_args:
+      - EXTRA_CONF_FILE=sockets.conf
+    platform_allow:
       - native_sim
       - native_sim/native/64
-    tags:
-      - net
-      - can
