@@ -46,5 +46,53 @@
 			#interrupt-cells = <4>;
 			status = "okay";
 		};
+
+		can0_global: can0-global@e6660000 {
+			compatible = "renesas,rcar-v4h-rscanfd-global";
+			reg = <0xe6660000 0x20000>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 412 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+
+			can0: can0 {
+				compatible = "renesas,rcar-rscanfd";
+				status = "disabled";
+			};
+
+			can1: can1 {
+				compatible = "renesas,rcar-rscanfd";
+				status = "disabled";
+			};
+
+			can2: can2 {
+				compatible = "renesas,rcar-rscanfd";
+				status = "disabled";
+			};
+
+			can3: can3 {
+				compatible = "renesas,rcar-rscanfd";
+				status = "disabled";
+			};
+
+			can4: can4 {
+				compatible = "renesas,rcar-rscanfd";
+				status = "disabled";
+			};
+
+			can5: can5 {
+				compatible = "renesas,rcar-rscanfd";
+				status = "disabled";
+			};
+
+			can6: can6 {
+				compatible = "renesas,rcar-rscanfd";
+				status = "disabled";
+			};
+
+			can7: can7 {
+				compatible = "renesas,rcar-rscanfd";
+				status = "disabled";
+			};
+		};
 	};
 };
