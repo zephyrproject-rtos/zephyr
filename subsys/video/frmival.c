@@ -36,54 +36,27 @@ int video_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 	return video_driver_enum_frmival(dev, fie);
 }
 
-int video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwise,
-				   const struct video_frmival *desired,
-				   struct video_frmival *match)
+int video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwise, uint32_t desired,
+				   uint32_t *match)
 {
-	if (stepwise == NULL || desired == NULL || match == NULL) {
+	uint32_t goal;
+
+	if (stepwise == NULL || match == NULL) {
 		return -EINVAL;
 	}
 
-	const uint32_t dens[] = {stepwise->min.denominator, stepwise->max.denominator,
-				 stepwise->step.denominator, desired->denominator};
-	uint32_t den = 1;
-
-	/* Use the least common multiple of all denominators as common denominator */
-	ARRAY_FOR_EACH(dens, i) {
-		uint64_t lcm = sys_lcm(den, dens[i]);
-
-		if (lcm == 0U || lcm > UINT32_MAX) {
-			return -ERANGE;
-		}
-		den = lcm;
-	}
-
-	uint64_t min = (uint64_t)stepwise->min.numerator * (den / stepwise->min.denominator);
-	uint64_t max = (uint64_t)stepwise->max.numerator * (den / stepwise->max.denominator);
-	uint64_t step = (uint64_t)stepwise->step.numerator * (den / stepwise->step.denominator);
-	uint64_t goal = (uint64_t)desired->numerator * (den / desired->denominator);
-	uint64_t num;
-	uint32_t gcd;
-
-	__ASSERT_NO_MSG(step != 0U);
+	__ASSERT_NO_MSG(stepwise->step != 0U);
 	/* Prevent division by zero */
-	if (step == 0U) {
+	if (stepwise->step == 0U) {
 		return -ERANGE;
 	}
+
 	/* Saturate the desired value to the min/max supported */
-	goal = CLAMP(goal, min, max);
+	goal = CLAMP(desired, stepwise->min, stepwise->max);
 
-	/* Compute a numerator and denominator, reduced to fit in 32 bits */
-	num = min + DIV_ROUND_CLOSEST(goal - min, step) * step;
-	gcd = sys_gcd(den, (uint32_t)(num % den));
-	num /= gcd;
-	den /= gcd;
-	if (num > UINT32_MAX) {
-		return -ERANGE;
-	}
-
-	match->numerator = num;
-	match->denominator = den;
+	/* Compute the closest match */
+	*match = stepwise->min +
+		 DIV_ROUND_CLOSEST(goal - stepwise->min, stepwise->step) * stepwise->step;
 
 	return 0;
 }
@@ -96,39 +69,40 @@ int video_closest_frmival(const struct device *dev, struct video_frmival_enum *m
 
 	struct video_frmival desired = match->discrete;
 	struct video_frmival_enum fie = {.format = match->format};
-	uint64_t best_diff_nsec = INT32_MAX;
-	uint64_t goal_nsec = video_frmival_nsec(&desired);
+	uint32_t best_diff_usec = UINT32_MAX;
+	uint32_t goal_usec = desired.usec;
 
 	for (fie.index = 0; video_enum_frmival(dev, &fie) == 0; fie.index++) {
 		struct video_frmival tmp = {0};
-		uint64_t diff_nsec = 0;
-		uint64_t tmp_nsec;
+		uint32_t diff_usec = 0;
+		uint32_t tmp_usec = 0;
 		int ret;
 
 		switch (fie.type) {
 		case VIDEO_FRMIVAL_TYPE_DISCRETE:
 			tmp = fie.discrete;
+			tmp_usec = tmp.usec;
 			break;
 		case VIDEO_FRMIVAL_TYPE_STEPWISE:
-			ret = video_closest_frmival_stepwise(&fie.stepwise, &desired, &tmp);
+			ret = video_closest_frmival_stepwise(&fie.stepwise, goal_usec, &tmp_usec);
 			if (ret != 0) {
 				continue;
 			}
+			tmp.usec = tmp_usec;
 			break;
 		default:
 			CODE_UNREACHABLE;
 		}
 
-		tmp_nsec = video_frmival_nsec(&tmp);
-		diff_nsec = tmp_nsec > goal_nsec ? tmp_nsec - goal_nsec : goal_nsec - tmp_nsec;
+		diff_usec = tmp_usec > goal_usec ? tmp_usec - goal_usec : goal_usec - tmp_usec;
 
-		if (diff_nsec < best_diff_nsec) {
-			best_diff_nsec = diff_nsec;
+		if (diff_usec < best_diff_usec) {
+			best_diff_usec = diff_usec;
 			match->index = fie.index;
 			match->discrete = tmp;
 		}
 
-		if (diff_nsec == 0) {
+		if (diff_usec == 0) {
 			/* Exact match, stop searching a better match */
 			break;
 		}

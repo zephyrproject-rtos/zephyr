@@ -194,25 +194,32 @@ static uint32_t mipi_csi2rx_cal_frame_size(const struct video_format *fmt)
 	return fmt->height * fmt->width * video_bits_per_pixel(fmt->pixelformat);
 }
 
-static uint32_t mipi_csi2rx_estimate_pixel_rate(const struct video_frmival *cur_fmival,
-						const struct video_frmival *fie_frmival,
+static uint32_t mipi_csi2rx_estimate_pixel_rate(uint32_t cur_usec,
+						uint32_t target_usec,
 						const struct video_format *cur_format,
 						const struct video_format *fie_format,
-						uint32_t cur_pixel_rate, uint8_t laneNum)
+						uint32_t cur_pixel_rate)
 {
-	uint64_t numerator = mipi_csi2rx_cal_frame_size(cur_format) * fie_frmival->denominator *
-			     cur_fmival->numerator * cur_pixel_rate;
+	uint64_t dividend;
+	uint64_t divisor;
 
-	uint64_t denominator = mipi_csi2rx_cal_frame_size(fie_format) * fie_frmival->numerator *
-			       cur_fmival->denominator;
+	if (target_usec == 0U) {
+		return 0U;
+	}
 
-	return numerator / denominator;
+	dividend = (uint64_t)mipi_csi2rx_cal_frame_size(cur_format) * cur_usec * cur_pixel_rate;
+	divisor = (uint64_t)mipi_csi2rx_cal_frame_size(fie_format) * target_usec;
+
+	if (divisor == 0U) {
+		return 0U;
+	}
+
+	return (uint32_t)(dividend / divisor);
 }
 
 static int mipi_csi2rx_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
 	const struct mipi_csi2rx_config *config = dev->config;
-	struct mipi_csi2rx_data *drv_data = dev->data;
 	int ret;
 	uint32_t est_pixel_rate;
 	struct video_frmival cur_frmival;
@@ -220,55 +227,56 @@ static int mipi_csi2rx_enum_frmival(const struct device *dev, struct video_frmiv
 	struct video_control sensor_rate = {.id = VIDEO_CID_PIXEL_RATE, .val64 = -1};
 
 	ret = video_enum_frmival(config->sensor_dev, fie);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
 	ret = video_get_frmival(config->sensor_dev, &cur_frmival);
-	if (ret) {
+	if (ret != 0) {
 		LOG_ERR("Cannot get sensor_dev frame rate");
 		return ret;
 	}
 
 	ret = video_get_format(config->sensor_dev, &cur_fmt);
-	if (ret) {
+	if (ret != 0) {
 		LOG_ERR("Cannot get sensor_dev format");
 		return ret;
 	}
 
 	ret = video_get_ctrl(config->sensor_dev, &sensor_rate);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
 	if (fie->type == VIDEO_FRMIVAL_TYPE_DISCRETE) {
-		est_pixel_rate = mipi_csi2rx_estimate_pixel_rate(
-			&cur_frmival, &fie->discrete, &cur_fmt, fie->format, sensor_rate.val64,
-			drv_data->csi2rxConfig.laneNum);
+		est_pixel_rate =
+			mipi_csi2rx_estimate_pixel_rate(cur_frmival.usec, fie->discrete.usec,
+							&cur_fmt, fie->format, sensor_rate.val64);
 		if (est_pixel_rate > MAX_SUPPORTED_PIXEL_RATE) {
 			return -EINVAL;
 		}
-
 	} else {
 		/* Check the lane rate of the lower bound framerate */
-		est_pixel_rate = mipi_csi2rx_estimate_pixel_rate(
-			&cur_frmival, &fie->stepwise.min, &cur_fmt, fie->format, sensor_rate.val64,
-			drv_data->csi2rxConfig.laneNum);
+		est_pixel_rate =
+			mipi_csi2rx_estimate_pixel_rate(cur_frmival.usec, fie->stepwise.min,
+							&cur_fmt, fie->format, sensor_rate.val64);
 		if (est_pixel_rate > MAX_SUPPORTED_PIXEL_RATE) {
 			return -EINVAL;
 		}
 
 		/* Check the lane rate of the upper bound framerate */
-		est_pixel_rate = mipi_csi2rx_estimate_pixel_rate(
-			&cur_frmival, &fie->stepwise.max, &cur_fmt, fie->format, sensor_rate.val64,
-			drv_data->csi2rxConfig.laneNum);
+		est_pixel_rate =
+			mipi_csi2rx_estimate_pixel_rate(cur_frmival.usec, fie->stepwise.max,
+							&cur_fmt, fie->format, sensor_rate.val64);
 		if (est_pixel_rate > MAX_SUPPORTED_PIXEL_RATE) {
-			fie->stepwise.max.denominator =
-				(mipi_csi2rx_cal_frame_size(&cur_fmt) * MAX_SUPPORTED_PIXEL_RATE *
-				 cur_frmival.denominator) /
-				(mipi_csi2rx_cal_frame_size(fie->format) * sensor_rate.val64 *
-				 cur_frmival.numerator);
-			fie->stepwise.max.numerator = 1;
+			uint64_t dividend = (uint64_t)mipi_csi2rx_cal_frame_size(&cur_fmt) *
+					    cur_frmival.usec * sensor_rate.val64;
+			uint64_t divisor = (uint64_t)mipi_csi2rx_cal_frame_size(fie->format) *
+					   MAX_SUPPORTED_PIXEL_RATE;
+
+			if (divisor != 0U) {
+				fie->stepwise.max = (uint32_t)(dividend / divisor);
+			}
 		}
 	}
 

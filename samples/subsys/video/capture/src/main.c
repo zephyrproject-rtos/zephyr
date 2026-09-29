@@ -230,12 +230,10 @@ static int app_setup_video_frmival(const struct device *const camera_dev,
 
 	while (video_enum_frmival(camera_dev, &fie) == 0) {
 		if (fie.type == VIDEO_FRMIVAL_TYPE_DISCRETE) {
-			LOG_INF("   %u/%u", fie.discrete.numerator, fie.discrete.denominator);
+			LOG_INF("   %u us", fie.discrete.usec);
 		} else {
-			LOG_INF("   [min = %u/%u; max = %u/%u; step = %u/%u]",
-				fie.stepwise.min.numerator, fie.stepwise.min.denominator,
-				fie.stepwise.max.numerator, fie.stepwise.max.denominator,
-				fie.stepwise.step.numerator, fie.stepwise.step.denominator);
+			LOG_INF("   [min = %u us; max = %u us; step = %u us]",
+				fie.stepwise.min, fie.stepwise.max, fie.stepwise.step);
 		}
 		fie.index++;
 	}
@@ -248,7 +246,7 @@ static int app_setup_video_frmival(const struct device *const camera_dev,
 		return ret;
 	} else if (ret == 0) {
 		LOG_INF("- Default frame rate : %f fps",
-			1.0 * frmival.denominator / frmival.numerator);
+			1.0 * USEC_PER_SEC / frmival.usec);
 	}
 
 	return 0;

@@ -728,10 +728,13 @@ static int video_sw_generator_set_frmival(const struct device *dev, struct video
 {
 	struct video_sw_generator_data *data = dev->data;
 
-	data->frame_rate = CLAMP(DIV_ROUND_CLOSEST(frmival->denominator, frmival->numerator),
+	if (frmival->usec == 0U) {
+		return -EINVAL;
+	}
+
+	data->frame_rate = CLAMP(DIV_ROUND_CLOSEST(USEC_PER_SEC, frmival->usec),
 				 MIN_FRAME_RATE, MAX_FRAME_RATE);
-	frmival->numerator = 1;
-	frmival->denominator = data->frame_rate;
+	frmival->usec = USEC_PER_SEC / data->frame_rate;
 
 	return 0;
 }
@@ -740,8 +743,7 @@ static int video_sw_generator_get_frmival(const struct device *dev, struct video
 {
 	struct video_sw_generator_data *data = dev->data;
 
-	frmival->numerator = 1;
-	frmival->denominator = data->frame_rate;
+	frmival->usec = USEC_PER_SEC / data->frame_rate;
 
 	return 0;
 }
@@ -762,13 +764,10 @@ static int video_sw_generator_enum_frmival(const struct device *dev, struct vide
 	}
 
 	fie->type = VIDEO_FRMIVAL_TYPE_STEPWISE;
-	fie->stepwise.min.numerator = 1;
-	fie->stepwise.min.denominator = MAX_FRAME_RATE;
-	fie->stepwise.max.numerator = UINT32_MAX;
-	fie->stepwise.max.denominator = 1;
+	fie->stepwise.min = USEC_PER_SEC / MAX_FRAME_RATE;
+	fie->stepwise.max = UINT32_MAX;
 	/* The frame interval step size is the minimum resolution of K_MSEC(), which is 1ms */
-	fie->stepwise.step.numerator = 1;
-	fie->stepwise.step.denominator = 1000;
+	fie->stepwise.step = USEC_PER_MSEC;
 
 	return 0;
 }
