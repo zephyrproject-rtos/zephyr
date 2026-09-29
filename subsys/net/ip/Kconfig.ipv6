@@ -359,9 +359,11 @@ config NET_IPV6_MLD_ROBUSTNESS
 	default 2
 	help
 	  The Robustness Variable of RFC 3810 ch 9.1 allows tuning for the
-	  expected packet loss on a link, it should not be set to one. An
-	  MLDv1 querier is remembered for Robustness Variable times the Query
-	  Interval plus one Query Response Interval after its last query.
+	  expected packet loss on a link, it should not be set to one. The
+	  unsolicited report of a join is sent Robustness Variable times in
+	  total, and an MLDv1 querier is remembered for Robustness Variable
+	  times the Query Interval plus one Query Response Interval after its
+	  last query.
 
 config NET_IPV6_NBR_CACHE
 	bool "Neighbor cache"
