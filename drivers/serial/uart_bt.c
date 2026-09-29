@@ -129,7 +129,7 @@ static void tx_work_handler(struct k_work *work)
 	struct uart_bt_data *dev_data = CONTAINER_OF(dwork, struct uart_bt_data, uart.tx_work);
 	uint8_t *data = NULL;
 	size_t len;
-	int err;
+	int err = 0;
 
 	__ASSERT_NO_MSG(dev_data);
 
@@ -140,7 +140,11 @@ static void tx_work_handler(struct k_work *work)
 		 * managing separate read pointers: one per connection.
 		 */
 		len = MIN(ring_buf_get_ptr(dev_data->uart.tx_ringbuf, &data, 0), chunk_size);
-		if (len > 0) {
+		/* With notifications off the chunk is consumed below without being
+		 * sent, which also discards data queued for a peer that has since
+		 * unsubscribed.
+		 */
+		if (len > 0 && atomic_get(&dev_data->bt.enabled) != 0) {
 			err = bt_nus_inst_send(NULL, dev_data->bt.inst, data, len);
 			if (err) {
 				LOG_ERR("Failed to send data over BT: %d", err);
@@ -160,14 +164,20 @@ static int uart_bt_fifo_fill(const struct device *dev, const uint8_t *tx_data, i
 	struct uart_bt_data *dev_data = (struct uart_bt_data *)dev->data;
 	size_t wrote;
 
+	if (atomic_get(&dev_data->bt.enabled) == 0) {
+		if (dev_data->uart.tx_irq_ena) {
+			k_work_submit_to_queue(&nus_work_queue, &dev_data->uart.cb_work);
+		}
+
+		return len;
+	}
+
 	wrote = ring_buf_put(dev_data->uart.tx_ringbuf, tx_data, len);
 	if (wrote < len) {
 		LOG_WRN("Ring buffer full, drop %zd bytes", len - wrote);
 	}
 
-	if (atomic_get(&dev_data->bt.enabled)) {
-		k_work_reschedule_for_queue(&nus_work_queue, &dev_data->uart.tx_work, K_NO_WAIT);
-	}
+	k_work_reschedule_for_queue(&nus_work_queue, &dev_data->uart.tx_work, K_NO_WAIT);
 
 	return wrote;
 }
@@ -191,6 +201,10 @@ static void uart_bt_poll_out(const struct device *dev, unsigned char c)
 	struct uart_bt_data *dev_data = (struct uart_bt_data *)dev->data;
 	struct ring_buf *ringbuf = dev_data->uart.tx_ringbuf;
 
+	if (atomic_get(&dev_data->bt.enabled) == 0) {
+		return;
+	}
+
 	/** Right now we're discarding data if ring-buf is full. */
 	while (!ring_buf_put(ringbuf, &c, 1)) {
 		if (k_is_in_isr() || !atomic_get(&dev_data->bt.enabled)) {
@@ -201,14 +215,11 @@ static void uart_bt_poll_out(const struct device *dev, unsigned char c)
 		k_sleep(K_MSEC(1));
 	}
 
-	/** Don't flush the data until notifications are enabled. */
-	if (atomic_get(&dev_data->bt.enabled)) {
-		/** Delay will allow buffering some characters before transmitting
-		 * data, so more than one byte is transmitted (e.g: when poll_out is
-		 * called inside a for-loop).
-		 */
-		k_work_schedule_for_queue(&nus_work_queue, &dev_data->uart.tx_work, K_MSEC(1));
-	}
+	/** Delay will allow buffering some characters before transmitting
+	 * data, so more than one byte is transmitted (e.g: when poll_out is
+	 * called inside a for-loop).
+	 */
+	k_work_schedule_for_queue(&nus_work_queue, &dev_data->uart.tx_work, K_MSEC(1));
 }
 
 static int uart_bt_irq_tx_ready(const struct device *dev)
