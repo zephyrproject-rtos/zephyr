@@ -38,12 +38,22 @@ config INSTRUMENTATION_BACKEND_RAM
 	  Trigger a dump by calling instr_dump_buffer() / instr_dump_deltas()
 	  from the debugger, or via dump-on-full if enabled.
 
+config INSTRUMENTATION_BACKEND_SEMIHOST
+	bool "Semihost backend"
+	depends on SEMIHOST
+	help
+	  Write dumped instrumentation data to ./instrumentation.bin on the
+	  host via semihosting (useful with QEMU). Trigger a dump by calling
+	  instr_dump_buffer() / instr_dump_deltas(), or via dump-on-full.
+	  Enable CONFIG_SEMIHOST alongside this option.
+
 endchoice
 
 config INSTRUMENTATION_BACKEND_NAME
 	string
 	default "instr_backend_uart" if INSTRUMENTATION_BACKEND_UART
 	default "instr_backend_ram" if INSTRUMENTATION_BACKEND_RAM
+	default "instr_backend_semihost" if INSTRUMENTATION_BACKEND_SEMIHOST
 
 config INSTRUMENTATION_BACKEND_RAM_BUFFER_SIZE
 	int "RAM instrumentation dump buffer size"
