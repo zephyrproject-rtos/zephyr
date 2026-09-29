@@ -239,4 +239,21 @@
 			drive-strength = "medium";
 		};
 	};
+
+	ssie0_default: ssie0_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_SSIE, 4, 3)>, /* SSIBCK0 */
+				<RA_PSEL(RA_PSEL_SSIE, 4, 4)>, /* SSILRCK0 */
+				<RA_PSEL(RA_PSEL_SSIE, 4, 5)>, /* SSITXD0 */
+				<RA_PSEL(RA_PSEL_SSIE, 4, 6)>; /* SSIRXD0 */
+			drive-strength = "high";
+		};
+	};
+
+	pwm2_default: pwm2_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_GPT1, 13, 6)>; /* GTIOC2A */
+			drive-strength = "medium";
+		};
+	};
 };
