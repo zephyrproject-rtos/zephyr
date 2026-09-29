@@ -5,6 +5,7 @@ menuconfig BMI323
 	bool "BMI323 measurement unit"
 	default y
 	depends on DT_HAS_BOSCH_BMI323_ENABLED
+	select GPIO
 	help
 	  Enable driver for BMI323 IMU sensor.
 	  The driver implements the following features:
