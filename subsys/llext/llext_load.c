@@ -45,6 +45,27 @@ __weak int arch_elf_veneer_init(struct llext_loader *ldr, struct llext *ext)
 	return 0;
 }
 
+const void *llext_lookup_vma(struct llext_loader *ldr, struct llext *ext, uintptr_t vma)
+{
+	for (unsigned int i = 0; i < ext->sect_cnt; i++) {
+		elf_shdr_t *shdr = ext->sect_hdrs + i;
+
+		if (shdr->sh_size == 0 || !(shdr->sh_flags & SHF_ALLOC) ||
+		    ldr->sect_map[i].mem_idx == LLEXT_MEM_COUNT) {
+			continue;
+		}
+
+		if (vma < shdr->sh_addr || vma >= shdr->sh_addr + shdr->sh_size) {
+			continue;
+		}
+
+		return (const uint8_t *)llext_loaded_sect_ptr(ldr, ext, i) +
+		       (vma - shdr->sh_addr);
+	}
+
+	return NULL;
+}
+
 const void *llext_loaded_sect_ptr(struct llext_loader *ldr, struct llext *ext, unsigned int sh_ndx)
 {
 	enum llext_mem mem_idx = ldr->sect_map[sh_ndx].mem_idx;

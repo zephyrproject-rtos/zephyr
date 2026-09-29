@@ -12,6 +12,7 @@ extern "C" {
 #endif
 
 #include <zephyr/llext/llext.h>
+#include <zephyr/llext/loader.h>
 
 /**
  * @file
@@ -27,6 +28,19 @@ struct llext_elf_sect_map {
 };
 
 const void *llext_loaded_sect_ptr(struct llext_loader *ldr, struct llext *ext, unsigned int sh_ndx);
+
+/* Loaded address of an ET_DYN VMA, or NULL if that byte was not mapped. */
+const void *llext_lookup_vma(struct llext_loader *ldr, struct llext *ext, uintptr_t vma);
+
+/* Load bias: loaded address minus link VMA. */
+static inline uintptr_t llext_et_dyn_bias(const struct llext *ext)
+{
+	if (ext->dyn_base == 0U) {
+		return (uintptr_t)ext->mem[LLEXT_MEM_TEXT];
+	}
+
+	return ext->dyn_base - ext->dyn_link;
+}
 
 
 static inline const char *llext_string(const struct llext_loader *ldr, const struct llext *ext,
@@ -44,6 +58,10 @@ static inline uintptr_t llext_get_reloc_instruction_location(struct llext_loader
 							     int shndx,
 							     const elf_rela_t *rela)
 {
+	if (ldr->reloc_vma) {
+		return (uintptr_t)llext_lookup_vma(ldr, ext, rela->r_offset);
+	}
+
 	return (uintptr_t) llext_loaded_sect_ptr(ldr, ext, shndx) + rela->r_offset;
 }
 
