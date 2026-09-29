@@ -5,7 +5,7 @@
  */
 
 &usart2 {
-	dmas = <&dmamux1 3 53 STM32_DMA_PERIPH_TX>,
-	       <&dmamux1 4 52 STM32_DMA_PERIPH_RX>;
+	dmas = <&dmamux1 53 STM32_DMA_PERIPH_TX>,
+	       <&dmamux1 52 STM32_DMA_PERIPH_RX>;
 	dma-names = "tx", "rx";
 };
