@@ -36,6 +36,8 @@ struct fd_entry {
 	struct k_condvar cond;
 	size_t offset;
 	uint32_t mode;
+	/* Set once zvfs_close() has closed the object; the fd is gone from then on. */
+	bool closing;
 };
 
 #if defined(CONFIG_POSIX_DEVICE_IO)
@@ -148,6 +150,34 @@ static int z_fd_unref(int fd)
 	return 0;
 }
 
+/*
+ * Take a reference on a slot that is in use and not yet closed. Never moves
+ * the count up from zero, which would resurrect a free slot. Assumes fd was
+ * already bounds-checked.
+ */
+static int z_fd_ref_live(int fd)
+{
+	struct fd_entry *entry = &fdtable[fd];
+	atomic_val_t old_rc;
+
+	do {
+		old_rc = atomic_get(&entry->refcount);
+		if ((old_rc == 0) || entry->closing) {
+			errno = EBADF;
+			return -1;
+		}
+	} while (!atomic_cas(&entry->refcount, old_rc, old_rc + 1));
+
+	/* close() may have marked the slot while the reference was being taken. */
+	if (entry->closing) {
+		(void)z_fd_unref(fd);
+		errno = EBADF;
+		return -1;
+	}
+
+	return 0;
+}
+
 static int _find_fd_entry(void)
 {
 	int fd;
@@ -171,12 +201,52 @@ static int _check_fd(int fd)
 
 	fd = k_array_index_sanitize(fd, ARRAY_SIZE(fdtable));
 
-	if (!atomic_get(&fdtable[fd].refcount)) {
+	if (!atomic_get(&fdtable[fd].refcount) || fdtable[fd].closing) {
 		errno = EBADF;
 		return -1;
 	}
 
 	return 0;
+}
+
+/*
+ * Start a call on fd: hold its slot, so close() cannot free and reuse it until
+ * z_fd_call_end(). With lock, also take the entry lock and check again once it
+ * is held, since close() may have run while we waited for it.
+ */
+static int z_fd_call_begin(int fd, bool lock)
+{
+	if ((fd < 0) || (fd >= ARRAY_SIZE(fdtable))) {
+		errno = EBADF;
+		return -1;
+	}
+
+	fd = k_array_index_sanitize(fd, ARRAY_SIZE(fdtable));
+
+	if (z_fd_ref_live(fd) < 0) {
+		return -1;
+	}
+
+	if (lock) {
+		(void)k_mutex_lock(&fdtable[fd].lock, K_FOREVER);
+		if (fdtable[fd].closing) {
+			k_mutex_unlock(&fdtable[fd].lock);
+			(void)z_fd_unref(fd);
+			errno = EBADF;
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+static void z_fd_call_end(int fd, bool lock)
+{
+	if (lock) {
+		k_mutex_unlock(&fdtable[fd].lock);
+	}
+
+	(void)z_fd_unref(fd);
 }
 
 void *zvfs_get_fd_obj(int fd, const struct fd_op_vtable *vtable, int err)
@@ -202,7 +272,9 @@ static int z_get_fd_by_obj_and_vtable(void *obj, const struct fd_op_vtable *vtab
 	int fd;
 
 	for (fd = 0; fd < ARRAY_SIZE(fdtable); fd++) {
-		if (fdtable[fd].obj == obj && fdtable[fd].vtable == vtable) {
+		/* A closed fd kept by a running call may name an object since reused */
+		if (fdtable[fd].obj == obj && fdtable[fd].vtable == vtable &&
+		    !fdtable[fd].closing) {
 			return fd;
 		}
 	}
@@ -253,6 +325,46 @@ void *zvfs_get_fd_obj_and_vtable(int fd, const struct fd_op_vtable **vtable, str
 	return entry->obj;
 }
 
+void *zvfs_get_fd_obj_and_vtable_ref(int fd, const struct fd_op_vtable **vtable,
+				     struct k_mutex **lock)
+{
+	struct fd_entry *entry;
+
+	if ((fd < 0) || (fd >= ARRAY_SIZE(fdtable))) {
+		errno = EBADF;
+		return NULL;
+	}
+
+	fd = k_array_index_sanitize(fd, ARRAY_SIZE(fdtable));
+
+	if (z_fd_ref_live(fd) < 0) {
+		return NULL;
+	}
+
+	entry = &fdtable[fd];
+
+	/* Reserved but not finalized, or an entry with no object (stdin/out/err). */
+	if (entry->obj == NULL) {
+		(void)z_fd_unref(fd);
+		errno = EBADF;
+		return NULL;
+	}
+
+	*vtable = entry->vtable;
+
+	if (lock != NULL) {
+		*lock = &entry->lock;
+	}
+
+	return entry->obj;
+}
+
+void zvfs_put_fd(int fd)
+{
+	/* Assumes fd came from a successful zvfs_get_fd_obj_and_vtable_ref(). */
+	(void)z_fd_unref(fd);
+}
+
 int zvfs_reserve_fd(void)
 {
 	int fd;
@@ -268,6 +380,7 @@ int zvfs_reserve_fd(void)
 		fdtable[fd].offset = 0;
 		k_mutex_init(&fdtable[fd].lock);
 		k_condvar_init(&fdtable[fd].cond);
+		fdtable[fd].closing = false;
 	}
 
 	k_mutex_unlock(&fdtable_lock);
@@ -341,11 +454,9 @@ static ssize_t zvfs_rw(int fd, void *buf, size_t sz, bool is_write, const size_t
 	ssize_t res;
 	const size_t *off;
 
-	if (_check_fd(fd) < 0) {
+	if (z_fd_call_begin(fd, true) < 0) {
 		return -1;
 	}
-
-	(void)k_mutex_lock(&fdtable[fd].lock, K_FOREVER);
 
 	prw = supports_pread_pwrite(fdtable[fd].mode);
 	if (from_offset != NULL && !prw) {
@@ -385,7 +496,7 @@ static ssize_t zvfs_rw(int fd, void *buf, size_t sz, bool is_write, const size_t
 	}
 
 unlock:
-	k_mutex_unlock(&fdtable[fd].lock);
+	z_fd_call_end(fd, true);
 
 	return res;
 }
@@ -404,11 +515,11 @@ int zvfs_close(int fd)
 {
 	int res = 0;
 
-	if (_check_fd(fd) < 0) {
+	/* Fails if a concurrent close() got here first. */
+	if (z_fd_call_begin(fd, true) < 0) {
 		return -1;
 	}
 
-	(void)k_mutex_lock(&fdtable[fd].lock, K_FOREVER);
 	if (fdtable[fd].vtable->close != NULL) {
 		/* close() is optional - e.g. stdinout_fd_op_vtable */
 		if (fdtable[fd].mode & ZVFS_MODE_IFSOCK) {
@@ -420,9 +531,14 @@ int zvfs_close(int fd)
 			res = fdtable[fd].vtable->close(fdtable[fd].obj);
 		}
 	}
-	k_mutex_unlock(&fdtable[fd].lock);
 
+	/*
+	 * Only now, so that the object's own close can still look up its fd.
+	 * Drop the table's reference; the slot is freed with the last one.
+	 */
+	fdtable[fd].closing = true;
 	zvfs_free_fd(fd);
+	z_fd_call_end(fd, true);
 
 	return res;
 }
@@ -450,20 +566,30 @@ int zvfs_fileno(FILE *file)
 
 int zvfs_fstat(int fd, struct zvfs_stat *buf)
 {
-	if (_check_fd(fd) < 0) {
+	int res;
+
+	if (z_fd_call_begin(fd, false) < 0) {
 		return -1;
 	}
 
-	return zvfs_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj, ZFD_IOCTL_STAT, buf);
+	res = zvfs_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj, ZFD_IOCTL_STAT, buf);
+	z_fd_call_end(fd, false);
+
+	return res;
 }
 
 int zvfs_fsync(int fd)
 {
-	if (_check_fd(fd) < 0) {
+	int res;
+
+	if (z_fd_call_begin(fd, false) < 0) {
 		return -1;
 	}
 
-	return zvfs_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj, ZFD_IOCTL_FSYNC);
+	res = zvfs_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj, ZFD_IOCTL_FSYNC);
+	z_fd_call_end(fd, false);
+
+	return res;
 }
 
 static inline off_t zvfs_lseek_wrap(int fd, int cmd, ...)
@@ -473,7 +599,6 @@ static inline off_t zvfs_lseek_wrap(int fd, int cmd, ...)
 
 	__ASSERT_NO_MSG(fd < ARRAY_SIZE(fdtable));
 
-	(void)k_mutex_lock(&fdtable[fd].lock, K_FOREVER);
 	va_start(args, cmd);
 	res = fdtable[fd].vtable->ioctl(fdtable[fd].obj, cmd, args);
 	va_end(args);
@@ -489,30 +614,35 @@ static inline off_t zvfs_lseek_wrap(int fd, int cmd, ...)
 			break;
 		}
 	}
-	k_mutex_unlock(&fdtable[fd].lock);
 
 	return res;
 }
 
 off_t zvfs_lseek(int fd, off_t offset, int whence)
 {
-	if (_check_fd(fd) < 0) {
+	off_t res;
+
+	if (z_fd_call_begin(fd, true) < 0) {
 		return -1;
 	}
 
-	return zvfs_lseek_wrap(fd, ZFD_IOCTL_LSEEK, offset, whence, fdtable[fd].offset);
+	res = zvfs_lseek_wrap(fd, ZFD_IOCTL_LSEEK, offset, whence, fdtable[fd].offset);
+	z_fd_call_end(fd, true);
+
+	return res;
 }
 
 int zvfs_fcntl(int fd, int cmd, va_list args)
 {
 	int res;
 
-	if (_check_fd(fd) < 0) {
+	if (z_fd_call_begin(fd, false) < 0) {
 		return -1;
 	}
 
 	/* The rest of commands are per-fd, handled by ioctl vmethod. */
 	res = fdtable[fd].vtable->ioctl(fdtable[fd].obj, cmd, args);
+	z_fd_call_end(fd, false);
 
 	return res;
 }
@@ -524,31 +654,39 @@ static inline int zvfs_ftruncate_wrap(int fd, int cmd, ...)
 
 	__ASSERT_NO_MSG(fd < ARRAY_SIZE(fdtable));
 
-	(void)k_mutex_lock(&fdtable[fd].lock, K_FOREVER);
 	va_start(args, cmd);
 	res = fdtable[fd].vtable->ioctl(fdtable[fd].obj, cmd, args);
 	va_end(args);
-	k_mutex_unlock(&fdtable[fd].lock);
 
 	return res;
 }
 
 int zvfs_ftruncate(int fd, off_t length)
 {
-	if (_check_fd(fd) < 0) {
+	int res;
+
+	if (z_fd_call_begin(fd, true) < 0) {
 		return -1;
 	}
 
-	return zvfs_ftruncate_wrap(fd, ZFD_IOCTL_TRUNCATE, length);
+	res = zvfs_ftruncate_wrap(fd, ZFD_IOCTL_TRUNCATE, length);
+	z_fd_call_end(fd, true);
+
+	return res;
 }
 
 int zvfs_ioctl(int fd, unsigned long request, va_list args)
 {
-	if (_check_fd(fd) < 0) {
+	int res;
+
+	if (z_fd_call_begin(fd, false) < 0) {
 		return -1;
 	}
 
-	return fdtable[fd].vtable->ioctl(fdtable[fd].obj, request, args);
+	res = fdtable[fd].vtable->ioctl(fdtable[fd].obj, request, args);
+	z_fd_call_end(fd, false);
+
+	return res;
 }
 
 int zvfs_unlink(const char *path)
