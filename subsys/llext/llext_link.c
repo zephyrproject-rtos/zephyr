@@ -369,17 +369,26 @@ static int llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_
 
 		if (tgt) {
 			/* Relocatable / partially linked ELF. */
-			if (rela.r_offset >= tgt->sh_size) {
-				LOG_WRN("PLT: r_offset %#zx out of target section "
-					"(size %#zx), skipping",
-					(size_t)rela.r_offset, (size_t)tgt->sh_size);
-				continue;
-			}
-
 			const void *sect_ptr = llext_loaded_sect_ptr(ldr, ext, shdr->sh_info);
 
 			if (!sect_ptr) {
 				LOG_WRN("PLT: section %u not loaded, skipping", shdr->sh_info);
+				continue;
+			}
+
+			if (rela.r_offset >= tgt->sh_size) {
+				/* Type 0 is R_<arch>_NONE, which writes nothing and may
+				 * sit at the section end.
+				 */
+				if (ELF_R_TYPE(rela.r_info) == 0) {
+					continue;
+				}
+				LOG_ERR("PLT: r_offset %#zx out of target section "
+					"(size %#zx)",
+					(size_t)rela.r_offset, (size_t)tgt->sh_size);
+				if (link_err == 0) {
+					link_err = -ENOEXEC;
+				}
 				continue;
 			}
 
