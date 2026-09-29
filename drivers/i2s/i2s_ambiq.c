@@ -455,7 +455,11 @@ static int i2s_ambiq_write(const struct device *dev, void *buffer, size_t size)
 		return -EINVAL;
 	}
 
-	ret = k_sem_take(&(data->tx_ready_sem), K_MSEC(100));
+	ret = k_sem_take(&(data->tx_ready_sem), SYS_TIMEOUT_MS(data->i2s_user_config.timeout));
+	if (ret != 0) {
+		LOG_DBG("No free TX buffer %d", ret);
+		return ret;
+	}
 
 	i2s_ambiq_pm_policy_state_lock_get(dev);
 
@@ -502,7 +506,7 @@ static int i2s_ambiq_read(const struct device *dev, void **buffer, size_t *size)
 		return -EIO;
 	}
 
-	ret = k_sem_take(&(data->rx_done_sem), K_MSEC(100));
+	ret = k_sem_take(&(data->rx_done_sem), SYS_TIMEOUT_MS(data->i2s_user_config.timeout));
 
 	if (ret != 0) {
 		LOG_DBG("No audio data to be read %d", ret);
