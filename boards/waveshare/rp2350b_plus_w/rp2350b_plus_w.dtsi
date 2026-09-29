@@ -118,3 +118,7 @@ gpio1: &gpio0_hi {
 &rng {
 	status = "okay";
 };
+
+zephyr_udc0: &usbd {
+	status = "okay";
+};
