@@ -657,8 +657,16 @@ __weak void clock_init(void)
 #endif
 #endif
 
+/* Never reclock a FlexSPI the image executes in place from */
+#define FLEXSPI_IS_XIP(node_id)                                                                    \
+	(IS_ENABLED(CONFIG_XIP) &&                                                                 \
+	 (CONFIG_FLASH_BASE_ADDRESS >= DT_REG_ADDR_BY_IDX(node_id, 1)) &&                          \
+	 (CONFIG_FLASH_BASE_ADDRESS <                                                              \
+	  (DT_REG_ADDR_BY_IDX(node_id, 1) + DT_REG_SIZE_BY_IDX(node_id, 1))))
+
 #if !(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_flash_controller), nxp_imx_flexspi_nor)) &&              \
-	defined(CONFIG_MEMC_MCUX_FLEXSPI) && DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexspi))
+	defined(CONFIG_MEMC_MCUX_FLEXSPI) && DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexspi)) &&     \
+	!FLEXSPI_IS_XIP(DT_NODELABEL(flexspi))
 	/* Configure FLEXSPI1 using OSC_RC_48M_DIV2 */
 	rootCfg.mux = kCLOCK_FLEXSPI1_ClockRoot_MuxOscRc48MDiv2;
 	rootCfg.div = 1;
@@ -666,7 +674,8 @@ __weak void clock_init(void)
 #endif
 
 #if !(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_flash_controller), nxp_imx_flexspi_nor)) &&              \
-	defined(CONFIG_MEMC_MCUX_FLEXSPI) && DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexspi2))
+	defined(CONFIG_MEMC_MCUX_FLEXSPI) && DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexspi2)) &&    \
+	!FLEXSPI_IS_XIP(DT_NODELABEL(flexspi2))
 	/* Configure FLEXSPI2 using OSC_RC_48M_DIV2 */
 	rootCfg.mux = kCLOCK_FLEXSPI2_ClockRoot_MuxOscRc48MDiv2;
 	rootCfg.div = 1;
