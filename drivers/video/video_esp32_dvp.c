@@ -101,6 +101,7 @@ void video_esp32_dma_rx_done(const struct device *dev, void *user_data, uint32_t
 			     int status)
 {
 	struct video_esp32_data *data = user_data;
+	struct video_buffer *next_vbuf;
 
 	if (status == DMA_STATUS_BLOCK) {
 		LOG_DBG("received block");
@@ -119,16 +120,21 @@ void video_esp32_dma_rx_done(const struct device *dev, void *user_data, uint32_t
 		return;
 	}
 
+	next_vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
+	if (next_vbuf == NULL) {
+		/*
+		 * Capture the next frame into the same buffer rather than stop: a
+		 * capture restarted mid-frame would never be aligned to VSYNC again.
+		 */
+		LOG_DBG("Frame dropped. No buffer available");
+		video_esp32_reload_dma(data);
+		return;
+	}
+
 	data->active_vbuf->timestamp = k_uptime_get_32();
 	k_fifo_put(&data->fifo_out, data->active_vbuf);
 	VIDEO_ESP32_RAISE_OUT_SIG_IF_ENABLED(VIDEO_BUF_DONE)
-	data->active_vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
-
-	if (data->active_vbuf == NULL) {
-		LOG_WRN("Frame dropped. No buffer available");
-		VIDEO_ESP32_RAISE_OUT_SIG_IF_ENABLED(VIDEO_BUF_ERROR)
-		return;
-	}
+	data->active_vbuf = next_vbuf;
 	video_esp32_reload_dma(data);
 }
 
