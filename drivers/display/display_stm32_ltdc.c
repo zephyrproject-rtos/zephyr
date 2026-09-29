@@ -140,6 +140,8 @@ static void stm32_ltdc_global_isr(const struct device *dev)
 
 				LTDC_LAYER(&data->hltdc, LTDC_LAYER_1)->CFBAR =
 					(uint32_t)data->front_buf;
+				/* The HAL programs this address again when it sets up the layer */
+				data->hltdc.LayerCfg[0].FBStartAdress = (uint32_t)data->front_buf;
 
 				__HAL_LTDC_RELOAD_IMMEDIATE_CONFIG(&data->hltdc);
 
