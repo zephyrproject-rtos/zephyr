@@ -157,6 +157,10 @@
 	zephyr_udc0: udc {
 		status = "okay";
 	};
+
+	zephyr_uhc0: uhc {
+		status = "okay";
+	};
 };
 
 &code_mram_cm85 {
