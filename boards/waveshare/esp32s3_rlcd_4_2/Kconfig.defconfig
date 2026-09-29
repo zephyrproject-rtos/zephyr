@@ -12,10 +12,10 @@ choice LV_COLOR_DEPTH
 	default LV_COLOR_DEPTH_1
 endchoice
 
-config LV_Z_AREA_X_ALIGNMENT_WIDTH
+configdefault LV_Z_AREA_X_ALIGNMENT_WIDTH
 	default 12
 
-config LV_Z_AREA_Y_ALIGNMENT_WIDTH
+configdefault LV_Z_AREA_Y_ALIGNMENT_WIDTH
 	default 2
 
 endif # LVGL
@@ -24,10 +24,10 @@ if FUEL_GAUGE
 
 # Composite fuel gauge gets battery voltage from ADC-based voltage-divider sensor
 
-config ADC
+configdefault ADC
 	default y
 
-config SENSOR
+configdefault SENSOR
 	default y
 
 endif # FUEL_GAUGE
