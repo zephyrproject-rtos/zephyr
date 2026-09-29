@@ -275,6 +275,16 @@ static inline int net_ipv6_finalize(struct net_pkt *pkt,
  */
 #if defined(CONFIG_NET_IPV6_MLD)
 int net_ipv6_mld_send_single(struct net_if *iface, const struct net_in6_addr *addr, uint8_t mode);
+
+/**
+ * @brief Maximum Response Delay of a Multicast Listener Query in milliseconds
+ *
+ * @param code Maximum Response Code of the query
+ * @param mldv2 Decode the floating point MLDv2 form of codes 32768 and above
+ *
+ * @return Maximum Response Delay in milliseconds.
+ */
+uint32_t net_ipv6_mld_max_resp_delay(uint16_t code, bool mldv2);
 #else
 static inline int
 net_ipv6_mld_send_single(struct net_if *iface, const struct net_in6_addr *addr, uint8_t mode)
