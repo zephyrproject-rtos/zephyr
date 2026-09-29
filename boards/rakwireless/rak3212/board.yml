@@ -1,6 +1,6 @@
 board:
-  name: rak3112
-  full_name: RAK3112
+  name: rak3212
+  full_name: RAK3212 Breakout Board
   vendor: rakwireless
   socs:
   - name: esp32s3
