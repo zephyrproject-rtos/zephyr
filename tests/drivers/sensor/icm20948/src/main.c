@@ -6,6 +6,8 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/emul.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/gpio/gpio_emul.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/ztest.h>
@@ -151,6 +153,102 @@ ZTEST(icm20948, test_unsupported_channel_is_rejected)
 	zassert_ok(sensor_sample_fetch(dev));
 	zassert_equal(sensor_channel_get(dev, SENSOR_CHAN_PRESS, &val), -ENOTSUP,
 		      "an unsupported channel should be rejected");
+}
+
+static const struct gpio_dt_spec irq = GPIO_DT_SPEC_GET(NODE, irq_gpios);
+
+static unsigned int handler_calls;
+
+static void count_trigger(const struct device *sensor, const struct sensor_trigger *trig)
+{
+	ARG_UNUSED(sensor);
+	ARG_UNUSED(trig);
+
+	handler_calls++;
+}
+
+/* Walks the line through the edge the driver arms itself for */
+static void pulse_irq(void)
+{
+	zassert_ok(gpio_emul_input_set(irq.port, irq.pin, 0));
+	k_msleep(5);
+	zassert_ok(gpio_emul_input_set(irq.port, irq.pin, 1));
+	k_msleep(5);
+}
+
+ZTEST(icm20948, test_data_ready_trigger_reaches_the_handler)
+{
+	static const struct sensor_trigger trig = {
+		.type = SENSOR_TRIG_DATA_READY,
+		.chan = SENSOR_CHAN_ALL,
+	};
+
+	handler_calls = 0;
+	zassert_ok(sensor_trigger_set(dev, &trig, count_trigger));
+
+	pulse_irq();
+	zassert_equal(handler_calls, 1, "the handler should have run once");
+
+	/* The interrupt is masked while the handler runs and unmasked after */
+	pulse_irq();
+	zassert_equal(handler_calls, 2, "the handler should have run again");
+
+	zassert_ok(sensor_trigger_set(dev, &trig, NULL));
+}
+
+ZTEST(icm20948, test_a_removed_handler_is_not_called)
+{
+	static const struct sensor_trigger trig = {
+		.type = SENSOR_TRIG_DATA_READY,
+		.chan = SENSOR_CHAN_ALL,
+	};
+
+	zassert_ok(sensor_trigger_set(dev, &trig, count_trigger));
+	zassert_ok(sensor_trigger_set(dev, &trig, NULL));
+
+	handler_calls = 0;
+	pulse_irq();
+
+	zassert_equal(handler_calls, 0, "a removed handler should not run");
+}
+
+ZTEST(icm20948, test_unsupported_trigger_is_rejected)
+{
+	static const struct sensor_trigger trig = {
+		.type = SENSOR_TRIG_TAP,
+		.chan = SENSOR_CHAN_ALL,
+	};
+
+	zassert_equal(sensor_trigger_set(dev, &trig, count_trigger), -ENOTSUP,
+		      "a trigger the device does not have should be refused");
+}
+
+ZTEST(icm20948, test_data_ready_interrupt_is_enabled_at_init)
+{
+	uint8_t enable;
+
+	icm20948_emul_get_reg(target, REG_INT_ENABLE_1, &enable, sizeof(enable));
+
+	zassert_equal(enable & BIT_RAW_DATA_0_RDY_EN, BIT_RAW_DATA_0_RDY_EN,
+		      "the data ready interrupt was left disabled");
+}
+
+ZTEST(icm20948, test_arming_the_trigger_clears_a_stale_interrupt)
+{
+	static const struct sensor_trigger trig = {
+		.type = SENSOR_TRIG_DATA_READY,
+		.chan = SENSOR_CHAN_ALL,
+	};
+	uint8_t status = BIT_RAW_DATA_0_RDY_INT;
+
+	icm20948_emul_set_reg(target, REG_INT_STATUS_1, &status, sizeof(status));
+
+	zassert_ok(sensor_trigger_set(dev, &trig, count_trigger));
+
+	icm20948_emul_get_reg(target, REG_INT_STATUS_1, &status, sizeof(status));
+	zassert_equal(status, 0, "a conversion the caller did not ask for was left latched");
+
+	zassert_ok(sensor_trigger_set(dev, &trig, NULL));
 }
 
 ZTEST_SUITE(icm20948, NULL, NULL, NULL, NULL, NULL);
