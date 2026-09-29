@@ -56,4 +56,13 @@ void soc_early_init_hook(void)
 
 	/* Power Configuration */
 	LL_PWR_SetRegulatorSupply(SELECTED_POWER_SUPPLY);
+	if (SELECTED_POWER_SUPPLY == LL_PWR_SMPS_SUPPLY) {
+		while (!LL_PWR_IsActiveFlag_REGULATOR()) {
+			/* Wait until regulator supply switches to SMPS */
+		}
+	} else {
+		while (LL_PWR_IsActiveFlag_REGULATOR()) {
+			/* Wait until regulator supply switches to LDO */
+		}
+	}
 }
