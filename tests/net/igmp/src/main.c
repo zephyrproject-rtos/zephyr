@@ -81,11 +81,14 @@ static bool is_query_resp_ok;
 static bool is_v1_report_sent;
 static bool is_v2_report_sent;
 static bool is_v2_leave_sent;
+static int report_count;
 static bool is_igmpv2_query_sent;
 static bool is_igmpv3_query_sent;
 K_SEM_DEFINE(wait_data, 0, UINT_MAX);
 
 #define WAIT_TIME 500
+/* Max Resp Code of the queries sent by the tests, in tenths of a second */
+#define QUERY_MAX_RSP  1
 #define WAIT_TIME_LONG MSEC_PER_SEC
 #define MY_PORT 1969
 #define PEER_PORT 13856
@@ -181,6 +184,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		is_join_msg_ok = true;
 		is_query_resp_ok = true;
 		is_report_sent = true;
+		report_count++;
 		k_sem_give(&wait_data);
 	} else if (igmp_header->type == NET_IPV4_IGMP_REPORT_V2) {
 		NET_DBG("Received v2 report....");
@@ -190,6 +194,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		is_join_msg_ok = true;
 		is_query_resp_ok = true;
 		is_report_sent = true;
+		report_count++;
 		k_sem_give(&wait_data);
 	} else if (igmp_header->type == NET_IPV4_IGMP_REPORT_V3) {
 		NET_DBG("Received v3 report....");
@@ -219,6 +224,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		is_query_resp_ok = true;
 #endif
 		is_report_sent = true;
+		report_count++;
 		k_sem_give(&wait_data);
 	} else if (igmp_header->type == NET_IPV4_IGMP_LEAVE) {
 		NET_DBG("Received leave....");
@@ -312,7 +318,9 @@ static void *igmp_setup(void)
 	return NULL;
 }
 
-/* Forget about older version queriers heard by a previous test */
+/* Forget about older version queriers heard and responses scheduled by a
+ * previous test.
+ */
 static void igmp_before(void *fixture)
 {
 	struct net_if_ipv4 *ipv4 = net_iface->config.ip.ipv4;
@@ -321,6 +329,11 @@ static void igmp_before(void *fixture)
 
 	ipv4->igmp_v1_querier_timeout = sys_timepoint_calc(K_NO_WAIT);
 	ipv4->igmp_v2_querier_timeout = sys_timepoint_calc(K_NO_WAIT);
+	ipv4->igmp_version = 0;
+	ipv4->igmp_general_timeout = sys_timepoint_calc(K_FOREVER);
+	ARRAY_FOR_EACH(ipv4->mcast, i) {
+		ipv4->mcast[i].igmp_resp_timeout = sys_timepoint_calc(K_FOREVER);
+	}
 
 	is_igmpv2_query_sent = false;
 	is_igmpv3_query_sent = false;
@@ -410,8 +423,7 @@ static struct net_pkt *prepare_igmp_msg(struct net_if *iface, bool is_igmpv3,
 static struct net_pkt *prepare_igmp_query(struct net_if *iface, bool is_igmpv3,
 					  const struct net_in_addr *group)
 {
-	return prepare_igmp_msg(iface, is_igmpv3, group, NET_IPV4_IGMP_QUERY,
-				is_igmpv3 ? 0x64 : 0xff);
+	return prepare_igmp_msg(iface, is_igmpv3, group, NET_IPV4_IGMP_QUERY, QUERY_MAX_RSP);
 }
 
 static void join_group(void)
@@ -765,6 +777,232 @@ ZTEST_USER(net_igmp, test_group_rejoin)
 	socket_leave_group_with_index(&my_addr);
 }
 
+/* A query is not answered right away but after a random delay bounded by
+ * its Max Resp Time (RFC 3376 ch 5.2, RFC 2236 ch 3).
+ */
+ZTEST_USER(net_igmp, test_igmp_query_delayed)
+{
+	struct net_pkt *pkt;
+	int64_t start;
+
+	join_group();
+
+	k_sem_reset(&wait_data);
+	is_report_sent = false;
+	is_igmpv2_query_sent = !IS_ENABLED(CONFIG_NET_IPV4_IGMPV3);
+	is_igmpv3_query_sent = !is_igmpv2_query_sent;
+
+	/* Max Resp Code 10 is one second */
+	pkt = prepare_igmp_msg(net_iface, IS_ENABLED(CONFIG_NET_IPV4_IGMPV3), NULL,
+			       NET_IPV4_IGMP_QUERY, 10);
+	start = k_uptime_get();
+	zassert_equal(net_ipv4_input(pkt), NET_OK, "Failed to send");
+	/* A report is only immediate when no time passed while the query was
+	 * handled; the host may have been stalled for longer than the delay.
+	 */
+	zassert_true(!is_report_sent || k_uptime_get() > start, "Query answered without delay");
+
+	zassert_ok(k_sem_take(&wait_data, K_MSEC(1500)), "Timeout while waiting query event");
+	zassert_true(is_report_sent, "Query not answered");
+
+	leave_group();
+}
+
+/* A second General Query while a response is pending does not schedule
+ * another response (RFC 3376 ch 5.2 rule 1).
+ */
+ZTEST_USER(net_igmp, test_igmp_query_merged)
+{
+	struct net_pkt *pkt;
+
+	join_group();
+
+	k_sem_reset(&wait_data);
+	report_count = 0;
+	is_igmpv2_query_sent = !IS_ENABLED(CONFIG_NET_IPV4_IGMPV3);
+	is_igmpv3_query_sent = !is_igmpv2_query_sent;
+
+	for (int i = 0; i < 2; i++) {
+		pkt = prepare_igmp_msg(net_iface, IS_ENABLED(CONFIG_NET_IPV4_IGMPV3), NULL,
+				       NET_IPV4_IGMP_QUERY, 5);
+		zassert_equal(net_ipv4_input(pkt), NET_OK, "Failed to send");
+	}
+
+	if (report_count != 0) {
+		/* Stalled so long that the first response was already due */
+		leave_group();
+		ztest_test_skip();
+	}
+
+	k_msleep(1000);
+	zassert_equal(report_count, 1, "Expected one report, got %d", report_count);
+
+	leave_group();
+}
+
+/* Max Resp Code decoding: IGMPv2 is linear in tenths of a second, IGMPv3
+ * switches to a floating point form at 128 (RFC 3376 ch 4.1.1), a code of 0
+ * comes from an IGMPv1 querier and means 10 seconds (RFC 3376 ch 7.2.1).
+ */
+ZTEST(net_igmp, test_igmp_max_resp_time)
+{
+	zassert_equal(net_ipv4_igmp_max_resp_time(0, false), 10000);
+	zassert_equal(net_ipv4_igmp_max_resp_time(0, true), 10000);
+	zassert_equal(net_ipv4_igmp_max_resp_time(1, false), 100);
+	zassert_equal(net_ipv4_igmp_max_resp_time(100, false), 10000);
+	zassert_equal(net_ipv4_igmp_max_resp_time(255, false), 25500);
+	zassert_equal(net_ipv4_igmp_max_resp_time(127, true), 12700);
+	/* mant 0, exp 0: (0x10 << 3) tenths */
+	zassert_equal(net_ipv4_igmp_max_resp_time(0x80, true), 12800);
+	/* mant 15, exp 7: (0x1f << 10) tenths */
+	zassert_equal(net_ipv4_igmp_max_resp_time(0xff, true), 3174400);
+}
+
+/* A pending response to a General Query that is due sooner covers a later
+ * Group-Specific Query (RFC 3376 ch 5.2 rule 1). With per-group timers the
+ * same single report results.
+ */
+ZTEST_USER(net_igmp, test_igmp_query_general_covers_group)
+{
+	bool is_igmpv3 = IS_ENABLED(CONFIG_NET_IPV4_IGMPV3);
+	struct net_pkt *pkt;
+
+	join_group();
+
+	k_sem_reset(&wait_data);
+	report_count = 0;
+	is_igmpv2_query_sent = !is_igmpv3;
+	is_igmpv3_query_sent = is_igmpv3;
+
+	pkt = prepare_igmp_msg(net_iface, is_igmpv3, NULL, NET_IPV4_IGMP_QUERY, 1);
+	zassert_equal(net_ipv4_input(pkt), NET_OK, "Failed to send");
+
+	pkt = prepare_igmp_msg(net_iface, is_igmpv3, &mcast_addr, NET_IPV4_IGMP_QUERY, 0xff);
+	zassert_equal(net_ipv4_input(pkt), NET_OK, "Failed to send");
+
+	if (report_count != 0) {
+		/* Stalled so long that the first response was already due */
+		leave_group();
+		ztest_test_skip();
+	}
+
+	k_msleep(1500);
+	zassert_equal(report_count, 1, "Expected one report, got %d", report_count);
+
+	leave_group();
+}
+
+/* A second query for a group is answered at the earliest of the pending and
+ * the newly selected delay (RFC 3376 ch 5.2 rule 4, RFC 2236 ch 3).
+ */
+ZTEST_USER(net_igmp, test_igmp_query_group_earliest)
+{
+	bool is_igmpv3 = IS_ENABLED(CONFIG_NET_IPV4_IGMPV3);
+	struct net_pkt *pkt;
+
+	join_group();
+
+	k_sem_reset(&wait_data);
+	report_count = 0;
+	is_igmpv2_query_sent = !is_igmpv3;
+	is_igmpv3_query_sent = is_igmpv3;
+
+	/* Up to 25.5 seconds, then up to 100 milliseconds */
+	pkt = prepare_igmp_msg(net_iface, is_igmpv3, &mcast_addr, NET_IPV4_IGMP_QUERY, 0xff);
+	zassert_equal(net_ipv4_input(pkt), NET_OK, "Failed to send");
+
+	pkt = prepare_igmp_msg(net_iface, is_igmpv3, &mcast_addr, NET_IPV4_IGMP_QUERY, 1);
+	zassert_equal(net_ipv4_input(pkt), NET_OK, "Failed to send");
+
+	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), "Timeout while waiting query event");
+
+	k_msleep(1000);
+	zassert_equal(report_count, 1, "Expected one report, got %d", report_count);
+
+	leave_group();
+}
+
+/* Switching compatibility mode cancels the pending responses (RFC 3376 ch
+ * 7.2.1), here when an IGMPv3 query arrives after the IGMPv2 querier present
+ * timer ran out.
+ */
+ZTEST_USER(net_igmp, test_igmp_mode_change_cancels_response)
+{
+	struct net_if_ipv4 *ipv4 = net_iface->config.ip.ipv4;
+	struct net_pkt *pkt;
+
+	if (!IS_ENABLED(CONFIG_NET_IPV4_IGMPV3)) {
+		ztest_test_skip();
+	}
+
+	join_group();
+
+	k_sem_reset(&wait_data);
+	report_count = 0;
+	is_v2_report_sent = false;
+
+	/* An IGMPv2 querier: a response is pending for up to 25.5 seconds */
+	is_igmpv2_query_sent = true;
+	pkt = prepare_igmp_msg(net_iface, false, NULL, NET_IPV4_IGMP_QUERY, 0xff);
+	zassert_equal(net_ipv4_input(pkt), NET_OK, "Failed to send");
+
+	/* The querier went away and an IGMPv3 one shows up */
+	ipv4->igmp_v2_querier_timeout = sys_timepoint_calc(K_NO_WAIT);
+
+	is_igmpv2_query_sent = false;
+	pkt = prepare_igmp_msg(net_iface, true, NULL, NET_IPV4_IGMP_QUERY, 1);
+	zassert_equal(net_ipv4_input(pkt), NET_OK, "Failed to send");
+
+	k_msleep(1500);
+	zassert_equal(report_count, 1, "Expected one report, got %d", report_count);
+	zassert_false(is_v2_report_sent, "Cancelled IGMPv2 response was sent");
+
+	leave_group();
+}
+
+/* The compatibility mode also changes when the querier present timer runs
+ * out on its own, which cancels the pending responses as well.
+ */
+ZTEST_USER(net_igmp, test_igmp_mode_expiry_cancels_response)
+{
+	struct net_if_ipv4 *ipv4 = net_iface->config.ip.ipv4;
+	struct net_if *iface = net_iface;
+	struct net_if_mcast_addr *maddr;
+	struct net_pkt *pkt;
+
+	if (!IS_ENABLED(CONFIG_NET_IPV4_IGMPV3)) {
+		ztest_test_skip();
+	}
+
+	join_group();
+	maddr = net_if_ipv4_maddr_lookup(&mcast_addr, &iface);
+	zassert_not_null(maddr, "Group not registered");
+
+	k_sem_reset(&wait_data);
+	report_count = 0;
+	is_igmpv2_query_sent = true;
+
+	/* An IGMPv2 querier: a response is pending for up to 200 milliseconds */
+	pkt = prepare_igmp_msg(net_iface, false, NULL, NET_IPV4_IGMP_QUERY, 2);
+	zassert_equal(net_ipv4_input(pkt), NET_OK, "Failed to send");
+
+	/* The querier present timer runs out before the response is due */
+	ipv4->igmp_v2_querier_timeout = sys_timepoint_calc(K_NO_WAIT);
+
+	if (report_count != 0 || sys_timepoint_expired(maddr->igmp_resp_timeout)) {
+		/* Stalled so long that the response was already due */
+		leave_group();
+		ztest_test_skip();
+	}
+
+	k_msleep(1000);
+	zassert_equal(report_count, 0, "Cancelled response was sent");
+
+	/* Back in IGMPv3 mode, the leave is reported with IGMPv3 */
+	is_igmpv2_query_sent = false;
+	leave_group();
+}
+
 /* After a General Query from an IGMPv2 querier, the host joins and leaves
  * with IGMPv2 messages (RFC 3376 ch 7.2.1).
  */
@@ -794,38 +1032,27 @@ ZTEST_USER(net_igmp, test_igmp_v2_querier_present)
 	zassert_true(is_v2_leave_sent, "Leave not reported with IGMPv2");
 }
 
-/* After a query from an IGMPv1 querier, the host answers and joins with
- * IGMPv1 reports and does not send a leave message (RFC 2236 ch 4).
+/* After a query from an IGMPv1 querier, the host joins with IGMPv1 reports
+ * and does not send a leave message (RFC 2236 ch 4).
  */
 ZTEST_USER(net_igmp, test_igmp_v1_querier_present)
 {
 	struct net_pkt *pkt;
 
-	join_group();
-
-	k_sem_reset(&wait_data);
-	is_v1_report_sent = false;
-
 	pkt = prepare_igmp_msg(net_iface, false, NULL, NET_IPV4_IGMP_QUERY, 0);
 	zassert_equal(net_ipv4_input(pkt), NET_OK, "Failed to send");
 
-	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), "Timeout while waiting query event");
-	zassert_true(is_v1_report_sent, "Query not answered with IGMPv1");
-
-	is_leave_msg_ok = false;
-	is_v2_leave_sent = false;
-
-	leave_group();
-	zassert_false(is_leave_msg_ok, "Unexpected leave msg");
-
-	k_sem_reset(&wait_data);
 	is_v1_report_sent = false;
 
 	join_group();
 	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), "Timeout while waiting join event");
 	zassert_true(is_v1_report_sent, "Join not reported with IGMPv1");
 
+	is_leave_msg_ok = false;
+	is_v2_leave_sent = false;
+
 	leave_group();
+	zassert_false(is_leave_msg_ok, "Unexpected leave msg");
 	zassert_false(is_v2_leave_sent, "Unexpected leave msg");
 }
 
