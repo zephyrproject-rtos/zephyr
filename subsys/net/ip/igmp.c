@@ -19,6 +19,7 @@ LOG_MODULE_DECLARE(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/igmp.h>
+#include <zephyr/random/random.h>
 #include "net_private.h"
 #include "connection.h"
 #include "ipv4.h"
@@ -44,6 +45,15 @@ LOG_MODULE_DECLARE(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 /* Version 1 Router Present Timeout of an IGMPv2 host, RFC 2236 ch 8.11 */
 #define IGMP_V1_ROUTER_PRESENT_TIMEOUT_S 400U
 
+/* An IGMPv1 query has a Max Resp Code of 0, meaning 10 seconds (RFC 3376 ch 7.2.1) */
+#define IGMP_V1_MAX_RESP_TIME_MS (10U * MSEC_PER_SEC)
+
+/* Protects the response deadlines and the querier present timers */
+static K_MUTEX_DEFINE(igmp_lock);
+
+static void igmp_timeout(struct k_work *work);
+static K_WORK_DELAYABLE_DEFINE(igmp_timer, igmp_timeout);
+
 static const struct net_in_addr all_systems = { { { 224, 0, 0, 1 } } };
 static const struct net_in_addr all_routers = { { { 224, 0, 0, 2 } } };
 #if defined(CONFIG_NET_IPV4_IGMPV3)
@@ -58,8 +68,9 @@ static const struct net_in_addr igmp_multicast_addr = { { { 224, 0, 0, 22 } } };
 #define dbg_addr_recv(pkt_str, src, dst) \
 	dbg_addr("Received", pkt_str, src, dst)
 
+/* Numbered so that 0 can mark an interface without a known compatibility mode */
 enum igmp_version {
-	IGMPV1,
+	IGMPV1 = 1,
 	IGMPV2,
 	IGMPV3,
 };
@@ -73,11 +84,96 @@ static bool igmp_is_reported(const struct net_if_mcast_addr *mcast)
 	       !net_ipv4_addr_cmp(&mcast->address.in_addr, &all_systems);
 }
 
-/* Host Compatibility Mode of the interface, RFC 3376 ch 7.2.1: the version
- * of the oldest querier heard within the Older Version Querier Present
- * Timeout, the newest supported version otherwise.
+static k_timepoint_t igmp_timepoint_never(void)
+{
+	return sys_timepoint_calc(K_FOREVER);
+}
+
+static bool igmp_timepoint_is_never(k_timepoint_t timepoint)
+{
+	return K_TIMEOUT_EQ(sys_timepoint_timeout(timepoint), K_FOREVER);
+}
+
+static k_timepoint_t igmp_timepoint_min(k_timepoint_t a, k_timepoint_t b)
+{
+	return sys_timepoint_cmp(a, b) < 0 ? a : b;
+}
+
+/* Max Resp Time of a query in milliseconds. IGMPv3 encodes values of 128
+ * and above as floating point (RFC 3376 ch 4.1.1), IGMPv2 is linear
+ * (RFC 2236 ch 2.2).
  */
-static enum igmp_version igmp_host_version(const struct net_if_ipv4 *ipv4)
+uint32_t net_ipv4_igmp_max_resp_time(uint8_t code, bool igmpv3)
+{
+	uint32_t tenths;
+
+	if (code == 0U) {
+		return IGMP_V1_MAX_RESP_TIME_MS;
+	}
+
+	if (igmpv3 && code >= 128U) {
+		uint32_t mant = code & 0x0FU;
+		uint32_t exponent = (code >> 4) & 0x07U;
+
+		tenths = (mant | 0x10U) << (exponent + 3U);
+	} else {
+		tenths = code;
+	}
+
+	return tenths * (MSEC_PER_SEC / 10U);
+}
+
+/* A random point in time within (0, max_ms] from now */
+static k_timepoint_t igmp_random_delay(uint32_t max_ms)
+{
+	uint32_t delay_ms = max_ms > 0U ? 1U + sys_rand32_get() % max_ms : 0U;
+
+	return sys_timepoint_calc(K_MSEC(delay_ms));
+}
+
+/* Make the timer fire no later than at timeout. Called with igmp_lock held,
+ * but not from the timer handler itself, which reschedules directly.
+ */
+static void igmp_timer_arm(k_timepoint_t timeout)
+{
+	k_timeout_t remaining = sys_timepoint_timeout(timeout);
+	k_ticks_t left = k_work_delayable_remaining_get(&igmp_timer);
+
+	if (igmp_timepoint_is_never(timeout)) {
+		/* Rescheduling with K_FOREVER would cancel the timer */
+		return;
+	}
+
+	if (left > 0 && left <= remaining.ticks) {
+		return;
+	}
+
+	if (left == 0 && k_work_delayable_is_pending(&igmp_timer)) {
+		/* Already due or running: run again right away so that the new
+		 * deadline is taken into account.
+		 */
+		remaining = K_NO_WAIT;
+	}
+
+	(void)k_work_reschedule(&igmp_timer, remaining);
+}
+
+/* Cancel every pending query response of the interface */
+static void igmp_cancel_responses(struct net_if_ipv4 *ipv4)
+{
+	ipv4->igmp_general_timeout = igmp_timepoint_never();
+
+	ARRAY_FOR_EACH(ipv4->mcast, i) {
+		ipv4->mcast[i].igmp_resp_timeout = igmp_timepoint_never();
+	}
+}
+
+/* Version that follows from the querier timers, RFC 3376 ch 7.2.1: the
+ * version of the oldest querier heard within the Older Version Querier
+ * Present Timeout, the newest supported version otherwise. Called with
+ * igmp_lock held, the timepoints are not read atomically.
+ */
+static enum igmp_version igmp_querier_version(const struct net_if_ipv4 *ipv4)
 {
 	if (!sys_timepoint_expired(ipv4->igmp_v1_querier_timeout)) {
 		return IGMPV1;
@@ -91,12 +187,48 @@ static enum igmp_version igmp_host_version(const struct net_if_ipv4 *ipv4)
 	return IGMPV2;
 }
 
+/* The newest version built in, which is the mode before any query was heard */
+static enum igmp_version igmp_newest_version(void)
+{
+	return IS_ENABLED(CONFIG_NET_IPV4_IGMPV3) ? IGMPV3 : IGMPV2;
+}
+
+/* Host Compatibility Mode of the interface as last applied by
+ * igmp_version_update(), the newest version built in before any query was
+ * heard. A single byte, so it can be read without igmp_lock on the send
+ * paths.
+ */
+static enum igmp_version igmp_host_version(const struct net_if_ipv4 *ipv4)
+{
+	return ipv4->igmp_version != 0U ? (enum igmp_version)ipv4->igmp_version
+					: igmp_newest_version();
+}
+
+/* Apply the Host Compatibility Mode that follows from the querier timers. A
+ * host that changes its mode cancels its pending response and retransmission
+ * timers, RFC 3376 ch 7.2.1. Called with igmp_lock held.
+ */
+static void igmp_version_update(struct net_if_ipv4 *ipv4)
+{
+	enum igmp_version version = igmp_querier_version(ipv4);
+	enum igmp_version old_version = igmp_host_version(ipv4);
+
+	if (old_version != version) {
+		igmp_cancel_responses(ipv4);
+	}
+
+	ipv4->igmp_version = version;
+}
+
 /* A query from an older version querier switches the host to that version
  * for the Older Version Querier Present Timeout, RFC 3376 ch 7.2.1. IGMPv2
- * routers are only recognized by their General Queries.
+ * routers are only recognized by their General Queries. The timer is armed
+ * for the end of the timeout, when the host switches back.
  */
 static void igmp_querier_seen(struct net_if_ipv4 *ipv4, enum igmp_version version, bool general)
 {
+	k_mutex_lock(&igmp_lock, K_FOREVER);
+
 	if (version == IGMPV1) {
 		/* An IGMPv2 host remembers an IGMPv1 querier longer than an
 		 * IGMPv3 host does.
@@ -106,10 +238,16 @@ static void igmp_querier_seen(struct net_if_ipv4 *ipv4, enum igmp_version versio
 					     : IGMP_V1_ROUTER_PRESENT_TIMEOUT_S;
 
 		ipv4->igmp_v1_querier_timeout = sys_timepoint_calc(K_SECONDS(timeout_s));
+		igmp_timer_arm(ipv4->igmp_v1_querier_timeout);
 	} else if (version == IGMPV2 && general) {
 		ipv4->igmp_v2_querier_timeout =
 			sys_timepoint_calc(K_SECONDS(IGMP_OLDER_VERSION_QUERIER_PRESENT_S));
+		igmp_timer_arm(ipv4->igmp_v2_querier_timeout);
 	}
+
+	igmp_version_update(ipv4);
+
+	k_mutex_unlock(&igmp_lock);
 }
 
 static int igmp_v2_create(struct net_pkt *pkt, const struct net_in_addr *addr,
@@ -517,6 +655,128 @@ static void igmp_query_respond(struct net_if *iface, struct net_if_mcast_addr *g
 	}
 }
 
+/* Rules 3 and 4 of RFC 3376 ch 5.2: a response for the group is sent at the
+ * earliest of a pending response and the new delay. Called with igmp_lock
+ * held.
+ */
+static void igmp_group_schedule(struct net_if_mcast_addr *group, k_timepoint_t delay)
+{
+	group->igmp_resp_timeout = igmp_timepoint_min(group->igmp_resp_timeout, delay);
+
+	igmp_timer_arm(group->igmp_resp_timeout);
+}
+
+/* Schedule the response to a Membership Query after a random delay bounded
+ * by its Max Resp Time, RFC 3376 ch 5.2. A General Query has group NULL.
+ */
+static void igmp_query_schedule(struct net_if *iface, struct net_if_mcast_addr *group,
+				uint32_t max_resp_ms)
+{
+	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
+	k_timepoint_t delay;
+
+	k_mutex_lock(&igmp_lock, K_FOREVER);
+
+	delay = igmp_random_delay(max_resp_ms);
+
+	/* Rule 1: a pending response to a General Query due sooner covers this
+	 * query as well.
+	 */
+	if (sys_timepoint_cmp(ipv4->igmp_general_timeout, delay) <= 0) {
+		goto out;
+	}
+
+	if (group != NULL) {
+		igmp_group_schedule(group, delay);
+	} else if (igmp_host_version(ipv4) == IGMPV3) {
+		/* Rule 2: the interface timer answers with a single report */
+		ipv4->igmp_general_timeout = delay;
+		igmp_timer_arm(delay);
+	} else {
+		/* Older versions answer with one report per group, each after
+		 * its own random delay (RFC 2236 ch 3).
+		 */
+		ARRAY_FOR_EACH(ipv4->mcast, i) {
+			if (igmp_is_reported(&ipv4->mcast[i])) {
+				igmp_group_schedule(&ipv4->mcast[i],
+						    igmp_random_delay(max_resp_ms));
+			}
+		}
+	}
+
+out:
+	k_mutex_unlock(&igmp_lock);
+}
+
+/* Note the end of a running querier present timer in next */
+static void igmp_querier_timeout_next(k_timepoint_t timeout, k_timepoint_t *next)
+{
+	if (!sys_timepoint_expired(timeout)) {
+		*next = igmp_timepoint_min(*next, timeout);
+	}
+}
+
+/* Send the responses of the interface that are due and note the earliest
+ * remaining one in next. Called with igmp_lock held.
+ */
+static void igmp_iface_timeout(struct net_if *iface, struct net_if_ipv4 *ipv4, k_timepoint_t *next)
+{
+	/* An expired querier present timer changes the compatibility mode */
+	igmp_version_update(ipv4);
+	igmp_querier_timeout_next(ipv4->igmp_v1_querier_timeout, next);
+	igmp_querier_timeout_next(ipv4->igmp_v2_querier_timeout, next);
+
+	if (sys_timepoint_expired(ipv4->igmp_general_timeout)) {
+		ipv4->igmp_general_timeout = igmp_timepoint_never();
+		igmp_query_respond(iface, NULL);
+	} else {
+		*next = igmp_timepoint_min(*next, ipv4->igmp_general_timeout);
+	}
+
+	ARRAY_FOR_EACH(ipv4->mcast, i) {
+		struct net_if_mcast_addr *mcast = &ipv4->mcast[i];
+
+		if (!mcast->is_used) {
+			continue;
+		}
+
+		if (sys_timepoint_expired(mcast->igmp_resp_timeout)) {
+			mcast->igmp_resp_timeout = igmp_timepoint_never();
+
+			if (igmp_is_reported(mcast)) {
+				igmp_query_respond(iface, mcast);
+			}
+		} else {
+			*next = igmp_timepoint_min(*next, mcast->igmp_resp_timeout);
+		}
+	}
+}
+
+static void igmp_timeout(struct k_work *work)
+{
+	k_timepoint_t next = igmp_timepoint_never();
+
+	ARG_UNUSED(work);
+
+	k_mutex_lock(&igmp_lock, K_FOREVER);
+
+	STRUCT_SECTION_FOREACH(net_if, iface) {
+		struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
+
+		if (ipv4 == NULL) {
+			continue;
+		}
+
+		igmp_iface_timeout(iface, ipv4, &next);
+	}
+
+	if (!igmp_timepoint_is_never(next)) {
+		(void)k_work_reschedule(&igmp_timer, sys_timepoint_timeout(next));
+	}
+
+	k_mutex_unlock(&igmp_lock);
+}
+
 enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt, struct net_ipv4_hdr *ip_hdr)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(igmp_access, struct net_ipv4_igmp_v2_query);
@@ -599,7 +859,8 @@ enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt, struct net_ipv4_hdr *i
 
 	igmp_querier_seen(iface->config.ip.ipv4, version, maddr == NULL);
 
-	igmp_query_respond(iface, maddr);
+	igmp_query_schedule(iface, maddr,
+			    net_ipv4_igmp_max_resp_time(igmp_hdr->max_rsp, version == IGMPV3));
 
 out:
 	net_pkt_unref(pkt);
