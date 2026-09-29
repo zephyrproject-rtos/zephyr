@@ -88,31 +88,6 @@ int uhc_mcux_shutdown(const struct device *dev)
 	return 0;
 }
 
-/* Signal bus reset, 50ms SE0 signal */
-int uhc_mcux_bus_reset(const struct device *dev)
-{
-	return uhc_mcux_bus_control(dev, kUSB_HostBusReset);
-}
-
-/* Enable SOF generator */
-int uhc_mcux_sof_enable(const struct device *dev)
-{
-	/* MCUX doesn't need it. */
-	return 0;
-}
-
-/* Disable SOF generator and suspend bus */
-int uhc_mcux_bus_suspend(const struct device *dev)
-{
-	return uhc_mcux_bus_control(dev, kUSB_HostBusSuspend);
-}
-
-/* Signal bus resume event, 20ms K-state + low-speed EOP */
-int uhc_mcux_bus_resume(const struct device *dev)
-{
-	return uhc_mcux_bus_control(dev, kUSB_HostBusResume);
-}
-
 int uhc_mcux_dequeue(const struct device *dev, struct uhc_transfer *const xfer)
 {
 	usb_host_pipe_t *mcux_ep;

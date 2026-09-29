@@ -238,11 +238,6 @@ static DEVICE_API(uhc, mcux_uhc_api) = {
 	.disable = uhc_mcux_disable,
 	.shutdown = uhc_mcux_shutdown,
 
-	.bus_reset = uhc_mcux_bus_reset,
-	.sof_enable = uhc_mcux_sof_enable,
-	.bus_suspend = uhc_mcux_bus_suspend,
-	.bus_resume = uhc_mcux_bus_resume,
-
 	.ep_enqueue = uhc_mcux_enqueue,
 	.ep_dequeue = uhc_mcux_dequeue,
 	.root_hub_control = uhc_mcux_root_hub_control,

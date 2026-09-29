@@ -146,7 +146,6 @@ struct uhc_vrt_data {
 	uint16_t sof_count;
 	uint8_t req;
 	enum usb_device_speed speed;
-	bool bus_suspended;
 	struct k_spinlock lock;
 	struct uhc_vrt_port ports[CONFIG_UHC_VIRTUAL_NUM_PORTS];
 };
@@ -166,8 +165,6 @@ struct uhc_vrt_event {
 };
 
 K_MEM_SLAB_DEFINE_TYPE(uhc_vrt_slab, struct uhc_vrt_event, 16);
-
-static int uhc_vrt_bus_resume(const struct device *dev);
 
 static void vrt_event_submit(const struct device *dev,
 			     const enum uhc_vrt_event_type type,
@@ -1034,12 +1031,6 @@ static void vrt_port_rwup(struct uhc_vrt_data *const priv,
 		port->status.wPortStatus &= ~USB_HUB_PORT_STATUS_SUSPEND;
 		port->status.wPortChange |= USB_HUB_PORT_CHANGE_SUSPEND;
 	}
-
-	if (priv->bus_suspended) {
-		uhc_lock_internal(priv->dev, K_FOREVER);
-		uhc_vrt_bus_resume(priv->dev);
-		uhc_unlock_internal(priv->dev);
-	}
 }
 
 static void vrt_device_act(const struct device *dev,
@@ -1097,43 +1088,6 @@ static void uhc_vrt_uvb_cb(const void *const vrt_priv,
 	} else {
 		LOG_ERR("Unknown event %d for %p", type, dev);
 	}
-}
-
-static int uhc_vrt_sof_enable(const struct device *dev)
-{
-	struct uhc_vrt_data *priv = uhc_get_private(dev);
-
-	k_timer_start(&priv->sof_timer, priv->sof_period, priv->sof_period);
-
-	return 0;
-}
-
-/* Disable SOF generator and suspend bus */
-static int uhc_vrt_bus_suspend(const struct device *dev)
-{
-	struct uhc_vrt_data *priv = uhc_get_private(dev);
-
-	k_timer_stop(&priv->sof_timer);
-	priv->bus_suspended = true;
-
-	return uvb_advert(priv->host_node, UVB_EVT_SUSPEND, NULL, NULL);
-}
-
-static int uhc_vrt_bus_reset(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
-static int uhc_vrt_bus_resume(const struct device *dev)
-{
-	struct uhc_vrt_data *priv = uhc_get_private(dev);
-
-	k_timer_start(&priv->sof_timer, priv->sof_period, priv->sof_period);
-	priv->bus_suspended = false;
-
-	return uvb_advert(priv->host_node, UVB_EVT_RESUME, NULL, NULL);
 }
 
 static int uhc_vrt_enqueue(const struct device *dev,
@@ -1262,11 +1216,6 @@ static DEVICE_API(uhc, uhc_vrt_api) = {
 	.enable = uhc_vrt_enable,
 	.disable = uhc_vrt_disable,
 	.shutdown = uhc_vrt_shutdown,
-
-	.bus_reset = uhc_vrt_bus_reset,
-	.sof_enable  = uhc_vrt_sof_enable,
-	.bus_suspend = uhc_vrt_bus_suspend,
-	.bus_resume = uhc_vrt_bus_resume,
 
 	.ep_enqueue = uhc_vrt_enqueue,
 	.ep_dequeue = uhc_vrt_dequeue,

@@ -503,7 +503,6 @@ struct usb_device *usbh_device_get_root(struct usbh_context *const ctx)
 
 int usbh_device_init(struct usb_device *const udev)
 {
-	struct usbh_context *const uhs_ctx = udev->ctx;
 	uint8_t new_addr;
 	int err;
 
@@ -516,14 +515,6 @@ int usbh_device_init(struct usb_device *const udev)
 	if (err) {
 		LOG_ERR("Failed to lock USB device");
 		return err;
-	}
-
-	if (usbh_device_is_root(uhs_ctx, udev)) {
-		err = uhc_bus_reset(uhs_ctx->dev);
-		if (err) {
-			LOG_ERR("Failed to signal bus reset");
-			return err;
-		}
 	}
 
 	/*

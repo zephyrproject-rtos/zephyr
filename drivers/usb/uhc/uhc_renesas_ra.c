@@ -726,58 +726,6 @@ static void uhc_renesas_ra_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-/* Enable SOF generator */
-static int uhc_renesas_ra_sof_enable(const struct device *dev)
-{
-	/* Already enabled by a uhc_enable() call */
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
-static int uhc_renesas_ra_bus_suspend(const struct device *dev)
-{
-	struct uhc_renesas_ra_data *priv = uhc_get_private(dev);
-	fsp_err_t err;
-
-	err = R_USBH_BusSuspend(&priv->uhc_ctrl);
-	if (err != FSP_SUCCESS) {
-		return -EIO;
-	}
-
-	uhc_submit_event(dev, UHC_EVT_SUSPENDED, 0);
-
-	return 0;
-}
-
-static int uhc_renesas_ra_bus_reset(const struct device *dev)
-{
-	/*
-	 * TODO: Move the reset performance from the USBH_EVENT_DEVICE_ATTACH event to this
-	 * function. Then, the reset signal will be issued by usbh_core.
-	 *
-	 * This can be done once the high-speed negotiation issue in usbh_core has been fixed.
-	 * See https://github.com/zephyrproject-rtos/zephyr/pull/110022
-	 */
-
-	return 0;
-}
-
-static int uhc_renesas_ra_bus_resume(const struct device *dev)
-{
-	struct uhc_renesas_ra_data *priv = uhc_get_private(dev);
-	fsp_err_t err;
-
-	err = R_USBH_BusResume(&priv->uhc_ctrl);
-	if (err != FSP_SUCCESS) {
-		return -EIO;
-	}
-
-	uhc_submit_event(dev, UHC_EVT_RESUMED, 0);
-
-	return 0;
-}
-
 /*
  * Hub Descriptor. The controller has a single physical port, no TT and no
  * over-current reporting.
@@ -1160,10 +1108,6 @@ static DEVICE_API(uhc, uhc_renesas_ra_api) = {
 	.enable = uhc_renesas_ra_enable,
 	.disable = uhc_renesas_ra_disable,
 	.shutdown = uhc_renesas_ra_shutdown,
-	.bus_reset = uhc_renesas_ra_bus_reset,
-	.sof_enable = uhc_renesas_ra_sof_enable,
-	.bus_suspend = uhc_renesas_ra_bus_suspend,
-	.bus_resume = uhc_renesas_ra_bus_resume,
 	.ep_enqueue = uhc_renesas_ra_ep_enqueue,
 	.ep_dequeue = uhc_renesas_ra_ep_dequeue,
 	.root_hub_control = uhc_renesas_ra_root_hub_control,

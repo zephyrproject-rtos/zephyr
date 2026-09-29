@@ -727,12 +727,6 @@ static int usbip_init(void)
 		return err;
 	}
 
-	err = uhc_sof_enable(usbip_uhs_ctx.dev);
-	if (err) {
-		LOG_ERR("Failed to start SoF");
-		return err;
-	}
-
 	LOG_INF("Host controller enabled");
 	bus_ctx->uhs_ctx = &usbip_uhs_ctx;
 	bus_ctx->busnum = 1;
