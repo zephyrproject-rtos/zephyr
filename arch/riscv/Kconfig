@@ -340,7 +340,7 @@ config RISCV_HAS_CLIC
 	bool
 	depends on RISCV_PRIVILEGED
 	select RISCV_ALWAYS_SWITCH_THROUGH_ECALL if MULTITHREADING
-	select CLIC_SUPPORT_INTERRUPT_LEVEL if !NRFX_CLIC
+	select RISCV_SUPPORT_INTERRUPT_PREEMPT if !NRFX_CLIC
 	help
 	  Does the SOC provide support for a Core-Local Interrupt Controller (CLIC).
 
@@ -352,14 +352,13 @@ config RISCV_HAS_AIA
 	  which includes APLIC (Advanced Platform-Level Interrupt Controller) and
 	  IMSIC (Incoming Message-Signaled Interrupt Controller).
 
-config CLIC_SUPPORT_INTERRUPT_LEVEL
+config RISCV_SUPPORT_INTERRUPT_PREEMPT
 	bool
-	depends on RISCV_HAS_CLIC
+	depends on RISCV_HAS_CLIC || ZERO_LATENCY_IRQS
 	help
-	  For CLIC implementations with extended interrupt level, where
-	  higher-numbered interrupt levels can preempt lower-numbered interrupt
-	  levels. This option handles interrupt level in ISR to ensure proper
-	  nested ISR exits.
+	  Enable support for interrupt preemption. When selected, ISR code
+	  will save the current xcause register within context stacking logic.
+	  This will preserve the previous interrupt level.
 
 config RISCV_SOC_INTERRUPT_INIT
 	bool "SOC-based interrupt initialization"
