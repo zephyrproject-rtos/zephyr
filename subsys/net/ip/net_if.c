@@ -4327,6 +4327,12 @@ static void ipv4_config_defaults_set(struct net_if_ipv4 *ipv4)
 	ipv4->ttl = CONFIG_NET_INITIAL_TTL;
 	ipv4->mcast_ttl = CONFIG_NET_INITIAL_MCAST_TTL;
 
+#if defined(CONFIG_NET_IPV4_IGMP)
+	/* No older version querier heard: the timers have expired */
+	ipv4->igmp_v1_querier_timeout = sys_timepoint_calc(K_NO_WAIT);
+	ipv4->igmp_v2_querier_timeout = sys_timepoint_calc(K_NO_WAIT);
+#endif
+
 	IF_ENABLED(CONFIG_NET_IPV4_ACD, (ipv4->conflict_cnt = 0));
 }
 #else

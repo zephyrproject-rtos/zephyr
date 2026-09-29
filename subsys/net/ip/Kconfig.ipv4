@@ -124,6 +124,18 @@ config NET_IPV4_IGMPV3
 	help
 	  Use IGMPv3 for managing the multicast groups.
 
+config NET_IPV4_IGMP_ROBUSTNESS
+	int "IGMP Robustness Variable"
+	depends on NET_IPV4_IGMP
+	range 1 7
+	default 2
+	help
+	  The Robustness Variable of RFC 3376 ch 8.1 allows tuning for the
+	  expected packet loss on a network, it should not be set to one. An
+	  older version querier is remembered for Robustness Variable times
+	  the Query Interval plus one Query Response Interval after its last
+	  query.
+
 config NET_IPV4_ACD
 	bool "Activate IPv4 address conflict detection (RFC 5227)"
 	depends on NET_ARP
