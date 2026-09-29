@@ -37,6 +37,9 @@ enum k_fatal_error_reason {
 	/** High severity software error */
 	K_ERR_KERNEL_PANIC,
 
+	/** A work queue handler exceeded its configured timeout */
+	K_ERR_WORK_TIMEOUT,
+
 	/** Arch specific fatal errors */
 	K_ERR_ARCH_START = 16
 };

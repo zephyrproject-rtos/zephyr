@@ -77,6 +77,8 @@ static const char *reason_to_str(unsigned int reason)
 		return "Kernel oops";
 	case K_ERR_KERNEL_PANIC:
 		return "Kernel panic";
+	case K_ERR_WORK_TIMEOUT:
+		return "Work timeout";
 	default:
 		return "Unknown error";
 	}
