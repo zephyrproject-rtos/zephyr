@@ -1,6 +1,10 @@
 # Copyright 2022 NXP
 # SPDX-License-Identifier: Apache-2.0
 
+set_target_properties(mcuboot PROPERTIES
+  IMAGE_CONF_SCRIPT ${APP_DIR}/sysbuild/mcuboot_image_config.cmake
+)
+
 # Add the mcuboot key file to the secondary swapped app
 # This must be done here to ensure that the same key file is used for signing
 # both the primary and secondary apps
