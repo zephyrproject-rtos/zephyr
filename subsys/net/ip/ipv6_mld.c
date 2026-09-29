@@ -1213,14 +1213,81 @@ drop:
 	return ret < 0 ? NET_DROP : NET_CONTINUE;
 }
 
+/* Another listener reported the address, so this node does not have to: in
+ * MLDv1 mode the pending response and retransmission for the address are
+ * cancelled (RFC 2710 ch 4). In MLDv2 mode reports are not suppressed
+ * (RFC 3810 ch 8.2.2). Only a report that came from the link, with a
+ * link-local source and a hop limit of 1, is taken into account.
+ */
+static enum net_verdict handle_mld_v1_report(struct net_icmp_ctx *ctx, struct net_pkt *pkt,
+					     struct net_icmp_ip_hdr *hdr,
+					     struct net_icmp_hdr *icmp_hdr, void *user_data)
+{
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(mld_access, struct mld_query_common);
+	struct net_if *iface = net_pkt_iface(pkt);
+	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
+	struct net_ipv6_hdr *ip_hdr = hdr->ipv6;
+	struct mld_query_common *report;
+	struct net_if_mcast_addr *maddr;
+	struct net_pkt_cursor backup;
+	struct net_in6_addr group;
+
+	ARG_UNUSED(ctx);
+	ARG_UNUSED(icmp_hdr);
+	ARG_UNUSED(user_data);
+
+	net_pkt_cursor_backup(pkt, &backup);
+
+	if (ipv6 == NULL || ip_hdr->hop_limit != 1U || !net_ipv6_is_ll_addr_raw(ip_hdr->src)) {
+		goto out;
+	}
+
+	/* A Version 1 Report has the layout of a Version 1 Query */
+	report = (struct mld_query_common *)net_pkt_get_data(pkt, &mld_access);
+	if (report == NULL) {
+		goto out;
+	}
+
+	net_ipv6_addr_copy_raw(group.s6_addr, report->mcast_address);
+
+	maddr = net_if_ipv6_maddr_lookup(&group, &iface);
+	if (maddr == NULL) {
+		goto out;
+	}
+
+	k_mutex_lock(&mld_lock, K_FOREVER);
+
+	if (mld_host_version(ipv6) == MLDV1) {
+		maddr->mld_resp_timeout = mld_timepoint_never();
+		maddr->mld_retx_timeout = mld_timepoint_never();
+		maddr->mld_retx_left = 0U;
+	}
+
+	k_mutex_unlock(&mld_lock);
+
+out:
+	net_pkt_cursor_restore(pkt, &backup);
+
+	return NET_CONTINUE;
+}
+
 void net_ipv6_mld_init(void)
 {
-	static struct net_icmp_ctx ctx;
+	static struct net_icmp_ctx query_ctx;
+	static struct net_icmp_ctx report_ctx;
 	int ret;
 
-	ret = net_icmp_init_ctx(&ctx, NET_AF_INET6, NET_ICMPV6_MLD_QUERY, 0, handle_mld_query);
+	ret = net_icmp_init_ctx(&query_ctx, NET_AF_INET6, NET_ICMPV6_MLD_QUERY, 0,
+				handle_mld_query);
 	if (ret < 0) {
 		NET_ERR("Cannot register %s handler (%d)", STRINGIFY(NET_ICMPV6_MLD_QUERY),
+			ret);
+	}
+
+	ret = net_icmp_init_ctx(&report_ctx, NET_AF_INET6, NET_ICMPV6_MLDv1_REPORT, 0,
+				handle_mld_v1_report);
+	if (ret < 0) {
+		NET_ERR("Cannot register %s handler (%d)", STRINGIFY(NET_ICMPV6_MLDv1_REPORT),
 			ret);
 	}
 }
