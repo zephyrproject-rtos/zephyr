@@ -7,7 +7,7 @@
 /dts-v1/;
 
 #include <bflb/bl808.dtsi>
-#include <bflb/bl808_em_32kb.dtsi>
+#include <bflb/bl808_em_32kb_wifi.dtsi>
 #include "m1s-pinctrl.dtsi"
 
 / {
@@ -143,5 +143,9 @@
 };
 
 &bt_hci_bflb {
+	status = "okay";
+};
+
+&wifi0 {
 	status = "okay";
 };
