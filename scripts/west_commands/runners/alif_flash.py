@@ -159,7 +159,7 @@ class AlifImageBinaryRunner(ZephyrBinaryRunner):
 
         self.logger.info("Binary address %s and size %s KB", hex(fls_addr), fls_size)
 
-        if self.build_conf.getboolean('CONFIG_RTSS_HP'):
+        if self.build_conf.getboolean('CONFIG_SOC_FAMILY_ENSEMBLE_RTSS_HP'):
             self.logger.info("..build for HighPerformance Core")
             build_core = "hp"
         else:
