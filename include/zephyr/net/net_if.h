@@ -16,7 +16,7 @@
  * @brief Network Interface abstraction layer
  * @defgroup net_if Network Interface abstraction layer
  * @since 1.5
- * @version 1.0.0
+ * @version 1.1.0
  * @ingroup networking
  * @{
  */
@@ -535,6 +535,18 @@ struct net_if_ipv4 {
 
 	/** IPv4 time-to-live for multicast packets */
 	uint8_t mcast_ttl;
+
+#if defined(CONFIG_NET_IPV4_IGMP)
+	/** IGMPv1 Querier Present timer (@rfc{3376,section-7.2.1}), expired
+	 *  when no IGMPv1 querier is present.
+	 */
+	k_timepoint_t igmp_v1_querier_timeout;
+
+	/** IGMPv2 Querier Present timer (@rfc{3376,section-7.2.1}), expired
+	 *  when no IGMPv2 querier is present.
+	 */
+	k_timepoint_t igmp_v2_querier_timeout;
+#endif
 
 #if defined(CONFIG_NET_IPV4_ACD)
 	/** IPv4 conflict count.  */
