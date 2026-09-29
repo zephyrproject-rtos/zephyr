@@ -129,7 +129,7 @@ __syscall void xtensa_user_fault(unsigned int reason);
 #include <zephyr/syscalls/arch.h>
 
 /* internal routine documented in C file, needed by IRQ_CONNECT() macro */
-void z_irq_priority_set(uint32_t irq, uint32_t prio, uint32_t flags);
+void z_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags);
 
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 	{ \
