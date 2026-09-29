@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_RL_SIZE
+	int "Resolving list size reported by the test driver"
+	default 8
+	help
+	  Zero makes the host resolve addresses itself.
+
+source "Kconfig.zephyr"
