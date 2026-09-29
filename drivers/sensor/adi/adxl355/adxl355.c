@@ -1072,7 +1072,27 @@ static int adxl355_reset_device(const struct device *dev)
 		return ret;
 	}
 
-	return 0;
+	/*
+	 * The device does not respond until it has reloaded its NVM: reads return
+	 * 0xFF, which has NVM_BUSY set, and writes are ignored. Wait for it before
+	 * any register is programmed.
+	 */
+	for (int i = 0; i < ADXL355_RESET_POLL_ATTEMPTS; i++) {
+		uint8_t status;
+
+		k_msleep(1);
+		ret = adxl355_reg_read(dev, ADXL355_STATUS, &status, 1);
+		if (ret != 0) {
+			LOG_ERR("Failed to read status after reset");
+			return ret;
+		}
+		if ((status & ADXL355_STATUS_NVM_BUSY_MSK) == 0) {
+			return 0;
+		}
+	}
+
+	LOG_ERR("Device still busy after reset");
+	return -ETIMEDOUT;
 }
 
 static DEVICE_API(sensor, adxl355_api_funcs) = {

@@ -143,6 +143,7 @@
 #define ADXL355_PARTID_VAL    0xEDu /* PART ID */
 #define ADXL355_REVID_VAL     0x01u /* REV ID */
 #define ADXL355_RESET_CMD     0x52u /* RESET command */
+#define ADXL355_RESET_POLL_ATTEMPTS 100 /* 1 ms apart, for NVM_BUSY after a reset */
 
 /* Sensitivity Values */
 #define ADXL355_SENSITIVITY_2G 256000 /* in LSB/g */
