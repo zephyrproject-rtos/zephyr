@@ -36,6 +36,7 @@ struct posix_thread_attr
 	uint8_t schedpolicy: 2;
 	bool contentionscope: 1;
 	bool inheritsched: 1;
+	bool stack_is_user: 1;
 	union {
 		bool caller_destroys: 1;
 		bool initialized: 1;
