@@ -276,16 +276,16 @@ int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *r
 	case R_RISCV_NONE:
 		break;
 	case R_RISCV_32:
+		/* Absolute address; values above 2GiB are valid. */
 		jump_target = sym_base_addr + rel->r_addend; /* S + A */
 		UNALIGNED_PUT((uint32_t)jump_target, loc32);
-		return riscv_relocation_fits(jump_target, INT32_MAX, reloc_type);
+		break;
 	case R_RISCV_64:
 		/* full 64-bit range, need no range check */
 		UNALIGNED_PUT(sym_base_addr + rel->r_addend, loc64); /* S + A */
 		break;
 	case R_RISCV_RELATIVE:
-		/* either full 32-bit or 64-bit range, need no range check */
-		UNALIGNED_PUT(load_bias + rel->r_addend, loc_word); /* B + A */
+		UNALIGNED_PUT(llext_et_dyn_bias(ext) + rel->r_addend, loc_word);
 		break;
 	case R_RISCV_JUMP_SLOT:
 		/* either full 32-bit or 64-bit range, need no range check */
