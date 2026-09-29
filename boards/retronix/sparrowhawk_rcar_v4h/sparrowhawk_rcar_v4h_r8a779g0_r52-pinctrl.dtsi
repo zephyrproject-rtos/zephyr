@@ -22,4 +22,20 @@
 	hscif1_data_rx_default: hscif1_data_rx_default {
 		pin = <PIN_MSIOF2_SS1 FUNC_HTX1>;
 	};
+
+	can3_tx_default: can3_tx_default {
+		pin = <PIN_CANFD3_TX FUNC_CANFD3_TX>;
+	};
+
+	can3_rx_default: can3_rx_default {
+		pin = <PIN_CANFD3_RX FUNC_CANFD3_RX>;
+	};
+
+	can4_tx_default: can4_tx_default {
+		pin = <PIN_CANFD4_TX FUNC_CANFD4_TX>;
+	};
+
+	can4_rx_default: can4_rx_default {
+		pin = <PIN_CANFD4_RX FUNC_CANFD4_RX>;
+	};
 };
