@@ -43,3 +43,11 @@ zephyr_sources_ifdef(CONFIG_PM power.c)
 zephyr_sources_ifdef(CONFIG_PM_S2RAM s2ram.c)
 
 zephyr_sources_ifdef(CONFIG_POWEROFF poweroff.c)
+
+if(CONFIG_FLASH_MCUX_FLEXSPI_XIP OR CONFIG_FLASH_MCUX_FLEXSPI_NOR)
+  # When executing from external FlexSPI flash (ROMABLE_REGION at ~0x08000000)
+  # any __ramfunc symbol lands in SRAM, which is too far for the signed 31-bit
+  # R_ARM_PREL31 relocation used in .ARM.exidx.ramfunc entries.  Discard those
+  # entries; the Cortex-M unwinder does not consume them anyway.
+  zephyr_linker_sources(SECTIONS ramfunc_xip_discard.ld)
+endif()
