@@ -20,6 +20,7 @@ LOG_MODULE_DECLARE(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/icmp.h>
+#include <zephyr/random/random.h>
 #include "net_private.h"
 #include "connection.h"
 #include "icmpv6.h"
@@ -56,10 +57,96 @@ LOG_MODULE_DECLARE(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 #define MLD_OLDER_VERSION_QUERIER_PRESENT_S \
 	(CONFIG_NET_IPV6_MLD_ROBUSTNESS * MLD_QUERY_INTERVAL_S + MLD_QUERY_RESPONSE_INTERVAL_S)
 
+/* Numbered so that 0 can mark an interface without a known compatibility mode */
 enum mld_version {
 	MLDV1 = 1,
 	MLDV2,
 };
+
+/* Protects the response deadlines and the querier present timer */
+/* Protects the MLD timers and the compatibility mode of every interface. It
+ * is never held while a message is sent: sending takes the interface lock,
+ * which callers of net_ipv6_mld_join() may hold while taking this one.
+ */
+static K_MUTEX_DEFINE(mld_lock);
+
+static void mld_timeout(struct k_work *work);
+static K_WORK_DELAYABLE_DEFINE(mld_timer, mld_timeout);
+
+static k_timepoint_t mld_timepoint_never(void)
+{
+	return sys_timepoint_calc(K_FOREVER);
+}
+
+static bool mld_timepoint_is_never(k_timepoint_t timepoint)
+{
+	return K_TIMEOUT_EQ(sys_timepoint_timeout(timepoint), K_FOREVER);
+}
+
+static k_timepoint_t mld_timepoint_min(k_timepoint_t a, k_timepoint_t b)
+{
+	return sys_timepoint_cmp(a, b) < 0 ? a : b;
+}
+
+/* MLDv2 encodes delays of 32768 ms and above as floating point (RFC 3810 ch
+ * 5.1.3), MLDv1 is linear over the whole field (RFC 2710 ch 3.4).
+ */
+uint32_t net_ipv6_mld_max_resp_delay(uint16_t code, bool mldv2)
+{
+	if (mldv2 && code >= 0x8000U) {
+		uint32_t mant = code & 0x0FFFU;
+		uint32_t exponent = (code >> 12) & 0x07U;
+
+		return (mant | 0x1000U) << (exponent + 3U);
+	}
+
+	return code;
+}
+
+/* A random point in time within (0, max_ms] from now */
+static k_timepoint_t mld_random_delay(uint32_t max_ms)
+{
+	uint32_t delay_ms = max_ms > 0U ? 1U + sys_rand32_get() % max_ms : 0U;
+
+	return sys_timepoint_calc(K_MSEC(delay_ms));
+}
+
+/* Make the timer fire no later than at timeout. Called with mld_lock held,
+ * but not from the timer handler itself, which reschedules directly.
+ */
+static void mld_timer_arm(k_timepoint_t timeout)
+{
+	k_timeout_t remaining = sys_timepoint_timeout(timeout);
+	k_ticks_t left = k_work_delayable_remaining_get(&mld_timer);
+
+	if (mld_timepoint_is_never(timeout)) {
+		/* Rescheduling with K_FOREVER would cancel the timer */
+		return;
+	}
+
+	if (left > 0 && left <= remaining.ticks) {
+		return;
+	}
+
+	if (left == 0 && k_work_delayable_is_pending(&mld_timer)) {
+		/* Already due or running: run again right away so that the new
+		 * deadline is taken into account.
+		 */
+		remaining = K_NO_WAIT;
+	}
+
+	(void)k_work_reschedule(&mld_timer, remaining);
+}
+
+/* Cancel every pending query response of the interface */
+static void mld_cancel_timers(struct net_if_ipv6 *ipv6)
+{
+	ipv6->mld_general_timeout = mld_timepoint_never();
+
+	ARRAY_FOR_EACH(ipv6->mcast, i) {
+		ipv6->mcast[i].mld_resp_timeout = mld_timepoint_never();
+	}
+}
 
 /* The fields shared by MLDv1 and MLDv2 queries */
 struct mld_query_common {
@@ -68,24 +155,58 @@ struct mld_query_common {
 	uint8_t mcast_address[NET_IPV6_ADDR_SIZE];
 } __packed;
 
-/* Host Compatibility Mode of the interface, RFC 3810 ch 8.2.1: MLDv1 while
- * an MLDv1 querier was heard within the Older Version Querier Present
- * Timeout, MLDv2 otherwise.
+/* Version that follows from the querier timer, RFC 3810 ch 8.2.1: MLDv1
+ * while an MLDv1 querier was heard within the Older Version Querier Present
+ * Timeout, MLDv2 otherwise. Called with mld_lock held, the timepoint is not
+ * read atomically.
  */
-static enum mld_version mld_host_version(const struct net_if_ipv6 *ipv6)
+static enum mld_version mld_querier_version(const struct net_if_ipv6 *ipv6)
 {
 	return sys_timepoint_expired(ipv6->mld_v1_querier_timeout) ? MLDV2 : MLDV1;
 }
 
+/* Host Compatibility Mode of the interface as last applied by
+ * mld_version_update(), MLDv2 before any query was heard. A single byte,
+ * so it can be read without mld_lock on the send paths.
+ */
+static enum mld_version mld_host_version(const struct net_if_ipv6 *ipv6)
+{
+	return ipv6->mld_version != 0U ? (enum mld_version)ipv6->mld_version : MLDV2;
+}
+
+/* Apply the Host Compatibility Mode that follows from the querier timer. A
+ * host that changes its mode cancels its pending responses and
+ * retransmission timers, RFC 3810 ch 8.2.1. Called with mld_lock held.
+ */
+static void mld_version_update(struct net_if_ipv6 *ipv6)
+{
+	enum mld_version version = mld_querier_version(ipv6);
+	enum mld_version old_version = mld_host_version(ipv6);
+
+	if (old_version != version) {
+		mld_cancel_timers(ipv6);
+	}
+
+	ipv6->mld_version = version;
+}
+
 /* An MLDv1 query switches the host to MLDv1 for the Older Version Querier
- * Present Timeout, RFC 3810 ch 8.2.1.
+ * Present Timeout, RFC 3810 ch 8.2.1. The timer is armed for the end of the
+ * timeout, when the host switches back.
  */
 static void mld_querier_seen(struct net_if_ipv6 *ipv6, enum mld_version version)
 {
+	k_mutex_lock(&mld_lock, K_FOREVER);
+
 	if (version == MLDV1) {
 		ipv6->mld_v1_querier_timeout =
 			sys_timepoint_calc(K_SECONDS(MLD_OLDER_VERSION_QUERIER_PRESENT_S));
+		mld_timer_arm(ipv6->mld_v1_querier_timeout);
 	}
+
+	mld_version_update(ipv6);
+
+	k_mutex_unlock(&mld_lock);
 }
 
 /* Internal structure used for appending multicast routes to MLDv2 reports */
@@ -726,6 +847,145 @@ static bool mld_has_router_alert(struct net_pkt *pkt, const struct net_ipv6_hdr 
 	return found;
 }
 
+/* Respond to a query with the current state of the given group, or of every
+ * listened to group for a General Query (group is NULL).
+ */
+static void mld_query_respond(struct net_if *iface, struct net_if_mcast_addr *group)
+{
+	int ret;
+
+	if (group != NULL) {
+		ret = net_ipv6_mld_send_single(iface, &group->address.in6_addr,
+					       NET_IPV6_MLDv2_MODE_IS_EXCLUDE);
+	} else {
+		ret = send_mld_report(iface);
+	}
+
+	if (ret < 0) {
+		NET_DBG("Cannot send MLD report (%d)", ret);
+	}
+}
+
+/* Rules 3 and 4 of RFC 3810 ch 6.2: a response for the group is sent at the
+ * earliest of a pending response and the new delay. Called with mld_lock
+ * held.
+ */
+static void mld_group_schedule(struct net_if_mcast_addr *group, k_timepoint_t delay)
+{
+	group->mld_resp_timeout = mld_timepoint_min(group->mld_resp_timeout, delay);
+
+	mld_timer_arm(group->mld_resp_timeout);
+}
+
+/* Schedule the response to a query after a random delay bounded by its
+ * Maximum Response Delay, RFC 3810 ch 6.2. A General Query has group NULL.
+ */
+static void mld_query_schedule(struct net_if *iface, struct net_if_mcast_addr *group,
+			       uint32_t max_resp_ms)
+{
+	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
+	k_timepoint_t delay;
+
+	k_mutex_lock(&mld_lock, K_FOREVER);
+
+	delay = mld_random_delay(max_resp_ms);
+
+	/* Rule 1: a pending response to a General Query due sooner covers this
+	 * query as well.
+	 */
+	if (sys_timepoint_cmp(ipv6->mld_general_timeout, delay) <= 0) {
+		goto out;
+	}
+
+	if (group != NULL) {
+		mld_group_schedule(group, delay);
+	} else if (mld_host_version(ipv6) == MLDV2) {
+		/* Rule 2: the Interface Timer answers with a single report */
+		ipv6->mld_general_timeout = delay;
+		mld_timer_arm(delay);
+	} else {
+		/* MLDv1 answers with one report per group, each after its own
+		 * random delay (RFC 2710 ch 4).
+		 */
+		ARRAY_FOR_EACH(ipv6->mcast, i) {
+			if (ipv6->mcast[i].is_used && ipv6->mcast[i].is_joined &&
+			    mld_is_reported(&ipv6->mcast[i].address.in6_addr)) {
+				mld_group_schedule(&ipv6->mcast[i], mld_random_delay(max_resp_ms));
+			}
+		}
+	}
+
+out:
+	k_mutex_unlock(&mld_lock);
+}
+
+/* Send the responses of the interface that are due and note the earliest
+ * remaining one in next. Called with mld_lock held, which is released while
+ * a response is sent.
+ */
+static void mld_iface_timeout(struct net_if *iface, struct net_if_ipv6 *ipv6, k_timepoint_t *next)
+{
+	/* An expired querier present timer changes the compatibility mode */
+	mld_version_update(ipv6);
+	if (!sys_timepoint_expired(ipv6->mld_v1_querier_timeout)) {
+		*next = mld_timepoint_min(*next, ipv6->mld_v1_querier_timeout);
+	}
+
+	if (sys_timepoint_expired(ipv6->mld_general_timeout)) {
+		ipv6->mld_general_timeout = mld_timepoint_never();
+		k_mutex_unlock(&mld_lock);
+		mld_query_respond(iface, NULL);
+		k_mutex_lock(&mld_lock, K_FOREVER);
+	} else {
+		*next = mld_timepoint_min(*next, ipv6->mld_general_timeout);
+	}
+
+	ARRAY_FOR_EACH(ipv6->mcast, i) {
+		struct net_if_mcast_addr *mcast = &ipv6->mcast[i];
+
+		if (!mcast->is_used) {
+			continue;
+		}
+
+		if (sys_timepoint_expired(mcast->mld_resp_timeout)) {
+			mcast->mld_resp_timeout = mld_timepoint_never();
+
+			if (mcast->is_joined && mld_is_reported(&mcast->address.in6_addr)) {
+				k_mutex_unlock(&mld_lock);
+				mld_query_respond(iface, mcast);
+				k_mutex_lock(&mld_lock, K_FOREVER);
+			}
+		} else {
+			*next = mld_timepoint_min(*next, mcast->mld_resp_timeout);
+		}
+	}
+}
+
+static void mld_timeout(struct k_work *work)
+{
+	k_timepoint_t next = mld_timepoint_never();
+
+	ARG_UNUSED(work);
+
+	k_mutex_lock(&mld_lock, K_FOREVER);
+
+	STRUCT_SECTION_FOREACH(net_if, iface) {
+		struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
+
+		if (ipv6 == NULL || net_if_flag_is_set(iface, NET_IF_IPV6_NO_MLD)) {
+			continue;
+		}
+
+		mld_iface_timeout(iface, ipv6, &next);
+	}
+
+	if (!mld_timepoint_is_never(next)) {
+		(void)k_work_reschedule(&mld_timer, sys_timepoint_timeout(next));
+	}
+
+	k_mutex_unlock(&mld_lock);
+}
+
 #define dbg_addr(action, pkt_str, src, dst)				\
 	do {								\
 		NET_DBG("%s %s from %s to %s", action, pkt_str,         \
@@ -746,6 +1006,7 @@ static enum net_verdict handle_mld_query(struct net_icmp_ctx *ctx,
 	struct net_ipv6_hdr *ip_hdr = hdr->ipv6;
 	uint16_t length = net_pkt_get_len(pkt);
 	struct mld_query_common *mld_query;
+	struct net_if_mcast_addr *maddr = NULL;
 	struct net_pkt_cursor backup;
 	enum mld_version version;
 	uint16_t num_sources = 0U;
@@ -815,19 +1076,21 @@ static enum net_verdict handle_mld_query(struct net_icmp_ctx *ctx,
 		goto drop;
 	}
 
+	if (net_pkt_iface(pkt)->config.ip.ipv6 == NULL) {
+		NET_DBG("DROP: no IPv6 configuration");
+		goto drop;
+	}
+
 	mld_querier_seen(net_pkt_iface(pkt)->config.ip.ipv6, version);
 
-	if (net_ipv6_addr_cmp_raw(mld_query->mcast_address,
-				  (uint8_t *)net_ipv6_unspecified_address())) {
-		ret = send_mld_report(net_pkt_iface(pkt));
-	} else {
+	if (!net_ipv6_addr_cmp_raw(mld_query->mcast_address,
+				   (uint8_t *)net_ipv6_unspecified_address())) {
 		/* A Multicast Address Specific Query is answered with the state
 		 * of that address only, and only by its listeners (RFC 3810 ch
 		 * 6.3). Multicast Address and Source Specific Queries are
 		 * answered the same way.
 		 */
 		struct net_if *iface = net_pkt_iface(pkt);
-		struct net_if_mcast_addr *maddr;
 		struct net_in6_addr group;
 
 		net_ipv6_addr_copy_raw(group.s6_addr, mld_query->mcast_address);
@@ -836,17 +1099,13 @@ static enum net_verdict handle_mld_query(struct net_icmp_ctx *ctx,
 		if (maddr == NULL || !net_if_ipv6_maddr_is_joined(maddr) ||
 		    !mld_is_reported(&group)) {
 			NET_DBG("Ignoring query for group %s", net_sprint_ipv6_addr(&group));
-			ret = 0;
 			goto out;
 		}
-
-		ret = net_ipv6_mld_send_single(iface, &group, NET_IPV6_MLDv2_MODE_IS_EXCLUDE);
 	}
 
-	if (ret < 0) {
-		NET_DBG("DROP: failed to send MLD report (%d)", ret);
-		goto drop;
-	}
+	mld_query_schedule(net_pkt_iface(pkt), maddr,
+			   net_ipv6_mld_max_resp_delay(net_ntohs(mld_query->max_response_code),
+						       version == MLDV2));
 
 out:
 	net_pkt_cursor_restore(pkt, &backup);
