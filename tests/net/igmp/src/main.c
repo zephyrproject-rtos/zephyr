@@ -611,21 +611,16 @@ ZTEST_USER(net_igmp, test_igmpv2_query)
 
 ZTEST_USER(net_igmp, test_group_rejoin)
 {
-	/* It is enough if this is tested with IGMPv2 only because we do not
-	 * really care about specific IGMP version here.
-	 */
-	if (IS_ENABLED(CONFIG_NET_IPV4_IGMPV3)) {
-		ztest_test_skip();
-	}
-
 	socket_join_group_with_index(&my_addr);
 
 	is_report_sent = false;
+	is_join_msg_ok = false;
 
 	net_if_carrier_off(net_iface);
 	net_if_carrier_on(net_iface);
 
 	zassert_true(is_report_sent, "Did not catch query event");
+	zassert_true(is_join_msg_ok, "Group not reported on rejoin");
 
 	socket_leave_group_with_index(&my_addr);
 }

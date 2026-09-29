@@ -625,7 +625,12 @@ int net_ipv4_igmp_rejoin(struct net_if *iface, struct net_if_mcast_addr *addr)
 {
 	int ret;
 
-	if (net_if_is_offloaded(iface)) {
+	/* Only joined groups are reported, so join before sending the report.
+	 * The all systems group is never reported, see net_ipv4_igmp_init().
+	 */
+	net_if_ipv4_maddr_join(iface, addr);
+
+	if (net_if_is_offloaded(iface) || net_ipv4_addr_cmp(&addr->address.in_addr, &all_systems)) {
 		goto out;
 	}
 
@@ -635,12 +640,11 @@ int net_ipv4_igmp_rejoin(struct net_if *iface, struct net_if_mcast_addr *addr)
 	ret = igmp_send_generic(iface, &addr->address.in_addr, true);
 #endif
 	if (ret < 0) {
+		net_if_ipv4_maddr_leave(iface, addr);
 		return ret;
 	}
 
 out:
-	net_if_ipv4_maddr_join(iface, addr);
-
 	net_if_mcast_monitor(iface, &addr->address, true);
 
 	net_mgmt_event_notify_with_info(NET_EVENT_IPV4_MCAST_JOIN, iface, &addr->address.in_addr,
