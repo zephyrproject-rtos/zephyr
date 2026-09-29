@@ -6,6 +6,7 @@
  * Application overlay for i2c devices
  */
 
+#include <zephyr/dt-bindings/sensor/bmi323.h>
 #include <zephyr/dt-bindings/sensor/lsm6dsv16x.h>
 #include <zephyr/dt-bindings/sensor/lsm6dsv32x.h>
 #include <zephyr/dt-bindings/sensor/lsm6dsv320x.h>
@@ -1710,4 +1711,14 @@ test_i2c_pmsa003i: pmsa003i@dc {
 test_i2c_tcs34725: tcs34725@dd {
 	compatible = "ams,tcs34725";
 	reg = <0xdd>;
+};
+
+test_i2c_bmi323: bmi323@de {
+	compatible = "bosch,bmi323";
+	reg = <0xde>;
+	int-gpios = <&test_gpio 0 0>;
+	accel-pwr-mode = <BMI323_DT_PWR_MODE_HIGH_PERF>;
+	accel-odr = <BMI323_DT_ODR_400_HZ>;
+	gyro-pwr-mode = <BMI323_DT_PWR_MODE_LOW_POWER>;
+	gyro-odr = <BMI323_DT_ODR_25_HZ>;
 };
