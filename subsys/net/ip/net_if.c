@@ -5747,6 +5747,8 @@ struct net_if_mcast_addr *net_if_ipv4_maddr_add(struct net_if *iface,
 		maddr->address.in_addr.s4_addr32[0] = addr->s4_addr32[0];
 #if defined(CONFIG_NET_IPV4_IGMP)
 		maddr->igmp_resp_timeout = sys_timepoint_calc(K_FOREVER);
+		maddr->igmp_retx_timeout = sys_timepoint_calc(K_FOREVER);
+		maddr->igmp_retx_left = 0U;
 #endif
 #if defined(CONFIG_NET_IPV4_IGMPV3)
 		maddr->sources_len = 0;
