@@ -25,7 +25,7 @@ extern "C" {
  * @brief CPU Frequency Scaling Performance State (pstate)
  * @defgroup subsys_cpu_freq_pstate CPU Frequency pstate
  * @since 4.3
- * @version 0.1.0
+ * @version 0.8.0
  * @ingroup subsys_cpu_freq
  * @{
  */
