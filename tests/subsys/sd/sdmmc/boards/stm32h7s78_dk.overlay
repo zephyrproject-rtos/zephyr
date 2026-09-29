@@ -12,6 +12,10 @@
 
 &sdhc {
 	status = "okay";
+
+	sdmmc {
+		status = "okay";
+	};
 };
 
 &pll2 {
