@@ -954,6 +954,7 @@ config NET_PKT_TIMESTAMP_THREAD
 
 config NET_PKT_TIMESTAMP_STACK_SIZE
 	int "Timestamp thread stack size"
+	default 2048 if 64BIT
 	default 1024
 	depends on NET_PKT_TIMESTAMP_THREAD
 	help
