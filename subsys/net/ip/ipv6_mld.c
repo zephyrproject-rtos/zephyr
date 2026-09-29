@@ -49,6 +49,21 @@ struct mcast_route_appending_info {
 	size_t skipped;
 };
 
+/* Groups MLD messages are sent for. No MLD message is ever sent for the
+ * link-scope all-nodes address, nor for a multicast address of scope 0
+ * (reserved) or 1 (interface-local), RFC 3810 ch 6.
+ */
+static bool mld_is_reported(const struct net_in6_addr *addr)
+{
+	struct net_in6_addr all_nodes;
+
+	net_ipv6_addr_create_ll_allnodes_mcast(&all_nodes);
+
+	return !net_ipv6_addr_cmp(addr, &all_nodes) &&
+	       !net_ipv6_is_addr_mcast_scope(addr, 0x00) &&
+	       !net_ipv6_is_addr_mcast_scope(addr, 0x01);
+}
+
 static int mld_create(struct net_pkt *pkt,
 		      const struct net_in6_addr *addr,
 		      uint8_t record_type)
@@ -151,7 +166,10 @@ static int mld_send(struct net_pkt *pkt)
 #if defined(CONFIG_NET_IPV6_MCAST_ROUTE_MLD_REPORTS)
 static void count_mcast_routes(struct net_route_ipv6_entry_mcast *entry, void *user_data)
 {
-	(*((int *)user_data))++;
+	/* Only routes to an address that MLD reports */
+	if (mld_is_reported(&entry->group)) {
+		(*((int *)user_data))++;
+	}
 }
 
 static void append_mcast_routes(struct net_route_ipv6_entry_mcast *entry, void *user_data)
@@ -159,7 +177,7 @@ static void append_mcast_routes(struct net_route_ipv6_entry_mcast *entry, void *
 	struct mcast_route_appending_info *info = (struct mcast_route_appending_info *)user_data;
 	struct net_if_mcast_addr *mcasts = info->iface->config.ip.ipv6->mcast;
 
-	if (info->status != 0 || entry->prefix_len != 128) {
+	if (info->status != 0 || entry->prefix_len != 128 || !mld_is_reported(&entry->group)) {
 		return;
 	}
 
@@ -183,6 +201,11 @@ int net_ipv6_mld_send_single(struct net_if *iface, const struct net_in6_addr *ad
 {
 	struct net_pkt *pkt;
 	int ret;
+
+	if (!mld_is_reported(addr)) {
+		/* No MLD messages for this address, RFC 3810 ch 6 */
+		return 0;
+	}
 
 	pkt = net_pkt_alloc_with_buffer(iface, IPV6_OPT_HDR_ROUTER_ALERT_LEN +
 					NET_ICMPV6_UNUSED_LEN +
@@ -221,7 +244,7 @@ int net_ipv6_mld_rejoin(struct net_if *iface, struct net_if_mcast_addr *addr)
 		return 0;
 	}
 
-	if (net_if_is_offloaded(iface)) {
+	if (net_if_is_offloaded(iface) || !mld_is_reported(&addr->address.in6_addr)) {
 		goto out;
 	}
 
@@ -261,7 +284,7 @@ int net_ipv6_mld_join(struct net_if *iface, const struct net_in6_addr *addr)
 		return 0;
 	}
 
-	if (net_if_is_offloaded(iface)) {
+	if (net_if_is_offloaded(iface) || !mld_is_reported(addr)) {
 		goto out;
 	}
 
@@ -312,7 +335,7 @@ int net_ipv6_mld_leave(struct net_if *iface, const struct net_in6_addr *addr)
 		return 0;
 	}
 
-	if (net_if_is_offloaded(iface)) {
+	if (net_if_is_offloaded(iface) || !mld_is_reported(addr)) {
 		goto out;
 	}
 
@@ -337,7 +360,7 @@ void net_ipv6_mld_send_leave(struct net_if *iface, const struct net_if_mcast_add
 		return;
 	}
 
-	if (net_if_is_offloaded(iface)) {
+	if (net_if_is_offloaded(iface) || !mld_is_reported(&addr->address.in6_addr)) {
 		goto out;
 	}
 
@@ -362,7 +385,8 @@ static int send_mld_report(struct net_if *iface)
 	NET_ASSERT(ipv6);
 
 	for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
-		if (!ipv6->mcast[i].is_used || !ipv6->mcast[i].is_joined) {
+		if (!ipv6->mcast[i].is_used || !ipv6->mcast[i].is_joined ||
+		    !mld_is_reported(&ipv6->mcast[i].address.in6_addr)) {
 			continue;
 		}
 
@@ -376,6 +400,11 @@ static int send_mld_report(struct net_if *iface)
 	 */
 	net_route_ipv6_mcast_foreach(count_mcast_routes, NULL, (void *)&count);
 #endif
+
+	if (count == 0) {
+		/* Nothing to report, RFC 3810 ch 6.2 */
+		return 0;
+	}
 
 	pkt = net_pkt_alloc_with_buffer(iface, IPV6_OPT_HDR_ROUTER_ALERT_LEN +
 					NET_ICMPV6_UNUSED_LEN +
@@ -392,7 +421,8 @@ static int send_mld_report(struct net_if *iface)
 	}
 
 	for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
-		if (!ipv6->mcast[i].is_used || !ipv6->mcast[i].is_joined) {
+		if (!ipv6->mcast[i].is_used || !ipv6->mcast[i].is_joined ||
+		    !mld_is_reported(&ipv6->mcast[i].address.in6_addr)) {
 			continue;
 		}
 
