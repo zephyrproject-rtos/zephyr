@@ -913,6 +913,8 @@ static int bosch_bmi323_driver_api_fetch_acc_samples(const struct device *dev)
 	if ((bosch_bmi323_value_is_valid(buf[0]) == false) ||
 		(bosch_bmi323_value_is_valid(buf[1]) == false) ||
 		(bosch_bmi323_value_is_valid(buf[2]) == false)) {
+		data->acc_samples_valid = false;
+
 		return -ENODATA;
 	}
 
@@ -953,6 +955,8 @@ static int bosch_bmi323_driver_api_fetch_gyro_samples(const struct device *dev)
 	if ((bosch_bmi323_value_is_valid(buf[0]) == false) ||
 		(bosch_bmi323_value_is_valid(buf[1]) == false) ||
 		(bosch_bmi323_value_is_valid(buf[2]) == false)) {
+		data->gyro_samples_valid = false;
+
 		return -ENODATA;
 	}
 
@@ -980,6 +984,8 @@ static int bosch_bmi323_driver_api_fetch_temperature(const struct device *dev)
 	}
 
 	if (bosch_bmi323_value_is_valid(buf) == false) {
+		data->temperature_valid = false;
+
 		return -ENODATA;
 	}
 
@@ -992,6 +998,29 @@ static int bosch_bmi323_driver_api_fetch_temperature(const struct device *dev)
 	data->temperature_valid = (ret == 0);
 
 	return 0;
+}
+
+static int bosch_bmi323_fetch_all_channels(const struct device *dev)
+{
+	static int (*const fetch[])(const struct device *dev) = {
+		bosch_bmi323_driver_api_fetch_acc_samples,
+		bosch_bmi323_driver_api_fetch_gyro_samples,
+		bosch_bmi323_driver_api_fetch_temperature,
+	};
+	bool fetched_any = false;
+	int ret;
+
+	for (size_t i = 0; i < ARRAY_SIZE(fetch); i++) {
+		ret = fetch[i](dev);
+
+		if (ret == 0) {
+			fetched_any = true;
+		} else if (ret != -ENODATA) {
+			return ret;
+		}
+	}
+
+	return (fetched_any == false) ? -ENODATA : 0;
 }
 
 static int bosch_bmi323_driver_api_sample_fetch(const struct device *dev, enum sensor_channel chan)
@@ -1018,19 +1047,7 @@ static int bosch_bmi323_driver_api_sample_fetch(const struct device *dev, enum s
 		break;
 
 	case SENSOR_CHAN_ALL:
-		ret = bosch_bmi323_driver_api_fetch_acc_samples(dev);
-
-		if (ret < 0) {
-			break;
-		}
-
-		ret = bosch_bmi323_driver_api_fetch_gyro_samples(dev);
-
-		if (ret < 0) {
-			break;
-		}
-
-		ret = bosch_bmi323_driver_api_fetch_temperature(dev);
+		ret = bosch_bmi323_fetch_all_channels(dev);
 
 		break;
 
