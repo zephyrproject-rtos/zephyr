@@ -129,6 +129,7 @@ extern struct sm_connect_req *sm_env[];
 extern int bl_wifi_register_wpa_cb_internal(const struct wpa_funcs *cb);
 extern int bl_wifi_set_appie_internal(uint8_t vif_idx, wifi_appie_t type, uint8_t *ie, uint16_t len,
 				      bool sta);
+extern void scanu_cached_scanresult_clear(void);
 
 static bool bssid_is_specific(const uint8_t *bssid);
 static bool bridge_sta_init(void);
@@ -812,6 +813,10 @@ void bflb_wifi_handle_e2a_msg(struct bflb_wifi_dev *d, uint16_t id, const void *
 
 	case SCANU_START_CFM:
 	case SCAN_DONE_IND:
+		/* The FW never empties its 6-slot BSS cache after a host scan;
+		 * a full cache makes the next join drop its target (status 14).
+		 */
+		scanu_cached_scanresult_clear();
 		LOG_DBG("scan done, %u APs", bflb_wifi_scan_count());
 		bflb_wifi_post_event(BFLB_WIFI_EVT_SCAN_DONE, 0);
 		break;
