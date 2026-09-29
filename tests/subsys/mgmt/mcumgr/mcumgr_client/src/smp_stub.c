@@ -63,11 +63,6 @@ void smp_transport_read_hdr(const struct net_buf *nb, struct smp_hdr *dst_hdr)
 }
 
 
-static uint16_t smp_uart_get_mtu(const struct net_buf *nb)
-{
-	return 256;
-}
-
 static int smp_uart_tx_pkt(struct net_buf *nb)
 {
 	if (send_client_failure) {
@@ -106,7 +101,6 @@ void stub_smp_client_transport_register(void)
 {
 
 	smpt_test.functions.output = smp_uart_tx_pkt;
-	smpt_test.functions.get_mtu = smp_uart_get_mtu;
 
 	smp_transport_init(&smpt_test);
 	smp_client_transport.smpt = &smpt_test;

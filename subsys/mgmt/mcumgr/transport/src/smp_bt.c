@@ -1369,7 +1369,9 @@ static void smp_bt_setup(void)
 	}
 
 	smp_bt_transport.functions.output = smp_bt_tx_pkt;
+	TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS);
 	smp_bt_transport.functions.get_mtu = smp_bt_nb_get_mtu;
+	TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS);
 	smp_bt_transport.functions.ud_copy = smp_bt_ud_copy;
 	smp_bt_transport.functions.ud_free = smp_bt_ud_free;
 	smp_bt_transport.functions.query_valid_check = smp_bt_query_valid_check;

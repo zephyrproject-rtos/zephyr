@@ -184,7 +184,9 @@ static int smp_uart_init(void)
 	int rc;
 
 	smp_uart_transport.functions.output = smp_uart_tx_pkt;
+	TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS);
 	smp_uart_transport.functions.get_mtu = smp_uart_get_mtu;
+	TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS);
 
 #ifdef CONFIG_MCUMGR_GRP_TRANSPORT
 	smp_uart_transport.functions.bridge_connect = smp_uart_bridge_connect;

@@ -28,10 +28,12 @@ static struct lorawan_downlink_cb lorawan_smp_downlink_cb = {
 	.cb = smp_lorawan_downlink,
 };
 
+TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS)
 struct smp_transport smp_lorawan_transport = {
 	.functions.output = smp_lorawan_uplink,
 	.functions.get_mtu = smp_lorawan_get_mtu,
 };
+TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS)
 
 #ifdef CONFIG_SMP_CLIENT
 struct smp_client_transport_entry smp_lorawan_client_transport = {
