@@ -54,6 +54,15 @@ enum igmp_version {
 	IGMPV3,
 };
 
+/* Groups the interface reports membership of. The all systems group
+ * 224.0.0.1 is joined on every interface at init time and is never reported.
+ */
+static bool igmp_is_reported(const struct net_if_mcast_addr *mcast)
+{
+	return mcast->is_used && mcast->is_joined &&
+	       !net_ipv4_addr_cmp(&mcast->address.in_addr, &all_systems);
+}
+
 static int igmp_v2_create(struct net_pkt *pkt, const struct net_in_addr *addr,
 			  uint8_t type)
 {
@@ -130,15 +139,7 @@ static int igmp_v3_create(struct net_pkt *pkt, uint8_t type, struct net_if_mcast
 	}
 
 	for (int i = 0; i < mcast_len; i++) {
-		/* We don't need to send an IGMP membership report to the IGMP
-		 * all systems multicast address of 224.0.0.1 so skip over it.
-		 * Since the IGMP all systems multicast address is marked as
-		 * used and joined during init time, we have to check this
-		 * address separately to skip over it.
-		 */
-		if (!mcast[i].is_used || !mcast[i].is_joined ||
-		    net_ipv4_addr_cmp_raw((uint8_t *)&mcast[i].address.in_addr,
-					  (uint8_t *)&all_systems)) {
+		if (!igmp_is_reported(&mcast[i])) {
 			continue;
 		}
 
@@ -159,15 +160,7 @@ static int igmp_v3_create(struct net_pkt *pkt, uint8_t type, struct net_if_mcast
 	}
 
 	for (int i = 0; i < mcast_len; i++) {
-		/* We don't need to send an IGMP membership report to the IGMP
-		 * all systems multicast address of 224.0.0.1 so skip over it.
-		 * Since the IGMP all systems multicast address is marked as
-		 * used and joined during init time, we have to check this
-		 * address separately to skip over it.
-		 */
-		if (!mcast[i].is_used || !mcast[i].is_joined ||
-		    net_ipv4_addr_cmp_raw((uint8_t *)&mcast[i].address.in_addr,
-					  (uint8_t *)&all_systems)) {
+		if (!igmp_is_reported(&mcast[i])) {
 			continue;
 		}
 
@@ -295,114 +288,88 @@ static int igmp_send(struct net_pkt *pkt)
 	return 0;
 }
 
-static int send_igmp_report(struct net_if *iface,
-			    struct net_ipv4_igmp_v2_query *igmp_v2_hdr)
+static int igmp_send_v2(struct net_if *iface, const struct net_in_addr *dst,
+			const struct net_in_addr *group, uint8_t type)
+{
+	struct net_pkt *pkt;
+	int ret;
+
+	pkt = net_pkt_alloc_with_buffer(
+		iface, IPV4_OPT_HDR_ROUTER_ALERT_LEN + sizeof(struct net_ipv4_igmp_v2_report),
+		NET_AF_INET, NET_IPPROTO_IGMP, PKT_WAIT_TIME);
+	if (pkt == NULL) {
+		return -ENOMEM;
+	}
+
+	ret = igmp_v2_create_packet(pkt, dst, group, type);
+	if (ret < 0) {
+		goto drop;
+	}
+
+	ret = igmp_send(pkt);
+	if (ret < 0) {
+		goto drop;
+	}
+
+	return 0;
+
+drop:
+	net_pkt_unref(pkt);
+
+	return ret;
+}
+
+/* Send a v2 Membership Report for the given group, or for every joined
+ * group if group is NULL. Reports are sent to the group address, RFC 2236
+ * ch 9.
+ */
+static int igmp_send_v2_response(struct net_if *iface, const struct net_in_addr *group)
 {
 	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
-	struct net_pkt *pkt = NULL;
-	int i, count = 0;
 	int ret = 0;
 
 	if (!ipv4) {
 		return -ENOENT;
 	}
 
-	for (i = 0; i < NET_IF_MAX_IPV4_MADDR; i++) {
-		/* We don't need to send an IGMP membership report to the IGMP
-		 * all systems multicast address of 224.0.0.1 so skip over it.
-		 * Since the IGMP all systems multicast address is marked as
-		 * used and joined during init time, we have to check this
-		 * address separately to skip over it.
-		 */
-		if (!ipv4->mcast[i].is_used || !ipv4->mcast[i].is_joined ||
-			net_ipv4_addr_cmp_raw((uint8_t *)&ipv4->mcast[i].address.in_addr,
-					(uint8_t *)&all_systems)) {
+	ARRAY_FOR_EACH(ipv4->mcast, i) {
+		if (!igmp_is_reported(&ipv4->mcast[i])) {
 			continue;
 		}
 
-		count++;
-	}
-
-	if (count == 0) {
-		return -ESRCH;
-	}
-
-	for (i = 0; i < NET_IF_MAX_IPV4_MADDR; i++) {
-		/* We don't need to send an IGMP membership report to the IGMP
-		 * all systems multicast address of 224.0.0.1 so skip over it.
-		 * Since the IGMP all systems multicast address is marked as
-		 * used and joined during init time, we have to check this
-		 * address separately to skip over it.
-		 */
-		if (!ipv4->mcast[i].is_used || !ipv4->mcast[i].is_joined ||
-			net_ipv4_addr_cmp_raw((uint8_t *)&ipv4->mcast[i].address.in_addr,
-					(uint8_t *)&all_systems)) {
+		if (group != NULL && !net_ipv4_addr_cmp(&ipv4->mcast[i].address.in_addr, group)) {
 			continue;
 		}
 
-		pkt = net_pkt_alloc_with_buffer(iface,
-					IPV4_OPT_HDR_ROUTER_ALERT_LEN +
-					sizeof(struct net_ipv4_igmp_v2_report),
-					NET_AF_INET, NET_IPPROTO_IGMP,
-					PKT_WAIT_TIME);
-		if (!pkt) {
-			return -ENOMEM;
-		}
-
-		/* Send the IGMP V2 membership report to the group multicast
-		 * address, as per RFC 2236 Section 9.
-		 */
-		ret = igmp_v2_create_packet(pkt, &ipv4->mcast[i].address.in_addr,
-					    &ipv4->mcast[i].address.in_addr,
-					    NET_IPV4_IGMP_REPORT_V2);
+		ret = igmp_send_v2(iface, &ipv4->mcast[i].address.in_addr,
+				   &ipv4->mcast[i].address.in_addr, NET_IPV4_IGMP_REPORT_V2);
 		if (ret < 0) {
-			goto drop;
+			return ret;
 		}
-
-		ret = igmp_send(pkt);
-		if (ret < 0) {
-			goto drop;
-		}
-
-		/* So that we do not free the data while it is being sent */
-		pkt = NULL;
-	}
-
-drop:
-	if (pkt) {
-		net_pkt_unref(pkt);
 	}
 
 	return ret;
 }
 
 #if defined(CONFIG_NET_IPV4_IGMPV3)
-static int send_igmp_v3_report(struct net_if *iface, struct net_ipv4_igmp_v3_query *igmp_v3_hdr)
+/* Send one v3 Membership Report with a group record for every reported
+ * group in mcast. The report is sent to 224.0.0.22, RFC 3376 ch 4.2.14.
+ */
+static int igmp_send_v3(struct net_if *iface, struct net_if_mcast_addr mcast[], size_t mcast_len,
+			bool state_change)
 {
-	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
-	struct net_pkt *pkt = NULL;
-	int i, group_count = 0, source_count = 0;
-	int ret = 0;
+	struct net_pkt *pkt;
+	size_t group_count = 0;
+	size_t source_count = 0;
+	int ret;
 
-	if (!ipv4) {
-		return -ENOENT;
-	}
-
-	for (i = 0; i < NET_IF_MAX_IPV4_MADDR; i++) {
-		/* We don't need to send an IGMP membership report to the IGMP
-		 * all systems multicast address of 224.0.0.1 so skip over it.
-		 * Since the IGMP all systems multicast address is marked as
-		 * used and joined during init time, we have to check this
-		 * address separately to skip over it.
-		 */
-		if (!ipv4->mcast[i].is_used || !ipv4->mcast[i].is_joined ||
-		    net_ipv4_addr_cmp_raw((uint8_t *)&ipv4->mcast[i].address.in_addr,
-					  (uint8_t *)&all_systems)) {
+	for (size_t i = 0; i < mcast_len; i++) {
+		if (!igmp_is_reported(&mcast[i])) {
 			continue;
 		}
 
 		group_count++;
-		source_count += ipv4->mcast[i].sources_len;
+		source_count += mcast[i].sources_len;
 	}
 
 	if (group_count == 0) {
@@ -415,16 +382,12 @@ static int send_igmp_v3_report(struct net_if *iface, struct net_ipv4_igmp_v3_que
 			sizeof(struct net_ipv4_igmp_v3_group_record) * group_count +
 			sizeof(struct net_in_addr) * source_count,
 		NET_AF_INET, NET_IPPROTO_IGMP, PKT_WAIT_TIME);
-	if (!pkt) {
+	if (pkt == NULL) {
 		return -ENOMEM;
 	}
 
-	/* Send the IGMP V3 membership report to the igmp multicast
-	 * address, as per RFC 3376 Section 4.2.14.
-	 */
-
-	ret = igmp_v3_create_packet(pkt, &igmp_multicast_addr, ipv4->mcast, NET_IF_MAX_IPV4_MADDR,
-				    NET_IPV4_IGMP_REPORT_V3, false);
+	ret = igmp_v3_create_packet(pkt, &igmp_multicast_addr, mcast, mcast_len,
+				    NET_IPV4_IGMP_REPORT_V3, state_change);
 	if (ret < 0) {
 		goto drop;
 	}
@@ -434,70 +397,88 @@ static int send_igmp_v3_report(struct net_if *iface, struct net_ipv4_igmp_v3_que
 		goto drop;
 	}
 
-	/* So that we do not free the data while it is being sent */
-	pkt = NULL;
+	return 0;
 
 drop:
-	if (pkt) {
-		net_pkt_unref(pkt);
-	}
+	net_pkt_unref(pkt);
 
 	return ret;
 }
 #endif
 
-enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt, struct net_ipv4_hdr *ip_hdr)
+#if defined(CONFIG_NET_IPV4_IGMPV3)
+static int igmp_send_v3_response(struct net_if *iface, struct net_if_mcast_addr *group)
+{
+	if (group != NULL) {
+		return igmp_send_v3(iface, group, 1, false);
+	}
+
+	return igmp_send_v3(iface, iface->config.ip.ipv4->mcast, NET_IF_MAX_IPV4_MADDR, false);
+}
+#else
+static int igmp_send_v3_response(struct net_if *iface, struct net_if_mcast_addr *group)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(group);
+
+	return -ENOTSUP;
+}
+#endif
+
+/* Respond to a Membership Query with the current state of the given group,
+ * or of every joined group for a General Query (group is NULL).
+ */
+static void igmp_query_respond(struct net_if *iface, struct net_if_mcast_addr *group,
+			       enum igmp_version version)
 {
 	int ret;
-	uint16_t chksum = 0;
-	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(igmpv2_access, struct net_ipv4_igmp_v2_query);
 
-	struct net_ipv4_igmp_v2_query *igmpv2_hdr;
-	int igmp_buf_len =
-		pkt->buffer->len - (net_pkt_ip_hdr_len(pkt) + net_pkt_ipv4_opts_len(pkt));
-#if defined(CONFIG_NET_IPV4_IGMPV3)
-	struct net_ipv4_igmp_v3_query *igmpv3_hdr;
+	if (IS_ENABLED(CONFIG_NET_IPV4_IGMPV3) && version == IGMPV3) {
+		ret = igmp_send_v3_response(iface, group);
+	} else {
+		ret = igmp_send_v2_response(iface, group != NULL ? &group->address.in_addr : NULL);
+	}
+
+	if (ret < 0 && ret != -ESRCH) {
+		NET_DBG("Cannot send IGMP report (%d)", ret);
+	}
+}
+
+enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt, struct net_ipv4_hdr *ip_hdr)
+{
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(igmp_access, struct net_ipv4_igmp_v2_query);
+	struct net_if *iface = net_pkt_iface(pkt);
+	struct net_if_mcast_addr *maddr = NULL;
+	struct net_ipv4_igmp_v2_query *igmp_hdr;
+	struct net_in_addr group;
 	enum igmp_version version;
+	uint16_t chksum = 0;
+	int igmp_len;
+	int ret;
 
-	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(igmpv3_access, struct net_ipv4_igmp_v3_query);
+	if (iface->config.ip.ipv4 == NULL) {
+		NET_DBG("DROP: no IPv4 configuration");
+		return NET_DROP;
+	}
 
-	/* Detect IGMP type (RFC 3376 ch 7.1) */
-	if (igmp_buf_len == IGMPV2_PAYLOAD_MIN_LEN) {
-		/* IGMPv1/2 detected */
+	igmp_len = pkt->buffer->len - (net_pkt_ip_hdr_len(pkt) + net_pkt_ipv4_opts_len(pkt));
+
+	/* The version of a query follows from its length, RFC 3376 ch 7.1 */
+	if (igmp_len == IGMPV2_PAYLOAD_MIN_LEN) {
 		version = IGMPV2;
-	} else if (igmp_buf_len >= IGMPV3_PAYLOAD_MIN_LEN) {
-		/* IGMPv3 detected */
+	} else if (igmp_len >= IGMPV3_PAYLOAD_MIN_LEN) {
 		version = IGMPV3;
 	} else {
-#else
-	if (igmp_buf_len < IGMPV2_PAYLOAD_MIN_LEN) {
-#endif
 		NET_DBG("DROP: unsupported payload length");
 		return NET_DROP;
 	}
 
-	if (!net_ipv4_addr_cmp_raw(ip_hdr->dst, (uint8_t *)&all_systems)) {
-		NET_DBG("DROP: Invalid dst address");
+	/* The first eight octets are common to all versions */
+	igmp_hdr = (struct net_ipv4_igmp_v2_query *)net_pkt_get_data(pkt, &igmp_access);
+	if (igmp_hdr == NULL) {
+		NET_DBG("DROP: NULL %s header", "IGMP");
 		return NET_DROP;
 	}
-
-#if defined(CONFIG_NET_IPV4_IGMPV3)
-	if (version == IGMPV3) {
-		igmpv3_hdr = (struct net_ipv4_igmp_v3_query *)net_pkt_get_data(pkt, &igmpv3_access);
-		if (!igmpv3_hdr) {
-			NET_DBG("DROP: NULL %sv3 header", "IGMP");
-			return NET_DROP;
-		}
-	} else {
-#endif
-		igmpv2_hdr = (struct net_ipv4_igmp_v2_query *)net_pkt_get_data(pkt, &igmpv2_access);
-		if (!igmpv2_hdr) {
-			NET_DBG("DROP: NULL %s header", "IGMP");
-			return NET_DROP;
-		}
-#if defined(CONFIG_NET_IPV4_IGMPV3)
-	}
-#endif
 
 	ret = net_calc_chksum_igmp(pkt, &chksum);
 	if (ret < 0 || chksum != 0U) {
@@ -505,15 +486,7 @@ enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt, struct net_ipv4_hdr *i
 		goto drop;
 	}
 
-#if defined(CONFIG_NET_IPV4_IGMPV3)
-	if (version == IGMPV3) {
-		ret = net_pkt_acknowledge_data(pkt, &igmpv3_access);
-	} else {
-#endif
-		ret = net_pkt_acknowledge_data(pkt, &igmpv2_access);
-#if defined(CONFIG_NET_IPV4_IGMPV3)
-	}
-#endif
+	ret = net_pkt_acknowledge_data(pkt, &igmp_access);
 	if (ret < 0) {
 		NET_DBG("DROP: cannot acknowledge data");
 		goto drop;
@@ -521,105 +494,42 @@ enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt, struct net_ipv4_hdr *i
 
 	dbg_addr_recv("Internet Group Management Protocol", &ip_hdr->src, &ip_hdr->dst);
 
-	net_stats_update_ipv4_igmp_recv(net_pkt_iface(pkt));
+	net_stats_update_ipv4_igmp_recv(iface);
 
-#if defined(CONFIG_NET_IPV4_IGMPV3)
-	if (version == IGMPV3) {
-		(void)send_igmp_v3_report(net_pkt_iface(pkt), igmpv3_hdr);
-	} else {
-#endif
-		(void)send_igmp_report(net_pkt_iface(pkt), igmpv2_hdr);
-#if defined(CONFIG_NET_IPV4_IGMPV3)
+	if (igmp_hdr->type != NET_IPV4_IGMP_QUERY) {
+		NET_DBG("Ignoring IGMP message type 0x%02x", igmp_hdr->type);
+		goto out;
 	}
-#endif
 
+	net_ipv4_addr_copy_raw(group.s4_addr, igmp_hdr->address.s4_addr);
+
+	if (net_ipv4_is_addr_unspecified(&group)) {
+		/* General Query, sent to the all systems group (RFC 3376 ch 4.1.12) */
+		if (!net_ipv4_addr_cmp_raw(ip_hdr->dst, (uint8_t *)&all_systems)) {
+			NET_DBG("DROP: Invalid dst address");
+			goto drop;
+		}
+	} else {
+		/* Group-Specific Query, only a member of the group answers */
+		maddr = net_if_ipv4_maddr_lookup(&group, &iface);
+		if (maddr == NULL || !net_if_ipv4_maddr_is_joined(maddr)) {
+			NET_DBG("Ignoring query for group %s", net_sprint_ipv4_addr(&group));
+			goto out;
+		}
+	}
+
+	igmp_query_respond(iface, maddr, version);
+
+out:
 	net_pkt_unref(pkt);
 
 	return NET_OK;
 
 drop:
-	net_stats_update_ipv4_igmp_drop(net_pkt_iface(pkt));
+	net_stats_update_ipv4_igmp_drop(iface);
 
 	return NET_DROP;
 }
-
-#if !defined(CONFIG_NET_IPV4_IGMPV3)
-static int igmp_send_generic(struct net_if *iface,
-			     const struct net_in_addr *addr,
-			     bool join)
-{
-	struct net_pkt *pkt;
-	int ret;
-
-	pkt = net_pkt_alloc_with_buffer(iface,
-					IPV4_OPT_HDR_ROUTER_ALERT_LEN +
-					sizeof(struct net_ipv4_igmp_v2_report),
-					NET_AF_INET, NET_IPPROTO_IGMP,
-					PKT_WAIT_TIME);
-	if (!pkt) {
-		return -ENOMEM;
-	}
-
-	/* Send the IGMP V2 membership report to the group multicast
-	 * address, as per RFC 2236 Section 9. The leave report
-	 * should be sent to the ALL ROUTERS multicast address (224.0.0.2)
-	 */
-	ret = igmp_v2_create_packet(pkt,
-				join ? addr : &all_routers, addr,
-				join ? NET_IPV4_IGMP_REPORT_V2 : NET_IPV4_IGMP_LEAVE);
-	if (ret < 0) {
-		goto drop;
-	}
-
-	ret = igmp_send(pkt);
-	if (ret < 0) {
-		goto drop;
-	}
-
-	return 0;
-
-drop:
-	net_pkt_unref(pkt);
-
-	return ret;
-}
-#endif
-
-#if defined(CONFIG_NET_IPV4_IGMPV3)
-static int igmpv3_send_generic(struct net_if *iface, struct net_if_mcast_addr *mcast)
-{
-	struct net_pkt *pkt;
-	int ret;
-
-	pkt = net_pkt_alloc_with_buffer(iface,
-					IPV4_OPT_HDR_ROUTER_ALERT_LEN +
-						sizeof(struct net_ipv4_igmp_v3_report) +
-						sizeof(struct net_ipv4_igmp_v3_group_record) +
-						sizeof(struct net_in_addr) * mcast->sources_len,
-					NET_AF_INET, NET_IPPROTO_IGMP, PKT_WAIT_TIME);
-	if (!pkt) {
-		return -ENOMEM;
-	}
-
-	ret = igmp_v3_create_packet(pkt, &igmp_multicast_addr, mcast, 1, NET_IPV4_IGMP_REPORT_V3,
-				    true);
-	if (ret < 0) {
-		goto drop;
-	}
-
-	ret = igmp_send(pkt);
-	if (ret < 0) {
-		goto drop;
-	}
-
-	return 0;
-
-drop:
-	net_pkt_unref(pkt);
-
-	return ret;
-}
-#endif
 
 int net_ipv4_igmp_rejoin(struct net_if *iface, struct net_if_mcast_addr *addr)
 {
@@ -635,9 +545,10 @@ int net_ipv4_igmp_rejoin(struct net_if *iface, struct net_if_mcast_addr *addr)
 	}
 
 #if defined(CONFIG_NET_IPV4_IGMPV3)
-	ret = igmpv3_send_generic(iface, addr);
+	ret = igmp_send_v3(iface, addr, 1, true);
 #else
-	ret = igmp_send_generic(iface, &addr->address.in_addr, true);
+	ret = igmp_send_v2(iface, &addr->address.in_addr, &addr->address.in_addr,
+			   NET_IPV4_IGMP_REPORT_V2);
 #endif
 	if (ret < 0) {
 		net_if_ipv4_maddr_leave(iface, addr);
@@ -713,9 +624,9 @@ int net_ipv4_igmp_join(struct net_if *iface, const struct net_in_addr *addr,
 	}
 
 #if defined(CONFIG_NET_IPV4_IGMPV3)
-	ret = igmpv3_send_generic(iface, maddr);
+	ret = igmp_send_v3(iface, maddr, 1, true);
 #else
-	ret = igmp_send_generic(iface, addr, true);
+	ret = igmp_send_v2(iface, addr, addr, NET_IPV4_IGMP_REPORT_V2);
 #endif
 	if (ret < 0) {
 		net_if_ipv4_maddr_leave(iface, maddr);
@@ -769,9 +680,10 @@ int net_ipv4_igmp_leave(struct net_if *iface, const struct net_in_addr *addr)
 	removed_addr.record_type = IGMPV3_MODE_IS_INCLUDE;
 	removed_addr.sources_len = 0;
 
-	ret = igmpv3_send_generic(iface, &removed_addr);
+	ret = igmp_send_v3(iface, &removed_addr, 1, true);
 #else
-	ret = igmp_send_generic(iface, addr, false);
+	/* A Leave Group message is sent to the all routers group, RFC 2236 ch 3 */
+	ret = igmp_send_v2(iface, &all_routers, addr, NET_IPV4_IGMP_LEAVE);
 #endif
 	if (ret < 0) {
 		return ret;
@@ -798,9 +710,9 @@ void net_ipv4_igmp_send_leave(struct net_if *iface, const struct net_if_mcast_ad
 	removed_addr.record_type = IGMPV3_MODE_IS_INCLUDE;
 	removed_addr.sources_len = 0;
 
-	igmpv3_send_generic(iface, &removed_addr);
+	igmp_send_v3(iface, &removed_addr, 1, true);
 #else
-	igmp_send_generic(iface, &addr->address.in_addr, false);
+	igmp_send_v2(iface, &all_routers, &addr->address.in_addr, NET_IPV4_IGMP_LEAVE);
 #endif
 out:
 	net_if_mcast_monitor(iface, &addr->address, false);

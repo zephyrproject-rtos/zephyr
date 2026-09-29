@@ -31,6 +31,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV4_LOG_LEVEL);
 #include <zephyr/net/socket.h>
 
 #include <zephyr/random/random.h>
+#include <zephyr/sys/byteorder.h>
 
 #include "ipv4.h"
 #include "igmp.h"
@@ -66,6 +67,7 @@ static const unsigned char igmp_v3_query[] = {
 
 static struct net_in_addr my_addr = { { { 192, 0, 2, 1 } } };
 static struct net_in_addr mcast_addr = { { { 224, 0, 2, 63 } } };
+static struct net_in_addr other_mcast_addr = { { { 224, 0, 2, 64 } } };
 static struct net_in_addr any_addr = NET_INADDR_ANY_INIT;
 
 static struct net_if *net_iface;
@@ -313,23 +315,73 @@ static void igmp_teardown(void *dummy)
 	net_if_ipv4_addr_rm(net_iface, &my_addr);
 }
 
-static struct net_pkt *prepare_igmp_query(struct net_if *iface, bool is_igmpv3)
+static uint16_t test_chksum(const uint8_t *data, size_t len)
 {
+	uint32_t sum = 0;
+
+	for (size_t i = 0; i + 1 < len; i += 2) {
+		sum += sys_get_be16(&data[i]);
+	}
+
+	if ((len & 1) != 0) {
+		sum += data[len - 1] << 8;
+	}
+
+	while ((sum >> 16) != 0) {
+		sum = (sum & 0xffff) + (sum >> 16);
+	}
+
+	return ~sum;
+}
+
+/* Build an IGMP message from a template. When group is given, the IP
+ * destination and the IGMP group address are replaced by it and the
+ * checksums are recomputed, turning a General Query into a Group-Specific
+ * Query (or a Report for the group when type is changed as well).
+ */
+static struct net_pkt *prepare_igmp_msg(struct net_if *iface, bool is_igmpv3,
+					const struct net_in_addr *group, uint8_t type)
+{
+	const size_t ip_hdr_len = 24; /* IPv4 header plus the Router Alert option */
+	const unsigned char *igmp_msg = is_igmpv3 ? igmp_v3_query : igmp_v2_query;
+	size_t igmp_msg_size = is_igmpv3 ? sizeof(igmp_v3_query) : sizeof(igmp_v2_query);
+	uint8_t buf[sizeof(igmp_v3_query)];
 	struct net_pkt *pkt;
 
-	const unsigned char *igmp_query = is_igmpv3 ? igmp_v3_query : igmp_v2_query;
-	size_t igmp_query_size = is_igmpv3 ? sizeof(igmp_v3_query) : sizeof(igmp_v2_query);
+	memcpy(buf, igmp_msg, igmp_msg_size);
 
-	pkt = net_pkt_alloc_with_buffer(iface, igmp_query_size, NET_AF_INET,
-					NET_IPPROTO_IGMP, K_FOREVER);
+	buf[ip_hdr_len] = type;
+
+	if (group != NULL) {
+		memcpy(&buf[16], group->s4_addr, sizeof(group->s4_addr));
+		memcpy(&buf[ip_hdr_len + 4], group->s4_addr, sizeof(group->s4_addr));
+	}
+
+	buf[10] = 0;
+	buf[11] = 0;
+	sys_put_be16(test_chksum(buf, ip_hdr_len), &buf[10]);
+
+	buf[ip_hdr_len + 2] = 0;
+	buf[ip_hdr_len + 3] = 0;
+	sys_put_be16(test_chksum(&buf[ip_hdr_len], igmp_msg_size - ip_hdr_len),
+		     &buf[ip_hdr_len + 2]);
+
+	pkt = net_pkt_alloc_with_buffer(iface, igmp_msg_size, NET_AF_INET, NET_IPPROTO_IGMP,
+					K_FOREVER);
 	zassert_not_null(pkt, "Failed to allocate buffer");
 
-	zassert_ok(net_pkt_write(pkt, igmp_query, igmp_query_size));
+	zassert_ok(net_pkt_write(pkt, buf, igmp_msg_size));
 
 	net_pkt_set_overwrite(pkt, true);
 	net_pkt_cursor_init(pkt);
 
 	return pkt;
+}
+
+static struct net_pkt *prepare_igmp_query(struct net_if *iface, bool is_igmpv3,
+					  const struct net_in_addr *group)
+{
+	return prepare_igmp_msg(iface, is_igmpv3, group, NET_IPV4_IGMP_QUERY);
 }
 
 static void join_group(void)
@@ -564,7 +616,7 @@ ZTEST_USER(net_igmp, test_socket_catch_join_with_index)
 	socket_leave_group_with_index(&my_addr);
 }
 
-static void igmp_send_query(bool is_imgpv3)
+static void igmp_send_query(bool is_imgpv3, const struct net_in_addr *group)
 {
 	struct net_pkt *pkt;
 
@@ -582,8 +634,8 @@ static void igmp_send_query(bool is_imgpv3)
 	is_igmpv2_query_sent = !is_imgpv3;
 	is_igmpv3_query_sent = is_imgpv3;
 
-	pkt = prepare_igmp_query(net_iface, is_imgpv3);
-	zassert_not_null(pkt, "IGMPv2 query packet prep failed");
+	pkt = prepare_igmp_query(net_iface, is_imgpv3, group);
+	zassert_not_null(pkt, "IGMP query packet prep failed");
 
 	zassert_equal(net_ipv4_input(pkt), NET_OK, "Failed to send");
 
@@ -601,12 +653,67 @@ static void igmp_send_query(bool is_imgpv3)
 
 ZTEST_USER(net_igmp, test_igmpv3_query)
 {
-	igmp_send_query(true);
+	igmp_send_query(true, NULL);
 }
 
 ZTEST_USER(net_igmp, test_igmpv2_query)
 {
-	igmp_send_query(false);
+	igmp_send_query(false, NULL);
+}
+
+ZTEST_USER(net_igmp, test_igmpv3_group_query)
+{
+	igmp_send_query(true, &mcast_addr);
+}
+
+ZTEST_USER(net_igmp, test_igmpv2_group_query)
+{
+	igmp_send_query(false, &mcast_addr);
+}
+
+/* A query for a group that is not joined is not answered, nor is a message
+ * that is not a query.
+ */
+static void igmp_send_unanswered(bool is_igmpv3, const struct net_in_addr *group, uint8_t type,
+				 enum net_verdict verdict)
+{
+	struct net_pkt *pkt;
+
+	join_group();
+
+	k_sem_reset(&wait_data);
+	is_report_sent = false;
+
+	is_igmpv2_query_sent = !is_igmpv3;
+	is_igmpv3_query_sent = is_igmpv3;
+
+	pkt = prepare_igmp_msg(net_iface, is_igmpv3, group, type);
+	zassert_not_null(pkt, "IGMP packet prep failed");
+
+	zassert_equal(net_ipv4_input(pkt), verdict, "Unexpected verdict");
+	if (verdict == NET_DROP) {
+		net_pkt_unref(pkt);
+	}
+
+	zassert_equal(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), -EAGAIN, "Unexpected event");
+	zassert_false(is_report_sent, "Unexpected report");
+
+	is_igmpv2_query_sent = false;
+	is_igmpv3_query_sent = false;
+
+	leave_group();
+}
+
+ZTEST_USER(net_igmp, test_igmp_group_query_not_member)
+{
+	/* The IPv4 layer drops multicast packets for groups that are not joined */
+	igmp_send_unanswered(IS_ENABLED(CONFIG_NET_IPV4_IGMPV3), &other_mcast_addr,
+			     NET_IPV4_IGMP_QUERY, NET_DROP);
+}
+
+ZTEST_USER(net_igmp, test_igmp_report_not_answered)
+{
+	igmp_send_unanswered(false, &mcast_addr, NET_IPV4_IGMP_REPORT_V2, NET_OK);
 }
 
 ZTEST_USER(net_igmp, test_group_rejoin)
