@@ -1389,10 +1389,11 @@ static int bosch_bmi323_pm_resume(const struct device *dev)
 
 	ret = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
+		/* Triggers will not work, but fetch and get still do. */
 		LOG_WRN("Failed to configure int");
 	}
 
-	return ret;
+	return 0;
 }
 
 #ifdef CONFIG_PM_DEVICE
