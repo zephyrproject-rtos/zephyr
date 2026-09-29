@@ -45,7 +45,7 @@ const void *usbh_desc_get_iface(const struct usb_device *const udev, const uint8
  * @param[in] udev USB device that contains the list of endpoints
  * @param[in] ep The endpoint address to search
  *
- * @return A pointer to the endpoint, NULL if it is not configured
+ * @return A pointer to the endpoint, NULL if it is not enabled
  */
 struct usb_host_ep *usbh_desc_get_endpoint(struct usb_device *const udev, const uint8_t ep);
 
