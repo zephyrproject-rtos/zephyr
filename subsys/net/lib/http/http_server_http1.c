@@ -492,11 +492,15 @@ static int http1_add_headers(struct http_client_ctx *client, struct http1_header
 	return http1_header_append(client, buf, crlf, 2);
 }
 
+/* Send the response headers if not sent yet, the chunk of body data in rsp, and
+ * the terminating chunk once the response is final.
+ */
 static int http1_dynamic_response(struct http_client_ctx *client, struct http_response_ctx *rsp,
+				  enum http_transaction_status status,
 				  struct http_resource_detail_dynamic *dynamic_detail)
 {
 	struct http1_header_buf header_buf = {.len = 0};
-	struct net_iovec iov[4];
+	struct net_iovec iov[5];
 	size_t iovlen = 0;
 	char tmp[TEMP_BUF_LEN];
 	int ret;
@@ -521,8 +525,9 @@ static int http1_dynamic_response(struct http_client_ctx *client, struct http_re
 		client->http1_headers_sent = true;
 	}
 
-	/* Pass the header block and the chunk of body data to the socket in one
-	 * call, so that a socket able to gather them can send them together.
+	/* Pass the header block, the chunk of body data and the terminating chunk
+	 * to the socket in one call, so that a socket able to gather them can send
+	 * them together.
 	 */
 	if (header_buf.len > 0) {
 		iov[iovlen++] =
@@ -546,6 +551,12 @@ static int http1_dynamic_response(struct http_client_ctx *client, struct http_re
 			/* Use Transfer-Encoding: chunked */
 			iov[iovlen++] = (struct net_iovec){.iov_base = (void *)crlf, .iov_len = 2};
 		}
+	}
+
+	/* HTTP/1.0 client does not expect the terminating chunk */
+	if (http_response_is_final(rsp, status) && !is_client_http10(client)) {
+		iov[iovlen++] = (struct net_iovec){.iov_base = (void *)final_chunk,
+						   .iov_len = sizeof(final_chunk) - 1};
 	}
 
 	if (iovlen == 0) {
@@ -579,7 +590,7 @@ static int dynamic_get_del_opts_req(struct http_resource_detail_dynamic *dynamic
 			return ret;
 		}
 
-		ret = http1_dynamic_response(client, &response_ctx, dynamic_detail);
+		ret = http1_dynamic_response(client, &response_ctx, status, dynamic_detail);
 		if (ret < 0) {
 			return ret;
 		}
@@ -587,14 +598,6 @@ static int dynamic_get_del_opts_req(struct http_resource_detail_dynamic *dynamic
 		/* URL params are passed in the first cb only */
 		len = 0;
 	} while (!http_response_is_final(&response_ctx, status));
-
-	/* Only send the 0\r\n\r\n if the client is NOT HTTP/1.0 */
-	if (!is_client_http10(client)) {
-		ret = http_server_sendall(client, final_chunk, sizeof(final_chunk) - 1);
-		if (ret < 0) {
-			return ret;
-		}
-	}
 
 	ret = dynamic_detail->cb(client, HTTP_SERVER_TRANSACTION_COMPLETE, &request_ctx,
 				 &response_ctx, dynamic_detail->user_data);
@@ -615,6 +618,7 @@ static int dynamic_post_put_req(struct http_resource_detail_dynamic *dynamic_det
 	enum http_transaction_status status;
 	struct http_request_ctx request_ctx;
 	struct http_response_ctx response_ctx;
+	bool response_provided;
 
 	if (ptr == NULL) {
 		return -ENOENT;
@@ -643,8 +647,9 @@ static int dynamic_post_put_req(struct http_resource_detail_dynamic *dynamic_det
 	/* For POST the application might not send a response until all data has been received.
 	 * Don't send a default response until the application has had a chance to respond.
 	 */
-	if (http_response_is_provided(&response_ctx)) {
-		ret = http1_dynamic_response(client, &response_ctx, dynamic_detail);
+	response_provided = http_response_is_provided(&response_ctx);
+	if (response_provided) {
+		ret = http1_dynamic_response(client, &response_ctx, status, dynamic_detail);
 		if (ret < 0) {
 			return ret;
 		}
@@ -662,26 +667,24 @@ static int dynamic_post_put_req(struct http_resource_detail_dynamic *dynamic_det
 			return ret;
 		}
 
-		ret = http1_dynamic_response(client, &response_ctx, dynamic_detail);
+		ret = http1_dynamic_response(client, &response_ctx, status, dynamic_detail);
 		if (ret < 0) {
 			return ret;
 		}
 	}
 
-	/* At end of message, ensure response is sent and terminated */
+	/* At end of message, ensure response is sent and terminated. A response
+	 * provided above is already terminated, as the loop only ends on a final
+	 * response.
+	 */
 	if (client->parser_state == HTTP1_MESSAGE_COMPLETE_STATE) {
-		if (!client->http1_headers_sent) {
+		if (!response_provided) {
+			/* Default response if no headers were sent yet, otherwise
+			 * only the terminating chunk.
+			 */
 			memset(&response_ctx, 0, sizeof(response_ctx));
 			response_ctx.final_chunk = true;
-			ret = http1_dynamic_response(client, &response_ctx, dynamic_detail);
-			if (ret < 0) {
-				return ret;
-			}
-		}
-
-		/* HTTP/1.0 client does not expect CRLF in the response */
-		if (!is_client_http10(client)) {
-			ret = http_server_sendall(client, final_chunk, sizeof(final_chunk) - 1);
+			ret = http1_dynamic_response(client, &response_ctx, status, dynamic_detail);
 			if (ret < 0) {
 				return ret;
 			}
