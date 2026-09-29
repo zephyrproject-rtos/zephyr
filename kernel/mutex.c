@@ -140,6 +140,14 @@ static bool adjust_owner_prio(struct k_mutex *mutex, int32_t new_prio)
 	return false;
 }
 
+static bool is_pended_on_mutex(const struct k_thread *thread,
+			       const struct k_mutex *mutex)
+{
+	return (mutex != NULL) &&
+	       z_is_thread_pending(thread) &&
+	       (thread->base.pended_on == &mutex->wait_q);
+}
+
 /*
  * Scan all mutexes held by a thread and return the highest priority
  * among all their waiters, floored at floor_prio.
@@ -253,16 +261,17 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 			 * is updated on every hop, so a finite timeout anywhere
 			 * in the chain -- not just at the hop that closes the
 			 * cycle -- correctly rules out a false positive.
-			 * z_is_thread_pending() guards against a stale
-			 * mutex_pended_on in a thread that timed out but has
-			 * not yet cleared the field.
+			 * is_pended_on_mutex() guards against a stale
+			 * mutex_pended_on in a thread that timed out or was
+			 * unpended/aborted (and may now be pended on a
+			 * different wait_q) before clearing the field.
 			 */
 			all_forever = all_forever &&
 				      z_is_inactive_timeout(&chain_owner->base.timeout);
 
 			if (all_forever &&
-			    chain_owner->mutex_pended_on != NULL &&
-			    z_is_thread_pending(chain_owner) &&
+			    is_pended_on_mutex(chain_owner,
+					       chain_owner->mutex_pended_on) &&
 			    chain_owner->mutex_pended_on->owner == _current) {
 				__ASSERT(false,
 					"mutex deadlock: thread %p waiting on "
@@ -279,13 +288,14 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 
 			/*
 			 * Stop the chain walk if the owner is not actually
-			 * pending — its mutex_pended_on may be stale (e.g. it
-			 * just timed out but has not yet cleared the field).
+			 * pending on its mutex_pended_on->wait_q — its
+			 * mutex_pended_on may be stale (e.g. it just timed out
+			 * or was unpended and has not yet cleared the field).
 			 * Always boost the current owner first, then decide
 			 * whether to continue.
 			 */
-			if (chain_owner->mutex_pended_on == NULL ||
-			    !z_is_thread_pending(chain_owner)) {
+			if (!is_pended_on_mutex(chain_owner,
+						chain_owner->mutex_pended_on)) {
 				break;
 			}
 
