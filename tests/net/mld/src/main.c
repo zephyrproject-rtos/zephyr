@@ -31,6 +31,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 #include <zephyr/net/socket.h>
 
 #include <zephyr/random/random.h>
+#include <zephyr/sys/byteorder.h>
 
 #include "icmpv6.h"
 #include "ipv6.h"
@@ -147,23 +148,167 @@ static struct net_icmp_hdr *get_icmp_hdr(struct net_pkt *pkt)
 	return (struct net_icmp_hdr *)net_pkt_cursor_get_pos(pkt);
 }
 
+/* Offsets in a sent MLD message: IPv6 header, Hop-by-Hop header with the
+ * Router Alert option, ICMPv6 header.
+ */
+#define MLD_MSG_HBH_OFFSET  40
+#define MLD_MSG_ICMP_OFFSET 48
+#define MLD_MSG_MAX_LEN     512
+
+/* ICMPv6 checksum over the pseudo header and the message, RFC 4443 ch 2.3 */
+static uint16_t test_icmpv6_chksum(const uint8_t *buf, size_t len)
+{
+	size_t icmp_len = len - MLD_MSG_ICMP_OFFSET;
+	uint32_t sum = 0;
+
+	for (size_t i = 8; i < 40; i += 2) {
+		sum += sys_get_be16(&buf[i]); /* source and destination */
+	}
+
+	sum += icmp_len + NET_IPPROTO_ICMPV6;
+
+	for (size_t i = MLD_MSG_ICMP_OFFSET; i + 1 < len; i += 2) {
+		sum += sys_get_be16(&buf[i]);
+	}
+
+	if ((len & 1) != 0) {
+		sum += buf[len - 1] << 8;
+	}
+
+	while ((sum >> 16) != 0) {
+		sum = (sum & 0xffff) + (sum >> 16);
+	}
+
+	return ~sum;
+}
+
+/* Every MLD message is sent with a hop limit of 1, a link-local or the
+ * unspecified source and the Router Alert option (RFC 3810 ch 5 and 5.2.13).
+ * An MLDv2 report goes to FF02::16 (ch 5.2.14), an MLDv1 Report to the
+ * address it reports and a Done to FF02::2 (RFC 2710 ch 8).
+ */
+static void check_sent_msg(const uint8_t *buf, size_t len)
+{
+	/* Next header, length, Router Alert for MLD; the two padding octets
+	 * follow as Pad1 options or a PadN option.
+	 */
+	static const uint8_t hbh_router_alert[] = { NET_IPPROTO_ICMPV6, 0x00, 0x05, 0x02,
+						    0x00, 0x00 };
+	const uint8_t *icmp = &buf[MLD_MSG_ICMP_OFFSET];
+	struct net_in6_addr expected_dst;
+	const uint8_t *dst = NULL;
+	struct net_in6_addr src;
+
+	zassert_true(len >= MLD_MSG_ICMP_OFFSET + 24, "Message too short (%zu)", len);
+	zassert_equal(buf[0] >> 4, 6, "Not an IPv6 header");
+	zassert_equal(sys_get_be16(&buf[4]), len - 40, "Wrong payload length");
+	zassert_equal(buf[6], NET_IPV6_NEXTHDR_HBHO, "No Hop-by-Hop header");
+	zassert_equal(buf[7], 1, "Hop limit is not 1");
+	zassert_mem_equal(&buf[MLD_MSG_HBH_OFFSET], hbh_router_alert, sizeof(hbh_router_alert),
+			  "No Router Alert option for MLD");
+	zassert_true((buf[MLD_MSG_HBH_OFFSET + 6] == 0x00 && buf[MLD_MSG_HBH_OFFSET + 7] == 0x00) ||
+		     (buf[MLD_MSG_HBH_OFFSET + 6] == 0x01 && buf[MLD_MSG_HBH_OFFSET + 7] == 0x00),
+		     "Hop-by-Hop header not padded");
+
+	memcpy(&src, &buf[8], sizeof(src));
+	zassert_true(net_ipv6_is_ll_addr(&src) || net_ipv6_is_addr_unspecified(&src),
+		     "Source %s is not link-local", net_sprint_ipv6_addr(&src));
+
+	zassert_equal(icmp[1], 0, "ICMPv6 code is not 0");
+	zassert_equal(test_icmpv6_chksum(buf, len), 0, "Bad ICMPv6 checksum");
+
+	switch (icmp[0]) {
+	case NET_ICMPV6_MLDv2:
+		net_ipv6_addr_create(&expected_dst, 0xff02, 0, 0, 0, 0, 0, 0, 0x0016);
+		dst = expected_dst.s6_addr;
+		break;
+	case NET_ICMPV6_MLDv1_REPORT:
+		dst = &icmp[8];
+		break;
+	case NET_ICMPV6_MLDv1_DONE:
+		net_ipv6_addr_create_ll_allrouters_mcast(&expected_dst);
+		dst = expected_dst.s6_addr;
+		break;
+	default:
+		break;
+	}
+
+	if (dst != NULL) {
+		zassert_mem_equal(&buf[24], dst, sizeof(struct net_in6_addr),
+				  "Wrong destination address");
+	}
+}
+
+/* Note which record types an MLDv2 report carries */
+static void check_v2_report(const uint8_t *icmp, size_t len)
+{
+	uint16_t records = sys_get_be16(&icmp[6]);
+	const uint8_t *record = &icmp[8];
+
+	zassert_equal(sys_get_be16(&icmp[4]), 0, "Reserved bytes must be zeroed");
+
+	for (uint16_t i = 0; i < records; i++) {
+		uint16_t sources;
+
+		zassert_true(record + 20 <= icmp + len,
+			     "Truncated multicast address record %u of %u in %zu octets", i,
+			     records, len);
+		sources = sys_get_be16(&record[2]);
+
+		switch (record[0]) {
+		case NET_IPV6_MLDv2_CHANGE_TO_EXCLUDE_MODE:
+			is_join_msg_ok = true;
+			break;
+		case NET_IPV6_MLDv2_CHANGE_TO_INCLUDE_MODE:
+			is_leave_msg_ok = true;
+			break;
+		case NET_IPV6_MLDv2_MODE_IS_EXCLUDE:
+			break;
+		default:
+			zassert_unreachable("Unexpected record type %d", record[0]);
+		}
+
+		record += 20 + 16 * sources;
+	}
+}
+
+static bool is_mld_type(uint8_t type)
+{
+	return type == NET_ICMPV6_MLD_QUERY || type == NET_ICMPV6_MLDv1_REPORT ||
+	       type == NET_ICMPV6_MLDv1_DONE || type == NET_ICMPV6_MLDv2;
+}
+
 static int tester_send(const struct device *dev, struct net_pkt *pkt)
 {
-	struct net_icmp_hdr *icmp;
+	uint8_t buf[MLD_MSG_MAX_LEN];
+	size_t len = net_pkt_get_len(pkt);
+	const uint8_t *icmp = &buf[MLD_MSG_ICMP_OFFSET];
+
+	ARG_UNUSED(dev);
 
 	if (!pkt->buffer) {
 		TC_ERROR("No data to send!\n");
 		return -ENODATA;
 	}
 
-	icmp = get_icmp_hdr(pkt);
+	/* Neighbor Discovery and other traffic of the interface is not checked */
+	if (!is_mld_type(get_icmp_hdr(pkt)->type)) {
+		return 0;
+	}
 
-	if (icmp->type == NET_ICMPV6_MLDv2) {
-		/* FIXME, add more checks here */
+	zassert_true(len <= sizeof(buf), "Message too long (%zu)", len);
+	net_pkt_cursor_init(pkt);
+	zassert_ok(net_pkt_read(pkt, buf, len), "Cannot read the message");
 
-		NET_DBG("Received something....");
-		is_join_msg_ok = true;
-		is_leave_msg_ok = true;
+	check_sent_msg(buf, len);
+
+	/* The report handlers expect the cursor at the ICMPv6 header */
+	(void)get_icmp_hdr(pkt);
+
+	switch (icmp[0]) {
+	case NET_ICMPV6_MLDv2:
+		NET_DBG("Received MLDv2 report....");
+		check_v2_report(icmp, len - MLD_MSG_ICMP_OFFSET);
 		is_report_sent = true;
 		report_count++;
 
@@ -172,16 +317,23 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		}
 
 		k_sem_give(&wait_data);
-	} else if (icmp->type == NET_ICMPV6_MLDv1_REPORT) {
+		break;
+	case NET_ICMPV6_MLDv1_REPORT:
 		NET_DBG("Received MLDv1 report....");
 		is_v1_report_sent = true;
+		is_join_msg_ok = true;
 		is_report_sent = true;
 		report_count++;
 		k_sem_give(&wait_data);
-	} else if (icmp->type == NET_ICMPV6_MLDv1_DONE) {
+		break;
+	case NET_ICMPV6_MLDv1_DONE:
 		NET_DBG("Received MLDv1 done....");
 		is_v1_done_sent = true;
+		is_leave_msg_ok = true;
 		k_sem_give(&wait_data);
+		break;
+	default:
+		zassert_unreachable("Unexpected ICMPv6 message type %d", icmp[0]);
 	}
 
 	return 0;
@@ -506,6 +658,10 @@ struct mld_query_opts {
 	uint8_t hop_limit;
 	/* ICMPv6 type, a Multicast Listener Query when 0 */
 	uint8_t type;
+	/* Value of the Number of Sources field when it should differ from sources */
+	uint16_t claimed_sources;
+	/* Extra zero octets appended to the message */
+	uint8_t extra_len;
 };
 
 /* Inject a Multicast Listener Query built from opts */
@@ -561,14 +717,21 @@ static void send_mld_query(struct net_if *iface, const struct mld_query_opts *op
 	zassert_ok(net_pkt_write(pkt, group, sizeof(struct net_in6_addr)), "Failed to write");
 
 	if (!opts->v1) {
+		uint16_t sources = opts->claimed_sources != 0 ? opts->claimed_sources
+							      : opts->sources;
+
 		zassert_ok(net_pkt_write_be16(pkt, 0), "Failed to write"); /* Resv, S, QRV, QQIC */
-		zassert_ok(net_pkt_write_be16(pkt, opts->sources), "Failed to write");
+		zassert_ok(net_pkt_write_be16(pkt, sources), "Failed to write");
 
 		for (uint16_t i = 0; i < opts->sources; i++) {
 			zassert_ok(net_pkt_write(pkt, net_ipv6_unspecified_address(),
 						 sizeof(struct net_in6_addr)),
 				   "Failed to write");
 		}
+	}
+
+	for (uint8_t i = 0; i < opts->extra_len; i++) {
+		zassert_ok(net_pkt_write_u8(pkt, 0), "Failed to write");
 	}
 
 	net_pkt_cursor_init(pkt);
@@ -1511,6 +1674,71 @@ ZTEST(net_mld_test_suite, test_query_router_alert_in_dest_opts_ignored)
 	const struct mld_query_opts opts = { .dest_opts = true, .max_resp = 3 };
 
 	verify_query_unanswered(&opts);
+}
+
+/* A query whose length matches neither version is ignored (RFC 3810 ch 8.1) */
+ZTEST(net_mld_test_suite, test_query_odd_length_ignored)
+{
+	const struct mld_query_opts opts = { .v1 = true, .max_resp = 3, .extra_len = 2 };
+
+	verify_query_unanswered(&opts);
+}
+
+/* An MLDv2 query shorter than its Number of Sources requires is dropped */
+ZTEST(net_mld_test_suite, test_query_truncated_sources_ignored)
+{
+	const struct mld_query_opts opts = { .max_resp = 3, .claimed_sources = 1 };
+
+	verify_query_unanswered(&opts);
+}
+
+/* A Multicast Address and Source Specific Query is answered by a listener of
+ * the address (RFC 3810 ch 6.3).
+ */
+ZTEST(net_mld_test_suite, test_address_and_source_specific_query)
+{
+	struct mld_query_opts opts = { .max_resp = 3, .sources = 1 };
+
+	test_join_group();
+
+	k_sem_reset(&wait_data);
+	is_report_sent = false;
+	opts.dst = &mcast_addr;
+	opts.group = &mcast_addr;
+
+	send_mld_query(net_iface, &opts);
+
+	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)),
+		   "Timeout while waiting for the report");
+	zassert_true(is_report_sent, "Query not answered");
+
+	test_leave_group();
+}
+
+/* A pending response to a General Query that is due sooner covers a later
+ * Multicast Address Specific Query (RFC 3810 ch 6.2 rule 1).
+ */
+ZTEST(net_mld_test_suite, test_query_general_covers_address)
+{
+	struct mld_query_opts opts = { .max_resp = 100 };
+
+	test_join_group();
+
+	k_sem_reset(&wait_data);
+	report_count = 0;
+
+	send_mld_query(net_iface, &opts);
+
+	/* The largest MLDv2 Maximum Response Code, over two hours */
+	opts.max_resp = 0xffff;
+	opts.dst = &mcast_addr;
+	opts.group = &mcast_addr;
+	send_mld_query(net_iface, &opts);
+
+	k_msleep(1000);
+	zassert_equal(report_count, 1, "Expected one report, got %d", report_count);
+
+	test_leave_group();
 }
 
 /* A query must arrive with a hop limit of 1 (RFC 3810 ch 6.2) */
