@@ -298,7 +298,6 @@ __subsystem struct uhc_driver_api {
 	int (*shutdown)(const struct device *dev);
 
 	int (*bus_reset)(const struct device *dev);
-	int (*sof_enable)(const struct device *dev);
 	int (*bus_suspend)(const struct device *dev);
 	int (*bus_resume)(const struct device *dev);
 
@@ -334,28 +333,6 @@ static inline int uhc_bus_reset(const struct device *dev)
 
 	api->lock(dev);
 	ret = api->bus_reset(dev);
-	api->unlock(dev);
-
-	return ret;
-}
-
-/**
- * @brief Enable Start of Frame generator
- *
- * Enable SOF generator.
- *
- * @param[in] dev      Pointer to device struct of the driver instance
- *
- * @return 0 on success, all other values should be treated as error.
- * @retval -EALREADY if already enabled
- */
-static inline int uhc_sof_enable(const struct device *dev)
-{
-	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
-	int ret;
-
-	api->lock(dev);
-	ret = api->sof_enable(dev);
 	api->unlock(dev);
 
 	return ret;

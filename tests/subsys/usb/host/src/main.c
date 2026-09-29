@@ -289,9 +289,6 @@ void *usbh_test_enable(void)
 	ret = uhc_bus_resume(uhs_ctx->dev);
 	zassert_ok(ret, "Failed to signal bus resume");
 
-	ret = uhc_sof_enable(uhs_ctx->dev);
-	zassert_ok(ret, "Failed to enable SoF generator");
-
 	LOG_INF("Host controller enabled");
 
 	test_usbd = sample_usbd_setup_device(NULL);

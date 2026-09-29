@@ -373,9 +373,6 @@ static void *usb_test_enable(void)
 	err = uhc_bus_resume(uhs_ctx.dev);
 	zassert_equal(err, 0, "Failed to signal bus resume");
 
-	err = uhc_sof_enable(uhs_ctx.dev);
-	zassert_equal(err, 0, "Failed to enable SoF generator");
-
 	LOG_INF("Host controller enabled");
 
 	err = usbd_add_descriptor(&test_usbd, &test_lang);

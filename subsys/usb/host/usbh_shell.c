@@ -907,11 +907,6 @@ static int cmd_bus_resume(const struct shell *sh,
 		shell_print(sh, "host: USB bus resumed");
 	}
 
-	err = uhc_sof_enable(uhs_ctx->dev);
-	if (err) {
-		shell_error(sh, "host: Failed to start SoF generator %d", err);
-	}
-
 	return err;
 }
 
@@ -931,11 +926,6 @@ static int cmd_bus_reset(const struct shell *sh,
 		shell_error(sh, "host: Failed to perform bus reset %d", err);
 	} else {
 		shell_print(sh, "host: USB bus reset");
-	}
-
-	err = uhc_sof_enable(uhs_ctx->dev);
-	if (err) {
-		shell_error(sh, "host: Failed to start SoF generator %d", err);
 	}
 
 	return err;
