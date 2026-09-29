@@ -872,7 +872,7 @@ static int bflb_wpa_supp_associate(void *if_priv, struct wpa_driver_associate_pa
 					LOG_HEXDUMP_DBG(ctx->mdie, ctx->mdie_len, "MDIE");
 				}
 			} else {
-				/* skip unhandled IE */
+				LOG_DBG("Unhandled IE type 0x%02x, skipping", eid);
 			}
 			ie += ie_total;
 			remaining -= ie_total;
@@ -1559,6 +1559,9 @@ int _external_auth_ind(ke_msg_id_t const msgid, void *param, ke_task_id_t const 
 	struct bflb_supp_ctx *ctx = &g_supp_ctx;
 	struct zep_drv_if_ctx *drv_if_ctx;
 	union wpa_event_data event;
+	uint8_t *bssid_copy;
+	uint8_t *ssid_copy;
+	size_t ssid_len;
 
 	ARG_UNUSED(msgid);
 	ARG_UNUSED(dest_id);
@@ -1573,16 +1576,27 @@ int _external_auth_ind(ke_msg_id_t const msgid, void *param, ke_task_id_t const 
 		return 0;
 	}
 
-	memcpy(ctx->ext_auth_bssid, ind->bssid.array, ETH_ALEN);
-	memcpy(ctx->ext_auth_ssid, ind->ssid.array, MIN(ind->ssid.length, MAC_SSID_LEN));
+	ssid_copy = os_zalloc(MAC_SSID_LEN);
+	bssid_copy = os_zalloc(ETH_ALEN);
+	if (ssid_copy == NULL || bssid_copy == NULL) {
+		LOG_ERR("Failed to allocate SSID/BSSID");
+		os_free(ssid_copy);
+		os_free(bssid_copy);
+		return -ENOMEM;
+	}
+
+	/* The event handler calls os_free() */
+	ssid_len = MIN(ind->ssid.length, MAC_SSID_LEN);
+	memcpy(ssid_copy, ind->ssid.array, ssid_len);
+	memcpy(bssid_copy, ind->bssid.array, ETH_ALEN);
 
 	wl80211_glb.authenticating = 1;
 
 	memset(&event, 0, sizeof(event));
 	event.external_auth.action = EXT_AUTH_START;
-	event.external_auth.bssid = ctx->ext_auth_bssid;
-	event.external_auth.ssid = ctx->ext_auth_ssid;
-	event.external_auth.ssid_len = ind->ssid.length;
+	event.external_auth.bssid = bssid_copy;
+	event.external_auth.ssid = ssid_copy;
+	event.external_auth.ssid_len = ssid_len;
 	event.external_auth.key_mgmt_suite = ind->akm;
 
 	drv_if_ctx = ctx->supp_drv_if_ctx;
