@@ -4,21 +4,25 @@
 description: |
   STM32MP2 RCC (Reset and Clock controller).
 
-  On STM32MP2 platforms, the clock tree is configured by the Cortex-A35 core.
-  As a consequence, the only property to be set in devicetree node is the
-  clock-frequency.
-
   As for the peripherals, the clocks are configured per peripheral in the
   corresponding device tree node. The clock controller is responsible for
   enabling/disabling the clocks for the peripherals, when allowed by the
-  Resource Isolation Framework(RIF) peripheral, configured by the cortex-A35
-  core.
+  Resource Isolation Framework (RIF) configuration.
 
   To declare a peripheral "PERx" clock in the dtsi, you can follow the example
   below:
     PERx {
       ...
       clocks = <&rcc STM32_CLOCK(PERx, STM32_CLK)>;
+      ...
+    };
+
+  A clock source can also be referenced to query its rate through
+  clock_control_get_rate(). Example:
+    PERx {
+      ...
+      clocks = <&rcc STM32_CLOCK(PERx, STM32_CLK)>,
+               <&rcc STM32_SRC_PCLK3 NO_SEL>;
       ...
     };
 
