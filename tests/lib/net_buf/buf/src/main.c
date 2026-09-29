@@ -1396,4 +1396,38 @@ ZTEST(net_buf_tests, test_net_buf_is_valid)
 	zassert_equal(destroy_called, 1, "Incorrect destroy callback count");
 }
 
+ZTEST(net_buf_tests, test_net_buf_double_free)
+{
+	struct net_buf *buf;
+	uint8_t pool_id;
+	uint8_t user_data_size;
+
+	if (IS_ENABLED(CONFIG_ASSERT)) {
+		/* An assertion catches the double free before it returns */
+		ztest_test_skip();
+	}
+
+	destroy_called = 0;
+
+	buf = net_buf_alloc_len(&fixed_pool, 16, K_NO_WAIT);
+	zassert_not_null(buf, "Failed to get buffer");
+
+	pool_id = buf->pool_id;
+	user_data_size = buf->user_data_size;
+
+	net_buf_unref(buf);
+	zassert_equal(destroy_called, 1, "Incorrect destroy callback count");
+	zassert_equal(buf->ref, 0U, "Freed buffer has a reference");
+
+	/* A second unref has to leave the freed buffer as it is */
+	net_buf_unref(buf);
+	zexpect_equal(destroy_called, 1, "Buffer destroyed twice");
+	zexpect_equal(buf->ref, 0U, "Reference count changed to %u", buf->ref);
+	zexpect_equal(buf->flags, 0U, "Flags changed to 0x%02x", buf->flags);
+	zexpect_equal(buf->pool_id, pool_id, "Pool id changed from %u to %u", pool_id,
+		      buf->pool_id);
+	zexpect_equal(buf->user_data_size, user_data_size, "User data size changed from %u to %u",
+		      user_data_size, buf->user_data_size);
+}
+
 ZTEST_SUITE(net_buf_tests, NULL, NULL, NULL, NULL, NULL);
