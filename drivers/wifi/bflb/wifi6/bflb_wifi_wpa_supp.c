@@ -954,6 +954,12 @@ static int bflb_wpa_supp_set_key(void *if_priv, const unsigned char *ifname, enu
 	ARG_UNUSED(seq);
 	ARG_UNUSED(seq_len);
 
+	if ((key_flag & KEY_FLAG_NEXT) != 0) {
+		LOG_DBG("Waiting the 4-way handshake to be complete before setting up the key");
+		/* the handshake needs to continue unencrypted */
+		return -ENOTSUP;
+	}
+
 	if (ctx == NULL) {
 		return -EINVAL;
 	}
