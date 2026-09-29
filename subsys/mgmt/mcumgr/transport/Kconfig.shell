@@ -21,13 +21,21 @@ menuconfig MCUMGR_TRANSPORT_SHELL
 
 if MCUMGR_TRANSPORT_SHELL
 
+config MCUMGR_TRANSPORT_SHELL_MTU_DEPRECATED
+	bool
+	default y if MCUMGR_TRANSPORT_SHELL_MTU != 256
+	select DEPRECATED
+	help
+	  Indicates that MCUMGR_TRANSPORT_SHELL_MTU has been changed from its default. The option
+	  is deprecated.
+
 config MCUMGR_TRANSPORT_SHELL_MTU
-	int "Shell SMP MTU"
+	int "Shell SMP MTU [DEPRECATED]"
 	default 256
 	help
-	  Maximum size of SMP frames sent and received over shell. This value must satisfy the
-	  following relation:
-	  MCUMGR_TRANSPORT_SHELL_MTU <= MCUMGR_TRANSPORT_NETBUF_SIZE + 2
+	  Value returned by the shell transport's get_mtu callback. This option is deprecated along
+	  with that callback, which the SMP layer does not use. SMP over console frames are limited
+	  to 127 bytes and the maximum SMP packet size is set by MCUMGR_TRANSPORT_NETBUF_SIZE.
 
 config MCUMGR_TRANSPORT_SHELL_RX_BUF_COUNT
 	int "Shell SMP RX buffer count"
