@@ -197,6 +197,35 @@ void *zvfs_get_fd_obj_and_vtable(int fd, const struct fd_op_vtable **vtable,
 			      struct k_mutex **lock);
 
 /**
+ * @brief Get underlying object pointer and vtable pointer, with the descriptor held and locked.
+ *
+ * On success, takes a reference on the descriptor, so its slot is not freed or
+ * reused until zvfs_fd_unlock_put(), and then takes its lock. Fails once
+ * close() has closed the object, including while the caller waited for the
+ * lock. Every successful call must be paired with exactly one
+ * zvfs_fd_unlock_put(); a failed call must not be. A thread aborted in between
+ * never drops the reference, and the slot stays allocated for good; read() and
+ * write() on any descriptor hold one for the length of the call.
+ *
+ * @param fd File descriptor previously returned by zvfs_reserve_fd()
+ * @param vtable A pointer to a pointer variable to store the vtable
+ *
+ * @return Object pointer, or NULL with errno set to EBADF and nothing held
+ */
+void *zvfs_fd_get_locked(int fd, const struct fd_op_vtable **vtable);
+
+/**
+ * @brief Unlock and drop a descriptor taken by zvfs_fd_get_locked().
+ *
+ * Must be called exactly once for each successful zvfs_fd_get_locked() call,
+ * and for no other reason. If the descriptor was closed meanwhile, the last
+ * reference frees its slot.
+ *
+ * @param fd File descriptor passed to zvfs_fd_get_locked()
+ */
+void zvfs_fd_unlock_put(int fd);
+
+/**
  * @brief Get the mutex and condition variable associated with the given object and vtable.
  *
  * @param obj Object previously returned by a call to e.g. @ref zvfs_get_fd_obj.
