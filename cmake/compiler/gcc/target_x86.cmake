@@ -37,6 +37,10 @@ else()
   )
 endif()
 
+if(CONFIG_LLEXT_BUILD_PIC)
+  list(APPEND LLEXT_APPEND_FLAGS -fPIC)
+endif()
+
 # GNU Assembler, by default on non-Linux targets, treats slashes as
 # start of comments on i386.
 # (https://sourceware.org/binutils/docs-2.33.1/as/i386_002dChars.html#i386_002dChars)

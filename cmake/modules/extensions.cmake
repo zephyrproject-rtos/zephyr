@@ -7233,17 +7233,35 @@ function(add_llext_target target_name)
 
   elseif(CONFIG_LLEXT_TYPE_ELF_SHAREDLIB)
 
-    # Create a shared library
-    add_library(${llext_lib_target} EXCLUDE_FROM_ALL SHARED ${source_files})
-    set_target_properties(${llext_lib_target} PROPERTIES
-      LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/llext
-    )
-    set(llext_lib_output $<TARGET_FILE:${llext_lib_target}>)
-
-    # Add the llext flags to the linking step as well
+    # Host add_library(SHARED) is Mach-O; this still emits ELF ET_DYN.
+    add_executable(${llext_lib_target} EXCLUDE_FROM_ALL ${source_files})
     target_link_options(${llext_lib_target} PRIVATE
+      -shared
+      -nostdlib
+      -nodefaultlibs
+      -nostartfiles
       ${LLEXT_APPEND_FLAGS}
     )
+    if(NOT CONFIG_XTENSA)
+      # -Wl,-shared: x86 and ARC gcc specs drop the driver -shared flag.
+      target_link_options(${llext_lib_target} PRIVATE
+        -Wl,-shared
+        -Wl,--unresolved-symbols=ignore-all
+        # Separate pages for W^X; norelro keeps the GOT and .data contiguous.
+        -Wl,-z,max-page-size=4096
+        -Wl,-z,common-page-size=4096
+        -Wl,-z,norelro
+      )
+    endif()
+    if(CONFIG_RISCV)
+      # riscv-zephyr-elf ld has no -shared; lld emits ET_DYN.
+      target_link_options(${llext_lib_target} PRIVATE -fuse-ld=lld)
+    endif()
+    set_target_properties(${llext_lib_target} PROPERTIES
+      RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/llext
+      SUFFIX ".so"
+    )
+    set(llext_lib_output $<TARGET_FILE:${llext_lib_target}>)
 
   endif()
 
@@ -7286,7 +7304,8 @@ function(add_llext_target target_name)
   add_custom_command(
     OUTPUT ${llext_pkg_input}
     COMMAND "$<IF:${has_post_build_cmds},${noop_cmd},${copy_cmd}>"
-    DEPENDS ${llext_proc_target}
+    # A phony dependency is order-only and would leave the packaged ELF stale.
+    DEPENDS ${llext_proc_target} ${llext_lib_output}
     COMMAND_EXPAND_LISTS
   )
 

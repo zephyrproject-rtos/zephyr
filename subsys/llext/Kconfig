@@ -36,10 +36,20 @@ config LLEXT_TYPE_ELF_RELOCATABLE
 
 config LLEXT_TYPE_ELF_SHAREDLIB
 	bool "Shared library ELF file"
+	depends on (ARM && !ARMV6_M_ARMV8_M_BASELINE) || ARM64 || RISCV || X86 || \
+		(ARC && !ISA_ARCV3) || XTENSA
 	help
-	  Build and expect shared libraries as binary object type for
-	  the llext subsystem. The usual linking process is used to
+	  Build and expect shared libraries (ELF ET_DYN) as the binary object
+	  type for the llext subsystem. The usual linking process is used to
 	  generate the shared library from multiple object files.
+
+	  ARM, AArch64, RISC-V, x86, and ARC build these with -fPIC -shared.
+	  The loader applies the dynamic relocations (.rel.dyn, .rela.dyn,
+	  .rel.plt, .rela.plt, .rela.got) and keeps the link-time distance
+	  between text and the GOT. The Zephyr RISC-V GNU linker cannot emit
+	  shared objects, so that architecture links extensions with lld.
+	  Thumb-1 and ARCv3 linkers cannot emit a shared object either.
+	  Xtensa keeps its existing shared-library path.
 
 endchoice
 
@@ -142,7 +152,7 @@ config LLEXT_DATA_HEAP_SIZE
 
 config LLEXT_BUILD_PIC
 	bool "Use -fPIC when building LLEXT"
-	depends on XTENSA
+	depends on XTENSA || LLEXT_TYPE_ELF_SHAREDLIB
 	default y if LLEXT_TYPE_ELF_SHAREDLIB
 	help
 	  By default LLEXT compilation is performed with -fno-pic -fno-pie compiler
@@ -171,7 +181,7 @@ config LLEXT_STORAGE_WRITABLE
 
 config LLEXT_RODATA_NO_RELOC
 	bool "Keep read-only data without relocations in flash"
-	depends on !MMU && !USERSPACE
+	depends on !MMU && !USERSPACE && (!LLEXT_BUILD_PIC || XTENSA)
 	help
 	  When enabled, read-only data sections (.rodata) that do not have
 	  any relocations are kept in their original location (typically flash)
@@ -182,6 +192,9 @@ config LLEXT_RODATA_NO_RELOC
 
 	  This feature requires the extension to manually tag that data with
 	  the LLEXT_RODATA_NO_RELOC macro.
+
+	  Incompatible with non-Xtensa LLEXT_BUILD_PIC / ET_DYN loads, which
+	  keep text and rodata in one contiguous image.
 
 config LLEXT_EXPORT_DEVICES
 	bool "Export all DT devices to llexts"
