@@ -71,8 +71,11 @@ static struct net_in6_addr my_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 				       0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 static struct net_in6_addr peer_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					 0, 0, 0, 0, 0, 0, 0, 0x2 } } };
-static struct net_in6_addr mcast_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
-					  0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+/* A transient site-local group, MLD is not run for scope 0 */
+static const struct net_in6_addr mcast_addr = { { { 0xff, 0x15, 0, 0, 0, 0, 0, 0,
+						0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+static const struct net_in6_addr mldv2_routers_addr = { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0,
+							0, 0, 0, 0, 0, 0, 0, 0x16 } } };
 
 static struct net_in6_addr exp_mcast_group_storage;
 static const struct net_in6_addr *exp_mcast_group;
@@ -352,9 +355,6 @@ static void test_join_group(void)
 {
 	int ret;
 
-	/* Using adhoc multicast group outside standard range */
-	net_ipv6_addr_create(&mcast_addr, 0xff10, 0, 0, 0, 0, 0, 0, 0x0001);
-
 	ret = net_ipv6_mld_join(net_iface, &mcast_addr);
 	zassert_equal(ret, 0, "Cannot join IPv6 multicast group");
 
@@ -365,8 +365,6 @@ static void test_join_group(void)
 static void test_leave_group(void)
 {
 	int ret;
-
-	net_ipv6_addr_create(&mcast_addr, 0xff10, 0, 0, 0, 0, 0, 0, 0x0001);
 
 	ret = net_ipv6_mld_leave(net_iface, &mcast_addr);
 
@@ -522,8 +520,7 @@ static void join_mldv2_capable_routers_group(void)
 
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 
-	net_ipv6_addr_create(&mcast_addr, 0xff02, 0, 0, 0, 0, 0, 0, 0x0016);
-	ret = net_ipv6_mld_join(iface, &mcast_addr);
+	ret = net_ipv6_mld_join(iface, &mldv2_routers_addr);
 
 	zassert_true(ret == 0 || ret == -EALREADY,
 		     "Cannot join MLDv2-capable routers multicast group");
@@ -539,8 +536,7 @@ static void leave_mldv2_capable_routers_group(void)
 
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 
-	net_ipv6_addr_create(&mcast_addr, 0xff02, 0, 0, 0, 0, 0, 0, 0x0016);
-	ret = net_ipv6_mld_leave(iface, &mcast_addr);
+	ret = net_ipv6_mld_leave(iface, &mldv2_routers_addr);
 
 	zassert_equal(ret, 0,
 		      "Cannot leave MLDv2-capable routers multicast group");
@@ -686,15 +682,41 @@ static void expect_exclude_mcast_report(struct net_pkt *pkt, void *user_data)
 	}
 }
 
+/* No MLD message is ever sent for the link-scope all-nodes address
+ * (RFC 3810 ch 6): fail on a report that carries it.
+ */
+static void reject_mcast_report(struct net_pkt *pkt, void *user_data)
+{
+	struct mld_report_mcast_record record;
+	uint16_t records_count;
+	uint16_t res_bytes;
+
+	ARG_UNUSED(user_data);
+
+	zassert_not_null(exp_mcast_group, "Expected mcast group not set");
+
+	net_pkt_set_overwrite(pkt, true);
+	net_pkt_skip(pkt, sizeof(struct net_icmp_hdr));
+
+	zassert_ok(net_pkt_read_be16(pkt, &res_bytes), "Failed to read reserved bytes");
+	zassert_ok(net_pkt_read_be16(pkt, &records_count), "Failed to read addr count");
+
+	for (uint16_t i = 0; i < records_count; i++) {
+		zassert_ok(net_pkt_read(pkt, &record, sizeof(record)), "Failed to read record");
+		zassert_false(net_ipv6_addr_cmp_raw((const uint8_t *)exp_mcast_group,
+						    (const uint8_t *)&record.mcast_addr),
+			      "Group %s must not be reported",
+			      net_sprint_ipv6_addr(exp_mcast_group));
+	}
+}
+
 static void verify_allnodes_on_iface_event(void (*action)(void))
 {
 	struct net_if *iface = NULL;
 	struct net_if_mcast_addr *ifmaddr;
 	struct net_in6_addr addr;
-	bool exclude_report_sent = false;
 	struct mld_report_handler handler = {
-		.fn = expect_exclude_mcast_report,
-		.user_data = &exclude_report_sent
+		.fn = reject_mcast_report,
 	};
 
 	net_ipv6_addr_create_ll_allnodes_mcast(&addr);
@@ -710,12 +732,14 @@ static void verify_allnodes_on_iface_event(void (*action)(void))
 	zassert_ok(k_sem_take(&wait_joined, K_MSEC(WAIT_TIME)),
 		   "Timeout while waiting for an event");
 
+	/* Let the reports for the other groups go out and be checked */
+	k_msleep(THREAD_SLEEP);
+
 	ifmaddr = net_if_ipv6_maddr_lookup(&addr, &iface);
 	zassert_not_null(ifmaddr, "Interface does not contain "
 			"allnodes multicast address");
 
 	zassert_true(is_group_joined, "Did not join mcast group");
-	zassert_true(exclude_report_sent, "Did not send report");
 }
 
 /* Verify that mcast all nodes is present after interface admin state toggle */
@@ -923,9 +947,6 @@ ZTEST(net_mld_test_suite, test_no_mld_flag)
 
 	net_if_flag_set(net_iface, NET_IF_IPV6_NO_MLD);
 
-	/* Using adhoc multicast group outside standard range */
-	net_ipv6_addr_create(&mcast_addr, 0xff10, 0, 0, 0, 0, 0, 0, 0x0001);
-
 	ret = net_ipv6_mld_join(net_iface, &mcast_addr);
 	zassert_equal(ret, 0, "Cannot add multicast address");
 
@@ -965,12 +986,17 @@ static void handle_mld_report(struct net_pkt *pkt, void *user_data)
 	}
 }
 
+/* Number of groups a report is sent for: all-nodes is never reported */
 static size_t get_mcast_addr_count(struct net_if *iface)
 {
+	struct net_in6_addr all_nodes;
 	size_t ret = 0;
 
+	net_ipv6_addr_create_ll_allnodes_mcast(&all_nodes);
+
 	ARRAY_FOR_EACH_PTR(iface->config.ip.ipv6->mcast, mcast_addr) {
-		if (mcast_addr->is_used) {
+		if (mcast_addr->is_used &&
+		    !net_ipv6_addr_cmp(&mcast_addr->address.in6_addr, &all_nodes)) {
 			ret++;
 		}
 	}
@@ -1027,6 +1053,7 @@ static void verify_mcast_routes_in_mld(struct mld_report_info *info)
 	struct net_in6_addr site_local_mcast_addr_abcd;
 	struct net_in6_addr site_local_mcast_addr_beef;
 	struct net_in6_addr site_local_mcast_addr_cafe;
+	struct net_in6_addr reserved_scope_mcast_addr;
 
 	zassert_not_null(dummy_iface, "Invalid dummy iface");
 	zassert_not_null(null_iface, "Invalid null iface");
@@ -1059,6 +1086,21 @@ static void verify_mcast_routes_in_mld(struct mld_report_info *info)
 	k_msleep(THREAD_SLEEP);
 
 	zassert_equal(-EAGAIN, k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), "Expected a timeout");
+
+	k_sem_reset(&wait_data);
+
+	/* A route to an address of the reserved scope 0 can be added, but is
+	 * never reported (RFC 3810 ch 6).
+	 */
+	net_ipv6_addr_create(&reserved_scope_mcast_addr, 0xff00, 0, 0, 0, 0, 0, 0, 0x1);
+
+	zassert_not_null(net_route_ipv6_mcast_add(null_iface, &reserved_scope_mcast_addr, 128),
+			 "Failed to add multicast route");
+
+	k_msleep(THREAD_SLEEP);
+
+	zassert_equal(-EAGAIN, k_sem_take(&wait_data, K_MSEC(WAIT_TIME)),
+		      "Report for a reserved scope address");
 
 	k_sem_reset(&wait_data);
 
@@ -1095,6 +1137,9 @@ static void verify_mcast_routes_in_mld(struct mld_report_info *info)
 	zassert_equal(-EAGAIN, k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), "Expected a timeout");
 
 	/* Finalize cleanup */
+	zassert_true(net_route_ipv6_mcast_del(
+			net_route_ipv6_mcast_lookup(&reserved_scope_mcast_addr)),
+		     "Failed to cleanup route to ff00::1");
 	net_ipv6_mld_leave(dummy_iface, &site_local_mcast_addr_cafe);
 }
 
