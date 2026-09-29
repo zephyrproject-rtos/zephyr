@@ -1031,11 +1031,17 @@ static int bosch_bmi323_driver_api_sample_fetch(const struct device *dev, enum s
 	k_mutex_lock(&data->lock, K_FOREVER);
 
 	switch (chan) {
+	case SENSOR_CHAN_ACCEL_X:
+	case SENSOR_CHAN_ACCEL_Y:
+	case SENSOR_CHAN_ACCEL_Z:
 	case SENSOR_CHAN_ACCEL_XYZ:
 		ret = bosch_bmi323_driver_api_fetch_acc_samples(dev);
 
 		break;
 
+	case SENSOR_CHAN_GYRO_X:
+	case SENSOR_CHAN_GYRO_Y:
+	case SENSOR_CHAN_GYRO_Z:
 	case SENSOR_CHAN_GYRO_XYZ:
 		ret = bosch_bmi323_driver_api_fetch_gyro_samples(dev);
 
@@ -1052,7 +1058,7 @@ static int bosch_bmi323_driver_api_sample_fetch(const struct device *dev, enum s
 		break;
 
 	default:
-		ret = -ENODEV;
+		ret = -ENOTSUP;
 
 		break;
 	}
@@ -1060,6 +1066,46 @@ static int bosch_bmi323_driver_api_sample_fetch(const struct device *dev, enum s
 	k_mutex_unlock(&data->lock);
 
 	return ret;
+}
+
+static void bosch_bmi323_copy_axes(struct sensor_value *val, const struct sensor_value *samples,
+				   enum sensor_channel chan)
+{
+	size_t first;
+	size_t last;
+
+	switch (chan) {
+	case SENSOR_CHAN_ACCEL_X:
+	case SENSOR_CHAN_GYRO_X:
+		first = 0;
+		last = 0;
+
+		break;
+
+	case SENSOR_CHAN_ACCEL_Y:
+	case SENSOR_CHAN_GYRO_Y:
+		first = 1;
+		last = 1;
+
+		break;
+
+	case SENSOR_CHAN_ACCEL_Z:
+	case SENSOR_CHAN_GYRO_Z:
+		first = 2;
+		last = 2;
+
+		break;
+
+	default:
+		first = 0;
+		last = 2;
+
+		break;
+	}
+
+	for (size_t i = first; i <= last; i++, val++) {
+		*val = samples[i];
+	}
 }
 
 static int bosch_bmi323_driver_api_channel_get(const struct device *dev, enum sensor_channel chan,
@@ -1071,6 +1117,9 @@ static int bosch_bmi323_driver_api_channel_get(const struct device *dev, enum se
 	k_mutex_lock(&data->lock, K_FOREVER);
 
 	switch (chan) {
+	case SENSOR_CHAN_ACCEL_X:
+	case SENSOR_CHAN_ACCEL_Y:
+	case SENSOR_CHAN_ACCEL_Z:
 	case SENSOR_CHAN_ACCEL_XYZ:
 		if (data->acc_samples_valid == false) {
 			ret = -ENODATA;
@@ -1078,10 +1127,13 @@ static int bosch_bmi323_driver_api_channel_get(const struct device *dev, enum se
 			break;
 		}
 
-		memcpy(val, data->acc_samples, sizeof(data->acc_samples));
+		bosch_bmi323_copy_axes(val, data->acc_samples, chan);
 
 		break;
 
+	case SENSOR_CHAN_GYRO_X:
+	case SENSOR_CHAN_GYRO_Y:
+	case SENSOR_CHAN_GYRO_Z:
 	case SENSOR_CHAN_GYRO_XYZ:
 		if (data->gyro_samples_valid == false) {
 			ret = -ENODATA;
@@ -1089,7 +1141,7 @@ static int bosch_bmi323_driver_api_channel_get(const struct device *dev, enum se
 			break;
 		}
 
-		memcpy(val, data->gyro_samples, sizeof(data->gyro_samples));
+		bosch_bmi323_copy_axes(val, data->gyro_samples, chan);
 
 		break;
 
