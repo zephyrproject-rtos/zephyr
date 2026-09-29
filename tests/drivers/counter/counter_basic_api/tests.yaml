@@ -9,6 +9,7 @@ tests:
       - nucleo_f302r8
       - sam_e54_xpro
       - pic32cx_sg41_cult
+      - pic32cx_sg61_cult
       - pic32cm_jh01_cpro
     timeout: 600
   drivers.counter.basic_api.nrf_zli:
@@ -119,6 +120,7 @@ tests:
     platform_allow:
       - sam_e54_xpro
       - pic32cx_sg41_cult
+      - pic32cx_sg61_cult
       - pic32cm_jh01_cpro
     timeout: 600
     extra_args:
@@ -130,6 +132,7 @@ tests:
     depends_on: counter
     platform_allow:
       - pic32cx_sg41_cult
+      - pic32cx_sg61_cult
     timeout: 600
     extra_args:
       - FILE_SUFFIX=tc1
@@ -140,6 +143,7 @@ tests:
     depends_on: counter
     platform_allow:
       - pic32cx_sg41_cult
+      - pic32cx_sg61_cult
     timeout: 600
     extra_args:
       - FILE_SUFFIX=tc2
@@ -150,6 +154,7 @@ tests:
     depends_on: counter
     platform_allow:
       - pic32cx_sg41_cult
+      - pic32cx_sg61_cult
     timeout: 600
     extra_args:
       - FILE_SUFFIX=tc3
@@ -160,6 +165,7 @@ tests:
     depends_on: counter
     platform_allow:
       - pic32cx_sg41_cult
+      - pic32cx_sg61_cult
     timeout: 600
     extra_args:
       - FILE_SUFFIX=tc4
@@ -170,6 +176,7 @@ tests:
     depends_on: counter
     platform_allow:
       - pic32cx_sg41_cult
+      - pic32cx_sg61_cult
     timeout: 600
     extra_args:
       - FILE_SUFFIX=tc5
@@ -180,6 +187,7 @@ tests:
     depends_on: counter
     platform_allow:
       - pic32cx_sg41_cult
+      - pic32cx_sg61_cult
     timeout: 600
     extra_args:
       - FILE_SUFFIX=tc6
@@ -190,6 +198,7 @@ tests:
     depends_on: counter
     platform_allow:
       - pic32cx_sg41_cult
+      - pic32cx_sg61_cult
     timeout: 600
     extra_args:
       - FILE_SUFFIX=tc7
