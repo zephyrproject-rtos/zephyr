@@ -12,11 +12,7 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
 
-extern int mtu_exchange(struct bt_conn *conn);
-extern int write_cmd(struct bt_conn *conn);
-extern struct bt_conn *conn_connected;
-extern uint32_t last_write_rate;
-extern uint32_t *write_countdown;
+#include "gatt_write.h"
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -25,6 +21,11 @@ static const struct bt_data ad[] = {
 static const struct bt_data sd[] = {
 	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
 };
+
+static int start_adv(void)
+{
+	return bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
+}
 
 static void mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
@@ -101,13 +102,16 @@ uint32_t peripheral_gatt_write(uint32_t count)
 	}
 #endif /* CONFIG_BT_USER_PHY_UPDATE */
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
+	err = start_adv();
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
 		return 0U;
 	}
 
 	printk("Advertising successfully started\n");
+
+	/* Re-advertise on disconnect so a reset/reconnecting peer resumes. */
+	restart_adv_func = start_adv;
 
 	conn_connected = NULL;
 	last_write_rate = 0U;
@@ -120,36 +124,69 @@ uint32_t peripheral_gatt_write(uint32_t count)
 	}
 
 	while (true) {
-		struct bt_conn *conn = NULL;
-
-		if (conn_connected) {
-			/* Get a connection reference to ensure that a
-			 * reference is maintained in case disconnected
-			 * callback is called while we perform GATT Write
-			 * command.
-			 */
-			conn = bt_conn_ref(conn_connected);
+		if (conn_connected == NULL) {
+			(void)k_sleep(K_SECONDS(1));
+			continue;
 		}
 
-		if (conn) {
-			write_cmd(conn);
-			bt_conn_unref(conn);
+		/* Hold a reference across the transmit so the connection is not
+		 * freed by the disconnected callback mid-transmit. bt_conn_ref()
+		 * returns NULL if the connection was torn down concurrently.
+		 */
+		struct bt_conn *conn = conn_connected;
 
-			if (count) {
-				if ((count % 1000U) == 0U) {
-					printk("GATT Write countdown %u\n", count);
-				}
+		if (conn != NULL) {
+			conn = bt_conn_ref(conn);
+		}
 
-				count--;
-				if (!count) {
-					break;
-				}
+		if (conn == NULL) {
+			continue;
+		}
+
+		if (IS_ENABLED(CONFIG_USE_NOTIFY)) {
+			err = notify_poll(conn) ? notify_data(conn) : -EAGAIN;
+			if (err != 0) {
+				/* Not ready (-EAGAIN), out of buffers (-ENOMEM) or
+				 * the link is going down: back off one connection
+				 * interval. Sleeping (not yielding) lets time
+				 * advance so a pending disconnect is delivered.
+				 */
+				k_timeout_t delay = conn_interval_get(conn);
+
+				bt_conn_unref(conn);
+				(void)k_sleep(delay);
+				continue;
+			}
+		} else {
+			err = write_cmd(conn);
+			if (err != 0 && err != -ENOMEM) {
+				/* -ENOMEM just means no TX buffer was free this
+				 * iteration and is retried on the next one; any
+				 * other error is unexpected.
+				 */
+				printk("%s: write_cmd failed (%d)\n", __func__, err);
+			}
+		}
+
+		bt_conn_unref(conn);
+
+		/* Passing `0` will not use the countdown; the block below is
+		 * optimized out by the linker in that case.
+		 */
+		if (count != 0U) {
+			if ((count % 1000U) == 0U) {
+				printk("GATT %s countdown %u\n",
+				       IS_ENABLED(CONFIG_USE_NOTIFY) ? "Notify" : "Write",
+				       count);
 			}
 
-			k_yield();
-		} else {
-			k_sleep(K_SECONDS(1));
+			count--;
+			if (count == 0U) {
+				break;
+			}
 		}
+
+		k_yield();
 	}
 
 	return last_write_rate;
