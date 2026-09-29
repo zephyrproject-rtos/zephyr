@@ -2967,6 +2967,12 @@ lvgl
 hal_nxp
 =======
 
+* The ``CONFIG_LV_USE_GPU_NXP_PXP`` Kconfig option has been removed. It only enabled the NXP PXP
+  HAL driver component, which is already enabled by :kconfig:option:`CONFIG_MCUX_PXP`, defaulting
+  to ``y`` when the :dtcompatible:`nxp,pxp` devicetree node is enabled and
+  :kconfig:option:`CONFIG_DISPLAY` is set. Applications that use the PXP driver component
+  without the display subsystem must enable :kconfig:option:`CONFIG_MCUX_PXP` explicitly.
+
 * S32K344: The pinmux header file for this SoC was renamed from ``S32K344-172MQFP-pinctrl.h`` to
   ``S32K344_K324_K314_172HDQFP-pinctrl.h``. Out-of-tree boards must update their include directive accordingly::
 
