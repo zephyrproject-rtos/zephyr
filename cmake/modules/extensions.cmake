@@ -7278,17 +7278,46 @@ function(add_llext_target target_name)
 
   elseif(CONFIG_LLEXT_TYPE_ELF_SHAREDLIB)
 
-    # Create a shared library
-    add_library(${llext_lib_target} EXCLUDE_FROM_ALL SHARED ${source_files})
+    # Host add_library(SHARED) is Mach-O; this still emits ELF ET_DYN.
+    add_executable(${llext_lib_target} EXCLUDE_FROM_ALL ${source_files})
+    # TOOLCHAIN_LLEXT_FLAGS is only needed for RISC-V, whose ET_DYN support
+    # depends on the SDK providing lld. Other architectures use their normal
+    # linker and must not be forced onto lld.
+    if(CONFIG_RISCV)
+      set(llext_sharedlib_toolchain_flags ${TOOLCHAIN_LLEXT_FLAGS})
+    endif()
+    # The selected linker backend supplies the options required to emit an
+    # ET_DYN image and to retain unresolved kernel-export references.
+    target_link_options(${llext_lib_target} PRIVATE
+      -shared
+      -nostdlib
+      -nodefaultlibs
+      -nostartfiles
+      ${llext_sharedlib_toolchain_flags}
+      ${LLEXT_APPEND_FLAGS}
+      $<TARGET_PROPERTY:linker,llext_shared_linker>
+      $<TARGET_PROPERTY:linker,llext_shared_undefined>
+      # Separate pages for W^X; norelro keeps the GOT and .data contiguous.
+      $<TARGET_PROPERTY:linker,llext_shared_layout>
+    )
+    get_target_property(llext_shared_supported linker llext_shared_supported)
+    if(NOT llext_shared_supported)
+      # Stopgap: Kconfig runs before the linker backend sets this property,
+      # so it cannot verify the selected backend's ET_DYN support. Reaching
+      # this point means the toolchain's Kconfig capability and linker
+      # backend declaration are out of sync; fix the toolchain port.
+      message(FATAL_ERROR
+        "CONFIG_LLEXT_TYPE_ELF_SHAREDLIB is enabled, but linker '${LINKER}' "
+        "does not advertise llext_shared_supported (ELF ET_DYN support). "
+        "The toolchain's TOOLCHAIN_SUPPORTS_LLEXT_ET_DYN Kconfig capability "
+        "does not match the selected linker backend."
+      )
+    endif()
     set_target_properties(${llext_lib_target} PROPERTIES
-      LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/llext
+      RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/llext
+      SUFFIX ".so"
     )
     set(llext_lib_output $<TARGET_FILE:${llext_lib_target}>)
-
-    # Add the llext flags to the linking step as well
-    target_link_options(${llext_lib_target} PRIVATE
-      ${LLEXT_APPEND_FLAGS}
-    )
 
   endif()
 
@@ -7331,7 +7360,8 @@ function(add_llext_target target_name)
   add_custom_command(
     OUTPUT ${llext_pkg_input}
     COMMAND "$<IF:${has_post_build_cmds},${noop_cmd},${copy_cmd}>"
-    DEPENDS ${llext_proc_target}
+    # A phony dependency is order-only and would leave the packaged ELF stale.
+    DEPENDS ${llext_proc_target} ${llext_lib_output}
     COMMAND_EXPAND_LISTS
   )
 

@@ -49,6 +49,14 @@ set_property(TARGET linker PROPERTY no_check_sections)
 # such as, "-r" or "--relocatable" for LD and LLD.
 set_property(TARGET linker PROPERTY partial_linking)
 
+# Linker options used to build LLEXT shared libraries as ELF ET_DYN images.
+# These are intentionally linker properties so toolchain ports can provide
+# equivalent options for their linker instead of relying on architecture checks.
+set_property(TARGET linker PROPERTY llext_shared_supported FALSE)
+set_property(TARGET linker PROPERTY llext_shared_linker)
+set_property(TARGET linker PROPERTY llext_shared_undefined)
+set_property(TARGET linker PROPERTY llext_shared_layout)
+
 # Linker flag for section sorting by alignment
 set_property(TARGET linker PROPERTY sort_alignment)
 

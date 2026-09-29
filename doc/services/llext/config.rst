@@ -288,9 +288,38 @@ can be set by choosing among the following Kconfig options:
         subsystem. The standard linking process is used to generate the shared
         library from multiple object files.
 
+        The architecture and toolchain must both advertise support for this
+        format. Linker-specific options are supplied by the selected toolchain
+        and linker backend, allowing out-of-tree toolchains to provide their own
+        implementation without adding an architecture-specific exception. The
+        usual GNU and LLVM implementations build these libraries with
+        ``-fPIC -shared``. The loader accepts ELF ``ET_DYN`` images, applies
+        dynamic relocations (``.rel.dyn``, ``.rela.dyn``, ``.rel.plt``,
+        ``.rela.plt``, and ``.rela.got``), and places text, read-only data,
+        and the GOT in one image so the link-time distance from code to the
+        GOT is preserved. Undefined symbols are resolved from the kernel
+        export table. Xtensa keeps its existing shared-library loader.
+
         .. note::
 
-           This is not currently supported on ARM architectures.
+           The Zephyr SDK RISC-V GNU linker cannot create shared objects, so
+           its toolchain port selects ``ld.lld`` when it is available. A
+           toolchain without a linker that supports ET_DYN leaves this option
+           unavailable instead of failing later during the extension link.
+           The Zephyr SDK ARC linker currently emits incorrect
+           ``R_ARC_RELATIVE`` addends for ET_DYN images, so ARC is also
+           unavailable until the linker is fixed. OpenRISC, Thumb-1, and
+           ARCv3 are not supported. Each :c:func:`llext_load` owns a private
+           copy of text and data, because the PC-relative GOT offset is fixed
+           in the instructions. Load and unload take the LLEXT mutex, so
+           concurrent loads are serialized.
+           On an MMU target, each page of the image is mapped either
+           executable or writable, never both. The loader derives per-page
+           permissions from the text, data, and BSS layout to enforce W^X.
+           Validate externally supplied libraries before loading
+           them, the same way as other extensions. QEMU coverage uses
+           ``mps2/an521/cpu0``, ``qemu_cortex_a53``, ``qemu_riscv32``,
+           ``qemu_riscv64``, ``qemu_x86``, and ``qemu_x86_64``.
 
 .. _llext_kconfig_storage:
 

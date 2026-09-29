@@ -2,6 +2,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+# Xtensa's linker uses the compiler driver's -shared option directly and does
+# not require the generic GNU linker ET_DYN options.
+set_property(TARGET linker PROPERTY llext_shared_supported TRUE)
+
 check_set_linker_property(TARGET linker PROPERTY base
                           ${LINKERFLAGPREFIX},--gc-sections
                           ${LINKERFLAGPREFIX},--build-id=none
