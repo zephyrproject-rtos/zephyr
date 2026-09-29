@@ -29,7 +29,22 @@
  * peripheral sample is referenced using a pointer and the pointer will be used
  * to setup the throughput measurement countdown.
  */
-#if defined(CONFIG_BT_USER_PHY_UPDATE)
+#if defined(CONFIG_USE_NOTIFY) && !defined(CONFIG_USE_FULL_DUPLEX)
+/* Simplex GATT Notify is one-directional: only the peripheral transmits, and
+ * every notification it sends is received by the central (1:1). The two counts
+ * must therefore be equal. Unlike the full-duplex paths (where the peripheral
+ * count is intentionally higher), a higher peripheral count here would make the
+ * central reach its target first, exit, and disconnect the peripheral before it
+ * finishes. The count spans the PHY and connection update sweep and ends a few
+ * seconds after the link settles at 2M, so the rate is measured at steady state
+ * without a long redundant tail.
+ */
+#define COUNT_CENTRAL    35000U
+#define COUNT_PERIPHERAL 35000U
+#elif defined(CONFIG_BT_USER_PHY_UPDATE)
+/* Full-duplex Write or Notify: both peers transmit independently, so the higher
+ * peripheral count lets the central reach its target and disconnect first.
+ */
 #define COUNT_CENTRAL    17000U
 #define COUNT_PERIPHERAL 17600U
 #else /* !CONFIG_BT_USER_PHY_UPDATE */
@@ -53,6 +68,16 @@
  *  Throughput = 400 * 244 * 8 = 780800 bps
  */
 #define WRITE_RATE 780800 /* GATT Write bps recorded in this test */
+
+/* Notify Throughput calculation:
+ *  Simplex (one-directional): only the peripheral transmits data PDUs; the
+ *  central replies with empty PDUs. At 2M PHY with a 50 ms connection interval
+ *  the measured notify throughput is ~1.37 Mbps (700 * 244 * 8 bps).
+ *  Full-duplex: both peers notify simultaneously, so each direction matches the
+ *  full-duplex Write rate (WRITE_RATE) since Notify and Write without Response
+ *  have identical airtime.
+ */
+#define NOTIFY_RATE 1366400
 
 extern uint32_t central_gatt_write(uint32_t count);
 extern uint32_t peripheral_gatt_write(uint32_t count);
@@ -78,11 +103,19 @@ static void test_central_main(void)
 	write_rate = central_gatt_write(COUNT_CENTRAL);
 
 	printk("%s: Write Rate = %u bps\n", __func__, write_rate);
+#if defined(CONFIG_USE_NOTIFY) && !defined(CONFIG_USE_FULL_DUPLEX)
+	if (write_rate == NOTIFY_RATE) {
+		PASS("Central tests passed\n");
+	} else {
+		FAIL("Central tests failed\n");
+	}
+#else
 	if (write_rate == WRITE_RATE) {
 		PASS("Central tests passed\n");
 	} else {
 		FAIL("Central tests failed\n");
 	}
+#endif
 
 	/* Give extra time for peripheral side to finish its iterations */
 	k_sleep(K_SECONDS(1));
@@ -97,11 +130,19 @@ static void test_peripheral_main(void)
 	write_rate = peripheral_gatt_write(COUNT_PERIPHERAL);
 
 	printk("%s: Write Rate = %u bps\n", __func__, write_rate);
+#if defined(CONFIG_USE_NOTIFY) && !defined(CONFIG_USE_FULL_DUPLEX)
+	if (write_rate == NOTIFY_RATE) {
+		PASS("Peripheral tests passed\n");
+	} else {
+		FAIL("Peripheral tests failed\n");
+	}
+#else
 	if (write_rate == WRITE_RATE) {
 		PASS("Peripheral tests passed\n");
 	} else {
 		FAIL("Peripheral tests failed\n");
 	}
+#endif
 }
 
 static void test_gatt_write_init(void)
