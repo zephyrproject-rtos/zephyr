@@ -138,6 +138,16 @@ config NET_IPV4_IGMP_ROBUSTNESS
 	  Variable times the Query Interval plus one Query Response Interval
 	  after its last query.
 
+config NET_IPV4_IGMP_REQUIRE_ROUTER_ALERT
+	bool "Ignore IGMPv2 and IGMPv3 queries without the Router Alert option"
+	depends on NET_IPV4_IGMP
+	help
+	  Queries are sent with the IP Router Alert option, and a query without
+	  it may have been forged from outside the local network, so hosts
+	  should ignore it (RFC 3376 ch 9.1). Some queriers, IGMP snooping
+	  switches among them, leave the option out and their queries would go
+	  unanswered, so the check is off unless enabled here.
+
 config NET_IPV4_ACD
 	bool "Activate IPv4 address conflict detection (RFC 5227)"
 	depends on NET_ARP

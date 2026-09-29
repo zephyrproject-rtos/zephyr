@@ -885,6 +885,35 @@ static void igmp_report_heard(struct net_if *iface, const struct net_in_addr *gr
 	k_mutex_unlock(&igmp_lock);
 }
 
+static int igmp_router_alert_cb(uint8_t opt_type, uint8_t *opt_data, uint8_t opt_len,
+				void *user_data)
+{
+	bool *found = user_data;
+
+	/* A Router Alert option with the value 0, RFC 2113 ch 2.1 */
+	if (opt_type == NET_IPV4_OPTS_RA && opt_len == 2U && opt_data[0] == 0U &&
+	    opt_data[1] == 0U) {
+		*found = true;
+	}
+
+	return 0;
+}
+
+/* Queries are sent with the Router Alert option (RFC 3376 ch 4). One
+ * without it may have been forged from outside the local network, so hosts
+ * should ignore it (RFC 3376 ch 9).
+ */
+static bool igmp_query_has_router_alert(struct net_pkt *pkt)
+{
+	bool found = false;
+
+	if (net_ipv4_parse_hdr_options(pkt, igmp_router_alert_cb, &found) < 0) {
+		return false;
+	}
+
+	return found;
+}
+
 enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt, struct net_ipv4_hdr *ip_hdr)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(igmp_access, struct net_ipv4_igmp_v2_query);
@@ -954,6 +983,13 @@ enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt, struct net_ipv4_hdr *i
 
 	if (version == IGMPV2 && igmp_hdr->max_rsp == 0U) {
 		version = IGMPV1;
+	}
+
+	/* IGMPv1 predates the Router Alert option */
+	if (IS_ENABLED(CONFIG_NET_IPV4_IGMP_REQUIRE_ROUTER_ALERT) && version != IGMPV1 &&
+	    !igmp_query_has_router_alert(pkt)) {
+		NET_DBG("Ignoring query without Router Alert option");
+		goto out;
 	}
 
 	if (net_ipv4_is_addr_unspecified(&group)) {
