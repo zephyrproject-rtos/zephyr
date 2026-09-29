@@ -1458,7 +1458,7 @@ static void p80bd0_isr(const struct device *dev)
 		temp |= iodata[3U - n];
 	}
 
-	evt.evt_details = ESPI_PERIPHERAL_DEBUG_PORT80 | ((uint32_t)iowidth << 16);
+	evt.evt_details = ESPI_PERIPHERAL_DEBUG_PORT80;
 	evt.evt_details |= ((uint32_t)(ioflags & 0xfU) << 16);
 	evt.evt_details |= ((uint32_t)(iowidth & 0xfU) << 20);
 	evt.evt_data = temp;
