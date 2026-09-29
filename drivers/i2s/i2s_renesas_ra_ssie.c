@@ -1028,8 +1028,9 @@ static int i2s_renesas_ra_ssie_read(const struct device *dev, void **mem_block, 
 {
 	struct renesas_ra_ssie_data *dev_data = dev->data;
 	struct renesas_ra_ssie_stream rx_stream;
-	k_timeout_t timeout =
-		(dev_data->state == I2S_STATE_ERROR) ? K_NO_WAIT : K_MSEC(dev_data->rx_cfg.timeout);
+	k_timeout_t timeout = (dev_data->state == I2S_STATE_ERROR)
+				      ? K_NO_WAIT
+				      : SYS_TIMEOUT_MS(dev_data->rx_cfg.timeout);
 	int ret;
 
 	if (!dev_data->rx_configured) {

@@ -735,7 +735,7 @@ static int stm32_sai_sub_write(const struct device *dev, void *mem_block, size_t
 
 	struct queue_item item = {.buffer = mem_block, .size = size};
 
-	ret = k_msgq_put(&stream->queue, &item, K_MSEC(stream->i2s_cfg.timeout));
+	ret = k_msgq_put(&stream->queue, &item, SYS_TIMEOUT_MS(stream->i2s_cfg.timeout));
 	if (ret < 0) {
 		LOG_ERR("TX queue full");
 		return ret;
@@ -762,7 +762,8 @@ static int stm32_sai_sub_read(const struct device *dev, void **mem_block, size_t
 		return -EIO;
 	}
 
-	ret = k_msgq_get(&sub_data->stream.queue, &item, K_MSEC(sub_data->stream.i2s_cfg.timeout));
+	ret = k_msgq_get(&sub_data->stream.queue, &item,
+			 SYS_TIMEOUT_MS(sub_data->stream.i2s_cfg.timeout));
 	if (ret < 0) {
 		LOG_ERR("RX queue: %d", k_msgq_num_used_get(&sub_data->stream.queue));
 		return ret;
