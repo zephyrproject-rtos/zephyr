@@ -8,5 +8,27 @@ compatible: "arm,gic-v3-its"
 include: base.yaml
 
 properties:
+  zephyr,device-id-bits:
+    type: int
+    min: 1
+    max: 16
+    default: 16
+    description: |
+      Number of DeviceID bits provisioned by the driver. This bounds the
+      statically reserved Device table. The default covers the full 16-bit
+      PCIe RequesterID space. Reduce this value when all DeviceIDs used by
+      the platform fit in a narrower range to reduce static memory usage.
+
+  zephyr,device-table-size:
+    type: int
+    min: 4096
+    description: |
+      Upper limit in bytes on storage for the direct Device table or the
+      indirect root and second-level pages. The default reservation is sized
+      for the largest direct table at the configured DeviceID width.
+      Platforms with known table geometry can use a smaller limit to reduce
+      the reservation. The driver tries supported page sizes and layouts.
+      Initialization fails if none fits the reservation.
+
   reg:
     required: true

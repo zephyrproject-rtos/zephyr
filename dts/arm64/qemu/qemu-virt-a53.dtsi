@@ -95,6 +95,7 @@
 				compatible = "arm,gic-v3-its";
 				reg = <0x00 0x8080000 0x00 0x20000>;
 				msi-controller;
+				zephyr,device-table-size = <DT_SIZE_K(512)>;
 			};
 		};
 
