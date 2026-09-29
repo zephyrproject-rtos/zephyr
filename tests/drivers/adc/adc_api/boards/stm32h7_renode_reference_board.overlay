@@ -20,8 +20,8 @@
 };
 
 &adc1 {
-	dmas = <&dmamux1 0 9 (STM32_DMA_PERIPH_RX | STM32_DMA_MEM_16BITS |
-			      STM32_DMA_PERIPH_16BITS)>;
+	dmas = <&dmamux1 9 (STM32_DMA_PERIPH_RX | STM32_DMA_MEM_16BITS |
+			    STM32_DMA_PERIPH_16BITS)>;
 	dma-names = "dmamux";
 
 	channel@f {

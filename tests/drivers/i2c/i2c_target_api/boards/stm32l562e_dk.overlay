@@ -13,8 +13,8 @@
  * Short Pin PB7 to PB11, and PB6 to PB13, for the test to pass.
  */
 
-#define IC2_TEST_0_DMA_TX <&dmamux1 0 18 STM32_DMA_PERIPH_TX>
-#define IC2_TEST_0_DMA_RX <&dmamux1 1 17 STM32_DMA_PERIPH_RX>
+#define IC2_TEST_0_DMA_TX <&dmamux1 18 STM32_DMA_PERIPH_TX>
+#define IC2_TEST_0_DMA_RX <&dmamux1 17 STM32_DMA_PERIPH_RX>
 
 i2c_test_0: &i2c1 {
 	dmas = IC2_TEST_0_DMA_TX, IC2_TEST_0_DMA_RX;
@@ -27,8 +27,8 @@ i2c_test_0: &i2c1 {
 	};
 };
 
-#define IC2_TEST_1_DMA_TX <&dmamux1 2 20 STM32_DMA_PERIPH_TX>
-#define IC2_TEST_1_DMA_RX <&dmamux1 3 19 STM32_DMA_PERIPH_RX>
+#define IC2_TEST_1_DMA_TX <&dmamux1 20 STM32_DMA_PERIPH_TX>
+#define IC2_TEST_1_DMA_RX <&dmamux1 19 STM32_DMA_PERIPH_RX>
 
 i2c_test_1: &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pb13 &i2c2_sda_pb11>;
