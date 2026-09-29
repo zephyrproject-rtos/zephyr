@@ -1466,6 +1466,7 @@ static int bosch_bmi323_init(const struct device *dev)
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, bosch_bmi323_init, PM_DEVICE_DT_INST_GET(inst),         \
 					 &bosch_bmi323_data_##inst, &bosch_bmi323_config_##inst,\
-					 POST_KERNEL, 99, &bosch_bmi323_api);
+					 POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,                 \
+					 &bosch_bmi323_api);
 
 DT_INST_FOREACH_STATUS_OKAY(BMI323_DEVICE)
