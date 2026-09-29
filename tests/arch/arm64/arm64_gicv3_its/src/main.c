@@ -25,6 +25,12 @@ static void lpi_irq_handle(const void *parameter)
 /* Cover up to 832 LPIs over 26 DevicesIDs and 32 EventIDs per DeviceID */
 #define ITS_TEST_NUM_DEVS       26
 #define ITS_TEST_NUM_ITES       32
+#elif defined(CONFIG_BOARD_QEMU_CORTEX_A53)
+/* Spread test DeviceIDs across the overlay's 16-bit provision. */
+#define ITS_TEST_DEV(id)  (((id) * 257U) & 0xffffU)
+/* Cover up to 8192 LPIs over configured DeviceIDs and 32 EventIDs per DeviceID */
+#define ITS_TEST_NUM_DEVS CONFIG_GIC_V3_ITS_MAX_DEVICES
+#define ITS_TEST_NUM_ITES 32
 #else
 /* Generate a DeviceID over the whole 16bits */
 #define ITS_TEST_DEV(id)        ((((id + 256) % 16) << 12) | (((id + 256) % 24) << 8) | (id & 0xff))

@@ -27,3 +27,7 @@
 &cpu3 {
 	compatible = "arm,cortex-a53";
 };
+
+&its {
+	zephyr,device-table-size = <DT_SIZE_K(512)>;
+};

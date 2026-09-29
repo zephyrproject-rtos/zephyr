@@ -72,8 +72,8 @@ mem_addr_t gic_rdists[CONFIG_MP_MAX_NUM_CPUS];
 static uint8_t lpi_prop_table[LPI_PROPBASE_SZ(GIC_LPI_ID_BITS)] __aligned(KB(4));
 static uint8_t lpi_pend_tables[CONFIG_MP_MAX_NUM_CPUS][LPI_PENDBASE_SZ(GIC_LPI_ID_BITS)]
 	__aligned(KB(64));
+static ATOMIC_DEFINE(lpi_ready_cpus, CONFIG_MP_MAX_NUM_CPUS);
 static unsigned int lpi_intid_limit;
-atomic_t nlpi_intid = ATOMIC_INIT(8192);
 #endif
 
 static inline mem_addr_t gic_get_rdist(void)
@@ -444,6 +444,11 @@ static void gicv3_rdist_enable(mem_addr_t rdist)
 }
 
 #ifdef CONFIG_GIC_V3_ITS
+bool gicv3_rdist_lpi_is_ready(unsigned int cpu_id)
+{
+	return atomic_test_bit(lpi_ready_cpus, cpu_id);
+}
+
 /*
  * Setup LPIs Configuration & Pending tables for redistributors
  * LPI configuration is global, each redistributor has a pending table
@@ -455,6 +460,8 @@ static void gicv3_rdist_setup_lpis(mem_addr_t rdist)
 	uint8_t *lpi_pend_table = lpi_pend_tables[cpu_id];
 	uint64_t reg, tmp;
 	uint32_t ctlr;
+
+	atomic_clear_bit(lpi_ready_cpus, cpu_id);
 
 	if (lpi_intid_limit <= GIC_LPI_INT_BASE) {
 		return;
@@ -523,8 +530,13 @@ static void gicv3_rdist_setup_lpis(mem_addr_t rdist)
 	ctlr = sys_read32(rdist + GICR_CTLR);
 	ctlr |= GICR_CTLR_ENABLE_LPIS;
 	sys_write32(ctlr, rdist + GICR_CTLR);
+	if ((sys_read32(rdist + GICR_CTLR) & GICR_CTLR_ENABLE_LPIS) == 0U) {
+		LOG_ERR("Failed to enable LPIs on CPU%u", cpu_id);
+		return;
+	}
 
 	barrier_dsync_fence_full();
+	atomic_set_bit(lpi_ready_cpus, cpu_id);
 }
 #endif
 
@@ -830,7 +842,7 @@ void arm_gic_secondary_init(void)
 
 #ifdef CONFIG_GIC_V3_ITS
 	/* Map this CPU Redistributor in all the ITS Collection tables */
-	if (lpi_intid_limit > GIC_LPI_INT_BASE) {
+	if (gicv3_rdist_lpi_is_ready(arch_curr_cpu()->id)) {
 		its_rdist_map();
 	}
 #endif
