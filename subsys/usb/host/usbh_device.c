@@ -245,7 +245,7 @@ int usbh_device_interface_set(struct usb_device *const udev,
 			      const uint8_t iface, const uint8_t alt,
 			      const bool dry)
 {
-	uint8_t cur_alt;
+	int16_t cur_alt;
 	int err;
 
 	if (iface > UHC_INTERFACES_MAX) {
@@ -268,7 +268,7 @@ int usbh_device_interface_set(struct usb_device *const udev,
 	}
 
 	cur_alt = udev->ifaces[iface].alternate;
-	LOG_INF("Set Interfaces %u, alternate %u -> %u", iface, cur_alt, alt);
+	LOG_INF("Set Interfaces %u, alternate %d -> %u", iface, cur_alt, alt);
 	if (alt == cur_alt) {
 		LOG_DBG("Already active interface alternate");
 		goto error;
@@ -281,17 +281,21 @@ int usbh_device_interface_set(struct usb_device *const udev,
 		goto error;
 	}
 
-	/* Shutdown current interface alternate */
-	err = device_interface_modify(udev, EP_OP_DOWN, iface, cur_alt);
-	if (err) {
-		LOG_ERR("Failed to shutdown interface %u alternate %u", iface, alt);
-		goto error;
+	/* Shutdown current interface alternate, skip when this is the
+	 * first time an alternate is selected for this interface.
+	 */
+	if (cur_alt != USBH_IFACE_ALT_NONE) {
+		err = device_interface_modify(udev, EP_OP_DOWN, iface, cur_alt);
+		if (err) {
+			LOG_ERR("Failed to shutdown interface %u alternate %u", iface, alt);
+			goto error;
+		}
 	}
 
 	/* Setup new interface alternate */
 	err = device_interface_modify(udev, EP_OP_UP, iface, alt);
 	if (err) {
-		LOG_ERR("Failed to setup interface %u alternate %u", iface, cur_alt);
+		LOG_ERR("Failed to setup interface %u alternate %d", iface, cur_alt);
 		goto error;
 	}
 
@@ -356,10 +360,6 @@ static int parse_configuration_descriptor(struct usb_device *const udev)
 			ep_desc->wMaxPacketSize = sys_le16_to_cpu(ep_desc->wMaxPacketSize);
 			LOG_DBG("bEndpointAddress 0x%02x wMaxPacketSize %u",
 				ep_desc->bEndpointAddress, ep_desc->wMaxPacketSize);
-
-			if (if_desc != NULL && if_desc->bAlternateSetting == 0) {
-				assign_ep(udev, ep_desc->bEndpointAddress, ep_desc);
-			}
 		}
 
 		dhp = (void *)((uint8_t *)dhp + dhp->bLength);
@@ -373,14 +373,22 @@ static int parse_configuration_descriptor(struct usb_device *const udev)
 	return 0;
 }
 
+static void reset_interface(struct usb_device *const udev)
+{
+	memset(udev->ifaces, 0, sizeof(udev->ifaces));
+
+	for (uint8_t i = 0; i < ARRAY_SIZE(udev->ifaces); i++) {
+		udev->ifaces[i].alternate = USBH_IFACE_ALT_NONE;
+	}
+}
+
 static void reset_configuration(struct usb_device *const udev)
 {
 	/* Reset all endpoint pointers, except the control endpoints */
 	memset(&udev->ep_in[1], 0, sizeof(udev->ep_in) - sizeof(udev->ep_in[0]));
 	memset(&udev->ep_out[1], 0, sizeof(udev->ep_out) - sizeof(udev->ep_out[0]));
 
-	/* Reset all interface pointers */
-	memset(udev->ifaces, 0, sizeof(udev->ifaces));
+	reset_interface(udev);
 
 	udev->actual_cfg = 0;
 	udev->state = USB_STATE_ADDRESSED;

@@ -60,8 +60,8 @@ struct usb_host_interface {
 	struct usb_desc_header *dhp;
 	/** Pointer to the association interface descriptor, if any */
 	struct usb_association_descriptor *iad;
-	/** Alternate setting selected for this interface */
-	uint8_t alternate;
+	/** Alternate setting selected for this interface, negative if none */
+	int16_t alternate;
 };
 
 /**
