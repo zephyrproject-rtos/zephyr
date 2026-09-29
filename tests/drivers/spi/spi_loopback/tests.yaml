@@ -585,3 +585,33 @@ tests:
       - CONFIG_PM_DEVICE_RUNTIME=y
       - CONFIG_PM_POLICY_DEVICE_CONSTRAINTS=y
       - CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE=300
+  drivers.spi.loopback.pm.run0:
+    platform_allow:
+      - lp_mspm0g3507
+      - lp_mspm0g3519
+      - lp_mspm0l2228
+    extra_configs:
+      - CONFIG_PM=y
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y
+      - CONFIG_PM_POLICY_DEVICE_CONSTRAINTS=y
+      - CONFIG_TICKLESS_KERNEL=y
+      - CONFIG_COUNTER=y
+      - CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER=y
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="boards/lp_mspm0xxxxx_pm_runtime_run0.overlay"
+  drivers.spi.loopback.pm.full:
+    platform_allow:
+      - lp_mspm0g3507
+      - lp_mspm0g3519
+      - lp_mspm0l2228
+    extra_configs:
+      - CONFIG_PM=y
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y
+      - CONFIG_PM_POLICY_DEVICE_CONSTRAINTS=y
+      - CONFIG_TICKLESS_KERNEL=y
+      - CONFIG_COUNTER=y
+      - CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER=y
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="boards/lp_mspm0xxxxx_pm_runtime_full.overlay"
