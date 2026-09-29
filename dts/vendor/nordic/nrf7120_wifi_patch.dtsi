@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * nRF7120 Wi-Fi ROM patch reservations in cpuapp MRAM (0.1.0 packed layout).
+ *
+ * LMAC uses a 32 KiB cap starting at 0x100000. UMAC follows the LMAC image
+ * at 0x104f50; its partition spans up to 32 KiB for growth. slot0 is shortened
+ * and an image-0 trailer partition keeps the rest of the former slot0 map.
+ *
+ * Patch manifest origin must match each partition base; nrfxlib mergehex uses
+ * those origins when placing lmac_patch.bin and umac_patch.bin.
+ */
+
+&slot0_partition {
+	reg = <0x00010000 DT_SIZE_K(960)>;
+};
+
+&cpuapp_mram {
+	partitions {
+		lmac_rom_patch_partition: partition@100000 {
+			compatible = "zephyr,mapped-partition";
+			label = "wifi-lmac-rom-patch";
+			reg = <0x100000 0x4f50>;
+		};
+
+		umac_rom_patch_partition: partition@104f50 {
+			compatible = "zephyr,mapped-partition";
+			label = "wifi-umac-rom-patch";
+			reg = <0x104f50 DT_SIZE_K(32)>;
+		};
+
+		slot0_trailer_partition: partition@110000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0-trailer";
+			reg = <0x110000 DT_SIZE_K(964)>;
+		};
+	};
+};
+
+&wicr {
+	firmware-lmacrompatchaddr = <&lmac_rom_patch_partition>;
+	firmware-umacrompatchaddr = <&umac_rom_patch_partition>;
+};
