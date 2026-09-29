@@ -81,13 +81,10 @@ static esp_err_t gdma_create_sleep_retention_cb(void *arg)
 #define GDMA_LL_TX_EVENT_MASK AHB_DMA_LL_TX_EVENT_MASK
 #endif
 
-static int get_m2m_periph_id(void)
-{
-	return __builtin_ctz(GDMA_LL_M2M_FREE_PERIPH_ID_MASK);
-}
-
 struct dma_esp32_data {
 	gdma_hal_context_t hal;
+	/* Guards the peripheral IDs the channels select */
+	struct k_spinlock lock;
 #if defined(SOC_AXI_GDMA_SUPPORTED)
 	bool is_axi;
 #endif
@@ -134,6 +131,8 @@ struct dma_esp32_channel {
 	uint8_t dir;
 	uint8_t channel_id;
 	int periph_id;
+	/* The peripheral a memory-to-memory pair selects, but does not use */
+	int m2m_periph_id;
 	dma_callback_t cb;
 	void *user_data;
 	esp_dma_desc_t desc_list[CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM];
@@ -152,6 +151,34 @@ struct dma_esp32_config {
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 };
+
+/*
+ * A memory-to-memory pair still selects a peripheral ID, and a channel sharing
+ * that ID with it, say the SPI2 one, then starves. Pick the highest ID that no
+ * other channel selects; when it belongs to a real peripheral, configuring that
+ * peripheral's channel later moves the pair off it.
+ */
+static int get_m2m_periph_id(const struct dma_esp32_config *config, uint8_t channel_id)
+{
+	uint32_t free_mask = GDMA_LL_M2M_FREE_PERIPH_ID_MASK;
+
+	for (int i = 0; i < config->dma_channel_max; i++) {
+		const struct dma_esp32_channel *ch = &config->dma_channel[i];
+		int id = ch->periph_id == SOC_GDMA_TRIG_PERIPH_M2M0 ? ch->m2m_periph_id
+								    : ch->periph_id;
+
+		if (ch->dir != DMA_UNCONFIGURED && ch->channel_id != channel_id && id >= 0 &&
+		    id < 32) {
+			free_mask &= ~BIT(id);
+		}
+	}
+
+	if (free_mask == 0) {
+		return -EBUSY;
+	}
+
+	return 31 - __builtin_clz(free_mask);
+}
 
 /* LL wrappers: dual-bus SoCs have AHB and AXI; others use the unified API. */
 #if defined(SOC_AXI_GDMA_SUPPORTED)
@@ -238,6 +265,76 @@ static inline void dma_ll_force_reg_clock(struct dma_esp32_data *data, bool en)
 }
 
 #endif /* SOC_AXI_GDMA_SUPPORTED */
+
+/* Select a peripheral ID for a memory-to-memory pair and reserve it */
+static int dma_esp32_m2m_reserve(const struct device *dev, uint8_t channel_id)
+{
+	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
+	struct dma_esp32_data *data = (struct dma_esp32_data *const)(dev)->data;
+	struct dma_esp32_channel *rx = &config->dma_channel[channel_id * 2];
+	struct dma_esp32_channel *tx = &config->dma_channel[(channel_id * 2) + 1];
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+	int id = get_m2m_periph_id(config, channel_id);
+
+	if (id >= 0) {
+		rx->channel_id = channel_id;
+		tx->channel_id = channel_id;
+		rx->periph_id = SOC_GDMA_TRIG_PERIPH_M2M0;
+		tx->periph_id = SOC_GDMA_TRIG_PERIPH_M2M0;
+		rx->m2m_periph_id = id;
+		tx->m2m_periph_id = id;
+		rx->dir = DMA_RX;
+		tx->dir = DMA_TX;
+	}
+
+	k_spin_unlock(&data->lock, key);
+
+	return id;
+}
+
+/*
+ * Move the memory-to-memory pairs off a peripheral ID a channel now selects.
+ * A pair in the middle of a transfer selects its new ID at its next start.
+ */
+static int dma_esp32_m2m_evict(const struct device *dev, int periph_id)
+{
+	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
+	struct dma_esp32_data *data = (struct dma_esp32_data *const)(dev)->data;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+	int ret = 0;
+
+	for (int i = 0; i + 1 < config->dma_channel_max; i += 2) {
+		struct dma_esp32_channel *rx = &config->dma_channel[i];
+		struct dma_esp32_channel *tx = &config->dma_channel[i + 1];
+		int id;
+
+		if (rx->dir == DMA_UNCONFIGURED || rx->periph_id != SOC_GDMA_TRIG_PERIPH_M2M0 ||
+		    rx->m2m_periph_id != periph_id) {
+			continue;
+		}
+
+		id = get_m2m_periph_id(config, rx->channel_id);
+		if (id < 0) {
+			ret = id;
+			break;
+		}
+
+		rx->m2m_periph_id = id;
+		tx->m2m_periph_id = id;
+
+		if (dma_ll_rx_is_fsm_idle(data, rx->channel_id) &&
+		    dma_ll_tx_is_fsm_idle(data, rx->channel_id)) {
+			gdma_hal_connect_mem(&data->hal, rx->channel_id, GDMA_CHANNEL_DIRECTION_RX,
+					     id);
+			gdma_hal_connect_mem(&data->hal, rx->channel_id, GDMA_CHANNEL_DIRECTION_TX,
+					     id);
+		}
+	}
+
+	k_spin_unlock(&data->lock, key);
+
+	return ret;
+}
 
 #if CONFIG_PM
 static void IRAM_ATTR dma_esp32_pm_policy_state_lock_get(struct dma_esp32_channel *dma_channel_rx)
@@ -630,7 +727,7 @@ static int dma_esp32_config_rx(const struct device *dev, struct dma_esp32_channe
 
 	if (dma_channel->periph_id == SOC_GDMA_TRIG_PERIPH_M2M0) {
 		gdma_hal_connect_mem(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX,
-				     get_m2m_periph_id());
+				     dma_channel->m2m_periph_id);
 	} else {
 		gdma_hal_connect_peri(&data->hal, dma_channel->channel_id,
 				      GDMA_CHANNEL_DIRECTION_RX, dma_channel->periph_id);
@@ -670,7 +767,7 @@ static int dma_esp32_config_tx(const struct device *dev, struct dma_esp32_channe
 
 	if (dma_channel->periph_id == SOC_GDMA_TRIG_PERIPH_M2M0) {
 		gdma_hal_connect_mem(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX,
-				     get_m2m_periph_id());
+				     dma_channel->m2m_periph_id);
 	} else {
 		gdma_hal_connect_peri(&data->hal, dma_channel->channel_id,
 				      GDMA_CHANNEL_DIRECTION_TX, dma_channel->periph_id);
@@ -724,6 +821,14 @@ static int dma_esp32_config(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
+	if (config_dma->channel_direction == MEMORY_TO_MEMORY) {
+		ret = dma_esp32_m2m_reserve(dev, channel / 2);
+		if (ret < 0) {
+			LOG_ERR("No peripheral ID left for a memory-to-memory transfer");
+			return ret;
+		}
+	}
+
 	dma_channel->periph_id = config_dma->channel_direction == MEMORY_TO_MEMORY
 					 ? SOC_GDMA_TRIG_PERIPH_M2M0
 					 : config_dma->dma_slot;
@@ -760,6 +865,10 @@ static int dma_esp32_config(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
+	if (ret == 0 && config_dma->channel_direction != MEMORY_TO_MEMORY) {
+		ret = dma_esp32_m2m_evict(dev, dma_channel->periph_id);
+	}
+
 	return ret;
 }
 
@@ -792,6 +901,7 @@ static int dma_esp32_start(const struct device *dev, uint32_t channel)
 			&config->dma_channel[dma_channel->channel_id * 2];
 		struct dma_esp32_channel *dma_channel_tx =
 			&config->dma_channel[(dma_channel->channel_id * 2) + 1];
+		k_spinlock_key_t key;
 
 #if CONFIG_PM
 		dma_esp32_pm_policy_state_lock_get(dma_channel_rx);
@@ -802,12 +912,19 @@ static int dma_esp32_start(const struct device *dev, uint32_t channel)
 		gdma_hal_enable_intr(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX,
 				     GDMA_LL_EVENT_TX_EOF, true);
 
+		/* Select the ID dma_esp32_m2m_evict() may have moved the pair to */
+		key = k_spin_lock(&data->lock);
+		gdma_hal_connect_mem(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX,
+				     dma_channel_rx->m2m_periph_id);
+		gdma_hal_connect_mem(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX,
+				     dma_channel_rx->m2m_periph_id);
 		gdma_hal_start_with_desc(&data->hal, dma_channel->channel_id,
 					 GDMA_CHANNEL_DIRECTION_RX,
 					 (intptr_t)dma_channel_rx->desc_list);
 		gdma_hal_start_with_desc(&data->hal, dma_channel->channel_id,
 					 GDMA_CHANNEL_DIRECTION_TX,
 					 (intptr_t)dma_channel_tx->desc_list);
+		k_spin_unlock(&data->lock, key);
 	} else {
 		if (dma_channel->dir == DMA_RX) {
 			dma_esp32_rx_rearm(data, dma_channel->channel_id);
@@ -1086,6 +1203,7 @@ static int dma_esp32_init(const struct device *dev)
 		dma_channel->cb = NULL;
 		dma_channel->dir = DMA_UNCONFIGURED;
 		dma_channel->periph_id = ESP_GDMA_TRIG_PERIPH_INVALID;
+		dma_channel->m2m_periph_id = ESP_GDMA_TRIG_PERIPH_INVALID;
 		memset(dma_channel->desc_list, 0, sizeof(dma_channel->desc_list));
 	}
 
