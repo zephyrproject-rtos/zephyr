@@ -528,6 +528,12 @@ static int can_sock_getsockopt_vmeth(void *obj, int level, int optname,
 
 		iface = net_context_get_iface(obj);
 		dev = net_if_get_device(iface);
+		if (dev == NULL) {
+			/* The socket is not bound to a CAN interface */
+			errno = ENODEV;
+			return -1;
+		}
+
 		api = dev->api;
 
 		if (!api || !api->getsockopt) {
@@ -650,6 +656,12 @@ static int can_sock_setsockopt_vmeth(void *obj, int level, int optname,
 
 	iface = net_context_get_iface(obj);
 	dev = net_if_get_device(iface);
+	if (dev == NULL) {
+		/* The socket is not bound to a CAN interface */
+		errno = ENODEV;
+		return -1;
+	}
+
 	api = dev->api;
 
 	if (!api || !api->setsockopt) {
