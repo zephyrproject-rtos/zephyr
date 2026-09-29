@@ -30,11 +30,29 @@ config INSTRUMENTATION_BACKEND_UART
 	  Dump instrumentation data over the console UART and accept host
 	  commands (status, trigger, dump_trace, etc.) on the same device.
 
+config INSTRUMENTATION_BACKEND_RAM
+	bool "RAM backend"
+	help
+	  Copy dumped instrumentation data into a dedicated RAM buffer that can
+	  be retrieved with a debugger (for example gdb dump binary memory).
+	  Trigger a dump by calling instr_dump_buffer() / instr_dump_deltas()
+	  from the debugger, or via dump-on-full if enabled.
+
 endchoice
 
 config INSTRUMENTATION_BACKEND_NAME
 	string
 	default "instr_backend_uart" if INSTRUMENTATION_BACKEND_UART
+	default "instr_backend_ram" if INSTRUMENTATION_BACKEND_RAM
+
+config INSTRUMENTATION_BACKEND_RAM_BUFFER_SIZE
+	int "RAM instrumentation dump buffer size"
+	default 12000
+	depends on INSTRUMENTATION_BACKEND_RAM
+	help
+	  Size of the RAM buffer that receives dumped instrumentation bytes.
+	  Dumping stops (and further output is dropped) once this buffer is
+	  full.
 
 config INSTRUMENTATION_MODE_CALLGRAPH
 	bool "Call graph mode (Tracing)"
