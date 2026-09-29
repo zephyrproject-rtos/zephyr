@@ -454,7 +454,9 @@ static void smp_udp_start(void)
 
 	k_sem_init(&smp_udp_configs.ipv4.network_ready_sem, 0, 1);
 	smp_udp_configs.ipv4.smp_transport.functions.output = smp_udp4_tx;
+	TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS);
 	smp_udp_configs.ipv4.smp_transport.functions.get_mtu = smp_udp_get_mtu;
+	TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS);
 	smp_udp_configs.ipv4.smp_transport.functions.ud_copy = smp_udp_ud_copy;
 	smp_udp_configs.ipv4.smp_transport.functions.ud_init = smp_udp_ud_init;
 
@@ -477,7 +479,9 @@ static void smp_udp_start(void)
 
 	k_sem_init(&smp_udp_configs.ipv6.network_ready_sem, 0, 1);
 	smp_udp_configs.ipv6.smp_transport.functions.output = smp_udp6_tx;
+	TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS);
 	smp_udp_configs.ipv6.smp_transport.functions.get_mtu = smp_udp_get_mtu;
+	TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS);
 	smp_udp_configs.ipv6.smp_transport.functions.ud_copy = smp_udp_ud_copy;
 	smp_udp_configs.ipv6.smp_transport.functions.ud_init = smp_udp_ud_init;
 
