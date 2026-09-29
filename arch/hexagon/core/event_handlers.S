@@ -55,6 +55,9 @@ GTEXT(z_hexagon_arch_switch)
 #ifdef CONFIG_HW_STACK_PROTECTION
 GTEXT(z_hexagon_event_exit_stack_protect)
 #endif
+#ifdef CONFIG_USERSPACE
+GTEXT(z_hexagon_event_exit_user_sync)
+#endif
 GDATA(_kernel)
 
 /* offsets.h will be generated and included during build */
@@ -197,6 +200,16 @@ GDATA(_kernel)
 
 _event_no_switch_\event_id:
 #endif /* CONFIG_MULTITHREADING */
+
+#ifdef CONFIG_USERSPACE
+	/*
+	 * _current now points to the thread that will actually resume; sync
+	 * _hexagon_user_mode_active for it before the restore below returns.
+	 */
+	{
+		call ##z_hexagon_event_exit_user_sync
+	}
+#endif
 
 _event_restore_\event_id:
 	/* Restore r28 */
