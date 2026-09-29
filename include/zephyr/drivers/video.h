@@ -161,7 +161,7 @@ typedef int (*video_api_format_t)(const struct device *dev, struct video_format 
  * @brief Callback API to set or get video frame interval.
  * See @a video_driver_set_frmival() and @a video_driver_get_frmival() for argument description.
  */
-typedef int (*video_api_frmival_t)(const struct device *dev, struct video_frmival *frmival);
+typedef int (*video_api_frmival_t)(const struct device *dev, uint32_t *frmival);
 
 /**
  * @brief Callback API to enumerate supported frame intervals for a format.
@@ -354,12 +354,12 @@ static inline int video_driver_get_format(const struct device *dev, struct video
  * capabilities. They must instead modify the interval to match what the hardware can provide.
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @param frmival Pointer to a video frame interval struct.
+ * @param frmival Pointer to the frame interval in microseconds.
  *
  * @retval 0 on success.
  * @retval -ENOSYS API is not implemented.
  */
-static inline int video_driver_set_frmival(const struct device *dev, struct video_frmival *frmival)
+static inline int video_driver_set_frmival(const struct device *dev, uint32_t *frmival)
 {
 	const struct video_driver_api *api = DEVICE_API_GET(video, dev);
 
@@ -373,15 +373,15 @@ static inline int video_driver_set_frmival(const struct device *dev, struct vide
 /**
  * @brief Get video frame interval of a driver.
  *
- * Get current frame interval of the video device.
+ * Get current frame interval of the video device in microseconds.
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @param frmival Pointer to a video frame interval struct.
+ * @param frmival Pointer to store the frame interval in microseconds.
  *
  * @retval 0 on success.
  * @retval -ENOSYS API is not implemented.
  */
-static inline int video_driver_get_frmival(const struct device *dev, struct video_frmival *frmival)
+static inline int video_driver_get_frmival(const struct device *dev, uint32_t *frmival)
 {
 	const struct video_driver_api *api = DEVICE_API_GET(video, dev);
 

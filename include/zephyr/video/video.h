@@ -316,65 +316,48 @@ int video_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 /**
  * @brief Set video frame interval.
  *
- * Configure video device with a specific frame interval, using the closest matchiing frame
- * interval that  the driver can provide, updating @p frmival with the value effectively
+ * Configure video device with a specific frame interval, using the closest matching frame
+ * interval that the driver can provide, updating @p frmival with the value effectively
  * applied to the driver.
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @param frmival Pointer to a video frame interval struct.
+ * @param frmival Pointer to the frame interval in microseconds.
  *
  * @retval 0 If successful.
  * @retval -ENOSYS If API is not implemented.
  * @retval -EINVAL If parameters are invalid.
  * @retval -EIO General input / output error.
  */
-int video_set_frmival(const struct device *dev, struct video_frmival *frmival);
+int video_set_frmival(const struct device *dev, uint32_t *frmival);
 
 /**
  * @brief Get video frame interval of a driver.
  *
- * Get current frame interval of the video device.
+ * Get current frame interval of the video device in microseconds.
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @param frmival Pointer to a video frame interval struct.
+ * @param frmival Pointer to store the frame interval in microseconds.
  *
  * @retval 0 If successful.
  * @retval -ENOSYS If API is not implemented.
  * @retval -EINVAL If parameters are invalid.
  * @retval -EIO General input / output error.
  */
-int video_get_frmival(const struct device *dev, struct video_frmival *frmival);
-
-/**
- * @brief Compute the difference between two frame intervals
- *
- * @param frmival Frame interval to turn into microseconds.
- *
- * @return The frame interval value in microseconds.
- */
-static inline uint64_t video_frmival_nsec(const struct video_frmival *frmival)
-{
-	if (frmival == NULL || frmival->denominator == 0) {
-		return -EINVAL;
-	}
-
-	return (uint64_t)NSEC_PER_SEC * frmival->numerator / frmival->denominator;
-}
+int video_get_frmival(const struct device *dev, uint32_t *frmival);
 
 /**
  * @brief Find the closest match to a frame interval value within a stepwise frame interval.
  *
  * @param stepwise The stepwise frame interval range to search
- * @param desired The frame interval for which find the closest match
- * @param match The resulting frame interval closest to @p desired
+ * @param desired The frame interval in microseconds for which to find the closest match
+ * @param match Pointer to store the resulting frame interval closest to @p desired in microseconds
  *
  * @retval 0 If successful.
  * @retval -EINVAL If parameters are invalid.
- * @retval -ERANGE If the step is zero or the result does not fit in 32-bit values.
+ * @retval -ERANGE If the step is zero.
  */
-int video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwise,
-				   const struct video_frmival *desired,
-				   struct video_frmival *match);
+int video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwise, uint32_t desired,
+				   uint32_t *match);
 
 /**
  * @brief Find the closest match to a frame interval value within a video device.
@@ -383,11 +366,11 @@ int video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwise
  *
  * - @c match->format to the @ref video_format of interest.
  * - @c match->type to @ref VIDEO_FRMIVAL_TYPE_DISCRETE.
- * - @c match->discrete to the desired frame interval.
+ * - @c match->discrete to the desired frame interval in microseconds.
  *
  * The result will be loaded into @p match, with the following fields set:
  *
- * - @c match->discrete to the value of the closest frame interval.
+ * - @c match->discrete to the value of the closest frame interval in microseconds.
  * - @c match->index to the index of the closest frame interval.
  *
  * @param dev Video device to query.

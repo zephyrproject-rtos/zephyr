@@ -318,7 +318,7 @@ int main(void)
 	struct video_buffer *vbuf;
 	struct video_format fmt = {0};
 	uint32_t uvc_buf_count = CONFIG_VIDEO_BUFFER_POOL_NUM_MAX;
-	struct video_frmival frmival = {0};
+	uint32_t frmival = 0;
 	struct k_poll_signal sig;
 	struct k_poll_event evt[1];
 	k_timeout_t timeout = K_FOREVER;
@@ -393,9 +393,9 @@ int main(void)
 		return ret;
 	}
 
-	LOG_INF("The host selected format '%s' %ux%u at frame interval %u/%u",
+	LOG_INF("The host selected format '%s' %ux%u at frame interval %u us",
 		VIDEO_FOURCC_TO_STR(fmt.pixelformat), fmt.width, fmt.height,
-		frmival.numerator, frmival.denominator);
+		frmival);
 
 	if (app_has_videoenc()) {
 		/*

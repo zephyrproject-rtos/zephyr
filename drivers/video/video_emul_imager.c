@@ -226,7 +226,7 @@ err:
 	return ret;
 }
 
-static int emul_imager_set_frmival(const struct device *dev, struct video_frmival *frmival)
+static int emul_imager_set_frmival(const struct device *dev, uint32_t *frmival)
 {
 	struct emul_imager_data *data = dev->data;
 	struct video_frmival_enum fie = {.format = &data->fmt, .discrete = *frmival};
@@ -238,15 +238,21 @@ static int emul_imager_set_frmival(const struct device *dev, struct video_frmiva
 	}
 
 	LOG_DBG("Applying frame interval number %u", fie.index);
-	return emul_imager_set_mode(dev, &emul_imager_modes[data->fmt_id][fie.index]);
+	ret = emul_imager_set_mode(dev, &emul_imager_modes[data->fmt_id][fie.index]);
+	if (ret < 0) {
+		return ret;
+	}
+
+	*frmival = fie.discrete;
+
+	return 0;
 }
 
-static int emul_imager_get_frmival(const struct device *dev, struct video_frmival *frmival)
+static int emul_imager_get_frmival(const struct device *dev, uint32_t *frmival)
 {
 	struct emul_imager_data *data = dev->data;
 
-	frmival->numerator = 1;
-	frmival->denominator = data->mode->fps;
+	*frmival = data->mode->fps != 0 ? USEC_PER_SEC / data->mode->fps : 0;
 	return 0;
 }
 
@@ -264,8 +270,7 @@ static int emul_imager_enum_frmival(const struct device *dev, struct video_frmiv
 	mode = &emul_imager_modes[fmt_id][fie->index];
 
 	fie->type = VIDEO_FRMIVAL_TYPE_DISCRETE;
-	fie->discrete.numerator = 1;
-	fie->discrete.denominator = mode->fps;
+	fie->discrete = mode->fps != 0 ? USEC_PER_SEC / mode->fps : 0;
 
 	return mode->fps == 0;
 }

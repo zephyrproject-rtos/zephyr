@@ -14,8 +14,9 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/video/video.h>
 
-#define VIDEO_FRMIVAL_FPS(frmival)  DIV_ROUND_CLOSEST((frmival)->denominator, (frmival)->numerator)
-#define VIDEO_FRMIVAL_MSEC(frmival) (MSEC_PER_SEC * (frmival)->numerator / (frmival)->denominator)
+#define VIDEO_FRMIVAL_FPS(frmival_usec) \
+	((frmival_usec) != 0U ? DIV_ROUND_CLOSEST(USEC_PER_SEC, (frmival_usec)) : 0U)
+#define VIDEO_FRMIVAL_MSEC(frmival_usec) ((frmival_usec) / USEC_PER_MSEC)
 
 /* Helper to allow completion of sub-command with content that depends on previous selection */
 #define VIDEO_SHELL_COMPLETE_DEFINE(n, name)                                                       \
@@ -353,17 +354,21 @@ static int video_shell_print_frmival(const struct shell *sh, const struct device
 		case VIDEO_FRMIVAL_TYPE_DISCRETE:
 			shell_print(sh, "\t\t\tInterval: "
 				    "Discrete %u ms (%u FPS)",
-				    VIDEO_FRMIVAL_MSEC(&fie.discrete),
-				    VIDEO_FRMIVAL_FPS(&fie.discrete));
+				    VIDEO_FRMIVAL_MSEC(fie.discrete),
+				    VIDEO_FRMIVAL_FPS(fie.discrete));
 			break;
 		case VIDEO_FRMIVAL_TYPE_STEPWISE:
-			shell_print(sh, "\t\t\tInterval: "
-				    "Stepwise: %u ms - %u ms with step %u ms (%u - %u FPS)",
-				    VIDEO_FRMIVAL_MSEC(&fie.stepwise.min),
-				    VIDEO_FRMIVAL_MSEC(&fie.stepwise.max),
-				    VIDEO_FRMIVAL_MSEC(&fie.stepwise.step),
-				    VIDEO_FRMIVAL_FPS(&fie.stepwise.max),
-				    VIDEO_FRMIVAL_FPS(&fie.stepwise.min));
+			shell_print(
+				sh,
+				"\t\t\tInterval: "
+				"Stepwise: %u ms - %u ms with step %u ms (%u - %u FPS)",
+				(uint32_t)(fie.stepwise.min / USEC_PER_MSEC),
+				(uint32_t)(fie.stepwise.max / USEC_PER_MSEC),
+				(uint32_t)(fie.stepwise.step / USEC_PER_MSEC),
+				(uint32_t)(fie.stepwise.max != 0U ? USEC_PER_SEC / fie.stepwise.max
+								  : 0U),
+				(uint32_t)(fie.stepwise.min != 0U ? USEC_PER_SEC / fie.stepwise.min
+								  : 0U));
 			break;
 		default:
 			shell_error(sh, "Invalid type 0x%x", fie.type);
@@ -381,7 +386,7 @@ static int video_shell_print_frmival(const struct shell *sh, const struct device
 static int video_shell_set_frmival(const struct shell *sh, const struct device *dev,
 				   size_t argc, char **argv)
 {
-	struct video_frmival frmival = {0};
+	uint32_t frmival = 0;
 	char *arg_rate = argv[0];
 	char *end_rate;
 	unsigned long val;
@@ -389,14 +394,15 @@ static int video_shell_set_frmival(const struct shell *sh, const struct device *
 
 	val = strtoul(arg_rate, &end_rate, 10);
 	if (strcmp(end_rate, "fps") == 0) {
-		frmival.numerator = 1;
-		frmival.denominator = val;
+		if (val == 0) {
+			shell_error(sh, "FPS must be greater than 0");
+			return -EINVAL;
+		}
+		frmival = USEC_PER_SEC / val;
 	} else if (strcmp(end_rate, "ms") == 0) {
-		frmival.numerator = val;
-		frmival.denominator = MSEC_PER_SEC;
+		frmival = val * USEC_PER_MSEC;
 	} else if (strcmp(end_rate, "us") == 0) {
-		frmival.numerator = val;
-		frmival.denominator = USEC_PER_SEC;
+		frmival = val;
 	} else {
 		shell_error(sh, "Expected <n>ms, <n>us or <n>fps, not '%s'", arg_rate);
 		return -EINVAL;
@@ -409,7 +415,7 @@ static int video_shell_set_frmival(const struct shell *sh, const struct device *
 	}
 
 	shell_print(sh, "New frame interval:     %u ms (%u FPS)",
-		    VIDEO_FRMIVAL_MSEC(&frmival), VIDEO_FRMIVAL_FPS(&frmival));
+		    VIDEO_FRMIVAL_MSEC(frmival), VIDEO_FRMIVAL_FPS(frmival));
 
 	return 0;
 }
@@ -418,7 +424,7 @@ static int cmd_video_frmival(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	struct video_format fmt = {.type = video_shell_buf_type};
-	struct video_frmival frmival = {0};
+	uint32_t frmival = 0;
 	char *arg_device = argv[1];
 	int ret;
 
@@ -441,7 +447,7 @@ static int cmd_video_frmival(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	shell_print(sh, "Current frame interval: %u ms (%u FPS)",
-		    VIDEO_FRMIVAL_MSEC(&frmival), VIDEO_FRMIVAL_FPS(&frmival));
+		    VIDEO_FRMIVAL_MSEC(frmival), VIDEO_FRMIVAL_FPS(frmival));
 
 	switch (argc) {
 	case 2:
