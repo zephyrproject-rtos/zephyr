@@ -908,6 +908,63 @@ ZTEST_USER(net_igmp, test_igmp_long_query)
 	leave_group();
 }
 
+/* A query without the Router Alert option is ignored (RFC 3376 ch 9.1) when
+ * the option is required, and answered like any other query otherwise.
+ */
+ZTEST_USER(net_igmp, test_igmp_query_without_router_alert)
+{
+	const struct igmp_msg msg = {
+		.igmpv3 = IS_ENABLED(CONFIG_NET_IPV4_IGMPV3),
+		.type = NET_IPV4_IGMP_QUERY,
+		.max_rsp = QUERY_MAX_RSP,
+		.no_router_alert = true,
+	};
+	struct net_pkt *pkt;
+
+	if (IS_ENABLED(CONFIG_NET_IPV4_IGMP_REQUIRE_ROUTER_ALERT)) {
+		igmp_send_unanswered(&msg, NET_OK);
+		return;
+	}
+
+	join_group();
+
+	k_sem_reset(&wait_data);
+	is_report_sent = false;
+	expect_v2_report = !IS_ENABLED(CONFIG_NET_IPV4_IGMPV3);
+
+	pkt = prepare_igmp_msg(net_iface, &msg);
+	zassert_equal(net_ipv4_input(pkt), NET_OK, "Failed to send");
+
+	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), "Timeout while waiting query event");
+	zassert_true(is_report_sent, "Query without Router Alert not answered");
+
+	leave_group();
+}
+
+/* An IGMPv1 query predates the Router Alert option and is accepted without it,
+ * here seen from the host switching to IGMPv1 reports.
+ */
+ZTEST_USER(net_igmp, test_igmp_v1_query_without_router_alert)
+{
+	const struct igmp_msg msg = {
+		.type = NET_IPV4_IGMP_QUERY,
+		.max_rsp = 0,
+		.no_router_alert = true,
+	};
+	struct net_pkt *pkt;
+
+	pkt = prepare_igmp_msg(net_iface, &msg);
+	zassert_equal(net_ipv4_input(pkt), NET_OK, "Failed to send");
+
+	is_v1_report_sent = false;
+
+	join_group();
+	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), "Timeout while waiting join event");
+	zassert_true(is_v1_report_sent, "Join not reported with IGMPv1");
+
+	leave_group();
+}
+
 /* A General Query is answered for every joined group: with one record each
  * in a single IGMPv3 report, or with one IGMPv2 report per group.
  */
