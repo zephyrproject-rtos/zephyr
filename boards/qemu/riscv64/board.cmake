@@ -10,7 +10,12 @@ qemu_riscv_binary_suffix(QEMU_BINARY_SUFFIX)
 
 if(CONFIG_RISCV_S_MODE)
   # rv64i is a QEMU "bare" model: mmu= is off unless requested.
-  string(APPEND qemu_riscv_cpu ",s=on,u=on,pmp=on,priv_spec=v1.12.0,mmu=on,sv39=on")
+  string(APPEND qemu_riscv_cpu ",s=on,u=on,pmp=on,priv_spec=v1.12.0,mmu=on")
+  if(CONFIG_RISCV_MMU_SV48)
+    string(APPEND qemu_riscv_cpu ",sv48=on")
+  else()
+    string(APPEND qemu_riscv_cpu ",sv39=on")
+  endif()
 endif()
 
 set(QEMU_CPU_TYPE "${qemu_riscv_cpu}")
