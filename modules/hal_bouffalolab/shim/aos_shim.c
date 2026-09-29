@@ -217,18 +217,3 @@ void krhino_task_dyn_del(void *task)
 		k_heap_free(&shim_heap, t);
 	}
 }
-
-/* Blob printf is redirected here at link time */
-__printf_like(1, 2) int blob_printf(const char *format, ...)
-{
-#ifdef CONFIG_LOG
-	va_list argptr;
-
-	va_start(argptr, format);
-	log_generic(LOG_LEVEL_INF, format, argptr);
-	va_end(argptr);
-#else
-	ARG_UNUSED(format);
-#endif
-	return 0;
-}

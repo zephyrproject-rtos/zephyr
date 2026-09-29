@@ -17,7 +17,7 @@ config WIFI_BFLB_WIFI4
 	select PSA_WANT_ALG_CCM
 	help
 	  Common support for the wifi4 MACSW firmware blob driver
-	  (BL60x).
+	  (BL60x, BL808).
 
 config WIFI_BFLB_WIFI4_TASK_STACK_SIZE
 	int "WiFi firmware task stack size"
