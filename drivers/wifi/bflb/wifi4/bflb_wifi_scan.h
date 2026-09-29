@@ -41,7 +41,7 @@ struct bflb_scan_ap {
 	uint8_t rsnxe_len;
 };
 
-int bflb_wifi_scan_start(struct bflb_wifi_dev *d);
+int bflb_wifi_scan_start(struct bflb_wifi_dev *d, const uint8_t *ssid, uint8_t ssid_len);
 void bflb_wifi_scan_handle_result(struct bflb_wifi_dev *d, const void *payload);
 void bflb_wifi_deliver_scan_results(struct bflb_wifi_dev *d);
 
