@@ -548,3 +548,14 @@ tests:
       - CONFIG_PM_DEVICE_RUNTIME=y
       - CONFIG_PM_POLICY_DEVICE_CONSTRAINTS=y
       - CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE=300
+  drivers.spi.loopback.pm:
+    platform_allow:
+      - lp_mspm0g3519
+      - lp_mspm0l2228
+    extra_configs:
+      - CONFIG_PM=y
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y
+      - CONFIG_PM_POLICY_DEVICE_CONSTRAINTS=y
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="boards/${BOARD}_pm_runtime.overlay"
