@@ -67,6 +67,10 @@ static struct k_work_q *mgmt_work_q = COND_CODE_1(CONFIG_NET_MGMT_EVENT_SYSTEM_W
 static void mgmt_event_work_handler(struct k_work *work);
 static K_WORK_DEFINE(mgmt_work, mgmt_event_work_handler);
 
+/* Event whose callbacks are running. */
+static bool mgmt_current_event_valid;
+static uint64_t mgmt_current_event;
+
 static inline void mgmt_push_event(uint64_t mgmt_event, struct net_if *iface,
 				   const void *info, size_t length)
 {
@@ -100,9 +104,12 @@ static inline void mgmt_push_event(uint64_t mgmt_event, struct net_if *iface,
 	if (k_msgq_put(&event_msgq, &new_event,
 		K_MSEC(CONFIG_NET_MGMT_EVENT_QUEUE_TIMEOUT)) != 0) {
 		NET_WARN("Failure to push event (0x%" PRIx64 "), "
+			 "handling (0x%" PRIx64 ", %s), "
 			 "try increasing the 'CONFIG_NET_MGMT_EVENT_QUEUE_SIZE' "
 			 "or 'CONFIG_NET_MGMT_EVENT_QUEUE_TIMEOUT' options.",
-			 mgmt_event);
+			 mgmt_event,
+			 mgmt_current_event_valid ? mgmt_current_event : 0,
+			 mgmt_current_event_valid ? "valid" : "none");
 	}
 
 	(void)k_mutex_unlock(&net_mgmt_event_lock);
@@ -119,7 +126,10 @@ static void mgmt_event_work_handler(struct k_work *work)
 	while (k_msgq_get(&event_msgq, &mgmt_event, K_NO_WAIT) == 0) {
 		NET_DBG("Handling events, forwarding it relevantly");
 
+		mgmt_current_event = mgmt_event.event;
+		mgmt_current_event_valid = true;
 		mgmt_run_callbacks(&mgmt_event);
+		mgmt_current_event_valid = false;
 
 		/* forcefully give up our timeslot, to give time to the callback */
 		k_yield();
