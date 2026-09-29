@@ -6,13 +6,22 @@
 
 #include <zephyr/arch/riscv/irq.h>
 #include <offsets_short.h>
+#include <zephyr/devicetree.h>
 #include "csr_irq.inc"
 
 /* exports */
 GTEXT(_andes_plic_isr_entry)
+GTEXT(__soc_enable_isr_nesting)
+GTEXT(__soc_disable_isr_nesting)
 /* imports */
 GTEXT(_isr_wrapper)
 GDATA(plic_mcause)
+
+#define MIE_MTIE BIT(7)
+#define MIE_MSIE BIT(3)
+
+#define PLIC_THRESHOLD_ADDR (DT_REG_ADDR(DT_INST(0, sifive_plic_1_0_0)) + 0x200000)
+#define PLIC_MAX_PRIO (DT_PROP(DT_INST(0, sifive_plic_1_0_0), riscv_max_priority))
 
 /*
  * Each Andes Vectored PLIC vector table entry is 4 bytes for both RV32 and RV64.
@@ -78,3 +87,31 @@ SECTION_FUNC(exception.entry, _andes_plic_isr_entry)
 
 	/* Jump to the architecture ISR wrapper */
 	j _isr_wrapper
+
+#ifdef CONFIG_ZERO_LATENCY_IRQS
+
+SECTION_FUNC(exception.other, __soc_enable_isr_nesting)
+	/* Boost PLIC priority to block low priority interrupts */
+	li t0, PLIC_THRESHOLD_ADDR
+	li t1, PLIC_MAX_PRIO
+	addi t1, t1, -CONFIG_ZERO_LATENCY_LEVELS
+	sw t1, 0(t0)
+	/* Clear mie.MTIE and mie.MSIE */
+	li t0, (MIE_MTIE | MIE_MSIE)
+	csrc mie, t0
+	/* Set mstatus.MIE */
+	csrsi mstatus, 0x8
+	ret
+
+SECTION_FUNC(exception.other, __soc_disable_isr_nesting)
+	/* Disable interrupts, mret will re-enable them */
+	csrci mstatus, 0x8
+	/* Set mie.MTIE and mie.MSIE */
+	li t0, (MIE_MTIE | MIE_MSIE)
+	csrs mie, t0
+	/* Restore PLIC priority */
+	li t0, PLIC_THRESHOLD_ADDR
+	sw x0, 0(t0)
+	ret
+
+#endif /* CONFIG_ZERO_LATENCY_IRQS */
