@@ -27,8 +27,9 @@
 LOG_MODULE_REGISTER(esp_ppa, CONFIG_SOC_LOG_LEVEL);
 
 /* Color keying, the scaled alpha mode, the fixed foreground color for
- * alpha-only inputs and the YUV selectors are left at their reset values.
- * A request depending on one of them is rejected rather than run without it.
+ * alpha-only inputs and the YUV selectors of every picture but a scale,
+ * rotate and mirror input are left at their reset values. A request depending
+ * on one of them is rejected rather than run without it.
  */
 
 #define ESP_PPA_RX_CH    0
@@ -312,6 +313,34 @@ static uint32_t esp_ppa_pbyte(uint32_t color_mode)
 	}
 }
 
+/* The scale, rotate and mirror engine also takes YUV 4:2:0 and 4:2:2 input
+ * pictures, which it converts on the way in. YUV 4:4:4 needs the 2D-DMA to
+ * convert it first and is not offered.
+ */
+static bool esp_ppa_srm_in_is_yuv(ppa_srm_color_mode_t color_mode)
+{
+	switch (color_mode) {
+	case PPA_SRM_COLOR_MODE_YUV420:
+	case PPA_SRM_COLOR_MODE_YUV422_UYVY:
+	case PPA_SRM_COLOR_MODE_YUV422_VYUY:
+	case PPA_SRM_COLOR_MODE_YUV422_YUYV:
+	case PPA_SRM_COLOR_MODE_YUV422_YVYU:
+		return ppa_ll_srm_is_color_mode_supported(color_mode);
+	default:
+		return false;
+	}
+}
+
+static uint32_t esp_ppa_srm_in_pbyte(ppa_srm_color_mode_t color_mode)
+{
+	if (!esp_ppa_srm_in_is_yuv(color_mode)) {
+		return esp_ppa_pbyte(color_mode);
+	}
+
+	return (color_mode == PPA_SRM_COLOR_MODE_YUV420) ? DMA2D_DESCRIPTOR_PBYTE_1B5_PER_PIXEL
+							  : DMA2D_DESCRIPTOR_PBYTE_2B0_PER_PIXEL;
+}
+
 /* A block reaching outside its surface makes the DMA read or write past the
  * buffer, and oversized dimensions are truncated silently by the descriptor
  * bitfields.
@@ -470,6 +499,10 @@ static void esp_ppa_start_txn(struct esp_ppa_txn *txn)
 		dma2d_ll_rx_set_desc_addr(dma, ESP_PPA_RX_CH, (uint32_t)&txn->rx_desc);
 
 		ppa_ll_srm_set_rx_color_mode(ppa, in_cm);
+		if (esp_ppa_srm_in_is_yuv(in_cm)) {
+			ppa_ll_srm_set_rx_yuv_range(ppa, cfg->in.yuv_range);
+			ppa_ll_srm_set_rx_yuv2rgb_std(ppa, cfg->in.yuv_std);
+		}
 		ppa_ll_srm_enable_rx_byte_swap(ppa, cfg->byte_swap);
 		ppa_ll_srm_enable_rx_rgb_swap(ppa, cfg->rgb_swap);
 		ppa_ll_srm_configure_rx_alpha(ppa, cfg->alpha_update_mode, cfg->alpha_fix_val);
@@ -833,7 +866,7 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client,
 		return ESP_ERR_INVALID_ARG;
 	}
 
-	uint32_t in_pbyte = esp_ppa_pbyte(config->in.srm_cm);
+	uint32_t in_pbyte = esp_ppa_srm_in_pbyte(config->in.srm_cm);
 	uint32_t out_pbyte = esp_ppa_pbyte(config->out.srm_cm);
 	uint32_t out_block_w = (uint32_t)(config->in.block_w * config->scale_x);
 	uint32_t out_block_h = (uint32_t)(config->in.block_h * config->scale_y);
@@ -850,6 +883,20 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client,
 	}
 
 	if (config->in.buffer == NULL || config->out.buffer == NULL) {
+		return ESP_ERR_INVALID_ARG;
+	}
+	/* A chroma sample covers two columns, and in 4:2:0 two rows too */
+	if (esp_ppa_srm_in_is_yuv(config->in.srm_cm) &&
+	    (((config->in.pic_w | config->in.block_w | config->in.block_offset_x) & 1U) != 0U ||
+	     (config->in.srm_cm == PPA_SRM_COLOR_MODE_YUV420 &&
+	      ((config->in.pic_h | config->in.block_h | config->in.block_offset_y) & 1U) != 0U))) {
+		return ESP_ERR_INVALID_ARG;
+	}
+	if (esp_ppa_srm_in_is_yuv(config->in.srm_cm) &&
+	    ((config->in.yuv_range != PPA_COLOR_RANGE_LIMIT &&
+	      config->in.yuv_range != PPA_COLOR_RANGE_FULL) ||
+	     (config->in.yuv_std != PPA_COLOR_CONV_STD_RGB_YUV_BT601 &&
+	      config->in.yuv_std != PPA_COLOR_CONV_STD_RGB_YUV_BT709))) {
 		return ESP_ERR_INVALID_ARG;
 	}
 	if (!esp_ppa_geometry_valid(config->in.pic_w, config->in.pic_h, config->in.block_w,
