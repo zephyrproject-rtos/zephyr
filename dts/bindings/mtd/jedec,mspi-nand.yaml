@@ -1,0 +1,88 @@
+# Copyright (c) 2026 Synaptics Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+description: Generic SPI NAND flash on MSPI bus
+
+compatible: "jedec,mspi-nand"
+
+include: [mspi-device.yaml]
+
+properties:
+  jedec-id:
+    type: uint8-array
+    description: JEDEC ID
+
+  size-bytes:
+    type: int
+    required: true
+    description: Flash capacity in bytes
+
+  erase-block-size:
+    type: int
+    description: Block erase size in bytes
+
+  write-block-size:
+    type: int
+    description: Page size in bytes, excluding spare area
+
+  block-erase-duration-max:
+    type: int
+    description: Maximum block erase duration in microseconds
+
+  page-program-duration-max:
+    type: int
+    description: Maximum page program duration in microseconds
+
+  page-read-duration-max:
+    type: int
+    description: Maximum page read-to-cache duration in microseconds
+
+  reset-duration-max:
+    type: int
+    default: 2000
+    description: Maximum reset duration in microseconds
+
+  read-command:
+    type: int
+    default: 0x03
+    description: Cache read opcode used by the MSPI NAND driver
+
+  write-command:
+    type: int
+    default: 0x02
+    description: Program load opcode used by the MSPI NAND driver
+
+  requires-read-dummy:
+    type: boolean
+    description: |
+      Set when cache reads require a dummy byte after the column address.
+
+  read-address-length:
+    type: int
+    default: 2
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+    description: Address byte count for cache reads
+
+  program-load-address-length:
+    type: int
+    default: 2
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+    description: Address byte count for program-load transfers
+
+  row-address-length:
+    type: int
+    default: 3
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+    description: Address byte count for page/block row-address commands

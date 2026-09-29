@@ -38,6 +38,16 @@ config FLASH_MSPI_IS25XX0XX
 	select FLASH_JESD216
 	select MSPI_AMBIQ_CONTROLLER if SOC_FAMILY_AMBIQ
 
+menuconfig FLASH_MSPI_NAND
+	bool "Generic MSPI NAND Flash"
+	default y
+	depends on DT_HAS_JEDEC_MSPI_NAND_ENABLED
+	select FLASH_MSPI
+	select FLASH_HAS_EXPLICIT_ERASE
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EX_OP
+	select CRC
+
 menuconfig FLASH_MSPI_NOR
 	bool "Generic MSPI NOR Flash"
 	default y
