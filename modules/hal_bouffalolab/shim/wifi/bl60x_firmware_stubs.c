@@ -31,8 +31,14 @@ uint32_t ke_env;
 uint8_t rxl_cntrl_env[64];
 uint8_t vif_info_tab[2 * 1512];
 uint8_t sta_info_tab[7 * 368];
+struct sm_connect_req *sm_env[15];
 
 void mac_irq(void)
+{
+	/* Stub */
+}
+
+void scanu_cached_scanresult_clear(void)
 {
 	/* Stub */
 }
