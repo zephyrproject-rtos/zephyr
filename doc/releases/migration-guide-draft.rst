@@ -74,6 +74,12 @@ Networking
 Other subsystems
 ****************
 
+Tools
+*****
+
+* Deprecate the ``--esp-baud-rate`` argument on the esp32 runner and the ``-b`` / ``--baudrate``
+  argument on the bflb_mcu_tool runner. They are replaced with a generic ``--baud-rate`` argument.
+
 Modules
 *******
 
