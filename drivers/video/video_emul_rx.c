@@ -32,14 +32,14 @@ struct emul_rx_data {
 	struct k_fifo fifo_out;
 };
 
-static int emul_rx_set_frmival(const struct device *dev, struct video_frmival *frmival)
+static int emul_rx_set_frmival(const struct device *dev, uint32_t *frmival)
 {
 	const struct emul_rx_config *cfg = dev->config;
 
 	return video_set_frmival(cfg->source_dev, frmival);
 }
 
-static int emul_rx_get_frmival(const struct device *dev, struct video_frmival *frmival)
+static int emul_rx_get_frmival(const struct device *dev, uint32_t *frmival)
 {
 	const struct emul_rx_config *cfg = dev->config;
 

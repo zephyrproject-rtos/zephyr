@@ -1440,14 +1440,14 @@ static int stm32_dcmipp_get_caps(const struct device *dev, struct video_caps *ca
 	return 0;
 }
 
-static int stm32_dcmipp_get_frmival(const struct device *dev, struct video_frmival *frmival)
+static int stm32_dcmipp_get_frmival(const struct device *dev, uint32_t *frmival)
 {
 	const struct stm32_dcmipp_config *config = dev->config;
 
 	return video_get_frmival(config->source_dev, frmival);
 }
 
-static int stm32_dcmipp_set_frmival(const struct device *dev, struct video_frmival *frmival)
+static int stm32_dcmipp_set_frmival(const struct device *dev, uint32_t *frmival)
 {
 	const struct stm32_dcmipp_config *config = dev->config;
 

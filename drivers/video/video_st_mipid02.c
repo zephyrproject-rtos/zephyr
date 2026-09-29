@@ -330,14 +330,14 @@ static int mipid02_set_stream(const struct device *dev, bool enable, enum video_
 	return video_stream_start(cfg->source_dev, type);
 }
 
-static int mipid02_set_frmival(const struct device *dev, struct video_frmival *frmival)
+static int mipid02_set_frmival(const struct device *dev, uint32_t *frmival)
 {
 	const struct mipid02_config *cfg = dev->config;
 
 	return video_set_frmival(cfg->source_dev, frmival);
 }
 
-static int mipid02_get_frmival(const struct device *dev, struct video_frmival *frmival)
+static int mipid02_get_frmival(const struct device *dev, uint32_t *frmival)
 {
 	const struct mipid02_config *cfg = dev->config;
 

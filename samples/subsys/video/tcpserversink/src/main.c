@@ -218,7 +218,7 @@ int main(void)
 	int ret, sock, client;
 	struct video_format fmt;
 	struct video_caps caps;
-	struct video_frmival frmival;
+	uint32_t frmival;
 	struct video_frmival_enum fie;
 	enum video_buf_type type = VIDEO_BUF_TYPE_OUTPUT;
 	const struct device *video_dev;
@@ -356,9 +356,9 @@ int main(void)
 		return 0;
 	}
 
-	if (!video_get_frmival(video_dev, &frmival)) {
+	if (video_get_frmival(video_dev, &frmival) == 0) {
 		LOG_INF("- Default frame rate : %f fps",
-			1.0 * frmival.denominator / frmival.numerator);
+			1.0 * USEC_PER_SEC / frmival);
 	}
 
 	LOG_INF("- Supported frame intervals for the default format:");
@@ -366,12 +366,10 @@ int main(void)
 	fie.format = &fmt;
 	while (video_enum_frmival(video_dev, &fie) == 0) {
 		if (fie.type == VIDEO_FRMIVAL_TYPE_DISCRETE) {
-			LOG_INF("   %u/%u", fie.discrete.numerator, fie.discrete.denominator);
+			LOG_INF("   %u us", fie.discrete);
 		} else {
-			LOG_INF("   [min = %u/%u; max = %u/%u; step = %u/%u]",
-				fie.stepwise.min.numerator, fie.stepwise.min.denominator,
-				fie.stepwise.max.numerator, fie.stepwise.max.denominator,
-				fie.stepwise.step.numerator, fie.stepwise.step.denominator);
+			LOG_INF("   [min = %u us; max = %u us; step = %u us]",
+				fie.stepwise.min, fie.stepwise.max, fie.stepwise.step);
 		}
 		fie.index++;
 	}

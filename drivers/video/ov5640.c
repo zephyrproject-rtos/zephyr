@@ -131,11 +131,11 @@ LOG_MODULE_REGISTER(video_ov5640, CONFIG_VIDEO_LOG_LEVEL);
 #define PLL_PRE_DIV   3
 #define MIPI_BIT_MODE 0x08
 
-/* Must be kept in ascending order */
-enum ov5640_frame_rate {
-	OV5640_15_FPS = 15,
-	OV5640_30_FPS = 30,
-	OV5640_60_FPS = 60,
+/* Must be kept in descending order of framerate (ascending order of frame interval) */
+enum ov5640_frmival {
+	OV5640_60_FPS = USEC_PER_SEC / 60,
+	OV5640_30_FPS = USEC_PER_SEC / 30,
+	OV5640_15_FPS = USEC_PER_SEC / 15,
 };
 
 struct ov5640_config {
@@ -154,8 +154,8 @@ struct ov5640_config {
 	bool vsync_active;
 };
 
-struct ov5640_frmrate_config {
-	uint8_t frmrate;
+struct ov5640_frmival_config {
+	uint32_t frmival;
 	uint8_t pllCtrl1;
 	uint8_t pllCtrl2;
 	uint32_t pixelrate;
@@ -166,9 +166,9 @@ struct ov5640_mode_config {
 	uint16_t height;
 	uint16_t array_size_res_params;
 	const struct video_reg16 *res_params;
-	const struct ov5640_frmrate_config *frmrate_config;
-	uint16_t max_frmrate;
-	uint16_t def_frmrate;
+	const struct ov5640_frmival_config *frmival_config;
+	uint32_t min_frmival;
+	uint32_t def_frmival;
 };
 
 struct ov5640_ctrls {
@@ -191,7 +191,7 @@ struct ov5640_ctrls {
 struct ov5640_data {
 	struct ov5640_ctrls ctrls;
 	struct video_format fmt;
-	uint16_t cur_frmrate;
+	uint32_t frmival;
 	const struct ov5640_mode_config *cur_mode;
 };
 
@@ -555,17 +555,29 @@ static const struct video_reg16 hd_res_params[] = {
 	{TIMING_X_INC, 49}, {TIMING_Y_INC, 49},
 };
 
-static const struct ov5640_frmrate_config csi2_hd_frmrate_params[] = {
-	{15, 0x21, 0x2A, 24000000}, {30, 0x21, 0x54, 48000000}, {60, 0x11, 0x54, 96000000}};
+static const struct ov5640_frmival_config csi2_hd_frmival_params[] = {
+	{OV5640_60_FPS, 0x11, 0x54, 96000000},
+	{OV5640_30_FPS, 0x21, 0x54, 48000000},
+	{OV5640_15_FPS, 0x21, 0x2A, 24000000},
+};
 
-static const struct ov5640_frmrate_config csi2_vga_frmrate_params[] = {
-	{15, 0x22, 0x38, 24000000}, {30, 0x14, 0x38, 24000000}, {60, 0x14, 0x70, 48000000}};
+static const struct ov5640_frmival_config csi2_vga_frmival_params[] = {
+	{OV5640_60_FPS, 0x14, 0x70, 48000000},
+	{OV5640_30_FPS, 0x14, 0x38, 24000000},
+	{OV5640_15_FPS, 0x22, 0x38, 24000000},
+};
 
-static const struct ov5640_frmrate_config csi2_qvga_frmrate_params[] = {
-	{15, 0x22, 0x30, 24000000}, {30, 0x14, 0x30, 24000000}, {60, 0x14, 0x60, 48000000}};
+static const struct ov5640_frmival_config csi2_qvga_frmival_params[] = {
+	{OV5640_60_FPS, 0x14, 0x60, 48000000},
+	{OV5640_30_FPS, 0x14, 0x30, 24000000},
+	{OV5640_15_FPS, 0x22, 0x30, 24000000},
+};
 
-static const struct ov5640_frmrate_config csi2_qqvga_frmrate_params[] = {
-	{15, 0x22, 0x30, 24000000}, {30, 0x14, 0x30, 24000000}, {60, 0x14, 0x60, 48000000}};
+static const struct ov5640_frmival_config csi2_qqvga_frmival_params[] = {
+	{OV5640_60_FPS, 0x14, 0x60, 48000000},
+	{OV5640_30_FPS, 0x14, 0x30, 24000000},
+	{OV5640_15_FPS, 0x22, 0x30, 24000000},
+};
 
 static const struct ov5640_mode_config csi2_modes[] = {
 	{
@@ -573,43 +585,47 @@ static const struct ov5640_mode_config csi2_modes[] = {
 		.height = 120,
 		.array_size_res_params = ARRAY_SIZE(qqvga_res_params),
 		.res_params = qqvga_res_params,
-		.frmrate_config = csi2_qqvga_frmrate_params,
-		.max_frmrate = OV5640_60_FPS,
-		.def_frmrate = OV5640_30_FPS,
+		.frmival_config = csi2_qqvga_frmival_params,
+		.min_frmival = OV5640_60_FPS,
+		.def_frmival = OV5640_30_FPS,
 	},
 	{
 		.width = 320,
 		.height = 240,
 		.array_size_res_params = ARRAY_SIZE(qvga_res_params),
 		.res_params = qvga_res_params,
-		.frmrate_config = csi2_qvga_frmrate_params,
-		.max_frmrate = OV5640_60_FPS,
-		.def_frmrate = OV5640_30_FPS,
+		.frmival_config = csi2_qvga_frmival_params,
+		.min_frmival = OV5640_60_FPS,
+		.def_frmival = OV5640_30_FPS,
 	},
 	{
 		.width = 640,
 		.height = 480,
 		.array_size_res_params = ARRAY_SIZE(vga_res_params),
 		.res_params = vga_res_params,
-		.frmrate_config = csi2_vga_frmrate_params,
-		.max_frmrate = OV5640_60_FPS,
-		.def_frmrate = OV5640_30_FPS,
+		.frmival_config = csi2_vga_frmival_params,
+		.min_frmival = OV5640_60_FPS,
+		.def_frmival = OV5640_30_FPS,
 	},
 	{
 		.width = 1280,
 		.height = 720,
 		.array_size_res_params = ARRAY_SIZE(hd_res_params),
 		.res_params = hd_res_params,
-		.frmrate_config = csi2_hd_frmrate_params,
-		.max_frmrate = OV5640_60_FPS,
-		.def_frmrate = OV5640_30_FPS,
-	}};
+		.frmival_config = csi2_hd_frmival_params,
+		.min_frmival = OV5640_60_FPS,
+		.def_frmival = OV5640_30_FPS,
+	},
+};
 
-static const int ov5640_frame_rates[] = {OV5640_60_FPS, OV5640_30_FPS, OV5640_15_FPS};
+static const uint32_t ov5640_frmivals[] = {OV5640_60_FPS, OV5640_30_FPS, OV5640_15_FPS};
 
-static const struct ov5640_frmrate_config dvp_frmrate_params[] = {
+static const struct ov5640_frmival_config dvp_frmival_params[] = {
 	/* TODO - pixelrate value to be measured and fixed in DVP mode */
-	{15, 0x41, 0x60, 24000000}, {30, 0x21, 0x60, 48000000}, {60, 0x11, 0x60, 96000000}};
+	{OV5640_60_FPS, 0x11, 0x60, 96000000},
+	{OV5640_30_FPS, 0x21, 0x60, 48000000},
+	{OV5640_15_FPS, 0x41, 0x60, 24000000},
+};
 
 static const struct ov5640_mode_config dvp_modes[] = {
 	{
@@ -617,28 +633,29 @@ static const struct ov5640_mode_config dvp_modes[] = {
 		.height = 120,
 		.array_size_res_params = ARRAY_SIZE(qqvga_res_params),
 		.res_params = qqvga_res_params,
-		.frmrate_config = dvp_frmrate_params,
-		.max_frmrate = OV5640_60_FPS,
-		.def_frmrate = OV5640_30_FPS,
+		.frmival_config = dvp_frmival_params,
+		.min_frmival = OV5640_60_FPS,
+		.def_frmival = OV5640_30_FPS,
 	},
 	{
 		.width = 320,
 		.height = 240,
 		.array_size_res_params = ARRAY_SIZE(qvga_res_params),
 		.res_params = qvga_res_params,
-		.frmrate_config = dvp_frmrate_params,
-		.max_frmrate = OV5640_60_FPS,
-		.def_frmrate = OV5640_30_FPS,
+		.frmival_config = dvp_frmival_params,
+		.min_frmival = OV5640_60_FPS,
+		.def_frmival = OV5640_30_FPS,
 	},
 	{
 		.width = 480,
 		.height = 272,
 		.array_size_res_params = ARRAY_SIZE(wqvga_res_params),
 		.res_params = wqvga_res_params,
-		.frmrate_config = dvp_frmrate_params,
-		.max_frmrate = OV5640_30_FPS,
-		.def_frmrate = OV5640_30_FPS,
-	}};
+		.frmival_config = dvp_frmival_params,
+		.min_frmival = OV5640_30_FPS,
+		.def_frmival = OV5640_30_FPS,
+	},
+};
 
 #define OV5640_VIDEO_FORMAT_CAP(width, height, format)                                             \
 	{.pixelformat = (format),                                                                  \
@@ -699,32 +716,40 @@ static int ov5640_set_fmt_dvp(const struct ov5640_config *cfg)
 	return 0;
 }
 
-static int ov5640_set_frmival(const struct device *dev, struct video_frmival *frmival)
+static int ov5640_set_frmival(const struct device *dev, uint32_t *frmival)
 {
 	const struct ov5640_config *cfg = dev->config;
 	struct ov5640_data *drv_data = dev->data;
 	int ret;
 	uint8_t i, ind = 0;
-	uint32_t desired_frmrate, best_match = ov5640_frame_rates[ind];
+	uint32_t best_match = UINT32_MAX;
 
-	desired_frmrate = DIV_ROUND_CLOSEST(frmival->denominator, frmival->numerator);
+	if (*frmival == 0U) {
+		return -EINVAL;
+	}
 
-	/* Find the supported frame rate closest to the desired one */
-	for (i = 0; i < ARRAY_SIZE(ov5640_frame_rates); i++) {
-		if (ov5640_frame_rates[i] <= drv_data->cur_mode->max_frmrate &&
-		    ABS(desired_frmrate, ov5640_frame_rates[i]) <
-			    ABS(desired_frmrate, best_match)) {
-			best_match = ov5640_frame_rates[i];
-			ind = i;
+	/* Find the supported frame interval closest to the desired one */
+	for (i = 0; i < ARRAY_SIZE(ov5640_frmivals); i++) {
+		if (ov5640_frmivals[i] >= drv_data->cur_mode->min_frmival) {
+			if (best_match == UINT32_MAX ||
+			    ABS(*frmival, ov5640_frmivals[i]) <
+				    ABS(*frmival, best_match)) {
+				best_match = ov5640_frmivals[i];
+				ind = i;
+			}
 		}
 	}
 
-	struct video_reg16 frmrate_params[] = {
-		{SC_PLL_CTRL1_REG, drv_data->cur_mode->frmrate_config[ind].pllCtrl1},
-		{SC_PLL_CTRL2_REG, drv_data->cur_mode->frmrate_config[ind].pllCtrl2},
+	if (best_match == UINT32_MAX) {
+		return -EINVAL;
+	}
+
+	struct video_reg16 frmival_params[] = {
+		{SC_PLL_CTRL1_REG, drv_data->cur_mode->frmival_config[ind].pllCtrl1},
+		{SC_PLL_CTRL2_REG, drv_data->cur_mode->frmival_config[ind].pllCtrl2},
 		{PCLK_PERIOD_REG, 0x0a}};
 
-	ret = video_write_cci_multiregs16(&cfg->i2c, frmrate_params, ARRAY_SIZE(frmrate_params));
+	ret = video_write_cci_multiregs16(&cfg->i2c, frmival_params, ARRAY_SIZE(frmival_params));
 	ret |= video_modify_cci_reg(&cfg->i2c, OV5640_REG8(SC_PLL_CTRL0_REG), 0x0f, MIPI_BIT_MODE);
 	ret |= video_modify_cci_reg(&cfg->i2c, OV5640_REG8(SC_PLL_CTRL3_REG), 0x1f,
 				    (LOG2CEIL(PLL_ROOT_DIV) << 4) | (PLL_PRE_DIV & 0x07));
@@ -733,18 +758,17 @@ static int ov5640_set_frmival(const struct device *dev, struct video_frmival *fr
 					    (LOG2CEIL(SCLK2X_DIV) & 0x03 << 2) |
 					    (LOG2CEIL(SCLK_DIV) & 0x03));
 
-	if (ret) {
+	if (ret != 0) {
 		LOG_ERR("Unable to set frame interval");
 		return ret;
 	}
 
-	drv_data->cur_frmrate = best_match;
+	drv_data->frmival = best_match;
 
 	/* Update pixerate control */
-	drv_data->ctrls.pixel_rate.val64 = drv_data->cur_mode->frmrate_config[ind].pixelrate;
+	drv_data->ctrls.pixel_rate.val64 = drv_data->cur_mode->frmival_config[ind].pixelrate;
 
-	frmival->numerator = 1;
-	frmival->denominator = best_match;
+	*frmival = drv_data->frmival;
 
 	return 0;
 }
@@ -754,7 +778,7 @@ static int ov5640_set_fmt(const struct device *dev, struct video_format *fmt)
 	struct ov5640_data *drv_data = dev->data;
 	const struct ov5640_config *cfg = dev->config;
 	int ret, i;
-	struct video_frmival def_frmival;
+	uint32_t def_frmival;
 	const struct video_format_cap *fmts;
 	const struct ov5640_mode_config *modes;
 	size_t num_fmts;
@@ -857,8 +881,7 @@ static int ov5640_set_fmt(const struct device *dev, struct video_format *fmt)
 	}
 
 	/* Set frame rate */
-	def_frmival.denominator = drv_data->cur_mode->def_frmrate;
-	def_frmival.numerator = 1;
+	def_frmival = drv_data->cur_mode->def_frmival;
 
 	return ov5640_set_frmival(dev, &def_frmival);
 }
@@ -1148,12 +1171,11 @@ static int ov5640_get_volatile_ctrl(const struct device *dev, uint32_t id)
 	return 0;
 }
 
-static int ov5640_get_frmival(const struct device *dev, struct video_frmival *frmival)
+static int ov5640_get_frmival(const struct device *dev, uint32_t *frmival)
 {
 	struct ov5640_data *drv_data = dev->data;
 
-	frmival->numerator = 1;
-	frmival->denominator = drv_data->cur_frmrate;
+	*frmival = drv_data->frmival;
 
 	return 0;
 }
@@ -1163,6 +1185,7 @@ static int ov5640_enum_frmival(const struct device *dev, struct video_frmival_en
 	const struct ov5640_mode_config *modes;
 	size_t array_size_modes;
 	uint8_t i = 0;
+	uint32_t count = 0;
 
 	if (ov5640_is_dvp(dev)) {
 		modes = dvp_modes;
@@ -1179,16 +1202,22 @@ static int ov5640_enum_frmival(const struct device *dev, struct video_frmival_en
 		}
 	}
 
-	if (i == array_size_modes || fie->index >= ARRAY_SIZE(ov5640_frame_rates) ||
-	    ov5640_frame_rates[fie->index] > modes[i].max_frmrate) {
+	if (i == array_size_modes) {
 		return -EINVAL;
 	}
 
-	fie->type = VIDEO_FRMIVAL_TYPE_DISCRETE;
-	fie->discrete.numerator = 1;
-	fie->discrete.denominator = ov5640_frame_rates[fie->index];
+	for (size_t j = 0; j < ARRAY_SIZE(ov5640_frmivals); j++) {
+		if (ov5640_frmivals[j] >= modes[i].min_frmival) {
+			if (count == fie->index) {
+				fie->type = VIDEO_FRMIVAL_TYPE_DISCRETE;
+				fie->discrete = ov5640_frmivals[j];
+				return 0;
+			}
+			count++;
+		}
+	}
 
-	return 0;
+	return -EINVAL;
 }
 
 static DEVICE_API(video, ov5640_driver_api) = {
@@ -1278,14 +1307,15 @@ static int ov5640_init_controls(const struct device *dev)
 		return ret;
 	}
 
+	size_t qqvga_last = ARRAY_SIZE(csi2_qqvga_frmival_params) - 1;
+
 	return video_init_ctrl(
 		&ctrls->pixel_rate, dev, VIDEO_CID_PIXEL_RATE,
 		(struct video_ctrl_range){
-			.min64 = csi2_qqvga_frmrate_params[0].pixelrate,
-			.max64 = csi2_hd_frmrate_params[ARRAY_SIZE(csi2_hd_frmrate_params) - 1]
-					 .pixelrate,
+			.min64 = csi2_qqvga_frmival_params[qqvga_last].pixelrate,
+			.max64 = csi2_hd_frmival_params[0].pixelrate,
 			.step64 = 1,
-			.def64 = csi2_hd_frmrate_params[1].pixelrate});
+			.def64 = csi2_hd_frmival_params[1].pixelrate});
 }
 
 static int ov5640_init(const struct device *dev)

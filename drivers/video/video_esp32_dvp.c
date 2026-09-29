@@ -377,14 +377,14 @@ static void video_esp32_cam_ctrl_init(const struct device *dev)
 	cam_ll_enable_invert_hsync(data->hal.hw, cfg->invert_hsync);
 }
 
-static int video_esp32_set_frmival(const struct device *dev, struct video_frmival *frmival)
+static int video_esp32_set_frmival(const struct device *dev, uint32_t *frmival)
 {
 	const struct video_esp32_config *cfg = dev->config;
 
 	return video_set_frmival(cfg->source_dev, frmival);
 }
 
-static int video_esp32_get_frmival(const struct device *dev, struct video_frmival *frmival)
+static int video_esp32_get_frmival(const struct device *dev, uint32_t *frmival)
 {
 	const struct video_esp32_config *cfg = dev->config;
 
