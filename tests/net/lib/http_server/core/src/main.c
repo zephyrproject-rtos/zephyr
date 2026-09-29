@@ -27,6 +27,8 @@
 #define TEST_DYNAMIC_GET_PAYLOAD "Test dynamic GET"
 #define TEST_STATIC_PAYLOAD "Hello, World!"
 #define TEST_STATIC_FS_PAYLOAD "Hello, World from static file!"
+#define TEST_LONG_HEADER_NAME "Test-Header-With-A-Name-Longer-Than-The-Response-Format-Buffer"
+#define TEST_LONG_CONTENT_TYPE "application/vnd.zephyr.example-type+json"
 
 /* Random base64 encoded data */
 #define TEST_LONG_PAYLOAD_CHUNK_1                                                                  \
@@ -447,6 +449,9 @@ enum dynamic_response_headers_variant {
 
 	/* Long body data split across multiple callbacks */
 	DYNAMIC_RESPONSE_HEADERS_VARIANT_BODY_LONG,
+
+	/* Send a header with a long name */
+	DYNAMIC_RESPONSE_HEADERS_VARIANT_LONG_HEADER_NAME,
 };
 
 static uint8_t dynamic_response_headers_variant;
@@ -466,6 +471,10 @@ static int dynamic_response_headers_cb(struct http_client_ctx *client,
 
 	static const struct http_header override_headers[] = {
 		{.name = "Content-Type", .value = "application/json"},
+	};
+
+	static const struct http_header long_name_headers[] = {
+		{.name = TEST_LONG_HEADER_NAME, .value = "test_data"},
 	};
 
 	if (status == HTTP_SERVER_TRANSACTION_ABORTED ||
@@ -500,6 +509,12 @@ static int dynamic_response_headers_cb(struct http_client_ctx *client,
 	case DYNAMIC_RESPONSE_HEADERS_VARIANT_OVERRIDE_HEADER:
 		response_ctx->headers = override_headers;
 		response_ctx->header_count = ARRAY_SIZE(extra_headers);
+		response_ctx->final_chunk = true;
+		break;
+
+	case DYNAMIC_RESPONSE_HEADERS_VARIANT_LONG_HEADER_NAME:
+		response_ctx->headers = long_name_headers;
+		response_ctx->header_count = ARRAY_SIZE(long_name_headers);
 		response_ctx->final_chunk = true;
 		break;
 
@@ -573,6 +588,19 @@ struct http_resource_detail_dynamic dynamic_response_headers_detail = {
 
 HTTP_RESOURCE_DEFINE(dynamic_response_headers_resource, test_http_service, "/response_headers",
 		     &dynamic_response_headers_detail);
+
+struct http_resource_detail_dynamic dynamic_long_content_type_detail = {
+	.common = {
+		.type = HTTP_RESOURCE_TYPE_DYNAMIC,
+		.bitmask_of_supported_http_methods = BIT(HTTP_GET) | BIT(HTTP_POST),
+		.content_type = TEST_LONG_CONTENT_TYPE,
+	},
+	.cb = dynamic_response_headers_cb,
+	.user_data = NULL
+};
+
+HTTP_RESOURCE_DEFINE(dynamic_long_content_type_resource, test_http_service, "/long_content_type",
+		     &dynamic_long_content_type_detail);
 
 static int client_fd = -1;
 static uint8_t buf[BUFFER_SIZE];
@@ -2038,6 +2066,60 @@ ZTEST(server_function_tests, test_http1_dynamic_get_response_header_override)
 ZTEST(server_function_tests, test_http1_dynamic_post_response_header_override)
 {
 	test_http1_dynamic_response_header_override(true);
+}
+
+static void test_http1_dynamic_response_header_long_name(bool post)
+{
+	static const char response[] = "HTTP/1.1 200\r\n"
+				       "Transfer-Encoding: chunked\r\n"
+				       TEST_LONG_HEADER_NAME ": test_data\r\n"
+				       "Content-Type: text/plain\r\n"
+				       "\r\n"
+				       "0\r\n\r\n";
+
+	dynamic_response_headers_variant = DYNAMIC_RESPONSE_HEADERS_VARIANT_LONG_HEADER_NAME;
+
+	test_http1_dynamic_response_headers_default(response, post);
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_get_response_header_long_name)
+{
+	test_http1_dynamic_response_header_long_name(false);
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_post_response_header_long_name)
+{
+	test_http1_dynamic_response_header_long_name(true);
+}
+
+static void test_http1_dynamic_response_long_content_type(bool post)
+{
+	static const char get_request[] = "GET /long_content_type HTTP/1.1\r\n"
+					  "Accept: */*\r\n"
+					  "\r\n";
+	static const char post_request[] = "POST /long_content_type HTTP/1.1\r\n"
+					   "Accept: */*\r\n"
+					   "Content-Length: 17\r\n"
+					   "\r\n" TEST_DYNAMIC_POST_PAYLOAD;
+	static const char response[] = "HTTP/1.1 200\r\n"
+				       "Transfer-Encoding: chunked\r\n"
+				       "Content-Type: " TEST_LONG_CONTENT_TYPE "\r\n"
+				       "\r\n"
+				       "0\r\n\r\n";
+
+	dynamic_response_headers_variant = DYNAMIC_RESPONSE_HEADERS_VARIANT_NONE;
+
+	test_http1_dynamic_response_headers(post ? post_request : get_request, response);
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_get_response_long_content_type)
+{
+	test_http1_dynamic_response_long_content_type(false);
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_post_response_long_content_type)
+{
+	test_http1_dynamic_response_long_content_type(true);
 }
 
 static void test_http2_dynamic_response_header_override(bool post)
