@@ -38,6 +38,15 @@ config INSTRUMENTATION_BACKEND_RAM
 	  Trigger a dump by calling instr_dump_buffer() / instr_dump_deltas()
 	  from the debugger, or via dump-on-full if enabled.
 
+config INSTRUMENTATION_BACKEND_ITM
+	bool "ITM backend"
+	depends on ARMV7_M_ARMV8_M_MAINLINE
+	help
+	  Send dumped instrumentation data out an ITM stimulus port. Trace
+	  egress (SWO pin or TPIU parallel trace) is set up by the board or
+	  debug probe, not by this backend. Trigger a dump by calling
+	  instr_dump_buffer() / instr_dump_deltas(), or via dump-on-full.
+
 config INSTRUMENTATION_BACKEND_SEMIHOST
 	bool "Semihost backend"
 	depends on SEMIHOST
@@ -53,6 +62,7 @@ config INSTRUMENTATION_BACKEND_NAME
 	string
 	default "instr_backend_uart" if INSTRUMENTATION_BACKEND_UART
 	default "instr_backend_ram" if INSTRUMENTATION_BACKEND_RAM
+	default "instr_backend_itm" if INSTRUMENTATION_BACKEND_ITM
 	default "instr_backend_semihost" if INSTRUMENTATION_BACKEND_SEMIHOST
 
 config INSTRUMENTATION_BACKEND_RAM_BUFFER_SIZE
@@ -63,6 +73,40 @@ config INSTRUMENTATION_BACKEND_RAM_BUFFER_SIZE
 	  Size of the RAM buffer that receives dumped instrumentation bytes.
 	  Dumping stops (and further output is dropped) once this buffer is
 	  full.
+
+if INSTRUMENTATION_BACKEND_ITM
+
+config INSTRUMENTATION_BACKEND_ITM_PORT
+	int "ITM stimulus port for instrumentation dumps"
+	default 2
+	range 0 31
+	help
+	  Stimulus port this backend writes. Default 2 keeps it clear of the
+	  SWO log backend (port 0) and the tracing ITM backend (port 1).
+
+config INSTRUMENTATION_BACKEND_ITM_BUS_ID
+	int "ITM ATB trace id"
+	default 1
+	range 0 127
+	help
+	  ATB trace id tagging the ITM stream on the trace bus.
+
+config INSTRUMENTATION_BACKEND_ITM_STALL
+	bool "Stall the core on a full stimulus port instead of dropping"
+	help
+	  Spin until the stimulus port drains instead of dropping the rest
+	  of a packet after a bounded poll. Lossless, but stalls the core
+	  if nothing drains the trace.
+
+config INSTRUMENTATION_BACKEND_ITM_POLL
+	int "Ready-bit poll count before dropping"
+	default 128
+	depends on !INSTRUMENTATION_BACKEND_ITM_STALL
+	help
+	  How many times to poll the stimulus port ready bit before
+	  dropping the rest of a packet.
+
+endif # INSTRUMENTATION_BACKEND_ITM
 
 config INSTRUMENTATION_MODE_CALLGRAPH
 	bool "Call graph mode (Tracing)"

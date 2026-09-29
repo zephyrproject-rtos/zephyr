@@ -37,9 +37,10 @@ to control when recording is active. The default trigger and stopper functions a
 when ``main()`` starts until it returns.
 
 The recorded data is stored in RAM and can be accessed from a host computer thanks to a
-configurable data backend (UART, RAM, or semihosting). The default UART backend exposes a set of simple
-commands over the console serial port. :zephyr_file:`scripts/instrumentation/zaru.py` allows executing those commands
-through a high-level CLI and obtaining data suitable for further analysis (e.g. using `Perfetto`_).
+configurable data backend (UART, RAM, ITM, or semihosting). The default UART backend exposes a set
+of simple commands over the console serial port. :zephyr_file:`scripts/instrumentation/zaru.py`
+allows executing those commands through a high-level CLI and obtaining data suitable for further
+analysis (e.g. using `Perfetto`_).
 
 Operational Modes
 *****************
@@ -152,6 +153,8 @@ Dumped callgraph and profile bytes leave the target through a selected backend:
   plus host commands for ``zaru.py``
 - :kconfig:option:`CONFIG_INSTRUMENTATION_BACKEND_RAM` — dedicated RAM buffer for debugger
   retrieval (``instr_ram_buffer`` / ``instr_ram_buffer_pos``)
+- :kconfig:option:`CONFIG_INSTRUMENTATION_BACKEND_ITM` — Arm Cortex-M ITM stimulus port
+  (SWO / TPIU set up by the board or probe); see ``itm_instr_descriptor`` in the ELF
 - :kconfig:option:`CONFIG_INSTRUMENTATION_BACKEND_SEMIHOST` — host file
   ``./instrumentation.bin`` via semihosting (useful with QEMU)
 
