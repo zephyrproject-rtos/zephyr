@@ -728,7 +728,8 @@ static int pwm_stm32_init(const struct device *dev)
 		}
 
 		r = clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[1], &tim_clk);
-	} else if (IS_ENABLED(CONFIG_SOC_SERIES_STM32MP2X)) {
+	} else if (IS_ENABLED(CONFIG_SOC_SERIES_STM32MP1X) ||
+		   IS_ENABLED(CONFIG_SOC_SERIES_STM32MP2X)) {
 		/* No selectable source: the gate clock rate is the timer clock rate */
 		r = clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[0], &tim_clk);
 	} else {
