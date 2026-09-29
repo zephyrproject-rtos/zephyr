@@ -721,7 +721,6 @@ static int port_suspend(const struct device *const dev)
 		hprt = sys_read32((mem_addr_t)&base->hprt);
 		if (hprt & USB_DWC2_HPRT_PRTSUSP) {
 			priv->port_status.wPortStatus |= USB_HUB_PORT_STATUS_SUSPEND;
-			uhc_submit_event(dev, UHC_EVT_SUSPENDED, 0);
 			return 0;
 		}
 
@@ -735,7 +734,6 @@ static int port_resume(const struct device *const dev)
 {
 	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
 	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
-	enum uhc_event_type type;
 	uint32_t hprt;
 	int ret;
 
@@ -748,14 +746,11 @@ static int port_resume(const struct device *const dev)
 		}
 
 		/* Remote Wakeup - Resume signaling started by core */
-		type = UHC_EVT_RWUP;
 	} else {
 		/* Start driving Resume signaling */
 		hprt &= ~(USB_DWC2_HPRT_PRTSUSP | USB_DWC2_HPRT_W1C_MSK);
 		hprt |= USB_DWC2_HPRT_PRTRES;
 		sys_write32(hprt, (mem_addr_t)&base->hprt);
-
-		type = UHC_EVT_RESUMED;
 	}
 
 	k_msleep(CONFIG_UHC_DWC2_RESUME_DURATION_MS);
@@ -772,8 +767,6 @@ static int port_resume(const struct device *const dev)
 		priv->port_status.wPortStatus &= ~USB_HUB_PORT_STATUS_SUSPEND;
 		priv->port_status.wPortChange |= USB_HUB_PORT_CHANGE_SUSPEND;
 	}
-
-	uhc_submit_event(dev, type, 0);
 
 	/* Stop driving resume */
 	hprt &= ~(USB_DWC2_HPRT_PRTRES | USB_DWC2_HPRT_W1C_MSK);
@@ -2350,12 +2343,6 @@ static int uhc_dwc2_unlock(const struct device *const dev)
 	return k_mutex_unlock(&data->mutex);
 }
 
-static int uhc_dwc2_sof_enable(const struct device *const dev)
-{
-	/* Controller automatically enables SOFs */
-	return 0;
-}
-
 static int uhc_dwc2_bus_suspend(const struct device *const dev)
 {
 	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
@@ -2368,21 +2355,6 @@ static int uhc_dwc2_bus_suspend(const struct device *const dev)
 	}
 
 	k_event_post(&priv->events, BIT(UHC_DWC2_EVENT_SUSPEND));
-	return 0;
-}
-
-static int uhc_dwc2_bus_reset(const struct device *const dev)
-{
-	int ret;
-
-	ret = port_reset(dev);
-	if (ret != 0) {
-		LOG_ERR("Unable to reset root port");
-		return ret;
-	}
-
-	uhc_submit_event(dev, UHC_EVT_RESETED, 0);
-
 	return 0;
 }
 
@@ -2899,8 +2871,6 @@ static DEVICE_API(uhc, uhc_dwc2_api) = {
 	.disable = uhc_dwc2_disable,
 	.shutdown = uhc_dwc2_shutdown,
 	/* Bus related */
-	.bus_reset = uhc_dwc2_bus_reset,
-	.sof_enable = uhc_dwc2_sof_enable,
 	.bus_suspend = uhc_dwc2_bus_suspend,
 	.bus_resume = uhc_dwc2_bus_resume,
 	/* EP related */

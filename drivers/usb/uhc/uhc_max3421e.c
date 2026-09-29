@@ -633,6 +633,7 @@ static void max3421e_handle_condet(const struct device *dev)
 static void max3421e_bus_event(const struct device *dev)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
+	int err;
 
 	if (atomic_test_and_clear_bit(&priv->state,
 				      MAX3421E_STATE_BUS_RESUME)) {
@@ -643,8 +644,11 @@ static void max3421e_bus_event(const struct device *dev)
 		 */
 		priv->port_status.wPortStatus &= ~USB_HUB_PORT_STATUS_SUSPEND;
 		priv->port_status.wPortChange |= USB_HUB_PORT_CHANGE_SUSPEND;
-		/* Resume operation done event */
-		uhc_submit_event(dev, UHC_EVT_RESUMED, 0);
+
+		err = max3421e_mode_update(dev, priv->mode | MAX3421E_SOFKAENAB);
+		if (unlikely(err)) {
+			uhc_submit_event(dev, UHC_EVT_ERROR, err);
+		}
 	}
 
 	if (atomic_test_and_clear_bit(&priv->state,
@@ -652,8 +656,6 @@ static void max3421e_bus_event(const struct device *dev)
 		priv->port_status.wPortStatus &= ~USB_HUB_PORT_STATUS_RESET;
 		priv->port_status.wPortStatus |= USB_HUB_PORT_STATUS_ENABLE;
 		priv->port_status.wPortChange |= USB_HUB_PORT_CHANGE_RESET;
-		/* Reset operation done event */
-		uhc_submit_event(dev, UHC_EVT_RESETED, 0);
 	}
 }
 
@@ -700,7 +702,6 @@ static int max3421e_handle_bus_irq(const struct device *dev)
 	/* Suspend operation Done Interrupt (bus suspended) */
 	if (hirq & MAX3421E_SUSDN) {
 		ret = max3421e_hien_disable(dev, MAX3421E_SUSDN);
-		uhc_submit_event(dev, UHC_EVT_SUSPENDED, 0);
 	}
 
 	/* Peripheral Connect/Disconnect Interrupt */
@@ -812,20 +813,6 @@ static void max3421e_gpio_cb(const struct device *dev,
 		CONTAINER_OF(cb, struct max3421e_data, gpio_cb);
 
 	k_sem_give(&priv->irq_sem);
-}
-
-/* Enable SOF generator */
-static int max3421e_sof_enable(const struct device *dev)
-{
-	struct max3421e_data *priv = uhc_get_private(dev);
-
-	if (priv->mode & MAX3421E_SOFKAENAB) {
-		return -EALREADY;
-	}
-
-	priv->mode |= MAX3421E_SOFKAENAB;
-
-	return max3421e_write_byte(dev, MAX3421E_REG_MODE, priv->mode);
 }
 
 /* Disable SOF generator and suspend bus */
@@ -1485,8 +1472,6 @@ static DEVICE_API(uhc, max3421e_uhc_api) = {
 	.disable = uhc_max3421e_disable,
 	.shutdown = uhc_max3421e_shutdown,
 
-	.bus_reset = max3421e_bus_reset,
-	.sof_enable  = max3421e_sof_enable,
 	.bus_suspend = max3421e_bus_suspend,
 	.bus_resume = max3421e_bus_resume,
 

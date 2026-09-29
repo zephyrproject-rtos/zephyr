@@ -169,22 +169,8 @@ struct uhc_transfer {
  * @brief USB host controller event types
  */
 enum uhc_event_type {
-	/** Low speed device connected */
-	UHC_EVT_DEV_CONNECTED_LS,
-	/** Full speed device connected */
-	UHC_EVT_DEV_CONNECTED_FS,
-	/** High speed device connected */
-	UHC_EVT_DEV_CONNECTED_HS,
-	/** Device (peripheral) removed */
-	UHC_EVT_DEV_REMOVED,
-	/** Bus reset operation finished */
-	UHC_EVT_RESETED,
-	/** Bus suspend operation finished */
-	UHC_EVT_SUSPENDED,
 	/** Bus resume operation finished */
 	UHC_EVT_RESUMED,
-	/** Remote wakeup signal */
-	UHC_EVT_RWUP,
 	/** Endpoint request result event */
 	UHC_EVT_EP_REQUEST,
 	/**
@@ -314,8 +300,6 @@ __subsystem struct uhc_driver_api {
 	int (*disable)(const struct device *dev);
 	int (*shutdown)(const struct device *dev);
 
-	int (*bus_reset)(const struct device *dev);
-	int (*sof_enable)(const struct device *dev);
 	int (*bus_suspend)(const struct device *dev);
 	int (*bus_resume)(const struct device *dev);
 
@@ -332,51 +316,6 @@ __subsystem struct uhc_driver_api {
 /**
  * @endcond
  */
-
-/**
- * @brief Reset USB bus
- *
- * Perform USB bus reset, controller may emit UHC_EVT_RESETED
- * at the end of reset signaling.
- *
- * @param[in] dev      Pointer to device struct of the driver instance
- *
- * @return 0 on success, all other values should be treated as error.
- * @retval -EBUSY if the controller is already performing a bus operation
- */
-static inline int uhc_bus_reset(const struct device *dev)
-{
-	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
-	int ret;
-
-	api->lock(dev);
-	ret = api->bus_reset(dev);
-	api->unlock(dev);
-
-	return ret;
-}
-
-/**
- * @brief Enable Start of Frame generator
- *
- * Enable SOF generator.
- *
- * @param[in] dev      Pointer to device struct of the driver instance
- *
- * @return 0 on success, all other values should be treated as error.
- * @retval -EALREADY if already enabled
- */
-static inline int uhc_sof_enable(const struct device *dev)
-{
-	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
-	int ret;
-
-	api->lock(dev);
-	ret = api->sof_enable(dev);
-	api->unlock(dev);
-
-	return ret;
-}
 
 /**
  * @brief Suspend USB bus
