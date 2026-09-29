@@ -76,23 +76,37 @@ static bool http1_should_send_alt_svc(const struct http_client_ctx *client)
 	}
 }
 
-static int http1_send_alt_svc_header(struct http_client_ctx *client, bool end_headers)
+/* Returns the length of the Alt-Svc header written to buf, 0 if none is to be
+ * sent, or a negative error code.
+ */
+static int http1_format_alt_svc_header(struct http_client_ctx *client, char *buf, size_t size,
+				       bool end_headers)
 {
-	char alt_svc[ALT_SVC_HEADER_BUFFER_SIZE];
 	int len;
 
 	if (!http1_should_send_alt_svc(client)) {
 		return 0;
 	}
 
-	len = snprintk(alt_svc, sizeof(alt_svc),
-		       end_headers ? ALT_SVC_HEADER_FINAL_TEMPLATE :
-				     ALT_SVC_HEADER_TEMPLATE,
-		       *client->service->port,
-		       HTTP_SERVER_TO_H3_UPGRADE_MAX_AGE_SECS);
-	if (len < 0 || len >= sizeof(alt_svc)) {
+	len = snprintk(buf, size,
+		       end_headers ? ALT_SVC_HEADER_FINAL_TEMPLATE : ALT_SVC_HEADER_TEMPLATE,
+		       *client->service->port, HTTP_SERVER_TO_H3_UPGRADE_MAX_AGE_SECS);
+	if (len < 0 || len >= size) {
 		LOG_ERR("Failed to format Alt-Svc header");
 		return -ENOMEM;
+	}
+
+	return len;
+}
+
+static int http1_send_alt_svc_header(struct http_client_ctx *client, bool end_headers)
+{
+	char alt_svc[ALT_SVC_HEADER_BUFFER_SIZE];
+	int len;
+
+	len = http1_format_alt_svc_header(client, alt_svc, sizeof(alt_svc), end_headers);
+	if (len <= 0) {
+		return len;
 	}
 
 	return http_server_sendall(client, alt_svc, len);
@@ -329,19 +343,66 @@ static const char *http_status_str(enum http_status status)
 #define MAX_RESPONSE_TEMPLATE_SIZE                                                                 \
 	MAX(RESPONSE_TEMPLATE_SIZE_HTTP10, RESPONSE_TEMPLATE_SIZE_DYNAMIC)
 
-#define HTTP_RESPONSE_BUF_SIZE MAX_RESPONSE_TEMPLATE_SIZE
-
-/* Send a "name: value" header line. The parts are sent as they are, so header
- * names and values of any length are sent in full.
+/* Size of the buffer a response header block is assembled in. A header block
+ * that does not fit is sent in several parts.
  */
-static int http1_send_header_field(struct http_client_ctx *client, const char *name,
-				   const char *value)
+#define HTTP1_HEADER_BUF_SIZE 128
+
+BUILD_ASSERT(HTTP1_HEADER_BUF_SIZE >= MAX_RESPONSE_TEMPLATE_SIZE,
+	     "Header buffer must hold the response status line");
+
+struct http1_header_buf {
+	char data[HTTP1_HEADER_BUF_SIZE];
+	size_t len;
+};
+
+static int http1_header_flush(struct http_client_ctx *client, struct http1_header_buf *buf)
+{
+	int ret = 0;
+
+	if (buf->len > 0) {
+		ret = http_server_sendall(client, buf->data, buf->len);
+		buf->len = 0;
+	}
+
+	return ret;
+}
+
+/* Append a string to the header block. If it does not fit in the space left,
+ * the block assembled so far is sent first, and a string longer than the whole
+ * buffer is sent on its own.
+ */
+static int http1_header_append(struct http_client_ctx *client, struct http1_header_buf *buf,
+			       const char *str, size_t len)
+{
+	int ret;
+
+	if (len > sizeof(buf->data) - buf->len) {
+		ret = http1_header_flush(client, buf);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (len > sizeof(buf->data)) {
+			return http_server_sendall(client, str, len);
+		}
+	}
+
+	memcpy(&buf->data[buf->len], str, len);
+	buf->len += len;
+
+	return 0;
+}
+
+/* Append a "name: value" header line to the header block */
+static int http1_header_append_field(struct http_client_ctx *client, struct http1_header_buf *buf,
+				     const char *name, const char *value)
 {
 	const char *const parts[] = {name, ": ", value, crlf};
 	int ret;
 
 	ARRAY_FOR_EACH(parts, i) {
-		ret = http_server_sendall(client, parts[i], strlen(parts[i]));
+		ret = http1_header_append(client, buf, parts[i], strlen(parts[i]));
 		if (ret < 0) {
 			return ret;
 		}
@@ -350,13 +411,17 @@ static int http1_send_header_field(struct http_client_ctx *client, const char *n
 	return 0;
 }
 
-static int http1_send_headers(struct http_client_ctx *client, enum http_status status,
-			      const struct http_header *headers, size_t header_count,
-			      struct http_resource_detail_dynamic *dynamic_detail)
+/* Assemble the response header block in buf. It is normally left there for the
+ * caller to send together with the first chunk of the body.
+ */
+static int http1_add_headers(struct http_client_ctx *client, struct http1_header_buf *buf,
+			     enum http_status status, const struct http_header *headers,
+			     size_t header_count,
+			     struct http_resource_detail_dynamic *dynamic_detail)
 {
 	int ret;
 	bool content_type_sent = false;
-	char http_response[HTTP_RESPONSE_BUF_SIZE];
+	char alt_svc[ALT_SVC_HEADER_BUFFER_SIZE];
 	const char *header_template;
 
 	if (status < HTTP_100_CONTINUE || status > HTTP_511_NETWORK_AUTHENTICATION_REQUIRED) {
@@ -372,24 +437,22 @@ static int http1_send_headers(struct http_client_ctx *client, enum http_status s
 	header_template = is_client_http10(client) ? RESPONSE_TEMPLATE_DYNAMIC_HTTP_10_COMPATIBLE
 						   : RESPONSE_TEMPLATE_DYNAMIC_PART1;
 
-	/* Send response code and transfer encoding */
-	snprintk(http_response, sizeof(http_response), header_template, status,
+	/* Response code and transfer encoding, the buffer is still empty here */
+	snprintk(buf->data, sizeof(buf->data), header_template, status,
 		 IS_ENABLED(CONFIG_HTTP_SERVER_COMPLETE_STATUS_PHRASES) ? " " : "",
 		 http_status_str(status));
+	buf->len = strnlen(buf->data, sizeof(buf->data) - 1);
 
-	ret = http_server_sendall(client, http_response,
-				  strnlen(http_response, sizeof(http_response) - 1));
-	if (ret < 0) {
-		LOG_DBG("Failed to send HTTP headers part 1");
-		return ret;
+	ret = http1_format_alt_svc_header(client, alt_svc, sizeof(alt_svc), false);
+	if (ret > 0) {
+		ret = http1_header_append(client, buf, alt_svc, ret);
 	}
 
-	ret = http1_send_alt_svc_header(client, false);
 	if (ret < 0) {
 		return ret;
 	}
 
-	/* Send user-defined headers */
+	/* User-defined headers */
 	for (size_t i = 0; i < header_count; i++) {
 		const struct http_header *hdr = &headers[i];
 
@@ -402,14 +465,14 @@ static int http1_send_headers(struct http_client_ctx *client, enum http_status s
 			content_type_sent = true;
 		}
 
-		ret = http1_send_header_field(client, hdr->name, hdr->value);
+		ret = http1_header_append_field(client, buf, hdr->name, hdr->value);
 		if (ret < 0) {
 			LOG_DBG("Failed to send HTTP header");
 			return ret;
 		}
 	}
 
-	/* Send content-type header if it was not already sent */
+	/* Content-Type header, unless the application already provided it */
 	if (!content_type_sent) {
 		const char *content_type = NULL;
 
@@ -417,48 +480,53 @@ static int http1_send_headers(struct http_client_ctx *client, enum http_status s
 			content_type = dynamic_detail->common.content_type;
 		}
 
-		ret = http1_send_header_field(client, "Content-Type",
-					      content_type == NULL ? "text/html" : content_type);
+		ret = http1_header_append_field(client, buf, "Content-Type",
+						content_type == NULL ? "text/html" : content_type);
 		if (ret < 0) {
 			LOG_DBG("Failed to send Content-Type");
 			return ret;
 		}
 	}
 
-	/* Send final CRLF */
-	ret = http_server_sendall(client, crlf, 2);
-	if (ret < 0) {
-		LOG_DBG("Failed to send CRLF");
-		return ret;
-	}
-
-	return ret;
+	/* End of headers */
+	return http1_header_append(client, buf, crlf, 2);
 }
 
 static int http1_dynamic_response(struct http_client_ctx *client, struct http_response_ctx *rsp,
 				  struct http_resource_detail_dynamic *dynamic_detail)
 {
-	int ret;
+	struct http1_header_buf header_buf = {.len = 0};
+	struct net_iovec iov[4];
+	size_t iovlen = 0;
 	char tmp[TEMP_BUF_LEN];
+	int ret;
 
 	if (client->http1_headers_sent && (rsp->header_count > 0 || rsp->status != 0)) {
 		LOG_WRN("Already sent headers, dropping new headers and/or response code");
 	}
 
-	/* Send headers and response code if not already sent */
+	/* Build headers and response code if not already sent */
 	if (!client->http1_headers_sent) {
 		/* Use '200 OK' status if not specified by application */
 		if (rsp->status == 0) {
 			rsp->status = 200;
 		}
 
-		ret = http1_send_headers(client, rsp->status, rsp->headers, rsp->header_count,
-					 dynamic_detail);
+		ret = http1_add_headers(client, &header_buf, rsp->status, rsp->headers,
+					rsp->header_count, dynamic_detail);
 		if (ret < 0) {
 			return ret;
 		}
 
 		client->http1_headers_sent = true;
+	}
+
+	/* Pass the header block and the chunk of body data to the socket in one
+	 * call, so that a socket able to gather them can send them together.
+	 */
+	if (header_buf.len > 0) {
+		iov[iovlen++] =
+			(struct net_iovec){.iov_base = header_buf.data, .iov_len = header_buf.len};
 	}
 
 	/* Send body data if provided */
@@ -468,24 +536,23 @@ static int http1_dynamic_response(struct http_client_ctx *client, struct http_re
 		if (!is_client_http10(client)) {
 			/* Use Transfer-Encoding: chunked */
 			ret = snprintk(tmp, sizeof(tmp), "%zx\r\n", rsp->body_len);
-			ret = http_server_sendall(client, tmp, ret);
-			if (ret < 0) {
-				return ret;
-			}
+			iov[iovlen++] = (struct net_iovec){.iov_base = tmp, .iov_len = ret};
 		}
 
-		ret = http_server_sendall(client, rsp->body, rsp->body_len);
-		if (ret < 0) {
-			return ret;
-		}
+		iov[iovlen++] =
+			(struct net_iovec){.iov_base = (void *)rsp->body, .iov_len = rsp->body_len};
 
 		if (!is_client_http10(client)) {
 			/* Use Transfer-Encoding: chunked */
-			(void)http_server_sendall(client, crlf, 2);
+			iov[iovlen++] = (struct net_iovec){.iov_base = (void *)crlf, .iov_len = 2};
 		}
 	}
 
-	return 0;
+	if (iovlen == 0) {
+		return 0;
+	}
+
+	return http_server_sendall_iov(client, iov, iovlen);
 }
 
 static int dynamic_get_del_opts_req(struct http_resource_detail_dynamic *dynamic_detail,

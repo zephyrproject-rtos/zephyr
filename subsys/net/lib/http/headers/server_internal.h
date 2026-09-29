@@ -115,6 +115,7 @@ struct http_resource_detail *get_resource_detail(const struct http_service_desc 
 						 const char *path, int *len, bool is_ws);
 void http_server_remove_dot_segments(char *path);
 int http_server_sendall(struct http_client_ctx *client, const void *buf, size_t len);
+int http_server_sendall_iov(struct http_client_ctx *client, struct net_iovec *iov, size_t iovlen);
 void http_server_get_content_type_from_extension(char *url, char *content_type,
 						 size_t content_type_size);
 int http_server_find_file(char *fname, size_t fname_size, size_t *file_size,
