@@ -76,6 +76,9 @@
 /* INT_ENABLE_1 */
 #define BIT_RAW_DATA_0_RDY_EN BIT(0)
 
+/* INT_STATUS_1 */
+#define BIT_RAW_DATA_0_RDY_INT BIT(0)
+
 /* PWR_MGMT_1 */
 #define BIT_DEVICE_RESET BIT(7)
 #define BIT_SLEEP        BIT(6)
