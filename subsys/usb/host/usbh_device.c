@@ -133,15 +133,37 @@ enum ep_op {
 	EP_OP_DOWN, /* Disable endpoint and update endpoint pointers */
 };
 
-static void assign_ep_desc_ptr(struct usb_device *const udev,
-			       const uint8_t ep, void *const ptr)
+static void assign_ep(struct usb_device *const udev, const uint8_t ep,
+		      const struct usb_ep_descriptor *const ep_desc)
 {
-	uint8_t idx = USB_EP_GET_IDX(ep) & 0xF;
+	struct usb_host_ep *host_ep = uhc_get_udev_ep(udev, ep);
 
-	if (USB_EP_DIR_IS_IN(ep)) {
-		udev->ep_in[idx].desc = ptr;
-	} else {
-		udev->ep_out[idx].desc = ptr;
+	if (ep_desc == NULL) {
+		memset(host_ep, 0, sizeof(*host_ep));
+		return;
+	}
+
+	host_ep->addr = ep_desc->bEndpointAddress;
+	host_ep->attributes = ep_desc->bmAttributes;
+	host_ep->mps = ep_desc->wMaxPacketSize;
+	host_ep->interval = ep_desc->bInterval;
+}
+
+/*
+ * A control endpoint has no descriptor, its maximum packet size comes from the
+ * device descriptor and the remaining attributes are implied.
+ */
+static void assign_control_ep(struct usb_device *const udev)
+{
+	const uint8_t eps[] = {USB_CONTROL_EP_OUT, USB_CONTROL_EP_IN};
+
+	for (unsigned int i = 0; i < ARRAY_SIZE(eps); i++) {
+		struct usb_host_ep *host_ep = uhc_get_udev_ep(udev, eps[i]);
+
+		host_ep->addr = eps[i];
+		host_ep->attributes = USB_EP_TYPE_CONTROL;
+		host_ep->mps = udev->dev_desc.bMaxPacketSize0;
+		host_ep->interval = 0U;
 	}
 }
 
@@ -157,10 +179,10 @@ static int handle_ep_op(struct usb_device *const udev,
 			return -ENOTSUP;
 		}
 
-		assign_ep_desc_ptr(udev, ep_desc->bEndpointAddress, ep_desc);
+		assign_ep(udev, ep_desc->bEndpointAddress, ep_desc);
 		break;
 	case EP_OP_DOWN:
-		assign_ep_desc_ptr(udev, ep, NULL);
+		assign_ep(udev, ep, NULL);
 		break;
 	}
 
@@ -336,7 +358,7 @@ static int parse_configuration_descriptor(struct usb_device *const udev)
 				ep_desc->bEndpointAddress, ep_desc->wMaxPacketSize);
 
 			if (if_desc != NULL && if_desc->bAlternateSetting == 0) {
-				assign_ep_desc_ptr(udev, ep_desc->bEndpointAddress, ep_desc);
+				assign_ep(udev, ep_desc->bEndpointAddress, ep_desc);
 			}
 		}
 
@@ -353,9 +375,9 @@ static int parse_configuration_descriptor(struct usb_device *const udev)
 
 static void reset_configuration(struct usb_device *const udev)
 {
-	/* Reset all endpoint pointers */
-	memset(udev->ep_in, 0, sizeof(udev->ep_in));
-	memset(udev->ep_out, 0, sizeof(udev->ep_out));
+	/* Reset all endpoint pointers, except the control endpoints */
+	memset(&udev->ep_in[1], 0, sizeof(udev->ep_in) - sizeof(udev->ep_in[0]));
+	memset(&udev->ep_out[1], 0, sizeof(udev->ep_out) - sizeof(udev->ep_out[0]));
 
 	/* Reset all interface pointers */
 	memset(udev->ifaces, 0, sizeof(udev->ifaces));
@@ -541,6 +563,7 @@ int usbh_device_init(struct usb_device *const udev)
 	 * device descriptor is read.
 	 */
 	udev->dev_desc.bMaxPacketSize0 = 8;
+	assign_control_ep(udev);
 	err = usbh_req_desc_dev(udev, 8, &udev->dev_desc);
 	if (err) {
 		LOG_ERR("Failed to read device descriptor");
@@ -551,6 +574,9 @@ int usbh_device_init(struct usb_device *const udev)
 	if (err) {
 		goto error;
 	}
+
+	/* Update the control endpoint with the mps0 of the device */
+	assign_control_ep(udev);
 
 	err = alloc_device_address(udev, &new_addr);
 	if (err) {

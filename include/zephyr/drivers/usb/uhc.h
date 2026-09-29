@@ -64,9 +64,22 @@ struct usb_host_interface {
 	uint8_t alternate;
 };
 
+/**
+ * USB host endpoint
+ *
+ * Host side representation of an endpoint of a connected USB device. The
+ * attributes are taken from the endpoint descriptor of the device, or from the
+ * device descriptor for endpoint 0.
+ */
 struct usb_host_ep {
-	/** Pointer to the endpoint descriptor */
-	struct usb_ep_descriptor *desc;
+	/** Endpoint address (same as bEndpointAddress) */
+	uint8_t addr;
+	/** Endpoint attributes (same as bmAttributes) */
+	uint8_t attributes;
+	/** Maximum packet size (same as wMaxPacketSize) */
+	uint16_t mps;
+	/** Polling interval (same as bInterval) */
+	uint8_t interval;
 };
 
 /**
@@ -108,6 +121,29 @@ struct usb_device {
 };
 
 /**
+ * @brief Get USB device endpoint by endpoint address.
+ *
+ * Endpoint 0 has an entry per direction, because the two directions of a
+ * control endpoint carry the stages of a transfer in opposite directions.
+ *
+ * @param[in] udev Pointer to USB device instance
+ * @param[in] ep   Endpoint address
+ *
+ * @return Pointer to the IN or OUT endpoint.
+ */
+static inline struct usb_host_ep *uhc_get_udev_ep(struct usb_device *const udev,
+						  const uint8_t ep)
+{
+	uint8_t idx = USB_EP_GET_IDX(ep) & 0xFU;
+
+	if (USB_EP_DIR_IS_IN(ep)) {
+		return &udev->ep_in[idx];
+	} else {
+		return &udev->ep_out[idx];
+	}
+}
+
+/**
  * @brief USB control transfer stage
  */
 enum uhc_control_stage {
@@ -136,12 +172,12 @@ struct uhc_transfer {
 	/** Transfer data buffer */
 	struct net_buf *buf;
 	/** Endpoint to which request is associated */
-	uint8_t ep;
-	/** Endpoint type */
-	uint8_t type;
-	/** Maximum packet size */
-	uint16_t mps;
-	/** Interval, used for periodic transfers only */
+	struct usb_host_ep *ep;
+	/**
+	 * Polling interval requested for this transfer, used for periodic
+	 * transfers only. Taken from the endpoint when the transfer is
+	 * allocated, a caller may request a different one.
+	 */
 	uint16_t interval;
 	/** Start frame, used for periodic transfers only */
 	uint16_t start_frame;

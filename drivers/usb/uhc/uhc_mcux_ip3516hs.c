@@ -116,7 +116,8 @@ static void uhc_mcux_transfer_callback(void *param, usb_host_transfer_t *transfe
 	if (status == kStatus_USB_Success) {
 		err = 0;
 
-		if ((xfer->ep == 0) && (transfer->setupPacket->bRequest == USB_SREQ_SET_ADDRESS)) {
+		if ((xfer->ep->addr == 0) &&
+		    (transfer->setupPacket->bRequest == USB_SREQ_SET_ADDRESS)) {
 			usb_host_pipe_t *mcux_ep;
 
 			/* MCUX hal controller driver needs set the ep0's address
@@ -141,7 +142,7 @@ static void uhc_mcux_transfer_callback(void *param, usb_host_transfer_t *transfe
 	}
 
 	if ((xfer->buf != NULL) && (transfer->transferBuffer != NULL) &&
-	    USB_EP_DIR_IS_IN(xfer->ep) && (transfer->transferSofar > 0)) {
+	    USB_EP_DIR_IS_IN(xfer->ep->addr) && (transfer->transferSofar > 0)) {
 		net_buf_add(xfer->buf, transfer->transferSofar);
 	}
 
