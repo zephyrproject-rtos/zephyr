@@ -928,7 +928,53 @@ static int domain_privatize_kernel_text(uint64_t *domain_root)
 		l1_base = ((uintptr_t)l0_idx << RISCV_PGLEVEL_SHIFT(0)) |
 			  ((uintptr_t)l1_idx << RISCV_PGLEVEL_SHIFT(1));
 
-		/* Stamp PTE_USER on text/rodata pages in this L2 */
+#if PGTABLE_LEVELS == 4
+		/*
+		 * Sv48: L2 entries are still intermediate nodes (VPN[1]).
+		 * Descend one more level: privatise each L2→L3 table and
+		 * stamp PTE_USER on the L3 leaf PTEs that cover kernel text.
+		 */
+		for (i = 0; i < RISCV_PGTABLE_ENTRIES; i++) {
+			pte_t l2_pte = private_l2[i];
+			uint64_t *private_l3;
+			unsigned int j;
+			uintptr_t l2_base;
+
+			if (!pte_is_valid(l2_pte) || pte_is_leaf(l2_pte)) {
+				continue;
+			}
+
+			private_l3 = new_table();
+			if (!private_l3) {
+				return -ENOMEM;
+			}
+			inc_table_ref(private_l3);
+			memcpy(private_l3, (void *)pte_to_phys(l2_pte), PAGE_SIZE);
+			private_l2[i] = pte_create((uintptr_t)private_l3, PTE_TYPE_TABLE);
+
+			for (j = 0; j < RISCV_PGTABLE_ENTRIES; j++) {
+				if (pte_is_valid(private_l3[j])) {
+					adjust_table_usage(private_l3, 1);
+				}
+			}
+
+			l2_base = l1_base | ((uintptr_t)i << RISCV_PGLEVEL_SHIFT(2));
+
+			for (j = 0; j < RISCV_PGTABLE_ENTRIES; j++) {
+				uintptr_t page_va =
+					l2_base + ((uintptr_t)j << PAGE_SIZE_SHIFT);
+				pte_t pte = private_l3[j];
+
+				if (!pte_is_valid(pte) || !pte_is_leaf(pte)) {
+					continue;
+				}
+				if (page_va >= text_start && page_va < rom_end) {
+					private_l3[j] = pte | PTE_USER;
+				}
+			}
+		}
+#else
+		/* Sv39: L2 entries are leaf PTEs - stamp PTE_USER directly. */
 		for (i = 0; i < RISCV_PGTABLE_ENTRIES; i++) {
 			uintptr_t page_va = l1_base + ((uintptr_t)i << PAGE_SIZE_SHIFT);
 			pte_t pte = private_l2[i];
@@ -940,10 +986,49 @@ static int domain_privatize_kernel_text(uint64_t *domain_root)
 				private_l2[i] = pte | PTE_USER;
 			}
 		}
+#endif
 	}
 
 	return 0;
 }
+
+#if PGTABLE_LEVELS == 4
+/*
+ * Sv48 helper for sync_domains(): propagate missing kernel L2 entries into a
+ * domain's private L2 table.  Called when both the kernel and the domain have
+ * private (diverged) L1 tables; the L1-level sync in sync_domains() cannot
+ * reach inside an already-present L1 entry, so we descend one extra level.
+ */
+static void sync_l2_from_kernel(uint64_t *k_l1, uint64_t *d_l1)
+{
+	unsigned int j;
+
+	for (j = 0; j < RISCV_PGTABLE_ENTRIES; j++) {
+		pte_t k_l1j = k_l1[j];
+		pte_t d_l1j = d_l1[j];
+		uint64_t *k_l2, *d_l2;
+		unsigned int k;
+
+		if (!pte_is_valid(k_l1j) || !pte_is_table(k_l1j) ||
+		    !pte_is_valid(d_l1j) || !pte_is_table(d_l1j)) {
+			continue;
+		}
+
+		k_l2 = (uint64_t *)pte_to_phys(k_l1j);
+		d_l2 = (uint64_t *)pte_to_phys(d_l1j);
+
+		if (k_l2 == d_l2) {
+			continue;
+		}
+
+		for (k = 0; k < RISCV_PGTABLE_ENTRIES; k++) {
+			if (pte_is_valid(k_l2[k]) && !pte_is_valid(d_l2[k])) {
+				d_l2[k] = k_l2[k];
+			}
+		}
+	}
+}
+#endif
 
 /*
  * Propagate new kernel root-table entries to all active domain page tables.
@@ -1007,6 +1092,10 @@ static void sync_domains(void)
 						d_l1[j] = k_l1[j];
 					}
 				}
+
+#if PGTABLE_LEVELS == 4
+				sync_l2_from_kernel(k_l1, d_l1);
+#endif
 			}
 		}
 	}
@@ -1068,94 +1157,72 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 }
 
 /*
- * For each 2MB-aligned L1 slot covering [va, va+size), ensure the domain's
- * L1 and L2 intermediate tables are private copies (not shared with the
- * kernel).  Shared tables would cause partition map/unmap operations to
- * silently modify kernel mappings as a side-effect.
+ * For each leaf-adjacent-level slot (always 2MB, regardless of
+ * PGTABLE_LEVELS) covering [va, va+size), walk every intermediate table
+ * level from the root down to (but not including) the leaf level and
+ * ensure each one is a private copy (not shared with the kernel).  Shared
+ * tables would cause partition map/unmap operations to silently modify
+ * kernel mappings as a side-effect.
  *
  * Must be called with xlat_lock held.
  */
 static int ensure_private_tables(uint64_t *domain_root, uintptr_t va, size_t size)
 {
-	const uintptr_t l1_size = BIT(RISCV_PGLEVEL_SHIFT(1)); /* 2 MB */
-	uintptr_t cur = ROUND_DOWN(va, l1_size);
+	/* The table one level above the leaf always covers 2MB: the shift is
+	 * PAGE_SIZE_SHIFT + RISCV_PGLEVEL_BITS * 1, independent of how many
+	 * levels exist above it.
+	 */
+	const uintptr_t step_size = BIT(RISCV_PGLEVEL_SHIFT(PGTABLE_LEVELS - 2));
+	uintptr_t cur = ROUND_DOWN(va, step_size);
 	uintptr_t end = va + size;
 
-	for (; cur < end; cur += l1_size) {
-		unsigned int l0_idx = VPN(cur, 0);
-		unsigned int l1_idx = VPN(cur, 1);
-		pte_t d_l0_pte = domain_root[l0_idx];
-		uint64_t *d_l1, *k_l1 = NULL;
-		pte_t k_l0_pte;
-		unsigned int i;
+	for (; cur < end; cur += step_size) {
+		uint64_t *d_tbl = domain_root;
+		uint64_t *k_tbl = kernel_root_table;
+		int lv;
 
-		if (!pte_is_valid(d_l0_pte) || !pte_is_table(d_l0_pte)) {
-			continue;
-		}
-		d_l1 = (uint64_t *)pte_to_phys(d_l0_pte);
+		for (lv = 0; lv < PGTABLE_LEVELS - 1; lv++) {
+			unsigned int idx = VPN(cur, lv);
+			pte_t d_pte = d_tbl[idx];
+			uint64_t *d_next, *k_next = NULL;
+			unsigned int i;
 
-		k_l0_pte = kernel_root_table[l0_idx];
-		if (pte_is_valid(k_l0_pte) && pte_is_table(k_l0_pte)) {
-			k_l1 = (uint64_t *)pte_to_phys(k_l0_pte);
-		}
-
-		/* If domain shares the L1 with the kernel, privatize it. */
-		if (k_l1 != NULL && d_l1 == k_l1) {
-			uint64_t *priv_l1 = new_table();
-
-			if (!priv_l1) {
-				return -ENOMEM;
+			if (!pte_is_valid(d_pte) || !pte_is_table(d_pte)) {
+				break;
 			}
-			inc_table_ref(priv_l1);
-			memcpy(priv_l1, k_l1, PAGE_SIZE);
-			for (i = 0; i < RISCV_PGTABLE_ENTRIES; i++) {
-				if (pte_is_valid(priv_l1[i])) {
-					adjust_table_usage(priv_l1, 1);
-				}
-			}
-			/* Raw write: domain root is not set_pte()-tracked. */
-			domain_root[l0_idx] = pte_create((uintptr_t)priv_l1,
-							 PTE_TYPE_TABLE);
-			d_l1 = priv_l1;
-		}
+			d_next = (uint64_t *)pte_to_phys(d_pte);
 
-		/* Check the L2 entry at this l1_idx. */
-		{
-			pte_t d_l1_pte = d_l1[l1_idx];
-			uint64_t *d_l2, *k_l2 = NULL;
+			if (k_tbl != NULL) {
+				pte_t k_pte = k_tbl[idx];
 
-			if (!pte_is_valid(d_l1_pte) || !pte_is_table(d_l1_pte)) {
-				continue;
-			}
-			d_l2 = (uint64_t *)pte_to_phys(d_l1_pte);
-
-			if (k_l1 != NULL) {
-				pte_t k_l1_pte = k_l1[l1_idx];
-
-				if (pte_is_valid(k_l1_pte) && pte_is_table(k_l1_pte)) {
-					k_l2 = (uint64_t *)pte_to_phys(k_l1_pte);
+				if (pte_is_valid(k_pte) && pte_is_table(k_pte)) {
+					k_next = (uint64_t *)pte_to_phys(k_pte);
 				}
 			}
 
-			if (k_l2 != NULL && d_l2 == k_l2) {
-				uint64_t *priv_l2 = new_table();
+			/* If domain shares this table with the kernel, privatize it. */
+			if (k_next != NULL && d_next == k_next) {
+				uint64_t *priv = new_table();
 
-				if (!priv_l2) {
+				if (!priv) {
 					return -ENOMEM;
 				}
-				inc_table_ref(priv_l2);
-				memcpy(priv_l2, k_l2, PAGE_SIZE);
+				inc_table_ref(priv);
+				memcpy(priv, k_next, PAGE_SIZE);
 				for (i = 0; i < RISCV_PGTABLE_ENTRIES; i++) {
-					if (pte_is_valid(priv_l2[i])) {
-						adjust_table_usage(priv_l2, 1);
+					if (pte_is_valid(priv[i])) {
+						adjust_table_usage(priv, 1);
 					}
 				}
-				/* Raw write: d_l1 PTE count not tracked for
-				 * this slot (domain tables use raw writes).
+				/* Raw write: intermediate domain tables are
+				 * not set_pte()-tracked.
 				 */
-				d_l1[l1_idx] = pte_create((uintptr_t)priv_l2,
-							  PTE_TYPE_TABLE);
+				d_tbl[idx] = pte_create((uintptr_t)priv, PTE_TYPE_TABLE);
+				d_next = priv;
 			}
+
+			d_tbl = d_next;
+			k_tbl = k_next;
 		}
 	}
 	return 0;
