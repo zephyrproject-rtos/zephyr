@@ -21,6 +21,14 @@ properties:
     description:
       Digital reset input.
 
+  cirrus,asp:
+    type: int
+    enum: [1, 2]
+    default: 1
+    description: |
+      Audio serial port the host's I2S is wired to. ASP1 on the
+      nRF5340 Audio DK.
+
   gpio1-gpios:
     type: phandle-array
     description:
@@ -80,3 +88,15 @@ properties:
     type: phandle-array
     description:
       GPIO12 input with bus-keeper
+
+child-binding:
+  description: |
+    Second audio serial port of the same CS47L63, exposed as its own
+    audio_codec device. Clocks, output volume and mute, and the input
+    paths stay with the parent.
+  properties:
+    cirrus,asp:
+      type: int
+      required: true
+      enum: [1, 2]
+      description: Serial port this device drives; must differ from the parent's.
