@@ -20,6 +20,7 @@ uint64_t arch_timing_freq_get(void)
 	return CONFIG_XTENSA_CCOUNT_HZ;
 }
 
+__no_instrumentation__
 timing_t arch_timing_counter_get(void)
 {
 	uint32_t ccount;

@@ -28,8 +28,9 @@ exit events without requiring manual tracing calls in the code.
 The instrumentation subsystem relies on compiler support for automatic function instrumentation.
 When enabled, the compiler automatically inserts calls to special instrumentation handler functions
 at the entry and exit of every function in your application (excluding those explicitly marked with
-``__no_instrumentation__``). Currently, only GCC is supported with the ``-finstrument-functions``
-compiler flag.
+``__no_instrumentation__``). GCC and Clang/LLVM are supported via the ``-finstrument-functions``
+compiler flag (GNU instrumentation ABI: ``__cyg_profile_func_enter`` /
+``__cyg_profile_func_exit``).
 
 The subsystem initializes automatically after RAM initialization and uses trigger/stopper functions
 to control when recording is active. The default trigger and stopper functions are both set to
@@ -220,8 +221,11 @@ Limitations and Considerations
 ******************************
 
 Compiler support
-  The instrumentation subsystem requires GCC with ``-finstrument-functions`` support. Other
-  compilers are not supported.
+  The instrumentation subsystem requires GCC or Clang/LLVM with ``-finstrument-functions``
+  support. Function/file exclude lists
+  (:kconfig:option:`CONFIG_INSTRUMENTATION_EXCLUDE_FUNCTION_LIST` /
+  :kconfig:option:`CONFIG_INSTRUMENTATION_EXCLUDE_FILE_LIST`) are GCC-only; with Clang,
+  mark excluded functions with ``__no_instrumentation__``.
 
 Stack size requirements
   Instrumentation adds overhead to every function call, which increases stack usage. You will likely

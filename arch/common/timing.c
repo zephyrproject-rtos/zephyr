@@ -20,6 +20,7 @@ void arch_timing_stop(void)
 {
 }
 
+__no_instrumentation__
 timing_t arch_timing_counter_get(void)
 {
 #if CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
