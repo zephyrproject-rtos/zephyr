@@ -1785,7 +1785,9 @@ static int ifx_cat1_uart_pm_action(const struct device *dev, enum pm_device_acti
 		 * Power was lost: re-init the UART - re-apply pinctrl, re-assign
 		 * the clock divider, and replay the cached runtime config.
 		 */
+#if !defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2)
 		cy_rslt_t result;
+#endif /* !CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2 */
 		int ret;
 
 		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
@@ -1793,10 +1795,12 @@ static int ifx_cat1_uart_pm_action(const struct device *dev, enum pm_device_acti
 			return ret;
 		}
 
+#if !defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2)
 		result = ifx_cat1_utils_peri_pclk_assign_divider(config->clk_dst, &data->clock);
 		if (result != CY_RSLT_SUCCESS) {
 			return -EIO;
 		}
+#endif /* !CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2 */
 
 		ret = ifx_cat1_uart_configure(dev, &data->cfg);
 		if (ret < 0) {
