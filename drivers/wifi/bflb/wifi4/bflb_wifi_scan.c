@@ -84,12 +84,15 @@ struct bflb_scanu_result_ind {
 
 static struct bflb_scan_ap scan_ap[BFLB_SCAN_AP_MAX];
 static uint8_t scan_ap_cnt;
+static uint8_t scan_target_ssid[BFLB_WIFI_SSID_MAX_LEN];
+static uint8_t scan_target_ssid_len;
 
 static const uint8_t *find_ie(const uint8_t *pos, size_t len, uint8_t id);
 static bool rsn_suite_is_wfa(const uint8_t *suite);
 static void classify_rsn(const uint8_t *rsn, struct bflb_scan_ap *a);
 static const uint8_t *find_wpa_ie(const uint8_t *pos, size_t len);
 static struct bflb_scan_ap *scan_find_bssid(const uint8_t *bssid);
+static bool scan_is_target(const uint8_t *ssid, uint8_t ssid_len);
 static void bflb_init_scan_req(const struct bflb_wifi_dev *d, struct scanu_start_req *req);
 
 /* 00-0F-AC OUI: the IEEE 802.11 suite selectors. */
@@ -199,6 +202,12 @@ static const uint8_t *find_wpa_ie(const uint8_t *pos, size_t len)
 	return NULL;
 }
 
+static bool scan_is_target(const uint8_t *ssid, uint8_t ssid_len)
+{
+	return (scan_target_ssid_len != 0U) && (ssid_len == scan_target_ssid_len) &&
+	       (memcmp(ssid, scan_target_ssid, ssid_len) == 0);
+}
+
 static struct bflb_scan_ap *scan_find_bssid(const uint8_t *bssid)
 {
 	for (uint8_t i = 0; i < scan_ap_cnt; i++) {
@@ -257,10 +266,20 @@ void bflb_wifi_scan_handle_result(struct bflb_wifi_dev *d, const void *payload)
 	ies = f + BFLB_BEACON_BODY_OFF;
 	ies_len = ind->length - BFLB_BEACON_BODY_OFF;
 
+	ssid_ie = find_ie(ies, ies_len, IEEE80211_IE_SSID);
+	if ((ssid_ie != NULL) && (ssid_ie[1] > BFLB_WIFI_SSID_MAX_LEN)) {
+		ssid_ie = NULL;
+	}
+
 	a = scan_find_bssid(bssid);
 	if (a != NULL) {
 		if (ind->rssi > a->rssi) {
 			a->rssi = ind->rssi;
+		}
+		/* A hidden AP beacons an empty SSID; take it from its probe response. */
+		if ((a->ssid_len == 0U) && (ssid_ie != NULL) && (ssid_ie[1] > 0U)) {
+			a->ssid_len = ssid_ie[1];
+			memcpy(a->ssid, ssid_ie + 2, a->ssid_len);
 		}
 		return;
 	}
@@ -269,17 +288,21 @@ void bflb_wifi_scan_handle_result(struct bflb_wifi_dev *d, const void *payload)
 		/* The sweep runs low channel to high, so a full cache would
 		 * otherwise keep whatever the crowded low channels put in it
 		 * and drop every later channel unseen.  Give the slot to the
-		 * strongest APs instead.
+		 * strongest APs instead, but always keep the connect target.
 		 */
-		struct bflb_scan_ap *weakest = &scan_ap[0];
+		struct bflb_scan_ap *weakest = NULL;
+		bool target = (ssid_ie != NULL) && scan_is_target(ssid_ie + 2, ssid_ie[1]);
 
-		for (uint8_t i = 1; i < scan_ap_cnt; i++) {
-			if (scan_ap[i].rssi < weakest->rssi) {
+		for (uint8_t i = 0; i < scan_ap_cnt; i++) {
+			if (scan_is_target(scan_ap[i].ssid, scan_ap[i].ssid_len)) {
+				continue;
+			}
+			if ((weakest == NULL) || (scan_ap[i].rssi < weakest->rssi)) {
 				weakest = &scan_ap[i];
 			}
 		}
 
-		if (ind->rssi <= weakest->rssi) {
+		if ((weakest == NULL) || (!target && (ind->rssi <= weakest->rssi))) {
 			return;
 		}
 
@@ -309,8 +332,7 @@ void bflb_wifi_scan_handle_result(struct bflb_wifi_dev *d, const void *payload)
 		a->channel = wifi_utils_freq_to_chan(ind->center_freq);
 	}
 
-	ssid_ie = find_ie(ies, ies_len, IEEE80211_IE_SSID);
-	if ((ssid_ie != NULL) && (ssid_ie[1] <= BFLB_WIFI_SSID_MAX_LEN)) {
+	if (ssid_ie != NULL) {
 		a->ssid_len = ssid_ie[1];
 		memcpy(a->ssid, ssid_ie + 2, a->ssid_len);
 	} else {
@@ -386,7 +408,7 @@ const struct bflb_scan_ap *bflb_wifi_scan_find_ssid(const uint8_t *ssid, uint8_t
 /* Active wildcard scan across channels 1-13.  Returns immediately;
  * results arrive via SCANU_RESULT_IND and completion via SCANU_START_CFM.
  */
-int bflb_wifi_scan_start(struct bflb_wifi_dev *d)
+int bflb_wifi_scan_start(struct bflb_wifi_dev *d, const uint8_t *ssid, uint8_t ssid_len)
 {
 	struct scanu_start_req req;
 	int ret;
@@ -403,8 +425,16 @@ int bflb_wifi_scan_start(struct bflb_wifi_dev *d)
 	}
 
 	scan_ap_cnt = 0;
+	scan_target_ssid_len = 0;
+	if ((ssid != NULL) && (ssid_len <= BFLB_WIFI_SSID_MAX_LEN)) {
+		memcpy(scan_target_ssid, ssid, ssid_len);
+		scan_target_ssid_len = ssid_len;
+	}
 
 	bflb_init_scan_req(d, &req);
+	/* Probe for the target directly so a hidden AP answers with its SSID. */
+	req.ssid[0].length = scan_target_ssid_len;
+	memcpy(req.ssid[0].array, scan_target_ssid, scan_target_ssid_len);
 
 	ret = bflb_wifi_ipc_send_cmd(d, SCANU_START_REQ, BFLB_WIFI_PENDING_CFM_NONE, &req,
 				     sizeof(req), NULL, 0);
@@ -466,7 +496,7 @@ int bflb_wifi_scan(const struct device *dev, struct net_if *iface, struct wifi_s
 	d->scan_cb = cb;
 	k_mutex_unlock(&d->lock);
 
-	ret = bflb_wifi_scan_start(d);
+	ret = bflb_wifi_scan_start(d, NULL, 0);
 	if (ret != 0) {
 		k_mutex_lock(&d->lock, K_FOREVER);
 		d->scan_cb = NULL;
