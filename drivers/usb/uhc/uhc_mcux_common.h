@@ -49,12 +49,6 @@ int uhc_mcux_disable(const struct device *dev);
 
 int uhc_mcux_shutdown(const struct device *dev);
 
-/* Signal bus reset, 50ms SE0 signal */
-int uhc_mcux_bus_reset(const struct device *dev);
-
-/* Enable SOF generator */
-int uhc_mcux_sof_enable(const struct device *dev);
-
 /* Disable SOF generator and suspend bus */
 int uhc_mcux_bus_suspend(const struct device *dev);
 

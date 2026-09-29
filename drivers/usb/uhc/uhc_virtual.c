@@ -1099,15 +1099,6 @@ static void uhc_vrt_uvb_cb(const void *const vrt_priv,
 	}
 }
 
-static int uhc_vrt_sof_enable(const struct device *dev)
-{
-	struct uhc_vrt_data *priv = uhc_get_private(dev);
-
-	k_timer_start(&priv->sof_timer, priv->sof_period, priv->sof_period);
-
-	return 0;
-}
-
 /* Disable SOF generator and suspend bus */
 static int uhc_vrt_bus_suspend(const struct device *dev)
 {
@@ -1117,13 +1108,6 @@ static int uhc_vrt_bus_suspend(const struct device *dev)
 	priv->bus_suspended = true;
 
 	return uvb_advert(priv->host_node, UVB_EVT_SUSPEND, NULL, NULL);
-}
-
-static int uhc_vrt_bus_reset(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
 }
 
 static int uhc_vrt_bus_resume(const struct device *dev)
@@ -1263,8 +1247,6 @@ static DEVICE_API(uhc, uhc_vrt_api) = {
 	.disable = uhc_vrt_disable,
 	.shutdown = uhc_vrt_shutdown,
 
-	.bus_reset = uhc_vrt_bus_reset,
-	.sof_enable  = uhc_vrt_sof_enable,
 	.bus_suspend = uhc_vrt_bus_suspend,
 	.bus_resume = uhc_vrt_bus_resume,
 
