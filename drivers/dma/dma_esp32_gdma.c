@@ -956,6 +956,79 @@ static void dma_esp32_rx_rearm(struct dma_esp32_data *data, int channel_id)
 	dma_esp32_stop_barrier(data, channel_id, GDMA_CHANNEL_DIRECTION_RX);
 }
 
+#if defined(CONFIG_ESP_SPIRAM) && defined(CONFIG_SOC_SERIES_ESP32S3)
+#define DMA_ESP32_TX_PREFETCH 1
+
+/* Worst case to fill the FIFO from PSRAM on the slowest MSPI clocks, with the
+ * caches and the other GDMA channels contending: ~133 us. Allow twice that.
+ */
+#define DMA_ESP32_TX_PREFETCH_TIMEOUT_US 300
+
+#define DMA_ESP32_TX_FIFO_L3 3
+
+/* Peripherals start without waiting for their GDMA channel to have data. From
+ * PSRAM that takes microseconds and an SPI master runs dry (OUTFIFO_EMPTY_ERR),
+ * so wait for a full FIFO or a pushed descriptor.
+ */
+static int dma_esp32_tx_prefetch(struct dma_esp32_data *data, uint32_t channel_id)
+{
+	uint32_t timeout = k_us_to_cyc_ceil32(DMA_ESP32_TX_PREFETCH_TIMEOUT_US);
+	uint32_t start = k_cycle_get_32();
+	uint32_t events;
+
+	do {
+		if (gdma_ll_tx_is_fifo_full(data->hal.dev, channel_id, DMA_ESP32_TX_FIFO_L3)) {
+			return 0;
+		}
+		events = gdma_ll_tx_get_interrupt_status(data->hal.dev, channel_id, true);
+		if (events & GDMA_LL_EVENT_TX_DESC_ERROR) {
+			return -EIO;
+		}
+		if (events & (GDMA_LL_EVENT_TX_DONE | GDMA_LL_EVENT_TX_EOF)) {
+			return 0;
+		}
+	} while (k_cycle_get_32() - start < timeout);
+
+	return -ETIMEDOUT;
+}
+#endif
+
+static int dma_esp32_start_tx(struct dma_esp32_data *data, struct dma_esp32_channel *dma_channel)
+{
+	uint32_t channel_id = dma_channel->channel_id;
+#ifdef DMA_ESP32_TX_PREFETCH
+	bool from_psram = esp_ptr_external_ram(dma_channel->desc_list[0].buffer);
+	int ret;
+
+	if (from_psram) {
+		/* Events left from the previous transfer would end the wait */
+		gdma_hal_clear_intr(&data->hal, channel_id, GDMA_CHANNEL_DIRECTION_TX,
+				    GDMA_LL_TX_EVENT_MASK);
+	}
+#endif
+
+	gdma_hal_enable_intr(&data->hal, channel_id, GDMA_CHANNEL_DIRECTION_TX,
+			     GDMA_LL_EVENT_TX_EOF, true);
+	gdma_hal_start_with_desc(&data->hal, channel_id, GDMA_CHANNEL_DIRECTION_TX,
+				 (intptr_t)dma_channel->desc_list);
+
+#ifdef DMA_ESP32_TX_PREFETCH
+	if (from_psram) {
+		ret = dma_esp32_tx_prefetch(data, channel_id);
+		if (ret < 0) {
+			gdma_hal_enable_intr(&data->hal, channel_id, GDMA_CHANNEL_DIRECTION_TX,
+					     GDMA_LL_TX_EVENT_MASK, false);
+			gdma_hal_stop(&data->hal, channel_id, GDMA_CHANNEL_DIRECTION_TX);
+			dma_esp32_stop_barrier(data, channel_id, GDMA_CHANNEL_DIRECTION_TX);
+			LOG_ERR("No TX data from PSRAM on channel pair %u (%d)", channel_id, ret);
+			return ret;
+		}
+	}
+#endif
+
+	return 0;
+}
+
 static int dma_esp32_start(const struct device *dev, uint32_t channel)
 {
 	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
@@ -1011,11 +1084,7 @@ static int dma_esp32_start(const struct device *dev, uint32_t channel)
 			if (!dma_ll_tx_is_fsm_idle(data, dma_channel->channel_id)) {
 				return 0; /* already running, the reload is linked behind */
 			}
-			gdma_hal_enable_intr(&data->hal, dma_channel->channel_id,
-					     GDMA_CHANNEL_DIRECTION_TX, GDMA_LL_EVENT_TX_EOF, true);
-			gdma_hal_start_with_desc(&data->hal, dma_channel->channel_id,
-						 GDMA_CHANNEL_DIRECTION_TX,
-						 (intptr_t)dma_channel->desc_list);
+			return dma_esp32_start_tx(data, dma_channel);
 		} else {
 			LOG_ERR("Channel %d is not configured", channel);
 			return -EINVAL;
