@@ -5,7 +5,7 @@ if BOARD_RETERMINAL_E1001_ESP32S3_PROCPU
 
 if LVGL
 
-config LV_Z_COLOR_MONO_HW_INVERSION
+configdefault LV_Z_COLOR_MONO_HW_INVERSION
 	default y
 
 choice LV_COLOR_DEPTH
@@ -18,10 +18,10 @@ if FUEL_GAUGE
 
 # Composite fuel gauge gets battery voltage from ADC-based voltage-divider sensor
 
-config ADC
+configdefault ADC
 	default y
 
-config SENSOR
+configdefault SENSOR
 	default y
 
 endif # FUEL_GAUGE
