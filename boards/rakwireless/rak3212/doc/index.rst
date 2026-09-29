@@ -1,19 +1,19 @@
-.. zephyr:board:: rak3112
+.. zephyr:board:: rak3212
 
 Overview
 ********
 
-The RAK3112 is a low-power, long-range LoRaWAN module based on the
-Espressif ESP32-S3 MCU with an integrated Semtech SX1262 LoRa
-transceiver. Supporting LoRa, BLE, and Wi-Fi, this module is ideal for
-various IoT applications such as home automation, sensor networks,
-building automation, and other IoT network applications.
+The RAK3212 Breakout Board carries a RAK3112 WisDuo stamp module, which
+combines an Espressif ESP32-S3 MCU with a Semtech SX1262 LoRa transceiver
+for LoRa, BLE and Wi-Fi. The breakout board brings every module pin out to
+2.54 mm headers so the module can be evaluated without designing a carrier
+PCB.
+
+The same stamp module is carried by the :zephyr:board:`rak3312` WisBlock Core
+Module, which plugs into a WisBlock Base Board instead of exposing headers.
 
 Hardware
 ********
-
-It is designed for easy access to the pins on the board and to simplify the evaluation of the RAK3112
-module.
 
 The main hardware features are:
 
@@ -32,9 +32,9 @@ The main hardware features are:
 
 .. image:: img/pinout.webp
    :align: center
-   :alt: RAK3112-pinout
+   :alt: RAK3212 pinout
 
-For more information about the RAK3112 stamp module:
+For more information about the stamp module:
 
 - `WisDuo RAK3112 Website`_
 - `Espressif ESP32-S3 Website`_

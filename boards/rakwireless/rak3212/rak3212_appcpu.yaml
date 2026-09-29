@@ -1,5 +1,5 @@
-identifier: rak3112/esp32s3/appcpu
-name: RAK3112 APPCPU
+identifier: rak3212/esp32s3/appcpu
+name: RAK3212 Breakout Board APPCPU
 type: mcu
 arch: xtensa
 toolchain:
