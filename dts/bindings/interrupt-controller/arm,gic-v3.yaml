@@ -35,6 +35,14 @@ compatible: "arm,gic-v3"
 include: arm,gic.yaml
 
 properties:
+  zephyr,lpi-id-bits:
+    type: int
+    enum: [14, 15, 16]
+    description: |
+      Number of INTID bits provisioned for LPIs. The driver reserves LPI
+      tables for this width and uses no more than the width supported by
+      the GIC hardware. Defaults to 16 when omitted.
+
   redistributor-stride:
     type: int
     description:
