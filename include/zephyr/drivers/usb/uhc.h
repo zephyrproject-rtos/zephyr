@@ -166,22 +166,8 @@ struct uhc_transfer {
  * @brief USB host controller event types
  */
 enum uhc_event_type {
-	/** Low speed device connected */
-	UHC_EVT_DEV_CONNECTED_LS,
-	/** Full speed device connected */
-	UHC_EVT_DEV_CONNECTED_FS,
-	/** High speed device connected */
-	UHC_EVT_DEV_CONNECTED_HS,
-	/** Device (peripheral) removed */
-	UHC_EVT_DEV_REMOVED,
-	/** Bus reset operation finished */
-	UHC_EVT_RESETED,
-	/** Bus suspend operation finished */
-	UHC_EVT_SUSPENDED,
-	/** Bus resume operation finished */
-	UHC_EVT_RESUMED,
-	/** Remote wakeup signal */
-	UHC_EVT_RWUP,
+	/** Resume event */
+	UHC_EVT_RESUME,
 	/** Endpoint request result event */
 	UHC_EVT_EP_REQUEST,
 	/**
