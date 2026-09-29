@@ -333,6 +333,8 @@ static void igmp_before(void *fixture)
 	ipv4->igmp_general_timeout = sys_timepoint_calc(K_FOREVER);
 	ARRAY_FOR_EACH(ipv4->mcast, i) {
 		ipv4->mcast[i].igmp_resp_timeout = sys_timepoint_calc(K_FOREVER);
+		ipv4->mcast[i].igmp_retx_timeout = sys_timepoint_calc(K_FOREVER);
+		ipv4->mcast[i].igmp_retx_left = 0;
 	}
 
 	is_igmpv2_query_sent = false;
@@ -426,15 +428,40 @@ static struct net_pkt *prepare_igmp_query(struct net_if *iface, bool is_igmpv3,
 	return prepare_igmp_msg(iface, is_igmpv3, group, NET_IPV4_IGMP_QUERY, QUERY_MAX_RSP);
 }
 
-static void join_group(void)
+/* The unsolicited report of a join is retransmitted after a random delay,
+ * which would disturb the tests that count reports. Cancel it right after
+ * the join and verify the retransmission in its own test.
+ */
+static void cancel_retransmit(const struct net_in_addr *group)
+{
+	struct net_if *iface = net_iface;
+	struct net_if_mcast_addr *maddr;
+
+	maddr = net_if_ipv4_maddr_lookup(group, &iface);
+	zassert_not_null(maddr, "Group not registered");
+
+	maddr->igmp_retx_left = 0;
+	maddr->igmp_retx_timeout = sys_timepoint_calc(K_FOREVER);
+}
+
+static void join_group_retransmit(bool retransmit)
 {
 	int ret;
 
 	ret = net_ipv4_igmp_join(net_iface, &mcast_addr, NULL);
 	zassert_ok(ret, "Cannot join IPv4 multicast group");
 
+	if (!retransmit) {
+		cancel_retransmit(&mcast_addr);
+	}
+
 	/* Let the network stack to proceed */
 	k_msleep(THREAD_SLEEP);
+}
+
+static void join_group(void)
+{
+	join_group_retransmit(false);
 }
 
 static void leave_group(void)
@@ -565,6 +592,7 @@ static void socket_group_with_address(struct net_in_addr *local_addr, bool do_jo
 			   "Cannot join IPv4 multicast group (%d) "
 			   "with local addr %s",
 			   -errno, net_sprint_ipv4_addr(local_addr));
+		cancel_retransmit(&mcast_addr);
 	} else {
 		zassert_ok(ret, "Cannot leave IPv4 multicast group (%d)", -errno);
 
@@ -605,6 +633,7 @@ static void socket_group_with_index(struct net_in_addr *local_addr, bool do_join
 
 	if (do_join) {
 		zassert_ok(ret, "Cannot join IPv4 multicast group (%d)", -errno);
+		cancel_retransmit(&mcast_addr);
 	} else {
 		zassert_ok(ret, "Cannot leave IPv4 multicast group (%d)", -errno);
 
@@ -1000,6 +1029,87 @@ ZTEST_USER(net_igmp, test_igmp_mode_expiry_cancels_response)
 
 	/* Back in IGMPv3 mode, the leave is reported with IGMPv3 */
 	is_igmpv2_query_sent = false;
+	leave_group();
+}
+
+/* The unsolicited report of a join is sent Robustness Variable times within
+ * the Unsolicited Report Interval (RFC 3376 ch 5.1, RFC 2236 ch 3).
+ */
+ZTEST_USER(net_igmp, test_igmp_join_retransmit)
+{
+	/* The Unsolicited Report Interval is 1 second for IGMPv3 and 10 seconds
+	 * for IGMPv2.
+	 */
+	int interval_ms = IS_ENABLED(CONFIG_NET_IPV4_IGMPV3) ? 1000 : 10000;
+
+	report_count = 0;
+
+	join_group_retransmit(true);
+
+	k_msleep(interval_ms + WAIT_TIME);
+	zassert_equal(report_count, CONFIG_NET_IPV4_IGMP_ROBUSTNESS, "Expected %d reports, got %d",
+		      CONFIG_NET_IPV4_IGMP_ROBUSTNESS, report_count);
+
+	leave_group();
+}
+
+/* Leaving a group ends the retransmission of its join report */
+ZTEST_USER(net_igmp, test_igmp_leave_stops_retransmit)
+{
+	int interval_ms = IS_ENABLED(CONFIG_NET_IPV4_IGMPV3) ? 1000 : 10000;
+	/* An IGMPv3 leave is a report as well, an IGMPv2 leave is not */
+	int expected = IS_ENABLED(CONFIG_NET_IPV4_IGMPV3) ? 2 : 1;
+
+	report_count = 0;
+
+	/* Leave right away, before the first retransmission can be due */
+	zassert_ok(net_ipv4_igmp_join(net_iface, &mcast_addr, NULL), "Cannot join");
+	leave_group();
+
+	if (report_count != expected) {
+		/* Stalled so long that a retransmission was due before the leave */
+		ztest_test_skip();
+	}
+
+	k_msleep(interval_ms + WAIT_TIME);
+	zassert_equal(report_count, expected, "Expected %d reports, got %d", expected,
+		      report_count);
+}
+
+/* The first query from an older querier switches the mode and cancels the
+ * pending retransmission of a join report as well (RFC 3376 ch 7.2.1). The
+ * cancellation is checked in the retransmission state, since the response to
+ * the query looks the same on the wire as a retransmission would.
+ */
+ZTEST_USER(net_igmp, test_igmp_first_query_cancels_retransmit)
+{
+	struct net_if *iface = net_iface;
+	struct net_if_mcast_addr *maddr;
+	struct net_pkt *pkt;
+
+	if (!IS_ENABLED(CONFIG_NET_IPV4_IGMPV3)) {
+		ztest_test_skip();
+	}
+
+	zassert_ok(net_ipv4_igmp_join(net_iface, &mcast_addr, NULL), "Cannot join");
+
+	maddr = net_if_ipv4_maddr_lookup(&mcast_addr, &iface);
+	zassert_not_null(maddr, "Group not registered");
+	if (maddr->igmp_retx_left == 0) {
+		/* Stalled so long that the retransmission was already due */
+		leave_group();
+		ztest_test_skip();
+	}
+
+	/* An IGMPv2 querier */
+	is_igmpv2_query_sent = true;
+	pkt = prepare_igmp_msg(net_iface, false, NULL, NET_IPV4_IGMP_QUERY, 0xff);
+	zassert_equal(net_ipv4_input(pkt), NET_OK, "Failed to send");
+
+	zassert_equal(maddr->igmp_retx_left, 0, "Retransmission not cancelled");
+	zassert_true(K_TIMEOUT_EQ(sys_timepoint_timeout(maddr->igmp_retx_timeout), K_FOREVER),
+		     "Retransmission still scheduled");
+
 	leave_group();
 }
 

@@ -2,6 +2,7 @@ common:
   tags:
     - net
     - igmp
+  timeout: 120
   depends_on: netif
   platform_allow: qemu_x86
 tests:

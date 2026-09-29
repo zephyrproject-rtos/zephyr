@@ -48,6 +48,10 @@ LOG_MODULE_DECLARE(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 /* An IGMPv1 query has a Max Resp Code of 0, meaning 10 seconds (RFC 3376 ch 7.2.1) */
 #define IGMP_V1_MAX_RESP_TIME_MS (10U * MSEC_PER_SEC)
 
+/* Unsolicited Report Interval, RFC 3376 ch 8.11 and RFC 2236 ch 8.10 */
+#define IGMPV3_UNSOLICITED_REPORT_INTERVAL_MS (1U * MSEC_PER_SEC)
+#define IGMPV2_UNSOLICITED_REPORT_INTERVAL_MS (10U * MSEC_PER_SEC)
+
 /* Protects the response deadlines and the querier present timers */
 static K_MUTEX_DEFINE(igmp_lock);
 
@@ -158,13 +162,17 @@ static void igmp_timer_arm(k_timepoint_t timeout)
 	(void)k_work_reschedule(&igmp_timer, remaining);
 }
 
-/* Cancel every pending query response of the interface */
-static void igmp_cancel_responses(struct net_if_ipv4 *ipv4)
+/* Cancel every pending query response and report retransmission of the
+ * interface.
+ */
+static void igmp_cancel_timers(struct net_if_ipv4 *ipv4)
 {
 	ipv4->igmp_general_timeout = igmp_timepoint_never();
 
 	ARRAY_FOR_EACH(ipv4->mcast, i) {
 		ipv4->mcast[i].igmp_resp_timeout = igmp_timepoint_never();
+		ipv4->mcast[i].igmp_retx_timeout = igmp_timepoint_never();
+		ipv4->mcast[i].igmp_retx_left = 0U;
 	}
 }
 
@@ -214,7 +222,7 @@ static void igmp_version_update(struct net_if_ipv4 *ipv4)
 	enum igmp_version old_version = igmp_host_version(ipv4);
 
 	if (old_version != version) {
-		igmp_cancel_responses(ipv4);
+		igmp_cancel_timers(ipv4);
 	}
 
 	ipv4->igmp_version = version;
@@ -708,6 +716,79 @@ out:
 	k_mutex_unlock(&igmp_lock);
 }
 
+static uint32_t igmp_unsolicited_report_interval(const struct net_if_ipv4 *ipv4)
+{
+	if (igmp_host_version(ipv4) == IGMPV3) {
+		return IGMPV3_UNSOLICITED_REPORT_INTERVAL_MS;
+	}
+
+	return IGMPV2_UNSOLICITED_REPORT_INTERVAL_MS;
+}
+
+/* The unsolicited report of a join may get lost, so it is repeated
+ * [Robustness Variable] - 1 times at random intervals within the
+ * Unsolicited Report Interval (RFC 3376 ch 5.1, RFC 2236 ch 3). Called
+ * after the first report of the join has been sent.
+ */
+static void igmp_retransmit_schedule(struct net_if *iface, struct net_if_mcast_addr *group)
+{
+	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
+
+	k_mutex_lock(&igmp_lock, K_FOREVER);
+
+	group->igmp_retx_left = CONFIG_NET_IPV4_IGMP_ROBUSTNESS - 1;
+
+	if (group->igmp_retx_left > 0U) {
+		group->igmp_retx_timeout =
+			igmp_random_delay(igmp_unsolicited_report_interval(ipv4));
+		igmp_timer_arm(group->igmp_retx_timeout);
+	} else {
+		group->igmp_retx_timeout = igmp_timepoint_never();
+	}
+
+	k_mutex_unlock(&igmp_lock);
+}
+
+/* Retransmit the unsolicited report of a group when due and note the next
+ * retransmission in next. Called with igmp_lock held.
+ */
+static void igmp_group_retransmit(struct net_if *iface, struct net_if_ipv4 *ipv4,
+				  struct net_if_mcast_addr *group, k_timepoint_t *next)
+{
+	int ret;
+
+	if (group->igmp_retx_left == 0U) {
+		return;
+	}
+
+	if (!sys_timepoint_expired(group->igmp_retx_timeout)) {
+		*next = igmp_timepoint_min(*next, group->igmp_retx_timeout);
+		return;
+	}
+
+	if (!igmp_is_reported(group)) {
+		/* Left or the interface went down in the meantime */
+		group->igmp_retx_left = 0U;
+		group->igmp_retx_timeout = igmp_timepoint_never();
+		return;
+	}
+
+	ret = igmp_send_report(iface, group, 1, true);
+	if (ret < 0) {
+		NET_DBG("Cannot retransmit IGMP report (%d)", ret);
+	}
+
+	group->igmp_retx_left--;
+
+	if (group->igmp_retx_left > 0U) {
+		group->igmp_retx_timeout =
+			igmp_random_delay(igmp_unsolicited_report_interval(ipv4));
+		*next = igmp_timepoint_min(*next, group->igmp_retx_timeout);
+	} else {
+		group->igmp_retx_timeout = igmp_timepoint_never();
+	}
+}
+
 /* Note the end of a running querier present timer in next */
 static void igmp_querier_timeout_next(k_timepoint_t timeout, k_timepoint_t *next)
 {
@@ -716,8 +797,8 @@ static void igmp_querier_timeout_next(k_timepoint_t timeout, k_timepoint_t *next
 	}
 }
 
-/* Send the responses of the interface that are due and note the earliest
- * remaining one in next. Called with igmp_lock held.
+/* Send the responses and retransmissions of the interface that are due and
+ * note the earliest remaining one in next. Called with igmp_lock held.
  */
 static void igmp_iface_timeout(struct net_if *iface, struct net_if_ipv4 *ipv4, k_timepoint_t *next)
 {
@@ -749,6 +830,8 @@ static void igmp_iface_timeout(struct net_if *iface, struct net_if_ipv4 *ipv4, k
 		} else {
 			*next = igmp_timepoint_min(*next, mcast->igmp_resp_timeout);
 		}
+
+		igmp_group_retransmit(iface, ipv4, mcast, next);
 	}
 }
 
@@ -892,6 +975,8 @@ int net_ipv4_igmp_rejoin(struct net_if *iface, struct net_if_mcast_addr *addr)
 		return ret;
 	}
 
+	igmp_retransmit_schedule(iface, addr);
+
 out:
 	net_if_mcast_monitor(iface, &addr->address, true);
 
@@ -975,6 +1060,8 @@ int net_ipv4_igmp_join(struct net_if *iface, const struct net_in_addr *addr,
 
 		return ret;
 	}
+
+	igmp_retransmit_schedule(iface, maddr);
 
 out:
 	net_if_mcast_monitor(iface, &maddr->address, true);
