@@ -353,6 +353,17 @@ config NET_IPV6_MLD
 	  be active. The node speaks MLDv2 and falls back to MLDv1 when an
 	  MLDv1 querier is present. See RFC 3810 for details.
 
+config NET_IPV6_MLD_V1_COMPAT
+	bool "MLDv1 compatibility mode"
+	depends on NET_IPV6_MLD
+	default y
+	help
+	  Operate as an MLDv1 listener while an MLDv1 querier is present on
+	  the link, as RFC 3810 ch 8.2.1 requires. When disabled, MLDv1
+	  Queries and Reports are ignored (RFC 3810 ch 10.1), so that a forged
+	  MLDv1 Query cannot switch the node to MLDv1. Only disable this on
+	  links without MLDv1 routers.
+
 config NET_IPV6_MLD_ROBUSTNESS
 	int "MLD Robustness Variable"
 	depends on NET_IPV6_MLD
