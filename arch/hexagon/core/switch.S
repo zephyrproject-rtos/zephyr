@@ -68,6 +68,20 @@ SECTION_FUNC(TEXT, z_hexagon_arch_switch)
 	}
 #endif
 
+#ifdef CONFIG_USERSPACE
+	/*
+	 * Save GOSP (G2): HVM swaps it with r29 on every user<->guest
+	 * transition, so a switch from a nested mid-syscall interrupt would
+	 * otherwise lose whichever thread's user SP was sitting in G2.
+	 */
+	{
+		r2 = g2
+	}
+	{
+		memw(r29+#SWITCH_GOSP) = r2
+	}
+#endif
+
 	/* Store current stack pointer as switch handle for old thread */
 	{
 		memw(r1) = r29
@@ -103,6 +117,16 @@ SECTION_FUNC(TEXT, z_hexagon_arch_switch)
 	}
 	{
 		ugp = r2
+	}
+#endif
+
+#ifdef CONFIG_USERSPACE
+	/* Restore GOSP (G2) -- see the save side above */
+	{
+		r2 = memw(r29+#SWITCH_GOSP)
+	}
+	{
+		g2 = r2
 	}
 #endif
 
