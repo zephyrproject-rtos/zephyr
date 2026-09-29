@@ -1,7 +1,14 @@
 # Copyright (c) 2023 Trackunit Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-description: BMI323 motion tracking device
+title: BMI323 motion tracking device
+
+description: |
+  BMI323 motion tracking device.
+
+  When setting the accel-pwr-mode, accel-odr, gyro-pwr-mode and gyro-odr
+  properties in a .dts or .dtsi file you may include bmi323.h and use the
+  macros defined there.
 
 include: sensor-device.yaml
 
@@ -12,3 +19,94 @@ properties:
       This property specifies the connection for INT1, because the
       Zephyr driver maps all interrupts to INT1. The signal defaults
       to output low when produced by the sensor.
+
+  accel-pwr-mode:
+    type: int
+    default: 0x00
+    description: |
+      Power mode the accelerometer is placed in at init.
+
+      The default leaves the accelerometer powered down, which is the state the
+      chip comes out of reset in, so that a board which does not describe the
+      accelerometer draws no current for it. A board that reads the
+      accelerometer must select a powered mode, otherwise every fetch reports
+      -ENODATA.
+    enum:
+      - 0x00 # BMI323_DT_PWR_MODE_DISABLED
+      - 0x04 # BMI323_DT_PWR_MODE_LOW_POWER
+      - 0x07 # BMI323_DT_PWR_MODE_HIGH_PERF
+
+  accel-odr:
+    type: int
+    default: 0x08
+    description: |
+      Output data rate of the accelerometer, applied at init.
+
+      The default corresponds to the reset value of the ACC_CONF ODR field.
+      Note that the low power mode does not support the highest rates; consult
+      the datasheet before pairing this with accel-pwr-mode.
+    enum:
+      - 0x01 # BMI323_DT_ODR_0_78125_HZ
+      - 0x02 # BMI323_DT_ODR_1_5625_HZ
+      - 0x03 # BMI323_DT_ODR_3_125_HZ
+      - 0x04 # BMI323_DT_ODR_6_25_HZ
+      - 0x05 # BMI323_DT_ODR_12_5_HZ
+      - 0x06 # BMI323_DT_ODR_25_HZ
+      - 0x07 # BMI323_DT_ODR_50_HZ
+      - 0x08 # BMI323_DT_ODR_100_HZ
+      - 0x09 # BMI323_DT_ODR_200_HZ
+      - 0x0A # BMI323_DT_ODR_400_HZ
+      - 0x0B # BMI323_DT_ODR_800_HZ
+      - 0x0C # BMI323_DT_ODR_1600_HZ
+      - 0x0D # BMI323_DT_ODR_3200_HZ
+      - 0x0E # BMI323_DT_ODR_6400_HZ
+
+  gyro-pwr-mode:
+    type: int
+    default: 0x00
+    description: |
+      Power mode the gyroscope is placed in at init.
+
+      The default leaves the gyroscope powered down, which is the state the chip
+      comes out of reset in. The gyroscope draws substantially more current than
+      the accelerometer, so a board only pays for it by asking for it.
+    enum:
+      - 0x00 # BMI323_DT_PWR_MODE_DISABLED
+      - 0x04 # BMI323_DT_PWR_MODE_LOW_POWER
+      - 0x07 # BMI323_DT_PWR_MODE_HIGH_PERF
+
+  gyro-odr:
+    type: int
+    default: 0x08
+    description: |
+      Output data rate of the gyroscope, applied at init.
+
+      The default corresponds to the reset value of the GYRO_CONF ODR field.
+    enum:
+      - 0x01 # BMI323_DT_ODR_0_78125_HZ
+      - 0x02 # BMI323_DT_ODR_1_5625_HZ
+      - 0x03 # BMI323_DT_ODR_3_125_HZ
+      - 0x04 # BMI323_DT_ODR_6_25_HZ
+      - 0x05 # BMI323_DT_ODR_12_5_HZ
+      - 0x06 # BMI323_DT_ODR_25_HZ
+      - 0x07 # BMI323_DT_ODR_50_HZ
+      - 0x08 # BMI323_DT_ODR_100_HZ
+      - 0x09 # BMI323_DT_ODR_200_HZ
+      - 0x0A # BMI323_DT_ODR_400_HZ
+      - 0x0B # BMI323_DT_ODR_800_HZ
+      - 0x0C # BMI323_DT_ODR_1600_HZ
+      - 0x0D # BMI323_DT_ODR_3200_HZ
+      - 0x0E # BMI323_DT_ODR_6400_HZ
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/sensor/bmi323.h>
+
+    bmi323: bmi323@68 {
+      /* ... */
+
+      accel-pwr-mode = <BMI323_DT_PWR_MODE_HIGH_PERF>;
+      accel-odr = <BMI323_DT_ODR_100_HZ>;
+      gyro-pwr-mode = <BMI323_DT_PWR_MODE_HIGH_PERF>;
+      gyro-odr = <BMI323_DT_ODR_100_HZ>;
+    };
