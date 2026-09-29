@@ -61,6 +61,7 @@ tests:
       - mec172xevb_assy6906
       - mec15xxevb_assy6853
       - mec_assy6941/mec1753_qsz
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
     integration_platforms:
       - nucleo_f746zg
   sample.drivers.counter.alarm.stm32_rtc:
