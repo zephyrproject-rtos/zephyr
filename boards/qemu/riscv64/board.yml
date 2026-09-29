@@ -9,3 +9,4 @@ board:
         - name: smode
         - name: opensbi
         - name: opensbi_smp
+        - name: sv48
