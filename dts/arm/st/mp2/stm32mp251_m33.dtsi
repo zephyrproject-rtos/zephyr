@@ -36,7 +36,8 @@
 			compatible = "st,stm32h7-fdcan";
 			reg = <0x402f0000 0x400>, <0x40310000 0x2800>;
 			reg-names = "m_can", "message_ram";
-			clocks = <&rcc STM32_CLOCK(FDCAN, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(FDCAN, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(26) NO_SEL>;
 			interrupts = <93 0>, <96 0>;
 			interrupt-names = "int0", "int1";
 			bosch,mram-cfg = <0x1aa0 28 8 6 0 0 3 3>;
@@ -48,7 +49,8 @@
 			reg = <0x40350000 DT_SIZE_K(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(SPI6, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(SPI6, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(18) NO_SEL>;
 			interrupts = <154 0>;
 			st,spi-data-width = "full-4-to-16-bit";
 			fifo-size = <8>;
@@ -61,7 +63,8 @@
 			reg = <0x40360000 DT_SIZE_K(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(SPI7, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(SPI7, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(18) NO_SEL>;
 			interrupts = <155 0>;
 			st,spi-data-width = "full-4-to-16-bit";
 			fifo-size = <8>;
@@ -74,7 +77,8 @@
 			reg = <0x46020000 DT_SIZE_K(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(SPI8, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(SPI8, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(37) NO_SEL>;
 			interrupts = <156 0>;
 			st,spi-data-width = "limited-8-16-bit";
 			fifo-size = <8>;
@@ -85,7 +89,8 @@
 		uart8: serial@40380000 {
 			compatible = "st,stm32-uart";
 			reg = <0x40380000 DT_SIZE_K(1)>;
-			clocks = <&rcc STM32_CLOCK(UART8, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(UART8, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(21) NO_SEL>;
 			resets = <&rctl STM32_RESET(UART8, STM32_RST)>;
 			interrupts = <149 0>;
 			status = "disabled";
@@ -94,7 +99,8 @@
 		uart9: serial@402c0000 {
 			compatible = "st,stm32-uart";
 			reg = <0x402c0000 DT_SIZE_K(1)>;
-			clocks = <&rcc STM32_CLOCK(UART9, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(UART9, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(22) NO_SEL>;
 			resets = <&rctl STM32_RESET(UART9, STM32_RST)>;
 			interrupts = <150 0>;
 			status = "disabled";
@@ -105,7 +111,8 @@
 			reg = <0x40120000 DT_SIZE_K(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(I2C1, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(I2C1, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(12) NO_SEL>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <108 0>;
 			interrupt-names = "combined";
@@ -117,7 +124,8 @@
 			reg = <0x40130000 DT_SIZE_K(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(I2C2, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(I2C2, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(12) NO_SEL>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <110 0>;
 			interrupt-names = "combined";
@@ -129,7 +137,8 @@
 			reg = <0x40140000 DT_SIZE_K(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(I2C3, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(I2C3, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(13) NO_SEL>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <137 0>;
 			interrupt-names = "combined";
@@ -141,7 +150,8 @@
 			reg = <0x40150000 DT_SIZE_K(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(I2C4, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(I2C4, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(14) NO_SEL>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <168 0>;
 			interrupt-names = "combined";
@@ -153,7 +163,8 @@
 			reg = <0x40160000 DT_SIZE_K(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(I2C5, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(I2C5, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(13) NO_SEL>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <181 0>;
 			interrupt-names = "combined";
@@ -165,7 +176,8 @@
 			reg = <0x40170000 DT_SIZE_K(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(I2C6, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(I2C6, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(14) NO_SEL>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <208 0>;
 			interrupt-names = "combined";
@@ -177,7 +189,8 @@
 			reg = <0x40180000 DT_SIZE_K(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(I2C7, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(I2C7, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(15) NO_SEL>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <210 0>;
 			interrupt-names = "combined";
@@ -189,7 +202,8 @@
 			reg = <0x46040000 DT_SIZE_K(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(I2C8, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(I2C8, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(38) NO_SEL>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <212 0>;
 			interrupt-names = "combined";
@@ -202,7 +216,8 @@
 			#address-cells = <3>;
 			#size-cells = <0>;
 			resets = <&rctl STM32_RESET(I3C3, STM32_RST)>;
-			clocks = <&rcc STM32_CLOCK(I3C3, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(I3C3, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(13) NO_SEL>;
 			interrupts = <138 0>;
 			interrupt-names = "combined";
 			status = "disabled";
@@ -214,7 +229,8 @@
 			#address-cells = <3>;
 			#size-cells = <0>;
 			resets = <&rctl STM32_RESET(I3C4, STM32_RST)>;
-			clocks = <&rcc STM32_CLOCK(I3C4, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(I3C4, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(36) NO_SEL>;
 			interrupts = <213 0>;
 			interrupt-names = "combined";
 			status = "disabled";

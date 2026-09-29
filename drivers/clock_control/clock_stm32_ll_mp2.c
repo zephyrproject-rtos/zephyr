@@ -43,8 +43,74 @@ static int stm32_clock_control_off(const struct device *dev, clock_control_subsy
 	return 0;
 }
 
+/**
+ * @brief Frequency of a clock crossbar input
+ *
+ * The crossbar input list is fixed by the hardware, unlike the list of
+ * peripherals it feeds.
+ */
+static uint32_t get_xbar_source_rate(uint32_t xbar_source)
+{
+	LL_PLL_ClocksTypeDef pll_clocks;
+
+	switch (xbar_source) {
+	case LL_RCC_XBAR_CLKSRC_HSI:
+	case LL_RCC_XBAR_CLKSRC_HSIKER:
+		return HSI_VALUE;
+	case LL_RCC_XBAR_CLKSRC_HSE:
+	case LL_RCC_XBAR_CLKSRC_HSEKER:
+		return HSE_VALUE;
+	case LL_RCC_XBAR_CLKSRC_MSI:
+	case LL_RCC_XBAR_CLKSRC_MSIKER:
+		return MSI_VALUE;
+	case LL_RCC_XBAR_CLKSRC_LSI:
+		return LSI_VALUE;
+	case LL_RCC_XBAR_CLKSRC_LSE:
+		return LSE_VALUE;
+#if defined(LL_RCC_XBAR_CLKSRC_I2S)
+	case LL_RCC_XBAR_CLKSRC_I2S:
+#else
+	case LL_RCC_XBAR_CLKSRC_CK_IN:
+#endif
+		return EXTERNAL_CLOCK_VALUE;
+	case LL_RCC_XBAR_CLKSRC_PLL4_FOUTPOSTDIV:
+		LL_RCC_GetPLL4ClockFreq(&pll_clocks);
+		return pll_clocks.freq;
+	case LL_RCC_XBAR_CLKSRC_PLL5_FOUTPOSTDIV:
+		LL_RCC_GetPLL5ClockFreq(&pll_clocks);
+		return pll_clocks.freq;
+	case LL_RCC_XBAR_CLKSRC_PLL6_FOUTPOSTDIV:
+		LL_RCC_GetPLL6ClockFreq(&pll_clocks);
+		return pll_clocks.freq;
+	case LL_RCC_XBAR_CLKSRC_PLL7_FOUTPOSTDIV:
+		LL_RCC_GetPLL7ClockFreq(&pll_clocks);
+		return pll_clocks.freq;
+	case LL_RCC_XBAR_CLKSRC_PLL8_FOUTPOSTDIV:
+		LL_RCC_GetPLL8ClockFreq(&pll_clocks);
+		return pll_clocks.freq;
+	default:
+		/* SPDIF symbol clock, or no source selected */
+		return 0;
+	}
+}
+
+/** @brief Output frequency of clock crossbar (flexgen) channel @p channel */
+static uint32_t get_flexgen_rate(uint32_t channel)
+{
+	uint32_t prediv = READ_BIT(RCC->PREDIVxCFGR[channel], RCC_PREDIVxCFGR_PREDIVx_Msk);
+	uint32_t findiv = READ_BIT(RCC->FINDIVxCFGR[channel], RCC_FINDIVxCFGR_FINDIVx_Msk);
+
+	return get_xbar_source_rate(LL_RCC_GetCrossbarSource(channel)) /
+	       ((prediv + 1U) * (findiv + 1U));
+}
+
 static bool source_is_ready(uint32_t src)
 {
+	if (IN_RANGE(src, STM32_SRC_FLEXGEN_MIN, STM32_SRC_FLEXGEN_MAX)) {
+		return READ_BIT(RCC->XBARxCFGR[src - STM32_SRC_FLEXGEN_MIN],
+				RCC_XBARxCFGR_XBARxEN) != 0U;
+	}
+
 	switch (src) {
 	case STM32_SRC_SYSCLK:
 	case STM32_SRC_ICN_LS_MCU:
@@ -99,124 +165,23 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 	uint32_t apb3_clock = ls_mcu_clock >> LL_RCC_GetAPB3Prescaler();
 	uint32_t apb4_clock = ls_mcu_clock >> LL_RCC_GetAPB4Prescaler();
 	uint32_t apbdbg_clock = ls_mcu_clock >> LL_RCC_GetAPBDBGPrescaler();
-	LL_PLL_ClocksTypeDef pll_clocks;
 
 	ARG_UNUSED(dev);
 
+	if (IN_RANGE(pclken->bus, STM32_SRC_FLEXGEN_MIN, STM32_SRC_FLEXGEN_MAX)) {
+		*rate = get_flexgen_rate(pclken->bus - STM32_SRC_FLEXGEN_MIN);
+		goto apply_div;
+	}
+
 	switch (pclken->bus) {
-#if defined(LL_RCC_USART1_CLKSOURCE)
-	case STM32_CLOCK_PERIPH_USART1:
-		*rate = LL_RCC_GetUARTClockFreq(LL_RCC_USART1_CLKSOURCE);
-		break;
-#endif
-#if defined(LL_RCC_UART24_CLKSOURCE)
-	case STM32_CLOCK_PERIPH_USART2:
-	case STM32_CLOCK_PERIPH_UART4:
-		*rate = LL_RCC_GetUARTClockFreq(LL_RCC_UART24_CLKSOURCE);
-		break;
-#endif
-#if defined(LL_RCC_USART35_CLKSOURCE)
-	case STM32_CLOCK_PERIPH_USART3:
-	case STM32_CLOCK_PERIPH_UART5:
-		*rate = LL_RCC_GetUARTClockFreq(LL_RCC_USART35_CLKSOURCE);
-		break;
-#endif
-#if defined(LL_RCC_USART6_CLKSOURCE)
-	case STM32_CLOCK_PERIPH_USART6:
-		*rate = LL_RCC_GetUARTClockFreq(LL_RCC_USART6_CLKSOURCE);
-		break;
-#endif
-#if defined(LL_RCC_UART78_CLKSOURCE)
-	case STM32_CLOCK_PERIPH_UART7:
-	case STM32_CLOCK_PERIPH_UART8:
-		*rate = LL_RCC_GetUARTClockFreq(LL_RCC_UART78_CLKSOURCE);
-		break;
-#endif
-#if defined(LL_RCC_UART9_CLKSOURCE)
-	case STM32_CLOCK_PERIPH_UART9:
-		*rate = LL_RCC_GetUARTClockFreq(LL_RCC_UART9_CLKSOURCE);
-		break;
-#endif
-#if defined(LL_RCC_I2C12_I3C12_CLKSOURCE)
-	case STM32_CLOCK_PERIPH_I2C1:
-	case STM32_CLOCK_PERIPH_I2C2:
-	case STM32_CLOCK_PERIPH_I3C1:
-	case STM32_CLOCK_PERIPH_I3C2:
-		*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I2C12_I3C12_CLKSOURCE);
-		break;
-#endif
-#if defined(LL_RCC_I2C46_CLKSOURCE)
-	case STM32_CLOCK_PERIPH_I2C4:
-	case STM32_CLOCK_PERIPH_I2C6:
-		*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I2C46_CLKSOURCE);
-		break;
-#endif
-#if defined(LL_RCC_I2C35_I3C3_CLKSOURCE)
-	case STM32_CLOCK_PERIPH_I2C3:
-	case STM32_CLOCK_PERIPH_I2C5:
-	case STM32_CLOCK_PERIPH_I3C3:
-		*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I2C35_I3C3_CLKSOURCE);
-		break;
-#endif
-#if defined(LL_RCC_I2C7_CLKSOURCE)
-	case STM32_CLOCK_PERIPH_I2C7:
-		*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I2C7_CLKSOURCE);
-		break;
-#endif
-#if defined(LL_RCC_I2C8_CLKSOURCE)
-	case STM32_CLOCK_PERIPH_I2C8:
-		*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I2C8_CLKSOURCE);
-		break;
-#endif
-#if defined(LL_RCC_I3C4_CLKSOURCE)
-	case STM32_CLOCK_PERIPH_I3C4:
-		*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I3C4_CLKSOURCE);
-		break;
-#endif
-#if defined(LL_RCC_SPI1_CLKSOURCE)
-	case STM32_CLOCK_PERIPH_SPI1:
-		*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI1_CLKSOURCE);
-		break;
-#endif
-#if defined(LL_RCC_SPI23_CLKSOURCE)
-	case STM32_CLOCK_PERIPH_SPI2:
-	case STM32_CLOCK_PERIPH_SPI3:
-		*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI23_CLKSOURCE);
-		break;
-#endif
-#if defined(LL_RCC_SPI45_CLKSOURCE)
-	case STM32_CLOCK_PERIPH_SPI4:
-	case STM32_CLOCK_PERIPH_SPI5:
-		*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI45_CLKSOURCE);
-		break;
-#endif
-#if defined(LL_RCC_SPI67_CLKSOURCE)
-	case STM32_CLOCK_PERIPH_SPI6:
-	case STM32_CLOCK_PERIPH_SPI7:
-		*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI67_CLKSOURCE);
-		break;
-#endif
-#if defined(LL_RCC_SPI8_CLKSOURCE)
-	case STM32_CLOCK_PERIPH_SPI8:
-		*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI8_CLKSOURCE);
-		break;
-#endif
-#if defined(LL_RCC_FDCAN_CLKSOURCE)
-	case STM32_CLOCK_PERIPH_FDCAN:
-		*rate = LL_RCC_GetFDCANClockFreq(LL_RCC_FDCAN_CLKSOURCE);
-		break;
-#endif
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(timers12))
 	case STM32_CLOCK_PERIPH_TIM12:
 		/* Timer group 1 kernel clock equals APB1 when APB1 is not divided */
 		if (LL_RCC_GetAPB1Prescaler() != 0U) {
 			return -ENOTSUP;
 		}
-		*rate = SystemCoreClock >> LL_RCC_Get_LSMCUDIVR();
+		*rate = apb1_clock;
 		break;
-#endif
 	case STM32_CLOCK_PERIPH_WWDG1:
-		/* The WWDG1 clock is derived from the APB3 clock */
 		*rate = apb3_clock;
 		break;
 	case STM32_SRC_SYSCLK:
@@ -261,29 +226,25 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 		*rate = LSI_VALUE;
 		break;
 	case STM32_SRC_PLL4:
-		LL_RCC_GetPLL4ClockFreq(&pll_clocks);
-		*rate = pll_clocks.freq;
+		*rate = get_xbar_source_rate(LL_RCC_XBAR_CLKSRC_PLL4_FOUTPOSTDIV);
 		break;
 	case STM32_SRC_PLL5:
-		LL_RCC_GetPLL5ClockFreq(&pll_clocks);
-		*rate = pll_clocks.freq;
+		*rate = get_xbar_source_rate(LL_RCC_XBAR_CLKSRC_PLL5_FOUTPOSTDIV);
 		break;
 	case STM32_SRC_PLL6:
-		LL_RCC_GetPLL6ClockFreq(&pll_clocks);
-		*rate = pll_clocks.freq;
+		*rate = get_xbar_source_rate(LL_RCC_XBAR_CLKSRC_PLL6_FOUTPOSTDIV);
 		break;
 	case STM32_SRC_PLL7:
-		LL_RCC_GetPLL7ClockFreq(&pll_clocks);
-		*rate = pll_clocks.freq;
+		*rate = get_xbar_source_rate(LL_RCC_XBAR_CLKSRC_PLL7_FOUTPOSTDIV);
 		break;
 	case STM32_SRC_PLL8:
-		LL_RCC_GetPLL8ClockFreq(&pll_clocks);
-		*rate = pll_clocks.freq;
+		*rate = get_xbar_source_rate(LL_RCC_XBAR_CLKSRC_PLL8_FOUTPOSTDIV);
 		break;
 	default:
 		return -ENOTSUP;
 	}
 
+apply_div:
 	if (pclken->div) {
 		*rate /= (pclken->div + 1);
 	}
