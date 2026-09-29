@@ -5,7 +5,7 @@ if SHIELD_RAKWIRELESS_RAK19007
 
 if FUEL_GAUGE
 
-config SENSOR
+configdefault SENSOR
 	default y
 
 endif # FUEL_GAUGE
