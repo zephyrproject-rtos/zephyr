@@ -499,6 +499,14 @@ static int clock_control_bl808_init_crystal(void)
 	uint32_t tmp;
 	int count = CLOCK_TIMEOUT;
 
+	if (DT_INST_NODE_HAS_PROP(0, xtal_capcode)) {
+		tmp = sys_read32(AON_BASE + AON_XTAL_CFG_OFFSET);
+		tmp &= AON_XTAL_CAPCODE_IN_AON_UMSK & AON_XTAL_CAPCODE_OUT_AON_UMSK;
+		tmp |= (DT_INST_PROP(0, xtal_capcode) << AON_XTAL_CAPCODE_IN_AON_POS) |
+		       (DT_INST_PROP(0, xtal_capcode) << AON_XTAL_CAPCODE_OUT_AON_POS);
+		sys_write32(tmp, AON_BASE + AON_XTAL_CFG_OFFSET);
+	}
+
 	/* power crystal */
 	tmp = sys_read32(AON_BASE + AON_RF_TOP_AON_OFFSET);
 	tmp = (tmp & AON_PU_XTAL_AON_UMSK) | (1U << AON_PU_XTAL_AON_POS);
