@@ -117,6 +117,7 @@ config X86
 	bool
 	select ARCH_IS_SET
 	select ATOMIC_OPERATIONS_BUILTIN
+	select BARRIER_OPERATIONS_BUILTIN
 	select ARCH_SUPPORTS_COREDUMP
 	select ARCH_SUPPORTS_COREDUMP_PRIV_STACKS
 	select ARCH_SUPPORTS_ROM_START if !X86_64
@@ -192,6 +193,10 @@ config XTENSA
 	select ARCH_HAS_IRQ_OFFLOAD_NESTED
 	select ARCH_HAS_SEMIHOST
 	select ARCH_HAS_CPU_IDLE_HOOKS
+	# XCC has no barrier builtins: it stubs __sync_synchronize() out to a
+	# compiler barrier and does not implement __atomic_thread_fence(), which
+	# is what <zephyr/sys/barrier.h> falls back to on its own.
+	select BARRIER_OPERATIONS_BUILTIN if "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xcc"
 	help
 	  Xtensa architecture
 
