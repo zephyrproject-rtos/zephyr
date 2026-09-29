@@ -10,6 +10,7 @@ target_sources(app PRIVATE
 )
 
 target_sources_ifdef(CONFIG_ENABLE_LC3 app PRIVATE src/lc3.c)
+target_sources_ifdef(CONFIG_STEREO_AUDIO_OUTPUT app PRIVATE src/stereo_out.c)
 
 if(CONFIG_USE_CODEC_AUDIO_OUTPUT)
   target_sources(app PRIVATE src/hw_codec.c)
