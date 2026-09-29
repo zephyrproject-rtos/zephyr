@@ -309,10 +309,36 @@ static bool is_configured_udev(const struct device *dev, uint8_t device_addr)
 	return true;
 }
 
+/*
+ * Find the nearest high-speed ancestor hub in udev's topology and the port on that
+ * hub leading towards udev. The controller performs split transactions against this
+ * hub, which is not necessarily udev's immediate parent when one or more full-speed
+ * hubs sit in between. hub_addr is left at 0 (root port) when udev has no high-speed
+ * hub ancestor.
+ */
+static void get_hs_hub_addr_port(struct usb_device *udev, uint8_t *hub_addr, uint8_t *hub_port)
+{
+	struct usb_device *node = udev;
+
+	*hub_addr = 0;
+	*hub_port = 0;
+
+	while (node->hub != NULL) {
+		if (node->hub->speed == USB_SPEED_SPEED_HS) {
+			*hub_addr = node->hub->addr;
+			*hub_port = node->hub_port;
+			return;
+		}
+		node = node->hub;
+	}
+}
+
 static int uhc_renesas_ra_configure_udev(const struct device *dev, struct usb_device *udev,
 					 uint8_t mxps0)
 {
 	struct uhc_renesas_ra_data *priv = uhc_get_private(dev);
+	uint8_t hub_addr;
+	uint8_t hub_port;
 	usb_speed_t speed;
 	fsp_err_t err;
 	int ret = 0;
@@ -332,12 +358,9 @@ static int uhc_renesas_ra_configure_udev(const struct device *dev, struct usb_de
 		return -ENOTSUP;
 	}
 
-	/*
-	 * TODO: hub_addr/hub_port are hardcoded to 0 (root port) as a temporary
-	 * workaround until struct usb_device gains a hub topology field, which
-	 * split transactions to devices behind a high-speed hub need.
-	 */
-	err = R_USBH_PortOpen(&priv->uhc_ctrl, udev->addr, speed, mxps0, 0, 0);
+	get_hs_hub_addr_port(udev, &hub_addr, &hub_port);
+
+	err = R_USBH_PortOpen(&priv->uhc_ctrl, udev->addr, speed, mxps0, hub_addr, hub_port);
 	if (err != FSP_SUCCESS) {
 		return -EIO;
 	}
@@ -375,6 +398,8 @@ static int uhc_renesas_ra_open_pipe(const struct device *dev, uint8_t dev_addr, 
 static int uhc_renesas_ra_open_dcp(const struct device *dev, struct uhc_transfer *const xfer)
 {
 	struct uhc_renesas_ra_data *priv = uhc_get_private(dev);
+	uint8_t hub_addr;
+	uint8_t hub_port;
 	usb_speed_t speed;
 	fsp_err_t err;
 
@@ -392,12 +417,10 @@ static int uhc_renesas_ra_open_dcp(const struct device *dev, struct uhc_transfer
 		return -ENOTSUP;
 	}
 
-	/*
-	 * TODO: hub_addr/hub_port are hardcoded to 0 (root port) as a temporary
-	 * workaround until struct usb_device gains a hub topology field, which
-	 * split transactions to devices behind a high-speed hub need.
-	 */
-	err = R_USBH_PortOpen(&priv->uhc_ctrl, xfer->udev->addr, speed, xfer->mps, 0, 0);
+	get_hs_hub_addr_port(xfer->udev, &hub_addr, &hub_port);
+
+	err = R_USBH_PortOpen(&priv->uhc_ctrl, xfer->udev->addr, speed, xfer->mps, hub_addr,
+			      hub_port);
 	if (err != FSP_SUCCESS) {
 		return -EIO;
 	}
