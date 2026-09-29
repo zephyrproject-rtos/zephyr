@@ -57,7 +57,7 @@ int sys_heap_runtime_stats_get(struct sys_heap *heap,
 
 int sys_heap_runtime_stats_reset_max(struct sys_heap *heap)
 {
-	if (heap == NULL) {
+	if ((heap == NULL) || (heap->heap == NULL)) {
 		return -EINVAL;
 	}
 
