@@ -1,0 +1,72 @@
+/*
+ * Copyright (c) 2025 Kenneth Lu
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <espressif/esp32s3/esp32s3.dtsi>
+#include <zephyr/dt-bindings/pinctrl/esp32s3-pinctrl.h>
+#include <zephyr/dt-bindings/lora/sx126x.h>
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(16)>;
+	ranges = <0x0 0x0 DT_SIZE_M(16)>;
+};
+
+&psram0 {
+	size = <DT_SIZE_M(2)>;
+};
+
+&pinctrl {
+	spim2_default: spim2_default {
+		group1 {
+			pinmux = <SPIM2_MISO_GPIO3>,
+				 <SPIM2_SCLK_GPIO5>,
+				 <SPIM2_CSEL_GPIO7>;
+		};
+
+		group2 {
+			pinmux = <SPIM2_MOSI_GPIO6>;
+			output-low;
+		};
+	};
+
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_GPIO43>;
+			output-high;
+		};
+
+		group2 {
+			pinmux = <UART0_RX_GPIO44>;
+			bias-pull-up;
+		};
+	};
+};
+
+&spi2 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+
+	lora: lora@0 {
+		compatible = "semtech,sx1262";
+		reg = <0>;
+		reset-gpios = <&gpio 8 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
+		busy-gpios = <&gpio 48 GPIO_ACTIVE_HIGH>;
+		dio1-gpios = <&gpio 47 GPIO_ACTIVE_HIGH>;
+		antenna-enable-gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+		dio2-tx-enable;
+		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_1V8>;
+		tcxo-power-startup-delay-ms = <5>;
+		spi-max-frequency = <1000000>;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
