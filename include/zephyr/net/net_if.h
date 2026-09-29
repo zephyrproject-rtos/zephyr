@@ -16,7 +16,7 @@
  * @brief Network Interface abstraction layer
  * @defgroup net_if Network Interface abstraction layer
  * @since 1.5
- * @version 1.0.0
+ * @version 1.1.0
  * @ingroup networking
  * @{
  */
@@ -386,6 +386,13 @@ struct net_if_ipv6 {
 	 */
 	uint32_t desync_factor;
 #endif /* CONFIG_NET_IPV6_PE */
+
+#if defined(CONFIG_NET_IPV6_MLD)
+	/** MLDv1 Older Version Querier Present timer (@rfc{3810,section-8.2.1}),
+	 *  expired when no MLDv1 querier is present.
+	 */
+	k_timepoint_t mld_v1_querier_timeout;
+#endif
 
 #if defined(CONFIG_NET_IPV6_ND) && defined(CONFIG_NET_NATIVE_IPV6)
 	/** Router solicitation timer node */

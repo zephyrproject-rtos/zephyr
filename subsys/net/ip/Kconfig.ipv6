@@ -349,8 +349,19 @@ config NET_IPV6_MLD
 	default y
 	help
 	  The value depends on your network needs. MLD should normally
-	  be active. Currently we support only MLDv2. See RFC 3810 for
-	  details.
+	  be active. The node speaks MLDv2 and falls back to MLDv1 when an
+	  MLDv1 querier is present. See RFC 3810 for details.
+
+config NET_IPV6_MLD_ROBUSTNESS
+	int "MLD Robustness Variable"
+	depends on NET_IPV6_MLD
+	range 1 7
+	default 2
+	help
+	  The Robustness Variable of RFC 3810 ch 9.1 allows tuning for the
+	  expected packet loss on a link, it should not be set to one. An
+	  MLDv1 querier is remembered for Robustness Variable times the Query
+	  Interval plus one Query Response Interval after its last query.
 
 config NET_IPV6_NBR_CACHE
 	bool "Neighbor cache"
