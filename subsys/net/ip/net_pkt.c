@@ -717,7 +717,7 @@ void net_pkt_frag_unref(struct net_buf *frag)
 	 * (and both call alloc_del) or neither does (alloc_del skipped
 	 * even though one of them is going to free the buf). Doing the
 	 * atomic dec here makes "am I the last reference?" authoritative,
-	 * and the value returned by atomic_dec() is what the log reports.
+	 * and the count before the decrement is what the log reports.
 	 *
 	 * Snapshot the chain link and the pool *before* the atomic dec:
 	 * once our reference is dropped, another holder may free the
@@ -728,7 +728,20 @@ void net_pkt_frag_unref(struct net_buf *frag)
 	while (frag) {
 		struct net_buf *next = frag->frags;
 		struct net_buf_pool *pool = net_buf_pool_get(frag->pool_id);
-		uint8_t old_ref = atomic_dec(&frag->ref_word);
+		atomic_val_t old_word;
+		uint8_t old_ref;
+
+		/* A zero count must not be decremented, not even by an unref
+		 * racing with the last one: the borrow would go into the other
+		 * bytes of ref_word of a buffer that has already been freed.
+		 */
+		do {
+			old_word = atomic_get(&frag->ref_word);
+			old_ref = (uint8_t)old_word;
+			if (old_ref == 0U) {
+				break;
+			}
+		} while (!atomic_cas(&frag->ref_word, old_word, old_word - 1));
 
 #if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
 		NET_DBG("%s (%s) [%d] frag %p ref %u (%s():%d)",
@@ -739,10 +752,9 @@ void net_pkt_frag_unref(struct net_buf *frag)
 		__ASSERT(old_ref != 0, "frag %p double free", frag);
 		if (old_ref != 1) {
 			/*
-			 * Not the last reference (or a double free that
-			 * wrapped past zero). Some other holder still
-			 * owns the rest of the frag chain; we must not
-			 * touch the buffer further.
+			 * Not the last reference (or a double free). Some
+			 * other holder still owns the rest of the frag
+			 * chain; we must not touch the buffer further.
 			 */
 			return;
 		}
