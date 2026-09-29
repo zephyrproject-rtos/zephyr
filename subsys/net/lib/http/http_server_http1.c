@@ -329,8 +329,26 @@ static const char *http_status_str(enum http_status status)
 #define MAX_RESPONSE_TEMPLATE_SIZE                                                                 \
 	MAX(RESPONSE_TEMPLATE_SIZE_HTTP10, RESPONSE_TEMPLATE_SIZE_DYNAMIC)
 
-#define HTTP_RESPONSE_BUF_SIZE                                                                     \
-	MAX(MAX_RESPONSE_TEMPLATE_SIZE, CONFIG_HTTP_SERVER_MAX_HEADER_LEN + 2)
+#define HTTP_RESPONSE_BUF_SIZE MAX_RESPONSE_TEMPLATE_SIZE
+
+/* Send a "name: value" header line. The parts are sent as they are, so header
+ * names and values of any length are sent in full.
+ */
+static int http1_send_header_field(struct http_client_ctx *client, const char *name,
+				   const char *value)
+{
+	const char *const parts[] = {name, ": ", value, crlf};
+	int ret;
+
+	ARRAY_FOR_EACH(parts, i) {
+		ret = http_server_sendall(client, parts[i], strlen(parts[i]));
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
 
 static int http1_send_headers(struct http_client_ctx *client, enum http_status status,
 			      const struct http_header *headers, size_t header_count,
@@ -384,24 +402,9 @@ static int http1_send_headers(struct http_client_ctx *client, enum http_status s
 			content_type_sent = true;
 		}
 
-		snprintk(http_response, sizeof(http_response), "%s: ", hdr->name);
-
-		ret = http_server_sendall(client, http_response,
-					  strnlen(http_response, sizeof(http_response) - 1));
+		ret = http1_send_header_field(client, hdr->name, hdr->value);
 		if (ret < 0) {
-			LOG_DBG("Failed to send HTTP header name");
-			return ret;
-		}
-
-		ret = http_server_sendall(client, hdr->value, strlen(hdr->value));
-		if (ret < 0) {
-			LOG_DBG("Failed to send HTTP header value");
-			return ret;
-		}
-
-		ret = http_server_sendall(client, crlf, 2);
-		if (ret < 0) {
-			LOG_DBG("Failed to send CRLF");
+			LOG_DBG("Failed to send HTTP header");
 			return ret;
 		}
 	}
@@ -414,11 +417,8 @@ static int http1_send_headers(struct http_client_ctx *client, enum http_status s
 			content_type = dynamic_detail->common.content_type;
 		}
 
-		snprintk(http_response, sizeof(http_response), "Content-Type: %s\r\n",
-			 content_type == NULL ? "text/html" : content_type);
-
-		ret = http_server_sendall(client, http_response,
-					  strnlen(http_response, sizeof(http_response) - 1));
+		ret = http1_send_header_field(client, "Content-Type",
+					      content_type == NULL ? "text/html" : content_type);
 		if (ret < 0) {
 			LOG_DBG("Failed to send Content-Type");
 			return ret;
