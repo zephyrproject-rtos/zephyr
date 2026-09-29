@@ -23,5 +23,5 @@ set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
   COMMAND ${CMAKE_OBJCOPY} -O ihex ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME} ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_HEX_NAME}
   )
 
-set_property(TARGET runners_yaml_props_target PROPERTY hex_file
-  ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_HEX_NAME})
+# Register the generated hex file with the west flash runner
+set_property(TARGET runners_yaml_props_target PROPERTY hex_file ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_HEX_NAME})
