@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    When setting the accel-pm, accel-range, accel-odr, gyro-pm, gyro-range,
-    gyro-odr properties in a .dts or .dtsi file you may include lsm6dso.h
-    and use the macros defined there.
+  When setting the accel-pm, accel-range, accel-odr, gyro-pm, gyro-range,
+  gyro-odr properties in a .dts or .dtsi file you may include lsm6dso.h
+  and use the macros defined there.
 
 include: sensor-device.yaml
 
@@ -31,6 +31,11 @@ properties:
       (INT1 or INT2) the drdy line is attached to. This property is not
       mandatory and if not present it defaults to 1 which is the
       configuration at power-up.
+
+  int-open-drain:
+    type: boolean
+    description: |
+      Configure interrupt pin as open-drain. Defaults to push-pull.
 
   accel-pm:
     type: int
