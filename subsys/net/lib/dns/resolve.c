@@ -1878,14 +1878,19 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 			goto quit;
 		}
 
-		if (dns_msg->response_type == DNS_RESPONSE_IP) {
-			if ((ctx->queries[*query_idx].query_type == DNS_QUERY_TYPE_A &&
-			     answer_type != DNS_RR_TYPE_A) ||
-			    (ctx->queries[*query_idx].query_type == DNS_QUERY_TYPE_AAAA &&
-			     answer_type != DNS_RR_TYPE_AAAA)) {
-				ret = DNS_EAI_ADDRFAMILY;
-				goto quit;
-			}
+		/* Verify that the answer RR type matches the outstanding query
+		 * type for every response classification, not only
+		 * DNS_RESPONSE_IP. A response to an A/AAAA query must carry the
+		 * matching address record; CNAME records are allowed here
+		 * because they are used below for query redirection.
+		 */
+		if (((ctx->queries[*query_idx].query_type == DNS_QUERY_TYPE_A &&
+		      answer_type != DNS_RR_TYPE_A) ||
+		     (ctx->queries[*query_idx].query_type == DNS_QUERY_TYPE_AAAA &&
+		      answer_type != DNS_RR_TYPE_AAAA)) &&
+		    answer_type != DNS_RR_TYPE_CNAME) {
+			ret = DNS_EAI_ADDRFAMILY;
+			goto quit;
 		}
 
 		/* If we did ANY query, we need to check what
