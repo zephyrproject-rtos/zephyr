@@ -41,6 +41,9 @@ LOG_MODULE_DECLARE(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 
 #define MLDv2_LEN (MLDv2_MCAST_RECORD_LEN + sizeof(struct net_in6_addr))
 
+/* Router Alert option value for MLD, RFC 2711 ch 2.1 */
+#define IPV6_OPT_ROUTER_ALERT_MLD 0
+
 /* Internal structure used for appending multicast routes to MLDv2 reports */
 struct mcast_route_appending_info {
 	int status;
@@ -488,6 +491,44 @@ drop:
 	return ret;
 }
 
+static int mld_router_alert_cb(struct net_pkt *pkt, uint8_t hdr_type, uint8_t opt_type,
+			       uint8_t opt_len, void *user_data)
+{
+	bool *found = user_data;
+	uint16_t value;
+
+	if (hdr_type != NET_IPV6_NEXTHDR_HBHO || opt_type != NET_IPV6_EXT_HDR_OPT_RTR_ALERT ||
+	    opt_len != sizeof(value)) {
+		return 0;
+	}
+
+	if (net_pkt_read_be16(pkt, &value) < 0) {
+		return -EINVAL;
+	}
+
+	*found = value == IPV6_OPT_ROUTER_ALERT_MLD;
+
+	return *found ? 1 : 0;
+}
+
+/* Queries carry the Router Alert option in a Hop-by-Hop Options header
+ * (RFC 3810 ch 5), a query without it is dropped (ch 6.2).
+ */
+static bool mld_has_router_alert(struct net_pkt *pkt, const struct net_ipv6_hdr *ip_hdr)
+{
+	bool found = false;
+
+	if (ip_hdr->nexthdr != NET_IPV6_NEXTHDR_HBHO) {
+		return false;
+	}
+
+	if (net_ipv6_parse_ext_hdr_options(pkt, mld_router_alert_cb, &found) < 0) {
+		return false;
+	}
+
+	return found;
+}
+
 #define dbg_addr(action, pkt_str, src, dst)				\
 	do {								\
 		NET_DBG("%s %s from %s to %s", action, pkt_str,         \
@@ -547,6 +588,19 @@ static enum net_verdict handle_mld_query(struct net_icmp_ctx *ctx,
 
 	if (length < pkt_len || pkt_len > NET_IPV6_MTU ||
 	    ip_hdr->hop_limit != 1U || icmp_hdr->code != 0U) {
+		goto drop;
+	}
+
+	/* A query comes from a link-local address with the Router Alert
+	 * option, RFC 3810 ch 5.1.14 and 6.2.
+	 */
+	if (!net_ipv6_is_ll_addr_raw(ip_hdr->src)) {
+		NET_DBG("DROP: query source is not link-local");
+		goto drop;
+	}
+
+	if (!mld_has_router_alert(pkt, ip_hdr)) {
+		NET_DBG("DROP: query without Router Alert option");
 		goto drop;
 	}
 
