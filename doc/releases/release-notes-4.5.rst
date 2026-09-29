@@ -848,6 +848,14 @@ New APIs and options
   * :c:macro:`HWSPINLOCK_COMMON_CONFIG_FROM_DT_NODE`
   * :c:macro:`HWSPINLOCK_COMMON_CONFIG_FROM_DT_INST`
 
+* Interrupt controller
+
+  * :c:func:`its_alloc_intids` and :c:func:`its_alloc_map_intids`.
+  * :kconfig:option:`CONFIG_GIC_V3_ITS_MAX_DEVICES` and
+    :kconfig:option:`CONFIG_GIC_V3_ITS_MAX_VECTORS`.
+  * ``zephyr,device-id-bits`` property of :dtcompatible:`arm,gic-v3-its` and
+    ``zephyr,lpi-id-bits`` property of :dtcompatible:`arm,gic-v3`.
+
 * Kconfig
 
   * Add ``dt_partition_mtd`` preprocessor function (:github:`111599`)
