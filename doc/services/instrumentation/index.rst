@@ -36,10 +36,10 @@ to control when recording is active. The default trigger and stopper functions a
 ``main()`` (configurable via Kconfig), meaning instrumentation captures the entire execution from
 when ``main()`` starts until it returns.
 
-The recorded data is stored in RAM and can be accessed from a host computer thanks to a UART backend
-that exposes a set of simple commands. :zephyr_file:`scripts/instrumentation/zaru.py` script allows
-to execute these commands through a high-level command-line interface and makes it easy to obtain
-data in a format suitable for further analysis (e.g. using `Perfetto`_).
+The recorded data is stored in RAM and can be accessed from a host computer thanks to a
+configurable data backend. The default UART backend exposes a set of simple commands over the
+console serial port. :zephyr_file:`scripts/instrumentation/zaru.py` allows executing those commands
+through a high-level CLI and obtaining data suitable for further analysis (e.g. using `Perfetto`_).
 
 Operational Modes
 *****************
@@ -143,8 +143,14 @@ Enable instrumentation with:
    CONFIG_INSTRUMENTATION_MODE_CALLGRAPH=y    # For tracing
    CONFIG_INSTRUMENTATION_MODE_STATISTICAL=y  # For profiling
 
-The instrumentation subsystem communicates with the target device via a UART console. Ensure that
-the ``zephyr_console`` chosen node points to the desired UART controller.
+Data backends
+=============
+
+Dumped callgraph and profile bytes leave the target through a selected backend.
+The default :kconfig:option:`CONFIG_INSTRUMENTATION_BACKEND_UART` sends dumps over the
+console UART and accepts host commands used by ``zaru.py``.
+
+Ensure that the ``zephyr_console`` chosen node points to the desired UART controller.
 
 :ref:`Retained memory <retention_api>` allows trigger/stopper function addresses to persist across
 reboots. This feature is optional and enabled with the

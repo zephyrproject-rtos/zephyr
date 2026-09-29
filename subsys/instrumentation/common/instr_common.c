@@ -9,12 +9,12 @@
 #include <string.h>
 
 #include <zephyr/instrumentation/instrumentation.h>
+#include <instr_backend.h>
 #include <instr_buffer.h>
 #include <instr_timestamp.h>
 
 #include <zephyr/init.h>
 #include <zephyr/device.h>
-#include <zephyr/drivers/uart.h>
 #include <zephyr/kernel.h>
 #include <zephyr/retention/retention.h>
 #include <zephyr/sys/reboot.h>
@@ -27,6 +27,25 @@
 #endif
 #define INSTR_START_TAG "-*-#"
 #define INSTR_END_TAG "-*-!\n"
+
+static const struct instr_backend *primary_backend;
+
+__no_instrumentation__
+static const struct instr_backend *instr_get_primary_backend(void)
+{
+	if (primary_backend == NULL) {
+		primary_backend = instr_backend_get(CONFIG_INSTRUMENTATION_BACKEND_NAME);
+		instr_backend_init(primary_backend);
+	}
+
+	return primary_backend;
+}
+
+__no_instrumentation__
+static void instr_backend_output_str(const struct instr_backend *backend, const char *str)
+{
+	instr_backend_output(backend, (uint8_t *)str, strlen(str));
+}
 
 /*
  * Memory buffer to store instrumentation event records has the following modes:
@@ -165,6 +184,8 @@ int instr_init(void)
 	/* Initialize ring buffer */
 	instr_buffer_init();
 #endif
+
+	(void)instr_get_primary_backend();
 
 	/* Init and start counters for timestamping */
 	instr_timestamp_init();
@@ -306,12 +327,10 @@ void *instr_get_stop_func(void)
 }
 
 __no_instrumentation__
-void instr_dump_buffer_uart(void)
+void instr_dump_buffer(void)
 {
 #if defined(CONFIG_INSTRUMENTATION_MODE_CALLGRAPH)
-	static const struct device *const uart_dev =
-	DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
-
+	const struct instr_backend *backend = instr_get_primary_backend();
 	uint8_t *transferring_buf;
 	uint32_t transferring_length;
 
@@ -319,48 +338,45 @@ void instr_dump_buffer_uart(void)
 	instr_disable();
 
 	/* Initiator mark */
-	printk(INSTR_START_TAG);
+	instr_backend_output_str(backend, INSTR_START_TAG);
 
 	while (!ring_buf_is_empty(instr_buffer_get_ring_buf())) {
 		transferring_length =
 			ring_buf_get_ptr(instr_buffer_get_ring_buf(), &transferring_buf, 0);
 
-		for (uint32_t i = 0; i < transferring_length; i++) {
-			uart_poll_out(uart_dev, transferring_buf[i]);
-		}
-
+		instr_backend_output(backend, transferring_buf, transferring_length);
 		ring_buf_consume(instr_buffer_get_ring_buf(), transferring_length);
 	}
 
 	/* Terminator mark */
-	printk(INSTR_END_TAG);
+	instr_backend_output_str(backend, INSTR_END_TAG);
+	(void)instr_backend_flush(backend);
 #endif
 }
 
 __no_instrumentation__
-void instr_dump_deltas_uart(void)
+void instr_dump_deltas(void)
 {
 #if defined(CONFIG_INSTRUMENTATION_MODE_STATISTICAL)
-	static const struct device *const uart_dev =
-	DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+	const struct instr_backend *backend = instr_get_primary_backend();
+	uint8_t type = INSTR_EVENT_PROFILE;
 
 	instr_disable();
 
 	/* Initiator mark */
-	printk(INSTR_START_TAG);
+	instr_backend_output_str(backend, INSTR_START_TAG);
 
 	for (int i = 0; i < num_disco_func; i++) {
-		uart_poll_out(uart_dev, INSTR_EVENT_PROFILE);
-		for (int j = 0; j < sizeof(disco_func[i].addr); j++) {
-			uart_poll_out(uart_dev, *((uint8_t *)&disco_func[i].addr + j));
-		}
-		for (int k = 0; k < sizeof(disco_func[i].delta_t); k++) {
-			uart_poll_out(uart_dev, *((uint8_t *)&disco_func[i].delta_t + k));
-		}
+		instr_backend_output(backend, &type, sizeof(type));
+		instr_backend_output(backend, (uint8_t *)&disco_func[i].addr,
+				     sizeof(disco_func[i].addr));
+		instr_backend_output(backend, (uint8_t *)&disco_func[i].delta_t,
+				     sizeof(disco_func[i].delta_t));
 	}
 
 	/* Terminator mark */
-	printk(INSTR_END_TAG);
+	instr_backend_output_str(backend, INSTR_END_TAG);
+	(void)instr_backend_flush(backend);
 #endif
 }
 
@@ -583,7 +599,7 @@ void instr_event_handler(enum instr_event_types type, void *callee, void *caller
 		    ring_buf_space_get(instr_buffer_get_ring_buf()) <
 			    sizeof(struct instr_record)) {
 #ifdef CONFIG_INSTRUMENTATION_MODE_CALLGRAPH_DUMP_ON_FULL
-			instr_dump_buffer_uart();
+			instr_dump_buffer();
 			instr_buffer_reset();
 #else
 			_instr_tracing_disabled = true;

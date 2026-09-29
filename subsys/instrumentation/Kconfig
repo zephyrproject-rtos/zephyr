@@ -6,15 +6,35 @@
 config INSTRUMENTATION
 	bool "Compiler Instrumentation Support"
 	select REBOOT
-	select UART_CONSOLE
-	select UART_INTERRUPT_DRIVEN
 	help
 	  Enable compiler-managed runtime system instrumentation. This requires
 	  a compiler that supports function instrumentation, and a backend for
-	  capturing and processing those instrumentation events from the target,
-	  like a serial port.
+	  capturing and processing those instrumentation events from the target.
 
 if INSTRUMENTATION
+
+choice INSTRUMENTATION_BACKEND_CHOICE
+	prompt "Instrumentation data backend"
+	default INSTRUMENTATION_BACKEND_UART
+	help
+	  Select how dumped instrumentation data (callgraph traces and profile
+	  deltas) leaves the target. Host control commands used by zaru.py
+	  remain UART-based and are only available with the UART backend.
+
+config INSTRUMENTATION_BACKEND_UART
+	bool "UART backend"
+	depends on SERIAL
+	select UART_CONSOLE
+	select UART_INTERRUPT_DRIVEN
+	help
+	  Dump instrumentation data over the console UART and accept host
+	  commands (status, trigger, dump_trace, etc.) on the same device.
+
+endchoice
+
+config INSTRUMENTATION_BACKEND_NAME
+	string
+	default "instr_backend_uart" if INSTRUMENTATION_BACKEND_UART
 
 config INSTRUMENTATION_MODE_CALLGRAPH
 	bool "Call graph mode (Tracing)"
