@@ -310,7 +310,7 @@
 			 * because they share a single common bit in RCC registers
 			 */
 			clocks = <&rcc STM32_CLOCK(AHB0, 0)>;
-			#dma-cells = <3>;
+			#dma-cells = <2>;
 			dma-channels = <8>;
 			dma-generators = <1>;
 			dma-requests = <25>;

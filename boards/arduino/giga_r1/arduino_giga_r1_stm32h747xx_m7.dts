@@ -129,7 +129,7 @@
 	pinctrl-0 = <&dfsdm1_ckout_pd3
 		     &dfsdm1_datin0_pc1>;
 	pinctrl-names = "default";
-	dmas = <&dmamux1 0 101 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+	dmas = <&dmamux1 101 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
 	dma-names = "rx";
 
 	dfsdm_channel_0: channel@0 {
