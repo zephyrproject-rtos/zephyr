@@ -1240,6 +1240,11 @@ static void ipv6_config_defaults_set(struct net_if_ipv6 *ipv6)
 	IF_ENABLED(CONFIG_NET_IPV6_IID_STABLE, (ipv6->iid = NULL));
 	IF_ENABLED(CONFIG_NET_IPV6_IID_STABLE, (ipv6->network_counter = 0));
 	IF_ENABLED(CONFIG_NET_IPV6_PE, (ipv6->desync_factor = 0));
+
+#if defined(CONFIG_NET_IPV6_MLD)
+	/* No MLDv1 querier heard: the timer has expired */
+	ipv6->mld_v1_querier_timeout = sys_timepoint_calc(K_NO_WAIT);
+#endif
 }
 
 static void ipv6_prefix_rm_all(struct net_if *iface, struct net_if_ipv6 *ipv6)

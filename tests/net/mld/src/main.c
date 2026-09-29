@@ -86,6 +86,8 @@ static bool is_join_msg_ok;
 static bool is_leave_msg_ok;
 static bool is_query_received;
 static bool is_report_sent;
+static bool is_v1_report_sent;
+static bool is_v1_done_sent;
 
 static struct mld_report_handler *report_handler;
 
@@ -167,6 +169,15 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 			report_handler->fn(pkt, report_handler->user_data);
 		}
 
+		k_sem_give(&wait_data);
+	} else if (icmp->type == NET_ICMPV6_MLDv1_REPORT) {
+		NET_DBG("Received MLDv1 report....");
+		is_v1_report_sent = true;
+		is_report_sent = true;
+		k_sem_give(&wait_data);
+	} else if (icmp->type == NET_ICMPV6_MLDv1_DONE) {
+		NET_DBG("Received MLDv1 done....");
+		is_v1_done_sent = true;
 		k_sem_give(&wait_data);
 	}
 
@@ -343,12 +354,19 @@ static void *test_mld_setup(void)
 	return NULL;
 }
 
+/* Forget about MLDv1 queriers heard by a previous test */
 static void test_mld_before(void *fixture)
 {
+	struct net_if_ipv6 *ipv6 = net_iface->config.ip.ipv6;
+
 	ARG_UNUSED(fixture);
 
 	report_handler = NULL;
 	exp_mcast_group = NULL;
+
+	ipv6->mld_v1_querier_timeout = sys_timepoint_calc(K_NO_WAIT);
+	is_v1_report_sent = false;
+	is_v1_done_sent = false;
 }
 
 static void test_join_group(void)
@@ -1032,6 +1050,33 @@ ZTEST(net_mld_test_suite, test_address_specific_query_not_listener)
 	opts.group = &other;
 
 	verify_query_unanswered(&opts);
+}
+
+/* After an MLDv1 query the host operates in MLDv1 mode (RFC 3810 ch
+ * 8.2.1): queries are answered with MLDv1 Reports, a join is announced with
+ * one and a leave with a Done message.
+ */
+ZTEST(net_mld_test_suite, test_mldv1_querier_present)
+{
+	const struct mld_query_opts opts = { .v1 = true, .max_resp = 3 };
+
+	k_sem_reset(&wait_data);
+	is_v1_report_sent = false;
+
+	/* The solicited-node group of the address is answered for */
+	send_mld_query(net_iface, &opts);
+	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), "Timeout while waiting for a report");
+	zassert_true(is_v1_report_sent, "Query not answered with MLDv1");
+
+	k_sem_reset(&wait_data);
+	is_v1_report_sent = false;
+	is_v1_done_sent = false;
+
+	test_join_group();
+	zassert_true(is_v1_report_sent, "Join not reported with MLDv1");
+
+	test_leave_group();
+	zassert_true(is_v1_done_sent, "Leave not reported with a Done message");
 }
 
 /* A query must come from a link-local address (RFC 3810 ch 5.1.14) */
