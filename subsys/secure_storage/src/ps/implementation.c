@@ -2,9 +2,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/secure_storage/uid.h>
+#include <zephyr/secure_storage/its.h>
 #include <zephyr/secure_storage/ps.h>
 #include <zephyr/secure_storage/ps/store.h>
 #include <zephyr/secure_storage/ps/transform.h>
+#include <zephyr/secure_storage/ps/replay_protection.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
@@ -12,6 +14,9 @@
 #include <string.h>
 
 LOG_MODULE_REGISTER(secure_storage_ps, CONFIG_SECURE_STORAGE_LOG_LEVEL);
+
+BUILD_ASSERT(CONFIG_SECURE_STORAGE_PS_REPLAY_PROTECTION_SIZE <=
+	     CONFIG_SECURE_STORAGE_ITS_MAX_DATA_SIZE);
 
 static void log_failed_operation(const char *operation, const char *preposition, psa_status_t ret)
 {
@@ -55,6 +60,53 @@ static psa_status_t transform_stored_data(
 	return PSA_SUCCESS;
 }
 
+static psa_status_t check_replay_protection(
+		psa_storage_uid_t uid,
+		const uint8_t stored_data[static SECURE_STORAGE_PS_TRANSFORM_MAX_STORED_DATA_SIZE],
+		size_t stored_data_len)
+{
+	uint8_t its_rp[CONFIG_SECURE_STORAGE_PS_REPLAY_PROTECTION_SIZE];
+	size_t its_rp_len;
+	uint8_t ps_rp[CONFIG_SECURE_STORAGE_PS_REPLAY_PROTECTION_SIZE];
+	size_t ps_rp_len;
+	psa_status_t ret;
+
+	ret = secure_storage_its_get(SECURE_STORAGE_CALLER_PSA_PS, uid, 0,
+				     sizeof(its_rp), its_rp,
+				     &its_rp_len);
+	if (ret != PSA_SUCCESS) {
+		LOG_ERR("Failed to retrieve replay protection value for entry " PSA_UID_FMT,
+			PSA_UID_ARGS(uid));
+		/* When this function is called the data from PS has already been read, so
+		 * the entry exists there. If for some reason there is no corresponding field
+		 * in ITS then the correct error is PSA_ERROR_INVALID_SIGNATURE.
+		 */
+		if (ret == PSA_ERROR_DOES_NOT_EXIST) {
+			return PSA_ERROR_INVALID_SIGNATURE;
+		}
+		if (ret == PSA_ERROR_STORAGE_FAILURE ||
+		    ret == PSA_ERROR_INVALID_SIGNATURE ||
+		    ret == PSA_ERROR_DATA_CORRUPT) {
+			return ret;
+		}
+		return PSA_ERROR_GENERIC_ERROR;
+	}
+
+	ret = secure_storage_ps_get_replay_protection(stored_data, stored_data_len,
+						      ps_rp, &ps_rp_len);
+	if (ret != PSA_SUCCESS) {
+		LOG_ERR("Failed to compute replay protection value for entry " PSA_UID_FMT,
+			PSA_UID_ARGS(uid));
+		return PSA_ERROR_GENERIC_ERROR;
+	}
+
+	if ((its_rp_len != ps_rp_len) ||
+	    (memcmp(its_rp, ps_rp, ps_rp_len) != 0)) {
+		return PSA_ERROR_INVALID_SIGNATURE;
+	}
+	return PSA_SUCCESS;
+}
+
 static psa_status_t get_entry(secure_storage_uid_t uid, size_t data_size, uint8_t *data,
 			      size_t *data_len, psa_storage_create_flags_t *create_flags)
 {
@@ -63,6 +115,11 @@ static psa_status_t get_entry(secure_storage_uid_t uid, size_t data_size, uint8_
 	size_t stored_data_len;
 
 	ret = get_stored_data(uid, stored_data, &stored_data_len);
+	if (ret != PSA_SUCCESS) {
+		return ret;
+	}
+
+	ret = check_replay_protection(uid.uid, stored_data, stored_data_len);
 	if (ret != PSA_SUCCESS) {
 		return ret;
 	}
@@ -111,6 +168,12 @@ static psa_status_t store_entry(secure_storage_uid_t uid, size_t data_length,
 	psa_status_t ret;
 	uint8_t stored_data[SECURE_STORAGE_PS_TRANSFORM_MAX_STORED_DATA_SIZE];
 	size_t stored_data_len;
+	uint8_t replay_prot[CONFIG_SECURE_STORAGE_PS_REPLAY_PROTECTION_SIZE];
+	size_t replay_prot_len;
+	uint8_t old_replay_prot[CONFIG_SECURE_STORAGE_PS_REPLAY_PROTECTION_SIZE];
+	size_t old_replay_prot_len;
+	bool has_old_replay_prot;
+	psa_status_t rollback_ret;
 
 	ret = secure_storage_ps_transform_to_store(uid, data_length, p_data, create_flags,
 						    stored_data, &stored_data_len);
@@ -119,9 +182,50 @@ static psa_status_t store_entry(secure_storage_uid_t uid, size_t data_length,
 		return PSA_ERROR_GENERIC_ERROR;
 	}
 
+	ret = secure_storage_ps_get_replay_protection(stored_data, stored_data_len,
+						      replay_prot, &replay_prot_len);
+	if (ret != PSA_SUCCESS) {
+		LOG_ERR("Failed to compute replay protection for entry " PSA_UID_FMT,
+			PSA_UID_ARGS(uid.uid));
+		return PSA_ERROR_GENERIC_ERROR;
+	}
+
+	/* Save the current replay protection value (if any) so that it can be restored if
+	 * writing the new data to the PS store fails. This keeps the old entry readable.
+	 */
+	has_old_replay_prot = (secure_storage_its_get(SECURE_STORAGE_CALLER_PSA_PS, uid.uid, 0,
+						      sizeof(old_replay_prot), old_replay_prot,
+						      &old_replay_prot_len) == PSA_SUCCESS);
+
+	ret = secure_storage_its_set(SECURE_STORAGE_CALLER_PSA_PS, uid.uid,
+				     replay_prot_len, replay_prot, PSA_STORAGE_FLAG_NONE);
+	if (ret != PSA_SUCCESS) {
+		LOG_ERR("Failed to store replay protection value for entry " PSA_UID_FMT " (%d)",
+			PSA_UID_ARGS(uid.uid), ret);
+		if ((ret == PSA_ERROR_INSUFFICIENT_STORAGE) ||
+		    (ret == PSA_ERROR_STORAGE_FAILURE)) {
+			return ret;
+		}
+		return PSA_ERROR_GENERIC_ERROR;
+	}
+
 	ret = secure_storage_ps_store_set(uid, stored_data_len, stored_data);
 	if (ret != PSA_SUCCESS) {
 		log_failed_operation("write", "to", ret);
+
+		if (has_old_replay_prot) {
+			rollback_ret = secure_storage_its_set(SECURE_STORAGE_CALLER_PSA_PS,
+							      uid.uid, old_replay_prot_len,
+							      old_replay_prot,
+							      PSA_STORAGE_FLAG_NONE);
+		} else {
+			rollback_ret = secure_storage_its_remove(SECURE_STORAGE_CALLER_PSA_PS,
+								 uid.uid);
+		}
+		if (rollback_ret != PSA_SUCCESS) {
+			LOG_ERR("Failed to roll back replay protection for entry " PSA_UID_FMT
+				" (%d)", PSA_UID_ARGS(uid.uid), rollback_ret);
+		}
 	}
 	return ret;
 }
@@ -171,6 +275,12 @@ psa_status_t secure_storage_ps_get(const psa_storage_uid_t uid,
 	if (ret != PSA_SUCCESS) {
 		return ret;
 	}
+
+	ret = check_replay_protection(uid, stored_data, stored_data_len);
+	if (ret != PSA_SUCCESS) {
+		return ret;
+	}
+
 	if (data_offset == 0
 	 && data_size >= SECURE_STORAGE_PS_TRANSFORM_DATA_SIZE(stored_data_len)) {
 		/* All the data fits directly in the provided buffer. */
@@ -237,6 +347,11 @@ static psa_status_t ps_remove(psa_storage_uid_t uid)
 		if (ret != PSA_SUCCESS) {
 			LOG_WRN("%s entry " SS_UID_FMT " that failed to be read back. (%d)",
 				"Removing", SS_UID_ARGS(ps_uid), ret);
+		}
+		ret = secure_storage_its_remove(SECURE_STORAGE_CALLER_PSA_PS, uid);
+		if (ret != PSA_SUCCESS) {
+			LOG_ERR("Failed to remove replay protection from ITS for " PSA_UID_FMT
+				" (%d)", PSA_UID_ARGS(uid), ret);
 		}
 		ret = secure_storage_ps_store_remove(ps_uid);
 		if (ret != PSA_SUCCESS) {

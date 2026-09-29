@@ -9,10 +9,13 @@ config SECURE_STORAGE_PS_IMPLEMENTATION_ZEPHYR
 	bool "Zephyr's PS implementation"
 	select SECURE_STORAGE_PS_TRANSFORM_MODULE
 	select SECURE_STORAGE_PS_STORE_MODULE
+	select SECURE_STORAGE_PS_REPLAY_PROTECTION_MODULE
 	help
 	  Use Zephyr's implementation of the PS API.
-	  It calls into the transform and store modules, which
+	  It calls into the transform, store and replay protection modules, which
 	  can be configured and have custom implementations.
+	  The replay protection values are stored through the ITS API, so an ITS
+	  implementation (Zephyr's or a custom one) must be available.
 
 config SECURE_STORAGE_PS_IMPLEMENTATION_ITS
 	bool "PS calls directly into the ITS"
@@ -41,6 +44,9 @@ config SECURE_STORAGE_PS_MAX_DATA_SIZE
 	help
 	  The maximum size, in bytes, that the data of a PS entry can be.
 	  Increasing this value increases the stack usage when serving PSA PS API calls.
+	  With SECURE_STORAGE_PS_IMPLEMENTATION_ZEPHYR, PS API calls also call into the
+	  ITS API to handle the replay protection values, so their stack usage also
+	  depends on SECURE_STORAGE_ITS_MAX_DATA_SIZE.
 
 menuconfig SECURE_STORAGE_PS_TRANSFORM_MODULE
 	bool "PS transform module"
@@ -64,5 +70,18 @@ menuconfig SECURE_STORAGE_PS_STORE_MODULE
 if SECURE_STORAGE_PS_STORE_MODULE
 
 rsource "Kconfig.ps_store"
+
+endif
+
+menuconfig SECURE_STORAGE_PS_REPLAY_PROTECTION_MODULE
+	bool "PS replay protection module"
+	help
+	  The module that computes the replay protection value of the PS data
+	  that is written to and read from ITS. Zephyr's PS implementation calls
+	  into it.
+
+if SECURE_STORAGE_PS_REPLAY_PROTECTION_MODULE
+
+rsource "Kconfig.ps_replay_protection"
 
 endif
