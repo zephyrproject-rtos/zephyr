@@ -715,6 +715,29 @@ static void dma_esp32_stop_barrier(struct dma_esp32_data *data, uint32_t channel
 	gdma_hal_clear_intr(&data->hal, channel_id, dir, mask);
 }
 
+/*
+ * On the ESP32-S3 the burst length also sets the size of the blocks the
+ * GDMA reads and writes PSRAM in: 16, 32 or 64 bytes.
+ */
+#if defined(GDMA_LL_EXT_MEM_BK_SIZE_16B)
+#define DMA_ESP32_BURST_VALID(len)                                                                 \
+	((len) == 0 || (IS_POWER_OF_TWO(len) && (len) <= GDMA_LL_MAX_BURST_SIZE_PSRAM))
+#else
+#define DMA_ESP32_BURST_VALID(len) true
+#endif
+
+/* A burst length of 0 turns bursts off */
+static void dma_esp32_set_burst(struct dma_esp32_data *data, uint32_t channel_id,
+				gdma_channel_direction_t dir, uint32_t burst_length, bool allowed)
+{
+	bool burst = burst_length != 0 && allowed;
+
+	gdma_hal_enable_burst(&data->hal, channel_id, dir, burst, burst);
+#if defined(GDMA_LL_EXT_MEM_BK_SIZE_16B)
+	gdma_hal_set_burst_size(&data->hal, channel_id, dir, burst ? MAX(burst_length, 16) : 16);
+#endif
+}
+
 static int dma_esp32_config_rx(const struct device *dev, struct dma_esp32_channel *dma_channel,
 			       struct dma_config *config_dma)
 {
@@ -733,11 +756,8 @@ static int dma_esp32_config_rx(const struct device *dev, struct dma_esp32_channe
 				      GDMA_CHANNEL_DIRECTION_RX, dma_channel->periph_id);
 	}
 
-	if (config_dma->dest_burst_length) {
-		gdma_hal_enable_burst(&data->hal, dma_channel->channel_id,
-				      GDMA_CHANNEL_DIRECTION_RX, config->sram_alignment >= 4,
-				      config->sram_alignment >= 4);
-	}
+	dma_esp32_set_burst(data, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX,
+			    config_dma->dest_burst_length, config->sram_alignment >= 4);
 
 	gdma_hal_set_strategy(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX, true,
 			      false, false);
@@ -773,10 +793,8 @@ static int dma_esp32_config_tx(const struct device *dev, struct dma_esp32_channe
 				      GDMA_CHANNEL_DIRECTION_TX, dma_channel->periph_id);
 	}
 
-	if (config_dma->source_burst_length) {
-		gdma_hal_enable_burst(&data->hal, dma_channel->channel_id,
-				      GDMA_CHANNEL_DIRECTION_TX, true, true);
-	}
+	dma_esp32_set_burst(data, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX,
+			    config_dma->source_burst_length, true);
 
 	gdma_hal_set_priority(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX,
 			      config_dma->channel_priority);
@@ -818,6 +836,11 @@ static int dma_esp32_config(const struct device *dev, uint32_t channel,
 
 	if (config_dma->channel_priority > GDMA_LL_CHANNEL_MAX_PRIORITY) {
 		LOG_ERR("Channel priority must be at most %d", GDMA_LL_CHANNEL_MAX_PRIORITY);
+		return -EINVAL;
+	}
+
+	if (!DMA_ESP32_BURST_VALID(config_dma->source_burst_length)) {
+		LOG_ERR("Unsupported burst length %u", config_dma->source_burst_length);
 		return -EINVAL;
 	}
 
