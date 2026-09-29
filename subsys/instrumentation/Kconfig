@@ -135,6 +135,7 @@ config INSTRUMENTATION_EXCLUDE_FUNCTION_LIST
 	default "arch_timing_counter_get,arch_irq_lock,arch_irq_unlock,\
 		k_cycle_get_64,sys_clock_cycle_get_64,elapsed"
 	depends on INSTRUMENTATION_MODE_CALLGRAPH || INSTRUMENTATION_MODE_STATISTICAL
+	depends on "$(TOOLCHAIN_VARIANT_COMPILER)" = "gnu"
 	help
 	  Set the list of function names to be excluded from instrumentation.
 	  The function name to be matched is its user-visible name. The match is
@@ -142,13 +143,20 @@ config INSTRUMENTATION_EXCLUDE_FUNCTION_LIST
 	  a function name, it is considered to be a match. The function names in
 	  the list are separate by a comma, for instance: sym0, sym1, ...
 
+	  This option maps to GCC's -finstrument-functions-exclude-function-list.
+	  This option is only available with the GNU compiler variant.
+
 config INSTRUMENTATION_EXCLUDE_FILE_LIST
 	string "Exclude file list"
 	depends on INSTRUMENTATION_MODE_CALLGRAPH || INSTRUMENTATION_MODE_STATISTICAL
+	depends on "$(TOOLCHAIN_VARIANT_COMPILER)" = "gnu"
 	help
 	  Set the list of files that are excluded from instrumentation. The
 	  match is done on substrings: if the file parameter is a substring of
 	  the file name, it is considered to be a match. The files in the list
 	  are separate by a comma, for instance: file0, file1, ...
+
+	  This option maps to GCC's -finstrument-functions-exclude-file-list.
+	  This option is only available with the GNU compiler variant.
 
 endif
