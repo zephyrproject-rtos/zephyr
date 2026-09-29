@@ -1265,6 +1265,10 @@ ZTEST(net_mld_test_suite, test_mldv1_querier_present)
 {
 	const struct mld_query_opts opts = { .v1 = true, .max_resp = 3 };
 
+	if (!IS_ENABLED(CONFIG_NET_IPV6_MLD_V1_COMPAT)) {
+		ztest_test_skip();
+	}
+
 	k_sem_reset(&wait_data);
 	is_v1_report_sent = false;
 
@@ -1391,6 +1395,10 @@ ZTEST(net_mld_test_suite, test_mode_change_cancels_response)
 	struct net_if_ipv6 *ipv6 = net_iface->config.ip.ipv6;
 	struct mld_query_opts opts = { .v1 = true, .max_resp = 25000 };
 
+	if (!IS_ENABLED(CONFIG_NET_IPV6_MLD_V1_COMPAT)) {
+		ztest_test_skip();
+	}
+
 	test_join_group();
 
 	k_sem_reset(&wait_data);
@@ -1430,6 +1438,10 @@ ZTEST(net_mld_test_suite, test_mode_expiry_cancels_response)
 	struct mld_query_opts opts = { .v1 = true, .max_resp = 200 };
 	struct net_if *iface = net_iface;
 	struct net_if_mcast_addr *maddr;
+
+	if (!IS_ENABLED(CONFIG_NET_IPV6_MLD_V1_COMPAT)) {
+		ztest_test_skip();
+	}
 
 	test_join_group();
 
@@ -1511,6 +1523,10 @@ ZTEST(net_mld_test_suite, test_v1_report_suppresses_response)
 {
 	struct mld_query_opts opts = { .v1 = true, .max_resp = 1000 };
 
+	if (!IS_ENABLED(CONFIG_NET_IPV6_MLD_V1_COMPAT)) {
+		ztest_test_skip();
+	}
+
 	test_join_group();
 
 	k_sem_reset(&wait_data);
@@ -1544,6 +1560,10 @@ ZTEST(net_mld_test_suite, test_v1_report_suppresses_response)
 ZTEST(net_mld_test_suite, test_v1_report_from_off_link_ignored)
 {
 	struct mld_query_opts opts = { .v1 = true, .max_resp = 500 };
+
+	if (!IS_ENABLED(CONFIG_NET_IPV6_MLD_V1_COMPAT)) {
+		ztest_test_skip();
+	}
 
 	test_join_group();
 
@@ -1628,6 +1648,38 @@ ZTEST(net_mld_test_suite, test_report_after_link_local_dad)
 	cancel_retransmits(net_iface);
 	report_handler = NULL;
 	zassert_true(net_if_ipv6_addr_rm(net_iface, &ll_addr), "Cannot remove address");
+	test_leave_group();
+}
+
+/* Without MLDv1 compatibility an MLDv1 query is ignored and the node keeps
+ * reporting with MLDv2 (RFC 3810 ch 10.1).
+ */
+ZTEST(net_mld_test_suite, test_mldv1_query_ignored)
+{
+	struct mld_query_opts opts = { .v1 = true, .max_resp = 3 };
+
+	if (IS_ENABLED(CONFIG_NET_IPV6_MLD_V1_COMPAT)) {
+		ztest_test_skip();
+	}
+
+	test_join_group();
+
+	k_sem_reset(&wait_data);
+	is_report_sent = false;
+	opts.dst = &mcast_addr;
+	opts.group = &mcast_addr;
+
+	send_mld_query(net_iface, &opts);
+	zassert_equal(-EAGAIN, k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), "Unexpected report");
+
+	test_leave_group();
+
+	is_join_msg_ok = false;
+	is_v1_report_sent = false;
+	test_join_group();
+	zassert_true(is_join_msg_ok, "Join not reported with MLDv2");
+	zassert_false(is_v1_report_sent, "Join reported with MLDv1");
+
 	test_leave_group();
 }
 
