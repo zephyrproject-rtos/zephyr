@@ -1,12 +1,12 @@
 # Copyright (c) 2026 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-config HW_STACK_PROTECTION
+configdefault HW_STACK_PROTECTION
 	default ARCH_HAS_STACK_PROTECTION
 
 if SPI_NOR
 
-config SPI_NOR_FLASH_LAYOUT_PAGE_SIZE
+configdefault SPI_NOR_FLASH_LAYOUT_PAGE_SIZE
 	default 4096 if MCUBOOT || BOOTLOADER_MCUBOOT
 
 endif # SPI_NOR
@@ -18,17 +18,17 @@ config BOARD_NRF93M1DK
 
 # By default, if we build for a Non-Secure version of the board,
 # enable building with TF-M as the Secure Execution Environment.
-config BUILD_WITH_TFM
+configdefault BUILD_WITH_TFM
 	default y
 
 # If building with TF-M, disable UART in TF-M to avoid conflicts with
 # the UART used by the modem
 if BUILD_WITH_TFM
 
-config TFM_SECURE_UART
+configdefault TFM_SECURE_UART
 	default n
 
-config TFM_LOG_LEVEL_SILENCE
+configdefault TFM_LOG_LEVEL_SILENCE
 	default y
 
 endif # BUILD_WITH_TFM
@@ -47,21 +47,21 @@ if BOARD_NRF93M1DK_NRF54L15_CPUAPP_NS || BOARD_NRF93M1DK_NRF54L15_CPUAPP
 # The order of 3, 4 and 5 is critical to ensure that the Vbus current limit
 # is set before the modem is initialized.
 
-config POWER_DOMAIN_GPIO_INIT_PRIORITY
+configdefault POWER_DOMAIN_GPIO_INIT_PRIORITY
 	default 92
 
-config MODEM_CELLULAR_INIT_PRIORITY
+configdefault MODEM_CELLULAR_INIT_PRIORITY
 	default 93
 
 if !MCUBOOT
 
-config REGULATOR
+configdefault REGULATOR
 	default y
 
-config SENSOR
+configdefault SENSOR
 	default y
 
-config POWER_DOMAIN
+configdefault POWER_DOMAIN
 	default y
 
 endif # !MCUBOOT
