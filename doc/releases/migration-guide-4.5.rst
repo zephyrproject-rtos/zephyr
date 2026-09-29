@@ -2548,6 +2548,23 @@ gPTP
 Modem
 *****
 
+Sierra Wireless HL78xx
+======================
+
+* AirVantage FOTA policy has moved from the driver to the application. The driver no longer
+  accepts firmware download and install requests on its own: with
+  :kconfig:option:`CONFIG_MODEM_HL78XX_AIRVANTAGE_USER_AGREEMENT` enabled, applications must
+  answer each user agreement request with :c:func:`hl78xx_airvantage_agreement_accept` or
+  :c:func:`hl78xx_airvantage_agreement_delay`, otherwise the FOTA operation does not proceed.
+
+* The ``wdsi_indication`` member of the :c:struct:`hl78xx_evt` content union has been replaced
+  by ``wdsi`` (:c:struct:`hl78xx_wdsi_evt`), which carries the indication and its data. Replace
+  ``content.wdsi_indication`` with ``content.wdsi.indication``.
+
+* The ``CONFIG_MODEM_HL78XX_AIRVANTAGE_HOST_INITIATED`` and
+  ``CONFIG_MODEM_HL78XX_AIRVANTAGE_MODULE_INITIATED`` options have been removed. They had no
+  effect and must be removed from application configurations.
+
 SIMCOM SIM7080
 ==============
 

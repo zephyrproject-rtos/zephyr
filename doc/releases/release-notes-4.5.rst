@@ -253,6 +253,13 @@ Removed APIs and options
 
     * ``CONFIG_MCUMGR_GRP_OS_INFO_HARDWARE_INFO_SHORT_HARDWARE_PLATFORM``
 
+* Modem
+
+    * ``CONFIG_MODEM_HL78XX_AIRVANTAGE_HOST_INITIATED``
+    * ``CONFIG_MODEM_HL78XX_AIRVANTAGE_MODULE_INITIATED``
+    * The ``wdsi_indication`` member of :c:struct:`hl78xx_evt`, replaced by ``wdsi``
+      (see :ref:`the migration guide <migration_4.5>`)
+
 * Networking
 
     * ``CONFIG_NET_TC_SKIP_FOR_HIGH_PRIO``
@@ -800,6 +807,14 @@ New APIs and options
 * Modem
 
   * :c:enumerator:`CELLULAR_MODEM_INFO_SERIAL_NUMBER`
+  * Sierra Wireless HL78xx:
+
+    * :c:func:`hl78xx_airvantage_agreement_accept`
+    * :c:func:`hl78xx_airvantage_agreement_delay`
+    * :c:func:`hl78xx_fw_supports_ntn`
+    * :c:func:`hl78xx_fw_version_supports_ntn`
+    * :kconfig:option:`CONFIG_MODEM_HL78XX_AIRVANTAGE_UA_REBOOT_DEVICE`
+    * :kconfig:option:`CONFIG_MODEM_HL78XX_NTN_PDP_FAMILY`
 
 * Multimedia Pipeline
 
