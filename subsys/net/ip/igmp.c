@@ -99,8 +99,22 @@ static int igmp_v2_create(struct net_pkt *pkt, const struct net_in_addr *addr,
 }
 
 #if defined(CONFIG_NET_IPV4_IGMPV3)
+/* Record type of a group in a report. A state-change report carries a
+ * filter-mode-change record derived from the current filter mode (RFC 3376
+ * ch 4.2.12), a query response carries the current filter mode itself.
+ */
+static uint8_t igmp_v3_record_type(const struct net_if_mcast_addr *mcast, bool state_change)
+{
+	if (!state_change) {
+		return mcast->record_type;
+	}
+
+	return mcast->record_type == IGMPV3_MODE_IS_INCLUDE ? IGMPV3_CHANGE_TO_INCLUDE_MODE
+							    : IGMPV3_CHANGE_TO_EXCLUDE_MODE;
+}
+
 static int igmp_v3_create(struct net_pkt *pkt, uint8_t type, struct net_if_mcast_addr mcast[],
-			  size_t mcast_len)
+			  size_t mcast_len, bool state_change)
 {
 	NET_PKT_DATA_ACCESS_DEFINE(igmp_access, struct net_ipv4_igmp_v3_report);
 	NET_PKT_DATA_ACCESS_DEFINE(group_record_access, struct net_ipv4_igmp_v3_group_record);
@@ -163,7 +177,7 @@ static int igmp_v3_create(struct net_pkt *pkt, uint8_t type, struct net_if_mcast
 			return -ENOBUFS;
 		}
 
-		group_record->type = mcast[i].record_type;
+		group_record->type = igmp_v3_record_type(&mcast[i], state_change);
 		group_record->aux_len = 0U;
 		net_ipaddr_copy(&group_record->address, &mcast[i].address.in_addr);
 		group_record->sources_len = net_htons(mcast[i].sources_len);
@@ -236,7 +250,8 @@ static int igmp_v2_create_packet(struct net_pkt *pkt, const struct net_in_addr *
 
 #if defined(CONFIG_NET_IPV4_IGMPV3)
 static int igmp_v3_create_packet(struct net_pkt *pkt, const struct net_in_addr *dst,
-				 struct net_if_mcast_addr mcast[], size_t mcast_len, uint8_t type)
+				 struct net_if_mcast_addr mcast[], size_t mcast_len, uint8_t type,
+				 bool state_change)
 {
 	const uint32_t router_alert = 0x94040000; /* RFC 2213 ch 2.1 */
 	int ret;
@@ -257,7 +272,7 @@ static int igmp_v3_create_packet(struct net_pkt *pkt, const struct net_in_addr *
 
 	net_pkt_set_ipv4_opts_len(pkt, IPV4_OPT_HDR_ROUTER_ALERT_LEN);
 
-	return igmp_v3_create(pkt, type, mcast, mcast_len);
+	return igmp_v3_create(pkt, type, mcast, mcast_len, state_change);
 }
 #endif
 
@@ -409,7 +424,7 @@ static int send_igmp_v3_report(struct net_if *iface, struct net_ipv4_igmp_v3_que
 	 */
 
 	ret = igmp_v3_create_packet(pkt, &igmp_multicast_addr, ipv4->mcast, NET_IF_MAX_IPV4_MADDR,
-				    NET_IPV4_IGMP_REPORT_V3);
+				    NET_IPV4_IGMP_REPORT_V3, false);
 	if (ret < 0) {
 		goto drop;
 	}
@@ -586,7 +601,8 @@ static int igmpv3_send_generic(struct net_if *iface, struct net_if_mcast_addr *m
 		return -ENOMEM;
 	}
 
-	ret = igmp_v3_create_packet(pkt, &igmp_multicast_addr, mcast, 1, NET_IPV4_IGMP_REPORT_V3);
+	ret = igmp_v3_create_packet(pkt, &igmp_multicast_addr, mcast, 1, NET_IPV4_IGMP_REPORT_V3,
+				    true);
 	if (ret < 0) {
 		goto drop;
 	}
@@ -674,15 +690,15 @@ int net_ipv4_igmp_join(struct net_if *iface, const struct net_in_addr *addr,
 
 #if defined(CONFIG_NET_IPV4_IGMPV3)
 	if (param != NULL) {
-		maddr->record_type = param->include ? IGMPV3_CHANGE_TO_INCLUDE_MODE
-						    : IGMPV3_CHANGE_TO_EXCLUDE_MODE;
+		maddr->record_type =
+			param->include ? IGMPV3_MODE_IS_INCLUDE : IGMPV3_MODE_IS_EXCLUDE;
 		maddr->sources_len = param->sources_len;
 		for (int i = 0; i < param->sources_len; i++) {
 			net_ipaddr_copy(&maddr->sources[i].in_addr.s_addr,
 					&param->source_list[i].s_addr);
 		}
 	} else {
-		maddr->record_type = IGMPV3_CHANGE_TO_EXCLUDE_MODE;
+		maddr->record_type = IGMPV3_MODE_IS_EXCLUDE;
 	}
 #endif
 
@@ -711,14 +727,6 @@ int net_ipv4_igmp_join(struct net_if *iface, const struct net_in_addr *addr,
 
 		return ret;
 	}
-
-#if defined(CONFIG_NET_IPV4_IGMPV3)
-	if (param != NULL) {
-		/* Updating the record type for further use after sending the join report */
-		maddr->record_type =
-			param->include ? IGMPV3_MODE_IS_INCLUDE : IGMPV3_MODE_IS_EXCLUDE;
-	}
-#endif
 
 out:
 	net_if_mcast_monitor(iface, &maddr->address, true);
@@ -751,7 +759,10 @@ int net_ipv4_igmp_leave(struct net_if *iface, const struct net_in_addr *addr)
 	}
 
 #if defined(CONFIG_NET_IPV4_IGMPV3)
-	removed_addr.record_type = IGMPV3_CHANGE_TO_INCLUDE_MODE;
+	/* Leaving is a change to INCLUDE mode with an empty source list,
+	 * RFC 3376 ch 5.1.
+	 */
+	removed_addr.record_type = IGMPV3_MODE_IS_INCLUDE;
 	removed_addr.sources_len = 0;
 
 	ret = igmpv3_send_generic(iface, &removed_addr);
@@ -780,7 +791,7 @@ void net_ipv4_igmp_send_leave(struct net_if *iface, const struct net_if_mcast_ad
 #if defined(CONFIG_NET_IPV4_IGMPV3)
 	struct net_if_mcast_addr removed_addr = *addr;
 
-	removed_addr.record_type = IGMPV3_CHANGE_TO_INCLUDE_MODE;
+	removed_addr.record_type = IGMPV3_MODE_IS_INCLUDE;
 	removed_addr.sources_len = 0;
 
 	igmpv3_send_generic(iface, &removed_addr);
