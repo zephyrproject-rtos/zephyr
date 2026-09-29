@@ -382,6 +382,9 @@ Relevant existing standards:
 * `ETSI EN 303 645 <https://www.etsi.org/deliver/etsi_en/303600_303699/303645/>`_ - Cyber Security
   for Consumer Internet of Things: Baseline Requirements
 
+CEN and CENELEC are developing the horizontal harmonized standards for all products with digital
+elements as the EN 40000-1 series, see :ref:`en_40000_1`.
+
 ETSI is developing harmonized standards in response to the `CRA Standardisation Request (M/606)
 <https://ec.europa.eu/growth/tools-databases/enorm/mandate/606_en>`_. Public draft standards
 include product-specific requirements for:

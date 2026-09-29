@@ -19,11 +19,13 @@ requirements to all products with digital elements, including wired devices, and
 for vulnerability handling and support periods. It applies in full from December 11, 2027, and the
 Commission has announced that the RED cybersecurity requirements will be repealed once the CRA
 applies. Until then, radio equipment has to meet the RED requirements, and much of the work done
-for EN 18031 carries over to the CRA.
+for EN 18031 carries over to the CRA: the horizontal CRA standards of the
+:ref:`EN 40000-1 <en_40000_1>` series, which are still under development, build on EN 18031.
 
 .. toctree::
    :maxdepth: 1
 
    cyber-resilience-act.rst
    en-18031.rst
+   en-40000-1.rst
    etsi-303645.rst

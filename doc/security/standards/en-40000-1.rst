@@ -1,0 +1,291 @@
+.. _en_40000_1:
+
+CRA Horizontal Standards (EN 40000-1)
+#####################################
+
+.. warning::
+   This document is for informational purposes only and does not constitute legal advice.
+   Consult with your legal counsel for compliance guidance specific to your situation.
+
+.. note::
+   The EN 40000-1 series is still under development. The information on EN 40000-1-4 is based on
+   the draft presented by CEN/CLC/JTC 13/WG 9 in the `EN 40000-1-4 deep dive session`_ of
+   March 5, 2026. Requirement IDs, titles and scope are subject to change until the standard is
+   published.
+
+Overview
+********
+
+The European Commission requested harmonized standards for the
+:ref:`Cyber Resilience Act <cra_faq>` (CRA) in `Standardisation Request M/606`_. They fall into
+two groups:
+
+* **Horizontal standards** apply to all products with digital elements. CEN and CENELEC develop
+  them in the joint technical committee CEN/CLC/JTC 13 as the EN 40000-1 series.
+* **Vertical standards** add requirements for the important and critical product categories of
+  the CRA. Most of them are developed by ETSI as the EN 304 6xx series, including standards for
+  operating systems (EN 304 626) and boot managers (EN 304 623).
+
+A product that does not fall into one of the categories covered by a vertical standard relies on
+the horizontal standards alone. All standards are expected to be published before the CRA
+applies in full on December 11, 2027.
+
+Parts of the Series
+*******************
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 25 55
+
+   * - Part
+     - Title
+     - Scope
+   * - EN 40000-1-1
+     - Vocabulary
+     - Terms and definitions used across the series.
+   * - EN 40000-1-2
+     - Principles for cyber resilience
+     - Process standard for the risk-based design, development and maintenance of products,
+       covering CRA Annex I Part I (1). The risk assessment it defines selects the security
+       controls from EN 40000-1-4.
+   * - EN 40000-1-3
+     - Vulnerability handling
+     - Process standard for vulnerability handling, covering CRA Annex I Part II.
+   * - EN 40000-1-4
+     - Generic security requirements
+     - Product standard with a catalog of security controls, covering CRA Annex I Part I (2),
+       points (a) to (m).
+   * - TR 40000-1-5
+     - Threats and security objectives
+     - Informative technical report that maps threats to security objectives, as an input to the
+       risk assessment.
+
+EN 40000-1-1 to EN 40000-1-3 are available as drafts. EN 40000-1-4 is at an earlier stage and no
+public draft is available yet.
+
+For Zephyr, EN 40000-1-2 and EN 40000-1-3 mainly concern the processes of the manufacturer and of
+the Zephyr Project, which are described in :ref:`cra_faq`. The rest of this page covers
+EN 40000-1-4, which defines requirements on the product itself.
+
+Generic Security Requirements (EN 40000-1-4)
+********************************************
+
+Structure
+=========
+
+EN 40000-1-4 builds on the :ref:`EN 18031 <en_18031>` series. It keeps the EN 18031 security
+mechanisms and requirement IDs and adds security controls for the CRA essential requirements that
+EN 18031 does not cover. The standard is structured as follows:
+
+* Each CRA essential requirement of Annex I Part I (2) is mapped to security objectives.
+* Each security objective is met by one or more security controls, which can have several levels.
+* Each security control has assessment criteria.
+
+Unlike EN 18031, EN 40000-1-4 does not decide whether a control applies through decision trees.
+Which controls are needed, and at which level, follows from the risk assessment according to
+EN 40000-1-2. Informative annexes map the security objectives to other standards such as
+IEC 62443-4-2, ISO/IEC 27002 and :ref:`ETSI EN 303 645 <etsi_303645>`.
+
+Coverage of CRA requirements by EN 18031
+========================================
+
+The following table shows how far the existing EN 18031 requirements cover the essential
+requirements of CRA Annex I Part I (2), according to the draft mapping presented in the
+`EN 40000-1-4 deep dive session`_.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 8 27 45 20
+
+   * - Point
+     - Essential requirement
+     - EN 18031 requirements
+     - Coverage
+   * - (a)
+     - No known exploitable vulnerabilities
+     - GEC-1
+     - Full
+   * - (b)
+     - Secure by default configuration
+     - GEC-2, GEC-3, GEC-4, GEC-5, GEC-7, AUM-5-1, AUM-5-2, DLM-1
+     - Partial
+   * - (c)
+     - Security updates
+     - SUM-1, SUM-2, SUM-3
+     - Partial
+   * - (d)
+     - Protection from unauthorized access
+     - ACM-2, AUM-1-1, AUM-1-2, AUM-2, AUM-3, AUM-4, AUM-5-1, AUM-5-2, AUM-6
+     - Partial
+   * - (e)
+     - Confidentiality
+     - SSM-1, SSM-3, SCM-3, SCM-4, CCK-1, CCK-2, CCK-3, CRY-1
+     - Full
+   * - (f)
+     - Integrity
+     - SSM-1, SSM-2, SCM-2, GEC-8
+     - Partial
+   * - (g)
+     - Data minimization
+     - UNM-1, UNM-2
+     - Partial
+   * - (h)
+     - Availability
+     - RLM-1
+     - Partial
+   * - (i)
+     - Minimize negative impact on other devices and networks
+     - GEC-8, TCM-1, NMM-1
+     - Partial
+   * - (j)
+     - Attack surface minimization
+     - GEC-2, GEC-3, GEC-4, GEC-5, GEC-6, GEC-7
+     - Partial
+   * - (k)
+     - Incident impact reduction through exploit mitigation
+     - None
+     - None
+   * - (l)
+     - Logging and monitoring
+     - LGM-1, LGM-2, LGM-3, LGM-4, NMM-1, TCM-1
+     - Partial
+   * - (m)
+     - Secure deletion and data transfer
+     - DLM-1
+     - Partial
+
+A product that already meets EN 18031 has covered a large part of the CRA product requirements.
+The remaining gaps are addressed by the new requirements below.
+
+New requirements
+================
+
+The draft adds the following requirements to the EN 18031 mechanisms, and introduces the new
+mechanisms DTM (data minimization), LIM (impact limitation) and MON (monitoring).
+
+.. list-table::
+   :header-rows: 1
+   :widths: 10 35 10 45
+
+   * - ID
+     - Title
+     - Point
+     - Zephyr support
+   * - GEC-9
+     - Secure startup configuration
+     - (b)
+     - Product responsibility.
+   * - GEC-10
+     - Factory reset
+     - (b)
+     - Stored data can be removed through :ref:`settings_api` and :ref:`secure_storage`, and the
+       underlying partitions erased with :ref:`flash_map_api`.
+   * - GEC-11
+     - Exploit mitigation mechanisms
+     - (k)
+     - Stack canaries (:kconfig:option:`CONFIG_STACK_CANARIES`), hardware stack protection
+       (:kconfig:option:`CONFIG_HW_STACK_PROTECTION`), thread isolation with
+       :ref:`usermode_api` and :ref:`memory_domain`, secure processing environment with
+       :ref:`tfm`.
+   * - GEC-12
+     - No unneeded software components
+     - (b), (j)
+     - Only subsystems and drivers enabled in Kconfig and devicetree are built into the image.
+   * - GEC-13
+     - Report on possible unauthorized access and corruption
+     - (d), (f)
+     - Product responsibility.
+   * - SUM-4
+     - Postponed updates
+     - (c)
+     - Product responsibility.
+   * - UNM-4
+     - User security update notification
+     - (c)
+     - Product responsibility.
+   * - RLM-2
+     - Recovery from incidents
+     - (h)
+     - Image swap and revert to the previous image with :ref:`mcuboot`, :ref:`watchdog_api`.
+   * - RLM-3
+     - Network prioritization
+     - (h)
+     - :ref:`traffic-class-support`.
+   * - RLM-4
+     - Resource prioritization
+     - (h)
+     - Thread priorities and :ref:`scheduling_v2`.
+   * - RLM-5
+     - Resource management
+     - (h)
+     - Statically sized :ref:`memory_slabs_v2`, :ref:`heap_v2` and :ref:`net_buf_interface`
+       pools.
+   * - RLM-6
+     - Control system backup
+     - (h)
+     - Product responsibility.
+   * - LGM-5
+     - Disabling logging
+     - (l)
+     - Runtime filtering in :ref:`logging_api`
+       (:kconfig:option:`CONFIG_LOG_RUNTIME_FILTERING`).
+   * - LGM-6
+     - Exclude sensitive personal information
+     - (l)
+     - Product responsibility.
+   * - MON-1
+     - Monitor security relevant activities
+     - (l)
+     - Product responsibility.
+   * - MON-2
+     - Disabling monitoring
+     - (l)
+     - Product responsibility.
+   * - DTM-1
+     - Data minimization in relation to intended purpose
+     - (g)
+     - Product responsibility.
+   * - DTM-2
+     - Default data processing minimization
+     - (g)
+     - Product responsibility.
+   * - DTM-3
+     - Configurable controls for optional data processing
+     - (g)
+     - Product responsibility.
+   * - LIM-1
+     - External impact limitation
+     - (i)
+     - Product responsibility.
+   * - LIM-2
+     - Prevention of attack propagation
+     - (i)
+     - Product responsibility.
+   * - DLM-2
+     - Confidential export of user data
+     - (m)
+     - Product responsibility.
+   * - DLM-3
+     - Integrity protection of exported data
+     - (m)
+     - Product responsibility.
+   * - DLM-4
+     - Authenticity of the communication partner for export of data
+     - (m)
+     - Product responsibility.
+
+External Resources
+******************
+
+* `Standardisation Request M/606`_
+* `CEN-CENELEC: CRA Standards Unlocked, Deep Dive Session on Security Controls
+  <https://www.cencenelec.eu/news-events/events/2026/2026-03-05-cra-standards-unlocked-deep-dive-session-security-controls-generic-security-requirements/>`_
+  (`slides <EN 40000-1-4 deep dive session_>`_)
+* `ETSI Cyber Resilience Act Portal <https://docbox.etsi.org/cyber/CYBER/Open>`_
+* :ref:`cra_faq`
+* :ref:`en_18031`
+
+..
+
+.. _`Standardisation Request M/606`: https://ec.europa.eu/growth/tools-databases/enorm/mandate/606_en
+.. _`EN 40000-1-4 deep dive session`: https://www.cencenelec.eu/media/CEN-CENELEC/Events/Webinars/2026/2026-03-05_cra_unlocked_deepdive_securitycontrols_cen-clc-jtc-13-wg-9_pt2.pdf
