@@ -84,9 +84,15 @@ comparatively simple API.
   driver whose time base is shared between CPUs must ensure only the last CPU
   going idle stops the clock.
 
+  The driver returns zero after preparing the timer. If preparation fails, it
+  returns a negative error code and leaves the primary timer operational. The
+  power-management path then stays active and does not call
+  :c:func:`sys_clock_idle_exit`.
+
   The hook is optional.  Without it, :c:func:`sys_clock_set_timeout` is called
   with its deprecated ``idle`` argument set to ``true``, so a driver still
-  keying its low-power handling on that argument keeps working.
+  keying its low-power handling on that argument keeps working; the default
+  hook returns zero.
 
 The last three entry points divide the four states a system can be in:
 

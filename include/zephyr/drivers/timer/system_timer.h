@@ -305,8 +305,14 @@ void sys_clock_no_timeout(void);
  *        Only the calling CPU is going idle: a driver whose time base is
  *        shared between CPUs must ensure only the last CPU going idle stops
  *        the clock.
+ *
+ * On failure, the driver must leave the primary system timer operational. The
+ * caller does not invoke sys_clock_idle_exit() when this function fails.
+ *
+ * @retval 0 The timer is prepared for low-power idle.
+ * @retval -errno The timer could not be prepared for low-power idle.
  */
-void sys_clock_idle_enter(uint32_t ticks);
+int sys_clock_idle_enter(uint32_t ticks);
 
 /**
  * @brief Hardware cycle counter

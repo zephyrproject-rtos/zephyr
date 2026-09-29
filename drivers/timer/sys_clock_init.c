@@ -38,7 +38,7 @@ void __weak sys_clock_no_timeout(void)
 	sys_clock_set_timeout(UINT32_MAX, false);
 }
 
-void __weak sys_clock_idle_enter(uint32_t ticks)
+int __weak sys_clock_idle_enter(uint32_t ticks)
 {
 	/* A driver that does not implement this hook may still key its
 	 * low-power handling on sys_clock_set_timeout()'s idle argument, so
@@ -47,4 +47,5 @@ void __weak sys_clock_idle_enter(uint32_t ticks)
 	 * that does.
 	 */
 	sys_clock_set_timeout(ticks, true);
+	return 0;
 }

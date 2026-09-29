@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT nxp_os_timer
 
+#include <errno.h>
 #include <limits.h>
 
 #include <zephyr/init.h>
@@ -129,10 +130,15 @@ void mcux_lpc_ostick_isr(const void *arg)
  * system, so delegate wakeup to the generic companion and capture the OS Timer
  * value (lost across the state) for restoration on wakeup.
  */
-static uint32_t mcux_lpc_ostick_set_counter_timeout(uint64_t timeout_us)
+static int mcux_lpc_ostick_set_counter_timeout(uint64_t timeout_us)
 {
+	int ret;
+
 	/* Arm the system-timer low-power companion to wake the system. */
-	z_sys_clock_lpm_enter(timeout_us);
+	ret = z_sys_clock_lpm_enter(timeout_us);
+	if (ret < 0) {
+		return ret;
+	}
 	lpm_companion_armed = true;
 
 	/* Capture the OS Timer value; it loses its state in a handoff-power-state. */
@@ -188,12 +194,13 @@ static struct counter_alarm_cfg alarm_cfg = {0};
  * OS Timer to save off the count if needed and also start a wakeup counter
  * that would wakeup the system from deep power down modes.
  */
-static uint32_t mcux_lpc_ostick_set_counter_timeout(int32_t curr_timeout)
+static int mcux_lpc_ostick_set_counter_timeout(int32_t curr_timeout)
 {
+	int ret;
 	uint32_t ticks;
 
 	if (counter_dev == NULL) {
-		return 1;
+		return -ENODEV;
 	}
 
 	/* Check if we should use the remaining ticks from a prior overflow */
@@ -215,14 +222,18 @@ static uint32_t mcux_lpc_ostick_set_counter_timeout(int32_t curr_timeout)
 	top_cfg.ticks = ticks;
 	alarm_cfg.ticks = ticks;
 	/* short circuit conditional logic, if top value doesn't work, we try alarm */
-	if (counter_set_top_value(counter_dev, &top_cfg) != 0 &&
-	    counter_set_channel_alarm(counter_dev, 0, &alarm_cfg) != 0) {
-		return 1;
+	ret = counter_set_top_value(counter_dev, &top_cfg);
+	if (ret != 0) {
+		ret = counter_set_channel_alarm(counter_dev, 0, &alarm_cfg);
+		if (ret != 0) {
+			return ret;
+		}
 	}
 
 	/* Counter is set to wakeup the system after the requested time */
-	if (counter_start(counter_dev) != 0) {
-		return 1;
+	ret = counter_start(counter_dev);
+	if (ret != 0) {
+		return ret;
 	}
 	counter_running = true;
 
@@ -325,7 +336,7 @@ static inline bool os_timer_state_needs_handoff(enum pm_state state)
  * timeout. Hand off to the companion only when the next power state is one in
  * which the OS Timer stops keeping time (handoff-power-states).
  */
-static void mcux_os_timer_set_lp_counter_timeout(void)
+static int mcux_os_timer_set_lp_counter_timeout(void)
 {
 	uint64_t timeout;
 
@@ -334,7 +345,7 @@ static void mcux_os_timer_set_lp_counter_timeout(void)
 	 * from low power modes.
 	 */
 	if (!os_timer_state_needs_handoff(pm_state_next_get(0)->state)) {
-		return;
+		return 0;
 	}
 
 	if (wait_forever) {
@@ -355,10 +366,10 @@ static void mcux_os_timer_set_lp_counter_timeout(void)
 		timeout = (((timeout / CYC_PER_TICK) * CYC_PER_TICK) * CYC_PER_US);
 	}
 
-	mcux_lpc_ostick_set_counter_timeout(timeout);
+	return mcux_lpc_ostick_set_counter_timeout(timeout);
 }
 #else
-#define mcux_os_timer_set_lp_counter_timeout(...) do { } while (0)
+#define mcux_os_timer_set_lp_counter_timeout(...) 0
 #endif /* MCUX_OS_TIMER_LPM */
 
 bool z_nxp_os_timer_ignore_timer_wakeup(void)
@@ -413,6 +424,18 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	counter_remaining_ticks = 0;
 
 	k_spin_unlock(&lock, key);
+}
+
+int sys_clock_idle_enter(uint32_t ticks)
+{
+#if defined(MCUX_OS_TIMER_LPM)
+	if (ticks == 0U) {
+		return mcux_os_timer_set_lp_counter_timeout();
+	}
+#endif
+
+	sys_clock_set_timeout(ticks, true);
+	return 0;
 }
 
 uint32_t sys_clock_elapsed(void)

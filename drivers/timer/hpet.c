@@ -341,13 +341,13 @@ void sys_clock_no_timeout(void)
 	}
 }
 
-void sys_clock_idle_enter(uint32_t ticks)
+int sys_clock_idle_enter(uint32_t ticks)
 {
 	uint32_t reg;
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL) || ticks != SYS_CLOCK_IDLE_FOREVER) {
 		sys_clock_set_timeout(ticks, false);
-		return;
+		return 0;
 	}
 
 	if (IS_ENABLED(CONFIG_SMP)) {
@@ -355,7 +355,7 @@ void sys_clock_idle_enter(uint32_t ticks)
 		 * going idle, so it must keep running for the others: nothing
 		 * to do here.
 		 */
-		return;
+		return 0;
 	}
 
 	/* Nothing to wake up for and the uptime may drift: stop the main
@@ -367,6 +367,7 @@ void sys_clock_idle_enter(uint32_t ticks)
 	reg = hpet_gconf_get();
 	reg &= ~GCONF_ENABLE;
 	hpet_gconf_set(reg);
+	return 0;
 }
 
 void sys_clock_idle_exit(void)

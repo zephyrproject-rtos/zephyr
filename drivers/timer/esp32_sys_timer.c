@@ -114,12 +114,12 @@ void sys_clock_disable(void)
 }
 
 #if defined(CONFIG_PM)
-void sys_clock_idle_enter(uint32_t ticks)
+int sys_clock_idle_enter(uint32_t ticks)
 {
 	sys_clock_set_timeout(ticks, false);
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL) || systimer_hal.dev == NULL) {
-		return;
+		return 0;
 	}
 
 	uint64_t timeout_us = k_ticks_to_us_ceil64(ticks);
@@ -127,6 +127,7 @@ void sys_clock_idle_enter(uint32_t ticks)
 	lptim_pre_idle = esp32_lptim_hook_on_lpm_entry(timeout_us);
 	systimer_pre_idle = get_systimer_alarm();
 	timeout_idle = true;
+	return 0;
 }
 
 void sys_clock_idle_exit(void)

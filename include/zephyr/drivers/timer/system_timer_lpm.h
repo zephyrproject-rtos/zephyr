@@ -60,8 +60,10 @@ void z_sys_clock_lpm_init(void);
  * not call it.
  *
  * @param max_lpm_time_us Maximum time allowed in low-power state, in microseconds.
+ * @retval 0 A valid wake deadline was armed.
+ * @retval -errno The wake deadline could not be armed.
  */
-void z_sys_clock_lpm_enter(uint64_t max_lpm_time_us);
+int z_sys_clock_lpm_enter(uint64_t max_lpm_time_us);
 
 /**
  * @brief Report elapsed time after low-power state exit

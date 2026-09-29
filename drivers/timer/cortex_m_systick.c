@@ -419,13 +419,13 @@ void z_sys_clock_hw_cycles_per_sec_update(uint32_t new_hz)
 }
 #endif /* CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE */
 
-void sys_clock_idle_enter(uint32_t ticks)
+int sys_clock_idle_enter(uint32_t ticks)
 {
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 
 #if defined(CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE)
 	if (ticks != SYS_CLOCK_IDLE_FOREVER) {
-		return;
+		return 0;
 	}
 
 	/* Nothing to wake up for and the uptime may drift, so stop the counter
@@ -436,6 +436,8 @@ void sys_clock_idle_enter(uint32_t ticks)
 	SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
 	last_load = TIMER_STOPPED;
 #else
+	int ret;
+
 	/* SYS_CLOCK_IDLE_FOREVER converts to a wakeup tens of days out, which
 	 * is the intent: the companion may wake earlier, never later.
 	 */
@@ -443,11 +445,15 @@ void sys_clock_idle_enter(uint32_t ticks)
 
 	timeout_idle = true;
 
-	/**
+	/*
 	 * Invoke platform-specific layer to configure LPTIM
 	 * such that system wakes up after timeout elapses.
 	 */
-	z_sys_clock_lpm_enter(timeout_us);
+	ret = z_sys_clock_lpm_enter(timeout_us);
+	if (ret < 0) {
+		timeout_idle = false;
+		return ret;
+	}
 
 #if !defined(CONFIG_SYSTEM_TIMER_RESET_BY_LPM)
 	/* Store current value of SysTick counter to be able to
@@ -479,6 +485,8 @@ void sys_clock_idle_enter(uint32_t ticks)
 	overflow_cyc = 0;
 #endif /* !CONFIG_SYSTEM_TIMER_RESET_BY_LPM */
 #endif /* CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE */
+
+	return 0;
 }
 
 void sys_clock_idle_exit(void)

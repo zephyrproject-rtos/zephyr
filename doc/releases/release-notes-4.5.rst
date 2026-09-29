@@ -492,7 +492,8 @@ Deprecated APIs and options
     :kconfig:option:`CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE`, replacing the call to
     :c:func:`sys_clock_set_timeout` with ``ticks=K_TICKS_FOREVER``.
   * New :c:func:`sys_clock_idle_enter` hook for handling of entry in low-power state,
-    replacing the call to :c:func:`sys_clock_set_timeout` with ``idle=true``.
+    replacing the call to :c:func:`sys_clock_set_timeout` with ``idle=true``. The hook
+    can reject low-power entry when it cannot prepare a valid wakeup.
 
 * :abbr:`USB (Universal Serial Bus)`
 

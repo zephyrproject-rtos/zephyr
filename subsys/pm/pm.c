@@ -175,8 +175,13 @@ bool pm_system_suspend(int32_t kernel_ticks)
 	uint8_t id = CPU_ID;
 	k_spinlock_key_t key;
 	int32_t ticks;
+	int ret;
 	int64_t events_ticks;
 	uint32_t exit_latency_ticks;
+	uint32_t idle_ticks;
+#ifdef CONFIG_PM_DEVICE_SYSTEM_MANAGED
+	bool devices_suspended = false;
+#endif
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, system_suspend, kernel_ticks);
 
@@ -226,6 +231,7 @@ bool pm_system_suspend(int32_t kernel_ticks)
 							   PM_STATE_ACTIVE);
 				return false;
 			}
+			devices_suspended = true;
 		}
 	}
 #endif
@@ -238,13 +244,25 @@ bool pm_system_suspend(int32_t kernel_ticks)
 	 * sys_clock_idle_exit(). A real deadline is brought forward to
 	 * accommodate the time the CPU needs to fully wake up.
 	 */
-	uint32_t idle_ticks = (ticks == K_TICKS_FOREVER)
-		? SYS_CLOCK_IDLE_FOREVER
-		: (uint32_t)MAX(0, (int64_t)ticks - (int64_t)exit_latency_ticks);
+	idle_ticks = (ticks == K_TICKS_FOREVER)
+			     ? SYS_CLOCK_IDLE_FOREVER
+			     : (uint32_t)MAX(0, (int64_t)ticks - (int64_t)exit_latency_ticks);
 
 	key = sys_clock_lock();
-	sys_clock_idle_enter(idle_ticks);
+	ret = sys_clock_idle_enter(idle_ticks);
 	sys_clock_unlock(key);
+
+	if (ret < 0) {
+#ifdef CONFIG_PM_DEVICE_SYSTEM_MANAGED
+		if (devices_suspended) {
+			pm_resume_devices();
+		}
+		(void)atomic_add(&_cpus_active, 1);
+#endif
+		z_cpus_pm_state[id] = NULL;
+		SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks, PM_STATE_ACTIVE);
+		return false;
+	}
 
 	/*
 	 * This function runs with interrupts locked. If a power state is

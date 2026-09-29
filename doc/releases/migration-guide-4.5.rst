@@ -1900,7 +1900,11 @@ Timer
   calling :c:func:`sys_clock_set_timeout` with ``idle=true``, so timer drivers that
   still examine ``idle`` keep working unchanged. Such drivers should be updated to
   implement :c:func:`sys_clock_idle_enter` and move their ``idle``-specific handling
-  there. The argument is removed in a future release (:github:`115844`).
+  there. The new hook returns zero on success or a negative error code when the
+  timer cannot prepare a valid wakeup. On failure, the timer must remain operational
+  because the kernel does not enter the selected power state or call
+  :c:func:`sys_clock_idle_exit`. The argument is removed in a future release
+  (:github:`115844`).
 
 * When :kconfig:option:`CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE` is enabled, the kernel now
   calls the new :c:func:`sys_clock_no_timeout` hook when no timeout is pending, instead
