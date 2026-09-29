@@ -273,10 +273,16 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 			    is_pended_on_mutex(chain_owner,
 					       chain_owner->mutex_pended_on) &&
 			    chain_owner->mutex_pended_on->owner == _current) {
+				struct k_thread *owner = mutex->owner;
+
+				_current->mutex_pended_on = NULL;
+				k_spin_unlock(&mutex_lock, key);
 				__ASSERT(false,
 					"mutex deadlock: thread %p waiting on "
 					"mutex %p (owner %p)",
-					_current, mutex, mutex->owner);
+					_current, mutex, owner);
+				key = k_spin_lock(&mutex_lock);
+				_current->mutex_pended_on = mutex;
 				break;
 			}
 #endif /* CONFIG_MUTEX_DEADLOCK_DETECT */

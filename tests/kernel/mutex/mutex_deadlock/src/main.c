@@ -159,6 +159,26 @@ ZTEST(mutex_deadlock, test_deadlock_detection)
 }
 
 /**
+ * @brief Verify mutex_lock spinlock is not left held after deadlock __ASSERT
+ *
+ * If __ASSERT fires inside z_impl_k_mutex_lock() while mutex_lock is still
+ * held, any subsequent mutex operation (including printk/log hooks inside
+ * assert_print() that attempt k_mutex_lock(..., K_NO_WAIT)) will fail
+ * z_spin_lock_valid(&mutex_lock) and recursively fault/deadlock.
+ */
+ZTEST(mutex_deadlock, test_mutex_usable_after_deadlock_assert)
+{
+#if defined(CONFIG_MUTEX_DEADLOCK_DETECT) && Z_MUTEX_PI_ENABLED
+	zassert_is_null(k_current_get()->mutex_pended_on,
+			"mutex_pended_on was not cleared before deadlock __ASSERT");
+	zassert_ok(k_mutex_lock(&mutex_a, K_NO_WAIT));
+	zassert_ok(k_mutex_unlock(&mutex_a));
+#else
+	ztest_test_skip();
+#endif
+}
+
+/**
  * @brief Verify stale mutex_pended_on does not trigger a false-positive deadlock
  *
  * Exercises two mechanisms by which a stale mutex_pended_on pointer could
