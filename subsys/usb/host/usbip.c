@@ -136,12 +136,12 @@ static int usbip_req_cb(struct usb_device *const udev, struct uhc_transfer *cons
 	int err;
 
 	LOG_INF("SUBMIT seqnum %u finished err %d ep 0x%02x",
-		cmd->hdr.seqnum, xfer->err, xfer->ep);
+		cmd->hdr.seqnum, xfer->err, xfer->ep->addr);
 
 	ret.hdr.command = net_htonl(USBIP_RET_SUBMIT);
 	ret.hdr.seqnum = net_htonl(cmd->hdr.seqnum);
 	ret.hdr.devid = net_htonl(cmd->hdr.devid);
-	ret.hdr.ep = net_htonl(xfer->ep);
+	ret.hdr.ep = net_htonl(xfer->ep->addr);
 	ret.hdr.direction = net_htonl(cmd->hdr.direction);
 
 	memset(&ret.submit, 0, sizeof(ret.submit));
@@ -164,7 +164,7 @@ static int usbip_req_cb(struct usb_device *const udev, struct uhc_transfer *cons
 	}
 
 	if (xfer->err == 0 && cmd->submit.length != 0) {
-		if (USB_EP_DIR_IS_IN(xfer->ep)) {
+		if (USB_EP_DIR_IS_IN(xfer->ep->addr)) {
 			ret.submit.actual_length = net_htonl(buf->len);
 		} else {
 			ret.submit.actual_length = net_htonl(cmd->submit.length);
@@ -172,8 +172,8 @@ static int usbip_req_cb(struct usb_device *const udev, struct uhc_transfer *cons
 	}
 
 
-	if (USB_EP_GET_IDX(xfer->ep) == 0U) {
-		check_ctrl_request(dev_ctx->udev, xfer->ep, xfer->setup_pkt);
+	if (USB_EP_GET_IDX(xfer->ep->addr) == 0U) {
+		check_ctrl_request(dev_ctx->udev, xfer->ep->addr, xfer->setup_pkt);
 	}
 
 	err = usbip_send(dev_ctx->connfd, &ret, sizeof(ret));
@@ -182,7 +182,7 @@ static int usbip_req_cb(struct usb_device *const udev, struct uhc_transfer *cons
 		goto usbip_req_cb_error;
 	}
 
-	if (USB_EP_DIR_IS_IN(xfer->ep) && ret.submit.actual_length != 0) {
+	if (USB_EP_DIR_IS_IN(xfer->ep->addr) && ret.submit.actual_length != 0) {
 		LOG_INF("Send RET_SUBMIT transfer_buffer len %u", buf->len);
 		err = usbip_send(dev_ctx->connfd, buf->data, buf->len);
 		if (err != 0) {
