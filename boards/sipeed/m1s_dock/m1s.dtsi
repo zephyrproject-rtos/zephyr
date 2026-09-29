@@ -30,6 +30,11 @@
 	};
 };
 
+&clocks {
+	/* Centers the module crystal: the reset default runs it ~57 ppm off */
+	xtal-capcode = <50>;
+};
+
 &clk_flash {
 	clocks = <&clk_bclk>;
 	divider = <1>;
