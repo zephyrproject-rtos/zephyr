@@ -1478,6 +1478,25 @@ static inline int get_slot_by_id(struct dns_resolve_context *ctx,
 	return -ENOENT;
 }
 
+/* Must be invoked with context lock held */
+static inline int get_slot_by_id_and_orig_hash(struct dns_resolve_context *ctx,
+					       uint16_t dns_id,
+					       uint16_t orig_query_hash)
+{
+	int i;
+
+	for (i = 0; i < CONFIG_DNS_NUM_CONCUR_QUERIES; i++) {
+		if (check_query_active(&ctx->queries[i], false) &&
+		    ctx->queries[i].id == dns_id &&
+		    (orig_query_hash == 0 ||
+		     ctx->queries[i].orig_query_hash == orig_query_hash)) {
+			return i;
+		}
+	}
+
+	return -ENOENT;
+}
+
 static int update_query_idx(struct dns_resolve_context *ctx,
 			    struct dns_msg_t *dns_msg,
 			    uint16_t *dns_id,
@@ -2344,10 +2363,10 @@ static void dns_resolve_cancel_all(struct dns_resolve_context *ctx)
 	}
 }
 
-static int dns_resolve_cancel_with_hash(struct dns_resolve_context *ctx,
-					uint16_t dns_id,
-					uint16_t query_hash,
-					const char *query_name)
+static int dns_resolve_cancel_with_orig_hash(struct dns_resolve_context *ctx,
+					     uint16_t dns_id,
+					     uint16_t orig_query_hash,
+					     const char *query_name)
 {
 	int ret = 0;
 	int i;
@@ -2362,7 +2381,7 @@ static int dns_resolve_cancel_with_hash(struct dns_resolve_context *ctx,
 		goto unlock;
 	}
 
-	i = get_slot_by_id(ctx, dns_id, query_hash);
+	i = get_slot_by_id_and_orig_hash(ctx, dns_id, orig_query_hash);
 	if (i < 0) {
 		ret = -ENOENT;
 		goto unlock;
@@ -2370,7 +2389,7 @@ static int dns_resolve_cancel_with_hash(struct dns_resolve_context *ctx,
 
 	NET_DBG("Cancelling DNS req %u (name %s type %d hash %u)", dns_id,
 		query_name == NULL ? "<unknown>" : query_name,
-		ctx->queries[i].query_type, query_hash);
+		ctx->queries[i].query_type, orig_query_hash);
 
 	dns_resolve_cancel_slot(ctx, i);
 
@@ -2425,8 +2444,12 @@ int dns_resolve_cancel_with_name(struct dns_resolve_context *ctx,
 		}
 	}
 
-	return dns_resolve_cancel_with_hash(ctx, dns_id, query_hash,
-					    query_name);
+	/* The caller only knows the name it originally asked for, so we
+	 * delete by orig_query_hash instead of the current query_hash which
+	 * changes as CNAME aliases are followed.
+	 */
+	return dns_resolve_cancel_with_orig_hash(ctx, dns_id, query_hash,
+						 query_name);
 }
 
 int dns_resolve_cancel(struct dns_resolve_context *ctx, uint16_t dns_id)
@@ -2730,6 +2753,7 @@ try_resolve:
 	ctx->queries[i].user_data = user_data;
 	ctx->queries[i].ctx = ctx;
 	ctx->queries[i].query_hash = 0;
+	ctx->queries[i].orig_query_hash = 0;
 	ctx->queries[i].additional_queries = 0;
 	ctx->queries[i].cb_called = false;
 	ctx->queries[i].deadline = sys_timepoint_calc(tout);
@@ -2790,6 +2814,8 @@ try_resolve:
 		ret = -ENOENT;
 		goto quit;
 	}
+
+	ctx->queries[i].orig_query_hash = ctx->queries[i].query_hash;
 
 	ret = 0;
 

@@ -185,12 +185,13 @@ static int bma4xx_attr_set_range(const struct sensor_value *val,
 static int bma4xx_attr_set_bwp(const struct sensor_value *val,
 			       struct bma4xx_runtime_config *new_config)
 {
-	/* Require that `val2` is unused, and that `val1` is in range of a valid BWP */
-	if (val->val2 || val->val1 < BMA4XX_BWP_OSR4_AVG1 || val->val1 > BMA4XX_BWP_RES_AVG128) {
+	/* Ensure a valid BWP for performance mode, the only mode currently supported */
+	if (val->val2 != 0 || val->val1 < BMA4XX_BWP_OSR4_AVG1 ||
+	    val->val1 > BMA4XX_BWP_NORM_AVG4) {
 		return -EINVAL;
 	}
 
-	new_config->accel_bwp = (((uint8_t)val->val1) << BMA4XX_SHIFT_ACC_CONF_BWP);
+	new_config->accel_bwp = (uint8_t)val->val1;
 
 	return 0;
 }

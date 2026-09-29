@@ -347,7 +347,7 @@ static DEVICE_API(uart, uart_psoc6_driver_api) = {
 										\
 		CY_PSOC6_UART_IRQ_SET_FUNC(n)					\
 	};									\
-	DEVICE_DT_INST_DEFINE(n, &uart_psoc6_init, NULL,			\
+	DEVICE_DT_INST_DEFINE(n, uart_psoc6_init, NULL,				\
 			      CY_PSOC6_UART_DECL_DATA_PTR(n),			\
 			      &cy_psoc6_uart##n##_config, PRE_KERNEL_1,		\
 			      CONFIG_SERIAL_INIT_PRIORITY,			\

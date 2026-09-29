@@ -522,7 +522,7 @@ static DEVICE_API(uart, neorv32_uart_driver_api) = {
 									\
 	PM_DEVICE_DT_DEFINE(node_id, neorv32_uart_pm_action);		\
 									\
-	DEVICE_DT_DEFINE(node_id, &neorv32_uart_init,			\
+	DEVICE_DT_DEFINE(node_id, neorv32_uart_init,			\
 			 PM_DEVICE_DT_GET(node_id),			\
 			 &neorv32_uart_##n##_data,			\
 			 &neorv32_uart_##n##_config,			\

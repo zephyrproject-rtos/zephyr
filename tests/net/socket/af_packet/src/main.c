@@ -1712,8 +1712,9 @@ ZTEST(socket_packet, test_packet_sock_setsockopt_other_level)
 	zassert_ok(ret, "Cannot set receive timeout (%d)", errno);
 }
 
-/* A packet socket membership must not stop the IP level joins from reaching
- * the receive filter.
+/* A packet socket membership must not stop the IP level multicast addresses
+ * from reaching the receive filter. The device is told about the address as
+ * soon as it is added to the interface, without waiting for a group report.
  */
 ZTEST(socket_packet, test_packet_sock_membership_eth_filter_ip)
 {
@@ -1721,14 +1722,12 @@ ZTEST(socket_packet, test_packet_sock_membership_eth_filter_ip)
 	static const uint8_t mcast_ip_lladdr[] = {
 		0x01, 0x00, 0x5e, 0x00, 0x00, 0xfb
 	};
-	struct net_addr addr = {
-		.family = NET_AF_INET,
-		.in_addr = { { { 224, 0, 0, 251 } } },
-	};
+	static const struct net_in_addr addr = { { { 224, 0, 0, 251 } } };
 
 	memset(&eth_filter_data, 0, sizeof(eth_filter_data));
 
-	net_if_mcast_monitor(ud.first, &addr, true);
+	zassert_not_null(net_if_ipv4_maddr_add(ud.first, &addr),
+			 "Cannot add multicast address");
 
 	zassert_equal(eth_filter_data.count, 1, "Filter not programmed");
 	zassert_equal(eth_filter_data.iface, ud.first,
@@ -1737,7 +1736,8 @@ ZTEST(socket_packet, test_packet_sock_membership_eth_filter_ip)
 	zassert_mem_equal(eth_filter_data.mac_address.addr, mcast_ip_lladdr,
 			  sizeof(mcast_ip_lladdr), "Wrong address filtered");
 
-	net_if_mcast_monitor(ud.first, &addr, false);
+	zassert_true(net_if_ipv4_maddr_rm(ud.first, &addr),
+		     "Cannot remove multicast address");
 
 	zassert_equal(eth_filter_data.count, 2, "Filter not removed");
 	zassert_false(eth_filter_data.set, "Filter not disabled");
@@ -1750,10 +1750,7 @@ ZTEST(socket_packet, test_packet_sock_membership_eth_filter_ip)
 ZTEST(socket_packet, test_packet_sock_membership_eth_filter_shared)
 {
 	/* 224.0.0.1 maps to mcast_lladdr */
-	struct net_addr addr = {
-		.family = NET_AF_INET,
-		.in_addr = { { { 224, 0, 0, 1 } } },
-	};
+	static const struct net_in_addr addr = { { { 224, 0, 0, 1 } } };
 	struct net_packet_mreq mreq;
 	int ret;
 
@@ -1762,7 +1759,8 @@ ZTEST(socket_packet, test_packet_sock_membership_eth_filter_shared)
 
 	memset(&eth_filter_data, 0, sizeof(eth_filter_data));
 
-	net_if_mcast_monitor(ud.first, &addr, true);
+	zassert_not_null(net_if_ipv4_maddr_add(ud.first, &addr),
+			 "Cannot add multicast address");
 
 	zassert_equal(eth_filter_data.count, 1, "Filter not programmed");
 	zassert_true(eth_filter_data.set, "Filter not enabled");
@@ -1786,7 +1784,8 @@ ZTEST(socket_packet, test_packet_sock_membership_eth_filter_shared)
 	zassert_true(eth_filter_data.set,
 		     "Filter disabled while the IP level still needs the group");
 
-	net_if_mcast_monitor(ud.first, &addr, false);
+	zassert_true(net_if_ipv4_maddr_rm(ud.first, &addr),
+		     "Cannot remove multicast address");
 
 	zassert_equal(eth_filter_data.count, 2, "Filter not removed");
 	zassert_false(eth_filter_data.set, "Filter not disabled");
@@ -1801,31 +1800,29 @@ ZTEST(socket_packet, test_packet_sock_membership_eth_filter_shared)
 ZTEST(socket_packet, test_packet_sock_membership_eth_filter_alias)
 {
 	/* Both of these map to mcast_lladdr */
-	struct net_addr first = {
-		.family = NET_AF_INET,
-		.in_addr = { { { 224, 0, 0, 1 } } },
-	};
-	struct net_addr second = {
-		.family = NET_AF_INET,
-		.in_addr = { { { 225, 0, 0, 1 } } },
-	};
+	static const struct net_in_addr first = { { { 224, 0, 0, 1 } } };
+	static const struct net_in_addr second = { { { 225, 0, 0, 1 } } };
 
 	memset(&eth_filter_data, 0, sizeof(eth_filter_data));
 
-	net_if_mcast_monitor(ud.first, &first, true);
-	net_if_mcast_monitor(ud.first, &second, true);
+	zassert_not_null(net_if_ipv4_maddr_add(ud.first, &first),
+			 "Cannot add multicast address");
+	zassert_not_null(net_if_ipv4_maddr_add(ud.first, &second),
+			 "Cannot add multicast address");
 
 	zassert_equal(eth_filter_data.count, 1,
 		      "Filter programmed per IP address instead of per group");
 
-	net_if_mcast_monitor(ud.first, &first, false);
+	zassert_true(net_if_ipv4_maddr_rm(ud.first, &first),
+		     "Cannot remove multicast address");
 
 	zassert_equal(eth_filter_data.count, 1,
 		      "Filter changed while the address is still in use");
 	zassert_true(eth_filter_data.set,
 		     "Filter disabled while the address is still in use");
 
-	net_if_mcast_monitor(ud.first, &second, false);
+	zassert_true(net_if_ipv4_maddr_rm(ud.first, &second),
+		     "Cannot remove multicast address");
 
 	zassert_equal(eth_filter_data.count, 2, "Filter not removed");
 	zassert_false(eth_filter_data.set, "Filter not disabled");
@@ -2029,10 +2026,7 @@ ZTEST(socket_packet, test_packet_sock_membership_eth_filter_foreach)
 ZTEST(socket_packet, test_packet_sock_membership_eth_filter_mgmt)
 {
 	/* 224.0.0.1 maps to mcast_lladdr */
-	struct net_addr addr = {
-		.family = NET_AF_INET,
-		.in_addr = { { { 224, 0, 0, 1 } } },
-	};
+	static const struct net_in_addr addr = { { { 224, 0, 0, 1 } } };
 	struct net_eth_addr mac;
 	int ret;
 
@@ -2051,12 +2045,14 @@ ZTEST(socket_packet, test_packet_sock_membership_eth_filter_mgmt)
 	/* The device already listens to the address so it must not be told
 	 * about it a second time.
 	 */
-	net_if_mcast_monitor(ud.first, &addr, true);
+	zassert_not_null(net_if_ipv4_maddr_add(ud.first, &addr),
+			 "Cannot add multicast address");
 
 	zassert_equal(eth_filter_data.count, 1,
 		      "Filter programmed again for an already filtered address");
 
-	net_if_mcast_monitor(ud.first, &addr, false);
+	zassert_true(net_if_ipv4_maddr_rm(ud.first, &addr),
+		     "Cannot remove multicast address");
 
 	zassert_equal(eth_filter_data.count, 1,
 		      "Filter removed while the application still needs it");

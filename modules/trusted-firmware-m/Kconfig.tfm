@@ -74,6 +74,16 @@ menuconfig BUILD_WITH_TFM
 
 if BUILD_WITH_TFM
 
+config TFM_PLATFORM_HANDLES_MERGE
+	bool
+	help
+	  Selected by a platform (SoC/board) that post-processes the TF-M
+	  secure and non-secure images itself (for example, extra signing)
+	  and produces the merged image on its own, instead of relying on the
+	  default secure/non-secure merge performed by the TF-M module. This
+	  is an internal symbol with no prompt and is not meant to be set by
+	  users.
+
 config TFM_PROFILE
 	string
 	default "profile_small" if TFM_PROFILE_TYPE_SMALL
@@ -355,6 +365,56 @@ config TFM_PUBLIC_KEY_FORMAT_HASH
 	bool
 
 endchoice
+
+config TFM_MCUBOOT_ENCRYPTION
+	bool "Image encryption in BL2"
+	help
+	  Enable support for encrypted images in MCUboot (BL2). Maps to the
+	  TF-M option MCUBOOT_ENC_IMAGES.
+
+	  Only the update images (*_signed_encrypted.bin) are encrypted. BL2
+	  decrypts an image while moving it from the secondary to the primary
+	  slot, so the images flashed to the primary slot stay unencrypted.
+
+if TFM_MCUBOOT_ENCRYPTION
+
+choice TFM_MCUBOOT_ENCRYPTION_KEY_WRAP_SCHEME
+	prompt "Image encryption key-wrapping scheme"
+	default TFM_MCUBOOT_ENCRYPTION_RSA_OAEP
+	help
+	  Selects the algorithm that wraps the per-image AES key stored in the
+	  image TLV area.
+
+config TFM_MCUBOOT_ENCRYPTION_RSA_OAEP
+	bool "RSA-OAEP"
+	help
+	  Wrap the AES key using RSA-OAEP.
+	  Corresponds to TF-M MCUBOOT_ENCRYPT_RSA option.
+
+endchoice
+
+config TFM_MCUBOOT_ENCRYPTION_KEY_LEN
+	int "Image encryption AES key length"
+	default 128
+	help
+	  Length in bits of the AES key used to encrypt the image payload.
+	  Valid values are 128 and 256. Maps to the TF-M MCUBOOT_ENC_KEY_LEN
+	  option.
+
+config TFM_MCUBOOT_ENCRYPTION_KEY_FILE
+	string "Path to private key used to encrypt firmware images"
+	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/enc-rsa2048-priv.pem" if TFM_MCUBOOT_ENCRYPTION_RSA_OAEP
+	help
+	  The path and filename for the key file used to encrypt the secure and
+	  non-secure firmware images. For RSA-OAEP this is the RSA private key.
+	  It is embedded in BL2 to unwrap the AES key and its public half wraps
+	  that key when the images are encrypted. Maps to the TF-M
+	  MCUBOOT_KEY_ENC option.
+
+	  The default is a publicly known MCUboot test key and provides no
+	  confidentiality. Use your own private key for production.
+
+endif # TFM_MCUBOOT_ENCRYPTION
 
 config TFM_MCUBOOT_IMAGE_NUMBER
 	int "Granularity of FW updates of TFM and app"

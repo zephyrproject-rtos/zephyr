@@ -35,3 +35,29 @@ config NXP_MCXW7XX_BOOT_HEADER
 	help
 	  Create data structures required by the boot ROM to boot the
 	  application from flash.
+
+config SOC_SERIES_MCXW7XX_SHUTDOWN_UNUSED_RAM
+	bool "Power off unused SRAM banks at init"
+	depends on PM
+	depends on $(dt_nodelabel_has_prop,cmc,sram-banks)
+	help
+	  At SoC power init, permanently power off (in all modes, via the CMC
+	  SRAMDIS register) every CMC-controllable SRAM bank that no memory
+	  region the linked image relies on overlaps. This lowers both active
+	  and low-power leakage on images that do not use all of SRAM.
+
+	  Bank geometry (start address, size and CMC disable bit for each bank)
+	  comes from the sram-banks property on the cmc device tree node. A bank
+	  is kept powered when it overlaps any of: the chosen zephyr,sram node,
+	  the chosen zephyr,flash node when it is linked on-chip, or any enabled
+	  zephyr,memory-region node. So an application keeps a bank alive simply
+	  by declaring the region that uses it (for example an ECC region holding
+	  critical data declared as a zephyr,memory-region). No linker symbol is
+	  used, so the decision is not tied to any single linker region.
+
+	  By default zephyr,sram spans the whole system SRAM, so only banks
+	  outside it (for example the Code-TCM banks in the common flash-execution
+	  configuration) are powered off. To free system-SRAM banks, shrink
+	  zephyr,sram in a board overlay so the unused high banks fall outside it.
+	  When this option is disabled, no SRAMDIS programming occurs and behavior
+	  is unchanged.

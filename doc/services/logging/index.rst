@@ -8,52 +8,55 @@ Logging
     :depth: 2
 
 The logging API provides a common interface to process messages issued by
-developers. Messages are passed through a frontend and are then
+developers. Messages are passed through a frontend and then
 processed by active backends.
-Custom frontend and backends can be used if needed.
+The frontend is responsible for immediate filtering and queueing of log messages, so it needs to
+be fast. Backends may run later and take more time. They format the log message and send it to a
+destination, for example UART, RTT or BLE.
+A custom frontend and custom backends can be used if needed.
 
 Summary of the logging features:
 
 - Deferred logging reduces the time needed to log a message by shifting time
-  consuming operations to a known context instead of processing and sending
+  consuming operations to a known context, instead of processing and sending
   the log message when called.
 - Multiple backends supported (up to 9 backends).
-- Custom frontend support. It can work together with backends.
+- Custom frontend support, which can work together with standard backends.
 - Compile time filtering on module level.
-- Run time filtering independent for each backend.
-- Additional run time filtering on module instance level.
-- Timestamping with user provided function. Timestamp can have 32 or 64 bits.
+- Independent runtime filtering for each backend.
+- Additional runtime filtering on module instance level.
+- Timestamping with a user provided function. Timestamps can be 32 or 64 bits large.
 - Dedicated API for dumping data.
 - Dedicated API for handling transient strings.
-- Panic support - in panic mode logging switches to blocking, synchronous
+- Panic support - in panic mode, logging switches to blocking, synchronous
   processing.
-- Printk support - printk message can be redirected to the logging.
-- Design ready for multi-domain/multi-processor system.
-- Support for logging floating point variables and long long arguments.
+- Printk support - printk messages can be redirected to the logging system.
+- Design ready for multi-domain/multi-processor systems.
+- Support for logging floating point and ``long long`` values.
 - Built-in copying of transient strings used as arguments.
 - Support for multi-domain logging.
 - Rate-limited logging macros to prevent log flooding when messages are generated frequently.
 
-Logging API is highly configurable at compile time as well as at run time. Using
-Kconfig options (see :ref:`logging_kconfig`) logs can be gradually removed from
+The logging API is highly configurable at compile time as well as at runtime. Using
+Kconfig options (see :ref:`logging_kconfig`), logs can be gradually removed from
 compilation to reduce image size and execution time when logs are not needed.
-During compilation logs can be filtered out on module basis and severity level.
+During compilation, logs can be filtered out by module and severity level.
 
-Logs can also be compiled in but filtered on run time using dedicate API. Run
-time filtering is independent for each backend and each source of log messages.
-Source of log messages can be a module or specific instance of the module.
+Logs can also be compiled in but filtered at runtime using a dedicate API. Runtime
+filtering is independent for each backend and each source of log messages.
+The source of a log message can be a module or specific instance of a module.
 
 There are four severity levels available in the system: error, warning, info
-and debug. For each severity level the logging API (:zephyr_file:`include/zephyr/logging/log.h`)
-has set of dedicated macros. Logger API also has macros for logging data.
+and debug. For each severity level, the logging API (:zephyr_file:`include/zephyr/logging/log.h`)
+has a set of dedicated macros. There are also macros for logging data.
 
-For each level the following set of macros are available:
+For each severity level, the following set of macros is available:
 
 - ``LOG_X`` for standard printf-like messages, e.g. :c:macro:`LOG_ERR`.
 - ``LOG_HEXDUMP_X`` for dumping data, e.g. :c:macro:`LOG_HEXDUMP_WRN`.
-- ``LOG_INST_X`` for standard printf-like message associated with the
+- ``LOG_INST_X`` for standard printf-like messages associated with a
   particular instance, e.g. :c:macro:`LOG_INST_INF`.
-- ``LOG_INST_HEXDUMP_X`` for dumping data associated with the particular
+- ``LOG_INST_HEXDUMP_X`` for dumping data associated with a particular
   instance, e.g. :c:macro:`LOG_INST_HEXDUMP_DBG`
 
 The warning level also exposes the following additional macro:
@@ -62,46 +65,50 @@ The warning level also exposes the following additional macro:
 
 Rate-limited logging macros are also available for all severity levels to prevent log flooding:
 
-- ``LOG_X_RATELIMIT`` for rate-limited standard printf-like messages using default rate, e.g. :c:macro:`LOG_ERR_RATELIMIT`.
-- ``LOG_X_RATELIMIT_RATE`` for rate-limited standard printf-like messages with custom rate, e.g. :c:macro:`LOG_ERR_RATELIMIT_RATE`.
-- ``LOG_HEXDUMP_X_RATELIMIT`` for rate-limited data dumping using default rate, e.g. :c:macro:`LOG_HEXDUMP_WRN_RATELIMIT`.
-- ``LOG_HEXDUMP_X_RATELIMIT_RATE`` for rate-limited data dumping with custom rate, e.g. :c:macro:`LOG_HEXDUMP_WRN_RATELIMIT_RATE`.
+- ``LOG_X_RATELIMIT`` for rate-limited standard printf-like messages using the default rate,
+  e.g. :c:macro:`LOG_ERR_RATELIMIT`.
+- ``LOG_X_RATELIMIT_RATE`` for rate-limited standard printf-like messages with a custom rate,
+  e.g. :c:macro:`LOG_ERR_RATELIMIT_RATE`.
+- ``LOG_HEXDUMP_X_RATELIMIT`` for rate-limited data dumping using the default rate,
+  e.g. :c:macro:`LOG_HEXDUMP_WRN_RATELIMIT`.
+- ``LOG_HEXDUMP_X_RATELIMIT_RATE`` for rate-limited data dumping with a custom rate,
+  e.g. :c:macro:`LOG_HEXDUMP_WRN_RATELIMIT_RATE`.
 
 The convenience macros use the default rate specified by ``CONFIG_LOG_RATELIMIT_INTERVAL_MS``,
 while the explicit rate macros take a rate parameter (in milliseconds) that specifies the minimum interval between log messages.
 
 There are two configuration categories: configurations per module and global
-configuration. When logging is enabled globally, it works for modules. However,
+configuration. When logging is enabled globally, it is enabled for all modules by default. However,
 modules can disable logging locally. Every module can specify its own logging
 level. The module must define the :c:macro:`LOG_LEVEL` macro before using the
 API. Unless a global override is set, the module logging level will be honored.
 The global override can only increase the logging level. It cannot be used to
 lower module logging levels that were previously set higher. It is also possible
-to globally limit logs by providing maximal severity level present in the
+to globally limit logs by providing a maximal severity level present in the
 system, where maximal means lowest severity (e.g. if maximal level in the system
-is set to info, it means that errors, warnings and info levels are present but
+is set to info, it means that errors, warnings and info levels are present, but
 debug messages are excluded).
 
 Each module which is using the logging must specify its unique name and
-register itself to the logging. If module consists of more than one file,
-registration is performed in one file but each file must define a module name.
+register itself to the logging. If a module consists of more than one file,
+then registration is performed in only one file, but each file must specify the module name.
 
-Logger's default frontend is designed to be thread safe and minimizes time needed
+The logger's default frontend is designed to be thread safe and minimizes the time needed
 to log the message. Time consuming operations like string formatting or access to the
-transport are not performed by default when logging API is called. When logging
-API is called a message is created and added to the list. Dedicated,
-configurable buffer for pool of log messages is used. There are 2 types of messages:
-standard and hexdump. Each message contain source ID (module or instance ID and
-domain ID which might be used for multiprocessor systems), timestamp and
-severity level. Standard message contains pointer to the string and arguments.
-Hexdump message contains copied data and string.
+transport are not performed by default when the logging API is called. When the logging
+API is called, a message is created and added to the list. A dedicated,
+configurable buffer for a pool of log messages is used. There are 2 types of messages:
+standard and hexdump. Each message contains a source ID (module or instance ID and
+domain ID, which might be used for multiprocessor systems), timestamp and
+severity level. A standard message contains pointers to the string and arguments.
+A hexdump message contains the copied data and string.
 
 .. _logging_kconfig:
 
 Global Kconfig Options
 **********************
 
-These options can be found in the following path :zephyr_file:`subsys/logging/Kconfig`.
+These options can be found in the following file: :zephyr_file:`subsys/logging/Kconfig`.
 
 :kconfig:option:`CONFIG_LOG`: Global switch, turns on/off the logging.
 
@@ -208,11 +215,11 @@ Usage
 Logging in a module
 ===================
 
-In order to use logging in the module, a unique name of a module must be
-specified and module must be registered using :c:macro:`LOG_MODULE_REGISTER`.
+In order to use logging in the module, a unique name for the module must be
+specified and the module must be registered using :c:macro:`LOG_MODULE_REGISTER`.
 Optionally, a compile time log level for the module can be specified as the
-second parameter. Default log level (:kconfig:option:`CONFIG_LOG_DEFAULT_LEVEL`) is used
-if custom log level is not provided.
+second parameter. The default log level (:kconfig:option:`CONFIG_LOG_DEFAULT_LEVEL`) is used
+if a custom log level is not provided.
 
 .. code-block:: c
 
@@ -223,8 +230,8 @@ If the module consists of multiple files, then ``LOG_MODULE_REGISTER()`` should
 appear in exactly one of them. Each other file should use
 :c:macro:`LOG_MODULE_DECLARE` to declare its membership in the module.
 Optionally, a compile time log level for the module can be specified as
-the second parameter. Default log level (:kconfig:option:`CONFIG_LOG_DEFAULT_LEVEL`)
-is used if custom log level is not provided.
+the second parameter. The default log level (:kconfig:option:`CONFIG_LOG_DEFAULT_LEVEL`)
+is used if a custom log level is not provided.
 
 .. code-block:: c
 
@@ -232,11 +239,11 @@ is used if custom log level is not provided.
    /* In all files comprising the module but one */
    LOG_MODULE_DECLARE(foo, CONFIG_FOO_LOG_LEVEL);
 
-In order to use logging API in a function implemented in a header file
+In order to use the logging API in a function implemented in a header file,
 :c:macro:`LOG_MODULE_DECLARE` macro must be used in the function body
-before logging API is called. Optionally, a compile time log level for the module
-can be specified as the second parameter. Default log level
-(:kconfig:option:`CONFIG_LOG_DEFAULT_LEVEL`) is used if custom log level is not
+before the logging API is called. Optionally, a compile time log level for the module
+can be specified as the second parameter. The default log level
+(:kconfig:option:`CONFIG_LOG_DEFAULT_LEVEL`) is used if a custom log level is not
 provided.
 
 .. code-block:: c
@@ -250,10 +257,10 @@ provided.
    	LOG_INF("foo");
    }
 
-Dedicated Kconfig template (:zephyr_file:`subsys/logging/Kconfig.template.log_config`)
-can be used to create local log level configuration.
+The dedicated Kconfig template (:zephyr_file:`subsys/logging/Kconfig.template.log_config`)
+can be used to create a local log level configuration.
 
-Example below presents usage of the template. As a result CONFIG_FOO_LOG_LEVEL
+The example below shows the template being used. As a result, ``CONFIG_FOO_LOG_LEVEL``
 will be generated:
 
 .. code-block:: none
@@ -265,14 +272,14 @@ will be generated:
 Logging in a module instance
 ============================
 
-In case of modules which are multi-instance and instances are widely used
-across the system enabling logs will lead to flooding. The logger provides the tools
-which can be used to provide filtering on instance level rather than module
-level. In that case logging can be enabled for particular instance.
+In case there are modules which are multi-instance and instances are widely used
+across the system, enabling logs will lead to flooding. The logging API provides tools
+which can be used to filter logs on the instance level rather than the module
+level. For example, logging can be enabled for a particular instance only.
 
-In order to use instance level filtering following steps must be performed:
+In order to use instance level filtering, the following steps must be performed:
 
-- a pointer to specific logging structure is declared in instance structure.
+- A pointer to a specific logging structure is declared in the instance structure.
   :c:macro:`LOG_INSTANCE_PTR_DECLARE` is used for that.
 
 .. code-block:: c
@@ -284,8 +291,8 @@ In order to use instance level filtering following steps must be performed:
    	uint32_t id;
    }
 
-- module must provide macro for instantiation. In that macro, logging instance
-  is registered and log instance pointer is initialized in the object structure.
+- The module must provide a macro for its instantiation. In that macro, the logging instance
+  is registered and the log instance pointer is initialized in the object structure.
 
 .. code-block:: c
 
@@ -295,7 +302,7 @@ In order to use instance level filtering following steps must be performed:
    		LOG_INSTANCE_PTR_INIT(log, foo, _name)          \
    	}
 
-Note that when logging is disabled logging instance and pointer to that instance
+Note that when logging is disabled, the logging instance and pointer to that instance
 are not created.
 
 In order to use the instance logging API in a source file, a compile-time log
@@ -325,20 +332,20 @@ level must be set using :c:macro:`LOG_LEVEL_SET`.
 Controlling the logging
 =======================
 
-By default, logging processing in deferred mode is handled internally by the
+By default, log processing in deferred mode is handled internally by a
 dedicated task which starts automatically. However, it might not be available
 if multithreading is disabled. It can also be disabled by unsetting
 :kconfig:option:`CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD`. In that case, logging can
 be controlled using the API defined in :zephyr_file:`include/zephyr/logging/log_ctrl.h`.
 Logging must be initialized before it can be used. Optionally, the user can provide
-a function which returns the timestamp value. If not provided, :c:macro:`k_cycle_get`
+a function which returns a timestamp value. If not provided, :c:macro:`k_cycle_get`
 or :c:macro:`k_cycle_get_32` is used for timestamping.
-The :c:func:`log_process` function is used to trigger processing of one log
+The :c:func:`log_process` function is used to process one log
 message (if pending), and returns true if there are more messages pending.
 However, it is recommended to use macro wrappers (:c:macro:`LOG_INIT` and
-:c:macro:`LOG_PROCESS`) which handle the case where logging is disabled.
+:c:macro:`LOG_PROCESS`), which handle the case where logging is disabled.
 
-The following snippet shows how logging can be processed in simple forever loop.
+The following snippet shows how logs can be processed in a simple infinite loop.
 
 .. code-block:: c
 
@@ -357,8 +364,8 @@ The following snippet shows how logging can be processed in simple forever loop.
    	}
    }
 
-If logs are processed from a thread (user or internal) then it is possible to enable
-a feature which will wake up processing thread when certain amount of log messages are
+If logs are processed from a thread (user or internal), then it is possible to enable
+a feature which will wake up the processing thread when a certain number of log messages is
 buffered (see :kconfig:option:`CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD`).
 
 .. _logging_ratelimited:
@@ -454,14 +461,14 @@ to track the last log time for each call site.
 Logging panic
 *************
 
-In case of error condition system usually can no longer rely on scheduler or
-interrupts. In that situation deferred log message processing is not an option.
-Logger controlling API provides a function for entering into panic mode
-(:c:func:`log_panic`) which should be called in such situation.
+In case of an error condition, the system usually can no longer rely on the scheduler or
+interrupts. In that situation, deferred log message processing is not an option.
+The logger controlling API provides a function for entering into panic mode
+(:c:func:`log_panic`), which should be called in such a situation.
 
-When :c:func:`log_panic` is called, _panic_ notification is sent to all active
-backends. Once all backends are notified, all buffered messages are flushed. Since
-that moment all logs are processed in a blocking way.
+When :c:func:`log_panic` is called, a *panic* notification is sent to all active
+backends. Once all backends are notified, all buffered messages are flushed. From
+that moment forward, all logs are processed in a blocking way.
 
 .. _logging_printk:
 
@@ -469,13 +476,13 @@ Printk
 ******
 
 Typically, logging and :c:func:`printk` use the same output, which they compete
-for. This can lead to issues if the output does not support preemption but it may
+for. This can lead to issues if the output does not support preemption, but it may
 also result in corrupted output because logging data is interleaved with printk
 data. However, it is possible to redirect printk messages to the
 logging subsystem by enabling :kconfig:option:`CONFIG_LOG_PRINTK`. In that case,
 printk entries are treated as log messages with level 0 (they cannot be disabled).
-When enabled, logging manages the output so there is no interleaving. However,
-in deferred mode the printk behaviour is changed since the output is delayed
+When enabled, logging manages the output, so there is no interleaving. However,
+in deferred mode, the printk behaviour is changed since the output is delayed
 until the logging thread processes the data. :kconfig:option:`CONFIG_LOG_PRINTK`
 is enabled by default.
 
@@ -491,15 +498,15 @@ Logging consists of 3 main parts:
 - Core
 - Backends
 
-Log message is generated by a source of logging which can be a module or
+A log message is generated by a source of logging, which can be a module or an
 instance of a module.
 
 Default Frontend
 ================
 
-Default frontend is engaged when the logging API is called in a source of logging (e.g.
-:c:macro:`LOG_INF`) and is responsible for filtering a message (compile and run
-time), allocating a buffer for the message, creating the message and committing that
+The default frontend is engaged when the logging API is called by a source of logging (e.g.
+:c:macro:`LOG_INF`) and is responsible for filtering a message (compile and runtime),
+allocating a buffer for the message, creating the message and committing that
 message. Since the logging API can be called in an interrupt, the frontend is optimized
 to log the message as fast as possible.
 
@@ -512,12 +519,12 @@ Log messages are stored in a continuous block of memory.
 Memory is allocated from a circular packet buffer (:ref:`mpsc_pbuf`), which has
 a few consequences:
 
- * Each message is a self-contained, continuous block of memory thus it is suited
+ * Each message is a self-contained, continuous block of memory. Thus, it is suited
    for copying the message (e.g. for offline processing).
- * Messages must be sequentially freed. Backend processing is synchronous. Backend
+ * Messages must be freed sequentially. Backend processing is synchronous. Backends
    can make a copy for deferred processing.
 
-A log message has following format:
+A log message has the following format:
 
 +------------------+----------------------------------------------------+
 | Message Header   | 2 bits: MPSC packet buffer header                  |
@@ -538,7 +545,11 @@ A log message has following format:
 |                  +----------------------------------------------------+
 |                  | 32 or 64 bits: Timestamp [#l0]_                    |
 |                  +----------------------------------------------------+
-|                  | Optional padding [#l1]_                            |
+|                  | pointer: Pointer to thread ID (optional) [#l1]_    |
+|                  +----------------------------------------------------+
+|                  | 8 bits: core ID (optional) [#l2]_                  |
+|                  +----------------------------------------------------+
+|                  | Optional padding [#l3]_                            |
 +------------------+----------------------------------------------------+
 | Cbprintf         | Header                                             |
 |                  +----------------------------------------------------+
@@ -553,14 +564,17 @@ A log message has following format:
 
 .. rubric:: Footnotes
 
-.. [#l0] Depending on the platform and the timestamp size fields may be swapped.
-.. [#l1] It may be required for cbprintf package alignment
+.. [#l0] Depending on their size, the source descriptor and timestamp fields may be swapped,
+         in order to reduce the amount of padding.
+.. [#l1] Only present if CONFIG_LOG_THREAD_ID_PREFIX is enabled.
+.. [#l2] Only present if CONFIG_LOG_CORE_ID_PREFIX is enabled.
+.. [#l3] It may be required for cbprintf package alignment.
 
 Log message allocation
 ----------------------
 
 It may happen that the frontend cannot allocate a message. This happens if the
-system is generating more log messages than it can process in certain time
+system is generating more log messages than it can process in a certain time
 frame. There are two strategies to handle that case:
 
 - No overflow - the new log is dropped if space for a message cannot be allocated.
@@ -571,22 +585,22 @@ frame. There are two strategies to handle that case:
 
 .. _logging_runtime_filtering:
 
-Run-time filtering
+Runtime filtering
 ------------------
 
-If run-time filtering is enabled, then for each source of logging a filter
-structure in RAM is declared. Such filter is using 32 bits divided into ten 3
-bit slots. Except *slot 0*, each slot stores current filter for one backend in
-the system. *Slot 0* (bits 0-2) is used to aggregate maximal filter setting for
-given source of logging. Aggregate slot determines if log message is created
-for given entry since it indicates if there is at least one backend expecting
-that log entry. Backend slots are examined when message is processed by the core
-to determine if message is accepted by the given backend. Contrary to compile
-time filtering, binary footprint is increased because logs are compiled in.
+If runtime filtering is enabled, then for each source of logging a filter
+structure in RAM is declared. Such a filter is using 32 bits divided into ten 3
+bit slots. Except for *slot 0*, each slot stores the current filter for one backend in
+the system. *Slot 0* (bits 0-2) is used to aggregate the maximal filter setting for a
+given source of logging. The aggregate slot determines if a log message is created
+for a given entry, since it indicates if there is at least one backend expecting
+that log entry. Backend slots are examined when a message is processed by the core
+to determine if the message is accepted by the given backend. Compared to compile
+time filtering, the binary footprint is increased, because discarded logs are still compiled in.
 
-In the example below backend 1 is set to receive errors (*slot 1*) and backend
-2 up to info level (*slot 2*). Slots 3-9 are not used. Aggregated filter
-(*slot 0*) is set to info level and up to this level message from that
+In the example below, backend 1 is set to receive errors (*slot 1*) and backend
+2 up to info level (*slot 2*). Slots 3-9 are not used. The aggregated filter
+(*slot 0*) is set to info level, meaning that up to this level, message from that
 particular source will be buffered.
 
 +------+------+------+------+-----+------+
@@ -767,31 +781,32 @@ Logging backends are registered using :c:macro:`LOG_BACKEND_DEFINE`. The macro
 creates an instance in the dedicated memory section. Backends can be dynamically
 enabled (:c:func:`log_backend_enable`) and disabled. When
 :ref:`logging_runtime_filtering` is enabled, :c:func:`log_filter_set` can be used
-to dynamically change filtering of a module logs for given backend. Module is
-identified by source ID and domain ID. Source ID can be retrieved if source name
+to dynamically change filtering of a module's logs for a given backend. A module is
+identified by source ID and domain ID. The source ID can be retrieved if the source name
 is known by iterating through all registered sources.
 
-Logging supports up to 9 concurrent backends. Log message is passed to the
-each backend in processing phase. Additionally, backend is notified when logging
-enter panic mode with :c:func:`log_backend_panic`. On that call backend should
-switch to synchronous, interrupt-less operation or shut down itself if that is
-not supported.  Occasionally, logging may inform backend about number of dropped
-messages with :c:func:`log_backend_dropped`. Message processing API is version
+Logging supports up to 9 concurrent backends. A log message is passed to
+each backend in the processing phase. Additionally, a backend is notified when logging
+enters panic mode with :c:func:`log_backend_panic`. When that happens, the backend should
+switch to synchronous, interrupt-less operation or shut itself down if that is
+not supported.  Occasionally, logging may inform the backend about the number of dropped
+messages with :c:func:`log_backend_dropped`. The message processing API is version
 specific.
 
-:c:func:`log_backend_msg_process` is used for processing message. It is common for
-standard and hexdump messages because log message hold string with arguments
-and data. It is also common for deferred and immediate logging.
+:c:func:`log_backend_msg_process` is used for processing a message. It is common for
+standard and hexdump messages, because a standard message holds its formatting arguments
+in the same place where a hexdump message holds its data. It is also common for deferred
+and immediate logging.
 
 .. _log_output:
 
 Message formatting
 ------------------
 
-Logging provides set of function that can be used by the backend to format a
+Logging provides a set of functions that can be used by the backend to format a
 message. Helper functions are available in :zephyr_file:`include/zephyr/logging/log_output.h`.
 
-Example message formatted using :c:func:`log_output_msg_process`.
+Example message formatted using :c:func:`log_output_msg_process`:
 
 .. code-block:: console
 
@@ -803,7 +818,7 @@ Example message formatted using :c:func:`log_output_msg_process`.
 Dictionary-based Logging
 ========================
 
-Dictionary-based logging, instead of human readable texts, outputs the log
+Dictionary-based logging, instead of human readable text, outputs the log
 messages in binary format. This binary format encodes arguments to formatted
 strings in their native storage formats which can be more compact than their
 text equivalents. For statically defined strings (including the format
@@ -930,25 +945,25 @@ examples on using the log parsers.
 Recommendations and limitations
 *******************************
 
-The are following recommendations:
+Consider the following recommendations:
 
 * Enable :kconfig:option:`CONFIG_LOG_SPEED` to slightly speed up deferred logging at the
-  cost of slight increase in memory footprint.
-* It is recommended to cast pointer to ``const char *`` when it is used with ``%s``
+  cost of a slight increase in memory footprint.
+* It is recommended to cast a pointer to ``const char *`` when it is used with a ``%s``
   format specifier and it points to a constant string.
-* It is recommended to cast pointer to ``char *`` when it is used with ``%s``
+* It is recommended to cast a pointer to ``char *`` when it is used with a ``%s``
   format specifier and it points to a transient string.
 * It is required to cast a character pointer to non character pointer
-  (e.g., ``void *``) when it is used with ``%p`` format specifier.
+  (e.g., ``void *``) when it is used with a ``%p`` format specifier.
 
 .. code-block:: c
 
    LOG_WRN("%s", str);
    LOG_WRN("%p", (void *)str);
 
-There are following limitations:
+Consider the following limitations:
 
-* Logging does not support string format specifier with width (e.g., ``%.*s`` or ``%8s``). That
+* Logging does not support string format specifiers with width (e.g., ``%.*s`` or ``%8s``). That
   is because format string content is not used to build a log message, only argument types.
 * If deferred logging is used and log messages are prefixed with the thread name
   (Kconfig option ``CONFIG_LOG_THREAD_ID_PREFIX=y`` and ``CONFIG_THREAD_NAME=y``), it is assumed that
@@ -1020,13 +1035,15 @@ on ``qemu_x86``. It is a rough comparison to give a general overview.
 Stack usage
 ***********
 
-When logging is enabled it impacts stack usage of the context that uses logging API. If stack
-is optimized it may lead to stack overflow. Stack usage depends on mode and optimization. It
-also significantly varies between platforms. In general, when :kconfig:option:`CONFIG_LOG_MODE_DEFERRED`
-is used stack usage is smaller since logging is limited to creating and storing log message.
-When :kconfig:option:`CONFIG_LOG_MODE_IMMEDIATE` is used then log message is processed by the backend
-which includes string formatting. In case of that mode, stack usage will depend on which backends
-are used.
+When logging is enabled, it impacts the stack usage of the context that uses
+the logging API. If the stack is optimized, it may lead to stack overflow. Stack
+usage depends on mode and optimization. It also significantly varies between
+platforms. In general, when :kconfig:option:`CONFIG_LOG_MODE_DEFERRED` is
+used, stack usage is smaller, since logging is limited to creating and storing
+log messages. If :kconfig:option:`CONFIG_LOG_MODE_IMMEDIATE` is used, the log
+message is processed by the backends, which includes string formatting, directly
+in the context that uses the logging API. In case of that mode, the stack usage
+will depend on which backends are used.
 
 Some of the platforms characterization for log message with two ``integer`` arguments listed below:
 
@@ -1052,28 +1069,13 @@ For logging on NRF54H20 using ARM Coresight STM see :ref:`logging_cs_stm`.
 API Reference
 *************
 
-Logger API
-==========
-
 .. doxygengroup:: log_api
-
-Logger control
-==============
 
 .. doxygengroup:: log_ctrl
 
-Log message
-===========
-
 .. doxygengroup:: log_msg
 
-Logger backend interface
-========================
-
 .. doxygengroup:: log_backend
-
-Logger output formatting
-========================
 
 .. doxygengroup:: log_output
 

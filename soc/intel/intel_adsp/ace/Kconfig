@@ -15,6 +15,21 @@ config SOC_SERIES_INTEL_ADSP_ACE
 	select HAS_PM
 	select PM_STATE_SET_IRQ_UNLOCKED
 	select ARCH_HAS_GDBSTUB
+	#
+	# With testing, there are too many IPIs being sent which can overwhelm
+	# the IDC block. So enable IPI optimization to limit sched IPIs to
+	# specific targets.
+	#
+	# The issue is due to commit 093325206d082131fb2073ddd25b1645001a27b6
+	# (kernel: smp: ipi: do not drain self bit in signal_pending_ipi())
+	# where it fixed an issue of missing IPIs due to incorrect
+	# bit clearing. The result is that there are way more IPIs between
+	# CPUs. With testings, there are many threads being created, scheduled
+	# and destroyed. Enabling MMU makes this even worse due to IPI being
+	# used for TLB shootdown as there are lots of modifications to
+	# memory domains linking to thread lifecycles. So just keep this here.
+	#
+	imply IPI_OPTIMIZE if ZTEST && SMP && MP_MAX_NUM_CPUS > 1
 
 config SOC_SERIES_INTEL_ADSP_ACE15
 	select XTENSA_CPU_HAS_HIFI4

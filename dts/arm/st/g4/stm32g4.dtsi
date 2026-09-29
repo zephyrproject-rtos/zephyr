@@ -899,7 +899,7 @@
 		status = "disabled";
 	};
 
-	vref: vref {
+	vref1: vref: vref {
 		compatible = "st,stm32-vref";
 		nvmem-cells = <&vrefint_otp>;
 		vrefint-cal-mv = <3000>;

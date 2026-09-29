@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&cpuapp_mram {
+	reg = <0x0 DT_SIZE_K(3960)>;
+	ranges = <0x0 0x0 DT_SIZE_K(3960)>;
+
+	/delete-node/ partitions;
+};
+
+&cpuapp_sram {
+	/* ranges is kept so that ram03_sram still translates to 0x200e0000 */
+	reg = <0x0 DT_SIZE_K(896)>;
+};
+
+&mram_controller {
+	cpuflpr_mram: mram@3de000 {
+		compatible = "soc-nv-flash";
+		reg = <0x3de000 DT_SIZE_K(116)>;
+		ranges = <0x0 0x3de000 DT_SIZE_K(116)>;
+		erase-block-size = <4096>;
+		write-block-size = <16>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+	};
+};
+
+&uart21 {
+	status = "reserved";
+};
+
+&cpuflpr_vpr {
+	execution-memory = <&cpuflpr_mram>;
+};
+
+&cpuapp_vevif_tx {
+	status = "okay";
+};
+
+#define WITH_FLPR_PARTITIONS
+#include <vendor/nordic/nrf7120_cpuapp_partition.dtsi>

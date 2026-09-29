@@ -117,6 +117,12 @@
 			status = "disabled";
 		};
 
+		rng: rng@420c0800 {
+			nist-config = <0x8f01f00>;
+			health-test-config = <0x6688>;
+			noise-source-control = <0xfff>;
+		};
+
 		radio: radio@48020000 {
 			interrupts = <66 0>;
 		};

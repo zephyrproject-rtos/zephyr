@@ -21,6 +21,7 @@
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/sntp.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/ztest.h>
 
 #include "sntp_pkt.h"
@@ -35,6 +36,11 @@
 #define RECV_TIMEOUT_MS 100
 
 static int server_fd = -1;
+
+/* Seconds to advance the system clock between the request and the response,
+ * to reach a round trip that does not fit in 32 bits of microseconds.
+ */
+static uint32_t clock_jump_s;
 
 /* A well-formed response; a test overrides only the field it exercises.
  * The originate timestamp is left zero, filled in by exchange().
@@ -80,6 +86,14 @@ static int exchange(struct sntp_pkt *response, bool echo_originate, struct sntp_
 	ret = zsock_recvfrom(server_fd, &request, sizeof(request), 0,
 			     (struct net_sockaddr *)&client, &client_len);
 	zassert_equal(ret, (int)sizeof(request), "no request from the client: %d", ret);
+
+	if (clock_jump_s > 0) {
+		struct timespec now;
+
+		zassert_ok(sys_clock_gettime(SYS_CLOCK_REALTIME, &now), "could not read the clock");
+		now.tv_sec += clock_jump_s;
+		zassert_ok(sys_clock_settime(SYS_CLOCK_REALTIME, &now), "could not set the clock");
+	}
 
 	if (echo_originate) {
 		response->orig_tm_s = net_htonl((uint32_t)ctx.expected_orig_ts.seconds);
@@ -204,6 +218,85 @@ ZTEST(sntp_response, test_reversed_server_timestamps_are_rejected)
 
 	zassert_equal(exchange(&response, true, &ts), -EINVAL,
 		      "reversed server timestamps were accepted");
+}
+
+/* The delay and the uncertainty are reported in unsigned fields but are
+ * computed from timestamps the server chose, so a server whose turnaround
+ * exceeds the round trip the client measured drives both negative.
+ */
+ZTEST(sntp_response, test_negative_delay_and_uncertainty_are_clamped)
+{
+	struct sntp_pkt response = response_template();
+	struct sntp_time ts;
+
+	/* A second of server turnaround, far beyond the loopback round trip */
+	response.rx_tm_s = net_htonl(OFFSET_1970_JAN_1);
+	response.tx_tm_s = net_htonl(OFFSET_1970_JAN_1 + 1);
+
+	zassert_ok(exchange(&response, true, &ts), "a valid response was rejected");
+
+	zexpect_equal(ts.rsp_delay_us, 0, "negative delay reported as %u", ts.rsp_delay_us);
+	zexpect_equal(ts.uncertainty_us, 0, "negative uncertainty reported as %u",
+		      ts.uncertainty_us);
+}
+
+/* Root delay and root dispersion are seconds in Q16.16, so they reach about
+ * 65536 s, past what the microsecond field can express.
+ */
+ZTEST(sntp_response, test_excessive_uncertainty_is_clamped)
+{
+	struct sntp_pkt response = response_template();
+	struct sntp_time ts;
+
+	response.root_delay = net_htonl(UINT32_MAX);
+	response.root_dispersion = net_htonl(UINT32_MAX);
+
+	zassert_ok(exchange(&response, true, &ts), "a valid response was rejected");
+
+	zexpect_equal(ts.uncertainty_us, UINT32_MAX, "uncertainty reported as %u",
+		      ts.uncertainty_us);
+}
+
+/* A round trip longer than 32 bits of microseconds can hold, which the
+ * asynchronous read path has no timeout to bound.
+ */
+ZTEST(sntp_response, test_long_round_trip_is_measured)
+{
+	struct sntp_pkt response = response_template();
+	struct sntp_time ts;
+	struct timespec now;
+
+	/* No server turnaround, so the delay is half the round trip */
+	response.rx_tm_s = net_htonl(OFFSET_1970_JAN_1);
+	response.tx_tm_s = net_htonl(OFFSET_1970_JAN_1);
+
+	clock_jump_s = 3600;
+	zassert_ok(exchange(&response, true, &ts), "a valid response was rejected");
+	clock_jump_s = 0;
+
+	zexpect_within(ts.rsp_delay_us, 1800 * USEC_PER_SEC, USEC_PER_SEC,
+		       "half of an hour long round trip reported as %u", ts.rsp_delay_us);
+
+	/* Leave the clock where the rest of the suite expects it */
+	zassert_ok(sys_clock_gettime(SYS_CLOCK_REALTIME, &now), "could not read the clock");
+	now.tv_sec -= 3600;
+	zassert_ok(sys_clock_settime(SYS_CLOCK_REALTIME, &now), "could not set the clock");
+}
+
+/* The clamps must not swallow what an ordinary exchange produces */
+ZTEST(sntp_response, test_plausible_delay_and_uncertainty_are_reported)
+{
+	struct sntp_pkt response = response_template();
+	struct sntp_time ts;
+
+	response.rx_tm_s = net_htonl(OFFSET_1970_JAN_1);
+	response.tx_tm_s = net_htonl(OFFSET_1970_JAN_1);
+
+	zassert_ok(exchange(&response, true, &ts), "a valid response was rejected");
+
+	zexpect_true(ts.rsp_delay_us < USEC_PER_SEC, "implausible delay %u", ts.rsp_delay_us);
+	zexpect_true(ts.uncertainty_us < USEC_PER_SEC, "implausible uncertainty %u",
+		     ts.uncertainty_us);
 }
 
 static void *setup(void)

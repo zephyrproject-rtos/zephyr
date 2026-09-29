@@ -16,5 +16,6 @@ such as firmware updates and querying metadata embedded in the firmware image.
     smp_transport.rst
     dfu.rst
     ota.rst
+    fota_http.rst
     ec_host_cmd.rst
     ../binary_descriptors/index.rst

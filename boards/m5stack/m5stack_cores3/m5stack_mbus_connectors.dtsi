@@ -35,6 +35,15 @@ m5stack_mbus_i2c1: &i2c1 {};
 
 m5stack_mbus_uart0: &uart0 {};
 
-m5stack_mbus_uart1: &uart1 {};
+/*
+ * UART on the M-Bus PC_RX / PC_TX pins (GPIO18 / GPIO17). Boards that route
+ * uart1 elsewhere define M5STACK_MBUS_PC_UART to the label of the UART node
+ * they put on these pins before including this file.
+ */
+#ifndef M5STACK_MBUS_PC_UART
+#define M5STACK_MBUS_PC_UART uart1
+#endif
+
+m5stack_mbus_uart1: &M5STACK_MBUS_PC_UART {};
 
 m5stack_mbus_spi: &spi2 {};

@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+cmake_minimum_required(VERSION 3.28.0)
+
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+project(fota_http)
+
+target_sources(app PRIVATE src/main.c)
+
+if(CONFIG_FOTA_HTTP_TLS)
+  set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
+  generate_inc_file_for_target(app src/ca_cert.pem ${gen_dir}/ca_cert.pem.inc)
+endif()

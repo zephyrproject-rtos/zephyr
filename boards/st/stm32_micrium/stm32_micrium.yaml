@@ -1,0 +1,21 @@
+identifier: stm32_micrium
+name: ST STM32-MICRIUM
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 64
+flash: 256
+supported:
+  - can
+  - gpio
+  - i2c
+  - netif:eth
+  - rtc
+  - spi
+  - uart
+  - usb_device
+  - usbd
+  - watchdog
+vendor: st

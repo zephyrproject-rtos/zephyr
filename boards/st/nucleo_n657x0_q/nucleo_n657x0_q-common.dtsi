@@ -18,6 +18,8 @@
 		zephyr,sram = &axisram2;
 		zephyr,canbus = &fdcan1;
 		spi-flash0 = &mx25um51245g;
+		volt-sensor0 = &vbat;
+		volt-sensor1 = &vddcore;
 	};
 
 	leds: leds {
@@ -176,16 +178,28 @@
 };
 
 &adc12_common {
+	clocks = <&rcc STM32_CLOCK(AHB1, 5)>,
+		 <&rcc STM32_SRC_CKPER ADC12_SEL(1)>;
+	clock-names = "adcx", "adc_ker";
 	vref-mv = <1800>;
 	status = "okay";
 };
 
 &adc1 {
-	clocks = <&rcc STM32_CLOCK(AHB1, 5)>,
-		 <&rcc STM32_SRC_CKPER ADC12_SEL(1)>;
-	clock-names = "adcx", "adc_ker";
 	pinctrl-0 = <&adc1_inp10_pa9 &adc1_inp11_pa10>; /* Arduino A1 & A2 */
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&adc2 {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
+};
+
+&vddcore {
 	status = "okay";
 };
 

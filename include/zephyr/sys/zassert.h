@@ -147,7 +147,7 @@ static inline __printf_like(1, 2) void zassert_print(const char *fmt, ...)
 			case ZASSERT_LEVEL_TERSE:					\
 				zassert_fail(NULL, NULL, 0, NULL);			\
 				break;							\
-			case ZASSERT_LEVEL_OFF: /* To silence warnings */		\
+			default: /* ZASSERT_LEVEL_OFF */				\
 				break;							\
 			}								\
 		}									\

@@ -5,9 +5,7 @@
  */
 
 #include <zephyr/console/console.h>
-#include <zephyr/device.h>
 #include <zephyr/kernel.h>
-#include <zephyr/pm/device.h>
 #include <zephyr/pm/pm.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/state.h>
@@ -321,12 +319,6 @@ int main(void)
 
 	console_init();
 	pm_notifier_register(&pm_events);
-
-	const struct device *wake_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_system_timer_companion));
-
-	if (device_is_ready(wake_dev)) {
-		(void)pm_device_wakeup_enable(wake_dev, true);
-	}
 
 	/* Lock the deeper states by default so sleep windows stay in runtime-idle.
 	 * Deep-sleep and DSR windows unlock them explicitly.

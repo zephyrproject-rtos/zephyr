@@ -20,12 +20,11 @@ choice SYSTEM_TIMER_LPM_COMPANION
 	default SYSTEM_TIMER_LPM_COMPANION_HOOKS if PM
 endchoice
 
-# During deepsleep, HF clocks stop so SysTick freezes. For DS-RAM the
-# SysTick hardware is fully reset on warm boot. In both cases the systick
-# driver must disable SysTick before idle and restart it on wake so that
-# the companion timer is the sole time reference across the sleep.
+# SysTick freezes in every deepsleep-class state (HF clocks stop; DS-RAM also
+# resets it on warm boot), so the driver stops it before idle and restarts it on
+# wake, leaving the companion as the sole time reference.
 config SYSTEM_TIMER_RESET_BY_LPM
-	default y if PM_S2RAM
+	default y if PM
 
 choice NULL_POINTER_EXCEPTION_DETECTION
 	default NULL_POINTER_EXCEPTION_DETECTION_NONE
@@ -46,14 +45,21 @@ config SYS_CLOCK_TICKS_PER_SEC
 # For cm33 all code executes from CBUS aliases (0x08.../0x18...)
 # for performance improvements but must be flashed at SAHB
 # alias (0x60.../0x70...). Adjust LMA by +0x58000000 (constant
-# difference between 0x08 -> 0x60)
+# difference between 0x08 -> 0x60).
+# Not applied to MCUBoot itself, which runs from RRAM and needs
+# no address translation.
 config BUILD_OUTPUT_ADJUST_LMA
 	depends on XIP
 	depends on CPU_CORTEX_M33
+	depends on !MCUBOOT
 	default "0x58000000"
 
 # BL2 implementation not available yet
 config TFM_BL2_NOT_SUPPORTED
+	default y
+
+# PSE84 handles its own signing/merging for TF-M
+config TFM_PLATFORM_HANDLES_MERGE
 	default y
 
 endif # SOC_SERIES_PSE84

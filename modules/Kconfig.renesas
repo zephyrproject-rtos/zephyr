@@ -8,6 +8,11 @@ config HAS_RENESAS_RA_FSP
 	help
 	  Enable Renesas RA FSP support
 
+config HAS_RENESAS_RX_FSP
+	bool
+	help
+	  Enable Renesas RX FSP support
+
 config HAS_RENESAS_RZ_FSP
 	bool
 	help
@@ -211,6 +216,11 @@ config USE_RA_FSP_USB_DEVICE
 	help
 	  Enable RA FSP USB Device Controller driver
 
+config USE_RA_FSP_USB_HOST
+	bool
+	help
+	  Enable RA FSP USB Host Controller driver
+
 config USE_RA_FSP_SDRAM
 	bool
 	help
@@ -329,6 +339,11 @@ config USE_RA_FSP_SCI_B_LIN
 	bool
 	help
 	  Enable RA FSP SCI-B LIN driver
+
+config USE_RA_FSP_ADC_B
+	bool
+	help
+	  Enable RX FSP ADC-B driver
 
 endif # HAS_RENESAS_RA_FSP
 
@@ -536,3 +551,12 @@ config USE_RX_RDP_LPC
 	  Enable RX RDP LPC driver
 
 endif # HAS_RENESAS_RX_RDP
+
+if HAS_RENESAS_RX_FSP
+
+config USE_RX_FSP_SCI_B_UART
+	bool
+	help
+	  Enable RX FSP SCI-B UART driver
+
+endif # HAS_RENESAS_RX_FSP

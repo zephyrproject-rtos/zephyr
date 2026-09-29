@@ -88,7 +88,7 @@ static DEVICE_API(uart, uart_mtk_driver_api) = {
 		.clock_freq = DT_INST_PROP(n, clock_frequency),                                    \
 		UART_CLOCK_INIT(n) UART_PINCTRL_INIT(n) UART_IRQ_CONFIG_INIT(n)};                  \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &uart_mtk_init, NULL, &uart_mtk_data_##n, &uart_mtk_config_##n,   \
+	DEVICE_DT_INST_DEFINE(n, uart_mtk_init, NULL, &uart_mtk_data_##n, &uart_mtk_config_##n,    \
 			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, &uart_mtk_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_INIT)

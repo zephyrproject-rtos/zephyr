@@ -3,6 +3,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+&cpuapp_mram {
+	reg = <0x0 DT_SIZE_K(3960)>;
+	ranges = <0x0 0x0 DT_SIZE_K(3960)>;
+
+	/delete-node/ partitions;
+};
+
+&cpuapp_sram {
+	/* ranges is kept so that ram03_sram still translates to 0x200e0000 */
+	reg = <0x0 DT_SIZE_K(896)>;
+};
+
 &ram03_sram {
 	cpuflpr_sram_code_data: sram@0 {
 		compatible = "mmio-sram";
@@ -17,7 +29,7 @@
 		reg = <0x3de000 DT_SIZE_K(116)>;
 		ranges = <0x0 0x3de000 DT_SIZE_K(116)>;
 		erase-block-size = <4096>;
-		write-block-size = <4>;
+		write-block-size = <16>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 	};
@@ -35,3 +47,6 @@
 &cpuapp_vevif_tx {
 	status = "okay";
 };
+
+#define WITH_FLPR_PARTITIONS
+#include <vendor/nordic/nrf7120_cpuapp_partition.dtsi>

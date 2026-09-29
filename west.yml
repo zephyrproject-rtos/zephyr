@@ -168,7 +168,7 @@ manifest:
         - hal
     - name: hal_bouffalolab
       path: modules/hal/bouffalolab
-      revision: 15b8a5f64cea87dcd247a2a5edd8b2ed51fa8ff4
+      revision: 577b219696191f7715ac772e265b14108ecc49a5
       groups:
         - hal
     - name: hal_espressif
@@ -203,7 +203,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 153373591c84109bbca866381e213ec09809cdd2
+      revision: 58c060befc11f3029212bf4246fd3ca471328861
       path: modules/hal/nordic
       groups:
         - hal
@@ -213,7 +213,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: c315d71fefbd809e59c66de88efb088a23128610
+      revision: a2e2237465e4d5d6d21b30dbbe365a78eccc241a
       path: modules/hal/nxp
       groups:
         - hal
@@ -235,7 +235,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 3d41a40a7d71849c67ccce16444f9783941c9f16
+      revision: a843129f7cb8d048bcb9bcd46bbfebf66b9cbe7c
       groups:
         - hal
     - name: hal_rpi_pico
@@ -330,7 +330,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: aa32eaaad41cc345e6f6e6633368a4766fe23c25
+      revision: c85af35b875d244cf91f8ec3caa04168fc7f1ec1
       path: bootloader/mcuboot
       groups:
         - bootloader
@@ -362,7 +362,7 @@ manifest:
       revision: 01032a8a7bdfdd541686f5dfa3671e602b9fcbff
       path: modules/lib/open-amp
     - name: openthread
-      revision: e4d97681c53ec1cc34af1404ad2960adda4ba691
+      revision: 4a8d33459567cc611bf9d4d810c2201a24a64d84
       path: modules/lib/openthread
     - name: percepio
       path: modules/debug/percepio
@@ -403,7 +403,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: 887ce63ea249036ea87f37f0313364332bb55fae
+      revision: b01f190e46afcb02b7f240d2b3ab961d6bca6c24
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
@@ -414,7 +414,7 @@ manifest:
       revision: 9164bd18dcd88ff9d9ef98279501fc1093571017
       path: modules/lib/zcbor
     - name: zephyr-xenlib
-      revision: 7f0884563f865a2a223f26dd0d847fb0faad397d
+      revision: 8b13d0b709314b7de6cb5877c286d52e71095cc8
       path: modules/lib/zephyr-xenlib
   # zephyr-keep-sorted-stop
 

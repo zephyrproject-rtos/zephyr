@@ -98,6 +98,7 @@
 		led0 = &red_led;
 		led1 = &blue_led;
 		sw0 = &user_button;
+		ext-nor0 = &ext_flash_ctrl;
 	};
 };
 
@@ -212,7 +213,8 @@ st_cam_i2c: &i2c4 {
 		power-up-delay = <100>;
 		num-auto-refresh = <8>;
 		mode-register = <0x220>;
-		refresh-rate = <0x603>;
+		/* 64 ms / 4096 rows x 93.3 MHz SDCLK (HCLK3 / 3) - 20 */
+		refresh-rate = <1438>;
 
 		bank@1 {
 			reg = <1>;
@@ -277,6 +279,12 @@ st_cam_i2c: &i2c4 {
 };
 
 &octospi1 {
+	compatible = "st,stm32-ospi-controller";
+	status = "okay";
+	clock-frequency = <DT_FREQ_M(50)>;
+	op-mode = "MSPI_OP_MODE_CONTROLLER";
+	duplex = "MSPI_HALF_DUPLEX";
+	dqs-support;
 	pinctrl-0 = <&octospim_p1_clk_pb2 &octospim_p1_ncs_pg6
 		     &octospim_p1_io0_pd11 &octospim_p1_io1_pf9
 		     &octospim_p1_io2_pf7 &octospim_p1_io3_pf6
@@ -284,17 +292,28 @@ st_cam_i2c: &i2c4 {
 		     &octospim_p1_io6_pg9 &octospim_p1_io7_pd7
 		     &octospim_p1_dqs_pc5>;
 	pinctrl-names = "default";
+	st,io-low-port = "IOPORT_1_LOW";
+	st,io-high-port = "IOPORT_1_HIGH";
+	st,clk-port = <1>;
+	st,dqs-port = <1>;
+	st,ncs-port = <1>;
 
-	status = "okay";
-
-	mx25lm51245: ospi-nor-flash@0 {
-		compatible = "st,stm32-ospi-nor";
+	ext_flash_ctrl: nor-flash-controller@0 {
+		compatible = "mxicy,mx25u", "jedec,nor";
 		reg = <0>;
-		size = <DT_SIZE_M(512)>; /* 512 Megabits */
-		ospi-max-frequency = <DT_FREQ_M(50)>;
-		spi-bus-width = <OSPI_OPI_MODE>;
-		data-rate = <OSPI_DTR_TRANSFER>;
+		size = <DT_SIZE_M(512)>; /* 512 Mbits */
 		status = "okay";
+
+		mspi-max-frequency = <DT_FREQ_M(50)>;
+		mspi-io-mode = "MSPI_IO_MODE_OCTAL";
+		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+		mspi-hardware-ce-num = <0>;
+
+		read-command = <0xec13>;
+		write-command = <0x12ed>;
+		command-length = "INSTR_2_BYTE";
+		rx-dummy = <20>;
+		jedec-id = [c2 85 3a]; /* MX25LM51245 */
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -302,8 +321,8 @@ st_cam_i2c: &i2c4 {
 			#size-cells = <1>;
 
 			partition@0 {
-				label = "nor";
-				reg = <0x00000000 DT_SIZE_M(4)>;
+				label = "storage";
+				reg = <0x0 DT_SIZE_M(64)>;
 			};
 		};
 	};

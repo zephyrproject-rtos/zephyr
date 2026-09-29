@@ -4218,7 +4218,7 @@ Microchip RISC-V Platforms:
   labels:
     - "platform: Microchip RISC-V"
 
-Microchip SAM Platforms:
+Microchip SAM MCU Platforms:
   status: maintained
   maintainers:
     - nandojve
@@ -4231,17 +4231,33 @@ Microchip SAM Platforms:
     - stephanosio
   files:
     - boards/atmel/
-    - boards/microchip/sam/
+    - boards/microchip/sam/sam_*/
     - dts/arm/atmel/
-    - dts/arm/microchip/sam/
+    - dts/arm/microchip/sam/sam_*/
     - soc/atmel/
-    - soc/microchip/sam/sama*/
+    - soc/microchip/sam/sam_*/
     - drivers/*/*sam*
     - dts/bindings/*/atmel,*
     - include/zephyr/*/*/*sam*
     - include/zephyr/*/*/*atmel*
   labels:
-    - "platform: Microchip SAM"
+    - "platform: Microchip SAM MCU"
+
+Microchip SAM MPU Platforms:
+  status: maintained
+  maintainers:
+    - TonyHan11
+  collaborators:
+    - MCHP-MPU-Solutions-SHA
+    - nandojve
+  files:
+    - boards/microchip/sam/sama*/
+    - dts/arm/microchip/sam/sam9/
+    - dts/arm/microchip/sam/sama*/
+    - soc/microchip/sam/common/
+    - soc/microchip/sam/sama*/
+  labels:
+    - "platform: Microchip SAM MPU"
 
 Microchip SmartFusion2 platform:
   status: maintained
@@ -5130,9 +5146,11 @@ Networking:
     - include/zephyr/net/gptp.h
     - samples/net/ethernet/gptp/
     - subsys/net/l2/ethernet/gptp/
+    - tests/net/gptp/
   labels:
     - "area: Networking"
   tests:
+    - net.gptp
     - sample.net.gptp
 
 Nuvoton NPCM Platforms:
@@ -5380,6 +5398,26 @@ Power management:
     - pm
     - drivers.power_domain.build
     - sample.power
+
+Precision Timing:
+  status: maintained
+  maintainers:
+    - DBS06
+    - yangbolu1991
+  collaborators:
+    - awojasinski
+    - jukkar
+  files:
+    - include/zephyr/precision_timing/
+    - samples/subsys/precision_timing/
+    - subsys/precision_timing/
+    - tests/subsys/precision_timing/
+    - doc/kernel/precision_timing.rst
+  labels:
+    - "area: Precision Timing"
+  tests:
+    - sample.subsys.precision_timing
+    - subsys.precision_timing
 
 QNX Hypervisor Platforms:
   status: maintained
@@ -7918,6 +7956,25 @@ hawkBit:
     - "area: hawkBit"
   tests:
     - sample.net.hawkbit
+
+"mgmt: fota_http":
+  status: maintained
+  maintainers:
+    - sylvioalves
+  files:
+    - subsys/mgmt/fota_http/
+    - include/zephyr/mgmt/fota_http.h
+    - samples/subsys/mgmt/fota_http/
+    - tests/subsys/mgmt/fota_http/
+    - doc/services/device_mgmt/fota_http.rst
+  labels:
+    - "area: FOTA HTTP"
+  description: >-
+    Firmware Over-the-Air over HTTP or HTTPS into the MCUboot
+    secondary slot
+  tests:
+    - sample.mgmt.fota_http
+    - mgmt.fota_http
 
 "mgmt: updatehub":
   status: maintained

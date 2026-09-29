@@ -1538,8 +1538,8 @@
 				reg = <0x54020000 0x400>;
 				interrupts = <40 0>;
 				clocks = <&rcc STM32_CLOCK(AHB3, 0)>;
-				nist-config = <0xf00d00>;
-				health-test-config = <0xaac7>;
+				nist-config = <0x8f00f00>;
+				health-test-config = <0x6a93>;
 				status = "disabled";
 			};
 
@@ -1754,6 +1754,19 @@
 		vddio5 {
 			domain = <STM32_DT_IOCELL_VDDIO5>;
 		};
+	};
+
+	vbat: vbat {
+		compatible = "st,stm32-vbat";
+		ratio = <4>;
+		io-channels = <&adc2 16>;
+		status = "disabled";
+	};
+
+	vddcore: vddcore {
+		compatible = "st,stm32-vddcore";
+		io-channels = <&adc2 17>;
+		status = "disabled";
 	};
 };
 

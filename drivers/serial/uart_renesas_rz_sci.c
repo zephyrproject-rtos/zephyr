@@ -144,7 +144,9 @@ static int uart_rz_sci_apply_config(const struct device *dev)
 
 	sci_baud_setting_t baud_setting;
 	sci_uart_extended_cfg_t *fsp_config_extend = (sci_uart_extended_cfg_t *)fsp_cfg->p_extend;
-
+#if defined(CONFIG_SOC_SERIES_RZG3E)
+	baud_setting.clock_source = SCI_B_UART_SOURCE_CLOCK_PCLK;
+#endif
 	fsp_err_t fsp_err;
 #if defined(CONFIG_UART_RENESAS_RZ_SCI_B)
 	uint32_t baud_rate = uart_config->baudrate;
@@ -514,10 +516,10 @@ static int uart_rz_init(const struct device *dev)
 				.assertion_time = 1,                                               \
 				.negation_time = 1,                                                \
 			},                                                                         \
+		.p_reg = (void *)DT_REG_ADDR(SCI_NODE(n)),                                         \
 		COND_CODE_1(CONFIG_UART_RENESAS_RZ_SCI_B,                                          \
-			(.half_data_setting = {.enable = 0},                                       \
-			 .p_reg = (void *)DT_REG_ADDR(SCI_NODE(n))),                               \
-			(.clock_source = SCI_UART_CLOCK_SOURCE_SCI0ASYNCCLK)) };  \
+			(.half_data_setting = {.enable = 0}),                                      \
+			(.clock_source = SCI_UART_CLOCK_SOURCE_SCI0ASYNCCLK)) };                \
 	static uart_cfg_t g_uart##n##_cfg = {                                                      \
 		.channel = DT_PROP(SCI_NODE(n), channel),                                          \
 		.p_extend = &g_uart##n##_cfg_extend,                                               \
@@ -535,7 +537,7 @@ static int uart_rz_init(const struct device *dev)
 			 .p_callback = uart_rz_sci_event_handler,                                  \
 			 .p_context = (void *)DEVICE_DT_INST_GET(n),)) };                          \
 	PINCTRL_DT_DEFINE(SCI_NODE(n));                                                            \
-	static struct uart_rz_sci_config uart_rz_config_##n = {                                    \
+	static const struct uart_rz_sci_config uart_rz_config_##n = {                              \
 		.pin_config = PINCTRL_DT_DEV_CONFIG_GET(SCI_NODE(n)),                              \
 		COND_CODE_1(CONFIG_UART_RENESAS_RZ_SCI_B,                      \
 			(.fsp_api = &g_uart_on_sci_b),                         \
@@ -562,7 +564,7 @@ static int uart_rz_init(const struct device *dev)
 			(UART_RZ_CONFIG_FUNC(n);))                        \
 		return uart_rz_init(dev);                                                          \
 	}                                                                                          \
-	DEVICE_DT_INST_DEFINE(n, &uart_rz_init_##n, NULL, &uart_rz_sci_data_##n,                   \
+	DEVICE_DT_INST_DEFINE(n, uart_rz_init_##n, NULL, &uart_rz_sci_data_##n,                    \
 			      &uart_rz_config_##n, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,      \
 			      &uart_rz_sci_driver_api);
 
