@@ -86,6 +86,12 @@ struct spi_esp32_data {
 #endif
 	uint8_t dfs;
 	uint32_t clock_source_hz;
+	/* Chunk on the wire, finished by spi_esp32_transfer_finish() */
+	bool chunk_active;
+	uint8_t *chunk_tx_temp;
+	uint8_t *chunk_rx_temp;
+	size_t chunk_len_bytes;
+	size_t chunk_len_frames;
 #if CONFIG_PM
 	bool pm_policy_state_on;
 #endif
