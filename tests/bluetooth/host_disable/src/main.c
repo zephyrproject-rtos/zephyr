@@ -234,6 +234,9 @@ static k_timeout_t disconnect_rsp_delay;
 static uint8_t disconnect_status;
 static uint16_t disconnect_handle;
 
+/* Whether the transport was still open when the disconnect command arrived */
+static bool disconnect_before_close;
+
 /* The controller accepts the command and the connection is gone, unless it is
  * to reject the command.
  */
@@ -283,7 +286,15 @@ static void cmd_handle(const struct device *dev, struct net_buf *cmd)
 
 		disconnect_count++;
 		disconnect_handle = cp->handle;
-		(void)k_work_schedule(&disconnect_rsp_work, disconnect_rsp_delay);
+		disconnect_before_close = (close_count == 0U);
+
+		/* K_FOREVER: the response does not make it before the transport
+		 * is closed, after which the driver delivers nothing.
+		 */
+		if (!K_TIMEOUT_EQ(disconnect_rsp_delay, K_FOREVER)) {
+			(void)k_work_schedule(&disconnect_rsp_work, disconnect_rsp_delay);
+		}
+
 		return;
 	}
 
@@ -699,6 +710,85 @@ static ZTEST(bt_disable, test_data_sent_during_disable)
 	 * let go of, so that a new one can be had.
 	 */
 	reset_rsp_delay = K_NO_WAIT;
+	zassert_ok(bt_enable(NULL), "Bluetooth init after a disable failed");
+	connect_as_peripheral();
+
+	zassert_ok(bt_disable(), "Bluetooth disable failed");
+	bt_conn_unref(test_conn);
+	test_conn = NULL;
+}
+
+/* The application disconnects from a thread of its own. It cannot be the
+ * system workqueue, which delivers the delayed responses of the controller here
+ * and must not be held up by a call that waits for one.
+ */
+static K_THREAD_STACK_DEFINE(app_stack, 1024);
+static struct k_work_q app_workq;
+static K_SEM_DEFINE(disconnect_returned, 0, 1);
+static int disconnect_err;
+static int64_t disconnect_return_time;
+
+static void disconnect_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	disconnect_err = bt_conn_disconnect(test_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	disconnect_return_time = k_uptime_get();
+	k_sem_give(&disconnect_returned);
+}
+
+static K_WORK_DELAYABLE_DEFINE(disconnect_work, disconnect_handler);
+
+/* A command that another thread sends while bt_disable() waits for the reset is
+ * transmitted once the controller has responded to the reset, and is on its way
+ * when bt_disable() closes the transport. Its sender must be told that it
+ * failed, there and then: the response that it waits for cannot come.
+ */
+static ZTEST(bt_disable, test_command_in_flight_at_close)
+{
+	static bool started;
+	int64_t start;
+
+	if (IS_ENABLED(CONFIG_TEST_DRIVER_NO_CLOSE)) {
+		ztest_test_skip();
+	}
+
+	if (!started) {
+		k_work_queue_init(&app_workq);
+		k_work_queue_start(&app_workq, app_stack, K_THREAD_STACK_SIZEOF(app_stack),
+				   K_PRIO_PREEMPT(1), NULL);
+		started = true;
+	}
+
+	connect_as_peripheral();
+
+	reset_rsp_delay = K_MSEC(20);
+	disconnect_rsp_delay = K_FOREVER;
+	disconnect_before_close = false;
+	k_sem_reset(&disconnect_returned);
+	(void)k_work_schedule_for_queue(&app_workq, &disconnect_work, K_MSEC(10));
+
+	start = k_uptime_get();
+	zassert_ok(bt_disable(), "Bluetooth disable failed");
+
+	zassert_equal(disconnect_count, 1U, "The controller got %u disconnect commands",
+		      disconnect_count);
+	zassert_true(disconnect_before_close,
+		     "The disconnect command was sent after the transport was closed");
+
+	zassert_ok(k_sem_take(&disconnect_returned, K_SECONDS(1)),
+		   "bt_conn_disconnect() did not return");
+	zassert_true(disconnect_return_time - start < MSEC_PER_SEC,
+		     "bt_conn_disconnect() returned after %lld ms", disconnect_return_time - start);
+	zassert_equal(disconnect_err, -EIO, "bt_conn_disconnect() gave %d (!= %d)", disconnect_err,
+		      -EIO);
+
+	bt_conn_unref(test_conn);
+	test_conn = NULL;
+
+	/* Bluetooth comes up again and connects */
+	reset_rsp_delay = K_NO_WAIT;
+	disconnect_rsp_delay = K_NO_WAIT;
 	zassert_ok(bt_enable(NULL), "Bluetooth init after a disable failed");
 	connect_as_peripheral();
 
