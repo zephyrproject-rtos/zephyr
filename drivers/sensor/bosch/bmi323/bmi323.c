@@ -997,7 +997,7 @@ static int bosch_bmi323_driver_api_fetch_temperature(const struct device *dev)
 
 	data->temperature_valid = (ret == 0);
 
-	return 0;
+	return ret;
 }
 
 static int bosch_bmi323_fetch_all_channels(const struct device *dev)
