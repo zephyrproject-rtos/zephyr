@@ -972,6 +972,14 @@ struct bt_hci_cp_write_current_iac_lap {
 	struct bt_hci_iac_lap lap[0];
 } __packed;
 
+/** HCI opcode for Set AFH Host Channel Classification. */
+#define BT_HCI_OP_SET_AFH_HOST_CHAN_CLASSIF     BT_OP(BT_OGF_BASEBAND, 0x003f) /* 0x0c3f */
+/** HCI command parameters for Set AFH Host Channel Classification. */
+struct bt_hci_cp_set_afh_host_chan_classif {
+	/** AFH host channel classification. */
+	uint8_t chan_map[10];
+} __packed;
+
 /** HCI opcode for Write Inquiry Scan Type. */
 #define BT_HCI_OP_WRITE_INQUIRY_SCAN_TYPE       BT_OP(BT_OGF_BASEBAND, 0x0043) /* 0x0c43 */
 /** HCI command parameters for Write Inquiry Scan Type. */
