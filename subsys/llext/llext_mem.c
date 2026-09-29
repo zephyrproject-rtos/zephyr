@@ -66,6 +66,155 @@ static void llext_init_mem_part(struct llext *ext, enum llext_mem mem_idx,
 	LOG_DBG("region %d: start %#zx, size %zd", mem_idx, (size_t)start, len);
 }
 
+static bool llext_ptr_in_dyn_image(const struct llext *ext, const void *ptr)
+{
+	uintptr_t addr = (uintptr_t)ptr;
+
+	return ext->dyn_base != 0 && addr >= ext->dyn_base && addr < ext->dyn_base + ext->dyn_span;
+}
+
+static bool llext_et_dyn_program_region(enum llext_mem mem_idx)
+{
+	switch (mem_idx) {
+	case LLEXT_MEM_TEXT:
+	case LLEXT_MEM_DATA:
+	case LLEXT_MEM_RODATA:
+	case LLEXT_MEM_BSS:
+	case LLEXT_MEM_EXPORT:
+	case LLEXT_MEM_PREINIT:
+	case LLEXT_MEM_INIT:
+	case LLEXT_MEM_FINI:
+		return true;
+	default:
+		return false;
+	}
+}
+
+static int llext_write_region(struct llext_loader *ldr, struct llext *ext, enum llext_mem mem_idx)
+{
+	elf_shdr_t *region = ldr->sects + mem_idx;
+	uintptr_t base = (uintptr_t)ext->mem[mem_idx];
+	size_t offset = region->sh_offset;
+	size_t length = region->sh_size;
+	int ret;
+
+	if (region->sh_type == SHT_NOBITS) {
+		memset(ext->mem[mem_idx], 0, region->sh_size);
+		return 0;
+	}
+
+	if (region->sh_flags & SHF_ALLOC) {
+		size_t prepad = region->sh_info;
+
+		memset((void *)base, 0, prepad);
+		base += prepad;
+		offset += prepad;
+		length -= prepad;
+	}
+
+	ret = llext_seek(ldr, offset);
+	if (ret != 0) {
+		return ret;
+	}
+
+	return llext_read(ldr, (void *)base, length);
+}
+
+/* One buffer, so PC-relative text-to-GOT distances stay intact. */
+static int llext_prepare_et_dyn_image(struct llext_loader *ldr, struct llext *ext)
+{
+	uintptr_t vma_lo = UINTPTR_MAX;
+	uintptr_t vma_hi = 0;
+	size_t align = 4;
+
+	if (IS_ENABLED(CONFIG_HARVARD)) {
+		LOG_ERR("ET_DYN shared libraries are not supported on Harvard architectures");
+		return -ENOTSUP;
+	}
+
+	for (enum llext_mem mem_idx = 0; mem_idx < LLEXT_MEM_COUNT; mem_idx++) {
+		elf_shdr_t *region = ldr->sects + mem_idx;
+
+		if (!llext_et_dyn_program_region(mem_idx) || region->sh_type == SHT_NULL ||
+		    region->sh_size == 0 || !(region->sh_flags & SHF_ALLOC)) {
+			continue;
+		}
+
+		if (region->sh_addr < vma_lo) {
+			vma_lo = region->sh_addr;
+		}
+		if (region->sh_addr + region->sh_size > vma_hi) {
+			vma_hi = region->sh_addr + region->sh_size;
+		}
+		if (region->sh_addralign > align) {
+			align = region->sh_addralign;
+		}
+	}
+
+	if (vma_lo == UINTPTR_MAX || vma_hi <= vma_lo) {
+		LOG_ERR("ET_DYN file has no allocatable program sections");
+		return -ENOEXEC;
+	}
+
+	/* ADRP and MMU updates need the link VMA's page offset. */
+	if (IS_ENABLED(CONFIG_ARM64) && align < 4096U) {
+		align = 4096U;
+	}
+#ifdef CONFIG_MMU
+	if (align < LLEXT_PAGE_SIZE) {
+		align = LLEXT_PAGE_SIZE;
+	}
+#endif
+	uintptr_t map_lo = ROUND_DOWN(vma_lo, align);
+
+	size_t span = (size_t)(vma_hi - map_lo);
+#ifdef CONFIG_MMU
+	/* Permission updates cover whole pages. Own that tail padding. */
+	span = ROUND_UP(span, LLEXT_PAGE_SIZE);
+#endif
+	size_t bytes = span;
+
+#ifdef CONFIG_LLEXT_HEAP_MEMBLK
+	bytes = ROUND_UP(bytes, CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE);
+#endif
+
+	void *raw = llext_aligned_alloc_instr(ext, align, bytes);
+
+	if (raw == NULL) {
+		LOG_ERR("Failed to allocate %zu bytes for ET_DYN image", bytes);
+		return -ENOMEM;
+	}
+
+	/* Aligned alloc already matches map_lo's congruence class (0 mod align). */
+	uintptr_t base = (uintptr_t)raw;
+
+	memset((void *)base, 0, span);
+
+	ext->dyn_image = raw;
+	ext->dyn_base = base;
+	ext->dyn_link = map_lo;
+	ext->dyn_span = span;
+	ext->alloc_size += bytes;
+
+	for (enum llext_mem mem_idx = 0; mem_idx < LLEXT_MEM_COUNT; mem_idx++) {
+		elf_shdr_t *region = ldr->sects + mem_idx;
+
+		if (!llext_et_dyn_program_region(mem_idx) || region->sh_type == SHT_NULL ||
+		    region->sh_size == 0 || !(region->sh_flags & SHF_ALLOC)) {
+			continue;
+		}
+
+		ext->mem[mem_idx] = (uint8_t *)base + (region->sh_addr - map_lo);
+		ext->mem_size[mem_idx] = region->sh_size;
+		ext->mem_on_heap[mem_idx] = false;
+	}
+
+	LOG_DBG("ET_DYN image base %p span %#zx (linked VMA %#zx)",
+		(void *)base, span, (size_t)vma_lo);
+
+	return 0;
+}
+
 static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 			      enum llext_mem mem_idx, const struct llext_load_param *ldr_parm)
 {
@@ -77,6 +226,13 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 	if (!region_alloc) {
 		return 0;
 	}
+
+	if (llext_ptr_in_dyn_image(ext, ext->mem[mem_idx])) {
+		ext->mem_size[mem_idx] = region->sh_size;
+		llext_init_mem_part(ext, mem_idx, (uintptr_t)ext->mem[mem_idx], region->sh_size);
+		return llext_write_region(ldr, ext, mem_idx);
+	}
+
 	ext->mem_size[mem_idx] = region_alloc;
 
 	/*
@@ -211,33 +367,9 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 	llext_init_mem_part(ext, mem_idx, (uintptr_t)ext->mem[mem_idx],
 		region_alloc);
 
-	if (region->sh_type == SHT_NOBITS) {
-		memset(ext->mem[mem_idx], 0, region->sh_size);
-	} else {
-		uintptr_t base = (uintptr_t)ext->mem[mem_idx];
-		size_t offset = region->sh_offset;
-		size_t length = region->sh_size;
-
-		if (region->sh_flags & SHF_ALLOC) {
-			/* zero out any prepad bytes, not part of the data area */
-			size_t prepad = region->sh_info;
-
-			memset((void *)base, 0, prepad);
-			base += prepad;
-			offset += prepad;
-			length -= prepad;
-		}
-
-		/* actual data area without prepad bytes */
-		ret = llext_seek(ldr, offset);
-		if (ret != 0) {
-			goto err;
-		}
-
-		ret = llext_read(ldr, (void *)base, length);
-		if (ret != 0) {
-			goto err;
-		}
+	ret = llext_write_region(ldr, ext, mem_idx);
+	if (ret != 0) {
+		goto err;
 	}
 
 	ext->mem_on_heap[mem_idx] = true;
@@ -271,9 +403,18 @@ int llext_copy_strings(struct llext_loader *ldr, struct llext *ext,
 int llext_copy_regions(struct llext_loader *ldr, struct llext *ext,
 		       const struct llext_load_param *ldr_parm)
 {
+	/* Xtensa uses its own PLT path and may be Harvard. */
+	if (!IS_ENABLED(CONFIG_XTENSA) && ldr->hdr.e_type == ET_DYN && !ldr_parm->pre_located) {
+		int ret = llext_prepare_et_dyn_image(ldr, ext);
+
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
 	for (enum llext_mem mem_idx = 0; mem_idx < LLEXT_MEM_COUNT; mem_idx++) {
 		/* strings have already been copied */
-		if (ext->mem[mem_idx]) {
+		if (ext->mem[mem_idx] && !llext_ptr_in_dyn_image(ext, ext->mem[mem_idx])) {
 			continue;
 		}
 
@@ -317,6 +458,42 @@ void llext_adjust_mmu_permissions(struct llext *ext)
 	size_t size;
 	uint32_t flags;
 
+	/* AArch64 will not execute a writable page. */
+	if (ext->dyn_base != 0U) {
+		uintptr_t image = ext->dyn_base;
+		uintptr_t image_end = image + ROUND_UP(ext->dyn_span, LLEXT_PAGE_SIZE);
+		uintptr_t text = (uintptr_t)ext->mem[LLEXT_MEM_TEXT];
+		uintptr_t text_end = text + ext->mem_size[LLEXT_MEM_TEXT];
+		uintptr_t data = (uintptr_t)ext->mem[LLEXT_MEM_DATA];
+		uintptr_t data_end = data + ext->mem_size[LLEXT_MEM_DATA];
+		uintptr_t bss = (uintptr_t)ext->mem[LLEXT_MEM_BSS];
+		uintptr_t bss_end = bss + ext->mem_size[LLEXT_MEM_BSS];
+
+		for (uintptr_t page = image; page < image_end; page += LLEXT_PAGE_SIZE) {
+			uintptr_t page_end = page + LLEXT_PAGE_SIZE;
+			bool exec = text != 0U && page < text_end && page_end > text;
+			bool write = (data != 0U && page < data_end && page_end > data) ||
+				     (bss != 0U && page < bss_end && page_end > bss);
+
+			if (exec && write) {
+				LOG_ERR("ET_DYN page %p is both executable and writable",
+					(void *)page);
+				exec = false;
+			}
+
+			flags = exec ? K_MEM_PERM_EXEC : K_MEM_PERM_RW;
+			addr = (void *)page;
+			sys_cache_data_flush_range(addr, LLEXT_PAGE_SIZE);
+			if (exec) {
+				sys_cache_instr_invd_range(addr, LLEXT_PAGE_SIZE);
+			}
+			k_mem_update_flags(addr, LLEXT_PAGE_SIZE, flags);
+		}
+
+		ext->mmu_permissions_set = true;
+		return;
+	}
+
 	for (enum llext_mem mem_idx = 0; mem_idx < LLEXT_MEM_PARTITIONS; mem_idx++) {
 		addr = ext->mem[mem_idx];
 		size = ROUND_UP(ext->mem_size[mem_idx], LLEXT_PAGE_SIZE);
@@ -359,6 +536,7 @@ void llext_free_regions(struct llext *ext)
 	for (int i = 0; i < LLEXT_MEM_COUNT; i++) {
 #ifdef CONFIG_MMU
 		if (ext->mmu_permissions_set && ext->mem_size[i] != 0 &&
+		    !llext_ptr_in_dyn_image(ext, ext->mem[i]) &&
 		    (i == LLEXT_MEM_TEXT || i == LLEXT_MEM_RODATA
 #ifdef CONFIG_LLEXT_VENEERS
 		     || i == LLEXT_MEM_VENEER
@@ -385,6 +563,22 @@ void llext_free_regions(struct llext *ext)
 
 			ext->mem[i] = NULL;
 		}
+	}
+
+	if (ext->dyn_image != NULL) {
+		LOG_DBG("freeing ET_DYN image");
+#ifdef CONFIG_MMU
+		if (ext->mmu_permissions_set && ext->dyn_base != 0U) {
+			k_mem_update_flags((void *)ext->dyn_base,
+					   ROUND_UP(ext->dyn_span, LLEXT_PAGE_SIZE),
+					   K_MEM_PERM_RW);
+		}
+#endif
+		llext_free_instr(ext, ext->dyn_image);
+		ext->dyn_image = NULL;
+		ext->dyn_base = 0;
+		ext->dyn_link = 0;
+		ext->dyn_span = 0;
 	}
 
 	llext_heap_reset(ext);
