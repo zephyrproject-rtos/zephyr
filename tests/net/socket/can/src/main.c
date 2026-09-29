@@ -8,9 +8,11 @@
 #include <errno.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/net/net_if.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/socketcan.h>
 #include <zephyr/net/socketcan_utils.h>
+#include <zephyr/sys/fdtable.h>
 #include <zephyr/ztest.h>
 
 LOG_MODULE_REGISTER(socket_can, LOG_LEVEL_ERR);
@@ -207,5 +209,96 @@ ZTEST(socket_can_unbound, test_getsockopt_filter)
 
 ZTEST_SUITE(socket_can_unbound, NULL, NULL, socket_can_unbound_before, socket_can_unbound_after,
 	    NULL);
+
+#define WAITER_JOIN_TIMEOUT K_MSEC(100)
+
+static K_THREAD_STACK_DEFINE(waiter_stack, 2048 + CONFIG_TEST_EXTRA_STACK_SIZE);
+static struct k_thread waiter_thread;
+static bool waiter_started;
+static int waiter_res;
+static int waiter_errno;
+
+static void recv_waiter(void *p1, void *p2, void *p3)
+{
+	struct socketcan_frame frame;
+
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	waiter_res = zsock_recv(fd, &frame, sizeof(frame), 0);
+	waiter_errno = errno;
+}
+
+static void start_waiter(k_thread_entry_t entry)
+{
+	waiter_started = true;
+	(void)k_thread_create(&waiter_thread, waiter_stack, K_THREAD_STACK_SIZEOF(waiter_stack),
+			      entry, NULL, NULL, NULL, k_thread_priority_get(k_current_get()) - 1,
+			      0, K_NO_WAIT);
+	k_yield();
+	zassert_equal(k_thread_join(&waiter_thread, K_NO_WAIT), -EBUSY, "the call did not block");
+}
+
+static void close_and_join(void)
+{
+	int closed = fd;
+	int again;
+
+	zassert_ok(zsock_close(fd), "close() failed (%d)", errno);
+	fd = -1;
+	zassert_ok(k_thread_join(&waiter_thread, WAITER_JOIN_TIMEOUT),
+		   "close() did not wake the call");
+	waiter_started = false;
+
+	again = zvfs_reserve_fd();
+	if (again >= 0) {
+		zvfs_free_fd(again);
+	}
+	zassert_equal(again, closed, "the woken call kept fd %d", closed);
+}
+
+static void socket_can_close_before(void *fixture)
+{
+	struct net_if *iface = net_if_get_first_by_type(&NET_L2_GET_NAME(CANBUS_RAW));
+	struct net_sockaddr_can addr = {
+		.can_family = NET_AF_CAN,
+	};
+
+	ARG_UNUSED(fixture);
+
+	zassert_not_null(iface, "no CAN interface");
+	addr.can_ifindex = net_if_get_by_iface(iface);
+
+	fd = zsock_socket(NET_AF_CAN, NET_SOCK_RAW, NET_CAN_RAW);
+	zassert_true(fd >= 0, "socket() failed (%d)", errno);
+	zassert_ok(zsock_bind(fd, (struct net_sockaddr *)&addr, sizeof(addr)), "bind() failed (%d)",
+		   errno);
+}
+
+static void socket_can_close_after(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	if (fd >= 0) {
+		(void)zsock_close(fd);
+		fd = -1;
+	}
+
+	if (waiter_started && (k_thread_join(&waiter_thread, WAITER_JOIN_TIMEOUT) != 0)) {
+		k_thread_abort(&waiter_thread);
+	}
+	waiter_started = false;
+}
+
+ZTEST(socket_can_close, test_recv_woken_by_close)
+{
+	start_waiter(recv_waiter);
+	close_and_join();
+	zassert_equal(waiter_res, -1, "recv() returned %d", waiter_res);
+	zassert_equal(waiter_errno, EINTR, "Unexpected errno (%d)", waiter_errno);
+}
+
+ZTEST_SUITE(socket_can_close, NULL, NULL, socket_can_close_before, socket_can_close_after, NULL);
 
 #endif /* CONFIG_NET_SOCKETS_CAN */
