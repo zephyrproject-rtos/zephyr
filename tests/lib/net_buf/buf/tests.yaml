@@ -3,3 +3,9 @@ tests:
     min_ram: 16
     tags:
       - net_buf
+  libraries.net_buf.buf.no_assert:
+    min_ram: 16
+    tags:
+      - net_buf
+    extra_configs:
+      - CONFIG_ASSERT=n
