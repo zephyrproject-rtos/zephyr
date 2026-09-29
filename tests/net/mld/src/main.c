@@ -504,6 +504,8 @@ struct mld_query_opts {
 	bool dest_opts;
 	/* Hop limit, 1 when 0 */
 	uint8_t hop_limit;
+	/* ICMPv6 type, a Multicast Listener Query when 0 */
+	uint8_t type;
 };
 
 /* Inject a Multicast Listener Query built from opts */
@@ -551,7 +553,7 @@ static void send_mld_query(struct net_if *iface, const struct mld_query_opts *op
 		net_pkt_set_ipv6_next_hdr(pkt, NET_IPPROTO_ICMPV6);
 	}
 
-	ret = net_icmpv6_create(pkt, NET_ICMPV6_MLD_QUERY, 0);
+	ret = net_icmpv6_create(pkt, opts->type != 0 ? opts->type : NET_ICMPV6_MLD_QUERY, 0);
 	zassert_false(ret, "Cannot create icmpv6 pkt");
 
 	zassert_ok(net_pkt_write_be16(pkt, opts->max_resp), "Failed to write");
@@ -1325,6 +1327,94 @@ ZTEST(net_mld_test_suite, test_leave_stops_retransmit)
 
 	k_msleep(1000 + WAIT_TIME);
 	zassert_equal(report_count, 2, "Expected two reports, got %d", report_count);
+}
+
+/* In MLDv1 mode a Version 1 Report from another listener cancels the pending
+ * response for that address (RFC 2710 ch 4).
+ */
+ZTEST(net_mld_test_suite, test_v1_report_suppresses_response)
+{
+	struct mld_query_opts opts = { .v1 = true, .max_resp = 1000 };
+
+	test_join_group();
+
+	k_sem_reset(&wait_data);
+	report_count = 0;
+	opts.dst = &mcast_addr;
+	opts.group = &mcast_addr;
+
+	send_mld_query(net_iface, &opts);
+	k_msleep(THREAD_SLEEP);
+
+	opts.max_resp = 0;
+	opts.type = NET_ICMPV6_MLDv1_REPORT;
+	send_mld_query(net_iface, &opts);
+	k_msleep(THREAD_SLEEP);
+
+	if (report_count != 0) {
+		/* Stalled so long that the response was due before the report */
+		test_leave_group();
+		ztest_test_skip();
+	}
+
+	k_msleep(1500);
+	zassert_equal(report_count, 0, "Response not suppressed, got %d", report_count);
+
+	test_leave_group();
+}
+
+/* A Version 1 Report that did not come from the link, here from a global
+ * source, does not suppress anything.
+ */
+ZTEST(net_mld_test_suite, test_v1_report_from_off_link_ignored)
+{
+	struct mld_query_opts opts = { .v1 = true, .max_resp = 500 };
+
+	test_join_group();
+
+	k_sem_reset(&wait_data);
+	report_count = 0;
+	opts.dst = &mcast_addr;
+	opts.group = &mcast_addr;
+
+	send_mld_query(net_iface, &opts);
+
+	opts.max_resp = 0;
+	opts.type = NET_ICMPV6_MLDv1_REPORT;
+	opts.src = &peer_addr;
+	send_mld_query(net_iface, &opts);
+
+	k_msleep(1000);
+	zassert_equal(report_count, 1, "Expected one report, got %d", report_count);
+
+	test_leave_group();
+}
+
+/* An MLDv2 host does not suppress its response when another listener reports
+ * with MLDv1 (RFC 3810 ch 8.2.2).
+ */
+ZTEST(net_mld_test_suite, test_v1_report_no_suppression_in_v2)
+{
+	struct mld_query_opts opts = { .max_resp = 500 };
+
+	test_join_group();
+
+	k_sem_reset(&wait_data);
+	report_count = 0;
+	opts.dst = &mcast_addr;
+	opts.group = &mcast_addr;
+
+	send_mld_query(net_iface, &opts);
+
+	opts.v1 = true;
+	opts.max_resp = 0;
+	opts.type = NET_ICMPV6_MLDv1_REPORT;
+	send_mld_query(net_iface, &opts);
+
+	k_msleep(1000);
+	zassert_equal(report_count, 1, "Expected one report, got %d", report_count);
+
+	test_leave_group();
 }
 
 /* A query must come from a link-local address (RFC 3810 ch 5.1.14) */
