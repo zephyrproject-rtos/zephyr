@@ -7,8 +7,8 @@
 #include <rakwireless/rak3172.dtsi>
 
 / {
-	model = "RAKWireless RAK3172 WisDuo LPWAN Module with a STM32WLE5CC SoC";
-	compatible = "stm32,rak3172_stm32wl";
+	model = "RAKwireless RAK3272S Breakout Board";
+	compatible = "rakwireless,rak3272s";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -19,22 +19,7 @@
 		zephyr,system-timer = &lptim1;
 	};
 
-	leds {
-		compatible = "gpio-leds";
-
-		blue_led: led_2 {
-			gpios = <&gpioa 1 GPIO_ACTIVE_HIGH>;
-			label = "Blue LED";
-		};
-
-		green_led: led_1 {
-			gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
-			label = "Green LED";
-		};
-	};
-
 	aliases {
-		led0 = &green_led;
 		lora0 = &lora;
 		watchdog0 = &iwdg;
 	};
