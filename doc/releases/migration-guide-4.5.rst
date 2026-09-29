@@ -2236,7 +2236,10 @@ Bluetooth HCI
   * Remove ``select BT_HCI_SETUP`` from the driver's Kconfig.
 
   The initialization then also runs in a build without a Host, where ``setup()`` was never
-  called.
+  called. With a Host it runs in the thread that calls :c:func:`bt_enable`, before that function
+  returns, also when a ready callback is passed; ``setup()`` ran from the system workqueue in
+  that case. This holds for every in-tree driver that implemented ``setup()``, as they have all
+  been converted.
 
 * The HCI driver :c:member:`bt_hci_driver_api.open` callback no longer has a ``recv`` parameter;
   rather the common HCI driver layer code takes care of managing this as part of the common
