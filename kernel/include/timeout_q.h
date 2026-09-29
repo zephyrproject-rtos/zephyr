@@ -120,10 +120,10 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
  */
 int z_try_abort_timeout(struct _timeout *to);
 
-/* True if @to is the currently in-flight timeout and a same-CPU aborter
- * has marked the slot as superseded. Handlers with non-idempotent side
- * effects (e.g. k_timer's expiry_fn) should call this at entry, after
- * taking their own lock, and bail if it returns true.
+/* True if @to is the currently in-flight timeout and an aborter has marked
+ * the slot as superseded. Handlers with non-idempotent side effects (e.g.
+ * k_timer's expiry_fn) should call this at entry, after taking their own
+ * lock, and bail if it returns true.
  */
 bool z_timeout_inflight_superseded(const struct _timeout *to);
 
