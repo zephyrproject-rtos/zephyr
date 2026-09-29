@@ -158,9 +158,15 @@ static void bflb_wpa_supp_deinit(void *if_priv)
 static int bflb_wpa_supp_scan2(void *if_priv, struct wpa_driver_scan_params *params)
 {
 	ARG_UNUSED(if_priv);
-	ARG_UNUSED(params);
 
-	return bflb_wifi_scan_start(&bflb_wifi);
+	for (size_t i = 0; (params != NULL) && (i < params->num_ssids); i++) {
+		if (params->ssids[i].ssid_len > 0U) {
+			return bflb_wifi_scan_start(&bflb_wifi, params->ssids[i].ssid,
+						    (uint8_t)params->ssids[i].ssid_len);
+		}
+	}
+
+	return bflb_wifi_scan_start(&bflb_wifi, NULL, 0);
 }
 
 static int bflb_wpa_supp_scan_abort(void *if_priv)
@@ -549,7 +555,8 @@ static int bflb_wpa_supp_get_capa(void *if_priv, struct wpa_driver_capa *capa)
 	capa->key_mgmt = WPA_DRIVER_CAPA_KEY_MGMT_WPA2 | WPA_DRIVER_CAPA_KEY_MGMT_WPA2_PSK |
 			 WPA_DRIVER_CAPA_KEY_MGMT_SAE;
 
-	capa->max_scan_ssids = 1;
+	/* Wildcard plus the connect target, so every connect scan protects the target. */
+	capa->max_scan_ssids = 2;
 
 	return 0;
 }
