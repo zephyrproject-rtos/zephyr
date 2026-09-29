@@ -285,6 +285,16 @@ int net_ipv6_mld_send_single(struct net_if *iface, const struct net_in6_addr *ad
  * @return Maximum Response Delay in milliseconds.
  */
 uint32_t net_ipv6_mld_max_resp_delay(uint16_t code, bool mldv2);
+
+/**
+ * @brief Report every multicast group listened to on the interface again
+ *
+ * Called when a link-local address becomes valid, as reports sent before
+ * that carried the unspecified source address (RFC 3810 ch 5.2.13).
+ *
+ * @param iface Network interface
+ */
+void net_ipv6_mld_report_all(struct net_if *iface);
 #else
 static inline int
 net_ipv6_mld_send_single(struct net_if *iface, const struct net_in6_addr *addr, uint8_t mode)
@@ -294,6 +304,10 @@ net_ipv6_mld_send_single(struct net_if *iface, const struct net_in6_addr *addr, 
 	ARG_UNUSED(mode);
 
 	return -ENOTSUP;
+}
+static inline void net_ipv6_mld_report_all(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
 }
 #endif /* CONFIG_NET_IPV6_MLD */
 
