@@ -196,7 +196,11 @@ static int usb_add_frame(const struct stream_rx *stream, int chn, uint32_t ts)
 	/* TODO: Add support for properly support the presentation delay.
 	 * For now we just send audio to USB as soon as we get it
 	 */
-	return usb_add_frame_to_usb(chan_alloc, lc3_rx_buf, sizeof(lc3_rx_buf), ts);
+	if (IS_ENABLED(CONFIG_USE_USB_AUDIO_OUTPUT)) {
+		return usb_add_frame_to_usb(chan_alloc, lc3_rx_buf, sizeof(lc3_rx_buf), ts);
+	}
+
+	return stereo_out_add_frame(chan_alloc, lc3_rx_buf, sizeof(lc3_rx_buf), ts);
 }
 
 static int codec_add_frame(const struct stream_rx *stream, int chn, uint32_t ts)
