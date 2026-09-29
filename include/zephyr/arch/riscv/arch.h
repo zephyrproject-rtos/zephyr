@@ -282,6 +282,12 @@ struct arch_mem_domain {
 
 extern void z_irq_spurious(const void *unused);
 
+#ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_IRQ_LOCK_OPS
+extern unsigned int z_soc_irq_lock(void);
+extern void z_soc_irq_unlock(unsigned int key);
+extern bool z_soc_irq_unlocked(unsigned int key);
+#endif
+
 /* Privilege-level abstraction for IRQ enable/disable CSR and bit */
 #ifdef CONFIG_RISCV_S_MODE
 /** @brief Name of the interrupt-status CSR as a string literal (S-mode) */
@@ -443,6 +449,28 @@ static ALWAYS_INLINE bool arch_cpu_irqs_are_enabled(void)
 	return (status & RV_STATUS_IE) != 0;
 #endif
 }
+
+#ifdef CONFIG_ZERO_LATENCY_IRQS
+static ALWAYS_INLINE unsigned int arch_zli_lock(void)
+{
+	unsigned int key;
+
+	__asm__ volatile ("csrrc %0, mstatus, %1"
+			  : "=r" (key)
+			  : "rK" (RV_STATUS_IE)
+			  : "memory");
+
+	return key;
+}
+
+static ALWAYS_INLINE void arch_zli_unlock(unsigned int key)
+{
+	__asm__ volatile ("csrs mstatus, %0"
+			  :
+			  : "r" (key & RV_STATUS_IE)
+			  : "memory");
+}
+#endif
 
 static ALWAYS_INLINE void arch_nop(void)
 {
