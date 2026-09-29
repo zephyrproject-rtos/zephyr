@@ -215,9 +215,6 @@ int voice_tx(const uint8_t *data, uint32_t len)
 	int err;
 	void *mem_block;
 
-	static bool tx_started;
-	static uint32_t tx_count;
-
 	if (len != (BLOCK_SIZE * 2)) {
 		printk("Invalid data len %u != %u\n", len, BLOCK_SIZE * 2);
 		return -EINVAL;
@@ -246,18 +243,7 @@ int voice_tx(const uint8_t *data, uint32_t len)
 		return err;
 	}
 
-	tx_count += 1;
-
-	/* Only start the TX when more than one frame wrote. */
-	if (!tx_started && tx_count > 1) {
-		err = i2s_trigger(voice_tx_dev, I2S_DIR_TX, I2S_TRIGGER_START);
-		if (err < 0) {
-			printk("Failed to trigger start on TX: %d\n", err);
-			return err;
-		}
-		tx_started = true;
-	}
-
+	(void)i2s_trigger(voice_tx_dev, I2S_DIR_TX, I2S_TRIGGER_START);
 	return 0;
 }
 
