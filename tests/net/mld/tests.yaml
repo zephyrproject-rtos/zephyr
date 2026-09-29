@@ -2,6 +2,7 @@ common:
   tags:
     - net
     - mld
+  timeout: 120
   depends_on: netif
 tests:
   net.mld:

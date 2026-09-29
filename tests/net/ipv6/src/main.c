@@ -493,6 +493,12 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 
 	icmp = get_icmp_hdr(pkt);
 
+	/* MLD reports are sent by the stack on its own and are not counted */
+	if (icmp->type == NET_ICMPV6_MLDv2 || icmp->type == NET_ICMPV6_MLDv1_REPORT ||
+	    icmp->type == NET_ICMPV6_MLDv1_DONE) {
+		return 0;
+	}
+
 	atomic_inc(&pkt_num);
 
 	/* Reply with RA message */
@@ -1187,6 +1193,24 @@ static void tx_pool_snapshot(struct tx_pool_snapshot *snap)
 
 	snap->pkts = (int)k_mem_slab_num_free_get(tx);
 	snap->bufs = (int)atomic_get(&tx_data->avail_count);
+
+	/* Messages the stack sends on its own, such as MLD reports, may be in
+	 * flight: sample again until two readings agree.
+	 */
+	for (int i = 0; i < 10; i++) {
+		int pkts, bufs;
+
+		k_sleep(K_MSEC(10));
+
+		pkts = (int)k_mem_slab_num_free_get(tx);
+		bufs = (int)atomic_get(&tx_data->avail_count);
+		if (pkts == snap->pkts && bufs == snap->bufs) {
+			break;
+		}
+
+		snap->pkts = pkts;
+		snap->bufs = bufs;
+	}
 }
 
 static void assert_tx_pool_restored(const struct tx_pool_snapshot *before)

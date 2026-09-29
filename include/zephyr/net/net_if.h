@@ -205,6 +205,16 @@ struct net_if_mcast_addr {
 	 *  this IPv6 group, never expiring when no response is pending.
 	 */
 	k_timepoint_t mld_resp_timeout;
+
+	/** Deadline of the next retransmission of the unsolicited MLD report
+	 *  of a join of this IPv6 group, never expiring when none is pending.
+	 */
+	k_timepoint_t mld_retx_timeout;
+
+	/** Retransmissions of the unsolicited MLD report of this IPv6 group
+	 *  left.
+	 */
+	uint8_t mld_retx_left;
 #endif
 
 #if defined(CONFIG_NET_IPV4_IGMPV3)

@@ -357,6 +357,18 @@ static void *test_mld_setup(void)
 	return NULL;
 }
 
+/* The unsolicited report of a join is retransmitted after a random delay,
+ * which would disturb the tests that count reports. Cancel the pending
+ * retransmissions and verify them in their own tests.
+ */
+static void cancel_retransmits(struct net_if *iface)
+{
+	ARRAY_FOR_EACH_PTR(iface->config.ip.ipv6->mcast, mcast) {
+		mcast->mld_retx_left = 0;
+		mcast->mld_retx_timeout = sys_timepoint_calc(K_FOREVER);
+	}
+}
+
 /* Forget about MLDv1 queriers heard by a previous test */
 static void test_mld_before(void *fixture)
 {
@@ -373,6 +385,7 @@ static void test_mld_before(void *fixture)
 	ARRAY_FOR_EACH(ipv6->mcast, i) {
 		ipv6->mcast[i].mld_resp_timeout = sys_timepoint_calc(K_FOREVER);
 	}
+	cancel_retransmits(net_iface);
 
 	is_v1_report_sent = false;
 	is_v1_done_sent = false;
@@ -385,6 +398,7 @@ static void test_join_group(void)
 
 	ret = net_ipv6_mld_join(net_iface, &mcast_addr);
 	zassert_equal(ret, 0, "Cannot join IPv6 multicast group");
+	cancel_retransmits(net_iface);
 
 	/* Let the network stack to proceed */
 	k_msleep(THREAD_SLEEP);
@@ -587,6 +601,7 @@ static void join_mldv2_capable_routers_group(void)
 
 	zassert_true(ret == 0 || ret == -EALREADY,
 		     "Cannot join MLDv2-capable routers multicast group");
+	cancel_retransmits(iface);
 
 	k_msleep(THREAD_SLEEP);
 
@@ -794,6 +809,7 @@ static void verify_allnodes_on_iface_event(void (*action)(void))
 
 	zassert_ok(k_sem_take(&wait_joined, K_MSEC(WAIT_TIME)),
 		   "Timeout while waiting for an event");
+	cancel_retransmits(net_iface);
 
 	/* Let the reports for the other groups go out and be checked */
 	k_msleep(THREAD_SLEEP);
@@ -860,6 +876,7 @@ static void verify_solicit_node_on_iface_event(void (*action)(void))
 
 	zassert_ok(k_sem_take(&wait_joined, K_MSEC(WAIT_TIME)),
 		   "Timeout while waiting for an event");
+	cancel_retransmits(net_iface);
 
 	ifmaddr = net_if_ipv6_maddr_lookup(&addr, &iface);
 	zassert_not_null(ifmaddr, "Interface does not contain "
@@ -973,6 +990,7 @@ ZTEST(net_mld_test_suite, test_group_preserved_over_iface_down_up)
 
 	zassert_ok(k_sem_take(&wait_report, K_MSEC(WAIT_TIME)),
 		   "Timeout while waiting for the MLD report");
+	cancel_retransmits(net_iface);
 	zassert_equal(record_type, NET_IPV6_MLDv2_CHANGE_TO_EXCLUDE_MODE,
 		      "Interface up did not rejoin the group");
 
@@ -1265,6 +1283,50 @@ ZTEST(net_mld_test_suite, test_mode_expiry_cancels_response)
 	test_leave_group();
 }
 
+/* The unsolicited report of a join is sent Robustness Variable times within
+ * the Unsolicited Report Interval (RFC 3810 ch 6.1).
+ */
+ZTEST(net_mld_test_suite, test_join_retransmit)
+{
+	int ret;
+
+	k_sem_reset(&wait_data);
+	report_count = 0;
+
+	ret = net_ipv6_mld_join(net_iface, &mcast_addr);
+	zassert_equal(ret, 0, "Cannot join IPv6 multicast group");
+
+	k_msleep(1000 + WAIT_TIME);
+	zassert_equal(report_count, CONFIG_NET_IPV6_MLD_ROBUSTNESS, "Expected %d reports, got %d",
+		      CONFIG_NET_IPV6_MLD_ROBUSTNESS, report_count);
+
+	test_leave_group();
+}
+
+/* Leaving a group ends the retransmission of its join report */
+ZTEST(net_mld_test_suite, test_leave_stops_retransmit)
+{
+	int ret;
+
+	k_sem_reset(&wait_data);
+	report_count = 0;
+
+	/* Leave right away, before the first retransmission can be due; the
+	 * leave is a report as well.
+	 */
+	ret = net_ipv6_mld_join(net_iface, &mcast_addr);
+	zassert_equal(ret, 0, "Cannot join IPv6 multicast group");
+	test_leave_group();
+
+	if (report_count != 2) {
+		/* Stalled so long that a retransmission was due before the leave */
+		ztest_test_skip();
+	}
+
+	k_msleep(1000 + WAIT_TIME);
+	zassert_equal(report_count, 2, "Expected two reports, got %d", report_count);
+}
+
 /* A query must come from a link-local address (RFC 3810 ch 5.1.14) */
 ZTEST(net_mld_test_suite, test_query_global_source_ignored)
 {
@@ -1455,6 +1517,7 @@ static void verify_mcast_routes_in_mld(struct mld_report_info *info)
 	 */
 	zassert_ok(net_ipv6_mld_join(dummy_iface, &site_local_mcast_addr_cafe),
 		   "Failed to join a group");
+	cancel_retransmits(dummy_iface);
 
 	k_msleep(THREAD_SLEEP);
 
