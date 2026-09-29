@@ -26,6 +26,7 @@ tests:
     platform_allow:
       - apollo3p_evb
       - apollo510_evb
+      - armfly_stm32h743xih6
       - b_l4s5i_iot01a
       - fk723m1_zgt6
       - fk7b0m1_vbt6
