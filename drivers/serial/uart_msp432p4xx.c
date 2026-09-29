@@ -9,7 +9,8 @@
 /* See www.ti.com/lit/pdf/slau356f, Chapter 22, for MSP432P4XX UART info. */
 
 /* include driverlib/gpio.h (from the msp432p4xx SDK) before Z's uart.h so
- * that the definition of BIT is not overridden */
+ * that the definition of BIT is not overridden
+ */
 #include <driverlib/gpio.h>
 
 #include <zephyr/drivers/uart.h>
@@ -156,6 +157,11 @@ static int uart_msp432p4xx_init(const struct device *dev)
 static int uart_msp432p4xx_poll_in(const struct device *dev, unsigned char *c)
 {
 	const struct uart_msp432p4xx_config *config = dev->config;
+
+	if (!MAP_UART_getInterruptStatus(config->base,
+					 EUSCI_A_UART_RECEIVE_INTERRUPT_FLAG)) {
+		return -1;
+	}
 
 	*c = MAP_UART_receiveData(config->base);
 
