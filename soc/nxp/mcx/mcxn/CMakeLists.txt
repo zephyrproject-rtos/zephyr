@@ -33,7 +33,7 @@ endif()
 
 zephyr_include_directories(.)
 
-set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")
+set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/linker.ld CACHE INTERNAL "")
 
 # Build the SoC P-state setter implementation for CPUFreq when selected
 zephyr_library_sources_ifdef(CONFIG_CPU_FREQ_PSTATE_SET_SOC cpu_freq_scale.c)
