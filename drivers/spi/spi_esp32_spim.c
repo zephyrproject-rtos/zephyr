@@ -48,6 +48,9 @@ LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
 
 #define SPI_DMA_MAX_BUFFER_SIZE 4092
 
+/* Size of each of the two transmit bounce buffers of an instance */
+#define SPI_TX_BOUNCE_SIZE ROUND_UP(CONFIG_SPI_ESP32_TX_BOUNCE_BUFFER_SIZE, 4)
+
 #define SPI_DMA_RX 0
 #define SPI_DMA_TX 1
 
@@ -91,6 +94,9 @@ static inline void spi_esp32_complete(const struct device *dev,
 	spi_ll_disable_int(spi);
 	spi_ll_clear_int_stat(spi);
 #endif
+
+	k_free(data->tx_alloc);
+	data->tx_alloc = NULL;
 
 	spi_context_cs_control(&data->ctx, false);
 
@@ -202,6 +208,107 @@ static void spi_esp32_dma_tx_start(const struct device *dev, uint8_t *buf, size_
 }
 #endif /* SOC_GDMA_SUPPORTED */
 
+/* Without bounce buffers, allocate a chunk to send what the DMA cannot read from */
+static int spi_esp32_tx_alloc(const struct device *dev, const struct spi_buf_set *tx_bufs)
+{
+	const struct spi_esp32_config *cfg = dev->config;
+	struct spi_esp32_data *data = dev->data;
+	size_t len = 0;
+
+	if (!cfg->dma_enabled || cfg->tx_bounce != NULL || tx_bufs == NULL ||
+	    spi_context_is_peripheral(&data->ctx)) {
+		return 0;
+	}
+
+	for (size_t i = 0; i < tx_bufs->count; i++) {
+		const struct spi_buf *buf = &tx_bufs->buffers[i];
+
+		if (buf->buf != NULL && !esp_ptr_dma_capable(buf->buf)) {
+			len = MAX(len, buf->len);
+		}
+	}
+
+	if (len == 0) {
+		return 0;
+	}
+
+	data->tx_alloc = k_malloc(MIN(len, SPI_DMA_MAX_BUFFER_SIZE));
+	if (data->tx_alloc == NULL) {
+		LOG_ERR("Error allocating temp buffer Tx");
+		return -ENOMEM;
+	}
+
+	return 0;
+}
+
+/* Largest chunk the current buffers can be sent in */
+static size_t IRAM_ATTR spi_esp32_chunk_max(const struct device *dev)
+{
+	const struct spi_esp32_config *cfg = dev->config;
+	struct spi_esp32_data *data = dev->data;
+	const uint8_t *tx_buf = data->ctx.tx_buf;
+
+	if (!cfg->dma_enabled) {
+		return SOC_SPI_MAXIMUM_BUFFER_SIZE;
+	}
+
+	if (cfg->tx_bounce != NULL && tx_buf != NULL && !esp_ptr_dma_capable(tx_buf)) {
+		return SPI_TX_BOUNCE_SIZE;
+	}
+
+	return SPI_DMA_MAX_BUFFER_SIZE;
+}
+
+/* Return a buffer holding the chunk to send, copying it unless already there */
+static uint8_t *IRAM_ATTR spi_esp32_tx_copy(const struct device *dev, const uint8_t *src,
+					    size_t len)
+{
+	const struct spi_esp32_config *cfg = dev->config;
+	struct spi_esp32_data *data = dev->data;
+	uint8_t *buf;
+
+	if (cfg->tx_bounce == NULL) {
+		if (data->tx_alloc != NULL) {
+			memcpy(data->tx_alloc, src, len);
+		}
+
+		return data->tx_alloc;
+	}
+
+	buf = &cfg->tx_bounce[data->tx_bounce_idx * SPI_TX_BOUNCE_SIZE];
+	if (data->tx_prefill_src != src || data->tx_prefill_len != len) {
+		memcpy(buf, src, len);
+	}
+
+	data->tx_prefill_src = NULL;
+	data->tx_bounce_idx ^= 1;
+
+	return buf;
+}
+
+/* Copy the next chunk to the other bounce buffer while this one is sent */
+static void IRAM_ATTR spi_esp32_tx_prefill(const struct device *dev)
+{
+	const struct spi_esp32_config *cfg = dev->config;
+	struct spi_esp32_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
+	size_t len;
+
+	if (cfg->tx_bounce == NULL || ctx->tx_buf == NULL || ctx->rx_buf != NULL ||
+	    esp_ptr_dma_capable(ctx->tx_buf)) {
+		return;
+	}
+
+	len = MIN(spi_context_max_continuous_chunk(ctx) * data->dfs, spi_esp32_chunk_max(dev));
+	if (len == 0) {
+		return;
+	}
+
+	memcpy(&cfg->tx_bounce[data->tx_bounce_idx * SPI_TX_BOUNCE_SIZE], ctx->tx_buf, len);
+	data->tx_prefill_src = ctx->tx_buf;
+	data->tx_prefill_len = len;
+}
+
 /* Set up one chunk and start it on the wire */
 static int IRAM_ATTR spi_esp32_transfer_start(const struct device *dev)
 {
@@ -212,14 +319,12 @@ static int IRAM_ATTR spi_esp32_transfer_start(const struct device *dev)
 	spi_hal_dev_config_t *hal_dev = &data->dev_config;
 	spi_hal_trans_config_t *hal_trans = &data->trans_config;
 	size_t chunk_len_bytes = spi_context_max_continuous_chunk(&data->ctx) * data->dfs;
-	size_t max_buf_sz =
-		cfg->dma_enabled ? SPI_DMA_MAX_BUFFER_SIZE : SOC_SPI_MAXIMUM_BUFFER_SIZE;
-	size_t transfer_len_bytes = MIN(chunk_len_bytes, max_buf_sz);
+	size_t transfer_len_bytes = MIN(chunk_len_bytes, spi_esp32_chunk_max(dev));
 	size_t transfer_len_frames = transfer_len_bytes / data->dfs;
 	size_t bit_len = transfer_len_bytes << 3;
 	uint8_t *rx_temp = NULL;
 	uint8_t *tx_temp = NULL;
-	size_t dma_len_tx = MIN(ctx->tx_len * data->dfs, SPI_DMA_MAX_BUFFER_SIZE);
+	uint8_t *tx_copy = NULL;
 	size_t dma_len_rx = MIN(ctx->rx_len * data->dfs, SPI_DMA_MAX_BUFFER_SIZE);
 	bool prepare_data = true;
 	int err = 0;
@@ -228,13 +333,11 @@ static int IRAM_ATTR spi_esp32_transfer_start(const struct device *dev)
 		/* bit_len needs to be at least one byte long when using DMA */
 		bit_len = !bit_len ? 8 : bit_len;
 		if (ctx->tx_buf && !esp_ptr_dma_capable((uint32_t *)&ctx->tx_buf[0])) {
-			LOG_DBG("Tx buffer not DMA capable");
-			tx_temp = k_malloc(dma_len_tx);
-			if (!tx_temp) {
-				LOG_ERR("Error allocating temp buffer Tx");
+			tx_copy = spi_esp32_tx_copy(dev, ctx->tx_buf, transfer_len_bytes);
+			if (tx_copy == NULL) {
+				LOG_ERR("No buffer to send Tx from");
 				return -ENOMEM;
 			}
-			memcpy(tx_temp, &ctx->tx_buf[0], dma_len_tx);
 		} else if (!ctx->tx_buf && ctx->rx_buf && !hal_dev->half_duplex) {
 			/* Full-duplex RX-only transfer: allocate zero-filled TX buffer.
 			 * In loopback configurations (GPIO matrix or external wire),
@@ -273,7 +376,7 @@ static int IRAM_ATTR spi_esp32_transfer_start(const struct device *dev)
 #endif
 	}
 
-	hal_trans->send_buffer = tx_temp ? tx_temp : (uint8_t *)ctx->tx_buf;
+	hal_trans->send_buffer = tx_copy ? tx_copy : tx_temp ? tx_temp : (uint8_t *)ctx->tx_buf;
 	hal_trans->rcv_buffer = rx_temp ? rx_temp : ctx->rx_buf;
 	hal_trans->tx_bitlen = bit_len;
 	hal_trans->rx_bitlen = bit_len;
@@ -393,6 +496,7 @@ static int IRAM_ATTR spi_esp32_transfer_start(const struct device *dev)
 	/* send data */
 	spi_hal_user_start(hal);
 	spi_context_update_tx(&data->ctx, data->dfs, transfer_len_frames);
+	spi_esp32_tx_prefill(dev);
 
 	data->chunk_tx_temp = tx_temp;
 	data->chunk_rx_temp = rx_temp;
@@ -1072,6 +1176,12 @@ static int transceive(const struct device *dev,
 	spi_esp32_pm_policy_state_lock_get(dev);
 #endif
 
+	/* Before the configuration, which may run a dummy transfer */
+	ret = spi_esp32_tx_alloc(dev, tx_bufs);
+	if (ret != 0) {
+		goto done;
+	}
+
 	ret = spi_esp32_configure(dev, spi_cfg);
 	if (ret) {
 		goto done;
@@ -1096,6 +1206,9 @@ static int transceive(const struct device *dev,
 		return ret;
 	}
 #endif /* CONFIG_ESP32_SPI_TARGET */
+
+	/* A prefill belongs to the transfer it was made for */
+	data->tx_prefill_src = NULL;
 
 	spi_context_cs_control(&data->ctx, true);
 
@@ -1123,6 +1236,8 @@ static int transceive(const struct device *dev,
 				}
 				spi_esp32_transfer_finish(dev);
 			}
+			k_free(data->tx_alloc);
+			data->tx_alloc = NULL;
 			spi_ll_clear_int_stat(cfg->spi);
 			k_sem_reset(&data->ctx.sync);
 			spi_context_cs_control(&data->ctx, false);
@@ -1145,6 +1260,9 @@ static int transceive(const struct device *dev,
 #endif  /* CONFIG_SPI_ESP32_INTERRUPT */
 
 done:
+	k_free(data->tx_alloc);
+	data->tx_alloc = NULL;
+
 #if CONFIG_PM
 	spi_esp32_pm_policy_state_lock_put(dev);
 #endif
@@ -1211,9 +1329,23 @@ static DEVICE_API(spi, spi_api) = {
 	.dma_clk_src = DT_INST_PROP(idx, dma_clk)
 #endif /* defined(SOC_GDMA_SUPPORTED) */
 
+#if CONFIG_SPI_ESP32_TX_BOUNCE_BUFFER_SIZE > 0
+#define SPI_ESP32_TX_BOUNCE_DEFINE(idx)                                                            \
+	COND_CODE_1(DT_INST_PROP(idx, dma_enabled),                                                \
+		    (static uint8_t spi_tx_bounce_##idx[2 * SPI_TX_BOUNCE_SIZE] __aligned(4);),    \
+		    ())
+
+#define SPI_ESP32_TX_BOUNCE_GET(idx)                                                               \
+	COND_CODE_1(DT_INST_PROP(idx, dma_enabled), (spi_tx_bounce_##idx), (NULL))
+#else
+#define SPI_ESP32_TX_BOUNCE_DEFINE(idx)
+#define SPI_ESP32_TX_BOUNCE_GET(idx) NULL
+#endif
+
 #define ESP32_SPI_INIT(idx)	\
 				\
 	PINCTRL_DT_INST_DEFINE(idx);	\
+	SPI_ESP32_TX_BOUNCE_DEFINE(idx)	\
 										\
 	static struct spi_esp32_data spi_data_##idx = {	\
 		SPI_CONTEXT_INIT_LOCK(spi_data_##idx, ctx),	\
@@ -1245,6 +1377,7 @@ static DEVICE_API(spi, spi_api) = {
 			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset),	\
 		.use_iomux = DT_INST_PROP(idx, use_iomux),	\
 		.dma_enabled = DT_INST_PROP(idx, dma_enabled),	\
+		.tx_bounce = SPI_ESP32_TX_BOUNCE_GET(idx),	\
 		.dma_host = DT_INST_PROP(idx, dma_host),	\
 		SPI_DMA_CFG(idx),				\
 		.cs_setup = DT_INST_PROP_OR(idx, cs_setup_time, 0), \
