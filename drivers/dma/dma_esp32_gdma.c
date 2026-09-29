@@ -641,6 +641,91 @@ static int dma_esp32_config(const struct device *dev, uint32_t channel,
 	return ret;
 }
 
+#if defined(CONFIG_ESP_SPIRAM) && defined(CONFIG_SOC_SERIES_ESP32S3)
+#define DMA_ESP32_TX_PREFETCH 1
+
+/*
+ * Bound on filling the TX FIFO from PSRAM. That takes at most two PSRAM
+ * blocks of up to 64 bytes (an unaligned buffer spans two), each queued
+ * behind whatever else the MSPI bus serves: a line of up to 64 bytes for each
+ * of the I-cache refill, D-cache writeback and D-cache refill, and a block for
+ * each of the 9 other GDMA channels. On the slowest bus Zephyr sets up (20 MHz
+ * dual flash, 20 MHz quad PSRAM) 64 bytes take up to 15 us from flash and
+ * 8 us from PSRAM: 3 * 15 + (9 + 2) * 8 = 133 us. Twice that, rounded up. In
+ * time, not CPU cycles, as it only depends on the flash and PSRAM clocks.
+ */
+#define DMA_ESP32_TX_PREFETCH_TIMEOUT_US 300
+
+/* The TX FIFO level (L1 to L3) whose full flag ends the wait: L3 */
+#define DMA_ESP32_TX_FIFO_L3 3
+
+/*
+ * A peripheral starts sending without waiting for its GDMA channel to have
+ * data. From internal RAM the GDMA wins that race, but from PSRAM it takes
+ * microseconds, and meanwhile the SPI master, for one, runs dry: it flags
+ * OUTFIFO_EMPTY_ERR, clocks out its whole length without the data, and the
+ * channel never reaches its EOF. So wait until the FIFO is full, or the first
+ * descriptor is pushed, before the caller starts the peripheral.
+ */
+static int dma_esp32_tx_prefetch(struct dma_esp32_data *data, uint32_t channel_id)
+{
+	uint32_t timeout = k_us_to_cyc_ceil32(DMA_ESP32_TX_PREFETCH_TIMEOUT_US);
+	uint32_t start = k_cycle_get_32();
+	uint32_t events;
+
+	do {
+		if (gdma_ll_tx_is_fifo_full(data->hal.dev, channel_id, DMA_ESP32_TX_FIFO_L3)) {
+			return 0;
+		}
+		events = gdma_ll_tx_get_interrupt_status(data->hal.dev, channel_id, true);
+		if (events & GDMA_LL_EVENT_TX_DESC_ERROR) {
+			return -EIO;
+		}
+		if (events & (GDMA_LL_EVENT_TX_DONE | GDMA_LL_EVENT_TX_EOF)) {
+			return 0;
+		}
+	} while (k_cycle_get_32() - start < timeout);
+
+	return -ETIMEDOUT;
+}
+#endif
+
+static int dma_esp32_start_tx(struct dma_esp32_data *data, struct dma_esp32_channel *dma_channel)
+{
+	uint32_t channel_id = dma_channel->channel_id;
+#ifdef DMA_ESP32_TX_PREFETCH
+	bool from_psram = esp_ptr_external_ram(dma_channel->desc_list[0].buffer);
+	int ret;
+
+	if (from_psram) {
+		/* Events left from the previous transfer would end the wait */
+		gdma_hal_clear_intr(&data->hal, channel_id, GDMA_CHANNEL_DIRECTION_TX,
+				    GDMA_LL_TX_EVENT_MASK);
+	}
+#endif
+
+	gdma_hal_enable_intr(&data->hal, channel_id, GDMA_CHANNEL_DIRECTION_TX,
+			     GDMA_LL_EVENT_TX_EOF, true);
+	gdma_hal_start_with_desc(&data->hal, channel_id, GDMA_CHANNEL_DIRECTION_TX,
+				 (intptr_t)dma_channel->desc_list);
+
+#ifdef DMA_ESP32_TX_PREFETCH
+	if (from_psram) {
+		ret = dma_esp32_tx_prefetch(data, channel_id);
+		if (ret < 0) {
+			gdma_hal_enable_intr(&data->hal, channel_id, GDMA_CHANNEL_DIRECTION_TX,
+					     GDMA_LL_TX_EVENT_MASK, false);
+			gdma_hal_stop(&data->hal, channel_id, GDMA_CHANNEL_DIRECTION_TX);
+			dma_esp32_stop_barrier(data, channel_id, GDMA_CHANNEL_DIRECTION_TX);
+			LOG_ERR("No TX data from PSRAM on channel pair %u (%d)", channel_id, ret);
+			return ret;
+		}
+	}
+#endif
+
+	return 0;
+}
+
 static int dma_esp32_start(const struct device *dev, uint32_t channel)
 {
 	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
@@ -683,11 +768,7 @@ static int dma_esp32_start(const struct device *dev, uint32_t channel)
 						 GDMA_CHANNEL_DIRECTION_RX,
 						 (intptr_t)dma_channel->desc_list);
 		} else if (dma_channel->dir == DMA_TX) {
-			gdma_hal_enable_intr(&data->hal, dma_channel->channel_id,
-					     GDMA_CHANNEL_DIRECTION_TX, GDMA_LL_EVENT_TX_EOF, true);
-			gdma_hal_start_with_desc(&data->hal, dma_channel->channel_id,
-						 GDMA_CHANNEL_DIRECTION_TX,
-						 (intptr_t)dma_channel->desc_list);
+			return dma_esp32_start_tx(data, dma_channel);
 		} else {
 			LOG_ERR("Channel %d is not configured", channel);
 			return -EINVAL;
