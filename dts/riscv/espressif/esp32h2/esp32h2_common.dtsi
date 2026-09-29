@@ -100,6 +100,13 @@
 		compatible = "simple-bus";
 		ranges;
 
+		/* ROM code region, contains the libc and utility functions */
+		soc_rom: memory@40000000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x40000000 DT_SIZE_K(128)>;
+			zephyr,memory-region = "SOC_ROM";
+		};
+
 		sramhp: memory@40800000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x40800000 DT_SIZE_K(320)>;

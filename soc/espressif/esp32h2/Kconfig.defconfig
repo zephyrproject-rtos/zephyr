@@ -6,6 +6,15 @@ if SOC_SERIES_ESP32H2
 config NUM_IRQS
 	default 32
 
+config PMP_SLOTS
+	default 16
+
+# Flash code runs through the MMU and the PMP init code runs from IRAM, so
+# locked global entries would block execution before the flash text is
+# covered. Use unlocked entries with MPRV-based enforcement instead.
+config PMP_NO_LOCK_GLOBAL
+	default y
+
 config MAIN_STACK_SIZE
 	default 2048
 
