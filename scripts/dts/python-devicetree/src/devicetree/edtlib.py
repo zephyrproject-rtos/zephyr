@@ -2025,7 +2025,7 @@ class Node:
 
     def _check_undeclared_props(self) -> None:
         # Checks that all properties are declared in the binding
-        wl = {"compatible", "status", "ranges", "phandle",
+        wl = {"compatible", "status", "ranges", "dma-ranges", "phandle",
               "interrupt-parent", "interrupts-extended", "device_type"}
 
         for prop_name in self._node.props:
