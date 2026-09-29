@@ -39,6 +39,7 @@
 #include <lc3.h>
 
 #include "lc3.h"
+#include "stereo_out.h"
 #include "stream_rx.h"
 #include "usb.h"
 #include "hw_codec.h"
@@ -91,10 +92,10 @@ static int init_lc3_decoder(struct stream_rx *stream, uint32_t lc3_frame_duratio
 	LOG_INF("Initializing the LC3 decoder with %u us duration and %u Hz frequency",
 		lc3_frame_duration_us, lc3_freq_hz);
 	/* Create the decoder instance. This shall complete before stream_started() is called. */
-	stream->lc3_decoder =
-		lc3_setup_decoder(lc3_frame_duration_us, lc3_freq_hz,
-				  IS_ENABLED(CONFIG_USE_USB_AUDIO_OUTPUT) ? USB_SAMPLE_RATE_HZ : 0,
-				  &stream->lc3_decoder_mem);
+	stream->lc3_decoder = lc3_setup_decoder(
+		lc3_frame_duration_us, lc3_freq_hz,
+		IS_ENABLED(CONFIG_STEREO_AUDIO_OUTPUT) ? STEREO_OUT_SAMPLE_RATE_HZ : 0,
+		&stream->lc3_decoder_mem);
 	if (stream->lc3_decoder == NULL) {
 		LOG_ERR("Failed to setup LC3 decoder - wrong parameters?\n");
 		return -EINVAL;
@@ -150,7 +151,7 @@ static bool decode_frame(struct lc3_data *data, size_t frame_cnt)
 static int get_lc3_chan_alloc_from_index(const struct stream_rx *stream, uint8_t index,
 					 enum bt_audio_location *chan_alloc)
 {
-#if defined(CONFIG_USE_USB_AUDIO_OUTPUT)
+#if defined(CONFIG_STEREO_AUDIO_OUTPUT)
 	const bool has_left = (stream->lc3_chan_allocation & BT_AUDIO_LOCATION_FRONT_LEFT) != 0;
 	const bool has_right = (stream->lc3_chan_allocation & BT_AUDIO_LOCATION_FRONT_RIGHT) != 0;
 	const bool is_mono = stream->lc3_chan_allocation == BT_AUDIO_LOCATION_MONO_AUDIO;
@@ -172,9 +173,9 @@ static int get_lc3_chan_alloc_from_index(const struct stream_rx *stream, uint8_t
 	}
 
 	return 0;
-#else  /* !CONFIG_USE_USB_AUDIO_OUTPUT */
+#else  /* !CONFIG_STEREO_AUDIO_OUTPUT */
 	return -EINVAL;
-#endif /* CONFIG_USE_USB_AUDIO_OUTPUT */
+#endif /* CONFIG_STEREO_AUDIO_OUTPUT */
 }
 
 static int usb_add_frame(const struct stream_rx *stream, int chn, uint32_t ts)
@@ -233,7 +234,7 @@ static size_t decode_frame_block(struct lc3_data *data, size_t frame_cnt)
 					continue;
 				}
 			}
-			if (IS_ENABLED(CONFIG_USE_USB_AUDIO_OUTPUT)) {
+			if (IS_ENABLED(CONFIG_STEREO_AUDIO_OUTPUT)) {
 				ret = usb_add_frame(stream, i, data->ts);
 				if (ret != 0) {
 					LOG_ERR("usb_add_frame failed: %d", ret);
@@ -244,8 +245,8 @@ static size_t decode_frame_block(struct lc3_data *data, size_t frame_cnt)
 			/* If decoding failed, we clear the data to USB as it would contain
 			 * invalid data
 			 */
-			if (IS_ENABLED(CONFIG_USE_USB_AUDIO_OUTPUT)) {
-				usb_clear_frames_to_usb();
+			if (IS_ENABLED(CONFIG_STEREO_AUDIO_OUTPUT)) {
+				stereo_out_clear_frames();
 			}
 			break;
 		}
@@ -396,7 +397,7 @@ int lc3_enable(struct stream_rx *stream)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_USE_USB_AUDIO_OUTPUT)) {
+	if (IS_ENABLED(CONFIG_STEREO_AUDIO_OUTPUT)) {
 		if ((stream->lc3_chan_allocation & BT_AUDIO_LOCATION_FRONT_LEFT) != 0) {
 			if (usb_left_stream == NULL) {
 				LOG_INF("Setting USB left stream to %p", stream);
@@ -435,7 +436,7 @@ int lc3_disable(struct stream_rx *stream)
 
 	stream->lc3_decoder = NULL;
 
-	if (IS_ENABLED(CONFIG_USE_USB_AUDIO_OUTPUT)) {
+	if (IS_ENABLED(CONFIG_STEREO_AUDIO_OUTPUT)) {
 		if (usb_left_stream == stream) {
 			usb_left_stream = NULL;
 		}
