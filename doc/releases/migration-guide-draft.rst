@@ -448,6 +448,17 @@ Shell
   ``-ENOEXEC`` instead of ``SHELL_CMD_HELP_PRINTED`` (1). The help is still printed. Update code
   that checks the return value of :c:func:`shell_execute_cmd` for this case.
 
+Tools
+*****
+
+* Deprecate the ``--esp-baud-rate`` argument on the esp32 runner, the ``-b`` / ``--baudrate``
+  argument on the bflb_mcu_tool runner, the ``-b`` argument on the bflb_flash_command runner and the
+  ``--baudrate`` argument on the amebaflash runner. They are replaced with a generic
+  ``--baud-rate`` argument.
+
+* The stm32flash runner now defaults to 115200 baud instead of 57600 when no ``--baud-rate`` is
+  given. Pass ``--baud-rate=57600`` to keep the previous speed.
+
 Modules
 *******
 
