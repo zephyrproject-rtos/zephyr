@@ -186,10 +186,11 @@ if DT_HAS_ST_STM32_DMA2D_ENABLED && LV_USE_DRAW_DMA2D
 config LV_ATTRIBUTE_MEM_ALIGN_SIZE
 	default 32
 
-# Value for 32-byte area width alignment depends on format
+# Area X alignment in pixels, a power of two, for a multiple of 32 bytes:
+# in RGB888, 32 pixels are 96 bytes
 config LV_Z_AREA_X_ALIGNMENT_WIDTH
 	default 16 if STM32_LTDC_RGB565
-	default 96 if STM32_LTDC_RGB888
+	default 32 if STM32_LTDC_RGB888
 	default 8 if STM32_LTDC_ARGB8888
 
 config LV_Z_VDB_ALIGN
