@@ -14,6 +14,10 @@
 #include <zephyr/drivers/sip_svc/sip_svc_agilex_smc.h>
 #include <zephyr/sys/__assert.h>
 
+#if defined(CONFIG_SOC_AGILEX5)
+#include <zephyr/drivers/sip_svc/sip_svc_agilex_mbox_ddr.h>
+#endif
+
 #define SVC_METHOD	       "smc"
 #define GET_VOLTAGE_CMD	       (0x18U)
 #define SET_VOLTAGE_CHANNEL(x) ((1 << (x)) & 0xffff)
@@ -23,6 +27,11 @@ struct private_data {
 	struct k_sem semaphore;
 	uint32_t voltage_channel0;
 };
+
+#if defined(CONFIG_SOC_AGILEX5)
+static SOCFPGA_MBOX_DDR uint32_t mbox_cmd_buf[2] __aligned(64);
+static SOCFPGA_MBOX_DDR uint32_t mbox_resp_buf[2] __aligned(64);
+#endif
 
 void get_voltage_callback(uint32_t c_token, struct sip_svc_response *response)
 {
@@ -55,8 +64,12 @@ int main(void)
 	float voltage;
 	int err, trans_id;
 
+#if defined(CONFIG_SOC_AGILEX5)
+	resp_addr = mbox_resp_buf;
+#else
 	resp_addr = (uint32_t *)k_malloc(resp_size);
 	__ASSERT(resp_addr != NULL, "Failed to get memory");
+#endif
 
 	mb_smc_ctrl = sip_svc_get_controller(SVC_METHOD);
 	__ASSERT(mb_smc_ctrl != NULL, "Failed to get the controller from sip_svc");
@@ -76,8 +89,12 @@ int main(void)
 		err = sip_svc_open(mb_smc_ctrl, mb_c_token, K_FOREVER);
 		__ASSERT(err != SIP_SVC_ID_INVALID, "Failed to open with sip_svc");
 
+#if defined(CONFIG_SOC_AGILEX5)
+		cmd_addr = mbox_cmd_buf;
+#else
 		cmd_addr = (uint32_t *)k_malloc(cmd_size);
 		__ASSERT(cmd_addr != NULL, "Failed to get memory");
+#endif
 
 		/**
 		 * Populate the SDM mailbox command ,where first word will be the header,

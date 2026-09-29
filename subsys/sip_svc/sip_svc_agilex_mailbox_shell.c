@@ -15,6 +15,10 @@
 #include <string.h>
 #include <errno.h>
 
+#if defined(CONFIG_SOC_AGILEX5)
+#include <zephyr/drivers/sip_svc/sip_svc_agilex_mbox_ddr.h>
+#endif
+
 #define MAX_TIMEOUT_MSECS (1 * 1000UL)
 
 struct private_data {
@@ -24,6 +28,12 @@ struct private_data {
 
 static void *mb_smc_ctrl;
 static uint32_t mb_c_token = SIP_SVC_ID_INVALID;
+
+#if defined(CONFIG_SOC_AGILEX5)
+static SOCFPGA_MBOX_DDR uint32_t mbox_cmd_buf[SIP_SVP_MB_MAX_WORD_SIZE] __aligned(64);
+static SOCFPGA_MBOX_DDR uint32_t mbox_resp_buf[SIP_SVP_MB_MAX_WORD_SIZE] __aligned(64);
+static SOCFPGA_MBOX_DDR uint32_t mbox_cancel_cmd __aligned(4);
+#endif
 
 static int cmd_reg(const struct shell *sh, size_t argc, char **argv)
 {
@@ -124,6 +134,9 @@ static int cmd_close(const struct shell *sh, size_t argc, char **argv)
 		return 0;
 	}
 
+#if defined(CONFIG_SOC_AGILEX5)
+	mbox_cancel_cmd = MAILBOX_CANCEL_COMMAND;
+#else
 	uint32_t *cmd_addr = k_malloc(cmd_size);
 
 	if (!cmd_addr) {
@@ -131,11 +144,16 @@ static int cmd_close(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	*cmd_addr = MAILBOX_CANCEL_COMMAND;
+#endif
 
 	request.header = SIP_SVC_PROTO_HEADER(SIP_SVC_PROTO_CMD_ASYNC, 0);
 	request.a0 = SMC_FUNC_ID_MAILBOX_SEND_COMMAND;
 	request.a1 = 0;
+#if defined(CONFIG_SOC_AGILEX5)
+	request.a2 = (uint64_t)&mbox_cancel_cmd;
+#else
 	request.a2 = (uint64_t)cmd_addr;
+#endif
 	request.a3 = (uint64_t)cmd_size;
 	request.a4 = 0;
 	request.a5 = 0;
@@ -147,7 +165,9 @@ static int cmd_close(const struct shell *sh, size_t argc, char **argv)
 
 	err = sip_svc_close(mb_smc_ctrl, mb_c_token, &request);
 	if (err) {
+#if !defined(CONFIG_SOC_AGILEX5)
 		k_free(cmd_addr);
+#endif
 		shell_error(sh, "Mailbox client close fail (%d)", err);
 	} else {
 		shell_print(sh, "Mailbox client close success");
@@ -192,7 +212,9 @@ static void cmd_send_callback(uint32_t c_token, struct sip_svc_response *respons
 	 */
 	if (resp_data) {
 		shell_print(sh, "response data %p is freed\n", resp_data);
+#if !defined(CONFIG_SOC_AGILEX5)
 		k_free((char *)resp_data);
+#endif
 	}
 
 	k_sem_give(&(priv->semaphore));
@@ -212,18 +234,24 @@ static int parse_mb_data(const struct shell *sh, char *hex_list, char **cmd_addr
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_SOC_AGILEX5)
+	*cmd_addr = (char *)mbox_cmd_buf;
+#else
 	*cmd_addr = k_malloc(SIP_SVP_MB_MAX_WORD_SIZE * 4);
 	if (!*cmd_addr) {
 		shell_error(sh, "Fail to allocate command memory");
 		return -ENOMEM;
 	}
+#endif
 
 	buffer = (uint32_t *)*cmd_addr;
 	hex_str = strtok_r(hex_str, " ", &state);
 
 	while (hex_str) {
 		if (i >= SIP_SVP_MB_MAX_WORD_SIZE) {
+#if !defined(CONFIG_SOC_AGILEX5)
 			k_free(*cmd_addr);
+#endif
 			shell_error(sh, "Mailbox length too long");
 			return -EOVERFLOW;
 		}
@@ -231,10 +259,14 @@ static int parse_mb_data(const struct shell *sh, char *hex_list, char **cmd_addr
 		hex_val = strtoul(hex_str, &endptr, 16);
 		if (errno == ERANGE) {
 			shell_error(sh, " Value is out of range value");
+#if !defined(CONFIG_SOC_AGILEX5)
 			k_free(*cmd_addr);
+#endif
 			return -ERANGE;
 		} else if (errno || endptr == hex_str || *endptr) {
+#if !defined(CONFIG_SOC_AGILEX5)
 			k_free(*cmd_addr);
+#endif
 			shell_error(sh, " Invalid argument");
 			return -EINVAL;
 		}
@@ -289,12 +321,16 @@ static int cmd_send(const struct shell *sh, size_t argc, char **argv)
 		}
 	}
 
+#if defined(CONFIG_SOC_AGILEX5)
+	resp_addr = (char *)mbox_resp_buf;
+#else
 	resp_addr = k_malloc(SIP_SVP_MB_MAX_WORD_SIZE * 4);
 	if (!resp_addr) {
 		k_free(cmd_addr);
 		shell_error(sh, "Fail to allocate response memory");
 		return -ENOMEM;
 	}
+#endif
 	shell_print(sh, "\tResponse memory %p\n", (char *)resp_addr);
 
 	k_sem_init(&(priv.semaphore), 0, 1);
@@ -317,8 +353,10 @@ static int cmd_send(const struct shell *sh, size_t argc, char **argv)
 
 	if (trans_id < 0) {
 		shell_error(sh, "Mailbox send fail (no open or no free trans_id)");
+#if !defined(CONFIG_SOC_AGILEX5)
 		k_free(cmd_addr);
 		k_free(resp_addr);
+#endif
 		err = -EBUSY;
 	} else {
 		/*wait for callback*/
