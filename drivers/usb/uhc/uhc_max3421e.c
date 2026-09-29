@@ -19,6 +19,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/usb/uhc.h>
+#include <zephyr/usb/class/usb_hub.h>
 
 #include "uhc_common.h"
 #include "uhc_max3421e.h"
@@ -43,6 +44,8 @@ struct max3421e_data {
 	uint8_t mode;
 	uint8_t hxfr;
 	uint8_t hrsl;
+	struct usb_hub_status hub_status;
+	struct usb_hub_port_status port_status;
 };
 
 struct max3421e_config {
@@ -572,7 +575,6 @@ static void max3421e_handle_condet(const struct device *dev)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
 	const uint8_t jk = priv->hrsl & MAX3421E_JKSTATUS_MASK;
-	enum uhc_event_type type = UHC_EVT_ERROR;
 	uint8_t mode = priv->mode;
 	int err;
 
@@ -594,34 +596,38 @@ static void max3421e_handle_condet(const struct device *dev)
 	 * Frame markers (SOF or keep-alive) are generated only while a device
 	 * is connected. Without a device, each frame marker is reported as a
 	 * disconnect.
+	 *
+	 * The root hub has a single physical port. Its connection is reported
+	 * through port_status, polled by the host stack via uhc_root_hub_status().
 	 */
 	if (jk == 0) {
 		/* Device disconnected */
 		mode &= ~MAX3421E_SOFKAENAB;
-		type = UHC_EVT_DEV_REMOVED;
-	}
-
-	if (jk == MAX3421E_JSTATUS) {
-		/* Device connected */
-		mode |= MAX3421E_SOFKAENAB;
-		type = (mode & MAX3421E_LOWSPEED) != 0U ?
-		       UHC_EVT_DEV_CONNECTED_LS : UHC_EVT_DEV_CONNECTED_FS;
+		priv->port_status.wPortStatus &= USB_HUB_PORT_STATUS_POWER;
 	}
 
 	if (jk == MAX3421E_KSTATUS) {
-		/* Device connected */
 		mode ^= MAX3421E_LOWSPEED;
+	}
+
+	if (jk == MAX3421E_JSTATUS || jk == MAX3421E_KSTATUS) {
+		/* Device connected */
 		mode |= MAX3421E_SOFKAENAB;
-		type = (mode & MAX3421E_LOWSPEED) != 0U ?
-		       UHC_EVT_DEV_CONNECTED_LS : UHC_EVT_DEV_CONNECTED_FS;
+		priv->port_status.wPortStatus &= USB_HUB_PORT_STATUS_POWER;
+		priv->port_status.wPortStatus |= USB_HUB_PORT_STATUS_CONNECTION;
+		if ((mode & MAX3421E_LOWSPEED) != 0U) {
+			priv->port_status.wPortStatus |= USB_HUB_PORT_STATUS_LOW_SPEED;
+		}
+	}
+
+	if (jk == 0 || jk == MAX3421E_JSTATUS || jk == MAX3421E_KSTATUS) {
+		priv->port_status.wPortChange |= USB_HUB_PORT_CHANGE_CONNECTION;
 	}
 
 	err = max3421e_mode_update(dev, mode);
 	if (unlikely(err)) {
-		type = UHC_EVT_ERROR;
+		uhc_submit_event(dev, UHC_EVT_ERROR, err);
 	}
-
-	uhc_submit_event(dev, type, err);
 }
 
 static void max3421e_bus_event(const struct device *dev)
@@ -630,12 +636,22 @@ static void max3421e_bus_event(const struct device *dev)
 
 	if (atomic_test_and_clear_bit(&priv->state,
 				      MAX3421E_STATE_BUS_RESUME)) {
+		/*
+		 * USB 2.0 11.24.2.7.2.3: C_PORT_SUSPEND is set only once the
+		 * resume signaling has actually completed, regardless of
+		 * whether the resume was host- or device-initiated.
+		 */
+		priv->port_status.wPortStatus &= ~USB_HUB_PORT_STATUS_SUSPEND;
+		priv->port_status.wPortChange |= USB_HUB_PORT_CHANGE_SUSPEND;
 		/* Resume operation done event */
 		uhc_submit_event(dev, UHC_EVT_RESUMED, 0);
 	}
 
 	if (atomic_test_and_clear_bit(&priv->state,
 				      MAX3421E_STATE_BUS_RESET)) {
+		priv->port_status.wPortStatus &= ~USB_HUB_PORT_STATUS_RESET;
+		priv->port_status.wPortStatus |= USB_HUB_PORT_STATUS_ENABLE;
+		priv->port_status.wPortChange |= USB_HUB_PORT_CHANGE_RESET;
 		/* Reset operation done event */
 		uhc_submit_event(dev, UHC_EVT_RESETED, 0);
 	}
@@ -659,6 +675,22 @@ static int max3421e_clear_hirq(const struct device *dev, const uint8_t hirq)
 	return max3421e_write_byte(dev, MAX3421E_REG_HIRQ, hirq);
 }
 
+/* Signal bus resume event, 20ms K-state + low-speed EOP */
+static int max3421e_bus_resume(const struct device *dev)
+{
+	struct max3421e_data *priv = uhc_get_private(dev);
+	int ret;
+
+	if (atomic_test_bit(&priv->state, MAX3421E_STATE_BUS_RESET)) {
+		return -EBUSY;
+	}
+
+	ret = max3421e_write_byte(dev, MAX3421E_REG_HCTL, MAX3421E_SIGRSM);
+	atomic_set_bit(&priv->state, MAX3421E_STATE_BUS_RESUME);
+
+	return ret;
+}
+
 static int max3421e_handle_bus_irq(const struct device *dev)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
@@ -676,9 +708,16 @@ static int max3421e_handle_bus_irq(const struct device *dev)
 		max3421e_handle_condet(dev);
 	}
 
-	/* Remote Wakeup Interrupt */
+	/*
+	 * Remote Wakeup Interrupt: the peripheral requests the host to
+	 * resume bus activity. The host must still drive the resume
+	 * signaling itself (AN3785, "RWUIRQ, RWUIE"). Completion is reported
+	 * through max3421e_bus_event() like any other resume.
+	 */
 	if (hirq & MAX3421E_RWU) {
-		uhc_submit_event(dev, UHC_EVT_RWUP, 0);
+		if (priv->port_status.wPortStatus & USB_HUB_PORT_STATUS_SUSPEND) {
+			ret = max3421e_bus_resume(dev);
+		}
 	}
 
 	/* Bus Reset or Bus Resume event */
@@ -822,20 +861,270 @@ static int max3421e_bus_reset(const struct device *dev)
 	return ret;
 }
 
-/* Signal bus resume event, 20ms K-state + low-speed EOP */
-static int max3421e_bus_resume(const struct device *dev)
+/*
+ * Hub Descriptor. MAX3421E has a single physical port and never operates at
+ * high-speed, so it has no TT.
+ * D1:D0 Logical Power Switching Mode, Individual port power switching
+ * D4:D3 Over-current Protection Mode, Global (ganged) Over-current Protection
+ */
+#define MAX3421E_HUB_CHARACTERISTICS BIT(0)
+
+struct max3421e_hub_desc {
+	struct usb_hub_descriptor hub;
+	uint8_t DeviceRemovable[DIV_ROUND_UP(1 + 1, 8)];
+	uint8_t PortPwrCtrlMask[DIV_ROUND_UP(1 + 1, 8)];
+} __packed;
+
+/* USB 2.0 11.23.2.1: PortPwrCtrlMask should have all bits set to 1B. */
+static const struct max3421e_hub_desc max3421e_hub_desc = {
+	.hub = {
+		.bDescLength = sizeof(struct max3421e_hub_desc),
+		.bDescriptorType = USB_HUB_DESCRIPTOR_TYPE,
+		.bNbrPorts = 1,
+		.wHubCharacteristics = sys_cpu_to_le16(MAX3421E_HUB_CHARACTERISTICS),
+	},
+	.PortPwrCtrlMask = {0xFF},
+};
+
+static int max3421e_hub_sreq_get_desc(const struct device *dev,
+				      const struct usb_setup_packet *const setup,
+				      struct net_buf *const buf)
+{
+	size_t len;
+
+	ARG_UNUSED(dev);
+
+	len = MIN(sizeof(max3421e_hub_desc), setup->wLength);
+	net_buf_add_mem(buf, &max3421e_hub_desc, len);
+
+	return 0;
+}
+
+static int max3421e_hub_hcreq_get_status(const struct device *dev,
+					 const struct usb_setup_packet *const setup,
+					 struct net_buf *const buf)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
-	int ret;
+	const void *data;
+	size_t len;
 
-	if (atomic_test_bit(&priv->state, MAX3421E_STATE_BUS_RESET)) {
-		return -EBUSY;
+	switch (setup->RequestType.recipient) {
+	case USB_REQTYPE_RECIPIENT_DEVICE:
+		data = &priv->hub_status;
+		len = sizeof(priv->hub_status);
+		break;
+	case USB_REQTYPE_RECIPIENT_OTHER:
+		if (setup->wIndex != 1) {
+			return -EPIPE;
+		}
+
+		data = &priv->port_status;
+		len = sizeof(priv->port_status);
+		break;
+	default:
+		return -EPIPE;
 	}
 
-	ret = max3421e_write_byte(dev, MAX3421E_REG_HCTL, MAX3421E_SIGRSM);
-	atomic_set_bit(&priv->state, MAX3421E_STATE_BUS_RESUME);
+	net_buf_add_mem(buf, data, MIN(len, setup->wLength));
+
+	return 0;
+}
+
+static int max3421e_hub_dev_set_feature(const struct device *dev,
+					const struct usb_setup_packet *const setup)
+{
+	struct max3421e_data *priv = uhc_get_private(dev);
+
+	/*
+	 * No local power or over-current sensing, change bits are driver state.
+	 * USB 2.0 Table 11-17: C_HUB_x selector value is its bit number in
+	 * wHubChange.
+	 */
+	if (setup->wValue > USB_HCFS_C_HUB_OVER_CURRENT) {
+		return -EPIPE;
+	}
+
+	priv->hub_status.wHubChange |= BIT(setup->wValue);
+
+	return 0;
+}
+
+static int max3421e_hub_dev_clear_feature(const struct device *dev,
+					  const struct usb_setup_packet *const setup)
+{
+	struct max3421e_data *priv = uhc_get_private(dev);
+
+	/*
+	 * No local power or over-current sensing, change bits are driver state.
+	 * USB 2.0 Table 11-17: C_HUB_x selector value is its bit number in
+	 * wHubChange.
+	 */
+	if (setup->wValue > USB_HCFS_C_HUB_OVER_CURRENT) {
+		return -EPIPE;
+	}
+
+	priv->hub_status.wHubChange &= ~BIT(setup->wValue);
+
+	return 0;
+}
+
+static int max3421e_hub_port_set_feature(const struct device *dev,
+					 const struct usb_setup_packet *const setup)
+{
+	struct max3421e_data *priv = uhc_get_private(dev);
+
+	if (setup->wIndex != 1) {
+		return -EPIPE;
+	}
+
+	switch (setup->wValue) {
+	case USB_HCFS_PORT_POWER:
+		/* No VBUS switch is implemented. VBUS is always supplied. */
+		priv->port_status.wPortStatus |= USB_HUB_PORT_STATUS_POWER;
+		break;
+	case USB_HCFS_PORT_RESET:
+		if (!(priv->port_status.wPortStatus & USB_HUB_PORT_STATUS_CONNECTION)) {
+			break;
+		}
+
+		priv->port_status.wPortStatus &= (USB_HUB_PORT_STATUS_POWER |
+						  USB_HUB_PORT_STATUS_CONNECTION |
+						  USB_HUB_PORT_STATUS_LOW_SPEED);
+		priv->port_status.wPortStatus |= USB_HUB_PORT_STATUS_RESET;
+
+		return max3421e_bus_reset(dev);
+	case USB_HCFS_PORT_SUSPEND:
+		if (priv->port_status.wPortStatus & USB_HUB_PORT_STATUS_CONNECTION) {
+			priv->port_status.wPortStatus |= USB_HUB_PORT_STATUS_SUSPEND;
+
+			return max3421e_bus_suspend(dev);
+		}
+		break;
+	default:
+		return -EPIPE;
+	}
+
+	return 0;
+}
+
+static int max3421e_hub_port_clear_feature(const struct device *dev,
+					   const struct usb_setup_packet *const setup)
+{
+	struct max3421e_data *priv = uhc_get_private(dev);
+	uint16_t c_bit;
+
+	if (setup->wIndex != 1) {
+		return -EPIPE;
+	}
+
+	switch (setup->wValue) {
+	case USB_HCFS_PORT_POWER:
+		/* No VBUS switch is implemented. VBUS stays supplied. */
+		priv->port_status.wPortStatus &= ~USB_HUB_PORT_STATUS_POWER;
+		break;
+	case USB_HCFS_PORT_ENABLE:
+		/* The controller cannot disable its port. */
+		priv->port_status.wPortStatus &= ~USB_HUB_PORT_STATUS_ENABLE;
+		break;
+	case USB_HCFS_PORT_SUSPEND:
+		/*
+		 * USB 2.0 11.24.2.13: if the port is not suspended, treat
+		 * this as a no-op. The status bit and C_PORT_SUSPEND are
+		 * updated once resume signaling actually completes, in
+		 * max3421e_bus_event().
+		 */
+		if (priv->port_status.wPortStatus & USB_HUB_PORT_STATUS_SUSPEND) {
+			return max3421e_bus_resume(dev);
+		}
+		break;
+	case USB_HCFS_C_PORT_CONNECTION:
+	case USB_HCFS_C_PORT_ENABLE:
+	case USB_HCFS_C_PORT_SUSPEND:
+	case USB_HCFS_C_PORT_OVER_CURRENT:
+	case USB_HCFS_C_PORT_RESET:
+		/*
+		 * The controller has no port change register, change bits are
+		 * driver state. USB 2.0 Table 11-17: C_PORT_x selector value is
+		 * 16 plus its bit number in wPortChange.
+		 */
+		c_bit = BIT(setup->wValue - USB_HCFS_C_PORT_CONNECTION);
+		priv->port_status.wPortChange &= ~c_bit;
+		break;
+	default:
+		return -EPIPE;
+	}
+
+	return 0;
+}
+
+static int max3421e_root_hub_control(const struct device *dev,
+				     const struct usb_setup_packet *const setup,
+				     struct net_buf *const buf)
+{
+	int ret = 0;
+
+	switch (setup->bRequest) {
+	case USB_SREQ_GET_DESCRIPTOR:
+		ret = max3421e_hub_sreq_get_desc(dev, setup, buf);
+		break;
+	case USB_HCREQ_GET_STATUS:
+		ret = max3421e_hub_hcreq_get_status(dev, setup, buf);
+		break;
+	case USB_HCREQ_SET_FEATURE:
+		if (setup->RequestType.recipient == USB_REQTYPE_RECIPIENT_DEVICE) {
+			ret = max3421e_hub_dev_set_feature(dev, setup);
+		} else {
+			ret = max3421e_hub_port_set_feature(dev, setup);
+		}
+		break;
+	case USB_HCREQ_CLEAR_FEATURE:
+		if (setup->RequestType.recipient == USB_REQTYPE_RECIPIENT_DEVICE) {
+			ret = max3421e_hub_dev_clear_feature(dev, setup);
+		} else {
+			ret = max3421e_hub_port_clear_feature(dev, setup);
+		}
+		break;
+	case USB_HCREQ_CLEAR_TT_BUFFER:
+	case USB_HCREQ_RESET_TT:
+	case USB_HCREQ_GET_TT_STATE:
+	case USB_HCREQ_STOP_TT:
+		/* MAX3421E never operates at high-speed, so it has no TT. */
+		ret = -EPIPE;
+		break;
+	default:
+		LOG_ERR("root hub: unsupported request 0x%02x", setup->bRequest);
+		ret = -EPIPE;
+		break;
+	}
 
 	return ret;
+}
+
+/*
+ * Hub and Port Status Change Bitmap, USB 2.0 11.12.4: bit 0 is the hub's
+ * own change, bit 1 is the single port's change.
+ */
+static int max3421e_root_hub_status(const struct device *dev, struct net_buf *const buf)
+{
+	struct max3421e_data *priv = uhc_get_private(dev);
+	uint8_t bitmap[DIV_ROUND_UP(1 + 1, 8)] = {0};
+	bool changed = false;
+
+	if (priv->hub_status.wHubChange != 0) {
+		bitmap[0] |= BIT(0);
+		changed = true;
+	}
+
+	if (priv->port_status.wPortChange != 0) {
+		bitmap[0] |= BIT(1);
+		changed = true;
+	}
+
+	if (changed) {
+		net_buf_add_mem(buf, bitmap, MIN(sizeof(bitmap), net_buf_tailroom(buf)));
+	}
+
+	return 0;
 }
 
 static int max3421e_enqueue(const struct device *dev,
@@ -1203,6 +1492,8 @@ static DEVICE_API(uhc, max3421e_uhc_api) = {
 
 	.ep_enqueue = max3421e_enqueue,
 	.ep_dequeue = max3421e_dequeue,
+	.root_hub_control = max3421e_root_hub_control,
+	.root_hub_status = max3421e_root_hub_status,
 };
 
 #define MAX3421E_DEFINE(id)                                                      \
