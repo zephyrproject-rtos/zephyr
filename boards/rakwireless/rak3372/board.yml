@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 RAKwireless Technology Limited
+
+board:
+  name: rak3372
+  full_name: RAK3372 WisBlock Core Module
+  vendor: rakwireless
+  socs:
+  - name: stm32wle5xx
