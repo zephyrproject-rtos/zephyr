@@ -101,6 +101,11 @@ LOG_MODULE_DECLARE(bflb_wifi, CONFIG_WIFI_LOG_LEVEL);
 
 #define BFLB_CHAN_FREQ_ANY UINT16_MAX
 
+/* Firmware station table: capability word and its MFP bit. */
+#define BFLB_STA_INFO_STRIDE 368U
+#define BFLB_STA_INFO_CAPA   308U
+#define BFLB_STA_CAPA_MFP    BIT(3)
+
 struct mm_version_cfm_raw {
 	uint32_t version_lmac;
 	uint32_t version_machw_1;
@@ -130,6 +135,7 @@ extern int bl_wifi_register_wpa_cb_internal(const struct wpa_funcs *cb);
 extern int bl_wifi_set_appie_internal(uint8_t vif_idx, wifi_appie_t type, uint8_t *ie, uint16_t len,
 				      bool sta);
 extern void scanu_cached_scanresult_clear(void);
+extern uint8_t sta_info_tab[];
 
 static bool bssid_is_specific(const uint8_t *bssid);
 static bool bridge_sta_init(void);
@@ -539,6 +545,8 @@ static void bflb_connect_fill_bssid(struct bflb_wifi_dev *d, struct sm_connect_r
 
 static void bflb_handle_sm_connect_ind(struct bflb_wifi_dev *d, const struct sm_connect_ind *ind)
 {
+	uint32_t *capa;
+
 	LOG_INF("connect status=%u reason=%u vif=%u ap=%u qos=%u freq=%u", ind->status_code,
 		ind->reason_code, ind->vif_idx, ind->ap_idx, ind->qos, ind->center_freq);
 
@@ -553,6 +561,12 @@ static void bflb_handle_sm_connect_ind(struct bflb_wifi_dev *d, const struct sm_
 		/* BSS address feeds the MAC HW RX filter. */
 		bflb_nxmac_write_addr(d->connected_bssid, NXMAC_BSS_ADDR_LOW_REG,
 				      NXMAC_BSS_ADDR_HIGH_REG);
+		/* The blob drops the AP MFP capability; restore it so the deauth is protected. */
+		if (g_supp_ctx.conn_sae) {
+			capa = (uint32_t *)&sta_info_tab[(ind->ap_idx * BFLB_STA_INFO_STRIDE) +
+							 BFLB_STA_INFO_CAPA];
+			*capa |= BFLB_STA_CAPA_MFP;
+		}
 	}
 
 	bflb_wifi_post_event(BFLB_WIFI_EVT_CONNECTED, ind->status_code);
