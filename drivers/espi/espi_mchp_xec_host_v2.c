@@ -1508,29 +1508,11 @@ static void p80bd0_isr(const struct device *dev)
 		 */
 		evt.evt_data = XEC_PBD_EC_DA_VAL_GET(dattr) | BIT(16);
 
+		/* evt_details b[23:16] = byte lane (0-3) of the 32-bit Port 80 capture */
 		byte_lane = XEC_PBD_EC_DA_LANE_GET(dattr);
+		evt.evt_details = ((uint32_t)byte_lane << 16) | ESPI_PERIPHERAL_DEBUG_PORT80;
 
-		switch (byte_lane) {
-		case XEC_PBD_EC_DA_LANE_0:
-			evt.evt_details |=
-				((ESPI_PERIPHERAL_INDEX_0 << 16) | ESPI_PERIPHERAL_DEBUG_PORT80);
-			break;
-		case XEC_PBD_EC_DA_LANE_1:
-			evt.evt_details |=
-				((ESPI_PERIPHERAL_INDEX_1 << 16) | ESPI_PERIPHERAL_DEBUG_PORT80);
-			break;
-		case XEC_PBD_EC_DA_LANE_2:
-			break;
-		case XEC_PBD_EC_DA_LANE_3:
-			break;
-		default:
-			break;
-		}
-
-		if (evt.evt_details) {
-			espi_send_callbacks(&data->callbacks, dev, evt);
-			evt.evt_details = 0;
-		}
+		espi_send_callbacks(&data->callbacks, dev, evt);
 
 		dattr = sys_read32(p80rb + XEC_PBD_EC_DA_OFS);
 	}
