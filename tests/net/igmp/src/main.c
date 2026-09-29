@@ -78,6 +78,9 @@ static bool is_leave_msg_ok;
 static bool is_query_received;
 static bool is_report_sent;
 static bool is_query_resp_ok;
+static bool is_v1_report_sent;
+static bool is_v2_report_sent;
+static bool is_v2_leave_sent;
 static bool is_igmpv2_query_sent;
 static bool is_igmpv3_query_sent;
 K_SEM_DEFINE(wait_data, 0, UINT_MAX);
@@ -172,10 +175,18 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		NET_DBG("Received query....");
 		is_query_received = true;
 		k_sem_give(&wait_data);
+	} else if (igmp_header->type == NET_IPV4_IGMP_REPORT_V1) {
+		NET_DBG("Received v1 report....");
+		is_v1_report_sent = true;
+		is_join_msg_ok = true;
+		is_query_resp_ok = true;
+		is_report_sent = true;
+		k_sem_give(&wait_data);
 	} else if (igmp_header->type == NET_IPV4_IGMP_REPORT_V2) {
 		NET_DBG("Received v2 report....");
 		zassert_true(!IS_ENABLED(CONFIG_NET_IPV4_IGMPV3) || is_igmpv2_query_sent,
 			     "Wrong IGMP report received (IGMPv2)");
+		is_v2_report_sent = true;
 		is_join_msg_ok = true;
 		is_query_resp_ok = true;
 		is_report_sent = true;
@@ -211,6 +222,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		k_sem_give(&wait_data);
 	} else if (igmp_header->type == NET_IPV4_IGMP_LEAVE) {
 		NET_DBG("Received leave....");
+		is_v2_leave_sent = true;
 		is_leave_msg_ok = true;
 		k_sem_give(&wait_data);
 	}
@@ -300,6 +312,21 @@ static void *igmp_setup(void)
 	return NULL;
 }
 
+/* Forget about older version queriers heard by a previous test */
+static void igmp_before(void *fixture)
+{
+	struct net_if_ipv4 *ipv4 = net_iface->config.ip.ipv4;
+
+	ARG_UNUSED(fixture);
+
+	ipv4->igmp_v1_querier_timeout = sys_timepoint_calc(K_NO_WAIT);
+	ipv4->igmp_v2_querier_timeout = sys_timepoint_calc(K_NO_WAIT);
+
+	is_igmpv2_query_sent = false;
+	is_igmpv3_query_sent = false;
+	k_sem_reset(&wait_data);
+}
+
 static void igmp_teardown(void *dummy)
 {
 	ARG_UNUSED(dummy);
@@ -340,7 +367,8 @@ static uint16_t test_chksum(const uint8_t *data, size_t len)
  * Query (or a Report for the group when type is changed as well).
  */
 static struct net_pkt *prepare_igmp_msg(struct net_if *iface, bool is_igmpv3,
-					const struct net_in_addr *group, uint8_t type)
+					const struct net_in_addr *group, uint8_t type,
+					uint8_t max_rsp)
 {
 	const size_t ip_hdr_len = 24; /* IPv4 header plus the Router Alert option */
 	const unsigned char *igmp_msg = is_igmpv3 ? igmp_v3_query : igmp_v2_query;
@@ -351,6 +379,7 @@ static struct net_pkt *prepare_igmp_msg(struct net_if *iface, bool is_igmpv3,
 	memcpy(buf, igmp_msg, igmp_msg_size);
 
 	buf[ip_hdr_len] = type;
+	buf[ip_hdr_len + 1] = max_rsp;
 
 	if (group != NULL) {
 		memcpy(&buf[16], group->s4_addr, sizeof(group->s4_addr));
@@ -381,7 +410,8 @@ static struct net_pkt *prepare_igmp_msg(struct net_if *iface, bool is_igmpv3,
 static struct net_pkt *prepare_igmp_query(struct net_if *iface, bool is_igmpv3,
 					  const struct net_in_addr *group)
 {
-	return prepare_igmp_msg(iface, is_igmpv3, group, NET_IPV4_IGMP_QUERY);
+	return prepare_igmp_msg(iface, is_igmpv3, group, NET_IPV4_IGMP_QUERY,
+				is_igmpv3 ? 0x64 : 0xff);
 }
 
 static void join_group(void)
@@ -631,8 +661,11 @@ static void igmp_send_query(bool is_imgpv3, const struct net_in_addr *group)
 	is_report_sent = false;
 	is_query_resp_ok = false;
 
-	is_igmpv2_query_sent = !is_imgpv3;
-	is_igmpv3_query_sent = is_imgpv3;
+	/* Only a General Query from an IGMPv2 querier switches an IGMPv3 host
+	 * to IGMPv2, a Group-Specific one is answered in IGMPv3.
+	 */
+	is_igmpv2_query_sent = !IS_ENABLED(CONFIG_NET_IPV4_IGMPV3) || (!is_imgpv3 && group == NULL);
+	is_igmpv3_query_sent = !is_igmpv2_query_sent;
 
 	pkt = prepare_igmp_query(net_iface, is_imgpv3, group);
 	zassert_not_null(pkt, "IGMP query packet prep failed");
@@ -687,7 +720,7 @@ static void igmp_send_unanswered(bool is_igmpv3, const struct net_in_addr *group
 	is_igmpv2_query_sent = !is_igmpv3;
 	is_igmpv3_query_sent = is_igmpv3;
 
-	pkt = prepare_igmp_msg(net_iface, is_igmpv3, group, type);
+	pkt = prepare_igmp_msg(net_iface, is_igmpv3, group, type, 0x64);
 	zassert_not_null(pkt, "IGMP packet prep failed");
 
 	zassert_equal(net_ipv4_input(pkt), verdict, "Unexpected verdict");
@@ -732,6 +765,70 @@ ZTEST_USER(net_igmp, test_group_rejoin)
 	socket_leave_group_with_index(&my_addr);
 }
 
+/* After a General Query from an IGMPv2 querier, the host joins and leaves
+ * with IGMPv2 messages (RFC 3376 ch 7.2.1).
+ */
+ZTEST_USER(net_igmp, test_igmp_v2_querier_present)
+{
+	struct net_pkt *pkt;
+
+	if (!IS_ENABLED(CONFIG_NET_IPV4_IGMPV3)) {
+		ztest_test_skip();
+	}
+
+	pkt = prepare_igmp_query(net_iface, false, NULL);
+	zassert_equal(net_ipv4_input(pkt), NET_OK, "Failed to send");
+
+	is_igmpv2_query_sent = true;
+	is_v2_report_sent = false;
+
+	join_group();
+	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), "Timeout while waiting join event");
+	zassert_true(is_v2_report_sent, "Join not reported with IGMPv2");
+
+	k_sem_reset(&wait_data);
+	is_v2_leave_sent = false;
+
+	leave_group();
+	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), "Timeout while waiting leave event");
+	zassert_true(is_v2_leave_sent, "Leave not reported with IGMPv2");
+}
+
+/* After a query from an IGMPv1 querier, the host answers and joins with
+ * IGMPv1 reports and does not send a leave message (RFC 2236 ch 4).
+ */
+ZTEST_USER(net_igmp, test_igmp_v1_querier_present)
+{
+	struct net_pkt *pkt;
+
+	join_group();
+
+	k_sem_reset(&wait_data);
+	is_v1_report_sent = false;
+
+	pkt = prepare_igmp_msg(net_iface, false, NULL, NET_IPV4_IGMP_QUERY, 0);
+	zassert_equal(net_ipv4_input(pkt), NET_OK, "Failed to send");
+
+	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), "Timeout while waiting query event");
+	zassert_true(is_v1_report_sent, "Query not answered with IGMPv1");
+
+	is_leave_msg_ok = false;
+	is_v2_leave_sent = false;
+
+	leave_group();
+	zassert_false(is_leave_msg_ok, "Unexpected leave msg");
+
+	k_sem_reset(&wait_data);
+	is_v1_report_sent = false;
+
+	join_group();
+	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), "Timeout while waiting join event");
+	zassert_true(is_v1_report_sent, "Join not reported with IGMPv1");
+
+	leave_group();
+	zassert_false(is_v2_leave_sent, "Unexpected leave msg");
+}
+
 ZTEST(net_igmp, test_igmp_multi_join)
 {
 	is_join_msg_ok = false;
@@ -756,4 +853,4 @@ ZTEST(net_igmp, test_igmp_multi_join)
 	zassert_true(is_leave_msg_ok, "Leave msg invalid");
 }
 
-ZTEST_SUITE(net_igmp, NULL, igmp_setup, NULL, NULL, igmp_teardown);
+ZTEST_SUITE(net_igmp, NULL, igmp_setup, igmp_before, NULL, igmp_teardown);

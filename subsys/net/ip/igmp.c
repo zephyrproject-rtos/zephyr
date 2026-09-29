@@ -33,11 +33,21 @@ LOG_MODULE_DECLARE(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 #define IGMPV2_PAYLOAD_MIN_LEN 8
 #define IGMPV3_PAYLOAD_MIN_LEN 12
 
+/* Query Interval and Query Response Interval, RFC 3376 ch 8.2 and 8.3 */
+#define IGMP_QUERY_INTERVAL_S          125U
+#define IGMP_QUERY_RESPONSE_INTERVAL_S 10U
+
+/* Older Version Querier Present Timeout, RFC 3376 ch 8.12 */
+#define IGMP_OLDER_VERSION_QUERIER_PRESENT_S \
+	(CONFIG_NET_IPV4_IGMP_ROBUSTNESS * IGMP_QUERY_INTERVAL_S + IGMP_QUERY_RESPONSE_INTERVAL_S)
+
+/* Version 1 Router Present Timeout of an IGMPv2 host, RFC 2236 ch 8.11 */
+#define IGMP_V1_ROUTER_PRESENT_TIMEOUT_S 400U
+
 static const struct net_in_addr all_systems = { { { 224, 0, 0, 1 } } };
+static const struct net_in_addr all_routers = { { { 224, 0, 0, 2 } } };
 #if defined(CONFIG_NET_IPV4_IGMPV3)
 static const struct net_in_addr igmp_multicast_addr = { { { 224, 0, 0, 22 } } };
-#else
-static const struct net_in_addr all_routers = { { { 224, 0, 0, 2 } } };
 #endif
 
 #define dbg_addr(action, pkt_str, src, dst)				\
@@ -61,6 +71,45 @@ static bool igmp_is_reported(const struct net_if_mcast_addr *mcast)
 {
 	return mcast->is_used && mcast->is_joined &&
 	       !net_ipv4_addr_cmp(&mcast->address.in_addr, &all_systems);
+}
+
+/* Host Compatibility Mode of the interface, RFC 3376 ch 7.2.1: the version
+ * of the oldest querier heard within the Older Version Querier Present
+ * Timeout, the newest supported version otherwise.
+ */
+static enum igmp_version igmp_host_version(const struct net_if_ipv4 *ipv4)
+{
+	if (!sys_timepoint_expired(ipv4->igmp_v1_querier_timeout)) {
+		return IGMPV1;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4_IGMPV3) &&
+	    sys_timepoint_expired(ipv4->igmp_v2_querier_timeout)) {
+		return IGMPV3;
+	}
+
+	return IGMPV2;
+}
+
+/* A query from an older version querier switches the host to that version
+ * for the Older Version Querier Present Timeout, RFC 3376 ch 7.2.1. IGMPv2
+ * routers are only recognized by their General Queries.
+ */
+static void igmp_querier_seen(struct net_if_ipv4 *ipv4, enum igmp_version version, bool general)
+{
+	if (version == IGMPV1) {
+		/* An IGMPv2 host remembers an IGMPv1 querier longer than an
+		 * IGMPv3 host does.
+		 */
+		uint32_t timeout_s = IS_ENABLED(CONFIG_NET_IPV4_IGMPV3)
+					     ? IGMP_OLDER_VERSION_QUERIER_PRESENT_S
+					     : IGMP_V1_ROUTER_PRESENT_TIMEOUT_S;
+
+		ipv4->igmp_v1_querier_timeout = sys_timepoint_calc(K_SECONDS(timeout_s));
+	} else if (version == IGMPV2 && general) {
+		ipv4->igmp_v2_querier_timeout =
+			sys_timepoint_calc(K_SECONDS(IGMP_OLDER_VERSION_QUERIER_PRESENT_S));
+	}
 }
 
 static int igmp_v2_create(struct net_pkt *pkt, const struct net_in_addr *addr,
@@ -319,38 +368,6 @@ drop:
 	return ret;
 }
 
-/* Send a v2 Membership Report for the given group, or for every joined
- * group if group is NULL. Reports are sent to the group address, RFC 2236
- * ch 9.
- */
-static int igmp_send_v2_response(struct net_if *iface, const struct net_in_addr *group)
-{
-	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
-	int ret = 0;
-
-	if (!ipv4) {
-		return -ENOENT;
-	}
-
-	ARRAY_FOR_EACH(ipv4->mcast, i) {
-		if (!igmp_is_reported(&ipv4->mcast[i])) {
-			continue;
-		}
-
-		if (group != NULL && !net_ipv4_addr_cmp(&ipv4->mcast[i].address.in_addr, group)) {
-			continue;
-		}
-
-		ret = igmp_send_v2(iface, &ipv4->mcast[i].address.in_addr,
-				   &ipv4->mcast[i].address.in_addr, NET_IPV4_IGMP_REPORT_V2);
-		if (ret < 0) {
-			return ret;
-		}
-	}
-
-	return ret;
-}
-
 #if defined(CONFIG_NET_IPV4_IGMPV3)
 /* Send one v3 Membership Report with a group record for every reported
  * group in mcast. The report is sent to 224.0.0.22, RFC 3376 ch 4.2.14.
@@ -404,39 +421,95 @@ drop:
 
 	return ret;
 }
-#endif
-
-#if defined(CONFIG_NET_IPV4_IGMPV3)
-static int igmp_send_v3_response(struct net_if *iface, struct net_if_mcast_addr *group)
-{
-	if (group != NULL) {
-		return igmp_send_v3(iface, group, 1, false);
-	}
-
-	return igmp_send_v3(iface, iface->config.ip.ipv4->mcast, NET_IF_MAX_IPV4_MADDR, false);
-}
 #else
-static int igmp_send_v3_response(struct net_if *iface, struct net_if_mcast_addr *group)
+static int igmp_send_v3(struct net_if *iface, struct net_if_mcast_addr mcast[], size_t mcast_len,
+			bool state_change)
 {
 	ARG_UNUSED(iface);
-	ARG_UNUSED(group);
+	ARG_UNUSED(mcast);
+	ARG_UNUSED(mcast_len);
+	ARG_UNUSED(state_change);
 
 	return -ENOTSUP;
 }
 #endif
 
+/* Report the reported groups in mcast in the version the host speaks on the
+ * interface: a state-change report for a join, or the current state as
+ * response to a query. IGMPv3 packs all groups in one message, older
+ * versions send one message per group to the group address (RFC 2236 ch 9).
+ */
+static int igmp_send_report(struct net_if *iface, struct net_if_mcast_addr mcast[],
+			    size_t mcast_len, bool state_change)
+{
+	enum igmp_version version = igmp_host_version(iface->config.ip.ipv4);
+	uint8_t type;
+	int ret = 0;
+
+	if (IS_ENABLED(CONFIG_NET_IPV4_IGMPV3) && version == IGMPV3) {
+		return igmp_send_v3(iface, mcast, mcast_len, state_change);
+	}
+
+	type = version == IGMPV1 ? NET_IPV4_IGMP_REPORT_V1 : NET_IPV4_IGMP_REPORT_V2;
+
+	for (size_t i = 0; i < mcast_len; i++) {
+		if (!igmp_is_reported(&mcast[i])) {
+			continue;
+		}
+
+		ret = igmp_send_v2(iface, &mcast[i].address.in_addr, &mcast[i].address.in_addr,
+				   type);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return ret;
+}
+
+/* Report leaving a group: a change to INCLUDE mode with an empty source
+ * list for IGMPv3 (RFC 3376 ch 5.1), a Leave Group message to the all
+ * routers group for IGMPv2 (RFC 2236 ch 3). IGMPv1 has no leave message.
+ */
+static int igmp_send_leave(struct net_if *iface, const struct net_if_mcast_addr *mcast)
+{
+	enum igmp_version version = igmp_host_version(iface->config.ip.ipv4);
+
+	if (!igmp_is_reported(mcast)) {
+		/* The all-systems group never changes state, RFC 2236 ch 6 */
+		return 0;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4_IGMPV3) && version == IGMPV3) {
+		struct net_if_mcast_addr removed_addr = *mcast;
+
+#if defined(CONFIG_NET_IPV4_IGMPV3)
+		removed_addr.record_type = IGMPV3_MODE_IS_INCLUDE;
+		removed_addr.sources_len = 0;
+#endif
+		return igmp_send_v3(iface, &removed_addr, 1, true);
+	}
+
+	if (version == IGMPV2) {
+		return igmp_send_v2(iface, &all_routers, &mcast->address.in_addr,
+				    NET_IPV4_IGMP_LEAVE);
+	}
+
+	return 0;
+}
+
 /* Respond to a Membership Query with the current state of the given group,
  * or of every joined group for a General Query (group is NULL).
  */
-static void igmp_query_respond(struct net_if *iface, struct net_if_mcast_addr *group,
-			       enum igmp_version version)
+static void igmp_query_respond(struct net_if *iface, struct net_if_mcast_addr *group)
 {
 	int ret;
 
-	if (IS_ENABLED(CONFIG_NET_IPV4_IGMPV3) && version == IGMPV3) {
-		ret = igmp_send_v3_response(iface, group);
+	if (group != NULL) {
+		ret = igmp_send_report(iface, group, 1, false);
 	} else {
-		ret = igmp_send_v2_response(iface, group != NULL ? &group->address.in_addr : NULL);
+		ret = igmp_send_report(iface, iface->config.ip.ipv4->mcast, NET_IF_MAX_IPV4_MADDR,
+				       false);
 	}
 
 	if (ret < 0 && ret != -ESRCH) {
@@ -463,7 +536,9 @@ enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt, struct net_ipv4_hdr *i
 
 	igmp_len = pkt->buffer->len - (net_pkt_ip_hdr_len(pkt) + net_pkt_ipv4_opts_len(pkt));
 
-	/* The version of a query follows from its length, RFC 3376 ch 7.1 */
+	/* The version of a query follows from its length (RFC 3376 ch 7.1), an
+	 * IGMPv1 query has a Max Resp Code of 0 (RFC 3376 ch 7.2.1).
+	 */
 	if (igmp_len == IGMPV2_PAYLOAD_MIN_LEN) {
 		version = IGMPV2;
 	} else if (igmp_len >= IGMPV3_PAYLOAD_MIN_LEN) {
@@ -501,6 +576,10 @@ enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt, struct net_ipv4_hdr *i
 		goto out;
 	}
 
+	if (version == IGMPV2 && igmp_hdr->max_rsp == 0U) {
+		version = IGMPV1;
+	}
+
 	net_ipv4_addr_copy_raw(group.s4_addr, igmp_hdr->address.s4_addr);
 
 	if (net_ipv4_is_addr_unspecified(&group)) {
@@ -518,7 +597,9 @@ enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt, struct net_ipv4_hdr *i
 		}
 	}
 
-	igmp_query_respond(iface, maddr, version);
+	igmp_querier_seen(iface->config.ip.ipv4, version, maddr == NULL);
+
+	igmp_query_respond(iface, maddr);
 
 out:
 	net_pkt_unref(pkt);
@@ -544,12 +625,7 @@ int net_ipv4_igmp_rejoin(struct net_if *iface, struct net_if_mcast_addr *addr)
 		goto out;
 	}
 
-#if defined(CONFIG_NET_IPV4_IGMPV3)
-	ret = igmp_send_v3(iface, addr, 1, true);
-#else
-	ret = igmp_send_v2(iface, &addr->address.in_addr, &addr->address.in_addr,
-			   NET_IPV4_IGMP_REPORT_V2);
-#endif
+	ret = igmp_send_report(iface, addr, 1, true);
 	if (ret < 0) {
 		net_if_ipv4_maddr_leave(iface, addr);
 		return ret;
@@ -623,11 +699,7 @@ int net_ipv4_igmp_join(struct net_if *iface, const struct net_in_addr *addr,
 		goto out;
 	}
 
-#if defined(CONFIG_NET_IPV4_IGMPV3)
-	ret = igmp_send_v3(iface, maddr, 1, true);
-#else
-	ret = igmp_send_v2(iface, addr, addr, NET_IPV4_IGMP_REPORT_V2);
-#endif
+	ret = igmp_send_report(iface, maddr, 1, true);
 	if (ret < 0) {
 		net_if_ipv4_maddr_leave(iface, maddr);
 
@@ -673,18 +745,7 @@ int net_ipv4_igmp_leave(struct net_if *iface, const struct net_in_addr *addr)
 		goto out;
 	}
 
-#if defined(CONFIG_NET_IPV4_IGMPV3)
-	/* Leaving is a change to INCLUDE mode with an empty source list,
-	 * RFC 3376 ch 5.1.
-	 */
-	removed_addr.record_type = IGMPV3_MODE_IS_INCLUDE;
-	removed_addr.sources_len = 0;
-
-	ret = igmp_send_v3(iface, &removed_addr, 1, true);
-#else
-	/* A Leave Group message is sent to the all routers group, RFC 2236 ch 3 */
-	ret = igmp_send_v2(iface, &all_routers, addr, NET_IPV4_IGMP_LEAVE);
-#endif
+	ret = igmp_send_leave(iface, &removed_addr);
 	if (ret < 0) {
 		return ret;
 	}
@@ -704,16 +765,7 @@ void net_ipv4_igmp_send_leave(struct net_if *iface, const struct net_if_mcast_ad
 		goto out;
 	}
 
-#if defined(CONFIG_NET_IPV4_IGMPV3)
-	struct net_if_mcast_addr removed_addr = *addr;
-
-	removed_addr.record_type = IGMPV3_MODE_IS_INCLUDE;
-	removed_addr.sources_len = 0;
-
-	igmp_send_v3(iface, &removed_addr, 1, true);
-#else
-	igmp_send_v2(iface, &all_routers, &addr->address.in_addr, NET_IPV4_IGMP_LEAVE);
-#endif
+	(void)igmp_send_leave(iface, addr);
 out:
 	net_if_mcast_monitor(iface, &addr->address, false);
 
