@@ -17,6 +17,7 @@
 #include <zephyr/autoconf.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/drivers/audio/cs47l63.h>
 #include <zephyr/drivers/i2s.h>
 #include <zephyr/input/input.h>
 #include <zephyr/kernel.h>
@@ -346,6 +347,12 @@ int i2s_codec_init(void)
 	err = audio_codec_configure(codec_dev, &codec_cfg);
 	if (err != 0) {
 		LOG_ERR("Failed to configure codec: %d", err);
+		return err;
+	}
+
+	err = audio_codec_route_output(codec_dev, AUDIO_CHANNEL_ALL, CS47L63_OUTPUT_HP);
+	if (err != 0) {
+		LOG_ERR("Failed to route codec output: %d", err);
 		return err;
 	}
 
