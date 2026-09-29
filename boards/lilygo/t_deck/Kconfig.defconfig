@@ -7,10 +7,10 @@ if FUEL_GAUGE && BOARD_REVISION = "plus"
 
 # Composite fuel gauge gets battery voltage from ADC-based voltage-divider sensor
 
-config ADC
+configdefault ADC
 	default y
 
-config SENSOR
+configdefault SENSOR
 	default y
 
 endif # FUEL_GAUGE && BOARD_REVISION = "plus"
