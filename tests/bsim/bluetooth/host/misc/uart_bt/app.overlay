@@ -1,0 +1,12 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	nus_uart: nus-uart {
+		compatible = "zephyr,nus-uart";
+		tx-fifo-size = <32>;
+		rx-fifo-size = <32>;
+	};
+};
