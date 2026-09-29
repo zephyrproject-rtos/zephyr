@@ -441,64 +441,91 @@ static void test_verify_leave_group(void)
 	is_leave_msg_ok = false;
 }
 
-static void send_query(struct net_if *iface)
+struct mld_query_opts {
+	/* Source address, a link-local peer when NULL */
+	const struct net_in6_addr *src;
+	/* Destination, the link-scope all-nodes group when NULL */
+	const struct net_in6_addr *dst;
+	/* Multicast Address field, unspecified when NULL */
+	const struct net_in6_addr *group;
+	/* Maximum Response Code */
+	uint16_t max_resp;
+	/* Number of (unspecified) sources appended to an MLDv2 query */
+	uint16_t sources;
+	/* An MLDv1 query of 24 octets instead of an MLDv2 one */
+	bool v1;
+	/* Leave out the Hop-by-Hop header carrying the Router Alert option */
+	bool no_router_alert;
+	/* Put the padding before the Router Alert option instead of after it */
+	bool pad_first;
+	/* Carry the Router Alert option in a Destination Options header */
+	bool dest_opts;
+	/* Hop limit, 1 when 0 */
+	uint8_t hop_limit;
+};
+
+/* Inject a Multicast Listener Query built from opts */
+static void send_mld_query(struct net_if *iface, const struct mld_query_opts *opts)
 {
+	static const struct net_in6_addr peer_ll_addr = { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0,
+							      0, 0, 0, 0, 0, 0, 0, 0x2 } } };
+	const struct net_in6_addr *src = opts->src != NULL ? opts->src : &peer_ll_addr;
+	const struct net_in6_addr *group =
+		opts->group != NULL ? opts->group : net_ipv6_unspecified_address();
+	struct net_in6_addr all_nodes;
+	const struct net_in6_addr *dst;
 	struct net_pkt *pkt;
-	struct net_in6_addr dst;
 	int ret;
 
-	/* Sent to all MLDv2-capable routers */
-	net_ipv6_addr_create(&dst, 0xff02, 0, 0, 0, 0, 0, 0, 0x0016);
+	net_ipv6_addr_create_ll_allnodes_mcast(&all_nodes);
+	dst = opts->dst != NULL ? opts->dst : &all_nodes;
 
-	/* router alert opt + icmpv6 reserved space + mldv2 mcast record */
-	pkt = net_pkt_alloc_with_buffer(iface, 144, NET_AF_INET6,
-					NET_IPPROTO_ICMPV6, K_FOREVER);
+	pkt = net_pkt_alloc_with_buffer(iface, 128 + opts->sources * sizeof(struct net_in6_addr),
+					NET_AF_INET6, NET_IPPROTO_ICMPV6, K_FOREVER);
 	zassert_not_null(pkt, "Cannot allocate pkt");
 
-	net_pkt_set_ipv6_hop_limit(pkt, 1); /* RFC 3810 ch 7.4 */
-	ret = net_ipv6_create(pkt, &peer_addr, &dst);
+	net_pkt_set_ipv6_hop_limit(pkt, opts->hop_limit != 0 ? opts->hop_limit : 1);
+	ret = net_ipv6_create(pkt, src, dst);
 	zassert_false(ret, "Cannot create ipv6 pkt");
 
-	/* Add hop-by-hop option and router alert option, RFC 3810 ch 5. */
-	ret = net_pkt_write_u8(pkt, NET_IPPROTO_ICMPV6);
-	zassert_false(ret, "Failed to write");
-	ret = net_pkt_write_u8(pkt, 0); /* length (0 means 8 bytes) */
-	zassert_false(ret, "Failed to write");
+	if (!opts->no_router_alert) {
+		/* Hop-by-Hop header with the Router Alert option of RFC 2711 and
+		 * a PadN option, in either order.
+		 */
+		zassert_ok(net_pkt_write_u8(pkt, NET_IPPROTO_ICMPV6), "Failed to write");
+		zassert_ok(net_pkt_write_u8(pkt, 0), "Failed to write"); /* 8 octets */
+		if (opts->pad_first) {
+			zassert_ok(net_pkt_write_be16(pkt, 0x0100), "Failed to write");
+		}
+		zassert_ok(net_pkt_write_be16(pkt, 0x0502), "Failed to write");
+		zassert_ok(net_pkt_write_be16(pkt, 0), "Failed to write"); /* MLD */
+		if (!opts->pad_first) {
+			zassert_ok(net_pkt_write_be16(pkt, 0x0100), "Failed to write");
+		}
+		net_pkt_set_ipv6_ext_len(pkt, 8);
+		net_pkt_set_ipv6_next_hdr(pkt, opts->dest_opts ? NET_IPV6_NEXTHDR_DESTO
+							       : NET_IPV6_NEXTHDR_HBHO);
+	} else {
+		net_pkt_set_ipv6_next_hdr(pkt, NET_IPPROTO_ICMPV6);
+	}
 
-#define ROUTER_ALERT_LEN 8
-
-	/* IPv6 router alert option is described in RFC 2711. */
-	ret = net_pkt_write_be16(pkt, 0x0502); /* RFC 2711 ch 2.1 */
-	zassert_false(ret, "Failed to write");
-	ret = net_pkt_write_be16(pkt, 0); /* pkt contains MLD msg */
-	zassert_false(ret, "Failed to write");
-
-	ret = net_pkt_write_u8(pkt, 1); /* padn */
-	zassert_false(ret, "Failed to write");
-	ret = net_pkt_write_u8(pkt, 0); /* padn len */
-	zassert_false(ret, "Failed to write");
-
-	net_pkt_set_ipv6_ext_len(pkt, ROUTER_ALERT_LEN);
-
-	/* ICMPv6 header */
 	ret = net_icmpv6_create(pkt, NET_ICMPV6_MLD_QUERY, 0);
 	zassert_false(ret, "Cannot create icmpv6 pkt");
 
-	ret = net_pkt_write_be16(pkt, 3); /* maximum response code */
-	zassert_false(ret, "Failed to write");
-	ret = net_pkt_write_be16(pkt, 0); /* reserved field */
-	zassert_false(ret, "Failed to write");
+	zassert_ok(net_pkt_write_be16(pkt, opts->max_resp), "Failed to write");
+	zassert_ok(net_pkt_write_be16(pkt, 0), "Failed to write"); /* reserved */
+	zassert_ok(net_pkt_write(pkt, group, sizeof(struct net_in6_addr)), "Failed to write");
 
-	net_pkt_set_ipv6_next_hdr(pkt, NET_IPV6_NEXTHDR_HBHO);
+	if (!opts->v1) {
+		zassert_ok(net_pkt_write_be16(pkt, 0), "Failed to write"); /* Resv, S, QRV, QQIC */
+		zassert_ok(net_pkt_write_be16(pkt, opts->sources), "Failed to write");
 
-	ret = net_pkt_write_be16(pkt, 0); /* Resv, S, QRV and QQIC */
-	zassert_false(ret, "Failed to write");
-	ret = net_pkt_write_be16(pkt, 0); /* number of addresses */
-	zassert_false(ret, "Failed to write");
-
-	ret = net_pkt_write(pkt, net_ipv6_unspecified_address(),
-			    sizeof(struct net_in6_addr));
-	zassert_false(ret, "Failed to write");
+		for (uint16_t i = 0; i < opts->sources; i++) {
+			zassert_ok(net_pkt_write(pkt, net_ipv6_unspecified_address(),
+						 sizeof(struct net_in6_addr)),
+				   "Failed to write");
+		}
+	}
 
 	net_pkt_cursor_init(pkt);
 	ret = net_ipv6_finalize(pkt, NET_IPPROTO_ICMPV6);
@@ -508,6 +535,14 @@ static void send_query(struct net_if *iface)
 
 	ret = net_recv_data(iface, pkt);
 	zassert_false(ret, "Failed to receive data");
+}
+
+/* A General Query from a link-local peer */
+static void send_query(struct net_if *iface)
+{
+	const struct mld_query_opts opts = { .max_resp = 3 };
+
+	send_mld_query(iface, &opts);
 }
 
 /* interface needs to join the MLDv2-capable routers multicast group before it
@@ -936,6 +971,75 @@ ZTEST(net_mld_test_suite, test_verify_join_leave)
 	test_verify_leave_group();
 	test_catch_query();
 	test_verify_send_report();
+}
+
+/* Join a group, inject a query that must not be answered, leave again */
+static void verify_query_unanswered(const struct mld_query_opts *opts)
+{
+	test_join_group();
+
+	k_sem_reset(&wait_data);
+	is_report_sent = false;
+
+	send_mld_query(net_iface, opts);
+
+	zassert_equal(-EAGAIN, k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), "Unexpected report");
+	zassert_false(is_report_sent, "Query was answered");
+
+	test_leave_group();
+}
+
+/* A query must come from a link-local address (RFC 3810 ch 5.1.14) */
+ZTEST(net_mld_test_suite, test_query_global_source_ignored)
+{
+	const struct mld_query_opts opts = { .src = &peer_addr, .max_resp = 3 };
+
+	verify_query_unanswered(&opts);
+}
+
+/* A query must carry the Router Alert option (RFC 3810 ch 6.2) */
+ZTEST(net_mld_test_suite, test_query_without_router_alert_ignored)
+{
+	const struct mld_query_opts opts = { .no_router_alert = true, .max_resp = 3 };
+
+	verify_query_unanswered(&opts);
+}
+
+/* The Router Alert option is found wherever it sits among the options */
+ZTEST(net_mld_test_suite, test_query_router_alert_after_padding)
+{
+	const struct mld_query_opts opts = { .pad_first = true, .max_resp = 3 };
+
+	test_join_group();
+
+	k_sem_reset(&wait_data);
+	is_report_sent = false;
+
+	send_mld_query(net_iface, &opts);
+
+	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)),
+		   "Timeout while waiting for the report");
+	zassert_true(is_report_sent, "Query not answered");
+
+	test_leave_group();
+}
+
+/* The Router Alert option has to be in the Hop-by-Hop header, not in a
+ * Destination Options header (RFC 3810 ch 6.2).
+ */
+ZTEST(net_mld_test_suite, test_query_router_alert_in_dest_opts_ignored)
+{
+	const struct mld_query_opts opts = { .dest_opts = true, .max_resp = 3 };
+
+	verify_query_unanswered(&opts);
+}
+
+/* A query must arrive with a hop limit of 1 (RFC 3810 ch 6.2) */
+ZTEST(net_mld_test_suite, test_query_hop_limit_ignored)
+{
+	const struct mld_query_opts opts = { .hop_limit = 64, .max_resp = 3 };
+
+	verify_query_unanswered(&opts);
 }
 
 ZTEST(net_mld_test_suite, test_no_mld_flag)
