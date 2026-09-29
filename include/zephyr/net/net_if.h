@@ -183,6 +183,13 @@ struct net_if_mcast_addr {
 	/** Rejoining multicast groups list node */
 	sys_snode_t rejoin_node;
 
+#if defined(CONFIG_NET_IPV6_MLD)
+	/** Deadline of the pending response to a Multicast Listener Query for
+	 *  this IPv6 group, never expiring when no response is pending.
+	 */
+	k_timepoint_t mld_resp_timeout;
+#endif
+
 #if defined(CONFIG_NET_IPV4_IGMPV3)
 	/** Sources to filter on */
 	struct net_addr sources[CONFIG_NET_IF_MCAST_IPV4_SOURCE_COUNT];
@@ -388,10 +395,20 @@ struct net_if_ipv6 {
 #endif /* CONFIG_NET_IPV6_PE */
 
 #if defined(CONFIG_NET_IPV6_MLD)
+	/** Deadline of the pending response to an MLDv2 General Query, never
+	 *  expiring when no response is pending.
+	 */
+	k_timepoint_t mld_general_timeout;
+
 	/** MLDv1 Older Version Querier Present timer (@rfc{3810,section-8.2.1}),
 	 *  expired when no MLDv1 querier is present.
 	 */
 	k_timepoint_t mld_v1_querier_timeout;
+
+	/** MLD version the host last operated in on this interface (1 or 2).
+	 *  0 until the first query or timer run and stands for MLDv2.
+	 */
+	uint8_t mld_version;
 #endif
 
 #if defined(CONFIG_NET_IPV6_ND) && defined(CONFIG_NET_NATIVE_IPV6)

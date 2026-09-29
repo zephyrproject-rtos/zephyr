@@ -1242,8 +1242,10 @@ static void ipv6_config_defaults_set(struct net_if_ipv6 *ipv6)
 	IF_ENABLED(CONFIG_NET_IPV6_PE, (ipv6->desync_factor = 0));
 
 #if defined(CONFIG_NET_IPV6_MLD)
+	ipv6->mld_general_timeout = sys_timepoint_calc(K_FOREVER);
 	/* No MLDv1 querier heard: the timer has expired */
 	ipv6->mld_v1_querier_timeout = sys_timepoint_calc(K_NO_WAIT);
+	ipv6->mld_version = 0U;
 #endif
 }
 
@@ -2745,6 +2747,9 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 		ipv6->mcast[i].is_used = true;
 		ipv6->mcast[i].is_joined = false;
 		ipv6->mcast[i].address.family = NET_AF_INET6;
+#if defined(CONFIG_NET_IPV6_MLD)
+		ipv6->mcast[i].mld_resp_timeout = sys_timepoint_calc(K_FOREVER);
+#endif
 		net_if_maddr_ref_init(&ipv6->mcast[i]);
 
 		memcpy(&ipv6->mcast[i].address.in6_addr, addr, 16);

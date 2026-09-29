@@ -88,6 +88,7 @@ static bool is_query_received;
 static bool is_report_sent;
 static bool is_v1_report_sent;
 static bool is_v1_done_sent;
+static int report_count;
 
 static struct mld_report_handler *report_handler;
 
@@ -164,6 +165,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		is_join_msg_ok = true;
 		is_leave_msg_ok = true;
 		is_report_sent = true;
+		report_count++;
 
 		if (report_handler) {
 			report_handler->fn(pkt, report_handler->user_data);
@@ -174,6 +176,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		NET_DBG("Received MLDv1 report....");
 		is_v1_report_sent = true;
 		is_report_sent = true;
+		report_count++;
 		k_sem_give(&wait_data);
 	} else if (icmp->type == NET_ICMPV6_MLDv1_DONE) {
 		NET_DBG("Received MLDv1 done....");
@@ -365,8 +368,15 @@ static void test_mld_before(void *fixture)
 	exp_mcast_group = NULL;
 
 	ipv6->mld_v1_querier_timeout = sys_timepoint_calc(K_NO_WAIT);
+	ipv6->mld_general_timeout = sys_timepoint_calc(K_FOREVER);
+	ipv6->mld_version = 0;
+	ARRAY_FOR_EACH(ipv6->mcast, i) {
+		ipv6->mcast[i].mld_resp_timeout = sys_timepoint_calc(K_FOREVER);
+	}
+
 	is_v1_report_sent = false;
 	is_v1_done_sent = false;
+	report_count = 0;
 }
 
 static void test_join_group(void)
@@ -1077,6 +1087,182 @@ ZTEST(net_mld_test_suite, test_mldv1_querier_present)
 
 	test_leave_group();
 	zassert_true(is_v1_done_sent, "Leave not reported with a Done message");
+}
+
+/* Maximum Response Code decoding: MLDv1 is linear in milliseconds (RFC 2710
+ * ch 3.4), MLDv2 switches to a floating point form at 32768 (RFC 3810 ch
+ * 5.1.3).
+ */
+ZTEST(net_mld_test_suite, test_max_resp_delay)
+{
+	zassert_equal(net_ipv6_mld_max_resp_delay(0, false), 0);
+	zassert_equal(net_ipv6_mld_max_resp_delay(3, false), 3);
+	zassert_equal(net_ipv6_mld_max_resp_delay(0x8000, false), 32768);
+	zassert_equal(net_ipv6_mld_max_resp_delay(32767, true), 32767);
+	/* mant 0, exp 0: 0x1000 << 3 */
+	zassert_equal(net_ipv6_mld_max_resp_delay(0x8000, true), 32768);
+	/* mant 0xfff, exp 7: 0x1fff << 10 */
+	zassert_equal(net_ipv6_mld_max_resp_delay(0xffff, true), 8387584);
+}
+
+/* A query is not answered right away but after a random delay bounded by
+ * its Maximum Response Delay (RFC 3810 ch 6.2).
+ */
+ZTEST(net_mld_test_suite, test_query_delayed)
+{
+	const struct mld_query_opts opts = { .max_resp = 1000 };
+	int64_t start;
+
+	test_join_group();
+
+	k_sem_reset(&wait_data);
+	is_report_sent = false;
+
+	start = k_uptime_get();
+	send_mld_query(net_iface, &opts);
+	/* A report is only immediate when no time passed while the query was
+	 * handled; the host may have been stalled for longer than the delay.
+	 */
+	zassert_true(!is_report_sent || k_uptime_get() > start, "Query answered without delay");
+
+	zassert_ok(k_sem_take(&wait_data, K_MSEC(1500)), "Timeout while waiting for the report");
+	zassert_true(is_report_sent, "Query not answered");
+
+	test_leave_group();
+}
+
+/* A second General Query while a response is pending does not schedule
+ * another response (RFC 3810 ch 6.2 rule 1).
+ */
+ZTEST(net_mld_test_suite, test_query_merged)
+{
+	const struct mld_query_opts opts = { .max_resp = 500 };
+
+	test_join_group();
+
+	k_sem_reset(&wait_data);
+	report_count = 0;
+
+	send_mld_query(net_iface, &opts);
+	send_mld_query(net_iface, &opts);
+	k_msleep(THREAD_SLEEP);
+
+	if (report_count != 0) {
+		/* Stalled so long that the first response was already due */
+		test_leave_group();
+		ztest_test_skip();
+	}
+
+	k_msleep(1000);
+	zassert_equal(report_count, 1, "Expected one report, got %d", report_count);
+
+	test_leave_group();
+}
+
+/* A second query for an address is answered at the earliest of the pending
+ * and the newly selected delay (RFC 3810 ch 6.2 rule 4).
+ */
+ZTEST(net_mld_test_suite, test_query_address_earliest)
+{
+	struct mld_query_opts opts = { .max_resp = 32767 };
+
+	test_join_group();
+
+	k_sem_reset(&wait_data);
+	report_count = 0;
+	opts.dst = &mcast_addr;
+	opts.group = &mcast_addr;
+
+	/* Up to 32.767 seconds, then up to 100 milliseconds */
+	send_mld_query(net_iface, &opts);
+	opts.max_resp = 100;
+	send_mld_query(net_iface, &opts);
+
+	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)),
+		   "Timeout while waiting for the report");
+
+	k_msleep(1000);
+	zassert_equal(report_count, 1, "Expected one report, got %d", report_count);
+
+	test_leave_group();
+}
+
+/* Switching compatibility mode cancels the pending responses (RFC 3810 ch
+ * 8.2.1), here when an MLDv2 query arrives after the MLDv1 querier present
+ * timer ran out.
+ */
+ZTEST(net_mld_test_suite, test_mode_change_cancels_response)
+{
+	struct net_if_ipv6 *ipv6 = net_iface->config.ip.ipv6;
+	struct mld_query_opts opts = { .v1 = true, .max_resp = 25000 };
+
+	test_join_group();
+
+	k_sem_reset(&wait_data);
+	report_count = 0;
+	is_v1_report_sent = false;
+
+	/* An MLDv1 querier: responses are pending for up to 25 seconds */
+	send_mld_query(net_iface, &opts);
+	k_msleep(THREAD_SLEEP);
+
+	if (report_count != 0) {
+		/* Stalled so long that a response was already due */
+		test_leave_group();
+		ztest_test_skip();
+	}
+
+	/* The querier went away and an MLDv2 one shows up */
+	ipv6->mld_v1_querier_timeout = sys_timepoint_calc(K_NO_WAIT);
+
+	opts.v1 = false;
+	opts.max_resp = 100;
+	send_mld_query(net_iface, &opts);
+
+	k_msleep(1500);
+	zassert_equal(report_count, 1, "Expected one report, got %d", report_count);
+	zassert_false(is_v1_report_sent, "Cancelled MLDv1 response was sent");
+
+	test_leave_group();
+}
+
+/* The compatibility mode also changes when the querier present timer runs
+ * out on its own, which cancels the pending responses as well.
+ */
+ZTEST(net_mld_test_suite, test_mode_expiry_cancels_response)
+{
+	struct net_if_ipv6 *ipv6 = net_iface->config.ip.ipv6;
+	struct mld_query_opts opts = { .v1 = true, .max_resp = 200 };
+	struct net_if *iface = net_iface;
+	struct net_if_mcast_addr *maddr;
+
+	test_join_group();
+
+	maddr = net_if_ipv6_maddr_lookup(&mcast_addr, &iface);
+	zassert_not_null(maddr, "Group not registered");
+
+	k_sem_reset(&wait_data);
+	report_count = 0;
+	opts.dst = &mcast_addr;
+	opts.group = &mcast_addr;
+
+	/* An MLDv1 querier: a response is pending for up to 200 milliseconds */
+	send_mld_query(net_iface, &opts);
+	k_msleep(THREAD_SLEEP);
+
+	/* The querier present timer runs out before the response is due */
+	ipv6->mld_v1_querier_timeout = sys_timepoint_calc(K_NO_WAIT);
+
+	if (report_count != 0 || sys_timepoint_expired(maddr->mld_resp_timeout)) {
+		/* Stalled so long that the response was already due */
+		test_leave_group();
+		ztest_test_skip();
+	}
+
+	k_msleep(1000);
+	zassert_equal(report_count, 0, "Cancelled response was sent");
+
+	test_leave_group();
 }
 
 /* A query must come from a link-local address (RFC 3810 ch 5.1.14) */
