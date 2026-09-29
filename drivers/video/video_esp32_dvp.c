@@ -24,7 +24,7 @@
 
 LOG_MODULE_REGISTER(video_esp32_lcd_cam, CONFIG_VIDEO_LOG_LEVEL);
 
-#define VIDEO_ESP32_DMA_BUFFER_MAX_SIZE 4095
+#define VIDEO_ESP32_DMA_BUFFER_MAX_SIZE 4032
 #define VIDEO_ESP32_VSYNC_MASK          0x04
 
 #ifdef CONFIG_POLL
@@ -213,6 +213,9 @@ static int video_esp32_set_stream(const struct device *dev, bool enable, enum vi
 	dma_cfg.user_data = data;
 	dma_cfg.dma_slot = SOC_GDMA_TRIG_PERIPH_CAM0;
 	dma_cfg.complete_callback_en = 1;
+	/* Write PSRAM in 64-byte blocks, which the buffers are aligned to */
+	dma_cfg.source_burst_length = 64;
+	dma_cfg.dest_burst_length = 64;
 	dma_cfg.head_block = &data->dma_blocks[0];
 
 	error = dma_config(cfg->dma_dev, cfg->rx_dma_channel, &dma_cfg);
@@ -243,6 +246,8 @@ static int video_esp32_get_caps(const struct device *dev, struct video_caps *cap
 
 	/* Two buffers are needed to perform transfers */
 	caps->min_vbuf_count = 2;
+	/* GDMA writes PSRAM in blocks of up to 64 bytes, a cache line at most */
+	caps->buf_align = 64;
 
 	/* Forward the message to the source device */
 	return video_get_caps(config->source_dev, caps);
