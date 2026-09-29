@@ -532,6 +532,8 @@ static int dma_esp32_config_rx(const struct device *dev, struct dma_esp32_channe
 
 	gdma_hal_set_strategy(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX, true,
 			      false, false);
+	gdma_hal_set_priority(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX,
+			      config_dma->channel_priority);
 
 	dma_channel->cb = config_dma->dma_callback;
 	dma_channel->user_data = config_dma->user_data;
@@ -567,6 +569,9 @@ static int dma_esp32_config_tx(const struct device *dev, struct dma_esp32_channe
 				      GDMA_CHANNEL_DIRECTION_TX, true, true);
 	}
 
+	gdma_hal_set_priority(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX,
+			      config_dma->channel_priority);
+
 	dma_channel->cb = config_dma->dma_callback;
 	dma_channel->user_data = config_dma->user_data;
 
@@ -599,6 +604,11 @@ static int dma_esp32_config(const struct device *dev, uint32_t channel,
 
 	if (config_dma->source_burst_length != config_dma->dest_burst_length) {
 		LOG_ERR("Source and destination burst lengths must be equal");
+		return -EINVAL;
+	}
+
+	if (config_dma->channel_priority > GDMA_LL_CHANNEL_MAX_PRIORITY) {
+		LOG_ERR("Channel priority must be at most %d", GDMA_LL_CHANNEL_MAX_PRIORITY);
 		return -EINVAL;
 	}
 
