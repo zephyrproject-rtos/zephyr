@@ -130,7 +130,7 @@ static void uhc_mcux_transfer_callback(void *param, usb_host_transfer_t *transfe
 			 * So, add one flag and execute kUSB_HostUpdateControlEndpointAddress later
 			 * when there is ep0 transfer.
 			 */
-			mcux_ep = uhc_mcux_init_hal_ep(dev, xfer);
+			mcux_ep = xfer->ep->priv;
 			if (mcux_ep != NULL) {
 				mcux_ep->update_addr = 1U;
 			}
@@ -176,8 +176,8 @@ static int uhc_mcux_enqueue(const struct device *dev, struct uhc_transfer *const
 
 	uhc_xfer_append(dev, xfer);
 
-	/* firstly check and init the mcux endpoint handle */
-	mcux_ep = uhc_mcux_init_hal_ep(dev, xfer);
+	/* the pipe is opened when the endpoint is enabled */
+	mcux_ep = xfer->ep->priv;
 	if (mcux_ep == NULL) {
 		return -ENOMEM;
 	}
@@ -257,6 +257,8 @@ static DEVICE_API(uhc, mcux_uhc_api) = {
 	.bus_suspend = uhc_mcux_bus_suspend,
 	.bus_resume = uhc_mcux_bus_resume,
 
+	.ep_enable = uhc_mcux_ep_enable,
+	.ep_disable = uhc_mcux_ep_disable,
 	.ep_enqueue = uhc_mcux_enqueue,
 	.ep_dequeue = uhc_mcux_dequeue,
 };

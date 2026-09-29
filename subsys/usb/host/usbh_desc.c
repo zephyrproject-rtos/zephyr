@@ -140,7 +140,7 @@ struct usb_host_ep *usbh_desc_get_endpoint(struct usb_device *const udev, const 
 {
 	struct usb_host_ep *host_ep = uhc_get_udev_ep(udev, ep);
 
-	return host_ep->mps != 0U ? host_ep : NULL;
+	return host_ep->enabled ? host_ep : NULL;
 }
 
 int usbh_desc_fill_filter(const struct usb_desc_header *const desc,
