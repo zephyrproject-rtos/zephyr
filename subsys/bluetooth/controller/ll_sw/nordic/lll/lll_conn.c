@@ -714,7 +714,9 @@ void lll_conn_isr_tx(void *param)
 							     PHY_FLAGS_UNUSED, lll->phy_tx,
 							     lll->phy_flags, end_evt_delay);
 #else /* !CONFIG_BT_CTLR_PHY */
-	radio_switch_complete_with_delay_compensation_and_tx(0, 0, 0, 0, end_evt_delay);
+	radio_switch_complete_with_delay_compensation_and_tx(PHY_LEGACY,
+							     PHY_FLAGS_UNUSED, PHY_LEGACY,
+							     PHY_FLAGS_UNUSED, end_evt_delay);
 #endif /* !CONFIG_BT_CTLR_PHY */
 
 #endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
@@ -782,9 +784,9 @@ void lll_conn_isr_tx(void *param)
 	hcto += addr_us_get(lll->phy_rx);
 	hcto -= radio_tx_chain_delay_get(lll->phy_tx, lll->phy_flags);
 #else /* !CONFIG_BT_CTLR_PHY */
-	hcto += radio_rx_chain_delay_get(0, 0);
+	hcto += radio_rx_chain_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED);
 	hcto += addr_us_get(0);
-	hcto -= radio_tx_chain_delay_get(0, 0);
+	hcto -= radio_tx_chain_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED);
 #endif /* !CONFIG_BT_CTLR_PHY */
 
 	radio_tmr_hcto_configure(hcto);
@@ -820,7 +822,7 @@ void lll_conn_isr_tx(void *param)
 #else /* !CONFIG_BT_CTLR_PHY */
 	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + lll->tifs_rx_us -
 				 (EVENT_CLOCK_JITTER_US << 1) -
-				 radio_tx_chain_delay_get(0U, 0U) -
+				 radio_tx_chain_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED) -
 				 HAL_RADIO_GPIO_LNA_OFFSET);
 #endif /* !CONFIG_BT_CTLR_PHY */
 #endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
