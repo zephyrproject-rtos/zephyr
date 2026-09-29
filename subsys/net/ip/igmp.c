@@ -902,7 +902,7 @@ enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt, struct net_ipv4_hdr *i
 		return NET_DROP;
 	}
 
-	igmp_len = pkt->buffer->len - (net_pkt_ip_hdr_len(pkt) + net_pkt_ipv4_opts_len(pkt));
+	igmp_len = net_pkt_remaining_data(pkt);
 
 	/* The version of a query follows from its length (RFC 3376 ch 7.1), an
 	 * IGMPv1 query has a Max Resp Code of 0 (RFC 3376 ch 7.2.1).

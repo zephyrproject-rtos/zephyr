@@ -881,6 +881,33 @@ ZTEST_USER(net_igmp, test_igmp_query_odd_length)
 	igmp_send_unanswered(&msg, NET_DROP);
 }
 
+/* A query longer than one network buffer is still recognized and answered */
+ZTEST_USER(net_igmp, test_igmp_long_query)
+{
+	const struct igmp_msg msg = {
+		.igmpv3 = true,
+		.type = NET_IPV4_IGMP_QUERY,
+		.max_rsp = QUERY_MAX_RSP,
+		.sources = (CONFIG_NET_BUF_DATA_SIZE - IGMP_IP_HDR_LEN) / 4,
+	};
+	struct net_pkt *pkt;
+
+	join_group();
+
+	k_sem_reset(&wait_data);
+	is_report_sent = false;
+	expect_v2_report = !IS_ENABLED(CONFIG_NET_IPV4_IGMPV3);
+
+	pkt = prepare_igmp_msg(net_iface, &msg);
+	zassert_true(pkt->buffer->frags != NULL, "Query fits in one buffer");
+	zassert_equal(net_ipv4_input(pkt), NET_OK, "Failed to send");
+
+	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), "Timeout while waiting query event");
+	zassert_true(is_report_sent, "Long query not answered");
+
+	leave_group();
+}
+
 /* A General Query is answered for every joined group: with one record each
  * in a single IGMPv3 report, or with one IGMPv2 report per group.
  */
