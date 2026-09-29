@@ -78,6 +78,22 @@ config USE_CODEC_AUDIO_OUTPUT
 	  Enables codec audio as output. This uses the hardware audio codec for audio playback.
 	  Supports audio output through the codec driver.
 
+config USE_I2S_CODEC_AUDIO_OUTPUT
+	bool "Use a CS47L63 codec over I2S as output"
+	depends on ENABLE_LC3
+	depends on !USE_USB_AUDIO_OUTPUT && !USE_CODEC_AUDIO_OUTPUT
+	depends on DT_HAS_CIRRUS_CS47L63_ENABLED
+	depends on $(dt_alias_enabled,codec0) && $(dt_alias_enabled,i2s-codec-tx)
+	select I2S
+	select AUDIO
+	select AUDIO_CODEC
+	select INPUT
+	select STEREO_AUDIO_OUTPUT
+	help
+	  Plays the decoded audio over I2S, from the i2s-codec-tx alias, through the codec0 CS47L63
+	  as I2S target. The CS47L63 headphone output is mono, so left and right are mixed to
+	  (L+R)/2. The volume up, volume down and mute input keys control the codec output.
+
 config USE_SPECIFIC_BROADCAST_CHANNEL
 	bool "Use specific Broadcast Channel Audio Location"
 	default y
