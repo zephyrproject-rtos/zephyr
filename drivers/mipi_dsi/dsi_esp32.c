@@ -198,6 +198,37 @@ static int mipi_dsi_esp32_attach(const struct device *dev, uint8_t channel,
 	return 0;
 }
 
+/* Unlike the HAL read helper, stay in video mode: the host sends the request in
+ * the blanking periods, and leaving video mode mid-frame shifts the image.
+ */
+static ssize_t mipi_dsi_esp32_read(mipi_dsi_hal_context_t *hal, uint8_t channel,
+				   mipi_dsi_data_type_t dt, uint16_t header, uint8_t *buf,
+				   size_t len)
+{
+	size_t count = 0;
+
+	mipi_dsi_hal_host_gen_write_short_packet(hal, channel, MIPI_DSI_DT_SET_MAXIMUM_RETURN_PKT,
+						 len);
+	mipi_dsi_host_ll_enable_bta(hal->host, true);
+	mipi_dsi_host_ll_gen_set_rx_vcid(hal->host, channel);
+	mipi_dsi_hal_host_gen_write_short_packet(hal, channel, dt, header);
+
+	while (mipi_dsi_host_ll_gen_is_read_cmd_busy(hal->host) ||
+	       mipi_dsi_host_ll_gen_is_read_fifo_empty(hal->host)) {
+		k_busy_wait(MIPI_DSI_POLL_INTERVAL_US);
+	}
+
+	while (!mipi_dsi_host_ll_gen_is_read_fifo_empty(hal->host)) {
+		uint32_t word = mipi_dsi_host_ll_gen_read_payload_fifo(hal->host);
+
+		for (size_t i = 0; (i < sizeof(word)) && (count < len); i++) {
+			buf[count++] = (uint8_t)(word >> (8U * i));
+		}
+	}
+
+	return count;
+}
+
 static ssize_t mipi_dsi_esp32_transfer(const struct device *dev, uint8_t channel,
 				       struct mipi_dsi_msg *msg)
 {
@@ -223,9 +254,8 @@ static ssize_t mipi_dsi_esp32_transfer(const struct device *dev, uint8_t channel
 		if (msg->rx_buf == NULL || msg->rx_len == 0) {
 			return -EINVAL;
 		}
-		mipi_dsi_hal_host_gen_read_dcs_command(hal, channel, msg->cmd, 1, msg->rx_buf,
-						       msg->rx_len);
-		return msg->rx_len;
+		return mipi_dsi_esp32_read(hal, channel, MIPI_DSI_DT_DCS_READ_0, msg->cmd,
+					   msg->rx_buf, msg->rx_len);
 
 	case MIPI_DSI_GENERIC_SHORT_WRITE_0_PARAM:
 		mipi_dsi_hal_host_gen_write_short_packet(hal, channel,
@@ -260,10 +290,8 @@ static ssize_t mipi_dsi_esp32_transfer(const struct device *dev, uint8_t channel
 		if (msg->rx_buf == NULL || msg->rx_len == 0) {
 			return -EINVAL;
 		}
-		mipi_dsi_hal_host_gen_read_short_packet(hal, channel,
-							MIPI_DSI_DT_GENERIC_READ_REQUEST_0, 0,
-							msg->rx_buf, msg->rx_len);
-		return msg->rx_len;
+		return mipi_dsi_esp32_read(hal, channel, MIPI_DSI_DT_GENERIC_READ_REQUEST_0, 0,
+					   msg->rx_buf, msg->rx_len);
 
 	/* The parameter bytes would have to reach the wire for the panel to
 	 * answer about the right register, so a read that silently drops them
