@@ -19,6 +19,9 @@
 #include <zephyr/net/socket_offload.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_l2.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/sys/fdtable.h>
 
 static struct net_in_addr test_addr_ipv4 = { { { 192, 0, 2, 1 } } };
 static struct net_in6_addr test_addr_ipv6 = { { {
@@ -31,8 +34,56 @@ int offload_socket(int family, int type, int proto)
 	return -1;
 }
 
+static net_context_recv_cb_t offload_recv_cb;
+static void *offload_recv_user_data;
+
+static int offload_get(net_sa_family_t family, enum net_sock_type type,
+		       enum net_ip_protocol ip_proto, struct net_context **context)
+{
+	ARG_UNUSED(family);
+	ARG_UNUSED(type);
+	ARG_UNUSED(ip_proto);
+	ARG_UNUSED(context);
+
+	return 0;
+}
+
+static int offload_bind(struct net_context *context, const struct net_sockaddr *addr,
+			net_socklen_t addrlen)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(addr);
+	ARG_UNUSED(addrlen);
+
+	return 0;
+}
+
+static int offload_recv(struct net_context *context, net_context_recv_cb_t cb,
+			int32_t timeout, void *user_data)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(timeout);
+
+	offload_recv_cb = cb;
+	offload_recv_user_data = user_data;
+
+	return 0;
+}
+
+static int offload_put(struct net_context *context)
+{
+	ARG_UNUSED(context);
+
+	return 0;
+}
+
 /* Dummy offload API for net-offloaded ifaces */
-struct net_offload net_offload_api;
+struct net_offload net_offload_api = {
+	.get = offload_get,
+	.bind = offload_bind,
+	.recv = offload_recv,
+	.put = offload_put,
+};
 
 /* Dummy init function for socket-offloaded ifaces */
 static void sock_offload_l2_iface_init(struct net_if *iface)
@@ -391,6 +442,295 @@ ZTEST(net_offloaded_netdev, test_addr_add_net_off_impl)
 	test_addr_add_common(test_iface, "net");
 }
 
+#define OFFLOAD_PAYLOAD "abcd"
+#define OFFLOAD_PAYLOAD_LEN (sizeof(OFFLOAD_PAYLOAD) - 1U)
+
+static int offload_sock = -1;
+
+static K_THREAD_STACK_DEFINE(deliver_stack, 2048);
+static struct k_thread deliver_thread;
+static bool deliver_created;
+
+static int offloaded_udp_socket(struct net_if *iface, struct net_context **ctx)
+{
+	struct net_if *default_iface = net_if_get_default();
+	struct net_sockaddr_in addr = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(4242),
+	};
+	int ret;
+
+	net_if_set_default(iface);
+	offload_sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	net_if_set_default(default_iface);
+	zassert_true(offload_sock >= 0, "socket() failed (%d)", errno);
+
+	offload_recv_cb = NULL;
+	ret = zsock_bind(offload_sock, (struct net_sockaddr *)&addr, sizeof(addr));
+	zassert_ok(ret, "bind() failed (%d)", errno);
+	zassert_not_null(offload_recv_cb, "offloaded recv() was not called");
+
+	*ctx = zvfs_get_fd_obj(offload_sock, NULL, 0);
+	zassert_not_null(*ctx, "no context for socket %d", offload_sock);
+
+	return offload_sock;
+}
+
+static struct net_pkt *offloaded_rx_pkt(struct net_if *iface)
+{
+	struct net_pkt *pkt;
+
+	pkt = net_pkt_rx_alloc_with_buffer(iface, OFFLOAD_PAYLOAD_LEN, NET_AF_INET,
+					   NET_IPPROTO_UDP, K_NO_WAIT);
+	zassert_not_null(pkt, "cannot allocate a packet");
+	zassert_ok(net_pkt_write(pkt, OFFLOAD_PAYLOAD, OFFLOAD_PAYLOAD_LEN),
+		   "cannot write the packet");
+	net_pkt_cursor_init(pkt);
+
+	return pkt;
+}
+
+static void offloaded_close(int sock)
+{
+	zassert_ok(zsock_close(sock), "close() failed (%d)", errno);
+	offload_sock = -1;
+}
+
+ZTEST(net_offloaded_netdev, test_recv_net_off_impl)
+{
+	struct net_if *test_iface = NET_IF_GET(net_offload_test_impl, 0);
+	struct net_context *ctx;
+	char buf[OFFLOAD_PAYLOAD_LEN];
+	int sock;
+	int ret;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_NATIVE);
+
+	sock = offloaded_udp_socket(test_iface, &ctx);
+
+	offload_recv_cb(ctx, offloaded_rx_pkt(test_iface), NULL, NULL, 0, offload_recv_user_data);
+
+	ret = zsock_recv(sock, buf, sizeof(buf), ZSOCK_MSG_DONTWAIT);
+	zassert_equal(ret, sizeof(buf), "recv() returned %d (%d)", ret, errno);
+	zassert_mem_equal(buf, OFFLOAD_PAYLOAD, sizeof(buf), "wrong data");
+
+	offloaded_close(sock);
+}
+
+static void deliver(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p3);
+
+	offload_recv_cb(p1, p2, NULL, NULL, 0, offload_recv_user_data);
+}
+
+ZTEST(net_offloaded_netdev, test_shutdown_during_recv_net_off_impl)
+{
+	struct net_if *test_iface = NET_IF_GET(net_offload_test_impl, 0);
+	const struct fd_op_vtable *vtable;
+	struct net_context *ctx;
+	struct k_mem_slab *rx;
+	struct k_mutex *lock;
+	uint32_t rx_free;
+	char state[32];
+	char buf[OFFLOAD_PAYLOAD_LEN];
+	int sock;
+	int ret;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_NATIVE);
+
+	if (arch_num_cpus() > 1) {
+		ztest_test_skip();
+	}
+
+	sock = offloaded_udp_socket(test_iface, &ctx);
+	zassert_not_null(zvfs_get_fd_obj_and_vtable(sock, &vtable, &lock), "lookup failed");
+
+	net_pkt_get_info(&rx, NULL, NULL, NULL);
+	rx_free = k_mem_slab_num_free_get(rx);
+
+	/* The driver delivers while shutdown() holds the fd lock */
+	zassert_ok(k_mutex_lock(lock, K_FOREVER), "lock failed");
+	deliver_created = true;
+	k_thread_create(&deliver_thread, deliver_stack, K_THREAD_STACK_SIZEOF(deliver_stack),
+			deliver, ctx, offloaded_rx_pkt(test_iface), NULL,
+			k_thread_priority_get(k_current_get()) - 1, 0, K_NO_WAIT);
+	k_yield();
+	zexpect_not_null(strstr(k_thread_state_str(&deliver_thread, state, sizeof(state)),
+				"pending"),
+			 "delivery is not blocked on the lock: %s", state);
+	zexpect_ok(zsock_shutdown(sock, ZSOCK_SHUT_RD), "shutdown() failed (%d)", errno);
+	k_mutex_unlock(lock);
+
+	zassert_ok(k_thread_join(&deliver_thread, K_SECONDS(1)), "delivery did not return");
+	deliver_created = false;
+
+	ret = zsock_recv(sock, buf, sizeof(buf), ZSOCK_MSG_DONTWAIT);
+	zassert_true(ret <= 0, "recv() after shutdown() returned %d", ret);
+	zassert_equal(k_mem_slab_num_free_get(rx), rx_free,
+		      "RX packet leaked (%u free, expected %u)", k_mem_slab_num_free_get(rx),
+		      rx_free);
+
+	offloaded_close(sock);
+}
+
+static K_THREAD_STACK_DEFINE(recv_stack, 2048);
+static struct k_thread recv_thread;
+static bool recv_created;
+static int recv_ret;
+static int recv_errno;
+static bool addr_added;
+
+static void udp_recv(void *p1, void *p2, void *p3)
+{
+	char buf[OFFLOAD_PAYLOAD_LEN];
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	recv_ret = zsock_recv(POINTER_TO_INT(p1), buf, sizeof(buf), 0);
+	recv_errno = errno;
+}
+
+static int native_udp_socket(struct net_context **ctx)
+{
+	struct net_if *default_iface = net_if_get_default();
+
+	net_if_set_default(NET_IF_GET(sock_offload_test_impl, 0));
+	offload_sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	net_if_set_default(default_iface);
+	zassert_true(offload_sock >= 0, "socket() failed (%d)", errno);
+
+	*ctx = zvfs_get_fd_obj(offload_sock, NULL, 0);
+	zassert_not_null(*ctx, "no context for socket %d", offload_sock);
+	zassume_false(net_if_is_ip_offloaded(net_context_get_iface(*ctx)),
+		      "the socket starts on an IP-offloaded interface");
+
+	return offload_sock;
+}
+
+static void native_bind(int sock, struct net_context *ctx)
+{
+	struct net_if *default_iface = net_if_get_default();
+	struct net_sockaddr_in addr = {
+		.sin_family = NET_AF_INET,
+		.sin_addr.s_addr = NET_INADDR_ANY,
+	};
+	int ret;
+
+	net_if_set_default(NET_IF_GET(sock_offload_test_impl, 0));
+	ret = zsock_bind(sock, (struct net_sockaddr *)&addr, sizeof(addr));
+	net_if_set_default(default_iface);
+	zassert_ok(ret, "bind() failed (%d)", errno);
+	zassume_false(net_if_is_ip_offloaded(net_context_get_iface(ctx)),
+		      "bind() put the socket on an IP-offloaded interface");
+}
+
+static void udp_recv_start(int sock)
+{
+	int prio = k_thread_priority_get(k_current_get()) + 1;
+	char state[32];
+
+	zassume_true(prio <= K_LOWEST_APPLICATION_THREAD_PRIO, "no lower priority for the reader");
+
+	k_thread_create(&recv_thread, recv_stack, K_THREAD_STACK_SIZEOF(recv_stack), udp_recv,
+			INT_TO_POINTER(sock), NULL, NULL, prio, 0, K_NO_WAIT);
+	recv_created = true;
+	k_msleep(10);
+	zassert_not_null(strstr(k_thread_state_str(&recv_thread, state, sizeof(state)), "pending"),
+			 "recv() is not blocked: %s", state);
+}
+
+static void offloaded_bind(int sock)
+{
+	struct net_sockaddr_in addr = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(4242),
+		.sin_addr = test_addr_ipv4,
+	};
+
+	offload_recv_cb = NULL;
+	zassert_ok(zsock_bind(sock, (struct net_sockaddr *)&addr, sizeof(addr)),
+		   "bind() failed (%d)", errno);
+	zassert_not_null(offload_recv_cb, "offloaded recv() was not called");
+}
+
+static void udp_test_skip(void)
+{
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_NATIVE);
+
+	if (arch_num_cpus() > 1) {
+		ztest_test_skip();
+	}
+}
+
+ZTEST(net_offloaded_netdev, test_close_during_recv_native)
+{
+	struct net_context *ctx;
+	int sock;
+
+	udp_test_skip();
+
+	sock = native_udp_socket(&ctx);
+	native_bind(sock, ctx);
+	udp_recv_start(sock);
+
+	offloaded_close(sock);
+	sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(sock >= 0, "socket() failed (%d)", errno);
+	offload_sock = sock;
+	zexpect_true(zvfs_get_fd_obj(sock, NULL, 0) != ctx,
+		     "socket() got the context back while recv() waits on it");
+
+	zassert_ok(k_thread_join(&recv_thread, K_MSEC(100)), "recv() did not return");
+	recv_created = false;
+	zexpect_equal(recv_ret, -1, "recv() returned %d", recv_ret);
+	zexpect_equal(recv_errno, EINTR, "recv() failed with %d", recv_errno);
+
+	offloaded_close(sock);
+}
+
+ZTEST(net_offloaded_netdev, test_bind_during_recv_net_off_impl)
+{
+	struct net_if *test_iface = NET_IF_GET(net_offload_test_impl, 0);
+	struct net_context *ctx;
+	char buf[OFFLOAD_PAYLOAD_LEN];
+	int sock;
+	int ret;
+
+	udp_test_skip();
+
+	(void)net_if_up(test_iface);
+	zassert_not_null(net_if_ipv4_addr_add(test_iface, &test_addr_ipv4, NET_ADDR_MANUAL, 0),
+			 "cannot add an address to the offloaded interface");
+	addr_added = true;
+
+	sock = native_udp_socket(&ctx);
+	udp_recv_start(sock);
+
+	offloaded_bind(sock);
+	offloaded_close(sock);
+	sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(sock >= 0, "socket() failed (%d)", errno);
+	offload_sock = sock;
+	zassume_equal_ptr(zvfs_get_fd_obj(sock, NULL, 0), ctx,
+			  "socket() did not reuse the context");
+	offloaded_bind(sock);
+
+	zassert_ok(k_thread_join(&recv_thread, K_MSEC(100)), "recv() did not return");
+	recv_created = false;
+	zexpect_equal(recv_ret, -1, "recv() on the closed socket returned %d", recv_ret);
+	zexpect_equal(recv_errno, EINTR, "recv() on the closed socket failed with %d",
+		      recv_errno);
+
+	offload_recv_cb(ctx, offloaded_rx_pkt(test_iface), NULL, NULL, 0, offload_recv_user_data);
+	ret = zsock_recv(sock, buf, sizeof(buf), ZSOCK_MSG_DONTWAIT);
+	zexpect_equal(ret, sizeof(buf), "recv() on the new socket returned %d (%d)", ret, errno);
+	zexpect_true(net_context_is_used(ctx), "recv() released the new socket's context");
+
+	offloaded_close(sock);
+}
+
 static bool offload_getaddrinfo_called;
 
 static int test_offload_getaddrinfo(const char *node,
@@ -467,4 +807,34 @@ ZTEST(net_offloaded_netdev, test_dns_offload)
 	zsock_freeaddrinfo(ai);
 }
 
-ZTEST_SUITE(net_offloaded_netdev, NULL, NULL, net_offloaded_netdev_before, NULL, NULL);
+static void net_offloaded_netdev_after(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	if (offload_sock >= 0) {
+		(void)zsock_close(offload_sock);
+		offload_sock = -1;
+	}
+
+	if (deliver_created) {
+		if (k_thread_join(&deliver_thread, K_SECONDS(1)) != 0) {
+			k_thread_abort(&deliver_thread);
+		}
+		deliver_created = false;
+	}
+
+	if (recv_created) {
+		if (k_thread_join(&recv_thread, K_SECONDS(1)) != 0) {
+			k_thread_abort(&recv_thread);
+		}
+		recv_created = false;
+	}
+
+	if (addr_added) {
+		(void)net_if_ipv4_addr_rm(NET_IF_GET(net_offload_test_impl, 0), &test_addr_ipv4);
+		addr_added = false;
+	}
+}
+
+ZTEST_SUITE(net_offloaded_netdev, NULL, NULL, net_offloaded_netdev_before,
+	    net_offloaded_netdev_after, NULL);

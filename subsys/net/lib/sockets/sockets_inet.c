@@ -116,8 +116,8 @@ static void zsock_flush_queue(struct net_context *ctx)
 	/* Some threads might be waiting on recv, cancel the wait */
 	k_fifo_cancel_wait(&ctx->recv_q);
 
-	/* Wake reader if it was sleeping */
-	(void)k_condvar_signal(&ctx->cond.recv);
+	/* Wake readers if they were sleeping */
+	(void)k_condvar_broadcast(&ctx->cond.recv);
 }
 
 static int zsock_socket_internal(int family, int type, int proto)
@@ -274,9 +274,10 @@ static void zsock_received_cb(struct net_context *ctx,
 		(void)k_mutex_lock(ctx->cond.lock, K_FOREVER);
 	}
 
-	if (!net_context_is_used(ctx)) {
-		/* close() released the context while this waited for the
-		 * descriptor lock, after it flushed the queue.
+	if (!net_context_is_used(ctx) || sock_is_eof(ctx) ||
+	    ((ctx->recv_cb == NULL) && !net_if_is_ip_offloaded(net_context_get_iface(ctx)))) {
+		/* close() or shutdown() ran while this waited for the descriptor lock,
+		 * after it flushed the queue.
 		 */
 		NET_DBG("%sctx=%p, pkt=%p, st=%d, user_data=%p",
 			"DROP: ", ctx, pkt, status, user_data);
@@ -1021,16 +1022,36 @@ int zsock_wait_data(struct net_context *ctx, k_timeout_t *timeout)
 	}
 
 	if (k_fifo_is_empty(&ctx->recv_q)) {
+		/* close() can run during the wait. Hold the context, so that the
+		 * next socket() cannot get it back and clear the error close()
+		 * leaves for us. An offloaded put ignores the reference, and bind()
+		 * can move the socket onto an offloaded interface during the wait:
+		 * a cleared IN_USE flag or another lock then tells that the context
+		 * is gone, and the reference with it.
+		 */
+		struct k_mutex *lock = ctx->cond.lock;
+		bool hold = !net_if_is_ip_offloaded(net_context_get_iface(ctx));
+
+		if (hold) {
+			net_context_ref(ctx);
+		}
+
 		/* Wait for the data to arrive but without holding a lock */
 		ret = k_condvar_wait(&ctx->cond.recv, ctx->cond.lock,
 				     *timeout);
-		if (ret < 0) {
-			return ret;
+		if (hold && (!net_context_is_used(ctx) || ctx->cond.lock != lock)) {
+			return -EINTR;
 		}
 
-		if (sock_is_error(ctx)) {
-			return -sock_get_error(ctx);
+		if (ret == 0 && sock_is_error(ctx)) {
+			ret = -sock_get_error(ctx);
 		}
+
+		if (hold) {
+			net_context_unref(ctx);
+		}
+
+		return ret;
 	}
 
 	return 0;
