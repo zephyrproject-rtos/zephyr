@@ -885,6 +885,22 @@ static void igmp_report_heard(struct net_if *iface, const struct net_in_addr *gr
 	k_mutex_unlock(&igmp_lock);
 }
 
+/* An IGMPv3 query carries its source list (RFC 3376 ch 4.1), a shorter
+ * message is truncated. Octets beyond the list are ignored (ch 4.1.10).
+ * Called with the cursor behind the eight octets common to all versions.
+ */
+static bool igmp_v3_query_is_complete(struct net_pkt *pkt, size_t igmp_len)
+{
+	uint16_t sources;
+
+	/* Skip Resv, S, QRV and QQIC */
+	if (net_pkt_skip(pkt, 2) < 0 || net_pkt_read_be16(pkt, &sources) < 0) {
+		return false;
+	}
+
+	return igmp_len >= IGMPV3_PAYLOAD_MIN_LEN + sizeof(struct net_in_addr) * (size_t)sources;
+}
+
 static int igmp_router_alert_cb(uint8_t opt_type, uint8_t *opt_data, uint8_t opt_len,
 				void *user_data)
 {
@@ -983,6 +999,11 @@ enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt, struct net_ipv4_hdr *i
 
 	if (version == IGMPV2 && igmp_hdr->max_rsp == 0U) {
 		version = IGMPV1;
+	}
+
+	if (version == IGMPV3 && !igmp_v3_query_is_complete(pkt, igmp_len)) {
+		NET_DBG("DROP: truncated source list");
+		goto drop;
 	}
 
 	/* IGMPv1 predates the Router Alert option */

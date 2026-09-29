@@ -422,6 +422,8 @@ struct igmp_msg {
 	bool no_router_alert;
 	/* Number of (unspecified) source addresses appended to an IGMPv3 query */
 	uint16_t sources;
+	/* Value of the Number of Sources field when it should differ from sources */
+	uint16_t claimed_sources;
 	/* Extra zero bytes appended to the IGMP message */
 	uint8_t extra_len;
 };
@@ -462,7 +464,8 @@ static struct net_pkt *prepare_igmp_msg(struct net_if *iface, const struct igmp_
 	if (msg->igmpv3) {
 		igmp[8] = 0x02; /* QRV 2 */
 		igmp[9] = 0x7d; /* QQIC 125 seconds */
-		sys_put_be16(msg->sources, &igmp[10]);
+		sys_put_be16(msg->claimed_sources != 0 ? msg->claimed_sources : msg->sources,
+			     &igmp[10]);
 	}
 	sys_put_be16(test_chksum(igmp, igmp_len), &igmp[2]);
 
@@ -879,6 +882,47 @@ ZTEST_USER(net_igmp, test_igmp_query_odd_length)
 	};
 
 	igmp_send_unanswered(&msg, NET_DROP);
+}
+
+/* An IGMPv3 query shorter than its Number of Sources requires is dropped */
+ZTEST_USER(net_igmp, test_igmp_v3_query_truncated)
+{
+	const struct igmp_msg msg = {
+		.igmpv3 = true,
+		.type = NET_IPV4_IGMP_QUERY,
+		.max_rsp = QUERY_MAX_RSP,
+		.claimed_sources = 1,
+	};
+
+	igmp_send_unanswered(&msg, NET_DROP);
+}
+
+/* Octets beyond the source list of an IGMPv3 query are ignored (RFC 3376 ch
+ * 4.1.10), the query is answered.
+ */
+ZTEST_USER(net_igmp, test_igmp_v3_query_extra_octets)
+{
+	const struct igmp_msg msg = {
+		.igmpv3 = true,
+		.type = NET_IPV4_IGMP_QUERY,
+		.max_rsp = QUERY_MAX_RSP,
+		.extra_len = 2,
+	};
+	struct net_pkt *pkt;
+
+	join_group();
+
+	k_sem_reset(&wait_data);
+	is_report_sent = false;
+	expect_v2_report = !IS_ENABLED(CONFIG_NET_IPV4_IGMPV3);
+
+	pkt = prepare_igmp_msg(net_iface, &msg);
+	zassert_equal(net_ipv4_input(pkt), NET_OK, "Failed to send");
+
+	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), "Timeout while waiting query event");
+	zassert_true(is_report_sent, "Query not answered");
+
+	leave_group();
 }
 
 /* A query longer than one network buffer is still recognized and answered */
