@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 RAKwireless Technology Limited
+
+identifier: rak3312/esp32s3/appcpu
+name: RAK3312 WisBlock Core Module APPCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - uart
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+    - flash
+    - cpp
+    - posix
+    - watchdog
+    - logging
+    - kernel
+    - pm
+    - gpio
+    - crypto
+    - eeprom
+    - heap
+    - cmsis_rtos
+    - jwt
+    - zdsp
+vendor: rakwireless
