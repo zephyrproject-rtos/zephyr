@@ -426,6 +426,29 @@ static void hci_cmd_queue_purge(void)
 	}
 }
 
+/* Complete the command that was on its way to the controller when the HCI
+ * transport was closed. Its response cannot arrive any more, and its sender
+ * would otherwise wait for the command timeout.
+ */
+static void hci_cmd_sent_purge(void)
+{
+	struct net_buf *buf;
+
+	buf = net_buf_take(&bt_dev.sent_cmd);
+	if (buf == NULL) {
+		return;
+	}
+
+	LOG_WRN("Dropping sent command 0x%04x: HCI transport closed", cmd(buf)->opcode);
+
+	if (cmd(buf)->sync != NULL) {
+		cmd(buf)->status = BT_HCI_ERR_UNSPECIFIED;
+		k_sem_give(cmd(buf)->sync);
+	}
+
+	net_buf_unref(buf);
+}
+
 int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 {
 	int err;
@@ -5182,6 +5205,8 @@ int bt_disable(void)
 		atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLING);
 		return err;
 	}
+
+	hci_cmd_sent_purge();
 
 	/* Some functions rely on checking this bitfield */
 	memset(bt_dev.supported_commands, 0x00, sizeof(bt_dev.supported_commands));
