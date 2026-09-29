@@ -112,12 +112,19 @@ static int mcux_snvs_set_alarm(const struct device *dev,
 	ticks = alarm_cfg->ticks;
 
 	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) == 0) {
+		/*
+		 * A relative alarm cannot be late by definition, so the
+		 * late check below only applies to absolute alarms.
+		 */
 		ticks += current;
-	}
-
-	if (ticks < current) {
-		LOG_ERR("Invalid alarm ticks");
-		return -EINVAL;
+	} else if (ticks <= current) {
+		/*
+		 * The alarm fires when the counter increments to equal the
+		 * match value, so an absolute target at or before the current
+		 * time can never match. Report it as late.
+		 */
+		LOG_ERR("Absolute alarm was set too late");
+		return -ETIME;
 	}
 
 	if (chan_id == 0) {
