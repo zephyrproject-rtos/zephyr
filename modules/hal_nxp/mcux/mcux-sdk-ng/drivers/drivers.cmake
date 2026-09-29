@@ -114,7 +114,6 @@ set_variable_ifdef(CONFIG_COUNTER_MCUX_LPIT      CONFIG_MCUX_COMPONENT_driver.lp
 set_variable_ifdef(CONFIG_DISPLAY_MCUX_ELCDIF   CONFIG_MCUX_COMPONENT_driver.elcdif)
 set_variable_ifdef(CONFIG_DISPLAY_SOCIONEXT_DPU CONFIG_MCUX_COMPONENT_driver.dpu_1)
 set_variable_ifdef(CONFIG_MCUX_PXP              CONFIG_MCUX_COMPONENT_driver.pxp)
-set_variable_ifdef(CONFIG_LV_USE_GPU_NXP_PXP    CONFIG_MCUX_COMPONENT_driver.pxp)
 set_variable_ifdef(CONFIG_GPIO_MCUX_RGPIO       CONFIG_MCUX_COMPONENT_driver.rgpio)
 set_variable_ifdef(CONFIG_GPIO_MCUX_GPIO        CONFIG_MCUX_COMPONENT_driver.gpio)
 set_variable_ifdef(CONFIG_I2S_MCUX_SAI          CONFIG_MCUX_COMPONENT_driver.sai)
