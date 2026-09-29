@@ -5,13 +5,13 @@
 
 /dts-v1/;
 #include <rakwireless/rak3112.dtsi>
-#include "rak3112-pinctrl.dtsi"
+#include "rak3212-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <espressif/partitions_0x0_amp_16M.dtsi>
 
 / {
-	model = "RAK3112 PROCPU";
-	compatible = "espressif,esp32s3";
+	model = "RAK3212 Breakout Board PROCPU";
+	compatible = "rakwireless,rak3212";
 
 	aliases {
 		i2c-1 = &i2c1;
