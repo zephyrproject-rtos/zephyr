@@ -28,7 +28,7 @@
 
 K_MEM_SLAB_DEFINE_TYPE(file_desc_slab, struct fs_file_t, ZVFS_OPEN_SIZE);
 
-struct fd_entry {
+struct zvfs_fd_ref {
 	void *obj;
 	const struct fd_op_vtable *vtable;
 	atomic_t refcount;
@@ -36,6 +36,12 @@ struct fd_entry {
 	struct k_condvar cond;
 	size_t offset;
 	uint32_t mode;
+	/*
+	 * Set once zvfs_close() has closed the object; the fd is gone from then on.
+	 * Set before close drops the table's reference, and read again after
+	 * z_fd_ref_live() moves refcount, so a reference taken after it is refused.
+	 */
+	atomic_t closing;
 };
 
 #if defined(CONFIG_POSIX_DEVICE_IO)
@@ -44,7 +50,7 @@ static const struct fd_op_vtable stdinout_fd_op_vtable;
 BUILD_ASSERT(ZVFS_OPEN_SIZE >= 3, "ZVFS_OPEN_SIZE >= 3 for CONFIG_POSIX_DEVICE_IO");
 #endif /* defined(CONFIG_POSIX_DEVICE_IO) */
 
-static struct fd_entry fdtable[ZVFS_OPEN_SIZE] = {
+static struct zvfs_fd_ref fdtable[ZVFS_OPEN_SIZE] = {
 #if defined(CONFIG_POSIX_DEVICE_IO)
 	/*
 	 * Predefine entries for stdin/stdout/stderr.
@@ -122,7 +128,7 @@ static int z_fd_ref(int fd)
 	return atomic_inc(&fdtable[fd].refcount) + 1;
 }
 
-static int z_fd_unref(int fd)
+static int z_fd_unref(struct zvfs_fd_ref *entry)
 {
 	atomic_val_t old_rc;
 
@@ -131,19 +137,49 @@ static int z_fd_unref(int fd)
 	 * atomic decrement if refcount value is grater than zero. Otherwise,
 	 * refcount is not going to be written.
 	 */
-	do {
-		old_rc = atomic_get(&fdtable[fd].refcount);
+	for (;;) {
+		old_rc = atomic_get(&entry->refcount);
 		if (!old_rc) {
 			return 0;
 		}
-	} while (!atomic_cas(&fdtable[fd].refcount, old_rc, old_rc - 1));
 
-	if (old_rc != 1) {
-		return old_rc - 1;
+		if (old_rc != 1) {
+			if (atomic_cas(&entry->refcount, old_rc, old_rc - 1)) {
+				return old_rc - 1;
+			}
+			continue;
+		}
+
+		/* zvfs_reserve_fd() must not take the slot before it is cleared. */
+		(void)k_mutex_lock(&fdtable_lock, K_FOREVER);
+		if (atomic_cas(&entry->refcount, 1, 0)) {
+			entry->obj = NULL;
+			entry->vtable = NULL;
+			k_mutex_unlock(&fdtable_lock);
+			return 0;
+		}
+		k_mutex_unlock(&fdtable_lock);
 	}
+}
 
-	fdtable[fd].obj = NULL;
-	fdtable[fd].vtable = NULL;
+static int z_fd_ref_live(struct zvfs_fd_ref *entry)
+{
+	atomic_val_t old_rc;
+
+	do {
+		old_rc = atomic_get(&entry->refcount);
+		if ((old_rc == 0) || atomic_get(&entry->closing)) {
+			errno = EBADF;
+			return -1;
+		}
+	} while (!atomic_cas(&entry->refcount, old_rc, old_rc + 1));
+
+	/* close() may have marked the slot while the reference was being taken. */
+	if (atomic_get(&entry->closing)) {
+		(void)z_fd_unref(entry);
+		errno = EBADF;
+		return -1;
+	}
 
 	return 0;
 }
@@ -171,7 +207,7 @@ static int _check_fd(int fd)
 
 	fd = k_array_index_sanitize(fd, ARRAY_SIZE(fdtable));
 
-	if (!atomic_get(&fdtable[fd].refcount)) {
+	if (!atomic_get(&fdtable[fd].refcount) || atomic_get(&fdtable[fd].closing)) {
 		errno = EBADF;
 		return -1;
 	}
@@ -179,9 +215,59 @@ static int _check_fd(int fd)
 	return 0;
 }
 
+static int z_fd_lock_live(struct zvfs_fd_ref *entry)
+{
+	(void)k_mutex_lock(&entry->lock, K_FOREVER);
+	if (atomic_get(&entry->closing) != 0) {
+		k_mutex_unlock(&entry->lock);
+		errno = EBADF;
+		return -1;
+	}
+
+	return 0;
+}
+
+/*
+ * Start a call on fd: hold its slot, so close() cannot free and reuse it until
+ * z_fd_call_end(). With lock, also take the entry lock and check again once it
+ * is held, since close() may have run while we waited for it.
+ */
+static struct zvfs_fd_ref *z_fd_call_begin(int fd, bool lock)
+{
+	struct zvfs_fd_ref *entry;
+
+	if ((fd < 0) || (fd >= ARRAY_SIZE(fdtable))) {
+		errno = EBADF;
+		return NULL;
+	}
+
+	fd = k_array_index_sanitize(fd, ARRAY_SIZE(fdtable));
+	entry = &fdtable[fd];
+
+	if (z_fd_ref_live(entry) < 0) {
+		return NULL;
+	}
+
+	if (lock && (z_fd_lock_live(entry) < 0)) {
+		(void)z_fd_unref(entry);
+		return NULL;
+	}
+
+	return entry;
+}
+
+static void z_fd_call_end(struct zvfs_fd_ref *entry, bool lock)
+{
+	if (lock) {
+		k_mutex_unlock(&entry->lock);
+	}
+
+	(void)z_fd_unref(entry);
+}
+
 void *zvfs_get_fd_obj(int fd, const struct fd_op_vtable *vtable, int err)
 {
-	struct fd_entry *entry;
+	struct zvfs_fd_ref *entry;
 
 	if (_check_fd(fd) < 0) {
 		return NULL;
@@ -202,7 +288,9 @@ static int z_get_fd_by_obj_and_vtable(void *obj, const struct fd_op_vtable *vtab
 	int fd;
 
 	for (fd = 0; fd < ARRAY_SIZE(fdtable); fd++) {
-		if (fdtable[fd].obj == obj && fdtable[fd].vtable == vtable) {
+		/* A closed fd kept by a running call may name an object since reused */
+		if (fdtable[fd].obj == obj && fdtable[fd].vtable == vtable &&
+		    !atomic_get(&fdtable[fd].closing)) {
 			return fd;
 		}
 	}
@@ -215,7 +303,7 @@ bool zvfs_get_obj_lock_and_cond(void *obj, const struct fd_op_vtable *vtable, st
 				struct k_condvar **cond)
 {
 	int fd;
-	struct fd_entry *entry;
+	struct zvfs_fd_ref *entry;
 
 	fd = z_get_fd_by_obj_and_vtable(obj, vtable);
 	if (_check_fd(fd) < 0) {
@@ -237,7 +325,7 @@ bool zvfs_get_obj_lock_and_cond(void *obj, const struct fd_op_vtable *vtable, st
 
 void *zvfs_get_fd_obj_and_vtable(int fd, const struct fd_op_vtable **vtable, struct k_mutex **lock)
 {
-	struct fd_entry *entry;
+	struct zvfs_fd_ref *entry;
 
 	if (_check_fd(fd) < 0) {
 		return NULL;
@@ -251,6 +339,33 @@ void *zvfs_get_fd_obj_and_vtable(int fd, const struct fd_op_vtable **vtable, str
 	}
 
 	return entry->obj;
+}
+
+struct zvfs_fd_ref *zvfs_fd_get_locked(int fd, void **obj, const struct fd_op_vtable **vtable)
+{
+	struct zvfs_fd_ref *entry;
+
+	entry = z_fd_call_begin(fd, true);
+	if (entry == NULL) {
+		return NULL;
+	}
+
+	/* Reserved but not finalized, or an entry with no object (stdin/out/err). */
+	if (entry->obj == NULL) {
+		z_fd_call_end(entry, true);
+		errno = EBADF;
+		return NULL;
+	}
+
+	*obj = entry->obj;
+	*vtable = entry->vtable;
+
+	return entry;
+}
+
+void zvfs_fd_unlock_put(struct zvfs_fd_ref *ref)
+{
+	z_fd_call_end(ref, true);
 }
 
 int zvfs_reserve_fd(void)
@@ -268,6 +383,7 @@ int zvfs_reserve_fd(void)
 		fdtable[fd].offset = 0;
 		k_mutex_init(&fdtable[fd].lock);
 		k_condvar_init(&fdtable[fd].cond);
+		atomic_clear(&fdtable[fd].closing);
 	}
 
 	k_mutex_unlock(&fdtable_lock);
@@ -310,7 +426,7 @@ void zvfs_finalize_typed_fd(int fd, void *obj, const struct fd_op_vtable *vtable
 void zvfs_free_fd(int fd)
 {
 	/* Assumes fd was already bounds-checked. */
-	(void)z_fd_unref(fd);
+	(void)z_fd_unref(&fdtable[fd]);
 }
 
 int zvfs_alloc_fd(void *obj, const struct fd_op_vtable *vtable)
@@ -340,14 +456,14 @@ static ssize_t zvfs_rw(int fd, void *buf, size_t sz, bool is_write, const size_t
 	bool prw;
 	ssize_t res;
 	const size_t *off;
+	struct zvfs_fd_ref *entry;
 
-	if (_check_fd(fd) < 0) {
+	entry = z_fd_call_begin(fd, true);
+	if (entry == NULL) {
 		return -1;
 	}
 
-	(void)k_mutex_lock(&fdtable[fd].lock, K_FOREVER);
-
-	prw = supports_pread_pwrite(fdtable[fd].mode);
+	prw = supports_pread_pwrite(entry->mode);
 	if (from_offset != NULL && !prw) {
 		/*
 		 * Seekable file types should support pread() / pwrite() and per-fd offset passing.
@@ -359,21 +475,21 @@ static ssize_t zvfs_rw(int fd, void *buf, size_t sz, bool is_write, const size_t
 	}
 
 	/* If there is no specified from_offset, then use the current offset of the fd */
-	off = (from_offset == NULL) ? &fdtable[fd].offset : from_offset;
+	off = (from_offset == NULL) ? &entry->offset : from_offset;
 
 	if (is_write) {
-		if (fdtable[fd].vtable->write_offs == NULL) {
+		if (entry->vtable->write_offs == NULL) {
 			res = -1;
 			errno = EIO;
 		} else {
-			res = fdtable[fd].vtable->write_offs(fdtable[fd].obj, buf, sz, *off);
+			res = entry->vtable->write_offs(entry->obj, buf, sz, *off);
 		}
 	} else {
-		if (fdtable[fd].vtable->read_offs == NULL) {
+		if (entry->vtable->read_offs == NULL) {
 			res = -1;
 			errno = EIO;
 		} else {
-			res = fdtable[fd].vtable->read_offs(fdtable[fd].obj, buf, sz, *off);
+			res = entry->vtable->read_offs(entry->obj, buf, sz, *off);
 		}
 	}
 	if (res > 0 && prw && from_offset == NULL) {
@@ -381,11 +497,11 @@ static ssize_t zvfs_rw(int fd, void *buf, size_t sz, bool is_write, const size_t
 		 * only update the fd offset when from_offset is not specified
 		 * See pread() / pwrite()
 		 */
-		fdtable[fd].offset += res;
+		entry->offset += res;
 	}
 
 unlock:
-	k_mutex_unlock(&fdtable[fd].lock);
+	z_fd_call_end(entry, true);
 
 	return res;
 }
@@ -403,27 +519,30 @@ ssize_t zvfs_write(int fd, const void *buf, size_t sz, const size_t *from_offset
 int zvfs_close(int fd)
 {
 	int res = 0;
+	struct zvfs_fd_ref *entry;
 
-	if (_check_fd(fd) < 0) {
+	entry = z_fd_call_begin(fd, true);
+	if (entry == NULL) {
 		return -1;
 	}
 
-	(void)k_mutex_lock(&fdtable[fd].lock, K_FOREVER);
-	if (fdtable[fd].vtable->close != NULL) {
+	if (entry->vtable->close != NULL) {
 		/* close() is optional - e.g. stdinout_fd_op_vtable */
-		if (fdtable[fd].mode & ZVFS_MODE_IFSOCK) {
+		if ((entry->mode & ZVFS_MODE_IFSOCK) != 0U) {
 			/* Network socket needs to know socket number so pass
 			 * it via close2() call.
 			 */
-			res = fdtable[fd].vtable->close2(fdtable[fd].obj, fd);
+			res = entry->vtable->close2(entry->obj, fd);
 			zvfs_socket_close_hook(fd);
 		} else {
-			res = fdtable[fd].vtable->close(fdtable[fd].obj);
+			res = entry->vtable->close(entry->obj);
 		}
 	}
-	k_mutex_unlock(&fdtable[fd].lock);
 
-	zvfs_free_fd(fd);
+	/* Only now, so that the object's own close can still look up its fd. */
+	atomic_set(&entry->closing, 1);
+	(void)z_fd_unref(entry);
+	z_fd_call_end(entry, true);
 
 	return res;
 }
@@ -446,110 +565,144 @@ int zvfs_fileno(FILE *file)
 		return -1;
 	}
 
-	return (struct fd_entry *)file - fdtable;
+	return (struct zvfs_fd_ref *)file - fdtable;
 }
 
 int zvfs_fstat(int fd, struct zvfs_stat *buf)
 {
-	if (_check_fd(fd) < 0) {
+	int res;
+	struct zvfs_fd_ref *entry;
+
+	entry = z_fd_call_begin(fd, false);
+	if (entry == NULL) {
 		return -1;
 	}
 
-	return zvfs_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj, ZFD_IOCTL_STAT, buf);
+	res = zvfs_fdtable_call_ioctl(entry->vtable, entry->obj, ZFD_IOCTL_STAT, buf);
+	z_fd_call_end(entry, false);
+
+	return res;
 }
 
 int zvfs_fsync(int fd)
 {
-	if (_check_fd(fd) < 0) {
+	int res;
+	struct zvfs_fd_ref *entry;
+
+	entry = z_fd_call_begin(fd, false);
+	if (entry == NULL) {
 		return -1;
 	}
 
-	return zvfs_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj, ZFD_IOCTL_FSYNC);
+	res = zvfs_fdtable_call_ioctl(entry->vtable, entry->obj, ZFD_IOCTL_FSYNC);
+	z_fd_call_end(entry, false);
+
+	return res;
 }
 
-static inline off_t zvfs_lseek_wrap(int fd, int cmd, ...)
+static inline off_t zvfs_lseek_wrap(struct zvfs_fd_ref *entry, int cmd, ...)
 {
 	off_t res;
 	va_list args;
 
-	__ASSERT_NO_MSG(fd < ARRAY_SIZE(fdtable));
+	__ASSERT_NO_MSG(IS_ARRAY_ELEMENT(fdtable, entry));
 
-	(void)k_mutex_lock(&fdtable[fd].lock, K_FOREVER);
 	va_start(args, cmd);
-	res = fdtable[fd].vtable->ioctl(fdtable[fd].obj, cmd, args);
+	res = entry->vtable->ioctl(entry->obj, cmd, args);
 	va_end(args);
 	if (res >= 0) {
-		switch (fdtable[fd].mode & ZVFS_MODE_IFMT) {
+		switch (entry->mode & ZVFS_MODE_IFMT) {
 		case ZVFS_MODE_IFDIR:
 		case ZVFS_MODE_IFBLK:
 		case ZVFS_MODE_IFSHM:
 		case ZVFS_MODE_IFREG:
-			fdtable[fd].offset = res;
+			entry->offset = res;
 			break;
 		default:
 			break;
 		}
 	}
-	k_mutex_unlock(&fdtable[fd].lock);
 
 	return res;
 }
 
 off_t zvfs_lseek(int fd, off_t offset, int whence)
 {
-	if (_check_fd(fd) < 0) {
+	off_t res;
+	struct zvfs_fd_ref *entry;
+
+	entry = z_fd_call_begin(fd, true);
+	if (entry == NULL) {
 		return -1;
 	}
 
-	return zvfs_lseek_wrap(fd, ZFD_IOCTL_LSEEK, offset, whence, fdtable[fd].offset);
+	res = zvfs_lseek_wrap(entry, ZFD_IOCTL_LSEEK, offset, whence, entry->offset);
+	z_fd_call_end(entry, true);
+
+	return res;
 }
 
 int zvfs_fcntl(int fd, int cmd, va_list args)
 {
 	int res;
+	struct zvfs_fd_ref *entry;
 
-	if (_check_fd(fd) < 0) {
+	entry = z_fd_call_begin(fd, false);
+	if (entry == NULL) {
 		return -1;
 	}
 
 	/* The rest of commands are per-fd, handled by ioctl vmethod. */
-	res = fdtable[fd].vtable->ioctl(fdtable[fd].obj, cmd, args);
+	res = entry->vtable->ioctl(entry->obj, cmd, args);
+	z_fd_call_end(entry, false);
 
 	return res;
 }
 
-static inline int zvfs_ftruncate_wrap(int fd, int cmd, ...)
+static inline int zvfs_ftruncate_wrap(struct zvfs_fd_ref *entry, int cmd, ...)
 {
 	int res;
 	va_list args;
 
-	__ASSERT_NO_MSG(fd < ARRAY_SIZE(fdtable));
+	__ASSERT_NO_MSG(IS_ARRAY_ELEMENT(fdtable, entry));
 
-	(void)k_mutex_lock(&fdtable[fd].lock, K_FOREVER);
 	va_start(args, cmd);
-	res = fdtable[fd].vtable->ioctl(fdtable[fd].obj, cmd, args);
+	res = entry->vtable->ioctl(entry->obj, cmd, args);
 	va_end(args);
-	k_mutex_unlock(&fdtable[fd].lock);
 
 	return res;
 }
 
 int zvfs_ftruncate(int fd, off_t length)
 {
-	if (_check_fd(fd) < 0) {
+	int res;
+	struct zvfs_fd_ref *entry;
+
+	entry = z_fd_call_begin(fd, true);
+	if (entry == NULL) {
 		return -1;
 	}
 
-	return zvfs_ftruncate_wrap(fd, ZFD_IOCTL_TRUNCATE, length);
+	res = zvfs_ftruncate_wrap(entry, ZFD_IOCTL_TRUNCATE, length);
+	z_fd_call_end(entry, true);
+
+	return res;
 }
 
 int zvfs_ioctl(int fd, unsigned long request, va_list args)
 {
-	if (_check_fd(fd) < 0) {
+	int res;
+	struct zvfs_fd_ref *entry;
+
+	entry = z_fd_call_begin(fd, false);
+	if (entry == NULL) {
 		return -1;
 	}
 
-	return fdtable[fd].vtable->ioctl(fdtable[fd].obj, request, args);
+	res = entry->vtable->ioctl(entry->obj, request, args);
+	z_fd_call_end(entry, false);
+
+	return res;
 }
 
 int zvfs_unlink(const char *path)
