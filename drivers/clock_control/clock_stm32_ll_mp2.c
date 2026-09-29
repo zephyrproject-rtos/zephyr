@@ -43,10 +43,53 @@ static int stm32_clock_control_off(const struct device *dev, clock_control_subsy
 	return 0;
 }
 
+static bool source_is_ready(uint32_t src)
+{
+	switch (src) {
+	case STM32_SRC_SYSCLK:
+	case STM32_SRC_ICN_LS_MCU:
+	case STM32_SRC_PCLK1:
+	case STM32_SRC_PCLK2:
+	case STM32_SRC_PCLK3:
+	case STM32_SRC_PCLK4:
+#if defined(RCC_APB5DIVR_APB5DIV)
+	case STM32_SRC_PCLK5:
+#endif /* RCC_APB5DIVR_APB5DIV */
+	case STM32_SRC_PCLKDBG:
+		/* Running by construction: the Cortex-M33 executes off these clocks */
+		return true;
+	case STM32_SRC_HSI:
+		return LL_RCC_HSI_IsReady() == 1U;
+	case STM32_SRC_HSE:
+		return LL_RCC_HSE_IsReady() == 1U;
+	case STM32_SRC_MSI:
+		return LL_RCC_MSI_IsReady() == 1U;
+	case STM32_SRC_LSE:
+		return LL_RCC_LSE_IsReady() == 1U;
+	case STM32_SRC_LSI:
+		return LL_RCC_LSI_IsReady() == 1U;
+	case STM32_SRC_PLL4:
+		return LL_RCC_PLL4_IsReady() == 1U;
+	case STM32_SRC_PLL5:
+		return LL_RCC_PLL5_IsReady() == 1U;
+	case STM32_SRC_PLL6:
+		return LL_RCC_PLL6_IsReady() == 1U;
+	case STM32_SRC_PLL7:
+		return LL_RCC_PLL7_IsReady() == 1U;
+	case STM32_SRC_PLL8:
+		return LL_RCC_PLL8_IsReady() == 1U;
+	default:
+		return false;
+	}
+}
+
 static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 					       clock_control_subsys_t sub_system, uint32_t *rate)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
+
+	/* APB clocks derive from ck_icn_ls_mcu; prescaler values are shift counts. */
+	LL_PLL_ClocksTypeDef pll_clocks;
 
 	ARG_UNUSED(dev);
 
@@ -176,12 +219,103 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 #endif
 	case STM32_CLOCK_PERIPH_WWDG1:
 		/* The WWDG1 clock is derived from the APB3 clock */
-		*rate = SystemCoreClock >> (LL_RCC_Get_LSMCUDIVR() + LL_RCC_GetAPB3Prescaler());
+		*rate = SystemCoreClock >> LL_RCC_Get_LSMCUDIVR();
+		*rate >>= LL_RCC_GetAPB3Prescaler();
+		break;
+	case STM32_SRC_SYSCLK:
+		*rate = SystemCoreClock;
+		break;
+	case STM32_SRC_ICN_LS_MCU:
+		*rate = SystemCoreClock >> LL_RCC_Get_LSMCUDIVR();
+		break;
+	case STM32_SRC_PCLK1:
+		*rate = SystemCoreClock >> LL_RCC_Get_LSMCUDIVR();
+		*rate >>= LL_RCC_GetAPB1Prescaler();
+		break;
+	case STM32_SRC_PCLK2:
+		*rate = SystemCoreClock >> LL_RCC_Get_LSMCUDIVR();
+		*rate >>= LL_RCC_GetAPB2Prescaler();
+		break;
+	case STM32_SRC_PCLK3:
+		*rate = SystemCoreClock >> LL_RCC_Get_LSMCUDIVR();
+		*rate >>= LL_RCC_GetAPB3Prescaler();
+		break;
+	case STM32_SRC_PCLK4:
+		*rate = SystemCoreClock >> LL_RCC_Get_LSMCUDIVR();
+		*rate >>= LL_RCC_GetAPB4Prescaler();
+		break;
+#if defined(RCC_APB5DIVR_APB5DIV)
+	case STM32_SRC_PCLK5:
+		*rate = SystemCoreClock >> LL_RCC_Get_LSMCUDIVR();
+		*rate >>= LL_RCC_GetAPB5Prescaler();
+		break;
+#endif /* RCC_APB5DIVR_APB5DIV */
+	case STM32_SRC_PCLKDBG:
+		*rate = SystemCoreClock >> LL_RCC_Get_LSMCUDIVR();
+		*rate >>= LL_RCC_GetAPBDBGPrescaler();
+		break;
+	case STM32_SRC_HSI:
+		*rate = HSI_VALUE;
+		break;
+	case STM32_SRC_HSE:
+		*rate = HSE_VALUE;
+		break;
+	case STM32_SRC_MSI:
+		*rate = MSI_VALUE;
+		break;
+	case STM32_SRC_LSE:
+		*rate = LSE_VALUE;
+		break;
+	case STM32_SRC_LSI:
+		*rate = LSI_VALUE;
+		break;
+	case STM32_SRC_PLL4:
+	case STM32_SRC_PLL5:
+	case STM32_SRC_PLL6:
+	case STM32_SRC_PLL7:
+	case STM32_SRC_PLL8:
+		*rate = get_xbar_source_rate(LL_RCC_XBAR_CLKSRC_PLL4_FOUTPOSTDIV +
+					     (pclken->bus - STM32_SRC_PLL4));
+		if (*rate == 0U) {
+			return -ENOTSUP;
+		}
 		break;
 	default:
 		return -ENOTSUP;
 	}
 
+	if (pclken->div != 0U) {
+		*rate /= (pclken->div + 1);
+	}
+
+	return 0;
+}
+
+static enum clock_control_status stm32_clock_control_get_status(const struct device *dev,
+								clock_control_subsys_t sub_system)
+{
+	struct stm32_pclken *pclken = (struct stm32_pclken *)sub_system;
+
+	ARG_UNUSED(dev);
+
+	if (IN_RANGE(pclken->bus, STM32_CLOCK_PERIPH_MIN, STM32_CLOCK_PERIPH_MAX)) {
+		if ((sys_read32(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus) & pclken->enr)
+		    == pclken->enr) {
+			return CLOCK_CONTROL_STATUS_ON;
+		} else {
+			return CLOCK_CONTROL_STATUS_OFF;
+		}
+	}
+
+	return source_is_ready(pclken->bus) ? CLOCK_CONTROL_STATUS_ON : CLOCK_CONTROL_STATUS_OFF;
+}
+
+static int stm32_clock_control_configure(const struct device *dev,
+					clock_control_subsys_t sub_system, void *data)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(sub_system);
+	ARG_UNUSED(data);
 	return 0;
 }
 
@@ -189,6 +323,8 @@ static DEVICE_API(clock_control, stm32_clock_control_api) = {
 	.on = stm32_clock_control_on,
 	.off = stm32_clock_control_off,
 	.get_rate = stm32_clock_control_get_subsys_rate,
+	.get_status = stm32_clock_control_get_status,
+	.configure = stm32_clock_control_configure,
 };
 
 static int stm32_clock_control_init(const struct device *dev)
