@@ -188,6 +188,16 @@ struct net_if_mcast_addr {
 	 *  this IPv4 group, never expiring when no response is pending.
 	 */
 	k_timepoint_t igmp_resp_timeout;
+
+	/** Deadline of the next retransmission of the unsolicited IGMP report
+	 *  of a join of this IPv4 group, never expiring when none is pending.
+	 */
+	k_timepoint_t igmp_retx_timeout;
+
+	/** Retransmissions of the unsolicited IGMP report of this IPv4 group
+	 *  left.
+	 */
+	uint8_t igmp_retx_left;
 #endif
 
 #if defined(CONFIG_NET_IPV4_IGMPV3)
