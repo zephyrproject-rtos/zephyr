@@ -42,14 +42,13 @@ int hardware_init(void)
 	/* The APM access-path filters default to enabled and only allow
 	 * masters in TEE mode. Disable them so the application (which runs in
 	 * REE mode) is not denied access to peripherals, including the modem
-	 * and RF register bus used by the Wi-Fi controller.
+	 * and RF register bus used by the Wi-Fi controller. The CPU_APM filter
+	 * gates the CPU's own memory accesses per security mode and silently
+	 * drops user-mode instruction fetches, so it is disabled as well.
 	 */
 	apm_ll_hp_apm_enable_ctrl_filter_all(false);
 	apm_ll_lp_apm_enable_ctrl_filter_all(false);
-	/* The CPU APM filter stays at its defaults; it must also be
-	 * opened when user mode support is added, since it silently
-	 * denies U-mode fetches.
-	 */
+	apm_ll_cpu_apm_enable_ctrl_filter_all(false);
 
 	/* Configure PMA (Physical Memory Attributes) entries to replace
 	 * ROM's default configuration. This is needed because the Zephyr
