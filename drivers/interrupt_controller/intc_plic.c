@@ -391,13 +391,21 @@ int riscv_plic_irq_is_enabled(uint32_t irq)
  *
  * @param irq IRQ number for which to set priority
  * @param priority Priority of IRQ to set to
+ * @param flags Architecture specific flags, defined in <zephyr/arch/riscv/irq.h>
  */
-void riscv_plic_set_priority(uint32_t irq, uint32_t priority)
+void riscv_plic_set_priority(uint32_t irq, uint32_t priority, uint32_t flags)
 {
 	const struct device *dev = get_plic_dev_from_irq(irq);
 	const struct plic_config *config = dev->config;
 	const uint32_t local_irq = irq_from_level_2(irq);
 	mem_addr_t prio_addr = config->prio + (local_irq * sizeof(uint32_t));
+
+#ifdef CONFIG_ZERO_LATENCY_IRQS
+	if (flags & IRQ_ZERO_LATENCY) {
+		/* Boost priority for zero-latency interrupts */
+		priority += (config->max_prio - CONFIG_ZERO_LATENCY_LEVELS);
+	}
+#endif
 
 	if (priority > config->max_prio) {
 		priority = config->max_prio;
