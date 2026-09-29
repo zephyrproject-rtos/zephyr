@@ -6,7 +6,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/cache.h>
+#if defined(CONFIG_GIC_V3_ITS) && defined(CONFIG_GIC_V3_RDIST_DMA_NONCOHERENT)
+#include <zephyr/arch/cache.h>
+#endif
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
@@ -15,12 +17,15 @@
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/drivers/interrupt_controller/gic.h>
 #include <zephyr/sys/barrier.h>
+#include <zephyr/logging/log.h>
 #include "intc_gic_common_priv.h"
 #include "intc_gicv3_priv.h"
 
 #include <string.h>
 
 #define DT_DRV_COMPAT arm_gic_v3
+
+LOG_MODULE_REGISTER(intc_gicv3, CONFIG_INTC_LOG_LEVEL);
 
 #define GIC_V3_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(DT_DRV_COMPAT)
 
@@ -57,19 +62,17 @@ mem_addr_t gic_rdists[CONFIG_MP_MAX_NUM_CPUS];
 #define IGROUPR_VAL 0x0U
 #endif
 
-/*
- * We allocate memory for PROPBASE to cover 2 ^ lpi_id_bits LPIs to
- * deal with (one configuration byte per interrupt). PENDBASE has to
- * be 64kB aligned (one bit per LPI, plus 8192 bits for SPI/PPI/SGI).
- */
-#define ITS_MAX_LPI_NRBITS 16 /* 64K LPIs */
+#define GIC_LPI_ID_BITS DT_PROP(GIC_V3_NODE, zephyr_lpi_id_bits)
 
-#define LPI_PROPBASE_SZ(nrbits) ROUND_UP(BIT(nrbits), KB(64))
+/* Configuration bytes start at the first LPI. Pending bits use the full INTID. */
+#define LPI_PROPBASE_SZ(nrbits) ROUND_UP(BIT(nrbits) - GIC_LPI_INT_BASE, KB(4))
 #define LPI_PENDBASE_SZ(nrbits) ROUND_UP(BIT(nrbits) / 8, KB(64))
 
 #ifdef CONFIG_GIC_V3_ITS
-static uintptr_t lpi_prop_table;
-
+static uint8_t lpi_prop_table[LPI_PROPBASE_SZ(GIC_LPI_ID_BITS)] __aligned(KB(4));
+static uint8_t lpi_pend_tables[CONFIG_MP_MAX_NUM_CPUS][LPI_PENDBASE_SZ(GIC_LPI_ID_BITS)]
+	__aligned(KB(64));
+static unsigned int lpi_intid_limit;
 atomic_t nlpi_intid = ATOMIC_INIT(8192);
 #endif
 
@@ -103,9 +106,24 @@ static int gic_wait_rwp(uint32_t intid)
 }
 
 #ifdef CONFIG_GIC_V3_ITS
+static bool arm_gic_lpi_intid_is_valid(unsigned int intid)
+{
+	if ((intid < GIC_LPI_INT_BASE) || (intid >= lpi_intid_limit)) {
+		LOG_ERR("LPI INTID %u is outside the configured range", intid);
+		return false;
+	}
+
+	return true;
+}
+
 static void arm_gic_lpi_setup(unsigned int intid, bool enable)
 {
-	uint8_t *cfg = &((uint8_t *)lpi_prop_table)[intid - 8192];
+	uint8_t *cfg;
+
+	if (!arm_gic_lpi_intid_is_valid(intid)) {
+		return;
+	}
+	cfg = &lpi_prop_table[intid - GIC_LPI_INT_BASE];
 
 	if (enable) {
 		*cfg |= BIT(0);
@@ -124,7 +142,12 @@ static void arm_gic_lpi_setup(unsigned int intid, bool enable)
 
 static void arm_gic_lpi_set_priority(unsigned int intid, unsigned int prio)
 {
-	uint8_t *cfg = &((uint8_t *)lpi_prop_table)[intid - 8192];
+	uint8_t *cfg;
+
+	if (!arm_gic_lpi_intid_is_valid(intid)) {
+		return;
+	}
+	cfg = &lpi_prop_table[intid - GIC_LPI_INT_BASE];
 
 	*cfg &= 0xfc;
 	*cfg |= prio & 0xfc;
@@ -140,7 +163,13 @@ static void arm_gic_lpi_set_priority(unsigned int intid, unsigned int prio)
 
 static bool arm_gic_lpi_is_enabled(unsigned int intid)
 {
-	uint8_t *cfg = &((uint8_t *)lpi_prop_table)[intid - 8192];
+	uint8_t *cfg;
+
+	if (!arm_gic_lpi_intid_is_valid(intid)) {
+		return false;
+	}
+
+	cfg = &lpi_prop_table[intid - GIC_LPI_INT_BASE];
 
 	return (*cfg & BIT(0));
 }
@@ -175,7 +204,7 @@ void arm_gic_irq_set_affinity(unsigned int intid, uint64_t mpidr)
 void arm_gic_irq_set_priority(unsigned int intid, unsigned int prio, uint32_t flags)
 {
 #ifdef CONFIG_GIC_V3_ITS
-	if (intid >= 8192) {
+	if (intid >= GIC_LPI_INT_BASE) {
 		arm_gic_lpi_set_priority(intid, prio);
 		return;
 	}
@@ -226,7 +255,7 @@ void arm_gic_irq_set_priority(unsigned int intid, unsigned int prio, uint32_t fl
 void arm_gic_irq_enable(unsigned int intid)
 {
 #ifdef CONFIG_GIC_V3_ITS
-	if (intid >= 8192) {
+	if (intid >= GIC_LPI_INT_BASE) {
 		arm_gic_lpi_setup(intid, true);
 		return;
 	}
@@ -258,7 +287,7 @@ void arm_gic_irq_enable(unsigned int intid)
 void arm_gic_irq_disable(unsigned int intid)
 {
 #ifdef CONFIG_GIC_V3_ITS
-	if (intid >= 8192) {
+	if (intid >= GIC_LPI_INT_BASE) {
 		arm_gic_lpi_setup(intid, false);
 		return;
 	}
@@ -280,7 +309,7 @@ void arm_gic_irq_disable(unsigned int intid)
 bool arm_gic_irq_is_enabled(unsigned int intid)
 {
 #ifdef CONFIG_GIC_V3_ITS
-	if (intid >= 8192) {
+	if (intid >= GIC_LPI_INT_BASE) {
 		return arm_gic_lpi_is_enabled(intid);
 	}
 #endif
@@ -421,34 +450,44 @@ static void gicv3_rdist_enable(mem_addr_t rdist)
  */
 static void gicv3_rdist_setup_lpis(mem_addr_t rdist)
 {
-	unsigned int lpi_id_bits =
-		MIN(GICD_TYPER_IDBITS(sys_read32(GICD_TYPER)), ITS_MAX_LPI_NRBITS);
-	uintptr_t lpi_pend_table;
+	unsigned int lpi_id_bits = MIN(GICD_TYPER_IDBITS(sys_read32(GICD_TYPER)), GIC_LPI_ID_BITS);
+	unsigned int cpu_id = arch_curr_cpu()->id;
+	uint8_t *lpi_pend_table = lpi_pend_tables[cpu_id];
 	uint64_t reg, tmp;
 	uint32_t ctlr;
 
-	/* If not, alloc a common prop table for all redistributors */
-	if (!lpi_prop_table) {
-		lpi_prop_table = (uintptr_t)k_aligned_alloc(4 * 1024, LPI_PROPBASE_SZ(lpi_id_bits));
-		memset((void *)lpi_prop_table, 0, LPI_PROPBASE_SZ(lpi_id_bits));
+	if (lpi_intid_limit <= GIC_LPI_INT_BASE) {
+		return;
 	}
 
-	lpi_pend_table = (uintptr_t)k_aligned_alloc(64 * 1024, LPI_PENDBASE_SZ(lpi_id_bits));
-	memset((void *)lpi_pend_table, 0, LPI_PENDBASE_SZ(lpi_id_bits));
+	ctlr = sys_read32(rdist + GICR_CTLR);
+	if ((ctlr & GICR_CTLR_ENABLE_LPIS) != 0U) {
+		sys_write32(ctlr & ~GICR_CTLR_ENABLE_LPIS, rdist + GICR_CTLR);
+	}
+
+	/* An earlier disable may still be pending even if EnableLPIs reads as zero. */
+	if ((ctlr & (GICR_CTLR_ENABLE_LPIS | BIT(GICR_CTLR_RWP))) != 0U) {
+		gic_wait_rwp(0U);
+		if ((sys_read32(rdist + GICR_CTLR) & GICR_CTLR_ENABLE_LPIS) != 0U) {
+			LOG_ERR("Failed to disable LPIs on CPU%u", cpu_id);
+			return;
+		}
+	}
+
+	/* A restarted CPU reuses its table, and PTZ requires every byte to be zero. */
+	memset(lpi_pend_table, 0, sizeof(lpi_pend_tables[0]));
 
 #ifdef CONFIG_GIC_V3_RDIST_DMA_NONCOHERENT
-	arch_dcache_flush_and_invd_range((void *)lpi_prop_table, LPI_PROPBASE_SZ(lpi_id_bits));
-	arch_dcache_flush_and_invd_range((void *)lpi_pend_table, LPI_PENDBASE_SZ(lpi_id_bits));
+	arch_dcache_flush_and_invd_range(lpi_prop_table, sizeof(lpi_prop_table));
+	arch_dcache_flush_and_invd_range(lpi_pend_table, sizeof(lpi_pend_tables[0]));
 #endif
-
-	ctlr = sys_read32(rdist + GICR_CTLR);
-	ctlr &= ~GICR_CTLR_ENABLE_LPIS;
-	sys_write32(ctlr, rdist + GICR_CTLR);
+	barrier_dsync_fence_full();
 
 	/* PROPBASE */
 	reg = (GIC_BASER_SHARE_INNER << GITR_PROPBASER_SHAREABILITY_SHIFT) |
 	      (GIC_BASER_CACHE_RAWAWB << GITR_PROPBASER_INNER_CACHE_SHIFT) |
-	      (lpi_prop_table & (GITR_PROPBASER_ADDR_MASK << GITR_PROPBASER_ADDR_SHIFT)) |
+	      ((uintptr_t)lpi_prop_table &
+	       (GITR_PROPBASER_ADDR_MASK << GITR_PROPBASER_ADDR_SHIFT)) |
 	      (GIC_BASER_CACHE_INNERLIKE << GITR_PROPBASER_OUTER_CACHE_SHIFT) |
 	      ((lpi_id_bits - 1) & GITR_PROPBASER_ID_BITS_MASK);
 	sys_write64(reg, rdist + GICR_PROPBASER);
@@ -466,7 +505,8 @@ static void gicv3_rdist_setup_lpis(mem_addr_t rdist)
 	/* PENDBASE */
 	reg = (GIC_BASER_SHARE_INNER << GITR_PENDBASER_SHAREABILITY_SHIFT) |
 	      (GIC_BASER_CACHE_RAWAWB << GITR_PENDBASER_INNER_CACHE_SHIFT) |
-	      (lpi_pend_table & (GITR_PENDBASER_ADDR_MASK << GITR_PENDBASER_ADDR_SHIFT)) |
+	      ((uintptr_t)lpi_pend_table &
+	       (GITR_PENDBASER_ADDR_MASK << GITR_PENDBASER_ADDR_SHIFT)) |
 	      (GIC_BASER_CACHE_INNERLIKE << GITR_PENDBASER_OUTER_CACHE_SHIFT) | GITR_PENDBASER_PTZ;
 	sys_write64(reg, rdist + GICR_PENDBASER);
 	/* Check SHAREABILITY validity */
@@ -756,18 +796,24 @@ static void __arm_gic_init(void)
 
 	gic_rdists[cpu] = gic_rd_base;
 
+	gicv3_rdist_enable(gic_rd_base);
+
 #ifdef CONFIG_GIC_V3_ITS
 	/* Enable LPIs in Redistributor */
-	gicv3_rdist_setup_lpis(gic_get_rdist());
+	gicv3_rdist_setup_lpis(gic_rd_base);
 #endif
-
-	gicv3_rdist_enable(gic_get_rdist());
 
 	gicv3_cpuif_init();
 }
 
 int arm_gic_init(const struct device *dev)
 {
+#ifdef CONFIG_GIC_V3_ITS
+	uint32_t gicd_typer = sys_read32(GICD_TYPER);
+	unsigned int lpi_id_bits = MIN(GICD_TYPER_IDBITS(gicd_typer), GIC_LPI_ID_BITS);
+
+	lpi_intid_limit = gicv3_lpi_intid_limit(gicd_typer, lpi_id_bits, CONFIG_NUM_IRQS);
+#endif
 	gicv3_dist_init();
 
 	__arm_gic_init();
@@ -784,7 +830,9 @@ void arm_gic_secondary_init(void)
 
 #ifdef CONFIG_GIC_V3_ITS
 	/* Map this CPU Redistributor in all the ITS Collection tables */
-	its_rdist_map();
+	if (lpi_intid_limit > GIC_LPI_INT_BASE) {
+		its_rdist_map();
+	}
 #endif
 }
 #endif
