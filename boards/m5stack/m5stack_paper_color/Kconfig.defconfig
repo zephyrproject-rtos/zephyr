@@ -3,26 +3,26 @@
 
 if BOARD_M5STACK_PAPER_COLOR_ESP32S3_PROCPU
 
-config INPUT
+configdefault INPUT
 	default y
 
-config GPIO_HOGS_INIT_PRIORITY
+configdefault GPIO_HOGS_INIT_PRIORITY
 	default 83 if GPIO_HOGS
 
-config MIPI_DBI_INIT_PRIORITY
+configdefault MIPI_DBI_INIT_PRIORITY
 	default 84 if MIPI_DBI
 
-config DISPLAY_INIT_PRIORITY
+configdefault DISPLAY_INIT_PRIORITY
 	default 85 if DISPLAY
 
 if FUEL_GAUGE
 
 # Composite fuel gauge gets battery voltage from ADC-based voltage-divider sensor
 
-config ADC
+configdefault ADC
 	default y
 
-config SENSOR
+configdefault SENSOR
 	default y
 
 endif # FUEL_GAUGE
@@ -37,11 +37,10 @@ choice LV_Z_RENDERING_MODE
 	default LV_Z_FULL_REFRESH
 endchoice
 
-config LV_Z_VDB_CUSTOM_SECTION
+configdefault LV_Z_VDB_CUSTOM_SECTION
 	default y
 
-
-config ESP_SPIRAM
+configdefault ESP_SPIRAM
 	default y
 
 endif # LVGL
