@@ -1,0 +1,29 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ */
+
+/dts-v1/;
+#include <rakwireless/rak3112.dtsi>
+#include <espressif/partitions_0x0_amp_16M.dtsi>
+
+/ {
+	model = "RAK3312 WisBlock Core Module APPCPU";
+	compatible = "rakwireless,rak3312";
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,ipc_shm = &shm0;
+		zephyr,ipc = &ipm0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_appcpu_partition;
+	};
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&ipm0 {
+	status = "okay";
+};
