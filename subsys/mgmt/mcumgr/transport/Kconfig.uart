@@ -24,12 +24,20 @@ menuconfig MCUMGR_TRANSPORT_UART
 
 if MCUMGR_TRANSPORT_UART
 
+config MCUMGR_TRANSPORT_UART_MTU_DEPRECATED
+	bool
+	default y if MCUMGR_TRANSPORT_UART_MTU != 256
+	select DEPRECATED
+	help
+	  Indicates that MCUMGR_TRANSPORT_UART_MTU has been changed from its default. The option
+	  is deprecated.
+
 config MCUMGR_TRANSPORT_UART_MTU
-	int "UART SMP MTU"
+	int "UART SMP MTU [DEPRECATED]"
 	default 256
 	help
-	  Maximum size of SMP frames sent and received over UART, in bytes. This value must
-	  satisfy the following relation:
-	  MCUMGR_TRANSPORT_UART_MTU <= MCUMGR_TRANSPORT_NETBUF_SIZE + 2
+	  Value returned by the UART transport's get_mtu callback. This option is deprecated along
+	  with that callback, which the SMP layer does not use. SMP over console frames are limited
+	  to 127 bytes and the maximum SMP packet size is set by MCUMGR_TRANSPORT_NETBUF_SIZE.
 
 endif # MCUMGR_TRANSPORT_UART
