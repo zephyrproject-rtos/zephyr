@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Ali Talha Yurtseven
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.sensor.icm20948:
+    platform_allow:
+      - native_sim
+    tags:
+      - drivers
+      - sensor
