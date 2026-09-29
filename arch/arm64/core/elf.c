@@ -58,6 +58,10 @@ LOG_MODULE_REGISTER(elf, CONFIG_LLEXT_LOG_LEVEL);
 #define R_AARCH64_LDST64_ABS_LO12_NC  286
 #define R_AARCH64_LDST128_ABS_LO12_NC 299
 
+#define R_AARCH64_GLOB_DAT  1025
+#define R_AARCH64_JUMP_SLOT 1026
+#define R_AARCH64_RELATIVE  1027
+
 /* Local-exec TLS relocations (AArch64 ELF) */
 #define R_AARCH64_TLSLE_ADD_TPREL_HI12    549 /* 0x225 */
 #define R_AARCH64_TLSLE_ADD_TPREL_LO12_NC 551 /* 0x227 */
@@ -572,6 +576,17 @@ int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *r
 	case R_AARCH64_JUMP26:
 		ret = imm_reloc_handler(rel, reloc_type, loc, sym_base_addr);
 		/* TODO Handle case when address exceeds +/- 128MB */
+		break;
+
+	case R_AARCH64_RELATIVE:
+		overflow_check = false;
+		*(uint64_t *)loc = llext_et_dyn_bias(ext) + (uint64_t)rel->r_addend;
+		break;
+
+	case R_AARCH64_GLOB_DAT:
+	case R_AARCH64_JUMP_SLOT:
+		overflow_check = false;
+		*(uint64_t *)loc = sym_base_addr + rel->r_addend;
 		break;
 
 	case R_AARCH64_TLSLE_ADD_TPREL_HI12:

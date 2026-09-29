@@ -16,6 +16,9 @@ LOG_MODULE_REGISTER(elf, CONFIG_LLEXT_LOG_LEVEL);
 #define R_X86_64_64         1
 #define R_X86_64_PC32       2
 #define R_X86_64_PLT32      4
+#define R_X86_64_GLOB_DAT   6
+#define R_X86_64_JUMP_SLOT  7
+#define R_X86_64_RELATIVE   8
 #define R_X86_64_32        10
 #define R_X86_64_32S       11
 
@@ -64,7 +67,16 @@ int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *r
 	case R_X86_64_PLT32:
 		*(uint32_t *)loc = sym_base_addr - loc;
 		break;
+	case R_X86_64_GLOB_DAT:
+	case R_X86_64_JUMP_SLOT:
+		*(uint64_t *)loc = sym_base_addr;
+		break;
+	case R_X86_64_RELATIVE:
+		*(uint64_t *)loc = llext_et_dyn_bias(ext) + rel->r_addend;
+		break;
 	case R_X86_64_64:
+		*(uint64_t *)loc = sym_base_addr;
+		break;
 	case R_X86_64_32:
 	case R_X86_64_32S:
 		*(uint32_t *)loc = sym_base_addr;
@@ -80,6 +92,9 @@ int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *r
 #else
 #define R_386_32           1
 #define R_286_PC32         2
+#define R_386_GLOB_DAT     6
+#define R_386_JMP_SLOT     7
+#define R_386_RELATIVE     8
 
 /**
  * @brief Architecture specific function for relocating shared elf
@@ -120,16 +135,22 @@ int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *r
 		return ret;
 	}
 
-	sym_base_addr += addend;
-
 	int reloc_type = ELF32_R_TYPE(rel->r_info);
 
 	switch (reloc_type) {
-	case R_386_32:
+	case R_386_GLOB_DAT:
+	case R_386_JMP_SLOT:
+		/* In-place word is the lazy PLT stub, not an addend. */
 		*(uint32_t *)loc = sym_base_addr;
 		break;
+	case R_386_32:
+		*(uint32_t *)loc = sym_base_addr + addend;
+		break;
+	case R_386_RELATIVE:
+		*(uint32_t *)loc = llext_et_dyn_bias(ext) + addend;
+		break;
 	case R_286_PC32:
-		*(uint32_t *)loc = sym_base_addr - loc;
+		*(uint32_t *)loc = sym_base_addr + addend - loc;
 		break;
 	default:
 		LOG_ERR("unknown relocation: %u\n", reloc_type);
