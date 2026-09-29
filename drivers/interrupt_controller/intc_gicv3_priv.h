@@ -174,6 +174,8 @@
 #define GITS_TYPER_PTA_GET(_val)            MASK_GET(_val, GITS_TYPER_PTA)
 #define GITS_TYPER_HCC_GET(_val)            MASK_GET(_val, GITS_TYPER_HCC)
 #define GITS_TYPER_DEVBITS_GET(_val)        MASK_GET(_val, GITS_TYPER_DEVBITS)
+#define GITS_TYPER_CIDBITS_GET(_val)        MASK_GET(_val, GITS_TYPER_CIDBITS)
+#define GITS_TYPER_CIL_GET(_val)            MASK_GET(_val, GITS_TYPER_CIL)
 
 /* ITS COMMON BASER / CBASER register */
 
@@ -301,8 +303,6 @@ static inline unsigned int gicv3_lpi_intid_limit(uint32_t typer, unsigned int id
 #ifdef CONFIG_GIC_V3_ITS
 void its_rdist_map(void);
 void its_rdist_invall(void);
-
-extern atomic_t nlpi_intid;
 #endif
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_INTC_GICV3_PRIV_H_ */
