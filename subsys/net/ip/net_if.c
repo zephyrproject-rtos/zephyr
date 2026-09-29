@@ -2749,6 +2749,8 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 		ipv6->mcast[i].address.family = NET_AF_INET6;
 #if defined(CONFIG_NET_IPV6_MLD)
 		ipv6->mcast[i].mld_resp_timeout = sys_timepoint_calc(K_FOREVER);
+		ipv6->mcast[i].mld_retx_timeout = sys_timepoint_calc(K_FOREVER);
+		ipv6->mcast[i].mld_retx_left = 0U;
 #endif
 		net_if_maddr_ref_init(&ipv6->mcast[i]);
 

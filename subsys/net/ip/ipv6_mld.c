@@ -53,6 +53,10 @@ LOG_MODULE_DECLARE(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 #define MLD_QUERY_INTERVAL_S 125U
 #define MLD_QUERY_RESPONSE_INTERVAL_S 10U
 
+/* Unsolicited Report Interval, RFC 3810 ch 9.11 and RFC 2710 ch 7.10 */
+#define MLDV2_UNSOLICITED_REPORT_INTERVAL_MS (1U * MSEC_PER_SEC)
+#define MLDV1_UNSOLICITED_REPORT_INTERVAL_MS (10U * MSEC_PER_SEC)
+
 /* Older Version Querier Present Timeout, RFC 3810 ch 9.12 */
 #define MLD_OLDER_VERSION_QUERIER_PRESENT_S \
 	(CONFIG_NET_IPV6_MLD_ROBUSTNESS * MLD_QUERY_INTERVAL_S + MLD_QUERY_RESPONSE_INTERVAL_S)
@@ -72,6 +76,8 @@ static K_MUTEX_DEFINE(mld_lock);
 
 static void mld_timeout(struct k_work *work);
 static K_WORK_DELAYABLE_DEFINE(mld_timer, mld_timeout);
+
+static void mld_retransmit_schedule(struct net_if *iface, struct net_if_mcast_addr *group);
 
 static k_timepoint_t mld_timepoint_never(void)
 {
@@ -138,13 +144,17 @@ static void mld_timer_arm(k_timepoint_t timeout)
 	(void)k_work_reschedule(&mld_timer, remaining);
 }
 
-/* Cancel every pending query response of the interface */
+/* Cancel every pending query response and report retransmission of the
+ * interface.
+ */
 static void mld_cancel_timers(struct net_if_ipv6 *ipv6)
 {
 	ipv6->mld_general_timeout = mld_timepoint_never();
 
 	ARRAY_FOR_EACH(ipv6->mcast, i) {
 		ipv6->mcast[i].mld_resp_timeout = mld_timepoint_never();
+		ipv6->mcast[i].mld_retx_timeout = mld_timepoint_never();
+		ipv6->mcast[i].mld_retx_left = 0U;
 	}
 }
 
@@ -512,6 +522,8 @@ int net_ipv6_mld_rejoin(struct net_if *iface, struct net_if_mcast_addr *addr)
 		return ret;
 	}
 
+	mld_retransmit_schedule(iface, addr);
+
 out:
 	net_if_ipv6_maddr_join(iface, addr);
 
@@ -559,6 +571,8 @@ int net_ipv6_mld_join(struct net_if *iface, const struct net_in6_addr *addr)
 
 		return ret;
 	}
+
+	mld_retransmit_schedule(iface, maddr);
 
 out:
 	net_if_ipv6_maddr_join(iface, maddr);
@@ -919,9 +933,88 @@ out:
 	k_mutex_unlock(&mld_lock);
 }
 
-/* Send the responses of the interface that are due and note the earliest
- * remaining one in next. Called with mld_lock held, which is released while
- * a response is sent.
+static uint32_t mld_unsolicited_report_interval(const struct net_if_ipv6 *ipv6)
+{
+	if (mld_host_version(ipv6) == MLDV1) {
+		return MLDV1_UNSOLICITED_REPORT_INTERVAL_MS;
+	}
+
+	return MLDV2_UNSOLICITED_REPORT_INTERVAL_MS;
+}
+
+/* The unsolicited report of a join may get lost, so it is repeated
+ * [Robustness Variable] - 1 times at random intervals within the
+ * Unsolicited Report Interval (RFC 3810 ch 6.1, RFC 2710 ch 4). Called after
+ * the first report of the join has been sent.
+ */
+static void mld_retransmit_schedule(struct net_if *iface, struct net_if_mcast_addr *group)
+{
+	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
+
+	k_mutex_lock(&mld_lock, K_FOREVER);
+
+	group->mld_retx_left = CONFIG_NET_IPV6_MLD_ROBUSTNESS - 1;
+
+	if (group->mld_retx_left > 0U) {
+		group->mld_retx_timeout = mld_random_delay(mld_unsolicited_report_interval(ipv6));
+		mld_timer_arm(group->mld_retx_timeout);
+	} else {
+		group->mld_retx_timeout = mld_timepoint_never();
+	}
+
+	k_mutex_unlock(&mld_lock);
+}
+
+/* Retransmit the unsolicited report of a group when due and note the next
+ * retransmission in next. Called with mld_lock held, which is released while
+ * the report is sent.
+ */
+static void mld_group_retransmit(struct net_if *iface, struct net_if_ipv6 *ipv6,
+				 struct net_if_mcast_addr *group, k_timepoint_t *next)
+{
+	int ret;
+
+	if (group->mld_retx_left == 0U) {
+		return;
+	}
+
+	if (!sys_timepoint_expired(group->mld_retx_timeout)) {
+		*next = mld_timepoint_min(*next, group->mld_retx_timeout);
+		return;
+	}
+
+	if (!group->is_joined || !mld_is_reported(&group->address.in6_addr)) {
+		/* Left or the interface went down in the meantime */
+		group->mld_retx_left = 0U;
+		group->mld_retx_timeout = mld_timepoint_never();
+		return;
+	}
+
+	k_mutex_unlock(&mld_lock);
+	ret = net_ipv6_mld_send_single(iface, &group->address.in6_addr,
+				       NET_IPV6_MLDv2_CHANGE_TO_EXCLUDE_MODE);
+	k_mutex_lock(&mld_lock, K_FOREVER);
+
+	if (ret < 0) {
+		NET_DBG("Cannot retransmit MLD report (%d)", ret);
+	}
+
+	/* The group may have been left while the report was sent */
+	if (group->mld_retx_left > 0U) {
+		group->mld_retx_left--;
+	}
+
+	if (group->mld_retx_left > 0U) {
+		group->mld_retx_timeout = mld_random_delay(mld_unsolicited_report_interval(ipv6));
+		*next = mld_timepoint_min(*next, group->mld_retx_timeout);
+	} else {
+		group->mld_retx_timeout = mld_timepoint_never();
+	}
+}
+
+/* Send the responses and retransmissions of the interface that are due and
+ * note the earliest remaining one in next. Called with mld_lock held, which
+ * is released while a message is sent.
  */
 static void mld_iface_timeout(struct net_if *iface, struct net_if_ipv6 *ipv6, k_timepoint_t *next)
 {
@@ -958,6 +1051,8 @@ static void mld_iface_timeout(struct net_if *iface, struct net_if_ipv6 *ipv6, k_
 		} else {
 			*next = mld_timepoint_min(*next, mcast->mld_resp_timeout);
 		}
+
+		mld_group_retransmit(iface, ipv6, mcast, next);
 	}
 }
 
