@@ -16,3 +16,6 @@ tests:
   net.packet.allocation_stats:
     extra_configs:
       - CONFIG_NET_PKT_ALLOC_STATS=y
+  net.packet.no_assert:
+    extra_configs:
+      - CONFIG_ASSERT=n
