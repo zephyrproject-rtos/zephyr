@@ -11,6 +11,7 @@
 #include <zephyr/types.h>
 #include <zephyr/device.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
 
 /* Cache and Share ability for ITS & Redistributor LPI state tables */
 #define GIC_BASER_CACHE_NGNRNE     0x0UL /* Device-nGnRnE */
@@ -52,6 +53,15 @@
 
 /* GICD_CTLR Register write progress bit */
 #define GICD_CTLR_RWP 31
+
+/* Minimum supported LPI ID width */
+#define GIC_LPI_MIN_ID_BITS 14U
+
+/* GICD_TYPER */
+#define GICD_TYPER_NUM_LPIS_SHIFT 11U
+#define GICD_TYPER_NUM_LPIS_MASK  0x1fUL
+#define GICD_TYPER_NUM_LPIS(typer)                                                                 \
+	(((typer) >> GICD_TYPER_NUM_LPIS_SHIFT) & GICD_TYPER_NUM_LPIS_MASK)
 
 /* GICR_CTLR */
 #define GICR_CTLR_ENABLE_LPIS BIT(0)
@@ -274,6 +284,19 @@
 #define MASK(__basename)            (__basename##_MASK << __basename##_SHIFT)
 #define MASK_SET(__val, __basename) (((__val) & __basename##_MASK) << __basename##_SHIFT)
 #define MASK_GET(__reg, __basename) (((__reg) >> __basename##_SHIFT) & __basename##_MASK)
+
+static inline unsigned int gicv3_lpi_intid_limit(uint32_t typer, unsigned int id_bits,
+						 unsigned int irq_limit)
+{
+	unsigned int limit = MIN(BIT(id_bits), irq_limit);
+	unsigned int num_lpis = GICD_TYPER_NUM_LPIS(typer);
+
+	if (num_lpis != 0U && num_lpis + 1U < id_bits) {
+		limit = MIN(limit, 8192U + BIT(num_lpis + 1U));
+	}
+
+	return limit;
+}
 
 #ifdef CONFIG_GIC_V3_ITS
 void its_rdist_map(void);
