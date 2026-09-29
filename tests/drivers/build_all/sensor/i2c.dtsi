@@ -407,7 +407,8 @@ test_i2c_lsm6dsl: lsm6dsl@38 {
 test_i2c_lsm6dso: lsm6dso@39 {
 	compatible = "st,lsm6dso";
 	reg = <0x39>;
-	irq-gpios = <&test_gpio 0 0>;
+	irq-gpios = <&test_gpio 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	int-open-drain;
 	accel-pm = <LSM6DSO_DT_XL_ULP_MODE>;
 	accel-range = <LSM6DSO_DT_FS_8G>;
 	accel-odr = <LSM6DSO_DT_ODR_1Hz6>;
