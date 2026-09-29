@@ -727,6 +727,25 @@ int net_context_unref(struct net_context *context)
 	return 0;
 }
 
+static void context_release_port(struct net_context *context)
+{
+#if defined(CONFIG_NET_UDP_OPTIONS_DPLPMTUD)
+	(void)net_context_set_udp_dplpmtud(context, false);
+#endif /* CONFIG_NET_UDP_OPTIONS_DPLPMTUD */
+
+	if (context->conn_handler != NULL) {
+		if (IS_ENABLED(CONFIG_NET_TCP) || IS_ENABLED(CONFIG_NET_UDP) ||
+		    IS_ENABLED(CONFIG_NET_SOCKETS_CAN) ||
+		    IS_ENABLED(CONFIG_NET_SOCKETS_PACKET)) {
+			net_conn_unregister(context->conn_handler);
+		}
+
+		context->conn_handler = NULL;
+	}
+
+	context->flags &= ~NET_CONTEXT_LOCAL_ADDR_SET;
+}
+
 int net_context_put(struct net_context *context)
 {
 	int ret = 0;
@@ -764,6 +783,12 @@ int net_context_put(struct net_context *context)
 	context->connect_cb = NULL;
 	context->recv_cb = NULL;
 	context->send_cb = NULL;
+
+	if (net_context_get_proto(context) != NET_IPPROTO_TCP) {
+		context_release_port(context);
+	} else if (net_context_get_state(context) == NET_CONTEXT_LISTENING) {
+		context->flags &= ~NET_CONTEXT_LOCAL_ADDR_SET;
+	}
 
 	/* net_tcp_put() will handle decrementing refcount on stack's behalf */
 	net_tcp_put(context, false);
