@@ -5,8 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
+
 #include <zephyr/sys/printk.h>
 #include <zephyr/types.h>
+#include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/ztest.h>
@@ -31,6 +34,26 @@ static bool testing_device_order;
 static bool testing_force_state;
 static bool exit_post_ops_called;
 static int32_t policy_ticks;
+static uint32_t pm_state_set_calls;
+
+#if defined(CONFIG_ARCH_POSIX)
+static int timer_prepare_error;
+static uint32_t timer_prepare_calls;
+
+int sys_clock_idle_enter(uint32_t ticks)
+{
+	int ret = timer_prepare_error;
+
+	timer_prepare_calls++;
+	timer_prepare_error = 0;
+	if (ret < 0) {
+		return ret;
+	}
+
+	sys_clock_set_timeout(ticks, true);
+	return 0;
+}
+#endif
 
 enum pm_state forced_state;
 static const struct device *device_dummy;
@@ -178,6 +201,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(substate_id);
 	ARG_UNUSED(state);
+	pm_state_set_calls++;
 
 	if (!IS_ENABLED(CONFIG_PM_STATE_SET_IRQ_UNLOCKED)) {
 		zassert_equal(_kernel.idle, 0,
@@ -472,6 +496,55 @@ ZTEST(power_management_1cpu, test_power_state_trans)
 
 	pm_notifier_unregister(&notifier);
 }
+
+#if defined(CONFIG_ARCH_POSIX)
+ZTEST(power_management_1cpu, test_timer_prepare_failure)
+{
+	enum pm_device_state device_power_state;
+	uint32_t failed_prepare_calls;
+	int ret;
+
+	pm_notifier_register(&notifier);
+
+	ret = pm_device_runtime_disable(device_dummy);
+	zassert_equal(ret, 0, "Failed to disable device runtime PM");
+
+	pm_state_set_calls = 0U;
+	timer_prepare_calls = 0U;
+	timer_prepare_error = -EIO;
+	set_pm = false;
+	leave_idle = false;
+	enter_low_power = true;
+
+	k_sleep(SLEEP_TIMEOUT);
+
+	zassert_equal(timer_prepare_error, 0, "Timer failure was not consumed");
+	zassert_true(timer_prepare_calls > 0U, "Timer preparation was not attempted");
+	zassert_equal(pm_state_set_calls, 0U, "PM state was entered after timer failure");
+	zassert_false(set_pm, "Entry notification was sent after timer failure");
+	zassert_false(leave_idle, "Exit notification was sent after timer failure");
+
+	ret = pm_device_state_get(device_dummy, &device_power_state);
+	zassert_equal(ret, 0, "Failed to read device PM state");
+	zassert_equal(device_power_state, PM_DEVICE_STATE_ACTIVE,
+		      "Device was not resumed after timer failure");
+
+	failed_prepare_calls = timer_prepare_calls;
+	enter_low_power = true;
+	k_sleep(SLEEP_TIMEOUT);
+
+	zassert_true(timer_prepare_calls > failed_prepare_calls,
+		     "Timer preparation was not retried");
+	zassert_equal(pm_state_set_calls, 1U, "A later PM transition did not succeed");
+	zassert_true(leave_idle, "A later PM transition did not resume");
+
+	ret = pm_device_runtime_enable(device_dummy);
+	zassert_equal(ret, 0, "Failed to enable device runtime PM");
+
+	ret = pm_notifier_unregister(&notifier);
+	zassert_equal(ret, 0, "Failed to unregister PM notifier");
+}
+#endif
 
 /*
  * @brief notification between system and device
