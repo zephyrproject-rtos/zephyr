@@ -360,6 +360,16 @@ config RISCV_SUPPORT_INTERRUPT_PREEMPT
 	  will save the current xcause register within context stacking logic.
 	  This will preserve the previous interrupt level.
 
+config RISCV_NESTED_INTERRUPTS
+	bool
+	depends on RISCV_SUPPORT_INTERRUPT_PREEMPT
+	help
+	  Enable support for nested interrupts. When selected, higher priority
+	  interrupts can preempt lower priority ones, allowing for more responsive
+	  interrupt handling. SOCs must implement __soc_enable_isr_nesting and
+	  __soc_disable_isr_nesting functions, which should enable and disable
+	  interrupt preemption, respectively.
+
 config RISCV_SOC_INTERRUPT_INIT
 	bool "SOC-based interrupt initialization"
 	help

@@ -61,6 +61,15 @@
 #define EXC_SYSCALL  RISCV_EXC_ECALLM
 #endif
 
+#ifdef CONFIG_RISCV_NESTED_INTERRUPTS
+#define read_xcause(rd) lr rd, __struct_arch_esf_mcause_OFFSET(sp)
+#define read_xstatus(rd) lr rd, __struct_arch_esf_mstatus_OFFSET(sp)
+#else
+#define read_xcause(rd) csrr rd, RV_CAUSE
+#define read_xstatus(rd) csrr rd, RV_STATUS
+#endif
+
+
 
 /* Convenience macro for loading/storing register states. */
 #define DO_CALLER_SAVED(op) \
@@ -264,7 +273,7 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	and t1, t1, t2
 	bnez t1, no_fp
 	/* determine if this is an Illegal Instruction exception */
-	csrr t2, RV_CAUSE
+	read_xcause(t2)
 	li t1, CONFIG_RISCV_MCAUSE_EXCEPTION_MASK
 	and t2, t2, t1
 	li t1, 2		/* 2 = illegal instruction */
@@ -403,13 +412,18 @@ no_fp:	/* increment _current->arch.exception_depth */
 	jal ra, __soc_save_context
 #endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
 
+#ifdef CONFIG_RISCV_NESTED_INTERRUPTS
+	/* Enable ISR nesting for this interrupt */
+	jal ra, __soc_enable_isr_nesting
+#endif /* CONFIG_RISCV_NESTED_INTERRUPTS */
+
 	/*
 	 * Check if exception is the result of an interrupt or not.
 	 * Following the RISC-V architecture spec, the MSB
 	 * of the RV_CAUSE register is used to indicate whether an exception
 	 * is the result of an interrupt or an exception/fault.
 	 */
-	csrr t0, RV_CAUSE
+	read_xcause(t0)
 	bltz t0, is_interrupt
 
 	/*
@@ -417,7 +431,7 @@ no_fp:	/* increment _current->arch.exception_depth */
 	 * perform a context-switch or an IRQ offload. Otherwise call z_riscv_fault
 	 * to report the exception.
 	 */
-	csrr t0, RV_CAUSE
+	read_xcause(t0)
 #if CONFIG_RISCV_MCAUSE_EXCEPTION_MASK < ((1LLU << (__riscv_xlen - 1)) - 1LLU)
 	li t2, CONFIG_RISCV_MCAUSE_EXCEPTION_MASK
 	and t0, t0, t2
@@ -458,7 +472,7 @@ no_fp:	/* increment _current->arch.exception_depth */
 	 * Determine if we come from user space. If so, reconfigure the PMP for
 	 * kernel mode configuration.
 	 */
-	csrr t0, RV_STATUS
+	read_xstatus(t0)
 	li t1, STATUS_PP
 	and t0, t0, t1
 	bnez t0, 1f
@@ -791,7 +805,15 @@ on_irq_stack:
 #endif
 
 	/* Get IRQ causing interrupt */
+#ifdef CONFIG_RISCV_NESTED_INTERRUPTS
+	/* Pull xcause from the thread stack */
+	lr t0, ___cpu_t_irq_stack_OFFSET(s0)
+	lr t0, -16(t0)
+	lr a0, __struct_arch_esf_mcause_OFFSET(t0)
+#else
 	csrr a0, RV_CAUSE
+#endif /* CONFIG_RISCV_NESTED_INTERRUPTS */
+
 	li t0, CONFIG_RISCV_MCAUSE_EXCEPTION_MASK
 	and a0, a0, t0
 
@@ -908,6 +930,11 @@ might_have_rescheduled:
 #endif /* CONFIG_MULTITHREADING */
 
 no_reschedule:
+
+#ifdef CONFIG_RISCV_NESTED_INTERRUPTS
+	/* Disable ISR nesting for this interrupt */
+	jal ra, __soc_disable_isr_nesting
+#endif /* CONFIG_RISCV_NESTED_INTERRUPTS */
 
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 	/* Restore context at SOC level */
