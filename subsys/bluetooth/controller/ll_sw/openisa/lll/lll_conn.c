@@ -263,7 +263,7 @@ void lll_conn_isr_rx(void *param)
 				 HAL_RADIO_GPIO_PA_OFFSET);
 #else /* !CONFIG_BT_CTLR_PHY */
 	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + EVENT_IFS_US -
-				 radio_rx_chain_delay_get(0, 0) -
+				 radio_rx_chain_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED) -
 				 HAL_RADIO_GPIO_PA_OFFSET);
 #endif /* !CONFIG_BT_CTLR_PHY */
 #endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
@@ -351,7 +351,7 @@ void lll_conn_isr_tx(void *param)
 				     lll->phy_tx,
 				     lll->phy_flags);
 #else /* !CONFIG_BT_CTLR_PHY */
-	radio_switch_complete_and_tx(0, 0, 0, 0);
+	radio_switch_complete_and_tx(PHY_LEGACY, PHY_FLAGS_UNUSED, PHY_LEGACY, PHY_FLAGS_UNUSED);
 #endif /* !CONFIG_BT_CTLR_PHY */
 
 	lll_conn_rx_pkt_set(lll);
@@ -367,9 +367,9 @@ void lll_conn_isr_tx(void *param)
 	hcto += addr_us_get(lll->phy_rx);
 	hcto -= radio_tx_chain_delay_get(lll->phy_tx, lll->phy_flags);
 #else /* !CONFIG_BT_CTLR_PHY */
-	hcto += radio_rx_chain_delay_get(0, 0);
+	hcto += radio_rx_chain_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED);
 	hcto += addr_us_get(0);
-	hcto -= radio_tx_chain_delay_get(0, 0);
+	hcto -= radio_tx_chain_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED);
 #endif /* !CONFIG_BT_CTLR_PHY */
 
 	radio_tmr_hcto_configure(hcto);
@@ -394,7 +394,7 @@ void lll_conn_isr_tx(void *param)
 				 HAL_RADIO_GPIO_LNA_OFFSET);
 #else /* !CONFIG_BT_CTLR_PHY */
 	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + EVENT_IFS_US - 4 -
-				 radio_tx_chain_delay_get(0, 0) -
+				 radio_tx_chain_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED) -
 				 HAL_RADIO_GPIO_LNA_OFFSET);
 #endif /* !CONFIG_BT_CTLR_PHY */
 #endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
