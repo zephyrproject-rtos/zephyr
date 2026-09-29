@@ -860,6 +860,31 @@ static void igmp_timeout(struct k_work *work)
 	k_mutex_unlock(&igmp_lock);
 }
 
+/* Another member reported the group, so this host does not have to: an
+ * IGMPv1 or IGMPv2 host stops its timer for the group (RFC 2236 ch 3). An
+ * IGMPv3 host does not suppress its reports (RFC 3376 ch 7.2.2).
+ */
+static void igmp_report_heard(struct net_if *iface, const struct net_in_addr *group)
+{
+	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
+	struct net_if_mcast_addr *maddr;
+
+	maddr = net_if_ipv4_maddr_lookup(group, &iface);
+	if (maddr == NULL) {
+		return;
+	}
+
+	k_mutex_lock(&igmp_lock, K_FOREVER);
+
+	if (igmp_host_version(ipv4) != IGMPV3) {
+		maddr->igmp_resp_timeout = igmp_timepoint_never();
+		maddr->igmp_retx_timeout = igmp_timepoint_never();
+		maddr->igmp_retx_left = 0U;
+	}
+
+	k_mutex_unlock(&igmp_lock);
+}
+
 enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt, struct net_ipv4_hdr *ip_hdr)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(igmp_access, struct net_ipv4_igmp_v2_query);
@@ -914,6 +939,14 @@ enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt, struct net_ipv4_hdr *i
 
 	net_stats_update_ipv4_igmp_recv(iface);
 
+	net_ipv4_addr_copy_raw(group.s4_addr, igmp_hdr->address.s4_addr);
+
+	if (igmp_hdr->type == NET_IPV4_IGMP_REPORT_V1 ||
+	    igmp_hdr->type == NET_IPV4_IGMP_REPORT_V2) {
+		igmp_report_heard(iface, &group);
+		goto out;
+	}
+
 	if (igmp_hdr->type != NET_IPV4_IGMP_QUERY) {
 		NET_DBG("Ignoring IGMP message type 0x%02x", igmp_hdr->type);
 		goto out;
@@ -922,8 +955,6 @@ enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt, struct net_ipv4_hdr *i
 	if (version == IGMPV2 && igmp_hdr->max_rsp == 0U) {
 		version = IGMPV1;
 	}
-
-	net_ipv4_addr_copy_raw(group.s4_addr, igmp_hdr->address.s4_addr);
 
 	if (net_ipv4_is_addr_unspecified(&group)) {
 		/* General Query, sent to the all systems group (RFC 3376 ch 4.1.12) */

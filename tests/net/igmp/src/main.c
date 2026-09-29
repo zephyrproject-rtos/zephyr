@@ -1032,6 +1032,71 @@ ZTEST_USER(net_igmp, test_igmp_mode_expiry_cancels_response)
 	leave_group();
 }
 
+/* A report from another member of the group cancels the pending response of
+ * an IGMPv2 host (RFC 2236 ch 3).
+ */
+ZTEST_USER(net_igmp, test_igmp_report_suppressed)
+{
+	struct net_pkt *pkt;
+
+	join_group();
+
+	k_sem_reset(&wait_data);
+	report_count = 0;
+	is_igmpv2_query_sent = true;
+	is_igmpv3_query_sent = false;
+
+	/* An IGMPv2 General Query with a Max Resp Time of one second */
+	pkt = prepare_igmp_msg(net_iface, false, NULL, NET_IPV4_IGMP_QUERY, 10);
+	zassert_equal(net_ipv4_input(pkt), NET_OK, "Failed to send");
+
+	pkt = prepare_igmp_msg(net_iface, false, &mcast_addr, NET_IPV4_IGMP_REPORT_V2, 0);
+	zassert_equal(net_ipv4_input(pkt), NET_OK, "Failed to send");
+
+	if (report_count != 0) {
+		/* Stalled so long that the response was due before the report */
+		leave_group();
+		ztest_test_skip();
+	}
+
+	k_msleep(1500);
+	zassert_equal(report_count, 0, "Report not suppressed, got %d", report_count);
+
+	leave_group();
+}
+
+/* An IGMPv3 host does not suppress its response when another member reports
+ * with IGMPv2 (RFC 3376 ch 7.2.2).
+ */
+ZTEST_USER(net_igmp, test_igmp_report_not_suppressed_v3)
+{
+	struct net_pkt *pkt;
+
+	if (!IS_ENABLED(CONFIG_NET_IPV4_IGMPV3)) {
+		ztest_test_skip();
+	}
+
+	join_group();
+
+	k_sem_reset(&wait_data);
+	report_count = 0;
+	is_igmpv2_query_sent = false;
+	is_igmpv3_query_sent = true;
+
+	/* An IGMPv3 General Query with a Max Resp Time of 500 milliseconds */
+	pkt = prepare_igmp_msg(net_iface, true, NULL, NET_IPV4_IGMP_QUERY, 5);
+	zassert_equal(net_ipv4_input(pkt), NET_OK, "Failed to send");
+
+	pkt = prepare_igmp_msg(net_iface, false, &mcast_addr, NET_IPV4_IGMP_REPORT_V2, 0);
+	zassert_equal(net_ipv4_input(pkt), NET_OK, "Failed to send");
+
+	k_msleep(1000);
+	zassert_equal(report_count, 1, "Expected one report, got %d", report_count);
+	zassert_true(is_query_resp_ok, "Query not answered");
+
+	leave_group();
+}
+
 /* The unsolicited report of a join is sent Robustness Variable times within
  * the Unsolicited Report Interval (RFC 3376 ch 5.1, RFC 2236 ch 3).
  */
