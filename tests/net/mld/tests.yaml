@@ -15,6 +15,10 @@ tests:
     extra_configs:
       - CONFIG_NET_TC_THREAD_COOPERATIVE=y
       - CONFIG_NET_IPV6_DAD=n
+  net.mld.no_mldv1:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_COOPERATIVE=y
+      - CONFIG_NET_IPV6_MLD_V1_COMPAT=n
   net.mld.mcast_routes:
     extra_configs:
       - CONFIG_NET_IPV6_ROUTE_MCAST=y

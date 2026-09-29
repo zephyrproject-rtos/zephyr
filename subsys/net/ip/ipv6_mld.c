@@ -1170,6 +1170,11 @@ static enum net_verdict handle_mld_query(struct net_icmp_ctx *ctx,
 		goto drop;
 	}
 
+	if (version == MLDV1 && !IS_ENABLED(CONFIG_NET_IPV6_MLD_V1_COMPAT)) {
+		NET_DBG("Ignoring MLDv1 query");
+		goto out;
+	}
+
 	if (net_pkt_iface(pkt)->config.ip.ipv6 == NULL) {
 		NET_DBG("DROP: no IPv6 configuration");
 		goto drop;
@@ -1315,6 +1320,10 @@ void net_ipv6_mld_init(void)
 	if (ret < 0) {
 		NET_ERR("Cannot register %s handler (%d)", STRINGIFY(NET_ICMPV6_MLD_QUERY),
 			ret);
+	}
+
+	if (!IS_ENABLED(CONFIG_NET_IPV6_MLD_V1_COMPAT)) {
+		return;
 	}
 
 	ret = net_icmp_init_ctx(&report_ctx, NET_AF_INET6, NET_ICMPV6_MLDv1_REPORT, 0,
