@@ -12,6 +12,9 @@ configdefault NET_IF_MAX_IPV4_COUNT
 configdefault NET_IF_MAX_IPV6_COUNT
 	default 2
 
+configdefault ZVFS_POLL_MAX
+	default 8
+
 configdefault ETH_DRIVER
 	default y
 
