@@ -1213,6 +1213,40 @@ drop:
 	return ret < 0 ? NET_DROP : NET_CONTINUE;
 }
 
+/* Reports sent before the interface had a valid link-local address carried the
+ * unspecified source, which routers discard. Announce every group again once
+ * it does, RFC 3810 ch 5.2.13.
+ */
+void net_ipv6_mld_report_all(struct net_if *iface)
+{
+	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
+
+	if (ipv6 == NULL || net_if_flag_is_set(iface, NET_IF_IPV6_NO_MLD) ||
+	    net_if_is_offloaded(iface)) {
+		return;
+	}
+
+	ARRAY_FOR_EACH(ipv6->mcast, i) {
+		struct net_if_mcast_addr *maddr = &ipv6->mcast[i];
+		int ret;
+
+		if (!maddr->is_used || !maddr->is_joined ||
+		    !mld_is_reported(&maddr->address.in6_addr)) {
+			continue;
+		}
+
+		ret = net_ipv6_mld_send_single(iface, &maddr->address.in6_addr,
+					       NET_IPV6_MLDv2_CHANGE_TO_EXCLUDE_MODE);
+		if (ret < 0) {
+			NET_DBG("Cannot report %s (%d)",
+				net_sprint_ipv6_addr(&maddr->address.in6_addr), ret);
+			continue;
+		}
+
+		mld_retransmit_schedule(iface, maddr);
+	}
+}
+
 /* Another listener reported the address, so this node does not have to: in
  * MLDv1 mode the pending response and retransmission for the address are
  * cancelled (RFC 2710 ch 4). In MLDv2 mode reports are not suppressed

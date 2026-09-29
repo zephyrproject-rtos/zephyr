@@ -811,10 +811,12 @@ static void verify_allnodes_on_iface_event(void (*action)(void))
 
 	zassert_ok(k_sem_take(&wait_joined, K_MSEC(WAIT_TIME)),
 		   "Timeout while waiting for an event");
-	cancel_retransmits(net_iface);
 
-	/* Let the reports for the other groups go out and be checked */
-	k_msleep(THREAD_SLEEP);
+	/* Let the reports for the other groups go out and be checked, and DAD
+	 * of the link-local address complete, which reports them all again.
+	 */
+	k_msleep(DAD_TIMEOUT);
+	cancel_retransmits(net_iface);
 
 	ifmaddr = net_if_ipv6_maddr_lookup(&addr, &iface);
 	zassert_not_null(ifmaddr, "Interface does not contain "
@@ -878,6 +880,11 @@ static void verify_solicit_node_on_iface_event(void (*action)(void))
 
 	zassert_ok(k_sem_take(&wait_joined, K_MSEC(WAIT_TIME)),
 		   "Timeout while waiting for an event");
+
+	/* Let DAD of the link-local address complete, which reports all the
+	 * groups again, before cancelling the retransmissions.
+	 */
+	k_msleep(DAD_TIMEOUT);
 	cancel_retransmits(net_iface);
 
 	ifmaddr = net_if_ipv6_maddr_lookup(&addr, &iface);
@@ -992,6 +999,11 @@ ZTEST(net_mld_test_suite, test_group_preserved_over_iface_down_up)
 
 	zassert_ok(k_sem_take(&wait_report, K_MSEC(WAIT_TIME)),
 		   "Timeout while waiting for the MLD report");
+
+	/* Let DAD of the link-local address complete, which reports all the
+	 * groups again, before cancelling the retransmissions.
+	 */
+	k_msleep(DAD_TIMEOUT);
 	cancel_retransmits(net_iface);
 	zassert_equal(record_type, NET_IPV6_MLDv2_CHANGE_TO_EXCLUDE_MODE,
 		      "Interface up did not rejoin the group");
@@ -1414,6 +1426,45 @@ ZTEST(net_mld_test_suite, test_v1_report_no_suppression_in_v2)
 	k_msleep(1000);
 	zassert_equal(report_count, 1, "Expected one report, got %d", report_count);
 
+	test_leave_group();
+}
+
+/* Once a link-local address is valid, after DAD or right away without it,
+ * every listened to group is reported again (RFC 3810 ch 5.2.13).
+ */
+ZTEST(net_mld_test_suite, test_report_after_link_local_dad)
+{
+	struct net_in6_addr ll_addr = { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0,
+					    0, 0, 0, 0, 0, 0, 0, 0x5 } } };
+	uint8_t record_type = 0;
+	struct mld_report_handler handler = {
+		.fn = record_mcast_report,
+		.user_data = &record_type
+	};
+	struct net_if_addr *ifaddr;
+
+	test_join_group();
+
+	exp_mcast_group_storage = mcast_addr;
+	exp_mcast_group = &exp_mcast_group_storage;
+	report_handler = &handler;
+	k_sem_reset(&wait_report);
+
+	ifaddr = net_if_ipv6_addr_add(net_iface, &ll_addr, NET_ADDR_AUTOCONF, 0);
+	zassert_not_null(ifaddr, "Cannot add link-local address");
+
+	zassert_ok(k_sem_take(&wait_report, K_MSEC(2 * MSEC_PER_SEC)),
+		   "Timeout while waiting for the report");
+	zassert_equal(record_type, NET_IPV6_MLDv2_CHANGE_TO_EXCLUDE_MODE,
+		      "Group not reported again with the link-local address");
+
+	/* Let the reports for the other groups go out before cancelling the
+	 * retransmissions of all of them.
+	 */
+	k_msleep(THREAD_SLEEP);
+	cancel_retransmits(net_iface);
+	report_handler = NULL;
+	zassert_true(net_if_ipv6_addr_rm(net_iface, &ll_addr), "Cannot remove address");
 	test_leave_group();
 }
 

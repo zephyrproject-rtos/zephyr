@@ -1687,6 +1687,13 @@ static void dad_timeout(struct k_work *work)
 		 * needed in this case as the address is our own one.
 		 */
 		net_ipv6_nbr_rm(iface, &ifaddr->address.in6_addr);
+
+		/* Multicast groups joined so far were reported with the
+		 * unspecified source, RFC 3810 ch 5.2.13.
+		 */
+		if (net_ipv6_is_ll_addr(&ifaddr->address.in6_addr)) {
+			net_ipv6_mld_report_all(iface);
+		}
 	}
 }
 
@@ -2522,6 +2529,13 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 	}
 
 	net_if_unlock(iface);
+
+	if (ifaddr != NULL && !do_dad && net_ipv6_is_ll_addr(&ifaddr->address.in6_addr)) {
+		/* Usable right away: the multicast groups joined so far were
+		 * reported with the unspecified source, RFC 3810 ch 5.2.13.
+		 */
+		net_ipv6_mld_report_all(iface);
+	}
 
 	if (ifaddr != NULL && join_mcast) {
 		/* The allnodes multicast group is only joined once as
