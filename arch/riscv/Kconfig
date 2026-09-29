@@ -634,7 +634,7 @@ config NULL_POINTER_EXCEPTION_REGION_SIZE
 	help
 	  Use a PMP slot to make region (starting at address 0x0) inaccessible for
 	  detecting null pointer dereferencing (raising a CPU access fault).
-	  Minimum is 4 bytes.
+	  Minimum is 4 bytes. The size is rounded up to PMP_GRANULARITY.
 
 endif # NULL_POINTER_EXCEPTION_DETECTION_PMP
 
