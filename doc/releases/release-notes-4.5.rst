@@ -424,6 +424,17 @@ Deprecated APIs and options
   * Renamed :c:func:`lora_recv_duty_cycle` to :c:func:`lora_recv_duty_cycle_async`
     to be consistent with the existing sync/async naming convention.
 
+* MCUmgr
+
+  * The :c:type:`smp_transport_get_mtu_fn` type and the ``get_mtu`` member of
+    :c:struct:`smp_transport_api_t` have been deprecated, as the SMP layer does not use them.
+    See the :ref:`migration guide <migration_4.5>` for details.
+
+  * :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_UART_MTU` and
+    :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_SHELL_MTU` have been deprecated, as they only set the
+    value returned by the deprecated ``get_mtu`` callback. See the
+    :ref:`migration guide <migration_4.5>` for details.
+
 * Nordic
 
   * The internal SoC platform Kconfig symbols ``NRF_PLATFORM_HALTIUM`` and
