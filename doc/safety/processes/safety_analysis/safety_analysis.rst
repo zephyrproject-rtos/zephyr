@@ -49,7 +49,7 @@ This process is applicable to Zephyr project safety releases and applies to all 
 Overview
 ========
 
-.. figure:: ../images/TBD.svg
+.. figure:: ../../images/TBD.svg
    :align: center
    :alt: Zephyr safety analysis process activity diagram
    :figclass: align-center

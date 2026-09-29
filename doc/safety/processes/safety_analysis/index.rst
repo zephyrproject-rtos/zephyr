@@ -11,9 +11,8 @@ Project safety analysis.
    :glob:
    
    safety_analysis.rst
-   dependent_failure_analysis.rst
    safety_analysis_method-fmea.rst
    safety_analysis_method-stpa.rst
    safety_analysis_method-fta.rst
-   safety_analysis_method-dta.rst
+   safety_analysis-dfa.rst
        
