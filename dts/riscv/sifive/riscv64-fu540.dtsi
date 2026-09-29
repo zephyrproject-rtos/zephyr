@@ -229,7 +229,7 @@
 					       &hlic4 11 &hlic4 9>;
 			reg = <0x0c000000 0x04000000>;
 			riscv,max-priority = <7>;
-			riscv,ndev = <52>;
+			riscv,ndev = <54>;
 		};
 
 		uart0: serial@10010000 {
@@ -281,6 +281,29 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+		};
+
+		eth0: ethernet@10090000 {
+			compatible = "sifive,fu540-c000-gem", "cdns,gem";
+			reg = <0x10090000 0x2000 0x100a0000 0x1000>;
+			reg-names = "mac", "mgmt";
+			interrupt-parent = <&plic>;
+			interrupts = <53 1>;
+			status = "disabled";
+
+			eth0_mdio: mdio {
+				compatible = "cdns,macb-mdio";
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+
+			/* The time stamp unit runs from the 125 MHz GEMGXL clock */
+			eth0_ptp: ptp-clock {
+				compatible = "cdns,macb-ptp-clock";
+				clock-frequency = <125000000>;
+				status = "disabled";
+			};
 		};
 
 		gpio0: gpio@10060000 {

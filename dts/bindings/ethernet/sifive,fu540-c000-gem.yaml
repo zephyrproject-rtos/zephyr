@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Cadence GEM in the SiFive FU540.
+
+  The second register range is the GEMGXL management register, through
+  which the driver switches the GEM TX clock between the gigabit and the
+  slower rates to follow the link speed.
+
+compatible: "sifive,fu540-c000-gem"
+
+include: cdns,gem.yaml
+
+properties:
+  reg-names:
+    required: true
+    description: |
+      Names of the register ranges: "mac" for the GEM itself and "mgmt"
+      for the GEMGXL management register.

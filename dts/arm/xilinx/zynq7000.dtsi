@@ -6,7 +6,6 @@
 #include <mem.h>
 #include <arm/armv7-a.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
-#include <zephyr/dt-bindings/ethernet/xlnx_gem.h>
 
 / {
 	soc {
@@ -71,7 +70,7 @@
 		};
 
 		gem0: ethernet@e000b000 {
-			compatible = "xlnx,gem";
+			compatible = "xlnx,zynq-gem", "cdns,gem";
 			status = "disabled";
 			reg = <0xe000b000 0x1000>,
 			      <0xf8000140 0x4>;
@@ -81,27 +80,22 @@
 				     <GIC_SPI 23 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1";
-			amba-ahb-burst-length = <XLNX_GEM_AMBA_AHB_BURST_INCR16>;
-			hw-rx-buffer-size = <XLNX_GEM_HW_RX_BUFFER_SIZE_8KB>;
-			hw-rx-buffer-offset = <0>;
-			hw-tx-buffer-size-full;
-			rx-buffer-descriptors = <32>;
-			tx-buffer-descriptors = <32>;
-			rx-buffer-size = <1536>;
-			tx-buffer-size = <1536>;
-			discard-rx-fcs;
-			unicast-hash;
 
 			gem0_mdio: mdio {
-				compatible = "xlnx,gem-mdio";
+				compatible = "cdns,macb-mdio";
 				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <0>;
 			};
+
+			gem0_ptp: ptp-clock {
+				compatible = "cdns,macb-ptp-clock";
+				status = "disabled";
+			};
 		};
 
 		gem1: ethernet@e000c000 {
-			compatible = "xlnx,gem";
+			compatible = "xlnx,zynq-gem", "cdns,gem";
 			status = "disabled";
 			reg = <0xe000c000 0x1000>,
 			      <0xf8000144 0x4>;
@@ -111,22 +105,17 @@
 				     <GIC_SPI 46 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1";
-			amba-ahb-burst-length = <XLNX_GEM_AMBA_AHB_BURST_INCR16>;
-			hw-rx-buffer-size = <XLNX_GEM_HW_RX_BUFFER_SIZE_8KB>;
-			hw-rx-buffer-offset = <0>;
-			hw-tx-buffer-size-full;
-			rx-buffer-descriptors = <32>;
-			tx-buffer-descriptors = <32>;
-			rx-buffer-size = <1536>;
-			tx-buffer-size = <1536>;
-			discard-rx-fcs;
-			unicast-hash;
 
 			gem1_mdio: mdio {
-				compatible = "xlnx,gem-mdio";
+				compatible = "cdns,macb-mdio";
 				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <0>;
+			};
+
+			gem1_ptp: ptp-clock {
+				compatible = "cdns,macb-ptp-clock";
+				status = "disabled";
 			};
 		};
 
