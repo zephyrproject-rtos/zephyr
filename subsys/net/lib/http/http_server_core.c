@@ -1848,6 +1848,72 @@ int http_server_sendall(struct http_client_ctx *client, const void *buf, size_t 
 	return 0;
 }
 
+/* Send the buffers in iov as one stream of bytes, passing them to the socket in
+ * a single sendmsg() call rather than one send() call per buffer. Whether they
+ * then leave in fewer segments or records depends on the socket, some
+ * implementations of sendmsg() still write each buffer separately. Sockets
+ * without sendmsg() support get one send() call per buffer.
+ *
+ * The iovec array is modified as data is sent, so the caller must not reuse it
+ * afterwards.
+ */
+int http_server_sendall_iov(struct http_client_ctx *client, struct net_iovec *iov, size_t iovlen)
+{
+	struct net_msghdr msg = {
+		.msg_iov = iov,
+		.msg_iovlen = 0,
+	};
+
+	/* Drop empty buffers, which some socket implementations reject */
+	for (size_t i = 0; i < iovlen; i++) {
+		if (iov[i].iov_len > 0) {
+			iov[msg.msg_iovlen++] = iov[i];
+		}
+	}
+
+	while (msg.msg_iovlen > 0) {
+		ssize_t out_len = zsock_sendmsg(client->fd, &msg, 0);
+
+		if (out_len < 0) {
+			if (errno != EOPNOTSUPP && errno != ENOTSUP) {
+				return -errno;
+			}
+
+			/* The socket does not support sendmsg(), send the remaining
+			 * buffers one by one instead.
+			 */
+			for (size_t i = 0; i < msg.msg_iovlen; i++) {
+				int ret = http_server_sendall(client, msg.msg_iov[i].iov_base,
+							      msg.msg_iov[i].iov_len);
+
+				if (ret < 0) {
+					return ret;
+				}
+			}
+
+			return 0;
+		}
+
+		/* Skip what was sent, which may end in the middle of a buffer. */
+		while (out_len > 0 && msg.msg_iovlen > 0) {
+			size_t len = MIN((size_t)out_len, msg.msg_iov->iov_len);
+
+			msg.msg_iov->iov_base = (uint8_t *)msg.msg_iov->iov_base + len;
+			msg.msg_iov->iov_len -= len;
+			out_len -= len;
+
+			if (msg.msg_iov->iov_len == 0) {
+				msg.msg_iov++;
+				msg.msg_iovlen--;
+			}
+		}
+
+		http_client_timer_restart(client);
+	}
+
+	return 0;
+}
+
 bool http_response_is_final(struct http_response_ctx *rsp, enum http_transaction_status status)
 {
 	if (status != HTTP_SERVER_REQUEST_DATA_FINAL) {
