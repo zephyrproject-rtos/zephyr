@@ -71,6 +71,8 @@ extern "C" {
 #define CS47L63_GPIO2_CTRL1      0x00000C0CU
 #define CS47L63_GPIO3_CTRL1      0x00000C10U
 #define CS47L63_GPIO4_CTRL1      0x00000C14U
+#define CS47L63_GPIO_COUNT       12
+#define CS47L63_GP_CTRL1_RSVD    0x1EF00800U
 #define CS47L63_GP_DIR_INPUT     0x80000000U
 #define CS47L63_GP_CTRL1_ASP_PAD 0x61000000U
 
@@ -344,6 +346,9 @@ struct cs47l63_chip {
 struct cs47l63_config {
 	struct spi_dt_spec bus;
 	struct gpio_dt_spec reset_gpio;
+	/** cirrus,gpio-defaults: GPIOn_CTRL1 per GPIO from GPIO1; a reserved bit skips it. */
+	const uint32_t *gpio_defaults;
+	uint8_t gpio_defaults_len;
 	struct cs47l63_chip *chip;
 	struct cs47l63_port *port;
 };
