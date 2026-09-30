@@ -53,6 +53,7 @@ struct lc3_data {
 	struct net_buf *buf;
 	struct stream_rx *stream;
 	uint32_t ts;
+	uint32_t disable_cnt;
 	bool do_plc;
 };
 
@@ -60,6 +61,7 @@ K_MEM_SLAB_DEFINE_STATIC_TYPE(lc3_data_slab, struct lc3_data, CONFIG_BT_ISO_RX_B
 
 static int16_t lc3_rx_buf[LC3_MAX_NUM_SAMPLES_MONO];
 static K_FIFO_DEFINE(lc3_in_fifo);
+static K_MUTEX_DEFINE(lc3_decoder_mutex);
 
 /* We only want to send USB to left/right from a single stream. If we have 2 left streams, the
  * outgoing audio is going to be terrible.
@@ -290,19 +292,24 @@ static void lc3_decoder_thread_func(void *arg1, void *arg2, void *arg3)
 		struct lc3_data *data = k_fifo_get(&lc3_in_fifo, K_FOREVER);
 		struct stream_rx *stream = data->stream;
 
-		if (stream->lc3_decoder == NULL) {
-			LOG_WRN("Decoder is NULL, discarding data from FIFO");
+		k_mutex_lock(&lc3_decoder_mutex, K_FOREVER);
+
+		if (stream->lc3_decoder == NULL || data->disable_cnt != stream->lc3_disable_cnt) {
+			k_mutex_unlock(&lc3_decoder_mutex);
+			LOG_WRN("Decoder stopped, discarding data from FIFO");
+			net_buf_unref(data->buf);
 			k_mem_slab_free(&lc3_data_slab, (void *)data);
 			continue; /* Wait for new data */
 		}
 
 		do_lc3_decode(data);
 
+		k_mutex_unlock(&lc3_decoder_mutex);
 		k_mem_slab_free(&lc3_data_slab, (void *)data);
 	}
 }
 
-int lc3_enable(struct stream_rx *stream)
+static int do_lc3_enable(struct stream_rx *stream)
 {
 	const struct bt_audio_codec_cfg *codec_cfg = stream->stream.codec_cfg;
 	uint32_t lc3_frame_duration_us = 0U;
@@ -427,13 +434,28 @@ int lc3_enable(struct stream_rx *stream)
 	return 0;
 }
 
+int lc3_enable(struct stream_rx *stream)
+{
+	int err;
+
+	k_mutex_lock(&lc3_decoder_mutex, K_FOREVER);
+	err = do_lc3_enable(stream);
+	k_mutex_unlock(&lc3_decoder_mutex);
+
+	return err;
+}
+
 int lc3_disable(struct stream_rx *stream)
 {
+	k_mutex_lock(&lc3_decoder_mutex, K_FOREVER);
+
 	if (stream->lc3_decoder == NULL) {
-		return -EINVAL;
+		k_mutex_unlock(&lc3_decoder_mutex);
+		return -EALREADY;
 	}
 
 	stream->lc3_decoder = NULL;
+	stream->lc3_disable_cnt++;
 
 	if (IS_ENABLED(CONFIG_USE_USB_AUDIO_OUTPUT)) {
 		if (usb_left_stream == stream) {
@@ -443,6 +465,8 @@ int lc3_disable(struct stream_rx *stream)
 			usb_right_stream = NULL;
 		}
 	}
+
+	k_mutex_unlock(&lc3_decoder_mutex);
 
 	return 0;
 }
@@ -483,6 +507,7 @@ void lc3_enqueue_for_decoding(struct stream_rx *stream, const struct bt_iso_recv
 
 	data->buf = net_buf_ref(buf);
 	data->stream = stream;
+	data->disable_cnt = stream->lc3_disable_cnt;
 	if (info->flags & BT_ISO_FLAGS_TS) {
 		data->ts = info->ts;
 	} else {
