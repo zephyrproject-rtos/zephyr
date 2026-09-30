@@ -62,6 +62,8 @@ FUNC_NORETURN void z_prep_c(void)
 	 */
 	XTENSA_WSR(ZSR_CPU_STR, cpu0);
 
+	xtensa_cp_sharing_cpu_init();
+
 #ifdef CONFIG_INIT_STACKS
 	char *stack_start = K_KERNEL_STACK_BUFFER(z_interrupt_stacks[0]);
 	size_t stack_sz = K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[0]);

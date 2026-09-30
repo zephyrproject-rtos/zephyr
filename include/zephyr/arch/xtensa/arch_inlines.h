@@ -12,6 +12,7 @@
 
 #include <zephyr/kernel_structs.h>
 #include <zephyr/zsr.h>
+#include <zephyr/arch/xtensa/cp_sharing.h>
 
 /**
  * @brief Read a special register.
@@ -89,6 +90,24 @@ static ALWAYS_INLINE unsigned int arch_num_cpus(void)
 	return soc_num_cpus;
 #else
 	return CONFIG_MP_MAX_NUM_CPUS;
+#endif
+}
+
+/**
+ * @brief Set up the shared coprocessor on the calling CPU
+ *
+ * Eager sharing saves the coprocessor registers on interrupt entry, which
+ * needs the coprocessor enabled whatever state the boot ROM left CPENABLE
+ * in. Lazy sharing needs no setup: xtensa_switch() disables the coprocessor
+ * on the switch to the first thread.
+ */
+static ALWAYS_INLINE void xtensa_cp_sharing_cpu_init(void)
+{
+#ifdef CONFIG_XTENSA_EAGER_CP_SHARING
+	uint32_t cpenable = XTENSA_RSR("cpenable");
+
+	XTENSA_WSR("cpenable", cpenable | BIT(XTENSA_CP_ID));
+	__asm__ volatile("rsync");
 #endif
 }
 
