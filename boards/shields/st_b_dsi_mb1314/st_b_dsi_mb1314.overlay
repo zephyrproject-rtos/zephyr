@@ -49,6 +49,20 @@
 		height = <390>;
 		pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
 		status = "okay";
+
+		display-timings {
+			compatible = "zephyr,panel-timing";
+			de-active = <0>;
+			pixelclk-active = <0>;
+			hsync-active = <0>;
+			vsync-active = <0>;
+			hsync-len = <6>;
+			vsync-len = <1>;
+			hback-porch = <6>;
+			vback-porch = <1>;
+			hfront-porch = <6>;
+			vfront-porch = <1>;
+		};
 	};
 };
 
@@ -65,11 +79,11 @@
 		pixelclk-active = <0>;
 		hsync-active = <0>;
 		vsync-active = <0>;
-		hsync-len = <1>;
+		hsync-len = <6>;
 		vsync-len = <1>;
-		hback-porch = <1>;
+		hback-porch = <6>;
 		vback-porch = <1>;
-		hfront-porch = <1>;
+		hfront-porch = <6>;
 		vfront-porch = <1>;
 	};
 
