@@ -144,3 +144,7 @@ zephyr_mipi_dsi: &mipi_dsi {};
 &adc0 {
 	status = "okay";
 };
+
+&dac0 {
+	status = "okay";
+};
