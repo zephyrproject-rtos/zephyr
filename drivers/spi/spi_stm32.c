@@ -1887,6 +1887,59 @@ static int32_t spi_stm32_set_transfer_size(const struct device *dev,
 #if defined(CONFIG_SPI_STM32_DMA)
 #if !defined(CONFIG_SPI_RTIO)
 
+#ifdef CONFIG_SPI_STM32_DMA_CACHED_MEMORY
+/* The DMA wait deadline is never shorter than the fixed 1 s of the plain driver */
+#define SPI_STM32_DMA_TIMEOUT_MIN_MS 1000U
+
+/*
+ * The frames of this chunk on the wire, idle clocks between frames (midi-clock) included,
+ * plus the tolerance spi_context_wait_for_completion() adds; at least 1 s. The prescaler
+ * gives an SCK at or below the requested frequency and above half of it (or its highest
+ * SCK, far too fast for the 1 s to matter): count at half.
+ */
+static __noinline k_timeout_t spi_stm32_dma_timeout(const struct device *dev)
+{
+	const struct spi_stm32_config *cfg = dev->config;
+	struct spi_stm32_data *data = dev->data;
+	const struct spi_config *config = data->ctx.config;
+	uint64_t frames = MAX(data->tx_len, data->rx_len);
+	uint32_t frame_clocks = SPI_WORD_SIZE_GET(config->operation) + cfg->midi_clocks;
+	uint64_t timeout_ms = SPI_STM32_DMA_TIMEOUT_MIN_MS;
+
+	if (config->frequency >= 2U) {
+		uint64_t wire_ms =
+			DIV_ROUND_UP(frames * frame_clocks * MSEC_PER_SEC, config->frequency / 2U);
+
+		timeout_ms = MAX(timeout_ms, wire_ms + CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE);
+	}
+
+	return K_MSEC(MIN(timeout_ms, INT32_MAX));
+}
+
+/*
+ * Most transfers are far shorter than 1 s. If the frames take at most half a second even at
+ * half the requested frequency and the tolerance adds at most another half, the deadline above
+ * is the 1 s minimum: take it without the computation. The computation stays out of line, off
+ * the path of every transfer, where on an image run in place from external flash each extra
+ * executed cache line is fetched again on every transfer.
+ */
+static inline k_timeout_t spi_stm32_dma_wait_timeout(const struct device *dev)
+{
+	const struct spi_stm32_config *cfg = dev->config;
+	struct spi_stm32_data *data = dev->data;
+	const struct spi_config *config = data->ctx.config;
+	uint64_t clocks = (uint64_t)MAX(data->tx_len, data->rx_len) *
+			  (SPI_WORD_SIZE_GET(config->operation) + cfg->midi_clocks);
+
+	if ((CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE <= 500) &&
+	    (clocks <= (config->frequency / 4U))) {
+		return K_MSEC(SPI_STM32_DMA_TIMEOUT_MIN_MS);
+	}
+
+	return spi_stm32_dma_timeout(dev);
+}
+#endif /* CONFIG_SPI_STM32_DMA_CACHED_MEMORY */
+
 static int wait_dma_rx_tx_done(const struct device *dev)
 {
 	struct spi_stm32_data *data = dev->data;
@@ -1900,7 +1953,11 @@ static int wait_dma_rx_tx_done(const struct device *dev)
 	if (IS_ENABLED(CONFIG_SPI_PERIPHERAL) && spi_context_is_peripheral(&data->ctx)) {
 		timeout = K_FOREVER;
 	} else {
+#ifdef CONFIG_SPI_STM32_DMA_CACHED_MEMORY
+		timeout = spi_stm32_dma_wait_timeout(dev);
+#else
 		timeout = K_MSEC(1000);
+#endif /* CONFIG_SPI_STM32_DMA_CACHED_MEMORY */
 	}
 
 #ifdef CONFIG_SPI_STM32_DMA_RX_AUTO_SUSPEND

@@ -43,6 +43,9 @@ config SPI_STM32_DMA_CACHED_MEMORY
 	  the data cache line size; other RX buffers still use the fallback.
 	  With SPI_STM32_INTERRUPT, an RX overrun or a mode fault during a DMA
 	  transfer ends it at once with -EIO instead of at the timeout.
+	  The DMA wait follows the length of the transfer, idle clocks between
+	  frames included, and is never shorter than the fixed 1 s used without
+	  this option.
 
 	  STM32U5 only: tested there. The interrupt handler tells a DMA transfer
 	  by the TXDMAEN/RXDMAEN bits, which the STM32U5 lets the driver clear
