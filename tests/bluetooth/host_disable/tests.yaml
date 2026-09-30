@@ -14,3 +14,11 @@ tests:
   bluetooth.host_disable.no_close:
     extra_configs:
       - CONFIG_TEST_DRIVER_NO_CLOSE=y
+  bluetooth.host_disable.ctlr_stops:
+    extra_configs:
+      - CONFIG_TEST_CTLR_STOPS=y
+    ignore_faults: true
+  bluetooth.host_disable.send_blocks:
+    extra_configs:
+      - CONFIG_TEST_SEND_BLOCKS=y
+    ignore_faults: true
