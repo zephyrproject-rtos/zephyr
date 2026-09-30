@@ -1293,6 +1293,40 @@ static inline void async_evt_rx_err(struct uart_stm32_data *data, int err_code)
 	async_user_callback(data, &event);
 }
 
+#ifdef CONFIG_UART_STM32U5_ERRATA_DMAT_AFFECTED
+/*
+ * Workaround for STM32H5/U5: USART does not generate DMA requests
+ * after clearing/setting DMAR. This issue is not documented in the
+ * errata but behaves similarly to the documented DMAT issue.
+ * Toggle UE (USART Enable) to reset the USART internal state machine
+ * before re-enabling DMAR.
+ */
+static void uart_stm32_dma_rx_reset(USART_TypeDef *usart)
+{
+	LL_USART_DisableDMAReq_RX(usart);
+	LL_USART_Disable(usart);
+	LL_USART_Enable(usart);
+	/* Wait for USART to be ready after re-enable */
+	while (!LL_USART_IsActiveFlag_TEACK(usart)) {
+		/* busy-wait for transmit enable acknowledge */
+	}
+	LL_USART_EnableDMAReq_RX(usart);
+}
+
+/* Apply the USART reset that was deferred by RX enable while TX was ongoing */
+static void uart_stm32_dma_rx_reset_deferred(struct uart_stm32_data *data)
+{
+	const struct uart_stm32_config *config = data->uart_dev->config;
+
+	if (data->rx_dma_reset_pending) {
+		data->rx_dma_reset_pending = false;
+		if (data->dma_rx.enabled) {
+			uart_stm32_dma_rx_reset(config->usart);
+		}
+	}
+}
+#endif /* CONFIG_UART_STM32U5_ERRATA_DMAT_AFFECTED */
+
 static inline void async_evt_tx_done(struct uart_stm32_data *data)
 {
 	LOG_DBG("tx done: %d", data->dma_tx.counter);
@@ -1308,6 +1342,9 @@ static inline void async_evt_tx_done(struct uart_stm32_data *data)
 	data->dma_tx.counter = 0;
 #ifdef CONFIG_PM
 	data->tx_int_stream_on = false;
+#endif
+#ifdef CONFIG_UART_STM32U5_ERRATA_DMAT_AFFECTED
+	uart_stm32_dma_rx_reset_deferred(data);
 #endif
 
 	async_user_callback(data, &event);
@@ -1328,6 +1365,9 @@ static inline void async_evt_tx_abort(struct uart_stm32_data *data)
 	data->dma_tx.counter = 0;
 #ifdef CONFIG_PM
 	data->tx_int_stream_on = false;
+#endif
+#ifdef CONFIG_UART_STM32U5_ERRATA_DMAT_AFFECTED
+	uart_stm32_dma_rx_reset_deferred(data);
 #endif
 
 	async_user_callback(data, &event);
@@ -1597,33 +1637,42 @@ static inline void uart_stm32_dma_rx_enable(const struct device *dev)
 	USART_TypeDef *usart = config->usart;
 
 #ifdef CONFIG_UART_STM32U5_ERRATA_DMAT_AFFECTED
-	/*
-	 * Workaround for STM32H5/U5: USART does not generate DMA requests
-	 * after clearing/setting DMAR. This issue is not documented in the
-	 * errata but behaves similarly to the documented DMAT issue.
-	 * Toggle UE (USART Enable) to reset the USART internal state machine
-	 * before re-enabling DMAR.
-	 */
-	LL_USART_Disable(usart);
-	LL_USART_Enable(usart);
-	/* Wait for USART to be ready after re-enable */
-	while (!LL_USART_IsActiveFlag_TEACK(usart)) {
-		/* busy-wait for transmit enable acknowledge */
-	}
-#endif /* CONFIG_UART_STM32U5_ERRATA_DMAT_AFFECTED */
+	unsigned int key = irq_lock();
 
+	data->dma_rx.enabled = true;
+	if (data->dma_tx.buffer_length != 0) {
+		/* Toggling UE would abort the ongoing transmission: defer the reset
+		 * until the TX completes or is aborted.
+		 */
+		LL_USART_EnableDMAReq_RX(usart);
+		data->rx_dma_reset_pending = true;
+	} else {
+		uart_stm32_dma_rx_reset(usart);
+	}
+	irq_unlock(key);
+#else
 	LL_USART_EnableDMAReq_RX(usart);
 	data->dma_rx.enabled = true;
+#endif /* CONFIG_UART_STM32U5_ERRATA_DMAT_AFFECTED */
 }
 
 static inline void uart_stm32_dma_rx_disable(const struct device *dev)
 {
 	const struct uart_stm32_config *config = dev->config;
 	struct uart_stm32_data *data = dev->data;
+#ifdef CONFIG_UART_STM32U5_ERRATA_DMAT_AFFECTED
+	/* Keep a TX completion from applying a deferred reset in the middle */
+	unsigned int key = irq_lock();
+
+	data->rx_dma_reset_pending = false;
+#endif
 
 	LL_USART_DisableDMAReq_RX(config->usart);
 
 	data->dma_rx.enabled = false;
+#ifdef CONFIG_UART_STM32U5_ERRATA_DMAT_AFFECTED
+	irq_unlock(key);
+#endif
 }
 
 static int uart_stm32_async_rx_disable(const struct device *dev)
