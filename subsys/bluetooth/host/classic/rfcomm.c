@@ -2325,6 +2325,7 @@ static void rfcomm_handle_data(struct bt_rfcomm_session *session, struct net_buf
 int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 {
 	uint8_t fcs, cr;
+	uint16_t len;
 
 	if (!buf) {
 		return -EINVAL;
@@ -2358,10 +2359,13 @@ int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_UIH, buf->data);
 	net_buf_add_u8(buf, fcs);
 
-	k_fifo_put(&dlc->tx_queue, buf);
+	/* The TX work may send and free the buffer before this function returns */
+	len = buf->len;
+
+	k_fifo_put(&dlc->tx_queue, net_buf_take(&buf));
 	rfcomm_dlc_tx_trigger(dlc);
 
-	return buf->len;
+	return len;
 }
 
 static int rfcomm_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
