@@ -267,14 +267,25 @@ static void i2c_sam_twi_isr(const struct device *dev)
 	struct i2c_sam_twi_dev_data *const dev_data = dev->data;
 	Twi *const twi = dev_cfg->regs;
 	struct twi_msg *msg = &dev_data->msg;
+	uint32_t sr;
 	uint32_t isr_status;
 
 	/* Retrieve interrupt status */
-	isr_status = twi->TWI_SR & twi->TWI_IMR;
+	sr = twi->TWI_SR;
+	isr_status = sr & twi->TWI_IMR;
+
+	/*
+	 * The master receiver does not stretch SCL when RHR is not read in time, so
+	 * late servicing overwrites bytes. OVRE is clear-on-read: latch it here and
+	 * let the transfer run to its STOP.
+	 */
+	if (sr & TWI_SR_OVRE) {
+		msg->twi_sr |= TWI_SR_OVRE;
+	}
 
 	/* Not Acknowledged */
 	if (isr_status & TWI_SR_NACK) {
-		msg->twi_sr = isr_status;
+		msg->twi_sr |= isr_status;
 		goto tx_comp;
 	}
 
