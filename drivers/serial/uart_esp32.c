@@ -849,6 +849,8 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 
 	/* Notify RX_DISABLED when there is no buffer */
 	if (!data->async.rx_buf) {
+		uart_hal_disable_intr_mask(&data->hal,
+					   UART_INTR_RXFIFO_FULL | UART_INTR_RXFIFO_TOUT);
 #ifdef CONFIG_PM
 		uart_esp32_pm_policy_state_lock_put(uart_dev, RX_INT);
 #endif
@@ -1159,6 +1161,7 @@ static int uart_esp32_async_rx_enable(const struct device *dev, uint8_t *buf, si
 	/*
 	 * Enable interrupt on first receive byte so we can start async timer
 	 */
+	uart_hal_rxfifo_rst(&data->hal);
 	uart_hal_set_rxfifo_full_thr(&data->hal, 1);
 	uart_esp32_irq_rx_enable(dev);
 
@@ -1239,6 +1242,8 @@ static int uart_esp32_async_rx_disable(const struct device *dev)
 #endif
 		goto unlock;
 	}
+
+	uart_hal_disable_intr_mask(&data->hal, UART_INTR_RXFIFO_FULL | UART_INTR_RXFIFO_TOUT);
 
 	/*If any bytes have been received notify RX_RDY*/
 	evt.type = UART_RX_RDY;
