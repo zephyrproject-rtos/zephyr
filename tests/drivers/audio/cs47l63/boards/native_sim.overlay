@@ -110,4 +110,16 @@
 			cirrus,asp = <1>;
 		};
 	};
+
+	/* ASP1 only, so the ASP2 pads GPIO5-8 are free for defaults. */
+	cs47l63_gpio: cs47l63@a {
+		compatible = "cirrus,cs47l63";
+		reg = <10>;
+		spi-max-frequency = <8000000>;
+		reset-gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
+		cirrus,gpio-defaults = <0xffffffff 0xffffffff 0xffffffff 0xffffffff 0x61000001 0
+					0xffffffff 0x00800000 0x00000800 0x410001fa>;
+		status = "okay";
+	};
 };
