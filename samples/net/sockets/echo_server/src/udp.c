@@ -250,22 +250,29 @@ void start_udp(void)
 	}
 }
 
+static void stop_thread(struct k_thread *thread)
+{
+	if (k_thread_join(thread, K_SECONDS(1)) != 0) {
+		/* Not very graceful way to close a thread, but as we may be blocked
+		 * in recvfrom call it seems to be necessary
+		 */
+		k_thread_abort(thread);
+	}
+}
+
 void stop_udp(void)
 {
-	/* Not very graceful way to close a thread, but as we may be blocked
-	 * in recvfrom call it seems to be necessary
-	 */
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		k_thread_abort(udp6_thread_id);
 		if (conf.ipv6.udp.sock >= 0) {
 			(void)close(conf.ipv6.udp.sock);
 		}
+		stop_thread(udp6_thread_id);
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		k_thread_abort(udp4_thread_id);
 		if (conf.ipv4.udp.sock >= 0) {
 			(void)close(conf.ipv4.udp.sock);
 		}
+		stop_thread(udp4_thread_id);
 	}
 }
