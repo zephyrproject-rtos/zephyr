@@ -1,0 +1,106 @@
+# Makefile - STMems_Standard_C_drivers
+#
+# Copyright (c) 2019-2026 STMicroelectronics
+#
+# SPDX-License-Identifier: Apache-2.0
+
+set(stmems_pids
+  a3g4250d
+  ais25ba
+  ais2dw12
+  ais2ih
+  ais328dq
+  ais3624dq
+  asm330lhb
+  asm330lhbg1
+  asm330lhh
+  asm330lhhg1
+  asm330lhhx
+  asm330lhhxg1
+  h3lis100dl
+  h3lis331dl
+  hts221
+  i3g4250d
+  iis2dh
+  iis2dlpc
+  iis2dulpx
+  iis2iclx
+  iis2mdc
+  iis328dq
+  iis3dhhc
+  iis3dwb
+  iis3dwbg1
+  ilps22qs
+  ilps28qsw
+  ism303dac
+  ism330bx
+  ism330dhcx
+  ism330dlc
+  ism330is
+  ism6hg256x
+  l3gd20h
+  lis25ba
+  lis2de12
+  lis2dh12
+  lis2ds12
+  lis2dtw12
+  lis2du12
+  lis2dux12
+  lis2duxs12
+  lis2dw12
+  lis2hh12
+  lis2mdl
+  lis331dlh
+  lis3de
+  lis3dh
+  lis3dhh
+  lis3mdl
+  lps22ch
+  lps22df
+  lps22hb
+  lps22hh
+  lps25hb
+  lps27hhtw
+  lps27hhw
+  lps28dfw
+  lps33k
+  lsm303agr
+  lsm303ah
+  lsm6ds3tr-c
+  lsm6dsl
+  lsm6dsm
+  lsm6dso
+  lsm6dso16is
+  lsm6dso32
+  lsm6dso32x
+  lsm6dsox
+  lsm6dsr
+  lsm6dsrx
+  lsm6dsv16b
+  lsm6dsv16bx
+  lsm6dsv16x
+  lsm6dsv320x
+  lsm6dsv32x
+  lsm6dsv80x
+  lsm6dsv
+  lsm9ds1
+  mis2du12
+  st1vafe3bx
+  st1vafe6ax
+  sths34pf80
+  stts22h
+  stts751
+  )
+
+foreach(stmems_pid ${stmems_pids})
+  string(TOUPPER ${stmems_pid} pid_to_upper)
+  string(REPLACE "-" "_" pid_replace_dash_underscore ${pid_to_upper})
+  if(CONFIG_USE_STDC_${pid_replace_dash_underscore})
+    zephyr_include_directories(
+        ${ZEPHYR_HAL_ST_MODULE_DIR}/sensor/stmemsc/${stmems_pid}_STdC/driver/
+        )
+    zephyr_library_sources(
+	${ZEPHYR_HAL_ST_MODULE_DIR}/sensor/stmemsc/${stmems_pid}_STdC/driver/${stmems_pid}_reg.c
+        )
+  endif()
+endforeach()
