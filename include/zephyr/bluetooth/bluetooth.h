@@ -352,6 +352,9 @@ typedef void (*bt_ready_cb_t)(int err);
  * @retval -EALREADY Bluetooth is already enabled, or being enabled.
  * @retval -EAGAIN Bluetooth is being disabled; retry once bt_disable() has returned.
  * @retval -ENODEV The HCI driver is not ready.
+ * @retval -ETIMEDOUT The Controller did not respond to any command. The HCI transport is
+ *         closed, so bt_enable() can be called again without bt_disable(). With a @p cb,
+ *         the callback gets this error.
  */
 int bt_enable(bt_ready_cb_t cb);
 
