@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT nxp_lpdac
 
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/dac.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
@@ -43,6 +44,8 @@ LOG_MODULE_REGISTER(dac_mcux_lpdac, CONFIG_DAC_LOG_LEVEL);
 
 struct mcux_lpdac_config {
 	LPDAC_Type *base;
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
 	const struct pinctrl_dev_config *pincfg;
 	dac_reference_voltage_source_t ref_voltage;
 	bool low_power;
@@ -225,6 +228,13 @@ static int mcux_lpdac_pm_callback(const struct device *dev, enum pm_device_actio
 		return 0;
 
 	case PM_DEVICE_ACTION_RESUME:
+		if (config->clock_dev != NULL) {
+			err = clock_control_on(config->clock_dev, config->clock_subsys);
+			if (err != 0 && err != -ENOSYS) {
+				return err;
+			}
+		}
+
 		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 		if (err < 0 && err != -ENOENT) {
 			return err;
@@ -255,6 +265,10 @@ static int mcux_lpdac_pm_callback(const struct device *dev, enum pm_device_actio
 		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
 		if (err < 0 && err != -ENOENT) {
 			return err;
+		}
+
+		if (config->clock_dev != NULL) {
+			(void)clock_control_off(config->clock_dev, config->clock_subsys);
 		}
 
 		/*
@@ -305,6 +319,11 @@ static DEVICE_API(dac, mcux_lpdac_driver_api) = {
                                                                                                    \
 	static const struct mcux_lpdac_config mcux_lpdac_config_##n = {                            \
 		.base = (LPDAC_Type *)DT_INST_REG_ADDR(n),                                         \
+		.clock_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),                         \
+					 (DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n))), (NULL)),         \
+		.clock_subsys = (clock_control_subsys_t)COND_CODE_1(                               \
+				DT_INST_NODE_HAS_PROP(n, clocks),                                  \
+				(DT_INST_CLOCKS_CELL(n, name)), (0U)),                             \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
 		.ref_voltage = DT_INST_PROP(n, voltage_reference),                                 \
 		.low_power = DT_INST_PROP(n, low_power_mode),                                      \
