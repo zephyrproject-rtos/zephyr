@@ -16,6 +16,7 @@
 #endif
 #include <zephyr/sys/sys_heap.h>
 #include <zephyr/sys/libc-hooks.h>
+#include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/types.h>
 #ifdef CONFIG_MMU
 #include <zephyr/kernel/mm.h>
@@ -33,8 +34,14 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 # if Z_MALLOC_PARTITION_EXISTS
 K_APPMEM_PARTITION_DEFINE(z_malloc_partition);
 #  define POOL_SECTION Z_GENERIC_SECTION(K_APP_DMEM_SECTION(z_malloc_partition))
+#  define HEAP_IN_CHOSEN_REGION 0
 # else
-#  define POOL_SECTION __noinit
+/* Outside a partition the arena follows 'zephyr,kernel-heap': __heapmem is the
+ * plain __noinit this used without the chosen.
+ */
+#  define POOL_SECTION __heapmem
+#  define HEAP_IN_CHOSEN_REGION DT_HAS_CHOSEN(zephyr_kernel_heap)
+#  define HEAP_REGION           DT_CHOSEN(zephyr_kernel_heap)
 # endif /* CONFIG_USERSPACE */
 
 # if defined(CONFIG_MMU) && CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE < 0
@@ -99,16 +106,36 @@ static POOL_SECTION unsigned char __aligned(HEAP_ALIGN) malloc_arena[HEAP_SIZE];
  * suitable alignment
  */
 
-#   define HEAP_BASE	ROUND_UP(USED_RAM_END_ADDR, HEAP_ALIGN)
+#   if HEAP_IN_CHOSEN_REGION
 
-#   if (defined(CONFIG_XTENSA) && defined(CONFIG_SOC_FAMILY_INTEL_ADSP)) \
+/*
+ * With 'zephyr,kernel-heap' the arena is not in the zephyr,sram RAMABLE_REGION
+ * at all, so `_end` says nothing about where it may start. The RAM left over is
+ * what the linker did not place in that region: from the end of its section to
+ * the end of its `reg`.
+ */
+
+extern char LINKER_DT_NODE_REGION_END_SYM(HEAP_REGION)[];
+
+#    define HEAP_BASE	ROUND_UP(POINTER_TO_UINT(				\
+		LINKER_DT_NODE_REGION_END_SYM(HEAP_REGION)), HEAP_ALIGN)
+#    define HEAP_SIZE	ROUND_DOWN((size_t) DT_REG_SIZE(HEAP_REGION) -		\
+		((size_t) HEAP_BASE - (size_t) DT_REG_ADDR(HEAP_REGION)), HEAP_ALIGN)
+
+#   else /* HEAP_IN_CHOSEN_REGION */
+
+#    define HEAP_BASE	ROUND_UP(USED_RAM_END_ADDR, HEAP_ALIGN)
+
+#    if (defined(CONFIG_XTENSA) && defined(CONFIG_SOC_FAMILY_INTEL_ADSP)) \
 	|| defined(CONFIG_HAS_ESPRESSIF_HAL)
 extern char _heap_sentry[];
-#    define HEAP_SIZE  ROUND_DOWN((POINTER_TO_UINT(_heap_sentry) - HEAP_BASE), HEAP_ALIGN)
-#   else
-#    define HEAP_SIZE	ROUND_DOWN((size_t) DT_CHOSEN_SRAM_SIZE -	\
+#     define HEAP_SIZE  ROUND_DOWN((POINTER_TO_UINT(_heap_sentry) - HEAP_BASE), HEAP_ALIGN)
+#    else
+#     define HEAP_SIZE	ROUND_DOWN((size_t) DT_CHOSEN_SRAM_SIZE -	\
 		((size_t) HEAP_BASE - (size_t) DT_CHOSEN_SRAM_ADDR), HEAP_ALIGN)
-#   endif /* else CONFIG_XTENSA */
+#    endif /* else CONFIG_XTENSA */
+
+#   endif /* else HEAP_IN_CHOSEN_REGION */
 
 #  endif /* else CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE > 0 */
 
