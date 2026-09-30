@@ -20,6 +20,34 @@ zephyr_sources_ifdef(
   log_backend_efi_console.c
 )
 
+if(CONFIG_LOG_BACKEND_FLASH)
+  if("${CONFIG_LOG_BACKEND_FLASH_BUILD_ID}" STREQUAL "")
+    message(FATAL_ERROR
+      "CONFIG_LOG_BACKEND_FLASH_BUILD_ID is empty. Set it to a C expression "
+      "identifying this firmware: a stored log can only be decoded against the "
+      "build that wrote it, so the backend has to be able to tell one build "
+      "from another. Set it to NULL to store no build id and make no check.")
+  endif()
+
+  if("${CONFIG_LOG_BACKEND_FLASH_BUILD_ID}" MATCHES "[\"' ]")
+    message(FATAL_ERROR
+      "CONFIG_LOG_BACKEND_FLASH_BUILD_ID reaches the compiler as source, so it "
+      "cannot contain quotes or spaces. Define a macro in the header named by "
+      "CONFIG_LOG_BACKEND_FLASH_BUILD_ID_HEADER and name that macro here.")
+  endif()
+
+  zephyr_sources(log_backend_flash.c)
+
+  # The Kconfig value is C source, not a string, so it is handed to the
+  # compiler as a definition rather than used through autoconf.h.
+  zephyr_compile_definitions(
+    LOG_BACKEND_FLASH_BUILD_ID=${CONFIG_LOG_BACKEND_FLASH_BUILD_ID})
+
+  if(NOT "${CONFIG_LOG_BACKEND_FLASH_BUILD_ID_HEADER}" STREQUAL "")
+    zephyr_compile_definitions(LOG_BACKEND_FLASH_BUILD_ID_HAS_HEADER)
+  endif()
+endif()
+
 zephyr_sources_ifdef(
   CONFIG_LOG_BACKEND_FS
   log_backend_fs.c
