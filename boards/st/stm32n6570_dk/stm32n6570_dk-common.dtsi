@@ -437,6 +437,28 @@ zephyr_udc0: &usbotg_hs1 {
 	status = "okay";
 };
 
+/*
+ * OTG2 drives the USB Type-A host connector (CN17), whose VBUS comes from a
+ * power switch enabled by PB9. The GHWCFG values are the controller's own.
+ */
+zephyr_uhc0: &usbotg_hs2 {
+	compatible = "st,stm32n6-hsotg", "snps,dwc2";
+	/* Device controller properties, which the DWC2 binding does not declare */
+	/delete-property/ num-bidir-endpoints;
+	/delete-property/ ram-size;
+	/delete-property/ maximum-speed;
+	num-in-eps = <9>;
+	num-out-eps = <9>;
+	ghwcfg1 = <0x00000000>;
+	ghwcfg2 = <0x228fe052>;
+	ghwcfg4 = <0xe2103e30>;
+	g-rx-fifo-size = <256>;
+	g-np-tx-fifo-size = <64>;
+	g-tx-fifo-size = <64 64 64 64 64 64 64 64>;
+	vbus-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
+	status = "okay";
+};
+
 &xspi1 {
 	pinctrl-0 = <&xspim_p1_ncs1_po0 &xspim_p1_dqs0_po2
 		     &xspim_p1_dqs1_po3 &xspim_p1_clk_po4
