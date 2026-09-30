@@ -47,6 +47,10 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&porta>;
+		clocks = <&clk_aon MCXL_AON_CLOCK(MCXL_AON_GATE_GPIO,
+						  MCXL_AON_SEL_NONE, MCXL_AON_CLK_ROOT_SRC_NONE,
+						  MCXL_AON_DIV_NONE, MCXL_CLOCK_DIV_BY_1,
+						  MCXL_AON_CLK_FLAG_NONE)>;
 	};
 
 	aon_lpuart0: lpuart@82000 {
