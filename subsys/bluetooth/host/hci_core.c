@@ -125,6 +125,11 @@ static K_WORK_DEFINE(rx_work, rx_work_handler);
 static struct k_work_q bt_workq;
 static K_KERNEL_STACK_DEFINE(rx_thread_stack, CONFIG_BT_RX_STACK_SIZE);
 
+bool bt_is_work_thread(void)
+{
+	return k_current_get() == bt_workq.thread_id;
+}
+
 int bt_work_submit(struct k_work *work)
 {
 	return k_work_submit_to_queue(&bt_workq, work);
@@ -5046,7 +5051,7 @@ int bt_disable(void)
 		buf = net_buf_slist_get(&bt_dev.rx_queue);
 	}
 
-	if (k_current_get() == bt_workq.thread_id) {
+	if (bt_is_work_thread()) {
 		(void)k_work_cancel(&rx_work);
 	} else {
 		struct k_work_sync sync;

@@ -409,7 +409,7 @@ static int dispatch_avctp_packet(struct bt_avctp *session, struct net_buf *buf,
 	if (cr == BT_AVCTP_CMD) {
 		rsp = bt_avctp_create_pdu(NULL);
 		if (rsp == NULL) {
-			__ASSERT(0, "Failed to create AVCTP response PDU");
+			LOG_ERR("Failed to create AVCTP response PDU");
 			return -ENOMEM;
 		}
 
