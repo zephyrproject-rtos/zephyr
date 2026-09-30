@@ -603,12 +603,62 @@ static int uhc_renesas_ra_dequeue_cancelled(const struct device *dev, uint8_t de
 	return 0;
 }
 
+/*
+ * Nothing queued for a device that is gone completes: the controller withdraws
+ * a pending setup stage on a detach and stops reporting the pipes of a released
+ * device. Control transfers are handed back, as the host stack waits for them.
+ * The owners of the other transfers drop them when told the device is gone, so
+ * those are only unlinked, which also keeps them from blocking the pipe for the
+ * next device.
+ */
+static int uhc_renesas_ra_release_devices(const struct device *dev)
+{
+	struct uhc_renesas_ra_data *priv = uhc_get_private(dev);
+	struct uhc_transfer *xfer, *tmp;
+	fsp_err_t err;
+
+	if (!sys_dlist_is_empty(&priv->dcp.xfers_list)) {
+		(void)R_USBH_XferAbort(&priv->uhc_ctrl, 0, USB_CONTROL_EP_OUT);
+	}
+
+	for (int i = 1; i <= ARRAY_SIZE(priv->usbd_device); i++) {
+		if (!is_configured_udev(dev, i)) {
+			continue;
+		}
+
+		err = R_USBH_DeviceRelease(&priv->uhc_ctrl, i);
+		if (!(err == FSP_SUCCESS || err == FSP_ERR_ABORTED)) {
+			LOG_WRN("Error releasing device: %d", err);
+			return -EIO;
+		}
+	}
+
+	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&priv->dcp.xfers_list, xfer, tmp, node) {
+		uhc_xfer_return(dev, xfer, -ECONNRESET);
+	}
+
+	for (size_t i = 0; i < ARRAY_SIZE(priv->pipe); i++) {
+		SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&priv->pipe[i].xfers_list, xfer, tmp, node) {
+			sys_dlist_remove(&xfer->node);
+			xfer->queued = 0;
+		}
+	}
+
+	memset(&priv->usbd_device, 0, sizeof(priv->usbd_device));
+	memset(&priv->ep, 0, sizeof(priv->ep));
+
+	return 0;
+}
+
 static void uhc_renesas_ra_device_attach(const struct device *dev, usbh_event_t *event)
 {
 	struct uhc_renesas_ra_data *priv = uhc_get_private(dev);
 	fsp_err_t err;
 
 	priv->speed = event->attach.speed;
+
+	/* Drop what was queued for the previous device after it went away */
+	(void)uhc_renesas_ra_release_devices(dev);
 
 	switch (event->attach.speed) {
 	case USB_SPEED_LS:
@@ -635,23 +685,9 @@ static void uhc_renesas_ra_device_attach(const struct device *dev, usbh_event_t 
 
 static void uhc_renesas_ra_device_detach(const struct device *dev, usbh_event_t *hal_evt)
 {
-	struct uhc_renesas_ra_data *priv = uhc_get_private(dev);
-	fsp_err_t err;
-
-	for (int i = 1; i <= ARRAY_SIZE(priv->usbd_device); i++) {
-		if (!is_configured_udev(dev, i)) {
-			continue;
-		}
-
-		err = R_USBH_DeviceRelease(&priv->uhc_ctrl, i);
-		if (!(err == FSP_SUCCESS || err == FSP_ERR_ABORTED)) {
-			LOG_WRN("Error releasing device: %d", err);
-			return;
-		}
+	if (uhc_renesas_ra_release_devices(dev) != 0) {
+		return;
 	}
-
-	memset(&priv->usbd_device, 0, sizeof(priv->usbd_device));
-	memset(&priv->ep, 0, sizeof(priv->ep));
 
 	uhc_submit_event(dev, UHC_EVT_DEV_REMOVED, 0);
 }
