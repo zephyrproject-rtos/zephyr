@@ -5,6 +5,7 @@ menuconfig ETH_WCH
 	bool "WCH Ethernet driver"
 	default y
 	depends on DT_HAS_WCH_ETHERNET_ENABLED
+	select ETH_PHY_DRIVER
 	help
 	  Enable WCH Ethernet driver. It is available for
 	  all the CH32V307 and CH32V317 MCUs

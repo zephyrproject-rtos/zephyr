@@ -5,6 +5,7 @@ config ETH_RENESAS_RA
 	bool "Renesas RA Ethernet"
 	default y
 	depends on DT_HAS_RENESAS_RA_ETHERNET_ENABLED
+	select ETH_PHY_DRIVER
 	select USE_RA_FSP_ETHER
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	help

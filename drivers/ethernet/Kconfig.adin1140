@@ -5,6 +5,7 @@ menuconfig ETH_ADIN1140
 	bool "ADIN1140 10BASE-T1S MAC-PHY"
 	default y
 	depends on DT_HAS_ADI_ADIN1140_ENABLED
+	select ETH_PHY_DRIVER
 	select SPI
 	help
 	  The ADIN1140 is a 10BASE-T1S IEEE 802.3™-2022 compliant MAC-PHY

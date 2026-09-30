@@ -11,6 +11,7 @@ config ETH_DWC_XGMAC
 	bool "Synopsys DesignWareCore XGMAC Ethernet driver"
 	default y
 	depends on DT_HAS_SNPS_DWCXGMAC_ENABLED
+	select ETH_PHY_DRIVER
 	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
 	help
 	  This is a driver for the Synopsys DesignWare XGMAC, also referred to
