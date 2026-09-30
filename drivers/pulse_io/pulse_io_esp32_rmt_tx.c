@@ -237,6 +237,13 @@ int rmt_tx_configure(const struct device *dev, struct rmt_channel *ch)
 		rmt_ll_tx_enable_carrier_modulation(regs, id, false);
 	}
 
+#if RMT_LL_SUPPORT(ASYNC_STOP)
+	/* Latch the new configuration so the idle level reaches the pad now. */
+	key = k_spin_lock(&ch->lock);
+	rmt_ll_tx_stop(regs, id);
+	k_spin_unlock(&ch->lock, key);
+#endif
+
 	return 0;
 }
 
