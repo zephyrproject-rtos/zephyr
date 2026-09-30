@@ -8,7 +8,7 @@
 #include <threads.h>
 
 #include <zephyr/kernel.h>
-#include <zephyr/posix/pthread.h>
+#include <pthread.h>
 
 int mtx_init(mtx_t *mutex, int type)
 {

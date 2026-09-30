@@ -7,16 +7,17 @@
 #undef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200809L
 
+#include <dirent.h>
 #include <errno.h>
-#include <zephyr/kernel.h>
+#include <fcntl.h>
 #include <limits.h>
-#include <zephyr/posix/unistd.h>
-#include <zephyr/posix/dirent.h>
 #include <string.h>
-#include <zephyr/sys/fdtable.h>
-#include <zephyr/posix/sys/stat.h>
-#include <zephyr/posix/fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include <zephyr/fs/fs.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/fdtable.h>
 
 BUILD_ASSERT(PATH_MAX >= MAX_FILE_NAME, "PATH_MAX is less than MAX_FILE_NAME");
 

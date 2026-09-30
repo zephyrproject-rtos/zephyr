@@ -8,7 +8,7 @@
 #include <string.h>
 
 #include <zephyr/fs/fs.h>
-#include <zephyr/posix/dirent.h>
+#include <dirent.h>
 #include <zephyr/sys/minmax.h>
 #include <zephyr/sys/util.h>
 

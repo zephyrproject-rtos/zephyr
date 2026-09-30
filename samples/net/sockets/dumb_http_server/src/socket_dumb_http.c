@@ -7,17 +7,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-
-#if !defined(__ZEPHYR__) || defined(CONFIG_POSIX_API)
-
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 
-#else
+#if defined(__ZEPHYR__)
 
-#include <zephyr/net/socket.h>
 #include <zephyr/kernel.h>
 
 #include <zephyr/net/net_pkt.h>

@@ -6,9 +6,10 @@
 
 #include "posix_internal.h"
 
+#include <pthread.h>
+
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
-#include <zephyr/posix/pthread.h>
 #include <zephyr/sys/bitarray.h>
 
 static struct k_spinlock posix_spinlock_pool[CONFIG_MAX_PTHREAD_SPINLOCK_COUNT];

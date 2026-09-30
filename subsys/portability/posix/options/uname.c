@@ -7,7 +7,7 @@
 #include <string.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net/hostname.h>
-#include <zephyr/posix/sys/utsname.h>
+#include <sys/utsname.h>
 #include <zephyr/version.h>
 
 #ifdef CONFIG_NET_HOSTNAME_ENABLE

@@ -479,6 +479,12 @@ Deprecated APIs and options
   * Deprecated :kconfig:option:`CONFIG_NET_L2_PTP`.
     Used :kconfig:option:`CONFIG_NET_L2_PTP_TIMESTAMPING` instead.
 
+* POSIX
+
+  * :kconfig:option:`CONFIG_POSIX_API` was deprecated. Select a POSIX subprofile such as
+    :kconfig:option:`CONFIG_POSIX_AEP_CHOICE_PSE51` and the required Option Groups instead. See
+    :ref:`POSIX Configuration<posix_config>` for more details.
+
 * SPI
 
   * The SPI API now uses inclusive terminology (controller/peripheral, SDO/SDI). The former
@@ -900,6 +906,11 @@ New APIs and options
     context is active without reading the context internals.
   * Add :c:func:`coap_client_reregister_observe` to refresh an ongoing CoAP
     observation (:rfc:`7641` re-registration) without tearing it down.
+
+* POSIX
+
+  * :kconfig:option:`CONFIG_POSIX_AEP_CHOICE_NETAPP`, a Zephyr-specific subprofile with the
+    features of PSE52 plus the networking interfaces of PSE53, without multi-process support.
 
 * POSIX
 
