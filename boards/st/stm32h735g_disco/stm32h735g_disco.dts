@@ -181,6 +181,8 @@
 	pinctrl-names = "default";
 	cd-gpios = <&gpiof 5 GPIO_ACTIVE_LOW>;
 	disk-name = "SD";
+	bus-width = <4>;
+	status = "okay";
 };
 
 &octospi1 {
