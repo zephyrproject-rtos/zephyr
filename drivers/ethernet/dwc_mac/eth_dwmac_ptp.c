@@ -121,7 +121,7 @@ static int dwmac_ptp_adjust(const struct device *dev, int increment)
 	return 0;
 }
 
-static int dwmac_ptp_rate_adjust(const struct device *dev, double ratio)
+static int dwmac_ptp_adjust_rate(const struct device *dev, int64_t scaled_ppm)
 {
 	const struct dwmac_ptp_config *cfg = dev->config;
 	const struct device *eth_dev = cfg->eth_dev;
@@ -130,11 +130,9 @@ static int dwmac_ptp_rate_adjust(const struct device *dev, double ratio)
 	mm_reg_t base = DEVICE_MMIO_GET(eth_dev);
 	uint32_t addend_val;
 
-	if (ratio <= 0.0 || ratio > 2.0) {
+	if (ptp_clock_adjust_by_scaled_ppm(data->default_addend, scaled_ppm, &addend_val) != 0) {
 		return -EINVAL;
 	}
-
-	addend_val = (uint32_t)((double)data->default_addend * ratio);
 
 	K_SPINLOCK(&p->spinlock) {
 		sys_write32(addend_val, base + DWMAC_PTP_ADDEND_REG);
@@ -245,7 +243,7 @@ static DEVICE_API(ptp_clock, dwmac_ptp_api) = {
 	.set = dwmac_ptp_set,
 	.get = dwmac_ptp_get,
 	.adjust = dwmac_ptp_adjust,
-	.rate_adjust = dwmac_ptp_rate_adjust,
+	.adjust_rate = dwmac_ptp_adjust_rate,
 };
 
 const struct device *dwmac_get_ptp_clock(const struct device *dev, struct net_if *iface __unused)
