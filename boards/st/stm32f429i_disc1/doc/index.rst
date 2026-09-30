@@ -13,7 +13,6 @@ some highlights of the STM32F429I-DISC1 board:
 - Flexible board power supply:
 
   - ST-LINK/V2-B USB connector
-  - User USB FS connector
   - External 5 V or 3 V supply on the P1/P2 extension headers
 
 - Two push-buttons: USER and RESET
