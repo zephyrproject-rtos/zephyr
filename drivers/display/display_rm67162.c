@@ -192,6 +192,12 @@ struct rm67162_config {
 	const struct gpio_dt_spec te_gpio;
 	uint16_t panel_width;
 	uint16_t panel_height;
+	uint16_t hsync;
+	uint16_t hbp;
+	uint16_t hfp;
+	uint16_t vfp;
+	uint16_t vbp;
+	uint16_t vsync;
 };
 
 
@@ -256,13 +262,13 @@ static int rm67162_init(const struct device *dev)
 	mdev.mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST | MIPI_DSI_MODE_LPM;
 
 	mdev.timings.hactive = config->panel_width;
-	mdev.timings.hbp = 1;
-	mdev.timings.hfp = 1;
-	mdev.timings.hsync = 1;
+	mdev.timings.hbp = config->hbp;
+	mdev.timings.hfp = config->hfp;
+	mdev.timings.hsync = config->hsync;
 	mdev.timings.vactive = config->panel_height;
-	mdev.timings.vbp = 1;
-	mdev.timings.vfp = 1;
-	mdev.timings.vsync = 1;
+	mdev.timings.vbp = config->vbp;
+	mdev.timings.vfp = config->vfp;
+	mdev.timings.vsync = config->vsync;
 
 	ret = mipi_dsi_attach(config->mipi_dsi, config->channel, &mdev);
 	if (ret < 0) {
@@ -614,6 +620,12 @@ static DEVICE_API(display, rm67162_api) = {
 		.te_gpio = GPIO_DT_SPEC_INST_GET_OR(id, te_gpios, {0}),		\
 		.panel_width = DT_INST_PROP(id, width),				\
 		.panel_height = DT_INST_PROP(id, height),			\
+		.hsync = DT_PROP_OR(DT_INST_CHILD(id, display_timings), hsync_len, 1),	\
+		.hbp = DT_PROP_OR(DT_INST_CHILD(id, display_timings), hback_porch, 1),	\
+		.hfp = DT_PROP_OR(DT_INST_CHILD(id, display_timings), hfront_porch, 1),	\
+		.vsync = DT_PROP_OR(DT_INST_CHILD(id, display_timings), vsync_len, 1),	\
+		.vbp = DT_PROP_OR(DT_INST_CHILD(id, display_timings), vback_porch, 1),	\
+		.vfp = DT_PROP_OR(DT_INST_CHILD(id, display_timings), vfront_porch, 1),	\
 	};									\
 	static struct rm67162_data rm67162_data_##id = {			\
 		.pixel_format = DT_INST_PROP(id, pixel_format),			\
