@@ -391,8 +391,8 @@
 	/* Change the compatible here, and keep xspi for other boards */
 	compatible = "st,stm32-xspi-controller";
 	op-mode = "MSPI_OP_MODE_CONTROLLER";
-	st,csbound = <3>;
-	clock-frequency = <DT_FREQ_M(50)>;
+	st,csbound = <10>;
+	clock-frequency = <DT_FREQ_M(66)>;
 
 	pinctrl-0 = <&octospim_p2_io0_pg0 &octospim_p2_io1_pd2
 		     &octospim_p2_io2_pg2 &octospim_p2_io3_pg3
@@ -408,7 +408,7 @@
 		compatible = "st,psram-device", "aps-z8";
 		reg = <0>;
 		size = <DT_SIZE_M(64)>;
-		mspi-max-frequency = <DT_FREQ_M(50)>;
+		mspi-max-frequency = <DT_FREQ_M(66)>;
 		mspi-io-mode = "MSPI_IO_MODE_OCTAL";
 		mspi-data-rate = "MSPI_DATA_RATE_S_D_D";
 		mspi-hardware-ce-num = <0>;
@@ -416,10 +416,9 @@
 		write-command = <0xa0>;
 		command-length = "INSTR_1_BYTE";
 		address-length = "ADDR_4_BYTE";
-		rx-dummy = <5>;
-		tx-dummy = <5>;
+		rx-dummy = <3>;
+		tx-dummy = <3>;
 		memmap-config = <1 0 DT_SIZE_M(64) 0>;
-		ce-break-config = <1024 4>;
 		st,timing-config = <1>;
 		zephyr,pm-device-runtime-auto;
 		aps-version = "APS6408L";
