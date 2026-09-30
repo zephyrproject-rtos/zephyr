@@ -403,7 +403,7 @@ static whd_result_t airoc_wifi_host_buffer_get(whd_buffer_t *buffer, whd_buffer_
 static void airoc_wifi_buffer_release(whd_buffer_t buffer, whd_buffer_dir_t direction)
 {
 	CY_UNUSED_PARAMETER(direction);
-	(void)net_buf_destroy((struct net_buf *)buffer);
+	net_buf_unref((struct net_buf *)buffer);
 }
 
 static uint8_t *airoc_wifi_buffer_get_current_piece_data_pointer(whd_buffer_t buffer)
