@@ -1364,6 +1364,22 @@ static void spi_stm32_isr(const struct device *dev)
 		return;
 	}
 
+#ifdef CONFIG_SPI_STM32_DMA_CACHED_MEMORY
+	/*
+	 * A DMA transfer, told by TXDMAEN/RXDMAEN: transceive_dma() clears them at its end even
+	 * with SPE kept on, which the STM32U5 allows (RM0456, SPI_CFG1).
+	 */
+	if (LL_SPI_IsEnabledDMAReq_RX(spi) || LL_SPI_IsEnabledDMAReq_TX(spi)) {
+		if (spi_stm32_get_err(spi) != 0) {
+			ll_disable_int_errors(spi);
+			data->status_flags |= SPI_STM32_DMA_ERROR_FLAG;
+			k_sem_give(&data->status_sem);
+			return;
+		}
+		return;
+	}
+#endif /* CONFIG_SPI_STM32_DMA_CACHED_MEMORY */
+
 	if (!spi_stm32_transfer_ongoing(data)) {
 		if (ll_rx_is_not_empty(spi)) {
 			(void) LL_SPI_ReceiveData8(spi);
@@ -1778,6 +1794,16 @@ static int wait_dma_rx_tx_done(const struct device *dev)
 	while (1) {
 		res = k_sem_take(&data->status_sem, timeout);
 		if (res != 0) {
+#ifdef CONFIG_SPI_STM32_DMA_CACHED_MEMORY
+			/* Without the error interrupt an overrun only shows up as this timeout */
+			const struct spi_stm32_config *cfg = dev->config;
+			int err = spi_stm32_get_err(cfg->spi);
+
+			if (err != 0) {
+				return err;
+			}
+			LOG_ERR("SPI DMA transfer timed out");
+#endif /* CONFIG_SPI_STM32_DMA_CACHED_MEMORY */
 			return res;
 		}
 
@@ -2038,6 +2064,11 @@ static int transceive_dma(const struct device *dev,
 			return spi_context_wait_for_completion(&data->ctx);
 		}
 #endif /* CONFIG_SPI_ASYNC */
+
+#if defined(CONFIG_SPI_STM32_DMA_CACHED_MEMORY) && defined(CONFIG_SPI_STM32_INTERRUPT)
+		/* An error flagged before this point fires as soon as it is enabled */
+		ll_enable_int_errors(spi);
+#endif /* CONFIG_SPI_STM32_DMA_CACHED_MEMORY && CONFIG_SPI_STM32_INTERRUPT */
 
 		ret = wait_dma_rx_tx_done(dev);
 		if (ret != 0) {
