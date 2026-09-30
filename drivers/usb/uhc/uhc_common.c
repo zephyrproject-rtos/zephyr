@@ -266,6 +266,53 @@ ep_dequeue_error:
 	return ret;
 }
 
+int uhc_root_hub_control(const struct device *dev,
+			 const struct usb_setup_packet *const setup,
+			 struct net_buf *const buf)
+{
+	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
+	int ret = -ENOTSUP;
+
+	api->lock(dev);
+
+	if (!uhc_is_initialized(dev)) {
+		ret = -EPERM;
+		goto error;
+	}
+
+	if (api->root_hub_control != NULL) {
+		ret = api->root_hub_control(dev, setup, buf);
+	}
+
+error:
+	api->unlock(dev);
+
+	return ret;
+}
+
+int uhc_root_hub_status(const struct device *dev,
+			struct net_buf *const buf)
+{
+	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
+	int ret = -ENOTSUP;
+
+	api->lock(dev);
+
+	if (!uhc_is_initialized(dev)) {
+		ret = -EPERM;
+		goto error;
+	}
+
+	if (api->root_hub_status != NULL) {
+		ret = api->root_hub_status(dev, buf);
+	}
+
+error:
+	api->unlock(dev);
+
+	return ret;
+}
+
 int uhc_enable(const struct device *dev)
 {
 	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);

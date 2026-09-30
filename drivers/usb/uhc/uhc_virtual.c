@@ -20,13 +20,80 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/drivers/usb/uhc.h>
+#include <zephyr/usb/class/usb_hub.h>
+#include <zephyr/sys/byteorder.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uhc_vrt, CONFIG_UHC_DRIVER_LOG_LEVEL);
 
+/*
+ * SOF is generated once per microframe (125 us). A real USB frame number
+ * only advances every 8th microframe, and wraps at 0x7ff (USB 2.0 8.4.3).
+ */
+#define UHC_FRAME_NUMBER(sof_count) (((sof_count) >> 3) & 0x7FFU)
 #define FRAME_MAX_TRANSFERS 16
 
+/*
+ * USB 2.0 limits periodic (interrupt/isochronous) transfers to at most
+ * 90% of a (micro)frame's time budget, leaving the rest for control/bulk.
+ */
+#define FRAME_NSECS_FS 1000000UL
+#define FRAME_NSECS_HS 125000UL
+#define FRAME_PERIODIC_BUDGET(speed) \
+	(((speed) == USB_SPEED_SPEED_HS ? FRAME_NSECS_HS : FRAME_NSECS_FS) * 9UL / 10UL)
+
+/*
+ * Approximate bus time for a periodic transaction, in nanoseconds
+ * (USB 2.0 5.11.3).
+ *
+ * VRT_BIT_STUFF_TERM() is (3.167 + BitStuffTime(Data_bc)) * 1000: BitStuffTime
+ * is the worst-case bit-stuffed bit count (7/6 stuff ratio times 8 bits per
+ * byte), and 3.167 is a few extra fixed bit-times folded into the same term.
+ * Dividing by 1000 below floors it back to a plain bit-time count.
+ *
+ * 2083 and 8354 are the High-/Full-speed bit time (1000/480e6 s and
+ * 1000/12e6 s, the latter using the spec's own published rounding) scaled
+ * up so the bit-time count can be multiplied by them in integers; dividing
+ * by 1000 or 100 afterwards undoes that scaling and leaves nanoseconds.
+ */
+#define VRT_BIT_STUFF_TERM(bytecount) (3167UL + 9334UL * (bytecount))
+
+#define VRT_HS_NSECS(bytecount) \
+	((2083UL * (55UL * 8UL + VRT_BIT_STUFF_TERM(bytecount) / 1000UL)) / 1000UL + 5UL)
+#define VRT_HS_NSECS_ISO(bytecount) \
+	((2083UL * (38UL * 8UL + VRT_BIT_STUFF_TERM(bytecount) / 1000UL)) / 1000UL + 5UL)
+#define VRT_FS_NSECS(bytecount) \
+	(9107UL + (8354UL * (VRT_BIT_STUFF_TERM(bytecount) / 1000UL)) / 100UL)
+#define VRT_FS_NSECS_ISO(bytecount, fixed) \
+	((fixed) + (8354UL * (VRT_BIT_STUFF_TERM(bytecount) / 1000UL)) / 100UL)
+
+static uint32_t vrt_xfer_bus_time(const struct uhc_transfer *const xfer,
+				  const enum usb_device_speed speed)
+{
+	bool isoc = xfer->type == USB_EP_TYPE_ISO;
+	uint32_t bc = USB_MPS_EP_SIZE(xfer->mps);
+
+	if (speed == USB_SPEED_SPEED_HS) {
+		return isoc ? VRT_HS_NSECS_ISO(bc) : VRT_HS_NSECS(bc);
+	}
+
+	/* Full speed. Low speed is not supported yet. */
+	if (isoc) {
+		return VRT_FS_NSECS_ISO(bc, USB_EP_DIR_IS_IN(xfer->ep) ? 7268UL : 6265UL);
+	}
+
+	return VRT_FS_NSECS(bc);
+}
+
+/*
+ * UVB has no propagation delay, and this timeout is much higher than specified
+ * in USB 2.0 (7.1.19.2) So, it should be good enough even under high CPU load.
+ */
+#define UHC_VRT_XFER_TIMEOUT K_MSEC(1)
+
 struct uhc_vrt_config {
+	k_thread_stack_t *thread_stack;
+	size_t stack_size;
 };
 
 struct uhc_vrt_slot {
@@ -41,16 +108,47 @@ struct uhc_vrt_frame {
 	uint8_t count;
 };
 
+/*
+ * Port state as tracked by a real hub, USB 2.0 11.24.2.7. node is our own
+ * routing key, not part of the port status/change model.
+ */
+struct uhc_vrt_port {
+	const struct uvb_node *node;
+	struct usb_hub_port_status status;
+};
+
+static enum uvb_speed vrt_port_speed(const struct uhc_vrt_port *const port)
+{
+	if (port->status.wPortStatus & USB_HUB_PORT_STATUS_LOW_SPEED) {
+		return UVB_SPEED_LS;
+	}
+
+	if (port->status.wPortStatus & USB_HUB_PORT_STATUS_HIGH_SPEED) {
+		return UVB_SPEED_HS;
+	}
+
+	return UVB_SPEED_FS;
+}
+
 struct uhc_vrt_data {
 	const struct device *dev;
 	struct uvb_node *host_node;
-	struct k_work work;
+	struct usb_hub_status *hub_status;
+	struct k_thread thread_data;
 	struct k_fifo fifo;
 	struct uhc_transfer *last_xfer;
+	uint8_t xact_remaining;
+	struct uvb_packet *last_pkt;
+	k_timepoint_t xfer_timeout;
 	struct uhc_vrt_frame frame;
 	struct k_timer sof_timer;
-	uint16_t frame_number;
+	k_timeout_t sof_period;
+	uint16_t sof_count;
 	uint8_t req;
+	enum usb_device_speed speed;
+	bool bus_suspended;
+	struct k_spinlock lock;
+	struct uhc_vrt_port ports[CONFIG_UHC_VIRTUAL_NUM_PORTS];
 };
 
 enum uhc_vrt_event_type {
@@ -69,6 +167,8 @@ struct uhc_vrt_event {
 
 K_MEM_SLAB_DEFINE_TYPE(uhc_vrt_slab, struct uhc_vrt_event, 16);
 
+static int uhc_vrt_bus_resume(const struct device *dev);
+
 static void vrt_event_submit(const struct device *dev,
 			     const enum uhc_vrt_event_type type,
 			     const void *data)
@@ -83,7 +183,358 @@ static void vrt_event_submit(const struct device *dev,
 	event->type = type;
 	event->pkt = (struct uvb_packet *const)data;
 	k_fifo_put(&priv->fifo, event);
-	k_work_submit(&priv->work);
+}
+
+static int vrt_advert_pkt(struct uhc_vrt_data *const priv,
+			  struct uvb_packet *const pkt)
+{
+	/*
+	 * The device may get disconnected and there would not be any reply.
+	 * Track the packet of the last transaction and clean it up in
+	 * vrt_xfer_drop_active() to prevent a packet leak on device disconnect.
+	 */
+	priv->last_pkt = pkt;
+	/*
+	 * If the device does not respond for different reasons, check timeout
+	 * on SOF and cleanup.
+	 */
+	priv->xfer_timeout = sys_timepoint_calc(UHC_VRT_XFER_TIMEOUT);
+
+	/* Broadcast like a real hub to every enabled port. */
+	return uvb_advert_pkt(priv->host_node, NULL, pkt);
+}
+
+/*
+ * Hub and Port Status Change Bitmap length, USB 2.0 11.12.4:
+ * bit 0 is the hub's own  change, bits 1..N are ports 1..N, rounded up to
+ * whole bytes, same layout as the hub descriptor's DeviceRemovable and
+ * PortPwrCtrlMask fields.
+ */
+#define VRT_HUB_CHANGE_LEN DIV_ROUND_UP(CONFIG_UHC_VIRTUAL_NUM_PORTS + 1, 8)
+
+/*
+ * 11.23.2.1 Hub Descriptor. Identical wHubCharacteristics for all instances.
+ * D1:D0 Logical Power Switching Mode, Individual port power switching
+ * D4:D3 Over-current Protection Mode, Individual Port Over-current Protection
+ * D6:D5 TT Think Time, minimum (8 FS bit times)
+ * D7 Port Indicators Supported, not supported yet
+ */
+#define VRT_HUB_CHARACTERISTICS (BIT(0) | BIT(4))
+
+struct vrt_hub_desc {
+	struct usb_hub_descriptor hub;
+	uint8_t DeviceRemovable[DIV_ROUND_UP(CONFIG_UHC_VIRTUAL_NUM_PORTS + 1, 8)];
+	uint8_t PortPwrCtrlMask[DIV_ROUND_UP(CONFIG_UHC_VIRTUAL_NUM_PORTS + 1, 8)];
+} __packed;
+
+/*
+ * PortPwrCtrlMask is set to all-1s in uhc_vrt_driver_preinit();
+ * DeviceRemovable stays zeroed, every port reports a removable device.
+ */
+static struct vrt_hub_desc vrt_hub_desc = {
+	.hub = {
+		.bDescLength = sizeof(struct vrt_hub_desc),
+		.bDescriptorType = USB_HUB_DESCRIPTOR_TYPE,
+		.bNbrPorts = CONFIG_UHC_VIRTUAL_NUM_PORTS,
+		.wHubCharacteristics = sys_cpu_to_le16(VRT_HUB_CHARACTERISTICS),
+		/* 20 ms, virtual ports power up instantly */
+		.bPwrOn2PwrGood = 10,
+	},
+};
+
+static int vrt_hub_sreq_get_desc(const struct device *dev,
+				 const struct usb_setup_packet *const setup,
+				 struct net_buf *const buf)
+{
+	size_t len;
+
+	ARG_UNUSED(dev);
+
+	len = MIN(sizeof(vrt_hub_desc), setup->wLength);
+	net_buf_add_mem(buf, &vrt_hub_desc, len);
+
+	return 0;
+}
+
+static int vrt_hub_hcreq_get_status(const struct device *dev,
+				    const struct usb_setup_packet *const setup,
+				    struct net_buf *const buf)
+{
+	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	const void *data = NULL;
+	size_t len = 0;
+	int ret = 0;
+
+	switch (setup->RequestType.recipient) {
+	case USB_REQTYPE_RECIPIENT_DEVICE:
+		data = priv->hub_status;
+		len = sizeof(*priv->hub_status);
+		break;
+	case USB_REQTYPE_RECIPIENT_OTHER:
+		if (setup->wIndex == 0 || setup->wIndex > ARRAY_SIZE(priv->ports)) {
+			ret = -EPIPE;
+			break;
+		}
+
+		data = &priv->ports[setup->wIndex - 1].status;
+		len = sizeof(priv->ports[setup->wIndex - 1].status);
+		break;
+	default:
+		ret = -EPIPE;
+		break;
+	}
+
+	if (ret == 0 && data != NULL && buf != NULL) {
+		len = MIN(len, setup->wLength);
+		net_buf_add_mem(buf, data, len);
+	}
+
+	return ret;
+}
+
+static int vrt_hub_dev_set_feature(const struct device *dev,
+				   const struct usb_setup_packet *const setup)
+{
+	struct uhc_vrt_data *priv = uhc_get_private(dev);
+
+	switch (setup->wValue) {
+	case USB_HCFS_C_HUB_LOCAL_POWER:
+		priv->hub_status->wHubChange |= USB_HUB_CHANGE_LOCAL_POWER;
+		break;
+	case USB_HCFS_C_HUB_OVER_CURRENT:
+		priv->hub_status->wHubChange |= USB_HUB_CHANGE_OVER_CURRENT;
+		break;
+	default:
+		return -EPIPE;
+	}
+
+	return 0;
+}
+
+static int vrt_hub_port_set_feature(const struct device *dev,
+				    const struct usb_setup_packet *const setup)
+{
+	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	struct uhc_vrt_port *port;
+
+	if (setup->wIndex == 0 || setup->wIndex > ARRAY_SIZE(priv->ports)) {
+		return -EPIPE;
+	}
+
+	port = &priv->ports[setup->wIndex - 1];
+
+	switch (setup->wValue) {
+	case USB_HCFS_PORT_POWER:
+		port->status.wPortStatus |= USB_HUB_PORT_STATUS_POWER;
+		break;
+	case USB_HCFS_PORT_RESET:
+		if (!(port->status.wPortStatus & USB_HUB_PORT_STATUS_CONNECTION)) {
+			break;
+		}
+
+		port->status.wPortStatus &= (USB_HUB_PORT_STATUS_POWER |
+					     USB_HUB_PORT_STATUS_CONNECTION |
+					     USB_HUB_PORT_STATUS_LOW_SPEED |
+					     USB_HUB_PORT_STATUS_HIGH_SPEED);
+
+		port->status.wPortStatus |= USB_HUB_PORT_STATUS_ENABLE;
+		port->status.wPortChange |= USB_HUB_PORT_CHANGE_RESET;
+		uvb_advert(priv->host_node, UVB_EVT_RESET, port->node,
+			  INT_TO_POINTER(vrt_port_speed(port)));
+		break;
+	case USB_HCFS_PORT_SUSPEND:
+		if (port->status.wPortStatus & USB_HUB_PORT_STATUS_CONNECTION) {
+			port->status.wPortStatus |= USB_HUB_PORT_STATUS_SUSPEND;
+			uvb_advert(priv->host_node, UVB_EVT_SUSPEND, port->node, NULL);
+		}
+		break;
+	default:
+		return -EPIPE;
+	}
+
+	return 0;
+}
+
+static int vrt_hub_dev_clear_feature(const struct device *dev,
+				     const struct usb_setup_packet *const setup)
+{
+	struct uhc_vrt_data *priv = uhc_get_private(dev);
+
+	switch (setup->wValue) {
+	case USB_HCFS_C_HUB_LOCAL_POWER:
+		priv->hub_status->wHubChange &= ~USB_HUB_CHANGE_LOCAL_POWER;
+		break;
+	case USB_HCFS_C_HUB_OVER_CURRENT:
+		priv->hub_status->wHubChange &= ~USB_HUB_CHANGE_OVER_CURRENT;
+		break;
+	default:
+		return -EPIPE;
+	}
+
+	return 0;
+}
+
+static int vrt_hub_port_clear_feature(const struct device *dev,
+				      const struct usb_setup_packet *const setup)
+{
+	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	struct uhc_vrt_port *port;
+
+	if (setup->wIndex == 0 || setup->wIndex > ARRAY_SIZE(priv->ports)) {
+		return -EPIPE;
+	}
+
+	port = &priv->ports[setup->wIndex - 1];
+
+	switch (setup->wValue) {
+	case USB_HCFS_PORT_POWER:
+		port->status.wPortStatus &= ~USB_HUB_PORT_STATUS_POWER;
+		break;
+	case USB_HCFS_PORT_ENABLE:
+		port->status.wPortStatus &= ~USB_HUB_PORT_STATUS_ENABLE;
+		break;
+	case USB_HCFS_PORT_SUSPEND:
+		if (port->status.wPortStatus & USB_HUB_PORT_STATUS_SUSPEND) {
+			port->status.wPortStatus &= ~USB_HUB_PORT_STATUS_SUSPEND;
+			uvb_advert(priv->host_node, UVB_EVT_RESUME, port->node, NULL);
+		}
+		break;
+	case USB_HCFS_C_PORT_CONNECTION:
+		port->status.wPortChange &= ~USB_HUB_PORT_CHANGE_CONNECTION;
+		break;
+	case USB_HCFS_C_PORT_ENABLE:
+		port->status.wPortChange &= ~USB_HUB_PORT_CHANGE_ENABLE;
+		break;
+	case USB_HCFS_C_PORT_SUSPEND:
+		port->status.wPortChange &= ~USB_HUB_PORT_CHANGE_SUSPEND;
+		break;
+	case USB_HCFS_C_PORT_OVER_CURRENT:
+		port->status.wPortChange &= ~USB_HUB_PORT_CHANGE_OVER_CURRENT;
+		break;
+	case USB_HCFS_C_PORT_RESET:
+		port->status.wPortChange &= ~USB_HUB_PORT_CHANGE_RESET;
+		break;
+	default:
+		return -EPIPE;
+	}
+
+	return 0;
+}
+
+/*
+ * ClearTTBuffer/ResetTT/StopTT (USB 2.0 11.24.2.3/11.24.2.9/11.24.2.11): no
+ * real TT hardware is emulated (no busy buffers, no stopped state), so these
+ * are accepted as no-ops once the addressed port is validated.
+ */
+static int vrt_hub_validate_tt_port(const struct device *dev,
+				    const struct usb_setup_packet *const setup)
+{
+	struct uhc_vrt_data *priv = uhc_get_private(dev);
+
+	if (setup->wIndex == 0 || setup->wIndex > ARRAY_SIZE(priv->ports)) {
+		return -EPIPE;
+	}
+
+	return 0;
+}
+
+/* GetTTState (USB 2.0 11.24.2.8): no real TT state exists, report an idle TT. */
+static int vrt_hub_get_tt_state(const struct device *dev,
+				const struct usb_setup_packet *const setup,
+				struct net_buf *const buf)
+{
+	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	uint32_t tt_state = 0;
+	size_t len;
+
+	if (setup->wIndex == 0 || setup->wIndex > ARRAY_SIZE(priv->ports)) {
+		return -EPIPE;
+	}
+
+	len = MIN(sizeof(tt_state), setup->wLength);
+	net_buf_add_mem(buf, &tt_state, len);
+
+	return 0;
+}
+
+static int vrt_root_hub_control(const struct device *dev,
+				const struct usb_setup_packet *const setup,
+				struct net_buf *const buf)
+{
+	int ret = 0;
+
+	switch (setup->bRequest) {
+	case USB_SREQ_GET_DESCRIPTOR:
+		ret = vrt_hub_sreq_get_desc(dev, setup, buf);
+		break;
+	case USB_HCREQ_GET_STATUS:
+		ret = vrt_hub_hcreq_get_status(dev, setup, buf);
+		break;
+	case USB_HCREQ_SET_FEATURE:
+		if (setup->RequestType.recipient == USB_REQTYPE_RECIPIENT_DEVICE) {
+			ret = vrt_hub_dev_set_feature(dev, setup);
+		} else {
+			ret = vrt_hub_port_set_feature(dev, setup);
+		}
+		break;
+	case USB_HCREQ_CLEAR_FEATURE:
+		if (setup->RequestType.recipient == USB_REQTYPE_RECIPIENT_DEVICE) {
+			ret = vrt_hub_dev_clear_feature(dev, setup);
+		} else {
+			ret = vrt_hub_port_clear_feature(dev, setup);
+		}
+		break;
+	case USB_HCREQ_CLEAR_TT_BUFFER:
+	case USB_HCREQ_RESET_TT:
+	case USB_HCREQ_STOP_TT:
+		/*
+		 * No real TT hardware is emulated (no busy buffers, no
+		 * stopped state), so these are accepted as no-ops once the
+		 * addressed port is validated.
+		 */
+		ret = vrt_hub_validate_tt_port(dev, setup);
+		break;
+	case USB_HCREQ_GET_TT_STATE:
+		/* No real TT state exists; report an idle TT. */
+		ret = vrt_hub_get_tt_state(dev, setup, buf);
+		break;
+	default:
+		LOG_ERR("root hub: unsupported request 0x%02x", setup->bRequest);
+		ret = -EPIPE;
+		break;
+	}
+
+	return ret;
+}
+
+/*
+ * Process the emulated hub's status-change request.
+ * USB 2.0 11.12.4: only return data once something has actually changed.
+ */
+static int vrt_root_hub_status(const struct device *dev, struct net_buf *const buf)
+{
+	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	uint8_t bitmap[VRT_HUB_CHANGE_LEN] = {0};
+	bool changed = false;
+
+	if (priv->hub_status->wHubChange != 0) {
+		bitmap[0] |= BIT(0);
+		changed = true;
+	}
+
+	for (size_t i = 0; i < ARRAY_SIZE(priv->ports); i++) {
+		if (priv->ports[i].status.wPortChange != 0) {
+			bitmap[(i + 1) / 8] |= BIT((i + 1) % 8);
+			changed = true;
+		}
+	}
+
+	if (changed) {
+		net_buf_add_mem(buf, bitmap,
+				MIN(sizeof(bitmap), net_buf_tailroom(buf)));
+	}
+
+	return 0;
 }
 
 static int vrt_xfer_control(const struct device *dev,
@@ -107,15 +558,15 @@ static int vrt_xfer_control(const struct device *dev,
 
 		priv->req = UVB_REQUEST_SETUP;
 
-		return uvb_advert_pkt(priv->host_node, uvb_pkt);
+		return vrt_advert_pkt(priv, uvb_pkt);
 	}
 
 	if (buf != NULL && xfer->stage == UHC_CONTROL_STAGE_DATA) {
 		if (USB_EP_DIR_IS_IN(xfer->ep)) {
-			length = MIN(net_buf_tailroom(buf), xfer->mps);
+			length = MIN(net_buf_tailroom(buf), USB_MPS_EP_SIZE(xfer->mps));
 			data = net_buf_tail(buf);
 		} else {
-			length = MIN(buf->len, xfer->mps);
+			length = MIN(buf->len, USB_MPS_EP_SIZE(xfer->mps));
 			data = buf->data;
 		}
 
@@ -130,7 +581,7 @@ static int vrt_xfer_control(const struct device *dev,
 
 		priv->req = UVB_REQUEST_DATA;
 
-		return uvb_advert_pkt(priv->host_node, uvb_pkt);
+		return vrt_advert_pkt(priv, uvb_pkt);
 	}
 
 	if (xfer->stage == UHC_CONTROL_STAGE_STATUS) {
@@ -153,7 +604,7 @@ static int vrt_xfer_control(const struct device *dev,
 
 		priv->req = UVB_REQUEST_DATA;
 
-		return uvb_advert_pkt(priv->host_node, uvb_pkt);
+		return vrt_advert_pkt(priv, uvb_pkt);
 	}
 
 	return -EINVAL;
@@ -169,10 +620,10 @@ static int vrt_xfer_bulk(const struct device *dev,
 	size_t length;
 
 	if (USB_EP_DIR_IS_IN(xfer->ep)) {
-		length = MIN(net_buf_tailroom(buf), xfer->mps);
+		length = MIN(net_buf_tailroom(buf), USB_MPS_EP_SIZE(xfer->mps));
 		data = net_buf_tail(buf);
 	} else {
-		length = MIN(buf->len, xfer->mps);
+		length = MIN(buf->len, USB_MPS_EP_SIZE(xfer->mps));
 		data = buf->data;
 	}
 
@@ -183,7 +634,7 @@ static int vrt_xfer_bulk(const struct device *dev,
 		return -ENOMEM;
 	}
 
-	return uvb_advert_pkt(priv->host_node, uvb_pkt);
+	return vrt_advert_pkt(priv, uvb_pkt);
 }
 
 static inline uint8_t get_xfer_ep_idx(const uint8_t ep)
@@ -205,15 +656,16 @@ static void vrt_assemble_frame(const struct device *dev)
 	struct uhc_data *const data = dev->data;
 	struct uhc_transfer *tmp;
 	unsigned int n = 0;
-	unsigned int key;
+	k_spinlock_key_t key;
 	uint32_t bm = 0;
+	uint32_t periodic_used = 0;
+	uint32_t budget = FRAME_PERIODIC_BUDGET(priv->speed);
 
 	sys_dlist_init(&frame->list);
 	frame->ptr = NULL;
 	frame->count = 0;
-	key = irq_lock();
+	key = k_spin_lock(&priv->lock);
 
-	/* TODO: add periodic transfers up to 90% */
 	SYS_DLIST_FOR_EACH_CONTAINER(&data->ctrl_xfers, tmp, node) {
 		uint8_t idx = get_xfer_ep_idx(tmp->ep);
 
@@ -225,13 +677,24 @@ static void vrt_assemble_frame(const struct device *dev)
 		}
 
 		if (tmp->interval) {
-			if (tmp->start_frame != priv->frame_number) {
+			uint32_t bus_time;
+
+			if (tmp->start_frame != priv->sof_count) {
 				continue;
 			}
 
-			tmp->start_frame = priv->frame_number + tmp->interval;
+			bus_time = vrt_xfer_bus_time(tmp, priv->speed) *
+				   (1 + USB_MPS_ADDITIONAL_TRANSACTIONS(tmp->mps));
+			if (periodic_used + bus_time > budget) {
+				/* Frame's periodic budget is full, retry next frame. */
+				tmp->start_frame = priv->sof_count + 1;
+				continue;
+			}
+
+			periodic_used += bus_time;
+			tmp->start_frame = priv->sof_count + tmp->interval;
 			LOG_DBG("Interrupt transfer s.f. %u f.n. %u interval %u",
-				tmp->start_frame, priv->frame_number, tmp->interval);
+				tmp->start_frame, priv->sof_count, tmp->interval);
 		}
 
 		bm |= BIT(idx);
@@ -245,7 +708,7 @@ static void vrt_assemble_frame(const struct device *dev)
 		}
 	}
 
-	irq_unlock(key);
+	k_spin_unlock(&priv->lock, key);
 }
 
 static int vrt_schedule_frame(const struct device *dev)
@@ -253,6 +716,12 @@ static int vrt_schedule_frame(const struct device *dev)
 	struct uhc_vrt_data *const priv = uhc_get_private(dev);
 	struct uhc_vrt_frame *const frame = &priv->frame;
 	struct uhc_vrt_slot *slot;
+	int ret;
+
+	if (priv->last_pkt != NULL) {
+		/* Wait for its reply. vrt_xfer_check_timeout() drops it otherwise. */
+		return 0;
+	}
 
 	if (priv->last_xfer == NULL) {
 		if (frame->count >= FRAME_MAX_TRANSFERS) {
@@ -269,15 +738,26 @@ static int vrt_schedule_frame(const struct device *dev)
 
 		priv->last_xfer = slot->xfer;
 		frame->count++;
+		if (priv->last_xfer->interval) {
+			priv->xact_remaining =
+				1 + USB_MPS_ADDITIONAL_TRANSACTIONS(priv->last_xfer->mps);
+		}
 		LOG_DBG("Next transfer is %p (count %u)",
 			(void *)priv->last_xfer, frame->count);
 	}
 
 	if (USB_EP_GET_IDX(priv->last_xfer->ep) == 0) {
-		return vrt_xfer_control(dev, priv->last_xfer);
+		ret = vrt_xfer_control(dev, priv->last_xfer);
+	} else {
+		ret = vrt_xfer_bulk(dev, priv->last_xfer);
 	}
 
-	return vrt_xfer_bulk(dev, priv->last_xfer);
+	if (ret == -ENOMEM) {
+		/* Retry with the rest of the frame next SOF. */
+		priv->last_xfer = NULL;
+	}
+
+	return ret;
 }
 
 static void vrt_hrslt_success(const struct device *dev,
@@ -310,7 +790,7 @@ static void vrt_hrslt_success(const struct device *dev,
 		}
 
 		if (USB_EP_DIR_IS_OUT(pkt->ep)) {
-			length = MIN(buf->len, xfer->mps);
+			length = MIN(buf->len, USB_MPS_EP_SIZE(xfer->mps));
 			net_buf_pull(buf, length);
 			LOG_DBG("OUT chunk %zu out of %u", length, buf->len);
 			if (buf->len == 0) {
@@ -323,13 +803,14 @@ static void vrt_hrslt_success(const struct device *dev,
 		} else {
 			length = MIN(net_buf_tailroom(buf), pkt->length);
 			net_buf_add(buf, length);
-			if (pkt->length > xfer->mps) {
+			if (pkt->length > USB_MPS_EP_SIZE(xfer->mps)) {
 				LOG_ERR("Ambiguous packet with the length %zu",
 					pkt->length);
 			}
 
 			LOG_DBG("IN chunk %zu out of %zu", length, net_buf_tailroom(buf));
-			if (pkt->length < xfer->mps || !net_buf_tailroom(buf)) {
+			if (pkt->length < USB_MPS_EP_SIZE(xfer->mps) ||
+			    !net_buf_tailroom(buf)) {
 				if (pkt->ep == USB_CONTROL_EP_IN && !xfer->no_status) {
 					xfer->stage = UHC_CONTROL_STAGE_STATUS;
 				} else {
@@ -337,6 +818,15 @@ static void vrt_hrslt_success(const struct device *dev,
 				}
 			}
 		}
+
+		if (!finished && xfer->interval && --priv->xact_remaining == 0) {
+			/*
+			 * Microframe's transaction opportunities are used up.
+			 * The transfer stays queued and resumes at its next interval.
+			 */
+			priv->last_xfer = NULL;
+		}
+
 		break;
 	}
 
@@ -351,10 +841,28 @@ static void vrt_xfer_drop_active(const struct device *dev, int err)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
 
+	if (priv->last_pkt != NULL) {
+		uvb_free_pkt(priv->last_pkt);
+		priv->last_pkt = NULL;
+	}
+
 	if (priv->last_xfer) {
 		uhc_xfer_return(dev, priv->last_xfer, err);
 		priv->last_xfer = NULL;
 	}
+}
+
+static void vrt_xfer_check_timeout(const struct device *dev)
+{
+	struct uhc_vrt_data *priv = uhc_get_private(dev);
+
+	if (priv->last_pkt == NULL || !sys_timepoint_expired(priv->xfer_timeout)) {
+		return;
+	}
+
+	LOG_WRN("Transaction on ep 0x%02x timed out",
+		priv->last_xfer != NULL ? priv->last_xfer->ep : 0);
+	vrt_xfer_drop_active(dev, -ETIMEDOUT);
 }
 
 static int vrt_handle_reply(const struct device *dev,
@@ -365,6 +873,14 @@ static int vrt_handle_reply(const struct device *dev,
 	struct uhc_transfer *const xfer = priv->last_xfer;
 	int ret = 0;
 
+	if (priv->last_pkt == NULL) {
+		LOG_DBG("Ignore reply for a dropped transfer");
+		return 0;
+	}
+
+	/* Clear the reference to avoid double free in vrt_xfer_drop_active() */
+	priv->last_pkt = NULL;
+
 	if (xfer == NULL) {
 		LOG_ERR("No transfers to handle");
 		ret = -ENODATA;
@@ -373,8 +889,13 @@ static int vrt_handle_reply(const struct device *dev,
 
 	switch (pkt->reply) {
 	case UVB_REPLY_NACK:
-		/* Move the transfer back to the list. */
-		sys_dlist_append(&frame->list, frame->ptr);
+		if (xfer->type == USB_EP_TYPE_ISO) {
+			/* Isochronous transfers are never retried. */
+			uhc_xfer_return(dev, xfer, 0);
+		} else {
+			/* Move the transfer back to the list. */
+			sys_dlist_append(&frame->list, frame->ptr);
+		}
 		priv->last_xfer = NULL;
 		LOG_DBG("NACK 0x%02x count %u", xfer->ep, frame->count);
 		break;
@@ -412,20 +933,32 @@ static void vrt_xfer_cleanup_cancelled(const struct device *dev)
 	}
 }
 
-static void xfer_work_handler(struct k_work *work)
+static void uhc_vrt_thread_handler(void *arg1, void *arg2, void *arg3)
 {
-	struct uhc_vrt_data *priv = CONTAINER_OF(work, struct uhc_vrt_data, work);
-	const struct device *dev = priv->dev;
-	struct uhc_vrt_event *ev;
+	const struct device *dev = arg1;
+	struct uhc_vrt_data *priv = uhc_get_private(dev);
 
-	while ((ev = k_fifo_get(&priv->fifo, K_NO_WAIT)) != NULL) {
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
+
+	while (true) {
+		struct uhc_vrt_event *ev;
 		bool schedule = false;
 		int err;
 
+		ev = k_fifo_get(&priv->fifo, K_FOREVER);
+
 		switch (ev->type) {
 		case UHC_VRT_EVT_SOF:
-			priv->frame_number++;
+			priv->sof_count++;
+			err = uvb_advert(priv->host_node, UVB_EVT_SOF, NULL,
+					 INT_TO_POINTER(UHC_FRAME_NUMBER(priv->sof_count)));
+			if (unlikely(err)) {
+				uhc_submit_event(dev, UHC_EVT_ERROR, err);
+			}
+
 			vrt_xfer_cleanup_cancelled(dev);
+			vrt_xfer_check_timeout(dev);
 			vrt_assemble_frame(dev);
 			schedule = true;
 			break;
@@ -460,36 +993,114 @@ static void sof_timer_handler(struct k_timer *timer)
 	vrt_event_submit(priv->dev, UHC_VRT_EVT_SOF, NULL);
 }
 
+/* Find the port occupied by node, or the first free port if node is NULL. */
+static struct uhc_vrt_port *vrt_port_find(struct uhc_vrt_data *const priv,
+					  const struct uvb_node *const node)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(priv->ports); i++) {
+		if (priv->ports[i].node == node) {
+			return &priv->ports[i];
+		}
+	}
+
+	return NULL;
+}
+
+static struct uhc_vrt_port *vrt_port_connect(struct uhc_vrt_data *const priv,
+					     const struct uvb_node *const source,
+					     const uint16_t speed_bit)
+{
+	struct uhc_vrt_port *port = vrt_port_find(priv, NULL);
+
+	if (port == NULL) {
+		LOG_ERR("No free port for %p", (void *)source);
+		return NULL;
+	}
+
+	port->node = source;
+	port->status.wPortStatus &= USB_HUB_PORT_STATUS_POWER;
+	port->status.wPortStatus |= USB_HUB_PORT_STATUS_CONNECTION | speed_bit;
+	port->status.wPortChange |= USB_HUB_PORT_CHANGE_CONNECTION;
+
+	return port;
+}
+
+static void vrt_port_disconnect(struct uhc_vrt_data *const priv,
+				const struct uvb_node *const source)
+{
+	struct uhc_vrt_port *port = vrt_port_find(priv, source);
+
+	if (port == NULL) {
+		LOG_ERR("Failed to disconnect, port not found");
+		return;
+	}
+
+	port->node = NULL;
+	port->status.wPortStatus &= USB_HUB_PORT_STATUS_POWER;
+	port->status.wPortChange |= USB_HUB_PORT_CHANGE_CONNECTION;
+}
+
+static void vrt_port_rwup(struct uhc_vrt_data *const priv,
+			  const struct uvb_node *const source)
+{
+	struct uhc_vrt_port *port = vrt_port_find(priv, source);
+
+	if (port != NULL && (port->status.wPortStatus & USB_HUB_PORT_STATUS_SUSPEND)) {
+		port->status.wPortStatus &= ~USB_HUB_PORT_STATUS_SUSPEND;
+		port->status.wPortChange |= USB_HUB_PORT_CHANGE_SUSPEND;
+	}
+
+	if (priv->bus_suspended) {
+		uhc_lock_internal(priv->dev, K_FOREVER);
+		uhc_vrt_bus_resume(priv->dev);
+		uhc_unlock_internal(priv->dev);
+	}
+}
+
 static void vrt_device_act(const struct device *dev,
+			   const struct uvb_node *const source,
 			   const enum uvb_device_act act)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
-	enum uhc_event_type type;
 
 	switch (act) {
 	case UVB_DEVICE_ACT_RWUP:
-		type = UHC_EVT_RWUP;
+		vrt_port_rwup(priv, source);
+		break;
+	case UVB_DEVICE_ACT_LS:
+		if (vrt_port_connect(priv, source, USB_HUB_PORT_STATUS_LOW_SPEED) == NULL) {
+			return;
+		}
 		break;
 	case UVB_DEVICE_ACT_FS:
-		type = UHC_EVT_DEV_CONNECTED_FS;
-		k_timer_start(&priv->sof_timer, K_MSEC(1), K_MSEC(1));
+		if (vrt_port_connect(priv, source, 0) == NULL) {
+			return;
+		}
 		break;
 	case UVB_DEVICE_ACT_HS:
-		type = UHC_EVT_DEV_CONNECTED_HS;
-		k_timer_start(&priv->sof_timer, K_MSEC(1), K_USEC(125));
+		if (vrt_port_connect(priv, source, USB_HUB_PORT_STATUS_HIGH_SPEED) == NULL) {
+			return;
+		}
+		break;
+	case UVB_DEVICE_ACT_CONNECTED:
+		if (uhc_is_enabled(dev)) {
+			uvb_advert(priv->host_node, UVB_EVT_VBUS_READY, source, NULL);
+		}
 		break;
 	case UVB_DEVICE_ACT_REMOVED:
-		type = UHC_EVT_DEV_REMOVED;
+		vrt_port_disconnect(priv, source);
 		break;
+	case UVB_DEVICE_ACT_SS:
+		__fallthrough;
 	default:
-		type = UHC_EVT_ERROR;
+		uhc_submit_event(dev, UHC_EVT_ERROR, 0);
+		break;
 	}
-
-	uhc_submit_event(dev, type, 0);
 }
 
 static void uhc_vrt_uvb_cb(const void *const vrt_priv,
 			   const enum uvb_event_type type,
+			   const struct uvb_node *const source,
 			   const void *data)
 {
 	const struct device *dev = vrt_priv;
@@ -497,19 +1108,10 @@ static void uhc_vrt_uvb_cb(const void *const vrt_priv,
 	if (type == UVB_EVT_REPLY) {
 		vrt_event_submit(dev, UHC_VRT_EVT_REPLY, data);
 	} else if (type == UVB_EVT_DEVICE_ACT) {
-		vrt_device_act(dev, POINTER_TO_INT(data));
+		vrt_device_act(dev, source, POINTER_TO_INT(data));
 	} else {
 		LOG_ERR("Unknown event %d for %p", type, dev);
 	}
-}
-
-static int uhc_vrt_sof_enable(const struct device *dev)
-{
-	struct uhc_vrt_data *priv = uhc_get_private(dev);
-
-	k_timer_start(&priv->sof_timer, K_MSEC(1), K_MSEC(1));
-
-	return 0;
 }
 
 /* Disable SOF generator and suspend bus */
@@ -518,45 +1120,43 @@ static int uhc_vrt_bus_suspend(const struct device *dev)
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
 
 	k_timer_stop(&priv->sof_timer);
+	priv->bus_suspended = true;
 
-	return uvb_advert(priv->host_node, UVB_EVT_SUSPEND, NULL);
+	return uvb_advert(priv->host_node, UVB_EVT_SUSPEND, NULL, NULL);
 }
 
 static int uhc_vrt_bus_reset(const struct device *dev)
 {
-	struct uhc_vrt_data *priv = uhc_get_private(dev);
-	int ret;
+	ARG_UNUSED(dev);
 
-	k_timer_stop(&priv->sof_timer);
-	ret = uvb_advert(priv->host_node, UVB_EVT_RESET, NULL);
-	/* TDRSTR */
-	k_msleep(50);
-	k_timer_start(&priv->sof_timer, K_MSEC(1), K_MSEC(1));
-
-	return ret;
+	return 0;
 }
 
 static int uhc_vrt_bus_resume(const struct device *dev)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
 
-	k_timer_start(&priv->sof_timer, K_MSEC(1), K_MSEC(1));
+	k_timer_start(&priv->sof_timer, priv->sof_period, priv->sof_period);
+	priv->bus_suspended = false;
 
-	return uvb_advert(priv->host_node, UVB_EVT_RESUME, NULL);
+	return uvb_advert(priv->host_node, UVB_EVT_RESUME, NULL, NULL);
 }
 
 static int uhc_vrt_enqueue(const struct device *dev,
 			   struct uhc_transfer *const xfer)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	k_spinlock_key_t key;
 
 	if (xfer->interval) {
-		xfer->start_frame = priv->frame_number + xfer->interval;
+		xfer->start_frame = priv->sof_count + xfer->interval;
 		LOG_DBG("New interrupt transfer s.f. %u f.n. %u interval %u",
-			xfer->start_frame, priv->frame_number, xfer->interval);
+			xfer->start_frame, priv->sof_count, xfer->interval);
 	}
 
+	key = k_spin_lock(&priv->lock);
 	uhc_xfer_append(dev, xfer);
+	k_spin_unlock(&priv->lock, key);
 
 	return 0;
 }
@@ -564,11 +1164,12 @@ static int uhc_vrt_enqueue(const struct device *dev,
 static int uhc_vrt_dequeue(const struct device *dev,
 			    struct uhc_transfer *const xfer)
 {
+	struct uhc_vrt_data *priv = uhc_get_private(dev);
 	struct uhc_data *data = dev->data;
 	struct uhc_transfer *tmp;
-	unsigned int key;
+	k_spinlock_key_t key;
 
-	key = irq_lock();
+	key = k_spin_lock(&priv->lock);
 
 	SYS_DLIST_FOR_EACH_CONTAINER(&data->ctrl_xfers, tmp, node) {
 		if (xfer == tmp) {
@@ -576,28 +1177,43 @@ static int uhc_vrt_dequeue(const struct device *dev,
 		}
 	}
 
-	irq_unlock(key);
+	k_spin_unlock(&priv->lock, key);
 
 	return 0;
 }
 
 static int uhc_vrt_init(const struct device *dev)
 {
+	struct uhc_vrt_data *priv = uhc_get_private(dev);
+
+	priv->sof_period = K_USEC(125);
+
 	return 0;
 }
 
 static int uhc_vrt_enable(const struct device *dev)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	int err;
 
-	return uvb_advert(priv->host_node, UVB_EVT_VBUS_READY, NULL);
+	err = uvb_advert(priv->host_node, UVB_EVT_VBUS_READY, NULL, NULL);
+	if (err != 0) {
+		return err;
+	}
+
+	/* The emulated root hub itself, permanently high-speed. */
+	priv->speed = USB_SPEED_SPEED_HS;
+	priv->sof_period = K_USEC(125);
+	k_timer_start(&priv->sof_timer, priv->sof_period, priv->sof_period);
+
+	return 0;
 }
 
 static int uhc_vrt_disable(const struct device *dev)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
 
-	return uvb_advert(priv->host_node, UVB_EVT_VBUS_REMOVED, NULL);
+	return uvb_advert(priv->host_node, UVB_EVT_VBUS_REMOVED, NULL, NULL);
 }
 
 static int uhc_vrt_shutdown(const struct device *dev)
@@ -619,15 +1235,26 @@ static int uhc_vrt_unlock(const struct device *dev)
 static int uhc_vrt_driver_preinit(const struct device *dev)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	const struct uhc_vrt_config *config = dev->config;
 	struct uhc_data *data = dev->data;
 
 	priv->dev = dev;
 	k_mutex_init(&data->mutex);
 
+	data->caps.hs = 1;
 	priv->host_node->priv = dev;
 	k_fifo_init(&priv->fifo);
-	k_work_init(&priv->work, xfer_work_handler);
 	k_timer_init(&priv->sof_timer, sof_timer_handler, NULL);
+
+	/* USB 2.0 11.23.2.1: PortPwrCtrlMask should have all bits set to 1B. */
+	memset(vrt_hub_desc.PortPwrCtrlMask, 0xFF, sizeof(vrt_hub_desc.PortPwrCtrlMask));
+
+	k_thread_create(&priv->thread_data, config->thread_stack,
+			config->stack_size, uhc_vrt_thread_handler,
+			(void *)dev, NULL, NULL,
+			K_PRIO_COOP(CONFIG_UHC_VIRTUAL_THREAD_PRIORITY),
+			K_ESSENTIAL, K_NO_WAIT);
+	k_thread_name_set(&priv->thread_data, dev->name);
 
 	LOG_DBG("Virtual UHC pre-initialized");
 
@@ -643,26 +1270,35 @@ static DEVICE_API(uhc, uhc_vrt_api) = {
 	.shutdown = uhc_vrt_shutdown,
 
 	.bus_reset = uhc_vrt_bus_reset,
-	.sof_enable  = uhc_vrt_sof_enable,
 	.bus_suspend = uhc_vrt_bus_suspend,
 	.bus_resume = uhc_vrt_bus_resume,
 
 	.ep_enqueue = uhc_vrt_enqueue,
 	.ep_dequeue = uhc_vrt_dequeue,
+	.root_hub_control = vrt_root_hub_control,
+	.root_hub_status = vrt_root_hub_status,
 };
 
 #define DT_DRV_COMPAT zephyr_uhc_virtual
 
 #define UHC_VRT_DEVICE_DEFINE(n)						\
+	K_THREAD_STACK_DEFINE(uhc_vrt_stack_area_##n,				\
+			       CONFIG_UHC_VIRTUAL_STACK_SIZE);			\
+										\
 	UVB_HOST_NODE_DEFINE(uhc_bc_##n,					\
 			     DT_NODE_FULL_NAME(DT_DRV_INST(n)),			\
 			     uhc_vrt_uvb_cb);					\
 										\
+	static struct usb_hub_status uhc_vrt_hub_status_##n;			\
+										\
 	static const struct uhc_vrt_config uhc_vrt_config_##n = {		\
+		.thread_stack = uhc_vrt_stack_area_##n,				\
+		.stack_size = K_THREAD_STACK_SIZEOF(uhc_vrt_stack_area_##n),	\
 	};									\
 										\
 	static struct uhc_vrt_data uhc_priv_##n = {				\
 		.host_node = &uhc_bc_##n,					\
+		.hub_status = &uhc_vrt_hub_status_##n,				\
 	};									\
 										\
 	static struct uhc_data uhc_data_##n = {					\
