@@ -74,4 +74,7 @@ config LV_Z_DEMO_WIDGETS_OTHER_DISPS
 
 endchoice
 
+configdefault CPU_LOAD
+	default y if LV_USE_SYSMON
+
 source "Kconfig.zephyr"
