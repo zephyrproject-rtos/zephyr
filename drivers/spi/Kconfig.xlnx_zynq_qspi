@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Simon Maurer <mail@maurer.systems>
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_XLNX_ZYNQ_QSPI
+	bool "Xilinx Zynq Quad SPI driver"
+	default y
+	depends on DT_HAS_XLNX_ZYNQ_QSPI_ENABLED
+	help
+	  Enable Xilinx Zynq Quad SPI driver for accessing flash.
