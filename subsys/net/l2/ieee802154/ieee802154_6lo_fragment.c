@@ -511,14 +511,27 @@ static inline enum net_verdict fragment_add_to_cache(struct net_pkt *pkt)
 	struct net_buf *frag;
 	uint16_t size;
 	uint16_t tag;
+	uint8_t hdr_len;
 	uint8_t type;
 	int ret;
 
 	frag = pkt->buffer;
 	type = get_datagram_type(frag->data);
 
-	if ((type == NET_6LO_DISPATCH_FRAG1 && frag->len < NET_6LO_FRAG1_HDR_LEN) ||
-	    (type == NET_6LO_DISPATCH_FRAGN && frag->len < NET_6LO_FRAGN_HDR_LEN)) {
+	/* Only FRAG1 (11000xxx) and FRAGN (11100xxx) are supported. Other
+	 * dispatch values in this range, such as RFC 8025 paging or RFC 8931
+	 * RFRAG, are not implemented.
+	 */
+	if (type == NET_6LO_DISPATCH_FRAG1) {
+		hdr_len = NET_6LO_FRAG1_HDR_LEN;
+	} else if (type == NET_6LO_DISPATCH_FRAGN) {
+		hdr_len = NET_6LO_FRAGN_HDR_LEN;
+	} else {
+		NET_ERR("Unsupported fragment dispatch (0x%02x): fragment dropped", frag->data[0]);
+		return NET_DROP;
+	}
+
+	if (frag->len < hdr_len) {
 		NET_ERR("Fragment too short (%u): fragment dropped", frag->len);
 		return NET_DROP;
 	}
