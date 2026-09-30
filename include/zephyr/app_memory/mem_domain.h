@@ -137,11 +137,19 @@ int k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
 /**
  * @brief De-initialize a memory domain.
  *
+ * Release a memory domain that has no member threads left. The domain's
+ * partition table is cleared and any architecture-specific data is
+ * released. The domain may be initialized again with k_mem_domain_init().
+ *
+ * The default memory domain cannot be de-initialized.
+ *
  * @param domain The memory domain to be de-initialized.
  *
  * @retval 0 if successful
  * @retval -EBUSY if there are still threads associated with this memory domain.
  * @retval -EINVAL if invalid parameter supplied
+ * @retval -ENOTSUP if the architecture keeps per-domain data it cannot release
+ * @retval -ENOMEM if the architecture failed to release its per-domain data
  */
 int k_mem_domain_deinit(struct k_mem_domain *domain);
 
