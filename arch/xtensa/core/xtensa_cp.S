@@ -5,15 +5,18 @@
  */
 
 #include <zephyr/offsets.h>
+#include <zephyr/arch/xtensa/cp_sharing.h>
 
-#include <xtensa/config/tie.h>
-#include <xtensa/config/tie-asm.h>
+/* The save and load macros below are passed A3 as their only temporary */
+#if XTENSA_CP_NUM_ATMPS > 1
+#error "Shared coprocessor needs more than one temporary register"
+#endif
 
-#if defined(CONFIG_XTENSA_EAGER_HIFI_SHARING)
+#if defined(CONFIG_XTENSA_EAGER_CP_SHARING)
 /*
- * Load the HiFi registers from the cp buffer in the BSA. Round the address
- * of this buffer up to XCHAL_CP1_SA_ALIGN bytes to guarantee the necessary
- * alignment.
+ * Load the coprocessor registers from the cp buffer in the BSA. Round the
+ * address of this buffer up to XTENSA_CP_SA_ALIGN bytes to guarantee the
+ * necessary alignment.
  *
  * Upon entry ...
  * A0 - return address (do not modify)
@@ -24,18 +27,18 @@
 .global _xtensa_cp_load
 .align 4
 _xtensa_cp_load:
-        addi a2, a1, (___xtensa_irq_bsa_t_cp_OFFSET + XCHAL_CP1_SA_ALIGN - 1)
-        movi a3, ~(XCHAL_CP1_SA_ALIGN - 1)
+        addi a2, a1, (___xtensa_irq_bsa_t_cp_OFFSET + XTENSA_CP_SA_ALIGN - 1)
+        movi a3, ~(XTENSA_CP_SA_ALIGN - 1)
         and a2, a2, a3
 
-        xchal_cp1_load a2 a3 a3 a3 a3    /* Only A2 and A3 are used by macro */
+        XTENSA_CP_LOAD a2 a3 a3 a3 a3    /* Only A2 and A3 are used by macro */
 
 	ret
 
 /*
- * Save the HiFi registers into the cp buffer in the BSA. Round the address
- * of this buffer up to XCHAL_CP1_SA_ALIGN bytes to guarantee the necessary
- * alignment.
+ * Save the coprocessor registers into the cp buffer in the BSA. Round the
+ * address of this buffer up to XTENSA_CP_SA_ALIGN bytes to guarantee the
+ * necessary alignment.
  *
  * A0 - return address (do not modify)
  * A1 - address of BSA (do not modify)
@@ -45,16 +48,17 @@ _xtensa_cp_load:
 .global _xtensa_cp_save
 .align 4
 _xtensa_cp_save:
-        addi a2, a1, (___xtensa_irq_bsa_t_cp_OFFSET + XCHAL_CP1_SA_ALIGN - 1)
-        movi a3, ~(XCHAL_CP1_SA_ALIGN - 1)
+        addi a2, a1, (___xtensa_irq_bsa_t_cp_OFFSET + XTENSA_CP_SA_ALIGN - 1)
+        movi a3, ~(XTENSA_CP_SA_ALIGN - 1)
         and a2, a2, a3
 
-        xchal_cp1_store a2 a3 a3 a3 a3  /* Only A2 and A3 are used by macro */
+        XTENSA_CP_STORE a2 a3 a3 a3 a3  /* Only A2 and A3 are used by macro */
 
 	ret
-#elif defined(CONFIG_XTENSA_LAZY_HIFI_SHARING)
+#elif defined(CONFIG_XTENSA_LAZY_CP_SHARING)
 /*
- * Load the HiFi registers from the HiFi buffer in the k_thread structure.
+ * Load the coprocessor registers from the cp buffer in the k_thread
+ * structure.
  */
 .global xtensa_lazy_cp_load
 .align 4
@@ -66,11 +70,12 @@ xtensa_lazy_cp_load:
 	mov a0, a4
 
 	/* A2 should be address of cp storage; A3 is scratch */
-	xchal_cp1_load a2 a3 a3 a3 a3
+	XTENSA_CP_LOAD a2 a3 a3 a3 a3
 	retw
 
 /*
- * Save the HiFi registers to the HiFi buffer in the k_thread structure.
+ * Save the coprocessor registers to the cp buffer in the k_thread
+ * structure.
  */
 .global xtensa_lazy_cp_save
 .align 4
@@ -82,6 +87,6 @@ xtensa_lazy_cp_save:
 	mov a0, a4
 
 	/* A2 should be address of cp storage; A3 is scratch */
-	xchal_cp1_store a2 a3 a3 a3 a3  /* Only A2 and A3 are used by macro */
+	XTENSA_CP_STORE a2 a3 a3 a3 a3  /* Only A2 and A3 are used by macro */
 	retw
 #endif

@@ -197,7 +197,7 @@ _restore_ps_after:
 	FPU_REG_RESTORE
 #endif
 
-#if defined(CONFIG_XTENSA_EAGER_HIFI_SHARING)
+#if defined(CONFIG_XTENSA_EAGER_CP_SHARING)
 .extern _xtensa_cp_load
 	call0 _xtensa_cp_load
 #endif
@@ -346,12 +346,12 @@ __switch_swap_same_domain:
 	movi a0, _switch_restore_pc
 	s32i a0, a1, ___xtensa_irq_bsa_t_pc_OFFSET
 
-#if defined(CONFIG_XTENSA_EAGER_HIFI_SHARING)
+#if defined(CONFIG_XTENSA_EAGER_CP_SHARING)
 	call0 _xtensa_cp_save
-#elif defined(CONFIG_XTENSA_LAZY_HIFI_SHARING)
-	/* Disable HiFi sharing */
+#elif defined(CONFIG_XTENSA_LAZY_CP_SHARING)
+	/* Disable the shared coprocessor */
 	rsr a6, CPENABLE
-	movi a7, ~(1 << XCHAL_CP_ID_AUDIOENGINELX)
+	movi a7, ~(1 << XTENSA_CP_ID)
 	and a6, a6, a7
 	wsr a6, CPENABLE
 #endif
