@@ -2055,6 +2055,18 @@ WiFi
   supplicant. Applications that matched on the errno value have to match on the status
   value instead. (:github:`116704`)
 
+* The Nordic nRF70 devicetree compatibles that encoded the bus type have been replaced by bus-agnostic
+  ones, now that the nRF70 driver also supports MSPI. The bus is selected by the ``on-bus`` of
+  the parent node. Out-of-tree boards, shields, and devicetree overlays instantiating an nRF70
+  node must update the ``compatible`` property as follows:
+
+  * ``nordic,nrf7000-spi`` and ``nordic,nrf7000-qspi`` -> :dtcompatible:`nordic,nrf7000`
+  * ``nordic,nrf7001-spi`` and ``nordic,nrf7001-qspi`` -> :dtcompatible:`nordic,nrf7001`
+  * ``nordic,nrf7002-spi`` and ``nordic,nrf7002-qspi`` -> :dtcompatible:`nordic,nrf7002`
+
+  Out-of-tree code that references the generated devicetree symbols of the old compatibles
+  (for example ``DT_DRV_COMPAT`` or ``DT_HAS_NORDIC_NRF7002_SPI_ENABLED``) must be updated as well.
+
 Xen
 ===
 
