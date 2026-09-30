@@ -4,16 +4,23 @@
  */
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/sensor/bmi323.h>
 
 &i2c0 {
+	/* Configured from devicetree, to cover the non-default path. */
 	bmi323_i2c: bmi323@68 {
 		compatible = "bosch,bmi323";
 		reg = <0x68>;
 		int-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+		accel-pwr-mode = <BMI323_DT_PWR_MODE_HIGH_PERF>;
+		accel-odr = <BMI323_DT_ODR_200_HZ>;
+		gyro-pwr-mode = <BMI323_DT_PWR_MODE_LOW_POWER>;
+		gyro-odr = <BMI323_DT_ODR_50_HZ>;
 	};
 };
 
 &spi0 {
+	/* Left at the binding defaults, to cover the power-on reset path. */
 	bmi323_spi: bmi323@0 {
 		compatible = "bosch,bmi323";
 		reg = <0>;

@@ -175,12 +175,19 @@
 #define IMU_BOSCH_BMI323_REG_CMD_CMD_SIZE	    (0x10)
 #define IMU_BOSCH_BMI323_REG_CMD_CMD_VAL_SOFT_RESET (0xDEAF)
 
+#define IMU_BOSCH_BMI323_ACC_FIRST_SAMPLE_TIME_MS  20
+#define IMU_BOSCH_BMI323_GYRO_FIRST_SAMPLE_TIME_MS 60
+
 #define IMU_BOSCH_BMI323_REG_MASK(reg, field)                                                      \
 	(BIT_MASK(IMU_BOSCH_BMI323_REG_##reg##_##field##_SIZE)                                     \
 	 << IMU_BOSCH_BMI323_REG_##reg##_##field##_OFFSET)
 
 #define IMU_BOSCH_BMI323_REG_VALUE(reg, field, val)                                                \
 	(IMU_BOSCH_BMI323_REG_##reg##_##field##_VAL_##val                                          \
+	 << IMU_BOSCH_BMI323_REG_##reg##_##field##_OFFSET)
+
+#define IMU_BOSCH_BMI323_REG_FIELD(reg, field, val)                                                \
+	(((val) & BIT_MASK(IMU_BOSCH_BMI323_REG_##reg##_##field##_SIZE))                           \
 	 << IMU_BOSCH_BMI323_REG_##reg##_##field##_OFFSET)
 
 #define IMU_BOSCH_BMI323_REG_VALUE_GET_FIELD(reg_value, reg, field)                                \
@@ -224,6 +231,13 @@ struct bosch_bmi323_data {
 	uint32_t acc_full_scale;
 	uint32_t gyro_full_scale;
 
+	uint16_t saved_acc_conf;
+	uint16_t saved_gyro_conf;
+	uint16_t saved_int_map1;
+	uint16_t saved_int_map2;
+	uint16_t saved_feature_io0;
+	bool pm_state_saved;
+
 	struct gpio_callback gpio_callback;
 	const struct sensor_trigger *trigger;
 	sensor_trigger_handler_t trigger_handler;
@@ -264,6 +278,15 @@ struct bmi323_reading {
 	int16_t gyro_z;
 	int16_t temperature;
 };
+
+/* The BMI323 returns 0x8000 in a data register when no valid sample is
+ * available, e.g. the sensor is disabled or its first conversion has not
+ * completed yet.
+ */
+static inline bool bosch_bmi323_value_is_valid(int16_t value)
+{
+	return ((uint16_t)value != 0x8000);
+}
 
 /* RTIO support structures */
 #ifdef CONFIG_SENSOR_ASYNC_API

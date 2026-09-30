@@ -10,6 +10,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/dt-bindings/sensor/bmi323.h>
 
 #include "bmi323.h"
 
@@ -36,6 +37,11 @@ struct bosch_bmi323_config {
 	const struct gpio_dt_spec int_gpio;
 
 	const bosch_bmi323_gpio_callback_ptr int_gpio_callback;
+
+	const uint8_t acc_pwr_mode;
+	const uint8_t acc_odr;
+	const uint8_t gyro_pwr_mode;
+	const uint8_t gyro_odr;
 };
 
 static int bosch_bmi323_bus_init(const struct device *dev)
@@ -67,32 +73,28 @@ static int bosch_bmi323_bus_write_words(const struct device *dev, uint8_t offset
 	return bus->api->write_words(bus->context, offset, words, words_count);
 }
 
-static int32_t bosch_bmi323_lsb_from_fullscale(int64_t fullscale)
-{
-	return (fullscale * 1000) / INT16_MAX;
-}
-
 /* lsb is the value of one 1/1000000 LSB */
 static int64_t bosch_bmi323_value_to_micro(int16_t value, int32_t lsb)
 {
 	return ((int64_t)value) * lsb;
 }
 
-/* lsb is the value of one 1/1000000 LSB */
-static void bosch_bmi323_value_to_sensor_value(struct sensor_value *result, int16_t value,
-						   int32_t lsb)
+/* fullscale is the accelerometer range in milli-G */
+static void bosch_bmi323_acc_to_sensor_value(struct sensor_value *result, int16_t value,
+					     int64_t fullscale)
 {
-	int64_t ll_value = (int64_t)value * lsb;
-	int32_t int_part = (int32_t)(ll_value / 1000000);
-	int32_t frac_part = (int32_t)(ll_value % 1000000);
+	int64_t micro = ((int64_t)value * fullscale * SENSOR_G) / (1000LL * INT16_MAX);
 
-	result->val1 = int_part;
-	result->val2 = frac_part;
+	(void)sensor_value_from_micro(result, micro);
 }
 
-static bool bosch_bmi323_value_is_valid(int16_t value)
+/* fullscale is the gyroscope range in milli-dps */
+static void bosch_bmi323_gyro_to_sensor_value(struct sensor_value *result, int16_t value,
+					      int64_t fullscale)
 {
-	return ((uint16_t)value == 0x8000) ? false : true;
+	int64_t micro = ((int64_t)value * fullscale * SENSOR_PI) / (180000LL * INT16_MAX);
+
+	(void)sensor_value_from_micro(result, micro);
 }
 
 static int bosch_bmi323_validate_chip_id(const struct device *dev)
@@ -891,7 +893,6 @@ static int bosch_bmi323_driver_api_fetch_acc_samples(const struct device *dev)
 	struct sensor_value full_scale;
 	int16_t *buf = (int16_t *)data->acc_samples;
 	int ret;
-	int32_t lsb;
 
 	if (data->acc_full_scale == 0) {
 		ret = bosch_bmi323_driver_api_get_acc_full_scale(dev, &full_scale);
@@ -912,15 +913,15 @@ static int bosch_bmi323_driver_api_fetch_acc_samples(const struct device *dev)
 	if ((bosch_bmi323_value_is_valid(buf[0]) == false) ||
 		(bosch_bmi323_value_is_valid(buf[1]) == false) ||
 		(bosch_bmi323_value_is_valid(buf[2]) == false)) {
+		data->acc_samples_valid = false;
+
 		return -ENODATA;
 	}
 
-	lsb = bosch_bmi323_lsb_from_fullscale(data->acc_full_scale);
-
 	/* Reuse vector backwards to avoid overwriting the raw values */
-	bosch_bmi323_value_to_sensor_value(&data->acc_samples[2], buf[2], lsb);
-	bosch_bmi323_value_to_sensor_value(&data->acc_samples[1], buf[1], lsb);
-	bosch_bmi323_value_to_sensor_value(&data->acc_samples[0], buf[0], lsb);
+	bosch_bmi323_acc_to_sensor_value(&data->acc_samples[2], buf[2], data->acc_full_scale);
+	bosch_bmi323_acc_to_sensor_value(&data->acc_samples[1], buf[1], data->acc_full_scale);
+	bosch_bmi323_acc_to_sensor_value(&data->acc_samples[0], buf[0], data->acc_full_scale);
 
 	data->acc_samples_valid = true;
 
@@ -933,7 +934,6 @@ static int bosch_bmi323_driver_api_fetch_gyro_samples(const struct device *dev)
 	struct sensor_value full_scale;
 	int16_t *buf = (int16_t *)data->gyro_samples;
 	int ret;
-	int32_t lsb;
 
 	if (data->gyro_full_scale == 0) {
 		ret = bosch_bmi323_driver_api_get_gyro_full_scale(dev, &full_scale);
@@ -955,15 +955,15 @@ static int bosch_bmi323_driver_api_fetch_gyro_samples(const struct device *dev)
 	if ((bosch_bmi323_value_is_valid(buf[0]) == false) ||
 		(bosch_bmi323_value_is_valid(buf[1]) == false) ||
 		(bosch_bmi323_value_is_valid(buf[2]) == false)) {
+		data->gyro_samples_valid = false;
+
 		return -ENODATA;
 	}
 
-	lsb = bosch_bmi323_lsb_from_fullscale(data->gyro_full_scale);
-
 	/* Reuse vector backwards to avoid overwriting the raw values */
-	bosch_bmi323_value_to_sensor_value(&data->gyro_samples[2], buf[2], lsb);
-	bosch_bmi323_value_to_sensor_value(&data->gyro_samples[1], buf[1], lsb);
-	bosch_bmi323_value_to_sensor_value(&data->gyro_samples[0], buf[0], lsb);
+	bosch_bmi323_gyro_to_sensor_value(&data->gyro_samples[2], buf[2], data->gyro_full_scale);
+	bosch_bmi323_gyro_to_sensor_value(&data->gyro_samples[1], buf[1], data->gyro_full_scale);
+	bosch_bmi323_gyro_to_sensor_value(&data->gyro_samples[0], buf[0], data->gyro_full_scale);
 
 	data->gyro_samples_valid = true;
 
@@ -984,6 +984,8 @@ static int bosch_bmi323_driver_api_fetch_temperature(const struct device *dev)
 	}
 
 	if (bosch_bmi323_value_is_valid(buf) == false) {
+		data->temperature_valid = false;
+
 		return -ENODATA;
 	}
 
@@ -995,7 +997,30 @@ static int bosch_bmi323_driver_api_fetch_temperature(const struct device *dev)
 
 	data->temperature_valid = (ret == 0);
 
-	return 0;
+	return ret;
+}
+
+static int bosch_bmi323_fetch_all_channels(const struct device *dev)
+{
+	static int (*const fetch[])(const struct device *dev) = {
+		bosch_bmi323_driver_api_fetch_acc_samples,
+		bosch_bmi323_driver_api_fetch_gyro_samples,
+		bosch_bmi323_driver_api_fetch_temperature,
+	};
+	bool fetched_any = false;
+	int ret;
+
+	for (size_t i = 0; i < ARRAY_SIZE(fetch); i++) {
+		ret = fetch[i](dev);
+
+		if (ret == 0) {
+			fetched_any = true;
+		} else if (ret != -ENODATA) {
+			return ret;
+		}
+	}
+
+	return (fetched_any == false) ? -ENODATA : 0;
 }
 
 static int bosch_bmi323_driver_api_sample_fetch(const struct device *dev, enum sensor_channel chan)
@@ -1006,11 +1031,17 @@ static int bosch_bmi323_driver_api_sample_fetch(const struct device *dev, enum s
 	k_mutex_lock(&data->lock, K_FOREVER);
 
 	switch (chan) {
+	case SENSOR_CHAN_ACCEL_X:
+	case SENSOR_CHAN_ACCEL_Y:
+	case SENSOR_CHAN_ACCEL_Z:
 	case SENSOR_CHAN_ACCEL_XYZ:
 		ret = bosch_bmi323_driver_api_fetch_acc_samples(dev);
 
 		break;
 
+	case SENSOR_CHAN_GYRO_X:
+	case SENSOR_CHAN_GYRO_Y:
+	case SENSOR_CHAN_GYRO_Z:
 	case SENSOR_CHAN_GYRO_XYZ:
 		ret = bosch_bmi323_driver_api_fetch_gyro_samples(dev);
 
@@ -1022,24 +1053,12 @@ static int bosch_bmi323_driver_api_sample_fetch(const struct device *dev, enum s
 		break;
 
 	case SENSOR_CHAN_ALL:
-		ret = bosch_bmi323_driver_api_fetch_acc_samples(dev);
-
-		if (ret < 0) {
-			break;
-		}
-
-		ret = bosch_bmi323_driver_api_fetch_gyro_samples(dev);
-
-		if (ret < 0) {
-			break;
-		}
-
-		ret = bosch_bmi323_driver_api_fetch_temperature(dev);
+		ret = bosch_bmi323_fetch_all_channels(dev);
 
 		break;
 
 	default:
-		ret = -ENODEV;
+		ret = -ENOTSUP;
 
 		break;
 	}
@@ -1047,6 +1066,46 @@ static int bosch_bmi323_driver_api_sample_fetch(const struct device *dev, enum s
 	k_mutex_unlock(&data->lock);
 
 	return ret;
+}
+
+static void bosch_bmi323_copy_axes(struct sensor_value *val, const struct sensor_value *samples,
+				   enum sensor_channel chan)
+{
+	size_t first;
+	size_t last;
+
+	switch (chan) {
+	case SENSOR_CHAN_ACCEL_X:
+	case SENSOR_CHAN_GYRO_X:
+		first = 0;
+		last = 0;
+
+		break;
+
+	case SENSOR_CHAN_ACCEL_Y:
+	case SENSOR_CHAN_GYRO_Y:
+		first = 1;
+		last = 1;
+
+		break;
+
+	case SENSOR_CHAN_ACCEL_Z:
+	case SENSOR_CHAN_GYRO_Z:
+		first = 2;
+		last = 2;
+
+		break;
+
+	default:
+		first = 0;
+		last = 2;
+
+		break;
+	}
+
+	for (size_t i = first; i <= last; i++, val++) {
+		*val = samples[i];
+	}
 }
 
 static int bosch_bmi323_driver_api_channel_get(const struct device *dev, enum sensor_channel chan,
@@ -1058,6 +1117,9 @@ static int bosch_bmi323_driver_api_channel_get(const struct device *dev, enum se
 	k_mutex_lock(&data->lock, K_FOREVER);
 
 	switch (chan) {
+	case SENSOR_CHAN_ACCEL_X:
+	case SENSOR_CHAN_ACCEL_Y:
+	case SENSOR_CHAN_ACCEL_Z:
 	case SENSOR_CHAN_ACCEL_XYZ:
 		if (data->acc_samples_valid == false) {
 			ret = -ENODATA;
@@ -1065,10 +1127,13 @@ static int bosch_bmi323_driver_api_channel_get(const struct device *dev, enum se
 			break;
 		}
 
-		memcpy(val, data->acc_samples, sizeof(data->acc_samples));
+		bosch_bmi323_copy_axes(val, data->acc_samples, chan);
 
 		break;
 
+	case SENSOR_CHAN_GYRO_X:
+	case SENSOR_CHAN_GYRO_Y:
+	case SENSOR_CHAN_GYRO_Z:
 	case SENSOR_CHAN_GYRO_XYZ:
 		if (data->gyro_samples_valid == false) {
 			ret = -ENODATA;
@@ -1076,7 +1141,7 @@ static int bosch_bmi323_driver_api_channel_get(const struct device *dev, enum se
 			break;
 		}
 
-		memcpy(val, data->gyro_samples, sizeof(data->gyro_samples));
+		bosch_bmi323_copy_axes(val, data->gyro_samples, chan);
 
 		break;
 
@@ -1170,6 +1235,44 @@ static void bosch_bmi323_irq_callback_handler(struct k_work *item)
 	k_mutex_unlock(&data->lock);
 }
 
+static int bosch_bmi323_apply_initial_config(const struct device *dev)
+{
+	const struct bosch_bmi323_config *config = (const struct bosch_bmi323_config *)dev->config;
+	uint16_t buf[2];
+	int ret;
+
+	ret = bosch_bmi323_bus_read_words(dev, IMU_BOSCH_BMI323_REG_ACC_CONF, buf, 2);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	buf[0] &= ~(IMU_BOSCH_BMI323_REG_MASK(ACC_CONF, ODR) |
+		    IMU_BOSCH_BMI323_REG_MASK(ACC_CONF, MODE));
+	buf[0] |= IMU_BOSCH_BMI323_REG_FIELD(ACC_CONF, ODR, config->acc_odr) |
+		  IMU_BOSCH_BMI323_REG_FIELD(ACC_CONF, MODE, config->acc_pwr_mode);
+
+	buf[1] &= ~(IMU_BOSCH_BMI323_REG_MASK(GYRO_CONF, ODR) |
+		    IMU_BOSCH_BMI323_REG_MASK(GYRO_CONF, MODE));
+	buf[1] |= IMU_BOSCH_BMI323_REG_FIELD(GYRO_CONF, ODR, config->gyro_odr) |
+		  IMU_BOSCH_BMI323_REG_FIELD(GYRO_CONF, MODE, config->gyro_pwr_mode);
+
+	ret = bosch_bmi323_bus_write_words(dev, IMU_BOSCH_BMI323_REG_ACC_CONF, buf, 2);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* The gyroscope takes the longer of the two, so it covers both. */
+	if (config->gyro_pwr_mode != BMI323_DT_PWR_MODE_DISABLED) {
+		k_msleep(IMU_BOSCH_BMI323_GYRO_FIRST_SAMPLE_TIME_MS);
+	} else if (config->acc_pwr_mode != BMI323_DT_PWR_MODE_DISABLED) {
+		k_msleep(IMU_BOSCH_BMI323_ACC_FIRST_SAMPLE_TIME_MS);
+	}
+
+	return 0;
+}
+
 static int bosch_bmi323_pm_resume(const struct device *dev)
 {
 	const struct bosch_bmi323_config *config = (const struct bosch_bmi323_config *)dev->config;
@@ -1200,9 +1303,11 @@ static int bosch_bmi323_pm_resume(const struct device *dev)
 		return ret;
 	}
 
-	/* Soft reset restores chip to power-on defaults: 8g accel, 2000dps gyro */
-	data->acc_full_scale = 8000;  /* ±8G in milli-G */
-	data->gyro_full_scale = 2000000;  /* ±2000dps in micro-dps */
+	if (!data->pm_state_saved) {
+		/* Soft reset restores chip to power-on defaults: 8g accel, 2000dps gyro */
+		data->acc_full_scale = 8000;  /* ±8G in milli-G */
+		data->gyro_full_scale = 2000000;  /* ±2000dps in milli-dps */
+	}
 
 	ret = bosch_bmi323_bus_init(dev);
 
@@ -1227,24 +1332,113 @@ static int bosch_bmi323_pm_resume(const struct device *dev)
 		return ret;
 	}
 
+	if (data->pm_state_saved) {
+		uint16_t buf[2];
+
+		buf[0] = data->saved_acc_conf;
+		buf[1] = data->saved_gyro_conf;
+
+		ret = bosch_bmi323_bus_write_words(dev, IMU_BOSCH_BMI323_REG_ACC_CONF, buf, 2);
+
+		if (ret < 0) {
+			LOG_WRN("Failed to restore acc/gyro config");
+
+			return ret;
+		}
+
+		buf[0] = data->saved_feature_io0;
+
+		ret = bosch_bmi323_bus_write_words(dev, IMU_BOSCH_BMI323_REG_FEATURE_IO0, buf, 1);
+
+		if (ret < 0) {
+			LOG_WRN("Failed to restore feature config");
+
+			return ret;
+		}
+
+		buf[0] = IMU_BOSCH_BMI323_REG_VALUE(FEATURE_IO_STATUS, STATUS, SET);
+
+		ret = bosch_bmi323_bus_write_words(dev, IMU_BOSCH_BMI323_REG_FEATURE_IO_STATUS, buf,
+						   1);
+
+		if (ret < 0) {
+			LOG_WRN("Failed to commit feature config");
+
+			return ret;
+		}
+
+		buf[0] = data->saved_int_map1;
+		buf[1] = data->saved_int_map2;
+
+		ret = bosch_bmi323_bus_write_words(dev, IMU_BOSCH_BMI323_REG_INT_MAP1, buf, 2);
+
+		if (ret < 0) {
+			LOG_WRN("Failed to restore interrupt mapping");
+
+			return ret;
+		}
+	} else {
+		ret = bosch_bmi323_apply_initial_config(dev);
+
+		if (ret < 0) {
+			LOG_WRN("Failed to apply initial config");
+
+			return ret;
+		}
+	}
+
 	ret = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
+		/* Triggers will not work, but fetch and get still do. */
 		LOG_WRN("Failed to configure int");
 	}
 
-	return ret;
+	return 0;
 }
 
 #ifdef CONFIG_PM_DEVICE
 static int bosch_bmi323_pm_suspend(const struct device *dev)
 {
 	const struct bosch_bmi323_config *config = (const struct bosch_bmi323_config *)dev->config;
+	struct bosch_bmi323_data *data = (struct bosch_bmi323_data *)dev->data;
+	uint16_t buf[2];
 	int ret;
 
 	ret = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_DISABLE);
 	if (ret < 0) {
 		LOG_WRN("Failed to disable int");
 	}
+
+	ret = bosch_bmi323_bus_read_words(dev, IMU_BOSCH_BMI323_REG_ACC_CONF, buf, 2);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	data->saved_acc_conf = buf[0];
+	data->saved_gyro_conf = buf[1];
+
+	ret = bosch_bmi323_bus_read_words(dev, IMU_BOSCH_BMI323_REG_INT_MAP1, buf, 2);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	data->saved_int_map1 = buf[0];
+	data->saved_int_map2 = buf[1];
+
+	ret = bosch_bmi323_bus_read_words(dev, IMU_BOSCH_BMI323_REG_FEATURE_IO0, buf, 1);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	data->saved_feature_io0 = buf[0];
+	data->pm_state_saved = true;
+
+	data->acc_samples_valid = false;
+	data->gyro_samples_valid = false;
+	data->temperature_valid = false;
 
 	/* Soft reset device to put it into suspend */
 	return bosch_bmi323_soft_reset(dev);
@@ -1295,7 +1489,7 @@ static int bosch_bmi323_init(const struct device *dev)
 
 	/* Initialize to chip power-on defaults: 8g accel, 2000dps gyro */
 	data->acc_full_scale = 8000;  /* ±8G in milli-G */
-	data->gyro_full_scale = 2000000;  /* ±2000dps in micro-dps */
+	data->gyro_full_scale = 2000000;  /* ±2000dps in milli-dps */
 
 #ifdef CONFIG_SENSOR_ASYNC_API
 	/* Init MPSC ring buffer indices */
@@ -1388,12 +1582,17 @@ static int bosch_bmi323_init(const struct device *dev)
 		.bus = &bosch_bmi323_bus_api##inst,                                                \
 		.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                                \
 		.int_gpio_callback = bosch_bmi323_irq_callback##inst,                              \
+		.acc_pwr_mode = DT_INST_PROP(inst, accel_pwr_mode),                                \
+		.acc_odr = DT_INST_PROP(inst, accel_odr),                                          \
+		.gyro_pwr_mode = DT_INST_PROP(inst, gyro_pwr_mode),                                \
+		.gyro_odr = DT_INST_PROP(inst, gyro_odr),                                          \
 	};                                                                                         \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, bosch_bmi323_pm_action);                                    \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, bosch_bmi323_init, PM_DEVICE_DT_INST_GET(inst),         \
 					 &bosch_bmi323_data_##inst, &bosch_bmi323_config_##inst,\
-					 POST_KERNEL, 99, &bosch_bmi323_api);
+					 POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,                 \
+					 &bosch_bmi323_api);
 
 DT_INST_FOREACH_STATUS_OKAY(BMI323_DEVICE)
