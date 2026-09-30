@@ -1,0 +1,22 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/wisblock-sensor-slot.h>
+
+/ {
+	aliases {
+		accel0 = &lis3dh_rak1904;
+	};
+};
+
+&wisblock_i2c1 {
+	status = "okay";
+
+	lis3dh_rak1904: lis3dh@18 {
+		compatible = "st,lis3dh", "st,lis2dh";
+		reg = <0x18>;
+	};
+};
