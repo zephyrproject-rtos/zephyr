@@ -38,9 +38,9 @@ static void modem_backend_uart_isr_irq_handler_receive_ready(struct modem_backen
 		 * - or a too small receive_buf_size
 		 * relatively to the (too high) baud rate and amount of incoming data.
 		 */
-		LOG_WRN("Receive buffer overrun");
-		ring_buf_reset(receive_rb);
-		size = ring_buf_put_ptr(receive_rb, &buffer, 0);
+		LOG_DBG("RX buffer full, disabling RX IRQ");
+		uart_irq_rx_disable(backend->uart);
+		return;
 	}
 
 	ret = uart_fifo_read(backend->uart, buffer, size);
@@ -235,15 +235,47 @@ static int modem_backend_uart_isr_receive(void *data, uint8_t *buf, size_t size)
 	/* Swap receive ring double buffer */
 	uart_irq_rx_disable(backend->uart);
 	backend->isr.receive_rdb_used = receive_rdb_unused;
-	uart_irq_rx_enable(backend->uart);
+
+	struct ring_buf *receive_rb = &backend->isr.receive_rdb[receive_rdb_unused];
+
+	/*
+	 * Drain any data which accumulated in the UART FIFO while RX IRQ
+	 * was disabled into the newly active receive buffer.
+	 */
+	while (true) {
+		uint32_t space;
+		uint8_t *buffer;
+
+		space = ring_buf_put_ptr(receive_rb, &buffer, 0);
+
+		if (space == 0) {
+			break;
+		}
+
+		if (uart_poll_in(backend->uart, buffer) != 0) {
+			break;
+		}
+
+		ring_buf_commit(receive_rb, 1);
+	}
+
+	/*
+	 * Re-enable RX IRQ only if the backend buffer still has room.
+	 * Otherwise leave it disabled so the UART FIFO can provide
+	 * hardware flow control/backpressure.
+	 */
+	if (ring_buf_space_get(receive_rb) > 0) {
+		uart_irq_rx_enable(backend->uart);
+	}
 
 	/* Read data from previously used buffer */
 	receive_rdb_unused = (backend->isr.receive_rdb_used == 1) ? 0 : 1;
 
-	read_bytes += ring_buf_get(&backend->isr.receive_rdb[receive_rdb_unused], &buf[read_bytes],
-				   (size - read_bytes));
-	if (ring_buf_is_empty(&backend->isr.receive_rdb[receive_rdb_unused]) == false) {
-		/* More data available in the buffer */
+	read_bytes += ring_buf_get(&backend->isr.receive_rdb[receive_rdb_unused],
+				   &buf[read_bytes], size - read_bytes);
+
+	if (!ring_buf_is_empty(receive_rb) ||
+	    !ring_buf_is_empty(&backend->isr.receive_rdb[receive_rdb_unused])) {
 		k_work_schedule(&backend->receive_ready_work, K_NO_WAIT);
 	}
 
