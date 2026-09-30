@@ -30,7 +30,7 @@ extern char xtensa_arch_kernel_oops_epc[];
 extern void xtensa_lazy_cp_save(uint8_t *regs);
 extern void xtensa_lazy_cp_load(uint8_t *regs);
 
-#if defined(CONFIG_XTENSA_LAZY_HIFI_SHARING) && (CONFIG_MP_MAX_NUM_CPUS > 1)
+#if defined(CONFIG_XTENSA_LAZY_CP_SHARING) && (CONFIG_MP_MAX_NUM_CPUS > 1)
 #define LAZY_COPROCESSOR_LOCK
 
 static struct k_spinlock coprocessor_lock;
@@ -298,20 +298,20 @@ static inline void *return_to(void *interrupted)
 	void *next =
 		_current_cpu->nested <= 1 ? z_get_next_switch_handle(interrupted) : interrupted;
 
-#ifdef CONFIG_XTENSA_LAZY_HIFI_SHARING
+#ifdef CONFIG_XTENSA_LAZY_CP_SHARING
 	if (next != interrupted) {
 		unsigned int cp;
 
-		/* Disable the HiFi coprocessor, as xtensa_switch() does, so
-		 * that the incoming thread traps on its first HiFi
+		/* Disable the shared coprocessor, as xtensa_switch() does,
+		 * so that the incoming thread traps on its first coprocessor
 		 * instruction instead of using the registers of the current
-		 * HiFi owner.
+		 * owner.
 		 */
 		__asm__ volatile("rsr.cpenable %0" : "=r"(cp));
-		cp &= ~BIT(XCHAL_CP_ID_AUDIOENGINELX);
+		cp &= ~BIT(XTENSA_CP_ID);
 		__asm__ volatile("wsr.cpenable %0" :: "r"(cp));
 	}
-#endif /* CONFIG_XTENSA_LAZY_HIFI_SHARING */
+#endif /* CONFIG_XTENSA_LAZY_CP_SHARING */
 
 	return next;
 #else
@@ -321,7 +321,7 @@ static inline void *return_to(void *interrupted)
 
 #if defined(LAZY_COPROCESSOR_LOCK)
 /**
- * Spin until thread is no longer the HiFi owner on specified CPU.
+ * Spin until thread is no longer the coprocessor owner on specified CPU.
  * Note: Interrupts are locked on entry. Unlock before spinning to allow
  * an IPI to be caught and processed; restore them afterwards.
  */
@@ -335,7 +335,7 @@ static void spin_while_cp_owner(struct _cpu *cpu, struct k_thread *thread)
 	unlocked = original & ~PS_INTLEVEL_MASK;
 	__asm__ volatile("wsr.ps %0; rsync" :: "r"(unlocked) : "memory");
 
-	/* Spin until thread is no longer the HiFi owner on the other CPU */
+	/* Spin until thread is no longer the owner on the other CPU */
 
 	while ((struct k_thread *)
 	       atomic_ptr_get(&cpu->arch.cp_owner) == thread) {
@@ -348,7 +348,7 @@ static void spin_while_cp_owner(struct _cpu *cpu, struct k_thread *thread)
 }
 
 /**
- * Determine if the thread is the owner of a HiFi on another CPU. This is
+ * Determine if the thread is the coprocessor owner on another CPU. This is
  * called with the coprocessor lock held
  */
 static struct _cpu *thread_cp_owner_elsewhere(struct k_thread *thread)
@@ -368,9 +368,9 @@ static struct _cpu *thread_cp_owner_elsewhere(struct k_thread *thread)
 #endif
 
 /**
- * This routine only needed for SMP systems with HiFi sharing. It handles the
- * IPI sent to save the HiFi registers so the owner can load them onto another
- * CPU.
+ * This routine only needed for SMP systems with coprocessor sharing. It handles
+ * the IPI sent to save the coprocessor registers so the owner can load them onto
+ * another CPU.
  */
 void arch_ipi_lazy_coprocessors_save(void)
 {
@@ -386,12 +386,12 @@ void arch_ipi_lazy_coprocessors_save(void)
 		unsigned int cp;
 
 		__asm__ volatile("rsr.cpenable %0" : "=r"(cp));
-		cp |= BIT(XCHAL_CP_ID_AUDIOENGINELX);
+		cp |= BIT(XTENSA_CP_ID);
 		__asm__ volatile("wsr.cpenable %0" :: "r"(cp));
 
 		xtensa_lazy_cp_save(save_cp->arch.cp_regs);
 
-		cp &= ~BIT(XCHAL_CP_ID_AUDIOENGINELX);
+		cp &= ~BIT(XTENSA_CP_ID);
 		__asm__ volatile("wsr.cpenable %0" :: "r"(cp));
 
 		atomic_ptr_set(&cpu->arch.cp_owner, NULL);
@@ -625,20 +625,20 @@ void *xtensa_excint1_c(void *esf)
 		bsa->pc += 3;
 		break;
 #endif /* !CONFIG_USERSPACE */
-#ifdef CONFIG_XTENSA_LAZY_HIFI_SHARING
-	case EXCCAUSE_CP_DISABLED(XCHAL_CP_ID_AUDIOENGINELX):
-		/* Identify the interrupted thread and the old HiFi owner */
+#ifdef CONFIG_XTENSA_LAZY_CP_SHARING
+	case EXCCAUSE_CP_DISABLED(XTENSA_CP_ID):
+		/* Identify the interrupted thread and the old owner */
 		struct k_thread *thread = _current;
 		struct k_thread *owner;
 		unsigned int cp;
 
 #if defined(LAZY_COPROCESSOR_LOCK)
 		/*
-		 * If the interrupted thread is a HiFi owner on another CPU,
-		 * then send an IPI to that CPU to have it save its HiFi state
+		 * If the interrupted thread is the owner on another CPU,
+		 * then send an IPI to that CPU to have it save its state
 		 * and then return. This CPU will continue to raise the current
 		 * exception (and send IPIs) until the other CPU has both saved
-		 * the HiFi registers and cleared its HiFi owner.
+		 * the coprocessor registers and cleared its owner.
 		 */
 
 		k_spinlock_key_t key  = k_spin_lock(&coprocessor_lock);
@@ -655,9 +655,9 @@ void *xtensa_excint1_c(void *esf)
 		owner = (struct k_thread *)
 			atomic_ptr_get(&arch_curr_cpu()->arch.cp_owner);
 
-		/* Enable the HiFi coprocessor */
+		/* Enable the shared coprocessor */
 		__asm__ volatile("rsr.cpenable %0" : "=r"(cp));
-		cp |= BIT(XCHAL_CP_ID_AUDIOENGINELX);
+		cp |= BIT(XTENSA_CP_ID);
 		__asm__ volatile("wsr.cpenable %0" :: "r"(cp));
 
 		if (owner == thread) {
@@ -677,7 +677,7 @@ void *xtensa_excint1_c(void *esf)
 #endif
 		xtensa_lazy_cp_load(thread->arch.cp_regs);
 		break;
-#endif /* CONFIG_XTENSA_LAZY_HIFI_SHARING */
+#endif /* CONFIG_XTENSA_LAZY_CP_SHARING */
 #if defined(CONFIG_XTENSA_MMU) && defined(CONFIG_USERSPACE)
 	case EXCCAUSE_ITLB_MULTIHIT:
 		xtensa_exc_itlb_multihit_handle((void *)bsa->excvaddr);
