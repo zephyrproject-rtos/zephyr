@@ -298,6 +298,11 @@ int codec_tx(const uint8_t *data, uint32_t len)
 	return 0;
 }
 
+int codec_deinit(void)
+{
+	return 0;
+}
+
 #else
 
 int codec_init(uint8_t air_mode)
@@ -317,6 +322,11 @@ int codec_rx_start(codec_rx_cb_t cb)
 }
 
 int codec_rx_stop(void)
+{
+	return 0;
+}
+
+int codec_deinit(void)
 {
 	return 0;
 }
