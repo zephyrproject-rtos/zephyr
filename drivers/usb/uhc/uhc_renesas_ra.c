@@ -65,7 +65,6 @@ struct uhc_renesas_ra_data {
 	struct uhc_renesas_ra_pipe dcp;
 	struct uhc_renesas_ra_pipe pipe[10];
 	struct uhc_renesas_ra_endpoint ep[10][16][2];
-	usb_speed_t speed;
 };
 
 struct uhc_renesas_ra_config {
@@ -494,27 +493,18 @@ static int uhc_renesas_ra_poll_port_speed(const struct device *dev)
 		}
 	}
 
-	uhc_submit_event(dev, UHC_EVT_RESETED, 0);
-
-	if (priv->speed != speed) {
-		uhc_submit_event(dev, UHC_EVT_DEV_REMOVED, 0);
-
-		/* Speed negociation completed. Update device speed */
-		switch (speed) {
-		case USB_SPEED_LS:
-			uhc_submit_event(dev, UHC_EVT_DEV_CONNECTED_LS, 0);
-			break;
-		case USB_SPEED_FS:
-			uhc_submit_event(dev, UHC_EVT_DEV_CONNECTED_FS, 0);
-			break;
-		case USB_SPEED_HS:
-			uhc_submit_event(dev, UHC_EVT_DEV_CONNECTED_HS, 0);
-			break;
-		default:
-			return -EINVAL;
-		}
-
-		priv->speed = speed;
+	switch (speed) {
+	case USB_SPEED_LS:
+		uhc_submit_event(dev, UHC_EVT_DEV_CONNECTED_LS, 0);
+		break;
+	case USB_SPEED_FS:
+		uhc_submit_event(dev, UHC_EVT_DEV_CONNECTED_FS, 0);
+		break;
+	case USB_SPEED_HS:
+		uhc_submit_event(dev, UHC_EVT_DEV_CONNECTED_HS, 0);
+		break;
+	default:
+		return -EINVAL;
 	}
 
 	return 0;
@@ -652,26 +642,18 @@ static void uhc_renesas_ra_device_attach(const struct device *dev, usbh_event_t 
 	struct uhc_renesas_ra_data *priv = uhc_get_private(dev);
 	fsp_err_t err;
 
-	priv->speed = event->attach.speed;
-
-	/* Drop what was queued for the previous device after it went away */
-	(void)uhc_renesas_ra_release_devices(dev);
-
-	switch (event->attach.speed) {
-	case USB_SPEED_LS:
-		uhc_submit_event(dev, UHC_EVT_DEV_CONNECTED_LS, 0);
-		break;
-	case USB_SPEED_FS:
-		uhc_submit_event(dev, UHC_EVT_DEV_CONNECTED_FS, 0);
-		break;
-	case USB_SPEED_HS:
-		uhc_submit_event(dev, UHC_EVT_DEV_CONNECTED_HS, 0);
-		break;
-	default:
+	if (event->attach.speed == USB_SPEED_INVALID) {
 		LOG_WRN("Spurious attach event");
 		return;
 	}
 
+	/* Drop what was queued for the previous device after it went away */
+	(void)uhc_renesas_ra_release_devices(dev);
+
+	/*
+	 * A high-speed device only switches to high speed during the reset, so
+	 * report the device once the reset has settled its speed.
+	 */
 	err = R_USBH_PortReset(&priv->uhc_ctrl);
 	if (err != FSP_SUCCESS) {
 		return;
