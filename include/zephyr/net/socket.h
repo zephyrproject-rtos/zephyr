@@ -466,6 +466,13 @@ __syscall int zsock_socketpair(int family, int type, int proto, int *sv);
  * This function is also exposed as `close()`
  * if @kconfig{CONFIG_POSIX_API} is defined (in which case it
  * may conflict with generic POSIX `close()` function).
+ *
+ * Aborting a thread that is inside a socket call leaks the file descriptor
+ * the call holds, and leaves its lock held if the call held it at that
+ * moment. A recv() blocked on an IP socket without TLS or on a CAN socket,
+ * and an accept() blocked on an IP socket or a TLS listener, also hold the
+ * network context unless the interface is IP-offloaded, and that leaks too.
+ * Close or shut down the socket first, then join or abort the thread.
  */
 __syscall int zsock_close(int sock);
 
