@@ -10,3 +10,4 @@ config LORA_SX12XX_NATIVE_COMMON
 
 rsource "lr11xx/Kconfig"
 rsource "sx126x/Kconfig"
+rsource "sx128x/Kconfig"
