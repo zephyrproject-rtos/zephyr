@@ -309,7 +309,7 @@ static int npm10xx_charger_get_prop(const struct device *dev, const charger_prop
 			if (FIELD_GET(CHRG_ERRORREASON_VBATOV_Msk, reg)) {
 				val->health = CHARGER_HEALTH_OVERVOLTAGE;
 			} else if (FIELD_GET(CHRG_ERRORREASON_CHARGETIMEOUT_Msk |
-						     CHRG_TIMEOUT_TRICKLE_Msk,
+						     CHRG_ERRORREASON_TRICKLETIMEOUT_Msk,
 					     reg)) {
 				val->health = CHARGER_HEALTH_SAFETY_TIMER_EXPIRE;
 			} else {
@@ -438,6 +438,7 @@ static int npm10xx_charger_set_prop(const struct device *dev, const charger_prop
 {
 	int ret;
 	uint8_t addr = 0;
+	uint8_t enable;
 	uint16_t idx, reg;
 
 	const struct npm10xx_charger_config *config = dev->config;
@@ -453,17 +454,15 @@ static int npm10xx_charger_set_prop(const struct device *dev, const charger_prop
 		/* fall-through */
 	case CHARGER_PROP_CONSTANT_CHARGE_CURRENT_UA:
 		addr += NPM10_CHRG_ISET;
-		idx = val->const_charge_current_ua >
-		      linear_range_get_max_value(&chrg_current_range1);
-		ret = linear_range_get_index(idx ? &chrg_current_range2 : &chrg_current_range1,
-					     val->const_charge_current_ua, &reg);
+		ret = i2c_reg_read_byte_dt(&config->i2c, NPM10_CHRG_ENABLE, &enable);
 		if (ret < 0) {
 			return ret;
 		}
 
-		ret = i2c_reg_update_byte_dt(&config->i2c, NPM10_CHRG_ENABLE,
-					     CHRG_ENABLE_ISETDOUBLE_Msk,
-					     FIELD_PREP(CHRG_ENABLE_ISETDOUBLE_Msk, idx));
+		ret = linear_range_get_index((enable & CHRG_ENABLE_ISETDOUBLE_Msk)
+						     ? &chrg_current_range2
+						     : &chrg_current_range1,
+					     val->const_charge_current_ua, &reg);
 		if (ret < 0) {
 			return ret;
 		}
@@ -885,7 +884,7 @@ static DEVICE_API(charger, npm10xx_charger_driver_api) = {
 		.enable_advanced = DT_INST_PROP(inst, enable_advanced_profile),                    \
 		.enable_throttle = DT_INST_PROP(inst, enable_throttle_charging),                   \
 		.disable_lowbatt = DT_INST_PROP(inst, disable_lowbatt_charging),                   \
-		.vbatlow_threshold = DT_INST_ENUM_IDX_OR(inst, vbatlow_microvolt, UINT8_MAX),      \
+		.vbatlow_threshold = DT_INST_ENUM_IDX_OR(inst, vbat_low_microvolt, UINT8_MAX),     \
 		.vbusilim = DT_INST_ENUM_IDX_OR(inst, vbus_limit_microamp, UINT8_MAX),             \
 		.vbusdpm = DT_INST_ENUM_IDX_OR(inst, vbusdpm_microvolt, UINT8_MAX),                \
 		.term_current = DT_INST_ENUM_IDX_OR(inst, term_current_percent, UINT8_MAX),        \
