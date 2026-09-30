@@ -389,27 +389,37 @@ static int ptp_clock_e1000_adjust(const struct device *dev, int increment)
 	return 0;
 }
 
-static int ptp_clock_e1000_rate_adjust(const struct device *dev, double ratio)
+/* A rate offset of 100 % in scaled ppm */
+#define E1000_PTP_SCALED_PPM_FULL (1000000 * PTP_CLOCK_SCALED_PPM_ONE)
+
+static int ptp_clock_e1000_adjust_rate(const struct device *dev, int64_t scaled_ppm)
 {
 	const int hw_inc = NSEC_PER_SEC / CONFIG_ETH_E1000_PTP_CLOCK_SRC_HZ;
+	const int64_t max_ppm = E1000_PTP_SCALED_PPM_FULL / (2 * hw_inc);
 	struct ptp_context *ptp_context = dev->data;
 	struct e1000_dev *context = ptp_context->eth_context;
 	int corr;
 	int32_t mul;
-	float val;
+	uint64_t val;
+	uint64_t abs_ppm;
 
-	/* Limit possible ratio. */
-	if ((ratio > 1.0 + 1.0/(2.0 * hw_inc)) ||
-			(ratio < 1.0 - 1.0/(2.0 * hw_inc))) {
+	/* Limit possible rate offset to 1 / (2 * hw_inc). */
+	if ((scaled_ppm > max_ppm) || (scaled_ppm < -max_ppm)) {
 		return -EINVAL;
 	}
 
-	if (ratio < 1.0) {
+	/*
+	 * The increment is corrected by 1 ns every val timer clocks, which
+	 * makes up for the rate offset if val = 1 / (hw_inc * rate offset).
+	 */
+	if (scaled_ppm < 0) {
+		abs_ppm = (uint64_t)(-scaled_ppm);
 		corr = hw_inc - 1;
-		val = 1.0 / (hw_inc * (1.0 - ratio));
-	} else if (ratio > 1.0) {
+		val = E1000_PTP_SCALED_PPM_FULL / (hw_inc * abs_ppm);
+	} else if (scaled_ppm > 0) {
+		abs_ppm = (uint64_t)scaled_ppm;
 		corr = hw_inc + 1;
-		val = 1.0 / (hw_inc * (ratio - 1.0));
+		val = E1000_PTP_SCALED_PPM_FULL / (hw_inc * abs_ppm);
 	} else {
 		val = 0;
 		corr = hw_inc;
@@ -433,7 +443,7 @@ static DEVICE_API(ptp_clock, api) = {
 	.set = ptp_clock_e1000_set,
 	.get = ptp_clock_e1000_get,
 	.adjust = ptp_clock_e1000_adjust,
-	.rate_adjust = ptp_clock_e1000_rate_adjust,
+	.adjust_rate = ptp_clock_e1000_adjust_rate,
 };
 
 static int ptp_e1000_init(const struct device *port)
