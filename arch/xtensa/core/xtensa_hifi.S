@@ -6,6 +6,7 @@
 
 #include <zephyr/offsets.h>
 
+#include <xtensa/config/core-isa.h>
 #include <xtensa/config/tie.h>
 #include <xtensa/config/tie-asm.h>
 
@@ -60,8 +61,13 @@ _xtensa_hifi_save:
 .align 4
 xtensa_lazy_hifi_load:
 	entry a1, 32
-	/* Spill registers onto stack */
-	call8 xthal_window_spill
+	/* Spill registers onto stack, masking interrupts during the spill */
+	rsil a5, XCHAL_EXCM_LEVEL
+	mov a4, a0
+	call0 xtensa_spill_reg_windows
+	mov a0, a4
+	wsr.ps a5
+	rsync
 
 	/* A2 should be address of hifi storage; A3 is scratch */
 	xchal_cp1_load a2 a3 a3 a3 a3
@@ -74,8 +80,13 @@ xtensa_lazy_hifi_load:
 .align 4
 xtensa_lazy_hifi_save:
 	entry a1, 32
-	/* Spill registers onto stack */
-	call8 xthal_window_spill
+	/* Spill registers onto stack, masking interrupts during the spill */
+	rsil a5, XCHAL_EXCM_LEVEL
+	mov a4, a0
+	call0 xtensa_spill_reg_windows
+	mov a0, a4
+	wsr.ps a5
+	rsync
 
 	/* A2 should be address of hifi storage; A3 is scratch */
 	xchal_cp1_store a2 a3 a3 a3 a3  /* Only A2 and A3 are used by macro */
