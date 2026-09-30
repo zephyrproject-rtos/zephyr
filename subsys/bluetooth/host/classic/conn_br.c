@@ -178,11 +178,11 @@ void bt_br_acl_recv(struct bt_conn *conn, struct net_buf *buf, bool complete)
 		hdr = (void *)buf->data;
 		if (u16_add_overflow(sys_le16_to_cpu(hdr->len),
 				     sizeof(*hdr), &acl_total_len)) {
-			LOG_ERR("L2CAP PDU length overflow");
+			LOG_WRN("L2CAP PDU length overflow");
 			break;
 		}
 		if (buf->len < acl_total_len) {
-			LOG_ERR("Short packet (%u < %u)", buf->len, acl_total_len);
+			LOG_WRN("Short packet (%u < %u)", buf->len, acl_total_len);
 			break;
 		}
 		if (buf->len == acl_total_len) {
