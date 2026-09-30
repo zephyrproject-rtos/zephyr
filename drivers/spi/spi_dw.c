@@ -272,6 +272,11 @@ static int spi_dw_configure(const struct device *dev,
 	/* Determine how many bytes are required per-frame */
 	spi->dfs = SPI_WS_TO_DFS(SPI_WORD_SIZE_GET(config->operation));
 
+	/* As there is no 24-bit type, it's assumed uint32_t to be used as the buffer base type. */
+	if (spi->dfs == 3) {
+		spi->dfs = 4;
+	}
+
 	/* Frame format: Motorola (default) or TI SSP */
 	if (config->operation & SPI_FRAME_FORMAT_TI) {
 		ctrlr0 |= DW_SPI_CTRLR0_FRF_TI_SSP;
