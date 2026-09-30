@@ -6572,6 +6572,7 @@ int bt_l2cap_br_echo_req(struct bt_conn *conn, struct net_buf *buf)
 {
 	struct bt_l2cap_chan *chan;
 	struct bt_l2cap_sig_hdr *hdr;
+	struct net_buf_simple_state state;
 	int err;
 
 	if ((conn == NULL) || (buf == NULL)) {
@@ -6609,6 +6610,8 @@ int bt_l2cap_br_echo_req(struct bt_conn *conn, struct net_buf *buf)
 		return -EBUSY;
 	}
 
+	net_buf_simple_save(&buf->b, &state);
+
 	hdr = net_buf_push(buf, sizeof(*hdr));
 
 	hdr->code = BT_L2CAP_ECHO_REQ;
@@ -6619,17 +6622,26 @@ int bt_l2cap_br_echo_req(struct bt_conn *conn, struct net_buf *buf)
 	BR_CHAN(chan)->ident = hdr->ident;
 
 	err = bt_l2cap_br_send_cb(conn, BT_L2CAP_CID_BR_SIG, buf, NULL, NULL);
-	if (err == 0) {
-		bt_work_reschedule(&BR_CHAN(chan)->rtx_work, L2CAP_BR_ECHO_TIMEOUT);
+	if (err != 0) {
+		/* No response can come to a request that was not sent, and the
+		 * caller still owns the buffer.
+		 */
+		BR_CHAN(chan)->ident = 0;
+		net_buf_simple_restore(&buf->b, &state);
+		return err;
 	}
 
-	return err;
+	bt_work_reschedule(&BR_CHAN(chan)->rtx_work, L2CAP_BR_ECHO_TIMEOUT);
+
+	return 0;
 }
 
 int bt_l2cap_br_echo_rsp(struct bt_conn *conn, uint8_t identifier, struct net_buf *buf)
 {
 	struct bt_l2cap_chan *chan;
 	struct bt_l2cap_sig_hdr *hdr;
+	struct net_buf_simple_state state;
+	int err;
 
 	if ((conn == NULL) || (buf == NULL) || (identifier == 0)) {
 		return -EINVAL;
@@ -6661,13 +6673,21 @@ int bt_l2cap_br_echo_rsp(struct bt_conn *conn, uint8_t identifier, struct net_bu
 		return -ENOTCONN;
 	}
 
+	net_buf_simple_save(&buf->b, &state);
+
 	hdr = net_buf_push(buf, sizeof(*hdr));
 
 	hdr->code = BT_L2CAP_ECHO_RSP;
 	hdr->ident = identifier;
 	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
 
-	return bt_l2cap_br_send_cb(conn, BT_L2CAP_CID_BR_SIG, buf, NULL, NULL);
+	err = bt_l2cap_br_send_cb(conn, BT_L2CAP_CID_BR_SIG, buf, NULL, NULL);
+	if (err != 0) {
+		/* The caller still owns the buffer */
+		net_buf_simple_restore(&buf->b, &state);
+	}
+
+	return err;
 }
 
 #if defined(CONFIG_BT_L2CAP_CONNLESS)
