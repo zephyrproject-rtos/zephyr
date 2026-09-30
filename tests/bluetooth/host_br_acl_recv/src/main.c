@@ -240,3 +240,25 @@ ZTEST(br_acl_recv, test_views_exhausted)
 
 	zassert_equal(acl_freed, 1);
 }
+
+/* Bytes after the last PDU that are too few for an L2CAP header are dropped */
+ZTEST(br_acl_recv, test_trailing_bytes)
+{
+	static const uint16_t lens[] = { 3 };
+
+	for (size_t trailing = 1; trailing < L2CAP_HDR_LEN; trailing++) {
+		struct net_buf *acl = acl_packet(lens, ARRAY_SIZE(lens));
+
+		for (size_t i = 0; i < trailing; i++) {
+			net_buf_add_u8(acl, 0xff);
+		}
+
+		rx_count = 0;
+		acl_freed = 0;
+		bt_br_acl_recv(TEST_CONN, acl, true);
+
+		zassert_equal(rx_count, 1, "%zu trailing bytes", trailing);
+		check_delivered(0, lens[0]);
+		zassert_equal(acl_freed, 1, "%zu trailing bytes", trailing);
+	}
+}
