@@ -54,6 +54,16 @@ config BT_ACCEPT_CONN_AS_CENTRAL
 	  The kconfig option only works when calling function bt_br_set_discoverable to enable
 	  connectable mode with a NULL callback parameter.
 
+config BT_BR_ACL_RX_VIEW_COUNT
+	int "Number of views for L2CAP PDUs in HCI ACL packets carrying several"
+	default BT_BUF_ACL_RX_COUNT_EXTRA
+	range 1 $(UINT16_MAX)
+	help
+	  Number of L2CAP PDUs that receivers can keep at the same time, such as with an RFCOMM
+	  recv() callback returning -EINPROGRESS, counting only PDUs that are not the last one of
+	  their HCI ACL packet. Beyond that, a PDU shares its buffer with the next PDU of the
+	  packet, so a receiver keeping it finds the buffer moved on, and an error is logged.
+
 config BT_L2CAP_RX_FLUSH_TO
 	hex "Minimum Bluetooth L2CAP RX flush Timeout accepted in milliseconds"
 	default 0x0001 if BT_A2DP_SINK
