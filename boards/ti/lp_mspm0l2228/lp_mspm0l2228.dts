@@ -161,3 +161,7 @@
 &rtc {
 	status = "okay";
 };
+
+&aes {
+	status = "okay";
+};
