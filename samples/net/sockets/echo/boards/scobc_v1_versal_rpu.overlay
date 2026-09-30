@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2026 Space Cubics Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * The networking stack does not fit into TCM/OCM, so run the whole
+ * image from a DDR carve-out instead.
+ */
+
+/ {
+	chosen {
+		/delete-property/ zephyr,flash;
+		zephyr,sram = &rpu_ddr;
+	};
+
+	rpu_ddr: memory@9800000 {
+		compatible = "mmio-dram";
+		reg = <0x09800000 DT_SIZE_M(1)>;
+	};
+};
+
+&gem1 {
+	status = "okay";
+};
+
+&gem1_mdio {
+	status = "okay";
+};
