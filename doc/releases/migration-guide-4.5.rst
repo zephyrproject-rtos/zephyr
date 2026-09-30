@@ -1000,6 +1000,10 @@ Ethernet
   instead of :kconfig:option:`CONFIG_NET_L2_ETHERNET`. The later is now enabled by default when the
   former is. (:github:`117121`)
 
+* :kconfig:option:`CONFIG_ETH_PHY_DRIVER` is no longer enabled by default. It is now selected by
+  the Ethernet drivers that need a PHY driver. Out-of-tree Ethernet drivers that use a PHY driver
+  must select it as well.
+
 Flash
 =====
 * :dtcompatible:`jedec,spi-nand` now requires a ``plane-bytes`` property, which indicates the size
