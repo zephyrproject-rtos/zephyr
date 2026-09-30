@@ -153,7 +153,8 @@
 	pinctrl-names = "default";
 	scl-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
-	status = "okay";
+	/* Disabled by default: PB8 and PB9 are LCD lines (LTDC B6/B7) */
+	status = "disabled";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
@@ -162,7 +163,8 @@
 	pinctrl-names = "default";
 	scl-gpios = <&gpiob 10 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpiob 11 GPIO_ACTIVE_HIGH>;
-	status = "okay";
+	/* Disabled by default: PB10 and PB11 are LCD lines (LTDC G4/G5) */
+	status = "disabled";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
