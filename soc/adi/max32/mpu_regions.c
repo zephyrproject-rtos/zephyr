@@ -13,7 +13,11 @@
  * attribute index.
  */
 #if defined(CONFIG_MPU_ALLOW_FLASH_WRITE)
-#define MAX32_RBAR_RW_MASK P_RW_U_RO_Msk
+#if defined(CONFIG_USERSPACE)
+#define MAX32_RBAR_RW_MASK P_RW_U_RW_Msk
+#else
+#define MAX32_RBAR_RW_MASK P_RW_U_NA_Msk
+#endif /* CONFIG_USERSPACE */
 #else
 #define MAX32_RBAR_RW_MASK RO_Msk
 #endif /* CONFIG_MPU_ALLOW_FLASH_WRITE */
