@@ -943,6 +943,13 @@ New APIs and options
   * :kconfig:option:`CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_SIZE_IS_CONFIGURABLE`
 
 
+* Sys
+
+  * ``sys_arch_reboot_prepare()``, a weak hook for the platform code that
+    implements ``sys_arch_reboot()``. :c:func:`sys_reboot` calls it before
+    locking interrupts, so that work which needs the scheduler, such as taking
+    a lock, can be done before the reset. Not an application API.
+
 * Timer
 
   * :c:func:`z_sys_clock_lpm_enter`
