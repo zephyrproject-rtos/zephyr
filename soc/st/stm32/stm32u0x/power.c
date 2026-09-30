@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/init.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/pm.h>
