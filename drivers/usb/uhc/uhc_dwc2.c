@@ -2029,21 +2029,23 @@ static void port_handle_events(const struct device *dev, uint32_t event_mask)
 	}
 
 	if (event_mask & BIT(UHC_DWC2_EVENT_PORT_DISCONNECTION)) {
-		/* Port disconnected */
-		/* Debounce port disconnection */
+		/*
+		 * The core disables the port on a disconnect, so tear down even
+		 * if the line reads connected again after the debounce.
+		 */
 		if (port_debounce(dev, UHC_DWC2_EVENT_PORT_DISCONNECTION)) {
 			LOG_DBG("Port disconnected");
-			ch_release_all(dev);
-			/* Notify upper layer */
-			submit_dev_gone(dev);
-			/* Reset the controller to handle new connection */
-			soft_reset(dev);
-			/* Prepare for device connection */
-			port_enable(dev);
 		} else {
-			/* TODO: Implement handling */
-			LOG_ERR("Port changed during debouncing disconnect");
+			LOG_WRN("Port reconnected during disconnect debounce");
 		}
+
+		ch_release_all(dev);
+		/* Notify upper layer */
+		submit_dev_gone(dev);
+		/* Reset the controller to handle new connection */
+		soft_reset(dev);
+		/* Prepare for device connection */
+		port_enable(dev);
 	}
 
 	if (event_mask & BIT(UHC_DWC2_EVENT_PORT_ERROR)) {
