@@ -37,6 +37,11 @@ class SBOMConfig:
     # should also add an SPDX document for the SDK?
     include_sdk: bool = False
 
+    # SPDX 3.x: shorten IDs with a namespaceMap prefix (True) or write full
+    # IRIs (False), which are needed to merge documents from different builds.
+    # None selects full IRIs for sysbuild images, and shortened IDs otherwise.
+    namespace_map: bool | None = None
+
 
 # create Cmake file-based API directories and query file
 # Arguments:
@@ -70,6 +75,25 @@ def setup_cmake_query(build_dir):
             pass
 
     return True
+
+
+def use_namespace_map(namespace_map, cmake_cache):
+    """Resolve SBOMConfig.namespace_map for a build.
+
+    An explicit True/False is kept; None selects full IRIs (False) for the images
+    of a sysbuild build, which are described by separate documents that can only
+    be merged with full IRIs, and shortened IDs (True) otherwise.
+
+    Arguments:
+        - namespace_map: SBOMConfig.namespace_map
+        - cmake_cache: parsed CMake cache of the build
+    """
+    if namespace_map is not None:
+        return namespace_map
+    sysbuild = cmake_cache.get("SYSBUILD", "").upper() in ("1", "ON", "YES", "TRUE", "Y")
+    if sysbuild:
+        _logger.info("sysbuild image: writing full IRIs instead of namespaceMap prefixes")
+    return not sysbuild
 
 
 # main entry point for SBOM maker
@@ -116,7 +140,8 @@ def make_spdx(cfg):
         # Use SPDX 3.0 serializer
         from zspdx.serializers.spdx3 import SPDX3Serializer
 
-        serializer = SPDX3Serializer(sbom_graph, cfg.spdx_version)
+        namespace_map = use_namespace_map(cfg.namespace_map, w.cmake_cache)
+        serializer = SPDX3Serializer(sbom_graph, cfg.spdx_version, namespace_map=namespace_map)
         return serializer.serialize(cfg.spdx_dir)
     else:
         _logger.error("Unsupported SPDX version: %s", cfg.spdx_version)

@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import argparse
 import logging
 import os
 import sys
@@ -61,6 +62,14 @@ class ZephyrSpdx(WestCommand):
         parser.add_argument(
             '--include-sdk', action="store_true", help="also generate SPDX document for SDK"
         )
+        parser.add_argument(
+            '--namespace-map',
+            action=argparse.BooleanOptionalAction,
+            default=None,
+            help="SPDX 3.x: shorten IDs with a namespaceMap prefix, or write full IRIs "
+            "(--no-namespace-map) so that documents from different builds can be merged; "
+            "by default, full IRIs are used for sysbuild images only",
+        )
 
         return parser
 
@@ -79,6 +88,7 @@ class ZephyrSpdx(WestCommand):
         self.dbg("  --spdx-version is", args.spdx_version)
         self.dbg("  --analyze-includes is", args.analyze_includes)
         self.dbg("  --include-sdk is", args.include_sdk)
+        self.dbg("  --namespace-map is", args.namespace_map)
 
         if args.init:
             self.do_run_init(args)
@@ -136,6 +146,9 @@ class ZephyrSpdx(WestCommand):
             cfg.analyze_includes = True
         if args.include_sdk:
             cfg.include_sdk = True
+        if args.namespace_map is not None and version_obj.major < 3:
+            self.wrn("--namespace-map/--no-namespace-map only apply to SPDX 3.x; ignored")
+        cfg.namespace_map = args.namespace_map
 
         # make sure SPDX directory exists, or create it if it doesn't
         if os.path.exists(cfg.spdx_dir):

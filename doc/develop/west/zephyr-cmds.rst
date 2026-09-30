@@ -231,6 +231,15 @@ Command-line options
   document, :file:`sdk.spdx` (or :file:`sdk.jsonld`), which lists header files
   included from the SDK.
 
+- ``--namespace-map`` / ``--no-namespace-map``: for SPDX 3.x, choose whether
+  element IDs are shortened with a prefix declared in the document's
+  ``namespaceMap`` (e.g. ``zephyr:packages/app-sources``), or written as full
+  IRIs. Shortened IDs are only expanded by tools that read the ``namespaceMap``;
+  for JSON-LD consumers they are the same IRIs in every build, so documents from
+  different builds cannot be merged. By default, full IRIs are used when the
+  build is an image of a :ref:`sysbuild <sysbuild>` build, whose images are
+  described by separate documents, and shortened IDs otherwise.
+
 .. warning::
 
    The generation of SBOM documents for the ``native_sim`` platform is currently not supported.

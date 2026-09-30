@@ -53,7 +53,7 @@ class SPDX3Serializer:
     # does not provide an absolute URI of its own.
     _DEFAULT_BUILD_TYPE = "urn:spdx.dev:zephyr-cmake"
 
-    def __init__(self, sbom_graph: SBOMGraph, spdx_version=SPDX_VERSION_3_0):
+    def __init__(self, sbom_graph: SBOMGraph, spdx_version=SPDX_VERSION_3_0, namespace_map=True):
         self.sbom_data = sbom_graph
         self.spdx_version = spdx_version
 
@@ -105,9 +105,13 @@ class SPDX3Serializer:
         # re-serializing them in every document that mentions them.
         self._element_home = None
 
-        # Namespace prefixes for shortened IDs
+        # Namespace prefixes for shortened IDs. These are declared in the SPDX
+        # namespaceMap, which JSON-LD consumers do not use to expand IDs: for
+        # them, a shortened "zephyr:..." ID is the same IRI in every build, so
+        # documents from different builds cannot be merged. With namespace_map
+        # disabled, no prefix is used and IDs are written as full IRIs.
         self.namespace_prefixes = {}
-        if self.sbom_data.namespace_prefix:
+        if namespace_map and self.sbom_data.namespace_prefix:
             prefix = "zephyr"
             uri = self.sbom_data.namespace_prefix.rstrip("/") + "/"
             self.namespace_prefixes[uri] = prefix
