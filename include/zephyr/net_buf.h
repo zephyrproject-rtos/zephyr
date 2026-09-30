@@ -2901,15 +2901,20 @@ size_t net_buf_data_match(const struct net_buf *buf, size_t offset, const void *
  * @param buf Network buffer.
  * @param len Total length of data to be skipped.
  *
- * @return Pointer to the fragment or
- *         NULL and pos is 0 after successful skip,
- *         NULL and pos is 0xffff otherwise.
+ * @return The remaining fragment chain, or NULL if all data was skipped.
  */
 static inline struct net_buf *net_buf_skip(struct net_buf *buf, size_t len)
 {
-	while (buf && len--) {
-		net_buf_pull_u8(buf);
-		if (!buf->len) {
+	while (buf != NULL && len > 0U) {
+		size_t to_skip = MIN(len, buf->len);
+
+		/* A zero-capacity fragment has no data buffer to pull from */
+		if (to_skip > 0U) {
+			net_buf_pull(buf, to_skip);
+			len -= to_skip;
+		}
+
+		if (buf->len == 0U) {
 			buf = net_buf_frag_del(NULL, buf);
 		}
 	}
