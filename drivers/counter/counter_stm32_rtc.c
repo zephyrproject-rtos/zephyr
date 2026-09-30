@@ -140,12 +140,23 @@ struct rtc_stm32_config {
 
 struct rtc_stm32_data {
 	counter_alarm_callback_t callback;
+#if defined(CONFIG_COUNTER_64BITS_TICKS)
+	counter_alarm_callback_64_t callback_64;
+#endif
 	uint32_t ticks;
 	void *user_data;
 #ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
 	bool irq_on_late;
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 };
+
+static void rtc_stm32_clear_callback(struct rtc_stm32_data *data)
+{
+	data->callback = NULL;
+#if defined(CONFIG_COUNTER_64BITS_TICKS)
+	data->callback_64 = NULL;
+#endif
+}
 
 static inline void ll_clear_alarm_flag(void)
 {
@@ -427,7 +438,7 @@ static int rtc_stm32_stop(const struct device *dev)
 tick_t rtc_stm32_read(const struct device *dev)
 {
 	struct tm now = { 0 };
-	time_t ts;
+	int64_t ts;
 	uint32_t rtc_date, rtc_time;
 	tick_t ticks;
 #ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
@@ -468,12 +479,10 @@ tick_t rtc_stm32_read(const struct device *dev)
 	now.tm_min = bcd2bin(STM32_RTC_GET_MINUTE(rtc_time));
 	now.tm_sec = bcd2bin(STM32_RTC_GET_SECOND(rtc_time));
 
-	ts = timeutil_timegm(&now);
+	ts = timeutil_timegm64(&now);
 
 	/* Return number of seconds since RTC init */
 	ts -= T_TIME_OFFSET;
-
-	__ASSERT(sizeof(time_t) == 8, "unexpected time_t definition");
 
 	ticks = ts * counter_get_frequency(dev);
 #ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
@@ -505,13 +514,13 @@ static int rtc_stm32_get_value(const struct device *dev, uint32_t *ticks)
 	return 0;
 }
 
-#ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
+#if defined(CONFIG_COUNTER_64BITS_TICKS)
 static int rtc_stm32_get_value_64(const struct device *dev, uint64_t *ticks)
 {
 	*ticks = rtc_stm32_read(dev);
 	return 0;
 }
-#endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
+#endif /* CONFIG_COUNTER_64BITS_TICKS */
 
 #ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
 static void rtc_stm32_set_int_pending(void)
@@ -520,8 +529,9 @@ static void rtc_stm32_set_int_pending(void)
 }
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 
-static int rtc_stm32_set_alarm(const struct device *dev, uint8_t chan_id,
-				const struct counter_alarm_cfg *alarm_cfg)
+static int rtc_stm32_set_alarm_common(const struct device *dev,
+				    const struct counter_alarm_cfg *alarm_cfg,
+				    counter_alarm_callback_64_t callback_64)
 {
 #if !defined(COUNTER_NO_DATE)
 	struct tm alarm_tm;
@@ -538,13 +548,21 @@ static int rtc_stm32_set_alarm(const struct device *dev, uint8_t chan_id,
 	tick_t now = rtc_stm32_read(dev);
 	tick_t ticks = alarm_cfg->ticks;
 
-	if (data->callback != NULL) {
+	if (data->callback != NULL
+#if defined(CONFIG_COUNTER_64BITS_TICKS)
+	    || data->callback_64 != NULL
+#endif
+	) {
 		LOG_DBG("Alarm busy");
 		return -EBUSY;
 	}
 
-
 	data->callback = alarm_cfg->callback;
+#if defined(CONFIG_COUNTER_64BITS_TICKS)
+	data->callback_64 = callback_64;
+#else
+	ARG_UNUSED(callback_64);
+#endif
 	data->user_data = alarm_cfg->user_data;
 
 #if !defined(COUNTER_NO_DATE)
@@ -653,9 +671,42 @@ out_disable_bkup_access:
 	}
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 
+	if (ret < 0) {
+		rtc_stm32_clear_callback(data);
+	}
+
 	return ret;
 }
 
+static int rtc_stm32_set_alarm(const struct device *dev, uint8_t chan_id,
+				const struct counter_alarm_cfg *alarm_cfg)
+{
+	ARG_UNUSED(chan_id);
+
+	return rtc_stm32_set_alarm_common(dev, alarm_cfg, NULL);
+}
+
+#if defined(CONFIG_COUNTER_64BITS_TICKS)
+static int rtc_stm32_set_alarm_64(const struct device *dev, uint8_t chan_id,
+				   const struct counter_alarm_cfg_64 *alarm_cfg)
+{
+	const struct counter_config_info *info = dev->config;
+	struct counter_alarm_cfg cfg = {
+		.ticks = (uint32_t)alarm_cfg->ticks,
+		.user_data = alarm_cfg->user_data,
+		.flags = alarm_cfg->flags,
+	};
+
+	ARG_UNUSED(chan_id);
+
+	/* The 64-bit API does not extend this driver's advertised alarm range. */
+	if (alarm_cfg->ticks > info->max_top_value) {
+		return -EINVAL;
+	}
+
+	return rtc_stm32_set_alarm_common(dev, &cfg, alarm_cfg->callback);
+}
+#endif
 
 static int rtc_stm32_cancel_alarm(const struct device *dev, uint8_t chan_id)
 {
@@ -669,7 +720,7 @@ static int rtc_stm32_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	LL_RTC_EnableWriteProtection(STM32_ARG(RTC));
 	stm32_backup_domain_disable_access();
 
-	data->callback = NULL;
+	rtc_stm32_clear_callback(data);
 
 	return 0;
 }
@@ -688,6 +739,28 @@ static uint32_t rtc_stm32_get_top_value(const struct device *dev)
 	return info->max_top_value;
 }
 
+
+#if defined(CONFIG_COUNTER_64BITS_TICKS)
+static uint64_t rtc_stm32_get_top_value_64(const struct device *dev)
+{
+	const struct counter_config_info *info = dev->config;
+
+	return info->max_top_value_64;
+}
+
+static int rtc_stm32_set_top_value_64(const struct device *dev,
+				    const struct counter_top_cfg_64 *cfg)
+{
+	const struct counter_config_info *info = dev->config;
+
+	if (cfg->ticks != info->max_top_value_64 || cfg->callback != NULL ||
+	    (cfg->flags & COUNTER_TOP_CFG_DONT_RESET) == 0U) {
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif
 
 static int rtc_stm32_set_top_value(const struct device *dev,
 				   const struct counter_top_cfg *cfg)
@@ -708,8 +781,11 @@ void rtc_stm32_isr(const struct device *dev)
 {
 	struct rtc_stm32_data *data = dev->data;
 	counter_alarm_callback_t alarm_callback = data->callback;
-
-	uint32_t now = rtc_stm32_read(dev);
+#if defined(CONFIG_COUNTER_64BITS_TICKS)
+	counter_alarm_callback_64_t alarm_callback_64 = data->callback_64;
+#endif
+	void *user_data = data->user_data;
+	tick_t now = rtc_stm32_read(dev);
 
 	if (ll_is_active_alarm() != 0
 #ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
@@ -728,9 +804,14 @@ void rtc_stm32_isr(const struct device *dev)
 		data->irq_on_late = false;
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 
+		/* Release the channel before invoking a callback that may rearm it. */
+		rtc_stm32_clear_callback(data);
 		if (alarm_callback != NULL) {
-			data->callback = NULL;
-			alarm_callback(dev, 0, now, data->user_data);
+			alarm_callback(dev, 0, (uint32_t)now, user_data);
+#if defined(CONFIG_COUNTER_64BITS_TICKS)
+		} else if (alarm_callback_64 != NULL) {
+			alarm_callback_64(dev, 0, now, user_data);
+#endif
 		}
 	}
 
@@ -747,7 +828,7 @@ static int rtc_stm32_init(const struct device *dev)
 	struct rtc_stm32_data *data = dev->data;
 	int ret = -EIO;
 
-	data->callback = NULL;
+	rtc_stm32_clear_callback(data);
 
 	/* Enable the gate clocks; entry 1 selects the RTC source. */
 	for (size_t i = 0; i < cfg->pclken_count; i++) {
@@ -911,9 +992,12 @@ static DEVICE_API(counter, rtc_stm32_driver_api) = {
 	.start = rtc_stm32_start,
 	.stop = rtc_stm32_stop,
 	.get_value = rtc_stm32_get_value,
-#ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
+#if defined(CONFIG_COUNTER_64BITS_TICKS)
 	.get_value_64 = rtc_stm32_get_value_64,
-#endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
+	.set_alarm_64 = rtc_stm32_set_alarm_64,
+	.get_top_value_64 = rtc_stm32_get_top_value_64,
+	.set_top_value_64 = rtc_stm32_set_top_value_64,
+#endif
 	.set_alarm = rtc_stm32_set_alarm,
 	.cancel_alarm = rtc_stm32_cancel_alarm,
 	.set_top_value = rtc_stm32_set_top_value,
