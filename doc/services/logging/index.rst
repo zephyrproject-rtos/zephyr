@@ -206,6 +206,9 @@ Backend options:
 :kconfig:option:`CONFIG_LOG_BACKEND_NET`: Enable built-in Networking backend to send syslog messages
 to a network server.
 
+:kconfig:option:`CONFIG_LOG_BACKEND_FLASH`: Enable built-in flash backend, which keeps log messages
+in a flash partition across a reboot. See :ref:`log_backend_flash`.
+
 
 .. _log_usage:
 
@@ -812,6 +815,86 @@ Example message formatted using :c:func:`log_output_msg_process`:
 
    [00:00:00.000,274] <info> sample_instance.inst1: logging message
 
+.. _log_backend_flash:
+
+Flash backend
+-------------
+
+:kconfig:option:`CONFIG_LOG_BACKEND_FLASH` appends log messages to a flash partition, so that they
+survive a reboot on a device that has nowhere to send them while it is running. The partition is
+selected with the ``zephyr,log-partition`` chosen node, and the API for reading the messages back
+is in :zephyr_file:`include/zephyr/logging/log_backend_flash.h`.
+
+Messages are stored in the :ref:`dictionary <logging_guide_dictionary>` wire format, exactly as
+:c:func:`log_dict_output_msg_process` emits them, each framed with its length and a CRC-16/CCITT.
+A record can only be decoded against the firmware that wrote it, because it holds the address of
+its format string, and a change anywhere in the image can move the format strings of code that was
+not touched. The partition header therefore carries a build id, stored in clear so that a reader
+can tell which firmware it needs, and the backend refuses to append to a log carrying a different
+one: a log written before a firmware update is preserved rather than made unreadable. An explicit
+:c:func:`log_backend_flash_erase` is what gets logging going again in that case.
+
+There is no default build id, because none of what the backend can see by itself changes reliably
+when the image does. :kconfig:option:`CONFIG_LOG_BACKEND_FLASH_BUILD_ID` has to be set to a C
+expression of type ``const char *`` naming something that does, such as the version string the
+application already builds with, and the build fails if it is left empty. The expression cannot
+contain quotes or spaces: use a macro, a global variable or a function, declared by the header
+:kconfig:option:`CONFIG_LOG_BACKEND_FLASH_BUILD_ID_HEADER` names. An application built with a
+:ref:`VERSION <app-version-details>` file would use:
+
+.. code-block:: cfg
+
+   CONFIG_LOG_BACKEND_FLASH_BUILD_ID="STRINGIFY(APP_BUILD_VERSION)"
+   CONFIG_LOG_BACKEND_FLASH_BUILD_ID_HEADER="zephyr/app_version.h"
+
+If that header is not in the Zephyr tree itself, the application must add its location to the
+Zephyr include paths with:
+
+.. code-block:: cmake
+
+   zephyr_include_directories(src)
+
+Only the first ``LOG_BACKEND_FLASH_BUILD_ID_SIZE`` characters are stored and compared, so an id
+has to tell one build from another within them.
+
+A partition holding a log in a layout this firmware does not know -- one written after the on-disk
+format was changed, say -- is left alone entirely. Nothing in it can be located, not even where it
+ends, so :c:func:`log_backend_flash_query` and :c:func:`log_backend_flash_read` fail with
+``-ENOTSUP`` and nothing is appended to it. :c:func:`log_backend_flash_erase` is what recovers, and
+deliberately the only thing that does, so that a log is never discarded behind the back of whoever
+might still want it.
+
+Setting the expression to ``NULL`` disables the build id check. Use with caution.
+
+Leaving :kconfig:option:`CONFIG_LOG_BACKEND_FLASH_BUILD_ID` at its default empty value yields a
+build error. It must be set explicitly.
+
+Only memory that does not need an explicit erase before a write is supported, such as RRAM and
+MRAM. Records are packed end to end, so the write block holding the tail of a record is written
+again when the next record arrives, which ordinary NOR flash cannot do. Memory that needs an erase
+is refused outright, for reading a stored log back as much as for writing one.
+
+If the partition is not yet formatted, it is formatted the first time it is accessed (read or
+write). Afterwards, the log is erased only on request, never to make room: once the partition is
+full, further messages are dropped and counted. :c:func:`log_backend_flash_read` hands back whole
+records, framing stripped, so that what it returns is a dictionary log stream;
+:zephyr_file:`scripts/logging/dictionary/log_parser.py` decodes it against the ``.elf`` of the
+firmware that wrote it. :c:func:`log_backend_flash_query` reports how many records are stored and
+whether the running firmware can format them.
+
+The backend writes from :c:func:`log_backend_msg_process`, which is why it requires
+:kconfig:option:`CONFIG_LOG_MODE_DEFERRED`, and stops writing once logging enters panic mode: after
+:c:func:`log_panic` messages are processed in the context that produced them with interrupts
+locked, which is not a context a flash write can happen in. Call :c:func:`log_flush` from a thread
+where the log has to reach the medium before a reboot.
+
+Backend options:
+
+:kconfig:option:`CONFIG_LOG_BACKEND_FLASH_AUTOSTART`: Start the backend together with the logging
+subsystem. Disable it to have the application call :c:func:`log_backend_enable` itself.
+
+:kconfig:option:`CONFIG_LOG_BACKEND_FLASH_WRITE_BLOCK_MAX`: Largest flash write block the backend
+supports. It refuses to write to a partition that needs larger writes.
 
 .. _logging_guide_dictionary:
 
