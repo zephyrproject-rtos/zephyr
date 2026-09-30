@@ -629,10 +629,6 @@ static int adc_mspm0_config_sequence(const struct device *dev, const struct adc_
 
 	regs->ctl1 = (regs->ctl1 & ~(ADC12_CTL1_AVGN | ADC12_CTL1_AVGD)) | avg_acc | avg_div;
 
-	if (mem_ctl_count - 1 != data->channel_eoc) {
-		return -EINVAL;
-	}
-
 	regs->ctl1 =
 		(regs->ctl1 & ~(ADC12_CTL1_SAMPMODE | ADC12_CTL1_CONSEQ | ADC12_CTL1_TRIGSRC)) |
 		ADC12_CTL1_CONSEQ_VAL_SEQUENCE | ADC12_CTL1_SAMPMODE_VAL_AUTO |
