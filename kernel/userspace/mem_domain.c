@@ -111,10 +111,7 @@ int k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
 
 	domain->num_partitions = 0U;
 	(void)memset(domain->partitions, 0, sizeof(domain->partitions));
-
-#ifdef CONFIG_MEM_DOMAIN_HAS_THREAD_LIST
 	sys_dlist_init(&domain->thread_mem_domain_list);
-#endif /* CONFIG_MEM_DOMAIN_HAS_THREAD_LIST */
 
 #ifdef CONFIG_ARCH_MEM_DOMAIN_DATA
 	ret = arch_mem_domain_init(domain);
@@ -314,11 +311,8 @@ static int add_thread_locked(struct k_mem_domain *domain,
 
 	LOG_DBG("add thread %p to domain %p", thread, domain);
 
-#ifdef CONFIG_MEM_DOMAIN_HAS_THREAD_LIST
 	sys_dlist_append(&domain->thread_mem_domain_list,
 			 &thread->mem_domain_info.thread_mem_domain_node);
-#endif /* CONFIG_MEM_DOMAIN_HAS_THREAD_LIST */
-
 	thread->mem_domain_info.mem_domain = domain;
 
 #ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
@@ -336,9 +330,7 @@ static int remove_thread_locked(struct k_thread *thread)
 	LOG_DBG("remove thread %p from memory domain %p",
 		thread, thread->mem_domain_info.mem_domain);
 
-#ifdef CONFIG_MEM_DOMAIN_HAS_THREAD_LIST
 	sys_dlist_remove(&thread->mem_domain_info.thread_mem_domain_node);
-#endif /* CONFIG_MEM_DOMAIN_HAS_THREAD_LIST */
 
 #ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
 	ret = arch_mem_domain_thread_remove(thread);
@@ -381,7 +373,10 @@ int k_mem_domain_add_thread(struct k_mem_domain *domain, k_tid_t thread)
 	k_spinlock_key_t key;
 
 	key = k_spin_lock(&z_mem_domain_lock);
-	if (thread->mem_domain_info.mem_domain != domain) {
+	if (!sys_dnode_is_linked(&thread->mem_domain_info.thread_mem_domain_node)) {
+		/* The thread has exited and left its domain */
+		ret = -EINVAL;
+	} else if (thread->mem_domain_info.mem_domain != domain) {
 		struct k_mem_domain *old_domain = thread->mem_domain_info.mem_domain;
 
 		ret = remove_thread_locked(thread);
@@ -395,14 +390,12 @@ int k_mem_domain_add_thread(struct k_mem_domain *domain, k_tid_t thread)
 			 * The architecture leaves a thread it could not move
 			 * configured for its old domain: keep it a member there.
 			 */
-#ifdef CONFIG_MEM_DOMAIN_HAS_THREAD_LIST
 			sys_dnode_t *node = &thread->mem_domain_info.thread_mem_domain_node;
 
 			if (sys_dnode_is_linked(node)) {
 				sys_dlist_remove(node);
 			}
 			sys_dlist_append(&old_domain->thread_mem_domain_list, node);
-#endif /* CONFIG_MEM_DOMAIN_HAS_THREAD_LIST */
 			thread->mem_domain_info.mem_domain = old_domain;
 		}
 	}

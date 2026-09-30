@@ -83,13 +83,11 @@ struct k_mem_domain {
 #endif /* CONFIG_ARCH_MEM_DOMAIN_DATA */
 	/** partitions in the domain */
 	struct k_mem_partition partitions[CONFIG_MAX_DOMAIN_PARTITIONS];
-#ifdef CONFIG_MEM_DOMAIN_HAS_THREAD_LIST
 	/** Doubly linked list of member threads,
 	 * pointer to the thread_mem_domain_node inside
 	 * each thread's memory domain info struct.
 	 */
 	sys_dlist_t thread_mem_domain_list;
-#endif /* CONFIG_MEM_DOMAIN_HAS_THREAD_LIST */
 	/** number of active partitions in the domain */
 	uint8_t num_partitions;
 };
@@ -196,12 +194,15 @@ int k_mem_domain_remove_partition(struct k_mem_domain *domain,
  * @brief Add a thread into a memory domain.
  *
  * Add a thread into a memory domain. It will be removed from whatever
- * memory domain it previously belonged to.
+ * memory domain it previously belonged to. A thread that has exited is a
+ * member of no domain and cannot be added to one.
  *
  * @param domain The memory domain that the thread is going to be added into.
  * @param thread ID of thread going to be added into the memory domain.
  *
- * @return 0 if successful, fails otherwise.
+ * @retval 0 if successful
+ * @retval -EINVAL if the thread has exited
+ * @return a negative error code from the architecture layer otherwise.
  */
 int k_mem_domain_add_thread(struct k_mem_domain *domain,
 				   k_tid_t thread);
