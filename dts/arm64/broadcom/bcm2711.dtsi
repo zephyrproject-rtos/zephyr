@@ -78,12 +78,30 @@
 	};
 
 	soc {
-		dma-ranges = <0xc0000000 0x0 0x40000000>;
+		dma-ranges = <0xc0000000 0x0 0x40000000>,
+			     <0x7e000000 0xfe000000 0x01800000>;
 
 		sram0: memory@200000 {
 			compatible = "mmio-sram";
 			reg = <0x200000 0x80000>;
 			device_type = "memory";
+		};
+
+		/* Channels 11..14 are DMA4 engines with a different register layout */
+		dma: dma@fe007000 {
+			compatible = "brcm,bcm2835-dma";
+			reg = <0xfe007000 0xb00>;
+			interrupts = <GIC_SPI 84 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 85 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 88 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			#dma-cells = <1>;
+			dma-channels = <11>;
+			dma-buf-addr-alignment = <64>;
+			brcm,dma-channel-mask = <0x0630>;
+			status = "disabled";
 		};
 
 		mbox0: mbox@fe00b880 {
