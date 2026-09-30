@@ -15,28 +15,32 @@
 #include <stmemsc.h>
 #include "lps22hh_reg.h"
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#define LPS22H_ANY_INST_ON_BUS(bus) \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps22hh, bus) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps22hx, bus)
+
+#if LPS22H_ANY_INST_ON_BUS(spi)
 #include <zephyr/drivers/spi.h>
-#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
+#endif /* LPS22H_ANY_INST_ON_BUS(spi) */
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+#if LPS22H_ANY_INST_ON_BUS(i2c)
 #include <zephyr/drivers/i2c.h>
-#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
+#endif /* LPS22H_ANY_INST_ON_BUS(i2c) */
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+#if LPS22H_ANY_INST_ON_BUS(i3c)
 #include <zephyr/drivers/i3c.h>
-#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c) */
+#endif /* LPS22H_ANY_INST_ON_BUS(i3c) */
 
 struct lps22hh_config {
 	stmdev_ctx_t ctx;
 	union {
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+#if LPS22H_ANY_INST_ON_BUS(i2c)
 		const struct i2c_dt_spec i2c;
 #endif
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#if LPS22H_ANY_INST_ON_BUS(spi)
 		const struct spi_dt_spec spi;
 #endif
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+#if LPS22H_ANY_INST_ON_BUS(i3c)
 		struct i3c_device_desc **i3c;
 #endif
 	} stmemsc_cfg;
@@ -45,17 +49,21 @@ struct lps22hh_config {
 	struct gpio_dt_spec gpio_int;
 #endif
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+#if LPS22H_ANY_INST_ON_BUS(i3c)
 	struct {
 		const struct device *bus;
 		const struct i3c_device_id dev_id;
 	} i3c;
 #endif
+
+	bool lps22hb_compat;
 };
 
 struct lps22hh_data {
 	int32_t sample_press;
 	int16_t sample_temp;
+
+	bool is_lps22hb;
 
 #ifdef CONFIG_LPS22HH_TRIGGER
 	struct gpio_callback gpio_cb;
@@ -74,7 +82,7 @@ struct lps22hh_data {
 
 #endif /* CONFIG_LPS22HH_TRIGGER */
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+#if LPS22H_ANY_INST_ON_BUS(i3c)
 	struct i3c_device_desc *i3c_dev;
 #endif
 };
