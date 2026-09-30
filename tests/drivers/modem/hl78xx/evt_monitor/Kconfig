@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Netfeasa Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+# The monitor's Kconfig lives under `if MODEM_HL78XX` in the driver tree. This
+# test builds the monitor without the driver, so the symbols the library
+# compiles against are re-declared here; Kconfig merges the definitions.
+
+mainmenu "HL78xx event monitor test"
+
+config HL78XX_EVT_MONITOR_QUEUE_DEPTH
+	int "Deferred notification queue depth"
+	default 16
+
+config HL78XX_EVT_MONITOR_MAX_INSTANCE_MONITORS
+	int "Maximum number of runtime monitors"
+	default 8
+
+config HL78XX_EVT_MONITOR_APP_INIT_PRIORITY
+	int "Monitor init priority"
+	default 0
+
+config HL78XX_EVT_MONITOR_LOG_LEVEL
+	int "Monitor log level"
+	default 3
+
+source "Kconfig.zephyr"
