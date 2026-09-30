@@ -98,6 +98,10 @@ socket on a link of its own.
      - :zephyr_file:`tests/net/conformance/arp`
      - ``zethL2``
      - root
+   * - :zephyr_file:`igmp <tests/net/conformance/igmp/README.rst>`
+     - :zephyr_file:`tests/net/conformance/igmp`
+     - ``zethL2``
+     - root
    * - :zephyr_file:`ndp <tests/net/conformance/ndp/README.rst>`
      - :zephyr_file:`tests/net/conformance/ndp`
      - ``zethL2``
