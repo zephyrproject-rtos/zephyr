@@ -46,6 +46,12 @@ class SPDX3Serializer:
         "sdk": "Zephyr SDK",
     }
 
+    # IRI prefix of the SPDX License List licenses. These are defined by the
+    # License List itself, so documents reference them via ExternalMap instead
+    # of defining them: every document would otherwise define the same element,
+    # each with its own creationInfo, and documents could not be merged.
+    _LISTED_LICENSE_PREFIX = "https://spdx.org/licenses/"
+
     # Name of the SBOMDocument that hosts the Build profile (build targets).
     _BUILD_DOCUMENT = "build"
 
@@ -787,24 +793,22 @@ class SPDX3Serializer:
     def _create_license_expression(
         self, license_str: str
     ) -> spdx.simplelicensing_LicenseExpression | None:
-        """Create a license expression object and add it to elements."""
+        """Create a license expression object and add it to elements.
+
+        Only used for custom licenses and compound expressions; single License
+        List licenses are referenced by their IRI (see _get_license_target_id).
+        """
         if not license_str or license_str == NOASSERTION:
             return None
 
         license_expr = spdx.simplelicensing_LicenseExpression()
-        standard_licenses = get_license_ids()
-
-        # Check if it's a standard license ID
-        if license_str in standard_licenses:
-            license_expr._id = f"https://spdx.org/licenses/{license_str}"
-        else:
-            # Custom license - use a namespace-based ID
-            namespace = self.sbom_data.namespace_prefix.rstrip("/")
-            # Normalize the license string for use in URI
-            normalized = normalize_spdx_name(
-                license_str.replace(" ", "-").replace("(", "").replace(")", "")
-            )
-            license_expr._id = self._shorten_id(f"{namespace}/licenses/{normalized}")
+        # Custom license or compound expression - use a namespace-based ID
+        namespace = self.sbom_data.namespace_prefix.rstrip("/")
+        # Normalize the license string for use in URI
+        normalized = normalize_spdx_name(
+            license_str.replace(" ", "-").replace("(", "").replace(")", "")
+        )
+        license_expr._id = self._shorten_id(f"{namespace}/licenses/{normalized}")
 
         license_expr.simplelicensing_licenseExpression = license_str
         license_expr.creationInfo = self.creation_info._id
@@ -820,6 +824,9 @@ class SPDX3Serializer:
         """Return the SPDX 3 target ID for a license value."""
         if not license_str or license_str == NOASSERTION:
             return spdx.expandedlicensing_IndividualLicensingInfo.NoAssertionLicense
+
+        if license_str in get_license_ids():
+            return f"{self._LISTED_LICENSE_PREFIX}{license_str}"
 
         license_expr = self._create_license_expression(license_str)
         return license_expr._id if license_expr else None
@@ -924,9 +931,7 @@ class SPDX3Serializer:
         )
         document.creationInfo = self.creation_info
 
-        data_license = self._create_license_expression("CC0-1.0")
-        if data_license:
-            document.dataLicense = data_license._id
+        document.dataLicense = self._get_license_target_id("CC0-1.0")
 
         document.profileConformance.append(spdx.ProfileIdentifierType.core)
         document.profileConformance.append(spdx.ProfileIdentifierType.software)
@@ -970,9 +975,12 @@ class SPDX3Serializer:
             supplier_agent = self.organizations.get(component.supplier)
             if supplier_agent:
                 element_ids.add(supplier_agent._id)
-        data_license = self._create_license_expression("CC0-1.0")
-        if data_license:
-            element_ids.add(data_license._id)
+        element_ids.add(self._get_license_target_id("CC0-1.0"))
+
+        # License List licenses are imported, never defined here.
+        listed_ids = {i for i in element_ids if i.startswith(self._LISTED_LICENSE_PREFIX)}
+        element_ids -= listed_ids
+        import_ids |= listed_ids
 
         # A locally defined element is never also imported.
         import_ids -= element_ids
