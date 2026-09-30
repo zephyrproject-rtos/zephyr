@@ -63,6 +63,11 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
+* Architectures
+
+  * :kconfig:option:`CONFIG_ESP32S3_PIE_SHARING` (Xtensa, preserve the registers of the
+    ESP32-S3 PIE SIMD extension across context switches, see :ref:`xtensa_developer_guide`)
+
 * Bluetooth
 
   * Services
