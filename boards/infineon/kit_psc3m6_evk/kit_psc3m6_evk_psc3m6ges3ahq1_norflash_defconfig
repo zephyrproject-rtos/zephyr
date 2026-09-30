@@ -3,11 +3,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-board:
-  name: kit_psc3m6_evk
-  full_name: PSOC™ Control C3M6 Evaluation Kit
-  vendor: infineon
-  socs:
-  - name: psc3m6ges3ahq1
-    variants:
-    - name: 'norflash'
+CONFIG_TRUSTED_EXECUTION_SECURE=y
+
+# Enable SPI and NOR FLASH
+CONFIG_SPI=y
+CONFIG_SPI_NOR=y

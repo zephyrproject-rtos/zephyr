@@ -125,6 +125,67 @@ Here is an example for the :zephyr:code-sample:`hello_world` application.
    :board: kit_psc3m6_evk
    :goals: build
 
+Board Variants
+**************
+
+NOR Flash Variant
+=================
+
+The ``kit_psc3m6_evk/psc3m6ges3ahq1/norflash`` variant enables an external
+S25FL128 SPI NOR flash (16 MB) connected via SCB5 (P8.1 MOSI, P8.2 MISO,
+P8.3 CLK, P8.0 CS). This flash is exposed as a storage partition suitable for
+use with the flash API, file systems, or settings storage.
+
+.. note::
+
+   This variant requires a hardware rework. The default board target
+   (``kit_psc3m6_evk``) should be used for unmodified boards.
+
+.. note::
+
+   The S25FL128 flash operates in standard 4-wire SPI mode only. The WP# and
+   RESET# pins are not connected on this board, so QUAD SPI is not supported.
+   Hardware write-protection is not available; software write-protection via
+   the flash status register is still possible.
+
+.. _kit_psc3m6_evk_norflash_rework:
+
+Kit Rework for NOR Flash
+------------------------
+
+The following resistor rework is required per the `KIT_PSC3M6_EVAL User Guide`_
+to enable the SCB5 SPI NOR flash interface:
+
++------------------------+----------+
+| Reference Designator   | Assembly |
++========================+==========+
+| R62                    | Stuff    |
++------------------------+----------+
+| R63                    | Stuff    |
++------------------------+----------+
+| R64                    | Stuff    |
++------------------------+----------+
+| R67                    | Stuff    |
++------------------------+----------+
+| R71                    | DNI      |
++------------------------+----------+
+| R72                    | DNI      |
++------------------------+----------+
+| R73                    | DNI      |
++------------------------+----------+
+| R74                    | DNI      |
++------------------------+----------+
+| R134                   | DNI      |
++------------------------+----------+
+
+Building for the NOR Flash Variant
+----------------------------------
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/flash_shell
+   :board: kit_psc3m6_evk/psc3m6ges3ahq1/norflash
+   :goals: build
+
 Programming and Debugging
 *************************
 
