@@ -10,27 +10,39 @@ config AUDIO_TRANSFER_INTERVAL
 	help
 	  Controls the audio transfer interval.
 
-config PCM_BUFFERS
-	int "PCM Buffer Count"
+config VOICE_BUFFERS
+	int "VOICE Buffer Count"
 	default 4
 	help
 	  Controls the initial count of audio data blocks.
 
-config PCM_RX_THREAD_STACK_SIZE
-	int "PCM RX thread stack size"
+config VOICE_RX_THREAD_STACK_SIZE
+	int "VOICE RX thread stack size"
 	default 1024
 	help
-	  Controls the PCM RX thread stack size in bytes.
+	  Controls the VOICE RX thread stack size in bytes.
 
-config PCM_RX_THREAD_PRIO
-	int "PCM RX thread priority"
+config VOICE_TX_THREAD_STACK_SIZE
+	int "VOICE TX thread stack size"
+	default 1024
+	help
+	  Controls the VOICE TX thread stack size in bytes.
+
+config VOICE_RX_THREAD_PRIO
+	int "VOICE RX thread priority"
 	default 4
 	help
-	  Controls the PCM RX thread priority
+	  Controls the VOICE RX thread priority
+
+config VOICE_TX_THREAD_PRIO
+	int "VOICE TX thread priority"
+	default 3
+	help
+	  Controls the VOICE TX thread priority
 
 config CODEC_BUFFERS
 	int "CODEC Buffer Count"
-	default PCM_BUFFERS
+	default VOICE_BUFFERS
 	help
 	  Controls the initial count of audio data blocks.
 
@@ -45,3 +57,12 @@ config CODEC_RX_THREAD_PRIO
 	default 4
 	help
 	  Controls the CODEC RX thread priority
+
+config APP_HFP_HF_CODEC_MSBC_ENABLED
+	bool "mSBC codec support for voice over PCM"
+	default BT_H4_NXP_CTLR
+	depends on !BT_VOICE_OVER_HCI
+	select BT_HFP_HF_CODEC_NEG
+	select BT_HFP_HF_CODEC_MSBC
+	help
+	  Enables mSBC codec support for voice over PCM.
