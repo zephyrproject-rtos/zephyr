@@ -5,6 +5,7 @@ menuconfig ETH_LAN865X
 	bool "LAN865X 10BASE-T1S Controller"
 	default y
 	depends on DT_HAS_MICROCHIP_LAN865X_ENABLED
+	select ETH_PHY_DRIVER
 	select SPI
 	select NET_L2_ETHERNET_MGMT
 	help
