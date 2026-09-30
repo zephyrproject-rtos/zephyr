@@ -295,8 +295,25 @@ static ALWAYS_INLINE void isr_enter_hook(void)
 static inline void *return_to(void *interrupted)
 {
 #ifdef CONFIG_MULTITHREADING
-	return _current_cpu->nested <= 1 ?
-		z_get_next_switch_handle(interrupted) : interrupted;
+	void *next =
+		_current_cpu->nested <= 1 ? z_get_next_switch_handle(interrupted) : interrupted;
+
+#ifdef CONFIG_XTENSA_LAZY_HIFI_SHARING
+	if (next != interrupted) {
+		unsigned int cp;
+
+		/* Disable the HiFi coprocessor, as xtensa_switch() does, so
+		 * that the incoming thread traps on its first HiFi
+		 * instruction instead of using the registers of the current
+		 * HiFi owner.
+		 */
+		__asm__ volatile("rsr.cpenable %0" : "=r"(cp));
+		cp &= ~BIT(XCHAL_CP_ID_AUDIOENGINELX);
+		__asm__ volatile("wsr.cpenable %0" :: "r"(cp));
+	}
+#endif /* CONFIG_XTENSA_LAZY_HIFI_SHARING */
+
+	return next;
 #else
 	return interrupted;
 #endif /* CONFIG_MULTITHREADING */
