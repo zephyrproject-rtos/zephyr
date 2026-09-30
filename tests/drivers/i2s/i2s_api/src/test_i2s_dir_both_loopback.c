@@ -302,3 +302,68 @@ ZTEST_USER(i2s_dir_both_loopback, test_i2s_dir_both_transfer_tx_underrun)
 
 	k_sleep(K_MSEC(200));
 }
+
+#define TEST_I2S_RECOVERY_REPEAT_COUNT 5
+
+/** @brief TX underrun error with immediate single-direction PREPARE(TX) recovery.
+ *
+ * - An active I2S_DIR_BOTH transfer encounters a TX underrun error.
+ * - Immediately recover using single-direction PREPARE(TX) without draining.
+ * - Immediately restart the prepared direction (TX).
+ * - Repeat across multiple iterations to verify clean recovery and buffer reuse.
+ */
+ZTEST_USER(i2s_dir_both_loopback, test_i2s_dir_both_tx_underrun_immediate_prepare_tx)
+{
+	if (!dir_both_supported) {
+		TC_PRINT("I2S_DIR_BOTH value is not supported.\n");
+		ztest_test_skip();
+		return;
+	}
+
+	int ret;
+
+	for (int iter = 0; iter < TEST_I2S_RECOVERY_REPEAT_COUNT; iter++) {
+		/* Prefill only one TX block so underrun occurs promptly */
+		ret = tx_block_write(dev_i2s, 0, 0);
+		zassert_equal(ret, TC_PASS);
+
+		ret = i2s_trigger(dev_i2s, I2S_DIR_BOTH, I2S_TRIGGER_START);
+		zassert_equal(ret, 0, "RX/TX START trigger failed");
+
+		/* Read the one data block */
+		ret = rx_block_read(dev_i2s, 0);
+		zassert_equal(ret, TC_PASS);
+
+		/* Wait for underrun to occur */
+		k_sleep(K_MSEC(200));
+
+		/* Write should now fail with -EIO due to underrun error state */
+		ret = tx_block_write(dev_i2s, 2, -EIO);
+		zassert_equal(ret, TC_PASS);
+
+		/* Issue single-direction PREPARE(TX) while active_dir
+		 * is still I2S_DIR_BOTH.
+		 */
+		ret = i2s_trigger(dev_i2s, I2S_DIR_TX, I2S_TRIGGER_PREPARE);
+		zassert_equal(ret, 0, "PREPARE trigger failed");
+
+		/* Immediately write TX blocks and restart the prepared direction (TX) */
+		ret = tx_block_write(dev_i2s, 1, 0);
+		zassert_equal(ret, TC_PASS);
+		ret = tx_block_write(dev_i2s, 1, 0);
+		zassert_equal(ret, TC_PASS);
+
+		ret = i2s_trigger(dev_i2s, I2S_DIR_TX, I2S_TRIGGER_START);
+		zassert_equal(ret, 0, "TX START restart failed");
+
+		ret = i2s_trigger(dev_i2s, I2S_DIR_TX, I2S_TRIGGER_DRAIN);
+		zassert_equal(ret, 0, "TX DRAIN trigger failed");
+
+		/* Wait for TX to finish draining completely before touching the peer */
+		k_sleep(K_MSEC(200));
+
+		/* Quiesce peer stream before the next iteration */
+		ret = i2s_trigger(dev_i2s, I2S_DIR_RX, I2S_TRIGGER_DROP);
+		zassert_equal(ret, 0, "RX DROP trigger failed");
+	}
+}
