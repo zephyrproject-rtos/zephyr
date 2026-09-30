@@ -111,6 +111,13 @@ struct uhc_dwc2_channel_data {
 	bool periodic_started;
 	/* Periodic transfer has been scheduled and waiting for the SOF */
 	bool periodic_scheduled;
+	/* Channel requires split transaction */
+	bool do_split;
+};
+
+struct uhc_dwc2_split_info {
+	uint8_t hub_addr;
+	uint8_t hub_port;
 };
 
 struct uhc_dwc2_channel {
@@ -224,6 +231,36 @@ static inline bool periodic_frame_overrun(uint16_t current_frame, uint16_t sched
 	 * the scheduled frame is behind current_frame.
 	 */
 	return delta == 0U || delta >= PERIODIC_FRAME_HALF;
+}
+
+static inline bool get_split_info(const struct usb_device *udev,
+				  struct uhc_dwc2_split_info *info)
+{
+	const struct usb_device *child = udev;
+
+	/* A high-speed target does not need split transactions. */
+	if (udev->speed == USB_SPEED_SPEED_HS) {
+		return false;
+	}
+
+	/* TODO: Requires the udev struct to have hub_port */
+	while (child->hub != NULL) {
+		const struct usb_device *parent = child->hub;
+
+		if (parent->speed == USB_SPEED_SPEED_HS) {
+			info->hub_addr = parent->addr;
+			info->hub_port = child->hub_port;
+
+			LOG_WRN("SPLIT needed, dev=%u, speed=%u to hub=%u, port=%u",
+				udev->addr, udev->speed,
+				info->hub_addr, info->hub_port);
+			return true;
+		}
+
+		child = parent;
+	}
+
+	return false;
 }
 
 static inline void dwc2_set_reset(struct usb_dwc2_reg *const base, const bool reset)
@@ -1240,6 +1277,7 @@ static int ch_claim(const struct device *const dev,
 	ch->data->scheduled_frame = 0;
 	ch->data->periodic_started = false;
 	ch->data->periodic_scheduled = false;
+	ch->data->do_split = false;
 
 	priv->free_chs--;
 
@@ -1253,9 +1291,14 @@ static int ch_configure(const struct device *const dev, struct uhc_dwc2_channel 
 	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 	struct uhc_transfer *const xfer = ch->xfer;
 	struct usb_device *const udev = xfer->udev;
+	struct uhc_dwc2_split_info split;
 	uint32_t hcint;
 	uint32_t hcintmsk;
 	uint32_t hcchar;
+
+	if (get_split_info(udev, &split)) {
+		ch->data->do_split = true;
+	}
 
 	/* Clear the interrupt bits by writing them back */
 	hcint = sys_read32((mem_addr_t)&ch->regs->hcint);
@@ -1877,7 +1920,7 @@ static int submit_xfer(const struct device *const dev, struct uhc_transfer *cons
 	struct uhc_dwc2_channel *ch = NULL;
 	int ret;
 
-	LOG_DBG("addr=%u, ep=%02Xh, mps=%d, int=%d, start_frame=%d, stage=%d, no_status=%d",
+	LOG_INF("addr=%u, ep=%02Xh, mps=%d, int=%d, start_frame=%d, stage=%d, no_status=%d",
 		xfer->udev->addr, xfer->ep, xfer->mps, xfer->interval,
 		xfer->start_frame, xfer->stage, xfer->no_status);
 
