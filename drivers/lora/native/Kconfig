@@ -7,4 +7,5 @@ config LORA_SX12XX_NATIVE_COMMON
 	  Code shared by the native SX12xx drivers.
 
 rsource "sx126x/Kconfig"
+rsource "sx128x/Kconfig"
 rsource "lr11xx/Kconfig"
