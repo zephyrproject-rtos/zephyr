@@ -413,7 +413,8 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 		   0) {
 #endif /* !CONFIG_BT_CENTRAL */
 		radio_tmr_tifs_set(EVENT_IFS_US);
-		radio_switch_complete_and_tx(PHY_LEGACY, PHY_FLAGS_UNUSED, PHY_LEGACY, PHY_FLAGS_UNUSED);
+		radio_switch_complete_and_tx(PHY_LEGACY, PHY_FLAGS_UNUSED,
+					     PHY_LEGACY, PHY_FLAGS_UNUSED);
 	} else {
 		radio_switch_complete_and_disable();
 	}
@@ -874,7 +875,8 @@ static void isr_common_done(void *param)
 		   0) {
 #endif /* !CONFIG_BT_CENTRAL */
 		radio_tmr_tifs_set(EVENT_IFS_US);
-		radio_switch_complete_and_tx(PHY_LEGACY, PHY_FLAGS_UNUSED, PHY_LEGACY, PHY_FLAGS_UNUSED);
+		radio_switch_complete_and_tx(PHY_LEGACY, PHY_FLAGS_UNUSED,
+					     PHY_LEGACY, PHY_FLAGS_UNUSED);
 	} else {
 		radio_switch_complete_and_disable();
 	}
