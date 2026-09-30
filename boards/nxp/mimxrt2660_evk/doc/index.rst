@@ -95,6 +95,9 @@ Connections and I/Os
 |           | DATA0..DATA3    | (quad; the flash is not wired      |
 |           |                 | octal on this board)               |
 +-----------+-----------------+------------------------------------+
+| LPADC0    | ADC0 CH0A input | PIO3_0 (ball R2), J94 pin 13       |
+|           |                 | Input range 0-1.8 V                |
++-----------+-----------------+------------------------------------+
 
 The debug console runs at 115200 8N1 on the MCU-Link virtual COM port.
 
@@ -145,7 +148,7 @@ LPUART0 uses PERI3 divided by 5 (80 MHz):
                                            IMX_CCM_MUX_LPUART0_PERI3, 5, 1)>;
    };
 
-Only the LPUART driver reads that second entry today. A peripheral whose driver does
+Only the LPUART and LPADC drivers read that second entry today. A peripheral whose driver does
 not yet apply it keeps its root at the reset value, so adding the entry alone changes
 nothing for LPSPI, LPI2C or the others.
 

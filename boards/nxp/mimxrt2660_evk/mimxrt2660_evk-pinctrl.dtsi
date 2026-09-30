@@ -30,4 +30,12 @@
 			input-enable;
 		};
 	};
+
+	/* LPADC0: CH0A = PIO3_0 (J94 pin 13), CH0B = PIO3_1 (J94 pin 14). */
+	pinmux_adc0: pinmux_adc0 {
+		group0 {
+			pinmux = <&main__iomuxc_pio3_0_hsp_adc0_ch0a>,
+				 <&main__iomuxc_pio3_1_hsp_adc0_ch0b>;
+		};
+	};
 };
