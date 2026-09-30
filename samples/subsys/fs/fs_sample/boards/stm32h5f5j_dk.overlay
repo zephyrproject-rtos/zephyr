@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&sdmmc1 {
+	status = "okay";
+};
