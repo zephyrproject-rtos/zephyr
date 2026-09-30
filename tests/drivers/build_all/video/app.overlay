@@ -23,6 +23,12 @@
 		#clock-cells = <0>;
 	};
 
+	gc0308_input_clock: gc0308-input-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <24000000>;
+		#clock-cells = <0>;
+	};
+
 	test {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -187,6 +193,14 @@
 				compatible = "sony,imx219";
 				reg = <0xe>;
 				clocks = <&imx219_input_clock>;
+			};
+
+			test_i2c_gc0308: gc0308@f {
+				compatible = "galaxycore,gc0308";
+				reg = <0xf>;
+				clocks = <&gc0308_input_clock>;
+				reset-gpios = <&test_gpio 0 1>;
+				pwdn-gpios = <&test_gpio 1 0>;
 			};
 		};
 
