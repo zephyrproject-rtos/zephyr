@@ -975,6 +975,8 @@ static int regulator_npm10xx_init(const struct device *dev)
 	uint8_t reg;
 	bool enabled;
 
+	regulator_common_data_init(dev);
+
 	if (!i2c_is_ready_dt(&config->i2c)) {
 		LOG_ERR("I2C bus is not ready");
 		return -ENODEV;
