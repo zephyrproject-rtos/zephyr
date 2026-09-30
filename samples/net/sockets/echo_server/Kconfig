@@ -39,6 +39,15 @@ config NET_SAMPLE_HTTPS_SERVICE
 	default y if NET_SAMPLE_WEBSOCKET_CONSOLE
 	depends on NET_SOCKETS_SOCKOPT_TLS || TLS_CREDENTIALS
 
+config ZVFS_EVENTFD_ADD_SIZE_NET_SAMPLE_ECHO_SERVER
+	int "Number of eventfds needed by the echo-server UDP threads"
+	default 2 if NET_IPV4 && NET_IPV6
+	default 1
+	depends on ZVFS_EVENTFD && NET_SOCKETS_SOCKOPT_TLS
+	help
+	  With TLS, each UDP thread of the sample polls one zvfs eventfd, which
+	  wakes it when the server stops.
+
 if USB_DEVICE_STACK_NEXT
 
 # Source common USB sample options used to initialize new experimental USB

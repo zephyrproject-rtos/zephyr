@@ -14,6 +14,7 @@ LOG_MODULE_DECLARE(net_echo_server_sample, LOG_LEVEL_DBG);
 #include <errno.h>
 #include <stdio.h>
 
+#include <zephyr/posix/poll.h>
 #include <zephyr/posix/sys/socket.h>
 #include <zephyr/posix/unistd.h>
 
@@ -24,20 +25,23 @@ LOG_MODULE_DECLARE(net_echo_server_sample, LOG_LEVEL_DBG);
 #include "certificate.h"
 
 #define MAX_CLIENT_QUEUE CONFIG_NET_SAMPLE_NUM_HANDLERS
+#define SEND_WAIT_MS 100
 
 #if defined(CONFIG_NET_IPV4)
 K_THREAD_STACK_ARRAY_DEFINE(tcp4_handler_stack, CONFIG_NET_SAMPLE_NUM_HANDLERS,
 			    STACK_SIZE);
 static struct k_thread tcp4_handler_thread[CONFIG_NET_SAMPLE_NUM_HANDLERS];
-static APP_BMEM bool tcp4_handler_in_use[CONFIG_NET_SAMPLE_NUM_HANDLERS];
+static APP_BMEM atomic_t tcp4_handler_in_use[CONFIG_NET_SAMPLE_NUM_HANDLERS];
 #endif
 
 #if defined(CONFIG_NET_IPV6)
 K_THREAD_STACK_ARRAY_DEFINE(tcp6_handler_stack, CONFIG_NET_SAMPLE_NUM_HANDLERS,
 			    STACK_SIZE);
 static struct k_thread tcp6_handler_thread[CONFIG_NET_SAMPLE_NUM_HANDLERS];
-static APP_BMEM bool tcp6_handler_in_use[CONFIG_NET_SAMPLE_NUM_HANDLERS];
+static APP_BMEM atomic_t tcp6_handler_in_use[CONFIG_NET_SAMPLE_NUM_HANDLERS];
 #endif
+
+static APP_BMEM bool tcp_stopping;
 
 static void process_tcp4(void);
 static void process_tcp6(void);
@@ -54,14 +58,42 @@ K_THREAD_DEFINE(tcp6_thread_id, STACK_SIZE,
 
 static ssize_t sendall(int sock, const void *buf, size_t len)
 {
+	struct pollfd pfd = {
+		.fd = sock,
+		.events = POLLOUT,
+	};
+	int64_t end = k_uptime_get() + CONFIG_NET_SOCKET_MAX_SEND_WAIT;
+	bool woke_early = false;
+
 	while (len) {
-		ssize_t out_len = send(sock, buf, len, 0);
+		ssize_t out_len = send(sock, buf, len, MSG_DONTWAIT);
+		int err;
 
 		if (out_len < 0) {
-			return out_len;
+			err = errno;
+
+			if ((err != EAGAIN) && (err != ENOBUFS)) {
+				return out_len;
+			}
+
+			if (tcp_stopping || (!IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS) &&
+					     (k_uptime_get() >= end))) {
+				return out_len;
+			}
+
+			if ((err == ENOBUFS) || woke_early) {
+				(void)k_msleep(SEND_WAIT_MS);
+				woke_early = false;
+			} else {
+				woke_early = (poll(&pfd, 1, SEND_WAIT_MS) != 0);
+			}
+
+			continue;
 		}
 		buf = (const char *)buf + out_len;
 		len -= out_len;
+		end = k_uptime_get() + CONFIG_NET_SOCKET_MAX_SEND_WAIT;
+		woke_early = false;
 	}
 
 	return 0;
@@ -141,7 +173,7 @@ static void handle_data(void *ptr1, void *ptr2, void *ptr3)
 {
 	int slot = POINTER_TO_INT(ptr1);
 	struct data *data = ptr2;
-	bool *in_use = ptr3;
+	atomic_t *in_use = ptr3;
 	int offset = 0;
 	int received;
 	int client;
@@ -186,8 +218,10 @@ static void handle_data(void *ptr1, void *ptr2, void *ptr3)
 				      data->tcp.accepted[slot].recv_buffer,
 				      offset);
 			if (ret < 0) {
-				LOG_ERR("TCP (%s): Failed to send, "
-					"closing socket", data->proto);
+				if (!tcp_stopping) {
+					LOG_ERR("TCP (%s): Failed to send, "
+						"closing socket", data->proto);
+				}
 				break;
 			}
 
@@ -205,11 +239,12 @@ static void handle_data(void *ptr1, void *ptr2, void *ptr3)
 #endif
 	} while (true);
 
-	*in_use = false;
+	/* Whoever clears in_use closes the socket: this handler, or stop_tcp() */
+	if (atomic_cas(in_use, 1, 0)) {
+		(void)close(client);
 
-	(void)close(client);
-
-	data->tcp.accepted[slot].sock = -1;
+		data->tcp.accepted[slot].sock = -1;
+	}
 }
 
 static int get_free_slot(struct data *data)
@@ -238,7 +273,9 @@ static int process_tcp(struct data *data)
 	client = accept(data->tcp.sock, (struct sockaddr *)&client_addr,
 			&client_addr_len);
 	if (client < 0) {
-		LOG_ERR("%s accept error (%d)", data->proto, -errno);
+		if (!tcp_stopping) {
+			LOG_ERR("%s accept error (%d)", data->proto, -errno);
+		}
 		return -errno;
 	}
 
@@ -257,7 +294,7 @@ static int process_tcp(struct data *data)
 
 #if defined(CONFIG_NET_IPV6)
 	if (client_addr.sin_family == AF_INET6) {
-		tcp6_handler_in_use[slot] = true;
+		(void)atomic_set(&tcp6_handler_in_use[slot], 1);
 
 		k_thread_create(
 			&tcp6_handler_thread[slot],
@@ -281,7 +318,7 @@ static int process_tcp(struct data *data)
 
 #if defined(CONFIG_NET_IPV4)
 	if (client_addr.sin_family == AF_INET) {
-		tcp4_handler_in_use[slot] = true;
+		(void)atomic_set(&tcp4_handler_in_use[slot], 1);
 
 		k_thread_create(
 			&tcp4_handler_thread[slot],
@@ -383,15 +420,17 @@ void start_tcp(void)
 {
 	int i;
 
+	tcp_stopping = false;
+
 	for (i = 0; i < CONFIG_NET_SAMPLE_NUM_HANDLERS; i++) {
 		conf.ipv6.tcp.accepted[i].sock = -1;
 		conf.ipv4.tcp.accepted[i].sock = -1;
 
 #if defined(CONFIG_NET_IPV4)
-		tcp4_handler_in_use[i] = false;
+		(void)atomic_clear(&tcp4_handler_in_use[i]);
 #endif
 #if defined(CONFIG_NET_IPV6)
-		tcp6_handler_in_use[i] = false;
+		(void)atomic_clear(&tcp6_handler_in_use[i]);
 #endif
 	}
 
@@ -426,47 +465,59 @@ void start_tcp(void)
 #endif
 }
 
+static void stop_thread(struct k_thread *thread)
+{
+	if (k_thread_join(thread, K_SECONDS(1)) != 0) {
+		/* Not very graceful way to close a thread, but as we may be blocked
+		 * in accept or recv call it seems to be necessary
+		 */
+		k_thread_abort(thread);
+	}
+}
+
+static void stop_handler(struct data *cfg, int slot, struct k_thread *thread, atomic_t *in_use)
+{
+	if (!atomic_cas(in_use, 1, 0)) {
+		return;
+	}
+
+	(void)shutdown(cfg->tcp.accepted[slot].sock, SHUT_RD);
+	stop_thread(thread);
+	(void)close(cfg->tcp.accepted[slot].sock);
+	cfg->tcp.accepted[slot].sock = -1;
+}
+
 void stop_tcp(void)
 {
 	int i;
 
-	/* Not very graceful way to close a thread, but as we may be blocked
-	 * in accept or recv call it seems to be necessary
+	tcp_stopping = true;
+
+	/* Stop both listeners before any handler, so that no accept call
+	 * hands out a descriptor while the handlers are being stopped.
 	 */
+	if (IS_ENABLED(CONFIG_NET_IPV6) && conf.ipv6.tcp.sock >= 0) {
+		(void)close(conf.ipv6.tcp.sock);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && conf.ipv4.tcp.sock >= 0) {
+		(void)close(conf.ipv4.tcp.sock);
+	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		k_thread_abort(tcp6_thread_id);
-		if (conf.ipv6.tcp.sock >= 0) {
-			(void)close(conf.ipv6.tcp.sock);
-		}
-
-		for (i = 0; i < CONFIG_NET_SAMPLE_NUM_HANDLERS; i++) {
-#if defined(CONFIG_NET_IPV6)
-			if (tcp6_handler_in_use[i] == true) {
-				k_thread_abort(&tcp6_handler_thread[i]);
-			}
-#endif
-			if (conf.ipv6.tcp.accepted[i].sock >= 0) {
-				(void)close(conf.ipv6.tcp.accepted[i].sock);
-			}
-		}
+		stop_thread(tcp6_thread_id);
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		k_thread_abort(tcp4_thread_id);
-		if (conf.ipv4.tcp.sock >= 0) {
-			(void)close(conf.ipv4.tcp.sock);
-		}
+		stop_thread(tcp4_thread_id);
+	}
 
-		for (i = 0; i < CONFIG_NET_SAMPLE_NUM_HANDLERS; i++) {
-#if defined(CONFIG_NET_IPV4)
-			if (tcp4_handler_in_use[i] == true) {
-				k_thread_abort(&tcp4_handler_thread[i]);
-			}
+	for (i = 0; i < CONFIG_NET_SAMPLE_NUM_HANDLERS; i++) {
+#if defined(CONFIG_NET_IPV6)
+		stop_handler(&conf.ipv6, i, &tcp6_handler_thread[i], &tcp6_handler_in_use[i]);
 #endif
-			if (conf.ipv4.tcp.accepted[i].sock >= 0) {
-				(void)close(conf.ipv4.tcp.accepted[i].sock);
-			}
-		}
+#if defined(CONFIG_NET_IPV4)
+		stop_handler(&conf.ipv4, i, &tcp4_handler_thread[i], &tcp4_handler_in_use[i]);
+#endif
 	}
 }
