@@ -63,11 +63,11 @@
 		pixelclk-active = <0>;
 		hsync-active = <0>;
 		vsync-active = <0>;
-		hsync-len = <1>;
+		hsync-len = <6>;
 		vsync-len = <1>;
-		hback-porch = <1>;
+		hback-porch = <6>;
 		vback-porch = <1>;
-		hfront-porch = <1>;
+		hfront-porch = <6>;
 		vfront-porch = <1>;
 	};
 
