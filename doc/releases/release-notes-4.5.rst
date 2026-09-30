@@ -925,6 +925,15 @@ New APIs and options
   * :c:macro:`LOG_INST_WRN_PM_DEVICE_RUNTIME_PUT`
   * :c:macro:`LOG_INST_ERR_PM_DEVICE_RUNTIME_PUT`
 
+* PTP Clock
+
+  * :c:func:`ptp_clock_adjust_rate` and the :c:member:`ptp_clock_driver_api.adjust_rate` driver
+    operation (clock rate offset as scaled parts per million instead of a floating-point ratio)
+  * :c:func:`ptp_clock_scaled_ppm_to_ppb`
+  * :c:func:`ptp_clock_adjust_by_scaled_ppm`
+  * :c:macro:`PTP_CLOCK_SCALED_PPM_SHIFT`
+  * :c:macro:`PTP_CLOCK_SCALED_PPM_ONE`
+
 * Pulse IO
 
   * Added the :ref:`Pulse IO <pulse_io_api>` subsystem, a vendor-neutral
