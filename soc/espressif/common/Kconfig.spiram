@@ -30,6 +30,16 @@ config ESP_SPIRAM_MEMTEST
 	help
 	  Runs a memory test on initialization.
 
+config SOC_FAMILY_ESPRESSIF_ESP32_LIBC_HEAP_IN_PSRAM
+	bool "Place libc malloc heap in PSRAM"
+	depends on COMMON_LIBC_MALLOC
+	help
+	  Place the libc malloc heap in the .libc_psram_heap linker section
+	  and rely on the Espressif SoC linker scripts, which already map
+	  that section into the SoC's external RAM (PSRAM) region. This
+	  frees up internal SRAM and allows COMMON_LIBC_MALLOC_ARENA_SIZE to
+	  be sized well beyond what internal RAM alone could hold.
+
 choice SPIRAM_MODE
 	prompt "Mode (QUAD/OCT/HEX) of SPI RAM chip in use"
 	default SPIRAM_MODE_HEX if SOC_SERIES_ESP32P4
