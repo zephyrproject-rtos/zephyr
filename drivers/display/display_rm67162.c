@@ -19,6 +19,16 @@
 LOG_MODULE_REGISTER(rm67162, CONFIG_DISPLAY_LOG_LEVEL);
 
 /*
+ * Blanking periods used when the panel is driven in DSI video mode.
+ */
+#define RM67162_HSYNC 6
+#define RM67162_HBP   6
+#define RM67162_HFP   6
+#define RM67162_VSYNC 1
+#define RM67162_VBP   1
+#define RM67162_VFP   1
+
+/*
  * These commands are taken from NXP's MCUXpresso SDK.
  * Additional documentation is added where possible, but the
  * Manufacture command set pages are not described in the datasheet
@@ -256,13 +266,13 @@ static int rm67162_init(const struct device *dev)
 	mdev.mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST | MIPI_DSI_MODE_LPM;
 
 	mdev.timings.hactive = config->panel_width;
-	mdev.timings.hbp = 1;
-	mdev.timings.hfp = 1;
-	mdev.timings.hsync = 1;
+	mdev.timings.hbp = RM67162_HBP;
+	mdev.timings.hfp = RM67162_HFP;
+	mdev.timings.hsync = RM67162_HSYNC;
 	mdev.timings.vactive = config->panel_height;
-	mdev.timings.vbp = 1;
-	mdev.timings.vfp = 1;
-	mdev.timings.vsync = 1;
+	mdev.timings.vbp = RM67162_VBP;
+	mdev.timings.vfp = RM67162_VFP;
+	mdev.timings.vsync = RM67162_VSYNC;
 
 	ret = mipi_dsi_attach(config->mipi_dsi, config->channel, &mdev);
 	if (ret < 0) {
