@@ -41,8 +41,12 @@ config SPI_STM32_DMA_CACHED_MEMORY
 	  the data cache over the bytes the DMA moves. An RX buffer in cacheable
 	  memory goes to the DMA only if its start and length are multiples of
 	  the data cache line size; other RX buffers still use the fallback.
+	  With SPI_STM32_INTERRUPT, an RX overrun or a mode fault during a DMA
+	  transfer ends it at once with -EIO instead of at the timeout.
 
-	  STM32U5 only: tested there.
+	  STM32U5 only: tested there. The interrupt handler tells a DMA transfer
+	  by the TXDMAEN/RXDMAEN bits, which the STM32U5 lets the driver clear
+	  while the SPI stays enabled (RM0456, SPI_CFG1).
 
 	  Several transfers under one held chip select (SPI_HOLD_ON_CS) with a
 	  transfer through interrupts or polling after the first one need the
