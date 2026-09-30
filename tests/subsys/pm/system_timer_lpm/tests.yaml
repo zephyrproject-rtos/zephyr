@@ -18,3 +18,4 @@ tests:
       - kit_psc3m5_evk
       - kit_pse84_eval/pse846gps2dbzc4a/m33
       - kit_pse84_eval/pse846gps2dbzc4a/m55
+      - nucleo_n657x0_q/stm32n657xx/sb
