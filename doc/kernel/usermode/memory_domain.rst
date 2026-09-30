@@ -418,6 +418,20 @@ The k_mem_domain_remove_partition() API finds the memory partition
 that matches the given parameter and removes that partition from the
 memory domain.
 
+De-initialize a Memory Domain
+-----------------------------
+
+A memory domain that has no member threads left can be released with
+:c:func:`k_mem_domain_deinit`, after which the same variable may be initialized
+again. The call fails with ``-EBUSY`` while any thread is still a member, and
+with ``-ENOTSUP`` on architectures that keep per-domain data, such as page
+tables, without a way to release it. The default domain cannot be
+de-initialized.
+
+.. code-block:: c
+
+    k_mem_domain_deinit(&app0_domain);
+
 Available Partition Attributes
 ------------------------------
 
