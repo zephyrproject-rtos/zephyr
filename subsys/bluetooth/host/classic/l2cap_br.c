@@ -5499,6 +5499,21 @@ static void check_fixed_channel(struct bt_l2cap_chan *chan)
 	}
 }
 
+/* A receiver returning -EINPROGRESS owns the reference it was given until it
+ * calls bt_l2cap_chan_recv_complete(), while the caller still releases its own.
+ */
+static int l2cap_br_chan_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
+{
+	int err;
+
+	err = chan->ops->recv(chan, net_buf_ref(buf));
+	if (err != -EINPROGRESS) {
+		net_buf_unref(buf);
+	}
+
+	return err;
+}
+
 #if defined(CONFIG_BT_L2CAP_RET_FC)
 static bool bt_l2cap_br_check_tx_seq_out_of_sequence(struct bt_l2cap_br_chan *br_chan,
 						     uint16_t tx_seq)
@@ -6243,7 +6258,7 @@ valid_frame:
 		goto done;
 	}
 
-	err = br_chan->chan.ops->recv(&br_chan->chan, buf);
+	err = l2cap_br_chan_recv(&br_chan->chan, buf);
 	if (err < 0) {
 		if (err != -EINPROGRESS) {
 			LOG_ERR("err %d", err);
@@ -6431,7 +6446,7 @@ void bt_l2cap_br_recv(struct bt_conn *conn, struct net_buf *buf)
 		bt_l2cap_br_ret_fc_recv(BR_CHAN(chan), buf);
 	} else {
 #endif /* CONFIG_BT_L2CAP_RET_FC */
-		chan->ops->recv(chan, buf);
+		(void)l2cap_br_chan_recv(chan, buf);
 #if defined(CONFIG_BT_L2CAP_RET_FC)
 	}
 #endif /* CONFIG_BT_L2CAP_RET_FC */
