@@ -1396,6 +1396,27 @@ static void spi_stm32_isr(const struct device *dev)
 		return;
 	}
 
+#ifdef CONFIG_SPI_STM32_DMA_CACHED_MEMORY
+	/*
+	 * Synchronous DMA transfer: the DMA moves the data and only the error interrupts
+	 * are enabled. An overrun leaves the RX DMA short of data for good, so wake the
+	 * waiting thread now instead of letting it run into its timeout. The thread stops
+	 * the DMA and completes the transfer. The data register is not touched here: it
+	 * belongs to the DMA. The DMA requests tell such a transfer: transceive_dma()
+	 * clears them at its end, also with SPE kept on (the STM32U5 lets TXDMAEN and
+	 * RXDMAEN change while the SPI is enabled, RM0456 SPI_CFG1).
+	 */
+	if (LL_SPI_IsEnabledDMAReq_RX(spi) || LL_SPI_IsEnabledDMAReq_TX(spi)) {
+		if (spi_stm32_get_err(spi) != 0) {
+			ll_disable_int_errors(spi);
+			data->status_flags |= SPI_STM32_DMA_ERROR_FLAG;
+			k_sem_give(&data->status_sem);
+			return;
+		}
+		return;
+	}
+#endif /* CONFIG_SPI_STM32_DMA_CACHED_MEMORY */
+
 	if (!spi_stm32_transfer_ongoing(data)) {
 		if (ll_rx_is_not_empty(spi)) {
 			(void) LL_SPI_ReceiveData8(spi);
@@ -1810,6 +1831,19 @@ static int wait_dma_rx_tx_done(const struct device *dev)
 	while (1) {
 		res = k_sem_take(&data->status_sem, timeout);
 		if (res != 0) {
+#ifdef CONFIG_SPI_STM32_DMA_CACHED_MEMORY
+			/*
+			 * Without the error interrupt an overrun is only seen here: the RX DMA
+			 * never gets the frames the SPI dropped.
+			 */
+			const struct spi_stm32_config *cfg = dev->config;
+			int err = spi_stm32_get_err(cfg->spi);
+
+			if (err != 0) {
+				return err;
+			}
+			LOG_ERR("SPI DMA transfer timed out");
+#endif /* CONFIG_SPI_STM32_DMA_CACHED_MEMORY */
 			return res;
 		}
 
@@ -2050,6 +2084,15 @@ static int transceive_dma(const struct device *dev,
 			return spi_context_wait_for_completion(&data->ctx);
 		}
 #endif /* CONFIG_SPI_ASYNC */
+
+#if defined(CONFIG_SPI_STM32_DMA_CACHED_MEMORY) && defined(CONFIG_SPI_STM32_INTERRUPT)
+		/*
+		 * Report an overrun or a mode fault at once (spi_stm32_isr) rather than at the
+		 * timeout. An error flagged before this point fires as soon as it is enabled.
+		 * spi_stm32_complete() disables it again.
+		 */
+		ll_enable_int_errors(spi);
+#endif /* CONFIG_SPI_STM32_DMA_CACHED_MEMORY && CONFIG_SPI_STM32_INTERRUPT */
 
 		ret = wait_dma_rx_tx_done(dev);
 		if (ret != 0) {
