@@ -7,6 +7,13 @@ tests:
     tags:
       - net
       - http
+  sample.net.dhcpv4_client.rak13800:
+    harness: net
+    platform_allow: rak4631/nrf52840
+    extra_args: SHIELD="rakwireless_rak19007;rakwireless_rak13800"
+    tags:
+      - shield
+      - net
   sample.net.dhcpv4_client.qemu:
     harness: console
     harness_config:
