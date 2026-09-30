@@ -30,6 +30,26 @@ config SPI_STM32_DMA
 	  This can be used with the SPI_RTIO config to have SPI
 	  transactions using DMA + RTIO
 
+config SPI_STM32_DMA_CACHED_MEMORY
+	bool "DMA transfers with buffers in cacheable memory (STM32U5)"
+	depends on SPI_STM32_DMA && DCACHE && !SPI_RTIO
+	depends on SOC_SERIES_STM32U5X
+	help
+	  Let the DMA move buffers placed in cacheable memory, for example
+	  external PSRAM behind the DCACHE, instead of falling back to the
+	  interrupt or polling mode for them. The driver cleans and invalidates
+	  the data cache over the bytes the DMA moves. An RX buffer in cacheable
+	  memory goes to the DMA only if its start and length are multiples of
+	  the data cache line size; other RX buffers still use the fallback.
+
+	  STM32U5 only: tested there.
+
+	  Several transfers under one held chip select (SPI_HOLD_ON_CS) with a
+	  transfer through interrupts or polling after the first one need the
+	  st,gpio-control devicetree property (AFCNTR, the HAL's
+	  MasterKeepIOState): the driver turns the SPI off between them to set
+	  the transfer size, and the released pins can shift the data.
+
 config SPI_STM32_ERRATA_BUSY
 	bool
 	default y

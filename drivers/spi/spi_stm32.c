@@ -193,6 +193,14 @@ LOG_MODULE_REGISTER(spi_stm32, CONFIG_SPI_LOG_LEVEL);
 #define SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED	0
 #endif /* defined(CONFIG_DCACHE) && !defined(CONFIG_NOCACHE_MEMORY) */
 
+/*
+ * STM32U5 only (SPI_STM32_DMA_CACHED_MEMORY): DMA with buffers in cacheable memory. Every
+ * other series, and the STM32U5 without the option, build the driver as before.
+ */
+#if defined(CONFIG_SOC_SERIES_STM32U5X) && defined(CONFIG_SPI_STM32_DMA_CACHED_MEMORY)
+#define SPI_STM32_U5_DMA_CACHED
+#endif /* CONFIG_SOC_SERIES_STM32U5X && CONFIG_SPI_STM32_DMA_CACHED_MEMORY */
+
 #define WAIT_1US	1U
 
 /*
@@ -343,6 +351,46 @@ static uint8_t bits2bytes(spi_operation_t operation)
  */
 static __aligned(32) uint32_t dummy_rx_tx_buffer __nocache;
 
+#ifdef SPI_STM32_U5_DMA_CACHED
+/*
+ * A buffer outside non-cacheable memory (for example external PSRAM behind the STM32
+ * DCACHE) is kept coherent by address range, touching only the bytes the DMA moves:
+ * clean before a TX, clean and invalidate before an RX (no dirty line may be evicted over
+ * the incoming data), invalidate after an RX. Buffers in non-cacheable memory need nothing.
+ * An RX buffer in cacheable memory must own whole cache lines (see transceive()).
+ */
+static bool spi_stm32_dma_buf_cached(const void *buf, size_t len)
+{
+	return (buf != NULL) && (len != 0U) && !stm32_buf_in_nocache((uintptr_t)buf, len);
+}
+
+/*
+ * The invalidate around an RX DMA would also discard the CPU's writes to data sharing the
+ * first or the last cache line of the buffer. Such a buffer is not given to the DMA: its
+ * start and its length must both be multiples of the data cache line size.
+ */
+static bool spi_stm32_dma_rx_unaligned(const struct spi_buf_set *bufs)
+{
+	const size_t line = sys_cache_data_line_size_get();
+
+	if (bufs == NULL) {
+		return false;
+	}
+
+	for (size_t i = 0; i < bufs->count; i++) {
+		const void *buf = bufs->buffers[i].buf;
+		const size_t len = bufs->buffers[i].len;
+
+		if (spi_stm32_dma_buf_cached(buf, len) &&
+		    ((((uintptr_t)buf % line) != 0U) || ((len % line) != 0U))) {
+			return true;
+		}
+	}
+
+	return false;
+}
+#endif /* SPI_STM32_U5_DMA_CACHED */
+
 static int spi_stm32_dma_tx_load(const struct device *dev, const uint8_t *buf, size_t len)
 {
 	const struct spi_stm32_config *cfg = dev->config;
@@ -369,6 +417,11 @@ static int spi_stm32_dma_tx_load(const struct device *dev, const uint8_t *buf, s
 		blk_cfg->source_address = (uint32_t)&dummy_rx_tx_buffer;
 		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 	} else {
+#ifdef SPI_STM32_U5_DMA_CACHED
+		if (spi_stm32_dma_buf_cached(buf, len)) {
+			sys_cache_data_flush_range((void *)buf, len);
+		}
+#endif /* SPI_STM32_U5_DMA_CACHED */
 		blk_cfg->source_address = (uint32_t)buf;
 		if (data->dma_tx.src_addr_increment) {
 			blk_cfg->source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
@@ -426,6 +479,11 @@ static int spi_stm32_dma_rx_load(const struct device *dev, uint8_t *buf, size_t 
 		blk_cfg->dest_address = (uint32_t)&dummy_rx_tx_buffer;
 		blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 	} else {
+#ifdef SPI_STM32_U5_DMA_CACHED
+		if (spi_stm32_dma_buf_cached(buf, len)) {
+			sys_cache_data_flush_and_invd_range(buf, len);
+		}
+#endif /* SPI_STM32_U5_DMA_CACHED */
 		blk_cfg->dest_address = (uint32_t)buf;
 		if (data->dma_rx.dst_addr_increment) {
 			blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
@@ -542,6 +600,16 @@ static void spi_stm32_dma_rx_done(const struct device *dev, const struct spi_con
 #endif /* CONFIG_SPI_STM32_ERRATA_BUSY */
 
 #ifndef CONFIG_SPI_RTIO
+#ifdef SPI_STM32_U5_DMA_CACHED
+	if (transfer_dir != STM32_SPI_HALF_DUPLEX_TX) {
+		/* The DMA wrote rx_len frames at ctx.rx_buf behind the cache: drop those lines. */
+		size_t rx_bytes = data->rx_len * dfs;
+
+		if (spi_stm32_dma_buf_cached(data->ctx.rx_buf, rx_bytes)) {
+			sys_cache_data_invd_range(data->ctx.rx_buf, rx_bytes);
+		}
+	}
+#endif /* SPI_STM32_U5_DMA_CACHED */
 	if (transfer_dir == STM32_SPI_FULL_DUPLEX) {
 		spi_context_update_tx(&data->ctx, dfs, data->tx_len);
 		spi_context_update_rx(&data->ctx, dfs, data->rx_len);
@@ -666,6 +734,7 @@ static int spi_stm32_get_err(SPI_TypeDef *spi)
 
 	return 0;
 }
+
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 static void spi_stm32_send_fifo(SPI_TypeDef *spi, struct spi_stm32_data *data)
@@ -1343,6 +1412,7 @@ static void spi_stm32_isr(const struct device *dev)
 		return;
 	}
 
+
 	if (!spi_stm32_transfer_ongoing(data)) {
 		if (ll_rx_is_not_empty(spi)) {
 			(void) LL_SPI_ReceiveData8(spi);
@@ -1738,6 +1808,7 @@ static int32_t spi_stm32_set_transfer_size(const struct device *dev,
 #if defined(CONFIG_SPI_STM32_DMA)
 #if !defined(CONFIG_SPI_RTIO)
 
+
 static int wait_dma_rx_tx_done(const struct device *dev)
 {
 	struct spi_stm32_data *data = dev->data;
@@ -1754,6 +1825,7 @@ static int wait_dma_rx_tx_done(const struct device *dev)
 		timeout = K_MSEC(1000);
 	}
 
+
 	while (1) {
 		res = k_sem_take(&data->status_sem, timeout);
 		if (res != 0) {
@@ -1764,6 +1836,7 @@ static int wait_dma_rx_tx_done(const struct device *dev)
 			return -EIO;
 		}
 
+
 		if ((data->status_flags & SPI_STM32_DMA_DONE_FLAG) == SPI_STM32_DMA_DONE_FLAG) {
 			return 0;
 		}
@@ -1772,7 +1845,7 @@ static int wait_dma_rx_tx_done(const struct device *dev)
 	return res;
 }
 
-#ifdef CONFIG_DCACHE
+#if defined(CONFIG_DCACHE) && !defined(SPI_STM32_U5_DMA_CACHED)
 static bool is_dummy_buffer(const struct spi_buf *buf)
 {
 	return buf->buf == NULL;
@@ -1789,7 +1862,7 @@ static bool spi_buf_set_in_nocache(const struct spi_buf_set *bufs)
 	}
 	return true;
 }
-#endif /* CONFIG_DCACHE */
+#endif /* CONFIG_DCACHE && !SPI_STM32_U5_DMA_CACHED */
 #endif /* !CONFIG_SPI_RTIO */
 
 #if defined(CONFIG_SPI_ASYNC) || defined(CONFIG_SPI_RTIO)
@@ -1968,6 +2041,7 @@ static int transceive_dma(const struct device *dev,
 	tx_cfg->source_data_size = tx_cfg->source_burst_length = dfs;
 	tx_cfg->dest_data_size = tx_cfg->dest_burst_length = dfs;
 
+
 	/* Set request before enabling (otherwise SPI CFG1 reg may be write protected) */
 	spi_dma_enable_requests(spi);
 	LL_SPI_Enable(spi);
@@ -1997,6 +2071,7 @@ static int transceive_dma(const struct device *dev,
 			return spi_context_wait_for_completion(&data->ctx);
 		}
 #endif /* CONFIG_SPI_ASYNC */
+
 
 		ret = wait_dma_rx_tx_done(dev);
 		if (ret != 0) {
@@ -2089,7 +2164,14 @@ static int transceive(const struct device *dev,
 		return 0;
 	}
 
-#if defined(CONFIG_DCACHE) && defined(CONFIG_SPI_STM32_DMA) && !defined(CONFIG_SPI_RTIO)
+#if defined(SPI_STM32_U5_DMA_CACHED)
+	if (use_dma && spi_stm32_dma_rx_unaligned(rx_bufs)) {
+		LOG_WRN_ONCE("SPI DMA needs RX buffers aligned to the data cache line, "
+			     "falling back to %s mode",
+			     IS_ENABLED(CONFIG_SPI_STM32_INTERRUPT) ? "interrupt" : "polling");
+		use_dma = false;
+	}
+#elif defined(CONFIG_DCACHE) && defined(CONFIG_SPI_STM32_DMA) && !defined(CONFIG_SPI_RTIO)
 	if (use_dma &&
 	    ((tx_bufs != NULL && !spi_buf_set_in_nocache(tx_bufs)) ||
 	     (rx_bufs != NULL && !spi_buf_set_in_nocache(rx_bufs)))) {
@@ -2101,7 +2183,7 @@ static int transceive(const struct device *dev,
 		}
 		use_dma = false;
 	}
-#endif /* CONFIG_DCACHE && CONFIG_SPI_STM32_DMA && !CONFIG_SPI_RTIO */
+#endif /* SPI_STM32_U5_DMA_CACHED, CONFIG_DCACHE && CONFIG_SPI_STM32_DMA && !CONFIG_SPI_RTIO */
 
 	if (asynchronous && !IS_ENABLED(CONFIG_SPI_STM32_INTERRUPT) && !use_dma) {
 		LOG_ERR("Asynchronous transfer needs interrupts or DMA");
