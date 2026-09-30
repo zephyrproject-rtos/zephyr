@@ -27,8 +27,8 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 extern char xtensa_arch_except_epc[];
 extern char xtensa_arch_kernel_oops_epc[];
 
-extern void xtensa_lazy_hifi_save(uint8_t *regs);
-extern void xtensa_lazy_hifi_load(uint8_t *regs);
+extern void xtensa_lazy_cp_save(uint8_t *regs);
+extern void xtensa_lazy_cp_load(uint8_t *regs);
 
 #if defined(CONFIG_XTENSA_LAZY_HIFI_SHARING) && (CONFIG_MP_MAX_NUM_CPUS > 1)
 #define LAZY_COPROCESSOR_LOCK
@@ -308,7 +308,7 @@ static inline void *return_to(void *interrupted)
  * Note: Interrupts are locked on entry. Unlock before spinning to allow
  * an IPI to be caught and processed; restore them afterwards.
  */
-static void spin_while_hifi_owner(struct _cpu *cpu, struct k_thread *thread)
+static void spin_while_cp_owner(struct _cpu *cpu, struct k_thread *thread)
 {
 	unsigned int key;
 	unsigned int original;
@@ -321,7 +321,7 @@ static void spin_while_hifi_owner(struct _cpu *cpu, struct k_thread *thread)
 	/* Spin until thread is no longer the HiFi owner on the other CPU */
 
 	while ((struct k_thread *)
-	       atomic_ptr_get(&cpu->arch.hifi_owner) == thread) {
+	       atomic_ptr_get(&cpu->arch.cp_owner) == thread) {
 		key = arch_irq_lock();
 		arch_spin_relax();
 		arch_irq_unlock(key);
@@ -334,14 +334,14 @@ static void spin_while_hifi_owner(struct _cpu *cpu, struct k_thread *thread)
  * Determine if the thread is the owner of a HiFi on another CPU. This is
  * called with the coprocessor lock held
  */
-static struct _cpu *thread_hifi_owner_elsewhere(struct k_thread *thread)
+static struct _cpu *thread_cp_owner_elsewhere(struct k_thread *thread)
 {
 	struct _cpu *this_cpu = arch_curr_cpu();
 	struct k_thread *owner;
 
 	for (unsigned int i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
 		owner = (struct k_thread *)
-			atomic_ptr_get(&_kernel.cpus[i].arch.hifi_owner);
+			atomic_ptr_get(&_kernel.cpus[i].arch.cp_owner);
 		if ((this_cpu != &_kernel.cpus[i]) && (owner == thread)) {
 			return &_kernel.cpus[i];
 		}
@@ -360,26 +360,26 @@ void arch_ipi_lazy_coprocessors_save(void)
 #if defined(LAZY_COPROCESSOR_LOCK)
 	k_spinlock_key_t key = k_spin_lock(&coprocessor_lock);
 	struct _cpu *cpu = arch_curr_cpu();
-	struct k_thread *save_hifi = (struct k_thread *)
-				     atomic_ptr_get(&cpu->arch.save_hifi);
-	struct k_thread *hifi_owner = (struct k_thread *)
-				      atomic_ptr_get(&cpu->arch.hifi_owner);
+	struct k_thread *save_cp = (struct k_thread *)
+				     atomic_ptr_get(&cpu->arch.save_cp);
+	struct k_thread *cp_owner = (struct k_thread *)
+				      atomic_ptr_get(&cpu->arch.cp_owner);
 
-	if ((save_hifi == hifi_owner) && (save_hifi != NULL)) {
+	if ((save_cp == cp_owner) && (save_cp != NULL)) {
 		unsigned int cp;
 
 		__asm__ volatile("rsr.cpenable %0" : "=r"(cp));
 		cp |= BIT(XCHAL_CP_ID_AUDIOENGINELX);
 		__asm__ volatile("wsr.cpenable %0" :: "r"(cp));
 
-		xtensa_lazy_hifi_save(save_hifi->arch.hifi_regs);
+		xtensa_lazy_cp_save(save_cp->arch.cp_regs);
 
 		cp &= ~BIT(XCHAL_CP_ID_AUDIOENGINELX);
 		__asm__ volatile("wsr.cpenable %0" :: "r"(cp));
 
-		atomic_ptr_set(&cpu->arch.hifi_owner, NULL);
+		atomic_ptr_set(&cpu->arch.cp_owner, NULL);
 	}
-	atomic_ptr_set(&cpu->arch.save_hifi, NULL);
+	atomic_ptr_set(&cpu->arch.save_cp, NULL);
 	k_spin_unlock(&coprocessor_lock, key);
 #endif
 }
@@ -625,18 +625,18 @@ void *xtensa_excint1_c(void *esf)
 		 */
 
 		k_spinlock_key_t key  = k_spin_lock(&coprocessor_lock);
-		struct _cpu *cpu = thread_hifi_owner_elsewhere(thread);
+		struct _cpu *cpu = thread_cp_owner_elsewhere(thread);
 
 		if (cpu != NULL) {
-			cpu->arch.save_hifi = thread;
+			cpu->arch.save_cp = thread;
 			arch_sched_directed_ipi(BIT(cpu->id));
 			k_spin_unlock(&coprocessor_lock, key);
-			spin_while_hifi_owner(cpu, thread);
+			spin_while_cp_owner(cpu, thread);
 			key = k_spin_lock(&coprocessor_lock);
 		}
 #endif
 		owner = (struct k_thread *)
-			atomic_ptr_get(&arch_curr_cpu()->arch.hifi_owner);
+			atomic_ptr_get(&arch_curr_cpu()->arch.cp_owner);
 
 		/* Enable the HiFi coprocessor */
 		__asm__ volatile("rsr.cpenable %0" : "=r"(cp));
@@ -651,14 +651,14 @@ void *xtensa_excint1_c(void *esf)
 		}
 
 		if (owner != NULL) {
-			xtensa_lazy_hifi_save(owner->arch.hifi_regs);
+			xtensa_lazy_cp_save(owner->arch.cp_regs);
 		}
 
-		atomic_ptr_set(&arch_curr_cpu()->arch.hifi_owner, thread);
+		atomic_ptr_set(&arch_curr_cpu()->arch.cp_owner, thread);
 #if defined(LAZY_COPROCESSOR_LOCK)
 		k_spin_unlock(&coprocessor_lock, key);
 #endif
-		xtensa_lazy_hifi_load(thread->arch.hifi_regs);
+		xtensa_lazy_cp_load(thread->arch.cp_regs);
 		break;
 #endif /* CONFIG_XTENSA_LAZY_HIFI_SHARING */
 #if defined(CONFIG_XTENSA_MMU) && defined(CONFIG_USERSPACE)
