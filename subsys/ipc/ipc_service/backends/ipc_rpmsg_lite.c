@@ -824,12 +824,13 @@ static int open(const struct device *instance)
 	}
 
 	if (conf->role == ROLE_REMOTE) {
-		int32_t rc;
+		uint32_t link_up;
 
-		rc = rpmsg_lite_wait_for_link_up(
+		/* Returns RL_TRUE when the link is up, RL_FALSE on timeout */
+		link_up = rpmsg_lite_wait_for_link_up(
 			ipc_rpmsg_inst->rpmsg_lite_inst,
 			CONFIG_IPC_SERVICE_BACKEND_RPMSG_LITE_LINK_UP_TIMEOUT_MS);
-		if (rc != RL_SUCCESS) {
+		if (link_up != RL_TRUE) {
 			err = -ETIMEDOUT;
 			goto error;
 		}
