@@ -2147,6 +2147,12 @@ Libraries / Subsystems
   * TF-M can now be compiled using LLVM by setting ``ZEPHYR_TOOLCHAIN_VARIANT``
     to ``zephyr/llvm``.
 
+  * Fixed :c:func:`sys_reboot` blocking on the TF-M NS interface lock with
+    interrupts locked when another thread was in the middle of a Secure call,
+    which asserted with :kconfig:option:`CONFIG_SPIN_VALIDATE`. The lock is
+    now taken in ``sys_arch_reboot_prepare()`` before interrupts are locked.
+    (:github:`120042`)
+
 * DFU
 
   * Added :kconfig:option:`CONFIG_IMG_CUSTOM_SECTOR_SIZE` to allow MCUboot to use a different
