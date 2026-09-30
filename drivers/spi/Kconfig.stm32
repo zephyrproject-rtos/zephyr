@@ -54,6 +54,17 @@ config SPI_STM32_DMA_CACHED_MEMORY
 	  MasterKeepIOState): the driver turns the SPI off between them to set
 	  the transfer size, and the released pins can shift the data.
 
+config SPI_STM32_DMA_RX_AUTO_SUSPEND
+	bool "Stop the controller clock instead of an RX overrun in DMA transfers"
+	depends on SPI_STM32_DMA_CACHED_MEMORY && SPI_STM32_INTERRUPT
+	help
+	  In synchronous DMA transfers as SPI controller with frames of 8 bits
+	  and more, set MASRX: when the RX DMA falls behind and the RX FIFO
+	  fills up, the SPI stops the clock instead of overrunning and dropping
+	  frames, and the interrupt handler resumes the transfer (SUSPC) once
+	  the DMA has drained the FIFO. Useful when the DMA writes to slow
+	  memory such as external PSRAM.
+
 config SPI_STM32_ERRATA_BUSY
 	bool
 	default y
