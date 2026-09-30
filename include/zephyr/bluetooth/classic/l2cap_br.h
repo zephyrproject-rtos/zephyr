@@ -229,7 +229,8 @@ int bt_l2cap_br_connless_unregister(struct bt_l2cap_br_connless_cb *cb);
  * a specific PSM without establishing the L2CAP channel connection.
  *
  * The application is required to have reserved @ref BT_L2CAP_CONNLESS_RESERVE bytes
- * in the buffer before sending.
+ * in the buffer before sending. On error, the application still owns @p buf and gets it
+ * back unchanged.
  *
  * @param conn Connection object.
  * @param psm Protocol/Service Multiplexer identifying the destination service.
