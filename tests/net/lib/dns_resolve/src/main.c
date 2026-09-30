@@ -688,6 +688,17 @@ ZTEST(dns_resolve, test_dns_query_too_many)
 				DNS_TIMEOUT);
 	zassert_equal(ret, 0, "Cannot create IPv4 query");
 
+	/* Fill whatever query slots are left before expecting a rejection. */
+	for (int i = 1; i < CONFIG_DNS_NUM_CONCUR_QUERIES; i++) {
+		ret = dns_get_addr_info(NAME4,
+					DNS_QUERY_TYPE_A,
+					NULL,
+					dns_result_cb_dummy,
+					INT_TO_POINTER(expected_status),
+					DNS_TIMEOUT);
+		zassert_equal(ret, 0, "Cannot create IPv4 query %d", i);
+	}
+
 	ret = dns_get_addr_info(NAME4,
 				DNS_QUERY_TYPE_A,
 				NULL,
