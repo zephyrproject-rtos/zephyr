@@ -20,6 +20,7 @@ tests:
       bsim_exe_name: tests_bsim_bluetooth_ll_bis_prj_conf_overlay-sequential_conf
       tests_scripts:
         - tests_scripts/broadcast_iso_sequential.sh
+        - tests_scripts/broadcast_iso_resync.sh
 
   bluetooth.controller.bis.interleaved:
     sysbuild: true
