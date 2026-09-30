@@ -130,41 +130,6 @@
 		};
 	};
 
-	iap: flash-controller@34000 {
-		compatible = "nxp,iap-fmc55";
-		reg = <0x34000 0x18>;
-		ranges;
-		#address-cells = <1>;
-		#size-cells = <1>;
-		status = "okay";
-
-		flash0: flash@0 {
-			compatible = "soc-nv-flash";
-			reg = <0x0 DT_SIZE_K(1016)>;
-			erase-block-size = <DT_SIZE_K(8)>;
-			write-block-size = <16>;
-			ranges = <0x0 0x0 DT_SIZE_K(1016)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-		};
-
-		flash_reserved: flash@fe000 {
-			compatible = "soc-nv-flash";
-			reg = <0x000fe000 DT_SIZE_K(8)>;
-			status = "disabled";
-		};
-
-		uuid: flash@3fc70 {
-			compatible = "nxp,lpc-uid";
-			reg = <0x3fc70 0x10>;
-		};
-
-		boot_rom: flash@3000000 {
-			compatible = "soc-nv-flash";
-			reg = <0x3000000 DT_SIZE_K(256)>;
-		};
-	};
-
 	iocon: iocon@1000 {
 		compatible = "nxp,lpc-iocon";
 		reg = <0x1000 0x100>;
@@ -446,6 +411,49 @@
 		reg = <0xb8000 DT_SIZE_K(16)>;
 		zephyr,memory-region = "smem";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
+	};
+};
+
+/*
+ * The flash controller is declared as a direct child of /soc (a sibling of
+ * &peripheral) instead of inside &peripheral. &peripheral has a non-identity
+ * "ranges" that maps its bus space to CPU 0x40000000, so nesting the flash
+ * controller under it would let DT address translation climb into that
+ * mapping and resolve flash0 (and CONFIG_FLASH_BASE_ADDRESS) to 0x40000000
+ * instead of the real flash base 0x0. With the controller at /soc, its empty
+ * "ranges;" is safe: translation stops at /soc (which has no ranges), so
+ * flash0 keeps its real address (0x0).
+ */
+&iap {
+	compatible = "nxp,iap-fmc55";
+	#address-cells = <1>;
+	#size-cells = <1>;
+	status = "okay";
+
+	flash0: flash@0 {
+		compatible = "soc-nv-flash";
+		reg = <0x0 DT_SIZE_K(1016)>;
+		ranges = <0x0 0x0 DT_SIZE_K(1016)>;
+		erase-block-size = <DT_SIZE_K(8)>;
+		write-block-size = <16>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+	};
+
+	flash_reserved: flash@fe000 {
+		compatible = "soc-nv-flash";
+		reg = <0x000fe000 DT_SIZE_K(8)>;
+		status = "disabled";
+	};
+
+	uuid: flash@3fc70 {
+		compatible = "nxp,lpc-uid";
+		reg = <0x3fc70 0x10>;
+	};
+
+	boot_rom: flash@3000000 {
+		compatible = "soc-nv-flash";
+		reg = <0x3000000 DT_SIZE_K(256)>;
 	};
 };
 
