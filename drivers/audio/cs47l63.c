@@ -296,6 +296,25 @@ static int apply_trim(const struct device *dev)
 	return write_key_pair(dev, k_key_lock);
 }
 
+static int apply_gpio_defaults(const struct device *dev)
+{
+	const struct cs47l63_config *cfg = dev->config;
+	int ret;
+
+	for (size_t i = 0; i < cfg->gpio_defaults_len; i++) {
+		if ((cfg->gpio_defaults[i] & CS47L63_GP_CTRL1_RSVD) != 0U) {
+			continue;
+		}
+		ret = cs47l63_bus_write_reg(dev, CS47L63_GPIO1_CTRL1 + i * CS47L63_WORD_BYTES,
+					    cfg->gpio_defaults[i]);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
 int cs47l63_boot_bringup(const struct device *dev)
 {
 	int ret;
@@ -319,7 +338,12 @@ int cs47l63_boot_bringup(const struct device *dev)
 		return ret;
 	}
 
-	return apply_trim(dev);
+	ret = apply_trim(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return apply_gpio_defaults(dev);
 }
 
 /* FLL1 terms follow the vendor's cs47l63_fll_do_config(), and the write order its
@@ -2077,9 +2101,24 @@ static DEVICE_API(audio_codec, child_driver_api) = {
 	.stop = codec_stop,
 };
 
+#define CS47L63_GPIO_DEFAULT_BIT(node_id, prop, idx)                                               \
+	(((DT_PROP_BY_IDX(node_id, prop, idx) & CS47L63_GP_CTRL1_RSVD) == 0U) ? BIT(idx) : 0) |
+
+/* Bit n - 1 set for every GPIOn that cirrus,gpio-defaults writes. */
+#define CS47L63_GPIO_DEFAULTS_MASK(inst)                                                           \
+	(COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, cirrus_gpio_defaults),                            \
+		     (DT_INST_FOREACH_PROP_ELEM(inst, cirrus_gpio_defaults,                        \
+						CS47L63_GPIO_DEFAULT_BIT)),                        \
+		     ()) 0)
+
+#define CS47L63_ASP_PADS_MASK(asp) (BIT_MASK(4) << (4 * ((asp) - 1)))
+
 #define CS47L63_CHILD_DEFINE(node_id, inst)                                                        \
 	BUILD_ASSERT(DT_PROP(node_id, cirrus_asp) != DT_INST_PROP(inst, cirrus_asp),               \
 		     "cs47l63: " DT_NODE_PATH(node_id) " is on its parent's cirrus,asp");          \
+	BUILD_ASSERT((CS47L63_GPIO_DEFAULTS_MASK(inst) &                                           \
+		      CS47L63_ASP_PADS_MASK(DT_PROP(node_id, cirrus_asp))) == 0,                   \
+		     "cs47l63: cirrus,gpio-defaults sets an ASP pad of " DT_NODE_PATH(node_id));   \
 	static struct cs47l63_port cs47l63_port_##node_id = {                                      \
 		.asp = DT_PROP(node_id, cirrus_asp),                                               \
 		.out_mix_input = 3,                                                                \
@@ -2096,6 +2135,13 @@ static DEVICE_API(audio_codec, child_driver_api) = {
 		     "cs47l63: reset-gpios is required, boot starts with a hardware reset");       \
 	BUILD_ASSERT(DT_INST_CHILD_NUM_STATUS_OKAY(inst) <= 1,                                     \
 		     "cs47l63: " DT_NODE_PATH(DT_DRV_INST(inst)) " has more than one child");      \
+	BUILD_ASSERT(DT_INST_PROP_LEN_OR(inst, cirrus_gpio_defaults, 0) <= CS47L63_GPIO_COUNT,     \
+		     "cs47l63: cirrus,gpio-defaults has more entries than the part has GPIOs");    \
+	BUILD_ASSERT((CS47L63_GPIO_DEFAULTS_MASK(inst) &                                           \
+		      CS47L63_ASP_PADS_MASK(DT_INST_PROP(inst, cirrus_asp))) == 0,                 \
+		     "cs47l63: cirrus,gpio-defaults sets an ASP pad of the parent");               \
+	static const uint32_t cs47l63_gpio_defaults_##inst[] =                                     \
+		DT_INST_PROP_OR(inst, cirrus_gpio_defaults, {0});                                  \
 	static struct cs47l63_data cs47l63_data_##inst;                                            \
 	static struct cs47l63_chip cs47l63_chip_##inst;                                            \
 	static struct cs47l63_port cs47l63_port_##inst = {                                         \
@@ -2106,6 +2152,8 @@ static DEVICE_API(audio_codec, child_driver_api) = {
 		.bus = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8) | SPI_TRANSFER_MSB),             \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET(inst, reset_gpios),                            \
 		.gpio9_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, gpio9_gpios, {0}),                    \
+		.gpio_defaults = cs47l63_gpio_defaults_##inst,                                     \
+		.gpio_defaults_len = DT_INST_PROP_LEN_OR(inst, cirrus_gpio_defaults, 0),           \
 		.chip = &cs47l63_chip_##inst,                                                      \
 		.port = &cs47l63_port_##inst,                                                      \
 	};                                                                                         \
