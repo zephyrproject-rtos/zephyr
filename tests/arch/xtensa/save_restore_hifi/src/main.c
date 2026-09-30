@@ -13,6 +13,9 @@ K_THREAD_STACK_ARRAY_DEFINE(thread_stack, NUM_THREADS, STACK_SIZE);
 
 struct k_thread thread[NUM_THREADS];
 
+extern void hifi_set(uint8_t *aed_buffer);
+extern void hifi_get(uint8_t *aed_buffer);
+
 static void thread_entry(void *p1, void *p2, void *p3)
 {
 	uint32_t i;
@@ -30,9 +33,6 @@ static void thread_entry(void *p1, void *p2, void *p3)
 	for (i = 0; i < sizeof(init_regs); i++) {
 		init_regs[i] = (index & 0xff);
 	}
-
-	extern void hifi_set(uint8_t *aed_buffer);
-	extern void hifi_get(uint8_t *aed_buffer);
 
 	hifi_set(init_regs);
 
@@ -74,6 +74,77 @@ ZTEST(hifi, test_register_coherence)
 	for (i = 0; i < NUM_THREADS; i++) {
 		k_thread_join(&thread[i], K_FOREVER);
 	}
+}
+
+#define PREEMPT_ITERATIONS 100
+
+K_THREAD_STACK_DEFINE(preempt_low_stack, STACK_SIZE);
+K_THREAD_STACK_DEFINE(preempt_high_stack, STACK_SIZE);
+
+static struct k_thread preempt_low_thread;
+static struct k_thread preempt_high_thread;
+static atomic_t preempt_done;
+
+static void preempt_low_entry(void *p1, void *p2, void *p3)
+{
+	uint8_t init_regs[8 * 16] __aligned(16);
+	uint8_t value_regs[8 * 16] __aligned(16);
+
+	memset(init_regs, 0x5a, sizeof(init_regs));
+	hifi_set(init_regs);
+
+	/* Keep the HiFi registers live until the high priority thread is
+	 * done preempting this thread from its wake-up interrupt.
+	 */
+	while (atomic_get(&preempt_done) == 0) {
+		hifi_get(value_regs);
+		zassert_mem_equal(value_regs, init_regs, sizeof(init_regs),
+				  "HiFi registers corrupted by preemption");
+	}
+}
+
+static void preempt_high_entry(void *p1, void *p2, void *p3)
+{
+	uint8_t init_regs[8 * 16] __aligned(16);
+	uint8_t value_regs[8 * 16] __aligned(16);
+
+	memset(init_regs, 0xa5, sizeof(init_regs));
+
+	for (uint32_t i = 0; i < PREEMPT_ITERATIONS; i++) {
+		/* The timer interrupt that ends the sleep preempts the low
+		 * priority thread, which is still using the HiFi registers.
+		 */
+		k_sleep(K_MSEC(1));
+
+		hifi_set(init_regs);
+		hifi_get(value_regs);
+		zassert_mem_equal(value_regs, init_regs, sizeof(init_regs),
+				  "HiFi registers not loaded after preemption");
+	}
+
+	atomic_set(&preempt_done, 1);
+}
+
+ZTEST(hifi, test_register_coherence_preemption)
+{
+	atomic_set(&preempt_done, 0);
+
+	k_thread_create(&preempt_low_thread, preempt_low_stack, STACK_SIZE, preempt_low_entry, NULL,
+			NULL, NULL, K_PRIO_PREEMPT(2), 0, K_FOREVER);
+	k_thread_create(&preempt_high_thread, preempt_high_stack, STACK_SIZE, preempt_high_entry,
+			NULL, NULL, NULL, K_PRIO_PREEMPT(1), 0, K_FOREVER);
+
+#ifdef CONFIG_SCHED_CPU_MASK
+	/* Both threads must share a CPU for one to preempt the other */
+	zassert_ok(k_thread_cpu_pin(&preempt_low_thread, 0));
+	zassert_ok(k_thread_cpu_pin(&preempt_high_thread, 0));
+#endif
+
+	k_thread_start(&preempt_low_thread);
+	k_thread_start(&preempt_high_thread);
+
+	k_thread_join(&preempt_high_thread, K_FOREVER);
+	k_thread_join(&preempt_low_thread, K_FOREVER);
 }
 
 ZTEST_SUITE(hifi, NULL, NULL, NULL, NULL, NULL);
