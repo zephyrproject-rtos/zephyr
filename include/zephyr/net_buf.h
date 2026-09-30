@@ -1703,6 +1703,18 @@ struct net_buf * __must_check net_buf_ref(struct net_buf *buf);
  * This performs an atomic exchange on @p orig. setting it to NULL and
  * returning the previous value.
  *
+ * Use it where ownership of the reference moves, so that the previous owner
+ * is left without a pointer to a buffer it no longer owns:
+ *
+ * @code{.c}
+ * k_fifo_put(&tx_queue, net_buf_take(&buf));
+ * @endcode
+ *
+ * Passing `net_buf_take(&buf)` as an argument is only correct for calls that
+ * always take ownership. A function that takes ownership only on success
+ * leaves the buffer with the caller on error, so the caller needs its pointer
+ * until the function has returned.
+ *
  * @param orig Pointer to the buffer pointer to transfer. Will be set to NULL
  *		on return.
  *
@@ -2770,8 +2782,10 @@ void net_buf_frag_insert(struct net_buf *parent, struct net_buf *frag);
  *
  * Append a new fragment into the buffer fragments list.
  *
- * Note: This function takes ownership of the fragment reference so the
- * caller is not required to unref.
+ * Note: If @p head is not NULL, this function takes ownership of the
+ * fragment reference so the caller is not required to unref. If @p head is
+ * NULL, @p frag is returned with a new reference and the caller keeps its
+ * own.
  *
  * @param head Head of the fragment chain.
  * @param frag Fragment to add.

@@ -129,6 +129,98 @@ incremented with :c:func:`net_buf_ref()` or decremented with
 :c:func:`net_buf_unref()`. When the count drops to zero the buffer is
 automatically placed back to the free buffers pool.
 
+Ownership
+*********
+
+Each reference to a buffer has exactly one owner. The owner either
+releases its reference with :c:func:`net_buf_unref` or moves it to a new
+owner, such as a FIFO, a list or a function that takes ownership of the
+buffer. After the move the previous owner must no longer use the buffer,
+unless it holds another reference of its own.
+
+A fragment chain is owned through its head. Each buffer in the chain
+owns a reference to the next fragment and releases it when the buffer
+itself is freed, so releasing the last reference to the head releases
+the chain up to the first fragment that is still referenced elsewhere.
+:c:func:`net_buf_frag_insert` takes ownership of the fragment it is
+given, and so does :c:func:`net_buf_frag_add` when the head is not
+``NULL``. With a ``NULL`` head, :c:func:`net_buf_frag_add` returns the
+fragment with a new reference and the caller keeps its own.
+
+A function or callback that is given a buffer does one of the following
+with the reference, and its documentation should say which:
+
+Borrows
+  The function may use the buffer until it returns, but may neither keep
+  nor move it. To keep a borrowed buffer, it acquires a reference of its
+  own with :c:func:`net_buf_ref` first.
+
+Takes ownership
+  The reference moves to the function on every return, errors included.
+
+Takes ownership on success
+  The reference moves only if the function succeeds. On error the caller
+  still owns the buffer.
+
+Two helpers operate on the pointer that holds a reference, so that the
+previous owner is left with ``NULL`` instead of a pointer to a buffer it
+no longer owns. :c:func:`net_buf_take` moves the reference out of the
+pointer, and :c:func:`net_buf_drop` releases it. :c:func:`net_buf_drop`
+is meant for a pointer that outlives the release, such as a structure
+member, or one that may already be ``NULL``. A local pointer that holds a
+reference as it goes out of scope only needs :c:func:`net_buf_unref`.
+
+Putting a buffer in a FIFO or a list moves the reference to the queue.
+The receiving side may process and free the buffer even before
+:c:func:`k_fifo_put` returns, for instance when a higher-priority thread
+is waiting on the FIFO. Move the reference with :c:func:`net_buf_take` in
+the same expression:
+
+.. code-block:: c
+
+   k_fifo_put(&tx_queue, net_buf_take(&buf));
+
+Do this even where ``buf`` goes out of scope right after the call: a
+plain pointer argument looks the same as one that is only borrowed, while
+:c:func:`net_buf_take` shows at the call site that the reference moves.
+
+Passing ``net_buf_take(&buf)`` as an argument only works for calls that
+always take ownership, such as :c:func:`k_fifo_put`,
+:c:func:`net_buf_slist_put` and :c:func:`net_buf_frag_insert`. When a
+function that takes ownership only on success is given a plain pointer,
+the caller's pointer is unchanged either way, and only the return value
+tells whether the buffer is still its own.
+
+New functions that take ownership should therefore take a pointer to the
+caller's buffer pointer, and move the reference out with
+:c:func:`net_buf_take` when they take it. The caller's pointer is then
+``NULL`` exactly when ownership has moved, and :c:func:`net_buf_drop` is
+correct after the call whatever the outcome:
+
+.. code-block:: c
+
+   int foo_send(struct foo *foo, struct net_buf **buf)
+   {
+       if (!foo->ready) {
+           return -EAGAIN;
+       }
+
+       k_fifo_put(&foo->tx_queue, net_buf_take(buf));
+
+       return 0;
+   }
+
+   err = foo_send(foo, &buf);
+   if (err != 0) {
+       LOG_WRN("Not sent (err %d)", err);
+   }
+
+   /* Releases the buffer only if foo_send() did not take it */
+   net_buf_drop(&buf);
+
+Changing an existing function to this form breaks its callers, so it is
+best done when the function is reworked anyway.
+
 
 API Reference
 *************
