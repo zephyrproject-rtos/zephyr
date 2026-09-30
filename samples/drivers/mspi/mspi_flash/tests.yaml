@@ -31,6 +31,8 @@ tests:
       - stm32h573i_dk
       - stm32h5f5j_dk
       - stm32h7b3i_dk
+      - stm32h7s78_dk
+      - nucleo_h7s3l8
     integration_platforms:
       - apollo3p_evb
       - apollo510_evb
