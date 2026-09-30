@@ -59,6 +59,7 @@ struct lll_sync_iso {
 	uint8_t establish_events:3;
 
 	uint8_t next_chan_use;
+	uint8_t ctrl_chan_use;
 
 	/* Encryption */
 	uint8_t giv[8];
