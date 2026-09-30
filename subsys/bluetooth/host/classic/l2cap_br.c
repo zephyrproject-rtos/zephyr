@@ -6738,6 +6738,7 @@ int bt_l2cap_br_connless_send(struct bt_conn *conn, uint16_t psm, struct net_buf
 	struct bt_l2cap_chan *chan;
 	uint32_t remote_features;
 	uint16_t mtu;
+	int err;
 
 	if ((conn == NULL) || (buf == NULL)) {
 		LOG_ERR("Invalid parameters");
@@ -6785,7 +6786,13 @@ int bt_l2cap_br_connless_send(struct bt_conn *conn, uint16_t psm, struct net_buf
 
 	net_buf_push_le16(buf, psm);
 
-	return bt_l2cap_br_send_cb(conn, BT_L2CAP_CID_CONNLESS, buf, NULL, NULL);
+	err = bt_l2cap_br_send_cb(conn, BT_L2CAP_CID_CONNLESS, buf, NULL, NULL);
+	if (err != 0) {
+		/* The caller still owns the buffer */
+		(void)net_buf_pull_le16(buf);
+	}
+
+	return err;
 }
 
 static struct bt_l2cap_br_chan bt_l2cap_br_connless_pool[CONFIG_BT_MAX_CONN];
