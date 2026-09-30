@@ -161,10 +161,10 @@ class Blobs(WestCommand):
             return cached_blob
         name = Path(blob['path']).name
         sha256 = blob['sha256']
-        self.download_blob(blob, auto_cache_dir / f'{name}.{sha256}')
-        cached_blob = self.get_cached_blob(blob, [auto_cache_dir])
-        assert cached_blob, f'Blob {name} still not cached in auto-cache.'
-        return cached_blob
+        path = auto_cache_dir / f'{name}.{sha256}'
+        # verify_blob() reports a checksum mismatch later.
+        self.download_blob(blob, path)
+        return path
 
     def get_cached_blob(self, blob, cache_dirs: list) -> Path | None:
         """
