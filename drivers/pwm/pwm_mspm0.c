@@ -217,7 +217,6 @@ struct pwm_mspm0_data {
 #endif
 };
 
-
 static inline void mspm0_pwm_write_cc(struct mspm0_gptimer_regs *base, uint8_t ch, uint32_t val)
 {
 	if (ch < 2U) {
@@ -271,7 +270,6 @@ static inline void mspm0_pwm_write_ifctl(struct mspm0_gptimer_regs *base, uint8_
 	}
 }
 
-
 /*
  * DOWN-counting EDGE_ALIGN: LACT (reload) and CDACT (CC match) toggle the
  * pin so it's HIGH for exactly `pulse` ticks. At the 0% and 100% duty
@@ -317,7 +315,7 @@ static inline uint32_t mspm0_pwm_center_align_cc(uint32_t load, uint32_t pulse)
 }
 
 static void mspm0_pwm_setup_cc_chan(struct mspm0_gptimer_regs *base, uint8_t ch,
-				   enum pwm_mspm0_mode mode, uint32_t pulse)
+				    enum pwm_mspm0_mode mode, uint32_t pulse)
 {
 	uint32_t ccact;
 	uint32_t ccupd;
@@ -346,8 +344,7 @@ static void mspm0_pwm_setup_cc_chan(struct mspm0_gptimer_regs *base, uint8_t ch,
 	mspm0_pwm_write_cc(base, ch, cc_val);
 }
 
-static void mspm0_setup_pwm_out(const struct pwm_mspm0_config *config,
-				struct pwm_mspm0_data *data)
+static void mspm0_setup_pwm_out(const struct pwm_mspm0_config *config, struct pwm_mspm0_data *data)
 {
 	struct mspm0_gptimer_regs *base = config->base;
 	uint32_t ctrctl;
@@ -370,8 +367,8 @@ static void mspm0_setup_pwm_out(const struct pwm_mspm0_config *config,
 	 * LOAD must hold period/2. Use a local so data->period stays at the
 	 * full configured value (avoids double-halving on any future reinit).
 	 */
-	uint32_t load = (config->mode == PWM_MSPM0_CENTER_ALIGN) ? (data->period >> 1)
-								 : data->period;
+	uint32_t load =
+		(config->mode == PWM_MSPM0_CENTER_ALIGN) ? (data->period >> 1) : data->period;
 
 	base->COUNTERREGS.LOAD = load;
 
@@ -388,9 +385,8 @@ static void mspm0_setup_pwm_out(const struct pwm_mspm0_config *config,
 		ctrctl | GPTIMER_CTRCTL_REPEAT_REPEAT_1 | GPTIMER_CTRCTL_EN_ENABLED;
 }
 
-static int mspm0_pwm_set_cycles(const struct device *dev, uint32_t channel,
-			       uint32_t period_cycles, uint32_t pulse_cycles,
-			       pwm_flags_t flags)
+static int mspm0_pwm_set_cycles(const struct device *dev, uint32_t channel, uint32_t period_cycles,
+				uint32_t pulse_cycles, pwm_flags_t flags)
 {
 	const struct pwm_mspm0_config *config = dev->config;
 	struct pwm_mspm0_data *data = dev->data;
@@ -453,8 +449,8 @@ static int mspm0_pwm_set_cycles(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
-static int mspm0_pwm_get_cycles_per_sec(const struct device *dev,
-					uint32_t channel, uint64_t *cycles)
+static int mspm0_pwm_get_cycles_per_sec(const struct device *dev, uint32_t channel,
+					uint64_t *cycles)
 {
 	ARG_UNUSED(channel);
 	const struct pwm_mspm0_data *data = dev->data;
@@ -480,7 +476,7 @@ static int mspm0_pwm_get_cycles_per_sec(const struct device *dev,
  * for EDGE_TIME mode whenever PERIOD/PULSE/BOTH is requested there.
  */
 static uint32_t mspm0_pwm_cap_intr_mask(const struct pwm_mspm0_config *config,
-				       const struct pwm_mspm0_data *data)
+					const struct pwm_mspm0_data *data)
 {
 	if (data->cmode == CMODE_PULSE_WIDTH) {
 		return GPTIMER_INT_CCD_MASK(config->cc_idx[0] ^ 1U) | GPTIMER_INT_ZERO_BIT;
@@ -488,8 +484,7 @@ static uint32_t mspm0_pwm_cap_intr_mask(const struct pwm_mspm0_config *config,
 	return GPTIMER_INT_CCD_MASK(config->cc_idx[0]);
 }
 
-static void mspm0_setup_capture(const struct device *dev,
-				const struct pwm_mspm0_config *config,
+static void mspm0_setup_capture(const struct device *dev, const struct pwm_mspm0_config *config,
 				struct pwm_mspm0_data *data)
 {
 	struct mspm0_gptimer_regs *base = config->base;
@@ -532,18 +527,14 @@ static void mspm0_setup_capture(const struct device *dev,
 	config->irq_config_func(dev);
 }
 
-static int mspm0_capture_configure(const struct device *dev,
-				   uint32_t channel,
-				   pwm_flags_t flags,
-				   pwm_capture_callback_handler_t cb,
-				   void *user_data)
+static int mspm0_capture_configure(const struct device *dev, uint32_t channel, pwm_flags_t flags,
+				   pwm_capture_callback_handler_t cb, void *user_data)
 {
 	const struct pwm_mspm0_config *config = dev->config;
 	struct pwm_mspm0_data *data = dev->data;
 	uint32_t intr_mask;
 
-	if (config->is_capture != true ||
-	    channel != 0) {
+	if (config->is_capture != true || channel != 0) {
 		LOG_ERR("Invalid channel %d", channel);
 		return -EINVAL;
 	}
@@ -601,8 +592,7 @@ static int mspm0_capture_enable(const struct device *dev, uint32_t channel)
 	struct mspm0_gptimer_regs *base = config->base;
 	uint32_t intr_mask;
 
-	if (config->is_capture != true ||
-	    channel != 0) {
+	if (config->is_capture != true || channel != 0) {
 		LOG_ERR("Invalid capture mode or channel");
 		return -EINVAL;
 	}
@@ -647,8 +637,7 @@ static int mspm0_capture_disable(const struct device *dev, uint32_t channel)
 	struct mspm0_gptimer_regs *base = config->base;
 	uint32_t intr_mask;
 
-	if (config->is_capture != true ||
-	    channel != 0) {
+	if (config->is_capture != true || channel != 0) {
 		LOG_ERR("Invalid channel");
 		return -EINVAL;
 	}
@@ -685,8 +674,8 @@ static int pwm_mspm0_init(const struct device *dev)
 
 	struct mspm0_sys_clock clock_subsys = config->clock_subsys;
 
-	ret = clock_control_get_rate(config->clock_dev,
-				     (clock_control_subsys_t)&clock_subsys, &clock_rate);
+	ret = clock_control_get_rate(config->clock_dev, (clock_control_subsys_t)&clock_subsys,
+				     &clock_rate);
 	if (ret != 0) {
 		LOG_ERR("clk get rate err %d", ret);
 		return ret;
@@ -868,7 +857,6 @@ static void mspm0_cc_isr(const struct device *dev)
 
 #endif /* CONFIG_PWM_CAPTURE */
 
-
 /* Device instantiation */
 
 #ifdef CONFIG_PWM_CAPTURE
@@ -936,14 +924,9 @@ static void mspm0_cc_isr(const struct device *dev)
 			 .is_capture = DT_NODE_HAS_PROP(DT_DRV_INST(n), ti_cc_mode),               \
 			 IF_ENABLED(CONFIG_PWM_CAPTURE,					\
 		(.irq_config_func = COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), ti_cc_mode),	\
-						(mspm0_pwm_##n##_irq_register), (NULL)))) };           \
+						(mspm0_pwm_##n##_irq_register), (NULL)))) };       \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n,						\
-			      pwm_mspm0_init,					\
-			      NULL,						\
-			      &pwm_mspm0_data_ ## n,				\
-			      &pwm_mspm0_config_ ## n,				\
-			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,		\
-			      &pwm_mspm0_driver_api);
+	DEVICE_DT_INST_DEFINE(n, pwm_mspm0_init, NULL, &pwm_mspm0_data_##n, &pwm_mspm0_config_##n, \
+			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, &pwm_mspm0_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_DEVICE_INIT_MSPM0)
