@@ -29,6 +29,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 #include <zephyr/tc_util.h>
 
 #include "6lo.h"
+#include "6lo_private.h"
 #include "ieee802154_6lo_fragment.h"
 
 #define NET_LOG_ENABLED 1
@@ -705,6 +706,66 @@ ZTEST(ieee802154_6lo_fragment, test_fragment_reassembly_timeout)
 	k_sleep(K_MSEC(CONFIG_NET_L2_IEEE802154_REASSEMBLY_TIMEOUT * MSEC_PER_SEC + 200));
 
 	zassert_true(test_fragment(&test_data_2), "Reassembly failed after timeout");
+}
+
+static enum net_verdict reassemble_raw(const uint8_t *payload, size_t len)
+{
+	struct net_pkt *pkt;
+	struct net_buf *frag;
+	enum net_verdict verdict;
+
+	pkt = net_pkt_rx_alloc(K_FOREVER);
+	zassert_not_null(pkt);
+
+	frag = net_pkt_get_frag(pkt, len, K_FOREVER);
+	zassert_not_null(frag);
+
+	memcpy(frag->data, payload, len);
+	frag->len = len;
+
+	net_pkt_frag_add(pkt, frag);
+	net_pkt_set_overwrite(pkt, true);
+
+	verdict = ieee802154_6lo_reassemble(pkt);
+	if (verdict == NET_DROP) {
+		net_pkt_unref(pkt);
+	}
+
+	return verdict;
+}
+
+/* Fragments shorter than their header are dropped before the datagram
+ * size and tag are parsed, whatever the dispatch byte is.
+ */
+ZTEST(ieee802154_6lo_fragment, test_fragment_too_short)
+{
+	static const uint8_t frag1_short[] = { 0xC0, 0x00, 0x00 };
+	static const uint8_t fragn_short[] = { 0xE0, 0x00, 0x00, 0x00 };
+
+	zassert_equal(reassemble_raw(frag1_short, sizeof(frag1_short)), NET_DROP);
+	zassert_equal(reassemble_raw(fragn_short, sizeof(fragn_short)), NET_DROP);
+}
+
+/* Only FRAG1 and FRAGN are supported; any other dispatch in the 11xxxxxx
+ * range (RFC 8025 paging, RFC 8931 RFRAG, reserved values) is dropped
+ * before it can enter the reassembly cache.
+ */
+ZTEST(ieee802154_6lo_fragment, test_fragment_unsupported_dispatch)
+{
+	static const uint8_t unsupported[] = { 0xC8, 0xD0, 0xD8, 0xE8, 0xF0, 0xF8 };
+	uint8_t payload[NET_6LO_FRAGN_HDR_LEN + 8];
+
+	memset(payload, 0, sizeof(payload));
+
+	for (size_t i = 0; i < ARRAY_SIZE(unsupported); i++) {
+		payload[0] = unsupported[i];
+
+		/* Both a truncated and a full-size fragment */
+		zassert_equal(reassemble_raw(payload, 1), NET_DROP,
+			      "dispatch 0x%02x accepted", unsupported[i]);
+		zassert_equal(reassemble_raw(payload, sizeof(payload)), NET_DROP,
+			      "dispatch 0x%02x accepted", unsupported[i]);
+	}
 }
 
 ZTEST_SUITE(ieee802154_6lo_fragment, NULL, NULL, NULL, NULL, NULL);
