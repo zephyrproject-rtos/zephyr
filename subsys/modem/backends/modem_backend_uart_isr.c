@@ -38,9 +38,9 @@ static void modem_backend_uart_isr_irq_handler_receive_ready(struct modem_backen
 		 * - or a too small receive_buf_size
 		 * relatively to the (too high) baud rate and amount of incoming data.
 		 */
-		LOG_WRN("%s: Receive buffer overrun", backend->uart->name);
-		ring_buf_reset(receive_rb);
-		size = ring_buf_put_ptr(receive_rb, &buffer, 0);
+		LOG_DBG("RX buffer full, disabling RX IRQ");
+		uart_irq_rx_disable(backend->uart);
+		return;
 	}
 
 	ret = uart_fifo_read(backend->uart, buffer, size);
@@ -209,42 +209,77 @@ static int modem_backend_uart_isr_transmit_chain(void *data,
 	return written;
 }
 
+static int modem_backend_uart_isr_receive_from_uart(struct modem_backend_uart *backend,
+						    struct ring_buf *receive_rb)
+{
+	uint8_t *buffer;
+	int ret;
+
+	while (ring_buf_put_ptr(receive_rb, &buffer, 0) != 0) {
+		ret = uart_poll_in(backend->uart, buffer);
+
+		/* No character is currently available. */
+		if (ret == -1) {
+			return 0;
+		}
+
+		if (ret != 0) {
+			return ret;
+		}
+
+		ring_buf_commit(receive_rb, 1);
+	}
+
+	return 0;
+}
+
 static int modem_backend_uart_isr_receive(void *data, uint8_t *buf, size_t size)
 {
 	struct modem_backend_uart *backend = (struct modem_backend_uart *)data;
-
+	struct ring_buf *receive_rb;
+	struct ring_buf *consumer_rb;
+	struct ring_buf *tmp_rb;
+	uint8_t receive_rdb_consumer;
 	uint32_t read_bytes;
-	uint8_t receive_rdb_unused;
+	int ret;
 
 #if CONFIG_MODEM_STATS
 	advertise_receive_buf_stats(backend);
 #endif
 
-	read_bytes = 0;
-	receive_rdb_unused = (backend->isr.receive_rdb_used == 1) ? 0 : 1;
+	receive_rdb_consumer = (backend->isr.receive_rdb_used == 1) ? 0 : 1;
 
-	/* Read data from unused ring double buffer first */
-	read_bytes += ring_buf_get(&backend->isr.receive_rdb[receive_rdb_unused], buf, size);
+	receive_rb = &backend->isr.receive_rdb[backend->isr.receive_rdb_used];
+	consumer_rb = &backend->isr.receive_rdb[receive_rdb_consumer];
 
-	if (ring_buf_is_empty(&backend->isr.receive_rdb[receive_rdb_unused]) == false) {
-		/* More data available in the buffer */
-		k_work_schedule(&backend->receive_ready_work, K_NO_WAIT);
-		return (int)read_bytes;
+	read_bytes = ring_buf_get(consumer_rb, buf, size);
+
+	/* Disable RX IRQ while accessing and potentially swapping buffers. */
+	uart_irq_rx_disable(backend->uart);
+
+	if (ring_buf_is_empty(consumer_rb)) {
+		backend->isr.receive_rdb_used = receive_rdb_consumer;
+
+		tmp_rb = receive_rb;
+		receive_rb = consumer_rb;
+		consumer_rb = tmp_rb;
 	}
 
-	/* Swap receive ring double buffer */
-	uart_irq_rx_disable(backend->uart);
-	backend->isr.receive_rdb_used = receive_rdb_unused;
-	uart_irq_rx_enable(backend->uart);
+	ret = modem_backend_uart_isr_receive_from_uart(backend, receive_rb);
 
-	/* Read data from previously used buffer */
-	receive_rdb_unused = (backend->isr.receive_rdb_used == 1) ? 0 : 1;
+	if (ring_buf_space_get(receive_rb) > 0) {
+		uart_irq_rx_enable(backend->uart);
+	}
 
-	read_bytes += ring_buf_get(&backend->isr.receive_rdb[receive_rdb_unused], &buf[read_bytes],
-				   (size - read_bytes));
-	if (ring_buf_is_empty(&backend->isr.receive_rdb[receive_rdb_unused]) == false) {
-		/* More data available in the buffer */
+	read_bytes += ring_buf_get(
+		consumer_rb, &buf[read_bytes], size - read_bytes);
+
+	if (!ring_buf_is_empty(receive_rb) || !ring_buf_is_empty(consumer_rb)) {
 		k_work_schedule(&backend->receive_ready_work, K_NO_WAIT);
+	}
+
+	if (ret != 0) {
+		return ret;
 	}
 
 	return (int)read_bytes;
