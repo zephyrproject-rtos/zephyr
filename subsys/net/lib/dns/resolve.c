@@ -822,6 +822,7 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 	const struct net_in_addr *addr4 = NULL;
 	struct net_if *iface;
 	int ret, count;
+	int free_slot;
 
 	if (!ctx) {
 		return -ENOENT;
@@ -1102,6 +1103,14 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 				&net_sin(net_sad(&ctx->servers[i].dns_server_addr))->sin_addr);
 		}
 
+		/* Same whole-array scan as dns_write(); see the comment there.
+		 * ret still holds the result of bind_to_iface() (or the socket
+		 * fd), so it has to be reset for a full poll array to be an error
+		 * here.
+		 */
+		ret = -ENOENT;
+		free_slot = -1;
+
 		ARRAY_FOR_EACH(ctx->fds, j) {
 			if (ctx->fds[j].fd == ctx->servers[i].sock) {
 				/* There was query to this server already */
@@ -1109,12 +1118,15 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 				break;
 			}
 
-			if (ctx->fds[j].fd < 0) {
-				ctx->fds[j].fd = ctx->servers[i].sock;
-				ctx->fds[j].events = ZSOCK_POLLIN;
-				ret = 0;
-				break;
+			if (free_slot < 0 && ctx->fds[j].fd < 0) {
+				free_slot = j;
 			}
+		}
+
+		if (ret < 0 && free_slot >= 0) {
+			ctx->fds[free_slot].fd = ctx->servers[i].sock;
+			ctx->fds[free_slot].events = ZSOCK_POLLIN;
+			ret = 0;
 		}
 
 		if (ret < 0) {
@@ -2251,6 +2263,7 @@ static int dns_write(struct dns_resolve_context *ctx,
 	int server_addr_len;
 	uint16_t dns_id, len;
 	int ret, sock, family;
+	int free_slot;
 	char *query_name;
 
 	if (IS_ENABLED(CONFIG_DNS_RESOLVER_RANDOMIZE_SOURCE_PORT)) {
@@ -2313,7 +2326,13 @@ static int dns_write(struct dns_resolve_context *ctx,
 	}
 
 	ret = -ENOENT;
+	free_slot = -1;
 
+	/* A socket may already be polled in a slot behind a hole left by a
+	 * closed server, so scan the whole array for it before claiming the
+	 * first free slot: claiming the hole first would poll one socket twice
+	 * and leave no slot for the next server that comes up.
+	 */
 	ARRAY_FOR_EACH(ctx->fds, i) {
 		if (ctx->fds[i].fd == sock) {
 			/* There was query to this server already */
@@ -2321,12 +2340,15 @@ static int dns_write(struct dns_resolve_context *ctx,
 			break;
 		}
 
-		if (ctx->fds[i].fd < 0) {
-			ctx->fds[i].fd = sock;
-			ctx->fds[i].events = ZSOCK_POLLIN;
-			ret = 0;
-			break;
+		if (free_slot < 0 && ctx->fds[i].fd < 0) {
+			free_slot = i;
 		}
+	}
+
+	if (ret < 0 && free_slot >= 0) {
+		ctx->fds[free_slot].fd = sock;
+		ctx->fds[free_slot].events = ZSOCK_POLLIN;
+		ret = 0;
 	}
 
 	if (ret < 0) {
