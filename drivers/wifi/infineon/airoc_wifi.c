@@ -916,8 +916,11 @@ static int airoc_mgmt_connect(const struct device *dev,
 
 	if (data->is_sta_connected) {
 		LOG_ERR("Already connected");
-		ret = -EALREADY;
-		goto error;
+		/* Reject duplicate requests without reporting that the active
+		 * connection failed or changing its operational state.
+		 */
+		k_sem_give(&data->sema_common);
+		return -EALREADY;
 	}
 
 	if (data->is_ap_up) {
