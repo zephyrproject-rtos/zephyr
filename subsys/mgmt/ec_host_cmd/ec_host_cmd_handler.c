@@ -86,7 +86,7 @@ static int64_t suppressed_cmds_deadline = CONFIG_EC_HOST_CMD_LOG_SUPPRESSED_INTE
 static size_t suppressed_cmds_number;
 #endif /* CONFIG_EC_HOST_CMD_LOG_SUPPRESSED */
 
-static uint8_t cal_checksum(const uint8_t *const buffer, const uint16_t size)
+static uint8_t cal_checksum(const uint8_t *const buffer, const size_t size)
 {
 	uint8_t checksum = 0;
 
@@ -227,13 +227,19 @@ static enum ec_host_cmd_status verify_rx(struct ec_host_cmd_rx_ctx *rx)
 		return EC_HOST_CMD_INVALID_HEADER;
 	}
 
-	const uint16_t rx_valid_data_size = rx_header->data_len + RX_HEADER_SIZE;
 	/*
-	 * Ensure we received at least as much data as is expected.
+	 * data_len is a 16 bit field fully controlled by the host, so the sum has to be computed
+	 * on size_t. A 16 bit sum wraps for data_len >= 0xfff8 and lets a header-only packet
+	 * claim a request body it never sent.
+	 */
+	const size_t rx_valid_data_size = (size_t)rx_header->data_len + RX_HEADER_SIZE;
+
+	/*
+	 * Ensure we received at least as much data as is expected (but not more than rx buffer).
 	 * It is okay to receive more since some hardware interfaces
 	 * add on extra padding bytes at the end.
 	 */
-	if (rx->len < rx_valid_data_size) {
+	if ((rx->len < rx_valid_data_size) || (rx_valid_data_size > rx->len_max)) {
 		return EC_HOST_CMD_REQUEST_TRUNCATED;
 	}
 
@@ -273,7 +279,7 @@ static enum ec_host_cmd_status prepare_response(struct ec_host_cmd_tx_buf *tx, u
 	tx_header->data_len = len;
 	tx_header->reserved = 0;
 
-	const uint16_t tx_valid_data_size = tx_header->data_len + TX_HEADER_SIZE;
+	const size_t tx_valid_data_size = (size_t)tx_header->data_len + TX_HEADER_SIZE;
 
 	if (tx_valid_data_size > tx->len_max) {
 		return EC_HOST_CMD_INVALID_RESPONSE;
@@ -361,7 +367,18 @@ static void ec_host_cmd_log_request(const uint8_t *rx_buf)
 #endif /* CONFIG_EC_HOST_CMD_LOG_SUPPRESSED */
 
 	if (IS_ENABLED(CONFIG_EC_HOST_CMD_LOG_DBG_BUFFERS)) {
-		if (rx_header->data_len) {
+		/*
+		 * This runs before the rx status is checked, so data_len is not trustworthy
+		 * yet.
+		 */
+		const size_t rx_len = ec_host_cmd.rx_ctx.len;
+		size_t rx_data_len = 0;
+
+		if (rx_len > RX_HEADER_SIZE) {
+			rx_data_len = MIN((size_t)rx_header->data_len, rx_len - RX_HEADER_SIZE);
+		}
+
+		if (rx_data_len != 0) {
 			const uint8_t *rx_data = rx_buf + RX_HEADER_SIZE;
 			static const char dbg_fmt[] = "HC 0x%04x.%d:";
 			/* Use sizeof because "%04x" needs 4 bytes for command id, and
@@ -371,7 +388,7 @@ static void ec_host_cmd_log_request(const uint8_t *rx_buf)
 
 			snprintf(dbg_raw, sizeof(dbg_raw), dbg_fmt, rx_header->cmd_id,
 				 rx_header->cmd_ver);
-			LOG_HEXDUMP_DBG(rx_data, rx_header->data_len, dbg_raw);
+			LOG_HEXDUMP_DBG(rx_data, rx_data_len, dbg_raw);
 
 			return;
 		}
