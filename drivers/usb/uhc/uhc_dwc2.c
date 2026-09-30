@@ -2361,8 +2361,6 @@ static int uhc_dwc2_bus_resume(const struct device *const dev)
 
 static int uhc_dwc2_enqueue(const struct device *const dev, struct uhc_transfer *const xfer)
 {
-	uhc_lock_internal(dev, K_FOREVER);
-
 	(void)uhc_xfer_append(dev, xfer);
 
 	/*
@@ -2370,8 +2368,6 @@ static int uhc_dwc2_enqueue(const struct device *const dev, struct uhc_transfer 
 	 * in the list and is started later from the completion path.
 	 */
 	submit_pending(dev);
-
-	uhc_unlock_internal(dev);
 
 	return 0;
 }
@@ -2381,8 +2377,6 @@ static int uhc_dwc2_dequeue(const struct device *const dev, struct uhc_transfer 
 	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
 	struct uhc_data *const data = dev->data;
 	struct uhc_transfer *tmp;
-
-	uhc_lock_internal(dev, K_FOREVER);
 
 	/*
 	 * Mark the queued transfer as cancelled. The dequeue process itself
@@ -2395,8 +2389,6 @@ static int uhc_dwc2_dequeue(const struct device *const dev, struct uhc_transfer 
 			break;
 		}
 	}
-
-	uhc_unlock_internal(dev);
 
 	return 0;
 }
