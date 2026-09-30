@@ -26,6 +26,11 @@
 
 /* enough loop iterations to need more than one hardware batch */
 #define LOOP_BATCH_N 1200
+/*
+ * Without hardware auto-stop the loop is halted from the loop-end
+ * interrupt, and a few symbols can still leave after that.
+ */
+#define LOOP_BATCH_STOP_OVERRUN 8
 
 /* enough symbols to need more than one channel memory block */
 #define LONG_FRAME_SYMS 200
@@ -64,7 +69,7 @@ static uint8_t rx_index;
 
 static struct pulse_symbol tx_syms[PAYLOAD_SYMS + 8];
 static struct pulse_symbol rx_syms[PAYLOAD_SYMS + 16];
-static struct pulse_symbol loop_rx_syms[2 * LOOP_BATCH_N + 8];
+static struct pulse_symbol loop_rx_syms[2 * LOOP_BATCH_N + LOOP_BATCH_STOP_OVERRUN + 8];
 static struct pulse_symbol long_tx_syms[LONG_FRAME_SYMS + 1];
 
 static K_THREAD_STACK_DEFINE(tx_stack, 2048);
@@ -353,6 +358,7 @@ ZTEST(pulse_io_hw_loopback, test_loop_batch_rearm)
 {
 	struct pulse_io_caps caps;
 	size_t received = 0;
+	size_t limit;
 
 	zassert_ok(pulse_io_get_capabilities(dev, &caps));
 	if (caps.tx_loop_max < LOOP_BATCH_N || !caps.rx_streaming) {
@@ -385,8 +391,13 @@ ZTEST(pulse_io_hw_loopback, test_loop_batch_rearm)
 	 */
 	zassert_true(received > 2 * 1023, "received %zu symbols, loop stopped at one batch",
 		     received);
-	zassert_true(received <= 2 * LOOP_BATCH_N, "received %zu symbols, expected at most %u",
-		     received, 2 * LOOP_BATCH_N);
+
+	limit = 2U * LOOP_BATCH_N;
+	if (!caps.tx_loop_auto_stop) {
+		limit += LOOP_BATCH_STOP_OVERRUN;
+	}
+	zassert_true(received <= limit, "received %zu symbols, expected at most %zu", received,
+		     limit);
 
 	zassert_ok(pulse_io_channel_configure(dev, rx_chan, &rx_default_cfg));
 }
