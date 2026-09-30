@@ -121,8 +121,31 @@ void lll_sync_iso_prepare(void *param)
 
 void lll_sync_iso_flush(uint8_t handle, struct lll_sync_iso *lll)
 {
+	bool release = false;
+
 	ARG_UNUSED(handle);
-	ARG_UNUSED(lll);
+
+	for (uint8_t i = 0U; i < lll->stream_count; i++) {
+		for (uint8_t j = 0U; j < lll->payload_count_max; j++) {
+			struct node_rx_pdu *node_rx;
+
+			node_rx = lll->payload[i][j];
+			if (node_rx == NULL) {
+				continue;
+			}
+
+			lll->payload[i][j] = NULL;
+
+			node_rx->hdr.type = NODE_RX_TYPE_RELEASE;
+			iso_rx_put(node_rx->hdr.link, node_rx);
+
+			release = true;
+		}
+	}
+
+	if (release) {
+		iso_rx_sched();
+	}
 }
 
 static int init_reset(void)
