@@ -55,7 +55,7 @@ struct _thread_arch {
 
 #ifdef CONFIG_XTENSA_LAZY_HIFI_SHARING
 	/* A non-BSA region is required for lazy save/restore */
-	uint8_t hifi_regs[XCHAL_CP1_SA_SIZE] __aligned(XCHAL_CP1_SA_ALIGN);
+	uint8_t cp_regs[XCHAL_CP1_SA_SIZE] __aligned(XCHAL_CP1_SA_ALIGN);
 #endif
 };
 

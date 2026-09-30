@@ -11,7 +11,7 @@
 
 #if defined(CONFIG_XTENSA_EAGER_HIFI_SHARING)
 /*
- * Load the HiFi registers from the hifi buffer in the BSA. Round the address
+ * Load the HiFi registers from the cp buffer in the BSA. Round the address
  * of this buffer up to XCHAL_CP1_SA_ALIGN bytes to guarantee the necessary
  * alignment.
  *
@@ -21,10 +21,10 @@
  * A2 - available for use
  * A3 - available for use
  */
-.global _xtensa_hifi_load
+.global _xtensa_cp_load
 .align 4
-_xtensa_hifi_load:
-        addi a2, a1, (___xtensa_irq_bsa_t_hifi_OFFSET + XCHAL_CP1_SA_ALIGN - 1)
+_xtensa_cp_load:
+        addi a2, a1, (___xtensa_irq_bsa_t_cp_OFFSET + XCHAL_CP1_SA_ALIGN - 1)
         movi a3, ~(XCHAL_CP1_SA_ALIGN - 1)
         and a2, a2, a3
 
@@ -33,7 +33,7 @@ _xtensa_hifi_load:
 	ret
 
 /*
- * Save the HiFi registers into the hifi buffer in the BSA. Round the address
+ * Save the HiFi registers into the cp buffer in the BSA. Round the address
  * of this buffer up to XCHAL_CP1_SA_ALIGN bytes to guarantee the necessary
  * alignment.
  *
@@ -42,10 +42,10 @@ _xtensa_hifi_load:
  * A2 - available for use
  * A3 - available for use
  */
-.global _xtensa_hifi_save
+.global _xtensa_cp_save
 .align 4
-_xtensa_hifi_save:
-        addi a2, a1, (___xtensa_irq_bsa_t_hifi_OFFSET + XCHAL_CP1_SA_ALIGN - 1)
+_xtensa_cp_save:
+        addi a2, a1, (___xtensa_irq_bsa_t_cp_OFFSET + XCHAL_CP1_SA_ALIGN - 1)
         movi a3, ~(XCHAL_CP1_SA_ALIGN - 1)
         and a2, a2, a3
 
@@ -56,32 +56,32 @@ _xtensa_hifi_save:
 /*
  * Load the HiFi registers from the HiFi buffer in the k_thread structure.
  */
-.global xtensa_lazy_hifi_load
+.global xtensa_lazy_cp_load
 .align 4
-xtensa_lazy_hifi_load:
+xtensa_lazy_cp_load:
 	entry a1, 32
 	/* Spill registers onto stack */
 	mov a4, a0
 	call0 xtensa_spill_reg_windows
 	mov a0, a4
 
-	/* A2 should be address of hifi storage; A3 is scratch */
+	/* A2 should be address of cp storage; A3 is scratch */
 	xchal_cp1_load a2 a3 a3 a3 a3
 	retw
 
 /*
  * Save the HiFi registers to the HiFi buffer in the k_thread structure.
  */
-.global xtensa_lazy_hifi_save
+.global xtensa_lazy_cp_save
 .align 4
-xtensa_lazy_hifi_save:
+xtensa_lazy_cp_save:
 	entry a1, 32
 	/* Spill registers onto stack */
 	mov a4, a0
 	call0 xtensa_spill_reg_windows
 	mov a0, a4
 
-	/* A2 should be address of hifi storage; A3 is scratch */
+	/* A2 should be address of cp storage; A3 is scratch */
 	xchal_cp1_store a2 a3 a3 a3 a3  /* Only A2 and A3 are used by macro */
 	retw
 #endif

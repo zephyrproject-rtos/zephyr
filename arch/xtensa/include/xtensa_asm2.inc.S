@@ -18,7 +18,7 @@
  */
 
 #if defined(CONFIG_XTENSA_EAGER_HIFI_SHARING)
-.extern _xtensa_hifi_save
+.extern _xtensa_cp_save
 #endif
 
 /*
@@ -462,7 +462,7 @@ _excint_skip_ps_save_to_thread:
 #endif
 
 #if defined(CONFIG_XTENSA_EAGER_HIFI_SHARING)
-	call0 _xtensa_hifi_save    /* Save HiFi registers */
+	call0 _xtensa_cp_save    /* Save HiFi registers */
 #endif
 
 	call0 xtensa_save_high_regs

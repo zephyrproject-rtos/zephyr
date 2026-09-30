@@ -10,9 +10,9 @@
 /* Per CPU architecture specifics */
 struct _cpu_arch {
 #if defined(CONFIG_XTENSA_LAZY_HIFI_SHARING)
-	atomic_ptr_val_t hifi_owner; /* Owner of HiFi */
+	atomic_ptr_val_t cp_owner; /* Owner of the coprocessor */
 #if CONFIG_MP_MAX_NUM_CPUS > 1
-	atomic_ptr_val_t save_hifi;  /* Save HiFi on IPI if match hifi_owner */
+	atomic_ptr_val_t save_cp;  /* Save on IPI if match cp_owner */
 #endif
 #elif defined(__cplusplus)
 	/* An empty struct is not valid C, and compilers that accept it give
