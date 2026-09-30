@@ -215,10 +215,10 @@ static void dwmac_tx_release(const struct device *dev)
 				if ((des0 & TDES0_TTSS) != 0U) {
 #if defined(CONFIG_ETH_DWC_ETHER_1000_CORE_EDFE)
 					pkt->timestamp.second = d->des7;
-					pkt->timestamp.nanosecond = d->des6;
+					pkt->timestamp.nanosecond = DWMAC_PTP_SUBSEC_TO_NS(d->des6);
 #else /* CONFIG_ETH_DWC_ETHER_1000_CORE_EDFE */
 					pkt->timestamp.second = d->des3;
-					pkt->timestamp.nanosecond = d->des2;
+					pkt->timestamp.nanosecond = DWMAC_PTP_SUBSEC_TO_NS(d->des2);
 #endif /* CONFIG_ETH_DWC_ETHER_1000_CORE_EDFE */
 					net_if_add_tx_timestamp(pkt);
 				}
@@ -247,14 +247,14 @@ static void dwmac_receive_timestamp(struct net_pkt *pkt, struct dwmac_dma_desc *
 		return;
 	}
 	pkt->timestamp.second = d->des7;
-	pkt->timestamp.nanosecond = d->des6;
+	pkt->timestamp.nanosecond = DWMAC_PTP_SUBSEC_TO_NS(d->des6);
 #else
 	if (d->des2 == UINT32_MAX && d->des3 == UINT32_MAX) {
 		return;
 	}
 
 	pkt->timestamp.second = d->des3;
-	pkt->timestamp.nanosecond = d->des2;
+	pkt->timestamp.nanosecond = DWMAC_PTP_SUBSEC_TO_NS(d->des2);
 #endif /* CONFIG_ETH_DWC_ETHER_1000_CORE_EDFE */
 	net_pkt_set_rx_timestamping(pkt, true);
 }
