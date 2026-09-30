@@ -965,10 +965,7 @@ static int bt_l2cap_br_basic_mode_send_buf_init(struct bt_l2cap_br_chan *chan, s
 {
 	struct bt_l2cap_hdr *hdr;
 
-	hdr = net_buf_push(buf, sizeof(*hdr));
-	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
-	hdr->cid = sys_cpu_to_le16(chan->tx.cid);
-
+	/* Checked before the header is added, since the caller keeps the buffer on error */
 	if (buf->user_data_size < sizeof(struct closure)) {
 		LOG_WRN("not enough room in user_data %d < %d pool %u",
 			buf->user_data_size,
@@ -976,6 +973,10 @@ static int bt_l2cap_br_basic_mode_send_buf_init(struct bt_l2cap_br_chan *chan, s
 			buf->pool_id);
 		return -EINVAL;
 	}
+
+	hdr = net_buf_push(buf, sizeof(*hdr));
+	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
+	hdr->cid = sys_cpu_to_le16(chan->tx.cid);
 
 	LOG_DBG("push PDU: cb %p userdata %p", cb, user_data);
 
