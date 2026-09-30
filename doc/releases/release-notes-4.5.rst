@@ -552,6 +552,8 @@ New APIs and options
     priority-raising BASEPRI writes; enabled by default on Arm Cortex-M7, where erratum
     440977 applies to r0p0/r0p1 cores. Other Cortex-M cores no longer execute barriers in
     the interrupt lock/unlock fast paths, speeding up kernel hot paths)
+  * :kconfig:option:`CONFIG_ESP32S3_PIE_SHARING` (Xtensa, preserve the registers of the
+    ESP32-S3 PIE SIMD extension across context switches, see :ref:`xtensa_developer_guide`)
   * :kconfig:option:`CONFIG_EXCEPTION_DUMP` (enabled by default, can be disabled to compile
     out the fault handler output on size constrained builds)
   * :kconfig:option:`CONFIG_RISCV_ISA_EXT_ZKR` (RISC-V Zkr entropy source extension, enabled
