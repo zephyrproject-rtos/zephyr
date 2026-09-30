@@ -703,6 +703,9 @@ static void IRAM_ATTR uart_esp32_isr(void *arg)
 	const struct device *dev = (const struct device *)arg;
 	struct uart_esp32_data *data = dev->data;
 	uint32_t uart_intr_status = uart_hal_get_intsts_mask(&data->hal);
+#if CONFIG_UART_ASYNC_API
+	struct uart_event evt = {0};
+#endif
 
 	if (uart_intr_status == 0) {
 		return;
@@ -733,6 +736,30 @@ static void IRAM_ATTR uart_esp32_isr(void *arg)
 	if (uart_intr_status & UART_INTR_RXFIFO_FULL) {
 		data->async.rx_counter++;
 		uart_esp32_async_timer_start(&data->async.rx_timeout_work, data->async.rx_timeout);
+	}
+
+	if ((uart_intr_status & UART_INTR_TX_DONE) && (data->async.tx_len != 0U)) {
+		if (!uart_hal_is_tx_idle(&data->hal)) {
+			uart_hal_ena_intr_mask(&data->hal, UART_INTR_TX_DONE);
+		} else {
+			uart_hal_disable_intr_mask(&data->hal, UART_INTR_TX_DONE);
+			k_work_cancel_delayable(&data->async.tx_timeout_work);
+
+			evt.type = UART_TX_DONE;
+			evt.data.tx.buf = data->async.tx_buf;
+			evt.data.tx.len = data->async.tx_len;
+
+			data->async.tx_buf = NULL;
+			data->async.tx_len = 0U;
+
+#ifdef CONFIG_PM
+			uart_esp32_pm_policy_state_lock_put(dev, TX_ASYNC);
+#endif
+
+			if (data->async.cb) {
+				data->async.cb(dev, &evt, data->async.user_data);
+			}
+		}
 	}
 #endif
 }
@@ -845,27 +872,11 @@ static void IRAM_ATTR uart_esp32_dma_tx_done(const struct device *dma_dev, void 
 {
 	const struct device *uart_dev = user_data;
 	struct uart_esp32_data *data = uart_dev->data;
-	struct uart_event evt = {0};
-	unsigned int key = irq_lock();
 
-	k_work_cancel_delayable(&data->async.tx_timeout_work);
-
-	evt.type = UART_TX_DONE;
-	evt.data.tx.buf = data->async.tx_buf;
-	evt.data.tx.len = data->async.tx_len;
-	if (data->async.cb) {
-		data->async.cb(uart_dev, &evt, data->async.user_data);
-	}
-
-	/* Reset TX Buffer */
-	data->async.tx_buf = NULL;
-	data->async.tx_len = 0U;
-
-#ifdef CONFIG_PM
-	uart_esp32_pm_policy_state_lock_put(uart_dev, TX_ASYNC);
-#endif
-
-	irq_unlock(key);
+	/* The tail of the buffer is still in the TX FIFO: UART_TX_DONE is
+	 * reported from the ISR once the transmitter goes idle.
+	 */
+	uart_hal_ena_intr_mask(&data->hal, UART_INTR_TX_DONE);
 }
 
 static int uart_esp32_async_tx_abort(const struct device *dev)
@@ -896,17 +907,24 @@ static int uart_esp32_async_tx_abort(const struct device *dev)
 		goto unlock;
 	}
 
+	uart_hal_disable_intr_mask(&data->hal, UART_INTR_TX_DONE);
+	uart_hal_txfifo_rst(&data->hal);
+
 	evt.type = UART_TX_ABORTED;
 	evt.data.tx.buf = data->async.tx_buf;
 	evt.data.tx.len = tx_sent;
 
+	data->async.tx_buf = NULL;
+	data->async.tx_len = 0U;
+
+#ifdef CONFIG_PM
+	uart_esp32_pm_policy_state_lock_put(dev, TX_DRAIN);
+	uart_esp32_pm_policy_state_lock_put(dev, TX_ASYNC);
+#endif
+
 	if (data->async.cb) {
 		data->async.cb(dev, &evt, data->async.user_data);
 	}
-
-#ifdef CONFIG_PM
-	uart_esp32_pm_policy_state_lock_put(dev, TX_ASYNC);
-#endif
 
 unlock:
 	irq_unlock(key);
@@ -1037,7 +1055,7 @@ static int uart_esp32_async_tx(const struct device *dev, const uint8_t *buf, siz
 		goto unlock;
 	}
 
-	if (dma_status.busy) {
+	if (dma_status.busy || data->async.tx_len != 0U) {
 		LOG_ERR("Tx DMA Channel is busy");
 		err = -EBUSY;
 		goto unlock;
@@ -1060,6 +1078,8 @@ static int uart_esp32_async_tx(const struct device *dev, const uint8_t *buf, siz
 	err = dma_config(config->dma_dev, config->tx_dma_channel, &dma_cfg);
 	if (err) {
 		LOG_ERR("Error configuring Tx DMA (%d)", err);
+		data->async.tx_buf = NULL;
+		data->async.tx_len = 0U;
 		goto unlock;
 	}
 
@@ -1069,9 +1089,17 @@ static int uart_esp32_async_tx(const struct device *dev, const uint8_t *buf, siz
 	uart_esp32_pm_policy_state_lock_get(dev, TX_ASYNC);
 #endif
 
+	uart_hal_clr_intsts_mask(&data->hal, UART_INTR_TX_DONE);
+
 	err = dma_start(config->dma_dev, config->tx_dma_channel);
 	if (err) {
 		LOG_ERR("Error starting Tx DMA (%d)", err);
+		k_work_cancel_delayable(&data->async.tx_timeout_work);
+#ifdef CONFIG_PM
+		uart_esp32_pm_policy_state_lock_put(dev, TX_ASYNC);
+#endif
+		data->async.tx_buf = NULL;
+		data->async.tx_len = 0U;
 		goto unlock;
 	}
 
