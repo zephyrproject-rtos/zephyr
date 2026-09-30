@@ -15,7 +15,7 @@
  * @brief L2CAP
  * @defgroup bt_l2cap L2CAP
  * @since 1.0
- * @version 1.0.0
+ * @version 1.0.1
  * @ingroup bluetooth
  * @{
  */
@@ -941,6 +941,7 @@ int bt_l2cap_br_server_unregister(struct bt_l2cap_server *server);
  *  @param psm Channel PSM to connect to.
  *
  *  @return 0 in case of success or negative value in case of error.
+ *  @retval -EINVAL @p conn is not an LE connection.
  */
 int bt_l2cap_ecred_chan_connect(struct bt_conn *conn,
 				struct bt_l2cap_chan **chans, uint16_t psm);
@@ -1025,6 +1026,7 @@ int bt_l2cap_ecred_chan_reconfigure_explicit(struct bt_l2cap_chan **chans, size_
  *  @param psm Channel PSM to connect to.
  *
  *  @return 0 in case of success or negative value in case of error.
+ *  @retval -EINVAL @p conn is neither a BR/EDR nor an LE connection.
  */
 int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 			  uint16_t psm);
