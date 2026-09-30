@@ -2339,9 +2339,9 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 			ret = -EINVAL;
 			goto error;
 		}
-		if (payload->targets.num_targets > DW_I3C_MAX_CMD_BUF_SIZE) {
+		if (payload->targets.num_targets > DW_I3C_MAX_CMDS) {
 			LOG_ERR("%s: %zu CCC targets exceeds %d", dev->name,
-				payload->targets.num_targets, DW_I3C_MAX_CMD_BUF_SIZE);
+				payload->targets.num_targets, DW_I3C_MAX_CMDS);
 			ret = -ENOTSUP;
 			goto error;
 		}
@@ -2362,7 +2362,8 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 				COMMAND_PORT_ARG_DATA_LEN(payload->targets.payloads[i].data_len) |
 				COMMAND_PORT_TRANSFER_ARG;
 			cmd->cmd_lo = COMMAND_PORT_CP | COMMAND_PORT_DEV_INDEX(pos) |
-				      COMMAND_PORT_ROC | COMMAND_PORT_CMD(payload->ccc.id);
+				      COMMAND_PORT_TID(i) | COMMAND_PORT_ROC |
+				      COMMAND_PORT_CMD(payload->ccc.id);
 			/* last command queue with multiple targets must have TOC set */
 			if (i == (payload->targets.num_targets - 1)) {
 				cmd->cmd_lo |= COMMAND_PORT_TOC;
