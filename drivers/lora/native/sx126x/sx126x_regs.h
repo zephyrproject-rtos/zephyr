@@ -132,6 +132,22 @@
 #define SX126X_LORA_IQ_STANDARD             0x00
 #define SX126X_LORA_IQ_INVERTED             0x01
 
+/* CAD Symbol Number for SET_CAD_PARAMS: index 0..4, not the count 1/2/4/8/16. */
+#define SX126X_CAD_SYMB_1                   0x00
+#define SX126X_CAD_SYMB_2                   0x01
+#define SX126X_CAD_SYMB_4                   0x02
+#define SX126X_CAD_SYMB_8                   0x03
+#define SX126X_CAD_SYMB_16                  0x04
+
+/* CAD Exit Mode (for SET_CAD_PARAMS) */
+#define SX126X_CAD_EXIT_ONLY                0x00  /* CAD then back to STDBY_RC */
+#define SX126X_CAD_EXIT_RX                  0x01  /* CAD then RX on detection */
+#define SX126X_CAD_EXIT_LBT                 0x10  /* Listen Before Talk */
+
+/* CAD defaults (vendor/datasheet recommended) */
+#define SX126X_CAD_DET_MIN_DEFAULT          10
+#define SX126X_CAD_DEFAULT_SYMB             SX126X_CAD_SYMB_2
+
 /* TX Power Ramp Time (for SET_TX_PARAMS) */
 #define SX126X_RAMP_10_US                   0x00
 #define SX126X_RAMP_20_US                   0x01
