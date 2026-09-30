@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <dt-bindings/pinctrl/mspm0-pinctrl.h>
 #include <dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	model = "BeagleBoard.org BeagleConnect Zepto";
@@ -122,6 +123,122 @@
 	analog_pa27: analog_pa27 {
 		pinmux = <MSP_PINMUX(60, MSPM0_PIN_FUNCTION_ANALOG)>;
 		input-enable;
+	};
+
+	tima0_ccp0_pa0: tima0_ccp0_pa0 {
+		pinmux = <MSP_PINMUX(1, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	tima0_ccp1_pa01: tima0_ccp1_pa01 {
+		pinmux = <MSP_PINMUX(2, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	tima0_ccp1_pa03: tima0_ccp1_pa03 {
+		pinmux = <MSP_PINMUX(8, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	tima0_ccp2_pa03: tima0_ccp2_pa03 {
+		pinmux = <MSP_PINMUX(8, MSPM0_PIN_FUNCTION_8)>;
+	};
+
+	tima0_ccp1_cmpl_pa04: tima0_ccp1_cmpl_pa04 {
+		pinmux = <MSP_PINMUX(9, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	tima0_ccp3_pa04: tima0_ccp3_pa04 {
+		pinmux = <MSP_PINMUX(9, MSPM0_PIN_FUNCTION_8)>;
+	};
+
+	tima0_ccp2_cmpl_pa06: tima0_ccp2_cmpl_pa06 {
+		pinmux = <MSP_PINMUX(11, MSPM0_PIN_FUNCTION_10)>;
+	};
+
+	tima0_ccp2_pa07: tima0_ccp2_pa07 {
+		pinmux = <MSP_PINMUX(14, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	tima0_ccp1_pa07: tima0_ccp1_pa07 {
+		pinmux = <MSP_PINMUX(14, MSPM0_PIN_FUNCTION_8)>;
+	};
+
+	tima0_ccp0_pa08: tima0_ccp0_pa08 {
+		pinmux = <MSP_PINMUX(19, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	tima0_ccp0_cmpl_pa09: tima0_ccp0_cmpl_pa09 {
+		pinmux = <MSP_PINMUX(20, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	tima0_ccp1_pa09: tima0_ccp1_pa09 {
+		pinmux = <MSP_PINMUX(20, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	tima0_ccp2_pa10: tima0_ccp2_pa10 {
+		pinmux = <MSP_PINMUX(21, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	tima0_ccp2_cmpl_pa11: tima0_ccp2_cmpl_pa11 {
+		pinmux = <MSP_PINMUX(22, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	tima0_ccp3_pa12: tima0_ccp3_pa12 {
+		pinmux = <MSP_PINMUX(34, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	tima0_ccp3_cmpl_pa13: tima0_ccp3_cmpl_pa13 {
+		pinmux = <MSP_PINMUX(35, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	tima0_ccp3_pa17: tima0_ccp3_pa17 {
+		pinmux = <MSP_PINMUX(39, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	tima0_ccp3_cmpl_pa18: tima0_ccp3_cmpl_pa18 {
+		pinmux = <MSP_PINMUX(40, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	tima0_ccp1_pa18: tima0_ccp1_pa18 {
+		pinmux = <MSP_PINMUX(40, MSPM0_PIN_FUNCTION_11)>;
+	};
+
+	tima0_ccp2_pa19: tima0_ccp2_pa19 {
+		pinmux = <MSP_PINMUX(41, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	tima0_ccp2_cmpl_pa20: tima0_ccp2_cmpl_pa20 {
+		pinmux = <MSP_PINMUX(42, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	tima0_ccp0_pa21: tima0_ccp0_pa21 {
+		pinmux = <MSP_PINMUX(46, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	tima0_ccp0_cmpl_pa22: tima0_ccp0_cmpl_pa22 {
+		pinmux = <MSP_PINMUX(47, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	tima0_ccp1_pa22: tima0_ccp1_pa22 {
+		pinmux = <MSP_PINMUX(47, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	tima0_ccp3_pa23: tima0_ccp3_pa23 {
+		pinmux = <MSP_PINMUX(53, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	tima0_ccp3_cmpl_pa24: tima0_ccp3_cmpl_pa24 {
+		pinmux = <MSP_PINMUX(54, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	tima0_ccp3_pa25: tima0_ccp3_pa25 {
+		pinmux = <MSP_PINMUX(55, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	tima0_cpp1_cmpl_pa25: tima0_cpp1_cmpl_pa25 {
+		pinmux = <MSP_PINMUX(55, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	tima0_ccp3_cmpl_pa26: tima0_ccp3_cmpl_pa26 {
+		pinmux = <MSP_PINMUX(59, MSPM0_PIN_FUNCTION_6)>;
 	};
 };
 
@@ -257,4 +374,17 @@
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <12>;
 	};
+};
+
+&tima0 {
+	status = "okay";
+};
+
+&pwma0 {
+	pinctrl-0 = <&tima0_ccp1_pa07>;
+	pinctrl-names = "default";
+	ti,cc-index = <1>;
+	ti,pwm-mode = "EDGE_ALIGN_UP";
+	ti,period = <1000>;
+	status = "okay";
 };
