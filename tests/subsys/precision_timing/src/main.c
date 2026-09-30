@@ -93,7 +93,7 @@ static const struct precision_clock_api fake_clock_api = {
 static struct net_ptp_time ptp_time;
 static int ptp_error;
 static int ptp_phase;
-static double ptp_rate_ratio;
+static int64_t ptp_scaled_ppm;
 
 static int fake_ptp_set(const struct device *dev, struct net_ptp_time *tm)
 {
@@ -131,7 +131,7 @@ static int fake_ptp_adjust(const struct device *dev, int increment)
 	return 0;
 }
 
-static int fake_ptp_rate_adjust(const struct device *dev, double ratio)
+static int fake_ptp_adjust_rate(const struct device *dev, int64_t scaled_ppm)
 {
 	ARG_UNUSED(dev);
 
@@ -139,7 +139,7 @@ static int fake_ptp_rate_adjust(const struct device *dev, double ratio)
 		return ptp_error;
 	}
 
-	ptp_rate_ratio = ratio;
+	ptp_scaled_ppm = scaled_ppm;
 	return 0;
 }
 
@@ -147,7 +147,7 @@ static DEVICE_API(ptp_clock, fake_ptp_api) = {
 	.set = fake_ptp_set,
 	.get = fake_ptp_get,
 	.adjust = fake_ptp_adjust,
-	.rate_adjust = fake_ptp_rate_adjust,
+	.adjust_rate = fake_ptp_adjust_rate,
 };
 
 DEVICE_DEFINE(fake_ptp_clock, "fake_ptp_clock", NULL, NULL, NULL, NULL, POST_KERNEL,
@@ -284,12 +284,12 @@ ZTEST(precision_timing, test_ptp_adapter_converts_and_dispatches)
 	zassert_equal(ptp_phase, -123);
 	zassert_ok(precision_clock_adjust_rate(precision_clk,
 					2 * PRECISION_CLOCK_SCALED_PPM_ONE));
-	zassert_double_close(ptp_rate_ratio, 1.000002);
+	zassert_equal(ptp_scaled_ppm, 2 * PRECISION_CLOCK_SCALED_PPM_ONE);
 	zassert_ok(precision_clock_adjust_rate(precision_clk, 0));
-	zassert_double_close(ptp_rate_ratio, 1.0);
+	zassert_equal(ptp_scaled_ppm, 0);
 	zassert_ok(precision_clock_adjust_rate(precision_clk,
 					-(3 * PRECISION_CLOCK_SCALED_PPM_ONE / 2)));
-	zassert_double_close(ptp_rate_ratio, 0.9999985);
+	zassert_equal(ptp_scaled_ppm, -(3 * PRECISION_CLOCK_SCALED_PPM_ONE / 2));
 	zassert_equal(precision_clock_set(precision_clk, -1), -ERANGE);
 	zassert_equal(precision_clock_adjust_phase(precision_clk, (precision_time_t)INT_MAX + 1),
 		      -ERANGE);
