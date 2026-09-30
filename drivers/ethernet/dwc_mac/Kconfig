@@ -144,7 +144,7 @@ config ETH_ROCKCHIP_DWC_ETHER_QOS
 
 config ETH_DWMAC_MMU
 	bool "Synopsys DesignWare MAC driver for MMU based platforms"
-	depends on MMU
+	depends on CPU_HAS_MMU
 	depends on DT_HAS_SNPS_DESIGNWARE_ETHERNET_ENABLED
 	select ETH_DWC_ETHER_QOS_CORE
 	default y
