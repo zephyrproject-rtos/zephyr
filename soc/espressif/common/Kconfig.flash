@@ -167,4 +167,10 @@ config SOC_ESP32_SLEEP_DCM_VSET_VAL_IN_SLEEP
 	  according to the external DCDC selected in your hardware.
 	  Recommended value for TI TLV62569/TLV62569P: 14.
 
+config SOC_ESP32_FLASH_ALLOW_IRAM_ISR
+	bool "Allow IRAM interrupt handlers to run during flash operations"
+	help
+	  Allow handlers allocated with ``ESP_INTR_FLAG_IRAM`` to run while the flash
+	  cache is disabled. Such handlers must only touch code and data in IRAM.
+
 endif # SOC_FAMILY_ESPRESSIF_ESP32
