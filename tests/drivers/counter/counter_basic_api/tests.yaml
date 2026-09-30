@@ -73,12 +73,24 @@ tests:
     timeout: 600
     extra_configs:
       - CONFIG_COUNTER_MCUX_WAKE_TIMER_ALARM=y
+  drivers.counter.basic_api.mchp_tcc0:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow:
+      - pic32cm_jh01_cpro
+    timeout: 600
+    extra_args:
+      - FILE_SUFFIX=tcc0
   drivers.counter.basic_api.mchp_tcc1:
     tags:
       - drivers
       - counter
     depends_on: counter
-    platform_allow: sam_e54_xpro
+    platform_allow:
+      - sam_e54_xpro
+      - pic32cm_jh01_cpro
     timeout: 600
     extra_args:
       - FILE_SUFFIX=tcc1
@@ -90,6 +102,7 @@ tests:
     platform_allow:
       - sam_e54_xpro
       - pic32cx_sg41_cult
+      - pic32cm_jh01_cpro
     timeout: 600
     extra_args:
       - FILE_SUFFIX=tcc2
