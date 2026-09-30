@@ -45,6 +45,7 @@ sdhc: &sdmmc1 {
 	min-bus-freq = <DT_FREQ_K(400)>;
 	max-bus-freq = <DT_FREQ_M(208)>;
 	cd-gpios = <&gpiom 14 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
