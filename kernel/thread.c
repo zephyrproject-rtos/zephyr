@@ -968,6 +968,77 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	return stack_ptr;
 }
 
+/*
+ * The exit_thread_*() helpers below mirror the init_thread_*() ones: each
+ * undoes one optional feature's registration and collapses to nothing when
+ * the feature is disabled.
+ */
+
+/* Run the architecture's abort hook. */
+static inline void exit_thread_abort_hook(struct k_thread *thread)
+{
+#ifdef CONFIG_THREAD_ABORT_HOOK
+	thread_abort_hook(thread);
+#else
+	ARG_UNUSED(thread);
+#endif /* CONFIG_THREAD_ABORT_HOOK */
+}
+
+/* Unregister the thread from the object-core framework and its usage stats. */
+static inline void exit_thread_obj_core(struct k_thread *thread)
+{
+#ifdef CONFIG_OBJ_CORE_THREAD
+#ifdef CONFIG_OBJ_CORE_STATS_THREAD
+	k_obj_core_stats_deregister(K_OBJ_CORE(thread));
+#endif /* CONFIG_OBJ_CORE_STATS_THREAD */
+	k_obj_core_unlink(K_OBJ_CORE(thread));
+#else
+	ARG_UNUSED(thread);
+#endif /* CONFIG_OBJ_CORE_THREAD */
+}
+
+/*
+ * Leave the memory domain, drop every kernel object permission the thread
+ * held and retire the thread and stack kernel objects.
+ */
+static inline void exit_thread_userspace(struct k_thread *thread)
+{
+#ifdef CONFIG_USERSPACE
+	z_mem_domain_exit_thread(thread);
+	k_thread_perms_all_clear(thread);
+	k_object_uninit(thread->stack_obj);
+	k_object_uninit(thread);
+#else
+	ARG_UNUSED(thread);
+#endif /* CONFIG_USERSPACE */
+}
+
+/* Perform, or defer, the cleanup that needs the thread to have stopped. */
+static inline void exit_thread_abort_cleanup(struct k_thread *thread)
+{
+#ifdef CONFIG_THREAD_ABORT_NEED_CLEANUP
+	k_thread_abort_cleanup(thread);
+#else
+	ARG_UNUSED(thread);
+#endif /* CONFIG_THREAD_ABORT_NEED_CLEANUP */
+}
+
+/*
+ * Release everything a thread registered with the kernel while it was
+ * alive. This is the counterpart of z_setup_new_thread() and the only place
+ * where a dead thread's bookkeeping is undone. Called from the scheduler
+ * with its spinlock held, once the thread is known not to run anywhere and
+ * _current is still the aborting thread if it aborted itself.
+ */
+void z_thread_release(struct k_thread *thread)
+{
+	z_thread_monitor_exit(thread);
+	exit_thread_abort_hook(thread);
+	exit_thread_obj_core(thread);
+	exit_thread_userspace(thread);
+	exit_thread_abort_cleanup(thread);
+}
+
 #ifdef CONFIG_THREAD_RUNTIME_STACK_SAFETY
 int z_impl_k_thread_runtime_stack_unused_threshold_pct_set(struct k_thread *thread,
 							   uint32_t pct)
