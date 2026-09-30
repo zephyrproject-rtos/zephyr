@@ -61,6 +61,25 @@
 	};
 
 	soc {
+		dma-ranges = <0xc0000000 0x0 0x3f000000>,
+			     <0x7e000000 0x3f000000 0x01000000>;
+
+		dma: dma@3f007000 {
+			compatible = "brcm,bcm2835-dma";
+			reg = <0x3f007000 0xf00>;
+			interrupts = <BCM2835_IRQ_DMA(4) IRQ_TYPE_LEVEL 0>,
+				     <BCM2835_IRQ_DMA(5) IRQ_TYPE_LEVEL 0>,
+				     <BCM2835_IRQ_DMA(8) IRQ_TYPE_LEVEL 0>,
+				     <BCM2835_IRQ_DMA(9) IRQ_TYPE_LEVEL 0>,
+				     <BCM2835_IRQ_DMA(10) IRQ_TYPE_LEVEL 0>,
+				     <BCM2835_IRQ_DMA_SHARED IRQ_TYPE_LEVEL 0>;
+			#dma-cells = <1>;
+			dma-channels = <16>;
+			dma-buf-addr-alignment = <64>;
+			brcm,dma-channel-mask = <0x7f30>;
+			status = "disabled";
+		};
+
 		armctrl_intc: interrupt-controller@3f00b200 {
 			compatible = "brcm,bcm2835-armctrl-ic";
 			reg = <0x3f00b200 0x200>;
