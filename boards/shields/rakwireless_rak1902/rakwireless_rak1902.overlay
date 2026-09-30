@@ -1,0 +1,23 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ *
+ * RAK1902 is an ST LPS22HB on the WisBlock sensor I2C bus.
+ * The interrupt output follows the sensor slot GPIO, so it is not
+ * described here.
+ */
+
+/ {
+	aliases {
+		pressure-sensor = &lps22hb_rak1902;
+	};
+};
+
+&wisblock_i2c1 {
+	status = "okay";
+
+	lps22hb_rak1902: lps22hb@5c {
+		compatible = "st,lps22hb-press";
+		reg = <0x5c>;
+	};
+};
