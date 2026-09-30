@@ -88,14 +88,23 @@ void *test_mem_domain_setup(void)
 	return NULL;
 }
 
+/* De-initialize a domain. Architectures that keep per-domain data they
+ * cannot release (page tables without a deinit hook) report -ENOTSUP,
+ * which is not a failure of the test.
+ */
+static void domain_deinit(struct k_mem_domain *domain)
+{
+	int ret = k_mem_domain_deinit(domain);
+
+	zassert_true((ret == 0) || (ret == -ENOTSUP), "failed to de-initialize memory domain (%d)",
+		     ret);
+}
+
 void test_mem_domain_teardown(void *fixture)
 {
 	ARG_UNUSED(fixture);
 
-#if defined(CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT)
-	zassert_equal(k_mem_domain_deinit(&test_domain), 0,
-		      "failed to de-initialize memory domain");
-#endif /* CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT */
+	domain_deinit(&test_domain);
 }
 
 /* Helper function; run a function under a child user thread.
@@ -293,10 +302,7 @@ static void mem_domain_init_entry(void *p1, void *p2, void *p3)
 		k_mem_domain_init(&no_access_domain, 0, NULL),
 		0, "failed to initialize memory domain");
 
-#if defined(CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT)
-	zassert_equal(k_mem_domain_deinit(&no_access_domain), 0,
-		      "failed to de-initialize memory domain");
-#endif /* CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT */
+	domain_deinit(&no_access_domain);
 }
 
 static void mem_domain_add_partition_entry(void *p1, void *p2, void *p3)
@@ -598,10 +604,7 @@ ZTEST(mem_protect_domain, test_mem_domain_init_fail)
 				  no_parts),
 		0, "should fail to initialize memory domain");
 
-#if defined(CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT)
-	zassert_equal(k_mem_domain_deinit(&test_domain_fail), 0,
-		      "cannot de-initialize memory domain");
-#endif /* CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT */
+	domain_deinit(&test_domain_fail);
 }
 
 /**
@@ -614,7 +617,8 @@ ZTEST(mem_protect_domain, test_mem_domain_init_fail)
  */
 ZTEST(mem_protect_domain, test_mem_domain_deinit_fail)
 {
-#if defined(CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT)
+	int ret;
+
 	set_fault_valid(false);
 
 	/* Should not be able to de-init the default domain. */
@@ -630,8 +634,7 @@ ZTEST(mem_protect_domain, test_mem_domain_deinit_fail)
 	k_thread_name_set(&child_thread, "child_thread");
 	k_mem_domain_add_thread(&test_domain, &child_thread);
 
-	zassert_equal(k_mem_domain_deinit(&test_domain), -EBUSY,
-		      "should fail de-initializing test domain with threads attached");
+	ret = k_mem_domain_deinit(&test_domain);
 
 	/* Let the thread run to the end so any memory domain related
 	 * cleanup will be done.
@@ -639,16 +642,19 @@ ZTEST(mem_protect_domain, test_mem_domain_deinit_fail)
 	k_thread_start(&child_thread);
 	k_thread_join(&child_thread, K_FOREVER);
 
+	if (ret == -ENOTSUP) {
+		/* Architecture cannot release its per-domain data */
+		ztest_test_skip();
+	}
+
+	zassert_equal(ret, -EBUSY, "should fail de-initializing test domain with threads attached");
+
 	/* Note that we cannot test the proper de-initialization of test_domain
 	 * here (... where this should succeed). It is because the test_domain
 	 * is still being used for other tests in this test suite.
 	 * Instead, it will be tested in test_mem_domain_teardown() when all
 	 * tests have run.
 	 */
-
-#else  /* CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT */
-	ztest_test_skip();
-#endif /* CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT */
 }
 
 /**

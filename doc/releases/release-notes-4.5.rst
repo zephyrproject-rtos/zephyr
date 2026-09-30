@@ -2316,6 +2316,11 @@ Other notable changes
     failure.  Use :c:func:`k_thread_cpu_pin` to reassign a thread to a
     different CPU.
 
+  * :c:func:`k_mem_domain_deinit` now works on every architecture that keeps no
+    per-domain data, including all MPU based ones, instead of returning ``-ENOTSUP``
+    unless the architecture selected ``CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT``.
+    Architectures with per-domain data and no release hook still return ``-ENOTSUP``.
+
 * Timer
 
   * With :kconfig:option:`CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE` enabled, a driver may no

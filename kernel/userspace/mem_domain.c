@@ -156,7 +156,6 @@ out:
 
 int k_mem_domain_deinit(struct k_mem_domain *domain)
 {
-#if defined(CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT)
 	k_spinlock_key_t key;
 	int ret = 0;
 
@@ -171,6 +170,15 @@ int k_mem_domain_deinit(struct k_mem_domain *domain)
 		goto out;
 	}
 
+	if (IS_ENABLED(CONFIG_ARCH_MEM_DOMAIN_DATA) &&
+	    !IS_ENABLED(CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT)) {
+		/* The architecture keeps per-domain data (such as page
+		 * tables) that it has no way to release.
+		 */
+		ret = -ENOTSUP;
+		goto out;
+	}
+
 	key = k_spin_lock(&z_mem_domain_lock);
 
 	/* Must make sure there are no threads associated with this memory
@@ -182,6 +190,7 @@ int k_mem_domain_deinit(struct k_mem_domain *domain)
 		goto unlock_out;
 	}
 
+#ifdef CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT
 	ret = arch_mem_domain_deinit(domain);
 	if (ret != 0) {
 		LOG_ERR("architecture-specific de-initialization failed for domain %p with %d",
@@ -189,16 +198,19 @@ int k_mem_domain_deinit(struct k_mem_domain *domain)
 		ret = -ENOMEM;
 		goto unlock_out;
 	}
+#endif /* CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT */
+
+	/* No thread can reference the domain any more, so its partition
+	 * table can be dropped without notifying the architecture.
+	 */
+	domain->num_partitions = 0U;
+	(void)memset(domain->partitions, 0, sizeof(domain->partitions));
 
 unlock_out:
 	k_spin_unlock(&z_mem_domain_lock, key);
 
 out:
 	return ret;
-#else  /* CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT */
-	ARG_UNUSED(domain);
-	return -ENOTSUP;
-#endif /* CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT */
 }
 
 int k_mem_domain_add_partition(struct k_mem_domain *domain,
