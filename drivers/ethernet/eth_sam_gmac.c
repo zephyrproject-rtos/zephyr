@@ -2272,8 +2272,8 @@ static int ptp_clock_sam_gmac_adjust(const struct device *dev, int increment)
 	return 0;
 }
 
-static int ptp_clock_sam_gmac_rate_adjust(const struct device *dev,
-					  double ratio)
+static int ptp_clock_sam_gmac_adjust_rate(const struct device *dev,
+					  int64_t scaled_ppm)
 {
 	return -ENOTSUP;
 }
@@ -2282,7 +2282,7 @@ static DEVICE_API(ptp_clock, ptp_api) = {
 	.set = ptp_clock_sam_gmac_set,
 	.get = ptp_clock_sam_gmac_get,
 	.adjust = ptp_clock_sam_gmac_adjust,
-	.rate_adjust = ptp_clock_sam_gmac_rate_adjust,
+	.adjust_rate = ptp_clock_sam_gmac_adjust_rate,
 };
 
 #define SAM_GMAC_PTP_CLOCK_DEFN(n)							\
