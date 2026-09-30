@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Giuseppe Fabiano <gfabiano40@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Semtech SX1281 2.4 GHz LoRa, FLRC and GFSK transceiver without the ranging engine
+
+compatible: "semtech,sx1281"
+
+include: semtech,sx128x-base.yaml
