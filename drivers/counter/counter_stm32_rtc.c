@@ -830,6 +830,10 @@ static int rtc_stm32_init(const struct device *dev)
 
 	rtc_stm32_clear_callback(data);
 
+	/* RTC gate bits may be protected by backup-domain write access. */
+	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+	stm32_backup_domain_enable_access();
+
 	/* Enable the gate clocks; entry 1 selects the RTC source. */
 	for (size_t i = 0; i < cfg->pclken_count; i++) {
 		if (i == 1U) {
@@ -838,14 +842,9 @@ static int rtc_stm32_init(const struct device *dev)
 
 		if (clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[i]) != 0) {
 			LOG_ERR("RTC clock enabling failed");
-			return -EIO;
+			goto out_unlock_hsem;
 		}
 	}
-
-	/* Enable Backup access */
-	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
-
-	stm32_backup_domain_enable_access();
 
 #if DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_HSE
 	/* Must be configured before selecting the RTC clock source */
@@ -857,14 +856,20 @@ static int rtc_stm32_init(const struct device *dev)
 				    (clock_control_subsys_t) &cfg->pclken[1],
 				    NULL) != 0) {
 		LOG_ERR("clock configure failed");
-		goto out_disable_bkup_access;
+		goto out_unlock_hsem;
 	}
 
 #if !defined(CONFIG_SOC_SERIES_STM32WBAX)
 	LL_RCC_EnableRTC();
 #endif /* !CONFIG_SOC_SERIES_STM32WBAX */
 
+	ret = 0;
+
+out_unlock_hsem:
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
+	if (ret < 0) {
+		goto out_disable_bkup_access;
+	}
 
 #if !defined(CONFIG_COUNTER_RTC_STM32_SAVE_VALUE_BETWEEN_RESETS)
 	ret = rtc_stm32_deinit();
