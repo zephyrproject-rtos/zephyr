@@ -106,6 +106,10 @@ socket on a link of its own.
      - :zephyr_file:`tests/net/conformance/ndp`
      - ``zethL2``
      - root
+   * - :zephyr_file:`mld <tests/net/conformance/mld/README.rst>`
+     - :zephyr_file:`tests/net/conformance/mld`
+     - ``zethL2``
+     - root
    * - :zephyr_file:`tcp <tests/net/conformance/tcp/README.rst>`
      - :zephyr_file:`tests/net/conformance/tcp`
      - ``zethL2``
