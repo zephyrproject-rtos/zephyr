@@ -25,6 +25,7 @@
 	chosen {
 		zephyr,crc = &crc;
 		zephyr,entropy = &rng;
+		zephyr,system-timer-companion = &rtc;
 	};
 
 	cpus {
@@ -35,12 +36,23 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m55";
 			reg = <0>;
+			cpu-power-states = <&stop>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8.1m-mpu";
 				reg = <0xe000ed90 0x40>;
+			};
+		};
+
+		power-states {
+			stop: stop {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <1>;
+				min-residency-us = <100000>;
+				exit-latency-us = <1000>;
 			};
 		};
 	};
