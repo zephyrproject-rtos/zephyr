@@ -38,6 +38,10 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_TCP_LOG_LEVEL);
 #define MY_PORT 4242
 #define PEER_PORT 4242
 
+#define LINEARIZE_TCP_FIRST 8
+#define LINEARIZE_TCP_REST  (NET_TCPH_LEN - LINEARIZE_TCP_FIRST)
+#define LINEARIZE_PAYLOAD   16
+
 /* Data (1280 bytes) to be sent */
 static const char lorem_ipsum[] =
 	"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris id "
@@ -133,6 +137,7 @@ static enum test_case_no {
 	TEST_CLIENT_CLOSING_FAILURE_IPV6 = 16,
 	TEST_CLIENT_FIN_WAIT_2_IPV4_FAILURE = 17,
 	TEST_CLIENT_FIN_ACK_WITH_DATA = 18,
+	TEST_TCP_PKT_LINEARIZE_FRAG_CHAIN = 19,
 } test_case_no;
 
 static enum test_state t_state;
@@ -508,6 +513,9 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		break;
 	case TEST_CLIENT_FIN_ACK_WITH_DATA:
 		handle_client_fin_ack_with_data_test(net_pkt_family(pkt), &th);
+		break;
+	case TEST_TCP_PKT_LINEARIZE_FRAG_CHAIN:
+		/* Ignore RST/response TX while exercising tcp_pkt_linearize(). */
 		break;
 
 	default:
@@ -2619,6 +2627,98 @@ ZTEST(net_tcp, test_client_fin_ack_with_data)
 		 */
 		k_sleep(K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
 	}
+}
+
+/*
+ * Reproduce tcp_pkt_linearize() frag-chain UAF/double-free:
+ * TCP header split across net_buf fragments with leftover payload frags.
+ *
+ * Layout after rebuild:
+ *   b0: [IPv4 20][TCP first 8]
+ *   b1: [TCP last 12]          <- emptied then unref'd (bug frees b2 too)
+ *   b2: [payload]
+ *
+ * Path: net_recv_data -> net_tcp_input (stack copy OK) -> no listener ->
+ *        net_tcp_reply_rst -> th_get -> tcp_pkt_linearize.
+ */
+
+static void tcp_pkt_rebuild_split_tcp_header(struct net_pkt *pkt)
+{
+	uint8_t copy[NET_IPV4H_LEN + NET_TCPH_LEN + LINEARIZE_PAYLOAD];
+	struct net_buf *frag;
+	struct net_buf *b0;
+	struct net_buf *b1;
+	struct net_buf *b2;
+	size_t len;
+
+	len = net_pkt_get_len(pkt);
+	zassert_equal(len, sizeof(copy), "unexpected pkt len %zu", len);
+
+	net_pkt_cursor_init(pkt);
+	zassert_ok(net_pkt_read(pkt, copy, len));
+
+	while (pkt->buffer) {
+		frag = pkt->buffer;
+		pkt->buffer = frag->frags;
+		frag->frags = NULL;
+		net_buf_unref(frag);
+	}
+
+	b0 = net_pkt_get_frag(pkt, NET_IPV4H_LEN + LINEARIZE_TCP_FIRST, K_NO_WAIT);
+	zassert_not_null(b0);
+	net_buf_add_mem(b0, copy, NET_IPV4H_LEN + LINEARIZE_TCP_FIRST);
+	net_pkt_frag_add(pkt, b0);
+
+	b1 = net_pkt_get_frag(pkt, LINEARIZE_TCP_REST, K_NO_WAIT);
+	zassert_not_null(b1);
+	net_buf_add_mem(b1, copy + NET_IPV4H_LEN + LINEARIZE_TCP_FIRST, LINEARIZE_TCP_REST);
+	net_pkt_frag_add(pkt, b1);
+
+	b2 = net_pkt_get_frag(pkt, LINEARIZE_PAYLOAD, K_NO_WAIT);
+	zassert_not_null(b2);
+	net_buf_add_mem(b2, copy + NET_IPV4H_LEN + NET_TCPH_LEN, LINEARIZE_PAYLOAD);
+	net_pkt_frag_add(pkt, b2);
+
+	net_pkt_set_overwrite(pkt, true);
+	net_pkt_set_ip_hdr_len(pkt, NET_IPV4H_LEN);
+	net_pkt_set_ipv4_opts_len(pkt, 0);
+	net_pkt_cursor_init(pkt);
+	zassert_ok(net_pkt_skip(pkt, NET_IPV4H_LEN));
+	zassert_false(net_pkt_is_contiguous(pkt, NET_TCPH_LEN),
+		      "TCP header unexpectedly contiguous");
+	net_pkt_cursor_init(pkt);
+}
+
+ZTEST(net_tcp, test_tcp_pkt_linearize_frag_chain)
+{
+	struct net_pkt *pkt;
+	uint8_t payload[LINEARIZE_PAYLOAD];
+	int ret;
+	int i;
+
+	test_case_no = TEST_TCP_PKT_LINEARIZE_FRAG_CHAIN;
+	seq = 1U;
+	ack = 0U;
+
+	for (i = 0; i < LINEARIZE_PAYLOAD; i++) {
+		payload[i] = (uint8_t)i;
+	}
+
+	/* Unbound dst port -> RST path calls th_get()/tcp_pkt_linearize(). */
+	pkt = tester_prepare_tcp_pkt(AF_INET, htons(PEER_PORT),
+				     htons(9999), SYN, payload,
+				     sizeof(payload));
+	zassert_not_null(pkt, "failed to allocate TCP pkt");
+
+	tcp_pkt_rebuild_split_tcp_header(pkt);
+
+	ret = net_recv_data(net_iface, pkt);
+	zassert_equal(ret, 0, "net_recv_data failed (%d)", ret);
+
+	/* Allow RX/TCP work to finish (RST reply, pkt teardown).
+	 * On the buggy code path this panics with a net_buf double-free.
+	 */
+	k_msleep(50);
 }
 
 ZTEST_SUITE(net_tcp, NULL, presetup, NULL, NULL, NULL);
