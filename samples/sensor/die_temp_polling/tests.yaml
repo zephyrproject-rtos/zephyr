@@ -9,6 +9,7 @@ tests:
     integration_platforms:
       - stm32f3_disco
       - nucleo_h7a3zi_q
+      - frdm_mcxl255/mcxl255/cpu0
     harness: console
     harness_config:
       type: one_line
