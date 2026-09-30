@@ -1058,6 +1058,222 @@ static void test_iso_recv_main(void)
 	PASS("ISO recv test Passed\n");
 }
 
+#if !defined(CONFIG_TEST_LL_INTERFACE)
+#define RESYNC_COUNT           10U
+#define RESYNC_DURATION_MS     500U
+#define RESYNC_SDU_INTERVAL_MS 10U
+#define RESYNC_RELEASE_WAIT_MS 1000U
+
+static uint32_t volatile resync_sdu_count;
+static int64_t volatile resync_connected_ms;
+static int64_t volatile resync_disconnected_ms;
+
+static void iso_resync_connected(struct bt_iso_chan *chan)
+{
+	resync_connected_ms = k_uptime_get();
+	iso_connected(chan);
+}
+
+static void iso_resync_disconnected(struct bt_iso_chan *chan, uint8_t reason)
+{
+	resync_disconnected_ms = k_uptime_get();
+	iso_disconnected(chan, reason);
+}
+
+static void iso_resync_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *info,
+			    struct net_buf *buf)
+{
+	if ((info->flags & BT_ISO_FLAGS_VALID) != 0U) {
+		resync_sdu_count++;
+	}
+}
+
+static uint8_t iso_rx_free_count(void)
+{
+	uint8_t count = 0U;
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+	while (ull_iso_pdu_rx_alloc_peek(count + 1U) != NULL) {
+		count++;
+	}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
+
+	return count;
+}
+
+static struct bt_iso_chan_ops iso_resync_ops = {
+	.connected = iso_resync_connected,
+	.disconnected = iso_resync_disconnected,
+	.recv = iso_resync_recv,
+};
+
+static void test_iso_resync_main(void)
+{
+	struct bt_le_ext_adv *adv;
+	struct bt_iso_big *big;
+	int err;
+
+	printk("\n*ISO broadcast for re-sync test*\n");
+
+	err = bt_enable(NULL);
+	if (err != 0) {
+		FAIL("Could not init BT: %d\n", err);
+		return;
+	}
+
+	setup_ext_adv(&adv);
+
+	create_big(adv, &big);
+
+	k_work_init_delayable(&iso_send_work, iso_send);
+	k_work_schedule(&iso_send_work, K_NO_WAIT);
+
+	PASS("ISO broadcast for re-sync test Passed\n");
+}
+
+static void test_iso_recv_resync_main(void)
+{
+	struct bt_le_scan_param scan_param = {
+		.type = BT_LE_SCAN_TYPE_ACTIVE,
+		.options = BT_LE_SCAN_OPT_NONE,
+		.interval = 0x0004,
+		.window = 0x0004,
+	};
+	struct bt_le_per_adv_sync_param sync_create_param;
+	struct bt_iso_big_sync_param big_param = {0};
+	struct bt_le_per_adv_sync *sync = NULL;
+	struct bt_iso_big *big;
+	int err;
+
+	printk("\n*ISO receive re-sync test*\n");
+
+	err = bt_enable(NULL);
+	if (err != 0) {
+		FAIL("Could not init BT: %d\n", err);
+		return;
+	}
+
+	bt_le_scan_cb_register(&scan_callbacks);
+	bt_le_per_adv_sync_cb_register(&sync_cb);
+
+	is_periodic = false;
+	err = bt_le_scan_start(&scan_param, NULL);
+	if (err != 0) {
+		FAIL("Could not start scan: %d\n", err);
+		return;
+	}
+
+	while (!is_periodic) {
+		k_sleep(K_MSEC(100));
+	}
+
+	is_sync = false;
+	bt_addr_le_copy(&sync_create_param.addr, &per_addr);
+	sync_create_param.options = BT_LE_PER_ADV_SYNC_OPT_REPORTING_INITIALLY_DISABLED;
+	sync_create_param.sid = per_sid;
+	sync_create_param.skip = 0;
+	sync_create_param.timeout = 0xa;
+	err = bt_le_per_adv_sync_create(&sync_create_param, &sync);
+	if (err != 0) {
+		FAIL("Could not create sync: %d\n", err);
+		return;
+	}
+
+	while (!is_sync) {
+		k_sleep(K_MSEC(100));
+	}
+
+	err = bt_le_scan_stop();
+	if (err != 0) {
+		FAIL("Could not stop scan: %d\n", err);
+		return;
+	}
+
+	is_big_info = false;
+	while (!is_big_info) {
+		k_sleep(K_MSEC(100));
+	}
+
+	bis_iso_chan.ops = &iso_resync_ops;
+	bis_iso_qos.tx = NULL;
+	bis_iso_qos.rx = &iso_rx_qos;
+	big_param.bis_channels = bis_channels;
+	big_param.num_bis = BIS_ISO_CHAN_COUNT;
+	big_param.bis_bitfield = BT_ISO_BIS_INDEX_BIT(1); /* BIS 1 selected */
+	big_param.mse = 1;
+	big_param.sync_timeout = 100; /* 1000 ms */
+	big_param.encryption = false;
+
+	const uint8_t iso_rx_free = iso_rx_free_count();
+
+	for (uint8_t i = 0U; i < RESYNC_COUNT; i++) {
+		uint32_t expected;
+		uint32_t wait_ms;
+
+		is_iso_connected = false;
+		is_iso_disconnected = 0U;
+		resync_sdu_count = 0U;
+		err = bt_iso_big_sync(sync, &big_param, &big);
+		if (err != 0) {
+			FAIL("Could not create BIG sync: %d\n", err);
+			return;
+		}
+
+		while (!is_iso_connected) {
+			k_sleep(K_MSEC(100));
+		}
+
+		k_sleep(K_MSEC(RESYNC_DURATION_MS));
+
+		err = bt_iso_big_terminate(big);
+		if (err != 0) {
+			FAIL("Could not terminate BIG sync: %d\n", err);
+			return;
+		}
+
+		while (is_iso_disconnected == 0U) {
+			k_sleep(K_MSEC(100));
+		}
+
+		if (is_iso_disconnected != BT_HCI_ERR_LOCALHOST_TERM_CONN) {
+			FAIL("Unexpected BIG sync termination reason 0x%02x\n",
+			     is_iso_disconnected);
+			return;
+		}
+
+		wait_ms = 0U;
+		while ((iso_rx_free_count() != iso_rx_free) && (wait_ms < RESYNC_RELEASE_WAIT_MS)) {
+			k_sleep(K_MSEC(10));
+			wait_ms += 10U;
+		}
+
+		if (iso_rx_free_count() != iso_rx_free) {
+			FAIL("BIG sync %u: %u of %u ISO Rx buffers free\n", i + 1U,
+			     iso_rx_free_count(), iso_rx_free);
+			return;
+		}
+
+		expected = (resync_disconnected_ms - resync_connected_ms) / RESYNC_SDU_INTERVAL_MS;
+
+		printk("BIG sync %u: received %u of %u SDUs\n", i + 1U, resync_sdu_count, expected);
+		if (resync_sdu_count < (expected - (expected / 10U))) {
+			FAIL("BIG sync %u: received %u of %u SDUs\n", i + 1U, resync_sdu_count,
+			     expected);
+			return;
+		}
+	}
+
+	deleting_pa_sync = true;
+	err = bt_le_per_adv_sync_delete(sync);
+	if (err != 0) {
+		FAIL("Failed to delete periodic advertising sync (err %d)\n", err);
+		return;
+	}
+
+	PASS("ISO re-sync test Passed\n");
+}
+#endif /* !CONFIG_TEST_LL_INTERFACE */
+
 #if defined(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH)
 static void test_iso_recv_vs_dp_main(void)
 {
@@ -1251,6 +1467,22 @@ static const struct bst_test_instance test_def[] = {
 		.test_tick_f = test_iso_tick,
 		.test_main_f = test_iso_recv_main
 	},
+#if !defined(CONFIG_TEST_LL_INTERFACE)
+	{
+		.test_id = "broadcast_resync",
+		.test_descr = "ISO broadcast for re-sync",
+		.test_pre_init_f = test_iso_init,
+		.test_tick_f = test_iso_tick,
+		.test_main_f = test_iso_resync_main
+	},
+	{
+		.test_id = "receive_resync",
+		.test_descr = "ISO receive, terminate and re-sync BIG repeatedly",
+		.test_pre_init_f = test_iso_init,
+		.test_tick_f = test_iso_tick,
+		.test_main_f = test_iso_recv_resync_main
+	},
+#endif /* !CONFIG_TEST_LL_INTERFACE */
 #if defined(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH)
 	{
 		.test_id = "receive_vs_dp",
