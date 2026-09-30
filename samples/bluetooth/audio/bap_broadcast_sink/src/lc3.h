@@ -58,7 +58,7 @@ int lc3_enable(struct stream_rx *stream);
  * @param stream The stream to disable LC3 for
 
  * @retval 0 Success
- * @retval -EINVAL The stream is LC3 initialized
+ * @retval -EALREADY LC3 is not enabled for the stream
  */
 int lc3_disable(struct stream_rx *stream);
 
