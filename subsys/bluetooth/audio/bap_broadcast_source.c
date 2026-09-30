@@ -379,7 +379,7 @@ broadcast_source_setup_stream(uint8_t index, struct bt_bap_stream *stream,
 	update_codec_cfg_data(&ep->codec_cfg, stream_param->data, stream_param->data_len);
 
 #if defined(CONFIG_BT_ISO_TEST_PARAMS)
-	iso->chan.qos->num_subevents = qos->num_subevents;
+	iso->chan.qos->num_subevents = qos->test.num_subevents;
 #endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 	bt_bap_iso_unref(iso);
@@ -1151,7 +1151,7 @@ int bt_bap_broadcast_source_start(struct bt_bap_broadcast_source *source, struct
 	param.bis_channels = bis;
 	param.framing = qos->framing;
 	param.packing = source->packing;
-	param.interval = qos->interval;
+	param.interval = qos->sdu_interval;
 	param.latency = qos->latency;
 	param.encryption = source->encryption;
 	if (param.encryption) {

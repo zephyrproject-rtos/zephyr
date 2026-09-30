@@ -154,6 +154,10 @@ extern "C" {
 #define BT_ISO_PTO_MIN              0x00U
 /** Maximum pre-transmission offset (15) */
 #define BT_ISO_PTO_MAX              0x0FU
+/** Minimum worst case sleep clock accuracy (see @ref bt_gap_sca) */
+#define BT_ISO_WCA_MIN              0x00U
+/** Maximum worst case sleep clock accuracy (see @ref bt_gap_sca) */
+#define BT_ISO_WCA_MAX              0x07U
 /** No subinterval */
 #define BT_ISO_SUBINTERVAL_NONE     0x00000000U
 /** Unknown subinterval */

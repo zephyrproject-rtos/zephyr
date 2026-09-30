@@ -118,7 +118,7 @@ static int double_tap_init(const struct device *dev)
 #define INPUT_DOUBLE_TAP_DEFINE(inst)                                                              \
 	BUILD_ASSERT((DT_INST_PROP_LEN(inst, input_codes) ==                                       \
 		      DT_INST_PROP_LEN_OR(inst, single_tap_codes, 0)) ||                           \
-		      !DT_INST_NODE_HAS_PROP(inst, single_tap_codes));                             \
+		     !DT_INST_NODE_HAS_PROP(inst, single_tap_codes));                              \
 	BUILD_ASSERT(DT_INST_PROP_LEN(inst, input_codes) ==                                        \
 		     DT_INST_PROP_LEN(inst, double_tap_codes));                                    \
                                                                                                    \
@@ -130,7 +130,7 @@ static int double_tap_init(const struct device *dev)
                                                                                                    \
 	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, single_tap_codes), (                                \
 	static const uint16_t single_tap_codes_##inst[] = DT_INST_PROP(inst, single_tap_codes);    \
-	));                                                                                        \
+	));   \
                                                                                                    \
 	static const uint16_t double_tap_codes_##inst[] = DT_INST_PROP(inst, double_tap_codes);    \
                                                                                                    \
@@ -143,11 +143,11 @@ static int double_tap_init(const struct device *dev)
 		.input_codes = double_tap_input_codes_##inst,                                      \
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, single_tap_codes), (                        \
 		.single_tap_codes = single_tap_codes_##inst,                                       \
-		))                                                                                 \
-		.double_tap_codes = double_tap_codes_##inst,                                       \
-		.num_codes = DT_INST_PROP_LEN(inst, input_codes),                                  \
-		.double_tap_delay_ms = DT_INST_PROP(inst, double_tap_delay_ms),                    \
-	};                                                                                         \
+		)) .double_tap_codes =          \
+				 double_tap_codes_##inst,                                          \
+			.num_codes = DT_INST_PROP_LEN(inst, input_codes),                          \
+			.double_tap_delay_ms = DT_INST_PROP(inst, double_tap_delay_ms),            \
+		};                                                                                 \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, double_tap_init, NULL, NULL, &double_tap_config_##inst,        \
 			      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
