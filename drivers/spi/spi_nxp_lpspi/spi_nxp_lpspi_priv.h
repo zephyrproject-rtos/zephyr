@@ -37,6 +37,7 @@ struct lpspi_config {
 	DEVICE_MMIO_NAMED_ROM(reg_base);
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
+	clock_control_subsys_t clock_cfg;
 	void (*irq_config_func)(const struct device *dev);
 	uint32_t pcs_sck_delay;
 	uint32_t sck_pcs_delay;
@@ -114,6 +115,9 @@ int lpspi_wait_tx_fifo_empty(const struct device *dev);
 		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),                              \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
+		.clock_cfg = (clock_control_subsys_t)COND_CODE_1(                                  \
+			DT_INST_CLOCKS_HAS_NAME(n, source),                                        \
+			(DT_INST_CLOCKS_CELL_BY_NAME(n, source, name)), (0U)),                     \
 		.irq_config_func = lpspi_config_func_##n,                                          \
 		.pcs_sck_delay = DT_INST_PROP_OR(n, pcs_sck_delay, 0),                             \
 		.sck_pcs_delay = DT_INST_PROP_OR(n, sck_pcs_delay, 0),                             \
