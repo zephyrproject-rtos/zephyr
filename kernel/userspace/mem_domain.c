@@ -387,6 +387,35 @@ void z_mem_domain_exit_thread(struct k_thread *thread)
 	k_spin_unlock(&z_mem_domain_lock, key);
 }
 
+/* Move a thread that is linked into a domain to another one */
+static int move_thread_locked(struct k_mem_domain *domain, struct k_thread *thread)
+{
+	struct k_mem_domain *old_domain = thread->mem_domain_info.mem_domain;
+	int ret;
+
+	ret = remove_thread_locked(thread);
+
+	if (ret == 0) {
+		ret = add_thread_locked(domain, thread);
+	}
+
+	if (ret != 0) {
+		/*
+		 * The architecture leaves a thread it could not move
+		 * configured for its old domain: keep it a member there.
+		 */
+		sys_dnode_t *node = &thread->mem_domain_info.thread_mem_domain_node;
+
+		if (sys_dnode_is_linked(node)) {
+			sys_dlist_remove(node);
+		}
+		sys_dlist_append(&old_domain->thread_mem_domain_list, node);
+		thread->mem_domain_info.mem_domain = old_domain;
+	}
+
+	return ret;
+}
+
 int k_mem_domain_add_thread(struct k_mem_domain *domain, k_tid_t thread)
 {
 	int ret = 0;
@@ -397,28 +426,52 @@ int k_mem_domain_add_thread(struct k_mem_domain *domain, k_tid_t thread)
 		/* The thread has exited and left its domain */
 		ret = -EINVAL;
 	} else if (thread->mem_domain_info.mem_domain != domain) {
-		struct k_mem_domain *old_domain = thread->mem_domain_info.mem_domain;
+		ret = move_thread_locked(domain, thread);
+	}
+	k_spin_unlock(&z_mem_domain_lock, key);
 
-		ret = remove_thread_locked(thread);
+	return ret;
+}
 
-		if (ret == 0) {
-			ret = add_thread_locked(domain, thread);
-		}
+int k_mem_domain_remove_thread(k_tid_t thread)
+{
+	CHECKIF(thread == NULL) {
+		return -EINVAL;
+	}
 
+	return k_mem_domain_add_thread(&k_mem_domain_default, thread);
+}
+
+int k_mem_domain_remove_all_threads(struct k_mem_domain *domain)
+{
+	struct k_thread *thread;
+	struct k_thread *next;
+	k_spinlock_key_t key;
+	int ret = 0;
+
+	CHECKIF(domain == NULL) {
+		return -EINVAL;
+	}
+
+	if (domain == &k_mem_domain_default) {
+		/* There is no other domain to move its members to. */
+		return -EINVAL;
+	}
+
+	/* A thread being created takes this lock to join its parent's
+	 * domain, so the domain is empty for good once the walk is done:
+	 * a former member can only hand the default domain to a child.
+	 */
+	key = k_spin_lock(&z_mem_domain_lock);
+
+	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&domain->thread_mem_domain_list, thread, next,
+					  mem_domain_info.thread_mem_domain_node) {
+		ret = move_thread_locked(&k_mem_domain_default, thread);
 		if (ret != 0) {
-			/*
-			 * The architecture leaves a thread it could not move
-			 * configured for its old domain: keep it a member there.
-			 */
-			sys_dnode_t *node = &thread->mem_domain_info.thread_mem_domain_node;
-
-			if (sys_dnode_is_linked(node)) {
-				sys_dlist_remove(node);
-			}
-			sys_dlist_append(&old_domain->thread_mem_domain_list, node);
-			thread->mem_domain_info.mem_domain = old_domain;
+			break;
 		}
 	}
+
 	k_spin_unlock(&z_mem_domain_lock, key);
 
 	return ret;
