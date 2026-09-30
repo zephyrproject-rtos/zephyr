@@ -68,7 +68,6 @@ config ARM64
 	select ARCH_HAS_DEMAND_MAPPING
 	select ARCH_SUPPORTS_EVICTION_TRACKING
 	select EVICTION_TRACKING if DEMAND_PAGING
-	select MEM_DOMAIN_HAS_THREAD_LIST if ARM_MPU && USERSPACE
 	select ARCH_HAS_IRQ_OFFLOAD_NESTED
 	select ARCH_HAS_SEMIHOST
 	select ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
@@ -855,7 +854,6 @@ config ARCH_MEM_DOMAIN_SUPPORTS_ISOLATED_STACKS
 
 config ARCH_MEM_DOMAIN_SUPPORTS_DEINIT
 	bool
-	select MEM_DOMAIN_HAS_THREAD_LIST
 	help
 	  This hidden option is selected by the target architecture if
 	  the architecture supports de-initializing a memory domain.

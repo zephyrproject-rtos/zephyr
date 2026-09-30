@@ -83,13 +83,11 @@ struct k_mem_domain {
 #endif /* CONFIG_ARCH_MEM_DOMAIN_DATA */
 	/** partitions in the domain */
 	struct k_mem_partition partitions[CONFIG_MAX_DOMAIN_PARTITIONS];
-#ifdef CONFIG_MEM_DOMAIN_HAS_THREAD_LIST
 	/** Doubly linked list of member threads,
 	 * pointer to the thread_mem_domain_node inside
 	 * each thread's memory domain info struct.
 	 */
 	sys_dlist_t thread_mem_domain_list;
-#endif /* CONFIG_MEM_DOMAIN_HAS_THREAD_LIST */
 	/** number of active partitions in the domain */
 	uint8_t num_partitions;
 };
