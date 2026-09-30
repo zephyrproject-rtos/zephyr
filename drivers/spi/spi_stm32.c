@@ -369,6 +369,11 @@ static int spi_stm32_dma_tx_load(const struct device *dev, const uint8_t *buf, s
 		blk_cfg->source_address = (uint32_t)&dummy_rx_tx_buffer;
 		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 	} else {
+#ifdef CONFIG_SPI_STM32_DMA_CACHED_MEMORY
+		if (stm32_buf_is_cached((uintptr_t)buf, len)) {
+			sys_cache_data_flush_range((void *)buf, len);
+		}
+#endif /* CONFIG_SPI_STM32_DMA_CACHED_MEMORY */
 		blk_cfg->source_address = (uint32_t)buf;
 		if (data->dma_tx.src_addr_increment) {
 			blk_cfg->source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
@@ -426,6 +431,12 @@ static int spi_stm32_dma_rx_load(const struct device *dev, uint8_t *buf, size_t 
 		blk_cfg->dest_address = (uint32_t)&dummy_rx_tx_buffer;
 		blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 	} else {
+#ifdef CONFIG_SPI_STM32_DMA_CACHED_MEMORY
+		/* Clean too: the TX buffer may share these lines and is cleaned only later */
+		if (stm32_buf_is_cached((uintptr_t)buf, len)) {
+			sys_cache_data_flush_and_invd_range(buf, len);
+		}
+#endif /* CONFIG_SPI_STM32_DMA_CACHED_MEMORY */
 		blk_cfg->dest_address = (uint32_t)buf;
 		if (data->dma_rx.dst_addr_increment) {
 			blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
@@ -542,6 +553,16 @@ static void spi_stm32_dma_rx_done(const struct device *dev, const struct spi_con
 #endif /* CONFIG_SPI_STM32_ERRATA_BUSY */
 
 #ifndef CONFIG_SPI_RTIO
+#ifdef CONFIG_SPI_STM32_DMA_CACHED_MEMORY
+	if (transfer_dir != STM32_SPI_HALF_DUPLEX_TX) {
+		size_t rx_bytes = data->rx_len * dfs;
+
+		if ((data->ctx.rx_buf != NULL) &&
+		    stm32_buf_is_cached((uintptr_t)data->ctx.rx_buf, rx_bytes)) {
+			sys_cache_data_invd_range(data->ctx.rx_buf, rx_bytes);
+		}
+	}
+#endif /* CONFIG_SPI_STM32_DMA_CACHED_MEMORY */
 	if (transfer_dir == STM32_SPI_FULL_DUPLEX) {
 		spi_context_update_tx(&data->ctx, dfs, data->tx_len);
 		spi_context_update_rx(&data->ctx, dfs, data->rx_len);
@@ -1772,7 +1793,27 @@ static int wait_dma_rx_tx_done(const struct device *dev)
 	return res;
 }
 
-#ifdef CONFIG_DCACHE
+#if defined(CONFIG_SPI_STM32_DMA_CACHED_MEMORY)
+/* Check if a buffer of @bufs is in cached memory and not aligned on the cache line size */
+static bool spi_stm32_buf_is_cached_unaligned(const struct spi_buf_set *bufs)
+{
+	if (bufs == NULL) {
+		return false;
+	}
+
+	for (size_t i = 0; i < bufs->count; i++) {
+		const uintptr_t buf = (uintptr_t)bufs->buffers[i].buf;
+		const size_t len = bufs->buffers[i].len;
+
+		if ((buf != 0U) && stm32_buf_is_cached(buf, len) &&
+		    !stm32_buf_is_cache_line_aligned(buf, len)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+#elif defined(CONFIG_DCACHE)
 static bool is_dummy_buffer(const struct spi_buf *buf)
 {
 	return buf->buf == NULL;
@@ -2089,7 +2130,15 @@ static int transceive(const struct device *dev,
 		return 0;
 	}
 
-#if defined(CONFIG_DCACHE) && defined(CONFIG_SPI_STM32_DMA) && !defined(CONFIG_SPI_RTIO)
+#if defined(CONFIG_SPI_STM32_DMA_CACHED_MEMORY)
+	/* Invalidating a shared cache line would discard the CPU's writes to its other data */
+	if (use_dma && spi_stm32_buf_is_cached_unaligned(rx_bufs)) {
+		LOG_WRN_ONCE("SPI DMA needs cached RX buffers whose start and length are "
+			     "multiples of the data cache line size, falling back to %s mode",
+			     IS_ENABLED(CONFIG_SPI_STM32_INTERRUPT) ? "interrupt" : "polling");
+		use_dma = false;
+	}
+#elif defined(CONFIG_DCACHE) && defined(CONFIG_SPI_STM32_DMA) && !defined(CONFIG_SPI_RTIO)
 	if (use_dma &&
 	    ((tx_bufs != NULL && !spi_buf_set_in_nocache(tx_bufs)) ||
 	     (rx_bufs != NULL && !spi_buf_set_in_nocache(rx_bufs)))) {
