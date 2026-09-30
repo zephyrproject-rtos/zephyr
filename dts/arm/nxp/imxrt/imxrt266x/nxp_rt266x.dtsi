@@ -1673,6 +1673,9 @@
 		compatible = "nxp,lpdac";
 		reg = <0x42060000 0x1000>;
 		interrupts = <114 0>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_DAC,
+					   IMX_CCM_ROOT_NONE)>;
+		voltage-reference = <0>;
 		#io-channel-cells = <1>;
 		status = "disabled";
 	};
