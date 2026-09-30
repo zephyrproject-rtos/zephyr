@@ -103,7 +103,7 @@ if [ `command -v parallel` ]; then
       rm {#}.log
       echo "</testcase>"
     fi
-    ' ::: $all_cases >> $tmp_res_file ; err=$?
+    ' ::: $all_cases >> $tmp_res_file || err=$?
   fi
 else #fallback in case parallel is not installed
   set +e
