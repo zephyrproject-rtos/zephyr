@@ -266,7 +266,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 		radio_switch_complete_and_tx(lll->phy_rx, PHY_FLAGS_UNUSED, lll->phy_tx,
 					     lll->phy_flags);
 #else /* !CONFIG_BT_CTLR_PHY && !CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
-		radio_switch_complete_and_tx(PHY_LEGACY, PHY_FLAGS_UNUSED, PHY_LEGACY, PHY_FLAGS_UNUSED);
+		radio_switch_complete_and_tx(PHY_LEGACY, PHY_FLAGS_UNUSED,
+					     PHY_LEGACY, PHY_FLAGS_UNUSED);
 #endif /* !CONFIG_BT_CTLR_PHY */
 	}
 
