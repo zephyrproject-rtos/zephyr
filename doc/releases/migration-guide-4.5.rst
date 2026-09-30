@@ -189,6 +189,11 @@ Boards
   configuration that assigned the old symbol has to be updated, and fails to
   build until it is.
 
+* ``qemu_cortex_a9`` no longer has the ``zephyr,uart-pipe`` chosen node, so SLIP networking
+  (:kconfig:option:`CONFIG_NET_QEMU_SLIP`) is no longer available on it. The board now
+  defaults to Ethernet networking (:kconfig:option:`CONFIG_NET_QEMU_ETHERNET`) through the
+  emulated GEM.
+
 * On RP2040 and RP2350, the ``vreg`` node (:dtcompatible:`raspberrypi,core-supply-regulator`) is
   now ``disabled`` by default instead of ``okay``. Out-of-tree boards that need this regulator
   must set ``status = "okay"`` on the ``&vreg`` node.
