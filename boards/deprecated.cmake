@@ -163,3 +163,9 @@ set(stm32h7_renode_reference_board_DEPRECATED
 set(stm32h7_renode_reference_board/stm32h753xx_DEPRECATED
     stm32h7_renode_reference_platform/stm32h753xx
 )
+set(rak11720/apollo3_blue_DEPRECATED
+    rak11722/apollo3_blue
+)
+set(rak11720_DEPRECATED
+    rak11722
+)

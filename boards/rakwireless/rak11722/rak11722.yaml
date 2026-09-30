@@ -1,5 +1,5 @@
-identifier: rak11720
-name: RAK11720
+identifier: rak11722
+name: RAK11722 WisBlock Core Module
 type: mcu
 arch: arm
 ram: 384
