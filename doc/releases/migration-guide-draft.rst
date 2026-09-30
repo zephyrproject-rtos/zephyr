@@ -948,3 +948,7 @@ Architectures
   is now ``cp_regs``, and ``hifi_owner`` and ``save_hifi`` in ``struct _cpu_arch`` are now
   ``cp_owner`` and ``save_cp``. Code accessing these fields must use the new names. The
   :kconfig:option:`CONFIG_XTENSA_HIFI_SHARING` options are unchanged. (:github:`120790`)
+
+* The hidden ``CONFIG_MEM_DOMAIN_HAS_THREAD_LIST`` option has been removed: with
+  :kconfig:option:`CONFIG_USERSPACE`, every memory domain now keeps the list of its member
+  threads. Out-of-tree architectures must drop their ``select`` of the option. (:github:`120922`)
