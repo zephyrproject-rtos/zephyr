@@ -19,6 +19,16 @@ if DISPLAY
 configdefault MEMC
 	default y
 
+# Enable the MEMMAP and timing on the PSRAM MSPI device
+configdefault MSPI
+	default y
+
+configdefault MSPI_MEMMAP
+	default y
+
+configdefault MSPI_TIMING
+	default y
+
 configdefault I2C_STM32_V2_TIMING
 	default y if INPUT
 
