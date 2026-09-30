@@ -16,6 +16,7 @@ target_sources(app PRIVATE
     src/test_fault.c
     src/test_asp2.c
     src/test_dual_asp.c
+    src/test_gpio_defaults.c
     src/test_public_header.c
 )
 
