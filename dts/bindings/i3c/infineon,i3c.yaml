@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon I3C controller (Synopsys DW I3C IP with Infineon wrapper)
+
+compatible: "infineon,i3c"
+
+include: snps,designware-i3c.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  target-mode:
+    type: boolean
+    description: |
+      Initialize this I3C instance in target mode instead of controller mode.
+      Writes to DEV_OPERATION_MODE do not read back on this integration, so the
+      boot role cannot be recovered from that field and is declared here.
