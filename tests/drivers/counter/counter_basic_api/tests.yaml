@@ -81,7 +81,7 @@ tests:
     platform_allow: sam_e54_xpro
     timeout: 600
     extra_args:
-      DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc1.overlay"
+      - FILE_SUFFIX=tcc1
   drivers.counter.basic_api.mchp_tcc2:
     tags:
       - drivers
@@ -92,7 +92,7 @@ tests:
       - pic32cx_sg41_cult
     timeout: 600
     extra_args:
-      DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc2.overlay"
+      - FILE_SUFFIX=tcc2
   drivers.counter.basic_api.mchp_tcc3:
     tags:
       - drivers
@@ -101,7 +101,7 @@ tests:
     platform_allow: sam_e54_xpro
     timeout: 600
     extra_args:
-      DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc3.overlay"
+      - FILE_SUFFIX=tcc3
   drivers.counter.basic_api.mchp_tcc4:
     tags:
       - drivers
@@ -110,7 +110,7 @@ tests:
     platform_allow: sam_e54_xpro
     timeout: 600
     extra_args:
-      DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc4.overlay"
+      - FILE_SUFFIX=tcc4
   drivers.counter.basic_api.mchp_tc0:
     tags:
       - drivers
