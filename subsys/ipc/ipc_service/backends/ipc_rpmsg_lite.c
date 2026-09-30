@@ -328,9 +328,19 @@ void platform_notify(uint32_t vector_id)
 	}
 
 	struct mbox_msg msg = {0};
+	int mtu = mbox_mtu_get_dt(&owner->mbox_tx);
 
+	if (mtu <= 0) {
+		return;
+	}
+
+	/*
+	 * Some MBOX drivers carry less than 32 bits per message (e.g. 24 bits
+	 * on nxp,mbox-mailbox) and reject larger payloads. The vector_id only
+	 * uses its low bits, so send as many bytes as the channel supports.
+	 */
 	msg.data = &vector_id;
-	msg.size = sizeof(vector_id);
+	msg.size = MIN(sizeof(vector_id), (size_t)mtu);
 
 	mbox_send_dt(&owner->mbox_tx, &msg);
 }
@@ -402,10 +412,11 @@ static void mbox_callback_process(struct k_work *item)
 		uint32_t vq_id = RL_GET_Q_ID(msg_data);
 
 		/*
-		 * RPMSG-Lite VQ numbering: vq_id 0 is used by the HOST (master)
-		 * for TX notifications, vq_id 1 is used by the REMOTE (slave).
-		 * Each side's receive queue is the peer's send queue, so the
-		 * HOST processes rvq on vq_id 0 and the REMOTE on vq_id 1.
+		 * RPMSG-Lite VQ numbering: vring 0 carries REMOTE -> HOST
+		 * messages (HOST rvq, REMOTE tvq), vring 1 carries HOST ->
+		 * REMOTE messages (HOST tvq, REMOTE rvq). A kick on the peer's
+		 * send queue means new RX data, a kick on its receive queue
+		 * means TX buffers were returned (or, for the REMOTE, link up).
 		 */
 		if (data->role == ROLE_HOST) {
 			vq = (vq_id == 0) ? data->ipc_rpmsg_inst.rpmsg_lite_inst->rvq
@@ -424,10 +435,11 @@ static void mbox_callback_process(struct k_work *item)
 	uint32_t vq_id = RL_GET_Q_ID(msg_data);
 
 	/*
-	 * RPMSG-Lite VQ numbering: vq_id 0 is used by the HOST (master)
-	 * for TX notifications, vq_id 1 is used by the REMOTE (slave).
-	 * Each side's receive queue is the peer's send queue, so the
-	 * HOST processes rvq on vq_id 0 and the REMOTE on vq_id 1.
+	 * RPMSG-Lite VQ numbering: vring 0 carries REMOTE -> HOST
+	 * messages (HOST rvq, REMOTE tvq), vring 1 carries HOST ->
+	 * REMOTE messages (HOST tvq, REMOTE rvq). A kick on the peer's
+	 * send queue means new RX data, a kick on its receive queue
+	 * means TX buffers were returned (or, for the REMOTE, link up).
 	 */
 	if (data->role == ROLE_HOST) {
 		vq = (vq_id == 0) ? data->ipc_rpmsg_inst.rpmsg_lite_inst->rvq
@@ -444,11 +456,15 @@ static void mbox_callback_process(struct k_work *item)
 static void mbox_callback(const struct device *instance, uint32_t channel, void *user_data,
 			  struct mbox_msg *msg_data)
 {
-	if (msg_data == NULL || msg_data->size < sizeof(uint32_t)) {
+	uint32_t vector_id = 0;
+
+	if (msg_data == NULL || msg_data->size == 0) {
 		return;
 	}
 
-	uint32_t vector_id = *(const uint32_t *)msg_data->data;
+	/* The payload may be shorter than 32 bits, see platform_notify() */
+	memcpy(&vector_id, msg_data->data, MIN(msg_data->size, sizeof(vector_id)));
+
 	uint32_t link_id = RL_GET_LINK_ID(vector_id);
 
 	if (link_id >= NUM_INSTANCES) {
