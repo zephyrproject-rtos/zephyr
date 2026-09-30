@@ -9,16 +9,10 @@
 #include <zephyr/autoconf.h>
 #include <zephyr/toolchain.h>
 
-/*
- * Mapping of the Zephyr LVGL Kconfig options to the configuration macros
- * used by LVGL. lv_conf_internal.h includes lv_conf.h, and therefore this
- * file, before it evaluates the options of the LVGL module Kconfig, so the
- * definitions below take precedence over those.
- */
-
 /* Provide definition to align LVGL buffers */
-#define LV_ATTRIBUTE_MEM_ALIGN __aligned(CONFIG_LV_ATTRIBUTE_MEM_ALIGN_SIZE)
+#define LV_ATTRIBUTE_MEM_ALIGN __aligned(CONFIG_LV_Z_ATTRIBUTE_MEM_ALIGN_SIZE)
 
+#define LV_COLOR_16_SWAP_DISABLE_WARNING 1
 #ifdef CONFIG_LV_COLOR_16_SWAP
 #define LV_COLOR_16_SWAP 1
 #endif /* CONFIG_LV_COLOR_16_SWAP */
