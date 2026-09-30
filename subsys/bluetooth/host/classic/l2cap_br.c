@@ -5315,6 +5315,9 @@ static void l2cap_br_sig_handle(struct bt_l2cap_br *l2cap, struct bt_l2cap_sig_h
 
 	net_buf_simple_save(&buf->b, &state);
 
+	/* Leave out any commands that follow in the same signaling packet */
+	buf->len = len;
+
 	switch (hdr->code) {
 	case BT_L2CAP_INFO_RSP:
 		l2cap_br_info_rsp(l2cap, hdr->ident, buf);
