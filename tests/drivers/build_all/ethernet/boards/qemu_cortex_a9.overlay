@@ -4,6 +4,11 @@
  */
 
 / {
+	/* Use Ethernet instead of SLIP networking to build the GEM and its MDIO */
+	chosen {
+		/delete-property/ zephyr,uart-pipe;
+	};
+
 	soc {
 		eth0: ethernet@40000000 {
 			compatible = "snps,designware-ethernet", "snps,dwmac";
