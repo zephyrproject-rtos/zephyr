@@ -1926,12 +1926,14 @@ static int uart_stm32_async_tx(const struct device *dev,
 
 		if (ret != 0) {
 			LOG_ERR("dma tx config error!");
-			return -EINVAL;
+			ret = -EINVAL;
+			goto tx_error;
 		}
 
 		if (dma_start(data->dma_tx.dma_dev, data->dma_tx.dma_channel)) {
 			LOG_ERR("UART err: TX DMA start failed!");
-			return -EFAULT;
+			ret = -EFAULT;
+			goto tx_error;
 		}
 
 		/* Start TX timer */
@@ -1970,6 +1972,19 @@ static int uart_stm32_async_tx(const struct device *dev,
 	}
 
 	return 0;
+
+tx_error:
+	/* Undo the TX setup so no stale TX_DONE event is generated */
+	LL_USART_DisableIT_TC(usart);
+	data->dma_tx.buffer_length = 0;
+#ifdef CONFIG_PM
+	data->tx_int_stream_on = false;
+#endif
+#ifdef CONFIG_UART_STM32U5_ERRATA_DMAT_AFFECTED
+	/* RX may have been enabled meanwhile and deferred its reset to this TX */
+	uart_stm32_dma_rx_reset_deferred(data);
+#endif
+	return ret;
 }
 
 static void set_timeout_itr(USART_TypeDef *usart, uint32_t baudrate, int32_t timeout)
