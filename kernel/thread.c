@@ -822,20 +822,30 @@ static inline void init_thread_cpu_mask(struct k_thread *thread)
 #endif /* CONFIG_SCHED_CPU_MASK */
 }
 
-/* Attach the thread to its memory domain and inherit caller permissions
- * when K_INHERIT_PERMS is requested.
+/*
+ * Give the new thread everything it inherits from the thread creating it:
+ * the resource pool, the memory domain and, with K_INHERIT_PERMS, the
+ * kernel object permissions. This is the only place where a thread's
+ * attributes are derived from another thread's. A NULL parent (main thread
+ * creation on architectures without a dummy thread) inherits nothing.
  */
-static inline void init_thread_userspace_perms(struct k_thread *thread,
-					       uint32_t options)
+static inline void init_thread_from_parent(struct k_thread *thread, struct k_thread *parent,
+					   uint32_t options)
 {
+	if (parent == NULL) {
+		thread->resource_pool = NULL;
+		return;
+	}
+
+	thread->resource_pool = parent->resource_pool;
+
 #ifdef CONFIG_USERSPACE
-	z_mem_domain_init_thread(thread);
+	z_mem_domain_init_thread(thread, parent);
 
 	if ((options & K_INHERIT_PERMS) != 0U) {
-		k_thread_perms_inherit(_current, thread);
+		k_thread_perms_inherit(parent, thread);
 	}
 #else
-	ARG_UNUSED(thread);
 	ARG_UNUSED(options);
 #endif /* CONFIG_USERSPACE */
 }
@@ -941,17 +951,15 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	add_thread_to_monitor(new_thread, entry, p1, p2, p3);
 	init_thread_name(new_thread, name);
 	init_thread_cpu_mask(new_thread);
+	init_thread_from_parent(new_thread, _current, options);
 
 	/* _current may be NULL if the dummy thread is not used */
 	if (IS_ENABLED(CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN) &&
 	    (_current == NULL)) {
-		new_thread->resource_pool = NULL;
 		return stack_ptr;
 	}
 
-	init_thread_userspace_perms(new_thread, options);
 	init_thread_deadline(new_thread);
-	new_thread->resource_pool = _current->resource_pool;
 	init_thread_halt_queue(new_thread);
 	init_thread_usage(new_thread);
 
