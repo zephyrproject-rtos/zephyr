@@ -148,7 +148,28 @@
 #define ETH_XLNX_CRL_APB_GEMX_REF_CTRL_DIVISOR0_SHIFT	8
 #define ETH_XLNX_CRL_APB_GEMX_REF_CTRL_RX_CLKACT_BIT    0x04000000
 #define ETH_XLNX_CRL_APB_GEMX_REF_CTRL_CLKACT_BIT       0x02000000
-#endif /* CONFIG_SOC_FAMILY_XILINX_ZYNQ7000 || CONFIG_SOC_XILINX_ZYNQMP */
+#elif defined(CONFIG_SOC_AMD_VERSAL)
+/*
+ * Versal TX clock configuration: comp.
+ * AM012 Versal Adaptive SoC Register Reference, CRL module
+ *
+ * WPROT (CRL) register:
+ * [00] CRL register space write protection bit
+ *
+ * GEMx_REF_CTRL (CRL) registers:
+ * [27]       RX channel clock active bit
+ * [26]       TX channel clock active bit
+ * [25]       Clock active bit
+ * [17 .. 08] Reference clock divisor
+ */
+#define ETH_XLNX_CRL_WPROT_REGISTER_ADDRESS		0xFF5E001C
+#define ETH_XLNX_CRL_WPROT_BIT				0x00000001
+#define ETH_XLNX_CRL_GEMX_REF_CTRL_DIVISOR_MASK		0x000003FF
+#define ETH_XLNX_CRL_GEMX_REF_CTRL_DIVISOR_SHIFT	8
+#define ETH_XLNX_CRL_GEMX_REF_CTRL_RX_CLKACT_BIT	0x08000000
+#define ETH_XLNX_CRL_GEMX_REF_CTRL_TX_CLKACT_BIT	0x04000000
+#define ETH_XLNX_CRL_GEMX_REF_CTRL_CLKACT_BIT		0x02000000
+#endif /* CONFIG_SOC_FAMILY_XILINX_ZYNQ7000 || CONFIG_SOC_XILINX_ZYNQMP || CONFIG_SOC_AMD_VERSAL */
 
 /*
  * Register offsets within the respective GEM's address space:
@@ -202,12 +223,12 @@
 #define ETH_XLNX_GEM_LADDR4L_OFFSET			0x000000A0
 #define ETH_XLNX_GEM_LADDR4H_OFFSET			0x000000A4
 #define ETH_XLNX_GEM_DESIGN_CFG5_OFFSET			0x00000290
-#ifdef CONFIG_SOC_XILINX_ZYNQMP
+#if defined(CONFIG_SOC_XILINX_ZYNQMP) || defined(CONFIG_SOC_AMD_VERSAL)
 #define ETH_XLNX_GEM_TX1QBASEL_OFFSET			0x00000440
 #define ETH_XLNX_GEM_TX1QBASEH_OFFSET			0x000004C8
 #define ETH_XLNX_GEM_RX1QBASEL_OFFSET			0x00000480
 #define ETH_XLNX_GEM_RX1QBASEH_OFFSET			0x000004D4
-#endif /* CONFIG_SOC_XILINX_ZYNQMP */
+#endif /* CONFIG_SOC_XILINX_ZYNQMP || CONFIG_SOC_AMD_VERSAL */
 
 /*
  * Masks for clearing registers during initialization:
