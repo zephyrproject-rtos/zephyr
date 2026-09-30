@@ -3,6 +3,9 @@ tests:
     tags:
       - drivers
       - hwinfo
+    platform_exclude:
+      # Reset reason is not available on QEMU Cortex-M0 platform
+      - qemu_cortex_m0/nrf51822
   drivers.hwinfo.api.nvmem:
     tags:
       - drivers
