@@ -145,7 +145,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #endif
 
 #ifdef CONFIG_XTENSA_LAZY_HIFI_SHARING
-	memset(thread->arch.hifi_regs, 0, sizeof(thread->arch.hifi_regs));
+	memset(thread->arch.cp_regs, 0, sizeof(thread->arch.cp_regs));
 #endif /* CONFIG_XTENSA_LAZY_HIFI_SHARING */
 
 #ifdef CONFIG_KERNEL_COHERENCE
@@ -191,13 +191,13 @@ int arch_float_enable(struct k_thread *thread, unsigned int options)
 
 #if defined(CONFIG_XTENSA_LAZY_HIFI_SHARING)
 /**
- * @brief Drop HiFi coprocessor ownership of a thread.
+ * @brief Drop shared coprocessor ownership of a thread.
  *
- * Clears the HiFi owner of the thread's CPU if it is @p thread.
+ * Clears the shared coprocessor owner of the thread's CPU if it is @p thread.
  *
- * @param thread Thread giving up the HiFi coprocessor.
+ * @param thread Thread giving up the shared coprocessor.
  */
-void xtensa_hifi_disown(struct k_thread *thread)
+void xtensa_cp_disown(struct k_thread *thread)
 {
 	unsigned int cpu_id = 0;
 	struct k_thread *owner;
@@ -206,10 +206,10 @@ void xtensa_hifi_disown(struct k_thread *thread)
 	cpu_id = thread->base.cpu;
 #endif
 
-	owner = atomic_ptr_get(&_kernel.cpus[cpu_id].arch.hifi_owner);
+	owner = atomic_ptr_get(&_kernel.cpus[cpu_id].arch.cp_owner);
 
 	if (owner == thread) {
-		atomic_ptr_set(&_kernel.cpus[cpu_id].arch.hifi_owner, NULL);
+		atomic_ptr_set(&_kernel.cpus[cpu_id].arch.cp_owner, NULL);
 	}
 }
 #endif
@@ -224,7 +224,7 @@ int arch_coprocessors_disable(struct k_thread *thread)
 #endif
 
 #if defined(CONFIG_XTENSA_LAZY_HIFI_SHARING)
-	xtensa_hifi_disown(thread);
+	xtensa_cp_disown(thread);
 
 	/*
 	 * This routine is only called when aborting a thread and we
