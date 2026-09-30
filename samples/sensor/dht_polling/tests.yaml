@@ -30,3 +30,11 @@ tests:
       type: one_line
       regex:
         - "[0-9A-Za-z_,+-.]*@[0-9A-Fa-f]*: temp is (.*) °C humidity is (.*) %RH"
+  sample.sensor.dht_polling.rakwireless_rak1901:
+    tags: sensors
+    extra_args: SHIELD="rakwireless_rak1901"
+    platform_allow:
+      - rak4631/nrf52840
+    integration_platforms:
+      - rak4631/nrf52840
+    build_only: true
