@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2026 RAKwireless Technology Limited
+
+shield:
+  name: rakwireless_rak1901
+  full_name: RAK1901 WisBlock Temperature and Humidity Sensor
+  vendor: rakwireless
+  supported_features:
+    - sensor
