@@ -175,6 +175,11 @@ void bt_br_acl_recv(struct bt_conn *conn, struct net_buf *buf, bool complete)
 	struct net_buf *view;
 
 	while (true) {
+		if (buf->len < sizeof(*hdr)) {
+			LOG_WRN("Too short L2CAP PDU (%u < %zu)", buf->len, sizeof(*hdr));
+			break;
+		}
+
 		hdr = (void *)buf->data;
 		if (u16_add_overflow(sys_le16_to_cpu(hdr->len),
 				     sizeof(*hdr), &acl_total_len)) {
