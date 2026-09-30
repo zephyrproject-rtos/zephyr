@@ -5,6 +5,7 @@ config ETH_SY1XX
 	bool "Sensry SY1XX Ethernet driver"
 	default y
 	depends on DT_HAS_SENSRY_SY1XX_MAC_ENABLED
+	select ETH_PHY_DRIVER
 	select PINCTRL
 	help
 	  Enable Sensry SY1XX Ethernet MAC driver.

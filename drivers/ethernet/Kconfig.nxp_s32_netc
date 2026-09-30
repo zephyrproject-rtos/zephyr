@@ -5,6 +5,7 @@ menuconfig ETH_NXP_S32_NETC
 	bool "NXP S32 Ethernet Switch and Controller (NETC) driver"
 	default y
 	depends on (DT_HAS_NXP_S32_NETC_PSI_ENABLED || DT_HAS_NXP_S32_NETC_VSI_ENABLED)
+	select ETH_PHY_DRIVER
 	select MBOX
 	select PINCTRL
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
