@@ -162,6 +162,9 @@ endif # HAS_FLASH_LOAD_OFFSET || $(DT_HAS_MAPPED_PARTITION)
 config ROM_START_OFFSET
 	hex
 	prompt "ROM start offset" if !BOOTLOADER_MCUBOOT
+	default 0x1000 if BOOTLOADER_MCUBOOT && CPU_CORTEX_M && NUM_IRQS > 496
+	default 0x800 if BOOTLOADER_MCUBOOT && CPU_CORTEX_M && NUM_IRQS > 240
+	default 0x400 if BOOTLOADER_MCUBOOT && CPU_CORTEX_M && NUM_IRQS > 112
 	default 0x200 if BOOTLOADER_MCUBOOT
 	default 0
 	help
@@ -170,9 +173,12 @@ config ROM_START_OFFSET
 	  space between the beginning of the image and the start of the first
 	  section to store an image header or any other metadata.
 	  In the particular case of the MCUboot bootloader this reserves enough
-	  space to store the image header, which should also meet vector table
-	  alignment requirements on most ARM targets, although some targets
-	  may require smaller or larger values.
+	  space to store the image header, and also satisfies the vector table
+	  alignment requirements of Cortex-M targets. The VTOR offset must be
+	  aligned to 4 * (16 + NUM_IRQS) bytes rounded up to a power of two,
+	  so the default grows with the number of interrupts.
+	  Targets with requirements beyond this (e.g. additional metadata
+	  before the image) must still override this value.
 
 config ROM_END_OFFSET
 	hex "ROM end offset"

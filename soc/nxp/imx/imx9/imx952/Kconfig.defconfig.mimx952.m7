@@ -82,7 +82,4 @@ config POWER_DOMAIN
 
 endif # PM_DEVICE
 
-config ROM_START_OFFSET
-	default 0x800 if BOOTLOADER_MCUBOOT
-
 endif # SOC_MIMX9529_M7
