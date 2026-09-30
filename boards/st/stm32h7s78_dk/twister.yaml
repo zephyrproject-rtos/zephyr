@@ -39,3 +39,5 @@ variants:
         - kernel
         - posix
         - cmsis-dsp
+        - filesystem
+        - disk
