@@ -5,6 +5,7 @@
  */
 
 #include <freq.h>
+#include <zephyr/dt-bindings/ethernet/xlnx_gem.h>
 
 / {
 	sdhci_ref_clk: sdhci-ref-clk {
@@ -169,6 +170,62 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
+		};
+
+		gem0: ethernet@ff0c0000 {
+			compatible = "xlnx,gem";
+			reg = <0xff0c0000 DT_SIZE_K(4)>,
+			      <0xff5e0118 0x4>;
+			reg-names = "mac", "clkc";
+			interrupts = <GIC_SPI 56 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 57 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0", "irq_1";
+			amba-ahb-burst-length = <XLNX_GEM_AMBA_AHB_BURST_INCR16>;
+			hw-rx-buffer-size = <XLNX_GEM_HW_RX_BUFFER_SIZE_8KB>;
+			hw-rx-buffer-offset = <0>;
+			hw-tx-buffer-size-full;
+			rx-buffer-descriptors = <32>;
+			tx-buffer-descriptors = <32>;
+			rx-buffer-size = <1536>;
+			tx-buffer-size = <1536>;
+			discard-rx-fcs;
+			unicast-hash;
+			status = "disabled";
+
+			gem0_mdio: mdio {
+				compatible = "xlnx,gem-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
+
+		gem1: ethernet@ff0d0000 {
+			compatible = "xlnx,gem";
+			reg = <0xff0d0000 DT_SIZE_K(4)>,
+			      <0xff5e011c 0x4>;
+			reg-names = "mac", "clkc";
+			interrupts = <GIC_SPI 58 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 59 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0", "irq_1";
+			amba-ahb-burst-length = <XLNX_GEM_AMBA_AHB_BURST_INCR16>;
+			hw-rx-buffer-size = <XLNX_GEM_HW_RX_BUFFER_SIZE_8KB>;
+			hw-rx-buffer-offset = <0>;
+			hw-tx-buffer-size-full;
+			rx-buffer-descriptors = <32>;
+			tx-buffer-descriptors = <32>;
+			rx-buffer-size = <1536>;
+			tx-buffer-size = <1536>;
+			discard-rx-fcs;
+			unicast-hash;
+			status = "disabled";
+
+			gem1_mdio: mdio {
+				compatible = "xlnx,gem-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
 		};
 
 		ttc0: timer@ff0e0000 {
