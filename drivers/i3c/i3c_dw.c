@@ -113,7 +113,9 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define RESPONSE_ERROR_OVER_UNDER_FLOW 6
 #define RESPONSE_ERROR_TRANSF_ABORT    8
 #define RESPONSE_ERROR_I2C_W_NACK_ERR  9
+#define RESPONSE_ERROR_EARLY_TERMINATE 10
 #define RESPONSE_PORT_TID(x)           (((x) & GENMASK(27, 24)) >> 24)
+#define RESPONSE_PORT_RX_RSP           BIT(27)
 #define RESPONSE_PORT_DATA_LEN(x)      ((x) & GENMASK(15, 0))
 
 #define RX_TX_DATA_PORT              0x14
@@ -918,6 +920,11 @@ static uint32_t dw_i3c_target_err_flush_mask(uint8_t err)
 	case RESPONSE_ERROR_OVER_UNDER_FLOW:
 		/* One code covers both directions, so reset both sides. */
 		return RESET_CTRL_RX_FIFO | RESET_CTRL_TX_FIFO | RESET_CTRL_CMD_QUEUE;
+	case RESPONSE_ERROR_EARLY_TERMINATE:
+		/* The controller stopped the read early: the bytes it did not
+		 * take are still described by a command queue entry, so both go.
+		 */
+		return RESET_CTRL_TX_FIFO | RESET_CTRL_CMD_QUEUE;
 	default:
 		return RESET_CTRL_TX_FIFO | RESET_CTRL_CMD_QUEUE;
 	}
@@ -1064,27 +1071,37 @@ static void dw_i3c_process_response(const struct device *dev, uint32_t resp)
 	if (!dw_i3c_is_current_controller(dev)) {
 		const struct i3c_target_callbacks *target_cb =
 			(data->target_config != NULL) ? data->target_config->callbacks : NULL;
+		uint8_t err = RESPONSE_PORT_ERR_STATUS(resp);
+		uint16_t len = RESPONSE_PORT_DATA_LEN(resp);
+		bool is_rx = (resp & RESPONSE_PORT_RX_RSP) != 0U;
+		uint16_t rx_len = 0U;
 		uint32_t rx_data;
-		uint32_t tgt_flush;
+		uint32_t tgt_flush = 0U;
 		bool rx_drained = false;
 		int j, k;
 
+		/* Per Table 2-50, DATA_LENGTH is a received byte count only on a clean
+		 * receive response; otherwise it is the controller read's remaining length,
+		 * or meaningless after an error.
+		 */
+		if ((err == RESPONSE_NO_ERROR) && is_rx) {
+			rx_len = len;
+		}
+
 #ifdef CONFIG_I3C_TARGET_BUFFER_MODE
 		if (target_cb != NULL && target_cb->buf_write_received_cb != NULL) {
-			const uint16_t kept =
-				MIN(cmd->rx_len, (uint16_t)sizeof(data->target_buf));
+			const uint16_t kept = MIN(rx_len, (uint16_t)sizeof(data->target_buf));
 
-			if (kept < cmd->rx_len) {
+			if (kept < rx_len) {
 				LOG_WRN("%s: %u-byte write truncated to %u, raise "
 					"CONFIG_I3C_DW_TARGET_BUF_SIZE",
-					dev->name, cmd->rx_len, kept);
+					dev->name, rx_len, kept);
 			}
 
 			/* Drain whole words, but only keep what the buffer holds. */
-			for (j = 0; j < cmd->rx_len; j += 4) {
+			for (j = 0; j < rx_len; j += 4) {
 				rx_data = sys_read32(dw_i3c_regs(dev) + RX_TX_DATA_PORT);
-				for (k = 0; (k < MIN(4, cmd->rx_len - j)) && ((j + k) < kept);
-				     k++) {
+				for (k = 0; (k < MIN(4, rx_len - j)) && ((j + k) < kept); k++) {
 					data->target_buf[j + k] = (rx_data >> (8 * k)) & 0xff;
 				}
 			}
@@ -1095,18 +1112,21 @@ static void dw_i3c_process_response(const struct device *dev, uint32_t resp)
 		}
 #endif /* CONFIG_I3C_TARGET_BUFFER_MODE */
 
-		for (j = 0; !rx_drained && j < cmd->rx_len; j += 4) {
+		for (j = 0; !rx_drained && j < rx_len; j += 4) {
 			rx_data = sys_read32(dw_i3c_regs(dev) + RX_TX_DATA_PORT);
 			if (target_cb == NULL || target_cb->write_received_cb == NULL) {
 				continue;
 			}
 			/* Call write received cb for each remaining byte */
-			for (k = 0; k < MIN(4, cmd->rx_len - j); k++) {
+			for (k = 0; k < MIN(4, rx_len - j); k++) {
 				target_cb->write_received_cb(data->target_config,
 							     (rx_data >> (8 * k)) & 0xff);
 			}
 		}
 
+		/* Reached even with nothing drained: a completed response is the only
+		 * stop indication this IP gives.
+		 */
 		if (target_cb != NULL && target_cb->stop_cb != NULL) {
 			/*
 			 * TODO: modify API to include status, such as success or aborted
@@ -1115,7 +1135,12 @@ static void dw_i3c_process_response(const struct device *dev, uint32_t resp)
 			target_cb->stop_cb(data->target_config);
 		}
 
-		tgt_flush = dw_i3c_target_err_flush_mask(cmd->error);
+		if (err != RESPONSE_NO_ERROR) {
+			tgt_flush = dw_i3c_target_err_flush_mask(err);
+		} else if (!is_rx && (len != 0U)) {
+			tgt_flush = dw_i3c_target_err_flush_mask(RESPONSE_ERROR_EARLY_TERMINATE);
+		}
+
 		if (tgt_flush != 0U) {
 			sys_write32(tgt_flush, dw_i3c_regs(dev) + RESET_CTRL);
 			/* DEVICE_CTRL is not accessible until the flush bits settle. */
