@@ -558,6 +558,14 @@ config NOCACHE_MEMORY
 	  transfers when cache coherence issues are not optimal or can not
 	  be solved using cache maintenance operations.
 
+config RAMFUNC_CUSTOM_PLACEMENT
+	bool
+	depends on ARCH_HAS_RAMFUNC_SUPPORT
+	help
+	  Remove the default placement of the ramfunc section in the
+	  RAM_SECTIONS linker snippets, allowing the linker script to place it
+	  by including zephyr/linker/ramfunc.ld itself.
+
 config FRAME_POINTER
 	bool "Compile the kernel with frame pointers"
 	select OVERRIDE_FRAME_POINTER_DEFAULT
