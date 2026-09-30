@@ -3100,6 +3100,11 @@ int bt_l2cap_ecred_chan_connect(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
+	if (!bt_conn_is_le(conn)) {
+		LOG_ERR("Invalid ACL conn %p type 0x%02x", conn, conn->type);
+		return -EINVAL;
+	}
+
 	/* Init non-null channels */
 	for (i = 0; i < BT_L2CAP_ECRED_CHAN_MAX_PER_REQ; i++) {
 		if (!chan[i]) {
@@ -3337,6 +3342,11 @@ int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 
 	if (bt_conn_is_br(conn)) {
 		return bt_l2cap_br_chan_connect(conn, chan, psm);
+	}
+
+	if (!bt_conn_is_le(conn)) {
+		LOG_ERR("Invalid ACL conn %p type 0x%02x", conn, conn->type);
+		return -EINVAL;
 	}
 
 	if (le_chan->required_sec_level > BT_SECURITY_L4) {
