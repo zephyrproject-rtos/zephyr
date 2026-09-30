@@ -117,10 +117,15 @@ def zephyr_version():
         pytest.skip(f"Cannot read {version_file}")
 
     try:
-        return (
+        version = (
             f"{int(values['VERSION_MAJOR'])}"
             f".{int(values['VERSION_MINOR'])}"
             f".{int(values['PATCHLEVEL'])}"
         )
     except (KeyError, ValueError):
         pytest.skip(f"Cannot parse version from {version_file}")
+
+    extra = values.get("EXTRAVERSION", "")
+    if extra:
+        version += f"-{extra}"
+    return version
