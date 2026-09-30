@@ -1205,6 +1205,7 @@ static int dw_i3c_i2c_api_transfer(const struct device *dev, struct i2c_msg *msg
 }
 
 static int dw_i3c_init_scl_timing(const struct device *dev, struct i3c_config_controller *ctrl_cfg);
+static uint8_t odd_parity(uint8_t p);
 
 /**
  * @brief Configure I2C operation of a host controller.
@@ -1895,7 +1896,8 @@ static int dw_i3c_attach_device(const struct device *dev, struct i3c_device_desc
 	LOG_DBG("%s: Attaching %s", dev->name, desc->dev->name);
 
 	if (desc->dynamic_addr != 0U) {
-		dat |= DEV_ADDR_TABLE_DYNAMIC_ADDR(desc->dynamic_addr);
+		dat |= DEV_ADDR_TABLE_DYNAMIC_ADDR(desc->dynamic_addr |
+						   (odd_parity(desc->dynamic_addr) << 7));
 	}
 
 	if (desc->static_addr != 0U) {
@@ -1928,7 +1930,8 @@ static int dw_i3c_reattach_device(const struct device *dev, struct i3c_device_de
 	dat = sys_read32(dw_i3c_regs(dev) +
 			 DEV_ADDR_TABLE_LOC(data->datstartaddr, dw_i3c_device_data->id));
 	dat &= ~DEV_ADDR_TABLE_DYNAMIC_ADDR_MASK;
-	sys_write32(DEV_ADDR_TABLE_DYNAMIC_ADDR(desc->dynamic_addr) | dat,
+	sys_write32(DEV_ADDR_TABLE_DYNAMIC_ADDR(desc->dynamic_addr |
+						(odd_parity(desc->dynamic_addr) << 7)) | dat,
 		    dw_i3c_regs(dev) +
 			    DEV_ADDR_TABLE_LOC(data->datstartaddr, dw_i3c_device_data->id));
 
