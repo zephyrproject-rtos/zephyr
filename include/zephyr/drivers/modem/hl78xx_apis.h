@@ -1956,6 +1956,18 @@ int hl78xx_at_monitor_register(struct hl78xx_at_monitor_entry *mon);
 int hl78xx_at_monitor_unregister(struct hl78xx_at_monitor_entry *mon);
 
 /**
+ * @brief Number of deferred AT notifications dropped since boot.
+ *
+ * A parsed notification for the deferred (system workqueue) AT monitors is
+ * dropped, and logged at error level, when the copy heap of
+ * CONFIG_HL78XX_AT_MONITOR_HEAP_SIZE bytes cannot hold it. Direct monitors
+ * are never affected. The counter only grows; report deltas in telemetry.
+ *
+ * @return Number of dropped deferred AT notifications.
+ */
+uint32_t hl78xx_at_monitor_dropped_count(void);
+
+/**
  * @brief Set the event notification handler for HL78xx modem events.
  *
  * Registers a callback handler to receive asynchronous event notifications
