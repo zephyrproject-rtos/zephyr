@@ -98,6 +98,8 @@ Connections and I/Os
 | LPADC0    | ADC0 CH0A input | PIO3_0 (ball R2), J94 pin 13       |
 |           |                 | Input range 0-1.8 V                |
 +-----------+-----------------+------------------------------------+
+| LPDAC     | DAC_OUT         | ball L5, test point TP29           |
++-----------+-----------------+------------------------------------+
 
 The debug console runs at 115200 8N1 on the MCU-Link virtual COM port.
 
