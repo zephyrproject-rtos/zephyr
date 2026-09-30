@@ -127,3 +127,9 @@ set(kit_psc3m6_evk_DEPRECATED
 set(kit_psc3m6_evk/psc3m6ges3ahq1_DEPRECATED
     kit_psc3m6_eval/psc3m6ges3ahq1
 )
+set(rak11720/apollo3_blue_DEPRECATED
+    rak11722/apollo3_blue
+)
+set(rak11720_DEPRECATED
+    rak11722
+)

@@ -1,6 +1,6 @@
 board:
-  name: rak11720
-  full_name: RAK11720
+  name: rak11722
+  full_name: RAK11722 WisBlock Core Module
   vendor: rakwireless
   socs:
   - name: apollo3_blue

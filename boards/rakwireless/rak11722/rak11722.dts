@@ -6,12 +6,12 @@
 
 /dts-v1/;
 #include <rakwireless/rak11720.dtsi>
-#include "rak11720-pinctrl.dtsi"
+#include "rak11722-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	compatible = "ambiq,rak11720";
-	model = "RAKwireless RAK11720 WisBlock LPWAN Module";
+	compatible = "rakwireless,rak11722";
+	model = "RAK11722 WisBlock Core Module";
 
 	chosen {
 		zephyr,itcm = &tcm;
@@ -28,24 +28,7 @@
 
 	aliases {
 		watchdog0 = &wdt0;
-		led0 = &blue_led;
-		led1 = &green_led;
 		lora0 = &lora;
-		mcuboot-led0 = &blue_led;
-	};
-
-	leds {
-		compatible = "gpio-leds";
-
-		blue_led: led_2 {
-			gpios = <&gpio32_63 13 GPIO_ACTIVE_HIGH>;
-			label = "Blue LED";
-		};
-
-		green_led: led_1 {
-			gpios = <&gpio32_63 12 GPIO_ACTIVE_HIGH>;
-			label = "Green LED";
-		};
 	};
 };
 
@@ -104,7 +87,7 @@
 		pinctrl-0 = <&i2c2_default>;
 		pinctrl-names = "default";
 		clock-frequency = <I2C_BITRATE_STANDARD>;
-		status = "okay";
+		status = "disabled";
 	};
 };
 
@@ -115,7 +98,7 @@
 		pinctrl-names = "default";
 		cs-gpios = <&gpio0_31 1 GPIO_ACTIVE_LOW>;
 		clock-frequency = <DT_FREQ_M(1)>;
-		status = "okay";
+		status = "disabled";
 	};
 };
 
@@ -160,3 +143,20 @@
 		status = "okay";
 	};
 };
+
+&timer3 {
+	pwm3: pwm {
+		pinctrl-0 = <&pwm3_default>;
+		pinctrl-names = "default";
+		timer-segment = "SEGMENT_A";
+		pwm-type = "PWM_REPEAT";
+	};
+};
+
+&adc0 {
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+#include "wisblock.dtsi"
