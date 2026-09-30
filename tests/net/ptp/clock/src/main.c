@@ -213,7 +213,7 @@ static int my_ptp_clock_adjust(const struct device *dev, int increment)
 	return 0;
 }
 
-static int my_ptp_clock_rate_adjust(const struct device *dev, double ratio)
+static int my_ptp_clock_adjust_rate(const struct device *dev, int64_t scaled_ppm)
 {
 	return 0;
 }
@@ -225,7 +225,7 @@ static DEVICE_API(ptp_clock, api) = {
 	.set = my_ptp_clock_set,
 	.get = my_ptp_clock_get,
 	.adjust = my_ptp_clock_adjust,
-	.rate_adjust = my_ptp_clock_rate_adjust,
+	.adjust_rate = my_ptp_clock_adjust_rate,
 };
 
 static int ptp_test_1_init(const struct device *port)
