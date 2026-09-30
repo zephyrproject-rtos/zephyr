@@ -65,8 +65,16 @@ enum uhc_dwc2_channel_event {
 	UHC_DWC2_CHANNEL_DO_REWIND,
 	/* The channel is periodic, active and wait for scheduling. Channel is now halted */
 	UHC_DWC2_CHANNEL_DO_WAIT_SOF,
+	/* TODO: Add description */
+	UHC_DWC2_CHANNEL_DO_WAIT_CSPLIT,
 	/* The transfer was cancelled. Channel is now halted */
 	UHC_DWC2_CHANNEL_EVENT_CANCELLED,
+};
+
+enum uhc_dwc2_split_state {
+    UHC_DWC2_SPLIT_NONE,
+    UHC_DWC2_SPLIT_START,
+    UHC_DWC2_SPLIT_WAIT_COMPLETE,
 };
 
 #define EPSIZE_BULK_FS			64U
@@ -112,7 +120,11 @@ struct uhc_dwc2_channel_data {
 	/* Periodic transfer has been scheduled and waiting for the SOF */
 	bool periodic_scheduled;
 	/* Channel requires split transaction */
-	bool do_split;
+	bool do_split; /* TODO: redundant after split_state was introduced */
+	/* Channel split state */
+	enum uhc_dwc2_split_state split_state;
+	/* Channel split complete scheduled */
+	bool split_scheduled; /* Might be redundant, double check */
 };
 
 struct uhc_dwc2_split_info {
@@ -932,11 +944,97 @@ static uint32_t ch_handle_xfer_complete(const struct device *dev,
 	return ch_events;
 }
 
+static uint32_t ch_handle_in_ssplit(struct uhc_dwc2_channel *const ch, uint32_t hcint)
+{
+	uint32_t ch_events = 0;
+
+	if ((hcint & USB_DWC2_HCINT_CHHLTD) &&
+	    (hcint & USB_DWC2_HCINT_ACK)) {
+		/*
+		 * Channel is halted and waiting for split completion.
+		 */
+		ch->error_count = 0;
+		ch->data->split_state = UHC_DWC2_SPLIT_WAIT_COMPLETE;
+		ch->data->split_scheduled = true;
+
+		return BIT(UHC_DWC2_CHANNEL_DO_WAIT_CSPLIT);
+	}
+
+	/* TODO: Verify sense of the error handling during ssplit */
+	LOG_WRN("IN channel%d unexpected SSPLIT HCINT 0x%08x", ch->index, hcint);
+
+	return ch_events;
+}
+
+static uint32_t ch_handle_in_csplit(struct uhc_dwc2_channel *const ch,
+				    uint32_t hcint)
+{
+	uint32_t ch_events = 0;
+
+	if (hcint & USB_DWC2_HCINT_XFERCOMPL) {
+		ch->error_count = 0;
+		ch->data->split_state = UHC_DWC2_SPLIT_START;
+
+		ch_events |= BIT(UHC_DWC2_CHANNEL_EVENT_CPLT);
+		ch_events |= BIT(UHC_DWC2_CHANNEL_DO_RELEASE);
+
+	} else if (hcint & USB_DWC2_HCINT_NYET) {
+		LOG_DBG("IN ch%d CSPLIT NYET", ch->index);
+
+		/*
+		 * TT has not completed the downstream transaction yet.
+		 * Keep COMPSPLT state and retry CSPLIT later.
+		 */
+		ch->data->split_state = UHC_DWC2_SPLIT_WAIT_COMPLETE;
+		ch->data->split_scheduled = true;
+
+	} else if (hcint & USB_DWC2_HCINT_NAK) {
+		/*
+		 * Downstream endpoint NAKed.
+		 * Next attempt starts with another SSPLIT.
+		 */
+		ch->data->split_state = UHC_DWC2_SPLIT_START;
+		ch->data->split_scheduled = true;
+
+	} else if (hcint & USB_DWC2_HCINT_STALL) {
+		ch->data->split_state = UHC_DWC2_SPLIT_START;
+
+		ch_events |= BIT(UHC_DWC2_CHANNEL_EVENT_STALL);
+		ch_events |= BIT(UHC_DWC2_CHANNEL_DO_RELEASE);
+
+	} else if (hcint & (USB_DWC2_HCINT_XACTERR |
+			    USB_DWC2_HCINT_BBLERR)) {
+		LOG_ERR("IN channel%d CSPLIT, error HCINT=0x%08x",
+			ch->index, hcint);
+
+		ch_events |= BIT(UHC_DWC2_CHANNEL_EVENT_ERROR);
+		ch_events |= BIT(UHC_DWC2_CHANNEL_DO_RELEASE);
+
+	} else {
+		LOG_WRN("IN channel%d unexpected CSPLIT, HCINT=0x%08x",
+			ch->index, hcint);
+	}
+
+	return ch_events;
+}
+
 static uint32_t ch_handle_in_bulk_control(const struct device *dev,
 					  struct uhc_dwc2_channel *const ch,
 					  uint32_t hcint)
 {
 	uint32_t ch_events = 0;
+
+	/* Process Split transfers first */
+	if (ch->data->do_split) {
+		switch (ch->data->split_state) {
+		case UHC_DWC2_SPLIT_START:
+			return ch_handle_in_ssplit(ch, hcint);
+		case UHC_DWC2_SPLIT_WAIT_COMPLETE:
+			return ch_handle_in_csplit(ch, hcint);
+		default:
+			break;
+		}
+	}
 
 	if (hcint & USB_DWC2_HCINT_CHHLTD) {
 		if (hcint & (USB_DWC2_HCINT_XFERCOMPL | USB_DWC2_HCINT_STALL |
@@ -1278,6 +1376,7 @@ static int ch_claim(const struct device *const dev,
 	ch->data->periodic_started = false;
 	ch->data->periodic_scheduled = false;
 	ch->data->do_split = false;
+	ch->data->split_state = UHC_DWC2_SPLIT_NONE;
 
 	priv->free_chs--;
 
@@ -1295,9 +1394,20 @@ static int ch_configure(const struct device *const dev, struct uhc_dwc2_channel 
 	uint32_t hcint;
 	uint32_t hcintmsk;
 	uint32_t hcchar;
+	uint32_t hcsplt;
 
+	/* TODO: Check the position, when we need to configure it! */
 	if (get_split_info(udev, &split)) {
+		hcsplt = USB_DWC2_HCSPLT_SPLTENA |
+			 usb_dwc2_set_hcsplt_hubaddr(split.hub_addr) |
+			 usb_dwc2_set_hcsplt_prtaddr(split.hub_port) |
+			 usb_dwc2_set_hcsplt_xactpos(USB_DWC2_HCSPLT_XACTPOS_ALL);
 		ch->data->do_split = true;
+		ch->data->split_state = UHC_DWC2_SPLIT_START;
+	} else {
+		hcsplt = 0;
+		ch->data->do_split = false;
+		ch->data->split_state = UHC_DWC2_SPLIT_NONE;
 	}
 
 	/* Clear the interrupt bits by writing them back */
@@ -1328,11 +1438,15 @@ static int ch_configure(const struct device *const dev, struct uhc_dwc2_channel 
 		hcchar |= USB_DWC2_HCCHAR_EPDIR;
 	}
 
-	if (false /* TODO: Support Hubs channel->ls_via_fs_hub */) {
+	/* TODO: Ignored in peer-to-peer setup, but need to double check that on all platfroms */
+	if (udev->speed == USB_SPEED_SPEED_LS) {
 		hcchar |= USB_DWC2_HCCHAR_LSPDDEV;
 	}
 
+	sys_write32(hcsplt, (mem_addr_t)&ch->regs->hcsplt);
 	sys_write32(hcchar, (mem_addr_t)&ch->regs->hcchar);
+
+	LOG_WRN("ch_conf, HCSPLT %08Xh", hcsplt);
 
 	return 0;
 }
@@ -1673,7 +1787,27 @@ static void ch_reinit(const struct device *dev,
 	}
 }
 
-static void port_start_periodic(const struct device *dev)
+static void ch_start_csplit(const struct device *dev,
+                            struct uhc_dwc2_channel *const ch)
+{
+	uint32_t hcsplt;
+	uint32_t hcchar;
+
+	hcsplt = sys_read32((mem_addr_t)&ch->regs->hcsplt);
+	hcsplt |= USB_DWC2_HCSPLT_COMPSPLT;
+	sys_write32(hcsplt, (mem_addr_t)&ch->regs->hcsplt);
+
+	ch->data->split_scheduled = false;
+
+	hcchar = sys_read32((mem_addr_t)&ch->regs->hcchar);
+	hcchar |= USB_DWC2_HCCHAR_CHENA;
+	hcchar &= ~USB_DWC2_HCCHAR_CHDIS;
+	sys_write32(hcchar, (mem_addr_t)&ch->regs->hcchar);
+
+	LOG_WRN("start_csplit, HCSPLT %08Xh", hcsplt);
+}
+
+static void port_sof(const struct device *dev)
 {
 	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
 	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
@@ -1686,17 +1820,47 @@ static void port_start_periodic(const struct device *dev)
 	for (uint8_t idx = 0; idx < priv->numhstchnl; idx++) {
 		struct uhc_dwc2_channel *const ch = &priv->ch[idx];
 
-		if (ch->xfer == NULL || ch->data == NULL || !ch->data->periodic_scheduled) {
+		if (ch->xfer == NULL || ch->data == NULL) {
+			continue;
+		}
+
+		/* Handle pending Complete-Split first. */
+		if (ch->data->split_scheduled &&
+		    ch->data->split_state == UHC_DWC2_SPLIT_WAIT_COMPLETE) {
+
+			LOG_WRN("Channel%d start CSPLIT", ch->index);
+
+			ch->data->split_scheduled = false;
+			ch_start_csplit(dev, ch);
+
+			continue;
+		}
+
+		/* Handle periodic transfers. */
+		if (!ch->data->periodic_scheduled) {
 			continue;
 		}
 
 		if (next_frame == ch->data->scheduled_frame) {
-			LOG_DBG("TODO: Channel%d schedule periodic to frame=%u",
+			LOG_DBG("Channel%d schedule periodic to frame=%u",
 				ch->index,
 				ch->data->scheduled_frame);
+
 			ch->data->periodic_scheduled = false;
 			ch_start_interrupt(dev, ch);
 		}
+
+		// if (ch->xfer == NULL || ch->data == NULL || !ch->data->periodic_scheduled) {
+		// 	continue;
+		// }
+
+		// if (next_frame == ch->data->scheduled_frame) {
+		// 	LOG_DBG("TODO: Channel%d schedule periodic to frame=%u",
+		// 		ch->index,
+		// 		ch->data->scheduled_frame);
+		// 	ch->data->periodic_scheduled = false;
+		// 	ch_start_interrupt(dev, ch);
+		// }
 	}
 }
 
@@ -2094,7 +2258,7 @@ static void port_handle_events(const struct device *dev, uint32_t event_mask)
 	}
 
 	if (event_mask & BIT(UHC_DWC2_EVENT_SOF)) {
-		port_start_periodic(dev);
+		port_sof(dev);
 	}
 }
 
@@ -2133,7 +2297,12 @@ static void ch_handle_events(const struct device *dev, struct uhc_dwc2_channel *
 
 		uhc_xfer_return(dev, xfer, err);
 	} else {
-		/* Reinit/rewind transfer */
+		if (events & BIT(UHC_DWC2_CHANNEL_DO_WAIT_CSPLIT)) {
+			/* TODO: Implement split complete */
+			LOG_WRN("DO_WAIT_CSPLIT not implemented yet");
+			// TODO: Schedule split and start it with the next SOF?
+		}
+
 		if (events & BIT(UHC_DWC2_CHANNEL_DO_REWIND)) {
 			/* TODO: Implement rewind xfer */
 			LOG_WRN("DO_REWIND not implemented yet");
