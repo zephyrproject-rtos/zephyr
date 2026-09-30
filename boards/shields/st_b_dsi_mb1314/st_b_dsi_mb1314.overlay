@@ -31,8 +31,6 @@
 			 0 /* LowPowerWriteTimeout */
 			 0 /* BTATimeout */>;
 
-	vs-active-high;
-	hs-active-high;
 	de-active-high;
 
 	lp-rx-filter = <10000>;
