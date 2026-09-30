@@ -1365,6 +1365,17 @@ static int dw_i3c_controller_disable_ibi(const struct device *dev, struct i3c_de
 	return i3c_dw_endis_ibi(dev, target, false);
 }
 
+static void dw_i3c_ibi_discard_payload(const struct device *dev, uint8_t nbytes)
+{
+	while (nbytes >= BYTES_PER_DWORD) {
+		(void)sys_read32(dw_i3c_regs(dev) + IBI_QUEUE_STATUS);
+		nbytes -= BYTES_PER_DWORD;
+	}
+	if (nbytes > 0U) {
+		(void)sys_read32(dw_i3c_regs(dev) + IBI_QUEUE_STATUS);
+	}
+}
+
 static void dw_i3c_handle_tir(const struct device *dev, uint32_t ibi_status, bool has_ibi_data)
 {
 	uint8_t ibi_data[CONFIG_I3C_IBI_MAX_PAYLOAD_SIZE];
@@ -1377,14 +1388,11 @@ static void dw_i3c_handle_tir(const struct device *dev, uint32_t ibi_status, boo
 	pos = get_i3c_addr_pos(dev, addr, false);
 	if (pos < 0) {
 		LOG_ERR("%s: Invalid Slave address", dev->name);
+		dw_i3c_ibi_discard_payload(dev, len);
 		return;
 	}
 
 	struct i3c_device_desc *desc = i3c_dev_list_i3c_addr_find(dev, addr);
-
-	if (desc == NULL) {
-		return;
-	}
 
 	if (len > 0) {
 		read_ibi_fifo(dev, ibi_data, len);
@@ -1473,6 +1481,10 @@ static void ibis_handle(const struct device *dev)
 			dw_i3c_handle_mr(dev, ibi_stat);
 		} else {
 			LOG_ERR("%s: Unknown IBI type", dev->name);
+			if (has_ibi_data) {
+				dw_i3c_ibi_discard_payload(dev,
+							   IBI_QUEUE_STATUS_DATA_LEN(ibi_stat));
+			}
 		}
 	}
 }
