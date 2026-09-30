@@ -85,10 +85,13 @@ def module_component():
 
 @pytest.fixture
 def make_graph():
-    """Factory turning components into a described modules-deps graph."""
+    """Factory turning components into a described modules-deps graph.
 
-    def _graph(*components):
-        graph = SBOMGraph(namespace_prefix=NAMESPACE)
+    The optional ``namespace`` keyword stands for a different build.
+    """
+
+    def _graph(*components, namespace=NAMESPACE):
+        graph = SBOMGraph(namespace_prefix=namespace)
         graph.metadata.update(
             {
                 "creator_organization": ORGANIZATION,
@@ -97,7 +100,7 @@ def make_graph():
             }
         )
         graph.add_document(
-            SBOMDocument(name=DEPS_DOCUMENT, namespace=f"{NAMESPACE}/{DEPS_DOCUMENT}")
+            SBOMDocument(name=DEPS_DOCUMENT, namespace=f"{namespace}/{DEPS_DOCUMENT}")
         )
         document = graph.get_document(DEPS_DOCUMENT)
         for component in components:
