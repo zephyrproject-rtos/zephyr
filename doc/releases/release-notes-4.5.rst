@@ -435,6 +435,13 @@ Deprecated APIs and options
   * The Nordic SoC headers :file:`<haltium_power.h>` and :file:`<haltium_pm_s2ram.h>`
     have been renamed to :file:`<soc_power.h>` and :file:`<soc_pm_s2ram.h>` respectively.
 
+* PTP Clock
+
+  * :c:func:`ptp_clock_rate_adjust` and the :c:member:`ptp_clock_driver_api.rate_adjust` driver
+    operation are deprecated in favor of :c:func:`ptp_clock_adjust_rate` and
+    :c:member:`ptp_clock_driver_api.adjust_rate`, which take the rate offset as scaled parts per
+    million instead of a floating-point ratio.
+
 * Raspberry Pi
 
   * The RP2350 ``SOC_RP2350A_HAZARD3``, ``SOC_RP2350A_M33``, ``SOC_RP2350B_HAZARD3``, and
