@@ -846,7 +846,7 @@ static int uhc_renesas_ra_shutdown(const struct device *dev)
 	}
 
 	if (priv->uhc_cfg.hs_irq != FSP_INVALID_VECTOR) {
-		R_ICU->IELSR[priv->uhc_cfg.irq] = 0;
+		R_ICU->IELSR[priv->uhc_cfg.hs_irq] = 0;
 		irq_disable(priv->uhc_cfg.hs_irq);
 	}
 
