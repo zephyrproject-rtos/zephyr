@@ -11,6 +11,7 @@ LOG_MODULE_DECLARE(net_shell);
 #include <stdlib.h>
 #include <stdio.h>
 #include <zephyr/random/random.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/net/icmp.h>
 #include <zephyr/net/net_linkaddr.h>
 
@@ -23,6 +24,9 @@ LOG_MODULE_DECLARE(net_shell);
 #include "../ip/route.h"
 
 #if defined(CONFIG_NET_IP)
+
+/* Replies to probes older than this are treated as lost. */
+#define PING_SEQ_WINDOW 64
 
 static struct ping_context {
 	struct k_work_delayable work;
@@ -44,6 +48,8 @@ static struct ping_context {
 	uint8_t tos;
 	bool quiet;
 	int priority;
+	/* Bit (sequence % PING_SEQ_WINDOW) set once that probe got a reply. */
+	atomic_t seq_seen[ATOMIC_BITMAP_SIZE(PING_SEQ_WINDOW)];
 	struct ping_stats {
 		uint64_t cycle_sum;
 		uint32_t pkt_sent;
@@ -112,6 +118,18 @@ static void stats_update(struct ping_context *ctx, uint32_t cycles)
 	ctx->stats.rtt_max = MAX(ctx->stats.rtt_max, cycles);
 }
 
+static bool ping_echo_reply_accept(uint16_t identifier, uint16_t sequence)
+{
+	uint32_t sent = MIN(ping_ctx.sequence, ping_ctx.count);
+
+	if (identifier != ping_ctx.identifier || sequence == 0 || sequence > sent ||
+	    sent - sequence >= PING_SEQ_WINDOW) {
+		return false;
+	}
+
+	return !atomic_test_and_set_bit(ping_ctx.seq_seen, sequence % PING_SEQ_WINDOW);
+}
+
 #if defined(CONFIG_NET_NATIVE_IPV6)
 
 static enum net_verdict handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
@@ -131,8 +149,8 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
 		return NET_CONTINUE;
 	}
 
-	if (net_ntohs(icmp_echo->identifier) != ping_ctx.identifier ||
-	    net_ntohs(icmp_echo->sequence) != ping_ctx.sequence) {
+	if (!ping_echo_reply_accept(net_ntohs(icmp_echo->identifier),
+				    net_ntohs(icmp_echo->sequence))) {
 		return NET_CONTINUE;
 	}
 
@@ -182,8 +200,8 @@ static enum net_verdict handle_ipv4_echo_reply(struct net_icmp_ctx *ctx,
 		return NET_CONTINUE;
 	}
 
-	if (net_ntohs(icmp_echo->identifier) != ping_ctx.identifier ||
-	    net_ntohs(icmp_echo->sequence) != ping_ctx.sequence) {
+	if (!ping_echo_reply_accept(net_ntohs(icmp_echo->identifier),
+				    net_ntohs(icmp_echo->sequence))) {
 		return NET_CONTINUE;
 	}
 
@@ -262,7 +280,8 @@ static enum net_verdict handle_echo_reply_common(struct net_pkt *pkt, uint16_t s
 			 src, dst, sequence, ttl, rssi_buf, time_buf);
 	}
 
-	if (sequence == ping_ctx.count) {
+	if (ping_ctx.sequence >= ping_ctx.count && ping_ctx.stats.pkt_sent > 0 &&
+	    ping_ctx.stats.pkt_recv >= ping_ctx.stats.pkt_sent) {
 		ping_done(&ping_ctx);
 	}
 
@@ -325,7 +344,6 @@ static void ping_work(struct k_work *work)
 	struct net_icmp_ping_params params;
 	int ret;
 
-	ctx->identifier = sys_rand16_get();
 	ctx->sequence++;
 
 	if (ctx->sequence > ctx->count) {
@@ -335,6 +353,8 @@ static void ping_work(struct k_work *work)
 		ping_done(ctx);
 		return;
 	}
+
+	atomic_clear_bit(ctx->seq_seen, ctx->sequence % PING_SEQ_WINDOW);
 
 	if (ctx->sequence < ctx->count) {
 		k_work_reschedule(&ctx->work, K_MSEC(ctx->interval));
@@ -478,8 +498,6 @@ static int cmd_net_ping(const struct shell *sh, size_t argc, char *argv[])
 				PR_WARNING("Parse error: %s\n", argv[i]);
 				return -ENOEXEC;
 			}
-
-
 			break;
 		case 'i':
 			interval = parse_arg(&i, argc, argv);
@@ -551,6 +569,7 @@ static int cmd_net_ping(const struct shell *sh, size_t argc, char *argv[])
 	ping_ctx.payload_size = payload_size;
 	ping_ctx.stats = (struct ping_stats){.rtt_min = UINT32_MAX};
 	ping_ctx.quiet = quiet;
+	ping_ctx.identifier = sys_rand16_get();
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) &&
 	    net_addr_pton(NET_AF_INET6, host, &ping_ctx.addr6.sin6_addr) == 0) {
