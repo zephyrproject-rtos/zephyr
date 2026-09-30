@@ -888,6 +888,10 @@ The backend writes from :c:func:`log_backend_msg_process`, which is why it requi
 locked, which is not a context a flash write can happen in. Call :c:func:`log_flush` from a thread
 where the log has to reach the medium before a reboot.
 
+:kconfig:option:`CONFIG_LOG_BACKEND_FLASH_SHELL` adds a ``log_flash`` shell command that says what
+the partition holds, prints the stored records, dumps them as hex for decoding on a host, and
+erases the log.
+
 Backend options:
 
 :kconfig:option:`CONFIG_LOG_BACKEND_FLASH_AUTOSTART`: Start the backend together with the logging
