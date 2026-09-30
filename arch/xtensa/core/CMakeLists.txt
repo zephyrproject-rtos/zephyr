@@ -29,7 +29,7 @@ zephyr_library_sources_ifdef(CONFIG_XTENSA_MPU mpu/mpu_core.c mpu/mpu_regions.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE userspace.S syscall_helper.c)
 zephyr_library_sources_ifdef(CONFIG_LLEXT elf.c)
 zephyr_library_sources_ifdef(CONFIG_SMP smp.c)
-zephyr_library_sources_ifdef(CONFIG_XTENSA_HIFI_SHARING xtensa_cp.S)
+zephyr_library_sources_ifdef(CONFIG_XTENSA_CP_SHARING xtensa_cp.S)
 zephyr_library_sources_ifdef(CONFIG_XTENSA_FATAL_BREADCRUMB xtensa_breadcrumb.c)
 
 zephyr_library_sources(instr_mem.c)
