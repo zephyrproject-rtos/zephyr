@@ -71,6 +71,8 @@ typedef int (*ptp_clock_api_adjust_t)(const struct device *dev, int increment);
 /**
  * @brief Adjust the PTP clock rate ratio based on its nominal frequency.
  * See ptp_clock_rate_adjust() for argument description.
+ *
+ * @deprecated Use ptp_clock_api_adjust_rate_t instead.
  */
 typedef int (*ptp_clock_api_rate_adjust_t)(const struct device *dev, double ratio);
 
@@ -100,12 +102,14 @@ __subsystem struct ptp_clock_driver_api {
 	 * @driver_ops_optional @copybrief ptp_clock_rate_adjust
 	 *
 	 * Only used if @c adjust_rate is not implemented.
+	 *
+	 * @deprecated Implement @c adjust_rate instead.
 	 */
-	ptp_clock_api_rate_adjust_t rate_adjust;
+	__deprecated ptp_clock_api_rate_adjust_t rate_adjust;
 	/**
 	 * @driver_ops_mandatory @copybrief ptp_clock_adjust_rate
 	 *
-	 * A driver that implements @c rate_adjust may leave this unset.
+	 * A driver that implements the deprecated @c rate_adjust may leave this unset.
 	 */
 	ptp_clock_api_adjust_rate_t adjust_rate;
 };
@@ -224,6 +228,8 @@ static inline int ptp_clock_adjust(const struct device *dev, int increment)
  * If the driver only implements the scaled parts-per-million operation, the ratio is converted
  * and passed to that one.
  *
+ * @deprecated Use ptp_clock_adjust_rate() instead.
+ *
  * @param dev PTP clock device
  * @param rate Rate ratio based on its nominal frequency
  *
@@ -231,14 +237,16 @@ static inline int ptp_clock_adjust(const struct device *dev, int increment)
  * @retval -ERANGE Rate ratio is not representable as scaled parts per million
  * @retval -errno Other negative errno code on failure
  */
-static inline int ptp_clock_rate_adjust(const struct device *dev, double rate)
+__deprecated static inline int ptp_clock_rate_adjust(const struct device *dev, double rate)
 {
 	const struct ptp_clock_driver_api *api = DEVICE_API_GET(ptp_clock, dev);
 	double scaled_ppm;
 
+	TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS)
 	if (api->rate_adjust != NULL) {
 		return api->rate_adjust(dev, rate);
 	}
+	TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS)
 
 	scaled_ppm = (rate - 1.0) * (1000000.0 * PTP_CLOCK_SCALED_PPM_ONE);
 	scaled_ppm += (scaled_ppm < 0.0) ? -0.5 : 0.5;
@@ -271,8 +279,11 @@ static inline int ptp_clock_adjust_rate(const struct device *dev, int64_t scaled
 	const struct ptp_clock_driver_api *api = DEVICE_API_GET(ptp_clock, dev);
 
 	if (unlikely(api->adjust_rate == NULL)) {
+		/* Drivers that still implement the deprecated operation are served as well. */
+		TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS)
 		return api->rate_adjust(dev, 1.0 + (double)scaled_ppm /
 						     (1000000.0 * PTP_CLOCK_SCALED_PPM_ONE));
+		TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS)
 	}
 
 	return api->adjust_rate(dev, scaled_ppm);
