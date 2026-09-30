@@ -404,6 +404,19 @@ default domain), it will be removed from it in favor of the new one.
 In addition, if a thread is a member of a memory domain, and it creates a
 child thread, that thread will belong to the domain as well.
 
+A thread is returned to the default domain with
+:c:func:`k_mem_domain_remove_thread`, and a thread that terminates leaves its
+domain automatically. :c:func:`k_mem_domain_remove_all_threads` returns every
+member of a domain to the default domain in one step:
+
+.. code-block:: c
+
+    k_mem_domain_remove_thread(app_thread_id);
+    k_mem_domain_remove_all_threads(&app0_domain);
+
+A thread removed from a domain keeps running. If it is a user thread, it loses
+access to the domain's partitions and faults the next time it touches one.
+
 Remove a Memory Partition from a Memory Domain
 ----------------------------------------------
 
@@ -428,8 +441,15 @@ with ``-ENOTSUP`` on architectures that keep per-domain data, such as page
 tables, without a way to release it. The default domain cannot be
 de-initialized.
 
+Members that are still alive are moved out with
+:c:func:`k_mem_domain_remove_all_threads` first. Threads created by a member
+join its domain, so removing the members one at a time can leave a new one
+behind; removing all of them at once cannot. Abort the threads that must not
+keep running without the domain's partitions before emptying it.
+
 .. code-block:: c
 
+    k_mem_domain_remove_all_threads(&app0_domain);
     k_mem_domain_deinit(&app0_domain);
 
 Available Partition Attributes

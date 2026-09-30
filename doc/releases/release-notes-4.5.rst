@@ -763,6 +763,8 @@ New APIs and options
   * :c:macro:`K_MSGQ_DEFINE_TYPE`
   * :c:macro:`K_MSGQ_DEFINE_STATIC_TYPE`
   * :c:func:`k_sleep_ticks`
+  * :c:func:`k_mem_domain_remove_thread`
+  * :c:func:`k_mem_domain_remove_all_threads`
   * Namespaced equivalents of the interrupt control APIs, preferred for new
     code; the unprefixed names remain fully supported:
     :c:func:`k_irq_lock`, :c:func:`k_irq_unlock`, :c:func:`k_irq_enable`,

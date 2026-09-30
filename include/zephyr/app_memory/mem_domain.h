@@ -212,6 +212,48 @@ int k_mem_domain_remove_partition(struct k_mem_domain *domain,
 int k_mem_domain_add_thread(struct k_mem_domain *domain,
 				   k_tid_t thread);
 
+/**
+ * @brief Remove a thread from its memory domain.
+ *
+ * Move the thread back to the default memory domain. Every thread is a
+ * member of exactly one memory domain, so this is the counterpart of
+ * k_mem_domain_add_thread() for a thread that no longer needs the access
+ * its current domain grants. A thread that is already a member of the
+ * default domain is left unchanged.
+ *
+ * @param thread ID of the thread to be moved to the default memory domain.
+ *
+ * @retval 0 if successful
+ * @retval -EINVAL if invalid parameter supplied
+ * @return a negative error code from the architecture layer otherwise.
+ */
+int k_mem_domain_remove_thread(k_tid_t thread);
+
+/**
+ * @brief Remove every thread from a memory domain.
+ *
+ * Move all member threads of @p domain to the default memory domain in one
+ * step. No thread can join the domain by inheritance while this runs, so the
+ * domain has no members when the call returns successfully and
+ * k_mem_domain_deinit() will not find it busy, unless a thread is added to
+ * it again with k_mem_domain_add_thread().
+ *
+ * The moved threads keep running. A user thread among them loses access to
+ * the domain's partitions and faults the next time it touches one; abort
+ * the threads that must not outlive the domain before calling this.
+ *
+ * Interrupts are locked while the members are moved, for a time
+ * proportional to their number.
+ *
+ * @param domain The memory domain to be emptied.
+ *
+ * @retval 0 if successful
+ * @retval -EINVAL if @p domain is NULL or the default memory domain
+ * @return a negative error code from the architecture layer otherwise, in
+ *         which case some threads may still be members of the domain.
+ */
+int k_mem_domain_remove_all_threads(struct k_mem_domain *domain);
+
 #ifdef __cplusplus
 }
 #endif

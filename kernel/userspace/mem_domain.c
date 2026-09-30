@@ -397,6 +397,54 @@ int k_mem_domain_add_thread(struct k_mem_domain *domain, k_tid_t thread)
 	return ret;
 }
 
+int k_mem_domain_remove_thread(k_tid_t thread)
+{
+	CHECKIF(thread == NULL) {
+		return -EINVAL;
+	}
+
+	return k_mem_domain_add_thread(&k_mem_domain_default, thread);
+}
+
+int k_mem_domain_remove_all_threads(struct k_mem_domain *domain)
+{
+	struct k_thread *thread;
+	struct k_thread *next;
+	k_spinlock_key_t key;
+	int ret = 0;
+
+	CHECKIF(domain == NULL) {
+		return -EINVAL;
+	}
+
+	if (domain == &k_mem_domain_default) {
+		/* There is no other domain to move its members to. */
+		return -EINVAL;
+	}
+
+	/* A thread being created takes this lock to join its parent's
+	 * domain, so the domain is empty for good once the walk is done:
+	 * a former member can only hand the default domain to a child.
+	 */
+	key = k_spin_lock(&z_mem_domain_lock);
+
+	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&domain->thread_mem_domain_list, thread, next,
+					  mem_domain_info.thread_mem_domain_node) {
+		ret = remove_thread_locked(thread);
+		if (ret == 0) {
+			ret = add_thread_locked(&k_mem_domain_default, thread);
+		}
+
+		if (ret != 0) {
+			break;
+		}
+	}
+
+	k_spin_unlock(&z_mem_domain_lock, key);
+
+	return ret;
+}
+
 static void init_mem_domain_module(void)
 {
 	int ret;
