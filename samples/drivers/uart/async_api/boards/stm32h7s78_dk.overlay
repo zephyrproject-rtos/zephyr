@@ -5,7 +5,7 @@
  */
 
 &uart4 {
-	dmas = <&gpdma1 3 80 STM32_DMA_PERIPH_TX>,
-	       <&gpdma1 4 79 STM32_DMA_PERIPH_RX>;
+	dmas = <&gpdma1 80 STM32_DMA_PERIPH_TX>,
+	       <&gpdma1 79 STM32_DMA_PERIPH_RX>;
 	dma-names = "tx", "rx";
 };
