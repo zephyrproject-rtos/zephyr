@@ -79,6 +79,38 @@ config LOG_BACKEND_FLASH_AUTOSTART
 	  Disable it to have the application enable the backend itself, with
 	  log_backend_enable().
 
+config LOG_BACKEND_FLASH_SHELL
+	bool "Shell commands for the flash backend"
+	depends on SHELL
+	help
+	  Adds a "log_flash" command that says what the log partition holds,
+	  prints the stored records, dumps them as hex for decoding on a host,
+	  and erases the log.
+
+	  Printing a record means formatting it against the running firmware,
+	  which the command refuses when the log was written by another build,
+	  since a record holds the address of its format string. The hex dump
+	  works on any log and is what log_parser.py takes.
+
+if LOG_BACKEND_FLASH_SHELL
+
+config LOG_BACKEND_FLASH_SHELL_RECORD_MAX
+	int "Largest record the shell can read back"
+	default 256
+	range 32 $(INT32_MAX)
+	help
+	  Records are read one at a time, so this only has to hold the largest
+	  of them. A record that does not fit is reported and skipped.
+
+config LOG_BACKEND_FLASH_SHELL_TEXT_MAX
+	int "Longest formatted message the shell prints"
+	default 128
+	range 32 $(INT32_MAX)
+	help
+	  A message longer than this is printed truncated.
+
+endif # LOG_BACKEND_FLASH_SHELL
+
 config LOG_BACKEND_FLASH_WRITE_BLOCK_MAX
 	int "Largest supported flash write block size"
 	default 16

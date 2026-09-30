@@ -37,6 +37,7 @@ if(CONFIG_LOG_BACKEND_FLASH)
   endif()
 
   zephyr_sources(log_backend_flash.c)
+  zephyr_sources_ifdef(CONFIG_LOG_BACKEND_FLASH_SHELL log_backend_flash_shell.c)
 
   # The Kconfig value is C source, not a string, so it is handed to the
   # compiler as a definition rather than used through autoconf.h.
