@@ -18,7 +18,7 @@
 };
 
 &adc1 {
-	dmas = <&gpdma1 0 0 (STM32_DMA_PERIPH_RX | STM32_DMA_MEM_16BITS | STM32_DMA_PERIPH_16BITS)>;
+	dmas = <&gpdma1 0 (STM32_DMA_PERIPH_RX | STM32_DMA_MEM_16BITS | STM32_DMA_PERIPH_16BITS)>;
 	dma-names = "gpdma";
 
 	pinctrl-0 = <&adc1_in1_pc0 &adc1_in2_pc1 &adc1_in3_pc2 &adc1_in5_pa0 &adc1_in6_pa1
