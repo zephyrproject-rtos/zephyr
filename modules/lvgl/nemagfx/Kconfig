@@ -4,70 +4,61 @@
 
 menu "LVGL Zephyr NemaGFX support"
 
-config LV_USE_NEMA_GFX
+config LV_Z_USE_NEMA_GFX
 	bool
 	depends on DT_HAS_ST_NEOCHROM_GPU2D_ENABLED
 	select STM32_NEOCHROM_GPU2D
+	help
+	  Set when the LVGL NemaGFX renderer (CONFIG_LV_USE_NEMA_GFX) is
+	  enabled. Enables the NeoChrom GPU driver it uses.
 
-config LV_NEMA_USE_CACHE
+config LV_Z_NEMA_HAL_CUSTOM
 	bool
-	depends on LV_USE_NEMA_GFX
+	depends on LV_Z_USE_NEMA_GFX
+	help
+	  Set when the LVGL NemaGFX HAL choice is custom
+	  (CONFIG_LV_NEMA_HAL_CUSTOM). The Zephyr NemaGFX HAL is used then.
 
-config LV_NEMA_CACHE_HAL_INCLUDE
-	string
-	default "stm32u5xx_hal.h"
-	depends on LV_USE_NEMA_GFX && LV_NEMA_USE_CACHE
-
-choice LV_USE_NEMA_LIB
-	prompt "NemaGFX static library"
-	depends on LV_USE_NEMA_GFX
-
-config LV_NEMA_LIB_NONE
-	bool "LV_NEMA_LIB_NONE"
-
-config LV_NEMA_LIB_M33_REVC
-	bool "LV_NEMA_LIB_M33_REVC"
-
-config LV_NEMA_LIB_M33_NEMAPVG
-	bool "LV_NEMA_LIB_M33_NEMAPVG"
-
-config LV_NEMA_LIB_M55
-	bool "LV_NEMA_LIB_M55"
-
-config LV_NEMA_LIB_M7
-	bool "LV_NEMA_LIB_M7"
-
-endchoice
-
-choice LV_USE_NEMA_HAL
-	prompt "NemaGFX HAL"
-	depends on LV_USE_NEMA_GFX
-
-config LV_NEMA_HAL_CUSTOM
-	bool "LV_NEMA_HAL_CUSTOM"
-
-config LV_NEMA_HAL_STM32
-	bool "LV_NEMA_HAL_STM32"
-
-endchoice
-
-config LV_NEMA_STM32_HAL_INCLUDE
-	string
-	depends on LV_USE_NEMA_GFX && LV_NEMA_HAL_STM32
-
-config LV_USE_NEMA_VG
+config LV_Z_NEMA_USE_CACHE
 	bool
-	depends on LV_USE_NEMA_GFX
+	depends on LV_Z_USE_NEMA_GFX
+	help
+	  Board default for CONFIG_LV_NEMA_USE_CACHE. Applications set
+	  CONFIG_LV_NEMA_USE_CACHE instead.
 
-config LV_NEMA_GFX_MAX_RESX
-	int
-	depends on LV_USE_NEMA_VG
+config LV_Z_NEMA_CACHE_HAL_INCLUDE
+	string
+	depends on LV_Z_USE_NEMA_GFX
+	help
+	  Board default for CONFIG_LV_NEMA_CACHE_HAL_INCLUDE: the header
+	  providing the CMSIS data cache maintenance functions used by the
+	  NemaGFX renderer. Empty leaves the LVGL default.
 
-config LV_NEMA_GFX_MAX_RESY
-	int
-	depends on LV_USE_NEMA_VG
+config LV_Z_NEMA_LIB_M33_REVC
+	bool
+	help
+	  Board default for the LVGL NemaGFX library choice:
+	  CONFIG_LV_NEMA_LIB_M33_REVC.
 
-if LV_USE_NEMA_GFX && LV_NEMA_HAL_CUSTOM
+config LV_Z_NEMA_LIB_M33_NEMAPVG
+	bool
+	help
+	  Board default for the LVGL NemaGFX library choice:
+	  CONFIG_LV_NEMA_LIB_M33_NEMAPVG.
+
+config LV_Z_NEMA_LIB_M55
+	bool
+	help
+	  Board default for the LVGL NemaGFX library choice:
+	  CONFIG_LV_NEMA_LIB_M55.
+
+config LV_Z_NEMA_LIB_M7
+	bool
+	help
+	  Board default for the LVGL NemaGFX library choice:
+	  CONFIG_LV_NEMA_LIB_M7.
+
+if LV_Z_USE_NEMA_GFX && LV_Z_NEMA_HAL_CUSTOM
 
 config FPU
 	default y
@@ -82,6 +73,6 @@ config LV_Z_NEMA_HAL_RING_SIZE
 	help
 	  Size of the NemaGFX command ring.
 
-endif # LV_USE_NEMA_GFX
+endif # LV_Z_USE_NEMA_GFX
 
 endmenu

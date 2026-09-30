@@ -59,8 +59,8 @@ static uint8_t *lvgl_transform_buffer(uint8_t *px_map, uint32_t width, uint32_t 
 
 	/* Needed because LVGL reserves some bytes in the buffer for the color palette. */
 	uint8_t *src_buf = px_map + COLOR_PALETTE_HEADER_SIZE;
-	uint32_t stride = (width + CONFIG_LV_DRAW_BUF_STRIDE_ALIGN - 1) &
-			  ~(CONFIG_LV_DRAW_BUF_STRIDE_ALIGN - 1);
+	uint32_t stride = (width + LV_DRAW_BUF_STRIDE_ALIGN - 1) &
+			  ~(LV_DRAW_BUF_STRIDE_ALIGN - 1);
 
 	for (uint32_t y = 0; y < height; y++) {
 		for (uint32_t x = 0; x < width; x++) {
