@@ -107,6 +107,7 @@ New Drivers
   * :dtcompatible:`cdns,gem`
   * :dtcompatible:`cdns,macb-mdio`
   * :dtcompatible:`cdns,macb-ptp-clock`
+  * :dtcompatible:`infineon,cat1c-gem`
   * :dtcompatible:`xlnx,zynq-gem`
   * :dtcompatible:`xlnx,zynqmp-gem`
 
