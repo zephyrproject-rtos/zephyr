@@ -115,7 +115,7 @@ static int bq24190_charger_get_health(const struct device *dev, enum charger_hea
 	}
 
 	if (v & BQ24190_REG_F_NTC_FAULT_MASK) {
-		switch (v >> BQ24190_REG_F_NTC_FAULT_SHIFT & 0x7) {
+		switch (FIELD_GET(BQ24190_REG_F_NTC_FAULT_MASK, v)) {
 		case BQ24190_NTC_FAULT_TS1_COLD:
 		case BQ24190_NTC_FAULT_TS2_COLD:
 		case BQ24190_NTC_FAULT_TS1_TS2_COLD:
@@ -132,7 +132,7 @@ static int bq24190_charger_get_health(const struct device *dev, enum charger_hea
 	} else if (v & BQ24190_REG_F_BAT_FAULT_MASK) {
 		*health = CHARGER_HEALTH_OVERVOLTAGE;
 	} else if (v & BQ24190_REG_F_CHRG_FAULT_MASK) {
-		switch (v >> BQ24190_REG_F_CHRG_FAULT_SHIFT & 0x3) {
+		switch (FIELD_GET(BQ24190_REG_F_CHRG_FAULT_MASK, v)) {
 		case BQ24190_CHRG_FAULT_INPUT_FAULT:
 			/*
 			 * This could be over-voltage or under-voltage
