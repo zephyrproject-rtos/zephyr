@@ -26,4 +26,10 @@ bool bt_mesh_rpl_check(struct bt_mesh_net_rx *rx, struct bt_mesh_rpl **match, bo
 void bt_mesh_rpl_clear(void);
 void bt_mesh_rpl_update(struct bt_mesh_rpl *rpl,
 			struct bt_mesh_net_rx *rx);
+/*
+ * A storage backend using the pending store scheduler schedules
+ * BT_MESH_SETTINGS_RPL_PENDING for entry updates and
+ * BT_MESH_SETTINGS_RPL_RESET_PENDING when an IV Index update or recovery
+ * invalidates the list. Both run this function, which must cancel both flags.
+ */
 void bt_mesh_rpl_pending_store_all_nodes(void);

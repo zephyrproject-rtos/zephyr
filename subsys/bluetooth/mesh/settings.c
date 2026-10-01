@@ -58,8 +58,7 @@ LOG_MODULE_REGISTER(bt_mesh_settings);
 /* When true, the replay lists are stored on a deadline of their own. Otherwise
  * they are stored together with the generic pending flags.
  */
-#define RPL_OWN_TIMEOUT (IS_ENABLED(CONFIG_BT_MESH_RPL_STORAGE_MODE_SETTINGS) &&                   \
-			 RPL_STORE_TIMEOUT >= 0)
+#define RPL_OWN_TIMEOUT (RPL_STORE_TIMEOUT >= 0)
 
 static struct k_work_q settings_work_q;
 static K_THREAD_STACK_DEFINE(settings_work_stack, SETTINGS_WORKQ_STACK_SIZE);
@@ -89,6 +88,7 @@ int bt_mesh_settings_set(settings_read_cb read_cb, void *cb_arg,
 	return 0;
 }
 
+#if defined(CONFIG_BT_SETTINGS)
 static int mesh_commit(void)
 {
 	if (!atomic_test_bit(bt_mesh.flags, BT_MESH_INIT)) {
@@ -122,12 +122,14 @@ static int mesh_commit(void)
 
 SETTINGS_STATIC_HANDLER_DEFINE_WITH_CPRIO(bt_mesh, "bt/mesh", NULL, NULL, mesh_commit, NULL,
 					  BT_SETTINGS_CPRIO_2);
+#endif /* CONFIG_BT_SETTINGS */
 
 /* Pending flags that use K_NO_WAIT as the storage timeout */
 #define NO_WAIT_PENDING_BITS (BIT(BT_MESH_SETTINGS_NET_PENDING) |           \
 			      BIT(BT_MESH_SETTINGS_IV_PENDING)  |           \
 			      BIT(BT_MESH_SETTINGS_SEQ_PENDING) |           \
-			      BIT(BT_MESH_SETTINGS_CDB_PENDING))
+			      BIT(BT_MESH_SETTINGS_CDB_PENDING) |           \
+			      BIT(BT_MESH_SETTINGS_RPL_RESET_PENDING))
 
 /* Pending flags that use CONFIG_BT_MESH_RPL_STORE_TIMEOUT. Both replay lists
  * share the deadline, and each is stored only if its own flag is set.
@@ -182,6 +184,9 @@ void bt_mesh_settings_store_cancel(enum bt_mesh_settings_flag flag)
 	atomic_clear_bit(pending_flags, flag);
 }
 
+/* Data other than the replay protection list is only stored through the settings subsystem. */
+#define SETTINGS_HANDLER(_func) (IS_ENABLED(CONFIG_BT_SETTINGS) ? (_func) : NULL)
+
 static void store_pending_flags(uint32_t mask)
 {
 	LOG_DBG("");
@@ -191,42 +196,52 @@ static void store_pending_flags(uint32_t mask)
 	} handlers[BT_MESH_SETTINGS_FLAG_COUNT] = {
 		[BT_MESH_SETTINGS_RPL_PENDING]      = { bt_mesh_rpl_pending_store_all_nodes },
 		[BT_MESH_SETTINGS_RPL_RESET_PENDING] = { bt_mesh_rpl_pending_store_all_nodes },
-		[BT_MESH_SETTINGS_NET_KEYS_PENDING] = { bt_mesh_subnet_pending_store },
-		[BT_MESH_SETTINGS_APP_KEYS_PENDING] = { bt_mesh_app_key_pending_store },
-		[BT_MESH_SETTINGS_NET_PENDING]	    = { bt_mesh_net_pending_net_store },
-		[BT_MESH_SETTINGS_IV_PENDING]	    = { bt_mesh_net_pending_iv_store },
-		[BT_MESH_SETTINGS_SEQ_PENDING]	    = { bt_mesh_net_pending_seq_store },
+		[BT_MESH_SETTINGS_NET_KEYS_PENDING] = {
+			SETTINGS_HANDLER(bt_mesh_subnet_pending_store) },
+		[BT_MESH_SETTINGS_APP_KEYS_PENDING] = {
+			SETTINGS_HANDLER(bt_mesh_app_key_pending_store) },
+		[BT_MESH_SETTINGS_NET_PENDING]	    = {
+			SETTINGS_HANDLER(bt_mesh_net_pending_net_store) },
+		[BT_MESH_SETTINGS_IV_PENDING]	    = {
+			SETTINGS_HANDLER(bt_mesh_net_pending_iv_store) },
+		[BT_MESH_SETTINGS_SEQ_PENDING]	    = {
+			SETTINGS_HANDLER(bt_mesh_net_pending_seq_store) },
 		[BT_MESH_SETTINGS_DEV_KEY_CAND_PENDING] = {
-			bt_mesh_net_pending_dev_key_cand_store },
-		[BT_MESH_SETTINGS_HB_PUB_PENDING]   = { bt_mesh_hb_pub_pending_store },
-		[BT_MESH_SETTINGS_CFG_PENDING]	    = { bt_mesh_cfg_pending_store },
-		[BT_MESH_SETTINGS_COMP_PENDING]	    = { bt_mesh_comp_data_pending_clear },
-		[BT_MESH_SETTINGS_MOD_PENDING]	    = { bt_mesh_model_pending_store },
-		[BT_MESH_SETTINGS_VA_PENDING]	    = { bt_mesh_va_pending_store },
+			SETTINGS_HANDLER(bt_mesh_net_pending_dev_key_cand_store) },
+		[BT_MESH_SETTINGS_HB_PUB_PENDING]   = {
+			SETTINGS_HANDLER(bt_mesh_hb_pub_pending_store) },
+		[BT_MESH_SETTINGS_CFG_PENDING]	    = {
+			SETTINGS_HANDLER(bt_mesh_cfg_pending_store) },
+		[BT_MESH_SETTINGS_COMP_PENDING]	    = {
+			SETTINGS_HANDLER(bt_mesh_comp_data_pending_clear) },
+		[BT_MESH_SETTINGS_MOD_PENDING]	    = {
+			SETTINGS_HANDLER(bt_mesh_model_pending_store) },
+		[BT_MESH_SETTINGS_VA_PENDING]	    = {
+			SETTINGS_HANDLER(bt_mesh_va_pending_store) },
 		[BT_MESH_SETTINGS_CDB_PENDING]	    = {
 			IS_ENABLED(CONFIG_BT_MESH_CDB) ?
-				bt_mesh_cdb_pending_store : NULL },
+				SETTINGS_HANDLER(bt_mesh_cdb_pending_store) : NULL },
 		[BT_MESH_SETTINGS_SRPL_PENDING]     = {
 			IS_ENABLED(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV) ?
-				bt_mesh_srpl_pending_store : NULL },
+				SETTINGS_HANDLER(bt_mesh_srpl_pending_store) : NULL },
 		[BT_MESH_SETTINGS_SSEQ_PENDING]     = {
 			IS_ENABLED(CONFIG_BT_MESH_PROXY_SOLICITATION) ?
-				bt_mesh_sseq_pending_store : NULL },
+				SETTINGS_HANDLER(bt_mesh_sseq_pending_store) : NULL },
 		[BT_MESH_SETTINGS_BRG_PENDING]      = {
 			IS_ENABLED(CONFIG_BT_MESH_BRG_CFG_SRV) ?
-				bt_mesh_brg_cfg_pending_store : NULL },
+				SETTINGS_HANDLER(bt_mesh_brg_cfg_pending_store) : NULL },
 	};
 
 	for (int i = 0; i < ARRAY_SIZE(handlers); i++) {
-		if (handlers[i].handler == NULL) {
-			continue;
-		}
-
 		if ((mask & BIT(i)) == 0) {
 			continue;
 		}
 
-		if (atomic_test_and_clear_bit(pending_flags, i)) {
+		if (!atomic_test_and_clear_bit(pending_flags, i)) {
+			continue;
+		}
+
+		if (handlers[i].handler != NULL) {
 			handlers[i].handler();
 		}
 	}
