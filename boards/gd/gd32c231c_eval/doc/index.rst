@@ -1,7 +1,4 @@
-.. _gd32c231c_eval:
-
-GD32C231C-EVAL
-##############
+.. zephyr:board:: gd32c231c_eval
 
 Overview
 ********
@@ -28,6 +25,11 @@ Hardware
 - LED: 4 user LEDs (LED1..LED4)
 - Debug: SWD interface
 
+Supported Features
+==================
+
+.. zephyr:board-supported-hw::
+
 Connections and IOs
 ===================
 
@@ -47,6 +49,8 @@ UART
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 The GD32C231C-EVAL board includes an onboard GD-Link programmer/debugger
 with a CMSIS-DAP SWD interface over USB. The recommended flashing tool is
