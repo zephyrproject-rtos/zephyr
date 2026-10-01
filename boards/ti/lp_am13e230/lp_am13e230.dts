@@ -53,3 +53,11 @@
 	pinctrl-0 = <&uc4_tx_sda_pico_pa0 &uc4_rx_scl_sclk_pa1>;
 	pinctrl-names = "default";
 };
+
+&timg12_0 {
+	status = "okay";
+
+	counterg12_0: counterg12_0 {
+		status = "okay";
+	};
+};
