@@ -332,10 +332,12 @@ static int cmd_i3c_config_get_controller(const struct shell *sh, size_t argc, ch
 		    "scl.i2c: %u Hz\n"
 		    "scl_od_min.high_ns: %u ns\n"
 		    "scl_od_min.low_ns: %u ns\n"
+		    "tcas_ps: %u ps\n"
 		    "supported_hdr: 0x%02x",
 		    config.is_secondary ? "true" : "false",
 		    config.scl.i3c, config.scl.i2c,
 		    config.scl_od_min.high_ns, config.scl_od_min.low_ns,
+		    config.tcas_ps,
 		    config.supported_hdr);
 
 	return 0;
