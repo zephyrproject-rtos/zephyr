@@ -1,5 +1,8 @@
-X-NUCLEO-PGEEZ1 M95P32 extended operations
-############################################
+.. zephyr:code-sample:: x-nucleo-pgeez1
+   :name: X-NUCLEO-PGEEZ1 M95P32 extended operations
+   :relevant-api: flash_interface m95p32_flash_ex_op
+
+   Access the M95P32 identification pages and buffered page programming.
 
 Overview
 ********
