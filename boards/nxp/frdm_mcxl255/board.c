@@ -32,8 +32,6 @@ extern uint32_t SystemCoreClock;
 
 void board_early_init_hook(void)
 {
-	/* Enable APB clock gate for access to AON. */
-	CLOCK_EnableClock(kCLOCK_GateAonAPB);
 #if DT_NODE_EXISTS(DT_PATH(cpus, cpu_0))
 	/* Switch MAIN_CLK to SIRC to allow FIRC reconfiguration. */
 	CLOCK_AttachClk(kSIRC_to_MAIN_CLK);
@@ -64,6 +62,19 @@ void board_early_init_hook(void)
 	/* Switch MAIN_CLK to FIRC */
 	CLOCK_SetFlashWaitStateBasedOnFreq(CPU_CLOCK_FREQ);
 	CLOCK_AttachClk(kFIRC_to_MAIN_CLK);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_gpio0)) || \
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(porta)) || \
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_lpi2c0)) || \
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_lpuart0)) || \
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_kpp0)) || \
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_lpcmp0)) || \
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_qtmr0)) || \
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_qtmr1)) || \
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_lptmr0))
+	/* Enable APB clock gate for access to AON. */
+	CLOCK_EnableClock(kCLOCK_GateAonAPB);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_gpio0))
