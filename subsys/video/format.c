@@ -90,7 +90,7 @@ int video_set_compose_format(const struct device *dev, struct video_format *fmt)
 	int ret;
 
 	ret = video_set_selection(dev, &sel);
-	if (ret < 0 && ret != -ENOSYS) {
+	if (ret < 0 && ret != -ENOSYS && ret != -ENOTSUP) {
 		LOG_ERR("Unable to set selection compose");
 		return ret;
 	}
