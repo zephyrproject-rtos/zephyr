@@ -1,0 +1,6 @@
+shield:
+  name: dvp_24pin_ov2640
+  full_name: DVP 24-pin OV2640 Camera Shield
+  vendor: ovti
+  supported_features:
+    - video
