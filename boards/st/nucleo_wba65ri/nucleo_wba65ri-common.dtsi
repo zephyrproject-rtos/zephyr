@@ -161,6 +161,10 @@
 	status = "okay";
 };
 
+&vref {
+	status = "okay";
+};
+
 &lptim1 {
 	clocks = <&rcc STM32_CLOCK(APB7, 11)>,
 		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
