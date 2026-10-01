@@ -17,6 +17,7 @@
 
 	/* These aliases are provided for compatibility with samples */
 	aliases {
+		accel0 = &icm20689;
 		led0 = &led0;
 		pwm-led0 = &pwm_led0;
 		spi0 = &usart0;
