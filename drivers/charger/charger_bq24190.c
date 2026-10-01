@@ -8,7 +8,7 @@
 
 #include <errno.h>
 
-#include "bq24190.h"
+#include "charger_bq24190.h"
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/charger.h>
