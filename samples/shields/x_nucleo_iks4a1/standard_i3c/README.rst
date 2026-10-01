@@ -1,7 +1,8 @@
-.. _x-nucleo-iks4a1-std-i3c-sample:
+.. zephyr:code-sample:: x-nucleo-iks4a1-std-i3c
+   :name: X-NUCLEO-IKS4A1 shield - Standard (Mode 1 + I3C)
+   :relevant-api: sensor_interface
 
-X-NUCLEO-IKS4A1 shield Standard (Mode 1 + I3C) sample
-#####################################################
+   Interact with all the sensors of an X-NUCLEO-IKS4A1 shield using Standard mode over I3C.
 
 Overview
 ********
