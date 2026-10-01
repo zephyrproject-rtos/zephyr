@@ -16,6 +16,7 @@
 	chosen {
 		zephyr,sram = &sram0_1_2;
 		zephyr,flash = &flash0;
+		zephyr,canbus = &mcan0;
 	};
 };
 
@@ -39,4 +40,16 @@
 &hfxt {
 	clock-frequency = <DT_FREQ_M(48)>;
 	ti,xtal-startup-delay-us = <500>;
+};
+
+&canclk {
+	clocks = <&syspll>;
+	status = "okay";
+};
+
+&mcan0 {
+	status = "okay";
+	pinctrl-0 = <&mcan0_tx_pa12 &mcan0_rx_pa11>;
+	pinctrl-names = "default";
+	ti,divider = <2>;
 };
