@@ -81,6 +81,19 @@ tests:
       - CONFIG_PM_DEVICE=y
       - CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y
       - CONFIG_ESP32_SLEEP_POWER_DOWN_FLASH=y
+  drivers.uart.uart_elementary.silabs.pm:
+    filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
+    platform_allow:
+      - sixg301_rb4407a
+      - slwrb4180b
+      - xg23_rb4210a
+      - xg24_rb4186c
+      - xg24_rb4187c
+      - bg27_rb4110b
+      - bg29_rb4420a
+      - xg29_rb4412a
+    extra_configs:
+      - CONFIG_PM=y
   drivers.uart.uart_elementary_dual_nrf54h:
     filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
     platform_allow:
