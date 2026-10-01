@@ -1292,6 +1292,7 @@ void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode, uint8_t aKe
 			  const otMacKeyMaterial *aNextKey, otRadioKeyType aKeyType)
 {
 	ARG_UNUSED(aInstance);
+	ARG_UNUSED(aKeyIdMode);
 	__ASSERT_NO_MSG(aPrevKey != NULL && aCurrKey != NULL && aNextKey != NULL);
 
 #if defined(CONFIG_OPENTHREAD_PLATFORM_KEYS_EXPORTABLE_ENABLE)
@@ -1330,14 +1331,12 @@ void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode, uint8_t aKe
 	const uint8_t *next_key_data = aNextKey->mKeyMaterial.mKey.m8;
 #endif
 
-	/* aKeyIdMode is passed as the enum value (Mac::Frame::kKeyIdMode1 = 1),
-	 * not the raw wire byte. The old >> 3 shift was for the wire format where
-	 * KeyIdMode occupied bits [5:3] of the Security Control byte. With the
-	 * new OT API the enum value is passed directly, so no shift is needed.
-	 * (The OT spec also notes that platforms should ignore aKeyIdMode and
-	 * always treat keys as Mode-1, but we keep the branch for clarity.)
+	/* The OpenThread platform API requires aKeyIdMode to be ignored: keys set
+	 * through otPlatRadioSetMacKey() are always Key ID Mode 1 (see the
+	 * function documentation in openthread/platform/radio.h). The driver is
+	 * given the IEEE 802.15.4 mode number. aKeyId == 0 clears the keys.
 	 */
-	uint8_t key_id_mode = aKeyIdMode;
+	const uint8_t key_id_mode = 1;
 	uint8_t prev_key_id = 0;
 	uint8_t next_key_id = 0;
 
@@ -1365,7 +1364,7 @@ void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode, uint8_t aKe
 		},
 	};
 
-	if (key_id_mode == 1) {
+	if (aKeyId != 0) {
 		/* aKeyId in range: (1, 0x80) means valid keys */
 		prev_key_id = aKeyId == 1 ? 0x80 : aKeyId - 1;
 		next_key_id = aKeyId == 0x80 ? 1 : aKeyId + 1;
@@ -1378,9 +1377,6 @@ void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode, uint8_t aKe
 
 		keys[2].key_id = &next_key_id;
 		keys[2].key_value = (uint8_t *)next_key_data;
-	} else {
-		/* aKeyId == 0 is used only to clear keys for stack reset in RCP */
-		__ASSERT_NO_MSG((key_id_mode == 0) && (aKeyId == 0));
 	}
 
 	struct ieee802154_config config = {
