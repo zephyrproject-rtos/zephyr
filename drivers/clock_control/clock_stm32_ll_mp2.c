@@ -91,9 +91,14 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i3c2))
 	case STM32_CLOCK_PERIPH_I2C1:
 	case STM32_CLOCK_PERIPH_I2C2:
+#ifdef LL_RCC_I2C12_I3C12_CLKSOURCE
 	case STM32_CLOCK_PERIPH_I3C1:
 	case STM32_CLOCK_PERIPH_I3C2:
 		*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I2C12_I3C12_CLKSOURCE);
+#else
+		/* STM32MP21: I2C and I3C have separate kernel clocks */
+		*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I2C12_CLKSOURCE);
+#endif
 		break;
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2c4)) || \
@@ -107,9 +112,13 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2c5)) || \
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i3c3))
 	case STM32_CLOCK_PERIPH_I2C3:
+#ifdef LL_RCC_I2C35_I3C3_CLKSOURCE
 	case STM32_CLOCK_PERIPH_I2C5:
 	case STM32_CLOCK_PERIPH_I3C3:
 		*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I2C35_I3C3_CLKSOURCE);
+#else
+		*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I2C3_CLKSOURCE);
+#endif
 		break;
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2c7))
