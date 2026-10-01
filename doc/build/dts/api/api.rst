@@ -550,7 +550,11 @@ device.
    * - zephyr,rtk-serial
      - Selects the :ref:`uart_api` device used by the Serial GNSS RTK client.
    * - zephyr,secure-storage-its-partition
-     - Fixed partition node. This selects the partition used by the Secure Storage ZMS backend.
+     - Fixed partition node. This selects the partition used by the Secure Storage ITS ZMS
+       backend.
+   * - zephyr,secure-storage-ps-partition
+     - Fixed partition node. This selects the partition used by the Secure Storage PS ZMS
+       backend.
    * - zephyr,sensor-clock
      - Selects the :ref:`counter_api` device used as sensor time source.
    * - zephyr,settings-partition
