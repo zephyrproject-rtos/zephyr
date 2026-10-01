@@ -397,13 +397,6 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		standby_entered = false;
 	}
 #endif
-
-	/*
-	 * System is now in active mode.
-	 * Reenable interrupts which were disabled
-	 * when OS started idling code.
-	 */
-	irq_unlock(0);
 }
 
 #ifdef CONFIG_PM_CUSTOM_TICKS_HOOK
