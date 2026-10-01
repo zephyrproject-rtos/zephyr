@@ -1027,10 +1027,13 @@ New Boards
 * Alif Semiconductor
 
   * :zephyr:board:`balletto_b1_dk` (``balletto_b1_dk``)
+  * :zephyr:board:`balletto_b1_sk` (``balletto_b1_sk``)
+  * :zephyr:board:`ensemble_e1c_sk` (``ensemble_e1c_sk``)
   * :zephyr:board:`ensemble_e8_ak` (``ensemble_e8_ak``)
 
 * Analog Devices, Inc.
 
+  * :zephyr:board:`adi_eval_adin1140d1z` (``adi_eval_adin1140d1z``)
   * :zephyr:board:`max32651evkit` (``max32651evkit``)
 
 * Antmicro
@@ -1041,6 +1044,7 @@ New Boards
 * Arduino
 
   * :zephyr:board:`arduino_nano_connect` (``arduino_nano_connect``)
+  * :zephyr:board:`arduino_nano_r4` (``arduino_nano_r4``)
   * :zephyr:board:`arduino_nesso_n1` (``arduino_nesso_n1``)
 
 * ARM Ltd.
@@ -1076,6 +1080,10 @@ New Boards
   * :zephyr:board:`usbcanfd_dual` (``usbcanfd_dual``)
   * :zephyr:board:`usbcanfd_solo` (``usbcanfd_solo``)
 
+* Centre for Development of Advanced Computing (C-DAC)
+
+  * :zephyr:board:`aries_v3` (``aries_v3``)
+
 * Chengdu Ebyte Electronic Technology
 
   * :zephyr:board:`e80_900mbl_01` (``e80_900mbl_01``)
@@ -1089,12 +1097,33 @@ New Boards
 
   * :zephyr:board:`crd40l26` (``crd40l26``)
 
+* Core Devices LLC
+
+  * :zephyr:board:`pr2` (``pr2``)
+
+* DH electronics GmbH
+
+  * :zephyr:board:`stm32mp255c_dhsbc` (``stm32mp255c_dhsbc``)
+
+* Digilent, Inc.
+
+  * :zephyr:board:`zedboard` (``zedboard``)
+
+* Dongguan Waiken-Smart Technology Co., Ltd.
+
+  * :zephyr:board:`gd32f470zit6_core` (``gd32f470zit6_core``)
+
 * emtrion GmbH
 
   * :zephyr:board:`emsbc_neon_cm7` (``emsbc_neon_cm7``)
 
+* EnjoyDigital
+
+  * :zephyr:board:`litex_vexiiriscv` (``litex_vexiiriscv``)
+
 * Espressif Systems
 
+  * :zephyr:board:`esp32c61_devkitc` (``esp32c61_devkitc``)
   * :zephyr:board:`esp32p4_function_ev_board` (``esp32p4_function_ev_board``)
   * :zephyr:board:`esp32p4x_function_ev_board` (``esp32p4x_function_ev_board``)
   * :zephyr:board:`esp32s3_box3` (``esp32s3_box3``)
@@ -1107,9 +1136,21 @@ New Boards
 
   * :zephyr:board:`fs_i6s` (``fs_i6s``)
 
+* GigaDevice Semiconductor
+
+  * :zephyr:board:`gd32c231c_eval` (``gd32c231c_eval``)
+
 * Heimann Sensor GmbH
 
   * :zephyr:board:`htpa_eval` (``htpa_eval``)
+
+* Infineon Technologies
+
+  * :zephyr:board:`cy8cproto_040t` (``cy8cproto_040t``)
+  * :zephyr:board:`cy8cproto_040t_auto` (``cy8cproto_040t_auto``)
+  * :zephyr:board:`kit_psc3m5_cc2` (``kit_psc3m5_cc2``)
+  * :zephyr:board:`kit_psc3m6_evk` (``kit_psc3m6_evk``)
+  * :zephyr:board:`kit_t2g_c2d6m_lite` (``kit_t2g_c2d6m_lite``)
 
 * Intel Corporation
 
@@ -1135,6 +1176,7 @@ New Boards
 * M5Stack
 
   * :zephyr:board:`m5stack_paper_color` (``m5stack_paper_color``)
+  * :zephyr:board:`m5stack_stackchan` (``m5stack_stackchan``)
   * :zephyr:board:`m5stack_sticks3` (``m5stack_sticks3``)
   * :zephyr:board:`m5stack_unitc6l` (``m5stack_unitc6l``)
 
@@ -1142,11 +1184,17 @@ New Boards
 
   * :zephyr:board:`matouch_mtro128g` (``matouch_mtro128g``)
 
+* MediaTek Inc.
+
+  * :zephyr:board:`mt8370_genio_510_evk` (``mt8370_genio_510_evk``)
+  * :zephyr:board:`mt8390_genio_700_evk` (``mt8390_genio_700_evk``)
+
 * Microchip Technology Inc.
 
   * :zephyr:board:`m2s010_mkr_kit` (``m2s010_mkr_kit``)
   * :zephyr:board:`m2s_hello_fpga_kit` (``m2s_hello_fpga_kit``)
   * :zephyr:board:`pic32ck_gc01_cult` (``pic32ck_gc01_cult``)
+  * :zephyr:board:`pic32ck_sg01_cult` (``pic32ck_sg01_cult``)
   * :zephyr:board:`pic32cm_gc00_cpro` (``pic32cm_gc00_cpro``)
   * :zephyr:board:`pic32cm_sg00_cpro` (``pic32cm_sg00_cpro``)
   * :zephyr:board:`sama5d27_som1_ek1` (``sama5d27_som1_ek1``)
@@ -1158,6 +1206,7 @@ New Boards
 
 * Nordic Semiconductor
 
+  * :zephyr:board:`nrf54lv10dk` (``nrf54lv10dk``)
   * :zephyr:board:`nrf93m1dk` (``nrf93m1dk``)
 
 * Norik Systems
@@ -1181,7 +1230,9 @@ New Boards
   * :zephyr:board:`imx952_evk` (``imx952_evk``)
   * :zephyr:board:`lpc845brk` (``lpc845brk``)
   * :zephyr:board:`lpcxpresso54628` (``lpcxpresso54628``)
+  * :zephyr:board:`mimxrt2660_evk` (``mimxrt2660_evk``)
   * :zephyr:board:`mimxrt685_aud_evk` (``mimxrt685_aud_evk``)
+  * :zephyr:board:`mr_mcxn_t1` (``mr_mcxn_t1``)
   * :zephyr:board:`mr_navq95b` (``mr_navq95b``)
 
 * OLIMEX Ltd.
@@ -1202,6 +1253,9 @@ New Boards
 * QEMU
 
   * :zephyr:board:`qemu_cortex_a72` (``qemu_cortex_a72``)
+  * :zephyr:board:`qemu_hexagon` (``qemu_hexagon``)
+  * :zephyr:board:`qemu_tc3x` (``qemu_tc3x``)
+  * :zephyr:board:`qemu_tc4x` (``qemu_tc4x``)
 
 * Radxa
 
@@ -1222,6 +1276,8 @@ New Boards
 
 * Renesas Electronics Corporation
 
+  * :zephyr:board:`ek_rx74m` (``ek_rx74m``)
+  * :zephyr:board:`ek_rx74n` (``ek_rx74n``)
   * :zephyr:board:`rcar_ironhide_x5h` (``rcar_ironhide_x5h``)
   * :zephyr:board:`rza3m_ek` (``rza3m_ek``)
 
@@ -1232,6 +1288,8 @@ New Boards
   * :zephyr:board:`wio_tracker_l1` (``wio_tracker_l1``)
   * :zephyr:board:`xiao_esp32c5` (``xiao_esp32c5``)
   * :zephyr:board:`xiao_nrf54lm20a` (``xiao_nrf54lm20a``)
+  * :zephyr:board:`xiao_nrf54lm20b` (``xiao_nrf54lm20b``)
+  * :zephyr:board:`xiao_stm32c5` (``xiao_stm32c5``)
 
 * SEGGER Microcontroller GmbH
 
@@ -1258,6 +1316,7 @@ New Boards
 
   * :zephyr:board:`m0sense` (``m0sense``)
   * :zephyr:board:`m1s_dock` (``m1s_dock``)
+  * :zephyr:board:`tang_mega_138k_pro_dock` (``tang_mega_138k_pro_dock``)
 
 * Shenzhen Xunlong Software CO.,Limited
 
@@ -1266,24 +1325,39 @@ New Boards
 * Silicon Laboratories
 
   * :zephyr:board:`kg100s_rb4332a` (``kg100s_rb4332a``)
+  * :zephyr:board:`mgm260p_rb4351a` (``mgm260p_rb4351a``)
   * :zephyr:board:`siwx917_ek2708a` (``siwx917_ek2708a``)
+  * :zephyr:board:`sixg301_rb4407a` (``sixg301_rb4407a``)
+  * :zephyr:board:`xg21_rb4195b` (``xg21_rb4195b``)
+  * :zephyr:board:`xg21_rb4196b` (``xg21_rb4196b``)
+  * :zephyr:board:`xg22_rb4415a` (``xg22_rb4415a``)
+  * :zephyr:board:`xg24_rb4188a` (``xg24_rb4188a``)
   * :zephyr:board:`xg26_dk2608a` (``xg26_dk2608a``)
   * :zephyr:board:`xg26_rb4121a` (``xg26_rb4121a``)
+  * :zephyr:board:`xg29_rb4413a` (``xg29_rb4413a``)
+  * :zephyr:board:`xgm240_rb4318a` (``xgm240_rb4318a``)
 
 * STMicroelectronics
 
   * :zephyr:board:`nucleo_g491re` (``nucleo_g491re``)
   * :zephyr:board:`nucleo_u545re_q` (``nucleo_u545re_q``)
+  * :zephyr:board:`nucleo_wl33cc1` (``nucleo_wl33cc1``)
+  * :zephyr:board:`stm32_micrium` (``stm32_micrium``)
 
 * Sutajio Ko-Usagi PTE Ltd.
 
   * :zephyr:board:`tomu` (``tomu``)
+
+* T3 Gemstone
+
+  * :zephyr:board:`t3_gem_o1` (``t3_gem_o1``)
 
 * Texas Instruments
 
   * :zephyr:board:`lp_am13e230` (``lp_am13e230``)
   * :zephyr:board:`lp_am243` (``lp_am243``)
   * :zephyr:board:`lp_mspm33c321a` (``lp_mspm33c321a``)
+  * :zephyr:board:`tm4c123gxl` (``tm4c123gxl``)
 
 * Trenz Electronic
 
@@ -1305,6 +1379,10 @@ New Boards
 
   * :zephyr:board:`uiapduino_pro_micro_ch32v003` (``uiapduino_pro_micro_ch32v003``)
 
+* Vicharak
+
+  * :zephyr:board:`shrike_fi` (``shrike_fi``)
+
 * VIEWE Display Co., Ltd.
 
   * :zephyr:board:`uedx24240013_md50e` (``uedx24240013_md50e``)
@@ -1312,14 +1390,17 @@ New Boards
 
 * Waveshare Electronics
 
+  * :zephyr:board:`core2350b` (``core2350b``)
   * :zephyr:board:`esp32c6_lcd_1_47` (``esp32c6_lcd_1_47``)
   * :zephyr:board:`esp32p4_wifi6` (``esp32p4_wifi6``)
   * :zephyr:board:`esp32p4_wifi6_dev_kit` (``esp32p4_wifi6_dev_kit``)
+  * :zephyr:board:`rp2350b_plus_w` (``rp2350b_plus_w``)
   * :zephyr:board:`waveshare_esp32p4_eth` (``waveshare_esp32p4_eth``)
 
 * WeAct Studio
 
   * :zephyr:board:`ch32v00x_core` (``ch32v00x_core``)
+  * :zephyr:board:`mini_stm32h750` (``mini_stm32h750``)
   * :zephyr:board:`usb2canfdv2` (``usb2canfdv2``)
   * :zephyr:board:`weact_ra4m1_core` (``weact_ra4m1_core``)
 
@@ -1345,22 +1426,30 @@ New Shields
 
 * :ref:`AD-APARDPFW-SL <ad_apardpfw_sl>`
 * :ref:`Adafruit FeatherWing MAX3421E Shield <adafruit_featherwing_max3421e>`
+* :ref:`Adafruit ISM330DHCX Shield <adafruit_ism330dhcx>`
 * :ref:`Analog Devices Low-Speed Mixed-Signal Playground <adi_lsmspg>`
 * :ref:`ArduCam Mega SPI Camera Shield <arducam_mega>`
 * :ref:`DFRobot Gravity TM6605 Haptic Motor Driver Module <dfrobot_gravity_tm6605>`
+* :ref:`DH electronics DHSBC RS485 CAN Shield <dhsbc_rs485_can_shield>`
 * :ref:`EVAL-AD5529R-ARDZ <eval_ad5529r_ardz>`
 * :ref:`M5Stack Unit Gesture <m5stack_unit_gesture_shield>`
 * :ref:`M5Stack Unit Mini OLED <m5stack_unit_minioled_shield>`
 * :ref:`MB1280 STMod+ fan-out shield <mb1280_stmod_plus>`
+* :ref:`MikroElektronika DALI 2 Click <mikroe_dali_2_click_shield>`
 * :ref:`MikroElektronika EERAM 3.3V Click <mikroe_eeram_33v_click_shield>`
+* :ref:`MikroElektronika LIN Click <mikroe_lin_click_shield>`
 * :ref:`MikroElektronika Two Wire ETH Click <mikroe_two_wire_eth_click_shield>`
+* :ref:`NXP Arduino WiFi and BT Shield <nxp_arduino_wifi_bt>`
+* :ref:`NXP M.2 IEEE 802.15.4 SPI RCP Shield <nxp_m2_ieee802154>`
 * :ref:`NXP MX8 DSI OLED1A Panel <nxp_mx8_dsi_oled1a>`
 * :ref:`NXP MX9 DSI OLED Panel <nxp_mx9_dsi_oled>`
 * :ref:`OD-6010 SLCD Panel Shield <od_6010_shield>`
 * :ref:`RAK19007 WisBlock Base Board 2nd Gen <rakwireless_rak19007>`
+* :ref:`RTKAPPLCDMS02001BE MIPI Display <rtkapplcdms02001be>`
 * :ref:`Seeed Studio COB LED Driver Board for XIAO <seeed_xiao_cob_led>`
 * :ref:`ST B-M2MEM-PACK1 M.2 serial memory pack <st_b_m2mem_pack1_shield>`
 * :ref:`X-NUCLEO-67W61M1: Wi-Fi 6 expansion board <x_nucleo_67w61m1>`
+* :ref:`X-NUCLEO-GFX02Z1 Display expansion board <x_nucleo_gfx02z1_shield>`
 * :ref:`X-NUCLEO-GNSS1A1: GNSS expansion board based on Teseo-LIV3F <x-nucleo-gnss1a1>`
 * :ref:`X-NUCLEO-PGEEZ1 page EEPROM expansion board <x_nucleo_pgeez1_shield>`
 * :ref:`X-NUCLEO-WBA25A1: BLE expansion board <x-nucleo-wba25a1>`
