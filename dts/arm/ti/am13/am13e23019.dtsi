@@ -170,6 +170,40 @@
 				status = "disabled";
 			};
 		};
+
+		timg4_0: timg4_0@40180000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40180000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+			interrupts = <44 0>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			counterg4_0: counterg4_0 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <16>;
+				channels = <2>;
+				status = "disabled";
+			};
+		};
+
+		timg12_0: timg12_0@40188000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40188000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+			interrupts = <45 0>;
+			ti,clk-prescaler = <0>;
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			counterg12_0: counterg12_0 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <32>;
+				channels = <2>;
+				status = "disabled";
+			};
+		};
 	};
 };
 
