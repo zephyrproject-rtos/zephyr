@@ -5,6 +5,7 @@ config REGULATOR_STM32_VREFBUF
 	bool "STM32 VREFBUF regulator driver"
 	default y
 	depends on DT_HAS_ST_STM32_VREFBUF_ENABLED
+	select RESET
 	help
 	  Enable the STM32 VREFBUF regulator driver.
 
