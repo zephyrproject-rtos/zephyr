@@ -1830,10 +1830,8 @@ static int handle_na_input(struct net_icmp_ctx *ctx,
 
 	net_stats_update_ipv6_nd_recv(net_pkt_iface(pkt));
 
-	if (length < (sizeof(struct net_ipv6_hdr) +
-		      sizeof(struct net_icmp_hdr) +
-		      sizeof(struct net_icmpv6_na_hdr) +
-		      sizeof(struct net_icmpv6_nd_opt_hdr))) {
+	if (length < (sizeof(struct net_ipv6_hdr) + sizeof(struct net_icmp_hdr) +
+		      sizeof(struct net_icmpv6_na_hdr))) {
 		goto drop;
 	}
 
@@ -2542,10 +2540,8 @@ static int handle_ra_input(struct net_icmp_ctx *ctx,
 
 	net_stats_update_ipv6_nd_recv(net_pkt_iface(pkt));
 
-	if (length < (sizeof(struct net_ipv6_hdr) +
-		      sizeof(struct net_icmp_hdr) +
-		      sizeof(struct net_icmpv6_ra_hdr) +
-		      sizeof(struct net_icmpv6_nd_opt_hdr))) {
+	if (length < (sizeof(struct net_ipv6_hdr) + sizeof(struct net_icmp_hdr) +
+		      sizeof(struct net_icmpv6_ra_hdr))) {
 		goto drop;
 	}
 
