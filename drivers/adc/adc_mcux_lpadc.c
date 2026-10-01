@@ -553,9 +553,7 @@ static int mcux_lpadc_read_async(const struct device *dev,
 	int error;
 
 	adc_context_lock(&data->ctx, async ? true : false, async);
-#if CONFIG_PM_DEVICE
 	mcux_lpadc_pm_policy_device_power_lock_get(dev);
-#endif
 
 /*
  * Re-calibrate on read is only needed on low-power modes
