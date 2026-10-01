@@ -181,27 +181,18 @@ static void bflb_dvp2axi_apply_config(const struct device *dev)
 {
 	const struct bflb_dvp2axi_config *config = dev->config;
 	struct bflb_dvp2axi_data*data= dev->data;
-	struct video_format fmt = data->fmt;
 	uint32_t tmp;
-
-	tmp = (uintptr_t)data->active_vbuf->buffer;
-	sys_write32(tmp, config->base + CAM_DVP2AXI_ADDR_START_OFFSET);
 
 	tmp = data->fmt.height << 16 | data->fmt.width;
 	sys_write32(tmp, config->base + CAM_DVP2AXI_FRAM_EXM_OFFSET);
 
 	sys_write32(0, config->base + CAM_DVP_DEBUG_OFFSET);
 
-	if (data->active_vbuf->size < data->fmt.size) {
-		LOG_ERR("Invalid buffer size, skipping");
-		return;
-	}
-
 	/* BCNT is byte count */
-	sys_write32(data->active_vbuf->size, config->base + CAM_DVP2AXI_FRAME_BCNT_OFFSET);
+	sys_write32(data->fmt.size, config->base + CAM_DVP2AXI_FRAME_BCNT_OFFSET);
 
 	/* BCNT is AXI burst count */
-	tmp = data->active_vbuf->size
+	tmp = data->fmt.size
 		/ (config->axi_data_width / BITS_PER_BYTE)
 		/ config->axi_burst_length;
 	sys_write32(tmp, config->base + CAM_DVP2AXI_MEM_BCNT_OFFSET);
@@ -251,14 +242,17 @@ static void bflb_dvp2axi_apply_config(const struct device *dev)
 	sys_write32(tmp, config->base + CAM_DVP2AXI_CONFIGUE_OFFSET);
 }
 
-static void bflb_dvp2axi_trigger(const struct device *dev)
+static int bflb_dvp2axi_trigger(const struct device *dev)
 {
 	const struct bflb_dvp2axi_config *config = dev->config;
 	struct bflb_dvp2axi_data *data = dev->data;
 	uint32_t tmp;
+	int ret = 0;
 	int key;
 
 	key = k_irq_lock();
+
+	bflb_dvp2axi_apply_config(dev);
 
 	if (data->active_vbuf != NULL) {
 		LOG_DBG("Already busy with %p, skipping", (void *)data->active_vbuf->buffer);
@@ -271,17 +265,32 @@ static void bflb_dvp2axi_trigger(const struct device *dev)
 		goto end;
 	}
 
+	if (data->active_vbuf->size < data->fmt.size) {
+		LOG_ERR("Invalid buffer size, skipping");
+		return -ENOBUFS;
+	}
+
 	LOG_DBG("Submitting new buffer %p, size %u, format %s %ux%u",
 		(void *)data->active_vbuf->buffer, data->active_vbuf->size,
 		VIDEO_FOURCC_TO_STR(data->fmt.pixelformat), data->fmt.width, data->fmt.height);
 
-	bflb_dvp2axi_apply_config(dev);
+	tmp = (uintptr_t)data->active_vbuf->buffer;
+	sys_write32(tmp, config->base + CAM_DVP2AXI_ADDR_START_OFFSET);
+
+	ret = video_stream_start(config->source_dev, VIDEO_BUF_TYPE_OUTPUT);
+	if (ret < 0) {
+		LOG_ERR("Failed to start source device %s", config->source_dev->name);
+		goto end;
+	}
 
 	tmp = sys_read32(config->base + CAM_DVP2AXI_CONFIGUE_OFFSET);
 	tmp |= CAM_REG_DVP_ENABLE;
 	sys_write32(tmp, config->base + CAM_DVP2AXI_CONFIGUE_OFFSET);
+
 end:
 	k_irq_unlock(key);
+
+	return ret;
 }
 
 void bflb_dvp2axi_detrigger(const struct device *dev)
@@ -313,7 +322,7 @@ static int bflb_dvp2axi_enqueue(const struct device *dev, struct video_buffer *v
 	k_fifo_put(&data->fifo_in, vbuf);
 
 	if (data->is_streaming) {
-		bflb_dvp2axi_trigger(dev);
+		return bflb_dvp2axi_trigger(dev);
 	}
 
 	return 0;
@@ -359,7 +368,7 @@ static int bflb_dvp2axi_set_stream(const struct device *dev, bool stream, enum v
 {
 	const struct bflb_dvp2axi_config *config = dev->config;
 	struct bflb_dvp2axi_data *data = dev->data;
-	int ret;
+	int ret = 0;
 
 	if (type != VIDEO_BUF_TYPE_OUTPUT) {
 		LOG_ERR("Supporting output buffer type only");
@@ -373,13 +382,7 @@ static int bflb_dvp2axi_set_stream(const struct device *dev, bool stream, enum v
 	if (stream) {
 		LOG_INF("Starting %s", dev->name);
 
-		ret = video_stream_start(config->source_dev, type);
-		if (ret < 0) {
-			LOG_ERR("Failed to start source device %s", config->source_dev->name);
-			return ret;
-		}
-
-		bflb_dvp2axi_trigger(dev);
+		ret = bflb_dvp2axi_trigger(dev);
 	} else {
 		LOG_INF("Stopping %s", dev->name);
 
@@ -394,7 +397,7 @@ static int bflb_dvp2axi_set_stream(const struct device *dev, bool stream, enum v
 
 	data->is_streaming = stream;
 
-	return 0;
+	return ret;
 }
 
 static DEVICE_API(video, bflb_dvp2axi_api) = {
@@ -471,7 +474,7 @@ frame:
 	k_fifo_put(&data->fifo_out, data->active_vbuf);
 	data->active_vbuf = NULL;
 
-	bflb_dvp2axi_trigger(dev);
+	(void)bflb_dvp2axi_trigger(dev);
 }
 
 static void bflb_dvp2axi_add_format_cap(const struct device *dev,

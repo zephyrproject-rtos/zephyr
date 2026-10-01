@@ -1,14 +1,12 @@
 # Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
-# Copyright (c) 2026 Panoramix Labs
 #
 # SPDX-License-Identifier: Apache-2.0
 
-identifier: aipi_eyes_s2/bl618m05q2i
+identifier: aipi_eyes_s2
 name: AiPi-Eyes-S2 Multi-Functional Development Board
 type: mcu
 arch: riscv
 ram: 480
-flash: 2040
 toolchain:
   - zephyr
 testing:
