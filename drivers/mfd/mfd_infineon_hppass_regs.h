@@ -42,6 +42,10 @@
 
 #include <cy_device.h>
 
+#if !defined(CY_IP_MXS40MCPASS_VERSION)
+#error "CY_IP_MXS40MCPASS_VERSION undefined; HPPASS register layout cannot be selected"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -77,9 +81,16 @@ extern "C" {
 
 /* INFRA. */
 #define IFX_HPPASS_INFRA_TR_IN_SEL         0x000E0000U
+#if (CY_IP_MXS40MCPASS_VERSION >= 3u)
+/* v3 inserts TR_IN_SEL_2 and HW_TR_MODE_2, pushing the FW triggers down by 8. */
+#define IFX_HPPASS_INFRA_HW_TR_MODE  0x000E0008U
+#define IFX_HPPASS_INFRA_FW_TR_PULSE 0x000E0010U
+#define IFX_HPPASS_INFRA_FW_TR_LEVEL 0x000E0014U
+#else
 #define IFX_HPPASS_INFRA_HW_TR_MODE        0x000E0004U
 #define IFX_HPPASS_INFRA_FW_TR_PULSE       0x000E0008U
 #define IFX_HPPASS_INFRA_FW_TR_LEVEL       0x000E000CU
+#endif
 #define IFX_HPPASS_INFRA_CLOCK_STARTUP_DIV 0x000E0020U
 #define IFX_HPPASS_INFRA_STARTUP_CFG(n)    (0x000E0030U + (n) * 4U)
 #define IFX_HPPASS_INFRA_VDDA_STATUS       0x000E0050U
@@ -91,7 +102,12 @@ extern "C" {
 #define IFX_HPPASS_MMIO_INTR_MASKED        0x000F004CU
 #define IFX_HPPASS_MMIO_TR_LEVEL_CFG       0x000F0050U
 #define IFX_HPPASS_MMIO_TR_LEVEL_OUT(n)    (0x000F0060U + (n) * 4U)
+#if (CY_IP_MXS40MCPASS_VERSION >= 3u)
+/* TR_LEVEL_OUT[] holds 16 slots on v3, so the pulse array starts 0x20 higher. */
+#define IFX_HPPASS_MMIO_TR_PULSE_OUT(n) (0x000F00A0U + (n) * 4U)
+#else
 #define IFX_HPPASS_MMIO_TR_PULSE_OUT(n)    (0x000F0080U + (n) * 4U)
+#endif
 
 /*
  * CSG (Comparator Slope Generator): offsets relative to CSG @c reg base.
