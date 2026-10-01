@@ -1,4 +1,4 @@
-.. _safety_requirements:
+.. _safety_process-requirements:
 
 Safety Requirements
 ###################
@@ -118,7 +118,7 @@ New and changed requirements (what is in the PRs to the Requirements Repository)
 comments during the PR review.
 A requirements review has to consider both technical correctness and the formal need that requirements need be created following certain criteria.
 
-More details regarding the checklist and the formal expectations can be found in the :ref:`safety_requirements_checklist`.
+More details regarding the checklist and the formal expectations can be found in the :ref:`safety_process-requirements_checklist`.
 In the tests of the Zephyr Project adherence of the implementation to the functionality described in the requirements must be evaluated.
 
 Glossary of Requirements Grammar Elements

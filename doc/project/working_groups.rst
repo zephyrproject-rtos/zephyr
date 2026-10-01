@@ -1,3 +1,5 @@
+.. _working_groups:
+
 TSC Working Groups
 ******************
 
