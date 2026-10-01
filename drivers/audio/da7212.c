@@ -82,34 +82,36 @@ static int da7212_clock_mode_config(const struct device *dev, audio_dai_cfg_t *c
 {
 	uint8_t val = 0;
 
+	/* BCLK number per WCLK period, which is also the frame length the codec
+	 * expects when it is the clock target.
+	 */
+	switch (cfg->i2s.word_size) {
+	case 16:
+		val = DIALOG7212_DAI_BCLKS_PER_WCLK_BCLK32;
+		break;
+	case 32:
+		val = DIALOG7212_DAI_BCLKS_PER_WCLK_BCLK64;
+		break;
+	case 64:
+		val = DIALOG7212_DAI_BCLKS_PER_WCLK_BCLK128;
+		break;
+	case 128:
+		val = DIALOG7212_DAI_BCLKS_PER_WCLK_BCLK256;
+		break;
+	default:
+		LOG_ERR("Word size %d not supported", cfg->i2s.word_size);
+		return -EINVAL;
+	}
+
+	da7212_update_reg(dev, DIALOG7212_DAI_CLK_MODE,
+			(uint8_t)DIALOG7212_DAI_BCLKS_PER_WCLK_MASK, val);
+
 	/* Clock controller => DAI_CLK_EN = 1 (BCLK/WCLK output).
 	 * Clock target => DAI_CLK_EN = 0 (BCLK/WCLK input)
 	 */
 	if ((cfg->i2s.options & I2S_OPT_FRAME_CLK_TARGET) == 0) {
 		da7212_update_reg(dev, DIALOG7212_DAI_CLK_MODE,
 				DIALOG7212_DAI_CLK_EN_MASK, DIALOG7212_DAI_CLK_EN_MASK);
-
-		/* DAI clock controller BCLK number per WCLK period */
-		switch (cfg->i2s.word_size) {
-		case 16:
-			val = DIALOG7212_DAI_BCLKS_PER_WCLK_BCLK32;
-			break;
-		case 32:
-			val = DIALOG7212_DAI_BCLKS_PER_WCLK_BCLK64;
-			break;
-		case 64:
-			val = DIALOG7212_DAI_BCLKS_PER_WCLK_BCLK128;
-			break;
-		case 128:
-			val = DIALOG7212_DAI_BCLKS_PER_WCLK_BCLK256;
-			break;
-		default:
-			LOG_ERR("Word size %d not supported", cfg->i2s.word_size);
-			return -EINVAL;
-		}
-
-		da7212_update_reg(dev, DIALOG7212_DAI_CLK_MODE,
-				(uint8_t)DIALOG7212_DAI_BCLKS_PER_WCLK_MASK, val);
 	} else {
 		da7212_update_reg(dev, DIALOG7212_DAI_CLK_MODE,
 					DIALOG7212_DAI_CLK_EN_MASK, 0);
