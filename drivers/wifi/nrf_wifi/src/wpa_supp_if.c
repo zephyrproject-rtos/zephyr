@@ -1206,6 +1206,12 @@ int nrf_wifi_wpa_supp_signal_poll(void *if_priv, struct wpa_signal_info *si, uns
 		return ret;
 	}
 
+	/* Callers pass an uninitialized struct and not every field is filled in
+	 * below, so start from a known state.
+	 */
+	memset(si, 0, sizeof(*si));
+	si->current_noise = WPA_INVALID_NOISE;
+
 	vif_ctx_zep = if_priv;
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep) {
