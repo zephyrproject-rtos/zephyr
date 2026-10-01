@@ -2089,10 +2089,14 @@ static int cdns_i3c_configure(const struct device *dev, enum i3c_config_type typ
 		if ((ctrl_cfg->scl.i2c == 0U) || (ctrl_cfg->scl.i3c == 0U)) {
 			return -EINVAL;
 		}
+		if (!IN_RANGE(ctrl_cfg->tcas_ps, I3C_BUS_TCAS_MIN_PS, I3C_BUS_TCAS_MAX_PS)) {
+			return -EINVAL;
+		}
 
 		data->common.ctrl_config.scl.i3c = ctrl_cfg->scl.i3c;
 		data->common.ctrl_config.scl.i2c = ctrl_cfg->scl.i2c;
 		data->common.ctrl_config.scl_od_min = ctrl_cfg->scl_od_min;
+		data->common.ctrl_config.tcas_ps = ctrl_cfg->tcas_ps;
 
 		k_mutex_lock(&data->bus_lock, K_FOREVER);
 		pm_device_busy_set(dev);
@@ -4265,7 +4269,8 @@ static DEVICE_API(i3c, api) = {
 			.common.ctrl_config.scl_od_min.high_ns =                                   \
 				DT_INST_PROP(n, od_thigh_min_ns),                                  \
 			.common.ctrl_config.scl_od_min.low_ns =                                    \
-				DT_INST_PROP(n, od_tlow_min_ns),))                                 \
+				DT_INST_PROP(n, od_tlow_min_ns),                                   \
+			.common.ctrl_config.tcas_ps = DT_INST_PROP(n, tcas_ps),))                  \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, cdns_i3c_bus_init, NULL, &i3c_data_##n, &i3c_config_##n,          \
 			      POST_KERNEL, CONFIG_I3C_CONTROLLER_INIT_PRIORITY, &api);             \
