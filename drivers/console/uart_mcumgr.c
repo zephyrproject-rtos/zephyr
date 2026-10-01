@@ -88,6 +88,14 @@ static struct uart_mcumgr_rx_buf *uart_mcumgr_rx_byte(uint8_t byte)
 	struct uart_mcumgr_rx_buf *rx_buf;
 
 #if !defined(CONFIG_UART_MCUMGR_RAW_PROTOCOL)
+	/* Frame markers never occur inside a frame, so they always start a new line. */
+	if (byte == MCUMGR_SERIAL_HDR_PKT_1 || byte == MCUMGR_SERIAL_HDR_FRAG_1) {
+		uart_mcumgr_ignoring = false;
+		if (uart_mcumgr_cur_buf != NULL) {
+			uart_mcumgr_cur_buf->length = 0;
+		}
+	}
+
 	if (!uart_mcumgr_ignoring) {
 #endif
 		if (uart_mcumgr_cur_buf == NULL) {
