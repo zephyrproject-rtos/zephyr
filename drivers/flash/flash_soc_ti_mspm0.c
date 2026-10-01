@@ -117,6 +117,10 @@ static int flash_ti_mspm0_erase(const struct device *dev,
 			goto out;
 		}
 
+		if (DL_FlashCTL_getCommandStatus(cfg->regs) != DL_FLASHCTL_COMMAND_STATUS_PASSED) {
+			ret = -EIO;
+		}
+
 		offset += MSPM0_FLASH_ERASE_SIZE;
 		len -= MSPM0_FLASH_ERASE_SIZE;
 	} while (len != 0);
@@ -182,6 +186,10 @@ static int flash_ti_mspm0_write(const struct device *dev, off_t offset,
 		if (k_sem_take(&data->wait_sem, K_MSEC(FLASH_CMDWAIT_TIMEOUT)) < 0) {
 			ret = -ETIMEDOUT;
 			goto out;
+		}
+
+		if (DL_FlashCTL_getCommandStatus(cfg->regs) != DL_FLASHCTL_COMMAND_STATUS_PASSED) {
+			ret = -EIO;
 		}
 
 		offset += FLASH_MSPM0_WRITE_BLOCK_SIZE;
