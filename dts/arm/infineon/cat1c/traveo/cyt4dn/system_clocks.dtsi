@@ -276,6 +276,15 @@
 				clock-div = <2>;
 				status = "disabled";
 			};
+
+			/* Clock of the peripheral bus, at most 100 MHz */
+			clk_peri: clk_peri {
+				compatible = "fixed-factor-clock";
+				clocks = <&clk_hf0>;
+				#clock-cells = <0>;
+				clock-div = <2>;
+				status = "disabled";
+			};
 		};
 
 		periclocks {
