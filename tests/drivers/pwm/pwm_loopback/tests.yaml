@@ -10,7 +10,9 @@ common:
     fixture: pwm_loopback
 
 tests:
-  drivers.pwm.loopback: {}
+  drivers.pwm.loopback:
+    extra_args:
+      - platform:am62l_evm/am62l3/a53:SNIPPET=ti-io-exp
   drivers.pwm.s32k5xxcvb_s32k566_ftm.loopback:
     extra_args: DTC_OVERLAY_FILE="boards/s32k5xxcvb_s32k566_ftm.overlay"
     platform_allow:
