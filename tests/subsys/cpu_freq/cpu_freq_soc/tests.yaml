@@ -7,6 +7,8 @@ tests:
     platform_allow:
       - native_sim
       - native_sim/native/64
+      - nucleo_n657x0_q/stm32n657xx/sb
+      - stm32n6570_dk/stm32n657xx/sb
       - frdm_mcxn236
       - frdm_imx93/mimx9352/a55/smp
       - frdm_imx91/mimx9131

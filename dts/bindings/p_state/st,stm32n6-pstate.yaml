@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32N6 CPU performance state using the IC1 divider. The PLL and boot
+  voltage remain fixed. Each frequency must be an exact integer division
+  of the IC1 parent clock by a divider from 1 through 256, and must not
+  exceed the boot CPU frequency or 800 MHz.
+
+compatible: "st,stm32n6-pstate"
+
+include: zephyr,pstate.yaml
+
+properties:
+  clock-frequency:
+    type: int
+    required: true
+    description: CPU frequency in Hz.
+
+  load-threshold:
+    required: true
