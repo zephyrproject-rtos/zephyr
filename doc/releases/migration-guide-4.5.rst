@@ -2554,6 +2554,14 @@ Secure Storage
   it can now fail, with ``PSA_ERROR_DOES_NOT_EXIST`` for instance, instead of always returning
   ``PSA_SUCCESS``. (:github:`118718`)
 
+* The following were renamed, which affects custom ITS store and transform implementations:
+
+  * ``secure_storage_its_uid_t`` -> ``secure_storage_uid_t``
+  * ``secure_storage_its_caller_id_t`` -> ``secure_storage_caller_id_t``
+  * ``SECURE_STORAGE_ITS_CALLER_*`` -> ``SECURE_STORAGE_CALLER_*``
+  * ``SECURE_STORAGE_ITS_UID_BIT_SIZE`` -> ``SECURE_STORAGE_UID_BIT_SIZE``
+  * ``SECURE_STORAGE_ITS_CALLER_ID_BIT_SIZE`` -> ``SECURE_STORAGE_CALLER_ID_BIT_SIZE``
+
 Shell
 =====
 
