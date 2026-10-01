@@ -334,9 +334,9 @@ with a web browser:
       $ python3 -m http.server -d _build/html --bind 127.0.0.1
 
 Alternatively, the documentation can be built with the ``make html-live``
-(or ``make html-live-fast``) command, which will build the documentation, host
-it locally, and watch the documentation directory for changes. When changes are
-observed, it will automatically rebuild the documentation and refresh the hosted
+(or ``make html-live-fast`` or ``make html-live-minimal``) command, which will build the
+documentation, host it locally, and watch the documentation directory for changes.
+When changes are observed, it will automatically rebuild the documentation and refresh the hosted
 files.
 
 Building the Doxygen documentation standalone
