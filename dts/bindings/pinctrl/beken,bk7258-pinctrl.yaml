@@ -1,0 +1,61 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Beken BK7258 pin controller
+
+description: |
+  Singleton node selecting the peripheral function and pull resistors of
+  each of the BK7258's 56 pads.
+
+  Each child node configures one pad:
+
+    #include <zephyr/dt-bindings/pinctrl/beken-bk7258-pinctrl.h>
+
+    &pinctrl {
+      uart0_rx_p10: uart0_rx_p10 {
+        pinmux = <BK7258_PINMUX(10, FUNC0)>;
+        bias-pull-up;
+      };
+
+      uart0_tx_p11: uart0_tx_p11 {
+        pinmux = <BK7258_PINMUX(11, FUNC0)>;
+        bias-pull-up;
+      };
+    };
+
+    &uart0 {
+      pinctrl-0 = <&uart0_tx_p11 &uart0_rx_p10>;
+      pinctrl-names = "default";
+    };
+
+  The signal behind each FUNCn is given per pad, FUNC0 first, by the
+  GPIO_DEV_MAP table of the vendor SDK:
+  https://github.com/bekencorp/bk_idk/blob/release/v2.0.1/middleware/soc/bk7258/soc/gpio_map.h
+  The table numbers UART and I2S instances from one, so its UART1 is uart0.
+
+compatible: "beken,bk7258-pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  reg-names:
+    required: true
+
+child-binding:
+  description: BK7258 pad configuration.
+
+  include:
+    - name: pincfg-node.yaml
+      property-allowlist:
+        - bias-disable
+        - bias-pull-down
+        - bias-pull-up
+
+  properties:
+    pinmux:
+      required: true
+      type: int
+      description: Pad and function, encoded with BK7258_PINMUX(pad, FUNCn).
