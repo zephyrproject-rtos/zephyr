@@ -198,7 +198,7 @@ LOG_MODULE_REGISTER(spi_stm32, CONFIG_SPI_LOG_LEVEL);
  * spi_stm32_isr() serving the error interrupts during a synchronous DMA transfer. Every
  * other series, and the STM32U5 without the option, build the driver as before.
  */
-#if defined(CONFIG_SOC_SERIES_STM32U5X) && defined(CONFIG_SPI_STM32_DMA_CACHED_MEMORY)
+#if defined(CONFIG_SPI_STM32_DMA_CACHED_MEMORY)
 #define SPI_STM32_U5_DMA_CACHED
 #if defined(CONFIG_SPI_STM32_INTERRUPT)
 #define SPI_STM32_U5_DMA_ERR_IRQ
@@ -206,7 +206,7 @@ LOG_MODULE_REGISTER(spi_stm32, CONFIG_SPI_LOG_LEVEL);
 #define SPI_STM32_U5_DMA_MASRX
 #endif /* CONFIG_SPI_STM32_DMA_RX_AUTO_SUSPEND */
 #endif /* CONFIG_SPI_STM32_INTERRUPT */
-#endif /* CONFIG_SOC_SERIES_STM32U5X && CONFIG_SPI_STM32_DMA_CACHED_MEMORY */
+#endif /* CONFIG_SPI_STM32_DMA_CACHED_MEMORY */
 
 #define WAIT_1US	1U
 
