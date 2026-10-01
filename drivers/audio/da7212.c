@@ -523,6 +523,7 @@ static void da7212_configure_input(const struct device *dev)
 static int da7212_configure(const struct device *dev, struct audio_codec_cfg *cfg)
 {
 	const struct da7212_driver_config *const dev_cfg = DEV_CFG(dev);
+	uint8_t pll_indiv;
 
 	if (cfg->dai_type >= AUDIO_DAI_TYPE_INVALID) {
 		LOG_ERR("dai_type not supported");
@@ -563,12 +564,23 @@ static int da7212_configure(const struct device *dev, struct audio_codec_cfg *cf
 	da7212_write_reg(dev, DIALOG7212_REFERENCES,
 			(uint8_t)DIALOG7212_REFERENCES_BIAS_EN_MASK);
 
-	/* Keep PLL disable, use MCLK as system clock. */
+	/* Keep PLL disable, use MCLK as system clock. The input divider still
+	 * has to match the MCLK rate.
+	 */
 	da7212_write_reg(dev, DIALOG7212_PLL_FRAC_TOP, 0);
 	da7212_write_reg(dev, DIALOG7212_PLL_FRAC_BOT, 0);
 	da7212_write_reg(dev, DIALOG7212_PLL_INTEGER,
 			DIALOG7212_PLL_FBDIV_INTEGER_RESET_VALUE);
-	da7212_write_reg(dev, DIALOG7212_PLL_CTRL, 0x0);
+	if (cfg->mclk_freq <= 10000000U) {
+		pll_indiv = DIALOG7212_PLL_INDIV_2_10MHZ;
+	} else if (cfg->mclk_freq <= 20000000U) {
+		pll_indiv = DIALOG7212_PLL_INDIV_10_20MHZ;
+	} else if (cfg->mclk_freq <= 40000000U) {
+		pll_indiv = DIALOG7212_PLL_INDIV_20_40MHZ;
+	} else {
+		pll_indiv = DIALOG7212_PLL_INDIV_40_80MHZ;
+	}
+	da7212_write_reg(dev, DIALOG7212_PLL_CTRL, pll_indiv);
 
 	/* Set default clock mode to target, BCLK number per WCLK = 64 */
 	da7212_write_reg(dev, DIALOG7212_DAI_CLK_MODE,
