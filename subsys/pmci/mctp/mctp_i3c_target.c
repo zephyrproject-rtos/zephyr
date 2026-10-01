@@ -57,6 +57,52 @@ void mctp_i3c_target_buf_write(struct i3c_target_config *config, uint8_t *val, u
 	memcpy(b->rx_pkt->data, val, payload_len);
 }
 
+/*
+ * mctp_bus_rx() can synchronously call the binding tx (e.g. a control-message
+ * response), which blocks on a semaphore. stop_cb runs in the driver ISR, so
+ * deliver the received packet from thread context here instead.
+ *
+ * A single rx_done_pkt slot is used, which relies on transactions being
+ * serialized: the controller waits for the reply before sending the next
+ * message.
+ */
+static void mctp_i3c_target_rx_work(struct k_work *work)
+{
+	struct mctp_binding_i3c_target *b =
+		CONTAINER_OF(work, struct mctp_binding_i3c_target, rx_work);
+	struct mctp_pktbuf *pkt;
+
+	while (k_msgq_get(&b->rx_msgq, &pkt, K_NO_WAIT) == 0) {
+		struct i3c_config_target cfg;
+		size_t len = pkt->end - pkt->start;
+		uint8_t addr_byte;
+
+		/* Get dynamic address if not yet retrieved */
+		if (b->dynamic_addr == 0) {
+			if (i3c_config_get_target(b->i3c, &cfg) == 0) {
+				b->dynamic_addr = cfg.dynamic_addr;
+			}
+		}
+
+		/* PEC as per DSP0233 1.0.0: seeded with the address byte (dynamic_addr
+		 * << 1 | W), computed over all received bytes except the trailing PEC.
+		 */
+		addr_byte = b->dynamic_addr << 1U;
+
+		if (len < I3C_PROTOCOL_PEC_SZ) {
+			LOG_WRN("I3C RX packet too short for PEC");
+		} else if (mctp_i3c_verify_pec(&pkt->data[pkt->start], len, addr_byte) != 0) {
+			LOG_WRN("PEC verification failed (addr: 0x%02x)", addr_byte);
+		} else {
+			/* Strip the trailing PEC before handing up to libmctp */
+			pkt->end -= I3C_PROTOCOL_PEC_SZ;
+			mctp_bus_rx(&b->binding, pkt);
+		}
+
+		mctp_pktbuf_free(pkt);
+	}
+}
+
 int mctp_i3c_target_stop(struct i3c_target_config *config)
 {
 	struct mctp_binding_i3c_target *b =
@@ -68,9 +114,17 @@ int mctp_i3c_target_stop(struct i3c_target_config *config)
 	}
 
 	if (b->rx_pkt != NULL) {
-		mctp_bus_rx(&b->binding, b->rx_pkt);
-		mctp_pktbuf_free(b->rx_pkt);
+		/*
+		 * PEC verification uses the hardware CRC (which takes a mutex) and
+		 * mctp_bus_rx() may block, but stop_cb runs in the driver ISR. Queue
+		 * the packet and handle it from thread context.
+		 */
+		if (k_msgq_put(&b->rx_msgq, &b->rx_pkt, K_NO_WAIT) != 0) {
+			LOG_WRN("I3C RX queue full, dropping packet");
+			mctp_pktbuf_free(b->rx_pkt);
+		}
 		b->rx_pkt = NULL;
+		k_work_submit(&b->rx_work);
 	}
 
 	return 0;
@@ -116,11 +170,18 @@ int mctp_i3c_target_read_processed(struct i3c_target_config *config, uint8_t *va
 	}
 
 	pkt_len = b->tx_pkt->end - b->tx_pkt->start;
-	if (b->tx_ptr >= pkt_len) {
+
+	if (b->tx_ptr < pkt_len) {
+		/* Serve the next payload byte */
+		*val = b->tx_pkt->data[b->tx_pkt->start + b->tx_ptr++];
+	} else if (!b->tx_pec_sent) {
+		/* Payload done: serve the trailing PEC byte */
+		*val = b->tx_pec;
+		b->tx_pec_sent = true;
+	} else {
+		/* Payload and PEC both sent */
 		return -EIO;
 	}
-
-	*val = b->tx_pkt->data[b->tx_pkt->start + b->tx_ptr++];
 
 	return 0;
 }
@@ -151,6 +212,7 @@ int mctp_i3c_target_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt)
 
 	b->tx_pkt = pkt;
 	b->tx_ptr = 0U;
+	b->tx_pec_sent = false;
 
 	/* Calculate packet size and prepare TX buffer with PEC */
 	size_t pktsize = pkt->end - pkt->start;
@@ -166,7 +228,8 @@ int mctp_i3c_target_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt)
 	memcpy(tx_buf, pkt->data + pkt->start, pktsize);
 	uint8_t addr_byte = b->dynamic_addr << 1U | 1U;
 
-	tx_buf[pktsize] = mctp_i3c_calculate_pec(tx_buf, pktsize, addr_byte);
+	b->tx_pec = mctp_i3c_calculate_pec(tx_buf, pktsize, addr_byte);
+	tx_buf[pktsize] = b->tx_pec;
 
 	/* Some I3C IP need to have data at TX fifo before raising IBI */
 	ret = i3c_target_tx_write(b->i3c, tx_buf, pktsize + I3C_PROTOCOL_PEC_SZ, 0);
@@ -202,6 +265,10 @@ int mctp_i3c_target_start(struct mctp_binding *binding)
 		CONTAINER_OF(binding, struct mctp_binding_i3c_target, binding);
 	struct i3c_config_target config;
 	int rc;
+
+	k_msgq_init(&b->rx_msgq, (char *)b->rx_msgq_slots, sizeof(struct mctp_pktbuf *),
+		    MCTP_I3C_RX_QUEUE_DEPTH);
+	k_work_init(&b->rx_work, mctp_i3c_target_rx_work);
 
 	/* Get target device configuration to retrieve dynamic address */
 	rc = i3c_config_get_target(b->i3c, &config);
