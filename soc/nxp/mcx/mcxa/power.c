@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/pm/pm.h>
-#include <zephyr/arch/arch_interface.h>
+#include <zephyr/kernel.h>
 #include <fsl_cmc.h>
 #include <fsl_spc.h>
 #include <zephyr/platform/hooks.h>
