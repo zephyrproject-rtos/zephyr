@@ -1362,6 +1362,16 @@ int cdns_macb_probe(const struct device *dev)
 		return ret;
 	}
 
+#if defined(CONFIG_ETH_CDNS_MACB_PINCTRL)
+	if (cfg->pcfg != NULL) {
+		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0) {
+			LOG_ERR("unable to configure the pins (%d)", ret);
+			return ret;
+		}
+	}
+#endif
+
 	/* The MDIO driver enables the management frame interrupt */
 	k_sem_init(&p->mdio_done, 0U, 1U);
 

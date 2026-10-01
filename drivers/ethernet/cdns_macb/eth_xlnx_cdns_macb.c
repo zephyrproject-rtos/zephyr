@@ -63,6 +63,8 @@ int cdns_macb_platform_init(const struct device *dev)
 #define ETH_XLNX_CDNS_MACB_DEVICE(n, prefix, caps_)                                                \
 	BUILD_ASSERT(DT_INST_CLOCKS_HAS_NAME(n, pclk), "the pclk clock is required");              \
                                                                                                    \
+	CDNS_MACB_DT_INST_PINCTRL_DEFINE(n)                                                        \
+                                                                                                   \
 	static struct cdns_macb_rings prefix##n##_rings __nocache_noinit                           \
 		__aligned(CDNS_MACB_RINGS_ALIGN);                                                  \
                                                                                                    \
@@ -86,6 +88,7 @@ int cdns_macb_platform_init(const struct device *dev)
 			IF_ENABLED(CONFIG_PTP_CLOCK_CDNS_MACB,                                     \
 				   (.ptp_clock = DEVICE_DT_GET_OR_NULL(                            \
 						   DT_INST_CHILD(n, ptp_clock)),))                 \
+			CDNS_MACB_DT_INST_PINCTRL_INIT(n)                                          \
 			.rings = &prefix##n##_rings,                                               \
 			.clks = {                                                                  \
 				[CDNS_MACB_CLK_PCLK] = ETH_XLNX_CLOCK(n, pclk),                    \
