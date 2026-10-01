@@ -758,6 +758,13 @@ New APIs and options
   * :c:macro:`HWSPINLOCK_COMMON_CONFIG_FROM_DT_NODE`
   * :c:macro:`HWSPINLOCK_COMMON_CONFIG_FROM_DT_INST`
 
+* I3C
+
+  * :c:macro:`I3C_BUS_TCAS_FIRST_BC_MIN_NS`
+  * :c:macro:`I3C_BUS_TCAS_MAX_NS`
+  * :c:macro:`I3C_BUS_TCAS_MIN_NS`
+  * :c:member:`i3c_config_controller.tcas_ns`
+
 * Kconfig
 
   * Add ``dt_partition_mtd`` preprocessor function (:github:`111599`)
