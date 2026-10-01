@@ -2363,8 +2363,11 @@ New Samples
 * :zephyr:code-sample:`adi-pm`
 * :zephyr:code-sample:`assert`
 * :zephyr:code-sample:`autanalog_fir_fifo`
+* :zephyr:code-sample:`b-m2mem-pack1`
 * :zephyr:code-sample:`bluetooth_cap_handover`
 * :zephyr:code-sample:`buzzer-tone`
+* :zephyr:code-sample:`clock-monitor-check-freq`
+* :zephyr:code-sample:`clock-monitor-measure-freq`
 * :zephyr:code-sample:`coap-client-tcp`
 * :zephyr:code-sample:`color-palette`
 * :zephyr:code-sample:`coredump-udp-demo-shell`
@@ -2374,27 +2377,33 @@ New Samples
 * :zephyr:code-sample:`cs40l26`
 * :zephyr:code-sample:`dali`
 * :zephyr:code-sample:`dhcpv6-pd`
+* :zephyr:code-sample:`esp32-ppa-srm`
 * :zephyr:code-sample:`esp32-qdec-trigger`
 * :zephyr:code-sample:`espnow`
 * :zephyr:code-sample:`fido2`
 * :zephyr:code-sample:`flow-meter`
 * :zephyr:code-sample:`fota-http`
 * :zephyr:code-sample:`frdm-mcxe31b-system-off`
+* :zephyr:code-sample:`hash-bench`
 * :zephyr:code-sample:`i2c-tiny-usb`
-* :zephyr:code-sample:`logging_multidomain`
+* :zephyr:code-sample:`lin-ncv7430`
+* :zephyr:code-sample:`lin-ncv7430-responder`
 * :zephyr:code-sample:`lora-duty-cycle`
 * :zephyr:code-sample:`lp586x`
 * :zephyr:code-sample:`mcp-server-hello-world`
 * :zephyr:code-sample:`mfd_charger`
+* :zephyr:code-sample:`mimxrt700_evk_system_off`
 * :zephyr:code-sample:`mspi-throughput`
 * :zephyr:code-sample:`net-rtp`
-* :zephyr:code-sample:`nrf-sys-event`
+* :zephyr:code-sample:`nordic-flash`
+* :zephyr:code-sample:`npm10xx_uicr`
 * :zephyr:code-sample:`nxp_mcx_s2ram`
 * :zephyr:code-sample:`nxp_mcx_system_off`
+* :zephyr:code-sample:`nxp_rt700_dual_core_pm`
 * :zephyr:code-sample:`nxp_smartdma_mem_to_mem`
 * :zephyr:code-sample:`object_cores`
 * :zephyr:code-sample:`object_monitor`
-* :zephyr:code-sample:`pm-latency`
+* :zephyr:code-sample:`precision_timing`
 * :zephyr:code-sample:`pulse_io_byte_transfer`
 * :zephyr:code-sample:`qdec_multi`
 * :zephyr:code-sample:`quic-client-echo`
@@ -2404,9 +2413,9 @@ New Samples
 * :zephyr:code-sample:`rpi-board-info`
 * :zephyr:code-sample:`rpmsg-lite`
 * :zephyr:code-sample:`rw612_pm_flash_check`
+* :zephyr:code-sample:`sntp-server`
 * :zephyr:code-sample:`spi-rtio-loopback`
 * :zephyr:code-sample:`ssh-server-client`
-* :zephyr:code-sample:`sx9500`
 * :zephyr:code-sample:`tad2144`
 * :zephyr:code-sample:`tflite-neutron`
 * :zephyr:code-sample:`tfm_fwu`
@@ -2417,9 +2426,10 @@ New Samples
 * :zephyr:code-sample:`wifi-ble-provisioning`
 * :zephyr:code-sample:`wifi-mesh`
 * :zephyr:code-sample:`wifi-mesh-ip`
+* :zephyr:code-sample:`x-nucleo-iks4a1-std-i3c`
+* :zephyr:code-sample:`x-nucleo-pgeez1`
+* :zephyr:code-sample:`xclk-wiz`
 * :zephyr:code-sample:`zms-cycle-count`
-* :zephyr_file:`samples/drivers/clock_monitor/check_freq`
-* :zephyr_file:`samples/drivers/clock_monitor/measure_freq`
 
 Libraries / Subsystems
 **********************
