@@ -1618,6 +1618,7 @@ New Drivers
   * :dtcompatible:`cdns,gem`
   * :dtcompatible:`cdns,macb-mdio`
   * :dtcompatible:`cdns,macb-ptp-clock`
+  * :dtcompatible:`infineon,cat1c-gem`
   * :dtcompatible:`microchip,gmac-g1-eth` (:github:`105275`)
   * :dtcompatible:`microchip,gmac-g1-mdio` (:github:`105275`)
   * :dtcompatible:`microchip,lan8840` (:github:`110896`)
