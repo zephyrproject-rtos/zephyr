@@ -944,8 +944,9 @@ static int clock_get_rate_fdpll(const struct device *dev, uint8_t fdpll_id, uint
 			    OSCCTRL_DPLLRATIO_LDRFRAC_Pos;
 
 		frac_mult_max = OSCCTRL_DPLLRATIO_LDRFRAC_Msk >> OSCCTRL_DPLLRATIO_LDRFRAC_Pos;
-		*freq = (src_freq * (((mult_int + 1) * (frac_mult_max + 1)) + mult_frac)) /
-			(frac_mult_max + 1);
+		*freq = ((uint64_t)src_freq *
+			 (((mult_int + 1U) * (frac_mult_max + 1U)) + mult_frac)) /
+			(frac_mult_max + 1U);
 	} while (0);
 
 	return ret_val;
