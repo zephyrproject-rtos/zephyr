@@ -53,3 +53,19 @@
 &gpio_prt9 {
 	status = "okay";
 };
+
+&eth0 {
+	status = "okay";
+};
+
+&eth0_mdio {
+	status = "okay";
+};
+
+&eth0_phy {
+	status = "okay";
+};
+
+&eth0_ptp {
+	status = "okay";
+};
