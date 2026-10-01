@@ -127,6 +127,11 @@ struct msc_bot_ctx {
 	struct CSW csw;
 	uint32_t transferred_data;
 	size_t scsi_bytes;
+	/* Bus speed at configuration. Requests cancelled by a bus reset
+	 * complete after usbd_bus_speed() has changed, and FS and HS
+	 * endpoint addresses may differ.
+	 */
+	enum usbd_speed speed;
 };
 
 static struct net_buf *msc_buf_alloc_data(const uint8_t ep, uint8_t *data, size_t len)
@@ -232,12 +237,10 @@ static size_t msc_next_out_transfer_length(struct usbd_class_data *const c_data)
 
 static uint8_t msc_get_bulk_in(struct usbd_class_data *const c_data)
 {
-	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	struct msc_bot_ctx *ctx = usbd_class_get_private(c_data);
 	struct msc_bot_desc *desc = ctx->desc;
 
-	if (USBD_SUPPORTS_HIGH_SPEED &&
-	    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED && ctx->speed == USBD_SPEED_HS) {
 		return desc->if0_hs_in_ep.bEndpointAddress;
 	}
 
@@ -246,12 +249,10 @@ static uint8_t msc_get_bulk_in(struct usbd_class_data *const c_data)
 
 static uint8_t msc_get_bulk_out(struct usbd_class_data *const c_data)
 {
-	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	struct msc_bot_ctx *ctx = usbd_class_get_private(c_data);
 	struct msc_bot_desc *desc = ctx->desc;
 
-	if (USBD_SUPPORTS_HIGH_SPEED &&
-	    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED && ctx->speed == USBD_SPEED_HS) {
 		return desc->if0_hs_out_ep.bEndpointAddress;
 	}
 
@@ -362,6 +363,7 @@ static void msc_reset_handler(struct usbd_class_data *c_data)
 	int i;
 
 	LOG_INF("Bulk-Only Mass Storage Reset");
+	ctx->speed = usbd_bus_speed(usbd_class_get_ctx(c_data));
 	ctx->state = MSC_BBB_EXPECT_CBW;
 	for (i = 0; i < ctx->registered_luns; i++) {
 		scsi_reset(&ctx->luns[i]);
