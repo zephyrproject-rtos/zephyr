@@ -7,3 +7,12 @@ tests:
       - mesh
     integration_platforms:
       - native_sim
+  bluetooth.mesh.settings.no_bt_settings:
+    extra_args: TEST_WITHOUT_BT_SETTINGS=1
+    platform_allow:
+      - native_sim
+    tags:
+      - bluetooth
+      - mesh
+    integration_platforms:
+      - native_sim

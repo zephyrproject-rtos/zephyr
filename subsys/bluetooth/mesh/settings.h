@@ -8,8 +8,7 @@
 enum bt_mesh_settings_flag {
 	BT_MESH_SETTINGS_RPL_PENDING,
 	/* Replay list invalidated by an IV Index update, or IV index recovery.
-	 * Stored on CONFIG_BT_MESH_STORE_TIMEOUT rather than the replay list
-	 * timeout.
+	 * Stored immediately rather than on the replay list timeout.
 	 */
 	BT_MESH_SETTINGS_RPL_RESET_PENDING,
 	BT_MESH_SETTINGS_NET_KEYS_PENDING,

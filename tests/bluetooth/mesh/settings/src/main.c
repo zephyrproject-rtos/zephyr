@@ -26,6 +26,7 @@ static const enum bt_mesh_settings_flag no_wait_flags[] = {
 	BT_MESH_SETTINGS_IV_PENDING,
 	BT_MESH_SETTINGS_SEQ_PENDING,
 	BT_MESH_SETTINGS_CDB_PENDING,
+	BT_MESH_SETTINGS_RPL_RESET_PENDING,
 };
 
 static const enum bt_mesh_settings_flag rpl_flags[] = {
@@ -33,8 +34,8 @@ static const enum bt_mesh_settings_flag rpl_flags[] = {
 	BT_MESH_SETTINGS_SRPL_PENDING,
 };
 
+#if defined(CONFIG_BT_SETTINGS)
 static const enum bt_mesh_settings_flag generic_flags[] = {
-	BT_MESH_SETTINGS_RPL_RESET_PENDING,
 	BT_MESH_SETTINGS_NET_KEYS_PENDING,
 	BT_MESH_SETTINGS_APP_KEYS_PENDING,
 	BT_MESH_SETTINGS_DEV_KEY_CAND_PENDING,
@@ -46,6 +47,13 @@ static const enum bt_mesh_settings_flag generic_flags[] = {
 	BT_MESH_SETTINGS_SSEQ_PENDING,
 	BT_MESH_SETTINGS_BRG_PENDING,
 };
+#endif /* CONFIG_BT_SETTINGS */
+
+static bool is_flag_settings_only(enum bt_mesh_settings_flag flag)
+{
+	return !(flag == BT_MESH_SETTINGS_RPL_PENDING ||
+		 flag == BT_MESH_SETTINGS_RPL_RESET_PENDING);
+}
 
 /**** Mocked functions ****/
 
@@ -165,6 +173,10 @@ static void test_setup(void *f)
 ZTEST(bt_mesh_settings_store, test_no_wait_stored_immediately)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(no_wait_flags); i++) {
+		if (!IS_ENABLED(CONFIG_BT_SETTINGS) && is_flag_settings_only(no_wait_flags[i])) {
+			continue;
+		}
+
 		memset(store_cnt, 0, sizeof(store_cnt));
 
 		bt_mesh_settings_store_schedule(no_wait_flags[i]);
@@ -174,6 +186,26 @@ ZTEST(bt_mesh_settings_store, test_no_wait_stored_immediately)
 	}
 }
 
+/** Replay list flags are stored on CONFIG_BT_MESH_RPL_STORE_TIMEOUT, not before. */
+ZTEST(bt_mesh_settings_store, test_rpl_stored_on_rpl_timeout)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(rpl_flags); i++) {
+		if (!IS_ENABLED(CONFIG_BT_SETTINGS) && is_flag_settings_only(rpl_flags[i])) {
+			continue;
+		}
+
+		memset(store_cnt, 0, sizeof(store_cnt));
+
+		bt_mesh_settings_store_schedule(rpl_flags[i]);
+		k_sleep(K_MSEC(RPL_TIMEOUT_MS - MARGIN_MS));
+		assert_not_stored(rpl_flags[i]);
+
+		k_sleep(K_MSEC(2 * MARGIN_MS));
+		assert_only_stored(&rpl_flags[i], 1);
+	}
+}
+
+#if defined(CONFIG_BT_SETTINGS)
 /** Generic flags are stored on CONFIG_BT_MESH_STORE_TIMEOUT, not before. */
 ZTEST(bt_mesh_settings_store, test_generic_stored_on_store_timeout)
 {
@@ -186,21 +218,6 @@ ZTEST(bt_mesh_settings_store, test_generic_stored_on_store_timeout)
 
 		k_sleep(K_MSEC(2 * MARGIN_MS));
 		assert_only_stored(&generic_flags[i], 1);
-	}
-}
-
-/** Replay list flags are stored on CONFIG_BT_MESH_RPL_STORE_TIMEOUT, not before. */
-ZTEST(bt_mesh_settings_store, test_rpl_stored_on_rpl_timeout)
-{
-	for (size_t i = 0; i < ARRAY_SIZE(rpl_flags); i++) {
-		memset(store_cnt, 0, sizeof(store_cnt));
-
-		bt_mesh_settings_store_schedule(rpl_flags[i]);
-		k_sleep(K_MSEC(RPL_TIMEOUT_MS - MARGIN_MS));
-		assert_not_stored(rpl_flags[i]);
-
-		k_sleep(K_MSEC(2 * MARGIN_MS));
-		assert_only_stored(&rpl_flags[i], 1);
 	}
 }
 
@@ -264,6 +281,7 @@ ZTEST(bt_mesh_settings_store, test_no_wait_flushes_generic)
 	assert_stored(BT_MESH_SETTINGS_MOD_PENDING);
 	assert_stored(BT_MESH_SETTINGS_NET_PENDING);
 }
+#endif /* CONFIG_BT_SETTINGS */
 
 /** A cancelled flag is not stored when its deadline expires. */
 ZTEST(bt_mesh_settings_store, test_cancel_prevents_store)
@@ -281,13 +299,24 @@ ZTEST(bt_mesh_settings_store, test_cancel_prevents_store)
 /** bt_mesh_settings_store_pending() flushes every group without waiting. */
 ZTEST(bt_mesh_settings_store, test_store_pending_flushes_all_groups)
 {
+	int scheduled = 0;
+
 	for (int i = 0; i < BT_MESH_SETTINGS_FLAG_COUNT; i++) {
+		if (!IS_ENABLED(CONFIG_BT_SETTINGS) && is_flag_settings_only(i)) {
+			continue;
+		}
+
 		bt_mesh_settings_store_schedule(i);
+		scheduled++;
 	}
 
 	bt_mesh_settings_store_pending();
 
 	for (int i = 0; i < BT_MESH_SETTINGS_FLAG_COUNT; i++) {
+		if (!IS_ENABLED(CONFIG_BT_SETTINGS) && is_flag_settings_only(i)) {
+			continue;
+		}
+
 		assert_stored(i);
 	}
 
@@ -295,22 +324,30 @@ ZTEST(bt_mesh_settings_store, test_store_pending_flushes_all_groups)
 	 * share one handler, so they account for a single store.
 	 */
 	k_sleep(K_MSEC(RPL_TIMEOUT_MS + MARGIN_MS));
-	zassert_equal(total_stores(), BT_MESH_SETTINGS_FLAG_COUNT - 1, "flag stored twice");
+	zassert_equal(total_stores(), scheduled - 1, "flag stored twice");
 }
 
 /** Every flag of every group completes exactly once when all are pending together. */
 ZTEST(bt_mesh_settings_store, test_all_groups_complete)
 {
 	for (int i = 0; i < BT_MESH_SETTINGS_FLAG_COUNT; i++) {
+		if (!IS_ENABLED(CONFIG_BT_SETTINGS) && is_flag_settings_only(i)) {
+			continue;
+		}
+
 		bt_mesh_settings_store_schedule(i);
 	}
 
 	k_sleep(K_MSEC(MARGIN_MS));
-	/* RPL_RESET_PENDING is generic, so only the solicitation list is still due. */
+	/* Only the solicitation list is still due; the no-wait flush took everything else. */
 	assert_not_stored(BT_MESH_SETTINGS_SRPL_PENDING);
 
 	k_sleep(K_MSEC(RPL_TIMEOUT_MS));
 	for (int i = 0; i < BT_MESH_SETTINGS_FLAG_COUNT; i++) {
+		if (!IS_ENABLED(CONFIG_BT_SETTINGS) && is_flag_settings_only(i)) {
+			continue;
+		}
+
 		assert_stored(i);
 	}
 }
