@@ -43,7 +43,6 @@
 		led1 = &orange_led_2;
 		led2 = &red_led_3;
 		ambient-temp0 = &stlm75;
-		rtc = &rtc;
 		sdhc0 = &sdhc0;
 		watchdog0 = &iwdg;
 	};
