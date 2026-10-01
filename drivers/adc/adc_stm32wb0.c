@@ -396,8 +396,9 @@ static void adc_release_pm_locks(void)
 static void configure_tempsensor_calib_point(ADC_TypeDef *adc, uint32_t calib_point)
 {
 	uint16_t gain;
-#if defined(CONFIG_SOC_STM32WB09XX) || defined(CONFIG_SOC_STM32WB05XX)
-	/** RM0505/RM0529 §12.2.1 "Temperature sensor subsystem" */
+#if defined(CONFIG_SOC_STM32WB09XX) || defined(CONFIG_SOC_STM32WB05XX) ||                          \
+	defined(CONFIG_SOC_SERIES_STM32WL3X)
+	/** RM0505/RM0529/RM0511 §12.2.1 "Temperature sensor subsystem" */
 	gain = 0xFFF;
 #else
 	/** RM0530 §12.2.2 "Temperature sensor subsystem" */
