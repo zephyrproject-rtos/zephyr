@@ -21,6 +21,10 @@
 #include <zephyr/sys/device_mmio.h>
 #include <zephyr/sys/util.h>
 
+#if defined(CONFIG_ETH_CDNS_MACB_PINCTRL)
+#include <zephyr/drivers/pinctrl.h>
+#endif
+
 /*
  * Common checks
  */
@@ -176,6 +180,20 @@ struct cdns_macb_clock {
 		    ({0}))
 
 /*
+ * The pin control of an instance, defined by the glue and put into its
+ * config with these. Nothing without the pinctrl-0 property.
+ */
+#if defined(CONFIG_ETH_CDNS_MACB_PINCTRL)
+#define CDNS_MACB_DT_INST_PINCTRL_DEFINE(n)                                                        \
+	IF_ENABLED(DT_INST_PINCTRL_HAS_IDX(n, 0), (PINCTRL_DT_INST_DEFINE(n);))
+#define CDNS_MACB_DT_INST_PINCTRL_INIT(n)                                                          \
+	IF_ENABLED(DT_INST_PINCTRL_HAS_IDX(n, 0), (.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),))
+#else
+#define CDNS_MACB_DT_INST_PINCTRL_DEFINE(n)
+#define CDNS_MACB_DT_INST_PINCTRL_INIT(n)
+#endif
+
+/*
  * Common structure definitions
  */
 
@@ -218,6 +236,10 @@ struct cdns_macb_config {
 	struct cdns_macb_clock clks[CDNS_MACB_CLK_COUNT];
 #if defined(CONFIG_PTP_CLOCK_CDNS_MACB)
 	const struct device *ptp_clock;
+#endif
+#if defined(CONFIG_ETH_CDNS_MACB_PINCTRL)
+	/* NULL when the instance has no pins to configure */
+	const struct pinctrl_dev_config *pcfg;
 #endif
 	uint32_t caps;
 	/* GEM_DMACFG.FBLDO: 1, 4, 8 or 16 */

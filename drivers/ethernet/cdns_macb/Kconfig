@@ -61,6 +61,14 @@ config ETH_NIC_MODEL
 
 if ETH_CDNS_MACB_CORE
 
+config ETH_CDNS_MACB_PINCTRL
+	bool
+	default y if $(dt_compat_any_has_prop,$(DT_COMPAT_CDNS_GEM),pinctrl-0)
+	select PINCTRL
+	help
+	  The pins of the MAC are configured through pin control when the
+	  devicetree node has a pinctrl-0 property.
+
 configdefault NET_BUF_ALIGNMENT
 	default DCACHE_LINE_SIZE if DCACHE
 	default 8 if PTP_CLOCK_CDNS_MACB

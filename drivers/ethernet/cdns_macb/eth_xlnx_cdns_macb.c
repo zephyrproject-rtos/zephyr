@@ -222,6 +222,8 @@ int cdns_macb_platform_init(const struct device *dev)
 		      &prefix##n##_tx_clk_config, PRE_KERNEL_1,                                    \
 		      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &eth_xlnx_tx_clk_api);                   \
                                                                                                    \
+	CDNS_MACB_DT_INST_PINCTRL_DEFINE(n)                                                        \
+                                                                                                   \
 	static struct cdns_macb_rings prefix##n##_rings __nocache_noinit                           \
 		__aligned(CDNS_MACB_RINGS_ALIGN);                                                  \
                                                                                                    \
@@ -245,6 +247,7 @@ int cdns_macb_platform_init(const struct device *dev)
 			IF_ENABLED(CONFIG_PTP_CLOCK_CDNS_MACB,                                     \
 				   (.ptp_clock = DEVICE_DT_GET_OR_NULL(                            \
 						   DT_INST_CHILD(n, ptp_clock)),))                 \
+			CDNS_MACB_DT_INST_PINCTRL_INIT(n)                                          \
 			.rings = &prefix##n##_rings,                                               \
 			.clks = {                                                                  \
 				[CDNS_MACB_CLK_PCLK] = CDNS_MACB_DT_INST_CLOCK(n, pclk, NULL),     \

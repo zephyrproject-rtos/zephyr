@@ -31,11 +31,12 @@ description: |
 
   The MAC configuration is derived from the design configuration registers
   of the core; the phy-connection-type property selects the PHY interface,
-  MII when it is absent.
+  MII when it is absent. The pins are configured through pin control when
+  the node has a pinctrl-0 property.
 
 compatible: "cdns,gem"
 
-include: ethernet-controller.yaml
+include: [ethernet-controller.yaml, pinctrl-device.yaml]
 
 properties:
   reg:
