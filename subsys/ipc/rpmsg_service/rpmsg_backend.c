@@ -38,11 +38,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_RPMSG_SERVICE_LOG_LEVEL);
 
 #ifdef CONFIG_OPENAMP_RSC_TABLE
 #include <resource_table.h>
-#endif /* CONFIG_OPENAMP_RSC_TABLE */
+#else /* CONFIG_OPENAMP_RSC_TABLE */
 #define VRING_RX_ADDRESS	(VDEV_START_ADDR + SHM_SIZE - VDEV_STATUS_SIZE)
 #define VRING_TX_ADDRESS	(VDEV_START_ADDR + SHM_SIZE)
 #define VRING_ALIGNMENT		4
 #define VRING_SIZE		    16
+#endif /* CONFIG_OPENAMP_RSC_TABLE */
 
 #define IPM_WORK_QUEUE_STACK_SIZE CONFIG_RPMSG_SERVICE_WORK_QUEUE_STACK_SIZE
 #define IPM_WORK_QUEUE_PRIORITY   K_HIGHEST_APPLICATION_THREAD_PRIO
@@ -72,14 +73,7 @@ static metal_phys_addr_t rsc_tab_physmap;
 static struct metal_io_region rsc_io;
 #endif /* CONFIG_OPENAMP_RSC_TABLE */
 
-static struct virtio_vring_info rvrings[2] = {
-	[0] = {
-		.info.align = VRING_ALIGNMENT,
-	},
-	[1] = {
-		.info.align = VRING_ALIGNMENT,
-	},
-};
+static struct virtio_vring_info rvrings[2];
 static struct virtqueue *vqueue[2];
 
 static struct k_work ipm_work;
