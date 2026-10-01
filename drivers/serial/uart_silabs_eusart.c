@@ -15,6 +15,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/pm.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_silabs_ldma.h>
@@ -95,6 +96,8 @@ struct eusart_data {
 #endif
 #ifdef CONFIG_PM
 	ATOMIC_DEFINE(pm_lock, EUSART_PM_LOCK_COUNT);
+	struct pm_notifier pm_notifier;
+	bool em2_disabled;
 #endif
 };
 
@@ -152,6 +155,87 @@ static __maybe_unused bool eusart_pm_lock_put(const struct device *dev, enum eus
 #endif
 }
 
+#ifdef CONFIG_PM
+/**
+ * @brief Prepare a non EM2-capable EUSART instance for EM2/EM3 entry
+ *
+ * EUSART instances in power domain PD1 are not EM2-capable: their clock
+ * is gated in EM2, and if the transmitter or receiver is left enabled
+ * across the sleep, the transceiver FIFO state is corrupted and TX/RX
+ * stop working once the clock is restored. The driver holds PM locks
+ * while interrupt-driven or asynchronous transfers are in progress, but
+ * an idle instance with TX/RX enabled and no lock held will allow EM2.
+ *
+ * Follow the EM2 entry sequence documented for the peripheral: disable
+ * TX and RX, wait for the commands to synchronize, and wait for the
+ * transceiver to report disabled. The transmitter is idle at this
+ * point: polled TX waits for TXC before returning, and interrupt-driven
+ * and asynchronous TX hold a PM lock that prevents EM2 until TXC.
+ */
+static void eusart_pm_state_entry(const struct device *dev, enum pm_state state)
+{
+	const struct eusart_config *config = dev->config;
+	struct eusart_data *data = dev->data;
+	EUSART_TypeDef *eusart = config->eusart;
+	enum pm_device_state pm_state;
+
+	if (state == PM_STATE_RUNTIME_IDLE) {
+		/* EM1: clocks keep running, state is retained */
+		return;
+	}
+
+	if (pm_device_state_get(dev, &pm_state) == 0 &&
+	    (pm_state == PM_DEVICE_STATE_SUSPENDED || pm_state == PM_DEVICE_STATE_OFF)) {
+		/* Already suspended by device PM, clock is off */
+		return;
+	}
+
+	if (!(eusart->EN & EUSART_EN_EN)) {
+		return;
+	}
+
+	sl_hal_eusart_disable_tx(eusart);
+	sl_hal_eusart_disable_rx(eusart);
+	sl_hal_eusart_wait_sync(eusart, EUSART_SYNCBUSY_TXDIS | EUSART_SYNCBUSY_RXDIS);
+	while (eusart->STATUS & (EUSART_STATUS_TXENS | EUSART_STATUS_RXENS)) {
+	}
+
+	data->em2_disabled = true;
+}
+
+/**
+ * @brief Restore a non EM2-capable EUSART instance after EM2/EM3 exit
+ */
+static void eusart_pm_state_exit(const struct device *dev, enum pm_state state)
+{
+	const struct eusart_config *config = dev->config;
+	struct eusart_data *data = dev->data;
+
+	ARG_UNUSED(state);
+
+	if (!data->em2_disabled) {
+		return;
+	}
+
+	data->em2_disabled = false;
+	sl_hal_eusart_enable_tx(config->eusart);
+	sl_hal_eusart_enable_rx(config->eusart);
+}
+
+static void eusart_pm_notifier_register(const struct device *dev)
+{
+	__maybe_unused const struct eusart_config *config = dev->config;
+	struct eusart_data *data = dev->data;
+
+	if (EUSART_EM2_CAPABLE(EUSART_NUM(config->eusart))) {
+		/* State is retained in EM2, nothing to do around sleep */
+		return;
+	}
+
+	pm_notifier_register(&data->pm_notifier);
+}
+#endif /* CONFIG_PM */
+
 static int eusart_poll_in(const struct device *dev, unsigned char *c)
 {
 	const struct eusart_config *config = dev->config;
@@ -167,6 +251,16 @@ static int eusart_poll_in(const struct device *dev, unsigned char *c)
 static void eusart_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct eusart_config *config = dev->config;
+#ifdef CONFIG_PM
+	struct eusart_data *data = dev->data;
+
+	/* If the peripheral has been shut down to prepare for deep sleep, drop the character so a
+	 * call from another notifier or pm_state_set() with immediate logging can't spin here.
+	 */
+	if (data->em2_disabled) {
+		return;
+	}
+#endif
 
 	/* sl_hal_eusart_tx function already waits for the transmit buffer being empty
 	 * and waits for the bus to be free to transmit.
@@ -1169,6 +1263,10 @@ static int eusart_init(const struct device *dev)
 	}
 #endif
 
+#ifdef CONFIG_PM
+	eusart_pm_notifier_register(dev);
+#endif
+
 	return pm_device_driver_init(dev, eusart_pm_action);
 }
 
@@ -1283,6 +1381,27 @@ static DEVICE_API(uart, eusart_driver_api) = {
 #endif
 
 
+#ifdef CONFIG_PM
+/* The PM notifier callbacks carry no context, so wrap the common handlers per instance. */
+#define SILABS_EUSART_PM_NOTIFIER_DEFINE(idx)                                                      \
+	static void eusart_pm_state_entry_##idx(enum pm_state state)                               \
+	{                                                                                          \
+		eusart_pm_state_entry(DEVICE_DT_INST_GET(idx), state);                             \
+	}                                                                                          \
+	static void eusart_pm_state_exit_##idx(enum pm_state state)                                \
+	{                                                                                          \
+		eusart_pm_state_exit(DEVICE_DT_INST_GET(idx), state);                              \
+	}
+#define SILABS_EUSART_PM_NOTIFIER_INIT(idx)                                                        \
+	.pm_notifier = {                                                                           \
+		.state_entry = eusart_pm_state_entry_##idx,                                        \
+		.state_exit = eusart_pm_state_exit_##idx,                                          \
+	},
+#else
+#define SILABS_EUSART_PM_NOTIFIER_DEFINE(idx)
+#define SILABS_EUSART_PM_NOTIFIER_INIT(idx)
+#endif
+
 #define SILABS_EUSART_IRQ_HANDLER_FUNC(idx) .irq_config_func = eusart_config_func_##idx,
 #define SILABS_EUSART_IRQ_HANDLER(idx)                                                             \
 	static void eusart_config_func_##idx(const struct device *dev)                             \
@@ -1300,6 +1419,7 @@ static DEVICE_API(uart, eusart_driver_api) = {
 
 #define SILABS_EUSART_INIT(idx)                                                                    \
 	SILABS_EUSART_IRQ_HANDLER(idx);                                                            \
+	SILABS_EUSART_PM_NOTIFIER_DEFINE(idx)                                                      \
 	PINCTRL_DT_INST_DEFINE(idx);                                                               \
 	PM_DEVICE_DT_INST_DEFINE(idx, eusart_pm_action);                                           \
                                                                                                    \
@@ -1324,6 +1444,7 @@ static DEVICE_API(uart, eusart_driver_api) = {
 		},                                                                                 \
 		EUSART_DMA_CHANNEL(idx, rx)                                                        \
 		EUSART_DMA_CHANNEL(idx, tx)                                                        \
+		SILABS_EUSART_PM_NOTIFIER_INIT(idx)                                                \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(idx, eusart_init, PM_DEVICE_DT_INST_GET(idx), &eusart_data_##idx,    \
