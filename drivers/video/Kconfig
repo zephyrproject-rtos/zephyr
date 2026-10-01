@@ -73,6 +73,8 @@ config VIDEO_ENCODER_JPEG
 
 # zephyr-keep-sorted-start
 source "drivers/video/Kconfig.arducam_mega"
+source "drivers/video/Kconfig.bflb_camfront"
+source "drivers/video/Kconfig.bflb_dvp2axi"
 source "drivers/video/Kconfig.emul_imager"
 source "drivers/video/Kconfig.emul_rx"
 source "drivers/video/Kconfig.esp32_dvp"
