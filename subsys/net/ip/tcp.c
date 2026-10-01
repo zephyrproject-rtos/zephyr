@@ -2558,7 +2558,7 @@ static uint32_t seq_scale(uint32_t seq)
 	return seq + (k_ticks_to_ns_floor32(k_uptime_ticks()) >> 6);
 }
 
-static uint8_t unique_key[16]; /* MD5 128 bits as described in RFC6528 */
+static uint8_t unique_key[16]; /* Secret key hashed into the ISN, RFC 6528 ch 3 */
 static bool unique_key_valid;
 
 /* The secret key must not be known to an off-path attacker, otherwise the
@@ -2584,10 +2584,31 @@ static int tcp_init_isn_key(void)
 	return ret;
 }
 
-static uint32_t tcpv6_init_isn(struct net_in6_addr *saddr,
-			       struct net_in6_addr *daddr,
-			       uint16_t sport,
-			       uint16_t dport)
+/* ISN hash: the first 32 bits of SHA-256 over the secret key and the four-tuple */
+static int tcp_isn_hash(const void *buf, size_t len, uint32_t *isn)
+{
+	static bool failure_logged;
+	uint8_t hash[PSA_HASH_LENGTH(PSA_ALG_SHA_256)];
+	size_t hash_len;
+	psa_status_t status;
+
+	status = psa_hash_compute(PSA_ALG_SHA_256, buf, len, hash, sizeof(hash), &hash_len);
+	if (status != PSA_SUCCESS) {
+		if (!failure_logged) {
+			NET_ERR("Cannot compute TCP ISN hash (%d), using random ISN", status);
+			failure_logged = true;
+		}
+
+		return -EIO;
+	}
+
+	*isn = UNALIGNED_GET((uint32_t *)&hash[0]);
+
+	return 0;
+}
+
+static int tcpv6_isn_hash(struct net_in6_addr *saddr, struct net_in6_addr *daddr, uint16_t sport,
+			  uint16_t dport, uint32_t *isn)
 {
 	struct {
 		uint8_t key[sizeof(unique_key)];
@@ -2602,21 +2623,13 @@ static uint32_t tcpv6_init_isn(struct net_in6_addr *saddr,
 		.dport = dport
 	};
 
-	uint8_t hash[16];
-	size_t hash_len;
-
 	memcpy(buf.key, unique_key, sizeof(buf.key));
 
-	psa_hash_compute(PSA_ALG_SHA_256, (const unsigned char *)&buf, sizeof(buf),
-			 hash, sizeof(hash), &hash_len);
-
-	return seq_scale(UNALIGNED_GET((uint32_t *)&hash[0]));
+	return tcp_isn_hash(&buf, sizeof(buf), isn);
 }
 
-static uint32_t tcpv4_init_isn(struct net_in_addr *saddr,
-			       struct net_in_addr *daddr,
-			       uint16_t sport,
-			       uint16_t dport)
+static int tcpv4_isn_hash(struct net_in_addr *saddr, struct net_in_addr *daddr, uint16_t sport,
+			  uint16_t dport, uint32_t *isn)
 {
 	struct {
 		uint8_t key[sizeof(unique_key)];
@@ -2631,41 +2644,47 @@ static uint32_t tcpv4_init_isn(struct net_in_addr *saddr,
 		.dport = dport
 	};
 
-	uint8_t hash[16];
-	size_t hash_len;
+	memcpy(buf.key, unique_key, sizeof(buf.key));
 
-	memcpy(buf.key, unique_key, sizeof(unique_key));
+	return tcp_isn_hash(&buf, sizeof(buf), isn);
+}
 
-	psa_hash_compute(PSA_ALG_SHA_256, (const unsigned char *)&buf, sizeof(buf),
-			 hash, sizeof(hash), &hash_len);
+static int tcp_isn_hash_addr(struct net_sockaddr *saddr, struct net_sockaddr *daddr,
+			     uint32_t *isn)
+{
+	int ret;
 
-	return seq_scale(UNALIGNED_GET((uint32_t *)&hash[0]));
+	ret = tcp_init_isn_key();
+	if (ret != 0) {
+		return ret;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && saddr->sa_family == NET_AF_INET6) {
+		return tcpv6_isn_hash(&net_sin6(saddr)->sin6_addr, &net_sin6(daddr)->sin6_addr,
+				      net_sin6(saddr)->sin6_port, net_sin6(daddr)->sin6_port, isn);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && saddr->sa_family == NET_AF_INET) {
+		return tcpv4_isn_hash(&net_sin(saddr)->sin_addr, &net_sin(daddr)->sin_addr,
+				      net_sin(saddr)->sin_port, net_sin(daddr)->sin_port, isn);
+	}
+
+	return -EAFNOSUPPORT;
 }
 
 #else
 
-#define tcpv6_init_isn(...) (0UL)
-#define tcpv4_init_isn(...) (0UL)
-#define tcp_init_isn_key() (-ENOTSUP)
+#define tcp_isn_hash_addr(saddr, daddr, isn) (-ENOTSUP)
+#define seq_scale(seq) (seq)
 
 #endif /* CONFIG_NET_TCP_ISN_RFC6528 */
 
 static uint32_t tcp_init_isn(struct net_sockaddr *saddr, struct net_sockaddr *daddr)
 {
-	if (IS_ENABLED(CONFIG_NET_TCP_ISN_RFC6528) && tcp_init_isn_key() == 0) {
-		if (IS_ENABLED(CONFIG_NET_IPV6) &&
-		    saddr->sa_family == NET_AF_INET6) {
-			return tcpv6_init_isn(&net_sin6(saddr)->sin6_addr,
-					      &net_sin6(daddr)->sin6_addr,
-					      net_sin6(saddr)->sin6_port,
-					      net_sin6(daddr)->sin6_port);
-		} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
-			   saddr->sa_family == NET_AF_INET) {
-			return tcpv4_init_isn(&net_sin(saddr)->sin_addr,
-					      &net_sin(daddr)->sin_addr,
-					      net_sin(saddr)->sin_port,
-					      net_sin(daddr)->sin_port);
-		}
+	uint32_t isn = 0U;
+
+	if (IS_ENABLED(CONFIG_NET_TCP_ISN_RFC6528) && tcp_isn_hash_addr(saddr, daddr, &isn) == 0) {
+		return seq_scale(isn);
 	}
 
 	return sys_rand32_get();
