@@ -129,6 +129,11 @@
 			interrupt-names = "tx", "rx";
 			clocks = <&sysclk>;
 			current-speed = <115200>;
+
+			slip0: slip {
+				compatible = "zephyr,slip-eth", "zephyr,slip";
+				status = "okay";
+			};
 		};
 
 		uart2: uart@40006000 {

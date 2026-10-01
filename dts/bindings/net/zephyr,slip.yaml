@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  SLIP (Serial Line IP) network interface on a UART carrying IP packets.
+
+  The node is a child of the UART node used for the serial link. A node may
+  also carry the zephyr,slip-eth compatible. It is then used by the Ethernet
+  driver (CONFIG_ETH_SLIP_TAP) by default, or by this driver (CONFIG_SLIP)
+  when it is enabled instead. Only one of the two drivers can use the node.
+
+compatible: "zephyr,slip"
+
+include: uart-device.yaml
+
+examples:
+  - |
+    &uart1 {
+        status = "okay";
+        current-speed = <115200>;
+
+        slip0: slip {
+            compatible = "zephyr,slip";
+            status = "okay";
+        };
+    };
