@@ -10,6 +10,15 @@ description: |
   if needed, then feeds the output in one or both of the DVP2AXI sinks. It handles some of the
   link-level configurations.
 
+  The naming of variables (DVPAS, DVP_AS) suggest that the point-to-point communication between
+  CAMFRONT and DVP2AXI is AXI-Stream (AS) but this could not be confirmed.
+
+  The CAMFRONT engine may start after the image sensor started to produce data, in which case it
+  should correctly pick-up the next VSYNC strobe and start capturing the data after it.
+
+  It does not support explicit JPEG frames (without HSYNC toggling, where HSYNC == VSYNC), so
+  an emulation mode for the image sensor is required (see jpeg-hsync: in ovti,ov2640.yaml).
+
 compatible: "bflb,camfront"
 
 include: [base.yaml, pinctrl-device.yaml, reset-device.yaml]

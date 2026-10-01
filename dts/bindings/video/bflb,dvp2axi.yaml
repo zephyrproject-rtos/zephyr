@@ -10,6 +10,14 @@ description: |
   the data to memory over AXI. It is responsible for some of the link properties as well as well
   as extra transformation such as cropping or subsampling.
 
+  The engine supports automatic triggering the JPEG compression engine using a circular ring buffer
+  continuously refreshed. In which case, this data pipeline is formed:
+
+    CAMFRONT -> DVP2AXI -> PSRAM -> JPEG -> output buffer
+
+  The data coming out of DVP2AXI can still be accessed by the software under proper API (such as
+  zfence) to make sure that no tearing happens.
+
 compatible: "bflb,dvp2axi"
 
 include: [base.yaml, pinctrl-device.yaml, reset-device.yaml]
