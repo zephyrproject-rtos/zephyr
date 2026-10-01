@@ -815,6 +815,63 @@ ZTEST(sh, test_shell_readline_success)
 	shell_backend_dummy_clear_input(sh);
 }
 
+ZTEST(sh, test_cmd_concurrent_fprintf)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+	const char *cmd = "resize\n";
+	/* VT100 Cursor Position Report: ESC [ <row> ; <col> R (24 rows, 80 cols) */
+	const char *resp = "\033[24;80R";
+	const char *buf;
+	const char *restore_pos;
+	const char *conc_pos;
+	size_t size;
+	int ret;
+
+	test_shell_reset_state(sh);
+
+	ret = shell_backend_dummy_push_input(sh, cmd, strlen(cmd));
+	zassert_equal(ret, 0, "Failed to push input: %d", ret);
+
+	/*
+	 * Wait until the lower-priority shell_thread runs "resize" and sends
+	 * the cursor position query in cursor_position_get().
+	 */
+	zassert_true(WAIT_FOR(test_shell_output_contains(sh, "\033[6n"), 20000, k_msleep(1)),
+		     "Timed out waiting for cursor position query");
+
+	/* Queue the terminal cursor position response for cursor_position_get() */
+	ret = shell_backend_dummy_push_input(sh, resp, strlen(resp));
+	zassert_equal(ret, 0, "Failed to push response: %d", ret);
+
+	/*
+	 * Call shell_fprintf() from the higher-priority test thread while
+	 * shell_thread is mid-command. Because terminal_size_get() holds
+	 * z_shell_lock(), this call must block on lock_mtx, allowing
+	 * shell_thread to read the response, restore the cursor (\0338), and
+	 * unlock before "[CONCURRENT_FPRINTF]" is written.
+	 */
+	shell_fprintf(sh, SHELL_NORMAL, "[CONCURRENT_FPRINTF]\n");
+
+	/*
+	 * Wait for shell_thread to finish post-command prompt handling and
+	 * drain the RXRDY event from resp.
+	 */
+	zassert_true(WAIT_FOR((k_event_test(&sh->ctx->signal_event, SHELL_SIGNAL_RXRDY) == 0U) &&
+				      (sh->ctx->ctx.flags.processing == 0U),
+			      20000, k_msleep(1)),
+		     "Timed out waiting for shell_thread to finish command");
+
+	buf = shell_backend_dummy_get_output(sh, &size);
+	restore_pos = strstr(buf, "\0338");
+	conc_pos = strstr(buf, "[CONCURRENT_FPRINTF]");
+	zassert_not_null(restore_pos, "Expected cursor restore sequence in output");
+	zassert_not_null(conc_pos, "Expected concurrent fprintf output");
+	zassert_true(restore_pos < conc_pos,
+		     "Concurrent shell_fprintf interleaved before cursor restore in resize");
+
+	shell_backend_dummy_clear_output(sh);
+}
+
 static void *shell_setup(void)
 {
 	const struct shell *sh = shell_backend_dummy_get_ptr();
