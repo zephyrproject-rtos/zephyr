@@ -439,6 +439,12 @@ static void da7212_configure_output(const struct device *dev)
 	da7212_write_reg(dev, DIALOG7212_DAC_L_GAIN, (uint8_t)DIALOG7212_DAC_DEFAULT_GAIN);
 	da7212_write_reg(dev, DIALOG7212_DAC_R_GAIN, (uint8_t)DIALOG7212_DAC_DEFAULT_GAIN);
 
+	/* Enable the line amplifier, which drives the speaker outputs */
+	da7212_write_reg(dev, DIALOG7212_LINE_CTRL,
+		(uint8_t)(DIALOG7212_LINE_CTRL_AMP_EN_MASK |
+			DIALOG7212_LINE_CTRL_AMP_RAMP_EN_MASK |
+			DIALOG7212_LINE_CTRL_AMP_OE_MASK));
+
 	/* Set default HP volume and unmute */
 	da7212_out_volume_config(dev, AUDIO_CHANNEL_ALL, DIALOG7212_HP_DEFAULT_GAIN);
 	da7212_out_mute_config(dev, AUDIO_CHANNEL_ALL, false);
