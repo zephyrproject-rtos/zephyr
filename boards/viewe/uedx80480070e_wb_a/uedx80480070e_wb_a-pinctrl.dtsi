@@ -1,0 +1,69 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/esp32s3-pinctrl.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_GPIO43>;
+			output-high;
+		};
+
+		group2 {
+			pinmux = <UART0_RX_GPIO44>;
+			bias-pull-up;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO19>,
+				 <I2C0_SCL_GPIO20>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+
+	spim2_default: spim2_default {
+		group1 {
+			pinmux = <SPIM2_MISO_GPIO13>,
+				 <SPIM2_SCLK_GPIO12>;
+		};
+
+		group2 {
+			pinmux = <SPIM2_MOSI_GPIO11>;
+			output-low;
+		};
+	};
+
+	lcd_cam_default: lcd_cam_default {
+		group1 {
+			pinmux = <LCD_CAM_DATA_OUT0_GPIO8>,    /* B0 */
+				 <LCD_CAM_DATA_OUT1_GPIO3>,    /* B1 */
+				 <LCD_CAM_DATA_OUT2_GPIO46>,   /* B2 */
+				 <LCD_CAM_DATA_OUT3_GPIO9>,    /* B3 */
+				 <LCD_CAM_DATA_OUT4_GPIO1>,    /* B4 */
+				 <LCD_CAM_DATA_OUT5_GPIO5>,    /* G0 */
+				 <LCD_CAM_DATA_OUT6_GPIO6>,    /* G1 */
+				 <LCD_CAM_DATA_OUT7_GPIO7>,    /* G2 */
+				 <LCD_CAM_DATA_OUT8_GPIO15>,   /* G3 */
+				 <LCD_CAM_DATA_OUT9_GPIO16>,   /* G4 */
+				 <LCD_CAM_DATA_OUT10_GPIO4>,   /* G5 */
+				 <LCD_CAM_DATA_OUT11_GPIO45>,  /* R0 */
+				 <LCD_CAM_DATA_OUT12_GPIO48>,  /* R1 */
+				 <LCD_CAM_DATA_OUT13_GPIO47>,  /* R2 */
+				 <LCD_CAM_DATA_OUT14_GPIO21>,  /* R3 */
+				 <LCD_CAM_DATA_OUT15_GPIO14>,  /* R4 */
+				 <LCD_CAM_LCD_CLK_GPIO42>,     /* PCLK */
+				 <LCD_CAM_H_SYNC_LCD_GPIO39>,  /* HSYNC */
+				 <LCD_CAM_V_SYNC_LCD_GPIO41>,  /* VSYNC */
+				 <LCD_CAM_H_ENABLE_LCD_GPIO40>; /* DE */
+			output-enable;
+			bias-disable;
+		};
+	};
+};
