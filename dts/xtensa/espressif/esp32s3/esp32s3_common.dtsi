@@ -427,6 +427,11 @@
 				#size-cells = <0>;
 				status = "disabled";
 			};
+
+			lcd_cam_rgb: lcd_cam_rgb {
+				compatible = "espressif,esp32-lcd-cam-rgb";
+				status = "disabled";
+			};
 		};
 
 		usb_serial: uart@60038000 {
