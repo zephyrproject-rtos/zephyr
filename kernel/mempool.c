@@ -8,6 +8,7 @@
 #include <string.h>
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/util.h>
+#include <kernel_internal.h>
 
 static void *z_heap_aligned_alloc(struct k_heap *heap, size_t align, size_t size)
 {
@@ -56,6 +57,21 @@ void k_free(void *ptr)
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_heap_sys, k_free, *heap_ref, heap_ref);
 	}
 }
+
+/* See k_heap_free_sched_locked() */
+void k_free_sched_locked(void *ptr)
+{
+	struct k_heap **heap_ref;
+
+	if (ptr != NULL) {
+		heap_ref = ptr;
+		--heap_ref;
+		ptr = heap_ref;
+
+		k_heap_free_sched_locked(*heap_ref, ptr);
+	}
+}
+
 
 #if (K_HEAP_MEM_POOL_SIZE > 0)
 
