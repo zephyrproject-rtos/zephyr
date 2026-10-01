@@ -96,4 +96,63 @@ ZTEST(cond, test_cond_signal_static_init_pthread_cond_t)
 	zassert_ok(pthread_cond_destroy(&cond));
 }
 
+struct static_cond_test_data {
+	pthread_cond_t *cond;
+	pthread_mutex_t *mutex;
+	bool signaled;
+};
+
+static void *static_cond_waiter(void *arg)
+{
+	struct static_cond_test_data *data = arg;
+
+	zassert_ok(pthread_mutex_lock(data->mutex));
+	while (data->signaled == false) {
+		zassert_ok(pthread_cond_wait(data->cond, data->mutex));
+	}
+	zassert_ok(pthread_mutex_unlock(data->mutex));
+
+	return NULL;
+}
+
+/**
+ * @brief Test concurrent wait and signal with statically initialized condvar
+ *
+ * @details A PTHREAD_COND_INITIALIZER condvar must auto-initialize on first use
+ *          and reliably wake up waiters across concurrent threads, exercising
+ *          the serialized lazy-init path in to_posix_cond().
+ */
+ZTEST(cond, test_cond_static_initializer_multithread)
+{
+	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD)) {
+		/* skip redundant testing if there is no thread pool / heap allocation */
+		ztest_test_skip();
+		return;
+	}
+
+	static pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+	static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+	struct static_cond_test_data data = {
+		.cond = &cond,
+		.mutex = &mutex,
+		.signaled = false,
+	};
+	pthread_t th;
+
+	zassert_ok(pthread_create(&th, NULL, static_cond_waiter, &data));
+
+	/* Allow child thread to run and block in pthread_cond_wait */
+	k_msleep(50);
+
+	zassert_ok(pthread_mutex_lock(&mutex));
+	data.signaled = true;
+	zassert_ok(pthread_cond_signal(&cond));
+	zassert_ok(pthread_mutex_unlock(&mutex));
+
+	zassert_ok(pthread_join(th, NULL));
+
+	zassert_ok(pthread_cond_destroy(&cond));
+	zassert_ok(pthread_mutex_destroy(&mutex));
+}
+
 ZTEST_SUITE(cond, NULL, NULL, NULL, NULL, NULL);
