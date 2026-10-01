@@ -556,6 +556,14 @@ if(CONFIG_INSTRUMENTATION)
     zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,func_instrumentation_exclude_file_list>>)
     zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,func_instrumentation_exclude_file_list>>)
   endif()
+
+  # @Intent: Never instrument the CMSIS intrinsics when the stack limit is
+  # enforced: their hooks run inside sequences that move PSPLIM and fault.
+  # Added on top of, not via, the user's exclude file list.
+  if(CONFIG_BUILTIN_STACK_GUARD)
+    zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,func_instrumentation_exclude_cmsis>>)
+    zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,func_instrumentation_exclude_cmsis>>)
+  endif()
 endif()
 
 if(CONFIG_COMPILER_CODEGEN_VLIW_ENABLED)
