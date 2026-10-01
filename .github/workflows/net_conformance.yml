@@ -4,7 +4,15 @@
 # installation, a network interface facing the device, and a checkout of the
 # TTCN-3 suites, none of which a normal build has. They are also slow, and the
 # suites cannot run at the same time as each other, so this runs nightly rather
-# than per pull request.
+# than per pull request, except for a pull request that changes the tests, the
+# script that runs them or this workflow.
+#
+# It runs on a GitHub-hosted virtual machine rather than in a container on the
+# project's own runners. The suites talk to the device over tap interfaces, and
+# creating one needs CAP_NET_ADMIN, which the containers on those runners do not
+# get: they are started through a Kubernetes hook that takes no notice of docker
+# options such as --cap-add. On the virtual machine sudo is enough, and the job
+# builds only native_sim, so it needs nothing from the project's images.
 
 name: Network protocol conformance
 
@@ -13,6 +21,11 @@ on:
     # 03:00 UTC nightly
     - cron: '0 3 * * *'
   workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/net_conformance.yml'
+      - 'scripts/net/run-conformance-tests.sh'
+      - 'tests/net/conformance/**'
 
 permissions:
   contents: read
@@ -24,75 +37,57 @@ concurrency:
 jobs:
   conformance:
     if: github.repository_owner == 'zephyrproject-rtos'
-    runs-on:
-      group: zephyr-runner-v2-linux-x64-4xlarge
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
-    container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.4.20260912
-      # Creating the interfaces the suites talk to the device over needs to
-      # configure networking in the container, and some of the suites need a
-      # privileged port or a packet socket, so the job runs as root. A tap
-      # interface is made through /dev/net/tun, which a container does not
-      # have unless it is given it. A runner that does not start the
-      # container with docker takes no notice of these options, so the step
-      # that creates the interfaces makes the device itself when it has to.
-      options: >-
-        --entrypoint /bin/bash --cap-add=NET_ADMIN --device /dev/net/tun
-        --user root
     env:
       ZEPHYR_TOOLCHAIN_VARIANT: zephyr
       # A suite skips itself when something it needs is missing. This job
       # exists to run them all, so here that is a failure.
       NET_CONFORMANCE_REQUIRED: 1
     steps:
-      - name: Apply container owner mismatch workaround
-        run: |
-          git config --global --add safe.directory ${GITHUB_WORKSPACE}
-
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          path: zephyr
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Set up Zephyr environment
-        uses: ./.github/actions/zephyr-ci-env
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          group-filter: '+tools,'
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: zephyr/scripts/requirements-actions.txt
+
+      - name: Set up the Zephyr workspace
+        uses: zephyrproject-rtos/action-zephyr-setup@be8136a8bba01580485d98b7ad2d32477c36a49a # v1.0.15
+        with:
+          app-path: zephyr
+          # native_sim builds with the host compiler; the SDK is installed for
+          # its host tools, and this is the smallest toolchain to ask for.
+          toolchains: 'x86_64-zephyr-elf'
+          enable-ccache: false
+          # The suites live in net-tools, and native_sim needs no other
+          # module.
+          west-project-filter: '-.*,+net-tools'
 
       - name: Install Titan
         run: |
-          apt-get update
+          sudo apt-get update
           # expect is needed by suites that run through the main controller.
-          apt-get install -y --no-install-recommends eclipse-titan expect
-          echo "TTCN3_DIR=/usr" >> $GITHUB_ENV
-          # Where the suites are. The harness and the scripts under
-          # scripts/net look here first.
-          echo "NET_TOOLS_BASE=${GITHUB_WORKSPACE}/../tools/net-tools" >> $GITHUB_ENV
-
-      - name: Fetch the TTCN-3 modules
-        run: |
-          ${NET_TOOLS_BASE}/ttcn3/fetch-modules.sh
-
-      - name: Create the network interfaces
-        run: |
-          if [ ! -c /dev/net/tun ]; then
-            mkdir -p /dev/net
-            mknod /dev/net/tun c 10 200
-          fi
-          # The interface the suites that use sockets share.
-          ${NET_TOOLS_BASE}/net-setup.sh --config ${NET_TOOLS_BASE}/zeth.conf start
-          # A second one with no address, for the suites that read frames off
-          # the link and so need to be the only thing on it that answers.
-          ${NET_TOOLS_BASE}/net-setup.sh --config ${NET_TOOLS_BASE}/zeth-l2.conf \
-            --iface zethL2 start
-          ip -br addr show
+          sudo apt-get install -y --no-install-recommends eclipse-titan expect
 
       - name: Run the conformance suites
+        working-directory: zephyr
         run: |
-          export ZEPHYR_BASE=${GITHUB_WORKSPACE}
-          ./scripts/twister --platform native_sim --enable-slow --inline-logs \
-            --testsuite-root tests/net/conformance
+          export ZEPHYR_SDK_INSTALL_DIR=${{ github.workspace }}/zephyr-sdk
+          # The script fetches the third party TTCN-3 modules, creates the
+          # two interfaces, re-runs itself under sudo because some suites bind
+          # a privileged port or open a packet socket, runs Twister once over
+          # the whole directory and removes the interfaces again.
+          ./scripts/net/run-conformance-tests.sh \
+            --net-tools-dir ${{ github.workspace }}/tools/net-tools \
+            --titan-dir /usr --outdir twister-out
 
       - name: Upload the results
         if: always()
@@ -100,6 +95,6 @@ jobs:
         with:
           name: net-conformance-results
           path: |
-            twister-out/twister.xml
-            twister-out/**/twister_harness.log
+            zephyr/twister-out/twister.xml
+            zephyr/twister-out/**/twister_harness.log
           if-no-files-found: ignore
