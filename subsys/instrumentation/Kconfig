@@ -145,10 +145,20 @@ config INSTRUMENTATION_EXCLUDE_FUNCTION_LIST
 config INSTRUMENTATION_EXCLUDE_FILE_LIST
 	string "Exclude file list"
 	depends on INSTRUMENTATION_MODE_CALLGRAPH || INSTRUMENTATION_MODE_STATISTICAL
+	default "CMSIS/Core/Include/,arm_cmse.h" if CPU_CORTEX_M
 	help
 	  Set the list of files that are excluded from instrumentation. The
 	  match is done on substrings: if the file parameter is a substring of
 	  the file name, it is considered to be a match. The files in the list
 	  are separate by a comma, for instance: file0, file1, ...
+
+	  On Cortex-M, the CMSIS core and arm_cmse.h intrinsics are excluded by
+	  default. They are inline functions, so -finstrument-functions emits
+	  hooks around every inlined copy, including inside sequences that must
+	  not touch the stack. On Armv8-M with CONFIG_BUILTIN_STACK_GUARD, for
+	  example, arch_switch_to_main_thread() sets PSPLIM to the main thread's
+	  stack with __set_PSPLIM() while still running on the early boot stack:
+	  the exit hook emitted after it pushes below the new limit and the CPU
+	  takes a stack overflow fault before main() runs.
 
 endif
