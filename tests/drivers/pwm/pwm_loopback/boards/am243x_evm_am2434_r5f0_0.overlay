@@ -1,0 +1,22 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Texas Instruments Incorporated
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		pwms = <&main_epwm0 0 0 PWM_POLARITY_NORMAL>,
+		       <&main_ecap0 0 0 PWM_POLARITY_NORMAL>;
+	};
+};
+
+&main_epwm0 {
+	status = "okay";
+};
+
+&main_ecap0 {
+	status = "okay";
+};
