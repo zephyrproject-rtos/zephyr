@@ -14,6 +14,9 @@
 #include <zephyr/logging/log.h>
 #include <soc.h>
 #include <r_sau_i2c.h>
+#if defined(CONFIG_I2C_RENESAS_RA_SAU_DTC)
+#include <r_dtc.h>
+#endif
 
 LOG_MODULE_REGISTER(renesas_ra_i2c_sau, CONFIG_I2C_LOG_LEVEL);
 
@@ -37,6 +40,13 @@ struct i2c_renesas_ra_sau_data {
 	struct k_sem complete_sem;
 	volatile i2c_master_event_t event;
 	uint32_t dev_config;
+#if defined(CONFIG_I2C_RENESAS_RA_SAU_DTC)
+	transfer_instance_t transfer_tx;
+	transfer_info_t transfer_info[2] DTC_TRANSFER_INFO_ALIGNMENT;
+	transfer_cfg_t transfer_cfg;
+	dtc_instance_ctrl_t transfer_ctrl;
+	dtc_extended_cfg_t transfer_cfg_extend;
+#endif
 };
 
 static void i2c_renesas_ra_sau_callback(i2c_master_callback_args_t *p_args)
@@ -212,6 +222,17 @@ static int i2c_renesas_ra_sau_transfer(const struct device *dev, struct i2c_msg 
 			}
 			fsp_err = R_SAU_I2C_Read(&data->fsp_ctrl, buf, current->len, restart);
 		} else {
+#if defined(CONFIG_I2C_RENESAS_RA_SAU_DTC)
+			/*
+			 * Zero-length write (e.g. bus probing) has no payload.
+			 * Bypass DTC to let CPU interrupt handle address phase.
+			 */
+			if (current->len == 0) {
+				data->fsp_cfg.p_transfer_tx = NULL;
+			} else {
+				data->fsp_cfg.p_transfer_tx = &data->transfer_tx;
+			}
+#endif
 			fsp_err = R_SAU_I2C_Write(&data->fsp_ctrl, buf, current->len, restart);
 		}
 
@@ -223,6 +244,11 @@ static int i2c_renesas_ra_sau_transfer(const struct device *dev, struct i2c_msg 
 
 		/* Wait for transfer completion */
 		k_sem_take(&data->complete_sem, K_FOREVER);
+
+#if defined(CONFIG_I2C_RENESAS_RA_SAU_DTC)
+		/* Restore DTC transfer instance for subsequent transfers */
+		data->fsp_cfg.p_transfer_tx = &data->transfer_tx;
+#endif
 
 		/* Check transfer completion event */
 		switch (data->event) {
@@ -242,6 +268,14 @@ static int i2c_renesas_ra_sau_transfer(const struct device *dev, struct i2c_msg 
 	}
 
 release_bus:
+#if defined(CONFIG_I2C_RENESAS_RA_SAU_DTC)
+	/* Disable active transfer on error and restore transfer instance */
+	if ((ret != 0) && (data->fsp_cfg.p_transfer_tx != NULL)) {
+		(void)data->fsp_cfg.p_transfer_tx->p_api->disable(
+			data->fsp_cfg.p_transfer_tx->p_ctrl);
+	}
+	data->fsp_cfg.p_transfer_tx = &data->transfer_tx;
+#endif
 	/* Release bus lock */
 	k_sem_give(&data->bus_lock);
 	return ret;
@@ -359,6 +393,74 @@ static DEVICE_API(i2c, i2c_renesas_ra_sau_driver_api) = {
 			    sau_i2c_tei_isr, NULL, 0);                                             \
 	}
 
+#if defined(CONFIG_I2C_RENESAS_RA_SAU_DTC)
+/*
+ * DTC transfer configuration:
+ * Descriptor 0: Read received data from SDR into buffer (chained to
+ *               Descriptor 1).
+ * Descriptor 1: Write dummy byte to SDR to generate SCL clock for reception.
+ */
+#define SAU_I2C_DTC_INIT(idx)                                                                      \
+	.transfer_info =                                                                           \
+		{                                                                                  \
+			[0] =                                                                      \
+				{                                                                  \
+					.transfer_settings_word_b.dest_addr_mode =                 \
+						TRANSFER_ADDR_MODE_INCREMENTED,                    \
+					.transfer_settings_word_b.repeat_area =                    \
+						TRANSFER_REPEAT_AREA_DESTINATION,                  \
+					.transfer_settings_word_b.irq = TRANSFER_IRQ_END,          \
+					.transfer_settings_word_b.chain_mode =                     \
+						TRANSFER_CHAIN_MODE_EACH,                          \
+					.transfer_settings_word_b.src_addr_mode =                  \
+						TRANSFER_ADDR_MODE_FIXED,                          \
+					.transfer_settings_word_b.size = TRANSFER_SIZE_1_BYTE,     \
+					.transfer_settings_word_b.mode = TRANSFER_MODE_NORMAL,     \
+					.p_dest = (void *)NULL,                                    \
+					.p_src = (void const *)NULL,                               \
+					.num_blocks = 0,                                           \
+					.length = 0,                                               \
+				},                                                                 \
+			[1] =                                                                      \
+				{                                                                  \
+					.transfer_settings_word_b.dest_addr_mode =                 \
+						TRANSFER_ADDR_MODE_FIXED,                          \
+					.transfer_settings_word_b.repeat_area =                    \
+						TRANSFER_REPEAT_AREA_SOURCE,                       \
+					.transfer_settings_word_b.irq = TRANSFER_IRQ_END,          \
+					.transfer_settings_word_b.chain_mode =                     \
+						TRANSFER_CHAIN_MODE_DISABLED,                      \
+					.transfer_settings_word_b.src_addr_mode =                  \
+						TRANSFER_ADDR_MODE_INCREMENTED,                    \
+					.transfer_settings_word_b.size = TRANSFER_SIZE_1_BYTE,     \
+					.transfer_settings_word_b.mode = TRANSFER_MODE_NORMAL,     \
+					.p_dest = (void *)NULL,                                    \
+					.p_src = (void const *)NULL,                               \
+					.num_blocks = 0,                                           \
+					.length = 0,                                               \
+				},                                                                 \
+	},                                                                                         \
+	.transfer_cfg_extend =                                                                     \
+		{                                                                                  \
+			.activation_source =                                                       \
+				DT_IRQ(DT_INST_PHANDLE_BY_IDX(idx, sau_channels, 0), irq),         \
+	},                                                                                         \
+	.transfer_cfg =                                                                            \
+		{                                                                                  \
+			.p_info = &i2c_renesas_ra_sau_data_##idx.transfer_info[0],                 \
+			.p_extend = &i2c_renesas_ra_sau_data_##idx.transfer_cfg_extend,            \
+	},                                                                                         \
+	.transfer_tx = {                                                                           \
+		.p_ctrl = &i2c_renesas_ra_sau_data_##idx.transfer_ctrl,                            \
+		.p_cfg = &i2c_renesas_ra_sau_data_##idx.transfer_cfg,                              \
+		.p_api = &g_transfer_on_dtc,                                                       \
+	},
+#define SAU_I2C_TRANSFER_TX_INIT(idx) &i2c_renesas_ra_sau_data_##idx.transfer_tx
+#else
+#define SAU_I2C_DTC_INIT(idx)
+#define SAU_I2C_TRANSFER_TX_INIT(idx) NULL
+#endif
+
 #define I2C_RENESAS_RA_SAU_INIT(idx)                                                               \
 	RENESAS_RA_SAU_I2C_CHECK_OPERATION_CLOCK(idx);                                             \
                                                                                                    \
@@ -395,7 +497,7 @@ static DEVICE_API(i2c, i2c_renesas_ra_sau_driver_api) = {
 					      priority),                                           \
 				.tei_irq =                                                         \
 					DT_IRQ(DT_INST_PHANDLE_BY_IDX(idx, sau_channels, 0), irq), \
-				.p_transfer_tx = NULL,                                             \
+				.p_transfer_tx = SAU_I2C_TRANSFER_TX_INIT(idx),                    \
 				.p_transfer_rx = NULL,                                             \
 			},                                                                         \
 		.fsp_cfg_extend =                                                                  \
@@ -410,7 +512,7 @@ static DEVICE_API(i2c, i2c_renesas_ra_sau_driver_api) = {
 							RENESAS_RA_SAU_I2C_OPERATION_CLOCK(idx),   \
 					},                                                         \
 			},                                                                         \
-	};                                                                                         \
+		SAU_I2C_DTC_INIT(idx)};                                                            \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(idx, i2c_renesas_ra_sau_init, NULL, &i2c_renesas_ra_sau_data_##idx,  \
 			      &i2c_renesas_ra_sau_config_##idx, POST_KERNEL,                       \

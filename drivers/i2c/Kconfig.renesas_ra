@@ -89,3 +89,15 @@ config I2C_RENESAS_RA_SAU
 	select USE_RA_FSP_SAU_I2C
 	help
 	  Enable Renesas RA SAU Simplified I2C (IIC Master) Driver.
+
+if I2C_RENESAS_RA_SAU
+
+config I2C_RENESAS_RA_SAU_DTC
+	bool "DTC on Transmission and Reception"
+	default y
+	select USE_RA_FSP_DTC
+	help
+	  Enable DTC (Data Transfer Controller) support for Renesas RA
+	  SAU simplified I2C controller driver.
+
+endif
