@@ -206,6 +206,10 @@
 	status = "okay";
 };
 
+&vref {
+	status = "okay";
+};
+
 &timers3 {
 	st,prescaler = <10000>;
 	status = "okay";
