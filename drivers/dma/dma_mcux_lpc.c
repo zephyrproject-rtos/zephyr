@@ -860,10 +860,24 @@ static int dma_mcux_lpc_start(const struct device *dev, uint32_t channel)
 
 static int dma_mcux_lpc_stop(const struct device *dev, uint32_t channel)
 {
+	const struct dma_mcux_lpc_config *config = dev->config;
 	struct dma_mcux_lpc_dma_data *dev_data = dev->data;
-	int8_t virtual_channel = dev_data->channel_index[channel];
-	struct channel_data *data = DEV_CHANNEL_DATA(dev, virtual_channel);
-	dma_handle_t *p_handle = DEV_DMA_HANDLE(dev, virtual_channel);
+	int8_t virtual_channel;
+	struct channel_data *data;
+	dma_handle_t *p_handle;
+
+	if (channel >= config->num_of_channels) {
+		return -EINVAL;
+	}
+
+	virtual_channel = dev_data->channel_index[channel];
+	if (virtual_channel == -1) {
+		/* An unconfigured channel has no transfer to stop. */
+		return 0;
+	}
+
+	data = DEV_CHANNEL_DATA(dev, virtual_channel);
+	p_handle = DEV_DMA_HANDLE(dev, virtual_channel);
 
 	/* Abort/disable even if not busy. it's safe and avoids
 	 * any risk of data->busy not being accurate.
