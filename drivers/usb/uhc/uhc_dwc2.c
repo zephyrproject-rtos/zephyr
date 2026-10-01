@@ -1814,9 +1814,6 @@ static void port_sof(const struct device *dev)
 	uint32_t hfnum;
 	uint16_t next_frame;
 
-	hfnum = sys_read32((mem_addr_t)&base->hfnum);
-	next_frame = (usb_dwc2_get_hfnum_frnum(hfnum) + 1U) & PERIODIC_FRAME_MASK;
-
 	for (uint8_t idx = 0; idx < priv->numhstchnl; idx++) {
 		struct uhc_dwc2_channel *const ch = &priv->ch[idx];
 
@@ -1841,6 +1838,10 @@ static void port_sof(const struct device *dev)
 			continue;
 		}
 
+		/* TODO: Why does reading the HFNUM a lot hang the CTRL/BULK? */
+		hfnum = sys_read32((mem_addr_t)&base->hfnum);
+		next_frame = (usb_dwc2_get_hfnum_frnum(hfnum) + 1U) & PERIODIC_FRAME_MASK;
+
 		if (next_frame == ch->data->scheduled_frame) {
 			LOG_DBG("Channel%d schedule periodic to frame=%u",
 				ch->index,
@@ -1849,18 +1850,6 @@ static void port_sof(const struct device *dev)
 			ch->data->periodic_scheduled = false;
 			ch_start_interrupt(dev, ch);
 		}
-
-		// if (ch->xfer == NULL || ch->data == NULL || !ch->data->periodic_scheduled) {
-		// 	continue;
-		// }
-
-		// if (next_frame == ch->data->scheduled_frame) {
-		// 	LOG_DBG("TODO: Channel%d schedule periodic to frame=%u",
-		// 		ch->index,
-		// 		ch->data->scheduled_frame);
-		// 	ch->data->periodic_scheduled = false;
-		// 	ch_start_interrupt(dev, ch);
-		// }
 	}
 }
 
