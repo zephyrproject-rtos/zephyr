@@ -2558,7 +2558,7 @@ out:
 
 static uint32_t seq_scale(uint32_t seq)
 {
-	return seq + (k_ticks_to_ns_floor32(k_uptime_ticks()) >> 6);
+	return seq + (uint32_t)(k_ticks_to_ns_floor64(k_uptime_ticks()) >> 6);
 }
 
 static uint8_t unique_key[16]; /* Secret key hashed into the ISN, RFC 6528 ch 3 */
