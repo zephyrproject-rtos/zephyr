@@ -6,3 +6,4 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(pulse_io_hw_loopback)
 
 target_sources(app PRIVATE src/main.c)
+target_sources_ifdef(CONFIG_PM app PRIVATE src/pm.c)
