@@ -31,6 +31,14 @@
 	pinctrl-names = "default";
 };
 
+&camfront {
+	status = "okay";
+
+	pinctrl-0 = <&camfront_default>;
+	pinctrl-names = "default";
+	clock-divider = <2>;
+};
+
 &spi0 {
 	status = "okay";
 
@@ -39,4 +47,10 @@
 
 	/* shared between SD card and display, use only one */
 	cs-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+};
+
+&clocks {
+	/* for MCLK */
+	pinctrl-0 = <&clocks_default>;
+	pinctrl-names = "default";
 };
