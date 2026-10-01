@@ -881,6 +881,10 @@ static void spi_stm32_msg_start(const struct device *dev, bool is_rx_empty)
 	irq_disable(cfg->irq_line);
 #endif /* CONFIG_SPI_STM32_INTERRUPT && CONFIG_SOC_SERIES_STM32H7X */
 
+	/* Make sure DXP and EOT interrupts are disabled before starting the transfer */
+	ll_disable_int_dxp(spi);
+	ll_disable_int_eot(spi);
+
 	LL_SPI_Enable(spi);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
@@ -2072,7 +2076,7 @@ static int transceive(const struct device *dev,
 	int ret;
 	bool use_dma = false;
 	const struct spi_stm32_config *cfg = dev->config;
-	SPI_TypeDef *spi = cfg->spi;
+	__maybe_unused SPI_TypeDef *spi = cfg->spi;
 
 #if defined(CONFIG_SPI_STM32_DMA)
 	if ((SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_CONTROLLER) &&
@@ -2111,10 +2115,6 @@ static int transceive(const struct device *dev,
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, config);
 
 	spi_stm32_pm_policy_state_lock_get(dev);
-
-	/* Make sure DXP and EOT interrupts are disabled before starting the transfer */
-	ll_disable_int_dxp(spi);
-	ll_disable_int_eot(spi);
 
 #ifdef CONFIG_SPI_RTIO
 	ret = spi_rtio_transceive(data->rtio_ctx, config, tx_bufs, rx_bufs);
