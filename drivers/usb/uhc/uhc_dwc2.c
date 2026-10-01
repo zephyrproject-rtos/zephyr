@@ -918,6 +918,12 @@ static uint32_t ch_handle_in_bulk_control(const struct device *dev,
 				ch_events |= BIT(UHC_DWC2_CHANNEL_DO_REINIT);
 				ch_events |= BIT(UHC_DWC2_CHANNEL_DO_REWIND);
 			}
+		} else if ((hcint & USB_DWC2_HCINT_DTGERR) && ch->xfer->type == USB_EP_TYPE_BULK) {
+			/* The core acknowledged and dropped a repeated packet */
+			ch->error_count = 0U;
+			LOG_DBG("IN channel%d toggle error, HCINT 0x%08x", ch->index, hcint);
+			ch_events |= BIT(UHC_DWC2_CHANNEL_DO_REINIT);
+			ch_events |= BIT(UHC_DWC2_CHANNEL_DO_REWIND);
 		} else {
 			/* The channel halted without reporting a reason. Fail the
 			 * transfer instead of leaving the caller waiting.
