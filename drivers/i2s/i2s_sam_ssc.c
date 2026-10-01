@@ -118,9 +118,10 @@ static int queue_get(struct sys_ringq *f, void **mem_block, size_t *size)
 
 	key = irq_lock();
 	rc = sys_ringq_get(f, &item);
-
-	*mem_block = item.mem_block;
-	*size = item.size;
+	if (rc == 0) {
+		*mem_block = item.mem_block;
+		*size = item.size;
+	}
 	irq_unlock(key);
 	return rc;
 }
