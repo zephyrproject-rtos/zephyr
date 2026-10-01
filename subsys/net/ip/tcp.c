@@ -2561,7 +2561,7 @@ static uint32_t seq_scale(uint32_t seq)
 	return seq + (uint32_t)(k_ticks_to_ns_floor64(k_uptime_ticks()) >> 6);
 }
 
-static uint8_t unique_key[16]; /* Secret key hashed into the ISN, RFC 6528 ch 3 */
+ZTESTABLE_STATIC uint8_t unique_key[16]; /* Secret key hashed into the ISN, RFC 6528 ch 3 */
 static bool unique_key_valid;
 
 /* The secret key must not be known to an off-path attacker, otherwise the
@@ -2652,8 +2652,8 @@ static int tcpv4_isn_hash(struct net_in_addr *saddr, struct net_in_addr *daddr, 
 	return tcp_isn_hash(&buf, sizeof(buf), isn);
 }
 
-static int tcp_isn_hash_addr(struct net_sockaddr *saddr, struct net_sockaddr *daddr,
-			     uint32_t *isn)
+ZTESTABLE_STATIC int tcp_isn_hash_addr(struct net_sockaddr *saddr, struct net_sockaddr *daddr,
+				       uint32_t *isn)
 {
 	int ret;
 
