@@ -1,0 +1,33 @@
+# Copyright (c) 2026 Space Cubics Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_EVERSPIN_EMXXLX
+	bool "Everspin EMxxLX serial MRAM"
+	default y
+	depends on DT_HAS_EVERSPIN_EM004LXQ_ENABLED || \
+		DT_HAS_EVERSPIN_EM008LXQ_ENABLED || \
+		DT_HAS_EVERSPIN_EM016LXQ_ENABLED || \
+		DT_HAS_EVERSPIN_EM032LXQ_ENABLED || \
+		DT_HAS_EVERSPIN_EM064LXQ_ENABLED
+	select SPI
+	select SPI_EXTENDED_MODES
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_DRIVER_FILL
+	select FLASH_HAS_NO_EXPLICIT_ERASE
+	select FLASH_HAS_PAGE_LAYOUT
+	help
+	  Flash API driver for Everspin EM004LXQ, EM008LXQ, EM016LXQ,
+	  EM032LXQ, and EM064LXQ serial MRAM (512 KiB to 8 MiB). Supports
+	  single SPI and Quad STR (4-4-4) without a data strobe. Only volatile
+	  configuration is changed; manufacturing initialization and recovery
+	  that erase memory, OTP or nonvolatile registers are not performed.
+
+config FLASH_EVERSPIN_EMXXLX_TRANSFER_SIZE
+	int "Maximum Everspin MRAM command data length"
+	default 256
+	range 9 1024
+	depends on FLASH_EVERSPIN_EMXXLX
+	help
+	  Maximum data length in bytes, including eight dummy bytes for Quad
+	  reads. Controllers without FIFO streaming require this limit to fit
+	  their FIFO capacity.

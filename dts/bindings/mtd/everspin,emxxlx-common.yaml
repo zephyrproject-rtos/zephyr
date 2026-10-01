@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Space Cubics Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Common properties for Everspin EMxxLX serial MRAM
+
+include: spi-device.yaml
+
+properties:
+  spi-rx-bus-width:
+    type: int
+    required: true
+    enum: [1, 4]
+    description: |
+      Number of receive data lines. Both bus widths must match. A width of
+      4 selects Quad STR (4-4-4) without a data strobe.
+
+  spi-tx-bus-width:
+    type: int
+    required: true
+    enum: [1, 4]
+    description: |
+      Number of transmit data lines. Must match spi-rx-bus-width.
