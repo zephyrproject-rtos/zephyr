@@ -32,6 +32,19 @@ config ETH_XLNX_CDNS_MACB
 	  for the packet buffers; the Zynq-7000 L2 cache is not configured by
 	  Zephyr and must stay disabled.
 
+config ETH_INFINEON_CAT1C_CDNS_MACB
+	bool "Driver for the Cadence GEM on the Infineon CAT1C MCUs"
+	depends on DT_HAS_INFINEON_CAT1C_GEM_ENABLED
+	select ETH_CDNS_MACB_CORE
+	select CLOCK_CONTROL
+	select CLOCK_CONTROL_FIXED_RATE_CLOCK if DT_HAS_FIXED_CLOCK_ENABLED
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	default y
+	help
+	  This enables the Cadence GEM driver on the Infineon CAT1C (TRAVEO
+	  T2G) MCUs. The data cache of the Cortex-M7 is maintained for the
+	  packet buffers, the descriptor rings live in the nocache region.
+
 config ETH_NIC_MODEL
 	string
 	default "cadence_gem"
