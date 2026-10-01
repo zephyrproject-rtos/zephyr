@@ -107,6 +107,7 @@ static int flash_ti_mspm0_erase(const struct device *dev,
 	k_sem_reset(&data->wait_sem);
 
 	do {
+		DL_FlashCTL_executeClearStatus(cfg->regs);
 		DL_FlashCTL_unprotectSector(cfg->regs, offset,
 					    DL_FLASHCTL_REGION_SELECT_MAIN);
 		DL_FlashCTL_eraseMemory(cfg->regs, offset,
@@ -178,6 +179,7 @@ static int flash_ti_mspm0_write(const struct device *dev, off_t offset,
 			memcpy(aligned_data, src, FLASH_MSPM0_WRITE_BLOCK_SIZE);
 		}
 
+		DL_FlashCTL_executeClearStatus(cfg->regs);
 		DL_FlashCTL_unprotectSector(cfg->regs, offset,
 					    DL_FLASHCTL_REGION_SELECT_MAIN);
 
