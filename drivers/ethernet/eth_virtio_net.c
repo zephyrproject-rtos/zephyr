@@ -106,6 +106,7 @@ struct _rx_cb_data {
 
 struct virtnet_data {
 	const struct device *dev;
+	struct virtq vqs[2];
 	struct net_if *iface;
 	const struct _virtio_net_config *virtio_devcfg;
 	uint8_t mac[6];
@@ -113,18 +114,6 @@ struct virtnet_data {
 	uint8_t txb[VIRTIO_NET_BUFLEN];
 	uint8_t rxb[CONFIG_ETH_VIRTIO_NET_RX_BUFFERS][VIRTIO_NET_BUFLEN];
 };
-
-static uint16_t virtnet_enum_queues_cb(uint16_t q_index, uint16_t q_size_max, void *priv)
-{
-	ARG_UNUSED(q_size_max);
-	ARG_UNUSED(priv);
-
-	if (q_index % 2 == 0) { /* receiving virtqueue (even-numbered) */
-		return CONFIG_ETH_VIRTIO_NET_RX_BUFFERS;
-	} else {
-		return 1;
-	}
-}
 
 static enum ethernet_hw_caps virtnet_get_capabilities(const struct device *dev __unused,
 						     struct net_if *iface __unused)
@@ -144,7 +133,7 @@ static int virtnet_send(const struct device *dev, struct net_pkt *pkt)
 		return -EIO;
 	}
 
-	struct virtq *vq = virtio_get_virtqueue(config->vdev, VIRTQ_TX(1));
+	struct virtq *vq = &data->vqs[VIRTQ_TX(1)];
 	struct virtq_buf vqbuf[] = {
 		{.addr = data->txb, .len = sizeof(struct _virtio_net_hdr) + len}};
 
@@ -162,7 +151,7 @@ void virtnet_rx_cb(void *priv, uint32_t len)
 	struct virtnet_data *data = p->data;
 	uint16_t buf_no = p->buf_no;
 	const struct virtnet_config *config = data->dev->config;
-	struct virtq *vq = virtio_get_virtqueue(config->vdev, VIRTQ_RX(1));
+	struct virtq *vq = &data->vqs[VIRTQ_RX(1)];
 
 	len -= sizeof(struct _virtio_net_hdr);
 	struct net_pkt *pkt =
@@ -194,7 +183,7 @@ static void virtnet_if_init(struct net_if *iface)
 
 	data->iface = iface;
 	net_if_set_link_addr(iface, data->mac, sizeof(data->virtio_devcfg->mac), NET_LINK_ETHERNET);
-	struct virtq *vq = virtio_get_virtqueue(config->vdev, VIRTQ_RX(1));
+	struct virtq *vq = &data->vqs[VIRTQ_RX(1)];
 
 	for (int i = 0; i < CONFIG_ETH_VIRTIO_NET_RX_BUFFERS; i++) {
 		data->rx_cb_data[i].data = data;
@@ -213,6 +202,7 @@ static int virtnet_dev_init(const struct device *dev)
 {
 	const struct virtnet_config *config = dev->config;
 	struct virtnet_data *data = dev->data;
+	int ret;
 
 	(void)net_eth_mac_load(&config->mcfg, data->mac);
 
@@ -226,7 +216,17 @@ static int virtnet_dev_init(const struct device *dev)
 	LOG_DBG("MAC address is %02x:%02x:%02x:%02x:%02x:%02x", data->mac[0], data->mac[1],
 		data->mac[2], data->mac[3], data->mac[4], data->mac[5]);
 
-	virtio_init_virtqueues(config->vdev, 2, virtnet_enum_queues_cb, NULL);
+	ret = virtio_init_virtqueues(config->vdev, data->vqs, 2);
+	if (ret != 0) {
+		LOG_ERR("could not initialize virtqueues");
+		return ret;
+	}
+	/* every receive buffer and the transmit buffer take a descriptor */
+	if ((data->vqs[VIRTQ_RX(1)].num < CONFIG_ETH_VIRTIO_NET_RX_BUFFERS) ||
+	    (data->vqs[VIRTQ_TX(1)].num < 1U)) {
+		LOG_ERR("virtqueues are too small");
+		return -ENOTSUP;
+	}
 	virtio_finalize_init(config->vdev);
 
 	return 0;
@@ -239,8 +239,15 @@ static struct ethernet_api virtnet_api = {
 };
 
 #define VIRTIO_NET_DEFINE(inst)                                                                    \
+	VIRTQ_STORAGE_DEFINE(virtnet_rxq_##inst, CONFIG_ETH_VIRTIO_NET_RX_BUFFERS);                \
+	VIRTQ_STORAGE_DEFINE(virtnet_txq_##inst, 1);                                               \
 	static struct virtnet_data virtnet_data_##inst = {                                         \
 		.dev = DEVICE_DT_INST_GET(inst),                                                   \
+		.vqs = {                                                                           \
+			[VIRTQ_RX(1)] = VIRTQ_INITIALIZER(virtnet_rxq_##inst,                      \
+							  CONFIG_ETH_VIRTIO_NET_RX_BUFFERS),       \
+			[VIRTQ_TX(1)] = VIRTQ_INITIALIZER(virtnet_txq_##inst, 1),                  \
+		},                                                                                 \
 	};                                                                                         \
 	static const struct virtnet_config virtnet_config_##inst = {                               \
 		.vdev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                       \
