@@ -19,7 +19,15 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/i3c.h>
 #include <zephyr/pmci/mctp/mctp_i3c_common.h>
+#include <zephyr/pmci/mctp/mctp_i3c_pec.h>
 #include <libmctp.h>
+
+/** @cond INTERNAL_HIDDEN */
+/* Depth of the deferred receive queue: fragments of one message held at once */
+#ifndef MCTP_I3C_RX_QUEUE_DEPTH
+#define MCTP_I3C_RX_QUEUE_DEPTH 16
+#endif
+/** @endcond */
 
 /**
  * @brief An MCTP binding for Zephyr's I3C target interface using GPIO
@@ -35,8 +43,18 @@ struct mctp_binding_i3c_target {
 	struct k_sem *tx_lock;
 	struct k_sem *tx_complete;
 	struct mctp_pktbuf *rx_pkt;
-	uint8_t tx_storage[MCTP_PKTBUF_SIZE(MCTP_I3C_MAX_PKT_SIZE)] PKTBUF_STORAGE_ALIGN;
-	uint8_t tx_ptr;
+	/*
+	 * Deferred receive: stop_cb runs in ISR context, but PEC verification (HW
+	 * CRC) and mctp_bus_rx() may block. Received packets are queued and handled
+	 * from thread context. The queue holds a full message's fragments.
+	 */
+	struct k_work rx_work;
+	struct k_msgq rx_msgq;
+	struct mctp_pktbuf *rx_msgq_slots[MCTP_I3C_RX_QUEUE_DEPTH];
+	uint8_t tx_storage[MCTP_PKTBUF_SIZE(MCTP_I3C_MAX_PKT_SIZE +
+					    I3C_PROTOCOL_PEC_SZ)] PKTBUF_STORAGE_ALIGN;
+	/* Counts up to MCTP_PACKET_SIZE(MCTP_I3C_MAX_PKT_SIZE) + PEC (> 255) */
+	uint16_t tx_ptr;
 	/** @endcond INTERNAL_HIDDEN */
 };
 
@@ -61,6 +79,7 @@ int mctp_i3c_target_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt);
 			.start = mctp_i3c_target_start,                                            \
 			.tx = mctp_i3c_target_tx,                                                  \
 			.pkt_size = MCTP_I3C_MAX_PKT_SIZE,                                         \
+			.pkt_trailer = I3C_PROTOCOL_PEC_SZ,                                        \
 			.tx_storage = _name.tx_storage,                                            \
 		},                                                                                 \
 		.i3c = DEVICE_DT_GET(DT_PHANDLE(_node_id, i3c)),                                   \
