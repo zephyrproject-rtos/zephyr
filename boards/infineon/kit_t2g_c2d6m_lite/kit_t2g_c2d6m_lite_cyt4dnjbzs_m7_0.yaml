@@ -16,6 +16,7 @@ toolchain:
 supported:
   - adc
   - gpio
+  - netif:eth
   - pwm
   - uart
 vendor: infineon
