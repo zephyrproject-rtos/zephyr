@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig DISPLAY_ESP32_RGB
+	bool "ESP32 LCD-CAM parallel RGB display driver"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_LCD_CAM_RGB_ENABLED
+	select DMA
+	select ESP_SPIRAM
+	select SHARED_MULTI_HEAP
+	help
+	  Enable the RGB mode of the ESP32 LCD-CAM controller, which sends a
+	  framebuffer in PSRAM to a parallel RGB panel by DMA.
+
+if DISPLAY_ESP32_RGB
+
+config DISPLAY_ESP32_RGB_FB_NUM
+	int "Framebuffers"
+	default 2
+	range 1 3
+	help
+	  With one framebuffer, writes land in the frame the panel is showing,
+	  which tears moving pictures. With two, a frame is drawn into one
+	  framebuffer while the panel shows the other, and the next write
+	  waits for the panel to switch. With three, writes never wait for the
+	  panel. Each framebuffer takes width x height x 2 bytes of PSRAM.
+
+endif # DISPLAY_ESP32_RGB
