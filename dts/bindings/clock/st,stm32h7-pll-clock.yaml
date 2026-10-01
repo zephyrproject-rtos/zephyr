@@ -79,3 +79,21 @@ properties:
         PLLx FRACN value
     min: 0
     max: 8191
+
+  no-auto-enable:
+    type: boolean
+    description: |
+      Configure the PLL but do not enable it.
+
+      The clock control driver programs the PLL source, dividers,
+      multiplier and output enables at boot and on every exit from
+      low-power modes, but leaves the PLL disabled. The application is
+      responsible for enabling and disabling the PLL, and for keeping
+      the voltage scale, flash latency and every clock derived from
+      the PLL outputs within specification while doing so.
+
+      Until the application enables the PLL, its outputs are stopped
+      and peripherals clocked from them do not operate.
+
+      A PLL with this property cannot be the system clock source.
+      Not supported on dual-core SoCs.
