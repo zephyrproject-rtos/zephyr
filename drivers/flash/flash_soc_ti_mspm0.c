@@ -87,7 +87,7 @@ static int flash_ti_mspm0_erase(const struct device *dev,
 		return 0;
 	}
 
-	if (flash_ti_mspm0_valid_range(offset, len) == 0) {
+	if (!flash_ti_mspm0_valid_range(offset, len)) {
 		LOG_ERR("Erase range invalid. Offset %ld, len: %zu",
 						offset, len);
 		return -EINVAL;
@@ -150,7 +150,7 @@ static int flash_ti_mspm0_write(const struct device *dev, off_t offset,
 		return 0;
 	}
 
-	if (flash_ti_mspm0_valid_range(offset, len) == 0) {
+	if (!flash_ti_mspm0_valid_range(offset, len)) {
 		LOG_ERR("Write range invalid. Offset %ld, len: %zu",
 						offset, len);
 		return -EINVAL;
@@ -219,7 +219,7 @@ static int flash_ti_mspm0_read(const struct device *dev, off_t offset,
 		return 0;
 	}
 
-	if (flash_ti_mspm0_valid_range(offset, len) == 0) {
+	if (!flash_ti_mspm0_valid_range(offset, len)) {
 		LOG_ERR("Read range invalid. Offset %ld, len %zu",
 						offset, len);
 		return -EINVAL;
