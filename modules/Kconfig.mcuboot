@@ -436,4 +436,10 @@ config MCUBOOT_BOOT_MAX_ALIGN
 	  By default it's set to the maximum of the write block size of
 	  the chosen zephyr,flash node and 8.
 
+config APP_LINK_WITH_MCUBOOT_BOOTUTIL
+	bool "Link 'app' with MCUboot bootutil library"
+	default y
+	help
+	  Add MCUboot bootutil library header files to the 'app' include path.
+
 endif # MCUBOOT_BOOTUTIL_LIB

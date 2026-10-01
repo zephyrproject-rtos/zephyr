@@ -13,5 +13,3 @@ FILE(GLOB app_sources
 )
 
 target_sources(app PRIVATE ${app_sources})
-
-zephyr_library_link_libraries(MCUBOOT_BOOTUTIL)
