@@ -32,6 +32,7 @@
 		dac0: dac@40018000 {
 			compatible = "ti,mspm0-dac";
 			reg = <0x40018000 0x2000>;
+			interrupts = <7 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
