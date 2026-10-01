@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Intel Corporation
+ * Copyright (c) 2024 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -226,7 +226,7 @@ const struct xtensa_mmu_range xtensa_soc_mmu_ranges[] = {
 	MEM_MAP_SYM_REGION(
 		__cold_start,
 		__cold_end,
-		XTENSA_MMU_PERM_X,
+		XTENSA_MMU_PERM_X | XTENSA_MMU_MAP_SHARED,
 		"imr cold"
 	)
 
@@ -260,21 +260,21 @@ const struct xtensa_mmu_range xtensa_soc_mmu_ranges[] = {
 
 	{
 		.start = (uint32_t)(ADSP_L1CC_ADDR),
-		.end = (uint32_t)(ADSP_L1CC_ADDR + CONFIG_MMU_PAGE_SIZE),
+		.end   = (uint32_t)(ADSP_L1CC_ADDR + CONFIG_MMU_PAGE_SIZE),
 		.attrs = XTENSA_MMU_PERM_W,
 		.name = "l1cc",
 	},
 	{
 		/* FIXME: definitely need more refinements... */
 		.start = (uint32_t)0x0,
-		.end = (uint32_t)0x101800,
+		.end   = (uint32_t)0x101800,
 		.attrs = XTENSA_MMU_PERM_W,
 		.name = "hwreg0",
 	},
 	{
 		/* FIXME: definitely need more refinements... */
 		.start = (uint32_t)0x160000,
-		.end = (uint32_t)0x180000,
+		.end   = (uint32_t)0x180000,
 		.attrs = XTENSA_MMU_PERM_W,
 		.name = "hwreg1",
 	},
