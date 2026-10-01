@@ -132,7 +132,7 @@ DT_CHOSEN_ZEPHYR_PPP_UART := zephyr,ppp-uart
 
 choice NET_QEMU_NETWORKING
 	prompt "Qemu networking"
-	default NET_QEMU_PPP if NET_PPP
+	default NET_QEMU_PPP if NET_L2_PPP
 	default NET_QEMU_SLIP
 	depends on QEMU_TARGET
 	help
@@ -143,12 +143,14 @@ choice NET_QEMU_NETWORKING
 config NET_QEMU_SLIP
 	bool "SLIP"
 	depends on $(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_UART_PIPE))
+	imply NET_DRIVERS
 	help
 	  Connect to host or to another Qemu via SLIP.
 
 config NET_QEMU_PPP
 	bool "PPP"
 	depends on NET_TEST || $(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_PPP_UART))
+	imply NET_DRIVERS
 	help
 	  Connect to host via PPP.
 
