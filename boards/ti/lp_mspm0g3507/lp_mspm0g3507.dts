@@ -69,6 +69,10 @@
 	clocks = <&syspll>;
 };
 
+&mfpclk {
+	status = "okay";
+};
+
 &canclk {
 	clocks = <&syspll>;
 	clock-frequency = <DT_FREQ_M(40)>;
@@ -138,6 +142,8 @@
 
 &dac0 {
 	status = "okay";
+	fifo-enable;
+	sample-rate-hz = <1000>;
 };
 
 &spi0 {
