@@ -170,3 +170,27 @@ ZTEST(secure_storage_psa_ps, test_write_once_flag)
 	ret = psa_ps_remove(uid);
 	zassert_equal(ret, PSA_ERROR_NOT_PERMITTED);
 }
+
+/* The optional psa_ps_create() and psa_ps_set_extended() functions are not supported. */
+ZTEST(secure_storage_psa_ps, test_set_extended_not_supported)
+{
+	psa_status_t ret;
+	const psa_storage_uid_t uid = 1;
+	const uint8_t data[MAX_DATA_SIZE] = {};
+	struct psa_storage_info_t info;
+
+	zassert_equal(psa_ps_get_support(), 0);
+
+	ret = psa_ps_create(uid, sizeof(data), PSA_STORAGE_FLAG_NONE);
+	zassert_equal(ret, PSA_ERROR_NOT_SUPPORTED);
+	ret = psa_ps_get_info(uid, &info);
+	zassert_equal(ret, PSA_ERROR_DOES_NOT_EXIST);
+
+	ret = psa_ps_set(uid, sizeof(data), data, PSA_STORAGE_FLAG_NONE);
+	zassert_equal(ret, PSA_SUCCESS);
+	ret = psa_ps_set_extended(uid, 0, sizeof(data), data);
+	zassert_equal(ret, PSA_ERROR_NOT_SUPPORTED);
+
+	ret = psa_ps_remove(uid);
+	zassert_equal(ret, PSA_SUCCESS);
+}
