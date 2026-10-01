@@ -69,7 +69,9 @@ static int led_strip_cache_set_color(const struct device *dev, uint32_t led,
 			pixels[led].g = color[1];
 			pixels[led].b = color[2];
 
-			return led_strip_update_rgb(strip->dev, pixels, led + 1);
+			return led_strip_update_rgb(strip->dev, pixels,
+				(IS_ENABLED(CONFIG_LED_STRIP_CACHE_UPDATE_ALL) ?
+					length : led + 1));
 		}
 		led -= length;
 	}
