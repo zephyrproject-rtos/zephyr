@@ -1,7 +1,8 @@
-.. _xlnx_clk_wiz_sample:
+.. zephyr:code-sample:: xclk-wiz
+   :name: AXI Clocking Wizard
+   :relevant-api: clock_control_interface
 
-Clocking Wizard sample application
-######################################
+   Enable, reconfigure and read back an AXI Clocking Wizard output clock.
 
 Overview
 ********
