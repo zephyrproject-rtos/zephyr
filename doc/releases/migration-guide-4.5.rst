@@ -2413,6 +2413,45 @@ Bluetooth Services
 Networking
 **********
 
+* The SLIP drivers no longer use the ``uart_pipe`` driver and the ``zephyr,uart-pipe`` chosen
+  node. They are now devicetree devices whose node must be a child of the UART node they use:
+
+  * :dtcompatible:`zephyr,slip-eth` carries Ethernet frames and is driven by the Ethernet
+    driver :kconfig:option:`CONFIG_ETH_SLIP_TAP`. Like other Ethernet drivers it needs
+    :kconfig:option:`CONFIG_ETH_DRIVER` and is enabled by default when its node is enabled.
+  * :dtcompatible:`zephyr,slip` carries IP packets and is driven by
+    :kconfig:option:`CONFIG_SLIP`, which needs :kconfig:option:`CONFIG_NET_DRIVERS` and is
+    enabled by default when no ``zephyr,slip-eth`` node is enabled.
+
+  A node may list both compatibles, but only one of the two drivers can use it:
+
+  .. code-block:: devicetree
+
+     &uart1 {
+         slip0: slip {
+             compatible = "zephyr,slip-eth", "zephyr,slip";
+             status = "okay";
+         };
+     };
+
+  The in-tree QEMU boards that provide SLIP (``qemu_x86``, ``qemu_x86_64``, ``qemu_cortex_m3``,
+  ``qemu_cortex_a9``, ``qemu_arc``, ``mps2/an385`` and ``mps2/an386``) carry the node. Out of
+  tree boards that relied on the chosen node for SLIP must add it.
+
+  ``CONFIG_NET_SLIP_TAP`` and ``CONFIG_SLIP_TAP`` have been removed. Configurations that set
+  ``CONFIG_NET_SLIP_TAP=n`` to disable the QEMU SLIP link set ``CONFIG_ETH_SLIP_TAP=n`` or
+  ``CONFIG_ETH_DRIVER=n`` instead. The drivers no longer select
+  :kconfig:option:`CONFIG_UART_PIPE`. The Ethernet interface is no longer named ``slip``, it
+  gets the default Ethernet interface name. The IP driver is initialized at
+  :kconfig:option:`CONFIG_SLIP_INIT_PRIORITY` and the Ethernet driver at
+  :kconfig:option:`CONFIG_ETH_INIT_PRIORITY`, which must be higher than the init priority of
+  the UART.
+
+  ``CONFIG_SLIP_MAC_ADDR`` has been removed: set the MAC address with the
+  ``local-mac-address`` or ``zephyr,random-mac-address`` property of the ``zephyr,slip-eth``
+  node. Without either, a random address from the ``00:00:5E:00:53:xx`` range is used, as
+  before.
+
 * The HTTP client response callback (:c:type:`http_response_cb_t`) may now be
   invoked more than once for a single received buffer, once per body fragment,
   for example once per chunk of a chunked response. Applications that assumed a
