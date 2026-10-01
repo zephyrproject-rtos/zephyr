@@ -76,6 +76,9 @@ static uint8_t *llext_file_offset_to_addr(struct llext_loader *ldr, struct llext
 			ssize_t sect_offset = offset - (ssize_t)shdr->sh_offset;
 
 			if (sect_offset < (ssize_t)shdr->sh_size) {
+				if (ldr->sect_map[i].detached) {
+					return llext_peek(ldr, offset);
+				}
 				return (uint8_t *)ext->mem[mem_idx] + ldr->sect_map[i].offset +
 				       sect_offset;
 			}

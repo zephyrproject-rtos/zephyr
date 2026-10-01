@@ -24,6 +24,7 @@ extern "C" {
 struct llext_elf_sect_map {
 	enum llext_mem mem_idx;
 	size_t offset;
+	bool detached;
 };
 
 const void *llext_loaded_sect_ptr(struct llext_loader *ldr, struct llext *ext, unsigned int sh_ndx);
