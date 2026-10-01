@@ -122,7 +122,7 @@ static int cdns_macb_ptp_rate_adjust(const struct device *dev, double ratio)
 	}
 
 	incr = (double)data->incr_word * ratio;
-	if (incr >= (double)((TSU_INCR_NS_MAX + 1U) << TSU_INCR_SUBNS_BITS)) {
+	if (incr >= (double)((uint64_t)(TSU_INCR_NS_MAX + 1U) << TSU_INCR_SUBNS_BITS)) {
 		return -EINVAL;
 	}
 
