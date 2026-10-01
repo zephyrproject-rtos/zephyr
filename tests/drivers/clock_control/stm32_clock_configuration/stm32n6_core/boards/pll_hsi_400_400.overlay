@@ -1,0 +1,32 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "pll_hsi_600_400.overlay"
+
+/* 64 MHz / 3 is not integral; multiply by 75 before dividing. */
+&pll1 {
+	div-m = <3>;
+};
+
+&ic1 {
+	ic-div = <4>;
+};
+
+&ic2 {
+	ic-div = <4>;
+};
+
+&ic6 {
+	ic-div = <4>;
+};
+
+&ic11 {
+	ic-div = <4>;
+};
+
+&cpusw {
+	clocks = <&rcc STM32_SRC_IC1 CPU_SEL(3)>;
+	clock-frequency = <DT_FREQ_M(400)>;
+};
