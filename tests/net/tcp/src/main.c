@@ -2725,4 +2725,54 @@ ZTEST(net_tcp, test_tcp_pkt_linearize_frag_chain)
 	k_msleep(50);
 }
 
+#if defined(CONFIG_NET_TCP_ISN_RFC6528)
+int tcp_isn_hash_addr(struct sockaddr *saddr, struct sockaddr *daddr, uint32_t *isn);
+extern uint8_t unique_key[16];
+
+static void isn_hash_check(struct sockaddr *src, struct sockaddr *dst, uint16_t *dst_port)
+{
+	uint32_t isn_a, isn_b, isn_c, isn_d;
+	int ret;
+
+	ret = tcp_isn_hash_addr(src, dst, &isn_a);
+	zassert_equal(ret, 0, "ISN hash failed (%d)", ret);
+
+	ret = tcp_isn_hash_addr(src, dst, &isn_b);
+	zassert_equal(ret, 0, "ISN hash failed (%d)", ret);
+	zassert_equal(isn_a, isn_b, "ISN hash differs for the same four-tuple");
+
+	*dst_port = htons(ntohs(*dst_port) + 1);
+
+	ret = tcp_isn_hash_addr(src, dst, &isn_c);
+	zassert_equal(ret, 0, "ISN hash failed (%d)", ret);
+	zassert_not_equal(isn_a, isn_c, "ISN hash does not depend on the four-tuple");
+
+	/* The key is initialized by the first hash above. */
+	unique_key[0] ^= 0x01;
+
+	ret = tcp_isn_hash_addr(src, dst, &isn_d);
+	unique_key[0] ^= 0x01;
+	zassert_equal(ret, 0, "ISN hash failed (%d)", ret);
+	zassert_not_equal(isn_c, isn_d, "ISN hash does not depend on the secret key");
+}
+#endif
+
+/* The RFC 6528 ISN hash must succeed, be stable for a four-tuple and change
+ * with it. A failed or ignored hash leaves the ISN predictable.
+ */
+ZTEST(net_tcp, test_isn_rfc6528)
+{
+#if defined(CONFIG_NET_TCP_ISN_RFC6528)
+	struct sockaddr_in src4 = my_addr_s;
+	struct sockaddr_in dst4 = peer_addr_s;
+	struct sockaddr_in6 src6 = my_addr_v6_s;
+	struct sockaddr_in6 dst6 = peer_addr_v6_s;
+
+	isn_hash_check((struct sockaddr *)&src4, (struct sockaddr *)&dst4, &dst4.sin_port);
+	isn_hash_check((struct sockaddr *)&src6, (struct sockaddr *)&dst6, &dst6.sin6_port);
+#else
+	ztest_test_skip();
+#endif
+}
+
 ZTEST_SUITE(net_tcp, NULL, presetup, NULL, NULL, NULL);
