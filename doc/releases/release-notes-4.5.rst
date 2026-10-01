@@ -778,6 +778,17 @@ New APIs and options
     implementing your own :c:func:`secure_storage_its_transform_aead_crypt`. (:github:`118542`)
   * :kconfig:option:`CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_SCHEME_IS_CONFIGURABLE`
   * :kconfig:option:`CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_SIZE_IS_CONFIGURABLE`
+  * :kconfig:option:`CONFIG_SECURE_STORAGE_PS_IMPLEMENTATION_ZEPHYR`
+  * :kconfig:option:`CONFIG_SECURE_STORAGE_PS_MAX_DATA_SIZE`
+  * :kconfig:option:`CONFIG_SECURE_STORAGE_PS_REPLAY_PROTECTION_COUNTER`
+  * :kconfig:option:`CONFIG_SECURE_STORAGE_PS_REPLAY_PROTECTION_CUSTOM` to allow implementing
+    your own ``secure_storage_ps_get_replay_protection()``.
+  * :kconfig:option:`CONFIG_SECURE_STORAGE_PS_REPLAY_PROTECTION_SIZE`
+
+* TF-M
+
+  * :kconfig:option:`CONFIG_TFM_PS_MAX_ASSET_SIZE_OVERRIDE`
+  * :kconfig:option:`CONFIG_TFM_PS_MAX_ASSET_SIZE`
 
 
 * USB Type-C
@@ -1985,6 +1996,15 @@ Libraries / Subsystems
 
   * ``psa_its_get()`` called with a ``data_size`` of 0 now reports whether the entry exists
     and is valid instead of always returning ``PSA_SUCCESS``.
+
+  * Added a Zephyr implementation of the PSA Protected Storage API
+    (:kconfig:option:`CONFIG_SECURE_STORAGE_PS_IMPLEMENTATION_ZEPHYR`). Like the ITS one, it
+    calls into transform and store modules, which can be configured and customized separately,
+    and adds a replay protection module. Its ZMS store module uses a dedicated partition, selected
+    with the ``zephyr,secure-storage-ps-partition`` devicetree chosen property.
+    The create flags and replay protection values of its entries are stored in the ITS through the
+    existing ITS interface, which is unchanged, so custom ITS implementations need no update to
+    be used with it.
 
 * Multimedia Pipeline
 
