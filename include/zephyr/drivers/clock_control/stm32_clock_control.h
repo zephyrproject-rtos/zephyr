@@ -254,6 +254,7 @@
 #define STM32_PLL_S_DIVISOR		DT_PROP_OR(DT_NODELABEL(pll), div_s, 1)
 #define STM32_PLL_FRACN_ENABLED		DT_NODE_HAS_PROP(DT_NODELABEL(pll), fracn)
 #define STM32_PLL_FRACN_VALUE		DT_PROP_OR(DT_NODELABEL(pll), fracn, 0)
+#define STM32_PLL_NO_AUTO_ENABLE        DT_PROP_OR(DT_NODELABEL(pll), no_auto_enable, 0)
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(plli2s), st_stm32fx_pll_clock, okay)
@@ -334,6 +335,7 @@
 #define STM32_PLL2_T_DIVISOR	DT_PROP_OR(DT_NODELABEL(pll2), div_t, 1)
 #define STM32_PLL2_FRACN_ENABLED	DT_NODE_HAS_PROP(DT_NODELABEL(pll2), fracn)
 #define STM32_PLL2_FRACN_VALUE	DT_PROP_OR(DT_NODELABEL(pll2), fracn, 0)
+#define STM32_PLL2_NO_AUTO_ENABLE       DT_PROP_OR(DT_NODELABEL(pll2), no_auto_enable, 0)
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll3), st_stm32h5_pll_clock, okay) || \
@@ -354,6 +356,7 @@
 #define STM32_PLL3_S_DIVISOR	DT_PROP_OR(DT_NODELABEL(pll3), div_s, 1)
 #define STM32_PLL3_FRACN_ENABLED	DT_NODE_HAS_PROP(DT_NODELABEL(pll3), fracn)
 #define STM32_PLL3_FRACN_VALUE	DT_PROP_OR(DT_NODELABEL(pll3), fracn, 0)
+#define STM32_PLL3_NO_AUTO_ENABLE       DT_PROP_OR(DT_NODELABEL(pll3), no_auto_enable, 0)
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll4), st_stm32mp13_pll_clock, okay)
