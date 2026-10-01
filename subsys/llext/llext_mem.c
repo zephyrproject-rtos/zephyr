@@ -296,12 +296,10 @@ int llext_copy_regions(struct llext_loader *ldr, struct llext *ext,
 				if (name == NULL) {
 					LOG_WRN("-s (out of bounds section name string table "
 						"index) %#zx",
-						(size_t)ext->mem[mem_idx] +
-							ldr->sect_map[i].offset);
+						(size_t)llext_loaded_sect_ptr(ldr, ext, i));
 				} else {
 					LOG_DBG("-s %s %#zx", name,
-						(size_t)ext->mem[mem_idx] +
-							ldr->sect_map[i].offset);
+						(size_t)llext_loaded_sect_ptr(ldr, ext, i));
 				}
 			}
 		}
