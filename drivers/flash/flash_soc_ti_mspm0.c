@@ -108,9 +108,11 @@ static int flash_ti_mspm0_erase(const struct device *dev,
 
 	do {
 		DL_FlashCTL_executeClearStatus(cfg->regs);
-		DL_FlashCTL_unprotectSector(cfg->regs, offset,
+		DL_FlashCTL_unprotectSector(cfg->regs,
+					    FLASH_MSPM0_BASE_ADDRESS + offset,
 					    DL_FLASHCTL_REGION_SELECT_MAIN);
-		DL_FlashCTL_eraseMemory(cfg->regs, offset,
+		DL_FlashCTL_eraseMemory(cfg->regs,
+					FLASH_MSPM0_BASE_ADDRESS + offset,
 					DL_FLASHCTL_COMMAND_SIZE_SECTOR);
 
 		if (k_sem_take(&data->wait_sem, K_MSEC(FLASH_CMDWAIT_TIMEOUT)) < 0) {
@@ -180,10 +182,13 @@ static int flash_ti_mspm0_write(const struct device *dev, off_t offset,
 		}
 
 		DL_FlashCTL_executeClearStatus(cfg->regs);
-		DL_FlashCTL_unprotectSector(cfg->regs, offset,
+		DL_FlashCTL_unprotectSector(cfg->regs,
+					    FLASH_MSPM0_BASE_ADDRESS + offset,
 					    DL_FLASHCTL_REGION_SELECT_MAIN);
 
-		DL_FlashCTL_programMemory64WithECCGenerated(cfg->regs, offset, write_ptr);
+		DL_FlashCTL_programMemory64WithECCGenerated(cfg->regs,
+							    FLASH_MSPM0_BASE_ADDRESS + offset,
+							    write_ptr);
 
 		if (k_sem_take(&data->wait_sem, K_MSEC(FLASH_CMDWAIT_TIMEOUT)) < 0) {
 			ret = -ETIMEDOUT;
