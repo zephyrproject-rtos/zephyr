@@ -51,7 +51,6 @@ LOG_MODULE_REGISTER(i3c_stm32, CONFIG_I3C_LOG_LEVEL);
 
 #define STM32_I3C_TBUF_FMP_MIN_NS 500.0
 #define STM32_I3C_TBUF_FM_MIN_NS  1300.0
-#define STM32_I3C_TCAS_MIN_NS     38.4
 
 #define STM32_I3C_TRANSFER_TIMEOUT K_MSEC(100)
 
@@ -744,7 +743,8 @@ static int i3c_stm32_configure_free_timing(const struct device *dev, uint32_t i3
 			}
 		} else {
 			/* Pure I3C bus */
-			free_timing = i3c_stm32_calc_free_timing(STM32_I3C_TCAS_MIN_NS, i3c_clock);
+			free_timing = i3c_stm32_calc_free_timing(
+				data->drv_data.ctrl_config.tcas_ns, i3c_clock);
 		}
 	}
 	LL_I3C_SetFreeTiming(i3c, free_timing);
@@ -803,10 +803,15 @@ static int i3c_stm32_configure(const struct device *dev, enum i3c_config_type ty
 		if (ctrl_cfg->scl.i3c == 0U) {
 			return -EINVAL;
 		}
+		if ((ctrl_cfg->tcas_ns < I3C_BUS_TCAS_MIN_NS) ||
+		    (ctrl_cfg->tcas_ns > I3C_BUS_TCAS_MAX_NS)) {
+			return -EINVAL;
+		}
 		data->drv_data.ctrl_config.scl.i3c = ctrl_cfg->scl.i3c;
 		data->drv_data.ctrl_config.scl.i2c = ctrl_cfg->scl.i2c;
 		data->drv_data.ctrl_config.scl_od_min = ctrl_cfg->scl_od_min;
 		data->drv_data.ctrl_config.scl_pp_min = ctrl_cfg->scl_pp_min;
+		data->drv_data.ctrl_config.tcas_ns = ctrl_cfg->tcas_ns;
 	}
 
 	ret = i3c_stm32_activate(dev);
@@ -2598,6 +2603,7 @@ static DEVICE_API(i3c, i3c_stm32_driver_api) = {
 		.drv_data.ctrl_config.scl_od_min.high_ns = DT_INST_PROP(index, od_thigh_min_ns),   \
 		.drv_data.ctrl_config.scl_od_min.low_ns = DT_INST_PROP(index, od_tlow_min_ns),     \
 		.drv_data.ctrl_config.scl_pp_min.high_ns = DT_INST_PROP(index, pp_thigh_min_ns),   \
+		.drv_data.ctrl_config.tcas_ns = DT_INST_PROP(index, tcas_ns),                      \
 		STM32_I3C_DMA_CHANNEL(index, rx, RX, PERIPHERAL, MEMORY)                           \
 		STM32_I3C_DMA_CHANNEL(index, tx, TX, MEMORY, PERIPHERAL)                           \
 		STM32_I3C_DMA_CHANNEL(index, tc, TC, MEMORY, PERIPHERAL)                           \
