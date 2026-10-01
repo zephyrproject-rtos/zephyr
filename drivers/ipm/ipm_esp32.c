@@ -51,6 +51,8 @@ struct esp32_ipm_data {
 	struct esp32_ipm_control *control;
 };
 
+static uint32_t esp32_ipm_flash_irq_key;
+
 IRAM_ATTR static void esp32_ipm_isr(const struct device *dev)
 {
 	struct esp32_ipm_data *dev_data = (struct esp32_ipm_data *)dev->data;
@@ -137,7 +139,6 @@ static int esp32_ipm_send(const struct device *dev, int wait, uint32_t id,
 	/* data copied, set the id and, generate interrupt in the remote core */
 	if (dev_data->this_core_id == 0) {
 		memcpy(dev_data->shm.app_cpu_shm, data, size);
-		atomic_set(&dev_data->control->lock, ESP32_IPM_LOCK_FREE_VAL);
 		LOG_DBG("Generating interrupt on remote CPU 1 from CPU 0");
 #if defined(CONFIG_SOC_SERIES_ESP32)
 		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_1_REG, DPORT_CPU_INTR_FROM_CPU_1);
@@ -147,7 +148,6 @@ static int esp32_ipm_send(const struct device *dev, int wait, uint32_t id,
 
 	} else {
 		memcpy(dev_data->shm.pro_cpu_shm, data, size);
-		atomic_set(&dev_data->control->lock, ESP32_IPM_LOCK_FREE_VAL);
 		LOG_DBG("Generating interrupt on remote CPU 0 from CPU 1");
 #if defined(CONFIG_SOC_SERIES_ESP32)
 		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, DPORT_CPU_INTR_FROM_CPU_0);
@@ -156,6 +156,8 @@ static int esp32_ipm_send(const struct device *dev, int wait, uint32_t id,
 #endif
 	}
 
+	/* Prevent flash pause from interleaving before the remote ISR is triggered. */
+	atomic_set(&dev_data->control->lock, ESP32_IPM_LOCK_FREE_VAL);
 	irq_unlock(key);
 
 	return 0;
@@ -303,3 +305,60 @@ DEVICE_DT_INST_DEFINE(idx, &esp32_ipm_init, NULL,	\
 		    &esp32_ipm_driver_api);	\
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_IPM_INIT);
+
+/*
+ * Keep the shared-memory lock reserved while the other CPU is stalled for a
+ * flash operation. If this CPU already owns the lock, it is safe to stall the
+ * peer without taking ownership away from the current IPM operation.
+ */
+bool esp32_ipm_flash_pause(void)
+{
+	const struct device *dev = DEVICE_DT_INST_GET(0);
+	struct esp32_ipm_data *dev_data;
+	atomic_val_t core_id;
+	/* Keep the local IPM ISR from spinning while the shared lock is reserved. */
+	uint32_t key = irq_lock();
+
+	if (!device_is_ready(dev)) {
+		LOG_ERR("Cannot pause APPCPU: IPM device is not ready");
+		irq_unlock(key);
+		return false;
+	}
+
+	dev_data = (struct esp32_ipm_data *)dev->data;
+	core_id = dev_data->this_core_id;
+	if (core_id != 0) {
+		LOG_ERR("Cannot pause APPCPU: IPM lock must be acquired by PROCPU");
+		irq_unlock(key);
+		return false;
+	}
+
+	for (;;) {
+		atomic_val_t owner = atomic_get(&dev_data->control->lock);
+
+		if (owner == core_id) {
+			LOG_ERR("Cannot pause APPCPU: PROCPU already owns the IPM lock");
+			irq_unlock(key);
+			return false;
+		}
+
+		if (owner == ESP32_IPM_LOCK_FREE_VAL &&
+		    atomic_cas(&dev_data->control->lock, ESP32_IPM_LOCK_FREE_VAL, core_id)) {
+			esp32_ipm_flash_irq_key = key;
+			return true;
+		}
+
+		k_busy_wait(1);
+	}
+}
+
+void esp32_ipm_flash_resume(bool lock_acquired)
+{
+	const struct device *dev = DEVICE_DT_INST_GET(0);
+	struct esp32_ipm_data *dev_data = (struct esp32_ipm_data *)dev->data;
+
+	if (lock_acquired) {
+		atomic_set(&dev_data->control->lock, ESP32_IPM_LOCK_FREE_VAL);
+		irq_unlock(esp32_ipm_flash_irq_key);
+	}
+}
