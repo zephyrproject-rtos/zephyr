@@ -20,3 +20,12 @@ config DAC_BUFFER_NOT_SUPPORT
 	bool "DAC on board/SoC does not support output buffer mode"
 	help
 	  If this config is turned on, the sample will run with no output buffer enabled
+
+config DAC_SAMPLE_SLEEP_MS
+	int "Sleep between DAC writes in ms (-1 = auto from resolution, 0 = disabled)"
+	default -1
+	help
+	  Delay inserted between successive dac_write_value() calls.
+	  -1: use the original computed value (4096 / dac_values, min 1 ms).
+	   0: disable sleep entirely (e.g. when FIFO flow control handles pacing).
+	  >0: fixed delay in milliseconds.
