@@ -1,0 +1,6 @@
+shield:
+  name: dvp_24pin_gc2145
+  full_name: DVP 24-pin GC2145 Camera Shield
+  vendor: ovti
+  supported_features:
+    - video
