@@ -839,12 +839,37 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
+/* -ENOENT identifies a valid hardware channel without an allocated slot. */
+static int dma_mcux_lpc_get_channel_index(const struct device *dev, uint32_t channel)
+{
+	const struct dma_mcux_lpc_config *config = dev->config;
+	struct dma_mcux_lpc_dma_data *dev_data = dev->data;
+	int8_t virtual_channel;
+
+	if (channel >= config->num_of_channels) {
+		return -EINVAL;
+	}
+
+	virtual_channel = dev_data->channel_index[channel];
+	if (virtual_channel < 0) {
+		return -ENOENT;
+	}
+
+	return virtual_channel;
+}
+
 static int dma_mcux_lpc_start(const struct device *dev, uint32_t channel)
 {
-	struct dma_mcux_lpc_dma_data *dev_data = dev->data;
-	int8_t virtual_channel = dev_data->channel_index[channel];
-	struct channel_data *data = DEV_CHANNEL_DATA(dev, virtual_channel);
-	dma_handle_t *p_handle = DEV_DMA_HANDLE(dev, virtual_channel);
+	int virtual_channel = dma_mcux_lpc_get_channel_index(dev, channel);
+	struct channel_data *data;
+	dma_handle_t *p_handle;
+
+	if (virtual_channel < 0) {
+		return -EINVAL;
+	}
+
+	data = DEV_CHANNEL_DATA(dev, virtual_channel);
+	p_handle = DEV_DMA_HANDLE(dev, virtual_channel);
 
 	LOG_DBG("START TRANSFER");
 	LOG_DBG("DMA CTRL 0x%x", DEV_BASE(dev)->CTRL);
@@ -860,10 +885,20 @@ static int dma_mcux_lpc_start(const struct device *dev, uint32_t channel)
 
 static int dma_mcux_lpc_stop(const struct device *dev, uint32_t channel)
 {
-	struct dma_mcux_lpc_dma_data *dev_data = dev->data;
-	int8_t virtual_channel = dev_data->channel_index[channel];
-	struct channel_data *data = DEV_CHANNEL_DATA(dev, virtual_channel);
-	dma_handle_t *p_handle = DEV_DMA_HANDLE(dev, virtual_channel);
+	int virtual_channel = dma_mcux_lpc_get_channel_index(dev, channel);
+	struct channel_data *data;
+	dma_handle_t *p_handle;
+
+	if (virtual_channel == -ENOENT) {
+		/* An unconfigured channel has no transfer to stop. */
+		return 0;
+	}
+	if (virtual_channel < 0) {
+		return -EINVAL;
+	}
+
+	data = DEV_CHANNEL_DATA(dev, virtual_channel);
+	p_handle = DEV_DMA_HANDLE(dev, virtual_channel);
 
 	/* Abort/disable even if not busy. it's safe and avoids
 	 * any risk of data->busy not being accurate.
@@ -894,10 +929,15 @@ static int dma_mcux_lpc_stop(const struct device *dev, uint32_t channel)
 static int dma_mcux_lpc_reload(const struct device *dev, uint32_t channel,
 			       uint32_t src, uint32_t dst, size_t size)
 {
-	struct dma_mcux_lpc_dma_data *dev_data = dev->data;
-	int8_t virtual_channel = dev_data->channel_index[channel];
-	struct channel_data *data = DEV_CHANNEL_DATA(dev, virtual_channel);
+	int virtual_channel = dma_mcux_lpc_get_channel_index(dev, channel);
+	struct channel_data *data;
 	uint32_t xfer_config = 0U;
+
+	if (virtual_channel < 0) {
+		return -EINVAL;
+	}
+
+	data = DEV_CHANNEL_DATA(dev, virtual_channel);
 
 	/* DMA controller requires that the address be aligned to transfer size */
 	assert(src == ROUND_UP(src, data->width));
@@ -936,20 +976,16 @@ static int dma_mcux_lpc_reload(const struct device *dev, uint32_t channel,
 static int dma_mcux_lpc_get_status(const struct device *dev, uint32_t channel,
 				   struct dma_status *status)
 {
-	const struct dma_mcux_lpc_config *config = dev->config;
-	struct dma_mcux_lpc_dma_data *dev_data = dev->data;
-	int8_t virtual_channel;
+	int virtual_channel = dma_mcux_lpc_get_channel_index(dev, channel);
 	struct channel_data *data;
 
-	if (channel >= config->num_of_channels) {
+	if (virtual_channel < 0) {
 		return -EINVAL;
 	}
 
-	virtual_channel = dev_data->channel_index[channel];
 	data = DEV_CHANNEL_DATA(dev, virtual_channel);
 
-	/* If channel is actually busy or the virtual channel is just not set up */
-	if (data->busy && (virtual_channel != -1)) {
+	if (data->busy) {
 		status->busy = true;
 		status->pending_length = DMA_GetRemainingBytes(DEV_BASE(dev), channel);
 	} else {
