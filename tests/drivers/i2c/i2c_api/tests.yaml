@@ -39,6 +39,9 @@ tests:
       - ek_ra6m4
     extra_args:
       - DTC_OVERLAY_FILE="./boards/${BOARD}_sci_i2c.overlay"
+  drivers.i2c.renesas_sau_i2c.api:
+    filter: dt_alias_exists("i2c-0") and CONFIG_I2C_RENESAS_RA_SAU
+    min_ram: 8
   drivers.i2c.stm32.interrupt_disabled:
     depends_on:
       - arduino_i2c
