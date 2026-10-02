@@ -222,7 +222,28 @@ def check_call_sites(dwarf_info, DIE, cuOffset, call_tree, key, depth, flags):
 # with the found function pointer address, if any.
 
 
-def tags(dwarf_info, call_tree, flags, DIE, cuOffset, ptr_addresses, at_name_addr):
+# This function recursively traces through debugging entries with specific tags
+# that could lead to an entry tagged 'DW_TAG_subroutine_type'. In which case,
+# means the first debugging entry that was traced through is a function pointer.
+
+# Input is the DWARF information, the call_tree dictionary, the informational flags dictionary,
+# the current debugging entry, the compilation unit offset dictionary,
+# a list to store function pointer addresses, and the address of the original debugging entry
+# that was traced through if the ending debugging entry is tagged with 'DW_AT_subroutine_type'.
+
+# No output but the pointer addresses list is updated
+# with the found function pointer address, if any.
+
+
+def tags(dwarf_info, call_tree, flags, DIE, cuOffset, ptr_addresses, at_name_addr, visited=None):
+    if visited is None:
+        visited = set()
+        
+    # Sonsuz döngüleri engellemek için daha önce ziyaret ettiysek geri dön
+    if DIE.offset in visited:
+        return
+    visited.add(DIE.offset)
+
     try:
         try:
             # If getting the at_name attribute fails
@@ -243,6 +264,7 @@ def tags(dwarf_info, call_tree, flags, DIE, cuOffset, ptr_addresses, at_name_add
                 cuOffset,
                 ptr_addresses,
                 at_name_addr,
+                visited,
             )
         elif target_DIE.tag == "DW_TAG_const_type":
             tags(
@@ -253,6 +275,7 @@ def tags(dwarf_info, call_tree, flags, DIE, cuOffset, ptr_addresses, at_name_add
                 cuOffset,
                 ptr_addresses,
                 at_name_addr,
+                visited,
             )
         elif target_DIE.tag == "DW_TAG_variable":
             tags(
@@ -263,6 +286,7 @@ def tags(dwarf_info, call_tree, flags, DIE, cuOffset, ptr_addresses, at_name_add
                 cuOffset,
                 ptr_addresses,
                 at_name_addr,
+                visited,
             )
         elif target_DIE.tag == "DW_TAG_structure_type":
             for c in target_DIE.iter_children():
@@ -275,11 +299,13 @@ def tags(dwarf_info, call_tree, flags, DIE, cuOffset, ptr_addresses, at_name_add
                         cuOffset,
                         ptr_addresses,
                         at_name_addr,
+                        visited,
                     )
         elif target_DIE.tag == "DW_TAG_subroutine_type":
             ptr_addresses.append(at_name_addr)
     except KeyError:
         pass
+
 
 
 # This function extracts the maximum stack usage for each function
