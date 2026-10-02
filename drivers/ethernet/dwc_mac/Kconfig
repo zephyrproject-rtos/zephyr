@@ -33,6 +33,19 @@ config ETH_DWC_ETHER_1000_CORE
 	  also referred to as "dwc_ether_mac10_100_1000_universal".
 	  IP version v3.x is supported.
 
+config ETH_ALIF_DWC_ETHER_QOS
+	bool "Driver for DWC Ethernet QoS-based Alif Ensemble"
+	depends on SOC_FAMILY_ENSEMBLE_RTSS
+	depends on DT_HAS_ALIF_ENSEMBLE_ETH_ENABLED
+	select ETH_DWC_ETHER_QOS_CORE
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select PINCTRL
+	select CLOCK_CONTROL
+	default y
+	help
+	  This enables the Synopsys DesignWare MAC driver on the RTSS cores of
+	  Alif Ensemble SoCs.
+
 config ETH_ESP32_DWC_ETHER_1000
 	bool "Driver for DWC Ethernet MAC-based ESP32"
 	depends on !ETH_ESP32
