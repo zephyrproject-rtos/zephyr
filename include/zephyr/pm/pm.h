@@ -207,19 +207,24 @@ void pm_state_set(enum pm_state state, uint8_t substate_id);
  * @brief Do any SoC or architecture specific post ops after sleep state exits.
  *
  * This function is a place holder to do any operations that may be needed after
- * a sleep state exits. It is the first thing the resume path runs: before the
- * system timer is restarted, before any system-managed devices are resumed,
- * before PM exit notifications, and while interrupts are still locked.
+ * a sleep state exits. By default, it is called after system-managed devices
+ * have been resumed, before PM exit notifications and system clock idle-exit
+ * accounting, and while interrupts are still locked.
+ *
+ * With CONFIG_PM_EARLY_SYSTEM_TIMER_RESUME, this hook runs before system clock
+ * idle-exit accounting and system-managed device resume. Platforms enabling
+ * this experimental sequence must ensure this hook does not depend on devices
+ * having been resumed, for example when releasing I/O retention or isolation.
+ *
  * Implementations that do not select CONFIG_PM_STATE_SET_IRQ_UNLOCKED must use
  * this hook for hardware resume operations only. They must not unmask interrupts
  * or otherwise dispatch pending wake-source ISRs from this hook; the kernel idle
  * path restores the original interrupt state after PM resume housekeeping is
  * complete.
  *
- * @note The system timer has not been restarted yet, and a state that stopped
- *       it leaves its count frozen. Nothing that waits on the system timer may
- *       be called from this hook, k_busy_wait() in particular: it would never
- *       return.
+ * @note The system timer has not been restarted when this hook runs in either
+ *       sequence. If the low-power state stopped it, code that waits on that
+ *       timer, such as a timer-based k_busy_wait(), may never return.
  *
  * @note As with @ref pm_state_set, when system PM keeps interrupts locked
  *       across resume, this ordering covers only interrupts that

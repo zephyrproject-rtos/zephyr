@@ -1,4 +1,5 @@
 # Copyright (c) 2020 Intel Corporation.
+# Copyright 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 cmake_minimum_required(VERSION 3.28.0)
@@ -7,6 +8,10 @@ project(power_management_test)
 
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
+
+if(CONFIG_TEST_PM_TIMER_RESTART)
+  zephyr_link_libraries(-Wl,--wrap=sys_clock_idle_exit)
+endif()
 
 target_include_directories(app
   PRIVATE
