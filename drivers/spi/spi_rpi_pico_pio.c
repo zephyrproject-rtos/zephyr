@@ -85,6 +85,9 @@ struct spi_pico_pio_data {
 #endif
 };
 
+/* Default TX and RX FIFO size in words (not merged) */
+#define SPI_RPI_PICO_PIO_FIFO_DEPTH 4
+
 #if defined(CONFIG_SPI_RPI_PICO_PIO_DMA)
 static uint32_t dummy_tx;
 static uint32_t dummy_rx;
@@ -324,12 +327,6 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 
 #if SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
-#if defined(CONFIG_SPI_RPI_PICO_PIO_DMA)
-		if (dev_cfg->dma_config.dev) {
-			LOG_ERR("DMA not supported in 3-wire operation");
-			return -ENOTSUP;
-		}
-#endif
 
 		if ((cpol != 0) || (cpha != 0)) {
 			LOG_ERR("Only mode (0, 0) supported in 3-wire SIO");
@@ -501,19 +498,19 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 }
 
 #if defined(CONFIG_SPI_RPI_PICO_PIO_DMA)
-static int spi_pico_pio_dma_setup(const struct device *dev, bool dir);
+static int spi_pico_pio_dma_4_wire(const struct device *dev, bool dir);
 
-static int spi_pico_pio_start_dma_transceive(const struct device *dev)
+static int spi_pico_pio_start_dma_4_wire_transceive(const struct device *dev)
 {
 	const struct spi_pico_pio_config *dev_cfg = dev->config;
 	int err;
 
-	err = spi_pico_pio_dma_setup(dev, false);
+	err = spi_pico_pio_dma_4_wire(dev, false);
 	if (err) {
 		goto on_error;
 	}
 
-	err = spi_pico_pio_dma_setup(dev, true);
+	err = spi_pico_pio_dma_4_wire(dev, true);
 	if (err) {
 		goto on_error;
 	}
@@ -580,26 +577,47 @@ static void spi_pico_pio_dma_callback(const struct device *dma_dev, void *arg, u
 	/* Check transfer finished.
 	 * chunk_len is zero here means the transfer is already complete.
 	 */
-	if (MIN(data->tx_count, data->rx_count) >= chunk_len) {
-		spi_context_update_tx(&data->spi_ctx, 1, chunk_len);
-		spi_context_update_rx(&data->spi_ctx, 1, chunk_len);
+	if (!dev_cfg->sio_gpio.port) {
+		/* 4-wire mode */
+		if (MIN(data->tx_count, data->rx_count) >= chunk_len) {
+			spi_context_update_tx(&data->spi_ctx, data->dfs, chunk_len);
+			spi_context_update_rx(&data->spi_ctx, data->dfs, chunk_len);
 
-		if (spi_pico_pio_transfer_ongoing(data)) {
-			/* Next chunk is available, reset the count and
-			 * continue processing
-			 */
-			data->tx_count = 0;
-			data->rx_count = 0;
-		} else {
-			/* All data is processed, complete the process */
-			complete = true;
+			if (spi_pico_pio_transfer_ongoing(data)) {
+				/* Next chunk is available, reset the count and
+				 * continue processing
+				 */
+				data->tx_count = 0;
+				data->rx_count = 0;
+			} else {
+				/* All data is processed, complete the process */
+				complete = true;
+			}
 		}
-	}
-
-	if (!complete && data->tx_callbacked && data->rx_callbacked) {
-		err = spi_pico_pio_start_dma_transceive(dev);
-		if (err) {
-			complete = true;
+		if (!complete && data->tx_callbacked && data->rx_callbacked) {
+			err = spi_pico_pio_start_dma_4_wire_transceive(dev);
+			if (err) {
+				complete = true;
+			}
+		}
+	} else {
+		/* 3-wire mode: either TX or RX transfer but not both */
+		if (data->tx_callbacked) {
+			spi_context_update_tx(&data->spi_ctx, data->dfs, chunk_len);
+		} else if (data->rx_callbacked) {
+			spi_context_update_rx(&data->spi_ctx, data->dfs, chunk_len);
+		}
+		if (data->tx_count >= chunk_len || data->rx_count >= chunk_len) {
+			if (spi_pico_pio_transfer_ongoing(data)) {
+				/* Next chunk is available, reset the count and
+				 * continue processing
+				 */
+				data->tx_count = 0;
+				data->rx_count = 0;
+			} else {
+				/* All data is processed, complete the process */
+				complete = true;
+			}
 		}
 	}
 
@@ -610,7 +628,7 @@ static void spi_pico_pio_dma_callback(const struct device *dma_dev, void *arg, u
 	k_spin_unlock(&data->lock, key);
 }
 
-static int spi_pico_pio_dma_setup(const struct device *dev, bool dir)
+static int spi_pico_pio_dma_4_wire(const struct device *dev, bool dir)
 {
 	struct spi_pico_pio_data *data = dev->data;
 	const struct spi_pico_pio_config *dev_cfg = dev->config;
@@ -770,7 +788,72 @@ static void spi_pico_pio_txrx_4_wire(const struct device *dev)
 	}
 }
 
-static void spi_pico_pio_txrx_3_wire(const struct device *dev)
+#if defined(CONFIG_SPI_RPI_PICO_PIO_DMA) && SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED
+/*
+ * DMA transfer for half-duplex mode: one direction individual transfer,
+ * either TX (dir == true) or RX (dir == false).
+ */
+static int spi_pico_pio_dma_3_wire(const struct device *dev, PIO pio, bool dir, void *buf,
+				   uint32_t words)
+{
+	struct spi_pico_pio_data *data = dev->data;
+	const struct spi_pico_pio_config *dev_cfg = dev->config;
+	struct dma_config *dma_cfg = &data->dma_config;
+	struct dma_block_config *block_cfg = &data->dma_block;
+	uint32_t channel = dir ? dev_cfg->dma_config.tx_channel : dev_cfg->dma_config.rx_channel;
+	struct spi_context *spi_ctx = &data->spi_ctx;
+	int ret;
+
+	memset(dma_cfg, 0, sizeof(*dma_cfg));
+	memset(block_cfg, 0, sizeof(*block_cfg));
+	dma_cfg->user_data = (void *)dev;
+	dma_cfg->block_count = 1U;
+	dma_cfg->head_block = block_cfg;
+	dma_cfg->dma_slot = RPI_PICO_DMA_DREQ_TO_SLOT(pio_get_dreq(pio, data->pio_sm, dir));
+	dma_cfg->channel_direction = dir ? MEMORY_TO_PERIPHERAL : PERIPHERAL_TO_MEMORY;
+	dma_cfg->source_data_size = data->dfs;
+	dma_cfg->dest_data_size = data->dfs;
+	dma_cfg->dma_callback = spi_pico_pio_dma_callback;
+	block_cfg->block_size = words * data->dfs;
+	if (dir) {
+		block_cfg->source_address = (uint32_t)buf;
+		block_cfg->source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+		block_cfg->dest_address = (uint32_t)&pio->txf[data->pio_sm];
+		block_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+		data->tx_callbacked = false;
+	} else {
+		block_cfg->source_address = (uint32_t)&pio->rxf[data->pio_sm];
+		block_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+		block_cfg->dest_address = (uint32_t)buf;
+		block_cfg->dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+		data->rx_callbacked = false;
+	}
+
+	ret = dma_config(dev_cfg->dma_config.dev, channel, dma_cfg);
+	if (ret < 0) {
+		LOG_ERR("dma_config failed: %d", ret);
+		return ret;
+	}
+	ret = dma_start(dev_cfg->dma_config.dev, channel);
+	if (ret < 0) {
+		LOG_ERR("dma_start failed: %d", ret);
+		return ret;
+	}
+
+	pio_sm_set_enabled(pio, data->pio_sm, true);
+
+	return spi_context_wait_for_completion(spi_ctx);
+}
+#endif /* CONFIG_SPI_RPI_PICO_PIO_DMA && SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED */
+
+/*
+ * This is different from the 4-wire version in that it will set up and
+ * use individual TX and RX DMA transfers if DMA is enabled, or fall
+ * back to CPU-handled transfers if DMA isn't enabled or if the data
+ * fits completely in the PIO FIFO and can be transferred in a single SM
+ * run.
+ */
+static int spi_pico_pio_txrx_3_wire(const struct device *dev)
 {
 #if SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED
 	struct spi_pico_pio_data *data = dev->data;
@@ -781,6 +864,7 @@ static void spi_pico_pio_txrx_3_wire(const struct device *dev)
 	int sio_pin = dev_cfg->sio_gpio.pin;
 	uint32_t tx_size = data->spi_ctx.tx_len; /* Number of WORDS to send */
 	uint32_t rx_size = data->spi_ctx.rx_len; /* Number of WORDS to receive */
+	bool pio_sm_enabled = false;
 	PIO pio = pio_rpi_pico_get_pio(dev_cfg->piodev);
 
 	if (txbuf) {
@@ -795,41 +879,68 @@ static void spi_pico_pio_txrx_3_wire(const struct device *dev)
 		pio_sm_restart(pio, data->pio_sm);
 		pio_sm_clkdiv_restart(pio, data->pio_sm);
 		pio_sm_exec(pio, data->pio_sm, pio_encode_jmp(data->pio_tx_offset));
-		pio_sm_set_enabled(pio, data->pio_sm, true);
 
-		while (data->tx_count < tx_size) {
-			/* Fill up fifo with available TX data */
-			while ((!pio_sm_is_tx_fifo_full(pio, data->pio_sm)) &&
-			       data->tx_count < tx_size) {
+#if defined(CONFIG_SPI_RPI_PICO_PIO_DMA)
+		if (dev_cfg->dma_config.dev != NULL && tx_size > SPI_RPI_PICO_PIO_FIFO_DEPTH) {
+			int rc = spi_pico_pio_dma_3_wire(dev, pio, true, (uint8_t *)txbuf, tx_size);
 
-				switch (data->dfs) {
-				case 4: {
-					txrx = sys_get_be32(txbuf + (data->tx_count * 4));
-					spi_pico_pio_sm_put32(pio, data->pio_sm, txrx);
-				} break;
-
-				case 2: {
-					txrx = sys_get_be16(txbuf + (data->tx_count * 2));
-					spi_pico_pio_sm_put16(pio, data->pio_sm, txrx);
-				} break;
-
-				case 1: {
-					txrx = ((uint8_t *)txbuf)[data->tx_count];
-					spi_pico_pio_sm_put8(pio, data->pio_sm, txrx);
-				} break;
-
-				default:
-					LOG_ERR("Support fot %d bits not enabled", (data->dfs * 8));
-					break;
-				}
-				data->tx_count++;
+			if (rc == 0) {
+				data->tx_count = tx_size;
+			} else {
+				return rc;
 			}
-		}
-		/* Wait for the state machine to complete the cycle */
-		/* before resetting the PIO for reading.            */
-		while ((!pio_sm_is_tx_fifo_empty(pio, data->pio_sm)) ||
-		       (!spi_pico_pio_sm_complete(pio, data))) {
-			;
+		} else {
+#else
+		{
+#endif
+			while (data->tx_count < tx_size) {
+				/* Fill up fifo with available TX data */
+				while ((!pio_sm_is_tx_fifo_full(pio, data->pio_sm)) &&
+				       data->tx_count < tx_size) {
+
+					switch (data->dfs) {
+					case 4: {
+						txrx = sys_get_be32(txbuf + (data->tx_count * 4));
+						spi_pico_pio_sm_put32(pio, data->pio_sm, txrx);
+					} break;
+
+					case 2: {
+						txrx = sys_get_be16(txbuf + (data->tx_count * 2));
+						spi_pico_pio_sm_put16(pio, data->pio_sm, txrx);
+					} break;
+
+					case 1: {
+						txrx = ((uint8_t *)txbuf)[data->tx_count];
+						spi_pico_pio_sm_put8(pio, data->pio_sm, txrx);
+					} break;
+
+					default:
+						LOG_ERR("Support for %d bits not enabled",
+							(data->dfs * 8));
+						break;
+					}
+					data->tx_count++;
+				}
+				if (!pio_sm_enabled) {
+					pio_sm_set_enabled(pio, data->pio_sm, true);
+					pio_sm_enabled = true;
+				}
+			}
+			/* Wait for the state machine to complete the cycle */
+			/* before resetting the PIO for reading.            */
+			while ((!pio_sm_is_tx_fifo_empty(pio, data->pio_sm)) ||
+			       (!spi_pico_pio_sm_complete(pio, data))) {
+				;
+			}
+#if defined(CONFIG_SPI_RPI_PICO_PIO_DMA)
+			/*
+			 * Clear the TX SPI context in case the RX path
+			 * is handled by DMA to indicate that the
+			 * transfer will be done in the RX channel only.
+			 */
+			data->spi_ctx.tx_len = 0;
+			data->tx_callbacked = false;
+#endif
 		}
 	}
 
@@ -843,8 +954,17 @@ static void spi_pico_pio_txrx_3_wire(const struct device *dev)
 		pio_sm_clkdiv_restart(pio, data->pio_sm);
 		pio_sm_put(pio, data->pio_sm, (rx_size * data->bits) - 1);
 		pio_sm_exec(pio, data->pio_sm, pio_encode_jmp(data->pio_rx_offset));
-		pio_sm_set_enabled(pio, data->pio_sm, true);
+#if defined(CONFIG_SPI_RPI_PICO_PIO_DMA)
+		if (dev_cfg->dma_config.dev != NULL && rx_size > SPI_RPI_PICO_PIO_FIFO_DEPTH) {
+			int rc = spi_pico_pio_dma_3_wire(dev, pio, false, rxbuf, rx_size);
 
+			if (rc == 0) {
+				data->rx_count = rx_size;
+			}
+			return rc;
+		}
+#endif
+		pio_sm_set_enabled(pio, data->pio_sm, true);
 		while (data->rx_count < rx_size) {
 			while ((!pio_sm_is_rx_fifo_empty(pio, data->pio_sm)) &&
 			       data->rx_count < rx_size) {
@@ -873,21 +993,24 @@ static void spi_pico_pio_txrx_3_wire(const struct device *dev)
 			}
 		}
 	}
+	return 0;
 #else
 	LOG_ERR("SIO pin requires half-duplex support");
+	return -ENOTSUP;
 #endif /* SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED */
 }
 
-static void spi_pico_pio_txrx(const struct device *dev)
+static int spi_pico_pio_txrx(const struct device *dev)
 {
 	const struct spi_pico_pio_config *dev_cfg = dev->config;
 
 	/* 3-wire or 4-wire mode? */
 	if (dev_cfg->sio_gpio.port) {
-		spi_pico_pio_txrx_3_wire(dev);
-	} else {
-		spi_pico_pio_txrx_4_wire(dev);
+		return spi_pico_pio_txrx_3_wire(dev);
 	}
+	spi_pico_pio_txrx_4_wire(dev);
+
+	return 0;
 }
 
 static int spi_pico_pio_transceive_impl(const struct device *dev, const struct spi_config *spi_cfg,
@@ -918,7 +1041,8 @@ static int spi_pico_pio_transceive_impl(const struct device *dev, const struct s
 		pio_sm_clear_fifos(pio, data->pio_sm);
 
 #if defined(CONFIG_SPI_RPI_PICO_PIO_DMA)
-		if (dev_cfg->dma_config.dev) {
+		/* 4-wire mode DMA transfer */
+		if (dev_cfg->dma_config.dev && !dev_cfg->sio_gpio.port) {
 			struct dma_status tx_stat = {.busy = true};
 			struct dma_status rx_stat = {.busy = true};
 
@@ -932,7 +1056,7 @@ static int spi_pico_pio_transceive_impl(const struct device *dev, const struct s
 						dev_cfg->dma_config.rx_channel, &rx_stat);
 			}
 
-			rc = spi_pico_pio_start_dma_transceive(dev);
+			rc = spi_pico_pio_start_dma_4_wire_transceive(dev);
 			if (rc < 0) {
 				goto error;
 			}
@@ -941,7 +1065,10 @@ static int spi_pico_pio_transceive_impl(const struct device *dev, const struct s
 #else
 		{
 #endif
-			spi_pico_pio_txrx(dev);
+			rc = spi_pico_pio_txrx(dev);
+			if (rc < 0) {
+				goto error;
+			}
 			spi_context_update_tx(spi_ctx, data->dfs, data->tx_count);
 			spi_context_update_rx(spi_ctx, data->dfs, data->rx_count);
 		}
