@@ -9,8 +9,8 @@
 #include <mem.h>
 
 / {
-	model = "hexagon-virt,qemu";
 	compatible = "qemu,hexagon-virt";
+	model = "hexagon-virt,qemu";
 	#address-cells = <1>;
 	#size-cells = <1>;
 
@@ -23,9 +23,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "qcom,hexagon-v67";
 			reg = <0>;
+			device_type = "cpu";
 			clock-frequency = <1000000>;
 		};
 	};
@@ -37,11 +37,11 @@
 	};
 
 	chosen {
+		stdout-path = &uart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &sram0;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
-		stdout-path = &uart0;
 	};
 
 	/* PL011 UART provided by QEMU virt machine */
@@ -53,14 +53,14 @@
 		interrupt-parent = <&intc>;
 		clocks = <&uartclk &uartclk>;
 		clock-names = "uartclk", "apb_pclk";
-		status = "okay";
 		current-speed = <115200>;
+		status = "okay";
 	};
 
 	soc {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 		interrupt-parent = <&intc>;
 
 		intc: interrupt-controller {
@@ -136,14 +136,14 @@
 
 	/* Main system memory */
 	memory@80000000 {
-		device_type = "memory";
 		reg = <0x80000000 DT_SIZE_M(32)>;
+		device_type = "memory";
 	};
 
 	/* SRAM for code and data */
 	sram0: memory@a0000000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0xa0000000 DT_SIZE_M(16)>;
+		device_type = "memory";
 	};
 };
