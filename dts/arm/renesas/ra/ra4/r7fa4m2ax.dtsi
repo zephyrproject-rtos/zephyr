@@ -42,9 +42,9 @@
 
 		sci1: sci1@40118100 {
 			compatible = "renesas,ra-sci";
+			reg = <0x40118100 0x100>;
 			interrupts = <4 1>, <5 1>, <6 1>, <7 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
-			reg = <0x40118100 0x100>;
 			clocks = <&pclka MSTPB 30>;
 			status = "disabled";
 
@@ -74,9 +74,9 @@
 
 		sci2: sci2@40118200 {
 			compatible = "renesas,ra-sci";
+			reg = <0x40118200 0x100>;
 			interrupts = <8 1>, <9 1>, <10 1>, <11 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
-			reg = <0x40118200 0x100>;
 			clocks = <&pclka MSTPB 29>;
 			status = "disabled";
 
@@ -106,9 +106,9 @@
 
 		sci3: sci3@40118300 {
 			compatible = "renesas,ra-sci";
+			reg = <0x40118300 0x100>;
 			interrupts = <12 1>, <13 1>, <14 1>, <15 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
-			reg = <0x40118300 0x100>;
 			clocks = <&pclka MSTPB 28>;
 			status = "disabled";
 
@@ -138,9 +138,9 @@
 
 		sci4: sci4@40118400 {
 			compatible = "renesas,ra-sci";
+			reg = <0x40118400 0x100>;
 			interrupts = <16 1>, <17 1>, <18 1>, <19 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
-			reg = <0x40118400 0x100>;
 			clocks = <&pclka MSTPB 27>;
 			status = "disabled";
 
@@ -174,40 +174,40 @@
 
 		pwm2: pwm2@40169200 {
 			compatible = "renesas,ra-pwm";
+			reg = <0x40169200 0x100>;
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_2>;
 			clocks = <&pclkd MSTPE 29>;
-			reg = <0x40169200 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
 
 		pwm3: pwm3@40169300 {
 			compatible = "renesas,ra-pwm";
+			reg = <0x40169300 0x100>;
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_3>;
 			clocks = <&pclkd MSTPE 28>;
-			reg = <0x40169300 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
 
 		pwm6: pwm6@40169600 {
 			compatible = "renesas,ra-pwm";
+			reg = <0x40169600 0x100>;
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_6>;
 			clocks = <&pclkd MSTPE 25>;
-			reg = <0x40169600 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
 
 		pwm7: pwm7@40169700 {
 			compatible = "renesas,ra-pwm";
+			reg = <0x40169700 0x100>;
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_7>;
 			clocks = <&pclkd MSTPE 24>;
-			reg = <0x40169700 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
@@ -227,43 +227,43 @@
 
 		option_setting_ofs0: option-setting-ofs0@100a100 {
 			compatible = "zephyr,memory-region";
-			zephyr,memory-region = "OFS_OFS0_MEMORY";
 			reg = <0x0100a100 0x4>;
+			zephyr,memory-region = "OFS_OFS0_MEMORY";
 			status = "okay";
 		};
 
 		option_setting_ofs1_sec: option-setting-ofs1-sec@100a200 {
 			compatible = "zephyr,memory-region";
-			zephyr,memory-region = "OFS_OFS1_SEC_MEMORY";
 			reg = <0x0100a200 0x4>;
+			zephyr,memory-region = "OFS_OFS1_SEC_MEMORY";
 			status = "okay";
 		};
 
 		option_setting_bps_sec: option-setting-bps-sec@100a240 {
 			compatible = "zephyr,memory-region";
-			zephyr,memory-region = "OFS_BPS_SEC_MEMORY";
 			reg = <0x0100a240 0x4>;
+			zephyr,memory-region = "OFS_BPS_SEC_MEMORY";
 			status = "okay";
 		};
 
 		option_setting_pbps_sec: option-setting-pbps-sec@100a260 {
 			compatible = "zephyr,memory-region";
-			zephyr,memory-region = "OFS_PBPS_SEC_MEMORY";
 			reg = <0x0100a260 0x4>;
+			zephyr,memory-region = "OFS_PBPS_SEC_MEMORY";
 			status = "okay";
 		};
 
 		option_setting_ofs1_sel: option-setting-ofs1-sel@100a280 {
 			compatible = "zephyr,memory-region";
-			zephyr,memory-region = "OFS_OFS1_SEL_MEMORY";
 			reg = <0x0100a280 0x4>;
+			zephyr,memory-region = "OFS_OFS1_SEL_MEMORY";
 			status = "okay";
 		};
 
 		option_setting_bps_sel: option-setting-bps-sel@100a2c0 {
 			compatible = "zephyr,memory-region";
-			zephyr,memory-region = "OFS_BPS_SEL_MEMORY";
 			reg = <0x0100a2c0 0x4>;
+			zephyr,memory-region = "OFS_BPS_SEL_MEMORY";
 			status = "okay";
 		};
 	};
