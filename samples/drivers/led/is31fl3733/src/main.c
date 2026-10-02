@@ -134,7 +134,7 @@ int main(void)
 			return 0;
 		}
 		if (current_limit == 0xFF) {
-			/* Select lower current limt */
+			/* Select lower current limit */
 			printk("Restarting sample with lower current limit\n");
 			current_limit = 0x3F;
 			ret = is31fl3733_current_limit(led_dev, current_limit);
@@ -143,7 +143,7 @@ int main(void)
 				return 0;
 			}
 		} else {
-			/* Select higher current limt */
+			/* Select higher current limit */
 			printk("Restarting sample with higher current limit\n");
 			current_limit = 0xFF;
 			ret = is31fl3733_current_limit(led_dev, current_limit);

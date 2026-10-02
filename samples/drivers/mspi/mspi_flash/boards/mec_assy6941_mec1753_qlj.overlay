@@ -31,7 +31,7 @@
 		     &qspi_shd_clk_gpio056_lp &qspi_shd_cs0_n_gpio055_lp>;
 	pinctrl-names = "default", "sleep";
 
-	/* Assembly-6791 SPI flash dongle conntected to EVB J18 2x10 with JP87 on 2-3 VTR1(3.3V)
+	/* Assembly-6791 SPI flash dongle connected to EVB J18 2x10 with JP87 on 2-3 VTR1(3.3V)
 	 * Dongle has four W25Q128JV 128 megabit 3.3 SPI flash chips
 	 */
 	spiflash0: qspi-nor-flash@0 {
