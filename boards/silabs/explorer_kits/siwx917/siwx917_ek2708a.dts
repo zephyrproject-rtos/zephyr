@@ -7,6 +7,7 @@
 #include <silabs/siwg917y111mgaba.dtsi>
 #include <zephyr/dt-bindings/adc/silabs-siwx91x-adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/pinctrl/silabs/siwx91x-pinctrl.h>
@@ -67,18 +68,18 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0>;
 		gpio-map-pass-thru = <0 GPIO_DT_FLAGS_MASK>;
-		gpio-map = <0 0 &gpiob 13 0>,   /* AN   */
-			   <1 0 &gpiob 14 0>,   /* RST  */
-			   <2 0 &gpiob 12 0>,   /* CS   */
-			   <3 0 &gpiob 9 0>,    /* SCK  */
-			   <4 0 &gpiob 10 0>,   /* MISO */
-			   <5 0 &gpiob 11 0>,   /* MOSI */
-			   <6 0 &gpioa 12 0>,   /* PWM  */
-			   <7 0 &uulpgpio 2 0>, /* INT  */
-			   <8 0 &ulpgpio 6 0>,  /* RX   */
-			   <9 0 &ulpgpio 7 0>,  /* TX   */
-			   <10 0 &gpioa 7 0>,   /* SCL  */
-			   <11 0 &gpioa 6 0>;   /* SDA  */
+		gpio-map = <MIKROBUS_AN 0 &gpiob 13 0>,
+			   <MIKROBUS_RST 0 &gpiob 14 0>,
+			   <MIKROBUS_CS 0 &gpiob 12 0>,
+			   <MIKROBUS_SCK 0 &gpiob 9 0>,
+			   <MIKROBUS_MISO 0 &gpiob 10 0>,
+			   <MIKROBUS_MOSI 0 &gpiob 11 0>,
+			   <MIKROBUS_PWM 0 &gpioa 12 0>,
+			   <MIKROBUS_INT 0 &uulpgpio 2 0>,
+			   <MIKROBUS_RX 0 &ulpgpio 6 0>,
+			   <MIKROBUS_TX 0 &ulpgpio 7 0>,
+			   <MIKROBUS_SCL 0 &gpioa 7 0>,
+			   <MIKROBUS_SDA 0 &gpioa 6 0>;
 	};
 
 	qwiic_connector: stemma-qt-connector {
