@@ -26,8 +26,8 @@
 
 		cpu@0 {
 			compatible = "arm,cortex-m3";
-			clock-frequency = <24000000>;
 			reg = <0>;
+			clock-frequency = <24000000>;
 		};
 	};
 
@@ -91,8 +91,8 @@
 
 		wdog0: wdog@40008000 {
 			compatible = "arm,cmsdk-watchdog";
-			clocks = <&sysclk>;
 			reg = <0x40008000 0x1000>;
+			clocks = <&sysclk>;
 		};
 
 		gpio0: gpio@40010000 {
