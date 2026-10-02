@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <bflb/bl616cl.dtsi>
+#include <bflb/bl616cl_em_16kb_wifi.dtsi>
+#include "ai_m64p_common.dtsi"
+
+/ {
+	model = "Ai-Thinker M64P-32S BLIFN4IR4ID Module";
+};
+
+&flash0 {
+	compatible = "bflb,sf-flash", "soc-nv-flash", "gd,gd25lq32d";
+	spi-bus-mode = <4>;
+	sf-pad = <1>;
+	jedec-id = [c8 60 16];
+	use-sfdp;
+};
