@@ -8,8 +8,8 @@
 #include "stm32h7_hdmi_board.dtsi"
 
 / {
-	model = "Antmicro STM32H7 Hdmi Board";
 	compatible = "antmicro,stm32h7-hdmi-board";
+	model = "Antmicro STM32H7 Hdmi Board";
 
 	chosen {
 		/* zephyr,console = &uart5; */
