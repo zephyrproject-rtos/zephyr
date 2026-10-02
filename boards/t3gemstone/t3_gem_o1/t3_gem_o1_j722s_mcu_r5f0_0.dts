@@ -12,8 +12,8 @@
 #include <freq.h>
 
 / {
-	model = "T3 Gemstone O1";
 	compatible = "t3gemstone,t3-gem-o1";
+	model = "T3 Gemstone O1";
 
 	chosen {
 		zephyr,sram = &ddr1;
@@ -58,10 +58,10 @@
 };
 
 &uart1 {
-	status = "okay";
 	pinctrl-0 = <&uart1_tx_default &uart1_rx_default>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &systick_timer {
