@@ -4,6 +4,11 @@
  */
 
 #include <zephyr/init.h>
+
+#include <cmsis_core.h>
+#include <hal/nrf_power.h>
+
+#if defined(CONFIG_PWM)
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/dt-bindings/pinctrl/nrf-pinctrl.h>
@@ -68,9 +73,49 @@ WISBLOCK_PWM_STATES(pwm0);
 WISBLOCK_PWM_STATES(pwm1);
 WISBLOCK_PWM_STATES(pwm2);
 
-void board_early_init_hook(void)
+static void wisblock_pwm_connect(void)
 {
 	WISBLOCK_PWM_UPDATE(pwm0);
 	WISBLOCK_PWM_UPDATE(pwm1);
 	WISBLOCK_PWM_UPDATE(pwm2);
+}
+#else
+static void wisblock_pwm_connect(void)
+{
+}
+#endif /* CONFIG_PWM */
+
+static void rak4630_regout0_set_3v3(void)
+{
+	/* The module supplies the SoC through VDDH, where the GPIO rail runs
+	 * from the internal regulator. UICR picks its voltage and comes up at
+	 * 1.8 V, too low for the WisBlock connector, so raise it to 3.3 V. A
+	 * chip erase puts UICR back to the default, which is why this cannot
+	 * be left to whatever programmed the board last.
+	 */
+	if ((nrf_power_mainregstatus_get(NRF_POWER) != NRF_POWER_MAINREGSTATUS_HIGH) ||
+	    ((NRF_UICR->REGOUT0 & UICR_REGOUT0_VOUT_Msk) !=
+	     (UICR_REGOUT0_VOUT_DEFAULT << UICR_REGOUT0_VOUT_Pos))) {
+		return;
+	}
+
+	NRF_NVMC->CONFIG = NVMC_CONFIG_WEN_Wen << NVMC_CONFIG_WEN_Pos;
+	while (NRF_NVMC->READY == NVMC_READY_READY_Busy) {
+	}
+
+	NRF_UICR->REGOUT0 = (NRF_UICR->REGOUT0 & ~((uint32_t)UICR_REGOUT0_VOUT_Msk)) |
+			    (UICR_REGOUT0_VOUT_3V3 << UICR_REGOUT0_VOUT_Pos);
+
+	NRF_NVMC->CONFIG = NVMC_CONFIG_WEN_Ren << NVMC_CONFIG_WEN_Pos;
+	while (NRF_NVMC->READY == NVMC_READY_READY_Busy) {
+	}
+
+	/* UICR is only read out of reset */
+	NVIC_SystemReset();
+}
+
+void board_early_init_hook(void)
+{
+	rak4630_regout0_set_3v3();
+	wisblock_pwm_connect();
 }
