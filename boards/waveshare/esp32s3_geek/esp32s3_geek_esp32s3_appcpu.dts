@@ -9,8 +9,8 @@
 #include <espressif/partitions_0x0_amp_16M.dtsi>
 
 / {
-	model = "ESP32-S3-GEEK APPCPU";
 	compatible = "waveshare,esp32-s3-geek";
+	model = "ESP32-S3-GEEK APPCPU";
 
 	chosen {
 		zephyr,sram = &sram1;
