@@ -1141,6 +1141,10 @@ static int modem_cellular_on_reset_pulse_state_enter(struct modem_cellular_data 
 		modem_cellular_baudrate_update(data, data->original_baudrate);
 	}
 
+	/* The modem restarts with the GNSS receiver off */
+	data->gnss_powered = false;
+	data->gnss_powered_known = true;
+
 	gpio_pin_set_dt(&config->reset_gpio, 1);
 	modem_cellular_start_timer(data, K_MSEC(config->vendor->reset_pulse_duration_ms));
 	return 0;
@@ -1225,6 +1229,10 @@ static int modem_cellular_on_power_on_pulse_state_enter(struct modem_cellular_da
 	if (data->original_baudrate) {
 		modem_cellular_baudrate_update(data, data->original_baudrate);
 	}
+
+	/* The modem starts with the GNSS receiver off */
+	data->gnss_powered = false;
+	data->gnss_powered_known = true;
 
 	gpio_pin_set_dt(&config->power_gpio, 1);
 	modem_cellular_start_timer(data, K_MSEC(config->vendor->power_pulse_duration_ms));
