@@ -15,15 +15,15 @@
 
 	soc {
 		fmc: flash-controller@4000c000 {
+			ranges = <0x0 0x0 DT_SIZE_K(512)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x0 DT_SIZE_K(512)>;
 
 			flash0: flash@0 {
 				reg = <0 DT_SIZE_K(512)>;
+				ranges;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges;
 			};
 		};
 
@@ -34,9 +34,9 @@
 			resets = <&rst NUMAKER_HSUSBD_RST>;
 			clocks = <&pcc NUMAKER_HSUSBD_MODULE 0 0>;
 			dma-buffer-size = <4096>;
-			status = "disabled";
 			/* 2 more for Control OUT/IN */
 			num-bidir-endpoints = <14>;
+			status = "disabled";
 		};
 	};
 };
