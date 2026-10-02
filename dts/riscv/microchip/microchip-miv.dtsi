@@ -13,10 +13,10 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			clock-frequency = <0>;
 			compatible = "microchip,miv", "riscv";
-			device_type = "cpu";
 			reg = <0>;
+			clock-frequency = <0>;
+			device_type = "cpu";
 			riscv,isa-base = "rv32i";
 			riscv,isa-extensions = "i", "m", "a", "zicsr", "zifencei";
 
@@ -30,10 +30,10 @@
 	};
 
 	soc {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "microchip,miv-soc", "simple-bus";
 		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		flash0: flash@80000000 {
 			compatible = "soc-nv-flash";
@@ -47,24 +47,24 @@
 
 		clint: clint@44000000 {
 			compatible = "sifive,clint0";
-			interrupts-extended = <&hlic 3>, <&hlic 7>;
 			reg = <0x44000000 0x10000>;
+			interrupts-extended = <&hlic 3>, <&hlic 7>;
 		};
 
 		mtimer: timer@4400bff8 {
 			compatible = "riscv,machine-timer";
-			interrupts-extended = <&hlic 7>;
 			reg = <0x4400bff8 0x8 0x44004000 0x8>;
+			interrupts-extended = <&hlic 7>;
 			reg-names = "mtime", "mtimecmp";
 		};
 
 		plic: interrupt-controller@40000000 {
 			compatible = "sifive,plic-1.0.0";
+			reg = <0x40000000 0x04000000>;
 			#address-cells = <0>;
 			#interrupt-cells = <2>;
 			interrupt-controller;
 			interrupts-extended = <&hlic 11>;
-			reg = <0x40000000 0x04000000>;
 			riscv,max-priority = <1>;
 			riscv,ndev = <31>;
 		};
@@ -72,9 +72,9 @@
 		uart0: uart@70001000 {
 			compatible = "microchip,coreuart";
 			reg = <0x70001000 0x1000>;
-			status = "disabled";
 			current-speed = <0>;
 			clock-frequency = <0>;
+			status = "disabled";
 		};
 	};
 };
