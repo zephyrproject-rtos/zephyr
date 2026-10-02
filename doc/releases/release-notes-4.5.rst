@@ -33,23 +33,87 @@ We are pleased to announce the release of Zephyr version 4.5.0.
 
 Major enhancements with this release include:
 
-**Infineon TriCore support**
-  Zephyr now supports the :zephyr:board-catalog:`Infineon TriCore architecture <#arch=tricore>`.
+**New architectures: Infineon TriCore and Qualcomm Hexagon**
+  Zephyr now supports the :zephyr:board-catalog:`Infineon TriCore architecture <#arch=tricore>`,
+  used in AURIX automotive microcontrollers, and the
+  :zephyr:board-catalog:`Qualcomm Hexagon DSP architecture <#arch=hexagon>`.
+
+**Multimedia Pipeline (mpipe)**
+  The new experimental :ref:`Multimedia Pipeline (mpipe) <mpipe>` subsystem, inspired by
+  GStreamer, provides a framework for building media applications from source, transform and
+  sink elements linked into a zero-copy pipeline.
+
+**Networking enhancements**
+  The networking stack runs faster and gains several new features:
+
+  - Up to 21% higher TCP throughput in the :ref:`zperf loopback benchmark <zperf-loopback-icount>`.
+
+  - :ref:`QUIC <quic_transport_interface>` and :ref:`HTTP/3 <http_server_interface>` support.
+
+  - :zephyr:code-sample:`SSH server and client <ssh-server-client>`, including a shell backend.
+
+  - :ref:`Model Context Protocol (MCP) server <mcp_server_interface>` to let AI agents use tools
+    exposed by a device.
+
+  - Gateway features: IPv4 forwarding and NAT, :ref:`DHCPv6 <dhcpv6_interface>` prefix delegation
+    and an :ref:`SNTP server <sntp_interface>`.
 
 **New driver classes**
+  Zephyr 4.5 adds several new driver APIs:
 
-  Zephyr 4.5 adds several new driver APIs, including:
+  - :ref:`Buzzer <buzzer_api>` for passive and active buzzers driven by PWM or GPIO,
 
-  - :ref:`Clock Monitor <clock_monitor_api>` for runtime observation of clock frequency
-  - :ref:`LIN <lin>` for the Local Interconnect Network automotive serial bus
+  - :ref:`Clock Monitor <clock_monitor_api>` for runtime observation of clock frequency,
 
-**New subsystems**
+  - :ref:`DALI <dali_api>` for the Digital Addressable Lighting Interface,
 
-  Zephyr 4.5 adds several new subsystem APIs, including:
+  - :ref:`LIN <lin>` for the Local Interconnect Network automotive serial bus,
 
-  - :ref:`Precision timing <precision_timing>` for shared checked time arithmetic, clock operations,
-    and PI control
-  - :ref:`Video <video_api>` for controlling video drivers
+  - :ref:`MUX <mux_api>` for hardware signal multiplexers, and
+
+  - :ref:`Pulse IO <pulse_io_api>` for hardware that generates and captures timed digital edges,
+    as needed by addressable LED strips and infrared transceivers.
+
+**Security and SBOM improvements**
+  This release improves SBOM generation, hardening checks and cryptographic acceleration:
+
+  - :ref:`SPDX 3.0 SBOMs <west-spdx>`, including the :ref:`Build profile <west-spdx-build-profile>`.
+
+  - A revamped :ref:`hardening tool <hardening>` with CWE references and CI integration.
+
+  - Hardware-accelerated :ref:`PSA Crypto <psa_crypto>` on selected Silicon Labs, NXP and STM32
+    devices.
+
+**Simulation and testing improvements**
+  This release extends simulated targets and test tooling:
+
+  - New host-backed :ref:`native_sim peripherals <native_sim_peripherals>`, including Wi-Fi, audio,
+    video, LEDs and host directory mounts.
+
+  - New :ref:`VirtIO <virtio>` drivers (block, input, GPIO, I2C and SPI) for QEMU targets.
+
+  - :ref:`Multi-device testing <twister_multi_duts_testing>` and
+    :ref:`multi-toolchain builds <twister_toolchain_selection>` in Twister.
+
+  - :ref:`TTCN-3 conformance test suites <ttcn3_testing>` for the networking stack.
+
+**Debugging and diagnostics**
+  This release adds several debugging and diagnostic tools:
+
+  - :ref:`ZASSERT() <assert>` for per-module and per-file assertion levels.
+
+  - Heap memory error detection with :kconfig:option:`CONFIG_SYS_HEAP_SANITIZER_ASAN` (native_sim)
+    and :kconfig:option:`CONFIG_SYS_HEAP_KASAN` (real targets).
+
+  - New :ref:`tracing <tracing>` features: terminal viewer, Perfetto export, shell and ITM backend.
+
+**Expanded board support**
+  This release adds support for 178 :ref:`new boards <boards_added_in_zephyr_4_5>` and 29
+  :ref:`new shields <shields_added_in_zephyr_4_5>`.
+
+  Newly supported SoC series include the Espressif ESP32-P4 and ESP32-C61, STMicroelectronics
+  STM32WL3x and Silicon Labs Series 3. The :zephyr:board:`Raspberry Pi 4 Model B <rpi_4b>` now runs
+  SMP on its four Cortex-A72 cores and supports Ethernet and a framebuffer display.
 
 An overview of the changes required or recommended when migrating your application from Zephyr
 v4.4.0 to Zephyr v4.5.0 can be found in the separate :ref:`migration guide<migration_4.5>`.
@@ -979,6 +1043,8 @@ New APIs and options
 
 .. zephyr-keep-sorted-stop
 
+.. _boards_added_in_zephyr_4_5:
+
 New Boards
 **********
 
@@ -1321,6 +1387,8 @@ New Boards
   * :zephyr:board:`w6100_evb_pico` (``w6100_evb_pico``)
   * :zephyr:board:`w6100_evb_pico2` (``w6100_evb_pico2``)
   * :zephyr:board:`w6300_evb_pico2` (``w6300_evb_pico2``)
+
+.. _shields_added_in_zephyr_4_5:
 
 New Shields
 ***********
@@ -2217,6 +2285,11 @@ Libraries / Subsystems
     applications out of reusable elements - sources, transforms and sinks -
     linked together into a pipeline. It lets an application describe the media
     flow it wants instead of driving each audio, video or display device itself.
+
+* Precision timing
+
+  * Introducing :ref:`precision_timing`, experimental reusable mechanisms for PTP, gPTP and other
+    users of high-resolution clocks: checked time arithmetic, clock operations and PI control.
 
 * Video
 
