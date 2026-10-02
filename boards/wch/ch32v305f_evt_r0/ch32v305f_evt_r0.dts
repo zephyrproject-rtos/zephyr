@@ -11,8 +11,8 @@
 #include "ch32v305f_evt_r0-pinctrl.dtsi"
 
 / {
-	model = "wch_ch32v305f_evt_r0";
 	compatible = "wch,ch32v305";
+	model = "wch_ch32v305f_evt_r0";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -46,8 +46,8 @@
 };
 
 &clk_hse {
-	status = "okay";
 	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
 };
 
 &pll {
@@ -80,8 +80,8 @@
 };
 
 &usart3 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&usart3_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
