@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/f4/stm32f415Rg.dtsi>
 #include <st/f4/stm32f415rgtx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -53,20 +54,20 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <0 0 &gpioa 0 0>,	/* AN  */
-			   <1 0 &gpiob 5 0>,	/* RST */
-			   <2 0 &gpiob 12 0>,	/* CS   */
-			   <3 0 &gpiob 13 0>,	/* SCK  */
-			   <4 0 &gpiob 14 0>,	/* MISO */
-			   <5 0 &gpiob 15 0>,	/* MOSI */
+		gpio-map = <MIKROBUS_AN 0 &gpioa 0 0>,
+			   <MIKROBUS_RST 0 &gpiob 5 0>,
+			   <MIKROBUS_CS 0 &gpiob 12 0>,
+			   <MIKROBUS_SCK 0 &gpiob 13 0>,
+			   <MIKROBUS_MISO 0 &gpiob 14 0>,
+			   <MIKROBUS_MOSI 0 &gpiob 15 0>,
 			   /* +3.3V */
 			   /* GND */
-			   <6 0 &gpiob 0 0>,	/* PWM  */
-			   <7 0 &gpiob 1 0>,	/* INT  */
-			   <8 0 &gpioc 11 0>,	/* RX   */
-			   <9 0 &gpioc 10 0>,	/* TX   */
-			   <10 0 &gpiob 10 0>,	/* SCL  */
-			   <11 0 &gpiob 11 0>;	/* SDA  */
+			   <MIKROBUS_PWM 0 &gpiob 0 0>,
+			   <MIKROBUS_INT 0 &gpiob 1 0>,
+			   <MIKROBUS_RX 0 &gpioc 11 0>,
+			   <MIKROBUS_TX 0 &gpioc 10 0>,
+			   <MIKROBUS_SCL 0 &gpiob 10 0>,
+			   <MIKROBUS_SDA 0 &gpiob 11 0>;
 		/* +5V */
 		/* GND */
 	};
