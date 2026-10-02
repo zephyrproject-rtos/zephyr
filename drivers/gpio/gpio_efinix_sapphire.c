@@ -121,7 +121,7 @@ static inline uint32_t get_port(const struct gpio_efinix_sapphire_cfg *config)
 {
 	uint32_t c_reg_val = sys_read32(GPIO_OUTPUT_ADDR);
 
-	return (c_reg_val & BIT_MASK(config->n_gpios));
+	return (c_reg_val & GENMASK(config->n_gpios - 1, 0));
 }
 
 static inline void set_port(const struct gpio_efinix_sapphire_cfg *config, uint32_t value)
@@ -197,11 +197,6 @@ static int gpio_efinix_sapphire_port_toggle_bits(const struct device *dev, gpio_
 
 static int gpio_efinix_sapphire_init(const struct device *dev)
 {
-	const struct gpio_efinix_sapphire_cfg *config = DEV_GPIO_CFG(dev);
-
-	if (config->n_gpios > 4) {
-		return -EINVAL;
-	}
 	return 0;
 }
 
