@@ -66,8 +66,15 @@ GEN_OFFSET_SYM(_thread_arch_t, sp_usr);
 GEN_OFFSET_SYM(_thread_arch_t, preempt_float);
 #endif
 
+GEN_OFFSET_SYM(_basic_sf_t, r0);
+GEN_OFFSET_SYM(_basic_sf_t, r1);
+GEN_OFFSET_SYM(_basic_sf_t, r2);
+GEN_OFFSET_SYM(_basic_sf_t, r3);
+GEN_OFFSET_SYM(_basic_sf_t, r12);
+GEN_OFFSET_SYM(_basic_sf_t, lr);
 GEN_OFFSET_SYM(_basic_sf_t, pc);
 GEN_OFFSET_SYM(_basic_sf_t, xpsr);
+GEN_ABSOLUTE_SYM(___basic_sf_t_SIZEOF, sizeof(_basic_sf_t));
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 GEN_OFFSET_SYM(_fpu_sf_t, fpscr);
