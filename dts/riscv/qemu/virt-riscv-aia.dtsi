@@ -19,10 +19,10 @@
 	aplic: interrupt-controller@c000000 {
 		compatible = "riscv,aplic";
 		reg = <0x0c000000 0x00008000>;
-		riscv,num-sources = <64>;
 		interrupt-controller;
 		#address-cells = <0>;
 		#interrupt-cells = <3>;
+		riscv,num-sources = <64>;
 		status = "okay";
 	};
 };
