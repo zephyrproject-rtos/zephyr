@@ -5,8 +5,8 @@
  */
 
 &i2c0 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
 
 	adt7420: adt7420@48 {
 		compatible = "adi,adt7420";

@@ -10,8 +10,8 @@
 };
 
 &lpuart1 {
-	status = "okay";
 	current-speed = <9600>;
+	status = "okay";
 
 	explorir_m: explorir_m {
 		compatible = "gss,explorir-m";
