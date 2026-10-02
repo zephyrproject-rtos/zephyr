@@ -62,17 +62,18 @@ static void cbSendSystemDesc(void)
 	SEGGER_SYSVIEW_SendSysDesc("C=" CONFIG_BOARD_QUALIFIERS);
 #endif
 
-/* The switch-case ISR table cannot be walked, so ISR names are not reported. */
-#if defined(CONFIG_SYMTAB) && defined(CONFIG_GEN_SW_ISR_TABLE_ARRAY)
+#ifdef CONFIG_SYMTAB
 	char isr_desc[SEGGER_SYSVIEW_MAX_STRING_LEN];
 
 	for (int idx = 0; idx < IRQ_TABLE_SIZE; idx++) {
-		const struct _isr_table_entry *entry = &_sw_isr_table[idx];
+		struct _isr_table_entry entry;
 
-		if ((entry->isr == z_irq_spurious) || (entry->isr == NULL)) {
+		z_sw_isr_table_lookup(idx, &entry);
+
+		if ((entry.isr == z_irq_spurious) || (entry.isr == NULL)) {
 			continue;
 		}
-		const char *name = symtab_find_symbol_name((uintptr_t)entry->isr, NULL);
+		const char *name = symtab_find_symbol_name((uintptr_t)entry.isr, NULL);
 
 		snprintf(isr_desc, SEGGER_SYSVIEW_MAX_STRING_LEN, "I#%d=%s", idx + 16, name);
 
