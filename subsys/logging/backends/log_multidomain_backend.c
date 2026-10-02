@@ -89,36 +89,23 @@ void log_multidomain_backend_on_error(struct log_multidomain_backend *backend_re
 }
 
 static void get_name_response(struct log_multidomain_backend *backend_remote,
-			      uint8_t domain_id, uint16_t source_id,
-			      bool domain_name)
+			      uint16_t source_id)
 {
-	const char *name = domain_name ?
-			log_domain_name_get(domain_id) :
-			log_source_name_get(domain_id, source_id);
+	const char *name = log_source_name_get(Z_LOG_LOCAL_DOMAIN_ID, source_id);
 	size_t slen = strlen(name);
 	size_t msg_offset = offsetof(struct log_multidomain_msg, data);
-	size_t msg_size = slen + 1 + msg_offset +
-		(domain_name ? sizeof(struct log_multidomain_domain_name) :
-				sizeof(struct log_multidomain_source_name));
+	size_t msg_size = slen + 1 + msg_offset + sizeof(struct log_multidomain_source_name);
 	uint8_t msg_buf[msg_size];
 	struct log_multidomain_msg *outmsg = (struct log_multidomain_msg *)msg_buf;
-	char *dst = domain_name ?
-			outmsg->data.domain_name.name :
-			outmsg->data.source_name.name;
+	char *dst = outmsg->data.source_name.name;
 	int err;
 
-	outmsg->id = domain_name ? Z_LOG_MULTIDOMAIN_ID_GET_DOMAIN_NAME :
-				Z_LOG_MULTIDOMAIN_ID_GET_SOURCE_NAME;
+	outmsg->id = Z_LOG_MULTIDOMAIN_ID_GET_SOURCE_NAME;
 	outmsg->status = Z_LOG_MULTIDOMAIN_STATUS_OK;
 	memcpy(dst, name, slen);
 	dst[slen] = '\0';
 
-	if (domain_name) {
-		outmsg->data.domain_name.domain_id = domain_id;
-	} else {
-		outmsg->data.source_name.domain_id = domain_id;
-		outmsg->data.source_name.source_id = source_id;
-	}
+	outmsg->data.source_name.source_id = source_id;
 
 	err = backend_remote->transport_api->send(backend_remote, outmsg, msg_size);
 	__ASSERT_NO_MSG(err >= 0);
@@ -137,44 +124,30 @@ void log_multidomain_backend_on_recv_cb(struct log_multidomain_backend *backend_
 	memcpy(&outmsg, msg, sizeof(struct log_multidomain_msg));
 
 	switch (msg->id) {
-	case Z_LOG_MULTIDOMAIN_ID_GET_DOMAIN_CNT:
-		outmsg.data.domain_cnt.count = log_domains_count();
-		break;
-
 	case Z_LOG_MULTIDOMAIN_ID_GET_SOURCE_CNT:
-		outmsg.data.source_cnt.count =
-			log_src_cnt_get(msg->data.source_cnt.domain_id);
+		outmsg.data.source_cnt.count = log_src_cnt_get(Z_LOG_LOCAL_DOMAIN_ID);
 		break;
-
-	case Z_LOG_MULTIDOMAIN_ID_GET_DOMAIN_NAME:
-		get_name_response(backend_remote,
-				  msg->data.domain_name.domain_id,
-				  0, true);
-		return;
 
 	case Z_LOG_MULTIDOMAIN_ID_GET_SOURCE_NAME:
-		get_name_response(backend_remote,
-				  msg->data.source_name.domain_id,
-				  msg->data.source_name.source_id,
-				  false);
+		get_name_response(backend_remote, msg->data.source_name.source_id);
 		return;
 
 	case Z_LOG_MULTIDOMAIN_ID_GET_LEVELS:
 		outmsg.data.levels.level =
 			log_filter_get(backend_remote->log_backend,
-				       outmsg.data.levels.domain_id,
+				       Z_LOG_LOCAL_DOMAIN_ID,
 				       outmsg.data.levels.source_id,
 				       false);
 		outmsg.data.levels.runtime_level =
 			log_filter_get(backend_remote->log_backend,
-				       outmsg.data.levels.domain_id,
+				       Z_LOG_LOCAL_DOMAIN_ID,
 				       outmsg.data.levels.source_id,
 				       true);
 		break;
 	case Z_LOG_MULTIDOMAIN_ID_SET_RUNTIME_LEVEL:
 		outmsg.data.set_rt_level.runtime_level =
 			log_filter_set(backend_remote->log_backend,
-				       outmsg.data.set_rt_level.domain_id,
+				       Z_LOG_LOCAL_DOMAIN_ID,
 				       outmsg.data.set_rt_level.source_id,
 				       outmsg.data.set_rt_level.runtime_level);
 		break;

@@ -66,29 +66,21 @@ struct log_link_api {
 	int (*initiate)(const struct log_link *link, struct log_link_config *config);
 	/** @brief Complete link activation (see log_link_activate()). */
 	int (*activate)(const struct log_link *link);
-	/** @brief Get a domain name (see log_link_get_domain_name()). */
-	int (*get_domain_name)(const struct log_link *link, uint32_t domain_id,
-				char *buf, size_t *length);
 	/** @brief Get a source name (see log_link_get_source_name()). */
-	int (*get_source_name)(const struct log_link *link, uint32_t domain_id,
-				uint16_t source_id, char *buf, size_t *length);
+	int (*get_source_name)(const struct log_link *link, uint16_t source_id, char *buf,
+			       size_t *length);
 	/** @brief Get level settings of a source (see log_link_get_levels()). */
-	int (*get_levels)(const struct log_link *link, uint32_t domain_id,
-				uint16_t source_id, uint8_t *level,
-				uint8_t *runtime_level);
+	int (*get_levels)(const struct log_link *link, uint16_t source_id, uint8_t *level,
+			  uint8_t *runtime_level);
 	/** @brief Set runtime level of a source (see log_link_set_runtime_level()). */
-	int (*set_runtime_level)(const struct log_link *link, uint32_t domain_id,
-				uint16_t source_id, uint8_t level);
+	int (*set_runtime_level)(const struct log_link *link, uint16_t source_id, uint8_t level);
 };
 
 /** @brief Run-time control block for a @ref log_link instance. */
 struct log_link_ctrl_blk {
 	/** @cond INTERNAL_HIDDEN */
-	uint32_t domain_cnt;
-	uint16_t source_cnt[1 + COND_CODE_1(CONFIG_LOG_MULTIDOMAIN,
-					    (CONFIG_LOG_REMOTE_DOMAIN_MAX_COUNT),
-					    (0))];
-	uint32_t domain_offset;
+	uint16_t source_cnt;
+	uint16_t domain_offset;
 	uint32_t *filters;
 	/** @endcond */
 };
@@ -192,62 +184,25 @@ static inline int log_link_activate(const struct log_link *link)
  */
 static inline int log_link_is_active(const struct log_link *link)
 {
-	return link->ctrl_blk->domain_offset > 0 ? 0 : -EINPROGRESS;
-}
-
-/** @brief Get number of domains in the link.
- *
- * @param[in] link	Log link instance.
- *
- * @return Number of domains.
- */
-static inline uint8_t log_link_domains_count(const struct log_link *link)
-{
-	__ASSERT_NO_MSG(link);
-
-	return link->ctrl_blk->domain_cnt;
+	return link->ctrl_blk->source_cnt > 0 ? 0 : -EINPROGRESS;
 }
 
 /** @brief Get number of sources in the domain.
  *
  * @param[in] link		Log link instance.
- * @param[in] domain_id		Relative domain ID.
  *
  * @return Source count.
  */
-static inline uint16_t log_link_sources_count(const struct log_link *link,
-					      uint32_t domain_id)
+static inline uint16_t log_link_sources_count(const struct log_link *link)
 {
 	__ASSERT_NO_MSG(link);
 
-	return link->ctrl_blk->source_cnt[domain_id];
-}
-
-/** @brief Get domain name.
- *
- * @param[in] link		Log link instance.
- * @param[in] domain_id		Relative domain ID.
- * @param[out] buf		Output buffer filled with domain name. If NULL
- *				then name length is returned.
- * @param[in,out] length	Buffer size. Name is trimmed if it does not fit
- *				in the buffer and field is set to actual name
- *				length.
- *
- * @return 0 on success or error code.
- */
-static inline int log_link_get_domain_name(const struct log_link *link,
-					   uint32_t domain_id, char *buf,
-					   size_t *length)
-{
-	__ASSERT_NO_MSG(link);
-
-	return link->api->get_domain_name(link, domain_id, buf, length);
+	return link->ctrl_blk->source_cnt;
 }
 
 /** @brief Get source name.
  *
  * @param[in] link	Log link instance.
- * @param[in] domain_id	Relative domain ID.
  * @param[in] source_id	Source ID.
  * @param[out] buf	Output buffer filled with source name.
  * @param[in,out] length	Buffer size. Name is trimmed if it does not fit
@@ -256,54 +211,47 @@ static inline int log_link_get_domain_name(const struct log_link *link,
  *
  * @return 0 on success or error code.
  */
-static inline int log_link_get_source_name(const struct log_link *link,
-					   uint32_t domain_id, uint16_t source_id,
+static inline int log_link_get_source_name(const struct log_link *link, uint16_t source_id,
 					   char *buf, size_t *length)
 {
 	__ASSERT_NO_MSG(link);
 	__ASSERT_NO_MSG(buf);
 
-	return link->api->get_source_name(link, domain_id, source_id,
-					buf, length);
+	return link->api->get_source_name(link, source_id, buf, length);
 }
 
 /** @brief Get level settings of the given source.
  *
  * @param[in] link	Log link instance.
- * @param[in] domain_id	Relative domain ID.
  * @param[in] source_id	Source ID.
  * @param[out] level	Location to store requested compile time level.
  * @param[out] runtime_level Location to store requested runtime time level.
  *
  * @return 0 on success or error code.
  */
-static inline int log_link_get_levels(const struct log_link *link,
-				      uint32_t domain_id, uint16_t source_id,
+static inline int log_link_get_levels(const struct log_link *link, uint16_t source_id,
 				      uint8_t *level, uint8_t *runtime_level)
 {
 	__ASSERT_NO_MSG(link);
 
-	return link->api->get_levels(link, domain_id, source_id,
-				     level, runtime_level);
+	return link->api->get_levels(link, source_id, level, runtime_level);
 }
 
 /** @brief Set runtime level of the given source.
  *
  * @param[in] link	Log link instance.
- * @param[in] domain_id	Relative domain ID.
  * @param[in] source_id	Source ID.
  * @param[in] level	Requested level.
  *
  * @return 0 on success or error code.
  */
-static inline int log_link_set_runtime_level(const struct log_link *link,
-					     uint32_t domain_id, uint16_t source_id,
+static inline int log_link_set_runtime_level(const struct log_link *link, uint16_t source_id,
 					     uint8_t level)
 {
 	__ASSERT_NO_MSG(link);
 	__ASSERT_NO_MSG(level);
 
-	return link->api->set_runtime_level(link, domain_id, source_id, level);
+	return link->api->set_runtime_level(link, source_id, level);
 }
 
 /**
