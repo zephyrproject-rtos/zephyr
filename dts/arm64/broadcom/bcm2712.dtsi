@@ -8,18 +8,18 @@
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 
 / {
+	interrupt-parent = <&gic>;
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a76";
 			reg = <0>;
+			device_type = "cpu";
 		};
 	};
-
-	interrupt-parent = <&gic>;
 
 	timer {
 		compatible = "arm,armv8-timer";
@@ -38,9 +38,9 @@
 		#size-cells = <1>;
 
 		sram0: memory@200000 {
-			device_type = "memory";
 			compatible = "mmio-sram";
 			reg = <0x0 0x200000 0x80000>;
+			device_type = "memory";
 		};
 
 		gic: interrupt-controller@107fff9000 {
@@ -120,12 +120,12 @@
 			      <0x0 0x0 0x8000000>,
 			      <0x0 0x8000000 0x10000>,
 			      <0x0 0x0 0x10>;
-			#address-cells = <3>;
-			#size-cells = <2>;
-			status = "okay";
 			ranges = <0x02000000 0x0 0x0 0x1b 0x0 0x00 0xfffffffc>,
 				 <0x43000000 0x4 0x0 0x18 0x0 0x03 0x00000000>,
 				 <0x03000000 0x0 0x0 0x10 0x0 0x10 0x00000000>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+			status = "okay";
 		};
 
 		pcie2: pcie@1000120000 {
@@ -134,11 +134,11 @@
 			      <0x0 0x410000 0x4000>,
 			      <0x0 0x0 0x400000>,
 			      <0x0 0x400000 0x4000>;
-			#address-cells = <3>;
-			#size-cells = <2>;
 			ranges = <0x02000000 0x0 0x0 0x1f 0x0 0x00 0xfffffffc>,
 				 <0x43000000 0x4 0x0 0x1c 0x0 0x03 0x00000000>,
 				 <0x02000000 0x0 0x0 0x1f 0x0 0x00 0x00400000>;
+			#address-cells = <3>;
+			#size-cells = <2>;
 			status = "okay";
 
 			rp1 {

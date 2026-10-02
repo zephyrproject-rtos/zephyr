@@ -20,20 +20,20 @@
 #include <zephyr/dt-bindings/interrupt-controller/bcm2835-armctrl.h>
 
 / {
+	interrupt-parent = <&armctrl_intc>;
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a53";
 			reg = <0>;
+			device_type = "cpu";
 			i-cache-line-size = <64>;
 			d-cache-line-size = <64>;
 		};
 	};
-
-	interrupt-parent = <&armctrl_intc>;
 
 	timer {
 		compatible = "arm,armv8-timer";
