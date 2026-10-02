@@ -313,7 +313,7 @@ retry:
 #ifndef CONFIG_WIFI_NM_WPA_SUPPLICANT
 /** Check if packet is mgmt and try to consume it.
  *
- * Return MLAN_STATUS_RESOURCE if not intrest in it.
+ * Return MLAN_STATUS_RESOURCE if not interest in it.
  * Return MLAN_STATUS_SUCCESS if packet is consumed.
  * Return MLAN_STATUS_FAILURE if error happens and needs to drop it.
  */
