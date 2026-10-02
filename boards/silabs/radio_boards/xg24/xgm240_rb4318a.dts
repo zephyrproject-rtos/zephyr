@@ -10,8 +10,8 @@
 #include "xgm240_rb4318a-pinctrl.dtsi"
 
 / {
-	model = "Silicon Labs xGM240S +10 dBm SiP Module Radio Board (xGM240-RB4318A, BRD4318A)";
 	compatible = "silabs,xgm240_rb4318a", "silabs,mgm24";
+	model = "Silicon Labs xGM240S +10 dBm SiP Module Radio Board (xGM240-RB4318A, BRD4318A)";
 };
 
 &led0 {

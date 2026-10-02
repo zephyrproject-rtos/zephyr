@@ -14,8 +14,8 @@
 #include "xg26_dk2608a-pinctrl.dtsi"
 
 / {
-	model = "Silicon Labs EFR32xG26 Dev Kit (xG26-DK2608A)";
 	compatible = "silabs,xg26_dk2608a", "silabs,efr32mg26";
+	model = "Silicon Labs EFR32xG26 Dev Kit (xG26-DK2608A)";
 
 	chosen {
 		zephyr,bt-hci = &bt_hci_silabs;
@@ -293,9 +293,9 @@
 };
 
 &ieee802154 {
-	status = "okay";
 	hfxo = <&hfxo>;
 	sleep-clock = <&lfxo>;
+	status = "okay";
 };
 
 &protimer {
