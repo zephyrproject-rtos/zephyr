@@ -46,7 +46,7 @@
  * @{
  */
 #define RX_LPT_CLOCKS_SOURCE_CLOCK_SUBCLOCK       0 /**< Sub-clock oscillator. */
-#define RX_LPT_CLOCKS_SOURCE_CLOCK_IWDT_LOW_SPEED 1 /**< IWDT low spped. */
+#define RX_LPT_CLOCKS_SOURCE_CLOCK_IWDT_LOW_SPEED 1 /**< IWDT low speed. */
 #define RX_LPT_CLOCKS_NON_USE                     2 /**< Not use. */
 #define RX_LPT_CLOCKS_SOURCE_CLOCK_LOCO           3 /**< LOCO clock source. */
 

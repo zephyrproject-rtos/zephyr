@@ -260,7 +260,7 @@ struct i3c_target_callbacks {
 	 * to this target.
 	 *
 	 * This function is invoked by the active controller when it handoffs
-	 * controllership to this target. This can happen wither the target has
+	 * controllership to this target. This can happen whether the target has
 	 * requested it or if the active controller chooses to handoff to the
 	 * controller capable target.
 	 *

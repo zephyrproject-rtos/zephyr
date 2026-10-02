@@ -174,7 +174,7 @@ static inline void min_heap_ref_heapify_up(struct min_heap_ref *heap, size_t ind
 /**
  * @brief Restore heap order by moving a node down the tree.
  *
- * Moves the node at the sepcified index downward in the heap until the min-heap property is
+ * Moves the node at the specified index downward in the heap until the min-heap property is
  * restored.
  *
  * @param heap Pointer to the min-heap.

@@ -40,7 +40,7 @@
 /**
  * @brief Encode a peripheral reset cell value for the <tt>wch,ch32-rcc-rctl</tt> binding.
  *
- * Packs an RCC bus register offest and a bit position into one 32-bit reset cell value.
+ * Packs an RCC bus register offset and a bit position into one 32-bit reset cell value.
  *
  * Bits [4:0] hold the reset bit position within the 32-bit RCC bus register;
  * bits [16:5] hold the RCC register byte offset relative to the RCC base address.
