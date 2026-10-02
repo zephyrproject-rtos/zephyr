@@ -592,7 +592,7 @@ int img_mgmt_erase_image_data(unsigned int off, unsigned int num_bytes)
 
 #ifdef CONFIG_MCUBOOT_IMG_MANAGER
 	/* Right now MCUmgr supports only mcuboot images.
-	 * Above compilation swich might help to recognize mcuboot related
+	 * Above compilation switch might help to recognize mcuboot related
 	 * code when supports for another bootloader will be introduced.
 	 */
 
