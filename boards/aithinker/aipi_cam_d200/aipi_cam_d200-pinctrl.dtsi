@@ -1,0 +1,55 @@
+/*
+ * Copyright (c) 2026 Panoramix Labs
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	/* "J9" connector (1:3V3, 2:SCL, 3:SDA, 4:GND), at the top */
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <GPIO0_I2C0_SCL>,
+				 <GPIO1_I2C0_SDA>;
+			bias-pull-up;
+			input-schmitt-enable;
+		};
+	};
+
+	/* "SPI Touch Screen", "CON1" connector */
+	spi0_default: spi0_default {
+		group1 {
+			pinmux = <GPIO15_SPI_MOSI>,
+				 <GPIO17_SPI_SCLK>;
+			bias-pull-up;
+			input-schmitt-enable;
+		};
+	};
+
+	/* "DVP CAM" connector at the bottom */
+	camfront_default: camfront_default {
+		group1 {
+			pinmux = <GPIO24_CAM0_DAT0>,
+				 <GPIO25_CAM0_DAT1>,
+				 <GPIO26_CAM0_DAT2>,
+				 <GPIO27_CAM0_DAT3>,
+				 <GPIO31_CAM0_DAT4>,
+				 <GPIO32_CAM0_DAT5>,
+				 <GPIO33_CAM0_DAT6>,
+				 <GPIO34_CAM0_DAT7>,
+				 <GPIO28_CAM0_HSYNC>,
+				 <GPIO29_CAM0_VSYNC>,
+				 <GPIO30_CAM0_CLK>;
+			bias-pull-up;
+			input-schmitt-enable;
+		};
+	};
+
+	/* "DVP CAM" connector at the bottom */
+	clocks_default: clocks_default {
+		group1 {
+			pinmux = <GPIO23_CLOCK_OUT3_CAM_REF>;
+			bias-pull-up;
+			input-schmitt-enable;
+		};
+	};
+};
