@@ -16,9 +16,9 @@
 		timebase-frequency = <DT_FREQ_M(800)>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <0>;
+			device_type = "cpu";
 
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -33,15 +33,15 @@
 	};
 
 	sram0: memory@92400000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x92400000 DT_SIZE_K(512)>;
+		device_type = "memory";
 	};
 
 	sram1: memory@92c00000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x92c00000 DT_SIZE_K(512)>;
+		device_type = "memory";
 	};
 
 	mclk1: mclk {
@@ -54,10 +54,10 @@
 		irqsteer: interrupt-controller@30a80000 {
 			compatible = "nxp,irqsteer-intc";
 			reg = <0x30a80000 DT_SIZE_K(64)>;
-			nxp,num-irqs = <160>;
 
 			#size-cells = <0>;
 			#address-cells = <1>;
+			nxp,num-irqs = <160>;
 
 			master0: interrupt-controller@0 {
 				compatible = "nxp,irqsteer-master";
@@ -131,8 +131,8 @@
 			status = "okay";
 
 			pinctrl: pinctrl {
-				status = "okay";
 				compatible = "nxp,imx8mp-pinctrl";
+				status = "okay";
 			};
 		};
 
