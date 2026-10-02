@@ -358,7 +358,8 @@ static bool esp_ppa_geometry_valid(uint32_t pic_w, uint32_t pic_h, uint32_t bloc
 		return false;
 	}
 
-	return (off_x + block_w <= pic_w) && (off_y + block_h <= pic_h);
+	return (off_x < pic_w) && (block_w <= pic_w - off_x) && (off_y < pic_h) &&
+	       (block_h <= pic_h - off_y);
 }
 
 /* The engine writes the whole output surface, so a buffer shorter than it is
