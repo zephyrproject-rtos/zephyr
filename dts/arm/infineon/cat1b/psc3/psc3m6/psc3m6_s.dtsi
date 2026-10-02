@@ -9,12 +9,22 @@
 #include "psc3m6.cm33.dtsi"
 
 / {
-	sram0: memory@34000000 {
-		compatible = "mmio-sram";
-		reg = <0x34000000 0x20000>;
-	};
-
 	soc {
+		watchdog0: watchdog@5220c000 {
+			compatible = "infineon,watchdog";
+			reg = <0x5220c000 0x10>;
+			interrupts = <36 4>;
+			status = "disabled";
+		};
+
+		rtc0: rtc@52220000 {
+			compatible = "infineon,rtc";
+			reg = <0x52220000 0xff0c>;
+			interrupts = <33 4>;
+			alarms-count = <2>;
+			status = "disabled";
+		};
+
 		pinctrl: pinctrl@52400000 {
 			compatible = "infineon,pinctrl";
 			reg = <0x52400000 0x20000>;
@@ -160,6 +170,40 @@
 			status = "disabled";
 		};
 
+		canfd0: canfd@52800000 {
+			compatible = "infineon,canfd-controller";
+			reg = <0x52800000 0x1088>, <0x52810000 0x1000>;
+			ranges;
+			reg-names = "wrapper", "mram";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			can0: can@52800000 {
+				compatible = "infineon,can";
+				reg = <0x52800000 0x200>, <0x52810000 0x800>;
+				reg-names = "m_can", "message_ram";
+				clk-dst = <0x40a>;
+				interrupts = <113 4>,
+					     <114 4>;
+				interrupt-names = "int0", "int1";
+				bosch,mram-cfg = <0x0 15 15 8 8 0 8 8>;
+				status = "disabled";
+			};
+
+			can1: can@52800200 {
+				compatible = "infineon,can";
+				reg = <0x52800200 0x200>, <0x52810000 0x1000>;
+				reg-names = "m_can", "message_ram";
+				clk-dst = <0x40b>;
+				interrupts = <115 4>,
+					     <116 4>;
+				interrupt-names = "int0", "int1";
+				bosch,mram-cfg = <0x800 15 15 8 8 0 8 8>;
+				status = "disabled";
+			};
+		};
+
 		scb0: scb@52820000 {
 			compatible = "infineon,scb";
 			reg = <0x52820000 0xfe0>;
@@ -207,54 +251,10 @@
 			clk-dst = <0x600>;
 			status = "disabled";
 		};
+	};
 
-		rtc0: rtc@52220000 {
-			compatible = "infineon,rtc";
-			reg = <0x52220000 0xff0c>;
-			interrupts = <33 4>;
-			alarms-count = <2>;
-			status = "disabled";
-		};
-
-		watchdog0: watchdog@5220c000 {
-			compatible = "infineon,watchdog";
-			reg = <0x5220c000 0x10>;
-			interrupts = <36 4>;
-			status = "disabled";
-		};
-
-		canfd0: canfd@52800000 {
-			compatible = "infineon,canfd-controller";
-			reg = <0x52800000 0x1088>, <0x52810000 0x1000>;
-			ranges;
-			reg-names = "wrapper", "mram";
-			#address-cells = <1>;
-			#size-cells = <1>;
-			status = "disabled";
-
-			can0: can@52800000 {
-				compatible = "infineon,can";
-				reg = <0x52800000 0x200>, <0x52810000 0x800>;
-				reg-names = "m_can", "message_ram";
-				clk-dst = <0x40a>;
-				interrupts = <113 4>,
-					     <114 4>;
-				interrupt-names = "int0", "int1";
-				bosch,mram-cfg = <0x0 15 15 8 8 0 8 8>;
-				status = "disabled";
-			};
-
-			can1: can@52800200 {
-				compatible = "infineon,can";
-				reg = <0x52800200 0x200>, <0x52810000 0x1000>;
-				reg-names = "m_can", "message_ram";
-				clk-dst = <0x40b>;
-				interrupts = <115 4>,
-					     <116 4>;
-				interrupt-names = "int0", "int1";
-				bosch,mram-cfg = <0x800 15 15 8 8 0 8 8>;
-				status = "disabled";
-			};
-		};
+	sram0: memory@34000000 {
+		compatible = "mmio-sram";
+		reg = <0x34000000 0x20000>;
 	};
 };

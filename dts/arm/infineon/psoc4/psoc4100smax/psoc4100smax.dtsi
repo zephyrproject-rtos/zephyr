@@ -10,26 +10,6 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
-	flash_controller: flash-controller@40100004 {
-		compatible = "infineon,flash-controller";
-		reg = <0x40100004 0x104>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-		status = "okay";
-
-		flash0: flash@0 {
-			compatible = "soc-nv-flash";
-			reg = <0x00000000 DT_SIZE_K(384)>;  /* 384 KB Flash */
-			write-block-size = <256>;
-			erase-block-size = <256>;
-		};
-	};
-
-	sram0: memory@20000000 {
-		compatible = "mmio-sram";
-		reg = <0x20000000 DT_SIZE_K(32)>;  /* 32 KB SRAM */
-	};
-
 	soc {
 		pinctrl: pinctrl@40020000 {
 			compatible = "infineon,pinctrl";
@@ -39,6 +19,13 @@
 		hsiom: hsiom@40020000 {
 			compatible = "infineon,hsiom";
 			reg = <0x40020000 0x4000>;
+			status = "disabled";
+		};
+
+		watchdog0: watchdog@40030000 {
+			compatible = "infineon,watchdog";
+			reg = <0x40030000 0xf1c>;
+			interrupts = <6 0>;
 			status = "disabled";
 		};
 
@@ -170,64 +157,6 @@
 				#gpio-cells = <2>;
 				status = "disabled";
 			};
-		};
-
-		scb0: scb@40240000 {
-			compatible = "infineon,scb";
-			reg = <0x40240000 0xfd0>;
-			interrupts = <7 3>;
-			clk-dst = <0x0>;
-			status = "disabled";
-		};
-
-		scb1: scb@40250000 {
-			compatible = "infineon,scb";
-			reg = <0x40250000 0xfd0>;
-			interrupts = <8 3>;
-			clk-dst = <0x1>;
-			status = "disabled";
-		};
-
-		scb2: scb@40260000 {
-			compatible = "infineon,scb";
-			reg = <0x40260000 0xfd0>;
-			interrupts = <9 3>;
-			clk-dst = <0x2>;
-			status = "disabled";
-		};
-
-		scb3: scb@40270000 {
-			compatible = "infineon,scb";
-			reg = <0x40270000 0xfd0>;
-			interrupts = <10 3>;
-			clk-dst = <0x3>;
-			status = "disabled";
-		};
-
-		scb4: scb@40280000 {
-			compatible = "infineon,scb";
-			reg = <0x40280000 0xfd0>;
-			interrupts = <11 3>;
-			clk-dst = <0x4>;
-			status = "disabled";
-		};
-
-		adc0: adc@403a0000 {
-			compatible = "infineon,sar-adc";
-			reg = <0x403a0000 0xf08>;
-			interrupts = <25 0>;
-			#io-channel-cells = <1>;
-			clocks = <&peri_clk_div4>;
-			clk-dst = <0x12>;
-			infineon,version = <2>;
-			status = "disabled";
-		};
-
-		watchdog0: watchdog@40030000 {
-			compatible = "infineon,watchdog";
-			reg = <0x40030000 0xf1c>;
-			interrupts = <6 0>;
-			status = "disabled";
 		};
 
 		dma0: dma@40101000 {
@@ -411,6 +340,77 @@
 					status = "disabled";
 				};
 			};
+		};
+
+		scb0: scb@40240000 {
+			compatible = "infineon,scb";
+			reg = <0x40240000 0xfd0>;
+			interrupts = <7 3>;
+			clk-dst = <0x0>;
+			status = "disabled";
+		};
+
+		scb1: scb@40250000 {
+			compatible = "infineon,scb";
+			reg = <0x40250000 0xfd0>;
+			interrupts = <8 3>;
+			clk-dst = <0x1>;
+			status = "disabled";
+		};
+
+		scb2: scb@40260000 {
+			compatible = "infineon,scb";
+			reg = <0x40260000 0xfd0>;
+			interrupts = <9 3>;
+			clk-dst = <0x2>;
+			status = "disabled";
+		};
+
+		scb3: scb@40270000 {
+			compatible = "infineon,scb";
+			reg = <0x40270000 0xfd0>;
+			interrupts = <10 3>;
+			clk-dst = <0x3>;
+			status = "disabled";
+		};
+
+		scb4: scb@40280000 {
+			compatible = "infineon,scb";
+			reg = <0x40280000 0xfd0>;
+			interrupts = <11 3>;
+			clk-dst = <0x4>;
+			status = "disabled";
+		};
+
+		adc0: adc@403a0000 {
+			compatible = "infineon,sar-adc";
+			reg = <0x403a0000 0xf08>;
+			interrupts = <25 0>;
+			#io-channel-cells = <1>;
+			clocks = <&peri_clk_div4>;
+			clk-dst = <0x12>;
+			infineon,version = <2>;
+			status = "disabled";
+		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+		reg = <0x20000000 DT_SIZE_K(32)>;  /* 32 KB SRAM */
+	};
+
+	flash_controller: flash-controller@40100004 {
+		compatible = "infineon,flash-controller";
+		reg = <0x40100004 0x104>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		status = "okay";
+
+		flash0: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x00000000 DT_SIZE_K(384)>;  /* 384 KB Flash */
+			write-block-size = <256>;
+			erase-block-size = <256>;
 		};
 	};
 };
