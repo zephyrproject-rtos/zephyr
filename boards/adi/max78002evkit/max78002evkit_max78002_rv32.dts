@@ -16,8 +16,8 @@
 };
 
 / {
-	model = "Analog Devices MAX78002EVKIT";
 	compatible = "adi,max78002evkit";
+	model = "Analog Devices MAX78002EVKIT";
 
 	chosen {
 		zephyr,console = &rv32_uart;

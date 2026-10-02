@@ -14,8 +14,8 @@
 storage_partition: &m4_storage_partition {};
 
 / {
-	model = "Analog Devices MAX78002EVKIT";
 	compatible = "adi,max78002evkit";
+	model = "Analog Devices MAX78002EVKIT";
 
 	chosen {
 		zephyr,console = &m4_uart;
@@ -45,9 +45,9 @@ storage_partition: &m4_storage_partition {};
 };
 
 &spi0 {
-	status = "okay";
 	pinctrl-0 = <&spi0_mosi_p0_5 &spi0_miso_p0_6 &spi0_sck_p0_7 &spi0_ss0_p0_4>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &wdt0 {
