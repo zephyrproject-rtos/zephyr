@@ -289,7 +289,7 @@ static int settings_file_save_and_compress(struct settings_file *cf,
 			continue;
 		}
 
-		/* avoid copping value which will be overwritten by new value*/
+		/* avoid copying value which will be overwritten by new value*/
 		if ((val1_off == new_name_len) &&
 		    !memcmp(name1, name, val1_off)) {
 			continue;
