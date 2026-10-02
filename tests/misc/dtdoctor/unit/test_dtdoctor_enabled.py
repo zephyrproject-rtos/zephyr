@@ -45,6 +45,13 @@ def test_no_compat_fallback(make_edt):
     assert "Could not determine compatible; check driver Kconfig manually." in lines
 
 
+def test_missing_zephyr_base_handled(make_edt, monkeypatch):
+    monkeypatch.delenv("ZEPHYR_BASE", raising=False)
+    edt, _ = make_edt(DTS_ENABLED)
+    lines = diagnose(edt)
+    assert any("check driver Kconfig manually" in line for line in lines)
+
+
 def test_main_end_to_end_enabled(make_edt, make_pickle, run_analyzer, kconfig_env):
     kconfig_env("kconfig_basic")
     edt, _ = make_edt(DTS_ENABLED)

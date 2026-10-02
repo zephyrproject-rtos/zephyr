@@ -55,9 +55,11 @@ def load_edt(path: str) -> edtlib.EDT:
         return pickle.load(f)
 
 
-def setup_kconfig() -> kconfiglib.Kconfig:
-    kconf = kconfiglib.Kconfig(os.path.join(os.environ.get("ZEPHYR_BASE"), "Kconfig"), warn=False)
-    return kconf
+def setup_kconfig() -> kconfiglib.Kconfig | None:
+    zephyr_base = os.environ.get("ZEPHYR_BASE")
+    if not zephyr_base:
+        return None
+    return kconfiglib.Kconfig(os.path.join(zephyr_base, "Kconfig"), warn=False)
 
 
 def format_node(node: edtlib.Node) -> str:
@@ -114,8 +116,12 @@ def handle_enabled_node(node: edtlib.Node) -> list[str]:
     lines = [f"'{format_node(node)}' is enabled but no driver appears to be available for it.\n"]
 
     compats = list(getattr(node, "compats", []))
-    if compats:
-        kconf = setup_kconfig()
+    kconf = setup_kconfig() if compats else None
+    if not compats:
+        lines.append("Could not determine compatible; check driver Kconfig manually.")
+    elif not kconf:
+        lines.append("ZEPHYR_BASE is not set; check driver Kconfig manually.")
+    else:
         deps = set()
         for compat in compats:
             dt_has = f"DT_HAS_{edtlib.str_as_token(compat.upper())}_ENABLED"
@@ -124,8 +130,6 @@ def handle_enabled_node(node: edtlib.Node) -> list[str]:
         if deps:
             lines.append("Try enabling these Kconfig options:\n")
             lines.extend(f" - {dep}=y" for dep in sorted(deps))
-    else:
-        lines.append("Could not determine compatible; check driver Kconfig manually.")
 
     return lines
 
