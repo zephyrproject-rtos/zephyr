@@ -563,7 +563,7 @@ static void IRAM_ATTR dma_esp32_isr_handle(const struct device *dev, uint8_t rx_
 #endif
 
 static int dma_esp32_config_descriptor(struct dma_esp32_channel *dma_channel,
-				       struct dma_block_config *block)
+				       struct dma_block_config *block, bool cyclic)
 {
 	if (!block) {
 		LOG_ERR("At least one dma block is required");
@@ -638,10 +638,16 @@ static int dma_esp32_config_descriptor(struct dma_esp32_channel *dma_channel,
 		block_size -= buffer_size;
 
 		if (!block_size) {
+			/* A cyclic transmission reports the end of every block */
+			if (cyclic && dma_channel->dir == DMA_TX) {
+				desc_iter->dw0.suc_eof = 1;
+			}
+
 			if (block->next_block) {
 				block = block->next_block;
 			} else {
-				desc_iter->next = NULL;
+				/* and starts over with the first one */
+				desc_iter->next = cyclic ? dma_channel->desc_list : NULL;
 				if (dma_channel->dir == DMA_TX) {
 					desc_iter->dw0.suc_eof = 1;
 				}
@@ -773,7 +779,7 @@ static int dma_esp32_config_rx(const struct device *dev, struct dma_esp32_channe
 	gdma_hal_clear_intr(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX,
 			    GDMA_LL_RX_EVENT_MASK);
 
-	return dma_esp32_config_descriptor(dma_channel, config_dma->head_block);
+	return dma_esp32_config_descriptor(dma_channel, config_dma->head_block, config_dma->cyclic);
 }
 
 static int dma_esp32_config_tx(const struct device *dev, struct dma_esp32_channel *dma_channel,
@@ -808,7 +814,7 @@ static int dma_esp32_config_tx(const struct device *dev, struct dma_esp32_channe
 	gdma_hal_clear_intr(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX,
 			    GDMA_LL_TX_EVENT_MASK);
 
-	return dma_esp32_config_descriptor(dma_channel, config_dma->head_block);
+	return dma_esp32_config_descriptor(dma_channel, config_dma->head_block, config_dma->cyclic);
 }
 
 static int dma_esp32_config(const struct device *dev, uint32_t channel,
