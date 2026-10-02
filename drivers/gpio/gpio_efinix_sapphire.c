@@ -133,7 +133,7 @@ static int gpio_efinix_sapphire_port_get_raw(const struct device *dev, gpio_port
 {
 	const struct gpio_efinix_sapphire_cfg *config = DEV_GPIO_CFG(dev);
 
-	*value = get_port(config);
+	*value = sys_read32(config->base_addr + BSP_GPIO_INPUT) & config->common.port_pin_mask;
 	return 0;
 }
 
