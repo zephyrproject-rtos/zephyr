@@ -12,6 +12,12 @@
 		zephyr,ipc_shm = &rpu0vdev0buffer;
 	};
 
+	mbox_consumer: mbox-consumer {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&rpu0_apu_mailbox 0>, <&rpu0_apu_mailbox 1>;
+		mbox-names = "tx", "rx";
+	};
+
 	/*
 	 * One naturally aligned MPU region covers the firmware carveout, both
 	 * vrings, and the shared buffer. APU and the RPU access this memory
@@ -54,12 +60,6 @@
 	rpu0vdev0buffer: memory@9868000 {
 		compatible = "mmio-sram";
 		reg = <0x09868000 0x100000>;
-	};
-
-	mbox_consumer: mbox-consumer {
-		compatible = "zephyr,mbox-ipm";
-		mboxes = <&rpu0_apu_mailbox 0>, <&rpu0_apu_mailbox 1>;
-		mbox-names = "tx", "rx";
 	};
 };
 
