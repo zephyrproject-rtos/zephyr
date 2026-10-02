@@ -25,22 +25,10 @@
 		};
 	};
 
-	sram0: memory@20040000 {
-		compatible = "mmio-sram";
-		reg = <0x20040000 0x10000>;
-	};
-
 	soc {
-		flash-controller@50100000 {
-			compatible = "ene,kb1200-flash-controller";
-			reg = <0x50100000 0x2000>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			flash0: flash@10000000 {
-				compatible = "soc-nv-flash";
-				reg = <0x10000000 0x40000>;
-			};
+		gcfg: gcfg@40000000 {
+			compatible = "ene,kb1200-gcfg";
+			reg = <0x40000000 0x100>;
 		};
 
 		pmu: pmu@40010000 {
@@ -48,80 +36,34 @@
 			reg = <0x40010000 0x100>;
 		};
 
-		gcfg: gcfg@40000000 {
-			compatible = "ene,kb1200-gcfg";
-			reg = <0x40000000 0x100>;
-		};
-
-		pinctrl: pin-controller@50000000 {
-			compatible = "ene,kb1200-pinctrl";
-			reg = <0x50000000 0x100>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			status = "okay";
-
-			gpio0x1x: gpio@50000000 {
-				compatible = "ene,kb1200-gpio";
-				reg = <0x50000000 0x04>, <0x50010000 0x04>;
-				interrupts = <2 3>, <3 3>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				ngpios = <32>;
-				status = "disabled";
-			};
-
-			gpio2x3x: gpio@50000004 {
-				compatible = "ene,kb1200-gpio";
-				reg = <0x50000004 0x04>, <0x50010004 0x04>;
-				interrupts = <4 3>, <5 3>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				ngpios = <32>;
-				status = "disabled";
-			};
-
-			gpio4x5x: gpio@50000008 {
-				compatible = "ene,kb1200-gpio";
-				reg = <0x50000008 0x04>, <0x50010008 0x04>;
-				interrupts = <6 3>, <7 3>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				ngpios = <32>;
-				status = "disabled";
-			};
-
-			gpio6x7x: gpio@5000000c {
-				compatible = "ene,kb1200-gpio";
-				reg = <0x5000000c 0x04>, <0x5001000c 0x04>;
-				interrupts = <8 3>, <9 3>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				ngpios = <32>;
-				status = "disabled";
-			};
-		};
-
-		uart0: serial@40310000 {
-			compatible = "ene,kb1200-uart";
-			reg = <0x40310000 0x4c>;
-			interrupts = <20 3>;
-			current-speed = <115200>;
+		wdt0: watchdog@40060000 {
+			compatible = "ene,kb1200-watchdog";
+			reg = <0x40060000 0x100>;
+			interrupts = <0 0>;
 			status = "disabled";
 		};
 
-		uart1: serial@40310020 {
-			compatible = "ene,kb1200-uart";
-			reg = <0x40310020 0x4c>;
-			interrupts = <20 3>;
-			current-speed = <115200>;
+		tach0: tach@40100000 {
+			compatible = "ene,kb1200-tach";
+			reg = <0x40100000 0x10>;
 			status = "disabled";
 		};
 
-		uart2: serial@40310040 {
-			compatible = "ene,kb1200-uart";
-			reg = <0x40310040 0x4c>;
-			interrupts = <20 3>;
-			current-speed = <115200>;
+		tach1: tach@40100010 {
+			compatible = "ene,kb1200-tach";
+			reg = <0x40100010 0x10>;
+			status = "disabled";
+		};
+
+		tach2: tach@40100020 {
+			compatible = "ene,kb1200-tach";
+			reg = <0x40100020 0x10>;
+			status = "disabled";
+		};
+
+		tach3: tach@40100030 {
+			compatible = "ene,kb1200-tach";
+			reg = <0x40100030 0x10>;
 			status = "disabled";
 		};
 
@@ -129,6 +71,20 @@
 			compatible = "ene,kb1200-adc";
 			reg = <0x40130000 0x100>;
 			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		fanpwm0: pwm@40200000 {
+			compatible = "ene,kb1200-pwm";
+			reg = <0x40200000 0x10>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		fanpwm1: pwm@40200010 {
+			compatible = "ene,kb1200-pwm";
+			reg = <0x40200010 0x10>;
+			#pwm-cells = <3>;
 			status = "disabled";
 		};
 
@@ -202,48 +158,27 @@
 			status = "disabled";
 		};
 
-		fanpwm0: pwm@40200000 {
-			compatible = "ene,kb1200-pwm";
-			reg = <0x40200000 0x10>;
-			#pwm-cells = <3>;
+		uart0: serial@40310000 {
+			compatible = "ene,kb1200-uart";
+			reg = <0x40310000 0x4c>;
+			interrupts = <20 3>;
+			current-speed = <115200>;
 			status = "disabled";
 		};
 
-		fanpwm1: pwm@40200010 {
-			compatible = "ene,kb1200-pwm";
-			reg = <0x40200010 0x10>;
-			#pwm-cells = <3>;
+		uart1: serial@40310020 {
+			compatible = "ene,kb1200-uart";
+			reg = <0x40310020 0x4c>;
+			interrupts = <20 3>;
+			current-speed = <115200>;
 			status = "disabled";
 		};
 
-		tach0: tach@40100000 {
-			compatible = "ene,kb1200-tach";
-			reg = <0x40100000 0x10>;
-			status = "disabled";
-		};
-
-		tach1: tach@40100010 {
-			compatible = "ene,kb1200-tach";
-			reg = <0x40100010 0x10>;
-			status = "disabled";
-		};
-
-		tach2: tach@40100020 {
-			compatible = "ene,kb1200-tach";
-			reg = <0x40100020 0x10>;
-			status = "disabled";
-		};
-
-		tach3: tach@40100030 {
-			compatible = "ene,kb1200-tach";
-			reg = <0x40100030 0x10>;
-			status = "disabled";
-		};
-
-		wdt0: watchdog@40060000 {
-			compatible = "ene,kb1200-watchdog";
-			reg = <0x40060000 0x100>;
-			interrupts = <0 0>;
+		uart2: serial@40310040 {
+			compatible = "ene,kb1200-uart";
+			reg = <0x40310040 0x4c>;
+			interrupts = <20 3>;
+			current-speed = <115200>;
 			status = "disabled";
 		};
 
@@ -336,6 +271,71 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
+
+		pinctrl: pin-controller@50000000 {
+			compatible = "ene,kb1200-pinctrl";
+			reg = <0x50000000 0x100>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			gpio0x1x: gpio@50000000 {
+				compatible = "ene,kb1200-gpio";
+				reg = <0x50000000 0x04>, <0x50010000 0x04>;
+				interrupts = <2 3>, <3 3>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "disabled";
+			};
+
+			gpio2x3x: gpio@50000004 {
+				compatible = "ene,kb1200-gpio";
+				reg = <0x50000004 0x04>, <0x50010004 0x04>;
+				interrupts = <4 3>, <5 3>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "disabled";
+			};
+
+			gpio4x5x: gpio@50000008 {
+				compatible = "ene,kb1200-gpio";
+				reg = <0x50000008 0x04>, <0x50010008 0x04>;
+				interrupts = <6 3>, <7 3>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "disabled";
+			};
+
+			gpio6x7x: gpio@5000000c {
+				compatible = "ene,kb1200-gpio";
+				reg = <0x5000000c 0x04>, <0x5001000c 0x04>;
+				interrupts = <8 3>, <9 3>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "disabled";
+			};
+		};
+
+		flash-controller@50100000 {
+			compatible = "ene,kb1200-flash-controller";
+			reg = <0x50100000 0x2000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@10000000 {
+				compatible = "soc-nv-flash";
+				reg = <0x10000000 0x40000>;
+			};
+		};
+	};
+
+	sram0: memory@20040000 {
+		compatible = "mmio-sram";
+		reg = <0x20040000 0x10000>;
 	};
 };
 
