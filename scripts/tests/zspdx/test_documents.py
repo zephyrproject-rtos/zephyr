@@ -5,7 +5,7 @@
 """Tests for the document-level output every generated SPDX document must carry."""
 
 import pytest
-from conftest import ORGANIZATION, TOOL_NAME, TOOL_VERSION
+from conftest import NAMESPACE, ORGANIZATION, TOOL_NAME, TOOL_VERSION
 from spdx_tools.spdx.model.relationship import RelationshipType
 from spdx_tools.spdx.validation.document_validator import validate_full_spdx_document
 
@@ -74,7 +74,49 @@ class TestSPDX3Documents:
         for name, objects in documents.items():
             document = next(o for o in objects.objects if isinstance(o, spdx.SpdxDocument))
             assert document.name, f"{name}: document name is empty"
-            assert document.namespaceMap or document._id, f"{name}: no namespace information"
+            assert document._id.startswith(NAMESPACE), f"{name}: ID is '{document._id}'"
+
+    def test_builds_share_no_element_ids(self, walker_graph, spdx3_documents):
+        """Documents of different builds can be loaded into one graph.
+
+        Two builds of the same modules, each with its own namespace prefix, must not
+        define any element under the same IRI, or their elements merge into one.
+        """
+        modules = [{"name": "mymodule", "remote": "https://github.com/vendor/mymodule"}]
+        build_ids = []
+        for build in ("build-a", "build-b"):
+            _, documents = spdx3_documents(walker_graph(modules, namespace=f"{NAMESPACE}/{build}"))
+            build_ids.append(
+                {
+                    o._id
+                    for objects in documents.values()
+                    for o in objects.objects
+                    if o._id and not o._id.startswith("_:")
+                }
+            )
+        assert all(build_ids), "no element IDs found"
+        assert build_ids[0].isdisjoint(build_ids[1]), sorted(build_ids[0] & build_ids[1])
+
+    def test_imports_resolve_to_sibling_documents(self, graph, spdx3_documents):
+        """Every imported element is defined by the document its locationHint names.
+
+        An import a consumer cannot resolve, such as a License List license that is
+        neither defined here nor served as SPDX 3 by spdx.org, is reported as undefined.
+        """
+        spdx, documents = spdx3_documents(graph)
+        defined = {
+            f"./{name}.jsonld": {o._id for o in objects.objects if o._id}
+            for name, objects in documents.items()
+        }
+        imports = 0
+        for name, objects in documents.items():
+            document = next(o for o in objects.objects if isinstance(o, spdx.SpdxDocument))
+            for external in document.import_:
+                imports += 1
+                assert external.externalSpdxId in defined.get(external.locationHint, ()), (
+                    f"{name}: {external.externalSpdxId} not defined at {external.locationHint}"
+                )
+        assert imports, "no cross-document import to check"
 
     def test_document_declares_root_elements(self, graph, spdx3_documents):
         spdx, documents = spdx3_documents(graph)

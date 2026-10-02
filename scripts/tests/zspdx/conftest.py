@@ -160,12 +160,13 @@ def walker_graph(tmp_path):
     Takes the module entries a build's metadata file would carry. The '-sources'
     components are added directly rather than through the walker, whose
     setup_zephyr_component() needs a west workspace and the CMake file-API; everything
-    the module dependency half contributes comes from the walker itself.
+    the module dependency half contributes comes from the walker itself. A different
+    ``namespace`` stands for a different build.
     """
 
-    def _graph(modules, zephyr=None):
+    def _graph(modules, zephyr=None, namespace=NAMESPACE):
         config = WalkerConfig()
-        config.namespace_prefix = NAMESPACE
+        config.namespace_prefix = namespace
         config.build_dir = str(tmp_path)
         walker = Walker(config)
         walker.setup_documents()
