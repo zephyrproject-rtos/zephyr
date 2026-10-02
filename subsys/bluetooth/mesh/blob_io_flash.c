@@ -59,6 +59,11 @@ static int io_open(const struct bt_mesh_blob_io *io,
 
 	flash->mode = mode;
 
+#if defined(CONFIG_BT_MESH_BLOB_IO_FLASH_BLOCK_CACHE)
+	flash->block_base = -1;
+	flash->block_len = 0;
+#endif
+
 	return flash_area_open(flash->area_id, &flash->area);
 }
 
@@ -113,6 +118,14 @@ static int block_start(const struct bt_mesh_blob_io *io,
 		return 0;
 	}
 
+#if defined(CONFIG_BT_MESH_BLOB_IO_FLASH_BLOCK_CACHE)
+	/* Start caching a fresh block; discard anything left from a block that
+	 * was aborted or suspended before it completed.
+	 */
+	flash->block_base = -1;
+	flash->block_len = 0;
+#endif
+
 	return erase_device_block(flash->area, flash->offset + block->offset, block->size);
 }
 
@@ -128,6 +141,82 @@ static int rd_chunk(const struct bt_mesh_blob_io *io,
 			       chunk->data, chunk->size);
 }
 
+#if defined(CONFIG_BT_MESH_BLOB_IO_FLASH_BLOCK_CACHE)
+static int wr_chunk(const struct bt_mesh_blob_io *io, const struct bt_mesh_blob_xfer *xfer,
+		    const struct bt_mesh_blob_block *block, const struct bt_mesh_blob_chunk *chunk)
+{
+	struct bt_mesh_blob_io_flash *flash = FLASH_IO(io);
+	off_t block_base = flash->offset + block->offset;
+	size_t chunk_end = chunk->offset + chunk->size;
+
+	/*
+	 * Accumulate the chunk into the in-RAM block buffer by its
+	 * block-relative offset instead of programming flash now. The whole
+	 * block is programmed write-block-aligned, each write block exactly
+	 * once, at block_end. This is required for flash whose write block is
+	 * an ECC phrase that may only be programmed once per erase: it stops a
+	 * chunk boundary that lands mid-write-block from re-programming the
+	 * shared write block.
+	 */
+	if (chunk_end > sizeof(flash->block_buf) ||
+	    (block_base + (off_t)chunk_end) > (off_t)flash->area->fa_size) {
+		return -EINVAL;
+	}
+
+	flash->block_base = block_base;
+	if (chunk_end > flash->block_len) {
+		flash->block_len = chunk_end;
+	}
+
+	memcpy(&flash->block_buf[chunk->offset], chunk->data, chunk->size);
+
+	return 0;
+}
+
+static void block_end(const struct bt_mesh_blob_io *io, const struct bt_mesh_blob_xfer *xfer,
+		      const struct bt_mesh_blob_block *block)
+{
+	struct bt_mesh_blob_io_flash *flash = FLASH_IO(io);
+	const struct device *fdev;
+	const struct flash_parameters *fparam;
+	uint32_t write_block_size;
+	size_t write_size;
+	int err;
+
+	if (flash->mode == BT_MESH_BLOB_READ || flash->block_base < 0) {
+		return;
+	}
+
+	fdev = flash_area_get_device(flash->area);
+	if (!fdev) {
+		return;
+	}
+
+	fparam = flash_get_parameters(fdev);
+	write_block_size = flash_area_align(flash->area);
+	write_size = ROUND_UP(flash->block_len, write_block_size);
+
+	/*
+	 * Pad the trailing partial write block with the erase value so the
+	 * final write block is programmed once with the valid bytes plus
+	 * padding. write_size never exceeds block_buf because the buffer is
+	 * sized to CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MAX, which is a power of two
+	 * and a multiple of the write block size.
+	 */
+	if (write_size > flash->block_len) {
+		memset(&flash->block_buf[flash->block_len], fparam->erase_value,
+		       write_size - flash->block_len);
+	}
+
+	err = flash_area_write(flash->area, flash->block_base, flash->block_buf, write_size);
+	if (err) {
+		LOG_ERR("BLOB block flush failed (err %d)", err);
+	}
+
+	flash->block_base = -1;
+	flash->block_len = 0;
+}
+#else  /* !CONFIG_BT_MESH_BLOB_IO_FLASH_BLOCK_CACHE */
 static int wr_chunk(const struct bt_mesh_blob_io *io,
 		    const struct bt_mesh_blob_xfer *xfer,
 		    const struct bt_mesh_blob_block *block,
@@ -186,6 +275,7 @@ static int wr_chunk(const struct bt_mesh_blob_io *io,
 
 	return flash_area_write(flash->area, aligned_offset, buf, write_size);
 }
+#endif /* CONFIG_BT_MESH_BLOB_IO_FLASH_BLOCK_CACHE */
 
 int bt_mesh_blob_io_flash_init(struct bt_mesh_blob_io_flash *flash,
 			       uint8_t area_id, off_t offset)
@@ -202,7 +292,11 @@ int bt_mesh_blob_io_flash_init(struct bt_mesh_blob_io_flash *flash,
 	flash->io.open = io_open;
 	flash->io.close = io_close;
 	flash->io.block_start = block_start;
+#if defined(CONFIG_BT_MESH_BLOB_IO_FLASH_BLOCK_CACHE)
+	flash->io.block_end = block_end;
+#else
 	flash->io.block_end = NULL;
+#endif
 	flash->io.rd = rd_chunk;
 	flash->io.wr = wr_chunk;
 
