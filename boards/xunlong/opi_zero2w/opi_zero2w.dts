@@ -24,12 +24,6 @@
 		zephyr,sram = &dram0;
 	};
 
-	dram0: memory@40080000 {
-		compatible = "mmio-sram";
-		reg = <0x40080000 DT_SIZE_M(1023)>;
-		device_type = "memory";
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -37,6 +31,12 @@
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
 			label = "Green LED";
 		};
+	};
+
+	dram0: memory@40080000 {
+		compatible = "mmio-sram";
+		reg = <0x40080000 DT_SIZE_M(1023)>;
+		device_type = "memory";
 	};
 };
 
