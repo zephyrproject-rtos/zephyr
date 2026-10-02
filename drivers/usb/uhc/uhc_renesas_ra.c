@@ -251,8 +251,8 @@ static int uhc_renesas_ra_schedule_xfer(const struct device *dev, uint8_t dev_ad
 
 	if (USB_EP_GET_IDX(xfer->ep) == 0) {
 		/*
-		 * If there is a control xfer, the driver should maintaince control xfer stage
-		 * update properly to not conrrupt the control transfer seq
+		 * If there is a control xfer, the driver should maintenance control xfer stage
+		 * update properly to not corrupt the control transfer seq
 		 */
 		return uhc_renesas_ra_control_xfer(dev, xfer);
 	}
