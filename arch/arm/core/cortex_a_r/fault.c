@@ -314,7 +314,8 @@ static bool is_exc_entry_store(uint32_t pc)
  * into the MPU guard of the stack. esf is built on the abort mode stack,
  * with the r0-r3, r12 and lr of the interrupted context. z_arm_data_abort
  * stores the SP, PC and CPSR of that context right above esf, where a
- * nested data abort would overwrite the PC and CPSR: read them first.
+ * nested data abort would overwrite the PC and CPSR: read them first. The
+ * SP found goes back there, for the fault dump.
  *
  * If the guard hit is the push that follows the SRS of an exception entry,
  * that SRS stored the PC and CPSR of the context the entry interrupted at
@@ -334,7 +335,7 @@ static bool is_exc_entry_store(uint32_t pc)
  */
 FUNC_NORETURN void z_arm_fault_stack_overflow(struct arch_esf *esf)
 {
-	const uint32_t *ctx = (const uint32_t *)(&esf->basic + 1);
+	uint32_t *ctx = (uint32_t *)(&esf->basic + 1);
 	uint32_t sp = ctx[0];
 	uint32_t pc = ctx[1];
 	uint32_t cpsr = ctx[2];
@@ -364,6 +365,7 @@ FUNC_NORETURN void z_arm_fault_stack_overflow(struct arch_esf *esf)
 	}
 #endif
 
+	ctx[0] = sp;
 	regs.pc = pc;
 	regs.xpsr = cpsr;
 	esf->basic = regs;
@@ -372,7 +374,7 @@ FUNC_NORETURN void z_arm_fault_stack_overflow(struct arch_esf *esf)
 #endif
 
 	EXCEPTION_DUMP("***** STACK OVERFLOW *****");
-	EXCEPTION_DUMP("Frame push @ 0x%08x, SP 0x%08x", __get_DFAR(), sp);
+	EXCEPTION_DUMP("Frame push @ 0x%08x", __get_DFAR());
 	z_arm_fatal_error(K_ERR_STACK_CHK_FAIL, esf);
 	k_fatal_halt(K_ERR_STACK_CHK_FAIL);
 }
