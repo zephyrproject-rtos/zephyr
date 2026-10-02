@@ -56,18 +56,6 @@
 		};
 	};
 
-	ddr0: memory@80000000 {
-		reg = <0x80000000 DT_SIZE_G(2)>;
-		device_type = "memory";
-		#address-cells = <0x1>;
-		#size-cells = <0x1>;
-
-		/* First 32MiB is reserved for TFA/OP-TEE */
-		a53_ddr_section: memory@82000000 {
-			reg = <0x82000000 (DT_SIZE_G(2) - DT_SIZE_M(32))>;
-		};
-	};
-
 	leds: leds {
 		compatible = "gpio-leds";
 
@@ -81,6 +69,18 @@
 		compatible = "zephyr,mbox-ipm";
 		mboxes = <&mbox0 1>, <&mbox0 0>;
 		mbox-names = "tx", "rx";
+	};
+
+	ddr0: memory@80000000 {
+		reg = <0x80000000 DT_SIZE_G(2)>;
+		device_type = "memory";
+		#address-cells = <0x1>;
+		#size-cells = <0x1>;
+
+		/* First 32MiB is reserved for TFA/OP-TEE */
+		a53_ddr_section: memory@82000000 {
+			reg = <0x82000000 (DT_SIZE_G(2) - DT_SIZE_M(32))>;
+		};
 	};
 };
 
