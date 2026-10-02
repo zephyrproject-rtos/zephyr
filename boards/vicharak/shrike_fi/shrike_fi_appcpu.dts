@@ -9,8 +9,8 @@
 #include "shrike_fi-pinctrl.dtsi"
 
 / {
-	model = "Vicharak Shrike-fi APPCPU";
 	compatible = "espressif,esp32s3";
+	model = "Vicharak Shrike-fi APPCPU";
 
 	chosen {
 		zephyr,sram = &sram1;
