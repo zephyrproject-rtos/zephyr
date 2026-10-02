@@ -861,15 +861,25 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client,
 		return ESP_ERR_INVALID_ARG;
 	}
 
-	if (!(config->scale_x > 0.0f) || !(config->scale_y > 0.0f) ||
+	if (!(config->scale_x >= 1.0f / PPA_LL_SRM_SCALING_FRAG_MAX) ||
+	    !(config->scale_y >= 1.0f / PPA_LL_SRM_SCALING_FRAG_MAX) ||
 	    config->scale_x >= ESP_PPA_MAX_SCALE || config->scale_y >= ESP_PPA_MAX_SCALE) {
 		return ESP_ERR_INVALID_ARG;
 	}
 
 	uint32_t in_pbyte = esp_ppa_srm_in_pbyte(config->in.srm_cm);
 	uint32_t out_pbyte = esp_ppa_pbyte(config->out.srm_cm);
-	uint32_t out_block_w = (uint32_t)(config->in.block_w * config->scale_x);
-	uint32_t out_block_h = (uint32_t)(config->in.block_h * config->scale_y);
+	/* The engine scales by an integer part and a number of sixteenths */
+	uint32_t sx_int = (uint32_t)config->scale_x;
+	uint32_t sx_frac = (uint32_t)(config->scale_x * PPA_LL_SRM_SCALING_FRAG_MAX) &
+			   (PPA_LL_SRM_SCALING_FRAG_MAX - 1);
+	uint32_t sy_int = (uint32_t)config->scale_y;
+	uint32_t sy_frac = (uint32_t)(config->scale_y * PPA_LL_SRM_SCALING_FRAG_MAX) &
+			   (PPA_LL_SRM_SCALING_FRAG_MAX - 1);
+	uint32_t out_block_w = sx_int * config->in.block_w +
+			       sx_frac * config->in.block_w / PPA_LL_SRM_SCALING_FRAG_MAX;
+	uint32_t out_block_h = sy_int * config->in.block_h +
+			       sy_frac * config->in.block_h / PPA_LL_SRM_SCALING_FRAG_MAX;
 
 	/* A quarter turn transposes the block, so the output extent the
 	 * checks below need is the scaled one with its sides swapped.
