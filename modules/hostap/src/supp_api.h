@@ -340,7 +340,7 @@ int supplicant_get_wifi_conn_params(const struct device *dev, struct net_if *ifa
  *
  * @param dev Pointer to the device structure for the driver instance
  * @param iface Network interface to use
- * @param params wps operarion parameters
+ * @param params wps operation parameters
  *
  * @return 0 if ok, < 0 if error
  */
