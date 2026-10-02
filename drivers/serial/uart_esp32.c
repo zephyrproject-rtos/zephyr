@@ -1272,6 +1272,7 @@ static int uart_esp32_async_rx_enable(const struct device *dev, uint8_t *buf, si
 	/*
 	 * Enable interrupt on first receive byte so we can start async timer
 	 */
+	uart_hal_rxfifo_rst(&data->hal);
 	uart_hal_set_rxfifo_full_thr(&data->hal, 1);
 	uart_esp32_irq_rx_enable(dev);
 
