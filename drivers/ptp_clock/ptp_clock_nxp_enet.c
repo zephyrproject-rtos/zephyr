@@ -131,8 +131,23 @@ static int ptp_clock_nxp_enet_rate_adjust(const struct device *dev,
 		 * It is not possible to adjust the rate of the clock.
 		 */
 		mul = 0;
+	} else if (val < 1.0) {
+		/* Ratio of 1.0, no correction. */
+		mul = 0;
 	} else {
-		mul = val;
+		/*
+		 * The hardware corrects every (COR + 1) ticks, so COR is the
+		 * period minus one. The rate goes as 1 / period, so of the two
+		 * periods around val take the one with the closest rate. The
+		 * ratio limit above keeps the period at 2 or more.
+		 */
+		uint32_t period = (uint32_t)val;
+
+		if (val * (2.0 * period + 1.0) > 2.0 * period * (period + 1.0)) {
+			period++;
+		}
+
+		mul = period - 1;
 	}
 
 	k_mutex_lock(&data->ptp_mutex, K_FOREVER);
