@@ -41,7 +41,7 @@ LOG_MODULE_REGISTER(uaol_intel_adsp);
 #define XHCI_CLOCKS_PER_UFRAME			(XHCI_CLOCKS_PER_SEC / UAOL_UFRAMES_PER_SEC)
 
 #define UAOL_POWER_CHANGE_TIMEOUT_USEC		32000
-#define UAOL_STREAM_STATE_CHANGE_TIMEOUT_USEC	32000
+#define UAOL_STREAM_STOP_TIMEOUT_MAX_USEC	2500
 #define UAOL_FRAME_ADJUST_TIMEOUT_USEC		32000
 #define XHCI_MSG_TIMEOUT_USEC			10000
 
@@ -503,18 +503,28 @@ static int uaol_intel_adsp_set_stream_state(const struct device *dev, int stream
 {
 	struct uaol_intel_adsp_data *dp = dev->data;
 	union UAOLxPCMSyCTL pcms_ctl;
-	uint32_t timeout = UAOL_STREAM_STATE_CHANGE_TIMEOUT_USEC;
+	uint32_t timeout;
 
 	pcms_ctl.full = sys_read64(UAOLxPCMSyCTL_ADDR(dp, stream));
-	if (pcms_ctl.part.sen != uaol_intel_adsp_get_sbusy(dev, stream)) {
+	if (start && (pcms_ctl.part.sen || uaol_intel_adsp_get_sbusy(dev, stream))) {
 		LOG_ERR("Unexpected stream state; SEN %d", pcms_ctl.part.sen);
 		return -EBUSY;
 	}
 	pcms_ctl.part.sen = start;
 	sys_write64(pcms_ctl.full, UAOLxPCMSyCTL_ADDR(dp, stream));
 
-	if (!WAIT_FOR(uaol_intel_adsp_get_sbusy(dev, stream) == start, timeout, k_busy_wait(1))) {
-		LOG_ERR("Stream start/stop timeout; start %d", start);
+	if (start) {
+		return 0;
+	}
+
+	/* SBUSY drops within 2 service intervals of SEN being cleared; add a 3rd one as a margin */
+	timeout = 3 * (UAOL_SERVICE_INTERVAL_BASE_USEC << pcms_ctl.part.si);
+	if (timeout > UAOL_STREAM_STOP_TIMEOUT_MAX_USEC) {
+		/* too long to spin under the lock, the caller resets the stream */
+		return -EAGAIN;
+	}
+	if (!WAIT_FOR(!uaol_intel_adsp_get_sbusy(dev, stream), timeout, k_busy_wait(1))) {
+		LOG_WRN("Stream %d stop timeout (%u us)", stream, timeout);
 		return -ETIMEDOUT;
 	}
 
@@ -802,7 +812,9 @@ static int uaol_intel_adsp_stop(const struct device *dev, int stream)
 
 	ret = uaol_intel_adsp_set_stream_state(dev, stream, false);
 	if (ret) {
-		LOG_WRN("Failed to stop stream (ret %d), resetting stream...", ret);
+		if (ret != -EAGAIN) {
+			LOG_WRN("Failed to stop stream (ret %d), resetting stream...", ret);
+		}
 		uaol_intel_adsp_reset_stream(dev, stream, true);
 		uaol_intel_adsp_reset_stream(dev, stream, false);
 		ret = 0;
