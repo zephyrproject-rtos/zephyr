@@ -2397,9 +2397,9 @@ static uint8_t get_content_ctrl_id(void)
 	return media_player.content_ctrl_id;
 }
 
-/** Calculates the new relative position depending on the sate and seeking/playing speed factor
+/** Calculates the new relative position depending on the state and seeking/playing speed factor
  *
- * @return New relative postion in centiseconds (may be negative)
+ * @return New relative position in centiseconds (may be negative)
  */
 static int32_t get_pos_diff_cs(void)
 {
