@@ -318,11 +318,6 @@ int nordicsemi_nrf71_init(void)
 	return 0;
 }
 
-void soc_early_init_hook(void)
-{
-	(void)nordicsemi_nrf71_init();
-}
-
 void arch_busy_wait(uint32_t time_us)
 {
 	nrfx_coredep_delay_us(time_us);
@@ -332,5 +327,6 @@ void arch_busy_wait(uint32_t time_us)
 void soc_reset_hook(void)
 {
 	SystemInit();
+	nordicsemi_nrf71_init();
 }
 #endif
