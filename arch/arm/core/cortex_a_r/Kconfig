@@ -115,7 +115,7 @@ config ARMV7_A_NS
 
 config ARMV7_EXCEPTION_STACK_SIZE
 	int "Undefined Instruction and Abort stack size (in bytes)"
-	default 256
+	default 512
 	help
 	  This option specifies the size of the stack used by the undefined
 	  instruction and data abort exception handlers.
@@ -266,7 +266,7 @@ config AARCH32_ARMV8_R
 
 config ARMV7_EXCEPTION_STACK_SIZE
 	int "Undefined Instruction and Abort stack size (in bytes)"
-	default 256
+	default 512
 	help
 	  This option specifies the size of the stack used by the undefined
 	  instruction and data abort exception handlers.
