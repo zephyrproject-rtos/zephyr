@@ -45,14 +45,22 @@
 		#size-cells = <1>;
 		interrupt-parent = <&cpu0intc>;
 
+		timer: timer@44a00000 {
+			compatible = "riscv,machine-timer";
+			reg = <0x44a00000 0x8 0x44a00008 0x8>;
+			reg-names = "mtime", "mtimecmp";
+			interrupts-extended = <&cpu0intc 7>;
+		};
+
+		whisper_consoleio: whisper-consoleio@d0580000 {
+			reg = <0xd0580000 0x00000004>;
+
+			status = "okay";
+		};
+
 		iccm: memory@ee000000 {
 			compatible = "mmio-sram";
 			reg = <0xee000000 0x02000000>;
-		};
-
-		dccm: memory@f4000000 {
-			compatible = "mmio-sram";
-			reg = <0xf4000000 0x02000000>;
 		};
 
 		pic: interrupt-controller@f00c0000 {
@@ -69,17 +77,9 @@
 			status = "disabled";
 		};
 
-		timer: timer@44a00000 {
-			compatible = "riscv,machine-timer";
-			reg = <0x44a00000 0x8 0x44a00008 0x8>;
-			reg-names = "mtime", "mtimecmp";
-			interrupts-extended = <&cpu0intc 7>;
-		};
-
-		whisper_consoleio: whisper-consoleio@d0580000 {
-			reg = <0xd0580000 0x00000004>;
-
-			status = "okay";
+		dccm: memory@f4000000 {
+			compatible = "mmio-sram";
+			reg = <0xf4000000 0x02000000>;
 		};
 	};
 };
