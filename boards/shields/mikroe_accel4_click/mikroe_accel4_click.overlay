@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
+
 / {
 	aliases {
 		accel0 = &lis2mdl_mikroe_accel_4_click;
@@ -15,6 +17,6 @@
 	lis2mdl_mikroe_accel_4_click: fxls8974@18 {
 		compatible = "nxp,fxls8974";
 		reg = <0x18>;
-		int2-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&mikrobus_header MIKROBUS_INT GPIO_ACTIVE_LOW>;
 	};
 };
