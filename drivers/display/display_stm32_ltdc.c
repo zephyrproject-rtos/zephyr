@@ -774,6 +774,25 @@ static int stm32_ltdc_suspend(const struct device *dev)
 	return err;
 }
 
+static int stm32_ltdc_resume(const struct device *dev)
+{
+	struct display_stm32_ltdc_data *data = dev->data;
+	int err;
+
+	/* stm32_ltdc_hw_init() can also return a HAL status, which is positive */
+	err = stm32_ltdc_hw_init(dev);
+	if (err != 0) {
+		return err;
+	}
+
+	/* The suspend reset the line interrupt that a registered callback relies on */
+	if (data->cb.dev != NULL) {
+		HAL_LTDC_ProgramLineEvent(&data->hltdc, data->cb.user_line_number);
+	}
+
+	return 0;
+}
+
 static int stm32_ltdc_pm_action(const struct device *dev,
 				enum pm_device_action action)
 {
@@ -781,7 +800,7 @@ static int stm32_ltdc_pm_action(const struct device *dev,
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		err = stm32_ltdc_hw_init(dev);
+		err = stm32_ltdc_resume(dev);
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		err = stm32_ltdc_suspend(dev);
