@@ -367,7 +367,7 @@ static int mpipe_pipeline_change_state(struct mpipe_element *element,
 		 * Teardown: raise the per-pad flushing gate BEFORE the children dismantle their
 		 * caps and buffer pools. The source thread was paused on PLAYING -> PAUSED but may
 		 * still be parked mid-chain holding a buffer. Once that buffer resumes (e.g.
-		 * threads woke up to extit), the flushing gate in mpipe_push_buffer() drops
+		 * threads woke up to exit), the flushing gate in mpipe_push_buffer() drops
 		 * it instead of pushing it through an element whose caps have been reset or whose
 		 * pool has been freed.
 		 */
