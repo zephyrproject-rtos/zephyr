@@ -9,8 +9,8 @@
 #include "ra8p1_titan.dtsi"
 
 / {
-	model = "Ruiside RA8P1 Titan";
 	compatible = "ruiside,ra8p1-titan", "renesas,ra8p1", "renesas,ra8";
+	model = "Ruiside RA8P1 Titan";
 
 	chosen {
 		zephyr,sram = &sram1;
