@@ -10,29 +10,6 @@
 
 / {
 	soc {
-		ethernet@42000800 {
-			compatible = "microchip,sam-ethernet-controller";
-			reg = <0x42000800 0x400>;
-
-			gmac: ethernet {
-				compatible = "atmel,sam0-gmac";
-				interrupts = <84 0>;
-				interrupt-names = "gmac";
-
-				num-queues = <1>;
-				local-mac-address = [00 00 00 00 00 00];
-				status = "disabled";
-			};
-
-			mdio: mdio {
-				compatible = "atmel,sam-mdio";
-
-				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-			};
-		};
-
 		can0: can@42000000 {
 			compatible = "atmel,sam0-can";
 			reg = <0x42000000 0x400>;
@@ -61,6 +38,29 @@
 
 			bosch,mram-cfg = <0x0 128 64 64 64 64 32 32>;
 			status = "disabled";
+		};
+
+		ethernet@42000800 {
+			compatible = "microchip,sam-ethernet-controller";
+			reg = <0x42000800 0x400>;
+
+			gmac: ethernet {
+				compatible = "atmel,sam0-gmac";
+				interrupts = <84 0>;
+				interrupt-names = "gmac";
+
+				num-queues = <1>;
+				local-mac-address = [00 00 00 00 00 00];
+				status = "disabled";
+			};
+
+			mdio: mdio {
+				compatible = "atmel,sam-mdio";
+
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
 		};
 	};
 };
