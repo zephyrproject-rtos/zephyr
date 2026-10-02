@@ -414,7 +414,7 @@ static int mpu_map_region_add(struct xtensa_mpu_map *map,
 	/*
 	 * Entry for ending of the region.
 	 *
-	 * If the end address matches one of the entry (entry_slot_e != NULL), we resue
+	 * If the end address matches one of the entry (entry_slot_e != NULL), we reuse
 	 * this existing entry.
 	 *
 	 * If there is no exact address match in the map (entry_slot_e == NULL), we need to
@@ -490,7 +490,7 @@ static int mpu_map_region_add(struct xtensa_mpu_map *map,
 	/*
 	 * Entry for beginning of the region.
 	 *
-	 * If the start address matches one of the entry (entry_slot_s != NULL), we resue
+	 * If the start address matches one of the entry (entry_slot_s != NULL), we reuse
 	 * this existing entry.
 	 *
 	 * If there is no exact address match in the map (entry_slot_s == NULL), we need to

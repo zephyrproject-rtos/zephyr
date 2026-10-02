@@ -158,7 +158,7 @@ static unsigned int priority_to_free_vector(unsigned int requested_priority)
 			z_interrupt_vectors_allocated[entry];
 	fsb = find_lsb_set(search_set);
 
-	__ASSERT(fsb != 0U, "No remaning vectors for priority level %d",
+	__ASSERT(fsb != 0U, "No remaining vectors for priority level %d",
 		 requested_priority);
 
 	/*

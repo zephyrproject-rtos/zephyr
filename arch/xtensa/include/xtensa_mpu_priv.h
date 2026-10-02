@@ -345,7 +345,7 @@ void xtensa_mpu_entry_attributes_set(struct xtensa_mpu_entry *entry,
  * This sets the starting address, enable bit, access rights and memory type
  * of an entry.
  *
- * Note that this preserves the valud of the segment field.
+ * Note that this preserves the value of the segment field.
  *
  * @param entry Pointer to the entry to be manipulated.
  * @param start_address Start address to be set.
