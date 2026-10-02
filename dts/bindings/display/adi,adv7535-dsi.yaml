@@ -15,9 +15,13 @@ include: mipi-dsi-device.yaml
 
 properties:
   data-lanes:
-    const: [4]
+    enum:
+      - 2
+      - 3
+      - 4
     description: |
-      The ADV7535 DSI receiver is wired for four data lanes.
+      Number of data lanes. ADV7535 supports from 2 to 4 DSI data lanes.
+      This impacts what resolutions and refresh rates will be achievable.
 
   pixel-format:
     enum:
