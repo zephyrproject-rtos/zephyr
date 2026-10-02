@@ -102,6 +102,8 @@ struct esp32_wifi_runtime {
 #endif
 	struct esp32_wifi_status status;
 	scan_result_cb_t scan_cb;
+	/* Interface the scan was requested on; results are reported through it. */
+	struct net_if *scan_iface;
 	uint8_t state;
 	uint8_t ap_connection_cnt;
 	struct k_mutex send_lock;
@@ -554,7 +556,7 @@ static void scan_done_handler(void)
 			break;
 		}
 
-		esp32_data.scan_cb(esp32_wifi_iface, 0, &res);
+		esp32_data.scan_cb(esp32_data.scan_iface, 0, &res);
 
 		/* ensure notifications get delivered */
 		k_yield();
@@ -568,7 +570,7 @@ static void scan_done_handler(void)
 	esp_wifi_clear_ap_list();
 
 	/* Report end of scan; the internal-scan case already returned above. */
-	esp32_data.scan_cb(esp32_wifi_iface, 0, NULL);
+	esp32_data.scan_cb(esp32_data.scan_iface, 0, NULL);
 	esp32_data.scan_cb = NULL;
 }
 
@@ -1735,7 +1737,13 @@ static int esp32_wifi_scan(const struct device *dev __unused,
 			   struct wifi_scan_params *params,
 			   scan_result_cb_t cb)
 {
-	struct esp32_wifi_runtime *data = esp32_wifi_data_get(iface);
+	/*
+	 * Scanning always runs on the station and scan_done_handler() reads
+	 * esp32_data, so track the callback there regardless of which
+	 * interface the request arrived on, and remember that interface so
+	 * the results are reported to the requester.
+	 */
+	struct esp32_wifi_runtime *data = &esp32_data;
 	int ret = 0;
 
 #if defined(CONFIG_WIFI_ESP32_MESH)
@@ -1752,6 +1760,7 @@ static int esp32_wifi_scan(const struct device *dev __unused,
 	}
 
 	data->scan_cb = cb;
+	data->scan_iface = iface;
 
 	wifi_scan_config_t scan_config = { 0 };
 
