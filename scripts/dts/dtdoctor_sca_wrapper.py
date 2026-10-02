@@ -44,13 +44,15 @@ def main() -> int:
     sys.stdout.write(proc.stdout)
     sys.stderr.write(proc.stderr)
 
-    # Extract __device_dts_ord_xxx symbols from errors and run diagnostics
+    # Extract __device_dts_ord_xxx symbols from errors and run diagnostics. Compile errors
+    # name either an ordinal or, when the node identifier did not resolve to a node, the
+    # identifier itself (e.g. __device_dts_ord_DT_N_ALIAS_led0_ORD).
     if proc.returncode != 0 and args.edt_pickle:
         patterns = [
-            r"(__device_dts_ord_\d+).* undeclared",  # gcc (quote style depends on locale)
-            r"(__device_dts_ord_\d+).* was not declared",  # g++
+            r"(__device_dts_ord_\w+).* undeclared",  # gcc (quote style depends on locale)
+            r"(__device_dts_ord_\w+).* was not declared",  # g++
             r"undefined reference to.*(__device_dts_ord_\d+)",  # ld
-            r"use of undeclared identifier '(__device_dts_ord_\d+)'",  # LLVM/clang (ATfE)
+            r"use of undeclared identifier '(__device_dts_ord_\w+)'",  # LLVM/clang (ATfE)
             r"undefined symbol: (__device_dts_ord_\d+)",  # LLVM/lld (ATfE)
         ]
         symbols = {m for p in patterns for m in re.findall(p, proc.stderr)}

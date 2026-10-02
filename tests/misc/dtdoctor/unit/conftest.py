@@ -101,6 +101,35 @@ DTS_ENABLED_NO_COMPAT = """
 };
 """
 
+# Aliases, labels, /chosen entries and compatibles for the unresolved node identifier
+# diagnoses: 'led0' is a label without an alias of that name and 'my-foo' an alias
+# without a label of that name. Two nodes share vnd,foo-device, one of them disabled.
+DTS_REFERENCES = """
+/dts-v1/;
+
+/ {
+	chosen {
+		zephyr,console = &foo_dev;
+	};
+
+	aliases {
+		my-foo = &foo_dev;
+	};
+
+	foo_dev: foo-device {
+		compatible = "vnd,foo-device";
+	};
+
+	bar_dev: bar-device {
+		compatible = "vnd,foo-device";
+		status = "disabled";
+	};
+
+	led0: led-0 {
+	};
+};
+"""
+
 
 def ord_symbol(edt: edtlib.EDT, label: str) -> str:
     """Return the __device_dts_ord_N symbol for the node with the given label."""

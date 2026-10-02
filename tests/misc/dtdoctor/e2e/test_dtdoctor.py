@@ -45,6 +45,32 @@ BAD_LINK_SNIPPET = (
     "}\n"
 )
 
+# Node identifiers that do not resolve to a node: the compile error names the
+# identifier instead of an ordinal, e.g. the missing alias in the first entry
+# gives __device_dts_ord_DT_N_ALIAS_dtdoctor_led_P_gpios_IDX_0_PH_ORD
+UNRESOLVED_DEVICES = {
+    "alias": (
+        "DEVICE_DT_GET(DT_GPIO_CTLR(DT_ALIAS(dtdoctor_led), gpios))",
+        "DT_ALIAS(dtdoctor_led) refers to the devicetree alias 'dtdoctor-led'",
+    ),
+    "nodelabel": (
+        "DEVICE_DT_GET(DT_NODELABEL(dtdoctor_disable))",
+        "Similar node labels: dtdoctor_disabled",
+    ),
+    "chosen": (
+        "DEVICE_DT_GET(DT_CHOSEN(dtdoctor_missing))",
+        "DT_CHOSEN(dtdoctor_missing) refers to a /chosen property that is not defined.",
+    ),
+    "instance": (
+        "DEVICE_DT_GET(DT_INST(2, vnd_dtdoctor_device))",
+        "only 2 node(s) have this compatible",
+    ),
+    "invalid-node": (
+        "DEVICE_DT_GET(DT_COMPAT_GET_ANY_STATUS_OKAY(vnd_dtdoctor_missing))",
+        "The node identifier is DT_INVALID_NODE",
+    ),
+}
+
 
 def ord_symbol(edt, label):
     return f"__device_dts_ord_{edt.label2node[label].dep_ordinal}"
@@ -106,6 +132,24 @@ def test_wrapper_diagnoses_compile_error(
 
     assert "DT Doctor" in proc.stdout
     assert "is disabled in" in proc.stdout
+
+
+@pytest.mark.parametrize('suffix', ['src/main.c', 'src/main.cpp'], ids=['c', 'cpp'])
+@pytest.mark.parametrize(
+    'expr, expected', list(UNRESOLVED_DEVICES.values()), ids=list(UNRESOLVED_DEVICES)
+)
+def test_wrapper_diagnoses_unresolved_node_id(
+    compile_cmd, edt_pickle, tmp_path, suffix, expr, expected
+):
+    argv, cwd, source = compile_cmd(suffix)
+    bad_src = tmp_path / f"bad{Path(suffix).suffix}"
+    bad_src.write_text(HEADER + f"const struct device *bad = {expr};\n", encoding="utf-8")
+
+    cmd = retarget(argv, source, bad_src, tmp_path / "bad.obj")
+    proc = run_wrapper_around(cmd, edt_pickle, cwd=cwd)
+    assert proc.returncode != 0
+    assert "DT Doctor" in proc.stdout
+    assert expected in proc.stdout
 
 
 def test_wrapper_diagnoses_link_error(compile_cmd, edt_pickle, cc, tmp_path):
