@@ -134,14 +134,6 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		mtimer: timer@e000bff8 {
-			compatible = "riscv,machine-timer";
-			reg = <0xe000bff8 0x8 0xe0004000 0x8>;
-			reg-names = "mtime", "mtimecmp";
-
-			interrupts-extended = <&clic 7 1>;
-		};
-
 		pinctrl: pin-controller@20000000 {
 			compatible = "bflb,pinctrl";
 			reg = <0x20000000 0x1000>;
@@ -472,6 +464,14 @@
 			#size-cells = <1>;
 			zephyr,memory-region = "PSRAM";
 			status = "disabled";
+		};
+
+		mtimer: timer@e000bff8 {
+			compatible = "riscv,machine-timer";
+			reg = <0xe000bff8 0x8 0xe0004000 0x8>;
+			reg-names = "mtime", "mtimecmp";
+
+			interrupts-extended = <&clic 7 1>;
 		};
 	};
 };
