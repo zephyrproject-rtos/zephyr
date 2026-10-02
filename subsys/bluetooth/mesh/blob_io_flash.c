@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(bt_mesh_blob_io_flash);
 
 #define FLASH_IO(_io) CONTAINER_OF(_io, struct bt_mesh_blob_io_flash, io)
 
-static int test_flash_area(uint8_t area_id)
+static int test_flash_area(uint8_t area_id, off_t offset)
 {
 	const struct flash_parameters *fparam;
 	const struct flash_area *area;
@@ -48,6 +48,22 @@ static int test_flash_area(uint8_t area_id)
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_BT_MESH_BLOB_IO_FLASH_BLOCK_CACHE)
+	/* The block cache programs each block at flash->offset + block->offset,
+	 * where block->offset is block-size aligned. An unaligned flash offset
+	 * would make every write block program start unaligned (rejected by the
+	 * flash driver) and cannot be re-aligned here without making adjacent
+	 * blocks share a write block and get programmed twice. Reject it.
+	 */
+	if (offset % align) {
+		LOG_ERR("offset must be a multiple of the write block size when "
+			"CONFIG_BT_MESH_BLOB_IO_FLASH_BLOCK_CACHE is enabled.");
+		return -EINVAL;
+	}
+#else
+	ARG_UNUSED(offset);
+#endif
+
 	return 0;
 }
 
@@ -58,6 +74,11 @@ static int io_open(const struct bt_mesh_blob_io *io,
 	struct bt_mesh_blob_io_flash *flash = FLASH_IO(io);
 
 	flash->mode = mode;
+
+#if defined(CONFIG_BT_MESH_BLOB_IO_FLASH_BLOCK_CACHE)
+	flash->received = 0;
+	flash->block_err = false;
+#endif
 
 	return flash_area_open(flash->area_id, &flash->area);
 }
@@ -113,6 +134,16 @@ static int block_start(const struct bt_mesh_blob_io *io,
 		return 0;
 	}
 
+#if defined(CONFIG_BT_MESH_BLOB_IO_FLASH_BLOCK_CACHE)
+	/* Start caching a fresh block; discard anything left from a block that
+	 * was aborted or suspended before it completed. Do NOT clear block_err
+	 * here: block_start only erases when the block is the first on its page,
+	 * so a not-erased block retried after a partial-write failure would be
+	 * re-programmed. The sticky error is cleared only in io_open().
+	 */
+	flash->received = 0;
+#endif
+
 	return erase_device_block(flash->area, flash->offset + block->offset, block->size);
 }
 
@@ -128,6 +159,89 @@ static int rd_chunk(const struct bt_mesh_blob_io *io,
 			       chunk->data, chunk->size);
 }
 
+#if defined(CONFIG_BT_MESH_BLOB_IO_FLASH_BLOCK_CACHE)
+static int wr_chunk(const struct bt_mesh_blob_io *io, const struct bt_mesh_blob_xfer *xfer,
+		    const struct bt_mesh_blob_block *block, const struct bt_mesh_blob_chunk *chunk)
+{
+	struct bt_mesh_blob_io_flash *flash = FLASH_IO(io);
+	size_t chunk_end = chunk->offset + chunk->size;
+	const struct device *fdev;
+	const struct flash_parameters *fparam;
+	uint32_t write_block_size;
+	size_t write_size;
+	int err;
+
+	/*
+	 * A previous flush failed: fail every later chunk of this block without
+	 * touching flash, so a write block that is shared by two chunks can
+	 * never be programmed a second time. The error is cleared when a new
+	 * block starts (block_start) or the stream reopens (io_open).
+	 */
+	if (flash->block_err) {
+		return -EIO;
+	}
+
+	/*
+	 * Accumulate the chunk into the in-RAM block buffer by its
+	 * block-relative offset instead of programming flash now. The whole
+	 * block is programmed write-block-aligned, each write block exactly
+	 * once, by the chunk that completes the block (see below). This is
+	 * required for flash whose write block is an ECC phrase that may only
+	 * be programmed once per erase: it stops a chunk boundary that lands
+	 * mid-write-block from re-programming the shared write block.
+	 */
+	if (chunk_end > block->size ||
+	    (flash->offset + block->offset + (off_t)chunk_end) > (off_t)flash->area->fa_size) {
+		return -EINVAL;
+	}
+
+	memcpy(&flash->block_buf[chunk->offset], chunk->data, chunk->size);
+	flash->received += chunk->size;
+
+	/* The server filters duplicate chunks, so each chunk is counted once;
+	 * the block is complete only when every byte has arrived.
+	 */
+	if (flash->received < block->size) {
+		return 0;
+	}
+
+	fdev = flash_area_get_device(flash->area);
+	if (!fdev) {
+		return -ENODEV;
+	}
+
+	fparam = flash_get_parameters(fdev);
+	write_block_size = flash_area_align(flash->area);
+	write_size = ROUND_UP(block->size, write_block_size);
+
+	/*
+	 * Pad the trailing partial write block with the erase value so the
+	 * final write block is programmed once with the valid bytes plus
+	 * padding. write_size never exceeds block_buf because the buffer is
+	 * sized to CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MAX, which is a power of two
+	 * and a multiple of the write block size.
+	 */
+	if (write_size > block->size) {
+		memset(&flash->block_buf[block->size], fparam->erase_value,
+		       write_size - block->size);
+	}
+
+	/*
+	 * Program the whole block once. Return any failure so the server leaves
+	 * the chunk missing and the client retries, and latch a sticky error so
+	 * no later chunk of this block re-programs a write block.
+	 */
+	err = flash_area_write(flash->area, flash->offset + block->offset, flash->block_buf,
+			       write_size);
+	if (err) {
+		flash->block_err = true;
+		LOG_ERR("BLOB block flush failed (err %d)", err);
+		return err;
+	}
+
+	return 0;
+}
+#else  /* !CONFIG_BT_MESH_BLOB_IO_FLASH_BLOCK_CACHE */
 static int wr_chunk(const struct bt_mesh_blob_io *io,
 		    const struct bt_mesh_blob_xfer *xfer,
 		    const struct bt_mesh_blob_block *block,
@@ -186,13 +300,14 @@ static int wr_chunk(const struct bt_mesh_blob_io *io,
 
 	return flash_area_write(flash->area, aligned_offset, buf, write_size);
 }
+#endif /* CONFIG_BT_MESH_BLOB_IO_FLASH_BLOCK_CACHE */
 
 int bt_mesh_blob_io_flash_init(struct bt_mesh_blob_io_flash *flash,
 			       uint8_t area_id, off_t offset)
 {
 	int err;
 
-	err = test_flash_area(area_id);
+	err = test_flash_area(area_id, offset);
 	if (err) {
 		return err;
 	}

@@ -1077,6 +1077,26 @@ config BT_MESH_BLOB_IO_FLASH_WRITE_BLOCK_SIZE_MAX
 	  The BLOB IO Flash module will support flash devices with explicit erase
 	  when this value is set to a multiple of the device write block size.
 
+config BT_MESH_BLOB_IO_FLASH_BLOCK_CACHE
+	bool "Cache each BLOB block in RAM and flush write-block-aligned once"
+	help
+	  Buffer a whole BLOB block in RAM and program each flash write-block
+	  exactly once per erase, when the block's last chunk arrives, instead of
+	  programming on every received chunk.
+
+	  This is required for explicit-erase flash whose write block is an
+	  ECC-protected phrase that may be programmed only once per erase (for
+	  example the internal flash on some NXP MCXW SoCs). Without it, a BLOB
+	  chunk whose size is not a multiple of the flash write block makes two
+	  adjacent chunks each program the write block they share, and the second
+	  program corrupts the ECC syndrome, which faults on the next read.
+
+	  Enabling this costs one block-sized RAM buffer
+	  (CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MAX) per BLOB flash stream. Leave it
+	  disabled on flash that allows a write block to be programmed more than
+	  once between erases (for example plain NOR or RRAM), where the default
+	  per-chunk write path is already correct and uses no extra RAM.
+
 endif # BT_MESH_BLOB_IO_FLASH
 
 config BT_MESH_DFU_SRV
