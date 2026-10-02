@@ -12,6 +12,7 @@
 #include <zephyr/ztest.h>
 #include <ksched.h>
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/pm/pm.h>
 #include <zephyr/pm/policy.h>
 #include "dummy_driver.h"
@@ -31,6 +32,48 @@ static bool testing_device_order;
 static bool testing_force_state;
 static bool exit_post_ops_called;
 static int32_t policy_ticks;
+#ifdef CONFIG_TEST_PM_TIMER_RESTART
+static bool testing_timer_restart;
+static bool resume_timer_progressed;
+
+enum resume_event {
+	RESUME_POST_OPS,
+	RESUME_TIMER,
+	RESUME_DEVICE,
+	RESUME_NOTIFY,
+};
+
+static enum resume_event resume_events[4];
+static size_t resume_event_count;
+
+static void record_resume_event(enum resume_event event)
+{
+	zassert_false(arch_cpu_irqs_are_enabled(), "Interrupts enabled during resume");
+	zassert_true(resume_event_count < ARRAY_SIZE(resume_events),
+		     "Too many resume events");
+	resume_events[resume_event_count++] = event;
+}
+
+void __real_sys_clock_idle_exit(void);
+
+void __wrap_sys_clock_idle_exit(void)
+{
+	if (testing_timer_restart) {
+		record_resume_event(RESUME_TIMER);
+	}
+	__real_sys_clock_idle_exit();
+}
+
+static void notify_timer_test_exit(enum pm_state state)
+{
+	ARG_UNUSED(state);
+	record_resume_event(RESUME_NOTIFY);
+}
+
+static struct pm_notifier timer_test_notifier = {
+	.state_exit = notify_timer_test_exit,
+};
+#endif
 
 enum pm_state forced_state;
 static const struct device *device_dummy;
@@ -93,6 +136,19 @@ static int device_b_pm_action(const struct device *dev,
 {
 	enum pm_device_state state_a;
 	enum pm_device_state state_c;
+
+#ifdef CONFIG_TEST_PM_TIMER_RESTART
+	if ((pm_action == PM_DEVICE_ACTION_RESUME) && testing_timer_restart) {
+		uint32_t start_cycles = k_cycle_get_32();
+
+		for (volatile uint32_t i = 0U; i < 10000U; i++) {
+			arch_nop();
+		}
+
+		resume_timer_progressed = k_cycle_get_32() != start_cycles;
+		record_resume_event(RESUME_DEVICE);
+	}
+#endif
 
 	if (!testing_device_order) {
 		return 0;
@@ -184,6 +240,16 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 			      "PM state set ran before idle wake sentinel was cleared");
 	}
 
+#ifdef CONFIG_TEST_PM_TIMER_RESTART
+	if (testing_timer_restart) {
+		k_spinlock_key_t key = sys_clock_lock();
+
+		sys_clock_idle_enter(SYS_CLOCK_IDLE_FOREVER);
+		sys_clock_unlock(key);
+		return;
+	}
+#endif
+
 	enum pm_device_state device_power_state;
 
 #ifndef CONFIG_PM_DEVICE_SYSTEM_MANAGED
@@ -247,6 +313,11 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	ARG_UNUSED(substate_id);
 
 	exit_post_ops_called = true;
+#ifdef CONFIG_TEST_PM_TIMER_RESTART
+	if (testing_timer_restart) {
+		record_resume_event(RESUME_POST_OPS);
+	}
+#endif
 	zassert_false(arch_cpu_irqs_are_enabled(),
 		      "PM exit post ops ran with interrupts enabled");
 }
@@ -472,6 +543,37 @@ ZTEST(power_management_1cpu, test_power_state_trans)
 
 	pm_notifier_unregister(&notifier);
 }
+
+#ifdef CONFIG_TEST_PM_TIMER_RESTART
+ZTEST(power_management_1cpu, test_timer_resume_order)
+{
+	static const enum resume_event early_order[] = {
+		RESUME_POST_OPS, RESUME_TIMER, RESUME_DEVICE, RESUME_NOTIFY,
+	};
+	static const enum resume_event legacy_order[] = {
+		RESUME_DEVICE, RESUME_POST_OPS, RESUME_NOTIFY, RESUME_TIMER,
+	};
+	const enum resume_event *expected =
+		IS_ENABLED(CONFIG_PM_EARLY_SYSTEM_TIMER_RESUME) ? early_order : legacy_order;
+
+	pm_notifier_register(&timer_test_notifier);
+	enter_low_power = true;
+	testing_timer_restart = true;
+	resume_timer_progressed = false;
+	resume_event_count = 0;
+
+	k_sleep(SLEEP_TIMEOUT);
+
+	testing_timer_restart = false;
+	pm_notifier_unregister(&timer_test_notifier);
+	zassert_equal(resume_event_count, ARRAY_SIZE(resume_events));
+	for (size_t i = 0; i < ARRAY_SIZE(resume_events); i++) {
+		zassert_equal(resume_events[i], expected[i], "Unexpected resume event at %zu", i);
+	}
+	zassert_equal(resume_timer_progressed, IS_ENABLED(CONFIG_PM_EARLY_SYSTEM_TIMER_RESUME),
+		      "Unexpected timer state during device resume");
+}
+#endif
 
 /*
  * @brief notification between system and device
