@@ -114,6 +114,12 @@
 	pinctrl-names = "default", "sleep";
 	status = "okay";
 
+	lis2dh12_accel: lis2dh12-accel@19 {
+		compatible = "st,lis2dh";
+		reg = <0x19>;
+		irq-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>, <&gpio0 1 GPIO_ACTIVE_HIGH>;
+	};
+
 	bq27421@55 {
 		compatible = "ti,bq274xx";
 		reg = <0x55>;
@@ -123,16 +129,9 @@
 		terminate-voltage = <3000>;
 	};
 
-	lis2dh12_accel: lis2dh12-accel@19 {
-		compatible = "st,lis2dh";
-		reg = <0x19>;
-		irq-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>, <&gpio0 1 GPIO_ACTIVE_HIGH>;
-	};
-
-	hts221@5f {
-		compatible = "st,hts221";
-		reg = <0x5f>;
-		drdy-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+	ccs811: ccs811@5a {
+		compatible = "ams,ccs811";
+		reg = <0x5a>;
 	};
 
 	lps22hb-press@5c {
@@ -140,9 +139,10 @@
 		reg = <0x5c>;
 	};
 
-	ccs811: ccs811@5a {
-		compatible = "ams,ccs811";
-		reg = <0x5a>;
+	hts221@5f {
+		compatible = "st,hts221";
+		reg = <0x5f>;
+		drdy-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
 	};
 
 	bme680@76 {
