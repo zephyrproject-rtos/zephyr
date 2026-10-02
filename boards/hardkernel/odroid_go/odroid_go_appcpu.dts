@@ -9,8 +9,8 @@
 #include <espressif/partitions_0x1000_amp.dtsi>
 
 / {
-	model = "ODROID-GO Game Kit APPCPU";
 	compatible = "hardkernel,odroid_go", "espressif,esp32";
+	model = "ODROID-GO Game Kit APPCPU";
 
 	chosen {
 		zephyr,sram = &sram1;
