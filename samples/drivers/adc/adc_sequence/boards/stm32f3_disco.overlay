@@ -18,9 +18,8 @@
 
 	adc_ad4114: adc_ad4114@0 {
 		compatible = "adi,ad4114-adc";
-		spi-max-frequency = <DT_FREQ_M(1)>;
-		status = "okay";
 		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
 		#io-channel-cells = <1>;
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -28,6 +27,7 @@
 		/* INPUTx mapping bits [9:0] for CH0 to CH15 */
 		map-inputs = <0x10 0x30 0x50 0x70 0x90 0xb0 0xd0 0xf0 0x110
 			      0x130 0x150 0x170 0x190 0x1b0 0x1d0 0x1f0>;
+		status = "okay";
 
 		channel@0 {
 			reg = <0x0>;

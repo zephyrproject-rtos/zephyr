@@ -6,9 +6,9 @@
 /* Overlay for Nucleo F413ZH: TMC6460 on SPI1, CS on PF12, DRV_EN on PB11, SLEEPN on PF14. */
 
 &spi1 {
-	status = "okay";
 
 	cs-gpios = <&gpiof 12 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	tmc6460: tmc6460@0 {
 		compatible = "adi,tmc6460";

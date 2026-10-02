@@ -7,10 +7,10 @@
 &ios0 {
 	i2c_ios0: i2c {
 		compatible = "ambiq,ios-i2c";
-		status = "okay";
 		fifo-threshold = <16>;
 		pinctrl-0 = <&ios_i2c0_default>;
 		pinctrl-names = "default";
+		status = "okay";
 
 		eeprom0: eeprom@10 {
 			compatible = "zephyr,i2c-target-eeprom";

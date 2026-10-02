@@ -8,9 +8,9 @@
 	status = "okay";
 
 	eeprom0: eeprom@50 {
+		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x50>;
 		size = <256>;
-		compatible = "zephyr,i2c-target-eeprom";
 		status = "okay";
 	};
 };

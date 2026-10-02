@@ -15,16 +15,16 @@
 };
 
 &tim1 {
-	status = "okay";
 	/*
 	 * The sample blinks the LED at 0.5 Hz, ceil(48 MHz / 65536 / 0.5 Hz)
 	 * is 1465, and the prescaler property is one less than that.
 	 */
 	prescaler = <1464>;
+	status = "okay";
 };
 
 &pwm1 {
-	status = "okay";
 	pinctrl-0 = <&blue_pwm_pinctrl>;
 	pinctrl-names = "default";
+	status = "okay";
 };

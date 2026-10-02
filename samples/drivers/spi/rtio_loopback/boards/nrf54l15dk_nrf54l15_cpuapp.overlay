@@ -54,12 +54,12 @@
 };
 
 &spi22 {
-	status = "okay";
 	pinctrl-0 = <&spi22_default>;
 	pinctrl-1 = <&spi22_sleep>;
 	pinctrl-names = "default", "sleep";
 	overrun-character = <0x00>;
 	cs-gpios = <&gpio2 10 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	spi_controller: spi-device@0 {
 		compatible = "vnd,spi-device";
@@ -70,11 +70,11 @@
 
 &spi21 {
 	compatible = "nordic,nrf-spis";
-	status = "okay";
 	def-char = <0x00>;
 	pinctrl-0 = <&spi21_default>;
 	pinctrl-1 = <&spi21_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 	/delete-property/ rx-delay-supported;
 	/delete-property/ rx-delay;
 

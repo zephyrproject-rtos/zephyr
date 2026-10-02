@@ -31,14 +31,14 @@
 };
 
 &pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pwm0_default_dali>;
 	pinctrl-1 = <&pwm0_sleep_dali>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &timer2 {
 	compatible = "nordic,nrf-timer";
-	status = "okay";
 	prescaler = <4>;
+	status = "okay";
 };

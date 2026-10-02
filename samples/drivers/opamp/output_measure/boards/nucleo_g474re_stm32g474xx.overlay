@@ -17,10 +17,10 @@
 };
 
 &adc2 {
-	status = "okay";
 
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@10 {
 		reg = <16>;

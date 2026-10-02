@@ -7,6 +7,6 @@
 };
 
 &timer130 {
-	status = "okay";
 	prescaler = <4>;
+	status = "okay";
 };

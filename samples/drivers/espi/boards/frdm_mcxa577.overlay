@@ -32,6 +32,6 @@
 };
 
 &espi_taf {
-	status = "okay";
 	flash-dev = <&espi_taf_sim_flash>;
+	status = "okay";
 };
