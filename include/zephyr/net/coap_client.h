@@ -254,12 +254,22 @@ int coap_client_init(struct coap_client *client, const char *info);
  * remain valid throughout the transaction (i.e. until the last block or an error is reported).
  * The library will need to access the payload pointer when sending consecutive payload blocks.
  *
+ * @note The application must not register more than one observation for the same target
+ * resource (@rfc{7641,section-3.1}). Use coap_client_reregister_observe() to refresh an
+ * ongoing observation.
+ *
  * @param client Client instance.
  * @param sock Open socket file descriptor.
  * @param addr the destination address of the request, NULL if socket is already connected.
  * @param req CoAP request structure
  * @param params Pointer to transmission parameters structure or NULL to use default values.
- * @return zero when operation started successfully or negative error code otherwise.
+ *
+ * @retval 0 Request started.
+ * @retval -EINVAL Invalid argument or request.
+ * @retval -EAGAIN No free request slot.
+ * @retval -EALREADY A request is ongoing on another socket.
+ * @retval -ENOTSUP Unsupported address family.
+ * @retval <0 Other negative error code on failure to build or send the request.
  */
 
 int coap_client_req(struct coap_client *client, int sock, const struct net_sockaddr *addr,
