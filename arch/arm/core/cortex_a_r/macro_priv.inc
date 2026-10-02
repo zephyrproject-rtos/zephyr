@@ -158,7 +158,6 @@
 	str r1, [r0]
 	mov r1, #0
 	str r1, [r0, #4]
-	str r1, [r0, #8]
 #endif
 .endm
 

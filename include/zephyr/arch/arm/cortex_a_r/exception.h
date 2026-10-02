@@ -23,13 +23,12 @@ extern "C" {
  * entry.
  *
  * The fault paths fill these fields in the exception frame before calling
- * z_arm_fatal_error(). They are not valid in other exception frames. msp
- * and exc_return are always zero on Cortex-A/R.
+ * z_arm_fatal_error(). They are not valid in other exception frames.
+ * exc_return is always zero on Cortex-A/R.
  */
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO)
 struct __extra_esf_info {
 	_callee_saved_t *callee;
-	uint32_t msp;
 	uint32_t exc_return;
 };
 #endif /* CONFIG_EXTRA_EXCEPTION_INFO */
