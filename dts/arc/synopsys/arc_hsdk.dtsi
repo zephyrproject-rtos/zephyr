@@ -15,27 +15,27 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "snps,archs38";
 			reg = <0>;
+			device_type = "cpu";
 		};
 
 		cpu@1 {
-			device_type = "cpu";
 			compatible = "snps,archs38";
 			reg = <1>;
+			device_type = "cpu";
 		};
 
 		cpu@2 {
-			device_type = "cpu";
 			compatible = "snps,archs38";
 			reg = <2>;
+			device_type = "cpu";
 		};
 
 		cpu@3 {
-			device_type = "cpu";
 			compatible = "snps,archs38";
 			reg = <3>;
+			device_type = "cpu";
 		};
 	};
 
@@ -71,29 +71,29 @@
 	};
 
 	soc {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "simple-bus";
 		interrupt-parent = <&idu_intc>;
-		ranges;
 
 		ddr0: memory@90000000 {
-			device_type = "memory";
 			reg = <0x90000000 0x50000000>;
+			device_type = "memory";
 		};
 
 		uart0: uart@f0005000 {
 			compatible = "ns16550";
-			clock-frequency = <33333333>;
 			reg = <0xf0005000 0x1000>;
+			clock-frequency = <33333333>;
 			interrupts = <30 1>;
 			reg-shift = <2>;
 		};
 
 		uart1: uart@f0026000 {
 			compatible = "ns16550";
-			clock-frequency = <33333333>;
 			reg = <0xf0026000 0x1000>;
+			clock-frequency = <33333333>;
 			interrupts = <46 1>;
 			reg-shift = <2>;
 			status = "disabled";
@@ -101,8 +101,8 @@
 
 		uart2: uart@f0027000 {
 			compatible = "ns16550";
-			clock-frequency = <33333333>;
 			reg = <0xf0027000 0x1000>;
+			clock-frequency = <33333333>;
 			interrupts = <47 1>;
 			reg-shift = <2>;
 			status = "disabled";
@@ -110,8 +110,8 @@
 
 		uart3: uart@f0028000 {
 			compatible = "ns16550";
-			clock-frequency = <33333333>;
 			reg = <0xf0028000 0x1000>;
+			clock-frequency = <33333333>;
 			interrupts = <48 1>;
 			reg-shift = <2>;
 			status = "disabled";
@@ -145,10 +145,10 @@
 
 		i2c0: i2c@f0023000 {
 			compatible = "snps,designware-i2c";
+			reg = <0xf0023000 0x1000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0xf0023000 0x1000>;
 			interrupts = <43 1>;
 
 			status = "disabled";
@@ -156,10 +156,10 @@
 
 		i2c1: i2c@f0024000 {
 			compatible = "snps,designware-i2c";
+			reg = <0xf0024000 0x1000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0xf0024000 0x1000>;
 			interrupts = <44 1>;
 
 			status = "disabled";
@@ -167,10 +167,10 @@
 
 		i2c2: i2c@f0025000 {
 			compatible = "snps,designware-i2c";
+			reg = <0xf0025000 0x1000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0xf0025000 0x1000>;
 			interrupts = <45 1>;
 
 			status = "disabled";
@@ -178,9 +178,9 @@
 
 		spi0: spi@f0020000 {
 			compatible = "snps,designware-spi";
+			reg = <0xf0020000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0xf0020000 0x1000>;
 			interrupts = <40 1>;
 			fifo-depth = <32>;
 			max-xfer-size = <16>;
@@ -189,9 +189,9 @@
 
 		spi1: spi@f0021000 {
 			compatible = "snps,designware-spi";
+			reg = <0xf0021000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0xf0021000 0x1000>;
 			interrupts = <41 1>;
 			fifo-depth = <32>;
 			max-xfer-size = <16>;
@@ -200,9 +200,9 @@
 
 		spi2: spi@f0022000 {
 			compatible = "snps,designware-spi";
+			reg = <0xf0022000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0xf0022000 0x1000>;
 			interrupts = <42 1>;
 			fifo-depth = <32>;
 			max-xfer-size = <16>;
