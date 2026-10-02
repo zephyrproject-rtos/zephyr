@@ -155,8 +155,9 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake(int sock, void *buf, size_t max
 	uint16_t last_message_id = 0;
 
 	LOG_INF("Recvfrom");
-	uint8_t ack_data[] = {0x68, 0x45, 0x00, 0x00, 0x00, 0x00,
-			      0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+	/* Piggybacked 2.05 with Observe option 1, which only observe requests look at */
+	uint8_t ack_data[] = {0x68, 0x45, 0x00, 0x00, 0x00, 0x00, 0x00,
+			      0x00, 0x00, 0x00, 0x00, 0x00, 0x61, 0x01};
 
 	last_message_id = get_next_pending_message_id();
 
@@ -2502,6 +2503,57 @@ ZTEST(coap_client, test_observe_reordered_notification_dropped)
 		      "Reordered notification must be dropped");
 }
 
+/* Piggybacked response to the registration with code obs_end_code and no Observe option */
+static uint8_t obs_end_code;
+
+static ssize_t z_impl_zsock_recvfrom_custom_fake_observe_end(int sock, void *buf, size_t max_len,
+							     int flags,
+							     struct net_sockaddr *src_addr,
+							     net_socklen_t *addrlen)
+{
+	uint8_t token[COAP_TOKEN_MAX_LEN] = {0};
+	struct coap_packet pkt;
+
+	zassert_ok(coap_packet_init(&pkt, buf, max_len, 1, COAP_TYPE_ACK, COAP_TOKEN_MAX_LEN,
+				    token, obs_end_code, get_next_pending_message_id()));
+	restore_token(buf);
+
+	fill_recv_src_addr(src_addr, addrlen);
+	clear_socket_events(sock, ZSOCK_POLLIN);
+
+	return pkt.offset;
+}
+
+/* RFC 7641, sections 3.2 and 4.1: a 2.xx response without Observe option or a
+ * non-2.xx response ends the observation.
+ */
+ZTEST(coap_client, test_observe_ended_by_server)
+{
+	static const uint8_t codes[] = {COAP_RESPONSE_CODE_CONTENT, COAP_RESPONSE_CODE_NOT_FOUND};
+	struct coap_client_request req = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = TEST_PATH,
+		.cb = coap_callback,
+		.options = {{ .code = COAP_OPTION_OBSERVE, .value[0] = 0, .len = 1 }},
+		.num_options = 1,
+		.user_data = &sem1,
+	};
+
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_observe_end;
+
+	for (int i = 0; i < ARRAY_SIZE(codes); i++) {
+		obs_end_code = codes[i];
+		zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
+		zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+		zassert_equal(last_response_code, codes[i]);
+		wait_callbacks_done();
+
+		zassert_equal(coap_client_reregister_observe(&client, &req), -ENOENT,
+			      "Observation ended by 0x%02x still ongoing", codes[i]);
+	}
+}
+
 ZTEST(coap_client, test_observe_deregister_con)
 {
 	struct coap_client_request req = {
@@ -2585,6 +2637,94 @@ ZTEST(coap_client, test_observe_deregister_non)
 	zassert_equal(last_response_code, -ECANCELED);
 
 	zassert_not_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+}
+
+static struct coap_client_request dereg_ending_req;
+static int dereg_ending_cb_cnt;
+static int dereg_ending_codes[3];
+static K_SEM_DEFINE(dereg_ending_done, 0, 1);
+
+static void dereg_ending_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake;
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_deregister_con;
+	zassert_ok(coap_client_deregister_observe(&client, &dereg_ending_req));
+	k_sem_give(&dereg_ending_done);
+}
+
+static K_WORK_DEFINE(dereg_ending_work, dereg_ending_work_handler);
+
+/* Deregister from another thread while the response ending the observation is delivered */
+static void dereg_ending_callback(const struct coap_client_response_data *data, void *user_data)
+{
+	if (dereg_ending_cb_cnt < ARRAY_SIZE(dereg_ending_codes)) {
+		dereg_ending_codes[dereg_ending_cb_cnt] = data->result_code;
+	}
+	dereg_ending_cb_cnt++;
+
+	if (data->result_code == COAP_RESPONSE_CODE_NOT_FOUND) {
+		k_work_submit(&dereg_ending_work);
+		zassert_ok(k_sem_take(&dereg_ending_done, K_SECONDS(1)));
+	}
+
+	k_sem_give((struct k_sem *)user_data);
+}
+
+static struct coap_client_request dereg_ending_req = {
+	.method = COAP_METHOD_GET,
+	.confirmable = true,
+	.path = TEST_PATH,
+	.cb = dereg_ending_callback,
+	.options = {
+		{ .code = COAP_OPTION_OBSERVE, .value[0] = 0, .len = 1 },
+		{ .code = COAP_OPTION_URI_QUERY, .value = TEST_QUERY,
+		  .len = sizeof(TEST_QUERY) - 1 },
+	},
+	.num_options = 2,
+	.user_data = &sem1,
+};
+
+/* NON 4.04 notification on the registration token */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_observe_not_found(int sock, void *buf,
+								   size_t max_len, int flags,
+								   struct net_sockaddr *src_addr,
+								   net_socklen_t *addrlen)
+{
+	struct coap_packet pkt;
+
+	zassert_ok(coap_packet_init(&pkt, buf, max_len, 1, COAP_TYPE_NON_CON, COAP_TOKEN_MAX_LEN,
+				    saved_observe_token, COAP_RESPONSE_CODE_NOT_FOUND, 0x7100));
+
+	fill_recv_src_addr(src_addr, addrlen);
+	clear_socket_events(sock, ZSOCK_POLLIN);
+
+	return pkt.offset;
+}
+
+/* A deregister sent while the server's 4.04 is delivered still completes */
+ZTEST(coap_client, test_observe_deregister_while_ending)
+{
+	dereg_ending_cb_cnt = 0;
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_observe_subscribe;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &dereg_ending_req, NULL));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	wait_callbacks_done();
+
+	z_impl_zsock_recvfrom_fake.custom_fake =
+		z_impl_zsock_recvfrom_custom_fake_observe_not_found;
+	set_socket_events(client.fd, ZSOCK_POLLIN);
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+
+	/* The deregister is acknowledged */
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)),
+		   "Deregister did not complete");
+	zassert_equal(dereg_ending_cb_cnt, 3);
+	zassert_equal(dereg_ending_codes[0], COAP_RESPONSE_CODE_CONTENT);
+	zassert_equal(dereg_ending_codes[1], COAP_RESPONSE_CODE_NOT_FOUND);
+	zassert_equal(dereg_ending_codes[2], COAP_RESPONSE_CODE_CONTENT);
 }
 
 ZTEST(coap_client, test_observe_reregister_con)
@@ -2704,6 +2844,29 @@ ZTEST(coap_client, test_observe_reregister_non)
 	zassert_not_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
 }
 
+/* Piggybacked 2.05 ACK with Observe obs_ack_seq for the pending message ID */
+static int obs_ack_seq;
+
+static ssize_t z_impl_zsock_recvfrom_custom_fake_observe_ack(int sock, void *buf,
+							     size_t max_len, int flags,
+							     struct net_sockaddr *src_addr,
+							     net_socklen_t *addrlen)
+{
+	uint8_t token[COAP_TOKEN_MAX_LEN] = {0};
+	struct coap_packet pkt;
+
+	zassert_ok(coap_packet_init(&pkt, buf, max_len, 1, COAP_TYPE_ACK, COAP_TOKEN_MAX_LEN,
+				    token, COAP_RESPONSE_CODE_CONTENT,
+				    get_next_pending_message_id()));
+	zassert_ok(coap_append_option_int(&pkt, COAP_OPTION_OBSERVE, obs_ack_seq));
+	restore_token(buf);
+
+	fill_recv_src_addr(src_addr, addrlen);
+	clear_socket_events(sock, ZSOCK_POLLIN);
+
+	return pkt.offset;
+}
+
 ZTEST(coap_client, test_observe_reregister_notification_before_ack)
 {
 	struct coap_client_request req = {
@@ -2751,6 +2914,8 @@ ZTEST(coap_client, test_observe_reregister_notification_before_ack)
 	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
 
 	/* The unanswered refresh is retransmitted; the server then ACKs it */
+	obs_ack_seq = 8;
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_observe_ack;
 	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_reregister_con;
 	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
 	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
@@ -2759,29 +2924,6 @@ ZTEST(coap_client, test_observe_reregister_notification_before_ack)
 	coap_client_cancel_requests(&client);
 	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
 	zassert_equal(last_response_code, -ECANCELED);
-}
-
-/* Piggybacked 2.05 ACK with Observe obs_ack_seq for the pending message ID */
-static int obs_ack_seq;
-
-static ssize_t z_impl_zsock_recvfrom_custom_fake_observe_ack(int sock, void *buf,
-							     size_t max_len, int flags,
-							     struct net_sockaddr *src_addr,
-							     net_socklen_t *addrlen)
-{
-	uint8_t token[COAP_TOKEN_MAX_LEN] = {0};
-	struct coap_packet pkt;
-
-	zassert_ok(coap_packet_init(&pkt, buf, max_len, 1, COAP_TYPE_ACK, COAP_TOKEN_MAX_LEN,
-				    token, COAP_RESPONSE_CODE_CONTENT,
-				    get_next_pending_message_id()));
-	zassert_ok(coap_append_option_int(&pkt, COAP_OPTION_OBSERVE, obs_ack_seq));
-	restore_token(buf);
-
-	fill_recv_src_addr(src_addr, addrlen);
-	clear_socket_events(sock, ZSOCK_POLLIN);
-
-	return pkt.offset;
 }
 
 static struct coap_client_request observe_ack_req = {

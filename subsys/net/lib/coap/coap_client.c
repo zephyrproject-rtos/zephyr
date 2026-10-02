@@ -1199,6 +1199,25 @@ static bool response_matches_request_token(const struct coap_client_internal_req
 	       memcmp(token, internal_req->request_token, tkl) == 0;
 }
 
+/* RFC 7641, sections 3.2 and 4.1: a non-2.xx response, or a 2.xx response
+ * without Observe option, on the registration token ends the observation.
+ * Block2 retrievals use their own token.
+ */
+static bool observation_ended(const struct coap_client_internal_request *internal_req,
+			      const struct coap_packet *response)
+{
+	uint8_t token[COAP_TOKEN_MAX_LEN];
+	uint8_t tkl = coap_header_get_token(response, token);
+
+	if (tkl != internal_req->observe_tkl ||
+	    memcmp(token, internal_req->observe_token, tkl) != 0) {
+		return false;
+	}
+
+	return (coap_header_get_code(response) >> 5) != 2 ||
+	       coap_get_option_int(response, COAP_OPTION_OBSERVE) < 0;
+}
+
 static int handle_response(struct coap_client *client, const struct net_sockaddr *addr,
 			   net_socklen_t addrlen, const struct coap_packet *response,
 			   bool response_truncated)
@@ -1594,13 +1613,17 @@ fail:
 	}
 #endif
 
-	if (was_observe) {
+	/* A deregister sent while the callback ran owns the slot now */
+	if (was_observe &&
+	    (!internal_req->is_observe || !observation_ended(internal_req, response))) {
 		/* Observer: keep request active until unobserve. The registration token
 		 * stays matchable in get_request_with_token(), so no token restore is
 		 * needed here.
 		 */
 		return ret;
 	}
+
+	internal_req->is_observe = false;
 
 	if (response_type == COAP_TYPE_ACK) {
 		/* This is piggybacked ACK,

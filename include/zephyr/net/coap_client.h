@@ -322,8 +322,9 @@ int coap_client_deregister_observe(struct coap_client *client, struct coap_clien
  * re-registration). This refreshes the server's observation entry - e.g.
  * before a Max-Age or a server-side idle timeout expires - without creating a
  * second observation. The server answers with the current resource state,
- * delivered on the existing observe callback; the observation otherwise
- * continues unchanged.
+ * delivered on the existing observe callback. The observation continues,
+ * unless the answer is not a 2.xx response with an Observe Option, which ends
+ * it (RFC 7641, sections 3.2 and 4.1).
  *
  * A failure to build or send the refresh leaves the observation intact (a
  * later refresh may still succeed), the error is returned and the callback is
@@ -337,7 +338,8 @@ int coap_client_deregister_observe(struct coap_client *client, struct coap_clien
  *
  * @retval 0 Success.
  * @retval -ENOENT No ongoing observation matches @p req, for instance because
- *                 it already ended with a timeout or a Reset from the server.
+ *                 it already ended with a timeout, a Reset from the server or
+ *                 a server response that ended it.
  * @retval -EBUSY A request is still awaiting its response on the observation,
  *                such as the registration itself, an earlier confirmable
  *                refresh or a blockwise notification being retrieved, or the
