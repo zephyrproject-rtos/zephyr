@@ -1710,6 +1710,45 @@ ZTEST(net_content_senml_cbor_nodata, test_get_time_nodata)
 	zassert_equal(ret, -EBADMSG, "Invalid error code returned");
 }
 
+ZTEST(net_content_senml_cbor, test_write_security_obj)
+{
+	struct lwm2m_ctx ctx = { 0 };
+	int ret;
+	struct test_payload_buffer payload = {
+		.data = {
+			(0x04 << 5) | 1,
+			(0x05 << 5) | 3,
+			(0x01 << 5) | 1,
+			(0x03 << 5) | 5,
+			'/', '0', '/', '0', '/',
+			(0x00 << 5) | 0,
+			(0x03 << 5) | 1,
+			'0',
+			(0x00 << 5) | 3,
+			(0x03 << 5) | 4,
+			'c', 'o', 'a', 'p'
+		},
+		.len = 18
+	};
+
+	/* The request targets the test object, the payload the Security object */
+	test_msg.ctx = &ctx;
+	test_msg.path.res_id = TEST_RES_STRING;
+	test_payload_set(payload);
+
+	ret = do_write_op_senml_cbor(&test_msg);
+	zassert_equal(ret, -EACCES, "Security object written outside bootstrap");
+
+	context_reset();
+	ctx.bootstrap_mode = true;
+	test_msg.ctx = &ctx;
+	test_msg.path.res_id = TEST_RES_STRING;
+	test_payload_set(payload);
+
+	ret = do_write_op_senml_cbor(&test_msg);
+	zassert_not_equal(ret, -EACCES, "Bootstrap write to Security object denied");
+}
+
 ZTEST_SUITE(net_content_senml_cbor, NULL, test_obj_init, test_prepare, NULL, NULL);
 ZTEST_SUITE(net_content_senml_cbor_nomem, NULL, test_obj_init, test_prepare_nomem, NULL, NULL);
 ZTEST_SUITE(net_content_senml_cbor_nodata, NULL, test_obj_init, test_prepare_nodata, NULL, NULL);

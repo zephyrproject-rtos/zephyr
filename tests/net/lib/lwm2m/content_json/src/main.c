@@ -725,6 +725,29 @@ ZTEST(net_content_json_nodata, test_get_objlnk_nodata)
 	zassert_equal(ret, -EINVAL, "Invalid error code returned");
 }
 
+ZTEST(net_content_json, test_write_security_obj)
+{
+	struct lwm2m_ctx ctx = { 0 };
+	int ret;
+
+	/* The request targets the test object, the payload the Security object */
+	test_msg.ctx = &ctx;
+	test_msg.path.res_id = TEST_RES_STRING;
+	test_payload_set("{\"bn\":\"/0/0/\",\"e\":[{\"n\":\"0\",\"sv\":\"coap://test\"}]}");
+
+	ret = do_write_op_json(&test_msg);
+	zassert_equal(ret, -EACCES, "Security object written outside bootstrap");
+
+	context_reset();
+	ctx.bootstrap_mode = true;
+	test_msg.ctx = &ctx;
+	test_msg.path.res_id = TEST_RES_STRING;
+	test_payload_set("{\"bn\":\"/0/0/\",\"e\":[{\"n\":\"0\",\"sv\":\"coap://test\"}]}");
+
+	ret = do_write_op_json(&test_msg);
+	zassert_not_equal(ret, -EACCES, "Bootstrap write to Security object denied");
+}
+
 ZTEST_SUITE(net_content_json, NULL, test_obj_init, test_prepare, NULL, NULL);
 ZTEST_SUITE(net_content_json_nomem, NULL, test_obj_init, test_prepare_nomem, NULL, NULL);
 ZTEST_SUITE(net_content_json_nodata, NULL, test_obj_init, test_prepare_nodata, NULL, NULL);
