@@ -268,6 +268,7 @@ ZTEST(pm_sleep, test_domain_power_down)
 	bool expect_top = IS_ENABLED(CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP);
 	bool expect_flash = IS_ENABLED(CONFIG_ESP32_SLEEP_POWER_DOWN_FLASH);
 	bool expect_cpu = IS_ENABLED(CONFIG_ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP);
+	const char *cpu_reason = "power down not enabled";
 	const char *top_reason = "power down not enabled";
 	const char *flash_reason = IS_ENABLED(CONFIG_SOC_ESP32_PM_FLASH_KEEP_POWER_IN_LSLP)
 					   ? "unsupported: SoC requires flash to stay ON"
@@ -290,6 +291,11 @@ ZTEST(pm_sleep, test_domain_power_down)
 	}
 #endif
 
+	if (IS_ENABLED(CONFIG_SOC_ESP32P4_REV_1_3)) {
+		expect_cpu = false;
+		cpu_reason = "unsupported: ESP32-P4 below v3 keeps the CPU domain ON";
+	}
+
 	TC_BLANK();
 	TC_PRINT("Goal: Verify that power domains are switched off in light sleep.\n");
 	settle_console();
@@ -300,7 +306,7 @@ ZTEST(pm_sleep, test_domain_power_down)
 	TC_PRINT("  --- power domains ---\n");
 	print_pd_line("TOP", w.top_down, expect_top, top_reason);
 	print_pd_line("flash", w.flash_down, expect_flash, flash_reason);
-	print_pd_line("CPU", w.cpu_down, expect_cpu, "power down not enabled");
+	print_pd_line("CPU", w.cpu_down, expect_cpu, cpu_reason);
 	TC_BLANK();
 
 	if (expect_top) {
