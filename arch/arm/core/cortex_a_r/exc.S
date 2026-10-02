@@ -42,16 +42,68 @@ GTEXT(z_arm_undef_instruction)
 GTEXT(z_arm_prefetch_abort)
 GTEXT(z_arm_data_abort)
 
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+/* _callee_saved is 36 bytes. Round up so that SP stays 8-byte aligned. */
+#define EXC_CALLEE_SAVED_SPACE ((___callee_saved_t_SIZEOF + 7) & ~7)
+#endif
+
 #ifndef CONFIG_USE_SWITCH
+
+/*
+ * After r0-r3, r12, lr^ are stored at [sp], capture previous-mode SP (in r1)
+ * and leave LR as the user/system value stmfd ^ stored. Clobbers r0-r2.
+ * Cannot CPS into USR. SP is the value before this frame was pushed.
+ *
+ * ldmia ^ reloads [sp, #20] into r14_usr. SVC, IRQ, ABT, UND, and FIQ have
+ * a banked LR; copying it here would corrupt r14_usr on a recoverable
+ * return. System mode shares r14 with User mode, so that slot is already
+ * the interrupted LR.
+ *
+ * Do not msr SPSR into CPSR: the T bit would switch this ARM handler to Thumb.
+ * Keep current CPSR (ARM, I/F) and replace only the mode field.
+ */
+.macro exception_capture_prev_sp
+	mrs r0, cpsr
+	mrs r1, spsr
+	and r2, r1, #MODE_MASK
+	cmp r2, #MODE_USR
+	beq 1f
+	bic r1, r0, #MODE_MASK
+	orr r1, r1, r2
+	orr r1, r1, #(I_BIT | F_BIT)
+	msr CPSR_c, r1
+	mov r1, sp
+	msr CPSR_c, r0
+	/*
+	 * A nested abort or undef taken in the same mode reads back the SP
+	 * that just built this frame. Add back what was pushed so far:
+	 * __basic_sf, the SP word and the pad.
+	 */
+	and r0, r0, #MODE_MASK
+	cmp r0, r2
+	addeq r1, r1, #(32 + Z_ARM_ESF_TRAILER_SIZE)
+	b 2f
+1:
+	sub r0, sp, #4
+	stmia r0, {sp}^
+	ldr r1, [r0]
+2:
+.endm
 
 .macro exception_entry mode
 	/*
-	 * Store r0-r3, r12, lr, lr_und and spsr_und into the stack to
-	 * construct an exception stack frame.
+	 * ESF on the exception-mode stack (not the thread stack):
+	 *   [fpu] [r0-r3, r12, lr, pc, xpsr] [sp_prev] [pad]
+	 * sp_prev sits after __basic_sf so SVC/IRQ frames that omit it still
+	 * match struct arch_esf.basic. The pad keeps SP 8-byte aligned at
+	 * every call into C.
 	 */
+	sub sp, #Z_ARM_ESF_TRAILER_SIZE
 	srsdb sp!, #\mode
 	stmfd sp, {r0-r3, r12, lr}^
 	sub sp, #24
+	exception_capture_prev_sp
+	str r1, [sp, #32]
 
 #if defined(CONFIG_FPU_SHARING)
 	sub sp, #___fpu_t_SIZEOF
@@ -75,7 +127,7 @@ GTEXT(z_arm_data_abort)
 	mov r0, #0
 	str r0, [sp, #4]
 
-	sub r1, sp, #___callee_saved_t_SIZEOF
+	sub r1, sp, #EXC_CALLEE_SAVED_SPACE
 	str r1, [sp]
 	cps #MODE_SYS
 	stm r1, {r4-r11, sp}
@@ -98,7 +150,7 @@ GTEXT(z_arm_data_abort)
 	/* Exit exception */
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO)
 	add sp, #___extra_esf_info_t_SIZEOF
-	add sp, #___callee_saved_t_SIZEOF
+	add sp, #EXC_CALLEE_SAVED_SPACE
 #endif
 .endm
 
@@ -125,9 +177,12 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
 	 * Store r0-r3, r12, lr, lr_und and spsr_und into the stack to
 	 * construct an exception stack frame.
 	 */
+	sub sp, #Z_ARM_ESF_TRAILER_SIZE
 	srsdb sp!, #MODE_UND
 	stmfd sp, {r0-r3, r12, lr}^
 	sub sp, #24
+	exception_capture_prev_sp
+	str r1, [sp, #32]
 
 	/* Increment exception nesting count */
 	get_cpu r2
@@ -161,7 +216,7 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
 	mov r0, #0
 	str r0, [sp, #4]
 
-	sub r1, sp, #___callee_saved_t_SIZEOF
+	sub r1, sp, #EXC_CALLEE_SAVED_SPACE
 	str r1, [sp]
 	cps #MODE_SYS
 	stm r1, {r4-r11, sp}
