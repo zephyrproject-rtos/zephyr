@@ -3,8 +3,8 @@
 };
 
 &sw_pwm {
-	status = "okay";
 	channel-gpios = <&gpio0 2 PWM_POLARITY_INVERTED>;
+	status = "okay";
 };
 
 &pwm_led0 {
