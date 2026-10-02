@@ -292,7 +292,7 @@
 				compatible = "silabs,siwx91x-pll";
 				#clock-cells = <0>;
 				clocks = <&ref_pll_mux>;
-				/* Check Siwg917 refference manual (section 6.12.7)
+				/* Check Siwg917 reference manual (section 6.12.7)
 				 * for supported frequencies
 				 */
 				clock-frequency = <DT_FREQ_K(12288)>;

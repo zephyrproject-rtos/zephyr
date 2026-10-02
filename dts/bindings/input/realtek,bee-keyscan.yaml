@@ -6,7 +6,7 @@ description: |
 
   The Bee Keyscan should be used with an external keyscan matrix.
   There is a total of 12 rows and 20 columns.
-  You can assign any available pins to row or colunm by pinctrl.
+  You can assign any available pins to row or column by pinctrl.
   The rows and columns need to be indexed starting from 0.
 
 compatible: "realtek,bee-keyscan"
