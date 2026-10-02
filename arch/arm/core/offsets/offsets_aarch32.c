@@ -77,6 +77,10 @@ GEN_ABSOLUTE_SYM(___fpu_t_SIZEOF, sizeof(_fpu_sf_t));
 
 GEN_ABSOLUTE_SYM(___esf_t_SIZEOF, sizeof(_esf_t));
 
+#if defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R)
+GEN_OFFSET_SYM(_esf_t, sp);
+#endif
+
 /* size of the entire preempt registers structure */
 
 GEN_ABSOLUTE_SYM(___callee_saved_t_SIZEOF, sizeof(struct _callee_saved));
