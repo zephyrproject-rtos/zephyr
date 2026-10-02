@@ -35,7 +35,7 @@ struct smp_shell_data {
 	struct net_buf_pool *buf_pool;
 	/** FIFO of frames ready to be processed */
 	struct k_fifo buf_ready;
-	/** Currectly active receive buffer */
+	/** Currently active receive buffer */
 	struct net_buf *buf;
 	/** Which parts of the SMP over console frame have been detected */
 	atomic_t esc_state;
