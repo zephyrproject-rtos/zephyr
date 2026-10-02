@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
-	model = "AM243x LaunchPad M4F Core";
 	compatible = "ti,lp_am243";
+	model = "AM243x LaunchPad M4F Core";
 
 	chosen {
 		/*

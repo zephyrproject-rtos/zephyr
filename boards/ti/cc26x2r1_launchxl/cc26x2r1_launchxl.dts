@@ -12,8 +12,8 @@
 #include "cc26x2r1_launchxl-pinctrl.dtsi"
 
 / {
-	model = "TI CC26x2R1 LaunchXL";
 	compatible = "ti,launchxl-cc26x2r1";
+	model = "TI CC26x2R1 LaunchXL";
 
 	chosen {
 		/delete-property/ zephyr,ieee802154;

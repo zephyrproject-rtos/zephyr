@@ -20,7 +20,6 @@
 	 */
 	antenna_mux0: antenna_mux0 {
 		compatible = "skyworks,sky13317";
-		status = "okay";
 		gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>, <&gpio0 29 GPIO_ACTIVE_HIGH>,
 			<&gpio0 30 GPIO_ACTIVE_HIGH>;
 		pinctrl-0 = <&board_ant_24g_off &board_ant_tx_pa_off &board_ant_subg_off>;
@@ -29,6 +28,7 @@
 		pinctrl-3 = <&board_ant_24g_off &board_ant_tx_pa_off &board_ant_subg_on>;
 		pinctrl-4 = <&board_ant_24g_off &board_ant_tx_pa_on &board_ant_subg_on>;
 		pinctrl-names = "default", "ant_24g", "ant_24g_pa", "ant_subg", "ant_subg_pa";
+		status = "okay";
 	};
 };
 
