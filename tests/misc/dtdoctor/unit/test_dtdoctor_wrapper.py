@@ -42,8 +42,16 @@ TESTDATA_TOOLCHAIN_ERRORS = [
         "__device_dts_ord_7",
     ),
     (
+        "main.c:12:9: error: '__device_dts_ord_7' undeclared (first use in this function)",
+        "__device_dts_ord_7",
+    ),
+    (
         # gcc built with NLS uses Unicode quotes in UTF-8 locales
         "main.c:10:23: error: ‘__device_dts_ord_7’ undeclared here (not in a function)",
+        "__device_dts_ord_7",
+    ),
+    (
+        "main.cpp:10:11: error: '__device_dts_ord_7' was not declared in this scope",
         "__device_dts_ord_7",
     ),
     (
@@ -54,6 +62,10 @@ TESTDATA_TOOLCHAIN_ERRORS = [
         "main.c:10:23: error: use of undeclared identifier '__device_dts_ord_7'",
         "__device_dts_ord_7",
     ),
+    (
+        "ld.lld: error: undefined symbol: __device_dts_ord_7",
+        "__device_dts_ord_7",
+    ),
 ]
 
 
@@ -62,9 +74,12 @@ TESTDATA_TOOLCHAIN_ERRORS = [
     TESTDATA_TOOLCHAIN_ERRORS,
     ids=[
         'gcc-file-scope',
+        'gcc-function-scope',
         'gcc-utf8-quotes',
+        'g++',
         'gnu-ld',
         'clang',
+        'lld',
     ],
 )
 def test_toolchain_regex_detection(monkeypatch, stderr_line, expected_symbol):
