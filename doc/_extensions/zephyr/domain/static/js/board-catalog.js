@@ -92,11 +92,11 @@ function populateFormFromURL() {
     }, 0);
   }
 
-  // Restore compatible search scope from URL
-  if (hashParams.has("compat-scope")) {
-    const toggle = document.getElementById("compat-scope-include-disabled");
+  // Restore peripheral search scope from URL
+  if (hashParams.has("peripheral-scope")) {
+    const toggle = document.getElementById("peripheral-scope-include-disabled");
     if (toggle) {
-      toggle.checked = hashParams.get("compat-scope") === "all";
+      toggle.checked = hashParams.get("peripheral-scope") === "all";
     }
   }
 
@@ -145,7 +145,7 @@ function hashIndicatesFilteredCatalogView() {
     if (key === "catalog") return true;
     if (fields.has(key) && value !== "") return true;
     if ((key === "show-boards" || key === "show-shields") && value === "false") return true;
-    if (key === "compat-scope" && value === "all") return true;
+    if (key === "peripheral-scope" && value === "all") return true;
   }
   return false;
 }
@@ -198,12 +198,12 @@ function updateURL() {
     ? hashParams.set("compatibles", selectedCompatibles.join("|"))
     : hashParams.delete("compatibles");
 
-  // Persist compat-scope only when non-default (default is unchecked, filtering out disabled)
-  const compatScopeIncludeDisabled =
-    document.getElementById("compat-scope-include-disabled")?.checked ?? false;
-  compatScopeIncludeDisabled
-    ? hashParams.set("compat-scope", "all")
-    : hashParams.delete("compat-scope");
+  // Persist peripheral-scope only when non-default (default is unchecked, filtering out disabled)
+  const peripheralScopeIncludeDisabled =
+    document.getElementById("peripheral-scope-include-disabled")?.checked ?? false;
+  peripheralScopeIncludeDisabled
+    ? hashParams.set("peripheral-scope", "all")
+    : hashParams.delete("peripheral-scope");
 
   window.history.replaceState({}, "", `#${hashParams.toString()}`);
 }
@@ -253,14 +253,27 @@ function setupHWCapabilitiesField() {
   const tagInput = document.getElementById("hwcaps-input");
   const datalist = document.getElementById("tag-list");
 
-  const tagCounts = Array.from(document.querySelectorAll(".board-card")).reduce((acc, board) => {
-    (board.getAttribute("data-supported-features") || "").split(" ").forEach((tag) => {
-      acc[tag] = (acc[tag] || 0) + 1;
-    });
-    return acc;
-  }, {});
+  function getFeatureAttrForScope() {
+    const includeDisabled =
+      document.getElementById("peripheral-scope-include-disabled")?.checked ?? false;
+    return includeDisabled ? "data-supported-features" : "data-supported-features-enabled";
+  }
 
-  const allTags = Object.keys(tagCounts).sort();
+  function getAllTags() {
+    const attr = getFeatureAttrForScope();
+    const tagCounts = Array.from(document.querySelectorAll(".board-card")).reduce(
+      (acc, board) => {
+        (board.getAttribute(attr) || "").split(" ").forEach((tag) => {
+          if (tag) acc[tag] = (acc[tag] || 0) + 1;
+        });
+        return acc;
+      },
+      {},
+    );
+    return Object.keys(tagCounts).sort();
+  }
+
+  let allTags = getAllTags();
 
   function addTag(tag) {
     if (selectedTags.includes(tag) || tag === "" || !allTags.includes(tag)) return;
@@ -285,6 +298,7 @@ function setupHWCapabilitiesField() {
   }
 
   function updateDatalist() {
+    allTags = getAllTags();
     datalist.innerHTML = "";
     const filteredTags = allTags.filter((tag) => !selectedTags.includes(tag));
 
@@ -318,6 +332,12 @@ function setupHWCapabilitiesField() {
     }
   });
 
+  /* Refresh datalist and re-filter when the scope toggle changes */
+  const scopeToggle = document.getElementById("peripheral-scope-include-disabled");
+  if (scopeToggle) {
+    scopeToggle.addEventListener("change", updateDatalist);
+  }
+
   updateDatalist();
 }
 
@@ -330,7 +350,7 @@ function setupCompatiblesField() {
 
   function getCompatiblesForScope() {
     const includeDisabled =
-      document.getElementById("compat-scope-include-disabled")?.checked ?? false;
+      document.getElementById("peripheral-scope-include-disabled")?.checked ?? false;
     const attr = includeDisabled ? "data-compatibles" : "data-compatibles-enabled";
     return [...new Set(
       Array.from(document.querySelectorAll(".board-card"))
@@ -394,7 +414,7 @@ function setupCompatiblesField() {
   });
 
   /* Refresh datalist and re-filter when the scope toggle changes */
-  const scopeToggle = document.getElementById("compat-scope-include-disabled");
+  const scopeToggle = document.getElementById("peripheral-scope-include-disabled");
   if (scopeToggle) {
     scopeToggle.addEventListener("change", updateDatalist);
   }
@@ -490,8 +510,8 @@ function resetForm() {
   document.querySelectorAll("#compatibles-tags .tag").forEach((tag) => tag.remove());
   document.getElementById("compatibles-input").value = "";
 
-  // Reset compatible scope to default (unchecked, disabled peripherals filtered out)
-  const scopeToggle = document.getElementById("compat-scope-include-disabled");
+  // Reset peripheral scope to default (unchecked, disabled peripherals filtered out)
+  const scopeToggle = document.getElementById("peripheral-scope-include-disabled");
   if (scopeToggle) {
     scopeToggle.checked = false;
   }
@@ -813,9 +833,14 @@ function filterBoards() {
     (tag) => tag.textContent,
   );
 
-  const compatScopeIncludeDisabled =
-    document.getElementById("compat-scope-include-disabled")?.checked ?? false;
-  const compatAttr = compatScopeIncludeDisabled ? "data-compatibles" : "data-compatibles-enabled";
+  const peripheralScopeIncludeDisabled =
+    document.getElementById("peripheral-scope-include-disabled")?.checked ?? false;
+  const compatAttr = peripheralScopeIncludeDisabled
+    ? "data-compatibles"
+    : "data-compatibles-enabled";
+  const featuresAttr = peripheralScopeIncludeDisabled
+    ? "data-supported-features"
+    : "data-supported-features-enabled";
 
   const resetFiltersBtn = document.getElementById("reset-filters");
   const ramFiltered = ramMinBytes > 0 || ramMaxBytes < Infinity;
@@ -829,7 +854,7 @@ function filterBoards() {
     socSocSelect.selectedOptions.length ||
     selectedHWTags.length ||
     selectedCompatibles.length ||
-    compatScopeIncludeDisabled ||
+    peripheralScopeIncludeDisabled ||
     !showBoards ||
     !showShields
   ) {
@@ -849,7 +874,7 @@ function filterBoards() {
     const boardTargetMemory = parseBoardTargetMemory(board);
     const boardVendor = board.getAttribute("data-vendor") || "";
     const boardSocs = (board.getAttribute("data-socs") || "").split(" ").filter(Boolean);
-    const boardSupportedFeatures = (board.getAttribute("data-supported-features") || "")
+    const boardSupportedFeatures = (board.getAttribute(featuresAttr) || "")
       .split(" ")
       .filter(Boolean);
     const boardCompatibles = (board.getAttribute(compatAttr) || "")

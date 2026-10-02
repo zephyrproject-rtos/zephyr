@@ -260,6 +260,7 @@ def get_catalog(
         doc_page = guess_doc_page(board)
 
         supported_features = {}
+        supported_features_enabled = {}
         compatibles = {}
         compatibles_enabled = {}
         target_memory = []
@@ -270,6 +271,7 @@ def get_catalog(
                 features = {}
                 target_compatibles = set()
                 target_enabled_compatibles = set()
+                target_enabled_feature_types = set()
                 ram_size = get_board_memory_size(edt, "zephyr,sram")
                 flash_size = get_board_memory_size(edt, "zephyr,flash")
                 if ram_size is not None or flash_size is not None:
@@ -314,6 +316,7 @@ def get_catalog(
                     target_compatibles.add(node.matching_compat)
                     if node.status == "okay":
                         target_enabled_compatibles.add(node.matching_compat)
+                        target_enabled_feature_types.add(binding_type)
 
                     node_info = {
                         "filename": str(filename),
@@ -346,6 +349,7 @@ def get_catalog(
                     "flash_size": flash_size,
                     "features": features,
                 }
+                supported_features_enabled[board_target] = list(target_enabled_feature_types)
                 compatibles[board_target] = list(target_compatibles)
                 compatibles_enabled[board_target] = list(target_enabled_compatibles)
 
@@ -384,6 +388,7 @@ def get_catalog(
             "socs": list(socs),
             "revision_default": board.revision_default,
             "supported_features": supported_features,
+            "supported_features_enabled": supported_features_enabled,
             "compatibles": compatibles,
             "compatibles_enabled": compatibles_enabled,
             "image": guess_image(board),
