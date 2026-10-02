@@ -1477,7 +1477,7 @@ static int cmd_run_suite(const struct shell *sh, size_t argc, char **argv)
 			val = atoi(state->optarg);
 			if (val < 1) {
 				shell_fprintf(sh, SHELL_ERROR,
-					"Invalid number of suite interations\n");
+					"Invalid number of suite iterations\n");
 				return -ENOEXEC;
 			}
 			repeat_iter = val;
