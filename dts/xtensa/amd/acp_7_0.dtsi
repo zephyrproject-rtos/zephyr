@@ -13,10 +13,10 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@9eac0000 {
-			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx7";
-			clock-frequency = <600000000>;
 			reg = <0x9eac0000>;
+			device_type = "cpu";
+			clock-frequency = <600000000>;
 		};
 	};
 
@@ -41,82 +41,82 @@
 
 		acp_sdw_dma: acp-sdw-dma@1243a00 {
 			compatible = "amd,acp-sdw-dma";
+			reg = <0x1243a00 4>;
 			dma-channels = <12>;
 			#dma-cells = <3>;
-			reg = <0x1243a00 4>;
 			status = "okay";
 		};
 
 		sdw_dai0: acp-sdw-dai0 {
 			compatible = "amd,acp-sdw-dai";
-			status = "okay";
 			dai-index = <0>;
+			status = "okay";
 		};
 
 		sdw_dai1: acp-sdw-dai1 {
 			compatible = "amd,acp-sdw-dai";
-			status = "okay";
 			dai-index = <1>;
+			status = "okay";
 		};
 
 		sdw_dai2: acp-sdw-dai2 {
 			compatible = "amd,acp-sdw-dai";
-			status = "okay";
 			dai-index = <2>;
+			status = "okay";
 		};
 
 		sdw_dai3: acp-sdw-dai3 {
 			compatible = "amd,acp-sdw-dai";
-			status = "okay";
 			dai-index = <3>;
+			status = "okay";
 		};
 
 		sdw_dai4: acp-sdw-dai4 {
 			compatible = "amd,acp-sdw-dai";
-			status = "okay";
 			dai-index = <4>;
+			status = "okay";
 		};
 
 		sdw_dai5: acp-sdw-dai5 {
 			compatible = "amd,acp-sdw-dai";
-			status = "okay";
 			dai-index = <5>;
+			status = "okay";
 		};
 
 		sdw_dai6: acp-sdw-dai6 {
 			compatible = "amd,acp-sdw-dai";
-			status = "okay";
 			dai-index = <64>;
+			status = "okay";
 		};
 
 		sdw_dai7: acp-sdw-dai7 {
 			compatible = "amd,acp-sdw-dai";
-			status = "okay";
 			dai-index = <65>;
+			status = "okay";
 		};
 
 		sdw_dai8: acp-sdw-dai8 {
 			compatible = "amd,acp-sdw-dai";
-			status = "okay";
 			dai-index = <66>;
+			status = "okay";
 		};
 
 		sdw_dai9: acp-sdw-dai9 {
 			compatible = "amd,acp-sdw-dai";
-			status = "okay";
 			dai-index = <67>;
+			status = "okay";
 		};
 
 		sdw_dai10: acp-sdw-dai10 {
 			compatible = "amd,acp-sdw-dai";
-			status = "okay";
 			dai-index = <68>;
+			status = "okay";
 		};
 
 		sdw_dai11: acp-sdw-dai11 {
 			compatible = "amd,acp-sdw-dai";
-			status = "okay";
 			dai-index = <69>;
+			status = "okay";
 		};
 
 		acp_tdm_dma: acp-tdm-dma {
@@ -128,20 +128,20 @@
 
 		tdm_dai0: tdm-dai0 {
 			compatible = "amd,tdm-dai";
-			status = "okay";
 			dai-index = <0>;
+			status = "okay";
 		};
 
 		tdm_dai1: tdm-dai1 {
 			compatible = "amd,tdm-dai";
-			status = "okay";
 			dai-index = <1>;
+			status = "okay";
 		};
 
 		tdm_dai2: tdm-dai2 {
 			compatible = "amd,tdm-dai";
-			status = "okay";
 			dai-index = <2>;
+			status = "okay";
 		};
 	};
 };
