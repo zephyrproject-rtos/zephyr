@@ -163,6 +163,28 @@ arduino_i2c: &i2c1 {
 	pinctrl-names = "default", "sleep";
 	status = "okay";
 
+	vdd2_nrf_sensor: ina231@40 {
+		compatible = "ti,ina230";
+		reg = <0x40>;
+		adc-mode = "Bus and shunt voltage continuous";
+		vbus-conversion-time-us = <4156>;
+		vshunt-conversion-time-us = <4156>;
+		avg-count = <1024>;
+		current-lsb-microamps = <1>;
+		rshunt-micro-ohms = <1000000>;
+	};
+
+	vdd2_codec_sensor: ina231@41 {
+		compatible = "ti,ina230";
+		reg = <0x41>;
+		adc-mode = "Bus and shunt voltage continuous";
+		vbus-conversion-time-us = <4156>;
+		vshunt-conversion-time-us = <4156>;
+		avg-count = <1024>;
+		current-lsb-microamps = <1>;
+		rshunt-micro-ohms = <2200000>;
+	};
+
 	vbat_sensor: ina231@44 {
 		compatible = "ti,ina230";
 		reg = <0x44>;
@@ -183,28 +205,6 @@ arduino_i2c: &i2c1 {
 		avg-count = <1024>;
 		current-lsb-microamps = <1>;
 		rshunt-micro-ohms = <2200000>;
-	};
-
-	vdd2_codec_sensor: ina231@41 {
-		compatible = "ti,ina230";
-		reg = <0x41>;
-		adc-mode = "Bus and shunt voltage continuous";
-		vbus-conversion-time-us = <4156>;
-		vshunt-conversion-time-us = <4156>;
-		avg-count = <1024>;
-		current-lsb-microamps = <1>;
-		rshunt-micro-ohms = <2200000>;
-	};
-
-	vdd2_nrf_sensor: ina231@40 {
-		compatible = "ti,ina230";
-		reg = <0x40>;
-		adc-mode = "Bus and shunt voltage continuous";
-		vbus-conversion-time-us = <4156>;
-		vshunt-conversion-time-us = <4156>;
-		avg-count = <1024>;
-		current-lsb-microamps = <1>;
-		rshunt-micro-ohms = <1000000>;
 	};
 };
 
