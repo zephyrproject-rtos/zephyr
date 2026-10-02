@@ -235,14 +235,18 @@ static void bflb_dvp2axi_apply_config(const struct device *dev)
 		config->axi_burst_length == 64 ? (6 << CAM_REG_XLEN_SHIFT) : 0;
 	/* hsync active high/low */
 	if (config->hsync_active) {
+		LOG_DBG("HSYNC is active high");
 		tmp |= CAM_REG_LINE_VLD_POL;
 	} else {
+		LOG_DBG("HSYNC is active low");
 		tmp &= ~CAM_REG_LINE_VLD_POL;
 	}
 	/* vsync active high/low */
 	if (config->vsync_active) {
+		LOG_DBG("VSYNC is active high");
 		tmp |= CAM_REG_FRAM_VLD_POL;
 	} else {
+		LOG_DBG("VSYNC is active low");
 		tmp &= ~CAM_REG_FRAM_VLD_POL;
 	}
 	sys_write32(tmp, config->base + CAM_DVP2AXI_CONFIGUE_OFFSET);

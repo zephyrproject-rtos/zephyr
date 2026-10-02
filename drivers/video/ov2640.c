@@ -165,20 +165,11 @@ struct ov2640_reg {
 };
 
 const int64_t ov2640_link_freq[] = {
-	MHZ(72), //MHZ(12), // MHZ(48)
+	MHZ(72), //MHZ(170), //MHZ(72), //MHZ(12), // MHZ(48)
 };
 
 static const struct ov2640_reg default_regs[] = {
-	/* Minimal init sequence */
-	{ BANK_SEL, BANK_SEL_DSP },
-	{ 0x2c, 0xff },
-	{ 0x2e, 0xdf },
-	{ BANK_SEL, BANK_SEL_SENSOR },
-	{ 0xff, 0x01 },
-	{ 0x3c, 0x32 },
-	{ 0x11, 0x80 },
-
-#if 0
+#if 1
 	{BANK_SEL, BANK_SEL_DSP},
 	{0x2c, 0xff},
 	{0x2e, 0xdf},
@@ -191,16 +182,26 @@ static const struct ov2640_reg default_regs[] = {
 	{COM9, COM9_AGC_SET(COM9_AGC_GAIN_8x)},
 	{R_BYPASS, R_BYPASS_DSP_BYPAS},
 #endif
-	/* Always output PCLK */
-	{COM10, 0},
+#if 0
+	/* Minimal init sequence */
+	{ BANK_SEL, BANK_SEL_DSP },
+	{ 0x2c, 0xff },
+	{ 0x2e, 0xdf },
+	{ BANK_SEL, BANK_SEL_SENSOR },
+	{ 0xff, 0x01 },
+	{ 0x3c, 0x32 },
+	{ 0x11, 0x80 },
+
+	/* Always output PCLK, VSYNC active-low */
+	//{COM10, (1U << 1)},
 
 	{COM2, 0x02}, /* Output drive x2 */
 
-	{ADDVSL, 0x10},
-	{ADDVSH, 0x10},
+	//{ADDVSL, 0x10},
+	//{ADDVSH, 0x10},
 
-	{FLL, 0x10},
-	{FLH, 0x10},
+	//{FLL, 0x10},
+	//{FLH, 0x10},
 
 	{0x2c, 0x0c},
 	{0x33, 0x78},
@@ -336,7 +337,7 @@ static const struct ov2640_reg default_regs[] = {
 	{0xe1, 0x77},
 	{0xdd, 0x7f},
 	{CTRL0, CTRL0_YUV422 | CTRL0_YUV_EN | CTRL0_RGB_EN},
-	{0x00, 0x00},
+#endif
 };
 
 static const struct ov2640_reg uxga_regs[] = {
@@ -392,9 +393,8 @@ static const struct ov2640_reg uxga_regs[] = {
 	/* DVP prescaler */
 	{R_DVP_SP, R_DVP_SP_AUTO_MODE | 0x04},
 
-	{R_BYPASS, R_BYPASS_DSP_EN},
+	//{R_BYPASS, R_BYPASS_DSP_EN},
 	{RESET, 0x00},
-	{0, 0},
 };
 
 #define NUM_BRIGHTNESS_LEVELS (5)
@@ -832,6 +832,7 @@ static int ov2640_set_fmt(const struct device *dev, struct video_format *fmt)
 	int ret = 0;
 	int i = 0;
 
+#if 0
 	/* We only support RGB565 and JPEG pixel formats */
 	if (fmt->pixelformat != VIDEO_PIX_FMT_RGB565 && fmt->pixelformat != VIDEO_PIX_FMT_JPEG) {
 		LOG_ERR("ov2640 camera supports only RGB565 and JPG pixelformats!");
@@ -865,6 +866,8 @@ static int ov2640_set_fmt(const struct device *dev, struct video_format *fmt)
 	/* Camera is not capable of handling given format */
 	LOG_ERR("Image format not supported\n");
 	return -ENOTSUP;
+#endif
+	return 0;
 }
 
 static int ov2640_get_fmt(const struct device *dev, struct video_format *fmt)
@@ -1060,8 +1063,8 @@ static int ov2640_init(const struct device *dev)
 		return -EIO;
 	}
 
-	ret |= ov2640_set_exposure_ctrl(dev, 1);
-	ret |= ov2640_set_white_bal(dev, 1);
+	//ret |= ov2640_set_exposure_ctrl(dev, 1);
+	//ret |= ov2640_set_white_bal(dev, 1);
 
 	if (ret) {
 		return ret;
