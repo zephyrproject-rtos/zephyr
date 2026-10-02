@@ -6,7 +6,7 @@
 
 /*
  * This file contains a full SPARC V8 trap table. The processor redirects
- * exection to the trap table on trap events. Each trap table entrys is four
+ * execution to the trap table on trap events. Each trap table entries is four
  * instructions.
  */
 
