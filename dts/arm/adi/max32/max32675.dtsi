@@ -73,8 +73,8 @@
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 5>;
 			interrupts = <28 0>, <29 0>, <30 0>, <31 0>, <68 0>, <69 0>, <70 0>, <71 0>;
 			dma-channels = <8>;
-			status = "disabled";
 			#dma-cells = <2>;
+			status = "disabled";
 		};
 
 		spi1: spi@40047000 {
@@ -91,10 +91,10 @@
 			compatible = "adi,max32-timer";
 			reg = <0x40114000 0x1000>;
 			interrupts = <9 0>;
-			status = "disabled";
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 0>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 			prescaler = <1>;
+			status = "disabled";
 		};
 
 		rtc_counter: rtc_counter@40106000 {
