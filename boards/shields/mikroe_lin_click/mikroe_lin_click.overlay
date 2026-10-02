@@ -4,11 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
+
 / {
 	mikroe_lin_click: mikroe_lin_click {
 		compatible = "infineon,tle72593ge", "lin-transceiver-gpio";
-		wakeup-gpios = <&mikrobus_header 6 GPIO_ACTIVE_HIGH>;
-		enable-gpios = <&mikrobus_header 2 GPIO_ACTIVE_HIGH>;
+		wakeup-gpios = <&mikrobus_header MIKROBUS_PWM GPIO_ACTIVE_HIGH>;
+		enable-gpios = <&mikrobus_header MIKROBUS_CS GPIO_ACTIVE_HIGH>;
 		min-bitrate = <2400>;
 		max-bitrate = <20000>;
 		#phy-cells = <0>;

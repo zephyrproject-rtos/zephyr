@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
+
 / {
 	aliases {
 		accel0 = &lsm6dsl_mikroe_lsm6dsl_click;
@@ -16,6 +18,6 @@
 		compatible = "st,lsm6dsl";
 		reg = <0>;
 		spi-max-frequency = <1000000>;
-		irq-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&mikrobus_header MIKROBUS_INT GPIO_ACTIVE_LOW>;
 	};
 };
