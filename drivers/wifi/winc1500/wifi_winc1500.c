@@ -879,6 +879,13 @@ static void handle_socket_msg_accept(struct socket_data *sd, void *pvMsg)
 			accept_msg->sock,
 			socket_message_to_string(accept_msg->sock));
 		sd->ret_code = accept_msg->sock;
+		return;
+	}
+
+	if (accept_msg->sock >= CONFIG_WIFI_WINC1500_OFFLOAD_MAX_SOCKETS) {
+		LOG_ERR("ACCEPT: socket %d out of bounds", accept_msg->sock);
+		winc1500_close(accept_msg->sock);
+		return;
 	}
 
 	if (sd->accept_cb) {
@@ -926,7 +933,14 @@ static void handle_socket_msg_accept(struct socket_data *sd, void *pvMsg)
 
 static void winc1500_socket_cb(SOCKET sock, uint8 message, void *pvMsg)
 {
-	struct socket_data *sd = &w1500_data.socket_data[sock];
+	struct socket_data *sd;
+
+	if (sock < 0 || sock >= CONFIG_WIFI_WINC1500_OFFLOAD_MAX_SOCKETS) {
+		LOG_ERR("sock %d out of bounds, Msg %d dropped", sock, message);
+		return;
+	}
+
+	sd = &w1500_data.socket_data[sock];
 
 	if (message != 6) {
 		LOG_DBG("sock %d Msg %d %s",
