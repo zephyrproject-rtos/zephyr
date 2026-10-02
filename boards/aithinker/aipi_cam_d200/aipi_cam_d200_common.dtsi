@@ -1,0 +1,64 @@
+/*
+ * Copyright (c) 2026 Panoramix Labs
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include "aipi_cam_d200-pinctrl.dtsi"
+
+/ {
+	model = "AiPi-Cam-200";
+
+	regulator-3v3-cam {
+		compatible = "regulator-gpio";
+
+		regulator-name = "3v3-cam";
+		regulator-boot-on;
+		gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
+		states = <3300000 0x1>;
+		startup-delay-us = <10>;
+	};
+
+	dvp_24pin_clock: cam-ref-clk {
+		compatible = "fixed-clock";
+		clock-frequency = <DT_FREQ_M(24)>;
+		#clock-cells = <0>;
+	};
+};
+
+dvp_24pin_i2c: &i2c0 {
+	status = "okay";
+
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+};
+
+dvp_24pin_interface: &dvp2axi0 {};
+
+dvp_24pin_ep_in: &camfront_ep_in {};
+
+&camfront {
+	status = "okay";
+
+	pinctrl-0 = <&camfront_default>;
+	pinctrl-names = "default";
+};
+
+&spi0 {
+	status = "okay";
+
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+
+	/* shared between SD card and display, use only one */
+	cs-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+};
+
+&clocks {
+	/* for MCLK */
+	pinctrl-0 = <&clocks_default>;
+	pinctrl-names = "default";
+};

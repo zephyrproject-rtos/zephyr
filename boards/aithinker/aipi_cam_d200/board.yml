@@ -1,0 +1,9 @@
+board:
+  name: aipi_cam_d200
+  full_name: AiPi-Cam-200 Multi-Functional Development Board
+  vendor: aithinker
+  socs:
+    - name: bl618m05q2i
+      variants:
+        - name: "safe_overclock"
+        - name: "unsafe_overclock"
