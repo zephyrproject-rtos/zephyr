@@ -22,6 +22,14 @@
  * @{
  */
 
+/** Clock enable register offset in CGU */
+#define ALIF_CLK_ENA_REG		0x14U
+
+/** Peripheral clock enable register offset in CLKCTL_PER_MST */
+#define ALIF_PERIPH_CLK_ENA_REG		0x0CU
+/** Ethernet control register offset in CLKCTL_PER_MST */
+#define ALIF_ETH_CTRL0_REG		0x80U
+
 /** UART control register offset in CLKCTL_PER_SLV */
 #define ALIF_UART_CTRL_REG		0x08U
 
@@ -124,6 +132,44 @@
 /** LPTIMER3 clock sourced from 128K_CLK */
 #define ALIF_LPTIMER3_128K_CLK      \
 	ALIF_CLK_CFG(VBAT, TIMER_CLKSEL, 0U, 0U, 1U, 2U, 12U, ALIF_PARENT_CLK_128K)
+
+/** @} */
+
+/**
+ * @name Ethernet clocks
+ *
+ * The 50 MHz RMII clock, from which the MAC derives its transmit and
+ * receive clocks, is gated in PERIPH_CLK_ENA and selected in
+ * ETH_CTRL0[RMII_CLKSEL] from either the ETH_REFCLK pin or the internal
+ * 50 MHz PLL output. The source selection has no enable bit; only the
+ * source is programmed.
+ *
+ * The CSR clock, which clocks the register interface of the MAC and from
+ * which the MDIO clock is divided, is SYST_HCLK. It has neither a gate nor a
+ * source selection, so its identifier names no register and only reports the
+ * rate.
+ *
+ * The PTP reference clock, which drives the timestamp counter of the MAC, is
+ * 100M_CLK. Its gate in the CGU clock enable register also gates 100M_CLK for
+ * the other peripherals it feeds.
+ *
+ * @{
+ */
+
+/** Ethernet RMII clock gate */
+#define ALIF_ETH_RMII_CLK           \
+	ALIF_CLK_CFG(CLKCTL_PER_MST, PERIPH_CLK_ENA, 12U, 1U, 0U, 0U, 0U, ALIF_PARENT_CLK_50M)
+/** Ethernet RMII clock sourced from the ETH_REFCLK pin */
+#define ALIF_ETH_RMII_REFCLK        \
+	ALIF_CLK_CFG(CLKCTL_PER_MST, ETH_CTRL0, 0U, 0U, 0U, 1U, 4U, ALIF_PARENT_CLK_50M)
+/** Ethernet RMII clock sourced from the internal 50 MHz PLL output */
+#define ALIF_ETH_RMII_PLL_50M       \
+	ALIF_CLK_CFG(CLKCTL_PER_MST, ETH_CTRL0, 0U, 0U, 1U, 1U, 4U, ALIF_PARENT_CLK_50M)
+/** Ethernet CSR clock sourced from system HCLK */
+#define ALIF_ETH_SYST_HCLK          ALIF_CLK_CFG_FIXED(ALIF_PARENT_CLK_SYST_HCLK)
+/** Ethernet PTP reference clock sourced from 100M_CLK */
+#define ALIF_ETH_PTP_100M_CLK       \
+	ALIF_CLK_CFG(CGU, CLK_ENA, 7U, 1U, 0U, 0U, 0U, ALIF_PARENT_CLK_100M)
 
 /** @} */
 
