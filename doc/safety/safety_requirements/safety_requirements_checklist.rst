@@ -49,7 +49,7 @@ Each new or changed requirement needs to be analysed, to make sure it is suitabl
      - To make sure the requirement can be analysed it must be easy to understand and leave no room for (functional) interpretation.
      - Avoid vague statements such as **some, sufficient, typical, many, several, few, ...**.
        Statements like **The Zephyr Kernel should provide functionality xyz where possible** are not accurate enough and leave room for interpretation.
-       Also **should** must be replaced with the unambigous **shall**. The **where possible** must be replaced with a definition where the author of the requirement wants the functionality to be provided.
+       Also **should** must be replaced with the unambiguous **shall**. The **where possible** must be replaced with a definition where the author of the requirement wants the functionality to be provided.
        This can be a list of cases, system states or other conditions. As long as they are clearly defined.
 
    * - VerReq_1_1
