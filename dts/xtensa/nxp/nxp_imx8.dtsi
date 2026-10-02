@@ -115,43 +115,6 @@
 		};
 	};
 
-	sram0: memory@92400000 {
-		compatible = "mmio-sram";
-		reg = <0x92400000 DT_SIZE_K(512)>;
-		device_type = "memory";
-	};
-
-	sram1: memory@92c00000 {
-		compatible = "mmio-sram";
-		reg = <0x92c00000 DT_SIZE_K(512)>;
-		device_type = "memory";
-	};
-
-	edma0: dma@591f0000 {
-		compatible = "nxp,edma";
-		reg = <0x591f0000 (DT_SIZE_K(64) * 33)>;
-		valid-channels = <6>, <7>, <14>, <15>;
-		power-domains = <&edma0_ch6_pd>, <&edma0_ch7_pd>,
-				<&edma0_ch14_pd>, <&edma0_ch15_pd>;
-		interrupts-extended = <&master6 58 0>, <&master6 58 0>,
-				      <&master5 29 0>, <&master5 29 0>;
-		#dma-cells = <2>;
-		status = "disabled";
-	};
-
-	sai1: dai@59050000 {
-		compatible = "nxp,dai-sai";
-		reg = <0x59050000 DT_SIZE_K(64)>;
-		interrupt-parent = <&master5>;
-		interrupts = <28 0>;
-		clocks = <&ccm IMX_CCM_SAI1_CLK 0x0 0x0>;
-		clock-names = "bus";
-		dai-index = <1>;
-		dmas = <&edma0 15 0>, <&edma0 14 0>;
-		dma-names = "tx", "rx";
-		status = "disabled";
-	};
-
 	esai0: dai@59010000 {
 		compatible = "nxp,dai-esai";
 		reg = <0x59010000 DT_SIZE_K(64)>;
@@ -168,9 +131,29 @@
 		status = "disabled";
 	};
 
-	/* LSIO MU2, used to interact with the SCFW */
-	scu_mu: mailbox@5d1d0000 {
-		reg = <0x5d1d0000 DT_SIZE_K(64)>;
+	sai1: dai@59050000 {
+		compatible = "nxp,dai-sai";
+		reg = <0x59050000 DT_SIZE_K(64)>;
+		interrupt-parent = <&master5>;
+		interrupts = <28 0>;
+		clocks = <&ccm IMX_CCM_SAI1_CLK 0x0 0x0>;
+		clock-names = "bus";
+		dai-index = <1>;
+		dmas = <&edma0 15 0>, <&edma0 14 0>;
+		dma-names = "tx", "rx";
+		status = "disabled";
+	};
+
+	edma0: dma@591f0000 {
+		compatible = "nxp,edma";
+		reg = <0x591f0000 (DT_SIZE_K(64) * 33)>;
+		valid-channels = <6>, <7>, <14>, <15>;
+		power-domains = <&edma0_ch6_pd>, <&edma0_ch7_pd>,
+				<&edma0_ch14_pd>, <&edma0_ch15_pd>;
+		interrupts-extended = <&master6 58 0>, <&master6 58 0>,
+				      <&master5 29 0>, <&master5 29 0>;
+		#dma-cells = <2>;
+		status = "disabled";
 	};
 
 	lpuart2: serial@5a080000 {
@@ -183,6 +166,11 @@
 		status = "disabled";
 	};
 
+	/* LSIO MU2, used to interact with the SCFW */
+	scu_mu: mailbox@5d1d0000 {
+		reg = <0x5d1d0000 DT_SIZE_K(64)>;
+	};
+
 	mailbox0: mailbox@5d310000 {
 		compatible = "nxp,imx-mu";
 		reg = <0x5d310000 0x10000>;
@@ -190,5 +178,17 @@
 		interrupts = <7 0 0>;
 		rdc = <0>;
 		status = "disabled";
+	};
+
+	sram0: memory@92400000 {
+		compatible = "mmio-sram";
+		reg = <0x92400000 DT_SIZE_K(512)>;
+		device_type = "memory";
+	};
+
+	sram1: memory@92c00000 {
+		compatible = "mmio-sram";
+		reg = <0x92c00000 DT_SIZE_K(512)>;
+		device_type = "memory";
 	};
 };

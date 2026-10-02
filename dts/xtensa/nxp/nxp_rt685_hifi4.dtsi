@@ -40,28 +40,6 @@
 			#interrupt-cells = <3>;
 		};
 
-		itcm: memory@24020000 {
-			compatible = "mmio-sram";
-
-			reg = <0x24020000 DT_SIZE_K(64)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			device_type = "memory";
-
-			adsp_reset: memory@24020000 {
-				reg = <0x24020000 DT_SIZE_K(1)>;
-			};
-		};
-
-		dtcm: memory@24000000 {
-			compatible = "mmio-sram";
-
-			reg = <0x24000000 DT_SIZE_K(64)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			device_type = "memory";
-		};
-
 		ram0_cached: memory@200000 {
 			compatible = "mmio-sram";
 
@@ -96,6 +74,28 @@
 			};
 		};
 
+		dtcm: memory@24000000 {
+			compatible = "mmio-sram";
+
+			reg = <0x24000000 DT_SIZE_K(64)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			device_type = "memory";
+		};
+
+		itcm: memory@24020000 {
+			compatible = "mmio-sram";
+
+			reg = <0x24020000 DT_SIZE_K(64)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			device_type = "memory";
+
+			adsp_reset: memory@24020000 {
+				reg = <0x24020000 DT_SIZE_K(1)>;
+			};
+		};
+
 		peripheral: peripheral@40000000 {
 			ranges = <0x0 0x40000000 0x10000000>;
 
@@ -107,6 +107,46 @@
 				compatible = "nxp,lpc-syscon";
 				reg = <0x1000 0x1000>;
 				#clock-cells = <1>;
+			};
+
+			iocon: iocon@4000 {
+				compatible = "nxp,lpc-iocon";
+				reg = <0x4000 0x1000>;
+
+				pinctrl: pinctrl {
+					compatible = "nxp,rt-iocon-pinctrl";
+				};
+			};
+
+			clkctl1: clkctl@21000 {
+				compatible = "nxp,lpc-syscon";
+				reg = <0x21000 0x1000>;
+				#clock-cells = <1>;
+			};
+
+			pint: pint@25000 {
+				compatible = "nxp,pint";
+				reg = <0x25000 0x1000>;
+				interrupt-controller;
+				#interrupt-cells = <1>;
+				#address-cells = <0>;
+				interrupts = <7 0 0>, <8 0 0>, <9 0 0>, <10 0 0>,
+					     <11 0 0>, <12 0 0>;
+				num-lines = <8>;
+				num-inputs = <64>;
+			};
+
+			i3c0: i3c@36000 {
+				compatible = "nxp,mcux-i3c";
+				reg = <0x36000 0x1000>;
+				#address-cells = <3>;
+				#size-cells = <0>;
+				interrupts = <6 0 0>;
+				clocks = <&clkctl1 MCUX_I3C_CLK>;
+				clk-divider = <2>;
+				clk-divider-slow = <1>;
+				clk-divider-tc = <1>;
+				status = "disabled";
 			};
 
 			gpio: gpio@100000 {
@@ -138,52 +178,12 @@
 				};
 			};
 
-			pint: pint@25000 {
-				compatible = "nxp,pint";
-				reg = <0x25000 0x1000>;
-				interrupt-controller;
-				#interrupt-cells = <1>;
-				#address-cells = <0>;
-				interrupts = <7 0 0>, <8 0 0>, <9 0 0>, <10 0 0>,
-					     <11 0 0>, <12 0 0>;
-				num-lines = <8>;
-				num-inputs = <64>;
-			};
-
-			iocon: iocon@4000 {
-				compatible = "nxp,lpc-iocon";
-				reg = <0x4000 0x1000>;
-
-				pinctrl: pinctrl {
-					compatible = "nxp,rt-iocon-pinctrl";
-				};
-			};
-
-			clkctl1: clkctl@21000 {
-				compatible = "nxp,lpc-syscon";
-				reg = <0x21000 0x1000>;
-				#clock-cells = <1>;
-			};
-
 			dma1: dma-controller@105000 {
 				compatible = "nxp,lpc-dma";
 				reg = <0x105000 0x1000>;
 				interrupts = <21 0 0>;
 				dma-channels = <33>;
 				#dma-cells = <1>;
-				status = "disabled";
-			};
-
-			i3c0: i3c@36000 {
-				compatible = "nxp,mcux-i3c";
-				reg = <0x36000 0x1000>;
-				#address-cells = <3>;
-				#size-cells = <0>;
-				interrupts = <6 0 0>;
-				clocks = <&clkctl1 MCUX_I3C_CLK>;
-				clk-divider = <2>;
-				clk-divider-slow = <1>;
-				clk-divider-tc = <1>;
 				status = "disabled";
 			};
 
