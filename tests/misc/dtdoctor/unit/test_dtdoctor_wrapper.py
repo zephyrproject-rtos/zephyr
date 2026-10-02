@@ -154,6 +154,14 @@ def test_no_double_dash_fallback(monkeypatch):
     assert calls["compiler"] == ["cc", "-c", "main.c"]
 
 
+def test_no_double_dash_strips_wrapper_options(monkeypatch):
+    stderr = "main.c:(.text+0x12): undefined reference to `__device_dts_ord_7'"
+    fake_run, calls = make_fake_run(rc=1, stderr=stderr)
+    run_wrapper(monkeypatch, ["--edt-pickle", "edt.pickle", "cc", "-c", "main.c"], fake_run)
+    assert calls["compiler"] == ["cc", "-c", "main.c"]
+    assert len(calls["analyzer"]) == 1
+
+
 def test_end_to_end_real_processes(make_edt, make_pickle, tmp_path):
     edt, _ = make_edt(DTS_DISABLED_FULL)
     symbol = ord_symbol(edt, "foo_dev")
