@@ -420,8 +420,8 @@ static int shi_ite_init_registers(const struct device *dev)
 
 	/*
 	 * General control register2
-	 * bit4 : Rx FIFO2 will not be overwrited once it's full.
-	 * bit3 : Rx FIFO1 will not be overwrited once it's full.
+	 * bit4 : Rx FIFO2 will not be overwritten once it's full.
+	 * bit3 : Rx FIFO1 will not be overwritten once it's full.
 	 * bit0 : Rx FIFO1/FIFO2 will reset after each CS_N goes high.
 	 */
 	IT83XX_SPI_GCR2 = IT83XX_SPI_RXF2OC | IT83XX_SPI_RXF1OC | IT83XX_SPI_RXFAR;
