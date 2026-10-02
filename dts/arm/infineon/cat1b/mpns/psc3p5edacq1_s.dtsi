@@ -12,9 +12,9 @@
 	flash-controller@52150000 {
 		compatible = "infineon,flash-controller";
 		reg = <0x52150000 0x10000>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 		status = "disabled";
 
 		flash0: flash@12000000 {

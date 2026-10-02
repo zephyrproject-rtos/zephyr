@@ -17,8 +17,8 @@
 	clocks {
 		/* Internal low-speed oscillator (ILO) */
 		clk_ilo: clk-ilo {
-			#clock-cells = <0>;
 			compatible = "infineon,fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_K(40)>;
 			system-clock = <IFX_ILO>;
 			status = "okay";
@@ -26,8 +26,8 @@
 
 		/* Internal main oscillator (IMO) */
 		clk_imo: clk-imo {
-			#clock-cells = <0>;
 			compatible = "infineon,fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(48)>;
 			system-clock = <IFX_IMO>;
 			status = "okay";
@@ -35,8 +35,8 @@
 
 		/* External clock (EXTCLK) */
 		clk_ext: clk-extclk {
-			#clock-cells = <0>;
 			compatible = "infineon,fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(48)>;
 			system-clock = <IFX_EXT>;
 			status = "okay";
@@ -44,16 +44,16 @@
 
 		/* Watch crystal oscillator (WCO) */
 		clk_wco: clk-wco {
-			#clock-cells = <0>;
 			compatible = "infineon,fixed-clock";
+			#clock-cells = <0>;
 			system-clock = <IFX_WCO>;
 			clock-frequency = <32768>;
 			status = "okay";
 		};
 
 		clk_hf: clk-hf {
-			#clock-cells = <0>;
 			compatible = "infineon,fixed-factor-clock";
+			#clock-cells = <0>;
 			clock-div = <IFX_CLK_HF_NO_DIVIDE>;
 			source-path = <IFX_PATH_PSOC4_IMO>;
 			system-clock = <IFX_HF>;
@@ -62,8 +62,8 @@
 		};
 
 		clk_pump: clk-pump {
-			#clock-cells = <0>;
 			compatible = "infineon,fixed-factor-clock";
+			#clock-cells = <0>;
 			system-clock = <IFX_PUMP>;
 			source-path = <IFX_PATH_PSOC4_PUMP_GND>;
 			instance = <0>;
@@ -73,8 +73,8 @@
 
 	peri_div: peri-div {
 		peri_clk_div0: peri-clk-div0 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			div-type = <DIV_16_BIT>;
 			channel = <0>;
 			clock-div = <1>;
@@ -82,8 +82,8 @@
 		};
 
 		peri_clk_div1: peri-clk-div1 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			div-type = <DIV_16_BIT>;
 			channel = <1>;
 			clock-div = <1>;
@@ -91,8 +91,8 @@
 		};
 
 		peri_clk_div2: peri-clk-div2 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			div-type = <DIV_16_BIT>;
 			channel = <2>;
 			clock-div = <1>;
@@ -100,8 +100,8 @@
 		};
 
 		peri_clk_div3: peri-clk-div3 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			div-type = <DIV_16_BIT>;
 			channel = <3>;
 			clock-div = <1>;
@@ -109,8 +109,8 @@
 		};
 
 		peri_clk_div4: peri-clk-div4 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			div-type = <DIV_16_BIT>;
 			channel = <4>;
 			clock-div = <1>;
@@ -118,8 +118,8 @@
 		};
 
 		peri_clk_div5: peri-clk-div5 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			div-type = <DIV_16_BIT>;
 			channel = <5>;
 			clock-div = <1>;
@@ -127,8 +127,8 @@
 		};
 
 		peri_clk_div6: peri-clk-div6 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			div-type = <DIV_16_BIT>;
 			channel = <6>;
 			clock-div = <1>;
@@ -136,8 +136,8 @@
 		};
 
 		peri_clk_div7: peri-clk-div7 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			div-type = <DIV_16_BIT>;
 			channel = <7>;
 			clock-div = <1>;
@@ -145,8 +145,8 @@
 		};
 
 		peri_clk_div8: peri-clk-div8 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			div-type = <DIV_16_BIT>;
 			channel = <8>;
 			clock-div = <1>;
@@ -154,8 +154,8 @@
 		};
 
 		peri_clk_div9: peri-clk-div9 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			div-type = <DIV_16_BIT>;
 			channel = <9>;
 			clock-div = <1>;
@@ -163,8 +163,8 @@
 		};
 
 		peri_clk_div10: peri-clk-div10 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			div-type = <DIV_16_BIT>;
 			channel = <10>;
 			clock-div = <1>;
@@ -172,8 +172,8 @@
 		};
 
 		peri_clk_div11: peri-clk-div11 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			div-type = <DIV_16_BIT>;
 			channel = <11>;
 			clock-div = <1>;
@@ -181,8 +181,8 @@
 		};
 
 		peri_clk_fract_div0: peri-clk-fract-div0 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			div-type = <DIV_16_5_BIT>;
 			channel = <0>;
 			clock-div = <1>;
@@ -190,8 +190,8 @@
 		};
 
 		peri_clk_fract_div1: peri-clk-fract-div1 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			div-type = <DIV_16_5_BIT>;
 			channel = <1>;
 			clock-div = <1>;
@@ -199,8 +199,8 @@
 		};
 
 		peri_clk_fract_div2: peri-clk-fract-div2 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			div-type = <DIV_16_5_BIT>;
 			channel = <2>;
 			clock-div = <1>;
@@ -208,8 +208,8 @@
 		};
 
 		peri_clk_fract_div3: peri-clk-fract-div3 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			div-type = <DIV_16_5_BIT>;
 			channel = <3>;
 			clock-div = <1>;
@@ -217,8 +217,8 @@
 		};
 
 		peri_clk_fract_div4: peri-clk-fract-div4 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			div-type = <DIV_16_5_BIT>;
 			channel = <4>;
 			clock-div = <1>;
@@ -226,8 +226,8 @@
 		};
 
 		peri_clk_fract_div5: peri-clk-fract-div5 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			div-type = <DIV_24_5_BIT>;
 			channel = <0>;
 			clock-div = <1>;

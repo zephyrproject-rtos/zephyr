@@ -16,8 +16,8 @@
 
 / {
 	srss_power: srss_power {
-		#clock-cells = <0>;
 		compatible = "infineon,cat1b-power";
+		#clock-cells = <0>;
 		power-profile = "POWER_PROFILE_0";
 		status = "okay";
 	};
@@ -25,8 +25,8 @@
 	clocks {
 		/* iho */
 		clk_iho: clk_iho {
-			#clock-cells = <0>;
 			compatible = "infineon,fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(48)>;
 			system-clock = <IFX_IHO>;
 			status = "okay";
@@ -34,8 +34,8 @@
 
 		/* imo */
 		clk_imo: clk_imo {
-			#clock-cells = <0>;
 			compatible = "infineon,fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(8)>;
 			system-clock = <IFX_IMO>;
 			status = "okay";
@@ -43,8 +43,8 @@
 
 		/* wco */
 		clk_wco: clk_wco {
-			#clock-cells = <0>;
 			compatible = "infineon,fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <32768>;
 			system-clock = <IFX_WCO>;
 			status = "okay";
@@ -52,8 +52,8 @@
 
 		/* fll */
 		fll0: fll0 {
-			#clock-cells = <0>;
 			compatible = "infineon,fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(96)>;
 			system-clock = <IFX_FLL>;
 			status = "disabled";
@@ -61,8 +61,8 @@
 
 		/* dpll250 — single instance for psc3m6 */
 		dpll_lp0: dpll_lp0 {
-			#clock-cells = <0>;
 			compatible = "infineon,fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <0>;
 			system-clock = <IFX_DPLL250_0>;
 			status = "disabled";
@@ -70,8 +70,8 @@
 
 		/* path mux0 */
 		path_mux0: path_mux0 {
-			#clock-cells = <0>;
 			compatible = "infineon,fixed-factor-clock";
+			#clock-cells = <0>;
 			system-clock = <IFX_PATHMUX>;
 			instance = <0>;
 			source-path = <IFX_CAT1_CLKPATH_IN_IHO>;
@@ -80,8 +80,8 @@
 
 		/* path mux1 */
 		path_mux1: path_mux1 {
-			#clock-cells = <0>;
 			compatible = "infineon,fixed-factor-clock";
+			#clock-cells = <0>;
 			system-clock = <IFX_PATHMUX>;
 			instance = <1>;
 			source-path = <IFX_CAT1_CLKPATH_IN_IHO>;
@@ -90,8 +90,8 @@
 
 		/* path mux2 */
 		path_mux2: path_mux2 {
-			#clock-cells = <0>;
 			compatible = "infineon,fixed-factor-clock";
+			#clock-cells = <0>;
 			system-clock = <IFX_PATHMUX>;
 			instance = <2>;
 			source-path = <IFX_CAT1_CLKPATH_IN_IHO>;
@@ -100,8 +100,8 @@
 
 		/* path mux3 */
 		path_mux3: path_mux3 {
-			#clock-cells = <0>;
 			compatible = "infineon,fixed-factor-clock";
+			#clock-cells = <0>;
 			system-clock = <IFX_PATHMUX>;
 			instance = <3>;
 			source-path = <IFX_CAT1_CLKPATH_IN_IHO>;
@@ -110,8 +110,8 @@
 
 		/* path mux4 */
 		path_mux4: path_mux4 {
-			#clock-cells = <0>;
 			compatible = "infineon,fixed-factor-clock";
+			#clock-cells = <0>;
 			system-clock = <IFX_PATHMUX>;
 			instance = <4>;
 			source-path = <IFX_CAT1_CLKPATH_IN_IHO>;
@@ -120,8 +120,8 @@
 
 		/* path mux5 */
 		path_mux5: path_mux5 {
-			#clock-cells = <0>;
 			compatible = "infineon,fixed-factor-clock";
+			#clock-cells = <0>;
 			system-clock = <IFX_PATHMUX>;
 			instance = <5>;
 			source-path = <IFX_CAT1_CLKPATH_IN_IHO>;
@@ -130,8 +130,8 @@
 
 		/* path mux6 */
 		path_mux6: path_mux6 {
-			#clock-cells = <0>;
 			compatible = "infineon,fixed-factor-clock";
+			#clock-cells = <0>;
 			system-clock = <IFX_PATHMUX>;
 			instance = <6>;
 			source-path = <IFX_CAT1_CLKPATH_IN_IHO>;
@@ -140,8 +140,8 @@
 
 		/* clk_hf0 — CPUSS, up to 180 MHz */
 		clk_hf0: clk_hf0 {
-			#clock-cells = <0>;
 			compatible = "infineon,fixed-factor-clock";
+			#clock-cells = <0>;
 			clock-div = <IFX_CLK_HF_NO_DIVIDE>;
 			system-clock = <IFX_HF>;
 			instance = <0>;
@@ -151,8 +151,8 @@
 
 		/* clk_hf1 — SmartIO, LPCOMP, IOSS */
 		clk_hf1: clk_hf1 {
-			#clock-cells = <0>;
 			compatible = "infineon,fixed-factor-clock";
+			#clock-cells = <0>;
 			clock-div = <IFX_CLK_HF_NO_DIVIDE>;
 			system-clock = <IFX_HF>;
 			instance = <1>;
@@ -162,8 +162,8 @@
 
 		/* clk_hf2 — CAN, SCB[0:4], up to 100 MHz */
 		clk_hf2: clk_hf2 {
-			#clock-cells = <0>;
 			compatible = "infineon,fixed-factor-clock";
+			#clock-cells = <0>;
 			clock-div = <IFX_CLK_HF_NO_DIVIDE>;
 			system-clock = <IFX_HF>;
 			instance = <2>;
@@ -173,8 +173,8 @@
 
 		/* clk_hf3 — USB DEV/HOST, 50 MHz from ECO */
 		clk_hf3: clk_hf3 {
-			#clock-cells = <0>;
 			compatible = "infineon,fixed-factor-clock";
+			#clock-cells = <0>;
 			clock-div = <IFX_CLK_HF_NO_DIVIDE>;
 			system-clock = <IFX_HF>;
 			instance = <3>;
@@ -184,8 +184,8 @@
 
 		/* clk_hf4 — SCB[5], I3C, up to 180 MHz */
 		clk_hf4: clk_hf4 {
-			#clock-cells = <0>;
 			compatible = "infineon,fixed-factor-clock";
+			#clock-cells = <0>;
 			clock-div = <IFX_CLK_HF_NO_DIVIDE>;
 			system-clock = <IFX_HF>;
 			instance = <4>;
@@ -195,8 +195,8 @@
 
 		/* clk_hf5 — ext_clk_out, up to 80 MHz */
 		clk_hf5: clk_hf5 {
-			#clock-cells = <0>;
 			compatible = "infineon,fixed-factor-clock";
+			#clock-cells = <0>;
 			clock-div = <IFX_CLK_HF_NO_DIVIDE>;
 			system-clock = <IFX_HF>;
 			instance = <5>;
@@ -206,8 +206,8 @@
 
 		/* clk_hf6 — CSV, 8 MHz from IMO */
 		clk_hf6: clk_hf6 {
-			#clock-cells = <0>;
 			compatible = "infineon,fixed-factor-clock";
+			#clock-cells = <0>;
 			clock-div = <IFX_CLK_HF_NO_DIVIDE>;
 			system-clock = <IFX_HF>;
 			instance = <6>;
@@ -220,8 +220,8 @@
 		/* Peripheral 0, Clock Group 0 (CPUSS, TCPWM, MOTIF, PASS_CSG / HF0) */
 		/* 24.5-bit */
 		peri0_group0_24_5bit_0: peri0_group0_24_5bit_0 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			peri-group = [00 00]; /* inst#, group# */
 			div-type = <DIV_24_5_BIT>;
 			channel = <0>;
@@ -231,8 +231,8 @@
 
 		/* 16-bit */
 		peri0_group0_16bit_0: peri0_group0_16bit_0 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			peri-group = [00 00]; /* inst#, group# */
 			div-type = <DIV_16_BIT>;
 			channel = <0>;
@@ -241,8 +241,8 @@
 		};
 
 		peri0_group0_16bit_1: peri0_group0_16bit_1 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			peri-group = [00 00]; /* inst#, group# */
 			div-type = <DIV_16_BIT>;
 			channel = <1>;
@@ -251,8 +251,8 @@
 		};
 
 		peri0_group0_16bit_2: peri0_group0_16bit_2 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			peri-group = [00 00]; /* inst#, group# */
 			div-type = <DIV_16_BIT>;
 			channel = <2>;
@@ -261,8 +261,8 @@
 		};
 
 		peri0_group0_16bit_3: peri0_group0_16bit_3 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			peri-group = [00 00]; /* inst#, group# */
 			div-type = <DIV_16_BIT>;
 			channel = <3>;
@@ -271,8 +271,8 @@
 		};
 
 		peri0_group0_16bit_4: peri0_group0_16bit_4 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			peri-group = [00 00]; /* inst#, group# */
 			div-type = <DIV_16_BIT>;
 			channel = <4>;
@@ -281,8 +281,8 @@
 		};
 
 		peri0_group0_16bit_5: peri0_group0_16bit_5 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			peri-group = [00 00]; /* inst#, group# */
 			div-type = <DIV_16_BIT>;
 			channel = <5>;
@@ -293,8 +293,8 @@
 		/* Peripheral 0, Clock Group 1 (SmartIO / HF1) */
 		/* 8-bit */
 		peri0_group1_8bit_0: peri0_group1_8bit_0 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			peri-group = [00 01]; /* inst#, group# */
 			div-type = <DIV_8_BIT>;
 			channel = <0>;
@@ -305,8 +305,8 @@
 		/* Peripheral 0, Clock Group 4 (COMM / HF2) — SCB[0:4], CANFD[0] */
 		/* 8-bit */
 		peri0_group4_8bit_0: peri0_group4_8bit_0 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			peri-group = [00 04]; /* inst#, group# */
 			div-type = <DIV_8_BIT>;
 			channel = <0>;
@@ -315,8 +315,8 @@
 		};
 
 		peri0_group4_8bit_1: peri0_group4_8bit_1 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			peri-group = [00 04]; /* inst#, group# */
 			div-type = <DIV_8_BIT>;
 			channel = <1>;
@@ -325,8 +325,8 @@
 		};
 
 		peri0_group4_8bit_2: peri0_group4_8bit_2 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			peri-group = [00 04]; /* inst#, group# */
 			div-type = <DIV_8_BIT>;
 			channel = <2>;
@@ -335,8 +335,8 @@
 		};
 
 		peri0_group4_8bit_3: peri0_group4_8bit_3 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			peri-group = [00 04]; /* inst#, group# */
 			div-type = <DIV_8_BIT>;
 			channel = <3>;
@@ -346,8 +346,8 @@
 
 		/* 16-bit */
 		peri0_group4_16bit_0: peri0_group4_16bit_0 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			peri-group = [00 04]; /* inst#, group# */
 			div-type = <DIV_16_BIT>;
 			channel = <0>;
@@ -357,8 +357,8 @@
 
 		/* 16.5-bit */
 		peri0_group4_16_5bit_0: peri0_group4_16_5bit_0 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			peri-group = [00 04]; /* inst#, group# */
 			div-type = <DIV_16_5_BIT>;
 			channel = <0>;
@@ -367,8 +367,8 @@
 		};
 
 		peri0_group4_16_5bit_1: peri0_group4_16_5bit_1 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			peri-group = [00 04]; /* inst#, group# */
 			div-type = <DIV_16_5_BIT>;
 			channel = <1>;
@@ -377,8 +377,8 @@
 		};
 
 		peri0_group4_16_5bit_2: peri0_group4_16_5bit_2 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			peri-group = [00 04]; /* inst#, group# */
 			div-type = <DIV_16_5_BIT>;
 			channel = <2>;
@@ -388,8 +388,8 @@
 
 		/* 24.5-bit */
 		peri0_group4_24_5bit_0: peri0_group4_24_5bit_0 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			peri-group = [00 04]; /* inst#, group# */
 			div-type = <DIV_24_5_BIT>;
 			channel = <0>;
@@ -400,8 +400,8 @@
 		/* Peripheral 0, Clock Group 6 (SCB[5], I3C / HF4) */
 		/* 16.5-bit */
 		peri0_group6_16_5bit_0: peri0_group6_16_5bit_0 {
-			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
+			#clock-cells = <0>;
 			peri-group = [00 06]; /* inst#, group# */
 			div-type = <DIV_16_5_BIT>;
 			channel = <0>;

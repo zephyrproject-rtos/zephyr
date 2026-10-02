@@ -13,9 +13,9 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m7";
 			reg = <0>;
+			device_type = "cpu";
 			clock-frequency = <350000000>;
 		};
 	};

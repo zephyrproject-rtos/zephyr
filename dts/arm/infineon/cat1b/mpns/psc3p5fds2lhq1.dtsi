@@ -12,9 +12,9 @@
 	flash-controller@42150000 {
 		compatible = "infineon,flash-controller";
 		reg = <0x42150000 0x10000>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		flash0: flash@2000000 {
 			compatible = "soc-nv-flash";
