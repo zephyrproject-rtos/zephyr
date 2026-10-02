@@ -152,24 +152,9 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 	status = "okay";
 
-	lsm6dsl: lsm6dsl@6a {
-		compatible = "st,lsm6dsl";
-		reg = <0x6a>;
-	};
-
-	hts221@5f {
-		compatible = "st,hts221";
-		reg = <0x5f>;
-	};
-
 	lis2mdl@1e {
 		compatible = "st,lis2mdl";
 		reg = <0x1e>;
-	};
-
-	lps22hb-press@5c {
-		compatible = "st,lps22hb-press";
-		reg = <0x5c>;
 	};
 
 	ssd1306: ssd1306@3c {
@@ -187,6 +172,21 @@
 		inversion-on;
 
 		reset-gpios = <&gpioa 8 GPIO_ACTIVE_HIGH>;
+	};
+
+	lps22hb-press@5c {
+		compatible = "st,lps22hb-press";
+		reg = <0x5c>;
+	};
+
+	hts221@5f {
+		compatible = "st,hts221";
+		reg = <0x5f>;
+	};
+
+	lsm6dsl: lsm6dsl@6a {
+		compatible = "st,lsm6dsl";
+		reg = <0x6a>;
 	};
 };
 
