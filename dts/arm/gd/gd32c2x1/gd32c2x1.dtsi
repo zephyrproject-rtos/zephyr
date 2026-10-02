@@ -55,10 +55,10 @@
 		fmc: flash-controller@40022000 {
 			compatible = "gd,gd32-flash-controller";
 			reg = <0x40022000 0x400>;
+			ranges;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 
 			flash0: flash@8000000 {
 				compatible = "gd,gd32-nv-flash-v1", "soc-nv-flash";
@@ -105,10 +105,10 @@
 
 		exti: interrupt-controller@40010400 {
 			compatible = "gd,gd32-exti";
+			reg = <0x40010400 0x400>;
 			interrupt-controller;
 			#interrupt-cells = <1>;
 			#address-cells = <0>;
-			reg = <0x40010400 0x400>;
 			num-lines = <24>;
 			interrupts = <5 0>, <6 0>, <7 0>, <8 0>,
 				     <9 0>, <24 0>, <31 0>;

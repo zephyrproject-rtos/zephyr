@@ -190,8 +190,8 @@
 			clocks = <&cctl GD32_CLOCK_DAC>;
 			resets = <&rctl GD32_RESET_DAC>;
 			num-channels = <2>;
-			status = "disabled";
 			#io-channel-cells = <1>;
+			status = "disabled";
 		};
 
 		i2c0: i2c@40005400 {
@@ -239,9 +239,9 @@
 			interrupts = <35 0>;
 			clocks = <&cctl GD32_CLOCK_SPI0>;
 			resets = <&rctl GD32_RESET_SPI0>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		spi1: spi@40003800 {
@@ -250,9 +250,9 @@
 			interrupts = <36 0>;
 			clocks = <&cctl GD32_CLOCK_SPI1>;
 			resets = <&rctl GD32_RESET_SPI1>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		spi2: spi@40003c00 {
@@ -261,9 +261,9 @@
 			interrupts = <51 0>;
 			clocks = <&cctl GD32_CLOCK_SPI2>;
 			resets = <&rctl GD32_RESET_SPI2>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		adc0: adc@40012000 {
@@ -273,8 +273,8 @@
 			clocks = <&cctl GD32_CLOCK_ADC0>;
 			resets = <&rctl GD32_RESET_ADC0>;
 			channels = <16>;
-			status = "disabled";
 			#io-channel-cells = <1>;
+			status = "disabled";
 		};
 
 		adc1: adc@40012100 {
@@ -284,8 +284,8 @@
 			clocks = <&cctl GD32_CLOCK_ADC1>;
 			resets = <&rctl GD32_RESET_ADC1>;
 			channels = <16>;
-			status = "disabled";
 			#io-channel-cells = <1>;
+			status = "disabled";
 		};
 
 		adc2: adc@40012200 {
@@ -295,8 +295,8 @@
 			clocks = <&cctl GD32_CLOCK_ADC2>;
 			resets = <&rctl GD32_RESET_ADC2>;
 			channels = <16>;
-			status = "disabled";
 			#io-channel-cells = <1>;
+			status = "disabled";
 		};
 
 		syscfg: syscfg@40013800 {
@@ -307,9 +307,9 @@
 
 		exti: interrupt-controller@40013c00 {
 			compatible = "gd,gd32-exti";
+			reg = <0x40013c00 0x400>;
 			interrupt-controller;
 			#interrupt-cells = <1>;
-			reg = <0x40013c00 0x400>;
 			num-lines = <23>;
 			interrupts = <6 0>, <7 0>, <8 0>, <9 0>, <10 0>, <23 0>,
 				     <40 0>;
@@ -342,9 +342,9 @@
 
 			gpioa: gpio@40020000 {
 				compatible = "gd,gd32-gpio";
+				reg = <0x40020000 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x40020000 0x400>;
 				clocks = <&cctl GD32_CLOCK_GPIOA>;
 				resets = <&rctl GD32_RESET_GPIOA>;
 				status = "disabled";
@@ -352,9 +352,9 @@
 
 			gpiob: gpio@40020400 {
 				compatible = "gd,gd32-gpio";
+				reg = <0x40020400 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x40020400 0x400>;
 				clocks = <&cctl GD32_CLOCK_GPIOB>;
 				resets = <&rctl GD32_RESET_GPIOB>;
 				status = "disabled";
@@ -362,9 +362,9 @@
 
 			gpioc: gpio@40020800 {
 				compatible = "gd,gd32-gpio";
+				reg = <0x40020800 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x40020800 0x400>;
 				clocks = <&cctl GD32_CLOCK_GPIOC>;
 				resets = <&rctl GD32_RESET_GPIOC>;
 				status = "disabled";
@@ -372,9 +372,9 @@
 
 			gpiod: gpio@40020c00 {
 				compatible = "gd,gd32-gpio";
+				reg = <0x40020c00 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x40020c00 0x400>;
 				clocks = <&cctl GD32_CLOCK_GPIOD>;
 				resets = <&rctl GD32_RESET_GPIOD>;
 				status = "disabled";
@@ -382,9 +382,9 @@
 
 			gpioe: gpio@40021000 {
 				compatible = "gd,gd32-gpio";
+				reg = <0x40021000 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x40021000 0x400>;
 				clocks = <&cctl GD32_CLOCK_GPIOE>;
 				resets = <&rctl GD32_RESET_GPIOE>;
 				status = "disabled";
@@ -392,9 +392,9 @@
 
 			gpiof: gpio@40021400 {
 				compatible = "gd,gd32-gpio";
+				reg = <0x40021400 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x40021400 0x400>;
 				clocks = <&cctl GD32_CLOCK_GPIOF>;
 				resets = <&rctl GD32_RESET_GPIOF>;
 				status = "disabled";
@@ -402,9 +402,9 @@
 
 			gpiog: gpio@40021800 {
 				compatible = "gd,gd32-gpio";
+				reg = <0x40021800 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x40021800 0x400>;
 				clocks = <&cctl GD32_CLOCK_GPIOG>;
 				resets = <&rctl GD32_RESET_GPIOG>;
 				status = "disabled";
@@ -412,9 +412,9 @@
 
 			gpioh: gpio@40021c00 {
 				compatible = "gd,gd32-gpio";
+				reg = <0x40021c00 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x40021c00 0x400>;
 				clocks = <&cctl GD32_CLOCK_GPIOH>;
 				resets = <&rctl GD32_RESET_GPIOH>;
 				status = "disabled";
@@ -422,9 +422,9 @@
 
 			gpioi: gpio@40022000 {
 				compatible = "gd,gd32-gpio";
+				reg = <0x40022000 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x40022000 0x400>;
 				clocks = <&cctl GD32_CLOCK_GPIOI>;
 				resets = <&rctl GD32_RESET_GPIOI>;
 				status = "disabled";
@@ -444,8 +444,8 @@
 
 			pwm {
 				compatible = "gd,gd32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 		};
 
@@ -462,8 +462,8 @@
 
 			pwm {
 				compatible = "gd,gd32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 		};
 
@@ -479,8 +479,8 @@
 
 			pwm {
 				compatible = "gd,gd32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 		};
 
@@ -496,8 +496,8 @@
 
 			pwm {
 				compatible = "gd,gd32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 		};
 
@@ -514,8 +514,8 @@
 
 			pwm {
 				compatible = "gd,gd32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 		};
 
@@ -554,8 +554,8 @@
 
 			pwm {
 				compatible = "gd,gd32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 		};
 
@@ -571,8 +571,8 @@
 
 			pwm {
 				compatible = "gd,gd32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 		};
 
@@ -588,8 +588,8 @@
 
 			pwm {
 				compatible = "gd,gd32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 		};
 
@@ -605,8 +605,8 @@
 
 			pwm {
 				compatible = "gd,gd32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 		};
 
@@ -622,8 +622,8 @@
 
 			pwm {
 				compatible = "gd,gd32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 		};
 
@@ -639,8 +639,8 @@
 
 			pwm {
 				compatible = "gd,gd32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 		};
 
@@ -656,8 +656,8 @@
 
 			pwm {
 				compatible = "gd,gd32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 		};
 
@@ -669,8 +669,8 @@
 			clocks = <&cctl GD32_CLOCK_DMA0>;
 			resets = <&rctl GD32_RESET_DMA0>;
 			dma-channels = <8>;
-			gd,mem2mem;
 			#dma-cells = <4>;
+			gd,mem2mem;
 			status = "disabled";
 		};
 
@@ -682,8 +682,8 @@
 			clocks = <&cctl GD32_CLOCK_DMA1>;
 			resets = <&rctl GD32_RESET_DMA1>;
 			dma-channels = <8>;
-			gd,mem2mem;
 			#dma-cells = <4>;
+			gd,mem2mem;
 			status = "disabled";
 		};
 	};
