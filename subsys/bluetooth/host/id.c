@@ -415,7 +415,7 @@ static int adv_rpa_get(struct bt_le_ext_adv *adv, bt_addr_t *rpa)
 }
 #endif /* defined(CONFIG_BT_RPA_SHARING) */
 
-int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv)
+int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv, uint32_t options)
 {
 	bt_addr_t rpa;
 	int err;
@@ -425,7 +425,7 @@ int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
-	    (adv->options & BT_LE_ADV_OPT_USE_NRPA)) {
+	    (options & BT_LE_ADV_OPT_USE_NRPA)) {
 		bt_addr_le_t addr;
 
 		err = bt_addr_le_create_nrpa(&addr);
@@ -526,10 +526,12 @@ int bt_id_set_private_addr(uint8_t id)
 	return 0;
 }
 
-int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv)
+int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv, uint32_t options)
 {
 	bt_addr_t nrpa;
 	int err;
+
+	ARG_UNUSED(options);
 
 	if (adv == NULL) {
 		return -EINVAL;
@@ -598,7 +600,7 @@ static void adv_enable_rpa(struct bt_le_ext_adv *adv, void *data)
 	if (atomic_test_and_clear_bit(adv->flags, BT_ADV_RPA_UPDATE)) {
 		int err;
 
-		err = bt_id_set_adv_private_addr(adv);
+		err = bt_id_set_adv_private_addr(adv, adv->options);
 		if (err) {
 			LOG_WRN("Failed to update advertiser RPA address (%d)", err);
 		}
@@ -2083,7 +2085,7 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 			return -EINVAL;
 		}
 
-		err = bt_id_set_adv_private_addr(adv);
+		err = bt_id_set_adv_private_addr(adv, options);
 		if (err) {
 			return err;
 		}
@@ -2100,7 +2102,7 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 
 		if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
 		    !(options & BT_LE_ADV_OPT_USE_IDENTITY)) {
-			err = bt_id_set_adv_private_addr(adv);
+			err = bt_id_set_adv_private_addr(adv, options);
 			if (err) {
 				return err;
 			}
@@ -2172,7 +2174,7 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 			 */
 			if (!IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY) ||
 			    !dev_scanning) {
-				err = bt_id_set_adv_private_addr(adv);
+				err = bt_id_set_adv_private_addr(adv, options);
 				*own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
 			} else {
 				if (id_addr->type == BT_ADDR_LE_RANDOM) {
@@ -2186,11 +2188,11 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 				bt_le_scan_set_enable(BT_HCI_LE_SCAN_ENABLE);
 			}
 #else
-			err = bt_id_set_adv_private_addr(adv);
+			err = bt_id_set_adv_private_addr(adv, options);
 			*own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
 #endif /* defined(CONFIG_BT_OBSERVER) */
 		} else {
-			err = bt_id_set_adv_private_addr(adv);
+			err = bt_id_set_adv_private_addr(adv, options);
 			*own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
 		}
 
