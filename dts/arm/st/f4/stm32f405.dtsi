@@ -24,25 +24,25 @@
 
 			gpiof: gpio@40021400 {
 				compatible = "st,stm32-gpio";
+				reg = <0x40021400 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x40021400 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB1, 5)>;
 			};
 
 			gpiog: gpio@40021800 {
 				compatible = "st,stm32-gpio";
+				reg = <0x40021800 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x40021800 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB1, 6)>;
 			};
 
 			gpioi: gpio@40022000 {
 				compatible = "st,stm32-gpio";
+				reg = <0x40022000 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x40022000 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB1, 8)>;
 			};
 		};
@@ -121,8 +121,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -150,8 +150,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -173,8 +173,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -196,8 +196,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -280,8 +280,8 @@
 			compatible = "st,stm32-dac";
 			reg = <0x40007400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 29)>;
-			status = "disabled";
 			#io-channel-cells = <1>;
+			status = "disabled";
 		};
 	};
 

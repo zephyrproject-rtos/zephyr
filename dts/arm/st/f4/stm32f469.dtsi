@@ -10,8 +10,8 @@
 / {
 	clocks {
 		clk48: clk48 {
-			#clock-cells = <0>;
 			compatible = "st,stm32-clock-mux";
+			#clock-cells = <0>;
 			clocks = <&rcc STM32_SRC_PLL_Q CK48M_SEL(0)>;
 			status = "disabled";
 		};

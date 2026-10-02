@@ -22,9 +22,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m33";
 			reg = <0>;
+			device_type = "cpu";
 		};
 	};
 
@@ -41,9 +41,9 @@
 	soc {
 		rcc: rcc@44200000 {
 			compatible = "st,stm32mp2-rcc";
+			reg = <0x44200000 DT_SIZE_K(64)>;
 			clocks-controller;
 			#clock-cells = <2>;
-			reg = <0x44200000 DT_SIZE_K(64)>;
 
 			rctl: reset-controller {
 				compatible = "st,stm32-rcc-rctl";
@@ -59,93 +59,93 @@
 
 		pinctrl: pin-controller@44240000 {
 			compatible = "st,stm32-pinctrl";
-			#address-cells = <1>;
-			#size-cells = <1>;
 			reg = <0x44240000 0xb0000>;
 			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
 
 			gpioa: gpio@44240000 {
 				compatible = "st,stm32mp2-gpio";
+				reg = <0x44240000 DT_SIZE_K(1)>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x44240000 DT_SIZE_K(1)>;
 			};
 
 			gpiob: gpio@44250000 {
 				compatible = "st,stm32mp2-gpio";
+				reg = <0x44250000 DT_SIZE_K(1)>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x44250000 DT_SIZE_K(1)>;
 			};
 
 			gpioc: gpio@44260000 {
 				compatible = "st,stm32mp2-gpio";
+				reg = <0x44260000 DT_SIZE_K(1)>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x44260000 DT_SIZE_K(1)>;
 			};
 
 			gpiod: gpio@44270000 {
 				compatible = "st,stm32mp2-gpio";
+				reg = <0x44270000 DT_SIZE_K(1)>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x44270000 DT_SIZE_K(1)>;
 			};
 
 			gpioe: gpio@44280000 {
 				compatible = "st,stm32mp2-gpio";
+				reg = <0x44280000 DT_SIZE_K(1)>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x44280000 DT_SIZE_K(1)>;
 			};
 
 			gpiof: gpio@44290000 {
 				compatible = "st,stm32mp2-gpio";
+				reg = <0x44290000 DT_SIZE_K(1)>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x44290000 DT_SIZE_K(1)>;
 			};
 
 			gpiog: gpio@442a0000 {
 				compatible = "st,stm32mp2-gpio";
+				reg = <0x442a0000 DT_SIZE_K(1)>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x442a0000 DT_SIZE_K(1)>;
 			};
 
 			gpioh: gpio@442b0000 {
 				compatible = "st,stm32mp2-gpio";
+				reg = <0x442b0000 DT_SIZE_K(1)>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x442b0000 DT_SIZE_K(1)>;
 			};
 
 			gpioi: gpio@442c0000 {
 				compatible = "st,stm32mp2-gpio";
+				reg = <0x442c0000 DT_SIZE_K(1)>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x442c0000 DT_SIZE_K(1)>;
 			};
 
 			gpioj: gpio@442d0000 {
 				compatible = "st,stm32mp2-gpio";
+				reg = <0x442d0000 DT_SIZE_K(1)>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x442d0000 DT_SIZE_K(1)>;
 			};
 
 			gpiok: gpio@442e0000 {
 				compatible = "st,stm32mp2-gpio";
+				reg = <0x442e0000 DT_SIZE_K(1)>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x442e0000 DT_SIZE_K(1)>;
 			};
 
 			gpioz: gpio@46200000 {
 				compatible = "st,stm32mp2-gpio";
+				reg = <0x46200000 DT_SIZE_K(1)>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x46200000 DT_SIZE_K(1)>;
 			};
 		};
 
@@ -173,9 +173,9 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(SPI1, STM32_CLK)>;
-			st,spi-data-width = "full-4-to-32-bit";
 			fifo-size = <16>;
 			fifo-max-transfer-size = <65535>;
+			st,spi-data-width = "full-4-to-32-bit";
 			status = "disabled";
 		};
 
@@ -185,9 +185,9 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(SPI2, STM32_CLK)>;
-			st,spi-data-width = "full-4-to-32-bit";
 			fifo-size = <16>;
 			fifo-max-transfer-size = <65535>;
+			st,spi-data-width = "full-4-to-32-bit";
 			status = "disabled";
 		};
 
@@ -197,9 +197,9 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(SPI3, STM32_CLK)>;
-			st,spi-data-width = "full-4-to-32-bit";
 			fifo-size = <16>;
 			fifo-max-transfer-size = <65535>;
+			st,spi-data-width = "full-4-to-32-bit";
 			status = "disabled";
 		};
 
@@ -209,9 +209,9 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(SPI4, STM32_CLK)>;
-			st,spi-data-width = "full-4-to-16-bit";
 			fifo-size = <8>;
 			fifo-max-transfer-size = <65535>;
+			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
 
@@ -221,9 +221,9 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(SPI5, STM32_CLK)>;
-			st,spi-data-width = "full-4-to-16-bit";
 			fifo-size = <8>;
 			fifo-max-transfer-size = <65535>;
+			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
 
@@ -330,14 +330,14 @@
 
 	clocks {
 		clk_hse: clk-hse {
-			#clock-cells = <0>;
 			compatible = "fixed-clock";
+			#clock-cells = <0>;
 			status = "disabled";
 		};
 
 		clk_hsi: clk-hsi {
-			#clock-cells = <0>;
 			compatible = "fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(64)>;
 			status = "disabled";
 		};
