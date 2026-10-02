@@ -29,8 +29,8 @@ wdt011: &cpurad_wdt011 {};
 / {
 	soc {
 		compatible = "simple-bus";
-		interrupt-parent = <&cpurad_nvic>;
 		ranges;
+		interrupt-parent = <&cpurad_nvic>;
 	};
 };
 
