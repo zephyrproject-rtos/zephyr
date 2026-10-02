@@ -62,7 +62,7 @@ where:
     :align: center
 
     +-------------+--------------------------------------------------------------+
-    | "transport" | :c:enum:`smp_transport_type` contains the tranport type for  |
+    | "transport" | :c:enum:`smp_transport_type` contains the transport type for |
     |             | which to bridge (connect) from the transport to.             |
     +-------------+--------------------------------------------------------------+
     | "mode"      | contains the configuration mode of the transport to use, may |
@@ -176,7 +176,7 @@ where:
     :align: center
 
     +-------------+----------------------------------------------------------------+
-    | "transport" | :c:enum:`smp_transport_type` contains the tranport type for    |
+    | "transport" | :c:enum:`smp_transport_type` contains the transport type for   |
     |             | which to disconnect the bridge from, this must not be provided |
     |             | if ``all`` is provided.                                        |
     +-------------+----------------------------------------------------------------+
@@ -457,10 +457,10 @@ where:
 .. table::
     :align: center
 
-    +-------------+-------------------------------------------------------------+
-    | "transport" | :c:enum:`smp_transport_type` contains the tranport type for |
-    |             | which to get details on.                                    |
-    +-------------+-------------------------------------------------------------+
+    +-------------+--------------------------------------------------------------+
+    | "transport" | :c:enum:`smp_transport_type` contains the transport type for |
+    |             | which to get details on.                                     |
+    +-------------+--------------------------------------------------------------+
 
 
 Details on transport modes response
@@ -574,13 +574,13 @@ where:
 .. table::
     :align: center
 
-    +-------------+-------------------------------------------------------------+
-    | "transport" | :c:enum:`smp_transport_type` contains the tranport type for |
-    |             | which to get configuration information for.                 |
-    +-------------+-------------------------------------------------------------+
-    | "mode"      | contains the configuration mode of the tranport type which  |
-    |             | to get configuration information for.                       |
-    +-------------+-------------------------------------------------------------+
+    +-------------+--------------------------------------------------------------+
+    | "transport" | :c:enum:`smp_transport_type` contains the transport type for |
+    |             | which to get configuration information for.                  |
+    +-------------+--------------------------------------------------------------+
+    | "mode"      | contains the configuration mode of the transport type which  |
+    |             | to get configuration information for.                        |
+    +-------------+--------------------------------------------------------------+
 
 Details on transport configuration response
 ===========================================
