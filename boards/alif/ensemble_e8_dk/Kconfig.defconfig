@@ -8,4 +8,7 @@ if BOARD_ENSEMBLE_E8_DK
 configdefault I2C_DW_CLOCK_SPEED
 	default 100
 
+configdefault ETH_DRIVER
+	default y if $(dt_nodelabel_enabled,eth)
+
 endif # BOARD_ENSEMBLE_E8_DK
