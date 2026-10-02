@@ -423,9 +423,14 @@ static void eth_nxp_enet_rx_thread(struct k_work *work)
 		return;
 	}
 
+	/*
+	 * Keep reading after a dropped frame (-EIO) too. It has been consumed,
+	 * and the ISR already cleared the RX flags, so the frames still in the
+	 * ring would not raise another interrupt.
+	 */
 	do {
 		ret = eth_nxp_enet_rx(dev);
-	} while (ret == 1);
+	} while (ret != 0);
 
 	ENET_EnableInterrupts(data->base, kENET_RxFrameInterrupt | kENET_RxBufferInterrupt);
 }
