@@ -85,7 +85,7 @@ const struct device *siwx91x_clock_control_get_device(uint32_t clkid)
 	return siwx91x_clk_dev_table[clkid];
 }
 
-/* TODO: Remove theses functions when the NWP driver is fully integrated with zephyr */
+/* TODO: Remove these functions when the NWP driver is fully integrated with zephyr */
 void siwx91x_clock_request_xtal_to_nwp(void)
 {
 	__maybe_unused const struct device *nwp_dev = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(nwp));

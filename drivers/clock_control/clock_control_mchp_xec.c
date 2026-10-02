@@ -28,7 +28,7 @@
  * Driver Init:
  *   Do PINCTRL
  *   Check selections matches current HW config
- *   If match return succes
+ *   If match return success
  *   Else
  *     Configure both to Silicon OSC
  *     Application can request change with optional callback
@@ -446,7 +446,7 @@ static void connect_periph_32k_source(const struct device *dev, uint8_t periph_s
 /* When PLL source is changed:
  * 1. HW switches to ring oscillator
  * 2. HW restarts PLL with new source.
- * 3. When PLL lock becomes true HW swithes from ring oscillator to PLL.
+ * 3. When PLL lock becomes true HW switches from ring oscillator to PLL.
  * During 1 & 2 the CPU/PCR clock source is the ring oscillator.
  * This means the clock monitor measurements will not be accurate until PLL is locked.
  */
