@@ -36,6 +36,11 @@ def test_chosen_reference_reported(make_edt):
     assert any("chosen" in line and "'zephyr,console'" in line for line in diagnose(edt))
 
 
+def test_alias_reference_reported(make_edt):
+    edt, _ = make_edt(DTS_DISABLED_FULL)
+    assert any("aliases" in line and "'my-foo'" in line for line in diagnose(edt))
+
+
 def test_remediation_hint(make_edt):
     edt, _ = make_edt(DTS_DISABLED_FULL)
     assert any("setting its 'status' property to 'okay'" in line for line in diagnose(edt))
