@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/f4/stm32f427vi.dtsi>
 #include <st/f4/stm32f427v(g-i)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -48,20 +49,20 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <0 0 &gpioa 6 0>,	/* AN  */
-			   <1 0 &gpioa 2 0>,	/* RST */
-			   <2 0 &gpioa 3 0>,	/* CS   */
-			   <3 0 &gpiob 3 0>,	/* SCK  */
-			   <4 0 &gpiob 4 0>,	/* MISO */
-			   <5 0 &gpiob 5 0>,	/* MOSI */
+		gpio-map = <MIKROBUS_AN 0 &gpioa 6 0>,
+			   <MIKROBUS_RST 0 &gpioa 2 0>,
+			   <MIKROBUS_CS 0 &gpioa 3 0>,
+			   <MIKROBUS_SCK 0 &gpiob 3 0>,
+			   <MIKROBUS_MISO 0 &gpiob 4 0>,
+			   <MIKROBUS_MOSI 0 &gpiob 5 0>,
 			   /* +3.3V */
 			   /* GND */
-			   <6 0 &gpioe 9 0>,	/* PWM  */
-			   <7 0 &gpioa 1 0>,	/* INT  */
-			   <8 0 &gpiod 9 0>,	/* RX   */
-			   <9 0 &gpiod 8 0>,	/* TX   */
-			   <10 0 &gpiob 6 0>,	/* SCL  */
-			   <11 0 &gpiob 7 0>;	/* SDA  */
+			   <MIKROBUS_PWM 0 &gpioe 9 0>,
+			   <MIKROBUS_INT 0 &gpioa 1 0>,
+			   <MIKROBUS_RX 0 &gpiod 9 0>,
+			   <MIKROBUS_TX 0 &gpiod 8 0>,
+			   <MIKROBUS_SCL 0 &gpiob 6 0>,
+			   <MIKROBUS_SDA 0 &gpiob 7 0>;
 		/* +5V */
 		/* GND */
 	};
@@ -71,20 +72,20 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <0 0 &gpioa 4 0>,	/* AN  */
-			   <1 0 &gpioe 1 0>,	/* RST */
-			   <2 0 &gpioe 0 0>,	/* CS   */
-			   <3 0 &gpiob 3 0>,	/* SCK  */
-			   <4 0 &gpiob 4 0>,	/* MISO */
-			   <5 0 &gpiob 5 0>,	/* MOSI */
+		gpio-map = <MIKROBUS_AN 0 &gpioa 4 0>,
+			   <MIKROBUS_RST 0 &gpioe 1 0>,
+			   <MIKROBUS_CS 0 &gpioe 0 0>,
+			   <MIKROBUS_SCK 0 &gpiob 3 0>,
+			   <MIKROBUS_MISO 0 &gpiob 4 0>,
+			   <MIKROBUS_MOSI 0 &gpiob 5 0>,
 			   /* +3.3V */
 			   /* GND */
-			   <6 0 &gpiod 15 0>,	/* PWM  */
-			   <7 0 &gpiob 9 0>,	/* INT  */
-			   <8 0 &gpiod 6 0>,	/* RX   */
-			   <9 0 &gpiod 5 0>,	/* TX   */
-			   <10 0 &gpiob 6 0>,	/* SCL  */
-			   <11 0 &gpiob 7 0>;	/* SDA  */
+			   <MIKROBUS_PWM 0 &gpiod 15 0>,
+			   <MIKROBUS_INT 0 &gpiob 9 0>,
+			   <MIKROBUS_RX 0 &gpiod 6 0>,
+			   <MIKROBUS_TX 0 &gpiod 5 0>,
+			   <MIKROBUS_SCL 0 &gpiob 6 0>,
+			   <MIKROBUS_SDA 0 &gpiob 7 0>;
 		/* +5V */
 		/* GND */
 	};
@@ -94,20 +95,20 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <0 0 &gpioa 7 0>,	/* AN  */
-			   <1 0 &gpiod 8 0>,	/* RST */
-			   <2 0 &gpiod 11 0>,	/* CS   */
-			   <3 0 &gpioc 10 0>,	/* SCK  */
-			   <4 0 &gpioc 11 0>,	/* MISO */
-			   <5 0 &gpioc 12 0>,	/* MOSI */
+		gpio-map = <MIKROBUS_AN 0 &gpioa 7 0>,
+			   <MIKROBUS_RST 0 &gpiod 8 0>,
+			   <MIKROBUS_CS 0 &gpiod 11 0>,
+			   <MIKROBUS_SCK 0 &gpioc 10 0>,
+			   <MIKROBUS_MISO 0 &gpioc 11 0>,
+			   <MIKROBUS_MOSI 0 &gpioc 12 0>,
 			   /* +3.3V */
 			   /* GND */
-			   <6 0 &gpiod 13 0>,	/* PWM  */
-			   <7 0 &gpioc 8 0>,	/* INT  */
-			   <8 0 &gpioc 7 0>,	/* RX   */
-			   <9 0 &gpioc 6 0>,	/* TX   */
-			   <10 0 &gpiob 6 0>,	/* SCL  */
-			   <11 0 &gpiob 7 0>;	/* SDA  */
+			   <MIKROBUS_PWM 0 &gpiod 13 0>,
+			   <MIKROBUS_INT 0 &gpioc 8 0>,
+			   <MIKROBUS_RX 0 &gpioc 7 0>,
+			   <MIKROBUS_TX 0 &gpioc 6 0>,
+			   <MIKROBUS_SCL 0 &gpiob 6 0>,
+			   <MIKROBUS_SDA 0 &gpiob 7 0>;
 		/* +5V */
 		/* GND */
 	};
@@ -117,20 +118,20 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <0 0 &gpioa 5 0>,	/* AN  */
-			   <1 0 &gpiod 0 0>,	/* RST */
-			   <2 0 &gpiod 1 0>,	/* CS   */
-			   <3 0 &gpioc 10 0>,	/* SCK  */
-			   <4 0 &gpioc 11 0>,	/* MISO */
-			   <5 0 &gpioc 12 0>,	/* MOSI */
+		gpio-map = <MIKROBUS_AN 0 &gpioa 5 0>,
+			   <MIKROBUS_RST 0 &gpiod 0 0>,
+			   <MIKROBUS_CS 0 &gpiod 1 0>,
+			   <MIKROBUS_SCK 0 &gpioc 10 0>,
+			   <MIKROBUS_MISO 0 &gpioc 11 0>,
+			   <MIKROBUS_MOSI 0 &gpioc 12 0>,
 			   /* +3.3V */
 			   /* GND */
-			   <6 0 &gpiod 14 0>,	/* PWM  */
-			   <7 0 &gpioa 14 0>,	/* INT  */
-			   <8 0 &gpioa 10 0>,	/* RX   */
-			   <9 0 &gpioa 9 0>,	/* TX   */
-			   <10 0 &gpiob 6 0>,	/* SCL  */
-			   <11 0 &gpiob 7 0>;	/* SDA  */
+			   <MIKROBUS_PWM 0 &gpiod 14 0>,
+			   <MIKROBUS_INT 0 &gpioa 14 0>,
+			   <MIKROBUS_RX 0 &gpioa 10 0>,
+			   <MIKROBUS_TX 0 &gpioa 9 0>,
+			   <MIKROBUS_SCL 0 &gpiob 6 0>,
+			   <MIKROBUS_SDA 0 &gpiob 7 0>;
 		/* +5V */
 		/* GND */
 	};
