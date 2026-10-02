@@ -264,14 +264,18 @@ static void host_kbc_ibf_isr(const void *arg)
 
 	/* KBC Input Buffer Full event */
 	kbc_evt->evt = HOST_KBC_EVT_IBF;
-	/* The data in KBC Input Buffer */
-	kbc_evt->data = inst_kbc->HIKMDI;
 	/*
 	 * Indicates if the host sent a command or data.
 	 * 0 = data
 	 * 1 = Command.
+	 *
+	 * This has to be sampled before reading HIKMDI: reading the input
+	 * buffer clears IBF, at which point the host is free to write the
+	 * next byte and A2 would reflect that write instead of this one.
 	 */
 	kbc_evt->type = IS_BIT_SET(inst_kbc->HIKMST, NPCX_HIKMST_A2);
+	/* The data in KBC Input Buffer */
+	kbc_evt->data = inst_kbc->HIKMDI;
 
 	LOG_DBG("%s: kbc data 0x%02x", __func__, evt.evt_data);
 	espi_send_callbacks(host_sub_data.callbacks, host_sub_data.host_bus_dev,
