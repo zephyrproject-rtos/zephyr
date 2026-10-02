@@ -53,6 +53,67 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		debug: debug-controller@0 {
+			compatible = "sifive,debug-013", "riscv,debug-013";
+			reg = <0x0 0x1000>;
+			interrupts-extended = <&hlic 65535>;
+			reg-names = "control";
+		};
+
+		modeselect: rom@1000 {
+			compatible = "sifive,modeselect0";
+			reg = <0x1000 0x1000>;
+			reg-names = "mem";
+		};
+
+		error-device@3000 {
+			compatible = "sifive,error0";
+			reg = <0x3000 0x1000>;
+			reg-names = "mem";
+		};
+
+		teststatus: teststatus@4000 {
+			compatible = "sifive,test0";
+			reg = <0x4000 0x1000>;
+			reg-names = "control";
+		};
+
+		maskrom: rom@10000 {
+			compatible = "sifive,maskrom0";
+			reg = <0x10000 0x2000>;
+			reg-names = "mem";
+		};
+
+		clint: clint@2000000 {
+			compatible = "sifive,clint0";
+			reg = <0x2000000 0x10000>;
+			interrupts-extended = <&hlic 3 &hlic 7>;
+		};
+
+		mtimer: timer@200bff8 {
+			compatible = "riscv,machine-timer";
+			reg = <0x200bff8 0x8 0x2004000 0x8>;
+			interrupts-extended = <&hlic 7>;
+			reg-names = "mtime", "mtimecmp";
+		};
+
+		itim: itim@8000000 {
+			compatible = "sifive,itim0";
+			reg = <0x8000000 0x2000>;
+			reg-names = "mem";
+		};
+
+		plic: interrupt-controller@c000000 {
+			compatible = "sifive,plic-1.0.0";
+			reg = <0x0c000000 0x04000000>;
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			interrupts-extended = <&hlic 11>;
+			riscv,max-priority = <7>;
+			riscv,ndev = <52>;
+		};
+
 		wdog0: wdog@10000000 {
 			compatible = "sifive,wdt";
 			reg = <0x10000000 0x40>;
@@ -69,36 +130,16 @@
 			reg-names = "control";
 		};
 
-		clint: clint@2000000 {
-			compatible = "sifive,clint0";
-			reg = <0x2000000 0x10000>;
-			interrupts-extended = <&hlic 3 &hlic 7>;
-		};
-
-		mtimer: timer@200bff8 {
-			compatible = "riscv,machine-timer";
-			reg = <0x200bff8 0x8 0x2004000 0x8>;
-			interrupts-extended = <&hlic 7>;
-			reg-names = "mtime", "mtimecmp";
-		};
-
-		debug: debug-controller@0 {
-			compatible = "sifive,debug-013", "riscv,debug-013";
-			reg = <0x0 0x1000>;
-			interrupts-extended = <&hlic 65535>;
+		prci: prci@10008000 {
+			compatible = "sifive,freedome300prci0";
+			reg = <0x10008000 0x1000>;
 			reg-names = "control";
 		};
 
-		dtim: dtim@80000000 {
-			compatible = "sifive,dtim0";
-			reg = <0x80000000 0x4000>;
-			reg-names = "mem";
-		};
-
-		error-device@3000 {
-			compatible = "sifive,error0";
-			reg = <0x3000 0x1000>;
-			reg-names = "mem";
+		otp: otp@10010000 {
+			compatible = "sifive,otp0";
+			reg = <0x10010000 0x1000 0x20000 0x2000>;
+			reg-names = "control", "mem";
 		};
 
 		gpio0: gpio@10012000 {
@@ -128,105 +169,11 @@
 			};
 		};
 
-		i2c0: i2c@10016000 {
-			compatible = "sifive,i2c0";
-			reg = <0x10016000 0x1000>;
-			interrupt-parent = <&plic>;
-			interrupts = <52 1>;
-			reg-names = "control";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		plic: interrupt-controller@c000000 {
-			compatible = "sifive,plic-1.0.0";
-			reg = <0x0c000000 0x04000000>;
-			#address-cells = <0>;
-			#interrupt-cells = <2>;
-			interrupt-controller;
-			interrupts-extended = <&hlic 11>;
-			riscv,max-priority = <7>;
-			riscv,ndev = <52>;
-		};
-
-		itim: itim@8000000 {
-			compatible = "sifive,itim0";
-			reg = <0x8000000 0x2000>;
-			reg-names = "mem";
-		};
-
-		otp: otp@10010000 {
-			compatible = "sifive,otp0";
-			reg = <0x10010000 0x1000 0x20000 0x2000>;
-			reg-names = "control", "mem";
-		};
-
-		prci: prci@10008000 {
-			compatible = "sifive,freedome300prci0";
-			reg = <0x10008000 0x1000>;
-			reg-names = "control";
-		};
-
-		pwm0: pwm@10015000 {
-			compatible = "sifive,pwm0";
-			reg = <0x10015000 0x1000>;
-			interrupt-parent = <&plic>;
-			interrupts = <40 1>, <41 1>, <42 1>, <43 1>;
-			reg-names = "control";
-			#pwm-cells = <2>;
-			sifive,compare-width = <8>;
-			status = "disabled";
-		};
-
-		pwm1: pwm@10025000 {
-			compatible = "sifive,pwm0";
-			reg = <0x10025000 0x1000>;
-			interrupt-parent = <&plic>;
-			interrupts = <44 1>, <45 1>, <46 1>, <47 1>;
-			reg-names = "control";
-			#pwm-cells = <2>;
-			sifive,compare-width = <16>;
-			status = "disabled";
-		};
-
-		pwm2: pwm@10035000 {
-			compatible = "sifive,pwm0";
-			reg = <0x10035000 0x1000>;
-			interrupt-parent = <&plic>;
-			interrupts = <48 1>, <49 1>, <50 1>, <51 1>;
-			reg-names = "control";
-			#pwm-cells = <2>;
-			sifive,compare-width = <16>;
-			status = "disabled";
-		};
-
-		modeselect: rom@1000 {
-			compatible = "sifive,modeselect0";
-			reg = <0x1000 0x1000>;
-			reg-names = "mem";
-		};
-
-		maskrom: rom@10000 {
-			compatible = "sifive,maskrom0";
-			reg = <0x10000 0x2000>;
-			reg-names = "mem";
-		};
-
 		uart0: serial@10013000 {
 			compatible = "sifive,uart0";
 			reg = <0x10013000 0x1000>;
 			interrupt-parent = <&plic>;
 			interrupts = <3 1>;
-			reg-names = "control";
-			status = "disabled";
-		};
-
-		uart1: serial@10023000 {
-			compatible = "sifive,uart0";
-			reg = <0x10023000 0x1000>;
-			interrupt-parent = <&plic>;
-			interrupts = <4 1>;
 			reg-names = "control";
 			status = "disabled";
 		};
@@ -242,6 +189,37 @@
 			status = "disabled";
 		};
 
+		pwm0: pwm@10015000 {
+			compatible = "sifive,pwm0";
+			reg = <0x10015000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <40 1>, <41 1>, <42 1>, <43 1>;
+			reg-names = "control";
+			#pwm-cells = <2>;
+			sifive,compare-width = <8>;
+			status = "disabled";
+		};
+
+		i2c0: i2c@10016000 {
+			compatible = "sifive,i2c0";
+			reg = <0x10016000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <52 1>;
+			reg-names = "control";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		uart1: serial@10023000 {
+			compatible = "sifive,uart0";
+			reg = <0x10023000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <4 1>;
+			reg-names = "control";
+			status = "disabled";
+		};
+
 		spi1: spi@10024000 {
 			compatible = "sifive,spi0";
 			reg = <0x10024000 0x1000>;
@@ -250,6 +228,17 @@
 			reg-names = "control";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		pwm1: pwm@10025000 {
+			compatible = "sifive,pwm0";
+			reg = <0x10025000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <44 1>, <45 1>, <46 1>, <47 1>;
+			reg-names = "control";
+			#pwm-cells = <2>;
+			sifive,compare-width = <16>;
 			status = "disabled";
 		};
 
@@ -264,10 +253,21 @@
 			status = "disabled";
 		};
 
-		teststatus: teststatus@4000 {
-			compatible = "sifive,test0";
-			reg = <0x4000 0x1000>;
+		pwm2: pwm@10035000 {
+			compatible = "sifive,pwm0";
+			reg = <0x10035000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <48 1>, <49 1>, <50 1>, <51 1>;
 			reg-names = "control";
+			#pwm-cells = <2>;
+			sifive,compare-width = <16>;
+			status = "disabled";
+		};
+
+		dtim: dtim@80000000 {
+			compatible = "sifive,dtim0";
+			reg = <0x80000000 0x4000>;
+			reg-names = "mem";
 		};
 	};
 };
