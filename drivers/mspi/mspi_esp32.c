@@ -132,7 +132,11 @@ static int cs_gpio_set(const struct mspi_esp32_data *data, const struct mspi_esp
 	bool pin_high =
 		(data->mspi_dev_config.ce_polarity == MSPI_CE_ACTIVE_HIGH) ? active : !active;
 
-	return gpio_pin_set_dt(cs, pin_high ? 1 : 0);
+	/*
+	 * ce_polarity already describes the physical level. Do not invert it
+	 * a second time through GPIO_ACTIVE_LOW in the GPIO specifier.
+	 */
+	return gpio_pin_set_raw(cs->port, cs->pin, pin_high);
 }
 
 /* --------------------------------------------------------------------------
@@ -1009,6 +1013,10 @@ static int init_dma(const struct device *dev)
 #else /* !SOC_GDMA_SUPPORTED — integrated DMA (ESP32, ESP32-S2) */
 
 	LOG_DBG("%s: integrated DMA path, enabling DMA clock", __func__);
+	if (config->dma_clk_src < 0) {
+		LOG_ERR("dma-clk is required when integrated DMA is enabled");
+		return -EINVAL;
+	}
 	if (clock_control_on(config->clock_dev, (clock_control_subsys_t)config->dma_clk_src)) {
 		LOG_ERR("Could not enable DMA clock");
 		return -EIO;
@@ -1049,8 +1057,8 @@ static int cs_configure(const struct device *dev)
 		}
 
 		bool pin_high = (data->mspi_dev_config.ce_polarity == MSPI_CE_ACTIVE_LOW);
-		int ret = gpio_pin_configure_dt(cs, pin_high ? GPIO_OUTPUT_ACTIVE
-							     : GPIO_OUTPUT_INACTIVE);
+		int ret = gpio_pin_configure_dt(cs, pin_high ? GPIO_OUTPUT_HIGH
+							     : GPIO_OUTPUT_LOW);
 
 		if (ret < 0) {
 			return ret;
@@ -1201,9 +1209,29 @@ static int mspi_esp32_init(const struct device *dev)
  * --------------------------------------------------------------------------
  */
 
+static int mspi_esp32_get_channel_status(const struct device *dev, uint8_t ch)
+{
+	struct mspi_esp32_data *data = dev->data;
+	int ret;
+
+	/* Each controller instance exposes one logical transfer channel. */
+	if (ch != 0) {
+		return -EINVAL;
+	}
+
+	if (k_mutex_lock(&data->lock, K_NO_WAIT) != 0) {
+		return -EBUSY;
+	}
+
+	ret = data->cs_active ? -EBUSY : 0;
+	k_mutex_unlock(&data->lock);
+	return ret;
+}
+
 static DEVICE_API(mspi, mspi_esp32_api) = {
 	.config = mspi_esp32_config,
 	.dev_config = mspi_esp32_dev_config,
+	.get_channel_status = mspi_esp32_get_channel_status,
 	.transceive = mspi_esp32_transceive,
 };
 
@@ -1219,7 +1247,7 @@ static DEVICE_API(mspi, mspi_esp32_api) = {
 	.dma_buf_size_alignment = MSPI_DMA_BUF_SIZE_ALIGNMENT(inst),
 #else
 #define MSPI_DMA_CFG(inst)                                                                         \
-	.dma_clk_src = DT_INST_PROP(inst, dma_clk),                                                \
+	.dma_clk_src = DT_INST_PROP_OR(inst, dma_clk, -1), \
 	.dma_buf_size_alignment = 4,
 #endif
 
@@ -1236,6 +1264,13 @@ static DEVICE_API(mspi, mspi_esp32_api) = {
 		.ce_group = (struct gpio_dt_spec *)ce_gpios##inst,                                 \
 		.num_ce_gpios = ARRAY_SIZE(ce_gpios##inst),                                        \
 	}
+
+#define MSPI_IRQ_CFG(inst) \
+	IF_ENABLED(CONFIG_MSPI_ESP32_INTERRUPT, ( \
+		.irq_source = DT_INST_IRQ_BY_IDX(inst, 0, irq), \
+		.irq_priority = DT_INST_IRQ_BY_IDX(inst, 0, priority), \
+		.irq_flags = DT_INST_IRQ_BY_IDX(inst, 0, flags), \
+	))
 
 #define ESP32_MSPI_INIT(inst)                                                                      \
 	PINCTRL_DT_INST_DEFINE(inst);                                                              \
@@ -1254,19 +1289,17 @@ static DEVICE_API(mspi, mspi_esp32_api) = {
 		.peripheral_id = DT_INST_PROP(inst, peripheral_id),                                \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
 		.mspi_config = MSPI_CONTROLLER_CONFIG(inst),                                       \
-		.clock_dev = DEVICE_DT_GET(DT_NODELABEL(clock)),                                   \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)), \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, offset),         \
 		.clock_source = DT_ENUM_IDX_OR(DT_DRV_INST(inst), clk_src, SPI_CLK_SRC_DEFAULT),   \
 		.dma_enabled = DT_INST_PROP_OR(inst, dma_enabled, false),                          \
-		.dma_host = DT_INST_PROP(inst, dma_host),                                          \
+		.dma_host = DT_INST_PROP_OR(inst, dma_host, DT_INST_PROP(inst, peripheral_id)), \
 		MSPI_DMA_CFG(inst).line_idle_low = DT_INST_PROP_OR(inst, line_idle_low, false),    \
 		.use_iomux = DT_INST_PROP_OR(inst, use_iomux, false),                              \
 		.duty_cycle = DT_INST_PROP(inst, duty_cycle),                                      \
 		.transfer_timeout = DT_INST_PROP(inst, transfer_timeout),                          \
-		.input_delay_ns = 0,                                                               \
-		.irq_source = DT_INST_IRQ_BY_IDX(inst, 0, irq),                                    \
-		.irq_priority = DT_INST_IRQ_BY_IDX(inst, 0, priority),                             \
-		.irq_flags = DT_INST_IRQ_BY_IDX(inst, 0, flags),                                   \
+		.input_delay_ns = DT_INST_PROP(inst, input_delay_ns), \
+		MSPI_IRQ_CFG(inst) \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, mspi_esp32_init, NULL, &mspi_esp32_data_##inst,                \

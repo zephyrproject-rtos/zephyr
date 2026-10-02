@@ -43,6 +43,7 @@ properties:
     description: |
       DMA host / peripheral slot index (0-based):
         0 → SPI2, 1 → SPI3.
+      If omitted, the driver uses peripheral-id.
       On GDMA targets this selects the GDMA trigger-peripheral slot.
       On legacy ESP32/ESP32-S2 it maps to the DPORT_SPI_DMA_CHAN_SEL field.
 
@@ -82,3 +83,10 @@ properties:
     description: |
       SPI clock duty-cycle hint (0–255, 128 ≈ 50 %).
       Passed to spi_hal_cal_clock_conf().
+
+  input-delay-ns:
+    type: int
+    default: 0
+    description: |
+      Input propagation delay in nanoseconds, used for read timing
+      compensation. Zero preserves the default timing.
