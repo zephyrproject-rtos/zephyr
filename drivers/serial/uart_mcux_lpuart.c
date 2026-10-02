@@ -11,6 +11,7 @@
 	IS_ENABLED(CONFIG_UART_ASYNC_API) && IS_ENABLED(CONFIG_UART_NXP_LPUART_ASYNC_API_SUPPORT)
 
 #include <errno.h>
+#include <zephyr/cache.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/clock_control.h>
@@ -503,6 +504,11 @@ static void async_evt_rx_rdy(const struct device *dev)
 
 	/* Only send event for new data */
 	if (event.data.rx.len > 0) {
+		/*
+		 * Drop lines the CPU may have fetched while the DMA was writing. Flush
+		 * first so data sharing a cache line with the buffer is not discarded.
+		 */
+		(void)sys_cache_data_flush_and_invd_range(&buf[offset], len);
 		async_user_callback(dev, &event);
 	}
 }
@@ -872,6 +878,8 @@ static int mcux_lpuart_tx(const struct device *dev, const uint8_t *buf, size_t l
 
 	LPUART_EnableTxDMA(lpuart, false);
 
+	(void)sys_cache_data_flush_range((void *)buf, len);
+
 	data->async.tx_dma_params.buf = buf;
 	data->async.tx_dma_params.buf_len = len;
 	data->async.tx_dma_params.active_dma_block.source_address = (uint32_t)buf;
@@ -968,6 +976,9 @@ static int mcux_lpuart_rx_enable(const struct device *dev, uint8_t *buf, const s
 		return -EBUSY;
 	}
 
+	/* Keep dirty lines from being evicted over data written by the DMA */
+	(void)sys_cache_data_flush_and_invd_range(buf, len);
+
 	rx_dma_params->timeout_us = timeout_us;
 	rx_dma_params->buf = buf;
 	rx_dma_params->buf_len = len;
@@ -1006,6 +1017,7 @@ static int mcux_lpuart_rx_buf_rsp(const struct device *dev, uint8_t *buf, size_t
 	key = irq_lock();
 	assert(data->async.next_rx_buffer == NULL);
 	assert(data->async.next_rx_buffer_len == 0);
+	(void)sys_cache_data_flush_and_invd_range(buf, len);
 	data->async.next_rx_buffer = buf;
 	data->async.next_rx_buffer_len = len;
 
