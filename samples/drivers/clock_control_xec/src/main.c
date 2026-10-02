@@ -174,7 +174,7 @@ static void pcr_clock_regs(void)
 	LOG_INF("PCR 32KHz Clock Monitor Duty Cycle Variation count register = 0x%x", r);
 
 	r = sys_read32(pcr_base + XEC_CC_32K_MAX_DC_VAR_OFS);
-	LOG_INF("PCR 32KHz Clock Monitor Max Duty Cycle Variation egister = 0x%x", r);
+	LOG_INF("PCR 32KHz Clock Monitor Max Duty Cycle Variation register = 0x%x", r);
 
 	r = sys_read32(pcr_base + XEC_CC_32K_VAL_CNT_OFS);
 	LOG_INF("PCR 32KHz Clock Monitor Valid register = 0x%x", r);
