@@ -34,16 +34,16 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "espressif,riscv", "riscv";
-			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "a", "c", "zicsr", "zifencei";
 			reg = <0>;
+			device_type = "cpu";
 			cpu-power-states = <&light_sleep &deep_sleep>;
 			clock-source = <ESP32_CPU_CLK_SRC_PLL>;
 			clock-frequency = <DT_FREQ_M(240)>;
 			xtal-freq = <DT_FREQ_M(48)>;
 			d-cache-line-size = <32>;
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "c", "zicsr", "zifencei";
 		};
 
 		power-states {
@@ -103,10 +103,10 @@
 	};
 
 	soc {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "simple-bus";
 		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		/*
 		 * ESP32-C5 ROM region containing libc functions.
@@ -126,12 +126,12 @@
 		};
 
 		sramlp: memory@50000000 {
-			#address-cells = <1>;
-			#size-cells = <1>;
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x50000000 DT_SIZE_K(16)>;
-			zephyr,memory-region = "SRAMLP";
 			ranges = <0x0 0x50000000 DT_SIZE_K(16)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			zephyr,memory-region = "SRAMLP";
 
 			ulp_ram: memory@0 {
 				compatible = "zephyr,memory-region", "mmio-sram";
@@ -155,17 +155,17 @@
 				compatible = "zephyr,memory-region", "mmio-sram";
 				reg = <0x3cf8 0x200>;
 				ranges = <0x0 0x3cf8 0x200>;
-				zephyr,memory-region = "SRAMLP_RETAINED_MEM";
-				status = "okay";
 				#address-cells = <1>;
 				#size-cells = <1>;
+				zephyr,memory-region = "SRAMLP_RETAINED_MEM";
+				status = "okay";
 
 				retainedmem0: retainedmem {
 					compatible = "zephyr,retained-ram";
-					status = "okay";
 					ranges;
 					#address-cells = <1>;
 					#size-cells = <1>;
+					status = "okay";
 				};
 			};
 
@@ -178,13 +178,13 @@
 			mbox0: mbox@3ff8 {
 				compatible = "espressif,mbox-esp32";
 				reg = <0x3ff8 0x8>;
-				status = "okay";
 				shared-memory = <&ipc_shm>;
 				shared-memory-size = <0x100>;
 				interrupts = <PMU_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
 					     <LP_CORE_PMU_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 				interrupt-parent = <&intc>;
 				#mbox-cells = <1>;
+				status = "okay";
 			};
 		};
 
@@ -201,10 +201,10 @@
 
 		intc: interrupt-controller@60010000 {
 			compatible = "espressif,esp32-intc";
+			reg = <0x60010000 DT_SIZE_K(4)>;
 			#address-cells = <0>;
 			#interrupt-cells = <3>;
 			interrupt-controller;
-			reg = <0x60010000 DT_SIZE_K(4)>;
 			status = "okay";
 		};
 
@@ -313,10 +313,10 @@
 		flash: flash-controller@60002000 {
 			compatible = "espressif,esp32-flash-controller";
 			reg = <0x60002000 0x1000>;
+			ranges;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
@@ -330,8 +330,8 @@
 
 		coretemp: coretemp@6000e058 {
 			compatible = "espressif,esp32-temp";
-			friendly-name = "coretemp";
 			reg = <0x6000e058 0x4>;
+			friendly-name = "coretemp";
 			status = "disabled";
 		};
 
@@ -364,9 +364,9 @@
 
 		gpio0: gpio@60091000 {
 			compatible = "espressif,esp32-gpio";
+			reg = <0x60091000 DT_SIZE_K(4)>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <0x60091000 DT_SIZE_K(4)>;
 			interrupts = <GPIO_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			ngpios = <29>;
@@ -374,9 +374,9 @@
 
 		i2c0: i2c@60004000 {
 			compatible = "espressif,esp32-i2c";
+			reg = <0x60004000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x60004000 0x1000>;
 			interrupts = <I2C_EXT0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			clocks = <&clock ESP32_I2C0_MODULE>;
@@ -385,9 +385,9 @@
 
 		i2s: i2s@6000c000 {
 			compatible = "espressif,esp32-i2s";
+			reg = <0x6000c000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x6000c000 0x1000>;
 			interrupts = <I2S0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			clocks = <&clock ESP32_I2S0_MODULE>;
@@ -400,20 +400,20 @@
 		uart0: uart@60000000 {
 			compatible = "espressif,esp32-uart";
 			reg = <0x60000000 DT_SIZE_K(4)>;
-			status = "disabled";
 			interrupts = <UART0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			clocks = <&clock ESP32_UART0_MODULE>;
+			status = "disabled";
 		};
 
 		uart1: uart@60001000 {
 			compatible = "espressif,esp32-uart";
 			reg = <0x60001000 DT_SIZE_K(4)>;
-			status = "disabled";
 			interrupts = <UART1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			clocks = <&clock ESP32_UART1_MODULE>;
 			current-speed = <115200>;
+			status = "disabled";
 		};
 
 		lp_uart: uart@600b1400 {
@@ -425,24 +425,24 @@
 			rx-pin = <4>;
 			rts-pin = <2>;
 			cts-pin = <3>;
-			status = "disabled";
 			current-speed = <115200>;
+			status = "disabled";
 		};
 
 		usb_serial: uart@6000f000 {
 			compatible = "espressif,esp32-usb-serial";
 			reg = <0x6000f000 0x1000>;
-			status = "disabled";
 			interrupts = <USB_SERIAL_JTAG_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			clocks = <&clock ESP32_USB_MODULE>;
+			status = "disabled";
 		};
 
 		ledc0: ledc@60007000 {
 			compatible = "espressif,esp32-ledc";
+			reg = <0x60007000 0x1000>;
 			pwm-controller;
 			#pwm-cells = <3>;
-			reg = <0x60007000 0x1000>;
 			clocks = <&clock ESP32_LEDC_MODULE>;
 			status = "disabled";
 		};
@@ -482,8 +482,8 @@
 
 		rmt: rmt@60006000 {
 			compatible = "espressif,esp32-rmt";
-			#pulse-io-cells = <1>;
 			reg = <0x60006000 0x1000>;
+			#pulse-io-cells = <1>;
 			interrupts = <RMT_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			clocks = <&clock ESP32_RMT_MODULE>;
