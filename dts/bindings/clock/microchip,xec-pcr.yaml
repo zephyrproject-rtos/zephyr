@@ -120,7 +120,7 @@ properties:
   xtal-hi-startup-current-disable:
     type: boolean
     description: |
-      If present disable crystal high startup current afer the crytal is
+      If present disable crystal high startup current after the crytal is
       stable and PLL has locked.
 
   pll-src-lock:

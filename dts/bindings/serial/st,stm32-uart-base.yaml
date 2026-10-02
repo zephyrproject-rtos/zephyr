@@ -72,7 +72,7 @@ properties:
   de-enable:
     type: boolean
     description: |
-      Enable activating an external transeiver through the DE pin which must also be configured
+      Enable activating an external transceiver through the DE pin which must also be configured
       using pinctrl.
 
   de-assert-time:
