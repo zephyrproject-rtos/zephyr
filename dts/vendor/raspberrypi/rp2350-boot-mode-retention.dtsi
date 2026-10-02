@@ -27,14 +27,14 @@
 
 		retainedmem {
 			compatible = "zephyr,retained-ram";
-			status = "okay";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			status = "okay";
 
 			boot_mode: retention@0 {
 				compatible = "zephyr,retention";
-				status = "okay";
 				reg = <0x0 0x1>;
+				status = "okay";
 			};
 		};
 	};
