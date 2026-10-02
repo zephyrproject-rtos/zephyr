@@ -142,12 +142,8 @@ def handle_disabled_node(node: edtlib.Node) -> list[str]:
         lines.extend(f" - {u.path}" for u in users)
 
     # Show chosen/alias references
-    chosen_refs = [
-        name
-        for name, n in (getattr(edt, "chosen_nodes", {}) or getattr(edt, "chosen", {})).items()
-        if n is node
-    ]
-    alias_refs = [name for name, n in getattr(edt, "aliases", {}).items() if n is node]
+    chosen_refs = [name for name, n in edt.chosen_nodes.items() if n is node]
+    alias_refs = node.aliases
 
     if chosen_refs or alias_refs:
         lines.append("")
