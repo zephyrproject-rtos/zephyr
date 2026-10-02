@@ -5,7 +5,7 @@
 # This module is responsible for including images into sysbuild and to call
 # pre and post hooks.
 
-# Internal function to update build info with list of images abnd write the file.
+# Internal function to update build info with list of images and write the file.
 # Main reason for using an internal function is to properly scope variable usage.
 # Function takes a list of images.
 function(sysbuild_info_image images)
