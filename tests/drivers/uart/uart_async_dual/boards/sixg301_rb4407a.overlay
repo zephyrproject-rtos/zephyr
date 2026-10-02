@@ -13,7 +13,7 @@
 /delete-node/ &ls013b7dh03;
 
 /*
- * Connect EXP[4,6,8,10] with EXP[7,9,11,13] on the Expension Pin header
+ * Connect EXP[4,6,8,10] with EXP[7,9,11,13] on the Expansion Pin header
  */
 
 &pinctrl {

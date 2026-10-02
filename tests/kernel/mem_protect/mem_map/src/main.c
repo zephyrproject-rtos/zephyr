@@ -85,7 +85,7 @@ ZTEST(mem_map, test_k_mem_map_phys_bare_rw)
 
 	if (IS_ENABLED(CONFIG_DCACHE)) {
 		/* Flush everything and invalidating all addresses to
-		 * prepare fot comparison test below.
+		 * prepare for comparison test below.
 		 */
 		sys_cache_data_flush_and_invd_all();
 	}
