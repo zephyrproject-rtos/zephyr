@@ -26,7 +26,7 @@
  *
  * @param name Arbitrary name given to the video device
  * @param device Pointer to the @ref device struct to initialize
- * @param source Pointer to the @ref device struct of the soruce device if any or @c NULL
+ * @param source Pointer to the @ref device struct of the source device if any or @c NULL
  */
 #define VIDEO_DEVICE_DEFINE(name, device, source)                                                  \
 	static STRUCT_SECTION_ITERABLE(video_device, name) = {                                     \

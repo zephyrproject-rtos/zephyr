@@ -560,7 +560,7 @@ static int ameba_wifi_status(const struct device *dev, struct net_if *iface,
 		status->security = WIFI_SECURITY_TYPE_NONE;
 		break;
 	default:
-		LOG_ERR("unkonwn security type");
+		LOG_ERR("unknown security type");
 		break;
 	}
 	return 0;

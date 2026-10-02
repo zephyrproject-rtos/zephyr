@@ -5,7 +5,7 @@
  */
 
 /**
- * @brief Header containing address/offets and functions for writing
+ * @brief Header containing address/offset and functions for writing
  * the FICR fields of the OTP memory on nRF7002 device
  */
 
