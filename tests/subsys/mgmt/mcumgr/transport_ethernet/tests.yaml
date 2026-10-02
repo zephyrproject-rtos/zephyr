@@ -1,0 +1,34 @@
+#
+# Copyright (c) 2026 Aleksandr Senin
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+common:
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+  tags:
+    - mgmt
+    - mcumgr
+    - transport
+    - ethernet
+tests:
+  mgmt.mcumgr.transport.ethernet:
+    extra_configs: []
+  mgmt.mcumgr.transport.ethernet.hw_filtering:
+    extra_configs:
+      - CONFIG_TEST_ETH_HW_FILTERING=y
+  mgmt.mcumgr.transport.ethernet.udp_ipv4:
+    extra_configs:
+      - CONFIG_MCUMGR_TRANSPORT_UDP=y
+      - CONFIG_MCUMGR_TRANSPORT_UDP_IPV4=y
+      - CONFIG_MCUMGR_TRANSPORT_UDP_AUTOMATIC_INIT=n
+      - CONFIG_NET_IPV4=y
+      - CONFIG_NET_UDP=y
+      - CONFIG_NET_SOCKETS=y
+      - CONFIG_NET_IPV6=n
+  mgmt.mcumgr.transport.ethernet.all:
+    extra_args:
+      - EXTRA_CONF_FILE="ethernet_all.conf"
