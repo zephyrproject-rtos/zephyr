@@ -12,15 +12,15 @@
 #include "htpa_eval-common.dtsi"
 
 / {
-	model = "Heimann HTPA Eval Board";
 	compatible = "heimann,htpa_eval", "atmel,same70q20b", "atmel,same70b";
+	model = "Heimann HTPA Eval Board";
 };
 
 &flash0 {
 	reg = <0x00400000 DT_SIZE_K(1024)>;
+	ranges = <0x0 0x00400000 DT_SIZE_K(1024)>;
 	#address-cells = <1>;
 	#size-cells = <1>;
-	ranges = <0x0 0x00400000 DT_SIZE_K(1024)>;
 	erase-blocks = <&eefc 8 2048>, <&eefc 126 8192>;
 
 	partitions {
@@ -31,30 +31,30 @@
 		/* Sector 0: bootloader (64 kbytes) */
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			reg = <0x0 0x00010000>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		/* Sector 1 to sector 7: slot0 (448 kbytes) */
 		slot0_partition: partition@10000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x00010000 0x00070000>;
+			label = "image-0";
 		};
 
 		/* Sector 8 to sector 14: slot1 (448 kbytes) */
 		slot1_partition: partition@80000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1";
 			reg = <0x00080000 0x00070000>;
+			label = "image-1";
 		};
 
 		/* Sector 15: scratch (64 kbytes) */
 		scratch_partition: partition@f0000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-scratch";
 			reg = <0x000f0000 0x00010000>;
+			label = "image-scratch";
 		};
 	};
 };
