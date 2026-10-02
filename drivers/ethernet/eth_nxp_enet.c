@@ -290,6 +290,13 @@ static int eth_nxp_enet_tx(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	frame_is_timestamped = net_pkt_is_tx_timestamping(pkt);
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET)
+	/*
+	 * Without a running 1588 timer there is no timestamp, and reading the timer when the
+	 * frame is reclaimed would wait forever with interrupts locked
+	 */
+	frame_is_timestamped = frame_is_timestamped && data->ptp.ptp_running;
+#endif
 
 	ret = ENET_SendFrame(data->base, &data->enet_handle, data->tx_frame_buf, total_len, RING_ID,
 			     frame_is_timestamped, pkt);
@@ -460,24 +467,27 @@ static int eth_nxp_enet_rx(const struct device *dev)
 	}
 
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
-	k_mutex_lock(data->ptp.ptp_mutex, K_FOREVER);
+	/* Without a running 1588 timer the frame has no timestamp */
+	if (data->ptp.ptp_running) {
+		k_mutex_lock(data->ptp.ptp_mutex, K_FOREVER);
 
-	/* Timestamp the packet using PTP clock. Add full second part
-	 * the hardware timestamp contains the fractional part of the second only
-	 */
-	ptp_clock_get(config->ptp_clock, &ptp_time);
+		/* Timestamp the packet using PTP clock. Add full second part
+		 * the hardware timestamp contains the fractional part of the second only
+		 */
+		ptp_clock_get(config->ptp_clock, &ptp_time);
 
-	/* If latest timestamp reloads after getting from Rx BD,
-	 * then second - 1 to make sure the actual Rx timestamp is accurate
-	 */
-	if (ptp_time.nanosecond < ts) {
-		ptp_time.second--;
+		/* If latest timestamp reloads after getting from Rx BD,
+		 * then second - 1 to make sure the actual Rx timestamp is accurate
+		 */
+		if (ptp_time.nanosecond < ts) {
+			ptp_time.second--;
+		}
+
+		pkt->timestamp.nanosecond = ts;
+		pkt->timestamp.second = ptp_time.second;
+		net_pkt_set_rx_timestamping(pkt, true);
+		k_mutex_unlock(data->ptp.ptp_mutex);
 	}
-
-	pkt->timestamp.nanosecond = ts;
-	pkt->timestamp.second = ptp_time.second;
-	net_pkt_set_rx_timestamping(pkt, true);
-	k_mutex_unlock(data->ptp.ptp_mutex);
 #endif /* CONFIG_PTP_CLOCK_NXP_ENET */
 
 	iface = get_iface(data);
