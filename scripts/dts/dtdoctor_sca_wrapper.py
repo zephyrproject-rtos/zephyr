@@ -37,7 +37,7 @@ def main() -> int:
         idx = sys.argv.index("--")
         args, cmd = parser.parse_known_args(sys.argv[1:idx])[0], sys.argv[idx + 1 :]
     else:
-        args, cmd = parser.parse_known_args(sys.argv[1:])[0], sys.argv[1:]
+        args, cmd = parser.parse_known_args(sys.argv[1:])
 
     # Run compiler/linker command
     proc = subprocess.run(cmd, capture_output=True, text=True)
