@@ -31,6 +31,11 @@
 	lp-mode;
 	status = "okay";
 
+	fifo {
+		compatible = "infineon,autanalog-sar-fifo";
+		fifo-levels = <256>;
+	};
+
 	/* MUX channel: P15.0 via internal MUX routing.
 	 * Channel ID 8 = MUX channel index 0.
 	 */
@@ -43,10 +48,5 @@
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,resolution = <12>;
 		zephyr,input-positive = <IFX_AUTANALOG_SAR_PIN_MUX_GPIO0>; /* P15.0 */
-	};
-
-	fifo {
-		compatible = "infineon,autanalog-sar-fifo";
-		fifo-levels = <256>;
 	};
 };
