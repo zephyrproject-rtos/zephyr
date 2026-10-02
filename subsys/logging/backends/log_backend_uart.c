@@ -86,7 +86,8 @@ static int char_out(uint8_t *data, size_t length, void *ctx)
 	struct lbu_data *lb_data = cb_ctx->data;
 	const struct device *uart_dev = LBU_UART_DEV(cb_ctx);
 
-	if (pm_device_runtime_get(uart_dev) < 0) {
+	if (!IS_ENABLED(CONFIG_LOG_PROCESS_THREAD) &&
+	    (pm_device_runtime_get(uart_dev) < 0)) {
 		/* Enabling the UART instance has failed but this
 		 * function MUST return the number of bytes consumed.
 		 */
@@ -114,11 +115,13 @@ static int char_out(uint8_t *data, size_t length, void *ctx)
 
 	(void)err;
 cleanup:
-	/* Use async put to avoid useless device suspension/resumption
-	 * when tranmiting chain of chars.
-	 * As errors cannot be returned, ignore the return value
-	 */
-	(void)pm_device_runtime_put_async(uart_dev, K_MSEC(1));
+	if (!IS_ENABLED(CONFIG_LOG_PROCESS_THREAD)) {
+		/* Use async put to avoid useless device suspension/resumption
+		 * when tranmiting chain of chars.
+		 * As errors cannot be returned, ignore the return value
+		 */
+		(void)pm_device_runtime_put_async(uart_dev, K_MSEC(1));
+	}
 
 	return length;
 }
@@ -217,12 +220,36 @@ static void dropped(const struct log_backend *const backend, uint32_t cnt)
 	}
 }
 
+static void notify(const struct log_backend *const backend,
+		   enum log_backend_evt event,
+		   union log_backend_evt_arg *arg)
+{
+	const struct lbu_cb_ctx *ctx = backend->cb->ctx;
+	const struct device *uart_dev = LBU_UART_DEV(ctx);
+
+	ARG_UNUSED(ctx);
+	ARG_UNUSED(arg);
+
+	switch (event) {
+	case LOG_BACKEND_EVT_PROCESS_THREAD_START:
+		(void)pm_device_runtime_get(uart_dev);
+		break;
+	case LOG_BACKEND_EVT_PROCESS_THREAD_DONE:
+		(void)pm_device_runtime_put(uart_dev);
+		break;
+	default:
+		break;
+	}
+}
+
 const struct log_backend_api log_backend_uart_api = {
 	.process = process,
 	.panic = panic,
 	.init = log_backend_uart_init,
 	.dropped = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? NULL : dropped,
 	.format_set = format_set,
+	.notify = (IS_ENABLED(CONFIG_LOG_PROCESS_THREAD) &&
+		   IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) ? notify : NULL,
 };
 
 #if defined(CONFIG_LOG_BACKEND_UART_ASYNC) && defined(CONFIG_SOC_FAMILY_STM32) &&                  \
