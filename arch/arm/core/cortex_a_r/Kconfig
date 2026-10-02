@@ -120,6 +120,11 @@ config ARMV7_EXCEPTION_STACK_SIZE
 	  This option specifies the size of the stack used by the undefined
 	  instruction and data abort exception handlers.
 
+	  When CONFIG_USE_SWITCH is disabled, the architecture enforces
+	  CONFIG_ARMV7_EXCEPTION_STACK_SIZE >= Z_ARMV7_EXCEPTION_ENTRY_STACK_BYTES
+	  (see include/zephyr/arch/arm/cortex_a_r/exception_stack.h), matching the
+	  exception entry frame built in exc.S.
+
 config ARMV7_FIQ_STACK_SIZE
 	int "FIQ stack size (in bytes)"
 	default 256
@@ -270,6 +275,11 @@ config ARMV7_EXCEPTION_STACK_SIZE
 	help
 	  This option specifies the size of the stack used by the undefined
 	  instruction and data abort exception handlers.
+
+	  When CONFIG_USE_SWITCH is disabled, the architecture enforces
+	  CONFIG_ARMV7_EXCEPTION_STACK_SIZE >= Z_ARMV7_EXCEPTION_ENTRY_STACK_BYTES
+	  (see include/zephyr/arch/arm/cortex_a_r/exception_stack.h), matching the
+	  exception entry frame built in exc.S.
 
 config ARMV7_FIQ_STACK_SIZE
 	int "FIQ stack size (in bytes)"
