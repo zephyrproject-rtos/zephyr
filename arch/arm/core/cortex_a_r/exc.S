@@ -100,6 +100,11 @@ z_arm_fpu_trap_exit:
  * encountered.
  */
 SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
+	.cfi_sections .debug_frame
+	.cfi_startproc
+	.cfi_signal_frame
+	.cfi_return_column pc
+	.cfi_undefined sp
 	/*
 	 * The undefined instruction address is offset by 2 if the previous
 	 * mode is Thumb; otherwise, it is offset by 4.
@@ -110,8 +115,10 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
 	subeq lr, #4	/* ARM   (!T_BIT) */
 	subne lr, #2	/* Thumb (T_BIT) */
 	pop {r0}
+	.cfi_register pc, lr
 
 	z_arm_cortex_ar_enter_exc 0
+	cfi_exc_frame
 #if defined(CONFIG_FPU_SHARING)
 	/* A VFP instruction with the FPU disabled: lazy FPU switch */
 	bl z_arm_fpu_trap
@@ -119,8 +126,10 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
 	bne z_arm_fpu_trap_exit
 #endif
 	z_arm_cortex_ar_save_extra
+	cfi_exc_frame_sp
 	bl z_arm_fault_undef_instruction
 	b z_arm_cortex_ar_exit_exc
+	.cfi_endproc
 
 /**
  * @brief Prefetch abort exception handler
@@ -129,11 +138,15 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
  * prefetched instruction as invalid and the instruction is executed.
  */
 SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_prefetch_abort)
+	.cfi_sections .debug_frame
+	.cfi_startproc
+	cfi_aarch32_pabt_frame
 	/*
 	 * The faulting instruction address is always offset by 4 for the
 	 * prefetch abort exceptions.
 	 */
 	sub lr, #4
+	.cfi_register pc, lr
 #if defined(CONFIG_MPU_STACK_GUARD)
 	/* Store LR and SPSR for the stack overflow path, see z_arm_data_abort */
 	sub sp, #4
@@ -141,9 +154,12 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_prefetch_abort)
 	add sp, #4
 #endif
 	z_arm_cortex_ar_enter_exc
+	cfi_exc_frame
 	z_arm_cortex_ar_save_extra
+	cfi_exc_frame_sp
 	bl z_arm_fault_prefetch
 	b z_arm_cortex_ar_exit_exc
+	.cfi_endproc
 
 /**
  * @brief Data abort exception handler
@@ -153,7 +169,12 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_prefetch_abort)
  * depending on the type of fault that caused it.
  */
 SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_data_abort)
+	.cfi_sections .debug_frame
+	.cfi_startproc
+	cfi_aarch32_dabt_frame
 	sub lr, #8
+	.cfi_register pc, lr
+	.cfi_remember_state
 
 #if defined(CONFIG_MPU_STACK_GUARD)
 	/*
@@ -177,11 +198,14 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_data_abort)
 #endif
 
 	z_arm_cortex_ar_enter_exc
+	cfi_exc_frame
 	z_arm_cortex_ar_save_extra
+	cfi_exc_frame_sp
 	bl z_arm_fault_data
 	b z_arm_cortex_ar_exit_exc
 
 #if defined(CONFIG_MPU_STACK_GUARD)
+	.cfi_restore_state
 stack_overflow:
 	/*
 	 * r0 holds the mode of the exception entry that hit the guard, and
@@ -209,6 +233,11 @@ stack_overflow:
 	cps #MODE_ABT
 	pop {r0}
 	z_arm_cortex_ar_enter_exc
+	cfi_exc_frame
+	cfi_overflow_frame_sp
 	z_arm_cortex_ar_save_extra
 	bl z_arm_fault_stack_overflow
+	/* Not reached. Keeps the return address of the call in this function. */
+	udf #0
 #endif
+	.cfi_endproc

@@ -131,18 +131,18 @@
 
 /*
  * Fill the callee-saved registers and the extra info of the exception frame
- * built by z_arm_cortex_ar_enter_exc, and point r0 to that frame. SP must be
- * where z_arm_cortex_ar_enter_exc left it, and r4-r11 must still hold the
- * values of the interrupted context: only C functions, which preserve them,
- * may run in between. Clobbers r1-r3.
+ * built by z_arm_cortex_ar_enter_exc, and point r0 to that frame. With
+ * CONFIG_USERSPACE, also store the interrupted SP in the word above the
+ * frame address at SP, for cfi_exc_frame_sp. SP must be where
+ * z_arm_cortex_ar_enter_exc left it, and r4-r11 must still hold the values
+ * of the interrupted context: only C functions, which preserve them, may
+ * run in between. Clobbers r1-r3.
  */
 .macro z_arm_cortex_ar_save_extra
 	ldr r0, [sp]
-#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
-	sub r1, r0, #___exc_extra_SIZEOF
-	stm r1, {r4-r11}
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO) || defined(CONFIG_USERSPACE)
 	/* The interrupted SP is above the exception frame... */
-	add r2, r0, #(___esf_t_SIZEOF - ___extra_esf_info_t_SIZEOF)
+	add r2, r0, #___basic_sf_t_SIZEOF
 #if defined(CONFIG_USERSPACE)
 	/* ...or in the thread for an exception from user mode */
 	ldr r3, [r0, #___basic_sf_t_xpsr_OFFSET]
@@ -152,13 +152,109 @@
 	ldr r2, [r2, #___cpu_t_current_OFFSET]
 	ldr r2, [r2, #_thread_offset_to_sp_usr]
 1:
+	str r2, [sp, #4]
 #endif
+#endif
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+	sub r1, r0, #___exc_extra_SIZEOF
+	stm r1, {r4-r11}
 	str r2, [r1, #___callee_saved_t_psp_OFFSET]
 	sub r0, r0, #___extra_esf_info_t_SIZEOF
 	str r1, [r0]
 	mov r1, #0
 	str r1, [r0, #4]
 #endif
+.endm
+
+/*
+ * DWARF call frame information, so that a debugger can unwind from a fault
+ * handler into the interrupted code.
+ *
+ * At the data abort and prefetch abort vectors, LR is the faulting PC plus
+ * 8 and 4. The SP of the interrupted context is not known yet.
+ */
+.macro cfi_aarch32_dabt_frame
+	.cfi_signal_frame
+	.cfi_return_column pc
+	.cfi_undefined sp
+	/* DW_CFA_val_expression r15, length 2, DW_OP_breg14 -8: PC = LR - 8 */
+	.cfi_escape 0x16, 0x0f, 0x02, 0x7e, 0x78
+.endm
+
+.macro cfi_aarch32_pabt_frame
+	.cfi_signal_frame
+	.cfi_return_column pc
+	.cfi_undefined sp
+	/* DW_CFA_val_expression r15, length 2, DW_OP_breg14 -4: PC = LR - 4 */
+	.cfi_escape 0x16, 0x0f, 0x02, 0x7e, 0x7c
+.endm
+
+/*
+ * After z_arm_cortex_ar_enter_exc, the frame address is at SP and the frame
+ * is right below the CFA. That is the interrupted SP, except for an
+ * exception from user mode, whose SP is not known until cfi_exc_frame_sp.
+ * r4-r11 still hold the interrupted values, or the C functions called since
+ * saved them.
+ */
+.macro cfi_exc_frame
+.if ___basic_sf_t_SIZEOF > 127 || ___basic_sf_t_xpsr_OFFSET > 127
+.error "the DWARF expressions encode frame offsets in one byte"
+.endif
+	/*
+	 * DW_CFA_def_cfa_expression, length 5, DW_OP_breg13 0, DW_OP_deref,
+	 * DW_OP_plus_uconst sizeof(__basic_sf): CFA = *SP + 32
+	 */
+	.cfi_escape 0x0f, 0x05, 0x7d, 0x00, 0x06, 0x23, ___basic_sf_t_SIZEOF
+	.cfi_offset r0, (___basic_sf_t_r0_OFFSET - ___basic_sf_t_SIZEOF)
+	.cfi_offset r1, (___basic_sf_t_r1_OFFSET - ___basic_sf_t_SIZEOF)
+	.cfi_offset r2, (___basic_sf_t_r2_OFFSET - ___basic_sf_t_SIZEOF)
+	.cfi_offset r3, (___basic_sf_t_r3_OFFSET - ___basic_sf_t_SIZEOF)
+	.cfi_offset r12, (___basic_sf_t_r12_OFFSET - ___basic_sf_t_SIZEOF)
+	.cfi_offset lr, (___basic_sf_t_lr_OFFSET - ___basic_sf_t_SIZEOF)
+	.cfi_offset pc, (___basic_sf_t_pc_OFFSET - ___basic_sf_t_SIZEOF)
+#if defined(CONFIG_USERSPACE)
+	/*
+	 * DW_CFA_val_expression r13, length 19: SP = the CFA, or 0 for an
+	 * exception from user mode, which has the low 4 bits of the saved
+	 * CPSR clear. The frames above the faulting function of a user
+	 * thread are then not reliable.
+	 *   DW_OP_breg13 0, DW_OP_deref                  frame address
+	 *   DW_OP_dup, DW_OP_plus_uconst xpsr, DW_OP_deref,
+	 *   DW_OP_lit15, DW_OP_and                       mode bits
+	 *   DW_OP_bra +5                                 not user mode
+	 *   DW_OP_drop, DW_OP_lit0, DW_OP_skip +2        user mode: 0
+	 *   DW_OP_plus_uconst sizeof(__basic_sf)         the CFA
+	 */
+	.cfi_escape 0x16, 0x0d, 0x13, 0x7d, 0x00, 0x06, 0x12, 0x23, \
+		___basic_sf_t_xpsr_OFFSET, 0x06, 0x3f, 0x1a, 0x28, 0x05, 0x00, \
+		0x13, 0x30, 0x2f, 0x02, 0x00, 0x23, ___basic_sf_t_SIZEOF
+#else
+	.cfi_val_offset sp, 0
+#endif
+.endm
+
+/*
+ * After z_arm_cortex_ar_save_extra, which stored the interrupted SP in the
+ * word above the frame address at SP.
+ */
+.macro cfi_exc_frame_sp
+#if defined(CONFIG_USERSPACE)
+	/* DW_CFA_val_expression r13, length 3, DW_OP_breg13 4, DW_OP_deref */
+	.cfi_escape 0x16, 0x0d, 0x03, 0x7d, 0x04, 0x06
+#endif
+.endm
+
+/*
+ * On the stack overflow path, after cfi_exc_frame: the interrupted SP is
+ * the word above the frame, which z_arm_data_abort stores and
+ * z_arm_fault_stack_overflow() updates.
+ */
+.macro cfi_overflow_frame_sp
+	/*
+	 * DW_CFA_val_expression r13, length 6, DW_OP_breg13 0, DW_OP_deref,
+	 * DW_OP_plus_uconst ___basic_sf_t_SIZEOF, DW_OP_deref
+	 */
+	.cfi_escape 0x16, 0x0d, 0x06, 0x7d, 0x00, 0x06, 0x23, ___basic_sf_t_SIZEOF, 0x06
 .endm
 
 /*
