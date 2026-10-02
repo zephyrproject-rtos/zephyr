@@ -42,16 +42,77 @@ GTEXT(z_arm_undef_instruction)
 GTEXT(z_arm_prefetch_abort)
 GTEXT(z_arm_data_abort)
 
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+/* EXTRA_EXCEPTION_INFO already stacks r4-r11 in _callee_saved. */
+#define EXC_CALLEE_GPR_SIZE 0
+#else
+/* r4-r11. Not banked, so still the interrupted values at exception entry. */
+#define EXC_CALLEE_GPR_SIZE 32
+#endif
+
 #ifndef CONFIG_USE_SWITCH
+
+
+/*
+ * After r0-r3, r12, lr^ are stored at [sp], capture previous-mode SP (in r1)
+ * and LR (written to [sp, #20]). Clobbers r0-r2. Cannot CPS into USR.
+ *
+ * Do not msr SPSR into CPSR: the T bit would switch this ARM handler to Thumb.
+ * Keep current CPSR (ARM, I/F) and replace only the mode field.
+ */
+.macro exception_capture_prev_sp_lr
+	mrs r0, cpsr
+	mrs r1, spsr
+	and r2, r1, #MODE_MASK
+	cmp r2, #MODE_USR
+	beq 1f
+	bic r1, r0, #MODE_MASK
+	orr r1, r1, r2
+	orr r1, r1, #(I_BIT | F_BIT)
+	msr CPSR_c, r1
+	mov r1, sp
+	mov r2, lr
+	msr CPSR_c, r0
+	str r2, [sp, #20]
+	b 2f
+1:
+	sub r0, sp, #4
+	stmia r0, {sp}^
+	ldr r1, [r0]
+2:
+.endm
+
+/*
+ * Park r4-r11 under the ESF and leave r0 pointing at arch_esf.
+ * r4-r11 are shared with System mode and still hold the interrupted
+ * values. The C handler preserves them in registers, but GDB is stopped
+ * inside that handler, so the unwind needs the memory copy.
+ * Dropped by exception_exit before z_arm_exc_exit.
+ */
+.macro exception_save_callee_gprs
+#if EXC_CALLEE_GPR_SIZE != 0
+	sub sp, #EXC_CALLEE_GPR_SIZE
+	stm sp, {r4-r11}
+	add r0, sp, #EXC_CALLEE_GPR_SIZE
+#else
+	mov r0, sp
+#endif
+.endm
 
 .macro exception_entry mode
 	/*
-	 * Store r0-r3, r12, lr, lr_und and spsr_und into the stack to
-	 * construct an exception stack frame.
+	 * ESF on the exception-mode stack (not the thread stack):
+	 *   [r4-r11] [fpu] [r0-r3, r12, lr, pc, xpsr] [sp_prev]
+	 * r4-r11 are omitted when CONFIG_EXTRA_EXCEPTION_INFO stacks them
+	 * in _callee_saved. sp_prev sits after __basic_sf so SVC/IRQ frames
+	 * that omit it still match struct arch_esf.basic.
 	 */
+	sub sp, #4
 	srsdb sp!, #\mode
 	stmfd sp, {r0-r3, r12, lr}^
 	sub sp, #24
+	exception_capture_prev_sp_lr
+	str r1, [sp, #32]
 
 #if defined(CONFIG_FPU_SHARING)
 	sub sp, #___fpu_t_SIZEOF
@@ -84,7 +145,7 @@ GTEXT(z_arm_data_abort)
 	mov r0, sp
 	mov sp, r1
 #else
-	mov r0, sp
+	exception_save_callee_gprs
 #endif
 
 	/* Increment exception nesting count */
@@ -99,6 +160,8 @@ GTEXT(z_arm_data_abort)
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO)
 	add sp, #___extra_esf_info_t_SIZEOF
 	add sp, #___callee_saved_t_SIZEOF
+#elif EXC_CALLEE_GPR_SIZE != 0
+	add sp, #EXC_CALLEE_GPR_SIZE
 #endif
 .endm
 
@@ -125,9 +188,12 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
 	 * Store r0-r3, r12, lr, lr_und and spsr_und into the stack to
 	 * construct an exception stack frame.
 	 */
+	sub sp, #4
 	srsdb sp!, #MODE_UND
 	stmfd sp, {r0-r3, r12, lr}^
 	sub sp, #24
+	exception_capture_prev_sp_lr
+	str r1, [sp, #32]
 
 	/* Increment exception nesting count */
 	get_cpu r2
@@ -170,7 +236,7 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
 	mov r0, sp
 	mov sp, r1
 #else
-	mov r0, sp
+	exception_save_callee_gprs
 #endif
 
 	bl z_arm_fault_undef_instruction
@@ -226,7 +292,15 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_data_abort)
 	 * the true esf from the one passed to z_arm_fault_data.
 	 */
 	cmp r0, #0
-	ldreq r1, [sp, #24 + FPU_SF_SIZE]
+	/*
+	 * Callee GPRs sit below the ESF until exception_exit. The PC slot is
+	 * basic.pc, 24 bytes into __basic_sf, after the FPU block.
+	 */
+#if EXC_CALLEE_GPR_SIZE != 0
+	ldreq r1, [sp, #(EXC_CALLEE_GPR_SIZE + 24 + FPU_SF_SIZE)]
+#else
+	ldreq r1, [sp, #(24 + FPU_SF_SIZE)]
+#endif
 
 	exception_exit
 
