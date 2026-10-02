@@ -14,8 +14,8 @@
 #define YCCM_SIZE DT_SIZE_K(64)
 
 / {
-	model = "snps,nsim_em";
 	compatible = "snps,nsim_em";
+	model = "snps,nsim_em";
 
 	xccm0: xccm@XCCM_ADDR {
 		compatible = "arc,xccm";

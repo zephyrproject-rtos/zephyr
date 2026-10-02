@@ -9,6 +9,6 @@
 #include "hsdk.dtsi"
 
 / {
-	model = "hsdk_2cores";
 	compatible = "snps,hsdk_2cores";
+	model = "hsdk_2cores";
 };
