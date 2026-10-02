@@ -892,7 +892,14 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 		.clk_src_hz = clk_src_hz,
 	};
 
-	spi_hal_cal_clock_conf(&timing_param, &hal_dev->timing_conf);
+	if (spi_hal_cal_clock_conf(&timing_param, &hal_dev->timing_conf) != ESP_OK) {
+		LOG_ERR("Frequency %u Hz not supported in full-duplex mode, set half-duplex or "
+			"dummy-comp in devicetree or lower the frequency",
+			spi_cfg->frequency);
+		/* Force a full reconfiguration at the next transfer */
+		ctx->config = NULL;
+		return -ENOTSUP;
+	}
 
 #ifdef SPI_LL_SRC_PRE_DIV_MAX
 	hal_dev->timing_conf.source_pre_div = pre_div;
