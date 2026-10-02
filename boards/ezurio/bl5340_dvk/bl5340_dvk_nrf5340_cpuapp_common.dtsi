@@ -174,15 +174,6 @@
 	pinctrl-names = "default", "sleep";
 	status = "okay";
 
-	at24c256@50 {
-		compatible = "atmel,at24c256", "atmel,at24";
-		reg = <0x50>;
-		size = <32768>;
-		pagesize = <64>;
-		address-width = <16>;
-		timeout = <10>;
-	};
-
 	lis3dh: lis3dh@18 {
 		compatible = "st,lis2dh";
 		reg = <0x18>;
@@ -200,9 +191,13 @@
 		screen-height = <240>;
 	};
 
-	bme680@76 {
-		compatible = "bosch,bme680";
-		reg = <0x76>;
+	at24c256@50 {
+		compatible = "atmel,at24c256", "atmel,at24";
+		reg = <0x50>;
+		size = <32768>;
+		pagesize = <64>;
+		address-width = <16>;
+		timeout = <10>;
 	};
 
 	dac0: mcp4725@60 {
@@ -224,6 +219,11 @@
 		#gpio-cells = <2>;
 		ngpios = <8>;
 		nint-gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
+	};
+
+	bme680@76 {
+		compatible = "bosch,bme680";
+		reg = <0x76>;
 	};
 };
 
