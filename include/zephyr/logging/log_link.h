@@ -16,7 +16,6 @@
 #include <zephyr/types.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log_msg.h>
-#include <zephyr/logging/log_internal.h>
 #include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
@@ -38,8 +37,7 @@ struct log_link;
  * @param link Link instance.
  * @param msg  Message received from the remote domain.
  */
-typedef void (*log_link_callback_t)(const struct log_link *link,
-				    union log_msg_generic *msg);
+typedef void (*log_link_callback_t)(const struct log_link *link, union log_msg_generic *msg);
 
 /**
  * @brief Callback invoked by a link to report dropped messages.
@@ -47,13 +45,12 @@ typedef void (*log_link_callback_t)(const struct log_link *link,
  * @param link    Link instance.
  * @param dropped Number of messages dropped since the previous notification.
  */
-typedef void (*log_link_dropped_cb_t)(const struct log_link *link,
-				      uint32_t dropped);
+typedef void (*log_link_dropped_cb_t)(const struct log_link *link, uint32_t dropped);
 
 /** @brief Log link configuration passed to the link at initiation time. */
 struct log_link_config {
-	log_link_callback_t msg_cb;        /**< Callback for received messages. */
-	log_link_dropped_cb_t dropped_cb;  /**< Callback for dropped messages. */
+	log_link_callback_t msg_cb;       /**< Callback for received messages. */
+	log_link_dropped_cb_t dropped_cb; /**< Callback for dropped messages. */
 };
 
 /**
@@ -74,6 +71,10 @@ struct log_link_api {
 			  uint8_t *runtime_level);
 	/** @brief Set runtime level of a source (see log_link_set_runtime_level()). */
 	int (*set_runtime_level)(const struct log_link *link, uint16_t source_id, uint8_t level);
+	/** @brief Get a message from the link (see log_link_get_msg()). */
+	union log_msg_generic *(*get_msg)(const struct log_link *link);
+	/** @brief Release a message back to the link (see log_link_put_msg()). */
+	void (*put_msg)(const struct log_link *link, union log_msg_generic *msg);
 };
 
 /** @brief Run-time control block for a @ref log_link instance. */
@@ -81,20 +82,18 @@ struct log_link_ctrl_blk {
 	/** @cond INTERNAL_HIDDEN */
 	uint16_t source_cnt;
 	uint16_t domain_offset;
+	const char **log_str_ptr;
+	struct log_source_const_data *sources;
 	uint32_t *filters;
 	/** @endcond */
 };
 
 /** @brief Log link instance. */
 struct log_link {
-	const struct log_link_api *api; /**< Link operations. */
-	const char *name;               /**< Unique link name. */
+	const struct log_link_api *api;     /**< Link operations. */
+	const char *name;                   /**< Unique link name. */
 	struct log_link_ctrl_blk *ctrl_blk; /**< Run-time control block. */
-	void *ctx;                      /**< Context associated with the link. */
-	/** @cond INTERNAL_HIDDEN */
-	struct mpsc_pbuf_buffer *mpsc_pbuf;
-	const struct mpsc_pbuf_buffer_config *mpsc_pbuf_config;
-	/** @endcond */
+	void *ctx;                          /**< Context associated with the link. */
 };
 
 /** @brief Create instance of a log link.
@@ -108,34 +107,13 @@ struct log_link {
  *
  * @param _name     Instance name.
  * @param _api      API list. See @ref log_link_api.
- * @param _buf_wlen Size (in words) of dedicated buffer for messages from this buffer.
- *		    If 0 default buffer is used.
  * @param _ctx      Context (void *) associated with the link.
  */
-#define LOG_LINK_DEF(_name, _api, _buf_wlen, _ctx) \
-	static uint32_t __aligned(Z_LOG_MSG_ALIGNMENT) _name##_buf32[_buf_wlen]; \
-	static const struct mpsc_pbuf_buffer_config _name##_mpsc_pbuf_config = { \
-		.buf = (uint32_t *)_name##_buf32, \
-		.size = _buf_wlen, \
-		.notify_drop = z_log_notify_drop, \
-		.get_wlen = log_msg_generic_get_wlen, \
-		.flags = IS_ENABLED(CONFIG_LOG_MODE_OVERFLOW) ? \
-			MPSC_PBUF_MODE_OVERWRITE : 0 \
-	}; \
-	COND_CODE_0(_buf_wlen, (), (static STRUCT_SECTION_ITERABLE(log_msg_ptr, \
-								   _name##_log_msg_ptr);)) \
-	static STRUCT_SECTION_ITERABLE_ALTERNATE(log_mpsc_pbuf, \
-						 mpsc_pbuf_buffer, \
-						 _name##_log_mpsc_pbuf); \
-	static struct log_link_ctrl_blk _name##_ctrl_blk; \
-	static const STRUCT_SECTION_ITERABLE(log_link, _name) = \
-	{ \
-		.api = &_api, \
-		.name = STRINGIFY(_name), \
-		.ctrl_blk = &_name##_ctrl_blk, \
-		.ctx = _ctx, \
-		.mpsc_pbuf = _buf_wlen ? &_name##_log_mpsc_pbuf : NULL, \
-		.mpsc_pbuf_config = _buf_wlen ? &_name##_mpsc_pbuf_config : NULL \
+#define LOG_LINK_DEFINE(_name, _api, _ctx)                                                         \
+	static struct log_link_ctrl_blk _name##_ctrl_blk;                                          \
+	static const STRUCT_SECTION_ITERABLE(log_link, _name) = {                                  \
+		.api = &_api,                                                                      \
+		.name = STRINGIFY(_name), .ctrl_blk = &_name##_ctrl_blk, .ctx = _ctx,              \
 	}
 
 /** @brief Initiate log link.
@@ -149,8 +127,7 @@ struct log_link {
  *
  * @return 0 on success or error code.
  */
-static inline int log_link_initiate(const struct log_link *link,
-				   struct log_link_config *config)
+static inline int log_link_initiate(const struct log_link *link, struct log_link_config *config)
 {
 	__ASSERT_NO_MSG(link);
 
@@ -254,17 +231,37 @@ static inline int log_link_set_runtime_level(const struct log_link *link, uint16
 	return link->api->set_runtime_level(link, source_id, level);
 }
 
-/**
- * @brief Enqueue external log message.
+/** @brief Get a message from the link.
  *
- * Add log message to processing queue. Log message is created outside local
- * core. For example it maybe coming from external domain.
+ * Multiple calls without putting back (releasing) the message will return the same message.
  *
  * @param link Log link instance.
- * @param data Message from remote domain.
- * @param len  Length in bytes.
+ *
+ * @return Pointer to a message or NULL if no message is available.
  */
-void z_log_msg_enqueue(const struct log_link *link, const void *data, size_t len);
+static inline union log_msg_generic *log_link_get_msg(const struct log_link *link)
+{
+	return link->api->get_msg(link);
+}
+
+/** @brief Release a message back to the link.
+ *
+ * After releasing the message, it can be freed.
+ *
+ * @param link Log link instance.
+ * @param msg Pointer to a message.
+ */
+static inline void log_link_put_msg(const struct log_link *link, union log_msg_generic *msg)
+{
+	link->api->put_msg(link, msg);
+}
+
+/**
+ * @brief Notify logging thread that new messages are available.
+ *
+ * @param new_msgs Number of new messages.
+ */
+void z_log_msg_remote_notify(size_t new_msgs);
 
 /**
  * @}

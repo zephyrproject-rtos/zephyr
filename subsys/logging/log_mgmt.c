@@ -184,10 +184,17 @@ static const char *link_source_name_get(uint8_t domain_id, uint32_t source_id)
 	};
 
 	__ASSERT_NO_MSG(link != NULL);
+	/* In case current domain has access to the remote source we can read them
+	 * directly.
+	 */
+	if (link->ctrl_blk->sources != NULL) {
+		return link->ctrl_blk->sources[source_id].name;
+	}
 
 	/* If not in cache fetch from link and cache it. */
 	if (!log_cache_get(&sname_cache, id.raw, &cached)) {
 		int err;
+
 
 		err = log_link_get_source_name(link, source_id, (char *)cached, &cache_size);
 		if (err < 0) {
@@ -467,8 +474,7 @@ static void link_filter_set(const struct log_link *link,
 	}
 }
 
-static void backend_filter_set(struct log_backend const *const backend,
-			       uint32_t level)
+static void backend_filter_set(struct log_backend const *const backend, uint32_t level)
 {
 	if (!IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
 		return;
@@ -543,12 +549,6 @@ void z_log_links_initiate(void)
 	cache_init();
 
 	STRUCT_SECTION_FOREACH(log_link, link) {
-#ifdef CONFIG_MPSC_PBUF
-		if (link->mpsc_pbuf) {
-			mpsc_pbuf_init(link->mpsc_pbuf, link->mpsc_pbuf_config);
-		}
-#endif
-
 		err = log_link_initiate(link, NULL);
 		__ASSERT(err == 0, "Failed to initialize link");
 	}
