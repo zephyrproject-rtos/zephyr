@@ -10,8 +10,8 @@
 #include "matouch_mtro128g-pinctrl.dtsi"
 
 / {
-	model = "Makerfabs Matouch MTRO128g";
 	compatible = "espressif,esp32s3";
+	model = "Makerfabs Matouch MTRO128g";
 
 	chosen {
 		zephyr,sram = &sram1;
