@@ -857,12 +857,30 @@ static inline void ch_process_control(const struct device *dev,
 			 * for OUT - xfer->buf->len
 			 */
 			if (next_dir_is_in) {
+#if (1) // SPLIT
+				uint16_t total = sys_le16_to_cpu(setup->wLength);
+				uint16_t remaining = total - xfer->buf->len;
+
+				if (ch->data->do_split) {
+					size = MIN(remaining, xfer->mps);
+				} else {
+					size = remaining;
+				}
+
+				ch->length = size;
+
+				LOG_DBG("Control DATA IN prog=%u, total=%u, received=%u, remaining=%u",
+					size, total, xfer->buf->len, remaining);
+
+				dma_addr = (mem_addr_t)net_buf_tail(xfer->buf);
+#else
 				size = sys_le16_to_cpu(setup->wLength);
 
 				LOG_DBG("Control DATA IN prog=%u, tailroom=%zu",
 					size, net_buf_tailroom(xfer->buf));
 
 				dma_addr = (mem_addr_t)(net_buf_tail(xfer->buf));
+#endif
 			} else {
 				size = xfer->buf->len;
 
@@ -1558,7 +1576,7 @@ static int ch_configure(const struct device *const dev, struct uhc_dwc2_channel 
 		ch->data->do_split = true;
 		ch->data->split_state = UHC_DWC2_SPLIT_SSPLIT;
 
-		LOG_WRN("Channel%u SSPLIT, from dev=%u, speed=%u to hub=%u, port=%u",
+		LOG_WRN("Channel%u SSPLIT, for dev=%u, speed=%u via hub=%u, port=%u",
 			ch->index,
 			udev->addr, udev->speed,
 			split.hub_addr, split.hub_port);
