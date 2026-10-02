@@ -172,12 +172,6 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 };
 
-&rtc {
-	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
-		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
-	status = "okay";
-};
-
 &iwdg {
 	status = "okay";
 };
