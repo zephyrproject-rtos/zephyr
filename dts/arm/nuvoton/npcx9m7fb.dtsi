@@ -8,12 +8,13 @@
 #include "npcx/npcx9.dtsi"
 
 / {
-	flash0: flash@10070000 {
-		reg = <0x10070000 DT_SIZE_K(256)>;
+	soc-id {
+		device-id = <0x62>;
+		revision-reg = <0x00017ffc 4>;
 	};
 
-	flash1: flash@64000000 {
-		reg = <0x64000000 DT_SIZE_K(512)>;
+	flash0: flash@10070000 {
+		reg = <0x10070000 DT_SIZE_K(256)>;
 	};
 
 	sram0: memory@200b0000 {
@@ -21,9 +22,8 @@
 		reg = <0x200b0000 DT_SIZE_K(128)>;
 	};
 
-	soc-id {
-		device-id = <0x62>;
-		revision-reg = <0x00017ffc 4>;
+	flash1: flash@64000000 {
+		reg = <0x64000000 DT_SIZE_K(512)>;
 	};
 };
 

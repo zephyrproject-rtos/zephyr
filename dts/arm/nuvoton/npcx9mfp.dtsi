@@ -12,12 +12,21 @@
 		zephyr,entropy = &drbg0;
 	};
 
-	flash0: flash@10058000 {
-		reg = <0x10058000 DT_SIZE_K(416)>;
+	soc {
+		drbg0: drbg@110 {
+			compatible = "nuvoton,npcx-drbg";
+			reg = <0x110 0x2c 0x15c 0x04>;
+			context-buffer-size = <240>;
+			status = "disabled";
+		};
 	};
 
-	flash1: flash@64000000 {
-		reg = <0x64000000 DT_SIZE_K(1024)>;
+	soc-id {
+		device-id = <0x2b>;
+	};
+
+	flash0: flash@10058000 {
+		reg = <0x10058000 DT_SIZE_K(416)>;
 	};
 
 	sram0: memory@200c0000 {
@@ -31,17 +40,8 @@
 		reg = <0x200d7000 DT_SIZE_K(4)>;
 	};
 
-	soc {
-		drbg0: drbg@110 {
-			compatible = "nuvoton,npcx-drbg";
-			reg = <0x110 0x2c 0x15c 0x04>;
-			context-buffer-size = <240>;
-			status = "disabled";
-		};
-	};
-
-	soc-id {
-		device-id = <0x2b>;
+	flash1: flash@64000000 {
+		reg = <0x64000000 DT_SIZE_K(1024)>;
 	};
 };
 
