@@ -7,7 +7,7 @@
 /**
  * @file
  *
- * This module can be used to covert fcntl.h constants between the embedded and
+ * This module can be used to convert fcntl.h constants between the embedded and
  * host C libraries.
  *
  * It is needed by both sides to share the same macro definitions/values

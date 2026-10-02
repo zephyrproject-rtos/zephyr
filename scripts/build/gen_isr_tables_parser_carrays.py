@@ -33,7 +33,7 @@ typedef void (* ISR)(const void *);
 
         The function prepares parser to work.
         Parameters:
-        - intlist_data: The binnary data from intlist section
+        - intlist_data: The binary data from intlist section
         - config: The configuration object
         - log: The logging object, has to have error and debug methods
         """
