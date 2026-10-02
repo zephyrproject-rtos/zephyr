@@ -25,12 +25,40 @@
 		watchdog0 = &wdt0;
 	};
 
-	ram0: memory@40000000 {
-		reg = <0x40000000 0x10000000>;
-		device_type = "memory";
-	};
-
 	soc {
+		clock-outputs {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			clk0: clock-controller@0 {
+				compatible = "litex,clkout";
+				reg = <0>;
+				#clock-cells = <1>;
+				clock-output-names = "CLK_0";
+				litex,clock-frequency = <11289600>;
+				litex,clock-phase = <0>;
+				litex,clock-duty-num = <1>;
+				litex,clock-duty-den = <2>;
+				litex,clock-margin = <1>;
+				litex,clock-margin-exp = <2>;
+				status = "okay";
+			};
+
+			clk1: clock-controller@1 {
+				compatible = "litex,clkout";
+				reg = <1>;
+				#clock-cells = <1>;
+				clock-output-names = "CLK_1";
+				litex,clock-frequency = <22579200>;
+				litex,clock-phase = <0>;
+				litex,clock-duty-num = <1>;
+				litex,clock-duty-den = <2>;
+				litex,clock-margin = <1>;
+				litex,clock-margin-exp = <2>;
+				status = "okay";
+			};
+		};
+
 		ctrl0: soc_controller@e0000000 {
 			compatible = "litex,soc-controller";
 			reg = <0xe0000000 0x4>,
@@ -66,6 +94,25 @@
 			status = "okay";
 		};
 
+		spi0: spi@e0002000 {
+			compatible = "litex,spi";
+			reg = <0xe0002000 0x4>,
+			      <0xe0002004 0x4>,
+			      <0xe0002008 0x4>,
+			      <0xe000200c 0x4>,
+			      <0xe0002010 0x4>,
+			      <0xe0002014 0x4>;
+			reg-names = "control",
+				    "status",
+				    "mosi",
+				    "miso",
+				    "cs",
+				    "loopback";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+		};
+
 		timer0: timer@e0002800 {
 			compatible = "litex,timer0";
 			reg = <0xe0002800 0x4>,
@@ -93,22 +140,112 @@
 			status = "okay";
 		};
 
-		wdt0: watchdog@e000d000 {
-			compatible = "litex,watchdog";
-			reg = <0xe000d000 0x4>,
-			      <0xe000d004 0x4>,
-			      <0xe000d008 0x4>,
-			      <0xe000d00c 0x4>,
-			      <0xe000d010 0x4>,
-			      <0xe000d014 0x4>;
+		dna0: dna@e0003800 {
+			compatible = "litex,dna0";
+			/* DNA data is 57-bits long,
+			 * so it requires 8 bytes.
+			 * In LiteX each 32-bit register holds
+			 * only a single byte of meaningful data,
+			 * hence 8 registers.
+			 */
+			reg = <0xe0003800 0x20>;
+			reg-names = "mem";
+			status = "okay";
+		};
+
+		clock0: clock@e0004800 {
+			compatible = "litex,clk";
+			reg = <0xe0004800 0x4>,
+			      <0xe0004804 0x4>,
+			      <0xe0004808 0x4>,
+			      <0xe000480c 0x4>,
+			      <0xe0004810 0x4>,
+			      <0xe0004814 0x4>,
+			      <0xe0004818 0x4>,
+			      <0xe000481c 0x4>;
+			reg-names = "drp_reset",
+				    "drp_locked",
+				    "drp_read",
+				    "drp_write",
+				    "drp_drdy",
+				    "drp_adr",
+				    "drp_dat_w",
+				    "drp_dat_r";
+			#clock-cells = <1>;
+			clocks = <&clk0 0>, <&clk1 1>;
+			clock-output-names = "CLK_0", "CLK_1";
+			litex,lock-timeout = <10>;
+			litex,drdy-timeout = <10>;
+			litex,divclk-divide-min = <1>;
+			litex,divclk-divide-max = <107>;
+			litex,clkfbout-mult-min = <2>;
+			litex,clkfbout-mult-max = <65>;
+			litex,vco-freq-min = <600000000>;
+			litex,vco-freq-max = <1200000000>;
+			litex,clkout-divide-min = <1>;
+			litex,clkout-divide-max = <126>;
+			litex,vco-margin = <0>;
+			status = "okay";
+		};
+
+		i2c0: i2c@e0005000 {
+			compatible = "litex,i2c";
+			reg = <0xe0005000 0x4>,
+			      <0xe0005004 0x4>;
+			reg-names = "write",
+				    "read";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+		};
+
+		gpio_out: gpio@e0005800 {
+			compatible = "litex,gpio";
+			reg = <0xe0005800 0x4>;
+			reg-names = "out";
+			ngpios = <4>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "okay";
+		};
+
+		gpio_in: gpio@e0006000 {
+			compatible = "litex,gpio";
+			reg = <0xe0006000 0x4>,
+			      <0xe0006004 0x4>,
+			      <0xe0006008 0x4>,
+			      <0xe0006010 0x4>,
+			      <0xe0006014 0x4>;
 			interrupt-parent = <&intc0>;
-			reg-names = "control",
-				    "cycles",
-				    "remaining",
-				    "ev_status",
+			interrupts = <4 2>;
+			reg-names = "in",
+				    "mode",
+				    "edge",
 				    "ev_pending",
 				    "ev_enable";
-			interrupts = <8 15>;
+			ngpios = <4>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "okay";
+		};
+
+		prbs0: prbs@e0006800 {
+			compatible = "litex,prbs";
+			reg = <0xe0006800 0x4>;
+			reg-names = "status";
+			status = "okay";
+		};
+
+		pwm0: pwm@e0007000 {
+			compatible = "litex,pwm";
+			reg = <0xe0007000 0x4>,
+			      <0xe0007004 0x10>,
+			      <0xe0007014 0x10>;
+			reg-names = "enable",
+				    "width",
+				    "period";
+			#pwm-cells = <2>;
 			status = "okay";
 		};
 
@@ -170,35 +307,51 @@
 			status = "okay";
 		};
 
-		dna0: dna@e0003800 {
-			compatible = "litex,dna0";
-			/* DNA data is 57-bits long,
-			 * so it requires 8 bytes.
-			 * In LiteX each 32-bit register holds
-			 * only a single byte of meaningful data,
-			 * hence 8 registers.
-			 */
-			reg = <0xe0003800 0x20>;
-			reg-names = "mem";
+		i2s_rx: i2s_rx@e000a800 {
+			compatible = "litex,i2s";
+			reg = <0xe000a800 0x4>,
+			      <0xe000a804 0x4>,
+			      <0xe000a808 0x4>,
+			      <0xe000a80c 0x4>,
+			      <0xe000a810 0x4>,
+			      <0xe000a814 0x4>,
+			      <0xb1000000 0x40000>;
+			interrupt-parent = <&intc0>;
+			interrupts = <6 2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg-names = "ev_status",
+				    "ev_pending",
+				    "ev_enable",
+				    "rx_ctl",
+				    "rx_stat",
+				    "rx_conf",
+				    "fifo";
+			fifo-depth = <256>;
 			status = "okay";
 		};
 
-		spi0: spi@e0002000 {
-			compatible = "litex,spi";
-			reg = <0xe0002000 0x4>,
-			      <0xe0002004 0x4>,
-			      <0xe0002008 0x4>,
-			      <0xe000200c 0x4>,
-			      <0xe0002010 0x4>,
-			      <0xe0002014 0x4>;
-			reg-names = "control",
-				    "status",
-				    "mosi",
-				    "miso",
-				    "cs",
-				    "loopback";
+		i2s_tx: i2s_tx@e000b000 {
+			compatible = "litex,i2s";
+			reg = <0xe000b000 0x4>,
+			      <0xe000b004 0x4>,
+			      <0xe000b008 0x4>,
+			      <0xe000b00c 0x4>,
+			      <0xe000b010 0x4>,
+			      <0xe000b014 0x4>,
+			      <0xb2000000 0x40000>;
+			interrupt-parent = <&intc0>;
+			interrupts = <7 2>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			reg-names = "ev_status",
+				    "ev_pending",
+				    "ev_enable",
+				    "tx_ctl",
+				    "tx_stat",
+				    "tx_conf",
+				    "fifo";
+			fifo-depth = <256>;
 			status = "okay";
 		};
 
@@ -234,6 +387,53 @@
 				reg = <0>;
 				spi-max-frequency = <10000000>;
 			};
+		};
+
+		wdt0: watchdog@e000d000 {
+			compatible = "litex,watchdog";
+			reg = <0xe000d000 0x4>,
+			      <0xe000d004 0x4>,
+			      <0xe000d008 0x4>,
+			      <0xe000d00c 0x4>,
+			      <0xe000d010 0x4>,
+			      <0xe000d014 0x4>;
+			interrupt-parent = <&intc0>;
+			reg-names = "control",
+				    "cycles",
+				    "remaining",
+				    "ev_status",
+				    "ev_pending",
+				    "ev_enable";
+			interrupts = <8 15>;
+			status = "okay";
+		};
+
+		i2c1: i2c@e000d800 {
+			compatible = "litex,litei2c";
+			reg = <0xe000d800 0x4>,
+			      <0xe000d804 0x4>,
+			      <0xe000d808 0x4>,
+			      <0xe000d80c 0x4>,
+			      <0xe000d810 0x4>,
+			      <0xe000d814 0x4>,
+			      <0xe000d818 0x4>,
+			      <0xe000d81c 0x4>,
+			      <0xe000d820 0x4>;
+			interrupt-parent = <&intc0>;
+			reg-names = "phy_speed_mode",
+				    "master_active",
+				    "master_settings",
+				    "master_addr",
+				    "master_rxtx",
+				    "master_status",
+				    "master_ev_status",
+				    "master_ev_pending",
+				    "master_ev_enable";
+			interrupts = <10 0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
 		};
 
 		sdhc0: sdhc@e000e800 {
@@ -308,210 +508,10 @@
 				status = "okay";
 			};
 		};
+	};
 
-		prbs0: prbs@e0006800 {
-			compatible = "litex,prbs";
-			reg = <0xe0006800 0x4>;
-			reg-names = "status";
-			status = "okay";
-		};
-
-		i2c0: i2c@e0005000 {
-			compatible = "litex,i2c";
-			reg = <0xe0005000 0x4>,
-			      <0xe0005004 0x4>;
-			reg-names = "write",
-				    "read";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "okay";
-		};
-
-		i2c1: i2c@e000d800 {
-			compatible = "litex,litei2c";
-			reg = <0xe000d800 0x4>,
-			      <0xe000d804 0x4>,
-			      <0xe000d808 0x4>,
-			      <0xe000d80c 0x4>,
-			      <0xe000d810 0x4>,
-			      <0xe000d814 0x4>,
-			      <0xe000d818 0x4>,
-			      <0xe000d81c 0x4>,
-			      <0xe000d820 0x4>;
-			interrupt-parent = <&intc0>;
-			reg-names = "phy_speed_mode",
-				    "master_active",
-				    "master_settings",
-				    "master_addr",
-				    "master_rxtx",
-				    "master_status",
-				    "master_ev_status",
-				    "master_ev_pending",
-				    "master_ev_enable";
-			interrupts = <10 0>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "okay";
-		};
-
-		pwm0: pwm@e0007000 {
-			compatible = "litex,pwm";
-			reg = <0xe0007000 0x4>,
-			      <0xe0007004 0x10>,
-			      <0xe0007014 0x10>;
-			reg-names = "enable",
-				    "width",
-				    "period";
-			#pwm-cells = <2>;
-			status = "okay";
-		};
-
-		gpio_out: gpio@e0005800 {
-			compatible = "litex,gpio";
-			reg = <0xe0005800 0x4>;
-			reg-names = "out";
-			ngpios = <4>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			status = "okay";
-		};
-
-		gpio_in: gpio@e0006000 {
-			compatible = "litex,gpio";
-			reg = <0xe0006000 0x4>,
-			      <0xe0006004 0x4>,
-			      <0xe0006008 0x4>,
-			      <0xe0006010 0x4>,
-			      <0xe0006014 0x4>;
-			interrupt-parent = <&intc0>;
-			interrupts = <4 2>;
-			reg-names = "in",
-				    "mode",
-				    "edge",
-				    "ev_pending",
-				    "ev_enable";
-			ngpios = <4>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			status = "okay";
-		};
-
-		i2s_rx: i2s_rx@e000a800 {
-			compatible = "litex,i2s";
-			reg = <0xe000a800 0x4>,
-			      <0xe000a804 0x4>,
-			      <0xe000a808 0x4>,
-			      <0xe000a80c 0x4>,
-			      <0xe000a810 0x4>,
-			      <0xe000a814 0x4>,
-			      <0xb1000000 0x40000>;
-			interrupt-parent = <&intc0>;
-			interrupts = <6 2>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg-names = "ev_status",
-				    "ev_pending",
-				    "ev_enable",
-				    "rx_ctl",
-				    "rx_stat",
-				    "rx_conf",
-				    "fifo";
-			fifo-depth = <256>;
-			status = "okay";
-		};
-
-		i2s_tx: i2s_tx@e000b000 {
-			compatible = "litex,i2s";
-			reg = <0xe000b000 0x4>,
-			      <0xe000b004 0x4>,
-			      <0xe000b008 0x4>,
-			      <0xe000b00c 0x4>,
-			      <0xe000b010 0x4>,
-			      <0xe000b014 0x4>,
-			      <0xb2000000 0x40000>;
-			interrupt-parent = <&intc0>;
-			interrupts = <7 2>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg-names = "ev_status",
-				    "ev_pending",
-				    "ev_enable",
-				    "tx_ctl",
-				    "tx_stat",
-				    "tx_conf",
-				    "fifo";
-			fifo-depth = <256>;
-			status = "okay";
-		};
-
-		clock-outputs {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			clk0: clock-controller@0 {
-				compatible = "litex,clkout";
-				reg = <0>;
-				#clock-cells = <1>;
-				clock-output-names = "CLK_0";
-				litex,clock-frequency = <11289600>;
-				litex,clock-phase = <0>;
-				litex,clock-duty-num = <1>;
-				litex,clock-duty-den = <2>;
-				litex,clock-margin = <1>;
-				litex,clock-margin-exp = <2>;
-				status = "okay";
-			};
-
-			clk1: clock-controller@1 {
-				compatible = "litex,clkout";
-				reg = <1>;
-				#clock-cells = <1>;
-				clock-output-names = "CLK_1";
-				litex,clock-frequency = <22579200>;
-				litex,clock-phase = <0>;
-				litex,clock-duty-num = <1>;
-				litex,clock-duty-den = <2>;
-				litex,clock-margin = <1>;
-				litex,clock-margin-exp = <2>;
-				status = "okay";
-			};
-		};
-
-		clock0: clock@e0004800 {
-			compatible = "litex,clk";
-			reg = <0xe0004800 0x4>,
-			      <0xe0004804 0x4>,
-			      <0xe0004808 0x4>,
-			      <0xe000480c 0x4>,
-			      <0xe0004810 0x4>,
-			      <0xe0004814 0x4>,
-			      <0xe0004818 0x4>,
-			      <0xe000481c 0x4>;
-			reg-names = "drp_reset",
-				    "drp_locked",
-				    "drp_read",
-				    "drp_write",
-				    "drp_drdy",
-				    "drp_adr",
-				    "drp_dat_w",
-				    "drp_dat_r";
-			#clock-cells = <1>;
-			clocks = <&clk0 0>, <&clk1 1>;
-			clock-output-names = "CLK_0", "CLK_1";
-			litex,lock-timeout = <10>;
-			litex,drdy-timeout = <10>;
-			litex,divclk-divide-min = <1>;
-			litex,divclk-divide-max = <107>;
-			litex,clkfbout-mult-min = <2>;
-			litex,clkfbout-mult-max = <65>;
-			litex,vco-freq-min = <600000000>;
-			litex,vco-freq-max = <1200000000>;
-			litex,clkout-divide-min = <1>;
-			litex,clkout-divide-max = <126>;
-			litex,vco-margin = <0>;
-			status = "okay";
-		};
+	ram0: memory@40000000 {
+		reg = <0x40000000 0x10000000>;
+		device_type = "memory";
 	};
 };
