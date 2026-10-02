@@ -7,10 +7,10 @@
 / {
 	usb_midi: usb_midi {
 		compatible = "zephyr,midi2-device";
-		status = "okay";
 		#address-cells = <1>;
 		#size-cells = <1>;
 		label = "Zephyr USB-MIDI Sample";
+		status = "okay";
 
 		midi_in_out@0 {
 			reg = <0 1>;

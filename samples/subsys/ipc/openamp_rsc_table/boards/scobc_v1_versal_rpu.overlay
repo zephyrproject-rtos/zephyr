@@ -20,11 +20,11 @@
 	rproc0_shm: shared-memory@9800000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x09800000 0x200000>;
-		zephyr,memory-region = "RPROC_SHM";
-		zephyr,memory-attr = <DT_MEM_ARM_MPU_RAM_NOCACHE>;
+		ranges = <0x0 0x09800000 0x200000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x09800000 0x200000>;
+		zephyr,memory-region = "RPROC_SHM";
+		zephyr,memory-attr = <DT_MEM_ARM_MPU_RAM_NOCACHE>;
 
 		/*
 		 * RPROC stores the load image for OCM data and the ELF resource
@@ -70,8 +70,8 @@
 		compatible = "xlnx,mbox-versal-ipi-dest-mailbox";
 		reg = <0xff360000 0x10000>, <0xff3f0a00 0x200>;
 		reg-names = "ctrl", "msg";
-		xlnx,ipi-id = <5>;
 		#mbox-cells = <1>;
+		xlnx,ipi-id = <5>;
 		status = "okay";
 	};
 };

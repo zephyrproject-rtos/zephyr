@@ -16,20 +16,20 @@
 		 * by Particle.
 		 */
 		littlefs_partition: partition@0 {
-			label = "littlefs";
 			reg = <0x00000000 0x00200000>;
+			label = "littlefs";
 		};
 
 		/* A 16 KiBy partition to use for the test. */
 		storage_partition: partition@200000 {
-			label = "storage";
 			reg = <0x00200000 0x00004000>;
+			label = "storage";
 		};
 
 		/* A bigger partition for something else. */
 		partition@204000 {
-			label = "scratch";
 			reg = <0x00204000 0x001fc000>;
+			label = "scratch";
 		};
 	};
 };

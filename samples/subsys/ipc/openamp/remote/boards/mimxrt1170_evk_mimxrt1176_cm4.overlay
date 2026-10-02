@@ -40,8 +40,8 @@
 
 /* Enable secondary LPUART */
 &lpuart2 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 /* Disable primary GPT timer */

@@ -6,7 +6,6 @@
  */
 
 &sdmmc1 {
-	status = "okay";
 	pinctrl-0 = <&sdmmc1_d0_pc8
 		     &sdmmc1_ck_pc12
 		     &sdmmc1_cmd_pd2>;
@@ -14,6 +13,7 @@
 	pinctrl-names = "default";
 
 	disk-name = "SD";
+	status = "okay";
 };
 
 / {
@@ -59,8 +59,8 @@
 			#size-cells = <1>;
 
 			storage_partition: partition@0 {
-				label = "storage";
 				reg = <0 DT_SIZE_M(8)>;
+				label = "storage";
 			};
 		};
 	};

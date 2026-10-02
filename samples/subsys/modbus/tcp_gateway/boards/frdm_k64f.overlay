@@ -5,8 +5,8 @@
  */
 
 &arduino_serial {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 
 	modbus0 {
 		compatible = "zephyr,modbus-serial";
