@@ -367,7 +367,7 @@ class PowerShield(PowerMonitor):
         # Read the next 2 bytes
         metadata_bytes = self.handler.read_bytes(2)
         if len(metadata_bytes) < 2:
-            logging.error("Error: Incomplete end of acquisition metadata reveived.")
+            logging.error("Error: Incomplete end of acquisition metadata received.")
             return
         # Check for end tags (last 2 bytes)
         end_tag_1 = metadata_bytes[0]
