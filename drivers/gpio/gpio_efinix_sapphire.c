@@ -38,7 +38,6 @@ LOG_MODULE_REGISTER(gpio_efinix_sapphire);
 struct gpio_efinix_sapphire_cfg {
 	struct gpio_driver_config common;
 	uint32_t base_addr;
-	int n_gpios;
 };
 
 /* efinix sapphire specific gpio data struct */
@@ -119,9 +118,7 @@ static int gpio_efinix_sapphire_config(const struct device *dev, gpio_pin_t pin,
 
 static inline uint32_t get_port(const struct gpio_efinix_sapphire_cfg *config)
 {
-	uint32_t c_reg_val = sys_read32(GPIO_OUTPUT_ADDR);
-
-	return (c_reg_val & BIT_MASK(config->n_gpios));
+	return sys_read32(GPIO_OUTPUT_ADDR);
 }
 
 static inline void set_port(const struct gpio_efinix_sapphire_cfg *config, uint32_t value)
@@ -197,11 +194,6 @@ static int gpio_efinix_sapphire_port_toggle_bits(const struct device *dev, gpio_
 
 static int gpio_efinix_sapphire_init(const struct device *dev)
 {
-	const struct gpio_efinix_sapphire_cfg *config = DEV_GPIO_CFG(dev);
-
-	if (config->n_gpios > 4) {
-		return -EINVAL;
-	}
 	return 0;
 }
 
@@ -219,7 +211,6 @@ static DEVICE_API(gpio, gpio_efinix_sapphire_api) = {
 	static struct gpio_efinix_sapphire_cfg gpio_efinix_sapphire_cfg_##n = { \
 		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n), \
 		.base_addr = DT_INST_REG_ADDR(n), \
-		.n_gpios = DT_INST_PROP(n, ngpios), \
 }; \
 static struct gpio_efinix_sapphire_data gpio_efinix_sapphire_data_##n; \
 	DEVICE_DT_INST_DEFINE(n, \
