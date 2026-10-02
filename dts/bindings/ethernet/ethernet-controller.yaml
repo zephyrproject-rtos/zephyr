@@ -7,6 +7,10 @@ include:
   - name: base.yaml
   - name: ethernet-mac-address.yaml
 
+class:
+  - net_if
+  - ethernet
+
 properties:
   phy-handle:
     type: phandle
