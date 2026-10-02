@@ -8,8 +8,8 @@
 #include "mini_stm32h750-common.dtsi"
 
 / {
-	model = "WeAct Studio MiniSTM32H750 Core Board";
 	compatible = "weact,mini-stm32h750";
+	model = "WeAct Studio MiniSTM32H750 Core Board";
 
 	chosen {
 		zephyr,flash = &ext_flash;
@@ -20,14 +20,14 @@
 
 &flash0 {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(128)>;
+			label = "mcuboot";
 		};
 	};
 };
@@ -36,14 +36,14 @@
 	status = "okay";
 
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		slot0_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x0 DT_SIZE_M(6)>;
+			label = "image-0";
 		};
 	};
 };
@@ -61,13 +61,13 @@
 		 * update image cannot be staged on the same QSPI device.
 		 */
 		slot1_partition: partition@0 {
-			label = "image-1";
 			reg = <0x00000000 DT_SIZE_M(6)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@600000 {
-			label = "storage";
 			reg = <0x00600000 DT_SIZE_M(2)>;
+			label = "storage";
 		};
 	};
 };
