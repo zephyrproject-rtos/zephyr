@@ -20,7 +20,7 @@ int bt_testlib_att_read_by_type_sync(struct net_buf_simple *result_data, uint16_
 				     uint16_t end_handle);
 
 /** If offset == 0, perform a single ATT_READ_REQ.
- * If offset > 0, perform a signle ATT_READ_BLOB_REQ.
+ * If offset > 0, perform a single ATT_READ_BLOB_REQ.
  */
 int bt_testlib_att_read_by_handle_sync(struct net_buf_simple *result_data, uint16_t *result_size,
 				       uint16_t *result_att_mtu, struct bt_conn *conn,
