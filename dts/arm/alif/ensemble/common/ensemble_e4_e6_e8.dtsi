@@ -13,21 +13,17 @@
 #include <alif/ensemble/common/ensemble_common.dtsi>
 
 &soc {
-	uart6: uart@4901e000 {
-		compatible = "ns16550";
-		reg = <0x4901e000 0x1000>;
-		clocks = <&clockctrl ALIF_UART6_SYST_PCLK>;
-		reg-shift = <2>;
-		current-speed = <115200>;
+	lptimer2: timer@42001028 {
+		compatible = "snps,dw-timers";
+		reg = <0x42001028 0x14>;
+		clocks = <&clockctrl ALIF_LPTIMER2_S32K_CLK>;
 		status = "disabled";
 	};
 
-	uart7: uart@4901f000 {
-		compatible = "ns16550";
-		reg = <0x4901f000 0x1000>;
-		clocks = <&clockctrl ALIF_UART7_SYST_PCLK>;
-		reg-shift = <2>;
-		current-speed = <115200>;
+	lptimer3: timer@4200103c {
+		compatible = "snps,dw-timers";
+		reg = <0x4200103c 0x14>;
+		clocks = <&clockctrl ALIF_LPTIMER3_S32K_CLK>;
 		status = "disabled";
 	};
 
@@ -119,17 +115,21 @@
 		status = "disabled";
 	};
 
-	lptimer2: timer@42001028 {
-		compatible = "snps,dw-timers";
-		reg = <0x42001028 0x14>;
-		clocks = <&clockctrl ALIF_LPTIMER2_S32K_CLK>;
+	uart6: uart@4901e000 {
+		compatible = "ns16550";
+		reg = <0x4901e000 0x1000>;
+		clocks = <&clockctrl ALIF_UART6_SYST_PCLK>;
+		reg-shift = <2>;
+		current-speed = <115200>;
 		status = "disabled";
 	};
 
-	lptimer3: timer@4200103c {
-		compatible = "snps,dw-timers";
-		reg = <0x4200103c 0x14>;
-		clocks = <&clockctrl ALIF_LPTIMER3_S32K_CLK>;
+	uart7: uart@4901f000 {
+		compatible = "ns16550";
+		reg = <0x4901f000 0x1000>;
+		clocks = <&clockctrl ALIF_UART7_SYST_PCLK>;
+		reg-shift = <2>;
+		current-speed = <115200>;
 		status = "disabled";
 	};
 };
