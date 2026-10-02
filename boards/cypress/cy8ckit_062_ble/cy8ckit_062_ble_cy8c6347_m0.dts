@@ -11,8 +11,8 @@
 #include "cy8ckit_062_ble_common.dtsi"
 
 / {
-	model = "Cypress PSOC 6 BLE Pioneer Kit";
 	compatible = "cypress,cy8c6xx7_cm0p", "cypress,psoc6";
+	model = "Cypress PSOC 6 BLE Pioneer Kit";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -25,8 +25,8 @@
 };
 
 &spi6 {
-	status = "okay";
 	interrupt-parent = <&intmux_ch16>;
+	status = "okay";
 };
 
 arduino_spi: &spi6 {};
