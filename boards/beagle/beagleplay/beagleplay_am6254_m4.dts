@@ -36,6 +36,12 @@
 		};
 	};
 
+	ipc0: ipc {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mbox0 0>, <&mbox0 1>;
+		mbox-names = "tx", "rx";
+	};
+
 	ddr0: memory@9cb00000 {
 		compatible = "mmio-sram";
 		reg = <0x9cb00000 DT_SIZE_M(1)>;
@@ -51,12 +57,6 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x9cc01000 (DT_SIZE_M(14) - DT_SIZE_K(4))>;
 		zephyr,memory-region = "DDR";
-	};
-
-	ipc0: ipc {
-		compatible = "zephyr,mbox-ipm";
-		mboxes = <&mbox0 0>, <&mbox0 1>;
-		mbox-names = "tx", "rx";
 	};
 };
 

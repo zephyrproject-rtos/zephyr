@@ -80,15 +80,15 @@
 		gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
 		status = "okay";
 
-		light: opt3001-light@44 {
-			compatible = "ti,opt3001";
-			reg = <0x44>;
-			status = "okay";
-		};
-
 		humidity: hdc2010-humidity@41 {
 			compatible = "ti,hdc2010";
 			reg = <0x41>;
+			status = "okay";
+		};
+
+		light: opt3001-light@44 {
+			compatible = "ti,opt3001";
+			reg = <0x44>;
 			status = "okay";
 		};
 	};
