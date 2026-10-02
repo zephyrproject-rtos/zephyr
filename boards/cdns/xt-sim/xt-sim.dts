@@ -9,8 +9,8 @@
 #include "sample_controller.dtsi"
 
 / {
-	model = "xt-sim";
 	compatible = "cdns,xtensa-sample-controller";
+	model = "xt-sim";
 
 	cpus {
 		timebase-frequency = <DT_FREQ_M(2)>;
