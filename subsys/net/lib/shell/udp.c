@@ -12,7 +12,7 @@ LOG_MODULE_DECLARE(net_shell);
 
 #include "net_shell_private.h"
 
-#if defined(CONFIG_NET_UDP) && defined(CONFIG_NET_NATIVE_UDP)
+#if defined(CONFIG_NET_UDP) && defined(CONFIG_NET_NATIVE_UDP) && defined(CONFIG_NET_CONTEXT)
 static struct net_context *udp_ctx;
 static const struct shell *udp_shell;
 K_SEM_DEFINE(udp_send_wait, 0, 1);
@@ -53,7 +53,7 @@ static void udp_sent(struct net_context *context, int status, void *user_data)
 
 static int cmd_net_udp_bind(const struct shell *sh, size_t argc, char *argv[])
 {
-#if !defined(CONFIG_NET_UDP) || !defined(CONFIG_NET_NATIVE_UDP)
+#if !defined(CONFIG_NET_UDP) || !defined(CONFIG_NET_NATIVE_UDP) || !defined(CONFIG_NET_CONTEXT)
 	ARG_UNUSED(sh);
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
@@ -155,7 +155,7 @@ release_ctx:
 
 static int cmd_net_udp_close(const struct shell *sh, size_t argc, char *argv[])
 {
-#if !defined(CONFIG_NET_UDP) || !defined(CONFIG_NET_NATIVE_UDP)
+#if !defined(CONFIG_NET_UDP) || !defined(CONFIG_NET_NATIVE_UDP) || !defined(CONFIG_NET_CONTEXT)
 	ARG_UNUSED(sh);
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
@@ -180,7 +180,7 @@ static int cmd_net_udp_close(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_net_udp_send(const struct shell *sh, size_t argc, char *argv[])
 {
-#if !defined(CONFIG_NET_UDP) || !defined(CONFIG_NET_NATIVE_UDP)
+#if !defined(CONFIG_NET_UDP) || !defined(CONFIG_NET_NATIVE_UDP) || !defined(CONFIG_NET_CONTEXT)
 	ARG_UNUSED(sh);
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
@@ -289,13 +289,14 @@ release_ctx:
 static int cmd_net_udp_dplpmtud(const struct shell *sh, size_t argc, char *argv[])
 {
 #if !defined(CONFIG_NET_UDP) || !defined(CONFIG_NET_NATIVE_UDP) || \
-	!defined(CONFIG_NET_UDP_OPTIONS_DPLPMTUD)
+	!defined(CONFIG_NET_CONTEXT) || !defined(CONFIG_NET_UDP_OPTIONS_DPLPMTUD)
 	ARG_UNUSED(sh);
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
 	PR_INFO("Set %s to enable %s support.\n",
-		"CONFIG_NET_UDP_OPTIONS_DPLPMTUD", "DPLPMTUD over UDP options");
+		"CONFIG_NET_CONTEXT and CONFIG_NET_UDP_OPTIONS_DPLPMTUD",
+		"DPLPMTUD over UDP options");
 	return -EOPNOTSUPP;
 #else
 	char *host = NULL;
@@ -411,13 +412,14 @@ static int cmd_net_udp_dplpmtud_server(const struct shell *sh, size_t argc,
 				       char *argv[])
 {
 #if !defined(CONFIG_NET_UDP) || !defined(CONFIG_NET_NATIVE_UDP) || \
-	!defined(CONFIG_NET_UDP_OPTIONS_DPLPMTUD)
+	!defined(CONFIG_NET_CONTEXT) || !defined(CONFIG_NET_UDP_OPTIONS_DPLPMTUD)
 	ARG_UNUSED(sh);
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
 	PR_INFO("Set %s to enable %s support.\n",
-		"CONFIG_NET_UDP_OPTIONS_DPLPMTUD", "DPLPMTUD over UDP options");
+		"CONFIG_NET_CONTEXT and CONFIG_NET_UDP_OPTIONS_DPLPMTUD",
+		"DPLPMTUD over UDP options");
 	return -EOPNOTSUPP;
 #else
 	char *addr_str = NULL;

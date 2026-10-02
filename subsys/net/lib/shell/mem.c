@@ -13,8 +13,10 @@ LOG_MODULE_DECLARE(net_shell);
 struct ctx_info {
 	int pos;
 	bool are_external_pools;
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
 	struct k_mem_slab *tx_slabs[CONFIG_NET_MAX_CONTEXTS];
 	struct net_buf_pool *data_pools[CONFIG_NET_MAX_CONTEXTS];
+#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 };
 
 #if defined(CONFIG_NET_OFFLOAD) || defined(CONFIG_NET_NATIVE)
@@ -39,11 +41,9 @@ static bool slab_pool_found_already(struct ctx_info *info,
 
 	return false;
 }
-#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
 static void context_info(struct net_context *context, void *user_data)
 {
-#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
 	struct net_shell_user_data *data = user_data;
 	const struct shell *sh = data->sh;
 	struct ctx_info *info = data->user_data;
@@ -89,8 +89,8 @@ static void context_info(struct net_context *context, void *user_data)
 	}
 
 	info->pos++;
-#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 }
+#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 #endif /* CONFIG_NET_OFFLOAD || CONFIG_NET_NATIVE */
 
 static int cmd_net_mem(const struct shell *sh, size_t argc, char *argv[])
@@ -144,7 +144,8 @@ static int cmd_net_mem(const struct shell *sh, size_t argc, char *argv[])
 		"CONFIG_NET_BUF_POOL_USAGE", "net_buf allocation");
 #endif /* CONFIG_NET_BUF_POOL_USAGE */
 
-	if (IS_ENABLED(CONFIG_NET_CONTEXT_NET_PKT_POOL)) {
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
+	{
 		struct net_shell_user_data user_data;
 		struct ctx_info info;
 
@@ -159,6 +160,7 @@ static int cmd_net_mem(const struct shell *sh, size_t argc, char *argv[])
 			PR("No external memory pools found.\n");
 		}
 	}
+#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
 #if defined(CONFIG_NET_PKT_ALLOC_STATS)
 	PR("\n");
