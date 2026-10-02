@@ -899,8 +899,6 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 	hal_dev->timing_conf.source_real_freq = clk_src_hz;
 #endif
 
-	data->trans_config.dummy_bits = hal_dev->timing_conf.timing_dummy;
-
 	hal_dev->tx_lsbfirst = spi_cfg->operation & SPI_TRANSFER_LSB ? 1 : 0;
 	hal_dev->rx_lsbfirst = spi_cfg->operation & SPI_TRANSFER_LSB ? 1 : 0;
 
