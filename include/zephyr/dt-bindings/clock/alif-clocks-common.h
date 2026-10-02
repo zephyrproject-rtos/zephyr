@@ -135,7 +135,21 @@
 #define ALIF_VBAT_MODULE                0x4U  /**< VBAT Clock Control */
 #define ALIF_M55HE_CFG_MODULE           0x5U  /**< M55 High Efficiency Config */
 #define ALIF_M55HP_CFG_MODULE           0x6U  /**< M55 High Performance Config */
+#define ALIF_NONE_MODULE                0x7U  /**< No register: fixed, always-on clock */
 
 /** @} */
+
+/**
+ * @brief Encode a clock with neither an enable bit nor a source selection
+ *
+ * The module is ALIF_NONE_MODULE and the register offset is unused, so a
+ * register access for such a clock hits the invalid-module assertion of the
+ * clock driver instead of a real register.
+ *
+ * @param parent_clk Parent clock source identifier (0-31, see ALIF_PARENT_CLK_*)
+ */
+#define ALIF_CLK_CFG_FIXED(parent_clk)                                                             \
+	((ALIF_NONE_MODULE << ALIF_CLOCK_MODULE_SHIFT) |                                           \
+	 (((parent_clk) & ALIF_CLOCK_PARENT_CLK_MASK) << ALIF_CLOCK_PARENT_CLK_SHIFT))
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ALIF_CLOCKS_COMMON_H_ */
