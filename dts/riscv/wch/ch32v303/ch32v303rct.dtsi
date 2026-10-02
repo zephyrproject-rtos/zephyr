@@ -64,9 +64,9 @@
 			clocks = <&rcc CH32V20X_V30X_CLOCK_SPI3>;
 			interrupt-parent = <&pfic>;
 			interrupts = <67>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 	};
 };

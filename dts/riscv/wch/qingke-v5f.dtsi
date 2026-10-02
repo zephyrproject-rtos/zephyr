@@ -23,28 +23,28 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@1 {
-			device_type = "cpu";
 			compatible = "wch,qingke-v5f", "riscv";
 			reg = <1>;
-			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei";
+			device_type = "cpu";
 			clock-frequency = <DT_FREQ_M(480)>;
 			cpu-power-states = <&run0>;
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei";
 		};
 	};
 
 	soc {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "simple-bus";
 		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		pfic: interrupt-controller@e000e000 {
 			compatible = "wch,pfic";
+			reg = <0xe000e000 0x10>;
 			#address-cells = <0>;
 			#interrupt-cells = <1>;
 			interrupt-controller;
-			reg = <0xe000e000 0x10>;
 			status = "okay";
 		};
 
@@ -58,9 +58,9 @@
 		systick: systimer@e000f080 {
 			compatible = "wch,systick";
 			reg = <0xe000f080 0x18>;
-			status = "okay";
 			interrupt-parent = <&pfic>;
 			interrupts = <13>;
+			status = "okay";
 		};
 	};
 };
