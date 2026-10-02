@@ -10,8 +10,8 @@
 #include "elemrv_flask_n-pinctrl.dtsi"
 
 / {
-	model = "ElemRV Flask-N (ElemRV-N)";
 	compatible = "aesc,elemrv-flask-n";
+	model = "ElemRV Flask-N (ElemRV-N)";
 
 	aliases {
 		led0 = &led0;
@@ -35,15 +35,15 @@
 
 	soc {
 		ocram: memory@80000000 {
-			device_type = "memory";
 			compatible = "mmio-sram";
 			reg = <0x80000000 DT_SIZE_K(1)>;
+			device_type = "memory";
 		};
 
 		hyperbus: memory@90000000 {
-			device_type = "memory";
 			compatible = "mmio-sram";
 			reg = <0x90000000 DT_SIZE_K(32)>;
+			device_type = "memory";
 		};
 
 		flash: flash@a0010000 {
@@ -58,9 +58,9 @@
 };
 
 &gpio0 {
-	status = "okay";
 	pinctrl-0 = <&gpio0_pin0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &pinctrl {
