@@ -15,6 +15,7 @@
 #include <zephyr/types.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log_core.h>
+#include <zephyr/logging/log_link.h>
 #include <zephyr/sys/mpsc_pbuf.h>
 
 #ifdef __cplusplus
@@ -171,6 +172,14 @@ static inline bool z_log_is_local_domain(uint8_t domain_id)
  * @return Timestamp.
  */
 log_timestamp_t z_log_timestamp(void);
+
+/** @brief Return link based on the domain id.
+ *
+ * @param[in]  domain_id Domain ID.
+ *
+ * @return Link to which given domain belongs.
+ */
+const struct log_link *z_log_get_link_domain(uint8_t domain_id);
 
 /** @endcond */
 
