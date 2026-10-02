@@ -69,6 +69,14 @@ UNRESOLVED_DEVICES = {
         "DEVICE_DT_GET(DT_COMPAT_GET_ANY_STATUS_OKAY(vnd_dtdoctor_missing))",
         "The node identifier is DT_INVALID_NODE",
     ),
+    "property": (
+        "DEVICE_DT_GET(DT_GPIO_CTLR(DT_ALIAS(dtdoctor_dev), gpios))",
+        "(alias 'dtdoctor-dev') has no 'gpios' property.",
+    ),
+    "path": (
+        "DEVICE_DT_GET(DT_PATH(dtdoctor_enable_device))",
+        "Similar child nodes: dtdoctor-enabled-device",
+    ),
 }
 
 
