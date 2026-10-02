@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
 #include "bl54l15_dvk_nrf54l_10_15-pinctrl.dtsi"
 
 / {
@@ -96,18 +97,18 @@
 		gpio-map-pass-thru = <0 0x3f>;
 		gpio-map =
 			   /* Shared functions listed in () */
-			   <0 0 &gpio1 13 0>,	/* AN  (button 0, ain6) */
-			   <1 0 &gpio0 4 0>,	/* RST (button 3) */
-			   <2 0 &gpio2 9 0>,	/* CS  (led 0) */
-			   <3 0 &gpio2 1 0>,	/* SCK */
-			   <4 0 &gpio2 4 0>,	/* MISO */
-			   <5 0 &gpio2 2 0>,	/* MOSI */
-			   <6 0 &gpio1 14 0>,	/* PWM (led 3) */
-			   <7 0 &gpio1 10 0>,	/* INT (led 1) */
-			   <8 0 &gpio1 8 0>,	/* UART RX (button 2) */
-			   <9 0 &gpio1 9 0>,	/* UART TX (button 1) */
-			   <10 0 &gpio1 11 0>,	/* SCL  */
-			   <11 0 &gpio1 12 0>;	/* SDA  */
+			   <MIKROBUS_AN 0 &gpio1 13 0>,	/* (button 0, ain6) */
+			   <MIKROBUS_RST 0 &gpio0 4 0>,	/* (button 3) */
+			   <MIKROBUS_CS 0 &gpio2 9 0>,	/* (led 0) */
+			   <MIKROBUS_SCK 0 &gpio2 1 0>,
+			   <MIKROBUS_MISO 0 &gpio2 4 0>,
+			   <MIKROBUS_MOSI 0 &gpio2 2 0>,
+			   <MIKROBUS_PWM 0 &gpio1 14 0>,	/* (led 3) */
+			   <MIKROBUS_INT 0 &gpio1 10 0>,	/* (led 1) */
+			   <MIKROBUS_RX 0 &gpio1 8 0>,	/* (button 2) */
+			   <MIKROBUS_TX 0 &gpio1 9 0>,	/* (button 1) */
+			   <MIKROBUS_SCL 0 &gpio1 11 0>,
+			   <MIKROBUS_SDA 0 &gpio1 12 0>;
 	};
 
 	qwiic_connector: qwiic-connector {
