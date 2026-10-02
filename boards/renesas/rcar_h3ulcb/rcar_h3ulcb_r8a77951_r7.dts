@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Renesas h3ulcb board";
 	compatible = "renesas,h3ulcb-cr7";
+	model = "Renesas h3ulcb board";
 
 	cpus {
 		timebase-frequency = <DT_FREQ_K(32)>;
@@ -53,8 +53,8 @@
 };
 
 &cmt0 {
-	status = "okay";
 	clock-frequency = <32000>;
+	status = "okay";
 };
 
 &gpio6 {

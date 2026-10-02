@@ -11,8 +11,8 @@
 #include "board.dtsi"
 
 / {
-	model = "emsdp";
 	compatible = "snps,emsdp", "snps,emsdp";
+	model = "emsdp";
 
 	cpus {
 		timebase-frequency = <DT_FREQ_M(50)>;
@@ -30,18 +30,18 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 / {
 	soc {
-		uart@f0004000 {
-			interrupts = <108 1>;
-		};
-
 		gpio@f0002000 {
 			interrupts = <86 1>;
+		};
+
+		uart@f0004000 {
+			interrupts = <108 1>;
 		};
 
 		/* IRQ line in em7d_esp is different to others */

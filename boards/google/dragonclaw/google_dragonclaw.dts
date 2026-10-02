@@ -10,8 +10,8 @@
 #include <st/f4/stm32f412c(e-g)ux-pinctrl.dtsi>
 
 / {
-	model = "Google Dragonclaw development board";
 	compatible = "google,dragonclaw-fpmcu";
+	model = "Google Dragonclaw development board";
 
 	chosen {
 		zephyr,console = &usart2;

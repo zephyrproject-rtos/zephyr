@@ -10,8 +10,8 @@
 #include "rtl872xd_evb-pinctrl.dtsi"
 
 / {
-	model = "RealTek AmebaD RTL872XD EVB";
 	compatible = "realtek,rtl872xd_evb";
+	model = "RealTek AmebaD RTL872XD EVB";
 
 	chosen {
 		zephyr,console = &loguart;
@@ -35,21 +35,21 @@
 
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "bootloader";
 			reg = <0x00000000 0x00014000>;
+			label = "bootloader";
 			read-only;
 		};
 
 		slot0_partition: partition@14000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x00014000 0x001ec000>;
+			label = "image-0";
 		};
 
 		storage_partition: partition@250000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x00250000 0x00006000>;
+			label = "storage";
 		};
 	};
 };

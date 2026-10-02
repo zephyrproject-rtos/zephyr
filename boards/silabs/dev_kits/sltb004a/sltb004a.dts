@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Silabs EFR32MG12 SLTB004A board (aka Thunderboard Sense 2)";
 	compatible = "silabs,sltb004a", "silabs,efr32mg";
+	model = "Silabs EFR32MG12 SLTB004A board (aka Thunderboard Sense 2)";
 
 	/* These aliases are provided for compatibility with samples */
 	aliases {

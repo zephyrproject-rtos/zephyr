@@ -19,8 +19,8 @@
 };
 
 &xiao_spi {
-	status = "okay";
 	cs-gpios = <&xiao_d 7 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	mcp2515_seeed_xiao_can: can@0 {
 		compatible = "microchip,mcp2515";

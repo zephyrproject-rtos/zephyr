@@ -116,9 +116,9 @@
 };
 
 &adc12_common {
+	vref-mv = <10000>;
 	st,adc-prescaler = <4>;
 	st,adc-clock-source = "SYNC";
-	vref-mv = <10000>;
 	status = "okay";
 };
 
@@ -161,9 +161,9 @@
 };
 
 &adc3_common {
+	vref-mv = <10000>;
 	st,adc-prescaler = <4>;
 	st,adc-clock-source = "SYNC";
-	vref-mv = <10000>;
 	status = "okay";
 };
 
@@ -232,9 +232,9 @@ sdhc: &sdmmc1 {
 	status = "okay";
 
 	wifi: airoc-wifi {
-		status = "okay";
 		compatible = "infineon,airoc-wifi";
 		wifi-reg-on-gpios = <&gpioj 1 GPIO_ACTIVE_HIGH>;
 		wifi-host-wake-gpios = <&gpioj 5 GPIO_ACTIVE_HIGH>;
+		status = "okay";
 	};
 };

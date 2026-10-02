@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
-	model = "ch32v003f4p6_dev_board";
 	compatible = "wch,ch32v003";
+	model = "ch32v003f4p6_dev_board";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -58,15 +58,15 @@
 };
 
 &i2c1 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &usart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&usart1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };

@@ -10,8 +10,8 @@
 #include "wio_wm1110_dev_kit-pinctrl.dtsi"
 
 / {
-	model = "Wio-WM1110 Dev Kit";
 	compatible = "seeed,wio-wm1110-dev-kit";
+	model = "Wio-WM1110 Dev Kit";
 
 	aliases {
 		led0 = &led0;
@@ -79,20 +79,20 @@
 
 &uart0 {
 	compatible = "nordic,nrf-uarte";
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &i2c0 {
 	compatible = "nordic,nrf-twim";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	lis3dh: lis3dh@19 {
 		compatible = "st,lis3dh", "st,lis2dh";

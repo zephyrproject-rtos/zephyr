@@ -9,8 +9,8 @@
 #include <common/mem.h>
 
 / {
-	model = "Xunlong Orange Pi 5 Ultra";
 	compatible = "xunlong,orangepi-5-ultra", "rockchip,rk3588";
+	model = "Xunlong Orange Pi 5 Ultra";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -19,9 +19,9 @@
 	};
 
 	sram0: memory@0 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x0 DT_SIZE_G(1)>;
+		device_type = "memory";
 	};
 };
 

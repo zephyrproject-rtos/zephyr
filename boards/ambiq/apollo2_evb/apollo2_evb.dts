@@ -10,8 +10,8 @@
 #include "apollo2_evb-pinctrl.dtsi"
 
 / {
-	model = "Ambiq Apollo2 evaluation board";
 	compatible = "ambiq,apollo2_evb";
+	model = "Ambiq Apollo2 evaluation board";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -31,26 +31,26 @@
 
 		boot_partition: partition@c000 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			reg = <0x0000c000 0xc000>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@18000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x00018000 0x72000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@8a000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1";
 			reg = <0x0008a000 0x72000>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@fc000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x000fc000 0x4000>;
+			label = "storage";
 		};
 	};
 };

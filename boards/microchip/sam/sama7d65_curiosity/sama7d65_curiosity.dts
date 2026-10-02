@@ -15,8 +15,8 @@
 #include <microchip/sam/sama7/sama7d6/sama7d65.dtsi>
 
 / {
-	model = "SAMA7D65-Curiosity board";
 	compatible = "microchip,sama7d65curiosity", "microchip,sama7d6", "microchip,sama7";
+	model = "SAMA7D65-Curiosity board";
 
 	aliases {
 		eeprom-0 = &eeprom0;
@@ -42,11 +42,6 @@
 		slow_xtal {
 			clock-frequency = <32768>;
 		};
-	};
-
-	ddram: ddram@60000000 {
-		compatible = "ddram";
-		reg = <0x60000000 DT_SIZE_M(1024)>;
 	};
 
 	leds {
@@ -94,6 +89,11 @@
 		blue_pwm_led: blue_pwm_led {
 			pwms = <&pwm 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
+	};
+
+	ddram: ddram@60000000 {
+		compatible = "ddram";
+		reg = <0x60000000 DT_SIZE_M(1024)>;
 	};
 };
 
@@ -146,7 +146,6 @@
 };
 
 &gmac0 {
-	status = "okay";
 
 	pinctrl-0 = <&pinctrl_gmac0_default>;
 	pinctrl-names = "default";
@@ -156,39 +155,40 @@
 
 	nvmem-cells = <&eeprom0_eui48>;
 	nvmem-cell-names = "mac_address";
+	status = "okay";
 };
 
 &gmac0_mdio {
-	status = "okay";
 
 	pinctrl-0 = <&pinctrl_gmac0_mdio_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	gmac0_phy: ethernet-phy@7 {
 		compatible = "microchip,lan8840";
+		reg = <7>;
 		int-gpios = <&pioc 1 GPIO_ACTIVE_LOW>;
 		microchip,rgmii-delay = "id";
-		reg = <7>;
 		status = "okay";
 	};
 };
 
 &mcan1 {
-	status = "okay";
 	pinctrl-0 = <&pinctrl_can1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &mcan2 {
-	status = "okay";
 	pinctrl-0 = <&pinctrl_can2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &mcan3 {
-	status = "okay";
 	pinctrl-0 = <&pinctrl_can3_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &pinctrl {

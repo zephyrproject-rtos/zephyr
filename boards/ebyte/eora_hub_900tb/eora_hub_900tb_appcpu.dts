@@ -10,8 +10,8 @@
 #include <espressif/partitions_0x0_amp_4M.dtsi>
 
 / {
-	model = "Ebyte EoRa-HUB-900TB Module Test Kit APPCPU";
 	compatible = "espressif,esp32s3";
+	model = "Ebyte EoRa-HUB-900TB Module Test Kit APPCPU";
 
 	chosen {
 		zephyr,sram = &sram1;

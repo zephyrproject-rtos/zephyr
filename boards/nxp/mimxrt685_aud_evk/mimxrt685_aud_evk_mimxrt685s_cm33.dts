@@ -11,8 +11,8 @@
 #include "mimxrt685_aud_evk-pinctrl.dtsi"
 
 / {
-	model = "NXP MIMXRT685-AUD-EVK board";
 	compatible = "nxp,mimxrt685";
+	model = "NXP MIMXRT685-AUD-EVK board";
 
 	aliases {
 		sw0 = &user_button_1;
@@ -69,16 +69,16 @@
 };
 
 &os_timer {
-	status = "okay";
 	wakeup-source;
+	status = "okay";
 };
 
 &flexcomm0 {
 	compatible = "nxp,lpc-usart";
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm0_usart>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &flexspi {
@@ -86,22 +86,22 @@
 
 	mx25u51245g: flash-controller@2 {
 		compatible = "nxp,imx-flexspi-nor";
-		size = <DT_SIZE_M(64 * 8)>;
 		reg = <2>;
+		ranges = <0x0 0x18000000 DT_SIZE_M(64)>;
+		size = <DT_SIZE_M(64 * 8)>;
 		spi-max-frequency = <DT_FREQ_M(96)>;
-		status = "okay";
 		jedec-id = [c2 25 3a];
 
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x18000000 DT_SIZE_M(64)>;
+		status = "okay";
 
 		mx25u51245g_flash: flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0x0 DT_SIZE_M(64)>;
+			ranges;
 			erase-block-size = <DT_SIZE_K(4)>;
 			write-block-size = <1>;
-			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -112,26 +112,26 @@
 
 				boot_partition: partition@0 {
 					compatible = "zephyr,mapped-partition";
-					label = "mcuboot";
 					reg = <0x00000000 DT_SIZE_K(128)>;
+					label = "mcuboot";
 				};
 
 				slot0_partition: partition@20000 {
 					compatible = "zephyr,mapped-partition";
-					label = "image-0";
 					reg = <0x00020000 DT_SIZE_M(3)>;
+					label = "image-0";
 				};
 
 				slot1_partition: partition@320000 {
 					compatible = "zephyr,mapped-partition";
-					label = "image-1";
 					reg = <0x00320000 DT_SIZE_M(3)>;
+					label = "image-1";
 				};
 
 				storage_partition: partition@620000 {
 					compatible = "zephyr,mapped-partition";
-					label = "storage";
 					reg = <0x00620000 (DT_SIZE_M(58) - DT_SIZE_K(128))>;
+					label = "storage";
 				};
 			};
 		};

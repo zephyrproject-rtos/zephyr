@@ -5,8 +5,8 @@
  */
 
 &arduino_serial {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 
 	esp8266 {
 		compatible = "espressif,esp-at";

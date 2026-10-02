@@ -5,12 +5,12 @@
  */
 
 &i2c1 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	clock-frequency = <DT_FREQ_K(100)>;
 	pinctrl-0 = <&i2c1_pins>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &zephyr_lcdif {
@@ -18,10 +18,10 @@
 };
 
 &mipi_dsi {
-	status = "okay";
 	ulps-wakeup-period = <130>;
 	video-mode-delay = <216>;
 	timing = <162 53 45 52>;
+	status = "okay";
 
 	phys-timing {
 		t-init = <79801>;

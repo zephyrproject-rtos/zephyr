@@ -11,8 +11,8 @@
 #include <dt-bindings/mipi_dsi/mipi_dsi.h>
 
 / {
-	model = "NXP i.MX95 EVK board";
 	compatible = "nxp,imx95_evk";
+	model = "NXP i.MX95 EVK board";
 
 	aliases {
 		watchdog0 = &wdog5;
@@ -75,39 +75,39 @@
 };
 
 &flexspi {
-	status = "okay";
 	ahb-prefetch;
 	ahb-read-addr-opt;
 	rx-clock-source = <1>;
 	pinctrl-0 = <&flexspi_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	ext_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		size = <DT_SIZE_M(1024)>;
 		reg = <0>;
+		ranges = <0x0 0x28000000 DT_SIZE_M(128)>;
+		size = <DT_SIZE_M(1024)>;
 		spi-max-frequency = <DT_FREQ_M(200)>;
-		status = "okay";
 		jedec-id = [2c 5b 1b];
 
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x28000000 DT_SIZE_M(128)>;
+		status = "okay";
 
 		mt35xu01gbba: flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0x0 DT_SIZE_M(128)>;
+			ranges;
 			erase-block-size = <DT_SIZE_K(4)>;
 			write-block-size = <2>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 
 			partitions {
+				ranges;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges;
 
 				/*
 				 * Partition sizes must be aligned
@@ -115,26 +115,26 @@
 				 */
 				boot_partition: partition@0 {
 					compatible = "zephyr,mapped-partition";
-					label = "mcuboot";
 					reg = <0x00000000 DT_SIZE_K(128)>;
+					label = "mcuboot";
 				};
 
 				slot0_partition: partition@20000 {
 					compatible = "zephyr,mapped-partition";
-					label = "image-0";
 					reg = <0x00020000 DT_SIZE_M(7)>;
+					label = "image-0";
 				};
 
 				slot1_partition: partition@720000 {
 					compatible = "zephyr,mapped-partition";
-					label = "image-1";
 					reg = <0x00720000 DT_SIZE_M(7)>;
+					label = "image-1";
 				};
 
 				storage_partition: partition@e20000 {
 					compatible = "zephyr,mapped-partition";
-					label = "storage";
 					reg = <0x00e20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
+					label = "storage";
 				};
 			};
 		};
@@ -154,6 +154,14 @@
 	#size-cells = <0>;
 	status = "okay";
 
+	audio_codec: wm8962@1a {
+		compatible = "wolfson,wm8962";
+		reg = <0x1a>;
+		clock-source = "MCLK";
+		clocks = <&scmi_clk IMX95_CLK_SAI3>;
+		clock-names = "mclk";
+	};
+
 	gpio_exp1: gpio-exp@21 {
 		compatible = "nxp,pcal6408";
 		reg = <0x21>;
@@ -167,14 +175,6 @@
 			output-low;
 			line-name = "CODEC_SLOT_SAI3_SEL";
 		};
-	};
-
-	audio_codec: wm8962@1a {
-		compatible = "wolfson,wm8962";
-		reg = <0x1a>;
-		clock-source = "MCLK";
-		clocks = <&scmi_clk IMX95_CLK_SAI3>;
-		clock-names = "mclk";
 	};
 };
 
@@ -220,17 +220,17 @@
 };
 
 &lpuart3 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&lpuart3_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpuart5 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&lpuart5_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sai3 {

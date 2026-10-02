@@ -8,11 +8,11 @@
 #include <zephyr/dt-bindings/display/panel.h>
 
 &zephyr_lcdif {
-	status = "okay";
 	clock-frequency = <279000000>;
 	wr-period = <14>;
 	wr-assert = <6>;
 	wr-deassert = <13>;
 	cs-assert = <1>;
 	cs-deassert = <4>;
+	status = "okay";
 };

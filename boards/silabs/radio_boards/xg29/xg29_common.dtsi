@@ -56,10 +56,10 @@
 		dpd-wakeup-sequence = <30000 20 35000>;
 		has-dpd;
 		jedec-id = [c2 28 14];
-		mxicy,mx25r-power-mode = "low-power";
 		size = <0x800000>;
 		spi-max-frequency = <DT_FREQ_M(33)>;
 		t-enter-dpd = <0>;
+		mxicy,mx25r-power-mode = "low-power";
 	};
 };
 

@@ -10,8 +10,8 @@
 #include "sparrowhawk_rcar_v4h_r8a779g0_r52-pinctrl.dtsi"
 
 / {
-	model = "Retronix Sparrow Hawk on R-Car V4H";
 	compatible = "retronix,sparrowhawk-v4h-cr52";
+	model = "Retronix Sparrow Hawk on R-Car V4H";
 
 	chosen {
 		zephyr,sram = &sram0;

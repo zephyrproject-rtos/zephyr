@@ -9,8 +9,8 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
-	model = "UIAPduino Pro Micro CH32V003";
 	compatible = "uiap,uiapduino_pro_micro_ch32v003";
+	model = "UIAPduino Pro Micro CH32V003";
 
 	chosen {
 		zephyr,sram = &sram0;

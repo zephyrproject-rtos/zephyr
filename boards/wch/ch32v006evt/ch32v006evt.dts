@@ -13,8 +13,8 @@
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
-	model = "ch32v006evt";
 	compatible = "wch,ch32v006";
+	model = "ch32v006evt";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -88,10 +88,10 @@
 };
 
 &usart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&usart1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &iwdg {

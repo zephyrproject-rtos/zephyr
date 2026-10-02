@@ -244,8 +244,8 @@
 
 	ext_flash_ctrl: flash-controller@1 {
 		compatible = "renesas,ra-ospi-b-nor";
-		ranges = <0x0 0x90000000 DT_SIZE_M(256)>;
 		reg = <1>;
+		ranges = <0x0 0x90000000 DT_SIZE_M(256)>;
 		protocol-mode = <OSPI_OPI_MODE>;
 		nor-max-frequency = <DT_FREQ_M(133)>;
 		jedec-id = [c2 86 3a];

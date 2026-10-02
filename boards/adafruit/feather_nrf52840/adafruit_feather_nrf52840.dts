@@ -10,8 +10,8 @@
 #include <nordic/nrf52840_partition.dtsi>
 
 / {
-	model = "Adafruit Feather nRF52840 Express";
 	compatible = "adafruit,feather-nrf52840";
+	model = "Adafruit Feather nRF52840 Express";
 
 	chosen {
 		zephyr,console = &uart0;

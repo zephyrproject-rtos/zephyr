@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Infineon PSOC Control C3M5 Connectivity Card 2";
 	compatible = "infineon,kit_psc3m5_cc2", "infineon,PSC3M5";
+	model = "Infineon PSOC Control C3M5 Connectivity Card 2";
 
 	aliases {
 		led0 = &user_led0;
@@ -117,23 +117,23 @@
 /* Console UART on SCB1, routed to the debug probe's virtual COM port. */
 uart1: &scb1 {
 	compatible = "infineon,uart";
-	status = "okay";
 	current-speed = <115200>;
 
 	clocks = <&peri0_group4_8bit_0>;
 
 	pinctrl-0 = <&p2_2_scb1_uart_rx &p2_3_scb1_uart_tx>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &peri0_group4_8bit_0 {
-	status = "okay";
 	clock-div = <86>;
+	status = "okay";
 };
 
 &peri0_group4_16_5bit_0 {
-	status = "okay";
 	clock-div = <1>;
+	status = "okay";
 };
 
 &canfd0 {
@@ -149,10 +149,10 @@ uart1: &scb1 {
  * can-transceiver-gpio node and no phys property are required.
  */
 &can1 {
-	status = "okay";
 	clocks = <&peri0_group4_16_5bit_0>;
 	pinctrl-0 = <&p6_2_can1_rx &p6_3_can1_tx>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /*
@@ -165,7 +165,6 @@ uart1: &scb1 {
  */
 spi3: &scb3 {
 	compatible = "infineon,spi";
-	status = "okay";
 
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -175,11 +174,12 @@ spi3: &scb3 {
 	pinctrl-0 = <&p5_0_scb3_spi_m_mosi &p5_1_scb3_spi_m_miso
 		     &p5_2_scb3_spi_m_clk &p5_3_scb3_spi_m_select0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &peri0_group4_8bit_1 {
-	status = "okay";
 	clock-div = <1>;
+	status = "okay";
 };
 
 /*
@@ -214,7 +214,6 @@ mikrobus_spi: &scb3 {};
 };
 
 &dpll_lp0 {
-	status = "okay";
 	clock-frequency = <180000000>;
 
 	feedback-div = <45>;
@@ -222,10 +221,10 @@ mikrobus_spi: &scb3 {};
 	output-div = <2>;
 	fraction-div = <0>;
 	dco-mode-enable;
+	status = "okay";
 };
 
 &dpll_lp1 {
-	status = "okay";
 	clock-frequency = <240000000>;
 
 	feedback-div = <60>;
@@ -233,6 +232,7 @@ mikrobus_spi: &scb3 {};
 	output-div = <2>;
 	fraction-div = <0>;
 	dco-mode-enable;
+	status = "okay";
 };
 
 &path_mux0 {
@@ -293,9 +293,9 @@ mikrobus_spi: &scb3 {};
 };
 
 &adc0 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	/* POT1 - AN_B4 */
 	channel@c {

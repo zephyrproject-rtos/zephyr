@@ -6,14 +6,14 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 &raspberrypi_serial {
-	status = "okay";
 	current-speed = <9600>;
+	status = "okay";
 
 	modbus0: modbus0 {
 		compatible = "zephyr,modbus-serial";
-		status = "okay";
 		de-gpios = <&raspberrypi_header 5 GPIO_ACTIVE_HIGH>;
 		re-gpios = <&raspberrypi_header 24 GPIO_ACTIVE_LOW>;
+		status = "okay";
 	};
 };
 

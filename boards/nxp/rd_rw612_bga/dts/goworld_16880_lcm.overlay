@@ -8,10 +8,10 @@
 };
 
 &lcdic {
-	status = "okay";
 	nxp,swap-bytes;
 	/* Raise the timer0 ratio to enable longer reset delay */
 	nxp,timer0-ratio = <15>;
+	status = "okay";
 
 	/*
 	 * Settings to connect this display:
@@ -38,7 +38,6 @@
 	 */
 	st7796s_lcdic: st7796s@0 {
 		compatible = "sitronix,st7796s";
-		status = "okay";
 		reg = <0>;
 		mipi-max-frequency = <DT_FREQ_M(23)>;
 		duplex = <SPI_HALF_DUPLEX>;
@@ -56,6 +55,7 @@
 		pgc = [f0 06 0b 07 06 05 2e 33 47 3a 17 16 2e 31];
 		ngc = [f0 09 0d 09 08 23 2e 33 46 38 13 13 2c 32];
 		madctl = <0x28>;
+		status = "okay";
 	};
 };
 

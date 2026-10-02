@@ -15,8 +15,8 @@
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 
 / {
-	model = "STMicroelectronics STM32H5F5J DISCOVERY KIT board";
 	compatible = "st,stm32h5f5j-dk";
+	model = "STMicroelectronics STM32H5F5J DISCOVERY KIT board";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -156,9 +156,9 @@
 	status = "okay";
 
 	pwm5: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim5_ch1_ph10>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -167,9 +167,9 @@
 	status = "okay";
 
 	pwm14: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim14_ch1_pa7>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -178,9 +178,9 @@
 	status = "okay";
 
 	pwm15: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim15_ch2_pe6>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -323,7 +323,6 @@
 	/* Change the compatible here, and keep xspi for other boards */
 	compatible = "st,stm32-xspi-controller";
 	op-mode = "MSPI_OP_MODE_CONTROLLER";
-	st,csbound = <0>;
 	clock-frequency = <DT_FREQ_M(50)>;
 
 	pinctrl-0 = <&octospim_p1_io0_pc9 &octospim_p1_io1_pf9
@@ -336,12 +335,14 @@
 	dmas = <&gpdma1 0 57 STM32_DMA_PERIPH_TX
 		&gpdma1 1 57 STM32_DMA_PERIPH_RX>;
 	dma-names = "tx", "rx";
+	st,csbound = <0>;
 
 	status = "okay";
 
 	ext_flash_ctrl: nor-flash-controller@0 {
 		compatible = "st,nor", "mxicy,mx25u", "jedec,nor";
 		reg = <0>;
+		ranges = <0x0 0x90000000 DT_SIZE_M(64)>;
 		size = <DT_SIZE_M(512)>; /* 512 Mbits */
 
 		read-command = <0xee11>;
@@ -351,7 +352,6 @@
 		mspi-io-mode = "MSPI_IO_MODE_OCTAL";
 		mspi-data-rate = "MSPI_DATA_RATE_DUAL";
 		mspi-hardware-ce-num = <0>;
-		st,mem-type = "macronix";
 		command-length = "INSTR_2_BYTE";
 
 		/* Enable Rd and Wr in MemoryMapped mode (permission = 0) */
@@ -360,18 +360,18 @@
 		/* external flash mapping */
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x90000000 DT_SIZE_M(64)>;
+		st,mem-type = "macronix";
 
 		status = "okay";
 
 		ext_flash: mx25lm51245: ext-flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0x0 DT_SIZE_M(64)>;
+			ranges = <0x0 0x0 DT_SIZE_M(64)>;
 			write-block-size = <1>;
 			erase-block-size = <DT_SIZE_K(4)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x0 DT_SIZE_M(64)>;
 		};
 	};
 };
@@ -380,7 +380,6 @@
 	/* Change the compatible here, and keep xspi for other boards */
 	compatible = "st,stm32-xspi-controller";
 	op-mode = "MSPI_OP_MODE_CONTROLLER";
-	st,csbound = <3>;
 	clock-frequency = <DT_FREQ_M(50)>;
 
 	pinctrl-0 = <&octospim_p2_io0_pg0 &octospim_p2_io1_pd2
@@ -390,6 +389,7 @@
 		     &octospim_p2_clk_pe14 &octospim_p2_ncs1_pe15
 		     &octospim_p2_dqs_pf5>;
 	pinctrl-names = "default";
+	st,csbound = <3>;
 
 	status = "okay";
 
@@ -409,9 +409,9 @@
 		tx-dummy = <5>;
 		memmap-config = <1 0 DT_SIZE_M(64) 0>;
 		ce-break-config = <1024 4>;
+		aps-version = "APS6408L";
 		st,timing-config = <1>;
 		zephyr,pm-device-runtime-auto;
-		aps-version = "APS6408L";
 		st,mem-type = "apmem";
 		status = "okay";
 	};
@@ -456,6 +456,10 @@ zephyr_jpegenc: &jpeg {
 
 	ext-sdram = <&psram>;
 
+	def-back-color-red = <0xff>;
+	def-back-color-green = <0xff>;
+	def-back-color-blue = <0xff>;
+
 	status = "okay";
 
 	display-timings {
@@ -471,8 +475,4 @@ zephyr_jpegenc: &jpeg {
 		hfront-porch = <0>;
 		vfront-porch = <8>;
 	};
-
-	def-back-color-red = <0xff>;
-	def-back-color-green = <0xff>;
-	def-back-color-blue = <0xff>;
 };

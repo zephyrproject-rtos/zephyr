@@ -14,8 +14,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Variscite DART-MX8M-PLUS M7";
 	compatible = "nxp,imx8mp_var_dart";
+	model = "Variscite DART-MX8M-PLUS M7";
 
 	chosen {
 		/* TCM */
@@ -51,10 +51,10 @@
 };
 
 &uart3 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart3_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio3 {

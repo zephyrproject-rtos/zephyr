@@ -9,8 +9,8 @@
 #include "pan1783_nrf5340_cpunet_common.dtsi"
 
 / {
-	model = "Panasonic PAN1783 EVB (NRF5340) Network";
 	compatible = "panasonic,pan1783-evb-cpunet";
+	model = "Panasonic PAN1783 EVB (NRF5340) Network";
 
 	chosen {
 		zephyr,sram = &sram1;

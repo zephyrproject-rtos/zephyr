@@ -9,8 +9,8 @@
 #include "bg27_rb411xb.dtsi"
 
 / {
-	model = "Silicon Labs BG27-RB4110B";
 	compatible = "silabs,bg27_rb4110b", "silabs,efr32bg27";
+	model = "Silicon Labs BG27-RB4110B";
 };
 
 &dcdc {

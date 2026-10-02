@@ -13,8 +13,8 @@
 #include <espressif/partitions_0x0_default.dtsi>
 
 / {
-	model = "PCB Cupid Glyph-H2";
 	compatible = "pcbcupid,glyph_h2";
+	model = "PCB Cupid Glyph-H2";
 
 	chosen {
 		zephyr,sram = &sramhp;

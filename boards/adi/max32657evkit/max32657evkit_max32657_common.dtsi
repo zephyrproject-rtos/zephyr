@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Analog Devices MAX32657EVKIT";
 	compatible = "adi,max32657evkit";
+	model = "Analog Devices MAX32657EVKIT";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -65,8 +65,8 @@
 };
 
 &clk_32k {
-	status = "okay";
 	clocks = <&clk_inro>;
+	status = "okay";
 };
 
 &gpio0 {
@@ -78,9 +78,9 @@
 };
 
 &spi0 {
-	status = "okay";
 	pinctrl-0 = <&spi0_mosi_p0_2 &spi0_miso_p0_4 &spi0_sck_p0_6 &spi0_ss0_p0_3>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &rtc_counter {
@@ -88,12 +88,12 @@
 };
 
 &i3c0 {
-	status = "okay";
 	pinctrl-0 = <&i3c_scl_p0_0 &i3c_sda_p0_1>;
 	pinctrl-names = "default";
 	i2c-scl-hz = <DT_FREQ_K(200)>;
 	i3c-scl-hz = <DT_FREQ_K(800)>;
 	i3c-od-scl-hz = <DT_FREQ_K(400)>;
+	status = "okay";
 
 	adxl367: adxl367@530000000000000000 {
 		compatible = "adi,adxl367";
@@ -103,11 +103,11 @@
 };
 
 &wut1 {
-	status = "okay";
 	wakeup-source;
+	status = "okay";
 
 	counter_wut1: counter {
-		status = "okay";
 		wakeup-source;
+		status = "okay";
 	};
 };

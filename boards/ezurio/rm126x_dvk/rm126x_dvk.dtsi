@@ -120,9 +120,9 @@
 };
 
 &lfxo {
-	status = "okay";
 	ctune = <38>;
 	precision = <50>;
+	status = "okay";
 };
 
 &gpio {

@@ -8,8 +8,8 @@
 #include <espressif/partitions_0x0_amp_16M.dtsi>
 
 / {
-	model = "RAK3112 APPCPU";
 	compatible = "rakwireless,rak3112";
+	model = "RAK3112 APPCPU";
 
 	chosen {
 		zephyr,sram = &sram1;

@@ -11,8 +11,8 @@
 #include "rzg2lc_smarc-pinctrl.dtsi"
 
 / {
-	model = "Renesas RZ/G2LC SMARC";
 	compatible = "renesas,rzg2lc-smarc";
+	model = "Renesas RZ/G2LC SMARC";
 
 	chosen {
 		zephyr,sram = &ddr;

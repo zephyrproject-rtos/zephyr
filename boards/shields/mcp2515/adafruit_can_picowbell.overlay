@@ -14,8 +14,8 @@
 };
 
 &pico_spi {
-	status = "okay";
 	cs-gpios = <&pico_header 20 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	mcp2515_adafruit_can_picowbell: can@0 {
 		compatible = "microchip,mcp2515";

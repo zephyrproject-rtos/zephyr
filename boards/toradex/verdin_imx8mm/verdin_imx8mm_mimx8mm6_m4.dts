@@ -10,8 +10,8 @@
 #include "verdin_imx8mm-pinctrl.dtsi"
 
 / {
-	model = "Toradex Verdin iMX8M Mini";
 	compatible = "nxp,verdin_imx8mm";
+	model = "Toradex Verdin iMX8M Mini";
 
 	aliases {
 		uart-1 = &uart1;

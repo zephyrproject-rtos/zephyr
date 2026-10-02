@@ -4,8 +4,8 @@
  */
 
 &arduino_serial {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 
 	mikroe_wifi_bt_click {
 		compatible = "espressif,esp-at";

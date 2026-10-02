@@ -10,6 +10,6 @@
 #include "frdm_mcxw23_common.dtsi"
 
 / {
-	model = "NXP FRDM-MCXW23 board";
 	compatible = "nxp,mcxw236", "nxp,mcx";
+	model = "NXP FRDM-MCXW23 board";
 };

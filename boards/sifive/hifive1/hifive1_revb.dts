@@ -7,13 +7,13 @@
 #include "hifive1.dts"
 
 / {
-	model = "SiFive HiFive 1 Rev. B";
 	compatible = "sifive,hifive1_revb";
+	model = "SiFive HiFive 1 Rev. B";
 };
 
 &uart1 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &spi0 {
@@ -21,10 +21,10 @@
 };
 
 &spi2 {
-	status = "okay";
 	pinctrl-0 = <&spi1_cs2_default
 		     &spi1_mosi_default
 		     &spi1_miso_default
 		     &spi1_sck_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };

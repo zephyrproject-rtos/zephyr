@@ -12,8 +12,8 @@
 #include "arduino_opta-common.dtsi"
 
 / {
-	model = "Arduino OPTA M4 core Programmable Logic Controller";
 	compatible = "arduino,opta-m4";
+	model = "Arduino OPTA M4 core Programmable Logic Controller";
 
 	chosen {
 		zephyr,sram = &sram1;
@@ -24,20 +24,20 @@
 
 &flash1 {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		slot0_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "unused";
 			reg = <0x00000000 DT_SIZE_K(512)>;
+			label = "unused";
 		};
 
 		slot1_partition: partition@80000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x00080000 DT_SIZE_K(512)>;
+			label = "image-0";
 		};
 	};
 };

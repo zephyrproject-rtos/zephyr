@@ -10,8 +10,8 @@
 #include "am62l_evm_am62l3_a53-pinctrl.dtsi"
 
 / {
-	model = "TI AM62L EVALUATION MODULE (EVM)";
 	compatible = "ti,am62l_evm";
+	model = "TI AM62L EVALUATION MODULE (EVM)";
 
 	chosen {
 		zephyr,console = &main_uart0;
@@ -63,10 +63,10 @@
 };
 
 &main_adc0 {
-	ti,fifo = <0>;
 	pinctrl-0 = <&adc0_ext_trigger0>,
 		    <&adc0_ext_trigger1>;
 	pinctrl-names = "default";
+	ti,fifo = <0>;
 	status = "okay";
 
 	channel@0 {
@@ -244,8 +244,8 @@
 
 	flash0: flash@0 {
 		compatible = "infineon,s28hx512t", "jedec,nor";
-		status = "okay";
 		reg = <0>;
+		ranges = <0x0 0x60000000 DT_SIZE_M(64)>; /* 64 MB - input in Bytes */
 		jedec-id = [34 5b 1a];
 		size = <DT_SIZE_M(512)>; /* 512 Mbits(64 MB) - input in Bits */
 		erase-block-size = <DT_SIZE_K(256)>;
@@ -262,14 +262,14 @@
 		t-reset-recovery = <90000>; /* 90us */
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x60000000 DT_SIZE_M(64)>; /* 64 MB - input in Bytes */
+		status = "okay";
 
 		flash0_memory: flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0x0 DT_SIZE_M(64)>; /* 64 MB - input in Bytes */
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 		};
 	};
 };

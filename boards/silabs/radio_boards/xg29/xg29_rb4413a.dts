@@ -11,8 +11,8 @@
 #include "xg29_rb4413a-pinctrl.dtsi"
 
 / {
-	model = "Silicon Labs xG29-RB4413A";
 	compatible = "silabs,xg29_rb4413a", "silabs,efr32mg29";
+	model = "Silicon Labs xG29-RB4413A";
 
 	chosen {
 		zephyr,display = &ls013b7dh03;

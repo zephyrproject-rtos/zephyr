@@ -10,6 +10,6 @@
 #include "mcxw23_evk_common.dtsi"
 
 / {
-	model = "NXP MCXW23-EVK board";
 	compatible = "nxp,mcxw236", "nxp,mcx";
+	model = "NXP MCXW23-EVK board";
 };

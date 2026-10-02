@@ -10,8 +10,8 @@
 #include <espressif/partitions_0x0_amp_16M.dtsi>
 
 / {
-	model = "VIEWE UEDX32480035E-WB-A APPCPU";
 	compatible = "viewe,uedx32480035e_wb_a", "espressif,esp32s3";
+	model = "VIEWE UEDX32480035E-WB-A APPCPU";
 
 	chosen {
 		zephyr,sram = &sram1;

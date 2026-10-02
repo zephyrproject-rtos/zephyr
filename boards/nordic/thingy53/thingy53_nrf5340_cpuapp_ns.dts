@@ -10,8 +10,8 @@
 #include <../boards/common/usb/cdc_acm_serial.dtsi>
 
 / {
-	model = "Nordic Thingy53 NRF5340 Application";
 	compatible = "nordic,thingy53-nrf5340-cpuapp";
+	model = "Nordic Thingy53 NRF5340 Application";
 
 	chosen {
 		zephyr,sram = &sram0_ns_app;

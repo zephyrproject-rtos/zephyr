@@ -14,9 +14,9 @@
 #include "xmc45_relax_kit-pinctrl.dtsi"
 
 / {
-	model = "Infineon XMC4500 Relax Kit";
 	compatible = "infineon,xm4500-relax-kit", "infineon,xmc4500",
 		     "infineon,xmc4xxx";
+	model = "Infineon XMC4500 Relax Kit";
 
 	aliases {
 		led0 = &led1;
@@ -80,9 +80,9 @@
 
 &flash0 {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		code_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
@@ -92,8 +92,8 @@
 
 		storage_partition: partition@80000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x80000 0x80000>;
+			label = "storage";
 		};
 	};
 };
@@ -145,7 +145,6 @@
 };
 
 &eth {
-	status = "okay";
 	pinctrl-0 = <&eth_p2_4_rxer &eth_p2_2_rxd0 &eth_p2_3_rxd1
 		     &eth_p15_8_clk_rmii &eth_p15_9_crs_dv &eth_p2_5_tx_en
 		     &eth_p2_8_txd0 &eth_p2_9_txd1>;
@@ -162,12 +161,13 @@
 	phy-handle = <&phy>;
 
 	zephyr,random-mac-address;
+	status = "okay";
 };
 
 &mdio {
-	status = "okay";
 	pinctrl-0 = <&eth_p2_0_mdo &eth_p2_7_mdc>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";

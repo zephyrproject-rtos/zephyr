@@ -13,8 +13,8 @@
 #include "xiao_ra4m1-pinctrl.dtsi"
 
 / {
-	model = "Seeed XIAO-RA4M1";
 	compatible = "renesas,ra4m1", "renesas,ra";
+	model = "Seeed XIAO-RA4M1";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -57,8 +57,8 @@
 };
 
 &hoco {
-	status = "okay";
 	clock-frequency = <48000000>;
+	status = "okay";
 };
 
 &pclkblock {

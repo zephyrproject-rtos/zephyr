@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/adc/adc.h>
 
 / {
-	model = "Renesas MCB-RX14T";
 	compatible = "renesas,mcb_rx14t";
+	model = "Renesas MCB-RX14T";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -91,8 +91,8 @@
 		#size-cells = <1>;
 
 		storage_partition: partition@0 {
-			label = "storage";
 			reg = <0x0 DT_SIZE_K(4)>;
+			label = "storage";
 		};
 	};
 };

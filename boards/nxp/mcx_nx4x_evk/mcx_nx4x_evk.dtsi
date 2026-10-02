@@ -66,9 +66,9 @@
 		user_button_2: button_0 {
 			label = "User SW2";
 			gpios = <&gpio1 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-			zephyr,code = <INPUT_KEY_0>;
 			/* SW2 (P1_3) wakes via WUU external pin 7. */
 			wakeup-ctrls = <&wuu NXP_WUU_PIN_7_FALLING_INT>;
+			zephyr,code = <INPUT_KEY_0>;
 			status = "disabled";
 		};
 
@@ -150,9 +150,9 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 
 &flash {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		/*
 		 * Partition sizes must be aligned
@@ -160,20 +160,20 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 		 */
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(80)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@14000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x00014000 DT_SIZE_K(984)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@10a000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1";
 			reg = <0x0010a000 DT_SIZE_K(984)>;
+			label = "image-1";
 		};
 
 		/* storage_partition is placed in WINBOND flash memory*/
@@ -193,9 +193,9 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 	/* WINBOND flash memory*/
 	ext_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		status = "disabled";
-		size = <DT_SIZE_M(64)>;
 		reg = <0>;
+		ranges = <0x0 0x90000000 DT_SIZE_M(8)>;
+		size = <DT_SIZE_M(64)>;
 		spi-max-frequency = <DT_SIZE_M(133)>;
 		jedec-id = [ef 60 17];
 		cs-interval-unit = <1>;
@@ -207,16 +207,16 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x90000000 DT_SIZE_M(8)>;
+		status = "disabled";
 
 		w25q64jwtbjq: flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0x0 DT_SIZE_M(8)>;
+			ranges;
 			erase-block-size = <DT_SIZE_K(4)>;
 			write-block-size = <1>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 		};
 	};
 };
@@ -235,8 +235,8 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 	pinctrl-0 = <&pinmux_enet_qos>;
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
-	zephyr,random-mac-address;
 	phy-handle = <&phy>;
+	zephyr,random-mac-address;
 };
 
 &enet_mdio {

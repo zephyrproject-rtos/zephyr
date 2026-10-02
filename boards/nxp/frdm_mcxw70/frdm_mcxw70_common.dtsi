@@ -101,16 +101,16 @@ portd: &port_d {};
 
 lpuart0: &lpuart_0 {
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpuart0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 lpuart1: &lpuart_1 {
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpuart1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 fmu: &fmu_0 {
@@ -118,15 +118,15 @@ fmu: &fmu_0 {
 };
 
 tpm0: &tpm_0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_tpm0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 tpm2: &tpm_2 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_tpm2>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 lptmr0: &lptmr_0 {

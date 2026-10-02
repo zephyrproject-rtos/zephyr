@@ -15,7 +15,7 @@
 
 	adafruit_dps310: dps310@77 {
 		compatible = "infineon,dps310";
-		status = "okay";
 		reg = <0x77>;
+		status = "okay";
 	};
 };

@@ -16,12 +16,12 @@
 };
 
 &iic1 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	clock-frequency = <DT_FREQ_K(100)>;
 	pinctrl-0 = <&iic1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &zephyr_lcdif {
@@ -29,7 +29,6 @@
 };
 
 &mipi_dsi {
-	status = "okay";
 	pll-div = <1>;
 	pll-mul-int = <50>;
 	pll-mul-frac = "0.00";
@@ -37,6 +36,7 @@
 	ulps-wakeup-period = <97>;
 	video-mode-delay = <186>;
 	timing = <1183 11 26 40>;
+	status = "okay";
 
 	phys-timing {
 		t-init = <71999>;

@@ -14,8 +14,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STM32L475 Pandora Development Board";
 	compatible = "alientek,pandora_stm32l475";
+	model = "STM32L475 Pandora Development Board";
 
 	aliases {
 		led0 = &red_led;

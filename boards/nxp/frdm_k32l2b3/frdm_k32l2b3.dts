@@ -12,8 +12,8 @@
 #include "frdm_k32l2b3-pinctrl.dtsi"
 
 / {
-	model = "NXP FRDM-K32L2B3 board";
 	compatible = "nxp,k32l2b3", "nxp,k32lx";
+	model = "NXP FRDM-K32L2B3 board";
 
 	aliases {
 		led0 = &led_green;
@@ -50,14 +50,14 @@
 
 		sw_1: button_1 {
 			label = "User Button 1 (SW1)";
-			zephyr,code = <INPUT_KEY_0>;
 			gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 
 		sw_3: button_2 {
 			label = "User Button 2 (SW3)";
-			zephyr,code = <INPUT_KEY_1>;
 			gpios = <&gpioc 3 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 };
@@ -101,16 +101,16 @@
 };
 
 &lpuart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&lpuart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c0 {
-	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	fxos8700: fxos8700@1c {
 		compatible = "nxp,fxos8700";

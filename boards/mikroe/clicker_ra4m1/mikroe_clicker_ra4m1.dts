@@ -12,8 +12,8 @@
 #include "mikroe_clicker_ra4m1-pinctrl.dtsi"
 
 / {
-	model = "Mikroe Clicker RA4M1";
 	compatible = "renesas,ra4m1", "renesas,ra";
+	model = "Mikroe Clicker RA4M1";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -84,9 +84,9 @@
 };
 
 &sci0 {
-	status = "okay";
 	pinctrl-0 = <&sci0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	uart0: uart {
 		current-speed = <115200>;
@@ -144,8 +144,8 @@
 };
 
 &xtal {
-	status = "okay";
 	clock-frequency = <12000000>;
+	status = "okay";
 };
 
 &pclkblock {

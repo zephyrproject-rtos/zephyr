@@ -5,8 +5,8 @@
  */
 
 / {
-	model = "Seagate Legend 3.5 board";
 	compatible = "legend35", "seagate,legend35";
+	model = "Seagate Legend 3.5 board";
 
 	aliases {
 		pwm-led0 = &pwm_led0;

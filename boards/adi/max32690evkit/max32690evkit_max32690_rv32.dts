@@ -20,8 +20,8 @@
 storage_partition: &rv32_storage_partition {};
 
 / {
-	model = "Analog Devices MAX32690EVKIT";
 	compatible = "adi,max32690evkit";
+	model = "Analog Devices MAX32690EVKIT";
 
 	chosen {
 		zephyr,console = &uart3;

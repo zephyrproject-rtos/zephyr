@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "PSOC™ Control C3M6 Evaluation Kit";
 	compatible = "infineon,kit_psc3m6_evk", "infineon,PSC3M6";
+	model = "PSOC™ Control C3M6 Evaluation Kit";
 
 	aliases {
 		led0 = &user_led0;
@@ -105,21 +105,21 @@
 /* Debug UART — console (SCB3: P6.3 TX, P6.2 RX) */
 uart3: &scb3 {
 	compatible = "infineon,uart";
-	status = "okay";
 	current-speed = <115200>;
 	clocks = <&peri0_group4_8bit_0>;
 	pinctrl-0 = <&p6_3_scb3_uart_tx &p6_2_scb3_uart_rx>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /* User UART (SCB4: P3.3 TX, P3.2 RX) */
 uart4: &scb4 {
 	compatible = "infineon,uart";
-	status = "okay";
 	current-speed = <115200>;
 	clocks = <&peri0_group4_8bit_1>;
 	pinctrl-0 = <&p3_3_scb4_uart_tx &p3_2_scb4_uart_rx>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /* CAN (CANFD0 channel 1: P5.2 RX, P5.3 TX) */
@@ -128,27 +128,27 @@ uart4: &scb4 {
 };
 
 &can1 {
-	status = "okay";
 	phys = <&can_phy0>;
 	clocks = <&peri0_group4_16_5bit_0>;
 	pinctrl-0 = <&p5_2_can1_ttcan_rx &p5_3_can1_ttcan_tx>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /* Peripheral clock dividers */
 &peri0_group4_8bit_0 {
-	status = "okay";
 	clock-div = <86>;
+	status = "okay";
 };
 
 &peri0_group4_8bit_1 {
-	status = "okay";
 	clock-div = <86>;
+	status = "okay";
 };
 
 &peri0_group4_16_5bit_0 {
-	status = "okay";
 	clock-div = <1>;
+	status = "okay";
 };
 
 &watchdog0 {
