@@ -234,7 +234,7 @@
       "mcountinhibit" : {
          "poke_mask" : "0x7d",
          "reset" : "0x0",
-         "commnet" : "Performance counter inhibit. One bit per counter.",
+         "comment" : "Performance counter inhibit. One bit per counter.",
          "exists" : "true",
          "mask" : "0x7d"
       },

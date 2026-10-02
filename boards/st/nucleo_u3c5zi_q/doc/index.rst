@@ -311,7 +311,7 @@ If you have flashed a sample to the board that enables TrustZone (TZEN=1), you w
 need to disable it (TZEN=0) before you can flash and run non-TrustZone sample
 on the board.
 
-Disabling TZEN needs to perfoms a regression from RDP level 1
+Disabling TZEN needs to perform a regression from RDP level 1
 (with TZEN enabled) to RDP level 0 (with TZEN disabled) at the very
 same time. This can be done either with valid embedded images in the target
 User Flash (secure and non-secure firmware images), or using RSS from embedded

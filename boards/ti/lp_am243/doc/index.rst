@@ -10,7 +10,7 @@ Overview
 ********
 
 The AM243x Launchpad is a development board that is based of a AM2434 SoC and
-therefor has two dualcore Cortex-R5F clusters running at 800 MHz and a
+therefore has two dualcore Cortex-R5F clusters running at 800 MHz and a
 Cortex-M4F running at 400 MHz. The board also includes a flash chip,
 DIP-Switches for the boot mode selection and 2 RJ45 Ethernet ports.
 
@@ -43,7 +43,7 @@ The board physically contains:
 
 
 The Cortex-R5F0_0 core uses the UART peripheral connected to the XDS110 debug
-probe by default and is therefor usable without additional UART to USB bridge.
+probe by default and is therefore usable without additional UART to USB bridge.
 The Cortex-M4F core uses the MCU_UART0 peripheral by default to avoid conflicts
 which is accessible via the J17 header on the board.
 
@@ -115,7 +115,7 @@ the ``debug`` build target:
 
 .. hint::
    To utilize this feature, you'll need an OpenOCD version that is new enough
-   and therefor might need to compile OpenOCD yourself. You can look at
+   and therefore might need to compile OpenOCD yourself. You can look at
    `building OpenOCD from source`_ for documentation on how to do that.
 
 
