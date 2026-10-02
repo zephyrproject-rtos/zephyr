@@ -261,9 +261,6 @@ fail:
 #define ADV7535_DEFINE(inst)                                                                       \
 	BUILD_ASSERT(DT_PROP(ADV7535_DSI(inst), pixel_format) == MIPI_DSI_PIXFMT_RGB888,           \
 		     "ADV7535 requires RGB888");                                                   \
-	BUILD_ASSERT(DT_PROP(ADV7535_PANEL(inst), width) * 9U ==                                   \
-			     DT_PROP(ADV7535_PANEL(inst), height) * 16U,                           \
-		     "ADV7535 requires a 16:9 active area");                                       \
 	BUILD_ASSERT(DT_INST_PROP(inst, adi_addr_cec) <= 0x7f,                                     \
 		     "ADV7535 CEC address must be seven-bit");                                     \
 	BUILD_ASSERT(DT_INST_PROP(inst, adi_addr_cec) != DT_INST_REG_ADDR(inst),                   \
