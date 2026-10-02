@@ -1327,7 +1327,7 @@ config FPU
 	  point operations, the "FPU register sharing" option must be enabled to
 	  preserve the floating point registers across context switches. This is
 	  done automatically if the platform enables an architecture-specific option
-	  enabling the compiler to generate FP instructions for general puprose
+	  enabling the compiler to generate FP instructions for general purpose
 	  integer work.
 
 	  Note that this option cannot be selected for the platforms that do not
