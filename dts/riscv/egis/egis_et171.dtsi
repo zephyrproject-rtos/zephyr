@@ -18,13 +18,13 @@
 
 		cpu0: cpu@0 {
 			compatible = "andestech,andescore-v5", "riscv";
-			device_type = "cpu";
 			reg = <0>;
-			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei";
+			device_type = "cpu";
 			mmu-type = "riscv,sv32";
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei";
 
 			cpu0_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -36,43 +36,43 @@
 	};
 
 	sram: memory@0 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x00000000 DT_SIZE_K(384)>;
+		device_type = "memory";
 	};
 
 	soc {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "egis,et171";
 		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		plic0: interrupt-controller@e4000000 {
 			compatible = "sifive,plic-1.0.0", "andestech,nceplic100";
+			reg = <0xe4000000 0x02000000>;
 			#address-cells = <1>;
 			#interrupt-cells = <2>;
 			interrupt-controller;
-			reg = <0xe4000000 0x02000000>;
+			interrupts-extended = <&cpu0_intc 11>;
 			riscv,max-priority = <255>;
 			riscv,ndev = <1023>;
-			interrupts-extended = <&cpu0_intc 11>;
 		};
 
 		plic_sw: interrupt-controller@e6400000 {
 			compatible = "sifive,plic-1.0.0", "andestech,nceplic100";
+			reg = <0xe6400000 0x00400000>;
 			#address-cells = <1>;
 			#interrupt-cells = <2>;
 			interrupt-controller;
-			reg = <0xe6400000 0x00400000>;
+			interrupts-extended = <&cpu0_intc 3>;
 			riscv,max-priority = <255>;
 			riscv,ndev = <1023>;
-			interrupts-extended = <&cpu0_intc 3>;
 		};
 
 		mtimer: timer@e6000000 {
 			compatible = "riscv,machine-timer";
-			reg-names = "mtime", "mtimecmp";
 			reg = <0xe6000000 0x8 0xe6000008 0x8>;
+			reg-names = "mtime", "mtimecmp";
 			interrupts-extended = <&cpu0_intc 7>;
 		};
 
