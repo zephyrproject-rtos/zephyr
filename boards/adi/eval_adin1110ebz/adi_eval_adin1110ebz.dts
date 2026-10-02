@@ -24,13 +24,6 @@
 		zephyr,flash-controller = &mx25r6435f;
 	};
 
-	ram0: psram@60000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x60000000 DT_SIZE_M(8)>;
-		device_type = "memory";
-		zephyr,memory-region = "RAM0";
-	};
-
 	leds { /* Respecting pcb silkscreen naming */
 		compatible = "gpio-leds";
 
@@ -74,6 +67,13 @@
 				#size-cells = <0>;
 			};
 		};
+	};
+
+	ram0: psram@60000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x60000000 DT_SIZE_M(8)>;
+		device_type = "memory";
+		zephyr,memory-region = "RAM0";
 	};
 };
 
