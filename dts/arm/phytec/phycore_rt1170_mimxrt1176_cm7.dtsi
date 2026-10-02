@@ -32,13 +32,13 @@
 };
 
 &lpuart1 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &lpuart5 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &som_green_led {
