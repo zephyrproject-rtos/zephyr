@@ -149,6 +149,8 @@ struct dma_esp32_channel {
 	uint32_t burst_length;
 	dma_callback_t cb;
 	void *user_data;
+	/* TX: the tail links back to the first descriptor */
+	bool cyclic;
 	union {
 		esp_dma_desc_t desc_list[CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM];
 		uint8_t desc_lines[ROUND_UP(CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM *
@@ -600,6 +602,7 @@ static void IRAM_ATTR dma_esp32_isr_handle_tx(const struct device *dev,
 	struct dma_esp32_data *data = (struct dma_esp32_data *const)(dev)->data;
 
 	bool completed = false;
+	int status = DMA_STATUS_COMPLETE;
 
 	gdma_hal_clear_intr(&data->hal, tx->channel_id, GDMA_CHANNEL_DIRECTION_TX, intr_status);
 	if ((intr_status & GDMA_LL_EVENT_TX_EOF) != 0U) {
@@ -614,24 +617,32 @@ static void IRAM_ATTR dma_esp32_isr_handle_tx(const struct device *dev,
 			eof -= SOC_NON_CACHEABLE_OFFSET_SRAM;
 		}
 #endif
-		/*
-		 * EOF interrupts merge and trail; the EOF descriptor register
-		 * names the last EOF: at the tail every chain is done, at the
-		 * previous tail only the older one. A controller that names
-		 * neither is counted per interrupt.
-		 */
-		if (tx->in_flight > 0U && eof == (intptr_t)tx->tail) {
-			tx->in_flight = 0U;
-		} else if (tx->in_flight == 2U && eof == (intptr_t)tx->tail_prev) {
-			tx->in_flight = 1U;
-		} else if (tx->in_flight > 0U &&
-			   !dma_esp32_desc_in_list(tx, (esp_dma_desc_t *)eof)) {
-			tx->in_flight--;
+		if (tx->cyclic) {
+			/* A ring runs until dma_stop(), the tail's EOF ends a lap */
+			if (eof != (intptr_t)tx->tail) {
+				status = DMA_STATUS_BLOCK;
+			}
+			completed = true;
+		} else {
+			/*
+			 * EOF interrupts merge and trail; the EOF descriptor register
+			 * names the last EOF: at the tail every chain is done, at the
+			 * previous tail only the older one. A controller that names
+			 * neither is counted per interrupt.
+			 */
+			if (tx->in_flight > 0U && eof == (intptr_t)tx->tail) {
+				tx->in_flight = 0U;
+			} else if (tx->in_flight == 2U && eof == (intptr_t)tx->tail_prev) {
+				tx->in_flight = 1U;
+			} else if (tx->in_flight > 0U &&
+				   !dma_esp32_desc_in_list(tx, (esp_dma_desc_t *)eof)) {
+				tx->in_flight--;
+			}
+			if (tx->in_flight == 0U) {
+				tx->running = false;
+			}
+			completed = tx->in_flight != before;
 		}
-		if (tx->in_flight == 0U) {
-			tx->running = false;
-		}
-		completed = tx->in_flight != before;
 
 		/*
 		 * A link written after the tail was fetched needs a restart,
@@ -647,9 +658,12 @@ static void IRAM_ATTR dma_esp32_isr_handle_tx(const struct device *dev,
 	if (tx->cb) {
 		intr_status &= ~(GDMA_LL_EVENT_TX_TOTAL_EOF | GDMA_LL_EVENT_TX_DONE |
 				 GDMA_LL_EVENT_TX_EOF);
+		if (intr_status != 0U) {
+			status = -(int)intr_status;
+		}
 
 		if (intr_status != 0U || completed) {
-			tx->cb(dev, tx->user_data, tx->channel_id * 2 + 1, -intr_status);
+			tx->cb(dev, tx->user_data, tx->channel_id * 2 + 1, status);
 		}
 	}
 }
@@ -753,13 +767,16 @@ static int dma_esp32_config_descriptor(struct dma_esp32_channel *dma_channel,
 		block_size -= buffer_size;
 
 		if (!block_size) {
+			if (dma_channel->dir == DMA_TX &&
+			    (dma_channel->cyclic || block->next_block == NULL)) {
+				desc_iter->dw0.suc_eof = 1;
+			}
+
 			if (block->next_block) {
 				block = block->next_block;
 			} else {
-				desc_iter->next = NULL;
-				if (dma_channel->dir == DMA_TX) {
-					desc_iter->dw0.suc_eof = 1;
-				}
+				desc_iter->next =
+					dma_channel->cyclic ? dma_channel->desc_list : NULL;
 				break;
 			}
 		}
@@ -774,7 +791,9 @@ static int dma_esp32_config_descriptor(struct dma_esp32_channel *dma_channel,
 		return -EINVAL;
 	}
 
-	if (dma_channel->dir == DMA_TX && dma_channel->periph_id != SOC_GDMA_TRIG_PERIPH_M2M0) {
+	/* Nothing is linked behind a ring, so its tail is not split */
+	if (dma_channel->dir == DMA_TX && dma_channel->periph_id != SOC_GDMA_TRIG_PERIPH_M2M0 &&
+	    !dma_channel->cyclic) {
 		desc_iter = dma_esp32_tx_split_tail(
 			desc_iter, dma_channel->desc_list + ARRAY_SIZE(dma_channel->desc_list) / 2);
 	}
@@ -919,6 +938,7 @@ static int dma_esp32_config_rx(const struct device *dev, struct dma_esp32_channe
 
 	dma_channel->cb = config_dma->dma_callback;
 	dma_channel->user_data = config_dma->user_data;
+	dma_channel->cyclic = config_dma->cyclic;
 
 	gdma_hal_enable_intr(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX,
 			     GDMA_LL_RX_EVENT_MASK, false);
@@ -955,6 +975,7 @@ static int dma_esp32_config_tx(const struct device *dev, struct dma_esp32_channe
 
 	dma_channel->cb = config_dma->dma_callback;
 	dma_channel->user_data = config_dma->user_data;
+	dma_channel->cyclic = config_dma->cyclic;
 
 	gdma_hal_enable_intr(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX,
 			     GDMA_LL_TX_EVENT_MASK, false);
@@ -996,6 +1017,11 @@ static int dma_esp32_config(const struct device *dev, uint32_t channel,
 	if (!DMA_ESP32_BURST_VALID(config_dma->source_burst_length)) {
 		LOG_ERR("Unsupported burst length %u", config_dma->source_burst_length);
 		return -EINVAL;
+	}
+
+	if (config_dma->cyclic && config_dma->channel_direction != MEMORY_TO_PERIPHERAL) {
+		LOG_ERR("Cyclic transfers are only supported for memory to peripheral");
+		return -ENOTSUP;
 	}
 
 	if (config_dma->channel_direction == MEMORY_TO_MEMORY) {
@@ -1355,6 +1381,11 @@ static int dma_esp32_reload(const struct device *dev, uint32_t channel, uint32_t
 		return -EINVAL;
 	}
 
+	/* Nothing can be linked behind a ring: it is rebuilt once stopped */
+	if (dma_channel->cyclic && dma_channel->running) {
+		return -EBUSY;
+	}
+
 	/* A running TX channel takes the buffer as the next one, as with eDMA. */
 	if (dma_channel->dir == DMA_TX && dma_channel->periph_id != SOC_GDMA_TRIG_PERIPH_M2M0 &&
 	    dma_channel->running && dma_channel->in_flight > 0U) {
@@ -1391,7 +1422,7 @@ static int dma_esp32_reload(const struct device *dev, uint32_t channel, uint32_t
 				desc_iter->dw0.length = size;
 				desc_iter->dw0.suc_eof = 1;
 			}
-			desc_iter->next = NULL;
+			desc_iter->next = dma_channel->cyclic ? dma_channel->desc_list : NULL;
 			break;
 		}
 		desc_iter->dw0.size = DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
@@ -1409,7 +1440,8 @@ static int dma_esp32_reload(const struct device *dev, uint32_t channel, uint32_t
 		return -EINVAL;
 	}
 
-	if (dma_channel->dir == DMA_TX && dma_channel->periph_id != SOC_GDMA_TRIG_PERIPH_M2M0) {
+	if (dma_channel->dir == DMA_TX && dma_channel->periph_id != SOC_GDMA_TRIG_PERIPH_M2M0 &&
+	    !dma_channel->cyclic) {
 		desc_iter = dma_esp32_tx_split_tail(
 			desc_iter, dma_channel->desc_list + ARRAY_SIZE(dma_channel->desc_list) / 2);
 	}
