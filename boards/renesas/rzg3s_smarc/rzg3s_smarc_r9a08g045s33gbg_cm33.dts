@@ -14,8 +14,8 @@
 #include "rzg3s_smarc-pinctrl.dtsi"
 
 / {
-	model = "Renesas RZ/G3S SMARC";
 	compatible = "renesas,rzg3s-smarc";
+	model = "Renesas RZ/G3S SMARC";
 
 	chosen {
 		zephyr,sram = &sram_mcpu0;
@@ -126,7 +126,7 @@
 &canfd0 {
 	pinctrl-0 = <&can0_pins>;
 	pinctrl-names = "default";
-	status = "okay";
 	rx-max-filters = <32>;
 	phys = <&transceiver0>;
+	status = "okay";
 };

@@ -17,8 +17,8 @@
 #include "aik_ra8d1-connector.dtsi"
 
 / {
-	model = "Renesas AIK-RA8D1";
 	compatible = "renesas,ra8d1", "renesas,ra8";
+	model = "Renesas AIK-RA8D1";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -229,14 +229,14 @@
 
 &data_flash {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		storage_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x0 DT_SIZE_K(12)>;
+			label = "storage";
 		};
 	};
 };

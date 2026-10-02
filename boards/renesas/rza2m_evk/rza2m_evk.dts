@@ -9,8 +9,8 @@
 #include "rza2m_evk-pinctrl.dtsi"
 
 / {
-	model = "Renesas RZA2M EVK";
 	compatible = "renesas,rza2m_evk";
+	model = "Renesas RZA2M EVK";
 
 	chosen {
 		zephyr,sram = &ram;
@@ -90,19 +90,19 @@
 	ext_flash_ctrl: flash-controller@0 {
 		compatible = "renesas,rza2m-qspi-spibsc";
 		reg = <0>;
-		status = "okay";
+		ranges = <0x0 0x20000000 DT_SIZE_M(64)>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x20000000 DT_SIZE_M(64)>;
+		status = "okay";
 
 		mx25l51245g: qspi-nor-flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0x0 DT_SIZE_M(64)>;
+			ranges;
 			write-block-size = <2>;
 			erase-block-size = <4096>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 
 			partitions {
 				ranges;
@@ -111,23 +111,23 @@
 
 				loader_program: partition@0 {
 					compatible = "zephyr,mapped-partition";
-					label = "loader-program";
 					reg = <0x00000000 DT_SIZE_K(56)>;
+					label = "loader-program";
 					read-only;
 				};
 
 				slot0_partition: partition@e000 {
 					compatible = "zephyr,mapped-partition";
-					label = "image-0";
 					reg = <0x0000e000 DT_SIZE_M(4)>;
+					label = "image-0";
 					read-only;
 				};
 
 				storage_partition: partition@40e000 {
 					compatible = "zephyr,mapped-partition";
-					label = "storage";
 					reg = <0x0040e000
 					       (DT_SIZE_M(64) - DT_SIZE_M(4) - DT_SIZE_K(56))>;
+					label = "storage";
 				};
 			};
 		};
