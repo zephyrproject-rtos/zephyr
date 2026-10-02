@@ -11,8 +11,8 @@
 #include <skeleton.dtsi>
 
 / {
-	model = "QEMU AURIX TC4Dx";
 	compatible = "infineon,qemu-tc4dx";
+	model = "QEMU AURIX TC4Dx";
 
 	cpus {
 		#address-cells = <1>;
@@ -54,11 +54,11 @@
 	};
 
 	soc {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 		interrupt-parent = <&ir>;
-		compatible = "simple-bus";
-		ranges;
 
 		ir: interrupt_controller@f4430000 {
 			compatible = "infineon,aurix-ir";
