@@ -284,23 +284,11 @@ static int check_vector(void *isr, int offset)
 	(defined(ISR3_OFFSET) || defined(ISR4_OFFSET) || \
 	 (defined(CONFIG_DYNAMIC_INTERRUPTS) && \
 	  (defined(ISR5_OFFSET) || defined(ISR6_OFFSET))))
-/* The software ISR table is either an array indexed by table index, or a
- * generated switch-case reachable only through get_isr_entry().
- */
-static void get_sw_isr_entry(unsigned int table_idx, struct _isr_table_entry *entry)
-{
-#if defined(CONFIG_GEN_SW_ISR_TABLE_ARRAY)
-	*entry = _sw_isr_table[table_idx];
-#else
-	get_isr_entry(table_idx, entry);
-#endif
-}
-
 static int check_sw_isr(void *isr, uintptr_t arg, int offset)
 {
 	struct _isr_table_entry e;
 
-	get_sw_isr_entry(TABLE_INDEX(offset), &e);
+	z_sw_isr_table_lookup(TABLE_INDEX(offset), &e);
 
 	TC_PRINT("Checking SW ISR table entry %d for irq %d\n",
 		 TABLE_INDEX(offset), IRQ_LINE(offset));
