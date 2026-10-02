@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # The contents of this file is based on include/zephyr/linker/common-rom.ld
-# and som of include/zephyr/linker/common-rom/*.ld
+# and some of include/zephyr/linker/common-rom/*.ld
 # Please keep in sync
 
 zephyr_linker_section(NAME init KVMA RAM_REGION GROUP RODATA_REGION)
