@@ -119,15 +119,15 @@ i2c0: &scb0 {
 	pinctrl-names = "default";
 	status = "okay";
 
-	dps368: dps368@77 {
-		compatible = "infineon,dps368", "infineon,dps310";
-		reg = <0x77>;
-		status = "okay";
-	};
-
 	bmi270: bmi270@68 {
 		compatible = "bosch,bmi270";
 		reg = <0x68>;
+		status = "okay";
+	};
+
+	dps368: dps368@77 {
+		compatible = "infineon,dps368", "infineon,dps310";
+		reg = <0x77>;
 		status = "okay";
 	};
 };
