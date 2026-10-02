@@ -15,10 +15,6 @@
 		};
 	};
 
-	sram0: memory@20000000 {
-		compatible = "mmio-sram";
-	};
-
 	flash0: serial-flash@0 {
 		compatible = "serial-flash";
 	};
@@ -37,6 +33,10 @@
 			clocks = <&sysclk>;
 			status = "disabled";
 		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
 	};
 };
 
