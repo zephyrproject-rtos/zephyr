@@ -26,7 +26,9 @@
 #if defined(CONFIG_SOC_SERIES_ESP32P4)
 #include <hal/pmu_ll.h>
 #include <hal/pmu_types.h>
+#if !defined(CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 extern esp_err_t sleep_clock_icg_startup_init(void);
+#endif
 #endif
 #if defined(CONFIG_ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP)
 #include <esp_private/sleep_cpu.h>
@@ -370,11 +372,16 @@ static int sleep_retention_init(void)
 	/* pmu_init() turns on all LP clocks; narrow it to FOSC (RC_SLOW) only. */
 	pmu_ll_lp_set_clk_power(&PMU, PMU_MODE_LP_ACTIVE, BIT(30));
 
+#if !defined(CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
+	/* With TOP power down, the ICG entries would gate the flash clocks
+	 * before the SPI memory registers are backed up.
+	 */
 	err = sleep_clock_icg_startup_init();
 	if (err != ESP_OK) {
 		LOG_ERR("sleep_clock_icg_startup_init failed (%d)", err);
 		ret = err;
 	}
+#endif
 #endif
 
 	err = sleep_clock_startup_init();
