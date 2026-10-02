@@ -19,9 +19,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
+			device_type = "cpu";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -212,6 +212,7 @@
 		nvmctrl: nvmctrl@41004000 {
 			compatible = "microchip,nvmctrl-g1-flash";
 			reg = <0x41004000 0x30>;
+			ranges;
 			interrupts = <29 0>, <30 0>;
 			interrupt-names = "flash", "eeprom";
 			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBB_NVMCTRL>;
@@ -219,17 +220,16 @@
 			lock-regions = <32>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 			status = "okay";
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
 				reg = <0x0 DT_SIZE_K(1024)>;
+				ranges;
 				write-block-size = <8>;
 				erase-block-size = <8192>;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges;
 			};
 
 			userrow: nvmuserrow@804000 {
@@ -246,10 +246,10 @@
 
 		pinctrl: pinctrl@41008000 {
 			compatible = "microchip,port-g1-pinctrl";
-			#address-cells = <1>;
-			#size-cells = <1>;
 			reg = <0x41008000 0x200>;
 			ranges = <0x41008000 0x41008000 0x200>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 
 			porta: gpio@41008000 {
 				compatible = "microchip,port-g1-gpio";
@@ -435,9 +435,9 @@
 
 		trng: random@42002800 {
 			compatible = "microchip,trng-g1-entropy";
+			reg = <0x42002800 0x24>;
 			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_TRNG>;
 			clock-names = "mclk";
-			reg = <0x42002800 0x24>;
 			interrupts = <131 0>;
 			interrupt-names = "datardy";
 			status = "disabled";

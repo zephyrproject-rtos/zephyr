@@ -23,9 +23,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m4";
 			reg = <0>;
+			device_type = "cpu";
 			clock-frequency = <96000000>;
 			cpu-power-states = <&idle &suspend_to_ram>;
 		};
@@ -71,24 +71,24 @@
 			compatible = "microchip,xec-pwm";
 			reg = <0x40005890 0x20>;
 			pcr-scr = <MCHP_XEC_SCR_ENCODE(3, 31)>;
-			status = "disabled";
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		pwm10: pwm@400058a0 {
 			compatible = "microchip,xec-pwm";
 			reg = <0x400058a0 0x20>;
 			pcr-scr = <MCHP_XEC_SCR_ENCODE(4, 0)>;
-			status = "disabled";
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		pwm11: pwm@400058b0 {
 			compatible = "microchip,xec-pwm";
 			reg = <0x400058b0 0x20>;
 			pcr-scr = <MCHP_XEC_SCR_ENCODE(4, 1)>;
-			status = "disabled";
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 	};
 };
