@@ -420,7 +420,7 @@ static ALWAYS_INLINE void sam0_thread_handler(const struct device *const dev)
 		while (eps) {
 			ep = udc_pull_ep_from_bmsk(&eps);
 			ep_cfg = udc_get_ep_cfg(dev, ep);
-			LOG_INF("New transfer ep 0x%02x in the queue", ep);
+			LOG_DBG("New transfer ep 0x%02x in the queue", ep);
 
 			if (!udc_ep_is_busy(ep_cfg)) {
 				sam0_handle_xfer_next(dev, ep_cfg);
