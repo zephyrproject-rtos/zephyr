@@ -8,8 +8,8 @@
 #include <arm/xilinx/versal_rpu.dtsi>
 
 / {
-	model = "AMD Versal RPU Cortex-R5";
 	compatible = "xlnx,versal-rpu";
+	model = "AMD Versal RPU Cortex-R5";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -26,11 +26,11 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &ttc0 {
-	status = "okay";
 	clock-frequency = <100000000>;
+	status = "okay";
 };
