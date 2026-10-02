@@ -124,7 +124,7 @@ struct uvc_data {
 	size_t vbuf_offset;
 	/* Let the different parts of the code know of the current state */
 	atomic_t state;
-	/* Index where newly generated descriptors are appened */
+	/* Index where newly generated descriptors are appended */
 	unsigned int fs_desc_idx;
 	unsigned int hs_desc_idx;
 	unsigned int fmt_desc_idx;
