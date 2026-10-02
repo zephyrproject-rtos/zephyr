@@ -9,8 +9,8 @@
 #include "sgrm-pinctrl.dtsi"
 
 / {
-	model = "GARDENA Smart Garden Radio Module";
 	compatible = "gardena,sgrm-sim3u167", "silabs,sim3u167", "silabs,sim3u";
+	model = "GARDENA Smart Garden Radio Module";
 
 	chosen {
 		zephyr,console = &usart1;
