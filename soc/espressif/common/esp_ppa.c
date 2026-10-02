@@ -341,6 +341,33 @@ static uint32_t esp_ppa_srm_in_pbyte(ppa_srm_color_mode_t color_mode)
 							  : DMA2D_DESCRIPTOR_PBYTE_2B0_PER_PIXEL;
 }
 
+/* The HAL aborts on an alpha mode or rotation angle outside its enumeration */
+static bool esp_ppa_alpha_mode_valid(ppa_alpha_update_mode_t mode)
+{
+	switch (mode) {
+	case PPA_ALPHA_NO_CHANGE:
+	case PPA_ALPHA_FIX_VALUE:
+	case PPA_ALPHA_SCALE:
+	case PPA_ALPHA_INVERT:
+		return true;
+	default:
+		return false;
+	}
+}
+
+static bool esp_ppa_rotation_valid(ppa_srm_rotation_angle_t angle)
+{
+	switch (angle) {
+	case PPA_SRM_ROTATION_ANGLE_0:
+	case PPA_SRM_ROTATION_ANGLE_90:
+	case PPA_SRM_ROTATION_ANGLE_180:
+	case PPA_SRM_ROTATION_ANGLE_270:
+		return true;
+	default:
+		return false;
+	}
+}
+
 /* A block reaching outside its surface makes the DMA read or write past the
  * buffer, and oversized dimensions are truncated silently by the descriptor
  * bitfields.
@@ -805,6 +832,11 @@ esp_err_t ppa_do_blend(ppa_client_handle_t ppa_client, const ppa_blend_oper_conf
 		return ESP_ERR_INVALID_ARG;
 	}
 
+	if (!esp_ppa_alpha_mode_valid(config->bg_alpha_update_mode) ||
+	    !esp_ppa_alpha_mode_valid(config->fg_alpha_update_mode)) {
+		return ESP_ERR_INVALID_ARG;
+	}
+
 	if (config->bg_ck_en || config->fg_ck_en || config->ck_reverse_bg2fg) {
 		return ESP_ERR_NOT_SUPPORTED;
 	}
@@ -866,6 +898,13 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client,
 	    !(config->scale_y >= 1.0f / PPA_LL_SRM_SCALING_FRAG_MAX) ||
 	    config->scale_x >= ESP_PPA_MAX_SCALE || config->scale_y >= ESP_PPA_MAX_SCALE) {
 		return ESP_ERR_INVALID_ARG;
+	}
+	if (!esp_ppa_rotation_valid(config->rotation_angle) ||
+	    !esp_ppa_alpha_mode_valid(config->alpha_update_mode)) {
+		return ESP_ERR_INVALID_ARG;
+	}
+	if (config->alpha_update_mode == PPA_ALPHA_SCALE) {
+		return ESP_ERR_NOT_SUPPORTED;
 	}
 
 	uint32_t in_pbyte = esp_ppa_srm_in_pbyte(config->in.srm_cm);
