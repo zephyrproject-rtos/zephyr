@@ -22,7 +22,7 @@ enum npcx_pinctrl_type {
 };
 
 /**
- * @brief Suppoerted peripheral device configuration type in NPCX series
+ * @brief Supported peripheral device configuration type in NPCX series
  */
 enum npcx_periph_type {
 	NPCX_PINCTRL_TYPE_PERIPH_PINMUX,
@@ -31,7 +31,7 @@ enum npcx_periph_type {
 };
 
 /**
- * @brief Suppoerted IO bias type in NPCX series
+ * @brief Supported IO bias type in NPCX series
  */
 enum npcx_io_bias_type {
 	NPCX_BIAS_TYPE_NONE,
@@ -40,7 +40,7 @@ enum npcx_io_bias_type {
 };
 
 /**
- * @brief Suppoerted IO drive type in NPCX series
+ * @brief Supported IO drive type in NPCX series
  */
 enum npcx_io_drive_type {
 	NPCX_DRIVE_TYPE_PUSH_PULL,
@@ -48,7 +48,7 @@ enum npcx_io_drive_type {
 };
 
 /**
- * @brief Suppoerted PSL input detection mode in NPCX series
+ * @brief Supported PSL input detection mode in NPCX series
  */
 enum npcx_psl_in_mode {
 	NPCX_PSL_IN_MODE_LEVEL,
@@ -56,7 +56,7 @@ enum npcx_psl_in_mode {
 };
 
 /**
- * @brief Suppoerted PSL input detection polarity in NPCX series
+ * @brief Supported PSL input detection polarity in NPCX series
  */
 enum npcx_psl_in_pol {
 	NPCX_PSL_IN_POL_LOW,
@@ -90,7 +90,7 @@ struct npcx_periph {
  */
 struct npcx_dev_ctl {
 	/** Related register offset for device configuration. */
-	uint16_t offest: 5;
+	uint16_t offset: 5;
 	/** Related register field offset for device control. */
 	uint16_t field_offset: 3;
 	/** Related register field size for device control. */
@@ -191,7 +191,7 @@ typedef struct npcx_pinctrl pinctrl_soc_pin_t;
 #define Z_PINCTRL_NPCX_DEVICE_CONTROL_INIT(node_id, prop)			\
 	{									\
 		.flags.type = NPCX_PINCTRL_TYPE_DEVICE_CTRL,			\
-		.cfg.dev_ctl.offest = DT_PROP_BY_IDX(node_id, prop, 0),		\
+		.cfg.dev_ctl.offset = DT_PROP_BY_IDX(node_id, prop, 0),		\
 		.cfg.dev_ctl.field_offset = DT_PROP_BY_IDX(node_id, prop, 1),	\
 		.cfg.dev_ctl.field_size = DT_PROP_BY_IDX(node_id, prop, 2),	\
 		.cfg.dev_ctl.field_value = DT_PROP_BY_IDX(node_id, prop, 3),	\
@@ -244,7 +244,7 @@ typedef struct npcx_pinctrl pinctrl_soc_pin_t;
 	},
 
 /**
- * @brief Utility macro to initialize all peripheral confiurations for each pin.
+ * @brief Utility macro to initialize all peripheral configurations for each pin.
  *
  * @param node_id Node identifier.
  * @param prop Pinctrl state property name. (i.e. 'pinctrl-0/1/2')
