@@ -20,7 +20,14 @@ config TF_PSA_CRYPTO_USER_CONFIG
 
 config MBEDTLS_ECP_NIST_OPTIM
 	bool "NIST curves optimization"
+	default y
 	depends on PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC
+	help
+	  Enable specific 'modulo p' routines for each NIST prime. Depending on the
+	  prime and architecture, makes operations 4 to 8 times faster on the
+	  corresponding curve.
+
+	  The cost is a small amount of flash for the reduction tables.
 
 comment "Supported ciphers and cipher modes"
 
