@@ -119,7 +119,7 @@ config CALLGRAPH_INFO
 	bool "Generate call graph information"
 	help
 	  Generate an extra .ci file for each compilation unit, that specifies all
-	  calls known to GCC at complile time on a per-function basis. Calls are
+	  calls known to GCC at compile time on a per-function basis. Calls are
 	  specified in the VCG format.
 
 config STACK_SENTINEL
