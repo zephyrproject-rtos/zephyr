@@ -993,6 +993,12 @@ int do_write_op_json(struct lwm2m_message *msg)
 			goto end_of_operation;
 		}
 
+		/* The record path comes from the payload, check it before any write */
+		ret = lwm2m_check_path_access(msg);
+		if (ret < 0) {
+			goto end_of_operation;
+		}
+
 		ret = lwm2m_get_or_create_engine_obj(msg, &obj_inst, &created);
 		if (ret < 0) {
 			break;

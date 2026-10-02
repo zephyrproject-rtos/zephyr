@@ -73,6 +73,9 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm2m_eng
 			struct lwm2m_engine_res_inst *res_inst,
 			struct lwm2m_engine_obj_field *obj_field, struct lwm2m_message *msg);
 
+/* Check that the server of msg->ctx may perform msg->operation on msg->path */
+int lwm2m_check_path_access(struct lwm2m_message *msg);
+
 enum coap_block_size lwm2m_default_block_size(void);
 
 int lwm2m_parse_peerinfo(char *url, struct lwm2m_ctx *client_ctx, bool is_firmware_uri);
