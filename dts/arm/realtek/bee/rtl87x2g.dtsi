@@ -75,7 +75,7 @@
 		};
 
 		tcm_heap: memory@133c00 {
-			/* Reserved memory for realtek osif heap manangement,
+			/* Reserved memory for realtek osif heap management,
 			 * which is used in realtek internal module.
 			 */
 			reg = <0x133c00 DT_SIZE_K(36)>;
