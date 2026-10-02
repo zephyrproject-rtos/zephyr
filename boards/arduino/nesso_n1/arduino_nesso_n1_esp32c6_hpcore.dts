@@ -141,12 +141,6 @@
 	pinctrl-names = "default";
 	status = "okay";
 
-	bmi270: bmi270@68 {
-		compatible = "bosch,bmi270";
-		reg = <0x68>;
-		status = "okay";
-	};
-
 	ft6336: ft6336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
@@ -170,6 +164,12 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <8>;
+	};
+
+	bmi270: bmi270@68 {
+		compatible = "bosch,bmi270";
+		reg = <0x68>;
+		status = "okay";
 	};
 };
 
