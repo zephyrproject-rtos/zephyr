@@ -42,16 +42,69 @@ GTEXT(z_arm_undef_instruction)
 GTEXT(z_arm_prefetch_abort)
 GTEXT(z_arm_data_abort)
 
+#if defined(CONFIG_FPU_SHARING)
+#define CFI_EXC_FPU_SIZE ___fpu_t_SIZEOF
+#else
+#define CFI_EXC_FPU_SIZE 0
+#endif
+
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+#define CFI_EXC_EXTRA_SIZE \
+	(___extra_esf_info_t_SIZEOF + ___callee_saved_t_SIZEOF)
 /* EXTRA_EXCEPTION_INFO already stacks r4-r11 in _callee_saved. */
 #define EXC_CALLEE_GPR_SIZE 0
 #else
+#define CFI_EXC_EXTRA_SIZE 0
 /* r4-r11. Not banked, so still the interrupted values at exception entry. */
 #define EXC_CALLEE_GPR_SIZE 32
 #endif
 
+/*
+ * Bytes pushed by exception_entry: callee r4-r11, fpu, basic, interrupted SP,
+ * then optional extra/callee. sizeof(arch_esf) is not used: with FPU_SHARING
+ * the uint64_t d[] members give the struct 4 bytes of tail padding that are
+ * never pushed.
+ */
+#define CFI_EXC_FRAME_SIZE \
+	(___esf_t_sp_OFFSET + 4 + CFI_EXC_EXTRA_SIZE + EXC_CALLEE_GPR_SIZE)
+
+/*
+ * Saved GPR locations in __basic_sf, as byte offsets from the CFA.
+ * above is the number of frame bytes between the end of __basic_sf and the
+ * CFA (4 for the interrupted SP word on the non-switch path).
+ */
+.macro cfi_basic_sf_offsets above=0
+	.cfi_offset pc, (___basic_sf_t_pc_OFFSET - ___basic_sf_t_SIZEOF - \above)
+	.cfi_offset lr, (___basic_sf_t_lr_OFFSET - ___basic_sf_t_SIZEOF - \above)
+	.cfi_offset r12, (___basic_sf_t_r12_OFFSET - ___basic_sf_t_SIZEOF - \above)
+	.cfi_offset r3, (___basic_sf_t_r3_OFFSET - ___basic_sf_t_SIZEOF - \above)
+	.cfi_offset r2, (___basic_sf_t_r2_OFFSET - ___basic_sf_t_SIZEOF - \above)
+	.cfi_offset r1, (___basic_sf_t_r1_OFFSET - ___basic_sf_t_SIZEOF - \above)
+	.cfi_offset r0, (___basic_sf_t_r0_OFFSET - ___basic_sf_t_SIZEOF - \above)
+.endm
+
 #ifndef CONFIG_USE_SWITCH
 
+.macro cfi_after_exception_entry
+	.cfi_def_cfa sp, CFI_EXC_FRAME_SIZE
+	cfi_basic_sf_offsets 4
+	.cfi_offset 13, -4
+#if EXC_CALLEE_GPR_SIZE != 0
+	/*
+	 * Thumb CFA is r7 and ARM CFA is r11. Both are callee-saved and are
+	 * not in __basic_sf, so without these the unwind stops at the first
+	 * frame-pointer function (typically main).
+	 */
+	.cfi_offset 4, -CFI_EXC_FRAME_SIZE
+	.cfi_offset 5, -(CFI_EXC_FRAME_SIZE - 4)
+	.cfi_offset 6, -(CFI_EXC_FRAME_SIZE - 8)
+	.cfi_offset 7, -(CFI_EXC_FRAME_SIZE - 12)
+	.cfi_offset 8, -(CFI_EXC_FRAME_SIZE - 16)
+	.cfi_offset 9, -(CFI_EXC_FRAME_SIZE - 20)
+	.cfi_offset 10, -(CFI_EXC_FRAME_SIZE - 24)
+	.cfi_offset 11, -(CFI_EXC_FRAME_SIZE - 28)
+#endif
+.endm
 
 /*
  * After r0-r3, r12, lr^ are stored at [sp], capture previous-mode SP (in r1)
@@ -173,6 +226,11 @@ GTEXT(z_arm_data_abort)
  * encountered.
  */
 SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
+	.cfi_sections .debug_frame
+	.cfi_startproc
+	.cfi_signal_frame
+	.cfi_return_column 15
+	.cfi_undefined 13
 	/*
 	 * The undefined instruction address is offset by 2 if the previous
 	 * mode is Thumb; otherwise, it is offset by 4.
@@ -183,6 +241,7 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
 	subeq lr, #4	/* ARM   (!T_BIT) */
 	subne lr, #2	/* Thumb (T_BIT) */
 	pop {r0}
+	.cfi_register 15, 14
 
 	/*
 	 * Store r0-r3, r12, lr, lr_und and spsr_und into the stack to
@@ -239,10 +298,12 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
 	exception_save_callee_gprs
 #endif
 
+	cfi_after_exception_entry
 	bl z_arm_fault_undef_instruction
 	exception_exit
 
 	b z_arm_exc_exit
+	.cfi_endproc
 
 /**
  * @brief Prefetch abort exception handler
@@ -251,17 +312,23 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
  * prefetched instruction as invalid and the instruction is executed.
  */
 SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_prefetch_abort)
+	.cfi_sections .debug_frame
+	.cfi_startproc
+	cfi_aarch32_pabt_frame
 	/*
 	 * The faulting instruction address is always offset by 4 for the
 	 * prefetch abort exceptions.
 	 */
 	sub lr, #4
+	.cfi_register 15, 14
 
 	exception_entry MODE_ABT
+	cfi_after_exception_entry
 	bl z_arm_fault_prefetch
 	exception_exit
 
 	b z_arm_exc_exit
+	.cfi_endproc
 
 #if defined(CONFIG_FPU_SHARING)
 #define FPU_SF_SIZE	___fpu_t_SIZEOF
@@ -277,13 +344,18 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_prefetch_abort)
  * depending on the type of fault that caused it.
  */
 SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_data_abort)
+	.cfi_sections .debug_frame
+	.cfi_startproc
+	cfi_aarch32_dabt_frame
 	/*
 	 * The faulting instruction address is always offset by 8 for the data
 	 * abort exceptions.
 	 */
 	sub lr, #8
+	.cfi_register 15, 14
 
 	exception_entry MODE_ABT
+	cfi_after_exception_entry
 	bl z_arm_fault_data
 
 	/*
@@ -307,6 +379,7 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_data_abort)
 	streq r1, [sp, #24 + FPU_SF_SIZE]
 
 	b z_arm_exc_exit
+	.cfi_endproc
 
 #else
 
@@ -361,14 +434,26 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
  * prefetched instruction as invalid and the instruction is executed.
  */
 SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_prefetch_abort)
+	.cfi_sections .debug_frame
+	.cfi_startproc
+	cfi_aarch32_pabt_frame
 	/*
 	 * The faulting instruction address is always offset by 4 for the
 	 * prefetch abort exceptions.
 	 */
 	sub lr, #4
+	.cfi_register 15, 14
 	z_arm_cortex_ar_enter_exc
+	.cfi_def_cfa sp, ___basic_sf_t_SIZEOF
+	cfi_basic_sf_offsets
+	/* DW_CFA_val_offset: interrupted SP = CFA + 0.
+	 * enter_exc builds this frame on the System stack, so CFA is the
+	 * interrupted SP when the previous mode was System.
+	 */
+	.cfi_escape 0x14, 0x0d, 0x0
 	bl z_arm_fault_prefetch
 	b z_arm_cortex_ar_exit_exc
+	.cfi_endproc
 
 /**
  * @brief Data abort exception handler
@@ -378,10 +463,22 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_prefetch_abort)
  * depending on the type of fault that caused it.
  */
 SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_data_abort)
+	.cfi_sections .debug_frame
+	.cfi_startproc
+	cfi_aarch32_dabt_frame
 	sub lr, #8
+	.cfi_register 15, 14
 
 	z_arm_cortex_ar_enter_exc
+	.cfi_def_cfa sp, ___basic_sf_t_SIZEOF
+	cfi_basic_sf_offsets
+	/* DW_CFA_val_offset: interrupted SP = CFA + 0.
+	 * enter_exc builds this frame on the System stack, so CFA is the
+	 * interrupted SP when the previous mode was System.
+	 */
+	.cfi_escape 0x14, 0x0d, 0x0
 	bl z_arm_fault_data
 	b z_arm_cortex_ar_exit_exc
+	.cfi_endproc
 
 #endif
