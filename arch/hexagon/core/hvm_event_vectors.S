@@ -271,6 +271,7 @@ _page_table_done:
 
 	.section .bss.page_table, "aw", @nobits
 	.align 4096
+GDATA(_hexagon_page_table)
 _hexagon_page_table:
 	.skip 4096
 #endif /* CONFIG_MMU */

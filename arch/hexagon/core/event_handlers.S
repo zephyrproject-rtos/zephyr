@@ -76,10 +76,21 @@ GDATA(_kernel)
 	memw(r29+#EVENT_CTX_GELR) = r0
 
 	/* Save GSR (g1 = guest status at time of event).
-	 * H2 has already disabled guest interrupts (GSR.IE=0).
+	 * H2 has already disabled guest interrupts (GSR.IE=0), but does
+	 * not touch UM (bit 31): GSR.UM is a software-defined semantic H2
+	 * just leaves as it was in the interrupted context. A trap0 taken
+	 * from a user thread would otherwise run this whole handler with
+	 * UM still set to 1, so kernel data reachable only through the
+	 * U=0 fixed-tail RAM entries (see hexagon_fixed_tail_init()) would
+	 * fault. Clear UM here so the handler body runs at guest
+	 * privilege like every other RTOS's trap handler; EVENT_EXIT
+	 * restores the original saved value below before vmrte, which
+	 * re-applies the interrupted thread's real UM on return.
 	 */
 	r0 = gsr
 	memw(r29+#EVENT_CTX_GSR) = r0
+	r0 = clrbit(r0, #31)
+	gsr = r0
 
 	/* Save remaining volatile registers */
 	{
@@ -208,6 +219,11 @@ _event_no_switch_\event_id:
 	 */
 	{
 		call ##z_hexagon_event_exit_user_sync
+	}
+
+	/* Reinstall this thread's hardware memory-domain map, if needed. */
+	{
+		call ##z_hexagon_mem_domain_switch
 	}
 #endif
 

@@ -18,6 +18,22 @@
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
 #include <zephyr/arch/arch_interface.h>
+#include <hexagon_vm.h>
+
+#ifdef CONFIG_USERSPACE
+/*
+ * Per-region entry budgets for the greedy largest-aligned-size-class
+ * decomposition arch_mem_domain_partition_add() and the own-stack
+ * resync helper use to turn an arbitrary [start, start+size) range
+ * into VM_TRANS_TYPE_LINEAR entries. A well-aligned region (the
+ * common case) needs exactly one; this covers oddly-aligned/sized
+ * ones too, up to the budget. Running out mid-region is logged and
+ * stops early -- it is never treated as fatal, matching RISC-V PMP's
+ * own "stop programming rather than assert" precedent.
+ */
+#define HEXAGON_MEM_DOMAIN_STACK_ENTRIES     4
+#define HEXAGON_MEM_DOMAIN_PARTITION_ENTRIES 4
+#endif
 
 /**
  * @brief Callee-saved register context for cooperative context switching.
@@ -107,6 +123,30 @@ struct _thread_arch {
 	 * in userspace.c for why it can't be carved out of anything else.
 	 */
 	uint8_t priv_stack[CONFIG_PRIVILEGED_STACK_SIZE] __aligned(ARCH_STACK_PTR_ALIGN);
+
+	/*
+	 * Generation of the owning k_mem_domain's partition set that
+	 * mem_domain_list below was last rebuilt against; compared with
+	 * arch_mem_domain_t.generation to decide whether a resync is due
+	 * before this thread's next switch-in. 0 (and no domain yet) means
+	 * "never built".
+	 */
+	uint32_t mem_domain_generation;
+
+	/*
+	 * Per-thread VM_TRANS_TYPE_LINEAR buffer: own-stack entries first
+	 * (narrowest, so they win the first-match-wins walk), then one
+	 * slot per possible partition, then a chain entry to the shared
+	 * "fixed tail" buffer (RAM/UART/H2-kernel fallback + terminator).
+	 * Kept at a fixed address for the lifetime of the thread so
+	 * repeated hexagon_vm_newmap() calls hash to the same H2 ASID
+	 * slot instead of minting a new one on every switch-in.
+	 */
+	struct hexagon_linear_entry
+		mem_domain_list[HEXAGON_MEM_DOMAIN_STACK_ENTRIES +
+				 (CONFIG_MAX_DOMAIN_PARTITIONS *
+				  HEXAGON_MEM_DOMAIN_PARTITION_ENTRIES) +
+				 1];
 #endif
 };
 

@@ -123,6 +123,21 @@ typedef uint32_t k_mem_partition_attr_t;
 
 #define K_MEM_PARTITION_IS_WRITABLE(attr)   ((attr) & 0x02)
 #define K_MEM_PARTITION_IS_EXECUTABLE(attr) ((attr) & 0x04)
+
+/**
+ * @brief Architecture-specific memory domain data.
+ *
+ * Bumped by arch_mem_domain_partition_add/remove() whenever a
+ * partition changes; compared against each thread's own
+ * _thread_arch.mem_domain_generation to decide whether that thread's
+ * per-thread VM_TRANS_TYPE_LINEAR buffer needs to be rebuilt before
+ * its next switch-in. Bookkeeping only -- installs nothing by itself.
+ */
+struct arch_mem_domain {
+	uint32_t generation;
+};
+
+typedef struct arch_mem_domain arch_mem_domain_t;
 #endif
 
 #ifdef __cplusplus
