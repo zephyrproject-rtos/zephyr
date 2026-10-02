@@ -12,5 +12,9 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - gpio
+  - i2c
+  - spi
   - uart
+  - watchdog
 vendor: beagle

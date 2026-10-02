@@ -12,5 +12,8 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - gpio
+  - i2c
+  - spi
   - uart
 vendor: beagle
