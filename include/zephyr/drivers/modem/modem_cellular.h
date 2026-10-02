@@ -203,6 +203,10 @@ struct modem_cellular_data {
 
 	/* Power management */
 	struct k_sem suspended_sem;
+	/* Set when SUSPEND arrives in a state that cannot act on it yet
+	 * (AWAIT_PPP_DEAD). That state re-delivers it when it is left.
+	 */
+	bool suspend_pending;
 
 	/* Modem cellular GNSS requests */
 	struct k_mutex gnss_request_lock;

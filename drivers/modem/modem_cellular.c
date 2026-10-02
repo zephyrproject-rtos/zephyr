@@ -996,6 +996,8 @@ static void modem_cellular_enter_power_off_state(struct modem_cellular_data *dat
 {
 	const struct modem_cellular_config *config = data->dev->config;
 
+	/* A timer armed by the state being left must not end the power-off states early */
+	modem_cellular_stop_timer(data);
 	modem_cellular_gnss_request_cancel(data);
 
 	/* Power the GNSS receiver down while the AT channel is still available */
@@ -1028,6 +1030,7 @@ static int modem_cellular_on_idle_state_enter(struct modem_cellular_data *data)
 	modem_cmux_release(&data->cmux);
 	modem_pipe_close_async(data->uart_pipe);
 	data->cmd_pipe = NULL;
+	data->suspend_pending = false;
 	/* The modem may have been powered off */
 	data->gnss_powered_known = false;
 	k_sem_give(&data->suspended_sem);
@@ -2257,6 +2260,16 @@ static void modem_cellular_await_ppp_dead_event_handler(struct modem_cellular_da
 		/* Wait for the channel to return to AT mode after PPP termination */
 		modem_cellular_start_timer(data, K_MSEC(config->vendor->reset_pulse_duration_ms));
 		break;
+	case MODEM_CELLULAR_EVENT_SUSPEND:
+		/* Handled in the next state, once PPP teardown has settled. Not every
+		 * entry into this state arms the timer, and a timer left from the
+		 * previous state may run for a full periodic script interval, so
+		 * (re)arm it to bound the wait.
+		 */
+		data->suspend_pending = true;
+		k_work_reschedule(&data->timeout_work,
+				  K_MSEC(config->vendor->reset_pulse_duration_ms));
+		break;
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
 		if (modem_cellular_has_network_script(config) &&
 		    !modem_cellular_is_registered(data)) {
@@ -2279,6 +2292,12 @@ static int modem_cellular_on_await_ppp_dead_state_leave(struct modem_cellular_da
 
 	modem_chat_release(&data->chat);
 	modem_ppp_release(config->ppp);
+
+	/* Queued, so it is handled in the next state */
+	if (data->suspend_pending) {
+		data->suspend_pending = false;
+		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_SUSPEND);
+	}
 
 	return 0;
 }
