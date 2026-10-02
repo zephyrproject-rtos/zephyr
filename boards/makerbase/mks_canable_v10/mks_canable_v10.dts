@@ -10,8 +10,8 @@
 #include <st/f0/stm32f072c(8-b)tx-pinctrl.dtsi>
 
 / {
-	model = "Makerbase MKS CANable V1.0";
 	compatible = "makerbase,mks-canable-v10";
+	model = "Makerbase MKS CANable V1.0";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -40,9 +40,9 @@
 };
 
 &clk_hsi {
+	clock-frequency = <DT_FREQ_M(8)>;
 	/* Internal 8 MHz clock used to drive PLL */
 	status = "okay";
-	clock-frequency = <DT_FREQ_M(8)>;
 };
 
 /* Adjust the PLL for a SYSTEM Clock of 48 MHz  */
