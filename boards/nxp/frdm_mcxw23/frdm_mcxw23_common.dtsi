@@ -6,6 +6,7 @@
 
 #include "frdm_mcxw23-pinctrl.dtsi"
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -85,16 +86,16 @@
 		gpio-map-pass-thru = <0 0x3f>;
 		gpio-map = /* Not a GPIO*/	/* AN  */
 			   /* Not a GPIO*/		/* RST */
-			   <2 0 &gpio0 8 0>,	/* CS   */
-			   <3 0 &gpio0 10 0>,	/* SCK  */
-			   <4 0 &gpio0 7 0>,	/* MISO */
-			   <5 0 &gpio0 6 0>,	/* MOSI */
-			   <6 0 &gpio0 15 0>,	/* PWM  */
-			   <7 0 &gpio0 16 0>,	/* INT  */
-			   <8 0 &gpio0 3 0>,	/* RX   */
-			   <9 0 &gpio0 2 0>,	/* TX   */
-			   <10 0 &gpio0 14 0>,	/* SCL  */
-			   <11 0 &gpio0 13 0>;	/* SDA  */
+			   <MIKROBUS_CS 0 &gpio0 8 0>,
+			   <MIKROBUS_SCK 0 &gpio0 10 0>,
+			   <MIKROBUS_MISO 0 &gpio0 7 0>,
+			   <MIKROBUS_MOSI 0 &gpio0 6 0>,
+			   <MIKROBUS_PWM 0 &gpio0 15 0>,
+			   <MIKROBUS_INT 0 &gpio0 16 0>,
+			   <MIKROBUS_RX 0 &gpio0 3 0>,
+			   <MIKROBUS_TX 0 &gpio0 2 0>,
+			   <MIKROBUS_SCL 0 &gpio0 14 0>,
+			   <MIKROBUS_SDA 0 &gpio0 13 0>;
 	};
 
 	arduino_header: arduino-connector {
