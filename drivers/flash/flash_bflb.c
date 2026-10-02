@@ -15,7 +15,7 @@
  * commands and writing/reading data directly. The control is done via the System bus (normal bus
  * used to talk to peripherals).
  * Direct mode is achieved in different ways:
- * On E24 cpus SoCs (BL60x, BL70x/L), only one System bus interace is available. Switching is done
+ * On E24 cpus SoCs (BL60x, BL70x/L), only one System bus interface is available. Switching is done
  * via a bank selection flag.
  * On e907 CPUs (BL61x/CL, BL808...), two system buses are available. The second bus is selected
  * by enabling it and turning on its selection flag, then enabling system bus mode on the interface.

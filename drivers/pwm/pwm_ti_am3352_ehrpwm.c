@@ -29,10 +29,10 @@ LOG_MODULE_REGISTER(ti_ehrpwm);
 struct ti_ehrpwm_regs {
 	volatile uint16_t TBCTL;   /**< Time-Base Control Register, offset: 0x00 */
 	uint8_t RESERVED_1[0x8];   /**< Reserved, offset: 0x04 - 0x0A */
-	volatile uint16_t TBPRD;   /**< Time-Base Period Register, offest: 0x0A */
+	volatile uint16_t TBPRD;   /**< Time-Base Period Register, offset: 0x0A */
 	uint8_t RESERVED_2[0x6];   /**< Reserved, offset: 0x0E - 0x12 */
-	volatile uint16_t CMPA;    /**< Counter-Compare A Register, offest: 0x12 */
-	volatile uint16_t CMPB;    /**< Counter-Compare B Register, offest: 0x14 */
+	volatile uint16_t CMPA;    /**< Counter-Compare A Register, offset: 0x12 */
+	volatile uint16_t CMPB;    /**< Counter-Compare B Register, offset: 0x14 */
 	volatile uint16_t AQCTLA;  /**< AQ Control Register for Output A, offset: 0x16 */
 	volatile uint16_t AQCTLB;  /**< AQ Control Register for Output B, offset: 0x18 */
 	volatile uint16_t AQSFRC;  /**< AQ Software Force Register, offset: 0x1A */
