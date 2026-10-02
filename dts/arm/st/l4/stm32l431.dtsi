@@ -19,39 +19,21 @@
 	soc {
 		compatible = "st,stm32l431", "st,stm32l4", "simple-bus";
 
-		pinctrl: pin-controller@48000000 {
-			gpiod: gpio@48000c00 {
-				compatible = "st,stm32-gpio";
-				reg = <0x48000c00 0x400>;
-				clocks = <&rcc STM32_CLOCK(AHB2, 3)>;
-				gpio-controller;
-				#gpio-cells = <2>;
-			};
-
-			gpioe: gpio@48001000 {
-				compatible = "st,stm32-gpio";
-				reg = <0x48001000 0x400>;
-				clocks = <&rcc STM32_CLOCK(AHB2, 4)>;
-				gpio-controller;
-				#gpio-cells = <2>;
-			};
-		};
-
-		rng: rng@50060800 {
-			clocks = <&rcc STM32_CLOCK(AHB2, 18)>,
-				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
-		};
-
-		i2c2: i2c@40005800 {
-			compatible = "st,stm32-i2c-v2";
-			reg = <0x40005800 0x400>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(APB1, 22)>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			interrupts = <33 0>, <34 0>;
-			interrupt-names = "event", "error";
+		timers7: timers@40001400 {
+			compatible = "st,stm32-timers";
+			reg = <0x40001400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 5)>,
+				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
+			resets = <&rctl STM32_RESET(APB1L, 5)>;
+			interrupts = <55 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
 			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
 		};
 
 		spi2: spi@40003800 {
@@ -85,21 +67,16 @@
 			status = "disabled";
 		};
 
-		timers7: timers@40001400 {
-			compatible = "st,stm32-timers";
-			reg = <0x40001400 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 5)>,
-				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
-			resets = <&rctl STM32_RESET(APB1L, 5)>;
-			interrupts = <55 0>;
-			interrupt-names = "global";
-			st,prescaler = <0>;
+		i2c2: i2c@40005800 {
+			compatible = "st,stm32-i2c-v2";
+			reg = <0x40005800 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB1, 22)>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <33 0>, <34 0>;
+			interrupt-names = "event", "error";
 			status = "disabled";
-
-			counter {
-				compatible = "st,stm32-counter";
-				status = "disabled";
-			};
 		};
 
 		can1: can@40006400 {
@@ -108,6 +85,14 @@
 			clocks = <&rcc STM32_CLOCK(APB1, 25)>;
 			interrupts = <19 0>, <20 0>, <21 0>, <22 0>;
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
+			status = "disabled";
+		};
+
+		dac1: dac@40007400 {
+			compatible = "st,stm32-dac";
+			reg = <0x40007400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 29)>;
+			#io-channel-cells = <1>;
 			status = "disabled";
 		};
 
@@ -149,12 +134,27 @@
 			};
 		};
 
-		dac1: dac@40007400 {
-			compatible = "st,stm32-dac";
-			reg = <0x40007400 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 29)>;
-			#io-channel-cells = <1>;
-			status = "disabled";
+		pinctrl: pin-controller@48000000 {
+			gpiod: gpio@48000c00 {
+				compatible = "st,stm32-gpio";
+				reg = <0x48000c00 0x400>;
+				clocks = <&rcc STM32_CLOCK(AHB2, 3)>;
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+
+			gpioe: gpio@48001000 {
+				compatible = "st,stm32-gpio";
+				reg = <0x48001000 0x400>;
+				clocks = <&rcc STM32_CLOCK(AHB2, 4)>;
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+		};
+
+		rng: rng@50060800 {
+			clocks = <&rcc STM32_CLOCK(AHB2, 18)>,
+				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 		};
 	};
 

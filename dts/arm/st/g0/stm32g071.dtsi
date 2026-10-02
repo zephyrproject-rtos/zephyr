@@ -30,10 +30,6 @@
 			status = "disabled";
 		};
 
-		dmamux1: dmamux@40020800 {
-			dma-requests = <57>;
-		};
-
 		ucpd1: ucpd@4000a000 {
 			compatible = "st,stm32-ucpd";
 			reg = <0x4000a000 0x400>;
@@ -48,6 +44,10 @@
 			clocks = <&rcc STM32_CLOCK(APB1, 26)>;
 			interrupts = <8 0>;
 			status = "disabled";
+		};
+
+		dmamux1: dmamux@40020800 {
+			dma-requests = <57>;
 		};
 	};
 };

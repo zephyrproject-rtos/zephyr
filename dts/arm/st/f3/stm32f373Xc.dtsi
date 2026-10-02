@@ -7,16 +7,13 @@
 #include <st/f3/stm32f373.dtsi>
 
 / {
-	sram0: memory@20000000 {
-		reg = <0x20000000 DT_SIZE_K(32)>;
-	};
-
 	soc {
-		flash-controller@40022000 {
-			flash0: flash@8000000 {
-				reg = <0x08000000 DT_SIZE_K(256)>;
-				ranges = <0 0x8000000 DT_SIZE_K(256)>;
-			};
+		dac2: dac@40009800 {
+			compatible = "st,stm32-dac";
+			reg = <0x40009800 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 26)>;
+			#io-channel-cells = <1>;
+			status = "disabled";
 		};
 
 		dma2: dma@40020400 {
@@ -27,12 +24,15 @@
 			status = "disabled";
 		};
 
-		dac2: dac@40009800 {
-			compatible = "st,stm32-dac";
-			reg = <0x40009800 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 26)>;
-			#io-channel-cells = <1>;
-			status = "disabled";
+		flash-controller@40022000 {
+			flash0: flash@8000000 {
+				reg = <0x08000000 DT_SIZE_K(256)>;
+				ranges = <0 0x8000000 DT_SIZE_K(256)>;
+			};
 		};
+	};
+
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(32)>;
 	};
 };

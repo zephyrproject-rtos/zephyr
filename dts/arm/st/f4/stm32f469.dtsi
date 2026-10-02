@@ -25,16 +25,6 @@
 				 <&rcc STM32_SRC_SYSCLK SDMMC_SEL(1)>;
 		};
 
-		usbotg_fs: usb@50000000 {
-			num-bidir-endpoints = <6>;
-			clocks = <&rcc STM32_CLOCK(AHB2, 7)>,
-				 <&rcc STM32_SRC_PLL_Q CK48M_SEL(0)>;
-		};
-
-		usbotg_hs: usb@40040000 {
-			num-bidir-endpoints = <9>;
-		};
-
 		mipi_dsi: dsihost@40016c00 {
 			compatible = "st,stm32-mipi-dsi";
 			reg = <0x40016c00 0x800>;
@@ -46,6 +36,16 @@
 				 <&rcc STM32_SRC_PLLSAI_POST_R NO_SEL>;
 			resets = <&rctl STM32_RESET(APB2, 27)>;
 			status = "disabled";
+		};
+
+		usbotg_hs: usb@40040000 {
+			num-bidir-endpoints = <9>;
+		};
+
+		usbotg_fs: usb@50000000 {
+			num-bidir-endpoints = <6>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 7)>,
+				 <&rcc STM32_SRC_PLL_Q CK48M_SEL(0)>;
 		};
 	};
 };

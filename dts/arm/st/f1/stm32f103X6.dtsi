@@ -6,20 +6,8 @@
 #include <st/f1/stm32f1.dtsi>
 
 / {
-	sram0: memory@20000000 {
-		reg = <0x20000000 DT_SIZE_K(10)>;
-	};
-
 	soc {
 		compatible = "st,stm32f103", "st,stm32f1", "simple-bus";
-
-		flash-controller@40022000 {
-			flash0: flash@8000000 {
-				reg = <0x08000000 DT_SIZE_K(32)>;
-				ranges = <0 0x8000000 DT_SIZE_K(32)>;
-				erase-block-size = <DT_SIZE_K(1)>;
-			};
-		};
 
 		usb: usb@40005c00 {
 			compatible = "st,stm32-usb";
@@ -42,10 +30,22 @@
 			clocks = <&rcc STM32_CLOCK(APB1, 25)>;
 			status = "disabled";
 		};
+
+		flash-controller@40022000 {
+			flash0: flash@8000000 {
+				reg = <0x08000000 DT_SIZE_K(32)>;
+				ranges = <0 0x8000000 DT_SIZE_K(32)>;
+				erase-block-size = <DT_SIZE_K(1)>;
+			};
+		};
 	};
 
 	usb_fs_phy: usbphy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
+	};
+
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(10)>;
 	};
 };
