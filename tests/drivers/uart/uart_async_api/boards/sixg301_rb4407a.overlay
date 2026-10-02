@@ -13,7 +13,7 @@
 /delete-node/ &ls013b7dh03;
 
 /*
- * Connect EXP4 with EXP7 on the Expension Pin header
+ * Connect EXP4 with EXP7 on the Expansion Pin header
  */
 &pinctrl {
 	eusart1_default: eusart1_default {

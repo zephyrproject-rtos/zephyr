@@ -2268,7 +2268,7 @@ ZTEST(net_ipv6, test_change_ll_addr)
 		     "Wrong link address 1");
 
 	/* As the net_ipv6_send_na() uses interface link address to
-	 * greate tllao, change the interface ll address here.
+	 * create tllao, change the interface ll address here.
 	 */
 	memcpy(ll_iface->addr, new_mac, sizeof(new_mac));
 
