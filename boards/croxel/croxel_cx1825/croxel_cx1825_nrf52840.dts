@@ -99,16 +99,10 @@
 	pinctrl-names = "default", "sleep";
 	status = "okay";
 
-	hts221: hts221@5f {
-		compatible = "st,hts221";
-		reg = <0x5f>;
-		drdy-gpios = <&gpio1 2 GPIO_ACTIVE_HIGH>;
-		status = "okay";
-	};
-
-	lps22hb: lps22hb-press@5c {
-		compatible = "st,lps22hb-press";
-		reg = <0x5c>;
+	lis3dh: lis3dh@18 {
+		compatible = "st,lis3dh", "st,lis2dh";
+		reg = <0x18>;
+		irq-gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>;
 		status = "okay";
 	};
 
@@ -119,10 +113,16 @@
 		status = "okay";
 	};
 
-	lis3dh: lis3dh@18 {
-		compatible = "st,lis3dh", "st,lis2dh";
-		reg = <0x18>;
-		irq-gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>;
+	lps22hb: lps22hb-press@5c {
+		compatible = "st,lps22hb-press";
+		reg = <0x5c>;
+		status = "okay";
+	};
+
+	hts221: hts221@5f {
+		compatible = "st,hts221";
+		reg = <0x5f>;
+		drdy-gpios = <&gpio1 2 GPIO_ACTIVE_HIGH>;
 		status = "okay";
 	};
 };
