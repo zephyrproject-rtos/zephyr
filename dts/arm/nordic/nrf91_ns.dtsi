@@ -50,6 +50,19 @@
 #include "nrf91_peripherals.dtsi"
 		};
 
+		/*
+		 * GPIOTE1 is always accessible as a non-secure peripheral,
+		 * so we give it the 'gpiote' label for use when building
+		 * code for this target.
+		 */
+		gpiote: gpiote1: gpiote@40031000 {
+			compatible = "nordic,nrf-gpiote";
+			reg = <0x40031000 0x1000>;
+			interrupts = <49 5>;
+			instance = <1>;
+			status = "disabled";
+		};
+
 		flash_controller: flash-controller@40039000 {
 			compatible = "nordic,nrf91-flash-controller";
 			reg = <0x40039000 0x1000>;
@@ -68,19 +81,6 @@
 				#size-cells = <1>;
 				status = "okay";
 			};
-		};
-
-		/*
-		 * GPIOTE1 is always accessible as a non-secure peripheral,
-		 * so we give it the 'gpiote' label for use when building
-		 * code for this target.
-		 */
-		gpiote: gpiote1: gpiote@40031000 {
-			compatible = "nordic,nrf-gpiote";
-			reg = <0x40031000 0x1000>;
-			interrupts = <49 5>;
-			instance = <1>;
-			status = "disabled";
 		};
 	};
 
