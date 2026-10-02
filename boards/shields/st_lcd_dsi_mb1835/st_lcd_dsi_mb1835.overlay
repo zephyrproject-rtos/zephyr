@@ -24,7 +24,6 @@
 };
 
 &zephyr_mipi_dsi {
-	status = "okay";
 
 	pll-ndiv = <125>;	/* PLLDSINDIV = 125 */
 	pll-idf = <4>;		/* DSI_PLL_IN_DIV4 */
@@ -57,9 +56,9 @@
 		      <23>,	/* DataLaneLP2HSTime */
 		      <0>,	/* DataLaneMaxReadTime */
 		      <7>;	/* StopWaitTime */
+	status = "okay";
 
 	hx8379c: hx8379c@0 {
-		status = "okay";
 		compatible = "himax,hx8379c";
 		reg = <0x0>; /* Virtual channel 0 */
 		width = <480>;
@@ -68,6 +67,7 @@
 		pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
 
 		reset-gpios = <&dsi_lcd_qsh_030 57 GPIO_ACTIVE_HIGH>;
+		status = "okay";
 
 		display-timings {
 			compatible = "zephyr,panel-timing";
@@ -86,7 +86,6 @@
 };
 
 &zephyr_lcd_controller {
-	status = "okay";
 	width = <480>;
 	height = <480>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
@@ -96,6 +95,7 @@
 	def-back-color-red = <0>;
 	def-back-color-green = <0>;
 	def-back-color-blue = <0>;
+	status = "okay";
 
 	/* J025F1CN0201W display module */
 	display-timings {

@@ -15,7 +15,6 @@
 		compatible = "jedec,nor";
 		reg = <0>;
 		size = <DT_SIZE_M(16)>; /* 16 Mbits */
-		status = "okay";
 
 		mspi-max-frequency = <DT_FREQ_M(50)>;
 		mspi-io-mode = "MSPI_IO_MODE_QUAD_1_4_4";
@@ -38,6 +37,7 @@
 		 */
 		t-reset-pulse = <5000000>;
 		t-reset-recovery = <10000000>;
+		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -45,8 +45,8 @@
 			#size-cells = <1>;
 
 			m2mem_flash0: partition@0 {
-				label = "storage";
 				reg = <0x0 DT_SIZE_M(2)>;
+				label = "storage";
 			};
 		};
 	};

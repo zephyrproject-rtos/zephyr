@@ -10,10 +10,10 @@
 	status = "okay";
 
 	wifi0: iwin {
-		status = "okay";
 		compatible = "inventek,eswifi-uart";
 
 		wakeup-gpios = <&arduino_header ARDUINO_HEADER_R3_D7 GPIO_ACTIVE_HIGH>;
 		resetn-gpios = <&arduino_header ARDUINO_HEADER_R3_D6 GPIO_ACTIVE_HIGH>;
+		status = "okay";
 	};
 };

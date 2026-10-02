@@ -8,14 +8,14 @@
 	status = "okay";
 
 	sparkfun_ens160: ens160@53 {
-		status = "okay";
 		compatible = "sciosense,ens160";
 		reg = <0x53>;
+		status = "okay";
 	};
 
 	sparkfun_bme280: bme280@77 {
-		status = "okay";
 		compatible = "bosch,bme280";
 		reg = <0x77>;
+		status = "okay";
 	};
 };

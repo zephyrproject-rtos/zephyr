@@ -32,8 +32,8 @@
 &csi_i2c {
 	imx219: imx219@10 {
 		compatible = "sony,imx219";
-		clocks = <&imx219_input_clock>;
 		reg = <0x10>;
+		clocks = <&imx219_input_clock>;
 
 		port {
 			imx219_ep_out: endpoint {

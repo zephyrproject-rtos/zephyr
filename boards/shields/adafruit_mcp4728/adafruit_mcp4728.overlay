@@ -16,11 +16,11 @@
 	status = "okay";
 
 	dac_adafruit_mcp4728: dac@60 {
-		status = "okay";
 		compatible = "microchip,mcp4728";
 		reg = <0x60>;
 		#io-channel-cells = <1>;
 		voltage-reference = <01 01 01 01>; /* Internal reference (2.048V) */
 		power-down-mode = <00 00 00 00>; /* Normal mode */
+		status = "okay";
 	};
 };

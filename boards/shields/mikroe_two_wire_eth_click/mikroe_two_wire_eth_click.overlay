@@ -8,7 +8,6 @@
 
 	eth_mikroe_two_wire_eth_click: lan865x@0 {
 		compatible = "microchip,lan865x";
-		status = "okay";
 		reg = <0>;
 		spi-cs-setup-delay-ns = <1000>;
 		phy-handle = <&phy_mikroe_two_wire_eth_click>;
@@ -17,17 +16,17 @@
 		rst-gpios = <&mikrobus_header 1 GPIO_ACTIVE_LOW>;
 
 		spi-max-frequency = <20000000>;
+		status = "okay";
 
 		mdio_mikroe_two_wire_eth_click: lan865x_mdio {
 			compatible = "microchip,lan865x-mdio";
-			status = "okay";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "okay";
 
 			phy_mikroe_two_wire_eth_click: ethernet-phy@0 {
 				compatible = "microchip,t1s-phy";
 				reg = <0x0>;
-				status = "okay";
 
 				plca-enable;
 				plca-node-id = <1>;
@@ -35,6 +34,7 @@
 				plca-burst-count = <0x0>;
 				plca-burst-timer = <0x80>;
 				plca-to-timer = <0x20>;
+				status = "okay";
 			};
 		};
 	};
