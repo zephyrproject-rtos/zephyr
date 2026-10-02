@@ -15,6 +15,8 @@ static void max32664c_interrupt_worker(struct k_work *p_work)
 {
 	struct max32664c_data *data = CONTAINER_OF(p_work, struct max32664c_data, interrupt_work);
 
+	ARG_UNUSED(data);
+
 	/* TODO */
 }
 
