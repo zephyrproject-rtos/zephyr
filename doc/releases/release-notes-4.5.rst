@@ -773,6 +773,11 @@ New APIs and options
 * Modem
 
   * :c:enumerator:`CELLULAR_MODEM_INFO_SERIAL_NUMBER`
+  * Modem cellular refuses to suspend (``-EBUSY``) while a devicetree child device
+    is still in use, instead of cutting power to it: a child under runtime PM that
+    holds a usage reference, or any other child in
+    :c:enumerator:`PM_DEVICE_STATE_ACTIVE`. Children without PM support or that
+    failed to initialize are ignored. Requires :kconfig:option:`CONFIG_DEVICE_DEPS`.
 
 * Multimedia Pipeline
 
