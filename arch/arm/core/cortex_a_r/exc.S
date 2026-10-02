@@ -74,7 +74,6 @@ GTEXT(z_arm_data_abort)
 	sub sp, #___extra_esf_info_t_SIZEOF
 	mov r0, #0
 	str r0, [sp, #4]
-	str r0, [sp, #8]
 
 	sub r1, sp, #___callee_saved_t_SIZEOF
 	str r1, [sp]
@@ -161,7 +160,6 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
 	sub sp, #___extra_esf_info_t_SIZEOF
 	mov r0, #0
 	str r0, [sp, #4]
-	str r0, [sp, #8]
 
 	sub r1, sp, #___callee_saved_t_SIZEOF
 	str r1, [sp]
