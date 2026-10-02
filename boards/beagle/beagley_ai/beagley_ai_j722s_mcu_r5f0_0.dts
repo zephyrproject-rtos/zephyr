@@ -8,7 +8,7 @@
 /dts-v1/;
 
 #include <ti/j722s_mcu_r5.dtsi>
-#include "beagley_ai_j722s_r5f0_0-pinctrl.dtsi"
+#include "beagley_ai-common.dtsi"
 #include <freq.h>
 
 / {
@@ -55,13 +55,6 @@
 		mboxes = <&mbox1 0>, <&mbox1 1>;
 		mbox-names = "tx", "rx";
 	};
-};
-
-&uart1 {
-	status = "okay";
-	pinctrl-0 = <&uart1_tx_default &uart1_rx_default>;
-	pinctrl-names = "default";
-	current-speed = <115200>;
 };
 
 &mcu_rti0 {
