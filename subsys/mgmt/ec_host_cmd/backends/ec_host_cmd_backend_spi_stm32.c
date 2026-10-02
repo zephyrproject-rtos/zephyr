@@ -145,6 +145,16 @@ enum spi_host_command_state {
 	SPI_HOST_CMD_STATE_RX_BAD,
 };
 
+static const char *const state_name[] = {
+	[SPI_HOST_CMD_STATE_DISABLED] = "DISABLED",
+	[SPI_HOST_CMD_STATE_RX_NOT_READY] = "RX_NOT_READY",
+	[SPI_HOST_CMD_STATE_READY_TO_RX] = "READY_TO_RX",
+	[SPI_HOST_CMD_STATE_RECEIVING] = "RECEIVING",
+	[SPI_HOST_CMD_STATE_PROCESSING] = "PROCESSING",
+	[SPI_HOST_CMD_STATE_SENDING] = "SENDING",
+	[SPI_HOST_CMD_STATE_RX_BAD] = "RX_BAD",
+};
+
 struct dma_stream {
 	const struct device *dma_dev;
 	uint32_t channel;
@@ -681,7 +691,7 @@ void gpio_cb_nss(const struct device *port, struct gpio_callback *cb, gpio_port_
 	if (hc_spi->state == SPI_HOST_CMD_STATE_PROCESSING ||
 	    hc_spi->state == SPI_HOST_CMD_STATE_SENDING) {
 		/* Ignore unexpected CS assertions while busy. Do not alter state to RX_BAD. */
-		LOG_WRN("Unexpected CS assert in state %d", hc_spi->state);
+		LOG_WRN("Unexpected CS assert in state: %s", state_name[hc_spi->state]);
 		return;
 	}
 
