@@ -34,3 +34,19 @@ def test_only_dt_dep_yields_no_suggestions(load_kconf):
         load_kconf("kconfig_basic"), "DT_HAS_VND_BARE_DEVICE_ENABLED"
     )
     assert deps == set()
+
+
+def test_select_condition_detected(load_kconf):
+    deps = dtdoctor_analyzer.find_kconfig_deps(load_kconf("kconfig_select"), DT_HAS_FOO)
+    assert "CONFIG_DTD_PLATFORM_SELECT" in deps
+
+
+def test_imply_condition_detected(load_kconf):
+    deps = dtdoctor_analyzer.find_kconfig_deps(load_kconf("kconfig_select"), DT_HAS_FOO)
+    assert "CONFIG_DTD_PLATFORM_IMPLY" in deps
+
+
+def test_no_substring_false_positive(load_kconf):
+    # DT_HAS_VND_FOO_DEVICE_ENABLED must not match DT_HAS_VND_FOO_DEVICE_ENABLED_EXT
+    deps = dtdoctor_analyzer.find_kconfig_deps(load_kconf("kconfig_substring"), DT_HAS_FOO)
+    assert deps == set()
