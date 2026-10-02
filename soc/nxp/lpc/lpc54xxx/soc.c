@@ -216,6 +216,16 @@ __weak void clock_init(void)
 #endif
 #endif /* CONFIG_SOC_LPC54628 */
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(wwdt0), nxp_lpc_wwdt, okay)
+	/*
+	 * The watchdog oscillator is powered down out of reset and its FREQSEL
+	 * field selects no frequency, so the watchdog would see a rate of 0.
+	 * FREQSEL 14 with DIVSEL 0 is 1 MHz, a 2 ms to 67 s timeout range.
+	 */
+	POWER_DisablePD(kPDRUNCFG_PD_WDT_OSC);
+	SYSCON->WDTOSCCTRL = SYSCON_WDTOSCCTRL_FREQSEL(14U) | SYSCON_WDTOSCCTRL_DIVSEL(0U);
+#endif
+
 	if (IS_ENABLED(CONFIG_NXP_GINT)) {
 		CLOCK_EnableClock(kCLOCK_Gint);
 	}
