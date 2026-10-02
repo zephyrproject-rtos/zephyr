@@ -14,8 +14,8 @@
  * The peripheral grants below are programmed for the CM33 host master on domain 0,
  * using policy 0 to grant full access policy. For those memory blocks from domain 1&2
  * whose policy is also 0, their access are all granted too. If other masters
- * on domain 1&2 need a different/strict policy, the polocy selection needs to
- * be updated. Here their policies remian unchanged, in case policy 1~7 are locked or
+ * on domain 1&2 need a different/strict policy, the policy selection needs to
+ * be updated. Here their policies remain unchanged, in case policy 1~7 are locked or
  * used by MBC0/1 that causes system failure.
  */
 #define MCXW72_TRDC_POLICY_FULL_ACCESS    0U

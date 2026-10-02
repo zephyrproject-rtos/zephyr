@@ -34,7 +34,7 @@ MAX_CMD_SZ = 16
 ERR_FAIL = 1
 
 # Define the header format and size for
-# transmiting the firmware
+# transmitting the firmware
 PACKET_HEADER_FORMAT_FW = 'I 42s 32s'
 HEADER_SZ = 78
 
@@ -110,7 +110,7 @@ class adsp_request_handler(socketserver.BaseRequestHandler):
             self.request.sendall(cmd)
             ret = self.do_download()
         else:
-            log.error("incorrect load communitcation!")
+            log.error("incorrect load communication!")
             return
 
         if not ret:
@@ -134,7 +134,7 @@ class adsp_log_handler(socketserver.BaseRequestHandler):
         if action == CMD_LOG_START:
             self.request.sendall(cmd)
         else:
-            log.error("incorrect monitor communitcation!")
+            log.error("incorrect monitor communication!")
 
         log.info("wait for FW ready...")
         while not runner.is_fw_ready():
@@ -162,7 +162,7 @@ class adsp_log_handler(socketserver.BaseRequestHandler):
 
         with subprocess.Popen(runner.get_script(), stdout=subprocess.PIPE,
                               start_new_session=True) as proc:
-            # Thread for monitoring the conntection
+            # Thread for monitoring the connection
             t = threading.Thread(target=self.check_connection, args=(proc,))
             t.start()
 
@@ -172,7 +172,7 @@ class adsp_log_handler(socketserver.BaseRequestHandler):
                     self.request.sendall(out)
                     ret = proc.poll()
                     if ret:
-                        log.info(f"retrun code: {ret}")
+                        log.info(f"return code: {ret}")
                         break
 
                 except (BrokenPipeError, ConnectionResetError):

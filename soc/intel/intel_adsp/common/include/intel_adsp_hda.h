@@ -314,7 +314,7 @@ static inline uint32_t intel_adsp_hda_unused(uint32_t base, uint32_t regblock_si
  * @param base Base address of the IP register block
  * @param regblock_size Register block size
  * @param sid Stream ID within the register block
- * @param len Len to increment postion by
+ * @param len Len to increment position by
  */
 static inline void intel_adsp_hda_host_commit(uint32_t base,
 					      uint32_t regblock_size,
@@ -336,7 +336,7 @@ static inline void intel_adsp_hda_host_commit(uint32_t base,
  * @param base Base address of the IP register block
  * @param regblock_size Register block size
  * @param sid Stream ID within the register block
- * @param len Len to increment postion by
+ * @param len Len to increment position by
  */
 static inline void intel_adsp_hda_link_commit(uint32_t base,
 					      uint32_t regblock_size,

@@ -272,7 +272,7 @@ SECTIONS
 		__ilm_ram_start = .;
 		. += __ilm_flash_end - __ilm_flash_start;
 		__ilm_ram_end = .;
-		/* Aligning 4k ensures ILM doesn't overwritte RAM. */
+		/* Aligning 4k ensures ILM doesn't overwrite RAM. */
 		. = ALIGN(0x1000);
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
