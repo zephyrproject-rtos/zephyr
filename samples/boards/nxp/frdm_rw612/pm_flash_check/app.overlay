@@ -11,8 +11,8 @@
 &w25q512jvfiq {
 	partitions {
 		scratch_partition: partition@3000000 {
-			label = "scratch";
 			reg = <0x3000000 DT_SIZE_K(16)>;
+			label = "scratch";
 		};
 	};
 };

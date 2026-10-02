@@ -5,6 +5,6 @@
  */
 
 &rtc {
-	status = "okay";
 	wakeup-source;
+	status = "okay";
 };

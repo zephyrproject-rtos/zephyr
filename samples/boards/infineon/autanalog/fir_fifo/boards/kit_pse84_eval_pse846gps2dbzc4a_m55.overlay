@@ -20,18 +20,18 @@
 };
 
 &adc0 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@0 {
 		reg = <0>;
+		fifo-sel = <IFX_AUTANALOG_SAR_FIFO_0>;
 		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 1)>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,resolution = <12>;
 		zephyr,input-positive = <0>;   /* P15.0 */
-		fifo-sel = <IFX_AUTANALOG_SAR_FIFO_0>;
 	};
 
 	/* MUX channel: P15.0 via internal MUX routing.
@@ -39,35 +39,35 @@
 	 */
 	channel@8 {
 		reg = <8>;
+		mux-buf-bypass;
+		fifo-sel = <IFX_AUTANALOG_SAR_FIFO_1>;
 		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 1)>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,resolution = <12>;
 		zephyr,input-positive = <IFX_AUTANALOG_SAR_PIN_MUX_GPIO0>;
-		mux-buf-bypass;
-		fifo-sel = <IFX_AUTANALOG_SAR_FIFO_1>;
 	};
 
 	/* FIR0 pseudo-channel */
 	channel@18 {
 		reg = <24>;
+		fifo-sel = <IFX_AUTANALOG_SAR_FIFO_2>;
 		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 1)>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,resolution = <12>;
 		zephyr,input-positive = <IFX_AUTANALOG_SAR_FIR_CH_GPIO0>;
-		fifo-sel = <IFX_AUTANALOG_SAR_FIFO_2>;
 	};
 
 	/* FIR1 pseudo-channel */
 	channel@19 {
 		reg = <25>;
+		fifo-sel = <IFX_AUTANALOG_SAR_FIFO_3>;
 		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 1)>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,resolution = <12>;
 		zephyr,input-positive = <IFX_AUTANALOG_SAR_FIR_CH_GPIO0>;
-		fifo-sel = <IFX_AUTANALOG_SAR_FIFO_3>;
 	};
 
 	/* FIR filter 0: 4-tap moving average on GPIO channel 0 (P15.0).
