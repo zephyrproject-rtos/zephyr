@@ -133,16 +133,16 @@
 	pinctrl-names = "default", "sleep";
 	status = "okay";
 
-	pcf85063a@51 {
-		compatible = "nxp,pcf85063a";
-		reg = <0x51>;
-	};
-
 	lis2dh: lis2dh@18 {
 		compatible = "st,lis2dh";
 		reg = <0x18>;
 		irq-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
 		disconnect-sdo-sa0-pull-up;
+	};
+
+	pcf85063a@51 {
+		compatible = "nxp,pcf85063a";
+		reg = <0x51>;
 	};
 };
 
