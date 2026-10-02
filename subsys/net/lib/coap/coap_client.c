@@ -1515,6 +1515,16 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 			last_block = false;
 		}
 
+		/* TODO: RFC 7959, section 3.3: retrieve the rest of a block-wise
+		 * response to a block-wise upload with further Block2 requests
+		 * instead of failing.
+		 */
+		if (last_block && block_option > 0 && GET_MORE(block_option)) {
+			LOG_ERR("Block-wise response to a block-wise upload not supported");
+			ret = -ENOTSUP;
+			goto fail;
+		}
+
 		block1_option = coap_get_option_int(response, COAP_OPTION_BLOCK1);
 		if (block1_option > 0) {
 			int block_size = GET_BLOCK_SIZE(block1_option);

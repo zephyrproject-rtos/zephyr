@@ -1724,11 +1724,15 @@ static ssize_t z_impl_zsock_sendto_custom_fake_record_block1(int sock, void *buf
 /* Answer the last block of an upload with a 2.04 carrying both the Block1
  * option and a Block2 option for a single-block response.
  */
+/* With combined_more, a full first Block2 block of a longer response */
+static bool combined_more;
+
 static ssize_t z_impl_zsock_recvfrom_custom_fake_combined(int sock, void *buf, size_t max_len,
 							  int flags, struct net_sockaddr *src_addr,
 							  net_socklen_t *addrlen)
 {
-	static const uint8_t payload[] = "done";
+	static uint8_t payload[256] = "done";
+	int block2 = combined_more ? BIT(3) | COAP_BLOCK_256 : COAP_BLOCK_256;
 	uint8_t token[COAP_TOKEN_MAX_LEN] = {0};
 	struct coap_packet pkt;
 
@@ -1740,10 +1744,11 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_combined(int sock, void *buf, s
 	zassert_ok(coap_packet_init(&pkt, buf, max_len, 1, COAP_TYPE_ACK, COAP_TOKEN_MAX_LEN,
 				    token, COAP_RESPONSE_CODE_CHANGED,
 				    get_next_pending_message_id()));
-	zassert_ok(coap_append_option_int(&pkt, COAP_OPTION_BLOCK2, COAP_BLOCK_256));
+	zassert_ok(coap_append_option_int(&pkt, COAP_OPTION_BLOCK2, block2));
 	zassert_ok(coap_append_option_int(&pkt, COAP_OPTION_BLOCK1, combined_block1));
 	zassert_ok(coap_packet_append_payload_marker(&pkt));
-	zassert_ok(coap_packet_append_payload(&pkt, payload, sizeof(payload) - 1));
+	zassert_ok(coap_packet_append_payload(&pkt, payload,
+					      combined_more ? sizeof(payload) : 4));
 	restore_token(buf);
 
 	fill_recv_src_addr(src_addr, addrlen);
@@ -1759,6 +1764,7 @@ ZTEST(coap_client, test_blockwise_upload_combined_block2)
 		ztest_test_skip();
 	}
 
+	combined_more = false;
 	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_record_block1;
 	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_combined;
 
@@ -1767,6 +1773,28 @@ ZTEST(coap_client, test_blockwise_upload_combined_block2)
 	k_sleep(K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS));
 	zassert_true(GET_BLOCK_NUM(combined_block1) > 0, "Payload must span several blocks");
 	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CHANGED, "Unexpected response (%d)",
+		      last_response_code);
+}
+
+/* RFC 7959, section 3.3: retrieving the rest of a block-wise response to a
+ * block-wise upload is not supported yet; the first block is not reported as
+ * the whole response.
+ */
+ZTEST(coap_client, test_blockwise_upload_combined_block2_more)
+{
+	/* Needs a payload larger than one message */
+	if (sizeof(long_payload) - 1 <= CONFIG_COAP_CLIENT_MESSAGE_SIZE) {
+		ztest_test_skip();
+	}
+
+	combined_more = true;
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_record_block1;
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_combined;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &long_request, NULL));
+
+	k_sleep(K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS));
+	zassert_equal(last_response_code, -ENOTSUP, "Unexpected response (%d)",
 		      last_response_code);
 }
 
