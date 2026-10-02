@@ -36,38 +36,6 @@
 		reg = <0x00000000 DT_SIZE_K(32)>;
 	};
 
-	tcmu: memory@20000000 {
-		compatible = "nxp,imx-dtcm";
-		reg = <0x20000000 DT_SIZE_K(32)>;
-	};
-
-	ocram_s: memory@208f8000 {
-		compatible = "nxp,imx-sys-bus";
-		reg = <0x208f8000 DT_SIZE_K(16)>;
-		device_type = "memory";
-	};
-
-	ocram: memory@20900000 {
-		compatible = "nxp,imx-sys-bus";
-		reg = <0x20900000 DT_SIZE_K(128)>;
-		device_type = "memory";
-	};
-
-	ddr: memory@80000000 {
-		compatible = "nxp,imx-sys-bus";
-		reg = <0x80000000 0x60000000>;
-		device_type = "memory";
-	};
-
-	flash: memory@DT_FLASH_ADDR {
-		compatible = "soc-nv-flash";
-		reg = <DT_ADDR(DT_FLASH_ADDR) DT_FLASH_SIZE>;
-	};
-
-	sram: memory@DT_SRAM_ADDR {
-		reg = <DT_ADDR(DT_SRAM_ADDR) DT_SRAM_SIZE>;
-	};
-
 	soc {
 		uart1: uart@42020000 {
 			compatible = "nxp,imx-uart";
@@ -80,58 +48,55 @@
 			status = "disabled";
 		};
 
-		uart2: uart@421e8000 {
-			compatible = "nxp,imx-uart";
-			reg = <0x421e8000 0x00004000>;
-			interrupts = <27 0>;
+		pwm1: pwm@42080000 {
+			compatible = "fsl,imx6sx-pwm", "fsl,imx27-pwm";
+			reg = <0x42080000 0x4000>;
+			interrupts = <83 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,
 						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID,
 						RDC_DOMAIN_PERM_RW))>;
+			prescaler = <0>;
+			#pwm-cells = <2>;
 			status = "disabled";
 		};
 
-		uart3: uart@421ec000 {
-			compatible = "nxp,imx-uart";
-			reg = <0x421ec000 0x00004000>;
-			interrupts = <28 0>;
+		pwm2: pwm@42084000 {
+			compatible = "fsl,imx6sx-pwm", "fsl,imx27-pwm";
+			reg = <0x42084000 0x4000>;
+			interrupts = <84 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,
 						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID,
 						RDC_DOMAIN_PERM_RW))>;
+			prescaler = <0>;
+			#pwm-cells = <2>;
 			status = "disabled";
 		};
 
-		uart4: uart@421f0000 {
-			compatible = "nxp,imx-uart";
-			reg = <0x421f0000 0x00004000>;
-			interrupts = <29 0>;
+		pwm3: pwm@42088000 {
+			compatible = "fsl,imx6sx-pwm", "fsl,imx27-pwm";
+			reg = <0x42088000 0x4000>;
+			interrupts = <85 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,
 						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID,
 						RDC_DOMAIN_PERM_RW))>;
+			prescaler = <0>;
+			#pwm-cells = <2>;
 			status = "disabled";
 		};
 
-		uart5: uart@421f4000 {
-			compatible = "nxp,imx-uart";
-			reg = <0x421f4000 0x00004000>;
-			interrupts = <30 0>;
+		pwm4: pwm@4208c000 {
+			compatible = "fsl,imx6sx-pwm", "fsl,imx27-pwm";
+			reg = <0x4208c000 0x4000>;
+			interrupts = <86 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,
 						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID,
 						RDC_DOMAIN_PERM_RW))>;
-			status = "disabled";
-		};
-
-		uart6: uart@422a0000 {
-			compatible = "nxp,imx-uart";
-			reg = <0x422a0000 0x00004000>;
-			interrupts = <17 0>;
-			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW) |
-				RDC_DOMAIN_PERM(M4_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW))>;
+			prescaler = <0>;
+			#pwm-cells = <2>;
 			status = "disabled";
 		};
 
@@ -226,10 +191,11 @@
 			status = "disabled";
 		};
 
-		mub: mu@4229c000 {
-			compatible = "nxp,imx-mu";
-			reg = <0x4229c000 0x4000>;
-			interrupts = <99 0>;
+		epit1: epit@420d0000 {
+			compatible = "nxp,imx-epit";
+			reg = <0x420d0000 0x4000>;
+			interrupts = <56 0>;
+			prescaler = <0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,
 						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID,
@@ -237,10 +203,10 @@
 			status = "disabled";
 		};
 
-		epit1: epit@420d0000 {
+		epit2: epit@420d4000 {
 			compatible = "nxp,imx-epit";
-			reg = <0x420d0000 0x4000>;
-			interrupts = <56 0>;
+			reg = <0x420d4000 0x4000>;
+			interrupts = <57 0>;
 			prescaler = <0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,
 						RDC_DOMAIN_PERM_RW) |
@@ -259,18 +225,6 @@
 				compatible = "nxp,mcux-rt-pinctrl";
 				status = "okay";
 			};
-		};
-
-		epit2: epit@420d4000 {
-			compatible = "nxp,imx-epit";
-			reg = <0x420d4000 0x4000>;
-			interrupts = <57 0>;
-			prescaler = <0>;
-			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW) |
-				RDC_DOMAIN_PERM(M4_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW))>;
-			status = "disabled";
 		};
 
 		i2c1: i2c@421a0000 {
@@ -315,6 +269,50 @@
 			status = "disabled";
 		};
 
+		uart2: uart@421e8000 {
+			compatible = "nxp,imx-uart";
+			reg = <0x421e8000 0x00004000>;
+			interrupts = <27 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW) |
+				RDC_DOMAIN_PERM(M4_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW))>;
+			status = "disabled";
+		};
+
+		uart3: uart@421ec000 {
+			compatible = "nxp,imx-uart";
+			reg = <0x421ec000 0x00004000>;
+			interrupts = <28 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW) |
+				RDC_DOMAIN_PERM(M4_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW))>;
+			status = "disabled";
+		};
+
+		uart4: uart@421f0000 {
+			compatible = "nxp,imx-uart";
+			reg = <0x421f0000 0x00004000>;
+			interrupts = <29 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW) |
+				RDC_DOMAIN_PERM(M4_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW))>;
+			status = "disabled";
+		};
+
+		uart5: uart@421f4000 {
+			compatible = "nxp,imx-uart";
+			reg = <0x421f4000 0x00004000>;
+			interrupts = <30 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW) |
+				RDC_DOMAIN_PERM(M4_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW))>;
+			status = "disabled";
+		};
+
 		i2c4: i2c@421f8000 {
 			compatible = "fsl,imx6sx-i2c", "fsl,imx21-i2c";
 			reg = <0x421f8000 0x4000>;
@@ -326,110 +324,6 @@
 						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID,
 						RDC_DOMAIN_PERM_RW))>;
-			status = "disabled";
-		};
-
-		pwm1: pwm@42080000 {
-			compatible = "fsl,imx6sx-pwm", "fsl,imx27-pwm";
-			reg = <0x42080000 0x4000>;
-			interrupts = <83 0>;
-			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW) |
-				RDC_DOMAIN_PERM(M4_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW))>;
-			prescaler = <0>;
-			#pwm-cells = <2>;
-			status = "disabled";
-		};
-
-		pwm2: pwm@42084000 {
-			compatible = "fsl,imx6sx-pwm", "fsl,imx27-pwm";
-			reg = <0x42084000 0x4000>;
-			interrupts = <84 0>;
-			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW) |
-				RDC_DOMAIN_PERM(M4_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW))>;
-			prescaler = <0>;
-			#pwm-cells = <2>;
-			status = "disabled";
-		};
-
-		pwm3: pwm@42088000 {
-			compatible = "fsl,imx6sx-pwm", "fsl,imx27-pwm";
-			reg = <0x42088000 0x4000>;
-			interrupts = <85 0>;
-			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW) |
-				RDC_DOMAIN_PERM(M4_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW))>;
-			prescaler = <0>;
-			#pwm-cells = <2>;
-			status = "disabled";
-		};
-
-		pwm4: pwm@4208c000 {
-			compatible = "fsl,imx6sx-pwm", "fsl,imx27-pwm";
-			reg = <0x4208c000 0x4000>;
-			interrupts = <86 0>;
-			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW) |
-				RDC_DOMAIN_PERM(M4_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW))>;
-			prescaler = <0>;
-			#pwm-cells = <2>;
-			status = "disabled";
-		};
-
-		pwm5: pwm@422a4000 {
-			compatible = "fsl,imx6sx-pwm", "fsl,imx27-pwm";
-			reg = <0x422a4000 0x4000>;
-			interrupts = <83 0>;
-			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW) |
-				RDC_DOMAIN_PERM(M4_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW))>;
-			prescaler = <0>;
-			#pwm-cells = <2>;
-			status = "disabled";
-		};
-
-		pwm6: pwm@422a8000 {
-			compatible = "fsl,imx6sx-pwm", "fsl,imx27-pwm";
-			reg = <0x422a8000 0x4000>;
-			interrupts = <84 0>;
-			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW) |
-				RDC_DOMAIN_PERM(M4_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW))>;
-			prescaler = <0>;
-			#pwm-cells = <2>;
-			status = "disabled";
-		};
-
-		pwm7: pwm@422ac000 {
-			compatible = "fsl,imx6sx-pwm", "fsl,imx27-pwm";
-			reg = <0x422ac000 0x4000>;
-			interrupts = <85 0>;
-			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW) |
-				RDC_DOMAIN_PERM(M4_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW))>;
-			prescaler = <0>;
-			#pwm-cells = <2>;
-			status = "disabled";
-		};
-
-		pwm8: pwm@422ab000 {
-			compatible = "fsl,imx6sx-pwm", "fsl,imx27-pwm";
-			reg = <0x422ab000 0x4000>;
-			interrupts = <86 0>;
-			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW) |
-				RDC_DOMAIN_PERM(M4_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW))>;
-			prescaler = <0>;
-			#pwm-cells = <2>;
 			status = "disabled";
 		};
 
@@ -460,6 +354,112 @@
 			#io-channel-cells = <1>;
 			status = "disabled";
 		};
+
+		mub: mu@4229c000 {
+			compatible = "nxp,imx-mu";
+			reg = <0x4229c000 0x4000>;
+			interrupts = <99 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW) |
+				RDC_DOMAIN_PERM(M4_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW))>;
+			status = "disabled";
+		};
+
+		uart6: uart@422a0000 {
+			compatible = "nxp,imx-uart";
+			reg = <0x422a0000 0x00004000>;
+			interrupts = <17 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW) |
+				RDC_DOMAIN_PERM(M4_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW))>;
+			status = "disabled";
+		};
+
+		pwm5: pwm@422a4000 {
+			compatible = "fsl,imx6sx-pwm", "fsl,imx27-pwm";
+			reg = <0x422a4000 0x4000>;
+			interrupts = <83 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW) |
+				RDC_DOMAIN_PERM(M4_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW))>;
+			prescaler = <0>;
+			#pwm-cells = <2>;
+			status = "disabled";
+		};
+
+		pwm6: pwm@422a8000 {
+			compatible = "fsl,imx6sx-pwm", "fsl,imx27-pwm";
+			reg = <0x422a8000 0x4000>;
+			interrupts = <84 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW) |
+				RDC_DOMAIN_PERM(M4_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW))>;
+			prescaler = <0>;
+			#pwm-cells = <2>;
+			status = "disabled";
+		};
+
+		pwm8: pwm@422ab000 {
+			compatible = "fsl,imx6sx-pwm", "fsl,imx27-pwm";
+			reg = <0x422ab000 0x4000>;
+			interrupts = <86 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW) |
+				RDC_DOMAIN_PERM(M4_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW))>;
+			prescaler = <0>;
+			#pwm-cells = <2>;
+			status = "disabled";
+		};
+
+		pwm7: pwm@422ac000 {
+			compatible = "fsl,imx6sx-pwm", "fsl,imx27-pwm";
+			reg = <0x422ac000 0x4000>;
+			interrupts = <85 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW) |
+				RDC_DOMAIN_PERM(M4_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW))>;
+			prescaler = <0>;
+			#pwm-cells = <2>;
+			status = "disabled";
+		};
+	};
+
+	flash: memory@DT_FLASH_ADDR {
+		compatible = "soc-nv-flash";
+		reg = <DT_ADDR(DT_FLASH_ADDR) DT_FLASH_SIZE>;
+	};
+
+	sram: memory@DT_SRAM_ADDR {
+		reg = <DT_ADDR(DT_SRAM_ADDR) DT_SRAM_SIZE>;
+	};
+
+	tcmu: memory@20000000 {
+		compatible = "nxp,imx-dtcm";
+		reg = <0x20000000 DT_SIZE_K(32)>;
+	};
+
+	ocram_s: memory@208f8000 {
+		compatible = "nxp,imx-sys-bus";
+		reg = <0x208f8000 DT_SIZE_K(16)>;
+		device_type = "memory";
+	};
+
+	ocram: memory@20900000 {
+		compatible = "nxp,imx-sys-bus";
+		reg = <0x20900000 DT_SIZE_K(128)>;
+		device_type = "memory";
+	};
+
+	ddr: memory@80000000 {
+		compatible = "nxp,imx-sys-bus";
+		reg = <0x80000000 0x60000000>;
+		device_type = "memory";
 	};
 };
 

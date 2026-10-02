@@ -142,120 +142,82 @@
 			reg = <0x20000000 DT_SIZE_K(256)>;
 		};
 
-		flexio1: flexio@425c0000 {
-			compatible = "nxp,flexio";
-			reg = <0x425c0000 0x4000>;
-			interrupts = <46 0>;
-			clocks = <&scmi_clk IMX952_CLK_FLEXIO1>;
+		tstmr2: timer@420a0000 {
+			compatible = "nxp,tstmr";
+			reg = <0x420a0000 0x8>;
+			clock-frequency = <DT_FREQ_M(24)>;
 			status = "disabled";
 		};
 
-		flexio2: flexio@425d0000 {
-			compatible = "nxp,flexio";
-			reg = <0x425d0000 0x4000>;
-			interrupts = <47 0>;
-			clocks = <&scmi_clk IMX952_CLK_FLEXIO2>;
+		lpuart3: serial@42190000 {
+			compatible = "nxp,imx-lpuart", "nxp,lpuart";
+			reg = <0x42190000 DT_SIZE_K(64)>;
+			interrupts = <64 3>;
+			clocks = <&scmi_clk IMX952_CLK_LPUART3>;
+			dmas = <&edma2 0 17>, <&edma2 1 18>;
+			dma-names = "tx", "rx";
 			status = "disabled";
 		};
 
-		gpio1: gpio@47400000 {
-			compatible = "nxp,imx-rgpio";
-			reg = <0x47400000 DT_SIZE_K(64)>;
-			interrupts = <10 0>, <11 0>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <16>;
+		lpuart4: serial@421a0000 {
+			compatible = "nxp,imx-lpuart", "nxp,lpuart";
+			reg = <0x421a0000 DT_SIZE_K(64)>;
+			interrupts = <65 3>;
+			clocks = <&scmi_clk IMX952_CLK_LPUART4>;
 			status = "disabled";
 		};
 
-		gpio2: gpio@43810000 {
-			compatible = "nxp,imx-rgpio";
-			reg = <0x43810000 DT_SIZE_K(64)>;
-			interrupts = <49 0>, <50 0>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <32>;
+		lpuart5: serial@421b0000 {
+			compatible = "nxp,imx-lpuart", "nxp,lpuart";
+			reg = <0x421b0000 DT_SIZE_K(64)>;
+			interrupts = <66 3>;
+			clocks = <&scmi_clk IMX952_CLK_LPUART5>;
+			dmas = <&edma2 2 21>, <&edma2 3 22>;
+			dma-names = "tx", "rx";
 			status = "disabled";
 		};
 
-		gpio3: gpio@43820000 {
-			compatible = "nxp,imx-rgpio";
-			reg = <0x43820000 DT_SIZE_K(64)>;
-			interrupts = <51 0>, <52 0>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <32>;
+		lpuart6: serial@421c0000 {
+			compatible = "nxp,imx-lpuart", "nxp,lpuart";
+			reg = <0x421c0000 DT_SIZE_K(64)>;
+			interrupts = <67 3>;
+			clocks = <&scmi_clk IMX952_CLK_LPUART6>;
 			status = "disabled";
 		};
 
-		gpio4: gpio@43840000 {
-			compatible = "nxp,imx-rgpio";
-			reg = <0x43840000 DT_SIZE_K(64)>;
-			interrupts = <53 0>, <54 0>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <30>;
+		lpuart7: serial@422b0000 {
+			compatible = "nxp,imx-lpuart", "nxp,lpuart";
+			reg = <0x422b0000 DT_SIZE_K(64)>;
+			interrupts = <68 3>;
+			clocks = <&scmi_clk IMX952_CLK_LPUART7>;
 			status = "disabled";
 		};
 
-		gpio5: gpio@43850000 {
-			compatible = "nxp,imx-rgpio";
-			reg = <0x43850000 DT_SIZE_K(64)>;
-			interrupts = <55 0>, <56 0>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <18>;
+		lpuart8: serial@422c0000 {
+			compatible = "nxp,imx-lpuart", "nxp,lpuart";
+			reg = <0x422c0000 DT_SIZE_K(64)>;
+			interrupts = <69 3>;
+			clocks = <&scmi_clk IMX952_CLK_LPUART8>;
 			status = "disabled";
 		};
 
-		edma1: dma@44000000 {
-			compatible = "nxp,mcux-edma";
-			reg = <0x44000000 0x4000>;
-			#dma-cells = <2>;
-			dma-channels = <32>;
-			dma-requests = <32>;
-			interrupts = <96 0>, <97 0>, <98 0>, <99 0>,
-				     <100 0>, <101 0>, <102 0>, <103 0>,
-				     <104 0>, <105 0>, <106 0>, <107 0>,
-				     <108 0>, <109 0>, <110 0>, <111 0>,
-				     <112 0>, <113 0>, <114 0>, <115 0>,
-				     <116 0>, <117 0>, <118 0>, <119 0>,
-				     <120 0>, <121 0>, <122 0>, <123 0>,
-				     <124 0>, <125 0>, <126 0>, <126 0>;
-			nxp,version = <4>;
+		mu7: mailbox@42440000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x42440000 DT_SIZE_K(4)>;
+			interrupts = <207 0>;
+			#mbox-cells = <1>;
 			status = "disabled";
 		};
 
-		edma2: dma@42800000 {
-			compatible = "nxp,mcux-edma";
-			reg = <0x42800000 0x4000>;
-			#dma-cells = <2>;
-			dma-channels = <64>;
-			dma-requests = <92>;
-			no-error-irq;
-			interrupts = <128 0>, <129 0>, <130 0>, <131 0>, <132 0>, <133 0>,
-				     <134 0>, <135 0>, <136 0>, <137 0>, <138 0>, <139 0>,
-				     <140 0>, <141 0>, <142 0>, <143 0>, <144 0>, <145 0>,
-				     <146 0>, <147 0>, <148 0>, <149 0>, <150 0>, <151 0>,
-				     <152 0>, <153 0>, <154 0>, <155 0>, <156 0>, <157 0>,
-				     <158 0>, <159 0>;
-			channels-shared-irq-mask = <0x00000003 0x00000000 0x0000000c 0x00000000
-						    0x00000030 0x00000000 0x000000c0 0x00000000
-						    0x00000300 0x00000000 0x00000c00 0x00000000
-						    0x00003000 0x00000000 0x0000c000 0x00000000
-						    0x00030000 0x00000000 0x000c0000 0x00000000
-						    0x00300000 0x00000000 0x00c00000 0x00000000
-						    0x03000000 0x00000000 0x0c000000 0x00000000
-						    0x30000000 0x00000000 0xc0000000 0x00000000
-						    0x00000000 0x00000003 0x00000000 0x0000000c
-						    0x00000000 0x00000030 0x00000000 0x000000c0
-						    0x00000000 0x00000300 0x00000000 0x00000c00
-						    0x00000000 0x00003000 0x00000000 0x0000c000
-						    0x00000000 0x00030000 0x00000000 0x000c0000
-						    0x00000000 0x00300000 0x00000000 0x00c00000
-						    0x00000000 0x03000000 0x00000000 0x0c000000
-						    0x00000000 0x30000000 0x00000000 0xc0000000>;
-			nxp,version = <5>;
+		lptmr2: timer@424d0000 {
+			compatible = "nxp,lptmr";
+			reg = <0x424d0000 DT_SIZE_K(4)>;
+			interrupts = <63 0>;
+			clocks = <&scmi_clk IMX952_CLK_LPTMR2>;
+			clock-frequency = <DT_FREQ_K(32)>;
+			clk-source = <2>;
+			prescale-glitch-filter-bypass;
+			resolution = <32>;
 			status = "disabled";
 		};
 
@@ -296,6 +258,19 @@
 			clocks = <&scmi_clk IMX952_CLK_TPM6>;
 			prescaler = <16>;
 			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		i3c2: i3c@42520000 {
+			compatible = "nxp,mcux-i3c";
+			reg = <0x42520000 0x1000>;
+			interrupts = <57 0>;
+			clocks = <&scmi_clk IMX952_CLK_I3C2SLOW>;
+			clk-divider = <6>;
+			clk-divider-slow = <1>;
+			clk-divider-tc = <1>;
+			#address-cells = <3>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 
@@ -345,18 +320,6 @@
 			status = "disabled";
 		};
 
-		flexcan1: can@443a0000 {
-			compatible = "nxp,flexcan-fd", "nxp,flexcan";
-			reg = <0x443a0000 DT_SIZE_K(64)>;
-			interrupts = <8 0>, <9 0>;
-			interrupt-names = "common", "error";
-			clocks = <&scmi_clk IMX952_CLK_CAN1>;
-			clock-names = "clksrc0";
-			clk-source = <0>;
-			number-of-mb = <96>;
-			status = "disabled";
-		};
-
 		flexcan2: can@425b0000 {
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
 			reg = <0x425b0000 DT_SIZE_K(64)>;
@@ -366,6 +329,22 @@
 			clock-names = "clksrc0";
 			clk-source = <0>;
 			number-of-mb = <96>;
+			status = "disabled";
+		};
+
+		flexio1: flexio@425c0000 {
+			compatible = "nxp,flexio";
+			reg = <0x425c0000 0x4000>;
+			interrupts = <46 0>;
+			clocks = <&scmi_clk IMX952_CLK_FLEXIO1>;
+			status = "disabled";
+		};
+
+		flexio2: flexio@425d0000 {
+			compatible = "nxp,flexio";
+			reg = <0x425d0000 0x4000>;
+			interrupts = <47 0>;
+			clocks = <&scmi_clk IMX952_CLK_FLEXIO2>;
 			status = "disabled";
 		};
 
@@ -381,66 +360,6 @@
 			status = "disabled";
 		};
 
-		flexcan4: can@427c0000 {
-			compatible = "nxp,flexcan-fd", "nxp,flexcan";
-			reg = <0x427c0000 DT_SIZE_K(64)>;
-			interrupts = <42 0>, <43 0>;
-			interrupt-names = "common", "error";
-			clocks = <&scmi_clk IMX952_CLK_CAN4>;
-			clock-names = "clksrc0";
-			clk-source = <0>;
-			number-of-mb = <96>;
-			status = "disabled";
-		};
-
-		flexcan5: can@427d0000 {
-			compatible = "nxp,flexcan-fd", "nxp,flexcan";
-			reg = <0x427d0000 DT_SIZE_K(64)>;
-			interrupts = <44 0>, <45 0>;
-			interrupt-names = "common", "error";
-			clocks = <&scmi_clk IMX952_CLK_CAN5>;
-			clock-names = "clksrc0";
-			clk-source = <0>;
-			number-of-mb = <96>;
-			status = "disabled";
-		};
-
-		lpuart3: serial@42190000 {
-			compatible = "nxp,imx-lpuart", "nxp,lpuart";
-			reg = <0x42190000 DT_SIZE_K(64)>;
-			interrupts = <64 3>;
-			clocks = <&scmi_clk IMX952_CLK_LPUART3>;
-			dmas = <&edma2 0 17>, <&edma2 1 18>;
-			dma-names = "tx", "rx";
-			status = "disabled";
-		};
-
-		lpuart4: serial@421a0000 {
-			compatible = "nxp,imx-lpuart", "nxp,lpuart";
-			reg = <0x421a0000 DT_SIZE_K(64)>;
-			interrupts = <65 3>;
-			clocks = <&scmi_clk IMX952_CLK_LPUART4>;
-			status = "disabled";
-		};
-
-		lpuart5: serial@421b0000 {
-			compatible = "nxp,imx-lpuart", "nxp,lpuart";
-			reg = <0x421b0000 DT_SIZE_K(64)>;
-			interrupts = <66 3>;
-			clocks = <&scmi_clk IMX952_CLK_LPUART5>;
-			dmas = <&edma2 2 21>, <&edma2 3 22>;
-			dma-names = "tx", "rx";
-			status = "disabled";
-		};
-
-		lpuart6: serial@421c0000 {
-			compatible = "nxp,imx-lpuart", "nxp,lpuart";
-			reg = <0x421c0000 DT_SIZE_K(64)>;
-			interrupts = <67 3>;
-			clocks = <&scmi_clk IMX952_CLK_LPUART6>;
-			status = "disabled";
-		};
-
 		sai3: dai@42650000 {
 			compatible = "nxp,dai-sai";
 			reg = <0x42650000 DT_SIZE_K(64)>;
@@ -451,22 +370,6 @@
 			mclk-is-output;
 			dmas = <&edma2 4 60>, <&edma2 5 61>;
 			dma-names = "tx", "rx";
-			status = "disabled";
-		};
-
-		lpuart7: serial@422b0000 {
-			compatible = "nxp,imx-lpuart", "nxp,lpuart";
-			reg = <0x422b0000 DT_SIZE_K(64)>;
-			interrupts = <68 3>;
-			clocks = <&scmi_clk IMX952_CLK_LPUART7>;
-			status = "disabled";
-		};
-
-		lpuart8: serial@422c0000 {
-			compatible = "nxp,imx-lpuart", "nxp,lpuart";
-			reg = <0x422c0000 DT_SIZE_K(64)>;
-			interrupts = <69 3>;
-			clocks = <&scmi_clk IMX952_CLK_LPUART8>;
 			status = "disabled";
 		};
 
@@ -562,6 +465,140 @@
 			status = "disabled";
 		};
 
+		flexcan4: can@427c0000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x427c0000 DT_SIZE_K(64)>;
+			interrupts = <42 0>, <43 0>;
+			interrupt-names = "common", "error";
+			clocks = <&scmi_clk IMX952_CLK_CAN4>;
+			clock-names = "clksrc0";
+			clk-source = <0>;
+			number-of-mb = <96>;
+			status = "disabled";
+		};
+
+		flexcan5: can@427d0000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x427d0000 DT_SIZE_K(64)>;
+			interrupts = <44 0>, <45 0>;
+			interrupt-names = "common", "error";
+			clocks = <&scmi_clk IMX952_CLK_CAN5>;
+			clock-names = "clksrc0";
+			clk-source = <0>;
+			number-of-mb = <96>;
+			status = "disabled";
+		};
+
+		edma2: dma@42800000 {
+			compatible = "nxp,mcux-edma";
+			reg = <0x42800000 0x4000>;
+			#dma-cells = <2>;
+			dma-channels = <64>;
+			dma-requests = <92>;
+			no-error-irq;
+			interrupts = <128 0>, <129 0>, <130 0>, <131 0>, <132 0>, <133 0>,
+				     <134 0>, <135 0>, <136 0>, <137 0>, <138 0>, <139 0>,
+				     <140 0>, <141 0>, <142 0>, <143 0>, <144 0>, <145 0>,
+				     <146 0>, <147 0>, <148 0>, <149 0>, <150 0>, <151 0>,
+				     <152 0>, <153 0>, <154 0>, <155 0>, <156 0>, <157 0>,
+				     <158 0>, <159 0>;
+			channels-shared-irq-mask = <0x00000003 0x00000000 0x0000000c 0x00000000
+						    0x00000030 0x00000000 0x000000c0 0x00000000
+						    0x00000300 0x00000000 0x00000c00 0x00000000
+						    0x00003000 0x00000000 0x0000c000 0x00000000
+						    0x00030000 0x00000000 0x000c0000 0x00000000
+						    0x00300000 0x00000000 0x00c00000 0x00000000
+						    0x03000000 0x00000000 0x0c000000 0x00000000
+						    0x30000000 0x00000000 0xc0000000 0x00000000
+						    0x00000000 0x00000003 0x00000000 0x0000000c
+						    0x00000000 0x00000030 0x00000000 0x000000c0
+						    0x00000000 0x00000300 0x00000000 0x00000c00
+						    0x00000000 0x00003000 0x00000000 0x0000c000
+						    0x00000000 0x00030000 0x00000000 0x000c0000
+						    0x00000000 0x00300000 0x00000000 0x00c00000
+						    0x00000000 0x03000000 0x00000000 0x0c000000
+						    0x00000000 0x30000000 0x00000000 0xc0000000>;
+			nxp,version = <5>;
+			status = "disabled";
+		};
+
+		gpio2: gpio@43810000 {
+			compatible = "nxp,imx-rgpio";
+			reg = <0x43810000 DT_SIZE_K(64)>;
+			interrupts = <49 0>, <50 0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <32>;
+			status = "disabled";
+		};
+
+		gpio3: gpio@43820000 {
+			compatible = "nxp,imx-rgpio";
+			reg = <0x43820000 DT_SIZE_K(64)>;
+			interrupts = <51 0>, <52 0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <32>;
+			status = "disabled";
+		};
+
+		gpio4: gpio@43840000 {
+			compatible = "nxp,imx-rgpio";
+			reg = <0x43840000 DT_SIZE_K(64)>;
+			interrupts = <53 0>, <54 0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <30>;
+			status = "disabled";
+		};
+
+		gpio5: gpio@43850000 {
+			compatible = "nxp,imx-rgpio";
+			reg = <0x43850000 DT_SIZE_K(64)>;
+			interrupts = <55 0>, <56 0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <18>;
+			status = "disabled";
+		};
+
+		edma1: dma@44000000 {
+			compatible = "nxp,mcux-edma";
+			reg = <0x44000000 0x4000>;
+			#dma-cells = <2>;
+			dma-channels = <32>;
+			dma-requests = <32>;
+			interrupts = <96 0>, <97 0>, <98 0>, <99 0>,
+				     <100 0>, <101 0>, <102 0>, <103 0>,
+				     <104 0>, <105 0>, <106 0>, <107 0>,
+				     <108 0>, <109 0>, <110 0>, <111 0>,
+				     <112 0>, <113 0>, <114 0>, <115 0>,
+				     <116 0>, <117 0>, <118 0>, <119 0>,
+				     <120 0>, <121 0>, <122 0>, <123 0>,
+				     <124 0>, <125 0>, <126 0>, <126 0>;
+			nxp,version = <4>;
+			status = "disabled";
+		};
+
+		tstmr1: timer@442c0000 {
+			compatible = "nxp,tstmr";
+			reg = <0x442c0000 0x8>;
+			clock-frequency = <DT_FREQ_M(24)>;
+			status = "disabled";
+		};
+
+		lptmr1: timer@44300000 {
+			compatible = "nxp,lptmr";
+			reg = <0x44300000 DT_SIZE_K(4)>;
+			interrupts = <18 0>;
+			clocks = <&scmi_clk IMX952_CLK_LPTMR1>;
+			clock-frequency = <32768>;
+			clk-source = <2>;
+			prescale-glitch-filter-bypass;
+			resolution = <32>;
+			status = "disabled";
+		};
+
 		tpm1: pwm@44310000 {
 			compatible = "nxp,kinetis-tpm";
 			reg = <0x44310000 0x88>;
@@ -579,6 +616,19 @@
 			clocks = <&scmi_clk IMX952_CLK_TPM2>;
 			prescaler = <16>;
 			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		i3c1: i3c@44330000 {
+			compatible = "nxp,mcux-i3c";
+			reg = <0x44330000 0x1000>;
+			interrupts = <12 0>;
+			clocks = <&scmi_clk IMX952_CLK_I3C1SLOW>;
+			clk-divider = <6>;
+			clk-divider-slow = <1>;
+			clk-divider-tc = <1>;
+			#address-cells = <3>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 
@@ -644,67 +694,24 @@
 			status = "disabled";
 		};
 
-		lptmr1: timer@44300000 {
-			compatible = "nxp,lptmr";
-			reg = <0x44300000 DT_SIZE_K(4)>;
-			interrupts = <18 0>;
-			clocks = <&scmi_clk IMX952_CLK_LPTMR1>;
-			clock-frequency = <32768>;
-			clk-source = <2>;
-			prescale-glitch-filter-bypass;
-			resolution = <32>;
+		flexcan1: can@443a0000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x443a0000 DT_SIZE_K(64)>;
+			interrupts = <8 0>, <9 0>;
+			interrupt-names = "common", "error";
+			clocks = <&scmi_clk IMX952_CLK_CAN1>;
+			clock-names = "clksrc0";
+			clk-source = <0>;
+			number-of-mb = <96>;
 			status = "disabled";
 		};
 
-		lptmr2: timer@424d0000 {
-			compatible = "nxp,lptmr";
-			reg = <0x424d0000 DT_SIZE_K(4)>;
-			interrupts = <63 0>;
-			clocks = <&scmi_clk IMX952_CLK_LPTMR2>;
-			clock-frequency = <DT_FREQ_K(32)>;
-			clk-source = <2>;
-			prescale-glitch-filter-bypass;
-			resolution = <32>;
-			status = "disabled";
-		};
-
-		tstmr1: timer@442c0000 {
-			compatible = "nxp,tstmr";
-			reg = <0x442c0000 0x8>;
-			clock-frequency = <DT_FREQ_M(24)>;
-			status = "disabled";
-		};
-
-		tstmr2: timer@420a0000 {
-			compatible = "nxp,tstmr";
-			reg = <0x420a0000 0x8>;
-			clock-frequency = <DT_FREQ_M(24)>;
-			status = "disabled";
-		};
-
-		i3c1: i3c@44330000 {
-			compatible = "nxp,mcux-i3c";
-			reg = <0x44330000 0x1000>;
-			interrupts = <12 0>;
-			clocks = <&scmi_clk IMX952_CLK_I3C1SLOW>;
-			clk-divider = <6>;
-			clk-divider-slow = <1>;
-			clk-divider-tc = <1>;
-			#address-cells = <3>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		i3c2: i3c@42520000 {
-			compatible = "nxp,mcux-i3c";
-			reg = <0x42520000 0x1000>;
-			interrupts = <57 0>;
-			clocks = <&scmi_clk IMX952_CLK_I3C2SLOW>;
-			clk-divider = <6>;
-			clk-divider-slow = <1>;
-			clk-divider-tc = <1>;
-			#address-cells = <3>;
-			#size-cells = <0>;
+		sar_adc: adc@44530000 {
+			compatible = "nxp,sar-adc";
+			reg = <0x44530000 DT_SIZE_K(64)>;
+			interrupts = <201 0>;
+			#io-channel-cells = <1>;
+			clocks = <&scmi_clk IMX952_CLK_ADC>;
 			status = "disabled";
 		};
 
@@ -713,14 +720,6 @@
 			reg = <0x44610000 DT_SIZE_K(4)>;
 			interrupts = <205 0>;
 			#mbox-cells = <1>;
-		};
-
-		mu7: mailbox@42440000 {
-			compatible = "nxp,mbox-imx-mu";
-			reg = <0x42440000 DT_SIZE_K(4)>;
-			interrupts = <207 0>;
-			#mbox-cells = <1>;
-			status = "disabled";
 		};
 
 		irqsteer: interrupt-controller@44680000 {
@@ -822,6 +821,28 @@
 			};
 		};
 
+		gpio1: gpio@47400000 {
+			compatible = "nxp,imx-rgpio";
+			reg = <0x47400000 DT_SIZE_K(64)>;
+			interrupts = <10 0>, <11 0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		mipi_dsi: mipi-dsi@4acf0000 {
+			compatible = "nxp,mipi-dsi-dwc";
+			reg = <0x4acf0000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupt-parent = <&disp_irqsteer_master0>;
+			interrupts = <48 0>;
+			clocks = <&scmi_clk 0>;
+			nxp,dc = <&dpu>;
+			status = "disabled";
+		};
+
 		disp_irqsteer: interrupt-controller@4b0b0000 {
 			compatible = "nxp,irqsteer-intc";
 			reg = <0x4b0b0000 DT_SIZE_K(64)>;
@@ -902,18 +923,6 @@
 			status = "disabled";
 		};
 
-		mipi_dsi: mipi-dsi@4acf0000 {
-			compatible = "nxp,mipi-dsi-dwc";
-			reg = <0x4acf0000 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupt-parent = <&disp_irqsteer_master0>;
-			interrupts = <48 0>;
-			clocks = <&scmi_clk 0>;
-			nxp,dc = <&dpu>;
-			status = "disabled";
-		};
-
 		netc_blk_ctrl: netc-blk-ctrl@4cde0000 {
 			compatible = "nxp,imx-netc-blk-ctrl";
 			reg = <0x4cde0000 0x10000>,
@@ -932,6 +941,18 @@
 				interrupts = <13 0>;
 				#address-cells = <1>;
 				#size-cells = <1>;
+
+				emdio: mdio@4cb00000 {
+					compatible = "nxp,imx-netc-emdio";
+					reg = <0x4cb00000 0x100000>,
+					      <0x4cce0000 0x2000>;
+					reg-names = "pfconfig", "basic";
+					clocks = <&scmi_clk IMX952_CLK_ENET>;
+					#address-cells = <1>;
+					#size-cells = <0>;
+					power-domains = <&netc_mix>;
+					status = "disabled";
+				};
 
 				enetc_psi0: ethernet@4cc00000 {
 					compatible = "nxp,imx-netc-psi";
@@ -966,18 +987,6 @@
 					status = "disabled";
 				};
 
-				emdio: mdio@4cb00000 {
-					compatible = "nxp,imx-netc-emdio";
-					reg = <0x4cb00000 0x100000>,
-					      <0x4cce0000 0x2000>;
-					reg-names = "pfconfig", "basic";
-					clocks = <&scmi_clk IMX952_CLK_ENET>;
-					#address-cells = <1>;
-					#size-cells = <0>;
-					power-domains = <&netc_mix>;
-					status = "disabled";
-				};
-
 				enetc_ptp_clock: ptp_clock@4ccc0000 {
 					compatible = "nxp,netc-ptp-clock";
 					reg = <0x4ccc0000 0x10000>;
@@ -986,15 +995,6 @@
 					status = "disabled";
 				};
 			};
-		};
-
-		sar_adc: adc@44530000 {
-			compatible = "nxp,sar-adc";
-			reg = <0x44530000 DT_SIZE_K(64)>;
-			interrupts = <201 0>;
-			#io-channel-cells = <1>;
-			clocks = <&scmi_clk IMX952_CLK_ADC>;
-			status = "disabled";
 		};
 	};
 };

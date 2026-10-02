@@ -15,24 +15,6 @@
 
 / {
 	soc {
-		fmu_0: memory-controller@50017000 {
-			compatible = "nxp,msf1";
-			reg = <0x50017000 0x30>;
-			/*
-			 * Map both physical internal flash and Flash
-			 * Logical Window (FLW). FLW is used for address
-			 * translation, the main core image should link
-			 * to FLW. Physical flash should be used only
-			 * for storage.
-			 */
-			ranges = <0x0 0x10000000 0x180000>, /* physical flash */
-				 <0x800000 0x800000 0x128000>; /* FLW */
-			#address-cells = <1>;
-			#size-cells = <1>;
-			interrupts = <27 0>;
-			status = "disabled";
-		};
-
 		stcm: sram@30000000 {
 			compatible = "mmio-sram";
 			reg = <0x30000000 DT_SIZE_K(192)>;
@@ -66,20 +48,6 @@
 				#size-cells = <1>;
 			};
 
-			pbridge1: pbridge@180000 {
-				reg = <0x180000 0x80000>;
-				ranges = <0x0 0x180000 0x80000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-			};
-
-			pbridge2: pbridge@200000 {
-				reg = <0x200000 0x3e000>;
-				ranges = <0x0 0x200000 0x3e000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-			};
-
 			fast_peripheral0: fast_peripheral@80000 {
 				reg = <0x80000 0x50000>;
 				ranges = <0x0 0x80000 0x50000>;
@@ -93,6 +61,38 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 			};
+
+			pbridge1: pbridge@180000 {
+				reg = <0x180000 0x80000>;
+				ranges = <0x0 0x180000 0x80000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+
+			pbridge2: pbridge@200000 {
+				reg = <0x200000 0x3e000>;
+				ranges = <0x0 0x200000 0x3e000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+		};
+
+		fmu_0: memory-controller@50017000 {
+			compatible = "nxp,msf1";
+			reg = <0x50017000 0x30>;
+			/*
+			 * Map both physical internal flash and Flash
+			 * Logical Window (FLW). FLW is used for address
+			 * translation, the main core image should link
+			 * to FLW. Physical flash should be used only
+			 * for storage.
+			 */
+			ranges = <0x0 0x10000000 0x180000>, /* physical flash */
+				 <0x800000 0x800000 0x128000>; /* FLW */
+			#address-cells = <1>;
+			#size-cells = <1>;
+			interrupts = <27 0>;
+			status = "disabled";
 		};
 	};
 };
