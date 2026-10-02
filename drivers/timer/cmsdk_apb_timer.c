@@ -100,6 +100,11 @@ static void timer_driver_set_reload(uint32_t rel)
 	/* verify if underflow occurred after reading val1 and before reading val2 */
 	if (val1 < val2) {
 		data->cycle_count += (val1 + (last_load - val2));
+		/* cycle_count has already been updated, clear the irq to prevent
+		 * subsequent update in the isr after this function returns.
+		 */
+		cfg->timer->intclear = TIMER_CTRL_INT_CLEAR;
+		NVIC_ClearPendingIRQ(TIMER_IRQ);
 	} else {
 		data->cycle_count += (val1 - val2);
 	}
