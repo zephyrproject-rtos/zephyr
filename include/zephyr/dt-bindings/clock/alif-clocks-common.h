@@ -112,6 +112,8 @@
 #define ALIF_PARENT_CLK_S32K        0x3U
 /** Always-on 128 kHz clock (128K_CLK), derived from the LFRC oscillator */
 #define ALIF_PARENT_CLK_128K        0x4U
+/** 50 MHz RMII reference clock, from the internal PLL output or the ETH_REFCLK pin */
+#define ALIF_PARENT_CLK_50M         0x5U
 
 /** @} */
 
