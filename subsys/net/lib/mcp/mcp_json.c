@@ -155,7 +155,7 @@ static const struct json_obj_descr mcp_json_cancelled_notif_out_descr[] = {
 };
 
 /*******************************************************************************
- * Initialize resposne descriptor
+ * Initialize response descriptor
  ******************************************************************************/
 struct mcp_json_server_info {
 	const char *name;
@@ -195,7 +195,7 @@ static const struct json_obj_descr mcp_json_init_result_descr[] = {
 };
 
 /*******************************************************************************
- * Ping resposne descriptor
+ * Ping response descriptor
  ******************************************************************************/
 struct mcp_json_ping_result {
 	const char *jsonrpc;
@@ -217,7 +217,7 @@ static const struct json_obj_descr mcp_json_ping_result_descr[] = {
 };
 
 /*******************************************************************************
- * Tools/list resposne descriptor
+ * Tools/list response descriptor
  ******************************************************************************/
 struct mcp_json_tools_list_result {
 	const char *jsonrpc;
@@ -240,7 +240,7 @@ static const struct json_obj_descr mcp_json_tools_list_result_descr[] = {
 };
 
 /*******************************************************************************
- * Tools/call resposne descriptor
+ * Tools/call response descriptor
  ******************************************************************************/
 struct mcp_json_content_item {
 	const char *type;
@@ -279,7 +279,7 @@ static const struct json_obj_descr mcp_json_tools_call_result_descr[] = {
 };
 
 /*******************************************************************************
- * Error resposne descriptor
+ * Error response descriptor
  ******************************************************************************/
 struct mcp_json_error {
 	const char *jsonrpc;
