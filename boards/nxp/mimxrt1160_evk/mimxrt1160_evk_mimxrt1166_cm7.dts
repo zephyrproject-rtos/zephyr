@@ -28,12 +28,6 @@
 		zephyr,ipc = &mailbox_a;
 	};
 
-	sdram0: memory@80000000 {
-		reg = <0x80000000 DT_SIZE_M(64)>;
-		/* Winbond W9825G6KH-5I */
-		device_type = "memory";
-	};
-
 	aliases {
 		watchdog0 = &wdog1;
 	};
@@ -73,6 +67,12 @@
 			   <29 0 &gpio2 31 0>,	/* Pin 29, CTP_INT */
 			   <32 0 &gpio11 16 0>,	/* Pin 32, PWR_EN */
 			   <34 0 &gpio9 29 0>;	/* Pin 34, BL_PWM */
+	};
+
+	sdram0: memory@80000000 {
+		reg = <0x80000000 DT_SIZE_M(64)>;
+		/* Winbond W9825G6KH-5I */
+		device_type = "memory";
 	};
 };
 

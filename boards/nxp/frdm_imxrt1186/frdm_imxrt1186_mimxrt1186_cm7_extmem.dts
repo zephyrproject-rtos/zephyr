@@ -29,15 +29,15 @@
 		zephyr,flash = &ext_flash;
 	};
 
-	hyperram0: memory@28000000 {
-		reg = <0x28000000 DT_SIZE_M(8)>;
-		/* Winbond W957A8MFYA5K */
+	ext_flash: memory@4000000 {
+		reg = <0x4000000 DT_SIZE_M(16)>;
 		device_type = "memory";
 		status = "okay";
 	};
 
-	ext_flash: memory@4000000 {
-		reg = <0x4000000 DT_SIZE_M(16)>;
+	hyperram0: memory@28000000 {
+		reg = <0x28000000 DT_SIZE_M(8)>;
+		/* Winbond W957A8MFYA5K */
 		device_type = "memory";
 		status = "okay";
 	};

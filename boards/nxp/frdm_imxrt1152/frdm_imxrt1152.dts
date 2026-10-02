@@ -31,17 +31,6 @@
 		zephyr,flash-controller = &ext_flash_ctrl;
 	};
 
-	/*
-	 * Winbond W959D8NFYA5 256Mb HyperRAM on FlexSPI2 port A, configured
-	 * by the boot ROM through the external memory configuration data
-	 * (XMCD) block. A second HyperRAM on port B is not configured, as
-	 * the simplified XMCD option block supports a single port.
-	 */
-	hyperram0: memory@60000000 {
-		reg = <0x60000000 DT_SIZE_M(32)>;
-		device_type = "memory";
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -69,6 +58,17 @@
 			gpios = <&gpio13 0 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+	};
+
+	/*
+	 * Winbond W959D8NFYA5 256Mb HyperRAM on FlexSPI2 port A, configured
+	 * by the boot ROM through the external memory configuration data
+	 * (XMCD) block. A second HyperRAM on port B is not configured, as
+	 * the simplified XMCD option block supports a single port.
+	 */
+	hyperram0: memory@60000000 {
+		reg = <0x60000000 DT_SIZE_M(32)>;
+		device_type = "memory";
 	};
 };
 

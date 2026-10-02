@@ -195,14 +195,14 @@
 	i2c-scl-hz = <400000>;
 	status = "okay";
 
-	bmp581: bmp581@460000000000000050 {
-		compatible = "bosch,bmp581";
-		reg = <0x46 0x0 0x50>;
-	};
-
 	bmm350: bmm350@140000000000000050 {
 		compatible = "bosch,bmm350";
 		reg = <0x14 0x0 0x50>;
+	};
+
+	bmp581: bmp581@460000000000000050 {
+		compatible = "bosch,bmp581";
+		reg = <0x46 0x0 0x50>;
 	};
 };
 
