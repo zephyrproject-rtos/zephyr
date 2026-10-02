@@ -11,7 +11,7 @@ config NUM_IRQS
 	default 512 if SOC_SERIES_J721E_R5
 
 # The frequency for Cortex-R cores depends on the external oscillator on the
-# board. Therefor it is necessary that boards have a node with the nodelabel
+# board. Therefore it is necessary that boards have a node with the nodelabel
 # "onboard_osc" that hold its frequency
 DT_ONBOARD_OSC_PATH := $(dt_nodelabel_path,onboard_osc)
 

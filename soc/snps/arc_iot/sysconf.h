@@ -21,7 +21,7 @@ typedef struct sysconf_reg {
 	volatile uint32_t APBCLKEN;	/* APB module clock enable */
 	volatile uint32_t CLKODIV;	/* AHB clock output enable and divisor set */
 	volatile uint32_t reserved2;      /* 0x14 */
-	volatile uint32_t RSTCON;	/* reset contrl */
+	volatile uint32_t RSTCON;	/* reset control */
 	volatile uint32_t RSTSTAT;	/* reset status */
 	volatile uint32_t AHBCLKDIV_SEL; /* AHB clock divisor select */
 	volatile uint32_t CLKSEL;	/* main clock source select */
