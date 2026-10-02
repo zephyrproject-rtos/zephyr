@@ -609,16 +609,45 @@ ZTEST(ptp_port_events, test_event_gen_receive_failure_reports_fault)
 	zassert_equal(msg_unref_calls, 1, "message should be unreferenced");
 }
 
-ZTEST(ptp_port_events, test_event_gen_post_recv_failure_reports_fault)
+ZTEST(ptp_port_events, test_event_gen_empty_datagram_is_discarded)
+{
+	struct ptp_port port;
+
+	init_port(&port, PTP_PS_LISTENING);
+	transport_recv_ret = 0;
+
+	zassert_equal(ptp_port_event_gen(&port, PTP_SOCKET_EVENT), PTP_EVT_NONE,
+		      "empty datagram should not report fault");
+	zassert_equal(msg_unref_calls, 1, "message should be unreferenced");
+}
+
+ZTEST(ptp_port_events, test_event_gen_malformed_message_is_discarded)
+{
+	struct ptp_port port;
+	const int errors[] = {-EBADMSG, -EMSGSIZE};
+
+	for (size_t i = 0; i < ARRAY_SIZE(errors); i++) {
+		reset_fakes();
+		init_port(&port, PTP_PS_LISTENING);
+		init_rx_msg(PTP_MSG_SYNC, 0x10);
+		msg_post_recv_ret = errors[i];
+
+		zassert_equal(ptp_port_event_gen(&port, PTP_SOCKET_EVENT), PTP_EVT_NONE,
+			      "malformed message should not report fault");
+		zassert_equal(msg_unref_calls, 1, "message should be unreferenced");
+	}
+}
+
+ZTEST(ptp_port_events, test_event_gen_unsupported_version_is_discarded)
 {
 	struct ptp_port port;
 
 	init_port(&port, PTP_PS_LISTENING);
 	init_rx_msg(PTP_MSG_SYNC, 0x10);
-	msg_post_recv_ret = -EBADMSG;
+	msg_post_recv_ret = -EPROTONOSUPPORT;
 
-	zassert_equal(ptp_port_event_gen(&port, PTP_SOCKET_EVENT), PTP_EVT_FAULT_DETECTED,
-		      "post-receive failure should report fault");
+	zassert_equal(ptp_port_event_gen(&port, PTP_SOCKET_EVENT), PTP_EVT_NONE,
+		      "unsupported version should not report fault");
 	zassert_equal(msg_unref_calls, 1, "message should be unreferenced");
 }
 
