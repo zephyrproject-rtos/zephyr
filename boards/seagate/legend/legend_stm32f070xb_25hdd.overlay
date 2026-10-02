@@ -5,8 +5,8 @@
  */
 
 / {
-	model = "Seagate Legend 2.5 HDD board";
 	compatible = "legend25_hdd", "seagate,legend25_hdd";
+	model = "Seagate Legend 2.5 HDD board";
 
 	aliases {
 		pwm-led0 = &pwm_led0;
