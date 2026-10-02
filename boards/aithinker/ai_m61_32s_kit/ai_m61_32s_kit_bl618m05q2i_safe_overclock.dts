@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include "ai_m61_32s.dtsi"
+#include "../common/ai_m61_32s_blifn8ir4all.dtsi"
 #include "ai_m61_32s_kit_common.dtsi"
 
 &clk_aupll {

@@ -6,5 +6,5 @@
 
 /dts-v1/;
 
-#include "ai_m61_32s.dtsi"
+#include "../common/ai_m61_32s_blofn8ir4all.dtsi"
 #include "aipi_eyes_s2_common.dtsi"
