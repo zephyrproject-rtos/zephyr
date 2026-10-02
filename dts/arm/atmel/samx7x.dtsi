@@ -30,9 +30,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m7";
 			reg = <0>;
+			device_type = "cpu";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -65,9 +65,9 @@
 
 		spi0: spi@40008000 {
 			compatible = "atmel,sam-spi";
+			reg = <0x40008000 0x4000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40008000 0x4000>;
 			interrupts = <21 0>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 21>;
 			status = "disabled";
@@ -126,10 +126,10 @@
 
 		twihs0: i2c@40018000 {
 			compatible = "atmel,sam-i2c-twihs";
+			reg = <0x40018000 0x12b>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40018000 0x12b>;
 			interrupts = <19 0>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 19>;
 			status = "disabled";
@@ -137,10 +137,10 @@
 
 		twihs1: i2c@4001c000 {
 			compatible = "atmel,sam-i2c-twihs";
+			reg = <0x4001c000 0x12b>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x4001c000 0x12b>;
 			interrupts = <20 0>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 20>;
 			status = "disabled";
@@ -151,10 +151,10 @@
 			reg = <0x40020000 0x4000>;
 			interrupts = <31 0>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 31>;
-			status = "disabled";
 			prescaler = <10>;
 			divider = <1>;
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		usart0: usart@40024000 {
@@ -224,8 +224,8 @@
 			reg = <0x4003c000 0x100>;
 			interrupts = <29 0>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 29>;
-			status = "disabled";
 			#io-channel-cells = <1>;
+			status = "disabled";
 		};
 
 		dacc: dacc@40040000 {
@@ -233,8 +233,8 @@
 			reg = <0x40040000 0x100>;
 			interrupts = <30 0>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 30>;
-			status = "disabled";
 			#io-channel-cells = <1>;
+			status = "disabled";
 		};
 
 		ethernet@40050000 {
@@ -253,9 +253,9 @@
 
 			mdio: mdio {
 				compatible = "atmel,sam-mdio";
-				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <0>;
+				status = "disabled";
 			};
 		};
 
@@ -278,9 +278,9 @@
 
 		spi1: spi@40058000 {
 			compatible = "atmel,sam-spi";
+			reg = <0x40058000 0x4000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40058000 0x4000>;
 			interrupts = <42 0>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 42>;
 			status = "disabled";
@@ -291,18 +291,18 @@
 			reg = <0x4005c000 0x4000>;
 			interrupts = <60 0>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 60>;
-			status = "disabled";
 			prescaler = <10>;
 			divider = <1>;
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		twihs2: i2c@40060000 {
 			compatible = "atmel,sam-i2c-twihs";
+			reg = <0x40060000 0x12b>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40060000 0x12b>;
 			interrupts = <41 0>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 41>;
 			status = "disabled";
@@ -313,8 +313,8 @@
 			reg = <0x40064000 0x100>;
 			interrupts = <40 0>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 40>;
-			status = "disabled";
 			#io-channel-cells = <1>;
+			status = "disabled";
 		};
 
 		trng: random@40070000 {
@@ -361,13 +361,13 @@
 		eefc: flash-controller@400e0c00 {
 			compatible = "atmel,sam-flash-controller";
 			reg = <0x400e0c00 0x200>;
+			ranges;
 			interrupts = <6 0>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 6>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
 			#erase-block-cells = <2>;
-			ranges;
 
 			flash0: flash@400000 {
 				compatible = "atmel,sam-flash", "soc-nv-flash";
@@ -380,9 +380,9 @@
 
 		pinctrl: pinctrl@400e0e00 {
 			compatible = "atmel,sam-pinctrl";
+			ranges = <0x400e0e00 0x400e0e00 0xa00>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x400e0e00 0x400e0e00 0xa00>;
 
 			pioa: gpio@400e0e00 {
 				compatible = "atmel,sam-gpio";

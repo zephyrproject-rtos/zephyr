@@ -116,21 +116,21 @@
 		nvmctrl: nvmctrl@41004000 {
 			compatible = "atmel,sam0-nvmctrl";
 			reg = <0x41004000 0x22>;
+			ranges;
 			interrupts = <29 0>, <30 0>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 
 			lock-regions = <32>;
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
+				ranges;
 
 				write-block-size = <8>;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges;
 			};
 		};
 
@@ -138,9 +138,9 @@
 			compatible = "atmel,sam0-dmac";
 			reg = <0x4100a000 0x50>;
 			interrupts = <31 0>, <32 0>, <33 0>, <34 0>, <35 0>;
-			status = "disabled";
 
 			#dma-cells = <2>;
+			status = "disabled";
 		};
 
 		eic: eic@40002800 {
@@ -276,41 +276,41 @@
 			porta: gpio@41008000 {
 				compatible = "atmel,sam0-gpio";
 				reg = <0x41008000 0x80>;
-
-				#atmel,pin-cells = <2>;
 				#gpio-cells = <2>;
 
 				gpio-controller;
+
+				#atmel,pin-cells = <2>;
 			};
 
 			portb: gpio@41008080 {
 				compatible = "atmel,sam0-gpio";
 				reg = <0x41008080 0x80>;
-
-				#atmel,pin-cells = <2>;
 				#gpio-cells = <2>;
 
 				gpio-controller;
+
+				#atmel,pin-cells = <2>;
 			};
 
 			portc: gpio@41008100 {
 				compatible = "atmel,sam0-gpio";
 				reg = <0x41008100 0x80>;
-
-				#atmel,pin-cells = <2>;
 				#gpio-cells = <2>;
 
 				gpio-controller;
+
+				#atmel,pin-cells = <2>;
 			};
 
 			portd: gpio@41008180 {
 				compatible = "atmel,sam0-gpio";
 				reg = <0x41008180 0x80>;
-
-				#atmel,pin-cells = <2>;
 				#gpio-cells = <2>;
 
 				gpio-controller;
+
+				#atmel,pin-cells = <2>;
 			};
 		};
 
@@ -318,9 +318,9 @@
 			compatible = "atmel,sam0-usb";
 			reg = <0x41000000 0x1000>;
 			interrupts = <80 0>, <81 0>, <82 0>, <83 0>;
-			status = "disabled";
 
 			num-bidir-endpoints = <8>;
+			status = "disabled";
 		};
 
 		trng: random@42002800 {
@@ -335,12 +335,12 @@
 			interrupts = <11 0>;
 			clocks = <&osc32kctrl>, <&mclk 0x14 9>;
 			clock-names = "OSC32KCTRL", "MCLK";
-			atmel,assigned-clocks = <&osc32kctrl 0>;
-			atmel,assigned-clock-names = "OSC32KCTRL";
-			status = "disabled";
 
 			alarms-count = <2>;
 			cal-constant = <(8192 * 128)>;
+			atmel,assigned-clocks = <&osc32kctrl 0>;
+			atmel,assigned-clock-names = "OSC32KCTRL";
+			status = "disabled";
 		};
 
 		adc0: adc@43001c00 {
@@ -350,6 +350,11 @@
 			interrupt-names = "overrun", "resrdy";
 			clocks = <&gclk 40>, <&mclk 0x20 7>;
 			clock-names = "GCLK", "MCLK";
+
+			#io-channel-cells = <1>;
+
+			prescaler = <4>;
+			calib-offset = <0>;
 			/*
 			 * 16 MHz is ADC max clock, source clock must not exceed 100 MHz.
 			 *	- table 54-8, section 54.6, page 2020
@@ -361,11 +366,6 @@
 			atmel,assigned-clock-names = "GCLK";
 
 			status = "disabled";
-
-			#io-channel-cells = <1>;
-
-			prescaler = <4>;
-			calib-offset = <0>;
 		};
 
 		adc1: adc@43002000 {
@@ -375,6 +375,11 @@
 			interrupt-names = "overrun", "resrdy";
 			clocks = <&gclk 41>, <&mclk 0x20 8>;
 			clock-names = "GCLK", "MCLK";
+
+			#io-channel-cells = <1>;
+
+			prescaler = <4>;
+			calib-offset = <14>;
 			/*
 			 * 16 MHz is ADC max clock, source clock must not exceed 100 MHz.
 			 *	- table 54-8, section 54.6, page 2020
@@ -385,11 +390,6 @@
 			atmel,assigned-clocks = <&gclk 2>;
 			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
-
-			#io-channel-cells = <1>;
-
-			prescaler = <4>;
-			calib-offset = <14>;
 		};
 
 		dac0: dac@43002400 {
@@ -398,11 +398,11 @@
 
 			clocks = <&gclk 42>, <&mclk 0x20 9>;
 			clock-names = "GCLK", "MCLK";
+
+			#io-channel-cells = <1>;
 			atmel,assigned-clocks = <&gclk 2>;
 			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
-
-			#io-channel-cells = <1>;
 		};
 
 		tc0: tc@40003800 {
@@ -456,12 +456,12 @@
 				     <90 0>, <91 0>;
 			clocks = <&gclk 25>, <&mclk 0x18 11>;
 			clock-names = "GCLK", "MCLK";
-			atmel,assigned-clocks = <&gclk 0>;
-			atmel,assigned-clock-names = "GCLK";
-			status = "disabled";
 
 			channels = <6>;
 			counter-size = <24>;
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
+			status = "disabled";
 		};
 
 		tcc1: tcc@41018000 {
@@ -470,12 +470,12 @@
 			interrupts = <92 0>, <93 0>, <94 0>, <95 0>, <96 0>;
 			clocks = <&gclk 25>, <&mclk 0x18 12>;
 			clock-names = "GCLK", "MCLK";
-			atmel,assigned-clocks = <&gclk 0>;
-			atmel,assigned-clock-names = "GCLK";
-			status = "disabled";
 
 			channels = <4>;
 			counter-size = <24>;
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
+			status = "disabled";
 		};
 
 		tcc2: tcc@42000c00 {
@@ -484,12 +484,12 @@
 			interrupts = <97 0>, <98 0>, <99 0>, <100 0>;
 			clocks = <&gclk 29>, <&mclk 0x1c 3>;
 			clock-names = "GCLK", "MCLK";
-			atmel,assigned-clocks = <&gclk 0>;
-			atmel,assigned-clock-names = "GCLK";
-			status = "disabled";
 
 			channels = <3>;
 			counter-size = <16>;
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
+			status = "disabled";
 		};
 
 		tcc3: tcc@42001000 {
@@ -498,12 +498,12 @@
 			interrupts = <101 0>, <102 0>, <103 0>;
 			clocks = <&gclk 29>, <&mclk 0x1c 4>;
 			clock-names = "GCLK", "MCLK";
-			atmel,assigned-clocks = <&gclk 0>;
-			atmel,assigned-clock-names = "GCLK";
-			status = "disabled";
 
 			channels = <2>;
 			counter-size = <16>;
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
+			status = "disabled";
 		};
 
 		tcc4: tcc@43001000 {
@@ -512,12 +512,12 @@
 			interrupts = <104 0>, <105 0>, <106 0>;
 			clocks = <&gclk 38>, <&mclk 0x20 4>;
 			clock-names = "GCLK", "MCLK";
-			atmel,assigned-clocks = <&gclk 0>;
-			atmel,assigned-clock-names = "GCLK";
-			status = "disabled";
 
 			channels = <2>;
 			counter-size = <16>;
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
+			status = "disabled";
 		};
 	};
 };
