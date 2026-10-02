@@ -4,12 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <bflb/bl602.dtsi>
-#include <bflb/bl60x_em_8kb_wifi.dtsi>
-#include "ai_wb2_12f-pinctrl.dtsi"
+#include "ai_wb2-pinctrl.dtsi"
 
 / {
-	model = "Ai-Thinker WB2-12F Module";
 	compatible = "bflb,bl602";
 
 	chosen {
