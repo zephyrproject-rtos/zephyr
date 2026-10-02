@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include "ai_m62_12f.dtsi"
+#include "../common/ai_m62_12f_blifn4.dtsi"
 #include "ai_m62_12f_kit-pinctrl.dtsi"
 
 / {

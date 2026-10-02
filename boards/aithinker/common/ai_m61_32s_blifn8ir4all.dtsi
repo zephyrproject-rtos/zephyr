@@ -6,7 +6,7 @@
 
 #include <bflb/bl618.dtsi>
 #include <bflb/bl61x_em_32kb_wifi.dtsi>
-#include "ai_m61-pinctrl.dtsi"
+#include "ai_m61_common.dtsi"
 
 / {
 	model = "Ai-Thinker M61-32S BLIFN8IR4ALL Module";

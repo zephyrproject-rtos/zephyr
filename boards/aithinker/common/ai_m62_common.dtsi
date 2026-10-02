@@ -4,16 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <bflb/bl616.dtsi>
-#include <bflb/bl61x_em_32kb_wifi.dtsi>
-#include "ai_m62_12f-pinctrl.dtsi"
-
 / {
-	model = "Ai-Thinker M62-12F Module";
 	compatible = "bflb,bl616";
 
 	chosen {
-		zephyr,flash = &gd25lq32d;
+		zephyr,flash = &flash0;
 		zephyr,flash-controller = &sf_bank1;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,sram = &all_ram;
@@ -45,7 +40,7 @@
 	reg = <0xa0000000 0x400000>;
 	ranges = <0x0 0xa0000000 0x400000>;
 
-	gd25lq32d: flash@0 {
+	flash0: flash@0 {
 		compatible = "bflb,sf-flash", "soc-nv-flash";
 		reg = <0x0 0x400000>;
 		ranges;
@@ -53,11 +48,6 @@
 		#size-cells = <1>;
 		write-block-size = <4>;
 		erase-block-size = <DT_SIZE_K(4)>;
-
-		spi-bus-mode = <4>;
-		sf-pad = <1>;
-		jedec-id = [c8 60 16];
-		use-sfdp;
 
 		partitions {
 			ranges;
