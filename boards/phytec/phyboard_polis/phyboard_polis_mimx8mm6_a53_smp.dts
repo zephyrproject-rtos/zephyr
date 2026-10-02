@@ -11,8 +11,8 @@
 #include "phyboard_polis-pinctrl.dtsi"
 
 / {
-	model = "phyBOARD-Polis i.MX8M Mini";
 	compatible = "nxp,phyboard_polis";
+	model = "phyBOARD-Polis i.MX8M Mini";
 
 	aliases {
 		uart-3 = &uart3;
@@ -50,10 +50,10 @@
 
 /* UART usually used from A53 Core (1st tty on Debug USB connector) */
 &uart3 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart3_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /* UART of the M4 Core (2nd tty on Debug USB connector) */

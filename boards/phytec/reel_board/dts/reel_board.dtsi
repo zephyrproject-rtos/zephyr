@@ -127,28 +127,28 @@
 &uart0 {
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 arduino_serial: &uart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-1 = <&uart1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 arduino_i2c: &i2c0 {
 	compatible = "nordic,nrf-twim";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	mma8642fc: mma8652fc@1d {
 		compatible = "nxp,fxos8700", "nxp,mma8652fc";
@@ -171,10 +171,10 @@ arduino_i2c: &i2c0 {
 };
 
 &pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-1 = <&pwm0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &ieee802154 {
@@ -182,11 +182,11 @@ arduino_i2c: &i2c0 {
 };
 
 arduino_spi: &spi3 {
-	status = "okay";
 	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 zephyr_udc0: &usbd {
