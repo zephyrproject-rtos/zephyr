@@ -129,7 +129,7 @@ void rts5912_ulpm_enable(void)
 	sys_reg->VIVOCTRL |= SYSTEM_VIVOCTRL_VODEF_Msk;
 	k_busy_wait(RTS5912_ULPM_WAIT_READY);
 
-	/* set to GPIO mode to clear status and aviod mis-trigger */
+	/* set to GPIO mode to clear status and avoid mis-trigger */
 	sys_reg->VIVOCTRL |= (SYSTEM_VIVOCTRL_VIN0MD_Msk | SYSTEM_VIVOCTRL_VIN1MD_Msk |
 			      SYSTEM_VIVOCTRL_VIN2MD_Msk | SYSTEM_VIVOCTRL_VIN3MD_Msk |
 			      SYSTEM_VIVOCTRL_VIN4MD_Msk | SYSTEM_VIVOCTRL_VIN5MD_Msk);

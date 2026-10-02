@@ -83,7 +83,7 @@ static int suspend_system_to_deepstop(void)
  */
 static void prepare_for_deepstop_entry(void)
 {
-	/* DEEPSTOP2 configuration is performed in familiy-wide code
+	/* DEEPSTOP2 configuration is performed in family-wide code
 	 * instead of here (see `soc/st/stm32/common/soc_config.c`).
 	 * RAMRET configuration is performed once during SoC init,
 	 * since it is retained across Deepstop (see `soc.c`).
@@ -202,7 +202,7 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	 * The only thing we may have to do is release GPIO retention,
 	 * which we have not done yet because we wanted the driver to
 	 * restore all configuration first.
-	 * We also need to enable IRQs to fullfill the API contract.
+	 * We also need to enable IRQs to fulfill the API contract.
 	 */
 #if HAS_GPIO_RETENTION
 	LL_PWR_DisableGPIORET();
