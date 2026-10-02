@@ -132,6 +132,24 @@
 		clocks = <&clockctrl ALIF_LPTIMER3_S32K_CLK>;
 		status = "disabled";
 	};
+
+	eth: ethernet@48100000 {
+		compatible = "alif,ensemble-eth", "snps,dwmac";
+		reg = <0x48100000 0x2000>;
+		clocks = <&clockctrl ALIF_ETH_RMII_REFCLK>,
+			 <&clockctrl ALIF_ETH_RMII_CLK>,
+			 <&clockctrl ALIF_ETH_SYST_HCLK>;
+		clock-names = "rmii-src", "rmii", "csr";
+		phy-connection-type = "rmii";
+		status = "disabled";
+
+		mdio: mdio {
+			compatible = "snps,dwmac-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
 };
 
 /* These devices carry the full eight pin wide LPGPIO. */

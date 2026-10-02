@@ -123,3 +123,8 @@
 	interrupt-parent = <&nvic>;
 	interrupts = <63 0>;
 };
+
+&eth {
+	interrupt-parent = <&nvic>;
+	interrupts = <148 0>;
+};
