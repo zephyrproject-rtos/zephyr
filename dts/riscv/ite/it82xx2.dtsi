@@ -20,10 +20,10 @@
 
 		intc: interrupt-controller@f03f00 {
 			compatible = "ite,it8xxx2-intc-v2";
+			reg = <0x00f03f00 0x0100>;
 			#address-cells = <0>;
 			#interrupt-cells = <2>;
 			interrupt-controller;
-			reg = <0x00f03f00 0x0100>;
 		};
 
 		twd0: watchdog@f01f80 {
@@ -900,114 +900,114 @@
 
 		i2c0: i2c@f04300 {
 			compatible = "ite,enhance-i2c";
+			reg = <0x00f04300 0x0080>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x00f04300 0x0080>;
 			interrupts = <IT8XXX2_IRQ_SMB_A IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
-			status = "disabled";
 			port-num = <SMB_CHANNEL_A>;
 			channel-switch-sel = <I2C_CHA_LOCATE>;
 			scl-gpios = <&gpiob 3 0>;
 			sda-gpios = <&gpiob 4 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBA>;
+			status = "disabled";
 		};
 
 		i2c1: i2c@f04380 {
 			compatible = "ite,enhance-i2c";
+			reg = <0x00f04380 0x0080>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x00f04380 0x0080>;
 			interrupts = <IT8XXX2_IRQ_SMB_B IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
-			status = "disabled";
 			port-num = <SMB_CHANNEL_B>;
 			channel-switch-sel = <I2C_CHB_LOCATE>;
 			scl-gpios = <&gpioc 1 0>;
 			sda-gpios = <&gpioc 2 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBB>;
+			status = "disabled";
 		};
 
 		i2c2: i2c@f04400 {
 			compatible = "ite,enhance-i2c";
+			reg = <0x00f04400 0x0080>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x00f04400 0x0080>;
 			interrupts = <IT8XXX2_IRQ_SMB_C IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
-			status = "disabled";
 			port-num = <SMB_CHANNEL_C>;
 			channel-switch-sel = <I2C_CHC_LOCATE>;
 			scl-gpios = <&gpiof 6 0>;
 			sda-gpios = <&gpiof 7 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBC>;
+			status = "disabled";
 		};
 
 		i2c3: i2c@f04480 {
 			compatible = "ite,enhance-i2c";
+			reg = <0x00f04480 0x0080>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x00f04480 0x0080>;
 			interrupts = <IT8XXX2_IRQ_SMB_D IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
-			status = "disabled";
 			port-num = <I2C_CHANNEL_D>;
 			channel-switch-sel = <I2C_CHD_LOCATE>;
 			scl-gpios = <&gpioh 1 0>;
 			sda-gpios = <&gpioh 2 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBD>;
+			status = "disabled";
 		};
 
 		i2c4: i2c@f04500 {
 			compatible = "ite,enhance-i2c";
+			reg = <0x00f04500 0x0080>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x00f04500 0x0080>;
 			interrupts = <IT8XXX2_IRQ_SMB_E IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
-			status = "disabled";
 			port-num = <I2C_CHANNEL_E>;
 			channel-switch-sel = <I2C_CHE_LOCATE>;
 			scl-gpios = <&gpioe 0 0>;
 			sda-gpios = <&gpioe 7 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBE>;
+			status = "disabled";
 		};
 
 		i2c5: i2c@f04580 {
 			compatible = "ite,enhance-i2c";
+			reg = <0x00f04580 0x0080>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x00f04580 0x0080>;
 			interrupts = <IT8XXX2_IRQ_SMB_F IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
-			status = "disabled";
 			port-num = <I2C_CHANNEL_F>;
 			channel-switch-sel = <I2C_CHF_LOCATE>;
 			scl-gpios = <&gpioa 4 0>;
 			sda-gpios = <&gpioa 5 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBF>;
+			status = "disabled";
 		};
 
 		ite_uart2_wrapper: uartwrapper@f02820 {
 			compatible = "ite,it8xxx2-uart";
 			reg = <0x00f02820 0x0020>;
-			status = "disabled";
 			port-num = <2>;
 			gpios = <&gpiof 0 0>;
 			uart-dev = <&uart2>;
+			status = "disabled";
 		};
 
 		usb0: usbd@f02f00 {
 			compatible = "ite,it82xx2-usb";
+			reg = <0x00f02f00 256>;
 			interrupts = <IT8XXX2_IRQ_USB IRQ_TYPE_LEVEL_HIGH
 				      IT8XXX2_IRQ_WU90 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			wucctrl = <&wuc_wu90>;
-			reg = <0x00f02f00 256>;
-			status = "disabled";
 			num-bidir-endpoints = <1>;
 			num-in-endpoints = <10>;
 			num-out-endpoints = <5>;
+			status = "disabled";
 		};
 
 		sha0: crypto@f03c00 {
@@ -1017,10 +1017,10 @@
 		};
 
 		spi0: spi@f02600 {
-			#address-cells = <1>;
-			#size-cells = <0>;
 			compatible = "ite,it8xxx2-spi";
 			reg = <0x00f02600 0x34>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			interrupt-parent = <&intc>;
 			interrupts = <37 IRQ_TYPE_EDGE_RISING>;
 			status = "disabled";
