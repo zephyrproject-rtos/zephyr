@@ -406,6 +406,19 @@ static void mbox_callback_process(struct k_work *item)
 
 	data = CONTAINER_OF(item, struct backend_data_t, mbox_work);
 
+	/*
+	 * rpmsg_lite_master_init() kicks the REMOTE before the HOST has
+	 * created its NS endpoint, and RPMSG-Lite drops messages for unknown
+	 * endpoints. Leave anything that arrives in between in the vring,
+	 * open() processes it once the NS endpoint exists.
+	 */
+	if (data->role == ROLE_HOST && data->ipc_rpmsg_inst.ns_handle == NULL) {
+#if defined(CONFIG_IPC_SERVICE_BACKEND_RPMSG_LITE_NOTIFY_QUEUE)
+		k_msgq_purge(&data->inst_mq);
+#endif
+		return;
+	}
+
 #if defined(CONFIG_IPC_SERVICE_BACKEND_RPMSG_LITE_NOTIFY_QUEUE)
 	/* Queue-based: Process all pending messages */
 	while (k_msgq_get(&data->inst_mq, &msg_data, K_NO_WAIT) == 0) {
@@ -453,6 +466,22 @@ static void mbox_callback_process(struct k_work *item)
 #endif
 }
 
+static void queue_notification(struct backend_data_t *data, uint32_t vector_id)
+{
+#if defined(CONFIG_IPC_SERVICE_BACKEND_RPMSG_LITE_NOTIFY_QUEUE)
+	/* Queue-based: Put message in queue for ordered processing */
+	if (k_msgq_put(&data->inst_mq, &vector_id, K_NO_WAIT) != 0) {
+		/* Queue full - message lost */
+		return;
+	}
+#else
+	/* Direct: Store latest notification (may overwrite previous) */
+	data->pending_vector_id = vector_id;
+#endif
+
+	k_work_submit_to_queue(&data->mbox_wq, &data->mbox_work);
+}
+
 static void mbox_callback(const struct device *instance, uint32_t channel, void *user_data,
 			  struct mbox_msg *msg_data)
 {
@@ -477,18 +506,7 @@ static void mbox_callback(const struct device *instance, uint32_t channel, void 
 		return;
 	}
 
-#if defined(CONFIG_IPC_SERVICE_BACKEND_RPMSG_LITE_NOTIFY_QUEUE)
-	/* Queue-based: Put message in queue for ordered processing */
-	if (k_msgq_put(&data->inst_mq, &vector_id, K_NO_WAIT) != 0) {
-		/* Queue full - message lost */
-		return;
-	}
-#else
-	/* Direct: Store latest notification (may overwrite previous) */
-	data->pending_vector_id = vector_id;
-#endif
-
-	k_work_submit_to_queue(&data->mbox_wq, &data->mbox_work);
+	queue_notification(data, vector_id);
 }
 
 static int mbox_init(const struct device *instance)
@@ -864,6 +882,11 @@ static int open(const struct device *instance)
 	if (ipc_rpmsg_inst->ns_handle == NULL) {
 		err = -EINVAL;
 		goto error;
+	}
+
+	if (conf->role == ROLE_HOST) {
+		/* Process REMOTE messages held back by mbox_callback_process() */
+		queue_notification(data, RL_GET_VQ_ID(conf->link_id, 0U));
 	}
 
 #if defined(RL_ALLOW_CUSTOM_SHMEM_CONFIG) && (RL_ALLOW_CUSTOM_SHMEM_CONFIG == 1)
