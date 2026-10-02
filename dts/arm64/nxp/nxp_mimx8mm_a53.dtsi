@@ -63,15 +63,6 @@
 		interrupt-parent = <&gic>;
 	};
 
-	gic: interrupt-controller@38800000 {
-		compatible = "arm,gic-v3", "arm,gic";
-		reg = <0x38800000 0x10000>, /* GIC Dist */
-		      <0x38880000 0xc0000>; /* GICR (RD_base + SGI_base) */
-		interrupt-controller;
-		#interrupt-cells = <4>;
-		status = "okay";
-	};
-
 	gpio1: gpio@30200000 {
 		compatible = "nxp,imx-gpio";
 		reg = <0x30200000 DT_SIZE_K(64)>;
@@ -198,15 +189,52 @@
 		#clock-cells = <3>;
 	};
 
-	uart2: serial@30890000 {
-		compatible = "nxp,imx-iuart";
-		reg = <0x30890000 DT_SIZE_K(64)>;
-		interrupts = <GIC_SPI 27 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		interrupt-names = "irq_0";
+	rdc: rdc@303d0000 {
+		compatible = "nxp,rdc";
+		reg = <0x303d0000 DT_SIZE_K(64)>;
+	};
+
+	pwm1: pwm@30660000 {
+		compatible = "nxp,ipwm";
+		reg = <0x30660000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 81 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
-		clocks = <&ccm IMX_CCM_UART2_CLK 0x6c 24>;
-		rdc = <(RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW) |
-			RDC_DOMAIN_PERM(M4_DOMAIN_ID, RDC_DOMAIN_PERM_RW))>;
+		clocks = <&ccm IMX_CCM_PWM1_CLK 0 0>;
+		rdc = <RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW)>;
+		#pwm-cells = <3>;
+		status = "disabled";
+	};
+
+	pwm2: pwm@30670000 {
+		compatible = "nxp,ipwm";
+		reg = <0x30670000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 82 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_PWM2_CLK 0 0>;
+		rdc = <RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW)>;
+		#pwm-cells = <3>;
+		status = "disabled";
+	};
+
+	pwm3: pwm@30680000 {
+		compatible = "nxp,ipwm";
+		reg = <0x30680000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 83 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_PWM3_CLK 0 0>;
+		rdc = <RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW)>;
+		#pwm-cells = <3>;
+		status = "disabled";
+	};
+
+	pwm4: pwm@30690000 {
+		compatible = "nxp,ipwm";
+		reg = <0x30690000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 84 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_PWM4_CLK 0 0>;
+		rdc = <RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW)>;
+		#pwm-cells = <3>;
 		status = "disabled";
 	};
 
@@ -222,13 +250,13 @@
 		status = "disabled";
 	};
 
-	uart4: serial@30a60000 {
+	uart2: serial@30890000 {
 		compatible = "nxp,imx-iuart";
-		reg = <0x30a60000 DT_SIZE_K(64)>;
-		interrupts = <GIC_SPI 29 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		reg = <0x30890000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 27 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
 		interrupt-parent = <&gic>;
-		clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>;
+		clocks = <&ccm IMX_CCM_UART2_CLK 0x6c 24>;
 		rdc = <(RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW) |
 			RDC_DOMAIN_PERM(M4_DOMAIN_ID, RDC_DOMAIN_PERM_RW))>;
 		status = "disabled";
@@ -282,52 +310,15 @@
 		status = "disabled";
 	};
 
-	rdc: rdc@303d0000 {
-		compatible = "nxp,rdc";
-		reg = <0x303d0000 DT_SIZE_K(64)>;
-	};
-
-	pwm1: pwm@30660000 {
-		compatible = "nxp,ipwm";
-		reg = <0x30660000 DT_SIZE_K(64)>;
-		interrupts = <GIC_SPI 81 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	uart4: serial@30a60000 {
+		compatible = "nxp,imx-iuart";
+		reg = <0x30a60000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 29 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
 		interrupt-parent = <&gic>;
-		clocks = <&ccm IMX_CCM_PWM1_CLK 0 0>;
-		rdc = <RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW)>;
-		#pwm-cells = <3>;
-		status = "disabled";
-	};
-
-	pwm2: pwm@30670000 {
-		compatible = "nxp,ipwm";
-		reg = <0x30670000 DT_SIZE_K(64)>;
-		interrupts = <GIC_SPI 82 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		interrupt-parent = <&gic>;
-		clocks = <&ccm IMX_CCM_PWM2_CLK 0 0>;
-		rdc = <RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW)>;
-		#pwm-cells = <3>;
-		status = "disabled";
-	};
-
-	pwm3: pwm@30680000 {
-		compatible = "nxp,ipwm";
-		reg = <0x30680000 DT_SIZE_K(64)>;
-		interrupts = <GIC_SPI 83 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		interrupt-parent = <&gic>;
-		clocks = <&ccm IMX_CCM_PWM3_CLK 0 0>;
-		rdc = <RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW)>;
-		#pwm-cells = <3>;
-		status = "disabled";
-	};
-
-	pwm4: pwm@30690000 {
-		compatible = "nxp,ipwm";
-		reg = <0x30690000 DT_SIZE_K(64)>;
-		interrupts = <GIC_SPI 84 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		interrupt-parent = <&gic>;
-		clocks = <&ccm IMX_CCM_PWM4_CLK 0 0>;
-		rdc = <RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW)>;
-		#pwm-cells = <3>;
+		clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>;
+		rdc = <(RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW) |
+			RDC_DOMAIN_PERM(M4_DOMAIN_ID, RDC_DOMAIN_PERM_RW))>;
 		status = "disabled";
 	};
 
@@ -362,6 +353,15 @@
 			clocks = <&ccm IMX_CCM_ENET_PLL 0 0>;
 			status = "disabled";
 		};
+	};
+
+	gic: interrupt-controller@38800000 {
+		compatible = "arm,gic-v3", "arm,gic";
+		reg = <0x38800000 0x10000>, /* GIC Dist */
+		      <0x38880000 0xc0000>; /* GICR (RD_base + SGI_base) */
+		interrupt-controller;
+		#interrupt-cells = <4>;
+		status = "okay";
 	};
 };
 
