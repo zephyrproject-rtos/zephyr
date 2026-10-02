@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/mbox/brcm-bcm2711-mbox.h>
 
 / {
-	model = "Raspberry Pi Zero 2 W";
 	compatible = "raspberrypi,model-zero-2-w", "brcm,bcm2710";
+	model = "Raspberry Pi Zero 2 W";
 
 	chosen {
 		zephyr,console = &uart1;
@@ -26,9 +26,9 @@
 	 * kernel_address= line in config.txt.
 	 */
 	dram0: memory@200000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x200000 DT_SIZE_M(256)>;
+		device_type = "memory";
 	};
 
 	aliases {
@@ -36,9 +36,9 @@
 	};
 
 	reserved-memory {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		/*
 		 * Shared buffer for the VideoCore firmware property
