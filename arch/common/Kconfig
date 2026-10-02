@@ -56,7 +56,7 @@ config EXCEPTION_DUMP_HOOK
 	depends on EXCEPTION_DUMP
 	help
 	  Enables hook for configuring an additional method for delivering
-	  exeption prints through similar interface as printk or LOG.
+	  exception prints through similar interface as printk or LOG.
 
 config EXCEPTION_DUMP_HOOK_ONLY
 	bool "Do not send exception prints to logs or printk if hook is set"

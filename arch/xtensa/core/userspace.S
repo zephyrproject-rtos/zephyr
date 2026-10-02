@@ -325,7 +325,7 @@ xtensa_userspace_enter:
 
 	wsr.ZSR_EPS a0
 
-	/* Wipe out a0 (thre is no return from this function */
+	/* Wipe out a0 (there is no return from this function */
 	movi a0, 0
 
 	rfi ZSR_RFI_LEVEL

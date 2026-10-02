@@ -478,7 +478,7 @@ _Level1RealVectorExtended:
  * caller function of the code that took the exception, and that can't
  * be done in C).  A prototype exists which mucks with the stack frame
  * from the C handler instead, but that would add a LARGE overhead to
- * some alloca() calls (those whent he caller has been spilled) just
+ * some alloca() calls (those when the caller has been spilled) just
  * to save these five cycles during other exceptions and L1
  * interrupts.  Maybe revisit at some point, with better benchmarking.
  * Note that _xt_alloca_exc is Xtensa-authored code which expects A0
