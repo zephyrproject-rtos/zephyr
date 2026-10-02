@@ -1,0 +1,5 @@
+tests:
+  mgmt.ec_host_cmd.spi_stm32.core:
+    platform_allow: [native_sim]
+    integration_platforms: [native_sim]
+    tags: ec_host_cmd
