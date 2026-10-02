@@ -1082,6 +1082,8 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 		*rate = CLOCK_GetWwdt0ClkFreq();
 #elif defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXL)
 		*rate = CLOCK_GetWwdtClkFreq();
+#elif defined(CONFIG_SOC_SERIES_LPC54XXX)
+		*rate = CLOCK_GetWdtOscFreq();
 #else
 		*rate = CLOCK_GetWdtClkFreq();
 #endif
