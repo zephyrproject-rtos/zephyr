@@ -10,8 +10,8 @@
 #include <freq.h>
 
 / {
-	model = "BeagleBoard.org BeagleBone AI-64";
 	compatible = "beagle,beaglebone-ai64";
+	model = "BeagleBoard.org BeagleBone AI-64";
 
 	chosen {
 		zephyr,sram = &ddr1;

@@ -9,6 +9,6 @@
 #include "pocketbeagle_2_m4-common.dtsi"
 
 / {
-	model = "BeagleBoard.org PocketBeagle 2 Industrial";
 	compatible = "beagle,pocketbeagle_2_industrial_am6254_m4";
+	model = "BeagleBoard.org PocketBeagle 2 Industrial";
 };

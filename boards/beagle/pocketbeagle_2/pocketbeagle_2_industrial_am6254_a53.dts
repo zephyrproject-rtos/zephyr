@@ -9,16 +9,16 @@
 #include "pocketbeagle_2_am6254_a53-common.dtsi"
 
 / {
-	model = "BeagleBoard.org PocketBeagle 2 Industrial";
 	compatible = "beagle,pocketbeagle_2_industrial_am6254_a53";
+	model = "BeagleBoard.org PocketBeagle 2 Industrial";
 
 	chosen {
 		zephyr,sram = &a53_ddr_section;
 	};
 
 	ddr0: memory@80000000 {
-		device_type = "memory";
 		reg = <0x80000000 DT_SIZE_G(1)>;
+		device_type = "memory";
 		#address-cells = <0x1>;
 		#size-cells = <0x1>;
 

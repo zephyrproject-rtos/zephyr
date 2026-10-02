@@ -9,6 +9,6 @@
 #include "pocketbeagle_2_mspm0l1105-common.dtsi"
 
 / {
-	model = "BeagleBoard.org PocketBeagle 2 Industrial";
 	compatible = "beagle,pocketbeagle_2_industrial_mspm0l1105";
+	model = "BeagleBoard.org PocketBeagle 2 Industrial";
 };
