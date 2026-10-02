@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "NXP FRDM-IMXRT1152 board";
 	compatible = "nxp,mimxrt1152";
+	model = "NXP FRDM-IMXRT1152 board";
 
 	aliases {
 		led0 = &green_led;
@@ -38,8 +38,8 @@
 	 * the simplified XMCD option block supports a single port.
 	 */
 	hyperram0: memory@60000000 {
-		device_type = "memory";
 		reg = <0x60000000 DT_SIZE_M(32)>;
+		device_type = "memory";
 	};
 
 	leds {
@@ -77,11 +77,11 @@
 };
 
 &lpuart1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpuart1>;
 	pinctrl-1 = <&pinmux_lpuart1_sleep>;
 	pinctrl-names = "default", "sleep";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &green_led {
@@ -93,13 +93,13 @@
 };
 
 &flexspi {
-	status = "okay";
+	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(64)>;
 	ahb-prefetch;
 	ahb-read-addr-opt;
 	rx-clock-source = <1>;
 	pinctrl-0 = <&pinmux_flexspi1>;
 	pinctrl-names = "default";
-	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(64)>;
+	status = "okay";
 
 	/*
 	 * The FlexSPI NOR flash controller is intentionally disabled: the
@@ -109,25 +109,25 @@
 	 */
 	ext_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		size = <DT_SIZE_M(64*8)>;
 		reg = <0>;
+		ranges = <0x0 0x30000000 DT_SIZE_M(64)>;
+		size = <DT_SIZE_M(64*8)>;
 		spi-max-frequency = <DT_FREQ_M(133)>;
-		status = "disabled";
 		jedec-id = [ef 60 20];
 
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x30000000 DT_SIZE_M(64)>;
+		status = "disabled";
 
 		w25q512nw: flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0x0 DT_SIZE_M(64)>;
+			ranges;
 			erase-block-size = <DT_SIZE_K(4)>;
 			write-block-size = <1>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 		};
 	};
 };

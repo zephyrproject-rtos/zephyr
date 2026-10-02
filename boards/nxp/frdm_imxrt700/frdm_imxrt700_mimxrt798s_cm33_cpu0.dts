@@ -11,8 +11,8 @@
 #include "frdm_imxrt700-pinctrl.dtsi"
 
 / {
-	model = "NXP FRDM-IMXRT700 board";
 	compatible = "nxp,mimxrt798s";
+	model = "NXP FRDM-IMXRT700 board";
 
 	aliases {
 		led0 = &green_led;
@@ -58,8 +58,8 @@
  * replace &os_timer with &systick
  */
 &os_timer_cpu0 {
-	status = "okay";
 	wakeup-source;
+	status = "okay";
 };
 
 &flexcomm0 {
@@ -67,10 +67,10 @@
 };
 
 &flexcomm0_lpuart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm0_lpuart>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio0 {
@@ -115,18 +115,19 @@
 	 */
 	ext_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,xspi-nor";
+		reg = <0>;
+		ranges = <0x0 0x38000000 DT_SIZE_M(32)>;
 		device-name = "w25q25pw";
 		/* W25Q25PW is a 32MB, 256Mbit flash part. */
 		size = <DT_SIZE_M(32)>;
-		reg = <0>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x38000000 DT_SIZE_M(32)>;
 		status = "disabled";
 
 		w25q25pw: flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0x0 DT_SIZE_M(32)>;
+			ranges;
 			erase-block-size = <DT_SIZE_K(4)>;
 			write-block-size = <4>;
 
@@ -137,7 +138,6 @@
 			 */
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 		};
 	};
 };

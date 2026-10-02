@@ -11,8 +11,8 @@
 #include "board_common.dtsi"
 
 / {
-	model = "NXP FRDM_MCXA346 board";
 	compatible = "nxp,mcxa346", "nxp,mcx";
+	model = "NXP FRDM_MCXA346 board";
 };
 
 &cpu0 {

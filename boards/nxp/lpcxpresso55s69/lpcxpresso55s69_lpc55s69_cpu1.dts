@@ -10,8 +10,8 @@
 #include "lpcxpresso55s69.dtsi"
 
 / {
-	model = "NXP LPCXpresso55S69 board";
 	compatible = "nxp,lpc55xxx", "nxp,lpc";
+	model = "NXP LPCXpresso55S69 board";
 
 	cpus {
 		/delete-node/ cpu@0;

@@ -18,8 +18,8 @@
 	};
 
 	ddr: memory@84000000 {
-		device_type = "memory";
 		reg = <0x84000000 DT_SIZE_M(36)>;
+		device_type = "memory";
 	};
 };
 

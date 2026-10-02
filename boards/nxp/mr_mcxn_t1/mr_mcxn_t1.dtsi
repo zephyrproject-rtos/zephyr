@@ -63,10 +63,10 @@
  * is resolved.
  */
 &i3c0 {
-	status = "disabled";
 	pinctrl-0 = <&pinmux_i3c0>;
 	pinctrl-names = "default";
 	i2c-scl-hz = <400000>;
+	status = "disabled";
 
 	bmp581_0: bmp581_0@470000000000000050 {
 		compatible = "bosch,bmp581";
@@ -231,9 +231,9 @@ mr_mcxn_t1_flexio_adc: &lpadc1 {};
 
 &flash {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		/*
 		 * Partition sizes must be aligned
@@ -241,20 +241,20 @@ mr_mcxn_t1_flexio_adc: &lpadc1 {};
 		 */
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(80)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@14000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x00014000 DT_SIZE_K(984)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@10a000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1";
 			reg = <0x0010a000 DT_SIZE_K(984)>;
+			label = "image-1";
 		};
 	};
 };
@@ -263,17 +263,17 @@ mr_mcxn_t1_flexio_adc: &lpadc1 {};
 	pinctrl-0 = <&pinmux_enet_qos>;
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
-	nxp,unique-mac;
 	phy-handle = <&phy>;
+	nxp,unique-mac;
 };
 
 &enet_mdio {
 	phy: ethernet-phy@12 {
 		compatible = "nxp,tja1103";
-		status = "okay";
 		reg = <0x12>;
 		int-gpios = <&gpio1 19 GPIO_ACTIVE_LOW>;
 		master-slave = "auto";
+		status = "okay";
 	};
 };
 
@@ -296,7 +296,6 @@ mr_mcxn_t1_flexio_adc: &lpadc1 {};
 &flexio0 {
 	flexio_spi0: flexio_spi0 {
 		compatible = "nxp,flexio-spi";
-		status = "okay";
 		#address-cells = <1>;
 		#size-cells = <0>;
 		sdo-pin = <0>;
@@ -304,6 +303,7 @@ mr_mcxn_t1_flexio_adc: &lpadc1 {};
 		sck-pin = <1>;
 		pinctrl-0 = <&pinmux_flexio_spi0>;
 		pinctrl-names = "default";
+		status = "okay";
 
 		led_strip: apa102@0 {
 			compatible = "apa,apa102";

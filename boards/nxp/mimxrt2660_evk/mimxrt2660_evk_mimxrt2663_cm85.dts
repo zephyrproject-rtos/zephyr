@@ -17,8 +17,8 @@
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 / {
-	model = "NXP MIMXRT2660-EVK board";
 	compatible = "nxp,mimxrt2663";
+	model = "NXP MIMXRT2660-EVK board";
 
 	chosen {
 		/*
