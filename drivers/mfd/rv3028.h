@@ -348,11 +348,11 @@ extern "C" {
  * @name RV3028 EEPROM EEBUSY pool times
  * @{
  */
-/** Read pool in ms (miliseconds) */
+/** Read pool in ms (milliseconds) */
 #define RV3028_EEBUSY_READ_POLL_MS  1
-/** Write pool in ms (miliseconds) */
+/** Write pool in ms (milliseconds) */
 #define RV3028_EEBUSY_WRITE_POLL_MS 10
-/** Timeout pool in ms (miliseconds) */
+/** Timeout pool in ms (milliseconds) */
 #define RV3028_EEBUSY_TIMEOUT_MS    100
 /** @} */
 
