@@ -137,7 +137,7 @@ static int gpio_max14906_diag_chan_get(const struct device *dev)
 	int ret;
 
 	if (config->fault_gpio.port && !gpio_pin_get_dt(&config->fault_gpio)) {
-		LOG_ERR("[DIAG] FAULT flag is rised");
+		LOG_ERR("[DIAG] FAULT flag is raised");
 	}
 
 	ret = max149x6_reg_transceive(dev, MAX14906_INT_REG, 0, NULL, MAX149x6_READ);

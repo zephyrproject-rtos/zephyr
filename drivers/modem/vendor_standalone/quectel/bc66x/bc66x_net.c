@@ -172,7 +172,7 @@ static int bc66x_open_and_wait_socket(struct bc66x_socket *sock, const char *ser
 
 	memcpy(&sock->remote_addr, dst_addr, sizeof(struct net_sockaddr_in));
 
-	/* TODO implement "AT+QISTATE" commmand invocation instead of the above memcpy */
+	/* TODO implement "AT+QISTATE" command invocation instead of the above memcpy */
 
 	LOG_DBG("SOCKET %d OPENED CORRECTLY", sock->modem_id);
 	return 0;

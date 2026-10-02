@@ -1171,7 +1171,7 @@ static int mspi_cadence_timing_config(const struct device *controller,
 	}
 
 	if (dev_id != data->current_peripheral) {
-		LOG_ERR("Tried chaning timing for another peripheral than the one the access lock "
+		LOG_ERR("Tried changing timing for another peripheral than the one the access lock "
 			"is held for");
 		ret = -EINVAL;
 		goto exit;

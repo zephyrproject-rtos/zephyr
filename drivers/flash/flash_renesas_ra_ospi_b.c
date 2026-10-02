@@ -1876,7 +1876,7 @@ static int flash_ospi_b_update_flash_config(const struct device *dev)
 			/* OSPI controller can not enable memory map at 1S-1S-1S */
 			word_swapped = true;
 			LOG_DBG("Byte order is swapped for this device, please aware that the data "
-				"on NOR Flash is not correct when read or programed by other mode");
+				"on NOR Flash is not correct when read or programmed by other mode");
 		}
 
 		/* Setup calibrate data */
