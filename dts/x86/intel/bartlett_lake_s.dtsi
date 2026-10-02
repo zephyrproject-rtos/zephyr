@@ -15,30 +15,30 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "intel,bartlett-lake";
-			d-cache-line-size = <64>;
 			reg = <0>;
+			device_type = "cpu";
+			d-cache-line-size = <64>;
 		};
 
 		cpu@1 {
-			device_type = "cpu";
 			compatible = "intel,bartlett-lake";
-			d-cache-line-size = <64>;
 			reg = <1>;
+			device_type = "cpu";
+			d-cache-line-size = <64>;
 		};
 	};
 
 	dram0: memory@0 {
-		device_type = "memory";
 		reg = <0x0 DT_DRAM_SIZE>;
+		device_type = "memory";
 	};
 
 	intc: ioapic@fec00000 {
 		compatible = "intel,ioapic";
+		reg = <0xfec00000 0x1000>;
 		#address-cells = <1>;
 		#interrupt-cells = <3>;
-		reg = <0xfec00000 0x1000>;
 		interrupt-controller;
 	};
 
@@ -51,11 +51,11 @@
 	};
 
 	pcie0: pcie0 {
+		compatible = "pcie-controller";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "pcie-controller";
 		acpi-hid = "PNP0A08";
-		ranges;
 
 		smbus0: smbus0 {
 			compatible = "intel,pch-smbus";
@@ -243,13 +243,13 @@
 			device-id = <0x7aaa>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			pw,cs-mode = <0>;
-			pw,cs-output = <0>;
-			pw,fifo-depth = <64>;
 			cs-gpios = <&gpio_0_i 15 GPIO_ACTIVE_LOW>;
 			clock-frequency = <100000000>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			pw,cs-mode = <0>;
+			pw,cs-output = <0>;
+			pw,fifo-depth = <64>;
 
 			status = "disabled";
 		};
@@ -260,13 +260,13 @@
 			device-id = <0x7aab>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			pw,cs-mode = <0>;
-			pw,cs-output = <0>;
-			pw,fifo-depth = <64>;
 			cs-gpios = <&gpio_0_i 19 GPIO_ACTIVE_LOW>;
 			clock-frequency = <100000000>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			pw,cs-mode = <0>;
+			pw,cs-output = <0>;
+			pw,fifo-depth = <64>;
 
 			status = "disabled";
 		};
@@ -277,13 +277,13 @@
 			device-id = <0x7afb>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			pw,cs-mode = <0>;
-			pw,cs-output = <0>;
-			pw,fifo-depth = <64>;
 			cs-gpios = <&gpio_0_r 12 GPIO_ACTIVE_LOW>;
 			clock-frequency = <100000000>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			pw,cs-mode = <0>;
+			pw,cs-output = <0>;
+			pw,fifo-depth = <64>;
 
 			status = "disabled";
 		};
@@ -347,10 +347,10 @@
 	};
 
 	soc {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "simple-bus";
 		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		vtd: vtd@fed91000 {
 			compatible = "intel,vt-d";
@@ -568,6 +568,8 @@
 			compatible = "motorola,mc146818-mfd";
 			reg = <0x70 0x01 0x71 0x01 0x72 0x01 0x73 0x01>;
 
+			status = "disabled";
+
 			rtc: counter: rtc {
 				compatible = "motorola,mc146818";
 				interrupts = <8 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
@@ -582,8 +584,6 @@
 				size = <241>;
 				status = "disabled";
 			};
-
-			status = "disabled";
 		};
 
 		tgpio: tgpio@fe001200 {
