@@ -147,17 +147,17 @@
 	pinctrl-names = "default", "sleep";
 	status = "okay";
 
-	lsm303agr_magn: lsm303agr-magn@1e {
-		compatible = "st,lis2mdl", "st,lsm303agr-magn";
-		reg = <0x1e>;
-		irq-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;	/* A3 */
-		status = "okay";
-	};
-
 	lsm303agr_accel: lsm303agr-accel@19 {
 		compatible = "st,lis2dh", "st,lsm303agr-accel";
 		reg = <0x19>;
 		irq-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+
+	lsm303agr_magn: lsm303agr-magn@1e {
+		compatible = "st,lis2mdl", "st,lsm303agr-magn";
+		reg = <0x1e>;
+		irq-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;	/* A3 */
 		status = "okay";
 	};
 
