@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "FocalTech FT9001 Evaluation Board";
 	compatible = "focaltech,ft9001-eval", "focaltech,ft9001";
+	model = "FocalTech FT9001 Evaluation Board";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -33,15 +33,15 @@
 
 		romcfg_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "romcfg";
 			reg = <0x00000000 0x00001000>;
+			label = "romcfg";
 			read-only;
 		};
 
 		app_partition: partition@1000 {
 			compatible = "zephyr,mapped-partition";
-			label = "app";
 			reg = <0x00001000 0x001ff000>;
+			label = "app";
 		};
 	};
 };
