@@ -482,7 +482,7 @@
 #define MCHP_SAF_DNX_LK_POS        28
 #define MCHP_SAF_DNX_LK            BIT(28)
 
-/* SAF Activity Count Reload Valud register */
+/* SAF Activity Count Reload Value register */
 #define MCHP_SAF_AC_RELOAD_OFS     0x1b8u
 #define MCHP_SAF_AC_RELOAD_REG_MSK 0xffffu
 
