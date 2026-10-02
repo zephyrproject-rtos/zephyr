@@ -43,14 +43,6 @@
 			status = "okay";
 		};
 
-		acp_sdw_dma: acp-sdw-dma@1243a00 {
-			compatible = "amd,acp-sdw-dma";
-			reg = <0x1243a00 4>;
-			dma-channels = <64>;
-			#dma-cells = <3>;
-			status = "okay";
-		};
-
 		sdw_dai0: acp-sdw-dai0 {
 			compatible = "amd,acp-sdw-dai";
 			dai-index = <0>;
@@ -601,6 +593,14 @@
 			compatible = "amd,acp-tdm-dma";
 			#dma-cells = <3>;
 			dma-channels = <6>;
+			status = "okay";
+		};
+
+		acp_sdw_dma: acp-sdw-dma@1243a00 {
+			compatible = "amd,acp-sdw-dma";
+			reg = <0x1243a00 4>;
+			dma-channels = <64>;
+			#dma-cells = <3>;
 			status = "okay";
 		};
 	};
