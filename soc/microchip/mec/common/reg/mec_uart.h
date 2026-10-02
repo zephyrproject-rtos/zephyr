@@ -183,7 +183,7 @@
 #define XEC_UART_LD_CFG_INVERT    BIT(2)
 
 /* MEC174x and onwards have a new register only visible to the EC at offset 0x8
- * Line State 2 register. It has fields indicating the number of bytes currenly
+ * Line State 2 register. It has fields indicating the number of bytes currently
  * in the TX FIFO and if the TX FIFO is full.
  */
 #define XEC_UART_LSR2_OFS              8u

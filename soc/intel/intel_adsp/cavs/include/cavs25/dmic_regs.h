@@ -309,7 +309,7 @@
 
 /* GLOBAL_CAPABILITIES */
 
-/* Nnumber of data entries supported in the PCM XCLK FIFO per FIR output. */
+/* Number of data entries supported in the PCM XCLK FIFO per FIR output. */
 #define GLOBAL_CAP_PCM_XCLK_FIFO_DEPTH		GENMASK(5, 0)
 
 /* Port Count */

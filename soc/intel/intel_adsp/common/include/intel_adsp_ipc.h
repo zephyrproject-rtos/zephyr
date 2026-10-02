@@ -90,7 +90,7 @@ int intel_adsp_ipc_send_message(const struct device *dev,
  * @param data 30 bits value to transmit with the message (IDR register)
  * @param ext_data Extended value to transmit with the message (IDD register)
  * @param timeout Maximum time to wait, or K_FOREVER, or K_NO_WAIT
- * @return returns 0 if message successfully transmited, otherwise error code.
+ * @return returns 0 if message successfully transmitted, otherwise error code.
  */
 int intel_adsp_ipc_send_message_sync(const struct device *dev,
 	uint32_t data, uint32_t ext_data, k_timeout_t timeout);

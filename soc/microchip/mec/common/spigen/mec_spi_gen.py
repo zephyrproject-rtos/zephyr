@@ -108,7 +108,7 @@ def build_tag(hdr_spi_loc):
 
     MEC172x Boot-ROM TAG is 4 bytes
     bits[23:0] = bits[31:8] of the Header SPI address
-    Header location must be a mutliple of 256 bytes
+    Header location must be a multiple of 256 bytes
     bits[31:24] = CRC8-ITU of bits[23:0]
     return immutable bytes type
     """

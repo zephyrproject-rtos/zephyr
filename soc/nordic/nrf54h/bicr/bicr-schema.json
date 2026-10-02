@@ -344,7 +344,7 @@
     },
     "hfxo": {
       "type": "object",
-      "title": "High Frequency Cristal Oscillator (HFXO) configuration",
+      "title": "High Frequency Crystal Oscillator (HFXO) configuration",
       "properties": {
         "mode": {
           "type": "string",

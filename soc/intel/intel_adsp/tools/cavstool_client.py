@@ -25,7 +25,7 @@ CMD_DOWNLOAD = "download"
 MAX_CMD_SZ = 16
 
 # Define the header format and size for
-# transmiting the firmware
+# transmitting the firmware
 PACKET_HEADER_FORMAT_FW = 'I 42s 32s'
 
 logging.basicConfig()

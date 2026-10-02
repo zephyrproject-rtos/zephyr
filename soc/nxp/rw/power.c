@@ -387,7 +387,7 @@ void nxp_rw6xx_power_init(void)
 	slp_cfg.pm3BuckCfg = suspend_sleepconfig[4];
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin0))
-	/* PIN 0 uses GPIO0_24, confiure the pin as GPIO */
+	/* PIN 0 uses GPIO0_24, configure the pin as GPIO */
 	pin_cfg = IOMUX_GPIO_IDX(24) | IOMUX_TYPE(IOMUX_GPIO);
 	pinctrl_configure_pins(&pin_cfg, 1, 0);
 
@@ -399,7 +399,7 @@ void nxp_rw6xx_power_init(void)
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin1))
-	/* PIN 1 uses GPIO0_25, confiure the pin as GPIO */
+	/* PIN 1 uses GPIO0_25, configure the pin as GPIO */
 	pin_cfg = IOMUX_GPIO_IDX(25) | IOMUX_TYPE(IOMUX_GPIO);
 	pinctrl_configure_pins(&pin_cfg, 1, 0);
 

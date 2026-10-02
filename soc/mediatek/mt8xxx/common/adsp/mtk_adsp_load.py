@@ -23,7 +23,7 @@ from glob import glob
 #
 # In the kernel driver, the address/size values come from devicetree.
 # But currently the MediaTek architecture is one kernel driver per SOC
-# (i.e. the devicetree values in the kenrel source are tied to the
+# (i.e. the devicetree values in the kernel source are tied to the
 # specific SOC anyway), so it really doesn't matter and we hard-code
 # the addresses for simplicity.
 #
