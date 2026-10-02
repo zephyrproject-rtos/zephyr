@@ -137,6 +137,7 @@ struct dma_esp32_channel {
 	uint32_t burst_length;
 	dma_callback_t cb;
 	void *user_data;
+	bool cyclic;
 	esp_dma_desc_t desc_list[CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM];
 	/*
 	 * TX reload with a transfer in flight: the halves of desc_list are
@@ -550,10 +551,21 @@ static void IRAM_ATTR dma_esp32_isr_handle_tx(const struct device *dev,
 		k_spin_unlock(&data->lock, key);
 	}
 	if (tx->cb) {
+		int status;
+
 		intr_status &= ~(GDMA_LL_EVENT_TX_TOTAL_EOF | GDMA_LL_EVENT_TX_DONE |
 				 GDMA_LL_EVENT_TX_EOF);
+		status = -intr_status;
 
-		tx->cb(dev, tx->user_data, tx->channel_id * 2 + 1, -intr_status);
+		/* Only the last block of a cyclic transfer completes it */
+		if (status == 0 && tx->cyclic &&
+		    gdma_hal_get_eof_desc_addr(&data->hal, tx->channel_id,
+					       GDMA_CHANNEL_DIRECTION_TX,
+					       true) != (uintptr_t)tx->tail) {
+			status = DMA_STATUS_BLOCK;
+		}
+
+		tx->cb(dev, tx->user_data, tx->channel_id * 2 + 1, status);
 	}
 }
 
@@ -656,13 +668,16 @@ static int dma_esp32_config_descriptor(struct dma_esp32_channel *dma_channel,
 		block_size -= buffer_size;
 
 		if (!block_size) {
+			if (dma_channel->dir == DMA_TX &&
+			    (dma_channel->cyclic || block->next_block == NULL)) {
+				desc_iter->dw0.suc_eof = 1;
+			}
+
 			if (block->next_block) {
 				block = block->next_block;
 			} else {
-				desc_iter->next = NULL;
-				if (dma_channel->dir == DMA_TX) {
-					desc_iter->dw0.suc_eof = 1;
-				}
+				desc_iter->next =
+					dma_channel->cyclic ? dma_channel->desc_list : NULL;
 				break;
 			}
 		}
@@ -816,6 +831,7 @@ static int dma_esp32_config_rx(const struct device *dev, struct dma_esp32_channe
 
 	dma_channel->cb = config_dma->dma_callback;
 	dma_channel->user_data = config_dma->user_data;
+	dma_channel->cyclic = config_dma->cyclic;
 
 	gdma_hal_enable_intr(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX,
 			     GDMA_LL_RX_EVENT_MASK, false);
@@ -851,6 +867,7 @@ static int dma_esp32_config_tx(const struct device *dev, struct dma_esp32_channe
 
 	dma_channel->cb = config_dma->dma_callback;
 	dma_channel->user_data = config_dma->user_data;
+	dma_channel->cyclic = config_dma->cyclic;
 
 	gdma_hal_enable_intr(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX,
 			     GDMA_LL_TX_EVENT_MASK, false);
@@ -892,6 +909,11 @@ static int dma_esp32_config(const struct device *dev, uint32_t channel,
 	if (!DMA_ESP32_BURST_VALID(config_dma->source_burst_length)) {
 		LOG_ERR("Unsupported burst length %u", config_dma->source_burst_length);
 		return -EINVAL;
+	}
+
+	if (config_dma->cyclic && config_dma->channel_direction != MEMORY_TO_PERIPHERAL) {
+		LOG_ERR("Cyclic transfers are only supported for memory to peripheral");
+		return -ENOTSUP;
 	}
 
 	if (config_dma->channel_direction == MEMORY_TO_MEMORY) {
