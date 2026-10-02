@@ -26,9 +26,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
+			device_type = "cpu";
 			cpu-power-states = <&idle &pstop2 &pstop1 &stop>;
 		};
 
@@ -83,8 +83,8 @@
 
 		scg: scg@40064000 {
 			compatible = "nxp,kinetis-scg";
-			sosc-mode = <KINETIS_SCG_SOSC_MODE_LOW_POWER>;
 			reg = <0x40064000 0x1000>;
+			sosc-mode = <KINETIS_SCG_SOSC_MODE_LOW_POWER>;
 			#clock-cells = <1>;
 
 			sosc_clk: sosc_clk {
@@ -217,17 +217,17 @@
 
 		edma: dma-controller@40008000 {
 			compatible = "nxp,mcux-edma";
-			nxp,version = <2>;
+			reg = <0x40008000 0x1000>, <0x40021000 0x1000>;
 			dma-channels = <16>;
 			dma-requests = <64>;
-			nxp,mem2mem;
-			reg = <0x40008000 0x1000>, <0x40021000 0x1000>;
 			interrupts = <0 0>, <1 0>, <2 0>, <3 0>,
 				     <4 0>, <5 0>, <6 0>, <7 0>,
 				     <8 0>, <9 0>, <10 0>, <11 0>,
 				     <12 0>, <13 0>, <14 0>, <15 0>,
 				     <16 0>;
 			#dma-cells = <2>;
+			nxp,version = <2>;
+			nxp,mem2mem;
 			status = "disabled";
 		};
 
@@ -296,9 +296,9 @@
 				compatible = "nxp,enet-mac";
 				interrupts = <73 0>, <74 0>, <75 0>;
 				interrupt-names = "TX", "RX", "ERR";
-				nxp,mdio = <&enet_mdio>;
 				ptp-clock = <&enet_ptp_clock>;
 				phy-connection-type = "rmii";
+				nxp,mdio = <&enet_mdio>;
 				status = "disabled";
 			};
 
@@ -377,11 +377,11 @@
 			interrupts = <48 0>, <49 0>, <50 0>, <51 0>;
 			interrupt-names = "chn0", "chn1", "chn2", "chn3";
 			clocks = <&pcc 0xdc KINETIS_PCC_SRC_SIRC_ASYNC>;
-			status = "disabled";
 			enable-run-in-doze;
 			max-load-value = <0xffffffff>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 
 			lpit0_channel0: lpit_channel@0 {
 				compatible = "nxp,lpit-channel";
@@ -541,10 +541,10 @@
 
 		lpi2c0: i2c@40066000 {
 			compatible = "nxp,lpi2c";
+			reg = <0x40066000 0x1000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40066000 0x1000>;
 			interrupts = <24 0>, <25 0>;
 			interrupt-names = "controller", "target";
 			clocks = <&pcc 0x198 KINETIS_PCC_SRC_FIRC_ASYNC>;
@@ -553,10 +553,10 @@
 
 		lpi2c1: i2c@40067000 {
 			compatible = "nxp,lpi2c";
+			reg = <0x40067000 0x1000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40067000 0x1000>;
 			interrupts = <29 0>, <30 0>;
 			interrupt-names = "controller", "target";
 			clocks = <&pcc 0x19c KINETIS_PCC_SRC_FIRC_ASYNC>;
@@ -714,11 +714,11 @@
 			interrupts = <70 0>, <71 0>;
 			dmas = <&edma 6 60>, <&edma 7 61>;
 			dma-names = "rx", "tx";
-			nxp,rx-dma-channel = <6>;
-			nxp,tx-dma-channel = <7>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			#pinmux-cells = <2>;
+			nxp,rx-dma-channel = <6>;
+			nxp,tx-dma-channel = <7>;
 			status = "disabled";
 		};
 
@@ -729,11 +729,11 @@
 			interrupts = <55 0>, <56 0>;
 			dmas = <&edma 8 12>, <&edma 9 13>;
 			dma-names = "rx", "tx";
-			nxp,rx-dma-channel = <8>;
-			nxp,tx-dma-channel = <9>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			#pinmux-cells = <2>;
+			nxp,rx-dma-channel = <8>;
+			nxp,tx-dma-channel = <9>;
 			status = "disabled";
 		};
 

@@ -19,8 +19,8 @@
 	soc {
 		ocram_combined: ocram@20340000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
-			zephyr,memory-region = "OCRAMCOMBINED";
 			reg = <0x20340000 DT_SIZE_K(256)>;
+			zephyr,memory-region = "OCRAMCOMBINED";
 		};
 	};
 };

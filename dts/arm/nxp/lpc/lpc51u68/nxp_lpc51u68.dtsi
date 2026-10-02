@@ -54,9 +54,9 @@
 		iocon: iocon@40001000 {
 			compatible = "nxp,lpc-iocon";
 			reg = <0x40001000 0x100>;
+			ranges = <0x0 0x40001000 0x100>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x40001000 0x100>;
 
 			pinctrl: pinctrl {
 				compatible = "nxp,lpc-iocon-pinctrl";
@@ -71,18 +71,18 @@
 
 			gpio0: gpio@0 {
 				compatible = "nxp,lpc-gpio-port";
+				reg = <0>;
 				int-source = "pint";
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0>;
 			};
 
 			gpio1: gpio@1 {
 				compatible = "nxp,lpc-gpio-port";
+				reg = <1>;
 				int-source = "pint";
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <1>;
 			};
 		};
 
@@ -188,11 +188,11 @@
 		sc_timer: pwm@40085000 {
 			compatible = "nxp,sctimer-pwm";
 			reg = <0x40085000 0x1000>;
-			status = "disabled";
 			interrupts = <12 0>;
 			clocks = <&syscon MCUX_SCTIMER_CLK>;
 			prescaler = <1>;
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		crc: crc@40095000 {

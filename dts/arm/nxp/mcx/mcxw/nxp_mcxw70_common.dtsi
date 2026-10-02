@@ -79,9 +79,9 @@
 	flash: flash@0 {
 		compatible = "soc-nv-flash";
 		reg = <0x0 0x180000>;
+		ranges = <0x0 0x0 0x180000>;
 		write-block-size = <16>;
 		erase-block-size = <DT_SIZE_K(8)>;
-		ranges = <0x0 0x0 0x180000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 	};
@@ -89,18 +89,18 @@
 	flw: flw@800000 {
 		compatible = "soc-nv-flash";
 		reg = <0x800000 0x128000>;
+		ranges = <0x0 0x800000 0x128000>;
 		write-block-size = <16>;
 		erase-block-size = <DT_SIZE_K(8)>;
-		ranges = <0x0 0x800000 0x128000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 	};
 
 	ifr0: flash@1000000 {
 		compatible = "nxp,mcxw-ifr";
+		reg = <0x1000000 DT_SIZE_K(32)>;
 		write-block-size = <16>;
 		erase-block-size = <DT_SIZE_K(8)>;
-		reg = <0x1000000 DT_SIZE_K(32)>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -114,13 +114,13 @@
 
 &stcm {
 	stcm_shared: stcm_shared@2e000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x2e000 DT_SIZE_K(8)>;
 		/* Use non-secure address range */
 		ranges = <0x0 0x2002e000 DT_SIZE_K(8)>;
-		reg = <0x2e000 DT_SIZE_K(8)>;
-		compatible = "zephyr,memory-region", "mmio-sram";
-		zephyr,memory-region = "STCM_SHARED";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		zephyr,memory-region = "STCM_SHARED";
 
 		shmem_fwk: memory@200 {
 			reg = <0x200 0x100>;
@@ -163,10 +163,10 @@
 		clocks = <&clk_ctrl MCXW_CLOCK(0x1a0, MCXW_CLK_IP_MUX_FRO_192M_DIV,
 					       MCXW_CLK_DIV_NONE,
 					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
-		status = "disabled";
 		max-load-value = <0xffffffff>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		status = "disabled";
 
 		lpit_0_channel0: lpit_channel@0 {
 			compatible = "nxp,lpit-channel";
@@ -261,8 +261,8 @@
 					       MCXW_CLK_DIV_NONE,
 					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		prescaler = <16>;
-		status = "disabled";
 		#pwm-cells = <3>;
+		status = "disabled";
 	};
 
 	tpm_3: pwm@1f000 {
@@ -273,8 +273,8 @@
 					       MCXW_CLK_DIV_NONE,
 					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		prescaler = <16>;
-		status = "disabled";
 		#pwm-cells = <3>;
+		status = "disabled";
 	};
 
 	tpm_4: pwm@20000 {
@@ -285,8 +285,8 @@
 					       MCXW_CLK_DIV_NONE,
 					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		prescaler = <16>;
-		status = "disabled";
 		#pwm-cells = <3>;
+		status = "disabled";
 	};
 
 	flexcan_0: can@28000 {
@@ -323,8 +323,8 @@
 	trng_0: trng@3c000 {
 		compatible = "nxp,kinetis-trng";
 		reg = <0x3c000 0x1000>;
-		status = "okay";
 		interrupts = <97 1>;
+		status = "okay";
 	};
 
 	crc: crc@18000 {
@@ -454,8 +454,8 @@
 					       MCXW_CLK_DIV_NONE,
 					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		prescaler = <16>;
-		status = "disabled";
 		#pwm-cells = <3>;
+		status = "disabled";
 	};
 
 	wdog_0: watchdog@1d000 {
@@ -495,9 +495,9 @@
 
 	nbu: nbu {
 		compatible = "nxp,nbu";
-		status = "okay";
 		interrupts = <92 2>;
 		interrupt-names = "nbu_rx_int";
+		status = "okay";
 	};
 
 	hci: hci_ble {
@@ -512,11 +512,11 @@
 	rtc_0: rtc@9000 {
 		compatible = "nxp,rtc";
 		reg = <0x9000 0x20>;
-		status = "disabled";
 		interrupts = <35 0>, <36 0>;
 		interrupt-names = "alarm", "seconds";
 		clock-frequency = <32768>;
 		prescaler = <32768>;
+		status = "disabled";
 
 		counter_rtc: counter_rtc {
 			compatible = "zephyr,rtc-counter";
@@ -527,11 +527,10 @@
 
 	edma: dma-controller@24000 {
 		compatible = "nxp,mcux-edma";
+		reg = <0x24000 0x140>;
 		#dma-cells = <2>;
-		nxp,version = <3>;
 		dma-channels = <16>;
 		dma-requests = <64>;
-		reg = <0x24000 0x140>;
 		clocks = <&clk_ctrl MCXW_CLOCK(0xf0, MCXW_CLK_IP_MUX_NONE,
 					       MCXW_CLK_DIV_NONE,
 					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
@@ -539,6 +538,7 @@
 			     <6 0>, <7 0>, <8 0>, <9 0>,
 			     <10 0>, <11 0>, <12 0>, <13 0>,
 			     <14 0>, <15 0>, <16 0>, <17 0>;
+		nxp,version = <3>;
 		status = "disabled";
 	};
 
@@ -548,9 +548,9 @@
 		clocks = <&clk_ctrl MCXW_CLOCK(0x108, MCXW_CLK_IP_MUX_NONE,
 					       MCXW_CLK_DIV_NONE,
 					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
-		status = "disabled";
 		interrupts = <18 0>;
 		clk-divider = <0x0>;
+		status = "disabled";
 	};
 
 	uid: uid@1f068 {
@@ -584,48 +584,48 @@
 					       MCXW_CLK_DIV_NONE,
 					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		prescaler = <16>;
-		status = "disabled";
 		#pwm-cells = <3>;
+		status = "disabled";
 	};
 };
 
 &fast_peripheral0 {
 	gpio_a: gpio@40000 {
 		compatible = "nxp,kinetis-gpio";
-		status = "disabled";
+		reg = <0x40000 0x128>;
 		gpio-controller;
 		clocks = <&clk_ctrl MCXW_CLOCK(0x160, MCXW_CLK_IP_MUX_NONE,
 					       MCXW_CLK_DIV_NONE,
 					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		#gpio-cells = <2>;
-		nxp,kinetis-port = <&port_a>;
-		reg = <0x40000 0x128>;
 		interrupts = <65 0>, <66 0>;
+		nxp,kinetis-port = <&port_a>;
+		status = "disabled";
 	};
 
 	gpio_b: gpio@10000 {
 		compatible = "nxp,kinetis-gpio";
-		status = "disabled";
+		reg = <0x10000 0x128>;
 		gpio-controller;
 		clocks = <&clk_ctrl MCXW_CLOCK(0x168, MCXW_CLK_IP_MUX_NONE,
 					       MCXW_CLK_DIV_NONE,
 					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		#gpio-cells = <2>;
-		nxp,kinetis-port = <&port_b>;
-		reg = <0x10000 0x128>;
 		interrupts = <67 0>, <68 0>;
+		nxp,kinetis-port = <&port_b>;
+		status = "disabled";
 	};
 
 	gpio_c: gpio@20000 {
 		compatible = "nxp,kinetis-gpio";
-		status = "disabled";
+		reg = <0x20000 0x128>;
 		gpio-controller;
 		clocks = <&clk_ctrl MCXW_CLOCK(0x170, MCXW_CLK_IP_MUX_NONE,
 					       MCXW_CLK_DIV_NONE,
 					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		#gpio-cells = <2>;
-		nxp,kinetis-port = <&port_c>;
-		reg = <0x20000 0x128>;
 		interrupts = <69 0>, <70 0>;
+		nxp,kinetis-port = <&port_c>;
+		status = "disabled";
 	};
 };

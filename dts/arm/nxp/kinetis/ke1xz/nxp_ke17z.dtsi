@@ -34,18 +34,18 @@
 		ftfa: flash-controller@40020000 {
 			compatible = "nxp,kinetis-ftfa";
 			reg = <0x40020000 0x1000>;
-			interrupts = <5 0>;
 
 			ranges;
+			interrupts = <5 0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
 				reg = <0 DT_SIZE_K(256)>;
+				ranges;
 				erase-block-size = <DT_SIZE_K(2)>;
 				write-block-size = <8>;
-				ranges;
 				#address-cells = <1>;
 				#size-cells = <1>;
 			};
@@ -54,9 +54,9 @@
 		tsi1: tsi@40047000 {
 			compatible = "nxp,tsi";
 			reg = <0x40047000 0x1000>;
-			status = "okay";
 			interrupts = <25 0>;
 			clocks = <&scg KINETIS_SCG_BUS_CLK>;
+			status = "okay";
 		};
 
 		/* Remove rtc, it doesn't exist on KE17Z */

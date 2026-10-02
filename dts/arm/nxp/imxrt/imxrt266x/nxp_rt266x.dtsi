@@ -117,9 +117,9 @@
 	cguana: clock-generation@40500000 {
 		compatible = "nxp,imx-cguana";
 		reg = <0x40500000 0x10000>;
+		ranges = <0x0 0x40500000 0x10000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x40500000 0x10000>;
 
 		sxosc: sxosc@20a0 {
 			compatible = "nxp,imx-cguana-sxosc", "nxp,imx-clock-source";
@@ -163,8 +163,8 @@
 			reg-names = "ctrl", "status";
 			#clock-cells = <0>;
 			clocks = <&sxosc>;
-			nxp,loop-div = <33>;
 			clock-frequency = <792000000>;
+			nxp,loop-div = <33>;
 		};
 
 		/*
@@ -254,11 +254,11 @@
 	main_ccm: clock-controller@40060000 {
 		compatible = "nxp,imx-ccm-rev3";
 		reg = <0x40060000 0x4000>;
+		ranges = <0x0 0x40060000 0x4000>;
 		#clock-cells = <1>;
 
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x40060000 0x4000>;
 	};
 
 	/*
@@ -301,83 +301,83 @@
 	ccm: syscon_ccm: clock-controller@40510000 {
 		compatible = "nxp,imx-ccm-rev3";
 		reg = <0x40510000 0x4000>;
+		ranges = <0x0 0x40510000 0x4000>;
 		#clock-cells = <1>;
 
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x40510000 0x4000>;
 
 		/* PLL-distribution and PFD layer -- feeds the core, bus and XSPI roots. */
 		/* CLOCK_ROOT3 */
 		mainpll_divx_rootclk: clock-root@30 {
 			compatible = "nxp,imx-ccm-rev3-root";
 			reg = <0x30 0x10>;
-			nxp,root-id = <IMX_CCM_ROOT_CGU_MAINPLL_DIVX>;
 			clock-mux = <IMX_CCM_MUX_MAINPLL_DIVX_MAINPLL_DIV5>;
 			clock-div = <1>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_MAINPLL_DIVX>;
 		};
 
 		/* CLOCK_ROOT4 */
 		syspll_divx_rootclk: clock-root@40 {
 			compatible = "nxp,imx-ccm-rev3-root";
 			reg = <0x40 0x10>;
-			nxp,root-id = <IMX_CCM_ROOT_CGU_SYSPLL_DIVX>;
 			clock-mux = <IMX_CCM_MUX_SYSPLL_DIVX_SYSPLL_DIV5>;
 			clock-div = <1>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_SYSPLL_DIVX>;
 		};
 
 		/* CLOCK_ROOT5 */
 		pll_pfdx_rootclk: clock-root@50 {
 			compatible = "nxp,imx-ccm-rev3-root";
 			reg = <0x50 0x10>;
-			nxp,root-id = <IMX_CCM_ROOT_CGU_PLL_PFDX>;
 			clock-mux = <IMX_CCM_MUX_PLL_PFDX_MAINPLL_DIVOUT1>;
 			clock-div = <1>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_PLL_PFDX>;
 		};
 
 		/* CLOCK_ROOT6 */
 		media_pfdx_rootclk: clock-root@60 {
 			compatible = "nxp,imx-ccm-rev3-root";
 			reg = <0x60 0x10>;
-			nxp,root-id = <IMX_CCM_ROOT_CGU_MEDIA_PFDX>;
 			clock-mux = <IMX_CCM_MUX_MEDIA_PFDX_SYSPLL_DIVOUT1>;
 			clock-div = <1>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_MEDIA_PFDX>;
 		};
 
 		/* CLOCK_ROOT7 */
 		mainpfdx_rootclk: clock-root@70 {
 			compatible = "nxp,imx-ccm-rev3-root";
 			reg = <0x70 0x10>;
-			nxp,root-id = <IMX_CCM_ROOT_CGU_MAINPFDX_ROOTCLK>;
 			clock-mux = <IMX_CCM_MUX_MAINPFDX_SYSPLL_DIVOUT1>;
 			clock-div = <1>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_MAINPFDX_ROOTCLK>;
 		};
 
 		/* CLOCK_ROOT8 */
 		commpfdx_rootclk: clock-root@80 {
 			compatible = "nxp,imx-ccm-rev3-root";
 			reg = <0x80 0x10>;
-			nxp,root-id = <IMX_CCM_ROOT_CGU_COMMPFDX_ROOTCLK>;
 			clock-mux = <IMX_CCM_MUX_COMMPFDX_COREPLL_OUT>;
 			clock-div = <1>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_COMMPFDX_ROOTCLK>;
 		};
 
 		/* CLOCK_ROOT9 */
 		maindivx_rootclk: clock-root@90 {
 			compatible = "nxp,imx-ccm-rev3-root";
 			reg = <0x90 0x10>;
-			nxp,root-id = <IMX_CCM_ROOT_CGU_MAINDIVX_ROOTCLK>;
 			clock-mux = <IMX_CCM_MUX_MAINDIVX_MAINPLL_DIV5>;
 			clock-div = <1>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_MAINDIVX_ROOTCLK>;
 		};
 
 		/* CLOCK_ROOT21 */
 		sysplldiv4_rootclk: clock-root@150 {
 			compatible = "nxp,imx-ccm-rev3-root";
 			reg = <0x150 0x10>;
-			nxp,root-id = <IMX_CCM_ROOT_CGU_SYSPLLDIV4_ROOTCLK>;
 			clock-mux = <IMX_CCM_MUX_SYSPLLDIV4_SYSPLL_DIV4>;
 			clock-div = <1>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_SYSPLLDIV4_ROOTCLK>;
 			nxp,preconfigured;
 		};
 
@@ -385,27 +385,27 @@
 		sysplldiv5_rootclk: clock-root@160 {
 			compatible = "nxp,imx-ccm-rev3-root";
 			reg = <0x160 0x10>;
-			nxp,root-id = <IMX_CCM_ROOT_CGU_SYSPLLDIV5_ROOTCLK>;
 			clock-mux = <IMX_CCM_MUX_SYSPLLDIV5_SYSPLL_DIV5>;
 			clock-div = <1>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_SYSPLLDIV5_ROOTCLK>;
 		};
 
 		/* CLOCK_ROOT23 */
 		sysplldivx_rootclk: clock-root@170 {
 			compatible = "nxp,imx-ccm-rev3-root";
 			reg = <0x170 0x10>;
-			nxp,root-id = <IMX_CCM_ROOT_CGU_SYSPLLDIVX_ROOTCLK>;
 			clock-mux = <IMX_CCM_MUX_SYSPLLDIVX_SYSPLL_DIV5>;
 			clock-div = <1>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_SYSPLLDIVX_ROOTCLK>;
 		};
 
 		/* CLOCK_ROOT24 */
 		mainplldivx_rootclk: clock-root@180 {
 			compatible = "nxp,imx-ccm-rev3-root";
 			reg = <0x180 0x10>;
-			nxp,root-id = <IMX_CCM_ROOT_CGU_MAINPLLDIVX_ROOTCLK>;
 			clock-mux = <IMX_CCM_MUX_MAINPLLDIVX_MAINPLL_DIV5>;
 			clock-div = <1>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_MAINPLLDIVX_ROOTCLK>;
 		};
 
 		/*
@@ -417,64 +417,64 @@
 		main_rootclk: clock-root@1e0 {
 			compatible = "nxp,imx-ccm-rev3-root";
 			reg = <0x1e0 0x10>;
-			nxp,root-id = <IMX_CCM_ROOT_CGU_MAIN_ROOTCLK>;
 			clock-mux = <IMX_CCM_MUX_CGU_MAIN_PLL_PFDX>;
 			clock-div = <1>;
 			clock-second-div = <3>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_MAIN_ROOTCLK>;
 		};
 
 		/* CLOCK_ROOT31 */
 		npu_rootclk: clock-root@1f0 {
 			compatible = "nxp,imx-ccm-rev3-root";
 			reg = <0x1f0 0x10>;
-			nxp,root-id = <IMX_CCM_ROOT_CGU_NPU_ROOTCLK>;
 			clock-mux = <IMX_CCM_MUX_NPU_COREPLL_OUT>;
 			clock-div = <1>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_NPU_ROOTCLK>;
 		};
 
 		/* CLOCK_ROOT32 */
 		mediabus_rootclk: clock-root@200 {
 			compatible = "nxp,imx-ccm-rev3-root";
 			reg = <0x200 0x10>;
-			nxp,root-id = <IMX_CCM_ROOT_CGU_MEDIABUS_ROOTCLK>;
 			clock-mux = <IMX_CCM_MUX_MEDIABUS_PLL_PFDX>;
 			clock-div = <3>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_MEDIABUS_ROOTCLK>;
 		};
 
 		/* CLOCK_ROOT33 */
 		audiobus_rootclk: clock-root@210 {
 			compatible = "nxp,imx-ccm-rev3-root";
 			reg = <0x210 0x10>;
-			nxp,root-id = <IMX_CCM_ROOT_CGU_AUDIOBUS_ROOTCLK>;
 			clock-mux = <IMX_CCM_MUX_AUDIOBUS_MAINPLL_DIVX>;
 			clock-div = <2>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_AUDIOBUS_ROOTCLK>;
 		};
 
 		/* CLOCK_ROOT34 */
 		commbus_rootclk: clock-root@220 {
 			compatible = "nxp,imx-ccm-rev3-root";
 			reg = <0x220 0x10>;
-			nxp,root-id = <IMX_CCM_ROOT_CGU_COMMBUS_ROOTCLK>;
 			clock-mux = <IMX_CCM_MUX_COMMBUS_MAINPLL_DIVX>;
 			clock-div = <2>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_COMMBUS_ROOTCLK>;
 		};
 
 		/* CLOCK_ROOT35 */
 		wakebus_rootclk: clock-root@230 {
 			compatible = "nxp,imx-ccm-rev3-root";
 			reg = <0x230 0x10>;
-			nxp,root-id = <IMX_CCM_ROOT_CGU_WAKEBUS_ROOTCLK>;
 			clock-mux = <IMX_CCM_MUX_WAKEBUS_MAINPLL_DIVX>;
 			clock-div = <10>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_WAKEBUS_ROOTCLK>;
 		};
 
 		/* CLOCK_ROOT36 */
 		syscon_pdmain_rootclk: clock-root@240 {
 			compatible = "nxp,imx-ccm-rev3-root";
 			reg = <0x240 0x10>;
-			nxp,root-id = <IMX_CCM_ROOT_CGU_SYSCON_PDMAIN_CLK>;
 			clock-mux = <IMX_CCM_MUX_SYSCON_PDMAIN_SYSPLL_DIV10>;
 			clock-div = <1>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_SYSCON_PDMAIN_CLK>;
 		};
 
 		/* Peripheral distribution root used by the console LPUART. */
@@ -482,69 +482,69 @@
 		peri3_rootclk: clock-root@280 {
 			compatible = "nxp,imx-ccm-rev3-root";
 			reg = <0x280 0x10>;
-			nxp,root-id = <IMX_CCM_ROOT_CGU_PERI_ROOTCLK3>;
 			clock-mux = <IMX_CCM_MUX_PERI3_MAINPLL_DIVX>;
 			clock-div = <1>;
+			nxp,root-id = <IMX_CCM_ROOT_CGU_PERI_ROOTCLK3>;
 		};
 	};
 
 	cmpt_ccm: clock-controller@44060000 {
 		compatible = "nxp,imx-ccm-rev3";
 		reg = <0x44060000 0x4000>;
+		ranges = <0x0 0x44060000 0x4000>;
 		#clock-cells = <1>;
 
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x44060000 0x4000>;
 
 		/* CLOCK_ROOT3 */
 		cmpt_systick0_rootclk: clock-root@30 {
 			compatible = "nxp,imx-ccm-rev3-root";
 			reg = <0x30 0x10>;
-			nxp,root-id = <IMX_CCM_ROOT_CMPT_SYSTICK_CLK0>;
 			clock-mux = <IMX_CCM_MUX_SYSTICK0_SXOSC>;
 			clock-div = <1>;
+			nxp,root-id = <IMX_CCM_ROOT_CMPT_SYSTICK_CLK0>;
 		};
 	};
 
 	wake_ccm: clock-controller@46060000 {
 		compatible = "nxp,imx-ccm-rev3";
 		reg = <0x46060000 0x4000>;
+		ranges = <0x0 0x46060000 0x4000>;
 		#clock-cells = <1>;
 
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x46060000 0x4000>;
 	};
 
 	audio_ccm: clock-controller@48060000 {
 		compatible = "nxp,imx-ccm-rev3";
 		reg = <0x48060000 0x4000>;
+		ranges = <0x0 0x48060000 0x4000>;
 		#clock-cells = <1>;
 
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x48060000 0x4000>;
 	};
 
 	comm_ccm: clock-controller@4a060000 {
 		compatible = "nxp,imx-ccm-rev3";
 		reg = <0x4a060000 0x4000>;
+		ranges = <0x0 0x4a060000 0x4000>;
 		#clock-cells = <1>;
 
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x4a060000 0x4000>;
 	};
 
 	media_ccm: clock-controller@4c060000 {
 		compatible = "nxp,imx-ccm-rev3";
 		reg = <0x4c060000 0x4000>;
+		ranges = <0x0 0x4c060000 0x4000>;
 		#clock-cells = <1>;
 
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x4c060000 0x4000>;
 	};
 
 	/*
@@ -557,8 +557,8 @@
 		reg = <0x421c0000 0x10000>;
 
 		pinctrl: pinctrl {
-			status = "okay";
 			compatible = "nxp,mcux-rt266x-pinctrl";
+			status = "okay";
 		};
 	};
 
@@ -573,8 +573,8 @@
 		reg = <0x46220000 0x10000>;
 
 		pinctrl_wake: pinctrl {
-			status = "okay";
 			compatible = "nxp,mcux-rt266x-pinctrl";
+			status = "okay";
 		};
 	};
 
@@ -588,8 +588,8 @@
 		reg = <0x46360000 0x10000>;
 
 		pinctrl_vbat: pinctrl {
-			status = "okay";
 			compatible = "nxp,mcux-rt266x-pinctrl";
+			status = "okay";
 		};
 	};
 
@@ -788,10 +788,10 @@
 	/* LPI2C (HSP domain), IRQ 175/176 */
 	lpi2c0: hsp_lpi2c_0: i2c@42140000 {
 		compatible = "nxp,lpi2c";
+		reg = <0x42140000 0x4000>;
 		clock-frequency = <I2C_BITRATE_STANDARD>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x42140000 0x4000>;
 		interrupts = <175 0>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_LPI2C0,
 					   IMX_CCM_ROOT_MAIN_LPI2C0_FCLK)>;
@@ -800,10 +800,10 @@
 
 	lpi2c1: hsp_lpi2c_1: i2c@42910000 {
 		compatible = "nxp,lpi2c";
+		reg = <0x42910000 0x4000>;
 		clock-frequency = <I2C_BITRATE_STANDARD>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x42910000 0x4000>;
 		interrupts = <176 0>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_LPI2C1,
 					   IMX_CCM_ROOT_MAIN_LPI2C1_FCLK)>;
@@ -812,10 +812,10 @@
 
 	lpi2c2: wake_lpi2c_0: i2c@461c0000 {
 		compatible = "nxp,lpi2c";
+		reg = <0x461c0000 0x4000>;
 		clock-frequency = <I2C_BITRATE_STANDARD>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x461c0000 0x4000>;
 		interrupts = <235 0>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_WAKE_LPI2C0,
 					   IMX_CCM_ROOT_WAKE_LPI2C0_FCLK)>;
@@ -824,10 +824,10 @@
 
 	lpi2c3: wake_lpi2c_1: i2c@461d0000 {
 		compatible = "nxp,lpi2c";
+		reg = <0x461d0000 0x4000>;
 		clock-frequency = <I2C_BITRATE_STANDARD>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x461d0000 0x4000>;
 		interrupts = <236 0>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_WAKE_LPI2C1,
 					   IMX_CCM_ROOT_WAKE_LPI2C1_FCLK)>;
@@ -1677,10 +1677,9 @@
 
 	/* eDMA3 (MAIN domain) version 4. Channels 0..31 = IRQ 29..60. */
 	edma0: main_edma3: dma-controller@400e0000 {
-		#dma-cells = <2>;
 		compatible = "nxp,mcux-edma";
-		nxp,version = <4>;
 		reg = <0x400e0000 0x20000>;
+		#dma-cells = <2>;
 		dma-channels = <32>;
 		/* eDMA3 takes the Mux1 request set, whose highest source is 200. */
 		dma-requests = <201>;
@@ -1693,14 +1692,14 @@
 			     <49 0>, <50 0>, <51 0>, <52 0>,
 			     <53 0>, <54 0>, <55 0>, <56 0>,
 			     <57 0>, <58 0>, <59 0>, <60 0>;
+		nxp,version = <4>;
 		status = "disabled";
 	};
 
 	edma1: main_edma5: dma-controller@40300000 {
-		#dma-cells = <2>;
 		compatible = "nxp,mcux-edma";
-		nxp,version = <5>;
 		reg = <0x40300000 0x20000>;
+		#dma-cells = <2>;
 		dma-channels = <16>;
 		/* eDMA5 takes the Mux0 request set, whose highest source is 76. */
 		dma-requests = <77>;
@@ -1709,34 +1708,35 @@
 			     <65 0>, <66 0>, <67 0>, <68 0>,
 			     <69 0>, <70 0>, <71 0>, <72 0>,
 			     <73 0>, <74 0>, <75 0>, <76 0>;
+		nxp,version = <5>;
 		status = "disabled";
 	};
 
 	edma2: wake_edma3: dma-controller@46270000 {
-		#dma-cells = <2>;
 		compatible = "nxp,mcux-edma";
-		nxp,version = <4>;
 		reg = <0x46270000 0x20000>;
+		#dma-cells = <2>;
 		dma-channels = <8>;
 		/* The WAKE eDMA takes the Mux3 request set, highest source 37. */
 		dma-requests = <38>;
 		no-error-irq;
 		interrupts = <208 0>, <209 0>, <210 0>, <211 0>,
 			     <212 0>, <213 0>, <214 0>, <215 0>;
+		nxp,version = <4>;
 		status = "disabled";
 	};
 
 	edma3: audio_edma3: dma-controller@48170000 {
-		#dma-cells = <2>;
 		compatible = "nxp,mcux-edma";
-		nxp,version = <4>;
 		reg = <0x48170000 0x20000>;
+		#dma-cells = <2>;
 		dma-channels = <8>;
 		/* The AUDIO eDMA takes the Mux2 request set, highest source 22. */
 		dma-requests = <23>;
 		no-error-irq;
 		interrupts = <271 0>, <272 0>, <273 0>, <274 0>,
 			     <275 0>, <276 0>, <277 0>, <278 0>;
+		nxp,version = <4>;
 		status = "disabled";
 	};
 
@@ -1788,9 +1788,9 @@
 	/* SAI (AUDIO domain), IRQ 256..258 */
 	sai0: audio_sai_0: sai@480c0000 {
 		compatible = "nxp,mcux-i2s";
+		reg = <0x480c0000 0x10000>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x480c0000 0x10000>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_AUDIO_SAI0,
 					   IMX_CCM_ROOT_AUDIO_SAI0_MCLK0)>;
 		interrupts = <256 0>;
@@ -1800,9 +1800,9 @@
 
 	sai1: audio_sai_1: sai@480d0000 {
 		compatible = "nxp,mcux-i2s";
+		reg = <0x480d0000 0x10000>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x480d0000 0x10000>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_AUDIO_SAI1,
 					   IMX_CCM_ROOT_AUDIO_SAI1_MCLK0)>;
 		interrupts = <257 0>;
@@ -1812,9 +1812,9 @@
 
 	sai2: audio_sai_2: sai@480e0000 {
 		compatible = "nxp,mcux-i2s";
+		reg = <0x480e0000 0x10000>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x480e0000 0x10000>;
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_AUDIO_SAI2,
 					   IMX_CCM_ROOT_AUDIO_SAI2_MCLK0)>;
 		interrupts = <258 0>;
@@ -1834,8 +1834,8 @@
 			compatible = "nxp,enet-mac";
 			interrupts = <299 0>, <300 0>;
 			interrupt-names = "TX", "RX";
-			nxp,mdio = <&enet_mdio>;
 			ptp-clock = <&enet_ptp_clock>;
+			nxp,mdio = <&enet_mdio>;
 			status = "disabled";
 		};
 

@@ -31,15 +31,15 @@
 
 		m7_itcm: memory@303c0000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
-			zephyr,memory-region = "M7_ITCM";
 			reg = <0x303c0000 DT_SIZE_K(256)>;
+			zephyr,memory-region = "M7_ITCM";
 			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 		};
 
 		peripheral: peripheral@50000000 {
 			compatible = "zephyr,memory-region";
-			ranges = <0x0 0x50000000 0x40000000>;
 			reg = <0x50000000 0x40000000>;
+			ranges = <0x0 0x50000000 0x40000000>;
 			zephyr,memory-region = "PERIPHERAL";
 			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_DEVICE)>;
 		};

@@ -18,9 +18,9 @@
 		timebase-frequency = <DT_FREQ_M(200)>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m4";
 			reg = <0>;
+			device_type = "cpu";
 		};
 	};
 
@@ -31,9 +31,9 @@
 		};
 
 		ddr_sys: memory@80000000 {
-			device_type = "memory";
 			compatible = "nxp,imx-sys-bus";
 			reg = <0x80000000 0x60000000>;
+			device_type = "memory";
 		};
 
 		tcml_code: code@1fff8000 {
@@ -52,9 +52,9 @@
 		};
 
 		ocram_sys: memory@20200000 {
-			device_type = "memory";
 			compatible = "nxp,imx-sys-bus";
 			reg = <0x20200000 DT_SIZE_K(128)>;
+			device_type = "memory";
 		};
 
 		/* OCRAM_S 0x20180000 is aliased at 0 */
@@ -64,9 +64,9 @@
 		};
 
 		ocram_s_sys: memory@180000 {
-			device_type = "memory";
 			compatible = "nxp,imx-sys-bus";
 			reg = <0x00180000 DT_SIZE_K(32)>;
+			device_type = "memory";
 		};
 
 		gpio1: gpio@30200000 {
@@ -255,17 +255,17 @@
 			status = "okay";
 
 			pinctrl: pinctrl {
-				status = "okay";
 				compatible = "nxp,imx7d-pinctrl";
+				status = "okay";
 			};
 		};
 
 		i2c1: i2c@30a20000 {
 			compatible = "fsl,imx7d-i2c", "fsl,imx21-i2c";
+			reg = <0x30a20000 0x10000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x30a20000 0x10000>;
 			interrupts = <35 0>;
 			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,
 						RDC_DOMAIN_PERM_RW) |
@@ -276,10 +276,10 @@
 
 		i2c2: i2c@30a30000 {
 			compatible = "fsl,imx7d-i2c", "fsl,imx21-i2c";
+			reg = <0x30a30000 0x10000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x30a30000 0x10000>;
 			interrupts = <36 0>;
 			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,
 						RDC_DOMAIN_PERM_RW) |
@@ -290,10 +290,10 @@
 
 		i2c3: i2c@30a40000 {
 			compatible = "fsl,imx7d-i2c", "fsl,imx21-i2c";
+			reg = <0x30a40000 0x10000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x30a40000 0x10000>;
 			interrupts = <37 0>;
 			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,
 						RDC_DOMAIN_PERM_RW) |
@@ -304,10 +304,10 @@
 
 		i2c4: i2c@30a50000 {
 			compatible = "fsl,imx7d-i2c", "fsl,imx21-i2c";
+			reg = <0x30a50000 0x10000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x30a50000 0x10000>;
 			interrupts = <38 0>;
 			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,
 						RDC_DOMAIN_PERM_RW) |
@@ -325,8 +325,8 @@
 						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID,
 						RDC_DOMAIN_PERM_RW))>;
-			status = "disabled";
 			#pwm-cells = <2>;
+			status = "disabled";
 		};
 
 		pwm2: pwm@30670000 {
@@ -338,8 +338,8 @@
 						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID,
 						RDC_DOMAIN_PERM_RW))>;
-			status = "disabled";
 			#pwm-cells = <2>;
+			status = "disabled";
 		};
 
 		pwm3: pwm@30680000 {
@@ -351,8 +351,8 @@
 						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID,
 						RDC_DOMAIN_PERM_RW))>;
-			status = "disabled";
 			#pwm-cells = <2>;
+			status = "disabled";
 		};
 
 		pwm4: pwm@30690000 {
@@ -364,8 +364,8 @@
 						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID,
 						RDC_DOMAIN_PERM_RW))>;
-			status = "disabled";
 			#pwm-cells = <2>;
+			status = "disabled";
 		};
 	};
 };

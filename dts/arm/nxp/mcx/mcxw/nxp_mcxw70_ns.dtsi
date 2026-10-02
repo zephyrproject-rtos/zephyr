@@ -16,6 +16,8 @@
 / {
 	soc {
 		fmu_0: memory-controller@40017000 {
+			compatible = "nxp,msf1";
+			reg = <0x40017000 0x30>;
 			/*
 			 * Map both physical internal flash and Flash
 			 * Logical Window (FLW). FLW is used for address
@@ -27,8 +29,6 @@
 				 <0x800000 0x00800000 0x128000>; /* FLW */
 			#address-cells = <1>;
 			#size-cells = <1>;
-			compatible = "nxp,msf1";
-			reg = <0x40017000 0x30>;
 			interrupts = <27 0>;
 			status = "disabled";
 		};
@@ -47,9 +47,9 @@
 			#size-cells = <1>;
 
 			stcm0: system_memory@0 {
+				compatible = "mmio-sram";
 				/* Use secure address range */
 				reg = <0x0 0x28e00>;
-				compatible = "mmio-sram";
 			};
 		};
 
