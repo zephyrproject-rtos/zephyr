@@ -50,20 +50,20 @@
 
 		m0p_partition: partition_m0p@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "m0p_partition";
 			reg = <0x0 DT_SIZE_K(512)>;
+			label = "m0p_partition";
 		};
 
 		m7_0_partition: partition@80000 {
 			compatible = "zephyr,mapped-partition";
-			label = "m7_0_partition";
 			reg = <0x80000 DT_SIZE_K(2656)>;
+			label = "m7_0_partition";
 		};
 
 		m7_1_partition: partition@318000 {
 			compatible = "zephyr,mapped-partition";
-			label = "m7_1_partition";
 			reg = <0x318000 DT_SIZE_K(3168)>;
+			label = "m7_1_partition";
 		};
 	};
 };
