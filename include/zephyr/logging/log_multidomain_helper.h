@@ -35,29 +35,23 @@
 /** @brief Logging message ID. */
 #define Z_LOG_MULTIDOMAIN_ID_MSG 0
 
-/** @brief Domain count request ID. */
-#define Z_LOG_MULTIDOMAIN_ID_GET_DOMAIN_CNT 1
-
 /** @brief Source count request ID. */
-#define Z_LOG_MULTIDOMAIN_ID_GET_SOURCE_CNT 2
-
-/** @brief Domain name request ID. */
-#define Z_LOG_MULTIDOMAIN_ID_GET_DOMAIN_NAME 3
+#define Z_LOG_MULTIDOMAIN_ID_GET_SOURCE_CNT 1
 
 /** @brief Source name request ID. */
-#define Z_LOG_MULTIDOMAIN_ID_GET_SOURCE_NAME 4
+#define Z_LOG_MULTIDOMAIN_ID_GET_SOURCE_NAME 2
 
 /** @brief Compile time and run-time levels request ID. */
-#define Z_LOG_MULTIDOMAIN_ID_GET_LEVELS 5
+#define Z_LOG_MULTIDOMAIN_ID_GET_LEVELS 3
 
 /** @brief Setting run-time level ID. */
-#define Z_LOG_MULTIDOMAIN_ID_SET_RUNTIME_LEVEL 6
+#define Z_LOG_MULTIDOMAIN_ID_SET_RUNTIME_LEVEL 4
 
 /** @brief Get number of dropped message ID. */
-#define Z_LOG_MULTIDOMAIN_ID_DROPPED 7
+#define Z_LOG_MULTIDOMAIN_ID_DROPPED 5
 
 /** @brief Link-backend readiness indication ID/ */
-#define Z_LOG_MULTIDOMAIN_ID_READY 8
+#define Z_LOG_MULTIDOMAIN_ID_READY 6
 
 /**@} */
 
@@ -79,33 +73,19 @@ struct log_multidomain_log_msg {
 	FLEXIBLE_ARRAY_DECLARE(uint8_t, data); /**< Serialized log message bytes. */
 } __packed;
 
-/** @brief Content of the domain count message. */
-struct log_multidomain_domain_cnt {
-	uint16_t count; /**< Number of domains. */
-} __packed;
-
 /** @brief Content of the source count message. */
 struct log_multidomain_source_cnt {
-	uint8_t domain_id; /**< Domain ID the request applies to. */
-	uint16_t count;    /**< Number of sources in the domain. */
-} __packed;
-
-/** @brief Content of the domain name message. */
-struct log_multidomain_domain_name {
-	uint8_t domain_id; /**< Domain ID. */
-	char name[];       /**< Null-terminated domain name. */
+	uint16_t count; /**< Number of sources in the domain. */
 } __packed;
 
 /** @brief Content of the source name message. */
 struct log_multidomain_source_name {
-	uint8_t domain_id;  /**< Domain ID. */
 	uint16_t source_id; /**< Source ID within the domain. */
 	char name[];        /**< Null-terminated source name. */
 } __packed;
 
 /** @brief Content of the message for getting logging levels. */
 struct log_multidomain_levels {
-	uint8_t domain_id;     /**< Domain ID. */
 	uint16_t source_id;    /**< Source ID within the domain. */
 	uint8_t level;         /**< Compile-time level. */
 	uint8_t runtime_level; /**< Run-time level. */
@@ -113,7 +93,6 @@ struct log_multidomain_levels {
 
 /** @brief Content of the message for setting logging level. */
 struct log_multidomain_set_runtime_level {
-	uint8_t domain_id;     /**< Domain ID. */
 	uint16_t source_id;    /**< Source ID within the domain. */
 	uint8_t runtime_level; /**< Run-time level to set. */
 } __packed;
@@ -126,9 +105,7 @@ struct log_multidomain_dropped {
 /** @brief Union with all message types. */
 union log_multidomain_msg_data {
 	struct log_multidomain_log_msg log_msg;           /**< Log message payload. */
-	struct log_multidomain_domain_cnt domain_cnt;     /**< Domain count payload. */
 	struct log_multidomain_source_cnt source_cnt;     /**< Source count payload. */
-	struct log_multidomain_domain_name domain_name;   /**< Domain name payload. */
 	struct log_multidomain_source_name source_name;   /**< Source name payload. */
 	struct log_multidomain_levels levels;             /**< Levels payload. */
 	struct log_multidomain_set_runtime_level set_rt_level; /**< Set-level payload. */
@@ -155,7 +132,7 @@ struct log_multidomain_link_transport_api {
 
 /** @brief Union for holding data returned by associated remote backend. */
 union log_multidomain_link_dst {
-	uint16_t count; /**< Domain or source count. */
+	uint16_t count; /**< Source count. */
 
 	/** @brief Destination buffer for a requested name. */
 	struct {
