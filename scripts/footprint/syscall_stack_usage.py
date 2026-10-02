@@ -19,9 +19,10 @@
 
 # Requires CONFIG_USERSPACE and CONFIG_STACK_USAGE to be enabled.
 
-from elftools.elf.elffile import ELFFile
-import os
 import argparse
+import os
+
+from elftools.elf.elffile import ELFFile
 
 # This function uses pyelftools to extract the DWARF information from the ELF file.
 
@@ -61,7 +62,6 @@ def get_syscalls(dwarf_info, cuOffsets, stack):
     syscall_table = {}
 
     for CU in dwarf_info.iter_CUs():
-
         cuOffset = CU.cu_offset
 
         # The first debugging entry in a compilation unit contains
@@ -72,7 +72,6 @@ def get_syscalls(dwarf_info, cuOffsets, stack):
         cuOffsets[file_name] = cuOffset
 
         for DIE in CU.iter_DIEs():
-
             # When CONFIG_USERSPACE is enabled, the stack size is found
             # in a structure named z_<arch_name>_thread_stack_header under the
             # userspace.c file.
@@ -86,7 +85,6 @@ def get_syscalls(dwarf_info, cuOffsets, stack):
                     stack.append(DIE.attributes["DW_AT_byte_size"].value)
 
             elif DIE.tag == "DW_TAG_subprogram":
-
                 try:
                     func_name = DIE.attributes["DW_AT_name"].value.decode("utf-8")
                 except KeyError:
@@ -95,10 +93,11 @@ def get_syscalls(dwarf_info, cuOffsets, stack):
                 # Addresses are relative to their space in the ELF file.
                 address = DIE.offset
 
-                if func_name.startswith(("z_mrsh", "z_vrfy", "z_impl")):
-
-                    if func_name not in syscall_table[file_name]:
-                        syscall_table[file_name].append([func_name, address])
+                if (
+                    func_name.startswith(("z_mrsh", "z_vrfy", "z_impl"))
+                    and func_name not in syscall_table[file_name]
+                ):
+                    syscall_table[file_name].append([func_name, address])
 
     return syscall_table
 
@@ -122,12 +121,11 @@ def get_call_tree(dwarf_info, syscall_table, flags, cuOffsets):
     call_tree = {}
 
     for key in syscall_table:
-
         call_tree[key] = []
 
         cuOffset = cuOffsets[key]
 
-        for i in range(0, len(syscall_table[key])):
+        for i in range(len(syscall_table[key])):
             address = syscall_table[key][i][1]
 
             DIE = dwarf_info.get_DIE_from_refaddr(address)
@@ -160,7 +158,6 @@ def get_call_tree(dwarf_info, syscall_table, flags, cuOffsets):
 
 def check_call_sites(dwarf_info, DIE, cuOffset, call_tree, key, depth, flags):
     for child in DIE.iter_children():
-
         # GNU_call_sites are 'regularly' called functions. Not inlined or a pointer.
         if child.tag == "DW_TAG_GNU_call_site":
             try:
@@ -196,7 +193,10 @@ def check_call_sites(dwarf_info, DIE, cuOffset, call_tree, key, depth, flags):
         # to a pointer type pointing to a subroutine type.
         else:
             ptr_addresses = []
-            tags(dwarf_info, call_tree, flags, child, cuOffset, ptr_addresses, 0)
+            visited = set()
+            tags(
+                dwarf_info, call_tree, flags, child, cuOffset, ptr_addresses, 0, visited
+            )
             for ptr in ptr_addresses:
                 if ptr != 0:
                     call_tree[key].append([ptr, depth])
@@ -213,7 +213,6 @@ def check_call_sites(dwarf_info, DIE, cuOffset, call_tree, key, depth, flags):
 # means the first debugging entry that was traced through is a function pointer.
 
 # Input is the DWARF information, the call_tree dictionary, the informational flags dictionary,
-
 # the current debugging entry, the compilation unit offset dictionary,
 # a list to store function pointer addresses, and the address of the original debugging entry
 # that was traced through if the ending debugging entry is tagged with 'DW_AT_subroutine_type'.
@@ -222,28 +221,9 @@ def check_call_sites(dwarf_info, DIE, cuOffset, call_tree, key, depth, flags):
 # with the found function pointer address, if any.
 
 
-# This function recursively traces through debugging entries with specific tags
-# that could lead to an entry tagged 'DW_TAG_subroutine_type'. In which case,
-# means the first debugging entry that was traced through is a function pointer.
-
-# Input is the DWARF information, the call_tree dictionary, the informational flags dictionary,
-# the current debugging entry, the compilation unit offset dictionary,
-# a list to store function pointer addresses, and the address of the original debugging entry
-# that was traced through if the ending debugging entry is tagged with 'DW_AT_subroutine_type'.
-
-# No output but the pointer addresses list is updated
-# with the found function pointer address, if any.
-
-
-def tags(dwarf_info, call_tree, flags, DIE, cuOffset, ptr_addresses, at_name_addr, visited=None):
-    if visited is None:
-        visited = set()
-        
-    # Sonsuz döngüleri engellemek için daha önce ziyaret ettiysek geri dön
-    if DIE.offset in visited:
-        return
-    visited.add(DIE.offset)
-
+def tags(
+    dwarf_info, call_tree, flags, DIE, cuOffset, ptr_addresses, at_name_addr, visited
+):
     try:
         try:
             # If getting the at_name attribute fails
@@ -253,31 +233,18 @@ def tags(dwarf_info, call_tree, flags, DIE, cuOffset, ptr_addresses, at_name_add
             at_name = ""
         if at_name != "":
             at_name_addr = DIE.offset
+
         at_type = DIE.attributes["DW_AT_type"].value + cuOffset
+        if at_type in visited:
+            return
+        visited.add(at_type)
+
         target_DIE = dwarf_info.get_DIE_from_refaddr(at_type)
-        if target_DIE.tag == "DW_TAG_pointer_type":
-            tags(
-                dwarf_info,
-                call_tree,
-                flags,
-                target_DIE,
-                cuOffset,
-                ptr_addresses,
-                at_name_addr,
-                visited,
-            )
-        elif target_DIE.tag == "DW_TAG_const_type":
-            tags(
-                dwarf_info,
-                call_tree,
-                flags,
-                target_DIE,
-                cuOffset,
-                ptr_addresses,
-                at_name_addr,
-                visited,
-            )
-        elif target_DIE.tag == "DW_TAG_variable":
+        if (
+            target_DIE.tag == "DW_TAG_pointer_type"
+            or target_DIE.tag == "DW_TAG_const_type"
+            or target_DIE.tag == "DW_TAG_variable"
+        ):
             tags(
                 dwarf_info,
                 call_tree,
@@ -307,7 +274,6 @@ def tags(dwarf_info, call_tree, flags, DIE, cuOffset, ptr_addresses, at_name_add
         pass
 
 
-
 # This function extracts the maximum stack usage for each function
 # using the .su files generated with CONFIG_STACK_USAGE enabled.
 
@@ -321,13 +287,11 @@ def tags(dwarf_info, call_tree, flags, DIE, cuOffset, ptr_addresses, at_name_add
 
 
 def get_memory_usage(dwarf_info, call_tree, flags, build_location):
-    mem_usage_dict = (
-        {}
-    )  # Key = function address, Value = memory usage found in .su file
+    mem_usage_dict = {}  # Key = function address, Value = memory usage found in .su file
 
     for key in call_tree:
         mem_usage = 0
-        for i in range(0, len(call_tree[key])):
+        for i in range(len(call_tree[key])):
             address = call_tree[key][i][0]
 
             DIE = dwarf_info.get_DIE_from_refaddr(address)
@@ -382,7 +346,6 @@ def redo_memory(dwarf_info, original_mem, mem_by_name):
         if name not in new_mem:
             new_mem[name] = original_mem[key]
         else:
-
             new_mem[name] = max(int(new_mem[name]), int(original_mem[key]))
 
         # mem_by_name structure is to keep track of functions that have multiple instances
@@ -423,7 +386,6 @@ def su_files(c_file, line, column, name, address, flags, build_location):
 
     for root, _, files in os.walk(build_location):
         if su_file in files:
-
             target_line = str(line) + ":" + str(column) + ":" + name
 
             found_path = os.path.join(root, su_file)
@@ -451,10 +413,8 @@ def su_files(c_file, line, column, name, address, flags, build_location):
 
 
 def confirm_su_file(file_name, find_line, address, flags):
-    with open(file_name, "r") as file:
-
+    with open(file_name) as file:
         for line in file:
-
             if find_line in line:
                 split_line = line.split()
 
@@ -491,8 +451,7 @@ def confirm_su_file(file_name, find_line, address, flags):
 
 def get_names(call_tree, dwarf_info, mem_usage):
     for key in call_tree:
-
-        for i in range(0, len(call_tree[key])):
+        for i in range(len(call_tree[key])):
             address = call_tree[key][i][0]
             DIE = dwarf_info.get_DIE_from_refaddr(address)
 
@@ -526,15 +485,13 @@ def get_names(call_tree, dwarf_info, mem_usage):
 
 def max_mem_usage(call_tree, max_usage):
     for key in call_tree:
-
         curr_stack = []  # Current call stack
         max_stack = []  # Maximum memory usage path found so far
         root = 0  # Root syscall address
         max_mem_used = 0
         max_usage[key] = []
 
-        for i in range(0, len(call_tree[key])):
-
+        for i in range(len(call_tree[key])):
             curr_name = call_tree[key][i][0]
             curr_depth = call_tree[key][i][1]
             curr_address = call_tree[key][i][2]
@@ -558,9 +515,8 @@ def max_mem_usage(call_tree, max_usage):
                 max_stack = check_stacks(curr_stack, max_stack)
 
                 if next_depth in (-1, 0):
-
-                    for max in max_stack:
-                        max_mem_used += max[3]
+                    for max_val in max_stack:
+                        max_mem_used += max_val[3]
                     max_usage[key].append([root, max_mem_used])
 
                     curr_stack = []
@@ -615,55 +571,54 @@ def check_stacks(curr_s, max_s):
 def print_tree(
     call_tree, flags, max_usage, stack_size, mem_by_name, output_file, verbose
 ):
-    f = open(output_file, "w")
+    with open(output_file, "w") as f:
+        for key in call_tree:
+            f.write(f"File: {key}\n")
+            print(f"File: {key}")
 
-    for key in call_tree:
-        f.write(f"File: {key}\n")
+            prev_depth = -1
 
-        prev_depth = -1
+            for function, depth, address, mem in call_tree[key]:
+                if depth == 0:
+                    f.write("\n")
+                    print()
 
-        for function, depth, address, mem in call_tree[key]:
-            if depth == 0:
-                f.write("\n")
-
-            if not verbose:
-                if depth != 0:
+                if not verbose and depth != 0:
                     continue
 
-            print_string = "   " * depth
+                print_string = "   " * depth
 
-            if depth > prev_depth or depth == 0:
-                print_string += "+"
+                if depth > prev_depth or depth == 0:
+                    print_string += "+"
 
-            if verbose:
-                print_string += function + "   " + str(mem)
+                if verbose:
+                    print_string += function + "   " + str(mem)
 
-                if address in flags:
-                    if "*" in flags[address]:
-                        if mem_by_name[function] > 1:
+                    if address in flags:
+                        if "*" in flags[address] and mem_by_name[function] > 1:
                             flags[address] = flags[address].replace("*", "external")
-                    print_string += "   " + flags[address]
-            else:
-                print_string += function
+                        print_string += "   " + flags[address]
+                else:
+                    print_string += function
 
-            if depth == 0:
-                for entry in max_usage[key]:
-                    if address == entry[0]:
-                        print_string += "   " + "MAX MEMORY USAGE: " + str(entry[1])
-                        if stack_size != 0:
-                            if entry[1] > (0.9 * stack_size):
+                if depth == 0:
+                    for entry in max_usage[key]:
+                        if address == entry[0]:
+                            print_string += "   " + "MAX MEMORY USAGE: " + str(entry[1])
+                            if stack_size != 0 and entry[1] > (0.9 * stack_size):
                                 print_string += (
                                     "   "
                                     + "WARNING: STACK USAGE EXCEEDS 90% OF STACK SIZE"
                                 )
 
-            f.write(print_string + "\n")
-            prev_depth = depth
+                f.write(print_string + "\n")
+                print(print_string)
+                prev_depth = depth
 
-        f.write("\n")
-        f.write("-" * 50 + "\n")
-
-    f.close()
+            f.write("\n")
+            f.write("-" * 50 + "\n")
+            print()
+            print("-" * 50)
 
 
 # This function prints a help message
@@ -729,7 +684,7 @@ def main():
     input_flags = args.input_flags
 
     try:
-        with open(elf_file_path, "r"):
+        with open(elf_file_path):
             pass
     except FileNotFoundError:
         print("ELF file not found. Exiting...")
