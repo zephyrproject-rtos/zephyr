@@ -9,8 +9,8 @@
 #include <st/f0/stm32f072c(8-b)tx-pinctrl.dtsi>
 
 / {
-	model = "USBCAN ISO";
 	compatible = "canmodule,usbcan-iso";
+	model = "USBCAN ISO";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -39,8 +39,8 @@
 };
 
 &clk_hse {
-	status = "okay";
 	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
 };
 
 &pll {
