@@ -25,13 +25,6 @@
 		zephyr,touch = &ft5336;
 	};
 
-	sdram1: sdram@c0000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0xc0000000 DT_SIZE_M(16)>;
-		device_type = "memory";
-		zephyr,memory-region = "SDRAM1";
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -72,6 +65,13 @@
 		led2 = &red_led_3;
 		led3 = &blue_led_4;
 		sw0 = &user_button;
+	};
+
+	sdram1: sdram@c0000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xc0000000 DT_SIZE_M(16)>;
+		device_type = "memory";
+		zephyr,memory-region = "SDRAM1";
 	};
 };
 
