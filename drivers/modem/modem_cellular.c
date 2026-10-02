@@ -780,7 +780,7 @@ MODEM_CHAT_MATCH_DEFINE(cgmr_match __maybe_unused, "", "", modem_cellular_chat_o
 
 MODEM_CHAT_MATCHES_DEFINE(abort_matches,
 			  MODEM_CHAT_MATCH("ERROR", "", NULL),
-			  MODEM_CHAT_MATCH("+CME ERROR", "",
+			  MODEM_CHAT_MATCH("+CME ERROR: ", "",
 					   COND_CODE_1(CONFIG_MODEM_CELLULAR_STATS,
 						       (modem_cellular_chat_on_cme_error),
 						       (NULL))));
