@@ -11,8 +11,8 @@
 #include "bl618g0-pinctrl.dtsi"
 
 / {
-	model = "Bouffalo Lab BL618 G0 evaluation board";
 	compatible = "bflb,bl618";
+	model = "Bouffalo Lab BL618 G0 evaluation board";
 
 	chosen {
 		zephyr,flash = &w25q64jv;
@@ -47,8 +47,8 @@
 
 		button_0: sw0 {
 			gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
-			zephyr,code = <INPUT_KEY_0>;
 			label = "SW0";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 };
@@ -101,41 +101,41 @@
 
 			boot_header_partition: partition@0 {
 				compatible = "zephyr,mapped-partition";
-				label = "boot_header";
 				reg = <0x00000000 0x2000>;
+				label = "boot_header";
 				read-only;
 			};
 
 			slot0_partition: partition@2000 {
 				compatible = "zephyr,mapped-partition";
-				label = "image-0";
 				reg = <0x00002000 (DT_SIZE_M(8) - DT_SIZE_K(64) - 0x2000)>;
+				label = "image-0";
 				read-only;
 			};
 
 			storage_partition: partition@7f0000 {
 				compatible = "zephyr,mapped-partition";
-				label = "storage";
 				reg = <0x7f0000 DT_SIZE_K(64)>;
+				label = "storage";
 			};
 		};
 	};
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &can0 {
-	status = "okay";
 
 	pinctrl-0 = <&can0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio0 {
@@ -151,11 +151,11 @@
 };
 
 &bt_hci_bflb {
-	status = "okay";
 
 	pwr-table-ble = <13>;
 	pwr-table-bt = <10 8 8>;
 	pwr-offset-bz = <16 16 16 16 16>;
+	status = "okay";
 };
 
 &wifi0 {
