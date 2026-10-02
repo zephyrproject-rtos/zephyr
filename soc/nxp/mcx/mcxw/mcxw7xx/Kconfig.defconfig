@@ -43,6 +43,20 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config MCUX_FLASH_K4_API
 	default y
 
+if BT_MESH_BLOB_IO_FLASH
+
+# MCXW7x internal flash is ECC-protected with a 16-byte phrase (write block)
+# that may only be programmed once per erase. Cache each BLOB block and flush
+# it phrase-aligned once so a BLE Mesh DFU with an unaligned chunk size does
+# not re-program a phrase and corrupt its ECC syndrome.
+config BT_MESH_BLOB_IO_FLASH_BLOCK_CACHE
+	default y
+
+config BT_MESH_BLOB_IO_FLASH_WRITE_BLOCK_SIZE_MAX
+	default 16
+
+endif # BT_MESH_BLOB_IO_FLASH
+
 if BT
 
 config MAIN_STACK_SIZE
