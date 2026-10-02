@@ -613,7 +613,7 @@ bool os_mutex_create_zephyr(void **handle_ptr)
 	struct k_mutex *mutex;
 
 	if (k_mem_slab_alloc(&osif_mutex_slab, (void **)&mutex, K_NO_WAIT) != 0) {
-		LOG_ERR("Exceeded max number of mutexs: %d!",
+		LOG_ERR("Exceeded max number of mutexes: %d!",
 			CONFIG_REALTEK_BEE_OSIF_MUTEX_MAX_COUNT);
 		return false;
 	}

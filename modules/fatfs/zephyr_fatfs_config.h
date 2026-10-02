@@ -154,7 +154,7 @@
  */
 /*
  * The FS_FATFS_WINDOW_ALIGNMENT is used to align win buffer of FATFS structure
- * to allow more optimal use with MCUs that require specific bufer alignment
+ * to allow more optimal use with MCUs that require specific buffer alignment
  * for DMA to work.
  */
 #if defined(CONFIG_FS_FATFS_WINDOW_ALIGNMENT)

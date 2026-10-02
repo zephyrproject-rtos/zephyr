@@ -39,7 +39,7 @@ int hostapd_ap_reg_domain(const struct device *dev, struct net_if *net_iface,
  *
  * @param dev Pointer to the device structure for the driver instance
  * @param net_iface Network interface to use
- * @param params wps operarion parameters
+ * @param params wps operation parameters
  *
  * @return 0 if ok, < 0 if error
  */
