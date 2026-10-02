@@ -28,6 +28,7 @@ _names = [
     # zephyr-keep-sorted-start
     'amebaflash',
     'bflb_mcu_tool',
+    'bkflash',
     'blackmagicprobe',
     'bossac',
     'canopen_program',

@@ -26,6 +26,7 @@ def test_runner_imports():
         'amebaflash',
         'arc-nsim',
         'bflb_mcu_tool',
+        'bkflash',
         'blackmagicprobe',
         'bossac',
         'canopen',
