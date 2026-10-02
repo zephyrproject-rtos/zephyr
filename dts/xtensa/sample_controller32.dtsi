@@ -12,28 +12,28 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "sample_controller";
 			reg = <0>;
+			device_type = "cpu";
 		};
 	};
 
 	sram0: memory@60000000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x60000000 0x4000000>;
+		device_type = "memory";
 	};
 
 	srom0: memory@fe000000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x50000000 0x1000000>;
+		device_type = "memory";
 	};
 
 	soc {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "simple-bus";
 		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
 	};
 };
