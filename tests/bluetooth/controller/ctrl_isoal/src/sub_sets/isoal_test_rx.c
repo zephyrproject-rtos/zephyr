@@ -10576,7 +10576,7 @@ ZTEST(test_rx_framed, test_rx_framed_trppl_pdu_dbl_sdu_pdu_err1)
 	/* SDU 1 -------------------------------------------------------------*/
 	/* SDU payload should not be written */
 
-	/* SDU shold not be emitted */
+	/* SDU should not be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST_CALL_COUNT(1);
 
 	/* SDU 2 -------------------------------------------------------------*/

@@ -594,7 +594,7 @@ class TestBuildTraceability:
             f"got relationships to: {[r.related_spdx_element_id for r in generated_from_rels]}"
         )
 
-        # hould reference zephyr document for kernel sou uses the app document cross-reference
+        # Should reference zephyr document for kernel sou uses the app document cross-reference
         app_ref_id = find_doc_ref_id(build_doc, app_doc.creation_info.document_namespace)
         assert app_ref_id is not None, "build.spdx: no external reference to app document"
 
