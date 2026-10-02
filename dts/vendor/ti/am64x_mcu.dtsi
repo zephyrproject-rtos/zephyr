@@ -15,9 +15,9 @@
 		compatible = "ti,control-module";
 		reg = <0x4080000 DT_SIZE_K(32)>;
 		ranges = <0x00 0x4080000 DT_SIZE_K(32)>;
-		ti,unlock-offsets = <0x1008 0x5008>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ti,unlock-offsets = <0x1008 0x5008>;
 
 		mcu_pinctrl: pinctrl@4000 {
 			compatible = "ti,k3-pinctrl";
@@ -75,9 +75,9 @@
 		compatible = "ti,omap-mcspi";
 		reg = <0x4b00000 0x400>;
 		clock-frequency = <DT_FREQ_M(50)>;
-		ti,spi-num-cs = <4>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		ti,spi-num-cs = <4>;
 		status = "disabled";
 	};
 
@@ -85,9 +85,9 @@
 		compatible = "ti,omap-mcspi";
 		reg = <0x4b10000 0x400>;
 		clock-frequency = <DT_FREQ_M(50)>;
-		ti,spi-num-cs = <4>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		ti,spi-num-cs = <4>;
 		status = "disabled";
 	};
 
