@@ -223,15 +223,15 @@
 				#size-cells = <1>;
 			};
 
+			nvm_sw_calib_area: nvm_sw_calib_area@800080 {
+				reg = <0x00800080 0x8>;
+			};
+
 			userrow: nvmuserrow@804000 {
 				compatible = "soc-nv-flash";
 				reg = <0x00804000 0x200>;
 				write-block-size = <8>;
 				erase-block-size = <512>;
-			};
-
-			nvm_sw_calib_area: nvm_sw_calib_area@800080 {
-				reg = <0x00800080 0x8>;
 			};
 		};
 
