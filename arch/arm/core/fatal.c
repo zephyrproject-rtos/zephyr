@@ -52,13 +52,30 @@ static void esf_dump(const struct arch_esf *esf)
 				       i + 3, (uint32_t)esf->fpu.s[i + 3]);
 		}
 #ifdef CONFIG_VFP_FEATURE_REGS_S64_D32
+		/*
+		 * Do not pass these registers through %llx. printk spills each
+		 * 32-bit index and the following uint64_t back to back, while
+		 * a formatter with long long support (picolibc __d_vfprintf,
+		 * CONFIG_PICOLIBC_IO_FLOAT) then aligns to 8 bytes and skips
+		 * the low half. A formatter without long long support reads
+		 * %llx as 32 bits and shifts the rest
+		 * (CONFIG_CBPRINTF_REDUCED_INTEGRAL,
+		 * CONFIG_PICOLIBC_IO_INTEGER, or CONFIG_PICOLIBC_IO_MINIMAL
+		 * without CONFIG_PICOLIBC_IO_MINIMAL_LONG_LONG).
+		 * Pass the high and low halves as 32-bit arguments.
+		 */
 		for (int i = 0; i < ARRAY_SIZE(esf->fpu.d); i += 4) {
-			EXCEPTION_DUMP("d[%2d]:  0x%16llx  d[%2d]:  0x%16llx"
-				       "  d[%2d]:  0x%16llx  d[%2d]:  0x%16llx",
-				       i, (uint64_t)esf->fpu.d[i],
-				       i + 1, (uint64_t)esf->fpu.d[i + 1],
-				       i + 2, (uint64_t)esf->fpu.d[i + 2],
-				       i + 3, (uint64_t)esf->fpu.d[i + 3]);
+			uint64_t d0 = esf->fpu.d[i];
+			uint64_t d1 = esf->fpu.d[i + 1];
+			uint64_t d2 = esf->fpu.d[i + 2];
+			uint64_t d3 = esf->fpu.d[i + 3];
+
+			EXCEPTION_DUMP("d[%2d]:  0x%08x%08x  d[%2d]:  0x%08x%08x"
+				       "  d[%2d]:  0x%08x%08x  d[%2d]:  0x%08x%08x",
+				       i, (uint32_t)(d0 >> 32), (uint32_t)d0,
+				       i + 1, (uint32_t)(d1 >> 32), (uint32_t)d1,
+				       i + 2, (uint32_t)(d2 >> 32), (uint32_t)d2,
+				       i + 3, (uint32_t)(d3 >> 32), (uint32_t)d3);
 		}
 #endif
 		EXCEPTION_DUMP("fpscr:  0x%08x", esf->fpu.fpscr);
