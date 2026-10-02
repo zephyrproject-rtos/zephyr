@@ -4,7 +4,7 @@ tests:
     # The following architectures are excluded as they have boards that
     # exhibit precision timing anomalies related to emulation.
     #     posix, sparc
-    # The following architectures are exluded as the necessary
+    # The following architectures are excluded as the necessary
     # thread runtime statistic hooks do not yet exist.
     #     mips
     arch_exclude:

@@ -23,7 +23,7 @@ DEFINE_FFF_GLOBALS;
 #define MORE_THAN_LONG_EXCHANGE_LIFETIME_MS 4 * LONG_ACK_TIMEOUT_MS
 #define MORE_THAN_ACK_TIMEOUT_MS                                                                   \
 	(CONFIG_COAP_INIT_ACK_TIMEOUT_MS + CONFIG_COAP_INIT_ACK_TIMEOUT_MS / 2)
-#define COAP_SEPARATE_TIMEOUT (6000 * 2) /* Needs a safety marging, tests run faster than -rt */
+#define COAP_SEPARATE_TIMEOUT (6000 * 2) /* Needs a safety margin, tests run faster than -rt */
 #define VALID_MESSAGE_ID BIT(31)
 #define TOKEN_OFFSET          4
 #define TEST_PATH "test"
