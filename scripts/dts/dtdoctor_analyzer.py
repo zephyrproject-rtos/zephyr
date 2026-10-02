@@ -70,7 +70,15 @@ def find_kconfig_deps(kconf: kconfiglib.Kconfig, dt_has_symbol: str) -> set[str]
     """
     prefix = os.environ.get("CONFIG_", "CONFIG_")
     target = f"{prefix}{dt_has_symbol}"
+    # Word-boundary match so e.g. DT_HAS_FOO_ENABLED doesn't match DT_HAS_FOO_ENABLED_EXT
+    target_re = re.compile(rf"(?<!\w){re.escape(target)}(?!\w)")
     deps = set()
+
+    def expr_to_str(expr):
+        return kconfiglib.expr_str(
+            expr,
+            lambda sc: f"{prefix}{sc.name}" if hasattr(sc, 'name') and sc.name else str(sc),
+        )
 
     def collect_syms(expr):
         # Recursively collect all symbol names in the expression tree except the target
@@ -81,24 +89,19 @@ def find_kconfig_deps(kconf: kconfiglib.Kconfig, dt_has_symbol: str) -> set[str]
             if sym_name != target:
                 deps.add(sym_name)
 
-    for sym in getattr(kconf, "unique_defined_syms", []):
+    for sym in kconf.unique_defined_syms:
         for node in sym.nodes:
             # Check dependencies
-            if node.dep is None:
-                continue
-            dep_str = kconfiglib.expr_str(
-                node.dep,
-                lambda sc: f"{prefix}{sc.name}" if hasattr(sc, 'name') and sc.name else str(sc),
-            )
-            if target in dep_str:
+            if node.dep is not None and target_re.search(expr_to_str(node.dep)):
                 collect_syms(node.dep)
 
-            # Check selects/implies
+            # A symbol whose select/imply is conditioned on the DT_HAS symbol is itself
+            # an option worth enabling
             for attr in ["orig_selects", "orig_implies"]:
-                for value, _ in getattr(node, attr, []) or []:
-                    value_str = kconfiglib.expr_str(value, str)
-                    if target in value_str:
-                        collect_syms(value)
+                for _, cond in getattr(node, attr, []) or []:
+                    if cond is not None and target_re.search(expr_to_str(cond)):
+                        deps.add(f"{prefix}{sym.name}")
+                        collect_syms(cond)
 
     return deps
 
