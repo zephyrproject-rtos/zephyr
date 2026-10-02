@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2025-2026 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <bflb/bl618.dtsi>
+#include <bflb/bl61x_em_32kb.dtsi>
+#include "ai_m61_common.dtsi"
+
+/ {
+	model = "Ai-Thinker M61-32S BLOFN8IR4 Module, ALL variant";
+};
+
+&flash0 {
+	compatible = "bflb,sf-flash", "soc-nv-flash", "gd,gd25q64e";
+	spi-bus-mode = <4>;
+	sf-pad = <2>;
+
+	/* The flash on the module doesn't support useful SFDP,
+	 * and the flash header doesn't provide a working configuration.
+	 * Manually set configuration for best performance.
+	 */
+	read-command = <0xeb>;
+	read-dummy-cycles = <2>;
+	continuous-read-command = <0xa0>;
+	rx-clock-invert;
+};
