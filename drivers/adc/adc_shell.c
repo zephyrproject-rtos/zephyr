@@ -196,7 +196,7 @@ static int cmd_adc_gain(const struct shell *sh, size_t argc, char **argv,
 {
 	/* -2: index of ADC label name */
 	struct adc_hdl *adc = get_adc(argv[-2]);
-	enum adc_gain gain = (enum adc_gain)data;
+	enum adc_gain gain = (enum adc_gain)(uintptr_t)data;
 	int retval = -EINVAL;
 
 	if (!device_is_ready(adc->dev)) {
@@ -278,7 +278,7 @@ static int cmd_adc_ref(const struct shell *sh, size_t argc, char **argv,
 {
 	/* -2 index of ADC label name */
 	struct adc_hdl *adc = get_adc(argv[-2]);
-	enum adc_reference reference = (enum adc_reference)data;
+	enum adc_reference reference = (enum adc_reference)(uintptr_t)data;
 	int retval = -EINVAL;
 
 	if (!device_is_ready(adc->dev)) {
