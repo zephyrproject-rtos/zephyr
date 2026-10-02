@@ -24,11 +24,11 @@ FUNC_NORETURN void stm32_enter_poweroff(void)
 	 *
 	 * Note that "sys_poweroff()" should only be called when
 	 * the system is in "a safe state", but we still make an
-	 * effort here to ensure entry low-power state suceeds
+	 * effort here to ensure entry low-power state succeeds
 	 * even if the system is still somewhat active...
 	 *
 	 * According to the ARM Architecture Reference Manual,
-	 * "[WFI is] the only architectually-defined mechanism
+	 * "[WFI is] the only architecturally-defined mechanism
 	 * that completely suspends execution", but WFE is also
 	 * described as being able to suspend execution and make
 	 * the CPU enter in low-power state! In practice, both

@@ -248,7 +248,7 @@ static int iocell_enable_compensation(uint16_t domain)
 	 */
 	stm32_reg_set_bits(&SBS->CCCSR, codesel_bit);
 #elif defined(CONFIG_SOC_SERIES_STM32N6X)
-	/* There is a global workaround implemnted in SystemInit.
+	/* There is a global workaround implemented in SystemInit.
 	 * For N6 IO compensation cell is always active.
 	 */
 	ARG_UNUSED(domain);
