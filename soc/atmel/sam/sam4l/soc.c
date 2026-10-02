@@ -57,7 +57,7 @@ static inline bool osc_is_ready(uint8_t id)
 }
 
 /**
- * Enable Backup System Control Oscilator RC32K
+ * Enable Backup System Control Oscillator RC32K
  */
 static inline void osc_priv_enable_rc32k(void)
 {
@@ -240,7 +240,7 @@ static ALWAYS_INLINE void clock_init(void)
 		     PM_UNLOCK_ADDR((uint32_t)&PM->MCCTRL - (uint32_t)PM);
 	PM->MCCTRL = OSC_SRC_PLL0;
 
-	/** Enable RC32K Oscilator */
+	/** Enable RC32K Oscillator */
 	osc_priv_enable_rc32k();
 	while (!osc_is_ready(OSC_ID_RC32K)) {
 		;

@@ -116,7 +116,7 @@ def main():
     parser.add_argument(
         '--bootstrap-dst-addr',
         required=False,
-        help='Bootstrap destanation address. Should be in RAM (SAHB)',
+        help='Bootstrap destination address. Should be in RAM (SAHB)',
     )
 
     parser.add_argument('--flash_addr_offset', required=False, help='Flash offset')

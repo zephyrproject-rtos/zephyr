@@ -113,7 +113,7 @@ enum NPCX_ESPI_TAF_MAX_READ_REQ {
 
 /*
  * The configurations of SPI flash are set in FIU module.
- * Thus, eSPI TAF driver of NPCX does not need additional hardware configuarations.
+ * Thus, eSPI TAF driver of NPCX does not need additional hardware configurations.
  * Therefore, define an empty structure here to comply with espi_saf.h
  */
 struct espi_saf_hw_cfg {
