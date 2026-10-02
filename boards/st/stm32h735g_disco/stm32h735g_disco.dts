@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32H735G DISCOVERY board";
 	compatible = "st,stm32h735g-disco";
+	model = "STMicroelectronics STM32H735G DISCOVERY board";
 
 	chosen {
 		zephyr,console = &usart3;
@@ -166,9 +166,9 @@
 };
 
 &mdio {
-	status = "okay";
 	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	eth_phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
@@ -207,6 +207,8 @@
 	ext_flash_ctrl: nor-flash-controller@0 {
 		compatible = "st,nor", "mxicy,mx25u", "jedec,nor";
 		reg = <0>;
+
+		ranges = <0x0 0x90000000 DT_SIZE_M(64)>; /* Ext Flash mem-mapped to 0x90000000 */
 		size = <DT_SIZE_M(512)>; /* 512 Megabits */
 		mspi-max-frequency = <DT_FREQ_M(50)>;
 		mspi-io-mode = "MSPI_IO_MODE_OCTAL";
@@ -216,7 +218,6 @@
 		command-length = "INSTR_2_BYTE";
 		write-command = <0x12ed>; /* WRite 4Bytes */
 		rx-dummy = <20>;
-		st,mem-type = "macronix";
 
 		/* Allow Rd and Wr in MemoryMapped mode (permission = 0) */
 		memmap-config = <1 0 DT_SIZE_M(64) 0>;
@@ -224,19 +225,18 @@
 		/* external flash mapping */
 		#address-cells = <1>;
 		#size-cells = <1>;
-
-		ranges = <0x0 0x90000000 DT_SIZE_M(64)>; /* Ext Flash mem-mapped to 0x90000000 */
+		st,mem-type = "macronix";
 
 		status = "okay";
 
 		ext_flash: mx25lm51245: ext-flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0x0 DT_SIZE_M(64)>;
+			ranges;
 			write-block-size = <1>;
 			erase-block-size = <DT_SIZE_K(4)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 
 			partitions {
 				compatible = "fixed-partitions";
@@ -244,8 +244,8 @@
 				#size-cells = <1>;
 
 				partition@0 {
-					label = "nor";
 					reg = <0x00000000 DT_SIZE_M(4)>;
+					label = "nor";
 				};
 			};
 		};
@@ -300,7 +300,7 @@
 };
 
 zephyr_udc0: &usbotg_hs {
-	status = "okay";
 	pinctrl-0 = <&usb_otg_hs_dm_pa11 &usb_otg_hs_dp_pa12>;
 	pinctrl-names = "default";
+	status = "okay";
 };
