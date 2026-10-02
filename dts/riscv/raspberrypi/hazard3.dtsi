@@ -8,11 +8,11 @@
 
 / {
 	soc {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "simple-bus";
 		interrupt-parent = <&intc>;
-		ranges;
 
 		intc: interrupt-controller {
 			compatible = "hazard3,hazard3-intc";
@@ -22,8 +22,8 @@
 
 		mtimer: timer@d00001b0 {
 			compatible = "riscv,machine-timer";
-			interrupts-extended = <&intc 29 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
 			reg = <0xd00001b0 0x8 0xd00001b8 0x8>;
+			interrupts-extended = <&intc 29 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
 			reg-names = "mtime", "mtimecmp";
 		};
 	};
