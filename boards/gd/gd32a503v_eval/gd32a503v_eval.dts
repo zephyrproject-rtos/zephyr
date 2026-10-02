@@ -9,8 +9,8 @@
 #include "gd32a503v_eval-pinctrl.dtsi"
 
 / {
-	model = "GigaDevice GD32A503V-EVAL";
 	compatible = "gd,gd32a503v-eval";
+	model = "GigaDevice GD32A503V-EVAL";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -65,22 +65,22 @@
 };
 
 &usart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&usart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &adc0 {
-	status = "okay";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &dac {
-	status = "okay";
 	pinctrl-0 = <&dac_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &fwdgt {
@@ -88,17 +88,17 @@
 };
 
 &spi0 {
-	status = "okay";
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpioa 1 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	nor_flash: gd25q16@0 {
 		compatible = "jedec,spi-nor";
-		size = <0x1000000>;
 		reg = <0>;
+		size = <0x1000000>;
 		spi-max-frequency = <4000000>;
-		status = "okay";
 		jedec-id = [c8 40 15];
+		status = "okay";
 	};
 };
