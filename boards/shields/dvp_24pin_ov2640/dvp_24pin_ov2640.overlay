@@ -20,6 +20,7 @@
 		compatible = "ovti,ov2640";
 		reg = <0x30>;
 		clock-rate-control = <0x80>;
+		drive-strength = <1>;
 		status = "okay";
 
 		port {
@@ -27,7 +28,7 @@
 				remote-endpoint-label = "dvp_24pin_ep_in";
 				bus-width = <8>;
 				hsync-active = <1>;
-				vsync-active = <0>;
+				vsync-active = <1>;
 				pclk-sample = <1>;
 			};
 		};
