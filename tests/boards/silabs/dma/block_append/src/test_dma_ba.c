@@ -179,7 +179,7 @@ static int test_ba_restart_in_isr(void)
 
 	TC_PRINT("Starting the transfer on channel %d and waiting completion\n", chan_id);
 
-	/* Lock IRQ in order to not triger the DMA isr */
+	/* Lock IRQ in order to not trigger the DMA isr */
 	key = irq_lock();
 	if (dma_start(dma, chan_id)) {
 		TC_PRINT("ERROR: transfer start (%d)\n", chan_id);
@@ -307,7 +307,7 @@ static int test_ba_stress_in_isr(void)
 
 	TC_PRINT("Starting the transfer on channel %d and waiting completion\n", chan_id);
 
-	/* Lock IRQ in order to not triger the DMA isr */
+	/* Lock IRQ in order to not trigger the DMA isr */
 	key = irq_lock();
 	if (dma_start(dma, chan_id)) {
 		TC_PRINT("ERROR: transfer start (%d)\n", chan_id);
