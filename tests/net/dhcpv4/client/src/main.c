@@ -29,6 +29,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_DHCPV4_LOG_LEVEL);
 
 #include "ipv4.h"
 #include "udp_internal.h"
+#include "connection.h"
 
 #include <zephyr/tc_util.h>
 #include <zephyr/ztest.h>
@@ -228,6 +229,16 @@ static const struct in_addr client_addr = { { { 255, 255, 255, 255 } } };
 #define OPTION_VENDOR_BYTE	2
 #define OPTION_VENDOR_EMPTY	3
 #define OPTION_INVALID		254
+#define OPTION_PAD		0
+#define OPTION_SUBNET_MASK	1
+#define OPTION_ROUTER		3
+#define OPTION_LEASE_TIME	51
+#define OPTION_SERVER_ID	54
+#define OPTION_RENEWAL		58
+#define OPTION_REBINDING	59
+#define OPTION_END		255
+/* op .. chaddr, sname, file and the magic cookie */
+#define DHCP_OPTIONS_OFFSET	(44 + 64 + 128 + 4)
 
 struct dhcp_msg {
 	uint32_t xid;
@@ -426,6 +437,72 @@ static int parse_dhcp_message(struct net_pkt *pkt, struct dhcp_msg *msg)
 	return 0;
 }
 
+/*
+ * Deliver through the real DHCP connection synchronously, so assertions do
+ * not race the RX thread. The message type deliberately follows lease options.
+ */
+static void check_unexpected_reply(struct net_if *iface, uint32_t xid, uint8_t msg_type,
+				   bool with_router)
+{
+	const struct in_addr gateway = iface->config.ip.ipv4->gw;
+	const struct in_addr server_id = iface->config.dhcpv4.server_id;
+	const struct in_addr netmask = iface->config.dhcpv4.netmask;
+	const uint32_t lease_time = iface->config.dhcpv4.lease_time;
+	const uint32_t renewal_time = iface->config.dhcpv4.renewal_time;
+	const uint32_t rebinding_time = iface->config.dhcpv4.rebinding_time;
+	const enum net_dhcpv4_state state = iface->config.dhcpv4.state;
+	struct in_addr current_gateway;
+	struct net_ipv4_hdr ipv4;
+	struct net_udp_hdr udp;
+	union net_ip_header ip_hdr = {.ipv4 = &ipv4};
+	union net_proto_header proto_hdr = {.udp = &udp};
+	struct net_pkt *pkt = prepare_dhcp_offer(iface, xid);
+	/* clang-format off */
+	uint8_t options[] = {
+		OPTION_ROUTER,       4, 192, 168, 1,   1,  /* Router */
+		OPTION_SERVER_ID,    4, 192, 168, 1,   1,  /* Server identifier */
+		OPTION_SUBNET_MASK,  4, 255, 255, 252, 0,  /* Netmask */
+		OPTION_LEASE_TIME,   4, 0,   0,   2,   88, /* Lease: 600 seconds */
+		OPTION_RENEWAL,      4, 0,   0,   1,   44, /* Renewal: 300 seconds */
+		OPTION_REBINDING,    4, 0,   0,   2,   13, /* Rebinding: 525 seconds */
+		MSG_TYPE, 1, msg_type,
+		OPTION_END,
+	};
+	/* clang-format on */
+	enum net_verdict verdict;
+
+	zassert_not_null(pkt, "Cannot allocate unexpected DHCP reply");
+	if (!with_router) {
+		/* Replace the complete router option with PAD bytes. */
+		memset(options, OPTION_PAD, 2U + sizeof(struct in_addr));
+	}
+
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, true);
+	zassert_ok(net_pkt_skip(pkt, NET_IPV4UDPH_LEN + DHCP_OPTIONS_OFFSET));
+	zassert_ok(net_pkt_write(pkt, options, sizeof(options)));
+	net_pkt_cursor_init(pkt);
+	zassert_ok(net_pkt_read(pkt, &ipv4, sizeof(ipv4)));
+	zassert_ok(net_pkt_read(pkt, &udp, sizeof(udp)));
+
+	verdict = net_conn_input(pkt, &ip_hdr, IPPROTO_UDP, &proto_hdr);
+	if (verdict == NET_DROP) {
+		net_pkt_unref(pkt);
+	}
+
+	current_gateway = iface->config.ip.ipv4->gw;
+	zassert_mem_equal(&current_gateway, &gateway, sizeof(gateway),
+			  "Unexpected reply changed the gateway");
+	zassert_mem_equal(&iface->config.dhcpv4.server_id, &server_id, sizeof(server_id),
+			  "Unexpected reply changed the selected server");
+	zassert_mem_equal(&iface->config.dhcpv4.netmask, &netmask, sizeof(netmask));
+	zassert_equal(iface->config.dhcpv4.lease_time, lease_time);
+	zassert_equal(iface->config.dhcpv4.renewal_time, renewal_time);
+	zassert_equal(iface->config.dhcpv4.rebinding_time, rebinding_time);
+	zassert_equal(iface->config.dhcpv4.state, state);
+	zassert_equal(verdict, NET_DROP, "Unexpected DHCP reply was accepted");
+}
+
 static int tester_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct net_pkt *rpkt;
@@ -460,6 +537,16 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 			return -EINVAL;
 		}
 	} else if (msg.type == REQUEST) {
+		if (net_pkt_iface(pkt)->config.dhcpv4.state == NET_DHCPV4_REQUESTING) {
+			/* A second server may reply after the first offer was selected. */
+			check_unexpected_reply(net_pkt_iface(pkt), msg.xid,
+					       NET_DHCPV4_MSG_TYPE_OFFER, true);
+			check_unexpected_reply(net_pkt_iface(pkt), msg.xid,
+					       NET_DHCPV4_MSG_TYPE_OFFER, false);
+			check_unexpected_reply(net_pkt_iface(pkt), msg.xid, NET_DHCPV4_MSG_TYPE_NAK,
+					       true);
+		}
+
 		/* Reply with DHCPv4 ACK message */
 		rpkt = prepare_dhcp_ack(net_pkt_iface(pkt), msg.xid);
 		if (!rpkt) {
@@ -722,6 +809,18 @@ ZTEST(dhcpv4_tests, test_dhcp)
 	/* Verify that Request xid matched Offer xid. */
 	zassert_equal(offer_xid, request_xid, "Offer/Request xid mismatch, "
 		      "Offer 0x%08x, Request 0x%08x", offer_xid, request_xid);
+
+	/* The events above may all arrive before the ACK is processed. */
+	for (int i = 0; i < 100 && iface->config.dhcpv4.state != NET_DHCPV4_BOUND; i++) {
+		k_msleep(10);
+	}
+	zassert_equal(iface->config.dhcpv4.state, NET_DHCPV4_BOUND, "Lease not bound");
+
+	/* Late offers and duplicate ACKs must not alter a bound lease. */
+	check_unexpected_reply(iface, request_xid, NET_DHCPV4_MSG_TYPE_OFFER, true);
+	check_unexpected_reply(iface, request_xid, NET_DHCPV4_MSG_TYPE_OFFER, false);
+	check_unexpected_reply(iface, request_xid, NET_DHCPV4_MSG_TYPE_ACK, true);
+	check_unexpected_reply(iface, request_xid, NET_DHCPV4_MSG_TYPE_NAK, true);
 }
 
 /**test case main entry */
