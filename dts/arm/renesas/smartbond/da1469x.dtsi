@@ -172,8 +172,28 @@
 	};
 
 	soc {
+		qspif: memory@16000000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x16000000 DT_SIZE_K(32768)>;
+			zephyr,memory-region = "QSPIF";
+		};
+
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
+		};
+
+		lcdc: lcdc@30030000 {
+			compatible = "renesas,smartbond-display";
+			reg = <0x30030000 0x18c>;
+			interrupts = <32 0>;
+			status = "disabled";
+		};
+
+		crypto: crypto@30040000 {
+			compatible = "renesas,smartbond-crypto";
+			reg = <0x30040000 0x200>;
+			interrupts = <29 0>;
+			status = "disabled";
 		};
 
 		psram: memory@32000000 {
@@ -184,10 +204,10 @@
 			status = "disabled";
 		};
 
-		qspif: memory@16000000 {
-			compatible = "zephyr,memory-region";
-			reg = <0x16000000 DT_SIZE_K(32768)>;
-			zephyr,memory-region = "QSPIF";
+		memc: qspic2@34000000 {
+			compatible = "renesas,smartbond-nor-psram";
+			reg = <0x34000000 0x48>;
+			status = "disabled";
 		};
 
 		flash_controller: flash-controller@38000000 {
@@ -208,6 +228,113 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 			};
+		};
+
+		rtc: rtc@50000400 {
+			compatible = "renesas,smartbond-rtc";
+			reg = <0x50000400 0x98>;
+			interrupts = <18 0>;
+			alarms-count = <1>;
+			status = "disabled";
+		};
+
+		wdog: watchdog@50000700 {
+			compatible = "renesas,smartbond-watchdog";
+			reg = <0x50000700 0x8>;
+			status = "okay";
+		};
+
+		timer1: timer@50010200 {
+			compatible = "renesas,smartbond-timer";
+			reg = <0x50010200 0x300>;
+			clock-src = <&lp_clk>;
+			interrupts = <16 0>;
+			prescaler = <1>;
+			status = "disabled";
+		};
+
+		timer2: timer@50010300 {
+			compatible = "renesas,smartbond-timer";
+			reg = <0x50010300 0x300>;
+			clock-src = <&divn_clk>;
+			interrupts = <17 0>;
+			prescaler = <32>;
+			status = "reserved";
+		};
+
+		uart: uart@50020000 {
+			compatible = "renesas,smartbond-uart";
+			reg = <0x50020000 0x100>;
+			periph-clock-config = <0x01>;
+			interrupts = <5 0>;
+			status = "disabled";
+		};
+
+		uart2: uart@50020100 {
+			compatible = "renesas,smartbond-uart";
+			reg = <0x50020100 0x100>;
+			periph-clock-config = <0x02>;
+			interrupts = <6 0>;
+			hw-flow-control-supported;
+			status = "disabled";
+		};
+
+		uart3: uart@50020200 {
+			compatible = "renesas,smartbond-uart";
+			reg = <0x50020200 0x100>;
+			periph-clock-config = <0x08>;
+			interrupts = <7 0>;
+			hw-flow-control-supported;
+			status = "disabled";
+		};
+
+		spi: spi@50020300 {
+			compatible = "renesas,smartbond-spi";
+			reg = <0x50020300 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			periph-clock-config = <0x20>;
+			interrupts = <10 0>;
+			status = "disabled";
+		};
+
+		spi2: spi@50020400 {
+			compatible = "renesas,smartbond-spi";
+			reg = <0x50020400 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			periph-clock-config = <0x80>;
+			interrupts = <11 0>;
+			status = "disabled";
+		};
+
+		i2c: i2c@50020600 {
+			compatible = "renesas,smartbond-i2c";
+			reg = <0x50020600 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			periph-clock-config = <0x0200>;
+			interrupts = <8 0>;
+			status = "disabled";
+		};
+
+		i2c2: i2c@50020700 {
+			compatible = "renesas,smartbond-i2c";
+			reg = <0x50020700 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			periph-clock-config = <0x0800>;
+			interrupts = <9 0>;
+			status = "disabled";
+		};
+
+		sdadc: sdadc@50020800 {
+			compatible = "renesas,smartbond-sdadc";
+			reg = <0x50020800 0x1c>;
+			interrupts = <28 0>;
+			clock-freq = <2>;
+			#io-channel-cells = <1>;
+			status = "disabled";
 		};
 
 		pinctrl: pin-controller@50020a00 {
@@ -245,157 +372,11 @@
 			};
 		};
 
-		rtc: rtc@50000400 {
-			compatible = "renesas,smartbond-rtc";
-			reg = <0x50000400 0x98>;
-			interrupts = <18 0>;
-			alarms-count = <1>;
-			status = "disabled";
-		};
-
-		wdog: watchdog@50000700 {
-			compatible = "renesas,smartbond-watchdog";
-			reg = <0x50000700 0x8>;
-			status = "okay";
-		};
-
-		timer1: timer@50010200 {
-			compatible = "renesas,smartbond-timer";
-			reg = <0x50010200 0x300>;
-			clock-src = <&lp_clk>;
-			interrupts = <16 0>;
-			prescaler = <1>;
-			status = "disabled";
-		};
-
-		timer2: timer@50010300 {
-			compatible = "renesas,smartbond-timer";
-			reg = <0x50010300 0x300>;
-			clock-src = <&divn_clk>;
-			interrupts = <17 0>;
-			prescaler = <32>;
-			status = "reserved";
-		};
-
-		timer3: timer@50040a00 {
-			compatible = "renesas,smartbond-timer";
-			reg = <0x50040a00 0x300>;
-			clock-src = <&lp_clk>;
-			interrupts = <34 0>;
-			prescaler = <31>;
-			status = "disabled";
-		};
-
-		timer4: timer@50040b00 {
-			compatible = "renesas,smartbond-timer";
-			reg = <0x50040b00 0x300>;
-			clock-src = <&divn_clk>;
-			interrupts = <35 0>;
-			prescaler = <32>;
-			status = "disabled";
-		};
-
-		uart: uart@50020000 {
-			compatible = "renesas,smartbond-uart";
-			reg = <0x50020000 0x100>;
-			periph-clock-config = <0x01>;
-			interrupts = <5 0>;
-			status = "disabled";
-		};
-
-		uart2: uart@50020100 {
-			compatible = "renesas,smartbond-uart";
-			reg = <0x50020100 0x100>;
-			periph-clock-config = <0x02>;
-			interrupts = <6 0>;
-			hw-flow-control-supported;
-			status = "disabled";
-		};
-
-		uart3: uart@50020200 {
-			compatible = "renesas,smartbond-uart";
-			reg = <0x50020200 0x100>;
-			periph-clock-config = <0x08>;
-			interrupts = <7 0>;
-			hw-flow-control-supported;
-			status = "disabled";
-		};
-
 		adc: adc@50030900 {
 			compatible = "renesas,smartbond-adc";
 			reg = <0x50030900 0x1c>;
 			interrupts = <27 0>;
 			#io-channel-cells = <1>;
-			status = "disabled";
-		};
-
-		sdadc: sdadc@50020800 {
-			compatible = "renesas,smartbond-sdadc";
-			reg = <0x50020800 0x1c>;
-			interrupts = <28 0>;
-			clock-freq = <2>;
-			#io-channel-cells = <1>;
-			status = "disabled";
-		};
-
-		crypto: crypto@30040000 {
-			compatible = "renesas,smartbond-crypto";
-			reg = <0x30040000 0x200>;
-			interrupts = <29 0>;
-			status = "disabled";
-		};
-
-		trng: trng@50040c00 {
-			compatible = "renesas,smartbond-trng";
-			reg = <0x50040c00 0x0c>;
-			interrupts = <24 0>;
-			status = "okay";
-		};
-
-		i2c: i2c@50020600 {
-			compatible = "renesas,smartbond-i2c";
-			reg = <0x50020600 0x100>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			periph-clock-config = <0x0200>;
-			interrupts = <8 0>;
-			status = "disabled";
-		};
-
-		i2c2: i2c@50020700 {
-			compatible = "renesas,smartbond-i2c";
-			reg = <0x50020700 0x100>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			periph-clock-config = <0x0800>;
-			interrupts = <9 0>;
-			status = "disabled";
-		};
-
-		lcdc: lcdc@30030000 {
-			compatible = "renesas,smartbond-display";
-			reg = <0x30030000 0x18c>;
-			interrupts = <32 0>;
-			status = "disabled";
-		};
-
-		spi: spi@50020300 {
-			compatible = "renesas,smartbond-spi";
-			reg = <0x50020300 0x100>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			periph-clock-config = <0x20>;
-			interrupts = <10 0>;
-			status = "disabled";
-		};
-
-		spi2: spi@50020400 {
-			compatible = "renesas,smartbond-spi";
-			reg = <0x50020400 0x100>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			periph-clock-config = <0x80>;
-			interrupts = <11 0>;
 			status = "disabled";
 		};
 
@@ -424,10 +405,29 @@
 			status = "okay";
 		};
 
-		memc: qspic2@34000000 {
-			compatible = "renesas,smartbond-nor-psram";
-			reg = <0x34000000 0x48>;
+		timer3: timer@50040a00 {
+			compatible = "renesas,smartbond-timer";
+			reg = <0x50040a00 0x300>;
+			clock-src = <&lp_clk>;
+			interrupts = <34 0>;
+			prescaler = <31>;
 			status = "disabled";
+		};
+
+		timer4: timer@50040b00 {
+			compatible = "renesas,smartbond-timer";
+			reg = <0x50040b00 0x300>;
+			clock-src = <&divn_clk>;
+			interrupts = <35 0>;
+			prescaler = <32>;
+			status = "disabled";
+		};
+
+		trng: trng@50040c00 {
+			compatible = "renesas,smartbond-trng";
+			reg = <0x50040c00 0x0c>;
+			interrupts = <24 0>;
+			status = "okay";
 		};
 	};
 
