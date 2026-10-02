@@ -58,6 +58,13 @@
 			riscv,ndev = <1023>;
 		};
 
+		mtimer: timer@e6000000 {
+			compatible = "riscv,machine-timer";
+			reg = <0xe6000000 0x8 0xe6000008 0x8>;
+			reg-names = "mtime", "mtimecmp";
+			interrupts-extended = <&cpu0_intc 7>;
+		};
+
 		plic_sw: interrupt-controller@e6400000 {
 			compatible = "sifive,plic-1.0.0", "andestech,nceplic100";
 			reg = <0xe6400000 0x00400000>;
@@ -67,13 +74,6 @@
 			interrupts-extended = <&cpu0_intc 3>;
 			riscv,max-priority = <255>;
 			riscv,ndev = <1023>;
-		};
-
-		mtimer: timer@e6000000 {
-			compatible = "riscv,machine-timer";
-			reg = <0xe6000000 0x8 0xe6000008 0x8>;
-			reg-names = "mtime", "mtimecmp";
-			interrupts-extended = <&cpu0_intc 7>;
 		};
 
 		syscon: syscon@f0100000 {
@@ -98,6 +98,14 @@
 			interrupt-parent = <&plic0>;
 			clock-frequency = <60000000>;
 			prescaler = <600>;
+			status = "disabled";
+		};
+
+		wdt: wdt@f0500000 {
+			compatible = "andestech,atcwdt200";
+			reg = <0xf0500000 0x1000>;
+			interrupts = <20 1>;
+			interrupt-parent = <&plic0>;
 			status = "disabled";
 		};
 
@@ -140,14 +148,6 @@
 			dma-requests = <16>;
 			chain-transfer = <1>;
 			#dma-cells = <3>;
-			status = "disabled";
-		};
-
-		wdt: wdt@f0500000 {
-			compatible = "andestech,atcwdt200";
-			reg = <0xf0500000 0x1000>;
-			interrupts = <20 1>;
-			interrupt-parent = <&plic0>;
 			status = "disabled";
 		};
 	};
