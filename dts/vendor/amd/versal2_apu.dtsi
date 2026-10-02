@@ -22,22 +22,6 @@
 			status = "disabled";
 		};
 
-		uart0: uart@f1920000 {
-			compatible = "arm,sbsa-uart";
-			reg = <0x0 0xf1920000 0x0 0x4c>;
-			interrupt-names = "irq_25";
-			interrupts = <GIC_SPI 25 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			status = "disabled";
-		};
-
-		uart1: uart@f1930000 {
-			compatible = "arm,sbsa-uart";
-			reg = <0x0 0xf1930000 0x0 0x1000>;
-			interrupt-names = "irq_26";
-			interrupts = <GIC_SPI 26 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			status = "disabled";
-		};
-
 		adma0: dma-controller@ebd00000 {
 			compatible = "amd,versal2-dma-1.0";
 			reg = <0x0 0xebd00000 0x0 0x1000>;
@@ -107,6 +91,22 @@
 			#dma-cells = <1>;
 			interrupts = <GIC_SPI 79 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			clock-names = "clk_main", "clk_apb";
+			status = "disabled";
+		};
+
+		uart0: uart@f1920000 {
+			compatible = "arm,sbsa-uart";
+			reg = <0x0 0xf1920000 0x0 0x4c>;
+			interrupt-names = "irq_25";
+			interrupts = <GIC_SPI 25 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart1: uart@f1930000 {
+			compatible = "arm,sbsa-uart";
+			reg = <0x0 0xf1930000 0x0 0x1000>;
+			interrupt-names = "irq_26";
+			interrupts = <GIC_SPI 26 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			status = "disabled";
 		};
 	};
