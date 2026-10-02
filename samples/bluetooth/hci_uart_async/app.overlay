@@ -6,9 +6,9 @@
  */
 
 bt_c2h_uart: &uart0 {
-	status = "okay";
 	current-speed = <1000000>;
 	hw-flow-control;
+	status = "okay";
 };
 
 / {

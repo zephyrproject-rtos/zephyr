@@ -17,9 +17,9 @@
 
 &spi1 {
 	compatible = "nordic,nrf-spis";
-	status = "okay";
 	def-char = <0x00>;
 	pinctrl-0 = <&spi1_default_alt>;
+	status = "okay";
 	/delete-property/ pinctrl-1;
 	pinctrl-names = "default";
 
