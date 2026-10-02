@@ -7,12 +7,6 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	sdram0: memory@80000000 {
-		reg = <0x80000000 DT_SIZE_M(64)>;
-		/* MT48LC16M16A2B4-7EIT */
-		device_type = "memory";
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -37,6 +31,12 @@
 				interrupts = <66 0>;
 			};
 		};
+	};
+
+	sdram0: memory@80000000 {
+		reg = <0x80000000 DT_SIZE_M(64)>;
+		/* MT48LC16M16A2B4-7EIT */
+		device_type = "memory";
 	};
 };
 
