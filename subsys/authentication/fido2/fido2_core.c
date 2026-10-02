@@ -690,7 +690,7 @@ static enum fido2_status handle_get_assertion(uint8_t *cbor_in, size_t cbor_in_l
 		return FIDO2_ERR_OTHER;
 	}
 
-	/* Store sates for getNextAssertion */
+	/* Store states for getNextAssertion */
 	if (ga_params.num_allow == 0 && found_creds_count > 1) {
 		ga_next_count = found_creds_count;
 		ga_next_index = 1;
