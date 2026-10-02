@@ -18,10 +18,10 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m0+";
-			clock-frequency = <DT_FREQ_M(48)>;
 			reg = <0>;
+			device_type = "cpu";
+			clock-frequency = <DT_FREQ_M(48)>;
 			cpu-power-states = <&state0 &state1 &state2>;
 		};
 
@@ -91,10 +91,10 @@
 			compatible = "ti,cc23x0-gpio";
 			reg = <0x40023000 0x804>;
 			interrupts = <5 0>;	/* GPIO combined on CPUIRQ5 */
-			status = "disabled";
 			gpio-controller;
 			#gpio-cells = <2>;	/* Pin (ID), and flags */
 			ngpios = <26>;		/* Only [DIO0, DIO25] are available */
+			status = "disabled";
 		};
 
 		uart0: uart@40034000 {
@@ -127,9 +127,9 @@
 
 		spi0: spi@40030000 {
 			compatible = "ti,cc23x0-spi";
+			reg = <0x40030000 0x164>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40030000 0x164>;
 			interrupts = <10 0>;
 			dmas = <&dma 0 0>, <&dma 1 1>;
 			dma-names = "tx", "rx";
@@ -270,9 +270,9 @@
 
 		i2c0: i2c@40038000 {
 			compatible = "ti,cc23x0-i2c";
+			reg = <0x40038000 0x820>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40038000 0x820>;
 			interrupts = <12 0>;
 			status = "disabled";
 		};
