@@ -10,3 +10,15 @@ config PTP_CLOCK_NXP_ENET
 	select PINCTRL
 	help
 	  Enable NXP ENET PTP clock to support Ethernet timestamping.
+
+config PTP_CLOCK_NXP_ENET_MAX_RATIO_PPM
+	int "Largest rate adjustment accepted, in ppm"
+	default 50000
+	range 1 100000
+	depends on PTP_CLOCK_NXP_ENET
+	help
+	  Largest difference from the nominal rate that the rate adjustment of the
+	  timer accepts. A larger request is rejected with -EINVAL, so a servo that
+	  went out of control does not reach the timer. The default of 5% is the
+	  limit that a 100 MHz timer clock had before this symbol existed. A
+	  servo that follows a crystal needs a few hundred ppm at most.
