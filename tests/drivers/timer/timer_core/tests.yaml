@@ -1,0 +1,164 @@
+common:
+  tags:
+    - drivers
+    - timer
+  type: unit
+tests:
+  # Ratios. The tick rate divides the hardware cycle rate in the first, and does
+  # not in the second, which is the nRF LFCLK at 32768Hz asked for a 1000Hz tick.
+  drivers.timer.core.tick_exact:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=32768
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1024
+      - CONFIG_TEST_COUNTER_WIDTH=24
+  drivers.timer.core.tick_inexact:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=32768
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+      - CONFIG_TEST_COUNTER_WIDTH=24
+  # An inexact ratio at a power-of-two tick rate, so dividing by the tick rate
+  # is a shift rather than a reciprocal.
+  drivers.timer.core.tick_inexact_pow2:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=14318180
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1024
+      - CONFIG_TEST_COUNTER_WIDTH=32
+  # The exact ratio with a 64-bit counter, as used by nrf_rtc_timer,
+  # arm_arch_timer and riscv_machine_timer.
+  drivers.timer.core.tick_exact_64bit:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=10000000
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=100
+      - CONFIG_TEST_COUNTER_WIDTH=64
+  # The same ratios on a target with a 64-bit divide, which uses plain division
+  # instead of the reciprocal. unit_testing builds 32-bit, so both the flag and
+  # the wider build are set by hand.
+  drivers.timer.core.tick_inexact_hwdiv:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=32768
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+      - CONFIG_TEST_COUNTER_WIDTH=64
+    extra_args:
+      - M64_MODE=y
+      # 64BIT is promptless and unit_testing does not select it, so the core is
+      # put on its CONFIG_64BIT path by hand, with M64_MODE building to match.
+      - EXTRA_CPPFLAGS=-DCONFIG_64BIT=1
+  drivers.timer.core.rate_at_runtime_hwdiv:
+    extra_configs:
+      - CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME=y
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=14318180
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+      - CONFIG_TEST_COUNTER_WIDTH=64
+    extra_args:
+      - M64_MODE=y
+      # 64BIT is promptless and unit_testing does not select it, so the core is
+      # put on its CONFIG_64BIT path by hand, with M64_MODE building to match.
+      - EXTRA_CPPFLAGS=-DCONFIG_64BIT=1
+  # A 64-bit counter at a rate the tick rate does not divide.
+  drivers.timer.core.tick_inexact_64bit:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=14318180
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+      - CONFIG_TEST_COUNTER_WIDTH=64
+  # The same with a 48-bit counter: 64-bit cycle arithmetic, but a counter that
+  # wraps well inside it.
+  drivers.timer.core.tick_inexact_48bit:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=14318180
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+      - CONFIG_TEST_COUNTER_WIDTH=48
+  # The same at a slower tick. The arm ceiling is then days rather than an
+  # hour, so the conversions see spans far past 32 bits.
+  drivers.timer.core.tick_inexact_64bit_slow:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=14318180
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=100
+      - CONFIG_TEST_COUNTER_WIDTH=64
+  # A rate the build cannot see: once read by the kernel at run time, once
+  # stated by the driver. Both take the general form.
+  drivers.timer.core.rate_at_runtime:
+    extra_configs:
+      - CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME=y
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=14318180
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+      - CONFIG_TEST_COUNTER_WIDTH=64
+  drivers.timer.core.rate_from_driver:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=14318180
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+      - CONFIG_TEST_COUNTER_WIDTH=32
+      - CONFIG_TEST_RATE_FROM_DRIVER=y
+  # Backends. COMPARE_EXACT misses a comparator set to a cycle already passed,
+  # which exercises the verify loop.
+  drivers.timer.core.compare_exact:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=14318180
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+      - CONFIG_TEST_COUNTER_WIDTH=32
+      - CONFIG_TEST_BACKEND_COMPARE_EXACT=y
+  drivers.timer.core.reload:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=32768
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+      - CONFIG_TEST_COUNTER_WIDTH=32
+      - CONFIG_TEST_BACKEND_RELOAD=y
+  # A reload register too short for a whole tick: systick's 24-bit LOAD against
+  # a 2Hz tick on an 84MHz core. One tick takes three arms, the first two
+  # announcing nothing. The only scenario where the alarm limits before the
+  # counter does.
+  drivers.timer.core.reload_short_alarm:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=84000000
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=2
+      - CONFIG_TEST_COUNTER_WIDTH=32
+      - CONFIG_TEST_BACKEND_RELOAD=y
+      - CONFIG_TEST_ALARM_MAX_CYCLES=0xffffff
+  # A comparator narrower than the counter, so a long timeout takes several
+  # arms. It still reaches a whole tick, which compare backends require.
+  drivers.timer.core.compare_short_alarm:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=14318180
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+      - CONFIG_TEST_COUNTER_WIDTH=32
+      - CONFIG_TEST_BACKEND_COMPARE_EXACT=y
+      - CONFIG_TEST_ALARM_MAX_CYCLES=0xffffff
+  # A floor well past a tick, so every arm is bumped up to it and each
+  # interrupt carries several ticks.
+  drivers.timer.core.reload_min_arm:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=32768
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+      - CONFIG_TEST_COUNTER_WIDTH=32
+      - CONFIG_TEST_BACKEND_RELOAD=y
+      - CONFIG_TEST_ALARM_MIN_CYCLES=100
+  # A reload timer left to free-run, as with a tickful kernel.
+  drivers.timer.core.tickful:
+    extra_configs:
+      - CONFIG_TICKLESS_KERNEL=n
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=32768
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+      - CONFIG_TEST_COUNTER_WIDTH=32
+      - CONFIG_TEST_BACKEND_RELOAD=y
+  # A count the driver synthesizes rather than reads at once, so the core reads
+  # it under the clock lock. This replaces the lock-free extension the 32-bit
+  # getter uses on a narrow counter, and is the only case where the 64-bit
+  # getter locks on a counter that needs no extending.
+  drivers.timer.core.nonatomic_narrow:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=32768
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+      - CONFIG_TEST_COUNTER_WIDTH=24
+      - CONFIG_TEST_COUNTER_NONATOMIC=y
+  drivers.timer.core.nonatomic_wide:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=14318180
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+      - CONFIG_TEST_COUNTER_WIDTH=64
+      - CONFIG_TEST_COUNTER_NONATOMIC=y
+  # A counter that can read behind a value already seen.
+  drivers.timer.core.nonmonotonic:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=32768
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+      - CONFIG_TEST_COUNTER_WIDTH=32
+      - CONFIG_TEST_COUNTER_NONMONOTONIC=y
