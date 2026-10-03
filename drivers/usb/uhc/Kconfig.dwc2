@@ -7,6 +7,8 @@ config UHC_DWC2
 	depends on DT_HAS_SNPS_DWC2_ENABLED
 	select EVENTS
 	select REGULATOR if SOC_SERIES_NRF54L
+	select STM32_USB_COMMON if DT_HAS_ST_STM32N6_HSOTG_ENABLED
+	select GPIO if DT_HAS_ST_STM32N6_HSOTG_ENABLED
 	help
 	  DWC2 USB host controller driver.
 
