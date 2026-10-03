@@ -36,12 +36,13 @@ static int adxl372_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 				 uint32_t *fit, uint16_t max_count, void *data_out)
 {
 	const struct adxl372_fifo_data *enc_data = (const struct adxl372_fifo_data *)buffer;
-	const uint8_t *buffer_end =
-		buffer + sizeof(struct adxl372_fifo_data) + enc_data->fifo_byte_count;
+	/* *fit is the buffer offset past the last decoded sample */
+	uint32_t offset = sizeof(struct adxl372_fifo_data);
+	const uint32_t buffer_end = offset + enc_data->fifo_byte_count;
 	int count = 0;
 	uint8_t sample_num = 0;
 
-	if ((uintptr_t)buffer_end <= *fit || chan_spec.chan_idx != 0) {
+	if (buffer_end <= *fit || chan_spec.chan_idx != 0) {
 		return 0;
 	}
 
@@ -49,8 +50,6 @@ static int adxl372_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 
 	memset(data, 0, sizeof(struct sensor_three_axis_data));
 	data->shift = 11; /* Sensor shift */
-
-	buffer += sizeof(struct adxl372_fifo_data);
 
 	uint8_t sample_set_size = enc_data->sample_set_size;
 
@@ -66,18 +65,17 @@ static int adxl372_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 		(total_samples > 0 ? (total_samples - 1) : 0) * period_ns;
 
 	/* Calculate which sample is decoded. */
-	if (*fit >= (uintptr_t)buffer) {
-		sample_num = (*fit - (uintptr_t)buffer) / sample_set_size;
+	if (*fit >= offset) {
+		sample_num = (*fit - offset) / sample_set_size;
 	}
 
-	while (count < max_count && buffer < buffer_end) {
-		const uint8_t *sample_end = buffer;
+	while (count < max_count && offset < buffer_end) {
+		const uint32_t sample_end = offset + sample_set_size;
+		const uint8_t *sample = buffer + offset;
 
-		sample_end += sample_set_size;
-
-		if ((uintptr_t)buffer < *fit) {
+		if (offset < *fit) {
 			/* This frame was already decoded, move on to the next frame */
-			buffer = sample_end;
+			offset = sample_end;
 			continue;
 		}
 
@@ -85,7 +83,7 @@ static int adxl372_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 		case SENSOR_CHAN_ACCEL_X:
 			if (enc_data->has_x) {
 				data->readings[count].timestamp_delta = sample_num * period_ns;
-				adxl372_accel_convert_q31(&data->readings[count].x, buffer);
+				adxl372_accel_convert_q31(&data->readings[count].x, sample);
 			}
 			break;
 		case SENSOR_CHAN_ACCEL_Y:
@@ -98,7 +96,7 @@ static int adxl372_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 				}
 				data->readings[count].timestamp_delta = sample_num * period_ns;
 				adxl372_accel_convert_q31(&data->readings[count].y,
-							  (buffer + buff_offset));
+							  (sample + buff_offset));
 			}
 			break;
 		case SENSOR_CHAN_ACCEL_Z:
@@ -117,7 +115,7 @@ static int adxl372_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 				}
 				data->readings[count].timestamp_delta = sample_num * period_ns;
 				adxl372_accel_convert_q31(&data->readings[count].z,
-							  (buffer + buff_offset));
+							  (sample + buff_offset));
 			}
 			break;
 		case SENSOR_CHAN_ACCEL_XYZ:
@@ -125,28 +123,28 @@ static int adxl372_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 			uint8_t buff_offset = 0;
 
 			if (enc_data->has_x) {
-				adxl372_accel_convert_q31(&data->readings[count].x, buffer);
+				adxl372_accel_convert_q31(&data->readings[count].x, sample);
 				buff_offset = 2;
 			}
 
 			if (enc_data->has_y) {
 				adxl372_accel_convert_q31(&data->readings[count].y,
-							  (buffer + buff_offset));
+							  (sample + buff_offset));
 
 				buff_offset += 2;
 			}
 
 			if (enc_data->has_z) {
 				adxl372_accel_convert_q31(&data->readings[count].z,
-							  (buffer + buff_offset));
+							  (sample + buff_offset));
 			}
 			break;
 		default:
 			return -ENOTSUP;
 		}
 
-		buffer = sample_end;
-		*fit = (uintptr_t)sample_end;
+		offset = sample_end;
+		*fit = sample_end;
 		count++;
 	}
 	data->header.reading_count = count;
