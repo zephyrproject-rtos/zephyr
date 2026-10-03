@@ -46,6 +46,41 @@ int bmp581_prep_reg_read_rtio_async(const struct bmp581_bus *bus,
 	return 2;
 }
 
+static int bmp581_prep_reg_write_i2c(const struct bmp581_bus *bus,
+				     uint8_t reg, const uint8_t *buf, size_t size,
+				     struct rtio_sqe **out)
+{
+	struct rtio *ctx = bus->rtio.ctx;
+	struct rtio_iodev *iodev = bus->rtio.iodev;
+	struct rtio_sqe *write_sqe;
+	uint8_t write_buf[7] = {reg};
+
+	/* One byte is occupied by the register address. */
+	if (size == 0 || size > sizeof(write_buf) - 1) {
+		return -EINVAL;
+	}
+
+	for (size_t i = 0; i < size; i++) {
+		write_buf[i + 1] = buf[i];
+	}
+
+	write_sqe = rtio_sqe_acquire(ctx);
+	if (!write_sqe) {
+		rtio_sqe_drop_all(ctx);
+		return -ENOMEM;
+	}
+
+	rtio_sqe_prep_tiny_write(write_sqe, iodev, RTIO_PRIO_NORM, write_buf,
+				 size + 1, NULL);
+	write_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP;
+
+	if (out) {
+		*out = write_sqe;
+	}
+
+	return 1;
+}
+
 int bmp581_prep_reg_write_rtio_async(const struct bmp581_bus *bus,
 				     uint8_t reg, const uint8_t *buf, size_t size,
 				     struct rtio_sqe **out)
@@ -95,33 +130,7 @@ int bmp581_prep_reg_write_rtio_async(const struct bmp581_bus *bus,
 	}
 
 	if (bus->rtio.type == BMP581_BUS_TYPE_I2C) {
-		struct rtio_sqe *write_sqe;
-		uint8_t write_buf[7] = {reg};
-
-		/* One byte is occupied by the register address. */
-		if (size > sizeof(write_buf) - 1) {
-			return -EINVAL;
-		}
-
-		for (size_t i = 0; i < size; i++) {
-			write_buf[i + 1] = buf[i];
-		}
-
-		write_sqe = rtio_sqe_acquire(ctx);
-		if (!write_sqe) {
-			rtio_sqe_drop_all(ctx);
-			return -ENOMEM;
-		}
-
-		rtio_sqe_prep_tiny_write(write_sqe, iodev, RTIO_PRIO_NORM, write_buf,
-					 size + 1, NULL);
-		write_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP;
-
-		if (out) {
-			*out = write_sqe;
-		}
-
-		return 1;
+		return bmp581_prep_reg_write_i2c(bus, reg, buf, size, out);
 	}
 
 	struct rtio_sqe *write_reg_sqe = rtio_sqe_acquire(ctx);
