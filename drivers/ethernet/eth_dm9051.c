@@ -150,7 +150,7 @@ LOG_MODULE_REGISTER(eth_dm9051, CONFIG_ETHERNET_LOG_LEVEL);
 /* PR - Packet Received */
 #define DM9051_ISR_PR			BIT(0)
 /* Interrupt sources enabled in IMR */
-#define DM9051_ISR_EVENTS		(DM9051_ISR_LNKCHG | DM9051_ISR_PT | DM9051_ISR_PR)
+#define DM9051_ISR_EVENTS		(DM9051_ISR_LNKCHG | DM9051_ISR_PR)
 
 /* 0x7F */
 /* PAR - Pointer Auto-Return Mode */
@@ -178,6 +178,12 @@ LOG_MODULE_REGISTER(eth_dm9051, CONFIG_ETHERNET_LOG_LEVEL);
 #define DM9051_NSR_POLL_TIMEOUT		K_USEC(20)
 /* Delay between NSR status polls */
 #define DM9051_NSR_POLL_INTERVAL	K_USEC(1)
+/* Busy wait for a TX request to complete, in microseconds */
+#define DM9051_TCR_POLL_BUSY_US		2000U
+/* Delay between busy TCR status polls, in microseconds */
+#define DM9051_TCR_POLL_INTERVAL_US	10U
+/* Max time to wait for a TX request to complete */
+#define DM9051_TCR_POLL_TIMEOUT		K_MSEC(10)
 /* Max time the RX thread waits for an INT edge before checking the line */
 #define DM9051_INT_POLL_PERIOD		K_SECONDS(1)
 /* Consecutive ISR services that read no frame before the RX thread waits */
@@ -203,7 +209,6 @@ struct eth_dm9051_data {
 	struct k_mutex spi_lock;
 	struct k_sem int_event;
 	struct net_if *iface;
-	struct k_sem tx_done;
 	uint8_t mac_addr[6];
 	/* Controller resets, counted with spi_lock held */
 	uint32_t resets;
@@ -380,10 +385,42 @@ static int eth_dm9051_nsr_poll(const struct device *dev, k_timeout_t timeout)
 	return -ETIMEDOUT;
 }
 
+static bool eth_dm9051_tcr_poll_done(const struct device *dev, int *ret)
+{
+	uint8_t tcr;
+
+	*ret = eth_dm9051_spi_read_reg(dev, DM9051_TCR, &tcr);
+
+	return (*ret != 0) || ((tcr & DM9051_TCR_TXREQ) == 0U);
+}
+
+/* Wait for TCR.TXREQ to clear. Called with spi_lock held. */
+static int eth_dm9051_tcr_poll(const struct device *dev)
+{
+	k_timepoint_t end = sys_timepoint_calc(DM9051_TCR_POLL_TIMEOUT);
+	int ret = 0;
+
+	/* Busy wait first: a full frame takes about 1.2 ms to send at 10 Mbit/s */
+	if (WAIT_FOR(eth_dm9051_tcr_poll_done(dev, &ret), DM9051_TCR_POLL_BUSY_US,
+		     k_busy_wait(DM9051_TCR_POLL_INTERVAL_US))) {
+		return ret;
+	}
+
+	/* Deferral and collisions on a half duplex link take longer: sleep between polls */
+	do {
+		k_sleep(K_TICKS(1));
+		if (eth_dm9051_tcr_poll_done(dev, &ret)) {
+			return ret;
+		}
+	} while (!sys_timepoint_expired(end));
+
+	return -ETIMEDOUT;
+}
+
 /* Reset and configure the controller. Called with spi_lock held. */
 static int eth_dm9051_hw_init(const struct device *dev)
 {
-	const uint8_t imr = DM9051_IMR_PRI | DM9051_IMR_PTI | DM9051_IMR_LNKCHGI | DM9051_IMR_PAR;
+	const uint8_t imr = DM9051_IMR_PRI | DM9051_IMR_LNKCHGI | DM9051_IMR_PAR;
 	const uint8_t rcr = DM9051_RCR_RXEN | DM9051_RCR_ALL |
 			    DM9051_RCR_DIS_CRC | DM9051_RCR_DIS_LONG;
 	const struct eth_dm9051_config *config = dev->config;
@@ -485,6 +522,13 @@ static int eth_dm9051_tx(const struct device *dev, struct net_pkt *pkt)
 
 	k_mutex_lock(&data->spi_lock, K_FOREVER);
 
+	/* A request that timed out before may still be pending: do not overwrite it */
+	ret = eth_dm9051_tcr_poll(dev);
+	if (ret < 0) {
+		ret = -EIO;
+		goto out_spi_unlock;
+	}
+
 	ret = eth_dm9051_nsr_poll(dev, DM9051_NSR_POLL_TIMEOUT);
 	if (ret < 0) {
 		goto out_spi_unlock;
@@ -509,13 +553,11 @@ static int eth_dm9051_tx(const struct device *dev, struct net_pkt *pkt)
 		goto out_spi_unlock;
 	}
 
-	k_mutex_unlock(&data->spi_lock);
-
-	if (k_sem_take(&data->tx_done, K_MSEC(10))) {
-		return -EIO;
+	/* TXREQ clears when the frame has been sent */
+	ret = eth_dm9051_tcr_poll(dev);
+	if (ret < 0) {
+		ret = -EIO;
 	}
-
-	return 0;
 
 out_spi_unlock:
 	k_mutex_unlock(&data->spi_lock);
@@ -776,7 +818,7 @@ static int eth_dm9051_update_link_status(const struct device *dev)
 	return 0;
 }
 
-/* Read and clear ISR, and signal TX completion, as one step under spi_lock */
+/* Read and clear ISR as one step under spi_lock */
 static int eth_dm9051_isr_service(const struct device *dev, uint8_t *isr)
 {
 	struct eth_dm9051_data *data = dev->data;
@@ -794,11 +836,6 @@ static int eth_dm9051_isr_service(const struct device *dev, uint8_t *isr)
 	if (ret < 0) {
 		LOG_ERR("%s: Failed to write ISR (err %d)", dev->name, ret);
 		goto out_spi_unlock;
-	}
-
-	if ((*isr & DM9051_ISR_PT) > 0) {
-		k_sem_give(&data->tx_done);
-		LOG_DBG("%s: Packet Transmitted", dev->name);
 	}
 
 out_spi_unlock:
@@ -854,9 +891,8 @@ static void eth_dm9051_rx_thread(void *p1, void *p2, void *p3)
 		}
 
 		/*
-		 * Only a frame read counts as work: a transmit or link change bit
-		 * that write-back does not clear would otherwise reset the count on
-		 * every service.
+		 * Only a frame read counts as work: a link change bit that write-back
+		 * does not clear would otherwise reset the count on every service.
 		 */
 		progress = false;
 
@@ -1152,7 +1188,6 @@ static int eth_dm9051_init(const struct device *dev)
 
 	/* Every wakeup reads ISR, so one pending wakeup stands for any number */
 	k_sem_init(&data->int_event, 0, 1);
-	k_sem_init(&data->tx_done, 1, UINT_MAX);
 	k_mutex_init(&data->spi_lock);
 
 	if (!spi_is_ready_dt(&config->spi)) {
