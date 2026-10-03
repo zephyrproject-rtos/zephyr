@@ -17,9 +17,6 @@ properties:
   pinctrl-names:
     required: true
 
-  max-bus-freq:
-    required: true
-
   non-removable:
     type: boolean
     description: |
