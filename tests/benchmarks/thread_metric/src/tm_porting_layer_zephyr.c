@@ -24,6 +24,10 @@
 #include "tm_api.h"
 
 #include <zephyr/kernel.h>
+#include <zephyr/init.h>
+#include <zephyr/irq.h>
+#include <zephyr/sw_isr_table.h>
+#include <zephyr/sys/barrier.h>
 
 #define TM_TEST_NUM_THREADS        10
 #define TM_TEST_STACK_SIZE         1024
@@ -175,13 +179,56 @@ int tm_semaphore_put(int semaphore_id)
 	return TM_SUCCESS;
 }
 
+#if defined(CONFIG_TM_INTERRUPT) || defined(CONFIG_TM_INTERRUPT_PREEMPTION)
+
 /* This function is defined by the benchmark. */
-extern void tm_interrupt_handler(const void *);
+extern void tm_interrupt_handler(const void *arg);
+
+/* These scenarios need an interrupt that can preempt the thread raising it,
+ * which means a real interrupt line.
+ */
+static int tm_irq_line = -1;
+
+static void tm_irq_dispatch(const void *arg)
+{
+	tm_interrupt_handler(arg);
+}
+
+/* Claim any line the platform left unconnected. */
+static int tm_interrupt_line_claim(void)
+{
+	for (int i = CONFIG_NUM_IRQS - 1; i >= 0; i--) {
+		if (_sw_isr_table[i].isr != z_irq_spurious) {
+			continue;
+		}
+
+		if (irq_connect_dynamic(i, 0, tm_irq_dispatch, NULL, 0) < 0) {
+			continue;
+		}
+
+		irq_enable(i);
+		tm_irq_line = i;
+		return 0;
+	}
+
+	return -ENODEV;
+}
+SYS_INIT(tm_interrupt_line_claim, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 void tm_cause_interrupt(void)
 {
-	irq_offload(tm_interrupt_handler, NULL);
+	__ASSERT(tm_irq_line >= 0, "no spare interrupt line to claim");
+
+	k_irq_set_pending((unsigned int)tm_irq_line);
+
+	/* Make sure the line is latched and taken before we return, rather
+	 * than some way into the caller's next iteration.
+	 */
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
 }
+
+#endif /* CONFIG_TM_INTERRUPT || CONFIG_TM_INTERRUPT_PREEMPTION */
 
 /*
  * This function creates the specified memory pool that can support one or more

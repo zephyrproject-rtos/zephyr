@@ -47,10 +47,12 @@ tests:
 
   benchmark.thread_metric.interrupt:
     min_ram: 24
+    filter: CONFIG_ARCH_HAS_IRQ_PENDING_OPS and CONFIG_GEN_SW_ISR_TABLE_ARRAY
     extra_configs:
       - CONFIG_TM_INTERRUPT=y
 
   benchmark.thread_metric.interrupt_preemption:
+    filter: CONFIG_ARCH_HAS_IRQ_PENDING_OPS and CONFIG_GEN_SW_ISR_TABLE_ARRAY
     extra_configs:
       - CONFIG_TM_INTERRUPT_PREEMPTION=y
 
