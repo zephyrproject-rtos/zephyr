@@ -16,12 +16,12 @@
 };
 
 &tc4 {
-	status = "okay";
 	compatible = "microchip,tc-g1-pwm";
 	#pwm-cells = <3>;
 	pinctrl-0 = <&tc4_pwm_default>;
 	pinctrl-names = "default";
 	prescaler = <4>;
+	status = "okay";
 };
 
 &porta {

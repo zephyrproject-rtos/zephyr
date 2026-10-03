@@ -25,8 +25,8 @@
 };
 
 &pwm1 {
-	status = "okay";
 	prescaler = <19>;
 	pinctrl-0 = <&pwm1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
