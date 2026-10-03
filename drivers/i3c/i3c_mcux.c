@@ -930,7 +930,7 @@ static int mcux_i3c_do_one_xfer_read(I3C_Type *base, struct mcux_i3c_data *data,
  * @return Number of bytes written, or negative if error.
  */
 static int mcux_i3c_do_one_xfer_write(I3C_Type *base, struct mcux_i3c_data *data,
-				      uint8_t *buf, uint8_t buf_sz, bool no_ending)
+				      uint8_t *buf, size_t buf_sz, bool no_ending)
 {
 	int offset = 0;
 	int remaining = buf_sz;
@@ -1029,6 +1029,7 @@ static int mcux_i3c_do_one_xfer(I3C_Type *base, struct mcux_i3c_data *data,
 		if (ret2 != 0) {
 			LOG_DBG("%s: timed out addr 0x%02x, buf_sz %u",
 				__func__, addr, buf_sz);
+			ret = ret2;
 			emit_stop = true;
 
 			goto out_one_xfer;
