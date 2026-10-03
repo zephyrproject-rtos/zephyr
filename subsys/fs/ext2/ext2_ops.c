@@ -113,23 +113,22 @@ out:
 
 static int ext2_close(struct fs_file_t *filp)
 {
-	int rc;
 	struct ext2_file *f = filp->filep;
+	int sync_rc;
+	int drop_rc;
 
-	rc = ext2_inode_sync(f->f_inode);
-	if (rc < 0) {
-		goto out;
+	if (f == NULL) {
+		return 0;
 	}
 
-	rc = ext2_inode_drop(f->f_inode);
-	if (rc < 0) {
-		goto out;
-	}
+	sync_rc = ext2_inode_sync(f->f_inode);
+	drop_rc = ext2_inode_drop(f->f_inode);
 
 	k_mem_slab_free(&file_struct_slab, (void *)f);
 	filp->filep = NULL;
-out:
-	return rc;
+
+	/* Closing is terminal; a second fs_close() only clears the core handle. */
+	return sync_rc < 0 ? sync_rc : drop_rc;
 }
 
 static ssize_t ext2_read(struct fs_file_t *filp, void *dest, size_t nbytes)
