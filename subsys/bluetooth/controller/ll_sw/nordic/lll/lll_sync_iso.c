@@ -121,8 +121,31 @@ void lll_sync_iso_prepare(void *param)
 
 void lll_sync_iso_flush(uint8_t handle, struct lll_sync_iso *lll)
 {
+	bool release = false;
+
 	ARG_UNUSED(handle);
-	ARG_UNUSED(lll);
+
+	for (uint8_t i = 0U; i < lll->stream_count; i++) {
+		for (uint8_t j = 0U; j < lll->payload_count_max; j++) {
+			struct node_rx_pdu *node_rx;
+
+			node_rx = lll->payload[i][j];
+			if (node_rx == NULL) {
+				continue;
+			}
+
+			lll->payload[i][j] = NULL;
+
+			node_rx->hdr.type = NODE_RX_TYPE_RELEASE;
+			iso_rx_put(node_rx->hdr.link, node_rx);
+
+			release = true;
+		}
+	}
+
+	if (release) {
+		iso_rx_sched();
+	}
 }
 
 static int init_reset(void)
@@ -227,6 +250,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 
 	/* Initialize control subevent flag */
 	lll->ctrl = 0U;
+	lll->ctrl_chan_ready = 0U;
 
 	/* Calculate the Access Address for the BIS event */
 	util_bis_aa_le32(lll->bis_curr, lll->seed_access_addr, access_addr);
@@ -1188,7 +1212,9 @@ isr_rx_next_subevent:
 	radio_crc_configure(PDU_CRC_POLYNOMIAL, sys_get_le24(crc_init));
 
 	/* Set the channel to use */
-	if (!bis) {
+	if (!bis && lll->ctrl_chan_ready) {
+		data_chan_use = lll->ctrl_chan_use;
+	} else if (!bis) {
 		const uint16_t event_counter =
 				(lll->payload_count / lll->bn) - 1U;
 
@@ -1438,6 +1464,19 @@ isr_rx_next_subevent:
 
 	} else {
 		LL_ASSERT_DBG(false);
+	}
+
+	if (!lll->ctrl && !lll->ctrl_chan_ready && (lll->cssn_next != lll->cssn_curr)) {
+		uint16_t remap_idx;
+		uint16_t prn_s;
+
+		util_bis_aa_le32(0U, lll->seed_access_addr, access_addr);
+		data_chan_id = lll_chan_id(access_addr);
+
+		lll->ctrl_chan_use =
+			lll_chan_iso_event(event_counter, data_chan_id, lll->data_chan_map,
+					   lll->data_chan_count, &prn_s, &remap_idx);
+		lll->ctrl_chan_ready = 1U;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR) && (trx_done != 0U)) {
