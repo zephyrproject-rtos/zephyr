@@ -3,4 +3,4 @@ board:
   full_name: OSD32MP1-BRK
   vendor: oct
   socs:
-    - name: osd32mp15x
+    - name: stm32mp157cxx
