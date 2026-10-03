@@ -47,7 +47,7 @@ void akm09918c_emul_reset(const struct emul *target)
 	struct akm09918c_emul_data *data = target->data;
 
 	memset(data->reg, 0, NUM_REGS);
-	data->reg[AKM09918C_REG_WIA1] = AKM09918C_WIA1;
+	data->reg[AKM09918C_REG_WIA1] = AK099XX_WIA1_AKM;
 	data->reg[AKM09918C_REG_WIA2] = AKM09918C_WIA2;
 }
 
@@ -104,8 +104,7 @@ static int akm09918c_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 
 		for (int i = 0; i < msgs->len; ++i) {
 			msgs->buf[i] = data->reg[regn + i];
-			if (regn + i == AKM09918C_REG_TMPS &&
-			    mode == AKM09918C_CNTL2_SINGLE_MEASURE) {
+			if (regn + i == AKM09918C_REG_TMPS && mode == AK099XX_MODE_SINGLE) {
 				/* Reading the TMPS register clears the DRDY bit */
 				data->reg[AKM09918C_REG_ST1] = 0;
 			}
@@ -156,7 +155,7 @@ static int akm09918c_emul_backend_set_channel(const struct emul *target, struct 
 	}
 
 	/* Set the ST1 register to show we have data */
-	data->reg[AKM09918C_REG_ST1] |= AKM09918C_ST1_DRDY;
+	data->reg[AKM09918C_REG_ST1] |= AK099XX_ST1_DRDY;
 
 	/* Convert fixed-point Gauss values into microgauss and then into its bit representation */
 	int32_t microgauss =
