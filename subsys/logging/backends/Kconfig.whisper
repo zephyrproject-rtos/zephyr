@@ -1,0 +1,28 @@
+#
+# Copyright 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config LOG_BACKEND_WHISPER
+	bool "Whisper backend"
+	depends on WHISPER_CONSOLE
+	default y
+	select LOG_BACKEND_SUPPORTS_FORMAT_TIMESTAMP
+	help
+	  When enabled backend is using whisper console output port to output logs.
+
+if LOG_BACKEND_WHISPER
+
+config LOG_BACKEND_WHISPER_OUTPUT_BUFFER_SIZE
+	int "Size of the output buffer for whisper backend"
+	default 16
+	help
+	  Buffer is used by log_output module for preparing output data (e.g.
+	  string formatting).
+
+backend = WHISPER
+backend-str = whisper
+source "subsys/logging/Kconfig.template.log_format_config"
+
+endif # LOG_BACKEND_WHISPER
