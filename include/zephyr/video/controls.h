@@ -392,6 +392,12 @@ enum video_camera_orientation {
  */
 #define VIDEO_CID_IMAGE_SOURCE_CLASS_BASE 0x009e0900
 
+/** Vertical blanking duration: duration (in lines) of the pause after the end of a frame */
+#define VIDEO_CID_VBLANK (VIDEO_CID_IMAGE_SOURCE_CLASS_BASE + 1)
+
+/** Horizontal blanking duration: duration (in pixels) of the pause after the end of a line */
+#define VIDEO_CID_HBLANK (VIDEO_CID_IMAGE_SOURCE_CLASS_BASE + 2)
+
 /**
  * @brief Analogue gain control
  *
