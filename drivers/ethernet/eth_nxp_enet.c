@@ -116,6 +116,12 @@ struct nxp_enet_mac_data {
 static K_THREAD_STACK_DEFINE(enet_rx_stack, CONFIG_ETH_NXP_ENET_RX_THREAD_STACK_SIZE);
 static struct k_work_q rx_work_queue;
 
+#if defined(CONFIG_ETH_NXP_ENET_RX_THREAD_PREEMPTIVE)
+#define ENET_RX_THREAD_PRIORITY K_PRIO_PREEMPT(CONFIG_ETH_NXP_ENET_RX_THREAD_PRIORITY)
+#else
+#define ENET_RX_THREAD_PRIORITY K_PRIO_COOP(CONFIG_ETH_NXP_ENET_RX_THREAD_PRIORITY)
+#endif
+
 static int rx_queue_init(void)
 {
 	struct k_work_queue_config cfg = {.name = "ENET_RX"};
@@ -123,7 +129,7 @@ static int rx_queue_init(void)
 	k_work_queue_init(&rx_work_queue);
 	k_work_queue_start(&rx_work_queue, enet_rx_stack,
 			   K_THREAD_STACK_SIZEOF(enet_rx_stack),
-			   K_PRIO_COOP(CONFIG_ETH_NXP_ENET_RX_THREAD_PRIORITY),
+			   ENET_RX_THREAD_PRIORITY,
 			   &cfg);
 
 	return 0;
