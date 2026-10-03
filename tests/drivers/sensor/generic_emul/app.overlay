@@ -12,13 +12,13 @@
 
 	fail_sensor: fail_sensor {
 		compatible = "zephyr,generic-emul-sensor";
-		status = "okay";
 		negated-init-rc = <2>;
+		status = "okay";
 	};
 
 	test_sensor_pm: test_sensor_pm {
 		compatible = "zephyr,generic-emul-sensor";
-		status = "okay";
 		zephyr,pm-device-runtime-auto;
+		status = "okay";
 	};
 };
