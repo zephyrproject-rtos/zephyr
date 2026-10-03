@@ -136,7 +136,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 		return;
 	}
 
-	ADCEnableDMATrigger();
+	ADCEnableDmaTrigger();
 
 	dma_start(cfg->dma_dev, cfg->dma_channel);
 #else
@@ -145,7 +145,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 
 	adc_cc23x0_pm_policy_state_lock_get();
 
-	ADCManualTrigger();
+	ADCStartConversion();
 }
 
 static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat)
@@ -213,7 +213,7 @@ static void adc_cc23x0_isr(const struct device *dev)
 		LOG_DBG("Next Ch %u", ch);
 
 		/* Trigger next conversion */
-		ADCManualTrigger();
+		ADCStartConversion();
 	} else {
 		adc_cc23x0_pm_policy_state_lock_put();
 		adc_context_on_sampling_done(&data->ctx, dev);
@@ -273,7 +273,7 @@ static int adc_cc23x0_read_common(const struct device *dev,
 		ADCSetAdjustmentOffset(data->ref_volt[ch_start]);
 
 #ifdef CONFIG_ADC_CC23X0_DMA_DRIVEN
-		ADCEnableDMAInterrupt(ADC_CC23X0_INT_MEMRES(0));
+		ADCEnableInterrupt(ADC_CC23X0_INT_MEMRES(0));
 #endif
 	} else if (data->ch_count <= ADC_CC23X0_MEM_COUNT) {
 		for (i = 0; i < ADC_CC23X0_CH_COUNT; i++) {
@@ -310,7 +310,7 @@ static int adc_cc23x0_read_common(const struct device *dev,
 		 * DMA transfer will be triggered when the last storage register
 		 * of the sequence is loaded with a new conversion result
 		 */
-		ADCEnableDMAInterrupt(ADC_CC23X0_INT_MEMRES(mem_index - 1));
+		ADCEnableInterrupt(ADC_CC23X0_INT_MEMRES(mem_index - 1));
 #endif
 	} else {
 		LOG_ERR("Too many channels in the sequence, max %u", ADC_CC23X0_MEM_COUNT);
