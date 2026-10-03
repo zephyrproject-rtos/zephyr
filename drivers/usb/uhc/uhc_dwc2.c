@@ -920,6 +920,7 @@ static inline void ch_process_control(const struct device *dev,
 			}
 		}
 	} else {
+#if (0)
 		/* Finished UHC_CONTROL_STAGE_DATA */
 		hctsiz = sys_read32((mem_addr_t)&ch->regs->hctsiz);
 		remaining = usb_dwc2_get_hctsiz_xfersize(hctsiz);
@@ -940,9 +941,100 @@ static inline void ch_process_control(const struct device *dev,
 			LOG_DBG("Control DATA OUT completed, prog=%u, rem=%u, act=%u",
 				ch->length, remaining, actual_len);
 		}
+
 		/* Status stage is always the opposite direction of data stage */
 		next_dir_is_in = !usb_reqtype_is_to_host(setup);
 		xfer->stage = UHC_CONTROL_STAGE_STATUS;
+#else 
+			/* Finished UHC_CONTROL_STAGE_DATA */
+	hctsiz = sys_read32((mem_addr_t)&ch->regs->hctsiz);
+	remaining = usb_dwc2_get_hctsiz_xfersize(hctsiz);
+	actual_len = ch->length - remaining;
+
+	if (usb_reqtype_is_to_host(setup)) {
+		uint16_t total = sys_le16_to_cpu(setup->wLength);
+		bool short_packet;
+
+		sys_cache_data_invd_range(net_buf_tail(xfer->buf), actual_len);
+		net_buf_add(xfer->buf, actual_len);
+
+		short_packet = actual_len < ch->length;
+
+		LOG_WRN("Control DATA IN completed: prog=%u act=%u received=%u total=%u",
+			ch->length, actual_len, xfer->buf->len, total);
+
+		if (ch->data->do_split &&
+		    !short_packet &&
+		    xfer->buf->len < total) {
+			uint16_t left = total - xfer->buf->len;
+
+			/*
+			 * DATA stage continues.
+			 */
+			next_dir_is_in = true;
+			size = MIN(left, xfer->mps);
+			ch->length = size;
+			dma_addr = (mem_addr_t)net_buf_tail(xfer->buf);
+
+			/*
+			 * Toggle DATA PID for next packet.
+			 */
+			ch->data->next_pid =
+				calc_next_pid(ch->data->next_pid, 1);
+
+			LOG_WRN("Control DATA IN next: size=%u received=%u left=%u pid=%u",
+				size, xfer->buf->len, left,
+				ch->data->next_pid);
+
+			/* TODO: Optimize */
+			/* Calculate new packet count */
+			pkt_cnt  = calc_packet_count(size, xfer->mps);
+
+			if (next_dir_is_in) {
+				sys_set_bits((mem_addr_t)&ch->regs->hcchar, USB_DWC2_HCCHAR_EPDIR);
+			} else {
+				sys_clear_bits((mem_addr_t)&ch->regs->hcchar, USB_DWC2_HCCHAR_EPDIR);
+			}
+
+			hctsiz = usb_dwc2_set_hctsiz_pid(ch->data->next_pid) |
+				usb_dwc2_set_hctsiz_pktcnt(pkt_cnt) |
+				usb_dwc2_set_hctsiz_xfersize(size);
+
+			if (dma_addr != 0 && size > 0) {
+				if (next_dir_is_in) {
+					sys_cache_data_invd_range((void *)dma_addr, size);
+				} else {
+					sys_cache_data_flush_range((void *)dma_addr, size);
+				}
+			}
+
+			uhc_dwc2_quirk_dma_addr_xlate(dev, &dma_addr);
+			sys_write32(hctsiz, (mem_addr_t)&ch->regs->hctsiz);
+			sys_write32((uint32_t)dma_addr, (mem_addr_t)&ch->regs->hcdma);
+
+			if (ch->data->do_split) {
+				ch_split_start_new(ch);
+			}
+
+			hcchar = sys_read32((mem_addr_t)&ch->regs->hcchar);
+			hcchar |= USB_DWC2_HCCHAR_CHENA;
+			hcchar &= ~USB_DWC2_HCCHAR_CHDIS;
+			sys_write32(hcchar, (mem_addr_t)&ch->regs->hcchar);
+			return;
+		}
+
+		/*
+		 * Short packet or requested amount received:
+		 * DATA stage is done.
+		 */
+	} else {
+		LOG_DBG("Control DATA OUT completed, prog=%u rem=%u act=%u",
+			ch->length, remaining, actual_len);
+	}
+
+	next_dir_is_in = !usb_reqtype_is_to_host(setup);
+	xfer->stage = UHC_CONTROL_STAGE_STATUS;
+#endif //
 	}
 
 	/* Calculate new packet count */
