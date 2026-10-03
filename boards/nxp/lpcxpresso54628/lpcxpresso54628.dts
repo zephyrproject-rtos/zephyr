@@ -29,6 +29,7 @@
 		usart-0 = &flexcomm0;
 		sw0 = &user_button;
 		accel0 = &mma8652fc;
+		watchdog0 = &wwdt0;
 	};
 
 	/*
@@ -149,5 +150,9 @@ zephyr_udc0: &usbhs {
 };
 
 &ctimer4 {
+	status = "okay";
+};
+
+&wwdt0 {
 	status = "okay";
 };
