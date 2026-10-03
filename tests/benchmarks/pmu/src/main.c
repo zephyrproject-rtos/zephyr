@@ -22,6 +22,7 @@
 #include <zephyr/irq_offload.h>
 #include <zephyr/random/random.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/cache.h>
 
 #ifdef CONFIG_SMP
 BUILD_ASSERT(IS_ENABLED(CONFIG_SCHED_CPU_MASK),
@@ -40,13 +41,12 @@ static int bench_cpu;
 
 #define L1_CACHE_WORK_SIZE (16 * 1024)
 #define L2_CACHE_WORK_SIZE (128 * 1024)
-#define CACHE_LINE_SIZE    64
 
 #define ARRAY_ELEMENTS    (L2_CACHE_WORK_SIZE / sizeof(uint64_t))
 #define MEMORY_ITERATIONS 1000
 
-static uint64_t __aligned(CACHE_LINE_SIZE) test_array[ARRAY_ELEMENTS];
-static uint32_t __aligned(CACHE_LINE_SIZE) random_indices[MEMORY_ITERATIONS];
+static uint64_t __dcacheline_aligned test_array[ARRAY_ELEMENTS];
+static uint32_t __dcacheline_aligned random_indices[MEMORY_ITERATIONS];
 
 static struct pmu_counter_config counter_configs[PMU_MAX_COUNTERS];
 
