@@ -2427,6 +2427,7 @@ Documentation Infrastructure:
     - include/zephyr/dt-bindings/mfd/
     - dts/bindings/mfd/
     - tests/drivers/build_all/mfd/
+    - tests/drivers/mfd/
   labels:
     - "area: MFD"
   tests:

@@ -1219,6 +1219,23 @@ MBOX
              channel-mask = <0x1>;
      };
 
+MFD
+===
+
+* The nPM2100 event callback API now uses :c:struct:`mfd_npm2100_event_callback`
+  instead of :c:struct:`gpio_callback`. Set ``event_mask`` to a bitwise-OR of
+  ``BIT(NPM2100_EVENT_*)`` values and assign ``handler`` directly instead of calling
+  ``gpio_init_callback()``. Update handler signatures to take
+  ``struct mfd_npm2100_event_callback *`` and ``npm2100_event_t`` as the second and third
+  arguments. Delivery remains once per matching event, before clearing the events in the PMIC;
+  registering the same callback again still succeeds without adding a duplicate entry.
+  A failed event-clear write can repeat a notification.
+  Add and remove callbacks from thread context. Serialize external callback-list changes
+  with dispatch; handlers may remove themselves. Removal does not wait for dispatch to finish.
+  :c:func:`mfd_npm2100_add_callback` now returns ``-EINVAL`` for a NULL callback or handler,
+  and :c:func:`mfd_npm2100_remove_callback` returns ``-EINVAL`` for a NULL callback.
+  (:github:`120768`)
+
 MSPI
 ====
 
