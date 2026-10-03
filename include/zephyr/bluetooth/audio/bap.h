@@ -178,17 +178,15 @@ extern "C" {
  * @param _pd Presentation Delay (usec)
  */
 #define BT_BAP_QOS_CFG(_interval, _framing, _phy, _sdu, _rtn, _latency, _pd)                       \
-	((struct bt_bap_qos_cfg){                                                                  \
-		.interval = _interval,                                                             \
-		.framing = _framing,                                                               \
-		.phy = _phy,                                                                       \
-		.sdu = _sdu,                                                                       \
-		.rtn = _rtn,                                                                       \
-		IF_ENABLED(UTIL_OR(IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE),                     \
+	((struct bt_bap_qos_cfg){.framing = _framing,                                              \
+				 .packing = BT_ISO_PACKING_SEQUENTIAL,                             \
+				 .phy = _phy,                                                      \
+				 .sdu_interval = _interval,                                        \
+				 .max_sdu = _sdu,                                                  \
+				 .pd = _pd,                                                        \
+				 IF_ENABLED(UTIL_OR(IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE),    \
 				   IS_ENABLED(CONFIG_BT_BAP_UNICAST)),                             \
-			   (.latency = _latency,))                                                 \
-		.pd = _pd,                                                                         \
-	})
+			   (.latency = _latency, .rtn = _rtn,))})
 
 /** @brief QoS Framing */
 enum bt_bap_qos_cfg_framing {
@@ -234,102 +232,185 @@ enum {
 	BT_BAP_QOS_CFG(_interval, BT_BAP_QOS_CFG_FRAMING_FRAMED, BT_BAP_QOS_CFG_2M, _sdu, _rtn,    \
 		       _latency, _pd)
 
-/** @brief QoS configuration structure. */
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || defined(__DOXYGEN__)
+/**
+ * @brief BIG-specific ISO test parameters (broadcast source).
+ */
+struct bt_bap_qos_big_test_cfg {
+	/**
+	 * @brief ISO Test Parameters
+	 *
+	 * Parameters used for ISO testing, including Instantaneous Retransmission Count (IRC),
+	 *
+	 * Value range @ref BT_ISO_IRC_MIN to @ref BT_ISO_IRC_MAX for IRC,
+	 */
+	uint8_t irc;
+	/**
+	 * @brief Packet Transmission Offset (PTO)
+	 *
+	 * This is a recommendation to the controller, and the actual PTO may be different than
+	 * this.
+	 *
+	 *
+	 * Value range @ref BT_ISO_PTO_MIN to @ref BT_ISO_PTO_MAX.
+	 *
+	 */
+	uint8_t pto;
+};
+#endif /*  CONFIG_BT_BAP_BROADCAST_SOURCE */
+
+#if defined(CONFIG_BT_BAP_UNICAST) || defined(__DOXYGEN__)
+/**
+ * @brief CIG/CIS-specific ISO test parameters (unicast).
+ */
+struct bt_bap_qos_cig_test_cfg {
+	/**
+	 * @brief Flush Timeout (FT)
+	 *
+	 * The flush timeout in multiples of ISO_Interval for each payload sent from the Central to
+	 * Peripheral.
+	 *
+	 * Value range @ref BT_ISO_FT_MIN to @ref BT_ISO_FT_MAX.
+	 */
+	uint16_t flush_timeout;
+	/**
+	 * @brief Worst case Clock Accuracy (WCA)
+	 *
+	 * The worst case clock accuracy in parts per million (ppm).
+	 *
+	 * Value range @ref BT_ISO_WCA_MIN to @ref BT_ISO_WCA_MAX.
+	 */
+	uint16_t wca;
+};
+#endif /*  CONFIG_BT_BAP_UNICAST */
+
+struct bt_bap_qos_group_test_cfg {
+	/**
+	 * @brief ISO Interval
+	 *
+	 * This is the interval at which ISO packets are transmitted.
+	 *
+	 * Value range @ref BT_ISO_SDU_INTERVAL_MIN to @ref BT_ISO_SDU_INTERVAL_MAX.
+	 */
+	uint16_t iso_interval;
+	/**
+	 * @brief Maximum PDU size
+	 *
+	 * Maximum size, in octets, of the payload from link layer to link layer.
+	 *
+	 *  Value range @ref BT_ISO_CONNECTED_PDU_MIN to @ref BT_ISO_PDU_MAX for
+	 *  connected ISO.
+	 *
+	 *  Value range @ref BT_ISO_BROADCAST_PDU_MIN to @ref BT_ISO_PDU_MAX for
+	 *  broadcast ISO.
+	 */
+	uint16_t max_pdu;
+	/**
+	 * @brief Burst number
+	 *
+	 * Value range @ref BT_ISO_BN_MIN to @ref BT_ISO_BN_MAX.
+	 */
+	uint8_t burst_number;
+	/**
+	 * @brief Number of subevents
+	 *
+	 * Maximum number of subevents in each CIS or BIS event.
+	 *
+	 * Value range @ref BT_ISO_NSE_MIN to @ref BT_ISO_NSE_MAX.
+	 */
+	uint8_t num_subevents;
+
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || defined(__DOXYGEN__)
+	/**
+	 * @brief Test configuration specific to the BIG
+	 *
+	 * This field is used to configure ISO test parameters specific to the BIG.
+	 *
+	 */
+	struct bt_bap_qos_big_test_cfg big;
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
+
+#if defined(CONFIG_BT_BAP_UNICAST) || defined(__DOXYGEN__)
+	/**
+	 * @brief Test configuration specific to the CIG
+	 *
+	 * This field is used to configure ISO test parameters specific to the CIG.
+	 *
+	 */
+	struct bt_bap_qos_cig_test_cfg cig;
+#endif /* CONFIG_BT_BAP_UNICAST */
+};
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
+
+/** @brief QoS configuration structure.
+ *
+ * This structure can be changed up and until bt_bap_stream_qos() has been called.
+ * Once a stream has been QoS configured, modifying this field does not modify the value.
+ * It is however possible to modify this field and call bt_bap_stream_qos() again to update
+ * the value, assuming that the stream is in the correct state.
+ */
 struct bt_bap_qos_cfg {
 	/**
 	 * @brief Presentation Delay in microseconds
-	 *
-	 * This value can be changed up and until bt_bap_stream_qos() has been called.
-	 * Once a stream has been QoS configured, modifying this field does not modify the value.
-	 * It is however possible to modify this field and call bt_bap_stream_qos() again to update
-	 * the value, assuming that the stream is in the correct state.
 	 *
 	 * Value range 0 to @ref BT_AUDIO_PD_MAX.
 	 */
 	uint32_t pd;
 
+	/** QoS Framing */
+	enum bt_bap_qos_cfg_framing framing;
+
 	/**
-	 * @brief Connected Isochronous Group (CIG) parameters
+	 * @brief ISO packing mode
 	 *
-	 * The fields in this struct affect the value sent to the controller via HCI
-	 * when creating the CIG. Once the group has been created with
-	 * bt_bap_unicast_group_create(), modifying these fields will not affect the group.
+	 * @ref BT_ISO_PACKING_SEQUENTIAL or @ref BT_ISO_PACKING_INTERLEAVED.
 	 */
-	struct {
-		/** QoS Framing */
-		enum bt_bap_qos_cfg_framing framing;
+	uint8_t packing;
 
-		/**
-		 * @brief PHY
-		 *
-		 * Allowed values are @ref BT_BAP_QOS_CFG_1M, @ref BT_BAP_QOS_CFG_2M and
-		 * @ref BT_BAP_QOS_CFG_CODED.
-		 */
-		uint8_t phy;
+	/**
+	 * @brief PHY
+	 *
+	 * Allowed values are @ref BT_BAP_QOS_CFG_1M, @ref BT_BAP_QOS_CFG_2M and
+	 * @ref BT_BAP_QOS_CFG_CODED.
+	 */
+	uint8_t phy;
 
-		/**
-		 * @brief Retransmission Number
-		 *
-		 * This a recommendation to the controller, and the actual retransmission number
-		 * may be different than this.
-		 */
-		uint8_t rtn;
+	/**
+	 * @brief SDU Interval
+	 *
+	 * Value range @ref BT_ISO_SDU_INTERVAL_MIN to @ref BT_ISO_SDU_INTERVAL_MAX
+	 */
+	uint32_t sdu_interval;
 
-		/**
-		 * @brief Maximum SDU size
-		 *
-		 * Value range @ref BT_ISO_MIN_SDU to @ref BT_ISO_MAX_SDU.
-		 */
-		uint16_t sdu;
+	/**
+	 * @brief Maximum SDU size
+	 *
+	 * Value range @ref BT_ISO_MIN_SDU to @ref BT_ISO_MAX_SDU.
+	 */
+	uint16_t max_sdu;
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || defined(CONFIG_BT_BAP_UNICAST) ||                   \
 	defined(__DOXYGEN__)
-		/**
-		 * @brief Maximum Transport Latency
-		 *
-		 * Not used for the @kconfig{CONFIG_BT_BAP_BROADCAST_SINK} role.
-		 */
-		uint16_t latency;
+	/**
+	 * @brief Maximum Transport Latency
+	 *
+	 * Not used for the @kconfig{CONFIG_BT_BAP_BROADCAST_SINK} role.
+	 */
+	uint16_t latency;
+	/**
+	 * @brief Retransmission Number
+	 *
+	 * This a recommendation to the controller, and the actual retransmission number
+	 * may be different than this.
+	 */
+	uint8_t rtn;
 #endif /*  CONFIG_BT_BAP_BROADCAST_SOURCE || CONFIG_BT_BAP_UNICAST */
 
-		/**
-		 * @brief SDU Interval
-		 *
-		 * Value range @ref BT_ISO_SDU_INTERVAL_MIN to @ref BT_ISO_SDU_INTERVAL_MAX
-		 */
-		uint32_t interval;
-
-#if defined(CONFIG_BT_ISO_TEST_PARAMS) || defined(__DOXYGEN__)
-		/**
-		 * @brief Maximum PDU size
-		 *
-		 * Maximum size, in octets, of the payload from link layer to link layer.
-		 *
-		 *  Value range @ref BT_ISO_CONNECTED_PDU_MIN to @ref BT_ISO_PDU_MAX for
-		 *  connected ISO.
-		 *
-		 *  Value range @ref BT_ISO_BROADCAST_PDU_MIN to @ref BT_ISO_PDU_MAX for
-		 *  broadcast ISO.
-		 */
-		uint16_t max_pdu;
-
-		/**
-		 * @brief Burst number
-		 *
-		 * Value range @ref BT_ISO_BN_MIN to @ref BT_ISO_BN_MAX.
-		 */
-		uint8_t burst_number;
-
-		/**
-		 * @brief Number of subevents
-		 *
-		 * Maximum number of subevents in each CIS or BIS event.
-		 *
-		 * Value range @ref BT_ISO_NSE_MIN to @ref BT_ISO_NSE_MAX.
-		 */
-		uint8_t num_subevents;
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	struct bt_bap_qos_group_test_cfg test;
 #endif /* CONFIG_BT_ISO_TEST_PARAMS */
-	};
 };
 
 /** Periodic advertising state reported by the Scan Delegator */
@@ -375,7 +456,7 @@ enum bt_bap_bass_att_err {
 };
 
 /** Value indicating that the periodic advertising interval is unknown */
-#define BT_BAP_PA_INTERVAL_UNKNOWN             0xFFFFU
+#define BT_BAP_PA_INTERVAL_UNKNOWN 0xFFFFU
 
 /**
  * @brief Broadcast Assistant no BIS sync preference
@@ -2618,8 +2699,7 @@ int bt_bap_scan_delegator_unregister(void);
  *
  * @return int    Error value. 0 on success, errno on fail.
  */
-int bt_bap_scan_delegator_set_pa_state(uint8_t src_id,
-				       enum bt_bap_pa_state pa_state);
+int bt_bap_scan_delegator_set_pa_state(uint8_t src_id, enum bt_bap_pa_state pa_state);
 
 /**
  * @brief Set the sync state of a receive state in the server
@@ -2748,8 +2828,7 @@ typedef bool (*bt_bap_scan_delegator_state_func_t)(
  * @param func      The callback function
  * @param user_data User specified data that sent to the callback function
  */
-void bt_bap_scan_delegator_foreach_state(bt_bap_scan_delegator_state_func_t func,
-					 void *user_data);
+void bt_bap_scan_delegator_foreach_state(bt_bap_scan_delegator_state_func_t func, void *user_data);
 
 /**
  * @brief Find and return a receive state based on a compare function
@@ -2759,8 +2838,8 @@ void bt_bap_scan_delegator_foreach_state(bt_bap_scan_delegator_state_func_t func
  *
  * @return The first receive state where the @p func returned true, or NULL
  */
-const struct bt_bap_scan_delegator_recv_state *bt_bap_scan_delegator_find_state(
-	bt_bap_scan_delegator_state_func_t func, void *user_data);
+const struct bt_bap_scan_delegator_recv_state *
+bt_bap_scan_delegator_find_state(bt_bap_scan_delegator_state_func_t func, void *user_data);
 
 /******************************** CLIENT API ********************************/
 
@@ -2770,8 +2849,7 @@ const struct bt_bap_scan_delegator_recv_state *bt_bap_scan_delegator_find_state(
  * @param conn    The connection to the peer device.
  * @param err     Error value. 0 on success, GATT error on fail.
  */
-typedef void (*bt_bap_broadcast_assistant_write_cb)(struct bt_conn *conn,
-						    int err);
+typedef void (*bt_bap_broadcast_assistant_write_cb)(struct bt_conn *conn, int err);
 
 /**
  * @brief Struct to hold the Basic Audio Profile Broadcast Assistant callbacks
@@ -2788,8 +2866,7 @@ struct bt_bap_broadcast_assistant_cb {
 	 *                          GATT error or ERRNO on fail.
 	 * @param recv_state_count  Number of receive states on the server.
 	 */
-	void (*discover)(struct bt_conn *conn, int err,
-			 uint8_t recv_state_count);
+	void (*discover)(struct bt_conn *conn, int err, uint8_t recv_state_count);
 
 	/**
 	 * @brief Callback function for Broadcast Audio Scan Service client scan results
@@ -2800,8 +2877,7 @@ struct bt_bap_broadcast_assistant_cb {
 	 * @param info          Advertiser information.
 	 * @param broadcast_id  24-bit broadcast ID.
 	 */
-	void (*scan)(const struct bt_le_scan_recv_info *info,
-		     uint32_t broadcast_id);
+	void (*scan)(const struct bt_le_scan_recv_info *info, uint32_t broadcast_id);
 
 	/**
 	 * @brief Callback function for when a receive state is read or updated
@@ -2919,8 +2995,7 @@ int bt_bap_broadcast_assistant_discover(struct bt_conn *conn);
  * @retval -ENOMEM Could not allocated memory for the request
  * @retval -ENOEXEC Unexpected scan or GATT error
  */
-int bt_bap_broadcast_assistant_scan_start(struct bt_conn *conn,
-					  bool start_scan);
+int bt_bap_broadcast_assistant_scan_start(struct bt_conn *conn, bool start_scan);
 
 /**
  * @brief Stop remote scanning for BISes for a server.
@@ -2958,7 +3033,6 @@ int bt_bap_broadcast_assistant_register_cb(struct bt_bap_broadcast_assistant_cb 
  * @retval -EALREADY if @p cb was not registered
  */
 int bt_bap_broadcast_assistant_unregister_cb(struct bt_bap_broadcast_assistant_cb *cb);
-
 
 /** Parameters for adding a source to a Broadcast Audio Scan Service server */
 struct bt_bap_broadcast_assistant_add_src_param {

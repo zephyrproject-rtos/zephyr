@@ -9,15 +9,13 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
-static const struct device *const fake_dev = DEVICE_DT_GET(
-		DT_NODELABEL(fake_input_device));
-static const struct device *const double_tap_dev = DEVICE_DT_GET(
-		DT_NODELABEL(double_tap));
-static const struct device *const double_tap_single_dev = DEVICE_DT_GET(
-		DT_NODELABEL(double_tap_single));
+static const struct device *const fake_dev = DEVICE_DT_GET(DT_NODELABEL(fake_input_device));
+static const struct device *const double_tap_dev = DEVICE_DT_GET(DT_NODELABEL(double_tap));
+static const struct device *const double_tap_single_dev =
+	DEVICE_DT_GET(DT_NODELABEL(double_tap_single));
 
-DEVICE_DT_DEFINE(DT_INST(0, vnd_input_device), NULL, NULL, NULL, NULL,
-		 PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
+DEVICE_DT_DEFINE(DT_INST(0, vnd_input_device), NULL, NULL, NULL, NULL, PRE_KERNEL_1,
+		 CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 
 static int event_count;
 static struct input_event last_events[2];
