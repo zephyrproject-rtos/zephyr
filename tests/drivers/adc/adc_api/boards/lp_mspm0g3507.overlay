@@ -14,14 +14,14 @@
 
 &adc0 {
 	clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
-	ti,clk-divider = <1>;
-	ti,clk-range = <6>;
 	max-result-reg = <12>;
 	pinctrl-0 = <&analog_pb25 &analog_pb24>;
 	pinctrl-names = "default";
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	ti,clk-divider = <1>;
+	ti,clk-range = <6>;
+	status = "okay";
 
 	channel@4 {
 		reg = <4>;

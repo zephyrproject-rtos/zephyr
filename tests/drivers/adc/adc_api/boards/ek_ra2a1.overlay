@@ -22,11 +22,11 @@
 };
 
 &adc0 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	interrupts = <31 1>;
 	interrupt-names = "scanend";
+	status = "okay";
 
 	/*
 	 * Channel 0 is used in single ended mode, with 15 bit resolution
