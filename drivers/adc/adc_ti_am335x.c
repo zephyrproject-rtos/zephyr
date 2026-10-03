@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Texas Instruments Incorporated
+ * Copyright (c) 2025-26 Texas Instruments Incorporated
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -92,6 +92,8 @@ enum ti_adc_irq {
 /* FIFO Data Register */
 #define TI_ADC_FIFODATA_ADCDATA GENMASK(11, 0) /* FIFO Data Mask */
 
+#define TI_ADC_RESOLUTION (12)
+
 #define DEV_CFG(dev)  ((const struct ti_adc_cfg *)(dev)->config)
 #define DEV_DATA(dev) ((struct ti_adc_data *)(dev)->data)
 #define DEV_REGS(dev) ((struct ti_adc_regs *)DEVICE_MMIO_GET(dev))
@@ -128,6 +130,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	struct ti_adc_regs *regs = DEV_REGS(data->dev);
 
 	regs->CONTROL &= ~TI_ADC_CONTROL_ENABLE;
+	regs->STEPENABLE = 0;
 
 	/* enable steps */
 	for (int chan = 0; chan < TI_ADC_TOTAL_CHANNELS; chan++) {
@@ -221,8 +224,17 @@ static int ti_adc_channel_setup(const struct device *dev, const struct adc_chann
 	}
 #endif
 
+	/* Allocate a new step only if this channel has not been configured before */
+	if (data->steps[chan] == UINT8_MAX) {
+		if (data->step_count >= TI_ADC_TOTAL_STEPS) {
+			LOG_ERR("No ADC steps available (max %d)", TI_ADC_TOTAL_STEPS);
+			return -ENOSPC;
+		}
+		data->steps[chan] = data->step_count++;
+	}
+
 	/* TODO: allow continuous mode when DMA is possible */
-	regs->STEP[data->step_count].CONFIG =
+	regs->STEP[data->steps[chan]].CONFIG =
 		FIELD_PREP(TI_ADC_STEPCONFIG_MODE, TI_ADC_STEPCONFIG_MODE_SINGLESHOT) |
 		FIELD_PREP(TI_ADC_STEPCONFIG_AVERAGING, cfg->oversampling[chan]) |
 #ifdef CONFIG_ADC_CONFIGURABLE_INPUTS
@@ -235,11 +247,9 @@ static int ti_adc_channel_setup(const struct device *dev, const struct adc_chann
 		FIELD_PREP(TI_ADC_STEPCONFIG_DIFFERENTIAL, chan_cfg->differential) |
 		FIELD_PREP(TI_ADC_STEPCONFIG_FIFOSEL, cfg->fifo);
 
-	regs->STEP[data->step_count].DELAY =
+	regs->STEP[data->steps[chan]].DELAY =
 		FIELD_PREP(TI_ADC_STEPDELAY_OPENDELAY, cfg->open_delay[chan]) |
 		FIELD_PREP(TI_ADC_STEPDELAY_SAMPLEDELAY, chan_cfg->acquisition_time);
-
-	data->steps[chan] = data->step_count++;
 
 	return 0;
 }
@@ -249,6 +259,11 @@ static int ti_adc_read_start(const struct device *dev, const struct adc_sequence
 	struct ti_adc_data *data = DEV_DATA(dev);
 	const uint8_t samplings = (sequence->options ? sequence->options->extra_samplings + 1 : 1);
 	size_t required_size = 0;
+
+	if (sequence->resolution != TI_ADC_RESOLUTION) {
+		LOG_ERR("Resolution must be %u bits", TI_ADC_RESOLUTION);
+		return -EINVAL;
+	}
 
 	data->chan_count = 0;
 
@@ -416,6 +431,7 @@ static void ti_adc_isr(const struct device *dev)
 		ADC_CONTEXT_INIT_LOCK(ti_adc_data_##n, ctx),                                       \
 		ADC_CONTEXT_INIT_SYNC(ti_adc_data_##n, ctx),                                       \
 		.dev = DEVICE_DT_INST_GET(n),                                                      \
+		.steps = {[0 ... TI_ADC_TOTAL_CHANNELS - 1] = UINT8_MAX},                         \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, ti_adc_init, NULL, &ti_adc_data_##n, &ti_adc_cfg_##n,             \
