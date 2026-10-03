@@ -1051,6 +1051,17 @@ static uint32_t ch_handle_in_interrupt(struct uhc_dwc2_channel *const ch,
 			ch->error_count = 0;
 			/* TODO: Optimize by handling transfer with bInterval=1 immediately */
 			ch_events |= BIT(UHC_DWC2_CHANNEL_DO_WAIT_SOF);
+		} else if (hcint & USB_DWC2_HCINT_DTGERR) {
+			/*
+			 * The core acknowledged and dropped a repeated packet. Take
+			 * the toggle it now expects and poll at the next interval.
+			 */
+			ch->error_count = 0U;
+			ch->data->next_pid =
+				usb_dwc2_get_hctsiz_pid(sys_read32((mem_addr_t)&ch->regs->hctsiz));
+			LOG_DBG("IN channel%d toggle error, next_pid=%u", ch->index,
+				ch->data->next_pid);
+			ch_events |= BIT(UHC_DWC2_CHANNEL_DO_WAIT_SOF);
 		} else {
 			/* TODO: Add handling for other cases */
 			LOG_WRN("IN halted, unhandled HCINT 0x%08x", hcint);
