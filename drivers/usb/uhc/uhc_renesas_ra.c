@@ -252,8 +252,8 @@ static int uhc_renesas_ra_schedule_xfer(const struct device *dev, uint8_t dev_ad
 
 	if (USB_EP_GET_IDX(xfer->ep) == 0) {
 		/*
-		 * If there is a control xfer, the driver should maintaince control xfer stage
-		 * update properly to not conrrupt the control transfer seq
+		 * If there is a control xfer, the driver should maintenance control xfer stage
+		 * update properly to not corrupt the control transfer seq
 		 */
 		return uhc_renesas_ra_control_xfer(dev, xfer);
 	}
@@ -499,7 +499,7 @@ static int uhc_renesas_ra_poll_port_speed(const struct device *dev)
 	if (priv->speed != speed) {
 		uhc_submit_event(dev, UHC_EVT_DEV_REMOVED, 0);
 
-		/* Speed negociation completed. Update device speed */
+		/* Speed negotiation completed. Update device speed */
 		switch (speed) {
 		case USB_SPEED_LS:
 			uhc_submit_event(dev, UHC_EVT_DEV_CONNECTED_LS, 0);
