@@ -60,25 +60,25 @@ struct mpipe_parser {
 	struct mpipe_buffer_pool *out_pool;
 
 	/**
-	 * @brief Set a capability on a pad.
+	 * @brief Apply the negotiated capability to one of the element's pads.
 	 *
-	 * @param parser Pointer to the parser element.
+	 * @param self Pointer to the parser element.
 	 * @param direction Pad direction (see @ref mpipe_pad_direction).
-	 * @param caps Pointer to the capability to set.
+	 * @param caps Pointer to the capability to apply.
 	 *
 	 * @return 0 on success, negative errno on failure
 	 */
-	int (*set_caps)(struct mpipe_parser *parser, enum mpipe_pad_direction direction,
+	int (*set_caps)(struct mpipe_parser *self, enum mpipe_pad_direction direction,
 			const struct mpipe_structure *caps);
 	/**
 	 * @brief Propose a buffer pool to upstream.
 	 *
-	 * @param parser Pointer to the parser element.
-	 * @param query Allocation query (see @ref mpipe_dispatch).
+	 * @param self Pointer to the parser element.
+	 * @param query Buffer pool query (see @ref mpipe_dispatch).
 	 *
 	 * @return 0 on success, negative errno on failure
 	 */
-	int (*propose_buffer_pool)(struct mpipe_parser *parser, struct mpipe_dispatch *query);
+	int (*propose_buffer_pool)(struct mpipe_parser *self, struct mpipe_dispatch *query);
 	/**
 	 * @brief Decide the buffer pool for downstream.
 	 *
@@ -87,12 +87,12 @@ struct mpipe_parser {
 	 * fallback. An element deciding for its own pool rebuilds its config
 	 * baseline here on every negotiation.
 	 *
-	 * @param parser Pointer to the parser element.
-	 * @param query Allocation query (see @ref mpipe_dispatch).
+	 * @param self Pointer to the parser element.
+	 * @param query Buffer pool query (see @ref mpipe_dispatch).
 	 *
 	 * @return 0 on success, negative errno on failure
 	 */
-	int (*decide_buffer_pool)(struct mpipe_parser *parser, struct mpipe_dispatch *query);
+	int (*decide_buffer_pool)(struct mpipe_parser *self, struct mpipe_dispatch *query);
 };
 
 /**

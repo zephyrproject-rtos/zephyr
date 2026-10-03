@@ -170,8 +170,8 @@ static int mpipe_tee_sink_event_fn(struct mpipe_pad *pad, struct mpipe_dispatch 
 	}
 }
 
-static int mpipe_tee_chain_fn(struct mpipe_pad *pad, struct net_buf *in_buf,
-			      struct net_buf **out_buf)
+static int mpipe_tee_process_fn(struct mpipe_pad *pad, struct net_buf *in_buf,
+				struct net_buf **out_buf)
 {
 	struct mpipe_tee *tee = (struct mpipe_tee *)pad->object.container;
 	uint8_t i = 0;
@@ -282,7 +282,7 @@ int mpipe_tee_init(struct mpipe_tee *tee, uint8_t id)
 	self->object.set_property = mpipe_tee_set_property;
 	self->change_state = mpipe_tee_change_state;
 
-	tee->sink_pad.chain_fn = mpipe_tee_chain_fn;
+	tee->sink_pad.process_fn = mpipe_tee_process_fn;
 	tee->sink_pad.query_fn = mpipe_tee_sink_query_fn;
 	tee->sink_pad.event_fn = mpipe_tee_sink_event_fn;
 

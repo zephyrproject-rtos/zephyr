@@ -15,13 +15,11 @@
 
 LOG_MODULE_REGISTER(mpipe_sink, CONFIG_MPIPE_LOG_LEVEL);
 
-#define MPIPE_PAD_SINK_ID 0
+#define SINK_PAD_ID 0
 
 static int mpipe_sink_set_caps(struct mpipe_sink *sink, const struct mpipe_structure *caps)
 {
-	if (sink == NULL) {
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(sink != NULL);
 
 	return mpipe_pad_set_caps(&sink->sink_pad, caps);
 }
@@ -44,7 +42,7 @@ static int mpipe_sink_query(struct mpipe_pad *pad, struct mpipe_dispatch *query)
 	}
 }
 
-int mpipe_sink_event(struct mpipe_pad *pad, struct mpipe_dispatch *event)
+static int mpipe_sink_event(struct mpipe_pad *pad, struct mpipe_dispatch *event)
 {
 	__ASSERT_NO_MSG(pad != NULL);
 	__ASSERT_NO_MSG(event != NULL);
@@ -78,8 +76,8 @@ int mpipe_sink_event(struct mpipe_pad *pad, struct mpipe_dispatch *event)
 	}
 }
 
-static int mpipe_sink_chain_fn(struct mpipe_pad *pad, struct net_buf *in_buf,
-			       struct net_buf **out_buf)
+static int mpipe_sink_process_fn(struct mpipe_pad *pad, struct net_buf *in_buf,
+				 struct net_buf **out_buf)
 {
 	/* By default, do nothing, just absorb the buffer */
 	ARG_UNUSED(pad);
@@ -116,14 +114,14 @@ int mpipe_sink_init(struct mpipe_sink *sink, uint8_t id)
 
 	mpipe_element_set_name(self, "sink");
 
-	mpipe_pad_init(&sink->sink_pad, MPIPE_PAD_SINK_ID, MPIPE_PAD_SINK, MPIPE_PAD_ALWAYS);
+	mpipe_pad_init(&sink->sink_pad, SINK_PAD_ID, MPIPE_PAD_SINK, MPIPE_PAD_ALWAYS);
 	mpipe_element_add_pad(self, &sink->sink_pad);
 
 	self->change_state = mpipe_sink_change_state;
 
 	sink->sink_pad.query_fn = mpipe_sink_query;
 	sink->sink_pad.event_fn = mpipe_sink_event;
-	sink->sink_pad.chain_fn = mpipe_sink_chain_fn;
+	sink->sink_pad.process_fn = mpipe_sink_process_fn;
 	sink->set_caps = mpipe_sink_set_caps;
 	sink->propose_buffer_pool = NULL;
 

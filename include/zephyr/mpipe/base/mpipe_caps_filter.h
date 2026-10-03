@@ -9,8 +9,8 @@
  * @brief Caps filter element.
  * @ingroup mpipe_caps_filter
  *
- * This element does not modify data, but used to enforce limitations on the data format.
- *
+ * This element does not modify data; it constrains the format negotiated on
+ * its link.
  */
 
 #ifndef ZEPHYR_INCLUDE_MPIPE_BASE_MPIPE_CAPS_FILTER_H_
@@ -27,13 +27,7 @@
 #include <zephyr/mpipe/mpipe_transform.h>
 
 /**
- * @brief Caps filter Property Identifiers
- *
- * Defined property identifiers specific to the caps_filter element. These
- * properties extend the base transform properties defined in @ref mpipe_prop_transform.
- *
- * The enumeration starts from MPIPE_PROP_TRANSFORM_LAST to ensure no
- * conflicts with base transform properties.
+ * @brief Caps filter property identifiers
  */
 enum {
 	/** Caps ID property */
@@ -41,15 +35,10 @@ enum {
 };
 
 /**
- * @brief Caps filter element.
+ * @brief Caps filter element
  *
- * Holds the filter the application configured, and the two peers the element
- * was linked to. It keeps its own copy of the filter because the pads are reset
- * on teardown: without it, a second run would negotiate unconstrained.
- *
- * The saved peers are what let the element take itself out of the graph once
- * the format is settled and put itself back on teardown, so that it costs
- * nothing on the buffer path.
+ * A transform that pins the capability negotiated on its link to the one the
+ * application configured, without touching the data.
  */
 struct mpipe_caps_filter {
 	/** Base transform element */

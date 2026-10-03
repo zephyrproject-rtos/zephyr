@@ -13,8 +13,8 @@
 
 LOG_MODULE_REGISTER(mpipe_parser, CONFIG_MPIPE_LOG_LEVEL);
 
-#define MPIPE_PAD_SINK_ID 0
-#define MPIPE_PAD_SRC_ID  1
+#define SINK_PAD_ID 0
+#define SRC_PAD_ID  1
 
 static int mpipe_parser_set_caps(struct mpipe_parser *parser, enum mpipe_pad_direction direction,
 				 const struct mpipe_structure *caps)
@@ -56,11 +56,7 @@ static inline int mpipe_parser_query_caps(struct mpipe_parser *self,
 		return -EINVAL;
 	}
 
-	/*
-	 * Keep the first supported capability the query accepts. The peer is
-	 * asked with the caps supported on the other side, which do not depend
-	 * on the candidate, so there is nothing here to backtrack over.
-	 */
+	/* The peer is asked with the other side's own caps, so there is nothing to backtrack */
 	ret = mpipe_pad_enum_first(this_pad, query->caps, &candidate);
 	if (ret != 0) {
 		return ret;
@@ -102,12 +98,7 @@ static int mpipe_parser_event(struct mpipe_pad *pad, struct mpipe_dispatch *even
 	case MPIPE_DISPATCH_EOS:
 		return mpipe_pad_send_event_default(pad, event);
 	case MPIPE_DISPATCH_CAPS:
-		/*
-		 * An event carrying no capability means the upstream could not
-		 * fixate. The parser knows the stream format it negotiated, so
-		 * it promotes the event into a real one of its own, referencing
-		 * this frame's storage.
-		 */
+		/* No capability means upstream could not fixate: announce the parser's own */
 		if (event->caps == NULL) {
 			struct mpipe_structure fwd_caps = other_pad->caps;
 			struct mpipe_dispatch fwd_event = {
@@ -131,12 +122,10 @@ static int mpipe_parser_event(struct mpipe_pad *pad, struct mpipe_dispatch *even
 	}
 }
 
-/* TODO: Make a helper to refactor this together with mpipe_transform */
 static int mpipe_parser_query(struct mpipe_pad *pad, struct mpipe_dispatch *query)
 {
-	if (pad == NULL || query == NULL) {
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(pad != NULL);
+	__ASSERT_NO_MSG(query != NULL);
 
 	int ret;
 	struct mpipe_parser *parser = (struct mpipe_parser *)pad->object.container;
@@ -197,11 +186,7 @@ int mpipe_parser_change_state(struct mpipe_element *self, enum mpipe_state_chang
 	case MPIPE_STATE_CHANGE_PAUSED_TO_READY:
 		mpipe_element_reset_pad_caps(self);
 
-		/*
-		 * The parser started the pool it draws from - its own or an
-		 * adopted proposal - so it stops it here; otherwise the pool
-		 * stays started across runs and can never be reconfigured.
-		 */
+		/* Stop the pool this element started, or it cannot be reconfigured next run */
 		if (parser->out_pool != NULL) {
 			(void)mpipe_buffer_pool_stop(parser->out_pool);
 		}
@@ -226,10 +211,10 @@ int mpipe_parser_init(struct mpipe_parser *parser, uint8_t id)
 
 	mpipe_element_set_name(self, "parser");
 
-	mpipe_pad_init(&parser->sink_pad, MPIPE_PAD_SINK_ID, MPIPE_PAD_SINK, MPIPE_PAD_ALWAYS);
+	mpipe_pad_init(&parser->sink_pad, SINK_PAD_ID, MPIPE_PAD_SINK, MPIPE_PAD_ALWAYS);
 	mpipe_element_add_pad(self, &parser->sink_pad);
 
-	mpipe_pad_init(&parser->src_pad, MPIPE_PAD_SRC_ID, MPIPE_PAD_SRC, MPIPE_PAD_ALWAYS);
+	mpipe_pad_init(&parser->src_pad, SRC_PAD_ID, MPIPE_PAD_SRC, MPIPE_PAD_ALWAYS);
 	mpipe_element_add_pad(self, &parser->src_pad);
 
 	parser->out_pool = NULL;

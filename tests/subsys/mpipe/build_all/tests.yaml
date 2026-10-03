@@ -1,6 +1,6 @@
 tests:
 
-  mpipe.core.build:
+  mpipe.framework.build:
     tags:
       - subsys
       - mpipe
