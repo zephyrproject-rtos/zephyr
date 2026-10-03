@@ -2583,7 +2583,16 @@ static int adc_stm32_pm_action(const struct device *dev,
 {
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		return adc_stm32_init(dev);
+	{
+		const struct adc_sub_stm32_cfg *config = dev->config;
+		int err = adc_stm32_init(config->parent);
+
+		if (err != 0) {
+			return err;
+		}
+
+		return adc_sub_stm32_init(dev);
+	}
 	case PM_DEVICE_ACTION_SUSPEND:
 		return adc_stm32_suspend_setup(dev);
 	default:
