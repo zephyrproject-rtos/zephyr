@@ -61,6 +61,10 @@
 #include <soc_init.h>
 #include <soc_random.h>
 
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+#include <kernel_tls.h>
+#endif
+
 #if defined(CONFIG_SOC_ESP32_APPCPU_TARGET)
 #error "APPCPU does not need this file!"
 #endif
@@ -343,6 +347,11 @@ static void boot_start(void)
 
 #if defined(CONFIG_ESP_SIMPLE_BOOT) || defined(CONFIG_BOOTLOADER_MCUBOOT)
 	map_rom_segments(0, &map);
+
+#if defined(CONFIG_RISCV) && defined(CONFIG_THREAD_LOCAL_STORAGE)
+	/* Load the boot TLS initializers now that flash rodata is mapped. */
+	z_tls_copy(__builtin_thread_pointer());
+#endif
 
 	/* Disable glitch detection as it can be falsely triggered by EMI interference */
 	ana_clock_glitch_reset_config(false);

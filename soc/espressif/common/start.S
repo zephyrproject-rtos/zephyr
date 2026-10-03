@@ -70,6 +70,21 @@ aa_loop:
 	csrw CSR_MTVT, t0
 #endif
 
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+	/* Reserve a zeroed boot TLS area on the stack and point tp at it. */
+	call z_tls_data_size_asm
+	sub sp, sp, a0
+	mv tp, sp
+	mv t0, sp
+	add t1, sp, a0
+1:
+	bgeu t0, t1, 2f
+	sw zero, 0(t0)
+	addi t0, t0, 4
+	j 1b
+2:
+#endif /* CONFIG_THREAD_LOCAL_STORAGE */
+
 	tail start_riscv
 
 	.size __start, . - __start
