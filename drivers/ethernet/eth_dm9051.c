@@ -205,7 +205,7 @@ struct eth_dm9051_data {
 	struct net_if *iface;
 	struct k_sem tx_done;
 	uint8_t mac_addr[6];
-	/* Controller resets, to detect one across a wait without spi_lock */
+	/* Controller resets, counted with spi_lock held */
 	uint32_t resets;
 };
 
@@ -380,7 +380,8 @@ static int eth_dm9051_nsr_poll(const struct device *dev, k_timeout_t timeout)
 	return -ETIMEDOUT;
 }
 
-static int eth_dm9051_hw_start(const struct device *dev, struct net_if *iface __unused)
+/* Reset and configure the controller. Called with spi_lock held. */
+static int eth_dm9051_hw_init(const struct device *dev)
 {
 	const uint8_t imr = DM9051_IMR_PRI | DM9051_IMR_PTI | DM9051_IMR_LNKCHGI | DM9051_IMR_PAR;
 	const uint8_t rcr = DM9051_RCR_RXEN | DM9051_RCR_ALL |
@@ -439,18 +440,35 @@ static int eth_dm9051_hw_start(const struct device *dev, struct net_if *iface __
 	return eth_dm9051_spi_write_reg(dev, DM9051_RCR, rcr);
 }
 
+static int eth_dm9051_hw_start(const struct device *dev, struct net_if *iface __unused)
+{
+	struct eth_dm9051_data *data = dev->data;
+	int ret;
+
+	k_mutex_lock(&data->spi_lock, K_FOREVER);
+	ret = eth_dm9051_hw_init(dev);
+	k_mutex_unlock(&data->spi_lock);
+
+	return ret;
+}
+
 static int eth_dm9051_hw_stop(const struct device *dev, struct net_if *iface __unused)
 {
+	struct eth_dm9051_data *data = dev->data;
 	int ret;
+
+	k_mutex_lock(&data->spi_lock, K_FOREVER);
 
 	/* Power off the internal phy */
 	ret = eth_dm9051_spi_write_reg(dev, DM9051_GPR, DM9051_GPR_PHY_OFF);
-	if (ret < 0) {
-		return ret;
+	if (ret == 0) {
+		/* Disable RX */
+		ret = eth_dm9051_spi_write_reg(dev, DM9051_RCR, 0);
 	}
 
-	/* Disable RX */
-	return eth_dm9051_spi_write_reg(dev, DM9051_RCR, 0);
+	k_mutex_unlock(&data->spi_lock);
+
+	return ret;
 }
 
 static int eth_dm9051_tx(const struct device *dev, struct net_pkt *pkt)
@@ -613,7 +631,7 @@ out_net_pkt_unref:
 
 out_restart:
 	/* The RX SRAM read pointer is not known to be at a frame boundary */
-	ret = eth_dm9051_hw_start(dev, data->iface);
+	ret = eth_dm9051_hw_init(dev);
 	if (ret < 0) {
 		LOG_ERR("%s: Failed to restart HW after RX error (err %d)", dev->name, ret);
 	}
@@ -700,12 +718,13 @@ static int eth_dm9051_update_link_status(const struct device *dev)
 	uint8_t ncr;
 	int ret;
 
+	k_mutex_lock(&data->spi_lock, K_FOREVER);
 	ret = eth_dm9051_spi_read_reg(dev, DM9051_NSR, &nsr);
-	if (ret < 0) {
-		return ret;
+	if (ret == 0) {
+		ret = eth_dm9051_spi_read_reg(dev, DM9051_NCR, &ncr);
 	}
+	k_mutex_unlock(&data->spi_lock);
 
-	ret = eth_dm9051_spi_read_reg(dev, DM9051_NCR, &ncr);
 	if (ret < 0) {
 		return ret;
 	}
@@ -739,6 +758,36 @@ static int eth_dm9051_update_link_status(const struct device *dev)
 	}
 
 	return 0;
+}
+
+/* Read and clear ISR, and signal TX completion, as one step under spi_lock */
+static int eth_dm9051_isr_service(const struct device *dev, uint8_t *isr)
+{
+	struct eth_dm9051_data *data = dev->data;
+	int ret;
+
+	k_mutex_lock(&data->spi_lock, K_FOREVER);
+
+	ret = eth_dm9051_spi_read_reg(dev, DM9051_ISR, isr);
+	if (ret < 0) {
+		LOG_ERR("%s: Failed to read ISR (err %d)", dev->name, ret);
+		goto out_spi_unlock;
+	}
+
+	ret = eth_dm9051_spi_write_reg(dev, DM9051_ISR, *isr);
+	if (ret < 0) {
+		LOG_ERR("%s: Failed to write ISR (err %d)", dev->name, ret);
+		goto out_spi_unlock;
+	}
+
+	if ((*isr & DM9051_ISR_PT) > 0) {
+		k_sem_give(&data->tx_done);
+		LOG_DBG("%s: Packet Transmitted", dev->name);
+	}
+
+out_spi_unlock:
+	k_mutex_unlock(&data->spi_lock);
+	return ret;
 }
 
 static void eth_dm9051_rx_thread(void *p1, void *p2, void *p3)
@@ -781,18 +830,9 @@ static void eth_dm9051_rx_thread(void *p1, void *p2, void *p3)
 			}
 		}
 
-		ret = eth_dm9051_spi_read_reg(dev, DM9051_ISR, &isr);
+		ret = eth_dm9051_isr_service(dev, &isr);
 		if (ret < 0) {
 			isr = 0;
-			LOG_ERR("%s: Failed to read ISR (err %d)", dev->name, ret);
-			eth_stats_update_errors_rx(data->iface);
-			continue;
-		}
-
-		ret = eth_dm9051_spi_write_reg(dev, DM9051_ISR, isr);
-		if (ret < 0) {
-			isr = 0;
-			LOG_ERR("%s: Failed to write ISR (err %d)", dev->name, ret);
 			eth_stats_update_errors_rx(data->iface);
 			continue;
 		}
@@ -803,11 +843,6 @@ static void eth_dm9051_rx_thread(void *p1, void *p2, void *p3)
 		 * every service.
 		 */
 		progress = false;
-
-		if ((isr & DM9051_ISR_PT) > 0) {
-			k_sem_give(&data->tx_done);
-			LOG_DBG("%s: Packet Transmitted", dev->name);
-		}
 
 		if ((isr & DM9051_ISR_PR) > 0) {
 			ret = eth_dm9051_rx(dev);
@@ -875,6 +910,8 @@ static int eth_dm9051_set_config(const struct device *dev,
 	uint8_t rcr;
 	int ret;
 
+	k_mutex_lock(&data->spi_lock, K_FOREVER);
+
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
 		memcpy(data->mac_addr, config->mac_address.addr, sizeof(data->mac_addr));
@@ -882,34 +919,41 @@ static int eth_dm9051_set_config(const struct device *dev,
 		ret = eth_dm9051_spi_write_regs(dev, DM9051_PAR, data->mac_addr,
 						sizeof(data->mac_addr));
 		if (ret < 0) {
-			return ret;
+			break;
 		}
 
 		LOG_INF("%s: MAC set to %02x:%02x:%02x:%02x:%02x:%02x", dev->name,
 			data->mac_addr[0], data->mac_addr[1],
 			data->mac_addr[2], data->mac_addr[3],
 			data->mac_addr[4], data->mac_addr[5]);
-
-		return ret;
+		break;
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
 		if (!IS_ENABLED(CONFIG_NET_PROMISCUOUS_MODE)) {
-			return -ENOTSUP;
+			ret = -ENOTSUP;
+			break;
 		}
 
 		ret = eth_dm9051_spi_read_reg(dev, DM9051_RCR, &rcr);
 		if (ret < 0) {
-			return ret;
+			break;
 		}
 
 		if (config->promisc_mode == ((rcr & DM9051_RCR_PRMSC) > 0)) {
-			return -EALREADY;
+			ret = -EALREADY;
+			break;
 		}
 
 		rcr = (rcr & ~DM9051_RCR_PRMSC) | (config->promisc_mode ? DM9051_RCR_PRMSC : 0);
-		return eth_dm9051_spi_write_reg(dev, DM9051_RCR, rcr);
+		ret = eth_dm9051_spi_write_reg(dev, DM9051_RCR, rcr);
+		break;
 	default:
-		return -ENOTSUP;
+		ret = -ENOTSUP;
+		break;
 	}
+
+	k_mutex_unlock(&data->spi_lock);
+
+	return ret;
 }
 
 static const struct device *eth_dm9051_get_phy(const struct device *dev,
@@ -941,7 +985,8 @@ static int eth_dm9051_get_link_state(const struct device *dev,
 	return 0;
 }
 
-static int eth_dm9051_phy_read(const struct device *dev, uint16_t reg_addr, uint32_t *data)
+/* Called with spi_lock held */
+static int eth_dm9051_phy_read_locked(const struct device *dev, uint16_t reg_addr, uint32_t *data)
 {
 	uint16_t phy_data;
 	int ret;
@@ -972,7 +1017,20 @@ static int eth_dm9051_phy_read(const struct device *dev, uint16_t reg_addr, uint
 	return 0;
 }
 
-static int eth_dm9051_phy_write(const struct device *dev, uint16_t reg_addr, uint32_t data)
+static int eth_dm9051_phy_read(const struct device *dev, uint16_t reg_addr, uint32_t *data)
+{
+	struct eth_dm9051_data *dev_data = dev->data;
+	int ret;
+
+	k_mutex_lock(&dev_data->spi_lock, K_FOREVER);
+	ret = eth_dm9051_phy_read_locked(dev, reg_addr, data);
+	k_mutex_unlock(&dev_data->spi_lock);
+
+	return ret;
+}
+
+/* Called with spi_lock held */
+static int eth_dm9051_phy_write_locked(const struct device *dev, uint16_t reg_addr, uint32_t data)
 {
 	uint16_t phy_data = sys_cpu_to_le16((uint16_t)data);
 	int ret;
@@ -994,6 +1052,18 @@ static int eth_dm9051_phy_write(const struct device *dev, uint16_t reg_addr, uin
 	}
 
 	return eth_dm9051_epcr_poll(dev, K_MSEC(10));
+}
+
+static int eth_dm9051_phy_write(const struct device *dev, uint16_t reg_addr, uint32_t data)
+{
+	struct eth_dm9051_data *dev_data = dev->data;
+	int ret;
+
+	k_mutex_lock(&dev_data->spi_lock, K_FOREVER);
+	ret = eth_dm9051_phy_write_locked(dev, reg_addr, data);
+	k_mutex_unlock(&dev_data->spi_lock);
+
+	return ret;
 }
 
 static DEVICE_API(ethphy, ethphy_dm9051_api) = {
