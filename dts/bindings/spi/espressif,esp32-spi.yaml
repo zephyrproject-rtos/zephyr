@@ -61,7 +61,18 @@ properties:
 
   dummy-comp:
     type: boolean
-    description: Enable dummy SPI compensation cycles
+    description: |
+      Disable dummy cycle compensation of the input delay.
+
+      Above a certain clock frequency, data received through the GPIO matrix
+      arrives too late to be sampled correctly. Half-duplex transfers that
+      receive data get extra dummy cycles to compensate, while full-duplex
+      mode does not support such frequencies.
+
+      Setting this property drops these dummy cycles and allows such
+      frequencies in full-duplex mode, at the risk of corrupting received
+      data. Devices that are only written to, such as displays, are not
+      affected.
 
   sio:
     type: boolean
