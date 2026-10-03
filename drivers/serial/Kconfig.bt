@@ -11,6 +11,8 @@ config UART_BT
 	help
 	  Enable the UART over NUS Bluetooth driver, which can be used to pipe
 	  serial data over Bluetooth LE GATT using NUS (Nordic UART Service).
+	  Output written while no peer has notifications enabled is discarded
+	  rather than buffered.
 
 if UART_BT
 
