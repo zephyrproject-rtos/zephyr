@@ -64,9 +64,14 @@ static inline uint64_t ctf_top_timestamp_get(void)
 			return;                                                                    \
 		}                                                                                  \
 		int key = irq_lock();                                                              \
+		const uint16_t stream_id = 0;                                                      \
+		uint16_t packet_size = 0;                                                          \
 		const uint64_t tstamp = ctf_top_timestamp_get();                                   \
                                                                                                    \
-		CTF_GATHER_FIELDS(tstamp, __VA_ARGS__)                                             \
+		packet_size = 8 * (0 MAP(CTF_INTERNAL_FIELD_SIZE, stream_id, packet_size, tstamp,  \
+					 ##__VA_ARGS__));                                          \
+                                                                                                   \
+		CTF_GATHER_FIELDS(stream_id, packet_size, tstamp, __VA_ARGS__)                     \
 		irq_unlock(key);                                                                   \
 	}
 #else
