@@ -17,6 +17,10 @@ extern int write_cmd(struct bt_conn *conn);
 extern struct bt_conn *conn_connected;
 extern uint32_t last_write_rate;
 extern uint32_t *write_countdown;
+extern void (*restart_adv_func)(void);
+#if defined(CONFIG_USE_NOTIFY)
+extern int notify_data(struct bt_conn *conn);
+#endif
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -25,6 +29,19 @@ static const struct bt_data ad[] = {
 static const struct bt_data sd[] = {
 	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
 };
+
+static void start_adv(void)
+{
+	int err;
+
+	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
+	if (err) {
+		printk("Advertising failed to start (err %d)\n", err);
+		return;
+	}
+
+	printk("Advertising successfully started\n");
+}
 
 static void mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
@@ -109,6 +126,9 @@ uint32_t peripheral_gatt_write(uint32_t count)
 
 	printk("Advertising successfully started\n");
 
+	/* Re-advertise on disconnect so a reset/reconnecting peer resumes. */
+	restart_adv_func = start_adv;
+
 	conn_connected = NULL;
 	last_write_rate = 0U;
 	write_countdown = &count;
@@ -132,6 +152,36 @@ uint32_t peripheral_gatt_write(uint32_t count)
 		}
 
 		if (conn) {
+#if defined(CONFIG_USE_NOTIFY)
+			err = notify_data(conn);
+			bt_conn_unref(conn);
+
+			if (err != 0) {
+				/* Not subscribed yet (-EAGAIN) or the link is going
+				 * down (e.g. -ENOTCONN). Sleep rather than busy-loop
+				 * so lower priority threads (e.g. the HCI RX task) are
+				 * not starved and simulated time still advances in bsim.
+				 */
+				k_sleep(K_MSEC(10));
+				continue;
+			}
+
+			/* Only advance the countdown once a notification was
+			 * actually queued (i.e. the peer has subscribed).
+			 */
+			if (count != 0U) {
+				if ((count % 1000U) == 0U) {
+					printk("GATT Notify countdown %u\n", count);
+				}
+
+				count--;
+				if (!count) {
+					break;
+				}
+			}
+
+			k_yield();
+#else
 			write_cmd(conn);
 			bt_conn_unref(conn);
 
@@ -147,6 +197,7 @@ uint32_t peripheral_gatt_write(uint32_t count)
 			}
 
 			k_yield();
+#endif
 		} else {
 			k_sleep(K_SECONDS(1));
 		}

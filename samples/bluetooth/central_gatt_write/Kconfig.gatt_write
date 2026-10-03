@@ -17,3 +17,25 @@ config USE_PHY_UPDATE_ITERATION_ONCE
 	depends on BT_USER_PHY_UPDATE
 	help
 	  Perform PHY Update for a single iteration.
+
+config USE_NOTIFY
+	bool "Use GATT Notifications instead of Write without Response"
+	help
+	  Exercise the GATT Notification throughput path instead of GATT Write
+	  without Response. The peripheral streams notifications and the central
+	  subscribes and receives them. With USE_FULL_DUPLEX both peers subscribe
+	  to and notify each other; otherwise only the peripheral notifies
+	  (one-directional). When disabled (default), both peers transmit GATT
+	  Write without Response commands.
+
+config USE_FULL_DUPLEX
+	bool "Exercise full-duplex (bidirectional) throughput"
+	default y
+	help
+	  Drive throughput from both peers simultaneously. For GATT Write without
+	  Response this is the inherent behaviour. For GATT Notifications
+	  (USE_NOTIFY) both peers subscribe to and notify each other instead of
+	  the one-directional peripheral-to-central path. Full-duplex transfers
+	  help uncover stack regressions such as deadlocks/livelocks (for example
+	  on supervision timeout) under simultaneous bidirectional load. Disable
+	  to exercise the one-directional (simplex) notify path.
