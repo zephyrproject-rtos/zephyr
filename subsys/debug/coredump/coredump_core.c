@@ -11,6 +11,9 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
+#ifdef CONFIG_DEBUG_COREDUMP_CRC
+#include <zephyr/sys/crc.h>
+#endif
 
 #include "coredump_internal.h"
 #if defined(CONFIG_DEBUG_COREDUMP_BACKEND_LOGGING)
@@ -47,6 +50,19 @@ static struct coredump_backend_api
 #if defined(CONFIG_COREDUMP_DEVICE)
 #include <zephyr/drivers/coredump.h>
 #define DT_DRV_COMPAT zephyr_coredump
+#endif
+
+#ifdef CONFIG_DEBUG_COREDUMP_CRC
+/* Running CRC-32 (IEEE) over every byte emitted for the current dump. */
+static uint32_t coredump_running_crc;
+
+/*
+ * Scratch buffer used to snapshot each output chunk so the CRC and the emitted
+ * bytes are computed from the exact same copy. It is deliberately a dedicated
+ * global symbol so the linker-RAM memory-region list can exclude it from the
+ * dump (see coredump_memory_regions.c).
+ */
+uint8_t z_coredump_crc_scratch[COREDUMP_CRC_SCRATCH_SIZE];
 #endif
 
 /*
@@ -107,8 +123,34 @@ static void dump_header(unsigned int reason)
 
 	hdr.tgt_code = sys_cpu_to_le16(arch_coredump_tgt_code_get());
 
+#ifdef CONFIG_DEBUG_COREDUMP_CRC
+	/* Advertise the CRC trailer so host tooling can reject a CRC dump that
+	 * was truncated before its trailer (rather than treat it as legacy).
+	 */
+	hdr.flag |= COREDUMP_HDR_FLAG_CRC;
+#endif
+
+	/* Route through coredump_buffer_output() so the header is covered by
+	 * the CRC trailer (when CONFIG_DEBUG_COREDUMP_CRC is enabled).
+	 */
+	coredump_buffer_output((uint8_t *)&hdr, sizeof(hdr));
+}
+
+#ifdef CONFIG_DEBUG_COREDUMP_CRC
+static void dump_crc_trailer(void)
+{
+	struct coredump_crc_hdr_t hdr = {
+		.id = COREDUMP_CRC_HDR_ID,
+		.hdr_version = sys_cpu_to_le16(COREDUMP_CRC_HDR_VER),
+		.crc = sys_cpu_to_le32(coredump_running_crc),
+	};
+
+	/* Write the trailer straight to the backend so the CRC it carries is
+	 * not folded into itself.
+	 */
 	backend_api->buffer_output((uint8_t *)&hdr, sizeof(hdr));
 }
+#endif /* CONFIG_DEBUG_COREDUMP_CRC */
 
 #if defined(CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_MIN) ||                                              \
 	defined(CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_THREADS)
@@ -354,6 +396,11 @@ void coredump(unsigned int reason, const struct arch_esf *esf,
 
 	z_coredump_start();
 
+#ifdef CONFIG_DEBUG_COREDUMP_CRC
+	/* crc32_ieee_update() seeds from 0x0 to match crc32_ieee(). */
+	coredump_running_crc = 0U;
+#endif
+
 #ifdef CONFIG_DEBUG_COREDUMP_SMP_FREEZE_CPUS
 	/*
 	 * Freeze every other CPU as early as possible so their captured
@@ -394,6 +441,10 @@ void coredump(unsigned int reason, const struct arch_esf *esf,
 	arch_coredump_thaw_other_cpus();
 #endif
 
+#ifdef CONFIG_DEBUG_COREDUMP_CRC
+	dump_crc_trailer();
+#endif
+
 	z_coredump_end();
 
 	(void)atomic_ptr_cas(&coredump_owner, self, NULL);
@@ -416,7 +467,42 @@ void coredump_buffer_output(uint8_t *buf, size_t buflen)
 		return;
 	}
 
+#ifdef CONFIG_DEBUG_COREDUMP_CRC
+	/*
+	 * Some dumped regions are volatile - most notably the ISR/exception
+	 * stack this dump routine is itself running on. Reading the source
+	 * buffer once for the CRC and letting the backend read it again for
+	 * output would let those two reads observe different bytes, so the
+	 * CRC would not match the emitted stream. Copy each chunk into a
+	 * scratch buffer and both CRC and emit from that same copy, so the
+	 * trailer always describes exactly what was written out.
+	 *
+	 * The scratch buffer is mutated while the dump runs, so it must not be
+	 * part of the dumped image. It is carved out of the linker-RAM
+	 * memory-region list (see coredump_memory_regions.c), which guarantees
+	 * the source range passed here never overlaps the scratch - a plain
+	 * memcpy() is therefore safe. coredump runs single-threaded on the fatal
+	 * path (other CPUs frozen), so the shared buffer needs no locking.
+	 */
+	uint8_t *src = buf;
+	size_t remaining = buflen;
+
+	while (remaining > 0U) {
+		size_t chunk = MIN(remaining, sizeof(z_coredump_crc_scratch));
+
+		(void)memcpy(z_coredump_crc_scratch, src, chunk);
+		coredump_running_crc =
+			crc32_ieee_update(coredump_running_crc, z_coredump_crc_scratch, chunk);
+		backend_api->buffer_output(z_coredump_crc_scratch, chunk);
+
+		src += chunk;
+		remaining -= chunk;
+	}
+
+	return;
+#else
 	backend_api->buffer_output(buf, buflen);
+#endif
 }
 
 void coredump_memory_dump(uintptr_t start_addr, uintptr_t end_addr)
