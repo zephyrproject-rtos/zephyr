@@ -13,6 +13,16 @@
         KEEP(*(.stack_chk.guard));
     } GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif /* CONFIG_STACK_CANARIES_TLS_PREPEND */
+
+#endif /* CONFIG_THREAD_LOCAL_STORAGE */
+
+	/*
+	 * Absorb all TLS input sections into explicit output sections.
+	 * When CONFIG_THREAD_LOCAL_STORAGE is enabled these hold the actual
+	 * per-thread data; when it is disabled they act as catch-alls so that
+	 * TLS sections contributed by C library objects (e.g. .tbss.errno from
+	 * newlib) are not left as linker orphans, which would produce warnings.
+	 */
 	SECTION_DATA_PROLOGUE(tdata,,)
 	{
 		*(.tdata .tdata.* .gnu.linkonce.td.*);
@@ -22,6 +32,8 @@
 	{
 		*(.tbss .tbss.* .gnu.linkonce.tb.* .tcommon);
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
 
 #if defined(CONFIG_STACK_CANARIES_TLS_PREPEND)
 #ifdef CONFIG_XIP
