@@ -875,6 +875,7 @@ static inline void ch_process_control(const struct device *dev,
 			/* Data stage is present, go to data stage */
 			next_dir_is_in = usb_reqtype_is_to_host(setup);
 			xfer->stage = UHC_CONTROL_STAGE_DATA;
+			ch->data->next_pid = USB_DWC2_HCTSIZ_PID_DATA1; /* TODO: check? Always? */
 
 			/*
 			 * NOTE: Sizes
