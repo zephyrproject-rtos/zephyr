@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for USB device support.
+
+rules:
+  USBD_DFU_ENABLE_UPLOAD:
+    value: n
+    rationale: |
+      Sets the DFU bitCanUpload flag, letting any USB host read out the full contents of every
+      flash partition exposed as a DFU image, application code and stored secrets included.
+    references: [CWE-200]
+
+  USB_DFU_ENABLE_UPLOAD:
+    value: n
+    rationale: |
+      Makes the legacy DFU class answer upload requests, letting any USB host read back the slot
+      partitions. The running image in slot0 is read in decrypted form even with MCUboot image
+      encryption enabled.
+    references: [CWE-200]
+
+  USB_DFU_PERMANENT_DOWNLOAD:
+    value: n
+    rationale: |
+      Marks each image downloaded over USB DFU as permanent, bypassing MCUboot's test-and-confirm
+      step. A faulty or malicious image then stays installed with no automatic revert, which can
+      leave the device unrecoverable.
