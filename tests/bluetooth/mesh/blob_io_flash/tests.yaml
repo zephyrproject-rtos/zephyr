@@ -9,3 +9,14 @@ tests:
       - mesh
     integration_platforms:
       - native_sim
+  bluetooth.mesh.blob_io_flash.block_cache:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="test.overlay"
+      - CONFIG_BT_MESH_BLOB_IO_FLASH_BLOCK_CACHE=y
+    platform_allow:
+      - native_sim
+    tags:
+      - bluetooth
+      - mesh
+    integration_platforms:
+      - native_sim

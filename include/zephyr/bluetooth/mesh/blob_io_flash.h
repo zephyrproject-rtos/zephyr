@@ -39,6 +39,22 @@ struct bt_mesh_blob_io_flash {
 	const struct flash_area *area;
 	/* BLOB stream. */
 	struct bt_mesh_blob_io io;
+
+#if defined(CONFIG_BT_MESH_BLOB_IO_FLASH_BLOCK_CACHE)
+	/* Block cache used when CONFIG_BT_MESH_BLOB_IO_FLASH_BLOCK_CACHE is set.
+	 * Received chunks are accumulated here by block-relative offset and the
+	 * whole block is programmed write-block-aligned, exactly once, at
+	 * block_end. This prevents re-programming a write block that is shared
+	 * by two adjacent chunks, which would corrupt the ECC syndrome on flash
+	 * that allows only one program per erase.
+	 */
+	/* Staging buffer for the current block. */
+	uint8_t block_buf[CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MAX];
+	/* Absolute flash-area offset of the cached block, or -1 when none. */
+	off_t block_base;
+	/* Number of valid bytes in block_buf for the current block. */
+	size_t block_len;
+#endif /* CONFIG_BT_MESH_BLOB_IO_FLASH_BLOCK_CACHE */
 };
 
 /** @brief Initialize a flash stream.
