@@ -46,18 +46,13 @@ struct user_init_stack_frame {
 	struct init_stack_frame iframe;
 	uint32_t user_sp;
 };
-
-static bool is_user(struct k_thread *thread)
-{
-	return (thread->base.user_options & K_USER) != 0;
-}
 #endif
 
 /* Set all stack-related architecture variables for the provided thread */
 static void setup_stack_vars(struct k_thread *thread)
 {
 #ifdef CONFIG_USERSPACE
-	if (is_user(thread)) {
+	if (k_thread_is_user_thread(thread)) {
 #ifdef CONFIG_GEN_PRIV_STACKS
 		thread->arch.priv_stack_start =
 			(uint32_t)z_priv_stack_find(thread->stack_obj);
@@ -72,7 +67,7 @@ static void setup_stack_vars(struct k_thread *thread)
 
 #ifdef CONFIG_ARC_STACK_CHECKING
 #ifdef CONFIG_USERSPACE
-	if (is_user(thread)) {
+	if (k_thread_is_user_thread(thread)) {
 		thread->arch.k_stack_top = thread->arch.priv_stack_start;
 		thread->arch.k_stack_base = (thread->arch.priv_stack_start +
 					     CONFIG_PRIVILEGED_STACK_SIZE);
@@ -98,7 +93,7 @@ static struct init_stack_frame *get_iframe(struct k_thread *thread,
 					   char *stack_ptr)
 {
 #ifdef CONFIG_USERSPACE
-	if (is_user(thread)) {
+	if (k_thread_is_user_thread(thread)) {
 		/* Initial stack frame for a user thread is slightly larger;
 		 * we land in z_user_thread_entry_wrapper on the privilege
 		 * stack, and pop off an additional value for the user
@@ -169,7 +164,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 * executing a loop without yielding.
 	 */
 	iframe->status32 = _ARC_V2_STATUS32_US | _ARC_V2_STATUS32_DZ;
-	if (is_user(thread)) {
+	if (k_thread_is_user_thread(thread)) {
 		iframe->pc = (uint32_t)z_user_thread_entry_wrapper;
 	} else {
 		iframe->pc = (uint32_t)z_thread_entry_wrapper;
