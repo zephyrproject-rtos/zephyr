@@ -1,0 +1,50 @@
+# Copyright (c) 2026 The Zephyr Project Contributors
+# Copyright (c) 2026 Dev It Wise
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  WS2812-family addressable LED strip driven by the nRF PWM peripheral with
+  EasyDMA. The strip is its own node; it takes one nRF PWM instance through the
+  'generator' phandle and drives it directly, the way nordic,nrf-sw-pwm takes a
+  TIMER or RTC instance. That instance must be left disabled so that Zephyr's
+  own PWM driver does not bind it, and its pinctrl states select the output pin
+  that carries the WS2812 data line.
+
+compatible: "worldsemi,ws2812-nrf-pwm"
+
+include: ws2812.yaml
+
+properties:
+  generator:
+    type: phandle
+    required: true
+    description: |
+      The nRF PWM instance this strip drives. The driver claims it outright:
+      it takes the nrfx instance from the referenced node's register address,
+      connects that node's interrupt, and applies that node's pinctrl default
+      state. Leave the referenced node disabled - Zephyr's PWM driver must not
+      bind the same instance.
+
+  time-t0h:
+    type: int
+    default: 400
+    description: |
+      How long the output signal stays high to signify a 0 bit, in
+      nanoseconds. The default is the time for WS2812B (0.4us +/- 150ns).
+
+  time-t1h:
+    type: int
+    default: 800
+    description: |
+      How long the output signal stays high to signify a 1 bit, in
+      nanoseconds. The default is the time for WS2812B (0.8us +/- 150ns).
+
+  time-total:
+    type: int
+    default: 1250
+    description: |
+      How long one bit, a pulse containing a high and a low part, lasts, in
+      nanoseconds. The default is the time for WS2812B (1.25us +/- 600ns).
+      Slower WS2812 clones that lose the chain partway down need a longer
+      period - e.g. 2000 ns, which matches the relaxed timing many "WS2812"
+      parts actually require.
