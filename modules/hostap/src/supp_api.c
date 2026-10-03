@@ -1631,7 +1631,7 @@ int supplicant_status(const struct device *dev __unused, struct net_if *iface,
 	if (wpa_s->wpa_state >= WPA_ASSOCIATED) {
 		struct wpa_ssid *ssid = wpa_s->current_ssid;
 		u8 channel = 0;
-		struct signal_poll_resp signal_poll;
+		struct signal_poll_resp signal_poll = { 0 };
 		u8 *_ssid;
 		size_t ssid_len;
 		struct status_resp cli_status;
