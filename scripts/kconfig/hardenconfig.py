@@ -22,8 +22,8 @@ same name, e.g. 'west build -t hardenconfig -- -DHARDENCONFIG_PROFILE=base'):
 
 import json
 import os
+import shutil
 import sys
-import textwrap
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
@@ -63,7 +63,8 @@ class Option:
     current: str | None = None
     visible: bool = False
     origin: str = 'database'  # 'database' or 'marker'
-    references: list[str] = field(default_factory=list)
+    # see hardeninglib.resolve_cwe()
+    references: list[hardeninglib.Reference] = field(default_factory=list)
     # database file (or Kconfig file, for marker options) the rule comes from
     source: str | None = None
 
@@ -109,7 +110,7 @@ def build_report(
                 result=hardeninglib.evaluate_rule(rule, symbol if visible else None),
                 current=symbol.str_value if symbol is not None else None,
                 visible=visible,
-                references=list(rule['references']),
+                references=[hardeninglib.resolve_cwe(ref) for ref in rule['references']],
                 source=rule['source'],
             )
         )
@@ -164,8 +165,28 @@ def write_json(report: HardeningReport, path: str) -> None:
         out.write('\n')
 
 
+def flexible_column_widths(term_width: int) -> tuple[int, int]:
+    """Split the terminal width left over by the fixed columns between the
+    Rationale and References columns. On terminals narrower than ~120
+    columns the minimum widths win and the table may wrap.
+    """
+    # Widest expected Name/Current/Recommended/Result contents, plus the
+    # borders and padding the 'grid' table format adds around six columns.
+    fixed = 37 + 7 + 11 + 6 + 19
+    available = term_width - fixed
+    rationale_width = max(24, available * 3 // 5)
+    references_width = max(14, available - rationale_width)
+    return rationale_width, references_width
+
+
+def format_references(references: list[hardeninglib.Reference]) -> str:
+    return '\n'.join(
+        f"{ref['id']}: {ref['name']}" if ref['name'] else ref['id'] for ref in references
+    )
+
+
 def render_text(report: HardeningReport, show_all: bool) -> str:
-    headers = ['Name', 'Current', 'Recommended', 'Check result', 'Rationale']
+    headers = ['Name', 'Current', 'Recommended', 'Result', 'Rationale', 'References']
 
     table_data = [
         [
@@ -173,7 +194,10 @@ def render_text(report: HardeningReport, show_all: bool) -> str:
             opt.current,
             opt.recommended,
             opt.result,
-            textwrap.fill(opt.rationale, width=50),
+            # collapse the newlines YAML literal blocks preserve, so tabulate
+            # re-wraps the rationale as one paragraph
+            ' '.join(opt.rationale.split()),
+            format_references(opt.references),
         ]
         for opt in report.options
         if show_all or opt.result == 'FAIL'
@@ -181,7 +205,17 @@ def render_text(report: HardeningReport, show_all: bool) -> str:
 
     lines = [f'Hardening report for profile: {report.profile}']
     if table_data:
-        lines.append(tabulate(table_data, headers=headers, tablefmt='grid'))
+        rationale_width, references_width = flexible_column_widths(
+            shutil.get_terminal_size(fallback=(132, 24)).columns
+        )
+        lines.append(
+            tabulate(
+                table_data,
+                headers=headers,
+                tablefmt='grid',
+                maxcolwidths=[None, None, None, None, rationale_width, references_width],
+            )
+        )
     n_fail = len(report.failures)
     if n_fail:
         lines.append(f'{n_fail} option(s) deviate from the hardening recommendations.')

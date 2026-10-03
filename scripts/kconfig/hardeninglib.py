@@ -17,6 +17,7 @@ This module is shared between the 'hardenconfig' build target
 are loaded and how they are interpreted.
 """
 
+import re
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, Protocol, TypedDict
@@ -291,6 +292,46 @@ def check_profile_integrity(database: Database) -> list[str]:
                 errors.append(f"rule {symbol}: unknown profile '{tag}'")
 
     return errors
+
+
+class Reference(TypedDict):
+    """A resolved rule reference, as produced by resolve_cwe()."""
+
+    id: str
+    name: str | None
+
+
+_CWE_RE = re.compile(r'CWE-(\d+)', re.IGNORECASE)
+
+# Lazily initialized cwe2 database, so its dataset is only loaded when a
+# reference actually needs resolving.
+_cwe_db: Any = None
+
+
+def _cwe_database() -> Any:
+    global _cwe_db
+    if _cwe_db is None:
+        from cwe2.database import Database as CweDatabase
+
+        _cwe_db = CweDatabase()
+    return _cwe_db
+
+
+def resolve_cwe(reference: str) -> Reference:
+    """Resolve a reference string to a {'id': ..., 'name': ...} dict.
+
+    For 'CWE-NNN' references the name is looked up in the offline CWE
+    database provided by the cwe2 package. The name is None when the
+    reference is not a CWE identifier or the identifier is unknown.
+    """
+    name: str | None = None
+    match = _CWE_RE.fullmatch(reference)
+    if match:
+        try:
+            name = _cwe_database().get(int(match.group(1))).name
+        except Exception:
+            name = None
+    return {'id': reference, 'name': name}
 
 
 def recommended_str(rule: Rule) -> str:
