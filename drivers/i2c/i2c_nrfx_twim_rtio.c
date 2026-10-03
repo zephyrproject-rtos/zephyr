@@ -61,14 +61,23 @@ static bool i2c_nrfx_twim_rtio_start(const struct device *dev, int *status)
 				break;
 			}
 
+			/*
+			 * We will copy the message buffer to the user RX buffer if RX operation
+			 * completes successfully. The user_rx_buf != NULL indicates the current
+			 * operation is an RX operation using the message buffer.
+			 */
 			data->user_rx_buf = sqe->rx.buf;
 			data->user_rx_buf_size = sqe->rx.buf_len;
+
 			error = i2c_nrfx_twim_msg_transfer(dev, I2C_MSG_READ | sqe->iodev_flags,
 							   config->common.msg_buf,
 							   data->user_rx_buf_size,
 							   dt_spec->addr);
+			if (error) {
+				/* RX operation using the message buffer was not started */
+				data->user_rx_buf = NULL;
+			}
 		} else {
-			data->user_rx_buf = NULL;
 			error = i2c_nrfx_twim_msg_transfer(dev, I2C_MSG_READ | sqe->iodev_flags,
 							   sqe->rx.buf, sqe->rx.buf_len,
 							   dt_spec->addr);
@@ -203,8 +212,14 @@ static void event_handler(nrfx_twim_event_t const *p_event, void *p_context)
 	struct i2c_nrfx_twim_rtio_data *data = dev->data;
 	int status = p_event->type == NRFX_TWIM_EVT_DONE ? 0 : -EIO;
 
-	if (data->user_rx_buf) {
-		memcpy(data->user_rx_buf, config->common.msg_buf, data->user_rx_buf_size);
+	/* RX user buffer is only set if we are doing an RX operation using the message buffer */
+	if (data->user_rx_buf != NULL) {
+		/* Copy message buffer to user RX buffer if RX operation successful */
+		if (status == 0) {
+			memcpy(data->user_rx_buf, config->common.msg_buf, data->user_rx_buf_size);
+		}
+
+		data->user_rx_buf = NULL;
 	}
 
 	i2c_nrfx_twim_rtio_complete(dev, status);
