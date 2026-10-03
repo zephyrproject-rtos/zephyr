@@ -104,7 +104,11 @@ static void counter_dw_timer_irq_handler(const struct device *timer_dev)
 		sys_set_bit(reg_base + CONTROLREG_OFST, TIMER_INTR_MASK_BIT);
 
 		data->alarm_cb = NULL;
+
+		k_spin_unlock(&data->lock, key);
+
 		alarm_cb(timer_dev, 0, ticks, data->prv_data);
+		return;
 
 	} else if (data->top_cb) {
 		data->top_cb(timer_dev, data->prv_data);
@@ -187,13 +191,8 @@ static int counter_dw_timer_set_top_value(const struct device *timer_dev,
 		return -EBUSY;
 	}
 
-	if (!top_cfg->callback) {
-		/* mask an interrupt if callback is not passed */
-		sys_set_bit(reg_base + CONTROLREG_OFST, TIMER_INTR_MASK_BIT);
-	} else {
-		/* unmask interrupt if callback is passed */
-		sys_clear_bit(reg_base + CONTROLREG_OFST, TIMER_INTR_MASK_BIT);
-	}
+	/* mask an interrupt */
+	sys_set_bit(reg_base + CONTROLREG_OFST, TIMER_INTR_MASK_BIT);
 
 	data->top_cb = top_cfg->callback;
 	data->prv_data = top_cfg->user_data;
@@ -203,6 +202,11 @@ static int counter_dw_timer_set_top_value(const struct device *timer_dev,
 
 	/* configuring timer in user-defined mode */
 	sys_set_bit(reg_base + CONTROLREG_OFST, TIMER_MODE_BIT);
+
+	if (top_cfg->callback) {
+		/* unmask interrupt if callback is passed */
+		sys_clear_bit(reg_base + CONTROLREG_OFST, TIMER_INTR_MASK_BIT);
+	}
 
 	/* set new top value */
 	sys_write32(top_cfg->ticks, reg_base + LOADCOUNT_OFST);
@@ -244,10 +248,13 @@ static int counter_dw_timer_set_alarm(const struct device *timer_dev, uint8_t ch
 
 	/* check if alarm is already active */
 	if (data->alarm_cb != NULL) {
-		LOG_ERR("Alarm is already active\n");
 		k_spin_unlock(&data->lock, key);
+		LOG_ERR("Alarm is already active\n");
 		return -EBUSY;
 	}
+
+	/* mask an interrupt */
+	sys_set_bit(reg_base + CONTROLREG_OFST, TIMER_INTR_MASK_BIT);
 
 	data->alarm_cb = alarm_cfg->callback;
 	data->prv_data = alarm_cfg->user_data;
@@ -256,6 +263,8 @@ static int counter_dw_timer_set_alarm(const struct device *timer_dev, uint8_t ch
 
 	/* start timer in user-defined mode */
 	sys_set_bit(reg_base + CONTROLREG_OFST, TIMER_MODE_BIT);
+
+	/* unmask an interrupt */
 	sys_clear_bit(reg_base + CONTROLREG_OFST, TIMER_INTR_MASK_BIT);
 
 	sys_write32(alarm_cfg->ticks, reg_base + LOADCOUNT_OFST);
