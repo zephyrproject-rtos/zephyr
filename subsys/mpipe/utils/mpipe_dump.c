@@ -22,41 +22,32 @@
 #include <zephyr/mpipe/mpipe_value.h>
 #include <zephyr/mpipe/utils/mpipe_dump.h>
 
-/**
- * Longest line held before it is written out; a longer line is split, and a
- * mid-line split lets an active shell inject its prompt into the graph, so
- * this fits a node line whose ports carry caps.
+/*
+ * Longest line held before it is written out. A longer line is split, and an
+ * active shell may inject its prompt at the split, so this fits a node line.
  */
 #define DUMP_LINE_MAX 256
 
-/**
- * An output callback with one line of output held in front of it. Writing
- * fragment by fragment floods the deferred log buffer behind printk() and drops
- * lines; holding a line brings a graph down to a dozen writes.
+/*
+ * An output callback with one line held in front of it: writing fragment by
+ * fragment floods the deferred log buffer behind printk() and drops lines.
  */
 struct mpipe_dump_writer {
-	/** Where a completed line is written, NULL for the console */
+	/* Where a completed line is written, NULL for the console */
 	mpipe_dump_print_t print;
-	/** Passed to @ref print untouched */
 	void *ctx;
-	/** Number of characters held in @ref line */
+	/* Number of characters held in line */
 	size_t len;
-	/** The line being built, not NUL-terminated until it is written */
 	char line[DUMP_LINE_MAX];
 };
 
-/**
- * State of one dump. Elements are indexed up front: a node's DOT name is its
- * position in this array, and an edge names its peer's node by it.
- */
+/* State of one dump. A node's DOT name is its index in elements, which edges refer to. */
 struct mpipe_dump_ctx {
-	/** Where the rendering is written */
 	struct mpipe_dump_writer writer;
-	/** Every element the dumped bin holds, nested bins included */
+	/* Every element the dumped bin holds, nested bins included */
 	struct mpipe_element *elements[CONFIG_MPIPE_DUMP_MAX_ELEMENTS];
-	/** Number of slots in use at the front of @ref elements */
 	int num_elements;
-	/** True once the bin held more elements than @ref elements can index */
+	/* True once the bin held more elements than elements can index */
 	bool truncated;
 };
 
@@ -258,10 +249,7 @@ int mpipe_dump_caps(const struct mpipe_structure *caps, mpipe_dump_print_t print
 	return 0;
 }
 
-/*
- * Render an element as "vid_src #1". Every init function names its element
- * after its type, so the name is printed as it was set.
- */
+/* Render an element as "vid_src #1" */
 static void dump_element_name(struct mpipe_dump_ctx *ctx, struct mpipe_element *element)
 {
 	const char *name = element->name;
@@ -326,10 +314,7 @@ static void dump_dot_ports(struct mpipe_dump_ctx *ctx, sys_dlist_t *pads, const 
 		dump_print(&ctx->writer, "%s<%s%u> %s #%u", first ? "" : "|", side, obj->id, side,
 			   obj->id);
 
-		/*
-		 * A linked pad's caps ride its edge; an unlinked pad has no edge, so
-		 * its caps show here - in parentheses, a record label reserves <>.
-		 */
+		/* An unlinked pad has no edge to carry its caps; a record label reserves <> */
 		if (pad->peer == NULL && !mpipe_structure_is_any(&pad->caps)) {
 			if (mpipe_structure_is_empty(&pad->caps)) {
 				dump_print(&ctx->writer, "\\n(empty)");
