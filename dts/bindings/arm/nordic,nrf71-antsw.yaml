@@ -1,0 +1,34 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  nRF71 antenna switch (ANTSW) steering, shared between Wi-Fi and BLE.
+
+  A single SoC pin steers the antenna switch between the two radios. The
+  physical level is 0 for WLAN and 1 for Bluetooth LE. Early boot code steers
+  to the Kconfig-selected default (SOC_SERIES_NRF71_ANTSW_DEFAULT) from
+  soc_early_init_hook(), then routes the pin to the ANTSWC peripheral
+  (GPIO PIN_CNF CTRLSEL = 5) via nrf_gpio_pin_control_select() so the radios
+  can share the line. Only the port and pin from sel-gpios are used; GPIO
+  active/inactive flags are not interpreted for polarity.
+
+  Because this runs before the GPIO driver is initialized, the pin is
+  configured through the nrf_gpio HAL using the PSEL derived from this
+  property. The pin is SoC specific and is not meant to be changed at a board
+  level.
+
+  Powering the antenna switch is a separate concern handled by the pwr_antswc
+  node (nordic,nrf-pwr-antswc).
+
+compatible: "nordic,nrf71-antsw"
+
+include: base.yaml
+
+properties:
+  sel-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Antenna switch select GPIO (port and pin only). Physical level 0 selects
+      WLAN and level 1 selects Bluetooth LE; GPIO flags are not used for
+      polarity.
