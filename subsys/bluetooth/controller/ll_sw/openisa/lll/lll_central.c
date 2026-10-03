@@ -178,7 +178,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 				 HAL_RADIO_GPIO_PA_OFFSET);
 #else /* !CONFIG_BT_CTLR_PHY */
 	radio_gpio_pa_lna_enable(remainder_us +
-				 radio_tx_ready_delay_get(0, 0) -
+				 radio_tx_ready_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED) -
 				 HAL_RADIO_GPIO_PA_OFFSET);
 #endif /* !CONFIG_BT_CTLR_PHY */
 #else /* !HAL_RADIO_GPIO_HAVE_PA_PIN */
