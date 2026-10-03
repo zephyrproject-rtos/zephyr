@@ -559,6 +559,37 @@ ZTEST(pthread, test_pthread_setschedprio)
 	zassert_ok(pthread_join(th, NULL));
 }
 
+static pthread_once_t once_cancel = PTHREAD_ONCE_INIT;
+static bool once_cancel_executed;
+
+static void once_init_cancel(void)
+{
+	pthread_exit(NULL);
+}
+
+static void once_init_success(void)
+{
+	once_cancel_executed = true;
+}
+
+static void *test_pthread_once_cancel_fn(void *arg)
+{
+	ARG_UNUSED(arg);
+	pthread_once(&once_cancel, once_init_cancel);
+	return NULL;
+}
+
+ZTEST(pthread, test_pthread_once_cancel)
+{
+	pthread_t th;
+
+	zassert_ok(pthread_create(&th, NULL, test_pthread_once_cancel_fn, NULL));
+	zassert_ok(pthread_join(th, NULL));
+
+	zassert_ok(pthread_once(&once_cancel, once_init_success));
+	zassert_true(once_cancel_executed);
+}
+
 static void before(void *arg)
 {
 	ARG_UNUSED(arg);
