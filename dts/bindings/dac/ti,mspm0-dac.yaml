@@ -14,6 +14,20 @@ properties:
   vref:
     type: phandle
 
+  fifo-enable:
+    type: boolean
+    description: |
+      Enable the 4-slot hardware FIFO. When set, the sample time generator
+      clocks samples out of the FIFO at sample-rate-hz, decoupling DAC output
+      timing from CPU write timing.
+
+  sample-rate-hz:
+    type: int
+    enum: [500, 1000, 2000, 4000, 8000, 16000, 100000, 200000, 500000, 1000000]
+    description: |
+      DAC output sample rate in Hz. Maps directly to the sample time generator
+      STIMCONFIG preset. Requires fifo-enable.
+
   "#io-channel-cells":
     const: 1
 
