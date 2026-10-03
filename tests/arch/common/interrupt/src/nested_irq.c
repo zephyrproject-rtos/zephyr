@@ -157,7 +157,11 @@ ZTEST(interrupt_feature, test_nested_isr)
 	irq_line_0 = IRQ0_LINE;
 	irq_line_1 = IRQ1_LINE;
 #elif defined(CONFIG_CPU_CORTEX_M) && defined(CONFIG_DYNAMIC_INTERRUPTS)
+#ifdef CONFIG_2ND_LVL_ISR_TBL_OFFSET
+	irq_line_0 = get_available_nvic_line(CONFIG_2ND_LVL_ISR_TBL_OFFSET);
+#else
 	irq_line_0 = get_available_nvic_line(CONFIG_NUM_IRQS);
+#endif
 	irq_line_1 = get_available_nvic_line(irq_line_0);
 #else
 	ztest_test_skip();
