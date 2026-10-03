@@ -24,9 +24,6 @@ the SoC reference manual (`RM0511`_).
 Supported Features
 ******************
 
-Not yet supported: the sub-GHz radio (MR_SubG), ADC, timers,
-watchdog and low-power modes.
-
 .. zephyr:board-supported-hw::
 
 Connections and IOs
