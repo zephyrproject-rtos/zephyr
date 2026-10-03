@@ -6,4 +6,8 @@ toolchain:
   - zephyr
 ram: 256
 flash: 1024
+supported:
+  - pinctrl
+  - uart
+  - gpio
 vendor: ti
