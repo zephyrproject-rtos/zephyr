@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include "ai_m64p_32s.dtsi"
+#include "../common/ai_m64p_32s_blifn4ir4id.dtsi"
 #include "ai_m64p_32s_kit-pinctrl.dtsi"
 
 / {

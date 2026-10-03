@@ -3,8 +3,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-identifier: aipi_eyes_s2/bl618m05q2i
-name: AiPi-Eyes-S2 Multi-Functional Development Board
+identifier: aipi_cam_d200/bl618m05q2i
+name: AiPi-Cam-200 Multi-Functional Development Board
 type: mcu
 arch: riscv
 ram: 480
@@ -23,5 +23,4 @@ supported:
   - i2c
   - spi
   - flash
-  - video
 vendor: bflb

@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <bflb/bl616.dtsi>
+#include <bflb/bl61x_em_32kb_wifi.dtsi>
+#include "ai_m62-pinctrl.dtsi"
+
+/ {
+	model = "Ai-Thinker M62-12F BLIFN4 Module";
+};
+
+&flash0 {
+	spi-bus-mode = <4>;
+	sf-pad = <1>;
+	jedec-id = [c8 60 16];
+	use-sfdp;
+};

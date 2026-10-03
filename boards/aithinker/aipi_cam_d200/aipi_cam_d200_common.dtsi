@@ -4,39 +4,41 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "aipi_eyes_s2-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include "aipi_cam_d200-pinctrl.dtsi"
 
 / {
-	model = "AiPi-Eyes-S2 Multi-Functional Development Board";
+	model = "AiPi-Cam-200";
 
-	aliases {
-		sw0 = &button_0;
-	};
+	regulator-3v3-cam {
+		compatible = "regulator-gpio";
 
-	buttons {
-		compatible = "gpio-keys";
-
-		button_0: sw0 {
-			gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
-			zephyr,code = <INPUT_KEY_0>;
-		};
+		regulator-name = "3v3-cam";
+		regulator-boot-on;
+		gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
+		states = <3300000 0x1>;
+		startup-delay-us = <10>;
 	};
 };
 
-&i2c0 {
+dvp_24pin_i2c: &i2c0 {
 	status = "okay";
+
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 };
 
+dvp_24pin_interface: &dvp2axi0 {};
+
+dvp_24pin_ep_in: &camfront_ep_in {};
+
 &camfront {
 	status = "okay";
 
 	pinctrl-0 = <&camfront_default>;
 	pinctrl-names = "default";
-	clock-divider = <2>;
 };
 
 &spi0 {

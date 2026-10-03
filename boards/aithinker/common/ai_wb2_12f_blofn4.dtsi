@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <bflb/bl602.dtsi>
+#include <bflb/bl60x_em_8kb_wifi.dtsi>
+#include "ai_wb2_common.dtsi"
+
+/ {
+	model = "Ai-Thinker WB2-12F Module";
+};

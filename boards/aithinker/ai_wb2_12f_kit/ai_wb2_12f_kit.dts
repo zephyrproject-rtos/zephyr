@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include "ai_wb2_12f.dtsi"
+#include "../common/ai_wb2_12f_blofn4.dtsi"
 #include "ai_wb2_12f_kit-pinctrl.dtsi"
 
 / {
@@ -84,14 +84,6 @@
 
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
-};
-
-&sec_eng_aes {
-	status = "okay";
-};
-
-&sec_eng_sha {
-	status = "okay";
 };
 
 &adc0 {

@@ -7,4 +7,4 @@
 /dts-v1/;
 
 #include "../common/ai_m61_32s_blofn8ir4all.dtsi"
-#include "aipi_eyes_s2_common.dtsi"
+#include "aipi_cam_d200_common.dtsi"
