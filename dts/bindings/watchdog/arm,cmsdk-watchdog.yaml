@@ -10,3 +10,12 @@ properties:
 
   clocks:
     required: true
+
+  reset-flags:
+    type: int
+    default: 3
+    description: |
+      Bitmask of supported WDT_FLAG_RESET_* values from
+      dt-bindings/watchdog/arm-cmsdk-watchdog.h. Defaults to
+      WDT_FLAG_RESET_SOC | WDT_FLAG_RESET_CPU_CORE so existing CMSDK
+      boards keep accepting a SoC reset request.
