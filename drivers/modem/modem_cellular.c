@@ -479,7 +479,7 @@ void modem_cellular_chat_on_cgsn_imei(struct modem_chat *chat, char **argv, uint
 	rsp = argv[1];
 	rsp_len = strlen(rsp);
 	if ((rsp_len != 17) || (rsp[0] != '"') || (rsp[16] != '"')) {
-		LOG_WRN("Invalid CGSN respnse: %s", rsp);
+		LOG_WRN("Invalid CGSN response: %s", rsp);
 		return;
 	}
 

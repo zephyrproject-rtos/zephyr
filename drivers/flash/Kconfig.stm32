@@ -116,8 +116,9 @@ config FLASH_STM32_ACCEPT_UNALIGNED_WRITES
 	  When this option is enabled, unaligned writes will be handled by writing to all blocks in range
 	  [offset; offset + length]. Blocks for which only part of the contents are provided are padded with
 	  the flash's erase value before writing. THIS IS NOT A READ-MODIFY-WRITE type operation! The flash
-	  addresses being written to are expected to be erased before writing to them. Contens of the flash
-	  after unaligned writes depend on the flash hardware details. The operation may fault.
+	  addresses being written to are expected to be erased before writing to them.
+	  Contents of the flash after unaligned writes depend on the flash hardware details.
+	  The operation may fault.
 
 if SOC_SERIES_STM32WBAX
 

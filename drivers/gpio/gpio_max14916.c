@@ -115,7 +115,7 @@ static int gpio_max14916_diag_chan_get(const struct device *dev)
 	int diag_ret = 0;
 
 	if (!gpio_pin_get_dt(&config->fault_gpio)) {
-		LOG_ERR("FLT flag is rised");
+		LOG_ERR("FLT flag is raised");
 		diag_ret = -EIO;
 	}
 
