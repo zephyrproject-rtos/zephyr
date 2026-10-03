@@ -37,6 +37,7 @@
 #include <hal/nrf_mpc.h>
 #include <hal/nrf_lfxo.h>
 #include <hal/nrf_gpio.h>
+#include <hal/nrf_reset.h>
 
 #include <approtect_setup.h>
 #include <wicr_setup.h>
@@ -210,6 +211,19 @@ static void wifi_setup(void)
  */
 int nordicsemi_nrf71_init(void)
 {
+#if defined(CONFIG_SOC_NRF7120_ENGA_CPUAPP) || defined(CONFIG_SOC_NRF7120E_ENGA_CPUAPP)
+	/* Clear DFI reset reason to enter ULV state without a power reset. */
+	nrf_reset_resetreas_clear(NRF_RESET, NRF_RESET_RESETREAS_DIF_MASK);
+
+	/* Temporary low-power comparator trim override. */
+#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+	sys_write32(0x3U, 0x50126448U);
+#else
+	sys_write32(0x3U, 0x40126448U);
+#endif
+	__DSB();
+#endif
+
 #if defined(CONFIG_HAS_NORDIC_RAM_CTRL) && !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 	nrfx_ram_ctrl_retention_enable_all_set(false);
 #endif
