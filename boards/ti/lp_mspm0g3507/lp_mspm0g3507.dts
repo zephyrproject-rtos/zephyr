@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/clock/mspm0_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
+#include <dt-bindings/adc/adc.h>
 
 / {
 	model = "TI LP_MSPM0G3507/MSPM0G3507";
@@ -46,6 +47,12 @@
 		pwm_led0: pwm_led0 {
 			pwms = <&pwma0 0 PWM_MSEC(100) PWM_POLARITY_NORMAL>;
 		};
+	};
+
+	zephyr,user {
+		dac = <&dac0>;
+		dac-channel-id = <0>;
+		dac-resolution = <12>;
 	};
 };
 
@@ -135,6 +142,34 @@
 
 &dac0 {
 	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,resolution = <12>;
+		zephyr,buffered;
+	};
+};
+
+&adc0 {
+	clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+	ti,clk-divider = <1>;
+	ti,clk-range = <6>;
+	max-result-reg = <12>;
+	pinctrl-0 = <&analog_pb25>;
+	pinctrl-names = "default";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@4 {
+		reg = <4>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
 };
 
 &spi0 {
