@@ -1,0 +1,7 @@
+description: |
+  STMicroelectronics LSM9DS1-MAG 3-axis magnetometer accessed
+  through SPI bus.
+
+compatible: "st,lsm9ds1_mag"
+
+include: ["spi-device.yaml", "st,lsm9ds1_mag-common.yaml"]
