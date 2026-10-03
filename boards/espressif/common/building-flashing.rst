@@ -74,6 +74,92 @@ Zephyr build. Output is structured by the domain subdirectories:
 
 For more information about the system build please read the :ref:`sysbuild` documentation.
 
+.. _hardware_flash_encryption:
+
+Hardware Flash Encryption
+=========================
+
+Espressif SoCs can enable hardware flash encryption in the Zephyr MCUboot
+sysbuild flow. On the first successful boot after a full chip erase and
+bootloader and application image flashing, MCUboot bootloader generates
+the encryption key, encrypts flash regions in place, burns the required
+eFuses and resets so the encrypted flash cache takes effect.
+
+This is distinct from MCUboot software-based image encryption
+(``SB_CONFIG_BOOT_ENCRYPTION``). Hardware flash encryption referred here
+is related to Espressif's hardware flash encryption feature.
+Hardware flash encryption is not available with Simple Boot.
+
+.. note::
+   When enabling hardware flash encryption, ``write-block-size`` **must**
+   be set to 32 bytes on the SoC or board's overlay file for **both**
+   application and MCUboot bootloader. See
+   :zephyr_file:`samples/boards/espressif/flash_encryption/boards/esp32_devkitc_procpu.overlay`
+   for an example.
+
+Enable it at sysbuild time:
+
+.. code-block:: shell
+
+   west build -b <board> samples/hello_world --sysbuild \
+     -DSB_CONFIG_MCUBOOT_ESP_FLASH_ENCRYPTION=y \
+     -DSB_CONFIG_MCUBOOT_ESP_FLASH_ENCRYPTION_DEVELOPMENT=y
+
+Development mode keeps UART download / encryption paths usable for
+re-flashing and is intended for testing only. It may be desirable to
+also keep JTAG access enabled by setting
+``SB_CONFIG_MCUBOOT_ESP_SECURE_BOOT_ALLOW_JTAG``.
+Release mode is aimed for production and permanently disables those
+insecure paths:
+
+.. code-block:: shell
+
+   west build -b <board> samples/hello_world --sysbuild \
+     -DSB_CONFIG_MCUBOOT_ESP_FLASH_ENCRYPTION=y \
+     -DSB_CONFIG_MCUBOOT_ESP_FLASH_ENCRYPTION_RELEASE=y
+
+.. note::
+
+   Release mode and eFuse burns are irreversible.
+
+For testing without burning real eFuses, enable virtual eFuse emulation
+(optionally persisted in a ``sys_partition`` with
+``SB_CONFIG_MCUBOOT_ESP_EFUSE_VIRTUAL_KEEP_IN_FLASH`` option):
+
+.. code-block:: shell
+
+   west build -b <board> samples/hello_world --sysbuild \
+     -DSB_CONFIG_MCUBOOT_ESP_FLASH_ENCRYPTION=y \
+     -DSB_CONFIG_MCUBOOT_ESP_FLASH_ENCRYPTION_DEVELOPMENT=y \
+     -DSB_CONFIG_MCUBOOT_ESP_EFUSE_VIRTUAL=y \
+     -DSB_CONFIG_MCUBOOT_ESP_EFUSE_VIRTUAL_KEEP_IN_FLASH=y
+
+Additional options under the sysbuild menu
+**Espressif hardware secure features** control XTS-AES key size, UART ROM
+download mode, XTS-AES pseudo-rounds (where supported), and other development
+overrides (JTAG, UART bootloader encryption, and so on). Prefer defaults for
+production builds.
+
+.. note::
+
+   Before enabling hardware flash encryption on a physical device, perform a
+   full chip erase, this is important because flash erased value (``0xFF`` in
+   most cases) read from the trailer registers are part of MCUboot's
+   update-state checking mechanism, thus unknown data or garbage could be
+   potentially interpreted as a valid state and lead to an unexpected
+   behavior.
+   After the first successful boot and flash regions encryption,
+   subsequent device re-flashing must be manually done with the
+   encryption-aware flow (see
+   :ref:`manual_flashing_when_flash_encryption`).
+   OTA updates may be performed sending plaintext images, as the flash
+   read/write operations are encrypted in runtime.
+
+When hardware flash encryption is enabled, sysbuild configures the
+application image, sets :kconfig:option:`CONFIG_ESP_FLASH_ENCRYPTION` and
+sets extra ``imgtool`` arguments for the padding and correct alignment, so
+the flash driver and tools match the encrypted layout.
+
 Manual Build
 ============
 
@@ -154,5 +240,37 @@ message in the monitor:
 
    ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
    Hello World! <board>
+
+.. _manual_flashing_when_flash_encryption:
+
+Manual flashing when Flash Encryption already enabled
+=====================================================
+
+While developing, it may be desirable to re-flash the bootloader/application
+images after having Hardware Flash Encryption already enabled and the flash
+regions already encrypted (only possible when working with
+``SB_CONFIG_MCUBOOT_ESP_FLASH_ENCRYPTION_DEVELOPMENT`` mode enabled). This
+is possible by using the Espressif's ``esptool`` tool manually:
+
+.. code-block:: shell
+
+   esptool -p <port> -b <baudrate> --no-stub --after no-reset write-flash \
+     --flash-mode dio --flash-freq keep --encrypt <slot0_partition_offset> \
+     <build_directory>/smp_svr/zephyr/zephyr.signed.bin --force
+   esptool -p <port> -b <baudrate> --no-stub --after no-reset write-flash \
+     --flash-mode dio --flash-freq keep --encrypt <boot_partition_offset> \
+     <build_directory>/mcuboot/zephyr/zephyr.bin --force
+
+Manually reset the board only after both images are flashed.
+
+.. note::
+
+   As mentioned in the :ref:`hardware_flash_encryption` section, MCUboot's
+   update-state checking mechanism is based on the flash erased value, thus
+   invalid data left on ``slot1_partition`` or ``scratch_partition`` trailer
+   regions could potentially lead to an unexpected behavior. In order to
+   workaround that when re-flashing images, a binary sized the same as the
+   partition filled with ``0xFF`` bytes can be manually flashed using
+   ``esptool``.
 
 .. _`Zephyr Support Status`: https://developer.espressif.com/software/zephyr-support-status/
