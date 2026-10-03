@@ -1,0 +1,424 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+#
+# Config schema for TI AM62L devices
+#
+
+
+definitions:
+  u8:
+    type: integer
+    minimum: 0
+    maximum: 0xff
+  u16:
+    type: integer
+    minimum: 0
+    maximum: 0xffff
+  u32:
+    type: integer
+    minimum: 0
+    maximum: 0xffffffff
+
+
+type: object
+properties:
+  pm-cfg:
+    type: object
+    properties:
+      rev:
+        type: object
+        properties:
+          boardcfg_abi_maj:
+            $ref: "#/definitions/u8"
+          boardcfg_abi_min:
+            $ref: "#/definitions/u8"
+  board-cfg:
+    type: object
+    properties:
+      rev:
+        type: object
+        properties:
+          boardcfg_abi_maj:
+            $ref: "#/definitions/u8"
+          boardcfg_abi_min:
+            $ref: "#/definitions/u8"
+      control:
+        type: object
+        properties:
+          subhdr:
+            type: object
+            properties:
+              magic:
+                $ref: "#/definitions/u16"
+              size:
+                $ref: "#/definitions/u16"
+          main_isolation_enable:
+            $ref: "#/definitions/u8"
+          main_isolation_hostid:
+            $ref: "#/definitions/u16"
+
+      bm_writer_cfg:
+        type: object
+        properties:
+          subhdr:
+            type: object
+            properties:
+              magic:
+                $ref: "#/definitions/u16"
+              size:
+                $ref: "#/definitions/u16"
+          allowed_host:
+            $ref: "#/definitions/u8"
+
+      reserved:
+        type: array
+        minItems: 7
+        maxItems: 7
+        items:
+          $ref: "#/definitions/u8"
+
+      debug_cfg:
+        type: object
+        properties:
+          subhdr:
+            type: object
+            properties:
+              magic:
+                $ref: "#/definitions/u16"
+              size:
+                $ref: "#/definitions/u16"
+          trace_dst_enables:
+            $ref: "#/definitions/u16"
+          trace_src_enables:
+            $ref: "#/definitions/u16"
+
+  sec-cfg:
+    type: object
+    properties:
+      rev:
+        type: object
+        properties:
+          boardcfg_abi_maj:
+            $ref: "#/definitions/u8"
+          boardcfg_abi_min:
+            $ref: "#/definitions/u8"
+
+      processor_acl_list:
+        type: object
+        properties:
+          subhdr:
+            type: object
+            properties:
+              magic:
+                $ref: "#/definitions/u16"
+              size:
+                $ref: "#/definitions/u16"
+          proc_acl_entries:
+            type: array
+            minItems: 32
+            maxItems: 32
+            items:
+              type: object
+              properties:
+                processor_id:
+                  $ref: "#/definitions/u8"
+                proc_access_master:
+                  $ref: "#/definitions/u8"
+                proc_access_secondary:
+                  type: array
+                  minItems: 3
+                  maxItems: 3
+                  items:
+                    $ref: "#/definitions/u8"
+      host_hierarchy:
+        type: object
+        properties:
+          subhdr:
+            type: object
+            properties:
+              magic:
+                $ref: "#/definitions/u16"
+              size:
+                $ref: "#/definitions/u16"
+          host_hierarchy_entries:
+            type: array
+            minItems: 32
+            maxItems: 32
+            items:
+              type: object
+              properties:
+                host_id:
+                  $ref: "#/definitions/u8"
+                supervisor_host_id:
+                  $ref: "#/definitions/u8"
+
+      otp_config:
+        type: object
+        properties:
+          subhdr:
+            type: object
+            properties:
+              magic:
+                $ref: "#/definitions/u16"
+              size:
+                $ref: "#/definitions/u16"
+          otp_entry:
+            type: array
+            minItems: 32
+            maxItems: 32
+            items:
+              type: object
+              properties:
+                host_id:
+                  $ref: "#/definitions/u8"
+                host_perms:
+                  $ref: "#/definitions/u8"
+          write_host_id:
+            $ref: "#/definitions/u8"
+
+      dkek_config:
+        type: object
+        properties:
+          subhdr:
+            type: object
+            properties:
+              magic:
+                $ref: "#/definitions/u16"
+              size:
+                $ref: "#/definitions/u16"
+          allowed_hosts:
+            type: array
+            minItems: 4
+            maxItems: 4
+            items:
+              $ref: "#/definitions/u8"
+          allow_dkek_export_tisci:
+            $ref: "#/definitions/u8"
+          rsvd:
+            type: array
+            minItems: 3
+            maxItems: 3
+            items:
+              $ref: "#/definitions/u8"
+
+      sa2ul_cfg:
+        type: object
+        properties:
+          subhdr:
+            type: object
+            properties:
+              magic:
+                $ref: "#/definitions/u16"
+              size:
+                $ref: "#/definitions/u16"
+          rsvd:
+            type: array
+            minItems: 2
+            maxItems: 4
+            items:
+              $ref: "#/definitions/u8"
+          enable_saul_psil_global_config_writes:
+            $ref: "#/definitions/u8"
+          auth_resource_owner:
+            $ref: "#/definitions/u8"
+
+      sec_dbg_config:
+        type: object
+        properties:
+          subhdr:
+            type: object
+            properties:
+              magic:
+                $ref: "#/definitions/u16"
+              size:
+                $ref: "#/definitions/u16"
+          allow_jtag_unlock:
+            $ref: "#/definitions/u8"
+          allow_wildcard_unlock:
+            $ref: "#/definitions/u8"
+          allowed_debug_level_rsvd:
+            $ref: "#/definitions/u8"
+          rsvd:
+            $ref: "#/definitions/u8"
+          min_cert_rev:
+            $ref: "#/definitions/u32"
+          jtag_unlock_hosts:
+            type: array
+            minItems: 4
+            maxItems: 4
+            items:
+              $ref: "#/definitions/u8"
+
+
+      sec_handover_cfg:
+        type: object
+        properties:
+          subhdr:
+            type: object
+            properties:
+              magic:
+                $ref: "#/definitions/u16"
+              size:
+                $ref: "#/definitions/u16"
+          handover_msg_sender:
+            $ref: "#/definitions/u8"
+          handover_to_host_id:
+            $ref: "#/definitions/u8"
+          rsvd:
+            type: array
+            minItems: 4
+            maxItems: 4
+            items:
+              $ref: "#/definitions/u8"
+
+  rm-cfg:
+    type: object
+    properties:
+      rm_boardcfg:
+        type: object
+        properties:
+          rev:
+            type: object
+            properties:
+              boardcfg_abi_maj:
+                $ref: "#/definitions/u8"
+              boardcfg_abi_min:
+                $ref: "#/definitions/u8"
+
+          host_cfg:
+            type: object
+            properties:
+              subhdr:
+                type: object
+                properties:
+                  magic:
+                    $ref: "#/definitions/u16"
+                  size:
+                    $ref: "#/definitions/u16"
+              host_cfg_entries:
+                type: array
+                minItems: 0
+                maxItems: 32
+                items:
+                  type: object
+                  properties:
+                    host_id:
+                      $ref: "#/definitions/u8"
+                    allowed_atype:
+                      $ref: "#/definitions/u8"
+                    allowed_qos:
+                      $ref: "#/definitions/u16"
+                    allowed_orderid:
+                      $ref: "#/definitions/u32"
+                    allowed_priority:
+                      $ref: "#/definitions/u16"
+                    allowed_sched_priority:
+                      $ref: "#/definitions/u8"
+          resasg:
+            type: object
+            properties:
+              subhdr:
+                type: object
+                properties:
+                  magic:
+                    $ref: "#/definitions/u16"
+                  size:
+                    $ref: "#/definitions/u16"
+              resasg_entries_size:
+                $ref: "#/definitions/u16"
+              reserved:
+                $ref: "#/definitions/u16"
+
+      resasg_entries:
+        type: array
+        minItems: 0
+        maxItems: 468
+        items:
+          type: object
+          properties:
+            start_resource:
+              $ref: "#/definitions/u16"
+            num_resource:
+              $ref: "#/definitions/u16"
+            type:
+              $ref: "#/definitions/u16"
+            host_id:
+              $ref: "#/definitions/u8"
+            reserved:
+              $ref: "#/definitions/u8"
+
+  tifs-rm-cfg:
+    type: object
+    properties:
+      rm_boardcfg:
+        type: object
+        properties:
+          rev:
+            type: object
+            properties:
+              boardcfg_abi_maj:
+                $ref: "#/definitions/u8"
+              boardcfg_abi_min:
+                $ref: "#/definitions/u8"
+
+          host_cfg:
+            type: object
+            properties:
+              subhdr:
+                type: object
+                properties:
+                  magic:
+                    $ref: "#/definitions/u16"
+                  size:
+                    $ref: "#/definitions/u16"
+              host_cfg_entries:
+                type: array
+                minItems: 0
+                maxItems: 32
+                items:
+                  type: object
+                  properties:
+                    host_id:
+                      $ref: "#/definitions/u8"
+                    allowed_atype:
+                      $ref: "#/definitions/u8"
+                    allowed_qos:
+                      $ref: "#/definitions/u16"
+                    allowed_orderid:
+                      $ref: "#/definitions/u32"
+                    allowed_priority:
+                      $ref: "#/definitions/u16"
+                    allowed_sched_priority:
+                      $ref: "#/definitions/u8"
+          resasg:
+            type: object
+            properties:
+              subhdr:
+                type: object
+                properties:
+                  magic:
+                    $ref: "#/definitions/u16"
+                  size:
+                    $ref: "#/definitions/u16"
+              resasg_entries_size:
+                $ref: "#/definitions/u16"
+              reserved:
+                $ref: "#/definitions/u16"
+
+      resasg_entries:
+        type: array
+        minItems: 0
+        maxItems: 468
+        items:
+          type: object
+          properties:
+            start_resource:
+              $ref: "#/definitions/u16"
+            num_resource:
+              $ref: "#/definitions/u16"
+            type:
+              $ref: "#/definitions/u16"
+            host_id:
+              $ref: "#/definitions/u8"
+            reserved:
+              $ref: "#/definitions/u8"
