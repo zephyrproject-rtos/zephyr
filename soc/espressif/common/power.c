@@ -249,6 +249,8 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 #endif
 			esp_err_t ret = esp_light_sleep_start();
 
+			esp32_sleep_gpio_restore();
+
 #if defined(CONFIG_SOC_ESP32_PM_SLEEP_STATS)
 			esp32_sleep_stats_after();
 #endif
@@ -282,7 +284,6 @@ void ESP32_PM_SLEEP_FN_ATTR pm_state_exit_post_ops(enum pm_state state, uint8_t 
 	switch (state) {
 	case PM_STATE_STANDBY:
 		if (sleep_enabled) {
-			esp32_sleep_gpio_restore();
 			rtc_wakeup_enable(state, false);
 		}
 
