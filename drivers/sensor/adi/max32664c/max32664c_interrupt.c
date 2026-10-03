@@ -15,6 +15,8 @@ static void max32664c_interrupt_worker(struct k_work *p_work)
 {
 	struct max32664c_data *data = CONTAINER_OF(p_work, struct max32664c_data, interrupt_work);
 
+	ARG_UNUSED(data);
+
 	/* TODO */
 }
 
@@ -39,28 +41,35 @@ int max32664c_init_interrupt(const struct device *dev)
 	struct max32664c_data *data = dev->data;
 	const struct max32664c_config *config = dev->config;
 
+	/*
+	 * MFIO is multiplexed: driven as an output during reset/bootloader
+	 * entry (see max32664c_bl.c), then switched to an input here so the
+	 * sensor hub can assert it low as its interrupt line during normal
+	 * operation. There is no separate interrupt GPIO in the devicetree
+	 * binding -- mfio-gpios is the only pin this signal can come from.
+	 */
 	LOG_DBG("Configure interrupt pin");
-	if (!gpio_is_ready_dt(&config->int_gpio)) {
-		LOG_ERR_DEVICE_NOT_READY(config->int_gpio.port);
+	if (!gpio_is_ready_dt(&config->mfio_gpio)) {
+		LOG_ERR_DEVICE_NOT_READY(config->mfio_gpio.port);
 		return -ENODEV;
 	}
 
-	err = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
+	err = gpio_pin_configure_dt(&config->mfio_gpio, GPIO_INPUT);
 	if (err < 0) {
 		LOG_ERR("Failed to configure GPIO! Error: %u", err);
 		return err;
 	}
 
-	err = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_FALLING);
+	err = gpio_pin_interrupt_configure_dt(&config->mfio_gpio, GPIO_INT_EDGE_FALLING);
 	if (err < 0) {
 		LOG_ERR("Failed to configure interrupt! Error: %u", err);
 		return err;
 	}
 
 	gpio_init_callback(&data->gpio_cb, max32664c_gpio_callback_handler,
-			   BIT(config->int_gpio.pin));
+			   BIT(config->mfio_gpio.pin));
 
-	err = gpio_add_callback_dt(&config->int_gpio, &data->gpio_cb);
+	err = gpio_add_callback_dt(&config->mfio_gpio, &data->gpio_cb);
 	if (err < 0) {
 		LOG_ERR("Failed to add GPIO callback! Error: %u", err);
 		return err;
