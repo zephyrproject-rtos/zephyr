@@ -8,6 +8,7 @@
 menuconfig NET_TCP
 	bool "TCP"
 	depends on NET_IP
+	depends on NET_CONTEXT
 	help
 	  The value depends on your network needs.
 

@@ -5,6 +5,7 @@
 
 menuconfig NET_SOCKETS
 	bool "BSD Sockets compatible API"
+	depends on NET_CONTEXT || !NET_NATIVE
 	select ZVFS
 	select ZVFS_POLL
 	select ZVFS_SELECT

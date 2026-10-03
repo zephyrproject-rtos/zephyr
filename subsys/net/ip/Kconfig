@@ -97,6 +97,7 @@ config NET_NATIVE_UDP
 
 config NET_OFFLOAD
 	bool "Offload IP stack"
+	select NET_CONTEXT
 	help
 	  Enables TCP/IP stack to be offload to a co-processor.
 
@@ -553,18 +554,29 @@ config NET_CONN_PACKET_CLONE_TIMEOUT
 	help
 	  Maximum wait time when cloning a packet for a network connection.
 
-config NET_MAX_CONTEXTS
-	int "Number of network contexts to allocate"
-	default 6
+config NET_CONTEXT
+	bool "Network context support"
+	default y
+	depends on NET_NATIVE || NET_OFFLOAD
 	help
-	  Each network context is used to describe a network 5-tuple that
-	  is used when listening or sending network traffic. This is very
-	  similar as one could call a network socket in some other systems.
+	  Network contexts back the socket API and TCP. Without them the
+	  stack can still handle L2, ICMP, DHCP and forwarding.
 
 config ZVFS_OPEN_ADD_SIZE_NET
 	int "Number of network sockets to allocate"
 	default NET_MAX_CONTEXTS if NET_NATIVE && NET_SOCKETS
 	default 0
+
+if NET_CONTEXT
+
+config NET_MAX_CONTEXTS
+	int "Number of network contexts to allocate"
+	range 1 65535
+	default 6
+	help
+	  Each network context is used to describe a network 5-tuple that
+	  is used when listening or sending network traffic. This is very
+	  similar as one could call a network socket in some other systems.
 
 config NET_CONTEXT_NET_PKT_POOL
 	bool "Net_buf TX pool / context"
@@ -700,6 +712,8 @@ config NET_CONTEXT_CLAMP_PORT_RANGE
 	  option can be used to clamp down the global local UDP/TCP port
 	  range for a given context. The port range is typically set by
 	  IP_LOCAL_PORT_RANGE socket option.
+
+endif # NET_CONTEXT
 
 endif # NET_RAW_MODE
 

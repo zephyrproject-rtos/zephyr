@@ -68,12 +68,13 @@ BUILD_ASSERT(CONFIG_NET_BUF_DATA_SIZE >= 96);
 #define MAX_IP_PROTO_LEN 8
 #else
 #if defined(CONFIG_NET_ETHERNET_BRIDGE) || \
+	defined(CONFIG_NET_L2_ETHERNET) || \
 	defined(CONFIG_NET_L2_IEEE802154) || \
 	defined(CONFIG_NET_L2_CUSTOM_IEEE802154)
 #define MAX_IP_PROTO_LEN 0
 #else
 #error "Some packet protocol (e.g. IPv6, IPv4, ETH, IEEE 802.15.4) needs to be selected."
-#endif /* ETHERNET_BRIDGE / L2_IEEE802154 */
+#endif /* ETHERNET_BRIDGE / L2_ETHERNET / L2_IEEE802154 */
 #endif /* SOCKETS_CAN */
 #endif /* IPv4 */
 #endif /* IPv6 */
@@ -85,12 +86,12 @@ BUILD_ASSERT(CONFIG_NET_BUF_DATA_SIZE >= 96);
 #if defined(CONFIG_NET_UDP)
 #define MAX_NEXT_PROTO_LEN NET_UDPH_LEN
 #else
-#if defined(CONFIG_NET_SOCKETS_CAN)
+#if defined(CONFIG_NET_SOCKETS_CAN) || !defined(CONFIG_NET_IP)
 #define MAX_NEXT_PROTO_LEN 0
 #else
 /* If no TCP and no UDP, apparently we still want pings to work. */
 #define MAX_NEXT_PROTO_LEN NET_ICMPH_LEN
-#endif /* SOCKETS_CAN */
+#endif /* SOCKETS_CAN || !NET_IP */
 #endif /* UDP */
 #endif /* TCP */
 
