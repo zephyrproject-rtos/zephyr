@@ -1,0 +1,13 @@
+common:
+  tags: tracing
+  platform_allow:
+    - native_sim
+  integration_platforms:
+    - native_sim
+tests:
+  tracing.skip_internal_objects.enabled:
+    extra_configs:
+      - CONFIG_TRACING_SKIP_INTERNAL_OBJECTS=y
+  tracing.skip_internal_objects.disabled:
+    extra_configs:
+      - CONFIG_TRACING_SKIP_INTERNAL_OBJECTS=n
