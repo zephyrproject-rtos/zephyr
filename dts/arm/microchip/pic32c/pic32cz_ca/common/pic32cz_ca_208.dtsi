@@ -104,3 +104,19 @@
 		status = "disabled";
 	};
 };
+
+&adc0 {
+	num-channels = <16>;
+};
+
+&adc1 {
+	num-channels = <6>;
+};
+
+&adc2 {
+	num-channels = <6>;
+};
+
+&adc3 {
+	num-channels = <6>;
+};
