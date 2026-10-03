@@ -174,14 +174,24 @@ void config_pll_sysclock(void)
 #endif /* DSI */
 #endif /* STM32_PLL_R_ENABLED */
 
-#if defined(CONFIG_SOC_SERIES_STM32F7X)
-	/* Assuming we stay on Power Scale default value: Power Scale 1 */
-	if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC > 180000000) {
+#if defined(CONFIG_SOC_SERIES_STM32F7X) || defined(PWR_CR_ODEN)
+	/*
+	 * Assuming we stay on Power Scale default value: Power Scale 1.
+	 * Over-drive is needed above 180 MHz on STM32F7, and above 168 MHz on
+	 * the STM32F4 lines that have it (STM32F42x/F43x/F446/F469/F479).
+	 */
+	const uint32_t overdrive_frequency =
+		IS_ENABLED(CONFIG_SOC_SERIES_STM32F7X) ? MHZ(180) : MHZ(168);
+
+	if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC > overdrive_frequency) {
 		/* Enable the PLL (PLLON) before setting overdrive. Skipping the PLL
 		 * locking phase since the system will be stalled during the switch
 		 * (ODSW) but the PLL clock system will be running during the locking
-		 * phase. See reference manual (RM0431) §4.1.4 Voltage regulator
-		 * Sub section: Entering Over-drive mode.
+		 * phase. See reference manuals:
+		 * - RM0431 Rev 4 §4.1.4 Voltage regulator, sub section Entering Over-drive mode
+		 *   for STM32F7xx.
+		 * - RM0090 Rev 22 §5.1.4 Voltage regulator for STM32F42xxx and STM32F43xxx,
+		 *   sub section Entering Over-drive mode for STM32F42x/F43x.
 		 */
 		LL_RCC_PLL_Enable();
 
@@ -201,7 +211,7 @@ void config_pll_sysclock(void)
 		 * And start waiting for the PLL locking phase to complete.
 		 */
 	}
-#endif /* CONFIG_SOC_SERIES_STM32F7X */
+#endif /* CONFIG_SOC_SERIES_STM32F7X || PWR_CR_ODEN */
 }
 
 #endif /* STM32_PLL_ENABLED */
