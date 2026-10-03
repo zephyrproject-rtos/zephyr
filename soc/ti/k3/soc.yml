@@ -1,6 +1,11 @@
 family:
 - name: ti_k3
   series:
+  - name: am62a
+    socs:
+    - name: am62a7
+      cpuclusters:
+      - name: mcu_r5f0_0
   - name: am62x
     socs:
     - name: am6232
