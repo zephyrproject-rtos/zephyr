@@ -515,9 +515,10 @@ static int lr11xx_chip_init(const struct device *dev)
 		return ret;
 	}
 
-	/* Configure IRQs on IRQ1: TX done, RX done, timeout */
+	/* Configure completion, preamble detection and timeout IRQs on IRQ1. */
 	uint16_t irq_mask = LR11XX_IRQ_TX_DONE | LR11XX_IRQ_RX_DONE |
-			    LR11XX_IRQ_RX_TX_TIMEOUT | LR11XX_IRQ_CRC_ERR;
+			    LR11XX_IRQ_RX_TX_TIMEOUT | LR11XX_IRQ_CRC_ERR |
+			    LR11XX_IRQ_PREAMBLE_DETECTED;
 	ret = lr11xx_set_dio_irq_params(dev, irq_mask, 0);
 	if (ret < 0) {
 		LOG_ERR("Set IRQ params failed: %d", ret);
@@ -557,6 +558,8 @@ static void lr11xx_irq_callback(const struct device *dev)
 {
 	struct lr11xx_data *data = dev->data;
 
+	/* Anchor the packet deadline before deferred IRQ processing. */
+	data->irq_rx_deadline = sys_timepoint_calc(data->packet_rx_timeout);
 	k_work_submit(&data->irq_work);
 }
 
@@ -694,7 +697,12 @@ static void lr11xx_handle_irq_rx_done(const struct device *dev, uint32_t irq_sta
 
 out:
 	if (data->rx_cb == NULL) {
-		lr11xx_set_sleep(dev);
+		if (data->rx_sync) {
+			/* Keep ownership until the caller has copied the shared buffer. */
+			lr11xx_set_standby(dev, LR11XX_STANDBY_RC);
+		} else {
+			lr11xx_set_sleep(dev);
+		}
 		k_msgq_put(&data->rx_msgq, &result, K_NO_WAIT);
 		return;
 	}
@@ -750,13 +758,21 @@ static void lr11xx_irq_work_handler(struct k_work *work)
 	uint32_t irq_status = 0;
 	int ret;
 
+	k_mutex_lock(&data->lock, K_FOREVER);
+	if (atomic_get(&data->state) == LR11XX_REST_STATE) {
+		goto out;
+	}
+
 	ret = lr11xx_hal_read_status(dev, NULL, &irq_status);
 	if (ret < 0) {
 		LOG_ERR("Failed to get IRQ status");
-		return;
+		goto out;
 	}
 
 	LOG_DBG("IRQ status: 0x%08x", irq_status);
+
+	/* Snapshot before clearing IRQs allows a new edge to record its own deadline. */
+	k_timepoint_t rx_deadline = data->irq_rx_deadline;
 
 	/* Clear handled IRQs */
 	lr11xx_clear_irq_status(dev, irq_status);
@@ -765,11 +781,34 @@ static void lr11xx_irq_work_handler(struct k_work *work)
 		lr11xx_handle_irq_tx_done(dev);
 	}
 
-	if (irq_status & LR11XX_IRQ_RX_DONE) {
-		lr11xx_handle_irq_rx_done(dev, irq_status);
+	if ((irq_status & LR11XX_IRQ_PREAMBLE_DETECTED) != 0U &&
+	    (irq_status & LR11XX_IRQ_RX_DONE) == 0U && data->rx_search) {
+		struct lr11xx_rx_result result = {
+			.status = -EINPROGRESS,
+			.deadline = rx_deadline,
+		};
+
+		/* Only the first preamble starts the packet reception budget. */
+		data->rx_search = false;
+		k_msgq_put(&data->rx_msgq, &result, K_NO_WAIT);
 	}
 
-	if (irq_status & LR11XX_IRQ_RX_TX_TIMEOUT) {
+	if (irq_status & LR11XX_IRQ_RX_DONE) {
+		bool expired = data->rx_search &&
+			(irq_status & LR11XX_IRQ_PREAMBLE_DETECTED) != 0U &&
+			!K_TIMEOUT_EQ(data->packet_rx_timeout, K_NO_WAIT) &&
+			sys_timepoint_expired(rx_deadline);
+
+		data->rx_search = false;
+		if (expired) {
+			/* Coalesced IRQs must not bypass the packet deadline. */
+			struct lr11xx_rx_result result = { .status = -EAGAIN };
+
+			k_msgq_put(&data->rx_msgq, &result, K_NO_WAIT);
+		} else {
+			lr11xx_handle_irq_rx_done(dev, irq_status);
+		}
+	} else if (irq_status & LR11XX_IRQ_RX_TX_TIMEOUT) {
 		lr11xx_handle_irq_timeout(dev);
 	}
 
@@ -777,6 +816,8 @@ static void lr11xx_irq_work_handler(struct k_work *work)
 	if (atomic_get(&data->state) != LR11XX_REST_STATE) {
 		lr11xx_hal_irq_enable(dev);
 	}
+out:
+	k_mutex_unlock(&data->lock);
 }
 
 static int lr11xx_configure_tx_params(const struct device *dev, int8_t power,
@@ -1013,12 +1054,12 @@ static int lr11xx_lora_send(const struct device *dev,
 }
 
 static int lr11xx_lora_recv(const struct device *dev, uint8_t *data_buf,
-			    uint8_t size, k_timeout_t timeout,
-			    int16_t *rssi, int8_t *snr)
+			    uint8_t size, k_timeout_t packet_search_timeout,
+			    k_timeout_t packet_rx_timeout, int16_t *rssi, int8_t *snr)
 {
 	struct lr11xx_data *data = dev->data;
 	struct lr11xx_rx_result result;
-	uint32_t timeout_ms;
+	k_timepoint_t deadline;
 	int ret;
 
 	if (!data->config_valid) {
@@ -1041,6 +1082,9 @@ static int lr11xx_lora_recv(const struct device *dev, uint8_t *data_buf,
 	}
 
 	data->rx_cb = NULL;
+	data->rx_sync = true;
+	data->rx_search = !K_TIMEOUT_EQ(packet_search_timeout, K_NO_WAIT);
+	data->packet_rx_timeout = packet_rx_timeout;
 	k_msgq_purge(&data->rx_msgq);
 
 	/* Set packet parameters for variable length reception */
@@ -1053,31 +1097,33 @@ static int lr11xx_lora_recv(const struct device *dev, uint8_t *data_buf,
 				       data->config.iq_inverted ?
 				       LR11XX_LORA_IQ_INVERTED : LR11XX_LORA_IQ_STANDARD);
 	if (ret < 0) {
-		lr11xx_set_sleep(dev);
-		k_mutex_unlock(&data->lock);
-		return ret;
+		goto out;
 	}
 
-	/* Start reception (0 = continuous for K_FOREVER) */
-	timeout_ms = K_TIMEOUT_EQ(timeout, K_FOREVER)
-		     ? 0 : k_ticks_to_ms_ceil32(timeout.ticks);
-	ret = lr11xx_set_rx(dev, timeout_ms);
+	/* Kernel deadlines cover both phases; leave the modem in continuous RX. */
+	ret = lr11xx_clear_irq_status(dev, LR11XX_IRQ_ALL);
 	if (ret < 0) {
-		lr11xx_set_sleep(dev);
-		k_mutex_unlock(&data->lock);
-		return ret;
+		goto out;
+	}
+	deadline = sys_timepoint_calc(data->rx_search ? packet_search_timeout : packet_rx_timeout);
+	ret = lr11xx_set_rx(dev, 0);
+	if (ret < 0) {
+		goto out;
 	}
 
 	k_mutex_unlock(&data->lock);
 
-	/* Wait for RX completion */
-	ret = k_msgq_get(&data->rx_msgq, &result, timeout);
+	ret = k_msgq_get(&data->rx_msgq, &result, sys_timepoint_timeout(deadline));
+	if (ret == 0 && result.status == -EINPROGRESS) {
+		/* Preamble detected; wait for completion using the deadline set in the IRQ. */
+		ret = k_msgq_get(&data->rx_msgq, &result,
+				 sys_timepoint_timeout(result.deadline));
+	}
+
+	k_mutex_lock(&data->lock, K_FOREVER);
 	if (ret < 0) {
-		LOG_DBG("RX timeout");
-		/* Chip is still receiving, abort first */
-		lr11xx_set_standby(dev, LR11XX_STANDBY_RC);
-		lr11xx_set_sleep(dev);
-		return -EAGAIN;
+		ret = -EAGAIN;
+		goto out;
 	}
 
 	/* Copy received data from shared buffer */
@@ -1091,10 +1137,20 @@ static int lr11xx_lora_recv(const struct device *dev, uint8_t *data_buf,
 		if (snr != NULL) {
 			*snr = result.snr;
 		}
-		return copy_len;
+		ret = copy_len;
+	} else {
+		ret = result.status;
 	}
 
-	return result.status;
+out:
+	/* Serialize cancellation with IRQ work and discard the old operation's IRQs. */
+	lr11xx_set_standby(dev, LR11XX_STANDBY_RC);
+	lr11xx_clear_irq_status(dev, LR11XX_IRQ_ALL);
+	data->rx_search = false;
+	data->rx_sync = false;
+	lr11xx_set_sleep(dev);
+	k_mutex_unlock(&data->lock);
+	return ret;
 }
 
 static int lr11xx_lora_recv_async(const struct device *dev,
@@ -1104,6 +1160,11 @@ static int lr11xx_lora_recv_async(const struct device *dev,
 	int ret;
 
 	k_mutex_lock(&data->lock, K_FOREVER);
+
+	if (data->rx_sync) {
+		k_mutex_unlock(&data->lock);
+		return -EBUSY;
+	}
 
 	if (cb == NULL) {
 		/* Stop async reception */
@@ -1452,8 +1513,8 @@ static int lr11xx_init(const struct device *dev)
 	k_mutex_init(&data->lock);
 	k_msgq_init(&data->tx_msgq, (char *)&data->tx_result,
 		    sizeof(struct lr11xx_tx_result), 1);
-	k_msgq_init(&data->rx_msgq, (char *)&data->rx_result,
-		    sizeof(struct lr11xx_rx_result), 1);
+	k_msgq_init(&data->rx_msgq, (char *)data->rx_result,
+		    sizeof(struct lr11xx_rx_result), ARRAY_SIZE(data->rx_result));
 	k_work_init(&data->irq_work, lr11xx_irq_work_handler);
 	data->dev = dev;
 	atomic_set(&data->state, LR11XX_STATE_IDLE);

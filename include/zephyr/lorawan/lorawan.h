@@ -334,11 +334,15 @@ int lorawan_send(uint8_t port, uint8_t *data, uint8_t len, enum lorawan_message_
 int lorawan_set_class(enum lorawan_class dev_class);
 
 /**
- * @brief Set the number of tries used for transmissions
+ * @brief Set the number of tries used for uplink transmissions
+ *
+ * Sets NbTrans for both confirmed and unconfirmed uplinks, including the
+ * initial transmission. When ADR is enabled, an accepted LinkADRReq can
+ * replace this value.
  *
  * This function must be called after lorawan_start().
  *
- * @param tries Number of tries to be used
+ * @param tries Number of transmissions, from 1 to 15
  *
  * @retval 0 successful
  * @retval -EPERM LoRaWAN stack has not been started
