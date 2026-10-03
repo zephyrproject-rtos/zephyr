@@ -91,6 +91,23 @@ tests:
       - stm32u083c_dk
     integration_platforms:
       - nucleo_g474re
+  drivers.spi.stm32_spi_dma_cached_memory.loopback:
+    extra_args: EXTRA_CONF_FILE="overlay-stm32-spi-dma-cached-memory.conf"
+    platform_allow:
+      - b_u585i_iot02a
+      - nucleo_u575zi_q
+    integration_platforms:
+      - b_u585i_iot02a
+  drivers.spi.stm32_spi_dma_cached_memory_polling.loopback:
+    extra_args: EXTRA_CONF_FILE="overlay-stm32-spi-dma-cached-memory-polling.conf"
+    platform_allow:
+      - b_u585i_iot02a
+      - nucleo_u575zi_q
+  drivers.spi.stm32_spi_dma_cached_memory_auto_suspend.loopback:
+    extra_args: EXTRA_CONF_FILE="overlay-stm32-spi-dma-cached-memory-auto-suspend.conf"
+    platform_allow:
+      - b_u585i_iot02a
+      - nucleo_u575zi_q
   drivers.spi.stm32_spi_dma_dt_nocache_mem.loopback:
     # this test case is for when nocache memory region is defined in DT
     # using `zephyr,memory-attr = < DT_MEM_ARM_MPU_RAM_NOCACHE)>`
