@@ -5,6 +5,7 @@ config CRYPTO_IT51XXX_SHA
 	bool "ITE IT51XXX SHA driver"
 	default y
 	depends on DT_HAS_ITE_IT51XXX_SHA_ENABLED
+	select MFD
 	select SOC_IT51XXX_HW_CRYPTO_ACCELERATE
 	help
 	  The IT51XXX hardware supports SHA-256 calculation, which is faster than

@@ -1,0 +1,4 @@
+tests:
+  boards.it51xxx_evb.hw_rsa:
+    platform_allow:
+      - it51xxx_evb/it51526aw

@@ -46,6 +46,12 @@ config SOC_IT515XX_HW_CRYPTO_OFFSET
 	  Due to the hardware requirements of the IT515XX, the SHA-256 data must be
 	  placed within the specific address range (0x83E000 to 0x83EFFF by default).
 
+configdefault SHARED_INTERRUPTS
+	default y if $(dt_nodelabel_enabled,sha256) && $(dt_nodelabel_enabled,hw_rsa)
+
+configdefault SHARED_IRQ_MAX_NUM_CLIENTS
+	default 2 if $(dt_nodelabel_enabled,sha256) && $(dt_nodelabel_enabled,hw_rsa)
+
 config ILM_MAX_SIZE
 	int "ILM Size in kB"
 	default 4
