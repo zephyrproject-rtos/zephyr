@@ -10,6 +10,7 @@
 #include <stddef.h>
 #include <errno.h>
 
+#include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/conn.h>
@@ -29,6 +30,7 @@ static struct bt_conn *g_conn;
 #define ARRAY_ITEM(i, _) i
 const uint8_t chrc_data[] = { LISTIFY(CHRC_SIZE, ARRAY_ITEM, (,)) }; /* 1, 2, 3 ... */
 const uint8_t long_chrc_data[] = { LISTIFY(LONG_CHRC_SIZE, ARRAY_ITEM, (,)) }; /* 1, 2, 3 ... */
+static uint8_t max_chrc_data[BT_ATT_MAX_ATTRIBUTE_LEN];
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
@@ -95,10 +97,52 @@ BT_GATT_SERVICE_DEFINE(test_svc, BT_GATT_PRIMARY_SERVICE(TEST_SERVICE_UUID),
 		       BT_GATT_CCC(long_subscribe, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE));
 
 static volatile size_t num_notifications_sent;
+static volatile size_t num_fallback_notifications_sent;
 
 static void notification_sent(struct bt_conn *conn, void *user_data)
 {
 	printk("Sent notification #%u\n", num_notifications_sent++);
+}
+
+static void fallback_notification_sent(struct bt_conn *conn, void *user_data)
+{
+	num_fallback_notifications_sent++;
+}
+
+static void notify_single(const struct bt_gatt_attr *attr, uint16_t len)
+{
+	struct bt_gatt_notify_params params = {
+		.attr = attr,
+		.data = max_chrc_data,
+		.len = len,
+		.func = fallback_notification_sent,
+	};
+	int err;
+
+	err = bt_gatt_notify_cb(g_conn, &params);
+	TEST_ASSERT(err == 0, "Failed to send %u byte notification (err %d)", len, err);
+}
+
+static void test_single_notify_fallback(const struct bt_gatt_attr *attr)
+{
+	uint16_t mtu = bt_gatt_get_mtu(g_conn);
+	const uint16_t lengths[] = {
+		FALLBACK_SHORT_LEN,
+		mtu - 3,
+		mtu - 4,
+		mtu - 5,
+	};
+
+	TEST_ASSERT(mtu > LONG_CHRC_SIZE + 5 && (mtu - 3) <= sizeof(max_chrc_data),
+		    "Unexpected ATT MTU %u", mtu);
+
+	ARRAY_FOR_EACH(lengths, i) {
+		notify_single(attr, lengths[i]);
+	}
+
+	while (num_fallback_notifications_sent < ARRAY_SIZE(lengths)) {
+		k_sleep(K_MSEC(10));
+	}
 }
 
 static inline void multiple_notify(const struct bt_gatt_attr *attrs[2])
@@ -178,6 +222,8 @@ static void test_main(void)
 	if (num_notifications_sent != NOTIFICATION_COUNT) {
 		TEST_FAIL("Unexpected notification callback value");
 	}
+
+	test_single_notify_fallback(attrs[0]);
 
 	TEST_PASS("GATT server passed");
 }
