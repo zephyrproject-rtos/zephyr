@@ -292,6 +292,7 @@ static void lc3_decoder_thread_func(void *arg1, void *arg2, void *arg3)
 
 		if (stream->lc3_decoder == NULL) {
 			LOG_WRN("Decoder is NULL, discarding data from FIFO");
+			net_buf_unref(data->buf);
 			k_mem_slab_free(&lc3_data_slab, (void *)data);
 			continue; /* Wait for new data */
 		}
@@ -430,7 +431,7 @@ int lc3_enable(struct stream_rx *stream)
 int lc3_disable(struct stream_rx *stream)
 {
 	if (stream->lc3_decoder == NULL) {
-		return -EINVAL;
+		return -EALREADY;
 	}
 
 	stream->lc3_decoder = NULL;
