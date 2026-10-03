@@ -15,6 +15,9 @@ elseif(CONFIG_BM_SUBSCRIBERS)
 elseif(CONFIG_BM_MSG_SUBSCRIBERS)
   list(APPEND app_sources src/msg_sub.c)
 
+elseif(CONFIG_BM_ASYNC_LISTENERS)
+  list(APPEND app_sources src/async_lis.c)
+
 endif()
 
 target_sources(app PRIVATE ${app_sources})
