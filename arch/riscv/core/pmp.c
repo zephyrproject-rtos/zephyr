@@ -795,7 +795,7 @@ void z_riscv_pmp_init(void)
 	 */
 	set_pmp_entry(&index, PMP_NONE | COND_CODE_1(CONFIG_PMP_NO_LOCK_GLOBAL, (0x0), (PMP_L)),
 		      0,
-		      CONFIG_NULL_POINTER_EXCEPTION_REGION_SIZE,
+		      ROUND_UP(CONFIG_NULL_POINTER_EXCEPTION_REGION_SIZE, CONFIG_PMP_GRANULARITY),
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 #endif
 
