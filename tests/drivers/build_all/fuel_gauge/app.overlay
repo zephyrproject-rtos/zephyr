@@ -12,19 +12,19 @@
 
 		test_gpio: gpio@deadbeef {
 			compatible = "vnd,gpio";
-			gpio-controller;
 			reg = <0xdeadbeef 0x1000>;
+			gpio-controller;
 			#gpio-cells = <0x2>;
 			status = "okay";
 		};
 
 		test_i2c: i2c@11112222 {
-			#address-cells = <1>;
-			#size-cells = <0>;
 			compatible = "vnd,i2c";
 			reg = <0x11112222 0x1000>;
-			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
+			status = "okay";
 
 #include "i2c.dtsi"
 		};
@@ -55,11 +55,11 @@
 
 		test_fuel_gauge: fuel_gauge {
 			compatible = "zephyr,fuel-gauge-composite";
-			status = "okay";
 			source-primary = <&test_vbatt>;
 			device-chemistry = "lithium-ion-polymer";
 			ocv-capacity-table-0 = <0>;
 			charge-full-design-microamp-hours = <1350000>;
+			status = "okay";
 		};
 	};
 };

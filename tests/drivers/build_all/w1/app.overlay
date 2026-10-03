@@ -17,8 +17,8 @@
 
 		test_gpio: gpio@deadbeef {
 			compatible = "vnd,gpio";
-			gpio-controller;
 			reg = <0xdeadbeef 0x1000>;
+			gpio-controller;
 			#gpio-cells = <0x2>;
 			status = "okay";
 		};
@@ -31,10 +31,10 @@
 		test_uart: uart@55556666 {
 			compatible = "vnd,serial";
 			reg = <0x55556666 0x1000>;
-			status = "okay";
 
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "okay";
 
 			test_uart_w1_serial: w1_serial {
 				compatible = "zephyr,w1-serial";
@@ -42,12 +42,12 @@
 		};
 
 		test_i2c: i2c@11112222 {
-			#address-cells = <1>;
-			#size-cells = <0>;
 			compatible = "vnd,i2c";
 			reg = <0x11112222 0x1000>;
-			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			clock-frequency = <100000>;
+			status = "okay";
 
 			test_i2c_ds2482_800: ds2482-800@0 {
 				compatible = "maxim,ds2482-800";

@@ -35,10 +35,10 @@ axp2101@3 {
 lc709203f@4 {
 	compatible = "onnn,lc709203f";
 	reg = <0x4>;
-	status = "okay";
 	apa = "500mAh";
 	battery-profile = <0x01>;
 	thermistor;
+	status = "okay";
 };
 
 sy24561@5 {

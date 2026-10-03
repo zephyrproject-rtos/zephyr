@@ -17,24 +17,24 @@
 
 		test_gpio: gpio@deadbeef {
 			compatible = "vnd,gpio";
-			gpio-controller;
 			reg = <0xdeadbeef 0x1000>;
+			gpio-controller;
 			#gpio-cells = <0x2>;
 		};
 
 		test_flexcomm7_lpi2c7: lpi2c@11112222 {
-			#address-cells = <1>;
-			#size-cells = <0>;
 			compatible = "nxp,lpi2c";
 			reg = <0x11112222 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			clocks = <&syscon MCUX_FLEXCOMM7_CLK>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 
 			test_ov7670: ov7670@1 {
 				compatible = "ovti,ov7670";
+				reg = <0x1>;
 				reset-gpios = <&test_gpio 19 GPIO_ACTIVE_HIGH>;
 				pwdn-gpios = <&test_gpio 18 GPIO_ACTIVE_HIGH>;
-				reg = <0x1>;
 
 				port {
 					test_ov7670_ep_out: endpoint {

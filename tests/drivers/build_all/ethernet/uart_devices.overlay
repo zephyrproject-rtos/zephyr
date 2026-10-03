@@ -17,8 +17,8 @@
 
 		test_gpio: gpio@deadbeef {
 			compatible = "vnd,gpio";
-			gpio-controller;
 			reg = <0xdeadbeef 0x1000>;
+			gpio-controller;
 			#gpio-cells = <0x2>;
 			status = "okay";
 		};
@@ -31,10 +31,10 @@
 
 			test_uart_ch9120: ch9120 {
 				compatible = "wch,ch9120";
-				status = "okay";
 				reset-gpios = <&test_gpio 19 GPIO_ACTIVE_LOW>;
 				config-gpios = <&test_gpio 18 GPIO_ACTIVE_LOW>;
 				tcpcs-gpios = <&test_gpio 17 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+				status = "okay";
 			};
 		};
 	};
