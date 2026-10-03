@@ -149,8 +149,8 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 	conn->past = ull_conn_default_past_param_get();
 #endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 
-	memcpy(&lll->crc_init[0], &pdu_adv->connect_ind.crc_init[0], 3);
-	memcpy(&lll->access_addr[0], &pdu_adv->connect_ind.access_addr[0], 4);
+	memcpy(&lll->crc_init[0], &pdu_adv->connect_ind.crc_init[0], PDU_CRC_SIZE);
+	memcpy(&lll->access_addr[0], &pdu_adv->connect_ind.access_addr[0], PDU_ACCESS_ADDR_SIZE);
 	memcpy(&lll->data_chan_map[0], &pdu_adv->connect_ind.chan_map[0],
 	       sizeof(lll->data_chan_map));
 	lll->data_chan_count = util_ones_count_get(&lll->data_chan_map[0],
