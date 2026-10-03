@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT litex_dna0
 
 #include <zephyr/drivers/hwinfo.h>
-#include <soc.h>
+#include <zephyr/drivers/misc/litex/litex_csr.h>
 #include <string.h>
 #include <zephyr/device.h>
 #include <zephyr/sys/util.h>
