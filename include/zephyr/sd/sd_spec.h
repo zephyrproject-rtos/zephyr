@@ -929,6 +929,26 @@ struct sdio_cis {
 	uint16_t rdy_timeout; /*!< I/O ready timeout */
 };
 
+/**
+ * @brief Parsed SDIO CCCR (card common control register) contents
+ *
+ * Neutral representation of the function-0 CCCR fields, filled by
+ * @ref sdio_read_cccr. Callers map these onto their own bookkeeping.
+ */
+struct sdio_cccr {
+	uint8_t sdio_revision; /*!< CCCR/SDIO format revision */
+	uint8_t sd_spec; /*!< SD physical spec version */
+	bool support_hs; /*!< High speed supported */
+	bool support_4bit_ls; /*!< 4-bit low-speed bus supported */
+	bool support_multiblock; /*!< Multi-block transfers supported */
+	bool support_sdr50; /*!< UHS SDR50 supported */
+	bool support_sdr104; /*!< UHS SDR104 supported */
+	bool support_ddr50; /*!< UHS DDR50 supported */
+	bool drv_type_a; /*!< Drive strength type A supported */
+	bool drv_type_c; /*!< Drive strength type C supported */
+	bool drv_type_d; /*!< Drive strength type D supported */
+};
+
 #ifdef __cplusplus
 }
 #endif
