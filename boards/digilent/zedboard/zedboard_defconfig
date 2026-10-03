@@ -8,3 +8,10 @@ CONFIG_UART_CONSOLE=y
 
 CONFIG_DCACHE=y
 CONFIG_DCACHE_LINE_SIZE=32
+
+# Networking buffers (GEM is enabled in zedboard.dts)
+# The xlnx,gem driver no memcopy RX path loans one stack net_buf per RX BD,
+# sized by CONFIG_NET_BUF_DATA_SIZE. Devicetree rx-buffer-size is 1536 bytes
+# on Zynq-7000 GEM; eth_xlnx_gem.c BUILD_ASSERT requires NET_BUF_DATA_SIZE
+# to be at least that value (default 128 is too small for GEM builds).
+CONFIG_NET_BUF_DATA_SIZE=1536
