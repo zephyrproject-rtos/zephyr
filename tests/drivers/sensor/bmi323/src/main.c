@@ -113,20 +113,55 @@ static void check_fetch_temperature(const struct device *dev, const struct emul 
 static void check_fetch_motion(const struct device *dev, const struct emul *target)
 {
 	struct sensor_value values[3];
+	struct sensor_value attr;
 
-	bmi323_emul_set_accel_raw(target, 1, -1, 0);
+	/* Test default full-scale (8G accel, 2000dps gyro) */
+	bmi323_emul_set_accel_raw(target, 4096, -4096, 0);
 	zassert_ok(sensor_sample_fetch_chan(dev, SENSOR_CHAN_ACCEL_XYZ));
 	zassert_ok(sensor_channel_get(dev, SENSOR_CHAN_ACCEL_XYZ, values));
-	zassert_true(sensor_value_to_micro(&values[0]) > 0);
-	zassert_true(sensor_value_to_micro(&values[1]) < 0);
-	zassert_equal(0, sensor_value_to_micro(&values[2]));
+	zassert_equal(9, values[0].val1);
+	zassert_equal(806949, values[0].val2);
+	zassert_equal(-9, values[1].val1);
+	zassert_equal(-806949, values[1].val2);
+	zassert_equal(0, values[2].val1);
+	zassert_equal(0, values[2].val2);
 
-	bmi323_emul_set_gyro_raw(target, -1, 0, 1);
+	bmi323_emul_set_gyro_raw(target, 32767, -32767, 0);
 	zassert_ok(sensor_sample_fetch_chan(dev, SENSOR_CHAN_GYRO_XYZ));
 	zassert_ok(sensor_channel_get(dev, SENSOR_CHAN_GYRO_XYZ, values));
-	zassert_true(sensor_value_to_micro(&values[0]) < 0);
-	zassert_equal(0, sensor_value_to_micro(&values[1]));
-	zassert_true(sensor_value_to_micro(&values[2]) > 0);
+	zassert_equal(34, values[0].val1);
+	zassert_equal(906577, values[0].val2);
+	zassert_equal(-34, values[1].val1);
+	zassert_equal(-906577, values[1].val2);
+	zassert_equal(0, values[2].val1);
+	zassert_equal(0, values[2].val2);
+
+	/* Configure 16G accel and 500dps gyro */
+	attr = (struct sensor_value){.val1 = 16};
+	zassert_ok(sensor_attr_set(dev, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_FULL_SCALE, &attr));
+	attr = (struct sensor_value){.val1 = 500};
+	zassert_ok(sensor_attr_set(dev, SENSOR_CHAN_GYRO_XYZ, SENSOR_ATTR_FULL_SCALE, &attr));
+
+	/* Test scaled values under 16G accel and 500dps gyro */
+	bmi323_emul_set_accel_raw(target, 32767, -32767, 0);
+	zassert_ok(sensor_sample_fetch_chan(dev, SENSOR_CHAN_ACCEL_XYZ));
+	zassert_ok(sensor_channel_get(dev, SENSOR_CHAN_ACCEL_XYZ, values));
+	zassert_equal(156, values[0].val1);
+	zassert_equal(906400, values[0].val2);
+	zassert_equal(-156, values[1].val1);
+	zassert_equal(-906400, values[1].val2);
+	zassert_equal(0, values[2].val1);
+	zassert_equal(0, values[2].val2);
+
+	bmi323_emul_set_gyro_raw(target, 32767, -32767, 0);
+	zassert_ok(sensor_sample_fetch_chan(dev, SENSOR_CHAN_GYRO_XYZ));
+	zassert_ok(sensor_channel_get(dev, SENSOR_CHAN_GYRO_XYZ, values));
+	zassert_equal(8, values[0].val1);
+	zassert_equal(726644, values[0].val2);
+	zassert_equal(-8, values[1].val1);
+	zassert_equal(-726644, values[1].val2);
+	zassert_equal(0, values[2].val1);
+	zassert_equal(0, values[2].val2);
 }
 
 ZTEST_F(bmi323, test_i2c)
