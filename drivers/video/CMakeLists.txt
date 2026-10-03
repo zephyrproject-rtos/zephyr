@@ -6,6 +6,8 @@ zephyr_library_sources(video_common.c)
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_VIDEO_ARDUCAM_MEGA video_arducam_mega.c)
+zephyr_library_sources_ifdef(CONFIG_VIDEO_BFLB_DVP2AXI video_bflb_dvp2axi.c)
+zephyr_library_sources_ifdef(CONFIG_VIDEO_BFLB_CAMFRONT video_bflb_camfront.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_EMUL_IMAGER video_emul_imager.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_EMUL_RX video_emul_rx.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_ESP32 video_esp32_dvp.c)

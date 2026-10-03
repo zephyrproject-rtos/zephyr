@@ -5,9 +5,15 @@ description: Bouffalolab BL61x Clock Controller
 
 compatible: "bflb,bl61x-clock-controller"
 
-include: [base.yaml, clock-controller.yaml]
+include: [base.yaml, clock-controller.yaml, pinctrl-device.yaml]
 
 properties:
+  pinctrl-0:
+    required: false
+
+  pinctrl-names:
+    required: false
+
   "#clock-cells":
     const: 1
 
