@@ -62,9 +62,9 @@ extern "C" {
  * which consumes it.  The lock is released when
  * sys_clock_announce_locked() returns.
  *
- * The driver-provided functions sys_clock_set_timeout() and
- * sys_clock_elapsed() are always called by the kernel with this lock
- * already held.
+ * The driver-provided functions sys_clock_set_timeout(),
+ * sys_clock_elapsed(), sys_clock_no_timeout() and sys_clock_idle_enter()
+ * are always called by the kernel with this lock already held.
  *
  * Example usage from a timer ISR:
  *
@@ -277,6 +277,8 @@ void sys_clock_disable(void);
  *
  * Unlike sys_clock_disable(), this is not a teardown.
  *
+ * @note Called with the system clock lock held.
+ *
  * The hook is optional.  Without it, sys_clock_set_timeout() is asked for the
  * longest wait it can express, UINT32_MAX ticks.  That is numerically what
  * K_TICKS_FOREVER was here, so a driver that has not migrated and still keys
@@ -305,6 +307,8 @@ void sys_clock_no_timeout(void);
  *        Only the calling CPU is going idle: a driver whose time base is
  *        shared between CPUs must ensure only the last CPU going idle stops
  *        the clock.
+ *
+ * @note Called with the system clock lock held.
  */
 void sys_clock_idle_enter(uint32_t ticks);
 
