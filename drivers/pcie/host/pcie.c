@@ -52,10 +52,15 @@ void pcie_set_cmd(pcie_bdf_t bdf, uint32_t bits, bool on)
 	pcie_conf_write(bdf, PCIE_CONF_CMDSTAT, cmdstat);
 }
 
+/* Maximum number of DWORD-aligned capability slots in each configuration-space region. */
+#define PCIE_CAP_MAX_ENTRIES 48U
+#define PCIE_EXT_CAP_MAX_ENTRIES 960U
+
 uint32_t pcie_get_cap(pcie_bdf_t bdf, uint32_t cap_id)
 {
 	uint32_t reg = 0U;
 	uint32_t data;
+	unsigned int ttl = PCIE_CAP_MAX_ENTRIES;
 
 	data = pcie_conf_read(bdf, PCIE_CONF_CMDSTAT);
 	if ((data & PCIE_CONF_CMDSTAT_CAPS) != 0U) {
@@ -63,32 +68,33 @@ uint32_t pcie_get_cap(pcie_bdf_t bdf, uint32_t cap_id)
 		reg = PCIE_CONF_CAPPTR_FIRST(data);
 	}
 
-	while (reg != 0U) {
+	while ((reg != 0U) && (ttl-- > 0U)) {
 		data = pcie_conf_read(bdf, reg);
 
 		if (PCIE_CONF_CAP_ID(data) == cap_id) {
-			break;
+			return reg;
 		}
 
 		reg = PCIE_CONF_CAP_NEXT(data);
 	}
 
-	return reg;
+	return 0U;
 }
 
 uint32_t pcie_get_ext_cap(pcie_bdf_t bdf, uint32_t cap_id)
 {
 	unsigned int reg = PCIE_CONF_EXT_CAPPTR; /* Start at end of the PCI configuration space */
+	unsigned int ttl = PCIE_EXT_CAP_MAX_ENTRIES;
 	uint32_t data;
 
-	while (reg != 0U) {
+	while ((reg != 0U) && (ttl-- > 0U)) {
 		data = pcie_conf_read(bdf, reg);
 		if (!data || data == 0xffffffffU) {
 			return 0;
 		}
 
 		if (PCIE_CONF_EXT_CAP_ID(data) == cap_id) {
-			break;
+			return reg;
 		}
 
 		reg = PCIE_CONF_EXT_CAP_NEXT(data) >> 2;
@@ -98,7 +104,7 @@ uint32_t pcie_get_ext_cap(pcie_bdf_t bdf, uint32_t cap_id)
 		}
 	}
 
-	return reg;
+	return 0U;
 }
 
 /**
