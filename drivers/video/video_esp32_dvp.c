@@ -24,7 +24,7 @@
 
 LOG_MODULE_REGISTER(video_esp32_lcd_cam, CONFIG_VIDEO_LOG_LEVEL);
 
-#define VIDEO_ESP32_DMA_BUFFER_MAX_SIZE 4095
+#define VIDEO_ESP32_DMA_BUFFER_MAX_SIZE 4032
 #define VIDEO_ESP32_VSYNC_MASK          0x04
 
 #ifdef CONFIG_POLL
@@ -101,6 +101,7 @@ void video_esp32_dma_rx_done(const struct device *dev, void *user_data, uint32_t
 			     int status)
 {
 	struct video_esp32_data *data = user_data;
+	struct video_buffer *next_vbuf;
 
 	if (status == DMA_STATUS_BLOCK) {
 		LOG_DBG("received block");
@@ -119,16 +120,21 @@ void video_esp32_dma_rx_done(const struct device *dev, void *user_data, uint32_t
 		return;
 	}
 
+	next_vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
+	if (next_vbuf == NULL) {
+		/*
+		 * Capture the next frame into the same buffer rather than stop: a
+		 * capture restarted mid-frame would never be aligned to VSYNC again.
+		 */
+		LOG_DBG("Frame dropped. No buffer available");
+		video_esp32_reload_dma(data);
+		return;
+	}
+
 	data->active_vbuf->timestamp = k_uptime_get_32();
 	k_fifo_put(&data->fifo_out, data->active_vbuf);
 	VIDEO_ESP32_RAISE_OUT_SIG_IF_ENABLED(VIDEO_BUF_DONE)
-	data->active_vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
-
-	if (data->active_vbuf == NULL) {
-		LOG_WRN("Frame dropped. No buffer available");
-		VIDEO_ESP32_RAISE_OUT_SIG_IF_ENABLED(VIDEO_BUF_ERROR)
-		return;
-	}
+	data->active_vbuf = next_vbuf;
 	video_esp32_reload_dma(data);
 }
 
@@ -213,6 +219,9 @@ static int video_esp32_set_stream(const struct device *dev, bool enable, enum vi
 	dma_cfg.user_data = data;
 	dma_cfg.dma_slot = SOC_GDMA_TRIG_PERIPH_CAM0;
 	dma_cfg.complete_callback_en = 1;
+	/* Write PSRAM in 64-byte blocks, which the buffers are aligned to */
+	dma_cfg.source_burst_length = 64;
+	dma_cfg.dest_burst_length = 64;
 	dma_cfg.head_block = &data->dma_blocks[0];
 
 	error = dma_config(cfg->dma_dev, cfg->rx_dma_channel, &dma_cfg);
@@ -243,6 +252,8 @@ static int video_esp32_get_caps(const struct device *dev, struct video_caps *cap
 
 	/* Two buffers are needed to perform transfers */
 	caps->min_vbuf_count = 2;
+	/* GDMA writes PSRAM in blocks of up to 64 bytes, a cache line at most */
+	caps->buf_align = 64;
 
 	/* Forward the message to the source device */
 	return video_get_caps(config->source_dev, caps);
