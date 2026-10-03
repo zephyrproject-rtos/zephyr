@@ -1,0 +1,16 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	model = "STM32 Minimum Development Board (Blue)";
+	compatible = "stm32_min_dev_blue", "st,stm32f103c6";
+
+	leds {
+		led: led {
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
