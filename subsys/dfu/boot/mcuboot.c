@@ -20,9 +20,7 @@
 #include <bootutil/bootutil_public.h>
 #include <zephyr/dfu/mcuboot.h>
 
-#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) || \
-	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT)
-/* For RAM LOAD mode, the active image must be fetched from the bootloader */
+#if defined(CONFIG_MCUBOOT_ACTIVE_SLOT_FROM_BLINFO)
 #include <bootutil/boot_status.h>
 #include <zephyr/retention/blinfo.h>
 
@@ -73,10 +71,8 @@ enum IMAGE_INDEXES {
 	IMAGE_INDEX_7,
 };
 
-#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) || \
-	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT)
-/* For RAM LOAD mode, the active image must be fetched from the bootloader */
-#define ACTIVE_SLOT_FLASH_AREA_ID boot_fetch_active_slot()
+#if defined(CONFIG_MCUBOOT_ACTIVE_SLOT_FROM_BLINFO)
+#define ACTIVE_SLOT_FLASH_AREA_ID boot_fetch_active_slot_area_id()
 #else
 /* Get active partition. zephyr,code-partition chosen node must be defined */
 #define ACTIVE_SLOT_FLASH_AREA_ID DT_PARTITION_ID(DT_CHOSEN(zephyr_code_partition))
@@ -105,9 +101,8 @@ struct mcuboot_v1_raw_header {
  * End of strict defines
  */
 
-#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) || \
-	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT)
-uint8_t boot_fetch_active_slot(void)
+#if defined(CONFIG_MCUBOOT_ACTIVE_SLOT_FROM_BLINFO)
+uint8_t boot_fetch_active_slot_number(void)
 {
 	int rc;
 	uint8_t slot;
@@ -119,6 +114,15 @@ uint8_t boot_fetch_active_slot(void)
 
 		return BOOT_INVALID_SLOT_ID;
 	}
+
+	return slot;
+}
+
+uint8_t boot_fetch_active_slot_area_id(void)
+{
+	uint8_t slot;
+
+	slot = boot_fetch_active_slot_number();
 
 	LOG_DBG("Active slot: %d", slot);
 	/* Map slot number back to flash area ID */
@@ -207,16 +211,12 @@ uint8_t boot_fetch_active_slot(void)
 
 	return BOOT_INVALID_SLOT_ID;
 }
-#else  /* CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD ||
-	* CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT
-	*/
-uint8_t boot_fetch_active_slot(void)
+#else  /* !CONFIG_MCUBOOT_ACTIVE_SLOT_FROM_BLINFO */
+uint8_t boot_fetch_active_slot_area_id(void)
 {
 	return ACTIVE_SLOT_FLASH_AREA_ID;
 }
-#endif /* CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD ||
-	* CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT
-	*/
+#endif /* CONFIG_MCUBOOT_ACTIVE_SLOT_FROM_BLINFO */
 
 #if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_OFFSET)
 size_t boot_get_image_start_offset(uint8_t area_id)
