@@ -1140,7 +1140,7 @@ static DEVICE_API(regulator, regulator_npm10xx_driver_api) = {
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, regulator_npm10xx_parent_init, NULL, NULL, &regulator_config##n,  \
-			      POST_KERNEL, CONFIG_REGULATOR_NPM10XX_COMMON_INIT_PRIORITY,          \
+			      POST_KERNEL, CONFIG_REGULATOR_NPM10XX_INIT_PRIORITY,                 \
 			      &regulator_npm10xx_parent_driver_api);                               \
                                                                                                    \
 	REGULATOR_NPM10XX_DEFINE_COND(n, buck, NPM10XX_SOURCE_BUCK)                                \

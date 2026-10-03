@@ -13,7 +13,7 @@ config GPIO_NPM2100
 config GPIO_NPM2100_INIT_PRIORITY
 	int "nPM2100 GPIO driver initialization priority"
 	depends on GPIO_NPM2100
-	default 80
+	default MFD_INIT_PRIORITY
 	help
 	  Initialization priority for the nPM2100 GPIO driver. It must be
 	  greater than the I2C controller init priority.

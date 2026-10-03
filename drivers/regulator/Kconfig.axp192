@@ -15,9 +15,8 @@ if REGULATOR_AXP192_AXP2101
 
 config REGULATOR_AXP192_AXP2101_INIT_PRIORITY
 	int "AXP192/AXP2101 regulator driver init priority"
-	default 86
+	default MFD_INIT_PRIORITY
 	help
-	  Init priority for the axp192/axp2101 regulator driver. It must be
-	  greater than MFD_INIT_PRIORITY.
+	  Init priority for the axp192/axp2101 regulator driver.
 
 endif
