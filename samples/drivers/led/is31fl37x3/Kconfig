@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2023 Daniel DeGrasse <daniel@degrasse.com>
+
+source "Kconfig.zephyr"
+
+config LED_ROW_COUNT
+	int "Number of rows in the LED matrix"
+	default 11 if DT_HAS_ISSI_IS31FL3743B_ENABLED
+	default 12
+	help
+	  Set this to match the number of SW connections
+	  wired up to your LED controller. The sample will only attempt
+	  to drive LEDs within this range. The IS31FL3733 has 12 SW lines,
+	  and the IS31FL3743B has 11.
+
+config LED_COLUMN_COUNT
+	int "Number of columns in the LED matrix"
+	default 18 if DT_HAS_ISSI_IS31FL3743B_ENABLED
+	default 16
+	help
+	  Set this to match the number of CS connections wired
+	  up to your LED controller. The sample will only attempt to drive
+	  LEDs within this range. The IS31FL3733 has 16 CS lines and the
+	  IS31FL3743B has 18.

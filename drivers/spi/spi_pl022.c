@@ -349,7 +349,9 @@ static int spi_pl022_configure(const struct device *dev,
 	uint32_t pclk = 0;
 	uint32_t cr0;
 	uint32_t cr1;
+#if defined(CONFIG_CLOCK_CONTROL)
 	int ret;
+#endif
 
 	if (spi_context_configured(&data->ctx, spicfg)) {
 		return 0;
