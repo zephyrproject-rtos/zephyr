@@ -34,8 +34,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#if CONFIG_QEMU_TARGET ||\
-	DT_ANY_INST_HAS_BOOL_STATUS_OKAY(disable_rx_checksum_offload) ||\
+#if DT_ANY_INST_HAS_BOOL_STATUS_OKAY(disable_rx_checksum_offload) ||\
 	DT_ANY_INST_HAS_BOOL_STATUS_OKAY(disable_tx_checksum_offload)
 #warning "xlnx_gem: at least one instance has checksum offloading to hardware disabled"
 #endif

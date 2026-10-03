@@ -10,6 +10,7 @@ menuconfig ETH_XILINX_AXI_ETHERNET_LITE
 	default y
 	depends on DT_HAS_XLNX_XPS_ETHERNETLITE_3_00_A_MAC_ENABLED || DT_HAS_XLNX_XPS_ETHERNETLITE_1_00_A_MAC_ENABLED
 	depends on LITTLE_ENDIAN # byte order operations might break for BE
+	select ETH_PHY_DRIVER
 	help
 	  Enable Xilinx AXI Ethernet Lite MAC driver, commonly found on Xilinx FPGAs and SoCs.
 
