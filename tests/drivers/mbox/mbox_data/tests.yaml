@@ -14,6 +14,12 @@ tests:
       - s32z2xxdc2/s32z270/rtu1
       - s32z2xxdc2@D/s32z270/rtu0
       - s32z2xxdc2@D/s32z270/rtu1
+      - kit_pse84_ai/pse846gps2dbzc4a/m33
+      - kit_pse84_ai/pse846gps2dbzc4a/m33/ns
+      - kit_pse84_ai/pse846gps2dbzc4a/m55
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+      - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
   drivers.mbox.mbox_data.single_cpu:
     platform_allow:
       - s32z2xxdc2/s32z270/rtu0
