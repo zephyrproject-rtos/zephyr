@@ -1,0 +1,27 @@
+tests:
+  arch.xtensa.nested_irq_exit:
+    arch_allow: xtensa
+    filter: not CONFIG_SMP
+    platform_allow:
+      - qemu_xtensa/dc233c
+      - qemu_xtensa/dc233c/mmu
+      - qemu_xtensa/sample_controller32/mpu
+    integration_platforms:
+      - qemu_xtensa/dc233c
+    tags:
+      - kernel
+      - interrupt
+  arch.xtensa.nested_irq_exit.userspace:
+    arch_allow: xtensa
+    filter: not CONFIG_SMP and CONFIG_ARCH_HAS_USERSPACE
+    platform_allow:
+      - qemu_xtensa/dc233c/mmu
+      - qemu_xtensa/sample_controller32/mpu
+    integration_platforms:
+      - qemu_xtensa/dc233c/mmu
+    tags:
+      - kernel
+      - interrupt
+      - userspace
+    extra_configs:
+      - CONFIG_USERSPACE=y
