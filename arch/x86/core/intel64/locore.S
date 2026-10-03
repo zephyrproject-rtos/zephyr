@@ -978,9 +978,31 @@ irq_dispatch:
 	call z_sched_usage_stop
 	popq %rcx
 #endif
+
+/* CONFIG_SYS_IDLE_HOOKS also needs this hook, for the same reason as on the
+ * 32-bit path; see the comment in arch/x86/core/ia32/intstub.S.
+ */
+#if defined(CONFIG_TRACING_ISR) || defined(CONFIG_SYS_IDLE_HOOKS)
+	/* RCX still holds the vector number the dispatch below indexes with, so
+	 * save it. It is pushed twice to keep RSP 16-byte aligned for the call.
+	 */
+	pushq %rcx
+	pushq %rcx
+	call sys_trace_isr_enter
+	popq %rcx
+	popq %rcx
+#endif
+
 	movq x86_irq_funcs(,%rcx,8), %rax
 	movq x86_irq_args(,%rcx,8), %rdi
 	call *%rax
+
+#if defined(CONFIG_TRACING_ISR)
+	/* Nothing is live across this call: the EOI sequence below recomputes
+	 * RAX/RCX/RDX and reloads RSI from the TSS.
+	 */
+	call sys_trace_isr_exit
+#endif
 
 	xorq %rax, %rax
 #ifdef CONFIG_X2APIC
