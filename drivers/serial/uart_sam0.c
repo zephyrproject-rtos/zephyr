@@ -858,16 +858,20 @@ static int uart_sam0_fifo_read(const struct device *dev, uint8_t *rx_data,
 	const struct uart_sam0_dev_cfg *config = dev->config;
 	SercomUsart * const regs = config->regs;
 
-	if (regs->INTFLAG.bit.RXC) {
-		uint8_t ch = regs->DATA.reg;
-
-		if (size >= 1) {
-			*rx_data = ch;
-			return 1;
-		} else {
-			return -EINVAL;
-		}
+	/*
+	 * Check the requested size before touching DATA: reading it pops the
+	 * received byte out of the receiver, so reading it with no room to
+	 * store the byte would discard received data.
+	 */
+	if (size < 1) {
+		return 0;
 	}
+
+	if (regs->INTFLAG.bit.RXC) {
+		*rx_data = regs->DATA.reg;
+		return 1;
+	}
+
 	return 0;
 }
 
