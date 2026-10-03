@@ -196,6 +196,17 @@ static int dma_rpi_pico_config(const struct device *dev, uint32_t channel,
 	channel_config_set_high_priority(&data->channels[channel].config,
 					 !!(dma_cfg->channel_priority));
 
+	/*
+	 * Additional channel configuration flags are encoded into unused
+	 * dma_cfg fields:
+	 * - Byte swap: half_complete_callback_en
+	 * - Quiet IRQ: complete_callback_en
+	 */
+	channel_config_set_bswap(&data->channels[channel].config,
+				dma_cfg->half_complete_callback_en);
+	channel_config_set_irq_quiet(&data->channels[channel].config,
+				dma_cfg->complete_callback_en);
+
 	data->channels[channel].callback = dma_cfg->dma_callback;
 	data->channels[channel].user_data = dma_cfg->user_data;
 	data->channels[channel].source_data_size = dma_cfg->source_data_size;
