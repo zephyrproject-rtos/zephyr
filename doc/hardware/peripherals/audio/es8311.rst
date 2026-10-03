@@ -1,0 +1,69 @@
+.. SPDX-FileCopyrightText: Copyright (c) 2026 Hsiu-Chi Tsai
+.. SPDX-License-Identifier: Apache-2.0
+
+.. _es8311_codec:
+
+Everest ES8311
+##############
+
+The ES8311 driver supports playback, capture and full duplex with standard I2S,
+16-bit words, two slots, MSB-first data and normal bit/frame clock polarity.
+The codec is the clock target; the I2S controller supplies BCLK and LRCK.
+Gated bit clocks are not supported.
+
+Clock configuration
+*******************
+
+Set :c:member:`audio_codec_cfg.mclk_freq` to the clock supplied at the MCLK pin,
+which must be 256 times the sample rate. Supported rates are 8000, 11025, 12000,
+16000, 22050, 24000, 32000, 44100 and 48000 Hz.
+
+A zero ``mclk_freq`` selects BCLK as the internal clock source. With two 16-bit
+slots, BCLK is 32 times the sample rate; the codec multiplies it by eight.
+This mode supports 32000, 44100 and 48000 Hz, keeping the multiplier input
+above the 1 MHz limit for 3.3 V operation.
+
+Stream lifecycle
+****************
+
+Configuration powers the selected converters but leaves both directions muted.
+Start the I2S transport with initial buffers, then call :c:func:`audio_codec_start`
+for the required direction and check its return value. Supply continuous clocks
+while streaming.
+
+Before stopping the transport, call :c:func:`audio_codec_stop` and check its return
+value. In BCLK-derived mode, stopping BCLK also stops the codec clock. A mute
+failure must be handled before removing clocks from a possibly active DAC.
+
+.. code-block:: c
+
+   ret = audio_codec_stop(codec, AUDIO_DAI_DIR_TX);
+   if (ret < 0) {
+           return ret;
+   }
+   return i2s_trigger(i2s_dev, I2S_DIR_TX, I2S_TRIGGER_DROP);
+
+The legacy :c:func:`audio_codec_stop_output` cannot report a mute failure. Use
+the direction-aware API when transport shutdown depends on the result.
+Stopping remains available after a failed configuration; property application
+requires a valid configured route.
+
+Board integration
+*****************
+
+The :dtcompatible:`everest,es8311` properties select the mono DAC slot and
+microphone PGA gain. Capture uses differential MIC1 with a fixed +24 dB digital
+scale before the input-volume control. Output uses headphone mode. Account for
+these gains when selecting the microphone and avoid clipping the analog input.
+
+The driver does not manage regulators or implement device PM. Supplies must be
+available before initialization. A board that enables supplies later can use
+``zephyr,deferred-init`` and call :c:func:`device_init` after power is available.
+Coordinate codec muting, I2S clocks and any external amplifier enable in the
+application before suspend or shutdown.
+
+Initialization checks chip identity, releases INI_REG and attempts to mute and
+power down both converters. Configuration explicitly restores the registers it
+uses without a digital reset. These I2C operations cannot prevent transients
+before driver initialization or guarantee muting when the bus fails. Analog
+settling and clock/power sequencing need validation on the target board.

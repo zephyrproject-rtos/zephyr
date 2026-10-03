@@ -19,3 +19,11 @@ API Reference
 *************
 
 .. doxygengroup:: audio_codec_interface
+
+Driver-specific notes
+*********************
+
+.. toctree::
+   :maxdepth: 1
+
+   es8311

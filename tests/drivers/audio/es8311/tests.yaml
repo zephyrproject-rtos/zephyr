@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Hsiu-Chi Tsai
+# SPDX-License-Identifier: Apache-2.0
+common:
+  tags:
+    - drivers
+    - audio
+  filter: dt_compat_enabled("everest,es8311")
+  platform_allow:
+    - native_sim/native
+    - native_sim/native/64
+tests:
+  drivers.audio.es8311: {}
+  drivers.audio.es8311.repeat:
+    extra_configs:
+      - CONFIG_ZTEST_SHUFFLE=y
+      - CONFIG_ZTEST_REPEAT=y
+      - CONFIG_ZTEST_SUITE_REPEAT_COUNT=3
+      - CONFIG_ZTEST_TEST_REPEAT_COUNT=2
