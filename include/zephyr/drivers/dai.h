@@ -248,6 +248,12 @@ struct dai_properties {
 	uint32_t reg_init_delay;
 	/** Stream ID. */
 	int stream_id;
+#ifdef CONFIG_DAI_INTEL_UAOL
+	/** UAOL link device index. */
+	uint32_t uaol_link_id;
+	/** UAOL stream ID. */
+	uint32_t uaol_stream_id;
+#endif
 };
 
 /** @brief Main DAI config structure
@@ -273,6 +279,8 @@ struct dai_config {
 	size_t block_size;
 	/** DAI specific link configuration. */
 	uint16_t link_config;
+	/** DAI specific link configuration of an extra stream, if any (e.g. UAOL feedback). */
+	uint16_t extra_link_config;
 	/** tdm slot group number*/
 	uint32_t tdm_slot_group;
 };
