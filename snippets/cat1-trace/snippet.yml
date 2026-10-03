@@ -1,0 +1,19 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: cat1-trace
+description: >-
+  Enable the Infineon CAT1 parallel trace port so an external trace probe can
+  capture ETM/ITM instruction trace. Applies to the secure CM33 image, which
+  owns the HSIOM trace pins.
+
+append:
+  EXTRA_CONF_FILE: cat1-trace.conf
+
+boards:
+  /.*kit_pse84_eval.*/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: enable-trace.overlay
+  /.*kit_psc3m5_evk.*/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: enable-trace.overlay
