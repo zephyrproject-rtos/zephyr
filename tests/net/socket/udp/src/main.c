@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_event.h>
 #include <zephyr/net/ptp_time.h>
+#include <zephyr/sys/fdtable.h>
 
 #include "ipv6.h"
 #include "net_private.h"
@@ -4585,9 +4586,223 @@ ZTEST(net_socket_udp, test_v6_rebinding)
 	test_rebinding_common(NET_AF_INET6);
 }
 
+#define CLOSE_READERS 2
+
+static K_THREAD_STACK_ARRAY_DEFINE(close_reader_stack, CLOSE_READERS, 2048);
+static struct k_thread close_reader_thread[CLOSE_READERS];
+static bool close_reader_created[CLOSE_READERS];
+static K_SEM_DEFINE(close_reader_started, 0, CLOSE_READERS);
+static volatile bool close_reader_done[CLOSE_READERS];
+static volatile int close_reader_ret[CLOSE_READERS];
+static volatile int close_reader_errno[CLOSE_READERS];
+
+static void close_reader(void *p1, void *p2, void *p3)
+{
+	int i = POINTER_TO_INT(p2);
+	char buf[sizeof(TEST_STR_SMALL)];
+
+	k_sem_give(&close_reader_started);
+	if (POINTER_TO_INT(p3) != 0) {
+		close_reader_ret[i] = zvfs_read(POINTER_TO_INT(p1), buf, sizeof(buf), NULL);
+	} else {
+		close_reader_ret[i] = zsock_recv(POINTER_TO_INT(p1), buf, sizeof(buf), 0);
+	}
+	close_reader_errno[i] = errno;
+	close_reader_done[i] = true;
+}
+
+/* Start reader i on sock, in read() if use_read, else in recv(). It outranks
+ * the caller, which must run at K_PRIO_PREEMPT(10), so this returns only once
+ * the reader blocks.
+ */
+static void start_close_reader(int i, int sock, bool use_read)
+{
+	char state[32];
+
+	close_reader_done[i] = false;
+	close_reader_created[i] = true;
+	k_thread_create(&close_reader_thread[i], close_reader_stack[i],
+			K_THREAD_STACK_SIZEOF(close_reader_stack[i]), close_reader,
+			INT_TO_POINTER(sock), INT_TO_POINTER(i), INT_TO_POINTER(use_read),
+			K_PRIO_PREEMPT(9), 0, K_NO_WAIT);
+	zassert_ok(k_sem_take(&close_reader_started, K_NO_WAIT), "reader %d did not start", i);
+	zassert_not_null(strstr(k_thread_state_str(&close_reader_thread[i], state, sizeof(state)),
+				"pending"),
+			 "reader %d is not blocked: %s", i, state);
+}
+
+static void join_close_reader(int i)
+{
+	zassert_ok(k_thread_join(&close_reader_thread[i], K_SECONDS(1)),
+		   "reader %d did not return", i);
+	close_reader_created[i] = false;
+	zassert_equal(close_reader_ret[i], -1, "reader on a closed socket returned %d",
+		      close_reader_ret[i]);
+	zassert_equal(close_reader_errno[i], EINTR, "wrong errno %d", close_reader_errno[i]);
+}
+
+/* A reader blocked in recv(), or in read() if use_read, on socket A, which is
+ * closed and followed by a new socket B.
+ */
+static void close_during_read_then_reuse(bool use_read)
+{
+	struct zsock_timeval optval = { .tv_sec = 1 };
+	int prio = k_thread_priority_get(k_current_get());
+	struct net_sockaddr_in addr_a, addr_b, addr_c;
+	char buf[sizeof(TEST_STR_SMALL)];
+	int sock_a, sock_b, sock_c;
+	void *ctx_a, *ctx_b;
+	int rv;
+
+	/* The window below is made by priorities, which order threads on one CPU only */
+	if (arch_num_cpus() > 1) {
+		ztest_test_skip();
+	}
+
+	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &sock_a, &addr_a);
+	rv = zsock_bind(sock_a, (struct net_sockaddr *)&addr_a, sizeof(addr_a));
+	zassert_equal(rv, 0, "bind failed (%d)", errno);
+	ctx_a = zvfs_get_fd_obj(sock_a, NULL, 0);
+	zassert_not_null(ctx_a, "no context for socket A");
+
+	k_thread_priority_set(k_current_get(), K_PRIO_PREEMPT(10));
+	start_close_reader(0, sock_a, use_read);
+
+	/* Now we outrank the reader: it cannot run between close() and socket() */
+	k_thread_priority_set(k_current_get(), K_PRIO_PREEMPT(8));
+	zassert_equal(zsock_close(sock_a), 0, "close failed (%d)", errno);
+	prepare_sock_udp_v4(MY_IPV4_ADDR, CLIENT_PORT, &sock_b, &addr_b);
+	ctx_b = zvfs_get_fd_obj(sock_b, NULL, 0);
+	zassert_false(close_reader_done[0], "reader ran between close() and socket()");
+	zassert_not_equal(sock_b, sock_a, "socket B got fd %d, which the reader still holds",
+			  sock_b);
+	zassert_not_equal(ctx_b, ctx_a, "socket B got context %p, which the reader still waits on",
+			  ctx_b);
+
+	k_thread_priority_set(k_current_get(), prio);
+	join_close_reader(0);
+
+	/* B works, and the datagram sent to it is its own */
+	rv = zsock_bind(sock_b, (struct net_sockaddr *)&addr_b, sizeof(addr_b));
+	zassert_equal(rv, 0, "bind failed (%d)", errno);
+	rv = zsock_setsockopt(sock_b, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO, &optval,
+			      sizeof(optval));
+	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
+	prepare_sock_udp_v4(MY_IPV4_ADDR, ANY_PORT, &sock_c, &addr_c);
+	rv = zsock_sendto(sock_c, TEST_STR_SMALL, STRLEN(TEST_STR_SMALL), 0,
+			  (struct net_sockaddr *)&addr_b, sizeof(addr_b));
+	zassert_equal(rv, STRLEN(TEST_STR_SMALL), "sendto failed (%d)", errno);
+	rv = zsock_recv(sock_b, buf, sizeof(buf), 0);
+	zassert_equal(rv, STRLEN(TEST_STR_SMALL), "recv() on socket B failed (%d)", errno);
+	zassert_mem_equal(buf, TEST_STR_SMALL, STRLEN(TEST_STR_SMALL), "wrong data");
+
+	zassert_equal(zsock_close(sock_b), 0, "close failed");
+	zassert_equal(zsock_close(sock_c), 0, "close failed");
+}
+
+ZTEST(net_socket_udp, test_close_during_recv_then_reuse)
+{
+	close_during_read_then_reuse(false);
+}
+
+/* read() goes through the fd table rather than the socket calls */
+ZTEST(net_socket_udp, test_close_during_read_then_reuse)
+{
+	close_during_read_then_reuse(true);
+}
+
+ZTEST(net_socket_udp, test_close_wakes_every_reader)
+{
+	int prio = k_thread_priority_get(k_current_get());
+	struct net_sockaddr_in addr_a;
+	void *ctx_a;
+	int sock_a, sock_b;
+	int rv;
+
+	/* The window below is made by priorities, which order threads on one CPU only */
+	if (arch_num_cpus() > 1) {
+		ztest_test_skip();
+	}
+
+	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &sock_a, &addr_a);
+	rv = zsock_bind(sock_a, (struct net_sockaddr *)&addr_a, sizeof(addr_a));
+	zassert_equal(rv, 0, "bind failed (%d)", errno);
+	ctx_a = zvfs_get_fd_obj(sock_a, NULL, 0);
+	zassert_not_null(ctx_a, "no context for socket A");
+
+	/* Two readers in recv() on one fd: the wait releases the fd lock */
+	k_thread_priority_set(k_current_get(), K_PRIO_PREEMPT(10));
+	start_close_reader(0, sock_a, false);
+	start_close_reader(1, sock_a, false);
+
+	k_thread_priority_set(k_current_get(), K_PRIO_PREEMPT(8));
+	zassert_equal(zsock_close(sock_a), 0, "close failed (%d)", errno);
+
+	k_thread_priority_set(k_current_get(), prio);
+	join_close_reader(0);
+	join_close_reader(1);
+
+	/* Both readers let go: the fd and the context are free again */
+	sock_b = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_equal(sock_b, sock_a, "fd %d is still held (got %d)", sock_a, sock_b);
+	zassert_equal(zvfs_get_fd_obj(sock_b, NULL, 0), ctx_a, "context %p is still held",
+		      ctx_a);
+	zassert_equal(zsock_close(sock_b), 0, "close failed");
+}
+
+/* A reader has looked up the fd and pends on the fd lock when close() runs. It must not go on to
+ * wait on the closed context, where nothing would wake it.
+ */
+ZTEST(net_socket_udp, test_close_before_wait_gets_ebadf)
+{
+	int prio = k_thread_priority_get(k_current_get());
+	const struct fd_op_vtable *vtable;
+	struct net_sockaddr_in addr_a;
+	struct k_mutex *lock;
+	int sock_a;
+	int rv;
+
+	/* The window below is made by priorities, which order threads on one CPU only */
+	if (arch_num_cpus() > 1) {
+		ztest_test_skip();
+	}
+
+	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &sock_a, &addr_a);
+	rv = zsock_bind(sock_a, (struct net_sockaddr *)&addr_a, sizeof(addr_a));
+	zassert_equal(rv, 0, "bind failed (%d)", errno);
+	zassert_not_null(zvfs_get_fd_obj_and_vtable(sock_a, &vtable, &lock), "no context");
+
+	/* Hold the fd lock so the reader cannot get past its lookup */
+	k_mutex_lock(lock, K_FOREVER);
+	k_thread_priority_set(k_current_get(), K_PRIO_PREEMPT(10));
+	start_close_reader(0, sock_a, false);
+
+	/* close() returns while the reader still has not reached the wait */
+	zassert_equal(zsock_close(sock_a), 0, "close failed (%d)", errno);
+	zassert_false(close_reader_done[0], "reader ran before close() returned");
+	k_mutex_unlock(lock);
+
+	k_thread_priority_set(k_current_get(), prio);
+	zassert_ok(k_thread_join(&close_reader_thread[0], K_SECONDS(1)),
+		   "reader waits on a closed socket");
+	close_reader_created[0] = false;
+	zassert_equal(close_reader_ret[0], -1, "reader on a closed socket returned %d",
+		      close_reader_ret[0]);
+	zassert_equal(close_reader_errno[0], EBADF, "wrong errno %d", close_reader_errno[0]);
+}
+
 static void after(void *arg)
 {
 	ARG_UNUSED(arg);
+
+	/* A failed test can leave a reader blocked, keep it from the next test */
+	for (int i = 0; i < CLOSE_READERS; i++) {
+		if (close_reader_created[i]) {
+			k_thread_abort(&close_reader_thread[i]);
+			close_reader_created[i] = false;
+		}
+	}
+	k_sem_reset(&close_reader_started);
 
 	for (int i = 0; i < ZVFS_OPEN_SIZE; ++i) {
 		(void)zsock_close(i);

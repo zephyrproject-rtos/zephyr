@@ -426,47 +426,57 @@ void start_tcp(void)
 #endif
 }
 
+/* A thread blocked in a socket call leaves it once the socket is closed
+ * or shut down. Abort it only if it does not.
+ */
+static void stop_thread(struct k_thread *thread)
+{
+	if (k_thread_join(thread, K_SECONDS(1)) != 0) {
+		k_thread_abort(thread);
+	}
+}
+
 void stop_tcp(void)
 {
 	int i;
 
-	/* Not very graceful way to close a thread, but as we may be blocked
-	 * in accept or recv call it seems to be necessary
+	/* Stop both listeners before any handler, so that no accept call
+	 * hands out a descriptor while the handlers are being stopped.
+	 * Closing a listener makes the accept call its thread is blocked in
+	 * return. Aborting a thread inside a socket call would leave the
+	 * call's file descriptor and context in use.
 	 */
+	if (IS_ENABLED(CONFIG_NET_IPV6) && conf.ipv6.tcp.sock >= 0) {
+		(void)close(conf.ipv6.tcp.sock);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && conf.ipv4.tcp.sock >= 0) {
+		(void)close(conf.ipv4.tcp.sock);
+	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		k_thread_abort(tcp6_thread_id);
-		if (conf.ipv6.tcp.sock >= 0) {
-			(void)close(conf.ipv6.tcp.sock);
-		}
-
-		for (i = 0; i < CONFIG_NET_SAMPLE_NUM_HANDLERS; i++) {
-#if defined(CONFIG_NET_IPV6)
-			if (tcp6_handler_in_use[i] == true) {
-				k_thread_abort(&tcp6_handler_thread[i]);
-			}
-#endif
-			if (conf.ipv6.tcp.accepted[i].sock >= 0) {
-				(void)close(conf.ipv6.tcp.accepted[i].sock);
-			}
-		}
+		stop_thread(tcp6_thread_id);
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		k_thread_abort(tcp4_thread_id);
-		if (conf.ipv4.tcp.sock >= 0) {
-			(void)close(conf.ipv4.tcp.sock);
-		}
+		stop_thread(tcp4_thread_id);
+	}
 
-		for (i = 0; i < CONFIG_NET_SAMPLE_NUM_HANDLERS; i++) {
-#if defined(CONFIG_NET_IPV4)
-			if (tcp4_handler_in_use[i] == true) {
-				k_thread_abort(&tcp4_handler_thread[i]);
-			}
-#endif
-			if (conf.ipv4.tcp.accepted[i].sock >= 0) {
-				(void)close(conf.ipv4.tcp.accepted[i].sock);
-			}
+	/* A handler owns its socket and closes it when it leaves. Shutting
+	 * the socket down for reading makes its recv call return 0.
+	 */
+	for (i = 0; i < CONFIG_NET_SAMPLE_NUM_HANDLERS; i++) {
+#if defined(CONFIG_NET_IPV6)
+		if (tcp6_handler_in_use[i] == true) {
+			(void)shutdown(conf.ipv6.tcp.accepted[i].sock, SHUT_RD);
+			stop_thread(&tcp6_handler_thread[i]);
 		}
+#endif
+#if defined(CONFIG_NET_IPV4)
+		if (tcp4_handler_in_use[i] == true) {
+			(void)shutdown(conf.ipv4.tcp.accepted[i].sock, SHUT_RD);
+			stop_thread(&tcp4_handler_thread[i]);
+		}
+#endif
 	}
 }

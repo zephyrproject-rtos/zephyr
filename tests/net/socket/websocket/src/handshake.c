@@ -324,6 +324,20 @@ ZTEST(net_websocket_handshake, test_accept_correct)
 	(void)websocket_disconnect(ws);
 }
 
+/* close() sends the CLOSE frame by looking the websocket up through its own fd,
+ * which is already being closed at that point.
+ */
+ZTEST(net_websocket_handshake, test_disconnect_sends_close)
+{
+	int ws = do_handshake(ACCEPT_CORRECT);
+	int ret;
+
+	zassert_true(ws >= 0, "handshake rejected a correct key (%d)", ws);
+
+	ret = websocket_disconnect(ws);
+	zassert_equal(ret, 0, "disconnect failed (%d, errno %d)", ret, errno);
+}
+
 /* The value is only a prefix of the expected one. Matching just the bytes the
  * server chose to send would let this through.
  */
