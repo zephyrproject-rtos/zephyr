@@ -25,7 +25,8 @@ static inline void timestamp_serialize(void)
 	:
 	: "%eax", "%ebx", "%ecx", "%edx");
 }
-#elif defined(CONFIG_CPU_CORTEX_M) || \
+#elif defined(CONFIG_CPU_ARM9) || \
+	defined(CONFIG_CPU_CORTEX_M) || \
 	defined(CONFIG_CPU_AARCH32_CORTEX_R) || \
 	defined(CONFIG_CPU_AARCH32_CORTEX_A) || \
 	defined(CONFIG_CPU_CORTEX_A) || \

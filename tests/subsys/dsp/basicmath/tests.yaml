@@ -1,6 +1,6 @@
 tests:
   zdsp.basicmath:
-    filter: CONFIG_FULL_LIBC_SUPPORTED or CONFIG_ARCH_POSIX
+    filter: (CONFIG_FULL_LIBC_SUPPORTED or CONFIG_ARCH_POSIX) and not CONFIG_CPU_ARM9
     integration_platforms:
       - frdm_k64f
       - sam_e70_xplained/same70q21
