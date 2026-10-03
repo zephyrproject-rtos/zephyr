@@ -1,0 +1,148 @@
+common:
+  tags:
+    - kernel
+    - benchmark
+    - interrupt
+  # The framework's timed control benchmark spins until a deadline
+  # expires, and on a simulated target time does not advance while the
+  # CPU is busy, so it never returns. tests/benchmarks/memory_allocators
+  # excludes posix for the same reason.
+  arch_exclude:
+    - posix
+tests:
+  benchmark.kernel.interrupt.latency:
+    # FIXME: no DWT on qemu_cortex_m0, no timing support on m2gl025_miv
+    platform_exclude:
+      - qemu_cortex_m0
+      - m2gl025_miv
+    harness: console
+    integration_platforms:
+      - qemu_cortex_m3
+      - qemu_cortex_a53
+      - qemu_x86
+      - qemu_riscv32
+    harness_config:
+      type: one_line
+      record:
+        regex:
+          - "^P,(?P<suite>[^,]+),(?P<metric>[^,]+),(?P<samples>[^,]+),(?P<min>[^,]+),(?P<p50>[^,]+),(?P<p90>[^,]+),(?P<p99>[^,]+),(?P<p999>[^,]+),(?P<p9999>[^,]+),(?P<max>[^,]+)$"
+      regex:
+        - "PROJECT EXECUTION SUCCESSFUL"
+
+  # Additionally measure the dynamic interrupt connect cost on
+  # platforms supporting runtime ISR installation.
+  benchmark.kernel.interrupt.latency.dynamic:
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_cortex_a53
+      - qemu_riscv32
+    extra_configs:
+      - CONFIG_DYNAMIC_INTERRUPTS=y
+      - CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV=y
+    harness: console
+    harness_config:
+      type: one_line
+      record:
+        regex:
+          - "^P,(?P<suite>[^,]+),(?P<metric>[^,]+),(?P<samples>[^,]+),(?P<min>[^,]+),(?P<p50>[^,]+),(?P<p90>[^,]+),(?P<p99>[^,]+),(?P<p999>[^,]+),(?P<p9999>[^,]+),(?P<max>[^,]+)$"
+      regex:
+        - "PROJECT EXECUTION SUCCESSFUL"
+
+  # Re-run the scenarios under background system load. The interesting
+  # numbers here are the maximum and the standard deviation, not the mean.
+  benchmark.kernel.interrupt.latency.load:
+    platform_exclude:
+      - qemu_cortex_m0
+      - m2gl025_miv
+      # The critical section scenario busy waits with interrupts
+      # locked while the load timer keeps expiring. Under emulation
+      # that combination costs orders of magnitude more wall clock
+      # than the nominal hold time, making the run impractically long:
+      # the ARC models, clocked at 10MHz, do not get through that one
+      # scenario in half an hour.
+      - qemu_arc/qemu_arc_em
+      - qemu_arc/qemu_arc_hs
+      - qemu_arc/qemu_arc_hs/xip
+      - qemu_arc/qemu_arc_hs5x
+      - qemu_arc/qemu_arc_hs6x
+      - qemu_cortex_m3
+    extra_args:
+      - EXTRA_CONF_FILE="prj.load.conf"
+    extra_configs:
+      - CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV=y
+    timeout: 120
+    harness: console
+    integration_platforms:
+      - qemu_cortex_a53
+      - qemu_x86
+    harness_config:
+      type: one_line
+      record:
+        regex:
+          - "^P,(?P<suite>[^,]+),(?P<metric>[^,]+),(?P<samples>[^,]+),(?P<min>[^,]+),(?P<p50>[^,]+),(?P<p90>[^,]+),(?P<p99>[^,]+),(?P<p999>[^,]+),(?P<p9999>[^,]+),(?P<max>[^,]+)$"
+      regex:
+        - "PROJECT EXECUTION SUCCESSFUL"
+
+  # Zero-latency interrupts are Cortex-M only, and claim the same IRQ
+  # line as the direct ISR scenario, so they need a build of their own.
+  benchmark.kernel.interrupt.latency.zli:
+    arch_allow: arm
+    filter: CONFIG_CPU_CORTEX_M_HAS_BASEPRI
+    extra_args:
+      - EXTRA_CONF_FILE="prj.zli.conf"
+    extra_configs:
+      - CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV=y
+    timeout: 120
+    harness: console
+    integration_platforms:
+      - qemu_cortex_m3
+    harness_config:
+      type: one_line
+      record:
+        regex:
+          - "^P,(?P<suite>[^,]+),(?P<metric>[^,]+),(?P<samples>[^,]+),(?P<min>[^,]+),(?P<p50>[^,]+),(?P<p90>[^,]+),(?P<p99>[^,]+),(?P<p999>[^,]+),(?P<p9999>[^,]+),(?P<max>[^,]+)$"
+      regex:
+        - "PROJECT EXECUTION SUCCESSFUL"
+
+  # Same scenarios with the benchmark's interrupt handlers relocated to
+  # RAM. Compare against the base run to see what fetching them from
+  # flash costs; only meaningful on hardware with flash wait states.
+  benchmark.kernel.interrupt.latency.ramfunc:
+    filter: CONFIG_ARCH_HAS_RAMFUNC_SUPPORT and CONFIG_XIP
+    extra_args:
+      - EXTRA_CONF_FILE="prj.ramfunc.conf"
+    extra_configs:
+      - CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV=y
+    timeout: 120
+    harness: console
+    integration_platforms:
+      - qemu_cortex_m3
+    harness_config:
+      type: one_line
+      record:
+        regex:
+          - "^P,(?P<suite>[^,]+),(?P<metric>[^,]+),(?P<samples>[^,]+),(?P<min>[^,]+),(?P<p50>[^,]+),(?P<p90>[^,]+),(?P<p99>[^,]+),(?P<p999>[^,]+),(?P<p9999>[^,]+),(?P<max>[^,]+)$"
+      regex:
+        - "PROJECT EXECUTION SUCCESSFUL"
+
+  # The nested scenario needs the second line at a higher priority than
+  # the first, so it cannot share a build with the direct ISR
+  # comparison, which needs the two at equal priority.
+  benchmark.kernel.interrupt.latency.nested:
+    filter: CONFIG_CPU_CORTEX_M or CONFIG_ARC or CONFIG_GIC
+    extra_args:
+      - EXTRA_CONF_FILE="prj.nested.conf"
+    extra_configs:
+      - CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV=y
+    timeout: 120
+    harness: console
+    integration_platforms:
+      - qemu_cortex_m3
+      - qemu_cortex_a53
+    harness_config:
+      type: one_line
+      record:
+        regex:
+          - "^P,(?P<suite>[^,]+),(?P<metric>[^,]+),(?P<samples>[^,]+),(?P<min>[^,]+),(?P<p50>[^,]+),(?P<p90>[^,]+),(?P<p99>[^,]+),(?P<p999>[^,]+),(?P<p9999>[^,]+),(?P<max>[^,]+)$"
+      regex:
+        - "PROJECT EXECUTION SUCCESSFUL"
