@@ -873,6 +873,18 @@ ZTEST(prf, test_fp_value)
 	dv = 0x1p+1023;
 	TEST_PRF(&rc, "%.16g", dv);
 	PRF_CHECK("8.98846567431158e+307", rc);
+
+	dv = 9.999999999e-20;
+	TEST_PRF(&rc, "%.10e", dv);
+	PRF_CHECK("9.9999999990e-20", rc);
+
+	dv = 9999.5;
+	TEST_PRF(&rc, "%.3e", dv);
+	PRF_CHECK("1.000e+04", rc);
+
+	dv = 0.8;
+	TEST_PRF(&rc, "%.0g", dv);
+	PRF_CHECK("0.8", rc);
 }
 
 ZTEST(prf, test_fp_length)
