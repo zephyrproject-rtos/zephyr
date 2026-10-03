@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/dma/mchp-xec-dmac.h>
+
+/ {
+	aliases {
+		mspi0 = &gpspi1;
+	};
+};
+
+&dmac {
+	status = "okay";
+};
+
+&gpspi1 {
+	compatible = "microchip,xec-gpspi-v2-controller";
+	status = "okay";
+	dmas = <&dmac 14 DMA_MCHP_XEC_TRIG_SRC_GPSPI1_TX>,
+	       <&dmac 15 DMA_MCHP_XEC_TRIG_SRC_GPSPI1_RX>;
+	dma-names = "tx", "rx";
+	pinctrl-0 = <&spi1_clk_gpio141 &spi1_sdo_gpio142
+		     &spi1_sdi_gpio143 &spi1_cs_n_gpio144>;
+	pinctrl-1 = <&spi1_clk_gpio141_lp &spi1_sdo_gpio142_lp
+		     &spi1_sdi_gpio143_lp &spi1_cs_n_gpio144_lp>;
+	pinctrl-names = "default", "sleep";
+	clock-frequency = <DT_FREQ_M(24)>;
+	op-mode = "MSPI_OP_MODE_CONTROLLER";
+	duplex = "MSPI_HALF_DUPLEX";
+
+	mspi_device: mspi_device@0 {
+		compatible = "zephyr,emul-device-mspi";
+		reg = <0>;
+		mspi-max-frequency = <DT_FREQ_M(12)>;
+		status = "okay";
+	};
+};
