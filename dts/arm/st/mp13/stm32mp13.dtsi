@@ -300,7 +300,7 @@
 
 		dmamux1: dmamux@48002000 {
 			compatible = "st,stm32-dmamux";
-			#dma-cells = <3>;
+			#dma-cells = <2>;
 			reg = <0x48002000 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 2)>;
 			dma-channels = <16>;

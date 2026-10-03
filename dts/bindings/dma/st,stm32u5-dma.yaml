@@ -28,7 +28,7 @@ include:
 
 properties:
   "#dma-cells":
-    const: 3
+    const: 2
 
   interrupts:
     description: |
@@ -38,7 +38,6 @@ properties:
         interrupts = <74 0>, <47 0>;
 
 dma-cells:
-  - channel
   - slot
   - channel-config
 
@@ -47,7 +46,7 @@ examples:
     /* Definition example: STM32U5 SoC DTSI */
     gpdma1: dma@40020000 {
       compatible = "st,stm32u5-dma";
-      #dma-cells = <3>;
+      #dma-cells = <2>;
       reg = <0x40020000 DT_SIZE_K(1)>;
       clocks = <&rcc STM32_CLOCK(AHB1, 0)>;
       interrupts = <29 0>, <30 0>, <31 0>, <32 0>,
@@ -67,7 +66,7 @@ examples:
      * the list and mapping of available DMA requests.
      */
     &spi1 {
-      dmas = <&gpdma 0 6 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_MEDIUM)>,
-             <&gpdma 1 7 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_MEDIUM)>;
+      dmas = <&gpdma 6 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_MEDIUM)>,
+             <&gpdma 7 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_MEDIUM)>;
       dma-names = "rx", "tx";
     };

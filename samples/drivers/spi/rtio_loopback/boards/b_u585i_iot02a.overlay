@@ -35,8 +35,8 @@
 	status = "okay";
 	pinctrl-0 = <&spi1_miso_pe14 &spi1_mosi_pe15 &spi1_sck_pe13 &spi1_nss_pa4>;
 	pinctrl-names = "default";
-	dmas = <&gpdma1 0 7 STM32_DMA_PERIPH_TX>,
-	       <&gpdma1 1 6 STM32_DMA_PERIPH_RX>;
+	dmas = <&gpdma1 7 STM32_DMA_PERIPH_TX>,
+	       <&gpdma1 6 STM32_DMA_PERIPH_RX>;
 	dma-names = "tx", "rx";
 	st,fifo-threshold = <8>;
 
@@ -51,8 +51,8 @@
 	status = "okay";
 	pinctrl-0 = <&spi3_miso_pg10 &spi3_mosi_pd6 &spi3_sck_pg9 &spi3_nss_pg12>;
 	pinctrl-names = "default";
-	dmas = <&gpdma1 2 11 STM32_DMA_PERIPH_TX>,
-	       <&gpdma1 3 10 STM32_DMA_PERIPH_RX>;
+	dmas = <&gpdma1 11 STM32_DMA_PERIPH_TX>,
+	       <&gpdma1 10 STM32_DMA_PERIPH_RX>;
 	dma-names = "tx", "rx";
 	st,fifo-threshold = <8>;
 

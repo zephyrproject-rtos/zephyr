@@ -357,8 +357,8 @@
 		     &octospi1_dqs_pb2>;
 	pinctrl-names = "default";
 
-	dmas = <&gpdma1 4 57 STM32_DMA_PERIPH_TX
-		&gpdma1 5 57 STM32_DMA_PERIPH_RX>;
+	dmas = <&gpdma1 57 STM32_DMA_PERIPH_TX
+		&gpdma1 57 STM32_DMA_PERIPH_RX>;
 	dma-names = "tx", "rx";
 
 	status = "okay";

@@ -8,9 +8,8 @@ description: |
   capable of supporting independent DMA channels.
   DMAMUX clients connected to the STM32 DMA ultiplexer must use a two-cell specifier
   for each dmamux channel: a phandle to the DMA multiplexer plus the following 2 integer cells:
-    1. channel: the mux channel from 0 to <dma-channels> - 1
-    2. slot: the request line Multiplexer ID
-    3. channel-config: A 32bit mask specifying the DMA channel configuration
+    1. slot: the request line Multiplexer ID
+    2. channel-config: A 32bit mask specifying the DMA channel configuration
     which is device dependent:
         -bit 6-7 : Direction  (see dma.h)
                0x0: MEM to MEM
@@ -53,8 +52,8 @@ description: |
     for client SPI of stm32wb55x
      spi1: spi@40013000 {
          compatible = "st,stm32-spi";
-         dmas = <&dmamux1 11 7 0x20440
-                  &dmamux1 1 6 0x20480>;
+         dmas = <&dmamux1 7 0x20440
+                  &dmamux1 6 0x20480>;
          dma-names = "tx", "rx";
         };
 
@@ -67,13 +66,12 @@ properties:
     required: true
 
   "#dma-cells":
-    const: 3
+    const: 2
 
 # Parameter syntax of stm32 follows the dma client dts syntax
 # in the Linux kernel declared in
 # https://git.kernel.org/pub/scm/linux/kernel/git/devicetree/devicetree-rebasing.git/plain/Bindings/dma/stm32/st,stm32-dmamux.yaml
 
 dma-cells:
-  - channel
   - slot
   - channel-config

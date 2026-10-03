@@ -13,8 +13,8 @@
  * Short Pin PA11 to PB14, and PA12 to PB13, for the test to pass.
  */
 
-#define IC2_TEST_0_DMA_TX <&dmamux1 0 14 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>
-#define IC2_TEST_0_DMA_RX <&dmamux1 1 13 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>
+#define IC2_TEST_0_DMA_TX <&dmamux1 14 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>
+#define IC2_TEST_0_DMA_RX <&dmamux1 13 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>
 
 i2c_test_0: &i2c2 {
 	dmas = IC2_TEST_0_DMA_TX, IC2_TEST_0_DMA_RX;
@@ -27,8 +27,8 @@ i2c_test_0: &i2c2 {
 	};
 };
 
-#define IC2_TEST_1_DMA_TX <&dmamux1 2 16 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>
-#define IC2_TEST_1_DMA_RX <&dmamux1 3 15 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>
+#define IC2_TEST_1_DMA_TX <&dmamux1 16 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>
+#define IC2_TEST_1_DMA_RX <&dmamux1 15 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>
 
 i2c_test_1: &i2c3 {
 	pinctrl-0 = <&i2c3_scl_pb13 &i2c3_sda_pb14>;

@@ -13,8 +13,8 @@
 	pinctrl-0 = <&spi1_sck_pa5 &spi1_mosi_pa7>;
 	pinctrl-names = "default";
 	status = "okay";
-	dmas = <&dmamux1 0 17 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_LOW)>,
-	       <&dmamux1 1 16 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_LOW)>;
+	dmas = <&dmamux1 17 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_LOW)>,
+	       <&dmamux1 16 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_LOW)>;
 	dma-names = "tx", "rx";
 
 	led_strip: ws2812@0 {

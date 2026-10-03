@@ -9,8 +9,8 @@ dut: &uart9 {
 	pinctrl-0 = <&uart9_tx_pd15 &uart9_rx_pd14>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
-	dmas = <&dmamux1 2 117 STM32_DMA_PERIPH_TX>,
-	       <&dmamux1 3 116 STM32_DMA_PERIPH_RX>;
+	dmas = <&dmamux1 117 STM32_DMA_PERIPH_TX>,
+	       <&dmamux1 116 STM32_DMA_PERIPH_RX>;
 	dma-names = "tx", "rx";
 	status = "okay";
 };

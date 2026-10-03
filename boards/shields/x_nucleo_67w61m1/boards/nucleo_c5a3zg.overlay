@@ -5,7 +5,7 @@
  */
 
 &arduino_spi {
-	dmas = <&lpdma1 0 5 STM32_DMA_PERIPH_TX>,
-	       <&lpdma1 1 4 STM32_DMA_PERIPH_RX>;
+	dmas = <&lpdma1 5 STM32_DMA_PERIPH_TX>,
+	       <&lpdma1 4 STM32_DMA_PERIPH_RX>;
 	dma-names = "tx", "rx";
 };

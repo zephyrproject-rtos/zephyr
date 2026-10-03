@@ -239,12 +239,39 @@ static int dmamux_stm32_init(const struct device *dev)
 	return 0;
 }
 
+static bool dma_stm32_chan_filter(const struct device *dev, int id, void *filter_param)
+{
+	const struct dma_stm32_data *data = dev->data;
+	const struct dma_context *dma_ctx = &data->dma_ctx;
+
+	if (id >= dma_ctx->dma_channels) {
+		return -EINVAL;
+	}
+
+	/* Automatic reservation if no filter_param */
+	if (!filter_param) {
+		return true;
+	}
+
+	/* Channel is already reserved */
+	if (atomic_test_bit(dma_ctx->atomic, id)) {
+		return false;
+	}
+
+	if (*(uint32_t *)filter_param != id) {
+		return false;
+	}
+
+	return true;
+}
+
 static DEVICE_API(dma, dma_funcs) = {
 	.reload		 = dmamux_stm32_reload,
 	.config		 = dmamux_stm32_configure,
 	.start		 = dmamux_stm32_start,
 	.stop		 = dmamux_stm32_stop,
 	.get_status	 = dmamux_stm32_get_status,
+	.chan_filter	 = dmamux_stm32_chan_filter,
 };
 
 /*

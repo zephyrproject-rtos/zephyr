@@ -547,7 +547,7 @@
 		/* DMAMUX clock is enabled as long as DMA1 is enabled */
 		dmamux1: dmamux@40020800 {
 			compatible = "st,stm32-dmamux";
-			#dma-cells = <3>;
+			#dma-cells = <2>;
 			reg = <0x40020800 0x800>;
 			interrupts = <11 0>;
 			dma-channels = <3>;

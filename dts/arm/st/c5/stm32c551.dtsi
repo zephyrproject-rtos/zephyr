@@ -44,8 +44,8 @@
 			reg = <0x40003c00 0x400>;
 			interrupts = <50 0>;
 			clocks = <&rcc STM32_CLOCK(APB1, 15)>;
-			dmas = <&lpdma1 0 9 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
-			       <&lpdma1 1 8 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+			dmas = <&lpdma1 9 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
+			       <&lpdma1 8 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
 			dma-names = "tx", "rx";
 			status = "disabled";
 		};

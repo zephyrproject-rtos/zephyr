@@ -11,8 +11,8 @@
  */
 
 &spi3 {
-	dmas = <&dmamux1 0 16 STM32_DMA_PERIPH_TX>,
-	       <&dmamux1 7 15 STM32_DMA_PERIPH_RX>;
+	dmas = <&dmamux1 16 STM32_DMA_PERIPH_TX>,
+	       <&dmamux1 15 STM32_DMA_PERIPH_RX>;
 	dma-names = "tx", "rx";
 
 	slow@0 {
