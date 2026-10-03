@@ -162,10 +162,25 @@ struct net_socket_service_desc {
  *
  * @retval 0 No error
  * @retval -ENOENT Service is not found.
- * @retval -EINVAL Invalid parameter.
+ * @retval -EIO Service thread not running.
+ * @retval -ENOMEM Out of memory.
  */
 __syscall int net_socket_service_register(const struct net_socket_service_desc *service,
 					  struct zsock_pollfd *fds, int len, void *user_data);
+
+/**
+ * @brief Deregister individual pollable socket.
+ *
+ * @param service Pointer to a service description.
+ * @param fd Socket to be deregister.
+ *
+ * @retval 0 No error
+ * @retval -ENOENT Service is not found.
+ * @retval -EIO Service thread not running.
+ * @retval -ENOMEM Out of memory.
+ */
+__syscall int net_socket_service_deregister(const struct net_socket_service_desc *service,
+					    int fd);
 
 /**
  * @brief Unregister pollable sockets.
@@ -174,7 +189,7 @@ __syscall int net_socket_service_register(const struct net_socket_service_desc *
  *
  * @retval 0 No error
  * @retval -ENOENT Service is not found.
- * @retval -EINVAL Invalid parameter.
+ * @retval -EIO Service thread not running.
  */
 static inline int net_socket_service_unregister(const struct net_socket_service_desc *service)
 {
