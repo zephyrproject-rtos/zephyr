@@ -1,6 +1,6 @@
-.. _safety_requirements_checklist:
+.. _safety_process-requirements_checklist:
 
-Safety Requirements Checklist
+Requirements Checklist
 #############################
 
 Introduction
@@ -13,7 +13,7 @@ This checklist shall serve as the minimum that needs to be considered when doing
 Requirements Structure and Guidelines
 *************************************
 
-You can find the approach taken by the Zephyr Project in :ref:`safety_requirements`
+You can find the approach taken by the Zephyr Project in :ref:`safety_process-requirements`
 
 Review Instructions
 *******************
