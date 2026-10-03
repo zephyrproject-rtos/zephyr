@@ -120,8 +120,8 @@ struct boot_notif {
 };
 
 struct ocpp_idtag_info {
-	char idtag[CISTR20];
-	char p_idtag[CISTR20];
+	char idtag[CISTR20 + 1];
+	char p_idtag[CISTR20 + 1];
 	enum ocpp_auth_status auth_status;
 	char exptime[CISTR25];
 };
@@ -161,8 +161,9 @@ struct ocpp_info {
 };
 
 struct ocpp_session {
-	struct k_mutex slock; /* session lock */
-	char idtag[CISTR20];
+	bool is_busy;
+	bool is_closing;
+	char idtag[CISTR20 + 1];
 	bool is_active;
 	uint8_t idcon;
 	int idtxn;
