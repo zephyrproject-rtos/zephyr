@@ -126,7 +126,7 @@ static int rpu_validate_addr(uint32_t start_addr, uint32_t len, bool *hl_flag)
 	}
 
 	if (ret) {
-		LOG_ERR("Address validation failed - pls check memmory map and re-try");
+		LOG_ERR("Address validation failed - pls check memory map and re-try");
 		return -1;
 	}
 

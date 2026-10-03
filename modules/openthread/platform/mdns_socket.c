@@ -446,7 +446,7 @@ static void process_mdns_message(struct otbr_msg_ctx *msg_ctx_ptr)
 	 * query/response that has to be sent.
 	 * Here, we calculate the approximate number of OT message buffers that will be required
 	 * to hold the incoming mDNS packet. If the number of free OT message buffers will drop
-	 * below the imposed limit after the conversion has been perfomed, the incoming packet
+	 * below the imposed limit after the conversion has been performed, the incoming packet
 	 * will be silently dropped.
 	 * A possible scenario would be when multipackets (TC bit set) are received from multiple
 	 * hosts, as mDNS module stores the incoming messages for a period of time.

@@ -821,7 +821,7 @@ def dt_reg_size(node: Node, index: int = 0) -> int:
 
 
 def dt_prop(node: Node, name: str, default: Any = NO_DEFAULT) -> Any:
-    """Get the property value and identfier of a property.
+    """Get the property value and identifier of a property.
     Optionally returns a default value.
     """
     try:
@@ -1127,7 +1127,7 @@ class SocLookupTables:
         return {addr: name for name, addr in self.ppib_instances}
 
     def lookup_ctrlsel_for_property(self, prop: Property, psel: tuple[int, int]) -> Ctrlsel | None:
-        """Find the appopriate CTRLSEL value for a given gpios property."""
+        """Find the appropriate CTRLSEL value for a given gpios property."""
         if not prop.node.regs:
             # Only nodes with registers can be looked up
             return None
@@ -1137,7 +1137,7 @@ class SocLookupTables:
         return self._lookup_ctrlsel(periph_addr, gpios_prop)
 
     def lookup_ctrlsel_for_pinctrl(self, prop: PinCtrl, psel: NrfPsel) -> Ctrlsel | None:
-        """Find the appopriate CTRLSEL value for a given pinctrl."""
+        """Find the appropriate CTRLSEL value for a given pinctrl."""
         ctrlsel_default = None
         if psel.fun == NrfFun.ASSUMED_GPIO:
             # We map unsupported values to GPIO CTRLSEL

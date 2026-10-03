@@ -37,7 +37,7 @@ endif()
 # MCUX SDK NG needs `core_id` as input, it defines `core_id_suffix_name` based on
 # `core_id` in file "mcux-sdk-ng/devices/RT/RT500/MIMXRT595S/<core_id>".
 #
-# Zephyr provides `MCUX_CORE_SUFFIX` to distinguish the core, it is actaully the
+# Zephyr provides `MCUX_CORE_SUFFIX` to distinguish the core, it is actually the
 # `core_id_suffix_name` in MCUX SDK NG, here convert it to `core_id`, then pass
 # it to MCUX SDK NG.
 if(DEFINED CONFIG_MCUX_CORE_SUFFIX)
