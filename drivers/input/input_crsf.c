@@ -42,7 +42,9 @@ struct crsf_input_channel {
 	uint32_t zephyr_code;
 };
 
-static const struct uart_config uart_cfg_crsf = {.baudrate = 420000,
+#define CRSF_BAUDRATE 420000
+
+static const struct uart_config uart_cfg_crsf = {.baudrate = CRSF_BAUDRATE,
 						 .parity = UART_CFG_PARITY_NONE,
 						 .stop_bits = UART_CFG_STOP_BITS_1,
 						 .data_bits = UART_CFG_DATA_BITS_8,
@@ -65,7 +67,14 @@ struct input_crsf_config {
 #define CRSF_CONNECTION_TIMEOUT_MS 200
 #define CRSF_TX_BUF_SIZE           CRSF_MAX_FRAME_LEN
 #define CRSF_RX_BUF_SIZE           (2 * CRSF_MAX_FRAME_LEN) /* Async RX DMA buffer size */
-#define CRSF_RX_TIMEOUT_US         1000                     /* Flush timeout for async RX */
+/*
+ * Flush async RX after a few idle character times (10 bits each).
+ * At 420 kbaud this is ~96 us, short enough to avoid batching
+ * consecutive RC updates even at 1 kHz ExpressLRS packet rates.
+ */
+#define CRSF_RX_IDLE_CHARS         4
+#define CRSF_RX_TIMEOUT_US                                                                         \
+	DIV_ROUND_UP(CRSF_RX_IDLE_CHARS * 10 * USEC_PER_SEC, CRSF_BAUDRATE)
 #define CRSF_QUEUE_SIZE            3
 
 #define REPORT_FILTER      CONFIG_INPUT_CRSF_REPORT_FILTER
