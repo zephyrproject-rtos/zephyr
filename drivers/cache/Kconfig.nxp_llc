@@ -1,0 +1,23 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config CACHE_NXP_LLC
+	bool "NXP CodaCache last-level cache driver"
+	default y
+	depends on SOC_SERIES_IMXRT266X
+	depends on EXTERNAL_CACHE
+	select CACHE_HAS_DRIVER
+	help
+	  Enable the NXP two-level cache backend for i.MX RT266x (MIMXRT2660).
+	  This single drivers/cache backend serves BOTH cache levels behind
+	  Zephyr's level-less cache API: the Cortex-M85 L1 (via the CMSIS SCB
+	  helpers) and the CodaCache last-level cache (LLC) in front of the XSPI
+	  external-memory windows. Selecting EXTERNAL_CACHE removes the arch
+	  Cortex-M L1 backend (arch/arm/core/cortex_m/cache.c, gated on
+	  ARCH_CACHE) from the build, so this driver must cover both levels.
+	  DMA buffers must NOT live in the LLC-cached XSPI aliases (0x68000000 /
+	  0x88000000): eDMA masters bypass the LLC, the LLC line (128 bytes) is
+	  wider than CONFIG_DCACHE_LINE_SIZE, and there is no invalidate that
+	  skips write-back. Keep DMA buffers in on-chip SRAM, TCM, or the direct
+	  XSPI windows (0x60000000 / 0x80000000). __nocache over a cached alias
+	  does not reach the XSPI and must not be used there.

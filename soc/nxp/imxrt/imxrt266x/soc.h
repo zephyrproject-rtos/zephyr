@@ -55,6 +55,17 @@ FUNC_NORETURN void soc_early_init_failed(enum soc_early_init_step step);
 /* Hand the Resource Domain Controller and the DMA masters to the CPU's domain. */
 void soc_trdc_setup(void);
 
+/*
+ * Way-valid mask for LLC whole-cache maintenance. The boot ROM partitions most
+ * ways as scratchpad SRAM (CCUSPCR0[NUMSCPADWAYS]); only the remaining ways are
+ * cache. A whole-cache flush/invalidate must target exactly those cache ways --
+ * the CCUCMWVR 0xFF reset value would operate on scratchpad SRAM instead. The
+ * mask is derived from the live scratchpad partition, so it tracks whatever the
+ * ROM configured. Returns a WAYVALID bitmask (bit i set => way i is cache).
+ */
+uint32_t soc_llc_way_valid_mask(void);
+
+
 #ifdef __cplusplus
 }
 #endif
