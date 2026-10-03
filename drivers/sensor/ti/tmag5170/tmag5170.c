@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Michal Morsisko
+ * Copyright (c) 2026 Swarovski Optik AG & Co. KG
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,259 +8,58 @@
 #define DT_DRV_COMPAT ti_tmag5170
 
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/spi.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/rtio/rtio.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
 
-#if defined(CONFIG_TMAG5170_CRC)
-#include <zephyr/sys/crc.h>
+#include "tmag5170.h"
+#include "tmag5170_bus.h"
+
+#if defined(CONFIG_SENSOR_ASYNC_API)
+#include "tmag5170_decoder.h"
 #endif
 
-#include "tmag5170.h"
+#if defined(CONFIG_TMAG5170_STREAM)
+#include "tmag5170_stream.h"
+#endif
 
-#define TMAG5170_REG_DEVICE_CONFIG     0x0U
-#define TMAG5170_REG_SENSOR_CONFIG     0x1U
-#define TMAG5170_REG_SYSTEM_CONFIG     0x2U
-#define TMAG5170_REG_ALERT_CONFIG      0x3U
-#define TMAG5170_REG_X_THRX_CONFIG     0x4U
-#define TMAG5170_REG_Y_THRX_CONFIG     0x5U
-#define TMAG5170_REG_Z_THRX_CONFIG     0x6U
-#define TMAG5170_REG_T_THRX_CONFIG     0x7U
-#define TMAG5170_REG_CONV_STATUS       0x8U
-#define TMAG5170_REG_X_CH_RESULT       0x9U
-#define TMAG5170_REG_Y_CH_RESULT       0xAU
-#define TMAG5170_REG_Z_CH_RESULT       0xBU
-#define TMAG5170_REG_TEMP_RESULT       0xCU
-#define TMAG5170_REG_AFE_STATUS        0xDU
-#define TMAG5170_REG_SYS_STATUS        0xEU
-#define TMAG5170_REG_TEST_CONFIG       0xFU
-#define TMAG5170_REG_OSC_MONITOR       0x10U
-#define TMAG5170_REG_MAG_GAIN_CONFIG   0x11U
-#define TMAG5170_REG_MAG_OFFSET_CONFIG 0x12U
-#define TMAG5170_REG_ANGLE_RESULT      0x13U
-#define TMAG5170_REG_MAGNITUDE_RESULT  0x14U
+#if defined(CONFIG_SENSOR_ASYNC_API)
+const uint8_t tmag5170_result_regs[TMAG5170_RESULT_IDX_COUNT] = {
+	[TMAG5170_RESULT_IDX_X] = TMAG5170_REG_X_CH_RESULT,
+	[TMAG5170_RESULT_IDX_Y] = TMAG5170_REG_Y_CH_RESULT,
+	[TMAG5170_RESULT_IDX_Z] = TMAG5170_REG_Z_CH_RESULT,
+	[TMAG5170_RESULT_IDX_ANGLE] = TMAG5170_REG_ANGLE_RESULT,
+	[TMAG5170_RESULT_IDX_TEMP] = TMAG5170_REG_TEMP_RESULT,
+};
+#endif
 
-#define TMAG5170_CONV_AVG_POS        12U
-#define TMAG5170_CONV_AVG_MASK       (BIT_MASK(3U) << TMAG5170_CONV_AVG_POS)
-#define TMAG5170_CONV_AVG_SET(value) (((value) << TMAG5170_CONV_AVG_POS) & TMAG5170_CONV_AVG_MASK)
-
-#define TMAG5170_MAG_TEMPCO_POS  8U
-#define TMAG5170_MAG_TEMPCO_MASK (BIT_MASK(2U) << TMAG5170_MAG_TEMPCO_POS)
-#define TMAG5170_MAG_TEMPCO_SET(value)                                                             \
-	(((value) << TMAG5170_MAG_TEMPCO_POS) & TMAG5170_MAG_TEMPCO_MASK)
-
-#define TMAG5170_OPERATING_MODE_POS  4U
-#define TMAG5170_OPERATING_MODE_MASK (BIT_MASK(3U) << TMAG5170_OPERATING_MODE_POS)
-#define TMAG5170_OPERATING_MODE_SET(value)                                                         \
-	(((value) << TMAG5170_OPERATING_MODE_POS) & TMAG5170_OPERATING_MODE_MASK)
-
-#define TMAG5170_T_CH_EN_POS        3U
-#define TMAG5170_T_CH_EN_MASK       (BIT_MASK(1U) << TMAG5170_T_CH_EN_POS)
-#define TMAG5170_T_CH_EN_SET(value) (((value) << TMAG5170_T_CH_EN_POS) & TMAG5170_T_CH_EN_MASK)
-
-#define TMAG5170_T_RATE_POS        2U
-#define TMAG5170_T_RATE_MASK       (BIT_MASK(1U) << TMAG5170_T_RATE_POS)
-#define TMAG5170_T_RATE_SET(value) (((value) << TMAG5170_T_RATE_POS) & TMAG5170_T_RATE_MASK)
-
-#define TMAG5170_ANGLE_EN_POS        14U
-#define TMAG5170_ANGLE_EN_MASK       (BIT_MASK(2U) << TMAG5170_ANGLE_EN_POS)
-#define TMAG5170_ANGLE_EN_SET(value) (((value) << TMAG5170_ANGLE_EN_POS) & TMAG5170_ANGLE_EN_MASK)
-
-#define TMAG5170_SLEEPTIME_POS  10U
-#define TMAG5170_SLEEPTIME_MASK (BIT_MASK(4U) << TMAG5170_SLEEPTIME_POS)
-#define TMAG5170_SLEEPTIME_SET(value)                                                              \
-	(((value) << TMAG5170_SLEEPTIME_POS) & TMAG5170_SLEEPTIME_MASK)
-
-#define TMAG5170_MAG_CH_EN_POS  6U
-#define TMAG5170_MAG_CH_EN_MASK (BIT_MASK(4U) << TMAG5170_MAG_CH_EN_POS)
-#define TMAG5170_MAG_CH_EN_SET(value)                                                              \
-	(((value) << TMAG5170_MAG_CH_EN_POS) & TMAG5170_MAG_CH_EN_MASK)
-
-#define TMAG5170_Z_RANGE_POS        4U
-#define TMAG5170_Z_RANGE_MASK       (BIT_MASK(2U) << TMAG5170_Z_RANGE_POS)
-#define TMAG5170_Z_RANGE_SET(value) (((value) << TMAG5170_Z_RANGE_POS) & TMAG5170_Z_RANGE_MASK)
-
-#define TMAG5170_Y_RANGE_POS        2U
-#define TMAG5170_Y_RANGE_MASK       (BIT_MASK(2U) << TMAG5170_Y_RANGE_POS)
-#define TMAG5170_Y_RANGE_SET(value) (((value) << TMAG5170_Y_RANGE_POS) & TMAG5170_Y_RANGE_MASK)
-
-#define TMAG5170_X_RANGE_POS        0U
-#define TMAG5170_X_RANGE_MASK       (BIT_MASK(2U) << TMAG5170_X_RANGE_POS)
-#define TMAG5170_X_RANGE_SET(value) (((value) << TMAG5170_X_RANGE_POS) & TMAG5170_X_RANGE_MASK)
-
-#define TMAG5170_RSLT_ALRT_POS  8U
-#define TMAG5170_RSLT_ALRT_MASK (BIT_MASK(1U) << TMAG5170_RSLT_ALRT_POS)
-#define TMAG5170_RSLT_ALRT_SET(value)                                                              \
-	(((value) << TMAG5170_RSLT_ALRT_POS) & TMAG5170_RSLT_ALRT_MASK)
-
-#define TMAG5170_VER_POS        4U
-#define TMAG5170_VER_MASK       (BIT_MASK(2U) << TMAG5170_VER_POS)
-#define TMAG5170_VER_GET(value) (((value) & TMAG5170_VER_MASK) >> TMAG5170_VER_POS)
-
-#define TMAG5170_A1_REV 0x0U
-#define TMAG5170_A2_REV 0x1U
-
-#define TMAG5170_MAX_RANGE_50MT_IDX      0x0U
-#define TMAG5170_MAX_RANGE_25MT_IDX      0x1U
-#define TMAG5170_MAX_RANGE_100MT_IDX     0x2U
-#define TMAG5170_MAX_RANGE_EXTEND_FACTOR 0x3U
-
-#define TMAG5170_CONFIGURATION_MODE  0x0U
-#define TMAG5170_STAND_BY_MODE       0x1U
-#define TMAG5170_ACTIVE_TRIGGER_MODE 0x3U
-#define TMAG5170_SLEEP_MODE          0x5U
-#define TMAG5170_DEEP_SLEEP_MODE     0x6U
-
-#define TMAG5170_MT_TO_GAUSS_RATIO 10U
-#define TMAG5170_T_SENS_T0         25U
-#define TMAG5170_T_ADC_T0          17522U
-#define TMAG5170_T_ADC_RES         60U
-
-#define TMAG5170_CMD_TRIGGER_CONVERSION BIT(0U)
-
-#define TMAG5170_CRC_SEED          0xFU
-#define TMAG5170_CRC_POLY          0x3U
-#define TMAG5170_SPI_BUFFER_LEN    4U
-#define TMAG5170_SET_CRC(buf, crc) ((uint8_t *)(buf))[3] |= (crc & 0x0F)
-#define TMAG5170_ZERO_CRC(buf)     ((uint8_t *)(buf))[3] &= 0xF0
-#define TMAG5170_GET_CRC(buf)      ((uint8_t *)(buf))[3] & 0x0F
+/** Number of submission and completion queue entries per instance.
+ *
+ * The longest sequence issued by the driver is a trigger frame, a delay and the
+ * five result frames, followed by the completion callback.
+ */
+#define TMAG5170_RTIO_QUEUE_LEN 12
 
 LOG_MODULE_REGISTER(TMAG5170, CONFIG_SENSOR_LOG_LEVEL);
 
-static int tmag5170_transmit_raw(const struct tmag5170_dev_config *config, uint8_t *buffer_tx,
-				 uint8_t *buffer_rx)
+static int tmag5170_write_register(const struct device *dev, uint8_t reg, uint16_t data)
 {
-	const struct spi_buf tx_buf = {
-		.buf = buffer_tx,
-		.len = TMAG5170_SPI_BUFFER_LEN,
-	};
+	struct tmag5170_data *drv_data = dev->data;
 
-	const struct spi_buf_set tx = {.buffers = &tx_buf, .count = 1};
-
-	const struct spi_buf rx_buf = {
-		.buf = buffer_rx,
-		.len = TMAG5170_SPI_BUFFER_LEN,
-	};
-
-	const struct spi_buf_set rx = {.buffers = &rx_buf, .count = 1};
-
-	int ret = spi_transceive_dt(&config->bus, &tx, &rx);
-
-	return ret;
+	return tmag5170_write_register_rtio(&drv_data->bus, reg, data);
 }
 
-static int tmag5170_transmit(const struct device *dev, uint8_t *buffer_tx, uint8_t *buffer_rx)
-{
-#if defined(CONFIG_TMAG5170_CRC)
-	TMAG5170_ZERO_CRC(buffer_tx);
-	uint8_t crc = crc4_ti(TMAG5170_CRC_SEED, buffer_tx, TMAG5170_SPI_BUFFER_LEN);
-
-	TMAG5170_SET_CRC(buffer_tx, crc);
-#endif
-	int ret = tmag5170_transmit_raw(dev->config, buffer_tx, buffer_rx);
-#if defined(CONFIG_TMAG5170_CRC)
-	if (buffer_rx != NULL && ret == 0) {
-		uint8_t read_crc = TMAG5170_GET_CRC(buffer_rx);
-
-		TMAG5170_ZERO_CRC(buffer_rx);
-		crc = crc4_ti(TMAG5170_CRC_SEED, buffer_rx, TMAG5170_SPI_BUFFER_LEN);
-		if (read_crc != crc) {
-			return -EIO;
-		}
-	}
-#endif
-
-	return ret;
-}
-
-static int tmag5170_write_register(const struct device *dev, uint32_t reg, uint16_t data)
-{
-	uint8_t buffer_tx[4] = {reg, (data >> 8) & 0xFF, data & 0xFF, 0x00U};
-
-	return tmag5170_transmit(dev, buffer_tx, NULL);
-}
-
-static int tmag5170_read_register(const struct device *dev, uint32_t reg, uint16_t *output,
+static int tmag5170_read_register(const struct device *dev, uint8_t reg, uint16_t *output,
 				  uint8_t cmd)
 {
-	uint8_t buffer_tx[4] = {BIT(7) | reg, 0x00U, 0x00U, (cmd & BIT_MASK(4U)) << 4U};
-	uint8_t buffer_rx[4] = {0x00U};
+	struct tmag5170_data *drv_data = dev->data;
 
-	int ret = tmag5170_transmit(dev, buffer_tx, buffer_rx);
-
-	*output = (buffer_rx[1] << 8) | buffer_rx[2];
-
-	return ret;
-}
-
-static int tmag5170_convert_magn_reading_to_gauss(struct sensor_value *output,
-						  uint16_t chan_reading, uint8_t chan_range,
-						  uint8_t chip_revision)
-{
-	uint16_t max_range_mt = 0U;
-
-	if (chan_range == TMAG5170_MAX_RANGE_50MT_IDX) {
-		max_range_mt = 50U;
-	} else if (chan_range == TMAG5170_MAX_RANGE_25MT_IDX) {
-		max_range_mt = 25U;
-	} else if (chan_range == TMAG5170_MAX_RANGE_100MT_IDX) {
-		max_range_mt = 100U;
-	} else {
-		return -ENOTSUP;
-	}
-
-	if (chip_revision == TMAG5170_A2_REV) {
-		max_range_mt *= TMAG5170_MAX_RANGE_EXTEND_FACTOR;
-	}
-
-	max_range_mt *= 2U;
-
-	/* The sensor returns data in mT, we need to convert it to Gauss */
-	uint32_t max_range_gauss = max_range_mt * TMAG5170_MT_TO_GAUSS_RATIO;
-
-	/* Convert from 2's complementary system, as it is shown in datasheet.
-	 * Since the DATA_TYPE register is not written (default=0x0),
-	 * the formula for 16-bit sensor data must be applied.
-	 */
-	int64_t result = chan_reading - ((chan_reading & 0x8000) << 1);
-
-	result *= max_range_gauss;
-
-	/* Scale to sensor_value micro-units */
-	result *= 1000000LL;
-
-	/* Divide as it is shown in datasheet */
-	result /= 65536LL;
-
-	return sensor_value_from_micro(output, result);
-}
-
-static void tmag5170_convert_temp_reading_to_celsius(struct sensor_value *output,
-						     uint16_t chan_reading)
-{
-	/* Apply value conversion as shown in the datasheet */
-	int64_t result = chan_reading - TMAG5170_T_ADC_T0;
-
-	result = (TMAG5170_T_SENS_T0 * 1000000LL) +
-		 (1000000LL * result / (int64_t)TMAG5170_T_ADC_RES);
-
-	(void)sensor_value_from_micro(output, result);
-}
-
-static void tmag5170_convert_angle_reading_to_degrees(struct sensor_value *output,
-						      uint16_t chan_reading)
-{
-	/* Apply value conversion as shown in the datasheet.
-	 * 12 MSBs store the integer part of the result,
-	 * 4 LSBs store the fractional part of the result
-	 */
-	const int64_t result =
-		(chan_reading >> 4) * 1000000LL + ((chan_reading & 0xF) * 1000000LL) / 16LL;
-
-	(void)sensor_value_from_micro(output, result);
+	return tmag5170_read_register_rtio(&drv_data->bus, reg, cmd, output);
 }
 
 static int tmag5170_sample_fetch(const struct device *dev, enum sensor_channel chan)
@@ -278,7 +78,7 @@ static int tmag5170_sample_fetch(const struct device *dev, enum sensor_channel c
 		/* Wait for the measurement to be ready.
 		 * The waiting time will vary depending on the configuration
 		 */
-		k_sleep(K_MSEC(5U));
+		k_sleep(K_MSEC(TMAG5170_CONVERSION_TIME_MS));
 	}
 
 	switch (chan) {
@@ -343,11 +143,27 @@ static int tmag5170_sample_fetch(const struct device *dev, enum sensor_channel c
 	return ret;
 }
 
+static int tmag5170_convert_magn_reading_to_gauss(struct sensor_value *output,
+						  uint16_t chan_reading, uint8_t chan_range,
+						  uint8_t chip_revision)
+{
+	int64_t micro;
+	int ret = tmag5170_magn_reading_to_micro_gauss(chan_reading, chan_range, chip_revision,
+						       &micro);
+
+	if (ret != 0) {
+		return ret;
+	}
+
+	return sensor_value_from_micro(output, micro);
+}
+
 static int tmag5170_channel_get(const struct device *dev, enum sensor_channel chan,
 				struct sensor_value *val)
 {
 	const struct tmag5170_dev_config *cfg = dev->config;
 	struct tmag5170_data *drv_data = dev->data;
+	int64_t micro;
 	int ret = 0;
 
 	switch (chan) {
@@ -378,10 +194,12 @@ static int tmag5170_channel_get(const struct device *dev, enum sensor_channel ch
 							     drv_data->chip_revision);
 		break;
 	case SENSOR_CHAN_ROTATION:
-		tmag5170_convert_angle_reading_to_degrees(val, drv_data->angle);
+		tmag5170_angle_reading_to_micro_degrees(drv_data->angle, &micro);
+		(void)sensor_value_from_micro(val, micro);
 		break;
 	case SENSOR_CHAN_AMBIENT_TEMP:
-		tmag5170_convert_temp_reading_to_celsius(val, drv_data->temperature);
+		tmag5170_temp_reading_to_micro_celsius(drv_data->temperature, &micro);
+		(void)sensor_value_from_micro(val, micro);
 		break;
 	default:
 		ret = -ENOTSUP;
@@ -391,6 +209,180 @@ static int tmag5170_channel_get(const struct device *dev, enum sensor_channel ch
 	return ret;
 }
 
+#if defined(CONFIG_SENSOR_ASYNC_API)
+
+static void tmag5170_complete_result(struct rtio *ctx, const struct rtio_sqe *sqe, int result,
+				     void *arg)
+{
+	ARG_UNUSED(arg);
+
+	struct rtio_iodev_sqe *iodev_sqe = (struct rtio_iodev_sqe *)sqe->userdata;
+	struct tmag5170_encoded_data *edata;
+	struct rtio_cqe *cqe;
+	uint8_t *buf;
+	uint32_t buf_len;
+	int err = (result < 0) ? result : 0;
+
+	do {
+		cqe = rtio_cqe_consume(ctx);
+		if (cqe != NULL) {
+			if (cqe->result < 0 && err == 0) {
+				err = cqe->result;
+			}
+			rtio_cqe_release(ctx, cqe);
+		}
+	} while (cqe != NULL);
+
+	if (err == 0) {
+		/* The buffer has already been allocated by the submission, so
+		 * this only hands back the very same buffer.
+		 */
+		err = rtio_sqe_rx_buf(iodev_sqe, 0, 0, &buf, &buf_len);
+	}
+
+	if (err == 0) {
+		edata = (struct tmag5170_encoded_data *)buf;
+
+		/* Verify the CRC of every frame which has been shifted in. This
+		 * cannot be done by the bus layer anymore, because the frames
+		 * are transferred asynchronously.
+		 */
+		for (uint8_t idx = 0U; idx < TMAG5170_RESULT_IDX_COUNT; idx++) {
+			if ((edata->header.channels & BIT(idx)) == 0U) {
+				continue;
+			}
+
+			err = tmag5170_frame_decode(edata->payload.frames[idx], NULL);
+			if (err != 0) {
+				LOG_ERR("CRC mismatch of result register %u", idx);
+				break;
+			}
+		}
+	}
+
+	if (err) {
+		rtio_iodev_sqe_err(iodev_sqe, err);
+	} else {
+		rtio_iodev_sqe_ok(iodev_sqe, 0);
+	}
+
+	LOG_DBG("One-shot fetch completed");
+}
+
+static void tmag5170_submit_one_shot(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+{
+	const struct sensor_read_config *read_cfg = iodev_sqe->sqe.iodev->data;
+	const struct tmag5170_dev_config *cfg = dev->config;
+	struct tmag5170_data *drv_data = dev->data;
+	const uint32_t min_buf_len = sizeof(struct tmag5170_encoded_data);
+	struct tmag5170_encoded_data *edata;
+	struct rtio_sqe *sqe = NULL;
+	uint8_t *buf;
+	uint32_t buf_len;
+	int err;
+
+	err = rtio_sqe_rx_buf(iodev_sqe, min_buf_len, min_buf_len, &buf, &buf_len);
+	if (err != 0) {
+		LOG_ERR("Failed to get a read buffer of size %u bytes", min_buf_len);
+		rtio_iodev_sqe_err(iodev_sqe, err);
+		return;
+	}
+	edata = (struct tmag5170_encoded_data *)buf;
+
+	err = tmag5170_encode(dev, read_cfg->channels, read_cfg->count, buf);
+	if (err != 0) {
+		LOG_ERR("Failed to encode sensor data");
+		rtio_iodev_sqe_err(iodev_sqe, err);
+		return;
+	}
+
+	if (cfg->operating_mode == TMAG5170_STAND_BY_MODE ||
+	    cfg->operating_mode == TMAG5170_ACTIVE_TRIGGER_MODE) {
+#if defined(CONFIG_RTIO_OP_DELAY)
+		/* In the trigger driven operating modes a conversion has to be
+		 * started explicitly and its result only becomes available once
+		 * the conversion finished. The blocking k_sleep() of the
+		 * fetch/get API is replaced by a chained RTIO delay operation:
+		 * it does not hold the bus, hence transfers of other devices
+		 * can be served meanwhile and neither the submit nor the
+		 * completion path blocks.
+		 */
+		tmag5170_frame_encode_read(drv_data->tx_trigger_frame, TMAG5170_REG_SYS_STATUS,
+					   TMAG5170_CMD_TRIGGER_CONVERSION);
+
+		err = tmag5170_prep_frame_rtio_async(&drv_data->bus, drv_data->tx_trigger_frame,
+						     drv_data->rx_trigger_frame, &sqe);
+		if (err < 0) {
+			goto err_sqe;
+		}
+		sqe->flags |= RTIO_SQE_CHAINED;
+
+		sqe = rtio_sqe_acquire(drv_data->bus.rtio.ctx);
+		if (!sqe) {
+			goto err_sqe;
+		}
+		rtio_sqe_prep_delay(sqe, K_MSEC(TMAG5170_CONVERSION_TIME_MS), NULL);
+		sqe->flags |= RTIO_SQE_CHAINED;
+#else
+		/* Without the RTIO delay operation the conversion time cannot
+		 * be bridged without blocking, which is not allowed here.
+		 */
+		LOG_ERR("Trigger driven operating modes require CONFIG_RTIO_OP_DELAY");
+		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
+		return;
+#endif /* CONFIG_RTIO_OP_DELAY */
+	}
+
+	for (uint8_t idx = 0U; idx < TMAG5170_RESULT_IDX_COUNT; idx++) {
+		if ((edata->header.channels & BIT(idx)) == 0U) {
+			continue;
+		}
+
+		tmag5170_frame_encode_read(drv_data->tx_frames[idx], tmag5170_result_regs[idx], 0U);
+
+		err = tmag5170_prep_frame_rtio_async(&drv_data->bus, drv_data->tx_frames[idx],
+						     edata->payload.frames[idx], &sqe);
+		if (err < 0) {
+			goto err_sqe;
+		}
+		sqe->flags |= RTIO_SQE_CHAINED;
+	}
+
+	sqe = rtio_sqe_acquire(drv_data->bus.rtio.ctx);
+	if (!sqe) {
+		goto err_sqe;
+	}
+	rtio_sqe_prep_callback_no_cqe(sqe, tmag5170_complete_result, (void *)dev, iodev_sqe);
+
+	rtio_submit(drv_data->bus.rtio.ctx, 0);
+
+	return;
+
+err_sqe:
+	LOG_ERR("Failed to acquire SQE");
+	rtio_sqe_drop_all(drv_data->bus.rtio.ctx);
+	rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+}
+
+static void tmag5170_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+{
+	const struct sensor_read_config *read_cfg = iodev_sqe->sqe.iodev->data;
+
+	if (!read_cfg->is_streaming) {
+		tmag5170_submit_one_shot(dev, iodev_sqe);
+		return;
+	}
+
+#if defined(CONFIG_TMAG5170_STREAM)
+	tmag5170_stream_submit(dev, iodev_sqe);
+#else
+	LOG_ERR("Streaming not supported");
+	rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
+#endif
+}
+
+#endif /* CONFIG_SENSOR_ASYNC_API */
+
 static int tmag5170_init_registers(const struct device *dev)
 {
 	const struct tmag5170_dev_config *cfg = dev->config;
@@ -399,9 +391,9 @@ static int tmag5170_init_registers(const struct device *dev)
 	int ret = 0;
 
 #if !defined(CONFIG_TMAG5170_CRC)
-	const uint8_t disable_crc_packet[4] = {0x0FU, 0x0U, 0x04U, 0x07U};
+	const uint8_t disable_crc_packet[TMAG5170_SPI_BUFFER_LEN] = {0x0FU, 0x0U, 0x04U, 0x07U};
 
-	ret = tmag5170_transmit_raw(cfg, disable_crc_packet, NULL);
+	ret = tmag5170_transmit_frame_rtio(&drv_data->bus, disable_crc_packet);
 #endif
 	if (ret == 0) {
 		ret = tmag5170_read_register(dev, TMAG5170_REG_TEST_CONFIG, &test_cfg_reg, 0U);
@@ -420,7 +412,7 @@ static int tmag5170_init_registers(const struct device *dev)
 				TMAG5170_X_RANGE_SET(cfg->x_range));
 	}
 
-#if defined(CONFIG_TMAG5170_TRIGGER)
+#if defined(CONFIG_TMAG5170_TRIGGER) || defined(CONFIG_TMAG5170_STREAM)
 	if (ret == 0) {
 		ret = tmag5170_write_register(dev, TMAG5170_REG_ALERT_CONFIG,
 					      TMAG5170_RSLT_ALRT_SET(1U));
@@ -465,20 +457,29 @@ static int tmag5170_pm_action(const struct device *dev, enum pm_device_action ac
 }
 #endif /* CONFIG_PM_DEVICE */
 
-static DEVICE_API(sensor, tmag5170_driver_api) = {.sample_fetch = tmag5170_sample_fetch,
-						  .channel_get = tmag5170_channel_get,
+static DEVICE_API(sensor, tmag5170_driver_api) = {
+	.sample_fetch = tmag5170_sample_fetch,
+	.channel_get = tmag5170_channel_get,
 #if defined(CONFIG_TMAG5170_TRIGGER)
-						  .trigger_set = tmag5170_trigger_set
+	.trigger_set = tmag5170_trigger_set,
+#endif
+#if defined(CONFIG_SENSOR_ASYNC_API)
+	.submit = tmag5170_submit,
+	.get_decoder = tmag5170_get_decoder,
 #endif
 };
 
 static int tmag5170_init(const struct device *dev)
 {
-	const struct tmag5170_dev_config *cfg = dev->config;
+	struct tmag5170_data *drv_data = dev->data;
 	int ret = 0;
 
-	if (!spi_is_ready_dt(&cfg->bus)) {
-		LOG_ERR_DEVICE_NOT_READY(cfg->bus.bus);
+#if defined(CONFIG_TMAG5170_TRIGGER)
+	const struct tmag5170_dev_config *cfg = dev->config;
+#endif
+
+	if (!spi_is_ready_iodev(drv_data->bus.rtio.iodev)) {
+		LOG_ERR_DEVICE_NOT_READY(dev);
 		return -ENODEV;
 	}
 
@@ -487,7 +488,9 @@ static int tmag5170_init(const struct device *dev)
 		return ret;
 	}
 
-#if defined(CONFIG_TMAG5170_TRIGGER)
+#if defined(CONFIG_TMAG5170_STREAM)
+	ret = tmag5170_stream_init(dev);
+#elif defined(CONFIG_TMAG5170_TRIGGER)
 	if (cfg->int_gpio.port) {
 		ret = tmag5170_trigger_init(dev);
 	}
@@ -496,11 +499,24 @@ static int tmag5170_init(const struct device *dev)
 	return ret;
 }
 
+#if defined(CONFIG_TMAG5170_TRIGGER) || defined(CONFIG_TMAG5170_STREAM)
+#define TMAG5170_INT_GPIO_INIT(_num) .int_gpio = GPIO_DT_SPEC_INST_GET_OR(_num, int_gpios, {0}),
+#else
+#define TMAG5170_INT_GPIO_INIT(_num)
+#endif
+
 #define DEFINE_TMAG5170(_num)                                                                      \
-	static struct tmag5170_data tmag5170_data_##_num;                                          \
+	RTIO_DEFINE(tmag5170_rtio_ctx_##_num, TMAG5170_RTIO_QUEUE_LEN, TMAG5170_RTIO_QUEUE_LEN);   \
+	SPI_DT_IODEV_DEFINE(tmag5170_bus_##_num, DT_DRV_INST(_num),                                \
+			    SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB | SPI_WORD_SET(8));          \
+	static struct tmag5170_data tmag5170_data_##_num = {                                       \
+		.bus.rtio =                                                                        \
+			{                                                                          \
+				.ctx = &tmag5170_rtio_ctx_##_num,                                  \
+				.iodev = &tmag5170_bus_##_num,                                     \
+			},                                                                         \
+	};                                                                                         \
 	static const struct tmag5170_dev_config tmag5170_config_##_num = {                         \
-		.bus = SPI_DT_SPEC_INST_GET(_num, SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB |      \
-							  SPI_WORD_SET(8)),                        \
 		.magnetic_channels = DT_INST_ENUM_IDX(_num, magnetic_channels),                    \
 		.x_range = DT_INST_ENUM_IDX(_num, x_range),                                        \
 		.y_range = DT_INST_ENUM_IDX(_num, y_range),                                        \
@@ -513,8 +529,7 @@ static int tmag5170_init(const struct device *dev)
 		.disable_temperature_oversampling =                                                \
 			DT_INST_PROP(_num, disable_temperature_oversampling),                      \
 		.sleep_time = DT_INST_ENUM_IDX(_num, sleep_time),                                  \
-		IF_ENABLED(CONFIG_TMAG5170_TRIGGER, (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(_num,    \
-								int_gpios, { 0 }),)) };           \
+		TMAG5170_INT_GPIO_INIT(_num)};                                                     \
 	PM_DEVICE_DT_INST_DEFINE(_num, tmag5170_pm_action);                                        \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(_num, tmag5170_init, PM_DEVICE_DT_INST_GET(_num),             \
