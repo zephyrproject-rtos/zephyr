@@ -14,46 +14,25 @@
 		timebase-frequency = <DT_FREQ_M(100)>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m0+";
 			reg = <0>;
+			device_type = "cpu";
 		};
 
 		cpu@1 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
 			reg = <1>;
+			device_type = "cpu";
 		};
-	};
-
-	flash-controller@40240000 {
-		compatible = "infineon,flash-controller";
-		reg = <0x40240000 0x10000>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		flash0: flash@10000000 {
-			compatible = "soc-nv-flash";
-			reg = <0x10000000 0x80000>;
-			write-block-size = <512>;
-			erase-block-size = <512>;
-		};
-
-		flash1: flash@14000000 {
-			compatible = "soc-nv-flash";
-			reg = <0x14000000 0x8000>;
-			write-block-size = <512>;
-			erase-block-size = <512>;
-			status = "disabled";
-		};
-	};
-
-	sram0: memory@8000000 {
-		compatible = "mmio-sram";
-		reg = <0x8000000 0x40000>;
 	};
 
 	soc {
+		uid: device_uid@16000600 {
+			compatible = "infineon,uid";
+			reg = <0x16000600 0xb>;
+			status = "disabled";
+		};
+
 		pinctrl: pinctrl@40300000 {
 			compatible = "infineon,pinctrl";
 			reg = <0x40300000 0x20000>;
@@ -73,8 +52,8 @@
 				interrupts = <0 6>;
 				gpio-controller;
 				ngpios = <6>;
-				status = "disabled";
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 
 			gpio_prt2: gpio@40310100 {
@@ -83,8 +62,8 @@
 				interrupts = <2 6>;
 				gpio-controller;
 				ngpios = <8>;
-				status = "disabled";
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 
 			gpio_prt3: gpio@40310180 {
@@ -93,8 +72,8 @@
 				interrupts = <3 6>;
 				gpio-controller;
 				ngpios = <2>;
-				status = "disabled";
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 
 			gpio_prt5: gpio@40310280 {
@@ -103,8 +82,8 @@
 				interrupts = <5 6>;
 				gpio-controller;
 				ngpios = <4>;
-				status = "disabled";
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 
 			gpio_prt6: gpio@40310300 {
@@ -113,8 +92,8 @@
 				interrupts = <6 6>;
 				gpio-controller;
 				ngpios = <8>;
-				status = "disabled";
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 
 			gpio_prt7: gpio@40310380 {
@@ -123,8 +102,8 @@
 				interrupts = <7 6>;
 				gpio-controller;
 				ngpios = <8>;
-				status = "disabled";
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 
 			gpio_prt8: gpio@40310400 {
@@ -133,8 +112,8 @@
 				interrupts = <8 6>;
 				gpio-controller;
 				ngpios = <4>;
-				status = "disabled";
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 
 			gpio_prt9: gpio@40310480 {
@@ -143,8 +122,8 @@
 				interrupts = <9 6>;
 				gpio-controller;
 				ngpios = <4>;
-				status = "disabled";
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 
 			gpio_prt10: gpio@40310500 {
@@ -153,8 +132,8 @@
 				interrupts = <10 6>;
 				gpio-controller;
 				ngpios = <8>;
-				status = "disabled";
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 
 			gpio_prt11: gpio@40310580 {
@@ -163,8 +142,8 @@
 				interrupts = <11 6>;
 				gpio-controller;
 				ngpios = <8>;
-				status = "disabled";
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 
 			gpio_prt12: gpio@40310600 {
@@ -173,8 +152,8 @@
 				interrupts = <12 6>;
 				gpio-controller;
 				ngpios = <4>;
-				status = "disabled";
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 
 			gpio_prt14: gpio@40310700 {
@@ -183,21 +162,15 @@
 				interrupts = <14 6>;
 				gpio-controller;
 				ngpios = <2>;
-				status = "disabled";
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 		};
 
-		uid: device_uid@16000600 {
-			compatible = "infineon,uid";
-			reg = <0x16000600 0xb>;
-			status = "disabled";
-		};
-
-		adc0: adc@409d0000 {
-			compatible = "infineon,adc";
-			reg = <0x409d0000 0x10000>;
-			interrupts = <155 6>;
+		sdhc0: sdhc@40460000 {
+			compatible = "infineon,sdhc-sdio";
+			reg = <0x40460000 0x2000>;
+			interrupts = <164 6>;
 			status = "disabled";
 		};
 
@@ -271,10 +244,37 @@
 			status = "disabled";
 		};
 
-		sdhc0: sdhc@40460000 {
-			compatible = "infineon,sdhc-sdio";
-			reg = <0x40460000 0x2000>;
-			interrupts = <164 6>;
+		adc0: adc@409d0000 {
+			compatible = "infineon,adc";
+			reg = <0x409d0000 0x10000>;
+			interrupts = <155 6>;
+			status = "disabled";
+		};
+	};
+
+	sram0: memory@8000000 {
+		compatible = "mmio-sram";
+		reg = <0x8000000 0x40000>;
+	};
+
+	flash-controller@40240000 {
+		compatible = "infineon,flash-controller";
+		reg = <0x40240000 0x10000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flash0: flash@10000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x10000000 0x80000>;
+			write-block-size = <512>;
+			erase-block-size = <512>;
+		};
+
+		flash1: flash@14000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x14000000 0x8000>;
+			write-block-size = <512>;
+			erase-block-size = <512>;
 			status = "disabled";
 		};
 	};

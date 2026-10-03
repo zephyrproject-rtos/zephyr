@@ -17,9 +17,9 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "snps,arcem";
 			reg = <0>;
+			device_type = "cpu";
 		};
 	};
 
@@ -35,22 +35,6 @@
 		interrupt-parent = <&intc>;
 	};
 
-	iccm0: iccm@60000000 {
-		compatible = "arc,iccm";
-		reg = <0x60000000 0x20000>;
-	};
-
-	dccm0: dccm@80000000 {
-		compatible = "arc,dccm";
-		reg = <0x80000000 0x20000>;
-	};
-
-	/* this is (Pseudo SRAM), so treat it like mmio-sram */
-	sram0: memory@10000000 {
-		compatible = "mmio-sram";
-		reg = <0x10000000 0x1000000>;
-	};
-
 	spiclk: spi-clock {
 		compatible = "fixed-clock";
 		clock-frequency = <1000000>;
@@ -58,17 +42,44 @@
 	};
 
 	soc {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "simple-bus";
 		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
 
-		uart0: uart@f0004000 {
-			compatible = "ns16550";
-			clock-frequency = <DT_APB_CLK_HZ>;
-			reg = <0xf0004000 0x1000>;
+		/* DFSS-SPI0 */
+		spi2: spi@80010000 {
+			compatible = "snps,designware-spi";
+			reg = <0x80010000 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&spiclk>;
+			interrupts = <63 2>, <64 2>, <65 2>;
+			interrupt-names = "err_int", "rx_avail", "tx_req";
 			interrupt-parent = <&intc>;
-			reg-shift = <2>;
+			aux-reg;
+			fifo-depth = <16>;
+			max-xfer-size = <16>;
+		};
+
+		/* DFSS-SPI1 */
+		spi3: spi@80010100 {
+			compatible = "snps,designware-spi";
+			reg = <0x80010100 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&spiclk>;
+			interrupts = <67 2>, <68 2>, <69 2>;
+			interrupt-names = "err_int", "rx_avail", "tx_req";
+			interrupt-parent = <&intc>;
+			aux-reg;
+			fifo-depth = <16>;
+			max-xfer-size = <16>;
+		};
+
+		pinctrl: pinctrl@f0001000 {
+			compatible = "snps,emsdp-pinctrl";
+			reg = <0xf0001000 0x100>;
 		};
 
 		gpio0: gpio@f0002000 {
@@ -88,6 +99,14 @@
 			#gpio-cells = <2>;
 		};
 
+		uart0: uart@f0004000 {
+			compatible = "ns16550";
+			reg = <0xf0004000 0x1000>;
+			clock-frequency = <DT_APB_CLK_HZ>;
+			interrupt-parent = <&intc>;
+			reg-shift = <2>;
+		};
+
 		/* wifi rs9113 */
 		spi0: spi@f0008000 {
 			compatible = "snps,designware-spi";
@@ -99,11 +118,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
-		};
-
-		pinctrl: pinctrl@f0001000 {
-			compatible = "snps,emsdp-pinctrl";
-			reg = <0xf0001000 0x100>;
 		};
 
 		/* SPI-flash for user data */
@@ -122,39 +136,25 @@
 				reg = <0>;
 				size = <0x10000000>;
 				spi-max-frequency = <100000>;
-				status = "okay";
 				jedec-id = [01 02 19];
+				status = "okay";
 			};
 		};
+	};
 
-		/* DFSS-SPI0 */
-		spi2: spi@80010000 {
-			compatible = "snps,designware-spi";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x80010000 0x100>;
-			clocks = <&spiclk>;
-			interrupts = <63 2>, <64 2>, <65 2>;
-			interrupt-names = "err_int", "rx_avail", "tx_req";
-			interrupt-parent = <&intc>;
-			aux-reg;
-			fifo-depth = <16>;
-			max-xfer-size = <16>;
-		};
+	/* this is (Pseudo SRAM), so treat it like mmio-sram */
+	sram0: memory@10000000 {
+		compatible = "mmio-sram";
+		reg = <0x10000000 0x1000000>;
+	};
 
-		/* DFSS-SPI1 */
-		spi3: spi@80010100 {
-			compatible = "snps,designware-spi";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x80010100 0x100>;
-			clocks = <&spiclk>;
-			interrupts = <67 2>, <68 2>, <69 2>;
-			interrupt-names = "err_int", "rx_avail", "tx_req";
-			interrupt-parent = <&intc>;
-			aux-reg;
-			fifo-depth = <16>;
-			max-xfer-size = <16>;
-		};
+	iccm0: iccm@60000000 {
+		compatible = "arc,iccm";
+		reg = <0x60000000 0x20000>;
+	};
+
+	dccm0: dccm@80000000 {
+		compatible = "arc,dccm";
+		reg = <0x80000000 0x20000>;
 	};
 };

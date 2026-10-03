@@ -10,38 +10,6 @@
 	soc {
 		compatible = "st,stm32f051", "st,stm32f0", "simple-bus";
 
-		usart2: serial@40004400 {
-			compatible = "st,stm32-usart", "st,stm32-uart";
-			reg = <0x40004400 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 17)>;
-			resets = <&rctl STM32_RESET(APB1, 17)>;
-			interrupts = <28 0>;
-			status = "disabled";
-		};
-
-		i2c2: i2c@40005800 {
-			compatible = "st,stm32-i2c-v2";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x40005800 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 22)>;
-			interrupts = <24 0>;
-			interrupt-names = "combined";
-			status = "disabled";
-		};
-
-		spi2: spi@40003800 {
-			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x40003800 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
-			interrupts = <26 0>;
-			st,spi-data-width = "full-4-to-16-bit";
-			status = "disabled";
-		};
-
 		timers6: timers@40001000 {
 			compatible = "st,stm32-timers";
 			reg = <0x40001000 0x400>;
@@ -59,6 +27,46 @@
 			};
 		};
 
+		spi2: spi@40003800 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			reg = <0x40003800 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
+			interrupts = <26 0>;
+			st,spi-data-width = "full-4-to-16-bit";
+			status = "disabled";
+		};
+
+		usart2: serial@40004400 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40004400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 17)>;
+			resets = <&rctl STM32_RESET(APB1, 17)>;
+			interrupts = <28 0>;
+			status = "disabled";
+		};
+
+		i2c2: i2c@40005800 {
+			compatible = "st,stm32-i2c-v2";
+			reg = <0x40005800 0x400>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB1, 22)>;
+			interrupts = <24 0>;
+			interrupt-names = "combined";
+			status = "disabled";
+		};
+
+		dac1: dac@40007400 {
+			compatible = "st,stm32-dac";
+			reg = <0x40007400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 29)>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
 		timers15: timers@40014000 {
 			compatible = "st,stm32-timers";
 			reg = <0x40014000 0x400>;
@@ -72,22 +80,14 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
 			};
-		};
-
-		dac1: dac@40007400 {
-			compatible = "st,stm32-dac";
-			reg = <0x40007400 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 29)>;
-			status = "disabled";
-			#io-channel-cells = <1>;
 		};
 	};
 

@@ -9,9 +9,9 @@
  */
 i3c0: i3c@40010800 {
 	compatible = "microchip,xec-i3c";
+	reg = <0x40010800 0x800>;
 	#address-cells = <3>;
 	#size-cells = <0>;
-	reg = <0x40010800 0x800>;
 	interrupts = <181 2>;
 	girqs = <MCHP_XEC_ECIA_GIRQ_ENC(13, 8) MCHP_XEC_ECIA_GIRQ_ENC(22, 17)>;
 	clocks = <&pcr 4 25 MCHP_XEC_PCR_CLK_I3C>;
@@ -22,9 +22,9 @@ i3c0: i3c@40010800 {
 
 i3c1: i3c@40010000 {
 	compatible = "microchip,xec-i3c";
+	reg = <0x40010000 0x800>;
 	#address-cells = <3>;
 	#size-cells = <0>;
-	reg = <0x40010000 0x800>;
 	interrupts = <182 2>;
 	girqs = <MCHP_XEC_ECIA_GIRQ_ENC(13, 9) MCHP_XEC_ECIA_GIRQ_ENC(22, 16)>;
 	clocks = <&pcr 4 26 MCHP_XEC_PCR_CLK_I3C>;

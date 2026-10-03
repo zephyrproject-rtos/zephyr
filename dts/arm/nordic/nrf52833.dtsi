@@ -21,9 +21,9 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
+			device_type = "cpu";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -58,9 +58,9 @@
 			compatible = "nordic,nrf-uicr";
 			reg = <0x10001000 0x1000>;
 			ranges = <0x0 0x10001000 0x1000>;
-			status = "okay";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			status = "okay";
 		};
 
 		sram0: memory@20000000 {
@@ -90,23 +90,23 @@
 			compatible = "nordic,nrf-power";
 			reg = <0x40000000 0x1000>;
 			interrupts = <0 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "okay";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			status = "okay";
 
 			gpregret1: gpregret1@4000051c {
-				#address-cells = <1>;
-				#size-cells = <1>;
 				compatible = "nordic,nrf-gpregret";
 				reg = <0x4000051c 0x1>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				status = "okay";
 			};
 
 			gpregret2: gpregret2@40000520 {
-				#address-cells = <1>;
-				#size-cells = <1>;
 				compatible = "nordic,nrf-gpregret";
 				reg = <0x40000520 0x1>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				status = "okay";
 			};
 
@@ -129,12 +129,12 @@
 			compatible = "nordic,nrf-radio";
 			reg = <0x40001000 0x1000>;
 			interrupts = <1 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "okay";
 			dfe-supported;
 			ieee802154-supported;
 			ble-2mbps-supported;
 			ble-coded-phy-supported;
 			radio-tx-high-power-supported;
+			status = "okay";
 
 			ieee802154: ieee802154 {
 				compatible = "nordic,nrf-ieee802154";
@@ -168,13 +168,13 @@
 			 *              "nordic,nrf-twis".
 			 */
 			compatible = "nordic,nrf-twim";
+			reg = <0x40003000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40003000 0x1000>;
 			interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
 			easydma-maxcnt-bits = <16>;
-			status = "disabled";
 			zephyr,pm-device-runtime-auto;
+			status = "disabled";
 		};
 
 		spi0: spi@40003000 {
@@ -186,9 +186,9 @@
 			 *              "nordic,nrf-spis".
 			 */
 			compatible = "nordic,nrf-spim";
+			reg = <0x40003000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40003000 0x1000>;
 			interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
 			max-frequency = <DT_FREQ_M(8)>;
 			easydma-maxcnt-bits = <16>;
@@ -204,13 +204,13 @@
 			 *              "nordic,nrf-twis".
 			 */
 			compatible = "nordic,nrf-twim";
+			reg = <0x40004000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40004000 0x1000>;
 			interrupts = <4 NRF_DEFAULT_IRQ_PRIORITY>;
 			easydma-maxcnt-bits = <16>;
-			status = "disabled";
 			zephyr,pm-device-runtime-auto;
+			status = "disabled";
 		};
 
 		spi1: spi@40004000 {
@@ -222,9 +222,9 @@
 			 *              "nordic,nrf-spis".
 			 */
 			compatible = "nordic,nrf-spim";
+			reg = <0x40004000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40004000 0x1000>;
 			interrupts = <4 NRF_DEFAULT_IRQ_PRIORITY>;
 			max-frequency = <DT_FREQ_M(8)>;
 			easydma-maxcnt-bits = <16>;
@@ -242,47 +242,47 @@
 			compatible = "nordic,nrf-gpiote";
 			reg = <0x40006000 0x1000>;
 			interrupts = <6 5>;
-			status = "disabled";
 			instance = <0>;
+			status = "disabled";
 		};
 
 		adc: adc@40007000 {
 			compatible = "nordic,nrf-saadc";
 			reg = <0x40007000 0x1000>;
 			interrupts = <7 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "disabled";
 			#io-channel-cells = <1>;
 			zephyr,pm-device-runtime-auto;
+			status = "disabled";
 		};
 
 		timer0: timer@40008000 {
 			compatible = "nordic,nrf-timer";
-			status = "disabled";
 			reg = <0x40008000 0x1000>;
 			cc-num = <4>;
 			max-bit-width = <32>;
 			interrupts = <8 NRF_DEFAULT_IRQ_PRIORITY>;
 			prescaler = <0>;
+			status = "disabled";
 		};
 
 		timer1: timer@40009000 {
 			compatible = "nordic,nrf-timer";
-			status = "disabled";
 			reg = <0x40009000 0x1000>;
 			cc-num = <4>;
 			max-bit-width = <32>;
 			interrupts = <9 NRF_DEFAULT_IRQ_PRIORITY>;
 			prescaler = <0>;
+			status = "disabled";
 		};
 
 		timer2: timer@4000a000 {
 			compatible = "nordic,nrf-timer";
-			status = "disabled";
 			reg = <0x4000a000 0x1000>;
 			cc-num = <4>;
 			max-bit-width = <32>;
 			interrupts = <10 NRF_DEFAULT_IRQ_PRIORITY>;
 			prescaler = <0>;
+			status = "disabled";
 		};
 
 		rtc0: rtc@4000b000 {
@@ -290,9 +290,9 @@
 			reg = <0x4000b000 0x1000>;
 			cc-num = <3>;
 			interrupts = <11 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "disabled";
 			clock-frequency = <32768>;
 			prescaler = <1>;
+			status = "disabled";
 		};
 
 		temp: temp@4000c000 {
@@ -337,9 +337,9 @@
 			reg = <0x40011000 0x1000>;
 			cc-num = <4>;
 			interrupts = <17 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "disabled";
 			clock-frequency = <32768>;
 			prescaler = <1>;
+			status = "disabled";
 		};
 
 		qdec: qdec0: qdec@40012000 {
@@ -404,30 +404,30 @@
 
 		timer3: timer@4001a000 {
 			compatible = "nordic,nrf-timer";
-			status = "disabled";
 			reg = <0x4001a000 0x1000>;
 			cc-num = <6>;
 			max-bit-width = <32>;
 			interrupts = <26 NRF_DEFAULT_IRQ_PRIORITY>;
 			prescaler = <0>;
+			status = "disabled";
 		};
 
 		timer4: timer@4001b000 {
 			compatible = "nordic,nrf-timer";
-			status = "disabled";
 			reg = <0x4001b000 0x1000>;
 			cc-num = <6>;
 			max-bit-width = <32>;
 			interrupts = <27 NRF_DEFAULT_IRQ_PRIORITY>;
 			prescaler = <0>;
+			status = "disabled";
 		};
 
 		pwm0: pwm@4001c000 {
 			compatible = "nordic,nrf-pwm";
 			reg = <0x4001c000 0x1000>;
 			interrupts = <28 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "disabled";
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		pdm0: pdm@4001d000 {
@@ -453,13 +453,13 @@
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
-				erase-block-size = <4096>;
-				write-block-size = <4>;
 				reg = <0x00000000 DT_SIZE_K(512)>;
 				ranges = <0x0 0x00000000 DT_SIZE_K(512)>;
-				status = "okay";
+				erase-block-size = <4096>;
+				write-block-size = <4>;
 				#address-cells = <1>;
 				#size-cells = <1>;
+				status = "okay";
 			};
 		};
 
@@ -479,16 +479,16 @@
 			compatible = "nordic,nrf-pwm";
 			reg = <0x40021000 0x1000>;
 			interrupts = <33 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "disabled";
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		pwm2: pwm@40022000 {
 			compatible = "nordic,nrf-pwm";
 			reg = <0x40022000 0x1000>;
 			interrupts = <34 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "disabled";
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		spi2: spi@40023000 {
@@ -500,9 +500,9 @@
 			 *              "nordic,nrf-spis".
 			 */
 			compatible = "nordic,nrf-spim";
+			reg = <0x40023000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40023000 0x1000>;
 			interrupts = <35 NRF_DEFAULT_IRQ_PRIORITY>;
 			max-frequency = <DT_FREQ_M(8)>;
 			easydma-maxcnt-bits = <16>;
@@ -514,16 +514,16 @@
 			reg = <0x40024000 0x1000>;
 			cc-num = <4>;
 			interrupts = <36 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "disabled";
 			clock-frequency = <32768>;
 			prescaler = <1>;
+			status = "disabled";
 		};
 
 		i2s0: i2s@40025000 {
 			compatible = "nordic,nrf-i2s";
+			reg = <0x40025000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40025000 0x1000>;
 			interrupts = <37 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "disabled";
 		};
@@ -551,15 +551,15 @@
 			compatible = "nordic,nrf-pwm";
 			reg = <0x4002d000 0x1000>;
 			interrupts = <45 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "disabled";
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		spi3: spi@4002f000 {
 			compatible = "nordic,nrf-spim";
+			reg = <0x4002f000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x4002f000 0x1000>;
 			interrupts = <47 NRF_DEFAULT_IRQ_PRIORITY>;
 			max-frequency = <DT_FREQ_M(32)>;
 			easydma-maxcnt-bits = <16>;
@@ -570,25 +570,25 @@
 
 		gpio0: gpio@50000000 {
 			compatible = "nordic,nrf-gpio";
-			gpio-controller;
 			reg = <0x50000000 0x200
 			       0x50000500 0x300>;
+			gpio-controller;
 			#gpio-cells = <2>;
-			status = "disabled";
 			port = <0>;
 			gpiote-instance = <&gpiote>;
+			status = "disabled";
 		};
 
 		gpio1: gpio@50000300 {
 			compatible = "nordic,nrf-gpio";
-			gpio-controller;
 			reg = <0x50000300 0x200
 			       0x50000800 0x300>;
+			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <10>;
-			status = "disabled";
 			port = <1>;
 			gpiote-instance = <&gpiote>;
+			status = "disabled";
 		};
 	};
 };

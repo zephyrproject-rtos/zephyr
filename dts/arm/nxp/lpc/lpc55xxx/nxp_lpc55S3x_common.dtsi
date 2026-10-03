@@ -81,11 +81,6 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
-	pmc: pmc@20000 {
-		compatible = "nxp,lpc-pmc-hwinfo";
-		reg = <0x20000 0x1000>;
-	};
-
 	syscon: syscon@0 {
 		compatible = "nxp,lpc-syscon";
 		reg = <0x0 0x1000>;
@@ -97,100 +92,16 @@
 		};
 	};
 
-	iap: flash-controller@34000 {
-		compatible = "nxp,iap-fmc553";
-		reg = <0x34000 0x1000>;
-		ranges = <0x0 0x10000000 0x3020000>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-		status = "okay";
-
-		flash0: flash@0 {
-			compatible = "soc-nv-flash";
-			reg = <0x0 DT_SIZE_K(246)>;
-			ranges = <0x0 0x0 DT_SIZE_K(246)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			erase-block-size = <512>;
-			write-block-size = <512>;
-		};
-
-		flash_reserved: flash@3d800 {
-			compatible = "soc-nv-flash";
-			reg = <0x0003d800 DT_SIZE_K(10)>;
-			status = "disabled";
-		};
-
-		boot_rom: flash@3000000 {
-			compatible = "soc-nv-flash";
-			reg = <0x3000000 DT_SIZE_K(128)>;
-		};
-	};
-
 	iocon: iocon@1000 {
 		compatible = "nxp,lpc-iocon";
 		reg = <0x1000 0x100>;
+		ranges = <0x0 0x1000 0x100>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x1000 0x100>;
 
 		pinctrl: pinctrl {
 			compatible = "nxp,lpc-iocon-pinctrl";
 		};
-	};
-
-	gpio: gpio@8c000 {
-		compatible = "nxp,lpc-gpio";
-		reg = <0x8c000 0x2488>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		gpio0: gpio@0 {
-			compatible = "nxp,lpc-gpio-port";
-			int-source = "pint";
-			gpio-controller;
-			#gpio-cells = <2>;
-			reg = <0>;
-		};
-
-		gpio1: gpio@1 {
-			compatible = "nxp,lpc-gpio-port";
-			int-source = "pint";
-			gpio-controller;
-			#gpio-cells = <2>;
-			reg = <1>;
-		};
-
-		gpio2: gpio@2 {
-			compatible = "nxp,lpc-gpio-port";
-			gpio-controller;
-			#gpio-cells = <2>;
-			reg = <2>;
-		};
-	};
-
-	dma0: dma-controller@82000 {
-		compatible = "nxp,lpc-dma";
-		reg = <0x82000 0x1000>;
-		interrupts = <1 0>;
-		dma-channels = <52>;
-		nxp,dma-num-of-otrigs = <4>;
-		nxp,dma-otrig-base-address = <LPC55S36_DMA0_OTRIG_BASE>;
-		nxp,dma-itrig-base-address = <LPC55S36_DMA0_ITRIG_BASE>;
-		status = "disabled";
-		#dma-cells = <1>;
-	};
-
-	dma1: dma-controller@a7000 {
-		compatible = "nxp,lpc-dma";
-		reg = <0xa7000 0x1000>;
-		interrupts = <58 0>;
-		dma-channels = <16>;
-		nxp,dma-num-of-otrigs = <4>;
-		nxp,dma-otrig-base-address = <LPC55S36_DMA1_OTRIG_BASE>;
-		nxp,dma-itrig-base-address = <LPC55S36_DMA1_ITRIG_BASE>;
-		status = "disabled";
-		#dma-cells = <1>;
 	};
 
 	gint0: gint@2000 {
@@ -224,69 +135,144 @@
 	inputmux0: inputmux@6000 {
 		compatible = "nxp,inputmux";
 		reg = <0x6000 0x1000>;
-		status = "disabled";
 		#mux-control-cells = <1>;
 		#mux-state-cells = <2>;
+		status = "disabled";
 	};
 
 	ctimer0: ctimer@8000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x8000 0x1000>;
 		interrupts = <10 0>;
-		status = "disabled";
 		clk-source = <3>;
 		clocks = <&syscon MCUX_CTIMER0_CLK>;
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		status = "disabled";
 	};
 
 	ctimer1: ctimer@9000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x9000 0x1000>;
 		interrupts = <11 0>;
-		status = "disabled";
 		clk-source = <3>;
 		clocks = <&syscon MCUX_CTIMER1_CLK>;
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		status = "disabled";
+	};
+
+	wwdt0: watchdog@c000 {
+		compatible = "nxp,lpc-wwdt";
+		reg = <0xc000 0x1000>;
+		clocks = <&syscon MCUX_WWDT0_CLK>;
+		interrupts = <0 0>;
+		clk-divider = <1>;
+		status = "disabled";
+	};
+
+	pmc: pmc@20000 {
+		compatible = "nxp,lpc-pmc-hwinfo";
+		reg = <0x20000 0x1000>;
 	};
 
 	ctimer2: ctimer@28000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x28000 0x1000>;
 		interrupts = <36 0>;
-		status = "disabled";
 		clk-source = <3>;
 		clocks = <&syscon MCUX_CTIMER2_CLK>;
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		status = "disabled";
 	};
 
 	ctimer3: ctimer@29000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x29000 0x1000>;
 		interrupts = <13 0>;
-		status = "disabled";
 		clk-source = <3>;
 		clocks = <&syscon MCUX_CTIMER3_CLK>;
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		status = "disabled";
 	};
 
 	ctimer4: ctimer@2a000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x2a000 0x1000>;
 		interrupts = <37 0>;
-		status = "disabled";
 		clk-source = <3>;
 		clocks = <&syscon MCUX_CTIMER4_CLK>;
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		status = "disabled";
+	};
+
+	iap: flash-controller@34000 {
+		compatible = "nxp,iap-fmc553";
+		reg = <0x34000 0x1000>;
+		ranges = <0x0 0x10000000 0x3020000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		status = "okay";
+
+		flash0: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_K(246)>;
+			ranges = <0x0 0x0 DT_SIZE_K(246)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			erase-block-size = <512>;
+			write-block-size = <512>;
+		};
+
+		flash_reserved: flash@3d800 {
+			compatible = "soc-nv-flash";
+			reg = <0x0003d800 DT_SIZE_K(10)>;
+			status = "disabled";
+		};
+
+		boot_rom: flash@3000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x3000000 DT_SIZE_K(128)>;
+		};
+	};
+
+	dma0: dma-controller@82000 {
+		compatible = "nxp,lpc-dma";
+		reg = <0x82000 0x1000>;
+		interrupts = <1 0>;
+		dma-channels = <52>;
+		#dma-cells = <1>;
+		nxp,dma-num-of-otrigs = <4>;
+		nxp,dma-otrig-base-address = <LPC55S36_DMA0_OTRIG_BASE>;
+		nxp,dma-itrig-base-address = <LPC55S36_DMA0_ITRIG_BASE>;
+		status = "disabled";
+	};
+
+	usbfs: usbfs@84000 {
+		compatible = "nxp,lpcip3511";
+		reg = <0x84000 0x1000>;
+		interrupts = <28 0>;
+		num-bidir-endpoints = <5>;
+		maximum-speed = "full-speed";
+		status = "disabled";
+	};
+
+	sc_timer: pwm@85000 {
+		compatible = "nxp,sctimer-pwm";
+		reg = <0x85000 0x1000>;
+		interrupts = <12 0>;
+		clocks = <&syscon MCUX_SCTIMER_CLK 0 0>;
+		prescaler = <2>;
+		#pwm-cells = <3>;
+		status = "disabled";
 	};
 
 	flexcomm0: flexcomm@86000 {
@@ -344,6 +330,43 @@
 		status = "disabled";
 	};
 
+	gpio: gpio@8c000 {
+		compatible = "nxp,lpc-gpio";
+		reg = <0x8c000 0x2488>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		gpio0: gpio@0 {
+			compatible = "nxp,lpc-gpio-port";
+			reg = <0>;
+			int-source = "pint";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio1: gpio@1 {
+			compatible = "nxp,lpc-gpio-port";
+			reg = <1>;
+			int-source = "pint";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio2: gpio@2 {
+			compatible = "nxp,lpc-gpio-port";
+			reg = <2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+	};
+
+	crc: crc@95000 {
+		compatible = "nxp,crc";
+		reg = <0x95000 0x1000>;
+		clocks = <&syscon MCUX_CRC_CLK>;
+		status = "disabled";
+	};
+
 	flexcomm5: flexcomm@96000 {
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x96000 0x1000>;
@@ -385,16 +408,15 @@
 		resets = <&reset NXP_SYSCON_RESET(2, 28)>;
 		dmas = <&dma0 2>, <&dma0 3>;
 		dma-names = "rx", "tx";
-		status = "disabled";
 		#address-cells = <1>;
 		#size-cells = <0>;
+		status = "disabled";
 	};
 
 	adc0: adc@a0000 {
 		compatible = "nxp,lpc-lpadc";
 		reg = <0xa0000 0x1000>;
 		interrupts = <22 0>;
-		status = "disabled";
 		clk-divider = <8>;
 		clk-source = <0>;
 		voltage-ref = <1>;
@@ -405,8 +427,37 @@
 		#io-channel-cells = <1>;
 		dmas = <&dma0 21>, <&dma0 22>;
 		dma-names = "adc0-dma0", "adc0-dma1";
-		nxp,references = <&vref0 1800>;
 		clocks = <&syscon MCUX_LPADC1_CLK>;
+		nxp,references = <&vref0 1800>;
+		status = "disabled";
+	};
+
+	powerquad: powerquad@a6000 {
+		compatible = "nxp,powerquad";
+		reg = <0xa6000 0x1000>;
+		clocks = <&syscon MCUX_POWERQUAD_CLK>;
+		status = "disabled";
+	};
+
+	dma1: dma-controller@a7000 {
+		compatible = "nxp,lpc-dma";
+		reg = <0xa7000 0x1000>;
+		interrupts = <58 0>;
+		dma-channels = <16>;
+		#dma-cells = <1>;
+		nxp,dma-num-of-otrigs = <4>;
+		nxp,dma-otrig-base-address = <LPC55S36_DMA1_OTRIG_BASE>;
+		nxp,dma-itrig-base-address = <LPC55S36_DMA1_ITRIG_BASE>;
+		status = "disabled";
+	};
+
+	dac0: dac@b2000 {
+		compatible = "nxp,lpdac";
+		reg = <0xb2000 0x1000>;
+		interrupts = <74 0>;
+		voltage-reference = <0>;
+		#io-channel-cells = <1>;
+		status = "disabled";
 	};
 
 	hscmp0: comparator@b3000 {
@@ -415,8 +466,40 @@
 		interrupts = <77 0>;
 		clocks = <&syscon MCUX_HSCMP0_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(3, 15)>;
-		status = "disabled";
 		nxp,references = <&vref0 1800>;
+		status = "disabled";
+	};
+
+	opamp0: opamp@b4000 {
+		compatible = "nxp,opamp";
+		reg = <0xb4000 0x1000>;
+		operation-mode = "low_noise";
+		functional-mode = "follower";
+		clocks = <&syscon MCUX_OPAMP0_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(3, 12)>;
+		status = "disabled";
+	};
+
+	vref0: vref@b5000 {
+		compatible = "nxp,vref";
+		reg = <0xb5000 0x30>;
+		regulator-name = "lpc55s36-vref";
+		#nxp,reference-cells = <1>;
+		nxp,buffer-startup-delay-us = <400>;
+		nxp,bandgap-startup-time-us = <20>;
+		nxp,current-compensation-en;
+		nxp,internal-voltage-regulator-en;
+		nxp,chop-oscillator-en;
+		status = "disabled";
+	};
+
+	dac1: dac@b6000 {
+		compatible = "nxp,lpdac";
+		reg = <0xb6000 0x1000>;
+		interrupts = <75 0>;
+		voltage-reference = <0>;
+		#io-channel-cells = <1>;
+		status = "disabled";
 	};
 
 	hscmp1: comparator@b7000 {
@@ -425,8 +508,27 @@
 		interrupts = <78 0>;
 		clocks = <&syscon MCUX_HSCMP1_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(3, 16)>;
-		status = "disabled";
 		nxp,references = <&vref0 1800>;
+		status = "disabled";
+	};
+
+	opamp1: opamp@b8000 {
+		compatible = "nxp,opamp";
+		reg = <0xb8000 0x1000>;
+		operation-mode = "low_noise";
+		functional-mode = "follower";
+		clocks = <&syscon MCUX_OPAMP1_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(3, 13)>;
+		status = "disabled";
+	};
+
+	dac2: dac@b9000 {
+		compatible = "nxp,lpdac";
+		reg = <0xb9000 0x1000>;
+		interrupts = <76 0>;
+		voltage-reference = <0>;
+		#io-channel-cells = <1>;
+		status = "disabled";
 	};
 
 	hscmp2: comparator@ba000 {
@@ -435,65 +537,18 @@
 		interrupts = <79 0>;
 		clocks = <&syscon MCUX_HSCMP2_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(3, 17)>;
-		status = "disabled";
 		nxp,references = <&vref0 1800>;
-	};
-
-	opamp0: opamp@b4000 {
-		compatible = "nxp,opamp";
-		reg = <0xb4000 0x1000>;
 		status = "disabled";
-		operation-mode = "low_noise";
-		functional-mode = "follower";
-		clocks = <&syscon MCUX_OPAMP0_CLK>;
-		resets = <&reset NXP_SYSCON_RESET(3, 12)>;
-	};
-
-	opamp1: opamp@b8000 {
-		compatible = "nxp,opamp";
-		reg = <0xb8000 0x1000>;
-		status = "disabled";
-		operation-mode = "low_noise";
-		functional-mode = "follower";
-		clocks = <&syscon MCUX_OPAMP1_CLK>;
-		resets = <&reset NXP_SYSCON_RESET(3, 13)>;
 	};
 
 	opamp2: opamp@bb000 {
 		compatible = "nxp,opamp";
 		reg = <0xbb000 0x1000>;
-		status = "disabled";
 		operation-mode = "low_noise";
 		functional-mode = "follower";
 		clocks = <&syscon MCUX_OPAMP2_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(3, 14)>;
-	};
-
-	dac0: dac@b2000 {
-		compatible = "nxp,lpdac";
-		reg = <0xb2000 0x1000>;
-		interrupts = <74 0>;
 		status = "disabled";
-		voltage-reference = <0>;
-		#io-channel-cells = <1>;
-	};
-
-	dac1: dac@b6000 {
-		compatible = "nxp,lpdac";
-		reg = <0xb6000 0x1000>;
-		interrupts = <75 0>;
-		status = "disabled";
-		voltage-reference = <0>;
-		#io-channel-cells = <1>;
-	};
-
-	dac2: dac@b9000 {
-		compatible = "nxp,lpdac";
-		reg = <0xb9000 0x1000>;
-		interrupts = <76 0>;
-		status = "disabled";
-		voltage-reference = <0>;
-		#io-channel-cells = <1>;
 	};
 
 	can0: can@4009d000 {
@@ -520,9 +575,9 @@
 			interrupts = <83 0>, <84 0>;
 			#pwm-cells = <3>;
 			clocks = <&syscon MCUX_BUS_CLK 0 0>;
+			run-in-wait;
 			nxp,prescaler = <128>;
 			status = "disabled";
-			run-in-wait;
 		};
 
 		flexpwm0_pwm1: pwm1 {
@@ -532,9 +587,9 @@
 			interrupts = <85 0>, <86 0>;
 			#pwm-cells = <3>;
 			clocks = <&syscon MCUX_BUS_CLK 0 0>;
+			run-in-wait;
 			nxp,prescaler = <128>;
 			status = "disabled";
-			run-in-wait;
 		};
 
 		flexpwm0_pwm2: pwm2 {
@@ -544,9 +599,9 @@
 			interrupts = <87 0>, <88 0>;
 			#pwm-cells = <3>;
 			clocks = <&syscon MCUX_BUS_CLK 0 0>;
+			run-in-wait;
 			nxp,prescaler = <128>;
 			status = "disabled";
-			run-in-wait;
 		};
 
 		flexpwm0_pwm3: pwm3 {
@@ -556,9 +611,9 @@
 			interrupts = <89 0>, <90 0>;
 			#pwm-cells = <3>;
 			clocks = <&syscon MCUX_BUS_CLK 0 0>;
+			run-in-wait;
 			nxp,prescaler = <128>;
 			status = "disabled";
-			run-in-wait;
 		};
 	};
 
@@ -575,9 +630,9 @@
 			interrupts = <94 0>, <95 0>;
 			#pwm-cells = <3>;
 			clocks = <&syscon MCUX_BUS_CLK 0 0>;
+			run-in-wait;
 			nxp,prescaler = <128>;
 			status = "disabled";
-			run-in-wait;
 		};
 
 		flexpwm1_pwm1: pwm1 {
@@ -587,9 +642,9 @@
 			interrupts = <96 0>, <97 0>;
 			#pwm-cells = <3>;
 			clocks = <&syscon MCUX_BUS_CLK 0 0>;
+			run-in-wait;
 			nxp,prescaler = <128>;
 			status = "disabled";
-			run-in-wait;
 		};
 
 		flexpwm1_pwm2: pwm2 {
@@ -599,9 +654,9 @@
 			interrupts = <98 0>, <99 0>;
 			#pwm-cells = <3>;
 			clocks = <&syscon MCUX_BUS_CLK 0 0>;
+			run-in-wait;
 			nxp,prescaler = <128>;
 			status = "disabled";
-			run-in-wait;
 		};
 
 		flexpwm1_pwm3: pwm3 {
@@ -611,65 +666,10 @@
 			interrupts = <100 0>, <101 0>;
 			#pwm-cells = <3>;
 			clocks = <&syscon MCUX_BUS_CLK 0 0>;
+			run-in-wait;
 			nxp,prescaler = <128>;
 			status = "disabled";
-			run-in-wait;
 		};
-	};
-
-	usbfs: usbfs@84000 {
-		compatible = "nxp,lpcip3511";
-		reg = <0x84000 0x1000>;
-		interrupts = <28 0>;
-		num-bidir-endpoints = <5>;
-		maximum-speed = "full-speed";
-		status = "disabled";
-	};
-
-	sc_timer: pwm@85000 {
-		compatible = "nxp,sctimer-pwm";
-		reg = <0x85000 0x1000>;
-		interrupts = <12 0>;
-		status = "disabled";
-		clocks = <&syscon MCUX_SCTIMER_CLK 0 0>;
-		prescaler = <2>;
-		#pwm-cells = <3>;
-	};
-
-	vref0: vref@b5000 {
-		compatible = "nxp,vref";
-		regulator-name = "lpc55s36-vref";
-		reg = <0xb5000 0x30>;
-		status = "disabled";
-		#nxp,reference-cells = <1>;
-		nxp,buffer-startup-delay-us = <400>;
-		nxp,bandgap-startup-time-us = <20>;
-		nxp,current-compensation-en;
-		nxp,internal-voltage-regulator-en;
-		nxp,chop-oscillator-en;
-	};
-
-	crc: crc@95000 {
-		compatible = "nxp,crc";
-		reg = <0x95000 0x1000>;
-		clocks = <&syscon MCUX_CRC_CLK>;
-		status = "disabled";
-	};
-
-	wwdt0: watchdog@c000 {
-		compatible = "nxp,lpc-wwdt";
-		reg = <0xc000 0x1000>;
-		clocks = <&syscon MCUX_WWDT0_CLK>;
-		interrupts = <0 0>;
-		status = "disabled";
-		clk-divider = <1>;
-	};
-
-	powerquad: powerquad@a6000 {
-		compatible = "nxp,powerquad";
-		reg = <0xa6000 0x1000>;
-		clocks = <&syscon MCUX_POWERQUAD_CLK>;
-		status = "disabled";
 	};
 };
 

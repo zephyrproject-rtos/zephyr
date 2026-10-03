@@ -11,8 +11,8 @@
 #include <skeleton.dtsi>
 
 / {
-	model = "QEMU AURIX TC4Dx";
 	compatible = "infineon,qemu-tc4dx";
+	model = "QEMU AURIX TC4Dx";
 
 	cpus {
 		#address-cells = <1>;
@@ -32,33 +32,12 @@
 		};
 	};
 
-	flashctrl: flash-controller@f8040000 {
-		reg = <0xf8040000 0x200>;
-		ranges;
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		flash0: flash@80000000 {
-			compatible = "soc-nv-flash";
-			reg = <0x80000000 DT_SIZE_M(4)>;
-			ranges = <0x0 0x80000000 DT_SIZE_M(4)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-		};
-	};
-
-	dsram0: memory@70000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x70000000 DT_SIZE_K(240)>;
-		zephyr,memory-region = "DSRAM0";
-	};
-
 	soc {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 		interrupt-parent = <&ir>;
-		compatible = "simple-bus";
-		ranges;
 
 		ir: interrupt_controller@f4430000 {
 			compatible = "infineon,aurix-ir";
@@ -81,6 +60,27 @@
 			clocks = <&fstm>;
 			interrupts = <0x8 1>, <0xa 1>;
 			status = "disabled";
+		};
+	};
+
+	dsram0: memory@70000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x70000000 DT_SIZE_K(240)>;
+		zephyr,memory-region = "DSRAM0";
+	};
+
+	flashctrl: flash-controller@f8040000 {
+		reg = <0xf8040000 0x200>;
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flash0: flash@80000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x80000000 DT_SIZE_M(4)>;
+			ranges = <0x0 0x80000000 DT_SIZE_M(4)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 		};
 	};
 };

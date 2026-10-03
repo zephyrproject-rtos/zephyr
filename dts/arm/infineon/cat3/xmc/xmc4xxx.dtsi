@@ -21,21 +21,6 @@
 		};
 	};
 
-	flash_controller: flash_controller@58001000 {
-		compatible = "infineon,xmc4xxx-flash-controller";
-		reg = <0x58001000 0x1400>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges;
-
-		flash0: flash@8000000 {
-			#address-cells = <1>;
-			#size-cells = <1>;
-			compatible = "infineon,xmc4xxx-nv-flash", "soc-nv-flash";
-			write-block-size = <256>;
-		};
-	};
-
 	sysclk: system-clock {
 		compatible = "fixed-clock";
 		clock-frequency = <120000000>;
@@ -43,117 +28,6 @@
 	};
 
 	soc {
-		intc: eru@40044000 {
-			compatible = "infineon,xmc4xxx-intc";
-			reg = <0x40044000 0xff>, <0x50004800 0xff>;
-			/* naming order is intentional. eru1 maps to a lower address than eru0 */
-			reg-names = "eru1", "eru0";
-			interrupts = <1 1>, <2 1>, <3 1>, <4 1>, <5 1>, <6 1>, <7 1>, <8 1>;
-			interrupt-names = "eru0sr0", "eru0sr1", "eru0sr2", "eru0sr3",
-					  "eru1sr0", "eru1sr1", "eru1sr2", "eru1sr3";
-		};
-
-		pinctrl: pinctrl@48028000 {
-			compatible = "infineon,xmc4xxx-pinctrl";
-			reg = <0x48028000 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			gpio0: gpio@48028000 {
-				compatible = "infineon,xmc4xxx-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				reg = <0x48028000 0x100>;
-				status = "disabled";
-			};
-
-			gpio1: gpio@48028100 {
-				compatible = "infineon,xmc4xxx-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				reg = <0x48028100 0x100>;
-				status = "disabled";
-			};
-
-			gpio2: gpio@48028200 {
-				compatible = "infineon,xmc4xxx-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				reg = <0x48028200 0x100>;
-				status = "disabled";
-			};
-
-			gpio14: gpio@48028e00 {
-				compatible = "infineon,xmc4xxx-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				reg = <0x48028e00 0x100>;
-				status = "disabled";
-			};
-
-			gpio15: gpio@48028f00 {
-				compatible = "infineon,xmc4xxx-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				reg = <0x48028f00 0x100>;
-				status = "disabled";
-			};
-		};
-
-		dma0: dma0@50014000 {
-			compatible = "infineon,xmc4xxx-dma";
-			reg = <0x50014000 0x2bc>;
-			interrupts = <105 1>;
-			dma-channels = <8>;
-			#dma-cells = <3>;
-			status = "disabled";
-		};
-
-		dma1: dma1@50018000 {
-			compatible = "infineon,xmc4xxx-dma";
-			reg = <0x50018000 0x15c>;
-			interrupts = <110 1>;
-			dma-channels = <4>;
-			#dma-cells = <3>;
-			status = "disabled";
-		};
-
-		usic0ch0: usic@40030000 {
-			reg = <0x40030000 0x1ff>;
-			clocks = <&sysclk>;
-			status = "disabled";
-		};
-
-		usic0ch1: usic@40030200 {
-			reg = <0x40030200 0x1ff>;
-			clocks = <&sysclk>;
-			status = "disabled";
-		};
-
-		usic1ch0: usic@48020000 {
-			reg = <0x48020000 0x1ff>;
-			clocks = <&sysclk>;
-			status = "disabled";
-		};
-
-		usic1ch1: usic@48020200 {
-			reg = <0x48020200 0x1ff>;
-			clocks = <&sysclk>;
-			status = "disabled";
-		};
-
-		usic2ch0: usic@48024000 {
-			reg = <0x48024000 0x1ff>;
-			clocks = <&sysclk>;
-			status = "disabled";
-		};
-
-		usic2ch1: usic@48024200 {
-			reg = <0x48024200 0x1ff>;
-			clocks = <&sysclk>;
-			status = "disabled";
-		};
-
 		adc0: adc@40004400 {
 			compatible = "infineon,xmc4xxx-adc";
 			reg = <0x40004400 0x400>;
@@ -186,12 +60,6 @@
 			status = "disabled";
 		};
 
-		die_temp: die_temp@5000408c {
-			reg = <0x5000408c 0x8>;
-			compatible = "infineon,xmc4xxx-temp";
-			status = "disabled";
-		};
-
 		pwm_ccu40: ccu40@4000c000 {
 			compatible = "infineon,xmc4xxx-ccu4-pwm";
 			reg = <0x4000c000 0x4000>;
@@ -213,13 +81,6 @@
 			status = "disabled";
 		};
 
-		pwm_ccu43: ccu43@48004000 {
-			compatible = "infineon,xmc4xxx-ccu4-pwm";
-			reg = <0x48004000 0x4000>;
-			#pwm-cells = <3>;
-			status = "disabled";
-		};
-
 		pwm_ccu80: ccu80@40020000 {
 			compatible = "infineon,xmc4xxx-ccu8-pwm";
 			reg = <0x40020000 0x4000>;
@@ -234,39 +95,33 @@
 			status = "disabled";
 		};
 
-		wdt0: watchdog@50008000 {
-			compatible = "infineon,xmc4xxx-watchdog";
-			reg = <0x50008000 0x4000>;
-			interrupts = <0 1>; // shared interrupt line with rtc
+		usic0ch0: usic@40030000 {
+			reg = <0x40030000 0x1ff>;
+			clocks = <&sysclk>;
 			status = "disabled";
 		};
 
-		rtc: rtc@50004a00 {
-			compatible = "infineon,xmc4xxx-rtc";
-			reg = <0x50004a00 0x200>;
-			interrupts = <0 1>; // shared interrupt line with wdt0
-			alarms-count = <1>;
+		usic0ch1: usic@40030200 {
+			reg = <0x40030200 0x1ff>;
+			clocks = <&sysclk>;
 			status = "disabled";
 		};
 
-		eth: ethernet@5000c000 {
-			compatible = "infineon,xmc4xxx-ethernet", "snps,dwmac";
-			reg = <0x5000c000 0x3fff>;
-			interrupts = <108 1>;
-			snps,multicast-filter-bins = <64>;
-			snps,perfect-filter-entries = <4>;
+		intc: eru@40044000 {
+			compatible = "infineon,xmc4xxx-intc";
+			reg = <0x40044000 0xff>, <0x50004800 0xff>;
+			/* naming order is intentional. eru1 maps to a lower address than eru0 */
+			reg-names = "eru1", "eru0";
+			interrupts = <1 1>, <2 1>, <3 1>, <4 1>, <5 1>, <6 1>, <7 1>, <8 1>;
+			interrupt-names = "eru0sr0", "eru0sr1", "eru0sr2", "eru0sr3",
+					  "eru1sr0", "eru1sr1", "eru1sr2", "eru1sr3";
+		};
+
+		pwm_ccu43: ccu43@48004000 {
+			compatible = "infineon,xmc4xxx-ccu4-pwm";
+			reg = <0x48004000 0x4000>;
+			#pwm-cells = <3>;
 			status = "disabled";
-
-			mdio: mdio {
-				compatible = "snps,dwmac-mdio";
-				status = "disabled";
-				#address-cells = <1>;
-				#size-cells = <0>;
-			};
-
-			ptp_clock: ptp-clock {
-				compatible = "snps,dwmac-ptp-clock";
-			};
 		};
 
 		can: can@48014000 {
@@ -299,6 +154,136 @@
 			};
 		};
 
+		usic1ch0: usic@48020000 {
+			reg = <0x48020000 0x1ff>;
+			clocks = <&sysclk>;
+			status = "disabled";
+		};
+
+		usic1ch1: usic@48020200 {
+			reg = <0x48020200 0x1ff>;
+			clocks = <&sysclk>;
+			status = "disabled";
+		};
+
+		usic2ch0: usic@48024000 {
+			reg = <0x48024000 0x1ff>;
+			clocks = <&sysclk>;
+			status = "disabled";
+		};
+
+		usic2ch1: usic@48024200 {
+			reg = <0x48024200 0x1ff>;
+			clocks = <&sysclk>;
+			status = "disabled";
+		};
+
+		pinctrl: pinctrl@48028000 {
+			compatible = "infineon,xmc4xxx-pinctrl";
+			reg = <0x48028000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			gpio0: gpio@48028000 {
+				compatible = "infineon,xmc4xxx-gpio";
+				reg = <0x48028000 0x100>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+
+			gpio1: gpio@48028100 {
+				compatible = "infineon,xmc4xxx-gpio";
+				reg = <0x48028100 0x100>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+
+			gpio2: gpio@48028200 {
+				compatible = "infineon,xmc4xxx-gpio";
+				reg = <0x48028200 0x100>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+
+			gpio14: gpio@48028e00 {
+				compatible = "infineon,xmc4xxx-gpio";
+				reg = <0x48028e00 0x100>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+
+			gpio15: gpio@48028f00 {
+				compatible = "infineon,xmc4xxx-gpio";
+				reg = <0x48028f00 0x100>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+		};
+
+		die_temp: die_temp@5000408c {
+			compatible = "infineon,xmc4xxx-temp";
+			reg = <0x5000408c 0x8>;
+			status = "disabled";
+		};
+
+		rtc: rtc@50004a00 {
+			compatible = "infineon,xmc4xxx-rtc";
+			reg = <0x50004a00 0x200>;
+			interrupts = <0 1>; // shared interrupt line with wdt0
+			alarms-count = <1>;
+			status = "disabled";
+		};
+
+		wdt0: watchdog@50008000 {
+			compatible = "infineon,xmc4xxx-watchdog";
+			reg = <0x50008000 0x4000>;
+			interrupts = <0 1>; // shared interrupt line with rtc
+			status = "disabled";
+		};
+
+		eth: ethernet@5000c000 {
+			compatible = "infineon,xmc4xxx-ethernet", "snps,dwmac";
+			reg = <0x5000c000 0x3fff>;
+			interrupts = <108 1>;
+			snps,multicast-filter-bins = <64>;
+			snps,perfect-filter-entries = <4>;
+			status = "disabled";
+
+			mdio: mdio {
+				compatible = "snps,dwmac-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			ptp_clock: ptp-clock {
+				compatible = "snps,dwmac-ptp-clock";
+			};
+		};
+
+		dma0: dma0@50014000 {
+			compatible = "infineon,xmc4xxx-dma";
+			reg = <0x50014000 0x2bc>;
+			interrupts = <105 1>;
+			dma-channels = <8>;
+			#dma-cells = <3>;
+			status = "disabled";
+		};
+
+		dma1: dma1@50018000 {
+			compatible = "infineon,xmc4xxx-dma";
+			reg = <0x50018000 0x15c>;
+			interrupts = <110 1>;
+			dma-channels = <4>;
+			#dma-cells = <3>;
+			status = "disabled";
+		};
+
 		usb0: usb@50040000 {
 			compatible = "infineon,xmc4xxx-usb", "snps,dwc2";
 			reg = <0x50040000 0x8000>;
@@ -312,6 +297,21 @@
 			g-np-tx-fifo-size = <16>;
 			g-tx-fifo-size = <128 128 32 16 16 16>;
 			status = "disabled";
+		};
+	};
+
+	flash_controller: flash_controller@58001000 {
+		compatible = "infineon,xmc4xxx-flash-controller";
+		reg = <0x58001000 0x1400>;
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flash0: flash@8000000 {
+			compatible = "infineon,xmc4xxx-nv-flash", "soc-nv-flash";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			write-block-size = <256>;
 		};
 	};
 };

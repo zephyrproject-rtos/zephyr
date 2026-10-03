@@ -20,9 +20,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m0+";
 			reg = <0>;
+			device_type = "cpu";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -168,10 +168,10 @@
 
 		pinctrl: pinctrl@41000000 {
 			compatible = "microchip,port-g1-pinctrl";
-			#address-cells = <1>;
-			#size-cells = <1>;
 			reg = <0x41000000 0x180>;
 			ranges = <0x41000000 0x41000000 0x180>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 
 			porta: gpio@41000000 {
 				compatible = "microchip,port-g1-gpio";
@@ -185,6 +185,7 @@
 		nvmctrl: flash-controller@41004000 {
 			compatible = "microchip,nvmctrl-g2";
 			reg = <0x41004000 0xa0>;
+			ranges;
 			interrupts = <6 0>;
 			interrupt-names = "nvmctrl";
 			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBB_NVMCTRL>;
@@ -192,7 +193,6 @@
 			clock-parent = <&clock>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 
 			flash0: flash@0 {
 				compatible = "microchip,flash-g2", "soc-nv-flash";

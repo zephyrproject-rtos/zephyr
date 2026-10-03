@@ -16,10 +16,10 @@
 	status = "okay";
 
 	mb85rs1mt: mb85rs1mt@0 {
-		status = "okay";
 		compatible = "fujitsu,mb85rsxx";
 		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(25)>;
 		size = <DT_SIZE_K(128)>;
+		status = "okay";
 	};
 };

@@ -19,29 +19,29 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "espressif,riscv", "riscv";
-			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "a", "c", "zicsr", "zifencei";
 			reg = <0>;
+			device_type = "cpu";
 			clock-source = <ESP32_RTC_FAST_CLK_SRC_XTAL_D2>;
 			clock-frequency = <DT_FREQ_M(20)>;
 			xtal-freq = <DT_FREQ_M(40)>;
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "c", "zicsr", "zifencei";
 		};
 	};
 
 	soc {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "simple-bus";
 		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		sramlp: memory@50000000 {
-			#address-cells = <1>;
-			#size-cells = <1>;
 			compatible = "mmio-sram";
 			reg = <0x50000000 DT_SIZE_K(16)>;
 			ranges = <0x0 0x50000000 DT_SIZE_K(16)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 
 			ulp_ram: memory@0 {
 				compatible = "zephyr,memory-region", "mmio-sram";
@@ -64,31 +64,31 @@
 			mbox0: mbox@3ff8 {
 				compatible = "espressif,mbox-esp32";
 				reg = <0x3ff8 0x8>;
-				status = "okay";
 				shared-memory = <&ipc_shm>;
 				shared-memory-size = <0x100>;
 				interrupts = <PMU_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
 					     <LP_CORE_PMU_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 				interrupt-parent = <&intc>;
 				#mbox-cells = <1>;
+				status = "okay";
 			};
 		};
 
 		intc: interrupt-controller@50000008 {
 			compatible = "espressif,esp32-intc";
+			reg = <0x50000008 DT_SIZE_K(4)>;
 			#address-cells = <0>;
 			#interrupt-cells = <3>;
 			interrupt-controller;
-			reg = <0x50000008 DT_SIZE_K(4)>;
 			status = "okay";
 		};
 
 		flash: flash-controller@60002000 {
 			compatible = "espressif,esp32-flash-controller";
 			reg = <0x60002000 0x1000>;
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
@@ -112,9 +112,9 @@
 
 		lp_gpio: gpio@600b2000 {
 			compatible = "espressif,esp32-lpgpio";
+			reg = <0x600b2000 DT_SIZE_K(1)>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <0x600b2000 DT_SIZE_K(1)>;
 			ngpios = <8>;
 		};
 	};

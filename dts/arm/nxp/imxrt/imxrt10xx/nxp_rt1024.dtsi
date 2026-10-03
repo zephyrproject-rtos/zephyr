@@ -39,31 +39,31 @@
 };
 
 &flexspi {
-	status = "okay";
 	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(4)>;
 	reg-names = "reg_base", "ahb";
+	status = "okay";
 
 	/* 32 megabit internal flash present on chip */
 	soc_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		size = <DT_SIZE_M(4 * 8)>;
 		reg = <0>;
+		ranges = <0x0 0x60000000 DT_SIZE_M(4)>;
+		size = <DT_SIZE_M(4 * 8)>;
 		spi-max-frequency = <DT_FREQ_M(133)>;
-		status = "okay";
 		jedec-id = [ef 40 16];
 
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x60000000 DT_SIZE_M(4)>;
+		status = "okay";
 
 		w25q32jvwj0: flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0x0 DT_SIZE_M(4)>;
+			ranges;
 			erase-block-size = <DT_SIZE_K(4)>;
 			write-block-size = <1>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 		};
 	};
 };
