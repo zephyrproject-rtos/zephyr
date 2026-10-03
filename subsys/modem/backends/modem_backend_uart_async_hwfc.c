@@ -144,7 +144,8 @@ static void modem_backend_uart_async_hwfc_event_handler(const struct device *dev
 
 	case UART_TX_ABORTED:
 		if (modem_backend_uart_async_hwfc_is_open(backend)) {
-			LOG_WRN("Transmit aborted (%zu sent)", evt->data.tx.len);
+			LOG_WRN("%s: Transmit aborted (%zu sent)", backend->uart->name,
+				evt->data.tx.len);
 		}
 		atomic_clear_bit(&backend->async.common.state,
 				 MODEM_BACKEND_UART_ASYNC_STATE_TRANSMIT_BIT);
@@ -162,7 +163,7 @@ static void modem_backend_uart_async_hwfc_event_handler(const struct device *dev
 		err = uart_rx_buf_rsp(backend->uart, buf->buf,
 				      backend->async.rx_buf_size - sizeof(struct rx_buf_t));
 		if (err) {
-			LOG_ERR("uart_rx_buf_rsp: %d", err);
+			LOG_ERR("%s: uart_rx_buf_rsp: %d", backend->uart->name, err);
 			rx_buf_unref(&backend->async, buf->buf);
 		}
 		break;
@@ -180,8 +181,8 @@ static void modem_backend_uart_async_hwfc_event_handler(const struct device *dev
 			rx_event.len = evt->data.rx.len;
 			err = k_msgq_put(&backend->async.rx_queue, &rx_event, K_NO_WAIT);
 			if (err) {
-				LOG_WRN("RX queue overflow: %d (dropped %u)", err,
-					evt->data.rx.len);
+				LOG_WRN("%s: RX queue overflow: %d (dropped %u)",
+					backend->uart->name, err, evt->data.rx.len);
 				rx_buf_unref(&backend->async, evt->data.rx.buf);
 				break;
 			}
@@ -201,7 +202,8 @@ static void modem_backend_uart_async_hwfc_event_handler(const struct device *dev
 		break;
 
 	case UART_RX_STOPPED:
-		LOG_WRN("Receive stopped for reasons: %u", (uint8_t)evt->data.rx_stop.reason);
+		LOG_WRN("%s: Receive stopped for reasons: %u", backend->uart->name,
+			(uint8_t)evt->data.rx_stop.reason);
 		break;
 
 	default:
@@ -306,7 +308,8 @@ static int modem_backend_uart_async_hwfc_transmit_chain(
 #endif
 
 	if (ret != 0) {
-		LOG_ERR("Failed to %s %u bytes. (%d)", "start async transmit for", offset, ret);
+		LOG_ERR("%s: Failed to %s %u bytes. (%d)", backend->uart->name,
+			"start async transmit for", offset, ret);
 		return ret;
 	}
 
