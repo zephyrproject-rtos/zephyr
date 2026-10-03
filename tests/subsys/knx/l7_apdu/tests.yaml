@@ -1,0 +1,5 @@
+tests:
+  knx.l7_apdu:
+    tags:
+      - knx
+    type: unit
