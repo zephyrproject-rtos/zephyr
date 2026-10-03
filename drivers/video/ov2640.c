@@ -435,12 +435,6 @@ static const struct ov2640_reg uxga_regs[] = {
 	/* DVP prescaler */
 	{R_DVP_SP, R_DVP_SP_AUTO_MODE | 0x04},
 
-
-	{BANK_SEL, BANK_SEL_SENSOR},
-	/* Ungated PCLK, VSYNC active-low, HSYNC active-high */
-	{COM10, 0U << 1},
-	{BANK_SEL, BANK_SEL_DSP},
-
 	{R_BYPASS, R_BYPASS_DSP_EN},
 	{RESET, 0x00},
 };

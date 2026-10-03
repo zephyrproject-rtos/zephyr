@@ -27,9 +27,7 @@
 			ov2640_ep_out: endpoint {
 				remote-endpoint-label = "dvp_24pin_ep_in";
 				bus-width = <8>;
-				hsync-active = <1>;
-				vsync-active = <1>;
-				pclk-sample = <1>;
+				/* hsync/vsync/pclk signals are non-configurable */
 			};
 		};
 	};
