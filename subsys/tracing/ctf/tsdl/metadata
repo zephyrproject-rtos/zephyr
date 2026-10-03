@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: Apache-2.0 */
 /* CTF 1.8 */
 typealias integer { size = 8; align = 8; signed = true; } := int8_t;
 typealias integer { size = 8; align = 8; signed = false; } := uint8_t;
@@ -28,6 +29,8 @@ event {
 	fields := struct {
 		uint32_t thread_id;
 		ctf_bounded_string_t name[20];
+		uint8_t cpu_id;
+		int8_t prio;
 	};
 };
 
@@ -37,6 +40,8 @@ event {
 	fields := struct {
 		uint32_t thread_id;
 		ctf_bounded_string_t name[20];
+		uint8_t cpu_id;
+		int8_t prio;
 	};
 };
 
