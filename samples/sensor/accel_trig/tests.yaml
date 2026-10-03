@@ -62,6 +62,15 @@ tests:
       - nrf52dk/nrf52832
     integration_platforms:
       - nrf52dk/nrf52832
+  sample.sensor.accel_trig.rak1904:
+    harness_config:
+      fixture: fixture_sensor_accel_int
+    extra_args:
+      - SHIELD="rakwireless_rak19007;rakwireless_rak1904_sensor_a"
+    platform_allow:
+      - rak4631/nrf52840
+    integration_platforms:
+      - rak4631/nrf52840
   sample.sensor.accel_trig.generic-tap:
     filter: dt_compat_enabled("nxp,fxos8700") or dt_compat_enabled("invensense,icm42605") or
             dt_compat_enabled("st,iis2dlpc") or dt_compat_enabled("st,lis2dw12")
