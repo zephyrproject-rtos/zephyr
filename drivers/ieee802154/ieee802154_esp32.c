@@ -513,16 +513,22 @@ static int esp32_tx(const struct device *dev, enum ieee802154_tx_mode tx_mode, s
 		break;
 	case IEEE802154_TX_MODE_TXTIME:
 	case IEEE802154_TX_MODE_TXTIME_CCA:
-		/**
-		 * The Espressif HAL functions seem to expect a system uptime in us stored as
-		 * uint32_t, which would overflow already after 1.2 hours. In addition to that, the
-		 * network time from PTP, which is returned by net_pkt_timestamp_ns, will most
-		 * probably have a different basis. Anyway, time-based transfers are required for
-		 * some Thread features, so this will have to be fixed in the future.
+		/* The esp_ieee802154_transmit_at() takes the low 32 bits of
+		 * esp_timer_get_time() in microseconds. The HAL compares the value
+		 * modulo 2^32 and programs the MAC timer with the difference, so the
+		 * target only has to stay within 2^31 us (about 35 minutes) of the
+		 * current time; a target already in the past fires immediately.
+		 * esp32_get_time() reports that same clock and the packet timestamp is
+		 * referred to it, so the truncation below loses nothing.
 		 *
-		 * See also:
-		 * - include/zephyr/net/net_time.h
-		 * - ../modules/hal/espressif/components/ieee802154/driver/esp_ieee802154_dev.c
+		 * Before this path can be reached, esp32_get_capabilities() has to
+		 * advertise IEEE802154_HW_TXTIME and the driver has to implement
+		 * get_sch_acc(). The target then also needs the offset from the packet
+		 * timestamp to the start of the SHR, which the ramp-up compensation in
+		 * the HAL does not cover.
+		 *
+		 * See hal_espressif/components/ieee802154/driver/esp_ieee802154_timer.c
+		 * for the comparison against esp_timer.
 		 */
 		net_time_us = net_pkt_timestamp_ns(pkt) / NSEC_PER_USEC;
 		err = esp_ieee802154_transmit_at(data->tx_psdu,
@@ -759,6 +765,7 @@ static void esp32_iface_init(struct net_if *iface)
 
 static const struct ieee802154_radio_api esp32_radio_api = {
 	.iface_api.init = esp32_iface_init,
+
 	.get_time         = esp32_get_time,
 	.get_capabilities = esp32_get_capabilities,
 	.cca              = esp32_cca,
