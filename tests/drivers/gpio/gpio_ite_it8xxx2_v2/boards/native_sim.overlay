@@ -9,14 +9,6 @@
 #include <zephyr/sys/util_macro.h>
 
 / {
-	intc: interrupt-controller@f03f00 {
-		compatible = "vnd,intc";
-		reg = <0x00f03f00 0x0100>;
-		#address-cells = <0>;
-		#interrupt-cells = <2>;
-		interrupt-controller;
-	};
-
 	gpioa: gpio@f01601 {
 		compatible = "ite,it8xxx2-gpio-v2";
 		reg = <0x00f01601 1   /* GPDR (set) */
@@ -41,5 +33,13 @@
 			    BIT(1) BIT(2) BIT(3) BIT(4)>;
 		has-volt-sel = <1 1 1 1 1 1 1 1>;
 		#gpio-cells = <2>;
+	};
+
+	intc: interrupt-controller@f03f00 {
+		compatible = "vnd,intc";
+		reg = <0x00f03f00 0x0100>;
+		#address-cells = <0>;
+		#interrupt-cells = <2>;
+		interrupt-controller;
 	};
 };
