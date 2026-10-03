@@ -216,6 +216,8 @@ struct eth_dm9051_data {
 	uint8_t mac_addr[6];
 	/* RX SRAM may hold frames although ISR.PR is clear, set by the RX thread */
 	bool rx_pending;
+	/* A restart from the RX thread failed and is retried, under spi_lock */
+	bool restart_pending;
 	/* Controller resets, counted with spi_lock held */
 	uint32_t resets;
 };
@@ -490,6 +492,7 @@ static int eth_dm9051_hw_start(const struct device *dev, struct net_if *iface __
 
 	k_mutex_lock(&data->spi_lock, K_FOREVER);
 	ret = eth_dm9051_hw_init(dev);
+	data->restart_pending = false;
 	k_mutex_unlock(&data->spi_lock);
 
 	return ret;
@@ -507,6 +510,11 @@ static int eth_dm9051_hw_stop(const struct device *dev, struct net_if *iface __u
 	if (ret == 0) {
 		/* Disable RX */
 		ret = eth_dm9051_spi_write_reg(dev, DM9051_RCR, 0);
+	}
+
+	if (ret == 0) {
+		/* Reception is off: a retried restart would turn it on again */
+		data->restart_pending = false;
 	}
 
 	k_mutex_unlock(&data->spi_lock);
@@ -576,11 +584,16 @@ out_spi_unlock:
  */
 static int eth_dm9051_rx_restart(const struct device *dev)
 {
+	struct eth_dm9051_data *data = dev->data;
 	int ret;
 
 	ret = eth_dm9051_hw_init(dev);
 	if (ret < 0) {
+		/* IMR and RCR may be left at reset values: no RX interrupt would retry */
 		LOG_ERR("%s: Failed to restart HW after RX error (err %d)", dev->name, ret);
+		data->restart_pending = true;
+	} else {
+		data->restart_pending = false;
 	}
 
 	return -EIO;
@@ -891,6 +904,13 @@ static void eth_dm9051_rx_thread(void *p1, void *p2, void *p3)
 	data = dev->data;
 
 	while (true) {
+		/* Start, stop and restart set or clear it, all under spi_lock */
+		k_mutex_lock(&data->spi_lock, K_FOREVER);
+		if (data->restart_pending) {
+			(void)eth_dm9051_rx_restart(dev);
+		}
+		k_mutex_unlock(&data->spi_lock);
+
 		/*
 		 * The interrupt is edge triggered but the line follows ISR, so an
 		 * event latched between reading ISR and writing it back keeps the
