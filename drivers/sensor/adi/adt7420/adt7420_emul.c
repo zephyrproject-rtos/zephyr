@@ -121,7 +121,7 @@ static int adt7420_emul_set_channel(const struct emul *target, struct sensor_cha
 
 	/* Convert q31 to millicelsius: physical = (q31 << shift) / BIT(31) */
 	int64_t scaled_value = (int64_t)*value << shift;
-	int64_t millicelsius = scaled_value * 1000 / BIT(31);
+	int64_t millicelsius = scaled_value * 1000 / (int64_t)BIT(31);
 
 	uint16_t code;
 

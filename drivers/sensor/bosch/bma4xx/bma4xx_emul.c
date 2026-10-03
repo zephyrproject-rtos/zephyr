@@ -204,7 +204,7 @@ void bma4xx_emul_set_accel_data(const struct emul *target, q31_t value, int8_t s
 
 	unshifted = shift < 0 ? ((int64_t)value >> -shift) : ((int64_t)value << shift);
 
-	intermediate = (unshifted * BIT(11)) / (g << range_g);
+	intermediate = (unshifted * (int64_t)BIT(11)) / (g << range_g);
 
 	intermediate /= accel_range;
 
