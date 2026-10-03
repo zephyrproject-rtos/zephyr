@@ -68,17 +68,17 @@
 			compatible = "zephyr,sim-flash";
 			reg = <0x10000 0x10000>;
 			ranges;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			status = "disabled";
 
 			dummy_flash: dummy_flash@1000 {
 				compatible = "soc-nv-flash";
 				reg = <0x1000 0x8000>;
 				ranges = <0x0 0x1000 0x8000>;
-				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <1>;
+				status = "disabled";
 			};
 		};
 
@@ -86,17 +86,17 @@
 			compatible = "zephyr,sim-flash";
 			reg = <0x20000 0x8000>;
 			ranges;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			status = "disabled";
 
 			dummy_range_flash: dummy_range_flash@11000 {
 				compatible = "soc-nv-flash";
 				reg = <0x11000 0x8000>;
 				ranges = <0x0 0x11000 0x8000>;
-				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <1>;
+				status = "disabled";
 			};
 		};
 	};
