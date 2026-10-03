@@ -826,6 +826,31 @@ static void ch_split_start_new(struct uhc_dwc2_channel *const ch)
 	ch->data->split_state = UHC_DWC2_SPLIT_SSPLIT;
 }
 
+static void ch_start_split(const struct device *dev, struct uhc_dwc2_channel *const ch)
+{
+	uint32_t hcsplt;
+	uint32_t hcchar;
+
+	hcsplt = sys_read32((mem_addr_t)&ch->regs->hcsplt);
+
+	if (ch->data->split_state == UHC_DWC2_SPLIT_SSPLIT) {
+		hcsplt &= ~USB_DWC2_HCSPLT_COMPSPLT;
+	} else if (ch->data->split_state == UHC_DWC2_SPLIT_CSPLIT) {
+		hcsplt |= USB_DWC2_HCSPLT_COMPSPLT;
+	} else {
+		LOG_ERR("Channel%d split wriong state", ch->index);
+	}
+
+	sys_write32(hcsplt, (mem_addr_t)&ch->regs->hcsplt);
+
+	ch->data->split_scheduled = false;
+
+	hcchar = sys_read32((mem_addr_t)&ch->regs->hcchar);
+	hcchar |= USB_DWC2_HCCHAR_CHENA;
+	hcchar &= ~USB_DWC2_HCCHAR_CHDIS;
+	sys_write32(hcchar, (mem_addr_t)&ch->regs->hcchar);
+}
+
 static inline void ch_process_control(const struct device *dev,
 				      struct uhc_dwc2_channel *const ch)
 {
@@ -981,10 +1006,10 @@ static uint32_t ch_handle_in_ssplit(struct uhc_dwc2_channel *const ch, uint32_t 
 		if (hcint & USB_DWC2_HCINT_ACK) {
 			ch->error_count = 0;
 			ch_events = BIT(UHC_DWC2_CHANNEL_DO_WAIT_CSPLIT);
-		} else if (USB_DWC2_HCINT_NAK) {
+		} else if (hcint & USB_DWC2_HCINT_NAK) {
 			/* Retry */
 			LOG_WRN("NAK in ssplit not implemented yet");
-		} else if (USB_DWC2_HCINT_XACTERR) {
+		} else if (hcint & USB_DWC2_HCINT_XACTERR) {
 			ch->error_count++;
 			if (ch->error_count >= 3) { 
 				/* De-allocate the channel */
@@ -1010,7 +1035,6 @@ static uint32_t ch_handle_in_csplit(struct uhc_dwc2_channel *const ch, uint32_t 
 		if (hcint & USB_DWC2_HCINT_XFERCOMPL) {
 			/* Complete */
 			ch->error_count = 0;
-			ch->data->split_state = UHC_DWC2_SPLIT_NONE;
 
 			ch_events |= BIT(UHC_DWC2_CHANNEL_EVENT_CPLT);
 			ch_events |= BIT(UHC_DWC2_CHANNEL_DO_RELEASE);
@@ -1931,30 +1955,7 @@ static void ch_reinit(const struct device *dev,
 	}
 }
 
-static void ch_start_split(const struct device *dev, struct uhc_dwc2_channel *const ch)
-{
-	uint32_t hcsplt;
-	uint32_t hcchar;
 
-	hcsplt = sys_read32((mem_addr_t)&ch->regs->hcsplt);
-	hcsplt |= USB_DWC2_HCSPLT_COMPSPLT;
-	sys_write32(hcsplt, (mem_addr_t)&ch->regs->hcsplt);
-
-	ch->data->split_scheduled = false;
-
-	hcchar = sys_read32((mem_addr_t)&ch->regs->hcchar);
-	hcchar |= USB_DWC2_HCCHAR_CHENA;
-	hcchar &= ~USB_DWC2_HCCHAR_CHDIS;
-	sys_write32(hcchar, (mem_addr_t)&ch->regs->hcchar);
-
-	if (ch->data->split_state == UHC_DWC2_SPLIT_SSPLIT) {
-		LOG_WRN("%s, channel%d SSPLIT not implemented yet", __FUNCTION__,  ch->index);
-	} else if (ch->data->split_state == UHC_DWC2_SPLIT_CSPLIT) {
-		LOG_WRN("Channel%d CSPLIT", ch->index);
-	} else {
-		LOG_ERR("Channel%d split wriong state", ch->index);
-	}
-}
 
 static void port_sof(const struct device *dev)
 {
