@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Realtek Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_RTS5817
+	bool "RTS5817 Entropy Controller Driver"
+	depends on DT_HAS_REALTEK_RTS5817_TRNG_ENABLED
+	depends on OTP_RTS5817
+	select ENTROPY_HAS_DRIVER
+	default y
+	help
+	  This option enables the entropy number generator for RTS5817 SoCs.
