@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 RAKwireless Technology Limited
+
+config BOARD_RAK3372
+	select BOARD_EARLY_INIT_HOOK if ADC || PWM
+	select PINCTRL_DYNAMIC if ADC || PWM

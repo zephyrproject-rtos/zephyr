@@ -1,5 +1,5 @@
-identifier: rak3172
-name: RAK3172 LoRa STM32WL
+identifier: rak3372
+name: RAK3372 WisBlock Core Module
 type: mcu
 arch: arm
 toolchain:
@@ -8,12 +8,16 @@ toolchain:
 ram: 64
 flash: 256
 supported:
+  - adc
   - counter
   - gpio
   - i2c
   - nvs
+  - pwm
+  - rtc
   - spi
   - uart
   - watchdog
   - lora
-vendor: rak
+  - wisblock_io
+vendor: rakwireless
