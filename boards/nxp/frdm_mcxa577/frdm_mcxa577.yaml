@@ -35,4 +35,5 @@ supported:
   - pwm
   - tsi
   - usbd
+  - usbh
 vendor: nxp
