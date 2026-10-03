@@ -15,6 +15,7 @@ struct rtio;
 struct rtio_sqe;
 struct rtio_cqe;
 struct rtio_iodev_sqe;
+struct zvfs_pollfd;
 
 #ifdef __cplusplus
 extern "C" {
