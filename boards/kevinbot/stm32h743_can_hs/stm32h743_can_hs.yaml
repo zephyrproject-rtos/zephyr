@@ -1,0 +1,21 @@
+identifier: stm32h743_can_hs
+vendor: kevinbot
+name: STM32H743 CAN + USB-HS Dev Board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 512
+flash: 2048
+supported:
+  - gpio
+  - counter
+  - spi
+  - watchdog
+  - qspi
+  - backup_sram
+  - pwm
+  - can
+  - usb_device
+  - usb_cdc_acm
