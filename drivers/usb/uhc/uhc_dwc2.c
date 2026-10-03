@@ -862,6 +862,7 @@ static inline void ch_process_control(const struct device *dev,
 				uint16_t remaining = total - xfer->buf->len;
 
 				if (ch->data->do_split) {
+					/* Split for minimum size */
 					size = MIN(remaining, xfer->mps);
 				} else {
 					size = remaining;
@@ -869,7 +870,7 @@ static inline void ch_process_control(const struct device *dev,
 
 				ch->length = size;
 
-				LOG_DBG("Control DATA IN prog=%u, total=%u, received=%u, remaining=%u",
+				LOG_WRN("Control DATA IN prog=%u, total=%u, received=%u, remaining=%u",
 					size, total, xfer->buf->len, remaining);
 
 				dma_addr = (mem_addr_t)net_buf_tail(xfer->buf);
@@ -903,7 +904,7 @@ static inline void ch_process_control(const struct device *dev,
 			sys_cache_data_invd_range(net_buf_tail(xfer->buf), actual_len);
 			net_buf_add(xfer->buf, actual_len);
 
-			LOG_DBG("Control DATA IN completed, prog=%u, rem=%u, act=%u, tailroom=%zu",
+			LOG_WRN("Control DATA IN completed, prog=%u, rem=%u, act=%u, tailroom=%zu",
 				ch->length,
 				remaining,
 				actual_len,
