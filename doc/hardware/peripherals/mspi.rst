@@ -80,6 +80,14 @@ MSPI bus inside the device driver initialization function:
 
       * :c:func:`mspi_memmap_config` for memory mapped access (e.g. :term:`XIP`)
 
+        Once memory mapping is enabled, a device driver may ask for a transfer
+        to be serviced through the mapped region by setting
+        ``xfer_mode`` to ``MSPI_MEMMAP``. This only applies to packets that
+        access the memory array of the peripheral; command and register
+        accesses stay on ``MSPI_PIO`` or ``MSPI_DMA``. Controllers that do not
+        implement it return ``-ENOTSUP``, so the device driver should be
+        prepared to repeat the transfer in one of the other modes.
+
       * :c:func:`mspi_scramble_config` for scrambling feature
 
       * :c:func:`mspi_timing_config` for platform specific timing setup.
