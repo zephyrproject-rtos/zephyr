@@ -1,12 +1,42 @@
 /*
- * Copyright 2024-2026 NXP
+ * Copyright 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	soc {
+		fmu: memory-controller@40020000 {
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "nxp,msf1";
+			reg = <0x40020000 0x30>;
+			interrupts = <27 0>;
+			status = "disabled";
+		};
+
+		ctcm: sram@4000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		stcm: sram@20000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		peripheral: peripheral@40000000 {
+			ranges = <0x0 0x40000000 0x10000000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+	};
+};
+
 #include "nxp_mcxw7x_common.dtsi"
 
-/* TSTMR is removed from MCXW72 due to SIRC clock source instability. */
+/* TSTMR is removed from MCXW727C due to SIRC clock source instability. */
 /delete-node/ &tstmr0;
 
 &fast_peripheral1 {
@@ -30,7 +60,7 @@
 };
 
 &fmu {
-	ranges = <0x0 0x10000000 DT_SIZE_M(2)>;
+	ranges = <0x0 0x0 DT_SIZE_M(2)>;
 };
 
 &flash {
@@ -39,7 +69,7 @@
 };
 
 &ctcm {
-	ranges = <0x0 0x14000000 DT_SIZE_K(32)>;
+	ranges = <0x0 0x4000000 DT_SIZE_K(32)>;
 };
 
 &ctcm0 {
@@ -47,30 +77,11 @@
 };
 
 &stcm {
-	ranges = <0x0 0x30000000 DT_SIZE_K(232)>;
+	ranges = <0x0 0x20000000 DT_SIZE_K(232)>;
 };
 
 &stcm0 {
 	reg = <0x0 DT_SIZE_K(232)>;
-};
-
-&cmc {
-	/*
-	 * CMC SRAM power partitions: <start-address size cmc-disable-bit>.
-	 * bits 0..1 Code-TCM (16 KB each @0x1400_0000);
-	 * bits 2..9 System-TCM (16,16,32,32,32,32,32,32 KB @0x3000_0000).
-	 * The top 8 KB VBAT-retained bank is intentionally omitted (never gated).
-	 */
-	sram-banks = <0x14000000 DT_SIZE_K(16) 0>,
-		     <0x14004000 DT_SIZE_K(16) 1>,
-		     <0x30000000 DT_SIZE_K(16) 2>,
-		     <0x30004000 DT_SIZE_K(16) 3>,
-		     <0x30008000 DT_SIZE_K(32) 4>,
-		     <0x30010000 DT_SIZE_K(32) 5>,
-		     <0x30018000 DT_SIZE_K(32) 6>,
-		     <0x30020000 DT_SIZE_K(32) 7>,
-		     <0x30028000 DT_SIZE_K(32) 8>,
-		     <0x30030000 DT_SIZE_K(32) 9>;
 };
 
 &pbridge2 {

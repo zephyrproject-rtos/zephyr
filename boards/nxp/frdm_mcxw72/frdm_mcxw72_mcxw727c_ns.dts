@@ -1,11 +1,11 @@
 /*
- * Copyright 2024-2026 NXP
+ * Copyright 2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
 
-#include <nxp/mcx/mcxw/nxp_mcxw727c.dtsi>
+#include <nxp/mcx/mcxw/nxp_mcxw727c_ns.dtsi>
 #include "frdm_mcxw72_common.dtsi"
 
 / {
@@ -23,8 +23,4 @@
 		zephyr,bt-c2h-uart = &lpuart0;
 		zephyr,crc = &crc;
 	};
-};
-
-&sema42 {
-	status = "okay";
 };

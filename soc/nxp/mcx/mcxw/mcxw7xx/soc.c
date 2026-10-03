@@ -74,7 +74,7 @@ __imx_boot_ivt_section void (*const image_vector_table[])(void) = {
 };
 #endif /* CONFIG_NXP_MCXW7XX_BOOT_HEADER */
 
-#ifndef CONFIG_SOC_MCXW70AC
+#if !defined(CONFIG_SOC_MCXW70AC) && !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 static void vbat_init(void)
 {
 	VBAT_Type *base = (VBAT_Type *)DT_REG_ADDR(DT_NODELABEL(vbat));

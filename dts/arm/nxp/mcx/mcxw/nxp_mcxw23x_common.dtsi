@@ -130,39 +130,19 @@
 		};
 	};
 
+	/*
+	 * The flash content (flash0/flash_reserved/uuid/boot_rom) is not
+	 * accessed through this controller's own peripheral-bus address
+	 * window: it lives in a completely different part of the address
+	 * space (the secure/non-secure flash alias), so it is declared
+	 * directly under soc by the per-variant dtsi instead of being
+	 * nested here, avoiding any risk of its address translating
+	 * through this node's (or peripheral's) own ranges.
+	 */
 	iap: flash-controller@34000 {
 		compatible = "nxp,iap-fmc55";
 		reg = <0x34000 0x18>;
-		ranges;
-		#address-cells = <1>;
-		#size-cells = <1>;
 		status = "okay";
-
-		flash0: flash@0 {
-			compatible = "soc-nv-flash";
-			reg = <0x0 DT_SIZE_K(1016)>;
-			erase-block-size = <DT_SIZE_K(8)>;
-			write-block-size = <16>;
-			ranges = <0x0 0x0 DT_SIZE_K(1016)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-		};
-
-		flash_reserved: flash@fe000 {
-			compatible = "soc-nv-flash";
-			reg = <0x000fe000 DT_SIZE_K(8)>;
-			status = "disabled";
-		};
-
-		uuid: flash@3fc70 {
-			compatible = "nxp,lpc-uid";
-			reg = <0x3fc70 0x10>;
-		};
-
-		boot_rom: flash@3000000 {
-			compatible = "soc-nv-flash";
-			reg = <0x3000000 DT_SIZE_K(256)>;
-		};
 	};
 
 	iocon: iocon@1000 {
