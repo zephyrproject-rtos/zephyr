@@ -570,6 +570,22 @@ out_spi_unlock:
 	return ret;
 }
 
+/*
+ * Restart the controller when the RX SRAM read pointer is not known to be at a
+ * frame boundary. Called with spi_lock held.
+ */
+static int eth_dm9051_rx_restart(const struct device *dev)
+{
+	int ret;
+
+	ret = eth_dm9051_hw_init(dev);
+	if (ret < 0) {
+		LOG_ERR("%s: Failed to restart HW after RX error (err %d)", dev->name, ret);
+	}
+
+	return -EIO;
+}
+
 static int eth_dm9051_recv_pkt(const struct device *dev, struct net_pkt **out)
 {
 	struct eth_dm9051_data *data = dev->data;
@@ -676,12 +692,7 @@ out_net_pkt_unref:
 	return ret;
 
 out_restart:
-	/* The RX SRAM read pointer is not known to be at a frame boundary */
-	ret = eth_dm9051_hw_init(dev);
-	if (ret < 0) {
-		LOG_ERR("%s: Failed to restart HW after RX error (err %d)", dev->name, ret);
-	}
-	return -EIO;
+	return eth_dm9051_rx_restart(dev);
 }
 
 /* Drain RX SRAM. Returns the number of frames read, or a negative errno. */
@@ -694,6 +705,7 @@ static int eth_dm9051_rx(const struct device *dev)
 	bool broadcast;
 	int frames = 0;
 	uint16_t flag;
+	uint8_t ready;
 	size_t len;
 	int ret;
 
@@ -714,9 +726,19 @@ static int eth_dm9051_rx(const struct device *dev)
 			goto out_update_errors_rx;
 		}
 
+		/* The second byte read is the ready byte of the next frame header */
+		ready = (uint8_t)sys_be16_to_cpu(flag);
+
 		/* Check if RX data is available in RX SRAM */
-		if (!(sys_be16_to_cpu(flag) & DM9051_FLAG_RX_PKT)) {
+		if (ready == 0U) {
 			break;
+		}
+
+		/* Any other value means the read pointer is not at a frame header */
+		if (ready != DM9051_FLAG_RX_PKT) {
+			LOG_DBG("%s: RX ready byte invalid: %02x", dev->name, ready);
+			ret = eth_dm9051_rx_restart(dev);
+			goto out_update_errors_rx;
 		}
 
 		/* Get received packet */
