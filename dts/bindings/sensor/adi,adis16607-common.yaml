@@ -1,0 +1,46 @@
+# Copyright (c) 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ADIS16607 6-Degrees-of-Freedom IMU (accelerometer + gyroscope)
+
+  SPI half-duplex protocol: reads require two SPI transfers (CS toggled
+  between), writes use a single 3-byte transfer. Burst reads keep CS
+  asserted for the entire frame. Maximum SPI clock frequency is 15 MHz
+  for burst reads; 2 MHz for individual register reads/writes.
+
+  Example:
+    &spi0 {
+      adis16607: adis16607@0 {
+        compatible = "adi,adis16607-3";
+        reg = <0>;
+        spi-max-frequency = <1000000>;
+        spi-cpol;
+        spi-cpha;
+        drdy-gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+      };
+    };
+
+include: spi-device.yaml
+
+properties:
+  drdy-gpios:
+    type: phandle-array
+    description: |
+      Data ready interrupt output from the sensor. Active high.
+      Connect to a GPIO input on the host. Needed for trigger support;
+      omit when using polling mode.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Optional hardware reset pin. Active low: assert low to reset,
+      release high for normal operation. If absent, software reset is used.
+
+  odr:
+    type: int
+    description: |
+      Output data rate in Hz. The driver computes DEC_RATE = (8000 / odr) - 1.
+      Must be a divisor of 8000 (e.g. 8000, 4000, 2000, 1000, 500 ...).
+      A value of 0 leaves the register at the power-on default (8 kHz).
+    default: 0

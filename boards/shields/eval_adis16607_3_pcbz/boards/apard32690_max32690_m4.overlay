@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		imu0 = &adis16607_eval_adis16607_3_pcbz;
+		6dof-motion-drdy0 = &adis16607_eval_adis16607_3_pcbz;
+	};
+};
