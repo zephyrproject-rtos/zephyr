@@ -193,6 +193,7 @@ config PTP_UDP_IPV6_PROTOCOL
 	bool "UDP with IPv6"
 	depends on NET_IPV6
 	select NET_IPV6_MLD
+	select NET_CONTEXT_RECV_PKTINFO
 
 config PTP_IEEE_802_3_PROTOCOL
 	bool "IEEE 802.3 (Layer 2 / EtherType 0x88F7)"
