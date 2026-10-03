@@ -49,6 +49,12 @@
 				#size-cells = <1>;
 			};
 		};
+
+		aes: aes@401b0000 {
+			compatible = "ti,mspm0-aes-adv";
+			reg = <0x401b0000 0x2000>;
+			interrupts = <43 0>;
+		};
 	};
 };
 
