@@ -670,7 +670,7 @@ static int sfdp_read(const struct device *dev, off_t addr, void *dest,
 	struct flash_mspi_nor_data *dev_data = dev->data;
 	int rc;
 
-	set_up_xfer(dev, MSPI_RX, dev_config->control_xfer_mode);
+	set_up_xfer(dev, MSPI_RX, dev_config->data_xfer_mode);
 	if (in_octal_io(dev)) {
 		dev_data->xfer.rx_dummy    = dev_data->cmd_info.sfdp_dummy_20
 					   ? 20 : 8;
