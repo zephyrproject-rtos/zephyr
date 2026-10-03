@@ -15,8 +15,13 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/ethernet/eth_nxp_enet.h>
+#include <zephyr/logging/log.h>
 
 #include <fsl_enet.h>
+
+#include "ptp_clock_nxp_enet_rate_math.h"
+
+LOG_MODULE_REGISTER(ptp_clock_nxp_enet);
 
 struct ptp_clock_nxp_enet_config {
 	const struct pinctrl_dev_config *pincfg;
@@ -31,13 +36,33 @@ struct ptp_clock_nxp_enet_data {
 	ENET_Type *base;
 	enet_handle_t *enet_handle;
 	struct k_mutex ptp_mutex;
+	/* The timer is only started when its clock rate is usable */
+	bool timer_running;
 };
+
+/* ATINC.INC holds the tick in whole nanoseconds, in 7 bits */
+static bool ptp_clock_nxp_enet_rate_usable(uint32_t rate)
+{
+	uint32_t inc;
+
+	if (rate == 0U) {
+		return false;
+	}
+
+	inc = NSEC_PER_SEC / rate;
+
+	return (inc >= 1U) && (inc <= (ENET_ATINC_INC_MASK >> ENET_ATINC_INC_SHIFT));
+}
 
 static int ptp_clock_nxp_enet_set(const struct device *dev,
 				struct net_ptp_time *tm)
 {
 	struct ptp_clock_nxp_enet_data *data = dev->data;
 	enet_ptp_time_t enet_time;
+
+	if (!data->timer_running) {
+		return -ENODEV;
+	}
 
 	enet_time.second = tm->second;
 	enet_time.nanosecond = tm->nanosecond;
@@ -53,6 +78,12 @@ static int ptp_clock_nxp_enet_get(const struct device *dev,
 	struct ptp_clock_nxp_enet_data *data = dev->data;
 	enet_ptp_time_t enet_time;
 
+	if (!data->timer_running) {
+		tm->second = 0;
+		tm->nanosecond = 0;
+		return -ENODEV;
+	}
+
 	ENET_Ptp1588GetTimer(data->base, data->enet_handle, &enet_time);
 
 	tm->second = enet_time.second;
@@ -67,6 +98,10 @@ static int ptp_clock_nxp_enet_adjust(const struct device *dev,
 	struct ptp_clock_nxp_enet_data *data = dev->data;
 	int ret = 0;
 	int key;
+
+	if (!data->timer_running) {
+		return -ENODEV;
+	}
 
 	if ((increment <= (int32_t)(-NSEC_PER_SEC)) ||
 			(increment >= (int32_t)NSEC_PER_SEC)) {
@@ -89,55 +124,53 @@ static int ptp_clock_nxp_enet_adjust(const struct device *dev,
 
 }
 
+/*
+ * ENET_Ptp1588StartTimer() sets ATINC.INC to the tick truncated to whole nanoseconds. Find the
+ * ATINC.INC_CORR and ATCOR values that make the average tick the one of the clock rate times
+ * the ratio, which also absorbs the fractional part of the tick.
+ */
+static int ptp_clock_nxp_enet_correction(uint32_t clock_rate, double ratio, int *inc_corr,
+					 uint32_t *cor)
+{
+	int hw_inc = NSEC_PER_SEC / clock_rate;
+	double target_ns = (double)NSEC_PER_SEC / (double)clock_rate * ratio;
+
+	return ptp_clock_nxp_enet_find_correction(
+		hw_inc, target_ns, ENET_ATINC_INC_CORR_MASK >> ENET_ATINC_INC_CORR_SHIFT,
+		ENET_ATCOR_COR_MASK, inc_corr, cor);
+}
+
 static int ptp_clock_nxp_enet_rate_adjust(const struct device *dev,
 					double ratio)
 {
 	const struct ptp_clock_nxp_enet_config *config = dev->config;
 	struct ptp_clock_nxp_enet_data *data = dev->data;
-	int corr;
-	int32_t mul;
-	double val;
 	uint32_t enet_ref_pll_rate;
+	uint32_t cor;
+	int inc_corr;
+	int ret;
 
-	(void) clock_control_get_rate(config->clock_dev, config->clock_subsys,
-				&enet_ref_pll_rate);
-	int hw_inc = NSEC_PER_SEC / enet_ref_pll_rate;
-
-	/* No change needed. */
-	if ((ratio > 1.0 && ratio - 1.0 < 0.00000001) ||
-	   (ratio < 1.0 && 1.0 - ratio < 0.00000001)) {
-		return 0;
+	if (!data->timer_running) {
+		return -ENODEV;
 	}
 
-	/* Limit possible ratio. */
-	if ((ratio > 1.0 + 1.0/(2 * hw_inc)) ||
-			(ratio < 1.0 - 1.0/(2 * hw_inc))) {
+	/* Do not let a servo that went out of control reach the timer */
+	if ((ratio > 1.0 + CONFIG_PTP_CLOCK_NXP_ENET_MAX_RATIO_PPM * 1.0e-6) ||
+	    (ratio < 1.0 - CONFIG_PTP_CLOCK_NXP_ENET_MAX_RATIO_PPM * 1.0e-6)) {
 		return -EINVAL;
 	}
 
-	if (ratio < 1.0) {
-		corr = hw_inc - 1;
-		val = 1.0 / (hw_inc * (1.0 - ratio));
-	} else if (ratio > 1.0) {
-		corr = hw_inc + 1;
-		val = 1.0 / (hw_inc * (ratio - 1.0));
-	} else {
-		val = 0;
-		corr = hw_inc;
-	}
+	(void)clock_control_get_rate(config->clock_dev, config->clock_subsys, &enet_ref_pll_rate);
 
-	if (val >= INT32_MAX) {
-		/* Value is too high.
-		 * It is not possible to adjust the rate of the clock.
-		 */
-		mul = 0;
-	} else {
-		mul = val;
+	/* There is no early return for a ratio of 1.0, the fractional tick still needs a value */
+	ret = ptp_clock_nxp_enet_correction(enet_ref_pll_rate, ratio, &inc_corr, &cor);
+	if (ret != 0) {
+		return ret;
 	}
 
 	k_mutex_lock(&data->ptp_mutex, K_FOREVER);
 
-	ENET_Ptp1588AdjustTimer(data->base, corr, mul);
+	ENET_Ptp1588AdjustTimer(data->base, inc_corr, cor);
 
 	k_mutex_unlock(&data->ptp_mutex);
 
@@ -159,11 +192,15 @@ void nxp_enet_ptp_clock_callback(const struct device *dev,
 	if (event == NXP_ENET_MODULE_RESET) {
 		enet_ptp_config_t ptp_config;
 		uint32_t enet_ref_pll_rate;
+		uint32_t cor;
+		int inc_corr;
 		uint8_t ptp_multicast[6] = { 0x01, 0x1B, 0x19, 0x00, 0x00, 0x00 };
 		uint8_t ptp_peer_multicast[6] = { 0x01, 0x80, 0xC2, 0x00, 0x00, 0x0E };
 
-		(void) clock_control_get_rate(config->clock_dev, config->clock_subsys,
-					&enet_ref_pll_rate);
+		if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
+					   &enet_ref_pll_rate) < 0) {
+			enet_ref_pll_rate = 0U;
+		}
 
 		ENET_AddMulticastGroup(data->base, ptp_multicast);
 		ENET_AddMulticastGroup(data->base, ptp_peer_multicast);
@@ -177,9 +214,22 @@ void nxp_enet_ptp_clock_callback(const struct device *dev,
 		/* Get enet handle from mac driver */
 		data->enet_handle = ptp_data->enet;
 
+		if (!ptp_clock_nxp_enet_rate_usable(enet_ref_pll_rate)) {
+			LOG_ERR("1588 timer clock of %u Hz is not usable, timer not started",
+				enet_ref_pll_rate);
+			return;
+		}
+
 		ENET_Ptp1588SetChannelMode(data->base, kENET_PtpTimerChannel3,
 				kENET_PtpChannelPulseHighonCompare, true);
 		ENET_Ptp1588StartTimer(data->base, ptp_config.ptp1588ClockSrc_Hz);
+
+		/* Make up for the fractional part of the tick that the start above cut off */
+		if (ptp_clock_nxp_enet_correction(enet_ref_pll_rate, 1.0, &inc_corr, &cor) == 0) {
+			ENET_Ptp1588AdjustTimer(data->base, inc_corr, cor);
+		}
+
+		data->timer_running = true;
 		ENET_EnableInterrupts(data->base, ENET_TS_INTERRUPT);
 	}
 }
