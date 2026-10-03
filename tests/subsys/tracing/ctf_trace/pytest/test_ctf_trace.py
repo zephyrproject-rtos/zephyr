@@ -2,9 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """
-Decode the CTF stream emitted by the ctf_trace application and assert that the
-expected events are present with sane fields.
+Decode the CTF stream emitted by the ctf_trace application and check it against
+the expectations the application prints for every traced call.
 
+    EXPECT <event> <field>=<value>...   the next such event must exist, in order
+    COUNT <n> <event> <field>=<value>... exactly n such events exist in the stream
 """
 
 import glob
@@ -21,23 +23,6 @@ import trace_viewer as tv  # noqa: E402
 
 METADATA = os.path.join(ZEPHYR_BASE, "subsys", "tracing", "ctf", "tsdl", "metadata")
 
-# One representative event per object type the app exercises.
-EXPECTED_EVENTS = [
-    "thread_create",
-    "semaphore_give_enter",
-    "semaphore_take_exit",
-    "mutex_lock_enter",
-    "queue_init",
-    "queue_append_enter",
-    "queue_get_exit",
-    "fifo_init_enter",
-    "fifo_put_enter",
-    "lifo_put_enter",
-    "stack_push_enter",
-    "heap_alloc_enter",
-    "heap_alloc_exit",
-]
-
 
 def _find_trace(build_dir):
     candidates = [os.path.join(str(build_dir), "channel0_0")]
@@ -48,9 +33,51 @@ def _find_trace(build_dir):
     return None
 
 
+def _parse_fields(tokens):
+    fields = {}
+    for tok in tokens:
+        key, value = tok.split("=", 1)
+        try:
+            fields[key] = int(value, 0)
+        except ValueError:
+            fields[key] = value
+    return fields
+
+
+def _parse_expectations(lines):
+    expects, counts = [], []
+    for line in lines:
+        tokens = line.split()
+        if tokens[:1] == ["EXPECT"]:
+            expects.append((tokens[1], _parse_fields(tokens[2:])))
+        elif tokens[:1] == ["COUNT"]:
+            counts.append((int(tokens[1]), tokens[2], _parse_fields(tokens[3:])))
+    return expects, counts
+
+
+def _matches(event, name, fields):
+    if event.name != name:
+        return False
+    for key, want in fields.items():
+        got = event.fields.get(key)
+        if isinstance(want, int):
+            # Ids and return values are emitted as 32-bit fields; negative
+            # errno values and 64-bit pointers compare through the same mask.
+            if got is None or (got & 0xFFFFFFFF) != (want & 0xFFFFFFFF):
+                return False
+        elif got != want:
+            return False
+    return True
+
+
+def _fmt(event):
+    return f"{event.name} {event.fields}"
+
+
 def test_ctf_trace(dut):
-    # Wait for the app to finish emitting its tracepoints.
-    dut.readlines_until(regex=".*CTF TRACE DONE", timeout=30)
+    lines = dut.readlines_until(regex=".*CTF TRACE DONE", timeout=30)
+    expects, counts = _parse_expectations(lines)
+    assert expects, "the application printed no expectations"
 
     build_dir = dut.device_config.app_build_dir or dut.device_config.build_dir
 
@@ -65,25 +92,25 @@ def test_ctf_trace(dut):
 
     assert os.path.isfile(METADATA), f"CTF metadata not found at {METADATA}"
     defs = tv.parse_metadata(METADATA)
-    tr = tv.parse_trace(trace, defs, has_ts=True)
+    events = tv.parse_trace(trace, defs, has_ts=True).events
+    logger.info("decoded %d CTF events, checking %d expectations", len(events), len(expects))
+    assert events, "no CTF events decoded"
 
-    names = [e.name for e in tr.events]
-    seen = set(names)
-    logger.info("decoded %d CTF events, %d distinct types", len(tr.events), len(seen))
-    assert len(tr.events) > 0, "no CTF events decoded"
+    # Every expected event must appear, in the order the calls were made.
+    pos = 0
+    for name, fields in expects:
+        idx = next((i for i in range(pos, len(events)) if _matches(events[i], name, fields)), None)
+        if idx is None:
+            same_name = [_fmt(e) for e in events[pos:] if e.name == name]
+            raise AssertionError(
+                f"no {name} {fields} after event #{pos}; "
+                f"later {name} events: {same_name[:5] or 'none'}"
+            )
+        pos = idx + 1
 
-    missing = [e for e in EXPECTED_EVENTS if e not in seen]
-    assert not missing, f"missing expected CTF events {missing}; decoded types: {sorted(seen)}"
+    # Blocking hooks fire only when the call actually pended.
+    for n, name, fields in counts:
+        got = sum(1 for e in events if _matches(e, name, fields))
+        assert got == n, f"expected {n} {name} {fields} events, decoded {got}"
 
-    assert "queue_get_blocking" not in names, "K_NO_WAIT queue get emitted a blocking event"
-
-    # Field sanity: queue_get_exit must carry the object id, timeout and return value.
-    get_exit = next(e for e in tr.events if e.name == "queue_get_exit")
-    for field in ("id", "timeout", "ret"):
-        assert field in get_exit.fields, f"queue_get_exit missing field {field}: {get_exit.fields}"
-
-    # Ordering sanity: the queue is initialised before it is read from.
-    idx = {n: names.index(n) for n in ("queue_init", "queue_get_exit")}
-    assert idx["queue_init"] < idx["queue_get_exit"], "queue_init must precede queue_get_exit"
-
-    logger.info("CTF trace validated: all %d expected event types present", len(EXPECTED_EVENTS))
+    logger.info("CTF trace validated: %d events in order, %d counts", len(expects), len(counts))
