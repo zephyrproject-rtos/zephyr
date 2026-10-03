@@ -1,0 +1,47 @@
+# Copyright (c) 2026 Testo SE & Co. KGaA
+# SPDX-License-Identifier: Apache-2.0
+
+title: TI BQ25620 battery charger
+
+description: |
+  TI BQ25620 I2C controlled single cell buck battery charger with power path
+  management, USB BC1.2 adapter detection, OTG boost and an integrated ADC.
+
+  The parent node represents the I2C device. It disables the I2C watchdog and
+  distributes the interrupts to the function child nodes. The charger function
+  is described by a child node with the "ti,bq25620-charger" compatible.
+
+compatible: "ti,bq25620"
+
+include: i2c-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  int-gpios:
+    type: phandle-array
+    description: |
+      Interrupt pin. The device signals status changes and faults with a
+      256 us low pulse, so the pin is typically flagged GPIO_ACTIVE_LOW.
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/gpio/gpio.h>
+
+    i2c {
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        bq25620@6b {
+            compatible = "ti,bq25620";
+            reg = <0x6b>;
+            int-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+
+            charger {
+                compatible = "ti,bq25620-charger";
+                constant-charge-current-max-microamp = <1040000>;
+                constant-charge-voltage-max-microvolt = <4200000>;
+            };
+        };
+    };
