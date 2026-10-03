@@ -43,6 +43,10 @@
 #include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
 #include <zephyr/cache.h>
 #include "sdhc_helpers.h"
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/pm/pm.h>
 
 #include "cy_sd_host.h"
 #include "cy_sysclk.h"
@@ -99,6 +103,7 @@ struct __aligned(CONFIG_SDHC_BUFFER_ALIGNMENT) sdhc_infineon_data {
 	uint8_t clock_peri_group;
 #endif
 	bool app_cmd;
+	cy_stc_sd_host_context_t context; /* Needed for rebuilds */
 };
 
 static const cy_stc_sd_host_init_config_t sdhc_config = {
@@ -187,6 +192,10 @@ static int sdhc_infineon_reset(const struct device *dev)
 {
 	const struct sdhc_infineon_config *config = dev->config;
 	uint32_t timeout_us = 1000U;
+	int ret = 0;
+
+	pm_policy_device_power_lock_get(dev);
+	(void)pm_device_runtime_get(dev);
 
 	Cy_SD_Host_SoftwareReset(config->reg_addr, CY_SD_HOST_RESET_DATALINE);
 	Cy_SD_Host_SoftwareReset(config->reg_addr, CY_SD_HOST_RESET_CMD_LINE);
@@ -195,10 +204,13 @@ static int sdhc_infineon_reset(const struct device *dev)
 		/* Reset was not cleared by SDHC IP Block. Something wrong. Are clocks enabled? */
 		LOG_ERR("Software reset is not completed...timeout, reg:0x%08X",
 			config->reg_addr->CORE.SW_RST_R);
-		return -ETIMEDOUT;
+		ret = -ETIMEDOUT;
 	}
 
-	return 0;
+	(void)pm_device_runtime_put(dev);
+	pm_policy_device_power_lock_put(dev);
+
+	return ret;
 }
 
 static inline cy_en_sd_host_response_type_t sdhc_resp_type(uint32_t response_type)
@@ -548,6 +560,21 @@ static int sdhc_infineon_request(const struct device *dev, struct sdhc_command *
 	/* Reset semaphore */
 	k_sem_reset(&sdhc_data->transfer_sem);
 
+	/*
+	 * Reference the device for the duration of the request. With device
+	 * runtime PM this resumes the controller; inert under system-managed PM.
+	 * The constraint is taken first because resuming reprograms the SD clock.
+	 */
+	pm_policy_device_power_lock_get(dev);
+
+	result = pm_device_runtime_get(dev);
+	if (result < 0) {
+		LOG_ERR("Failed to resume the controller: %d", result);
+		pm_policy_device_power_lock_put(dev);
+		k_sem_give(&sdhc_data->thread_lock);
+		return result;
+	}
+
 	cy_stc_sd_host_cmd_config_t cmd_config = {
 		.commandIndex = cmd->opcode,
 		.commandArgument = cmd->arg,
@@ -678,6 +705,9 @@ end:
 	} else {
 		sdhc_data->app_cmd = false;
 	}
+
+	(void)pm_device_runtime_put(dev);
+	pm_policy_device_power_lock_put(dev);
 	k_sem_give(&sdhc_data->thread_lock);
 
 	return result;
@@ -759,6 +789,12 @@ static int sdhc_infineon_set_io(const struct device *dev, struct sdhc_io *ios)
 		ios->bus_width, ios->clock, ios->power_mode == SDHC_POWER_ON ? "ON" : "OFF",
 		sd_voltage_str(ios->signal_voltage), sdhc_timing_mode_str(ios->timing));
 
+	/* Taken before the reference: resuming and sdhc_change_clock() both reprogram
+	 * the SD clock and must not be cut by a power-loss state.
+	 */
+	pm_policy_device_power_lock_get(dev);
+	(void)pm_device_runtime_get(dev);
+
 	/* Toggle card power supply */
 	if (sdhc_data->power_mode != ios->power_mode) {
 		sdhc_card_power_cycle(dev, ios->power_mode);
@@ -776,9 +812,11 @@ static int sdhc_infineon_set_io(const struct device *dev, struct sdhc_io *ios)
 			break;
 		case SDHC_BUS_WIDTH8BIT:
 			bus_width = CY_SD_HOST_BUS_WIDTH_8_BIT;
-			return -ENOTSUP;
+			ret = -ENOTSUP;
+			goto out;
 		default:
-			return -ENOTSUP;
+			ret = -ENOTSUP;
+			goto out;
 		}
 
 		if (sdhc_data->bus_width != bus_width) {
@@ -789,7 +827,8 @@ static int sdhc_infineon_set_io(const struct device *dev, struct sdhc_io *ios)
 				LOG_INF("Bus width set successfully to %d bit", ios->bus_width);
 			} else {
 				LOG_ERR("Error configuring bus width");
-				return -EINVAL;
+				ret = -EINVAL;
+				goto out;
 			}
 
 			sdhc_data->bus_width = bus_width;
@@ -819,7 +858,8 @@ static int sdhc_infineon_set_io(const struct device *dev, struct sdhc_io *ios)
 			break;
 		default:
 			LOG_ERR("Timing mode not supported for this device");
-			return -ENOTSUP;
+			ret = -ENOTSUP;
+			goto out;
 		}
 
 		if (sdhc_data->speed_mode != speed_mode) {
@@ -829,7 +869,8 @@ static int sdhc_infineon_set_io(const struct device *dev, struct sdhc_io *ios)
 				LOG_INF("Timing set successfully to %d", ios->timing);
 			} else {
 				LOG_ERR("Error configuring Timing");
-				return -EINVAL;
+				ret = -EINVAL;
+				goto out;
 			}
 
 			sdhc_data->speed_mode = speed_mode;
@@ -845,7 +886,8 @@ static int sdhc_infineon_set_io(const struct device *dev, struct sdhc_io *ios)
 			if (ios->clock > sdhc_data->props.f_max ||
 			    ios->clock < sdhc_data->props.f_min) {
 				LOG_ERR("Proposed clock outside supported host range");
-				return -EINVAL;
+				ret = -EINVAL;
+				goto out;
 			}
 
 			uint32_t actual_freq = ios->clock;
@@ -857,7 +899,8 @@ static int sdhc_infineon_set_io(const struct device *dev, struct sdhc_io *ios)
 				LOG_INF("Bus clock successfully set to %d kHz", ios->clock / 1000);
 			} else {
 				LOG_ERR("Error configuring card clock");
-				return -EINVAL;
+				ret = -EINVAL;
+				goto out;
 			}
 		}
 
@@ -874,11 +917,16 @@ static int sdhc_infineon_set_io(const struct device *dev, struct sdhc_io *ios)
 			Cy_SD_Host_ChangeIoVoltage(config->reg_addr, CY_SD_HOST_IO_VOLT_1_8V);
 			break;
 		default:
-			return -ENOTSUP;
+			ret = -ENOTSUP;
+			goto out;
 		}
 
 		sdhc_data->signal_voltage = ios->signal_voltage;
 	}
+
+out:
+	(void)pm_device_runtime_put(dev);
+	pm_policy_device_power_lock_put(dev);
 
 	return ret;
 }
@@ -905,7 +953,13 @@ static int sdhc_infineon_card_busy(const struct device *dev)
 {
 	const struct sdhc_infineon_config *config = dev->config;
 	int busy_status = 0;
-	uint32_t state = Cy_SD_Host_GetPresentState(config->reg_addr);
+	uint32_t state;
+
+	pm_policy_device_power_lock_get(dev);
+	(void)pm_device_runtime_get(dev);
+	state = Cy_SD_Host_GetPresentState(config->reg_addr);
+	(void)pm_device_runtime_put(dev);
+	pm_policy_device_power_lock_put(dev);
 
 	/* Per the sdhc_card_busy() API contract, only the DAT[3:0] line level
 	 * reflects real card busy state; DAT_LINE_ACTIVE/CMD_INHIBIT_DAT can
@@ -932,7 +986,7 @@ static int sdhc_infineon_enable_interrupt(const struct device *dev, sdhc_interru
 {
 	struct sdhc_infineon_data *sdhc_data = dev->data;
 	const struct sdhc_infineon_config *config = dev->config;
-	uint32_t cur_int_mask = Cy_SD_Host_GetNormalInterruptMask(config->reg_addr);
+	uint32_t cur_int_mask;
 
 	if (sources != SDHC_INT_SDIO) {
 		return -ENOTSUP;
@@ -946,10 +1000,17 @@ static int sdhc_infineon_enable_interrupt(const struct device *dev, sdhc_interru
 	sdhc_data->sdio_cb = callback;
 	sdhc_data->sdio_cb_user_data = user_data;
 
+	pm_policy_device_power_lock_get(dev);
+	(void)pm_device_runtime_get(dev);
+
 	/* Enable CARD INTERRUPT */
+	cur_int_mask = Cy_SD_Host_GetNormalInterruptMask(config->reg_addr);
 	sdhc_data->irq_cause |= CY_SD_HOST_CARD_INTERRUPT;
 	Cy_SD_Host_SetNormalInterruptMask(config->reg_addr,
 					  cur_int_mask | CY_SD_HOST_CARD_INTERRUPT);
+
+	(void)pm_device_runtime_put(dev);
+	pm_policy_device_power_lock_put(dev);
 
 	return 0;
 }
@@ -958,7 +1019,7 @@ static int sdhc_infineon_disable_interrupt(const struct device *dev, int sources
 {
 	struct sdhc_infineon_data *sdhc_data = dev->data;
 	const struct sdhc_infineon_config *config = dev->config;
-	uint32_t cur_int_mask = Cy_SD_Host_GetNormalInterruptMask(config->reg_addr);
+	uint32_t cur_int_mask;
 
 	if (sources != SDHC_INT_SDIO) {
 		return -ENOTSUP;
@@ -967,10 +1028,17 @@ static int sdhc_infineon_disable_interrupt(const struct device *dev, int sources
 	sdhc_data->sdio_cb = NULL;
 	sdhc_data->sdio_cb_user_data = NULL;
 
+	pm_policy_device_power_lock_get(dev);
+	(void)pm_device_runtime_get(dev);
+
 	/* Disable CARD INTERRUPT */
+	cur_int_mask = Cy_SD_Host_GetNormalInterruptMask(config->reg_addr);
 	sdhc_data->irq_cause &= ~CY_SD_HOST_CARD_INTERRUPT;
 	Cy_SD_Host_SetNormalInterruptMask(config->reg_addr,
 					  cur_int_mask & ~CY_SD_HOST_CARD_INTERRUPT);
+
+	(void)pm_device_runtime_put(dev);
+	pm_policy_device_power_lock_put(dev);
 
 	return 0;
 }
@@ -980,7 +1048,6 @@ static int sdhc_infineon_init(const struct device *dev)
 	int result = 0;
 	const struct sdhc_infineon_config *config = dev->config;
 	struct sdhc_infineon_data *sdhc_data = dev->data;
-	cy_stc_sd_host_context_t context;
 	cy_rslt_t status;
 
 	/* Configure DT provided device signals when available */
@@ -1025,7 +1092,7 @@ static int sdhc_infineon_init(const struct device *dev)
 	Cy_SD_Host_Enable(config->reg_addr);
 
 	/* Configure SD Host to operate */
-	result = (int)Cy_SD_Host_Init(config->reg_addr, &sdhc_config, &context);
+	result = (int)Cy_SD_Host_Init(config->reg_addr, &sdhc_config, &sdhc_data->context);
 	if (result != 0) {
 		return -EFAULT;
 	}
@@ -1041,6 +1108,70 @@ static int sdhc_infineon_init(const struct device *dev)
 
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int sdhc_infineon_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct sdhc_infineon_config *const config = dev->config;
+	struct sdhc_infineon_data *const sdhc_data = dev->data;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Refuse while a command or data transfer is on the bus. */
+		if ((Cy_SD_Host_GetPresentState(config->reg_addr) &
+		     (CY_SD_HOST_CMD_INHIBIT | CY_SD_HOST_CMD_CMD_INHIBIT_DAT |
+		      CY_SD_HOST_DAT_LINE_ACTIVE)) != 0U) {
+			return -EBUSY;
+		}
+		/* Leave enabled for a wakeup source; gating would disable DeepSleep wake. */
+		if (pm_device_wakeup_is_enabled(dev)) {
+			break;
+		}
+		/* Clock gate the block; clock tree left untouched. */
+		Cy_SD_Host_Disable(config->reg_addr);
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		Cy_SD_Host_Enable(config->reg_addr);
+		/* An instance whose SDHC*_RETENTION_PRESENT is 0 comes out of DeepSleep
+		 * with its interrupt enables, host control and GP_OUT cleared, which
+		 * stalls the next command.  Cy_SD_Host_Disable() preserves them, so a
+		 * zeroed enable mask means the block lost power rather than was gated.
+		 */
+		if (Cy_SD_Host_GetNormalInterruptEnable(config->reg_addr) == 0U) {
+			(void)Cy_SD_Host_Init(config->reg_addr, &sdhc_config,
+					      &sdhc_data->context);
+			(void)Cy_SD_Host_SetHostBusWidth(config->reg_addr, sdhc_data->bus_width);
+			(void)Cy_SD_Host_SetHostSpeedMode(config->reg_addr, sdhc_data->speed_mode);
+			Cy_SD_Host_ChangeIoVoltage(config->reg_addr,
+						   (sdhc_data->signal_voltage == SD_VOL_1_8_V)
+							   ? CY_SD_HOST_IO_VOLT_1_8V
+							   : CY_SD_HOST_IO_VOLT_3_3V);
+		}
+		/* Cy_SD_Host_Enable() restores the internal clock but leaves the card clock
+		 * output that Cy_SD_Host_Disable() gated off, so every resume has to reprogram.
+		 */
+		if (sdhc_data->bus_clock != 0U) {
+			uint32_t freq = sdhc_data->bus_clock;
+
+			(void)sdhc_change_clock(dev, &freq);
+		}
+		break;
+#if defined(CONFIG_PM_S2RAM) || defined(CONFIG_PM_DEVICE_POWER_DOMAIN)
+	case PM_DEVICE_ACTION_TURN_ON:
+		/*
+		 * Power was lost: fully re-init the controller - re-apply pinctrl,
+		 * re-assign the clock divider, re-enable and re-init the SD host,
+		 * and clear the slot so the card is re-initialized on next set_io().
+		 */
+		return sdhc_infineon_init(dev);
+#endif /* CONFIG_PM_S2RAM || CONFIG_PM_DEVICE_POWER_DOMAIN */
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
 
 static DEVICE_API(sdhc, sdhc_infineon_api) = {
 	.reset = sdhc_infineon_reset,
@@ -1106,8 +1237,14 @@ static DEVICE_API(sdhc, sdhc_infineon_api) = {
                                                                                                    \
 	static int sdhc_infineon_init##n(const struct device *dev)                                 \
 	{                                                                                          \
+		int ret;                                                                           \
+                                                                                                   \
 		IFX_SDHC_IRQ_CONFIG(n);                                                            \
-		return sdhc_infineon_init(dev);                                                    \
+		ret = sdhc_infineon_init(dev);                                                     \
+		if (ret < 0) {                                                                     \
+			return ret;                                                                \
+		}                                                                                  \
+		return pm_device_runtime_enable(dev);                                              \
 	}                                                                                          \
                                                                                                    \
 	static const struct sdhc_infineon_config sdhc_infineon_##n##_config = {                    \
@@ -1145,8 +1282,10 @@ static DEVICE_API(sdhc, sdhc_infineon_api) = {
 			  .hs400_support = false},                                                 \
 		IFX_SDHC_PERI_CLOCK_INIT(n)};                                                      \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &sdhc_infineon_init##n, NULL, &sdhc_infineon_##n##_data,          \
-			      &sdhc_infineon_##n##_config, POST_KERNEL, CONFIG_SDHC_INIT_PRIORITY, \
-			      &sdhc_infineon_api);
+	PM_DEVICE_DT_INST_DEFINE(n, sdhc_infineon_pm_action);                                      \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &sdhc_infineon_init##n, PM_DEVICE_DT_INST_GET(n),                 \
+			      &sdhc_infineon_##n##_data, &sdhc_infineon_##n##_config, POST_KERNEL, \
+			      CONFIG_SDHC_INIT_PRIORITY, &sdhc_infineon_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IFX_SDHC_INIT)
