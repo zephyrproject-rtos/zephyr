@@ -38,6 +38,12 @@ configdefault BT_CTLR_ISOAL_SOURCES
 configdefault BT_CTLR_ISOAL_SINKS
 	default 2
 
+configdefault BT_CTLR_ISO_TX_BUFFER_SIZE
+	default 255
+
+configdefault BT_CTLR_ISO_TX_SDU_LEN_MAX
+	default 247
+
 endif # BT_AUDIO && BT_LL_SW_SPLIT
 
 source "Kconfig.zephyr"
