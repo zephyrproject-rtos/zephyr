@@ -13,6 +13,8 @@
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_ameba, CONFIG_ADC_LOG_LEVEL);
@@ -24,6 +26,10 @@ LOG_MODULE_REGISTER(adc_ameba, CONFIG_ADC_LOG_LEVEL);
 #define ADC_RESOLUTION_MIN    (12)
 #define VALID_RESOLUTION(r)   ((r) >= ADC_RESOLUTION_MIN)
 #define INVALID_RESOLUTION(r) (!VALID_RESOLUTION(r))
+#define AMEBA_ADC_MAX_CHANNELS 16U
+
+BUILD_ASSERT(DT_INST_PROP(0, channel_count) <= AMEBA_ADC_MAX_CHANNELS,
+	     "Ameba ADC supports at most 16 channel IDs");
 
 struct adc_ameba_config {
 	const uint8_t channel_count;
@@ -35,22 +41,33 @@ struct adc_ameba_config {
 struct adc_ameba_data {
 	uint16_t meas_ref_internal;
 	uint16_t *buffer;
+	struct k_mutex lock;
 };
+
+static uint8_t adc_ameba_get_channel_id(uint32_t reading)
+{
+#if defined(BIT_MASK_DAT_CHID)
+	return FIELD_GET(BIT_MASK_DAT_CHID, reading);
+#else
+	return ADC_GET_CH_NUM_GLOBAL(reading);
+#endif
+}
 
 static int adc_ameba_read(const struct device *dev, const struct adc_sequence *seq)
 {
+	const struct adc_ameba_config *conf = dev->config;
 	struct adc_ameba_data *data = dev->data;
-	int reading, cal;
-	uint8_t channel_id;
+	uint32_t readings[AMEBA_ADC_MAX_CHANNELS];
+	uint16_t values[AMEBA_ADC_MAX_CHANNELS] = {0};
+	uint8_t channel_ids[AMEBA_ADC_MAX_CHANNELS];
+	uint32_t seen_channels = 0U;
+	uint8_t channel_count = 0U;
+	uint8_t output_index = 0U;
+	int ret = 0;
 
 	if (seq->buffer == NULL) {
 		LOG_ERR("Sequence buffer is NULL");
 		return -EINVAL;
-	}
-
-	if (seq->buffer_size < 2) {
-		LOG_ERR("Sequence buffer space too low '%d'", seq->buffer_size);
-		return -ENOMEM;
 	}
 
 	if (seq->channels == 0U) {
@@ -58,12 +75,16 @@ static int adc_ameba_read(const struct device *dev, const struct adc_sequence *s
 		return -EINVAL;
 	}
 
-	if ((seq->channels & (seq->channels - 1U)) != 0U) {
-		LOG_ERR("Multi-channel readings not supported");
+	if (find_msb_set(seq->channels) > conf->channel_count) {
+		LOG_ERR("Unsupported channel mask '0x%x'", seq->channels);
 		return -ENOTSUP;
 	}
 
-	channel_id = find_lsb_set(seq->channels) - 1;
+	channel_count = POPCOUNT(seq->channels);
+	if (seq->buffer_size < channel_count * sizeof(uint16_t)) {
+		LOG_ERR("Sequence buffer space too low '%zu'", seq->buffer_size);
+		return -ENOMEM;
+	}
 
 	if (INVALID_RESOLUTION(seq->resolution)) {
 		LOG_ERR("unsupported resolution (%d)", seq->resolution);
@@ -87,23 +108,58 @@ static int adc_ameba_read(const struct device *dev, const struct adc_sequence *s
 		return -ENOTSUP;
 	}
 
-	ADC_SetChList(&channel_id, 1);
-	ADC_ReceiveBuf(&reading, 1);
-
-	/* Get corrected voltage output */
-	cal = ADC_GetVoltage(ADC_GET_DATA_GLOBAL(reading));
-
-	/* Fit according to selected attenuation */
-	if (data->meas_ref_internal > 0) {
-		cal = (cal << seq->resolution) / data->meas_ref_internal;
+	for (uint8_t channel_id = 0U;
+	     channel_id < conf->channel_count;
+	     channel_id++) {
+		if ((seq->channels & BIT(channel_id)) != 0U) {
+			channel_ids[output_index++] = channel_id;
+		}
 	}
-	cal = cal < 0 ? 0 : cal;
 
-	/* Store result */
+	k_mutex_lock(&data->lock, K_FOREVER);
+	ADC_SetChList(channel_ids, channel_count);
+	ADC_ReceiveBuf(readings, channel_count);
+
+	for (uint8_t sample_index = 0U; sample_index < channel_count; sample_index++) {
+		uint8_t channel_id =
+			adc_ameba_get_channel_id(readings[sample_index]);
+		int cal;
+
+		if (channel_id >= conf->channel_count ||
+		    (seq->channels & BIT(channel_id)) == 0U ||
+		    (seen_channels & BIT(channel_id)) != 0U) {
+			LOG_ERR("Unexpected channel id '%u'", channel_id);
+			ret = -EIO;
+			goto out;
+		}
+
+		cal = ADC_GetVoltage(ADC_GET_DATA_GLOBAL(readings[sample_index]));
+		if (data->meas_ref_internal > 0) {
+			cal = (cal << seq->resolution) / data->meas_ref_internal;
+		}
+		values[channel_id] = cal < 0 ? 0 : cal;
+		seen_channels |= BIT(channel_id);
+	}
+
+	if (seen_channels != seq->channels) {
+		LOG_ERR("ADC channel list incomplete");
+		ret = -EIO;
+		goto out;
+	}
+
 	data->buffer = (uint16_t *)seq->buffer;
-	data->buffer[0] = cal;
+	output_index = 0U;
+	for (uint8_t channel_id = 0U;
+	     channel_id < conf->channel_count;
+	     channel_id++) {
+		if ((seq->channels & BIT(channel_id)) != 0U) {
+			data->buffer[output_index++] = values[channel_id];
+		}
+	}
 
-	return 0;
+out:
+	k_mutex_unlock(&data->lock);
+	return ret;
 }
 
 static int adc_ameba_channel_setup(const struct device *dev, const struct adc_channel_cfg *cfg)
@@ -160,6 +216,7 @@ static int adc_ameba_init(const struct device *dev)
 	adc_init_struct.ADC_OpMode = ADC_AUTO_MODE;
 	ADC_Init(&adc_init_struct);
 	ADC_Cmd(ENABLE);
+	k_mutex_init(&((struct adc_ameba_data *)dev->data)->lock);
 
 	return 0;
 }
