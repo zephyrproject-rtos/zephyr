@@ -90,6 +90,11 @@ int airoc_wifi_init_primary(const struct device *dev, whd_interface_t *interface
 	return 0;
 }
 
+void airoc_wifi_bus_detach(whd_driver_t whd_driver)
+{
+	whd_bus_spi_detach(whd_driver);
+}
+
 /*
  * Implement SPI Transfer wrapper
  */
