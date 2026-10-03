@@ -147,4 +147,20 @@
 				 <I2C1_SCL_GPIO45>;
 		};
 	};
+
+	sdhost_gpio48: sdhost-gpio48 {
+		group_clk {
+			pinmux = <SDHOST_CLK_GPIO48>;
+			bias-disable;
+		};
+
+		group_data {
+			pinmux = <SDHOST_CMD_GPIO49>,
+				 <SDHOST_DAT0_GPIO50>,
+				 <SDHOST_DAT1_GPIO51>,
+				 <SDHOST_DAT2_GPIO52>,
+				 <SDHOST_DAT3_GPIO53>;
+			bias-pull-up;
+		};
+	};
 };
