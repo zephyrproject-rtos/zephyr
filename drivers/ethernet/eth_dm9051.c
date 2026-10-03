@@ -596,8 +596,11 @@ static int eth_dm9051_rx(const struct device *dev)
 {
 	struct eth_dm9051_data *data = dev->data;
 	struct net_pkt *pkt;
+	bool multicast;
+	bool broadcast;
 	int frames = 0;
 	uint16_t flag;
+	size_t len;
 	int ret;
 
 	k_mutex_lock(&data->spi_lock, K_FOREVER);
@@ -627,6 +630,11 @@ static int eth_dm9051_rx(const struct device *dev)
 			goto out_update_errors_rx;
 		}
 
+		/* The stack can free the packet before net_recv_data() returns */
+		len = net_pkt_get_len(pkt);
+		broadcast = net_eth_is_addr_broadcast(&NET_ETH_HDR(pkt)->dst);
+		multicast = net_eth_is_addr_multicast(&NET_ETH_HDR(pkt)->dst);
+
 		/* Push the net_pkt in the network stack */
 		ret = net_recv_data(data->iface, pkt);
 		if (ret < 0) {
@@ -635,11 +643,11 @@ static int eth_dm9051_rx(const struct device *dev)
 		}
 
 		/* Update ethernet statistics */
-		eth_stats_update_bytes_rx(data->iface, net_pkt_get_len(pkt));
+		eth_stats_update_bytes_rx(data->iface, len);
 		eth_stats_update_pkts_rx(data->iface);
-		if (net_eth_is_addr_broadcast(&NET_ETH_HDR(pkt)->dst)) {
+		if (broadcast) {
 			eth_stats_update_broadcast_rx(data->iface);
-		} else if (net_eth_is_addr_multicast(&NET_ETH_HDR(pkt)->dst)) {
+		} else if (multicast) {
 			eth_stats_update_multicast_rx(data->iface);
 		} else {
 			/* Unicast frame */
