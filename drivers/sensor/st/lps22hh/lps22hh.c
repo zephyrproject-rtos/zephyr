@@ -11,6 +11,7 @@
 #define DT_DRV_COMPAT st_lps22hh
 
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/dt-bindings/sensor/lps22hh.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/byteorder.h>
@@ -21,15 +22,28 @@
 
 LOG_MODULE_REGISTER(LPS22HH, CONFIG_SENSOR_LOG_LEVEL);
 
-#ifdef CONFIG_LPS22HH_TRIGGER
+static int lps22hh_set_low_noise(stmdev_ctx_t *ctx, uint8_t val);
 
-static inline int lps22hh_set_odr_raw(const struct device *dev, uint8_t odr)
+static int lps22hh_reg_update_byte(stmdev_ctx_t *ctx, uint8_t reg,
+				   uint8_t mask, uint8_t val)
 {
-	const struct lps22hh_config *const cfg = dev->config;
-	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	uint8_t tmp = 0;
+	int ret;
 
-	return lps22hh_data_rate_set(ctx, odr);
+	ret = lps22hh_read_reg(ctx, reg, &tmp, 1);
+	if (ret < 0) {
+		return ret;
+	}
+	tmp = (tmp & ~mask) | (val & mask);
+	return lps22hh_write_reg(ctx, reg, &tmp, 1);
 }
+
+static int lps22hh_set_odr_raw(stmdev_ctx_t *ctx, uint8_t odr)
+{
+	return lps22hh_reg_update_byte(ctx, LPS22HH_CTRL_REG1, 0x07U, odr & 0x07U);
+}
+
+#ifdef CONFIG_LPS22HH_TRIGGER
 
 static const uint16_t lps22hh_map[] = {0, 1, 10, 25, 50, 75, 100, 200};
 
@@ -48,7 +62,9 @@ static int lps22hh_odr_set(const struct device *dev, uint16_t freq)
 		return -EINVAL;
 	}
 
-	if (lps22hh_set_odr_raw(dev, odr) < 0) {
+	const struct lps22hh_config *const cfg = dev->config;
+
+	if (lps22hh_set_odr_raw((stmdev_ctx_t *)&cfg->ctx, odr) < 0) {
 		LOG_DBG("failed to set sampling rate");
 		return -EIO;
 	}
@@ -73,11 +89,12 @@ static int lps22hh_sample_fetch(const struct device *dev, enum sensor_channel ch
 	lps22hh_status_t status;
 	bool data_ready;
 
-	/* One-shot mode, trigger the measurement */
+	/* One-shot mode, trigger the measurement. */
 	if (lps22hh_data_rate_set(ctx, LPS22HH_ONE_SHOOT) < 0) {
 		LOG_ERR("Failed to trigger sample");
 		return -EIO;
 	}
+
 	/* Wait until data is sampled.
 	 * The datasheet doesn't specify how long a measurement cycle takes, but since 200Hz ODR
 	 * is possible, it should be less than 5ms. Measured duration on one device is sub 3ms.
@@ -207,6 +224,20 @@ static DEVICE_API(sensor, lps22hh_driver_api) = {
 #endif
 };
 
+static int lps22hh_set_low_noise(stmdev_ctx_t *ctx, uint8_t val)
+{
+	lps22hh_ctrl_reg2_t reg;
+	const int ret = lps22hh_read_reg(ctx, LPS22HH_CTRL_REG2, (uint8_t *)&reg, 1);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	reg.low_noise_en = val;
+
+	return lps22hh_write_reg(ctx, LPS22HH_CTRL_REG2, (uint8_t *)&reg, 1);
+}
+
 static int lps22hh_init_chip(const struct device *dev)
 {
 	const struct lps22hh_config *const cfg = dev->config;
@@ -225,6 +256,20 @@ static int lps22hh_init_chip(const struct device *dev)
 	}
 
 	LOG_DBG("%s: chip id 0x%x", dev->name, chip_id);
+
+	/* Set the low-noise mode while the device is in power-down */
+	if (cfg->low_noise != 0U &&
+	    lps22hh_set_low_noise(ctx, cfg->low_noise) < 0) {
+		LOG_ERR("%s: Failed to set low-noise mode", dev->name);
+		return -EIO;
+	}
+
+	/* Configure the internal low-pass filter bandwidth. */
+	if (cfg->lpfp != 0U &&
+	    lps22hh_lp_bandwidth_set(ctx, (lps22hh_lpfp_cfg_t)cfg->lpfp) < 0) {
+		LOG_ERR("%s: Failed to set low-pass filter", dev->name);
+		return -EIO;
+	}
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 	if (cfg->i3c.bus != NULL) {
@@ -251,14 +296,14 @@ static int lps22hh_init_chip(const struct device *dev)
 #ifdef CONFIG_LPS22HH_TRIGGER
 	/* set sensor default odr */
 	LOG_DBG("%s: odr: %d", dev->name, cfg->odr);
-	ret = lps22hh_set_odr_raw(dev, cfg->odr);
+	ret = lps22hh_set_odr_raw(ctx, cfg->odr);
 	if (ret < 0) {
 		LOG_ERR("%s: Failed to set odr %d", dev->name, cfg->odr);
 		return ret;
 	}
 #else
-	/* No trigger mode, we will use the one-shot mode in fetch */
-	ret = lps22hh_data_rate_set(ctx, LPS22HH_POWER_DOWN);
+	/* No trigger mode, we will use the one-shot mode in fetch. */
+	ret = lps22hh_set_odr_raw(ctx, LPS22HH_POWER_DOWN);
 	if (ret < 0) {
 		LOG_ERR("%s: Failed to set one-shot", dev->name);
 		return ret;
@@ -289,7 +334,7 @@ static int lps22hh_pm_action(const struct device *dev, enum pm_device_action act
 
 	case PM_DEVICE_ACTION_RESUME:
 #ifdef CONFIG_LPS22HH_TRIGGER
-		ret = lps22hh_set_odr_raw(dev, cfg->odr);
+		ret = lps22hh_set_odr_raw((stmdev_ctx_t *)&cfg->ctx, cfg->odr);
 		if (ret != 0) {
 			LOG_ERR("%s: Failed to set odr %d", dev->name, cfg->odr);
 		}
@@ -299,7 +344,7 @@ static int lps22hh_pm_action(const struct device *dev, enum pm_device_action act
 	case PM_DEVICE_ACTION_SUSPEND:
 #ifdef CONFIG_LPS22HH_TRIGGER
 		/* set odr to 0 for power-down mode */
-		ret = lps22hh_set_odr_raw(dev, 0);
+		ret = lps22hh_set_odr_raw((stmdev_ctx_t *)&cfg->ctx, 0);
 		if (ret != 0) {
 			LOG_ERR("%s: Failed to reset odr", dev->name);
 		}
@@ -361,8 +406,22 @@ static int lps22hh_init(const struct device *dev)
 
 #define LPS22HH_CONFIG_COMMON(inst)                                     \
 	.odr = DT_INST_PROP(inst, odr),                                 \
+	.lpfp = DT_INST_PROP(inst, lpfp_bandwidth),                     \
+	.low_noise = DT_INST_PROP(inst, low_noise),                     \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),		\
 			(LPS22HH_CFG_IRQ(inst)), ())
+
+/*
+ * LOW_NOISE_EN is only effective for output data rates below 100 Hz; the chip
+ * ignores it at 100/200 Hz. Do not fail silently. Thus, assert here.
+ */
+#define LPS22HH_CONFIG_CHECK(inst)						\
+	BUILD_ASSERT(								\
+		!(DT_INST_PROP(inst, low_noise) &&				\
+		  DT_INST_PROP(inst, odr) >= LPS22HH_DT_ODR_100HZ),		\
+		"lps22hh: low-noise mode requires an ODR below 100 Hz");
+
+DT_INST_FOREACH_STATUS_OKAY(LPS22HH_CONFIG_CHECK)
 
 #define LPS22HH_SPI_OPERATION                                           \
 	(SPI_WORD_SET(8) | SPI_OP_MODE_CONTROLLER | SPI_MODE_CPOL | SPI_MODE_CPHA)
