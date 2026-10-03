@@ -110,6 +110,14 @@
 		xosc-frequency = <12000000>;
 		xosc-en = <1>;
 		xosc-xtal-en = <1>;
+		/*
+		 * Route the crystal to the USB PLL reference undivided. The
+		 * USBHS controllers have no other reference, and XOSCCTRLA is
+		 * enable-protected: once the oscillator is running the field
+		 * can no longer be written, so it has to be set here, in the
+		 * same word that enables the oscillator.
+		 */
+		xosc-usb-ref-clock-div = "div1";
 	};
 
 	dpll: dpll {
@@ -275,5 +283,32 @@ i2c0: &sercom9 {
 
 &rtc {
 	prescaler = <1024>;
+	status = "okay";
+};
+
+/*
+ * J103 is the board's Type-C connector, wired to USBHS1. USBHS0 goes to the
+ * micro-AB connector J102 and is left disabled here; J200 belongs to the
+ * on-board debugger and never reaches the SoC.
+ *
+ * The Type-C CC pull-downs are not fitted: they sit on the B0 throw of
+ * U104/U108 (NC7SB3157), and a low on the shared select line picks that
+ * throw. R121 already idles the net low, so device mode is the power-up
+ * default, but a strap this load-bearing is driven rather than inherited.
+ *
+ * VBUS enable is the active-low input of the MIC2026 that sources 5 V onto
+ * the connector. A device must never turn it on.
+ */
+zephyr_udc0: &usbhs1 {
+	drd-gpios = <&portd 0 GPIO_ACTIVE_LOW>;
+	vbus-enable-gpios = <&porte 9 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&portd {
+	status = "okay";
+};
+
+&porte {
 	status = "okay";
 };
