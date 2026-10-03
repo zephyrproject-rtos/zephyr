@@ -1,4 +1,8 @@
 / {
+	aliases {
+		retainedmemtestdevice = &retainedmem0;
+	};
+
 	cpuapp_sram@2002f000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x2002f000 DT_SIZE_K(4)>;
@@ -15,10 +19,6 @@
 			#size-cells = <1>;
 			status = "okay";
 		};
-	};
-
-	aliases {
-		retainedmemtestdevice = &retainedmem0;
 	};
 };
 

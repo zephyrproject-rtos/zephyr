@@ -1,6 +1,10 @@
 #include <common/mem.h>
 
 / {
+	aliases {
+		retainedmemtestdevice = &retainedmem0;
+	};
+
 	sram@2000ffe0 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x2000ffe0 0x20>;
@@ -17,10 +21,6 @@
 			#size-cells = <1>;
 			status = "okay";
 		};
-	};
-
-	aliases {
-		retainedmemtestdevice = &retainedmem0;
 	};
 };
 

@@ -5,6 +5,10 @@
  */
 
 / {
+	aliases {
+		retainedmemtestdevice = &retainedmem0;
+	};
+
 	memory@50001f00 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x50001f00 0x100>;
@@ -21,10 +25,6 @@
 			#size-cells = <1>;
 			status = "okay";
 		};
-	};
-
-	aliases {
-		retainedmemtestdevice = &retainedmem0;
 	};
 };
 
