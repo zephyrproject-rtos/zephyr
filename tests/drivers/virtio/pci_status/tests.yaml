@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.virtio.pci_status:
+    platform_allow:
+      - qemu_malta
+      - qemu_malta/qemu_malta/be
+      - qemu_x86
+      - qemu_cortex_a53
+    tags:
+      - drivers
+      - pcie
+      - virtio
