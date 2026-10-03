@@ -1,0 +1,19 @@
+# Copyright (c) 2026 YunHung Hua
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - memc
+    - userspace
+  filter: CONFIG_ARCH_HAS_USERSPACE
+  # Two cases expect an oops when a user thread passes a kernel buffer
+  ignore_faults: true
+  platform_allow:
+    - qemu_x86
+    - mps2/an385
+  integration_platforms:
+    - qemu_x86
+tests:
+  drivers.memc.userspace:
+    harness: ztest
