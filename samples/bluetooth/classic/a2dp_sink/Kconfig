@@ -22,6 +22,14 @@ config A2DP_BOARD_CODEC_PLAY_COUNT
 	int "The play count of the board codec interface (i2s)"
 	default 4
 
+config A2DP_BOARD_CODEC_OUTPUT_CHANNELS
+	int "Number of board codec output channels"
+	range 1 2
+	default 2
+	help
+	  Number of channels supported by the board codec output. Stereo input
+	  is downmixed when this is set to 1.
+
 config A2DP_BOARD_CODEC_PLAY_THRESHOLD
 	int "The threshold of pcm buffer when playing data to codec (n%)"
 	default 20
