@@ -168,6 +168,9 @@ struct bmp388_cal_data {
 	int8_t p11;
 } __packed;
 
+/* Largest single burst read performed by the driver: the NVM calibration block. */
+#define BMP388_MAX_READ_SIZE MAX(BMP388_SAMPLE_BUFFER_SIZE, (int)sizeof(struct bmp388_cal_data))
+
 struct bmp388_sample {
 	uint32_t press;
 	uint32_t raw_temp;
