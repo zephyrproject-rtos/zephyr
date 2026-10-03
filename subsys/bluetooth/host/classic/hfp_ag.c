@@ -3336,10 +3336,6 @@ static int bt_hfp_ag_ccwa_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	int err;
 	uint32_t value;
 
-	if (!BOTH_SUPT_FEAT(ag, BT_HFP_HF_FEATURE_3WAY_CALL, BT_HFP_AG_FEATURE_3WAY_CALL)) {
-		return -ENOEXEC;
-	}
-
 	if (!is_char(buf, '=')) {
 		return -ENOTSUP;
 	}
