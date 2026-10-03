@@ -1,0 +1,19 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * To use this sample:
+ * - Measure the sawtooth output on test point TP29 (DAC_OUT, ball L5).
+ * - VREFH0 = VREFP_ANA = 3.3 V (JP5 fitted).
+ */
+
+/ {
+	zephyr,user {
+		dac = <&dac0>;
+		dac-channel-id = <0>;
+		dac-resolution = <12>;
+	};
+};

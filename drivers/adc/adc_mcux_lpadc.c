@@ -63,6 +63,7 @@ struct mcux_lpadc_config {
 	uint8_t bandgap_input;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
+	clock_control_subsys_t clock_cfg;
 	int32_t ref_supply_val;
 	const struct device *opamp;
 	uint8_t opamp_channel; /* ADC channel index that samples OPAMP output */
@@ -1010,10 +1011,17 @@ static int mcux_lpadc_init(const struct device *dev)
 	}
 
 	err = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
-	if (err && err != -ENOSYS) {
-		/* Real error occurred */
+	if (err != 0 && err != -ENOSYS) {
 		LOG_ERR("Failed to configure clock: %d", err);
 		return err;
+	}
+
+	if (config->clock_cfg != NULL) {
+		err = clock_control_configure(config->clock_dev, config->clock_cfg, NULL);
+		if (err != 0) {
+			LOG_ERR("Failed to configure clock source: %d", err);
+			return err;
+		}
 	}
 
 	LPADC_GetDefaultConfig(&adc_config);
@@ -1053,6 +1061,13 @@ static int mcux_lpadc_init(const struct device *dev)
 	 * to spin forever on GCC[RDY]. See GitHub issue #105652.
 	 */
 	k_busy_wait(1U);
+#if defined(FSL_FEATURE_LPADC_HAS_CTRL_CALOFSMODE) && FSL_FEATURE_LPADC_HAS_CTRL_CALOFSMODE
+	/* 16-bit offset calibration mode is required for proper auto-calibration
+	 * on parts with CTRL[CALOFSMODE] (e.g. RT266x). Without this, gain
+	 * calibration produces wrong offsets and all conversions return 0.
+	 */
+	LPADC_SetOffsetCalibrationMode(base, kLPADC_OffsetCalibration16bitMode);
+#endif /* FSL_FEATURE_LPADC_HAS_CTRL_CALOFSMODE */
 	LPADC_PrepareAutoCalibration(base);
 	LPADC_FinishAutoCalibration(base);
 #endif /* FSL_FEATURE_LPADC_HAS_CTRL_CALOFS */
@@ -1211,7 +1226,12 @@ static DEVICE_API(adc, mcux_lpadc_driver_api) = {
 					    nxp_references))), (NULL)),				\
 		DT_FOREACH_CHILD(DT_DRV_INST(n), LPADC_BANDGAP_SUPPLY_INIT)			\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),				\
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),		\
+		.clock_subsys = (clock_control_subsys_t)COND_CODE_1(				\
+			DT_INST_NODE_HAS_PROP(n, clocks),				\
+			(DT_INST_CLOCKS_CELL(n, name)), (0U)),					\
+		.clock_cfg = (clock_control_subsys_t)COND_CODE_1(				\
+			DT_INST_CLOCKS_HAS_NAME(n, source),					\
+			(DT_INST_CLOCKS_CELL_BY_NAME(n, source, name)), (0U)),			\
 		.ref_supply_val = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, nxp_references),		\
 					      (DT_PHA(DT_DRV_INST(n), nxp_references, vref_mv)),\
 					      (0)),						\
