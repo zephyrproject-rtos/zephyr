@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/wuc/wuc_renesas_ra_lpm.h>
+
+/ {
+	zephyr,user {
+		wakeup-source;
+		wakeup-ctrls = <&wuc RA_WUC_DPSS_IRQ13_FALLING>;
+	};
+};
+
+&wuc {
+	status = "okay";
+};
