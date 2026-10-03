@@ -46,24 +46,24 @@
 };
 
 &spi120 {
-	status = "okay";
 	pinctrl-0 = <&spi120_default>;
 	pinctrl-1 = <&spi120_sleep>;
 	pinctrl-names = "default", "sleep";
 	overrun-character = <0x00>;
 	memory-regions = <&dma_fast_region>;
 	zephyr,pm-device-runtime-auto;
-
-	slow@1 {
-		compatible = "test-spi-loopback-slow";
-		reg = <1>;
-		spi-max-frequency = <DT_FREQ_M(4)>;
-	};
+	status = "okay";
 
 	dut_fast: fast@0 {
 		compatible = "test-spi-loopback-fast";
 		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(8)>;
+	};
+
+	slow@1 {
+		compatible = "test-spi-loopback-slow";
+		reg = <1>;
+		spi-max-frequency = <DT_FREQ_M(4)>;
 	};
 };
 

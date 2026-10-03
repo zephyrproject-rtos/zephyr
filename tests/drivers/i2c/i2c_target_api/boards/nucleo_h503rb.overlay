@@ -23,8 +23,8 @@ i2c_test_0: &i2c1 {
 	sda-gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
 	dmas = IC2_TEST_0_DMA_TX, IC2_TEST_0_DMA_RX;
 	dma-names = "tx", "rx";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	eeprom1: eeprom@10 {
 		compatible = "zephyr,i2c-target-eeprom";

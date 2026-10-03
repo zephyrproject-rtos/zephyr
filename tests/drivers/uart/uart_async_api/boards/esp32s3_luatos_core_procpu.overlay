@@ -18,12 +18,12 @@
 };
 
 dut: &uart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart1_test>;
 	pinctrl-names = "default";
 	dmas = <&dma 0>, <&dma 1>;
 	dma-names = "rx", "tx";
+	status = "okay";
 };
 
 &dma {

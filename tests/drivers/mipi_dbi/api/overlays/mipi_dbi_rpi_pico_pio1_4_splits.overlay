@@ -12,7 +12,6 @@
 	status = "okay";
 
 	mipi_dbi: mipi_dbi {
-		status = "okay";
 		compatible = "raspberrypi,pico-mipi-dbi-pio";
 		reset-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
 		cs-gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
@@ -25,5 +24,6 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		#data-pin-split-cells = <2>;
+		status = "okay";
 	};
 };

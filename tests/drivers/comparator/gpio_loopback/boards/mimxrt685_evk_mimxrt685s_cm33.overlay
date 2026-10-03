@@ -40,7 +40,6 @@
 &acmp {
 	pinctrl-0 = <&acmp_default>;
 	pinctrl-names = "default";
-	status = "okay";
 
 	positive-mux-input = "IN1";
 	positive-port-input = "MUX";
@@ -52,4 +51,5 @@
 	dac-vref-source = "VIN2";
 	dac-value = <127>;
 	dac-enable;
+	status = "okay";
 };

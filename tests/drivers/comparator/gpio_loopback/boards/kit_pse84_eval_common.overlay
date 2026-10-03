@@ -25,7 +25,6 @@
 };
 
 &lpcomp0_0 {
-	status = "okay";
 	output-mode = "direct";
 	power = "ulp";
 	/* Reject glitches when the slow ULP comparator crosses local_vref. */
@@ -33,13 +32,14 @@
 	intr-type = "both";
 	input-p = "gpio";
 	input-n = "local_vref";
+	status = "okay";
 };
 
 &lpcomp0_1 {
-	status = "disabled";
 	output-mode = "direct";
 	power = "ulp";
 	intr-type = "both";
 	input-p = "gpio";
 	input-n = "local_vref";
+	status = "disabled";
 };

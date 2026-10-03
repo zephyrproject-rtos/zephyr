@@ -99,25 +99,25 @@
 };
 
 &spi130 {
-	status = "reserved";
 	pinctrl-0 = <&spi130_default_alt>;
 	pinctrl-1 = <&spi130_sleep_alt>;
 	pinctrl-names = "default", "sleep";
 	interrupt-parent = <&cpuppr_clic>;
+	status = "reserved";
 };
 
 &spi131 {
-	status = "reserved";
 	pinctrl-0 = <&spis131_default_alt>;
 	pinctrl-1 = <&spis131_sleep_alt>;
 	pinctrl-names = "default", "sleep";
 	interrupt-parent = <&cpuppr_clic>;
+	status = "reserved";
 };
 
 &spis120 {
-	status = "reserved";
 	pinctrl-0 = <&spis120_default_alt>;
 	pinctrl-1 = <&spis120_sleep_alt>;
 	pinctrl-names = "default", "sleep";
 	interrupt-parent = <&cpuflpr_clic>;
+	status = "reserved";
 };

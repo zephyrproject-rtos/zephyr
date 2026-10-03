@@ -20,8 +20,8 @@
 
 	test_dev: test_dev {
 		compatible = "test-device-pm";
-		status = "okay";
 		power-domains = <&test_reg_1>;
 		alternate-domain = <&test_reg_chained>;
+		status = "okay";
 	};
 };

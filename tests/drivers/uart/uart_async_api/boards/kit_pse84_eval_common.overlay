@@ -11,13 +11,13 @@
 
 dut: &scb5 {
 	compatible = "infineon,uart";
-	status = "okay";
 	current-speed = <115200>;
 	clocks = <&peri0_group1_16bit_2>;
 	pinctrl-0 = <&p17_1_scb5_uart_tx &p17_0_scb5_uart_rx>;
 	pinctrl-names = "default";
 	dmas = <&dma0 0>, <&dma0 1>;
 	dma-names = "tx", "rx";
+	status = "okay";
 };
 
 &p17_1_scb5_uart_tx {
@@ -29,6 +29,6 @@ dut: &scb5 {
 };
 
 &peri0_group1_16bit_2 {
-	status = "okay";
 	clock-div = <109>;
+	status = "okay";
 };

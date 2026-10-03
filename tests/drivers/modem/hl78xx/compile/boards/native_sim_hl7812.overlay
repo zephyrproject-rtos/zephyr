@@ -13,12 +13,11 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 
 	hl7812_modem: modem {
 		compatible = "swir,hl7812";
-		status = "okay";
 		mdm-pwr-on-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
 		mdm-fast-shutd-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
 		mdm-vgpio-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
@@ -29,6 +28,7 @@
 		mdm-reset-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 		mdm-wake-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
 		mdm-dtr-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+		status = "okay";
 
 		test_hl7812_socket_offload: socket_offload {
 			compatible = "swir,hl7812-offload";

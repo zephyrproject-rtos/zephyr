@@ -21,10 +21,10 @@
 };
 
 &comp1_ch1 {
-	status = "okay";
 	pinctrl-0 = <&comp1_inp_pb2 &comp1_out_pe12>;
 	pinctrl-names = "default";
 	positive-input = "IN1";
 	negative-input = "1_4VREFINT";
 	invert-output = "NONINVERTED";
+	status = "okay";
 };

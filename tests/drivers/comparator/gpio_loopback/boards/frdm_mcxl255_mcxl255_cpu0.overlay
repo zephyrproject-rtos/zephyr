@@ -18,7 +18,6 @@
 };
 
 &lpacmp {
-	status = "okay";
 	/* P0_10 (J3-3) is muxed to the analog function at reset. */
 	positive-input = "comp_in4";
 	/*
@@ -28,4 +27,5 @@
 	 */
 	negative-input = <4>;
 	sample-delay = <80>; /* 8 us at the 10 MHz AON_CLK */
+	status = "okay";
 };

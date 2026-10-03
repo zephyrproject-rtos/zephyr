@@ -15,8 +15,8 @@
 &adc0 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 	dmas = <&dma0 DMA_REQSEL_IADC0IADC_SCAN>;
+	status = "okay";
 
 	channel@0 {
 		reg = <0>;

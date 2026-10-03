@@ -18,8 +18,8 @@
 	status = "okay";
 
 	pwm1: pwm {
-		status = "okay";
 		pinctrl-0 = <&tmr1c_oa_p0_11>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };

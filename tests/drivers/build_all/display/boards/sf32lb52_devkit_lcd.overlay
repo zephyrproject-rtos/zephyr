@@ -28,10 +28,10 @@
 	status = "okay";
 
 	mipi_dbi: mipi-dbi {
-		status = "okay";
 		#address-cells = <1>;
 		#size-cells = <0>;
 		pinctrl-0 = <&lcdc_8080_default>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };

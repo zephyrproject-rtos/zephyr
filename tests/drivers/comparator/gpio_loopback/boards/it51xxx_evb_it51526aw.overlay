@@ -17,8 +17,8 @@
 };
 
 &vcmp1 {
-	status = "okay";
 	threshold-mv = <1500>;
 	scan-period = <0x4>;
 	io-channels = <&adc0 3>;
+	status = "okay";
 };

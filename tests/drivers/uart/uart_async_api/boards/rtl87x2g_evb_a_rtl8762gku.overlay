@@ -7,7 +7,6 @@
 &uart2 {
 	pinctrl-0 = <&uart2_default>;
 	pinctrl-names = "default";
-	status = "okay";
 	parity = "none";
 	stop-bits = "1";
 	data-bits = <8>;
@@ -20,6 +19,7 @@
 		 BEE_DMA_DST_WIDTH_8BIT | BEE_DMA_SRC_MSIZE(BEE_DMA_MSIZE_1) |
 		 BEE_DMA_DST_MSIZE(BEE_DMA_MSIZE_1) | BEE_DMA_PRIORITY(0))>;
 	dma-names = "tx", "rx";
+	status = "okay";
 };
 
 &dma0 {
