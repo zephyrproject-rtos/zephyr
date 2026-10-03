@@ -6,4 +6,3 @@ config SOC_EFINIX_SAPPHIRE
 	select RISCV
 	select RISCV_PRIVILEGED
 	select RISCV_HAS_PLIC
-	imply XIP
