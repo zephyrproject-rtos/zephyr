@@ -99,4 +99,48 @@ Alternatively, if you decided to use the VIRTIO Network device on qemu_x86_64:
 
 Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
 
+macOS Host
+**********
+
+macOS has no tuntap device, so on a macOS host the build system connects QEMU
+to the host through the vmnet framework in host mode instead of a TAP
+interface. No interface has to be created beforehand and
+:kconfig:option:`CONFIG_ETH_QEMU_IFACE_NAME` is not used: vmnet creates a
+bridge interface on the host when QEMU starts and removes it when QEMU exits.
+The instance joins an isolated vmnet network without a DHCP server, so the
+host side of the bridge starts without an address and the ``192.0.2.0/24``
+and ``2001:db8::/64`` addresses used by the samples can be assigned to it.
+
+The network is identified by a UUID that the build system generates for each
+build directory and keeps in its CMake cache, so instances started from
+different build directories are on separate networks with separate bridges.
+To put several builds on one network, pass the same identifier to each of
+them with ``-DNET_QEMU_VMNET_NET_UUID=<uuid>``.
+
+Opening a vmnet interface requires root privileges unless the QEMU binary
+carries the ``com.apple.vm.networking`` entitlement. The QEMU builds shipped
+with the Zephyr SDK do not have it, so QEMU must be started as root.
+Build the application as a normal user, then start the ``run`` target with
+``sudo``:
+
+.. code-block:: console
+
+   west build -b qemu_x86 samples/net/sockets/echo_server -- \
+      -DEXTRA_CONF_FILE=overlay-e1000.conf
+   sudo ninja -C build run
+
+Once QEMU runs, assign the host addresses to the bridge interface vmnet
+created in a second terminal. The interface is ``bridge100`` unless other
+virtual machines are running; ``ifconfig`` shows it with a ``vmenet``
+interface as member:
+
+.. code-block:: console
+
+   sudo ifconfig bridge100 alias 192.0.2.2 255.255.255.0
+   sudo ifconfig bridge100 inet6 2001:db8::2 prefixlen 64 alias
+
+The host now reaches the Zephyr instance at ``192.0.2.1`` and ``2001:db8::1``.
+The addresses have to be assigned again after every QEMU start, since the
+bridge is recreated each time.
+
 .. _`net-tools`: https://github.com/zephyrproject-rtos/net-tools
