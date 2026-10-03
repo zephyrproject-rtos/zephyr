@@ -2,5 +2,5 @@
 # Copyright (c) 2026 RAKwireless Technology Limited
 
 config BOARD_RAK4631
-	select BOARD_EARLY_INIT_HOOK if PWM
+	select BOARD_EARLY_INIT_HOOK
 	select PINCTRL_DYNAMIC if PWM
