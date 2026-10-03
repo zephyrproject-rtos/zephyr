@@ -17,6 +17,26 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	fakedomain_0: fakedomain_0 {
+		compatible = "fakedomain";
+		power-domains = <&fakedomain_2>;
+		#power-domain-cells = <0>;
+		status = "okay";
+	};
+
+	fakedomain_1: fakedomain_1 {
+		compatible = "fakedomain";
+		power-domains = <&fakedomain_0>;
+		#power-domain-cells = <0>;
+		status = "okay";
+	};
+
+	fakedomain_2: fakedomain_2 {
+		compatible = "fakedomain";
+		#power-domain-cells = <0>;
+		status = "okay";
+	};
+
 	fake_driver_label: fakedriver@e0000000 {
 		compatible = "fakedriver";
 		reg = <0xe0000000 0x2000>;
@@ -74,26 +94,6 @@
 		compatible = "fakedeferdriver";
 		reg = <0xf9000000 0x2000>;
 		zephyr,deferred-init;
-		status = "okay";
-	};
-
-	fakedomain_0: fakedomain_0 {
-		compatible = "fakedomain";
-		power-domains = <&fakedomain_2>;
-		#power-domain-cells = <0>;
-		status = "okay";
-	};
-
-	fakedomain_1: fakedomain_1 {
-		compatible = "fakedomain";
-		power-domains = <&fakedomain_0>;
-		#power-domain-cells = <0>;
-		status = "okay";
-	};
-
-	fakedomain_2: fakedomain_2 {
-		compatible = "fakedomain";
-		#power-domain-cells = <0>;
 		status = "okay";
 	};
 };
