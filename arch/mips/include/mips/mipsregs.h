@@ -16,6 +16,7 @@
 #define CP0_STATUS	$12
 #define CP0_CAUSE	$13
 #define CP0_EPC		$14
+#define CP0_CONFIG	$16
 
 /* CP0_STATUS bits */
 #define ST0_IE		0x00000001
@@ -23,6 +24,12 @@
 #define ST0_ERL		0x00000004
 #define ST0_IP0		0x00000100
 #define ST0_BEV		0x00400000
+
+/* CP0_CONFIG1 fields */
+#define CONF1_IL_MASK	0x00380000
+#define CONF1_IL_SHIFT	19
+#define CONF1_DL_MASK	0x00001c00
+#define CONF1_DL_SHIFT	10
 
 /* CP0_CAUSE bits */
 #define CAUSE_EXP_MASK	0x0000007c
@@ -49,5 +56,15 @@
 #define write_c0_status(val)	_mips_write_32bit_c0_register(CP0_STATUS, val)
 
 #define read_c0_cause()		_mips_read_32bit_c0_register(CP0_CAUSE)
+
+#define _mips_read_32bit_c0_register_sel(reg, sel) \
+({ \
+	uint32_t val; \
+	__asm__ __volatile__("mfc0\t%0, " STRINGIFY(reg) ", " STRINGIFY(sel) "\n" \
+	: "=r" (val)); \
+	val; \
+})
+
+#define read_c0_config1()	_mips_read_32bit_c0_register_sel(CP0_CONFIG, 1)
 
 #endif /* _ZEPHYR_ARCH_MIPS_INCLUDE_MIPS_MIPSREGS_H_ */

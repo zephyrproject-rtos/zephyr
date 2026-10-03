@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_MT7628
+	bool
+	select SOC_SERIES_MT76X8
+	help
+	  Mediatek MT7628
+
+config SOC
+	default "mt7628" if SOC_MT7628

@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+description: MIPS 24KEc
+
+compatible: "mti,mips24KEc"
+
+include: cpu.yaml
