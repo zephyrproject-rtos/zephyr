@@ -8,6 +8,9 @@ properties:
   reg:
     required: true
 
+  framing-error-reporting:
+    default: "LAST_READ"
+
   fifo-disable:
     type: boolean
     description: Disable the UART FIFO

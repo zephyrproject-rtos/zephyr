@@ -11,6 +11,9 @@ include:
   - name: atmel,assigned-clocks.yaml
 
 properties:
+  framing-error-reporting:
+    default: "STICKY_MULTIPLE"
+
   reg:
     required: true
 
