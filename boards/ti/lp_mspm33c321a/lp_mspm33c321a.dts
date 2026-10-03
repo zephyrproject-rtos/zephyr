@@ -11,6 +11,10 @@
 	model = "TI LP_MSPM33C321A/MSPM33C321A";
 	compatible = "ti,lp-mspm33c321a";
 
+	aliases {
+		watchdog0 = &wdt0;
+	};
+
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
@@ -23,5 +27,36 @@
 };
 
 &sram0 {
+	status = "okay";
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(160)>;
+};
+
+&mclk {
+	clocks = <&hsclk>;
+};
+
+&hsclk {
+	clocks = <&syspll>;
+	status = "okay";
+};
+
+&syspll {
+	status = "okay";
+};
+
+&hfxt {
+	clock-frequency = <DT_FREQ_M(48)>;
+	ti,xtal-startup-delay-us = <500>;
+};
+
+&lfxt {
+	clock-frequency = <32768>;
+	ti,xtal-startup-delay-us = <640000>;
+};
+
+&wdt0 {
 	status = "okay";
 };

@@ -20,6 +20,8 @@
 	aliases {
 		led0 = &led0;
 		pwm-led0 = &pwm_led0;
+		watchdog0 = &wdt0;
+		watchdog1 = &wdt1;
 	};
 
 	chosen {
@@ -54,18 +56,21 @@
 };
 
 &ulpclk {
-	clock-frequency = <DT_FREQ_M(40)>;
 	clk-div = <2>;
 };
 
 &mclk {
 	clock-frequency = <DT_FREQ_M(80)>;
+	clocks = <&hsclk>;
+};
+
+&hsclk {
 	clocks = <&syspll>;
+	status = "okay";
 };
 
 &canclk {
 	clocks = <&syspll>;
-	clock-frequency = <DT_FREQ_M(40)>;
 	status = "okay";
 };
 
