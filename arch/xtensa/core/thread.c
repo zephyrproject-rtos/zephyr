@@ -72,7 +72,7 @@ static void *init_stack(struct k_thread *thread, int *stack_top,
 	 */
 	thread->arch.return_ps = PS_WOE | PS_UM | PS_CALLINC(1);
 
-	if ((thread->base.user_options & K_USER) == K_USER) {
+	if (k_thread_is_user_thread(thread)) {
 		frame->bsa.pc = (uintptr_t)arch_user_mode_enter;
 	} else {
 		frame->bsa.pc = (uintptr_t)z_thread_entry;
@@ -86,7 +86,7 @@ static void *init_stack(struct k_thread *thread, int *stack_top,
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 	frame->bsa.threadptr = thread->tls;
 #elif CONFIG_USERSPACE
-	frame->bsa.threadptr = (uintptr_t)((thread->base.user_options & K_USER) ? thread : NULL);
+	frame->bsa.threadptr = (uintptr_t)(k_thread_is_user_thread(thread) ? thread : NULL);
 #endif
 #endif
 
@@ -280,7 +280,7 @@ int arch_thread_priv_stack_space_get(const struct k_thread *thread, size_t *stac
 
 	struct xtensa_thread_stack_header *hdr_stack_obj;
 
-	if ((thread->base.user_options & K_USER) != K_USER) {
+	if (!k_thread_is_user_thread(thread)) {
 		return -EINVAL;
 	}
 

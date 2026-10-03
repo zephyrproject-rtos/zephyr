@@ -161,7 +161,7 @@ static void dump_thread(struct k_thread *thread, bool is_current)
 	coredump_memory_dump(start_addr, end_addr);
 
 #if defined(CONFIG_DEBUG_COREDUMP_DUMP_THREAD_PRIV_STACK)
-	if ((thread->base.user_options & K_USER) == K_USER) {
+	if (k_thread_is_user_thread(thread)) {
 		arch_coredump_priv_stack_dump(thread);
 	}
 #endif /* CONFIG_DEBUG_COREDUMP_DUMP_THREAD_PRIV_STACK */

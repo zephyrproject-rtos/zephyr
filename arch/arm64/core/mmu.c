@@ -1556,7 +1556,7 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 	domain_ptables = &domain->arch.ptables;
 	old_ptables = thread->arch.ptables;
 
-	is_user = (thread->base.user_options & K_USER) != 0;
+	is_user = k_thread_is_user_thread(thread);
 	is_migration = (old_ptables != NULL) && is_user;
 
 	if (is_migration) {
@@ -1589,7 +1589,7 @@ int arch_mem_domain_thread_remove(struct k_thread *thread)
 	domain = thread->mem_domain_info.mem_domain;
 	domain_ptables = &domain->arch.ptables;
 
-	if ((thread->base.user_options & K_USER) == 0) {
+	if (!k_thread_is_user_thread(thread)) {
 		return 0;
 	}
 
@@ -1623,7 +1623,7 @@ void z_arm64_thread_mem_domains_init(struct k_thread *incoming)
 {
 	struct arm_mmu_ptables *ptables;
 
-	if ((incoming->base.user_options & K_USER) == 0) {
+	if (!k_thread_is_user_thread(incoming)) {
 		return;
 	}
 

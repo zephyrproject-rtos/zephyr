@@ -276,8 +276,7 @@ void z_impl_user_fault(unsigned int reason)
 	}
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
-	if (((_current->base.user_options & K_USER) != 0) &&
-		reason != K_ERR_STACK_CHK_FAIL) {
+	if (k_thread_is_user_thread(_current) && reason != K_ERR_STACK_CHK_FAIL) {
 		reason = K_ERR_KERNEL_OOPS;
 	}
 	z_riscv_fatal_error(reason, oops_esf);

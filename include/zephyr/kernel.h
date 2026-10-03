@@ -872,6 +872,21 @@ static inline k_tid_t k_current_get(void)
 }
 
 /**
+ * @brief Test whether provided thread is user thread.
+ *
+ * @isr_ok
+ *
+ * @param thread Thread to test.
+ *
+ * @retval true if provided thread is user thread
+ * @retval false if provided thread is not user thread
+ */
+static inline bool k_thread_is_user_thread(const struct k_thread *thread)
+{
+	return (thread->base.user_options & K_USER) != 0U;
+}
+
+/**
  * @brief Abort a thread.
  *
  * This routine permanently stops execution of @a thread. The thread is taken
