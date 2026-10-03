@@ -12,3 +12,12 @@ tests:
       - rd_rw612_bga/rw612
     integration_platforms:
       - rd_rw612_bga/rw612
+    timeout: 30
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "Video device connected!"
+        - "Capture started"
+        - "Received \\d+ frames"
