@@ -162,6 +162,7 @@ config NET_QEMU_ETHERNET
 
 config NET_QEMU_USER
 	bool "SLIRP"
+	imply ETH_DRIVER
 	imply NET_L2_ETHERNET
 	help
 	  Connect to host system via Qemu's built-in User Networking support. This
