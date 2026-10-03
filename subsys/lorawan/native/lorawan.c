@@ -171,6 +171,19 @@ int lorawan_join(const struct lorawan_join_config *config)
 	return ret;
 }
 
+int lorawan_join_airtime(void)
+{
+	struct lwan_req msg;
+	int ret;
+
+	if (!atomic_test_bit(lwan_ctx.flags, LWAN_FLAG_STARTED)) {
+		return -EPERM;
+	}
+
+	msg = LWAN_REQ(LWAN_REQ_JOIN_AIRTIME, NULL);
+	return engine_post_req_wait(&msg);
+}
+
 int lorawan_send(uint8_t port, uint8_t *data, uint8_t len,
 		 enum lorawan_message_type type)
 {

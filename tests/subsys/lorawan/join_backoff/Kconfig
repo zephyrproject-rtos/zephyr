@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Embeint Inc
+
+config LORAWAN
+	bool "Override without dependencies"
+
+source "Kconfig.zephyr"

@@ -63,8 +63,47 @@ static void lorwan_datarate_changed(enum lorawan_datarate dr)
 
 static void link_check_ans_cb(uint8_t demod_margin, uint8_t nb_gateways)
 {
-	LOG_INF("Link check: margin %u dB, %u gateway(s)",
-		demod_margin, nb_gateways);
+	LOG_INF("Link check: margin %u dB, %u gateway(s)", demod_margin, nb_gateways);
+}
+
+static void network_join(struct lorawan_join_config *join_cfg)
+{
+	uint32_t cumulative_join_airtime = 0;
+	uint32_t join_backoff_ms;
+	int join_airtime;
+	int ret;
+
+	join_airtime = lorawan_join_airtime();
+	if (join_airtime < 0) {
+		LOG_WRN("Failed to query Join-Request airtime: %d", join_airtime);
+		LOG_WRN("Fallback to longest known airtime");
+		/* Use known longest join-request duration */
+		join_airtime = 1700;
+	}
+	LOG_INF("Join-Request airtime: %d ms", join_airtime);
+
+	LOG_INF("Joining network over OTAA");
+	while (1) {
+		LOG_INF("Join attempt: %d", join_cfg->otaa.dev_nonce + 1);
+		ret = lorawan_join(join_cfg);
+		if (ret == 0) {
+			/* Join succeeded */
+			break;
+		}
+		LOG_ERR("lorawan_join_network failed: %d", ret);
+		/* A real application should persist `cumulative_join_airtime` in non-volatile
+		 * storage here and reload any existing value on boot, to handle reboots before a
+		 * successful association is made.
+		 */
+		cumulative_join_airtime += join_airtime;
+		join_backoff_ms = lorawan_join_backoff(join_airtime, cumulative_join_airtime);
+		LOG_INF("Waiting %d seconds for next attempt", join_backoff_ms / MSEC_PER_SEC);
+		k_sleep(K_MSEC(join_backoff_ms));
+		/* Increment DevNonce for next attempt */
+		join_cfg->otaa.dev_nonce += 1;
+	}
+
+	/* Reset any persisted `cumulative_join_airtime` value here */
 }
 
 int main(void)
@@ -115,12 +154,8 @@ int main(void)
 	join_cfg.otaa.nwk_key = app_key;
 	join_cfg.otaa.dev_nonce = 0u;
 
-	LOG_INF("Joining network over OTAA");
-	ret = lorawan_join(&join_cfg);
-	if (ret < 0) {
-		LOG_ERR("lorawan_join_network failed: %d", ret);
-		return 0;
-	}
+	/* Join the network */
+	network_join(&join_cfg);
 
 	LOG_INF("Sending data...");
 	for (uint32_t i = 0;; i++) {
