@@ -1,0 +1,29 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Texas Instruments Incorporated
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		test-comp = &comp0;
+	};
+
+	zephyr,user {
+		test-gpios = <&gpioa 14 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&comp0 {
+	status = "okay";
+	positive-inputs = <2>;
+	pinctrl-0 = <&comp0_out_pa07>;
+	pinctrl-names = "default";
+	ti,mode = "fast";
+	ti,reference-source = "vdda_dac"; /* 3.3V */
+	ti,reference-terminal = "neg";
+	ti,reference-dac-code0 = <128>;
+	ti,filter-enable;
+	ti,filter-delay = <2700>;
+};
