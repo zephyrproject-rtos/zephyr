@@ -34,6 +34,11 @@
 &uart1 {
 	status = "okay";
 	current-speed = <115200>;
+
+	slip0: slip {
+		compatible = "zephyr,slip-eth", "zephyr,slip";
+		status = "okay";
+	};
 };
 
 &uart2 {

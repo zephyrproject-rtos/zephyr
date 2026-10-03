@@ -110,7 +110,7 @@ Networking
 ==========
 
 The board supports SLIP networking over an emulated serial port
-(``CONFIG_NET_SLIP_TAP=y``). The detailed setup is described in
+(:kconfig:option:`CONFIG_ETH_SLIP_TAP`, enabled by default). The detailed setup is described in
 :ref:`networking_with_qemu`.
 
 It is also possible to use the QEMU built-in Ethernet adapter to connect

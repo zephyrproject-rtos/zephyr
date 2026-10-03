@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  SLIP (Serial Line IP) network interface on a UART carrying Ethernet frames
+  (TAP mode, CONFIG_ETH_SLIP_TAP). The host side runs tunslip6 from
+  net-tools with TAP support.
+
+  The node is a child of the UART node used for the serial link. A node may
+  also carry the zephyr,slip compatible. It is then used by this driver by
+  default, or by the IP driver (CONFIG_SLIP) when that is enabled instead.
+  Only one of the two drivers can use the node.
+
+  Without local-mac-address or zephyr,random-mac-address the interface
+  gets a random address from the 00:00:5E:00:53:00/40 documentation range.
+
+compatible: "zephyr,slip-eth"
+
+include: [uart-device.yaml, ethernet-controller.yaml]
+
+examples:
+  - |
+    &uart1 {
+        status = "okay";
+        current-speed = <115200>;
+
+        slip0: slip {
+            compatible = "zephyr,slip-eth", "zephyr,slip";
+            status = "okay";
+        };
+    };

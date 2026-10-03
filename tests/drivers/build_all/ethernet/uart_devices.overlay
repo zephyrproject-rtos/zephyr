@@ -36,6 +36,11 @@
 				config-gpios = <&test_gpio 18 GPIO_ACTIVE_LOW>;
 				tcpcs-gpios = <&test_gpio 17 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			};
+
+			test_uart_slip: slip {
+				compatible = "zephyr,slip-eth", "zephyr,slip";
+				status = "okay";
+			};
 		};
 	};
 };

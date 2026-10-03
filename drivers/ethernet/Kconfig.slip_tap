@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config ETH_SLIP_TAP
+	bool "SLIP TAP Ethernet driver"
+	default y if !QEMU_TARGET || NET_QEMU_SLIP
+	depends on DT_HAS_ZEPHYR_SLIP_ETH_ENABLED
+	depends on NET_NATIVE
+	depends on NET_L2_ETHERNET
+	select SLIP_COMMON
+	help
+	  Carry Ethernet frames over the SLIP link of the zephyr,slip-eth
+	  node. The host side runs tunslip6 with TAP support from the
+	  net-tools project, see https://github.com/zephyrproject-rtos/net-tools
