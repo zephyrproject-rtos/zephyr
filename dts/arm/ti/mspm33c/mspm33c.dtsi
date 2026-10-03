@@ -73,6 +73,13 @@
 				#gpio-cells = <2>;
 			};
 		};
+
+		iwdt: iwdt@400d9300 {
+			compatible = "ti,mspm0-iwdt";
+			reg = <0x400d9300 0x100>;
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
 	};
 };
 
