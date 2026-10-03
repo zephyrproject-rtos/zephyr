@@ -142,9 +142,35 @@ static inline int z_vrfy_auxdisplay_is_busy(const struct device *dev)
 static inline int z_vrfy_auxdisplay_custom_character_set(const struct device *dev,
 							 struct auxdisplay_character *character)
 {
+	struct auxdisplay_capabilities capabilities;
+	struct auxdisplay_character character_copy;
+	int ret;
+
 	K_OOPS(K_SYSCALL_DRIVER_AUXDISPLAY(dev, custom_character_set));
-	K_OOPS(K_SYSCALL_MEMORY_READ(character, sizeof(struct auxdisplay_character)));
-	return z_impl_auxdisplay_custom_character_set(dev, character);
+	K_OOPS(K_SYSCALL_DRIVER_AUXDISPLAY(dev, capabilities_get));
+
+	/* Work from a local copy so the pixel buffer checked below is the
+	 * one the driver is given.
+	 */
+	K_OOPS(k_usermode_from_copy(&character_copy, character,
+				    sizeof(struct auxdisplay_character)));
+
+	ret = z_impl_auxdisplay_capabilities_get(dev, &capabilities);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* Pixel data is a character width by character height array of bytes. */
+	K_OOPS(K_SYSCALL_MEMORY_ARRAY_READ(character_copy.data,
+					   capabilities.custom_character_width,
+					   capabilities.custom_character_height));
+
+	ret = z_impl_auxdisplay_custom_character_set(dev, &character_copy);
+
+	K_OOPS(k_usermode_to_copy(&character->character_code, &character_copy.character_code,
+				  sizeof(character->character_code)));
+
+	return ret;
 }
 #include <zephyr/syscalls/auxdisplay_custom_character_set_mrsh.c>
 
@@ -160,9 +186,18 @@ static inline int z_vrfy_auxdisplay_write(const struct device *dev, const uint8_
 static inline int z_vrfy_auxdisplay_custom_command(const struct device *dev,
 						   struct auxdisplay_custom_data *data)
 {
+	struct auxdisplay_custom_data data_copy;
+
 	K_OOPS(K_SYSCALL_DRIVER_AUXDISPLAY(dev, custom_command));
-	K_OOPS(K_SYSCALL_MEMORY_READ(data, sizeof(struct auxdisplay_custom_data)));
-	return z_impl_auxdisplay_custom_command(dev, data);
+
+	/* Work from a local copy so the payload checked below is the one
+	 * the driver is given.
+	 */
+	K_OOPS(k_usermode_from_copy(&data_copy, data,
+				    sizeof(struct auxdisplay_custom_data)));
+	K_OOPS(K_SYSCALL_MEMORY_READ(data_copy.data, data_copy.len));
+
+	return z_impl_auxdisplay_custom_command(dev, &data_copy);
 }
 #include <zephyr/syscalls/auxdisplay_custom_command_mrsh.c>
 
