@@ -5,8 +5,8 @@
  */
 
 &mbox {
-	status = "okay";
 	msg-payloads;
+	status = "okay";
 };
 
 / {
