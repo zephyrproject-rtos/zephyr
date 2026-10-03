@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/net/net_log.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/dummy.h>
+#include <zephyr/sys/fdtable.h>
 
 #include "net_private.h"
 
@@ -1029,6 +1030,195 @@ ZTEST(socket_misc_test_suite, test_so_domain_socket_option)
 	zassert_equal(ret, 0, "close failed, %d", -errno);
 	ret = zsock_close(sock_u);
 	zassert_equal(ret, 0, "close failed, %d", -errno);
+}
+
+/*
+ * A socket whose vtable leaves most operations NULL and counts the ones it
+ * implements, so a test can tell what ran and when.
+ */
+static int fake_sock_obj;
+static ZTEST_BMEM int fake_op_calls;
+static ZTEST_BMEM int fake_close_calls;
+
+static int fake_bind(void *obj, const struct net_sockaddr *addr, net_socklen_t addrlen)
+{
+	fake_op_calls++;
+	return 0;
+}
+
+static int fake_shutdown(void *obj, int how)
+{
+	fake_op_calls++;
+	return 0;
+}
+
+static int fake_ioctl(void *obj, unsigned int request, va_list args)
+{
+	/* Opening the fd hands over the lock, which is not a call */
+	if (request != ZFD_IOCTL_SET_LOCK) {
+		fake_op_calls++;
+	}
+	return 0;
+}
+
+static int fake_close2(void *obj, int fd)
+{
+	fake_close_calls++;
+	return 0;
+}
+
+static const struct socket_op_vtable fake_sock_vtable = {
+	.fd_vtable = {
+		.close2 = fake_close2,
+		.ioctl = fake_ioctl,
+	},
+	.shutdown = fake_shutdown,
+	.bind = fake_bind,
+};
+
+static int fake_sock_open(void)
+{
+	int fd = zvfs_reserve_fd();
+
+	zassert_true(fd >= 0, "no free fd");
+	zvfs_finalize_typed_fd(fd, &fake_sock_obj,
+			       (const struct fd_op_vtable *)&fake_sock_vtable,
+			       ZVFS_MODE_IFSOCK);
+	return fd;
+}
+
+ZTEST(socket_misc_test_suite, test_unsupported_call_does_not_leak_fd)
+{
+	int fd;
+	int ret;
+	int i;
+
+	/* listen() is left NULL by the fake vtable */
+	fake_close_calls = 0;
+	fd = fake_sock_open();
+	for (i = 0; i < 50; i++) {
+		ret = zsock_listen(fd, 1);
+		zassert_equal(ret, -1, "listen succeeded");
+		zassert_equal(errno, EOPNOTSUPP, "wrong errno %d", errno);
+	}
+	zassert_equal(zsock_close(fd), 0, "close failed");
+	zassert_equal(fake_close_calls, 1, "close2 did not run");
+
+	/* A leaked reference keeps a slot busy forever, so more rounds than
+	 * there are slots would run the table dry.
+	 */
+	for (i = 0; i < ZVFS_OPEN_SIZE + 10; i++) {
+		fd = fake_sock_open();
+		ret = zsock_listen(fd, 1);
+		zassert_equal(ret, -1, "listen succeeded");
+		zassert_equal(errno, EOPNOTSUPP, "wrong errno %d", errno);
+		/* the normal path: lock, call, unlock, put */
+		zassert_equal(zsock_bind(fd, NULL, 0), 0, "bind failed");
+		zassert_equal(zsock_close(fd), 0, "close failed");
+	}
+
+	/* And a real socket still opens */
+	fd = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(fd >= 0, "UDP socket open failed after %d rounds", i);
+	zassert_equal(zsock_close(fd), 0, "close failed");
+}
+
+static K_THREAD_STACK_DEFINE(queued_stack, 2048);
+static struct k_thread queued_thread;
+static ZTEST_BMEM volatile int queued_entered;
+static ZTEST_BMEM volatile int queued_done;
+static ZTEST_BMEM volatile int queued_ret;
+static ZTEST_BMEM volatile int queued_errno;
+
+enum queued_call {
+	QUEUED_BIND,
+	QUEUED_SHUTDOWN,
+	QUEUED_FCNTL,
+	QUEUED_IOCTL,
+};
+
+static void queued_caller(void *p1, void *p2, void *p3)
+{
+	int fd = POINTER_TO_INT(p1);
+
+	queued_entered = 1;
+	switch (POINTER_TO_INT(p2)) {
+	case QUEUED_BIND:
+		queued_ret = zsock_bind(fd, NULL, 0);
+		break;
+	case QUEUED_SHUTDOWN:
+		queued_ret = zsock_shutdown(fd, ZSOCK_SHUT_RD);
+		break;
+	case QUEUED_FCNTL:
+		queued_ret = zsock_fcntl(fd, ZVFS_F_GETFL, 0);
+		break;
+	case QUEUED_IOCTL:
+		queued_ret = zsock_ioctl(fd, ZFD_IOCTL_FIONREAD, NULL);
+		break;
+	}
+	queued_errno = errno;
+	queued_done = 1;
+}
+
+static void call_queued_during_close(enum queued_call call)
+{
+	const struct fd_op_vtable *vt;
+	struct k_mutex *lock;
+	int fd;
+
+	fake_op_calls = 0;
+	fake_close_calls = 0;
+	queued_entered = 0;
+	queued_done = 0;
+	fd = fake_sock_open();
+
+	/* Hold the fd lock, the way a call that is already running would */
+	zassert_not_null(zvfs_get_fd_obj_and_vtable(fd, &vt, &lock), "lookup failed");
+	zassert_equal(k_mutex_lock(lock, K_FOREVER), 0, "lock failed");
+
+	k_thread_create(&queued_thread, queued_stack, K_THREAD_STACK_SIZEOF(queued_stack),
+			queued_caller, INT_TO_POINTER(fd), INT_TO_POINTER(call), NULL,
+			k_thread_priority_get(k_current_get()) + 1, 0, K_NO_WAIT);
+
+	/* The caller has entered its call and is queued on the lock */
+	k_sleep(K_MSEC(100));
+	zassert_equal(queued_entered, 1, "caller did not start");
+	zassert_equal(queued_done, 0, "caller was not blocked on the lock");
+	zassert_equal(fake_op_calls, 0, "op ran while the lock was held");
+
+	/* Close under the (recursive) lock, then let the caller go */
+	zassert_equal(zsock_close(fd), 0, "close failed");
+	zassert_equal(fake_close_calls, 1, "close2 did not run");
+	k_mutex_unlock(lock);
+
+	zassert_equal(k_thread_join(&queued_thread, K_SECONDS(2)), 0, "caller did not return");
+	zassert_equal(queued_ret, -1, "call on a closed socket succeeded");
+	zassert_equal(queued_errno, EBADF, "wrong errno %d", queued_errno);
+	zassert_equal(fake_op_calls, 0, "op ran on a closed socket");
+
+	/* The caller dropped its reference, so the slot was freed */
+	zassert_equal(zvfs_reserve_fd(), fd, "fd %d was not freed, reference leaked", fd);
+	zvfs_free_fd(fd);
+}
+
+ZTEST(socket_misc_test_suite, test_call_queued_during_close_gets_ebadf)
+{
+	call_queued_during_close(QUEUED_BIND);
+}
+
+ZTEST(socket_misc_test_suite, test_shutdown_queued_during_close_gets_ebadf)
+{
+	call_queued_during_close(QUEUED_SHUTDOWN);
+}
+
+ZTEST(socket_misc_test_suite, test_fcntl_queued_during_close_gets_ebadf)
+{
+	call_queued_during_close(QUEUED_FCNTL);
+}
+
+ZTEST(socket_misc_test_suite, test_ioctl_queued_during_close_gets_ebadf)
+{
+	call_queued_during_close(QUEUED_IOCTL);
 }
 
 ZTEST_SUITE(socket_misc_test_suite, NULL, setup, NULL, NULL, NULL);
