@@ -625,6 +625,7 @@ static int eth_dm9051_rx(const struct device *dev)
 {
 	struct eth_dm9051_data *data = dev->data;
 	struct net_pkt *pkt = NULL;
+	uint32_t resets;
 	int frames = 0;
 	uint16_t flag;
 	int ret;
@@ -660,11 +661,24 @@ static int eth_dm9051_rx(const struct device *dev)
 			goto out_update_errors_rx;
 		}
 
-		/* Push the net_pkt in the network stack, whose L2 counts it in the RX statistics */
+		/*
+		 * Push the net_pkt in the network stack without spi_lock: with
+		 * NET_TC_RX_COUNT=0 the stack processes it here, and a reply then
+		 * takes its locks and spi_lock in turn. The read pointer stays at
+		 * the next frame unless a controller reset meanwhile cleared RX SRAM.
+		 * The Ethernet L2 counts the frame in its RX statistics.
+		 */
+		resets = data->resets;
+		k_mutex_unlock(&data->spi_lock);
 		ret = net_recv_data(data->iface, pkt);
+		k_mutex_lock(&data->spi_lock, K_FOREVER);
 		if (ret < 0) {
 			net_pkt_unref(pkt);
 			goto out_update_errors_rx;
+		}
+
+		if (data->resets != resets) {
+			break;
 		}
 	}
 
