@@ -39,6 +39,7 @@ following expectations:
 
  * Major version X (x.Y.z | x > 0) MUST be incremented if a compatibility
    breaking change was made to the API.
+   Patch and minor versions MUST be reset to 0 when major version is incremented.
 
 .. note::
    Version for existing APIs are initially set based on the current state of the
