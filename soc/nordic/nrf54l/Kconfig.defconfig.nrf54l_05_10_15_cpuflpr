@@ -16,4 +16,10 @@ config ASSERT
 config CBPRINTF_CONVERT_CHECK_PTR
 	default n if !XIP
 
+config LOG_BACKEND_IPC_FSC
+	default n
+
+config LOG_FRONTEND_IPC_FSC
+	default n
+
 endif # SOC_NRF54L05_CPUFLPR || SOC_NRF54L10_CPUFLPR || SOC_NRF54L15_CPUFLPR

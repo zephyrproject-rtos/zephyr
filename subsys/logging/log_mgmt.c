@@ -74,67 +74,33 @@ static bool source_id_cmp(uintptr_t id0, uintptr_t id1)
  * - controlling backends filtering
  */
 
-/** @brief Return link and relative domain id based on absolute domain id.
+/** @brief Return link based on the domain id.
  *
- * @param[in]  domain_id	Absolute domain ID.
- * @param[out] rel_domain_id	Domain ID elative to the link domain ID as output.
+ * @param[in]  domain_id Domain ID.
  *
- * @return Link to which given domain belongs. NULL if link was not found.
+ * @return Link to which given domain belongs.
  */
-static const struct log_link *get_link_domain(uint8_t domain_id, uint8_t *rel_domain_id)
+static const struct log_link *get_link_domain(uint8_t domain_id)
 {
-	uint8_t domain_max;
+	const struct log_link *link;
 
-	STRUCT_SECTION_FOREACH(log_link, link) {
-		domain_max = link->ctrl_blk->domain_offset +
-				link->ctrl_blk->domain_cnt;
-		if (domain_id < domain_max) {
+	STRUCT_SECTION_GET(log_link, domain_id - 1, &link);
 
-			*rel_domain_id = domain_id - link->ctrl_blk->domain_offset;
-			return link;
-		}
-	}
-
-	*rel_domain_id = 0;
-
-	return NULL;
-}
-
-/** @brief Get source offset used for getting runtime filter.
- *
- * Runtime filters for each link are dynamically allocated as an array of
- * filters for all domains in the link. In order to fetch link associated with
- * given source an index in the array must be retrieved.
- */
-static uint32_t get_source_offset(const struct log_link *link,
-				  uint8_t rel_domain_id)
-{
-	uint32_t offset = 0;
-
-	for (uint8_t i = 0; i < rel_domain_id; i++) {
-		offset += log_link_sources_count(link, i);
-	}
-
-	return offset;
+	return link;
 }
 
 uint32_t *z_log_link_get_dynamic_filter(uint8_t domain_id, uint32_t source_id)
 {
-	uint8_t rel_domain_id;
-	const struct log_link *link = get_link_domain(domain_id, &rel_domain_id);
-	uint32_t source_offset = 0;
+	const struct log_link *link = get_link_domain(domain_id);
 
 	__ASSERT_NO_MSG(link != NULL);
-
-	source_offset = get_source_offset(link, rel_domain_id);
-
-	return &link->ctrl_blk->filters[source_offset + source_id];
+	return &link->ctrl_blk->filters[source_id];
 }
 
 #ifdef CONFIG_LOG_MULTIDOMAIN
 static int link_filters_init(const struct log_link *link)
 {
-	uint32_t total_cnt = get_source_offset(link, link->ctrl_blk->domain_cnt);
+	uint32_t total_cnt = log_link_sources_count(link);
 
 	link->ctrl_blk->filters = k_malloc(sizeof(uint32_t) * total_cnt);
 	if (link->ctrl_blk->filters == NULL) {
@@ -178,21 +144,17 @@ uint8_t z_log_ext_domain_count(void)
 {
 	uint8_t cnt = 0;
 
-	STRUCT_SECTION_FOREACH(log_link, link) {
-		cnt += log_link_domains_count(link);
-	}
+	STRUCT_SECTION_COUNT(log_link, &cnt);
 
 	return cnt;
 }
 
 static uint16_t link_source_count(uint8_t domain_id)
 {
-	uint8_t rel_domain_id;
-	const struct log_link *link = get_link_domain(domain_id, &rel_domain_id);
+	const struct log_link *link = get_link_domain(domain_id);
 
 	__ASSERT_NO_MSG(link != NULL);
-
-	return log_link_sources_count(link, rel_domain_id);
+	return log_link_sources_count(link);
 }
 
 uint32_t log_src_cnt_get(uint32_t domain_id)
@@ -213,6 +175,7 @@ static const char *link_source_name_get(uint8_t domain_id, uint32_t source_id)
 {
 	uint8_t *cached;
 	size_t cache_size = sname_cache.item_size;
+	const struct log_link *link = get_link_domain(domain_id);
 	union log_source_ids id = {
 		.id = {
 			.domain_id = domain_id,
@@ -220,16 +183,20 @@ static const char *link_source_name_get(uint8_t domain_id, uint32_t source_id)
 		}
 	};
 
+	__ASSERT_NO_MSG(link != NULL);
+	/* In case current domain has access to the remote source we can read them
+	 * directly.
+	 */
+	if (link->ctrl_blk->sources != NULL) {
+		return link->ctrl_blk->sources[source_id].name;
+	}
+
 	/* If not in cache fetch from link and cache it. */
 	if (!log_cache_get(&sname_cache, id.raw, &cached)) {
-		uint8_t rel_domain_id;
-		const struct log_link *link = get_link_domain(domain_id, &rel_domain_id);
 		int err;
 
-		__ASSERT_NO_MSG(link != NULL);
 
-		err = log_link_get_source_name(link, rel_domain_id, source_id,
-					       (char *)cached, &cache_size);
+		err = log_link_get_source_name(link, source_id, (char *)cached, &cache_size);
 		if (err < 0) {
 			log_cache_release(&sname_cache, cached);
 			return NULL;
@@ -257,58 +224,27 @@ const char *log_source_name_get(uint32_t domain_id, uint32_t source_id)
 	return link_source_name_get(domain_id, source_id);
 }
 
-/* First check in cache if not there fetch from remote.
- * When fetched from remote put in cache.
- *
- * @note Execution time depends on whether entry is in cache.
- */
-static const char *link_domain_name_get(uint8_t domain_id)
-{
-	uint8_t *cached;
-	size_t cache_size = dname_cache.item_size;
-	uintptr_t id = (uintptr_t)domain_id;
-	static const char *invalid_domain = "invalid";
-
-	/* If not in cache fetch from link and cache it. */
-	if (!log_cache_get(&dname_cache, id, &cached)) {
-		uint8_t rel_domain_id;
-		const struct log_link *link = get_link_domain(domain_id, &rel_domain_id);
-		int err;
-
-		__ASSERT_NO_MSG(link != NULL);
-
-		err = log_link_get_domain_name(link, rel_domain_id, (char *)cached,
-					       &cache_size);
-		if (err < 0) {
-			log_cache_release(&dname_cache, cached);
-			return invalid_domain;
-		}
-
-		log_cache_put(&dname_cache, cached);
-	}
-
-	return (const char *)cached;
-}
-
 const char *log_domain_name_get(uint32_t domain_id)
 {
+	const struct log_link *link;
+
 	if (z_log_is_local_domain(domain_id)) {
 		return CONFIG_LOG_DOMAIN_NAME;
 	}
 
-	return link_domain_name_get(domain_id);
+	STRUCT_SECTION_GET(log_link, domain_id - 1, &link);
+
+	return link->name;
 }
 
 static uint8_t link_compiled_level_get(uint8_t domain_id, uint32_t source_id)
 {
-	uint8_t rel_domain_id;
-	const struct log_link *link = get_link_domain(domain_id, &rel_domain_id);
+	const struct log_link *link = get_link_domain(domain_id);
 	uint8_t level;
 
 	__ASSERT_NO_MSG(link != NULL);
 
-	return !log_link_get_levels(link, rel_domain_id, source_id, &level, NULL) ?
-		level : 0;
+	return !log_link_get_levels(link, source_id, &level, NULL) ? level : 0;
 }
 
 uint8_t log_compiled_level_get(uint8_t domain_id, uint32_t source_id)
@@ -326,12 +262,11 @@ uint8_t log_compiled_level_get(uint8_t domain_id, uint32_t source_id)
 
 int z_log_link_set_runtime_level(uint8_t domain_id, uint16_t source_id, uint8_t level)
 {
-	uint8_t rel_domain_id;
-	const struct log_link *link = get_link_domain(domain_id, &rel_domain_id);
+	const struct log_link *link = get_link_domain(domain_id);
 
 	__ASSERT_NO_MSG(link != NULL);
 
-	return log_link_set_runtime_level(link, rel_domain_id, source_id, level);
+	return log_link_set_runtime_level(link, source_id, level);
 }
 
 static uint32_t *get_dynamic_filter(uint8_t domain_id, uint32_t source_id)
@@ -534,16 +469,12 @@ static void link_filter_set(const struct log_link *link,
 		return;
 	}
 
-	for (uint8_t d = link->ctrl_blk->domain_offset;
-	     d < link->ctrl_blk->domain_offset + link->ctrl_blk->domain_cnt; d++) {
-		for (uint16_t s = 0; s < log_src_cnt_get(d); s++) {
-			log_filter_set(backend, d, s, level);
-		}
+	for (uint16_t s = 0; s < log_link_sources_count(link); s++) {
+		log_filter_set(backend, link->ctrl_blk->domain_offset, s, level);
 	}
 }
 
-static void backend_filter_set(struct log_backend const *const backend,
-			       uint32_t level)
+static void backend_filter_set(struct log_backend const *const backend, uint32_t level)
 {
 	if (!IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
 		return;
@@ -618,12 +549,6 @@ void z_log_links_initiate(void)
 	cache_init();
 
 	STRUCT_SECTION_FOREACH(log_link, link) {
-#ifdef CONFIG_MPSC_PBUF
-		if (link->mpsc_pbuf) {
-			mpsc_pbuf_init(link->mpsc_pbuf, link->mpsc_pbuf_config);
-		}
-#endif
-
 		err = log_link_initiate(link, NULL);
 		__ASSERT(err == 0, "Failed to initialize link");
 	}
@@ -659,11 +584,8 @@ uint32_t z_log_links_activate(uint32_t active_mask, uint8_t *offset)
 			int err = log_link_activate(link);
 
 			if (err == 0) {
-				uint8_t domain_cnt = log_link_domains_count(link);
-
 				link->ctrl_blk->domain_offset = *offset;
-				link->ctrl_blk->domain_cnt = domain_cnt;
-				*offset += domain_cnt;
+				*offset = *offset + 1;
 				if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
 					link_filters_init(link);
 					backends_link_init(link);

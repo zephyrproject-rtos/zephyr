@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="660" height="330" viewBox="0 0 660 330"
+     font-family="sans-serif" font-size="14">
+  <rect x="0" y="0" width="660" height="330" fill="#ffffff"/>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#000000"/>
+    </marker>
+  </defs>
+
+  <!-- Root domain -->
+  <rect x="20" y="30" width="260" height="250" rx="10" fill="none" stroke="#000000"/>
+  <text x="150" y="55" text-anchor="middle" font-weight="bold">Root domain (cpu0)</text>
+
+  <rect x="45" y="75" width="210" height="40" fill="none" stroke="#000000"/>
+  <text x="150" y="100" text-anchor="middle">logging core</text>
+
+  <rect x="45" y="150" width="95" height="40" fill="none" stroke="#000000"/>
+  <text x="92" y="175" text-anchor="middle">backend</text>
+
+  <rect x="160" y="150" width="95" height="40" fill="none" stroke="#000000"/>
+  <text x="207" y="175" text-anchor="middle">link</text>
+
+  <line x1="92" y1="115" x2="92" y2="150" stroke="#000000" marker-end="url(#arrow)"/>
+  <line x1="207" y1="150" x2="207" y2="115" stroke="#000000" marker-end="url(#arrow)"/>
+  <line x1="92" y1="190" x2="92" y2="305" stroke="#000000" marker-end="url(#arrow)"/>
+  <text x="102" y="275">UART</text>
+
+  <!-- Remote domain -->
+  <rect x="380" y="30" width="260" height="250" rx="10" fill="none" stroke="#000000"/>
+  <text x="510" y="55" text-anchor="middle" font-weight="bold">Remote domain (cpu1)</text>
+
+  <rect x="405" y="75" width="210" height="40" fill="none" stroke="#000000"/>
+  <text x="510" y="100" text-anchor="middle">logging core</text>
+
+  <rect x="405" y="150" width="210" height="40" fill="none" stroke="#000000"/>
+  <text x="510" y="175" text-anchor="middle">backend or frontend</text>
+
+  <line x1="510" y1="115" x2="510" y2="150" stroke="#000000" marker-end="url(#arrow)"/>
+  <line x1="405" y1="170" x2="255" y2="170" stroke="#000000" marker-end="url(#arrow)"/>
+  <text x="330" y="160" text-anchor="middle">IPC</text>
+</svg>

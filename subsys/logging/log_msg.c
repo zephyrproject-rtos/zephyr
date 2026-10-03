@@ -46,7 +46,7 @@ void z_log_msg_finalize(struct log_msg *msg, const void *source,
 			 const struct log_msg_desc desc, const void *data)
 {
 	if (!msg) {
-		z_log_dropped(false);
+		z_log_dropped(false, 1);
 
 		return;
 	}

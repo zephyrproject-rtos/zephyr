@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_LOG_IPC_EARLY_LOGS
+	bool "Remote delivers logs created before IPC is bound"
+	default y
+	help
+	  Set by sysbuild based on the remote configuration. When enabled, logs
+	  created by the remote before the IPC endpoint is bound shall arrive.
+	  When disabled, they shall be dropped and the drop shall be reported.
+
+config TEST_LOG_IPC_BURST_CNT
+	int "Number of messages in the burst test"
+	default 20
+	help
+	  Set by sysbuild based on the remote configuration. IPC backend on the
+	  remote sends each log message in a separate IPC buffer and drops
+	  messages when there are no free buffers so burst must be smaller than
+	  the number of IPC TX blocks.
+
+source "Kconfig.zephyr"

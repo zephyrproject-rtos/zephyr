@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/ipc/ipc_service.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/cpu_load.h>
 LOG_MODULE_DECLARE(app);
 
 #define STACKSIZE	2048
@@ -51,6 +53,8 @@ static void sample_entry(void *dummy0, void *dummy1, void *dummy2)
 	unsigned char message = 0;
 	struct ipc_ept ept;
 	int ret;
+	int load = 0;
+	int load_cnt = 0;
 
 	printk("IPC-service REMOTE [INST 1] demo started\n");
 
@@ -73,7 +77,11 @@ static void sample_entry(void *dummy0, void *dummy1, void *dummy2)
 	k_sem_take(&bound_sem, K_FOREVER);
 	LOG_INF("bounded");
 
-	while (message < 99) {
+	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+		(void)cpu_load_get(true);
+	}
+
+	while (message < 19) {
 		k_sem_take(&data_sem, K_FOREVER);
 		message = sample_received_data;
 
@@ -85,6 +93,15 @@ static void sample_entry(void *dummy0, void *dummy1, void *dummy2)
 		if (ret < 0) {
 			printk("send_message(%d) failed with ret %d\n", message, ret);
 			break;
+		}
+
+		k_msleep(10);
+		load_cnt++;
+		if (load_cnt % 10 == 0) {
+			if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+				load = cpu_load_get(true);
+				LOG_INF("CPU load: %d.%d%%", load / 10, load % 10);
+			}
 		}
 	}
 

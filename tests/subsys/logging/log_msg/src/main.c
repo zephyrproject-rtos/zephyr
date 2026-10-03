@@ -116,7 +116,7 @@ union log_msg_generic *msg_copy_and_free(union log_msg_generic *msg,
 
 	memcpy(buf, msg, len);
 
-	z_log_msg_free(msg);
+	z_log_msg_free(msg, NULL);
 
 	return (union log_msg_generic *)buf;
 }
@@ -158,19 +158,19 @@ void validate_base_message_set(const struct log_source_const_data *source,
 	size_t len0, len1, len2;
 	union log_msg_generic *msg0, *msg1, *msg2;
 
-	msg0 = z_log_msg_claim(NULL);
+	msg0 = z_log_msg_claim(NULL, NULL);
 	zassert_true(msg0, "Unexpected null message");
 	len0 = log_msg_generic_get_wlen((union mpsc_pbuf_generic *)msg0);
 	msg0 = msg_copy_and_free(msg0, buf0, sizeof(buf0));
 	clear_pkg_flags(&msg0->log);
 
-	msg1 = z_log_msg_claim(NULL);
+	msg1 = z_log_msg_claim(NULL, NULL);
 	zassert_true(msg1, "Unexpected null message");
 	len1 = log_msg_generic_get_wlen((union mpsc_pbuf_generic *)msg1);
 	msg1 = msg_copy_and_free(msg1, buf1, sizeof(buf1));
 	clear_pkg_flags(&msg1->log);
 
-	msg2 = z_log_msg_claim(NULL);
+	msg2 = z_log_msg_claim(NULL, NULL);
 	zassert_true(msg2, "Unexpected null message");
 	len2 = log_msg_generic_get_wlen((union mpsc_pbuf_generic *)msg2);
 	msg2 = msg_copy_and_free(msg2, buf2, sizeof(buf2));
@@ -357,13 +357,13 @@ static void get_msg_validate_length(uint32_t exp_len)
 	uint32_t len;
 	union log_msg_generic *msg;
 
-	msg = z_log_msg_claim(NULL);
+	msg = z_log_msg_claim(NULL, NULL);
 	len = log_msg_generic_get_wlen((union mpsc_pbuf_generic *)msg);
 
 	zassert_equal(len, exp_len, "Unexpected message length %d (exp:%d)",
 			len, exp_len);
 
-	z_log_msg_free(msg);
+	z_log_msg_free(msg, NULL);
 }
 
 ZTEST(log_msg, test_mode_size_plain_string)
@@ -571,13 +571,13 @@ ZTEST(log_msg, test_saturate)
 	zassert_equal(z_log_dropped_read_and_clear(), 3, "No dropped messages.");
 
 	for (int i = 0; i < exp_capacity; i++) {
-		msg = z_log_msg_claim(NULL);
+		msg = z_log_msg_claim(NULL, NULL);
 		zassert_equal(log_msg_get_timestamp(&msg->log), i,
 				"Unexpected timestamp used for message id");
-		z_log_msg_free(msg);
+		z_log_msg_free(msg, NULL);
 	}
 
-	msg = z_log_msg_claim(NULL);
+	msg = z_log_msg_claim(NULL, NULL);
 
 	zassert_equal(msg, NULL, "Expected no pending messages");
 }
