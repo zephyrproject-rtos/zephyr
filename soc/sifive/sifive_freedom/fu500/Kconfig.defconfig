@@ -13,11 +13,11 @@ config 2ND_LVL_ISR_TBL_OFFSET
 config 2ND_LVL_INTR_00_OFFSET
 	default 11
 
-config MAX_IRQ_PER_AGGREGATOR
-	default 52
+configdefault MAX_IRQ_PER_AGGREGATOR
+	default 54
 
-config NUM_IRQS
-	default 64
+configdefault NUM_IRQS
+	default 66
 
 configdefault FPU
 	default y

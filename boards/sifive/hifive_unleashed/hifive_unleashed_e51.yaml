@@ -20,5 +20,6 @@ testing:
     resc: boards/sifive/hifive_unleashed/support/hifive_unleashed.resc
 supported:
   - gpio
+  - netif:eth
   - spi
 vendor: sifive
