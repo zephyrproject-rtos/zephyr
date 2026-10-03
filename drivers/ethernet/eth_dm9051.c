@@ -220,6 +220,8 @@ struct eth_dm9051_data {
 	bool restart_pending;
 	/* Controller resets, counted with spi_lock held */
 	uint32_t resets;
+	/* Promiscuous mode set through set_config, kept across resets, under spi_lock */
+	bool promisc;
 };
 
 struct eth_dm9051_rxhdr {
@@ -428,11 +430,11 @@ static int eth_dm9051_tcr_poll(const struct device *dev)
 /* Reset and configure the controller. Called with spi_lock held. */
 static int eth_dm9051_hw_init(const struct device *dev)
 {
-	const uint8_t imr = DM9051_IMR_PRI | DM9051_IMR_LNKCHGI | DM9051_IMR_PAR;
-	const uint8_t rcr = DM9051_RCR_RXEN | DM9051_RCR_ALL |
-			    DM9051_RCR_DIS_CRC | DM9051_RCR_DIS_LONG;
-	const struct eth_dm9051_config *config = dev->config;
 	struct eth_dm9051_data *data = dev->data;
+	const uint8_t imr = DM9051_IMR_PRI | DM9051_IMR_LNKCHGI | DM9051_IMR_PAR;
+	const uint8_t rcr = DM9051_RCR_RXEN | DM9051_RCR_ALL | DM9051_RCR_DIS_CRC |
+			    DM9051_RCR_DIS_LONG | (data->promisc ? DM9051_RCR_PRMSC : 0U);
+	const struct eth_dm9051_config *config = dev->config;
 	int ret;
 
 	data->resets++;
@@ -1052,18 +1054,27 @@ static int eth_dm9051_set_config(const struct device *dev,
 			break;
 		}
 
+		/*
+		 * Compare with the recorded mode, not RCR: stopping the interface or
+		 * a failed restart clears RCR, and RCR would then report a change
+		 * the stack still has to make as already done.
+		 */
+		if (config->promisc_mode == data->promisc) {
+			ret = -EALREADY;
+			break;
+		}
+
 		ret = eth_dm9051_spi_read_reg(dev, DM9051_RCR, &rcr);
 		if (ret < 0) {
 			break;
 		}
 
-		if (config->promisc_mode == ((rcr & DM9051_RCR_PRMSC) > 0)) {
-			ret = -EALREADY;
-			break;
-		}
-
 		rcr = (rcr & ~DM9051_RCR_PRMSC) | (config->promisc_mode ? DM9051_RCR_PRMSC : 0);
 		ret = eth_dm9051_spi_write_reg(dev, DM9051_RCR, rcr);
+		if (ret == 0) {
+			/* A controller reset rewrites RCR: keep the mode for it */
+			data->promisc = config->promisc_mode;
+		}
 		break;
 	default:
 		ret = -ENOTSUP;
