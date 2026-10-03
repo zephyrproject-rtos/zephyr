@@ -1,31 +1,86 @@
 common:
-  platform_allow:
-    - native_sim
-  integration_platforms:
-    - native_sim
   tags:
     - nvmem
 tests:
   nvmem.api.bbram:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
     extra_configs:
       - CONFIG_BBRAM=y
     extra_dtc_overlay_files:
       - bbram.overlay
   nvmem.api.eeprom:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
     extra_configs:
       - CONFIG_EEPROM=y
     extra_dtc_overlay_files:
       - eeprom.overlay
   nvmem.api.flash:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
     extra_configs:
       - CONFIG_FLASH=y
       - CONFIG_NVMEM_FLASH_WRITE=y
     extra_dtc_overlay_files:
       - flash.overlay
   nvmem.api.otp:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
     extra_configs:
       - CONFIG_OTP=y
       - CONFIG_OTP_PROGRAM=y
       - CONFIG_NVMEM_OTP_WRITE=y
     extra_dtc_overlay_files:
       - otp.overlay
+  nvmem.api.psa.its:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    extra_conf_files:
+      - psa.conf
+    extra_dtc_overlay_files:
+      - psa_its.overlay
+      - psa_zms.overlay
+  nvmem.api.psa.its.64bit_uid:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    extra_conf_files:
+      - psa.conf
+    extra_configs:
+      - CONFIG_SECURE_STORAGE_64_BIT_UID=y
+    extra_dtc_overlay_files:
+      - psa_its.overlay
+      - psa_64bit_uid.overlay
+      - psa_zms.overlay
+  nvmem.api.psa.ps:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    extra_conf_files:
+      - psa.conf
+    extra_dtc_overlay_files:
+      - psa_ps.overlay
+      - psa_zms.overlay
+  nvmem.api.psa.its.tfm:
+    build_only: true
+    tags:
+      - trusted-firmware-m
+    platform_allow:
+      - mps2/an521/cpu0/ns
+    integration_platforms:
+      - mps2/an521/cpu0/ns
+    extra_dtc_overlay_files:
+      - psa_its.overlay

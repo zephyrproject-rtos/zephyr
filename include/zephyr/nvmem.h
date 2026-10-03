@@ -348,6 +348,7 @@ int nvmem_cell_read(const struct nvmem_cell *cell, void *data, off_t off, size_t
  * @retval -EINVAL Invalid offset or length arguments.
  * @retval -EROFS  Writing to a read-only NVMEM Cell.
  * @retval -ENODEV The controller device is not ready.
+ * @retval -ENOSYS The NVMEM provider does not implement writing.
  * @retval -ENXIO  No runtime device API available.
  * @return The result of the underlying device API call.
  */

@@ -1,0 +1,16 @@
+/**
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-FileCopyrightText: Copyright (c) 2026, Basalte bv
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test_nvmem0: nvmem-psa-ps {
+		compatible = "zephyr,nvmem-psa-ps";
+		/* Offset the UIDs: cell@0 must not map to UID 0, which is invalid */
+		uid-base = <0x0 0x1000>;
+	};
+};
+
+#include "common.dtsi"
+#include "psa_cells.dtsi"

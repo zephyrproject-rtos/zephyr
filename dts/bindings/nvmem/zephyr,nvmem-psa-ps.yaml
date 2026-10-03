@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NVMEM provider backed by PSA Protected Storage (PS).
+
+  Each NVMEM cell in the child nvmem-layout node maps to one PS entry whose
+  UID is the cell's reg address plus the optional uid-base property. This
+  allows entries that already exist, for example ones written by another
+  component or during provisioning, to be consumed as NVMEM cells.
+
+  The semantics are identical to the zephyr,nvmem-psa-its binding, except
+  entries are accessed through the PSA Protected Storage API.
+
+compatible: "zephyr,nvmem-psa-ps"
+
+include: zephyr,nvmem-psa-common.yaml
+
+examples:
+  - |
+    psa_ps: nvmem-psa-ps {
+        compatible = "zephyr,nvmem-psa-ps";
+        /* entries live at UID 0xC2E00000_00000000 + the cell address */
+        uid-base = <0xC2E00000 0x0>;
+
+        nvmem-layout {
+            compatible = "fixed-layout";
+            #address-cells = <1>;
+            #size-cells = <1>;
+
+            cred0: cred@5 {
+                reg = <0x5 0x100>;
+                #nvmem-cell-cells = <0>;
+            };
+        };
+    };
