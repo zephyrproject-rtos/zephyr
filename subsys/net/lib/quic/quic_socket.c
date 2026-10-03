@@ -716,41 +716,26 @@ static int quic_conn_poll_update_ctx(struct quic_context *ctx,
 	return 0;
 }
 
-static int quic_ctx_ioctl_vmeth(void *obj, unsigned int request, va_list args)
+static int quic_ctx_poll_prepare_vmeth(void *obj, struct zvfs_pollfd *pfd,
+			struct k_poll_event **pev, struct k_poll_event *pev_end)
 {
-	struct quic_context *ctx = obj;
+	return quic_conn_poll_prepare_ctx(obj, pfd, pev, pev_end);
+}
 
-	switch (request) {
-	case ZFD_IOCTL_POLL_OFFLOAD:
-		return -ENOTSUP;
+static int quic_ctx_poll_update_vmeth(void *obj, struct zvfs_pollfd *pfd,
+			struct k_poll_event **pev)
+{
+	return quic_conn_poll_update_ctx(obj, pfd, pev);
+}
 
-	case ZFD_IOCTL_POLL_PREPARE: {
-		struct zsock_pollfd *pfd;
-		struct k_poll_event **pev;
-		struct k_poll_event *pev_end;
+static int quic_ctx_poll_offload_vmeth(void *obj, struct zvfs_pollfd *fds, int nfds, int timeout)
+{
+	ARG_UNUSED(obj);
+	ARG_UNUSED(fds);
+	ARG_UNUSED(nfds);
+	ARG_UNUSED(timeout);
 
-		pfd = va_arg(args, struct zsock_pollfd *);
-		pev = va_arg(args, struct k_poll_event **);
-		pev_end = va_arg(args, struct k_poll_event *);
-
-		return quic_conn_poll_prepare_ctx(ctx, pfd, pev, pev_end);
-	}
-
-	case ZFD_IOCTL_POLL_UPDATE: {
-		struct zsock_pollfd *pfd;
-		struct k_poll_event **pev;
-
-		pfd = va_arg(args, struct zsock_pollfd *);
-		pev = va_arg(args, struct k_poll_event **);
-
-		return quic_conn_poll_update_ctx(ctx, pfd, pev);
-	}
-
-	default:
-		break;
-	}
-
-	return 0;
+	return -ENOTSUP;
 }
 
 static bool quic_stream_can_send(struct quic_stream *stream)
@@ -887,41 +872,26 @@ static int quic_stream_poll_update(struct quic_stream *stream,
 	return 0;
 }
 
-static int quic_stream_ioctl_vmeth(void *obj, unsigned int request, va_list args)
+static int quic_stream_poll_prepare_vmeth(void *obj, struct zvfs_pollfd *pfd,
+			struct k_poll_event **pev, struct k_poll_event *pev_end)
 {
-	struct quic_stream *stream = obj;
+	return quic_stream_poll_prepare(obj, pfd, pev, pev_end);
+}
 
-	switch (request) {
-	case ZFD_IOCTL_POLL_OFFLOAD:
-		return -ENOTSUP;
+static int quic_stream_poll_update_vmeth(void *obj, struct zvfs_pollfd *pfd,
+			struct k_poll_event **pev)
+{
+	return quic_stream_poll_update(obj, pfd, pev);
+}
 
-	case ZFD_IOCTL_POLL_PREPARE: {
-		struct zsock_pollfd *pfd;
-		struct k_poll_event **pev;
-		struct k_poll_event *pev_end;
+static int quic_stream_poll_offload_vmeth(void *obj, struct zvfs_pollfd *fds, int nfds, int timeout)
+{
+	ARG_UNUSED(obj);
+	ARG_UNUSED(fds);
+	ARG_UNUSED(nfds);
+	ARG_UNUSED(timeout);
 
-		pfd = va_arg(args, struct zsock_pollfd *);
-		pev = va_arg(args, struct k_poll_event **);
-		pev_end = va_arg(args, struct k_poll_event *);
-
-		return quic_stream_poll_prepare(stream, pfd, pev, pev_end);
-	}
-
-	case ZFD_IOCTL_POLL_UPDATE: {
-		struct zsock_pollfd *pfd;
-		struct k_poll_event **pev;
-
-		pfd = va_arg(args, struct zsock_pollfd *);
-		pev = va_arg(args, struct k_poll_event **);
-
-		return quic_stream_poll_update(stream, pfd, pev);
-	}
-
-	default:
-		break;
-	}
-
-	return 0;
+	return -ENOTSUP;
 }
 
 static int quic_wait_for_application_send_ready(struct quic_endpoint *ep,
@@ -2275,7 +2245,9 @@ static int quic_stream_shutdown_vmeth(void *obj, int how)
 static const struct socket_op_vtable quic_ctx_fd_op_vtable = {
 	.fd_vtable = {
 		.close = quic_ctx_close_vmeth,
-		.ioctl = quic_ctx_ioctl_vmeth,
+		.poll_prepare = quic_ctx_poll_prepare_vmeth,
+		.poll_update = quic_ctx_poll_update_vmeth,
+		.poll_offload = quic_ctx_poll_offload_vmeth,
 	},
 	.accept = quic_accept_ctx,
 	.getsockopt = quic_getsockopt_ctx,
@@ -2287,7 +2259,9 @@ static const struct socket_op_vtable quic_stream_fd_op_vtable = {
 		.read = quic_stream_read_vmeth,
 		.write = quic_stream_write_vmeth,
 		.close = quic_stream_close_vmeth,
-		.ioctl = quic_stream_ioctl_vmeth,
+		.poll_prepare = quic_stream_poll_prepare_vmeth,
+		.poll_update = quic_stream_poll_update_vmeth,
+		.poll_offload = quic_stream_poll_offload_vmeth,
 	},
 	.sendto = quic_stream_sendto_ctx,
 	.recvfrom = quic_stream_recvfrom_ctx,

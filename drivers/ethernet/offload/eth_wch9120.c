@@ -387,18 +387,35 @@ static int ch9120_close(void *obj)
 	return 0;
 }
 
+static int ch9120_poll_prepare(void *obj, struct zvfs_pollfd *pfd,
+			struct k_poll_event **pev, struct k_poll_event *pev_end)
+{
+	ARG_UNUSED(obj);
+	ARG_UNUSED(pfd);
+	ARG_UNUSED(pev);
+	ARG_UNUSED(pev_end);
+
+	errno = EXDEV;
+	return -1;
+}
+
+static int ch9120_poll_update(void *obj, struct zvfs_pollfd *pfd, struct k_poll_event **pev)
+{
+	ARG_UNUSED(obj);
+	ARG_UNUSED(pfd);
+	ARG_UNUSED(pev);
+
+	errno = EXDEV;
+	return -1;
+}
+
 static int ch9120_ioctl(void *obj, unsigned int request, va_list args)
 {
 	ARG_UNUSED(obj);
+	ARG_UNUSED(request);
 	ARG_UNUSED(args);
 
-	switch (request) {
-	case ZFD_IOCTL_POLL_PREPARE:
-	case ZFD_IOCTL_POLL_UPDATE:
-		return -EXDEV;
-	default:
-		return -EINVAL;
-	}
+	return -EINVAL;
 }
 
 static int ch9120_connect(void *obj, const struct net_sockaddr *addr, net_socklen_t addrlen)
@@ -824,6 +841,8 @@ static const struct socket_op_vtable ch9120_socket_fd_op_vtable = {
 		.write = ch9120_write,
 		.close = ch9120_close,
 		.ioctl = ch9120_ioctl,
+		.poll_prepare = ch9120_poll_prepare,
+		.poll_update = ch9120_poll_update,
 	},
 	.bind = NULL,
 	.connect = ch9120_connect,
