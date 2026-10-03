@@ -1,0 +1,71 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Dev It Wise
+# SPDX-License-Identifier: Apache-2.0
+#
+# libFuzzer dictionary for the MQTT receive path. The tokens are the
+# byte sequences the encoding gives meaning to: the fixed-header byte
+# that selects the packet type, the continuation bytes that extend the
+# remaining length, and the 5.0 property identifiers. Reaching a
+# property identifier by mutation alone costs the fuzzer the executions
+# that should go into the property walk behind it.
+
+# Fixed header: packet type in the high nibble, flags in the low one.
+# A packet the client does not expect is dropped without being decoded,
+# so only the ones it decodes are listed.
+pkt_connack="\x20"
+pkt_publish_qos0="\x30"
+pkt_publish_qos1="\x32"
+pkt_publish_qos2="\x34"
+pkt_publish_dup_retain="\x3b"
+pkt_puback="\x40"
+pkt_pubrec="\x50"
+pkt_pubrel="\x62"
+pkt_pubcomp="\x70"
+pkt_suback="\x90"
+pkt_unsuback="\xb0"
+pkt_pingresp="\xd0"
+pkt_disconnect="\xe0"
+pkt_auth="\xf0"
+
+# Remaining length, and every other variable-length integer: the high
+# bit continues the field into the next byte, up to four of them.
+varint_cont="\x80"
+varint_max="\xff\xff\xff\x7f"
+varint_overlong="\xff\xff\xff\xff"
+
+# Property identifiers, 5.0 only. Each is followed by a value whose
+# width the identifier decides, which is where a length taken from the
+# wire becomes a read.
+prop_payload_format="\x01"
+prop_message_expiry="\x02"
+prop_content_type="\x03"
+prop_response_topic="\x08"
+prop_correlation_data="\x09"
+prop_subscription_id="\x0b"
+prop_session_expiry="\x11"
+prop_assigned_client_id="\x12"
+prop_server_keep_alive="\x13"
+prop_auth_method="\x15"
+prop_auth_data="\x16"
+prop_response_information="\x1a"
+prop_server_reference="\x1c"
+prop_reason_string="\x1f"
+prop_receive_maximum="\x21"
+prop_topic_alias_maximum="\x22"
+prop_topic_alias="\x23"
+prop_maximum_qos="\x24"
+prop_retain_available="\x25"
+prop_user_property="\x26"
+prop_maximum_packet_size="\x27"
+
+# A property list that announces more bytes than the packet carries is
+# the shape the length checks exist for.
+prop_len_empty="\x00"
+prop_len_overlong="\xff\x7f"
+
+# Reason codes a broker returns, which decide whether the client keeps
+# decoding the packet or gives up on the connection.
+reason_success="\x00"
+reason_topic_alias_invalid="\x94"
+reason_packet_too_large="\x95"
+reason_malformed_packet="\x81"
