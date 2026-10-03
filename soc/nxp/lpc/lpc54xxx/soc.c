@@ -202,6 +202,17 @@ __weak void clock_init(void)
 			(CPU_FREQ / FSL_FEATURE_SDIF_MAX_SOURCE_CLOCK) + 1U, true);
 #endif
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(dmic0), nxp_dmic, okay)
+	/*
+	 * The DMIC functional clock is the PDM bit clock: 12 MHz FRO divided by
+	 * 5 gives 2.4 MHz. Boards using 2FS output then get an exact
+	 * oversampling ratio at 16 kHz, so the achieved PCM rate is the
+	 * requested one.
+	 */
+	CLOCK_AttachClk(kFRO12M_to_DMIC);
+	CLOCK_SetClkDiv(kCLOCK_DivDmicClk, 5U, false);
+#endif
+
 	/*
 	 * The M_CAN functional clock is the core clock divided by CANnCLKDIV,
 	 * which is halted out of reset. Divide by 11 -> 20 MHz at a 220 MHz
