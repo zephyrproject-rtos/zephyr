@@ -11,6 +11,7 @@
 #include <zephyr/timing/timing.h>
 #include <zephyr/sys/spsc_lockfree.h>
 #include <zephyr/sys/mpsc_lockfree.h>
+#include <zephyr/sys/mpsc_lockfree_priority.h>
 
 static struct mpsc push_pop_q;
 static struct mpsc_node push_pop_nodes[2];
@@ -66,6 +67,52 @@ ZTEST(mpsc, test_push_pop)
 
 	node = mpsc_pop(&push_pop_q);
 	zassert_is_null(node, "Pop on empty queue should return null");
+}
+
+
+/*
+ * @brief Test for MPSC priority ordering
+ *
+ * This test verifies that elements pushed into the MPSC priority queue
+ * are popped in the correct priority order.
+ */
+#define MPSC_PRIORITY_LEVELS 3
+
+struct test_mpsc_priority_node {
+	struct mpsc_node node;
+	uint32_t value;
+};
+
+ZTEST(mpsc, test_priority_ordering)
+{
+	struct mpsc queues[MPSC_PRIORITY_LEVELS];
+	struct mpsc_priority priority_q;
+	struct test_mpsc_priority_node nodes[] = {
+		{ .value = 0U },
+		{ .value = 1U },
+		{ .value = 2U },
+		{ .value = 3U },
+	};
+	const uint32_t expected[] = { 1U, 2U, 0U, 3U };
+
+	mpsc_priority_init(&priority_q, queues, ARRAY_SIZE(queues));
+	zassert_is_null(mpsc_priority_pop(&priority_q));
+
+	mpsc_priority_push(&priority_q, &nodes[0].node, 2U);
+	mpsc_priority_push(&priority_q, &nodes[1].node, 0U);
+	mpsc_priority_push(&priority_q, &nodes[2].node, 1U);
+	mpsc_priority_push(&priority_q, &nodes[3].node, 2U);
+
+	for (size_t i = 0U; i < ARRAY_SIZE(expected); i++) {
+		struct mpsc_node *node = mpsc_priority_pop(&priority_q);
+		struct test_mpsc_priority_node *priority_node;
+
+		zassert_not_null(node);
+		priority_node = CONTAINER_OF(node, struct test_mpsc_priority_node, node);
+		zassert_equal(priority_node->value, expected[i]);
+	}
+
+	zassert_is_null(mpsc_priority_pop(&priority_q));
 }
 
 #define MPSC_FREEQ_SZ 8
