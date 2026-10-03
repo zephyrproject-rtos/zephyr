@@ -69,4 +69,13 @@ config SOC_ATMEL_SAMD5X_OSCULP32K_AS_MAIN
 
 endchoice
 
+config SOC_ATMEL_SAMD5X_CMCC
+	bool "Cortex M Cache Controller (CMCC)"
+	default y
+	help
+	  Enable the 4 KB cache on the Cortex-M4F code bus, which serves the
+	  internal flash, the NVM user and calibration pages and the QSPI
+	  memory window. The SAM0 flash driver invalidates it after erase and
+	  write; any other code that changes these memories must do the same.
+
 endif
