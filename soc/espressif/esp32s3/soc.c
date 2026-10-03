@@ -39,6 +39,12 @@ static void IRAM_ATTR esp_errata(void)
 
 void IRAM_ATTR __esp_platform_app_start(void)
 {
+	/* esp_restart() does not reset LCD_CAM, which may still be scanning out from the previous
+	 * run
+	 */
+	SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN1_REG, SYSTEM_LCD_CAM_RST | SYSTEM_DMA_RST);
+	CLEAR_PERI_REG_MASK(SYSTEM_PERIP_RST_EN1_REG, SYSTEM_LCD_CAM_RST | SYSTEM_DMA_RST);
+
 	/* Configure the mode of instruction cache : cache size, cache line size. */
 	esp_config_instruction_cache_mode();
 
