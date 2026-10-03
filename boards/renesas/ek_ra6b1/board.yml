@@ -1,0 +1,8 @@
+board:
+  name: ek_ra6b1
+  full_name: RA6B1 Evaluation Kit
+  vendor: renesas
+  socs:
+  - name: r7ka6b1bg4znq
+  - name: r7ka6b1bg4zdc
+  - name: r7ka6b1bg4zak

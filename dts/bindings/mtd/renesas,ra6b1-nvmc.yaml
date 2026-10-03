@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA6B1 NVMC driver.
+
+include: flash-controller.yaml
+
+compatible: "renesas,ra6b1-nvmc"
+
+properties:
+  interrupts:
+    required: true
