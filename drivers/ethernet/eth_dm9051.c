@@ -790,8 +790,10 @@ static int eth_dm9051_rx(const struct device *dev)
 		ret = net_recv_data(data->iface, pkt);
 		k_mutex_lock(&data->spi_lock, K_FOREVER);
 		if (ret < 0) {
+			/* Drop only this frame: the read pointer is at the next one */
+			LOG_DBG("%s: RX packet not accepted (err %d)", dev->name, ret);
 			net_pkt_unref(pkt);
-			goto out_update_errors_rx;
+			eth_stats_update_errors_rx(data->iface);
 		}
 
 		if (data->resets != resets) {
