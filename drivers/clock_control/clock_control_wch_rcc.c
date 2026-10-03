@@ -102,7 +102,12 @@ static int clock_control_wch_rcc_get_rate(const struct device *dev, clock_contro
 	const struct clock_control_wch_rcc_config *config = dev->config;
 	RCC_TypeDef *regs = config->regs;
 	uint32_t cfgr0 = regs->CFGR0;
+#if WCH_RCC_SRC_IS_H41X_PLL
+	/* The H41x SysTick runs from HCLK, while the V5F core and SYSCLK run faster. */
+	uint32_t sysclk = WCH_RCC_SYSCLK;
+#else
 	uint32_t sysclk = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+#endif
 	uint32_t ahbclk = sysclk;
 
 #if WCH_RCC_SRC_IS_H41X_PLL
