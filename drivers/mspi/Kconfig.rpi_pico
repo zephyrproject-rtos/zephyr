@@ -1,0 +1,18 @@
+# Copyright (c) 2026 WIZnet Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config MSPI_RPI_PICO_PIO
+	bool "Raspberry Pi Pico PIO MSPI controller"
+	default y
+	depends on DT_HAS_RASPBERRYPI_PICO_MSPI_PIO_ENABLED
+	depends on RESET
+	select PINCTRL
+	select PICOSDK_USE_PIO
+	select DMA
+	help
+	  Enable the PIO based MSPI controller for RP2040/RP2350.
+	  Supports MSPI_IO_MODE_QUAD_1_4_4 for devices such as the
+	  WIZnet W6300 Ethernet controller.
+
+	  The PIO FIFOs are fed and drained by DMA, so the controller node
+	  needs a TX and an RX channel in dmas/dma-names.

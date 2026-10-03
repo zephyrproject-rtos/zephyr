@@ -6,6 +6,25 @@ if BOARD_W6300_EVB_PICO2
 configdefault ETH_DRIVER
 	default y
 
+# The W6300 hangs off the PIO based MSPI controller, which initialises at
+# MSPI_INIT_PRIORITY (70), so the Ethernet driver has to come after it.
+config ETH_INIT_PRIORITY
+	default 80
+
+if NET_L2_ETHERNET
+
+# A 1500 byte frame occupies twelve fixed size network buffers, so the default
+# RX pools only cover a handful of frames in flight.  Once they are exhausted
+# the driver blocks in its RX path and the W6300 socket buffer overflows, which
+# shows up as silent packet loss under sustained line rate traffic.
+configdefault NET_BUF_RX_COUNT
+	default 256
+
+configdefault NET_PKT_RX_COUNT
+	default 32
+
+endif # NET_L2_ETHERNET
+
 config USB_SELF_POWERED
 	default n
 

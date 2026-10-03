@@ -6,6 +6,7 @@
 
 #include <freq.h>
 
+#include <zephyr/dt-bindings/clock/rpi_pico_clock_common.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
@@ -65,9 +66,17 @@
 		};
 	};
 
+	/*
+	 * Single data line fallback for the W6300.  The W6300 signals are not
+	 * routed to the RP2350 SPI0 pinmux, so this bus has to be bit-banged
+	 * and only reaches 500 kHz.  The board therefore drives the W6300 over
+	 * the PIO based MSPI controller (&mspi0) by default.  To fall back to
+	 * single data line SPI, enable &spi_w6300 and &ethernet_spi and disable
+	 * &mspi0 and &ethernet.
+	 */
 	spi_w6300: spi-bitbang {
 		compatible = "zephyr,spi-bitbang";
-		status = "okay";
+		status = "disabled";
 		#address-cells = <1>;
 		#size-cells = <0>;
 		clk-gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
@@ -75,14 +84,14 @@
 		sdi-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
 		cs-gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
 
-		ethernet: w6300@0 {
+		ethernet_spi: w6300@0 {
 			compatible = "wiznet,w6300";
 			reg = <0x0>;
 			spi-max-frequency = <500000>;
 			int-gpios = <&gpio0 15 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			reset-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
 			zephyr,random-mac-address;
-			status = "okay";
+			status = "disabled";
 		};
 	};
 
@@ -115,6 +124,52 @@
 	clock-frequency = <DT_FREQ_M(8)>;
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
+};
+
+/*
+ * PIO QSPI bus for W6300
+ *  CS  : GPIO16   CLK : GPIO17
+ *  IO0 : GPIO18   IO1 : GPIO19
+ *  IO2 : GPIO20   IO3 : GPIO21
+ *  INT : GPIO15   RST : GPIO22
+ */
+&pio0 {
+	status = "okay";
+
+	mspi0: mspi0 {
+		compatible = "raspberrypi,pico-mspi-pio";
+		status = "okay";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		pinctrl-0 = <&pio0_qspi_default>;
+		pinctrl-names = "default";
+		clocks = <&clocks RPI_PICO_CLKID_CLK_SYS>;
+		clk-gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
+		io0-gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;
+		io1-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
+		io2-gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
+		io3-gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
+		ce-gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
+		dmas = <&dma 0 0 0>, <&dma 1 0 0>;
+		dma-names = "tx", "rx";
+
+		ethernet: w6300@0 {
+			compatible = "wiznet,w6300";
+			reg = <0>;
+			mspi-max-frequency = <33000000>;
+			mspi-io-mode = "MSPI_IO_MODE_QUAD_1_4_4";
+			mspi-cpp-mode = "MSPI_CPP_MODE_0";
+			mspi-ce-polarity = "MSPI_CE_ACTIVE_LOW";
+			int-gpios = <&gpio0 15 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			reset-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+			zephyr,random-mac-address;
+			status = "okay";
+		};
+	};
+};
+
+&dma {
+	status = "okay";
 };
 
 &i2c0 {
