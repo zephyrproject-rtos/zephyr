@@ -956,6 +956,33 @@ static void wait_for_data(void)
 	LOG_INF("Data received");
 }
 
+static bool find_recv_state_by_broadcast_id_cb(
+	const struct bt_bap_scan_delegator_recv_state *recv_state, void *user_data)
+{
+	const uint32_t *broadcast_id = user_data;
+
+	return recv_state->broadcast_id == *broadcast_id;
+}
+
+static void test_recv_state_decrypting(void)
+{
+	const struct bt_bap_scan_delegator_recv_state *recv_state;
+
+	recv_state = bt_bap_scan_delegator_find_state(find_recv_state_by_broadcast_id_cb,
+						       &broadcaster_broadcast_id);
+	if (recv_state == NULL) {
+		FAIL("Could not find receive state for broadcast ID 0x%06X\n",
+		     broadcaster_broadcast_id);
+		return;
+	}
+
+	if (recv_state->encrypt_state != BT_BAP_BIG_ENC_STATE_DEC) {
+		FAIL("Invalid encrypt_state 0x%02X, expected 0x%02X\n", recv_state->encrypt_state,
+		     BT_BAP_BIG_ENC_STATE_DEC);
+		return;
+	}
+}
+
 static void test_common(void)
 {
 	int err;
@@ -1112,6 +1139,21 @@ static void test_sink_encrypted(void)
 	}
 
 	wait_for_data();
+	test_recv_state_decrypting();
+
+	test_broadcast_stop();
+	test_broadcast_sync(BROADCAST_CODE);
+
+	WAIT_FOR_FLAG(flag_sink_started);
+
+	LOG_INF("Waiting for %zu streams to be started", stream_sync_cnt);
+	for (size_t i = 0U; i < stream_sync_cnt; i++) {
+		err = k_sem_take(&sem_stream_started, K_FOREVER);
+		__ASSERT_NO_MSG(err == 0);
+	}
+
+	wait_for_data();
+	test_recv_state_decrypting();
 
 	backchannel_sync_send_all(); /* let other devices know we have received data */
 
