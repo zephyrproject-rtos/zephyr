@@ -38,6 +38,14 @@
 	status = "okay";
 };
 
+/* 17.2032 MHz crystal on the ECO pins, disabled by default */
+&clk_eco {
+	clock-frequency = <17203200>;
+	eco-ctrim = <6>;
+	eco-gtrim = <2>;
+	eco-iboost = <1>;
+};
+
 /* For the dpll clocks declared below
  * The clock-frequency value is here for dts reference, but
  * it does not affect the frequency set by the clock_control
