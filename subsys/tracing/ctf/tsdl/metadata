@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2026 Picoheart Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 /* CTF 1.8 */
 typealias integer { size = 8; align = 8; signed = true; } := int8_t;
 typealias integer { size = 8; align = 8; signed = false; } := uint8_t;
@@ -20,6 +25,9 @@ trace {
 
 stream {
 	event.header := struct event_header;
+	event.context := struct {
+		uint8_t cpu_id;
+	};
 };
 
 event {
