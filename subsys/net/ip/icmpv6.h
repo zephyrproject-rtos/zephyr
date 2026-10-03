@@ -149,6 +149,8 @@ struct net_icmpv6_ptb {
 #define NET_ICMPV6_TIME_EXCEEDED  3	/* Time exceeded */
 #define NET_ICMPV6_PARAM_PROBLEM  4	/* IPv6 header is bad */
 #define NET_ICMPV6_MLD_QUERY    130	/* Multicast Listener Query */
+#define NET_ICMPV6_MLDv1_REPORT 131	/* Multicast Listener Report v1 */
+#define NET_ICMPV6_MLDv1_DONE   132	/* Multicast Listener Done v1 */
 #define NET_ICMPV6_RS           133	/* Router Solicitation */
 #define NET_ICMPV6_RA           134	/* Router Advertisement */
 #define NET_ICMPV6_NS           135	/* Neighbor Solicitation */

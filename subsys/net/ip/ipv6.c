@@ -205,6 +205,151 @@ static inline bool ipv6_drop_on_unknown_option(struct net_pkt *pkt,
 	return true;
 }
 
+/* Hand one option to the callback with the cursor at its data, then move past
+ * the data whatever the callback consumed.
+ */
+static int ipv6_ext_hdr_option_handle(struct net_pkt *pkt, uint8_t hdr_type, uint8_t opt_type,
+				      uint8_t opt_len, net_ipv6_ext_hdr_option_cb_t cb,
+				      void *user_data)
+{
+	struct net_pkt_cursor data;
+	int ret = 0;
+
+	net_pkt_cursor_backup(pkt, &data);
+
+	if (opt_type != NET_IPV6_EXT_HDR_OPT_PADN) {
+		ret = cb(pkt, hdr_type, opt_type, opt_len, user_data);
+	}
+
+	net_pkt_cursor_restore(pkt, &data);
+
+	if (net_pkt_skip(pkt, opt_len) < 0) {
+		return -EINVAL;
+	}
+
+	return ret;
+}
+
+/* Walk the TLV options of a Hop-by-Hop or Destination Options header (RFC
+ * 8200 ch 4.2) with the cursor at its start, and leave it at the next header.
+ */
+static int ipv6_options_hdr_walk(struct net_pkt *pkt, uint8_t hdr_type, uint8_t *next_hdr,
+				 net_ipv6_ext_hdr_option_cb_t cb, void *user_data)
+{
+	uint8_t hdr_ext_len;
+	uint16_t left;
+	int ret = 0;
+
+	if (net_pkt_read_u8(pkt, next_hdr) < 0 || net_pkt_read_u8(pkt, &hdr_ext_len) < 0) {
+		return -EINVAL;
+	}
+
+	/* The length is in 8 octet units, not counting the first 8 octets */
+	left = (hdr_ext_len + 1U) * 8U - 2U;
+
+	while (left > 0U && ret == 0) {
+		uint8_t opt_type;
+		uint8_t opt_len;
+
+		if (net_pkt_read_u8(pkt, &opt_type) < 0) {
+			return -EINVAL;
+		}
+
+		left--;
+
+		if (opt_type == NET_IPV6_EXT_HDR_OPT_PAD1) {
+			continue;
+		}
+
+		if (left == 0U || net_pkt_read_u8(pkt, &opt_len) < 0) {
+			return -EINVAL;
+		}
+
+		left--;
+
+		if (opt_len > left) {
+			return -EINVAL;
+		}
+
+		ret = ipv6_ext_hdr_option_handle(pkt, hdr_type, opt_type, opt_len, cb, user_data);
+		left -= opt_len;
+	}
+
+	return ret;
+}
+
+/* Step over a Routing or Fragment header with the cursor at its start, and
+ * leave it at the next header.
+ */
+static int ipv6_ext_hdr_skip(struct net_pkt *pkt, uint8_t hdr_type, uint8_t *next_hdr)
+{
+	uint8_t hdr_ext_len;
+	size_t rest;
+
+	if (net_pkt_read_u8(pkt, next_hdr) < 0) {
+		return -EINVAL;
+	}
+
+	if (hdr_type == NET_IPV6_NEXTHDR_FRAG) {
+		/* A Fragment header is always 8 octets long */
+		rest = 8U - sizeof(*next_hdr);
+	} else {
+		/* A Routing header is (hdr_ext_len + 1) * 8 octets long */
+		if (net_pkt_read_u8(pkt, &hdr_ext_len) < 0) {
+			return -EINVAL;
+		}
+
+		rest = (hdr_ext_len + 1U) * 8U - sizeof(*next_hdr) - sizeof(hdr_ext_len);
+	}
+
+	if (net_pkt_skip(pkt, rest) < 0) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int net_ipv6_parse_ext_hdr_options(struct net_pkt *pkt, net_ipv6_ext_hdr_option_cb_t cb,
+				   void *user_data)
+{
+	struct net_pkt_cursor backup;
+	uint8_t next_hdr;
+	int ret = -EINVAL;
+
+	net_pkt_cursor_backup(pkt, &backup);
+	net_pkt_cursor_init(pkt);
+
+	if (net_pkt_skip(pkt, offsetof(struct net_ipv6_hdr, nexthdr)) < 0 ||
+	    net_pkt_read_u8(pkt, &next_hdr) < 0 ||
+	    net_pkt_skip(pkt, sizeof(struct net_ipv6_hdr) - offsetof(struct net_ipv6_hdr, nexthdr) -
+				  sizeof(next_hdr)) < 0) {
+		goto out;
+	}
+
+	ret = 0;
+
+	while (ret == 0) {
+		switch (next_hdr) {
+		case NET_IPV6_NEXTHDR_HBHO:
+		case NET_IPV6_NEXTHDR_DESTO:
+			ret = ipv6_options_hdr_walk(pkt, next_hdr, &next_hdr, cb, user_data);
+			break;
+		case NET_IPV6_NEXTHDR_ROUTING:
+		case NET_IPV6_NEXTHDR_FRAG:
+			ret = ipv6_ext_hdr_skip(pkt, next_hdr, &next_hdr);
+			break;
+		default:
+			/* The upper layer header */
+			goto out;
+		}
+	}
+
+out:
+	net_pkt_cursor_restore(pkt, &backup);
+
+	return ret;
+}
+
 static inline int ipv6_handle_ext_hdr_options(struct net_pkt *pkt,
 					      struct net_ipv6_hdr *hdr,
 					      uint16_t pkt_len)

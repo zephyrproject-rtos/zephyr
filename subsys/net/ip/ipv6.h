@@ -59,8 +59,47 @@
  */
 #define NET_IPV6_EXT_HDR_OPT_PAD1  0
 #define NET_IPV6_EXT_HDR_OPT_PADN  1
+#define NET_IPV6_EXT_HDR_OPT_RTR_ALERT 5
 #define NET_IPV6_EXT_HDR_OPT_RPL   0x63
 
+/**
+ * @typedef net_ipv6_ext_hdr_option_cb_t
+ * @brief Extension header option callback of net_ipv6_parse_ext_hdr_options()
+ *
+ * @param pkt Network packet, with the cursor at the option data
+ * @param hdr_type Type of the extension header carrying the option, one of
+ *                 NET_IPV6_NEXTHDR_HBHO or NET_IPV6_NEXTHDR_DESTO
+ * @param opt_type Option type
+ * @param opt_len Option data length
+ * @param user_data User data given to net_ipv6_parse_ext_hdr_options()
+ *
+ * @retval 0 Continue with the next option
+ * @retval 1 Stop parsing
+ * @retval <0 Stop parsing with an error
+ */
+typedef int (*net_ipv6_ext_hdr_option_cb_t)(struct net_pkt *pkt, uint8_t hdr_type,
+					    uint8_t opt_type, uint8_t opt_len, void *user_data);
+
+/**
+ * @brief Walk the options of the extension headers of a packet
+ *
+ * Follows the extension header chain from the IPv6 header up to the upper
+ * layer header. The options of every Hop-by-Hop and Destination Options
+ * header are handed to the callback, except for the padding options.
+ * Routing and Fragment headers are stepped over. The packet cursor is left
+ * where it was.
+ *
+ * @param pkt Network packet
+ * @param cb Callback called for each option
+ * @param user_data User data passed to the callback
+ *
+ * @retval 0 All options were walked
+ * @retval 1 The callback stopped the walk
+ * @retval -EINVAL A header is malformed
+ * @retval <0 The negative value returned by the callback
+ */
+int net_ipv6_parse_ext_hdr_options(struct net_pkt *pkt, net_ipv6_ext_hdr_option_cb_t cb,
+				   void *user_data);
 /**
  * @brief Multicast Listener Record v2 record types.
  */
@@ -236,6 +275,26 @@ static inline int net_ipv6_finalize(struct net_pkt *pkt,
  */
 #if defined(CONFIG_NET_IPV6_MLD)
 int net_ipv6_mld_send_single(struct net_if *iface, const struct net_in6_addr *addr, uint8_t mode);
+
+/**
+ * @brief Maximum Response Delay of a Multicast Listener Query in milliseconds
+ *
+ * @param code Maximum Response Code of the query
+ * @param mldv2 Decode the floating point MLDv2 form of codes 32768 and above
+ *
+ * @return Maximum Response Delay in milliseconds.
+ */
+uint32_t net_ipv6_mld_max_resp_delay(uint16_t code, bool mldv2);
+
+/**
+ * @brief Report every multicast group listened to on the interface again
+ *
+ * Called when a link-local address becomes valid, as reports sent before
+ * that carried the unspecified source address (RFC 3810 ch 5.2.13).
+ *
+ * @param iface Network interface
+ */
+void net_ipv6_mld_report_all(struct net_if *iface);
 #else
 static inline int
 net_ipv6_mld_send_single(struct net_if *iface, const struct net_in6_addr *addr, uint8_t mode)
@@ -245,6 +304,10 @@ net_ipv6_mld_send_single(struct net_if *iface, const struct net_in6_addr *addr, 
 	ARG_UNUSED(mode);
 
 	return -ENOTSUP;
+}
+static inline void net_ipv6_mld_report_all(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
 }
 #endif /* CONFIG_NET_IPV6_MLD */
 
