@@ -70,6 +70,22 @@ union z_tricore_context {
 	struct z_tricore_upper_context upper;
 };
 
+/**
+ * @brief Convert a PCX pointer to a context save area address.
+ *
+ * PCXS holds the segment in bits 19:16 and PCXO the offset in bits 15:0; the
+ * resulting address is {PCXS, 6'b0, PCXO, 6'b0}. The exception wrapper in
+ * syscall_wrapper.S performs the same conversion in assembly.
+ *
+ * @param pcx PCX pointer as held in the PCXI or FCX register.
+ *
+ * @return Start address of the referenced context save area.
+ */
+static inline uintptr_t z_tricore_pcx_to_addr(uint32_t pcx)
+{
+	return (uintptr_t)((pcx & 0xF0000U) << 12) | (uintptr_t)((pcx & 0xFFFFU) << 6);
+}
+
 #ifdef __cplusplus
 }
 #endif
