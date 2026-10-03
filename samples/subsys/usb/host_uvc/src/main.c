@@ -196,7 +196,6 @@ static int setup_video_streaming(const struct device *uvc_dev,
 				 struct video_format *const fmt)
 {
 	struct video_caps caps = {.type = VIDEO_BUF_TYPE_OUTPUT};
-	size_t bsize;
 	int ret;
 
 	/* Get capabilities */
@@ -213,18 +212,10 @@ static int setup_video_streaming(const struct device *uvc_dev,
 
 	log_video_info(uvc_dev, &caps, fmt);
 
-	bsize = fmt->width * fmt->height * 2;
+	video_estimate_fmt_size(fmt);
 
-	if (caps.min_vbuf_count > CONFIG_VIDEO_BUFFER_POOL_NUM_MAX ||
-	    bsize > (CONFIG_APP_VIDEO_FRAME_WIDTH * CONFIG_APP_VIDEO_FRAME_HEIGHT * 2)) {
-		LOG_ERR("Not enough buffers or memory to start streaming");
-		return -ENOMEM;
-	}
-
-	ret = allocate_buffers_and_start_stream(uvc_dev, allocated_vbufs,
-						allocated_count, bsize, caps.type);
-
-	return ret;
+	return allocate_buffers_and_start_stream(uvc_dev, allocated_vbufs,
+						 allocated_count, fmt->size, caps.type);
 }
 
 /* Cleanup video streaming resources */
@@ -286,9 +277,6 @@ int main(void)
 	const struct device *uvc_dev = device_get_binding("usbh_uvc_0");
 	struct video_buffer *allocated_vbufs[CONFIG_VIDEO_BUFFER_POOL_NUM_MAX] = {NULL};
 	struct video_format fmt;
-	struct k_poll_signal sig;
-	struct k_poll_event evt[1];
-	k_timeout_t timeout = K_FOREVER;
 	enum video_buf_type type = VIDEO_BUF_TYPE_OUTPUT;
 	uint32_t frame_count = 0;
 	uint8_t allocated_count = 0;
@@ -311,16 +299,13 @@ int main(void)
 		return err;
 	}
 
-	LOG_INF("USB host video device %s is ready", uvc_dev->name);
-
-	k_poll_signal_init(&sig);
-	k_poll_event_init(&evt[0], K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &sig);
-
-	err = video_set_signal(uvc_dev, &sig);
-	if (err != 0) {
-		LOG_WRN("Failed to setup the signal on %s output endpoint", uvc_dev->name);
-		timeout = K_MSEC(10);
+	err = uhc_sof_enable(uhs_ctx.dev);
+	if (err) {
+		LOG_ERR("Failed to enable SOF traffic");
+		return err;
 	}
+
+	LOG_INF("USB host video device %s is ready", uvc_dev->name);
 
 	while (true) {
 		/* Wait for video device connection */
@@ -339,18 +324,10 @@ int main(void)
 
 		/* Main video streaming loop - process frames until disconnect */
 		while (true) {
-			err = k_poll(evt, ARRAY_SIZE(evt), timeout);
-			if (err != 0 && err != -EAGAIN) {
-				LOG_WRN("Poll failed with error %d", err);
-				continue;
-			}
-
 			err = process_video_stream(uvc_dev, &frame_count);
 			if (err == -ENODEV) {
 				break;
 			}
-
-			k_poll_signal_reset(&sig);
 		}
 
 		err = cleanup_video_streaming(uvc_dev, allocated_vbufs, &allocated_count, type);
