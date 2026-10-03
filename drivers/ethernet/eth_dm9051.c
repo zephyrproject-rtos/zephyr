@@ -190,6 +190,10 @@ LOG_MODULE_REGISTER(eth_dm9051, CONFIG_ETHERNET_LOG_LEVEL);
 #define DM9051_ISR_IDLE_MAX		8U
 /* Wait after DM9051_ISR_IDLE_MAX idle ISR services */
 #define DM9051_ISR_IDLE_BACKOFF		K_MSEC(1)
+/* Frames read per RX drain before spi_lock is released to other users */
+#define DM9051_RX_DRAIN_MAX		16
+/* Longest time in ticks the RX thread runs without blocking before it sleeps a tick */
+#define DM9051_RX_BUSY_MAX_TICKS	10
 
 struct eth_dm9051_config {
 	struct net_eth_mac_config mac_cfg;
@@ -695,6 +699,13 @@ static int eth_dm9051_rx(const struct device *dev)
 	k_mutex_lock(&data->spi_lock, K_FOREVER);
 
 	while (true) {
+		if (frames >= DM9051_RX_DRAIN_MAX) {
+			/* Let a transmit waiting for spi_lock in, then drain again */
+			data->rx_pending = true;
+			k_sem_give(&data->int_event);
+			break;
+		}
+
 		/* Read RX flag */
 		ret = eth_dm9051_spi_read_mem(data->dev, DM9051_MRCMDX, (void *)&flag, 2);
 		if (ret < 0) {
@@ -845,6 +856,7 @@ static void eth_dm9051_rx_thread(void *p1, void *p2, void *p3)
 
 	const struct eth_dm9051_config *config;
 	struct eth_dm9051_data *data;
+	int64_t busy_since = k_uptime_ticks();
 	k_timeout_t timeout;
 	uint8_t idle = 0U;
 	struct device *dev;
@@ -871,7 +883,12 @@ static void eth_dm9051_rx_thread(void *p1, void *p2, void *p3)
 			timeout = (idle >= DM9051_ISR_IDLE_MAX) ? DM9051_ISR_IDLE_BACKOFF :
 								  DM9051_INT_POLL_PERIOD;
 			idle = 0U;
-			ret = k_sem_take(&data->int_event, timeout);
+			/* Only a wait that blocks ends a run of busy time */
+			ret = k_sem_take(&data->int_event, K_NO_WAIT);
+			if (ret != 0) {
+				ret = k_sem_take(&data->int_event, timeout);
+				busy_since = k_uptime_ticks();
+			}
 			/* A failed line read services ISR rather than waiting again */
 			if ((ret != 0) && (gpio_pin_get_dt(&config->gpio_int) == 0)) {
 				continue;
@@ -914,6 +931,16 @@ static void eth_dm9051_rx_thread(void *p1, void *p2, void *p3)
 		}
 
 		idle = progress ? 0U : (uint8_t)(idle + 1U);
+
+		/*
+		 * The thread is cooperative: while frames arrive as fast as SPI
+		 * reads them, it would never block, and no lower priority thread,
+		 * such as the one sending replies, would run.
+		 */
+		if ((k_uptime_ticks() - busy_since) >= DM9051_RX_BUSY_MAX_TICKS) {
+			k_sleep(K_TICKS(1));
+			busy_since = k_uptime_ticks();
+		}
 	}
 }
 
