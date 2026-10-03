@@ -14,8 +14,9 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/video/video.h>
 
-#define VIDEO_FRMIVAL_FPS(frmival)  DIV_ROUND_CLOSEST((frmival)->denominator, (frmival)->numerator)
-#define VIDEO_FRMIVAL_MSEC(frmival) (MSEC_PER_SEC * (frmival)->numerator / (frmival)->denominator)
+#define VIDEO_FRMIVAL_FPS(frmival) \
+	((frmival)->usec != 0U ? DIV_ROUND_CLOSEST(USEC_PER_SEC, (frmival)->usec) : 0U)
+#define VIDEO_FRMIVAL_MSEC(frmival) ((frmival)->usec / USEC_PER_MSEC)
 
 /* Helper to allow completion of sub-command with content that depends on previous selection */
 #define VIDEO_SHELL_COMPLETE_DEFINE(n, name)                                                       \
@@ -357,13 +358,17 @@ static int video_shell_print_frmival(const struct shell *sh, const struct device
 				    VIDEO_FRMIVAL_FPS(&fie.discrete));
 			break;
 		case VIDEO_FRMIVAL_TYPE_STEPWISE:
-			shell_print(sh, "\t\t\tInterval: "
-				    "Stepwise: %u ms - %u ms with step %u ms (%u - %u FPS)",
-				    VIDEO_FRMIVAL_MSEC(&fie.stepwise.min),
-				    VIDEO_FRMIVAL_MSEC(&fie.stepwise.max),
-				    VIDEO_FRMIVAL_MSEC(&fie.stepwise.step),
-				    VIDEO_FRMIVAL_FPS(&fie.stepwise.max),
-				    VIDEO_FRMIVAL_FPS(&fie.stepwise.min));
+			shell_print(
+				sh,
+				"\t\t\tInterval: "
+				"Stepwise: %u ms - %u ms with step %u ms (%u - %u FPS)",
+				(uint32_t)(fie.stepwise.min / USEC_PER_MSEC),
+				(uint32_t)(fie.stepwise.max / USEC_PER_MSEC),
+				(uint32_t)(fie.stepwise.step / USEC_PER_MSEC),
+				(uint32_t)(fie.stepwise.max != 0U ? USEC_PER_SEC / fie.stepwise.max
+								  : 0U),
+				(uint32_t)(fie.stepwise.min != 0U ? USEC_PER_SEC / fie.stepwise.min
+								  : 0U));
 			break;
 		default:
 			shell_error(sh, "Invalid type 0x%x", fie.type);
@@ -389,14 +394,15 @@ static int video_shell_set_frmival(const struct shell *sh, const struct device *
 
 	val = strtoul(arg_rate, &end_rate, 10);
 	if (strcmp(end_rate, "fps") == 0) {
-		frmival.numerator = 1;
-		frmival.denominator = val;
+		if (val == 0) {
+			shell_error(sh, "FPS must be greater than 0");
+			return -EINVAL;
+		}
+		frmival.usec = USEC_PER_SEC / val;
 	} else if (strcmp(end_rate, "ms") == 0) {
-		frmival.numerator = val;
-		frmival.denominator = MSEC_PER_SEC;
+		frmival.usec = val * USEC_PER_MSEC;
 	} else if (strcmp(end_rate, "us") == 0) {
-		frmival.numerator = val;
-		frmival.denominator = USEC_PER_SEC;
+		frmival.usec = val;
 	} else {
 		shell_error(sh, "Expected <n>ms, <n>us or <n>fps, not '%s'", arg_rate);
 		return -EINVAL;

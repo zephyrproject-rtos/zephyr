@@ -38,8 +38,7 @@ struct hm0360_data {
 };
 
 struct video_frmival default_frmival = {
-	.numerator = 1,
-	.denominator = 15
+	.usec = USEC_PER_SEC / 15,
 };
 
 enum {
@@ -615,29 +614,30 @@ static int hm0360_get_fmt(const struct device *dev, struct video_format *fmt)
 
 int hm0360_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
+	uint32_t fps;
+
 	switch (fie->index) {
 	case HM0360_60_FPS:
-		fie->discrete.denominator = 60;
+		fps = 60;
 		break;
 	case HM0360_30_FPS:
-		fie->discrete.denominator = 30;
+		fps = 30;
 		break;
 	case HM0360_15_FPS:
-		fie->discrete.denominator = 15;
+		fps = 15;
 		break;
 	case HM0360_10_FPS:
-		fie->discrete.denominator = 10;
+		fps = 10;
 		break;
 	default:
 		return -EINVAL;
 	}
 
 	fie->type = VIDEO_FRMIVAL_TYPE_DISCRETE;
-	fie->discrete.numerator = 1;
+	fie->discrete.usec = USEC_PER_SEC / fps;
 
 	return 0;
 }
-
 
 static int hm0360_set_frmival(const struct device *dev, struct video_frmival *frmival)
 {
@@ -661,15 +661,19 @@ static int hm0360_set_frmival(const struct device *dev, struct video_frmival *fr
 	switch (fie.index) {
 	case HM0360_60_FPS:
 		osc_div = highres ? 0x00 : 0x01;
+		drv_data->cur_frmrate = 60;
 		break;
 	case HM0360_30_FPS:
 		osc_div = highres ? 0x01 : 0x02;
+		drv_data->cur_frmrate = 30;
 		break;
 	case HM0360_15_FPS:
 		osc_div = highres ? 0x02 : 0x03;
+		drv_data->cur_frmrate = 15;
 		break;
 	case HM0360_10_FPS:
 		osc_div = 0x03;
+		drv_data->cur_frmrate = 10;
 		break;
 	default:
 		CODE_UNREACHABLE;
@@ -681,12 +685,9 @@ static int hm0360_set_frmival(const struct device *dev, struct video_frmival *fr
 		return ret;
 	}
 
-	LOG_DBG("FrameRate selected: %d", frmival->denominator);
+	frmival->usec = fie.discrete.usec;
 
-	frmival->denominator = fie.discrete.denominator;
-	drv_data->cur_frmrate = fie.discrete.denominator;
-
-	LOG_DBG("FrameRate rounded to: %d", fie.discrete.denominator);
+	LOG_DBG("FrameRate selected: %u us", fie.discrete.usec);
 	LOG_DBG("HIRES Selected: %d", highres);
 	LOG_DBG("OSC DIV: 0x%x", osc_div);
 
@@ -697,8 +698,7 @@ static int hm0360_get_frmival(const struct device *dev, struct video_frmival *fr
 {
 	struct hm0360_data *drv_data = dev->data;
 
-	frmival->denominator = drv_data->cur_frmrate;
-	frmival->numerator = 1;
+	frmival->usec = drv_data->cur_frmrate != 0 ? USEC_PER_SEC / drv_data->cur_frmrate : 0;
 
 	return 0;
 }

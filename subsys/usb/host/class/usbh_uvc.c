@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <inttypes.h>
 #include <stdlib.h>
 
 #include <zephyr/init.h>
@@ -1277,13 +1278,11 @@ static int set_frame_rate(const struct device *dev, uint32_t fps)
 		return 0;
 	}
 
-	fie.discrete.numerator = target_frmival;
-	fie.discrete.denominator = NSEC_PER_SEC / 100;
+	fie.discrete.usec = target_frmival / 10;
 
 	video_closest_frmival(dev, &fie);
 
-	best_frmival =
-		(fie.discrete.numerator * (NSEC_PER_SEC / 100ULL)) / fie.discrete.denominator;
+	best_frmival = fie.discrete.usec * 10;
 
 	LOG_DBG("Selected frame interval index: %u, interval: %u (100ns units)", fie.index,
 		best_frmival);
@@ -1788,16 +1787,13 @@ static int enum_frame_intervals(const struct uvc_frame_common_descriptor *frame_
 		}
 
 		frmival_enum->type = VIDEO_FRMIVAL_TYPE_STEPWISE;
-		frmival_enum->stepwise.min.numerator = sys_get_le32(interval_data);
-		frmival_enum->stepwise.min.denominator = (NSEC_PER_SEC / 100);
-		frmival_enum->stepwise.max.numerator = sys_get_le32(interval_data + 4);
-		frmival_enum->stepwise.max.denominator = (NSEC_PER_SEC / 100);
-		frmival_enum->stepwise.step.numerator = sys_get_le32(interval_data + 8);
-		frmival_enum->stepwise.step.denominator = (NSEC_PER_SEC / 100);
+		frmival_enum->stepwise.min = sys_get_le32(interval_data) / 10;
+		frmival_enum->stepwise.max = sys_get_le32(interval_data + 4) / 10;
+		frmival_enum->stepwise.step = sys_get_le32(interval_data + 8) / 10;
 
-		LOG_DBG("Stepwise intervals: min=%u, max=%u, step=%u (100ns)",
-			frmival_enum->stepwise.min.numerator, frmival_enum->stepwise.max.numerator,
-			frmival_enum->stepwise.step.numerator);
+		LOG_DBG("Stepwise intervals: min=%u, max=%u, step=%u us",
+			frmival_enum->stepwise.min, frmival_enum->stepwise.max,
+			frmival_enum->stepwise.step);
 
 	} else {
 		/* Discrete frame intervals */
@@ -1815,12 +1811,11 @@ static int enum_frame_intervals(const struct uvc_frame_common_descriptor *frame_
 		}
 
 		frmival_enum->type = VIDEO_FRMIVAL_TYPE_DISCRETE;
-		frmival_enum->discrete.numerator =
-			sys_get_le32(interval_data + frmival_enum->index * 4);
-		frmival_enum->discrete.denominator = (NSEC_PER_SEC / 100);
+		frmival_enum->discrete.usec =
+			sys_get_le32(interval_data + frmival_enum->index * 4) / 10;
 
-		LOG_DBG("Discrete interval[%u]: %u (100ns units)", frmival_enum->index,
-			frmival_enum->discrete.numerator);
+		LOG_DBG("Discrete interval[%u]: %u us", frmival_enum->index,
+			frmival_enum->discrete.usec);
 	}
 
 	return 0;
@@ -2545,11 +2540,11 @@ static int usbh_uvc_set_frmival(const struct device *dev, struct video_frmival *
 		return -ENODEV;
 	}
 
-	if (frmival->numerator == 0 || frmival->denominator == 0) {
+	if (frmival->usec == 0U) {
 		return -EINVAL;
 	}
 
-	fps = frmival->denominator / frmival->numerator;
+	fps = USEC_PER_SEC / frmival->usec;
 
 	ret = set_frame_rate(dev, fps);
 	if (ret != 0) {
@@ -2563,7 +2558,6 @@ static int usbh_uvc_set_frmival(const struct device *dev, struct video_frmival *
 static int usbh_uvc_get_frmival(const struct device *dev, struct video_frmival *const frmival)
 {
 	struct uvc_host_data *host_data = dev->data;
-	uint32_t fps;
 
 	if (!atomic_test_bit(&host_data->device_flags, UVC_DEVICE_FLAG_CONNECTED)) {
 		return -ENODEV;
@@ -2575,12 +2569,9 @@ static int usbh_uvc_get_frmival(const struct device *dev, struct video_frmival *
 		return -EINVAL;
 	}
 
-	fps = (NSEC_PER_SEC / 100) / host_data->current_format.frmival_100ns;
-	frmival->numerator = 1;
-	frmival->denominator = fps;
+	frmival->usec = host_data->current_format.frmival_100ns / 10;
 
-	LOG_DBG("Current frame interval: %u/%u (fps=%u)", frmival->numerator, frmival->denominator,
-		fps);
+	LOG_DBG("Current frame interval: %u us", frmival->usec);
 
 	return 0;
 }
