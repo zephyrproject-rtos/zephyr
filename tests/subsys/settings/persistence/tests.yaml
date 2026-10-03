@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+common:
+  tags:
+    - settings
+    - trusted-firmware-m
+
+tests:
+  settings.persistence.tfm-its:
+    platform_allow:
+      - mps2/an521/cpu0/ns
+    integration_platforms:
+      - mps2/an521/cpu0/ns
+    expect_reboot: true
+    timeout: 10
+    filter: CONFIG_TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
+    extra_args:
+      - CONFIG_SETTINGS_TFM_PSA=y
+      - CONFIG_SETTINGS_TFM_PSA_BACKEND_ITS=y
