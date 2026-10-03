@@ -1,0 +1,14 @@
+common:
+  harness: ctest
+  timeout: 120
+tests:
+  sca.dtdoctor:
+    extra_args:
+      - ZEPHYR_SCA_VARIANT=dtdoctor
+    integration_toolchains:
+      - zephyr/gnu
+      - zephyr/llvm
+    integration_platforms:
+      - qemu_cortex_m3
+    platform_allow:
+      - qemu_cortex_m3

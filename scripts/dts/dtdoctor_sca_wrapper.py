@@ -5,7 +5,7 @@
 
 """
 Compiler launcher wrapper that captures what appears to be Devicetree-related build errors, and
-diagnoses them using diagnose_build_error.py.
+diagnoses them using dtdoctor_analyzer.py.
 
 The tool is meant to be configured as a CMAKE_<LANG>_COMPILER_LAUNCHER or as a
 CMAKE_<LANG>_LINKER_LAUNCHER.
@@ -37,20 +37,23 @@ def main() -> int:
         idx = sys.argv.index("--")
         args, cmd = parser.parse_known_args(sys.argv[1:idx])[0], sys.argv[idx + 1 :]
     else:
-        args, cmd = parser.parse_known_args(sys.argv[1:])[0], sys.argv[1:]
+        args, cmd = parser.parse_known_args(sys.argv[1:])
 
     # Run compiler/linker command
     proc = subprocess.run(cmd, capture_output=True, text=True)
     sys.stdout.write(proc.stdout)
     sys.stderr.write(proc.stderr)
 
-    # Extract __device_dts_ord_xxx symbols from errors and run diagnostics
+    # Extract __device_dts_ord_xxx symbols from errors and run diagnostics. Compile errors
+    # name either an ordinal or, when the node identifier did not resolve to a node, the
+    # identifier itself (e.g. __device_dts_ord_DT_N_ALIAS_led0_ORD).
     if proc.returncode != 0 and args.edt_pickle:
         patterns = [
-            r"(__device_dts_ord_\d+).*undeclared here",  # gcc
+            r"(__device_dts_ord_\w+).* undeclared",  # gcc (quote style depends on locale)
+            r"(__device_dts_ord_\w+).* was not declared",  # g++
             r"undefined reference to.*(__device_dts_ord_\d+)",  # ld
-            r"use of undeclared identifier '(__device_dts_ord_\d+)'",  # LLVM/clang (ATfE)
-            r"undefined symbol: \(__device_dts_ord_(\d+)",  # LLVM/lld (ATfE)
+            r"use of undeclared identifier '(__device_dts_ord_\w+)'",  # LLVM/clang (ATfE)
+            r"undefined symbol: (__device_dts_ord_\d+)",  # LLVM/lld (ATfE)
         ]
         symbols = {m for p in patterns for m in re.findall(p, proc.stderr)}
 
