@@ -931,11 +931,11 @@ static int fw_upload_v1_send_data(uint16_t len)
 		len = fw_upload.fw_length - fw_upload.current_length;
 	}
 
-	__ASSERT(sizeof(fw_upload.send_buffer) >= len, "V1: Out of sending buffer range (%u < %u)",
+	__ASSERT(sizeof(fw_upload.send_buffer) >= len, "V1: Out of sending buffer range (%zu < %u)",
 		 sizeof(fw_upload.send_buffer), len);
 
 	if (sizeof(fw_upload.send_buffer) < len) {
-		LOG_ERR("V1: Out of sending buffer range (%u < %u)", sizeof(fw_upload.send_buffer),
+		LOG_ERR("V1: Out of sending buffer range (%zu < %u)", sizeof(fw_upload.send_buffer),
 			len);
 		return -ENOMEM;
 	}
@@ -991,11 +991,11 @@ static int fw_upload_v3_send_data(void)
 		fw_upload.length = fw_upload.fw_length - start;
 	}
 	__ASSERT(sizeof(fw_upload.send_buffer) >= fw_upload.length,
-		 "V3: Out of sending buffer range (%u < %u)", sizeof(fw_upload.send_buffer),
+		 "V3: Out of sending buffer range (%zu < %u)", sizeof(fw_upload.send_buffer),
 		 fw_upload.length);
 
 	if (sizeof(fw_upload.send_buffer) < fw_upload.length) {
-		LOG_ERR("V3: Out of sending buffer range (%u < %u)", sizeof(fw_upload.send_buffer),
+		LOG_ERR("V3: Out of sending buffer range (%zu < %u)", sizeof(fw_upload.send_buffer),
 			fw_upload.length);
 		return -ENOMEM;
 	}
