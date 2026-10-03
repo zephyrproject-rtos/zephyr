@@ -1060,6 +1060,8 @@ SECTIONS
     . = ALIGN(16);
     KEEP(*(.mbedtls_heap*))
     . = ALIGN(16);
+    KEEP(*(.libc_psram_heap*))
+    . = ALIGN(16);
 
     _ext_ram_bss_end = ABSOLUTE(.);
 
