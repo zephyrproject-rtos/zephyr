@@ -59,6 +59,10 @@
 	status = "okay";
 };
 
+&coretemp {
+	status = "okay";
+};
+
 &gpioa {
 	status = "okay";
 };

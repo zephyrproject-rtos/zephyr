@@ -205,6 +205,13 @@
 			status = "disabled";
 		};
 
+		coretemp: coretemp@40816000 {
+			compatible = "realtek,ameba-temp";
+			reg = <0x40816000 0x30>;
+			friendly-name = "coretemp";
+			status = "disabled";
+		};
+
 		timer0: counter@40819000 {
 			compatible = "realtek,ameba-counter";
 			reg = <0x40819000 0x30>;
