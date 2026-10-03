@@ -623,6 +623,7 @@ static int eth_dm9051_rx(const struct device *dev)
 {
 	struct eth_dm9051_data *data = dev->data;
 	struct net_pkt *pkt;
+	uint32_t resets;
 	bool multicast;
 	bool broadcast;
 	int frames = 0;
@@ -666,8 +667,16 @@ static int eth_dm9051_rx(const struct device *dev)
 		broadcast = net_eth_is_addr_broadcast(&NET_ETH_HDR(pkt)->dst);
 		multicast = net_eth_is_addr_multicast(&NET_ETH_HDR(pkt)->dst);
 
-		/* Push the net_pkt in the network stack */
+		/*
+		 * Push the net_pkt in the network stack without spi_lock: with
+		 * NET_TC_RX_COUNT=0 the stack processes it here, and a reply then
+		 * takes its locks and spi_lock in turn. The read pointer stays at
+		 * the next frame unless a controller reset meanwhile cleared RX SRAM.
+		 */
+		resets = data->resets;
+		k_mutex_unlock(&data->spi_lock);
 		ret = net_recv_data(data->iface, pkt);
+		k_mutex_lock(&data->spi_lock, K_FOREVER);
 		if (ret < 0) {
 			net_pkt_unref(pkt);
 			goto out_update_errors_rx;
@@ -682,6 +691,10 @@ static int eth_dm9051_rx(const struct device *dev)
 			eth_stats_update_multicast_rx(data->iface);
 		} else {
 			/* Unicast frame */
+		}
+
+		if (data->resets != resets) {
+			break;
 		}
 	}
 
