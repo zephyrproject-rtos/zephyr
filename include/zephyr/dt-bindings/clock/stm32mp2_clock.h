@@ -78,6 +78,10 @@
 /* FDCAN Peripheral */
 #define STM32_CLOCK_PERIPH_FDCAN	0x7E0
 
+/* Display peripherals */
+#define STM32_CLOCK_PERIPH_LTDC		0x840
+#define STM32_CLOCK_PERIPH_DSI		0x844
+
 /* Watchdog Peripheral */
 #define STM32_CLOCK_PERIPH_IWDG4	0x894
 #define STM32_CLOCK_PERIPH_WWDG1	0x89C
