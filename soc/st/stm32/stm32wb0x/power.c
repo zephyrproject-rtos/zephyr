@@ -202,7 +202,7 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	 * The only thing we may have to do is release GPIO retention,
 	 * which we have not done yet because we wanted the driver to
 	 * restore all configuration first.
-	 * We also need to enable IRQs to fullfill the API contract.
+	 * We also need to enable IRQs to fulfill the API contract.
 	 */
 #if HAS_GPIO_RETENTION
 	LL_PWR_DisableGPIORET();
