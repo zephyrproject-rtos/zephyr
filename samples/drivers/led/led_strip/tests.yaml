@@ -16,5 +16,6 @@ tests:
     extra_args: FILE_SUFFIX=pulse_io
     platform_allow:
       - esp32s3_devkitc/esp32s3/procpu
+      - adafruit_feather_stm32f405
     harness_config:
       fixture: fixture_led_strip
