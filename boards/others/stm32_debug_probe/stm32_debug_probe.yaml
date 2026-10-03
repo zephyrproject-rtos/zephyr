@@ -1,0 +1,14 @@
+identifier: stm32_debug_probe/stm32f103xb
+name: STM32 Debug Probe
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 20
+flash: 128
+supported:
+  - gpio
+  - uart
+  - usb_device
+vendor: others

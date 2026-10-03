@@ -3,9 +3,10 @@
 
 identifier: acp_7_x_adsp/acp_7_x
 name: AMD ACP7.X Audio DSP
-type: mpu
+type: mcu
 arch: xtensa
 toolchain:
   - zephyr
   - xcc
 vendor: amd
+twister: false
