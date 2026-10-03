@@ -982,6 +982,9 @@ int arch_mem_domain_deinit(struct k_mem_domain *domain);
  * be added to before this is called. Implementations may assume that the
  * thread is not already a member of this domain.
  *
+ * On failure, the thread must keep the memory configuration of the domain it
+ * was in, which the kernel then restores it to.
+ *
  * @param thread Thread which needs to be configured.
  *
  * @retval 0 if successful
