@@ -208,12 +208,149 @@ ZTEST_USER(mutex_api_error, test_mutex_unlock_invalid_obj)
 	create_negative_test_thread(MUTEX_UNLOCK_INVALID_OBJ);
 }
 
+/**
+ * @brief Test locking an uninitialized BSS mutex trips assertion
+ *
+ * @details Lock a statically declared (BSS) mutex before calling
+ * k_mutex_init() and verify the assertion fires.
+ *
+ * @ingroup kernel_mutex_tests
+ *
+ * @see k_mutex_lock()
+ */
+ZTEST(mutex_api_error, test_mutex_lock_uninit_bss)
+{
+	static struct k_mutex uninit_bss;
+
+	ztest_set_assert_valid(true);
+	k_mutex_lock(&uninit_bss, K_NO_WAIT);
+	ztest_test_fail();
+}
+
+/**
+ * @brief Test unlocking an uninitialized BSS mutex trips assertion
+ *
+ * @details Unlock a statically declared (BSS) mutex before calling
+ * k_mutex_init() and verify the assertion fires.
+ *
+ * @ingroup kernel_mutex_tests
+ *
+ * @see k_mutex_unlock()
+ */
+ZTEST(mutex_api_error, test_mutex_unlock_uninit_bss)
+{
+	static struct k_mutex uninit_bss;
+
+	ztest_set_assert_valid(true);
+	k_mutex_unlock(&uninit_bss);
+	ztest_test_fail();
+}
+
+#ifdef CONFIG_DYNAMIC_OBJECTS
+/**
+ * @brief Test locking an uninitialized dynamic mutex trips assertion
+ *
+ * @details Allocate a mutex via k_object_alloc() without calling
+ * k_mutex_init() and verify the assertion fires. Guards against regression
+ * in the CONFIG_ASSERT memset in dynamic_object_create().
+ *
+ * @ingroup kernel_mutex_tests
+ *
+ * @see k_mutex_lock()
+ */
+ZTEST(mutex_api_error, test_mutex_lock_uninit_dynamic)
+{
+	struct k_mutex *m = k_object_alloc(K_OBJ_MUTEX);
+
+	zassert_not_null(m, "k_object_alloc failed");
+	ztest_set_assert_valid(true);
+	k_mutex_lock(m, K_NO_WAIT);
+	ztest_test_fail();
+}
+
+/**
+ * @brief Test unlocking an uninitialized dynamic mutex trips assertion
+ *
+ * @details Allocate a mutex via k_object_alloc() without calling
+ * k_mutex_init() and verify the assertion fires. Guards against regression
+ * in the CONFIG_ASSERT memset in dynamic_object_create().
+ *
+ * @ingroup kernel_mutex_tests
+ *
+ * @see k_mutex_unlock()
+ */
+ZTEST(mutex_api_error, test_mutex_unlock_uninit_dynamic)
+{
+	struct k_mutex *m = k_object_alloc(K_OBJ_MUTEX);
+
+	zassert_not_null(m, "k_object_alloc failed");
+	ztest_set_assert_valid(true);
+	k_mutex_unlock(m);
+	ztest_test_fail();
+}
+#endif /* CONFIG_DYNAMIC_OBJECTS */
+
+/**
+ * @brief Test re-initializing a held mutex trips assertion
+ *
+ * @details Initialize and lock a mutex, then call k_mutex_init() again
+ * and verify the re-init assertion fires.
+ *
+ * @ingroup kernel_mutex_tests
+ *
+ * @see k_mutex_init()
+ */
+ZTEST(mutex_api_error, test_mutex_reinit_held)
+{
+	static struct k_mutex m;
+	int ret;
+
+	ret = k_mutex_init(&m);
+	zassert_equal(ret, 0, "k_mutex_init failed: %d", ret);
+
+	ret = k_mutex_lock(&m, K_NO_WAIT);
+	zassert_equal(ret, 0, "k_mutex_lock failed: %d", ret);
+
+	ztest_set_assert_valid(true);
+	k_mutex_init(&m);
+	ztest_test_fail();
+}
+
+/**
+ * @brief Test re-initializing an unlocked mutex succeeds
+ *
+ * @details Initialize, lock, and unlock a mutex, then call k_mutex_init()
+ * again and verify it succeeds without triggering the re-init assertion.
+ *
+ * @ingroup kernel_mutex_tests
+ *
+ * @see k_mutex_init()
+ */
+ZTEST(mutex_api_error, test_mutex_reinit_unlocked)
+{
+	static struct k_mutex m;
+	int ret;
+
+	ret = k_mutex_init(&m);
+	zassert_equal(ret, 0, "initial k_mutex_init failed: %d", ret);
+
+	ret = k_mutex_lock(&m, K_NO_WAIT);
+	zassert_equal(ret, 0, "k_mutex_lock failed: %d", ret);
+
+	ret = k_mutex_unlock(&m);
+	zassert_equal(ret, 0, "k_mutex_unlock failed: %d", ret);
+
+	ret = k_mutex_init(&m);
+	zassert_equal(ret, 0, "re-init of unlocked mutex failed: %d", ret);
+}
+
 static void *mutex_api_tests_setup(void)
 {
 #ifdef CONFIG_USERSPACE
 	k_thread_access_grant(k_current_get(), &tdata, &tstack,
 		       &mutex, &sem, &pipe, &queue);
 #endif
+	k_thread_system_pool_assign(k_current_get());
 	return NULL;
 }
 
