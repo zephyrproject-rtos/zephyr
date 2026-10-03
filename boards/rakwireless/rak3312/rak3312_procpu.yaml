@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 RAKwireless Technology Limited
+
+identifier: rak3312/esp32s3/procpu
+name: RAK3312 WisBlock Core Module PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - counter
+  - entropy
+  - gpio
+  - i2c
+  - nvs
+  - pinmux
+  - pwm
+  - regulator
+  - spi
+  - uart
+  - watchdog
+  - lora
+  - wisblock_io
+vendor: rakwireless

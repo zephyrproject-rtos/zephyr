@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 RAKwireless Technology Limited
+
+board:
+  name: rak3312
+  full_name: RAK3312 WisBlock Core Module
+  vendor: rakwireless
+  socs:
+  - name: esp32s3

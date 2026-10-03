@@ -1,5 +1,8 @@
-identifier: rak3112/esp32s3/appcpu
-name: RAK3112 APPCPU
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 RAKwireless Technology Limited
+
+identifier: rak3312/esp32s3/appcpu
+name: RAK3312 WisBlock Core Module APPCPU
 type: mcu
 arch: xtensa
 toolchain:
