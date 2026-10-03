@@ -165,6 +165,18 @@ set_compiler_property(PROPERTY no_common -fno-common)
 # at present, zephyr only support gnu coverage
 set_compiler_property(PROPERTY coverage "")
 
+# Clang-style heap KASAN. Recover so ccac emits the _noabort callbacks.
+set_compiler_property(PROPERTY heap_kasan
+  -fsanitize=kernel-address
+  -fsanitize-recover=kernel-address
+  -mllvm;-asan-instrumentation-with-call-threshold=0
+  -mllvm;-asan-globals=0
+  -mllvm;-asan-stack=0
+  -mllvm;-asan-instrument-reads=0)
+
+# ccac has no -fno-sanitize= form; instrumentation is opt-in.
+set_compiler_property(PROPERTY no_heap_kasan "")
+
 # mwdt compiler flags for imacros. The specific header must be appended by user.
 set_compiler_property(PROPERTY imacros -imacros)
 
