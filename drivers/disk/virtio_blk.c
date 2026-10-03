@@ -102,6 +102,7 @@ struct virtio_blk_drv_config {
 
 struct virtio_blk_data {
 	const struct device *vdev;
+	struct virtq vq;
 	struct disk_info info;
 	struct k_sem sem;
 	struct k_mutex lock;
@@ -127,19 +128,6 @@ struct virtio_blk_chunk {
 
 static int virtio_blk_disk_ioctl(struct disk_info *disk, uint8_t cmd, void *buff);
 static const struct disk_operations virtio_blk_ops;
-
-static uint16_t virtio_blk_enum_queues_cb(uint16_t q_index, uint16_t q_size_max, void *opaque)
-{
-	struct virtio_blk_data *data = opaque;
-
-	if (q_index == VIRTIO_BLK_QUEUE_IDX) {
-		uint16_t request_queue_size = Z_POW2_CEIL(data->max_data_segs + 2U);
-
-		return MIN(request_queue_size, q_size_max);
-	}
-
-	return 0;
-}
 
 static void virtio_blk_complete(void *priv, uint32_t used_len)
 {
@@ -194,7 +182,7 @@ static int virtio_blk_negotiate_feature(const struct device *vdev, int bit, bool
 static int virtio_blk_submit(struct virtio_blk_data *data, uint32_t type, uint64_t sector,
 			     struct virtq_buf *data_segs, uint16_t n_segs, bool is_write)
 {
-	struct virtq *vq = virtio_get_virtqueue(data->vdev, VIRTIO_BLK_QUEUE_IDX);
+	struct virtq *vq = &data->vq;
 	struct virtq_buf bufs[VIRTIO_BLK_MAX_DATA_SEGS + 2];
 	uint16_t dev_readable_count;
 	uint16_t bufs_count = 0;
@@ -426,7 +414,7 @@ static int virtio_blk_transfer_mmu(struct virtio_blk_data *data, uint32_t type,
 				   uint32_t start_sector, const uint8_t *buf, uint32_t num_sector,
 				   bool is_write)
 {
-	struct virtq *vq = virtio_get_virtqueue(data->vdev, VIRTIO_BLK_QUEUE_IDX);
+	struct virtq *vq = &data->vq;
 	struct virtq_buf segs[VIRTIO_BLK_MAX_DATA_SEGS];
 	uint32_t sector_size = data->sector_size;
 	uint16_t max_data_descs;
@@ -500,7 +488,6 @@ static int virtio_blk_dev_init(const struct device *dev)
 	const struct virtio_blk_drv_config *cfg = dev->config;
 	struct virtio_blk_data *data = dev->data;
 	const uint8_t *dev_cfg_bytes;
-	struct virtq *vq;
 	bool have_blk_size = false;
 	bool have_seg_max = false;
 	uint32_t sector_size = CONFIG_DISK_VIRTIO_BLK_SECTOR_SIZE;
@@ -601,7 +588,7 @@ static int virtio_blk_dev_init(const struct device *dev)
 
 	data->sector_size = sector_size;
 	data->sectors_per_block = sector_size / VIRTIO_BLK_SECTOR_SIZE;
-	ret = virtio_init_virtqueues(cfg->vdev, 1, virtio_blk_enum_queues_cb, data);
+	ret = virtio_init_virtqueues(cfg->vdev, &data->vq, 1);
 	if (ret != 0) {
 		return ret;
 	}
@@ -610,9 +597,8 @@ static int virtio_blk_dev_init(const struct device *dev)
 	 * A normal request needs at least one header, one data and one status
 	 * descriptor.  Reject a virtqueue that cannot hold the minimum chain.
 	 */
-	vq = virtio_get_virtqueue(cfg->vdev, VIRTIO_BLK_QUEUE_IDX);
-	if (vq == NULL || vq->num < 3U) {
-		LOG_ERR("request virtqueue missing or too small");
+	if (data->vq.num < 3U) {
+		LOG_ERR("request virtqueue too small");
 		return -ENOTSUP;
 	}
 
@@ -722,7 +708,10 @@ static const struct disk_operations virtio_blk_ops = {
 };
 
 #define VIRTIO_BLK_DEFINE(inst)                                                                    \
-	static struct virtio_blk_data virtio_blk_data_##inst;                                      \
+	VIRTQ_STORAGE_DEFINE(virtio_blk_vq_##inst, VIRTIO_BLK_REQUEST_QUEUE_SIZE);                 \
+	static struct virtio_blk_data virtio_blk_data_##inst = {                                   \
+		.vq = VIRTQ_INITIALIZER(virtio_blk_vq_##inst, VIRTIO_BLK_REQUEST_QUEUE_SIZE),      \
+	};                                                                                         \
 	static const struct virtio_blk_drv_config virtio_blk_drv_config_##inst = {                 \
 		.vdev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                       \
 		.disk_name = DT_INST_PROP(inst, disk_name),                                        \

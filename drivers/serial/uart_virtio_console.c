@@ -79,6 +79,19 @@ struct _ctl_cb_data {
 /* This should be enough as QEMU only allows 31 */
 #define VIRTIO_CONSOLE_MAX_PORTS 32
 
+#ifdef CONFIG_UART_VIRTIO_CONSOLE_F_MULTIPORT
+/* A receive and a transmit virtqueue for every port and for the control messages */
+#define VIRTIO_CONSOLE_NUM_VIRTQUEUES 66
+BUILD_ASSERT(VIRTIO_CONSOLE_NUM_VIRTQUEUES == (VIRTIO_CONSOLE_MAX_PORTS + 1) * 2);
+
+#define VIRTIO_CONSOLE_VIRTQUEUE_SIZE(q)                                                           \
+	(((q) == VIRTQ_CONTROL_RX)   ? CONFIG_UART_VIRTIO_CONSOLE_RX_CONTROL_BUFSIZE               \
+	 : (((q) == VIRTQ_CONTROL_TX) ? CONFIG_UART_VIRTIO_CONSOLE_TX_CONTROL_BUFSIZE : 1))
+#else
+#define VIRTIO_CONSOLE_NUM_VIRTQUEUES    2
+#define VIRTIO_CONSOLE_VIRTQUEUE_SIZE(q) 1
+#endif
+
 /* Allows virtconsole_recv_cb to know which virtqueue it was called by */
 struct _rx_cb_data {
 	struct virtconsole_data *data;
@@ -110,6 +123,9 @@ static int8_t vq_idx_to_port(uint16_t q)
 
 struct virtconsole_data {
 	const struct device *dev;
+	struct virtq vqs[VIRTIO_CONSOLE_NUM_VIRTQUEUES];
+	/* number of virtqueues in use, the device may have less ports than the driver */
+	uint16_t n_vqs;
 #ifdef CONFIG_UART_VIRTIO_CONSOLE_F_MULTIPORT
 	/* bitmask of ports to be used as console */
 	uint32_t console_ports;
@@ -135,22 +151,9 @@ struct virtconsole_data {
 	struct _virtio_console_config *virtio_devcfg;
 };
 
-/* Return desired size for given virtqueue */
-static uint16_t virtconsole_enum_queues_cb(uint16_t q_index, uint16_t q_size_max, void *priv)
+static struct virtq *virtconsole_get_virtqueue(struct virtconsole_data *data, uint16_t q_no)
 {
-	ARG_UNUSED(q_size_max);
-	ARG_UNUSED(priv);
-
-	switch (q_index) {
-#ifdef CONFIG_UART_VIRTIO_CONSOLE_F_MULTIPORT
-	case VIRTQ_CONTROL_RX:
-		return CONFIG_UART_VIRTIO_CONSOLE_RX_CONTROL_BUFSIZE;
-	case VIRTQ_CONTROL_TX:
-		return CONFIG_UART_VIRTIO_CONSOLE_TX_CONTROL_BUFSIZE;
-#endif
-	default:
-		return 1;
-	}
+	return (q_no < data->n_vqs) ? &data->vqs[q_no] : NULL;
 }
 
 static void virtconsole_recv_cb(void *priv, uint32_t len)
@@ -179,7 +182,7 @@ static void virtconsole_recv_setup(const struct device *dev, uint16_t q_no, void
 	if ((port >= 0) && (port < VIRTIO_CONSOLE_MAX_PORTS)) {
 		atomic_set_bit(&(data->rx_started), port);
 	}
-	struct virtq *vq = virtio_get_virtqueue(config->vdev, q_no);
+	struct virtq *vq = virtconsole_get_virtqueue(data, q_no);
 
 	if (vq == NULL) {
 		LOG_ERR("could not access virtqueue %u", q_no);
@@ -200,7 +203,7 @@ static void virtconsole_control_tx_flush(void *priv, uint32_t len)
 	const struct device *dev = data->dev;
 	const struct virtconsole_config *config = dev->config;
 	struct _fifo_item_virtio_console_control *item;
-	struct virtq *vq = virtio_get_virtqueue(config->vdev, VIRTQ_CONTROL_TX);
+	struct virtq *vq = virtconsole_get_virtqueue(data, VIRTQ_CONTROL_TX);
 
 	if (vq == NULL) {
 		LOG_ERR("could not access virtqueue 3");
@@ -229,7 +232,7 @@ static void virtconsole_send_control_msg(const struct device *dev, uint32_t port
 	const struct virtconsole_config *config = dev->config;
 	struct virtconsole_data *data = dev->data;
 
-	struct virtq *vq = virtio_get_virtqueue(config->vdev, VIRTQ_CONTROL_TX);
+	struct virtq *vq = virtconsole_get_virtqueue(data, VIRTQ_CONTROL_TX);
 
 	if (vq == NULL) {
 		LOG_ERR("could not access virtqueue 3");
@@ -404,7 +407,7 @@ static void virtconsole_poll_out(const struct device *dev, unsigned char c)
 			}
 #endif
 			uint16_t q_no = PORT_TO_TX_VQ_IDX(port);
-			struct virtq *vq = virtio_get_virtqueue(config->vdev, q_no);
+			struct virtq *vq = virtconsole_get_virtqueue(data, q_no);
 
 			if (vq == NULL) {
 				LOG_ERR("could not access virtqueue %u", q_no);
@@ -536,6 +539,8 @@ static int virtconsole_init(const struct device *dev)
 			LOG_WRN("could not commit feature bits; disabling multiport feature");
 		} else {
 			n_queues = (sys_le16_to_cpu(data->virtio_devcfg->max_nr_ports) + 1) * 2;
+			/* ports beyond VIRTIO_CONSOLE_MAX_PORTS are not used */
+			n_queues = MIN(n_queues, VIRTIO_CONSOLE_NUM_VIRTQUEUES);
 		}
 	}
 	if (!multiport) {
@@ -544,12 +549,19 @@ static int virtconsole_init(const struct device *dev)
 		data->console_ports = 1; /* Enable port 0 */
 	}
 #endif
-	int ret = virtio_init_virtqueues(config->vdev, n_queues, virtconsole_enum_queues_cb, NULL);
+	int ret = virtio_init_virtqueues(config->vdev, data->vqs, n_queues);
 
 	if (ret) {
 		LOG_ERR("error initializing virtqueues!");
 		return ret;
 	}
+	for (size_t i = 0; i < n_queues; i++) {
+		if (data->vqs[i].num < VIRTIO_CONSOLE_VIRTQUEUE_SIZE(i)) {
+			LOG_ERR("virtqueue %zu is too small", i);
+			return -ENOTSUP;
+		}
+	}
+	data->n_vqs = n_queues;
 	virtio_finalize_init(config->vdev);
 #ifdef CONFIG_UART_VIRTIO_CONSOLE_F_MULTIPORT
 	if (multiport) {
@@ -584,8 +596,20 @@ static DEVICE_API(uart, virtconsole_api) = {
 #endif
 };
 
+#define VIRTIO_CONSOLE_VIRTQUEUE_STORAGE(q, inst)                                                  \
+	VIRTQ_STORAGE_DEFINE(virtconsole_vq_##inst##_##q, VIRTIO_CONSOLE_VIRTQUEUE_SIZE(q))
+
+#define VIRTIO_CONSOLE_VIRTQUEUE_INIT(q, inst)                                                     \
+	VIRTQ_INITIALIZER(virtconsole_vq_##inst##_##q, VIRTIO_CONSOLE_VIRTQUEUE_SIZE(q))
+
 #define VIRTIO_CONSOLE_DEFINE(inst)                                                                \
-	static struct virtconsole_data virtconsole_data_##inst;                                    \
+	LISTIFY(VIRTIO_CONSOLE_NUM_VIRTQUEUES, VIRTIO_CONSOLE_VIRTQUEUE_STORAGE, (;), inst);       \
+	static struct virtconsole_data virtconsole_data_##inst = {                                 \
+		.vqs = {                                                                           \
+			LISTIFY(VIRTIO_CONSOLE_NUM_VIRTQUEUES, VIRTIO_CONSOLE_VIRTQUEUE_INIT,      \
+				(,), inst)                                                         \
+		},                                                                                 \
+	};                                                                                         \
 	static const struct virtconsole_config virtconsole_config_##inst = {                       \
 		.vdev = DEVICE_DT_GET(DT_PARENT(DT_DRV_INST(inst))),                               \
 	};                                                                                         \

@@ -28,46 +28,40 @@ LOG_MODULE_REGISTER(virtio, CONFIG_VIRTIO_LOG_LEVEL);
 /* According to the spec 2.7.5.2 the maximum size of descriptor chain is 4GB */
 #define MAX_DESCRIPTOR_CHAIN_LENGTH BIT64(32)
 
-int virtq_create(struct virtq *v, size_t size)
+int virtq_create(struct virtq *v, size_t max_size)
 {
+	size_t size = MIN(v->max_num, max_size);
+
 	/*
 	 * A size of 0 denotes a queue the driver enumerates but does not use
 	 * (e.g. the virtiofs high priority queue). Such a queue is set up empty
 	 * and is never operated on. Other split virtqueue sizes must be powers
-	 * of two no greater than 32 KiB.
+	 * of two no greater than 32 KiB. The size a virtqueue is defined with is
+	 * checked at build time, but the maximum the device reports, which may
+	 * limit it further, is not trusted to be valid.
 	 */
-	if (size > KB(32) || (size != 0U && !IS_POWER_OF_TWO(size))) {
+	if (size != 0U && !IS_POWER_OF_TWO(size)) {
 		LOG_ERR("invalid virtqueue size %zu", size);
 		return -EINVAL;
 	}
+
 	/*
-	 * For sizes and alignments see table in spec 2.7. We are supporting only modern virtio, so
+	 * The descriptor table, the available ring and the used ring are laid out for the
+	 * requested size at the start of the storage. We are supporting only modern virtio, so
 	 * we don't have to adhere to additional constraints from spec 2.7.2
 	 */
-	size_t descriptor_table_size = 16 * size;
-	size_t available_ring_size = 2 * size + 6;
-	size_t used_ring_pad = (descriptor_table_size + available_ring_size) % 4;
-	size_t used_ring_size = 8 * size + 6;
-	size_t shared_size =
-		descriptor_table_size + available_ring_size + used_ring_pad + used_ring_size;
-	size_t recv_cbs_pad = WB_UP(shared_size) - shared_size;
-	size_t recv_cbs_size = recv_cbs_pad + sizeof(struct virtq_receive_callback_entry) * size;
-	size_t v_size = shared_size + recv_cbs_size + size * sizeof(stack_data_t);
+	uint8_t *ring_area = (uint8_t *)v->desc;
 
-	uint8_t *v_area = k_aligned_alloc(16, v_size);
-
-	if (v_area == NULL) {
-		LOG_ERR("unable to allocate virtqueue");
-		return -ENOMEM;
-	}
-
-	memset(v, 0, sizeof(*v));
-	v->num = size;
-	v->desc = (struct virtq_desc *)v_area;
-	v->avail = (struct virtq_avail *)((uint8_t *)v->desc + descriptor_table_size);
-	v->used = (struct virtq_used *)((uint8_t *)v->avail + available_ring_size + used_ring_pad);
-	v->recv_cbs = (struct virtq_receive_callback_entry *)((uint8_t *)v->used + used_ring_size +
-							      recv_cbs_pad);
+	*v = (struct virtq){
+		.num = size,
+		.max_num = v->max_num,
+		.desc = v->desc,
+		.avail = (struct virtq_avail *)(ring_area + VIRTQ_AVAIL_RING_OFFSET(size)),
+		.used = (struct virtq_used *)(ring_area + VIRTQ_USED_RING_OFFSET(size)),
+		.free_desc_buf = v->free_desc_buf,
+		.free_desc_n = size,
+		.recv_cbs = v->recv_cbs,
+	};
 
 	/*
 	 * At the beginning of the descriptor table, the available ring and the used ring have to be
@@ -75,23 +69,15 @@ int virtq_create(struct virtq *v, size_t size)
 	 * Its unspecified for channel I/O (chapter 4.3), but its used on platforms not supported by
 	 * Zephyr, so we don't have to handle it here
 	 */
-	memset(v_area, 0, v_size);
+	memset(ring_area, 0, VIRTQ_RING_AREA_SIZE(size));
+	memset(v->recv_cbs, 0, size * sizeof(*v->recv_cbs));
 
-	/* pointer-aligned as recv_cbs starts WB_UP()-aligned and holds pointer pairs */
-	stack_data_t *stack_buf = (stack_data_t *)(v_area + shared_size + recv_cbs_size);
-
-	k_stack_init(&v->free_desc_stack, stack_buf, size);
+	k_stack_init(&v->free_desc_stack, v->free_desc_buf, size);
 	for (uint16_t i = 0; i < size; i++) {
 		k_stack_push(&v->free_desc_stack, i);
 	}
-	v->free_desc_n = size;
 
 	return 0;
-}
-
-void virtq_free(struct virtq *v)
-{
-	k_free(v->desc);
 }
 
 static void virtq_add_available(struct virtq *v, uint16_t desc_idx)
