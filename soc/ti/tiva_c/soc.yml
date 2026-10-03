@@ -4,3 +4,6 @@ family:
   - name: tm4c123x
     socs:
     - name: ti_tm4c123gh6pm
+  - name: tm4c129x
+    socs:
+    - name: ti_tm4c129encpdt
