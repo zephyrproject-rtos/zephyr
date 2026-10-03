@@ -13,7 +13,8 @@
 
 #include <LoRaMac.h>
 #include <Region.h>
-#include "../nvm/lorawan_nvm.h"
+#include "lorawan_nvm.h"
+#include "nvm.h"
 
 #ifdef CONFIG_LORAWAN_REGION_AS923
 #define DEFAULT_LORAWAN_REGION             LORAMAC_REGION_AS923
@@ -767,6 +768,7 @@ int lorawan_start(void)
 	MibRequestConfirm_t mib_req;
 	GetPhyParams_t phy_params;
 	PhyParam_t phy_param;
+	int ret;
 
 	status = LoRaMacInitialization(&mac_primitives, &mac_callbacks,
 				       selected_region);
@@ -779,8 +781,16 @@ int lorawan_start(void)
 	LOG_DBG("LoRaMAC Initialized");
 
 	if (!IS_ENABLED(CONFIG_LORAWAN_NVM_NONE)) {
-		lorawan_nvm_init();
-		lorawan_nvm_data_restore();
+		ret = lorawan_nvm_init();
+		if (ret != 0) {
+			LOG_ERR("NVM init failed: %d", ret);
+			return ret;
+		}
+		ret = lorawan_nvm_restore();
+		if (ret != 0) {
+			LOG_ERR("NVM restore failed: %d", ret);
+			return ret;
+		}
 	}
 
 	status = LoRaMacStart();
@@ -819,7 +829,7 @@ static int lorawan_init(void)
 	if (IS_ENABLED(CONFIG_LORAWAN_NVM_NONE)) {
 		mac_callbacks.NvmDataChange = NULL;
 	} else {
-		mac_callbacks.NvmDataChange = lorawan_nvm_data_mgmt_event;
+		mac_callbacks.NvmDataChange = loramac_nvm_data_mgmt_event;
 	}
 
 	mac_callbacks.MacProcessNotify = mac_process_notify;
