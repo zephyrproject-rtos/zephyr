@@ -659,8 +659,8 @@ static int spi_cdns_transceive(const struct device *dev, const struct spi_config
 	/* Clear Pending Interrupts */
 	(void)sys_read32(SPI_REG(dev, SPI_INT_STATUS));
 
-	/* Reset semaphore for waiting for completion */
-	k_sem_reset(&data->ctx.sync);
+	/* Discard a stale completion before waiting for this transfer */
+	spi_context_clear_completion(&data->ctx);
 
 	/* TxFIFO and RxFIFO clear */
 	sys_set_mask32(SPI_REG(dev, SPI_CONF), SPI_CONF_TXCLR | SPI_CONF_RXCLR,
