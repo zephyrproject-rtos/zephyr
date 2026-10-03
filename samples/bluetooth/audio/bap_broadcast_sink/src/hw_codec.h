@@ -26,19 +26,26 @@
 int hw_codec_open(void);
 
 /**
- * @brief Configure the audio codec sampling rate.
+ * @brief Configure the audio codec output format.
  *
- * This function applies the desired sampling rate to the audio codec.
- * It must be called after @ref hw_codec_open and before sending
+ * This function applies the desired sampling rate and channel count to the
+ * audio codec. It must be called after @ref hw_codec_open and before sending
  * audio data with @ref hw_codec_write_data.
  *
- * @param samplerate Sampling rate in Hz (for example, 48000 for 48 kHz).
+ * @param samplerate   Sampling rate in Hz (for example, 48000 for 48 kHz).
+ * @param frame_dur_us Codec frame duration in microseconds, as negotiated in
+ *                     the codec configuration (7500 or 10000 for LC3). Used to
+ *                     size the transfer blocks of the underlying transport.
+ * @param channels     Number of interleaved PCM output channels (1 for mono,
+ *                     2 for stereo). Must match the number of active BIS
+ *                     streams so the I2S consumption rate equals the decoded
+ *                     PCM production rate.
  *
  * @retval 0        On success.
  * @retval -EALREADY If the codec is already configured.
  * @return negative  On other failures, with a negative error code.
  */
-int hw_codec_cfg(uint32_t samplerate);
+int hw_codec_cfg(uint32_t samplerate, uint32_t frame_dur_us, uint8_t channels);
 
 /**
  * @brief Write audio data to the codec for playback.

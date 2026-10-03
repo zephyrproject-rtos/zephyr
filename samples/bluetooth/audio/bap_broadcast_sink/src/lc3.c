@@ -203,6 +203,14 @@ static int codec_add_frame(const struct stream_rx *stream, int chn, uint32_t ts)
 	ARG_UNUSED(stream);
 	ARG_UNUSED(ts);
 
+#if defined(CONFIG_BAP_SINK_AUDIO_PATH_MPIPE)
+	/* The mpipe audio path owns the codec output; it is fed from
+	 * stream_rx_recv() and decodes in its own transform, so the direct
+	 * write here is intentionally disabled.
+	 */
+	ARG_UNUSED(chn);
+	return 0;
+#else
 	/* Codec output is mono: only the primary (channel 0) is forwarded.
 	 * Any additional channels are intentionally ignored.
 	 */
@@ -211,6 +219,7 @@ static int codec_add_frame(const struct stream_rx *stream, int chn, uint32_t ts)
 	} else {
 		return hw_codec_write_data((const uint8_t *)lc3_rx_buf, sizeof(lc3_rx_buf));
 	}
+#endif /* defined(CONFIG_BAP_SINK_AUDIO_PATH_MPIPE) */
 }
 
 static size_t decode_frame_block(struct lc3_data *data, size_t frame_cnt)
@@ -417,7 +426,8 @@ int lc3_enable(struct stream_rx *stream)
 	}
 
 	if (IS_ENABLED(CONFIG_USE_CODEC_AUDIO_OUTPUT)) {
-		const int err = hw_codec_cfg(lc3_freq_hz);
+		/* The non-mpipe path renders only one channel (see codec_add_frame). */
+		const int err = hw_codec_cfg(lc3_freq_hz, lc3_frame_duration_us, 1U);
 
 		if ((err != 0) && (err != -EALREADY)) {
 			LOG_ERR("Failed to configure codec: %d", err);

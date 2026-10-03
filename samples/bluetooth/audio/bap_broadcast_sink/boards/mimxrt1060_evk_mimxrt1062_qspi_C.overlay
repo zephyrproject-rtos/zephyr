@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		/* hw_codec.c resolves the codec through DT_ALIAS(codec0).
+		 * audio_codec is the WM8962 node defined in the board DTS.
+		 */
+		codec0 = &audio_codec;
+	};
+};
+
+&sai1 {
+	mclk-output;
+	podf = <15>;
+	pll-clocks = <&anatop 0 0 0>,
+		     <&anatop 0 0 32>,
+		     <&anatop 0 0 1>,
+		     <&anatop 0 0 768>,
+		     <&anatop 0 0 1000>;
+};

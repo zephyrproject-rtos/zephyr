@@ -24,6 +24,17 @@
 struct stream_rx {
 	/* A BAP stream object */
 	struct bt_bap_stream stream;
+
+#if defined(CONFIG_BAP_SINK_AUDIO_PATH_MPIPE)
+	/**
+	 * @brief mpipe output channel index for this BIS stream.
+	 *
+	 * Set in stream_rx_started() from the BIS audio location (FRONT_LEFT
+	 * -> 0, FRONT_RIGHT -> 1). Used by stream_rx_recv() to route each SDU
+	 * to the correct interleaved PCM channel in the mpipe pipeline.
+	 */
+	uint8_t mpipe_channel;
+#endif /* CONFIG_BAP_SINK_AUDIO_PATH_MPIPE */
 #if CONFIG_INFO_REPORTING_INTERVAL > 0
 	/** Struct containing information useful for logging purposes */
 	struct {
