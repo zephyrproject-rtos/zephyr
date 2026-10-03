@@ -903,6 +903,33 @@ Class membership can be queried at build time with
 :c:macro:`DT_NUM_CLASS_STATUS_OKAY`, and tested from Kconfig with
 ``$(dt_class_enabled,<class name>)``.
 
+Class queries let code handle every node of a kind of device without listing
+compatibles, so bindings added later, including out-of-tree ones, are covered
+as soon as they declare the class. For example,
+:zephyr_file:`modules/lvgl/lvgl.c` checks at build time that each display it
+drives is a display controller node, and
+:zephyr_file:`drivers/i3c/i3c_shell.c` generates its controller entries from
+the ``i3c`` class instead of a list of compatibles.
+
+These queries answer a devicetree question, not a device question: a node is
+a class member because its binding declares the class, so it stays a member
+in a build that selected a driver for a different one of its classes, or no
+driver at all. A device can also implement the class API without being a
+member, if its binding does not declare the class or if it has no devicetree
+node.
+
+Code that turns class members into devices has to handle both. Resolving the
+device by name with ``device_get_binding(DEVICE_DT_NAME(node_id))`` and
+checking it with :c:macro:`DEVICE_API_IS` covers a missing driver and a
+driver of another class alike; this suits code where the name is the
+user-facing handle, such as a shell, but :c:macro:`DEVICE_DT_NAME` falls back
+to the node name, which is not unique across buses. Code that needs one
+statically defined object per device can define it from the subsystem's
+device definition macro instead, which expands only for nodes whose driver
+was built. :c:macro:`DEVICE_DT_GET` on a class member does not link when no
+driver was built for the node. See :ref:`device_model_api` for the runtime
+side of device classes.
+
 To add a class to a device whose binding cannot be changed, for example to
 classify an upstream device from a downstream module, define a more specific
 compatible whose binding includes the original binding and declares the
