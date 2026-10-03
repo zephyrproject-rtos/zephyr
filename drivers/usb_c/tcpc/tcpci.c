@@ -524,13 +524,16 @@ int tcpci_tcpm_transmit_data(const struct i2c_dt_spec *bus, struct pd_msg *msg,
 		struct i2c_msg buf[3];
 
 		uint8_t tmp[2] = {TCPC_REG_TX_BUFFER, cnt};
+		uint8_t header_le[2];
+
+		sys_put_le16(msg->header.raw_value, header_le);
 
 		buf[0].buf = tmp;
 		buf[0].len = 2;
 		buf[0].flags = I2C_MSG_WRITE;
 
-		buf[1].buf = (uint8_t *)&msg->header.raw_value;
-		buf[1].len = sizeof(msg->header.raw_value);
+		buf[1].buf = header_le;
+		buf[1].len = sizeof(header_le);
 		buf[1].flags = I2C_MSG_WRITE;
 
 		buf[2].buf = (uint8_t *)msg->data;
