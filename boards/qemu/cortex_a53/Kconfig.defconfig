@@ -14,16 +14,8 @@ config MAX_THREAD_BYTES
 config HAS_COVERAGE_SUPPORT
 	default y
 
-if NETWORKING
-
-choice NET_QEMU_NETWORKING
-	default NET_QEMU_ETHERNET if QEMU_CORTEX_A53_ETH_E1000
-endchoice
-
-config NET_DRIVERS
-	default n if QEMU_CORTEX_A53_ETH_E1000
-
-endif # NETWORKING
+configdefault ETH_DRIVER
+	default y
 
 # QEMU PCI requires at least 256M of virtual space
 config KERNEL_VM_SIZE
