@@ -9,28 +9,28 @@
 	gpio1: gpio1 {
 		compatible = "zephyr,gpio-emul";
 		#gpio-cells = <0x2>;
-		status = "okay";
 		gpio-controller;
+		status = "okay";
 	};
 
 	gpio2: gpio2 {
 		compatible = "zephyr,gpio-emul";
 		#gpio-cells = <0x2>;
-		status = "okay";
 		gpio-controller;
+		status = "okay";
 	};
 
 	gpio3: gpio3 {
 		compatible = "zephyr,gpio-emul";
 		#gpio-cells = <0x2>;
-		status = "okay";
 		gpio-controller;
+		status = "okay";
 	};
 
 	gpio4: gpio4 {
 		compatible = "zephyr,gpio-emul";
 		#gpio-cells = <0x2>;
-		status = "okay";
 		gpio-controller;
+		status = "okay";
 	};
 };
