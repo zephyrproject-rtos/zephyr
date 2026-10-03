@@ -174,7 +174,8 @@ void shared_multi_heap_free(void *block);
  * @param region	pointer to the memory region to be added.
  *
  * @retval 0		on success.
- * @retval -EINVAL	when the region attribute is out-of-bound.
+ * @retval -EINVAL	when the region attribute is out-of-bound or the
+ *			region is too small for a heap.
  * @retval -ENOMEM	when there are no more heaps available.
  * @retval other	errno codes
  */

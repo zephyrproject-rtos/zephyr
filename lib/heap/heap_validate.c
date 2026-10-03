@@ -170,6 +170,10 @@ bool sys_heap_validate(struct sys_heap *heap)
 {
 	struct z_heap *h = heap->heap;
 
+	if (h == NULL) {
+		return true;
+	}
+
 	if (!z_heap_full_check(h)) {
 		return false;
 	}

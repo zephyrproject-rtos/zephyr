@@ -119,6 +119,9 @@ int sys_heap_get_largest_free_block(struct sys_heap *heap, size_t *bytes);
 /** @brief Initialize sys_heap
  *
  * Initializes a sys_heap struct to manage the specified memory.
+ * A region too small to hold the heap metadata (see Z_HEAP_MIN_SIZE)
+ * triggers an assertion or, with assertions disabled, leaves the heap
+ * empty so that every allocation from it fails.
  *
  * @param heap Heap to initialize
  * @param mem Untyped pointer to unused memory

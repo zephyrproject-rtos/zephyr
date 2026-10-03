@@ -12,3 +12,6 @@ tests:
     extra_configs:
       - CONFIG_SYS_HEAP_HARDENING_FULL=y
       - CONFIG_TEST_RANDOM_GENERATOR=y
+  libraries.heap_min.no_assert:
+    extra_configs:
+      - CONFIG_ASSERT=n
