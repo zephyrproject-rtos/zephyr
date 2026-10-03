@@ -96,10 +96,10 @@ struct net_buf_simple {
 	 * The room left for more data is net_buf_simple_tailroom(), not net_buf_simple::size
 	 * minus net_buf_simple::len: net_buf_simple::size counts the headroom as well.
 	 */
-	uint16_t len;
+	uint32_t len;
 
 	/** Amount of data that net_buf_simple#__buf can store. */
-	uint16_t size;
+	uint32_t size;
 
 	/** Start of the data storage. Not to be accessed directly
 	 *  (the data pointer should be used instead).
@@ -1143,10 +1143,10 @@ struct net_buf {
 			uint8_t *data;
 
 			/** Length of the data behind the data pointer. */
-			uint16_t len;
+			uint32_t len;
 
 			/** Amount of data that this buffer can store. */
-			uint16_t size;
+			uint32_t size;
 
 			/** Start of the data storage. Not to be accessed
 			 *  directly (the data pointer should be used
