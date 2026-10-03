@@ -68,6 +68,10 @@ config INPUT_THREAD_STACK_SIZE
 
 endif # INPUT_MODE_THREAD
 
+module = INPUT
+module-str = input
+source "kernel/Kconfig.template.workqueue"
+
 config INPUT_EVENT_DUMP
 	bool "Log all input events"
 	depends on LOG

@@ -66,7 +66,7 @@ static void kpp_work_handler(struct k_work *work)
 	stable = KPP_keyPressScanning(config->base, read_keys_new, drv_data->clock_rate);
 
 	if (stable != kStatus_Success) {
-		k_work_schedule(&drv_data->work, K_MSEC(CONFIG_INPUT_KPP_PERIOD_MS));
+		input_work_schedule(&drv_data->work, K_MSEC(CONFIG_INPUT_KPP_PERIOD_MS));
 		return;
 	}
 
@@ -106,7 +106,7 @@ static void kpp_work_handler(struct k_work *work)
 			kKPP_keyReleaseInterrupt);
 		KPP_EnableInterrupts(config->base, kKPP_keyDepressInterrupt);
 	} else {
-		k_work_schedule(&drv_data->work, K_MSEC(CONFIG_INPUT_KPP_PERIOD_MS));
+		input_work_schedule(&drv_data->work, K_MSEC(CONFIG_INPUT_KPP_PERIOD_MS));
 	}
 }
 
@@ -130,7 +130,7 @@ static void kpp_isr(const struct device *dev)
 	KPP_ClearStatusFlag(config->base, kKPP_keyDepressInterrupt |
 		kKPP_keyReleaseInterrupt);
 	/* Key depress report */
-	k_work_schedule(&drv_data->work, K_MSEC(0));
+	input_work_schedule(&drv_data->work, K_MSEC(0));
 }
 
 static int input_kpp_init(const struct device *dev)
