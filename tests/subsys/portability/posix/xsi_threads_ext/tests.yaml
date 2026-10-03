@@ -8,7 +8,7 @@ common:
     - arch
     - simulation
   min_flash: 64
-  min_ram: 32
+  min_ram: 64
 tests:
   portability.posix.xsi_threads_ext: {}
   portability.posix.xsi_threads_ext.minimal:
@@ -28,4 +28,5 @@ tests:
       - CONFIG_PICOLIBC=y
   portability.posix.xsi_threads_ext.static_stack:
     extra_configs:
+      - CONFIG_DYNAMIC_THREAD=n
       - CONFIG_DYNAMIC_THREAD_ALLOC=n
