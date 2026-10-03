@@ -1,0 +1,18 @@
+#
+# Copyright NXP 2026
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Emulation UWB Module driver
+
+compatible: "zephyr,uwb-emul"
+
+include: [uwb-uci.yaml]
+
+properties:
+  uwb-uci-name:
+    default: "UWB Emulation"
+
+  uwb-uci-bus:
+    default: "virtual"
