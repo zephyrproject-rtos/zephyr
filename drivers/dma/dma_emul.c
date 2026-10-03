@@ -465,6 +465,16 @@ static int dma_emul_stop(const struct device *dev, uint32_t channel)
 	return 0;
 }
 
+static void dma_emul_release(const struct device *dev, uint32_t channel)
+{
+	k_spinlock_key_t key;
+	struct dma_emul_data *data = dev->data;
+
+	key = k_spin_lock(&data->lock);
+	dma_emul_set_channel_state(dev, channel, DMA_EMUL_CHANNEL_UNUSED);
+	k_spin_unlock(&data->lock, key);
+}
+
 static int dma_emul_suspend(const struct device *dev, uint32_t channel)
 {
 	LOG_DBG("%s()", __func__);
@@ -517,6 +527,7 @@ static DEVICE_API(dma, dma_emul_driver_api) = {
 	.resume = dma_emul_resume,
 	.get_status = dma_emul_get_status,
 	.get_attribute = dma_emul_get_attribute,
+	.chan_release = dma_emul_release,
 	.chan_filter = dma_emul_chan_filter,
 };
 
