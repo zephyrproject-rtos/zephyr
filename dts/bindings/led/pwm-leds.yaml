@@ -9,6 +9,8 @@ description: |
 
 compatible: "pwm-leds"
 
+class: led
+
 child-binding:
   description: PWM LED child node
 

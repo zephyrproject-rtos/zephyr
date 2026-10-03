@@ -9,6 +9,8 @@ description: |
 
 compatible: "x-powers,axp2101-led"
 
+class: led
+
 on-bus: axp2101
 
 properties:
