@@ -69,6 +69,19 @@ config USBH_VIDEO_MAX_FRMIVAL
 	  Max number of Frame Interval listed on a frame descriptor. The
 	  default value is selected arbitrarily to fit most situations.
 
+config USBH_VIDEO_STACK_SIZE
+	int "Size of each UVC class instance's stack, in bytes"
+	default 512
+	help
+	  Stack size used for each UVC class.
+	  Default is expected to be enough for any purpose.
+
+config USBH_VIDEO_THREAD_PRIORITY
+	int "Size of each UVC class instance's stack, in bytes"
+	default 0
+	help
+	  Thread priority for UVC transfer handling.
+
 module = USBH_UVC
 module-str = usbh uvc
 default-count = 1
