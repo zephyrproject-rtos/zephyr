@@ -10,6 +10,18 @@
 
 #define DT_DRV_COMPAT nordic_nrf93m1
 
+/* AT+IPR is stored permanently, so a bus whose devicetree `current-speed` is
+ * already the wanted rate belongs to a modem that was switched on an earlier
+ * boot and needs nothing sent to it.
+ */
+#define NRF93M1_BUS_SPEED_IS_NEW(inst)                                                             \
+	(DT_PROP_OR(DT_INST_BUS(inst), current_speed, 0) == CONFIG_MODEM_CELLULAR_NEW_BAUDRATE)
+
+#define NRF93M1_BUS_SPEED_DIFFERS_OR(inst) !NRF93M1_BUS_SPEED_IS_NEW(inst) ||
+
+/* Drop the script entirely when no instance needs it. */
+#define NRF93M1_SET_BAUDRATE_REQUIRED (DT_INST_FOREACH_STATUS_OKAY(NRF93M1_BUS_SPEED_DIFFERS_OR) 0)
+
 struct nrf93m1_modem_cellular_config {
 	/** UART bus is configured with RTS/CTS hardware flow control */
 	bool bus_has_hwfc;
@@ -44,6 +56,16 @@ MODEM_CHAT_MATCHES_DEFINE(nordic_nrf93m1_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATC
 MODEM_CHAT_MATCHES_DEFINE(nordic_nrf93m1_ifc_matches,
 			  MODEM_CHAT_MATCH_INITIALIZER("+IFC:", ",", nrf93m1_on_ifc, false, true),
 			  MODEM_CHAT_MATCH("OK", "", NULL));
+
+#if NRF93M1_SET_BAUDRATE_REQUIRED
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(nordic_nrf93m1_set_baudrate_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP(
+				"AT+IPR=" STRINGIFY(CONFIG_MODEM_CELLULAR_NEW_BAUDRATE), ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf93m1_set_baudrate_chat_script,
+			 nordic_nrf93m1_set_baudrate_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 1);
+#endif
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	nordic_nrf93m1_init_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
@@ -166,6 +188,9 @@ static bool nrf93m1_ifc_required(void *user_data)
 static const struct modem_cellular_vendor_config nrf93m1_vendor = {
 	/* clang-format off */
 	.scripts = {
+#if NRF93M1_SET_BAUDRATE_REQUIRED
+		.set_baudrate = &nordic_nrf93m1_set_baudrate_chat_script,
+#endif
 		.init = &nordic_nrf93m1_init_chat_script,
 		.network = &nordic_nrf93m1_network_chat_script,
 		.dial = &nordic_nrf93m1_dial_chat_script,
@@ -185,6 +210,10 @@ static const struct modem_cellular_vendor_config nrf93m1_vendor = {
 	.cmux_disconnect_timeout_ms = 3000,
 	.startup_time_ms = 5000,
 	.shutdown_time_ms = 1000,
+	/* AT+IPR is stored in NVM, so the modem comes up at the configured rate on every
+	 * later boot and the common driver only has to send the script once.
+	 */
+	.uart_settings_permanent = true,
 };
 
 #define MODEM_CELLULAR_DEVICE_NORDIC_NRF93M1(inst)                                                 \
