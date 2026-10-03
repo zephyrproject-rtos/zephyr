@@ -493,6 +493,59 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 }
 
 static bool process_pending_cmd(k_timeout_t timeout);
+
+/* A command timed out while Bluetooth is being enabled, and the Controller
+ * has not sent anything since the transport was opened: it is missing,
+ * unpowered or does not run HCI. Nothing in the Host depends on the
+ * Controller yet, so close the transport, as bt_disable() does, which stops
+ * any late response from completing the command. The caller can then fail
+ * instead of asserting.
+ *
+ * Return true if the transport is closed.
+ */
+static bool close_silent_transport(void)
+{
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ENABLING) ||
+	    !atomic_test_bit(bt_dev.flags, BT_DEV_OPEN) ||
+	    atomic_test_bit(bt_dev.flags, BT_DEV_CTLR_RX)) {
+		return false;
+	}
+
+	/* The TX processor holds the host lock while the driver is in send(),
+	 * which can outlast the command timeout, and the transport must not be
+	 * closed during a send. Holding the lock also keeps a new send from
+	 * starting before the close.
+	 */
+	if (k_mutex_lock(&bt_dev.lock, K_NO_WAIT) != 0) {
+		return false;
+	}
+
+	atomic_clear_bit(bt_dev.flags, BT_DEV_OPEN);
+	hci_cmd_queue_purge();
+
+	if (bt_hci_close(bt_dev.hci) != 0) {
+		atomic_set_bit(bt_dev.flags, BT_DEV_OPEN);
+		bt_dev_unlock();
+		return false;
+	}
+
+	bt_dev_unlock();
+
+	/* A packet that came in before the close shows that the Controller
+	 * responds, so the timeout is not the case handled here. Otherwise
+	 * nothing has reached bt_recv(), so unlike in bt_disable() there is
+	 * nothing on the RX queue to drop.
+	 */
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_CTLR_RX)) {
+		return false;
+	}
+
+	net_buf_drop(&bt_dev.sent_cmd);
+	bt_monitor_send(BT_MONITOR_CLOSE_INDEX, NULL, 0);
+
+	return true;
+}
+
 int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 			 struct net_buf **rsp)
 {
@@ -569,6 +622,12 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 
 	/* Now that we have sent the command, suspend until the LL replies */
 	err = k_sem_take(&sync_sem, HCI_CMD_TIMEOUT);
+	if (err != 0 && close_silent_transport()) {
+		LOG_ERR("No response from the Controller, command opcode 0x%04x timeout", opcode);
+		net_buf_unref(buf);
+		return -ETIMEDOUT;
+	}
+
 	BT_ASSERT_MSG(err == 0,
 		      "Controller unresponsive, command opcode 0x%04x timeout with err %d",
 		      opcode, err);
@@ -4737,6 +4796,10 @@ static int bt_recv(const struct device *dev, struct net_buf *buf)
 	ARG_UNUSED(dev);
 	int err;
 
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_ENABLING)) {
+		atomic_set_bit(bt_dev.flags, BT_DEV_CTLR_RX);
+	}
+
 	k_sched_lock();
 	err = bt_recv_unsafe(buf);
 	k_sched_unlock();
@@ -4962,6 +5025,9 @@ int bt_enable(bt_ready_cb_t cb)
 			bt_hci_set_public_addr(bt_dev.hci, BT_ADDR_ANY);
 		}
 	}
+
+	/* Cleared before the open, as the Controller may send right after it. */
+	atomic_clear_bit(bt_dev.flags, BT_DEV_CTLR_RX);
 
 	err = bt_hci_open(bt_dev.hci, bt_recv);
 	if (err) {

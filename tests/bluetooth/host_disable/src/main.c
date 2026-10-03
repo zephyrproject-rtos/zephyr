@@ -20,6 +20,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
+#include <zephyr/ztest_error_hook.h>
 
 #define DT_DRV_COMPAT zephyr_bt_hci_test
 
@@ -162,11 +163,16 @@ static const struct cmd_handler cmds[] = {
 };
 
 /* What the test looks at: how often the controller has been reset, and what
- * the driver's close() is to return.
+ * the driver's close() is to return. A silent controller drops every command,
+ * and a controller that stops goes silent once it has answered a command. A
+ * driver that blocks stays in send() for longer than the command timeout.
  */
 static unsigned int reset_count;
 static unsigned int close_count;
 static int close_err;
+static bool silent;
+static bool stops;
+static bool blocks;
 
 static void cmd_handle(const struct device *dev, struct net_buf *cmd)
 {
@@ -214,7 +220,13 @@ static int driver_send(const struct device *dev, struct net_buf *buf)
 	uint8_t type = net_buf_pull_u8(buf);
 
 	zassert_equal(type, BT_HCI_H4_CMD, "Unexpected buffer type %u", type);
-	cmd_handle(dev, buf);
+	if (blocks) {
+		/* The command timeout of the Host is 10 s. */
+		k_sleep(K_SECONDS(15));
+	} else if (!silent) {
+		cmd_handle(dev, buf);
+		silent = stops;
+	}
 	net_buf_unref(buf);
 
 	return 0;
@@ -241,7 +253,16 @@ static void before(void *fixture)
 {
 	ARG_UNUSED(fixture);
 
+	/* The Host asserts in the tests where the controller stops or the
+	 * driver blocks, which leaves it in the middle of bt_enable(), so each
+	 * of those tests runs alone.
+	 */
+	if (IS_ENABLED(CONFIG_TEST_CTLR_STOPS) || IS_ENABLED(CONFIG_TEST_SEND_BLOCKS)) {
+		ztest_test_skip();
+	}
+
 	close_err = 0;
+	silent = false;
 	if (!bt_is_ready()) {
 		zassert_ok(bt_enable(NULL), "Bluetooth init failed");
 	}
@@ -311,3 +332,121 @@ static ZTEST(bt_disable, test_enable_disable_cycle)
 	zassert_ok(bt_enable(NULL), "Bluetooth init after a disable failed");
 	zassert_true(bt_is_ready(), "Bluetooth is not ready after init");
 }
+
+/* A controller that never responds makes bt_enable() fail, instead of the
+ * Host asserting on the timeout of its first command. The transport is closed
+ * again, so Bluetooth can be enabled once the controller responds.
+ */
+static ZTEST(bt_disable, test_enable_silent_controller)
+{
+	int err;
+
+	if (IS_ENABLED(CONFIG_TEST_DRIVER_NO_CLOSE)) {
+		ztest_test_skip();
+	}
+
+	zassert_ok(bt_disable(), "Bluetooth disable failed");
+
+	silent = true;
+	err = bt_enable(NULL);
+	zassert_equal(err, -ETIMEDOUT, "bt_enable() gave %d (!= %d)", err, -ETIMEDOUT);
+	zassert_equal(close_count, 2U, "close() was called %u times", close_count);
+	zassert_false(bt_is_ready(), "Bluetooth is ready without a controller");
+
+	silent = false;
+	zassert_ok(bt_enable(NULL), "Bluetooth init after a silent controller failed");
+	zassert_true(bt_is_ready(), "Bluetooth is not ready after init");
+}
+
+static K_SEM_DEFINE(ready_sem, 0, 1);
+static int ready_err;
+
+static void ready_cb(int err)
+{
+	ready_err = err;
+	k_sem_give(&ready_sem);
+}
+
+/* As above, with the initialization and the close of the transport done on
+ * the system work queue.
+ */
+static ZTEST(bt_disable, test_enable_silent_controller_cb)
+{
+	if (IS_ENABLED(CONFIG_TEST_DRIVER_NO_CLOSE)) {
+		ztest_test_skip();
+	}
+
+	zassert_ok(bt_disable(), "Bluetooth disable failed");
+
+	silent = true;
+	zassert_ok(bt_enable(ready_cb), "bt_enable() failed");
+	zassert_ok(k_sem_take(&ready_sem, K_SECONDS(30)), "The ready callback was not called");
+	zassert_equal(ready_err, -ETIMEDOUT, "The ready callback gave %d (!= %d)", ready_err,
+		      -ETIMEDOUT);
+	zassert_equal(close_count, 2U, "close() was called %u times", close_count);
+	zassert_false(bt_is_ready(), "Bluetooth is ready without a controller");
+
+	silent = false;
+	zassert_ok(bt_enable(NULL), "Bluetooth init after a silent controller failed");
+	zassert_true(bt_is_ready(), "Bluetooth is not ready after init");
+}
+
+static K_THREAD_STACK_DEFINE(enable_stack, CONFIG_ZTEST_STACK_SIZE);
+static struct k_thread enable_thread;
+static bool enable_returned;
+
+static void enable_entry(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	ztest_set_fault_valid(true);
+	(void)bt_enable(NULL);
+	enable_returned = true;
+}
+
+/* Call bt_enable() in a thread of its own, which the assert aborts, and check
+ * that the Host asserted without closing the transport.
+ */
+static void enable_until_assert(void)
+{
+	k_thread_create(&enable_thread, enable_stack, K_THREAD_STACK_SIZEOF(enable_stack),
+			enable_entry, NULL, NULL, NULL, CONFIG_ZTEST_THREAD_PRIORITY, 0, K_NO_WAIT);
+	zassert_ok(k_thread_join(&enable_thread, K_FOREVER), "Joining the enable thread failed");
+
+	zassert_false(enable_returned, "bt_enable() returned instead of asserting");
+	zassert_equal(close_count, 0U, "close() was called %u times", close_count);
+}
+
+/* A controller that answers HCI Reset and then stops responding is there but
+ * broken, so the Host asserts on the timeout instead of failing bt_enable().
+ */
+static ZTEST(bt_ctlr_stops, test_enable_ctlr_stops)
+{
+	if (!IS_ENABLED(CONFIG_TEST_CTLR_STOPS)) {
+		ztest_test_skip();
+	}
+
+	stops = true;
+	enable_until_assert();
+	zassert_equal(reset_count, 1U, "The controller was reset %u times", reset_count);
+}
+
+ZTEST_SUITE(bt_ctlr_stops, NULL, NULL, NULL, NULL, NULL);
+
+/* The transport must not be closed while the driver is in send(), so when the
+ * command times out during a send, the Host asserts instead of failing
+ * bt_enable().
+ */
+static ZTEST(bt_send_blocks, test_enable_send_blocks)
+{
+	if (!IS_ENABLED(CONFIG_TEST_SEND_BLOCKS)) {
+		ztest_test_skip();
+	}
+
+	blocks = true;
+	enable_until_assert();
+}
+
+ZTEST_SUITE(bt_send_blocks, NULL, NULL, NULL, NULL, NULL);

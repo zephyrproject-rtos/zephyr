@@ -7,4 +7,18 @@ config TEST_DRIVER_NO_CLOSE
 	  Build the test HCI driver without a close() op, as several in-tree
 	  HCI drivers are, so that bt_disable() cannot close the transport.
 
+config TEST_CTLR_STOPS
+	bool "Run only the test with a controller that stops responding"
+	help
+	  Run only the test where the controller answers HCI Reset and then
+	  stops responding. The Host asserts in that test, so no other test can
+	  run after it.
+
+config TEST_SEND_BLOCKS
+	bool "Run only the test with a driver that blocks in send()"
+	help
+	  Run only the test where the driver stays in send() for longer than
+	  the command timeout of the Host. The Host asserts in that test, so no
+	  other test can run after it.
+
 source "Kconfig.zephyr"
