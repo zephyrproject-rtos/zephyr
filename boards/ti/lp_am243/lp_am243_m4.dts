@@ -17,7 +17,7 @@
 	chosen {
 		/*
 		 * MCU_UART0 isn't connected to the onboard USB UART bridge since the
-		 * r5f0_0 core is using that UART instance already. Therefor it's
+		 * r5f0_0 core is using that UART instance already. Therefore it's
 		 * necessary to connected an external USB to UART bridge on the onboard
 		 * pinheader!
 		 */

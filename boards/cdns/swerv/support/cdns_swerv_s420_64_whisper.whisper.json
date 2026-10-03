@@ -284,7 +284,7 @@
          "exists" : "true",
          "mask" : "0x7d",
          "poke_mask" : "0x7d",
-         "commnet" : "Performance counter inhibit. One bit per counter.",
+         "comment" : "Performance counter inhibit. One bit per counter.",
          "reset" : "0x0"
       },
       "dcsr" : {
