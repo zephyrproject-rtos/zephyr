@@ -6,3 +6,9 @@ description: Nordic nRF HFCLK clock control node
 compatible: "nordic,nrf-clock-hfclk"
 
 include: base.yaml
+
+properties:
+
+  supported-clock-frequencies:
+    type: array
+    description: Supported clock frequencies in descending order

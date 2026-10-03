@@ -16,6 +16,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/wifi/nrf_wifi/bus/qspi_if.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
 
 #include <soc.h>
 #include <nrfx_qspi.h>
@@ -71,12 +72,14 @@ BUILD_ASSERT(QSPI_IF_DEVICE_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 16),
 	     "Unsupported SCK frequency.");
 
 /*
- * Determine a configuration value (INST_0_SCK_CFG) and, if needed, a divider
- * (BASE_CLOCK_DIV) for the clock from which the SCK frequency is derived that
+ * Determine a configuration value (INST_0_SCK_CFG) and, if needed, a clock frequency
+ * (BASE_CLOCK_FREQUENCY) for the clock from which the SCK frequency is derived that
  * need to be used to achieve the SCK frequency as close as possible (but not
  * higher) to the one specified in DT.
  */
 #if defined(CONFIG_SOC_SERIES_NRF53)
+
+#define DEFAULT_BASE_CLOCK_FREQUENCY MHZ(48)
 /*
  * On nRF53 Series SoCs, the default /4 divider for the HFCLK192M clock can
  * only be used when the QSPI peripheral is idle. When a QSPI operation is
@@ -88,31 +91,36 @@ BUILD_ASSERT(QSPI_IF_DEVICE_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 16),
 #if (QSPI_IF_DEVICE_FREQUENCY >= NRF_QSPI_BASE_CLOCK_FREQ)
 /* For requested SCK >= 96 MHz, use HFCLK192M / 1 / (2*1) = 96 MHz */
 #define BASE_CLOCK_DIV NRF_CLOCK_HFCLK_DIV_1
+#define BASE_CLOCK_FREQUENCY MHZ(192)
 #define INST_0_SCK_CFG NRF_QSPI_FREQ_DIV1
 /* If anomaly 159 is to be prevented, only /1 divider can be used. */
 #elif NRF53_ERRATA_159_ENABLE_WORKAROUND
 #define BASE_CLOCK_DIV NRF_CLOCK_HFCLK_DIV_1
+#define BASE_CLOCK_FREQUENCY MHZ(192)
 #define INST_0_SCK_CFG (DIV_ROUND_UP(NRF_QSPI_BASE_CLOCK_FREQ, \
 				     QSPI_IF_DEVICE_FREQUENCY) - 1)
 #elif (QSPI_IF_DEVICE_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 2))
 /* For 96 MHz > SCK >= 48 MHz, use HFCLK192M / 2 / (2*1) = 48 MHz */
 #define BASE_CLOCK_DIV NRF_CLOCK_HFCLK_DIV_2
+#define BASE_CLOCK_FREQUENCY MHZ(96)
 #define INST_0_SCK_CFG NRF_QSPI_FREQ_DIV1
 #elif (QSPI_IF_DEVICE_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 3))
 /* For 48 MHz > SCK >= 32 MHz, use HFCLK192M / 1 / (2*3) = 32 MHz */
 #define BASE_CLOCK_DIV NRF_CLOCK_HFCLK_DIV_1
+#define BASE_CLOCK_FREQUENCY MHZ(192)
 #define INST_0_SCK_CFG NRF_QSPI_FREQ_DIV3
 #else
 /* For requested SCK < 32 MHz, use divider /2 for HFCLK192M. */
 #define BASE_CLOCK_DIV NRF_CLOCK_HFCLK_DIV_2
+#define BASE_CLOCK_FREQUENCY MHZ(96)
 #define INST_0_SCK_CFG (DIV_ROUND_UP(NRF_QSPI_BASE_CLOCK_FREQ / 2, \
 				     QSPI_IF_DEVICE_FREQUENCY) - 1)
 #endif
 
-#if BASE_CLOCK_DIV == NRF_CLOCK_HFCLK_DIV_1
+#if BASE_CLOCK_FREQUENCY == MHZ(192)
 /* For 8 MHz, use HFCLK192M / 1 / (2*12) */
 #define INST_0_SCK_CFG_WAKE NRF_QSPI_FREQ_DIV12
-#elif BASE_CLOCK_DIV == NRF_CLOCK_HFCLK_DIV_2
+#elif BASE_CLOCK_FREQUENCY == MHZ(96)
 /* For 8 MHz, use HFCLK192M / 2 / (2*6) */
 #define INST_0_SCK_CFG_WAKE NRF_QSPI_FREQ_DIV6
 #else
@@ -133,7 +141,7 @@ BUILD_ASSERT(QSPI_IF_DEVICE_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 16),
 #else
 /*
  * On nRF52 Series SoCs, the base clock divider is not configurable,
- * so BASE_CLOCK_DIV is not defined.
+ * so BASE_CLOCK_FREQUENCY is not defined.
  */
 #if (QSPI_IF_DEVICE_FREQUENCY >= NRF_QSPI_BASE_CLOCK_FREQ)
 #define INST_0_SCK_CFG NRF_QSPI_FREQ_DIV1
@@ -359,7 +367,12 @@ static inline void qspi_lock(const struct device *dev)
 	 * increased also when the QSPI peripheral is idle.
 	 */
 #if defined(CONFIG_SOC_SERIES_NRF53)
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	nrf_clock_hfclk192m_div_set(NRF_CLOCK, BASE_CLOCK_DIV);
+#else
+	clock_control_set_rate(DEVICE_DT_GET_ONE(nordic_nrf_clock_hfclk192m), NULL,
+			       (clock_control_subsys_rate_t)BASE_CLOCK_FREQUENCY);
+#endif
 	k_busy_wait(BASE_CLOCK_SWITCH_DELAY_US);
 #endif
 }
@@ -367,9 +380,14 @@ static inline void qspi_lock(const struct device *dev)
 static inline void qspi_unlock(const struct device *dev)
 {
 #if defined(CONFIG_SOC_SERIES_NRF53)
-	/* Restore the default base clock divider to reduce power consumption.
+	/* Restore the default base clock frequency to reduce power consumption.
 	 */
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	nrf_clock_hfclk192m_div_set(NRF_CLOCK, NRF_CLOCK_HFCLK_DIV_4);
+#else
+	clock_control_set_rate(DEVICE_DT_GET_ONE(nordic_nrf_clock_hfclk192m), NULL,
+			       (clock_control_subsys_rate_t)DEFAULT_BASE_CLOCK_FREQUENCY);
+#endif
 	k_busy_wait(BASE_CLOCK_SWITCH_DELAY_US);
 #endif
 
@@ -707,15 +725,25 @@ static int qspi_nrfx_configure(const struct device *dev)
 	 * Make sure this transaction is performed with a valid base clock
 	 * divider.
 	 */
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	nrf_clock_hfclk192m_div_set(NRF_CLOCK, BASE_CLOCK_DIV);
+#else
+	clock_control_set_rate(DEVICE_DT_GET_ONE(nordic_nrf_clock_hfclk192m), NULL,
+			       (clock_control_subsys_rate_t)BASE_CLOCK_FREQUENCY);
+#endif
 	k_busy_wait(BASE_CLOCK_SWITCH_DELAY_US);
 #endif
 
 	int ret = _nrfx_qspi_init(&QSPIconfig, qspi_handler, dev_data);
 
 #if defined(CONFIG_SOC_SERIES_NRF53)
-	/* Restore the default /4 divider after the QSPI initialization. */
+	/* Restore the default frequency after the QSPI initialization. */
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	nrf_clock_hfclk192m_div_set(NRF_CLOCK, NRF_CLOCK_HFCLK_DIV_4);
+#else
+	clock_control_set_rate(DEVICE_DT_GET_ONE(nordic_nrf_clock_hfclk192m), NULL,
+			       (clock_control_subsys_rate_t)DEFAULT_BASE_CLOCK_FREQUENCY);
+#endif
 	k_busy_wait(BASE_CLOCK_SWITCH_DELAY_US);
 #endif
 	if (ret == 0) {
