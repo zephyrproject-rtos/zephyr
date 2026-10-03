@@ -159,12 +159,14 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 			barrier_dmem_fence_full(); /* write barrier */
 		}
 		z_sched_spinlock_release();
+		z_irq_timing_end(key);
 		arch_switch(newsh, &old_thread->switch_handle);
 	} else {
 		z_sched_spinlock_release();
 	}
 
 	if (is_spinlock) {
+		z_irq_timing_end(key);
 		arch_irq_unlock(key);
 	} else {
 		irq_unlock(key);
@@ -205,6 +207,7 @@ static inline int z_swap_irqlock(unsigned int key)
 	z_assert_can_swap(key, NULL);
 #endif /* CONFIG_SPIN_VALIDATE */
 
+	z_irq_timing_end(key);
 	ret = arch_swap(key);
 	return ret;
 }
