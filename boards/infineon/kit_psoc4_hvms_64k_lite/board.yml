@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: kit_psoc4_hvms_64k_lite
+  full_name: PSOC™ 4 HVMS 64K Lite Kit
+  vendor: infineon
+  socs:
+  - name: cy8c4146lwe_hvs115x
