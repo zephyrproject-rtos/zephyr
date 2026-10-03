@@ -65,6 +65,46 @@ typedef uint64_t elf64_xword;
  */
 #define EI_NIDENT 16
 
+/** Index of the ELF class byte in e_ident */
+#define EI_CLASS 4
+/** Index of the ELF data-encoding byte in e_ident */
+#define EI_DATA  5
+
+/** Invalid ELF class */
+#define ELFCLASSNONE 0
+/** 32-bit ELF */
+#define ELFCLASS32   1
+/** 64-bit ELF */
+#define ELFCLASS64   2
+
+/** Invalid data encoding */
+#define ELFDATANONE 0
+/** Little-endian ELF */
+#define ELFDATA2LSB 1
+/** Big-endian ELF */
+#define ELFDATA2MSB 2
+
+/** No machine */
+#define EM_NONE 0
+/** Intel 80386 */
+#define EM_386  3
+/** ARM 32-bit */
+#define EM_ARM  40
+/** AMD x86-64 */
+#define EM_X86_64 62
+/** ARC Cores ARCompact */
+#define EM_ARC_COMPACT 93
+/** AArch64 */
+#define EM_AARCH64 183
+/** ARC Cores ARCv2 */
+#define EM_ARC_COMPACT2 195
+/** Synopsys ARCv3 64-bit (HS6x) */
+#define EM_ARC_COMPACT3_64 253
+/** Synopsys ARCv3 32-bit (HS5x) */
+#define EM_ARC_COMPACT3 255
+/** RISC-V */
+#define EM_RISCV 243
+
 /**
  * @brief ELF Header(32-bit)
  */

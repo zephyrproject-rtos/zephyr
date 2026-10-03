@@ -63,6 +63,10 @@ set(LLEXT_REMOVE_FLAGS
   -Os
 )
 
+if(CONFIG_LLEXT_BUILD_PIC)
+  list(APPEND LLEXT_APPEND_FLAGS -fPIC)
+endif()
+
 list(APPEND LLEXT_EDK_REMOVE_FLAGS
   --sysroot=.*
   -fmacro-prefix-map=.*

@@ -29,7 +29,10 @@ set(ext_names
 )
 
 if(CONFIG_ARM)
-  if(NOT CONFIG_CPU_CORTEX_M0 AND NOT CONFIG_CPU_CORTEX_M0PLUS AND NOT CONFIG_CPU_CORTEX_M1)
+  # MOVW/MOVT immediates are absolute (R_ARM_THM_MOVW_ABS_NC). The ARM linker
+  # rejects those in an ET_DYN shared object; they stay an ET_REL/ET_OBJECT test.
+  if(NOT CONFIG_LLEXT_TYPE_ELF_SHAREDLIB AND
+     NOT CONFIG_CPU_CORTEX_M0 AND NOT CONFIG_CPU_CORTEX_M0PLUS AND NOT CONFIG_CPU_CORTEX_M1)
     list(APPEND ext_names movwmovt)
   endif()
 endif()
@@ -122,7 +125,9 @@ if(CONFIG_LLEXT_TYPE_ELF_RELOCATABLE AND CONFIG_XTENSA AND CONFIG_LLEXT_STORAGE_
   )
 endif()
 
-if(NOT CONFIG_LLEXT_TYPE_ELF_OBJECT AND CONFIG_RISCV AND CONFIG_RISCV_ISA_EXT_C)
+# Non-PIC PCREL_HI20; a shared link rejects these.
+if(NOT CONFIG_LLEXT_TYPE_ELF_OBJECT AND NOT CONFIG_LLEXT_TYPE_ELF_SHAREDLIB AND
+   CONFIG_RISCV AND CONFIG_RISCV_ISA_EXT_C)
   add_llext_target(riscv_edge_case_cb_type_ext
     OUTPUT  ${PROJECT_BINARY_DIR}/llext/riscv_edge_case_cb_type_ext.llext
     SOURCES ${PROJECT_SOURCE_DIR}/src/riscv_edge_case_cb_type.c ${PROJECT_SOURCE_DIR}/src/riscv_edge_case_cb_type_trigger.S
@@ -132,7 +137,7 @@ if(NOT CONFIG_LLEXT_TYPE_ELF_OBJECT AND CONFIG_RISCV AND CONFIG_RISCV_ISA_EXT_C)
   )
 endif()
 
-if(NOT CONFIG_LLEXT_TYPE_ELF_OBJECT AND CONFIG_RISCV)
+if(NOT CONFIG_LLEXT_TYPE_ELF_OBJECT AND NOT CONFIG_LLEXT_TYPE_ELF_SHAREDLIB AND CONFIG_RISCV)
   add_llext_target(riscv_edge_case_non_paired_hi20_lo12_ext
     OUTPUT  ${PROJECT_BINARY_DIR}/llext/riscv_edge_case_non_paired_hi20_lo12_ext.llext
     SOURCES ${PROJECT_SOURCE_DIR}/src/riscv_edge_case_non_paired_hi20_lo12.c ${PROJECT_SOURCE_DIR}/src/riscv_edge_case_non_paired_hi20_lo12_trigger.S

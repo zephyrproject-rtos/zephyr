@@ -288,9 +288,28 @@ can be set by choosing among the following Kconfig options:
         subsystem. The standard linking process is used to generate the shared
         library from multiple object files.
 
+        ARM, AArch64, RISC-V, x86, and ARC shared libraries are built with
+        ``-fPIC -shared``. The loader accepts ELF ``ET_DYN`` images, applies
+        dynamic relocations (``.rel.dyn``, ``.rela.dyn``, ``.rel.plt``,
+        ``.rela.plt``, and ``.rela.got``), and places text, read-only data,
+        and the GOT in one image so the link-time distance from code to the
+        GOT is preserved. Undefined symbols are resolved from the kernel
+        export table. Xtensa keeps its existing shared-library loader.
+
         .. note::
 
-           This is not currently supported on ARM architectures.
+           The Zephyr RISC-V GNU linker cannot create shared objects; extension
+           links on RISC-V use ``ld.lld``. OpenRISC, Thumb-1, and ARCv3 are not
+           supported. Each
+           :c:func:`llext_load` owns a private copy of text and data, because
+           the PC-relative GOT offset is fixed in the instructions. Load and
+           unload take the LLEXT mutex, so concurrent loads are serialized.
+           On an MMU target the whole image is mapped readable, writable, and
+           executable. Validate externally supplied libraries before loading
+           them, the same way as other extensions. QEMU coverage uses
+           ``mps2/an521/cpu0``, ``qemu_cortex_a53``, ``qemu_riscv32``,
+           ``qemu_riscv64``, ``qemu_x86``, ``qemu_x86_64``, and
+           ``qemu_arc/qemu_arc_hs``.
 
 .. _llext_kconfig_storage:
 

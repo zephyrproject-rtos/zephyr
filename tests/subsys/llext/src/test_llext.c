@@ -284,6 +284,49 @@ LLEXT_LOAD_UNLOAD(hello_world,
 	.kernel_only = true
 )
 
+/* Xtensa relocates the GOT in place, so the same buffer cannot be loaded twice. */
+#if defined(CONFIG_LLEXT_TYPE_ELF_SHAREDLIB) && !defined(CONFIG_XTENSA)
+ZTEST(llext, test_sharedlib_load_twice)
+{
+	const struct llext_test test_case = {
+		.name = "hello_world",
+		.buf = hello_world_ext,
+		.buf_len = sizeof(hello_world_ext),
+		.kernel_only = true,
+	};
+
+	load_call_unload(&test_case);
+	load_call_unload(&test_case);
+}
+#endif
+
+ZTEST(llext, test_reject_malformed_elf)
+{
+	static const uint8_t bad_magic[64] = {'N', 'O', 'P', 'E'};
+	struct llext_buf_loader bad_loader = LLEXT_BUF_LOADER(bad_magic, sizeof(bad_magic));
+	struct llext *ext = NULL;
+	int res;
+
+	res = llext_load(&bad_loader.loader, "bad-magic", &ext, NULL);
+	zassert_equal(res, -ENOEXEC, "malformed ELF magic should fail, got %d", res);
+	zassert_is_null(ext, "failed load must not publish an extension");
+
+	/* ELF32, little-endian, type ET_EXEC (unsupported). */
+	static uint8_t exec_elf[64] = {
+		0x7f, 'E', 'L', 'F', 1, 1, 1,
+	};
+
+	exec_elf[16] = 2;  /* ET_EXEC */
+	exec_elf[18] = 40; /* EM_ARM; ignored unless this build is ARM */
+
+	struct llext_buf_loader exec_loader = LLEXT_BUF_LOADER(exec_elf, sizeof(exec_elf));
+
+	ext = NULL;
+	res = llext_load(&exec_loader.loader, "et-exec", &ext, NULL);
+	zassert_true(res < 0, "ET_EXEC should be rejected, got %d", res);
+	zassert_is_null(ext, "rejected image must not stay loaded");
+}
+
 /* When compiled with CCAC, init_fini's sections are unfixably out of order */
 #if !defined(CONFIG_LLEXT_TYPE_ELF_SHAREDLIB) && !defined(__CCAC__)
 static LLEXT_CONST uint8_t init_fini_ext[] LLEXT_SECT ELF_ALIGN = {
@@ -476,14 +519,15 @@ static LLEXT_CONST uint8_t multi_file_ext[] LLEXT_SECT ELF_ALIGN = {
 };
 LLEXT_LOAD_UNLOAD(multi_file)
 
-#if defined(CONFIG_RISCV) && defined(CONFIG_RISCV_ISA_EXT_C)
+#if !defined(CONFIG_LLEXT_TYPE_ELF_SHAREDLIB) && defined(CONFIG_RISCV) && \
+	defined(CONFIG_RISCV_ISA_EXT_C)
 static LLEXT_CONST uint8_t riscv_edge_case_cb_type_ext[] ELF_ALIGN = {
 	#include "riscv_edge_case_cb_type.inc"
 };
 LLEXT_LOAD_UNLOAD(riscv_edge_case_cb_type)
 #endif /* CONFIG_RISCV && CONFIG_RISCV_ISA_EXT_C */
 
-#if defined(CONFIG_RISCV)
+#if !defined(CONFIG_LLEXT_TYPE_ELF_SHAREDLIB) && defined(CONFIG_RISCV)
 static LLEXT_CONST uint8_t riscv_edge_case_non_paired_hi20_lo12_ext[] ELF_ALIGN = {
 	#include "riscv_edge_case_non_paired_hi20_lo12.inc"
 };

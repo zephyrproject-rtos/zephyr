@@ -283,6 +283,29 @@ tests:
       - CONFIG_PICOLIBC=y
       - CONFIG_THREAD_LOCAL_STORAGE=y
 
+  # ET_DYN image is not split into per-region MPU partitions.
+  llext.et_dyn:
+    arch_allow:
+      - arm
+      - arm64
+      - riscv
+      - x86
+      - arc
+    # Thumb-1 and ARCv3 linkers cannot emit ET_DYN.
+    filter: not CONFIG_MPU and not CONFIG_ARMV6_M_ARMV8_M_BASELINE and not CONFIG_ISA_ARCV3
+    extra_conf_files: ['no_mem_protection.conf']
+    extra_configs:
+      - CONFIG_LLEXT_TYPE_ELF_SHAREDLIB=y
+      - CONFIG_LLEXT_BUILD_PIC=y
+      - CONFIG_LLEXT_HEAP_SIZE=128
+    integration_platforms:
+      - mps2/an521/cpu0         # ARM Cortex-M33
+      - qemu_cortex_a53         # AArch64
+      - qemu_riscv32
+      - qemu_riscv64
+      - qemu_x86
+      - qemu_x86_64
+      - qemu_arc/qemu_arc_hs
   llext.semihost:
     arch_allow:
       - arm

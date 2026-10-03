@@ -275,8 +275,34 @@ int llext_lookup_symbol(struct llext_loader *ldr, struct llext *ext, uintptr_t *
 		 * For regular symbols, the link address is obtained by adding st_value to the start
 		 * address of the section in which the target symbol resides.
 		 */
-		*link_addr =
-			(uintptr_t)llext_loaded_sect_ptr(ldr, ext, sym->st_shndx) + sym->st_value;
+		const elf_shdr_t *sym_shdr = ext->sect_hdrs + sym->st_shndx;
+
+		/* TLS is not mapped; st_value is an offset in the TLS block. */
+		if (sym_shdr->sh_flags & SHF_TLS) {
+			*link_addr = sym->st_value;
+			return 0;
+		}
+
+		const void *sect_base = llext_loaded_sect_ptr(ldr, ext, sym->st_shndx);
+
+		if (sect_base == NULL) {
+			LOG_ERR("cannot apply relocation: symbol section %u is not loaded",
+				sym->st_shndx);
+			return -ENOEXEC;
+		}
+
+		*link_addr = (uintptr_t)sect_base + sym->st_value;
+		/* ET_DYN st_value is a VMA. Xtensa keeps its own calculation. */
+		if (!IS_ENABLED(CONFIG_XTENSA) && ldr->hdr.e_type == ET_DYN) {
+			uintptr_t sh_addr = ext->sect_hdrs[sym->st_shndx].sh_addr;
+
+			if ((uintptr_t)sym->st_value < sh_addr) {
+				LOG_ERR("ET_DYN symbol value %#zx is below section VMA %#zx",
+					(size_t)sym->st_value, (size_t)sh_addr);
+				return -ENOEXEC;
+			}
+			*link_addr -= sh_addr;
+		}
 	} else {
 		LOG_ERR("cannot apply relocation: "
 			"target symbol has unexpected section index %d (%#x)",
@@ -460,6 +486,48 @@ static int llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_
 	return link_err;
 }
 
+/* ET_DYN r_offset is a VMA, not an offset into sh_info. */
+static int llext_link_dynamic(struct llext_loader *ldr, struct llext *ext, elf_shdr_t *shdr)
+{
+	unsigned int rel_cnt = shdr->sh_size / shdr->sh_entsize;
+	int link_err = 0;
+
+	ldr->reloc_vma = true;
+
+	for (unsigned int j = 0; j < rel_cnt; j++) {
+		elf_rela_t rel = {0};
+		int ret;
+
+		ret = llext_seek(ldr, shdr->sh_offset + j * shdr->sh_entsize);
+		if (ret != 0) {
+			ldr->reloc_vma = false;
+			return ret;
+		}
+
+		ret = llext_read(ldr, &rel, shdr->sh_entsize);
+		if (ret != 0) {
+			ldr->reloc_vma = false;
+			return ret;
+		}
+
+		if (llext_lookup_vma(ldr, ext, rel.r_offset) == NULL) {
+			LOG_ERR("dynamic relocation %u VMA %#zx is not in a loaded section",
+				j, (size_t)rel.r_offset);
+			link_err = -ENOEXEC;
+			break;
+		}
+
+		ret = arch_elf_relocate(ldr, ext, &rel, shdr);
+		if (ret != 0) {
+			link_err = ret;
+			break;
+		}
+	}
+
+	ldr->reloc_vma = false;
+	return link_err;
+}
+
 int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_load_param *ldr_parm)
 {
 	uintptr_t sect_base = 0;
@@ -468,6 +536,8 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 	const char *name;
 	int link_err = 0;
 	int i, ret;
+
+	ldr->reloc_vma = false;
 
 	for (i = 0; i < ext->sect_cnt; ++i) {
 		elf_shdr_t *shdr = ext->sect_hdrs + i;
@@ -516,6 +586,15 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 				"for section name",
 				i, shdr->sh_name);
 			return -ENOEXEC;
+		}
+
+		/* ET_DYN r_offset is a VMA, including .rela.data. Xtensa uses llext_link_plt(). */
+		if (!IS_ENABLED(CONFIG_XTENSA) && ldr->hdr.e_type == ET_DYN) {
+			ret = llext_link_dynamic(ldr, ext, shdr);
+			if (ret != 0) {
+				return ret;
+			}
+			continue;
 		}
 
 		/*

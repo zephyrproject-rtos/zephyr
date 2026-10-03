@@ -18,6 +18,9 @@ LOG_MODULE_REGISTER(elf, CONFIG_LLEXT_LOG_LEVEL);
 #define R_ARC_S25H_PCREL    16
 #define R_ARC_S25W_PCREL    17
 #define R_ARC_32_ME         27
+#define R_ARC_GLOB_DAT      0x36
+#define R_ARC_JMP_SLOT      0x37
+#define R_ARC_RELATIVE      0x38
 
 /* ARCompact insns packed in memory have Middle Endian encoding */
 #define ME(x) (((x & 0xffff0000) >> 16) | ((x & 0xffff) << 16))
@@ -67,7 +70,13 @@ int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *r
 	switch (reloc_type) {
 	case R_ARC_32:
 	case R_ARC_B26:
+	case R_ARC_GLOB_DAT:
+	case R_ARC_JMP_SLOT:
 		UNALIGNED_PUT(sym_base_addr, (uint32_t *)loc);
+		break;
+	case R_ARC_RELATIVE:
+		/* In-place word is the link VMA; r_addend is not. */
+		UNALIGNED_PUT(llext_et_dyn_bias(ext) + insn, (uint32_t *)loc);
 		break;
 	case R_ARC_S25H_PCREL:
 		/* ((S + A) - P) >> 1
