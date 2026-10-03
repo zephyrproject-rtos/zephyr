@@ -9,7 +9,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
-extern const struct device *get_adc_device(void);
+#include "adc_test.h"
+
 extern struct k_poll_signal async_sig;
 
 void *adc_basic_setup(void)
