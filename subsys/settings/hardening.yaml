@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for the settings subsystem.
+
+rules:
+  SETTINGS_SHELL:
+    value: n
+    rationale: |
+      The settings shell lists, reads, writes and deletes any persisted setting, disclosing values
+      such as Bluetooth bonding keys and allowing configuration that survives reboot to be
+      rewritten.
+    references: [CWE-200]
