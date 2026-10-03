@@ -1,3 +1,5 @@
+# Copyright 2026 NXP
+
 common:
   platform_allow:
     - native_sim
@@ -11,3 +13,17 @@ tests:
   pm.system.custom.ticks.hook:
     extra_args:
       - CONF_FILE="custom-ticks.conf"
+  pm.system.timer.restart:
+    platform_allow:
+      - qemu_cortex_m3
+    extra_args:
+      - CONF_FILE="timer-restart.conf"
+    extra_configs:
+      - CONFIG_PM_EARLY_SYSTEM_TIMER_RESUME=y
+    timeout: 10
+  pm.system.timer.legacy:
+    platform_allow:
+      - qemu_cortex_m3
+    extra_args:
+      - CONF_FILE="timer-restart.conf"
+    timeout: 10
