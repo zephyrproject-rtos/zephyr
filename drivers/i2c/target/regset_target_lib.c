@@ -11,16 +11,6 @@
 
 LOG_MODULE_REGISTER(regset, CONFIG_I2C_LOG_LEVEL);
 
-void regset_target_lib_set_changed_callback(const struct device *dev,
-					    regset_target_lib_changed_handler_t handler,
-					    void *user_data)
-{
-	struct regset_target_lib_data *data = dev->data;
-
-	data->changed_handler = handler;
-	data->changed_handler_data = user_data;
-}
-
 size_t regset_target_lib_get_size(const struct device *dev)
 {
 	const struct regset_target_lib_config *cfg = dev->config;
@@ -92,8 +82,13 @@ static int regset_target_lib_read_requested(struct i2c_target_config *config,
 			config, struct regset_target_lib_data, config);
 	const struct device *dev = data->dev;
 	const struct regset_target_lib_config *cfg = dev->config;
+	const struct regset_target_lib_api *api = cfg->api;
 
 	*val = cfg->buffer[data->buffer_idx];
+
+	if (api != NULL && api->read != NULL) {
+		api->read(dev, data->buffer_idx, &cfg->buffer[data->buffer_idx], val);
+	}
 
 	LOG_DBG("i2c target: read req, val=0x%x", *val);
 
@@ -109,6 +104,7 @@ static int regset_target_lib_write_received(struct i2c_target_config *config,
 			config, struct regset_target_lib_data, config);
 	const struct device *dev = data->dev;
 	const struct regset_target_lib_config *cfg = dev->config;
+	const struct regset_target_lib_api *api = cfg->api;
 
 	LOG_DBG("i2c target: write done, val=0x%x", val);
 
@@ -125,7 +121,12 @@ static int regset_target_lib_write_received(struct i2c_target_config *config,
 		data->buffer_idx = val | (data->buffer_idx << 8);
 		data->idx_write_cnt++;
 	} else {
-		cfg->buffer[data->buffer_idx++] = val;
+		if (api != NULL && api->write != NULL) {
+			api->write(dev, data->buffer_idx, &cfg->buffer[data->buffer_idx], val);
+		} else {
+			cfg->buffer[data->buffer_idx] = val;
+		}
+		data->buffer_idx++;
 		data->changed = true;
 	}
 
@@ -141,11 +142,16 @@ static int regset_target_lib_read_processed(struct i2c_target_config *config,
 			config, struct regset_target_lib_data, config);
 	const struct device *dev = data->dev;
 	const struct regset_target_lib_config *cfg = dev->config;
+	const struct regset_target_lib_api *api = cfg->api;
 
 	/* Increment here */
 	data->buffer_idx = (data->buffer_idx + 1) % cfg->buffer_size;
 
 	*val = cfg->buffer[data->buffer_idx];
+
+	if (api != NULL && api->read != NULL) {
+		api->read(dev, data->buffer_idx, &cfg->buffer[data->buffer_idx], val);
+	}
 
 	LOG_DBG("i2c target: read done, val=0x%x", *val);
 
@@ -160,14 +166,16 @@ static int regset_target_lib_stop(struct i2c_target_config *config)
 {
 	struct regset_target_lib_data *data = CONTAINER_OF(
 			config, struct regset_target_lib_data, config);
-	regset_target_lib_changed_handler_t handler = data->changed_handler;
+	const struct device *dev = data->dev;
+	const struct regset_target_lib_config *cfg = dev->config;
+	const struct regset_target_lib_api *api = cfg->api;
 
 	LOG_DBG("i2c target: stop");
 
 	data->idx_write_cnt = 0;
 
-	if (data->changed && handler != NULL) {
-		handler(data->dev, data->changed_handler_data);
+	if (data->changed && api != NULL && api->changed != NULL) {
+		api->changed(dev);
 	}
 	data->changed = false;
 
@@ -182,6 +190,7 @@ static void regset_target_lib_buf_write_received(struct i2c_target_config *confi
 			config, struct regset_target_lib_data, config);
 	const struct device *dev = data->dev;
 	const struct regset_target_lib_config *cfg = dev->config;
+	const struct regset_target_lib_api *api = cfg->api;
 
 	/* The first byte(s) is offset */
 	uint32_t idx_write_cnt = 0;
@@ -194,7 +203,15 @@ static void regset_target_lib_buf_write_received(struct i2c_target_config *confi
 	}
 
 	if (len > 0) {
-		memcpy(&cfg->buffer[data->buffer_idx], ptr, len);
+		if (api != NULL && api->write != NULL) {
+			for (uint32_t i = 0; i < len; i++) {
+				api->write(dev, data->buffer_idx,
+					   &cfg->buffer[data->buffer_idx], ptr[i]);
+				data->buffer_idx = (data->buffer_idx + 1) % cfg->buffer_size;
+			}
+		} else {
+			memcpy(&cfg->buffer[data->buffer_idx], ptr, len);
+		}
 		data->changed = true;
 	}
 }
