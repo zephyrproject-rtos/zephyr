@@ -77,6 +77,7 @@ void radio_pkt_tx_set(void *tx_packet);
 uint32_t radio_tx_ready_delay_get(uint8_t phy, uint8_t flags);
 uint32_t radio_tx_chain_delay_get(uint8_t phy, uint8_t flags);
 uint32_t radio_rx_ready_delay_get(uint8_t phy, uint8_t flags);
+uint32_t radio_rx_address_delay_get(uint8_t phy, uint8_t flags);
 uint32_t radio_rx_chain_delay_get(uint8_t phy, uint8_t flags);
 void radio_rx_enable(void);
 void radio_tx_enable(void);
@@ -131,8 +132,11 @@ void radio_bc_configure(uint32_t n);
 void radio_bc_status_reset(void);
 uint32_t radio_bc_has_match(void);
 
+typedef void (*radio_tmr_isr_cb_t) (void *param, uint8_t chain);
+
 void isr_radio_tmr(void);
-uint32_t radio_tmr_isr_set(uint32_t start_us, radio_isr_cb_t cb, void *param);
+uint32_t radio_tmr_isr_set(uint32_t start_us, radio_tmr_isr_cb_t cb, void *param);
+uint32_t radio_tmr_isr_clear(void **param);
 
 void radio_tmr_status_reset(void);
 void radio_tmr_tx_status_reset(void);
@@ -146,6 +150,8 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder);
 uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t ticks_start);
 uint32_t radio_tmr_start_us(uint8_t trx, uint32_t us);
 uint32_t radio_tmr_start_now(uint8_t trx);
+void radio_tmr_start_save(uint32_t ticks_start);
+uint32_t radio_tmr_start_restore(void);
 uint32_t radio_tmr_start_get(void);
 uint32_t radio_tmr_start_latency_get(void);
 void radio_tmr_stop(void);
