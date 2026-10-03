@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2026, Testo SE & Co. KGaA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	hy4245: hy4245@55 {
+		compatible = "hycon,hy4245";
+		reg = <0x55>;
+		status = "okay";
+	};
+};
