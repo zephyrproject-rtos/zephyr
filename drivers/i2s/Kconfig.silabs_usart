@@ -1,0 +1,31 @@
+# Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig I2S_SILABS_USART
+	bool "Silicon Labs USART I2S (Series 2)"
+	default y
+	depends on DT_HAS_SILABS_USART_I2S_ENABLED
+	depends on DT_HAS_SILABS_LDMA_ENABLED
+	depends on CLOCK_CONTROL
+	select DMA
+	select PINCTRL
+	select SILABS_SISDK_USART
+	select SILABS_SISDK_PRS
+	help
+	  I2S over USART synchronous mode with I2SCTRL enabled (Series 2+ and
+	  similar). Audio data is transferred using the SoC LDMA controller
+	  (requires ``dmas`` / ``dma-names`` on the USART I2S devicetree node).
+
+if I2S_SILABS_USART
+
+config I2S_SILABS_USART_TX_BLOCK_COUNT
+	int "TX queue depth (memory blocks)"
+	default 4
+	range 2 16
+
+config I2S_SILABS_USART_RX_BLOCK_COUNT
+	int "RX queue depth (memory blocks)"
+	default 4
+	range 2 16
+
+endif # I2S_SILABS_USART
