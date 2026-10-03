@@ -24,10 +24,39 @@ dmic_dev: &dmic0 {
 &dmic0_ch2 {
 	status = "okay";
 	use-alt-io;
+	/* fir1-decimation sets the total PDM oversampling ratio together with
+	 * the default CIC_DECIM_32 (factor 32): total = 32 * (fir1-decimation + 1).
+	 * The IM73D122 mic's clock-input windows are discrete bands, not a
+	 * continuous range. At this sample's 16 kHz PCM rate:
+	 *
+	 *   fir1-decimation  total  PDM clock  mic clock band
+	 *   0                32     0.512 MHz  low-power (450-850 kHz)
+	 *   1                64     1.024 MHz  undefined gap (out of spec)
+	 *   2                96     1.536 MHz  normal (1.2-1.65 MHz)      <- used here
+	 *   3                128    2.048 MHz  high-performance (2.0-2.6 MHz)
+	 *   4                160    2.56 MHz   high-performance (2.0-2.6 MHz)
+	 *
+	 * The mic's second high-performance band (2.9-3.3 MHz) is not reachable
+	 * at 16 kHz with this driver's decimation options; 160x is the maximum.
+	 * Ratios 32x, 96x, 128x and 160x were each built, flashed and captured
+	 * fault-free on kit_pse84_ai; only the 96x setting used here was checked
+	 * for audio content.
+	 *
+	 * fir1-scale is a right shift applied to the FIR1 output, so a smaller
+	 * value yields a larger PCM magnitude. 10 is the value the vendor BSP
+	 * uses at this 96x ratio, five bits below the driver's default of 15.
+	 * It was taken from the BSP rather than derived or swept here, and the
+	 * other ratios above may need a different value to avoid clipping or
+	 * excessive attenuation.
+	 */
+	fir1-decimation = <2>;
+	fir1-scale = <10>;
 };
 
 &dmic0_ch3 {
 	status = "okay";
+	fir1-decimation = <2>;
+	fir1-scale = <10>;
 };
 
 &dma0 {

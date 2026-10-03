@@ -251,6 +251,18 @@ static int dmic_stop_capture(const struct device *dev)
 	return 0;
 }
 
+/* CIC_DECIM_2 = 0 ... CIC_DECIM_32 = 4, each step doubling the decimation factor */
+static uint32_t ifx_dmic_cic_decim_factor(cy_en_pdm_pcm_ch_cic_decimcode_t code)
+{
+	return 2U << (uint32_t)code;
+}
+
+/* FIR1_DECIM_1 = 0 ... FIR1_DECIM_4 = 3, decimation factor is code + 1 */
+static uint32_t ifx_dmic_fir1_decim_factor(cy_en_pdm_pcm_ch_fir1_decimcode_t code)
+{
+	return (uint32_t)code + 1U;
+}
+
 static int ifx_dmic_configure(const struct device *dev, struct dmic_cfg *cfg)
 {
 	struct ifx_dmic_data *const data = dev->data;
@@ -331,12 +343,22 @@ static int ifx_dmic_configure(const struct device *dev, struct dmic_cfg *cfg)
 	uint32_t peri_freq =
 		ifx_cat1_utils_peri_pclk_get_frequency(PCLK_PDM0_CLK_IF_SRSS, &data->clock);
 
-	/* clkDiv is the register field and represents a divider value of clkDiv + 1
-	 * The TRM recommends an oversampling rate of 64, meaning that the PDM clock
-	 * should be 64 times the PCM sample rate.
+	/* The PDM clock to PCM sample rate ratio (oversampling) is determined by the
+	 * CIC and FIR1 decimation configured for the first requested channel. All
+	 * channels sharing this PDM instance's clock are expected to use the same
+	 * decimation configuration.
 	 */
+	dmic_parse_channel_map(channel->req_chan_map_lo, channel->req_chan_map_hi, 0, &pdm_ctl_idx,
+			       &lr);
+	uint8_t pdm_ch_n0 = (2 * pdm_ctl_idx) + ((lr == PDM_CHAN_LEFT) ? 0U : 1U);
+	uint32_t oversampling =
+		ifx_dmic_cic_decim_factor(data->pdm_pcm_ch_cfg[pdm_ch_n0].cic_decim_code) *
+		ifx_dmic_fir1_decim_factor(data->pdm_pcm_ch_cfg[pdm_ch_n0].fir1_decim_code);
+
+	/* clkDiv is the register field and represents a divider value of clkDiv + 1 */
 	uint16_t clock_div =
-		(uint16_t)(((float)peri_freq / ((float)stream->pcm_rate * 64.0f)) - 0.5f);
+		(uint16_t)(((float)peri_freq / ((float)stream->pcm_rate * (float)oversampling)) -
+			   0.5f);
 
 	/* validate clkDiv range (min = 3, max = 255) - should be set to an odd value */
 	if ((clock_div < 3) || (clock_div > 255)) {
@@ -349,8 +371,8 @@ static int ifx_dmic_configure(const struct device *dev, struct dmic_cfg *cfg)
 	}
 
 	pdm_cfg->clkDiv = clock_div;
-	LOG_DBG("DMIC clock divider set to: %u. Fs = %u", pdm_cfg->clkDiv + 1,
-		peri_freq / ((pdm_cfg->clkDiv + 1) * 64U));
+	LOG_DBG("DMIC clock divider set to: %u. Oversampling: %u. Fs = %u", pdm_cfg->clkDiv + 1,
+		oversampling, peri_freq / ((pdm_cfg->clkDiv + 1) * oversampling));
 
 	/* In stereo configurations, the left channel will sample at 1/4 the PDM clock period
 	 * and right channel at 3/4 the PDM clock period
