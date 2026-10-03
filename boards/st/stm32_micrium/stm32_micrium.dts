@@ -43,7 +43,6 @@
 		led1 = &orange_led_2;
 		led2 = &red_led_3;
 		ambient-temp0 = &stlm75;
-		rtc = &rtc;
 		sdhc0 = &sdhc0;
 		watchdog0 = &iwdg;
 	};
@@ -170,12 +169,6 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12
 		     &usb_otg_fs_id_pa10 &usb_otg_fs_vbus_pa9>;
 	pinctrl-names = "default";
-	status = "okay";
-};
-
-&rtc {
-	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
-		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
 };
 
