@@ -19,6 +19,20 @@ properties:
       The property value should ensure the flags properly describe
       the signal that is presented to the driver.
 
+  int-gpio-config:
+    type: int
+    default: 1
+    description: |
+      Select the interrupt configuration for the INT gpio.
+
+      The default of 1 ensures an interrupt already pending
+      at boot is not missed.
+
+      - 0 # STTS22H_DT_GPIO_INT_EDGE_TO_ACTIVE
+      - 1 # STTS22H_DT_GPIO_INT_LEVEL_ACTIVE
+
+    enum: [0, 1]
+
   temperature-hi-threshold:
     type: int
     default: 0
