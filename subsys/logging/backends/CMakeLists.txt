@@ -50,6 +50,11 @@ zephyr_sources_ifdef(
   log_backend_rtt.c
 )
 
+zephyr_sources_ifdef(
+  CONFIG_LOG_BACKEND_RPMSG
+  log_backend_rpmsg.c
+)
+
 zephyr_include_directories_ifdef(
   CONFIG_LOG_BACKEND_SPINEL
   ${ZEPHYR_BASE}/subsys/net/lib/openthread/platform/
