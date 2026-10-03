@@ -45,6 +45,18 @@
 		};
 	};
 
+	itcm: memory@10000000 {
+		compatible = "zephyr,memory-region", "arm,itcm-ecc";
+		reg = <0x10000000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "ITCM";
+	};
+
+	dtcm: memory@30000000 {
+		compatible = "zephyr,memory-region", "arm,dtcm-ecc";
+		reg = <0x30000000 DT_SIZE_K(128)>;
+		zephyr,memory-region = "DTCM";
+	};
+
 	axisram12: axisram12@34000000 {
 		#address-cells = <1>;
 		#size-cells = <1>;
