@@ -67,6 +67,8 @@ LOG_MODULE_REGISTER(clock_mchp_pic32cz_ca, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #define SUBSYS_TYPE_MCLKPERIPH (9)
 #define SUBSYS_TYPE_MAX        (9)
 
+#define MCLK_CLKDIV_IDX_PERIPH 1
+
 /* mclk bus */
 #define MCLKMSK0     (0)
 #define MCLKMSK1     (1)
@@ -1207,6 +1209,10 @@ static int clock_mchp_get_rate(const struct device *dev, clock_control_subsys_t 
 
 	case SUBSYS_TYPE_MCLKDOMAIN:
 	case SUBSYS_TYPE_MCLKPERIPH:
+		if (subsys.bits.type == SUBSYS_TYPE_MCLKPERIPH) {
+			inst = MCLK_CLKDIV_IDX_PERIPH;
+		}
+
 		/* source for mclk is always gclk0 */
 		ret_val = clock_get_rate_gclkgen(dev, 0, CLOCK_MCHP_GCLK_SRC_MAX + 1,
 						 &gclkgen_src_freq);
