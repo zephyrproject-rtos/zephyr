@@ -23,6 +23,8 @@
 
 #include <esp_hosted_mcu.h>
 
+#include "esp_hosted_mcu_wifi.h"
+
 #define DT_DRV_COMPAT espressif_esp_hosted_mcu_wifi
 
 #include <zephyr/logging/log.h>
@@ -68,6 +70,8 @@ struct esp_hosted_mcu_data {
 	uint8_t mac_addr[ESP_HOSTED_MCU_IFACE_COUNT][ESP_HOSTED_MCU_MAC_ADDR_LEN];
 	enum wifi_iface_state state[ESP_HOSTED_MCU_IFACE_COUNT];
 	struct k_sem scan_sem;
+	/* Set by esp_hosted_mcu_wifi_restart(): the waiting scan cannot finish. */
+	bool scan_aborted;
 #if defined(CONFIG_NET_STATISTICS_WIFI)
 	struct net_stats_wifi stats;
 #endif
@@ -262,6 +266,7 @@ static int esp_hosted_mcu_scan(const struct device *dev, struct net_if *iface,
 
 	ARG_UNUSED(params);
 
+	data->scan_aborted = false;
 	k_sem_reset(&data->scan_sem);
 
 	/* Kick off a blocking scan on the coprocessor. */
@@ -277,6 +282,10 @@ static int esp_hosted_mcu_scan(const struct device *dev, struct net_if *iface,
 	/* Wait for the scan-done event, then read how many APs were found. */
 	if (k_sem_take(&data->scan_sem, K_MSEC(ESP_HOSTED_MCU_SCAN_TIMEOUT)) != 0) {
 		return -ETIMEDOUT;
+	}
+	if (data->scan_aborted) {
+		/* The coprocessor restarted; this scan went with its previous run. */
+		return -EAGAIN;
 	}
 
 	req = (Rpc)Rpc_init_zero;
@@ -943,22 +952,15 @@ static void esp_hosted_mcu_default_init_config(Rpc_Req_WifiInit *init)
 	cfg->dump_hesigb_enable = 0;
 }
 
-/* Register with the core and run the coprocessor esp_wifi init sequence. */
-static int esp_hosted_mcu_wifi_init(const struct device *dev)
+/*
+ * The coprocessor's esp_wifi bring-up. Run from init, and again by
+ * esp_hosted_mcu_wifi_restart() once the coprocessor has restarted with no
+ * memory of it.
+ */
+static int esp_hosted_mcu_wifi_bringup(struct esp_hosted_mcu_data *data)
 {
-	struct esp_hosted_mcu_data *data = dev->data;
 	Rpc req = Rpc_init_zero;
 	Rpc resp = Rpc_init_zero;
-
-	if (!device_is_ready(DEVICE_DT_GET(DT_INST_PARENT(0)))) {
-		LOG_ERR("esp-hosted-mcu core not ready");
-		return -ENODEV;
-	}
-
-	k_sem_init(&data->scan_sem, 0, 1);
-
-	/* Route asynchronous coprocessor events (connect/disconnect/scan) here. */
-	esp_hosted_mcu_register_rpc_event(esp_hosted_mcu_handle_event, data);
 
 	/* Read the STA and AP MAC addresses the coprocessor reports. */
 	for (size_t i = 0; i < ESP_HOSTED_MCU_IFACE_COUNT; i++) {
@@ -1006,6 +1008,87 @@ static int esp_hosted_mcu_wifi_init(const struct device *dev)
 	}
 
 	return 0;
+}
+
+/* Register with the core and run the coprocessor's esp_wifi bring-up. */
+static int esp_hosted_mcu_wifi_init(const struct device *dev)
+{
+	struct esp_hosted_mcu_data *data = dev->data;
+
+	if (!device_is_ready(DEVICE_DT_GET(DT_INST_PARENT(0)))) {
+		LOG_ERR("esp-hosted-mcu core not ready");
+		return -ENODEV;
+	}
+
+	k_sem_init(&data->scan_sem, 0, 1);
+
+	/* Route asynchronous coprocessor events (connect/disconnect/scan) here. */
+	esp_hosted_mcu_register_rpc_event(esp_hosted_mcu_handle_event, data);
+
+	return esp_hosted_mcu_wifi_bringup(data);
+}
+
+int esp_hosted_mcu_wifi_restart(void)
+{
+	const struct device *dev = DEVICE_DT_INST_GET(0);
+	struct esp_hosted_mcu_data *data;
+	struct net_if *sta;
+	enum wifi_iface_state prev;
+#if defined(CONFIG_WIFI_ESP_HOSTED_MCU_AP_STA_MODE)
+	struct net_if *ap;
+#endif
+
+	/*
+	 * A device whose init failed stays not ready: device_init() refuses a
+	 * second call and the network stack skipped its interface. Nothing here
+	 * can change that without going around the kernel.
+	 */
+	if (!device_is_ready(dev)) {
+		return -ENODEV;
+	}
+
+	data = dev->data;
+	sta = data->iface[ESP_HOSTED_MCU_IFACE_STA];
+
+	/*
+	 * The coprocessor dropped any association along with its previous run
+	 * and will send no disconnect event for it, so report the loss the way
+	 * that event would have. Left believing it is still associated, a
+	 * supplicant or an application never retries.
+	 */
+	/*
+	 * A scan waiting for the previous run's scan-done event will never see
+	 * it. Release it with an error, rather than leave it to time out and
+	 * then read results from a coprocessor that is being brought up.
+	 */
+	data->scan_aborted = true;
+	k_sem_give(&data->scan_sem);
+
+	prev = data->state[ESP_HOSTED_MCU_IFACE_STA];
+	data->state[ESP_HOSTED_MCU_IFACE_STA] = WIFI_STATE_DISCONNECTED;
+	if (sta == NULL) {
+		/* No interface to report it to. */
+	} else if (prev == WIFI_STATE_ASSOCIATING) {
+		wifi_mgmt_raise_connect_result_event(sta, WIFI_STATUS_CONN_FAIL);
+	} else if (prev == WIFI_STATE_COMPLETED) {
+		if (IS_ENABLED(CONFIG_WIFI_STA_AUTO_DHCPV4)) {
+			net_dhcpv4_stop(sta);
+		}
+		net_if_dormant_on(sta);
+		wifi_mgmt_raise_disconnect_result_event(sta, 0);
+	} else {
+		/* Not associated: nothing to report. */
+	}
+
+#if defined(CONFIG_WIFI_ESP_HOSTED_MCU_AP_STA_MODE)
+	ap = data->iface[ESP_HOSTED_MCU_IFACE_AP];
+	if (ap != NULL && data->state[ESP_HOSTED_MCU_IFACE_AP] == WIFI_STATE_COMPLETED) {
+		data->state[ESP_HOSTED_MCU_IFACE_AP] = WIFI_STATE_DISCONNECTED;
+		wifi_mgmt_raise_ap_disable_result_event(ap, 0);
+	}
+#endif
+
+	return esp_hosted_mcu_wifi_bringup(data);
 }
 
 static const struct wifi_mgmt_ops esp_hosted_mcu_mgmt = {
