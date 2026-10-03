@@ -15,7 +15,19 @@ LOG_MODULE_REGISTER(input_vs1838b, CONFIG_INPUT_LOG_LEVEL);
 
 /* A NEC packet is defined by:
  * - a lead burst (2 edges)
+ * - a space
  * - an 8-bit address followed by its logical inverse
+ * - an 8-bit command followed by its logical inverse
+ * - a trailing burst
+ */
+
+/*
+ *  An Extended NEC (NECext) in the reference:
+ *  https://www.sbprojects.net/knowledge/ir/nec.php
+ *  is defined by:
+ * - a lead burst (2 edges)
+ * - a space
+ * - a 16-bit address
  * - an 8-bit command followed by its logical inverse
  * - a trailing burst
  */
@@ -181,36 +193,25 @@ static bool detect_leading_burst(int64_t *const edges_ticks)
 			       VS1838B_NEC_LEAD_PULSE_OFF_MAX_TICK);
 }
 
-static bool read_redundant_byte(int64_t *const edges_ticks, uint8_t *const byte,
-				uint32_t const offset)
+/* Read halfword (16 bits) starting from the given offset */
+static bool read_halfword(int64_t *const edges_ticks, uint16_t *const halfword,
+			  uint32_t const offset)
 {
-	uint8_t temp_byte;
-	uint8_t reverse_byte;
+	/* Read two bytes and define if they are logical inverse (NEC) or not (NECext) */
+	uint8_t low_byte;
+	uint8_t high_bytes;
 
-	if (read_byte_from(edges_ticks, offset, &temp_byte) &&
-	    read_byte_from(edges_ticks, offset + (2 * BITS_PER_BYTE), &reverse_byte)) {
-		if (temp_byte == (uint8_t)(~reverse_byte)) {
-			*byte = temp_byte;
-		} else {
-			LOG_ERR("Error while decoding byte");
-			return false;
-		}
+	if (read_byte_from(edges_ticks, offset, &low_byte) &&
+	    read_byte_from(edges_ticks, offset + (2 * BITS_PER_BYTE), &high_bytes)) {
+
+		*halfword = (high_bytes << (BITS_PER_BYTE)) | low_byte;
+		return true;
 	} else {
-		LOG_ERR("Error while reading bytes");
+		LOG_ERR("Error while reading halfword");
 		return false;
 	}
 
 	return true;
-}
-
-static bool read_address_byte(int64_t *const edges_ticks, uint8_t *const address)
-{
-	return read_redundant_byte(edges_ticks, address, NEC_ADDRESS_BYTE_EDGE_OFFSET);
-}
-
-static bool read_command_byte(int64_t *const edges_ticks, uint8_t *const command)
-{
-	return read_redundant_byte(edges_ticks, command, NEC_COMMAND_BYTE_EDGE_OFFSET);
 }
 
 static bool detect_last_burst(int64_t *const edges_ticks)
@@ -233,25 +234,53 @@ static bool detect_last_burst(int64_t *const edges_ticks)
 			       VS1838B_NEC_BIT_DETECT_MAX_TICK);
 }
 
-static bool get_address_and_command(int64_t *const edges_ticks, uint8_t *const address,
-				    uint8_t *const command)
+/* Checks if low byte and high byte are inverse of each other */
+static bool contains_inverted_bytes(uint16_t *raw)
+{
+	return (*raw & 0xFF) == ((~*raw & 0xFF00) >> BITS_PER_BYTE);
+}
+
+static bool isNECHeader(uint16_t *address, uint16_t *command)
+{
+	return contains_inverted_bytes(address) && contains_inverted_bytes(command);
+}
+
+static bool isNECextHeader(uint16_t *command)
+{
+	return contains_inverted_bytes(command);
+}
+
+static bool get_address_and_command(int64_t *const edges_ticks, uint16_t *const address,
+				    uint16_t *const command)
 {
 	if (!detect_leading_burst(edges_ticks)) {
 		LOG_DBG("No lead detected");
 		return false;
 	}
 
-	if (!read_address_byte(edges_ticks, address)) {
+	if (!read_halfword(edges_ticks, address, NEC_ADDRESS_BYTE_EDGE_OFFSET)) {
 		LOG_DBG("No address decoded");
 		return false;
 	}
 
-	if (!read_command_byte(edges_ticks, command)) {
+	if (!read_halfword(edges_ticks, command, NEC_COMMAND_BYTE_EDGE_OFFSET)) {
 		LOG_DBG("No command decoded");
 		return false;
 	}
 	if (!detect_last_burst(edges_ticks)) {
 		LOG_DBG("No trailing edge detected");
+		return false;
+	}
+
+	if (isNECHeader(address, command)) {
+		*address = *address & 0xFF;
+		*command = *command & 0xFF;
+		LOG_DBG("NEC protocol detected");
+	} else if (isNECextHeader(command)) {
+		*command = *command & 0xFF;
+		LOG_DBG("NECext protocol detected");
+	} else {
+		LOG_ERR("Failed to detect protocol");
 		return false;
 	}
 
@@ -267,13 +296,15 @@ static void vs1838b_decode_work_handler(struct k_work *item)
 	struct vs1838b_data *data = CONTAINER_OF(dwork, struct vs1838b_data, decode_work);
 
 	if (k_sem_take(&data->decode_sem, K_FOREVER) == 0) {
-		uint8_t address_byte;
-		uint8_t command_byte;
+		uint16_t address;
+		uint16_t command;
 
-		if (get_address_and_command(data->edges_ticks, &address_byte, &command_byte)) {
-			LOG_DBG("Address: [0x%X] | Command: [0x%X]", address_byte, command_byte);
+		if (get_address_and_command(data->edges_ticks, &address, &command)) {
+
+			LOG_DBG("Address: [0x%04X] | Command: [0x%04X]", address, command);
 			if (input_report(data->dev, INPUT_EV_DEVICE, INPUT_MSC_SCAN,
-					 (address_byte << 8) | command_byte, true, K_FOREVER) < 0) {
+					 (address << (2 * BITS_PER_BYTE)) | command, true,
+					 K_FOREVER) < 0) {
 				LOG_ERR("Message failed to be enqueued");
 			}
 		}
