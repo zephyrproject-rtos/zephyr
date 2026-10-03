@@ -389,6 +389,13 @@ config BT_CTLR_DATA_LENGTH_CLEAR
 	  251 byte cleartext payloads in the Controller. Encrypted connections
 	  are not supported.
 
+config BT_CTLR_DATA_HEADER_OCTET3
+	bool "Use ACL Data Header with 3 Octets" if SOC_COMPATIBLE_NRF54LX && \
+							!BT_CTLR_DF_CONN_CTE_TX && \
+							!BT_CTLR_DF_CONN_CTE_RX
+	default y if !SOC_COMPATIBLE_NRF54LX || BT_CTLR_DF_CONN_CTE_TX || BT_CTLR_DF_CONN_CTE_RX
+	help
+	  ACL Data Header assigned to Radio packet pointer takes 3 octets.
 
 config BT_CTLR_PHY_2M_NRF
 	bool "2Mbps Nordic Semiconductor PHY Support (Cleartext only)"
