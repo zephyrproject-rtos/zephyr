@@ -40,6 +40,21 @@
 				pinmux = <DT_CAT1_PINMUX(17, 0, HSIOM_SEL_ACT_14)>;
 				drive-push-pull;
 			};
+
+			/omit-if-no-ref/ p7_5_pwm0_25_line_out: p7_5_pwm0_25_line_out {
+				pinmux = <DT_CAT1_PINMUX(7, 5, HSIOM_SEL_ACT_0)>;
+				drive-push-pull;
+			};
+
+			/omit-if-no-ref/ p7_6_pwm0_26_line_out: p7_6_pwm0_26_line_out {
+				pinmux = <DT_CAT1_PINMUX(7, 6, HSIOM_SEL_ACT_0)>;
+				drive-push-pull;
+			};
+
+			/omit-if-no-ref/ p7_7_pwm0_27_line_out: p7_7_pwm0_27_line_out {
+				pinmux = <DT_CAT1_PINMUX(7, 7, HSIOM_SEL_ACT_0)>;
+				drive-push-pull;
+			};
 		};
 	};
 };

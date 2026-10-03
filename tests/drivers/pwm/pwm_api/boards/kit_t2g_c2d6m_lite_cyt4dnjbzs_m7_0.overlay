@@ -1,0 +1,33 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	aliases {
+		pwm-test = &pwm0_26;
+	};
+};
+
+&clk_peri0 {
+	status = "okay";
+};
+
+&peri0_group0_16bit_0 {
+	status = "okay";
+};
+
+&tcpwm0_26 {
+	clock-frequency = <1000000>;
+	status = "okay";
+};
+
+&pwm0_26 {
+	clocks = <&peri0_group0_16bit_0>;
+	pinctrl-0 = <&p7_6_pwm0_26_line_out>;
+	pinctrl-names = "default";
+	status = "okay";
+};
