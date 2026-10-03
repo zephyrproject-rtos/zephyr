@@ -36,8 +36,8 @@
  * P24	- P0.25/I2C_SCL_2
  * P25	- P1.01/SW1
  * P26	- P1.02/SW2
- * P27	- P0.03/LED1
- * P28	- P0.04/LED2
+ * P27	- P1.03/LED1
+ * P28	- P1.04/LED2
  * P29	- P0.03/QSPI_CLK
  * P30	- P0.02/QSPI_DIO3
  * P31	- P0.28/QSPI_DIO2
@@ -103,7 +103,7 @@
 		status = "disabled";
 		reset-gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
 		busy-gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
-		rx-enable-gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
+		antenna-enable-gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
 		dio1-gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>;
 		dio2-tx-enable;
 		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_3V3>;
