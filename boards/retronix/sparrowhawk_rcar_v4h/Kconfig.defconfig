@@ -6,3 +6,11 @@ config BUILD_OUTPUT_BIN
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/clocks/clock-cl16m_rt,clock-frequency)
+
+if BOARD_SPARROWHAWK_RCAR_V4H_R8A779G0_A76
+
+# GPIO must initialize after the GIC/PFC and before GPIO regulators.
+config GPIO_INIT_PRIORITY
+	default 70
+
+endif
