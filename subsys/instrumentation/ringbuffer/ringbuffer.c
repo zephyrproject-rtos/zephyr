@@ -10,6 +10,8 @@
 static struct ring_buf instr_ring_buf;
 static uint8_t instr_buffer[CONFIG_INSTRUMENTATION_MODE_CALLGRAPH_TRACE_BUFFER_SIZE + 1];
 
+BUILD_ASSERT(sizeof(instr_buffer) <= RING_BUFFER_MAX_SIZE, RING_BUFFER_SIZE_ASSERT_MSG);
+
 struct ring_buf *instr_buffer_get_ring_buf(void)
 {
 	return &instr_ring_buf;
