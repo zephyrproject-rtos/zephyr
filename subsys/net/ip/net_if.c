@@ -4334,6 +4334,14 @@ static void ipv4_config_defaults_set(struct net_if_ipv4 *ipv4)
 	ipv4->ttl = CONFIG_NET_INITIAL_TTL;
 	ipv4->mcast_ttl = CONFIG_NET_INITIAL_MCAST_TTL;
 
+#if defined(CONFIG_NET_IPV4_IGMP)
+	ipv4->igmp_general_timeout = sys_timepoint_calc(K_FOREVER);
+	/* No older version querier heard: the timers have expired */
+	ipv4->igmp_v1_querier_timeout = sys_timepoint_calc(K_NO_WAIT);
+	ipv4->igmp_v2_querier_timeout = sys_timepoint_calc(K_NO_WAIT);
+	ipv4->igmp_version = 0U;
+#endif
+
 	IF_ENABLED(CONFIG_NET_IPV4_ACD, (ipv4->conflict_cnt = 0));
 }
 #else
@@ -5744,6 +5752,11 @@ struct net_if_mcast_addr *net_if_ipv4_maddr_add(struct net_if *iface,
 		maddr->is_joined = false;
 		maddr->address.family = NET_AF_INET;
 		maddr->address.in_addr.s4_addr32[0] = addr->s4_addr32[0];
+#if defined(CONFIG_NET_IPV4_IGMP)
+		maddr->igmp_resp_timeout = sys_timepoint_calc(K_FOREVER);
+		maddr->igmp_retx_timeout = sys_timepoint_calc(K_FOREVER);
+		maddr->igmp_retx_left = 0U;
+#endif
 #if defined(CONFIG_NET_IPV4_IGMPV3)
 		maddr->sources_len = 0;
 #endif
