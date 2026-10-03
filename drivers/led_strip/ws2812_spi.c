@@ -56,6 +56,11 @@ struct ws2812_spi_cfg {
 	uint16_t reset_delay;
 };
 
+struct ws2812_spi_data {
+	/* When the strip is done latching the last update */
+	k_timepoint_t reset_done;
+};
+
 static const struct ws2812_spi_cfg *dev_cfg(const struct device *dev)
 {
 	return dev->config;
@@ -109,11 +114,14 @@ static inline void ws2812_spi_ser(uint8_t color, uint8_t one, uint8_t zero,
 }
 
 /*
- * Latch current color values on strip and reset its state machines.
+ * Wait for the strip to latch the last update and reset its state machines.
+ * This only sleeps if the last update was less than the reset delay ago.
  */
-static inline void ws2812_reset_delay(uint16_t delay)
+static void ws2812_reset_wait(struct ws2812_spi_data *data)
 {
-	k_usleep(delay);
+	if (!sys_timepoint_expired(data->reset_done)) {
+		k_sleep(sys_timepoint_timeout(data->reset_done));
+	}
 }
 
 static int ws2812_strip_update_rgb(const struct device *dev,
@@ -121,6 +129,7 @@ static int ws2812_strip_update_rgb(const struct device *dev,
 				   size_t num_pixels)
 {
 	const struct ws2812_spi_cfg *cfg = dev_cfg(dev);
+	struct ws2812_spi_data *data = dev->data;
 	const uint8_t one = cfg->one_frame, zero = cfg->zero_frame;
 	const uint8_t bits_per_symbol = cfg->bits_per_symbol;
 	const size_t total_bits = num_pixels * cfg->num_colors *
@@ -179,10 +188,12 @@ static int ws2812_strip_update_rgb(const struct device *dev,
 	}
 
 	/*
-	 * Display the pixel data.
+	 * Display the pixel data. The strip latches it during the reset delay,
+	 * which the next update waits for.
 	 */
+	ws2812_reset_wait(data);
 	rc = spi_write_dt(&cfg->bus, &tx);
-	ws2812_reset_delay(cfg->reset_delay);
+	data->reset_done = sys_timepoint_calc(K_USEC(cfg->reset_delay));
 
 	return rc;
 }
@@ -264,6 +275,8 @@ static DEVICE_API(led_strip, ws2812_spi_api) = {
 										\
 	WS2812_COLOR_MAPPING(idx);						\
 										\
+	static struct ws2812_spi_data ws2812_spi_##idx##_data;			\
+										\
 	static const struct ws2812_spi_cfg ws2812_spi_##idx##_cfg = {		\
 		.bus = SPI_DT_SPEC_INST_GET(idx, SPI_OPER(idx)),		\
 		.px_buf = ws2812_spi_##idx##_px_buf,				\
@@ -279,7 +292,7 @@ static DEVICE_API(led_strip, ws2812_spi_api) = {
 	DEVICE_DT_INST_DEFINE(idx,						\
 			      ws2812_spi_init,					\
 			      NULL,						\
-			      NULL,						\
+			      &ws2812_spi_##idx##_data,				\
 			      &ws2812_spi_##idx##_cfg,				\
 			      POST_KERNEL,					\
 			      CONFIG_LED_STRIP_INIT_PRIORITY,			\
