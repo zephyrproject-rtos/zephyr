@@ -2055,6 +2055,14 @@ Video
 WiFi
 ====
 
+* :c:struct:`wifi_connect_req_params` gained PMKSA import fields, and
+  :c:macro:`NET_REQUEST_WIFI_CONNECT` now requires a payload of exactly
+  ``sizeof(struct wifi_connect_req_params)``. Zero-initialize the structure and leave
+  ``pmksa_entries`` as ``NULL`` and ``pmksa_entry_count`` as zero when not importing entries.
+  A mismatched pointer/count pair returns ``-EINVAL``; a nonzero count with
+  :kconfig:option:`CONFIG_WIFI_MGMT_PMKSA_IMPORT` disabled returns ``-ENOTSUP``.
+  (:github:`115470`)
+
 * In the functions implemented by the :c:struct:`net_wifi_mgmt_offload`, internally
   :c:struct:`ethernet_api` and :c:struct:`wifi_mgmt_ops`, a additional argument was added for
   a pointer to :c:struct:`net_if`. This api is not directly exposed to the application, so only
