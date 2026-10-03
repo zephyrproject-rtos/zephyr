@@ -48,6 +48,7 @@ class Boards(WestCommand):
 
             - name: board name
             - full_name: board full name (typically, its commercial name)
+            - default_qualifier: effective default board qualifier
             - revision_default: board default revision
             - revisions: list of board revisions
             - qualifiers: board qualifiers (will be empty for legacy boards)
@@ -99,12 +100,14 @@ class Boards(WestCommand):
                 continue
 
             if args.all_targets:
-                all_targets += [f"{board.name}/{qualifier}"
-                                for qualifier in list_boards.board_v2_qualifiers(board)]
-                if board.revisions:
-                    all_targets += [f"{board.name}@{revision.name}/{qualifier}"
-                                    for qualifier in list_boards.board_v2_qualifiers(board)
-                                    for revision in board.revisions]
+                for qualifier in list_boards.board_v2_qualifiers(board):
+                    if board.revisions:
+                        for revision in board.revisions:
+                            all_targets += list_boards.board_v2_target_aliases(
+                                board, qualifier, revision.name
+                            )
+                    else:
+                        all_targets += list_boards.board_v2_target_aliases(board, qualifier)
             else:
                 if board.revisions:
                     revisions_list = ','.join([rev.name for rev in board.revisions])
@@ -115,6 +118,7 @@ class Boards(WestCommand):
                     args.format.format(
                         name=board.name,
                         full_name=board.full_name,
+                        default_qualifier=list_boards.board_v2_default_qualifier(board),
                         revision_default=board.revision_default,
                         revisions=revisions_list,
                         dir=board.dir,
@@ -125,4 +129,4 @@ class Boards(WestCommand):
                 )
 
         if args.all_targets:
-            self.inf(os.linesep.join(all_targets))
+            self.inf(os.linesep.join(dict.fromkeys(all_targets)))

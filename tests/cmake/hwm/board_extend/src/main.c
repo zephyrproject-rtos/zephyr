@@ -68,6 +68,7 @@ ZTEST(soc_board_extend, test_native_sim_extend)
 #else
 	zassert_true(false, "Did not expect to build for a base native_sim board");
 #endif
+}
 #elif CONFIG_BOARD_MPS2
 ZTEST(soc_board_extend, test_an521_soc_extend)
 {
@@ -76,10 +77,21 @@ ZTEST(soc_board_extend, test_an521_soc_extend)
 #elif CONFIG_BOARD_MPS2
 	zassert_true(false, "Did not expect to build for a base mps2 board");
 #endif
-
+}
+#elif CONFIG_BOARD_QEMU_X86_DEFAULT
+ZTEST(soc_board_extend, test_qemu_x86_default_qualifier)
+{
+#if CONFIG_BOARD_QEMU_X86_DEFAULT_ATOM_VIRT
+	zassert_false(DT_NODE_EXISTS(DT_PATH(added_by_default_qualifier_two)));
+#elif CONFIG_BOARD_QEMU_X86_DEFAULT_ATOM_VIRT_TWO
+	zassert_true(DT_NODE_EXISTS(DT_PATH(added_by_default_qualifier_two)));
+#else
+	zassert_true(false, "Did not expect to build for a base qemu_x86_default board");
+#endif
+}
 #else
 ZTEST(soc_board_extend, test_failure)
 {
 	zassert_true(false, "Did not expect to build for a regular board");
-#endif
 }
+#endif
