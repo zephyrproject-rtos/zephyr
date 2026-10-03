@@ -13,6 +13,7 @@
 #include <zephyr/drivers/virtio.h>
 #include <zephyr/drivers/virtio/virtqueue.h>
 #include "virtio_common.h"
+#include "virtio_mmio_status.h"
 
 #define DT_DRV_COMPAT virtio_mmio
 
@@ -154,10 +155,9 @@ static bool virtio_mmio_read_status_bit(const struct device *dev, int bit)
 
 static void virtio_mmio_write_status_bit(const struct device *dev, int bit)
 {
-	const uint32_t mask = sys_cpu_to_le32(BIT(bit));
 	const uint32_t val = virtio_mmio_read32(dev, VIRTIO_MMIO_STATUS);
 
-	virtio_mmio_write32(dev, VIRTIO_MMIO_STATUS, val | mask);
+	virtio_mmio_write32(dev, VIRTIO_MMIO_STATUS, virtio_mmio_status_with_bit(val, bit));
 }
 
 static int virtio_mmio_write_driver_feature_bit_range_check(const struct device *dev, int bit,
