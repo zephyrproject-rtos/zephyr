@@ -1,0 +1,28 @@
+# Copyright (c) 2026 HawkEye 360
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Qorvo CMD170P4 7.5-9 GHz driver amplifier with integrated power detector.
+
+  The CMD170P4 has an on-chip power detector that outputs a voltage (0-5V)
+  proportional to the RF output power (0-30 dBm) according to a non-linear
+  power law. The driver uses a pre-computed compensation table and linear
+  interpolation to convert detector voltage to RF power.
+
+compatible: "qorvo,cmd170p4"
+
+include: sensor-device.yaml
+
+properties:
+  io-channels:
+    required: true
+    description: |
+      ADC channel connected to the CMD170P4 Vdet pin.
+      The detector outputs 0-5V corresponding to 0-30 dBm RF power.
+
+examples:
+  - |
+    rf_power_detector: rf-power-detector {
+      compatible = "qorvo,cmd170p4";
+      io-channels = <&adc 5>;
+    };
