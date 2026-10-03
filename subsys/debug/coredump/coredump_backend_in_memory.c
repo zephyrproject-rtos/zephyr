@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <string.h>
 
+#include <zephyr/cache.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_ctrl.h>
@@ -46,6 +47,10 @@ static inline void in_memory_invalidate(void)
 	memset(&in_memory_coredump[IN_MEMORY_END], 0, IN_MEMORY_CANARY_SIZE);
 	*coredump_size = 0;
 	cur_ptr = NULL;
+
+	sys_cache_data_flush_range(in_memory_coredump, IN_MEMORY_START);
+	sys_cache_data_flush_range(&in_memory_coredump[IN_MEMORY_END],
+				   IN_MEMORY_CANARY_SIZE);
 }
 static inline void in_memory_erase(void)
 {
@@ -114,6 +119,9 @@ static void coredump_in_memory_backend_end(void)
 	       in_memory_canary, IN_MEMORY_CANARY_SIZE);
 
 	*coredump_size = cur_ptr - &in_memory_coredump[IN_MEMORY_START];
+
+	sys_cache_data_flush_range(in_memory_coredump,
+				   sizeof(in_memory_coredump));
 
 	LOG_ERR(COREDUMP_PREFIX_STR COREDUMP_END_STR);
 }
