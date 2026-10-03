@@ -165,6 +165,54 @@ RPMsg UART console via overlays. On Linux, enable the RPMsg TTY driver
 (``rpmsg_tty``) and look for ``/dev/ttyRPMSG*`` (bind order depends on which
 cores are running).
 
+Debugging
+*********
+
+OpenOCD can debug the R5F cores either with the on-board Linux self-hosted
+``dmem`` adapter, or with an external JTAG adapter (for example TUMPA or
+Bus Pirate). The board runner selects the core GDB port and OpenOCD target
+handle; the probe is chosen at build time with ``OPENOCD_INTERFACE``.
+
+Self-hosted (default)
+---------------------
+
+OpenOCD runs on Linux on the board and uses the TI K3 ``dmem`` adapter.
+Access to ``/dev/mem`` requires superuser privilege, so launch OpenOCD
+separately:
+
+.. code-block:: console
+
+   sudo openocd -f board/ti/j721e-self-hosted.cfg
+
+Then attach with the ``debug`` build target:
+
+.. zephyr-app-commands::
+   :app: <my_app>
+   :board: beaglebone_ai64/j721e/main_r5f0_0
+   :maybe-skip-config:
+   :goals: debug
+
+The other MAIN and MCU R5F targets use the same command with the matching board
+target.
+
+External JTAG adapter
+---------------------
+
+Select any OpenOCD interface script stem with ``OPENOCD_INTERFACE``
+(cached by CMake). The value is the path under OpenOCD's ``interface/``
+directory, without the ``.cfg`` suffix, for example ``ftdi/tumpa`` or
+``buspirate``:
+
+.. code-block:: console
+
+   west build -b beaglebone_ai64/j721e/main_r5f0_0 -- \
+     -DOPENOCD_INTERFACE=ftdi/tumpa
+   west debug
+
+.. hint::
+   Use an OpenOCD build with TI K3 J721E support. Older package-manager
+   versions may not include the required scripts.
+
 References
 **********
 
