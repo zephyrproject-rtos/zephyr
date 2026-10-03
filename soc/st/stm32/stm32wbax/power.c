@@ -32,6 +32,8 @@
 #include <zephyr/pm/policy.h>
 #include <os_wrapper.h>
 #include <ll_sys.h>
+#include "app_conf.h"
+
 #endif
 
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
@@ -134,6 +136,15 @@ BUILD_ASSERT(SRAM1_RETENTION_MASK != 0U,
 
 #define HSE_ON (stm32_reg_read_bits(&RCC->CR, RCC_CR_HSEON) == RCC_CR_HSEON)
 
+/* Number of 32-bit words needed for ISER/IPR depending on IRQ count */
+#define NVIC_ISER_COUNT ((CONFIG_NUM_IRQS + 31) / 32)
+#define NVIC_IPR_COUNT  ((CONFIG_NUM_IRQS + 3) / 4)
+
+struct nvic_context {
+	uint32_t iser[NVIC_ISER_COUNT];
+	uint32_t ipr[CONFIG_NUM_IRQS];
+};
+
 static uint32_t ram_waitstates_backup;
 static uint32_t flash_latency_backup;
 
@@ -142,9 +153,14 @@ static uint32_t flash_latency_backup;
 bool standby_entered;
 static struct fpu_ctx_full fpu_state;
 static struct scb_context scb_state;
+static struct nvic_context nvic_state;
 #if defined(CONFIG_ARM_MPU)
 static struct z_mpu_context_retained mpu_state;
 #endif
+#endif
+
+#if defined(CONFIG_PM) && (defined(CONFIG_BT) || defined(CONFIG_IEEE802154))
+uint64_t next_radio_evt_us;
 #endif
 
 static int enter_low_power_mode(void)
@@ -198,6 +214,42 @@ static int enter_low_power_mode(void)
 }
 
 #if defined(CONFIG_PM_S2RAM)
+
+static void nvic_save_context(void)
+{
+	/* 1. Save priorities 4 interrupts at a time using 32-bit access */
+	for (int i = 0; i < NVIC_IPR_COUNT; i++) {
+		nvic_state.ipr[i] = NVIC->IPR[i];
+	}
+
+	/* 2. Save active interrupt enables */
+	for (int i = 0; i < NVIC_ISER_COUNT; i++) {
+		nvic_state.iser[i] = NVIC->ISER[i];
+	}
+}
+
+static void nvic_restore_context(void)
+{
+	/* 1. Clear any pending/stale hardware IRQs prior to re-enabling */
+	for (int i = 0; i < NVIC_ISER_COUNT; i++) {
+		NVIC->ICER[i] = 0xFFFFFFFFU;
+		NVIC->ICPR[i] = 0xFFFFFFFFU;
+	}
+
+	/* 2. Restore Peripheral Interrupt Priorities (IPR) */
+	for (int i = 0; i < NVIC_IPR_COUNT; i++) {
+		NVIC->IPR[i] = nvic_state.ipr[i];
+	}
+
+	/* 3. Restore Active Interrupt Enables (ISER) */
+	for (int i = 0; i < NVIC_ISER_COUNT; i++) {
+		NVIC->ISER[i] = nvic_state.iser[i];
+	}
+
+	__DSB();
+	__ISB();
+}
+
 static void set_mode_suspend_to_ram_enter(void)
 {
 	/* Enable RTC wakeup
@@ -216,12 +268,13 @@ static void set_mode_suspend_to_ram_enter(void)
 	/* Select standby mode */
 	LL_PWR_SetPowerMode(LL_PWR_MODE_STANDBY);
 
-	/* Save FPU, SCB and MPU states */
+	/* Save NVIC, FPU, SCB and MPU states */
 	z_arm_save_fp_context(&fpu_state);
 	z_arm_save_scb_context(&scb_state);
 #if defined(CONFIG_ARM_MPU)
 	z_arm_save_mpu_context(&mpu_state);
 #endif /* CONFIG_ARM_MPU */
+	nvic_save_context();
 
 	standby_entered = true;
 	/* Save context and enter Standby mode */
@@ -236,7 +289,8 @@ static void set_mode_suspend_to_ram_enter(void)
 
 static void set_mode_suspend_to_ram_exit(void)
 {
-	/* Save MPU, SCB and FPU states */
+	/* Restore NVIC, MPU, SCB and FPU states */
+	nvic_restore_context();
 #if defined(CONFIG_ARM_MPU)
 	z_arm_restore_mpu_context(&mpu_state);
 #endif /* CONFIG_ARM_MPU */
@@ -256,6 +310,26 @@ static void set_mode_suspend_to_ram_exit(void)
 	stm32wba_init();
 	stm32_power_init();
 }
+#if (defined(CONFIG_BT) || defined(CONFIG_IEEE802154))
+
+void stm32wba_radio_pm_resume(void)
+{
+	ll_sys_dp_slp_exit();
+}
+
+void stm32wba_radio_pm_suspend(void)
+{
+	enum pm_state state = pm_state_next_get(_current_cpu->id)->state;
+
+	if (state == PM_STATE_SUSPEND_TO_RAM) {
+		/* System will enter S2RAM, program wakeup timer for
+		 * possible radio event
+		 */
+		(void)ll_sys_dp_slp_enter(next_radio_evt_us);
+	}
+}
+#endif
+
 #endif
 
 /*
@@ -392,13 +466,6 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		standby_entered = false;
 	}
 #endif
-
-	/*
-	 * System is now in active mode.
-	 * Reenable interrupts which were disabled
-	 * when OS started idling code.
-	 */
-	irq_unlock(0);
 }
 
 #ifdef CONFIG_PM_CUSTOM_TICKS_HOOK
@@ -409,7 +476,7 @@ int64_t pm_policy_next_custom_ticks(void)
 	if (LL_PWR_GetRadioMode() == LL_PWR_RADIO_ACTIVE_MODE) {
 		ret = 0; /* Radio is active - inhibit sleep */
 	} else {
-		uint64_t next_radio_evt_us = os_timer_get_earliest_time();
+		next_radio_evt_us = os_timer_get_earliest_time();
 
 		if (next_radio_evt_us == LL_DP_SLP_NO_WAKEUP) {
 			ret = -1LL; /* No radio event pending */
