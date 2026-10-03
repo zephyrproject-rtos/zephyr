@@ -202,7 +202,12 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #endif
 
 #define QUEUE_STATUS_LEVEL             0x4c
+/* Valid only if IC_HAS_IBI_DATA=1: number of IBI status entries. Reserved otherwise. */
 #define QUEUE_STATUS_IBI_STATUS_CNT(x) (((x) & GENMASK(28, 24)) >> 24)
+/*
+ * IC_HAS_IBI_DATA=0: number of valid IBI status entries.
+ * IC_HAS_IBI_DATA=1: number of valid IBI data entries (payload dwords).
+ */
 #define QUEUE_STATUS_IBI_BUF_BLR(x)    (((x) & GENMASK(23, 16)) >> 16)
 #define QUEUE_STATUS_LEVEL_RESP(x)     (((x) & GENMASK(15, 8)) >> 8)
 #define QUEUE_STATUS_LEVEL_CMD(x)      ((x) & GENMASK(7, 0))
@@ -1575,26 +1580,34 @@ static int dw_i3c_controller_disable_ibi(const struct device *dev, struct i3c_de
 	return i3c_dw_endis_ibi(dev, target, false);
 }
 
-static void dw_i3c_handle_tir(const struct device *dev, uint32_t ibi_status)
+static void dw_i3c_ibi_discard_payload(const struct device *dev, uint8_t nbytes)
+{
+	while (nbytes >= BYTES_PER_DWORD) {
+		(void)sys_read32(dw_i3c_regs(dev) + IBI_QUEUE_STATUS);
+		nbytes -= BYTES_PER_DWORD;
+	}
+	if (nbytes > 0U) {
+		(void)sys_read32(dw_i3c_regs(dev) + IBI_QUEUE_STATUS);
+	}
+}
+
+static void dw_i3c_handle_tir(const struct device *dev, uint32_t ibi_status, bool has_ibi_data)
 {
 	uint8_t ibi_data[CONFIG_I3C_IBI_MAX_PAYLOAD_SIZE];
 	uint8_t addr, len;
 	int pos;
 
 	addr = IBI_QUEUE_IBI_ADDR(ibi_status);
-	len = IBI_QUEUE_STATUS_DATA_LEN(ibi_status);
+	len = has_ibi_data ? IBI_QUEUE_STATUS_DATA_LEN(ibi_status) : 0U;
 
 	pos = get_i3c_addr_pos(dev, addr, false);
 	if (pos < 0) {
 		LOG_ERR("%s: Invalid Slave address", dev->name);
+		dw_i3c_ibi_discard_payload(dev, len);
 		return;
 	}
 
 	struct i3c_device_desc *desc = i3c_dev_list_i3c_addr_find(dev, addr);
-
-	if (desc == NULL) {
-		return;
-	}
 
 	if (len > 0) {
 		read_ibi_fifo(dev, ibi_data, len);
@@ -1638,23 +1651,55 @@ static void dw_i3c_handle_mr(const struct device *dev, uint32_t ibi_status)
 	}
 }
 
+/*
+ * Number of IBI status dwords to pop, and whether this IP has a separate
+ * IBI data buffer (IC_HAS_IBI_DATA).
+ *
+ * IBI_STATUS_CNT is reserved (reads 0) when IC_HAS_IBI_DATA=0; in that
+ * case IBI_BUF_BLR is the status count. When IC_HAS_IBI_DATA=1,
+ * IBI_STATUS_CNT is the status count and IBI_BUF_BLR is payload dwords.
+ */
+static uint32_t dw_i3c_ibi_status_count(uint32_t status_level, bool *has_ibi_data)
+{
+	uint32_t nstat = QUEUE_STATUS_IBI_STATUS_CNT(status_level);
+
+	if (nstat != 0U) {
+		if (has_ibi_data != NULL) {
+			*has_ibi_data = true;
+		}
+		return nstat;
+	}
+
+	if (has_ibi_data != NULL) {
+		*has_ibi_data = false;
+	}
+
+	return QUEUE_STATUS_IBI_BUF_BLR(status_level);
+}
+
 static void ibis_handle(const struct device *dev)
 {
-	uint32_t nibis, ibi_stat;
+	uint32_t status_level, nibis, ibi_stat;
+	bool has_ibi_data;
 	int32_t i;
 
-	nibis = sys_read32(dw_i3c_regs(dev) + QUEUE_STATUS_LEVEL);
-	nibis = QUEUE_STATUS_IBI_STATUS_CNT(nibis);
+	status_level = sys_read32(dw_i3c_regs(dev) + QUEUE_STATUS_LEVEL);
+	nibis = dw_i3c_ibi_status_count(status_level, &has_ibi_data);
+
 	for (i = 0; i < nibis; i++) {
 		ibi_stat = sys_read32(dw_i3c_regs(dev) + IBI_QUEUE_STATUS);
 		if (IBI_TYPE_SIRQ(ibi_stat)) {
-			dw_i3c_handle_tir(dev, ibi_stat);
+			dw_i3c_handle_tir(dev, ibi_stat, has_ibi_data);
 		} else if (IBI_TYPE_HJ(ibi_stat)) {
 			dw_i3c_handle_hj(dev, ibi_stat);
 		} else if (IBI_TYPE_MR(ibi_stat)) {
 			dw_i3c_handle_mr(dev, ibi_stat);
 		} else {
 			LOG_ERR("%s: Unknown IBI type", dev->name);
+			if (has_ibi_data) {
+				dw_i3c_ibi_discard_payload(dev,
+							   IBI_QUEUE_STATUS_DATA_LEN(ibi_stat));
+			}
 		}
 	}
 }
@@ -2920,7 +2965,7 @@ static struct i3c_device_desc *dw_i3c_device_find(const struct device *dev,
 static int dw_i3c_recover_bus(const struct device *dev)
 {
 	struct dw_i3c_data *data = dev->data;
-	uint32_t nibis;
+	uint32_t level, ndwords;
 	int ret;
 
 
@@ -2934,12 +2979,19 @@ static int dw_i3c_recover_bus(const struct device *dev)
 		return ret;
 	}
 
-	/* Drain any pending IBIs so the controller is not blocked by
-	 * an unread IBI queue when we try to resume.
+	/* Drain pending IBI status entries. IBI_STATUS_CNT is the IBI count
+	 * only when IC_HAS_IBI_DATA=1; otherwise it is reserved and
+	 * IBI_BUF_BLR holds the status count. Leftover IBI data (BLR when
+	 * IC_HAS_IBI_DATA=1) is dropped by RESET_CTRL_IBI_QUEUE below.
 	 */
-	nibis = QUEUE_STATUS_IBI_STATUS_CNT(sys_read32(dw_i3c_regs(dev) + QUEUE_STATUS_LEVEL));
-	while (nibis--) {
+	level = sys_read32(dw_i3c_regs(dev) + QUEUE_STATUS_LEVEL);
+	ndwords = QUEUE_STATUS_IBI_STATUS_CNT(level);
+	if (ndwords == 0U) {
+		ndwords = QUEUE_STATUS_IBI_BUF_BLR(level);
+	}
+	while (ndwords > 0U) {
 		(void)sys_read32(dw_i3c_regs(dev) + IBI_QUEUE_STATUS);
+		ndwords--;
 	}
 
 	/* Flush command / response / data FIFOs and the IBI queue.
