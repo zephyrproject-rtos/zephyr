@@ -111,10 +111,15 @@ config SPIRAM_SPEED_200M
 	bool "200MHz clock speed"
 	depends on SOC_SERIES_ESP32P4
 
+config SPIRAM_SPEED_250M
+	bool "250MHz clock speed"
+	depends on SOC_SERIES_ESP32P4 && SOC_ESP32P4_REV_MIN_FULL >= 300
+
 endchoice # SPIRAM_SPEED
 
 config SPIRAM_SPEED
 	int
+	default 250 if SPIRAM_SPEED_250M
 	default 200 if SPIRAM_SPEED_200M
 	default 120 if SPIRAM_SPEED_120M
 	default 80 if SPIRAM_SPEED_80M
