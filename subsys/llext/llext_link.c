@@ -47,8 +47,8 @@ __weak int arch_elf_relocate_global(struct llext_loader *ldr, struct llext *ext,
 }
 
 /*
- * Resolve addresses within the copied / merged memory regions tracked by
- * ext->mem[] and ldr->sect_map
+ * Resolve addresses within the merged memory regions tracked by ext->mem[]
+ * and ldr->sect_map, and within detached sections in the ELF buffer
  */
 static uint8_t *llext_file_offset_to_addr(struct llext_loader *ldr, struct llext *ext,
 					  ssize_t offset)
@@ -76,8 +76,7 @@ static uint8_t *llext_file_offset_to_addr(struct llext_loader *ldr, struct llext
 			ssize_t sect_offset = offset - (ssize_t)shdr->sh_offset;
 
 			if (sect_offset < (ssize_t)shdr->sh_size) {
-				return (uint8_t *)ext->mem[mem_idx] + ldr->sect_map[i].offset +
-				       sect_offset;
+				return (uint8_t *)llext_loaded_sect_ptr(ldr, ext, i) + sect_offset;
 			}
 		}
 	}
