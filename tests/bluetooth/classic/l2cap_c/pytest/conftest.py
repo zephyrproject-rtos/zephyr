@@ -31,7 +31,7 @@ def fixture_initialize(request, shell: Shell, dut: DeviceAdapter):
 
     shell.exec_command("bt init")
     lines = dut.readlines_until(regex="Bluetooth initialized")
-    regex = r'Identity: *(?P<bd_addr>([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2}) *\((.*?)\))'
+    regex = r'Identity: *[PR]:(?P<bd_addr>([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2})'
     bd_addr = None
     for line in lines:
         logger.info(f"Shell log {line}")
