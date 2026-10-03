@@ -11,14 +11,6 @@
 		#address-cells = <0x1>;
 		#size-cells = <0x1>;
 
-		test_gpio: gpio@deadbeef {
-			compatible = "vnd,gpio";
-			reg = <0xdeadbeef 0x1000>;
-			gpio-controller;
-			#gpio-cells = <0x2>;
-			status = "okay";
-		};
-
 		test_spi_cs: spi@33334444 {
 			compatible = "vnd,spi";
 			reg = <0x33334444 0x1000>;
@@ -49,6 +41,14 @@
 				reg = <0>;
 				spi-max-frequency = <2000000>;
 			};
+		};
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			reg = <0xdeadbeef 0x1000>;
+			gpio-controller;
+			#gpio-cells = <0x2>;
+			status = "okay";
 		};
 	};
 };
