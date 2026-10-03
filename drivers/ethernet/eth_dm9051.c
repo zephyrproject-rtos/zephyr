@@ -210,6 +210,8 @@ struct eth_dm9051_data {
 	struct k_sem int_event;
 	struct net_if *iface;
 	uint8_t mac_addr[6];
+	/* RX SRAM may hold frames although ISR.PR is clear, set by the RX thread */
+	bool rx_pending;
 	/* Controller resets, counted with spi_lock held */
 	uint32_t resets;
 };
@@ -713,6 +715,15 @@ static int eth_dm9051_rx(const struct device *dev)
 			eth_stats_update_errors_rx(data->iface);
 			continue;
 		}
+		if (ret == -ENOMEM) {
+			/*
+			 * ISR.PR is already clear, so drain the frames behind this one
+			 * in a new pass instead of on the next RX interrupt, and let
+			 * other spi_lock users in before the next allocation attempt.
+			 */
+			data->rx_pending = true;
+			k_sem_give(&data->int_event);
+		}
 		if (ret == -ECANCELED) {
 			/* A controller reset during the buffer wait cleared RX SRAM */
 			break;
@@ -880,7 +891,8 @@ static void eth_dm9051_rx_thread(void *p1, void *p2, void *p3)
 		 */
 		progress = false;
 
-		if ((isr & DM9051_ISR_PR) > 0) {
+		if (((isr & DM9051_ISR_PR) > 0) || data->rx_pending) {
+			data->rx_pending = false;
 			ret = eth_dm9051_rx(dev);
 			if (ret < 0) {
 				LOG_ERR("%s: RX failed (err %d)", dev->name, ret);
