@@ -499,7 +499,7 @@ out_spi_unlock:
 	return ret;
 }
 
-static struct net_pkt *eth_dm9051_recv_pkt(const struct device *dev)
+static int eth_dm9051_recv_pkt(const struct device *dev, struct net_pkt **out)
 {
 	struct eth_dm9051_data *data = dev->data;
 	struct eth_dm9051_rxhdr rxhdr;
@@ -512,7 +512,7 @@ static struct net_pkt *eth_dm9051_recv_pkt(const struct device *dev)
 				      sizeof(rxhdr));
 	if (ret < 0) {
 		LOG_ERR("%s: Failed to read RX header (err %d)", dev->name, ret);
-		return NULL;
+		return ret;
 	}
 
 	rx_len = sys_get_le16(rxhdr.len);
@@ -533,7 +533,7 @@ static struct net_pkt *eth_dm9051_recv_pkt(const struct device *dev)
 		if (ret < 0) {
 			LOG_ERR("%s: Failed to restart HW after RX error (err %d)", dev->name, ret);
 		}
-		return NULL;
+		return -EIO;
 	}
 
 	/* Drop a frame larger than the stack accepts */
@@ -544,8 +544,9 @@ static struct net_pkt *eth_dm9051_recv_pkt(const struct device *dev)
 		ret = eth_dm9051_spi_read_mem(dev, DM9051_MRCMD, NULL, rx_len);
 		if (ret < 0) {
 			LOG_ERR("%s: Failed to discard RX data (err %d)", dev->name, ret);
+			return ret;
 		}
-		return NULL;
+		return -EMSGSIZE;
 	}
 
 	/* Alloc RX net_pkt and subtract 4 from RX length to discard CRC */
@@ -558,8 +559,9 @@ static struct net_pkt *eth_dm9051_recv_pkt(const struct device *dev)
 		ret = eth_dm9051_spi_read_mem(dev, DM9051_MRCMD, NULL, rx_len);
 		if (ret < 0) {
 			LOG_ERR("%s: Failed to discard RX data (err %d)", dev->name, ret);
+			return ret;
 		}
-		return NULL;
+		return -ENOMEM;
 	}
 
 	/* Read RX data from RX SRAM */
@@ -575,18 +577,20 @@ static struct net_pkt *eth_dm9051_recv_pkt(const struct device *dev)
 		goto out_net_pkt_unref;
 	}
 
-	return pkt;
+	*out = pkt;
+
+	return 0;
 
 out_net_pkt_unref:
 	net_pkt_unref(pkt);
-	return NULL;
+	return ret;
 }
 
 /* Drain RX SRAM. Returns the number of frames read, or a negative errno. */
 static int eth_dm9051_rx(const struct device *dev)
 {
 	struct eth_dm9051_data *data = dev->data;
-	struct net_pkt *pkt;
+	struct net_pkt *pkt = NULL;
 	int frames = 0;
 	uint16_t flag;
 	int ret;
@@ -607,10 +611,14 @@ static int eth_dm9051_rx(const struct device *dev)
 		}
 
 		/* Get received packet */
-		pkt = eth_dm9051_recv_pkt(dev);
+		ret = eth_dm9051_recv_pkt(dev, &pkt);
 		frames++;
-		if (!pkt) {
-			ret = -EIO;
+		if (ret == -EMSGSIZE) {
+			/* Frame dropped, keep draining the frames behind it */
+			eth_stats_update_errors_rx(data->iface);
+			continue;
+		}
+		if (ret < 0) {
 			goto out_update_errors_rx;
 		}
 
