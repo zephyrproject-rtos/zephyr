@@ -723,9 +723,8 @@ static int select_data_channel_wait(struct lwan_ctx *ctx, uint8_t dr,
 	int ret;
 
 	do {
-		ret = region->select_data_channel(ctx->channels,
-						  ctx->channel_count,
-						  dr, freq, &delay_ms);
+		ret = region->select_data_channel(ctx->channels, ctx->channel_count, dr, freq,
+						  &delay_ms);
 		if (ret == -ENOBUFS) {
 			LOG_INF("Duty cycle: waiting %d ms", delay_ms);
 			k_msleep(delay_ms);
@@ -733,6 +732,29 @@ static int select_data_channel_wait(struct lwan_ctx *ctx, uint8_t dr,
 	} while (ret == -ENOBUFS);
 
 	return ret;
+}
+
+static int data_channel_wait(struct lwan_ctx *ctx, uint8_t dr, uint32_t *freq)
+{
+	const struct lwan_region_ops *region = ctx->region;
+	int ret;
+
+	for (uint8_t draw = 0; draw <= region->max_lbt_retries; draw++) {
+		ret = select_data_channel_wait(ctx, dr, freq);
+		if (ret != 0 || region->get_lbt_params == NULL) {
+			return ret;
+		}
+
+		/* Selection is random, so a busy channel is worth retrying. */
+		ret = mac_lbt_check(ctx, *freq, dr);
+		if (ret != -EBUSY) {
+			return ret;
+		}
+	}
+
+	LOG_WRN("LBT: no clear channel after %u draws", region->max_lbt_retries + 1U);
+
+	return -EBUSY;
 }
 
 static void send_post_tx(struct lwan_ctx *ctx, void *user_data)
@@ -875,7 +897,7 @@ static int send_one_attempt(struct lwan_ctx *ctx, struct send_state *state,
 		state->req->port, state->req->len, state->fcnt,
 		attempt + 1, state->tries);
 
-	ret = select_data_channel_wait(ctx, state->dr_idx, &tx_freq);
+	ret = data_channel_wait(ctx, state->dr_idx, &tx_freq);
 	if (ret != 0) {
 		LOG_ERR("No channel available for DR%u: %d",
 			state->dr_idx, ret);

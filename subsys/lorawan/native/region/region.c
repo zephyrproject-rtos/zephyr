@@ -9,12 +9,20 @@
 extern const struct lwan_region_ops eu868_ops;
 #endif
 
+#ifdef CONFIG_LORAWAN_REGION_KR920
+extern const struct lwan_region_ops kr920_ops;
+#endif
+
 const struct lwan_region_ops *lwan_region_get(enum lorawan_region region)
 {
 	switch (region) {
 #ifdef CONFIG_LORAWAN_REGION_EU868
 	case LORAWAN_REGION_EU868:
 		return &eu868_ops;
+#endif
+#ifdef CONFIG_LORAWAN_REGION_KR920
+	case LORAWAN_REGION_KR920:
+		return &kr920_ops;
 #endif
 	default:
 		return NULL;
