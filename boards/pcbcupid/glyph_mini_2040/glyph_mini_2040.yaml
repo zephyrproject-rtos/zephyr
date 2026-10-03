@@ -1,0 +1,23 @@
+identifier: glyph_mini_2040
+name: Glyph-Mini-2040
+type: mcu
+arch: arm
+flash: 8192
+ram: 264
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - uart
+  - i2c
+  - spi
+  - adc
+  - hwinfo
+  - watchdog
+  - flash
+  - dma
+  - counter
+  - clock
+  - usbd
+vendor: pcbcupid

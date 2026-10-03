@@ -1,0 +1,6 @@
+board:
+  name: glyph_mini_2040
+  full_name: Glyph-Mini-2040
+  vendor: pcbcupid
+  socs:
+  - name: rp2040
