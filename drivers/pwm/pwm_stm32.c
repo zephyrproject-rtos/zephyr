@@ -347,8 +347,13 @@ static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
 		if (IS_TIM_SLAVE_INSTANCE(timer) && !cfg->four_channel_capture_support) {
 			LL_TIM_SetSlaveMode(timer,
 					LL_TIM_SLAVEMODE_DISABLED);
+			/* LL_TIM_TS_ITR0 is not defined on WB0, nor on WBA23/WBA25 (no TIM1) */
+#ifdef LL_TIM_TS_ITR0
 			LL_TIM_SetTriggerInput(timer, LL_TIM_TS_ITR0);
+#endif
+#if HAS_MASTERMODE_SUPPORT
 			LL_TIM_DisableMasterSlaveMode(timer);
+#endif
 		}
 #endif /* CONFIG_PWM_CAPTURE */
 
