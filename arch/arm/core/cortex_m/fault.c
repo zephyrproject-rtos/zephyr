@@ -22,6 +22,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/barrier.h>
 #include <cortex_m/debug.h>
+#include <cortex_m/exception.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -73,6 +74,10 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 #define SCB_CFSR_USGFAULTSR                                                                        \
 	(uint32_t)((SCB->CFSR & SCB_CFSR_USGFAULTSR_Msk) >> SCB_CFSR_USGFAULTSR_Pos)
 #endif /* CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
+
+#ifdef CONFIG_CORTEX_M_DEBUG_SAVE_FAULT_SP
+uint32_t z_arm_coredump_fault_sp;
+#endif
 
 /**
  *
