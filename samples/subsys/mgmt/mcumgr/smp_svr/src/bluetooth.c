@@ -45,13 +45,38 @@ static void connected(struct bt_conn *conn, uint8_t err)
 		LOG_ERR("Connection failed, err 0x%02x %s", err, bt_hci_err_to_str(err));
 		k_work_submit(&advertise_work);
 	} else {
-		LOG_INF("Connected");
+		struct bt_conn_info info;
+		char peer[BT_ADDR_LE_STR_LEN] = "unknown";
+		char local[BT_ADDR_LE_STR_LEN] = "unknown";
+		int32_t rc;
+
+		rc = bt_conn_get_info(conn, &info);
+		if (rc != 0) {
+			LOG_WRN("Failed to get connection info (rc %d)", rc);
+		} else {
+			bt_addr_le_to_str(info.le.remote, peer, sizeof(peer));
+			bt_addr_le_to_str(info.le.local, local, sizeof(local));
+		}
+
+		LOG_INF("Connected, peer %s, local %s", peer, local);
 	}
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	LOG_INF("Disconnected, reason 0x%02x %s", reason, bt_hci_err_to_str(reason));
+	struct bt_conn_info info;
+	char peer[BT_ADDR_LE_STR_LEN] = "unknown";
+	int32_t rc;
+
+	rc = bt_conn_get_info(conn, &info);
+	if (rc != 0) {
+		LOG_WRN("Failed to get connection info (rc %d)", rc);
+	} else {
+		bt_addr_le_to_str(info.le.remote, peer, sizeof(peer));
+	}
+
+	LOG_INF("Disconnected, reason 0x%02x %s, peer %s", reason,
+		bt_hci_err_to_str(reason), peer);
 }
 
 static void on_conn_recycled(void)
