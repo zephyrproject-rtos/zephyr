@@ -36,7 +36,8 @@
 			reg = <0x46020000 DT_SIZE_K(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(SPI6, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(SPI6, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(37) NO_SEL>;
 			interrupts = <139 0>;
 			st,spi-data-width = "full-4-to-16-bit";
 			fifo-size = <8>;
@@ -49,7 +50,8 @@
 			reg = <0x40170000 DT_SIZE_K(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(I2C1, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(I2C1, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(13) NO_SEL>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <95 0>;
 			interrupt-names = "combined";
@@ -61,7 +63,8 @@
 			reg = <0x40180000 DT_SIZE_K(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(I2C2, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(I2C2, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(13) NO_SEL>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <97 0>;
 			interrupt-names = "combined";
@@ -73,7 +76,8 @@
 			reg = <0x46040000 DT_SIZE_K(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(I2C3, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(I2C3, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(38) NO_SEL>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <124 0>;
 			interrupt-names = "combined";
@@ -86,7 +90,8 @@
 			#address-cells = <3>;
 			#size-cells = <0>;
 			resets = <&rctl STM32_RESET(I3C3, STM32_RST)>;
-			clocks = <&rcc STM32_CLOCK(I3C3, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(I3C3, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(36) NO_SEL>;
 			interrupts = <125 0>;
 			interrupt-names = "combined";
 			status = "disabled";
@@ -122,6 +127,8 @@
 };
 
 &spi3 {
+	clocks = <&rcc STM32_CLOCK(SPI3, STM32_CLK)>,
+		 <&rcc STM32_SRC_FLEXGEN(11) NO_SEL>;
 	interrupts = <112 0>;
 };
 
@@ -134,6 +141,8 @@
 };
 
 &usart1 {
+	clocks = <&rcc STM32_CLOCK(USART1, STM32_CLK)>,
+		 <&rcc STM32_SRC_FLEXGEN(18) NO_SEL>;
 	interrupts = <101 0>;
 };
 
@@ -154,10 +163,14 @@
 };
 
 &usart6 {
+	clocks = <&rcc STM32_CLOCK(USART6, STM32_CLK)>,
+		 <&rcc STM32_SRC_FLEXGEN(19) NO_SEL>;
 	interrupts = <123 0>;
 };
 
 &uart7 {
+	clocks = <&rcc STM32_CLOCK(UART7, STM32_CLK)>,
+		 <&rcc STM32_SRC_FLEXGEN(20) NO_SEL>;
 	interrupts = <135 0>;
 };
 
@@ -170,10 +183,14 @@
 };
 
 &i3c1 {
+	clocks = <&rcc STM32_CLOCK(I3C1, STM32_CLK)>,
+		 <&rcc STM32_SRC_FLEXGEN(14) NO_SEL>;
 	interrupts = <96 0>;
 };
 
 &i3c2 {
+	clocks = <&rcc STM32_CLOCK(I3C2, STM32_CLK)>,
+		 <&rcc STM32_SRC_FLEXGEN(14) NO_SEL>;
 	interrupts = <98 0>;
 };
 
