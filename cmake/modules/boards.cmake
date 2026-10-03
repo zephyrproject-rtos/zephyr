@@ -133,12 +133,42 @@ parse_board_components(
   BOARD BOARD_REVISION BOARD_QUALIFIERS
 )
 
+# Prepare list boards command for deprecation lookup and board discovery.
+list(TRANSFORM ARCH_ROOT PREPEND "--arch-root=" OUTPUT_VARIABLE arch_root_args)
+list(TRANSFORM BOARD_ROOT PREPEND "--board-root=" OUTPUT_VARIABLE board_root_args)
+list(TRANSFORM SOC_ROOT PREPEND "--soc-root=" OUTPUT_VARIABLE soc_root_args)
+
+set(list_boards_commands
+  COMMAND "${PYTHON_EXECUTABLE}" "${ZEPHYR_BASE}/scripts/list_boards.py"
+          ${arch_root_args} ${board_root_args} "--arch-root=${ZEPHYR_BASE}"
+          ${soc_root_args} "--soc-root=${ZEPHYR_BASE}"
+)
+
 include(${ZEPHYR_BASE}/boards/deprecated.cmake)
 if("${BOARD_QUALIFIERS}" STREQUAL "")
   set(board_deprecated_key ${BOARD})
 else()
   set(board_deprecated_key ${BOARD}/${BOARD_QUALIFIERS})
 endif()
+
+# Expand an omitted SoC before looking up a fully qualified deprecated target.
+# Keep explicit shorthand mappings and reject ambiguous multi-SoC shorthand.
+if(NOT DEFINED ${board_deprecated_key}_DEPRECATED AND "${BOARD_QUALIFIERS}" MATCHES "^/")
+  execute_process(${list_boards_commands} "--board=${BOARD}" "--cmakeformat={SOCS}"
+    OUTPUT_VARIABLE board_deprecated_soc_info
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    RESULT_VARIABLE board_deprecated_result
+    ERROR_QUIET
+  )
+  if(board_deprecated_result EQUAL 0)
+    cmake_parse_arguments(board_deprecated "" "" "SOCS" ${board_deprecated_soc_info})
+    list(LENGTH board_deprecated_SOCS board_deprecated_soc_count)
+    if(board_deprecated_soc_count EQUAL 1)
+      set(board_deprecated_key "${BOARD}/${board_deprecated_SOCS}${BOARD_QUALIFIERS}")
+    endif()
+  endif()
+endif()
+
 if(${board_deprecated_key}_DEPRECATED)
   set(BOARD_DEPRECATED ${board_deprecated_key} CACHE STRING "Deprecated BOARD, provided by user")
   message(WARNING
@@ -181,21 +211,6 @@ if(DEFINED BOARD_DIR AND NOT EXISTS ${BOARD_DIR}/board.yml)
   )
   set(BOARD_DIR BOARD_DIR-NOTFOUND CACHE PATH "Path to a file." FORCE)
 endif()
-
-# Prepare list boards command.
-# This command is used for locating the board dir as well as printing all boards
-# in the system in the following cases:
-# - User specifies an invalid BOARD
-# - User invokes '<build-command> boards' target
-list(TRANSFORM ARCH_ROOT PREPEND "--arch-root=" OUTPUT_VARIABLE arch_root_args)
-list(TRANSFORM BOARD_ROOT PREPEND "--board-root=" OUTPUT_VARIABLE board_root_args)
-list(TRANSFORM SOC_ROOT PREPEND "--soc-root=" OUTPUT_VARIABLE soc_root_args)
-
-set(list_boards_commands
-    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/list_boards.py
-            ${arch_root_args} ${board_root_args} --arch-root=${ZEPHYR_BASE}
-            ${soc_root_args} --soc-root=${ZEPHYR_BASE}
-)
 
 if(NOT BOARD_DIR)
   if(BOARD_ALIAS)
