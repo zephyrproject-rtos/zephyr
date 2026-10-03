@@ -29,6 +29,19 @@ LOG_MODULE_REGISTER(display_st7735r, CONFIG_DISPLAY_LOG_LEVEL);
 
 #define ST7735R_PIXEL_SIZE 2u
 
+/*
+ * SPI_LOCK_ON keeps the bus reserved between the individual commands of an
+ * init/write sequence. The RTIO path does not support it: spi_rtio_transceive()
+ * rejects any config with SPI_LOCK_ON set, which would make the very first
+ * command fail with -EINVAL. There the whole transaction is submitted as a
+ * single chain instead, so locking the bus is not needed.
+ */
+#ifdef CONFIG_SPI_RTIO
+#define ST7735R_SPI_LOCK 0
+#else
+#define ST7735R_SPI_LOCK SPI_LOCK_ON
+#endif
+
 struct st7735r_config {
 	const struct device *mipi_dev;
 	const struct mipi_dbi_config dbi_config;
@@ -497,7 +510,7 @@ static DEVICE_API(display, st7735r_api) = {
 				((DT_INST_STRING_UPPER_TOKEN(inst, mipi_mode) == \
 				 MIPI_DBI_MODE_SPI_4WIRE) ? SPI_WORD_SET(8) :	\
 				 SPI_WORD_SET(9)) |				\
-				SPI_HOLD_ON_CS | SPI_LOCK_ON, 0),		\
+				SPI_HOLD_ON_CS | ST7735R_SPI_LOCK, 0),		\
 		.width = DT_INST_PROP(inst, width),				\
 		.height = DT_INST_PROP(inst, height),				\
 		.madctl = DT_INST_PROP(inst, madctl),				\
