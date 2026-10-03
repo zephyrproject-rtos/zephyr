@@ -13,22 +13,22 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x2003f000 DT_SIZE_K(4)>;
 		ranges = <0x0 0x2003f000 DT_SIZE_K(4)>;
-		zephyr,memory-region = "RetainedMem";
-		status = "okay";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		zephyr,memory-region = "RetainedMem";
+		status = "okay";
 
 		retainedmem {
 			compatible = "zephyr,retained-ram";
-			status = "okay";
 			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			status = "okay";
 
 			settings_partition0: settings_partition@0 {
 				compatible = "zephyr,retention";
-				status = "okay";
 				reg = <0x0 0x1000>;
+				status = "okay";
 			};
 		};
 	};
