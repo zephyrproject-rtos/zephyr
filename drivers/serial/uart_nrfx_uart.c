@@ -921,6 +921,8 @@ static void uart_nrfx_irq_callback_set(const struct device *dev,
 				       void *cb_data)
 {
 	(void)dev;
+	unsigned int key = irq_lock();
+
 	irq_callback = cb;
 	irq_cb_data = cb_data;
 
@@ -928,6 +930,8 @@ static void uart_nrfx_irq_callback_set(const struct device *dev,
 	uart0_cb.callback = NULL;
 	uart0_cb.user_data = NULL;
 #endif
+
+	irq_unlock(key);
 }
 
 /**
