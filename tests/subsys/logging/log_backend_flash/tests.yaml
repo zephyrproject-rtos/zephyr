@@ -1,0 +1,17 @@
+common:
+  tags:
+    - logging
+    - backend
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+tests:
+  logging.backend.flash: {}
+  logging.backend.flash.write_block_16:
+    extra_args: EXTRA_DTC_OVERLAY_FILE="write_block_16.overlay"
+  logging.backend.flash.no_build_id:
+    extra_configs:
+      - CONFIG_LOG_BACKEND_FLASH_BUILD_ID="NULL"
+      - CONFIG_LOG_BACKEND_FLASH_BUILD_ID_HEADER=""
