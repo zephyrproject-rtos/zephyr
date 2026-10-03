@@ -609,18 +609,26 @@ documentation.
 .. _CMake Cache: https://cmake.org/cmake/help/book/mastering-cmake/chapter/CMake%20Cache.html
 
 
+.. _application-configuration:
+
 Application Configuration
 *************************
-
-.. _application-configuration-directory:
-
-Application Configuration Directory
-===================================
 
 Zephyr will use configuration files from the application's configuration
 directory except for files with an absolute path provided by the arguments
 described earlier, for example ``CONF_FILE``, ``EXTRA_CONF_FILE``,
 ``DTC_OVERLAY_FILE``, and ``EXTRA_DTC_OVERLAY_FILE``.
+
+.. note::
+
+   Kconfig fragment files have the .conf file extension, devicetree overlay files have the
+   .overlay file extension. A Kconfig fragment file is not an overlay file, it is prohibited to
+   have Kconfig fragment named ``overlay-*.conf`` in Zephyr
+
+.. _application-configuration-directory:
+
+Application Configuration Directory
+===================================
 
 The application configuration directory is defined by the
 ``APPLICATION_CONFIG_DIR`` variable.
