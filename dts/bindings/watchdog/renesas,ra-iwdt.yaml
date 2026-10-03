@@ -1,0 +1,54 @@
+description: Renesas RA Independent Watchdog
+
+compatible: "renesas,ra-iwdt"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+
+  window-start:
+    type: int
+    enum: [100, 75, 50, 25]
+    description: |
+      The start of the window, as a percentage of the timeout period. The watchdog
+      will reset the system if it is not refreshed within the window.
+      - 100: window opens at 100%
+      - 75: window opens at 75%
+      - 50: window opens at 50%
+      - 25: window opens at 25%
+
+  window-end:
+    type: int
+    enum: [0, 25, 50, 75]
+    description: |
+      The end of the window, as a percentage of the timeout period. The watchdog
+      will reset the system if it is not refreshed within the window.
+      - 0: window closes at 0%
+      - 25: window closes at 25%
+      - 50: window closes at 50%
+      - 75: window closes at 75%
+
+  timeout-period:
+    type: int
+    enum: [128, 512, 1024, 2048]
+    description: |
+      The IWDT timeout period, in IWDTCLK cycles.
+      - 128: 128 cycles
+      - 512: 512 cycles
+      - 1024: 1024 cycles
+      - 2048: 2048 cycles
+
+  clock-division:
+    type: int
+    enum: [1, 16, 32, 64, 128, 256]
+    description: |
+      The divisor applied to IWDTCLK to produce the IWDT count source.
+      - 1: IWDTCLK / 1
+      - 16: IWDTCLK / 16
+      - 32: IWDTCLK / 32
+      - 64: IWDTCLK / 64
+      - 128: IWDTCLK / 128
+      - 256: IWDTCLK / 256

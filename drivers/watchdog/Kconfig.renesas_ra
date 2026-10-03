@@ -28,3 +28,47 @@ config WDT_RENESAS_RA_START_IN_BOOT
 	  Start watchdog in boot time
 
 endif # WDT_RENESAS_RA
+
+config WDT_RENESAS_RA_IWDT
+	bool "Independent Watchdog Driver for Renesas RA family"
+	default y
+	depends on DT_HAS_RENESAS_RA_IWDT_ENABLED
+	select USE_RA_FSP_IWDT
+	help
+	  Enable independent watchdog driver for Renesas RA MCUs
+
+if WDT_RENESAS_RA_IWDT
+
+config WDT_RENESAS_RA_IWDT_NMI
+	bool "NMI interrupt enable for IWDT"
+	default y
+	select RUNTIME_NMI
+	help
+	  Independent watchdog timer generates an NMI on underflow or refresh error
+	  instead of resetting the SoC, so a callback registered via install_timeout()
+	  can run.
+
+choice
+	prompt "IWDT Start Mode"
+	default WDT_RENESAS_RA_IWDT_AUTO_START_MODE
+	help
+	  Select the IWDT start mode.
+	  - WDT_RENESAS_RA_IWDT_AUTO_START_MODE: Counting starts automatically after a reset,
+	    controlled by the Option Function Select Register 0 (OFS0). Window, timeout and
+	    clock division settings are fixed in OFS0 at flash time and cannot be changed by
+	    this driver at runtime. This is the only mode available on RA MCUs whose IWDT
+	    does not implement register start mode.
+	  - WDT_RENESAS_RA_IWDT_REGISTER_START_MODE: The IWDT stays stopped after a reset and
+	    is started by this driver's setup() call, which programs window, timeout and
+	    clock division settings at runtime. Only meaningful on RA MCUs whose IWDT
+	    implements register start mode; selecting it on any other MCU is a build error.
+
+config WDT_RENESAS_RA_IWDT_AUTO_START_MODE
+	bool "Start IWDT automatically on reset"
+
+config WDT_RENESAS_RA_IWDT_REGISTER_START_MODE
+	bool "Start IWDT via register write"
+
+endchoice
+
+endif # WDT_RENESAS_RA_IWDT
