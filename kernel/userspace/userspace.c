@@ -113,10 +113,19 @@ const char *otype_to_str(enum k_objects otype)
 	return ret;
 }
 
+/*
+ * A permission index names one principal in the perms[] bitmap of every
+ * kernel object. Every principal is a thread today, and a thread's index is
+ * its slot in _thread_idx_map[], but the perms_*_index() primitives below
+ * only deal in indexes; thread_index_get() is the one place that turns a
+ * thread into one.
+ */
+#define PERM_INDEX_NONE (-1)
+
 struct perm_ctx {
 	int parent_id;
 	int child_id;
-	struct k_thread *parent;
+	const void *skip;
 };
 
 #ifdef CONFIG_GEN_PRIV_STACKS
@@ -657,14 +666,17 @@ __weak void k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 }
 #endif
 
-static unsigned int thread_index_get(struct k_thread *thread)
+/* Permission index of a thread, or PERM_INDEX_NONE for a thread that is not
+ * a kernel object (declared on a stack or in supervisor-only memory).
+ */
+static int thread_index_get(struct k_thread *thread)
 {
 	struct k_object *ko;
 
 	ko = k_object_find(thread);
 
 	if (ko == NULL) {
-		return -1;
+		return PERM_INDEX_NONE;
 	}
 
 	return ko->data.thread_id;
@@ -741,38 +753,37 @@ static void wordlist_cb(struct k_object *ko, void *ctx_ptr)
 	struct perm_ctx *ctx = (struct perm_ctx *)ctx_ptr;
 
 	if (sys_bitfield_test_bit((mem_addr_t)&ko->perms, ctx->parent_id) &&
-				  ((struct k_thread *)ko->name != ctx->parent)) {
+	    (ko->name != ctx->skip)) {
 		sys_bitfield_set_bit((mem_addr_t)&ko->perms, ctx->child_id);
 	}
 }
 
-void k_thread_perms_inherit(struct k_thread *parent, struct k_thread *child)
+/* Give child_id every permission parent_id holds, except on the object at
+ * skip (a thread must not hand out access to itself).
+ */
+static void perms_inherit_index(int parent_id, int child_id, const void *skip)
 {
 	struct perm_ctx ctx = {
-		thread_index_get(parent),
-		thread_index_get(child),
-		parent
+		.parent_id = parent_id,
+		.child_id = child_id,
+		.skip = skip,
 	};
 
-	if ((ctx.parent_id != -1) && (ctx.child_id != -1)) {
+	if ((parent_id != PERM_INDEX_NONE) && (child_id != PERM_INDEX_NONE)) {
 		k_object_wordlist_foreach(wordlist_cb, &ctx);
 	}
 }
 
-void k_thread_perms_set(struct k_object *ko, struct k_thread *thread)
+static void perms_set_index(struct k_object *ko, int index)
 {
-	int index = thread_index_get(thread);
-
-	if (index != -1) {
+	if (index != PERM_INDEX_NONE) {
 		sys_bitfield_set_bit((mem_addr_t)&ko->perms, index);
 	}
 }
 
-void k_thread_perms_clear(struct k_object *ko, struct k_thread *thread)
+static void perms_clear_index(struct k_object *ko, int index)
 {
-	int index = thread_index_get(thread);
-
-	if (index != -1) {
+	if (index != PERM_INDEX_NONE) {
 		sys_bitfield_clear_bit((mem_addr_t)&ko->perms, index);
 		/* unref_check() requires lists_lock so its dlist remove is
 		 * SMP-safe.
@@ -795,35 +806,57 @@ static void clear_perms_cb_locked(struct k_object *ko, void *ctx_ptr)
 	unref_check(ko, id, true);
 }
 
-/*
- * The only place where this routine is presently used in the Zephyr tree
- * is in halt_thread() when a thread is being aborted and the scheduler's
- * spinlock is held. The knowledge that the scheduler's spinlock is held must
- * be passed down to the lower layers so that they do not try to reacquire the
- * spinlock (leading to deadlock).
+/* Drop index from every object's bitmap. Only used while the scheduler's
+ * spinlock is held, which the lower layers must know so that they do not
+ * try to reacquire it (leading to deadlock).
  */
-void k_thread_perms_all_clear(struct k_thread *thread)
+static void perms_all_clear_index(int index)
 {
-	uintptr_t index = thread_index_get(thread);
-
-	if ((int)index != -1) {
-		k_object_wordlist_foreach(clear_perms_cb_locked, (void *)index);
+	if (index != PERM_INDEX_NONE) {
+		k_object_wordlist_foreach(clear_perms_cb_locked, (void *)(uintptr_t)index);
 	}
 }
 
-static int thread_perms_test(struct k_object *ko)
+static int perms_test_index(struct k_object *ko, int index)
 {
-	int index;
-
 	if ((ko->flags & K_OBJ_FLAG_PUBLIC) != 0U) {
 		return 1;
 	}
 
-	index = thread_index_get(_current);
-	if (index != -1) {
+	if (index != PERM_INDEX_NONE) {
 		return sys_bitfield_test_bit((mem_addr_t)&ko->perms, index);
 	}
 	return 0;
+}
+
+void k_thread_perms_inherit(struct k_thread *parent, struct k_thread *child)
+{
+	perms_inherit_index(thread_index_get(parent), thread_index_get(child), parent);
+}
+
+void k_thread_perms_set(struct k_object *ko, struct k_thread *thread)
+{
+	perms_set_index(ko, thread_index_get(thread));
+}
+
+void k_thread_perms_clear(struct k_object *ko, struct k_thread *thread)
+{
+	perms_clear_index(ko, thread_index_get(thread));
+}
+
+/*
+ * The only place where this routine is presently used in the Zephyr tree
+ * is in halt_thread() when a thread is being aborted and the scheduler's
+ * spinlock is held.
+ */
+void k_thread_perms_all_clear(struct k_thread *thread)
+{
+	perms_all_clear_index(thread_index_get(thread));
+}
+
+static int thread_perms_test(struct k_object *ko)
+{
+	return perms_test_index(ko, thread_index_get(_current));
 }
 
 static void dump_permission_error(struct k_object *ko)
