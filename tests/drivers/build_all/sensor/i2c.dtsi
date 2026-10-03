@@ -1716,3 +1716,8 @@ test_i2c_vl53l5cx: vl53l5cx@de {
 	compatible = "st,vl53l5cx";
 	reg = <0xde>;
 };
+
+test_i2c_mlx90632: mlx90632@df {
+	compatible = "melexis,mlx90632";
+	reg = <0xdf>;
+};
