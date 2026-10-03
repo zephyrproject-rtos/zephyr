@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Lontium LT8912B MIPI DSI to HDMI bridge
+
+description: |
+    The Lontium LT8912B converts a MIPI DSI video mode stream into HDMI
+    output. It is configured over I2C using three consecutive addresses
+    (main page at reg, CEC/DSI page at reg+1, AVI page at reg+2).
+
+    The video timings are declared in a display-timings child node and
+    are handed both to the bridge and, through the MIPI DSI attach, to
+    the DSI host.
+
+compatible: "lontium,lt8912b"
+
+include: [i2c-device.yaml, display-controller.yaml]
+
+properties:
+  mipi-dsi:
+    type: phandle
+    required: true
+    description: |
+      MIPI DSI host the bridge is connected to.
+
+  data-lanes:
+    type: array
+    required: true
+    description: |
+      Number of MIPI DSI data lanes (1, 2, 3 or 4).
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Reset pin. The bridge receives this as an active-low signal. If not
+      provided, the power-on reset state is used.
