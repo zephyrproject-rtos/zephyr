@@ -1,0 +1,48 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip PolarFire SoC derived clock (child of PLL)
+
+compatible: "microchip,mpfs-clk"
+
+include: [base.yaml, clock-controller.yaml]
+
+properties:
+  clk-type:
+    type: int
+    default: 0
+    enum:
+      - 0 # Unknown
+      - 1 # CPU
+      - 2 # AXI
+      - 3 # AHB APB
+    required: true
+    description: Clock label for use with clock_control API.
+
+  clocks:
+    type: phandle-array
+    required: true
+    description: Reference to parent clock (PLL or other clock source).
+
+  "#clock-cells":
+    type: int
+    required: true
+    description: Clock specifier is a single clock ID. Required if node acts as clock provider.
+
+  frequency-max:
+    type: int
+    required: true
+    description: Maximum output frequency in Hz.
+
+  frequency-min:
+    type: int
+    required: true
+    description: Minimum output frequency in Hz.
+
+  microchip,sysreg:
+    type: phandle
+    required: true
+    description: Phandle to SYSREG/CLKCFG syscon node.
+
+clock-cells:
+  - clkid
