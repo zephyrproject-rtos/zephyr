@@ -86,6 +86,33 @@ properties:
     min: 1
     max: 0x3FFFF
 
+  a2:
+    type: int
+    default: 0
+    description: |
+      Second phase acceleration for controllers with a six-point ramp
+      (e.g. TMC522x) in [µsteps/ta²] (unsigned)
+    min: 0
+    max: 0xFFFF
+
+  v2:
+    type: int
+    default: 0
+    description: |
+      Second phase threshold velocity for controllers with a six-point ramp
+      (e.g. TMC522x) in [µsteps/t] (unsigned)
+    min: 0
+    max: 0xFFFFF
+
+  d2:
+    type: int
+    default: 0
+    description: |
+      Second phase deceleration for controllers with a six-point ramp
+      (e.g. TMC522x) in [µsteps/ta²] (unsigned)
+    min: 0
+    max: 0xFFFF
+
   tzerowait:
     type: int
     default: 0

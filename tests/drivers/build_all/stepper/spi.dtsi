@@ -166,3 +166,53 @@ adi_tmc51xx_2: adi-tmc51xx@2 {
 		iholddelay = <3>;
 	};
 };
+
+adi_tmc522x: adi_tmc522x@3 {
+	compatible = "adi,tmc522x";
+	status = "okay";
+	reg = <0x03>;
+	spi-max-frequency = <4000000>;
+
+	clock-frequency = <16000000>;
+	chopper-mode = "spreadcycle";
+	chm-mode = "spreadcycle";
+
+	tmc522x_stepper_driver: tmc522x_stepper_driver {
+		compatible = "adi,tmc522x-stepper-driver";
+		idx = <0>;
+		micro-step-res = <16>;
+		stallguard2-threshold = <0>;
+
+		ihold = <16>;
+		irun = <31>;
+		irundelay = <4>;
+		iholddelay = <3>;
+		tpowerdown = <10>;
+
+		toff = <5>;
+		tbl = <3>;
+		hstrt = <7>;
+		hend = <3>;
+
+		fs-gain = <0>;
+		fs-sense = <0>;
+		global-scaler = <231>;
+	};
+
+	tmc522x_motion_controller: tmc522x_motion_controller {
+		compatible = "adi,tmc522x-stepper-ctrl";
+		idx = <0>;
+
+		vstart = <10>;
+		vstop = <10>;
+		v1 = <0>;
+		amax = <10000>;
+		vmax = <10000>;
+		dmax = <10000>;
+		d1 = <10000>;
+
+		a2 = <10000>;
+		v2 = <0>;
+		d2 = <10000>;
+	};
+};
