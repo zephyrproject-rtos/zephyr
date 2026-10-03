@@ -7,8 +7,7 @@
 /dts-v1/;
 
 #include <broadcom/bcm2710.dtsi>
-#include <broadcom/bcm2711-pinctrl.dtsi>
-#include <zephyr/dt-bindings/mbox/brcm-bcm2711-mbox.h>
+#include "rpi_zero_2w-pinctrl.dtsi"
 
 / {
 	model = "Raspberry Pi Zero 2 W";
@@ -19,6 +18,7 @@
 		zephyr,shell-uart = &uart1;
 		zephyr,sram = &dram0;
 		zephyr,entropy = &rng;
+		zephyr,display = &fb0;
 	};
 
 	/*
@@ -50,18 +50,6 @@
 			compatible = "zephyr,memory-region";
 			reg = <0x10200000 DT_SIZE_K(64)>;
 			zephyr,memory-region = "VC_SHARED";
-		};
-	};
-
-	firmware: firmware {
-		compatible = "raspberrypi,bcm283x-firmware";
-		mboxes = <&mbox0 BCM2711_MBOX0_CH_ARM_TO_VC>;
-		mbox-names = "vc";
-		shared-memory = <&vc_mem>;
-
-		vc_thermal: vc-thermal {
-			compatible = "raspberrypi,bcm283x-vc-thermal";
-			status = "okay";
 		};
 	};
 };
