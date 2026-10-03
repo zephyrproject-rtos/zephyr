@@ -1116,12 +1116,12 @@ static bool verify_common_vco_rate(uint32_t lcm_vco_rate, uint32_t rate_a, uint3
 		vco_rate_ok = false;
 	} else {
 		divider = pdiv_calc_divider(lcm_vco_rate, rate_a);
-		/* Make sure we have a perfect commont vco rate. */
+		/* Make sure we have a perfect common vco rate. */
 		if (divider == 0 || rate_a * divider != lcm_vco_rate) {
 			vco_rate_ok = false;
 		} else {
 			divider = pdiv_calc_divider(lcm_vco_rate, rate_b);
-			/* Make sure we have a perfect commont vco rate. */
+			/* Make sure we have a perfect common vco rate. */
 			if (divider == 0 || rate_b * divider != lcm_vco_rate) {
 				vco_rate_ok = false;
 			}
@@ -1193,7 +1193,7 @@ static int pll_output_set_rate(const struct device *dev, clock_control_subsys_t 
 	}
 
 	divider = pll_calculate_parameter(cfg->input_freq, rate, &pll_config);
-	/* Cannot generate this rate even if the PLL is exclusivly available. */
+	/* Cannot generate this rate even if the PLL is exclusively available. */
 	if (divider == 0) {
 		return -EINVAL;
 	}

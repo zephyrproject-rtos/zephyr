@@ -182,7 +182,7 @@ static const struct xec_mbox_config xec_mbox0_cfg = {
  * EC may choose to enable EC-to-Host Serial-IRQ and/or EC-to-Host SMI delivered
  * by Serial-IRQ.
  * We do not write 0xFF to the Host-to-EC register to clear the interrupt status because
- * the Host may interpret claring of Host-to-EC as the EC has completed the requested
+ * the Host may interpret clearing of Host-to-EC as the EC has completed the requested
  * operation. Instead, we disable the mailbox interrupt. The application can re-enable the
  * interrupt after writing a value to Host-to-EC via our side-band API.
  */

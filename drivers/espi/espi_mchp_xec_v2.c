@@ -293,7 +293,7 @@ static bool espi_xec_channel_ready(const struct device *dev, enum espi_channel c
  *   XEC HW updates the VWires Available status bit in the 16-bit eSPI status word and if enabled,
  *   asserts the configured ESPI_nALERT signal (in-band or pin).
  *
- * The Host responds to ESPI_nALERT assertion by issueing GET_STATUS to read the 16-bit ESPI status
+ * The Host responds to ESPI_nALERT assertion by issuing GET_STATUS to read the 16-bit ESPI status
  * word. If the Host sees VWires Available status is set it issues GET_VW with the number of VWire
  * groups it has configured when eSPI was initialized. When GET_VW reads any XEC
  * Target-to-Controller group, XEC HW clears the read-only changed bit(s).
