@@ -72,7 +72,7 @@ void arc_core_mpu_configure_thread(struct k_thread *thread)
 {
 #if defined(CONFIG_USERSPACE)
 	/* configure stack region of user thread */
-	if (thread->base.user_options & K_USER) {
+	if (k_thread_is_user_thread(thread)) {
 		LOG_DBG("configure user thread %p's stack", thread);
 		if (_mpu_configure(THREAD_STACK_USER_REGION, (uint32_t)thread->stack_info.start,
 				   thread->stack_info.size) < 0) {
