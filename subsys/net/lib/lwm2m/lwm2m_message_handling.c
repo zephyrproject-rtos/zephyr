@@ -2194,6 +2194,29 @@ static int parse_write_op(struct lwm2m_message *msg, uint16_t format)
 	return r;
 }
 
+int lwm2m_check_path_access(struct lwm2m_message *msg)
+{
+#if defined(CONFIG_LWM2M_ACCESS_CONTROL_ENABLE)
+	int r;
+
+	r = access_control_check_access(msg->path.obj_id, msg->path.obj_inst_id,
+					msg->ctx->srv_obj_inst, msg->operation,
+					msg->ctx->bootstrap_mode);
+	if (r < 0) {
+		LOG_ERR("Access denied - Server obj %u does not have proper access to "
+			"resource",
+			msg->ctx->srv_obj_inst);
+		return r;
+	}
+#endif
+	if (msg->path.level > LWM2M_PATH_LEVEL_NONE &&
+	    msg->path.obj_id == LWM2M_OBJECT_SECURITY_ID && !msg->ctx->bootstrap_mode) {
+		return -EACCES;
+	}
+
+	return 0;
+}
+
 static int do_composite_write_op(struct lwm2m_message *msg, uint16_t format)
 {
 	uint16_t payload_len = 0U;
@@ -2504,20 +2527,8 @@ static int handle_request(struct coap_packet *request, struct lwm2m_message *msg
 		goto error;
 	}
 
-#if defined(CONFIG_LWM2M_ACCESS_CONTROL_ENABLE)
-	r = access_control_check_access(msg->path.obj_id, msg->path.obj_inst_id,
-					msg->ctx->srv_obj_inst, msg->operation,
-					msg->ctx->bootstrap_mode);
+	r = lwm2m_check_path_access(msg);
 	if (r < 0) {
-		LOG_ERR("Access denied - Server obj %u does not have proper access to "
-			"resource",
-			msg->ctx->srv_obj_inst);
-		goto error;
-	}
-#endif
-	if (msg->path.level > LWM2M_PATH_LEVEL_NONE &&
-	    msg->path.obj_id == LWM2M_OBJECT_SECURITY_ID && !msg->ctx->bootstrap_mode) {
-		r = -EACCES;
 		goto error;
 	}
 
