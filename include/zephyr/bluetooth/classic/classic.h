@@ -649,6 +649,17 @@ void bt_br_foreach_bond(void (*func)(const struct bt_br_bond_info *info, void *u
 int bt_br_write_eir(const struct bt_data *eir, size_t eir_count, bool fec_required);
 
 /**
+ * @brief Set the AFH host channel classification of the local BR/EDR Controller.
+ *
+ *  @param chan_map  10 octets, one bit per channel from 2402 MHz to 2480 MHz.
+ *                   0 marks the channel as bad, 1 as unknown. Bit 79 is
+ *                   reserved and shall be set to 0.
+ *
+ *  @return  Zero for success, negative error code otherwise.
+ */
+int bt_br_set_chan_map(const uint8_t chan_map[10]);
+
+/**
  * @}
  */
 

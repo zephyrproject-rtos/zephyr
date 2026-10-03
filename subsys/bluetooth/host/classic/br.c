@@ -1723,3 +1723,30 @@ int bt_br_write_eir(const struct bt_data *eir, size_t eir_count, bool fec_requir
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_EXT_INQUIRY_RESPONSE, buf, NULL);
 }
+
+int bt_br_set_chan_map(const uint8_t chan_map[10])
+{
+	struct bt_hci_cp_set_afh_host_chan_classif *cp;
+	struct net_buf *buf;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	if (!BT_CMD_TEST(bt_dev.supported_commands, 12, 1)) {
+		LOG_WRN("Set AFH Host Channel Classification command is not supported");
+		return -ENOTSUP;
+	}
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+
+	memcpy(&cp->chan_map[0], &chan_map[0], 9);
+	cp->chan_map[9] = chan_map[9] & BIT_MASK(7);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_SET_AFH_HOST_CHAN_CLASSIF, buf, NULL);
+}
