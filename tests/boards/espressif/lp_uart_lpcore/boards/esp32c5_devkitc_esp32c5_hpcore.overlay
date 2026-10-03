@@ -18,12 +18,12 @@
 };
 
 &mbox0 {
-	status = "okay";
 	shared-memory-size = <0x8>;
+	status = "okay";
 };
 
 &lp_uart {
-	status = "okay";
 	current-speed = <115200>;
 	loopback;
+	status = "okay";
 };
