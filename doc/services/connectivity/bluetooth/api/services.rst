@@ -23,6 +23,11 @@ Heart Rate Service
 
 .. doxygengroup:: bt_hrs
 
+HID Service
+***********
+
+.. doxygengroup:: bt_hids
+
 Immediate Alert Service
 ***********************
 
