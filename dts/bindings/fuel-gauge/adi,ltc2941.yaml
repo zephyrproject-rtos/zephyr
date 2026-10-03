@@ -1,0 +1,50 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices LTC2941 battery gas gauge / coulomb counter.
+
+  The device integrates current through an external sense resistor and stores
+  a 16-bit accumulated charge. It does not measure voltage, current, or
+  temperature (those features belong to LTC2942 and later).
+
+compatible: "adi,ltc2941"
+
+include: [base.yaml, i2c-device.yaml, fuel-gauge.yaml]
+
+properties:
+  reg:
+    required: true
+
+  rsense-milliohms:
+    type: int
+    required: true
+    description: |
+      External sense resistor in milliohms, between SENSE+ and SENSE-.
+      Charge LSB is qLSB = 0.085 mAh * (50 mOhm / rsense) * (M / 128),
+      where M is the coulomb-counter prescaler. The datasheet example and
+      the +/-50 mV sense range use 50 mOhm for a 1 A application.
+
+  prescaler:
+    type: int
+    default: 128
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+    description: |
+      Coulomb counter prescaler M (control register B[5:3]).
+      Default 128 matches the LTC2941 power-on value (B[5:3] = 111).
+
+  design-capacity-microamp-hours:
+    type: int
+    description: |
+      Battery design capacity in microamp-hours. Used to report
+      FUEL_GAUGE_DESIGN_CAPACITY and state-of-charge. Omit this property
+      if the host will program accumulated charge against the 16-bit
+      full-scale range only.
