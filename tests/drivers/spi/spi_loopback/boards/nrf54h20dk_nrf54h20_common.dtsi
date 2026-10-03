@@ -38,6 +38,8 @@
 	pinctrl-1 = <&spi130_sleep>;
 	pinctrl-names = "default", "sleep";
 	overrun-character = <0x00>;
+
+	cs-gpios = <&gpio0 10 0>;
 	zephyr,pm-device-runtime-auto;
 	status = "okay";
 
@@ -52,8 +54,6 @@
 		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(8)>;
 	};
-
-	cs-gpios = <&gpio0 10 0>;
 };
 
 &gpio0 {

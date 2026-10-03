@@ -31,10 +31,10 @@
 &spi0 {
 	rx-dtc;
 	tx-dtc;
-	status = "okay";
 	pinctrl-0 = <&spi0_default_alt>;
 	pinctrl-names = "default";
 	cs-gpios = <&ioport1 8 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	dut_spi_dt: test-spi-dev@0 {
 		compatible = "vnd,spi-device";
@@ -46,7 +46,7 @@
 dut_spis: &spi1 {
 	rx-dtc;
 	tx-dtc;
-	status = "okay";
 	pinctrl-0 = <&spi1_default_alt>;
 	pinctrl-names = "default";
+	status = "okay";
 };

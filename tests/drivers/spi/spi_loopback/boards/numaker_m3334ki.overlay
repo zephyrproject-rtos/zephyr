@@ -17,6 +17,11 @@
 };
 
 &spi2 {
+	pinctrl-0 = <&spi2_default>;
+	pinctrl-names = "default";
+
+	status = "okay";
+
 	slow@0 {
 		compatible = "test-spi-loopback-slow";
 		reg = <0>;
@@ -28,8 +33,4 @@
 		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(16)>;
 	};
-
-	status = "okay";
-	pinctrl-0 = <&spi2_default>;
-	pinctrl-names = "default";
 };

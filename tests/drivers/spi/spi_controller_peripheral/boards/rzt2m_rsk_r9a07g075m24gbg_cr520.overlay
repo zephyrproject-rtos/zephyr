@@ -31,7 +31,6 @@
 };
 
 &spi2 {
-	status = "okay";
 	pinctrl-0 = <&spi2_pins>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
@@ -39,6 +38,7 @@
 	dmas = <&dma0 1 RZ_DMA_PERIPH_TO_MEM>,
 	       <&dma0 0 RZ_DMA_MEM_TO_PERIPH>;
 	dma-names = "rx", "tx";
+	status = "okay";
 
 	dut_spi_dt: test-spi-dev@0 {
 		compatible = "vnd,spi-device";
@@ -50,12 +50,12 @@
 };
 
 dut_spis: &spi3 {
-	status = "okay";
 	pinctrl-0 = <&spi3_pins>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &dma0 {
-	status = "okay";
 	dma-buf-addr-alignment = <1>;
+	status = "okay";
 };

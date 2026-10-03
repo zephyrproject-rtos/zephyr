@@ -52,13 +52,13 @@
 
 &spi121 {
 	compatible = "nordic,nrf-spim";
-	status = "okay";
 	pinctrl-0 = <&spi121_default_alt>;
 	pinctrl-1 = <&spi121_sleep_alt>;
 	pinctrl-names = "default", "sleep";
 	overrun-character = <0x00>;
 	memory-regions = <&dma_fast_region>;
 	cs-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	dut_spi_dt: test-spi-dev@0 {
 		compatible = "vnd,spi-device";
@@ -69,12 +69,12 @@
 
 dut_spis: &spi131 {
 	compatible = "nordic,nrf-spis";
-	status = "okay";
 	def-char = <0x00>;
 	pinctrl-0 = <&spis131_default_alt>;
 	pinctrl-1 = <&spis131_sleep_alt>;
 	pinctrl-names = "default", "sleep";
 	memory-regions = <&cpuapp_dma_region>;
+	status = "okay";
 	/delete-property/ rx-delay-supported;
 	/delete-property/ rx-delay;
 };
