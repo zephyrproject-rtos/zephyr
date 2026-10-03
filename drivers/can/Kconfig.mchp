@@ -1,0 +1,14 @@
+# Microchip M_CAN G1 configuration options
+
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_MCHP_MCAN_G1
+	bool "Microchip M_CAN G1 driver"
+	default y
+	depends on DT_HAS_MICROCHIP_MCAN_G1_ENABLED
+	depends on CLOCK_CONTROL
+	select CAN_MCAN
+	select PINCTRL
+	help
+	  Enable the Microchip M_CAN G1 CAN FD front end.

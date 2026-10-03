@@ -1,0 +1,58 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip M_CAN G1 CAN FD controller
+
+description: |
+  Microchip M_CAN G1.
+
+  A Bosch M_CAN core inside a Microchip wrapper. The wrapper registers occupy
+  the first 0x100 bytes of the peripheral and hold CTRLA, CTRLB, the bus error
+  and debug interrupt registers and SYNCBUSY; the M_CAN core starts at 0x100.
+  The two reg entries name that split.
+
+  Supported families: PIC32CM SG/GC.
+
+  Group g1 CAN driver supports following hardware peripherals:
+    - module name="CAN" id="05010" name2="can_fd_apb_v1" version="1a0"
+
+compatible: "microchip,mcan-g1"
+
+include:
+  - name: bosch,m_can-base.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  reg-names:
+    required: true
+    description: |
+      Two entries: "wrapper", the Microchip wrapper registers, and "m_can",
+      the Bosch M_CAN core.
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+    description: |
+      Three entries: "int0" and "int1", the two M_CAN interrupt lines, and
+      "berr", the Microchip AHB bus error and debug interrupt that sits
+      outside the core.
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+    description: |
+      Two entries: "mclk", the peripheral bus clock, and "gclk", the generic
+      clock feeding the M_CAN core.
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
