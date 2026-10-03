@@ -1021,25 +1021,36 @@ static int eth_dm9051_set_mac_addr(const struct device *dev)
 	ret = net_eth_mac_load(&config->mac_cfg, data->mac_addr);
 	if (ret == 0) {
 		/* Write the MAC address into device */
-		return eth_dm9051_spi_write_regs(dev, DM9051_PAR, data->mac_addr,
-						 sizeof(data->mac_addr));
+		ret = eth_dm9051_spi_write_regs(dev, DM9051_PAR, data->mac_addr,
+						sizeof(data->mac_addr));
+		if (ret < 0) {
+			LOG_ERR("%s: Failed to write MAC address (err %d)", dev->name, ret);
+		}
+		return ret;
+	}
+
+	/* Fall back to PAR only when no address is configured */
+	if (ret != -ENODATA) {
+		LOG_ERR("%s: Failed to load MAC address (err %d)", dev->name, ret);
+		return ret;
 	}
 
 	/* Read the MAC address from DM9051_PAR registers */
 	ret = eth_dm9051_spi_read_regs(dev, DM9051_PAR, data->mac_addr, sizeof(data->mac_addr));
 	if (ret < 0) {
+		LOG_ERR("%s: Failed to read MAC address from PAR (err %d)", dev->name, ret);
 		return ret;
 	}
 
 	/* Check if MAC address is not 00:00:00:00:00:00 */
 	if (UNALIGNED_GET((uint32_t *)(data->mac_addr + 0)) == 0x0 &&
 	    UNALIGNED_GET((uint16_t *)(data->mac_addr + 4)) == 0x0) {
-		return -EINVAL;
+		return -EADDRNOTAVAIL;
 	}
 
 	/* Check if MAC address if not multicast address */
 	if ((data->mac_addr[0] & 0x1) > 0) {
-		return -EINVAL;
+		return -EADDRNOTAVAIL;
 	}
 
 	return 0;
@@ -1102,7 +1113,12 @@ static int eth_dm9051_init(const struct device *dev)
 	}
 
 	ret = eth_dm9051_set_mac_addr(dev);
-	if (ret < 0) {
+	if ((ret < 0) && (ret != -EADDRNOTAVAIL)) {
+		return ret;
+	}
+
+	if (ret == -EADDRNOTAVAIL) {
+		/* PAR holds no valid unicast address */
 		LOG_WRN("%s: Unable to set MAC address", dev->name);
 	}
 
