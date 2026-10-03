@@ -1,0 +1,29 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Texas Instruments TAS2560 Class-D audio amplifier.
+
+  One node is one mono amplifier. A stereo board is two nodes on the same bus,
+  each with its own I2C address and ti,asi-channel.
+
+  Playback is 16-bit I2S. The on-chip DSP program stays loaded and the PLL is
+  set to 1024 times the sample rate. For 16-bit stereo that is PLL J = 32.
+  The bit clock must stay between 512 kHz and 20 MHz.
+
+compatible: "ti,tas2560"
+
+include: i2c-device.yaml
+
+properties:
+  ti,asi-channel:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    description: |
+      I2S slot mixed into this amplifier.
+      0 is left, 1 is right, 2 is (left + right) / 2, 3 is mono PCM.
