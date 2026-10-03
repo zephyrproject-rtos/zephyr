@@ -299,6 +299,26 @@ individual's GitHub user name from the relevant sections of the
 TSC, representatives of the TSC or by the individuals themselves. Maintainers
 may also initiate the removal of inactive collaborators in their area.
 
+A maintainer is considered inactive in an area if, for a continuous period of 30 days,
+they have not fulfilled any of their responsibilities within that area as described in
+the :ref:`maintainer <maintainer>` role section.
+
+Inactivity is tracked by the TSC or its designated representatives. Once the 30-day
+threshold is reached, the maintainer is notified, together with the other maintainers
+of the affected area. The notice asks whether the individual is able to remain involved
+in the project, recognizing that an absence may be due to temporary circumstances such
+as workload, illness, or personal leave.
+
+If no response is received within two weeks, the individual is removed from the
+:ref:`maintainers_file`. If the individual responds and wishes to remain in their role,
+the TSC will agree with them on a timeframe for returning to active involvement. If they
+are still inactive at the end of that timeframe, the TSC may proceed to remove that maintainer.
+
+Removal for inactivity is not punitive. Retired maintainers and collaborators are moved
+to an emeritus list and may be reinstated to their previous role on request when they are
+able to return to active involvement, subject to confirmation by the TSC or the relevant
+area maintainer.
+
 A maintainer may object to being retired, and request a decision by the TSC.
 
 .. _maintainers_file:
