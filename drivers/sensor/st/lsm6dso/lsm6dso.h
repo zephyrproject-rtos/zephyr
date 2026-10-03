@@ -62,6 +62,7 @@ struct lsm6dso_config {
 #ifdef CONFIG_LSM6DSO_TRIGGER
 	const struct gpio_dt_spec gpio_drdy;
 	uint8_t int_pin;
+	bool int_open_drain;
 	bool trig_enabled;
 #ifdef CONFIG_LSM6DSO_TAP
 	uint8_t tap_mode;
