@@ -19,8 +19,8 @@
 	ov2640: ov2640@30 {
 		compatible = "ovti,ov2640";
 		reg = <0x30>;
-		clock-rate-control = <0x80>;
 		drive-strength = <1>;
+		clock-multiplier = <2>;
 		status = "okay";
 
 		port {
