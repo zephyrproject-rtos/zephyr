@@ -63,6 +63,8 @@
 #include <zephyr/sys/check.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/llext/symbol.h>
+
+ZASSERT_MODULE(KERNEL);
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 /*
@@ -176,7 +178,7 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 	bool resched = false;
 #endif
 
-	__ASSERT(!arch_is_in_isr(), "mutexes cannot be used inside ISRs");
+	ZASSERT(!arch_is_in_isr(), "mutexes cannot be used inside ISRs");
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mutex, lock, mutex, timeout);
 
@@ -264,10 +266,10 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 			    chain_owner->mutex_pended_on != NULL &&
 			    z_is_thread_pending(chain_owner) &&
 			    chain_owner->mutex_pended_on->owner == _current) {
-				__ASSERT(false,
+				ZASSERT(false,
 					"mutex deadlock: thread %p waiting on "
-					"mutex %p (owner %p)",
-					_current, mutex, mutex->owner);
+					"mutex %p (owner %p)", _current,
+					mutex, mutex->owner);
 				break;
 			}
 #endif /* CONFIG_MUTEX_DEADLOCK_DETECT */
@@ -382,7 +384,7 @@ int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 {
 	struct k_thread *new_owner = NULL;
 
-	__ASSERT(!arch_is_in_isr(), "mutexes cannot be used inside ISRs");
+	ZASSERT(!arch_is_in_isr(), "mutexes cannot be used inside ISRs");
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mutex, unlock, mutex);
 
@@ -406,7 +408,7 @@ int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 	 * therefore no underflow check is required. Use assert to catch
 	 * undefined behavior.
 	 */
-	__ASSERT_NO_MSG(mutex->lock_count > 0U);
+	ZASSERT(mutex->lock_count > 0U);
 
 	LOG_DBG("mutex %p lock_count: %d", mutex, mutex->lock_count);
 
