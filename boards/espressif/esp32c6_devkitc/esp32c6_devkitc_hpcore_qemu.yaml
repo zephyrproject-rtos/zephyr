@@ -4,7 +4,9 @@
 identifier: esp32c6_devkitc/esp32c6/hpcore/qemu
 name: ESP32-C6-DevKitC HP Core (Espressif QEMU)
 vendor: espressif
-type: mcu
+type: qemu
+simulation:
+  - name: espressif_qemu
 arch: riscv
 toolchain:
   - zephyr
