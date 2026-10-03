@@ -181,6 +181,10 @@ static int lsm9ds1_gyro_odr_set(const struct device *dev, uint16_t freq)
 	int ret;
 
 	odr = lsm9ds1_gyro_freq_to_odr_val(freq);
+	if (odr < 0) {
+		LOG_DBG("gyroscope sampling frequency not supported");
+		return odr;
+	}
 
 	if (odr == data->gyro_odr) {
 		return 0;
@@ -228,6 +232,10 @@ static int lsm9ds1_accel_odr_set(const struct device *dev, uint16_t freq)
 	if (old_odr & GYRO_ODR_MASK) {
 
 		odr = lsm9ds1_gyro_freq_to_odr_val(freq);
+		if (odr < 0) {
+			LOG_DBG("gyroscope sampling frequency not supported");
+			return odr;
+		}
 
 		if (odr == data->gyro_odr) {
 			return 0;
@@ -251,13 +259,13 @@ static int lsm9ds1_accel_odr_set(const struct device *dev, uint16_t freq)
 	} else {
 
 		odr = lsm9ds1_accel_freq_to_odr_val(freq);
+		if (odr < 0) {
+			LOG_DBG("accelerometer sampling frequency not supported");
+			return odr;
+		}
 
 		if (odr == data->accel_odr) {
 			return 0;
-		}
-
-		if (odr < 0) {
-			return odr;
 		}
 
 		ret = lsm9ds1_accel_set_odr_raw(dev, odr);
@@ -491,7 +499,7 @@ static inline void lsm9ds1_gyro_convert(struct sensor_value *val, int raw_val, u
 {
 	/* Sensitivity is exposed in udps/LSB */
 	/* Convert to rad/s */
-	sensor_10udegrees_to_rad((raw_val * (int32_t)sensitivity) / 10, val);
+	sensor_10udegrees_to_rad((int32_t)(((int64_t)raw_val * sensitivity) / 10), val);
 }
 
 static inline int lsm9ds1_gyro_get_channel(enum sensor_channel chan, struct sensor_value *val,
@@ -640,6 +648,10 @@ static int lsm9ds1_init(const struct device *dev)
 		LOG_ERR("failed to set IMU odr");
 		return ret;
 	}
+
+	/* imu_odr packs CTRL_REG6_XL.odr_xl in bits 6:4 and CTRL_REG1_G.odr_g in bits 2:0 */
+	data->accel_odr = (cfg->imu_odr >> 4) & GYRO_ODR_MASK;
+	data->gyro_odr = cfg->imu_odr & GYRO_ODR_MASK;
 
 	fs = cfg->accel_range;
 	LOG_DBG("accel range is %d\n", fs);
