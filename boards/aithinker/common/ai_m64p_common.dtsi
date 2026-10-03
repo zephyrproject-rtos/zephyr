@@ -1,16 +1,13 @@
 /*
- * Copyright (c) 2025-2026 MASSDRIVER EI (massdriver.space)
+ * Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <bflb/bl618.dtsi>
-#include <bflb/bl61x_em_32kb_wifi.dtsi>
-#include "ai_m61_32s-pinctrl.dtsi"
+#include "ai_m64p-pinctrl.dtsi"
 
 / {
-	model = "Ai-Thinker M61-32S Module";
-	compatible = "bflb,bl618";
+	compatible = "bflb,bl616cl";
 
 	chosen {
 		zephyr,flash = &flash0;
@@ -42,21 +39,17 @@
 };
 
 &sf_bank1 {
-	reg = <0xa0000000 0x800000>;
-	ranges = <0x0 0xa0000000 0x800000>;
+	reg = <0x80000000 0x400000>;
+	ranges = <0x0 0x80000000 0x400000>;
 
 	flash0: flash@0 {
-		compatible = "bflb,sf-flash", "soc-nv-flash", "gd,gd25q64e";
-		reg = <0x0 0x800000>;
+		compatible = "bflb,sf-flash", "soc-nv-flash";
+		reg = <0x0 0x400000>;
 		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 		write-block-size = <4>;
 		erase-block-size = <DT_SIZE_K(4)>;
-
-		spi-bus-mode = <4>;
-		sf-pad = <1>;
-		use-sfdp;
 
 		partitions {
 			ranges;
@@ -73,14 +66,14 @@
 			slot0_partition: partition@2000 {
 				compatible = "zephyr,mapped-partition";
 				label = "image-0";
-				reg = <0x00002000 (0x00200000 - 0x2000)>;
+				reg = <0x00002000 (0x00100000 - 0x2000)>;
 				read-only;
 			};
 
-			storage_partition: partition@200000 {
+			storage_partition: partition@100000 {
 				compatible = "zephyr,mapped-partition";
 				label = "storage";
-				reg = <0x00200000 0x600000>;
+				reg = <0x00100000 0x300000>;
 			};
 		};
 	};
@@ -105,6 +98,12 @@
 
 &sec_eng_trng {
 	status = "okay";
+};
+
+&psram {
+	status = "okay";
+	reg = <0x88000000 DT_SIZE_M(4)>;
+	ranges = <0x0 0x88000000 DT_SIZE_M(4)>;
 };
 
 &bt_hci_bflb {
