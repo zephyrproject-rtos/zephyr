@@ -72,6 +72,14 @@ config CLOCK_CONTROL_IFX_PERI_CLOCK_V2
 	  This option enables the peripheral clock group driver (infineon,peri-clk)
 	  for Infineon MCUs.
 
+config CLOCK_CONTROL_IFX_PERI_CLOCK_HAS_GROUP
+	bool
+	help
+	  Selected by Infineon SoCs whose peripheral clock destination
+	  (en_clk_dst_t) packs the peripheral group and instance numbers
+	  alongside the output. The peri-div clock driver composes those
+	  fields into the clock destination only when this is set.
+
 if CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK
 config CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK_INIT_PRIORITY
 	int "Infineon fixed factor clock driver init priority"
