@@ -40,3 +40,43 @@ config UDC_MCHP_UDPHS_G1_BURST_LOCK
 	  maximum optimization of the bus bandwidth usage.
 
 endif # UDC_MCHP_UDPHS_G1
+
+config UDC_MCHP_G2
+	bool "Microchip G2 USB device controller driver"
+	default y
+	depends on DT_HAS_MICROCHIP_USB_G2_ENABLED
+	select UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT
+	select EVENTS
+	help
+	  USB device controller driver for Microchip G2 family.
+	  This driver supports USB 2.0 High-Speed and Full-Speed operation.
+
+if UDC_MCHP_G2
+
+config UDC_MCHP_G2_STACK_SIZE
+	int "UDC controller driver internal thread stack size"
+	depends on UDC_MCHP_G2
+	default 1024
+	help
+	  Microchip G2 USB device controller driver internal thread stack size.
+
+config UDC_MCHP_G2_THREAD_PRIORITY
+	int "Microchip G2 controller driver thread priority"
+	depends on UDC_MCHP_G2
+	default 8
+	help
+	  Microchip G2 USB device controller driver thread priority.
+
+config UDC_MCHP_G2_VBUS_POLL_PERIOD_MS
+	int "VBUS polling period in milliseconds"
+	depends on UDC_MCHP_G2
+	default 100
+	range 10 1000
+	help
+	  Period between successive VBUS level checks performed by the system
+	  work queue.  A shorter period reduces the latency between cable
+	  plug/unplug and the UDC_EVT_VBUS_READY / UDC_EVT_VBUS_REMOVED event
+	  being delivered to the upper layer, at the cost of slightly higher
+	  CPU overhead.  100 ms is adequate for typical USB-device applications.
+
+endif # UDC_MCHP_G2

@@ -108,7 +108,7 @@
 		xosc-startup-time = <500000>;
 		xosc-clock-failure-detection-en = <0>;
 		xosc-safe-clock-frequency = <48>;
-		xosc-usbhs-ref-clock-div = "usbhs-pll-ref-xosc-clock-disabled";
+		xosc-usbhs-ref-clock-div = "usbhs-pll-ref-xosc-clock-div-1";
 	};
 
 	xosc32k: xosc32k {
@@ -290,5 +290,9 @@
 };
 
 &portd {
+	status = "okay";
+};
+
+zephyr_udc0: &hsusb0 {
 	status = "okay";
 };

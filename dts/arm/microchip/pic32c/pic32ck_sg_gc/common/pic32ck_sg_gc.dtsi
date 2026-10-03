@@ -47,6 +47,14 @@
 			};
 		};
 
+		hwinfo: device_id@a0071e0 {
+			compatible = "microchip,hwinfo-g1";
+			reg = <0x0a0071e0 0x4>,
+			      <0x0a0071e4 0x4>,
+			      <0x0a0071e8 0x4>,
+			      <0x0a0071ec 0x4>;
+		};
+
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 		};
@@ -130,6 +138,21 @@
 				compatible = "microchip,pic32ck-sg-gc-mclkperiph";
 				#clock-cells = <1>;
 			};
+		};
+
+		hsusb0: usb@46000000 {
+			compatible = "microchip,usb-g2";
+			reg = <0x46000000 0x2000>;
+			interrupts = <154 0>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_USBHS_AHB>,
+				 <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_USB_APB>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_USB>;
+			clock-names = "ahb", "apb", "gclk";
+			num-bidir-endpoints = <8>;
+			num-in-endpoints = <8>;
+			num-out-endpoints = <8>;
+			maximum-speed = "high-speed";
+			status = "disabled";
 		};
 	};
 };
