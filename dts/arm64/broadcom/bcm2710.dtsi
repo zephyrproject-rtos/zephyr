@@ -122,6 +122,16 @@
 			status = "disabled";
 		};
 
+		spi0: spi@3f204000 {
+			compatible = "brcm,bcm2835-spi";
+			reg = <0x3f204000 0x200>;
+			interrupts = <BCM2835_IRQ_SPI IRQ_TYPE_LEVEL 0>;
+			clocks = <&clk_core>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		uart1: uart@3f215040 {
 			compatible = "brcm,bcm283x-aux-uart", "ns16550";
 			reg = <0x3f215040 0x40>;

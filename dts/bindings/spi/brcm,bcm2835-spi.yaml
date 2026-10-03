@@ -1,0 +1,34 @@
+# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Broadcom BCM283x SPI Controller
+
+  The SPI controller exposed on the Raspberry Pi 40-pin header. The
+  auxiliary SPI1 / SPI2 blocks use a different register layout and a
+  separate binding (brcm,bcm2835-aux-spi).
+
+  Chip select is expected to be driven from GPIOs (cs-gpios); the
+  controller's native CE0/CE1 lines are not used by the Zephyr driver.
+
+compatible: "brcm,bcm2835-spi"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+    description: |
+      Core clock that feeds the SPI clock divider.
+      SCLK = core clock rate / CDIV.
+
+  # pinctrl-0 / pinctrl-names come from the pinctrl-device.yaml include
+  # and are intentionally NOT required: a board may mux the SPI pins via
+  # pinctrl at init, or leave them unset and mux imperatively at runtime
+  # (e.g. an SPI display reusing MISO as a D/C line).

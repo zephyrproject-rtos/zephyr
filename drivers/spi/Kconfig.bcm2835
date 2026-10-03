@@ -1,0 +1,15 @@
+# Broadcom BCM2835 SPI controller
+#
+# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_BCM2835
+	bool "Broadcom BCM2835 SPI controller driver"
+	default y
+	depends on DT_HAS_BRCM_BCM2835_SPI_ENABLED
+	select PINCTRL
+	help
+	  Enable the polled driver for the Broadcom BCM2835-family SPI
+	  controller: SPI0 on the Raspberry Pi 40-pin header, and the
+	  same IP behind SPI3..SPI6 on the BCM2711. Chip select is
+	  driven via cs-gpios.
