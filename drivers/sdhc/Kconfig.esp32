@@ -5,6 +5,7 @@ config SDHC_ESP32
 	bool "ESP32 SDHC Driver"
 	default y
 	depends on DT_HAS_ESPRESSIF_ESP32_SDHC_SLOT_ENABLED
+	select SDHC_COMMON
 	select SDHC_SUPPORTS_NATIVE_MODE
 	select PINCTRL
 	help

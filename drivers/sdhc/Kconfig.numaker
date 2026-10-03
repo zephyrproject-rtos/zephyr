@@ -5,6 +5,7 @@ config SDHC_NUMAKER
 	bool "Nuvoton NuMaker SDHC driver"
 	default y
 	depends on DT_HAS_NUVOTON_NUMAKER_SDHC_ENABLED
+	select SDHC_COMMON
 	select PINCTRL
 	select SDHC_SUPPORTS_NATIVE_MODE
 	help

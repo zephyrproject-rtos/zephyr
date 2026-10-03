@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NXP
+# SPDX-FileCopyrightText: Copyright 2022, 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: NXP imx USDHC controller
@@ -29,12 +29,6 @@ properties:
     description: |
       Number of words used as write watermark level in FIFO queue for USDHC
 
-  max-current-330:
-    type: int
-    default: 0
-    description: |
-      Max drive current in mA at 3.3V. A value of zero indicates no maximum
-      is specified by the driver.
   clocks:
     required: true
 
