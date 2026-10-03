@@ -1,0 +1,6 @@
+shield:
+  name: rakwireless_rak13800
+  full_name: RAK13800 WisBlock Ethernet Module
+  vendor: rakwireless
+  supported_features:
+    - ethernet

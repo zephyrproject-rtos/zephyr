@@ -19,6 +19,13 @@
 		fuel-gauge0 = &wisblock_vbat;
 	};
 
+	wisblock_3v3_s: wisblock-3v3-s {
+		compatible = "power-domain-gpio";
+		enable-gpios = <&wisblock_io WISBLOCK_IO_IO2 GPIO_ACTIVE_HIGH>;
+		#power-domain-cells = <0>;
+		status = "disabled";
+	};
+
 	leds {
 		compatible = "gpio-leds";
 
