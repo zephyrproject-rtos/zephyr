@@ -7,7 +7,7 @@
 /dts-v1/;
 
 #include <bflb/bl808.dtsi>
-#include <bflb/bl808_em_32kb.dtsi>
+#include <bflb/bl808_em_32kb_wifi.dtsi>
 #include "m1s-pinctrl.dtsi"
 
 / {
@@ -28,6 +28,11 @@
 	aliases {
 		watchdog0 = &wdt0;
 	};
+};
+
+&clocks {
+	/* Centers the module crystal: the reset default runs it ~57 ppm off */
+	xtal-capcode = <50>;
 };
 
 &clk_flash {
@@ -143,5 +148,9 @@
 };
 
 &bt_hci_bflb {
+	status = "okay";
+};
+
+&wifi0 {
 	status = "okay";
 };

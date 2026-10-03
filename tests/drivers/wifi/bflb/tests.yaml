@@ -14,6 +14,7 @@ common:
     - ai_m62_12f_kit
     - maix_m0s_dock
     - ai_m64p_32s_kit
+    - m1s_dock
   extra_configs:
     - CONFIG_BUILD_ONLY_NO_BLOBS=y
 tests:
