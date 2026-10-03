@@ -118,17 +118,19 @@ A typical flash layout for devices without a ROM bootloader is:
 
 	&flash0 {
 		partitions {
-			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			boot_partition: partition@0 {
+				compatible = "zephyr,mapped-partition";
 				label = "sam-ba";
 				reg = <0x00000000 0x2000>;
 				read-only;
 			};
 
 			code_partition: partition@2000 {
+				compatible = "zephyr,mapped-partition";
 				label = "code";
 				reg = <0x2000 0x3a000>;
 				read-only;
@@ -140,6 +142,7 @@ A typical flash layout for devices without a ROM bootloader is:
 			* if enabled.
 			*/
 			storage_partition: partition@3c000 {
+				compatible = "zephyr,mapped-partition";
 				label = "storage";
 				reg = <0x0003c000 0x00004000>;
 			};
@@ -159,11 +162,12 @@ partition is:
 
 	&flash0 {
 		partitions {
-			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			code_partition: partition@0 {
+				compatible = "zephyr,mapped-partition";
 				label = "code";
 				reg = <0x0 0xF0000>;
 				read-only;
@@ -175,6 +179,7 @@ partition is:
 			* if enabled.
 			*/
 			storage_partition: partition@F0000 {
+				compatible = "zephyr,mapped-partition";
 				label = "storage";
 				reg = <0x000F0000 0x00100000>;
 			};
