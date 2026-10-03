@@ -102,7 +102,7 @@ static int i2s_stm32_set_clock(const struct device *dev,
 {
 	const struct i2s_stm32_cfg *cfg = dev->config;
 	uint32_t freq_in = 0U;
-	uint8_t i2s_div, i2s_odd;
+	uint32_t i2s_div, i2s_odd;
 
 	if (cfg->pclk_len > 1) {
 		/* Handle multiple clock sources */
@@ -134,13 +134,13 @@ static int i2s_stm32_set_clock(const struct device *dev,
 	i2s_odd = (i2s_div & 0x1) ? 1 : 0;
 	i2s_div >>= 1;
 
-	/* i2s_div == 0 || i2s_div == 1 are forbidden */
-	if (i2s_div < 2U) {
+	/* i2s_div == 0 || i2s_div == 1 are forbidden, and I2SDIV is 8 bits */
+	if (i2s_div < 2U || i2s_div > UINT8_MAX) {
 		LOG_ERR("The linear prescaler value is unsupported");
 		return -EINVAL;
 	}
 
-	LOG_DBG("i2s_div: %d - i2s_odd: %d", i2s_div, i2s_odd);
+	LOG_DBG("i2s_div: %u - i2s_odd: %u", i2s_div, i2s_odd);
 
 	LL_I2S_SetPrescalerLinear(cfg->i2s, i2s_div);
 	LL_I2S_SetPrescalerParity(cfg->i2s, i2s_odd);
