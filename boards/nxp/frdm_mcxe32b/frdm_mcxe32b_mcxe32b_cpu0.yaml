@@ -1,0 +1,16 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: frdm_mcxe32b/mcxe32b/cpu0
+name: NXP FRDM-MCXE32B (CPU0)
+type: mcu
+arch: arm
+ram: 144
+flash: 3920
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - arduino_gpio
+  - gpio
+vendor: nxp
