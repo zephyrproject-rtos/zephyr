@@ -89,7 +89,7 @@ static bool in_stack_bound(uintptr_t addr, const struct k_thread *const thread,
 	}
 
 #ifdef CONFIG_USERSPACE
-	if ((thread->base.user_options & K_USER) != 0) {
+	if (k_thread_is_user_thread(thread)) {
 		return in_user_thread_stack_bound(addr, thread);
 	}
 #endif /* CONFIG_USERSPACE */
