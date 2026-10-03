@@ -9,9 +9,16 @@
 
 static inline int z_vrfy_rtc_set_time(const struct device *dev, const struct rtc_time *timeptr)
 {
+	struct rtc_time time_copy;
+
 	K_OOPS(K_SYSCALL_DRIVER_RTC(dev, set_time));
-	K_OOPS(K_SYSCALL_MEMORY_READ(timeptr, sizeof(struct rtc_time)));
-	return z_impl_rtc_set_time(dev, timeptr);
+
+	/* Snapshot the time so a concurrent user thread cannot change the
+	 * fields while the driver reads them.
+	 */
+	K_OOPS(k_usermode_from_copy(&time_copy, timeptr, sizeof(time_copy)));
+
+	return z_impl_rtc_set_time(dev, &time_copy);
 }
 #include <zephyr/syscalls/rtc_set_time_mrsh.c>
 
@@ -36,9 +43,20 @@ static inline int z_vrfy_rtc_alarm_get_supported_fields(const struct device *dev
 static inline int z_vrfy_rtc_alarm_set_time(const struct device *dev, uint16_t id, uint16_t mask,
 					    const struct rtc_time *timeptr)
 {
+	struct rtc_time time_copy;
+
 	K_OOPS(K_SYSCALL_DRIVER_RTC(dev, alarm_set_time));
-	K_OOPS(K_SYSCALL_MEMORY_READ(timeptr, sizeof(struct rtc_time)));
-	return z_impl_rtc_alarm_set_time(dev, id, mask, timeptr);
+
+	if (timeptr == NULL) {
+		K_OOPS(K_SYSCALL_VERIFY_MSG(mask == 0,
+					    "timeptr may only be NULL when mask is 0"));
+
+		return z_impl_rtc_alarm_set_time(dev, id, mask, NULL);
+	}
+
+	K_OOPS(k_usermode_from_copy(&time_copy, timeptr, sizeof(time_copy)));
+
+	return z_impl_rtc_alarm_set_time(dev, id, mask, &time_copy);
 }
 #include <zephyr/syscalls/rtc_alarm_set_time_mrsh.c>
 
