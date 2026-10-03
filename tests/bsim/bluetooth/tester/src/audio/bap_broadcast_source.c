@@ -27,7 +27,7 @@
 
 LOG_MODULE_REGISTER(bsim_bap_broadcast_source, CONFIG_BSIM_BTTESTER_LOG_LEVEL);
 
-static void test_bap_broadcast_source(void)
+static void start_broadcast_source(void)
 {
 	const uint8_t cc_data_16_2_1[] = BT_AUDIO_CODEC_CFG_LC3_DATA(
 		BT_AUDIO_CODEC_CFG_FREQ_16KHZ, BT_AUDIO_CODEC_CFG_DURATION_10,
@@ -58,6 +58,23 @@ static void test_bap_broadcast_source(void)
 					       ARRAY_SIZE(cc_data_16_2_1), cc_data_16_2_1);
 	bsim_btp_bap_broadcast_adv_start(broadcast_id);
 	bsim_btp_bap_broadcast_source_start(broadcast_id);
+}
+
+static void test_bap_broadcast_source(void)
+{
+	start_broadcast_source();
+
+	TEST_PASS("PASSED\n");
+}
+
+static void test_bap_broadcast_source_power_off(void)
+{
+	start_broadcast_source();
+
+	/* Let the source stream, so that the tester is sending when it is powered off */
+	k_sleep(K_SECONDS(1));
+
+	bsim_btp_gap_set_powered(false);
 
 	TEST_PASS("PASSED\n");
 }
@@ -67,6 +84,11 @@ static const struct bst_test_instance test_sample[] = {
 		.test_id = "bap_broadcast_source",
 		.test_descr = "Smoketest for the BAP broadcast source BT Tester behavior",
 		.test_main_f = test_bap_broadcast_source,
+	},
+	{
+		.test_id = "bap_broadcast_source_power_off",
+		.test_descr = "BT Tester powered off while its BAP broadcast source is streaming",
+		.test_main_f = test_bap_broadcast_source_power_off,
 	},
 	BSTEST_END_MARKER,
 };
