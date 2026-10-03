@@ -617,15 +617,10 @@ static int lis2dw12_bus_check(const struct device *dev)
 {
 	const struct lis2dw12_device_config *cfg = dev->config;
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	if (!device_is_ready(cfg->stmemsc_cfg.i2c.bus)) {
+	if (!device_is_ready(cfg->bus)) {
 		return -ENODEV;
 	}
-#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	if (!device_is_ready(cfg->stmemsc_cfg.spi.bus)) {
-		return -ENODEV;
-	}
-#endif
+
 	return 0;
 }
 
@@ -707,6 +702,7 @@ static int lis2dw12_init(const struct device *dev)
 #endif /* CONFIG_LIS2DW12_TRIGGER */
 
 #define LIS2DW12_CONFIG_COMMON(inst)					\
+	.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),			\
 	.pm = DT_INST_PROP(inst, power_mode),				\
 	.odr = DT_INST_PROP_OR(inst, odr, 12),				\
 	.range = DT_INST_PROP(inst, range),				\
