@@ -40,22 +40,46 @@
 #define NS_TO_SYS_CLOCK_HW_CYCLES(ns) \
 	((uint64_t)sys_clock_hw_cycles_per_sec() * (ns) / NSEC_PER_SEC + 1)
 
+#define CYCLES_STANDARD_LOW	NS_TO_SYS_CLOCK_HW_CYCLES(4700)
+#define CYCLES_STANDARD_HIGH	NS_TO_SYS_CLOCK_HW_CYCLES(4000)
+#define CYCLES_FAST_LOW		NS_TO_SYS_CLOCK_HW_CYCLES(1300)
+#define CYCLES_FAST_HIGH	NS_TO_SYS_CLOCK_HW_CYCLES(600)
+#define CYCLES_FAST_PLUS_LOW	NS_TO_SYS_CLOCK_HW_CYCLES(400)
+#define CYCLES_FAST_PLUS_HIGH	NS_TO_SYS_CLOCK_HW_CYCLES(300)
+
 int i2c_bitbang_configure(struct i2c_bitbang *context, uint32_t dev_config)
 {
+	int max_speed = I2C_SPEED_FAST_PLUS;
+	int speed = I2C_SPEED_GET(dev_config);
+
 	/* Check for features we don't support */
 	if (I2C_ADDR_10_BITS & dev_config) {
 		return -ENOTSUP;
 	}
 
+	if (sys_clock_hw_cycles_per_sec() < USEC_PER_SEC) {
+		max_speed = I2C_SPEED_STANDARD;
+	} else if (sys_clock_hw_cycles_per_sec() < 2 * USEC_PER_SEC) {
+		max_speed = I2C_SPEED_FAST;
+	}
+
+	if (speed > max_speed) {
+		speed = max_speed;
+	}
+
 	/* Setup speed to use */
-	switch (I2C_SPEED_GET(dev_config)) {
+	switch (speed) {
 	case I2C_SPEED_STANDARD:
-		context->delays[T_LOW]  = NS_TO_SYS_CLOCK_HW_CYCLES(4700);
-		context->delays[T_HIGH] = NS_TO_SYS_CLOCK_HW_CYCLES(4000);
+		context->delays[T_LOW] = CYCLES_STANDARD_LOW;
+		context->delays[T_HIGH] = CYCLES_STANDARD_HIGH;
 		break;
 	case I2C_SPEED_FAST:
-		context->delays[T_LOW]  = NS_TO_SYS_CLOCK_HW_CYCLES(1300);
-		context->delays[T_HIGH] = NS_TO_SYS_CLOCK_HW_CYCLES(600);
+		context->delays[T_LOW] = CYCLES_FAST_LOW;
+		context->delays[T_HIGH] = CYCLES_FAST_HIGH;
+		break;
+	case I2C_SPEED_FAST_PLUS:
+		context->delays[T_LOW] = CYCLES_FAST_PLUS_LOW;
+		context->delays[T_HIGH] = CYCLES_FAST_PLUS_HIGH;
 		break;
 	default:
 		return -ENOTSUP;
