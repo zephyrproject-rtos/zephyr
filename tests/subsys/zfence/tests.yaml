@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  zfence.unit:
+    tags:
+      - zfence
+      - unit
+    platform_allow: native_sim
+    integration_platforms:
+      - native_sim
+    harness: ztest
+    harness_config:
+      type: one_line
+      regex:
+        - "TESTSUITE zfence_suite succeeded"
+
+  zfence.unit.per_fence:
+    tags:
+      - zfence
+      - unit
+      - per_fence
+    platform_allow: native_sim
+    integration_platforms:
+      - native_sim
+    extra_configs:
+      - CONFIG_ZFENCE_PER_FENCE_WAIT_CTX=y
+    harness: ztest
+    harness_config:
+      type: one_line
+      regex:
+        - "TESTSUITE zfence_suite succeeded"
+
+  zfence.unit.64bit:
+    tags:
+      - zfence
+      - unit
+      - 64bit
+    platform_allow: native_sim/native/64
+    integration_platforms:
+      - native_sim/native/64
+    harness: ztest
+    harness_config:
+      type: one_line
+      regex:
+        - "TESTSUITE zfence_overflow_64bit_suite succeeded"
