@@ -28,3 +28,13 @@ The demo can be built as follows:
    :board: native_sim
    :goals: run
    :compact:
+
+The area behind the transparent screen depends on the display. The SDL
+(``native_sim``) display composites the framebuffer over its own transparency
+checkerboard, so transparency is visible out of the box. Other displays have no
+such background, so the sample draws an opaque black/white checkerboard on the
+bottom layer itself; this is controlled by
+:kconfig:option:`CONFIG_APP_DRAW_BACKGROUND_CHECKERBOARD`, which defaults to
+enabled on every display except SDL. Disable it on boards where a separate
+hardware layer (e.g. a video plane) provides the background — the
+on-screen-display (OSD) use case.
