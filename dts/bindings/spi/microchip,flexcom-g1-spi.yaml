@@ -55,6 +55,12 @@ properties:
       Connects TX to RX internally creating a loop back connection. Useful
       for testing.
 
+  fifo-size:
+    type: int
+    required: true
+    description: |
+      The size of SPI transmit FIFO and receive FIFO.
+
   dmas:
     description: |
       TX & RX dma specifiers.  Each specifier will have a phandle
