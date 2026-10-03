@@ -25,6 +25,7 @@
 
 	chosen {
 		zephyr,flash-controller = &iap;
+		zephyr,crc = &crc;
 	};
 
 	cpus {
@@ -402,6 +403,44 @@
 			input = <0>;
 			prescale = <0>;
 			status = "disabled";
+		};
+
+		crc: crc@40095000 {
+			compatible = "nxp,lpc-crc";
+			reg = <0x40095000 0x1000>;
+			clocks = <&syscon MCUX_CRC_CLK>;
+			status = "disabled";
+		};
+
+		mrt0: mrt@4000d000 {
+			compatible = "nxp,mrt";
+			reg = <0x4000d000 0x100>;
+			interrupts = <9 0>;
+			num-channels = <4>;
+			num-bits = <24>;
+			clocks = <&syscon MCUX_MRT_CLK>;
+			resets = <&reset NXP_SYSCON_RESET(1, 0)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			mrt0_channel0: mrt_channel@0 {
+				compatible = "nxp,mrt-channel";
+				reg = <0>;
+				status = "disabled";
+			};
+		};
+
+		rtc: rtc@4002c000 {
+			compatible = "nxp,lpc-rtc";
+			reg = <0x4002c000 0x1000>;
+			interrupts = <29 0>;
+			status = "disabled";
+
+			rtc_highres: rtc_highres {
+				compatible = "nxp,lpc-rtc-highres";
+				status = "disabled";
+			};
 		};
 	};
 };

@@ -29,6 +29,7 @@
 		usart-0 = &flexcomm0;
 		sw0 = &user_button;
 		accel0 = &mma8652fc;
+		rtc = &rtc;
 	};
 
 	/*
@@ -78,6 +79,10 @@
  */
 &sram0 {
 	reg = <0x20000000 DT_SIZE_K(160)>;
+};
+
+&crc {
+	status = "okay";
 };
 
 &flexcomm0 {
@@ -149,5 +154,17 @@ zephyr_udc0: &usbhs {
 };
 
 &ctimer4 {
+	status = "okay";
+};
+
+&mrt0 {
+	status = "okay";
+};
+
+&mrt0_channel0 {
+	status = "okay";
+};
+
+&rtc {
 	status = "okay";
 };
