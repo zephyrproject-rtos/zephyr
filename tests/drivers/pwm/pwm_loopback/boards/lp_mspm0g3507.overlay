@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Connect PA15 (PWM output, pwma0 CH0, TIMA0 CCP2) to PB4 (capture input,
+ * pwma1 CH0, TIMA1 CCP0) with a wire before running this test.
+ */
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		pwms = <&pwma0 0 0 PWM_POLARITY_NORMAL>,
+		       <&pwma1 0 0 PWM_POLARITY_NORMAL>;
+	};
+};
+
+&pinctrl {
+	tima1_ccp0_pb4 {
+		input-enable;
+		bias-pull-down;
+	};
+};
+
+&pwma0 {
+	pinctrl-0 = <&tima0_ccp2_pa15>;
+	ti,cc-index = <2>;
+};
+
+&tima1 {
+	ti,clk-div = <8>;
+	ti,clk-prescaler = <255>;
+	status = "okay";
+
+	pwma1: pwma1 {
+		pinctrl-0 = <&tima1_ccp0_pb4>;
+		pinctrl-names = "default";
+		ti,cc-index = <0>;
+		ti,cc-mode = "PULSE_WIDTH";
+		ti,period = <0xffff>;
+		status = "okay";
+	};
+};
