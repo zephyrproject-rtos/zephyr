@@ -8,8 +8,11 @@
 #include "../psc3/psc3m6/psc3m6.e-lqfp-100_s.dtsi"
 
 / {
-	flash-controller@52150000 {
+	flash_controller: flash-controller@52150000 {
 		compatible = "infineon,flash-controller";
+		erase-value = <0x00>;
+		infineon,explicit-erase;
+		infineon,cache-invalidate = "icache0";
 		reg = <0x52150000 0x10000>;
 		ranges;
 		#address-cells = <1>;
