@@ -17,6 +17,28 @@
 #define ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_GICV3_ITS_H_
 
 typedef unsigned int (*its_api_alloc_intid_t)(const struct device *dev);
+
+/**
+ * @brief Allocate and map consecutive LPI INTIDs to EventIDs starting at zero.
+ *
+ * @param dev ITS device.
+ * @param device_id DeviceID whose EventIDs are mapped.
+ * @param count Number of INTIDs to allocate and map.
+ * @return First allocated LPI INTID (at least 8192).
+ * @retval 0 Allocation or mapping failed.
+ */
+typedef unsigned int (*its_api_alloc_map_intids_t)(const struct device *dev, uint32_t device_id,
+						   unsigned int count);
+
+/**
+ * @brief Allocate consecutive LPI INTIDs.
+ *
+ * @param dev ITS device.
+ * @param count Number of INTIDs to allocate.
+ * @return First allocated LPI INTID (at least 8192).
+ * @retval 0 Not enough LPI INTIDs remain in the provisioned range.
+ */
+typedef unsigned int (*its_api_alloc_intids_t)(const struct device *dev, unsigned int count);
 typedef int (*its_api_setup_deviceid_t)(const struct device *dev, uint32_t device_id,
 					unsigned int nites);
 typedef int (*its_api_map_intid_t)(const struct device *dev, uint32_t device_id,
@@ -30,11 +52,50 @@ __subsystem struct its_driver_api {
 	its_api_map_intid_t map_intid;
 	its_api_send_int_t send_int;
 	its_api_get_msi_addr_t get_msi_addr;
+	/** @brief Allocate consecutive LPI INTIDs. */
+	its_api_alloc_intids_t alloc_intids;
+	/** @brief Allocate consecutive LPI INTIDs and map them to EventIDs. */
+	its_api_alloc_map_intids_t alloc_map_intids;
 };
 
+/**
+ * @brief Allocate an LPI INTID.
+ *
+ * @param dev ITS device.
+ * @return Allocated LPI INTID (at least 8192).
+ * @retval 0 No LPI INTIDs remain in the provisioned range.
+ */
 static inline int its_alloc_intid(const struct device *dev)
 {
 	return DEVICE_API_GET(its, dev)->alloc_intid(dev);
+}
+
+/**
+ * @brief Allocate consecutive LPI INTIDs.
+ *
+ * @param dev ITS device.
+ * @param count Number of INTIDs to allocate.
+ * @return First allocated LPI INTID (at least 8192).
+ * @retval 0 Not enough LPI INTIDs remain in the provisioned range.
+ */
+static inline int its_alloc_intids(const struct device *dev, unsigned int count)
+{
+	return DEVICE_API_GET(its, dev)->alloc_intids(dev, count);
+}
+
+/**
+ * @brief Allocate consecutive LPI INTIDs and map them to EventIDs.
+ *
+ * @param dev ITS device.
+ * @param device_id DeviceID whose EventIDs are mapped.
+ * @param count Number of INTIDs to allocate and map.
+ * @return First allocated LPI INTID (at least 8192).
+ * @retval 0 Allocation or mapping failed.
+ */
+static inline int its_alloc_map_intids(const struct device *dev, uint32_t device_id,
+				       unsigned int count)
+{
+	return DEVICE_API_GET(its, dev)->alloc_map_intids(dev, device_id, count);
 }
 
 static inline int its_setup_deviceid(const struct device *dev, uint32_t device_id,

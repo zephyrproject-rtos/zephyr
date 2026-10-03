@@ -347,6 +347,7 @@ static uint8_t pcie_ecam_msi_device_setup(const struct device *dev, unsigned int
 #ifdef CONFIG_GIC_V3_ITS
 	const struct pcie_ctrl_config *cfg = (const struct pcie_ctrl_config *)dev->config;
 	unsigned int device_id;
+	unsigned int first_intid;
 	pcie_bdf_t bdf;
 	int ret, i;
 
@@ -356,7 +357,8 @@ static uint8_t pcie_ecam_msi_device_setup(const struct device *dev, unsigned int
 
 	bdf = vectors[0].bdf;
 
-	/* We do not support allocating vectors for multiple BDFs for now,
+	/*
+	 * We do not support allocating vectors for multiple BDFs for now,
 	 * This would need tracking vectors already allocated for a BDF and
 	 * re-allocating a proper table in ITS for each BDF since we can't be
 	 * sure more vectors for each BDF will be allocated later.
@@ -376,20 +378,45 @@ static uint8_t pcie_ecam_msi_device_setup(const struct device *dev, unsigned int
 		return 0;
 	}
 
+#ifdef CONFIG_PCIE_MSI_X
+	if (vectors[0].msix) {
+		first_intid = its_alloc_map_intids(cfg->msi_parent, device_id, n_vector);
+		if (first_intid == 0U) {
+			return 0;
+		}
+
+		for (i = 0; i < n_vector; i++) {
+			vectors[i].arch.irq = first_intid + i;
+			vectors[i].arch.address = its_get_msi_addr(cfg->msi_parent);
+			vectors[i].arch.eventid = i;
+			vectors[i].arch.priority = priority;
+		}
+
+		return n_vector;
+	}
+#endif
+
+	/*
+	 * MSI requires a power-of-two vector count. Reserve the whole block so a
+	 * short allocation cannot consume vectors that the PCIe layer discards.
+	 */
+	first_intid = its_alloc_map_intids(cfg->msi_parent, device_id, n_vector);
+	while ((first_intid == 0U) && (n_vector > 1U)) {
+		n_vector >>= 1;
+		first_intid = its_alloc_map_intids(cfg->msi_parent, device_id, n_vector);
+	}
+	if (first_intid == 0U) {
+		return 0;
+	}
+
 	for (i = 0; i < n_vector; i++) {
-		vectors[i].arch.irq = its_alloc_intid(cfg->msi_parent);
+		vectors[i].arch.irq = first_intid + i;
 		vectors[i].arch.address = its_get_msi_addr(cfg->msi_parent);
 		vectors[i].arch.eventid = i;
 		vectors[i].arch.priority = priority;
-
-		ret = its_map_intid(cfg->msi_parent, device_id,
-				    vectors[i].arch.eventid, vectors[i].arch.irq);
-		if (ret) {
-			break;
-		}
 	}
 
-	return i;
+	return n_vector;
 #else
 	return 0;
 #endif

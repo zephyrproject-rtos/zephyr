@@ -1170,6 +1170,32 @@ Interrupt Controllers
 * Deprecate ``GIC_NUM_CPU_IF`` from GIC header file :file:`gic.h`. One shall use
   instead.:kconfig:option:`CONFIG_MP_MAX_NUM_CPUS` instead.
 
+* The GIC v3 ITS driver no longer allocates any of its tables from the system heap. The LPI
+  property and pending tables, the Device and Collection tables, the per-device ITTs and the
+  indirect Device table pages are statically reserved, and :kconfig:option:`CONFIG_GIC_V3_ITS` no
+  longer selects :kconfig:option:`CONFIG_KERNEL_MEM_POOL`. The
+  ``CONFIG_HEAP_MEM_POOL_ADD_SIZE_GIC_V3_ITS`` minimum-heap option was removed, so applications
+  and boards that only raised :kconfig:option:`CONFIG_HEAP_MEM_POOL_SIZE` for the ITS driver can
+  drop or reduce that setting.
+
+* ITS memory usage is now bounded at build time by new options and Devicetree properties:
+
+  * :kconfig:option:`CONFIG_GIC_V3_ITS_MAX_DEVICES` (default 16) bounds the number of devices
+    that can be registered per ITS instance and fixes the number of reserved ITTs and indirect
+    Device table pages. Device registration returns ``-ENOMEM`` when the limit is reached.
+  * :kconfig:option:`CONFIG_GIC_V3_ITS_MAX_VECTORS` (default 32, must be a power of two) fixes
+    the number of interrupt translation entries reserved for each registered device.
+  * The new ``zephyr,device-id-bits`` property on :dtcompatible:`arm,gic-v3-its` (default 16)
+    bounds the reserved Device table. Boards with a narrower DeviceID space should set it to the
+    provisioned width; the default reserves 2 MiB.
+  * The new ``zephyr,lpi-id-bits`` property on :dtcompatible:`arm,gic-v3` (default 16) bounds the
+    reserved LPI property and pending tables.
+
+* The ITS driver validates hardware capabilities against the provisioned tables before enabling
+  them and fails initialization with ``-ENOTSUP`` when the hardware page size, entry size or ID
+  widths exceed what is provisioned (LPI ID widths below 14 bits are rejected), or with
+  ``-ENOSPC`` when a table exceeds the static capacity.
+
 MBOX
 ====
 

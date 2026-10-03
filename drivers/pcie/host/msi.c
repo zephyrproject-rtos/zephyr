@@ -145,6 +145,7 @@ uint8_t pcie_msi_vectors_allocate(pcie_bdf_t bdf,
 	uint32_t req_vectors;
 	uint32_t base;
 	bool msi;
+	uint8_t allocated;
 
 	base = pcie_msi_base(bdf, &msi);
 
@@ -167,12 +168,20 @@ uint8_t pcie_msi_vectors_allocate(pcie_bdf_t bdf,
 	if (n_vector > req_vectors) {
 		n_vector = req_vectors;
 	}
+	if (msi && (n_vector > 0U)) {
+		n_vector = BIT(find_msb_set(n_vector) - 1U);
+	}
 
 	for (req_vectors = 0; req_vectors < n_vector; req_vectors++) {
 		vectors[req_vectors].bdf = bdf;
 	}
 
-	return arch_pcie_msi_vectors_allocate(priority, vectors, n_vector);
+	allocated = arch_pcie_msi_vectors_allocate(priority, vectors, n_vector);
+	if (msi && (allocated > 0U)) {
+		allocated = BIT(find_msb_set(allocated) - 1U);
+	}
+
+	return allocated;
 }
 
 bool pcie_msi_vector_connect(pcie_bdf_t bdf,

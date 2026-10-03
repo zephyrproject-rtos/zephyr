@@ -278,8 +278,6 @@
 #ifdef CONFIG_GIC_V3_ITS
 void its_rdist_map(void);
 void its_rdist_invall(void);
-
-extern atomic_t nlpi_intid;
 #endif
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_INTC_GICV3_PRIV_H_ */

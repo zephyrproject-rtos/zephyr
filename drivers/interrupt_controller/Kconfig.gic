@@ -51,34 +51,36 @@ config GIC_V3_RDIST_MATCHING_AFF0_ONLY
 	  Some platforms only use aff0 to match mpdir and GICR.aff. With this
 	  enabled, we find the target redistributor by comparing the aff0 only.
 
-config GIC_V3_ITS
+menuconfig GIC_V3_ITS
 	bool "GIC v3 Interrupt Translation Service"
 	depends on GIC_V3
 	# ITS generates Non-secure Group 1 LPI interrupts, requiring EL1NS
 	select ARMV8_A_NS
 	select DYNAMIC_INTERRUPTS
-	select KERNEL_MEM_POOL
 	help
 	  Support for the optional Interrupt Translation Service used to translate
-	  hardware interrupt from PCIe MSI messages for example. Please note
-	  that ITS allocates its tables from the system heap, whose minimum size
-	  HEAP_MEM_POOL_ADD_SIZE_GIC_V3_ITS below accounts for.
+	  hardware interrupts from PCIe MSI messages, for example.
 
-# The GICv3 and ITS drivers allocate, from the system heap:
-# - LPI property table: one 64K table, 64K aligned, shared by all CPUs
-# - LPI pending table: one 64K table, 64K aligned, per redistributor/CPU
-# - Devices table: 128x4K, 4K aligned
-# - Interrupt collections table: 1x4K, 4K aligned
-#
-# 13x64K covers those on a four-CPU system. It does not include the interrupt
-# translation tables, which are 256-byte aligned and sized per device: a 32-ITE
-# table needs 256 bytes, so the remainder leaves room for a useful number of
-# them. Boards needing more can raise CONFIG_HEAP_MEM_POOL_SIZE, and an
-# application that has measured its own requirement can opt out of the minimum
-# with CONFIG_HEAP_MEM_POOL_IGNORE_MIN.
-config HEAP_MEM_POOL_ADD_SIZE_GIC_V3_ITS
-	int
-	default 851968 if GIC_V3_ITS
+if GIC_V3_ITS
+
+config GIC_V3_ITS_MAX_DEVICES
+	int "Maximum registered devices per controller"
+	range 1 256
+	default 16
+	help
+	  Reserve one interrupt translation table and at most one 64 KiB indirect
+	  Device table page per device. The required page count depends on DeviceID
+	  width.
+
+config GIC_V3_ITS_MAX_VECTORS
+	int "Maximum MSI vectors per device"
+	range 2 2048
+	default 32
+	help
+	  Reserve this many interrupt translation entries for each device.
+	  The value must be a power of two.
+
+endif # GIC_V3_ITS
 
 config GIC_SAFE_CONFIG
 	bool "GIC Distributor Safe Configuration"
