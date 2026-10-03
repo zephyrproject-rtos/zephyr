@@ -49,6 +49,13 @@ Boards
   * Remove custom nodes and linker sections that reserve the push area, such as
     ``nrf_kmu_reserved_push_area``. They would overlap the ``kmu_push_area`` node.
 
+* :zephyr:board:`stm32_min_dev` now declares two SoCs, so the SoC qualifier is
+  mandatory. Applications and test configurations that used ``stm32_min_dev``,
+  ``stm32_min_dev@blue`` or ``stm32_min_dev@black`` must use
+  ``stm32_min_dev@blue/stm32f103x8`` or ``stm32_min_dev@black/stm32f103x8``
+  instead. ``stm32_min_dev_defconfig`` was renamed accordingly to
+  :file:`stm32_min_dev_stm32f103x8_defconfig`.
+
 Device Drivers and Devicetree
 *****************************
 
