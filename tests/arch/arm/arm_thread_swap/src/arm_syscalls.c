@@ -7,6 +7,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/arch/cpu.h>
 #include <cmsis_core.h>
+#include <zephyr/interrupt_util.h>
 #include <zephyr/kernel_structs.h>
 #include <zephyr/sys/barrier.h>
 #include <offsets_short_arch.h>
@@ -207,35 +208,11 @@ ZTEST(arm_thread_swap, test_arm_syscalls)
 #endif
 
 #if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-	for (i = CONFIG_NUM_IRQS - 1; i >= 0; i--) {
-		if (NVIC_GetEnableIRQ(i) == 0) {
-			/*
-			 * Interrupts configured statically with IRQ_CONNECT(.)
-			 * are automatically enabled. NVIC_GetEnableIRQ()
-			 * returning false, here, implies that the IRQ line is
-			 * either not implemented or it is not enabled, thus,
-			 * currently not in use by Zephyr.
-			 */
-
-			/* Set the NVIC line to pending. */
-			NVIC_SetPendingIRQ(i);
-
-			if (NVIC_GetPendingIRQ(i)) {
-				/* If the NVIC line is pending, it is
-				 * guaranteed that it is implemented.
-				 */
-				break;
-			}
-		}
-	}
-
-	zassert_true(i >= 0, "No available IRQ line to use in the test\n");
-
+	i = get_available_nvic_line(CONFIG_NUM_IRQS);
 	TC_PRINT("Available IRQ line: %u\n", i);
 
 	arch_irq_connect_dynamic(i, 0 /* highest priority */, arm_isr_handler, (uint32_t *)i, 0);
 
-	NVIC_ClearPendingIRQ(i);
 	NVIC_EnableIRQ(i);
 
 	/* Allow the user thread to trigger an interrupt;
