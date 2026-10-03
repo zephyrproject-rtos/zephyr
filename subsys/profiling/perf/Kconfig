@@ -19,4 +19,5 @@ config PROFILING_PERF_BUFFER_SIZE
 
 endif
 
+rsource "event/Kconfig"
 rsource "backends/Kconfig"
