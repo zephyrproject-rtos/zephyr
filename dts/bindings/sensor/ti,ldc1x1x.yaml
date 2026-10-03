@@ -1,0 +1,343 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+title: Texas Instruments LDC1X1X Inductance-to-Digital Converter
+
+description: |
+  Texas Instruments LDC1312, LDC1314, LDC1612, and LDC1614
+  inductance-to-digital converters.
+
+  The family provides 2-channel or 4-channel inductive sensing over I2C.
+  LDC131x devices report the 12 MSBs of an internal 16-bit conversion result
+  and support output gain. LDC161x devices report a 28-bit conversion result.
+
+compatible: "ti,ldc1x1x"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  sd-gpios:
+    type: phandle-array
+    description: |
+      The SD pin defaults to active high when consumed by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
+
+  intb-gpios:
+    type: phandle-array
+    description: |
+      The INTB pin defaults to active low when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
+
+  ldc1x14:
+    type: boolean
+    description: |
+      Set to identify the sensor as LDC1314 or LDC1614
+      (4-channel version).
+
+  autoscan:
+    type: boolean
+    description: |
+      Set the Auto-Scan mode.
+
+      false = Continuous conversion on the single channel selected by
+      "active-channel" (single-channel mode).
+
+      true = Auto-Scan conversions as selected by "rr-sequence"
+      (multichannel mode).
+
+  fref:
+    type: int
+    required: true
+    description: |
+      Reference frequency of the selected clock source in kHz.
+
+      The internal oscillator is nominally around 43 MHz.
+      A common external clock source is 40 MHz on CLKIN.
+
+  rr-sequence:
+    type: int
+    default: 0
+    description: |
+      Auto-Scan sequence configuration.
+      The LDC will perform a single conversion on each channel
+      in the sequence selected, and then restart the sequence continuously.
+
+      The sensor performs conversion on Channel 0 to 1 by default after
+      power-on reset. This setting only applies if autoscan=true
+      (multichannel mode).
+
+      0 = Ch0, Ch1
+      1 = Ch0, Ch1, Ch2 (LDC1314, LDC1614 only)
+      2 = Ch0, Ch1, Ch2, Ch3 (LDC1314, LDC1614 only)
+    enum:
+      - 0
+      - 1
+      - 2
+
+  active-channel:
+    type: int
+    default: 0
+    description: |
+      Selects the channel for continuous conversions.
+
+      The sensor performs continuous conversion on Channel 0 by default after
+      power-on reset. This setting only applies if autoscan=false
+      (single-channel mode).
+
+      0 = Perform continuous conversions on Channel 0
+      1 = Perform continuous conversions on Channel 1
+      2 = Perform continuous conversions on Channel 2 (LDC1314, LDC1614 only)
+      3 = Perform continuous conversions on Channel 3 (LDC1314, LDC1614 only)
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+
+  deglitch:
+    type: int
+    required: true
+    description: |
+      Input deglitch filter bandwidth. Select the lowest setting that exceeds
+      the maximum sensor oscillation frequency.
+
+      1 = 1.0 MHz
+      4 = 3.3 MHz
+      5 = 10 MHz
+      7 = 33 MHz
+    enum:
+      - 1
+      - 4
+      - 5
+      - 7
+
+  rp-override:
+    type: boolean
+    description: |
+      Drive the sensor with the fixed current programmed by "idrive" instead
+      of letting the sensor pick one.
+
+      The sensor determines the drive current automatically after power-on
+      reset, which is meant for prototyping an unknown sensor. Set this once
+      a suitable "idrive" is known, which is what TI recommends for
+      consistent measurement performance.
+
+  auto-amplitude-correction-disable:
+    type: boolean
+    description: |
+      Disable the automatic amplitude correction algorithm and stop the
+      sensor from updating its internal drive current estimate.
+
+      Set this together with "rp-override" to keep the drive current fully
+      under the control of "idrive".
+
+  sensor-activate-sel:
+    type: string
+    default: "low-power"
+    description: |
+      Sensor activation mode selection.
+
+      The sensor uses low-power activation mode by default after
+      power-on reset.
+
+      full-current = The LDC drives maximum sensor current for a shorter
+      sensor activation time.
+
+      low-power = The LDC uses the value programmed by "idrive" during
+      sensor activation to minimize power consumption.
+    enum:
+      - "full-current"
+      - "low-power"
+
+  ref-clk-src:
+    type: string
+    default: "internal"
+    description: |
+      Select reference frequency source.
+
+      The sensor uses the internal clock by default after power-on reset.
+
+      internal = Use internal oscillator as reference frequency.
+      external = Reference frequency is provided from CLKIN pin.
+    enum:
+      - "internal"
+      - "external"
+
+  current-drive:
+    type: string
+    default: "normal"
+    description: |
+      Select sensor current drive mode.
+
+      The sensor uses normal current drive by default after power-on reset.
+      High current drive only applies to Channel 0, and is only supported
+      when autoscan=false.
+
+      normal = The LDC drives all channels with normal sensor current
+      (1.5 mA max).
+
+      high = The LDC drives Channel 0 with current >1.5 mA.
+    enum:
+      - "normal"
+      - "high"
+
+  output-gain:
+    type: int
+    default: 0
+    description: |
+      Output gain control (LDC1312 and LDC1314 only).
+
+      The default output gain is 0 after power-on reset.
+      This property is ignored by LDC1612 and LDC1614.
+
+      0 = Gain = 1   | Effective resolution 12 bits | 100% full scale
+      1 = Gain = 4   | Effective resolution 14 bits | 25% full scale
+      2 = Gain = 8   | Effective resolution 15 bits | 12.5% full scale
+      3 = Gain = 16  | Effective resolution 16 bits | 6.25% full scale
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+
+child-binding:
+  description: |
+    Settings for one enabled sensor channel.
+
+    Exactly the channels the sensor converts must have a node. In Auto-Scan
+    that is channel 0 up to the channel selected by "rr-sequence", and in
+    single-channel mode it is the channel selected by "active-channel".
+
+  properties:
+    reg:
+      type: int
+      required: true
+      description: |
+        Channel number.
+        Channels 0-1 are available on LDC1312 and LDC1612.
+        Channels 0-3 are available on LDC1314 and LDC1614.
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+
+    rcount:
+      type: int
+      required: true
+      description: |
+        Channel X reference count conversion interval time.
+      min: 5
+      max: 65535
+
+    offset:
+      type: int
+      default: 0
+      description: |
+        Channel X conversion offset.
+        The default offset value after power-on reset is 0.
+      min: 0
+      max: 65535
+
+    settlecount:
+      type: int
+      required: true
+      description: |
+        Channel X conversion settling time.
+
+        The LDC uses this settling time to allow the LC sensor to
+        stabilize before initiating a conversion on Channel X.
+      min: 2
+      max: 65535
+
+    fref-divider:
+      type: int
+      required: true
+      description: |
+        Channel X reference divider.
+
+        Sets the divider for the channel reference clock.
+      min: 1
+      max: 1023
+
+    idrive:
+      type: int
+      required: true
+      description: |
+        Channel X sensor drive current.
+
+        This field defines the drive current used during the settling
+        and conversion time of the Channel X sensor clock.
+      min: 0
+      max: 31
+
+    fin-divider:
+      type: int
+      required: true
+      description: |
+        Channel X sensor input divider.
+
+        Sets FIN_DIVIDERx so that the effective sensor input frequency stays
+        within the allowed operating range.
+      min: 1
+      max: 15
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/gpio/gpio.h>
+
+    &i2c0 {
+      ldc1614: ldc1614@2a {
+        compatible = "ti,ldc1x1x";
+        reg = <0x2a>;
+        #address-cells = <1>;
+        #size-cells = <0>;
+        ldc1x14;
+        fref = <40000>;
+        autoscan;
+        rr-sequence = <2>;
+        deglitch = <4>;
+        sensor-activate-sel = "full-current";
+        ref-clk-src = "external";
+        sd-gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+        intb-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+
+        channel@0 {
+          reg = <0>;
+          rcount = <0x04d6>;
+          settlecount = <0x000a>;
+          fref-divider = <2>;
+          fin-divider = <1>;
+          idrive = <0x10>;
+        };
+
+        channel@1 {
+          reg = <1>;
+          rcount = <0x04d6>;
+          settlecount = <0x000a>;
+          fref-divider = <2>;
+          fin-divider = <1>;
+          idrive = <0x10>;
+        };
+
+        channel@2 {
+          reg = <2>;
+          rcount = <0x04d6>;
+          settlecount = <0x000a>;
+          fref-divider = <2>;
+          fin-divider = <1>;
+          idrive = <0x10>;
+        };
+
+        channel@3 {
+          reg = <3>;
+          rcount = <0x04d6>;
+          settlecount = <0x000a>;
+          fref-divider = <2>;
+          fin-divider = <1>;
+          idrive = <0x10>;
+        };
+      };
+    };
