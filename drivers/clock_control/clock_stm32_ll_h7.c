@@ -456,7 +456,7 @@ static int stm32_clock_control_on(const struct device *dev, clock_control_subsys
 	 * See RM0433 8.5.10 "Clock enabling delays"
 	 */
 	temp = sys_read32(STM32H7_BUS_CLK_REG + pclken->bus);
-	UNUSED(temp);
+	(void)temp;
 
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 
