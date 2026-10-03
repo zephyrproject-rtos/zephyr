@@ -1,0 +1,23 @@
+identifier: ophelia5dk/nrf54lm20a/cpuapp/ns
+name: OPHELIA5-DK-nRF54lm20a-Application-Non-Secure
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - zephyr
+ram: 252
+flash: 1452
+supported:
+  - adc
+  - counter
+  - dmic
+  - gpio
+  - i2c
+  - i2s
+  - pwm
+  - spi
+  - usbd
+  - usbh
+  - watchdog
+vendor: we
+sysbuild: true

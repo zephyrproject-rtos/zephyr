@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <vendor/nordic/nrf54lm20a_cpuflpr.dtsi>
+#include <vendor/nordic/nrf54lm20_a_b_ipc_shared_ram.dtsi>
+#include "nrf54lm20_a_cpuflpr_common.dtsi"
+
+/ {
+	model = "OPHELIA5 DK nRF54LM20A FLPR MCU";
+	compatible = "we,ophelia5dk_nrf54lm20a-cpuflpr";
+
+	chosen {
+		zephyr,console = &uart30;
+		zephyr,shell-uart = &uart30;
+		zephyr,code-partition = &cpuflpr_code_partition;
+		zephyr,flash = &cpuflpr_rram;
+		zephyr,sram = &cpuflpr_sram;
+	};
+};
