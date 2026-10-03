@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - sensor
+    - emul
+  platform_allow:
+    - native_sim/native/64
+    - mps2/an385
+  integration_platforms:
+    - native_sim/native/64
+    - mps2/an385
+tests:
+  drivers.sensor.emul_regmap.little_endian: {}
+  drivers.sensor.emul_regmap.big_endian:
+    extra_args: TEST_BIG_ENDIAN=ON
