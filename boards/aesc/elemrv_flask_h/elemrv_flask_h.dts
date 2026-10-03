@@ -26,6 +26,7 @@
 		zephyr,flash-controller = &flash_controller;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,entropy = &prng0;
 	};
 
 	leds: leds {
@@ -95,6 +96,10 @@
 
 &plic {
 	riscv,ndev = <8>;
+};
+
+&prng0 {
+	status = "okay";
 };
 
 &uart0 {
