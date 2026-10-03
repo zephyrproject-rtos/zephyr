@@ -1,0 +1,26 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Wiring: strap Arduino A2 to A3 on J405, the Arduino Analog In header.
+ *
+ * A3 is PB00, AC_AIN2, the positive input of comp0. The board drives nothing
+ * onto it. A2 is PB03, not driven by anything on the board, and sits next to
+ * A3 on the header, so the strap is one short jumper.
+ *
+ * comp0's negative input is the block's own 7-bit reference DAC at 64 of 128,
+ * so the threshold is half of AVDD, 1.65 V. A GPIO swinging 0 to 3.3 V crosses
+ * it with more than a volt of margin either way, wider than the "hyst20"
+ * hysteresis band this comparator is configured with.
+ */
+
+/ {
+	aliases {
+		test-comp = &comp0;
+	};
+
+	zephyr,user {
+		test-gpios = <&portb 3 GPIO_ACTIVE_HIGH>;
+	};
+};
