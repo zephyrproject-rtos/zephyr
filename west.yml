@@ -178,7 +178,7 @@ manifest:
       groups:
         - hal
     - name: hal_ethos_u
-      revision: 03567073fe2b9802c0bd73f9534da6f8a03924d1
+      revision: 5f0b9d1e17b245aefc308ee0d5a4543833b96b11
       path: modules/hal/ethos_u
       groups:
         - hal
@@ -403,7 +403,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: b01f190e46afcb02b7f240d2b3ab961d6bca6c24
+      revision: 3d46d29fb296af1ff278ea3216e6fe0289a8fa7a
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
