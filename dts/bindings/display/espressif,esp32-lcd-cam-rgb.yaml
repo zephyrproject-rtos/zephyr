@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ESP32 LCD-CAM RGB parallel display interface
+
+compatible: "espressif,esp32-lcd-cam-rgb"
+
+include: base.yaml
+
+child-binding:
+  description: RGB panel connected to the LCD-CAM RGB interface
+  include: display-controller.yaml
