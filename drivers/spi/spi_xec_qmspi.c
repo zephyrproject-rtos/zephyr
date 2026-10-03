@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT microchip_xec_qmspi
 
+#include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_xec, CONFIG_SPI_LOG_LEVEL);
 
@@ -645,7 +646,7 @@ static int qmspi_init(const struct device *dev)
 	MCHP_GIRQ_SRC_CLR(cfg->girq, cfg->girq_pos);
 
 	MCHP_GIRQ_BLK_CLREN(cfg->girq);
-	NVIC_ClearPendingIRQ(cfg->girq_nvic_direct);
+	k_irq_clear_pending(cfg->girq_nvic_direct);
 
 	err = spi_context_cs_configure_all(&data->ctx);
 	if (err < 0) {
