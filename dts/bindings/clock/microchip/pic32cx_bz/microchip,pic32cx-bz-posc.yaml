@@ -1,0 +1,16 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+include: [base.yaml]
+
+description: Primary Oscillator (POSC) configuration.
+compatible: "microchip,pic32cx-bz-posc"
+
+properties:
+  posc-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: Oscillator Enable
