@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Nuvoton Technology Corporation.
+ * Copyright (c) 2026 Nuvoton Technology Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,11 +19,11 @@ BUILD_ASSERT((CONFIG_NPCK_EPURST_DEBOUNCE_TIME_SEC > 0) &&
 extern void scfg_init(void);
 void soc_early_init_hook(void)
 {
-	struct glue_reg *inst_glue = (struct glue_reg *)
-			DT_REG_ADDR_BY_NAME(DT_NODELABEL(scfg), glue);
+	struct glue_reg *inst_glue =
+		(struct glue_reg *)DT_REG_ADDR_BY_NAME(DT_NODELABEL(scfg), glue);
 
-	struct scfg_reg *inst_scfg = (struct scfg_reg *)
-			DT_REG_ADDR_BY_NAME(DT_NODELABEL(scfg), scfg);
+	struct scfg_reg *inst_scfg =
+		(struct scfg_reg *)DT_REG_ADDR_BY_NAME(DT_NODELABEL(scfg), scfg);
 
 	if (IS_ENABLED(CONFIG_SOC_NPCK_EPURST_DISABLE)) {
 		/* EXT_PURST# signal is not selected to the pin by default */

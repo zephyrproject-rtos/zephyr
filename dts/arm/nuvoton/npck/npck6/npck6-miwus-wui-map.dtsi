@@ -1,0 +1,149 @@
+/*
+ * Copyright (c) 2026 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Common Wake-Up Unit Input (WUI) mapping configurations in npck */
+#include <nuvoton/npck/npck-miwus-wui-map.dtsi>
+
+/* Specific Wake-Up Unit Input (WUI) mapping configurations in npck3 series */
+/ {
+	/* Mapping between MIWU wui bits and source device */
+	npcx-miwus-wui-map {
+		compatible = "nuvoton,npcx-miwu-wui-map";
+
+		/* MIWU Table 0, group A */
+		wui_io00: wui0-1-0 {
+			miwus = <&miwu0 0 0>; /* GPIO00 */
+		};
+
+		wui_io06: wui0-1-6 {
+			miwus = <&miwu0 0 6>; /* GPIO06 */
+		};
+
+		/* MIWU Table 0, group B */
+		wui_io12: wui0-2-2 {
+			miwus = <&miwu0 1 2>; /* GPIO12 */
+		};
+
+		wui_io16: wui0-2-6 {
+			miwus = <&miwu0 1 6>; /* GPIO16 */
+		};
+
+		/* MIWU Table 0, group C */
+		wui_io24: wui0-3-4 {
+			miwus = <&miwu0 2 4>; /* GPIO24 */
+		};
+
+		/* MIWU Table 0, group D */
+		wui_cr_sin1: wui0-4-4-1 {
+			miwus = <&miwu0 3 4>; /* CR_SIN */
+		};
+
+		wui_io35: wui0-4-5 {
+
+			miwus = <&miwu0 3 5>; /* GPIO35 */
+		};
+
+		wui_io37: wui0-4-7 {
+			miwus = <&miwu0 3 7>; /* GPIO37 */
+		};
+
+		/* MIWU Table 0, group E */
+		wui_io41: wui0-5-1 {
+			miwus = <&miwu0 4 1>; /* GPIO41 */
+		};
+
+		wui_io42: wui0-5-2 {
+			miwus = <&miwu0 4 2>; /* GPIO42 */
+		};
+
+		wui_io43: wui0-5-3 {
+			miwus = <&miwu0 4 3>; /* GPIO43 */
+		};
+
+		/* MIWU Table 0, group H */
+		wui_io71: wui0-8-1 {
+			miwus = <&miwu0 7 1>; /* GPIO71 */
+		};
+
+		/* MIWU Table 1, group A */
+		wui_io80: wui1-1-0 {
+			miwus = <&miwu1 0 0>; /* GPIO80 */
+		};
+
+		wui_io82: wui1-1-2 {
+			miwus = <&miwu1 0 2>; /* GPIO82 */
+		};
+
+		wui_io84: wui1-1-4 {
+			miwus = <&miwu1 0 4>; /* GPIO84 */
+		};
+
+		/* MIWU Table 1, group B */
+		wui_io95: wui1-2-5 {
+			miwus = <&miwu1 1 5>; /* GPIO95 */
+		};
+
+		/* MIWU Table 1, group D */
+		wui_iob3: wui1-4-3 {
+			miwus = <&miwu1 3 3>; /* GPIOB3 */
+		};
+
+		wui_iob6: wui1-4-6 {
+			miwus = <&miwu1 3 6>; /* GPIOB6 */
+		};
+
+		wui_iob7: wui1-4-7 {
+			miwus = <&miwu1 3 7>; /* GPIOB7 */
+		};
+
+		/* MIWU Table 1, group E */
+		wui_ioc0: wui1-5-0 {
+			miwus = <&miwu1 4 0>; /* GPIOC0 */
+		};
+
+		wui_ioc1: wui1-5-1 {
+			miwus = <&miwu1 4 1>; /* GPIOC1 */
+		};
+
+		wui_ioc2: wui1-5-2 {
+			miwus = <&miwu1 4 2>; /* GPIOC2 */
+		};
+
+		wui_ioc4: wui1-5-4 {
+			miwus = <&miwu1 4 4>; /* GPIOC4 */
+		};
+
+		wui_ioc5: wui1-5-5 {
+			miwus = <&miwu1 4 5>; /* GPIOC5 */
+		};
+
+		wui_ioc6: wui1-5-6 {
+			miwus = <&miwu1 4 6>; /* GPIOC6 */
+		};
+
+		wui_ioc7: wui1-5-7 {
+			miwus = <&miwu1 4 7>; /* GPIOC7 */
+		};
+
+		wui_rtc: wui1-8-7 {
+			miwus = <&miwu1 7 7>; /* RTC */
+		};
+
+		/* MIWU Table 2, group E */
+		wui_vw_dnx_warn: wui2-5-1 {
+			miwus = <&miwu2 4 1>; /* DnX_WARN */
+		};
+
+		/* MIWU Table 2, group F */
+		wui_s0i3: wui2-6-3 {
+			miwus = <&miwu2 5 3>; /* S0i3 */
+		};
+
+		wui_s8: wui2-6-5 {
+			miwus = <&miwu2 5 5>; /* S8 */
+		};
+	};
+};

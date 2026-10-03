@@ -1,0 +1,21 @@
+# Nuvoton Cortex-M33 Embedded Controller
+
+# Copyright (c) 2026 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_NPCK6
+
+config NUM_IRQS
+	default 83
+
+config CORTEX_M_SYSTICK
+	default !NPCX_ITIM_TIMER
+
+config ESPI_TAF_NPCX
+	default y
+	depends on ESPI_TAF
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000
+
+endif # SOC_SERIES_NPCK6

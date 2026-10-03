@@ -47,6 +47,7 @@ POINTER_OFFSET_DEFAULT = 0x0
 
 # Chips: convert from name to index.
 CHIPS_INFO = {
+    'npck6m9': {'ram_address': 0x10020000, 'ram_size': 0xA0000},
     'npck3m8': {'ram_address': 0x10058000, 'ram_size': 0x68000},
     'npcx7m5': {'ram_address': 0x100a8000, 'ram_size': 0x20000},
     'npcx7m6': {'ram_address': 0x10090000, 'ram_size': 0x40000},
@@ -89,7 +90,7 @@ class EcstArgs:
     spi_flash_read_mode = SPI_MODE_VAL_DEFAULT
     firmware_load_address = None
     firmware_entry_point = None
-    use_arm_reset = True
+    use_arm_reset = None
     firmware_crc_start = FW_CRC_START_OFFSET_DEFAULT
     firmware_crc_size = None
     firmware_length = None
@@ -97,6 +98,7 @@ class EcstArgs:
     paste_firmware_header = PASTE_FIRMWARE_HEADER_DEFAULT
     pointer = POINTER_OFFSET_DEFAULT
     bh_offset = None
+    no_fw_addr_check = None
 
     def __init__(self):
 
@@ -166,6 +168,19 @@ def _populate_args(self, argument_list):
 
             self.spi_flash_read_mode = argument_list.spi_read_mode
 
+        elif (arg == "firmware_load_address") & \
+                (argument_list.firmware_load_address is not None):
+            self.firmware_load_address = \
+                _input_to_hex(argument_list.firmware_load_address)
+
+        elif (arg == "firmware_entry_point") &\
+                (argument_list.firmware_entry_point is not None):
+            self.firmware_entry_point = \
+                _input_to_hex(argument_list.firmware_entry_point)
+
+        elif (arg == "use_arm_reset") & argument_list.use_arm_reset:
+            self.use_arm_reset = argument_list.use_arm_reset
+
         elif (arg == "flash_size") & (argument_list.flash_size is not None):
             self.flash_size = argument_list.flash_size
 
@@ -176,6 +191,8 @@ def _populate_args(self, argument_list):
                     int(argument_list.paste_firmware_header, 16)
             else:
                 self.paste_firmware_header = INVALID_INPUT
+        elif (arg == "no_fw_addr_check") & argument_list.no_fw_addr_check:
+            self.no_fw_addr_check = argument_list.no_fw_addr_check
 
 def _create_parser(arg_list):
     """create argument parser according to pre-defined arguments
@@ -193,13 +210,18 @@ def _create_parser(arg_list):
     parser.add_argument("-nohcrc", action="store_true",
                         dest="firmware_header_crc")
     parser.add_argument("-nofcrc", action="store_true", dest="firmware_crc")
+    parser.add_argument("-usearmrst", action="store_true", dest="use_arm_reset")
     parser.add_argument("-spimaxclk", nargs='?',
                         dest="spi_flash_maximum_clock")
     parser.add_argument("-spiclkratio", nargs='?',
                         dest="spi_flash_clock_ratio")
     parser.add_argument("-spireadmode", nargs='?', dest="spi_read_mode")
+    parser.add_argument("-fwloadaddr", nargs='?', dest="firmware_load_address")
+    parser.add_argument("-fwep", nargs='?', dest="firmware_entry_point")
+
     parser.add_argument("-flashsize", nargs='?', dest="flash_size")
     parser.add_argument("-ph", nargs='?', dest="paste_firmware_header")
+    parser.add_argument("-no_fw_addr_check", action="store_true", dest="no_fw_addr_check")
 
     args = parser.parse_known_args(arg_list.split())
 
@@ -233,6 +255,20 @@ def _is_hex(val):
         if char not in hex_digits:
             return False
     return True
+
+
+def _input_to_hex(num):
+    """helper which takes a string and returns INVALID_INPUT if
+    the string is not an hex integer, otherwise returns its integer value
+
+    :param num: input to be checked
+    """
+    to_return = INVALID_INPUT
+    if _is_hex(num):
+        to_return = int(num, 16)
+
+    return to_return
+
 
 def exit_with_failure(message):
     """formatted failure message printer, prints the
