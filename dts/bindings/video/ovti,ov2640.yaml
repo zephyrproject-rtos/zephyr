@@ -45,4 +45,16 @@ properties:
       Select the signal drive strength, particularly useful for PCLK which reaches above 150 MHz
       for 16-bit per pixel formats at 1600x1200 at 30 FPS.
 
+  jpeg-hsync:
+    type: boolean
+    description: |
+      Mimicks an uncompressed frame transfer, with the JPEG buffer segmented in lines of as many
+      bytes as an uncompressed frame would have, leading to fewer lines (early VSYNC) and the last
+      line shorter (early HSYNC).
+
+      Set if the video receiver does not support JPEG input explicitly, in which case, the HSYNC
+      signal will be the same as VSYNC, effectively sending a single line with JPEG encoded data.
+
+      The pixel clock will be active only when data is to be sent, pausing and resuming.
+
 include: i2c-device.yaml
