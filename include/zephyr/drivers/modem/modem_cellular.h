@@ -74,6 +74,7 @@ enum modem_cellular_state {
 	MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT,
 	MODEM_CELLULAR_STATE_AWAIT_REGISTERED,
 	MODEM_CELLULAR_STATE_REGISTERED,
+	MODEM_CELLULAR_STATE_RUN_GNSS_REQUEST_SCRIPT,
 	MODEM_CELLULAR_STATE_AWAIT_PPP_DEAD,
 	MODEM_CELLULAR_STATE_INIT_POWER_OFF,
 	MODEM_CELLULAR_STATE_RUN_SHUTDOWN_SCRIPT,
@@ -103,7 +104,15 @@ enum modem_cellular_event {
 	MODEM_CELLULAR_EVENT_PERIODIC_KICK,
 	MODEM_CELLULAR_EVENT_DIAL,
 	MODEM_CELLULAR_EVENT_HANGUP,
+	MODEM_CELLULAR_EVENT_GNSS_REQUESTED,
 } __packed;
+
+enum modem_cellular_gnss_request_op {
+	MODEM_CELLULAR_GNSS_REQUEST_POWER_ON,
+	MODEM_CELLULAR_GNSS_REQUEST_SHUTDOWN,
+};
+
+struct modem_cellular_gnss_request;
 
 struct modem_cellular_event_cb {
 	cellular_event_mask_t mask;
@@ -144,7 +153,7 @@ struct modem_cellular_data {
 	struct modem_cmux_dlci dlci2;
 	struct modem_pipe *dlci1_pipe;
 	struct modem_pipe *dlci2_pipe;
-	/* Points to dlci1_pipe or NULL. Used for shutdown script if not NULL */
+	/* AT command channel chat was last attached to, or NULL */
 	struct modem_pipe *cmd_pipe;
 	uint8_t dlci1_receive_buf[MODEM_CMUX_WORK_BUFFER_SIZE];
 	/* DLCI 2 is only used for chat scripts. */
@@ -194,6 +203,28 @@ struct modem_cellular_data {
 
 	/* Power management */
 	struct k_sem suspended_sem;
+	/* Set when SUSPEND arrives in a state that cannot act on it yet
+	 * (AWAIT_PPP_DEAD). That state re-delivers it when it is left.
+	 */
+	bool suspend_pending;
+
+	/* Modem cellular GNSS requests */
+	struct k_mutex gnss_request_lock;
+	struct k_spinlock gnss_lock;
+
+	/* Request a caller is waiting on, or NULL */
+	struct modem_cellular_gnss_request *gnss_request;
+	enum modem_cellular_gnss_request_op gnss_op;
+	enum modem_cellular_state gnss_return_state;
+
+	/* Events received while the GNSS script runs, handled after it completes */
+	uint8_t gnss_deferred_count;
+	enum modem_cellular_event gnss_deferred_events[4];
+
+	/* GNSS power states */
+	bool gnss_powered;
+	bool gnss_powered_known;
+	bool gnss_suspend_pending;
 
 	/* Event dispatcher */
 	struct k_work event_dispatch_work;
@@ -262,6 +293,10 @@ struct modem_cellular_config_scripts {
 	const struct modem_chat_script *dial;
 	/** Optional script that periodically polls modem state while registered. */
 	const struct modem_chat_script *periodic;
+	/** Optional script that enables the modem's GNSS receiver. */
+	const struct modem_chat_script *gnss_power_on;
+	/** Optional script that disables the modem's GNSS receiver. */
+	const struct modem_chat_script *gnss_shutdown;
 	/** Optional script that prepares the modem for power-off. */
 	const struct modem_chat_script *shutdown;
 	/** Optional script for configuring DLCI channels after opening */
@@ -694,6 +729,56 @@ int cellular_modem_pause_periodic_script(const struct device *dev);
  * @see cellular_modem_pause_periodic_script
  */
 int cellular_modem_resume_periodic_script(const struct device *dev);
+
+/**
+ * @brief Run the vendor GNSS power-on script on demand.
+ *
+ * Intended for a driver of an integrated GNSS receiver to power it on from its own
+ * power-management handling, independently of the cellular modem's own suspend/resume
+ * cycle. Runs over the modem's AT command channel without affecting the cellular link, and
+ * blocks the calling thread until the script completes. A request made while the modem is
+ * suspended or still starting up waits until an AT command channel is available.
+ *
+ * @param dev Cellular device created with @ref MODEM_CELLULAR_DEFINE_INSTANCE(). Must not be NULL.
+ *
+ * @retval 0 Success.
+ * @retval -ENOTSUP Device has no gnss_power_on script configured.
+ * @retval -EDEADLK Called from the system workqueue, which runs the modem state machine.
+ * @retval -ECANCELED A suspend of the modem started while the request was waiting or running.
+ * The AT command may already have been sent.
+ * @retval -EIO Script failed, timed out or could not be started.
+ * @retval -ETIMEDOUT Request did not complete within
+ * @kconfig{CONFIG_MODEM_CELLULAR_GNSS_REQUEST_TIMEOUT_S}, for example because the modem stayed
+ * suspended or recovery gave up. The script may still run.
+ *
+ * @see modem_cellular_gnss_shutdown
+ */
+int modem_cellular_gnss_power_on(const struct device *dev);
+
+/**
+ * @brief Run the vendor GNSS shutdown script on demand.
+ *
+ * Intended for a driver of an integrated GNSS receiver to power it off from its own
+ * power-management handling, independently of the cellular modem's own suspend/resume
+ * cycle. Runs over the modem's AT command channel without affecting the cellular link, and
+ * blocks the calling thread until the script completes. A request made while the modem is
+ * suspended or still starting up waits until an AT command channel is available.
+ *
+ * @param dev Cellular device created with @ref MODEM_CELLULAR_DEFINE_INSTANCE(). Must not be NULL.
+ *
+ * @retval 0 Success.
+ * @retval -ENOTSUP Device has no gnss_shutdown script configured.
+ * @retval -EDEADLK Called from the system workqueue, which runs the modem state machine.
+ * @retval -ECANCELED A suspend of the modem started while the request was waiting or running.
+ * The AT command may already have been sent.
+ * @retval -EIO Script failed, timed out or could not be started.
+ * @retval -ETIMEDOUT Request did not complete within
+ * @kconfig{CONFIG_MODEM_CELLULAR_GNSS_REQUEST_TIMEOUT_S}, for example because the modem stayed
+ * suspended or recovery gave up. The script may still run.
+ *
+ * @see modem_cellular_gnss_power_on
+ */
+int modem_cellular_gnss_shutdown(const struct device *dev);
 
 /** @} */
 

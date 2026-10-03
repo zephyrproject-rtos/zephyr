@@ -3,3 +3,7 @@
 
 configdefault MODEM_CHAT_COMMANDS_CONDITIONAL
 	default y if DT_HAS_NORDIC_NRF93M1_ENABLED
+
+config MODEM_CELLULAR_U_BLOX_SARA_R4_GNSS
+	bool "u-blox SARA-R4 GNSS receiver support"
+	depends on GNSS && DT_HAS_U_BLOX_SARA_R4_ENABLED
