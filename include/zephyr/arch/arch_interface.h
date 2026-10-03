@@ -31,8 +31,6 @@
 #include <zephyr/toolchain.h>
 #include <stddef.h>
 #include <zephyr/types.h>
-#include <zephyr/arch/cpu.h>
-#include <zephyr/irq_offload.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,6 +44,23 @@ struct k_mem_domain;
 typedef struct z_thread_stack_element k_thread_stack_t;
 
 typedef void (*k_thread_entry_t)(void *p1, void *p2, void *p3);
+
+#ifdef __cplusplus
+}
+#endif
+
+/*
+ * <zephyr/arch/cpu.h> pulls in the architecture headers, which in turn include
+ * <zephyr/kernel/thread.h>. That header uses the declarations above, so these
+ * includes have to come after them: otherwise a translation unit that includes
+ * this header before any kernel header fails to compile.
+ */
+#include <zephyr/arch/cpu.h>
+#include <zephyr/irq_offload.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @defgroup arch-timing Architecture timing APIs
