@@ -1,0 +1,44 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: GPIO pins exposed on the additional pads of Seeed Studio XIAO Plus boards
+
+description: |
+    XIAO Plus boards keep the 14 castellated pins of the XIAO form factor
+    (see seeed,xiao-gpio) and add 9 pads on the bottom side, placed between
+    the castellated pins along both long edges. Carrier boards solder the
+    module on matching SMD pads.
+
+    This binding provides a nexus mapping for 9 pins where parent pins 11
+    through 19 correspond to D11 through D19. The castellated pins, shown in
+    brackets, are not part of this mapping. Top view:
+
+           [D0]                        [5V]
+        11  D11 (I2S_SD)
+           [D1]                        [GND]
+        12  D12 (I2S_SCK)
+           [D2]                        [3V3]
+        13  D13 (I2S_WS)
+           [D3]                        [D10]
+        14  D14 (RX1)          (MOSI1)  D19 19 *
+           [D4]                        [D9]
+        15  D15 (TX1)          (MISO1)  D18 18
+           [D5]                        [D8]
+        16  D16 (ADC_BAT)       (SCK1)  D17 17 *
+           [D6]                        [D7]
+
+    * The XIAO nRF52840 Plus places D17 between D7 and D8 and D19 between D9
+      and D10, as shown above. The XIAO ESP32S3 Plus swaps these two positions.
+      Parent pins 17 and 19 always refer to the pads labeled D17 (SCK1) and
+      D19 (MOSI1) on the pinout of the module, which is also how Seeed Studio
+      routes these signals on the carrier boards designed for each module.
+
+    D14, D15 and D16 may share pins with other functions of the module, such
+    as NFC or battery voltage measurement, see the board documentation.
+
+    https://wiki.seeedstudio.com/XIAO_BLE/
+    https://wiki.seeedstudio.com/xiao_esp32s3_getting_started/
+
+compatible: "seeed,xiao-plus-gpio"
+
+include: [gpio-nexus.yaml, base.yaml]
