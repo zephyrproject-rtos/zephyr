@@ -34,6 +34,8 @@ enum uvb_event_type {
 	UVB_EVT_SUSPEND,
 	/** Port reset detected */
 	UVB_EVT_RESET,
+	/** Start of Frame */
+	UVB_EVT_SOF,
 	/** Endpoint request event */
 	UVB_EVT_REQUEST,
 	/** Endpoint request reply event */
