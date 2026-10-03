@@ -538,7 +538,7 @@ int main(void)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(uac2_headset));
 	struct usbd_context *sample_usbd;
-	struct i2s_config config;
+	struct i2s_config config = {0};
 	int ret;
 
 	main_ctx.i2s_dev = DEVICE_DT_GET(DT_NODELABEL(i2s_rxtx));

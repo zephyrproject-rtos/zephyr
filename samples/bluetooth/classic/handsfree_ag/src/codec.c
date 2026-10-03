@@ -113,7 +113,7 @@ static K_KERNEL_STACK_MEMBER(codec_rx_thread_stack, CONFIG_CODEC_RX_THREAD_STACK
 
 int codec_init(uint8_t air_mode)
 {
-	struct i2s_config config;
+	struct i2s_config config = {0};
 	struct audio_codec_cfg audio_cfg;
 	int err;
 	uint8_t word_size;

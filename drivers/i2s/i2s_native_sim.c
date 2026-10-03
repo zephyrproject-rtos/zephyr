@@ -552,6 +552,10 @@ static int ns_i2s_validate_cfg(const struct ns_i2s_config *cfg, enum i2s_dir dir
 		return -EINVAL;
 	}
 
+	if (i2s_cfg->tdm.channel_disable_mask != 0U) {
+		return -EINVAL;
+	}
+
 	frame_bytes = ns_i2s_frame_bytes(i2s_cfg);
 	if ((frame_bytes == 0U) || ((i2s_cfg->block_size % frame_bytes) != 0U)) {
 		return -EINVAL;

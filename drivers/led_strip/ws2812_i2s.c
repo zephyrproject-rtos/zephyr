@@ -202,7 +202,7 @@ static size_t ws2812_strip_length(const struct device *dev)
 static int ws2812_i2s_init(const struct device *dev)
 {
 	const struct ws2812_i2s_cfg *cfg = dev->config;
-	struct i2s_config config;
+	struct i2s_config config = {0};
 	uint32_t lrck_hz;
 	int ret;
 

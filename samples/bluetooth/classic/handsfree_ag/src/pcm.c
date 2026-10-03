@@ -105,7 +105,7 @@ static K_KERNEL_STACK_MEMBER(pcm_rx_thread_stack, CONFIG_PCM_RX_THREAD_STACK_SIZ
 
 int pcm_init(uint8_t air_mode)
 {
-	struct i2s_config config;
+	struct i2s_config config = {0};
 	int err;
 	uint8_t word_size;
 	uint8_t channels;
