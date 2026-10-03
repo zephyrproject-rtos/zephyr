@@ -433,3 +433,51 @@ void arch_pmu_counter_clear_overflow(uint32_t counter)
 	/* Write 1 to clear overflow bit */
 	write_pmovsclr_el0(BIT(counter));
 }
+
+static ALWAYS_INLINE void pmu_write_pmintenset_el1(uint64_t v)
+{
+	__asm__ volatile("msr pmintenset_el1, %0" :: "r"(v) : "memory");
+}
+
+static ALWAYS_INLINE void pmu_write_pmintenclr_el1(uint64_t v)
+{
+	__asm__ volatile("msr pmintenclr_el1, %0" :: "r"(v) : "memory");
+}
+
+int arch_pmu_counter_write32(uint32_t counter, uint32_t value)
+{
+	unsigned int key;
+
+	if (!atomic_get(&pmu_curr_state()->initialized)) {
+		return -ENODEV;
+	}
+
+	if (counter >= pmu_curr_state()->num_counters) {
+		return -EINVAL;
+	}
+
+	key = arch_irq_lock();
+	write_pmselr_el0(counter);
+	barrier_isync_fence_full();
+	write_pmxevcntr_el0((uint64_t)value);
+	barrier_isync_fence_full();
+	arch_irq_unlock(key);
+
+	return 0;
+}
+
+void arch_pmu_counter_overflow_interrupt_set(uint32_t counter, bool enable)
+{
+	if (!atomic_get(&pmu_curr_state()->initialized) ||
+	    counter >= pmu_curr_state()->num_counters) {
+		return;
+	}
+
+	if (enable) {
+		pmu_write_pmintenset_el1(BIT(counter));
+	} else {
+		pmu_write_pmintenclr_el1(BIT(counter));
+	}
+
+	barrier_isync_fence_full();
+}
