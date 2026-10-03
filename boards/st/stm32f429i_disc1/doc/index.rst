@@ -13,7 +13,6 @@ some highlights of the STM32F429I-DISC1 board:
 - Flexible board power supply:
 
   - ST-LINK/V2-B USB connector
-  - User USB FS connector
   - External 5 V or 3 V supply on the P1/P2 extension headers
 
 - Two push-buttons: USER and RESET
@@ -87,10 +86,6 @@ Default Zephyr Peripheral Mapping:
 - USER_PB : PA0
 - LD3 : PG13
 - LD4 : PG14
-- I2C_1_SCL : PB8
-- I2C_1_SDA : PB9
-- I2C_2_SCL : PB10
-- I2C_2_SDA : PB11
 - I2C_3_SCL : PA8
 - I2C_3_SDA : PC9
 - SPI_5_CS : PC2
