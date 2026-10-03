@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32U5 OTG_HS DWC2 compatible controller. The high-speed PHY is selected by
+  the "phys" phandle.
+
+compatible: "st,stm32u5-hsotg"
+
+include: ["snps,dwc2.yaml", "pinctrl-device.yaml"]
+
+properties:
+  clocks:
+    required: true
+
+  vbus-gpios:
+    type: phandle-array
+    description: |
+      GPIO controlling the external VBUS power switch in USB host mode.
+      The GPIO, if defined, is used by the vendor quirk, and is active when USB
+      host is enabled.
