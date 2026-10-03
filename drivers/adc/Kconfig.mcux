@@ -33,6 +33,9 @@ config ADC_MCUX_LPADC
 	select ADC_CONFIGURABLE_INPUTS
 	select REGULATOR
 	select PINCTRL
+	# A sequence drops its device runtime reference from the watermark
+	# interrupt, which needs pm_device_runtime_put_async().
+	select PM_DEVICE_RUNTIME_ASYNC if PM_DEVICE_RUNTIME
 	depends on DT_HAS_NXP_LPC_LPADC_ENABLED
 	help
 	  Enable the MCUX LPADC driver.

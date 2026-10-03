@@ -14,6 +14,7 @@
 #include <errno.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/drivers/regulator.h>
 #include <zephyr/dt-bindings/regulator/nxp_vref.h>
 #include <zephyr/drivers/clock_control.h>
@@ -21,6 +22,7 @@
 #include <zephyr/drivers/opamp.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #ifdef CONFIG_ADC_MCUX_LPADC_DMA_DRIVEN
 #include <zephyr/drivers/dma.h>
 #endif
@@ -34,7 +36,14 @@
 #include <fsl_lpadc.h>
 LOG_MODULE_REGISTER(nxp_mcux_lpadc);
 
-#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+/*
+ * A sequence needs the converter from the moment it is armed until the
+ * watermark interrupt fires: the SoC must not enter a power state that stops
+ * it, and it must not be suspended. One hold/release pair covers both, and the
+ * release runs from adc_context_on_complete().
+ */
+#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+#define LPADC_PM_HOLD
 #define ADC_CONTEXT_ENABLE_ON_COMPLETE
 #endif
 #define ADC_CONTEXT_USES_KERNEL_TIMER
@@ -109,8 +118,9 @@ struct mcux_lpadc_data {
 	uint8_t channels_count;
 	bool use_dma;
 	uint32_t bandgap_channels;
-#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
-	bool pm_lock_active;
+	atomic_t bandgap_held;
+#if defined(LPADC_PM_HOLD)
+	atomic_t pm_hold;
 #endif
 #ifdef CONFIG_ADC_MCUX_LPADC_DMA_DRIVEN
 	struct dma_config dma_cfg;
@@ -199,6 +209,53 @@ static int mcux_lpadc_channel_position(uint32_t mask, uint8_t ch)
 	return pos;
 }
 
+/* Bit 0 of mcux_lpadc_data.bandgap_held. */
+#define LPADC_BANDGAP_HELD_BIT 0
+
+/*
+ * The bandgap reference is needed while the converter is active and at least
+ * one configured channel selects it as its positive input. Those two conditions
+ * are owned by different callers -- the channel configuration by the ADC API,
+ * the power state by the PM callback -- so each of them evaluates the condition
+ * and calls this, which reconciles the regulator against a flag recording
+ * whether this driver is holding the reference.
+ *
+ * The flag is claimed before the regulator call, so at most one caller performs
+ * each transition. TURN_OFF leaves it alone: the device is suspended before it
+ * is turned off, and that is what releases the reference.
+ */
+static int mcux_lpadc_bandgap_set(const struct device *dev, bool needed)
+{
+	const struct mcux_lpadc_config *config = dev->config;
+	struct mcux_lpadc_data *data = dev->data;
+	int err;
+
+	if (config->bandgap_supply == NULL) {
+		return 0;
+	}
+
+	if (needed) {
+		if (atomic_test_and_set_bit(&data->bandgap_held, LPADC_BANDGAP_HELD_BIT)) {
+			return 0;
+		}
+
+		err = regulator_enable(config->bandgap_supply);
+		if (err < 0) {
+			atomic_clear_bit(&data->bandgap_held, LPADC_BANDGAP_HELD_BIT);
+		}
+	} else {
+		if (!atomic_test_and_clear_bit(&data->bandgap_held, LPADC_BANDGAP_HELD_BIT)) {
+			return 0;
+		}
+
+		err = regulator_disable(config->bandgap_supply);
+		if (err < 0) {
+			atomic_set_bit(&data->bandgap_held, LPADC_BANDGAP_HELD_BIT);
+		}
+	}
+
+	return err;
+}
 
 static int mcux_lpadc_channel_setup(const struct device *dev,
 				const struct adc_channel_cfg *channel_cfg)
@@ -312,28 +369,26 @@ static int mcux_lpadc_channel_setup(const struct device *dev,
 
 	if (config->bandgap_supply != NULL) {
 		const uint32_t channel_mask = BIT(channel_cfg->channel_id);
-		const bool was_bandgap_channel = (data->bandgap_channels & channel_mask) != 0U;
-		const bool is_bandgap_channel =
-			channel_cfg->input_positive == config->bandgap_input;
+		enum pm_device_state state;
 
-		if (is_bandgap_channel && !was_bandgap_channel) {
-			if (data->bandgap_channels == 0U) {
-				err = regulator_enable(config->bandgap_supply);
-				if (err < 0) {
-					return err;
-				}
-			}
-
+		if (channel_cfg->input_positive == config->bandgap_input) {
 			data->bandgap_channels |= channel_mask;
-		} else if (!is_bandgap_channel && was_bandgap_channel) {
-			if (data->bandgap_channels == channel_mask) {
-				err = regulator_disable(config->bandgap_supply);
-				if (err < 0) {
-					return err;
-				}
-			}
-
+		} else {
 			data->bandgap_channels &= ~channel_mask;
+		}
+
+		/*
+		 * Re-evaluated here so that a channel configured on a running
+		 * converter takes effect at once. On a device that is not
+		 * active only the mask is updated, and the next resume applies
+		 * it.
+		 */
+		(void)pm_device_state_get(dev, &state);
+
+		err = mcux_lpadc_bandgap_set(dev, state == PM_DEVICE_STATE_ACTIVE &&
+						  data->bandgap_channels != 0U);
+		if (err < 0) {
+			return err;
 		}
 	}
 
@@ -515,30 +570,76 @@ static int mcux_lpadc_start_read(const struct device *dev,
 	return error;
 }
 
-static void mcux_lpadc_pm_policy_device_power_lock_get(const struct device *dev)
-{
-#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
-	struct mcux_lpadc_data *data = dev->data;
-	const struct mcux_lpadc_config *config = dev->config;
+#if defined(LPADC_PM_HOLD)
+/* Bit 0 of mcux_lpadc_data.pm_hold. */
+#define LPADC_PM_HOLD_BIT 0
 
-	if (config->pm_device_constraints && !data->pm_lock_active) {
+static int mcux_lpadc_pm_hold(const struct device *dev)
+{
+	struct mcux_lpadc_data *data = dev->data;
+	int err;
+
+	if (atomic_test_and_set_bit(&data->pm_hold, LPADC_PM_HOLD_BIT)) {
+		return 0;
+	}
+
+	err = pm_device_runtime_get(dev);
+	if (err < 0) {
+		atomic_clear_bit(&data->pm_hold, LPADC_PM_HOLD_BIT);
+		return err;
+	}
+
+	/*
+	 * The system-managed device sweep suspends devices that are not marked
+	 * busy. It and device runtime PM are mutually exclusive, so both are
+	 * covered by this one pair.
+	 */
+	pm_device_busy_set(dev);
+
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	if (((const struct mcux_lpadc_config *)dev->config)->pm_device_constraints) {
 		pm_policy_device_power_lock_get(dev);
-		data->pm_lock_active = true;
 	}
 #endif
+
+	return 0;
 }
 
-static void mcux_lpadc_pm_policy_device_power_lock_put(const struct device *dev)
+static void mcux_lpadc_pm_release(const struct device *dev)
 {
-#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
 	struct mcux_lpadc_data *data = dev->data;
 
-	if (data->pm_lock_active) {
+	if (!atomic_test_and_clear_bit(&data->pm_hold, LPADC_PM_HOLD_BIT)) {
+		return;
+	}
+
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	if (((const struct mcux_lpadc_config *)dev->config)->pm_device_constraints) {
 		pm_policy_device_power_lock_put(dev);
-		data->pm_lock_active = false;
 	}
 #endif
+
+	pm_device_busy_clear(dev);
+
+	/*
+	 * This can run from the watermark interrupt or the DMA callback, so the
+	 * suspend must not be performed inline.
+	 */
+	(void)pm_device_runtime_put_async(dev, K_NO_WAIT);
 }
+#else
+static inline int mcux_lpadc_pm_hold(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return 0;
+}
+
+static inline void mcux_lpadc_pm_release(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+#endif /* LPADC_PM_HOLD */
 
 static int mcux_lpadc_read_async(const struct device *dev,
 			const struct adc_sequence *sequence,
@@ -562,12 +663,26 @@ static int mcux_lpadc_read_async(const struct device *dev,
 
 	adc_context_lock(&data->ctx, async ? true : false, async);
 
-	mcux_lpadc_pm_policy_device_power_lock_get(dev);
+	/*
+	 * Taken with the context locked, so a reader that had to wait for the
+	 * lock takes its own hold once it gets in.
+	 */
+	error = mcux_lpadc_pm_hold(dev);
+	if (error != 0) {
+		adc_context_release(&data->ctx, error);
+		return error;
+	}
 
 	error = mcux_lpadc_start_read(dev, sequence);
 
+	/*
+	 * A sequence that ran has already dropped the hold from
+	 * adc_context_on_complete(), an error status included; this drops the
+	 * hold of a sequence that never started, and the flag inside makes it a
+	 * no-op otherwise.
+	 */
 	if (error != 0) {
-		mcux_lpadc_pm_policy_device_power_lock_put(dev);
+		mcux_lpadc_pm_release(dev);
 	}
 
 	adc_context_release(&data->ctx, error);
@@ -581,14 +696,14 @@ static int mcux_lpadc_read(const struct device *dev,
 	return mcux_lpadc_read_async(dev, sequence, NULL);
 }
 
-#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+#if defined(ADC_CONTEXT_ENABLE_ON_COMPLETE)
 static void adc_context_on_complete(struct adc_context *ctx, int status)
 {
 	ARG_UNUSED(status);
 
 	struct mcux_lpadc_data *data = CONTAINER_OF(ctx, struct mcux_lpadc_data, ctx);
 
-	mcux_lpadc_pm_policy_device_power_lock_put(data->dev);
+	mcux_lpadc_pm_release(data->dev);
 }
 #endif
 
@@ -905,109 +1020,20 @@ static void mcux_lpadc_isr(const struct device *dev)
 	}
 }
 
-#if CONFIG_PM_DEVICE
-static int mcux_lpadc_pm_callback(const struct device *dev, enum pm_device_action action)
-{
-	const struct mcux_lpadc_config *config = dev->config;
-	const struct device *regulator = config->ref_supplies;
-	const struct device *bandgap_supply = config->bandgap_supply;
-	struct mcux_lpadc_data *data = dev->data;
-	int err;
-
-	switch (action) {
-	case PM_DEVICE_ACTION_RESUME:
-
-		if (regulator != NULL) {
-			err = regulator_enable(regulator);
-			if (err < 0) {
-				return err;
-			}
-
-			/* Re-enable the BUF21 buffer (cleared at suspend). */
-			(void)regulator_set_mode(regulator, NXP_VREF_MODE_HIGH_POWER);
-		}
-
-		if (bandgap_supply != NULL && data->bandgap_channels != 0U) {
-			err = regulator_enable(bandgap_supply);
-			if (err < 0) {
-				return err;
-			}
-		}
-
-		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
-		if (err < 0 && err != -ENOENT) {
-			return err;
-		}
-
-		LPADC_Enable(config->base, true);
-
-		return 0;
-
-	case PM_DEVICE_ACTION_SUSPEND:
-
-		LPADC_Enable(config->base, false);
-
-		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
-		if (err < 0 && err != -ENOENT) {
-			return err;
-		}
-
-		if (regulator != NULL) {
-			err = regulator_disable(regulator);
-			if (err < 0) {
-				return err;
-			}
-		}
-
-		if (bandgap_supply != NULL && data->bandgap_channels != 0U) {
-			err = regulator_disable(bandgap_supply);
-			if (err < 0) {
-				return err;
-			}
-		}
-
-		return 0;
-
-	default:
-		return -ENOTSUP;
-	}
-}
-#endif
-
-static int mcux_lpadc_init(const struct device *dev)
+/*
+ * Bring the converter up from reset: clock, configuration, calibration and the
+ * watermark interrupt. Runs from TURN_ON, which is reached at init and again
+ * after the register block has lost power, so everything here has to tolerate
+ * running more than once. The converter is left disabled, which is the
+ * suspended state.
+ */
+static int mcux_lpadc_configure_hw(const struct device *dev)
 {
 	const struct mcux_lpadc_config *config = dev->config;
 	struct mcux_lpadc_data *data = dev->data;
 	ADC_Type *base = config->base;
 	lpadc_config_t adc_config;
 	int err;
-
-	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
-	if (err) {
-		return err;
-	}
-
-	/* Enable necessary regulators */
-	const struct device *regulator = config->ref_supplies;
-
-	if (regulator != NULL) {
-		err = regulator_enable(regulator);
-		if (err) {
-			return err;
-		}
-
-		/* Request the buffered 2.1V output (BUF21) on the NXP VREF
-		 * regulator. enable() only brings up the bandgap; without
-		 * this step BUF21 is left disabled and the LPADC's VREFI
-		 * reference is unbuffered, which causes inaccurate conversions.
-		 */
-		(void)regulator_set_mode(regulator, NXP_VREF_MODE_HIGH_POWER);
-	}
-
-	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock device not ready");
-		return -ENODEV;
-	}
 
 	err = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
 	if (err && err != -ENOSYS) {
@@ -1062,6 +1088,142 @@ static int mcux_lpadc_init(const struct device *dev)
 	LPADC_DoAutoCalibration(base);
 #endif /* FSL_FEATURE_LPADC_HAS_CFG_CALOFS */
 
+	/* Enable the watermark interrupt if not using DMA or if DMA setup failed */
+	if (!IS_ENABLED(CONFIG_ADC_MCUX_LPADC_DMA_DRIVEN) || !data->use_dma) {
+#if (defined(FSL_FEATURE_LPADC_FIFO_COUNT) && (FSL_FEATURE_LPADC_FIFO_COUNT == 2U))
+		LPADC_EnableInterrupts(base, kLPADC_FIFO0WatermarkInterruptEnable);
+#else
+		LPADC_EnableInterrupts(base, kLPADC_FIFOWatermarkInterruptEnable);
+#endif
+		config->irq_config_func(dev);
+	}
+
+	/*
+	 * LPADC_Init() leaves the converter running. Hand it over disabled; the
+	 * RESUME that follows TURN_ON is what enables it.
+	 */
+	LPADC_Enable(base, false);
+
+	return 0;
+}
+
+static int mcux_lpadc_pm_callback(const struct device *dev, enum pm_device_action action)
+{
+	const struct mcux_lpadc_config *config = dev->config;
+	const struct device *regulator = config->ref_supplies;
+	struct mcux_lpadc_data *data = dev->data;
+	int err;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+		/*
+		 * Reached at init, and again after Deep Power Down has reset
+		 * the register block: the suspend-to-RAM resume path does not
+		 * re-run driver init, so the configuration and the calibration
+		 * are redone here. Calibration needs the reference voltage, and
+		 * the device is handed over suspended, so the reference is
+		 * dropped again before returning.
+		 */
+		if (regulator != NULL) {
+			err = regulator_enable(regulator);
+			if (err < 0) {
+				return err;
+			}
+
+			/* Request the buffered 2.1V output (BUF21) on the NXP VREF
+			 * regulator. enable() only brings up the bandgap; without
+			 * this step BUF21 is left disabled and the LPADC's VREFI
+			 * reference is unbuffered, which causes inaccurate conversions.
+			 */
+			(void)regulator_set_mode(regulator, NXP_VREF_MODE_HIGH_POWER);
+		}
+
+		err = mcux_lpadc_configure_hw(dev);
+
+		if (regulator != NULL) {
+			int ref_err = regulator_disable(regulator);
+
+			if (err == 0) {
+				err = ref_err;
+			}
+		}
+
+		return err;
+
+	case PM_DEVICE_ACTION_TURN_OFF:
+		/*
+		 * The power domain suspends the device before it turns it off,
+		 * so the converter is already disabled and the supplies are
+		 * already released, and the register block is about to lose
+		 * power.
+		 */
+		return 0;
+
+	case PM_DEVICE_ACTION_RESUME:
+
+		if (regulator != NULL) {
+			err = regulator_enable(regulator);
+			if (err < 0) {
+				return err;
+			}
+
+			/* Re-enable the BUF21 buffer (cleared at suspend). */
+			(void)regulator_set_mode(regulator, NXP_VREF_MODE_HIGH_POWER);
+		}
+
+		err = mcux_lpadc_bandgap_set(dev, data->bandgap_channels != 0U);
+		if (err < 0) {
+			return err;
+		}
+
+		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+		if (err < 0 && err != -ENOENT) {
+			return err;
+		}
+
+		LPADC_Enable(config->base, true);
+
+		return 0;
+
+	case PM_DEVICE_ACTION_SUSPEND:
+
+		LPADC_Enable(config->base, false);
+
+		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
+		if (err < 0 && err != -ENOENT) {
+			return err;
+		}
+
+		if (regulator != NULL) {
+			err = regulator_disable(regulator);
+			if (err < 0) {
+				return err;
+			}
+		}
+
+		err = mcux_lpadc_bandgap_set(dev, false);
+		if (err < 0) {
+			return err;
+		}
+
+		return 0;
+
+	default:
+		return -ENOTSUP;
+	}
+}
+
+static int mcux_lpadc_init(const struct device *dev)
+{
+	const struct mcux_lpadc_config *config = dev->config;
+	struct mcux_lpadc_data *data = dev->data;
+
+	if (!device_is_ready(config->clock_dev)) {
+		LOG_ERR("clock device not ready");
+		return -ENODEV;
+	}
+
+	data->dev = dev;
 	data->use_dma = false;
 
 #if defined(CONFIG_ADC_MCUX_LPADC_DMA_DRIVEN)
@@ -1073,42 +1235,19 @@ static int mcux_lpadc_init(const struct device *dev)
 	}
 #endif
 
-	/* Enable the watermark interrupt if not using DMA or if DMA setup failed */
-	if (!IS_ENABLED(CONFIG_ADC_MCUX_LPADC_DMA_DRIVEN) || !data->use_dma) {
-#if (defined(FSL_FEATURE_LPADC_FIFO_COUNT) && (FSL_FEATURE_LPADC_FIFO_COUNT == 2U))
-		LPADC_EnableInterrupts(base, kLPADC_FIFO0WatermarkInterruptEnable);
-#else
-		LPADC_EnableInterrupts(base, kLPADC_FIFOWatermarkInterruptEnable);
-#endif
-		config->irq_config_func(dev);
-	}
-
-	data->dev = dev;
-
 	/* Initialize OPAMP gain control context */
 	data->current_gain_index = 0U;
 	data->desired_gain_index = -1;
 
 	adc_context_unlock_unconditionally(&data->ctx);
 
-
-
-#if CONFIG_PM_DEVICE
-	/* Disable LPADC here, in pm_device_driver_init,
-	 * - if device runtime PM is enabled, the LPADC state will be set to SUSPEND,
-	 *   we should keep same state in hardware.
-	 * - if device runtime PM is not enabled, pm_device_driver_init will resume LPADC.
-	 * - if the LPADC is in a power domain, and the power domain is off, the LPADC
-	 *   state will set to OFF, disabled LPADC matches the state.
+	/*
+	 * The bring-up runs from TURN_ON and the supplies and the pins from
+	 * RESUME, so a device that is left suspended here -- runtime PM, or a
+	 * power domain that is still off -- leaves no regulator enabled behind
+	 * it.
 	 */
-	LPADC_Enable(config->base, false);
-
 	return pm_device_driver_init(dev, mcux_lpadc_pm_callback);
-#else
-	return 0;
-#endif
-
-	return 0;
 }
 
 static DEVICE_API(adc, mcux_lpadc_driver_api) = {
