@@ -1,0 +1,17 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP MCXL always-on (AON) domain clock controller.
+
+compatible: "nxp,mcxl-aon-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+
+  "#clock-cells":
+    type: int
+    const: 1
+
+clock-cells:
+  - name
