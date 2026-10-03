@@ -63,3 +63,7 @@
 &aon_lptmr0 {
 	status = "okay";
 };
+
+&aon_lpcmp0 {
+	status = "okay";
+};

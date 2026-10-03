@@ -17,4 +17,5 @@ supported:
   - rtc
   - input
   - counter
+  - comparator
 vendor: nxp
