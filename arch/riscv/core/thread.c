@@ -121,7 +121,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	SOC_ISR_STACKING_ESR_INIT;
 #endif
 
-#ifdef CONFIG_CLIC_SUPPORT_INTERRUPT_LEVEL
+#ifdef CONFIG_RISCV_SUPPORT_INTERRUPT_PREEMPT
 	/* Clear the previous interrupt level. */
 	stack_init->mcause = 0;
 #endif

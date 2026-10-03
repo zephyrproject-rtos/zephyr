@@ -44,12 +44,17 @@ void riscv_plic_irq_disable(uint32_t irq);
 int riscv_plic_irq_is_enabled(uint32_t irq);
 
 /**
- * @brief Set interrupt priority
+ * @brief Set priority of a riscv PLIC-specific interrupt line
  *
- * @param irq Multi-level encoded interrupt ID
- * @param prio interrupt priority
+ * This routine set the priority of a RISCV PLIC-specific interrupt line.
+ * riscv_plic_irq_set_prio is called by riscv arch_irq_priority_set to set
+ * the priority of an interrupt whenever CONFIG_RISCV_HAS_PLIC variable is set.
+ *
+ * @param irq IRQ number for which to set priority
+ * @param priority Priority of IRQ to set to
+ * @param flags Architecture specific flags, defined in <zephyr/arch/riscv/irq.h>
  */
-void riscv_plic_set_priority(uint32_t irq, uint32_t prio);
+void riscv_plic_set_priority(uint32_t irq, uint32_t priority, uint32_t flags);
 
 /**
  * @brief Set IRQ affinity.

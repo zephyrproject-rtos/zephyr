@@ -6,8 +6,6 @@
 #ifndef SOC_RISCV_NORDIC_NRF_COMMON_VPR_SOC_ISR_STACKING_H_
 #define SOC_RISCV_NORDIC_NRF_COMMON_VPR_SOC_ISR_STACKING_H_
 
-#include <zephyr/arch/riscv/irq.h>
-
 #if !defined(_ASMLANGUAGE)
 
 #include <zephyr/devicetree.h>

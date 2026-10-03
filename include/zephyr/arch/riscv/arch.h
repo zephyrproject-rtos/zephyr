@@ -282,6 +282,12 @@ struct arch_mem_domain {
 
 extern void z_irq_spurious(const void *unused);
 
+#ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_IRQ_LOCK_OPS
+extern unsigned int z_soc_irq_lock(void);
+extern void z_soc_irq_unlock(unsigned int key);
+extern bool z_soc_irq_unlocked(unsigned int key);
+#endif
+
 /* Privilege-level abstraction for IRQ enable/disable CSR and bit */
 #ifdef CONFIG_RISCV_S_MODE
 /** @brief Name of the interrupt-status CSR as a string literal (S-mode) */
@@ -290,6 +296,10 @@ extern void z_irq_spurious(const void *unused);
 #define RV_STATUS_IE  SSTATUS_SIE
 /** @brief Previous interrupt-enable bit in the status CSR (S-mode: SPIE) */
 #define RV_STATUS_PIE SSTATUS_SPIE
+/** @brief Name of the trap cause CSR as a string literal (S-mode) */
+#define RV_CAUSE_CSR  "scause"
+/** @brief Name of the exception PC CSR as a string literal (S-mode) */
+#define RV_EPC_CSR    "sepc"
 #else
 /** @brief Name of the interrupt-status CSR as a string literal (M-mode) */
 #define RV_STATUS_CSR "mstatus"
@@ -297,7 +307,55 @@ extern void z_irq_spurious(const void *unused);
 #define RV_STATUS_IE  MSTATUS_IEN
 /** @brief Previous interrupt-enable bit in the status CSR (M-mode: MPIE) */
 #define RV_STATUS_PIE MSTATUS_MPIE_EN
+/** @brief Name of the trap cause CSR as a string literal (M-mode) */
+#define RV_CAUSE_CSR  "mcause"
+/** @brief Name of the exception PC CSR as a string literal (M-mode) */
+#define RV_EPC_CSR    "mepc"
 #endif
+
+#ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
+extern void __soc_save_context(struct soc_esf *context);
+extern void __soc_restore_context(struct soc_esf *context);
+#endif
+
+/**
+ * @brief What a direct ISR keeps of the context it interrupted
+ *
+ * A direct ISR is entered straight from the vector table, so it has no esf to
+ * hold the trap CSRs, and an interrupt nested in its body overwrites them. The
+ * ISR keeps its own copy in the frame the compiler gives it.
+ */
+struct arch_isr_direct_ctx {
+	unsigned long cause;
+	unsigned long epc;
+	unsigned long status;
+#ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
+	struct soc_esf soc_context;
+#endif
+};
+
+static inline void arch_isr_direct_ctx_save(struct arch_isr_direct_ctx *ctx)
+{
+	__asm__ volatile("csrr %0, " RV_CAUSE_CSR : "=r"(ctx->cause));
+	__asm__ volatile("csrr %0, " RV_EPC_CSR : "=r"(ctx->epc));
+	__asm__ volatile("csrr %0, " RV_STATUS_CSR : "=r"(ctx->status));
+
+#ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
+	__soc_save_context(&ctx->soc_context);
+#endif
+}
+
+static inline void arch_isr_direct_ctx_restore(struct arch_isr_direct_ctx *ctx)
+{
+#ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
+	__soc_restore_context(&ctx->soc_context);
+#endif
+
+	/* Leave the trap CSRs as this ISR found them */
+	__asm__ volatile("csrw " RV_EPC_CSR ", %0" : : "r"(ctx->epc) : "memory");
+	__asm__ volatile("csrw " RV_STATUS_CSR ", %0" : : "r"(ctx->status) : "memory");
+	__asm__ volatile("csrw " RV_CAUSE_CSR ", %0" : : "r"(ctx->cause) : "memory");
+}
 
 /**
  * @brief Read the privilege-level status register (mstatus or sstatus).
@@ -391,6 +449,28 @@ static ALWAYS_INLINE bool arch_cpu_irqs_are_enabled(void)
 	return (status & RV_STATUS_IE) != 0;
 #endif
 }
+
+#ifdef CONFIG_ZERO_LATENCY_IRQS
+static ALWAYS_INLINE unsigned int arch_zli_lock(void)
+{
+	unsigned int key;
+
+	__asm__ volatile ("csrrc %0, mstatus, %1"
+			  : "=r" (key)
+			  : "rK" (RV_STATUS_IE)
+			  : "memory");
+
+	return key;
+}
+
+static ALWAYS_INLINE void arch_zli_unlock(unsigned int key)
+{
+	__asm__ volatile ("csrs mstatus, %0"
+			  :
+			  : "r" (key & RV_STATUS_IE)
+			  : "memory");
+}
+#endif
 
 static ALWAYS_INLINE void arch_nop(void)
 {

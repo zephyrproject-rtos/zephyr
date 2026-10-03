@@ -328,30 +328,8 @@ menu "ARM Cortex-M0/M0+/M1/M3/M4/M7/M23/M33/M55 options"
 config GEN_ISR_TABLES
 	default y
 
-config ZERO_LATENCY_IRQS
-	bool "Zero-latency interrupts"
-	depends on CPU_CORTEX_M_HAS_BASEPRI
-	help
-	  The kernel may reserve some of the highest interrupts priorities in
-	  the system for its own use. These interrupts will not be masked
-	  by interrupt locking.
-	  When connecting interrupts the kernel will offset all interrupts
-	  to lower priority than those reserved by the kernel.
-	  Zero-latency interrupt can be used to set up an interrupt at the
-	  highest interrupt priority which will not be blocked by interrupt
-	  locking.
-	  Since Zero-latency ISRs will run in the same priority or possibly at
-	  higher priority than the rest of the kernel they cannot use any
-	  kernel functionality.
-
-config ZERO_LATENCY_LEVELS
-	int "Number of interrupt priority levels reserved for zero latency"
-	depends on ZERO_LATENCY_IRQS
-	range 1 $(UINT8_MAX)
-	help
-	  The amount of interrupt priority levels reserved for zero latency
-	  interrupts. Increase this value to reserve more than one priority
-	  level for zero latency interrupts.
+config ARCH_SUPPORTS_ZERO_LATENCY_IRQS
+	default y if CPU_CORTEX_M_HAS_BASEPRI
 
 config DYNAMIC_DIRECT_INTERRUPTS
 	bool "Support for dynamic direct interrupts"

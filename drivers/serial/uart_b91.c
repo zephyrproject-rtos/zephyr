@@ -570,7 +570,7 @@ static DEVICE_API(uart, uart_b91_driver_api) = {
 			    DEVICE_DT_INST_GET(n), 0);				    \
 										    \
 		riscv_plic_irq_enable(DT_INST_IRQN(n));				    \
-		riscv_plic_set_priority(DT_INST_IRQN(n), DT_INST_IRQ(n, priority)); \
+		riscv_plic_set_priority(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), 0); \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(UART_B91_INIT)
