@@ -759,6 +759,8 @@ static int adxl372_probe(const struct device *dev)
 		return ret;
 	}
 
+	data->odr = cfg->odr;
+
 	ret = adxl372_set_wakeup_rate(dev, cfg->wur);
 	if (ret) {
 		return ret;
