@@ -6,7 +6,7 @@
 
 #include <zephyr/dt-bindings/ipc_service/static_vrings.h>
 
-/delete-node/ &sram0_shared;
+/delete-node/ &ipc0;
 
 / {
 	chosen {

@@ -82,7 +82,7 @@ LOG_MODULE_REGISTER(ipc_icbmsg, CONFIG_IPC_SERVICE_BACKEND_ICBMSG_LOG_LEVEL);
 #define BLOCK_ALIGNMENT sizeof(uint32_t)
 
 /** Returns required data cache alignment for instance "i". */
-#define GET_CACHE_ALIGNMENT(i) DT_INST_PROP_OR(i, dcache_alignment, 4)
+#define GET_CACHE_ALIGNMENT(i) DT_INST_PROP_OR(i, dcache_alignment, 8)
 
 #define MATCHING_CACHE_ALIGNMENT(i) (GET_CACHE_ALIGNMENT(i) == GET_CACHE_ALIGNMENT(0)) &&
 #if !(DT_INST_FOREACH_STATUS_OKAY(MATCHING_CACHE_ALIGNMENT) 1)
@@ -94,6 +94,9 @@ LOG_MODULE_REGISTER(ipc_icbmsg, CONFIG_IPC_SERVICE_BACKEND_ICBMSG_LOG_LEVEL);
 
 /** Special endpoint address for control messages. */
 #define EPT_CONTROL 0xFF
+
+/* Check if there is only one instance and the TX and RX block counts are the same. */
+#define HAS_SINGLE_INSTANCE DT_NUM_INST_STATUS_OKAY(zephyr_ipc_icbmsg)
 
 /** Control message types. */
 enum msg_type {
@@ -114,19 +117,8 @@ enum ept_state {
 	EPT_READY,
 };
 
-/** Maximum number of active messages in the message queue (number of slots). */
-#define MAX_ACTIVE_COUNT CONFIG_IPC_SERVICE_BACKEND_ICBMSG_MAX_ACTIVE_COUNT
-
 /** Bit field used to mark high priority messages. */
 #define HI_PRIO_MASK BIT(7)
-
-/** Padding size to align the message queue to the cache alignment. */
-#define SHM_PADDING_SIZE                                                                           \
-	GET_CACHE_ALIGNMENT(0) > sizeof(uint32_t)                                                  \
-		? ((GET_CACHE_ALIGNMENT(0) -                                                       \
-		    (MAX_ACTIVE_COUNT + sizeof(struct icbmsg_shm_q_hdr))) %                        \
-		   GET_CACHE_ALIGNMENT(0))                                                         \
-		: 0
 
 /** Message queue header. */
 struct icbmsg_shm_q_hdr {
@@ -137,11 +129,8 @@ struct icbmsg_shm_q_hdr {
 /** Message queue. */
 struct icbmsg_shm_q {
 	struct icbmsg_shm_q_hdr hdr;
-	uint8_t slots[MAX_ACTIVE_COUNT];
-	uint8_t padding[SHM_PADDING_SIZE];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, slots); /**< Serialized log message bytes. */
 };
-
-BUILD_ASSERT(sizeof(struct icbmsg_shm_q) % GET_CACHE_ALIGNMENT(0) == 0);
 
 STATS_SECT_START(icbmsg_stats)
 STATS_SECT_ENTRY32(tx_packet_block1_count)
@@ -175,6 +164,9 @@ STATS_NAME_END(icbmsg_stats);
 struct icbmsg_msg_q_config {
 	volatile struct icbmsg_shm_q *prod_shmq;
 	volatile struct icbmsg_shm_q *cons_shmq;
+#if !IS_ENABLED(HAS_SINGLE_INSTANCE)
+	uint32_t slot_count;
+#endif
 };
 
 /** Local message queue data. */
@@ -303,6 +295,14 @@ struct icbmsg_data {
 	/** State. */
 	uint8_t state;
 };
+
+#define GET_TX_SLOT_COUNT(cfg)                                                                     \
+	COND_CODE_1(HAS_SINGLE_INSTANCE,                                                           \
+		((uint32_t)ROUND_UP(DT_INST_PROP(0, tx##_blocks), 4)), (cfg->tx_msg_q.slot_count))
+
+#define GET_RX_SLOT_COUNT(cfg)                                                                     \
+	COND_CODE_1(HAS_SINGLE_INSTANCE,                                                           \
+		((uint32_t)ROUND_UP(DT_INST_PROP(0, rx##_blocks), 4)), (cfg->rx_msg_q.slot_count))
 
 BUILD_ASSERT(NUM_EPT <= EPT_CONTROL, "Too many endpoints");
 
@@ -556,11 +556,12 @@ static void msg_q_reset(const struct device *instance)
 static int msg_q_consume(const struct device *instance, uint8_t block_index)
 {
 	const struct icbmsg_config *config = instance->config;
+	uint32_t slot_count = GET_RX_SLOT_COUNT(config);
 	struct icbmsg_data *data = instance->data;
 	uint8_t idx;
 
 	K_SPINLOCK(&data->lock) {
-		idx = config->rx_msg_q.cons_shmq->hdr.block_idx % MAX_ACTIVE_COUNT;
+		idx = config->rx_msg_q.cons_shmq->hdr.block_idx % slot_count;
 		config->rx_msg_q.cons_shmq->slots[idx] = block_index;
 		config->rx_msg_q.cons_shmq->hdr.block_idx++;
 		LOG_DBG("%p Consume index: %d, block_index: %d, %p",
@@ -577,6 +578,7 @@ static void msg_q_garbage_collect(const struct device *instance)
 {
 	struct icbmsg_data *data = instance->data;
 	const struct icbmsg_config *config = instance->config;
+	uint32_t slot_count = GET_TX_SLOT_COUNT(config);
 	uint32_t remote_idx;
 	uint32_t local_idx;
 	uint32_t cnt;
@@ -590,9 +592,9 @@ static void msg_q_garbage_collect(const struct device *instance)
 		cnt = remote_idx - local_idx;
 		LOG_DBG("%p Garbage collect remote_idx: %d local_idx: %d cnt:%d",
 			(void *)config->tx_msg_q.cons_shmq, remote_idx, local_idx, cnt);
-		__ASSERT_NO_MSG(cnt <= MAX_ACTIVE_COUNT);
+		__ASSERT_NO_MSG(cnt <= slot_count);
 		for (uint8_t i = 0; i < cnt; i++) {
-			size_t idx = (local_idx + i) % MAX_ACTIVE_COUNT;
+			size_t idx = (local_idx + i) % slot_count;
 			size_t blk_idx = config->tx_msg_q.cons_shmq->slots[idx];
 			struct icbmsg_packet *packet;
 
@@ -618,6 +620,7 @@ static int msg_q_produce(const struct device *instance, uint8_t block_index, int
 {
 	struct icbmsg_data *data = instance->data;
 	const struct icbmsg_config *config = instance->config;
+	uint32_t slot_count = GET_TX_SLOT_COUNT(config);
 	uint32_t active_count;
 	uint32_t idx;
 	int rv = 0;
@@ -629,12 +632,12 @@ static int msg_q_produce(const struct device *instance, uint8_t block_index, int
 
 	K_SPINLOCK(&data->lock) {
 		active_count = data->msg_q.tx_active_count;
-		if (active_count == MAX_ACTIVE_COUNT) {
+		if (active_count == slot_count) {
 			rv = -ENOMEM;
 			K_SPINLOCK_BREAK;
 		}
 
-		idx = config->tx_msg_q.prod_shmq->hdr.block_idx % MAX_ACTIVE_COUNT;
+		idx = config->tx_msg_q.prod_shmq->hdr.block_idx % slot_count;
 		data->msg_q.tx_active_count++;
 		STATS_INC(data->stats, tx_packet_count);
 		STATS_INCN(data->stats, tx_data_count,
@@ -941,6 +944,7 @@ static void handle_pending_messages(const struct device *instance)
 {
 	const struct icbmsg_config *config = instance->config;
 	struct icbmsg_data *data = instance->data;
+	uint32_t slot_count = GET_RX_SLOT_COUNT(config);
 	uint32_t local_idx;
 	uint32_t new_msgs;
 	uint32_t hi_prio_msgs;
@@ -954,7 +958,7 @@ static void handle_pending_messages(const struct device *instance)
 		new_msgs, local_idx, config->rx_msg_q.prod_shmq->hdr.block_idx);
 	if (likely(new_msgs == 1)) {
 		/* The most common case: only one new message. Handle it directly. */
-		uint32_t idx = local_idx % MAX_ACTIVE_COUNT;
+		uint32_t idx = local_idx % slot_count;
 		uint32_t block_index = config->rx_msg_q.prod_shmq->slots[idx];
 
 		if (block_index & HI_PRIO_MASK) {
@@ -967,7 +971,7 @@ static void handle_pending_messages(const struct device *instance)
 	} else if (new_msgs == 0) {
 		return;
 	}
-	__ASSERT_NO_MSG(new_msgs <= MAX_ACTIVE_COUNT);
+	__ASSERT_NO_MSG(new_msgs <= slot_count);
 
 	hi_prio_msgs =
 		config->rx_msg_q.prod_shmq->hdr.hi_prio_cnt - data->msg_q.rx_local_hi_prio_cnt;
@@ -978,7 +982,7 @@ static void handle_pending_messages(const struct device *instance)
 		high_prio_present = hi_prio_msgs != 0;
 		cont = high_prio_present && (new_msgs != hi_prio_msgs);
 		for (uint32_t i = 0; i < new_msgs; i++) {
-			uint32_t idx = (local_idx + i) % MAX_ACTIVE_COUNT;
+			uint32_t idx = (local_idx + i) % slot_count;
 			uint32_t block_index = config->rx_msg_q.prod_shmq->slots[idx];
 			bool is_hi_prio = block_index & HI_PRIO_MASK;
 
@@ -1290,10 +1294,10 @@ static int open(const struct device *instance)
 		return -EALREADY;
 	}
 
-	LOG_DBG("Shm_q TX prod: %p, cons: %p", (void *)config->tx_msg_q.prod_shmq,
-		(void *)config->tx_msg_q.cons_shmq);
-	LOG_DBG("Shm_q RX prod: %p, cons: %p", (void *)config->rx_msg_q.prod_shmq,
-		(void *)config->rx_msg_q.cons_shmq);
+	LOG_DBG("Shm_q TX prod: %p, cons: %p, slot_count: %u", (void *)config->tx_msg_q.prod_shmq,
+		(void *)config->tx_msg_q.cons_shmq, GET_TX_SLOT_COUNT(config));
+	LOG_DBG("Shm_q RX prod: %p, cons: %p, slot_count: %u", (void *)config->rx_msg_q.prod_shmq,
+		(void *)config->rx_msg_q.cons_shmq, GET_RX_SLOT_COUNT(config));
 	LOG_DBG("  TX %zu blocks of %zu bytes at %p, max allocable %zu bytes",
 		config->tx.block_count, config->tx.block_size,
 		(void *)config->tx.blocks_ptr, heap_max_data_size(&config->tx));
@@ -1371,74 +1375,61 @@ const static struct ipc_service_backend backend_ops = {
 	.release_rx_buffer = release_rx_buffer,
 };
 
+#define CACHE_ALIGN(i, x) ROUND_UP((x), GET_CACHE_ALIGNMENT(i))
+
+#define CACHE_DOWN_ALIGN(i, x) ROUND_DOWN((x), GET_CACHE_ALIGNMENT(i))
+
 /**
  * Size of a single shared-memory message queue at the start of each region.
  */
-#define GET_MSG_Q_AREA_SIZE(i) ROUND_UP(sizeof(struct icbmsg_shm_q), GET_CACHE_ALIGNMENT(i))
+#define GET_MSG_Q_AREA_SIZE(i, dir) \
+	CACHE_ALIGN(i, sizeof(struct icbmsg_shm_q) + ROUND_UP(DT_INST_PROP(i, dir##_blocks), 4))
 
 /**
  * Total queue area per region (producer + consumer queues).
  */
-#define GET_MSG_Q_REGION_SIZE(i) (2 * GET_MSG_Q_AREA_SIZE(i))
+#define GET_MSG_Q_REGION_SIZE(i, dir) (2 * GET_MSG_Q_AREA_SIZE(i, dir))
 
 /**
  * Address of the consumer queue in a shared memory region.
  */
-#define GET_CONS_SHMQ_ADDR_INST(i, direction)                                                      \
-	(GET_MEM_ADDR_INST(i, direction) + GET_MSG_Q_AREA_SIZE(i))
+#define GET_CONS_SHMQ_ADDR_INST(i, dir)                                                            \
+	(GET_MEM_ADDR_INST(i, dir) + GET_MSG_Q_AREA_SIZE(i, dir))
 
-/**
- * Calculate aligned block size by evenly dividing remaining space after the queue area.
- */
-#define GET_BLOCK_SIZE(i, total_size, local_blocks, remote_blocks)                                 \
-	ROUND_DOWN(((total_size) - GET_MSG_Q_REGION_SIZE(i)) / (local_blocks),                     \
-		   GET_CACHE_ALIGNMENT(i))
+/** Returns block size for specific instance and direction. */
+#define GET_BLOCK_SIZE(i, dir)                                                                     \
+	CACHE_DOWN_ALIGN(i, (GET_MEM_SIZE(i, dir) - GET_MSG_Q_REGION_SIZE(i, dir)) /               \
+		   DT_INST_PROP(i, dir##_blocks))
 
 /**
  * Calculate offset where the blocks area starts (after the message queue).
  */
-#define GET_BLOCKS_OFFSET(i, total_size, local_blocks, remote_blocks)                              \
-	((total_size) -                                                                            \
-	 GET_BLOCK_SIZE(i, (total_size), (local_blocks), (remote_blocks)) * (local_blocks))
+#define GET_BLOCKS_OFFSET(i, dir)                                                                  \
+	(GET_MEM_SIZE(i, dir) - GET_BLOCK_SIZE(i, dir) * DT_INST_PROP(i, dir##_blocks))
 
 /**
  * Return shared memory start address aligned to block alignment and cache line.
  */
-#define GET_MEM_ADDR_INST(i, direction)                                                            \
-	ROUND_UP(DT_REG_ADDR(DT_INST_PHANDLE(i, direction##_region)), GET_CACHE_ALIGNMENT(i))
+#define GET_MEM_ADDR_INST(i, dir) CACHE_ALIGN(i, DT_REG_ADDR(DT_INST_PHANDLE(i, dir##_region)))
 
 /**
  * Return shared memory end address aligned to block alignment and cache line.
  */
-#define GET_MEM_END_INST(i, direction)                                                             \
-	ROUND_DOWN(DT_REG_ADDR(DT_INST_PHANDLE(i, direction##_region)) +                           \
-			   DT_REG_SIZE(DT_INST_PHANDLE(i, direction##_region)),                    \
-		   GET_CACHE_ALIGNMENT(i))
+#define GET_MEM_END_INST(i, dir)                                                                   \
+	CACHE_DOWN_ALIGN(i, DT_REG_ADDR(DT_INST_PHANDLE(i, dir##_region)) +                        \
+			   DT_REG_SIZE(DT_INST_PHANDLE(i, dir##_region)))
 
 /**
  * Return shared memory size aligned to block alignment and cache line.
  */
-#define GET_MEM_SIZE_INST(i, direction)                                                            \
-	(GET_MEM_END_INST(i, direction) - GET_MEM_ADDR_INST(i, direction))
+#define GET_MEM_SIZE(i, dir) (GET_MEM_END_INST(i, dir) - GET_MEM_ADDR_INST(i, dir))
 
 /**
  * Returns address where area for blocks starts for specific instance and direction.
  * 'loc' and 'rem' parameters tells the direction. They can be either "tx, rx"
  *  or "rx, tx".
  */
-#define GET_BLOCKS_ADDR_INST(i, loc, rem)                                                          \
-	GET_MEM_ADDR_INST(i, loc) + GET_BLOCKS_OFFSET(i, GET_MEM_SIZE_INST(i, loc),                \
-						      DT_INST_PROP(i, loc##_blocks),               \
-						      DT_INST_PROP(i, rem##_blocks))
-
-/**
- * Returns block size for specific instance and direction.
- * 'loc' and 'rem' parameters tells the direction. They can be either "tx, rx"
- *  or "rx, tx".
- */
-#define GET_BLOCK_SIZE_INST(i, loc, rem)                                                           \
-	GET_BLOCK_SIZE(i, GET_MEM_SIZE_INST(i, loc), DT_INST_PROP(i, loc##_blocks),                \
-		       DT_INST_PROP(i, rem##_blocks))
+#define GET_BLOCKS_ADDR(i, dir) GET_MEM_ADDR_INST(i, dir) + GET_BLOCKS_OFFSET(i, dir)
 
 #define DEFINE_BACKEND_DEVICE(i)                                                                   \
 	static struct icbmsg_data icbmsg_data_##i;                                                 \
@@ -1447,14 +1438,14 @@ const static struct ipc_service_backend backend_ops = {
 		.mbox_rx = MBOX_DT_SPEC_INST_GET(i, rx),                                           \
 		.rx =                                                                              \
 			{                                                                          \
-				.blocks_ptr = (uint8_t *)GET_BLOCKS_ADDR_INST(i, rx, tx),          \
-				.block_size = GET_BLOCK_SIZE_INST(i, rx, tx),                      \
+				.blocks_ptr = (uint8_t *)GET_BLOCKS_ADDR(i, rx),                   \
+				.block_size = GET_BLOCK_SIZE(i, rx),                               \
 				.block_count = DT_INST_PROP(i, rx_blocks),                         \
 			},                                                                         \
 		.tx =                                                                              \
 			{                                                                          \
-				.blocks_ptr = (uint8_t *)GET_BLOCKS_ADDR_INST(i, tx, rx),          \
-				.block_size = GET_BLOCK_SIZE_INST(i, tx, rx),                      \
+				.blocks_ptr = (uint8_t *)GET_BLOCKS_ADDR(i, tx),                   \
+				.block_size = GET_BLOCK_SIZE(i, tx),                               \
 				.block_count = DT_INST_PROP(i, tx_blocks),                         \
 			},                                                                         \
 		.tx_msg_q =                                                                        \
@@ -1462,12 +1453,16 @@ const static struct ipc_service_backend backend_ops = {
 				.prod_shmq = (struct icbmsg_shm_q *)GET_MEM_ADDR_INST(i, tx),      \
 				.cons_shmq =                                                       \
 					(struct icbmsg_shm_q *)GET_CONS_SHMQ_ADDR_INST(i, tx),     \
+				COND_CODE_1(HAS_SINGLE_INSTANCE, (),                               \
+					(.slot_count = ROUND_UP(DT_INST_PROP(i, tx_blocks), 4),))  \
 			},                                                                         \
 		.rx_msg_q =                                                                        \
 			{                                                                          \
 				.prod_shmq = (struct icbmsg_shm_q *)GET_MEM_ADDR_INST(i, rx),      \
 				.cons_shmq =                                                       \
 					(struct icbmsg_shm_q *)GET_CONS_SHMQ_ADDR_INST(i, rx),     \
+				COND_CODE_1(HAS_SINGLE_INSTANCE, (),                               \
+					(.slot_count = ROUND_UP(DT_INST_PROP(i, rx_blocks), 4),))  \
 			},                                                                         \
 		.bound_packet =                                                                    \
 			BOUND_PACKET_INIT(DT_INST_PROP(i, tx_blocks), DT_INST_PROP(i, rx_blocks)), \
@@ -1483,20 +1478,10 @@ const static struct ipc_service_backend backend_ops = {
 		     "RX consumer queue is not aligned to cache alignment");                       \
 	BUILD_ASSERT(IS_POWER_OF_TWO(GET_CACHE_ALIGNMENT(i)),                                      \
 		     "This module supports only power of two cache alignment");                    \
-	BUILD_ASSERT(GET_MSG_Q_REGION_SIZE(i) <= GET_BLOCKS_OFFSET(i, GET_MEM_SIZE_INST(i, tx),    \
-								   DT_INST_PROP(i, tx_blocks),     \
-								   DT_INST_PROP(i, rx_blocks)),    \
+	BUILD_ASSERT(GET_MSG_Q_REGION_SIZE(i, tx) <= GET_BLOCKS_OFFSET(i, tx),                     \
 		     "TX region is too small for the message queues");                             \
-	BUILD_ASSERT(GET_MSG_Q_REGION_SIZE(i) <= GET_BLOCKS_OFFSET(i, GET_MEM_SIZE_INST(i, rx),    \
-								   DT_INST_PROP(i, rx_blocks),     \
-								   DT_INST_PROP(i, tx_blocks)),    \
+	BUILD_ASSERT(GET_MSG_Q_REGION_SIZE(i, rx) <= GET_BLOCKS_OFFSET(i, rx),                     \
 		     "RX region is too small for the message queues");                             \
-	BUILD_ASSERT((GET_BLOCK_SIZE_INST(i, tx, rx) >= BLOCK_ALIGNMENT) &&                        \
-			     (GET_BLOCK_SIZE_INST(i, tx, rx) < GET_MEM_SIZE_INST(i, tx)),          \
-		     "TX region is too small for provided number of blocks");                      \
-	BUILD_ASSERT((GET_BLOCK_SIZE_INST(i, rx, tx) >= BLOCK_ALIGNMENT) &&                        \
-			     (GET_BLOCK_SIZE_INST(i, rx, tx) < GET_MEM_SIZE_INST(i, rx)),          \
-		     "RX region is too small for provided number of blocks");                      \
 	BUILD_ASSERT(DT_INST_PROP(i, rx_blocks) <= 32, "Too many RX blocks");                      \
 	BUILD_ASSERT(DT_INST_PROP(i, tx_blocks) <= 32, "Too many TX blocks");                      \
 	DEVICE_DT_INST_DEFINE(i, &backend_init, NULL, &icbmsg_data_##i, &icbmsg_config_##i,        \
@@ -1526,6 +1511,7 @@ static const char *icbmsg_state_str(uint8_t state)
 static void icbmsg_print_instance_stats(const struct shell *sh, const struct device *instance)
 {
 	const struct icbmsg_config *conf = instance->config;
+	uint32_t slot_count = GET_TX_SLOT_COUNT(conf);
 	struct icbmsg_data *data = instance->data;
 
 	shell_print(sh, "ICBMsg instance: %s (%s)", instance->name, icbmsg_state_str(data->state));
@@ -1537,8 +1523,8 @@ static void icbmsg_print_instance_stats(const struct shell *sh, const struct dev
 		    (unsigned int)((data->stats.tx_max_block_usage_count * 100U) /
 				   conf->tx.block_count));
 	shell_print(sh, "  TX max slot usage: peak %u/%u (%u%%)", data->stats.tx_max_active_count,
-		    MAX_ACTIVE_COUNT,
-		    (unsigned int)((data->stats.tx_max_active_count * 100U) / MAX_ACTIVE_COUNT));
+		    slot_count,
+		    (unsigned int)((data->stats.tx_max_active_count * 100U) / slot_count));
 
 	shell_print(sh, "  RX memory: %zu blocks of %zu B (max payload %zu B)",
 		    conf->rx.block_count, conf->rx.block_size, heap_max_data_size(&conf->rx));
