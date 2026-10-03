@@ -332,12 +332,25 @@ ARM arch:
     - tests/arch/arm/
     - doc/hardware/arch/arm_cortex_m.rst
     - boards/qemu/cortex_m0/
+  files-regex-exclude:
+    - ^arch/arm/core/armv6/
   labels:
     - "area: ARM"
   tests:
     - arch.arm
     - arch
     - kernel
+
+ARM arch (pre-Cortex):
+  status: maintained
+  maintainers:
+    - jetpax
+  files-regex:
+    - ^arch/arm/core/armv6/
+  labels:
+    - "area: ARM pre-Cortex"
+  tests:
+    - arch.arm
 
 ARM64 arch:
   status: maintained
