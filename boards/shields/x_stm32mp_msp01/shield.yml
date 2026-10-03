@@ -1,0 +1,6 @@
+shields:
+  - name: x_stm32mp_msp01
+    full_name: X-STM32MP-MSP01
+    vendor: st
+    supported_features:
+      - sensor
