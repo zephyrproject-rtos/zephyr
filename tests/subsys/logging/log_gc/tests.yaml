@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright 2026 Mohammed El Amrani
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  platform_allow:
+    - qemu_cortex_m3
+  integration_platforms:
+    - qemu_cortex_m3
+  tags:
+    - logging
+  harness: ztest
+
+tests:
+  logging.log_gc.legacy:
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=n
+      - CONFIG_LOG_RUNTIME_FILTERING=n
+
+  logging.log_gc.legacy.runtime_filtering:
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=n
+      - CONFIG_LOG_RUNTIME_FILTERING=y
+      - CONFIG_LOG_RUNTIME_DEFAULT_LEVEL=2
+
+  logging.log_gc.linker_generator:
+    tags:
+      - linker_generator
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y
+      - CONFIG_LOG_RUNTIME_FILTERING=n
+
+  logging.log_gc.linker_generator.runtime_filtering:
+    tags:
+      - linker_generator
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y
+      - CONFIG_LOG_RUNTIME_FILTERING=y
+      - CONFIG_LOG_RUNTIME_DEFAULT_LEVEL=2
