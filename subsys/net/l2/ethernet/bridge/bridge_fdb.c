@@ -139,7 +139,7 @@ int eth_bridge_fdb_del(struct net_eth_addr *mac, struct net_if *iface)
 int eth_bridge_fdb_del_iface(struct net_if *iface)
 {
 	struct eth_bridge_fdb_entry *entry;
-	sys_snode_t *node, *prev = NULL;
+	sys_snode_t *node, *next, *prev = NULL;
 
 	if (iface == NULL) {
 		return -EINVAL;
@@ -151,26 +151,24 @@ int eth_bridge_fdb_del_iface(struct net_if *iface)
 
 	k_mutex_lock(&fdb_lock, K_FOREVER);
 
-	SYS_SLIST_FOR_EACH_NODE(&fdb_entries, node) {
+	SYS_SLIST_FOR_EACH_NODE_SAFE(&fdb_entries, node, next) {
 		entry = CONTAINER_OF(node, struct eth_bridge_fdb_entry, node);
 		if (entry->iface != iface) {
 			prev = node;
 			continue;
 		}
 
-		/* Remove from list */
-		sys_slist_remove(&fdb_entries, prev, node);
-		fdb_count--;
-
-		/* Free memory */
-		k_mem_slab_free(&fdb_slab, (void *)entry);
-
 		NET_DBG("FDB entry deleted: %02x:%02x:%02x:%02x:%02x:%02x -> iface %d",
 			entry->mac.addr[0], entry->mac.addr[1], entry->mac.addr[2],
 			entry->mac.addr[3], entry->mac.addr[4], entry->mac.addr[5],
 			net_if_get_by_iface(iface));
 
-		break;
+		/* Remove from list, prev stays the last kept node */
+		sys_slist_remove(&fdb_entries, prev, node);
+		fdb_count--;
+
+		/* Free memory */
+		k_mem_slab_free(&fdb_slab, (void *)entry);
 	}
 
 	k_mutex_unlock(&fdb_lock);

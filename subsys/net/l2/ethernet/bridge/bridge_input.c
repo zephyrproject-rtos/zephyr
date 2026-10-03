@@ -40,6 +40,11 @@ static void eth_bridge_fdb_forward_handler(struct eth_bridge_fdb_entry *entry, v
 
 	data->match = true;
 
+	/* The destination is on the segment the frame came from: filter it */
+	if (entry->iface == orig_iface) {
+		return;
+	}
+
 	/* Forward per FDB entry */
 	if (!net_if_flag_is_set(entry->iface, NET_IF_UP)) {
 		return;
