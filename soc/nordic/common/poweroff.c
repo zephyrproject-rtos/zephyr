@@ -57,6 +57,8 @@ void z_sys_poweroff(void)
 	nrf_power_system_off(NRF_POWER);
 #elif defined(CONFIG_SOC_SERIES_NRF54H) || defined(CONFIG_SOC_SERIES_NRF92)
 	nrf_poweroff();
+#elif defined(CONFIG_SOC_SERIES_NRF71)
+	nrf_regulators_system_off(NRF_REGULATORS_NS);
 #else
 	nrf_regulators_system_off(NRF_REGULATORS);
 #endif
