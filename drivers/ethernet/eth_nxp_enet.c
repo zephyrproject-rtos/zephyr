@@ -68,6 +68,29 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define RING_ID 0
 
+/* Use ENET_FRAME_MAX_VLANFRAMELEN for VLAN frame size
+ * Use ENET_FRAME_MAX_FRAMELEN for Ethernet frame size
+ */
+#if defined(CONFIG_NET_VLAN)
+#if !defined(ENET_FRAME_MAX_VLANFRAMELEN)
+#define ENET_FRAME_MAX_VLANFRAMELEN (ENET_FRAME_MAX_FRAMELEN + 4)
+#endif
+#define ETH_NXP_ENET_MAX_FRAMELEN ENET_FRAME_MAX_VLANFRAMELEN
+#else
+#define ETH_NXP_ENET_MAX_FRAMELEN ENET_FRAME_MAX_FRAMELEN
+#endif /* CONFIG_NET_VLAN */
+#define ETH_NXP_ENET_BUFFER_SIZE \
+		ROUND_UP(ETH_NXP_ENET_MAX_FRAMELEN, ENET_BUFF_ALIGNMENT)
+
+#ifdef CONFIG_ETH_NXP_ENET_RX_RECV_ZERO_COPY
+/* A descriptor takes one net buffer, so a frame takes this many. */
+#define NXP_ENET_RX_BUFF_SIZE CONFIG_NET_BUF_DATA_SIZE
+#define NXP_ENET_RX_FRAME_BUFS \
+	DIV_ROUND_UP(ETH_NXP_ENET_MAX_FRAMELEN, NXP_ENET_RX_BUFF_SIZE)
+#else
+#define NXP_ENET_RX_BUFF_SIZE ETH_NXP_ENET_BUFFER_SIZE
+#endif
+
 enum mac_address_source {
 	MAC_ADDR_SOURCE_UNIQUE,
 	MAC_ADDR_SOURCE_FUSED,
@@ -105,13 +128,100 @@ struct nxp_enet_mac_data {
 	struct k_work rx_work;
 	const struct device *dev;
 	struct k_sem rx_thread_sem;
+#ifndef CONFIG_ETH_NXP_ENET_RX_RECV_ZERO_COPY
 	struct k_mutex rx_frame_buf_mutex;
+#endif
 #ifdef CONFIG_PTP_CLOCK_NXP_ENET
 	struct nxp_enet_ptp_data ptp;
 #endif
 	uint8_t *tx_frame_buf;
+#ifndef CONFIG_ETH_NXP_ENET_RX_RECV_ZERO_COPY
 	uint8_t *rx_frame_buf;
+#endif
+#ifdef CONFIG_ETH_NXP_ENET_RX_RECV_ZERO_COPY
+	/*
+	 * The buffers out with the DMA: one per descriptor, plus a frame's
+	 * worth, since the SDK takes each replacement before it returns the
+	 * old buffer. Nothing touches a buffer while it is out here, so
+	 * buf->data still matches the address the SDK hands back.
+	 */
+	struct net_buf *rx_bufs[CONFIG_ETH_NXP_ENET_RX_BUFFERS + NXP_ENET_RX_FRAME_BUFS];
+	struct k_spinlock rx_bufs_lock;
+#endif
 };
+
+#ifdef CONFIG_ETH_NXP_ENET_RX_RECV_ZERO_COPY
+static void *eth_nxp_enet_rx_alloc(ENET_Type *base, void *user_data, uint8_t ring_id)
+{
+	const struct device *dev = user_data;
+	struct nxp_enet_mac_data *data = dev->data;
+	struct net_buf *buf;
+	k_spinlock_key_t key;
+
+	ARG_UNUSED(base);
+	ARG_UNUSED(ring_id);
+
+	buf = net_pkt_get_reserve_rx_data(NXP_ENET_RX_BUFF_SIZE, K_NO_WAIT);
+	if (buf == NULL) {
+		return NULL;
+	}
+
+	key = k_spin_lock(&data->rx_bufs_lock);
+	ARRAY_FOR_EACH(data->rx_bufs, i) {
+		if (data->rx_bufs[i] == NULL) {
+			data->rx_bufs[i] = buf;
+			k_spin_unlock(&data->rx_bufs_lock, key);
+			return buf->data;
+		}
+	}
+	k_spin_unlock(&data->rx_bufs_lock, key);
+
+	/* More buffers out at once than the SDK says it takes: something is off. */
+	LOG_ERR("no slot for a receive buffer");
+	net_buf_unref(buf);
+
+	return NULL;
+}
+
+/* Takes the buffer back from the DMA. Unrefs it as well unless keep is asked. */
+static struct net_buf *eth_nxp_enet_rx_claim(struct nxp_enet_mac_data *data,
+					     void *addr, bool keep)
+{
+	k_spinlock_key_t key = k_spin_lock(&data->rx_bufs_lock);
+	struct net_buf *buf = NULL;
+
+	ARRAY_FOR_EACH(data->rx_bufs, i) {
+		if (data->rx_bufs[i] != NULL && data->rx_bufs[i]->data == addr) {
+			buf = data->rx_bufs[i];
+			data->rx_bufs[i] = NULL;
+			break;
+		}
+	}
+	k_spin_unlock(&data->rx_bufs_lock, key);
+
+	if (buf == NULL) {
+		LOG_ERR("receive buffer %p is not one of ours", addr);
+		return NULL;
+	}
+
+	if (!keep) {
+		net_buf_unref(buf);
+		return NULL;
+	}
+
+	return buf;
+}
+
+static void eth_nxp_enet_rx_free(ENET_Type *base, void *buffer, void *user_data, uint8_t ring_id)
+{
+	const struct device *dev = user_data;
+
+	ARG_UNUSED(base);
+	ARG_UNUSED(ring_id);
+
+	(void)eth_nxp_enet_rx_claim(dev->data, buffer, false);
+}
+#endif /* CONFIG_ETH_NXP_ENET_RX_RECV_ZERO_COPY */
 
 static K_THREAD_STACK_DEFINE(enet_rx_stack, CONFIG_ETH_NXP_ENET_RX_THREAD_STACK_SIZE);
 static struct k_work_q rx_work_queue;
@@ -183,6 +293,30 @@ static const struct device *eth_nxp_enet_get_ptp_clock(const struct device *dev,
 
 	return config->ptp_clock;
 }
+
+/* The descriptor holds the fraction of the second; the clock has the rest. */
+static void eth_nxp_enet_rx_timestamp(const struct device *dev, struct net_pkt *pkt,
+				      uint32_t nanosecond)
+{
+	const struct nxp_enet_mac_config *config = dev->config;
+	struct nxp_enet_mac_data *data = dev->data;
+	struct net_ptp_time ptp_time;
+
+	k_mutex_lock(data->ptp.ptp_mutex, K_FOREVER);
+	ptp_clock_get(config->ptp_clock, &ptp_time);
+
+	/* The second turned over between the two readings. */
+	if (ptp_time.nanosecond < nanosecond) {
+		ptp_time.second--;
+	}
+
+	pkt->timestamp.nanosecond = nanosecond;
+	pkt->timestamp.second = ptp_time.second;
+	net_pkt_set_rx_timestamping(pkt, true);
+	k_mutex_unlock(data->ptp.ptp_mutex);
+}
+#else
+#define eth_nxp_enet_rx_timestamp(...)
 #endif /* CONFIG_PTP_CLOCK_NXP_ENET */
 
 static int eth_nxp_enet_tx(const struct device *dev, struct net_pkt *pkt)
@@ -315,12 +449,84 @@ static int eth_nxp_enet_get_config(const struct device *dev,
 	return -ENOTSUP;
 }
 
+#ifdef CONFIG_ETH_NXP_ENET_RX_RECV_ZERO_COPY
 static int eth_nxp_enet_rx(const struct device *dev)
 {
-#if defined(CONFIG_PTP_CLOCK_NXP_ENET)
-	const struct nxp_enet_mac_config *config = dev->config;
-	struct net_ptp_time ptp_time;
-#endif
+	struct nxp_enet_mac_data *data = dev->data;
+	enet_buffer_struct_t bufs[NXP_ENET_RX_FRAME_BUFS];
+	enet_rx_frame_struct_t frame = { .rxBuffArray = bufs };
+	struct net_pkt *pkt = NULL;
+	struct net_if *iface;
+	status_t status;
+	uint16_t taken = 0;
+	unsigned int used = 0;
+
+	memset(bufs, 0, sizeof(bufs));
+
+	status = ENET_GetRxFrame(data->base, &data->enet_handle, &frame, RING_ID);
+	if (status == kStatus_ENET_RxFrameEmpty) {
+		return 0;
+	} else if (status != kStatus_Success) {
+		/* The SDK already returned the buffers to the ring. */
+		eth_stats_update_errors_rx(get_iface(data));
+		return -EIO;
+	}
+
+	pkt = net_pkt_rx_alloc_on_iface(get_iface(data), K_NO_WAIT);
+	if (pkt == NULL) {
+		goto drop;
+	}
+
+	for (used = 0; used < ARRAY_SIZE(bufs) && taken < frame.totLen; used++) {
+		struct net_buf *buf;
+
+		if (bufs[used].buffer == NULL) {
+			break;
+		}
+
+		buf = eth_nxp_enet_rx_claim(data, bufs[used].buffer, true);
+		if (buf == NULL) {
+			goto drop;
+		}
+
+		bufs[used].buffer = NULL;
+		net_buf_add(buf, bufs[used].length);
+		net_pkt_append_buffer(pkt, buf);
+		taken += bufs[used].length;
+	}
+
+	if (taken != frame.totLen) {
+		LOG_ERR("frame of %u bytes came back as %u", frame.totLen, taken);
+		goto drop;
+	}
+
+	eth_nxp_enet_rx_timestamp(dev, pkt, frame.rxAttribute.timestamp);
+
+	iface = get_iface(data);
+	if (net_recv_data(iface, pkt) < 0) {
+		goto drop;
+	}
+
+	return 1;
+drop:
+	/* Buffers on the packet go back with it; the rest are ours. */
+	for (; used < ARRAY_SIZE(bufs); used++) {
+		if (bufs[used].buffer != NULL) {
+			(void)eth_nxp_enet_rx_claim(data, bufs[used].buffer, false);
+		}
+	}
+
+	if (pkt != NULL) {
+		net_pkt_unref(pkt);
+	}
+
+	eth_stats_update_errors_rx(get_iface(data));
+
+	return -EIO;
+}
+#else /* CONFIG_ETH_NXP_ENET_RX_RECV_ZERO_COPY */
+static int eth_nxp_enet_rx(const struct device *dev)
+{
 	struct nxp_enet_mac_data *data = dev->data;
 	uint32_t frame_length = 0U;
 	struct net_if *iface;
@@ -369,26 +575,7 @@ static int eth_nxp_enet_rx(const struct device *dev)
 		goto error;
 	}
 
-#if defined(CONFIG_PTP_CLOCK_NXP_ENET)
-	k_mutex_lock(data->ptp.ptp_mutex, K_FOREVER);
-
-	/* Timestamp the packet using PTP clock. Add full second part
-	 * the hardware timestamp contains the fractional part of the second only
-	 */
-	ptp_clock_get(config->ptp_clock, &ptp_time);
-
-	/* If latest timestamp reloads after getting from Rx BD,
-	 * then second - 1 to make sure the actual Rx timestamp is accurate
-	 */
-	if (ptp_time.nanosecond < ts) {
-		ptp_time.second--;
-	}
-
-	pkt->timestamp.nanosecond = ts;
-	pkt->timestamp.second = ptp_time.second;
-	net_pkt_set_rx_timestamping(pkt, true);
-	k_mutex_unlock(data->ptp.ptp_mutex);
-#endif /* CONFIG_PTP_CLOCK_NXP_ENET */
+	eth_nxp_enet_rx_timestamp(dev, pkt, ts);
 
 	iface = get_iface(data);
 	if (net_recv_data(iface, pkt) < 0) {
@@ -411,6 +598,7 @@ error:
 	eth_stats_update_errors_rx(get_iface(data));
 	return -EIO;
 }
+#endif /* CONFIG_ETH_NXP_ENET_RX_RECV_ZERO_COPY */
 
 static void eth_nxp_enet_rx_thread(struct k_work *work)
 {
@@ -652,7 +840,9 @@ static int eth_nxp_enet_init(const struct device *dev)
 
 	data->base = (ENET_Type *)DEVICE_MMIO_GET(config->module_dev);
 
+#ifndef CONFIG_ETH_NXP_ENET_RX_RECV_ZERO_COPY
 	k_mutex_init(&data->rx_frame_buf_mutex);
+#endif
 	k_sem_init(&data->rx_thread_sem, 0, CONFIG_ETH_NXP_ENET_RX_BUFFERS);
 	k_sem_init(&data->tx_buf_sem,
 		   CONFIG_ETH_NXP_ENET_TX_BUFFERS, CONFIG_ETH_NXP_ENET_TX_BUFFERS);
@@ -716,6 +906,12 @@ static int eth_nxp_enet_init(const struct device *dev)
 
 	enet_config.callback = eth_callback;
 	enet_config.userData = (void *)dev;
+
+#ifdef CONFIG_ETH_NXP_ENET_RX_RECV_ZERO_COPY
+	/* ENET_Up and ENET_Down take and return buffers through these. */
+	enet_config.rxBuffAlloc = eth_nxp_enet_rx_alloc;
+	enet_config.rxBuffFree = eth_nxp_enet_rx_free;
+#endif
 
 	ENET_Up(data->base,
 		  &data->enet_handle,
@@ -836,19 +1032,64 @@ static const struct ethernet_api api_funcs = {
 #define driver_cache_maintain	true
 #endif
 
-/* Use ENET_FRAME_MAX_VLANFRAMELEN for VLAN frame size
- * Use ENET_FRAME_MAX_FRAMELEN for Ethernet frame size
+
+/*
+ * Zero copy takes its buffers from the network buffer pool, so cache
+ * maintenance has to be on and the static buffers are not built at all.
  */
-#if defined(CONFIG_NET_VLAN)
-#if !defined(ENET_FRAME_MAX_VLANFRAMELEN)
-#define ENET_FRAME_MAX_VLANFRAMELEN (ENET_FRAME_MAX_FRAMELEN + 4)
-#endif
-#define ETH_NXP_ENET_BUFFER_SIZE \
-		ROUND_UP(ENET_FRAME_MAX_VLANFRAMELEN, ENET_BUFF_ALIGNMENT)
+#ifdef CONFIG_ETH_NXP_ENET_RX_RECV_ZERO_COPY
+#define NXP_ENET_RX_FRAME_BUF_DECL(n)
+#define NXP_ENET_RX_FRAME_BUF_INIT(n)
 #else
-#define ETH_NXP_ENET_BUFFER_SIZE \
-		ROUND_UP(ENET_FRAME_MAX_FRAMELEN, ENET_BUFF_ALIGNMENT)
-#endif /* CONFIG_NET_VLAN */
+#define NXP_ENET_RX_FRAME_BUF_DECL(n)						\
+	static _nxp_enet_driver_buffer_section uint8_t				\
+		nxp_enet_##n##_rx_frame_buf[NET_ETH_MAX_FRAME_SIZE];
+#define NXP_ENET_RX_FRAME_BUF_INIT(n)						\
+	.rx_frame_buf = nxp_enet_##n##_rx_frame_buf,
+#endif
+
+#ifdef CONFIG_ETH_NXP_ENET_RX_RECV_ZERO_COPY
+#define NXP_ENET_RX_BUFFERS_DECL(n)
+#define NXP_ENET_RX_BUFFER_ALIGN(n) NULL
+#else
+#define NXP_ENET_RX_BUFFERS_DECL(n)						\
+	static uint8_t __aligned(ENET_BUFF_ALIGNMENT)				\
+		_nxp_enet_dma_buffer_section					\
+		nxp_enet_##n##_rx_buffer[CONFIG_ETH_NXP_ENET_RX_BUFFERS]	\
+					[ETH_NXP_ENET_BUFFER_SIZE];
+#define NXP_ENET_RX_BUFFER_ALIGN(n) nxp_enet_##n##_rx_buffer[0]
+#endif
+
+#ifdef CONFIG_ETH_NXP_ENET_RX_RECV_ZERO_COPY
+#define NXP_ENET_CACHE_MAINTAIN(n) true
+#else
+#define NXP_ENET_CACHE_MAINTAIN(n) driver_cache_maintain
+#endif
+
+#ifdef CONFIG_ETH_NXP_ENET_RX_RECV_ZERO_COPY
+/*
+ * What the SDK asserts at run time or states in the notes on
+ * ENET_GetRxFrame, checked at build time instead. It invalidates a whole
+ * buffer rather than the length of the frame in it, hence the alignment.
+ */
+BUILD_ASSERT(NXP_ENET_RX_BUFF_SIZE >= ENET_RX_MIN_BUFFERSIZE,
+	     "CONFIG_NET_BUF_DATA_SIZE is below the smallest receive buffer "
+	     "the ENET takes");
+BUILD_ASSERT((NXP_ENET_RX_BUFF_SIZE % ENET_BUFF_ALIGNMENT) == 0,
+	     "CONFIG_NET_BUF_DATA_SIZE has to be a multiple of the DMA "
+	     "alignment, or two buffers share a cache line");
+BUILD_ASSERT(CONFIG_NET_BUF_ALIGNMENT >= ENET_BUFF_ALIGNMENT,
+	     "CONFIG_NET_BUF_ALIGNMENT has to be at least the DMA alignment");
+BUILD_ASSERT(NXP_ENET_RX_BUFF_SIZE * CONFIG_ETH_NXP_ENET_RX_BUFFERS >
+	     ETH_NXP_ENET_MAX_FRAMELEN,
+	     "the receive ring has to hold more than one whole frame");
+BUILD_ASSERT(CONFIG_NET_BUF_RX_COUNT >=
+	     CONFIG_ETH_NXP_ENET_RX_BUFFERS + NXP_ENET_RX_FRAME_BUFS,
+	     "the receive descriptors hold a buffer each and a frame is taken "
+	     "out before its buffers come back, so the pool needs that many "
+	     "before the application gets any");
+#endif /* CONFIG_ETH_NXP_ENET_RX_RECV_ZERO_COPY */
+
 
 #define NXP_ENET_PHY_MODE(node_id)							\
 	DT_ENUM_HAS_VALUE(node_id, phy_connection_type, mii) ? NXP_ENET_MII_MODE :	\
@@ -911,10 +1152,7 @@ static const struct ethernet_api api_funcs = {
 			enet_tx_bd_struct_t						\
 			nxp_enet_##n##_tx_buffer_desc[CONFIG_ETH_NXP_ENET_TX_BUFFERS];	\
 											\
-		static uint8_t __aligned(ENET_BUFF_ALIGNMENT)				\
-			_nxp_enet_dma_buffer_section					\
-			nxp_enet_##n##_rx_buffer[CONFIG_ETH_NXP_ENET_RX_BUFFERS]	\
-						[ETH_NXP_ENET_BUFFER_SIZE];		\
+		NXP_ENET_RX_BUFFERS_DECL(n)						\
 											\
 		static uint8_t __aligned(ENET_BUFF_ALIGNMENT)				\
 			_nxp_enet_dma_buffer_section					\
@@ -930,14 +1168,14 @@ static const struct ethernet_api api_funcs = {
 			.buffer_config = {{						\
 				.rxBdNumber = CONFIG_ETH_NXP_ENET_RX_BUFFERS,		\
 				.txBdNumber = CONFIG_ETH_NXP_ENET_TX_BUFFERS,		\
-				.rxBuffSizeAlign = ETH_NXP_ENET_BUFFER_SIZE,		\
+				.rxBuffSizeAlign = NXP_ENET_RX_BUFF_SIZE,		\
 				.txBuffSizeAlign = ETH_NXP_ENET_BUFFER_SIZE,		\
 				.rxBdStartAddrAlign = nxp_enet_##n##_rx_buffer_desc,	\
 				.txBdStartAddrAlign = nxp_enet_##n##_tx_buffer_desc,	\
-				.rxBufferAlign = nxp_enet_##n##_rx_buffer[0],		\
+				.rxBufferAlign = NXP_ENET_RX_BUFFER_ALIGN(n),		\
 				.txBufferAlign = nxp_enet_##n##_tx_buffer[0],		\
-				.rxMaintainEnable = driver_cache_maintain,		\
-				.txMaintainEnable = driver_cache_maintain,		\
+				.rxMaintainEnable = NXP_ENET_CACHE_MAINTAIN(n),		\
+				.txMaintainEnable = NXP_ENET_CACHE_MAINTAIN(n),		\
 				NXP_ENET_FRAMEINFO(n)					\
 			}},								\
 			.phy_mode = NXP_ENET_PHY_MODE(DT_DRV_INST(n)),			\
@@ -950,12 +1188,11 @@ static const struct ethernet_api api_funcs = {
 											\
 		static _nxp_enet_driver_buffer_section uint8_t				\
 			nxp_enet_##n##_tx_frame_buf[NET_ETH_MAX_FRAME_SIZE];		\
-		static _nxp_enet_driver_buffer_section uint8_t				\
-			nxp_enet_##n##_rx_frame_buf[NET_ETH_MAX_FRAME_SIZE];		\
+		NXP_ENET_RX_FRAME_BUF_DECL(n)						\
 											\
 		struct nxp_enet_mac_data nxp_enet_##n##_data = {			\
 			.tx_frame_buf = nxp_enet_##n##_tx_frame_buf,			\
-			.rx_frame_buf = nxp_enet_##n##_rx_frame_buf,			\
+			NXP_ENET_RX_FRAME_BUF_INIT(n)					\
 			.dev = DEVICE_DT_INST_GET(n),					\
 		};									\
 											\
