@@ -58,8 +58,7 @@ LOG_MODULE_REGISTER(bt_mesh_settings);
 /* When true, the replay lists are stored on a deadline of their own. Otherwise
  * they are stored together with the generic pending flags.
  */
-#define RPL_OWN_TIMEOUT (IS_ENABLED(CONFIG_BT_MESH_RPL_STORAGE_MODE_SETTINGS) &&                   \
-			 RPL_STORE_TIMEOUT >= 0)
+#define RPL_OWN_TIMEOUT (RPL_STORE_TIMEOUT >= 0)
 
 static struct k_work_q settings_work_q;
 static K_THREAD_STACK_DEFINE(settings_work_stack, SETTINGS_WORKQ_STACK_SIZE);

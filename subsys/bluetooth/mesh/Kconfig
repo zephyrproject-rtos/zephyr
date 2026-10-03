@@ -1864,15 +1864,15 @@ config BT_MESH_SEQ_STORE_RATE
 	  off with a value that's guaranteed to be larger than the last
 	  one used before power off.
 
-if BT_MESH_RPL_STORAGE_MODE_SETTINGS && BT_SETTINGS
-
 config BT_MESH_RPL_STORE_TIMEOUT
 	int "Minimum interval after which unsaved RPL and SRPL entries are updated in the settings subsystem"
 	range -1 1000000
 	default 5
 	help
 	  This value defines time in seconds until unsaved RPL and SRPL entries
-	  are written to the persistent storage. Setting this value
+	  are written to the persistent storage. The SRPL is always stored
+	  through the settings subsystem, whereas the RPL is only affected if
+	  its storage mode schedules stores with this timeout. Setting this value
 	  to a large number may lead to security vulnerabilities if a node
 	  gets powered off before the timer is fired. When flash is used
 	  as the persistent storage setting this value to a low number
@@ -1888,8 +1888,6 @@ config BT_MESH_RPL_STORE_TIMEOUT
 	  Failure to store the RPL and becoming vulnerable after reboot
 	  will cause the device to not perform the replay protection
 	  required by the spec.
-
-endif # BT_MESH_RPL_STORAGE_MODE_SETTINGS && BT_SETTINGS
 
 config BT_MESH_SETTINGS_WORKQ
 	bool "Store the Bluetooth Mesh settings in a separate work queue"
