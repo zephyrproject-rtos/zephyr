@@ -1773,8 +1773,8 @@ static inline void * __must_check net_buf_user_data(const struct net_buf *buf)
 /**
  * @brief Copy user data from one to another buffer.
  *
- * @param dst A valid pointer to a buffer gettings its user data overwritten.
- * @param src A valid pointer to a buffer gettings its user data copied. User data size must be
+ * @param dst A valid pointer to a buffer getting its user data overwritten.
+ * @param src A valid pointer to a buffer getting its user data copied. User data size must be
  *            equal to or exceed @a dst.
  *
  * @return 0 on success or negative error number on failure.
