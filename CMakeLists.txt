@@ -545,14 +545,21 @@ if(CONFIG_INSTRUMENTATION)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,func_instrumentation>>)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,func_instrumentation>>)
 
+  # Exclude-list flags are GCC-only; Clang clears these properties. Only apply
+  # them when the toolchain actually provides a non-empty flag value.
+  get_property(INSTR_EXCL_FUNCS TARGET compiler
+    PROPERTY func_instrumentation_exclude_function_list)
+  get_property(INSTR_EXCL_FILES TARGET compiler
+    PROPERTY func_instrumentation_exclude_file_list)
+
   # @Intent: Enable function blocklist for the instrumentation subsystem
-  if(CONFIG_INSTRUMENTATION_EXCLUDE_FUNCTION_LIST)
+  if(CONFIG_INSTRUMENTATION_EXCLUDE_FUNCTION_LIST AND INSTR_EXCL_FUNCS)
     zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,func_instrumentation_exclude_function_list>>)
     zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,func_instrumentation_exclude_function_list>>)
   endif()
 
   # @Intent: Enable file blocklist for the instrumentation subsystem
-  if(CONFIG_INSTRUMENTATION_EXCLUDE_FILE_LIST)
+  if(CONFIG_INSTRUMENTATION_EXCLUDE_FILE_LIST AND INSTR_EXCL_FILES)
     zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,func_instrumentation_exclude_file_list>>)
     zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,func_instrumentation_exclude_file_list>>)
   endif()

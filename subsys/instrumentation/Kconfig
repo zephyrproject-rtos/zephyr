@@ -142,6 +142,10 @@ config INSTRUMENTATION_EXCLUDE_FUNCTION_LIST
 	  a function name, it is considered to be a match. The function names in
 	  the list are separate by a comma, for instance: sym0, sym1, ...
 
+	  This option maps to GCC's -finstrument-functions-exclude-function-list
+	  and is ignored when building with Clang/LLVM. With Clang, mark
+	  functions with __no_instrumentation__ instead.
+
 config INSTRUMENTATION_EXCLUDE_FILE_LIST
 	string "Exclude file list"
 	depends on INSTRUMENTATION_MODE_CALLGRAPH || INSTRUMENTATION_MODE_STATISTICAL
@@ -150,5 +154,9 @@ config INSTRUMENTATION_EXCLUDE_FILE_LIST
 	  match is done on substrings: if the file parameter is a substring of
 	  the file name, it is considered to be a match. The files in the list
 	  are separate by a comma, for instance: file0, file1, ...
+
+	  This option maps to GCC's -finstrument-functions-exclude-file-list and
+	  is ignored when building with Clang/LLVM. With Clang, mark functions
+	  with __no_instrumentation__ instead.
 
 endif

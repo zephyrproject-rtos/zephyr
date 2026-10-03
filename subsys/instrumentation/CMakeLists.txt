@@ -10,8 +10,10 @@ zephyr_sources_ifdef(CONFIG_INSTRUMENTATION
 zephyr_sources_ifdef(CONFIG_INSTRUMENTATION_MODE_CALLGRAPH ringbuffer/ringbuffer.c)
 
 if(CONFIG_INSTRUMENTATION)
-  if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
-    zephyr_sources(handlers/instr_handlers_gcc.c)
+  # Both GCC and Clang implement the GNU instrumentation ABI
+  # (-finstrument-functions → __cyg_profile_func_enter/exit).
+  if(CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
+    zephyr_sources(handlers/instr_handlers.c)
   else()
     message(WARNING "CONFIG_INSTRUMENTATION unsupported by this compiler: ${CMAKE_C_COMPILER_ID}.")
   endif()
