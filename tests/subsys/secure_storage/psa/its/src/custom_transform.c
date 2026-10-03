@@ -6,7 +6,7 @@
 #include <string.h>
 
 psa_status_t secure_storage_its_transform_to_store(
-		secure_storage_its_uid_t uid, size_t data_len, const void *data,
+		secure_storage_uid_t uid, size_t data_len, const void *data,
 		secure_storage_packed_create_flags_t create_flags,
 		uint8_t stored_data[static SECURE_STORAGE_ITS_TRANSFORM_MAX_STORED_DATA_SIZE],
 		size_t *stored_data_len)
@@ -20,7 +20,7 @@ psa_status_t secure_storage_its_transform_to_store(
 }
 
 psa_status_t secure_storage_its_transform_from_store(
-		secure_storage_its_uid_t uid, size_t stored_data_len,
+		secure_storage_uid_t uid, size_t stored_data_len,
 		const uint8_t stored_data[static SECURE_STORAGE_ITS_TRANSFORM_MAX_STORED_DATA_SIZE],
 		size_t data_size, void *data, size_t *data_len,
 		psa_storage_create_flags_t *create_flags)

@@ -38,11 +38,6 @@ The secure storage subsystem's implementation of the PSA Secure Storage API:
 
   This depends on device-specific security features and the configuration.
 
-* does not yet provide an implementation of the Protected Storage (PS) API as of this writing.
-
-  Instead, the PS API directly calls into the Internal Trusted Storage (ITS) API
-  (unless a `custom implementation <#whole-api>`_ of the PS API is provided).
-
 Below are some ways the implementation purposefully deviates from the specification
 and an explanation why. This is not an exhaustive list.
 
@@ -74,6 +69,13 @@ and an explanation why. This is not an exhaustive list.
   In addition, the data stored in the ITS is not protected against replay attacks,
   because this requires storage that is protected by hardware.
 
+* The data stored in PS is always encrypted and protected against replay attacks, no matter
+  what the security capabilities of the external storage are (Against
+  `2.3 The Protected Storage API <https://arm-software.github.io/psa-api/storage/1.0/overview/architecture.html#the-protected-storage-api>`_).
+  As a consequence ``PSA_STORAGE_FLAG_NO_CONFIDENTIALITY`` and
+  ``PSA_STORAGE_FLAG_NO_REPLAY_PROTECTION`` flags are ignored when a PS entry
+  is created.
+
 * The data stored via the PSA Secure Storage API is not protected from direct
   read/write by software or debugging. (Against ``2.`` and ``10.`` in
   `3.2. Internal Trusted Storage requirements <https://arm-software.github.io/psa-api/storage/1.0/overview/requirements.html#internal-trusted-storage-requirements>`_.)
@@ -99,6 +101,13 @@ and an explanation why. This is not an exhaustive list.
   underlying it is protected by hardware, and thus that data read back from it is always intact.
   As it's not the case here, these error codes are passed on to let callers tell an entry that has
   been tampered with apart from an internal failure.
+
+* Optional PS functions ``psa_ps_create()`` and ``psa_ps_set_extended()`` are not implemented
+  and return ``PSA_ERROR_NOT_SUPPORTED`` if called.
+
+* ``psa_ps_set()`` is not power-cycle resistant. If the device is power cycled
+  while the entry is being stored, then the result might be corrupted. In this case the
+  entry can be removed and/or overwritten on the next boot.
 
 Configuration
 *************
@@ -133,6 +142,25 @@ Have a look at the :kconfig:option-regex:`ITS transform and store Kconfig option
 
 It's especially recommended to use or implement a secure :kconfig:option-regex:`encryption
 key provider <CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_.*>`.
+
+PS API
+======
+
+Zephyr's implementation of the PS API
+(:kconfig:option:`CONFIG_SECURE_STORAGE_PS_IMPLEMENTATION_ZEPHYR`)
+makes use of the PS transform, store and replay protection modules, which can be configured and
+customized separately.
+Have a look at the :kconfig:option-regex:`PS transform, store and replay protection Kconfig options
+<CONFIG_SECURE_STORAGE_PS_(TRANSFORM|STORE|REPLAY_PROTECTION)_.*>` to see the different
+configuration possibilities.
+
+The replay protection value of each entry is stored through the ITS API and checked when the entry
+is read back. Thus, the PS data is only protected against replay as much as the ITS data is.
+A power loss between the writes of the replay protection value and of the data makes the entry
+unreadable (``PSA_ERROR_INVALID_SIGNATURE``) until it is overwritten or removed.
+
+It's especially recommended to use or implement a secure :kconfig:option-regex:`encryption
+key provider <CONFIG_SECURE_STORAGE_PS_TRANSFORM_AEAD_KEY_PROVIDER_.*>`.
 
 Samples
 *******

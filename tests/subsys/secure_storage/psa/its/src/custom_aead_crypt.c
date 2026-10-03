@@ -30,7 +30,7 @@ static void compute_tag(size_t add_data_len, const uint8_t *add_data, size_t dat
 }
 
 psa_status_t secure_storage_its_transform_aead_crypt(
-		psa_key_usage_t operation, secure_storage_its_uid_t uid,
+		psa_key_usage_t operation, secure_storage_uid_t uid,
 		const uint8_t nonce[static CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_NONCE_SIZE],
 		size_t add_data_len, const uint8_t *add_data, size_t input_len,
 		const uint8_t *input, size_t output_size, uint8_t *output, size_t *output_len)

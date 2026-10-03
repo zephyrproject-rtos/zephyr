@@ -24,7 +24,7 @@
  * @param[out] name The setting name.
  */
 void secure_storage_its_store_settings_get_name(
-	secure_storage_its_uid_t uid,
+	secure_storage_uid_t uid,
 	char name[static SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_BUF_SIZE]);
 
 #endif

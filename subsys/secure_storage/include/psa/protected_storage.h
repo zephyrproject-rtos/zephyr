@@ -12,7 +12,7 @@
 /** @cond INTERNAL_HIDDEN */
 #ifdef CONFIG_SECURE_STORAGE_PS_IMPLEMENTATION_ITS
 #include "../internal/zephyr/secure_storage/its.h"
-#define ITS_CALLER_ID SECURE_STORAGE_ITS_CALLER_PSA_PS
+#define ITS_CALLER_ID SECURE_STORAGE_CALLER_PSA_PS
 #else
 #include "../internal/zephyr/secure_storage/ps.h"
 #endif

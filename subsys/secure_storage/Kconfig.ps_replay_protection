@@ -1,0 +1,30 @@
+# Copyright (c) 2026 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+choice SECURE_STORAGE_PS_REPLAY_PROTECTION_IMPLEMENTATION
+	prompt "Protected Storage (PS) replay protection implementation"
+	default SECURE_STORAGE_PS_REPLAY_PROTECTION_SHA256
+
+config SECURE_STORAGE_PS_REPLAY_PROTECTION_SHA256
+	bool "SHA-256 of the data stored in PS"
+	select PSA_CRYPTO
+	select PSA_WANT_ALG_SHA_256
+	help
+	  Each time an entry is written to PS, the SHA-256 of the stored data
+	  is computed and stored into ITS.
+
+config SECURE_STORAGE_PS_REPLAY_PROTECTION_CUSTOM
+	bool "Use a custom solution for replay protection"
+	help
+	  Provide a custom solution to compute the replay protection value for
+	  entries stored in PS.
+
+endchoice # SECURE_STORAGE_PS_REPLAY_PROTECTION_IMPLEMENTATION
+
+config SECURE_STORAGE_PS_REPLAY_PROTECTION_SIZE
+	int "Size of replay protection data stored in ITS"
+	range 1 SECURE_STORAGE_ITS_MAX_DATA_SIZE
+	default 32 if SECURE_STORAGE_PS_REPLAY_PROTECTION_SHA256
+	help
+	  Size of the data stored in ITS as replay protection value for each
+	  entry of PS.

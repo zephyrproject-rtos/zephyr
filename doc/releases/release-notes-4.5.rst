@@ -956,6 +956,12 @@ New APIs and options
     implementing your own :c:func:`secure_storage_its_transform_aead_crypt`. (:github:`118542`)
   * :kconfig:option:`CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_SCHEME_IS_CONFIGURABLE`
   * :kconfig:option:`CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_SIZE_IS_CONFIGURABLE`
+  * :kconfig:option:`CONFIG_SECURE_STORAGE_PS_IMPLEMENTATION_ZEPHYR`
+
+* TF-M
+
+  * :kconfig:option:`CONFIG_TFM_PS_MAX_ASSET_SIZE_OVERRIDE`
+  * :kconfig:option:`CONFIG_TFM_PS_MAX_ASSET_SIZE`
 
 
 * Timer
@@ -2210,6 +2216,10 @@ Libraries / Subsystems
 
   * ``psa_its_get()`` called with a ``data_size`` of 0 now reports whether the entry exists
     and is valid instead of always returning ``PSA_SUCCESS``.
+
+  * Added a Zephyr implementation of the PSA Protected Storage API
+    (:kconfig:option:`CONFIG_SECURE_STORAGE_PS_IMPLEMENTATION_ZEPHYR`). Its replay protection
+    values are stored through the ITS API.
 
 * Multimedia Pipeline
 
