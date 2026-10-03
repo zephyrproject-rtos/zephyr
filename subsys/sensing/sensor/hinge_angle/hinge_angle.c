@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <math.h>
 #include <stdlib.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/logging/log.h>
@@ -13,6 +14,7 @@
 LOG_MODULE_REGISTER(hinge_angle, CONFIG_SENSING_LOG_LEVEL);
 
 #define HINGE_REPORTER_NUM 2
+#define SENSING_HINGE_ANGLE_Q31_SHIFT 8
 
 static struct sensing_sensor_register_info hinge_reg = {
 	.flags = SENSING_SENSOR_FLAG_REPORT_ON_CHANGE,
@@ -98,21 +100,46 @@ static DEVICE_API(sensor, hinge_api) = {
 
 static q31_t calc_hinge_angle(struct hinge_angle_context *data)
 {
-	q31_t val;
+	double a0x = data->sample[0].readings[0].x;
+	double a0y = data->sample[0].readings[0].y;
+	double a0z = data->sample[0].readings[0].z;
+	double a1x = data->sample[1].readings[0].x;
+	double a1y = data->sample[1].readings[0].y;
+	double a1z = data->sample[1].readings[0].z;
+	double dot, norm0_sq, norm1_sq, cos_angle, degrees;
 
-	LOG_INF("Acc 0: x:%08x y:%08x z:%08x",
+	LOG_DBG("Acc 0: x:%08x y:%08x z:%08x",
 			data->sample[0].readings[0].x,
 			data->sample[0].readings[0].y,
 			data->sample[0].readings[0].z);
-	LOG_INF("Acc 1: x:%08x y:%08x z:%08x",
+	LOG_DBG("Acc 1: x:%08x y:%08x z:%08x",
 			data->sample[1].readings[0].x,
 			data->sample[1].readings[0].y,
 			data->sample[1].readings[0].z);
 
-	/* Todo: calc hinge angle base on data->sample[0] and data->sample[1] */
-	val = 0;
+	/*
+	 * Each reporter measures the gravity vector in its own frame. Report the
+	 * angle between the two measured acceleration vectors:
+	 *
+	 *   angle = acos((a0 . a1) / (|a0| * |a1|))
+	 *
+	 * The q31 shift is common to the three axes of a vector and cancels in
+	 * the ratio, so the raw components are used directly. The result is in
+	 * degrees, in the range 0 to 180.
+	 */
+	dot = a0x * a1x + a0y * a1y + a0z * a1z;
+	norm0_sq = a0x * a0x + a0y * a0y + a0z * a0z;
+	norm1_sq = a1x * a1x + a1y * a1y + a1z * a1z;
 
-	return val;
+	if (norm0_sq <= 0.0 || norm1_sq <= 0.0) {
+		return 0;
+	}
+
+	cos_angle = dot / sqrt(norm0_sq * norm1_sq);
+	cos_angle = CLAMP(cos_angle, -1.0, 1.0);
+	degrees = acos(cos_angle) * (180.0 / 3.141592653589793);
+
+	return (q31_t)(degrees * (double)BIT(31 - SENSING_HINGE_ANGLE_Q31_SHIFT));
 }
 
 static void hinge_reporter_on_data_event(sensing_sensor_handle_t handle,
@@ -144,6 +171,8 @@ static void hinge_reporter_on_data_event(sensing_sensor_handle_t handle,
 		}
 
 		sample->readings[0].v = calc_hinge_angle(data);
+		sample->header.reading_count = 1;
+		sample->shift = SENSING_HINGE_ANGLE_Q31_SHIFT;
 
 		struct rtio_iodev_sqe *sqe = data->sqe;
 
