@@ -512,7 +512,7 @@ static int eth_dm9051_recv_pkt(const struct device *dev, struct net_pkt **out)
 				      sizeof(rxhdr));
 	if (ret < 0) {
 		LOG_ERR("%s: Failed to read RX header (err %d)", dev->name, ret);
-		return ret;
+		goto out_restart;
 	}
 
 	rx_len = sys_get_le16(rxhdr.len);
@@ -529,11 +529,7 @@ static int eth_dm9051_recv_pkt(const struct device *dev, struct net_pkt **out)
 				rx_len, ETH_DM9051_MIN_FRAME_SIZE, ETH_DM9051_MAX_FRAME_SIZE);
 		}
 
-		ret = eth_dm9051_hw_start(dev, data->iface);
-		if (ret < 0) {
-			LOG_ERR("%s: Failed to restart HW after RX error (err %d)", dev->name, ret);
-		}
-		return -EIO;
+		goto out_restart;
 	}
 
 	/* Drop a frame larger than the stack accepts */
@@ -544,7 +540,7 @@ static int eth_dm9051_recv_pkt(const struct device *dev, struct net_pkt **out)
 		ret = eth_dm9051_spi_read_mem(dev, DM9051_MRCMD, NULL, rx_len);
 		if (ret < 0) {
 			LOG_ERR("%s: Failed to discard RX data (err %d)", dev->name, ret);
-			return ret;
+			goto out_restart;
 		}
 		return -EMSGSIZE;
 	}
@@ -559,7 +555,7 @@ static int eth_dm9051_recv_pkt(const struct device *dev, struct net_pkt **out)
 		ret = eth_dm9051_spi_read_mem(dev, DM9051_MRCMD, NULL, rx_len);
 		if (ret < 0) {
 			LOG_ERR("%s: Failed to discard RX data (err %d)", dev->name, ret);
-			return ret;
+			goto out_restart;
 		}
 		return -ENOMEM;
 	}
@@ -568,7 +564,8 @@ static int eth_dm9051_recv_pkt(const struct device *dev, struct net_pkt **out)
 	ret = eth_dm9051_spi_read_mem(dev, DM9051_MRCMD, data->rx_buf, rx_len);
 	if (ret < 0) {
 		LOG_ERR("%s: Failed to read RX data (err %d)", dev->name, ret);
-		goto out_net_pkt_unref;
+		net_pkt_unref(pkt);
+		goto out_restart;
 	}
 
 	/* Write RX data to net_pkt */
@@ -584,6 +581,14 @@ static int eth_dm9051_recv_pkt(const struct device *dev, struct net_pkt **out)
 out_net_pkt_unref:
 	net_pkt_unref(pkt);
 	return ret;
+
+out_restart:
+	/* The RX SRAM read pointer is not known to be at a frame boundary */
+	ret = eth_dm9051_hw_start(dev, data->iface);
+	if (ret < 0) {
+		LOG_ERR("%s: Failed to restart HW after RX error (err %d)", dev->name, ret);
+	}
+	return -EIO;
 }
 
 /* Drain RX SRAM. Returns the number of frames read, or a negative errno. */
