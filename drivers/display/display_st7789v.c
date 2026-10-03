@@ -60,6 +60,8 @@ struct st7789v_config {
 
 	uint16_t height;
 	uint16_t width;
+	uint16_t x_offset;
+	uint16_t y_offset;
 	uint8_t ready_time_ms;
 	uint32_t pixel_format;
 };
@@ -67,18 +69,10 @@ struct st7789v_config {
 struct st7789v_data {
 	uint16_t x_offset;
 	uint16_t y_offset;
+	enum display_orientation orientation;
 };
 
 #define ST7789V_PIXEL_SIZE(fmt)	DISPLAY_BITS_PER_PIXEL(fmt) / BITS_PER_BYTE
-
-static void st7789v_set_lcd_margins(const struct device *dev,
-				    uint16_t x_offset, uint16_t y_offset)
-{
-	struct st7789v_data *data = dev->data;
-
-	data->x_offset = x_offset;
-	data->y_offset = y_offset;
-}
 
 static int st7789v_transmit(const struct device *dev, uint8_t cmd,
 			    const uint8_t *tx_data, size_t tx_count)
@@ -234,13 +228,20 @@ static void st7789v_get_capabilities(const struct device *dev,
 			      struct display_capabilities *capabilities)
 {
 	const struct st7789v_config *config = dev->config;
+	const struct st7789v_data *data = dev->data;
 
-	capabilities->x_resolution = config->width;
-	capabilities->y_resolution = config->height;
+	if (data->orientation == DISPLAY_ORIENTATION_NORMAL ||
+	    data->orientation == DISPLAY_ORIENTATION_ROTATED_180) {
+		capabilities->x_resolution = config->width;
+		capabilities->y_resolution = config->height;
+	} else {
+		capabilities->x_resolution = config->height;
+		capabilities->y_resolution = config->width;
+	}
 
 	capabilities->supported_pixel_formats = config->pixel_format;
 	capabilities->current_pixel_format = config->pixel_format;
-	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
+	capabilities->current_orientation = data->orientation;
 }
 
 static inline uint8_t st7789v_get_colmod(enum display_pixel_format fmt)
@@ -269,19 +270,85 @@ static int st7789v_set_pixel_format(const struct device *dev,
 	return -ENOTSUP;
 }
 
+struct st7789v_geometry {
+	uint8_t mdac;
+	uint16_t x_offset;
+	uint16_t y_offset;
+	uint16_t width;
+	uint16_t height;
+};
+
+static void st7789v_rotate_cw(struct st7789v_geometry *geo)
+{
+	uint16_t frame_width = ((geo->mdac & ST7789V_MADCTL_MV_REVERSE_MODE) != 0U) ?
+			       ST7789V_GRAM_HEIGHT : ST7789V_GRAM_WIDTH;
+	uint16_t x_offset = geo->x_offset;
+	uint16_t width = geo->width;
+
+	if ((geo->mdac & ST7789V_MADCTL_MV_REVERSE_MODE) != 0U) {
+		geo->mdac &= ~ST7789V_MADCTL_MV_REVERSE_MODE;
+		geo->mdac ^= ST7789V_MADCTL_MY_BOTTOM_TO_TOP;
+	} else {
+		geo->mdac |= ST7789V_MADCTL_MV_REVERSE_MODE;
+		geo->mdac ^= ST7789V_MADCTL_MX_RIGHT_TO_LEFT;
+	}
+
+	geo->x_offset = geo->y_offset;
+	geo->y_offset = frame_width - x_offset - width;
+	geo->width = geo->height;
+	geo->height = width;
+}
+
 static int st7789v_set_orientation(const struct device *dev,
 			    const enum display_orientation orientation)
 {
-	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
-		return 0;
+	const struct st7789v_config *config = dev->config;
+	struct st7789v_data *data = dev->data;
+	struct st7789v_geometry geo = {
+		.mdac = config->mdac,
+		.x_offset = config->x_offset,
+		.y_offset = config->y_offset,
+		.width = config->width,
+		.height = config->height,
+	};
+	uint8_t rotations;
+	int ret;
+
+	switch (orientation) {
+	case DISPLAY_ORIENTATION_NORMAL:
+		rotations = 0U;
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_90:
+		rotations = 1U;
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_180:
+		rotations = 2U;
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_270:
+		rotations = 3U;
+		break;
+	default:
+		return -ENOTSUP;
 	}
-	LOG_ERR("Changing display orientation not implemented");
-	return -ENOTSUP;
+
+	for (uint8_t i = 0U; i < rotations; i++) {
+		st7789v_rotate_cw(&geo);
+	}
+
+	ret = st7789v_transmit(dev, ST7789V_CMD_MADCTL, &geo.mdac, 1);
+	if (ret < 0) {
+		return ret;
+	}
+
+	data->x_offset = geo.x_offset;
+	data->y_offset = geo.y_offset;
+	data->orientation = orientation;
+
+	return 0;
 }
 
 static int st7789v_lcd_init(const struct device *dev)
 {
-	struct st7789v_data *data = dev->data;
 	const struct st7789v_config *config = dev->config;
 	uint8_t dgmen = 0x00;
 	uint8_t frctrl2 = 0x0f;
@@ -289,9 +356,6 @@ static int st7789v_lcd_init(const struct device *dev)
 	uint8_t mdac = config->mdac;
 	uint8_t colmod = st7789v_get_colmod(config->pixel_format);
 	int ret;
-
-	st7789v_set_lcd_margins(dev, data->x_offset,
-				data->y_offset);
 
 	ret = st7789v_transmit_if(dev, config->present.cmd2en, ST7789V_CMD_CMD2EN,
 				  config->cmd2en_param, sizeof(config->cmd2en_param));
@@ -479,7 +543,17 @@ static DEVICE_API(display, st7789v_api) = {
 #define ST7789V_WORD_SIZE(inst)								\
 	((DT_INST_STRING_UPPER_TOKEN(inst, mipi_mode) == MIPI_DBI_MODE_SPI_4WIRE) ?     \
 	SPI_WORD_SET(8) : SPI_WORD_SET(9))
+#define ST7789V_MDAC_MV(inst)								\
+	((DT_INST_PROP(inst, mdac) & ST7789V_MADCTL_MV_REVERSE_MODE) != 0)
 #define ST7789V_INIT(inst)								\
+	BUILD_ASSERT(DT_INST_PROP(inst, x_offset) + DT_INST_PROP(inst, width) <=	\
+		     (ST7789V_MDAC_MV(inst) ?						\
+		      ST7789V_GRAM_HEIGHT : ST7789V_GRAM_WIDTH),			\
+		     "st7789v: x-offset + width exceeds the frame memory");		\
+	BUILD_ASSERT(DT_INST_PROP(inst, y_offset) + DT_INST_PROP(inst, height) <=	\
+		     (ST7789V_MDAC_MV(inst) ?						\
+		      ST7789V_GRAM_WIDTH : ST7789V_GRAM_HEIGHT),			\
+		     "st7789v: y-offset + height exceeds the frame memory");		\
 	static const struct st7789v_config st7789v_config_ ## inst = {			\
 		.mipi_dbi = DEVICE_DT_GET(DT_INST_PARENT(inst)),                        \
 		.dbi_config = MIPI_DBI_CONFIG_DT_INST(inst,                             \
@@ -517,6 +591,8 @@ static DEVICE_API(display, st7789v_api) = {
 		},									\
 		.width = DT_INST_PROP(inst, width),					\
 		.height = DT_INST_PROP(inst, height),					\
+		.x_offset = DT_INST_PROP(inst, x_offset),				\
+		.y_offset = DT_INST_PROP(inst, y_offset),				\
 		.ready_time_ms = DT_INST_PROP(inst, ready_time_ms),			\
 		.pixel_format = DT_INST_PROP(inst, pixel_format),			\
 	};										\
@@ -524,6 +600,7 @@ static DEVICE_API(display, st7789v_api) = {
 	static struct st7789v_data st7789v_data_ ## inst = {				\
 		.x_offset = DT_INST_PROP(inst, x_offset),				\
 		.y_offset = DT_INST_PROP(inst, y_offset),				\
+		.orientation = DISPLAY_ORIENTATION_NORMAL,				\
 	};										\
 											\
 	PM_DEVICE_DT_INST_DEFINE(inst, st7789v_pm_action);				\
