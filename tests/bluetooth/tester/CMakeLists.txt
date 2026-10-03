@@ -37,6 +37,14 @@ if(CONFIG_BT_RFCOMM)
     target_sources(app PRIVATE src/btp_rfcomm.c)
 endif()
 
+if(CONFIG_BT_HID_DEVICE)
+  target_sources(app PRIVATE src/btp_hid_device.c)
+endif()
+
+if(CONFIG_BT_HID_HOST)
+  target_sources(app PRIVATE src/btp_hid_host.c)
+endif()
+
 zephyr_library_include_directories(src src/btp src/audio/btp)
 add_subdirectory_ifdef(CONFIG_BT_AUDIO src/audio)
 
