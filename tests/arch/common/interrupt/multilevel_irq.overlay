@@ -35,10 +35,10 @@
 
 		test_l3_irq: interrupt-holder {
 			compatible = "vnd,interrupt-holder";
-			status = "okay";
 			interrupts = <13 3>;
 			interrupt-parent = <&test_l2_irq>;
 			interrupt-names = "test";
+			status = "okay";
 		};
 
 		test_l1_irq_inc: interrupt-controller@bbbbdccc {
@@ -61,10 +61,10 @@
 
 		test_l3_irq_inc: interrupt-holder-inc {
 			compatible = "vnd,interrupt-holder";
-			status = "okay";
 			interrupts = <16 3>; /* +3 */
 			interrupt-parent = <&test_l2_irq>;
 			interrupt-names = "test";
+			status = "okay";
 		};
 	};
 };
