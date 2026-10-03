@@ -190,6 +190,7 @@ struct ov2640_ctrls {
 	struct video_ctrl jpeg;
 	struct video_ctrl test_pattern;
 	struct video_ctrl link_freq;
+	struct video_ctrl vblank;
 };
 
 struct ov2640_data {
@@ -219,8 +220,6 @@ static const struct ov2640_reg default_regs[] = {
 	{ 0xff, 0x01 },
 	{ 0x3c, 0x32 },
 	{ 0x11, 0x80 },
-
-	{COM2, 0x00}, /* Output drive x2 */
 
 	{0x2c, 0x0c},
 	{0x33, 0x78},
@@ -572,183 +571,6 @@ static int ov2640_soft_reset(const struct device *dev)
 	return ret;
 }
 
-static int ov2640_set_level(const struct device *dev, int level, int max_level, int cols,
-			    const uint8_t regs[][cols])
-{
-	int ret = 0;
-	const struct ov2640_config *cfg = dev->config;
-
-	level += max_level / 2 + 1;
-
-	/* Switch to DSP register bank */
-	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_DSP);
-
-	for (int i = 0; i < (ARRAY_SIZE(regs[0]) / sizeof(regs[0][0])); i++) {
-		ret |= ov2640_write_reg(&cfg->i2c, regs[0][i], regs[level][i]);
-	}
-
-	return ret;
-}
-
-static int ov2640_set_quality(const struct device *dev, int qs)
-{
-	int ret = 0;
-	const struct ov2640_config *cfg = dev->config;
-
-	/* Switch to DSP register bank */
-	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_DSP);
-
-	/* Write QS register */
-	ret |= ov2640_write_reg(&cfg->i2c, QS, qs);
-
-	return ret;
-}
-
-static int ov2640_set_colorbar(const struct device *dev, uint8_t enable)
-{
-	int ret = 0;
-	const struct ov2640_config *cfg = dev->config;
-
-	uint8_t reg;
-
-	/* Switch to SENSOR register bank */
-	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_SENSOR);
-
-	/* Update COM7 to enable/disable color bar test pattern */
-
-	reg = ov2640_read_reg(&cfg->i2c, COM7);
-
-	if (enable) {
-		reg |= COM7_COLOR_BAR;
-	} else {
-		reg &= ~COM7_COLOR_BAR;
-	}
-
-	ret |= ov2640_write_reg(&cfg->i2c, COM7, reg);
-
-	return ret;
-}
-
-static int ov2640_set_white_bal(const struct device *dev, int enable)
-{
-	int ret = 0;
-	const struct ov2640_config *cfg = dev->config;
-
-	uint8_t reg;
-
-	/* Switch to SENSOR register bank */
-	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_SENSOR);
-
-	/* Update CTRL1 to enable/disable automatic white balance*/
-	reg = ov2640_read_reg(&cfg->i2c, CTRL1);
-
-	if (enable) {
-		reg |= CTRL1_AWB;
-	} else {
-		reg &= ~CTRL1_AWB;
-	}
-
-	ret |= ov2640_write_reg(&cfg->i2c, CTRL1, reg);
-
-	return ret;
-}
-
-static int ov2640_set_gain_ctrl(const struct device *dev, int enable)
-{
-	int ret = 0;
-	const struct ov2640_config *cfg = dev->config;
-
-	uint8_t reg;
-
-	/* Switch to SENSOR register bank */
-	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_SENSOR);
-
-	/* Update COM8 to enable/disable automatic gain control */
-	reg = ov2640_read_reg(&cfg->i2c, COM8);
-
-	if (enable) {
-		reg |= COM8_AGC_EN;
-	} else {
-		reg &= ~COM8_AGC_EN;
-	}
-
-	ret |= ov2640_write_reg(&cfg->i2c, COM8, reg);
-
-	return ret;
-}
-
-static int ov2640_set_exposure_ctrl(const struct device *dev, int enable)
-{
-	int ret = 0;
-	const struct ov2640_config *cfg = dev->config;
-
-	uint8_t reg;
-
-	/* Switch to SENSOR register bank */
-	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_SENSOR);
-
-	/* Update COM8  to enable/disable automatic exposure control */
-	reg = ov2640_read_reg(&cfg->i2c, COM8);
-
-	if (enable) {
-		reg |= COM8_AEC_EN;
-	} else {
-		reg &= ~COM8_AEC_EN;
-	}
-
-	ret |= ov2640_write_reg(&cfg->i2c, COM8, reg);
-
-	return ret;
-}
-
-static int ov2640_set_horizontal_mirror(const struct device *dev, int enable)
-{
-	int ret = 0;
-	const struct ov2640_config *cfg = dev->config;
-
-	uint8_t reg;
-
-	/* Switch to SENSOR register bank */
-	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_SENSOR);
-
-	/* Update REG04 to enable/disable horizontal mirror */
-	reg = ov2640_read_reg(&cfg->i2c, REG04);
-
-	if (enable) {
-		reg |= REG04_HFLIP_IMG;
-	} else {
-		reg &= ~REG04_HFLIP_IMG;
-	}
-
-	ret |= ov2640_write_reg(&cfg->i2c, REG04, reg);
-
-	return ret;
-}
-
-static int ov2640_set_vertical_flip(const struct device *dev, int enable)
-{
-	int ret = 0;
-	const struct ov2640_config *cfg = dev->config;
-
-	uint8_t reg;
-
-	/* Switch to SENSOR register bank */
-	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_SENSOR);
-
-	/* Update REG04 to enable/disable vertical flip */
-	reg = ov2640_read_reg(&cfg->i2c, REG04);
-
-	if (enable) {
-		reg |= REG04_VFLIP_IMG | REG04_VREF_EN;
-	} else {
-		reg &= ~(REG04_VFLIP_IMG | REG04_VREF_EN);
-	}
-
-	ret |= ov2640_write_reg(&cfg->i2c, REG04, reg);
-
-	return ret;
-}
-
 static int ov2640_apply_config(const struct device *dev)
 {
 	const struct ov2640_config *cfg = dev->config;
@@ -844,6 +666,7 @@ static int ov2640_apply_config(const struct device *dev)
 	}
 
 	/* Wait the new clock to stabilize */
+
 	k_sleep(K_MSEC(1));
 
 	/* DSP configuration in UXGA */
@@ -854,6 +677,7 @@ static int ov2640_apply_config(const struct device *dev)
 	}
 
 	/* Enable DSP */
+
 	ret = ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_DSP);
 	if (ret < 0) {
 		return ret;
@@ -978,6 +802,206 @@ static int ov2640_get_caps(const struct device *dev, struct video_caps *caps)
 	return 0;
 }
 
+static int ov2640_set_level(const struct device *dev, int level, int max_level, int cols,
+			    const uint8_t regs[][cols])
+{
+	int ret = 0;
+	const struct ov2640_config *cfg = dev->config;
+
+	level += max_level / 2 + 1;
+
+	/* Switch to DSP register bank */
+	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_DSP);
+
+	for (int i = 0; i < (ARRAY_SIZE(regs[0]) / sizeof(regs[0][0])); i++) {
+		ret |= ov2640_write_reg(&cfg->i2c, regs[0][i], regs[level][i]);
+	}
+
+	return ret;
+}
+
+static int ov2640_set_ctrl_jpeg_compression_quality(const struct device *dev, int qs)
+{
+	int ret = 0;
+	const struct ov2640_config *cfg = dev->config;
+
+	/* Switch to DSP register bank */
+	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_DSP);
+
+	/* Write QS register */
+	ret |= ov2640_write_reg(&cfg->i2c, QS, qs);
+
+	return ret;
+}
+
+static int ov2640_set_ctrl_test_pattern(const struct device *dev, uint8_t enable)
+{
+	int ret = 0;
+	const struct ov2640_config *cfg = dev->config;
+
+	uint8_t reg;
+
+	/* Switch to SENSOR register bank */
+	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_SENSOR);
+
+	/* Update COM7 to enable/disable color bar test pattern */
+
+	reg = ov2640_read_reg(&cfg->i2c, COM7);
+
+	if (enable) {
+		reg |= COM7_COLOR_BAR;
+	} else {
+		reg &= ~COM7_COLOR_BAR;
+	}
+
+	ret |= ov2640_write_reg(&cfg->i2c, COM7, reg);
+
+	return ret;
+}
+
+static int ov2640_set_ctrl_white_balance_temperature(const struct device *dev, int enable)
+{
+	int ret = 0;
+	const struct ov2640_config *cfg = dev->config;
+
+	uint8_t reg;
+
+	/* Switch to SENSOR register bank */
+	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_SENSOR);
+
+	/* Update CTRL1 to enable/disable automatic white balance*/
+	reg = ov2640_read_reg(&cfg->i2c, CTRL1);
+
+	if (enable) {
+		reg |= CTRL1_AWB;
+	} else {
+		reg &= ~CTRL1_AWB;
+	}
+
+	ret |= ov2640_write_reg(&cfg->i2c, CTRL1, reg);
+
+	return ret;
+}
+
+static int ov2640_set_ctrl_gain(const struct device *dev, int enable)
+{
+	int ret = 0;
+	const struct ov2640_config *cfg = dev->config;
+
+	uint8_t reg;
+
+	/* Switch to SENSOR register bank */
+	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_SENSOR);
+
+	/* Update COM8 to enable/disable automatic gain control */
+	reg = ov2640_read_reg(&cfg->i2c, COM8);
+
+	if (enable) {
+		reg |= COM8_AGC_EN;
+	} else {
+		reg &= ~COM8_AGC_EN;
+	}
+
+	ret |= ov2640_write_reg(&cfg->i2c, COM8, reg);
+
+	return ret;
+}
+
+static int ov2640_set_ctrl_exposure(const struct device *dev, int enable)
+{
+	int ret = 0;
+	const struct ov2640_config *cfg = dev->config;
+
+	uint8_t reg;
+
+	/* Switch to SENSOR register bank */
+	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_SENSOR);
+
+	/* Update COM8  to enable/disable automatic exposure control */
+	reg = ov2640_read_reg(&cfg->i2c, COM8);
+
+	if (enable) {
+		reg |= COM8_AEC_EN;
+	} else {
+		reg &= ~COM8_AEC_EN;
+	}
+
+	ret |= ov2640_write_reg(&cfg->i2c, COM8, reg);
+
+	return ret;
+}
+
+static int ov2640_set_ctrl_hflip(const struct device *dev, int enable)
+{
+	int ret = 0;
+	const struct ov2640_config *cfg = dev->config;
+
+	uint8_t reg;
+
+	/* Switch to SENSOR register bank */
+	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_SENSOR);
+
+	/* Update REG04 to enable/disable horizontal mirror */
+	reg = ov2640_read_reg(&cfg->i2c, REG04);
+
+	if (enable) {
+		reg |= REG04_HFLIP_IMG;
+	} else {
+		reg &= ~REG04_HFLIP_IMG;
+	}
+
+	ret |= ov2640_write_reg(&cfg->i2c, REG04, reg);
+
+	return ret;
+}
+
+static int ov2640_set_ctrl_vflip(const struct device *dev, int enable)
+{
+	int ret = 0;
+	const struct ov2640_config *cfg = dev->config;
+
+	uint8_t reg;
+
+	/* Switch to SENSOR register bank */
+	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_SENSOR);
+
+	/* Update REG04 to enable/disable vertical flip */
+	reg = ov2640_read_reg(&cfg->i2c, REG04);
+
+	if (enable) {
+		reg |= REG04_VFLIP_IMG | REG04_VREF_EN;
+	} else {
+		reg &= ~(REG04_VFLIP_IMG | REG04_VREF_EN);
+	}
+
+	ret |= ov2640_write_reg(&cfg->i2c, REG04, reg);
+
+	return ret;
+}
+
+static int ov2640_set_ctrl_vblank(const struct device *dev, uint16_t lines)
+{
+	const struct ov2640_config *cfg = dev->config;
+	int ret;
+
+	ret = ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_SENSOR);
+	if (ret) {
+		return ret;
+	}
+
+	ret = ov2640_write_reg(&cfg->i2c, ADDVSH, lines >> 8);
+	if (ret) {
+		return ret;
+	}
+
+	ret = ov2640_write_reg(&cfg->i2c, ADDVSL, lines & 0xFF);
+	if (ret) {
+		return ret;
+	}
+
+	return 0;
+}
+
 static int ov2640_set_ctrl(const struct device *dev, uint32_t id)
 {
 	struct ov2640_data *drv_data = dev->data;
@@ -985,15 +1009,15 @@ static int ov2640_set_ctrl(const struct device *dev, uint32_t id)
 
 	switch (id) {
 	case VIDEO_CID_HFLIP:
-		return ov2640_set_horizontal_mirror(dev, ctrls->hflip.val);
+		return ov2640_set_ctrl_hflip(dev, ctrls->hflip.val);
 	case VIDEO_CID_VFLIP:
-		return ov2640_set_vertical_flip(dev, ctrls->vflip.val);
+		return ov2640_set_ctrl_vflip(dev, ctrls->vflip.val);
 	case VIDEO_CID_EXPOSURE:
-		return ov2640_set_exposure_ctrl(dev, ctrls->ae.val);
+		return ov2640_set_ctrl_exposure(dev, ctrls->ae.val);
 	case VIDEO_CID_WHITE_BALANCE_TEMPERATURE:
-		return ov2640_set_white_bal(dev, ctrls->awb.val);
+		return ov2640_set_ctrl_white_balance_temperature(dev, ctrls->awb.val);
 	case VIDEO_CID_GAIN:
-		return ov2640_set_gain_ctrl(dev, ctrls->gain.val);
+		return ov2640_set_ctrl_gain(dev, ctrls->gain.val);
 	case VIDEO_CID_BRIGHTNESS:
 		return ov2640_set_level(dev, ctrls->brightness.val, NUM_BRIGHTNESS_LEVELS,
 					ARRAY_SIZE(brightness_regs[0]), brightness_regs);
@@ -1004,9 +1028,11 @@ static int ov2640_set_ctrl(const struct device *dev, uint32_t id)
 		return ov2640_set_level(dev, ctrls->saturation.val, NUM_SATURATION_LEVELS,
 					ARRAY_SIZE(saturation_regs[0]), saturation_regs);
 	case VIDEO_CID_JPEG_COMPRESSION_QUALITY:
-		return ov2640_set_quality(dev, ctrls->jpeg.val);
+		return ov2640_set_ctrl_jpeg_compression_quality(dev, ctrls->jpeg.val);
 	case VIDEO_CID_TEST_PATTERN:
-		return ov2640_set_colorbar(dev, ctrls->test_pattern.val);
+		return ov2640_set_ctrl_test_pattern(dev, ctrls->test_pattern.val);
+	case VIDEO_CID_VBLANK:
+		return ov2640_set_ctrl_vblank(dev, ctrls->vblank.val);
 	default:
 		return -ENOTSUP;
 	}
@@ -1086,6 +1112,13 @@ static int ov2640_init_controls(const struct device *dev)
 
 	ret = video_init_ctrl(&ctrls->test_pattern, dev, VIDEO_CID_TEST_PATTERN,
 			       (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
+	if (ret) {
+		return ret;
+	}
+
+	ret = video_init_ctrl(&ctrls->vblank, dev, VIDEO_CID_VBLANK,
+			       (struct video_ctrl_range){.min = 0, .max = UINT16_MAX, .step = 1,
+							 .def = 0});
 	if (ret) {
 		return ret;
 	}
