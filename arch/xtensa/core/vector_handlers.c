@@ -89,8 +89,7 @@ bool xtensa_is_outside_stack_bounds(uintptr_t addr, size_t sz, uint32_t ps)
 		 */
 		start = (uintptr_t)thread->stack_obj;
 		end = Z_STACK_PTR_ALIGN(thread->stack_info.start + thread->stack_info.size);
-	} else if (((ps & PS_RING_MASK) == 0U) &&
-		   ((thread->base.user_options & K_USER) == K_USER)) {
+	} else if (((ps & PS_RING_MASK) == 0U) && k_thread_is_user_thread(thread)) {
 		/* Check if this is a user thread, and that it was running in
 		 * kernel mode. If so, we must have been doing a syscall, so
 		 * check with privileged stack bounds.
