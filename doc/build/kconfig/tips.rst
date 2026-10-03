@@ -85,6 +85,63 @@ board specific properties may be appropriate. See
 
 For applications, see :zephyr:code-sample:`blinky` for a devicetree-based alternative.
 
+Build system defined variables
+==============================
+
+The Zephyr build system generates some Kconfig values internally itself which should never have
+types re-declared in Kconfig files, it is fine to reference or extend them. The build system
+currently generates board Kconfigs and devicetree ``DT_HAS_*`` Kconfigs, this may be extended in
+future releases of Zephyr.
+
+Mocking Kconfigs in tests
+=========================
+
+Tests can add a :file:`Kconfig` file to set Kconfigs for testing (i.e. unit testing or using
+frameworks) for features without the hardware having the underlying support. Tests
+**should not** use ``add_compile_definitions`` or ``zephyr_compile_options`` to fake Kconfigs
+being set, instead Kconfigs
+:ref:`that have been properly setup with helper symbols <good_select_use>` can do the following
+in test's Kocnfig file:
+
+.. code-block:: kconfig
+
+   config TEST_OPTIONS
+   	select CPU_HAS_FPU
+
+   config SOME_KCONFIG_DEPENDING_ON_FPU
+   	default y
+
+The above will then include the feature and allow mocking of if without having to duplicate Kconfigs.
+
+Symbol declarations
+*******************
+
+Symbols should be declared in one place only, this declaration should have the type of the
+symbol. This does not mean that Kconfigs cannot be changed or adapted from elsewhere, just that
+the type specifier should be on the primary symbol only. For example:
+
+.. code-block:: kconfig
+
+   config MY_AWESOME_CONFIG
+   	bool "Example text for a feature"
+
+The features of this Kconfig can be changed elsewhere without re-declaring it by doing:
+
+.. code-block:: kconfig
+
+   config MY_AWESOME_CONFIG
+   	select MY_OTHER_CONFIG
+
+And defaults set as normal with:
+
+.. code-block:: kconfig
+
+   configdefault MY_AWESOME_CONFIG
+   	default y
+
+This avoids issues if the original Kconfig is renamed or removed, if it is wrongly declared
+multiple times then users will be wholly unaware that the Kconfig is no longer valid.
+
 ``select`` statements
 *********************
 
@@ -867,17 +924,6 @@ the same definition is redundant, since it gives the type twice.
 The ``def_<type> <value>`` shorthand is generally only useful for symbols
 without prompts, and somewhat obscure.
 
-.. note::
-
-   For a symbol defined in multiple locations (e.g., in a ``Kconfig.defconfig``
-   file in Zephyr), it is best to only give the symbol type for the "base"
-   definition of the symbol, and to use ``default`` (instead of ``def_<type>
-   value``) for the remaining definitions. That way, if the base definition of
-   the symbol is removed, the symbol ends up without a type, which generates a
-   warning that points to the other definitions. That makes the extra
-   definitions easier to discover and remove.
-
-
 Prompt strings
 ==============
 
@@ -972,6 +1018,53 @@ toggled off to select none of the symbols:
 In the ``menuconfig`` interface, this will be displayed e.g. as
 ``[*] Use legacy protocol (Legacy protocol 1) --->``, where the choice can be
 toggled off to enable neither of the symbols.
+
+Choice symbol extensions
+========================
+
+Choice symbols can be extended elsewhere to add new options. An example of this would be a choice
+which specifies a single option out of many possible options like so:
+
+.. code-block:: kconfig
+
+   choice SECURITY_BACKEND
+   	prompt "Security backend"
+
+   config SECURITY_BACKEND_NONE
+   	bool "None"
+
+   config SECURITY_BACKEND_ONE
+   	bool "One type"
+
+   config SECURITY_BACKEND_TWO
+   	bool "Two type"
+
+   endchoice
+
+By giving the choice a name, it can be extended from elsewhere without re-declaring the prompt,
+like so:
+
+.. code-block:: kconfig
+
+   choice SECURITY_BACKEND
+
+   config SECURITY_BACKEND_EXTERNAL
+   	bool "External type"
+
+   endchoice
+
+The default value can also be changed if desired:
+
+.. code-block:: kconfig
+
+   choice SECURITY_BACKEND
+   	default SECURITY_BACKEND_ONE if SOME_CONDITION_HERE
+   endchoice
+
+.. note::
+
+   The first instance of a Kconfig default will be the one that is set as default and later
+   loaded defaults will not apply.
 
 
 ``visible if`` conditions
