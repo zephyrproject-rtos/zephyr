@@ -1,0 +1,14 @@
+sample:
+  name: Asynchronous biometrics
+  description: Device-managed biometric enrollment and asynchronous identification
+
+tests:
+  sample.drivers.biometrics.async:
+    tags:
+      - drivers
+      - biometrics
+    build_only: true
+    filter: dt_alias_exists("biometrics")
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64

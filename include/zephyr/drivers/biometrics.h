@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Siratul Islam <email@sirat.me>
+ * Copyright (c) 2025 Siratul Islam <siratul.islam@linux.dev>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,30 +17,27 @@
  * @brief Interfaces for biometric sensors.
  * @defgroup biometrics_interface Biometrics
  * @since 4.4
- * @version 0.1.0
+ * @version 0.2.0
  * @ingroup io_interfaces
  * @{
  */
 
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
+#include <zephyr/types.h>
 #include <errno.h>
 #include <stddef.h>
-#include <zephyr/types.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/**
- * @brief Biometrics sensor types
- */
-enum biometric_sensor_type {
-	BIOMETRIC_TYPE_FINGERPRINT, /**< Fingerprint sensor */
-	BIOMETRIC_TYPE_IRIS,        /**< Iris scanner */
-	BIOMETRIC_TYPE_FACE,        /**< Face recognition */
-	BIOMETRIC_TYPE_VOICE,       /**< Voice recognition */
-};
+/** @brief Biometric modality flags */
+#define BIOMETRIC_MODALITY_FINGERPRINT BIT(0) /**< Fingerprint sensor */
+#define BIOMETRIC_MODALITY_IRIS        BIT(1) /**< Iris scanner */
+#define BIOMETRIC_MODALITY_FACE        BIT(2) /**< Face recognition */
+#define BIOMETRIC_MODALITY_VOICE       BIT(3) /**< Voice recognition */
+#define BIOMETRIC_MODALITY_PALM        BIT(4) /**< Palm recognition */
 
 /**
  * @brief Biometric matching modes
@@ -82,6 +79,8 @@ enum biometric_attribute {
 	BIOMETRIC_ATTR_ANTI_SPOOF_LEVEL,
 	/** Last captured image quality score (sensor-specific range), read-only */
 	BIOMETRIC_ATTR_IMAGE_QUALITY,
+	/** Duplicate enrollment policy (0 = reject duplicates, 1 = allow) */
+	BIOMETRIC_ATTR_DUPLICATE_POLICY,
 	/**
 	 * Number of all common biometric attributes.
 	 */
@@ -97,32 +96,47 @@ enum biometric_attribute {
 	BIOMETRIC_ATTR_MAX = INT16_MAX,
 };
 
+/** @brief Request automatic template ID allocation with biometric_enroll_async(). */
+#define BIOMETRIC_ID_AUTO 0
+
+/** @brief Optional asynchronous operations. */
+#define BIOMETRIC_ASYNC_IDENTIFY BIT(0) /**< Asynchronous identification. */
+#define BIOMETRIC_ASYNC_ENROLL   BIT(1) /**< Asynchronous device-managed enrollment. */
+#define BIOMETRIC_ASYNC_VERIFY   BIT(2) /**< Asynchronous verification. */
+
 /**
  * @brief Biometric sensor capabilities
  */
 struct biometric_capabilities {
-	/** Biometric sensor type */
-	enum biometric_sensor_type type;
+	/** Bitmask of supported modalities */
+	uint32_t supported_modalities;
 	/** Maximum templates device can store */
 	uint16_t max_templates;
-	/** Size of each template in bytes */
+	/** Template size in bytes, or zero when unavailable. */
 	uint16_t template_size;
 	/** Bitmask of supported storage modes */
 	uint8_t storage_modes;
-	/** Number of samples needed for enrollment */
+	/** Staged enrollment sample count, or zero for device-managed enrollment only. */
 	uint8_t enrollment_samples_required;
+	/** Supported BIOMETRIC_ASYNC_* flags, or zero if none are supported. */
+	uint32_t async_operations;
 };
 
 /**
  * @brief Result from a biometric match operation
  */
 struct biometric_match_result {
-	/** Confidence/match score (sensor-specific scale, higher is better) */
+	/**
+	 * Confidence/match score (sensor-specific scale, higher is better),
+	 * or zero if unavailable.
+	 */
 	int32_t confidence;
 	/** Matched template ID (for IDENTIFY mode, or verified ID for VERIFY mode) */
 	uint16_t template_id;
-	/** Quality score of the captured sample used for matching (0-100) */
+	/** Sample quality (0-100), or zero if unavailable. */
 	uint8_t image_quality;
+	/** Modality that produced this result */
+	uint32_t modality;
 };
 
 /**
@@ -137,7 +151,55 @@ struct biometric_capture_result {
 	uint8_t samples_required;
 	/** Quality score of the captured sample (0-100) */
 	uint8_t quality;
+	/** Assigned template ID */
+	uint16_t template_id;
 };
+
+/** @brief Asynchronous biometric event types. */
+enum biometric_event_type {
+	BIOMETRIC_EVENT_MATCH,           /**< Matching succeeded. */
+	BIOMETRIC_EVENT_NO_MATCH,        /**< Matching attempt timed out or rejected the sample. */
+	BIOMETRIC_EVENT_ENROLL_COMPLETE, /**< Enrollment succeeded and the template is stored. */
+	BIOMETRIC_EVENT_ERROR,           /**< An operation or its cleanup failed. */
+	BIOMETRIC_EVENT_STOPPED,         /**< Final event of an asynchronous operation. */
+};
+
+/** @brief Result of device-managed enrollment. */
+struct biometric_enrollment_result {
+	uint16_t template_id; /**< Actual stored template ID. */
+	uint32_t modality;    /**< Single BIOMETRIC_MODALITY_* flag for the enrolled modality. */
+};
+
+/**
+ * @brief An asynchronous biometric event.
+ *
+ * Every accepted asynchronous request ends with exactly one STOPPED event.
+ * Operation or cleanup failures report ERROR before STOPPED.
+ */
+struct biometric_event {
+	enum biometric_event_type type; /**< Event discriminator. */
+	/** Operation or attempt status: zero on success, negative errno otherwise. */
+	int status;
+	/** Event-specific result, selected by type. */
+	union {
+		struct biometric_match_result match;           /**< Valid for MATCH. */
+		struct biometric_enrollment_result enrollment; /**< Valid for ENROLL_COMPLETE. */
+	};
+};
+
+/**
+ * @brief Handle a biometric event in driver thread context.
+ *
+ * Callbacks run in event order and must return promptly. Do not call biometric
+ * control or database APIs for this device from the callback.
+ * The device remains busy during the final STOPPED callback.
+ *
+ * @param dev Biometric device.
+ * @param event Event, valid only until the callback returns.
+ * @param user_data Application context registered with biometric_callback_set().
+ */
+typedef void (*biometric_event_callback_t)(const struct device *dev,
+					   const struct biometric_event *event, void *user_data);
 
 /**
  * @def_driverbackendgroup{Biometrics,biometrics_interface}
@@ -238,6 +300,34 @@ typedef int (*biometric_api_match)(const struct device *dev, enum biometric_matc
 typedef int (*biometric_api_led_control)(const struct device *dev, enum biometric_led_state state);
 
 /**
+ * @brief Callback API to register an event callback.
+ * See biometric_callback_set() for argument description
+ */
+typedef int (*biometric_api_callback_set)(const struct device *dev,
+					  biometric_event_callback_t callback, void *user_data);
+
+/**
+ * @brief Callback API to perform asynchronous matching.
+ * See biometric_match_async() for argument description
+ */
+typedef int (*biometric_api_match_async)(const struct device *dev, enum biometric_match_mode mode,
+					 uint16_t template_id, bool continuous,
+					 k_timeout_t timeout);
+
+/**
+ * @brief Callback API to start asynchronous enrollment.
+ * See biometric_enroll_async() for argument description
+ */
+typedef int (*biometric_api_enroll_async)(const struct device *dev, uint16_t template_id,
+					  k_timeout_t timeout);
+
+/**
+ * @brief Callback API to stop an asynchronous operation.
+ * See biometric_async_stop() for argument description
+ */
+typedef int (*biometric_api_async_stop)(const struct device *dev);
+
+/**
  * @driver_ops{Biometrics}
  */
 __subsystem struct biometric_driver_api {
@@ -254,15 +344,15 @@ __subsystem struct biometric_driver_api {
 	 */
 	biometric_api_attr_get attr_get;
 	/**
-	 * @driver_ops_mandatory @copybrief biometric_enroll_start
+	 * @driver_ops_optional @copybrief biometric_enroll_start
 	 */
 	biometric_api_enroll_start enroll_start;
 	/**
-	 * @driver_ops_mandatory @copybrief biometric_enroll_capture
+	 * @driver_ops_optional @copybrief biometric_enroll_capture
 	 */
 	biometric_api_enroll_capture enroll_capture;
 	/**
-	 * @driver_ops_mandatory @copybrief biometric_enroll_finalize
+	 * @driver_ops_optional @copybrief biometric_enroll_finalize
 	 */
 	biometric_api_enroll_finalize enroll_finalize;
 	/**
@@ -297,6 +387,22 @@ __subsystem struct biometric_driver_api {
 	 * @driver_ops_optional @copybrief biometric_led_control
 	 */
 	biometric_api_led_control led_control;
+	/**
+	 * @driver_ops_optional @copybrief biometric_callback_set
+	 */
+	biometric_api_callback_set callback_set;
+	/**
+	 * @driver_ops_optional @copybrief biometric_match_async
+	 */
+	biometric_api_match_async match_async;
+	/**
+	 * @driver_ops_optional @copybrief biometric_enroll_async
+	 */
+	biometric_api_enroll_async enroll_async;
+	/**
+	 * @driver_ops_optional @copybrief biometric_async_stop
+	 */
+	biometric_api_async_stop async_stop;
 };
 
 /**
@@ -391,12 +497,19 @@ static inline int z_impl_biometric_attr_get(const struct device *dev, enum biome
  * @return 0 on success, negative errno value on failure.
  * @retval -EINVAL Invalid template_id or enrollment in progress.
  * @retval -ENOSPC No space for new template.
+ * @retval -ENOSYS Not supported by device.
  */
 __syscall int biometric_enroll_start(const struct device *dev, uint16_t template_id);
 
 static inline int z_impl_biometric_enroll_start(const struct device *dev, uint16_t template_id)
 {
-	return DEVICE_API_GET(biometric, dev)->enroll_start(dev, template_id);
+	const struct biometric_driver_api *api = DEVICE_API_GET(biometric, dev);
+
+	if (api->enroll_start == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->enroll_start(dev, template_id);
 }
 
 /**
@@ -414,6 +527,7 @@ static inline int z_impl_biometric_enroll_start(const struct device *dev, uint16
  * @return 0 on success, negative errno value on failure.
  * @retval -EINVAL No enrollment started or already have enough samples.
  * @retval -ETIMEDOUT Timeout waiting for sample.
+ * @retval -ENOSYS Not supported by device.
  */
 __syscall int biometric_enroll_capture(const struct device *dev, k_timeout_t timeout,
 				       struct biometric_capture_result *result);
@@ -421,7 +535,13 @@ __syscall int biometric_enroll_capture(const struct device *dev, k_timeout_t tim
 static inline int z_impl_biometric_enroll_capture(const struct device *dev, k_timeout_t timeout,
 						  struct biometric_capture_result *result)
 {
-	return DEVICE_API_GET(biometric, dev)->enroll_capture(dev, timeout, result);
+	const struct biometric_driver_api *api = DEVICE_API_GET(biometric, dev);
+
+	if (api->enroll_capture == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->enroll_capture(dev, timeout, result);
 }
 
 /**
@@ -434,12 +554,19 @@ static inline int z_impl_biometric_enroll_capture(const struct device *dev, k_ti
  * @return 0 on success, negative errno value on failure.
  * @retval -EINVAL Insufficient samples.
  * @retval -ENOSPC No space to store template.
+ * @retval -ENOSYS Not supported by device.
  */
 __syscall int biometric_enroll_finalize(const struct device *dev);
 
 static inline int z_impl_biometric_enroll_finalize(const struct device *dev)
 {
-	return DEVICE_API_GET(biometric, dev)->enroll_finalize(dev);
+	const struct biometric_driver_api *api = DEVICE_API_GET(biometric, dev);
+
+	if (api->enroll_finalize == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->enroll_finalize(dev);
 }
 
 /**
@@ -652,6 +779,134 @@ static inline int z_impl_biometric_led_control(const struct device *dev,
 	}
 
 	return api->led_control(dev, state);
+}
+
+/**
+ * @brief Register an asynchronous event callback while the device is idle.
+ *
+ * Registration persists across operations and does not start one. Keep user_data
+ * valid until the callback is successfully replaced or unregistered while idle.
+ *
+ * @supervisor
+ * @param dev Biometric device.
+ * @param callback Event callback, or NULL to unregister while idle.
+ * @param user_data Application context, possibly NULL.
+ *
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS Callback registration is not implemented.
+ * @retval -EBUSY An operation or callback is active.
+ * @retval -EWOULDBLOCK Called from ISR or the device's callback thread.
+ */
+static inline int biometric_callback_set(const struct device *dev,
+					 biometric_event_callback_t callback, void *user_data)
+{
+	const struct biometric_driver_api *api = DEVICE_API_GET(biometric, dev);
+
+	if (api->callback_set == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->callback_set(dev, callback, user_data);
+}
+
+/**
+ * @brief Perform asynchronous biometric matching.
+ *
+ * Requires a registered callback. Returns after accepting the request.
+ * Detects modality automatically and reports MATCH or NO_MATCH per attempt.
+ * Continuous matching runs until stopped or a fatal error occurs.
+ * For a single attempt, STOPPED reports zero after normal completion and
+ * successful cleanup, including after NO_MATCH.
+ *
+ * @param dev Biometric device.
+ * @param mode Verify against one template or identify against the database.
+ * @param template_id Template ID for verification (1 to max_templates); ignored for identification.
+ * @param continuous True to repeat attempts, false for a single attempt.
+ * @param timeout Positive finite timeout for each attempt; drivers may round up.
+ *
+ * @return 0 if the request is accepted, negative errno value on failure.
+ * @retval -ENOSYS Asynchronous matching is not implemented.
+ * @retval -ENOTSUP Matching mode or repetition choice is not supported by the device.
+ * @retval -EINVAL Invalid mode, template ID, missing callback, or unsupported timeout.
+ * @retval -EBUSY An operation or callback is active.
+ * @retval -EWOULDBLOCK Called from ISR or the device's callback thread.
+ */
+__syscall int biometric_match_async(const struct device *dev, enum biometric_match_mode mode,
+				    uint16_t template_id, bool continuous, k_timeout_t timeout);
+
+static inline int z_impl_biometric_match_async(const struct device *dev,
+					       enum biometric_match_mode mode, uint16_t template_id,
+					       bool continuous, k_timeout_t timeout)
+{
+	const struct biometric_driver_api *api = DEVICE_API_GET(biometric, dev);
+
+	if (api->match_async == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->match_async(dev, mode, template_id, continuous, timeout);
+}
+
+/**
+ * @brief Enroll a template asynchronously using device-managed capture and storage.
+ *
+ * Requires a registered callback and returns after accepting the request.
+ * Modality is detected automatically. ENROLL_COMPLETE reports the actual stored
+ * template's ID and modality.
+ *
+ * @param dev Biometric device.
+ * @param template_id Requested template ID (1 to max_templates), or BIOMETRIC_ID_AUTO
+ *                    for automatic allocation.
+ * @param timeout Positive finite enrollment timeout; drivers may round up.
+ *
+ * @return 0 if the request is accepted, negative errno value on failure.
+ * @retval -ENOSYS Asynchronous enrollment is not implemented.
+ * @retval -ENOTSUP Requested ID allocation policy is not supported.
+ * @retval -EINVAL Invalid template ID, missing callback, or unsupported timeout.
+ * @retval -EBUSY An operation or callback is active.
+ * @retval -EWOULDBLOCK Called from ISR or the device's callback thread.
+ */
+__syscall int biometric_enroll_async(const struct device *dev, uint16_t template_id,
+				     k_timeout_t timeout);
+
+static inline int z_impl_biometric_enroll_async(const struct device *dev, uint16_t template_id,
+						k_timeout_t timeout)
+{
+	const struct biometric_driver_api *api = DEVICE_API_GET(biometric, dev);
+
+	if (api->enroll_async == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->enroll_async(dev, template_id, timeout);
+}
+
+/**
+ * @brief Stop an asynchronous operation and wait for callbacks to finish.
+ *
+ * Stopping enrollment does not delete a template already stored by the device.
+ * Cancellation reports STOPPED with status -ECANCELED unless cleanup fails.
+ * If the operation finishes before cancellation takes effect, its result is preserved.
+ *
+ * @param dev Biometric device.
+ *
+ * @return 0 on successful stop and protocol cleanup, negative errno value on failure.
+ * @retval -ENOSYS Stopping is not implemented.
+ * @retval -EALREADY No asynchronous operation is active.
+ * @retval -EBUSY A conflicting control operation is active.
+ * @retval -EWOULDBLOCK Called from ISR or the device's callback thread.
+ */
+__syscall int biometric_async_stop(const struct device *dev);
+
+static inline int z_impl_biometric_async_stop(const struct device *dev)
+{
+	const struct biometric_driver_api *api = DEVICE_API_GET(biometric, dev);
+
+	if (api->async_stop == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->async_stop(dev);
 }
 
 #ifdef __cplusplus

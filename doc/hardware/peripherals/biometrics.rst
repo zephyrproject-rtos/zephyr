@@ -6,18 +6,42 @@ Biometrics
 Overview
 ********
 
-The biometrics API provides a unified interface for biometric sensors such as
-fingerprint scanners, iris scanners, and face recognition modules. These sensors
-are commonly used for secure authentication in embedded systems, access control
-devices, and IoT applications.
+The biometrics API provides a common interface for enrollment, template management,
+and matching across biometric modalities, including fingerprint, face, and palm.
+Devices may support multiple modalities and store templates on the device or host.
+Use :c:func:`biometric_get_capabilities` to query supported modalities, storage
+modes, and asynchronous operations.
 
-The API supports the full lifecycle of biometric operations including enrollment,
-template management, and matching. Sensors can store templates on-device or on
-the host system depending on hardware capabilities.
+Enrollment can use staged sample capture or device-managed asynchronous capture
+and storage. Matching supports verification against a specific template or
+identification across the database, depending on the driver.
 
-A typical fingerprint enrollment process requires capturing multiple samples
-of the same finger to create a reliable template. The matching process compares
-a captured sample against stored templates to verify identity.
+Staged Enrollment
+*****************
+
+Call :c:func:`biometric_enroll_start` with the desired template ID, then
+:c:func:`biometric_enroll_capture` for each required sample. The device's
+``enrollment_samples_required`` capability gives the sample count.
+Call :c:func:`biometric_enroll_finalize` to complete enrollment and store the
+template, or :c:func:`biometric_enroll_abort` to cancel.
+
+Use :c:func:`biometric_match` for blocking verification or identification against
+stored templates.
+
+Asynchronous Operations
+***********************
+
+Register a callback with :c:func:`biometric_callback_set` before starting
+:c:func:`biometric_match_async` or :c:func:`biometric_enroll_async`. Events report
+matching results, enrollment completion, errors, and operation termination.
+Matching can run once or continuously until stopped with
+:c:func:`biometric_async_stop`.
+
+Callbacks run in driver thread context and must return promptly. They must not
+call control or database APIs for the same device.
+
+See :zephyr:code-sample:`biometrics-async` for an example of enrollment and
+continuous identification using shell commands.
 
 Configuration Options
 *********************
@@ -26,6 +50,7 @@ Related configuration options:
 
 * :kconfig:option:`CONFIG_BIOMETRICS`
 * :kconfig:option:`CONFIG_BIOMETRICS_INIT_PRIORITY`
+* :kconfig:option:`CONFIG_BIOMETRICS_SHELL`
 
 API Reference
 *************
