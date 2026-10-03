@@ -22,4 +22,16 @@
 	hscif1_data_rx_default: hscif1_data_rx_default {
 		pin = <PIN_MSIOF2_SS1 FUNC_HTX1>;
 	};
+
+	pwm1_default: pwm1_default {
+		pin = <PIN_CANFD2_RX FUNC_PWM1>;
+	};
+
+	pwm6_default: pwm6_default {
+		pin = <PIN_CANFD7_TX FUNC_PWM6>;
+	};
+
+	pwm7_default: pwm7_default {
+		pin = <PIN_CANFD7_RX FUNC_PWM7>;
+	};
 };

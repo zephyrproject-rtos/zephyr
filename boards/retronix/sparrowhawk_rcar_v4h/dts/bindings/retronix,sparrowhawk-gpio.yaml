@@ -1,0 +1,11 @@
+#
+# Copyright (c) 2026 Renesas Electronics Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Renesas RCAR GPIO
+
+compatible: "retronix,sparrowhawk-gpio"
+
+include: [gpio-nexus.yaml, base.yaml]
