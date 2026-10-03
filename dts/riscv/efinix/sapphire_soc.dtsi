@@ -105,5 +105,16 @@
 			current-speed = <115200>;
 			status = "disabled";
 		};
+
+		spi0: spi@f8014000 {
+			compatible = "efinix,sapphire-spi";
+			reg = <0xf8014000 0x1000>;
+			interrupt-parent = <&plic0>;
+			interrupts = <4 1>;
+			clock-frequency = <DT_FREQ_M(100)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
 	};
 };
