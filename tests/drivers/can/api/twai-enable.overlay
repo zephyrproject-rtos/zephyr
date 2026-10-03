@@ -6,9 +6,9 @@
 
 /* Enable CAN bus */
 &twai {
-	status = "okay";
 	pinctrl-0 = <&twai_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	can-transceiver {
 		max-bitrate = <1000000>;
