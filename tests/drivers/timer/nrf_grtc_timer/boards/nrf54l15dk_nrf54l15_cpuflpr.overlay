@@ -10,13 +10,13 @@ test_timer: &timer21 {
 };
 
 &timer20 {
-	status = "okay";
 	interrupts = <202 0>;
+	status = "okay";
 };
 
 &timer00 {
-	status = "okay";
 	prescaler = <0>;
+	status = "okay";
 };
 
 / {
@@ -26,7 +26,7 @@ test_timer: &timer21 {
 
 	busy-sim {
 		compatible = "vnd,busy-sim";
-		status = "okay";
 		counter = <&timer20>;
+		status = "okay";
 	};
 };
