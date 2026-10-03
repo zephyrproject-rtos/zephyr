@@ -7,8 +7,6 @@ project(fota_http_test)
 
 target_sources(app PRIVATE src/main.c)
 
-zephyr_library_link_libraries(MCUBOOT_BOOTUTIL)
-
 if(CONFIG_FOTA_HTTP_TLS)
   set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
   set(cert_dir ${ZEPHYR_BASE}/samples/net/sockets/echo_server/src)

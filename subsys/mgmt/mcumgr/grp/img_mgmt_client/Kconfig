@@ -14,6 +14,7 @@
 menuconfig MCUMGR_GRP_IMG_CLIENT
 	bool "MCUmgr client handlers for image management"
 	depends on SMP_CLIENT
+	select MCUBOOT_BOOTUTIL_LIB
 	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_3
 	help
 	  Enables MCUmgr client handlers for image management.
