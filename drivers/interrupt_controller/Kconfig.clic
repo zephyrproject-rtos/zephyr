@@ -55,10 +55,18 @@ config CLIC_PARAMETER_INTCTLBITS
 config CLIC_PARAMETER_MNLBITS
 	int "The number of bits in CLICINTCTLBITS to encode the interrupt level"
 	range 0 CLIC_PARAMETER_INTCTLBITS
+	default 4 if RISCV_NESTED_INTERRUPTS && CLIC_PARAMETER_INTCTLBITS >= 8
+	default 3 if RISCV_NESTED_INTERRUPTS && CLIC_PARAMETER_INTCTLBITS >= 6
+	default 2 if RISCV_NESTED_INTERRUPTS && CLIC_PARAMETER_INTCTLBITS >= 4
+	default 1 if RISCV_NESTED_INTERRUPTS && CLIC_PARAMETER_INTCTLBITS >= 2
 	default 0
 	help
 	  This option specifies the number of bits in CLICINTCTLBITS assigned to
 	  encode the interrupt level at machine mode.
+
+	  Whether an interrupt preempts another is decided by the level alone,
+	  so with nested interrupts this defaults to half of the control bits,
+	  leaving the rest as priority among the interrupts of a level.
 
 config LEGACY_CLIC_MEMORYMAP_ACCESS
 	bool

@@ -67,6 +67,23 @@ config RISCV_ALWAYS_SWITCH_THROUGH_ECALL
 	  and most people should say n here to minimize context switching
 	  overhead.
 
+config RISCV_NESTED_INTERRUPTS
+	bool "Nested interrupts"
+	help
+	  Allow an ISR to be preempted by an interrupt of higher priority.
+
+	  Each interrupt controller decides which interrupts may preempt an
+	  ISR, from its own priority scheme. Local interrupts have no hardware
+	  preemption, so while an ISR runs, its interrupt and the ones of lower
+	  priority are masked by CSR mie, in the order of the RISC-V privileged
+	  architecture specification: MEI > MSI > MTI > SEI > SSI > STI >
+	  LCOFI. Interrupts 16 and above are platform specific, so their
+	  number is taken as the priority.
+
+	  ISRs are still entered with interrupts disabled. The code handling
+	  the interrupt, such as the interrupt controller driver, enables them
+	  once its source can no longer signal again.
+
 DT_CHOSEN_Z_SRAM = zephyr,sram
 
 choice RISCV_CMODEL
