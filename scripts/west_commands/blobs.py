@@ -165,10 +165,9 @@ class Blobs(WestCommand):
             return cached_blob
         name = Path(blob['path']).name
         sha256 = blob['sha256']
-        self.download_blob(blob, auto_cache_dir / f'{name}.{sha256}')
-        cached_blob = self.get_cached_blob(blob, [auto_cache_dir])
-        assert cached_blob, f'Blob {name} still not cached in auto-cache.'
-        return cached_blob
+        path = auto_cache_dir / f'{name}.{sha256}'
+        self.download_blob(blob, path)  # guarantees blob at path, or it raises
+        return path
 
     def get_cached_blob(self, blob, cache_dirs: list) -> Path | None:
         """
@@ -262,10 +261,15 @@ class Blobs(WestCommand):
 
         Each URL is tried in order until one provides a download with a
         matching checksum. A download whose checksum does not match is
-        treated almost like a failed download, as a server may respond with a
-        bogus payload and a success status; so we try the next url.  "Almost"
-        the same because failed downloads don't leave a file with a bad
-        checksum behind, whereas we intentionally do that if we got nothing better.
+        treated like a failed download, as a server may respond with a
+        bogus payload and a success status (e.g. an HTML sign-in page
+        and status 200); so we try the next url.
+
+        Downloads go to a temporary file that is only moved to final path
+        once its checksum has been verified. If no URL gives a valid file,
+        ZephyrBlobException is raised.
+
+        As a result, when this function returns, path always holds a valid blob.
         '''
         urls = blob['url']
         if not isinstance(urls, list):
@@ -278,11 +282,10 @@ class Blobs(WestCommand):
             urls_with_mirrors.append(url)
         urls = urls_with_mirrors
 
-        downloaded = False
         # As opposed to the top-level "fetch()" function in this file that
         # try to hit caches first, the lowest-level "fetchers" invoked below
         # always perform a download.
-        for i, url in enumerate(urls):
+        for url in urls:
             scheme = blob.get('fetcher') or urlparse(url).scheme
             self.dbg(f'Fetching blob from url {url} with {scheme} to path: {path}')
             import fetchers
@@ -296,28 +299,30 @@ class Blobs(WestCommand):
             single_url_blob = blob.copy()
             single_url_blob['url'] = url
 
+            # Fetch to a temporary file so a bad download never poisons the path
+            tmp_path = path.with_name(path.name + '.part')
             try:
-                fetcher.fetch(self, single_url_blob, path)
+                fetcher.fetch(self, single_url_blob, tmp_path)
             except ZephyrBlobException as e:
                 self.wrn(e)
+                tmp_path.unlink(missing_ok=True)
                 continue
 
-            downloaded = True
-            # Checksum verification
-            if zephyr_module.get_blob_status(path, blob['sha256']) == zephyr_module.BLOB_PRESENT:
-                if i > 0:
-                    self.inf(f'Fallback URL worked: {url}')
-                return
             # Not necessarily an attack: a server can answer a raw file
-            # request with an HTML sign-in page and a 200 status.
-            self.wrn(f'Checksum mismatch for blob downloaded from {url}')
+            # request with an HTML sign-in page and a 200 status, so the
+            # checksum of the downloaded blob must be verified.
+            download_status = zephyr_module.get_blob_status(tmp_path, blob['sha256'])
+            if download_status != zephyr_module.BLOB_PRESENT:
+                self.wrn(f'Checksum mismatch for blob downloaded from {url}')
+                tmp_path.unlink(missing_ok=True)
+                continue
 
-        if not downloaded:
-            raise ZephyrBlobException('No URL worked for this blob')
+            # The blob is verified so it is finally moved to path
+            self.dbg(f'Successfully fetched blob from: {url}')
+            tmp_path.replace(path)
+            return
 
-        # At least one thing was downloaded, so don't raise and let one of the
-        # get_blob_status() calls invoked at a higher level report any
-        # checksum error later.
+        raise ZephyrBlobException('No URL worked for this blob')
 
     def get_blob(self, args, blob):
         """
