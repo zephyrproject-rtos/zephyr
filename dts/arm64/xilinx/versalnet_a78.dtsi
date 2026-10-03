@@ -62,6 +62,14 @@
 			     <GIC_PPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
 	};
+
+	/* CPU PMU (PMUv3); overflow interrupt on GIC PPI 7. */
+	pmu {
+		compatible = "arm,armv8-pmu";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_PPI 7 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		status = "okay";
+	};
 };
 
 &soc {
