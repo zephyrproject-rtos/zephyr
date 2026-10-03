@@ -14,7 +14,7 @@
 	status = "okay";
 
 	i2c9: i2c {
-		status = "okay";
 		sda-output-delay = <250>;
+		status = "okay";
 	};
 };
