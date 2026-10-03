@@ -13,6 +13,7 @@
 #include <xtensa/corebits.h>
 #include <xtensa/config/core-isa.h>
 #include <xtensa/config/tie.h>
+#include <zephyr/arch/xtensa/cp_sharing.h>
 
 /*
  * Stack frame layout for a saved processor context, in memory order,
@@ -91,10 +92,10 @@
 # define _BSA_PADDING_FPU		(0)
 #endif
 
-#if defined(CONFIG_XTENSA_EAGER_HIFI_SHARING)
-# define _BSA_PADDING_HIFI		(XCHAL_CP1_SA_SIZE + XCHAL_CP1_SA_ALIGN)
+#if defined(CONFIG_XTENSA_EAGER_CP_SHARING)
+# define _BSA_PADDING_CP		(XTENSA_CP_SA_SIZE + XTENSA_CP_SA_ALIGN)
 #else
-# define _BSA_PADDING_HIFI		(0)
+# define _BSA_PADDING_CP		(0)
 #endif
 
 #if XCHAL_HAVE_THREADPTR
@@ -121,7 +122,7 @@
 /* Raw size by adding up all the above. */
 #define _BSA_PADDING_BASE_SIZE		\
 	(_BSA_PADDING_FPU + \
-	 _BSA_PADDING_HIFI + \
+	 _BSA_PADDING_CP + \
 	 _BSA_PADDING_THREADPTR + \
 	 _BSA_PADDING_S32C1I + \
 	 _BSA_PADDING_LOOPS + \
@@ -198,16 +199,15 @@ struct xtensa_irq_base_save_area {
 	uintptr_t fpu15;
 #endif
 
-#if defined(CONFIG_XTENSA_EAGER_HIFI_SHARING)
+#if defined(CONFIG_XTENSA_EAGER_CP_SHARING)
 
 	/*
-	 * Carve space for the registers used by the HiFi audio engine
-	 * coprocessor (which is always CP1). Carve additional space to
-	 * manage alignment at run-time as we can not yet guarantee the
-	 * alignment of the BSA.
+	 * Carve space for the registers of the shared coprocessor. Carve
+	 * additional space to manage alignment at run-time as we can not
+	 * yet guarantee the alignment of the BSA.
 	 */
 
-	uint8_t  hifi[XCHAL_CP1_SA_SIZE + XCHAL_CP1_SA_ALIGN];
+	uint8_t  cp[XTENSA_CP_SA_SIZE + XTENSA_CP_SA_ALIGN];
 #endif
 
 	uintptr_t padding[_BSA_PADDING_NEEDED / sizeof(uintptr_t)];
@@ -227,7 +227,7 @@ typedef struct xtensa_irq_base_save_area _xtensa_irq_bsa_t;
 #undef _BSA_PADDING_LOOPS
 #undef _BSA_PADDING_S32C1I
 #undef _BSA_PADDING_THREADPTR
-#undef _BSA_PADDING_HIFI
+#undef _BSA_PADDING_CP
 #undef _BSA_PADDING_FPU
 
 /**

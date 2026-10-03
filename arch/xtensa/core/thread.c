@@ -16,6 +16,16 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
+#ifdef CONFIG_XTENSA_CP_SHARING
+BUILD_ASSERT((XCHAL_CP_MASK & BIT(XTENSA_CP_ID)) != 0,
+	     "CONFIG_XTENSA_CP_SHARING_ID is not a coprocessor of this core");
+#endif
+
+#ifdef CONFIG_XTENSA_HIFI_SHARING
+BUILD_ASSERT(XTENSA_CP_ID == XCHAL_CP_ID_AUDIOENGINELX,
+	     "CONFIG_XTENSA_CP_SHARING_ID is not the HiFi coprocessor");
+#endif
+
 #ifdef CONFIG_USERSPACE
 
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
@@ -133,9 +143,9 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	thread->arch.ptables = NULL;
 #endif
 
-#ifdef CONFIG_XTENSA_LAZY_HIFI_SHARING
-	memset(thread->arch.hifi_regs, 0, sizeof(thread->arch.hifi_regs));
-#endif /* CONFIG_XTENSA_LAZY_HIFI_SHARING */
+#ifdef CONFIG_XTENSA_LAZY_CP_SHARING
+	memset(thread->arch.cp_regs, 0, sizeof(thread->arch.cp_regs));
+#endif /* CONFIG_XTENSA_LAZY_CP_SHARING */
 
 #ifdef CONFIG_KERNEL_COHERENCE
 	__ASSERT_NO_MSG((((size_t)stack) % XCHAL_DCACHE_LINESIZE) == 0);
@@ -178,8 +188,8 @@ int arch_float_enable(struct k_thread *thread, unsigned int options)
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
 
-#if defined(CONFIG_XTENSA_LAZY_HIFI_SHARING)
-void xtensa_hifi_disown(struct k_thread *thread)
+#if defined(CONFIG_XTENSA_LAZY_CP_SHARING)
+void xtensa_cp_disown(struct k_thread *thread)
 {
 	unsigned int cpu_id = 0;
 	struct k_thread *owner;
@@ -188,10 +198,10 @@ void xtensa_hifi_disown(struct k_thread *thread)
 	cpu_id = thread->base.cpu;
 #endif
 
-	owner = atomic_ptr_get(&_kernel.cpus[cpu_id].arch.hifi_owner);
+	owner = atomic_ptr_get(&_kernel.cpus[cpu_id].arch.cp_owner);
 
 	if (owner == thread) {
-		atomic_ptr_set(&_kernel.cpus[cpu_id].arch.hifi_owner, NULL);
+		atomic_ptr_set(&_kernel.cpus[cpu_id].arch.cp_owner, NULL);
 	}
 }
 #endif
@@ -205,17 +215,17 @@ int arch_coprocessors_disable(struct k_thread *thread)
 	enotsup = false;
 #endif
 
-#if defined(CONFIG_XTENSA_LAZY_HIFI_SHARING)
-	xtensa_hifi_disown(thread);
+#if defined(CONFIG_XTENSA_LAZY_CP_SHARING)
+	xtensa_cp_disown(thread);
 
 	/*
 	 * This routine is only called when aborting a thread and we
-	 * deliberately do not disable the HiFi coprocessor here.
+	 * deliberately do not disable the coprocessor here.
 	 * 1. Such disabling can only be done for the current CPU, and we do
 	 *    not have control over which CPU the thread is running on.
 	 * 2. If the thread (being deleted) is a currently executing thread,
 	 *    there will be a context switch to another thread and that CPU
-	 *    will automatically disable the HiFi coprocessor upon the switch.
+	 *    will automatically disable the coprocessor upon the switch.
 	 */
 	enotsup = false;
 #endif
