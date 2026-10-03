@@ -9,6 +9,7 @@
 #include <soc.h>
 #include <stm32_ll_lptim.h>
 #include <stm32_ll_bus.h>
+#include <stm32_ll_exti.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_system.h>
@@ -631,6 +632,9 @@ static int sys_clock_driver_init(void)
 #ifdef CONFIG_SOC_SERIES_STM32WLX
 	/* Enable the LPTIM wakeup EXTI line */
 	LL_EXTI_EnableIT_0_31(LL_EXTI_LINE_29);
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
+	/* Enable the LPTIM1 wakeup EXTI line */
+	LL_EXTI_EnableIT_32_63(LL_EXTI_LINE_47);
 #endif
 
 	/* configure the LPTIM counter */
