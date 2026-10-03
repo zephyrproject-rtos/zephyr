@@ -46,7 +46,8 @@ __no_optimization void func_3(uint32_t *addr)
 	defined(CONFIG_SOC_FAMILY_ESPRESSIF_ESP32) || \
 	defined(CONFIG_SOC_FAMILY_MAX32_RV32) || \
 	defined(CONFIG_SOC_FAMILY_OPENHWGROUP_CVA6) || \
-	defined(CONFIG_SOC_FAMILY_NSIM_ARC_V)
+	defined(CONFIG_SOC_FAMILY_NSIM_ARC_V) || \
+	defined(CONFIG_SOC_AN536)
 	/* clang-format on */
 	ARG_UNUSED(addr);
 	/* Call k_panic() directly so Renode doesn't pause execution.
