@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Netfeasa Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.modem.hl78xx.evt_monitor:
+    platform_allow:
+      - native_sim
+      - qemu_x86
+    integration_platforms:
+      - native_sim
+    tags:
+      - drivers
+      - modem
+      - hl78xx

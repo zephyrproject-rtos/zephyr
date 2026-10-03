@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Netfeasa Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+# The AT monitor's Kconfig lives under `if MODEM_HL78XX` in the driver tree.
+# This test builds the monitor without the driver, so the symbols the library
+# compiles against are re-declared here; Kconfig merges the definitions.
+
+mainmenu "HL78xx AT monitor test"
+
+config HL78XX_AT_MONITOR
+	bool "HL78xx parsed AT monitor"
+
+config HL78XX_AT_MONITOR_HEAP_SIZE
+	int "Heap size for deferred AT notifications"
+	default 1024
+
+config HL78XX_AT_MONITOR_MAX_INSTANCE_MONITORS
+	int "Maximum number of runtime monitors"
+	default 8
+
+config HL78XX_AT_MONITOR_LOG_LEVEL
+	int "Monitor log level"
+	default 3
+
+source "Kconfig.zephyr"

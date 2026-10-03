@@ -78,18 +78,6 @@ static bool hl78xx_hl7800_cfg_skip_band_for_rat(struct hl78xx_data *data,
 	return false;
 }
 
-static bool hl78xx_hl7800_carrier_on_gnss_pending(struct hl78xx_data *data)
-{
-#ifdef CONFIG_HL78XX_GNSS
-	LOG_INF("HL7800 GNSS pending - routing through carrier_off/airplane");
-	hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_GNSS_MODE_ENTER_REQUESTED);
-	return true;
-#else
-	ARG_UNUSED(data);
-	return false;
-#endif /* CONFIG_HL78XX_GNSS */
-}
-
 static bool hl78xx_hl7800_on_gnss_mode_enter_lpm(struct hl78xx_data *data)
 {
 #ifdef CONFIG_HL78XX_GNSS
@@ -246,17 +234,19 @@ static void hl78xx_hl7800_on_ksup_lpm(struct hl78xx_data *data)
 #endif /* CONFIG_HL78XX_GNSS */
 		if (data->status.state == MODEM_HL78XX_STATE_RUN_RAT_CONFIG_SCRIPT ||
 		    data->status.state == MODEM_HL78XX_STATE_RUN_PMC_CONFIG_SCRIPT ||
-		    data->status.state == MODEM_HL78XX_STATE_SOFT_RESET) {
+		    data->status.state == MODEM_HL78XX_STATE_SOFT_RESET ||
+		    data->status.state == MODEM_HL78XX_STATE_FOTA) {
 			/* KSUP during RAT_CFG, PMC_CFG, or SOFT_RESET means the driver
 			 * explicitly sent AT+CFUN=4,1 and is waiting for the modem to
-			 * reboot. Dispatch MDM_RESTART so the event handler transitions
-			 * back to RUN_INIT_SCRIPT.
+			 * reboot; KSUP during FOTA is the reboot that completes a
+			 * firmware install. Dispatch MDM_RESTART so the event handler
+			 * transitions back to RUN_INIT_SCRIPT.
 			 *
 			 * This reboot is a real session boundary — unlike the PSM/eDRX
 			 * KSUPs handled below, where modem state is preserved and the
 			 * GNSS queue must survive the wake.
 			 */
-			LOG_DBG("KSUP after config restart (state=%d) - "
+			LOG_DBG("KSUP after expected restart (state=%d) - "
 				"dispatching MDM_RESTART",
 				data->status.state);
 			hl78xx_reset_modem_session_state(data);
@@ -521,6 +511,5 @@ const struct hl78xx_variant_ops hl78xx_variant_ops_hl7800 = {
 	.on_registered_ready = NULL, /* HL7800 readiness gates on carrier_on_dns_complete */
 	.on_kcellmeas_ready = NULL,  /* HL7800 readiness gates on carrier_on_dns_complete */
 #endif                               /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
-	.carrier_on_gnss_pending = hl78xx_hl7800_carrier_on_gnss_pending,
 	.on_gnss_mode_enter_lpm = hl78xx_hl7800_on_gnss_mode_enter_lpm,
 };

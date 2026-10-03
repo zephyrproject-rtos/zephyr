@@ -26,15 +26,25 @@ static size_t monitor_list_count;
 
 static void hl78xx_evt_monitor_task(struct k_work *work);
 
+/** Deferred notifications dropped because the queue was full; only grows. */
+static atomic_t hl78xx_evt_monitor_dropped;
+
 static K_FIFO_DEFINE(hl78xx_evt_monitor_fifo);
-static K_HEAP_DEFINE(hl78xx_evt_monitor_heap, CONFIG_HL78XX_EVT_MONITOR_HEAP_SIZE);
+/* One slot per queued deferred notification. A fixed-depth slab rather than
+ * a byte heap: the capacity is a count of events, and an overflow is a
+ * counted, logged event instead of a silent allocation failure. The modem
+ * dispatches three notifications back to back on every entry to the
+ * registered state, so the default depth must stay well above that.
+ */
+K_MEM_SLAB_DEFINE_STATIC(hl78xx_evt_monitor_slab, sizeof(struct evt_notif_fifo),
+			 CONFIG_HL78XX_EVT_MONITOR_QUEUE_DEPTH, sizeof(void *));
 static K_WORK_DEFINE(hl78xx_evt_monitor_work, hl78xx_evt_monitor_task);
 
 BUILD_ASSERT(CONFIG_HL78XX_EVT_MONITOR_MAX_INSTANCE_MONITORS > 0,
 	     "CONFIG_HL78XX_EVT_MONITOR_MAX_INSTANCE_MONITORS must be greater than 0");
 
-BUILD_ASSERT(CONFIG_HL78XX_EVT_MONITOR_HEAP_SIZE >= sizeof(struct evt_notif_fifo),
-	     "CONFIG_HL78XX_EVT_MONITOR_HEAP_SIZE is too small");
+BUILD_ASSERT(CONFIG_HL78XX_EVT_MONITOR_QUEUE_DEPTH > 0,
+	     "CONFIG_HL78XX_EVT_MONITOR_QUEUE_DEPTH must be greater than 0");
 
 static bool is_paused(const struct hl78xx_evt_monitor_entry *mon)
 {
@@ -257,7 +267,6 @@ void hl78xx_evt_monitor_dispatch(struct hl78xx_evt *notif)
 {
 	bool monitored;
 	struct evt_notif_fifo *evt_notif;
-	size_t sz_needed;
 	int ret;
 
 	__ASSERT_NO_MSG(notif != NULL);
@@ -287,11 +296,13 @@ void hl78xx_evt_monitor_dispatch(struct hl78xx_evt *notif)
 		return;
 	}
 
-	sz_needed = sizeof(struct evt_notif_fifo);
+	ret = k_mem_slab_alloc(&hl78xx_evt_monitor_slab, (void **)&evt_notif, K_NO_WAIT);
+	if (ret != 0) {
+		atomic_val_t dropped = atomic_inc(&hl78xx_evt_monitor_dropped) + 1;
 
-	evt_notif = k_heap_alloc(&hl78xx_evt_monitor_heap, sz_needed, K_NO_WAIT);
-	if (!evt_notif) {
-		LOG_WRN("No heap space for incoming notification: %d", notif->type);
+		LOG_ERR("Deferred notification queue full (depth %d): dropped event %d, "
+			"%ld dropped in total",
+			CONFIG_HL78XX_EVT_MONITOR_QUEUE_DEPTH, notif->type, (long)dropped);
 		return;
 	}
 
@@ -324,8 +335,13 @@ static void hl78xx_evt_monitor_task(struct k_work *work)
 				evt_notif->data.type, ret);
 		}
 
-		k_heap_free(&hl78xx_evt_monitor_heap, evt_notif);
+		k_mem_slab_free(&hl78xx_evt_monitor_slab, evt_notif);
 	}
+}
+
+uint32_t hl78xx_evt_monitor_dropped_count(void)
+{
+	return (uint32_t)atomic_get(&hl78xx_evt_monitor_dropped);
 }
 
 static int hl78xx_evt_monitor_sys_init(void)

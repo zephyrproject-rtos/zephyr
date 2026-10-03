@@ -10,11 +10,15 @@ if HL78XX_AT_MONITOR
 config HL78XX_AT_MONITOR_HEAP_SIZE
 	int "Heap size for deferred AT notifications"
 	range 64 4096
-	default 512
+	default 1024
 	help
 	  Heap size used to copy and queue parsed unsolicited AT notifications
-	  for deferred monitor dispatch in the system workqueue.
-	  Runtime monitor snapshot dispatch does not use this heap
+	  for deferred monitor dispatch in the system workqueue. A notification
+	  that does not fit is dropped, logged at error level and counted; the
+	  count is readable through hl78xx_at_monitor_dropped_count(). A copied
+	  notification is about 100 bytes and the modem emits several back to
+	  back around registration, so keep room for a burst.
+	  Direct monitor dispatch does not use this heap.
 
 config HL78XX_AT_MONITOR_MAX_INSTANCE_MONITORS
 	int "Maximum number of runtime HL78xx AT monitors"
