@@ -13,33 +13,58 @@ Hardware
 ********
 
 - 100-pin TQFP PIC32CM5112GC00100 microcontroller
-- Arm® Cortex®-M23 Microcontroller
-- 32.768 kHz crystal oscillator
-- 12 MHz crystal oscillator
+- Arm® Cortex®-M23 core running at up to 72 MHz
 - 512 KiB flash memory and 128 KiB of RAM
+- Up to 80 I/O lines with external interrupt capability
+- 12 MHz crystal oscillator
+- 32.768 kHz crystal oscillator
 - Two user LEDs (Red and Green)
 - One green board power LED
-- Two mechanical user push buttons
-- One reset button
-- Micro USB interface (Type-AB)
-- Virtual COM port (VCOM)
-- Programming and debugging of on-board PIC32CM GC through Serial Wire Debug (SWD) and on-board PKoB4 debugger
-- Arduino UNO R3 Shield Headers
-- mikroBUS™ Headers
-- Two CAN interfaces
-- 10 kOhms Potentiometer
-- CryptoAuthentication device, TA101
-- Touch Button
+- Two mechanical user push buttons, one touch button and one reset button
+- 10 kOhms thumb wheel potentiometer on PB06
+- 3.3V high-precision voltage reference (MCP1501)
+- TA101 CryptoAuthentication footprint, unpopulated on the shipping board
+- Micro USB interface (Type-AB) wired to the microcontroller
+- Programming and debugging through Serial Wire Debug (SWD), from the on-board
+  PKoB4 debugger or from the Cortex® 10-pin debug header
+- Virtual COM port (VCOM) provided by the PKoB4
+- Two Xplained Pro extension headers, EXT1 (J400) and EXT2 (J401)
+- One extension power header
+- One mikroBUS™ socket
+- One Arduino UNO R3 compatible shield interface
+- Two CAN interfaces with ATA6561 transceivers
+- USERLDO header and RTC header
 
 Supported Features
 ==================
 
 .. zephyr:board-supported-hw::
 
+Limitations
+-----------
+
+- **No entropy source.** The die carries no hardware random number generator,
+  so ``CONFIG_ENTROPY_GENERATOR`` has nothing to bind to on this board.
+  Anything needing random numbers has to bring its own source.
+- **Flash erase stalls the core.** The flash controller has a single panel
+  (``PFM_NUM_PANELS`` is 1), so there is no read-while-write: instruction fetch
+  stops for the whole duration of an erase. A page erase was measured on this
+  board at 20 ms, interrupts included. Erasing from a path with a deadline -
+  including a settings write that triggers a garbage collection - will miss it.
+
 Connections and IOs
 ===================
 
-The `PIC32CM SG00/GC00 Curiosity Pro User Guide`_ has detailed information about board connections.
+The `PIC32CM SG00/GC00 Curiosity Pro User Guide`_ has detailed information about
+board connections.
+
+.. warning::
+
+   PC07 is SWDIO and PC08 is SWCLK. Configuring either as a GPIO clears
+   ``PINCFG.PMUXEN`` and takes the debug interface away from the running
+   system, which leaves the board unable to accept another programming
+   session until it is erased through an external probe holding the target in
+   reset.
 
 Programming & Debugging
 ***********************
