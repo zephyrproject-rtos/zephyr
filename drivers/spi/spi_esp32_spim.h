@@ -42,6 +42,8 @@ struct spi_esp32_config {
 	bool use_iomux;
 	bool dma_enabled;
 	int dma_host;
+	/* Two chunk-sized buffers to send from when the DMA cannot read the data */
+	uint8_t *tx_bounce;
 #if defined(SOC_GDMA_SUPPORTED)
 	const struct device *dma_dev;
 	uint8_t dma_tx_ch;
@@ -86,6 +88,16 @@ struct spi_esp32_data {
 #endif
 	uint8_t dfs;
 	uint32_t clock_source_hz;
+	/* Bounce buffer the next chunk goes to, and what it already holds */
+	uint8_t tx_bounce_idx;
+	const uint8_t *tx_prefill_src;
+	size_t tx_prefill_len;
+	/* Chunk on the wire, finished by spi_esp32_transfer_finish() */
+	bool chunk_active;
+	uint8_t *chunk_tx_temp;
+	uint8_t *chunk_rx_temp;
+	size_t chunk_len_bytes;
+	size_t chunk_len_frames;
 #if CONFIG_PM
 	bool pm_policy_state_on;
 #endif

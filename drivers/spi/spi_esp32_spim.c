@@ -202,7 +202,49 @@ static void spi_esp32_dma_tx_start(const struct device *dev, uint8_t *buf, size_
 }
 #endif /* SOC_GDMA_SUPPORTED */
 
-static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
+/* Return a bounce buffer holding the chunk, copying it unless already there */
+static uint8_t *IRAM_ATTR spi_esp32_tx_bounce(const struct device *dev, const uint8_t *src,
+					      size_t len)
+{
+	const struct spi_esp32_config *cfg = dev->config;
+	struct spi_esp32_data *data = dev->data;
+	uint8_t *buf = &cfg->tx_bounce[data->tx_bounce_idx * SPI_DMA_MAX_BUFFER_SIZE];
+
+	if (data->tx_prefill_src != src || data->tx_prefill_len != len) {
+		memcpy(buf, src, len);
+	}
+
+	data->tx_prefill_src = NULL;
+	data->tx_bounce_idx ^= 1;
+
+	return buf;
+}
+
+/* Copy the next chunk to the other bounce buffer while this one is sent */
+static void IRAM_ATTR spi_esp32_tx_prefill(const struct device *dev)
+{
+	const struct spi_esp32_config *cfg = dev->config;
+	struct spi_esp32_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
+	size_t len;
+
+	if (cfg->tx_bounce == NULL || ctx->tx_buf == NULL || ctx->rx_buf != NULL ||
+	    esp_ptr_dma_capable(ctx->tx_buf)) {
+		return;
+	}
+
+	len = MIN(spi_context_max_continuous_chunk(ctx) * data->dfs, SPI_DMA_MAX_BUFFER_SIZE);
+	if (len == 0) {
+		return;
+	}
+
+	memcpy(&cfg->tx_bounce[data->tx_bounce_idx * SPI_DMA_MAX_BUFFER_SIZE], ctx->tx_buf, len);
+	data->tx_prefill_src = ctx->tx_buf;
+	data->tx_prefill_len = len;
+}
+
+/* Set up one chunk and start it on the wire */
+static int IRAM_ATTR spi_esp32_transfer_start(const struct device *dev)
 {
 	struct spi_esp32_data *data = dev->data;
 	const struct spi_esp32_config *cfg = dev->config;
@@ -218,6 +260,7 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	size_t bit_len = transfer_len_bytes << 3;
 	uint8_t *rx_temp = NULL;
 	uint8_t *tx_temp = NULL;
+	uint8_t *tx_bounce = NULL;
 	size_t dma_len_tx = MIN(ctx->tx_len * data->dfs, SPI_DMA_MAX_BUFFER_SIZE);
 	size_t dma_len_rx = MIN(ctx->rx_len * data->dfs, SPI_DMA_MAX_BUFFER_SIZE);
 	bool prepare_data = true;
@@ -226,7 +269,10 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	if (cfg->dma_enabled) {
 		/* bit_len needs to be at least one byte long when using DMA */
 		bit_len = !bit_len ? 8 : bit_len;
-		if (ctx->tx_buf && !esp_ptr_dma_capable((uint32_t *)&ctx->tx_buf[0])) {
+		if (ctx->tx_buf && !esp_ptr_dma_capable((uint32_t *)&ctx->tx_buf[0]) &&
+		    cfg->tx_bounce != NULL) {
+			tx_bounce = spi_esp32_tx_bounce(dev, ctx->tx_buf, transfer_len_bytes);
+		} else if (ctx->tx_buf && !esp_ptr_dma_capable((uint32_t *)&ctx->tx_buf[0])) {
 			LOG_DBG("Tx buffer not DMA capable");
 			tx_temp = k_malloc(dma_len_tx);
 			if (!tx_temp) {
@@ -272,7 +318,7 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 #endif
 	}
 
-	hal_trans->send_buffer = tx_temp ? tx_temp : (uint8_t *)ctx->tx_buf;
+	hal_trans->send_buffer = tx_bounce ? tx_bounce : tx_temp ? tx_temp : (uint8_t *)ctx->tx_buf;
 	hal_trans->rcv_buffer = rx_temp ? rx_temp : ctx->rx_buf;
 	hal_trans->tx_bitlen = bit_len;
 	hal_trans->rx_bitlen = bit_len;
@@ -391,13 +437,37 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	/* send data */
 	spi_hal_user_start(hal);
 	spi_context_update_tx(&data->ctx, data->dfs, transfer_len_frames);
+	spi_esp32_tx_prefill(dev);
 
-	while (!spi_hal_usr_is_done(hal)) {
-		/* nop */
-	}
+	data->chunk_tx_temp = tx_temp;
+	data->chunk_rx_temp = rx_temp;
+	data->chunk_len_bytes = transfer_len_bytes;
+	data->chunk_len_frames = transfer_len_frames;
+	data->chunk_active = true;
+
+	return 0;
+
+free:
+	k_free(tx_temp);
+	k_free(rx_temp);
+
+	return err;
+}
+
+/* Complete the chunk the hardware reported done */
+static void IRAM_ATTR spi_esp32_transfer_finish(const struct device *dev)
+{
+	struct spi_esp32_data *data = dev->data;
+	const struct spi_esp32_config *cfg = dev->config;
+	struct spi_context *ctx = &data->ctx;
+	spi_hal_context_t *hal = &data->hal;
+	size_t transfer_len_bytes = data->chunk_len_bytes;
+	uint8_t *rx_temp = data->chunk_rx_temp;
 
 #if defined(SOC_GDMA_SUPPORTED)
 	if (cfg->dma_enabled) {
+		spi_hal_trans_config_t *hal_trans = &data->trans_config;
+
 		if (hal_trans->rcv_buffer) {
 			dma_stop(cfg->dma_dev, cfg->dma_rx_ch);
 			/* Invalidate cache for the RX buffer so the CPU reads fresh
@@ -421,13 +491,30 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 		memcpy(&ctx->rx_buf[0], rx_temp, transfer_len_bytes);
 	}
 
-	spi_context_update_rx(&data->ctx, data->dfs, transfer_len_frames);
+	spi_context_update_rx(&data->ctx, data->dfs, data->chunk_len_frames);
 
-free:
-	k_free(tx_temp);
+	k_free(data->chunk_tx_temp);
 	k_free(rx_temp);
+	data->chunk_active = false;
+}
 
-	return err;
+static int IRAM_ATTR __maybe_unused spi_esp32_transfer(const struct device *dev)
+{
+	struct spi_esp32_data *data = dev->data;
+	int err;
+
+	err = spi_esp32_transfer_start(dev);
+	if (err != 0) {
+		return err;
+	}
+
+	while (!spi_hal_usr_is_done(&data->hal)) {
+		/* nop */
+	}
+
+	spi_esp32_transfer_finish(dev);
+
+	return 0;
 }
 
 #ifdef CONFIG_ESP32_SPI_TARGET
@@ -565,11 +652,26 @@ static void IRAM_ATTR spi_esp32_isr(void *arg)
 	}
 #endif /* CONFIG_ESP32_SPI_TARGET */
 
-	do {
-		spi_esp32_transfer(dev);
-	} while (spi_esp32_transfer_ongoing(data));
+	int err = 0;
 
-	spi_esp32_complete(dev, data, cfg->spi, 0);
+	/*
+	 * One chunk per interrupt: finish the chunk that raised it, if any, and
+	 * start the next, so that no thread waits for the wire time.
+	 */
+	spi_ll_clear_int_stat(cfg->spi);
+
+	if (data->chunk_active) {
+		spi_esp32_transfer_finish(dev);
+	}
+
+	if (spi_esp32_transfer_ongoing(data)) {
+		err = spi_esp32_transfer_start(dev);
+		if (err == 0) {
+			return;
+		}
+	}
+
+	spi_esp32_complete(dev, data, cfg->spi, err);
 
 #if CONFIG_PM
 	spi_esp32_pm_policy_state_lock_put(dev);
@@ -1035,6 +1137,9 @@ static int transceive(const struct device *dev,
 	}
 #endif /* CONFIG_ESP32_SPI_TARGET */
 
+	/* A prefill belongs to the transfer it was made for */
+	data->tx_prefill_src = NULL;
+
 	spi_context_cs_control(&data->ctx, true);
 
 #ifdef CONFIG_SPI_ESP32_INTERRUPT
@@ -1049,6 +1154,9 @@ static int transceive(const struct device *dev,
 			 */
 			spi_ll_disable_int(cfg->spi);
 			spi_ll_clear_int_stat(cfg->spi);
+			if (data->chunk_active) {
+				spi_esp32_transfer_finish(dev);
+			}
 			spi_context_cs_control(&data->ctx, false);
 #ifdef CONFIG_PM
 			spi_esp32_pm_policy_state_lock_put(dev);
@@ -1135,9 +1243,19 @@ static DEVICE_API(spi, spi_api) = {
 	.dma_clk_src = DT_INST_PROP(idx, dma_clk)
 #endif /* defined(SOC_GDMA_SUPPORTED) */
 
+#define SPI_ESP32_TX_BOUNCE_DEFINE(idx)                                                            \
+	COND_CODE_1(DT_INST_PROP(idx, dma_enabled),                                                \
+		    (static uint8_t spi_tx_bounce_##idx[2 * SPI_DMA_MAX_BUFFER_SIZE]           \
+			     __aligned(4);),                                                   \
+		    ())
+
+#define SPI_ESP32_TX_BOUNCE_GET(idx)                                                               \
+	COND_CODE_1(DT_INST_PROP(idx, dma_enabled), (spi_tx_bounce_##idx), (NULL))
+
 #define ESP32_SPI_INIT(idx)	\
 				\
 	PINCTRL_DT_INST_DEFINE(idx);	\
+	SPI_ESP32_TX_BOUNCE_DEFINE(idx)	\
 										\
 	static struct spi_esp32_data spi_data_##idx = {	\
 		SPI_CONTEXT_INIT_LOCK(spi_data_##idx, ctx),	\
@@ -1169,6 +1287,7 @@ static DEVICE_API(spi, spi_api) = {
 			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset),	\
 		.use_iomux = DT_INST_PROP(idx, use_iomux),	\
 		.dma_enabled = DT_INST_PROP(idx, dma_enabled),	\
+		.tx_bounce = SPI_ESP32_TX_BOUNCE_GET(idx),	\
 		.dma_host = DT_INST_PROP(idx, dma_host),	\
 		SPI_DMA_CFG(idx),				\
 		.cs_setup = DT_INST_PROP_OR(idx, cs_setup_time, 0), \
