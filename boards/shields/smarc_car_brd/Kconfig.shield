@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright 2026 Ezurio
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_SMARC_CAR_BRD
+	def_bool $(shields_list_contains,smarc_car_brd)
