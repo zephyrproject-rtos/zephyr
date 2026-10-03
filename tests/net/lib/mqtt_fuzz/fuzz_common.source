@@ -1,0 +1,76 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Shared shell helpers for the MQTT fuzz campaign scripts (compile.sh,
+# ci.fuzz.sh, fuzz_scripts/*.sh).  Modelled on tests/bsim/sh_common.source,
+# but written as a standalone file rather than reused directly: that file
+# hard-requires BSIM_OUT_PATH, a BabbleSim-specific variable this harness has
+# no dependency on.
+
+_process_ids="";
+
+: "${ZEPHYR_BASE:?ZEPHYR_BASE must be set to the Zephyr tree containing this test (this workspace has multiple Zephyr trees; getting this wrong is the single most common mistake here)}"
+
+if [ ! -d "${ZEPHYR_BASE}/tests/net/lib/mqtt_fuzz" ]; then
+	echo -e "  \e[91mZEPHYR_BASE=${ZEPHYR_BASE} does not contain tests/net/lib/mqtt_fuzz -- pointing at the wrong Zephyr tree\e[39m"
+	exit 1
+fi
+
+: "${ZEPHYR_TOOLCHAIN_VARIANT:?ZEPHYR_TOOLCHAIN_VARIANT must be set to llvm -- libFuzzer ships as part of clang}"
+
+if [ "${ZEPHYR_TOOLCHAIN_VARIANT}" != "llvm" ]; then
+	echo -e "  \e[91mZEPHYR_TOOLCHAIN_VARIANT=${ZEPHYR_TOOLCHAIN_VARIANT}, but this target requires llvm\e[39m"
+	exit 1
+fi
+
+if ! command -v clang >/dev/null 2>&1; then
+	echo -e "  \e[91mclang not found on PATH -- e.g. export PATH=\"/usr/lib/llvm-18/bin:\${PATH}\"\e[39m"
+	exit 1
+fi
+
+# west is a pip package, not always installed with a console-script entry
+# point on PATH; fall back to the module invocation these scripts can rely on
+# either way.
+if ! command -v west >/dev/null 2>&1; then
+	function west(){
+		python3 -m west "$@"
+	}
+fi
+
+: "${MQTT_FUZZ_CORPUS:?MQTT_FUZZ_CORPUS must be set to an external corpus directory -- the corpus cannot be shipped in this repo}"
+
+MQTT_FUZZ_OUT="${MQTT_FUZZ_OUT:-${ZEPHYR_BASE}/../mqtt_fuzz_out}"
+MQTT_FUZZ_BUILD="${MQTT_FUZZ_OUT}/build"
+MQTT_FUZZ_ARTIFACTS="${MQTT_FUZZ_OUT}/artifacts"
+MQTT_FUZZ_EXE="${MQTT_FUZZ_BUILD}/zephyr/zephyr.exe"
+
+mkdir -p "${MQTT_FUZZ_ARTIFACTS}"
+
+function run_in_background(){
+  "$@" & _process_ids="$_process_ids $!"
+}
+
+function wait_for_background_jobs(){
+  exit_code=0
+  for process_id in $_process_ids; do
+    wait $process_id || let "exit_code=$?"
+  done
+  [ $exit_code -eq 0 ] || exit $exit_code
+}
+
+trap ctrl_c INT
+
+function ctrl_c() {
+  echo "Aborted by CTRL-C"
+
+  for process_id in $_process_ids; do
+    kill -15 $process_id
+  done
+}
+
+function check_program_exists() {
+  if [ ! -f "$1" ]; then
+    echo -e "  \e[91m$1 cannot be found (did you forget to compile it? try compile.sh)\e[39m"
+    exit 1
+  fi
+}

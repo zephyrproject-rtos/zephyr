@@ -1,0 +1,11 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: Apache-2.0
+#
+# The corpus is external ($MQTT_FUZZ_CORPUS) and never committed here; these
+# are the paths a local compile.sh/mqtt_campaign.sh run produces alongside
+# this directory.
+mqtt_fuzz_out/
+crash-*
+leak-*
+timeout-*
+oom-*
