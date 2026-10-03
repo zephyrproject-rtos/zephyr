@@ -130,7 +130,7 @@ static int cmd_ptp_clock_freq(const struct shell *sh, size_t argc, char **argv)
 		return ret;
 	}
 
-	ret = ptp_clock_rate_adjust(dev, 1.0 + ((double)ppb / 1000000000.0));
+	ret = ptp_clock_adjust_rate(dev, (int64_t)ppb * PTP_CLOCK_SCALED_PPM_ONE / 1000);
 	if (ret < 0) {
 		return ret;
 	}
@@ -188,13 +188,12 @@ static int cmd_ptp_clock_selftest(const struct shell *sh, size_t argc, char **ar
 	shell_print(sh, "  result: read back time %"PRIu64".%09u", tm.second, tm.nanosecond);
 
 	/* set 'freq' with ppb value, sleep 'delay' seconds, and read back time */
-	ret = ptp_clock_rate_adjust(dev, 1.0 + ((double)freq / 1000000000.0));
+	ret = ptp_clock_adjust_rate(dev, (int64_t)freq * PTP_CLOCK_SCALED_PPM_ONE / 1000);
 	if (ret < 0) {
 		shell_print(sh, "failed to adjust rate");
 		return ret;
 	}
-	shell_print(sh, "test2: adjust frequency %d ppb (ratio %f), delay %d seconds...",
-		    freq, 1.0 + ((double)freq / 1000000000.0), delay);
+	shell_print(sh, "test2: adjust frequency %d ppb, delay %d seconds...", freq, delay);
 
 	k_sleep(K_SECONDS(delay));
 

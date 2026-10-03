@@ -888,19 +888,23 @@ static int eth_esp32_ptp_clock_adjust(const struct device *dev, int increment)
 		       : -EIO;
 }
 
-static int eth_esp32_ptp_clock_rate_adjust(const struct device *dev, double ratio)
+static int eth_esp32_ptp_clock_adjust_rate(const struct device *dev, int64_t scaled_ppm)
 {
 	struct eth_esp32_dev_data *const dev_data = dev->data;
-	int32_t adj_ppb = (int32_t)((ratio - 1.0) * 1000000000.0);
+	int64_t adj_ppb = ptp_clock_scaled_ppm_to_ppb(scaled_ppm);
 
-	return emac_hal_ptp_adj_freq(&dev_data->hal, adj_ppb) == ESP_OK ? 0 : -EIO;
+	if ((adj_ppb < INT32_MIN) || (adj_ppb > INT32_MAX)) {
+		return -ERANGE;
+	}
+
+	return emac_hal_ptp_adj_freq(&dev_data->hal, (int32_t)adj_ppb) == ESP_OK ? 0 : -EIO;
 }
 
 static DEVICE_API(ptp_clock, eth_esp32_ptp_clock_api) = {
 	.set = eth_esp32_ptp_clock_set,
 	.get = eth_esp32_ptp_clock_get,
 	.adjust = eth_esp32_ptp_clock_adjust,
-	.rate_adjust = eth_esp32_ptp_clock_rate_adjust,
+	.adjust_rate = eth_esp32_ptp_clock_adjust_rate,
 };
 
 static int eth_esp32_ptp_clock_init(const struct device *dev)

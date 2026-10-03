@@ -1478,6 +1478,24 @@ NXP
     #include <nxp/imx/pinctrl/mimx8ml8dvnlz-pinctrl.dtsi>
     #include <nxp/kinetis/k6x/pinctrl/MK64FN1M0VLL12-pinctrl.h>
 
+PTP Clock
+=========
+
+* :c:func:`ptp_clock_rate_adjust` and the :c:member:`ptp_clock_driver_api.rate_adjust` driver
+  operation, which take the clock rate as a floating-point ratio, have been deprecated. Use
+  :c:func:`ptp_clock_adjust_rate` and implement :c:member:`ptp_clock_driver_api.adjust_rate`
+  instead, which take the rate offset from the nominal frequency as scaled parts per million,
+  that is parts per million with a 16-bit binary fractional field:
+  ``scaled_ppm = (ratio - 1) * 1000000 * 65536``. :c:macro:`PTP_CLOCK_SCALED_PPM_ONE` is 1 ppm.
+
+  A driver only has to implement one of the two operations. Both functions work with either of
+  them and convert the argument if necessary, so applications and drivers can be migrated
+  independently.
+
+  Drivers can use :c:func:`ptp_clock_scaled_ppm_to_ppb` if the hardware takes the offset in
+  parts per billion, and :c:func:`ptp_clock_adjust_by_scaled_ppm` to compute the value of an
+  addend register from its nominal value. All in-tree drivers have been converted.
+
 PWM
 ===
 
