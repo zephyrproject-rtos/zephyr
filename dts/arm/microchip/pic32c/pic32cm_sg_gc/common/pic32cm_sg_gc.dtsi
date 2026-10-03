@@ -259,6 +259,29 @@
 			clock-names = "mclk", "gclk";
 			status = "disabled";
 		};
+
+		eic: interrupt-controller@44020000 {
+			compatible = "microchip,eic-g1-intc";
+			reg = <0x44020000 0x44>;
+			interrupts = <16 0>, <17 0>, <18 0>, <19 0>,
+				     <20 0>, <21 0>, <22 0>, <23 0>,
+				     <24 0>, <25 0>, <26 0>, <27 0>,
+				     <28 0>, <29 0>, <30 0>, <31 0>;
+			interrupt-names = "extint-0", "extint-1", "extint-2", "extint-3",
+					  "extint-4", "extint-5", "extint-6", "extint-7",
+					  "extint-8", "extint-9", "extint-10", "extint-11",
+					  "extint-12", "extint-13", "extint-14", "extint-15";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_EIC>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_EIC>;
+			clock-names = "mclk", "gclk";
+			portb-special-pins-1 = <0x00036f80 1>; /*7..11|13|14|16|17*/
+			portb-special-pins-2 = <0x00001000 10>; /*12*/
+			portb-special-pins-3 = <0x00008000 15>; /*15*/
+			portd-special-pins-1 = <0x00000380 3>; /*7|8|9*/
+			portd-special-pins-2 = <0x00030000 14>; /*16|17*/
+			portd-special-pins-3 = <0x001cfc30 2>; /*4|5|10..15|18|19|20*/
+			status = "disabled";
+		};
 	};
 };
 

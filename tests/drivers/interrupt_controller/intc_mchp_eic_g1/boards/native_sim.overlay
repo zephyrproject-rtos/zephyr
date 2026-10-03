@@ -1,0 +1,16 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* The port B and D groups of pic32cm_sg_gc_100.dtsi */
+/ {
+	eic: zephyr,user {
+		portb-special-pins-1 = <0x00036f80 1>;
+		portb-special-pins-2 = <0x00001000 10>;
+		portb-special-pins-3 = <0x00008000 15>;
+		portd-special-pins-1 = <0x00000380 3>;
+		portd-special-pins-2 = <0x00030000 14>;
+		portd-special-pins-3 = <0x001cfc30 2>;
+	};
+};
