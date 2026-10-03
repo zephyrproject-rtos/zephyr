@@ -6,6 +6,8 @@ config ST730X
 	default y
 	depends on DT_HAS_SITRONIX_ST7305_ENABLED || DT_HAS_SITRONIX_ST7306_ENABLED
 	select MIPI_DBI
+	select DISPLAY_COLOR_DITHER_SUPPORTED \
+		if $(dt_compat_any_has_prop,$(DT_COMPAT_SITRONIX_ST7306),color-mode,RBW)
 	imply DISPLAY_COLOR_PALETTE \
 		if $(dt_compat_any_has_prop,$(DT_COMPAT_SITRONIX_ST7306),color-mode,RBW)
 	help

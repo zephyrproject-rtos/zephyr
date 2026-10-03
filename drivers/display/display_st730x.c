@@ -12,6 +12,7 @@ LOG_MODULE_REGISTER(st730x, CONFIG_DISPLAY_LOG_LEVEL);
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/drivers/display.h>
+#include <zephyr/drivers/display/color_dither.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/mipi_dbi.h>
 #include <zephyr/kernel.h>
@@ -152,6 +153,9 @@ struct st730x_config {
 
 struct st730x_data {
 	enum display_pixel_format current_pixel_format;
+#if defined(CONFIG_DISPLAY_COLOR_DITHER)
+	struct display_color_dither_state color_dither;
+#endif
 };
 
 static int st730x_resume(const struct device *dev)
@@ -481,6 +485,10 @@ static int st730x_write(const struct device *dev, const uint16_t x, const uint16
 	uint32_t processed = 0;
 	int i;
 	struct display_buffer_descriptor mipi_desc = *desc;
+#if defined(CONFIG_DISPLAY_COLOR_DITHER)
+	struct display_buffer_descriptor scratch = *desc;
+	const struct display_buffer_descriptor *scratch_scratch = &scratch;
+#endif
 	uint8_t x_start = config->specifics->column_offset
 			  + ((config->start_column + x) * config->bppx) / ST730X_PPXA;
 	uint8_t x_end = config->specifics->column_offset
@@ -510,7 +518,17 @@ static int st730x_write(const struct device *dev, const uint16_t x, const uint16
 		buf_len = (desc->height * desc->width) / 2;
 		convert_function = st730x_convert_rbw_i4;
 	} else {
+#if defined(CONFIG_DISPLAY_COLOR_DITHER)
+		err = display_color_dither_prepare(dev, &data->color_dither, &scratch_scratch, &buf,
+						   &scratch);
+		if (err != 0) {
+			return err;
+		}
+		convert_function = st730x_convert_rbw_i4;
+		buf_len = (desc->height * desc->width) / 2;
+#else
 		return -ENOTSUP;
+#endif
 	}
 
 	if (desc->buf_size < buf_len) {
@@ -601,6 +619,11 @@ static void st730x_get_capabilities(const struct device *dev, struct display_cap
 	}
 	caps->current_pixel_format = data->current_pixel_format;
 	caps->screen_info = 0;
+#if defined(CONFIG_DISPLAY_COLOR_DITHER)
+	if (config->is_rbw) {
+		display_color_dither_patch_caps(&data->color_dither, caps);
+	}
+#endif
 }
 
 static int st730x_set_pixel_format(const struct device *dev, const enum display_pixel_format pf)
@@ -611,10 +634,20 @@ static int st730x_set_pixel_format(const struct device *dev, const enum display_
 	if (pf == PIXEL_FORMAT_MONO01) {
 		data->current_pixel_format = PIXEL_FORMAT_MONO01;
 		return 0;
-	} else if (pf == PIXEL_FORMAT_I_4 && config->is_rbw) {
+	}
+#if defined(CONFIG_DISPLAY_COLOR_DITHER)
+	else if (config->is_rbw) {
+		if (display_color_dither_set_input_format(&data->color_dither, pf) == 0) {
+			data->current_pixel_format = pf;
+			return 0;
+		}
+	}
+#else
+	else if (pf == PIXEL_FORMAT_I_4 && config->is_rbw) {
 		data->current_pixel_format = PIXEL_FORMAT_I_4;
 		return 0;
 	}
+#endif
 
 	LOG_ERR("Unsupported pixel format");
 
@@ -722,16 +755,32 @@ static const struct st730x_specific st7306_specifics = {
 	(DT_PROP(node_id, width) * ST730X_BPPX(node_id) * ST730X_BPPY(node_id)) / 4)
 
 #ifdef CONFIG_ST730X_DEFAULT_PALETTED
+#if defined(CONFIG_DISPLAY_COLOR_DITHER)
+#if defined(CONFIG_DISPLAY_COLOR_DITHER_DEFAULT_RGB565)
+#define ST730X_CURRENT_PIXEL_FORMAT_PALETTED PIXEL_FORMAT_RGB_565
+#elif defined(CONFIG_DISPLAY_COLOR_DITHER_DEFAULT_RGB888)
+#define ST730X_CURRENT_PIXEL_FORMAT_PALETTED PIXEL_FORMAT_RGB_888
+#else
+#define ST730X_CURRENT_PIXEL_FORMAT_PALETTED PIXEL_FORMAT_I_4
+#endif
+#else
+#define ST730X_CURRENT_PIXEL_FORMAT_PALETTED PIXEL_FORMAT_I_4
+#endif
 #define ST730X_CURRENT_PIXEL_FORMAT(node_id) \
-	COND_CASE_1(ST730X_IS_RBW(node_id), (PIXEL_FORMAT_I_4), (PIXEL_FORMAT_MONO01))
+	COND_CASE_1(ST730X_IS_RBW(node_id), (ST730X_CURRENT_PIXEL_FORMAT_PALETTED), \
+		    (PIXEL_FORMAT_MONO01))
 #else
 #define ST730X_CURRENT_PIXEL_FORMAT(node_id) PIXEL_FORMAT_MONO01
 #endif
 
 #define ST730X_DEFINE_MIPI(node_id, specifics_ptr)                                                 \
 	static uint8_t conversion_buf##node_id[ST730X_CONV_BUFFER_SIZE(node_id)];                  \
+	IF_ENABLED(CONFIG_DISPLAY_COLOR_DITHER,                                                    \
+		(DISPLAY_COLOR_DITHER_DEFINE(node_id);))                                           \
 	static struct st730x_data data##node_id = {                                                \
 		.current_pixel_format = ST730X_CURRENT_PIXEL_FORMAT(node_id),                      \
+		IF_ENABLED(CONFIG_DISPLAY_COLOR_DITHER,                                            \
+		(.color_dither = DISPLAY_COLOR_DITHER_INIT(node_id),))                             \
 	};                                                                                         \
 	static const struct st730x_config config##node_id = {                                      \
 		.mipi_dev = DEVICE_DT_GET(DT_PARENT(node_id)),                                     \

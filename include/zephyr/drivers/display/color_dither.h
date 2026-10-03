@@ -79,9 +79,9 @@
  *
  *   // In the driver instance definition, define backing storage before data:
  *   #define FOO_DEFINE(inst)                                                               \
- *           DISPLAY_COLOR_DITHER_DEFINE(inst);                                             \
+ *           DISPLAY_COLOR_DITHER_INST_DEFINE(inst);                                        \
  *           static struct foo_data foo_data_##inst = {                                     \
- *                   .color_dither = DISPLAY_COLOR_DITHER_INIT(inst),                       \
+ *                   .color_dither = DISPLAY_COLOR_DITHER_INST_INIT(inst),                  \
  *           };                                                                             \
  *           DEVICE_DT_INST_DEFINE(inst, ...);
  * @endcode
@@ -211,9 +211,21 @@ struct display_color_dither_state {
  *
  * @kconfig_dep{CONFIG_DISPLAY_COLOR_DITHER}
  *
+ * @param node_id  DT node ID.
+ */
+#define DISPLAY_COLOR_DITHER_DEFINE(node_id)                                                       \
+	static uint8_t color_dither_buf_##node_id[COLOR_DITHER_I4_BYTES(DT_PROP(node_id, width),   \
+									DT_PROP(node_id, height))];\
+	COLOR_DITHER_ERRDIFF_DEFINE(node_id, DT_PROP(node_id, width))
+
+/**
+ * @brief Same as DISPLAY_COLOR_DITHER_DEFINE but with a DT_DRV_COMPAT instance identifier.
+ *
+ * @kconfig_dep{CONFIG_DISPLAY_COLOR_DITHER}
+ *
  * @param inst  DT instance index.
  */
-#define DISPLAY_COLOR_DITHER_DEFINE(inst)                                                          \
+#define DISPLAY_COLOR_DITHER_INST_DEFINE(inst)                                                     \
 	static uint8_t color_dither_buf_##inst[COLOR_DITHER_I4_BYTES(DT_INST_PROP(inst, width),    \
 								     DT_INST_PROP(inst, height))]; \
 	COLOR_DITHER_ERRDIFF_DEFINE(inst, DT_INST_PROP(inst, width))
@@ -227,9 +239,28 @@ struct display_color_dither_state {
  * this expands to an empty initializer (the state member is then zero-sized), so it can be used
  * unconditionally.
  *
+ * @param node_id  DT node ID.
+ */
+#define DISPLAY_COLOR_DITHER_INIT(node_id)                                                         \
+	{                                                                                          \
+		.input_format = COLOR_DITHER_DEFAULT_FMT,                                          \
+		.converted_buf = color_dither_buf_##node_id,                                       \
+		.converted_buf_size = sizeof(color_dither_buf_##node_id),                          \
+		.err_rows =                                                                        \
+			{                                                                          \
+				COLOR_DITHER_ERRDIFF_R0(node_id),                                  \
+				COLOR_DITHER_ERRDIFF_R1(node_id),                                  \
+				COLOR_DITHER_ERRDIFF_R2(node_id),                                  \
+			},                                                                         \
+		.err_row_len = COLOR_DITHER_ERRDIFF_LEN(DT_PROP(node_id, width)),                  \
+	}
+
+/**
+ * @brief  Same as DISPLAY_COLOR_DITHER_INIT but with a DT_DRV_COMPAT instance identifier.
+ *
  * @param inst DT instance index.
  */
-#define DISPLAY_COLOR_DITHER_INIT(inst)                                                            \
+#define DISPLAY_COLOR_DITHER_INST_INIT(inst)                                                       \
 	{                                                                                          \
 		.input_format = COLOR_DITHER_DEFAULT_FMT,                                          \
 		.converted_buf = color_dither_buf_##inst,                                          \
@@ -332,8 +363,13 @@ bool display_color_dither_is_active(const struct display_color_dither_state *sta
 
 /** @cond INTERNAL_HIDDEN */
 
-#define DISPLAY_COLOR_DITHER_DEFINE(inst)
-#define DISPLAY_COLOR_DITHER_INIT(inst)                                                            \
+#define DISPLAY_COLOR_DITHER_DEFINE(node_id)
+#define DISPLAY_COLOR_DITHER_INIT(node_id)                                                         \
+	{                                                                                          \
+	}
+
+#define DISPLAY_COLOR_DITHER_INST_DEFINE(inst)
+#define DISPLAY_COLOR_DITHER_INST_INIT(inst)                                                       \
 	{                                                                                          \
 	}
 
