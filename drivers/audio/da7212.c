@@ -82,34 +82,36 @@ static int da7212_clock_mode_config(const struct device *dev, audio_dai_cfg_t *c
 {
 	uint8_t val = 0;
 
+	/* BCLK number per WCLK period, which is also the frame length the codec
+	 * expects when it is the clock target.
+	 */
+	switch (cfg->i2s.word_size) {
+	case 16:
+		val = DIALOG7212_DAI_BCLKS_PER_WCLK_BCLK32;
+		break;
+	case 32:
+		val = DIALOG7212_DAI_BCLKS_PER_WCLK_BCLK64;
+		break;
+	case 64:
+		val = DIALOG7212_DAI_BCLKS_PER_WCLK_BCLK128;
+		break;
+	case 128:
+		val = DIALOG7212_DAI_BCLKS_PER_WCLK_BCLK256;
+		break;
+	default:
+		LOG_ERR("Word size %d not supported", cfg->i2s.word_size);
+		return -EINVAL;
+	}
+
+	da7212_update_reg(dev, DIALOG7212_DAI_CLK_MODE,
+			(uint8_t)DIALOG7212_DAI_BCLKS_PER_WCLK_MASK, val);
+
 	/* Clock controller => DAI_CLK_EN = 1 (BCLK/WCLK output).
 	 * Clock target => DAI_CLK_EN = 0 (BCLK/WCLK input)
 	 */
 	if ((cfg->i2s.options & I2S_OPT_FRAME_CLK_TARGET) == 0) {
 		da7212_update_reg(dev, DIALOG7212_DAI_CLK_MODE,
 				DIALOG7212_DAI_CLK_EN_MASK, DIALOG7212_DAI_CLK_EN_MASK);
-
-		/* DAI clock controller BCLK number per WCLK period */
-		switch (cfg->i2s.word_size) {
-		case 16:
-			val = DIALOG7212_DAI_BCLKS_PER_WCLK_BCLK32;
-			break;
-		case 32:
-			val = DIALOG7212_DAI_BCLKS_PER_WCLK_BCLK64;
-			break;
-		case 64:
-			val = DIALOG7212_DAI_BCLKS_PER_WCLK_BCLK128;
-			break;
-		case 128:
-			val = DIALOG7212_DAI_BCLKS_PER_WCLK_BCLK256;
-			break;
-		default:
-			LOG_ERR("Word size %d not supported", cfg->i2s.word_size);
-			return -EINVAL;
-		}
-
-		da7212_update_reg(dev, DIALOG7212_DAI_CLK_MODE,
-				(uint8_t)DIALOG7212_DAI_BCLKS_PER_WCLK_MASK, val);
 	} else {
 		da7212_update_reg(dev, DIALOG7212_DAI_CLK_MODE,
 					DIALOG7212_DAI_CLK_EN_MASK, 0);
@@ -437,6 +439,12 @@ static void da7212_configure_output(const struct device *dev)
 	da7212_write_reg(dev, DIALOG7212_DAC_L_GAIN, (uint8_t)DIALOG7212_DAC_DEFAULT_GAIN);
 	da7212_write_reg(dev, DIALOG7212_DAC_R_GAIN, (uint8_t)DIALOG7212_DAC_DEFAULT_GAIN);
 
+	/* Enable the line amplifier, which drives the speaker outputs */
+	da7212_write_reg(dev, DIALOG7212_LINE_CTRL,
+		(uint8_t)(DIALOG7212_LINE_CTRL_AMP_EN_MASK |
+			DIALOG7212_LINE_CTRL_AMP_RAMP_EN_MASK |
+			DIALOG7212_LINE_CTRL_AMP_OE_MASK));
+
 	/* Set default HP volume and unmute */
 	da7212_out_volume_config(dev, AUDIO_CHANNEL_ALL, DIALOG7212_HP_DEFAULT_GAIN);
 	da7212_out_mute_config(dev, AUDIO_CHANNEL_ALL, false);
@@ -515,6 +523,7 @@ static void da7212_configure_input(const struct device *dev)
 static int da7212_configure(const struct device *dev, struct audio_codec_cfg *cfg)
 {
 	const struct da7212_driver_config *const dev_cfg = DEV_CFG(dev);
+	uint8_t pll_indiv;
 
 	if (cfg->dai_type >= AUDIO_DAI_TYPE_INVALID) {
 		LOG_ERR("dai_type not supported");
@@ -555,12 +564,23 @@ static int da7212_configure(const struct device *dev, struct audio_codec_cfg *cf
 	da7212_write_reg(dev, DIALOG7212_REFERENCES,
 			(uint8_t)DIALOG7212_REFERENCES_BIAS_EN_MASK);
 
-	/* Keep PLL disable, use MCLK as system clock. */
+	/* Keep PLL disable, use MCLK as system clock. The input divider still
+	 * has to match the MCLK rate.
+	 */
 	da7212_write_reg(dev, DIALOG7212_PLL_FRAC_TOP, 0);
 	da7212_write_reg(dev, DIALOG7212_PLL_FRAC_BOT, 0);
 	da7212_write_reg(dev, DIALOG7212_PLL_INTEGER,
 			DIALOG7212_PLL_FBDIV_INTEGER_RESET_VALUE);
-	da7212_write_reg(dev, DIALOG7212_PLL_CTRL, 0x0);
+	if (cfg->mclk_freq <= 10000000U) {
+		pll_indiv = DIALOG7212_PLL_INDIV_2_10MHZ;
+	} else if (cfg->mclk_freq <= 20000000U) {
+		pll_indiv = DIALOG7212_PLL_INDIV_10_20MHZ;
+	} else if (cfg->mclk_freq <= 40000000U) {
+		pll_indiv = DIALOG7212_PLL_INDIV_20_40MHZ;
+	} else {
+		pll_indiv = DIALOG7212_PLL_INDIV_40_80MHZ;
+	}
+	da7212_write_reg(dev, DIALOG7212_PLL_CTRL, pll_indiv);
 
 	/* Set default clock mode to target, BCLK number per WCLK = 64 */
 	da7212_write_reg(dev, DIALOG7212_DAI_CLK_MODE,
