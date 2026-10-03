@@ -15,7 +15,6 @@ abnornally||abnormally
 abnrormal||abnormal
 abord||abort
 aboslute||absolute
-abov||above
 abreviated||abbreviated
 absense||absence
 absolut||absolute

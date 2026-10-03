@@ -94,6 +94,7 @@ config GPIO_ENABLE_DISABLE_INTERRUPT
 	  pending register, etc. The driver must implement it to work.
 
 # zephyr-keep-sorted-start
+source "drivers/gpio/Kconfig.abov32"
 source "drivers/gpio/Kconfig.ad559x"
 source "drivers/gpio/Kconfig.adp5585"
 source "drivers/gpio/Kconfig.ads1x4s0x"
