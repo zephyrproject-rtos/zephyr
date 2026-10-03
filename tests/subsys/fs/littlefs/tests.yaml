@@ -30,6 +30,7 @@ tests:
   filesystem.littlefs.default:
     timeout: 60
     platform_allow:
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
       - nrf54l15dk/nrf54l15/cpuapp
       - s32z2xxdc2/s32z270/rtu0
       - s32z2xxdc2/s32z270/rtu1

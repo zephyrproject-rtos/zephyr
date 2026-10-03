@@ -8,7 +8,6 @@ name: PSOC Edge84 Evaluation Kit (M55)
 type: mcu
 arch: arm
 ram: 5120
-sysbuild: true
 toolchain:
   - zephyr
 supported:
@@ -20,6 +19,7 @@ supported:
   - gpio
   - hwinfo
   - pinctrl
+  - pwm
   - uart
   - usbd
   - spi

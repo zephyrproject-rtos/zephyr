@@ -16,6 +16,7 @@ common:
 tests:
   sample.drivers.adc.adc_sequence:
     platform_allow:
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
       - cy8cproto_063_ble
       - cy8cproto_062_4343w
       - nrf52840dk/nrf52840
