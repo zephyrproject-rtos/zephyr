@@ -13,7 +13,7 @@
 /* 43.836KHz (-0.37% Error) */
 &pllsai {
 	div-m = <8>;
-	mul-n = <101>;
+	mul-n = <202>;
 	div-q = <9>;
 	post-div-q = <1>;
 	clocks = <&clk_hse>;
@@ -22,6 +22,9 @@
 
 &sai1 {
 	status = "okay";
+	clocks = <&rcc STM32_CLOCK(APB2, 22)>,
+		 <&rcc STM32_SRC_PLLSAI_POST_Q NO_SEL>;
+	clock-names = "sai_ck", "sai_ker_ck";
 };
 
 &sai1_b {
@@ -31,6 +34,10 @@
 	mclk-enable;
 	mclk-divider = "div-256";
 	dma-names = "tx";
+
+	sai1_b_mck: mclk {
+		#clock-cells = <0>;
+	};
 };
 
 &dma2 {
