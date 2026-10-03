@@ -783,7 +783,7 @@ static void eth_xlnx_gem_reset_hw(const struct device *dev)
 		    DEVICE_MMIO_NAMED_GET(dev, mac) + ETH_XLNX_GEM_RXQBASE_OFFSET);
 	sys_write32(0x00000000,
 		    DEVICE_MMIO_NAMED_GET(dev, mac) + ETH_XLNX_GEM_TXQBASE_OFFSET);
-#ifdef CONFIG_SOC_XILINX_ZYNQMP
+#if defined(CONFIG_SOC_XILINX_ZYNQMP) || defined(CONFIG_SOC_AMD_VERSAL)
 	sys_write32(0x00000000,
 		    DEVICE_MMIO_NAMED_GET(dev, mac) + ETH_XLNX_GEM_RX1QBASEL_OFFSET);
 	sys_write32(0x00000000,
@@ -792,7 +792,7 @@ static void eth_xlnx_gem_reset_hw(const struct device *dev)
 		    DEVICE_MMIO_NAMED_GET(dev, mac) + ETH_XLNX_GEM_TX1QBASEL_OFFSET);
 	sys_write32(0x00000000,
 		    DEVICE_MMIO_NAMED_GET(dev, mac) + ETH_XLNX_GEM_TX1QBASEH_OFFSET);
-#endif
+#endif /* CONFIG_SOC_XILINX_ZYNQMP || CONFIG_SOC_AMD_VERSAL */
 }
 
 /**
@@ -830,6 +830,17 @@ static void eth_xlnx_gem_configure_clocks(const struct device *dev,
 		target = 2500000;   /* Target frequency: 2.5 MHz */
 	}
 
+#if defined(CONFIG_SOC_AMD_VERSAL)
+	/*
+	 * Calculate the divisor for the target frequency. On the Versal,
+	 * the GEMx_REF_CTRL register only provides a single divisor.
+	 * The frequency of the PLL to which the divisor shall be applied is
+	 * provided in the respective GEM's device tree data.
+	 */
+	div0 = CLAMP(DIV_ROUND_CLOSEST(dev_conf->pll_clock_frequency, target),
+		     1, ETH_XLNX_CRL_GEMX_REF_CTRL_DIVISOR_MASK);
+	div1 = 1;
+#else
 	/*
 	 * Calculate the divisors for the target frequency.
 	 * The frequency of the PLL to which the divisors shall be applied are
@@ -846,6 +857,7 @@ static void eth_xlnx_gem_configure_clocks(const struct device *dev,
 			break;
 		}
 	}
+#endif /* CONFIG_SOC_AMD_VERSAL */
 
 #if defined(CONFIG_SOC_XILINX_ZYNQMP)
 	/*
@@ -893,7 +905,37 @@ static void eth_xlnx_gem_configure_clocks(const struct device *dev,
 			ETH_XLNX_SLCR_GEMX_CLK_CTRL_DIVISOR1_SHIFT);
 
 	sys_write32(clk_ctrl_reg, DEVICE_MMIO_NAMED_GET(dev, clkc));
-#endif /* CONFIG_SOC_XILINX_ZYNQMP / CONFIG_SOC_FAMILY_XILINX_ZYNQ7000 */
+#elif defined(CONFIG_SOC_AMD_VERSAL)
+	/*
+	 * Versal register crl.GEMx_REF_CTRL:
+	 * RX_CLKACT bit [27]
+	 * TX_CLKACT bit [26]
+	 * CLKACT bit [25]
+	 * div0 bits [17..8]
+	 */
+	clk_ctrl_reg  = sys_read32(DEVICE_MMIO_NAMED_GET(dev, clkc));
+	clk_ctrl_reg &= ~(ETH_XLNX_CRL_GEMX_REF_CTRL_DIVISOR_MASK <<
+			ETH_XLNX_CRL_GEMX_REF_CTRL_DIVISOR_SHIFT);
+	clk_ctrl_reg |=	(div0 & ETH_XLNX_CRL_GEMX_REF_CTRL_DIVISOR_MASK) <<
+			ETH_XLNX_CRL_GEMX_REF_CTRL_DIVISOR_SHIFT;
+	clk_ctrl_reg |=	ETH_XLNX_CRL_GEMX_REF_CTRL_RX_CLKACT_BIT |
+			ETH_XLNX_CRL_GEMX_REF_CTRL_TX_CLKACT_BIT |
+			ETH_XLNX_CRL_GEMX_REF_CTRL_CLKACT_BIT;
+
+	/*
+	 * Unlock CRL write access if the write protect bit
+	 * is currently set, restore it afterwards.
+	 */
+	tmp = sys_read32(ETH_XLNX_CRL_WPROT_REGISTER_ADDRESS);
+	if ((tmp & ETH_XLNX_CRL_WPROT_BIT) > 0) {
+		sys_write32((tmp & ~ETH_XLNX_CRL_WPROT_BIT),
+			    ETH_XLNX_CRL_WPROT_REGISTER_ADDRESS);
+	}
+	sys_write32(clk_ctrl_reg, DEVICE_MMIO_NAMED_GET(dev, clkc));
+	if ((tmp & ETH_XLNX_CRL_WPROT_BIT) > 0) {
+		sys_write32(tmp, ETH_XLNX_CRL_WPROT_REGISTER_ADDRESS);
+	}
+#endif /* CONFIG_SOC_XILINX_ZYNQMP / CONFIG_SOC_FAMILY_XILINX_ZYNQ7000 / CONFIG_SOC_AMD_VERSAL */
 
 	LOG_DBG("%s set clock dividers div0/1 %u/%u for target "
 		"frequency %u Hz", dev->name, div0, div1, target);
@@ -1222,9 +1264,10 @@ static void eth_xlnx_gem_configure_buffers(const struct device *dev)
 		      (buf_iter * (uint32_t)dev_conf->tx_buffer_size);
 	bdptr->ctrl = (ETH_XLNX_GEM_TX_BD_WRAP_BIT | ETH_XLNX_GEM_TX_BD_USED_BIT);
 
-#ifdef CONFIG_SOC_XILINX_ZYNQMP
+#if defined(CONFIG_SOC_XILINX_ZYNQMP) || defined(CONFIG_SOC_AMD_VERSAL)
 	/*
-	 * On the UltraScale, configure the tie-off dummy buffer descriptors.
+	 * On the UltraScale and Versal, configure the tie-off dummy buffer
+	 * descriptors.
 	 * For both of them, set the 'wrap' bit, for the RX tie-off BD indicate
 	 * that this BD is not available for data reception, for the TX tie-off
 	 * BD indicate that there's no data to be transferred in there.
@@ -1238,7 +1281,7 @@ static void eth_xlnx_gem_configure_buffers(const struct device *dev)
 	bdptr = dev_data->tx_bd_ring.tie_off_bd;
 	bdptr->addr = (uint32_t)POINTER_TO_UINT(dev_data->tx_tie_off_buffer);
 	bdptr->ctrl = ETH_XLNX_GEM_TX_BD_WRAP_BIT | ETH_XLNX_GEM_TX_BD_USED_BIT;
-#endif /* CONFIG_SOC_XILINX_ZYNQMP */
+#endif /* CONFIG_SOC_XILINX_ZYNQMP || CONFIG_SOC_AMD_VERSAL */
 
 	/* Set free count/current index in the RX/TX BD ring data */
 	dev_data->rx_bd_ring.next_to_process = 0;
@@ -1250,9 +1293,9 @@ static void eth_xlnx_gem_configure_buffers(const struct device *dev)
 
 	/*
 	 * Write pointers to the first RX/TX BD to the controller.
-	 * On both the Zynq-7000 and the UltraScale, the legacy 32-bit
+	 * On the Zynq-7000, the UltraScale and Versal, the legacy 32-bit
 	 * RXQBASE/TXQBASE registers are the effective registers.
-	 * On the UltraScale, the retrofitted 64-bit RXQBASE/TXQBASE
+	 * On the UltraScale and Versal, the retrofitted 64-bit RXQBASE/TXQBASE
 	 * registers must point to the single dummy tie-off BD for
 	 * both the RX and TX direction.
 	 */
@@ -1260,14 +1303,14 @@ static void eth_xlnx_gem_configure_buffers(const struct device *dev)
 		    DEVICE_MMIO_NAMED_GET(dev, mac) + ETH_XLNX_GEM_RXQBASE_OFFSET);
 	sys_write32((uint32_t)POINTER_TO_UINT(dev_data->tx_bd_ring.first_bd),
 		    DEVICE_MMIO_NAMED_GET(dev, mac) + ETH_XLNX_GEM_TXQBASE_OFFSET);
-#ifdef CONFIG_SOC_XILINX_ZYNQMP
+#if defined(CONFIG_SOC_XILINX_ZYNQMP) || defined(CONFIG_SOC_AMD_VERSAL)
 	sys_write32(0x00000000, DEVICE_MMIO_NAMED_GET(dev, mac) + ETH_XLNX_GEM_RX1QBASEH_OFFSET);
 	sys_write32((uint32_t)POINTER_TO_UINT(dev_data->rx_bd_ring.tie_off_bd),
 		    DEVICE_MMIO_NAMED_GET(dev, mac) + ETH_XLNX_GEM_RX1QBASEL_OFFSET);
 	sys_write32(0x00000000, DEVICE_MMIO_NAMED_GET(dev, mac) + ETH_XLNX_GEM_TX1QBASEH_OFFSET);
 	sys_write32((uint32_t)POINTER_TO_UINT(dev_data->tx_bd_ring.tie_off_bd),
 		    DEVICE_MMIO_NAMED_GET(dev, mac) + ETH_XLNX_GEM_TX1QBASEL_OFFSET);
-#endif /* CONFIG_SOC_XILINX_ZYNQMP */
+#endif /* CONFIG_SOC_XILINX_ZYNQMP || CONFIG_SOC_AMD_VERSAL */
 }
 
 /**

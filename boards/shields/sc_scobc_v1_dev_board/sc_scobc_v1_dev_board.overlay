@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2026 Space Cubics Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&gem1 {
+	status = "disabled";
+	/* GEM1_REF_CTRL is sourced from the RPLL (750 MHz) */
+	clock-frequency = <DT_FREQ_M(750)>;
+	phy-handle = <&gem1_phy>;
+	local-mac-address = [02 00 00 00 00 01];
+};
+
+&gem1_mdio {
+	status = "disabled";
+
+	gem1_phy: phy@1 {
+		compatible = "ti,dp83867";
+		reg = <1>;
+		ti,interface-type = "rgmii-id";
+		/* 1.75 ns */
+		ti,tx-internal-delay = <0x6>;
+		ti,rx-internal-delay = <0x6>;
+	};
+};

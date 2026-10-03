@@ -1,0 +1,6 @@
+shield:
+  name: sc_scobc_v1_dev_board
+  full_name: SC-OBC Module V1 Development Board
+  vendor: sc
+  supported_features:
+    - ethernet
