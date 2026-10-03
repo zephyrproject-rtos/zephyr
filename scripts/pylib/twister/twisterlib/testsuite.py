@@ -446,6 +446,7 @@ class TestSuite(StatusMixin):
             os.path.realpath(suite_path), start=canonical_zephyr_base
         )
         self.yamlfile = suite_path
+        self.alt_config_dir = None
         self.testcases: list[TestCase] = []
         self.integration_platforms = []
 
