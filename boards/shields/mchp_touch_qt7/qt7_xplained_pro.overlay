@@ -1,0 +1,218 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * QT7 Xplained Pro Extension Board overlay
+ *
+ */
+
+/ {
+	qt7_leds {
+		compatible = "gpio-leds";
+
+		qt7_led_b0: button0_led {
+			gpios = <QT7_LED_BUTTON1>;
+			label = "Button 1 LED";
+		};
+
+		qt7_led_b1: button1_led {
+			gpios = <QT7_LED_BUTTON2>;
+			label = "Button 2 LED";
+		};
+
+		qt7_scroller_led0: slider_led0 {
+			gpios = <QT7_LED0_SCROLLER>;
+			label = "Slider LED0";
+		};
+
+		qt7_scroller_led1: slider_led1 {
+			gpios = <QT7_LED1_SCROLLER>;
+			label = "Slider LED1";
+		};
+
+		qt7_scroller_led2: slider_led2 {
+			gpios = <QT7_LED2_SCROLLER>;
+			label = "Slider LED2 ";
+		};
+
+		qt7_scroller_led3: slider_led3 {
+			gpios = <QT7_LED3_SCROLLER>;
+			label = "Slider LED3";
+		};
+
+		qt7_scroller_led4: slider_led4 {
+			gpios = <QT7_LED4_SCROLLER>;
+			label = "Slider LED4";
+		};
+
+		qt7_scroller_led5: slider_led5 {
+			gpios = <QT7_LED5_SCROLLER>;
+			label = "Slider LED5";
+		};
+	};
+};
+
+&ptc {
+	def-num-channels = <5>;
+	def-num-sensors = <5>;
+
+	pinctrl-0 = <&ptc_qt7_default>;
+	pinctrl-names = "default";
+
+	/* node parameters */
+	node_0_params: touch_node0 {
+		x-mask = <QT7_PIN3>,
+			 <QT7_PIN10>,
+			 <QT7_PIN7>,
+			 <QT7_PIN8>,
+			 <QT7_PIN9>;
+		x-names = "DRIVEN_SHIELD",
+			  "BUTTON_2",
+			  "SLIDER_0",
+			  "SLIDER_1",
+			  "SLIDER_2";
+		y-mask = <QT7_PIN4>;
+		y-names = "BUTTON_1";
+		zephyr,code = <INPUT_KEY_0>;
+		csd = <0>;
+		prescaler = "PRSC_DIV_SEL_16";
+		digital-gain = "GAIN_1";
+		analog-gain = "GAIN_1";
+		filter-level = "FILTER_LEVEL_16";
+	};
+
+	key_0_params: touch_key0 {
+		threshold = <50>;
+		hysteresis = "HYST_25";
+		aks-group = "NO_AKS_GROUP";
+	};
+
+	/* node parameters */
+	node_1_params: touch_node1 {
+		x-mask = <QT7_PIN3>,
+			 <QT7_PIN4>,
+			 <QT7_PIN7>,
+			 <QT7_PIN8>,
+			 <QT7_PIN9>;
+		x-names = "DRIVEN_SHIELD",
+			  "BUTTON_1",
+			  "SLIDER_0",
+			  "SLIDER_1",
+			  "SLIDER_2";
+		y-mask = <QT7_PIN10>;
+		y-names = "BUTTON_2";
+		zephyr,code = <INPUT_KEY_1>;
+		csd = <0>;
+		prescaler = "PRSC_DIV_SEL_16";
+		digital-gain = "GAIN_1";
+		analog-gain = "GAIN_1";
+		filter-level = "FILTER_LEVEL_16";
+	};
+
+	key_1_params: touch_key1 {
+		threshold = <50>;
+		hysteresis = "HYST_25";
+		aks-group = "NO_AKS_GROUP";
+	};
+
+	/* scroller - node parameters */
+	node_2_params: touch_node2 {
+		x-mask = <QT7_PIN3>,
+			 <QT7_PIN4>,
+			 <QT7_PIN10>,
+			 <QT7_PIN7>,
+			 <QT7_PIN8>;
+		x-names = "DRIVEN_SHIELD",
+			  "BUTTON_1",
+			  "BUTTON_2",
+			  "SLIDER_1",
+			  "SLIDER_2";
+		y-mask = <QT7_PIN9>;
+		y-names = "SLIDER_0";
+		zephyr,code = <INPUT_KEY_2>;
+		csd = <0>;
+		prescaler = "PRSC_DIV_SEL_16";
+		digital-gain = "GAIN_1";
+		analog-gain = "GAIN_1";
+		filter-level = "FILTER_LEVEL_16";
+	};
+
+	key_2_params: touch_key2 {
+		threshold = <50>;
+		hysteresis = "HYST_25";
+		aks-group = "NO_AKS_GROUP";
+	};
+
+	node_3_params: touch_node3 {
+		x-mask = <QT7_PIN3>,
+			 <QT7_PIN4>,
+			 <QT7_PIN10>,
+			 <QT7_PIN7>,
+			 <QT7_PIN9>;
+		x-names = "DRIVEN_SHIELD",
+			  "BUTTON_1",
+			  "BUTTON_2",
+			  "SLIDER_0",
+			  "SLIDER_2";
+		y-mask = <QT7_PIN8>;
+		y-names = "SLIDER_0";
+		zephyr,code = <INPUT_KEY_3>;
+		csd = <0>;
+		prescaler = "PRSC_DIV_SEL_16";
+		digital-gain = "GAIN_1";
+		analog-gain = "GAIN_1";
+		filter-level = "FILTER_LEVEL_16";
+	};
+
+	key_3_params: touch_key3 {
+		threshold = <50>;
+		hysteresis = "HYST_25";
+		aks-group = "NO_AKS_GROUP";
+	};
+
+	node_4_params: touch_node4 {
+		x-mask = <QT7_PIN3>,
+			 <QT7_PIN4>,
+			 <QT7_PIN10>,
+			 <QT7_PIN8>,
+			 <QT7_PIN9>;
+		x-names = "DRIVEN_SHIELD",
+			  "BUTTON_1",
+			  "BUTTON_2",
+			  "SLIDER_0",
+			  "SLIDER_1";
+		y-mask = <28>;
+		y-names = "SLIDER_0";
+		zephyr,code = <INPUT_KEY_4>;
+		csd = <0>;
+		prescaler = "PRSC_DIV_SEL_16";
+		digital-gain = "GAIN_1";
+		analog-gain = "GAIN_1";
+		filter-level = "FILTER_LEVEL_16";
+	};
+
+	key_4_params: touch_key4 {
+		threshold = <50>;
+		hysteresis = "HYST_25";
+		aks-group = "NO_AKS_GROUP";
+	};
+
+	def-num-scrollers = <1>;
+
+	/* Slider/wheel Parameters */
+	scroller-0-params {
+		compatible = "microchip,ptc-scroller";
+		scroller-type = "SCROLLER_TYPE_SLIDER";
+		zephyr,code = <INPUT_ABS_WHEEL>;
+		start-key = <2>;
+		number-of-keys = <3>;
+		position-hysteresis = <8>;
+		contact-min-threshold = <50>;
+
+		/* resol_deadband */
+		scroller-resolution = "SCR_RESOL_8_BIT";
+		scr-db-percent = "SCR_DB_10_PERCENT";
+	};
+};
