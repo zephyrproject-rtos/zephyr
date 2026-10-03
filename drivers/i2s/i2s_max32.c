@@ -670,7 +670,7 @@ static int i2s_max32_read(const struct device *dev, void **mem_block, size_t *si
 		return -EIO;
 	}
 
-	err = k_msgq_get(stream_data->queue, &block, K_MSEC(stream_data->i2s_cfg.timeout));
+	err = k_msgq_get(stream_data->queue, &block, SYS_TIMEOUT_MS(stream_data->i2s_cfg.timeout));
 	if (err < 0) {
 		LOG_ERR("RX queue empty");
 		return err;
@@ -700,7 +700,7 @@ static int i2s_max32_write(const struct device *dev, void *mem_block, size_t siz
 		return -EINVAL;
 	}
 
-	err = k_msgq_put(stream_data->queue, &block, K_MSEC(stream_data->i2s_cfg.timeout));
+	err = k_msgq_put(stream_data->queue, &block, SYS_TIMEOUT_MS(stream_data->i2s_cfg.timeout));
 	if (err < 0) {
 		LOG_ERR("TX queue full");
 		return err;
