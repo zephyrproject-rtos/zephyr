@@ -131,7 +131,7 @@ extern FUNC_NORETURN void z_riscv_userspace_enter(k_thread_entry_t user_entry,
 int z_irq_do_offload(void);
 #endif
 
-#ifdef CONFIG_FPU_SHARING
+#if defined(CONFIG_FPU_SHARING) && defined(CONFIG_RISCV_ISA_EXT_F)
 void arch_flush_local_fpu(void);
 void arch_flush_fpu_ipi(unsigned int cpu);
 void z_riscv_fpu_flush_thread(struct k_thread *thread);
