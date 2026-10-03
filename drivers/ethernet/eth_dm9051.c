@@ -146,6 +146,8 @@ LOG_MODULE_REGISTER(eth_dm9051, CONFIG_ETHERNET_LOG_LEVEL);
 #define DM9051_ISR_PT			BIT(1)
 /* PR - Packet Received */
 #define DM9051_ISR_PR			BIT(0)
+/* Interrupt sources enabled in IMR */
+#define DM9051_ISR_EVENTS		(DM9051_ISR_LNKCHG | DM9051_ISR_PT | DM9051_ISR_PR)
 
 /* 0x7F */
 /* PAR - Pointer Auto-Return Mode */
@@ -173,6 +175,12 @@ LOG_MODULE_REGISTER(eth_dm9051, CONFIG_ETHERNET_LOG_LEVEL);
 #define DM9051_NSR_POLL_TIMEOUT		K_USEC(20)
 /* Delay between NSR status polls */
 #define DM9051_NSR_POLL_INTERVAL	K_USEC(1)
+/* Max time the RX thread waits for an INT edge before checking the line */
+#define DM9051_INT_POLL_PERIOD		K_SECONDS(1)
+/* Consecutive ISR services that read no frame before the RX thread waits */
+#define DM9051_ISR_IDLE_MAX		8U
+/* Wait after DM9051_ISR_IDLE_MAX idle ISR services */
+#define DM9051_ISR_IDLE_BACKOFF		K_MSEC(1)
 
 struct eth_dm9051_config {
 	struct net_eth_mac_config mac_cfg;
@@ -559,10 +567,12 @@ out_net_pkt_unref:
 	return NULL;
 }
 
+/* Drain RX SRAM. Returns the number of frames read, or a negative errno. */
 static int eth_dm9051_rx(const struct device *dev)
 {
 	struct eth_dm9051_data *data = dev->data;
 	struct net_pkt *pkt;
+	int frames = 0;
 	uint16_t flag;
 	int ret;
 
@@ -583,6 +593,7 @@ static int eth_dm9051_rx(const struct device *dev)
 
 		/* Get received packet */
 		pkt = eth_dm9051_recv_pkt(dev);
+		frames++;
 		if (!pkt) {
 			ret = -EIO;
 			goto out_update_errors_rx;
@@ -607,6 +618,7 @@ static int eth_dm9051_rx(const struct device *dev)
 		}
 	}
 
+	ret = frames;
 	goto out_spi_unlock;
 
 out_update_errors_rx:
@@ -670,19 +682,44 @@ static void eth_dm9051_rx_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
+	const struct eth_dm9051_config *config;
 	struct eth_dm9051_data *data;
+	k_timeout_t timeout;
+	uint8_t idle = 0U;
 	struct device *dev;
 	uint8_t isr = 0;
+	bool progress;
 	int ret;
 
 	dev = p1;
+	config = dev->config;
 	data = dev->data;
 
 	while (true) {
-		k_sem_take(&data->int_event, K_FOREVER);
+		/*
+		 * The interrupt is edge triggered but the line follows ISR, so an
+		 * event latched between reading ISR and writing it back keeps the
+		 * line asserted without a new edge. Service ISR again instead of waiting for one,
+		 * and bound the wait so that a line left asserted by a failed ISR
+		 * access is still serviced. An event that ISR write-back does not
+		 * clear would keep the line asserted with no work to do, so wait
+		 * briefly after DM9051_ISR_IDLE_MAX such services in a row.
+		 */
+		if (((isr & DM9051_ISR_EVENTS) == 0U) || (idle >= DM9051_ISR_IDLE_MAX) ||
+		    (gpio_pin_get_dt(&config->gpio_int) <= 0)) {
+			timeout = (idle >= DM9051_ISR_IDLE_MAX) ? DM9051_ISR_IDLE_BACKOFF :
+								  DM9051_INT_POLL_PERIOD;
+			idle = 0U;
+			ret = k_sem_take(&data->int_event, timeout);
+			/* A failed line read services ISR rather than waiting again */
+			if ((ret != 0) && (gpio_pin_get_dt(&config->gpio_int) == 0)) {
+				continue;
+			}
+		}
 
 		ret = eth_dm9051_spi_read_reg(dev, DM9051_ISR, &isr);
 		if (ret < 0) {
+			isr = 0;
 			LOG_ERR("%s: Failed to read ISR (err %d)", dev->name, ret);
 			eth_stats_update_errors_rx(data->iface);
 			continue;
@@ -690,10 +727,18 @@ static void eth_dm9051_rx_thread(void *p1, void *p2, void *p3)
 
 		ret = eth_dm9051_spi_write_reg(dev, DM9051_ISR, isr);
 		if (ret < 0) {
+			isr = 0;
 			LOG_ERR("%s: Failed to write ISR (err %d)", dev->name, ret);
 			eth_stats_update_errors_rx(data->iface);
 			continue;
 		}
+
+		/*
+		 * Only a frame read counts as work: a transmit or link change bit
+		 * that write-back does not clear would otherwise reset the count on
+		 * every service.
+		 */
+		progress = false;
 
 		if ((isr & DM9051_ISR_PT) > 0) {
 			k_sem_give(&data->tx_done);
@@ -704,6 +749,10 @@ static void eth_dm9051_rx_thread(void *p1, void *p2, void *p3)
 			ret = eth_dm9051_rx(dev);
 			if (ret < 0) {
 				LOG_ERR("%s: RX failed (err %d)", dev->name, ret);
+			} else if (ret > 0) {
+				progress = true;
+			} else {
+				/* The frame was drained by the previous service */
 			}
 			LOG_DBG("%s: Packet Received", dev->name);
 		}
@@ -716,6 +765,8 @@ static void eth_dm9051_rx_thread(void *p1, void *p2, void *p3)
 			}
 			LOG_DBG("%s: Link changed", dev->name);
 		}
+
+		idle = progress ? 0U : (uint8_t)(idle + 1U);
 	}
 }
 
@@ -938,7 +989,8 @@ static int eth_dm9051_init(const struct device *dev)
 
 	data->dev = dev;
 
-	k_sem_init(&data->int_event, 0, UINT_MAX);
+	/* Every wakeup reads ISR, so one pending wakeup stands for any number */
+	k_sem_init(&data->int_event, 0, 1);
 	k_sem_init(&data->tx_done, 1, UINT_MAX);
 	k_mutex_init(&data->spi_lock);
 
@@ -973,6 +1025,14 @@ static int eth_dm9051_init(const struct device *dev)
 	}
 
 	ret = eth_dm9051_check_id(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Set the INT pin polarity before the RX thread starts checking the line */
+	ret = eth_dm9051_spi_write_reg(dev, DM9051_INTCR,
+				       (config->gpio_int.dt_flags & GPIO_ACTIVE_LOW) > 0 ?
+				       DM9051_INTCR_POL_LOW : DM9051_INTCR_POL_HIGH);
 	if (ret < 0) {
 		return ret;
 	}
