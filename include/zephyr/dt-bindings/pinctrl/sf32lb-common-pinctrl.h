@@ -22,7 +22,8 @@
  *
  * Bitmap:
  * - 0-10:  Configuration bits (function select, pull, drive strength, etc.)
- * - 11:    Reserved
+ * - 11:    Reserved (SF32LB52X uses it as the drive strength index MSB,
+ *          see the soc pinctrl_soc.h)
  * - 12-13: Port (SA, PA, ...)
  * - 14-21: Pad (0-128)
  * - 22-23: PINR register field (0-3)
