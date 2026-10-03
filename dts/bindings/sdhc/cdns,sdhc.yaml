@@ -1,20 +1,25 @@
 # Copyright (c) 2023 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-description: Cadence SDHC Controller
+description: Cadence SD Host Controller
 
 compatible: "cdns,sdhc"
 
-include: [sdhc.yaml, reset-device.yaml]
+include: [sdhc.yaml]
 
 properties:
-  clock-frequency:
-    type: int
-    description: clock-frequency for SDHC
   reg:
     required: true
-    description: register space
-  power-delay-ms:
-    type: int
+
+  reg-names:
     required: true
-    description: delay required to switch on the SDHC
+
+  broken-cd:
+    type: boolean
+    description:
+      There is no card detection available; polling must be used.
+
+  has-host:
+    type: boolean
+    description: |
+      Whether this instance exposes a separate "host" MMIO region.

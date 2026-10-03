@@ -20,6 +20,7 @@
 
 	aliases {
 		led0 = &led0;
+		sdhc0 = &sdmmc;
 	};
 
 	leds {
