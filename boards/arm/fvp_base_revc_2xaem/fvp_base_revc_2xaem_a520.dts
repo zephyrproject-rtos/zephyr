@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2026 Muhammad Waleed Badar
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <arm64/armv9-a.dtsi>
+#include "fvp_base_revc_2xaem.dtsi"
+
+/ {
+	model = "FVP Base RevC 2xAEMv9A (Cortex-A520)";
+};
+
+&cpu0 {
+	compatible = "arm,cortex-a520";
+};
+
+&cpu1 {
+	compatible = "arm,cortex-a520";
+};
+
+&cpu2 {
+	compatible = "arm,cortex-a520";
+};
+
+&cpu3 {
+	compatible = "arm,cortex-a520";
+};

@@ -132,6 +132,29 @@ if(CONFIG_BOARD_FVP_BASE_REVC_2XAEM_A320)
   set(ARMFVP_MIN_VERSION 11.29.27)
 endif()
 
+# Cortex-A520: Armv9.2-A (Armv8-A up to v8.7), 128-bit SVE2, MTE3.
+# Feature set taken from the Cortex-A520 TRM (102517) section 2.4.
+if(CONFIG_BOARD_FVP_BASE_REVC_2XAEM_A520)
+  set(ARMFVP_FLAGS ${ARMFVP_FLAGS}
+    # Cortex-A520 r0p1 (PartNum 0xD80, Variant 0, Revision 1).
+    -C cluster0.MIDR=0x410FD801
+
+    # ARMv9.2-A support level
+    -C cluster0.has_arm_v9-2=1
+
+    # Advanced SIMD and crypto support
+    -C cluster0.advsimd_bf16_support_level=1
+    -C cluster0.advsimd_i8mm_support_level=1
+
+    # Memory tagging support
+    -C cluster0.memory_tagging_support_level=3
+
+    # SVE configuration for Cortex-A520
+    -C cluster0.sve.veclen=2
+    )
+  set(ARMFVP_MIN_VERSION 11.29.27)
+endif()
+
 if(CONFIG_BOARD_FVP_BASE_REVC_2XAEM_V8A_AARCH32 OR
     CONFIG_BOARD_FVP_BASE_REVC_2XAEM_V8A_AARCH32_SMP)
   set(ARMFVP_FLAGS ${ARMFVP_FLAGS}

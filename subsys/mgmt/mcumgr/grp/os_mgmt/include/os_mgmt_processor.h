@@ -139,10 +139,12 @@ extern "C" {
 #define PROCESSOR_NAME "cortex-a76"
 #elif defined(CONFIG_CPU_CORTEX_A78)
 #define PROCESSOR_NAME "cortex-a78"
-#elif defined(CONFIG_CPU_CORTEX_A510)
-#define PROCESSOR_NAME "cortex-a510"
 #elif defined(CONFIG_CPU_CORTEX_A320)
 #define PROCESSOR_NAME "cortex-a320"
+#elif defined(CONFIG_CPU_CORTEX_A510)
+#define PROCESSOR_NAME "cortex-a510"
+#elif defined(CONFIG_CPU_CORTEX_A520)
+#define PROCESSOR_NAME "cortex-a520"
 #elif defined(CONFIG_CPU_CORTEX_A720)
 #define PROCESSOR_NAME "cortex-a720"
 #elif defined(CONFIG_CPU_CORTEX_R82)
