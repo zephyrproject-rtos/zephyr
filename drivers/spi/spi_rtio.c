@@ -185,7 +185,7 @@ int spi_rtio_copy(struct rtio *r,
 		tx_len = tx_bufs->buffers[tx].len;
 	} else {
 		tx_buf = NULL;
-		tx_len = rx_bufs->buffers[rx].len;
+		tx_len = (rx_bufs != NULL && rx < rx_count) ? rx_bufs->buffers[rx].len : 0;
 	}
 
 	if (rx < rx_count) {
@@ -210,15 +210,21 @@ int spi_rtio_copy(struct rtio *r,
 
 		/* If tx/rx len are same, we can do a simple transceive */
 		if (tx_len == rx_len) {
-			if (tx_buf == NULL) {
-				rtio_sqe_prep_read(sqe, iodev, RTIO_PRIO_NORM,
-						   rx_buf, rx_len, NULL);
-			} else if (rx_buf == NULL) {
-				rtio_sqe_prep_write(sqe, iodev, RTIO_PRIO_NORM,
-						    tx_buf, tx_len, NULL);
-			} else {
+			if (tx_buf != NULL && rx_buf != NULL) {
 				rtio_sqe_prep_transceive(sqe, iodev, RTIO_PRIO_NORM,
 							 tx_buf, rx_buf, rx_len, NULL);
+			} else if (rx_buf == NULL) {
+				if (tx_buf != NULL) {
+					rtio_sqe_prep_write(sqe, iodev, RTIO_PRIO_NORM,
+							    tx_buf, tx_len, NULL);
+				} else {
+					/* Both NULL: clock dummy bytes on bus, discard RX */
+					rtio_sqe_prep_read_discard(sqe, iodev, RTIO_PRIO_NORM,
+								   rx_len, NULL);
+				}
+			} else {
+				rtio_sqe_prep_read(sqe, iodev, RTIO_PRIO_NORM,
+						   rx_buf, rx_len, NULL);
 			}
 			tx++;
 			rx++;
@@ -237,10 +243,16 @@ int spi_rtio_copy(struct rtio *r,
 				tx_len = 0;
 			}
 		} else if (tx_len == 0) {
-			rtio_sqe_prep_read(sqe, iodev, RTIO_PRIO_NORM,
-					   (uint8_t *)rx_buf,
-					   (uint32_t)rx_len,
-					   NULL);
+			if (rx_buf != NULL) {
+				rtio_sqe_prep_read(sqe, iodev, RTIO_PRIO_NORM,
+						   (uint8_t *)rx_buf,
+						   (uint32_t)rx_len,
+						   NULL);
+			} else {
+				rtio_sqe_prep_read_discard(sqe, iodev, RTIO_PRIO_NORM,
+							   (uint32_t)rx_len,
+							   NULL);
+			}
 			rx++;
 			if (rx < rx_count) {
 				rx_buf = rx_bufs->buffers[rx].buf;
@@ -250,10 +262,16 @@ int spi_rtio_copy(struct rtio *r,
 				rx_len = 0;
 			}
 		} else if (rx_len == 0) {
-			rtio_sqe_prep_write(sqe, iodev, RTIO_PRIO_NORM,
-					    (uint8_t *)tx_buf,
-					    (uint32_t)tx_len,
-					    NULL);
+			if (tx_buf != NULL) {
+				rtio_sqe_prep_write(sqe, iodev, RTIO_PRIO_NORM,
+						    (uint8_t *)tx_buf,
+						    (uint32_t)tx_len,
+						    NULL);
+			} else {
+				rtio_sqe_prep_read_discard(sqe, iodev, RTIO_PRIO_NORM,
+							   (uint32_t)tx_len,
+							   NULL);
+			}
 			tx++;
 			if (tx < tx_count) {
 				tx_buf = tx_bufs->buffers[tx].buf;
@@ -263,21 +281,32 @@ int spi_rtio_copy(struct rtio *r,
 				tx_len = 0;
 			}
 		} else if (tx_len > rx_len) {
-			if (rx_buf) {
+			if (tx_buf != NULL && rx_buf != NULL) {
 				rtio_sqe_prep_transceive(sqe, iodev, RTIO_PRIO_NORM,
 							 (uint8_t *)tx_buf,
 							 (uint8_t *)rx_buf,
 							 (uint32_t)rx_len,
 							 NULL);
-			} else {
+			} else if (tx_buf != NULL) {
 				rtio_sqe_prep_write(sqe, iodev, RTIO_PRIO_NORM,
 						    (uint8_t *)tx_buf,
 						    (uint32_t)rx_len,
 						    NULL);
+			} else if (rx_buf != NULL) {
+				rtio_sqe_prep_read(sqe, iodev, RTIO_PRIO_NORM,
+						   (uint8_t *)rx_buf,
+						   (uint32_t)rx_len,
+						   NULL);
+			} else {
+				rtio_sqe_prep_read_discard(sqe, iodev, RTIO_PRIO_NORM,
+							   (uint32_t)rx_len,
+							   NULL);
 			}
 
 			tx_len -= rx_len;
-			tx_buf += rx_len;
+			if (tx_buf != NULL) {
+				tx_buf += rx_len;
+			}
 			rx++;
 			if (rx < rx_count) {
 				rx_buf = rx_bufs->buffers[rx].buf;
@@ -287,21 +316,32 @@ int spi_rtio_copy(struct rtio *r,
 				rx_len = tx_len;
 			}
 		} else if (rx_len > tx_len) {
-			if (tx_buf) {
+			if (tx_buf != NULL && rx_buf != NULL) {
 				rtio_sqe_prep_transceive(sqe, iodev, RTIO_PRIO_NORM,
 							 (uint8_t *)tx_buf,
 							 (uint8_t *)rx_buf,
 							 (uint32_t)tx_len,
 							 NULL);
-			} else {
+			} else if (tx_buf != NULL) {
+				rtio_sqe_prep_write(sqe, iodev, RTIO_PRIO_NORM,
+						    (uint8_t *)tx_buf,
+						    (uint32_t)tx_len,
+						    NULL);
+			} else if (rx_buf != NULL) {
 				rtio_sqe_prep_read(sqe, iodev, RTIO_PRIO_NORM,
 						   (uint8_t *)rx_buf,
 						   (uint32_t)tx_len,
 						   NULL);
+			} else {
+				rtio_sqe_prep_read_discard(sqe, iodev, RTIO_PRIO_NORM,
+							   (uint32_t)tx_len,
+							   NULL);
 			}
 
 			rx_len -= tx_len;
-			rx_buf += tx_len;
+			if (rx_buf != NULL) {
+				rx_buf += tx_len;
+			}
 			tx++;
 			if (tx < tx_count) {
 				tx_buf = tx_bufs->buffers[tx].buf;
