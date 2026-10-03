@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config CAN_LOOPBACK
-	bool "Emulated CAN loopback driver"
+	bool "Emulated loopback CAN driver"
 	default y
 	depends on DT_HAS_ZEPHYR_CAN_LOOPBACK_ENABLED
 	help
