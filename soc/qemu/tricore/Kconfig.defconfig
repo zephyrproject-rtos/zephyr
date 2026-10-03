@@ -14,7 +14,7 @@ endif
 if SOC_SERIES_TC4X
 
 config NUM_IRQS
-	default 16
+	default 2048
 
 endif
 
