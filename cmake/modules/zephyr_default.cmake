@@ -10,6 +10,8 @@
 
 include_guard(GLOBAL)
 
+include(extensions)
+
 # The code line below defines the real minimum supported CMake version.
 #
 # Unfortunately CMake requires the toplevel CMakeLists.txt file to define the
@@ -49,6 +51,13 @@ find_package(ZephyrAppConfiguration
   NO_CMAKE_SYSTEM_PATH
   NO_CMAKE_SYSTEM_PACKAGE_REGISTRY
 )
+
+# CMake 4.1.0 has a regression in string(GENEX_STRIP) that fails to strip
+# nested generator expressions, corrupting the flags computed by
+# compiler_simple_options() into bogus linker arguments such as ':>' and
+# ':-Os>'. See https://gitlab.kitware.com/cmake/cmake/-/work_items/27133
+zephyr_reject_cmake_version(4.1.0 4.1.1
+  "a regression in string(GENEX_STRIP) that produces invalid linker arguments")
 
 # Prepare user cache
 list(APPEND zephyr_cmake_modules python)
