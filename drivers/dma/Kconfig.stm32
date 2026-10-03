@@ -34,6 +34,17 @@ config DMA_STM32_V1
 	help
 	  Enable DMA V1 support.
 
+config DMA_STM32_DOUBLE_BUFFER
+	bool "STM32 DMA hardware double buffer mode"
+	depends on DMA_STM32_V1
+	help
+	  Enable the STM32-specific API that runs a cyclic transfer as a
+	  hardware ping-pong between two independent memory buffers
+	  (DMA_SxCR DBM/CT). Unlike plain circular mode, the two buffers do not
+	  have to be adjacent, and the address of the buffer the stream is not
+	  currently using can be replaced while the transfer runs, so re-arming
+	  introduces no gap.
+
 config DMA_STM32_V2
 	bool
 	default y
