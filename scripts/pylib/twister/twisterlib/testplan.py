@@ -3,6 +3,7 @@
 #
 # Copyright (c) 2018-2024 Intel Corporation
 # Copyright (c) 2024 Arm Limited (or its affiliates). All rights reserved.
+# Copyright (c) 2026 Advanced Micro Devices, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 import collections
@@ -96,11 +97,7 @@ class TestConfiguration:
         self.parse(config_file)
 
     def parse(self, config_file):
-        if os.path.exists(config_file):
-            tc_schema = scl.yaml_load(self.tc_schema_path)
-            self.test_config = scl.yaml_load_verify(config_file, tc_schema)
-        else:
-            raise TwisterRuntimeError(f"File {config_file} not found.")
+        self.test_config = self._load_config(config_file)
 
         platform_config = self.test_config.get('platforms', {})
 
@@ -111,6 +108,83 @@ class TestConfiguration:
 
         self.options = self.test_config.get('options', {})
 
+    def _load_config(self, config_file, stack=None):
+        """Load a test-config YAML, recursively merging any ``includes`` entries.
+
+        Included files are resolved relative to the file that lists them.
+        Each include is merged in order, then the including file overlays the
+        result so local ``options`` / ``platforms`` / ``levels`` win. Levels
+        with the same ``name`` are merged (``adds`` and ``inherits`` are
+        appended without duplicates). Circular includes are rejected.
+        """
+        config_path = os.path.abspath(config_file)
+        if stack is None:
+            stack = []
+        if config_path in stack:
+            chain = " -> ".join(stack + [config_path])
+            raise TwisterRuntimeError(
+                f"Circular include in test configuration: {chain}"
+            )
+        if not os.path.exists(config_path):
+            raise TwisterRuntimeError(f"File {config_file} not found.")
+
+        tc_schema = scl.yaml_load(self.tc_schema_path)
+        data = scl.yaml_load_verify(config_path, tc_schema) or {}
+        includes = data.pop("includes", []) or []
+
+        merged = {}
+        stack.append(config_path)
+        base_dir = os.path.dirname(config_path)
+        for inc in includes:
+            inc_path = inc if os.path.isabs(inc) else os.path.normpath(
+                os.path.join(base_dir, inc)
+            )
+            inc_data = self._load_config(inc_path, stack)
+            merged = self._merge_test_config(merged, inc_data)
+        stack.pop()
+        return self._merge_test_config(merged, data)
+
+    @staticmethod
+    def _merge_test_config(base, overlay):
+        result = copy.deepcopy(base) if base else {}
+        if not overlay:
+            return result
+        overlay = copy.deepcopy(overlay)
+
+        if "options" in overlay:
+            result.setdefault("options", {}).update(overlay["options"])
+
+        if "platforms" in overlay:
+            result.setdefault("platforms", {}).update(overlay["platforms"])
+
+        if "levels" in overlay:
+            result["levels"] = TestConfiguration._merge_levels(
+                result.get("levels", []), overlay["levels"]
+            )
+
+        return result
+
+    @staticmethod
+    def _merge_levels(base_levels, overlay_levels):
+        by_name = OrderedDict()
+        for lvl in base_levels:
+            by_name[lvl["name"]] = copy.deepcopy(lvl)
+        for lvl in overlay_levels:
+            name = lvl["name"]
+            if name not in by_name:
+                by_name[name] = copy.deepcopy(lvl)
+                continue
+            dest = by_name[name]
+            if "description" in lvl:
+                dest["description"] = lvl["description"]
+            for key in ("adds", "inherits"):
+                if key not in lvl:
+                    continue
+                dest.setdefault(key, [])
+                for item in lvl[key]:
+                    if item not in dest[key]:
+                        dest[key].append(item)
+        return list(by_name.values())
 
     @staticmethod
     def get_level(levels, name):

@@ -2047,6 +2047,38 @@ In the configuration file you can include complete components using
 regular expressions and you can specify which test level to import from
 the same file, making management of levels easier.
 
+A test configuration may also pull in other test-config YAML files with
+``includes``. Paths are resolved relative to the file that lists them
+(a single path join; parent directories are not searched). Included
+files are merged in order, then the including file overlays the result.
+Levels with the same ``name`` are combined (``adds`` and ``inherits``
+are appended). Nested includes are allowed; circular includes are
+rejected. ``--level`` matches names from the merged configuration.
+``inherits`` remains one-hop and order-sensitive: list a base level
+before any level that inherits it. Platform list keys such as
+``default_platforms`` are replaced rather than concatenated.
+
+.. code-block:: yaml
+
+   # common.yaml
+   levels:
+     - name: kernel
+       adds:
+         - kernel.semaphore
+         - kernel.mutex
+
+   # board.yaml  (passed as --test-config)
+   includes:
+     - common.yaml
+   levels:
+     - name: smoke
+       adds:
+         - drivers.console.uart
+     - name: smoke_and_kernel
+       inherits:
+         - smoke
+         - kernel
+
 To help with testing outside of upstream CI infrastructure, additional
 options are available in the configuration file, which can be hosted
 locally. As of now, those options are available:
