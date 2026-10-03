@@ -21,17 +21,17 @@
 		};
 	};
 
+	mbox-consumer {
+		compatible = "vnd,mbox-consumer";
+		mboxes = <&mbox1 0>, <&mbox1 4>, <&mbox4 0>, <&mbox4 3>;
+		mbox-names = "remote_valid", "remote_incorrect", "local_valid", "local_incorrect";
+	};
+
 	/* Memory region for MBOX (MHU) driver */
 	mhu_shmem: memory-region@62f01000 {
 		compatible = "zephyr,memory-region";
 		reg = <0x62f01000 0x1000>;
 		zephyr,memory-region = "mhu_shmem";
-	};
-
-	mbox-consumer {
-		compatible = "vnd,mbox-consumer";
-		mboxes = <&mbox1 0>, <&mbox1 4>, <&mbox4 0>, <&mbox4 3>;
-		mbox-names = "remote_valid", "remote_incorrect", "local_valid", "local_incorrect";
 	};
 };
 
