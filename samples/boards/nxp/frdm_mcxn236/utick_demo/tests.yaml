@@ -1,0 +1,16 @@
+# Copyright 2026
+#
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: UTICK Demo for FRDM-MCXN236
+common:
+  tags:
+    - drivers
+    - timer
+tests:
+  sample.boards.nxp.frdm_mcxn236.utick_demo:
+    build_only: true
+    platform_allow: frdm_mcxn236/mcxn236
+    integration_platforms:
+      - frdm_mcxn236/mcxn236
