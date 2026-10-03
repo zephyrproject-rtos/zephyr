@@ -19,11 +19,11 @@ properties:
 
   ti,divider:
     type: int
-    required: true
     enum:
       - 1
       - 2
       - 4
+    default: 1
     description: |
       CANCLK divider ratio for MCAN functional clock.
       Valid values are 1, 2, or 4. Default is 1 if omitted.
