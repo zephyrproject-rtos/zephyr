@@ -93,6 +93,9 @@ static inline bool dhcpv4_add_cookie(struct net_pkt *pkt)
 }
 
 #if defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS)
+BUILD_ASSERT(CONFIG_NET_DHCPV4_MAX_REQUESTED_OPTIONS >= ARRAY_SIZE(min_req_options),
+	     "CONFIG_NET_DHCPV4_MAX_REQUESTED_OPTIONS is smaller than the default options");
+
 static void dhcpv4_option_callback_get_unique_types(uint8_t *types)
 {
 	struct net_dhcpv4_option_callback *cb, *tmp;
