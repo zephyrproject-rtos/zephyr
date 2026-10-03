@@ -67,6 +67,18 @@ config ADC_ASYNC
 	help
 	  This option enables the asynchronous API calls.
 
+config ADC_DMA
+	bool "Request DMA-driven ADC transfers"
+	help
+	  Request the DMA mode of the ADC driver. Each driver with a DMA mode
+	  enables its own option for it in response, where the devicetree
+	  wires the controller to a DMA channel; drivers without one ignore
+	  the request.
+
+	  This only requests DMA and cannot disable it: a driver using DMA by
+	  default keeps doing so when this is left disabled. To force a driver
+	  out of its DMA mode, clear its own option instead.
+
 config ADC_INIT_PRIORITY
 	int "ADC init priority"
 	default KERNEL_INIT_PRIORITY_DEVICE
