@@ -965,10 +965,7 @@ static int bt_l2cap_br_basic_mode_send_buf_init(struct bt_l2cap_br_chan *chan, s
 {
 	struct bt_l2cap_hdr *hdr;
 
-	hdr = net_buf_push(buf, sizeof(*hdr));
-	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
-	hdr->cid = sys_cpu_to_le16(chan->tx.cid);
-
+	/* Checked before the header is added, since the caller keeps the buffer on error */
 	if (buf->user_data_size < sizeof(struct closure)) {
 		LOG_WRN("not enough room in user_data %d < %d pool %u",
 			buf->user_data_size,
@@ -976,6 +973,10 @@ static int bt_l2cap_br_basic_mode_send_buf_init(struct bt_l2cap_br_chan *chan, s
 			buf->pool_id);
 		return -EINVAL;
 	}
+
+	hdr = net_buf_push(buf, sizeof(*hdr));
+	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
+	hdr->cid = sys_cpu_to_le16(chan->tx.cid);
 
 	LOG_DBG("push PDU: cb %p userdata %p", cb, user_data);
 
@@ -6737,6 +6738,7 @@ int bt_l2cap_br_connless_send(struct bt_conn *conn, uint16_t psm, struct net_buf
 	struct bt_l2cap_chan *chan;
 	uint32_t remote_features;
 	uint16_t mtu;
+	int err;
 
 	if ((conn == NULL) || (buf == NULL)) {
 		LOG_ERR("Invalid parameters");
@@ -6784,7 +6786,13 @@ int bt_l2cap_br_connless_send(struct bt_conn *conn, uint16_t psm, struct net_buf
 
 	net_buf_push_le16(buf, psm);
 
-	return bt_l2cap_br_send_cb(conn, BT_L2CAP_CID_CONNLESS, buf, NULL, NULL);
+	err = bt_l2cap_br_send_cb(conn, BT_L2CAP_CID_CONNLESS, buf, NULL, NULL);
+	if (err != 0) {
+		/* The caller still owns the buffer */
+		(void)net_buf_pull_le16(buf);
+	}
+
+	return err;
 }
 
 static struct bt_l2cap_br_chan bt_l2cap_br_connless_pool[CONFIG_BT_MAX_CONN];
