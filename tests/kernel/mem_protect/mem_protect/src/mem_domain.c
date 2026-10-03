@@ -88,14 +88,23 @@ void *test_mem_domain_setup(void)
 	return NULL;
 }
 
+/* De-initialize a domain. Architectures that keep per-domain data they
+ * cannot release (page tables without a deinit hook) report -ENOTSUP,
+ * which is not a failure of the test.
+ */
+static void domain_deinit(struct k_mem_domain *domain)
+{
+	int ret = k_mem_domain_deinit(domain);
+
+	zassert_true((ret == 0) || (ret == -ENOTSUP), "failed to de-initialize memory domain (%d)",
+		     ret);
+}
+
 void test_mem_domain_teardown(void *fixture)
 {
 	ARG_UNUSED(fixture);
 
-#if defined(CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT)
-	zassert_equal(k_mem_domain_deinit(&test_domain), 0,
-		      "failed to de-initialize memory domain");
-#endif /* CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT */
+	domain_deinit(&test_domain);
 }
 
 /* Helper function; run a function under a child user thread.
@@ -293,10 +302,7 @@ static void mem_domain_init_entry(void *p1, void *p2, void *p3)
 		k_mem_domain_init(&no_access_domain, 0, NULL),
 		0, "failed to initialize memory domain");
 
-#if defined(CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT)
-	zassert_equal(k_mem_domain_deinit(&no_access_domain), 0,
-		      "failed to de-initialize memory domain");
-#endif /* CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT */
+	domain_deinit(&no_access_domain);
 }
 
 static void mem_domain_add_partition_entry(void *p1, void *p2, void *p3)
@@ -318,6 +324,16 @@ static void mem_domain_add_thread_entry(void *p1, void *p2, void *p3)
 	k_mem_domain_add_thread(&test_domain, zzz_thread);
 }
 
+static void mem_domain_remove_thread_entry(void *p1, void *p2, void *p3)
+{
+	k_mem_domain_remove_thread(zzz_thread);
+}
+
+static void mem_domain_remove_all_threads_entry(void *p1, void *p2, void *p3)
+{
+	k_mem_domain_remove_all_threads(&test_domain);
+}
+
 /**
  * @brief Verify that the memory domain APIs are supervisor-only.
  *
@@ -330,7 +346,7 @@ static void mem_domain_add_thread_entry(void *p1, void *p2, void *p3)
  *
  * Test steps:
  * - From a user thread, call k_mem_domain_init(), add_partition,
- *   remove_partition and add_thread in turn.
+ *   remove_partition, add_thread, remove_thread and remove_all_threads in turn.
  *
  * Expected result:
  * - Each call faults before doing anything.
@@ -339,6 +355,8 @@ static void mem_domain_add_thread_entry(void *p1, void *p2, void *p3)
  * @see k_mem_domain_add_partition()
  * @see k_mem_domain_remove_partition()
  * @see k_mem_domain_add_thread()
+ * @see k_mem_domain_remove_thread()
+ * @see k_mem_domain_remove_all_threads()
  */
 ZTEST(mem_protect_domain, test_mem_domain_api_supervisor_only)
 {
@@ -347,6 +365,167 @@ ZTEST(mem_protect_domain, test_mem_domain_api_supervisor_only)
 	spawn_child_thread(mem_domain_add_partition_entry, NULL, true);
 	spawn_child_thread(mem_domain_remove_partition_entry, NULL, true);
 	spawn_child_thread(mem_domain_add_thread_entry, NULL, true);
+	spawn_child_thread(mem_domain_remove_thread_entry, NULL, true);
+	spawn_child_thread(mem_domain_remove_all_threads_entry, NULL, true);
+}
+
+/* Second thread for the membership test, never started */
+static struct k_thread member_thread;
+static K_THREAD_STACK_DEFINE(member_stack, KOBJECT_STACK_SIZE);
+
+/**
+ * @brief Verify that threads can be taken out of a domain, one or all.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * Membership must follow every transition: k_mem_domain_remove_thread()
+ * returns one thread to the default domain and leaves the others alone,
+ * k_mem_domain_remove_all_threads() empties the domain in one step, and an
+ * aborted thread is a member of no domain. The default domain itself cannot
+ * be emptied. The threads are never started, so the test only observes the
+ * kernel's bookkeeping.
+ *
+ * Test steps:
+ * - Create two user threads without starting them; both inherit the default
+ *   domain.
+ * - Add both to the test domain, remove one and check the other stayed.
+ * - Add it back and remove all threads; check the domain has no members and
+ *   both threads are in the default domain.
+ * - Remove all threads from the now empty domain and from the default domain.
+ * - Abort both threads and check they are no longer linked into any domain.
+ *
+ * Expected result:
+ * - Membership follows every transition and the default domain is refused.
+ *
+ * @see k_mem_domain_remove_thread()
+ * @see k_mem_domain_remove_all_threads()
+ */
+ZTEST(mem_protect_domain, test_mem_domain_thread_membership)
+{
+	set_fault_valid(false);
+
+	k_thread_create(&child_thread, child_stack, K_THREAD_STACK_SIZEOF(child_stack),
+			rw_part_access, NULL, NULL, NULL, 0, K_USER, K_FOREVER);
+	k_thread_name_set(&child_thread, "child_thread");
+	k_thread_create(&member_thread, member_stack, K_THREAD_STACK_SIZEOF(member_stack),
+			rw_part_access, NULL, NULL, NULL, 0, K_USER, K_FOREVER);
+	k_thread_name_set(&member_thread, "member_thread");
+
+	zassert_equal(child_thread.mem_domain_info.mem_domain, &k_mem_domain_default,
+		      "new thread did not inherit the default domain");
+	zassert_true(sys_dlist_is_empty(&test_domain.thread_mem_domain_list),
+		     "test domain has members before any was added");
+
+	zassert_equal(k_mem_domain_add_thread(&test_domain, &child_thread), 0,
+		      "failed to add thread to domain");
+	zassert_equal(k_mem_domain_add_thread(&test_domain, &member_thread), 0,
+		      "failed to add thread to domain");
+
+	/* Removing one thread leaves the other where it is */
+	zassert_equal(k_mem_domain_remove_thread(&child_thread), 0,
+		      "failed to remove thread from domain");
+	zassert_equal(child_thread.mem_domain_info.mem_domain, &k_mem_domain_default,
+		      "removed thread is not in the default domain");
+	zassert_equal(member_thread.mem_domain_info.mem_domain, &test_domain,
+		      "removing one thread moved another");
+
+	/* Removing a thread already in the default domain is a no-op */
+	zassert_equal(k_mem_domain_remove_thread(&child_thread), 0,
+		      "removing from the default domain failed");
+
+	zassert_equal(k_mem_domain_add_thread(&test_domain, &child_thread), 0,
+		      "failed to add thread to domain");
+
+	zassert_equal(k_mem_domain_remove_all_threads(&test_domain), 0,
+		      "failed to remove all threads from domain");
+	zassert_true(sys_dlist_is_empty(&test_domain.thread_mem_domain_list),
+		     "domain still has members");
+	zassert_equal(child_thread.mem_domain_info.mem_domain, &k_mem_domain_default,
+		      "removed thread is not in the default domain");
+	zassert_equal(member_thread.mem_domain_info.mem_domain, &k_mem_domain_default,
+		      "removed thread is not in the default domain");
+
+	/* Nothing to do on an empty domain; the default domain is refused */
+	zassert_equal(k_mem_domain_remove_all_threads(&test_domain), 0,
+		      "removing all threads from an empty domain failed");
+	zassert_equal(k_mem_domain_remove_all_threads(&k_mem_domain_default), -EINVAL,
+		      "should fail removing all threads from the default domain");
+	zassert_equal(z_main_thread.mem_domain_info.mem_domain, &k_mem_domain_default,
+		      "default domain lost a member");
+
+	zassert_true(sys_dnode_is_linked(&child_thread.mem_domain_info.thread_mem_domain_node),
+		     "thread is not linked into its domain");
+
+	k_thread_abort(&child_thread);
+	k_thread_abort(&member_thread);
+
+	zassert_false(sys_dnode_is_linked(&child_thread.mem_domain_info.thread_mem_domain_node),
+		      "aborted thread still linked into a domain");
+	zassert_false(sys_dnode_is_linked(&member_thread.mem_domain_info.thread_mem_domain_node),
+		      "aborted thread still linked into a domain");
+}
+
+/**
+ * @brief Verify that a domain can be emptied and released while its members
+ *        are still alive.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * k_mem_domain_deinit() refuses a domain that has members.
+ * k_mem_domain_remove_all_threads() is the way to get rid of them without
+ * aborting them, after which the domain can be released and initialized
+ * again. Architectures that cannot release their per-domain data skip the
+ * test before initializing a domain they could never give back.
+ *
+ * Test steps:
+ * - Initialize a domain and add an unstarted thread to it.
+ * - Try to de-initialize it and expect -EBUSY.
+ * - Remove all threads and de-initialize it again.
+ * - Initialize the same domain again.
+ *
+ * Expected result:
+ * - The domain is busy with a member, and reusable once emptied.
+ *
+ * @see k_mem_domain_remove_all_threads()
+ * @see k_mem_domain_deinit()
+ */
+ZTEST(mem_protect_domain, test_mem_domain_remove_all_then_deinit)
+{
+	static struct k_mem_domain reuse_domain;
+
+	if (IS_ENABLED(CONFIG_ARCH_MEM_DOMAIN_DATA) &&
+	    !IS_ENABLED(CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT)) {
+		/* k_mem_domain_deinit() returns -ENOTSUP here */
+		ztest_test_skip();
+	}
+
+	set_fault_valid(false);
+
+	zassert_equal(k_mem_domain_init(&reuse_domain, 0, NULL), 0,
+		      "failed to initialize memory domain");
+
+	k_thread_create(&child_thread, child_stack, K_THREAD_STACK_SIZEOF(child_stack),
+			rw_part_access, NULL, NULL, NULL, 0, K_USER, K_FOREVER);
+	k_thread_name_set(&child_thread, "child_thread");
+	zassert_equal(k_mem_domain_add_thread(&reuse_domain, &child_thread), 0,
+		      "failed to add thread to domain");
+
+	zassert_equal(k_mem_domain_deinit(&reuse_domain), -EBUSY,
+		      "should fail de-initializing a domain with a member");
+
+	zassert_equal(k_mem_domain_remove_all_threads(&reuse_domain), 0,
+		      "failed to remove all threads from domain");
+	zassert_equal(k_mem_domain_deinit(&reuse_domain), 0,
+		      "failed to de-initialize an emptied memory domain");
+
+	zassert_equal(k_mem_domain_init(&reuse_domain, 0, NULL), 0,
+		      "failed to initialize the memory domain again");
+	zassert_equal(k_mem_domain_deinit(&reuse_domain), 0,
+		      "failed to de-initialize the memory domain again");
+
+	k_thread_abort(&child_thread);
 }
 
 /**
@@ -598,10 +777,7 @@ ZTEST(mem_protect_domain, test_mem_domain_init_fail)
 				  no_parts),
 		0, "should fail to initialize memory domain");
 
-#if defined(CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT)
-	zassert_equal(k_mem_domain_deinit(&test_domain_fail), 0,
-		      "cannot de-initialize memory domain");
-#endif /* CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT */
+	domain_deinit(&test_domain_fail);
 }
 
 /**
@@ -614,7 +790,8 @@ ZTEST(mem_protect_domain, test_mem_domain_init_fail)
  */
 ZTEST(mem_protect_domain, test_mem_domain_deinit_fail)
 {
-#if defined(CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT)
+	int ret;
+
 	set_fault_valid(false);
 
 	/* Should not be able to de-init the default domain. */
@@ -630,8 +807,7 @@ ZTEST(mem_protect_domain, test_mem_domain_deinit_fail)
 	k_thread_name_set(&child_thread, "child_thread");
 	k_mem_domain_add_thread(&test_domain, &child_thread);
 
-	zassert_equal(k_mem_domain_deinit(&test_domain), -EBUSY,
-		      "should fail de-initializing test domain with threads attached");
+	ret = k_mem_domain_deinit(&test_domain);
 
 	/* Let the thread run to the end so any memory domain related
 	 * cleanup will be done.
@@ -639,16 +815,19 @@ ZTEST(mem_protect_domain, test_mem_domain_deinit_fail)
 	k_thread_start(&child_thread);
 	k_thread_join(&child_thread, K_FOREVER);
 
+	if (ret == -ENOTSUP) {
+		/* Architecture cannot release its per-domain data */
+		ztest_test_skip();
+	}
+
+	zassert_equal(ret, -EBUSY, "should fail de-initializing test domain with threads attached");
+
 	/* Note that we cannot test the proper de-initialization of test_domain
 	 * here (... where this should succeed). It is because the test_domain
 	 * is still being used for other tests in this test suite.
 	 * Instead, it will be tested in test_mem_domain_teardown() when all
 	 * tests have run.
 	 */
-
-#else  /* CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT */
-	ztest_test_skip();
-#endif /* CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT */
 }
 
 /**
