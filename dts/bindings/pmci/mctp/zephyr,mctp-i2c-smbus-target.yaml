@@ -1,0 +1,33 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  A configuration for MCTP binding over SMBus/I2C using Zephyr I2C target RX
+  and transient controller-mode transfers for TX.
+
+compatible: "zephyr,mctp-i2c-smbus-target"
+
+properties:
+  i2c:
+    type: phandle
+    required: true
+    description: |
+      I2C peripheral that is used as an MCTP bus with the target mode API.
+
+  i2c-addr:
+    type: int
+    required: true
+    description: |
+      7-bit I2C target address of this endpoint.
+
+  endpoint-id:
+    type: int
+    required: true
+    description: |
+      MCTP endpoint ID of this endpoint.
+
+  remote-i2c-addr:
+    type: int
+    required: true
+    description: |
+      I2C address of the remote device used for transmit traffic.
