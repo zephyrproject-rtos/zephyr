@@ -10,6 +10,17 @@
 	*(.gcc_except_table .gcc_except_table.*)
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
+#if defined(CONFIG_LIBCXX_LIBCPP)
+	/*
+	 * LLVM libc++ places operator new/delete in a dedicated section
+	 * named __lcxx_override to support interposing.
+	 */
+	SECTION_PROLOGUE(__lcxx_override,,)
+	{
+	KEEP(*(__lcxx_override))
+	} GROUP_LINK_IN(ROMABLE_REGION)
+#endif /* CONFIG_LIBCXX_LIBCPP */
+
 #if defined (CONFIG_CPP_EXCEPTIONS)
 	SECTION_PROLOGUE(.eh_frame_hdr,,)
 	{
