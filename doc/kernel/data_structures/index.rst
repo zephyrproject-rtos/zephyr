@@ -40,3 +40,4 @@ structures are thread safe in specific usage scenarios (see
   spsc_lockfree.rst
   min_heap.rst
   ringq.rst
+  workq.rst
