@@ -1,0 +1,113 @@
+/*
+ * Copyright (c) 2026 Dimitri Varpusvuori
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/interrupt-controller/m68k.h>
+
+/ {
+	model = "QEMU M68K Virtual Machine";
+	compatible = "qemu,m68k-virt";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &goldfish_tty;
+		zephyr,shell-uart = &goldfish_tty;
+		zephyr,system-timer = &goldfish_rtc0;
+	};
+
+	sram0: memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x01000000>;
+	};
+
+	goldfish_tty: serial@ff008000 {
+		compatible = "google,goldfish-tty";
+		reg = <0xff008000 0x1000>;
+		big-endian;
+		status = "okay";
+	};
+
+	goldfish_rtc0: rtc@ff006000 {
+		compatible = "google,goldfish-rtc";
+		reg = <0xff006000 0x1000>;
+		interrupt-parent = <&goldfish_pic_ipl6>;
+		interrupts = <0>;
+		big-endian;
+		status = "okay";
+	};
+
+	/* QEMU wires PICs 0 through 5 to autovectored CPU levels 1 through 6. */
+	goldfish_pic_ipl1: interrupt-controller@ff000000 {
+		compatible = "google,goldfish-pic";
+		reg = <0xff000000 0x1000>;
+		interrupt-controller;
+		#address-cells = <0>;
+		#interrupt-cells = <1>;
+		interrupt-parent = <&m68k_cpu_intc>;
+		interrupts = <M68K_IRQ_AUTOVECTOR(1)>;
+		big-endian;
+		status = "okay";
+	};
+
+	goldfish_pic_ipl2: interrupt-controller@ff001000 {
+		compatible = "google,goldfish-pic";
+		reg = <0xff001000 0x1000>;
+		interrupt-controller;
+		#address-cells = <0>;
+		#interrupt-cells = <1>;
+		interrupt-parent = <&m68k_cpu_intc>;
+		interrupts = <M68K_IRQ_AUTOVECTOR(2)>;
+		big-endian;
+		status = "okay";
+	};
+
+	goldfish_pic_ipl3: interrupt-controller@ff002000 {
+		compatible = "google,goldfish-pic";
+		reg = <0xff002000 0x1000>;
+		interrupt-controller;
+		#address-cells = <0>;
+		#interrupt-cells = <1>;
+		interrupt-parent = <&m68k_cpu_intc>;
+		interrupts = <M68K_IRQ_AUTOVECTOR(3)>;
+		big-endian;
+		status = "okay";
+	};
+
+	goldfish_pic_ipl4: interrupt-controller@ff003000 {
+		compatible = "google,goldfish-pic";
+		reg = <0xff003000 0x1000>;
+		interrupt-controller;
+		#address-cells = <0>;
+		#interrupt-cells = <1>;
+		interrupt-parent = <&m68k_cpu_intc>;
+		interrupts = <M68K_IRQ_AUTOVECTOR(4)>;
+		big-endian;
+		status = "okay";
+	};
+
+	goldfish_pic_ipl5: interrupt-controller@ff004000 {
+		compatible = "google,goldfish-pic";
+		reg = <0xff004000 0x1000>;
+		interrupt-controller;
+		#address-cells = <0>;
+		#interrupt-cells = <1>;
+		interrupt-parent = <&m68k_cpu_intc>;
+		interrupts = <M68K_IRQ_AUTOVECTOR(5)>;
+		big-endian;
+		status = "okay";
+	};
+
+	goldfish_pic_ipl6: interrupt-controller@ff005000 {
+		compatible = "google,goldfish-pic";
+		reg = <0xff005000 0x1000>;
+		interrupt-controller;
+		#address-cells = <0>;
+		#interrupt-cells = <1>;
+		interrupt-parent = <&m68k_cpu_intc>;
+		interrupts = <M68K_IRQ_AUTOVECTOR(6)>;
+		big-endian;
+		status = "okay";
+	};
+};

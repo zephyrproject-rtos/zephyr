@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2026 Dimitri Varpusvuori
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <skeleton.dtsi>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			reg = <0>;
+			status = "okay";
+
+			m68k_cpu_intc: interrupt-controller {
+				compatible = "motorola,m68k-cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+	};
+};

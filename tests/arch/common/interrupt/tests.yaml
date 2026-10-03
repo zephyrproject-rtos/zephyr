@@ -56,6 +56,8 @@ tests:
       # interrupt_util.h yet.
       - sama5d27_som1_ek1
     arch_exclude:
+      # m68k cannot trigger maskable interrupts from software
+      - m68k
       # test needs 2 working interrupt lines
       - xtensa
       # TODO: make test work on this arch
@@ -89,6 +91,8 @@ tests:
       # interrupt_util.h yet.
       - sama5d27_som1_ek1
     arch_exclude:
+      # m68k cannot trigger maskable interrupts from software
+      - m68k
       # test needs 2 working interrupt lines
       - xtensa
       # TODO: make test work on this arch

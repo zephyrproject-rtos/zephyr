@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Dimitri Varpusvuori
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_GOLDFISH
+	bool "Goldfish TTY driver"
+	default y
+	depends on DT_HAS_GOOGLE_GOLDFISH_TTY_ENABLED
+	select SERIAL_HAS_DRIVER
