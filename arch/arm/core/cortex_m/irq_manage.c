@@ -233,7 +233,7 @@ int irq_target_state_is_secure(unsigned int irq)
  * @brief Disable and set all interrupt lines to target Non-Secure state.
  *
  * The function is used to set all HW NVIC interrupt lines to target the
- * Non-Secure state. The function shall only be called fron Secure state.
+ * Non-Secure state. The function shall only be called from Secure state.
  *
  * Notes:
  * - All NVIC interrupts are disabled before being routed to Non-Secure.
