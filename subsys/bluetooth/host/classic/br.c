@@ -904,6 +904,7 @@ int bt_br_init(void)
 	struct net_buf *rsp;
 	int err;
 	uint16_t default_link_policy_settings;
+	uint16_t policy_setting;
 
 	/* Read extended local features */
 	if (BT_FEAT_EXT_FEATURES(bt_dev.features)) {
@@ -1010,18 +1011,24 @@ int bt_br_init(void)
 	}
 
 	rp = (void *)rsp->data;
-	default_link_policy_settings = rp->default_link_policy_settings;
+	default_link_policy_settings = sys_le16_to_cpu(rp->default_link_policy_settings);
 	net_buf_drop(&rsp);
 
-	bool should_enable = IS_ENABLED(CONFIG_BT_DEFAULT_ROLE_SWITCH_ENABLE);
-	bool is_enabled = (default_link_policy_settings &
-			   BT_HCI_LINK_POLICY_SETTINGS_ENABLE_ROLE_SWITCH);
+	policy_setting = default_link_policy_settings;
 
-	/* Enable/Disable the default role switch */
-	if (should_enable != is_enabled) {
+	policy_setting &= ~BT_HCI_LINK_POLICY_SETTINGS_ENABLE_ROLE_SWITCH;
+	policy_setting &= ~BT_HCI_LINK_POLICY_SETTINGS_ENABLE_SNIFF_SWITCH;
+
+	if (IS_ENABLED(CONFIG_BT_DEFAULT_ROLE_SWITCH_ENABLE)) {
+		policy_setting |= BT_HCI_LINK_POLICY_SETTINGS_ENABLE_ROLE_SWITCH;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_DEFAULT_SNIFF_MODE_ENABLE)) {
+		policy_setting |= BT_HCI_LINK_POLICY_SETTINGS_ENABLE_SNIFF_SWITCH;
+	}
+
+	if (default_link_policy_settings != policy_setting) {
 		struct bt_hci_cp_write_default_link_policy_settings *policy_cp;
-
-		default_link_policy_settings ^= BT_HCI_LINK_POLICY_SETTINGS_ENABLE_ROLE_SWITCH;
 
 		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
@@ -1029,7 +1036,7 @@ int bt_br_init(void)
 		}
 
 		policy_cp = net_buf_add(buf, sizeof(*policy_cp));
-		policy_cp->default_link_policy_settings = default_link_policy_settings;
+		policy_cp->default_link_policy_settings = sys_cpu_to_le16(policy_setting);
 
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_DEFAULT_LINK_POLICY_SETTINGS, buf, NULL);
 		if (err) {
