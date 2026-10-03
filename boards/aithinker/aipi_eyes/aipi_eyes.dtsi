@@ -4,11 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "aipi_eyes_s2-pinctrl.dtsi"
+#include "ai_m61_32s.dtsi"
+#include "aipi_eyes-pinctrl.dtsi"
 
 / {
-	model = "AiPi-Eyes-S2 Multi-Functional Development Board";
-
 	aliases {
 		sw0 = &button_0;
 	};
@@ -16,6 +15,7 @@
 	buttons {
 		compatible = "gpio-keys";
 
+		/* BURN, the boot strap pin, shared with the backlight enable */
 		button_0: sw0 {
 			gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
 			zephyr,code = <INPUT_KEY_0>;
@@ -38,5 +38,5 @@
 	pinctrl-names = "default";
 
 	/* shared between SD card and display, use only one */
-	cs-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+	cs-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
 };
