@@ -346,6 +346,8 @@ typedef void (* ISR)(const void *);
             self.__write_shared_table(fp)
 
         if self.__vt:
+            if self.__config.args.isr_function:
+                fp.write(f"extern void {self.__config.args.isr_function}(void);\n")
             if self.__config.check_sym("CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_ADDRESS"):
                 self.__write_address_irq_vector_table(fp)
             elif self.__config.check_sym("CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_CODE"):

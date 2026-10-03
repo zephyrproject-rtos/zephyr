@@ -68,7 +68,9 @@ class gen_isr_config:
         self.__log = log
 
         # Select the default interrupt vector handler
-        if self.args.sw_isr_table:
+        if self.args.isr_function:
+            self.__vt_default_handler = self.args.isr_function
+        elif self.args.sw_isr_table:
             self.__vt_default_handler = self.__vt_irq_handler
         else:
             self.__vt_default_handler = self.__vt_spurious_handler
@@ -310,6 +312,9 @@ def parse_args():
     parser.add_argument("-k", "--kernel", required=True, help="Zephyr kernel image")
     parser.add_argument("-s", "--sw-isr-table", action="store_true", help="Generate SW ISR table")
     parser.add_argument("-V", "--vector-table", action="store_true", help="Generate vector table")
+    parser.add_argument(
+        "-I", "--isr-function", type=str, help="Specify a custom ISR function to jump to"
+    )
     parser.add_argument(
         "-i",
         "--intlist-section",
