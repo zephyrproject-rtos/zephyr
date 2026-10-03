@@ -2,6 +2,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
 
 &mikrobus_uart {
 	status = "okay";
@@ -11,7 +12,7 @@
 		compatible = "zephyr,modbus-serial";
 		status = "okay";
 		/* RS485 Isolator 5 Click: DE=AN, RE=RST */
-		de-gpios = <&mikrobus_header 0 GPIO_ACTIVE_HIGH>;
-		re-gpios = <&mikrobus_header 1 GPIO_ACTIVE_LOW>;
+		de-gpios = <&mikrobus_header MIKROBUS_AN GPIO_ACTIVE_HIGH>;
+		re-gpios = <&mikrobus_header MIKROBUS_RST GPIO_ACTIVE_LOW>;
 	};
 };

@@ -7,6 +7,7 @@
 
 #include <mem.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
@@ -33,6 +34,6 @@
 		 * driven high. Thus the meaning of WP is inverse, high and
 		 * not low active.
 		 */
-		wp-gpios = <&mikrobus_header 1 GPIO_ACTIVE_HIGH>;
+		wp-gpios = <&mikrobus_header MIKROBUS_RST GPIO_ACTIVE_HIGH>;
 	};
 };
