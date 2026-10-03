@@ -10,6 +10,7 @@
 #include <string.h>
 #include <assert.h>
 
+#include <infineon_kconfig.h>
 #include <cy_flash.h>
 #include <cy_syslib.h>
 
