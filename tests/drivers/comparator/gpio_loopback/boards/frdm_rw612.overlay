@@ -18,7 +18,7 @@
 };
 
 &acomp {
-	status = "okay";
 	positive-input = "ch0";
 	negative-input = "vio-0p50";
+	status = "okay";
 };
