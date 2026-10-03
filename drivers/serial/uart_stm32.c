@@ -317,7 +317,8 @@ static inline int uart_stm32_set_baudrate(const struct device *dev, uint32_t bau
 							       LL_USART_PRESCALER_DIV1,
 #endif
 							       baud_rate);
-		if (usartdiv < 16) {
+		/* BRR holds USARTDIV in 16 bits */
+		if (usartdiv < 16 || usartdiv > UINT16_MAX) {
 			LOG_ERR("Unable to set %s to %d", dev->name, baud_rate);
 			return -EINVAL;
 		}
