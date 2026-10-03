@@ -5,9 +5,11 @@
 
 config PS2_XEC
 	bool "XEC Microchip PS2 driver"
-	depends on SOC_FAMILY_MICROCHIP_MEC && ESPI_PERIPHERAL_8042_KBC
+	depends on DT_HAS_MICROCHIP_XEC_PS2_ENABLED
 	select PINCTRL
+	default y
 	help
 	  Enable the Microchip XEC PS2 IO driver. The driver also
-	  depends on the KBC 8042 keyboard controller. Note, MEC15xx
-	  series has two controllers and MEC172x series has one.
+	  depends on the KBC 8042 keyboard controller. Note, MEC15xx,
+	  MEC174x, MEC175x series have two controllers, MEC172x series
+	  has one.

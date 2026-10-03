@@ -501,7 +501,8 @@
 		ps2_0: ps2@40009000 {
 			reg = <0x40009000 0x40>;
 			interrupts = <100 3>;
-			girqs = <18 10>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(18, 10) MCHP_XEC_ECIA_GIRQ_ENC(21, 18)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(3, 5)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
