@@ -249,6 +249,13 @@ Boards
   ``-b stm32mp157c_dk2`` is deprecated and now maps to
   ``stm32mp157x_dk2/stm32mp157cxx``.
 
+* ``stm32_min_dev`` now declares two SoCs, so the SoC qualifier is mandatory.
+  Applications and test configurations that used ``stm32_min_dev``,
+  ``stm32_min_dev@blue`` or ``stm32_min_dev@black`` must use
+  ``stm32_min_dev@blue/stm32f103x8`` or ``stm32_min_dev@black/stm32f103x8``
+  instead. ``stm32_min_dev_defconfig`` was renamed accordingly to
+  :file:`stm32_min_dev_stm32f103x8_defconfig`.
+
 * The Nordic sysbuild Kconfig option ``SB_CONFIG_NRF_HALTIUM_GENERATE_UICR``
   has been renamed to :kconfig:option:`SB_CONFIG_NRF_GENERATE_UICR`.
   Update sysbuild configurations to use the new name.

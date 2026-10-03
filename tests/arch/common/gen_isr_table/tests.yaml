@@ -23,8 +23,8 @@ tests:
       - stm32f103_mini
       - nucleo_f103rb
       - olimexino_stm32
-      - stm32_min_dev@black
-      - stm32_min_dev@blue
+      - stm32_min_dev@black/stm32f103x8
+      - stm32_min_dev@blue/stm32f103x8
       - usb_kw24d512
       - v2m_beetle
       - cc1352r1_launchxl
