@@ -9,6 +9,11 @@ zephyr_sources_ifdef(CONFIG_STM32N6_AXISRAM
   axisram/stm32n6_axisram.c
 )
 
+zephyr_sources_ifdef(CONFIG_PM
+  lpm_timer.c
+  power.c
+)
+
 zephyr_sources_ifdef(CONFIG_STM32N6_NPU
   npu/npu_stm32n6.c
   npu/npu_cache_stm32n6.c

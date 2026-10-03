@@ -28,6 +28,8 @@
 #define apb5_prescaler(v) CONCAT(LL_RCC_APB5_DIV_, v)
 #define timg_prescaler(v) CONCAT(LL_RCC_TIM_PRESCALER_, v)
 
+#define STM32_CLOCK_READY_TIMEOUT_US 100000U
+
 #define PLL1_ID		1
 #define PLL2_ID		2
 #define PLL3_ID		3
@@ -677,6 +679,64 @@ static int set_up_ics(void)
 	return 0;
 }
 
+/*
+ * DWT CYCCNT does not depend on the Zephyr system timer, which is unavailable
+ * while clocks are restored after STOP. The configured CPU rate is the
+ * highest rate reached during this sequence. Before CPUCLK is restored the
+ * counter therefore advances no faster than the rate used for the deadline,
+ * so this timeout may be conservative but cannot expire early.
+ */
+static bool stm32_clock_wait_for(uint32_t (*read_status)(void), uint32_t expected_status)
+{
+	const uint32_t timeout_cycles =
+		(uint32_t)(((uint64_t)CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC *
+			    STM32_CLOCK_READY_TIMEOUT_US) / 1000000U);
+	uint32_t start_cycles;
+
+	CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+	DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+	start_cycles = DWT->CYCCNT;
+
+	while (read_status() != expected_status) {
+		if ((uint32_t)(DWT->CYCCNT - start_cycles) >= timeout_cycles) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+static int stm32_clock_control_restore_cpu_clock(void)
+{
+	uint32_t source;
+	uint32_t status;
+
+#if defined(STM32_CPUCLK_SRC_HSI)
+	if (LL_RCC_HSI_IsReady() != 1U) {
+		LL_RCC_HSI_Enable();
+		if (!stm32_clock_wait_for(LL_RCC_HSI_IsReady, 1U)) {
+			return -ETIMEDOUT;
+		}
+	}
+	source = LL_RCC_CPU_CLKSOURCE_HSI;
+	status = LL_RCC_CPU_CLKSOURCE_STATUS_HSI;
+#elif defined(STM32_CPUCLK_SRC_MSI)
+	source = LL_RCC_CPU_CLKSOURCE_MSI;
+	status = LL_RCC_CPU_CLKSOURCE_STATUS_MSI;
+#elif defined(STM32_CPUCLK_SRC_HSE)
+	source = LL_RCC_CPU_CLKSOURCE_HSE;
+	status = LL_RCC_CPU_CLKSOURCE_STATUS_HSE;
+#elif defined(STM32_CPUCLK_SRC_IC1)
+	source = LL_RCC_CPU_CLKSOURCE_IC1;
+	status = LL_RCC_CPU_CLKSOURCE_STATUS_IC1;
+#else
+	return -ENOTSUP;
+#endif
+
+	LL_RCC_SetCpuClkSource(source);
+	return stm32_clock_wait_for(LL_RCC_GetCpuClkSource, status) ? 0 : -ETIMEDOUT;
+}
+
 static int set_up_plls(void)
 {
 #if defined(STM32_PLL1_ENABLED)
@@ -1040,6 +1100,12 @@ int stm32_clock_control_init(const struct device *dev)
 		}
 	} else {
 		return -ENOTSUP;
+	}
+
+	/* Restore the configured CPUCLK source after STOP resumes on HSI. */
+	r = stm32_clock_control_restore_cpu_clock();
+	if (r < 0) {
+		return r;
 	}
 
 	/* Update CMSIS variable */
