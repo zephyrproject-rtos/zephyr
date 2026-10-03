@@ -1,0 +1,12 @@
+#
+# SPDX-FileCopyrightText: Copyright Alif Semiconductor
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+description: |
+  SPI controller behind an NXP SC18IS60x I2C to SPI bridge
+  (SC18IS602/SC18IS602B or SC18IS606).
+
+compatible: "nxp,sc18is60x-spi"
+include: spi-controller.yaml
+on-bus: nxp,sc18is60x
