@@ -166,7 +166,7 @@ static int bt_recv(const struct device *dev, struct net_buf *buf)
 
 	bt_monitor_send(bt_monitor_opcode(type, BT_MONITOR_RX), buf->data + 1, buf->len - 1);
 
-	k_fifo_put(raw_rx, buf);
+	k_fifo_put(raw_rx, net_buf_take(&buf));
 
 	return 0;
 }

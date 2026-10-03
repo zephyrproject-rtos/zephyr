@@ -604,7 +604,7 @@ static int process_queue(struct bt_att_chan *chan, struct k_fifo *queue)
 		err = bt_att_chan_send(chan, buf);
 		if (err) {
 			/* Push it back if it could not be send */
-			k_queue_prepend(&queue->_queue, buf);
+			k_queue_prepend(&queue->_queue, net_buf_take(&buf));
 			return err;
 		}
 
@@ -894,7 +894,7 @@ static void bt_att_chan_send_rsp(struct bt_att_chan *chan, struct net_buf *buf)
 	err = chan_send(chan, buf);
 	if (err) {
 		/* Responses need to be sent back using the same channel */
-		k_fifo_put(&chan->tx_queue, buf);
+		k_fifo_put(&chan->tx_queue, net_buf_take(&buf));
 	}
 }
 
@@ -2327,7 +2327,7 @@ static uint8_t att_prep_write_rsp(struct bt_att_chan *chan, uint16_t handle,
 	LOG_DBG("buf %p handle 0x%04x offset %u", data.buf, handle, offset);
 
 	/* Store buffer in the outstanding queue */
-	net_buf_slist_put(&chan->att->prep_queue, data.buf);
+	net_buf_slist_put(&chan->att->prep_queue, net_buf_take(&data.buf));
 
 	/* Generate response */
 	data.buf = att_create_rsp_pdu(chan, BT_ATT_OP_PREPARE_WRITE_RSP);
@@ -4116,7 +4116,7 @@ int bt_att_send(struct bt_conn *conn, struct net_buf *buf)
 		return -ENOTCONN;
 	}
 
-	k_fifo_put(&att->tx_queue, buf);
+	k_fifo_put(&att->tx_queue, net_buf_take(&buf));
 	att_send_process(att);
 
 	return 0;

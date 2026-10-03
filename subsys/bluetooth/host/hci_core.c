@@ -4658,7 +4658,7 @@ static void rx_queue_put(struct net_buf *buf)
 		return;
 	}
 
-	net_buf_slist_put(&bt_dev.rx_queue, buf);
+	net_buf_slist_put(&bt_dev.rx_queue, net_buf_take(&buf));
 
 	const int err = bt_work_submit(&rx_work);
 
