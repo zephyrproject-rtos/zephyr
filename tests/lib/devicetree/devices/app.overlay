@@ -16,41 +16,41 @@
 		#size-cells = <0x1>;
 
 		test_gpio_0: gpio@ffff {
+			compatible = "vnd,gpio-device";
+			reg = <0xffff 0x1000>;
 			gpio-controller;
 			#gpio-cells = <0x2>;
-			compatible = "vnd,gpio-device";
 			status = "okay";
-			reg = <0xffff 0x1000>;
 		};
 
 		test_i2c: i2c@11112222 {
+			compatible = "vnd,i2c";
+			reg = <0x11112222 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			compatible = "vnd,i2c";
-			status = "okay";
-			reg = <0x11112222 0x1000>;
 			clock-frequency = <100000>;
+			status = "okay";
 
 			test_dev_a: test-i2c-dev@10 {
 				compatible = "vnd,i2c-device";
-				status = "okay";
 				reg = <0x10>;
 				supply-gpios = <&test_gpio_0 1 0>;
+				status = "okay";
 			};
 
 			test_gpiox: test-i2c-dev@11 {
+				compatible = "vnd,gpio-expander";
+				reg = <0x11>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				compatible = "vnd,gpio-expander";
 				status = "okay";
-				reg = <0x11>;
 			};
 
 			test_dev_b: test-i2c-dev@12 {
 				compatible = "vnd,i2c-device";
-				status = "okay";
 				reg = <0x12>;
 				supply-gpios = <&test_gpiox 2 0>;
+				status = "okay";
 			};
 
 			test_dev_c: test-i2c-dev@13 {
@@ -65,20 +65,20 @@
 
 					test_p0_p1: partition@0 {
 						compatible = "fixed-subpartitions";
-						label = "partition-0-1-outer";
 						reg = <0x00000000 0x73000>;
 						ranges = <0x0 0x0 0x73000>;
+						label = "partition-0-1-outer";
 						#address-cells = <1>;
 						#size-cells = <1>;
 
 						test_p0: partition@0 {
-							label = "partition-0";
 							reg = <0x00000000 0x0000c000>;
+							label = "partition-0";
 						};
 
 						test_p1: partition@c000 {
-							label = "partition-1";
 							reg = <0x0000c000 0x00067000>;
+							label = "partition-1";
 						};
 					};
 				};
@@ -86,18 +86,18 @@
 
 			test-i2c-dev@14 {
 				compatible = "vnd,i2c-device";
-				status = "okay";
 				reg = <0x14>;
 				supply-gpios = <&test_gpiox 2 0>;
+				status = "okay";
 			};
 		};
 
 		test_gpio_injected: gpio@1000 {
+			compatible = "vnd,gpio-device";
+			reg = <0x1000 0x1000>;
 			gpio-controller;
 			#gpio-cells = <0x2>;
-			compatible = "vnd,gpio-device";
 			status = "okay";
-			reg = <0x1000 0x1000>;
 		};
 	};
 };
