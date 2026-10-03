@@ -79,6 +79,11 @@ struct lll_sync {
 	 */
 	bool is_cte_incomplete;
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_RSP)
+	/* PAwR (Periodic Advertising with Responses) scanner-side LLL state */
+	uint8_t is_rsp:1; /* Indicates PAwR mode */
+	uint8_t subevent_curr; /* Current subevent */
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_RSP */
 };
 
 int lll_sync_init(void);

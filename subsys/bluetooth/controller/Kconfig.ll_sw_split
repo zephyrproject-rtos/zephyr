@@ -39,7 +39,9 @@ config BT_LLL_VENDOR_NORDIC
 					     BT_CTLR_PHY_CODED_SUPPORT
 	select BT_CTLR_ADV_EXT_SUPPORT
 	select BT_CTLR_ADV_PERIODIC_SUPPORT
+	select BT_CTLR_ADV_PERIODIC_RSP_SUPPORT
 	select BT_CTLR_SYNC_PERIODIC_SUPPORT
+	select BT_CTLR_SYNC_PERIODIC_RSP_SUPPORT
 	select BT_CTLR_ADV_ISO_SUPPORT
 	select BT_CTLR_SYNC_ISO_SUPPORT
 	select BT_CTLR_BROADCAST_ISO_ENC_SUPPORT
@@ -271,6 +273,12 @@ config BT_CTLR_ADV_SYNC_SET
 	help
 	  Maximum supported periodic advertising sets.
 
+config BT_CTLR_ADV_PERIODIC_SUBEVENT_MAX
+	int "Maximum Periodic Advertising with Responses Subevents"
+	depends on BT_CTLR_ADV_PERIODIC_RSP
+	default 1
+	help
+	  Maximum Periodic Advertising with Responses Subevents.
 endif # BT_CTLR_ADV_EXT
 
 config BT_CTLR_ADV_DATA_BUF_MAX
@@ -597,6 +605,12 @@ config BT_CTLR_SYNC_PERIODIC_SKIP_ON_SCAN_AUX
 	  round robin scheduling to skip the overlapping Periodic Advertising
 	  Sync event. This permits new Periodic Advertising peers be discovered.
 
+config BT_CTLR_SYNC_PERIODIC_SUBEVENT_MAX
+	int "Maximum Periodic Advertising with Responses Sync Subevents"
+	depends on BT_CTLR_SYNC_PERIODIC_RSP
+	default 1
+	help
+	  Maximum Periodic Advertising with Responses Sync Subevents.
 config BT_CTLR_SYNC_ISO_RESERVE_MAX
 	bool "Use maximum ISO Synchronized Receiver event time reservation"
 	depends on BT_CTLR_SYNC_ISO

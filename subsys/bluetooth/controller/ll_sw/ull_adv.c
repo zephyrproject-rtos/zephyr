@@ -1460,8 +1460,17 @@ uint8_t ll_adv_enable(uint8_t enable)
 						CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET);
 
 #endif /* CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET */
+				#if defined(CONFIG_BT_CTLR_ADV_PERIODIC_RSP)
+				if(sync->lll.is_rsp) {
 
+				}else
+				{
+					ticks_slot_overhead2 = ull_adv_sync_evt_init(adv, sync, NULL);
+				}
+				#else
 				ticks_slot_overhead2 = ull_adv_sync_evt_init(adv, sync, NULL);
+				#endif /* CONFIG_BT_CTLR_ADV_PERIODIC_RSP */
+
 				ret = ull_adv_sync_start(adv, sync,
 							 ticks_anchor_sync,
 							 ticks_slot_overhead2);
