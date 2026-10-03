@@ -10,6 +10,8 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
 
+#include <zephyr/ztest.h>
+
 #include "test_gpio.h"
 
 /*
@@ -66,4 +68,17 @@ static void gpio_emul_callback_handler(const struct device *port,
 
 		return;
 	}
+}
+
+/* gpio_emul_output_get_masked() reports the pins it was asked for and no others. */
+ZTEST(gpio_port, test_gpio_emul_output_get_masked_honours_mask)
+{
+	const struct device *port = DEVICE_DT_GET(DEV_OUT);
+	gpio_port_value_t values;
+
+	zassert_ok(gpio_pin_configure(port, PIN_OUT, GPIO_OUTPUT_HIGH));
+
+	zassert_ok(gpio_emul_output_get_masked(port, BIT(PIN_IN), &values));
+	zassert_equal(values & ~BIT(PIN_IN), 0, "reported pins outside the mask: 0x%x",
+		      (unsigned int)values);
 }
