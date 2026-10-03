@@ -25,6 +25,7 @@ config UART_NXP_LPUART_ASYNC_API_SUPPORT
 	default y if $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_LPUART),dmas)
 	select SERIAL_SUPPORT_ASYNC
 	select DMA if UART_ASYNC_API
+	select CACHE_MANAGEMENT if UART_ASYNC_API && DCACHE
 	help
 	  Indicates if LPUART has async api support by having dmas enabled for it
 
