@@ -193,6 +193,8 @@ zephyr_iterable_section(NAME cfb_font KVMA RAM_REGION GROUP RODATA_REGION)
 
 zephyr_iterable_section(NAME tracing_backend KVMA RAM_REGION GROUP RODATA_REGION)
 
+zephyr_iterable_section(NAME instr_backend KVMA RAM_REGION GROUP RODATA_REGION)
+
 zephyr_linker_section(NAME zephyr_dbg_info KVMA RAM_REGION GROUP RODATA_REGION NOINPUT ${XIP_ALIGN_WITH_INPUT})
 zephyr_linker_section_configure(SECTION zephyr_dbg_info INPUT ".dbg_thread_info" KEEP)
 
