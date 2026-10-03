@@ -19,6 +19,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/cache.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/ztest.h>
 
@@ -50,6 +51,16 @@ static void dma_callback(const struct device *dma_dev, void *user_data,
 	k_sem_give(&xfer_sem);
 }
 
+/*
+ * The DMA engine may not be cache coherent. rx_data can share its last
+ * cache line with other data, so it is flushed before it is invalidated:
+ * a bare invalidate could discard that data's pending writes.
+ */
+static void sync_rx_data(void)
+{
+	sys_cache_data_flush_and_invd_range(rx_data, sizeof(rx_data));
+}
+
 
 static int test_cyclic(void)
 {
@@ -62,6 +73,8 @@ static int test_cyclic(void)
 		tx_data[i] = i;
 	}
 	(void)memset(rx_data + CONFIG_DMA_CYCLIC_XFER_SIZE, 0xA5, GUARD_BUF_SIZE);
+	sys_cache_data_flush_range(tx_data, sizeof(tx_data));
+	sync_rx_data();
 
 	dma = DEVICE_DT_GET(DT_NODELABEL(tst_dma0));
 	if (!device_is_ready(dma)) {
@@ -118,6 +131,7 @@ static int test_cyclic(void)
 		return TC_FAIL;
 	}
 
+	sync_rx_data();
 	if (memcmp(tx_data, rx_data, CONFIG_DMA_CYCLIC_XFER_SIZE)) {
 		TC_PRINT("Failed to verify tx/rx in the first cycle.\n");
 		return TC_FAIL;
@@ -132,6 +146,7 @@ static int test_cyclic(void)
 	/* reset rx_data to validate that transfer cycles */
 	memset(rx_data, 0, sizeof(rx_data));
 	(void)memset(rx_data + CONFIG_DMA_CYCLIC_XFER_SIZE, 0xA5, GUARD_BUF_SIZE);
+	sync_rx_data();
 
 	if (dma_resume(dma, chan_id) != 0) {
 		TC_PRINT("Failed to resume transfer\n");
@@ -148,6 +163,7 @@ static int test_cyclic(void)
 		return TC_FAIL;
 	}
 
+	sync_rx_data();
 	if (memcmp(tx_data, rx_data, CONFIG_DMA_CYCLIC_XFER_SIZE)) {
 		TC_PRINT("Failed to verify tx/rx in the second cycle.\n");
 		return TC_FAIL;
