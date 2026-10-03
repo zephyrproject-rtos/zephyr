@@ -18,6 +18,10 @@ if(CONFIG_SOC_MIMXRT798S)
 elseif(CONFIG_SOC_MCXN947)
   target_include_directories(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/models/mcxn)
   set(neutron_blob_dir "${ZEPHYR_HAL_NXP_MODULE_DIR}/zephyr/blobs/neutron/mcxn")
+elseif(CONFIG_SOC_SERIES_IMXRT266X)
+  target_include_directories(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/models/rt2660)
+  set(neutron_blob_dir "${ZEPHYR_HAL_NXP_MODULE_DIR}/zephyr/blobs/neutron/rt2660")
+  zephyr_linker_sources(RAM_SECTIONS nocache.ld)
 endif()
 
 # The Neutron NPU driver and firmware are distributed as binary blobs. Report

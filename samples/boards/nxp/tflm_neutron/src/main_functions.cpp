@@ -20,6 +20,8 @@
 #include <tensorflow/lite/schema/schema_generated.h>
 #include <tensorflow/lite/micro/kernels/neutron/neutron.h>
 
+#include <zephyr/kernel.h>
+#include "timer.h"
 #include <zephyr/sys/printk.h>
 #include <zephyr/linker/section_tags.h>
 #include <zephyr/autoconf.h>
@@ -40,6 +42,27 @@
 constexpr int kTensorArenaSize = 60 * 1024;
 #if defined(CONFIG_BOARD_MIMXRT700_EVK) || defined(CONFIG_SOC_MIMXRT798S)
 static uint8_t __nocache __ALIGNED(16) tensor_arena[kTensorArenaSize];
+#elif defined(CONFIG_SOC_SERIES_IMXRT266X)
+/*
+ * RT266x memory map for the NPU (see the board overlay). The whole NPU workload
+ * runs from on-chip SRAM, which is directly coupled to the M85 (fast, not
+ * LLC-cached) and coherent with the NPU without any cache maintenance (the L1
+ * D-cache is off; see soc.c):
+ *   - the tensor arena the NPU DMAs into lives in the SRAM0+SRAM1 region;
+ *   - the model is copied out of flash into SRAM2 so the CPU and NPU read it
+ *     from fast on-chip RAM instead of external XSPI flash.
+ */
+#include <zephyr/devicetree.h>
+#include <zephyr/linker/devicetree_regions.h>
+#define SRAM01_NPU_SECTION \
+	__attribute__((section(LINKER_DT_NODE_REGION_NAME(DT_NODELABEL(sram0)))))
+#define SRAM2_SECTION \
+	__attribute__((section(LINKER_DT_NODE_REGION_NAME(DT_NODELABEL(sram2)))))
+
+/* Tensor arena the NPU DMAs into: on-chip SRAM0+SRAM1. */
+static uint8_t __ALIGNED(16) SRAM01_NPU_SECTION tensor_arena[kTensorArenaSize];
+/* Model copied out of flash into fast on-chip SRAM2. */
+static uint8_t __ALIGNED(16) SRAM2_SECTION g_model_sram[sizeof(g_model)];
 #else
 static __attribute__((aligned(16))) uint8_t tensor_arena[kTensorArenaSize];
 #endif
@@ -49,10 +72,19 @@ static tflite::MicroInterpreter *interpreter = nullptr;
 static TfLiteTensor *input = nullptr;
 static TfLiteTensor *output = nullptr;
 
+extern "C" void cleanCache_by_Addr(uint32_t addr, uint32_t size);
+
 void setup(void)
 {
     /* Step 1: Load model */
+#if defined(CONFIG_SOC_SERIES_IMXRT266X)
+    /* Copy the model out of flash into fast on-chip SRAM2. */
+    memcpy(g_model_sram, g_model, sizeof(g_model));
+    cleanCache_by_Addr((uint32_t)(uintptr_t)g_model_sram, sizeof(g_model_sram));
+    const tflite::Model *model = tflite::GetModel(g_model_sram);
+#else
     const tflite::Model *model = tflite::GetModel(g_model);
+#endif
     if (model->version() != TFLITE_SCHEMA_VERSION) {
         printk("Model provided is schema version %d not equal "
                "to supported version %d!\r\n",
@@ -61,10 +93,12 @@ void setup(void)
     }
 
     /* Step 2: Create op resolver with NPU support */
-    static tflite::MicroMutableOpResolver<5> resolver;
+    static tflite::MicroMutableOpResolver<7> resolver;
     resolver.AddDequantize();
     resolver.AddReshape();
     resolver.AddSlice();
+    resolver.AddPad();
+    resolver.AddConv2D();
     resolver.AddSoftmax();
     resolver.AddCustom(tflite::GetString_NEUTRON_GRAPH(),
                        tflite::Register_NEUTRON_GRAPH());
@@ -135,15 +169,30 @@ void loop(void)
 
     /* Run inference */
     printk("Running inference...\n");
+    struct timer timer;
+    struct timer_result perf;
+    timer_start(&timer);
     TfLiteStatus status = interpreter->Invoke();
+    timer_stop(&timer, &perf);
     if (status != kTfLiteOk) {
         printk("ERROR: Invoke failed with status %d\n", status);
         return;
     }
     printk("Inference complete\n");
+    timer_report("Invoke time", &perf);
 
     /* Convert output to float */
-    float *scores = new float[output_size];
+    /*
+     * The classifier output is small (one score per label). Use fixed buffers
+     * sized to the label table instead of heap allocation, and clamp the count
+     * so a bad/oversized output tensor can never overrun them or exhaust the
+     * heap (operator new aborts on failure since C++ exceptions are disabled).
+     */
+    if (output_size > LABEL_COUNT) {
+        output_size = LABEL_COUNT;
+    }
+    float scores[LABEL_COUNT];
+    int indices[LABEL_COUNT];
     if (output->type == kTfLiteFloat32) {
         for (int i = 0; i < output_size; i++) {
             scores[i] = output->data.f[i];
@@ -163,8 +212,9 @@ void loop(void)
     }
 
     /* Find top-k */
-    int *indices = new int[output_size];
-    for (int i = 0; i < output_size; i++) indices[i] = i;
+    for (int i = 0; i < output_size; i++) {
+        indices[i] = i;
+    }
 
     for (int i = 0; i < TOP_K_RESULTS && i < output_size; i++) {
         int max_idx = i;
@@ -187,7 +237,4 @@ void loop(void)
         printk("%d. %-30s %.2f%%\n", i + 1, label, (double)(scores[idx] * 100.0f));
     }
     printk("----------------------------------------\n\n");
-
-    delete[] scores;
-    delete[] indices;
 }
