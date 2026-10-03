@@ -498,16 +498,18 @@ __weak void clock_init(void)
 
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet))
-	/* 100MHz enet PTP clock */
-	rootCfg.mux = kCLOCK_ENET_TIMER1_ClockRoot_MuxSysPll1Div2;
-	rootCfg.div = 5;
+	/* enet PTP clock, 100MHz unless the devicetree selects another root */
+	rootCfg.mux = DT_PROP_OR(DT_NODELABEL(enet_ptp_clock), clock_mux,
+				 kCLOCK_ENET_TIMER1_ClockRoot_MuxSysPll1Div2);
+	rootCfg.div = DT_PROP_OR(DT_NODELABEL(enet_ptp_clock), clock_div, 5);
 	CLOCK_SetRootClock(kCLOCK_Root_Enet_Timer1, &rootCfg);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet1g))
-	/* 100MHz enet1g PTP clock */
-	rootCfg.mux = kCLOCK_ENET_TIMER2_ClockRoot_MuxSysPll1Div2;
-	rootCfg.div = 5;
+	/* enet1g PTP clock, 100MHz unless the devicetree selects another root */
+	rootCfg.mux = DT_PROP_OR(DT_NODELABEL(enet1g_ptp_clock), clock_mux,
+				 kCLOCK_ENET_TIMER2_ClockRoot_MuxSysPll1Div2);
+	rootCfg.div = DT_PROP_OR(DT_NODELABEL(enet1g_ptp_clock), clock_div, 5);
 	CLOCK_SetRootClock(kCLOCK_Root_Enet_Timer2, &rootCfg);
 #endif
 #endif
