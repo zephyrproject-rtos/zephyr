@@ -205,6 +205,26 @@ LOG_MODULE_REGISTER(can_tcan4x5x, CONFIG_CAN_LOG_LEVEL);
 #define CAN_TCAN4X5X_WRITE_B_FL 0x61
 #define CAN_TCAN4X5X_READ_B_FL  0x41
 
+/*
+ * Maximum SPI transfer payload length in bytes. Sized to hold one Bosch M_CAN Message RAM element,
+ * with a lower bound keeping bulk Message RAM clearing at init efficient.
+ */
+#define CAN_TCAN4X5X_MAX_XFER_LEN                                                                  \
+	MAX(64U, MAX(sizeof(struct can_mcan_rx_fifo), sizeof(struct can_mcan_tx_buffer)))
+
+/*
+ * SPI transfer buffer holding the command header immediately followed by the payload. Keeping the
+ * two contiguous allows describing a transfer using a single SPI buffer per direction, which SPI
+ * controller drivers carry out as one SPI transaction instead of one per SPI buffer.
+ */
+struct tcan4x5x_xfer {
+	union {
+		uint8_t cmd[4]; /* command header, clocked out */
+		uint8_t status; /* global status byte, clocked in */
+	};
+	uint32_t payload[CAN_TCAN4X5X_MAX_XFER_LEN / sizeof(uint32_t)];
+};
+
 /* TCAN4x5x timing requirements */
 #define CAN_TCAN4X5X_T_MODE_STBY_NOM_US           70
 #define CAN_TCAN4X5X_T_MODE_NOM_SLP_US            200
@@ -253,16 +273,15 @@ static int tcan4x5x_read(const struct device *dev, uint16_t addr, void *dst, siz
 	const struct tcan4x5x_config *tcan_config = mcan_config->custom;
 	size_t len32 = len / sizeof(uint32_t);
 	uint32_t *dst32 = (uint32_t *)dst;
-	uint8_t cmd[4] = {CAN_TCAN4X5X_READ_B_FL, addr >> 8U & 0xFF, addr & 0xFF,
-			  len32 == 256 ? 0U : len32};
-	uint8_t global_status;
+	struct tcan4x5x_xfer txbuf = {
+		.cmd = {CAN_TCAN4X5X_READ_B_FL, addr >> 8U & 0xFF, addr & 0xFF, len32},
+	};
+	struct tcan4x5x_xfer rxbuf;
 	const struct spi_buf tx_bufs[] = {
-		{.buf = &cmd, .len = sizeof(cmd)},
+		{.buf = &txbuf, .len = sizeof(txbuf.cmd) + len},
 	};
 	const struct spi_buf rx_bufs[] = {
-		{.buf = &global_status, .len = sizeof(global_status)},
-		{.buf = NULL, .len = 3},
-		{.buf = dst, .len = len},
+		{.buf = &rxbuf, .len = sizeof(rxbuf.cmd) + len},
 	};
 	const struct spi_buf_set tx = {
 		.buffers = tx_bufs,
@@ -279,9 +298,12 @@ static int tcan4x5x_read(const struct device *dev, uint16_t addr, void *dst, siz
 		return 0;
 	}
 
-	/* Maximum transfer size is 256 32-bit words */
 	__ASSERT_NO_MSG(len % 4 == 0);
-	__ASSERT_NO_MSG(len32 <= 256);
+
+	if (len > CAN_TCAN4X5X_MAX_XFER_LEN) {
+		LOG_ERR("transfer length %zu exceeds maximum", len);
+		return -EINVAL;
+	}
 
 	err = spi_transceive_dt(&tcan_config->spi, &tx, &rx);
 	if (err != 0) {
@@ -289,10 +311,10 @@ static int tcan4x5x_read(const struct device *dev, uint16_t addr, void *dst, siz
 		return err;
 	}
 
-	__ASSERT_NO_MSG((global_status & CAN_TCAN4X5X_IR_SPIERR) == 0U);
+	__ASSERT_NO_MSG((rxbuf.status & CAN_TCAN4X5X_IR_SPIERR) == 0U);
 
 	for (i = 0; i < len32; i++) {
-		dst32[i] = sys_be32_to_cpu(dst32[i]);
+		dst32[i] = sys_be32_to_cpu(rxbuf.payload[i]);
 	}
 
 	return 0;
@@ -303,16 +325,15 @@ static int tcan4x5x_write(const struct device *dev, uint16_t addr, const void *s
 	const struct can_mcan_config *mcan_config = dev->config;
 	const struct tcan4x5x_config *tcan_config = mcan_config->custom;
 	size_t len32 = len / sizeof(uint32_t);
-	uint32_t src32[len32];
-	uint8_t cmd[4] = {CAN_TCAN4X5X_WRITE_B_FL, addr >> 8U & 0xFF, addr & 0xFF,
-			  len32 == 256 ? 0U : len32};
-	uint8_t global_status;
+	struct tcan4x5x_xfer txbuf = {
+		.cmd = {CAN_TCAN4X5X_WRITE_B_FL, addr >> 8U & 0xFF, addr & 0xFF, len32},
+	};
+	struct tcan4x5x_xfer rxbuf;
 	const struct spi_buf tx_bufs[] = {
-		{.buf = &cmd, .len = sizeof(cmd)},
-		{.buf = &src32, .len = len},
+		{.buf = &txbuf, .len = sizeof(txbuf.cmd) + len},
 	};
 	const struct spi_buf rx_bufs[] = {
-		{.buf = &global_status, .len = sizeof(global_status)},
+		{.buf = &rxbuf, .len = sizeof(rxbuf.cmd) + len},
 	};
 	const struct spi_buf_set tx = {
 		.buffers = tx_bufs,
@@ -329,12 +350,15 @@ static int tcan4x5x_write(const struct device *dev, uint16_t addr, const void *s
 		return 0;
 	}
 
-	/* Maximum transfer size is 256 32-bit words */
 	__ASSERT_NO_MSG(len % 4 == 0);
-	__ASSERT_NO_MSG(len32 <= 256);
+
+	if (len > CAN_TCAN4X5X_MAX_XFER_LEN) {
+		LOG_ERR("transfer length %zu exceeds maximum", len);
+		return -EINVAL;
+	}
 
 	for (i = 0; i < len32; i++) {
-		src32[i] = sys_cpu_to_be32(((uint32_t *)src)[i]);
+		txbuf.payload[i] = sys_cpu_to_be32(((uint32_t *)src)[i]);
 	}
 
 	err = spi_transceive_dt(&tcan_config->spi, &tx, &rx);
@@ -343,7 +367,7 @@ static int tcan4x5x_write(const struct device *dev, uint16_t addr, const void *s
 		return err;
 	}
 
-	__ASSERT_NO_MSG((global_status & CAN_TCAN4X5X_IR_SPIERR) == 0U);
+	__ASSERT_NO_MSG((rxbuf.status & CAN_TCAN4X5X_IR_SPIERR) == 0U);
 
 	return 0;
 }
@@ -381,7 +405,7 @@ static int tcan4x5x_write_mcan_mram(const struct device *dev, uint16_t offset, c
 
 static int tcan4x5x_clear_mcan_mram(const struct device *dev, uint16_t offset, size_t len)
 {
-	static const uint8_t buf[256] = {0};
+	static const uint32_t buf[CAN_TCAN4X5X_MAX_XFER_LEN / sizeof(uint32_t)] = {0};
 	size_t pending;
 	size_t upto;
 	int err;
