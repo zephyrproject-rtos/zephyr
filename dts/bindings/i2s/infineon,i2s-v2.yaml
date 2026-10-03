@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon CAT1 AUDIOSS I2S (v2) controller. Used by Traveo II / cyt4bf-class
+  devices where the audio sub-system implements the legacy I2S register block
+  (cyt4bf, cytvii_b_h_8m, etc.) rather than the TDM block used by other SoC.
+
+  The peripheral expects:
+    * a single combined IRQ line (TX/RX share one),
+    * one DMA channel per direction (named "tx" / "rx").
+
+compatible: "infineon,i2s-v2"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+    description: HF clock that feeds the AUDIOSS input (e.g. <&clk_hf5>).
+
+  dmas:
+    required: true
+    description: |
+      DMA channels for audio data. Channel direction is implied by the name.
+
+  dma-names:
+    required: true
+    description: Must contain "tx" and "rx".
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
