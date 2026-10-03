@@ -18,18 +18,31 @@ properties:
       The PWDN pin is asserted to disable the sensor. The sensor
       receives this as an active-high signal.
 
-  clock-rate-control:
+  clock-multiplier:
     type: int
-    default: 0x87
+    default: 2
+    min: 1
+    max: 2
     description: |
-      Define the value to the Clock Rate Control register. By changing
-      the system clock divide ratio and PLL, the frame rate and pixel
-      rate will change together.
-      Bit[7]    Internal frequency doublers ON/OFF selection.
-                0: ON       1: OFF
-      Bit[6]    Reserved
-      Bit[5:0]  Clock divider.
+      Select the multiplier applied to XVCLK (input clock pin), clocking the sensor internal
+      elements, also affecting the maximal pixel rate and frame rate.
 
-      CLK = XVCLK /(decimal value of CLKRC[5:0] + 1)
+  pixel-clock-divider:
+    type: int
+    default: 1
+    min: 1
+    max: 4
+    description: |
+      Select the divider applied to PCLK (pixel clock), applied on top of the system clock.
+      Valid values: 1, 2, 4.
+
+  drive-strength:
+    type: int
+    default: 1
+    min: 1
+    max: 4
+    description: |
+      Select the signal drive strength, particularly useful for PCLK which reaches above 150 MHz
+      for 16-bit per pixel formats at 1600x1200 at 30 FPS.
 
 include: i2c-device.yaml
