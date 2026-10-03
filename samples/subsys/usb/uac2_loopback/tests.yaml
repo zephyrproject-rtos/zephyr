@@ -1,0 +1,10 @@
+sample:
+  name: USB Audio 2 loopback sample
+tests:
+  sample.usb.uac2_loopback:
+    depends_on: usbd
+    tags: usb
+    build_only: true
+    integration_platforms:
+      - nrf52840dongle/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
