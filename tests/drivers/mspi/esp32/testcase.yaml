@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+
+common:
+  tags:
+    - drivers
+    - mspi
+  platform_allow:
+    - esp32s3_devkitc/esp32s3/procpu
+  integration_platforms:
+    - esp32s3_devkitc/esp32s3/procpu
+  harness: ztest
+tests:
+  drivers.mspi.esp32.interrupt: {}
+  drivers.mspi.esp32.polling:
+    extra_configs:
+      - CONFIG_MSPI_ESP32_INTERRUPT=n
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=polling.overlay

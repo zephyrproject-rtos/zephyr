@@ -1,0 +1,46 @@
+# Copyright 2026 Pavel Maloletkov
+# SPDX-License-Identifier: Apache-2.0
+
+config MSPI_ESP32
+	bool "ESP32 MSPI driver"
+	depends on DT_HAS_ESPRESSIF_ESP32_MSPI_ENABLED
+	help
+	  Enable ESP32 MSPI driver. This driver provides support for the
+	  ESP32 SPI peripherals through the Zephyr MSPI interface.
+
+if MSPI_ESP32
+
+config MSPI_DMA_MAX_BUFFER_SIZE
+	int "MSPI DMA buffer size (Byte)"
+	default 4092
+	help
+	  Set the size of each buffer used by MSPI DMA.
+
+config MSPI_ESP32_INTERRUPT
+	bool "ESP32 MSPI interrupt mode"
+	default y
+	help
+	  Signal transfer completion using the SPI "transaction done"
+	  interrupt instead of busy-polling the hardware from the calling
+	  thread. This lets other threads run while a transfer is in
+	  flight, instead of spinning the calling thread's CPU for the full
+	  duration of every transfer. Requires an "interrupts" property on
+	  the MSPI controller's devicetree node.
+
+config MSPI_ESP32_PSRAM_DMA
+	bool "Transfer directly out of PSRAM buffers"
+	depends on ESP_SPIRAM
+	help
+	  Hand cache-line aligned PSRAM buffers straight to the DMA instead of
+	  copying them into internal RAM first.
+
+	  This removes the copy, but the DMA must then feed the transmit FIFO
+	  straight from PSRAM at the full bus rate. PSRAM bandwidth is shared
+	  with instruction fetch and any other external-RAM traffic, so when it
+	  cannot keep up the FIFO underruns and the transfer is silently
+	  corrupted. The intermediate copy otherwise decouples the two rates.
+
+	  Only enable this if the bus clock is low enough that PSRAM can sustain
+	  it, and verify the resulting data.
+
+endif # MSPI_ESP32
