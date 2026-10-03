@@ -8,5 +8,6 @@ zephyr_library()
 zephyr_library_sources_ifdef(CONFIG_OPAMP_INFINEON_AUTANALOG_CTB opamp_infineon_autanalog_ctb.c)
 zephyr_library_sources_ifdef(CONFIG_OPAMP_MCUX_OPAMP opamp_mcux_opamp.c)
 zephyr_library_sources_ifdef(CONFIG_OPAMP_MCUX_OPAMP_FAST opamp_mcux_opamp_fast.c)
+zephyr_library_sources_ifdef(CONFIG_OPAMP_MSPM0 opamp_mspm0_opamp.c)
 zephyr_library_sources_ifdef(CONFIG_OPAMP_STM32 opamp_stm32_opamp.c)
 # zephyr-keep-sorted-stop

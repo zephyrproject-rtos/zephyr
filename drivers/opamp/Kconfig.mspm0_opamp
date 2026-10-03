@@ -1,0 +1,10 @@
+# TI MSPM0 Family
+
+# Copyright (c) 2026, Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+config OPAMP_MSPM0
+	bool "TI MSPM0 OPA driver"
+	default y
+	select PINCTRL
+	depends on DT_HAS_TI_MSPM0_OPAMP_ENABLED
