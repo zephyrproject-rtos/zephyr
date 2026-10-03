@@ -5,7 +5,7 @@
  */
 
 &flash0 {
-	/* ALL revision is BL618M65, which has an internal XMC Flash die
+	/* BLIFN8IR4 revision is BL618M65, which has an internal XMC Flash die
 	 * instead of an external SOIC Flash.
 	 */
 	compatible = "bflb,sf-flash", "soc-nv-flash", "xmc,xm25qw64";
