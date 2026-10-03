@@ -138,7 +138,7 @@ ZTEST(device_next, test_vendor_control_in)
 	zassert_equal(err, 0, "Failed to lock device");
 
 	/* Perform regular vendor IN transfer */
-	for (uint32_t i = 0; i < CONFIG_UDC_BUF_COUNT; i++) {
+	for (uint32_t i = 0; i < CONFIG_USBD_BUF_COUNT; i++) {
 		net_buf_reset(buf);
 		err = usbh_req_setup(udev, bmRequestType, bRequest, 0, 0, wLength, buf);
 		zassert_equal(err, 0, "Transfer status is an error");
@@ -146,14 +146,14 @@ ZTEST(device_next, test_vendor_control_in)
 
 	/* Perform vendor IN transfer but omit status stage*/
 	usbh_req_omit_status(true);
-	for (uint32_t i = 0; i < CONFIG_UDC_BUF_COUNT * 2; i++) {
+	for (uint32_t i = 0; i < CONFIG_USBD_BUF_COUNT * 2; i++) {
 		net_buf_reset(buf);
 		err = usbh_req_setup(udev, bmRequestType, bRequest, 0, 0, wLength, buf);
 		zassert_equal(err, 0, "Transfer status is an error");
 	}
 
 	/* Perform vendor IN requests but omit data and status stage*/
-	for (uint32_t i = 0; i < CONFIG_UDC_BUF_COUNT * 2; i++) {
+	for (uint32_t i = 0; i < CONFIG_USBD_BUF_COUNT * 2; i++) {
 		err = usbh_req_setup(udev, bmRequestType, bRequest, 0, 0, wLength, NULL);
 		zassert_equal(err, 0, "Transfer status is an error");
 	}
@@ -161,7 +161,7 @@ ZTEST(device_next, test_vendor_control_in)
 	usbh_req_omit_status(false);
 
 	/* Perform regular vendor IN transfer again */
-	for (uint32_t i = 0; i < CONFIG_UDC_BUF_COUNT; i++) {
+	for (uint32_t i = 0; i < CONFIG_USBD_BUF_COUNT; i++) {
 		net_buf_reset(buf);
 		err = usbh_req_setup(udev, bmRequestType, bRequest, 0, 0, wLength, buf);
 		zassert_equal(err, 0, "Transfer status is an error");
@@ -196,7 +196,7 @@ ZTEST(device_next, test_vendor_control_out)
 	zassert_equal(err, 0, "Failed to lock device");
 
 	/* Perform regular vendor OUT transfer */
-	for (uint32_t i = 0; i < CONFIG_UDC_BUF_COUNT; i++) {
+	for (uint32_t i = 0; i < CONFIG_USBD_BUF_COUNT; i++) {
 		net_buf_reset(buf);
 		for (uint32_t n = 0; n < wLength; n++) {
 			net_buf_add_u8(buf, n);
@@ -208,7 +208,7 @@ ZTEST(device_next, test_vendor_control_out)
 
 	/* Perform vendor OUT transfer but omit status stage*/
 	usbh_req_omit_status(true);
-	for (uint32_t i = 0; i < CONFIG_UDC_BUF_COUNT * 2; i++) {
+	for (uint32_t i = 0; i < CONFIG_USBD_BUF_COUNT * 2; i++) {
 		net_buf_reset(buf);
 		for (uint32_t n = 0; n < wLength; n++) {
 			net_buf_add_u8(buf, n);
@@ -219,7 +219,7 @@ ZTEST(device_next, test_vendor_control_out)
 	}
 
 	/* Perform vendor OUT requests but omit data and status stage*/
-	for (uint32_t i = 0; i < CONFIG_UDC_BUF_COUNT * 2; i++) {
+	for (uint32_t i = 0; i < CONFIG_USBD_BUF_COUNT * 2; i++) {
 		err = usbh_req_setup(udev, bmRequestType, bRequest, 0, 0, wLength, NULL);
 		zassert_equal(err, 0, "Transfer status is an error");
 	}
@@ -227,7 +227,7 @@ ZTEST(device_next, test_vendor_control_out)
 	usbh_req_omit_status(false);
 
 	/* Perform regular vendor OUT transfer again */
-	for (uint32_t i = 0; i < CONFIG_UDC_BUF_COUNT; i++) {
+	for (uint32_t i = 0; i < CONFIG_USBD_BUF_COUNT; i++) {
 		net_buf_reset(buf);
 		for (uint32_t n = 0; n < wLength; n++) {
 			net_buf_add_u8(buf, n);
@@ -262,7 +262,7 @@ ZTEST(device_next, test_control_nodata)
 	zassert_equal(err, 0, "Failed to lock device");
 
 	/* Perform regular control transfer */
-	for (uint32_t i = 0; i < CONFIG_UDC_BUF_COUNT; i++) {
+	for (uint32_t i = 0; i < CONFIG_USBD_BUF_COUNT; i++) {
 		err = usbh_req_setup(udev,
 				     bmRequestType, bRequest, wValue, wIndex, 0,
 				     NULL);
@@ -271,7 +271,7 @@ ZTEST(device_next, test_control_nodata)
 
 	/* Perform transfer but omit status stage*/
 	usbh_req_omit_status(true);
-	for (uint32_t i = 0; i < CONFIG_UDC_BUF_COUNT * 2; i++) {
+	for (uint32_t i = 0; i < CONFIG_USBD_BUF_COUNT * 2; i++) {
 		err = usbh_req_setup(udev,
 				     bmRequestType, bRequest, wValue, wIndex, 0,
 				     NULL);
@@ -281,7 +281,7 @@ ZTEST(device_next, test_control_nodata)
 	usbh_req_omit_status(false);
 
 	/* Perform regular control transfer again */
-	for (uint32_t i = 0; i < CONFIG_UDC_BUF_COUNT; i++) {
+	for (uint32_t i = 0; i < CONFIG_USBD_BUF_COUNT; i++) {
 		err = usbh_req_setup(udev,
 				     bmRequestType, bRequest, wValue, wIndex, 0,
 				     NULL);

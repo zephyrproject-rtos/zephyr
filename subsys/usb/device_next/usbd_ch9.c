@@ -1072,7 +1072,7 @@ static int usbd_enqueue_status_in(struct usbd_context *const uds_ctx)
 	struct net_buf *status_in;
 	int ret;
 
-	status_in = udc_ctrl_status_alloc(uds_ctx->dev, USB_CONTROL_EP_IN);
+	status_in = usbd_ep_ctrl_status_alloc(uds_ctx->dev, USB_CONTROL_EP_IN);
 	if (status_in == NULL) {
 		return -ENOMEM;
 	}
@@ -1098,7 +1098,7 @@ static int usbd_enqueue_status_out(struct usbd_context *const uds_ctx)
 		return 0;
 	}
 
-	status_out = udc_ctrl_status_alloc(uds_ctx->dev, USB_CONTROL_EP_OUT);
+	status_out = usbd_ep_ctrl_status_alloc(uds_ctx->dev, USB_CONTROL_EP_OUT);
 	if (status_out == NULL) {
 		return -ENOMEM;
 	}
@@ -1185,7 +1185,7 @@ int usbd_handle_ctrl_xfer(struct usbd_context *const uds_ctx,
 			 * Handler indicated that Data OUT should be received.
 			 * Allocate and enqueue buffer.
 			 */
-			next_buf = udc_ctrl_data_alloc(uds_ctx->dev, USB_CONTROL_EP_OUT,
+			next_buf = usbd_ep_ctrl_data_alloc(uds_ctx->dev, USB_CONTROL_EP_OUT,
 						       setup->wLength);
 			if (next_buf == NULL) {
 				goto ctrl_xfer_stall;
