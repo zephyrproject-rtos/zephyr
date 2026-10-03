@@ -14,6 +14,7 @@
 #include <zephyr/drivers/video.h>
 #include <zephyr/dt-bindings/video/video-interfaces.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/video/video.h>
 
 #include "video_common.h"
@@ -39,6 +40,8 @@ LOG_MODULE_REGISTER(video_gc2145, CONFIG_VIDEO_LOG_LEVEL);
 #define GC2145_REG_BYPASS_MODE          0x89
 #define GC2145_REG_BYPASS_MODE_SWITCH   BIT(5)
 #define GC2145_REG_CHIP_ID		GC2145_REG16_BE(0xF0)
+#define GC2145_REG_CLK_DIV_MODE		GC2145_REG8(0xFA)
+#define GC2145_REG_CLK_DIV_MODE_DIV	GENMASK(7, 4)
 #define GC2145_REG_RESET                0xFE
 #define GC2145_REG_SW_RESET             0x80
 #define GC2145_REG_RESET_P0_REGS        0x00
@@ -757,6 +760,7 @@ struct gc2145_config {
 	struct gpio_dt_spec reset_gpio;
 #endif
 	int bus_type;
+	uint8_t clock_divider;
 };
 
 struct gc2145_ctrls {
@@ -1399,6 +1403,13 @@ static int gc2145_init(const struct device *dev)
 		return ret;
 	}
 
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_CLK_DIV_MODE,
+				  FIELD_PREP(GC2145_REG_CLK_DIV_MODE_DIV,
+					     cfg->clock_divider - 1U));
+	if (ret < 0) {
+		return ret;
+	}
+
 	ret = gc2145_set_fmt(dev, &fmt);
 	if (ret) {
 		LOG_ERR("Unable to configure default format");
@@ -1428,6 +1439,7 @@ static int gc2145_init(const struct device *dev)
 		GC2145_GET_RESET_GPIO(n)							\
 		.bus_type = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(n, 0, 0), bus_type,		\
 				       VIDEO_BUS_TYPE_PARALLEL),				\
+		.clock_divider = DT_INST_PROP(n, clock_divider),				\
 	};											\
 												\
 	DEVICE_DT_INST_DEFINE(n, &gc2145_init, NULL, &gc2145_data_##n, &gc2145_cfg_##n,		\

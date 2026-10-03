@@ -18,6 +18,15 @@ properties:
     description: |
       The PWDN pin is asserted to power down the sensor. The sensor
       receives this as an active high signal
+  clock-divider:
+    type: int
+    default: 1
+    enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+    description: |
+      Divider of the sensor clock. The pixel clock and the frame rate are
+      divided by this value, which allows the sensor to be used with
+      receivers that cannot sample the pixel clock at full speed. The
+      default of 1 leaves the sensor clock undivided.
 
 child-binding:
   child-binding:

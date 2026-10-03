@@ -8,6 +8,7 @@
 #include <espressif/esp32/esp32.dtsi>
 #include "esp32_cam-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 #include <espressif/partitions_0x1000_amp.dtsi>
 
 / {
@@ -42,7 +43,9 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,settings-partition = &storage_partition;
 		zephyr,bt-hci = &esp32_bt_hci;
+		zephyr,camera = &i2s0;
 	};
 };
 
@@ -65,6 +68,19 @@
 	status = "okay";
 };
 
+&ledc0 {
+	status = "okay";
+	pinctrl-0 = <&ledc0_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel8@8 {
+		reg = <0x8>;
+		timer = <0>;
+	};
+};
+
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
@@ -79,6 +95,34 @@
 	scl-gpios = <&gpio0 27 GPIO_OPEN_DRAIN>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+
+	gc2145: gc2145@3c {
+		compatible = "galaxycore,gc2145";
+		reg = <0x3c>;
+		pwdn-gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>;
+		clock-divider = <3>;
+
+		port {
+			gc2145_ep_out: endpoint {
+				remote-endpoint-label = "i2s0_ep_in";
+			};
+		};
+	};
+};
+
+&i2s0 {
+	compatible = "espressif,esp32-i2s-cam";
+	status = "okay";
+	pinctrl-0 = <&i2s0_cam_default>;
+	pinctrl-names = "default";
+	pwms = <&ledc0 8 PWM_HZ(10000000) PWM_POLARITY_NORMAL>;
+	vsync-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
+
+	port {
+		i2s0_ep_in: endpoint {
+			remote-endpoint-label = "gc2145_ep_out";
+		};
+	};
 };
 
 &spi2 {

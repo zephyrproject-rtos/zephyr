@@ -11,6 +11,7 @@ tests:
     platform_allow:
       - mimxrt1064_evk/mimxrt1064
       - stm32n6570_dk/stm32n657xx/sb
+      - esp32_cam/esp32/procpu
     depends_on:
       - video
       - netif
@@ -21,3 +22,4 @@ tests:
       - platform:mimxrt1064_evk/mimxrt1064:SHIELD=dvp_fpc24_mt9m114
       - platform:stm32n6570_dk/stm32n657xx/sb:FILE_SUFFIX=venc
       - platform:stm32n6570_dk/stm32n657xx/sb:SHIELD=st_b_cams_imx_mb1854
+      - platform:esp32_cam/esp32/procpu:CONFIG_BUILD_ONLY_NO_BLOBS=y
