@@ -27,8 +27,10 @@
 
 	hyperram0: memory@4000000 {
 		/* Winbond W957A8MFYA5K */
+		compatible = "zephyr,memory-region";
 		device_type = "memory";
 		reg = <0x4000000 DT_SIZE_M(8)>;
+		zephyr,memory-region = "HYPER_RAM";
 		/*
 		 * Currently, HyperRAM on this board must be accessed under XIP mode,
 		 * so that the ROM bootloader can initialize it by reading the XMCD configuration.
