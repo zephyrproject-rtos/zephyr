@@ -168,6 +168,12 @@ struct modem_cellular_data {
 	uint8_t rsrq;
 	struct cellular_evt_network_status network_status;
 	bool network_status_valid;
+	/* Destination of the measurement in progress, owned by the caller. */
+	struct cellular_neighbor_cell *neighbor_cells;
+	uint8_t neighbor_cell_capacity;
+	uint8_t neighbor_cell_count;
+	bool neighbor_cells_truncated;
+	atomic_t neighbor_scan_busy;
 	uint8_t imei[MODEM_CELLULAR_DATA_IMEI_LEN];
 	uint8_t sn[MODEM_CELLULAR_DATA_SN_LEN];
 	uint8_t model_id[MODEM_CELLULAR_DATA_MODEL_ID_LEN];
@@ -262,6 +268,8 @@ struct modem_cellular_config_scripts {
 	const struct modem_chat_script *dial;
 	/** Optional script that periodically polls modem state while registered. */
 	const struct modem_chat_script *periodic;
+	/** Optional script that measures neighbour cells on request. */
+	const struct modem_chat_script *neighbor_scan;
 	/** Optional script that prepares the modem for power-off. */
 	const struct modem_chat_script *shutdown;
 	/** Optional script for configuring DLCI channels after opening */
@@ -360,6 +368,14 @@ void modem_cellular_emit_event(struct modem_cellular_data *data, enum cellular_e
  */
 void modem_cellular_emit_network_status(struct modem_cellular_data *data,
 					const struct cellular_evt_network_status *status);
+
+/*
+ * Write one neighbour cell into the buffer of the measurement in progress, dropping
+ * it and flagging the truncation when the buffer is full, or dropping it when no
+ * measurement is in progress.
+ */
+void modem_cellular_add_neighbor_cell(struct modem_cellular_data *data,
+				      const struct cellular_neighbor_cell *cell);
 
 void modem_cellular_chat_on_imei(struct modem_chat *chat, char **argv, uint16_t argc,
 				 void *user_data);

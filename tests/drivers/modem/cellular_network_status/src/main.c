@@ -33,6 +33,28 @@ static void init_data(struct modem_cellular_data *data)
 	data->cb.mask = CELLULAR_EVENT_NETWORK_STATUS_CHANGED;
 }
 
+/* A vendor measures neighbours when it has a measurement script; the request
+ * also needs the periodic script that starts it.
+ */
+static const struct modem_chat_script placeholder_script;
+
+static const struct modem_cellular_vendor_config reporting_vendor = {
+	.scripts = {
+		.periodic = &placeholder_script,
+		.neighbor_scan = &placeholder_script,
+	},
+};
+
+static const struct modem_cellular_config reporting_config = {
+	.vendor = &reporting_vendor,
+};
+
+static const struct modem_cellular_vendor_config silent_vendor;
+
+static const struct modem_cellular_config silent_config = {
+	.vendor = &silent_vendor,
+};
+
 static struct cellular_evt_network_status make_lte(uint32_t gci, int16_t rsrp)
 {
 	struct cellular_evt_network_status status = {
@@ -46,6 +68,20 @@ static struct cellular_evt_network_status make_lte(uint32_t gci, int16_t rsrp)
 	status.cell.lte.rsrp = rsrp;
 
 	return status;
+}
+
+static struct cellular_neighbor_cell make_neighbor(uint32_t earfcn, uint16_t pci, int16_t rsrp,
+						   int8_t rsrq)
+{
+	struct cellular_neighbor_cell cell = {0};
+
+	cell.access_tech = CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN;
+	cell.cell.lte.earfcn = earfcn;
+	cell.cell.lte.phys_cell_id = pci;
+	cell.cell.lte.rsrp = rsrp;
+	cell.cell.lte.rsrq = rsrq;
+
+	return cell;
 }
 
 /* modem_cellular_emit_network_status() must raise the event on the first report
@@ -87,6 +123,7 @@ ZTEST(cellular_network_status, test_getter_states)
 	struct modem_cellular_data data;
 	const struct device dev = {
 		.data = &data,
+		.config = &reporting_config,
 		.api = &modem_cellular_api,
 	};
 	struct cellular_evt_network_status status = make_lte(0x1234567, -95);
@@ -106,6 +143,84 @@ ZTEST(cellular_network_status, test_getter_states)
 	data.network_status_valid = false;
 	zassert_equal(cellular_get_network_status(&dev, &out), -ENODATA,
 		      "getter must report no data after invalidation");
+}
+
+/* The accumulator writes straight into the buffer the requesting thread owns. */
+ZTEST(cellular_network_status, test_neighbor_accumulate)
+{
+	struct modem_cellular_data data;
+	struct cellular_neighbor_cell a = make_neighbor(100, 10, -90, -10);
+	struct cellular_neighbor_cell b = make_neighbor(200, 20, -95, -12);
+	struct cellular_neighbor_cell out[4];
+
+	init_data(&data);
+	data.neighbor_cells = out;
+	data.neighbor_cell_capacity = ARRAY_SIZE(out);
+
+	modem_cellular_add_neighbor_cell(&data, &a);
+	modem_cellular_add_neighbor_cell(&data, &b);
+
+	zassert_equal(data.neighbor_cell_count, 2, "both neighbours must be written");
+	zassert_false(data.neighbor_cells_truncated, "a buffer that fits must not truncate");
+	zassert_equal(out[0].cell.lte.earfcn, 100);
+	zassert_equal(out[0].access_tech, CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN,
+		      "the access technology must select the reported union member");
+	zassert_equal(out[1].cell.lte.phys_cell_id, 20);
+	zassert_equal(out[1].cell.lte.rsrp, -95);
+}
+
+/* A buffer smaller than the measurement is filled to capacity and the overflow
+ * reported, so a caller that sized low still reads what fits.
+ */
+ZTEST(cellular_network_status, test_neighbor_truncates)
+{
+	struct modem_cellular_data data;
+	struct cellular_neighbor_cell a = make_neighbor(100, 10, -90, -10);
+	struct cellular_neighbor_cell b = make_neighbor(200, 20, -95, -12);
+	struct cellular_neighbor_cell out[1];
+
+	init_data(&data);
+	data.neighbor_cells = out;
+	data.neighbor_cell_capacity = ARRAY_SIZE(out);
+
+	modem_cellular_add_neighbor_cell(&data, &a);
+	modem_cellular_add_neighbor_cell(&data, &b);
+
+	zassert_equal(data.neighbor_cell_count, 1, "only what fits must be written");
+	zassert_true(data.neighbor_cells_truncated, "the overflow must be reported");
+	zassert_equal(out[0].cell.lte.earfcn, 100, "the entries that fit must be written");
+}
+
+/* A report arriving outside a measurement has nowhere to go. */
+ZTEST(cellular_network_status, test_neighbor_unsolicited_dropped)
+{
+	struct modem_cellular_data data;
+	struct cellular_neighbor_cell a = make_neighbor(100, 10, -90, -10);
+
+	init_data(&data);
+
+	modem_cellular_add_neighbor_cell(&data, &a);
+
+	zassert_equal(data.neighbor_cell_count, 0, "a report with no buffer must be dropped");
+	zassert_false(data.neighbor_cells_truncated, "dropping must not report truncation");
+}
+
+/* Without a measurement script there is nothing to ask for. */
+ZTEST(cellular_network_status, test_neighbor_unsupported_vendor)
+{
+	struct modem_cellular_data data;
+	const struct device dev = {
+		.data = &data,
+		.config = &silent_config,
+		.api = &modem_cellular_api,
+	};
+	struct cellular_neighbor_cell out[4];
+	uint8_t count = ARRAY_SIZE(out);
+
+	init_data(&data);
+
+	zassert_equal(cellular_scan_neighbor_cells(&dev, out, &count), -ENOSYS,
+		      "a vendor with no measurement script must return -ENOSYS");
 }
 
 ZTEST_SUITE(cellular_network_status, NULL, NULL, NULL, NULL, NULL);

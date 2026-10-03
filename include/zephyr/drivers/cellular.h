@@ -198,6 +198,23 @@ struct cellular_evt_network_status {
 };
 
 /**
+ * @brief Neighbour cell measurement.
+ *
+ * One entry of the list returned by @ref cellular_scan_neighbor_cells.
+ */
+struct cellular_neighbor_cell {
+	enum cellular_access_technology access_tech; /**< Access technology */
+	union {
+		struct {
+			uint32_t earfcn; /**< E-UTRAN assigned radio channel */
+			uint16_t phys_cell_id; /**< Physical cell ID */
+			int16_t rsrp; /**< Received signal power (dBm) */
+			int8_t rsrq; /**< Received signal quality (dB) */
+		} lte; /**< LTE neighbour cell information */
+	} cell; /**< Generic neighbour cell information, selected by @c access_tech */
+};
+
+/**
  * @brief Cellular link operational statistics.
  *
  * Counters are cumulative since boot.
@@ -268,6 +285,11 @@ typedef int (*cellular_api_get_registration_status)(const struct device *dev,
 typedef int (*cellular_api_get_network_status)(const struct device *dev,
 					       struct cellular_evt_network_status *status);
 
+/** API for measuring neighbour cells */
+typedef int (*cellular_api_scan_neighbor_cells)(const struct device *dev,
+						struct cellular_neighbor_cell *cells,
+						uint8_t *count);
+
 /** API for programming APN */
 typedef int (*cellular_api_set_apn)(const struct device *dev, const char *apn);
 
@@ -294,6 +316,8 @@ __subsystem struct cellular_driver_api {
 	cellular_api_get_registration_status get_registration_status;
 	/** @driver_ops_optional @copybrief cellular_get_network_status */
 	cellular_api_get_network_status get_network_status;
+	/** @driver_ops_optional @copybrief cellular_scan_neighbor_cells */
+	cellular_api_scan_neighbor_cells scan_neighbor_cells;
 	/** @driver_ops_optional @copybrief cellular_set_apn */
 	cellular_api_set_apn set_apn;
 	/** @driver_ops_optional @copybrief cellular_set_callback */
@@ -456,6 +480,38 @@ static inline int cellular_get_network_status(const struct device *dev,
 	}
 
 	return api->get_network_status(dev, status);
+}
+
+/**
+ * @brief Measure the neighbour cells
+ *
+ * @details Blocks until the modem reports its neighbour cells, which takes in the order
+ * of hundreds of milliseconds.
+ *
+ * @param dev Cellular network device instance
+ * @param cells Destination array for the neighbour cell measurements
+ * @param count In: capacity of @p cells. Out: number of entries written.
+ *
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS API is not supported by cellular network device.
+ * @retval -EINVAL @p cells or @p count is NULL, or @p count is zero.
+ * @retval -ENOMEM @p cells too small for the whole measurement; the entries that
+ * fit are written and the rest are not reported.
+ * @retval -EBUSY A measurement is already in progress, or the modem is mid-command.
+ * @retval -ENETDOWN The modem is not in a state that polls the network.
+ * @retval -EAGAIN The modem rejected or did not answer the measurement.
+ */
+static inline int cellular_scan_neighbor_cells(const struct device *dev,
+					       struct cellular_neighbor_cell *cells,
+					       uint8_t *count)
+{
+	const struct cellular_driver_api *api = DEVICE_API_GET(cellular, dev);
+
+	if (api->scan_neighbor_cells == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->scan_neighbor_cells(dev, cells, count);
 }
 
 /**
