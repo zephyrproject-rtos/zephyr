@@ -119,6 +119,9 @@ struct eic_config_params {
 	/** Enable/disable input debouncing for this line. */
 	bool debounce;
 
+	/** Enable/Disable event generation by the eic line */
+	bool evgen_enable;
+
 	/** Pointer to GPIO driver/user context passed back in the callback. */
 	void *gpio_data;
 
