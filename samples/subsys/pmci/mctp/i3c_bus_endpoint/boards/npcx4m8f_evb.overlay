@@ -8,12 +8,12 @@
 };
 
 &i3c0 {
-	status = "okay";
 	i3c-scl-hz = <7500000>;
 	i3c-od-scl-hz = <1500000>;
 
 	bcr = <0x06>;
 	tgt-pid = <0x0000020a 0x00000011>;
+	status = "okay";
 };
 
 &pcc {

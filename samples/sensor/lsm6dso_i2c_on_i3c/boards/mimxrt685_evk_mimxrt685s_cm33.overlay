@@ -1,5 +1,4 @@
 &i3c0 {
-	status = "okay";
 
 	/*
 	 * There might be other connected I2C devices
@@ -14,6 +13,7 @@
 	clk-divider = <12>;
 	clk-divider-slow = <1>;
 	clk-divider-tc = <1>;
+	status = "okay";
 
 	lsm6dso0: lsm6dso@6b0000000000000050 {
 		compatible = "st,lsm6dso";

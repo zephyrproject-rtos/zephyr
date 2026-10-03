@@ -15,8 +15,8 @@
 
 /* Example configuration of a ICP2021XX device on an Arduino SPI bus. */
 &arduino_spi {
-	status = "okay";
 	cs-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>; /* D8 */
+	status = "okay";
 
 	icp201xx: icp201xx@0 {
 		compatible = "invensense,icp201xx";
@@ -32,6 +32,6 @@
  */
 &uart0 {
 	compatible = "nordic,nrf-uarte";
-	status = "okay";
 	current-speed = <1000000>;
+	status = "okay";
 };

@@ -1,9 +1,9 @@
 / {
 	mcp9700a: mcp9700a {
-		status = "okay";
 		compatible = "microchip,mcp970x";
 		family = "MCP9700/9700A";
 		io-channels = <&adc 7>;
+		status = "okay";
 	};
 
 	aliases {

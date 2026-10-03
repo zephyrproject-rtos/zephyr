@@ -25,9 +25,9 @@
 };
 
 &gpioa {
-	status = "okay";
 	pinctrl-0 = <&gpioa_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &qdec {

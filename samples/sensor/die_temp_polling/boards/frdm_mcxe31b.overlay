@@ -13,16 +13,16 @@
 };
 
 &tempsense {
-	status = "okay";
 	io-channels = <&adc_0 0>;
+	status = "okay";
 };
 
 &adc_0 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
 
 	conv-clk-freq-div-factor = <3>;
+	status = "okay";
 
 	channel@0 {
 		reg = <0>;

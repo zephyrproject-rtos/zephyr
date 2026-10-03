@@ -15,7 +15,7 @@
 };
 
 &pwm1 {
-	status = "okay";
 	pinctrl-0 = <&pwm1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };

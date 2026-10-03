@@ -28,10 +28,10 @@
 };
 
 &uart1 {
-	status = "okay";
 	current-speed = <460800>;
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &spim2_default {
@@ -54,12 +54,12 @@
 
 	eth_w5500: eth-w5500@0 {
 		compatible = "wiznet,w5500";
-		status = "okay";
 		reg = <0x0>;
 		spi-max-frequency = <DT_FREQ_M(20)>;
 		int-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
 		reset-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
 		zephyr,random-mac-address;
+		status = "okay";
 	};
 };
 

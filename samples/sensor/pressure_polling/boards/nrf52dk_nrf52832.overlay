@@ -33,6 +33,6 @@
  */
 &uart0 {
 	compatible = "nordic,nrf-uarte";
-	status = "okay";
 	current-speed = <1000000>;
+	status = "okay";
 };

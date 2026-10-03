@@ -13,9 +13,9 @@
 
 /* SAI1 already has pinctrl-0 set in board dtsi, just add our properties */
 &sai1 {
-	status = "okay";
 	mclk-output;
 	nxp,rx-sync-mode;
+	status = "okay";
 };
 
 /*
@@ -23,7 +23,7 @@
  * for HFP SCO audio
  */
 &sai2 {
-	status = "okay";
 	nxp,tx-channel = <1>;
 	nxp,rx-sync-mode;
+	status = "okay";
 };

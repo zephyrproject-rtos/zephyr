@@ -12,9 +12,9 @@
 	status = "okay";
 
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		/* 64MiB external storage partition */
 		lfs1_partition: partition@0 {

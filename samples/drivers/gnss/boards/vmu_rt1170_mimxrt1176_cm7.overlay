@@ -15,11 +15,11 @@
 };
 
 &lpuart3 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 
 	gnss: gnss {
-		status = "okay";
 		compatible = "u-blox,f9p";
+		status = "okay";
 	};
 };

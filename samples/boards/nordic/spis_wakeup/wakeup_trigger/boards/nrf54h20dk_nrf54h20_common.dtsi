@@ -19,8 +19,8 @@
 };
 
 &gpiote130 {
-	status = "okay";
 	owned-channels = <1>;
+	status = "okay";
 };
 
 &gpio0 {
@@ -52,13 +52,13 @@
 
 &spi131 {
 	compatible = "nordic,nrf-spim";
-	status = "okay";
 	pinctrl-0 = <&spi131_default_alt>;
 	pinctrl-1 = <&spi131_sleep_alt>;
 	pinctrl-names = "default", "sleep";
 	overrun-character = <0x00>;
 	cs-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 	wake-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+	status = "okay";
 
 	spim_dt: spi-device@0 {
 		compatible = "vnd,spi-device";

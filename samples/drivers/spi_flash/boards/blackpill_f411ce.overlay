@@ -23,10 +23,10 @@
 		reg = <0>;
 		spi-max-frequency = <24000000>;
 		size = <DT_SIZE_M(64)>; /* 64 Mbits */
-		status = "okay";
 		jedec-id = [ef 40 17];
 		has-dpd;
 		t-enter-dpd = <3500>;
 		t-exit-dpd = <3500>;
+		status = "okay";
 	};
 };

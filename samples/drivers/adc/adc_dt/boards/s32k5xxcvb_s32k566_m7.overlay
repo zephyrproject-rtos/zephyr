@@ -15,9 +15,9 @@
 &sar_adc0 {
 	group-channel = "precision";
 	callback-select = "normal-end-chain";
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@0 {
 		reg = <0>;
@@ -38,9 +38,9 @@
 
 &sar_adc1 {
 	group-channel = "precision";
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@0 {
 		reg = <0>;

@@ -25,9 +25,9 @@
 &pcnt {
 	pinctrl-0 = <&pcnt_default>;
 	pinctrl-names = "default";
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	unit0@0 {
 		reg = <0>;

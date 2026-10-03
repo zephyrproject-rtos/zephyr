@@ -38,11 +38,11 @@
 };
 
 &uart1 {
-	status = "okay";
 	current-speed = <460800>;
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-1 = <&uart1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &psram0 {

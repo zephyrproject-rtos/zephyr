@@ -6,10 +6,10 @@
 / {
 	midi2: zephyr-midi2 {
 		compatible = "zephyr,midi2-device";
-		status = "okay";
 		#address-cells = <1>;
 		#size-cells = <1>;
 		label = "Zephyr-UDP-MIDI2";
+		status = "okay";
 
 		midi2@0 {
 			reg = <0 4>;

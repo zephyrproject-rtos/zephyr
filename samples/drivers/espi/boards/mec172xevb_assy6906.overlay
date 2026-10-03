@@ -18,30 +18,30 @@
 
 /* Enable Target to Controller Virtual Wires GPIO 0 - 3 */
 &vw_t2c_gpio_0 {
-	status = "okay";
 	reset-state = "1";
 	reset-source = "ESPI_RESET";
+	status = "okay";
 };
 
 &vw_t2c_gpio_1 {
-	status = "okay";
 	reset-state = "1";
 	reset-source = "ESPI_RESET";
+	status = "okay";
 };
 
 &vw_t2c_gpio_2 {
-	status = "okay";
 	reset-state = "1";
 	reset-source = "ESPI_RESET";
+	status = "okay";
 };
 
 &vw_t2c_gpio_3 {
-	status = "okay";
 	reset-state = "1";
 	reset-source = "ESPI_RESET";
+	status = "okay";
 };
 
 &qspi0 {
-	status = "okay";
 	clock-frequency = <24000000>;
+	status = "okay";
 };

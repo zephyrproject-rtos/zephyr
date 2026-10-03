@@ -12,15 +12,15 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <57600>;
 	pinctrl-0 = <&uart0_tx_pb2_default &uart0_rx_pb3_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &uart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart1_tx_pc6_default &uart1_rx_pc7_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
