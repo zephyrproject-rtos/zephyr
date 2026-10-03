@@ -49,7 +49,7 @@
 #error "Missing mcumgr fs checksum/hash algorithm selection?"
 #endif
 
-/* Define largest hach/checksum output size (bytes) */
+/* Define largest hash/checksum output size (bytes) */
 #if defined(CONFIG_MCUMGR_GRP_FS_HASH_SHA256)
 #define MCUMGR_GRP_FS_CHECKSUM_HASH_LARGEST_OUTPUT_SIZE 32
 #elif defined(CONFIG_MCUMGR_GRP_FS_CHECKSUM_IEEE_CRC32)
