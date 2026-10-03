@@ -33,6 +33,9 @@ LOG_MODULE_REGISTER(eth_dm9051, CONFIG_ETHERNET_LOG_LEVEL);
 /* Minimum Ethernet frame size (64 bytes including CRC) */
 #define ETH_DM9051_MIN_FRAME_SIZE	64
 
+/* Largest RX frame length trusted without a restart, as DM9051_PKT_MAX in the Linux driver */
+#define ETH_DM9051_MAX_FRAME_SIZE	1536U
+
 /* DM9051 Product ID */
 #define DM9051_ID			0x9051
 
@@ -516,19 +519,31 @@ static struct net_pkt *eth_dm9051_recv_pkt(const struct device *dev)
 
 	/* Check for RX errors */
 	if ((rxhdr.status & ~DM9051_RSR_MF) > 0 ||
-	    !IN_RANGE(rx_len, ETH_DM9051_MIN_FRAME_SIZE, sizeof(data->rx_buf))) {
+	    !IN_RANGE(rx_len, ETH_DM9051_MIN_FRAME_SIZE, ETH_DM9051_MAX_FRAME_SIZE)) {
 		if ((rxhdr.status & ~DM9051_RSR_MF) > 0) {
 			LOG_DBG("%s: RX status error: %02x", dev->name, rxhdr.status);
 		}
 
-		if (!IN_RANGE(rx_len, ETH_DM9051_MIN_FRAME_SIZE, sizeof(data->rx_buf))) {
-			LOG_DBG("%s: RX length out of range: %u (min: %u, max: %zu)",
-				dev->name, rx_len, ETH_DM9051_MIN_FRAME_SIZE, sizeof(data->rx_buf));
+		if (!IN_RANGE(rx_len, ETH_DM9051_MIN_FRAME_SIZE, ETH_DM9051_MAX_FRAME_SIZE)) {
+			LOG_DBG("%s: RX length out of range: %u (min: %u, max: %u)", dev->name,
+				rx_len, ETH_DM9051_MIN_FRAME_SIZE, ETH_DM9051_MAX_FRAME_SIZE);
 		}
 
 		ret = eth_dm9051_hw_start(dev, data->iface);
 		if (ret < 0) {
 			LOG_ERR("%s: Failed to restart HW after RX error (err %d)", dev->name, ret);
+		}
+		return NULL;
+	}
+
+	/* Drop a frame larger than the stack accepts */
+	if (rx_len > sizeof(data->rx_buf)) {
+		LOG_DBG("%s: RX frame too large: %u (max: %zu)", dev->name, rx_len,
+			sizeof(data->rx_buf));
+
+		ret = eth_dm9051_spi_read_mem(dev, DM9051_MRCMD, NULL, rx_len);
+		if (ret < 0) {
+			LOG_ERR("%s: Failed to discard RX data (err %d)", dev->name, ret);
 		}
 		return NULL;
 	}
