@@ -22,6 +22,7 @@
 void test_uart_configure(void);
 void test_uart_config_get(void);
 void test_uart_poll_out(void);
+void test_uart_poll_out_blocking(void);
 void test_uart_poll_in(void);
 #if CONFIG_UART_WIDE_DATA
 void test_uart_configure_wide(void);
