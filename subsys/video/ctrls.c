@@ -326,6 +326,12 @@ static inline const char *video_get_ctrl_name(uint32_t id)
 	case VIDEO_CID_JPEG_COMPRESSION_QUALITY:
 		return "Compression Quality";
 
+	/* Image source controls */
+	case VIDEO_CID_VBLANK:
+		return "Vertical Blanking";
+	case VIDEO_CID_HBLANK:
+		return "Horizontal Blanking";
+
 	/* Image processing controls */
 	case VIDEO_CID_PIXEL_RATE:
 		return "Pixel Rate";
