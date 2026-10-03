@@ -1,0 +1,83 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,pcie-controller = &pcie_test;
+	};
+
+	test_intc: test-intc {
+		compatible = "zephyr,test-irq-controller";
+		interrupt-controller;
+		#interrupt-cells = <2>;
+	};
+
+	pcie_test: pcie-test {
+		compatible = "pcie-controller";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		virtio_pci_non_vendor: virtio-pci-non-vendor {
+			compatible = "virtio,pci";
+			vendor-id = <0x1af4>;
+			device-id = <0x1070>;
+			interrupts = <0 0>;
+			interrupt-parent = <&test_intc>;
+			zephyr,deferred-init;
+			status = "okay";
+		};
+
+		virtio_pci_reserved_bar: virtio-pci-reserved-bar {
+			compatible = "virtio,pci";
+			vendor-id = <0x1af4>;
+			device-id = <0x1071>;
+			interrupts = <1 0>;
+			interrupt-parent = <&test_intc>;
+			zephyr,deferred-init;
+			status = "okay";
+		};
+
+		virtio_pci_long_notify: virtio-pci-long-notify {
+			compatible = "virtio,pci";
+			vendor-id = <0x1af4>;
+			device-id = <0x1072>;
+			interrupts = <2 0>;
+			interrupt-parent = <&test_intc>;
+			zephyr,deferred-init;
+			status = "okay";
+		};
+
+		virtio_pci_truncated_notify: virtio-pci-truncated-notify {
+			compatible = "virtio,pci";
+			vendor-id = <0x1af4>;
+			device-id = <0x1073>;
+			interrupts = <3 0>;
+			interrupt-parent = <&test_intc>;
+			zephyr,deferred-init;
+			status = "okay";
+		};
+
+		virtio_pci_short_common: virtio-pci-short-common {
+			compatible = "virtio,pci";
+			vendor-id = <0x1af4>;
+			device-id = <0x1074>;
+			interrupts = <5 0>;
+			interrupt-parent = <&test_intc>;
+			zephyr,deferred-init;
+			status = "okay";
+		};
+
+		virtio_pci_no_caps: virtio-pci-no-caps {
+			compatible = "virtio,pci";
+			vendor-id = <0x1af4>;
+			device-id = <0x1075>;
+			interrupts = <6 0>;
+			interrupt-parent = <&test_intc>;
+			zephyr,deferred-init;
+			status = "okay";
+		};
+	};
+};
