@@ -16,5 +16,6 @@ flash: 3072
 supported:
   - flash
   - gpio
+  - i2c
   - uart
 vendor: nxp
