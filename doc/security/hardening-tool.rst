@@ -102,8 +102,17 @@ command line, as above) or environment variables of the same name:
    * - ``HARDENCONFIG_JSON``
      - Path to a file where results are additionally written as JSON, for consumption by scripts
        and dashboards.
+   * - ``HARDENCONFIG_QUIET``
+     - When set, do not print the text report. Used together with ``HARDENCONFIG_JSON``.
    * - ``HARDENCONFIG_EXTRA_SOURCES``
      - Semicolon-separated list of additional hardening database files (see below).
+
+Dashboard integration
+*********************
+
+The hardening report is also part of the :ref:`build dashboard <dashboard>`: running the
+``dashboard`` build target generates a Hardening page listing the deviations, and flags
+them on the dashboard's summary page.
 
 The hardening database
 **********************

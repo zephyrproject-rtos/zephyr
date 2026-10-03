@@ -293,6 +293,30 @@ if(NOT KCONFIG_VARIANT_SOURCE)
       )
   endforeach()
 
+  # Non-interactive variant of the hardenconfig target that writes the
+  # hardening report as JSON into the build directory, for consumers such
+  # as the dashboard target. Only meaningful for the application (CONFIG_)
+  # Kconfig namespace: skip it when this module processes the sysbuild
+  # (SB_CONFIG) Kconfig.
+  if("${KCONFIG_NAMESPACE}" STREQUAL "CONFIG")
+    add_custom_target(
+      hardenconfig_report
+      ${CMAKE_COMMAND} -E env
+      ZEPHYR_BASE=${ZEPHYR_BASE}
+      ${COMMON_KCONFIG_ENV_SETTINGS}
+      HARDENCONFIG_PROFILE=${HARDENCONFIG_PROFILE}
+      "HARDENCONFIG_EXTRA_SOURCES=${HARDENCONFIG_EXTRA_SOURCES}"
+      HARDENCONFIG_JSON=${PROJECT_BINARY_DIR}/kconfig/hardening.json
+      HARDENCONFIG_QUIET=y
+      SHIELD_AS_LIST='${SHIELD_AS_LIST_ESCAPED}'
+      DTS_POST_CPP=${DTS_POST_CPP}
+      DTS_ROOT_BINDINGS=${DTS_ROOT_BINDINGS}
+      ${PYTHON_EXECUTABLE}
+      ${ZEPHYR_BASE}/scripts/kconfig/hardenconfig.py
+      ${KCONFIG_ROOT}
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig
+      )
+  endif()
 endif()
 
 # Support assigning Kconfig symbols on the command-line with CMake
