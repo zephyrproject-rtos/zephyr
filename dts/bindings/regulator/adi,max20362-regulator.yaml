@@ -61,6 +61,56 @@ properties:
       - 1: CAP   (MAX20362_LDO_SRC_CAP)
       - 2: BATT  (MAX20362_LDO_SRC_BATT)
 
+  rr-wrap:
+    type: boolean
+    description: |
+      Round-Robin wraps back to the first VSET after the last step instead of
+      stopping at the last value. Maps to DVS_CFG.RRWrap. Only used when
+      dvs-src = <MAX20362_DVS_SRC_ROUND_ROBIN>.
+
+  rr-clk-rising:
+    type: boolean
+    description: |
+      Round-Robin clock is active-high: the voltage updates on the rising edge.
+      When absent, the clock is active-low (falling edge). Maps to
+      RR_CFG1.RRClkPolarity. Only used when dvs-src is Round-Robin.
+
+  rr-timeout-reset:
+    type: boolean
+    description: |
+      Reset the Round-Robin pointer after a timeout. Maps to RR_CFG1.RRTimeoutRes.
+      Only used when dvs-src is Round-Robin.
+
+  rr-timeout:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+    description: |
+      Round-Robin timeout duration. Refer to the macros from
+      <zephyr/dt-bindings/regulator/max20362.h>:
+      - 0: disabled (MAX20362_RR_TIMEOUT_DISABLED)
+      - 1: 500 us   (MAX20362_RR_TIMEOUT_500US)
+      - 2: 1 ms     (MAX20362_RR_TIMEOUT_1MS)
+      - 3: 2 ms     (MAX20362_RR_TIMEOUT_2MS)
+      - 4: 4 ms     (MAX20362_RR_TIMEOUT_4MS)
+      - 5: 8 ms     (MAX20362_RR_TIMEOUT_8MS)
+      - 6: 16 ms    (MAX20362_RR_TIMEOUT_16MS)
+
+  rr-microvolt:
+    type: array
+    description: |
+      Round-Robin VSET table, in microvolts, in step order. Each value must fall
+      on the buck-boost output range. Provide between 1 and 20 entries; the
+      number of entries programs RR_CFG1.RRSize (steps = count - 1). Only used
+      when dvs-src = <MAX20362_DVS_SRC_ROUND_ROBIN>.
+
 child-binding:
   description: |
     Each rail that is used must be defined as a child node, strictly following
