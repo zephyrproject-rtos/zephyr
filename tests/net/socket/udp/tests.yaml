@@ -35,6 +35,8 @@ tests:
       - CONFIG_NET_STATISTICS_USER_API=y
       - CONFIG_NET_MGMT_EVENT=y
       - CONFIG_NET_MGMT=y
+      - CONFIG_NET_PKT_TXTIME_STATS=y
+      - CONFIG_NET_PKT_RXTIME_STATS=y
   net.socket.udp.tracing:
     platform_allow:
       - native_sim
