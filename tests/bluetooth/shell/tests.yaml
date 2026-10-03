@@ -127,6 +127,14 @@ tests:
       - native_sim
     build_only: true
     extra_args: CONFIG_BT_PRIVACY=n
+  bluetooth.shell.iso_sync_receiver_only:
+    integration_platforms:
+      - native_sim
+    build_only: true
+    extra_configs:
+      - CONFIG_BT_ISO_BROADCASTER=n
+      - CONFIG_BT_ISO_CENTRAL=n
+      - CONFIG_BT_ISO_PERIPHERAL=n
   bluetooth.shell.log_defaults:
     integration_platforms:
       - native_sim

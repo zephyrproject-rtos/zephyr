@@ -4474,7 +4474,11 @@ static void connection_info(struct bt_conn *conn, void *user_data)
 		if (chan != NULL) {
 			struct bt_iso_info iso_info;
 
+#if defined(CONFIG_BT_ISO_UNICAST)
 			selected = chan == &iso_chan ? "*" : " ";
+#else
+			selected = " ";
+#endif /* CONFIG_BT_ISO_UNICAST */
 
 			err = bt_iso_chan_get_info(chan, &iso_info);
 			if (err != 0) {
