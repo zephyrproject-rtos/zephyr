@@ -2,11 +2,56 @@
 # Copyright (c) 2026 Janez Ugovsek <janez@ugovsek.info>
 # SPDX-License-Identifier: Apache-2.0
 
-description: Micro Crystal RV3028 RTC, periodic time update and alarm device
+description: Micro Crystal RV3028 RTC, periodic time update, alarm device and timestamp feature
 
 compatible: "microcrystal,rv3028-rtc"
 
 include: rtc-device.yaml
+
+properties:
+  timestamp-edge-detection:
+    type: string
+    enum:
+      - "falling"
+      - "rising"
+    default: "falling"
+    description: |
+      Edge selection for timestamp events on the EVI pin. If omitted, the
+      driver uses falling-edge detection.
+
+  timestamp-filtering:
+    type: string
+    enum:
+      - "no"
+      - "256Hz"
+      - "64Hz"
+      - "8Hz"
+    default: "no"
+    description: |
+      Digital filter setting for the EVI pin. If omitted, no digital filtering
+      is used.
+
+  timestamp-overwrite:
+    type: string
+    enum:
+      - "first"
+      - "last"
+    default: "first"
+    description: |
+      Controls whether timestamp registers are overwritten when another event
+      occurs before software reads the previous timestamp. The timestamp count
+      register continues counting events independently of this setting.
+
+      first - The timestamp of the first event is recorded
+      last - The timestamp of the last event is recorded
+
+  timestamp-source-backup:
+    type: boolean
+    description: |
+      Automatic backup switchover is selected as timestamp source.
+      A timestamp is generated and an interrupt is issued when the
+      circuit goes to VBACKUP power state. Otherwise the source is
+      the external EVI pin.
 
 examples:
   - |
@@ -24,6 +69,10 @@ examples:
 
         rv3028_rtc: rtc {
           compatible = "microcrystal,rv3028-rtc";
+          timestamp-edge-detection = "rising";
+          timestamp-filtering = "256Hz";
+          timestamp-source-backup;
+          timestamp-overwrite = "last";
           status = "okay";
         };
       };
