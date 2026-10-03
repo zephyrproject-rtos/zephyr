@@ -1,0 +1,96 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config USBH_HID_CLASS
+	bool "USB host HID Class support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on USB_HOST_STACK
+	help
+	  USB Host HID Class implementation.
+
+if USBH_HID_CLASS
+
+config USBH_HID_INIT_PRIORITY
+	int "Init priority"
+	default 91
+	help
+	  Device driver initialization priority.
+
+config USBH_HID_WORKQUEUE_STACK_SIZE
+	int "Stack size of the USB host HID work queue"
+	default 1024
+	help
+	  Size of the stack for the dedicated work queue thread used to recover a
+	  stalled input endpoint outside of the USB host thread's context.
+
+config USBH_HID_WORKQUEUE_PRIORITY
+	int "Priority of the USB host HID work queue"
+	default 10
+	help
+	  Priority of the USB host HID work queue thread used to recover a
+	  stalled input endpoint outside of the USB host thread's context.
+
+config USBH_HID_REPORT_MAX_USAGES
+	int "Maximum usages to be found in a HID report descriptor"
+	default 16
+	help
+	  HID report descriptor fields have usages associated with them.
+	  Usages are specified sequentially and are assigned to fields
+	  with FIFO order. This option declares how big the usage stack
+	  can get.
+
+config USBH_HID_REPORT_MAX_VARIANTS
+	int "Maximum number of report variants for HID devices"
+	default 32
+	range 0 255
+	help
+	  HID devices can specify multiple reports, each distinguished by
+	  a report ID. This option declares how many the driver can allocate.
+
+config USBH_HID_REPORT_MAX_COLLECTIONS
+	int "Maximum number of report collections for HID devices"
+	default 16
+	help
+	  HID report descriptors are organized in logical group called
+	  collections. This option declares how many the driver can allocate.
+
+config USBH_HID_REPORT_MAX_FIELDS
+	int "Maximum number of report fields for HID devices"
+	default 32
+	help
+	  HID report descriptors are a list of input/output fields with which
+	  the device communicates. This option declares how many the driver
+	  can allocate.
+
+config USBH_HID_REPORT_MAX_STATE_STACK
+	int "Maximum size of the report state stack for HID devices"
+	default 8
+	help
+	  HID report descriptors work with a global state that can be pushed
+	  and popped from a stack. This option declares how bit the state stack
+	  can get.
+
+config USBH_HID_ROUTE_TO_INPUT
+	bool "Route the HID events directly to the input subsystem"
+	default n
+	select INPUT
+	help
+	  A HID device generates some events that can be handled by the input
+	  subsystem. By flagging this option they are reported through the
+	  USB host device.
+
+config USBH_HID_MAX_INPUT_REPORT_SIZE
+	int "Maximum input report size"
+	default 16
+	depends on USBH_HID_ROUTE_TO_INPUT
+	help
+	  In order to properly route HID events to the input subsystem the
+	  input reports must be stored and compared against the ones following.
+	  This is the maximum allowed report input size.
+
+
+module = USBH_HID
+module-str = usbh hid
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # USBH_HID_CLASS
