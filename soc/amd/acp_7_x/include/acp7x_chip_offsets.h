@@ -13,6 +13,10 @@
 #define ACP_DMA_DSCR_STRT_IDX_0                  0x1240028
 #define ACP_DMA_DSCR_CNT_0                       0x1240050
 #define ACP_DMA_PRIO_0                           0x1240078
+#define ACP_DMA_CNTL_9                           0x1240024
+#define ACP_DMA_DSCR_STRT_IDX_9                  0x124004C
+#define ACP_DMA_DSCR_CNT_9                       0x1240074
+#define ACP_DMA_PRIO_9                           0x124009C
 #define ACP_DMA_DESC_BASE_ADDR                   0x1240118
 #define ACP_DMA_DESC_MAX_NUM_DSCR                0x124011C
 #define ACP_DMA_CH_STS                           0x1240120
