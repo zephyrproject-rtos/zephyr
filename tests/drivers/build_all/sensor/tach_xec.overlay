@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Build coverage for the Microchip XEC tachometer. Every TACH_EDGES setting the
+ * hardware supports is exercised, along with the binding defaults, so that a
+ * change to the RPM conversion has to compile against all four measurement
+ * window widths. Two instances also carry a calibrated clock-frequency, one
+ * either side of the nominal 100 kHz, since that property scales the conversion
+ * and sets the fetch timeout.
+ *
+ * ict<n>_tach<n>_gpio05<n> and tach3_gpio033 are the alternate function 1
+ * routings of the four TACH inputs, and are spelled the same way on MEC15xx,
+ * MEC172x and MEC5, so this overlay is series independent.
+ */
+
+&tach0 {
+	status = "okay";
+	pinctrl-0 = <&ict0_tach0_gpio050>;
+	pinctrl-names = "default";
+	tach-edges = <2>;
+	pulses-per-round = <1>;
+	/* Measured on one Assy 6941 with the PLL on the silicon oscillator */
+	clock-frequency = <99042>;
+};
+
+&tach1 {
+	status = "okay";
+	pinctrl-0 = <&ict1_tach1_gpio051>;
+	pinctrl-names = "default";
+	tach-edges = <3>;
+	pulses-per-round = <2>;
+};
+
+/* Neither property set: exercises the tach-edges = 5, pulses-per-round = 2 defaults */
+&tach2 {
+	status = "okay";
+	pinctrl-0 = <&ict2_tach2_gpio052>;
+	pinctrl-names = "default";
+};
+
+&tach3 {
+	status = "okay";
+	pinctrl-0 = <&tach3_gpio033>;
+	pinctrl-names = "default";
+	tach-edges = <9>;
+	pulses-per-round = <4>;
+	/* The same part with the PLL referenced to a 32.768 kHz crystal */
+	clock-frequency = <100100>;
+};
