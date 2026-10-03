@@ -7,7 +7,9 @@ expected events are present with sane fields.
 
 """
 
+import contextlib
 import glob
+import io
 import logging
 import os
 import sys
@@ -87,3 +89,26 @@ def test_ctf_trace(dut):
     assert idx["queue_init"] < idx["queue_get_exit"], "queue_init must precede queue_get_exit"
 
     logger.info("CTF trace validated: all %d expected event types present", len(EXPECTED_EVENTS))
+
+    # Render the text view as well. Decoding a trace and drawing it are separate
+    # code paths, and a section that comes out empty is easy to miss by eye, so
+    # assert that both the CPU section and the per-thread section produced rows
+    # and that the thread table lists the threads the trace mentions.
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        tv.run_text(tr, 100)
+    rendered = out.getvalue()
+
+    assert "CPU 0" in rendered, f"no CPU section rendered:\n{rendered}"
+    table = rendered.split("Threads\n", 1)
+    assert len(table) == 2, f"no thread table rendered:\n{rendered}"
+    listed = [ln for ln in table[1].splitlines() if ln.startswith("  0x")]
+    assert listed, f"thread table is empty:\n{rendered}"
+
+    bars = set("\u2588\u2593\u2592\u2591")
+    states = rendered.split("Thread states", 1)
+    assert len(states) == 2, f"no thread state section rendered:\n{rendered}"
+    assert any(bars & set(ln) for ln in states[1].splitlines()), (
+        f"thread state section drew no bars:\n{rendered}"
+    )
+    logger.info("text view rendered: %d threads listed", len(listed))

@@ -26,9 +26,11 @@ struct tracing_backend_adsp_memory_window {
 static volatile struct tracing_backend_adsp_memory_window *mem_window;
 
 static void tracing_backend_adsp_memory_window_output(
-		const struct tracing_backend *backend,
+		const struct tracing_backend *backend, uint8_t stream_id,
 		uint8_t *data, uint32_t length)
 {
+	ARG_UNUSED(stream_id);
+
 #ifdef CONFIG_INTEL_ADSP_DEBUG_SLOT_MANAGER
 	if (!mem_window) {
 		return;
