@@ -21,6 +21,7 @@ config REQUIRES_FLOAT_PRINTF
 config LIBC_ALLOW_LESS_THAN_64BIT_TIME
 	bool "Don't require that time_t be at least 64-bits"
 	default y if NATIVE_LIBC
+	default y if XTENSA_LIBC
 	help
 	  When selected, time_t will not be required to be at least 64
 	  bits. Background: To avoid Y2038 issues time_t needs to be
@@ -67,6 +68,13 @@ config IAR_LIBC_SUPPORTED
 	help
 	  Selected if the target is an IAR Systems compiler
 
+config XTENSA_LIBC_SUPPORTED
+	bool
+	default n
+	select FULL_LIBC_SUPPORTED
+	help
+	  Selected in the target is built wiht xt-clang.
+
 config NATIVE_LIBC_INCOMPATIBLE
 	bool
 	help
@@ -82,6 +90,7 @@ choice LIBC_IMPLEMENTATION
 	default NEWLIB_LIBC if REQUIRES_FULL_LIBC
 	default MINIMAL_LIBC
 	default IAR_LIBC
+	default XTENSA_LIBC
 
 config MINIMAL_LIBC
 	bool "Minimal C library"
@@ -155,6 +164,14 @@ config IAR_LIBC
 	  Use the full IAR Compiler runtime libraries.
 	  A reduced Zephyr minimal libc will be used for library functionality
 	  not provided by the IAR C Runtime Library.
+
+config XTENSA_LIBC
+	bool "Xtensa C library"
+	depends on XTENSA_LIBC_SUPPORTED
+	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "xt-clang"
+	select TC_PROVIDES_POSIX_C_LANG_SUPPORT_R
+	help
+	  C library provided by Xtensa toolchain.
 
 endchoice # LIBC_IMPLEMENTATION
 

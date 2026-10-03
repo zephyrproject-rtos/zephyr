@@ -75,7 +75,7 @@ typedef unsigned long blkcnt_t;
 #define __blkcnt_t_defined
 #endif
 
-#if !defined(CONFIG_ARCMWDT_LIBC)
+#if !defined(CONFIG_ARCMWDT_LIBC) && !defined(CONFIG_XTENSA_LIBC)
 typedef int pid_t;
 #endif
 
@@ -89,7 +89,7 @@ typedef unsigned long timer_t;
 #endif
 
 /* Thread attributes */
-#if !defined(CONFIG_NEWLIB_LIBC)
+#if !defined(CONFIG_NEWLIB_LIBC) && !defined(CONFIG_XTENSA_LIBC)
 #if !defined(_PTHREAD_ATTR_T_DECLARED) && !defined(__pthread_attr_t_defined)
 typedef struct {
 	void *stack;
@@ -100,52 +100,72 @@ typedef struct {
 #endif
 #endif
 
+#if !defined(CONFIG_XTENSA_LIBC)
 typedef uint32_t pthread_t;
+#endif
+
 typedef uint32_t pthread_spinlock_t;
 
 /* Semaphore */
 typedef struct k_sem sem_t;
 
 /* Mutex */
+#if !defined(CONFIG_XTENSA_LIBC)
 typedef uint32_t pthread_mutex_t;
+#endif
 
+#if !defined(CONFIG_XTENSA_LIBC)
 struct pthread_mutexattr {
 	unsigned char type: 2;
 	bool initialized: 1;
 };
-#if !defined(CONFIG_NEWLIB_LIBC)
+#endif
+
+#if !defined(CONFIG_NEWLIB_LIBC) && !defined(CONFIG_XTENSA_LIBC)
 typedef struct pthread_mutexattr pthread_mutexattr_t;
 BUILD_ASSERT(sizeof(pthread_mutexattr_t) >= sizeof(struct pthread_mutexattr));
 #endif
 
 /* Condition variables */
+#if !defined(CONFIG_XTENSA_LIBC)
 typedef uint32_t pthread_cond_t;
+#endif
 
+#if !defined(CONFIG_XTENSA_LIBC)
 struct pthread_condattr {
 	clockid_t clock;
 };
+#endif
 
-#if !defined(CONFIG_NEWLIB_LIBC)
+#if !defined(CONFIG_NEWLIB_LIBC) && !defined(CONFIG_XTENSA_LIBC)
 typedef struct pthread_condattr pthread_condattr_t;
 BUILD_ASSERT(sizeof(pthread_condattr_t) >= sizeof(struct pthread_condattr));
 #endif
 
 /* Barrier */
+#if !defined(CONFIG_XTENSA_LIBC)
 typedef uint32_t pthread_barrier_t;
+#endif
 
+#if !defined(CONFIG_XTENSA_LIBC)
 typedef struct pthread_barrierattr {
 	int pshared;
 } pthread_barrierattr_t;
+#endif
 
+#if !defined(CONFIG_XTENSA_LIBC)
 typedef uint32_t pthread_rwlockattr_t;
+#endif
 
+#if !defined(CONFIG_XTENSA_LIBC)
 typedef uint32_t pthread_rwlock_t;
+#endif
 
 struct pthread_once {
 	bool flag;
 };
 
-#if !defined(CONFIG_NEWLIB_LIBC)
+#if !defined(CONFIG_NEWLIB_LIBC) && !defined(CONFIG_XTENSA_LIBC)
 typedef uint32_t pthread_key_t;
 typedef struct pthread_once pthread_once_t;
 /* Newlib typedefs pthread_once_t as a struct with two ints */
