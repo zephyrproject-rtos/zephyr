@@ -7762,6 +7762,20 @@ West:
   labels:
     - "area: TF-PSA-Crypto"
 
+"West project: tf-psa-crypto-drivers":
+  status: maintained
+  maintainers:
+    - npitre
+    - tomi-font
+  collaborators:
+    - Vge0rge
+    - valeriosetti
+    - JordanYates
+    - tpambor
+  files: []
+  labels:
+    - "area: TF-PSA-Crypto"
+
 "West project: tflite-micro":
   status: maintained
   maintainers:
