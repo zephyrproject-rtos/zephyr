@@ -204,7 +204,6 @@ static int mbox_stm32_hsem_set_enabled(const struct device *dev, uint32_t channe
 	}
 
 	if (enable) {
-		stm32_hsem_clear_rx_interrupt();
 		stm32_hsem_enable_rx_interrupt();
 	} else {
 		stm32_hsem_disable_rx_interrupt();
