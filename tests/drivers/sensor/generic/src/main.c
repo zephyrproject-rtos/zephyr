@@ -357,6 +357,69 @@ ZTEST(sensor_api, test_sensor_unit_conversion)
 	zassert_equal(ret, -ERANGE, "range error expected");
 
 #endif
+	/* Test struct sensor_value to q31 */
+	data.val1 = 0;
+	data.val2 = 0;
+	for (int shift = 1; shift <= 31; ++shift) {
+		zassert_equal(sensor_value_to_q31(&data, shift), 0, "the result does not match");
+	}
+
+	data.val1 = 0;
+	data.val2 = 500000;
+	zassert_equal(sensor_value_to_q31(&data, 0), 0x40000000U, "the result does not match");
+
+	data.val1 = 0;
+	data.val2 = -500000;
+	zassert_equal(sensor_value_to_q31(&data, 0), 0xC0000000U, "the result does not match");
+
+	data.val1 = 1;
+	data.val2 = 0;
+	zassert_equal(sensor_value_to_q31(&data, 1), 0x40000000U, "the result does not match");
+
+	data.val1 = -1;
+	data.val2 = 0;
+	zassert_equal(sensor_value_to_q31(&data, 1), 0xC0000000U, "the result does not match");
+
+	data.val1 = 1;
+	data.val2 = 999999;
+	zassert_equal(sensor_value_to_q31(&data, 1), 0x7FFFFBCEU, "the result does not match");
+
+	data.val1 = -1;
+	data.val2 = -999999;
+	zassert_equal(sensor_value_to_q31(&data, 1), 0x80000432U, "the result does not match");
+
+	data.val1 = 21;
+	data.val2 = 370000;
+	zassert_equal(sensor_value_to_q31(&data, 5), 0x557AE147U, "the result does not match");
+
+	data.val1 = -21;
+	data.val2 = -370000;
+	zassert_equal(sensor_value_to_q31(&data, 5), 0xAA851EB8U, "the result does not match");
+
+	data.val1 = 10000;
+	data.val2 = 0;
+	zassert_equal(sensor_value_to_q31(&data, 14), 0x4E200000U, "the result does not match");
+
+	data.val1 = -10000;
+	data.val2 = 0;
+	zassert_equal(sensor_value_to_q31(&data, 14), 0xB1E00000U, "the result does not match");
+
+	data.val1 = INT32_MAX;
+	data.val2 = 0;
+	zassert_equal(sensor_value_to_q31(&data, 31), 0x7FFFFFFFU, "the result does not match");
+
+	data.val1 = INT32_MAX;
+	data.val2 = 999999;
+	zassert_equal(sensor_value_to_q31(&data, 31), 0x7FFFFFFFU, "the result does not match");
+
+	data.val1 = INT32_MIN;
+	data.val2 = 0;
+	zassert_equal(sensor_value_to_q31(&data, 32), 0xC0000000U, "the result does not match");
+
+	data.val1 = INT32_MIN;
+	data.val2 = -999999;
+	zassert_equal(sensor_value_to_q31(&data, 32), 0xBFFFFFFFU, "the result does not match");
+
 	/* Test struct sensor_value to fixed point */
 	uint32_t val;
 
