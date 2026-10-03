@@ -19,14 +19,10 @@
 #include "nsi_main.h"
 #include "nsi_safe_call.h"
 #include "nsi_hw_scheduler.h"
-#include "nsi_hws_models_if.h"
+#include "nsi_hw_scheduler_backend.h"
 
 uint64_t nsi_simu_time; /* The actual time as known by the HW models */
 static uint64_t end_of_time = NSI_NEVER; /* When will this device stop */
-
-extern struct nsi_hw_event_st __nsi_hw_events_start[];
-extern struct nsi_hw_event_st __nsi_hw_events_end[];
-
 static unsigned int number_of_events;
 
 static unsigned int next_timer_index;
@@ -100,13 +96,21 @@ static void nsi_hws_sleep_until_next_event(void)
  */
 void nsi_hws_find_next_event(void)
 {
-	next_timer_index = 0;
-	next_timer_time  = *__nsi_hw_events_start[0].timer;
+	const struct nsi_hw_event_st *event;
 
-	for (unsigned int i = 1; i < number_of_events ; i++) {
-		if (next_timer_time > *__nsi_hw_events_start[i].timer) {
+	if (number_of_events == 0U) {
+		return;
+	}
+
+	next_timer_index = 0;
+	event = nsi_hws_get_event(0U);
+	next_timer_time = *event->timer;
+
+	for (unsigned int i = 1U; i < number_of_events; i++) {
+		event = nsi_hws_get_event(i);
+		if (next_timer_time > *event->timer) {
 			next_timer_index = i;
-			next_timer_time = *__nsi_hw_events_start[i].timer;
+			next_timer_time = *event->timer;
 		}
 	}
 }
@@ -125,7 +129,7 @@ void nsi_hws_one_event(void)
 	nsi_hws_sleep_until_next_event();
 
 	if (next_timer_index < number_of_events) { /* LCOV_EXCL_BR_LINE */
-		__nsi_hw_events_start[next_timer_index].callback();
+		nsi_hws_get_event(next_timer_index)->callback();
 	} else {
 		nsi_print_error_and_exit("next_timer_index corrupted\n"); /* LCOV_EXCL_LINE */
 	}
@@ -149,7 +153,8 @@ void nsi_hws_set_end_of_time(uint64_t new_end_of_time)
  */
 void nsi_hws_init(void)
 {
-	number_of_events = __nsi_hw_events_end - __nsi_hw_events_start;
+	nsi_hws_backend_init();
+	number_of_events = nsi_hws_backend_event_count;
 
 	nsi_hws_set_sig_handler();
 	nsi_hws_find_next_event();

@@ -257,15 +257,42 @@
 /* Check if a pointer is aligned enough for a particular data type. */
 #define IS_PTR_ALIGNED(ptr, type) IS_PTR_ALIGNED_BYTES(ptr, __alignof(type))
 
+/** @brief Storage class of a function an alias is defined for.
+ *
+ * FUNC_ALIAS() needs the aliased function to be nameable by the linker. Object
+ * formats which cannot alias a symbol with internal linkage give the aliased
+ * function external linkage instead.
+ */
+#ifndef ALIAS_TARGET
+#define ALIAS_TARGET static
+#endif
+
+/** @brief Storage class of an inline function an alias is defined for.
+ *
+ * As ALIAS_TARGET, for a function which would otherwise be `static inline`.
+ */
+#ifndef ALIAS_TARGET_INLINE
+#define ALIAS_TARGET_INLINE static inline
+#endif
+
 /** @brief Tag a symbol (e.g. function) to be kept in the binary even though it is not used.
  *
  * It prevents symbol from being removed by the linker garbage collector. It
  * is achieved by adding a pointer to that symbol to the kept memory section.
+ * Mach-O section names carry their segment and need the section marked as not
+ * dead strippable; ELF section names carry a leading dot.
  *
  * @param symbol Symbol to keep.
  */
+#if defined(__APPLE__)
+#define LINKER_KEEP(symbol) \
+	static const void * const symbol##_ptr __used \
+	__attribute__((__section__("__DATA,symbol_to_keep,regular,no_dead_strip"))) \
+	= (void *)&symbol
+#else
 #define LINKER_KEEP(symbol) \
 	static const void * const symbol##_ptr  __used \
 	__attribute__((__section__(".symbol_to_keep"))) = (void *)&symbol
+#endif
 
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_COMMON_H_ */
