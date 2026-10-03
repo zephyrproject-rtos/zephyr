@@ -182,30 +182,6 @@ static bool auxdisplay_nxp_slcd_write_symbol(const struct device *dev, uint8_t c
 	}
 }
 
-static uint16_t auxdisplay_nxp_slcd_char_to_pattern(
-	const struct auxdisplay_nxp_slcd_config *config,
-	uint8_t ch, bool rotated)
-{
-	/* All panels support digits, not all support letters. */
-	if (ch >= '0' && ch <= '9') {
-		return rotated
-			? config->panel_config.digits_rotated_180[ch - '0']
-			: config->panel_config.digits[ch - '0'];
-	} else if (ch >= 'A' && ch <= 'Z' &&
-		   config->panel_config.letters_upper != NULL) {
-		return rotated
-			? config->panel_config.letters_upper_rotated_180[ch - 'A']
-			: config->panel_config.letters_upper[ch - 'A'];
-	} else if (ch >= 'a' && ch <= 'z' &&
-		   config->panel_config.letters_lower != NULL) {
-		return rotated
-			? config->panel_config.letters_lower_rotated_180[ch - 'a']
-			: config->panel_config.letters_lower[ch - 'a'];
-	} else {
-		return SLCD_BLANK;
-	}
-}
-
 static int auxdisplay_nxp_slcd_write_pattern_on_position(const struct device *dev,
 							  uint16_t pattern,
 							  uint16_t position)
@@ -255,8 +231,7 @@ static int auxdisplay_nxp_slcd_write(const struct device *dev, const uint8_t *ch
 			continue;
 		}
 
-		pattern = auxdisplay_nxp_slcd_char_to_pattern(config, ch[i],
-			config->panel_config.rotated);
+		pattern = slcd_char_to_pattern(&config->panel_config, ch[i]);
 
 		position = data->cursor_y * cols +
 			(config->panel_config.rotated ?
