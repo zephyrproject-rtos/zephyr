@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: 2026 SMILE (smile.eu)
+# SPDX-License-Identifier: Apache-2.0
+
+description: WCH CH5xx PLL
+
+compatible: "wch,ch5xx-pll-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 0
+
+  clocks:
+    type: phandle-array
+    required: true
+
+examples:
+  - |
+    pll {
+      #clock-cells = <0>;
+      compatible = "wch,ch5xx-pll-clock";
+      clocks = <&clk_hse>; /* PLL source clock */
+      status = "okay";
+    };

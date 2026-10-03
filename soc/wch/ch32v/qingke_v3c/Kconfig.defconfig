@@ -3,8 +3,11 @@
 
 if SOC_SERIES_QINGKE_V3C
 
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+config TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+	default y
+
+config CLOCK_CONTROL
+	default y
 
 rsource "Kconfig.defconfig.*"
 
