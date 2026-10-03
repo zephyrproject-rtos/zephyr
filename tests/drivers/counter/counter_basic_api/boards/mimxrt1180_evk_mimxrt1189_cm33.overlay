@@ -5,9 +5,9 @@
  */
 
 &qtmr1_timer0 {
-	status = "okay";
 	primary-source = "kQTMR_ClockDivide_128";
 	mode = "kQTMR_PriSrcRiseEdge";
+	status = "okay";
 };
 
 &lpit1 {
@@ -71,8 +71,8 @@
 };
 
 &lptmr3 {
-	status = "okay";
 	prescale-glitch-filter = <10>;
+	status = "okay";
 };
 
 &tpm1 {

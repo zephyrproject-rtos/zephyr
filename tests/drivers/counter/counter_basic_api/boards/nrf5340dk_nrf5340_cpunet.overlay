@@ -5,16 +5,16 @@
  */
 
 &timer0 {
-	status = "okay";
 	prescaler = <4>;
+	status = "okay";
 };
 
 &timer1 {
-	status = "okay";
 	prescaler = <4>;
+	status = "okay";
 };
 
 &timer2 {
-	status = "okay";
 	prescaler = <4>;
+	status = "okay";
 };
