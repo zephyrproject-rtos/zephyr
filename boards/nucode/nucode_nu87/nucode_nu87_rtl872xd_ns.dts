@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2026 NUCODE Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nucode_nu87_rtl872xd.dts"
