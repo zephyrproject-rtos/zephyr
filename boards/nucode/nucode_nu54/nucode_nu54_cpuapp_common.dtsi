@@ -1,0 +1,153 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2026 NUCODE Co., Ltd.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nucode_nu54_common.dtsi"
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	chosen {
+		zephyr,console = &uart20;
+		zephyr,shell-uart = &uart20;
+		zephyr,uart-mcumgr = &uart20;
+		zephyr,bt-mon-uart = &uart20;
+		zephyr,bt-c2h-uart = &uart20;
+		zephyr,flash-controller = &rram_controller;
+		zephyr,flash = &cpuapp_rram;
+		zephyr,ieee802154 = &ieee802154;
+		zephyr,boot-mode = &boot_mode0;
+	};
+
+	aliases {
+		mcuboot-button0 = &button0;
+		mcuboot-led0 = &led0;
+		pwm-led0 = &pwm_led1;
+		watchdog0 = &wdt31;
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led1: pwm_led_1 {
+			pwms = <&pwm20 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+	};
+};
+
+&cpuapp_sram {
+	status = "okay";
+};
+
+/* These oscillator settings follow NUCODE's current board files. */
+&lfxo {
+	load-capacitors = "internal";
+	load-capacitance-femtofarad = <17000>;
+};
+
+&hfxo {
+	load-capacitors = "internal";
+	load-capacitance-femtofarad = <15000>;
+};
+
+&regulators {
+	status = "okay";
+};
+
+&vregmain {
+	status = "okay";
+	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+};
+
+&grtc {
+	owned-channels = <0 1 2 3 4 5 6 7 8 9 10 11>;
+	/* Channels 7-11 are reserved for zero-latency IRQs, 3-4 for FLPR. */
+	child-owned-channels = <3 4 7 8 9 10 11>;
+	status = "okay";
+};
+
+&uart20 {
+	status = "okay";
+};
+
+&i2c22 {
+	status = "okay";
+	clock-frequency = <100000>;
+	pinctrl-0 = <&i2c22_default>;
+	pinctrl-1 = <&i2c22_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&pwm20 {
+	status = "okay";
+	pinctrl-0 = <&pwm20_default>;
+	pinctrl-1 = <&pwm20_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&wdt31 {
+	status = "okay";
+};
+
+&adc {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpiote20 {
+	status = "okay";
+};
+
+&gpiote30 {
+	status = "okay";
+};
+
+&radio {
+	status = "okay";
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&temp {
+	status = "okay";
+};
+
+&clock {
+	status = "okay";
+};
+
+&xo {
+	status = "okay";
+};
+
+&lfclk {
+	status = "okay";
+};
+
+&nfct {
+	status = "disabled";
+};
+
+&gpregret1 {
+	status = "okay";
+
+	boot_mode0: boot_mode@0 {
+		compatible = "zephyr,retention";
+		status = "okay";
+		reg = <0x0 0x1>;
+	};
+};
