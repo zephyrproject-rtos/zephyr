@@ -1731,11 +1731,16 @@ static int esp32_wifi_connect(const struct device *dev __unused, struct net_if *
 }
 
 static int esp32_wifi_scan(const struct device *dev __unused,
-			   struct net_if *iface,
+			   struct net_if *iface __unused,
 			   struct wifi_scan_params *params,
 			   scan_result_cb_t cb)
 {
-	struct esp32_wifi_runtime *data = esp32_wifi_data_get(iface);
+	/*
+	 * Scanning always runs on the station and scan_done_handler() reports
+	 * through esp32_data, so track the callback there regardless of which
+	 * interface the request arrived on.
+	 */
+	struct esp32_wifi_runtime *data = &esp32_data;
 	int ret = 0;
 
 #if defined(CONFIG_WIFI_ESP32_MESH)
