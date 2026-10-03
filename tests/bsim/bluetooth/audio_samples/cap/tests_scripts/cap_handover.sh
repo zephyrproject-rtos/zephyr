@@ -1,24 +1,24 @@
 #!/usr/bin/env bash
-# Copyright 2023-2025 Nordic Semiconductor ASA
+# Copyright 2025 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
-
-# Simple selfchecking test for the CAP samples for broadcast.
+# Simple selfchecking test for the CAP samples for handover.
 # It relies on the bs_tests hooks to register a test timer callback. At the deadline,
 # the cap_handover test checks the handover app's ISO TX counter, while acceptor-side
 # audio packet receive verification is performed by the separate cap_acceptor test.
 
-simulation_id="${BOARD_TS}_cap_broadcast_test"
+simulation_id="${BOARD_TS}_cap_handover_test"
 verbosity_level=2
 EXECUTE_TIMEOUT=120
 
+source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
+
 cd ${BSIM_OUT_PATH}/bin
 
-Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_samples_cap_initiator_broadcast_prj_conf \
-  -v=${verbosity_level} -s=${simulation_id} -d=0 -RealEncryption=1 -testid=cap_initiator
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_samples_cap_handover_prj_conf \
+  -v=${verbosity_level} -s=${simulation_id} -d=0 -RealEncryption=1 -testid=cap_handover
 
-Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_samples_cap_acceptor_broadcast_prj_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_samples_cap_acceptor_handover_prj_conf \
   -v=${verbosity_level} -s=${simulation_id} -d=1 -RealEncryption=1 -testid=cap_acceptor
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \
