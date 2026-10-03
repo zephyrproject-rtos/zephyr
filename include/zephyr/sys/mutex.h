@@ -11,9 +11,13 @@
  * sys_mutex behaves almost exactly like k_mutex, with the added advantage
  * that a sys_mutex instance can reside in user memory.
  *
- * Further enhancements will support locking/unlocking uncontended sys_mutexes
- * with simple atomic ops instead of syscalls, similar to Linux's
- * FUTEX_LOCK_PI and FUTEX_UNLOCK_PI
+ * Depending on CONFIG_SYS_MUTEX_IMPL, sys_mutex is implemented either via
+ * a backing k_mutex (preserving priority inheritance) or via atomics on top
+ * of k_futex (allowing uncontended lock/unlock without syscalls on archs
+ * where reading the current thread and atomic ops are both syscall-free).
+ *
+ * Further enhancements will support priority inheritance with atomics once
+ * a corresponding futex is available.
  */
 
 #ifdef __cplusplus
@@ -21,17 +25,32 @@ extern "C" {
 #endif
 
 #ifdef CONFIG_USERSPACE
+#include <zephyr/kernel.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/clock.h>
 
+/**
+ * @brief Userspace mutex
+ */
 struct sys_mutex {
-	/* Currently unused, but will be used to store state for fast mutexes
-	 * that can be locked/unlocked with atomic ops if there is no
-	 * contention
-	 */
+	/** @cond INTERNAL_HIDDEN */
+#ifdef CONFIG_SYS_MUTEX_IMPL_K_MUTEX
 	atomic_t val;
+#elif defined(CONFIG_SYS_MUTEX_IMPL_FUTEX)
+	struct k_futex futex;
+	uint32_t counter;
+#endif  /* CONFIG_SYS_MUTEX_IMPL_FUTEX */
+	/** @endcond */
 };
+
+#ifdef CONFIG_SYS_MUTEX_IMPL_K_MUTEX
+__syscall int z_sys_mutex_kernel_lock(struct sys_mutex *mutex, k_timeout_t timeout);
+
+__syscall int z_sys_mutex_kernel_unlock(struct sys_mutex *mutex);
+
+#include <zephyr/syscalls/mutex.h>
+#endif /* CONFIG_SYS_MUTEX_IMPL_K_MUTEX */
 
 /**
  * @defgroup user_mutex_apis User mode mutex APIs
@@ -50,8 +69,11 @@ struct sys_mutex {
  *
  * @param name Name of the mutex.
  */
-#define SYS_MUTEX_DEFINE(name) \
-	struct sys_mutex name
+#if defined(CONFIG_SYS_MUTEX_IMPL_FUTEX)
+#define SYS_MUTEX_DEFINE(name) struct sys_mutex name = {.futex = {0}, .counter = 0}
+#else
+#define SYS_MUTEX_DEFINE(name) struct sys_mutex name
+#endif
 
 /**
  * @brief Initialize a mutex.
@@ -60,24 +82,12 @@ struct sys_mutex {
  *
  * Upon completion, the mutex is available and does not have an owner.
  *
- * This routine is only necessary to call when userspace is disabled
- * and the mutex was not created with SYS_MUTEX_DEFINE().
+ * This routine is only necessary to call when the mutex was not created
+ * with SYS_MUTEX_DEFINE().
  *
  * @param mutex Address of the mutex.
  */
-static inline void sys_mutex_init(struct sys_mutex *mutex)
-{
-	ARG_UNUSED(mutex);
-
-	/* Nothing to do, kernel-side data structures are initialized at
-	 * boot
-	 */
-}
-
-__syscall int z_sys_mutex_kernel_lock(struct sys_mutex *mutex,
-				      k_timeout_t timeout);
-
-__syscall int z_sys_mutex_kernel_unlock(struct sys_mutex *mutex);
+void sys_mutex_init(struct sys_mutex *mutex);
 
 /**
  * @brief Lock a mutex.
@@ -89,6 +99,10 @@ __syscall int z_sys_mutex_kernel_unlock(struct sys_mutex *mutex);
  * A thread is permitted to lock a mutex it has already locked. The operation
  * completes immediately and the lock count is increased by 1.
  *
+ * User threads need read-write access to the mutex memory. Depending on
+ * CONFIG_SYS_MUTEX_IMPL, calling this function without access will either fault
+ * or return -EACCES.
+ *
  * @param mutex Address of the mutex, which may reside in user memory
  * @param timeout Waiting period to lock the mutex,
  *                or one of the special values K_NO_WAIT and K_FOREVER.
@@ -97,13 +111,10 @@ __syscall int z_sys_mutex_kernel_unlock(struct sys_mutex *mutex);
  * @retval -EBUSY Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
  * @retval -EACCES Caller has no access to provided mutex address
- * @retval -EINVAL Provided mutex not recognized by the kernel
+ * @retval -EINVAL Provided mutex not recognized by the kernel or locked
+ *                 too many times
  */
-static inline int sys_mutex_lock(struct sys_mutex *mutex, k_timeout_t timeout)
-{
-	/* For now, make the syscall unconditionally */
-	return z_sys_mutex_kernel_lock(mutex, timeout);
-}
+int sys_mutex_lock(struct sys_mutex *mutex, k_timeout_t timeout);
 
 /**
  * @brief Unlock a mutex.
@@ -115,6 +126,10 @@ static inline int sys_mutex_lock(struct sys_mutex *mutex, k_timeout_t timeout)
  * the calling thread as many times as it was previously locked by that
  * thread.
  *
+ * User threads need read-write access to the mutex memory. Depending on
+ * CONFIG_SYS_MUTEX_IMPL, calling this function without access will either fault
+ * or return -EACCES.
+ *
  * @param mutex Address of the mutex, which may reside in user memory
  * @retval 0 Mutex unlocked
  * @retval -EACCES Caller has no access to provided mutex address
@@ -122,13 +137,7 @@ static inline int sys_mutex_lock(struct sys_mutex *mutex, k_timeout_t timeout)
  *                 locked
  * @retval -EPERM Caller does not own the mutex
  */
-static inline int sys_mutex_unlock(struct sys_mutex *mutex)
-{
-	/* For now, make the syscall unconditionally */
-	return z_sys_mutex_kernel_unlock(mutex);
-}
-
-#include <zephyr/syscalls/mutex.h>
+int sys_mutex_unlock(struct sys_mutex *mutex);
 
 #else
 #include <zephyr/kernel.h>
