@@ -165,24 +165,10 @@ struct ov2640_reg {
 };
 
 const int64_t ov2640_link_freq[] = {
-	MHZ(72), //MHZ(170), //MHZ(72), //MHZ(12), // MHZ(48)
+	MHZ(72), //MHZ(12), // MHZ(48)
 };
 
 static const struct ov2640_reg default_regs[] = {
-#if 1
-	{BANK_SEL, BANK_SEL_DSP},
-	{0x2c, 0xff},
-	{0x2e, 0xdf},
-	{BANK_SEL, BANK_SEL_SENSOR},
-	{0x3c, 0x32},
-	{CLKRC, 0x80},             /* Set PCLK divider */
-	{COM2, COM2_OUT_DRIVE_3x}, /* Output drive x2 */
-	{REG04, REG04_SET(REG04_HREF_EN)},
-	{COM8, COM8_SET(COM8_BNDF_EN | COM8_AGC_EN | COM8_AEC_EN)},
-	{COM9, COM9_AGC_SET(COM9_AGC_GAIN_8x)},
-	{R_BYPASS, R_BYPASS_DSP_BYPAS},
-#endif
-#if 0
 	/* Minimal init sequence */
 	{ BANK_SEL, BANK_SEL_DSP },
 	{ 0x2c, 0xff },
@@ -192,10 +178,19 @@ static const struct ov2640_reg default_regs[] = {
 	{ 0x3c, 0x32 },
 	{ 0x11, 0x80 },
 
-	/* Always output PCLK, VSYNC active-low */
-	//{COM10, (1U << 1)},
-
-	{COM2, 0x02}, /* Output drive x2 */
+#if 0
+	{BANK_SEL, BANK_SEL_DSP},
+	{0x2c, 0xff},
+	{0x2e, 0xdf},
+	{BANK_SEL, BANK_SEL_SENSOR},
+	{0x3c, 0x32},
+	{REG04, REG04_SET(REG04_HREF_EN)},
+	{COM8, COM8_SET(COM8_BNDF_EN | COM8_AGC_EN | COM8_AEC_EN)},
+	{COM9, COM9_AGC_SET(COM9_AGC_GAIN_8x)},
+	{R_BYPASS, R_BYPASS_DSP_BYPAS},
+#endif
+#if 1
+	{COM2, 0x00}, /* Output drive x2 */
 
 	//{ADDVSL, 0x10},
 	//{ADDVSH, 0x10},
@@ -230,6 +225,7 @@ static const struct ov2640_reg default_regs[] = {
 	{MC_BIST, MC_BIST_RESET | MC_BIST_BOOT_ROM_SEL},
 	{0x41, 0x24},
 	{RESET, RESET_JPEG | RESET_DVP},
+
 	{0x76, 0xff},
 	{0x33, 0xa0},
 	{0x42, 0x20},
@@ -393,7 +389,14 @@ static const struct ov2640_reg uxga_regs[] = {
 	/* DVP prescaler */
 	{R_DVP_SP, R_DVP_SP_AUTO_MODE | 0x04},
 
-	//{R_BYPASS, R_BYPASS_DSP_EN},
+
+	{BANK_SEL, BANK_SEL_SENSOR},
+	/* Ungated PCLK, VSYNC active-low, HSYNC active-high */
+	{COM10, 0U << 1},
+	{BANK_SEL, BANK_SEL_DSP},
+
+
+	{R_BYPASS, R_BYPASS_DSP_EN},
 	{RESET, 0x00},
 };
 
@@ -769,25 +772,22 @@ static int ov2640_set_vertical_flip(const struct device *dev, int enable)
 	return ret;
 }
 
-static int ov2640_set_resolution(const struct device *dev, uint16_t img_width, uint16_t img_height)
+static int ov2640_set_resolution(const struct device *dev, uint16_t width, uint16_t height)
 {
 	int ret = 0;
 	const struct ov2640_config *cfg = dev->config;
-
-	uint16_t w = img_width;
-	uint16_t h = img_height;
 
 	/* Disable DSP */
 	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_DSP);
 	ret |= ov2640_write_reg(&cfg->i2c, R_BYPASS, R_BYPASS_DSP_BYPAS);
 
 	/* Write output width, granularity 4 */
-	h /= 4;
-	w /= 4;
-	ret |= ov2640_write_reg(&cfg->i2c, ZMOW, w & 0xFF); /* OUTW[7:0] (real/4) */
-	ret |= ov2640_write_reg(&cfg->i2c, ZMOH, h & 0xFF); /* OUTH[7:0] (real/4) */
+	width /= 4;
+	height /= 4;
+	ret |= ov2640_write_reg(&cfg->i2c, ZMOW, width & 0xFF);
+	ret |= ov2640_write_reg(&cfg->i2c, ZMOH, height & 0xFF);
 	ret |= ov2640_write_reg(&cfg->i2c, ZMHH,
-				(((h >> 8) & 0x1) << 2) | ((w >> 10) & 0x3)); /* OUTH[8]/OUTW[9:8] */
+				(((height >> 8) & 0x1) << 2) | ((width >> 8) & 0x3));
 
 	/* Set CLKRC */
 	ret |= ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_SENSOR);
@@ -832,7 +832,6 @@ static int ov2640_set_fmt(const struct device *dev, struct video_format *fmt)
 	int ret = 0;
 	int i = 0;
 
-#if 0
 	/* We only support RGB565 and JPEG pixel formats */
 	if (fmt->pixelformat != VIDEO_PIX_FMT_RGB565 && fmt->pixelformat != VIDEO_PIX_FMT_JPEG) {
 		LOG_ERR("ov2640 camera supports only RGB565 and JPG pixelformats!");
@@ -866,8 +865,6 @@ static int ov2640_set_fmt(const struct device *dev, struct video_format *fmt)
 	/* Camera is not capable of handling given format */
 	LOG_ERR("Image format not supported\n");
 	return -ENOTSUP;
-#endif
-	return 0;
 }
 
 static int ov2640_get_fmt(const struct device *dev, struct video_format *fmt)
@@ -1063,8 +1060,8 @@ static int ov2640_init(const struct device *dev)
 		return -EIO;
 	}
 
-	//ret |= ov2640_set_exposure_ctrl(dev, 1);
-	//ret |= ov2640_set_white_bal(dev, 1);
+	ret |= ov2640_set_exposure_ctrl(dev, 1);
+	ret |= ov2640_set_white_bal(dev, 1);
 
 	if (ret) {
 		return ret;
@@ -1083,7 +1080,7 @@ static const struct ov2640_config ov2640_cfg_0 = {
 #if DT_INST_NODE_HAS_PROP(0, pwdn_gpios)
 	.pwdn_gpio = GPIO_DT_SPEC_INST_GET(0, pwdn_gpios),
 #endif
-	.clock_rate_control = 0x80, //DT_INST_PROP(0, clock_rate_control),
+	.clock_rate_control = 0x81, //DT_INST_PROP(0, clock_rate_control),
 };
 static struct ov2640_data ov2640_data_0;
 
