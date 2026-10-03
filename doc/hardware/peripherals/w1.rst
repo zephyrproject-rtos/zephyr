@@ -9,8 +9,8 @@ Overview
 1-Wire is a low speed half-duplex serial bus using only a single wire plus
 ground for both data transmission and device power supply.
 Similarly to I2C, 1-Wire uses a bidirectional open-collector data line,
-and is a single master multidrop bus. This means one master initiates all data
-exchanges with the slave devices.
+and is a single-controller multidrop bus. This means one controller initiates
+all data exchanges with the peripheral devices.
 The 1-Wire bus supports longer bus lines than I2C, while it reaches speeds of up
 to 15.4 kbps in standard mode and up to 125 kbps in overdrive mode.
 Reliable communication in standard speed configuration is possible with 10 nodes
@@ -27,12 +27,13 @@ The implementation details are specified in the `BOOK OF IBUTTON STANDARDS`_.
    A typical 1-Wire bus topology
 
 
-.. _w1-master-api:
+.. _w1-controller-api:
 
-W1 Master API
+W1 Controller API
 =================
 
-Zephyr's 1-Wire Master API is used to interact with 1-Wire slave devices like
+Zephyr's 1-Wire controller API is used to interact with 1-Wire peripheral
+devices like
 temperature sensors and serial memories.
 
 In Zephyr this API is split into the following layers.
@@ -44,18 +45,19 @@ In Zephyr this API is split into the following layers.
   which should work on most Zephyr platforms.
   In the future, a GPIO/Timer based driver and hardware specific drivers might
   be added.
-* The 1-Wire network layer handles all means for slave identification and bus
+* The 1-Wire network layer handles all means for peripheral identification and bus
   arbitration.
   This includes ROM commands like Match ROM, or Search ROM.
 
-   * All slave devices have a unique 64-bit identification number, which
+   * All peripheral devices have a unique 64-bit identification number, which
      includes a 8-bit `1-Wire Family Code`_ and a 8-bit CRC.
-   * In order to find slaves on the bus, the standard specifies an search
-     algorithm which successively detects all slaves on the bus.
+   * In order to find peripherals on the bus, the standard specifies an search
+     algorithm which successively detects all peripherals on the bus.
      This algorithm is described in the `1-Wire Search Algorithm Application Note`_.
 
 * Transport layer and Presentation layer functions are not implemented in the
-  generic 1-Wire driver and therefore must be handled in individual slave drivers.
+  generic 1-Wire driver and therefore must be handled in individual peripheral
+  drivers.
 
 The 1-Wire API is considered experimental.
 

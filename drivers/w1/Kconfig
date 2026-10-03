@@ -61,10 +61,10 @@ config W1_NET_FORCE_MULTIDROP_ADDRESSING
 	depends on W1_NET
 	help
 	  This option will ignore the number of 1-Wire
-	  slave devices defined in the DTS. Specifically,
+	  peripheral devices defined in the DTS. Specifically,
 	  this option avoids the SKIP ROM command,
 	  which is otherwise used in case of a single
-	  1-Wire slave on the bus. In most cases, enabling
+	  1-Wire peripheral on the bus. In most cases, enabling
 	  this option is not needed, yet it is essential
 	  if multiple 1-Wire devices unspecified in the
 	  DTS are interfaced.

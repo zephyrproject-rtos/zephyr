@@ -19,14 +19,14 @@
 LOG_MODULE_REGISTER(ds2484, CONFIG_W1_LOG_LEVEL);
 
 struct ds2484_config {
-	struct w1_master_config w1_config;
+	struct w1_controller_config w1_config;
 	const struct i2c_dt_spec i2c_spec;
 	const struct gpio_dt_spec slpz_spec;
 	bool apu;
 };
 
 struct ds2484_data {
-	struct w1_master_data w1_data;
+	struct w1_controller_data w1_data;
 	uint8_t reg_device_config;
 };
 
@@ -160,7 +160,7 @@ static DEVICE_API(w1, ds2484_driver_api) = {
 
 #define DS2484_INIT(inst)                                                                          \
 	static const struct ds2484_config inst_##inst##_config = {                                 \
-		.w1_config.slave_count = W1_INST_SLAVE_COUNT(inst),                                \
+		.w1_config.peripheral_count = W1_INST_PERIPHERAL_COUNT(inst),                      \
 		.i2c_spec = I2C_DT_SPEC_INST_GET(inst),                                            \
 		.slpz_spec = GPIO_DT_SPEC_INST_GET_OR(inst, slpz_gpios, {0}),                      \
 		.apu = DT_INST_PROP(inst, active_pullup),                                          \
