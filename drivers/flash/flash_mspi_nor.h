@@ -63,6 +63,8 @@ struct flash_mspi_nor_cmd_info {
 	 */
 	bool    rdid_addr_4     : 1;
 	uint8_t rdid_dummy      : 4;
+	/* - Read JEDEC ID data remains STR in DTR mode */
+	bool    rdid_data_str   : 1;
 };
 
 struct flash_mspi_nor_switch_info {

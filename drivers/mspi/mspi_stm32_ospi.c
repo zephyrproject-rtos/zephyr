@@ -1251,7 +1251,11 @@ static int mspi_stm32_ospi_clock_config(struct mspi_stm32_data *dev_data,
 	__ASSERT_NO_MSG(prescaler <= MSPI_STM32_CLOCK_PRESCALER_MAX);
 
 	/* Initialize XSPI HAL structure completely */
+#if defined(CONFIG_SOC_SERIES_STM32U5X)
 	dev_data->hmspi.ospi.Init.ClockPrescaler = prescaler;
+#else
+	dev_data->hmspi.ospi.Init.ClockPrescaler = prescaler + 1U;
+#endif
 
 	return 0;
 }
