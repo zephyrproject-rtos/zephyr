@@ -13,18 +13,18 @@
 #include <zephyr/drivers/entropy.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device.h>
-#include "bleplat_cntr.h"
-#include "ble_stack.h"
-#include "stm32wb0x_hal_radio_timer.h"
-#include "miscutil.h"
-#include "pka_manager.h"
-#include "app_conf.h"
-#include "dtm_cmd_db.h"
-#include "dm_alloc.h"
-#include "aci_adv_nwk.h"
-#include "app_common.h"
-#include "hw_aes.h"
-#include "hw_pka.h"
+#include <bleplat_cntr.h>
+#include <ble_stack.h>
+#include <stm32wb0x_hal_radio_timer.h>
+#include <miscutil.h>
+#include <pka_manager.h>
+#include <app_conf.h>
+#include <dtm_cmd_db.h>
+#include <dm_alloc.h>
+#include <aci_adv_nwk.h>
+#include <app_common.h>
+#include <hw_aes.h>
+#include <hw_pka.h>
 
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
