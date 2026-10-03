@@ -1,5 +1,21 @@
 tests:
   net.socket.can:
+    # Restrict to platforms that actually have a CAN device wired up as
+    # zephyr,canbus. Without this, twister falls back to its default
+    # platform list and tries to build/run this test everywhere,
+    # including boards with no CAN device at all (e.g. mps2/an385,
+    # qemu_cortex_a9/xc7z007s, qemu_riscv64/qemu_virt_riscv64,
+    # qemu_x86/atom) -- those fail with either a build error
+    # ('__device_dts_ord_DT_CHOSEN_zephyr_canbus_ORD' undeclared,
+    # because DT_CHOSEN(zephyr_canbus) resolves to nothing) or a runtime
+    # crash/hang when the code tries to use a CAN device that isn't
+    # there. native_sim is the only platform that wires up a software
+    # CAN loopback interface (&can_loopback0) as zephyr,canbus by
+    # default -- see boards/native/native_sim/native_sim.dts -- so it's
+    # the only platform this test can build and run on.
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
     integration_platforms:
       - native_sim
       - native_sim/native/64
