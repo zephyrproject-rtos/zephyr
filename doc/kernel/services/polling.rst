@@ -323,6 +323,9 @@ on one object each, saving possibly large amounts of stack space.
 Use a poll signal as a lightweight binary semaphore if only one thread pends on
 it.
 
+See the :zephyr:code-sample:`kernel-poll` sample for a complete dispatcher that
+waits on multiple kinds of kernel objects and handles polling timeouts.
+
 .. note::
     Because objects are only signaled if no other thread is waiting for them to
     become available and only one thread can poll on a specific object, polling
