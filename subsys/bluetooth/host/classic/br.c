@@ -1114,6 +1114,7 @@ int bt_br_discovery_start(const struct bt_br_discovery_param *param,
 
 int bt_br_discovery_stop(void)
 {
+	bool resolving_names = false;
 	int err;
 	int i;
 
@@ -1121,11 +1122,6 @@ int bt_br_discovery_stop(void)
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
 		return -EALREADY;
-	}
-
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_INQUIRY_CANCEL, NULL, NULL);
-	if (err) {
-		return err;
 	}
 
 	for (i = 0; i < discovery_results_count; i++) {
@@ -1139,6 +1135,8 @@ int bt_br_discovery_stop(void)
 			continue;
 		}
 
+		resolving_names = true;
+
 		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
 			continue;
@@ -1148,6 +1146,17 @@ int bt_br_discovery_stop(void)
 		bt_addr_copy(&cp->bdaddr, &discovery_results[i].addr);
 
 		bt_hci_cmd_send_sync(BT_HCI_OP_REMOTE_NAME_CANCEL, buf, NULL);
+	}
+
+	/* A remote name is only requested once the controller has reported
+	 * Inquiry Complete, and Inquiry Cancel is only defined before that
+	 * event (Core Specification 6.3, Vol 4, Part E, Section 7.1.2).
+	 */
+	if (!resolving_names) {
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_INQUIRY_CANCEL, NULL, NULL);
+		if (err) {
+			return err;
+		}
 	}
 
 	atomic_clear_bit(bt_dev.flags, BT_DEV_INQUIRY);
