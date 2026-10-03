@@ -9,6 +9,8 @@ tests:
     filter: CONFIG_ARCH_HAS_USERSPACE
     arch_exclude:
       - posix
+    platform_exclude:
+      - qemu_hexagon/qemu_hexagon_virt
     extra_args:
       - CONFIG_TEST_HW_STACK_PROTECTION=n
       - CONFIG_MINIMAL_LIBC=y

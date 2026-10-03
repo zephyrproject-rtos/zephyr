@@ -6,3 +6,25 @@ config TEST_EXTRA_STACK_SIZE
 
 config IDLE_STACK_SIZE
 	default 1024
+
+config PRIVILEGED_STACK_SIZE
+	# Sizes thread->arch.priv_stack, the kernel-side stack each K_USER
+	# thread uses for event/syscall handling (see arch_user_mode_enter()).
+	# 1024 was too small for some syscalls' C call depth; 2048 covers
+	# everything hit so far but is an empirical, not proven, bound.
+	default 2048
+
+if CPU_HAS_MMU
+
+config HEXAGON_MMU
+	bool "Hexagon MMU Support"
+	select MMU
+	select KERNEL_DIRECT_MAP
+	select SRAM_REGION_PERMISSIONS
+	help
+	  Enable memory management unit support for the Hexagon architecture.
+	  The HVM/H2 hypervisor maintains a single flat identity-mapped page
+	  table, so mappings require virt == phys and KERNEL_DIRECT_MAP is
+	  mandatory here.
+
+endif # CPU_HAS_MMU

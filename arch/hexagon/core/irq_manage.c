@@ -9,36 +9,17 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #include <zephyr/sw_isr_table.h>
+#include <zephyr/arch/hexagon/exception.h>
 #include <hexagon_vm.h>
 #include <hexagon_intc.h>
 #include <irq.h>
+#include <event_context.h>
+#ifdef CONFIG_USERSPACE
+extern void z_hexagon_syscall_handler(struct arch_esf *esf);
+extern void z_hexagon_user_mode_sync(void);
+#endif
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
-
-/* Event context saved by assembly handlers -- must match event_handlers.S */
-struct event_context {
-	uint32_t r0_r1[2];
-	uint32_t r2_r3[2];
-	uint32_t r4_r5[2];
-	uint32_t r6_r7[2];
-	uint32_t r8_r9[2];
-	uint32_t r10_r11[2];
-	uint32_t r12_r13[2];
-	uint32_t r14_r15[2];
-	uint32_t pred_regs;
-	uint32_t link_reg;
-	uint32_t gelr;          /* saved GELR (return PC) */
-	uint32_t gsr;           /* saved GSR (guest status) */
-	uint32_t sa0;
-	uint32_t lc0;
-	uint32_t sa1;
-	uint32_t lc1;
-	uint32_t m0;
-	uint32_t m1;
-	uint32_t usr;
-	uint32_t r28;
-	uint32_t scratch;       /* temporary storage used during event exit */
-};
 
 /* ISR nesting counter -- read by arch_is_in_isr() in arch.h */
 uint32_t z_hexagon_isr_nesting;
@@ -51,6 +32,30 @@ static void z_hexagon_interrupt_handler(struct event_context *ctx);
 /* Main event handler called from assembly */
 void z_hexagon_event_handler(unsigned int event_num, struct event_context *ctx)
 {
+#ifdef CONFIG_USERSPACE
+	/* We're in kernel mode now; clear so arch_is_user_context()=false. */
+	_hexagon_user_mode_active = 0;
+#endif
+
+	/*
+	 * Re-enable guest interrupts for syscall handling: H2 disables IE on
+	 * event entry, but kernel syscall code expects arch_irq_lock() to
+	 * report IE was enabled. Nested interrupts are safe since EVENT_ENTRY
+	 * saves all volatile state.
+	 */
+	if (event_num == HEXAGON_EVENT_TRAP0) {
+		hexagon_vm_setie(VM_INT_ENABLE);
+#ifdef CONFIG_USERSPACE
+		/*
+		 * Mark this thread's trap0 handling in flight, so a nested
+		 * event's z_hexagon_event_exit_user_sync() knows it is
+		 * resuming kernel-mode code, not user mode -- see
+		 * arch.trap0_active's comment in thread.h.
+		 */
+		_current->arch.trap0_active = 1;
+#endif
+	}
+
 	switch (event_num) {
 	case HEXAGON_EVENT_MACHINE_CHECK:
 		z_hexagon_fatal_error(K_ERR_CPU_EXCEPTION);
@@ -72,7 +77,37 @@ void z_hexagon_event_handler(unsigned int event_num, struct event_context *ctx)
 		z_hexagon_fatal_error(K_ERR_SPURIOUS_IRQ);
 		break;
 	}
+
+#ifdef CONFIG_USERSPACE
+	if (event_num == HEXAGON_EVENT_TRAP0) {
+		/* This thread's own trap0 handling has finished normally. */
+		_current->arch.trap0_active = 0;
+	}
+#endif
+
+	/*
+	 * Disable interrupts before returning to the EVENT_EXIT assembly
+	 * path.  EVENT_EXIT expects IE=0 for the preemption check and
+	 * vmrte sequence.
+	 */
+	hexagon_vm_setie(VM_INT_DISABLE);
 }
+
+#ifdef CONFIG_USERSPACE
+/*
+ * Called from EVENT_EXIT after any context switch, with _current already
+ * the thread about to resume. Skipped when trap0_active is set: that
+ * means this resumption point is still the thread's own kernel-mode trap0
+ * handler (preempted, not returning to real user mode) -- see
+ * arch.trap0_active's comment in thread.h.
+ */
+void z_hexagon_event_exit_user_sync(void)
+{
+	if (!_current->arch.trap0_active) {
+		z_hexagon_user_mode_sync();
+	}
+}
+#endif
 
 /* Handle general exceptions */
 #define GSR_CAUSE_MASK 0xFF
@@ -98,9 +133,30 @@ static void z_hexagon_exception_handler(struct event_context *ctx)
  */
 static void z_hexagon_trap0_handler(struct event_context *ctx)
 {
-	uint32_t syscall_num = ctx->r6_r7[0]; /* r6 */
+#ifdef CONFIG_USERSPACE
+	{
+		/* Minimal arch_esf: only args and syscall number matter. */
+		struct arch_esf esf = { 0 };
 
-	ARG_UNUSED(syscall_num);
+		esf.r0 = ctx->r0_r1[0];
+		esf.r1 = ctx->r0_r1[1];
+		esf.r2 = ctx->r2_r3[0];
+		esf.r3 = ctx->r2_r3[1];
+		esf.r4 = ctx->r4_r5[0];
+		esf.r5 = ctx->r4_r5[1];
+		esf.r6 = ctx->r6_r7[0]; /* syscall number */
+		esf.r7 = ctx->r6_r7[1];
+
+		z_hexagon_syscall_handler(&esf);
+
+		/* Write return value back to the event context */
+		ctx->r0_r1[0] = esf.r0;
+	}
+#else
+	/* trap0 should never fire without CONFIG_USERSPACE. */
+	ARG_UNUSED(ctx);
+	z_hexagon_fatal_error(K_ERR_CPU_EXCEPTION);
+#endif
 }
 
 /* Handle interrupts */
@@ -177,15 +233,7 @@ int arch_irq_is_enabled(unsigned int irq)
 	return status & 1;
 }
 
-#ifdef CONFIG_DYNAMIC_INTERRUPTS
-/* Connect IRQ at runtime.
- *
- * Only defined when the SW ISR table is writable at run time. Callers that
- * install an ISR unconditionally -- a driver's init function, say -- must use
- * IRQ_CONNECT() instead, so that the entry is generated at build time; calling
- * this without CONFIG_DYNAMIC_INTERRUPTS is a link error rather than a handler
- * that is quietly never installed.
- */
+/* Connect IRQ at runtime */
 int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			     void (*routine)(const void *parameter), const void *parameter,
 			     uint32_t flags)
@@ -194,19 +242,20 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 		return -EINVAL;
 	}
 
+#ifdef CONFIG_DYNAMIC_INTERRUPTS
 	/* Set up SW ISR table entry atomically with respect to the IRQ */
 	unsigned int key = arch_irq_lock();
 
 	_sw_isr_table[irq].isr = routine;
 	_sw_isr_table[irq].arg = parameter;
 	arch_irq_unlock(key);
+#endif
 
 	/* Set interrupt priority */
 	hexagon_irq_priority_set(irq, priority);
 
 	return 0;
 }
-#endif /* CONFIG_DYNAMIC_INTERRUPTS */
 
 /* Set interrupt priority */
 void hexagon_irq_priority_set(unsigned int irq, unsigned int priority)

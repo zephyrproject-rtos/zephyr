@@ -19,6 +19,7 @@ tests:
       - mimxrt1170_evk@A/mimxrt1176/cm4
       - mimxrt1170_evk@B/mimxrt1176/cm4
       - mimxrt1160_evk/mimxrt1166/cm4
+      - qemu_hexagon/qemu_hexagon_virt
     integration_platforms:
       - frdm_k64f/mk64f12
       - qemu_x86
