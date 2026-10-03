@@ -11,8 +11,8 @@
 };
 
 &lptmr0 {
-	status = "okay";
 	clock-frequency = <DT_FREQ_K(32)>;
 	prescale-glitch-filter-bypass;
 	clk-source = <2>;
+	status = "okay";
 };
