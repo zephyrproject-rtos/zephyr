@@ -43,6 +43,19 @@ int16_t input_to_hid_code(uint16_t input_code);
  */
 uint8_t input_to_hid_modifier(uint16_t input_code);
 
+/**
+ * @brief Convert an HID code to input code.
+ *
+ * Takes an HID code as input and returns the corresponding input code as
+ * output. The return value is -1 if the code is not found, if found it can
+ * safely be casted to a uint16_t type.
+ *
+ * @param hid_key HID code.
+ * @return the input code corresponding to the HID code (see @ref INPUT_KEY_CODES).
+ * @retval -1 if there's no input code for the specified HID code.
+ */
+int32_t hid_to_input(uint8_t hid_key);
+
 /** @} */
 
 #endif /* ZEPHYR_INCLUDE_INPUT_INPUT_HID_H_ */
