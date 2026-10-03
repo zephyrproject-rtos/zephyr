@@ -3,8 +3,8 @@
 Perf
 ####
 
-Perf is a profiler tool based on stack tracing. It can be used for lightweight profiling
-with minimal code overhead.
+Perf provides stack sampling and standalone performance counter sessions for lightweight
+profiling with minimal code overhead.
 
 Work Principle
 **************
@@ -33,11 +33,19 @@ Configuration
 
 You can configure this module using the following options:
 
-* :kconfig:option:`CONFIG_PROFILING_PERF`: Enables the module. This option adds
-  the ``perf`` command to the shell.
+* :kconfig:option:`CONFIG_PROFILING_PERF`: Enables stack sampling and the ``perf record`` shell
+  command.
 
 * :kconfig:option:`CONFIG_PROFILING_PERF_BUFFER_SIZE`: Sets the size of the perf buffer
   where samples are saved before printing.
+
+* :kconfig:option:`CONFIG_PROFILING_PERF_EVENTS`: Enables the performance event subsystem for
+  provider-based event discovery and counter session management. Requires
+  :kconfig:option:`CONFIG_MULTITHREADING`.
+
+* :kconfig:option:`CONFIG_PROFILING_PERF_EVENTS_SHELL`: Adds counter discovery and session
+  commands to the ``perf`` shell command. Requires :kconfig:option:`CONFIG_SHELL`, but not
+  stack-sampling support or :kconfig:option:`CONFIG_PROFILING_PERF`.
 
 Architecture backends may require additional stack-unwind support. The Cortex-M backend
 requires SysTick, thread stack information, extra exception information, Arm stack
@@ -48,4 +56,39 @@ Usage
 
 Refer to the :zephyr:code-sample:`profiling-perf` sample for an example of how to use the perf tool.
 
- .. _FlameGraph: https://github.com/brendangregg/FlameGraph/
+Counter sessions
+****************
+
+Counter providers expose canonical ``provider.event`` names. A stat session takes a baseline when
+it starts and a final snapshot when it stops. Only one stack-sampling or stat session can run at a
+time.
+
+For example:
+
+.. code-block:: shell
+
+   perf list
+   perf list cpu0
+   perf stat start -e cpu0.cycles
+   # Run the workload.
+   perf stat stop
+   perf printbuf
+
+``perf stat stop`` prints and retains the completed result. ``perf printbuf`` prints and clears the
+retained result, while ``perf clear`` discards it. Successfully starting a new ``perf stat`` or
+``perf record`` session also discards the retained stat result.
+
+Applications can resolve known event names with :c:func:`perf_event_lookup` and control a session
+with :c:func:`perf_stat_start` and :c:func:`perf_stat_stop`. These supervisor-only APIs must be
+called from thread context and do not depend on the shell or stack-sampling support.
+
+Event tokens are opaque, build-local identifiers. Applications must obtain them through
+:c:func:`perf_event_lookup`, must not modify them, and must not reuse them across firmware builds.
+The core supports up to 255 providers, each with provider-local event IDs from 0 to 65535.
+
+API reference
+*************
+
+.. doxygengroup:: profiling_perf
+
+.. _FlameGraph: https://github.com/brendangregg/FlameGraph/
