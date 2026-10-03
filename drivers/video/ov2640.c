@@ -180,6 +180,10 @@ struct ov2640_reg {
 	uint8_t value;
 };
 
+const int64_t ov2640_link_freq[] = {
+	MHZ(168), MHZ(72), MHZ(36)
+};
+
 static const struct ov2640_reg default_regs[] = {
 	/* Minimal init sequence */
 	{ BANK_SEL, BANK_SEL_DSP },
@@ -450,6 +454,7 @@ struct ov2640_ctrls {
 	struct video_ctrl saturation;
 	struct video_ctrl jpeg;
 	struct video_ctrl test_pattern;
+	struct video_ctrl link_freq;
 };
 
 struct ov2640_data {
@@ -992,6 +997,13 @@ static int ov2640_init_controls(const struct device *dev)
 	if (ret) {
 		return ret;
 	}
+
+	ret = video_init_int_menu_ctrl(&ctrls->link_freq, dev, VIDEO_CID_LINK_FREQ,
+				       0, ov2640_link_freq, ARRAY_SIZE(ov2640_link_freq));
+	if (ret < 0) {
+		return ret;
+	}
+	ctrls->link_freq.flags |= VIDEO_CTRL_FLAG_READ_ONLY;
 
 	return 0;
 }
