@@ -15,6 +15,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
+#include <zephyr/pm/state.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/iterable_sections.h>
 
@@ -225,6 +226,13 @@ struct pm_device_base {
 	/** Power Domain it belongs */
 	const struct device *domain;
 #endif /* CONFIG_PM_DEVICE_POWER_DOMAIN */
+#if defined(CONFIG_PM_DEVICE_WAKEUP_POWER_STATES) || defined(__DOXYGEN__)
+	/**
+	 * States this device cannot wake the system from, or NULL if there are
+	 * none.
+	 */
+	const struct pm_state_constraints *wakeup_states;
+#endif /* CONFIG_PM_DEVICE_WAKEUP_POWER_STATES */
 };
 
 /**
@@ -292,6 +300,61 @@ BUILD_ASSERT(offsetof(struct pm_device_isr, base) == 0);
 #define Z_PM_DEVICE_POWER_DOMAIN_INIT(obj)
 #endif /* CONFIG_PM_DEVICE_POWER_DOMAIN */
 
+#ifdef CONFIG_PM_DEVICE_WAKEUP_POWER_STATES
+/*
+ * The elements one property contributes, each one followed by a comma so that
+ * the two properties concatenate, or nothing at all when the node does not have
+ * the property: DT_FOREACH_PROP_ELEM_SEP() may not be reached with one the node
+ * lacks. Z_PM_STATE_CONSTRAINT_REF() is the same element that
+ * PM_STATE_CONSTRAINTS_LIST_DEFINE() builds its list from.
+ */
+#define Z_PM_DEVICE_WS_ELEMS(node_id, prop)					\
+	IF_ENABLED(DT_NODE_HAS_PROP(node_id, prop),				\
+		   (DT_FOREACH_PROP_ELEM_SEP(node_id, prop,			\
+					     Z_PM_STATE_CONSTRAINT_REF, (,)),))
+
+/*
+ * A state that removes the device's power is a state it cannot wake the system
+ * from, so zephyr,disabling-power-states feeds the list too and a node only has
+ * to name a state once.
+ */
+#define Z_PM_DEVICE_WS_ANY(node_id)						\
+	UTIL_OR(DT_NODE_HAS_PROP(node_id, zephyr_disabling_power_states),	\
+		DT_NODE_HAS_PROP(node_id, zephyr_wakeup_disabling_power_states))
+
+/* Each Z_PM_DEVICE_WS_ELEMS() ends with a comma, so the two run together. */
+#define Z_PM_DEVICE_WS_LIST_DEFINE(node_id, obj)				\
+	static const struct pm_state_constraint _CONCAT(obj, _ws_list)[] = {	\
+		Z_PM_DEVICE_WS_ELEMS(node_id, zephyr_disabling_power_states)	\
+		Z_PM_DEVICE_WS_ELEMS(node_id,					\
+				     zephyr_wakeup_disabling_power_states)	\
+	};									\
+	static const struct pm_state_constraints _CONCAT(obj, _ws) = {		\
+		.list = _CONCAT(obj, _ws_list),					\
+		.count = ARRAY_SIZE(_CONCAT(obj, _ws_list)),			\
+	}
+
+/**
+ * @brief Define the list of states a device cannot wake the system from.
+ *
+ * Expands to nothing when the node names no such state, in which case
+ * #Z_PM_DEVICE_WS_INIT leaves the pointer NULL.
+ *
+ * @param node_id Devicetree node for the initialized device (can be invalid).
+ * @param obj Name of the #pm_device_base structure being initialized.
+ */
+#define Z_PM_DEVICE_WS_DEFINE(node_id, obj)					\
+	COND_CODE_1(Z_PM_DEVICE_WS_ANY(node_id),				\
+		    (Z_PM_DEVICE_WS_LIST_DEFINE(node_id, obj);), ())
+
+#define Z_PM_DEVICE_WS_INIT(node_id, obj)					\
+	.wakeup_states = COND_CODE_1(Z_PM_DEVICE_WS_ANY(node_id),		\
+				     (&_CONCAT(obj, _ws)), (NULL)),
+#else
+#define Z_PM_DEVICE_WS_DEFINE(node_id, obj)
+#define Z_PM_DEVICE_WS_INIT(node_id, obj)
+#endif /* CONFIG_PM_DEVICE_WAKEUP_POWER_STATES */
+
 /**
  * @brief Utility macro to initialize #pm_device_base flags
  *
@@ -325,6 +388,7 @@ BUILD_ASSERT(offsetof(struct pm_device_isr, base) == 0);
 		.state = PM_DEVICE_STATE_ACTIVE,			     \
 		.action_cb = pm_action_cb,				     \
 		Z_PM_DEVICE_POWER_DOMAIN_INIT(node_id)			     \
+		Z_PM_DEVICE_WS_INIT(node_id, obj)			     \
 	}
 
 /**
@@ -380,6 +444,7 @@ BUILD_ASSERT(offsetof(struct pm_device_isr, base) == 0);
  */
 #define Z_PM_DEVICE_DEFINE(node_id, dev_id, pm_action_cb, isr_safe)		\
 	Z_PM_DEVICE_DEFINE_SLOT(dev_id);					\
+	Z_PM_DEVICE_WS_DEFINE(node_id, Z_PM_DEVICE_NAME(dev_id))		\
 	static struct COND_CODE_1(isr_safe, (pm_device_isr), (pm_device))	\
 		Z_PM_DEVICE_NAME(dev_id) =					\
 		Z_PM_DEVICE_INIT(Z_PM_DEVICE_NAME(dev_id), node_id,		\
@@ -647,6 +712,30 @@ bool pm_device_wakeup_is_enabled(const struct device *dev);
 bool pm_device_wakeup_is_capable(const struct device *dev);
 
 /**
+ * @brief Check if a device is wake up capable from a given power state
+ *
+ * Answers whether @p dev, when enabled as a wake up source, can wake the
+ * system from @p state / @p substate_id. It is false for a state named by the
+ * device's `zephyr,wakeup-disabling-power-states`, and for a state named by its
+ * `zephyr,disabling-power-states`, since a device that has lost its power
+ * cannot wake the system. A device that names no such state answers as
+ * pm_device_wakeup_is_capable() does.
+ *
+ * This reports what the hardware can do. It does not by itself keep the system
+ * out of a state, nor keep the device active for one.
+ *
+ * @param dev Device instance.
+ * @param state Power state.
+ * @param substate_id Power substate id.
+ *
+ * @retval true Device can wake the system up from this state.
+ * @retval false Device cannot wake the system up from this state.
+ */
+bool pm_device_wakeup_is_capable_from_state(const struct device *dev,
+					    enum pm_state state,
+					    uint8_t substate_id);
+
+/**
  * @brief Check if the device is on a switchable power domain.
  *
  * @param dev Device instance.
@@ -788,6 +877,16 @@ static inline bool pm_device_wakeup_is_enabled(const struct device *dev)
 static inline bool pm_device_wakeup_is_capable(const struct device *dev)
 {
 	ARG_UNUSED(dev);
+	return false;
+}
+
+static inline bool pm_device_wakeup_is_capable_from_state(const struct device *dev,
+							  enum pm_state state,
+							  uint8_t substate_id)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(state);
+	ARG_UNUSED(substate_id);
 	return false;
 }
 static inline bool pm_device_on_power_domain(const struct device *dev)

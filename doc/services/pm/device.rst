@@ -719,6 +719,39 @@ later calling :c:func:`pm_device_wakeup_enable`.
    It is responsibility of driver or the application to do any additional
    configuration required by the device to support it.
 
+.. _pm-device-wakeup-power-states:
+
+Wakeup capability per power state
+=================================
+
+:c:func:`pm_device_wakeup_is_capable` is binary: it takes no power state. Parts
+often wake from some states but not others, so
+:c:func:`pm_device_wakeup_is_capable_from_state` asks the same question for one
+state, and a device names the states it cannot wake from with
+``zephyr,wakeup-disabling-power-states``:
+
+.. code-block:: devicetree
+
+                lptmr0: lptmr@40040000 {
+                        ...
+                        wakeup-source;
+                        zephyr,wakeup-disabling-power-states = <&stop2>;
+                };
+
+``zephyr,disabling-power-states`` already implies this for the states it names,
+since a device that has lost its power cannot wake the system, and
+:c:func:`pm_device_wakeup_is_capable_from_state` reads both properties. Only a
+state that keeps the device powered but that it still cannot wake from has to
+be named above, for instance because the clock it counts from is not running
+there. A device that names no such state is capable from every state,
+which is the behaviour :c:func:`pm_device_wakeup_enable` has always had.
+
+This is a query, enabled by
+:kconfig:option:`CONFIG_PM_DEVICE_WAKEUP_POWER_STATES`. What to do with the
+answer is left to the caller: keeping a device active only for the states it
+can wake from, and keeping the system out of a state whose armed wakeup sources
+cannot wake it, are separate policies, and neither is implemented here.
+
 Examples
 ********
 
