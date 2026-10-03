@@ -309,5 +309,16 @@ zephyr_udc0: &udphsa {
 	vbus-gpios = <&pioc 8 GPIO_ACTIVE_HIGH>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_usba_vbus_det>;
+};
+
+&xdmac0 {
+	status = "okay";
+};
+
+&xdmac1 {
+	status = "okay";
+};
+
+&xdmac2 {
 	status = "okay";
 };
