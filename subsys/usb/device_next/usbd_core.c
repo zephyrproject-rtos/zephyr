@@ -290,12 +290,20 @@ static int usbd_pre_init(void)
 	k_thread_name_set(&usbd_thread_data, "usbd");
 
 	LOG_DBG("Available USB class iterators:");
+	/*
+	 * Reset the lifecycle state of both the per-speed node (registered
+	 * flag) and the shared class data (initialized flag). The class data
+	 * state is sticky once set, so clearing it here guarantees a clean
+	 * slate even if the instance was not shut down before.
+	 */
 	STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_fs, usbd_class_node, c_nd) {
 		atomic_set(&c_nd->state, 0);
+		atomic_set(&c_nd->c_data->state, 0);
 		LOG_DBG("\t%p->%p, name %s", c_nd, c_nd->c_data, c_nd->c_data->name);
 	}
 	STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_hs, usbd_class_node, c_nd) {
 		atomic_set(&c_nd->state, 0);
+		atomic_set(&c_nd->c_data->state, 0);
 		LOG_DBG("\t%p->%p, name %s", c_nd, c_nd->c_data, c_nd->c_data->name);
 	}
 
