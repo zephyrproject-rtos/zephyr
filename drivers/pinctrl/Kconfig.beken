@@ -1,0 +1,9 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_BEKEN_BK7258
+	bool "Beken BK7258 pin controller driver"
+	default y
+	depends on DT_HAS_BEKEN_BK7258_PINCTRL_ENABLED
+	help
+	  This option enables the Beken BK7258 pin controller driver.
