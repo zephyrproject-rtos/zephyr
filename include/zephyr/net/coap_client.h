@@ -202,6 +202,10 @@ struct coap_client_internal_request {
 
 	/* For GETs with observe option set */
 	bool is_observe;
+	/* Observe option value of the freshest accepted notification, < 0 if none */
+	int last_observe_seq;
+	/* Uptime at which the freshest notification was accepted */
+	int64_t last_observe_at;
 	int last_response_id;
 	uint8_t observe_token[COAP_TOKEN_MAX_LEN]; /* registration token snapshot */
 	uint8_t observe_tkl;
@@ -250,12 +254,22 @@ int coap_client_init(struct coap_client *client, const char *info);
  * remain valid throughout the transaction (i.e. until the last block or an error is reported).
  * The library will need to access the payload pointer when sending consecutive payload blocks.
  *
+ * @note The application must not register more than one observation for the same target
+ * resource (@rfc{7641,section-3.1}). Use coap_client_reregister_observe() to refresh an
+ * ongoing observation.
+ *
  * @param client Client instance.
  * @param sock Open socket file descriptor.
  * @param addr the destination address of the request, NULL if socket is already connected.
  * @param req CoAP request structure
  * @param params Pointer to transmission parameters structure or NULL to use default values.
- * @return zero when operation started successfully or negative error code otherwise.
+ *
+ * @retval 0 Request started.
+ * @retval -EINVAL Invalid argument or request.
+ * @retval -EAGAIN No free request slot.
+ * @retval -EALREADY A request is ongoing on another socket.
+ * @retval -ENOTSUP Unsupported address family.
+ * @retval <0 Other negative error code on failure to build or send the request.
  */
 
 int coap_client_req(struct coap_client *client, int sock, const struct net_sockaddr *addr,
@@ -318,8 +332,9 @@ int coap_client_deregister_observe(struct coap_client *client, struct coap_clien
  * re-registration). This refreshes the server's observation entry - e.g.
  * before a Max-Age or a server-side idle timeout expires - without creating a
  * second observation. The server answers with the current resource state,
- * delivered on the existing observe callback; the observation otherwise
- * continues unchanged.
+ * delivered on the existing observe callback. The observation continues,
+ * unless the answer is not a 2.xx response with an Observe Option, which ends
+ * it (RFC 7641, sections 3.2 and 4.1).
  *
  * A failure to build or send the refresh leaves the observation intact (a
  * later refresh may still succeed), the error is returned and the callback is
@@ -333,7 +348,8 @@ int coap_client_deregister_observe(struct coap_client *client, struct coap_clien
  *
  * @retval 0 Success.
  * @retval -ENOENT No ongoing observation matches @p req, for instance because
- *                 it already ended with a timeout or a Reset from the server.
+ *                 it already ended with a timeout, a Reset from the server or
+ *                 a server response that ended it.
  * @retval -EBUSY A request is still awaiting its response on the observation,
  *                such as the registration itself, an earlier confirmable
  *                refresh or a blockwise notification being retrieved, or the
