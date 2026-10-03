@@ -1,4 +1,7 @@
 common:
+  # prj.conf turns on CONFIG_DYNAMIC_INTERRUPTS, which platforms using a
+  # switch-case software ISR table cannot provide.
+  filter: CONFIG_DYNAMIC_INTERRUPTS
   tags:
     - kernel
     - interrupt
