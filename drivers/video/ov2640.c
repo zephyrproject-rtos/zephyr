@@ -62,8 +62,13 @@ LOG_MODULE_REGISTER(video_ov2640, CONFIG_VIDEO_LOG_LEVEL);
 #define R_BYPASS_DSP_BYPAS 0x01
 
 #define IMAGE_MODE         0xDA
-#define IMAGE_MODE_JPEG_EN 0x10
-#define IMAGE_MODE_RGB565  0x08
+#define IMAGE_MODE_JPEG_EN (1U << 4)
+#define IMAGE_MODE_DVP_MASK  GENMASK(3, 2)
+#define IMAGE_MODE_DVP_RGB565 (0x2 << 2)
+#define IMAGE_MODE_DVP_YUV422 (0x0 << 2)
+#define IMAGE_MODE_DVP_RAW10  (0x0 << 2)
+#define IMAGE_MODE_HREF_IS_VSYNC (1U << 1)
+#define IMAGE_MODE_BYTE_SWAP  (1U << 0)
 
 #define RESET      0xE0
 #define RESET_JPEG 0x10
@@ -170,6 +175,7 @@ struct ov2640_config {
 #endif
 	uint8_t clock_multiplier;
 	uint8_t drive_strength;
+	bool jpeg_hsync;
 };
 
 struct ov2640_ctrls {
@@ -473,39 +479,19 @@ static const uint8_t saturation_regs[NUM_SATURATION_LEVELS + 1][5] = {
 	{0x00, 0x02, 0x03, 0x58, 0x58},           /* +2 */
 };
 
-#define OV2640_VIDEO_FORMAT_CAP(width, height, format)                                             \
+#define OV2640_VIDEO_FORMAT_CAP(pixfmt)                                                            \
 	{                                                                                          \
-		.pixelformat = (format),                                                           \
-		.width_min = (width),                                                              \
-		.width_max = (width),                                                              \
-		.height_min = (height),                                                            \
-		.height_max = (height),                                                            \
-		.width_step = 0,                                                                   \
-		.height_step = 0,                                                                  \
+		.pixelformat = (pixfmt),                                                           \
+		.width_min = 16, .width_max = 1600, .width_step = 4,                               \
+		.height_min = 12, .height_max = 1200, .height_step = 1,                            \
 	}
 
 static const struct video_format_cap fmts[] = {
-	OV2640_VIDEO_FORMAT_CAP(160, 120, VIDEO_PIX_FMT_RGB565),   /* QQVGA */
-	OV2640_VIDEO_FORMAT_CAP(176, 144, VIDEO_PIX_FMT_RGB565),   /* QCIF  */
-	OV2640_VIDEO_FORMAT_CAP(240, 160, VIDEO_PIX_FMT_RGB565),   /* HQVGA */
-	OV2640_VIDEO_FORMAT_CAP(240, 240, VIDEO_PIX_FMT_RGB565),   /* 240x240 */
-	OV2640_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_RGB565),   /* QVGA  */
-	OV2640_VIDEO_FORMAT_CAP(352, 288, VIDEO_PIX_FMT_RGB565),   /* CIF   */
-	OV2640_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_RGB565),   /* VGA   */
-	OV2640_VIDEO_FORMAT_CAP(800, 600, VIDEO_PIX_FMT_RGB565),   /* SVGA  */
-	OV2640_VIDEO_FORMAT_CAP(1024, 768, VIDEO_PIX_FMT_RGB565),  /* XVGA  */
-	OV2640_VIDEO_FORMAT_CAP(1280, 1024, VIDEO_PIX_FMT_RGB565), /* SXGA  */
-	OV2640_VIDEO_FORMAT_CAP(1600, 1200, VIDEO_PIX_FMT_RGB565), /* UXGA  */
-	OV2640_VIDEO_FORMAT_CAP(160, 120, VIDEO_PIX_FMT_JPEG),     /* QQVGA */
-	OV2640_VIDEO_FORMAT_CAP(176, 144, VIDEO_PIX_FMT_JPEG),     /* QCIF  */
-	OV2640_VIDEO_FORMAT_CAP(240, 160, VIDEO_PIX_FMT_JPEG),     /* HQVGA */
-	OV2640_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_JPEG),     /* QVGA  */
-	OV2640_VIDEO_FORMAT_CAP(352, 288, VIDEO_PIX_FMT_JPEG),     /* CIF   */
-	OV2640_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_JPEG),     /* VGA   */
-	OV2640_VIDEO_FORMAT_CAP(800, 600, VIDEO_PIX_FMT_JPEG),     /* SVGA  */
-	OV2640_VIDEO_FORMAT_CAP(1024, 768, VIDEO_PIX_FMT_JPEG),    /* XVGA  */
-	OV2640_VIDEO_FORMAT_CAP(1280, 1024, VIDEO_PIX_FMT_JPEG),   /* SXGA  */
-	OV2640_VIDEO_FORMAT_CAP(1600, 1200, VIDEO_PIX_FMT_JPEG),   /* UXGA  */
+	OV2640_VIDEO_FORMAT_CAP(VIDEO_PIX_FMT_RGB565),
+	OV2640_VIDEO_FORMAT_CAP(VIDEO_PIX_FMT_RGB565X),
+	OV2640_VIDEO_FORMAT_CAP(VIDEO_PIX_FMT_YUYV),
+	OV2640_VIDEO_FORMAT_CAP(VIDEO_PIX_FMT_UYVY),
+	OV2640_VIDEO_FORMAT_CAP(VIDEO_PIX_FMT_JPEG),
 	{0},
 };
 
@@ -791,10 +777,29 @@ static int ov2640_apply_config(const struct device *dev)
 
 	switch (data->fmt.pixelformat) {
 	case VIDEO_PIX_FMT_JPEG:
-		ret = ov2640_write_reg(&cfg->i2c, IMAGE_MODE, IMAGE_MODE_JPEG_EN);
+		if (cfg->jpeg_hsync) {
+			ret = ov2640_write_reg(&cfg->i2c, IMAGE_MODE,
+					       IMAGE_MODE_JPEG_EN | IMAGE_MODE_HREF_IS_VSYNC);
+		} else {
+			ret = ov2640_write_reg(
+				&cfg->i2c, IMAGE_MODE, IMAGE_MODE_JPEG_EN);
+		}
 		break;
 	case VIDEO_PIX_FMT_RGB565:
-		ret = ov2640_write_reg(&cfg->i2c, IMAGE_MODE, IMAGE_MODE_RGB565);
+		ret = ov2640_write_reg(
+			&cfg->i2c, IMAGE_MODE, IMAGE_MODE_DVP_RGB565);
+		break;
+	case VIDEO_PIX_FMT_RGB565X:
+		ret = ov2640_write_reg(
+			&cfg->i2c, IMAGE_MODE, IMAGE_MODE_DVP_RGB565 | IMAGE_MODE_BYTE_SWAP);
+		break;
+	case VIDEO_PIX_FMT_YUYV:
+		ret = ov2640_write_reg(
+			&cfg->i2c, IMAGE_MODE, IMAGE_MODE_DVP_YUV422);
+		break;
+	case VIDEO_PIX_FMT_UYVY:
+		ret = ov2640_write_reg(
+			&cfg->i2c, IMAGE_MODE, IMAGE_MODE_DVP_YUV422 | IMAGE_MODE_BYTE_SWAP);
 		break;
 	default:
 		CODE_UNREACHABLE;
@@ -888,12 +893,6 @@ static int ov2640_set_format(const struct device *dev, struct video_format *fmt)
 	struct ov2640_data *drv_data = dev->data;
 	uint32_t index;
 	int ret = 0;
-
-	/* We only support RGB565 and JPEG pixel formats */
-	if (fmt->pixelformat != VIDEO_PIX_FMT_RGB565 && fmt->pixelformat != VIDEO_PIX_FMT_JPEG) {
-		LOG_ERR("ov2640 camera supports only RGB565 and JPG pixelformats!");
-		return -ENOTSUP;
-	}
 
 	if (!memcmp(&drv_data->fmt, fmt, sizeof(drv_data->fmt))) {
 		/* nothing to do */
@@ -1198,6 +1197,7 @@ static const struct ov2640_config ov2640_cfg_0 = {
 #endif
 	.clock_multiplier = DT_INST_PROP(0, clock_multiplier),
 	.drive_strength = DT_INST_PROP(0, drive_strength),
+	.jpeg_hsync = DT_INST_PROP(0, jpeg_hsync),
 };
 static struct ov2640_data ov2640_data_0;
 
