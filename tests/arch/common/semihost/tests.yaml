@@ -7,3 +7,13 @@ tests:
       - xtensa
     platform_type:
       - qemu
+  arch.common.semihost.ztest_exit:
+    arch_allow:
+      - arm
+      - arm64
+      - riscv
+      - xtensa
+    platform_type:
+      - qemu
+    extra_configs:
+      - CONFIG_ZTEST_SEMIHOST_EXIT=y

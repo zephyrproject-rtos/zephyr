@@ -17,6 +17,14 @@ config SEMIHOST
 	  This option is compatible with hardware and with QEMU, through the
 	  (automatic) use of the -semihosting-config switch when invoking it.
 
+config SEMIHOST_ASSUME_DEBUGGER
+	bool "Assume that a debugger servicing semihosting is attached"
+	depends on SEMIHOST
+	help
+	  Skip the attached-debugger check in semihost_exit(). Needed on
+	  architectures that cannot detect a debugger (all but Arm Cortex-M).
+	  The call faults if no debugger is attached.
+
 config ISR_TABLE_SHELL
 	bool "Shell command to dump the ISR tables"
 	depends on GEN_SW_ISR_TABLE
