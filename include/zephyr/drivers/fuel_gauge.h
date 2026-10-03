@@ -61,16 +61,20 @@ enum fuel_gauge_prop_type {
 	FUEL_GAUGE_CONNECT_STATE,
 	/** General Error/Runtime Flags */
 	FUEL_GAUGE_FLAGS,
-	/** Full Charge Capacity in uAh (might change in some implementations to determine wear) */
-	FUEL_GAUGE_FULL_CHARGE_CAPACITY_UAH,
-	/** @deprecated Use FUEL_GAUGE_FULL_CHARGE_CAPACITY_UAH instead. */
-	FUEL_GAUGE_FULL_CHARGE_CAPACITY __deprecated = FUEL_GAUGE_FULL_CHARGE_CAPACITY_UAH,
+	/**
+	 * Full Charge Capacity (might change in some implementations to determine wear).
+	 * The unit is gauge-dependent: SBS-compliant gauges report mAh or 10mWh
+	 * depending on the BatteryMode CAPACITY_MODE bit (see FUEL_GAUGE_SBS_MODE).
+	 */
+	FUEL_GAUGE_FULL_CHARGE_CAPACITY,
 	/** Is the battery physically present */
 	FUEL_GAUGE_PRESENT_STATE,
-	/** Remaining capacity in uAh */
-	FUEL_GAUGE_REMAINING_CAPACITY_UAH,
-	/** @deprecated Use FUEL_GAUGE_REMAINING_CAPACITY_UAH instead. */
-	FUEL_GAUGE_REMAINING_CAPACITY __deprecated = FUEL_GAUGE_REMAINING_CAPACITY_UAH,
+	/**
+	 * Remaining capacity.
+	 * The unit is gauge-dependent: SBS-compliant gauges report mAh or 10mWh
+	 * depending on the BatteryMode CAPACITY_MODE bit (see FUEL_GAUGE_SBS_MODE).
+	 */
+	FUEL_GAUGE_REMAINING_CAPACITY,
 	/** Remaining battery life time in minutes */
 	FUEL_GAUGE_RUNTIME_TO_EMPTY_MINS,
 	/** @deprecated Use FUEL_GAUGE_RUNTIME_TO_EMPTY_MINS instead. */
@@ -255,22 +259,12 @@ union fuel_gauge_prop_val {
 	uint32_t connect_state;
 	/** FUEL_GAUGE_FLAGS */
 	uint32_t flags;
-	/**
-	 * FUEL_GAUGE_FULL_CHARGE_CAPACITY
-	 * @deprecated Use @ref fuel_gauge_prop_val.full_charge_capacity_uah instead
-	 */
-	__deprecated uint32_t full_charge_capacity;
-	/** FUEL_GAUGE_FULL_CHARGE_CAPACITY_UAH */
-	uint32_t full_charge_capacity_uah;
+	/** FUEL_GAUGE_FULL_CHARGE_CAPACITY */
+	uint32_t full_charge_capacity;
 	/** FUEL_GAUGE_PRESENT_STATE */
 	bool present_state;
-	/**
-	 * FUEL_GAUGE_REMAINING_CAPACITY
-	 * @deprecated Use @ref fuel_gauge_prop_val.remaining_capacity_uah instead
-	 */
-	__deprecated uint32_t remaining_capacity;
-	/** FUEL_GAUGE_REMAINING_CAPACITY_UAH */
-	uint32_t remaining_capacity_uah;
+	/** FUEL_GAUGE_REMAINING_CAPACITY */
+	uint32_t remaining_capacity;
 	/**
 	 * FUEL_GAUGE_RUNTIME_TO_EMPTY
 	 * @deprecated Use @ref fuel_gauge_prop_val.runtime_to_empty_mins instead
