@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: 2026 ELAN Microelectronics Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ELAN EM32 USB 2.0 full-speed device controller
+
+compatible: "elan,em32-usbd"
+
+include: usb-ep.yaml
+
+properties:
+  reg:
+    required: true
+    description: USB device controller register range
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+    enum:
+      - "aip"
+      - "udc"
+      - "atrim"
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+    enum:
+      - "setup"
+      - "suspend"
+      - "resume"
+      - "reset"
+      - "ep-in"
+      - "ep-out"
