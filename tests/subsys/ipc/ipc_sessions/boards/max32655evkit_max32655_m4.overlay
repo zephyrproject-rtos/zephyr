@@ -10,9 +10,9 @@
 
 / {
 	reserved-memory {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		/* Split SRAM3 into even 8K pieces */
 		sram_tx: memory@2001c000 {
