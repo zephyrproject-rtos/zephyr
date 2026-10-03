@@ -19,8 +19,12 @@ void __weak arch_cpu_idle(void)
 
 void __weak arch_cpu_atomic_idle(unsigned int key)
 {
-	sys_trace_idle();
+	/*
+	 * ENABLE takes effect on the instruction after it, so a request that
+	 * becomes pending before that point is serviced before WAIT could run
+	 * and the caller then sleeps past the wake-up it was waiting for.
+	 * Reading the pending state first does not close that window, so do
+	 * not enter WAIT here.  arch_cpu_idle() still waits.
+	 */
 	irq_unlock(key);
-
-	__asm volatile("wait");
 }

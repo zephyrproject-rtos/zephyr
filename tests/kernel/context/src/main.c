@@ -344,6 +344,10 @@ ZTEST(context_cpu_idle, test_cpu_idle_atomic)
 	 */
 	TC_PRINT("Skipped: k_cpu_atomic_idle() is a no-op on ARM/ARM64\n");
 	ztest_test_skip();
+#elif defined(CONFIG_TRICORE)
+	/* TriCore cannot re-enable interrupts atomically with WAIT. */
+	TC_PRINT("Skipped: k_cpu_atomic_idle() does not wait on TriCore\n");
+	ztest_test_skip();
 #else
 	_test_kernel_cpu_idle(1);
 #endif
