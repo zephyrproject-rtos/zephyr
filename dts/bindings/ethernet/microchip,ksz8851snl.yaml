@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    KSZ8851SNL single-port 10/100BASE-T Ethernet controller with SPI
+    interface. The device integrates a MAC and PHY, accessed through
+    the same SPI register interface.
+
+compatible: "microchip,ksz8851snl"
+
+include: [spi-device.yaml, ethernet-controller.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Interrupt pin.
+
+      The interrupt pin of KSZ8851SNL is active low.
+      If connected directly the MCU pin should be configured
+      as active low.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Reset pin.
+
+      The reset pin of KSZ8851SNL is active low.
+      If connected directly the MCU pin should be configured
+      as active low.

@@ -42,6 +42,7 @@
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>;
 
 			test_spi_enc28j60: enc28j60@0 {
@@ -216,6 +217,15 @@
 				spi-max-frequency = <0>;
 				int-gpios = <&test_gpio 0 0>;
 				reset-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_ksz8851snl: ksz8851snl@b {
+				compatible = "microchip,ksz8851snl";
+				reg = <0xb>;
+				spi-max-frequency = <0>;
+				int-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 0 0>;
+				local-mac-address = [00 00 00 00 00 00];
 			};
 		};
 	};
