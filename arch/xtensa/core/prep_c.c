@@ -9,6 +9,7 @@
 #include <zephyr/platform/hooks.h>
 #include <zephyr/cache.h>
 #include <zephyr/arch/common/init.h>
+#include <zephyr/arch/xtensa/cp_sharing.h>
 
 extern FUNC_NORETURN void z_cstart(void);
 
@@ -61,6 +62,23 @@ FUNC_NORETURN void z_prep_c(void)
 	 * win.
 	 */
 	XTENSA_WSR(ZSR_CPU_STR, cpu0);
+
+#ifdef CONFIG_XTENSA_CP_SHARING
+	/* The boot environment may have left the shared coprocessor in any
+	 * state. Eager sharing saves its registers on interrupt entry and
+	 * needs it enabled. Lazy sharing needs it disabled so that the first
+	 * thread using it traps.
+	 */
+	uint32_t cpenable = XTENSA_RSR("cpenable");
+
+	if (IS_ENABLED(CONFIG_XTENSA_EAGER_CP_SHARING)) {
+		cpenable |= BIT(XTENSA_CP_ID);
+	} else {
+		cpenable &= ~BIT(XTENSA_CP_ID);
+	}
+	XTENSA_WSR("cpenable", cpenable);
+	__asm__ volatile("rsync");
+#endif
 
 #ifdef CONFIG_INIT_STACKS
 	char *stack_start = K_KERNEL_STACK_BUFFER(z_interrupt_stacks[0]);

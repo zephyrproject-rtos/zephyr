@@ -12,6 +12,7 @@
 #include <xtensa/config/specreg.h>
 #include <xtensa/config/system.h>  /* for XSHAL_USE_ABSOLUTE_LITERALS only */
 #include <xtensa/xtruntime-core-state.h>
+#include <zephyr/arch/xtensa/cp_sharing.h>
 
 /*
  * The following reset vector avoids initializing certain registers already
@@ -575,14 +576,14 @@ unpackdone:
 	 * all CPENABLE bits must be set, even though they may not always
 	 * correspond to a coprocessor.
 	 */
-#ifdef CONFIG_XTENSA_LAZY_HIFI_SHARING
+#ifdef CONFIG_XTENSA_LAZY_CP_SHARING
 	/*
-	 * Disable HiFi coprocessor by default. Should a thread try using
-         * the HiFi coprocessor, it will trigger an exception to both enable
-	 * it AND save/restore the HiFi state.
+	 * Disable the shared coprocessor by default. Should a thread try
+	 * using it, it will trigger an exception to both enable it AND
+	 * save/restore the coprocessor state.
 	 */
 
-	movi	a2, 0xFF & ~(1 << XCHAL_CP_ID_AUDIOENGINELX)
+	movi	a2, 0xFF & ~(1 << XTENSA_CP_ID)
 #else
 	movi	a2, 0xFF	 /* enable *all* bits, to allow dynamic TIE */
 #endif

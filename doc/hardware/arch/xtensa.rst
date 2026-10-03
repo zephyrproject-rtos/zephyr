@@ -94,3 +94,31 @@ HiFi sharing is the default, it can be explicitly selected by enabling the
 configuration option :kconfig:option:`CONFIG_XTENSA_EAGER_HIFI_SHARING`. To
 select lazy HiFi sharing instead, enable the configuration option
 :kconfig:option:`CONFIG_XTENSA_LAZY_HIFI_SHARING`.
+
+ESP32-S3 PIE
+************
+
+The Processor Instruction Extensions (PIE) of the ESP32-S3 add 128-bit SIMD instructions to its
+Xtensa LX7 cores, with eight 128-bit ``Q`` registers, the ``QACC`` and ``ACCX`` accumulators and a
+few state registers. PIE is coprocessor 3 of the core configuration, named ``cop_ai``.
+
+When :kconfig:option:`CONFIG_ESP32S3_PIE_SHARING` is enabled, the kernel preserves the PIE
+registers across context switches, allowing multiple threads to use PIE instructions. It uses the
+same mechanism as the shared HiFi registers mode described above, and the same restriction
+applies: only threads may use the PIE registers, not ISRs. Without this option, the behavior is
+undefined if two or more threads use PIE instructions.
+
+Two sharing models are available:
+
+* :kconfig:option:`CONFIG_ESP32S3_LAZY_PIE_SHARING`, the default, keeps PIE disabled for all
+  threads but the last one that used it. The kernel saves and restores the PIE registers only when
+  another thread executes a PIE instruction, using a 208-byte area in each thread structure. That
+  instruction traps, and the trap takes about 320 instructions. Other context switches take 4
+  more instructions.
+
+* :kconfig:option:`CONFIG_ESP32S3_EAGER_PIE_SHARING` saves and restores the PIE registers on every
+  context switch and interrupt, which adds about 100 instructions to each of them. Every saved
+  context grows by 224 bytes, which thread and interrupt stacks must have room for.
+
+The lazy model costs less when PIE rarely changes hands between threads, the eager model when
+threads using PIE alternate on most context switches.

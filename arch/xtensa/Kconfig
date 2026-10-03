@@ -88,6 +88,39 @@ config XTENSA_FATAL_BREADCRUMB
 	  provides the actual storage and reporting mechanism; enabling this
 	  option only opts a fatal exception into calling it.
 
+config XTENSA_CP_SHARING
+	bool
+	help
+	  Selected when the kernel preserves the registers of the coprocessor
+	  XTENSA_CP_SHARING_ID across context switches, allowing multiple
+	  threads to use that coprocessor.
+
+config XTENSA_CP_SHARING_ID
+	int
+	depends on XTENSA_CP_SHARING
+	range 1 7
+	default 1 if XTENSA_HIFI_SHARING
+	help
+	  Number of the coprocessor whose registers are preserved, as used by
+	  the XCHAL_CP<n> definitions of the core configuration.
+
+config XTENSA_EAGER_CP_SHARING
+	bool
+	select XTENSA_CP_SHARING
+	help
+	  Selected to save and restore the registers of the shared coprocessor
+	  on every context switch and interrupt.
+
+config XTENSA_LAZY_CP_SHARING
+	bool
+	depends on (SCHED_IPI_SUPPORTED && ARCH_HAS_DIRECTED_IPIS) || (MP_MAX_NUM_CPUS = 1)
+	select XTENSA_CP_SHARING
+	select ARCH_IPI_LAZY_COPROCESSORS_SAVE
+	help
+	  Selected to keep the shared coprocessor disabled for all threads but
+	  its current owner, and to save and restore its registers only when
+	  another thread uses it.
+
 menu "Xtensa HiFi Options"
 
 config XTENSA_CPU_HAS_HIFI
@@ -152,6 +185,7 @@ choice XTENSA_HIFI_SHARING_MODEL
 
 config XTENSA_EAGER_HIFI_SHARING
 	bool "Eager HiFi Sharing"
+	select XTENSA_EAGER_CP_SHARING
 	help
 	  This option enables eager sharing of HiFi registers across context
 	  switches. This means that the HiFi registers are unconditionally
@@ -161,7 +195,7 @@ config XTENSA_EAGER_HIFI_SHARING
 config XTENSA_LAZY_HIFI_SHARING
 	bool "Lazy HiFi Sharing"
 	depends on (SCHED_IPI_SUPPORTED && ARCH_HAS_DIRECTED_IPIS) || (MP_MAX_NUM_CPUS = 1)
-	select ARCH_IPI_LAZY_COPROCESSORS_SAVE
+	select XTENSA_LAZY_CP_SHARING
 	help
 	  This option enables lazy sharing of HiFi registers across context
 	  switches. This means that the HiFi registers are saved and restored
