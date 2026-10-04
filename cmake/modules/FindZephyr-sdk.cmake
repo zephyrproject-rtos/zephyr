@@ -32,7 +32,7 @@ zephyr_get(ZEPHYR_SDK_INSTALL_DIR)
 # 1) Zephyr specified as toolchain (ZEPHYR_SDK_INSTALL_DIR still used if defined)
 # 2) No toolchain specified == Default to Zephyr toolchain
 # Until we completely deprecate it
-if(("zephyr" STREQUAL ${ZEPHYR_TOOLCHAIN_VARIANT}) OR
+if(("zephyr" STREQUAL "${ZEPHYR_TOOLCHAIN_VARIANT}") OR
    (NOT DEFINED ZEPHYR_TOOLCHAIN_VARIANT) OR
    (DEFINED ZEPHYR_SDK_INSTALL_DIR) OR
    (Zephyr-sdk_FIND_REQUIRED))
