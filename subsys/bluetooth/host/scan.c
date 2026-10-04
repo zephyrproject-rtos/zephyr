@@ -403,6 +403,7 @@ static void select_scan_params(struct bt_le_scan_param *scan_param)
 		memcpy(scan_param, &scan_state.explicit_scan_param, sizeof(*scan_param));
 	}
 	/* Below this, the scanner module chooses the parameters. */
+#if defined(CONFIG_BT_CENTRAL)
 	/* 2. Priority: reuse parameters from initiator */
 	else if (atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING)) {
 		*scan_param = (struct bt_le_scan_param){
@@ -415,6 +416,7 @@ static void select_scan_params(struct bt_le_scan_param *scan_param)
 			.window_coded = bt_dev.create_param.window_coded,
 		};
 	}
+#endif /* CONFIG_BT_CENTRAL */
 	/* 3. Priority: choose custom parameters */
 	else {
 		*scan_param = (struct bt_le_scan_param){
