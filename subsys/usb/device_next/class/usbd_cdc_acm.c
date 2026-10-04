@@ -23,10 +23,19 @@
 #include <zephyr/logging/log.h>
 /* Prevent endless recursive logging loop and warn user about it */
 #if defined(CONFIG_USBD_CDC_ACM_LOG_LEVEL) && CONFIG_USBD_CDC_ACM_LOG_LEVEL != LOG_LEVEL_NONE
-#define CHOSEN_CONSOLE DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart)
+#define IS_CDC_ACM_UART(node_id, prop, idx)                                                        \
+	DT_NODE_HAS_COMPAT(DT_PHANDLE_BY_IDX(node_id, prop, idx), zephyr_cdc_acm_uart)
+/* The UART log backend uses zephyr,log-uart if chosen, zephyr,console otherwise */
+#if DT_HAS_CHOSEN(zephyr_log_uart)
+#define CHOSEN_LOG_UART                                                                            \
+	(DT_FOREACH_PROP_ELEM_SEP(DT_CHOSEN(zephyr_log_uart), uarts, IS_CDC_ACM_UART, (||)))
+#else
+#define CHOSEN_LOG_UART DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart)
+#endif
 #define CHOSEN_SHELL   DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_shell_uart), zephyr_cdc_acm_uart)
-#if (CHOSEN_CONSOLE && defined(CONFIG_LOG_BACKEND_UART)) || \
-	(CHOSEN_SHELL && defined(CONFIG_SHELL_LOG_BACKEND))
+#if (CHOSEN_LOG_UART && defined(CONFIG_LOG_BACKEND_UART)) ||                                       \
+	(CHOSEN_SHELL && defined(CONFIG_SHELL_BACKEND_SERIAL) &&                                   \
+	 defined(CONFIG_SHELL_LOG_BACKEND))
 #warning "USBD_CDC_ACM_LOG_LEVEL forced to LOG_LEVEL_NONE"
 #undef CONFIG_USBD_CDC_ACM_LOG_LEVEL
 #define CONFIG_USBD_CDC_ACM_LOG_LEVEL LOG_LEVEL_NONE
