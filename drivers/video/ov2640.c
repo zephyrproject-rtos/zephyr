@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: Copyright (c) 2021 Antmicro <www.antmicro.com>
  * SPDX-FileCopyrightText: Copyright (c) 2026 Panoramix Labs
- * SPDX-License-Identifier: Apache-2.0
+* SPDX-License-Identifier: Apache-2.0
  */
 
 #define DT_DRV_COMPAT ovti_ov2640
@@ -21,8 +21,8 @@ LOG_MODULE_REGISTER(video_ov2640, CONFIG_VIDEO_LOG_LEVEL);
 /* DSP register bank FF=0x00*/
 
 #define QS     0x44
-#define HSIZE  0x51
-#define VSIZE  0x52
+#define H_SIZE  0x51
+#define V_SIZE  0x52
 #define XOFFL  0x53
 #define YOFFL  0x54
 #define VHYX   0x55
@@ -85,6 +85,12 @@ LOG_MODULE_REGISTER(video_ov2640, CONFIG_VIDEO_LOG_LEVEL);
 #define BANK_SEL_DSP    0x00
 #define BANK_SEL_SENSOR 0x01
 
+/* This COM10 register is actually located on the DSP register bank, and only affects the signals
+ * output by the DSP is enabled. The defaults are different from the default of the documented
+ * COM10, which is why every other driver sets it to 0x00 to keep it consistent.
+ */
+#define COM10 0x15
+
 /* Sensor register bank FF=0x01*/
 
 #define COM1        0x03
@@ -96,8 +102,8 @@ LOG_MODULE_REGISTER(video_ov2640, CONFIG_VIDEO_LOG_LEVEL);
 #define CLKRC       0x11
 #define HREFST      0x17
 #define HREFEND     0x18
-#define VSTART      0x19
-#define VSTOP       0x1A
+#define VSTRT       0x19
+#define VEND        0x1A
 #define AEW         0x24
 #define AEB         0x25
 #define ARCOM2      0x34
@@ -151,16 +157,14 @@ LOG_MODULE_REGISTER(video_ov2640, CONFIG_VIDEO_LOG_LEVEL);
 #define COM9_AGC_GAIN_8x 0x02
 #define COM9_AGC_SET(x)  (COM9_DEFAULT | (x << 5))
 
-#define COM10 0x15
-
 #define VV                  0x26
 #define VV_AGC_TH_SET(h, l) ((h << 4) | (l & 0x0F))
 
 #define REG32               0x32
 
 #define OV2640_BASE_FPS 15
-#define UXGA_HSIZE 1600
-#define UXGA_VSIZE 1200
+#define OV2640_NATIVE_WIDTH 1600
+#define OV2640_NATIVE_HEIGHT 1200
 
 struct ov2640_config {
 	struct i2c_dt_spec i2c;
@@ -369,8 +373,8 @@ static const struct ov2640_reg uxga_regs[] = {
 	{HREFST, 0x11}, /* UXGA=0x11, SVGA/CIF=0x11 */
 	{HREFEND, 0x75},  /* UXGA=0x75, SVGA/CIF=0x43 */
 
-	{VSTART, 0x01}, /* UXGA=0x01, SVGA/CIF=0x00 */
-	{VSTOP, 0x97},  /* UXGA=0x97, SVGA/CIF=0x4b */
+	{VSTRT, 0x01},  /* UXGA=0x01, SVGA/CIF=0x00 */
+	{VEND, 0x97},   /* UXGA=0x97, SVGA/CIF=0x4b */
 	{0x3d, 0x34},   /* UXGA=0x34, SVGA/CIF=0x38 */
 
 	{0x35, 0x88},
@@ -390,20 +394,23 @@ static const struct ov2640_reg uxga_regs[] = {
 	{R_BYPASS, R_BYPASS_DSP_YES},
 
 	{RESET, RESET_DVP},
-	{HSIZE8, (UXGA_HSIZE >> 3)}, /* Image Horizontal Size HSIZE[10:3] */
-	{VSIZE8, (UXGA_VSIZE >> 3)}, /* Image Vertical Size VSIZE[10:3] */
+	{HSIZE8, (OV2640_NATIVE_WIDTH >> 3)}, /* Image Horizontal Size WIDTH[10:3] */
+	{VSIZE8, (OV2640_NATIVE_HEIGHT >> 3)}, /* Image Vertical Size HEIGHT[10:3] */
 
-	/* {HSIZE[11], HSIZE[2:0], VSIZE[2:0]} */
-	{SIZEL, ((UXGA_HSIZE >> 6) & 0x40) | ((UXGA_HSIZE & 0x7) << 3) | (UXGA_VSIZE & 0x7)},
+	/* {H_SIZE[11], H_SIZE[2:0], V_SIZE[2:0]} */
+	{SIZEL,
+	 (OV2640_NATIVE_WIDTH >> 10) << 6 |
+	 (OV2640_NATIVE_WIDTH & 0x7) << 3 |
+	 (OV2640_NATIVE_HEIGHT & 0x7) << 0},
 
 	{XOFFL, 0x00},                       /* OFFSET_X[7:0] */
 	{YOFFL, 0x00},                       /* OFFSET_Y[7:0] */
-	{HSIZE, ((UXGA_HSIZE >> 2) & 0xFF)}, /* H_SIZE[7:0] real/4 */
-	{VSIZE, ((UXGA_VSIZE >> 2) & 0xFF)}, /* V_SIZE[7:0] real/4 */
+	{H_SIZE, ((OV2640_NATIVE_WIDTH >> 2) & 0xFF)}, /* H_SIZE[7:0] real/4 */
+	{V_SIZE, ((OV2640_NATIVE_HEIGHT >> 2) & 0xFF)}, /* V_SIZE[7:0] real/4 */
 
 	/* V_SIZE[8]/OFFSET_Y[10:8]/H_SIZE[8]/OFFSET_X[10:8] */
-	{VHYX, ((UXGA_VSIZE >> 3) & 0x80) | ((UXGA_HSIZE >> 7) & 0x08)},
-	{TEST, (UXGA_HSIZE >> 4) & 0x80}, /* H_SIZE[9] */
+	{VHYX, ((OV2640_NATIVE_HEIGHT >> 3) & 0x80) | ((OV2640_NATIVE_WIDTH >> 7) & 0x08)},
+	{TEST, (OV2640_NATIVE_WIDTH >> 4) & 0x80}, /* H_SIZE[9] */
 
 	{CTRL2, CTRL2_DCW_EN | CTRL2_SDE_EN | CTRL2_UV_AVG_EN | CTRL2_CMX_EN | CTRL2_UV_ADJ_EN},
 
@@ -411,6 +418,14 @@ static const struct ov2640_reg uxga_regs[] = {
 	{CTRLI, CTRLI_LP_DP | 0x00},
 	/* DVP prescaler */
 	{R_DVP_SP, R_DVP_SP_AUTO_MODE | 0x04},
+
+	/* Same defaults as when DSP is turned off (the other "COM10", which is non-configurable,
+	 * the datasheet has an errata to correct it but the errata does not mention the
+	 * "other COM10", see notes above.
+	 *
+	 * This controls h-sync, v-sync, and pclk polarities.
+	 */
+	{COM10, 0x00},
 
 	{R_BYPASS, R_BYPASS_DSP_NO},
 	{RESET, 0x00},
@@ -1214,8 +1229,8 @@ static int ov2640_init(const struct device *dev)
 
 	ret = ov2640_set_format(dev, &(struct video_format){
 		.pixelformat = ov2640_fmts[0].pixelformat,
-		.width = UXGA_HSIZE,
-		.height = UXGA_VSIZE,
+		.width = OV2640_NATIVE_WIDTH,
+		.height = OV2640_NATIVE_HEIGHT,
 	});
 	if (ret < 0) {
 		return ret;
