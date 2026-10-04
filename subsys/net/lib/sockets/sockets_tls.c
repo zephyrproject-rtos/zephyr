@@ -1104,8 +1104,9 @@ static int wait(int sock, int timeout, int event)
 	}
 
 	if (ret == 1) {
+		/* poll() reports a socket closed while it waited as invalid */
 		if (fds.revents & ZSOCK_POLLNVAL) {
-			return -EBADF;
+			return -EINTR;
 		}
 
 		if (fds.revents & ZSOCK_POLLERR) {
