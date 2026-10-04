@@ -376,7 +376,10 @@ struct bt_dev {
 	bt_addr_le_t            id_addr[CONFIG_BT_ID_MAX];
 	uint8_t                    id_count;
 
+#if defined(CONFIG_BT_CENTRAL)
+	/* Parameters of the connection that is being created */
 	struct bt_conn_le_create_param create_param;
+#endif /* CONFIG_BT_CENTRAL */
 
 #if !defined(CONFIG_BT_EXT_ADV)
 	/* Legacy advertiser */

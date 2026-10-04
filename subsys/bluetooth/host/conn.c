@@ -1400,11 +1400,12 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		 * Timer is needed only for LE. For other link types controller
 		 * will handle connection timeout.
 		 */
-		if (IS_ENABLED(CONFIG_BT_CENTRAL) && bt_conn_is_le(conn) &&
-		    bt_dev.create_param.timeout != 0) {
+#if defined(CONFIG_BT_CENTRAL)
+		if (bt_conn_is_le(conn) && bt_dev.create_param.timeout != 0) {
 			bt_work_schedule(&conn->deferred_work,
 					 K_MSEC(10 * bt_dev.create_param.timeout));
 		}
+#endif /* CONFIG_BT_CENTRAL */
 
 		break;
 	case BT_CONN_DISCONNECTING:
