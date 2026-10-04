@@ -9,4 +9,8 @@ project(host_cmd)
 target_sources(app PRIVATE
   src/driver.c
   src/deadline.c
+  src/op.c
 )
+
+# The asynchronous command API is internal to the Host
+target_include_directories(app PRIVATE ${ZEPHYR_BASE}/subsys/bluetooth/host)

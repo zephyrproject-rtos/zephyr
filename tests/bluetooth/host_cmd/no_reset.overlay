@@ -1,0 +1,11 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* A controller that the Host does not reset. bt_disable() then needs no
+ * command of its own, so it can be called while a command is unanswered.
+ */
+&bt_hci_test {
+	bt-hci-quirks = "no-reset";
+};
