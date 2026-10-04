@@ -43,7 +43,6 @@ zephyr_library_sources_ifdef(CONFIG_GPIO_GD32 gpio_gd32.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_GECKO gpio_gecko.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_GRGPIO2 gpio_grgpio2.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_IMX gpio_imx.c)
-zephyr_library_sources_ifdef(CONFIG_GPIO_INFINEON gpio_infineon.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_INTEL gpio_intel.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_IPROC gpio_iproc.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_ITE_IT51XXX gpio_ite_it51xxx.c)
@@ -152,6 +151,13 @@ zephyr_library_sources_ifdef(CONFIG_GPIO_HOGS gpio_hogs.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_SHELL gpio_shell.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE gpio_handlers.c)
 # zephyr-keep-sorted-stop
+
+# Declared into the 'gpio' relocatable source set: an application may
+# claim the set into its own target, for example to combine the GPIO
+# driver with its hot path in one translation unit. The set is named
+# for the device class so a claim is portable across platforms;
+# whichever drivers the board enables end up in the set.
+zephyr_library_sources_set_ifdef(CONFIG_GPIO_INFINEON gpio FILES gpio_infineon.c)
 
 if(CONFIG_GPIO_EMUL_SDL)
   zephyr_library_sources(gpio_emul_sdl.c)
