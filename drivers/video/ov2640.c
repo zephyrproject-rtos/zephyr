@@ -163,11 +163,11 @@ LOG_MODULE_REGISTER(video_ov2640, CONFIG_VIDEO_LOG_LEVEL);
 
 struct ov2640_config {
 	struct i2c_dt_spec i2c;
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	struct gpio_dt_spec reset_gpio;
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+	struct gpio_dt_spec reset_gpios;
 #endif
-#if DT_INST_NODE_HAS_PROP(0, pwdn_gpios)
-	struct gpio_dt_spec pwdn_gpio;
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(powerdown_gpios)
+	struct gpio_dt_spec powerdown_gpios;
 #endif
 	uint8_t clock_multiplier;
 	uint8_t drive_strength;
@@ -1143,31 +1143,22 @@ static int ov2640_init(const struct device *dev)
 	}
 #endif
 
-#if DT_INST_NODE_HAS_PROP(0, pwdn_gpios)
-	if (!gpio_is_ready_dt(&cfg->pwdn_gpio)) {
-		LOG_ERR("%s: device %s is not ready", dev->name, cfg->pwdn_gpio.port->name);
-		return -ENODEV;
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+	if (cfg->reset_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&cfg->reset_gpio)) {
+			LOG_ERR("%s is not ready", cfg->reset_gpio.port->name);
+			return -ENODEV;
+		}
+
+		ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
+		if (ret < 0) {
+			return ret;
+		}
+
+		k_sleep(K_MSEC(1));
+		gpio_pin_set_dt(&cfg->reset_gpio, 0);
+		k_sleep(K_MSEC(1));
 	}
-#endif
-
-#if DT_INST_NODE_HAS_PROP(0, pwdn_gpios)
-	ret = gpio_pin_configure_dt(&cfg->pwdn_gpio, GPIO_OUTPUT_INACTIVE);
-	if (ret < 0) {
-		return ret;
-	}
-
-	k_sleep(K_MSEC(1));
-#endif
-
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
-	if (ret < 0) {
-		return ret;
-	}
-
-	k_sleep(K_MSEC(1));
-	gpio_pin_set_dt(&cfg->reset_gpio, 0);
-	k_sleep(K_MSEC(1));
 #endif
 
 	ret = ov2640_write_reg(&cfg->i2c, BANK_SEL, BANK_SEL_SENSOR);
@@ -1179,12 +1170,18 @@ static int ov2640_init(const struct device *dev)
 	/* Check connection */
 
 	ret = ov2640_read_sensor_reg(dev, REG_PID, &val);
+	if (ret < 0) {
+		return ret;
+	}
 	if (val != REG_PID_VAL) {
 		LOG_ERR("Invalid product ID, expected 0x%02x, got 0x%02x", REG_PID_VAL, val);
 		return -ENODEV;
 	}
 
 	ret = ov2640_read_sensor_reg(dev, REG_VER, &val);
+	if (ret < 0) {
+		return ret;
+	}
 	if (val != REG_VER_VAL) {
 		LOG_ERR("Invalid version, expected 0x%02x, got 0x%02x", REG_VER_VAL, val);
 		return -ENODEV;
@@ -1246,21 +1243,35 @@ static int ov2640_init(const struct device *dev)
 	return 0;
 }
 
-static const struct ov2640_config ov2640_cfg_0 = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	.reset_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+#define OV2640_RESET_GPIO(n)									\
+	.reset_gpios = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),
+#else
+#define OV2640_RESET_GPIO(n)
 #endif
-#if DT_INST_NODE_HAS_PROP(0, pwdn_gpios)
-	.pwdn_gpio = GPIO_DT_SPEC_INST_GET(0, pwdn_gpios),
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(powerdown_gpios)
+#define OV2640_POWERDOWN_GPIO(n)								\
+	.powerdown_gpio = GPIO_DT_SPEC_INST_GET_OR(n, powerdown_gpios, {0}),
+#else
+#define OV2640_POWERDOWN_GPIO(n)
 #endif
-	.clock_multiplier = DT_INST_PROP(0, clock_multiplier),
-	.drive_strength = DT_INST_PROP(0, drive_strength),
-	.jpeg_hsync = DT_INST_PROP(0, jpeg_hsync),
-};
-static struct ov2640_data ov2640_data_0;
 
-DEVICE_DT_INST_DEFINE(0, &ov2640_init, NULL, &ov2640_data_0, &ov2640_cfg_0, POST_KERNEL,
-		      CONFIG_VIDEO_INIT_PRIORITY, &ov2640_driver_api);
+#define OV2640_INIT(n)										\
+	static const struct ov2640_config ov2640_config_##n = {					\
+		.i2c = I2C_DT_SPEC_INST_GET(n),							\
+		OV2640_RESET_GPIO(n)								\
+		OV2640_POWERDOWN_GPIO(n)							\
+		.clock_multiplier = DT_INST_PROP(n, clock_multiplier),				\
+		.drive_strength = DT_INST_PROP(n, drive_strength),				\
+		.jpeg_hsync = DT_INST_PROP(n, jpeg_hsync),					\
+	};											\
+												\
+	static struct ov2640_data ov2640_data_##n;						\
+												\
+	DEVICE_DT_INST_DEFINE(n, &ov2640_init, NULL, &ov2640_data_##n, &ov2640_config_##n,	\
+			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &ov2640_driver_api);	\
+												\
+	VIDEO_DEVICE_DEFINE(ov2640_##n, DEVICE_DT_INST_GET(n), NULL);
 
-VIDEO_DEVICE_DEFINE(ov2640, DEVICE_DT_INST_GET(0), NULL);
+DT_INST_FOREACH_STATUS_OKAY(OV2640_INIT)
