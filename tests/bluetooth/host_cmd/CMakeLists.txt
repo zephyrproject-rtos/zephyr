@@ -9,6 +9,7 @@ project(host_cmd)
 target_sources(app PRIVATE
   src/driver.c
   src/deadline.c
+  src/disconnect.c
   src/op.c
 )
 
