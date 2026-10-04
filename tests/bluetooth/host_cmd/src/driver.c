@@ -27,6 +27,8 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
 
+#include "hci_core.h"
+
 #include "driver.h"
 
 #define DT_DRV_COMPAT zephyr_bt_hci_test
@@ -54,6 +56,9 @@ struct net_buf *test_cmd_bufs[TEST_CMD_BUF_MAX];
 static K_SEM_DEFINE(script_sem, 0, K_SEM_MAX_LIMIT);
 
 static const struct device *const hci_dev = DEVICE_DT_GET(DT_DRV_INST(0));
+
+/* First parameter byte of the TEST_OPCODE command that the controller got last */
+static uint8_t test_cmd_param;
 
 static void *evt_create(struct net_buf **buf, uint8_t evt, uint8_t len)
 {
@@ -101,7 +106,7 @@ void test_cmd_respond(struct test_cmd_script *script)
 		rp = cmd_complete(&evt, TEST_OPCODE, script->ncmd, 1U + script->rp_len);
 		rp[0] = script->status;
 		for (uint8_t i = 0U; i < script->rp_len; i++) {
-			rp[1U + i] = i;
+			rp[1U + i] = script->echo ? test_cmd_param : i;
 		}
 
 		bt_hci_recv(hci_dev, evt);
@@ -125,6 +130,46 @@ static int script_wait(const unsigned int *counter, unsigned int count)
 int test_cmd_wait(const struct test_cmd_script *script, unsigned int count)
 {
 	return script_wait(&script->count, count);
+}
+
+int test_rsp_wait(const struct test_cmd_script *script, unsigned int count)
+{
+	return script_wait(&script->rsp_count, count);
+}
+
+static K_SEM_DEFINE(flush_sem, 0, 1);
+
+static void flush_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	k_sem_give(&flush_sem);
+}
+
+static K_WORK_DEFINE(flush_work, flush_handler);
+
+/* A queue runs its work items in order: the flush work item runs once what
+ * was submitted before it has.
+ */
+static void flush_wait(int submit_err)
+{
+	struct k_work_sync sync;
+
+	zassert_true(submit_err >= 0, "Submitting the flush failed (err %d)", submit_err);
+	zassert_ok(k_sem_take(&flush_sem, TEST_TIMEOUT), "The queue is stuck");
+
+	/* The queue is done with the work item too, for the next flush */
+	(void)k_work_flush(&flush_work, &sync);
+}
+
+void test_workq_flush(struct k_work_q *queue)
+{
+	flush_wait(k_work_submit_to_queue(queue, &flush_work));
+}
+
+void test_bt_workq_flush(void)
+{
+	flush_wait(bt_work_submit(&flush_work));
 }
 
 void test_settle(void)
@@ -162,11 +207,37 @@ void test_cmd_bufs_release(void)
 	}
 }
 
+void test_cmd_pool_check(void)
+{
+	struct net_buf_pool *pool;
+	unsigned int count;
+
+	count = test_cmd_bufs_hold();
+	zassert_true(count > 0U, "No command buffer is free");
+	pool = net_buf_pool_get(test_cmd_bufs[0]->pool_id);
+	zassert_equal(count, pool->buf_count, "%u of %u command buffers are free", count,
+		      pool->buf_count);
+	zassert_equal(atomic_get(&pool->avail_count), 0, "The pool counts %ld free buffers",
+		      atomic_get(&pool->avail_count));
+
+	test_cmd_bufs_release();
+	zassert_equal(atomic_get(&pool->avail_count), pool->buf_count,
+		      "The pool counts %ld free buffers", atomic_get(&pool->avail_count));
+}
+
 void test_credit_grant(void)
 {
 	struct net_buf *evt;
 
 	(void)cmd_complete(&evt, 0U, 1U, 0U);
+	bt_hci_recv(hci_dev, evt);
+}
+
+void test_credit_revoke(void)
+{
+	struct net_buf *evt;
+
+	(void)cmd_complete(&evt, 0U, 0U, 0U);
 	bt_hci_recv(hci_dev, evt);
 }
 
@@ -270,6 +341,7 @@ static void cmd_handle(struct net_buf *cmd)
 			test_cmd_plen[test_cmd.count] = (uint8_t)cmd->len;
 		}
 
+		test_cmd_param = (cmd->len > 0U) ? cmd->data[0] : 0U;
 		scripted(&test_cmd, &cmd_rsp_work);
 		return;
 	case BT_HCI_OP_DISCONNECT:
