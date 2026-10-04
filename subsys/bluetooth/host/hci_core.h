@@ -349,12 +349,14 @@ struct bt_dev_le {
 	 */
 	uint8_t                    rl_entries;
 #endif /* CONFIG_BT_SMP */
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_ISO)
 	/* List of `struct bt_conn` that have either pending data to send, or
 	 * something to process (e.g. a disconnection event).
 	 *
 	 * Each element in this list contains a reference to its `conn` object.
 	 */
 	sys_slist_t		conn_ready;
+#endif /* CONFIG_BT_CONN || CONFIG_BT_ISO */
 };
 
 struct bt_dev_br {
@@ -381,11 +383,15 @@ struct bt_dev {
 	struct bt_conn_le_create_param create_param;
 
 #if !defined(CONFIG_BT_EXT_ADV)
+#if defined(CONFIG_BT_BROADCASTER)
 	/* Legacy advertiser */
 	struct bt_le_ext_adv    adv;
+#endif /* CONFIG_BT_BROADCASTER */
 #else
+#if defined(CONFIG_BT_BROADCASTER)
 	/* Pointer to reserved advertising set */
 	struct bt_le_ext_adv    *adv;
+#endif /* CONFIG_BT_BROADCASTER */
 #if defined(CONFIG_BT_CONN) && (CONFIG_BT_EXT_ADV_MAX_ADV_SET > 1)
 	/* When supporting multiple concurrent connectable advertising sets,
 	 * we need to know the identity of the terminating advertising set to
