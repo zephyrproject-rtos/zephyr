@@ -21,8 +21,8 @@ LOG_MODULE_REGISTER(video_ov2640, CONFIG_VIDEO_LOG_LEVEL);
 /* DSP register bank FF=0x00*/
 
 #define QS     0x44
-#define HSIZE  0x51
-#define VSIZE  0x52
+#define H_SIZE  0x51
+#define V_SIZE  0x52
 #define XOFFL  0x53
 #define YOFFL  0x54
 #define VHYX   0x55
@@ -61,8 +61,8 @@ LOG_MODULE_REGISTER(video_ov2640, CONFIG_VIDEO_LOG_LEVEL);
 #define R_DVP_SP_AUTO_MODE 0x80
 
 #define R_BYPASS           0x05
-#define R_BYPASS_DSP_EN    0x00
-#define R_BYPASS_DSP_BYPAS 0x01
+#define R_BYPASS_DSP_NO    0x00
+#define R_BYPASS_DSP_YES   0x01
 
 #define IMAGE_MODE         0xDA
 #define IMAGE_MODE_JPEG_EN (1U << 4)
@@ -85,6 +85,12 @@ LOG_MODULE_REGISTER(video_ov2640, CONFIG_VIDEO_LOG_LEVEL);
 #define BANK_SEL_DSP    0x00
 #define BANK_SEL_SENSOR 0x01
 
+/* This COM10 register is actually located on the DSP register bank, and only affects the signals
+ * output by the DSP is enabled. The defaults are different from the default of the documented
+ * COM10, which is why every other driver sets it to 0x00 to keep it consistent.
+ */
+#define COM10 0x15
+
 /* Sensor register bank FF=0x01*/
 
 #define COM1        0x03
@@ -96,8 +102,8 @@ LOG_MODULE_REGISTER(video_ov2640, CONFIG_VIDEO_LOG_LEVEL);
 #define CLKRC       0x11
 #define HREFST      0x17
 #define HREFEND     0x18
-#define VSTART      0x19
-#define VSTOP       0x1A
+#define VSTRT       0x19
+#define VEND        0x1A
 #define AEW         0x24
 #define AEB         0x25
 #define ARCOM2      0x34
@@ -151,16 +157,14 @@ LOG_MODULE_REGISTER(video_ov2640, CONFIG_VIDEO_LOG_LEVEL);
 #define COM9_AGC_GAIN_8x 0x02
 #define COM9_AGC_SET(x)  (COM9_DEFAULT | (x << 5))
 
-#define COM10 0x15
-
 #define VV                  0x26
 #define VV_AGC_TH_SET(h, l) ((h << 4) | (l & 0x0F))
 
 #define REG32               0x32
 
 #define OV2640_BASE_FPS 15
-#define UXGA_HSIZE 1600
-#define UXGA_VSIZE 1200
+#define OV2640_NATIVE_WIDTH 1600
+#define OV2640_NATIVE_HEIGHT 1200
 
 struct ov2640_config {
 	struct i2c_dt_spec i2c;
@@ -210,21 +214,20 @@ static const char *const ov2640_test_pattern_menu[] = {
 };
 
 /* Need to keep these two sychronized */
-static const uint8_t ov2640_clock_dividers[] = { 1, 2, 4 };
+static const uint8_t ov2640_clock_dividers[] = {1, 2, 4};
 const int64_t ov2640_link_freq[] = {
 	MHZ(168), MHZ(72), MHZ(36)
 };
 
 static const struct ov2640_reg ov2640_default_regs[] = {
 	/* Minimal init sequence */
-	{ BANK_SEL, BANK_SEL_DSP },
-	{ 0x2c, 0xff },
-	{ 0x2e, 0xdf },
-	{ BANK_SEL, BANK_SEL_SENSOR },
-	{ 0xff, 0x01 },
-	{ 0x3c, 0x32 },
-	{ 0x11, 0x80 },
-
+	{BANK_SEL, BANK_SEL_DSP},
+	{0x2c, 0xff},
+	{0x2e, 0xdf},
+	{BANK_SEL, BANK_SEL_SENSOR},
+	{0xff, 0x01},
+	{0x3c, 0x32},
+	{0x11, 0x80},
 	{0x2c, 0x0c},
 	{0x33, 0x78},
 	{0x3a, 0x33},
@@ -280,7 +283,6 @@ static const struct ov2640_reg ov2640_default_regs[] = {
 	{MC_BIST, MC_BIST_RESET | MC_BIST_BOOT_ROM_SEL},
 	{0x41, 0x24},
 	{RESET, RESET_JPEG | RESET_DVP},
-
 	{0x76, 0xff},
 	{0x33, 0xa0},
 	{0x42, 0x20},
@@ -399,8 +401,8 @@ static const struct ov2640_reg uxga_regs[] = {
 	{HREFST, 0x11}, /* UXGA=0x11, SVGA/CIF=0x11 */
 	{HREFEND, 0x75},  /* UXGA=0x75, SVGA/CIF=0x43 */
 
-	{VSTART, 0x01}, /* UXGA=0x01, SVGA/CIF=0x00 */
-	{VSTOP, 0x97},  /* UXGA=0x97, SVGA/CIF=0x4b */
+	{VSTRT, 0x01},  /* UXGA=0x01, SVGA/CIF=0x00 */
+	{VEND, 0x97},   /* UXGA=0x97, SVGA/CIF=0x4b */
 	{0x3d, 0x34},   /* UXGA=0x34, SVGA/CIF=0x38 */
 
 	{0x35, 0x88},
@@ -417,23 +419,26 @@ static const struct ov2640_reg uxga_regs[] = {
 	 * The sensor output image can be scaled with OUTW/OUTH
 	 */
 	{BANK_SEL, BANK_SEL_DSP},
-	{R_BYPASS, R_BYPASS_DSP_BYPAS},
+	{R_BYPASS, R_BYPASS_DSP_YES},
 
 	{RESET, RESET_DVP},
-	{HSIZE8, (UXGA_HSIZE >> 3)}, /* Image Horizontal Size HSIZE[10:3] */
-	{VSIZE8, (UXGA_VSIZE >> 3)}, /* Image Vertical Size VSIZE[10:3] */
+	{HSIZE8, (OV2640_NATIVE_WIDTH >> 3)}, /* Image Horizontal Size WIDTH[10:3] */
+	{VSIZE8, (OV2640_NATIVE_HEIGHT >> 3)}, /* Image Vertical Size HEIGHT[10:3] */
 
-	/* {HSIZE[11], HSIZE[2:0], VSIZE[2:0]} */
-	{SIZEL, ((UXGA_HSIZE >> 6) & 0x40) | ((UXGA_HSIZE & 0x7) << 3) | (UXGA_VSIZE & 0x7)},
+	/* {H_SIZE[11], H_SIZE[2:0], V_SIZE[2:0]} */
+	{SIZEL,
+	 (OV2640_NATIVE_WIDTH >> 10) << 6 |
+	 (OV2640_NATIVE_WIDTH & 0x7) << 3 |
+	 (OV2640_NATIVE_HEIGHT & 0x7) << 0},
 
 	{XOFFL, 0x00},                       /* OFFSET_X[7:0] */
 	{YOFFL, 0x00},                       /* OFFSET_Y[7:0] */
-	{HSIZE, ((UXGA_HSIZE >> 2) & 0xFF)}, /* H_SIZE[7:0] real/4 */
-	{VSIZE, ((UXGA_VSIZE >> 2) & 0xFF)}, /* V_SIZE[7:0] real/4 */
+	{H_SIZE, ((OV2640_NATIVE_WIDTH >> 2) & 0xFF)}, /* H_SIZE[7:0] real/4 */
+	{V_SIZE, ((OV2640_NATIVE_HEIGHT >> 2) & 0xFF)}, /* V_SIZE[7:0] real/4 */
 
 	/* V_SIZE[8]/OFFSET_Y[10:8]/H_SIZE[8]/OFFSET_X[10:8] */
-	{VHYX, ((UXGA_VSIZE >> 3) & 0x80) | ((UXGA_HSIZE >> 7) & 0x08)},
-	{TEST, (UXGA_HSIZE >> 4) & 0x80}, /* H_SIZE[9] */
+	{VHYX, ((OV2640_NATIVE_HEIGHT >> 3) & 0x80) | ((OV2640_NATIVE_WIDTH >> 7) & 0x08)},
+	{TEST, (OV2640_NATIVE_WIDTH >> 4) & 0x80}, /* H_SIZE[9] */
 
 	{CTRL2, CTRL2_DCW_EN | CTRL2_SDE_EN | CTRL2_UV_AVG_EN | CTRL2_CMX_EN | CTRL2_UV_ADJ_EN},
 
@@ -442,7 +447,15 @@ static const struct ov2640_reg uxga_regs[] = {
 	/* DVP prescaler */
 	{R_DVP_SP, R_DVP_SP_AUTO_MODE | 0x04},
 
-	{R_BYPASS, R_BYPASS_DSP_EN},
+	/* Same defaults as when DSP is turned off (the other "COM10", which is non-configurable,
+	 * the datasheet has an errata to correct it but the errata does not mention the
+	 * "other COM10", see notes above.
+	 *
+	 * This controls h-sync, v-sync, and pclk polarities.
+	 */
+	{COM10, 0x00},
+
+	{R_BYPASS, R_BYPASS_DSP_NO},
 	{RESET, 0x00},
 };
 
@@ -483,7 +496,7 @@ static const uint8_t saturation_regs[NUM_SATURATION_LEVELS + 1][5] = {
 		.height_min = 12, .height_max = 1200, .height_step = 1,                            \
 	}
 
-static const struct video_format_cap fmts[] = {
+static const struct video_format_cap ov2640_fmts[] = {
 	OV2640_VIDEO_FORMAT_CAP(VIDEO_PIX_FMT_RGB565),
 	OV2640_VIDEO_FORMAT_CAP(VIDEO_PIX_FMT_RGB565X),
 	OV2640_VIDEO_FORMAT_CAP(VIDEO_PIX_FMT_YUYV),
@@ -610,7 +623,7 @@ static int ov2640_write_all(const struct device *dev, const struct ov2640_reg *r
 	const struct ov2640_config *cfg = dev->config;
 	struct ov2640_data *data = dev->data;
 	int ret;
-	int ret2;
+	int ret2 = 0;
 
 	for (size_t i = 0; i < num; i++) {
 		ret2 = ov2640_write_reg(&cfg->i2c, regs[i].addr, regs[i].val);
@@ -635,12 +648,7 @@ static int ov2640_apply_config(const struct device *dev)
 
 	/* Disable DSP */
 
-	ret = ov2640_write_dsp_reg(dev, R_BYPASS, R_BYPASS_DSP_BYPAS);
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = ov2640_write_dsp_reg(dev, RESET, RESET_JPEG | RESET_DVP);
+	ret = ov2640_write_dsp_reg(dev, R_BYPASS, R_BYPASS_DSP_YES);
 	if (ret < 0) {
 		return ret;
 	}
@@ -719,9 +727,9 @@ static int ov2640_apply_config(const struct device *dev)
 		return ret;
 	}
 
-	/* Enable DSP */
+	/* Enable DSP engine converting the pixels */
 
-	ret = ov2640_write_dsp_reg(dev, R_BYPASS, R_BYPASS_DSP_EN);
+	ret = ov2640_write_dsp_reg(dev, R_BYPASS, R_BYPASS_DSP_NO);
 	if (ret < 0) {
 		return ret;
 	}
@@ -742,7 +750,7 @@ static int ov2640_set_format(const struct device *dev, struct video_format *fmt)
 		return 0;
 	}
 
-	ret = video_format_caps_index(fmts, fmt, &index);
+	ret = video_format_caps_index(ov2640_fmts, fmt, &index);
 	if (ret < 0) {
 		LOG_ERR("Format %s %ux%u not supported",
 			VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height);
@@ -824,7 +832,6 @@ static int ov2640_set_stream(const struct device *dev, bool stream, enum video_b
 		if (ret < 0) {
 			return ret;
 		}
-
 	} else {
 		ret = ov2640_write_dsp_reg(dev, RESET, 0xff);
 		if (ret < 0) {
@@ -837,7 +844,7 @@ static int ov2640_set_stream(const struct device *dev, bool stream, enum video_b
 
 static int ov2640_get_caps(const struct device *dev, struct video_caps *caps)
 {
-	caps->format_caps = fmts;
+	caps->format_caps = ov2640_fmts;
 	return 0;
 }
 
@@ -1201,9 +1208,9 @@ static int ov2640_init(const struct device *dev)
 	/* Defaults */
 
 	ret = ov2640_set_format(dev, &(struct video_format){
-		.pixelformat = VIDEO_PIX_FMT_RGB565,
-		.width = UXGA_HSIZE,
-		.height = UXGA_VSIZE,
+		.pixelformat = ov2640_fmts[0].pixelformat,
+		.width = OV2640_NATIVE_WIDTH,
+		.height = OV2640_NATIVE_HEIGHT,
 	});
 	if (ret < 0) {
 		return ret;
