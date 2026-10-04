@@ -687,6 +687,7 @@ elseif(NOT ZEPHYR_GIT_INDEX)
   endif()
 endif()
 
+zephyr_get(APP_BUILD_VERSION SYSBUILD LOCAL)
 if(DEFINED APP_BUILD_VERSION)
   set(app_build_version_argument "-DAPP_BUILD_VERSION=${APP_BUILD_VERSION}")
 endif()
