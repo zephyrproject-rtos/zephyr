@@ -209,11 +209,11 @@ static const char *const ov2640_test_pattern_menu[] = {
 	NULL
 };
 
+/* Need to keep these two sychronized */
+static const uint8_t ov2640_clock_dividers[] = { 1, 2, 4 };
 const int64_t ov2640_link_freq[] = {
 	MHZ(168), MHZ(72), MHZ(36)
 };
-
-static const uint8_t ov2640_clock_dividers[] = { 1, 2, 4 };
 
 static const struct ov2640_reg ov2640_default_regs[] = {
 	/* Minimal init sequence */
@@ -733,11 +733,11 @@ static int ov2640_apply_config(const struct device *dev)
 
 static int ov2640_set_format(const struct device *dev, struct video_format *fmt)
 {
-	struct ov2640_data *drv_data = dev->data;
+	struct ov2640_data *data = dev->data;
 	uint32_t index;
 	int ret = 0;
 
-	if (!memcmp(&drv_data->fmt, fmt, sizeof(drv_data->fmt))) {
+	if (!memcmp(&data->fmt, fmt, sizeof(data->fmt))) {
 		/* nothing to do */
 		return 0;
 	}
@@ -749,16 +749,16 @@ static int ov2640_set_format(const struct device *dev, struct video_format *fmt)
 		return ret;
 	}
 
-	drv_data->fmt = *fmt;
+	data->fmt = *fmt;
 
 	return 0;
 }
 
 static int ov2640_get_format(const struct device *dev, struct video_format *fmt)
 {
-	struct ov2640_data *drv_data = dev->data;
+	struct ov2640_data *data = dev->data;
 
-	*fmt = drv_data->fmt;
+	*fmt = data->fmt;
 
 	return 0;
 }
@@ -841,6 +841,28 @@ static int ov2640_get_caps(const struct device *dev, struct video_caps *caps)
 	return 0;
 }
 
+static int ov2640_get_volatile_ctrl(const struct device *dev, uint32_t id)
+{
+	struct ov2640_data *data = dev->data;
+	struct ov2640_ctrls *ctrls = &data->ctrls;
+
+	switch (id) {
+	case VIDEO_CID_LINK_FREQ:
+		for (int i = 0; i < ARRAY_SIZE(ov2640_clock_dividers); i++) {
+			if (data->clock_divider == ov2640_clock_dividers[i]) {
+				ctrls->link_freq.val = i;
+				return 0;
+			}
+		}
+		return -ENOENT;
+	default:
+		CODE_UNREACHABLE;
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int ov2640_set_level(const struct device *dev, int level, int max_level, int cols,
 			    const uint8_t regs[][cols])
 {
@@ -860,8 +882,8 @@ static int ov2640_set_level(const struct device *dev, int level, int max_level, 
 
 static int ov2640_set_ctrl(const struct device *dev, uint32_t id)
 {
-	struct ov2640_data *drv_data = dev->data;
-	struct ov2640_ctrls *ctrls = &drv_data->ctrls;
+	struct ov2640_data *data = dev->data;
+	struct ov2640_ctrls *ctrls = &data->ctrls;
 	uint8_t val;
 	int ret;
 
@@ -980,6 +1002,7 @@ static int ov2640_set_ctrl(const struct device *dev, uint32_t id)
 		return ov2640_write_sensor_reg(dev, ADDVSL, ctrls->vblank.val & 0xFF);
 
 	default:
+		CODE_UNREACHABLE;
 		return -ENOTSUP;
 	}
 }
@@ -993,13 +1016,14 @@ static DEVICE_API(video, ov2640_driver_api) = {
 	.get_frmival = ov2640_get_frmival,
 	.set_stream = ov2640_set_stream,
 	.set_ctrl = ov2640_set_ctrl,
+	.get_volatile_ctrl = ov2640_get_volatile_ctrl,
 };
 
 static int ov2640_init_controls(const struct device *dev)
 {
+	struct ov2640_data *data = dev->data;
+	struct ov2640_ctrls *ctrls = &data->ctrls;
 	int ret;
-	struct ov2640_data *drv_data = dev->data;
-	struct ov2640_ctrls *ctrls = &drv_data->ctrls;
 
 	ret = video_init_ctrl(&ctrls->hflip, dev, VIDEO_CID_HFLIP,
 			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
@@ -1075,6 +1099,7 @@ static int ov2640_init_controls(const struct device *dev)
 		return ret;
 	}
 	ctrls->link_freq.flags |= VIDEO_CTRL_FLAG_READ_ONLY;
+	ctrls->link_freq.flags |= VIDEO_CTRL_FLAG_VOLATILE;
 
 	return 0;
 }
