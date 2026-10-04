@@ -380,9 +380,18 @@ static void cmd_handle(const struct device *dev, struct net_buf *cmd)
 	bt_hci_recv(dev, evt);
 }
 
+/* A controller that the Host waits for, see CONFIG_BT_WAIT_NOP, takes the
+ * first command once it has sent a Command Complete event for no command. A
+ * silent controller does not send it either.
+ */
 static int driver_open(const struct device *dev)
 {
-	ARG_UNUSED(dev);
+	if (IS_ENABLED(CONFIG_BT_WAIT_NOP) && !silent) {
+		struct net_buf *evt;
+
+		(void)cmd_complete(&evt, 0U, BT_OP_NOP);
+		bt_hci_recv(dev, evt);
+	}
 
 	return 0;
 }
@@ -864,8 +873,8 @@ static ZTEST(bt_disable, test_command_in_flight_at_close)
 		   "bt_conn_disconnect() did not return");
 	zassert_true(disconnect_return_time - start < MSEC_PER_SEC,
 		     "bt_conn_disconnect() returned after %lld ms", disconnect_return_time - start);
-	zassert_equal(disconnect_err, -EIO, "bt_conn_disconnect() gave %d (!= %d)", disconnect_err,
-		      -EIO);
+	zassert_equal(disconnect_err, -EHOSTDOWN, "bt_conn_disconnect() gave %d (!= %d)",
+		      disconnect_err, -EHOSTDOWN);
 
 	bt_conn_unref(test_conn);
 	test_conn = NULL;
