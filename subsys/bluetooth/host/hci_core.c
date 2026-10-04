@@ -1956,25 +1956,11 @@ static void hci_disconn_complete_prio(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
-static void hci_disconn_complete(struct net_buf *buf)
+/* The second half of a disconnection, after BT_CONN_DISCONNECT_COMPLETE.
+ * Consumes the reference of the caller.
+ */
+static void hci_conn_disconnected(struct bt_conn *conn)
 {
-	struct bt_hci_evt_disconn_complete *evt = (void *)buf->data;
-	uint16_t handle = sys_le16_to_cpu(evt->handle);
-	struct bt_conn *conn;
-
-	LOG_DBG("status 0x%02x %s handle %u reason 0x%02x",
-		evt->status, bt_hci_err_to_str(evt->status), handle, evt->reason);
-
-	if (evt->status) {
-		return;
-	}
-
-	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_ALL);
-	if (!conn) {
-		LOG_ERR("Unable to look up conn with handle %u", handle);
-		return;
-	}
-
 	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 
 	if (!bt_conn_is_le(conn)) {
@@ -2016,6 +2002,36 @@ static void hci_disconn_complete(struct net_buf *buf)
 #endif /* defined(CONFIG_BT_CENTRAL) && !defined(CONFIG_BT_FILTER_ACCEPT_LIST) */
 
 	bt_conn_unref(conn);
+}
+
+static void hci_disconn_complete(struct net_buf *buf)
+{
+	struct bt_hci_evt_disconn_complete *evt = (void *)buf->data;
+	uint16_t handle = sys_le16_to_cpu(evt->handle);
+	struct bt_conn *conn;
+
+	LOG_DBG("status 0x%02x %s handle %u reason 0x%02x",
+		evt->status, bt_hci_err_to_str(evt->status), handle, evt->reason);
+
+	if (evt->status) {
+		return;
+	}
+
+	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_ALL);
+	if (!conn) {
+		LOG_ERR("Unable to look up conn with handle %u", handle);
+		return;
+	}
+
+	hci_conn_disconnected(conn);
+}
+
+void bt_hci_conn_lost(struct bt_conn *conn, uint8_t reason)
+{
+	conn->err = reason;
+
+	bt_conn_set_state(conn, BT_CONN_DISCONNECT_COMPLETE);
+	hci_conn_disconnected(bt_conn_ref(conn));
 }
 
 int bt_hci_le_read_remote_features(struct bt_conn *conn)

@@ -25,6 +25,8 @@
 #include <zephyr/sys/clock.h>
 #include <zephyr/toolchain.h>
 
+#include "hci_cmd_op.h"
+
 typedef enum __packed {
 	BT_CONN_DISCONNECTED,         /* Disconnected, conn is completely down */
 	BT_CONN_DISCONNECT_COMPLETE,  /* Received disconn comp event, transition to DISCONNECTED */
@@ -249,6 +251,9 @@ struct bt_conn {
 	/* Connection error or reason for disconnect */
 	uint8_t			err;
 
+	/* Reason that disconnect_op gives the controller */
+	uint8_t			disconnect_reason;
+
 	bt_conn_state_t state;
 
 	/* Next buffer should be an ACL/ISO HCI fragment. Kept with the other
@@ -287,6 +292,11 @@ struct bt_conn {
 	 * - Connection cleanup.
 	 */
 	struct k_work_delayable	deferred_work;
+
+	/* The HCI Disconnect command of this connection. While it is pending
+	 * it holds a reference to the connection.
+	 */
+	struct bt_hci_cmd_op	disconnect_op;
 
 	union {
 		struct bt_conn_le	le;

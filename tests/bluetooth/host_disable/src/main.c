@@ -581,9 +581,11 @@ static ZTEST(bt_disable, test_data_sent_during_disable)
 	test_conn = NULL;
 }
 
-/* The application disconnects from a thread of its own. It cannot be the
- * system workqueue, which delivers the delayed responses of the controller here
- * and must not be held up by a call that waits for one.
+/* A thread of the application sends the HCI Disconnect command itself and
+ * waits for it, as the Host does with most of its commands; a request through
+ * bt_conn_disconnect() does not wait. It cannot be the system workqueue, which
+ * delivers the delayed responses of the controller here and must not be held
+ * up by a call that waits for one.
  */
 static K_THREAD_STACK_DEFINE(app_stack, 1024);
 static struct k_work_q app_workq;
@@ -593,9 +595,17 @@ static int64_t disconnect_return_time;
 
 static void disconnect_handler(struct k_work *work)
 {
+	struct bt_hci_cp_disconnect *cp;
+	struct net_buf *buf;
+
 	ARG_UNUSED(work);
 
-	disconnect_err = bt_conn_disconnect(test_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(TEST_CONN_HANDLE);
+	cp->reason = BT_HCI_ERR_REMOTE_USER_TERM_CONN;
+
+	disconnect_err = bt_hci_cmd_send_sync(BT_HCI_OP_DISCONNECT, buf, NULL);
 	disconnect_return_time = k_uptime_get();
 	k_sem_give(&disconnect_returned);
 }
@@ -640,11 +650,12 @@ static ZTEST(bt_disable, test_command_in_flight_at_close)
 		     "The disconnect command was sent after the transport was closed");
 
 	zassert_ok(k_sem_take(&disconnect_returned, K_SECONDS(1)),
-		   "bt_conn_disconnect() did not return");
+		   "The sender of the command did not return");
 	zassert_true(disconnect_return_time - start < MSEC_PER_SEC,
-		     "bt_conn_disconnect() returned after %lld ms", disconnect_return_time - start);
-	zassert_equal(disconnect_err, -EHOSTDOWN, "bt_conn_disconnect() gave %d (!= %d)",
-		      disconnect_err, -EHOSTDOWN);
+		     "The sender of the command returned after %lld ms",
+		     disconnect_return_time - start);
+	zassert_equal(disconnect_err, -EHOSTDOWN, "The command gave %d (!= %d)", disconnect_err,
+		      -EHOSTDOWN);
 
 	bt_conn_unref(test_conn);
 	test_conn = NULL;
@@ -665,7 +676,8 @@ ZTEST_SUITE(bt_conn_tx, NULL, NULL, before, NULL, NULL);
 /* When the driver fails to send a data packet the Host gives the connection up.
  * It finds that out in the TX processor, which is what transmits the command
  * that disconnects, and so cannot be what waits for it. Nothing more is sent on
- * the connection while the controller takes its time to respond to the command.
+ * the connection, or accepted for it, while the controller takes its time to
+ * respond to the command.
  */
 static ZTEST(bt_conn_tx, test_data_send_failure)
 {
@@ -688,8 +700,8 @@ static ZTEST(bt_conn_tx, test_data_send_failure)
 	zassert_equal(disconnect_count, 1U, "The controller was told to disconnect %u times",
 		      disconnect_count);
 
-	zassert_ok(bt_gatt_write_without_response(test_conn, 1U, &value, sizeof(value), false),
-		   "Failed to queue the second packet");
+	zassert_equal(bt_gatt_write_without_response(test_conn, 1U, &value, sizeof(value), false),
+		      -ENOTCONN, "A packet was accepted for a connection that is given up");
 
 	zassert_ok(k_sem_take(&disconnected_sem, K_SECONDS(1)), "No disconnection");
 	zassert_equal(data_count, 1U, "The driver was given %u data packets", data_count);
@@ -717,18 +729,22 @@ static ZTEST(bt_conn_tx, test_data_send_failure_disconnect_rejected)
 	data_err = -EIO;
 	disconnect_rsp_delay = K_MSEC(20);
 	disconnect_status = BT_HCI_ERR_CMD_DISALLOWED;
+
+	/* Both packets are queued before the TX processor gets to the first */
+	k_sched_lock();
 	zassert_ok(bt_gatt_write_without_response(test_conn, 1U, &value, sizeof(value), false),
 		   "Failed to queue the first packet");
+	zassert_ok(bt_gatt_write_without_response(test_conn, 1U, &value, sizeof(value), false),
+		   "Failed to queue the second packet");
+	k_sched_unlock();
 
 	k_sleep(K_MSEC(10));
 	zassert_equal(data_count, 1U, "The driver was given %u data packets", data_count);
 	zassert_equal(disconnect_count, 1U, "The controller was told to disconnect %u times",
 		      disconnect_count);
 
-	/* The driver works again */
+	/* The driver works again, but the second packet stays where it is */
 	data_err = 0;
-	zassert_ok(bt_gatt_write_without_response(test_conn, 1U, &value, sizeof(value), false),
-		   "Failed to queue the second packet");
 	zassert_equal(data_count, 1U, "The driver was given %u data packets", data_count);
 
 	k_sleep(K_MSEC(20));
