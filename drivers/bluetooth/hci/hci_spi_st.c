@@ -575,6 +575,7 @@ static int bt_spi_send_raw(const struct device *dev, const uint8_t *pkt, size_t 
 	int ret;
 	uint8_t *data_ptr;
 	uint16_t remaining_bytes;
+	bool on_the_bus = false;
 
 	ARG_UNUSED(dev);
 
@@ -604,6 +605,7 @@ static int bt_spi_send_raw(const struct device *dev, const uint8_t *pkt, size_t 
 
 		if (!ret) {
 			/* Transmit the message */
+			on_the_bus = true;
 			ret = bt_spi_transceive(data_ptr, size, rx_first, 1);
 		}
 		remaining_bytes -= size;
@@ -616,6 +618,17 @@ static int bt_spi_send_raw(const struct device *dev, const uint8_t *pkt, size_t 
 
 	if (ret) {
 		LOG_ERR("Error %d", ret);
+
+		/* An error return says that no response to a command will
+		 * follow. Once part of a command has been on the bus that
+		 * cannot be said any more, as the controller may answer what
+		 * it got. The command then counts as sent, and what comes of
+		 * it shows in its response or in the lack of one.
+		 */
+		if (on_the_bus && pkt[PACKET_TYPE] == BT_HCI_H4_CMD) {
+			return 0;
+		}
+
 		return ret;
 	}
 
@@ -631,7 +644,11 @@ static int bt_spi_send_raw(const struct device *dev, const uint8_t *pkt, size_t 
 	 */
 	if (bt_spi_get_cmd((uint8_t *)pkt) == BT_HCI_OP_RESET) {
 		if (k_sem_take(&sem_initialised, K_SECONDS(CONFIG_BT_SPI_BOOT_TIMEOUT_SEC)) < 0) {
-			ret = -EIO;
+			/* The reset has been sent, so this is no failure to
+			 * send it. A controller that has not come up leaves
+			 * the commands that follow unanswered.
+			 */
+			LOG_ERR("No sign of the controller after the reset");
 		}
 	}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v1) */
