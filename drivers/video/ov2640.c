@@ -858,178 +858,127 @@ static int ov2640_set_level(const struct device *dev, int level, int max_level, 
 	return 0;
 }
 
-static int ov2640_set_ctrl_jpeg_compression_quality(const struct device *dev, int qs)
-{
-	return ov2640_write_dsp_reg(dev, QS, qs);
-}
-
-static int ov2640_set_ctrl_test_pattern(const struct device *dev, uint8_t enable)
-{
-	uint8_t val;
-	int ret;
-
-	ret = ov2640_read_sensor_reg(dev, COM7, &val);
-	if (ret < 0) {
-		return ret;
-	}
-
-	if (enable) {
-		val |= COM7_COLOR_BAR;
-	} else {
-		val &= ~COM7_COLOR_BAR;
-	}
-
-	return ov2640_write_sensor_reg(dev, COM7, val);
-}
-
-static int ov2640_set_ctrl_auto_whit_balance(const struct device *dev, int enable)
-{
-	uint8_t val;
-	int ret;
-
-	ret = ov2640_read_dsp_reg(dev, CTRL1, &val);
-	if (ret < 0) {
-		return ret;
-	}
-
-	if (enable) {
-		val |= CTRL1_AWB;
-	} else {
-		val &= ~CTRL1_AWB;
-	}
-
-	return ov2640_write_dsp_reg(dev, CTRL1, val);
-}
-
-static int ov2640_set_ctrl_autogain(const struct device *dev, int enable)
-{
-	uint8_t val;
-	int ret;
-
-	ret = ov2640_read_sensor_reg(dev, COM8, &val);
-	if (ret < 0) {
-		return ret;
-	}
-
-	if (enable) {
-		val |= COM8_AGC_EN;
-	} else {
-		val &= ~COM8_AGC_EN;
-	}
-
-	return ov2640_write_sensor_reg(dev, COM8, val);
-}
-
-static int ov2640_set_ctrl_exposure_auto(const struct device *dev, int manual)
-{
-	uint8_t val;
-	int ret;
-
-	if (manual > 1) {
-		LOG_WRN("Exposure other than manual/auto not supported");
-		return -ENOTSUP;
-	}
-
-	ret = ov2640_read_sensor_reg(dev, COM8, &val);
-	if (ret < 0) {
-		return ret;
-	}
-
-	if (!manual) {
-		val |= COM8_AEC_EN;
-	} else {
-		val &= ~COM8_AEC_EN;
-	}
-
-	return ov2640_write_sensor_reg(dev, COM8, val);
-}
-
-static int ov2640_set_ctrl_hflip(const struct device *dev, int enable)
-{
-	uint8_t val;
-	int ret;
-
-	ret = ov2640_read_sensor_reg(dev, REG04, &val);
-	if (ret < 0) {
-		return ret;
-	}
-
-	if (enable) {
-		val |= REG04_HFLIP_IMG;
-	} else {
-		val &= ~REG04_HFLIP_IMG;
-	}
-
-	return ov2640_write_sensor_reg(dev, REG04, val);
-}
-
-static int ov2640_set_ctrl_vflip(const struct device *dev, int enable)
-{
-	uint8_t val;
-	int ret;
-
-	ret = ov2640_read_sensor_reg(dev, REG04, &val);
-	if (ret < 0) {
-		return ret;
-	}
-
-	if (enable) {
-		val |= REG04_VFLIP_IMG | REG04_VREF_EN;
-	} else {
-		val &= ~(REG04_VFLIP_IMG | REG04_VREF_EN);
-	}
-
-	return ov2640_write_sensor_reg(dev, REG04, val);
-}
-
-static int ov2640_set_ctrl_vblank(const struct device *dev, uint16_t lines)
-{
-	int ret;
-
-	ret = ov2640_write_sensor_reg(dev, ADDVSH, lines >> 8);
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = ov2640_write_sensor_reg(dev, ADDVSL, lines & 0xFF);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return 0;
-}
-
 static int ov2640_set_ctrl(const struct device *dev, uint32_t id)
 {
 	struct ov2640_data *drv_data = dev->data;
 	struct ov2640_ctrls *ctrls = &drv_data->ctrls;
+	uint8_t val;
+	int ret;
 
 	switch (id) {
+
 	case VIDEO_CID_HFLIP:
-		return ov2640_set_ctrl_hflip(dev, ctrls->hflip.val);
+		ret = ov2640_read_sensor_reg(dev, REG04, &val);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (ctrls->hflip.val) {
+			val |= REG04_HFLIP_IMG;
+		} else {
+			val &= ~REG04_HFLIP_IMG;
+		}
+
+		return ov2640_write_sensor_reg(dev, REG04, val);
+
 	case VIDEO_CID_VFLIP:
-		return ov2640_set_ctrl_vflip(dev, ctrls->vflip.val);
+		ret = ov2640_read_sensor_reg(dev, REG04, &val);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (ctrls->vflip.val) {
+			val |= REG04_VFLIP_IMG | REG04_VREF_EN;
+		} else {
+			val &= ~(REG04_VFLIP_IMG | REG04_VREF_EN);
+		}
+
+		return ov2640_write_sensor_reg(dev, REG04, val);
+
 	case VIDEO_CID_EXPOSURE_AUTO:
-		return ov2640_set_ctrl_exposure_auto(dev, ctrls->exposure_auto.val);
+		if (ctrls->exposure_auto.val > 1) {
+			LOG_WRN("Exposure other than manual/auto not supported");
+			return -ENOTSUP;
+		}
+
+		ret = ov2640_read_sensor_reg(dev, COM8, &val);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (!ctrls->exposure_auto.val) {
+			val |= COM8_AEC_EN;
+		} else {
+			val &= ~COM8_AEC_EN;
+		}
+
+		return ov2640_write_sensor_reg(dev, COM8, val);
+
 	case VIDEO_CID_AUTO_WHITE_BALANCE:
-		return ov2640_set_ctrl_auto_whit_balance(dev, ctrls->auto_white_balance.val);
+		ret = ov2640_read_dsp_reg(dev, CTRL1, &val);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (ctrls->auto_white_balance.val) {
+			val |= CTRL1_AWB;
+		} else {
+			val &= ~CTRL1_AWB;
+		}
+
+		return ov2640_write_dsp_reg(dev, CTRL1, val);
+
 	case VIDEO_CID_AUTOGAIN:
-		return ov2640_set_ctrl_autogain(dev, ctrls->autogain.val);
+		ret = ov2640_read_sensor_reg(dev, COM8, &val);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (ctrls->autogain.val) {
+			val |= COM8_AGC_EN;
+		} else {
+			val &= ~COM8_AGC_EN;
+		}
+
+		return ov2640_write_sensor_reg(dev, COM8, val);
+
 	case VIDEO_CID_BRIGHTNESS:
 		return ov2640_set_level(dev, ctrls->brightness.val, NUM_BRIGHTNESS_LEVELS,
 					ARRAY_SIZE(brightness_regs[0]), brightness_regs);
+
 	case VIDEO_CID_CONTRAST:
 		return ov2640_set_level(dev, ctrls->contrast.val, NUM_CONTRAST_LEVELS,
 					ARRAY_SIZE(contrast_regs[0]), contrast_regs);
+
 	case VIDEO_CID_SATURATION:
 		return ov2640_set_level(dev, ctrls->saturation.val, NUM_SATURATION_LEVELS,
 					ARRAY_SIZE(saturation_regs[0]), saturation_regs);
+
 	case VIDEO_CID_JPEG_COMPRESSION_QUALITY:
-		return ov2640_set_ctrl_jpeg_compression_quality(dev, ctrls->jpeg.val);
+		return ov2640_write_dsp_reg(dev, QS, ctrls->jpeg.val);
+
 	case VIDEO_CID_TEST_PATTERN:
-		return ov2640_set_ctrl_test_pattern(dev, ctrls->test_pattern.val);
+		ret = ov2640_read_sensor_reg(dev, COM7, &val);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (ctrls->test_pattern.val) {
+			val |= COM7_COLOR_BAR;
+		} else {
+			val &= ~COM7_COLOR_BAR;
+		}
+
+		return ov2640_write_sensor_reg(dev, COM7, val);
+
 	case VIDEO_CID_VBLANK:
-		return ov2640_set_ctrl_vblank(dev, ctrls->vblank.val);
+		ret = ov2640_write_sensor_reg(dev, ADDVSH, ctrls->vblank.val >> 8);
+		if (ret < 0) {
+			return ret;
+		}
+
+		return ov2640_write_sensor_reg(dev, ADDVSL, ctrls->vblank.val & 0xFF);
+
 	default:
 		return -ENOTSUP;
 	}
