@@ -5,6 +5,7 @@
  */
 #define DT_DRV_COMPAT bflb_pwm_1
 
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pwm.h>
