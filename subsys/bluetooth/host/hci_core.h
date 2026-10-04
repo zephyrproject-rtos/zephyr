@@ -445,8 +445,9 @@ struct bt_dev {
 	/* Queue for incoming HCI events & ACL data */
 	sys_slist_t rx_queue;
 
-	/* Queue for outgoing HCI commands */
-	struct k_fifo		cmd_tx_queue;
+	/* Queue for outgoing HCI commands, protected by cmd_lock */
+	sys_slist_t		cmd_tx_queue;
+	struct k_spinlock	cmd_lock;
 
 	const struct device *hci;
 

@@ -402,6 +402,42 @@ struct net_buf *bt_hci_cmd_alloc(k_timeout_t timeout)
 	return buf;
 }
 
+/* The command queue is a plain list under a spinlock: nothing ever waits on
+ * it, and the lock lets a sender check that the transport is open and queue
+ * its command in one step.
+ */
+static struct net_buf *cmd_tx_queue_get(void)
+{
+	k_spinlock_key_t key;
+	sys_snode_t *node;
+
+	key = k_spin_lock(&bt_dev.cmd_lock);
+	node = sys_slist_get(&bt_dev.cmd_tx_queue);
+	k_spin_unlock(&bt_dev.cmd_lock, key);
+
+	if (node == NULL) {
+		return NULL;
+	}
+
+	return CONTAINER_OF(node, struct net_buf, node);
+}
+
+static struct net_buf *cmd_tx_queue_peek(void)
+{
+	k_spinlock_key_t key;
+	sys_snode_t *node;
+
+	key = k_spin_lock(&bt_dev.cmd_lock);
+	node = sys_slist_peek_head(&bt_dev.cmd_tx_queue);
+	k_spin_unlock(&bt_dev.cmd_lock, key);
+
+	if (node == NULL) {
+		return NULL;
+	}
+
+	return CONTAINER_OF(node, struct net_buf, node);
+}
+
 /* Drop every queued command once the HCI transport has been closed,
  * completing synchronous senders with an error.
  */
@@ -410,7 +446,7 @@ static void hci_cmd_queue_purge(void)
 	struct net_buf *buf;
 
 	while (true) {
-		buf = k_fifo_get(&bt_dev.cmd_tx_queue, K_NO_WAIT);
+		buf = cmd_tx_queue_get();
 		if (buf == NULL) {
 			break;
 		}
@@ -451,6 +487,8 @@ static void hci_cmd_sent_purge(void)
 
 int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 {
+	k_spinlock_key_t key;
+	bool open;
 	int err;
 
 	/* Make sure the HCI transport is open before attempting anything else */
@@ -496,16 +534,18 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 		return err;
 	}
 
-	k_fifo_put(&bt_dev.cmd_tx_queue, buf);
-
-	/* bt_disable() clears BT_DEV_OPEN before purging the queue, so a
-	 * command queued by a sender that passed the check above just before
-	 * the transport was closed is either found by that purge or seen
-	 * here: take it back and fail the call. If the purge got to it first
-	 * it completes the command like any other queued one.
+	/* bt_disable() clears BT_DEV_OPEN before purging the queue, and the
+	 * purge takes the same lock: a command is either refused here or
+	 * found by the purge, which completes it like any other queued one.
 	 */
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_OPEN) &&
-	    k_queue_remove(&bt_dev.cmd_tx_queue._queue, buf)) {
+	key = k_spin_lock(&bt_dev.cmd_lock);
+	open = atomic_test_bit(bt_dev.flags, BT_DEV_OPEN);
+	if (open) {
+		sys_slist_append(&bt_dev.cmd_tx_queue, &buf->node);
+	}
+	k_spin_unlock(&bt_dev.cmd_lock, key);
+
+	if (!open) {
 		net_buf_unref(buf);
 		return -EHOSTDOWN;
 	}
@@ -563,7 +603,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 		struct net_buf *cmd = NULL;
 
 		do {
-			cmd = k_fifo_peek_head(&bt_dev.cmd_tx_queue);
+			cmd = cmd_tx_queue_peek();
 			LOG_DBG("process cmd %p want %p", cmd, buf);
 
 			/* Wait for a response from the Bluetooth Controller.
@@ -3444,7 +3484,7 @@ static void hci_core_send_cmd(void)
 
 	/* Get next command */
 	LOG_DBG("fetch cmd");
-	buf = k_fifo_get(&bt_dev.cmd_tx_queue, K_NO_WAIT);
+	buf = cmd_tx_queue_get();
 	BT_ASSERT(buf);
 
 	/* Clear out any existing sent command */
@@ -4971,7 +5011,7 @@ int bt_enable(bt_ready_cb_t cb)
 	} else {
 		k_sem_init(&bt_dev.ncmd_sem, 0, 1);
 	}
-	k_fifo_init(&bt_dev.cmd_tx_queue);
+	sys_slist_init(&bt_dev.cmd_tx_queue);
 
 	if (IS_ENABLED(CONFIG_BT_HCI_SET_PUBLIC_ADDR)) {
 		/* Set on every enable, and cleared when there is no public
@@ -5453,7 +5493,7 @@ static bool process_pending_cmd(k_timeout_t timeout)
 		return false;
 	}
 
-	if (!k_fifo_is_empty(&bt_dev.cmd_tx_queue)) {
+	if (!sys_slist_is_empty(&bt_dev.cmd_tx_queue)) {
 		if (k_sem_take(&bt_dev.ncmd_sem, timeout) == 0) {
 			hci_core_send_cmd();
 			return true;
