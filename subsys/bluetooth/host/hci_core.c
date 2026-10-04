@@ -282,20 +282,47 @@ static void cmd_deadline_start(void)
  */
 #define CMD_BUF_SIZE MAX(BT_BUF_EVT_RX_SIZE, BT_BUF_CMD_TX_SIZE)
 #if defined(CONFIG_BT_CONN)
+/* A freed command buffer that is kept for the queued asynchronous commands
+ * instead of going back to the pool. Protected by cmd_lock.
+ */
+static struct net_buf *cmd_op_buf;
+
 static void hci_cmd_pool_destroy(struct net_buf *buf)
 {
 	k_spinlock_key_t key;
+	bool kept = false;
 
-	net_buf_destroy(buf);
-
-	/* A step forward for operations that wait for a buffer, unless it is
-	 * the controller that everything waits for.
+	/* With an operation waiting for a buffer, keep this one for it: the
+	 * pool would hand it straight to a thread blocked in
+	 * bt_hci_cmd_alloc(), and a stream of such allocators would starve
+	 * the operations, which never block on the pool. The buffer is
+	 * referenced again before anybody can find it in the slot.
 	 */
 	key = k_spin_lock(&bt_dev.cmd_lock);
-	if (bt_dev.sent_cmd == NULL && !sys_slist_is_empty(&bt_dev.cmd_op_queue)) {
-		cmd_deadline_restart();
+	if (!sys_slist_is_empty(&bt_dev.cmd_op_queue)) {
+		if (cmd_op_buf == NULL) {
+			cmd_op_buf = net_buf_ref(buf);
+			kept = true;
+#if defined(CONFIG_NET_BUF_POOL_USAGE)
+			/* net_buf_unref() has counted the buffer as available
+			 * by now, which it is not.
+			 */
+			atomic_dec(&net_buf_pool_get(buf->pool_id)->avail_count);
+#endif /* CONFIG_NET_BUF_POOL_USAGE */
+		}
+
+		/* A step forward for operations that wait for a buffer,
+		 * unless it is the controller that everything waits for.
+		 */
+		if (bt_dev.sent_cmd == NULL) {
+			cmd_deadline_restart();
+		}
 	}
 	k_spin_unlock(&bt_dev.cmd_lock, key);
+
+	if (!kept) {
+		net_buf_destroy(buf);
+	}
 
 	/* An asynchronous command that waits for a buffer can go on now */
 	if (!sys_slist_is_empty(&bt_dev.cmd_op_queue)) {
@@ -468,6 +495,22 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 }
 #endif /* defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL) */
 
+/* Set up an empty command buffer: room for the packet indicator and the HCI
+ * command header, no sender state.
+ */
+static void cmd_buf_prepare(struct net_buf *buf)
+{
+	net_buf_reserve(buf, BT_HCI_PKT_CMD_HDR_SIZE);
+
+	cmd(buf)->opcode = 0;
+	cmd(buf)->err = 0;
+	cmd(buf)->sync = NULL;
+	cmd(buf)->state = NULL;
+#if defined(CONFIG_BT_CONN)
+	cmd(buf)->op = NULL;
+#endif /* CONFIG_BT_CONN */
+}
+
 struct net_buf *bt_hci_cmd_alloc(k_timeout_t timeout)
 {
 	struct net_buf *buf;
@@ -480,16 +523,7 @@ struct net_buf *bt_hci_cmd_alloc(k_timeout_t timeout)
 
 	LOG_DBG("buf %p", buf);
 
-	/* Reserve room for the packet indicator and HCI command header */
-	net_buf_reserve(buf, BT_HCI_PKT_CMD_HDR_SIZE);
-
-	cmd(buf)->opcode = 0;
-	cmd(buf)->err = 0;
-	cmd(buf)->sync = NULL;
-	cmd(buf)->state = NULL;
-#if defined(CONFIG_BT_CONN)
-	cmd(buf)->op = NULL;
-#endif /* CONFIG_BT_CONN */
+	cmd_buf_prepare(buf);
 
 	return buf;
 }
@@ -832,6 +866,7 @@ static void hci_cmd_queue_purge(void)
 	sys_slist_t queue;
 	sys_snode_t *node;
 #if defined(CONFIG_BT_CONN)
+	struct net_buf *kept;
 	sys_slist_t ops;
 #endif /* CONFIG_BT_CONN */
 
@@ -840,9 +875,18 @@ static void hci_cmd_queue_purge(void)
 	sys_slist_init(&bt_dev.cmd_tx_queue);
 #if defined(CONFIG_BT_CONN)
 	cmd_ops_take(&ops);
+
+	kept = cmd_op_buf;
+	cmd_op_buf = NULL;
 #endif /* CONFIG_BT_CONN */
 	cmd_deadline_restart();
 	k_spin_unlock(&bt_dev.cmd_lock, key);
+
+#if defined(CONFIG_BT_CONN)
+	if (kept != NULL) {
+		net_buf_unref(kept);
+	}
+#endif /* CONFIG_BT_CONN */
 
 	while (true) {
 		struct net_buf *buf;
@@ -892,6 +936,7 @@ static void cmd_deadline_expired(struct k_timer *timer)
 	struct net_buf *sent;
 	uint16_t opcode = 0U;
 #if defined(CONFIG_BT_CONN)
+	struct net_buf *kept;
 	sys_slist_t ops;
 #endif /* CONFIG_BT_CONN */
 
@@ -915,11 +960,18 @@ static void cmd_deadline_expired(struct k_timer *timer)
 		 */
 #if defined(CONFIG_BT_CONN)
 		cmd_ops_take(&ops);
+
+		kept = cmd_op_buf;
+		cmd_op_buf = NULL;
 #endif /* CONFIG_BT_CONN */
 		cmd_deadline_restart();
 		k_spin_unlock(&bt_dev.cmd_lock, key);
 
 #if defined(CONFIG_BT_CONN)
+		if (kept != NULL) {
+			net_buf_unref(kept);
+		}
+
 		cmd_ops_complete(&ops, -ENOBUFS);
 #endif /* CONFIG_BT_CONN */
 
@@ -1036,9 +1088,29 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 }
 
 #if defined(CONFIG_BT_CONN)
+/* Take the buffer that hci_cmd_pool_destroy() kept for the operations */
+static struct net_buf *cmd_op_buf_take(void)
+{
+	k_spinlock_key_t key;
+	struct net_buf *buf;
+
+	key = k_spin_lock(&bt_dev.cmd_lock);
+	buf = cmd_op_buf;
+	cmd_op_buf = NULL;
+	k_spin_unlock(&bt_dev.cmd_lock, key);
+
+	if (buf != NULL) {
+		net_buf_reset(buf);
+		cmd_buf_prepare(buf);
+	}
+
+	return buf;
+}
+
 /* Give the queued operations their command buffers, in order, for as long as
  * the command pool has any. An operation that gets none stays queued; the
- * pool's destroy callback raises the TX processor when a buffer is freed.
+ * pool's destroy callback keeps the next freed buffer for it and raises the
+ * TX processor.
  */
 static void cmd_ops_dispatch(void)
 {
@@ -1049,7 +1121,11 @@ static void cmd_ops_dispatch(void)
 		sys_snode_t *node;
 		int err;
 
-		buf = bt_hci_cmd_alloc(K_NO_WAIT);
+		buf = cmd_op_buf_take();
+		if (buf == NULL) {
+			buf = bt_hci_cmd_alloc(K_NO_WAIT);
+		}
+
 		if (buf == NULL) {
 			return;
 		}
@@ -1176,6 +1252,7 @@ int bt_hci_cmd_op_cancel(struct bt_hci_cmd_op *op)
 {
 	struct net_buf *retired = NULL;
 	struct bt_future *fut = NULL;
+	struct net_buf *buf = NULL;
 	k_spinlock_key_t key;
 
 	key = k_spin_lock(&bt_dev.cmd_lock);
@@ -1221,10 +1298,22 @@ int bt_hci_cmd_op_cancel(struct bt_hci_cmd_op *op)
 		cmd_deadline_restart();
 	}
 
+	/* A buffer kept for the operations goes back to the pool when this
+	 * was the last one waiting.
+	 */
+	if (sys_slist_is_empty(&bt_dev.cmd_op_queue)) {
+		buf = cmd_op_buf;
+		cmd_op_buf = NULL;
+	}
+
 	k_spin_unlock(&bt_dev.cmd_lock, key);
 
 	if (retired != NULL) {
 		net_buf_unref(retired);
+	}
+
+	if (buf != NULL) {
+		net_buf_unref(buf);
 	}
 
 	/* A waiter must not be left behind; a callback is not invoked */
