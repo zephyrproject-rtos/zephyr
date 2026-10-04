@@ -31,17 +31,28 @@ can be disabled if not needed.
   * IPv6 header compression (6lo) is available for IPv6 connectivity for
     IEEE 802.15.4 networks (:rfc:`4944`).
   * DHCPv6 (Dynamic Host Configuration Protocol for IPv6) (:rfc:`8415`) client
-    functionality is supported.
+    and server are supported, including prefix delegation.
+    See :ref:`DHCPv6 <dhcpv6_interface>` for more details.
+  * DNS server addresses can be learned from Router Advertisements (RDNSS,
+    :rfc:`8106`).
   * The IPv6 privacy extension (:rfc:`8981`) is supported.
+  * IPv6 fragmentation and Path MTU Discovery (:rfc:`8201`) are supported.
+  * Multicast routing and forwarding is supported.
 
 * **IPv4** (:rfc:`791`) is supported. It cannot be used by IEEE 802.15.4 as
   this network technology supports only IPv6. IPv4 can be used for example
   in Ethernet, Wi-Fi and Cellular based networks.
 
   * DHCP (Dynamic Host Configuration Protocol) client and server is supported
-    (:rfc:`2131`).
+    (:rfc:`2131`). See :ref:`DHCPv4 <dhcpv4_interface>` for more details.
   * The IPv4 address can also be configured manually. Static IPv4 addresses
     are supported by default.
+  * IPv4 link-local address autoconfiguration (:rfc:`3927`) and address
+    conflict detection (:rfc:`5227`) are supported.
+    :zephyr:code-sample:`ipv4-autoconf` sample is provided.
+  * IGMPv2 (:rfc:`2236`) and IGMPv3 (:rfc:`3376`) multicast group management
+    is supported.
+  * IPv4 fragmentation and Path MTU Discovery (:rfc:`1191`) are supported.
   * IPv4 NAT (Network Address Translation) is supported. Packets can
     hop between interfaces by performing SNAT and DNAT. Connection tracking
     and iptable rules are used to filter and forward packets across subnets.
@@ -53,6 +64,11 @@ can be disabled if not needed.
   The developer can send UDP datagrams (client side support) or create a
   listener to receive UDP packets destined to certain port (server side
   support).
+  UDP options (:rfc:`9868`) are supported.
+  Datagram Packetization Layer Path MTU Discovery (DPLPMTUD, :rfc:`8899`) is
+  available for UDP-based protocols, and for plain UDP sockets through UDP
+  options (:rfc:`9869`).
+  See :ref:`DPLPMTUD <net_dplpmtud>` for more details.
 
 * **TCP** Transmission Control Protocol (:rfc:`9293`) is supported. Both server
   and client roles can be used the application. The amount of TCP sockets
@@ -60,14 +76,20 @@ can be disabled if not needed.
   Selective acknowledgment (:rfc:`2018`) is supported for received data
   (:kconfig:option:`CONFIG_NET_TCP_SACK`).
 
+* **QUIC** (:rfc:`9000`) transport with integrated TLS 1.3 (:rfc:`9001`) is
+  supported. See :ref:`QUIC <quic_transport_interface>` for more details.
+  :zephyr:code-sample:`quic-client-echo` and :zephyr:code-sample:`quic-service-echo`
+  samples are provided.
+
 * **BSD Sockets API** Support for a subset of a
   :ref:`BSD sockets compatible API <bsd_sockets_interface>` is
   implemented. Both blocking and non-blocking datagram (UDP) and stream (TCP)
   sockets are supported. Packet sockets (``AF_PACKET``) are also supported.
 
-* **Secure Sockets API** Experimental support for TLS/DTLS secure protocols and
-  configuration options for sockets API. Secure functions for the implementation
-  are provided by Mbed TLS library.
+* **Secure Sockets API** TLS and DTLS support with configuration options for
+  the sockets API. Secure functions for the implementation are provided by the
+  Mbed TLS library. See :ref:`secure sockets <secure_sockets_interface>` for
+  more details.
 
 * **MQTT** Message Queue Telemetry Transport (ISO/IEC PRF 20922) versions 3.1.1 and 5.0
   are supported.
@@ -77,7 +99,10 @@ can be disabled if not needed.
 * **MQTT-SN** MQTT for Sensor Networks version 1.2 is supported.
   A sample :zephyr:code-sample:`mqtt-sn-publisher` client application is provided.
 
-* **CoAP** Constrained Application Protocol (:rfc:`7252`) is supported.
+* **CoAP** Constrained Application Protocol (:rfc:`7252`) is supported,
+  including block-wise transfers (:rfc:`7959`), resource observation
+  (:rfc:`7641`), CoAP over TCP and TLS (:rfc:`8323`) for the client, and
+  OSCORE (:rfc:`8613`).
   Both :zephyr:code-sample:`coap-client` and :zephyr:code-sample:`coap-server` sample
   applications are provided.
 
@@ -91,21 +116,24 @@ can be disabled if not needed.
 
 * **HTTP** Hypertext Transfer Protocol client and server are supported.
   :ref:`http_client_interface` library supports HTTP/1.1 (:rfc:`2616`).
-  :ref:`http_server_interface` library supports HTTP/1.1 (:rfc:`2616`) and
-  HTTP/2 (:rfc:`9113`).
+  :ref:`http_server_interface` library supports HTTP/1.1 (:rfc:`2616`),
+  HTTP/2 (:rfc:`9113`) and HTTP/3 (:rfc:`9114`).
   :zephyr:code-sample:`sockets-http-client` and
   :zephyr:code-sample:`sockets-http-server` samples are provided.
 
-* **Websocket** (:rfc:`6455`) client is supported.
+* **Websocket** (:rfc:`6455`) client is supported, and the HTTP server can
+  upgrade connections to Websocket.
   :zephyr:code-sample:`sockets-websocket-client` sample is provided.
 
 * **DNS** Domain Name Service (:rfc:`1035`) client functionality is supported.
   Applications can use the DNS API to query domain name information or IP
   addresses from the DNS server. Both IPv4 (A) and IPv6 (AAAA) records can
   be queried.
-  Both multicast DNS (mDNS) (:rfc:`6762`) and link-local multicast name resolution
-  (LLMNR, :rfc:`4795`) are supported.
+  Multicast DNS (mDNS) (:rfc:`6762`) is supported, as well as the deprecated
+  link-local multicast name resolution (LLMNR, :rfc:`4795`).
   The DNS Service Discovery (:rfc:`6763`) is also supported.
+  An mDNS responder can answer queries and advertise DNS-SD services;
+  :zephyr:code-sample:`mdns-responder` sample is provided.
 
 * **Network Management API.** Applications can use network management API to
   listen management events generated by core network stack when for example IP address
@@ -143,13 +171,30 @@ can be disabled if not needed.
   See :ref:`gPTP support <gptp_interface>` and :ref:`PTP support <ptp_interface>`
   for more details.
 
-* **SNTP** Simple Network Time Protocol (:rfc:`5905`) client is supported.
-  :zephyr:code-sample:`sntp-client` sample is provided.
+* **SNTP** Simple Network Time Protocol (:rfc:`5905`) client and server are
+  supported. See :ref:`SNTP <sntp_interface>` for more details.
+  :zephyr:code-sample:`sntp-client` and :zephyr:code-sample:`sntp-server`
+  samples are provided.
 
 * **SOCKS5** proxy version 5 (:rfc:`1928`) is supported.
 
 * **TFTP** Trivial File Transfer Protocol (:rfc:`1350`) client is supported.
   :zephyr:code-sample:`tftp-client` sample is provided.
+
+* **FTP** File Transfer Protocol (:rfc:`959`) client is supported.
+  See :ref:`FTP client <ftp_client_interface>` for more details.
+  :zephyr:code-sample:`ftp-client` sample is provided.
+
+* **SSH** SSH-2 (:rfc:`4251` to :rfc:`4254`) server and client are supported.
+  Session channels carry shell, exec and subsystem requests, and the Zephyr
+  shell can be accessed over SSH.
+  :zephyr:code-sample:`ssh-server-client` sample is provided.
+
+* **WireGuard** VPN (`WireGuard protocol`_) is supported.
+  :zephyr:code-sample:`wireguard-vpn` sample is provided.
+
+* **RTP** Real-time Transport Protocol (:rfc:`3550`) is supported.
+  :zephyr:code-sample:`net-rtp` sample is provided.
 
 * **MIDI2** MIDI 2.0 network UDP transport is supported.
   :zephyr:code-sample:`netmidi2` sample is provided.
@@ -160,19 +205,28 @@ can be disabled if not needed.
 * **Prometheus** Metric Server functionality is supported.
   :zephyr:code-sample:`prometheus` is provided.
 
+* **MCP** Model Context Protocol server is supported, letting AI agents
+  discover and invoke tools exposed by the device over HTTP.
+  See :ref:`MCP server <mcp_server_interface>` for more details.
+  :zephyr:code-sample:`mcp-server-hello-world` sample is provided.
+
+* **Packet filtering and capture.** Received and sent packets can be filtered
+  with user-defined rules, and network traffic can be captured and sent to a
+  remote host for analysis. See :ref:`packet filtering <net_pkt_filter_interface>`
+  and :ref:`network packet capture <net_capture_interface>` for more details.
+
 * **Network shell.** The network shell provides helpers for figuring out
   network status, enabling/disabling features, and issuing commands like ping
   or DNS resolving. The net-shell is useful when developing network software.
   See :ref:`network shell <net_shell>` for more details.
 
-* **zperf** is an iPerf v2 network performance and bandwidth measurement tool.
-  Both client and server functionality is supported. :zephyr:code-sample:`zperf`
-  sample is provided.
+* **zperf** is a network performance and bandwidth measurement tool compatible
+  with iPerf v2 and iperf3. Both client and server functionality is supported.
+  :zephyr:code-sample:`zperf` sample is provided.
 
 Additionally these network technologies (link layers) are supported in Zephyr OS:
 
 * IEEE 802.15.4
-* Bluetooth
 * Ethernet, IEEE 802.3
 * Wi-Fi, IEEE 802.11
 * Cellular / PPP (:rfc:`1661`)
@@ -220,3 +274,6 @@ The networking stack source code tree is organized as follows:
 
 .. _LwM2M specification 1.1.1:
    https://www.openmobilealliance.org/release/LightweightM2M/V1_1_1-20190617-A/
+
+.. _WireGuard protocol:
+   https://www.wireguard.com/
