@@ -10,12 +10,22 @@
 #include <zephyr/kernel.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/fdtable.h>
+#include <zephyr/sys/speculation.h>
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 bool net_socket_is_tls(void *obj);
 #else
 #define net_socket_is_tls(obj) false
 #endif
+
+static void zvfs_poll_put_all(struct zvfs_fd_ref **held)
+{
+	for (int fd = 0; fd < ZVFS_OPEN_SIZE; fd++) {
+		if (held[fd] != NULL) {
+			zvfs_fd_put(held[fd]);
+		}
+	}
+}
 
 int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 {
@@ -26,8 +36,13 @@ int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 	struct k_poll_event poll_events[CONFIG_ZVFS_POLL_MAX];
 	struct k_poll_event *pev;
 	struct k_poll_event *pev_end = poll_events + ARRAY_SIZE(poll_events);
+	/* Index into fds of the entry that prepared each event */
+	int pev_owner[CONFIG_ZVFS_POLL_MAX];
+	int pev_count;
+	/* The fds held until we return, so that close() cannot free their slots */
+	struct zvfs_fd_ref *held[ZVFS_OPEN_SIZE] = {NULL};
+	bool looked_up[ZVFS_OPEN_SIZE] = {false};
 	const struct fd_op_vtable *vtable;
-	struct k_mutex *lock;
 	k_timepoint_t end;
 	bool offload = false;
 	const struct fd_op_vtable *offl_vtable = NULL;
@@ -37,6 +52,8 @@ int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 
 	pev = poll_events;
 	for (pfd = fds, i = nfds; i--; pfd++) {
+		struct k_poll_event *pev_start = pev;
+		struct zvfs_fd_ref *ref = NULL;
 		void *ctx;
 		int result;
 
@@ -45,13 +62,20 @@ int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 			continue;
 		}
 
-		ctx = zvfs_get_fd_obj_and_vtable(pfd->fd, &vtable, &lock);
-		if (ctx == NULL) {
+		if (pfd->fd < ZVFS_OPEN_SIZE) {
+			int idx = k_array_index_sanitize(pfd->fd, ZVFS_OPEN_SIZE);
+
+			if (!looked_up[idx]) {
+				held[idx] = zvfs_fd_get(pfd->fd);
+				looked_up[idx] = true;
+			}
+			ref = held[idx];
+		}
+
+		if ((ref == NULL) || (zvfs_fd_lock(ref, &ctx, &vtable) < 0)) {
 			/* Will set POLLNVAL in return loop */
 			continue;
 		}
-
-		(void)k_mutex_lock(lock, K_FOREVER);
 
 		result = zvfs_fdtable_call_poll_prepare(vtable, ctx, pfd, &pev, pev_end);
 		if (result == -EALREADY) {
@@ -81,13 +105,20 @@ int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 			result = 0;
 		}
 
-		k_mutex_unlock(lock);
+		zvfs_fd_unlock(ref);
 
 		if (result < 0) {
 			errno = -result;
-			return -1;
+			ret = -1;
+			goto out;
+		}
+
+		for (; pev_start < pev; pev_start++) {
+			pev_owner[pev_start - poll_events] = pfd - fds;
 		}
 	}
+
+	pev_count = pev - poll_events;
 
 	if (offload) {
 		int poll_timeout;
@@ -98,18 +129,20 @@ int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 			poll_timeout = k_ticks_to_ms_floor32(timeout.ticks);
 		}
 
-		return zvfs_fdtable_call_poll_offload(offl_vtable, offl_ctx, fds,
-					nfds, poll_timeout);
+		ret = zvfs_fdtable_call_poll_offload(offl_vtable, offl_ctx, fds, nfds,
+						     poll_timeout);
+		goto out;
 	}
 
 	timeout = sys_timepoint_timeout(end);
 
 	do {
-		ret = k_poll(poll_events, pev - poll_events, timeout);
+		ret = k_poll(poll_events, pev_count, timeout);
 		/* EAGAIN when timeout expired, EINTR when cancelled (i.e. EOF) */
 		if (ret != 0 && ret != -EAGAIN && ret != -EINTR) {
 			errno = -ret;
-			return -1;
+			ret = -1;
+			goto out;
 		}
 
 		retry = false;
@@ -117,6 +150,7 @@ int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 
 		pev = poll_events;
 		for (pfd = fds, i = nfds; i--; pfd++) {
+			struct zvfs_fd_ref *ref = NULL;
 			void *ctx;
 			int result;
 
@@ -126,24 +160,32 @@ int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 				continue;
 			}
 
-			ctx = zvfs_get_fd_obj_and_vtable(pfd->fd, &vtable, &lock);
-			if (ctx == NULL) {
+			if (pfd->fd < ZVFS_OPEN_SIZE) {
+				ref = held[k_array_index_sanitize(pfd->fd, ZVFS_OPEN_SIZE)];
+			}
+
+			if ((ref == NULL) || (zvfs_fd_lock(ref, &ctx, &vtable) < 0)) {
+				/* Skip the events it prepared before close() */
+				while ((pev < poll_events + pev_count) &&
+				       (pev_owner[pev - poll_events] == pfd - fds)) {
+					pev++;
+				}
+
 				pfd->revents = ZVFS_POLLNVAL;
 				ret++;
 				continue;
 			}
 
-			(void)k_mutex_lock(lock, K_FOREVER);
-
 			result = zvfs_fdtable_call_poll_update(vtable, ctx, pfd, &pev);
-			k_mutex_unlock(lock);
+			zvfs_fd_unlock(ref);
 
 			if (result == -EAGAIN) {
 				retry = true;
 				continue;
 			} else if (result != 0) {
 				errno = -result;
-				return -1;
+				ret = -1;
+				goto out;
 			}
 
 			if (pfd->revents != 0) {
@@ -163,6 +205,9 @@ int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 			}
 		}
 	} while (retry);
+
+out:
+	zvfs_poll_put_all(held);
 
 	return ret;
 }
