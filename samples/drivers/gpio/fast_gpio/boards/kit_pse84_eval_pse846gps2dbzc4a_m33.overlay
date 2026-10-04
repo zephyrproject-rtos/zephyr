@@ -1,0 +1,23 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Move the toggle pin from the red LED to Arduino A3 (P15.5, header
+ * J2.7, 1.8 V) so the burst can be probed with a scope. The J2 analog
+ * header pins are routed directly to the MCU pads; the J3/J4 digital
+ * headers sit behind dual voltage level translators that cannot slew
+ * at the measured toggle rates. The application reads the pin through
+ * the led0 alias, so only the gpios property changes.
+ */
+
+&gpio_prt15 {
+	status = "okay";
+};
+
+&led_red {
+	gpios = <&gpio_prt15 5 GPIO_ACTIVE_HIGH>;
+};
