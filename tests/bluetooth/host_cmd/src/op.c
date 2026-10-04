@@ -696,6 +696,64 @@ static ZTEST(cmd_op, test_deadline_hands_back_all)
 	recover();
 }
 
+/* A command buffer that is freed goes to an operation that waits for one, not
+ * to a thread that is blocked on the command pool.
+ */
+static void alloc_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	/* A command without parameters */
+	(void)bt_hci_cmd_send_sync(TEST_OPCODE, NULL, NULL);
+}
+
+static K_WORK_DEFINE(alloc_work, alloc_handler);
+static K_THREAD_STACK_DEFINE(alloc_stack, 2048);
+static struct k_work_q alloc_queue;
+
+static ZTEST(cmd_op, test_freed_buffer_goes_to_operation)
+{
+	static bool started;
+	struct net_buf *buf;
+
+	if (!started) {
+		k_work_queue_init(&alloc_queue);
+		k_work_queue_start(&alloc_queue, alloc_stack, K_THREAD_STACK_SIZEOF(alloc_stack),
+				   K_PRIO_PREEMPT(1), NULL);
+		started = true;
+	}
+
+	for (unsigned int round = 0U; round < 5U; round++) {
+		test_driver_reset();
+		(void)hold_buffers();
+
+		/* A sender that blocks on the pool, then an operation, which
+		 * has one parameter byte.
+		 */
+		zassert_true(k_work_submit_to_queue(&alloc_queue, &alloc_work) >= 0,
+			     "Starting the sender failed");
+		k_sleep(K_MSEC(10));
+		zassert_ok(bt_hci_cmd_send_async(&op, NULL, &fut), "Sending the operation failed");
+		k_sleep(K_MSEC(10));
+		zassert_equal(test_cmd.count, 0U, "A command was sent without a buffer");
+
+		buf = held[0];
+		held[0] = NULL;
+		net_buf_unref(buf);
+
+		zassert_ok(bt_future_wait(&fut, K_SECONDS(1)), "The operation did not complete");
+		zassert_equal(test_cmd_plen[0], 1U, "The blocked sender got the freed buffer");
+
+		release_buffers();
+		k_sleep(K_MSEC(10));
+		zassert_equal(test_cmd.count, 2U, "The controller got %u commands",
+			      test_cmd.count);
+
+		/* A buffer that changed hands is still one buffer to the pool */
+		check_pool();
+	}
+}
+
 /* Synchronous commands from two threads and operations at once: every one of
  * them completes.
  */
