@@ -1216,6 +1216,164 @@ static ZTEST(cmd_op, test_deadline_hands_back_all)
 	recover();
 }
 
+/* A command buffer that is freed goes to an operation that waits for one, not
+ * to a thread that is blocked on the command pool.
+ */
+static K_SEM_DEFINE(alloc_done, 0, 1);
+
+static void alloc_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	/* A command without parameters */
+	(void)bt_hci_cmd_send_sync(TEST_OPCODE, NULL, NULL);
+
+	k_sem_give(&alloc_done);
+}
+
+static K_WORK_DEFINE(alloc_work, alloc_handler);
+static K_THREAD_STACK_DEFINE(alloc_stack, 2048);
+static struct k_work_q alloc_queue;
+
+/* The queue of a sender that is to block on the command pool */
+static void alloc_queue_start(void)
+{
+	static bool started;
+
+	if (!started) {
+		k_work_queue_init(&alloc_queue);
+		k_work_queue_start(&alloc_queue, alloc_stack, K_THREAD_STACK_SIZEOF(alloc_stack),
+				   K_PRIO_PREEMPT(1), NULL);
+		started = true;
+	}
+}
+
+static ZTEST(cmd_op, test_freed_buffer_goes_to_operation)
+{
+	struct net_buf *buf;
+
+	alloc_queue_start();
+
+	for (unsigned int round = 0U; round < 5U; round++) {
+		test_driver_reset();
+		(void)hold_buffers();
+
+		/* A sender that blocks on the pool, then an operation, which
+		 * has one parameter byte.
+		 */
+		zassert_true(k_work_submit_to_queue(&alloc_queue, &alloc_work) >= 0,
+			     "Starting the sender failed");
+		k_sleep(K_MSEC(10));
+		zassert_ok(bt_hci_cmd_send_async(&req, &param_cmd), "Sending the operation failed");
+		k_sleep(K_MSEC(10));
+		zassert_equal(test_cmd.count, 0U, "A command was sent without a buffer");
+
+		buf = held[0];
+		held[0] = NULL;
+		net_buf_unref(buf);
+
+		zassert_ok(bt_future_wait(&req.fut, K_SECONDS(1)),
+			   "The operation did not complete");
+		zassert_equal(test_cmd_plen[0], 1U, "The blocked sender got the freed buffer");
+
+		release_buffers();
+		k_sleep(K_MSEC(10));
+		zassert_equal(test_cmd.count, 2U, "The controller got %u commands",
+			      test_cmd.count);
+
+		/* A buffer that changed hands is still one buffer to the pool */
+		check_pool();
+	}
+}
+
+/* Nor do operations that keep coming starve a thread that is blocked on the
+ * pool: the freed buffers alternate between the two. Three operations send
+ * themselves again from their callbacks, so that an operation waits for a
+ * buffer whenever one is freed.
+ */
+#define CHURN_OPS    3U
+#define CHURN_ROUNDS 20U
+
+static K_SEM_DEFINE(churn_done, 0, 1);
+static unsigned int churn_left;
+static unsigned int churn_pending;
+
+/* Sends its operation again with churn_cmd, which names it */
+static void churn_cb(struct bt_hci_cmd_op *completed, int result);
+
+static const struct bt_hci_cmd_desc churn_cmd = {
+	.opcode = TEST_OPCODE,
+	.encode = encode,
+	.done = churn_cb,
+};
+
+static void churn_cb(struct bt_hci_cmd_op *completed, int result)
+{
+	zassert_equal(result, 0, "An operation of the churn gave %d", result);
+
+	if (churn_left > 0U) {
+		churn_left--;
+		zassert_ok(bt_hci_cmd_send_cb(completed, &churn_cmd),
+			   "Sending an operation again from its callback failed");
+		return;
+	}
+
+	churn_pending--;
+	if (churn_pending == 0U) {
+		k_sem_give(&churn_done);
+	}
+}
+
+static ZTEST(cmd_op, test_sender_not_starved_by_operations)
+{
+	static struct bt_hci_cmd_op churn[CHURN_OPS];
+	bool sender_early = false;
+	struct net_buf *buf;
+
+	alloc_queue_start();
+	k_sem_reset(&alloc_done);
+	k_sem_reset(&churn_done);
+	test_cmd.delay = K_MSEC(1);
+
+	/* A sender that blocks on the pool, then the operations */
+	(void)hold_buffers();
+	zassert_true(k_work_submit_to_queue(&alloc_queue, &alloc_work) >= 0,
+		     "Starting the sender failed");
+	k_sleep(K_MSEC(10));
+
+	churn_left = CHURN_OPS * (CHURN_ROUNDS - 1U);
+	churn_pending = CHURN_OPS;
+	ARRAY_FOR_EACH(churn, i) {
+		zassert_ok(bt_hci_cmd_send_cb(&churn[i], &churn_cmd),
+			   "Sending operation %zu failed", i);
+	}
+
+	/* One buffer for all of them */
+	buf = held[0];
+	held[0] = NULL;
+	net_buf_unref(buf);
+
+	zassert_ok(k_sem_take(&alloc_done, K_SECONDS(5)), "The sender never got a buffer");
+	zassert_ok(k_sem_take(&churn_done, K_SECONDS(5)), "The operations did not all complete");
+
+	/* The command of the sender, the one without parameters, went out among
+	 * the first commands rather than after the operations had all finished.
+	 */
+	ARRAY_FOR_EACH(test_cmd_plen, i) {
+		if (test_cmd_plen[i] == 0U) {
+			sender_early = true;
+		}
+	}
+
+	zassert_true(sender_early, "The sender waited for the operations: lengths %u %u %u %u",
+		     test_cmd_plen[0], test_cmd_plen[1], test_cmd_plen[2], test_cmd_plen[3]);
+	zassert_equal(test_cmd.count, CHURN_OPS * CHURN_ROUNDS + 1U,
+		      "The controller got %u commands", test_cmd.count);
+
+	release_buffers();
+	check_pool();
+}
+
 /* Synchronous commands from two threads and operations at once: every one of
  * them completes.
  */
