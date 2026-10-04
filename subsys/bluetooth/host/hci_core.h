@@ -504,7 +504,8 @@ struct bt_dev {
 #if defined(CONFIG_BT_CONN)
 	/* Asynchronous commands waiting for a command buffer, and those whose
 	 * completion callback is still to run. Protected by cmd_lock. Built
-	 * with CONFIG_BT_CONN only, where the first user is.
+	 * with CONFIG_BT_CONN only, for the one user so far: the HCI Disconnect
+	 * of a connection, see conn_hci_send() in conn.c.
 	 */
 	sys_slist_t		cmd_op_queue;
 	sys_slist_t		cmd_done_list;
@@ -612,6 +613,12 @@ void bt_hci_cmd_state_set_init(struct net_buf *buf,
 			       atomic_t *target, int bit, bool val);
 
 int bt_hci_disconnect(uint16_t handle, uint8_t reason);
+
+/* Finish the teardown of a connection that the controller turns out not to
+ * have any more, once it is in BT_CONN_DISCONNECT_COMPLETE, as the handling of
+ * a Disconnection Complete event does.
+ */
+void bt_hci_conn_lost(struct bt_conn *conn);
 
 bool bt_le_conn_params_valid(const struct bt_le_conn_param *param);
 int bt_le_set_data_len(struct bt_conn *conn, uint16_t tx_octets, uint16_t tx_time);
