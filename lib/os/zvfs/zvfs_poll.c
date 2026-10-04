@@ -10,6 +10,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/fdtable.h>
+#include <zephyr/sys/speculation.h>
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 bool net_socket_is_tls(void *obj);
@@ -17,26 +18,74 @@ bool net_socket_is_tls(void *obj);
 #define net_socket_is_tls(obj) false
 #endif
 
+#define ZVFS_POLL_FD_WORDS DIV_ROUND_UP(ZVFS_OPEN_SIZE, NUM_BITS(uint32_t))
+
+static void zvfs_poll_put_all(struct zvfs_fd_ref **held)
+{
+	for (int fd = 0; fd < ZVFS_OPEN_SIZE; fd++) {
+		if (held[fd] != NULL) {
+			zvfs_fd_put(held[fd]);
+			held[fd] = NULL;
+		}
+	}
+}
+
+static void zvfs_poll_leave(struct zvfs_fd_ref **held, const uint32_t *armed, int fd_end)
+{
+	for (int fd = 0; fd < fd_end; fd++) {
+		if (sys_bitfield_test_bit((mem_addr_t)armed, fd) != 0) {
+			zvfs_fd_poll_leave(held[fd]);
+		}
+	}
+}
+
+static bool zvfs_poll_enter(struct zvfs_fd_ref **held, const uint32_t *armed)
+{
+	for (int fd = 0; fd < ZVFS_OPEN_SIZE; fd++) {
+		if ((sys_bitfield_test_bit((mem_addr_t)armed, fd) != 0) &&
+		    !zvfs_fd_poll_enter(held[fd])) {
+			zvfs_poll_leave(held, armed, fd);
+			return false;
+		}
+	}
+
+	return true;
+}
+
 int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 {
 	bool retry;
 	int ret = 0;
 	int i;
 	struct zvfs_pollfd *pfd;
-	struct k_poll_event poll_events[CONFIG_ZVFS_POLL_MAX];
+	struct k_poll_event poll_events[2 * CONFIG_ZVFS_POLL_MAX];
 	struct k_poll_event *pev;
-	struct k_poll_event *pev_end = poll_events + ARRAY_SIZE(poll_events);
+	struct k_poll_event *pev_end = poll_events + CONFIG_ZVFS_POLL_MAX;
+	/* Index into fds of the entry that prepared each event */
+	int pev_owner[CONFIG_ZVFS_POLL_MAX];
+	int pev_count;
+	int close_count = 0;
+	/* The fds held until we return, so that close() cannot free their slots */
+	struct zvfs_fd_ref *held[ZVFS_OPEN_SIZE] = {NULL};
+	uint32_t looked_up[ZVFS_POLL_FD_WORDS] = {0U};
+	uint32_t armed[ZVFS_POLL_FD_WORDS] = {0U};
+	uint32_t lock_failed[ZVFS_POLL_FD_WORDS] = {0U};
+	uint32_t ready[ZVFS_POLL_FD_WORDS] = {0U};
+	uint32_t released[ZVFS_POLL_FD_WORDS] = {0U};
 	const struct fd_op_vtable *vtable;
-	struct k_mutex *lock;
 	k_timepoint_t end;
 	bool offload = false;
 	const struct fd_op_vtable *offl_vtable = NULL;
 	void *offl_ctx = NULL;
+	int saved_errno = errno;
 
 	end = sys_timepoint_calc(timeout);
 
 	pev = poll_events;
 	for (pfd = fds, i = nfds; i--; pfd++) {
+		struct k_poll_event *pev_start = pev;
+		struct zvfs_fd_ref *ref = NULL;
+		uint32_t idx = 0U;
 		void *ctx;
 		int result;
 
@@ -45,13 +94,24 @@ int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 			continue;
 		}
 
-		ctx = zvfs_get_fd_obj_and_vtable(pfd->fd, &vtable, &lock);
-		if (ctx == NULL) {
+		if (pfd->fd < ZVFS_OPEN_SIZE) {
+			idx = k_array_index_sanitize(pfd->fd, ZVFS_OPEN_SIZE);
+
+			if (sys_bitfield_test_and_set_bit((mem_addr_t)looked_up, idx) == 0) {
+				held[idx] = zvfs_fd_get(pfd->fd);
+			}
+			ref = held[idx];
+		}
+
+		if (ref == NULL) {
 			/* Will set POLLNVAL in return loop */
 			continue;
 		}
 
-		(void)k_mutex_lock(lock, K_FOREVER);
+		if (zvfs_fd_lock(ref, &ctx, &vtable) < 0) {
+			sys_bitfield_set_bit((mem_addr_t)lock_failed, idx);
+			continue;
+		}
 
 		result = zvfs_fdtable_call_poll_prepare(vtable, ctx, pfd, &pev, pev_end);
 		if (result == -EALREADY) {
@@ -62,6 +122,7 @@ int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 			 */
 			timeout = K_NO_WAIT;
 			end = sys_timepoint_calc(timeout);
+			sys_bitfield_set_bit((mem_addr_t)ready, idx);
 			result = 0;
 		} else if (result == -EXDEV) {
 			/* If POLL_PREPARE returned EXDEV, it means
@@ -81,13 +142,24 @@ int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 			result = 0;
 		}
 
-		k_mutex_unlock(lock);
+		zvfs_fd_unlock(ref);
 
 		if (result < 0) {
 			errno = -result;
-			return -1;
+			ret = -1;
+			goto out;
+		}
+
+		if (pev_start < pev) {
+			sys_bitfield_set_bit((mem_addr_t)armed, idx);
+		}
+
+		for (; pev_start < pev; pev_start++) {
+			pev_owner[pev_start - poll_events] = pfd - fds;
 		}
 	}
+
+	pev_count = pev - poll_events;
 
 	if (offload) {
 		int poll_timeout;
@@ -98,18 +170,45 @@ int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 			poll_timeout = k_ticks_to_ms_floor32(timeout.ticks);
 		}
 
-		return zvfs_fdtable_call_poll_offload(offl_vtable, offl_ctx, fds,
-					nfds, poll_timeout);
+		zvfs_poll_put_all(held);
+		ret = zvfs_fdtable_call_poll_offload(offl_vtable, offl_ctx, fds, nfds,
+						     poll_timeout);
+		goto out;
+	}
+
+	for (int fd = 0; fd < ZVFS_OPEN_SIZE; fd++) {
+		if (held[fd] == NULL) {
+			continue;
+		}
+
+		if (sys_bitfield_test_bit((mem_addr_t)armed, fd) != 0) {
+			zvfs_fd_poll_close_event(held[fd], &poll_events[pev_count + close_count]);
+			close_count++;
+		} else if ((sys_bitfield_test_bit((mem_addr_t)lock_failed, fd) != 0) ||
+			   (sys_bitfield_test_bit((mem_addr_t)ready, fd) == 0)) {
+			if (sys_bitfield_test_bit((mem_addr_t)lock_failed, fd) == 0) {
+				sys_bitfield_set_bit((mem_addr_t)released, fd);
+			}
+			zvfs_fd_put(held[fd]);
+			held[fd] = NULL;
+		}
 	}
 
 	timeout = sys_timepoint_timeout(end);
 
 	do {
-		ret = k_poll(poll_events, pev - poll_events, timeout);
+		if (zvfs_poll_enter(held, armed)) {
+			ret = k_poll(poll_events, pev_count + close_count, timeout);
+			zvfs_poll_leave(held, armed, ZVFS_OPEN_SIZE);
+		} else {
+			ret = 0;
+		}
+
 		/* EAGAIN when timeout expired, EINTR when cancelled (i.e. EOF) */
 		if (ret != 0 && ret != -EAGAIN && ret != -EINTR) {
 			errno = -ret;
-			return -1;
+			ret = -1;
+			goto out;
 		}
 
 		retry = false;
@@ -117,6 +216,8 @@ int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 
 		pev = poll_events;
 		for (pfd = fds, i = nfds; i--; pfd++) {
+			struct zvfs_fd_ref *ref = NULL;
+			bool lookup = false;
 			void *ctx;
 			int result;
 
@@ -126,24 +227,43 @@ int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 				continue;
 			}
 
-			ctx = zvfs_get_fd_obj_and_vtable(pfd->fd, &vtable, &lock);
-			if (ctx == NULL) {
+			if (pfd->fd < ZVFS_OPEN_SIZE) {
+				uint32_t idx = k_array_index_sanitize(pfd->fd, ZVFS_OPEN_SIZE);
+
+				lookup = sys_bitfield_test_bit((mem_addr_t)released, idx) != 0;
+				ref = lookup ? zvfs_fd_get(pfd->fd) : held[idx];
+			}
+
+			if ((ref == NULL) || (zvfs_fd_lock(ref, &ctx, &vtable) < 0)) {
+				if (lookup && (ref != NULL)) {
+					zvfs_fd_put(ref);
+				}
+
+				/* Skip the events it prepared before close() */
+				while ((pev < poll_events + pev_count) &&
+				       (pev_owner[pev - poll_events] == pfd - fds)) {
+					pev++;
+				}
+
 				pfd->revents = ZVFS_POLLNVAL;
 				ret++;
 				continue;
 			}
 
-			(void)k_mutex_lock(lock, K_FOREVER);
-
 			result = zvfs_fdtable_call_poll_update(vtable, ctx, pfd, &pev);
-			k_mutex_unlock(lock);
+			zvfs_fd_unlock(ref);
+
+			if (lookup) {
+				zvfs_fd_put(ref);
+			}
 
 			if (result == -EAGAIN) {
 				retry = true;
 				continue;
 			} else if (result != 0) {
 				errno = -result;
-				return -1;
+				ret = -1;
+				goto out;
 			}
 
 			if (pfd->revents != 0) {
@@ -163,6 +283,13 @@ int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 			}
 		}
 	} while (retry);
+
+out:
+	zvfs_poll_put_all(held);
+
+	if (ret >= 0) {
+		errno = saved_errno;
+	}
 
 	return ret;
 }

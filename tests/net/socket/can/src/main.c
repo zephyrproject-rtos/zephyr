@@ -217,6 +217,7 @@ static struct k_thread waiter_thread;
 static bool waiter_started;
 static int waiter_res;
 static int waiter_errno;
+static struct zsock_pollfd waiter_pfd;
 
 static void recv_waiter(void *p1, void *p2, void *p3)
 {
@@ -227,6 +228,17 @@ static void recv_waiter(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	waiter_res = zsock_recv(fd, &frame, sizeof(frame), 0);
+	waiter_errno = errno;
+}
+
+static void poll_waiter(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	waiter_pfd = (struct zsock_pollfd){.fd = fd, .events = ZSOCK_POLLIN};
+	waiter_res = zsock_poll(&waiter_pfd, 1, -1);
 	waiter_errno = errno;
 }
 
@@ -297,6 +309,15 @@ ZTEST(socket_can_close, test_recv_woken_by_close)
 	close_and_join();
 	zassert_equal(waiter_res, -1, "recv() returned %d", waiter_res);
 	zassert_equal(waiter_errno, EINTR, "Unexpected errno (%d)", waiter_errno);
+}
+
+ZTEST(socket_can_close, test_poll_woken_by_close)
+{
+	start_waiter(poll_waiter);
+	close_and_join();
+	zassert_equal(waiter_res, 1, "poll() returned %d", waiter_res);
+	zassert_equal(waiter_pfd.revents, ZSOCK_POLLNVAL, "Unexpected revents (%d)",
+		      waiter_pfd.revents);
 }
 
 ZTEST_SUITE(socket_can_close, NULL, NULL, socket_can_close_before, socket_can_close_after, NULL);

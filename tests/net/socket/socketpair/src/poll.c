@@ -159,6 +159,71 @@ ZTEST_F(net_socketpair, test_poll_close_remote_end_POLLOUT)
 	zassert_equal(errno, EPIPE, "errno: expected: EPIPE actual: %d", errno);
 }
 
+static K_THREAD_STACK_DEFINE(poller_stack, 2048 + CONFIG_TEST_EXTRA_STACK_SIZE);
+static struct k_thread poller_thread;
+static struct zsock_pollfd poller_fd;
+static int poller_res;
+
+static void poller_fun(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	poller_res = zsock_poll(&poller_fd, 1, -1);
+}
+
+static void test_poll_close_own_end_common(struct net_socketpair_fixture *fixture,
+					   short events)
+{
+	int fd = fixture->sv[0];
+	int sv[2];
+
+	memset(&poller_fd, 0, sizeof(poller_fd));
+	poller_fd.fd = fd;
+	poller_fd.events = events;
+
+	(void)k_thread_create(&poller_thread, poller_stack, K_THREAD_STACK_SIZEOF(poller_stack),
+			      poller_fun, NULL, NULL, NULL,
+			      k_thread_priority_get(k_current_get()) - 1, 0, K_NO_WAIT);
+	k_yield();
+	zassert_equal(k_thread_join(&poller_thread, K_NO_WAIT), -EBUSY, "poll() did not block");
+
+	zassert_ok(zsock_close(fd), "close() failed: %d", errno);
+	fixture->sv[0] = -1;
+
+	if (k_thread_join(&poller_thread, K_MSEC(100)) != 0) {
+		k_thread_abort(&poller_thread);
+		zassert_unreachable("close() did not wake poll()");
+	}
+
+	zassert_equal(poller_res, 1, "poll() returned %d", poller_res);
+	zassert_equal(poller_fd.revents, ZSOCK_POLLNVAL, "revents: %d", poller_fd.revents);
+
+	zassert_ok(zsock_socketpair(NET_AF_UNIX, NET_SOCK_STREAM, 0, sv), "socketpair() failed: %d",
+		   errno);
+	zassert_ok(zsock_close(sv[0]));
+	zassert_ok(zsock_close(sv[1]));
+	zassert_true(sv[0] == fd || sv[1] == fd, "poll() kept fd %d", fd);
+}
+
+ZTEST_F(net_socketpair, test_poll_close_own_end_POLLIN)
+{
+	test_poll_close_own_end_common(fixture, ZSOCK_POLLIN);
+}
+
+ZTEST_F(net_socketpair, test_poll_close_own_end_POLLOUT)
+{
+	int res;
+
+	for (size_t i = 0; i < CONFIG_NET_SOCKETPAIR_BUFFER_SIZE; ++i) {
+		res = zsock_send(fixture->sv[0], "x", 1, 0);
+		zassert_equal(res, 1, "send failed: %d", res);
+	}
+
+	test_poll_close_own_end_common(fixture, ZSOCK_POLLOUT);
+}
+
 /*
  * Data available immediately
  *   - even with a timeout value of 0 us, poll should return immediately with

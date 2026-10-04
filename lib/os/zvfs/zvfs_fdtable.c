@@ -43,7 +43,22 @@ struct zvfs_fd_ref {
 	 * reference taken after it is refused.
 	 */
 	atomic_t closing;
+#if defined(CONFIG_ZVFS_POLL)
+	struct k_queue poll_q;
+	void *closed_node[1];
+	atomic_t poll_closed;
+	atomic_t pollers;
+	struct k_sem pollers_left;
+#endif
 };
+
+#if defined(CONFIG_ZVFS_POLL)
+#define FD_POLL_INITIALIZER(_fd)                                                                   \
+	.poll_q = Z_QUEUE_INITIALIZER(fdtable[_fd].poll_q),                                        \
+	.pollers_left = Z_SEM_INITIALIZER(fdtable[_fd].pollers_left, 0, 1),
+#else
+#define FD_POLL_INITIALIZER(_fd)
+#endif
 
 #if defined(CONFIG_POSIX_DEVICE_IO)
 static const struct fd_op_vtable stdinout_fd_op_vtable;
@@ -62,6 +77,7 @@ static struct zvfs_fd_ref fdtable[ZVFS_OPEN_SIZE] = {
 		.refcount = ATOMIC_INIT(1),
 		.lock = Z_MUTEX_INITIALIZER(fdtable[0].lock),
 		.cond = Z_CONDVAR_INITIALIZER(fdtable[0].cond),
+		FD_POLL_INITIALIZER(0)
 	},
 	{
 		/* STDOUT */
@@ -69,6 +85,7 @@ static struct zvfs_fd_ref fdtable[ZVFS_OPEN_SIZE] = {
 		.refcount = ATOMIC_INIT(1),
 		.lock = Z_MUTEX_INITIALIZER(fdtable[1].lock),
 		.cond = Z_CONDVAR_INITIALIZER(fdtable[1].cond),
+		FD_POLL_INITIALIZER(1)
 	},
 	{
 		/* STDERR */
@@ -76,6 +93,7 @@ static struct zvfs_fd_ref fdtable[ZVFS_OPEN_SIZE] = {
 		.refcount = ATOMIC_INIT(1),
 		.lock = Z_MUTEX_INITIALIZER(fdtable[2].lock),
 		.cond = Z_CONDVAR_INITIALIZER(fdtable[2].cond),
+		FD_POLL_INITIALIZER(2)
 	},
 #else
 	{0},
@@ -369,6 +387,84 @@ void zvfs_fd_unlock_put(struct zvfs_fd_ref *ref)
 	z_fd_call_end(ref, true);
 }
 
+struct zvfs_fd_ref *zvfs_fd_get(int fd)
+{
+	return z_fd_call_begin(fd, false);
+}
+
+int zvfs_fd_lock(struct zvfs_fd_ref *ref, void **obj, const struct fd_op_vtable **vtable)
+{
+	if (z_fd_lock_live(ref) < 0) {
+		return -1;
+	}
+
+	if (ref->obj == NULL) {
+		k_mutex_unlock(&ref->lock);
+		errno = EBADF;
+		return -1;
+	}
+
+	*obj = ref->obj;
+	*vtable = ref->vtable;
+
+	return 0;
+}
+
+void zvfs_fd_unlock(struct zvfs_fd_ref *ref)
+{
+	k_mutex_unlock(&ref->lock);
+}
+
+void zvfs_fd_put(struct zvfs_fd_ref *ref)
+{
+	z_fd_call_end(ref, false);
+}
+
+static void z_fd_poll_close(struct zvfs_fd_ref *entry)
+{
+#if defined(CONFIG_ZVFS_POLL)
+	if (atomic_set(&entry->poll_closed, 1) != 0) {
+		return;
+	}
+
+	k_queue_append(&entry->poll_q, entry->closed_node);
+	k_queue_cancel_wait(&entry->poll_q);
+
+	while (atomic_get(&entry->pollers) != 0) {
+		(void)k_sem_take(&entry->pollers_left, K_FOREVER);
+	}
+#else
+	ARG_UNUSED(entry);
+#endif
+}
+
+#if defined(CONFIG_ZVFS_POLL)
+void zvfs_fd_poll_close_event(struct zvfs_fd_ref *ref, struct k_poll_event *event)
+{
+	k_poll_event_init(event, K_POLL_TYPE_FIFO_DATA_AVAILABLE, K_POLL_MODE_NOTIFY_ONLY,
+			  &ref->poll_q);
+}
+
+void zvfs_fd_poll_leave(struct zvfs_fd_ref *ref)
+{
+	if ((atomic_dec(&ref->pollers) == 1) && (atomic_get(&ref->poll_closed) != 0)) {
+		k_sem_give(&ref->pollers_left);
+	}
+}
+
+bool zvfs_fd_poll_enter(struct zvfs_fd_ref *ref)
+{
+	(void)atomic_inc(&ref->pollers);
+
+	if (atomic_get(&ref->poll_closed) != 0) {
+		zvfs_fd_poll_leave(ref);
+		return false;
+	}
+
+	return true;
+}
+#endif
+
 int zvfs_reserve_fd(void)
 {
 	int fd;
@@ -383,6 +479,12 @@ int zvfs_reserve_fd(void)
 		k_mutex_init(&fdtable[fd].lock);
 		k_condvar_init(&fdtable[fd].cond);
 		(void)atomic_clear(&fdtable[fd].closing);
+#if defined(CONFIG_ZVFS_POLL)
+		k_queue_init(&fdtable[fd].poll_q);
+		(void)k_sem_init(&fdtable[fd].pollers_left, 0, 1);
+		(void)atomic_clear(&fdtable[fd].poll_closed);
+		(void)atomic_clear(&fdtable[fd].pollers);
+#endif
 		/* Mark entry as used, zvfs_finalize_fd() will fill it in. */
 		(void)z_fd_ref(fd);
 	}
@@ -427,6 +529,7 @@ void zvfs_finalize_typed_fd(int fd, void *obj, const struct fd_op_vtable *vtable
 void zvfs_free_fd(int fd)
 {
 	/* Assumes fd was already bounds-checked. */
+	z_fd_poll_close(&fdtable[fd]);
 	(void)atomic_set(&fdtable[fd].closing, 1);
 	(void)z_fd_unref(&fdtable[fd]);
 }
@@ -527,6 +630,8 @@ int zvfs_close(int fd)
 	if (entry == NULL) {
 		return -1;
 	}
+
+	z_fd_poll_close(entry);
 
 	if (entry->vtable->close != NULL) {
 		/* close() is optional - e.g. stdinout_fd_op_vtable */
