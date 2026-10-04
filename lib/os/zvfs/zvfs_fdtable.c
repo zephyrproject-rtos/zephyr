@@ -355,6 +355,16 @@ void zvfs_fd_unlock_put(int fd)
 	z_fd_call_end(fd, true);
 }
 
+int zvfs_fd_get(int fd)
+{
+	return z_fd_call_begin(fd, false);
+}
+
+void zvfs_fd_put(int fd)
+{
+	z_fd_call_end(fd, false);
+}
+
 int zvfs_reserve_fd(void)
 {
 	int fd;

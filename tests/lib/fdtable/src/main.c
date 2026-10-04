@@ -600,4 +600,210 @@ ZTEST(fdtable, test_zvfs_fd_get_locked_queued_during_close)
 	zvfs_free_fd(again);
 }
 
+static struct k_poll_signal poll_sig[2];
+static int prepare_calls;
+static int prepare_result;
+static int update_calls;
+static int offload_calls;
+
+static int poll_ioctl(void *obj, unsigned int request, va_list args)
+{
+	struct zvfs_pollfd *pfd;
+	struct k_poll_event **pev;
+	struct k_poll_event *pev_end;
+
+	switch (request) {
+	case ZFD_IOCTL_POLL_PREPARE:
+		(void)va_arg(args, struct zvfs_pollfd *);
+		pev = va_arg(args, struct k_poll_event **);
+		pev_end = va_arg(args, struct k_poll_event *);
+		prepare_calls++;
+		if (prepare_result != 0) {
+			return prepare_result;
+		}
+		if (*pev == pev_end) {
+			return -ENOMEM;
+		}
+		k_poll_event_init(*pev, K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, obj);
+		(*pev)++;
+		return 0;
+	case ZFD_IOCTL_POLL_UPDATE:
+		pfd = va_arg(args, struct zvfs_pollfd *);
+		pev = va_arg(args, struct k_poll_event **);
+		update_calls++;
+		if ((*pev)->state != K_POLL_STATE_NOT_READY) {
+			pfd->revents |= ZVFS_POLLIN;
+		}
+		(*pev)++;
+		return 0;
+	case ZFD_IOCTL_POLL_OFFLOAD:
+		offload_calls++;
+		return 0;
+	default:
+		return -EOPNOTSUPP;
+	}
+}
+
+static const struct fd_op_vtable poll_vtable = {
+	.close = counting_close,
+	.ioctl = poll_ioctl,
+};
+
+static void poll_reset(void)
+{
+	prepare_calls = 0;
+	prepare_result = 0;
+	update_calls = 0;
+	offload_calls = 0;
+	close_calls = 0;
+	k_poll_signal_init(&poll_sig[0]);
+	k_poll_signal_init(&poll_sig[1]);
+}
+
+static struct zvfs_pollfd poller_fds[2];
+static volatile bool poller_entered;
+static volatile bool poller_done;
+static int poller_res;
+
+static void poller_cb(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p3);
+
+	poller_entered = true;
+	poller_res = zvfs_poll(poller_fds, POINTER_TO_INT(p1), POINTER_TO_INT(p2));
+	poller_done = true;
+}
+
+static void start_poller(int nfds, int timeout_ms)
+{
+	poller_entered = false;
+	poller_done = false;
+
+	/* A higher priority poller runs on the yield */
+	k_thread_create(&fd_thread, fd_thread_stack, K_THREAD_STACK_SIZEOF(fd_thread_stack),
+			poller_cb, INT_TO_POINTER(nfds), INT_TO_POINTER(timeout_ms), NULL,
+			k_thread_priority_get(k_current_get()) - 1, 0, K_NO_WAIT);
+	k_yield();
+	zassert_true(poller_entered, "poller did not run");
+	zassert_false(poller_done, "poller did not block");
+}
+
+ZTEST(fdtable, test_zvfs_poll_queued_during_close)
+{
+	const struct fd_op_vtable *vtable;
+	struct k_mutex *lock;
+
+	/* The window below is made by priorities, which order threads on one CPU only */
+	if (arch_num_cpus() > 1) {
+		ztest_test_skip();
+	}
+
+	poll_reset();
+
+	int fd = zvfs_alloc_fd(&poll_sig[0], &poll_vtable);
+
+	zassert_true(fd >= 0, "fd < 0");
+
+	zassert_equal_ptr(zvfs_get_fd_obj_and_vtable(fd, &vtable, &lock), &poll_sig[0]);
+	zassert_ok(k_mutex_lock(lock, K_FOREVER));
+
+	poller_fds[0] = (struct zvfs_pollfd){.fd = fd, .events = ZVFS_POLLIN};
+	start_poller(1, 0);
+
+	zassert_equal(zvfs_close(fd), 0);
+	zassert_equal(close_calls, 1);
+
+	k_mutex_unlock(lock);
+	k_thread_join(&fd_thread, K_FOREVER);
+
+	zassert_equal(poller_res, 1);
+	zassert_equal(poller_fds[0].revents, ZVFS_POLLNVAL);
+	zassert_equal(prepare_calls, 0, "poll() queued during close() prepared the closed fd");
+	zassert_equal(update_calls, 0);
+
+	int again = zvfs_reserve_fd();
+
+	zassert_equal(again, fd, "poll() kept its reference");
+	zvfs_free_fd(again);
+}
+
+ZTEST(fdtable, test_zvfs_poll_close_while_waiting)
+{
+	/* The window below is made by priorities, which order threads on one CPU only */
+	if (arch_num_cpus() > 1) {
+		ztest_test_skip();
+	}
+
+	poll_reset();
+
+	int fd_a = zvfs_alloc_fd(&poll_sig[0], &poll_vtable);
+	int fd_b = zvfs_alloc_fd(&poll_sig[1], &poll_vtable);
+
+	zassert_true(fd_a >= 0 && fd_b >= 0, "fd < 0");
+
+	poller_fds[0] = (struct zvfs_pollfd){.fd = fd_a, .events = ZVFS_POLLIN};
+	poller_fds[1] = (struct zvfs_pollfd){.fd = fd_b, .events = ZVFS_POLLIN};
+	start_poller(2, -1);
+	zassert_equal(prepare_calls, 2);
+
+	zassert_equal(zvfs_close(fd_a), 0);
+
+	/* The table may have no other free slot */
+	int other = zvfs_reserve_fd();
+
+	zassert_not_equal(other, fd_a, "slot reused while poll() waits on it");
+	if (other >= 0) {
+		zvfs_free_fd(other);
+	}
+
+	zassert_ok(k_poll_signal_raise(&poll_sig[1], 0));
+	k_thread_join(&fd_thread, K_FOREVER);
+
+	zassert_equal(poller_res, 2);
+	zassert_equal(poller_fds[0].revents, ZVFS_POLLNVAL);
+	zassert_equal(poller_fds[1].revents, ZVFS_POLLIN, "fd_b read the closed fd's event");
+	zassert_equal(update_calls, 1, "poll() updated the closed fd");
+
+	int again = zvfs_reserve_fd();
+
+	zassert_equal(again, fd_a, "poll() kept its reference");
+	zvfs_free_fd(again);
+	zassert_equal(zvfs_close(fd_b), 0);
+}
+
+static void poll_and_close(int fd, int nfds, int expected)
+{
+	poller_fds[0] = (struct zvfs_pollfd){.fd = fd, .events = ZVFS_POLLIN};
+	poller_fds[1] = (struct zvfs_pollfd){.fd = fd, .events = ZVFS_POLLIN};
+	zassert_equal(zvfs_poll(poller_fds, nfds, 0), expected);
+	zassert_equal(zvfs_close(fd), 0);
+
+	int again = zvfs_reserve_fd();
+
+	zassert_equal(again, fd, "poll() kept its reference");
+	zvfs_free_fd(again);
+}
+
+ZTEST(fdtable, test_zvfs_poll_drops_references)
+{
+	poll_reset();
+	zassert_ok(k_poll_signal_raise(&poll_sig[0], 0));
+
+	/* Returning events, with the fd polled twice */
+	poll_and_close(zvfs_alloc_fd(&poll_sig[0], &poll_vtable), 2, 2);
+	zassert_equal(update_calls, 2);
+
+	/* Failing in prepare */
+	poll_reset();
+	prepare_result = -EINVAL;
+	poll_and_close(zvfs_alloc_fd(&poll_sig[0], &poll_vtable), 1, -1);
+	zassert_equal(prepare_calls, 1);
+
+	/* Handing over to an offloaded poll */
+	poll_reset();
+	prepare_result = -EXDEV;
+	poll_and_close(zvfs_alloc_fd(&poll_sig[0], &poll_vtable), 1, 0);
+	zassert_equal(offload_calls, 1);
+}
+
 ZTEST_SUITE(fdtable, NULL, NULL, NULL, NULL, NULL);

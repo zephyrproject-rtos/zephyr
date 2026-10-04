@@ -226,6 +226,27 @@ void *zvfs_fd_get_locked(int fd, const struct fd_op_vtable **vtable);
 void zvfs_fd_unlock_put(int fd);
 
 /**
+ * @brief Hold a descriptor without locking it.
+ *
+ * For a caller that waits with the descriptor unlocked, such as poll(). The
+ * slot is not freed or reused until zvfs_fd_put(), but close() can still close
+ * the object, so take zvfs_fd_get_locked() for each call into it. Every
+ * successful call must be paired with exactly one zvfs_fd_put().
+ *
+ * @param fd File descriptor previously returned by zvfs_reserve_fd()
+ *
+ * @return 0 on success, or -1 with errno set to EBADF and nothing held
+ */
+int zvfs_fd_get(int fd);
+
+/**
+ * @brief Drop a descriptor held by zvfs_fd_get().
+ *
+ * @param fd File descriptor passed to zvfs_fd_get()
+ */
+void zvfs_fd_put(int fd);
+
+/**
  * @brief Get the mutex and condition variable associated with the given object and vtable.
  *
  * @param obj Object previously returned by a call to e.g. @ref zvfs_get_fd_obj.
