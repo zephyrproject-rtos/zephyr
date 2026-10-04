@@ -19,7 +19,7 @@
 		zephyr,shell-uart = &usart2;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,flash-controller = &mx25r6435;
+		zephyr,flash-controller = &ext_flash_ctrl;
 	};
 
 	leds {
@@ -74,6 +74,7 @@
 		sw4 = &joy_left;
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
+		ext-nor0 = &ext_flash_ctrl;
 	};
 };
 
@@ -201,6 +202,11 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &quadspi {
+	compatible = "st,stm32-qspi-controller";
+	clock-names = "qspix";
+	clock-frequency = <DT_FREQ_M(8)>;
+	op-mode = "MSPI_OP_MODE_CONTROLLER";
+	st,cs-high-time = <3>; /* >= 30 ns */
 	pinctrl-0 = <&quadspi_bk1_io0_pb1 &quadspi_bk1_io1_pb0
 		     &quadspi_bk1_io2_pa7 &quadspi_bk1_io3_pa6
 		     &quadspi_bk1_ncs_pb11 &quadspi_clk_pa3>;
@@ -209,17 +215,25 @@ zephyr_udc0: &usbotg_fs {
 	dmas = <&dma2 7 3 STM32_DMA_PERIPH_RX>; /* channel 7 request 3 on DMA2 */
 	dma-names = "tx_rx";
 
-	flash-id = <1>;
 	status = "okay";
 
-	mx25r6435: qspi-nor-flash@0 {
-		compatible = "st,stm32-qspi-nor";
+	ext_flash_ctrl: nor-flash-controller@0 {
+		compatible = "jedec,nor";
 		reg = <0>;
 		size = <DT_SIZE_M(64)>; /* 64 Mbits */
-		qspi-max-frequency = <8000000>;
-		cs-high-time = <3>; /* >= 30 ns */
+		jedec-id = [c2 28 17]; /* MX25R6435F */
+		sfdp-bfp = [e5 20 f1 ff ff ff ff 03
+			    44 eb 08 6b 08 3b 04 bb
+			    ee ff ff ff ff ff 00 ff
+			    ff ff 00 ff 0c 20 0f 52
+			    10 d8 00 ff 23 72 f5 00
+			    82 ed 04 cc 44 83 68 44
+			    30 b0 30 b0 f7 c4 d5 5c
+			    00 be 29 ff f0 d0 ff ff];
+		mspi-max-frequency = <DT_FREQ_M(8)>;
+		mspi-io-mode = "MSPI_IO_MODE_QUAD_1_4_4";
+		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+		mspi-hardware-ce-num = <0>;
 		status = "okay";
-		spi-bus-width = <4>;
-		writeoc = "PP_1_4_4";
 	};
 };
