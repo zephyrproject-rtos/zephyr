@@ -31,6 +31,10 @@ struct test_cmd_script {
 	uint8_t ncmd;
 	/** Length of the return parameters after the status (TEST_OPCODE only) */
 	uint8_t rp_len;
+	/** The return parameters repeat the first parameter byte of the command
+	 *  instead of counting up (TEST_OPCODE only)
+	 */
+	bool echo;
 	/** What send() returns instead of taking the command, if not 0 */
 	int send_err;
 	/** How often the controller has been given the command */
