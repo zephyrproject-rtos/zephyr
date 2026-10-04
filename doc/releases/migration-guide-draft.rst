@@ -114,6 +114,10 @@ Bluetooth Classic
 Bluetooth Host
 ==============
 
+* A controller that stops responding to HCI commands is now given up on after the command timeout.
+  With :kconfig:option:`CONFIG_BT_ASSERT` disabled, the command fails with ``-ETIMEDOUT`` and every
+  later command with ``-EHOSTDOWN``, until :c:func:`bt_disable` followed by :c:func:`bt_enable`.
+
 * The ATT prepare write buffers (:kconfig:option:`CONFIG_BT_ATT_PREPARE_COUNT`) are now shared
   equally between connections: a single connection holds at most
   :kconfig:option:`CONFIG_BT_ATT_PREPARE_COUNT_PER_CONN` of them, which defaults to

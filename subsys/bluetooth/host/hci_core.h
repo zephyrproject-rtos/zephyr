@@ -40,6 +40,7 @@ enum {
 	BT_DEV_DISABLING,   /* Host stack is being disabled */
 	BT_DEV_OPEN,        /* HCI transport is open */
 	BT_DEV_CTLR_RX,     /* Controller has sent a packet during bt_enable() */
+	BT_DEV_CMD_FAILED,  /* The controller stopped responding to commands */
 	BT_DEV_READY,       /* Host stack has completed init */
 	BT_DEV_PRESET_ID,
 	BT_DEV_HAS_PUB_KEY,
@@ -93,6 +94,7 @@ enum {
 				 BIT(BT_DEV_DISABLING) | \
 				 BIT(BT_DEV_OPEN) | \
 				 BIT(BT_DEV_CTLR_RX) | \
+				 BIT(BT_DEV_CMD_FAILED) | \
 				 BIT(BT_DEV_PRESET_ID))
 
 #if defined(CONFIG_BT_EXT_ADV_LEGACY_SUPPORT)
@@ -485,7 +487,7 @@ struct bt_dev {
 	/* Number of commands controller can accept */
 	struct k_sem		ncmd_sem;
 
-	/* Last sent HCI command */
+	/* Last sent HCI command, protected by cmd_lock */
 	struct net_buf		*sent_cmd;
 
 	/* Queue for incoming HCI events & ACL data */
@@ -567,6 +569,12 @@ int bt_work_reschedule(struct k_work_delayable *work, k_timeout_t delay);
 
 /* Check whether it is executing in the `bt_workq` thread context. */
 bool bt_is_work_thread(void);
+
+/* The command deadline: how long the HCI command path may make no progress
+ * before the Host gives up the commands that wait, see cmd_deadline_expired()
+ * in hci_core.c.
+ */
+#define HCI_CMD_TIMEOUT K_SECONDS(10)
 
 /* Data type to store state related with command to be updated
  * when command completes successfully.

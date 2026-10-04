@@ -14,6 +14,9 @@ tests:
   bluetooth.host_disable.no_close:
     extra_configs:
       - CONFIG_TEST_DRIVER_NO_CLOSE=y
+  bluetooth.host_disable.wait_nop:
+    extra_configs:
+      - CONFIG_BT_WAIT_NOP=y
   bluetooth.host_disable.ctlr_stops:
     extra_configs:
       - CONFIG_TEST_CTLR_STOPS=y
