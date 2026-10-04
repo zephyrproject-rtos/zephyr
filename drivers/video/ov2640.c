@@ -177,9 +177,9 @@ struct ov2640_config {
 struct ov2640_ctrls {
 	struct video_ctrl hflip;
 	struct video_ctrl vflip;
-	struct video_ctrl ae;
-	struct video_ctrl awb;
-	struct video_ctrl gain;
+	struct video_ctrl exposure_auto;
+	struct video_ctrl auto_white_balance;
+	struct video_ctrl autogain;
 	struct video_ctrl contrast;
 	struct video_ctrl brightness;
 	struct video_ctrl saturation;
@@ -200,6 +200,12 @@ struct ov2640_data {
 struct ov2640_reg {
 	uint8_t addr;
 	uint8_t val;
+};
+
+static const char *const ov2640_test_pattern_menu[] = {
+	"Disabled",
+	"Color bars",
+	NULL
 };
 
 const int64_t ov2640_link_freq[] = {
@@ -855,7 +861,7 @@ static int ov2640_set_ctrl_test_pattern(const struct device *dev, uint8_t enable
 	return ov2640_write_sensor_reg(dev, COM7, val);
 }
 
-static int ov2640_set_ctrl_white_balance_temperature(const struct device *dev, int enable)
+static int ov2640_set_ctrl_auto_whit_balance(const struct device *dev, int enable)
 {
 	uint8_t val;
 	int ret;
@@ -874,7 +880,7 @@ static int ov2640_set_ctrl_white_balance_temperature(const struct device *dev, i
 	return ov2640_write_dsp_reg(dev, CTRL1, val);
 }
 
-static int ov2640_set_ctrl_gain(const struct device *dev, int enable)
+static int ov2640_set_ctrl_autogain(const struct device *dev, int enable)
 {
 	uint8_t val;
 	int ret;
@@ -893,17 +899,22 @@ static int ov2640_set_ctrl_gain(const struct device *dev, int enable)
 	return ov2640_write_sensor_reg(dev, COM8, val);
 }
 
-static int ov2640_set_ctrl_exposure(const struct device *dev, int enable)
+static int ov2640_set_ctrl_exposure_auto(const struct device *dev, int manual)
 {
 	uint8_t val;
 	int ret;
+
+	if (manual > 1) {
+		LOG_WRN("Exposure other than manual/auto not supported");
+		return -ENOTSUP;
+	}
 
 	ret = ov2640_read_sensor_reg(dev, COM8, &val);
 	if (ret < 0) {
 		return ret;
 	}
 
-	if (enable) {
+	if (!manual) {
 		val |= COM8_AEC_EN;
 	} else {
 		val &= ~COM8_AEC_EN;
@@ -977,12 +988,12 @@ static int ov2640_set_ctrl(const struct device *dev, uint32_t id)
 		return ov2640_set_ctrl_hflip(dev, ctrls->hflip.val);
 	case VIDEO_CID_VFLIP:
 		return ov2640_set_ctrl_vflip(dev, ctrls->vflip.val);
-	case VIDEO_CID_EXPOSURE:
-		return ov2640_set_ctrl_exposure(dev, ctrls->ae.val);
-	case VIDEO_CID_WHITE_BALANCE_TEMPERATURE:
-		return ov2640_set_ctrl_white_balance_temperature(dev, ctrls->awb.val);
-	case VIDEO_CID_GAIN:
-		return ov2640_set_ctrl_gain(dev, ctrls->gain.val);
+	case VIDEO_CID_EXPOSURE_AUTO:
+		return ov2640_set_ctrl_exposure_auto(dev, ctrls->exposure_auto.val);
+	case VIDEO_CID_AUTO_WHITE_BALANCE:
+		return ov2640_set_ctrl_auto_whit_balance(dev, ctrls->auto_white_balance.val);
+	case VIDEO_CID_AUTOGAIN:
+		return ov2640_set_ctrl_autogain(dev, ctrls->autogain.val);
 	case VIDEO_CID_BRIGHTNESS:
 		return ov2640_set_level(dev, ctrls->brightness.val, NUM_BRIGHTNESS_LEVELS,
 					ARRAY_SIZE(brightness_regs[0]), brightness_regs);
@@ -1032,19 +1043,19 @@ static int ov2640_init_controls(const struct device *dev)
 		return ret;
 	}
 
-	ret = video_init_ctrl(&ctrls->ae, dev, VIDEO_CID_EXPOSURE,
-			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 1});
+	ret = video_init_menu_ctrl(&ctrls->exposure_auto, dev, VIDEO_CID_EXPOSURE_AUTO, 0, NULL);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = video_init_ctrl(&ctrls->awb, dev, VIDEO_CID_WHITE_BALANCE_TEMPERATURE,
-			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 1});
+	ret = video_init_ctrl(
+		&ctrls->auto_white_balance, dev, VIDEO_CID_AUTO_WHITE_BALANCE,
+		(struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 1});
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = video_init_ctrl(&ctrls->gain, dev, VIDEO_CID_GAIN,
+	ret = video_init_ctrl(&ctrls->autogain, dev, VIDEO_CID_AUTOGAIN,
 			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 1});
 	if (ret < 0) {
 		return ret;
@@ -1075,15 +1086,15 @@ static int ov2640_init_controls(const struct device *dev)
 		return ret;
 	}
 
-	ret = video_init_ctrl(&ctrls->test_pattern, dev, VIDEO_CID_TEST_PATTERN,
-			       (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
+	ret = video_init_menu_ctrl(&ctrls->test_pattern, dev, VIDEO_CID_TEST_PATTERN, 0,
+				   ov2640_test_pattern_menu);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = video_init_ctrl(&ctrls->vblank, dev, VIDEO_CID_VBLANK,
-			       (struct video_ctrl_range){.min = 0, .max = UINT16_MAX, .step = 1,
-							 .def = 0});
+	ret = video_init_ctrl(
+		&ctrls->vblank, dev, VIDEO_CID_VBLANK,
+		(struct video_ctrl_range){.min = 0, .max = UINT16_MAX, .step = 1, .def = 0});
 	if (ret < 0) {
 		return ret;
 	}
