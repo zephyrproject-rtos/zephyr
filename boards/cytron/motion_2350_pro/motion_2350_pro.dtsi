@@ -181,6 +181,10 @@ zephyr_i2c: &i2c0 {
 	status = "okay";
 };
 
+&die_temp {
+	status = "okay";
+};
+
 zephyr_udc0: &usbd {
 	status = "okay";
 };

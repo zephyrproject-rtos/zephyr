@@ -173,6 +173,10 @@
 	status = "okay";
 };
 
+&die_temp {
+	status = "okay";
+};
+
 zephyr_udc0: &usbd {
 	status = "okay";
 };
