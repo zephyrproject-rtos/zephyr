@@ -126,6 +126,7 @@ LOG_MODULE_REGISTER(video_ov2640, CONFIG_VIDEO_LOG_LEVEL);
 
 #define COM2              0x09
 #define COM2_OUTPUT_DRIVE_MASK GENMASK(1, 0)
+#define COM2_STANDBY BIT(4)
 
 #define COM3             0x0C
 #define COM3_DEFAULT     0x38
@@ -741,7 +742,7 @@ static int ov2640_set_format(const struct device *dev, struct video_format *fmt)
 
 	drv_data->fmt = *fmt;
 
-	return ov2640_apply_config(dev);
+	return 0;
 }
 
 static int ov2640_get_format(const struct device *dev, struct video_format *fmt)
@@ -787,7 +788,7 @@ static int ov2640_set_frmival(const struct device *dev, struct video_frmival *fr
 	data->frmival_nsec = video_frmival_nsec(&fie.discrete);
 	data->clock_divider = ov2640_clock_dividers[fie.index];
 
-	return ov2640_apply_config(dev);
+	return 0;
 }
 
 static int ov2640_get_frmival(const struct device *dev, struct video_frmival *frmival)
@@ -800,8 +801,54 @@ static int ov2640_get_frmival(const struct device *dev, struct video_frmival *fr
 	return 0;
 }
 
-static int ov2640_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
+static int ov2640_set_stream(const struct device *dev, bool stream, enum video_buf_type type)
 {
+	uint8_t val;
+	int ret;
+
+	if (stream) {
+		ret = ov2640_read_dsp_reg(dev, COM2, &val);
+		if (ret < 0) {
+			return ret;
+		}
+
+		val &= ~COM2_STANDBY;
+
+		ret = ov2640_write_dsp_reg(dev, COM2, val);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ret = ov2640_apply_config(dev);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ret = ov2640_write_dsp_reg(dev, RESET, 0x00);
+		if (ret < 0) {
+			return ret;
+		}
+
+	} else {
+		/* Reset first so that the "out of standby" wait configuration before starting */
+		ret = ov2640_write_dsp_reg(dev, RESET, RESET_JPEG | RESET_DVP);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ret = ov2640_read_dsp_reg(dev, COM2, &val);
+		if (ret < 0) {
+			return ret;
+		}
+
+		val |= COM2_STANDBY;
+
+		ret = ov2640_write_dsp_reg(dev, COM2, val);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
 	return 0;
 }
 
@@ -1200,6 +1247,11 @@ static int ov2640_init(const struct device *dev)
 	}
 
 	ret = ov2640_set_frmival(dev, &(struct video_frmival){.numerator = 1, .denominator = 8});
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = ov2640_set_stream(dev, false, VIDEO_BUF_TYPE_OUTPUT);
 	if (ret < 0) {
 		return ret;
 	}
