@@ -226,12 +226,15 @@ struct bt_le_ext_adv {
 
 	ATOMIC_DEFINE(flags, BT_ADV_NUM_FLAGS);
 
-	struct k_work_delayable	lim_adv_timeout_work;
-
 	/** The options used to set the parameters for this advertising set
 	 * @ref bt_le_adv_param
+	 *
+	 * Before the work item, which is aligned to eight bytes, so that
+	 * neither of them is followed by padding.
 	 */
 	uint32_t options;
+
+	struct k_work_delayable	lim_adv_timeout_work;
 };
 
 enum {
