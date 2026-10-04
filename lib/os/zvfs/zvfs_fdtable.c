@@ -368,6 +368,39 @@ void zvfs_fd_unlock_put(struct zvfs_fd_ref *ref)
 	z_fd_call_end(ref, true);
 }
 
+struct zvfs_fd_ref *zvfs_fd_get(int fd)
+{
+	return z_fd_call_begin(fd, false);
+}
+
+int zvfs_fd_lock(struct zvfs_fd_ref *ref, void **obj, const struct fd_op_vtable **vtable)
+{
+	if (z_fd_lock_live(ref) < 0) {
+		return -1;
+	}
+
+	if (ref->obj == NULL) {
+		k_mutex_unlock(&ref->lock);
+		errno = EBADF;
+		return -1;
+	}
+
+	*obj = ref->obj;
+	*vtable = ref->vtable;
+
+	return 0;
+}
+
+void zvfs_fd_unlock(struct zvfs_fd_ref *ref)
+{
+	k_mutex_unlock(&ref->lock);
+}
+
+void zvfs_fd_put(struct zvfs_fd_ref *ref)
+{
+	z_fd_call_end(ref, false);
+}
+
 int zvfs_reserve_fd(void)
 {
 	int fd;
