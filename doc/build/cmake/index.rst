@@ -182,7 +182,7 @@ Build-time constants generation
    ``$<TARGET_OBJECTS:offsets>`` in linker scripts).
 
 System call boilerplate
-   The *gen_syscall.py* and *parse_syscalls.py*  scripts work
+   The *gen_syscalls.py* and *parse_syscalls.py*  scripts work
    together to bind potential system call functions with their
    implementations.
 
