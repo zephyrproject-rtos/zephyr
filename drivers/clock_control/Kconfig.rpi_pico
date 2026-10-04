@@ -19,6 +19,7 @@ config RPI_PICO_ROSC_USE_MEASURED_FREQ
 
 config RPI_PICO_SKIP_CLOCK_INIT
 	bool
+	default y if SOC_FAMILY_RPI_PICO_CPU1
 	help
 	  Skip clock initialisation - which is needed when running Zephyr
 	  on the second CPU core.
