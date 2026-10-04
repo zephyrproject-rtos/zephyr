@@ -11,7 +11,6 @@
 # +---------------------------------------------------------------+
 # | Generic C-compiler | Yes      |  Pre-processing of devicetree |
 # | Zephyr-sdk         |          |                               |
-# | gperf              |          |                               |
 # | openocd            |          |                               |
 # | bossac             |          |                               |
 # | imgtool            |          |                               |
@@ -22,10 +21,6 @@
 # 'CMAKE_C_COMPILER'
 # Path to C compiler.
 # Set to 'CMAKE_C_COMPILER-NOTFOUND' if no C compiler was found.
-#
-# 'GPERF'
-# Path to gperf.
-# Set to 'GPERF-NOTFOUND' if gperf was not found.
 #
 # 'OPENOCD'
 # Path to openocd.
@@ -49,9 +44,6 @@ if(HostTools_FOUND)
 endif()
 
 find_package(Zephyr-sdk 1.0)
-
-# gperf is an optional dependency
-find_program(GPERF gperf)
 
 # openocd is an optional dependency
 find_program(OPENOCD openocd)
