@@ -54,7 +54,7 @@ can be disabled if not needed.
   listener to receive UDP packets destined to certain port (server side
   support).
 
-* **TCP** Transmission Control Protocol (:rfc:`793`) is supported. Both server
+* **TCP** Transmission Control Protocol (:rfc:`9293`) is supported. Both server
   and client roles can be used the application. The amount of TCP sockets
   that are available to applications can be configured at build time.
   Selective acknowledgment (:rfc:`2018`) is supported for received data
