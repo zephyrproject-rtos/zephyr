@@ -1185,7 +1185,7 @@ void z_syscall_stack_measure(int syscall_id)
     /* Get the current thread */
     struct k_thread *thread = _current;
     
-    if (thread == NULL || thread->stack_info.start == 0) {
+    if (thread == NULL || thread->stack_info.start == 0 || k_is_in_isr()) {
         return;
     }
 
@@ -1202,7 +1202,7 @@ void z_syscall_stack_measure(int syscall_id)
          * This directly addresses the requirement to flag excessive syscall stack usage.
          */
         if (used_stack > (total_stack * 9) / 10) {
-            LOG_WRN("Syscall ID %d is an outlier! High privilege stack usage: %zu / %zu bytes", 
+            printk("Syscall ID %d is an outlier! High privilege stack usage: %zu / %zu bytes\n", 
                     syscall_id, used_stack, total_stack);
         }
     }
