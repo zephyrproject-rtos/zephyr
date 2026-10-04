@@ -15,7 +15,7 @@
  * @brief Connection management
  * @defgroup bt_conn Connection management
  * @since 1.0
- * @version 1.0.1
+ * @version 1.1.0
  * @ingroup bluetooth
  * @{
  */
@@ -1783,6 +1783,15 @@ int bt_conn_le_set_default_phy(uint8_t pref_tx_phy, uint8_t pref_rx_phy);
  *   - @ref BT_HCI_ERR_UNSUPP_REMOTE_FEATURE
  *   - @ref BT_HCI_ERR_PAIRING_NOT_SUPPORTED (BR/EDR connections only)
  *   - @ref BT_HCI_ERR_UNACCEPT_CONN_PARAM
+ *
+ *  For an established ACL connection the function does not wait for the
+ *  controller: a return value of zero means that the request to disconnect
+ *  has been queued. The @ref bt_conn_cb.disconnected callback is called once
+ *  the connection is gone. Should the controller reject the request, the
+ *  connection stays connected, a warning is logged and the callback is not
+ *  called, so a caller that waits for it needs to bound the wait and may try
+ *  again. For the other connection types, and for a connection that is still being created, the
+ *  function waits for the response of the controller and returns the outcome.
  *
  *  @param conn Connection to disconnect.
  *  @param reason Reason code for the disconnection.
