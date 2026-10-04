@@ -1581,6 +1581,175 @@ ZTEST(net_ipv6, test_send_neighbor_discovery_nbr_rm_pending)
 	assert_tx_pool_restored(&before);
 }
 
+static K_SEM_DEFINE(nbr_rm_sender_done, 0, 1);
+static int nbr_rm_sender_ret;
+
+static void nbr_rm_sender(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	nbr_rm_sender_ret = send_msg(&my_addr, &test_router_addr);
+	k_sem_give(&nbr_rm_sender_done);
+}
+
+K_THREAD_STACK_DEFINE(nbr_rm_sender_stack, 2048);
+static struct k_thread nbr_rm_sender_thread;
+
+/* The mutex the sender is blocked on, or NULL if it is not blocked on one. */
+static struct k_mutex *nbr_rm_sender_waits_on(void)
+{
+	if ((nbr_rm_sender_thread.base.thread_state & _THREAD_PENDING) == 0U ||
+	    nbr_rm_sender_thread.base.pended_on == NULL) {
+		return NULL;
+	}
+
+	return CONTAINER_OF(nbr_rm_sender_thread.base.pended_on, struct k_mutex, wait_q);
+}
+
+/* Earlier tests take the interface down and up, which restarts duplicate
+ * address detection. When it succeeds, dad_timeout() removes the neighbor
+ * entry for the address on the system work queue, and the neighbor lock it
+ * takes for that would be handed over ahead of the sender. Once no address
+ * is tentative, that work has run.
+ */
+static bool wait_for_dad_done(struct net_if *iface, int32_t timeout_ms)
+{
+	int64_t end = k_uptime_get() + timeout_ms;
+
+	while (k_uptime_get() <= end) {
+		bool tentative = false;
+
+		ARRAY_FOR_EACH(iface->config.ip.ipv6->unicast, i) {
+			if (iface->config.ip.ipv6->unicast[i].is_used &&
+			    iface->config.ip.ipv6->unicast[i].addr_state == NET_ADDR_TENTATIVE) {
+				tentative = true;
+			}
+		}
+
+		if (!tentative) {
+			return true;
+		}
+
+		k_sleep(K_MSEC(10));
+	}
+
+	return false;
+}
+
+/* For a link-local next hop net_ipv6_prepare_for_send() takes the interface
+ * from the neighbor cache. The neighbor is removed by a higher priority
+ * thread that was waiting for the neighbor lock, right after the sender's
+ * lookup released it. The sender must not use the entry it found: removal
+ * clears nbr->iface, and the packet must still go out through neighbor
+ * discovery on the interface it was sent on.
+ *
+ * The lock itself orders the threads. This thread, cooperative, holds it and
+ * lets the sender, preemptible and lowest, block on it inside the lookup.
+ * Releasing it hands it to the sender without running it, and the removal
+ * then blocks until the sender has done its lookup and released the lock.
+ * For a link-local destination that lookup is the first time the send path
+ * takes the neighbor lock.
+ */
+ZTEST(net_ipv6, test_send_neighbor_discovery_nbr_rm_after_lookup)
+{
+	static struct test_nd_count_context ctx = {
+		.exp_ns_addr = &test_router_addr,
+	};
+	static struct test_ns_handler handler = {
+		.fn = count_nd_ns,
+		.user_data = &ctx
+	};
+	static const uint8_t mac[] = { 0x00, 0x60, 0x97, 0x07, 0x69, 0xea };
+	struct tx_pool_snapshot before;
+	struct net_linkaddr lladdr;
+	struct k_mutex *lock = NULL;
+	struct net_nbr *nbr;
+
+	/* Priorities only order the threads that share a CPU. */
+	Z_TEST_SKIP_IFDEF(CONFIG_SMP);
+
+	(void)net_ipv6_nbr_rm(TEST_NET_IF, &test_router_addr);
+	zassert_true(wait_for_dad_done(TEST_NET_IF, 2 * WAIT_TIME_LONG),
+		     "Duplicate address detection did not finish");
+
+	zassert_false(net_if_ipv6_addr_onlink(NULL, &test_router_addr),
+		      "The neighbor is on-link by prefix");
+
+	/* Removing an entry with a known link address is what clears its
+	 * interface pointer.
+	 */
+	zassert_ok(net_linkaddr_set(&lladdr, mac, sizeof(mac)));
+	nbr = net_ipv6_nbr_add(TEST_NET_IF, &test_router_addr, &lladdr, false,
+			       NET_IPV6_NBR_STATE_STALE);
+	zassert_not_null(nbr, "Neighbor not added");
+	zassert_not_equal(nbr->idx, NET_NBR_LLADDR_UNKNOWN, "Link address not set");
+
+	atomic_clear(&ctx.ns_count);
+	ns_handler = &handler;
+	nbr_rm_sender_ret = -1;
+	k_sem_reset(&nbr_rm_sender_done);
+
+	tx_pool_snapshot(&before);
+
+	net_ipv6_nbr_lock();
+
+	k_thread_create(&nbr_rm_sender_thread, nbr_rm_sender_stack,
+			K_THREAD_STACK_SIZEOF(nbr_rm_sender_stack), nbr_rm_sender,
+			NULL, NULL, NULL, K_PRIO_PREEMPT(10), 0, K_NO_WAIT);
+
+	for (int i = 0; i < 100 && lock == NULL; i++) {
+		k_sleep(K_MSEC(10));
+		lock = nbr_rm_sender_waits_on();
+	}
+
+	if (lock == NULL || lock->owner != k_current_get()) {
+		/* The sender did not block on the neighbor lock, so the order
+		 * this test needs cannot be set up.
+		 */
+		TC_PRINT("sender did not block on the neighbor lock\n");
+		net_ipv6_nbr_unlock();
+		goto skip;
+	}
+
+	net_ipv6_nbr_unlock();
+
+	if (lock->owner != &nbr_rm_sender_thread) {
+		/* Another thread was waiting for the lock ahead of the sender
+		 * and got it.
+		 */
+		TC_PRINT("neighbor lock handed to %p, not to the sender\n", lock->owner);
+		goto skip;
+	}
+
+	zassert_true(net_ipv6_nbr_rm(TEST_NET_IF, &test_router_addr),
+		     "Neighbor not found.");
+	zassert_equal(k_sem_count_get(&nbr_rm_sender_done), 0,
+		      "The sender finished before the neighbor was removed");
+
+	zassert_ok(k_sem_take(&nbr_rm_sender_done, K_MSEC(WAIT_TIME)),
+		   "The sender did not finish");
+	k_thread_join(&nbr_rm_sender_thread, K_FOREVER);
+
+	zassert_equal(nbr_rm_sender_ret, 0, "Packet was dropped (%d)", nbr_rm_sender_ret);
+	zassert_true(wait_for_count(&ctx.ns_count, 1, WAIT_TIME),
+		     "No NS sent for the removed neighbor (%ld)", atomic_get(&ctx.ns_count));
+
+	zassert_true(net_ipv6_nbr_rm(TEST_NET_IF, &test_router_addr),
+		     "Neighbor not found.");
+
+	assert_tx_pool_restored(&before);
+	return;
+
+skip:
+	zassert_ok(k_sem_take(&nbr_rm_sender_done, K_MSEC(WAIT_TIME)),
+		   "The sender did not finish");
+	k_thread_join(&nbr_rm_sender_thread, K_FOREVER);
+	(void)net_ipv6_nbr_rm(TEST_NET_IF, &test_router_addr);
+	ztest_test_skip();
+}
+
 /**
  * @brief IPv6 prefix timeout
  */
