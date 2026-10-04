@@ -760,32 +760,6 @@
 		status = "disabled";
 	};
 
-	fmu: flash-controller@43000 {
-		compatible = "nxp,msf1";
-		reg = <0x43000 0x1000>;
-		interrupts = <138 0>;
-		status = "disabled";
-
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		flash: flash@0 {
-			compatible = "soc-nv-flash";
-			reg = <0 DT_SIZE_M(1)>;
-			erase-block-size = <DT_SIZE_K(8)>;
-			/* MCXN23x ROM Flash API supports writing of 128B pages. */
-			write-block-size = <128>;
-			ranges;
-			#address-cells = <1>;
-			#size-cells = <1>;
-		};
-
-		uuid: uuid@1100000 {
-			compatible = "nxp,lpc-uid";
-			reg = <0x1100000 0x10>;
-		};
-	};
-
 	os_timer: timers@49000 {
 		compatible = "nxp,os-timer";
 		reg = <0x49000 0x1000>;
@@ -1340,6 +1314,31 @@
 		reg = <0xd1000 0x1000>;
 		interrupts = <128 0>, <129 0>, <130 0>, <131 0>;
 		status = "disabled";
+	};
+};
+
+&fmu {
+	compatible = "nxp,msf1";
+	interrupts = <138 0>;
+	status = "disabled";
+
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	flash: flash@0 {
+		compatible = "soc-nv-flash";
+		reg = <0 DT_SIZE_M(1)>;
+		erase-block-size = <DT_SIZE_K(8)>;
+		/* MCXN23x ROM Flash API supports writing of 128B pages. */
+		write-block-size = <128>;
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+	};
+
+	uuid: uuid@1100000 {
+		compatible = "nxp,lpc-uid";
+		reg = <0x1100000 0x10>;
 	};
 };
 
