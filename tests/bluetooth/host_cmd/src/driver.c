@@ -46,6 +46,9 @@ unsigned int test_close_count;
 
 static const struct device *const hci_dev = DEVICE_DT_GET(DT_DRV_INST(0));
 
+/* First parameter byte of the TEST_OPCODE command that the controller got last */
+static uint8_t test_cmd_param;
+
 static void *evt_create(struct net_buf **buf, uint8_t evt, uint8_t len)
 {
 	struct bt_hci_evt_hdr *hdr;
@@ -92,7 +95,7 @@ void test_cmd_respond(const struct test_cmd_script *script)
 		rp = cmd_complete(&evt, TEST_OPCODE, script->ncmd, 1U + script->rp_len);
 		rp[0] = script->status;
 		for (uint8_t i = 0U; i < script->rp_len; i++) {
-			rp[1U + i] = i;
+			rp[1U + i] = script->echo ? test_cmd_param : i;
 		}
 
 		bt_hci_recv(hci_dev, evt);
@@ -202,6 +205,7 @@ static void cmd_handle(struct net_buf *cmd)
 			test_cmd_plen[test_cmd.count] = (uint8_t)cmd->len;
 		}
 
+		test_cmd_param = (cmd->len > 0U) ? cmd->data[0] : 0U;
 		scripted(&test_cmd, &cmd_rsp_work);
 		return;
 	case BT_HCI_OP_DISCONNECT:
