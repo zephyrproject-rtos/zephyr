@@ -7,6 +7,7 @@
 
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/irq.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
 
@@ -16,11 +17,11 @@ LOG_MODULE_REGISTER(wdt_bflb, CONFIG_WDT_LOG_LEVEL);
 #include <bouffalolab/common/timer_reg.h>
 
 /* WDG clock: 32K oscillator. With divider=31 => ~1032 Hz (32768/32).
- * We use divider 0 => 32768 Hz for maximum resolution.
+ * We use the divider that offers the best resolution possible for the time range.
  */
-#define WDT_CLK_FREQ  32768U
-#define WDT_CLK_DIV   0U
-#define WDT_MAX_TICKS UINT16_MAX
+#define WDT_CLK_FREQ	32768LLU
+#define WDT_MAX_TICKS	UINT16_MAX
+#define WDT_DIV_MAX	0x100U
 
 #define TIMER_WDT_WFAR_KEY	0xBABA
 #define TIMER_WDT_WSAR_KEY	0xEB10
@@ -34,6 +35,7 @@ struct wdt_bflb_config {
 struct wdt_bflb_data {
 	wdt_callback_t callback;
 	uint16_t match_value;
+	uint8_t divider;
 	bool reset_mode;
 	bool configured;
 };
@@ -74,14 +76,14 @@ static int wdt_bflb_setup(const struct device *dev, uint8_t options)
 	/* Set clock divider */
 	tmp = sys_read32(cfg->base + TIMER_TCDR_OFFSET);
 	tmp &= ~TIMER_WCDR_MASK;
-	tmp |= (WDT_CLK_DIV << TIMER_WCDR_SHIFT);
+	tmp |= ((uint32_t)data->divider << TIMER_WCDR_SHIFT);
 	sys_write32(tmp, cfg->base + TIMER_TCDR_OFFSET);
 
 	/* Set match value */
 	wdt_bflb_unlock(cfg->base);
 	tmp = sys_read32(cfg->base + TIMER_WMR_OFFSET);
 	tmp &= ~TIMER_WMR_MASK;
-	tmp |= (data->match_value << TIMER_WMR_SHIFT);
+	tmp |= ((uint32_t)data->match_value << TIMER_WMR_SHIFT);
 	sys_write32(tmp, cfg->base + TIMER_WMR_OFFSET);
 
 	/* Set mode: WRIE=1 for reset, WRIE=0 for interrupt */
@@ -127,7 +129,8 @@ static int wdt_bflb_disable(const struct device *dev)
 static int wdt_bflb_install_timeout(const struct device *dev, const struct wdt_timeout_cfg *timeout)
 {
 	struct wdt_bflb_data *data = dev->data;
-	uint32_t ticks;
+	uint32_t divider;
+	uint64_t total_ticks;
 
 	if (timeout->window.min != 0) {
 		LOG_ERR("Window watchdog not supported");
@@ -139,21 +142,22 @@ static int wdt_bflb_install_timeout(const struct device *dev, const struct wdt_t
 		return -EINVAL;
 	}
 
-	/* Convert ms to ticks: ticks = ms * freq / 1000 / (div+1) */
-	ticks = (uint64_t)timeout->window.max * WDT_CLK_FREQ / 1000U / (WDT_CLK_DIV + 1U);
+	/* The minimum result for this formula is at least 1 for the divider,
+	 * and 33 for a window.max above 0.
+	 */
+	total_ticks = DIV_ROUND_UP((uint64_t)timeout->window.max * WDT_CLK_FREQ, MSEC_PER_SEC);
+	divider = DIV_ROUND_UP(total_ticks, WDT_MAX_TICKS);
 
-	if (ticks > WDT_MAX_TICKS) {
+	if (divider > WDT_DIV_MAX) {
 		LOG_ERR("Timeout too large (max %u ms)",
-			(uint32_t)((uint64_t)WDT_MAX_TICKS * 1000U * (WDT_CLK_DIV + 1U) /
+			(uint32_t)((uint64_t)WDT_MAX_TICKS * WDT_DIV_MAX * MSEC_PER_SEC /
 				   WDT_CLK_FREQ));
 		return -EINVAL;
 	}
 
-	if (ticks == 0) {
-		ticks = 1;
-	}
-
-	data->match_value = (uint16_t)ticks;
+	/* Scale total tick count by divider */
+	data->match_value = (uint16_t)DIV_ROUND_UP(total_ticks, divider);
+	data->divider = (uint8_t)(divider - 1U);
 	data->callback = timeout->callback;
 	data->reset_mode = (timeout->callback == NULL);
 	data->configured = true;
