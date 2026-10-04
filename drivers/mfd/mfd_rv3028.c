@@ -274,7 +274,7 @@ int mfd_rv3028_update_reg8(const struct device *dev, uint8_t addr, uint8_t mask,
 	return 0;
 }
 
-int mfd_rv3028_eeprom_wait_busy(const struct device *dev, int poll_ms)
+static int mfd_rv3028_eeprom_wait_busy(const struct device *dev, int poll_ms)
 {
 	uint8_t status = 0;
 	int err;
@@ -301,43 +301,12 @@ int mfd_rv3028_eeprom_wait_busy(const struct device *dev, int poll_ms)
 	return 0;
 }
 
-int mfd_rv3028_exit_eerd(const struct device *dev)
+static int mfd_rv3028_exit_eerd(const struct device *dev)
 {
 	return mfd_rv3028_update_reg8(dev, RV3028_REG_CONTROL1, RV3028_CONTROL1_EERD, 0);
 }
 
-int mfd_rv3028_enter_eerd(const struct device *dev)
-{
-	uint8_t ctrl1;
-	bool eerd;
-	int ret;
-
-	ret = mfd_rv3028_read_reg8(dev, RV3028_REG_CONTROL1, &ctrl1);
-	if (ret) {
-		return ret;
-	}
-
-	eerd = ctrl1 & RV3028_CONTROL1_EERD;
-	if (eerd) {
-		return 0;
-	}
-
-	ret = mfd_rv3028_update_reg8(dev, RV3028_REG_CONTROL1, RV3028_CONTROL1_EERD,
-				     RV3028_CONTROL1_EERD);
-	if (ret) {
-		return ret;
-	}
-
-	ret = mfd_rv3028_eeprom_wait_busy(dev, RV3028_EEBUSY_WRITE_POLL_MS);
-	if (ret) {
-		mfd_rv3028_exit_eerd(dev);
-		return ret;
-	}
-
-	return ret;
-}
-
-int mfd_rv3028_eeprom_command(const struct device *dev, uint8_t command)
+static int mfd_rv3028_eeprom_command(const struct device *dev, uint8_t command)
 {
 	int err;
 
@@ -347,40 +316,6 @@ int mfd_rv3028_eeprom_command(const struct device *dev, uint8_t command)
 	}
 
 	return mfd_rv3028_write_reg8(dev, RV3028_REG_EEPROM_COMMAND, command);
-}
-
-int mfd_rv3028_update(const struct device *dev)
-{
-	int err;
-
-	err = mfd_rv3028_eeprom_command(dev, RV3028_EEPROM_CMD_UPDATE);
-	if (err) {
-		goto exit_eerd;
-	}
-
-	err = mfd_rv3028_eeprom_wait_busy(dev, RV3028_EEBUSY_WRITE_POLL_MS);
-
-exit_eerd:
-	mfd_rv3028_exit_eerd(dev);
-
-	return err;
-}
-
-int mfd_rv3028_refresh(const struct device *dev)
-{
-	int err;
-
-	err = mfd_rv3028_eeprom_command(dev, RV3028_EEPROM_CMD_REFRESH);
-	if (err) {
-		goto exit_eerd;
-	}
-
-	err = mfd_rv3028_eeprom_wait_busy(dev, RV3028_EEBUSY_READ_POLL_MS);
-
-exit_eerd:
-	mfd_rv3028_exit_eerd(dev);
-
-	return err;
 }
 
 static int mfd_rv3028_eeprom_run(const struct device *dev, uint8_t command, int poll_ms)
