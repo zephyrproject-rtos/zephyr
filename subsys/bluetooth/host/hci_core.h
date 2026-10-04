@@ -501,6 +501,15 @@ struct bt_dev {
 	sys_slist_t		cmd_tx_queue;
 	struct k_spinlock	cmd_lock;
 
+#if defined(CONFIG_BT_CONN)
+	/* Asynchronous commands waiting for a command buffer, and those whose
+	 * completion callback is still to run. Protected by cmd_lock. Built
+	 * with CONFIG_BT_CONN only, where the first user is.
+	 */
+	sys_slist_t		cmd_op_queue;
+	sys_slist_t		cmd_done_list;
+#endif /* CONFIG_BT_CONN */
+
 	const struct device *hci;
 
 #if defined(CONFIG_BT_PRIVACY)
