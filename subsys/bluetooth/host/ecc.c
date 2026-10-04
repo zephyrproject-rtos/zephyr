@@ -56,10 +56,11 @@ static ATOMIC_DEFINE(flags, NUM_FLAGS);
 static struct {
 	uint8_t private_key_be[BT_PRIV_KEY_LEN];
 
-	union {
-		uint8_t public_key_be[BT_PUB_KEY_LEN];
-		uint8_t dhkey_be[BT_DH_KEY_LEN];
-	};
+	/* Remote public key of the pending DH key request. It is not copied:
+	 * the requester keeps it until the request has completed, see
+	 * bt_dh_key_gen().
+	 */
+	const uint8_t *remote_pk;
 } ecc;
 
 /* based on Core Specification 4.2 Vol 3. Part H 2.3.5.6.1 */
@@ -157,12 +158,6 @@ static void generate_pub_key(struct k_work *work)
 		err = BT_HCI_ERR_UNSPECIFIED;
 		goto done;
 	}
-	/* secp256r1 PSA exported public key has an extra 0x04 predefined byte at
-	 * the beginning of the buffer which is not part of the coordinate so
-	 * we remove that.
-	 */
-	memcpy(ecc.public_key_be, &tmp_pub_key_buf[1], BT_PUB_KEY_LEN);
-
 	ret = psa_export_key(key_id, ecc.private_key_be, BT_PRIV_KEY_LEN, &tmp_len);
 	if (ret != PSA_SUCCESS) {
 		LOG_ERR("Failed to export ECC private key %d", ret);
@@ -198,9 +193,13 @@ done:
 	}
 
 	if (err == 0) {
-		sys_memcpy_swap(pub_key, ecc.public_key_be, BT_PUB_KEY_COORD_LEN);
+		/* secp256r1 PSA exported public key has an extra 0x04
+		 * predefined byte at the beginning of the buffer which is not
+		 * part of the coordinates, so it is skipped.
+		 */
+		sys_memcpy_swap(pub_key, &tmp_pub_key_buf[1], BT_PUB_KEY_COORD_LEN);
 		sys_memcpy_swap(&pub_key[BT_PUB_KEY_COORD_LEN],
-				&ecc.public_key_be[BT_PUB_KEY_COORD_LEN], BT_PUB_KEY_COORD_LEN);
+				&tmp_pub_key_buf[1 + BT_PUB_KEY_COORD_LEN], BT_PUB_KEY_COORD_LEN);
 		atomic_set_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY);
 	}
 
@@ -245,9 +244,15 @@ static void generate_dh_key(struct k_work *work)
 		goto exit;
 	}
 
-	memcpy(&tmp_pub_key_buf[1], ecc.public_key_be, BT_PUB_KEY_LEN);
+	/* Convert X and Y coordinates from little-endian to
+	 * big-endian (expected by the crypto API).
+	 */
+	sys_memcpy_swap(&tmp_pub_key_buf[1], ecc.remote_pk, BT_PUB_KEY_COORD_LEN);
+	sys_memcpy_swap(&tmp_pub_key_buf[1 + BT_PUB_KEY_COORD_LEN],
+			&ecc.remote_pk[BT_PUB_KEY_COORD_LEN], BT_PUB_KEY_COORD_LEN);
+
 	ret = psa_raw_key_agreement(PSA_ALG_ECDH, key_id, tmp_pub_key_buf, sizeof(tmp_pub_key_buf),
-				    ecc.dhkey_be, BT_DH_KEY_LEN, &tmp_len);
+				    dhkey, BT_DH_KEY_LEN, &tmp_len);
 	if (ret != PSA_SUCCESS) {
 		err = -EIO;
 		LOG_ERR("Raw key agreement failed %d", ret);
@@ -271,7 +276,8 @@ exit:
 	cb = dh_key_cb;
 	dh_key_cb = NULL;
 	if (err == 0) {
-		sys_memcpy_swap(dhkey, ecc.dhkey_be, sizeof(ecc.dhkey_be));
+		/* The crypto API gave it in big-endian */
+		sys_mem_swap(dhkey, sizeof(dhkey));
 	}
 	atomic_clear_bit(flags, PENDING_DHKEY);
 	bt_dev_unlock();
@@ -371,9 +377,9 @@ const uint8_t *bt_pub_key_get(void)
 
 int bt_dh_key_gen(const uint8_t remote_pk[BT_PUB_KEY_LEN], bt_dh_key_cb_t cb)
 {
-	/* The pending state and the callback are only accessed under the
-	 * host lock; the shared key storage is written under it here and
-	 * then owned by the worker until it clears the pending state (see
+	/* The pending state, the callback and the reference to the remote key
+	 * are only accessed under the host lock here; the worker owns the
+	 * reference until it clears the pending state (see
 	 * generate_dh_key()).
 	 */
 	bt_dev_lock();
@@ -397,12 +403,7 @@ int bt_dh_key_gen(const uint8_t remote_pk[BT_PUB_KEY_LEN], bt_dh_key_cb_t cb)
 
 	dh_key_cb = cb;
 
-	/* Convert X and Y coordinates from little-endian to
-	 * big-endian (expected by the crypto API).
-	 */
-	sys_memcpy_swap(ecc.public_key_be, remote_pk, BT_PUB_KEY_COORD_LEN);
-	sys_memcpy_swap(&ecc.public_key_be[BT_PUB_KEY_COORD_LEN],
-			&remote_pk[BT_PUB_KEY_COORD_LEN], BT_PUB_KEY_COORD_LEN);
+	ecc.remote_pk = remote_pk;
 
 	bt_dev_unlock();
 

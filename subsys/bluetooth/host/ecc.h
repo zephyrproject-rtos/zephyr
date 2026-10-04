@@ -101,7 +101,8 @@ typedef void (*bt_dh_key_cb_t)(const uint8_t key[BT_DH_KEY_LEN]);
  *
  *  Calculate a DH Key from the remote Public Key.
  *
- *  @param remote_pk Remote Public Key.
+ *  @param remote_pk Remote Public Key. It is not copied: it has to stay valid and
+ *                   unchanged until @p cb has been called.
  *  @param cb Callback to notify the calculated key.
  *
  *  @return Zero on success or negative error code otherwise
