@@ -9,6 +9,8 @@ project(host_cmd)
 target_sources(app PRIVATE
   src/driver.c
   src/deadline.c
+  src/op.c
+  src/op_no_reset.c
 )
 
 # The suites use internal headers of the Host
