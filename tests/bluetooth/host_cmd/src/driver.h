@@ -57,6 +57,10 @@ struct test_cmd_script {
 	uint8_t ncmd;
 	/** Length of the return parameters after the status (TEST_OPCODE only) */
 	uint8_t rp_len;
+	/** The return parameters repeat the first parameter byte of the command
+	 *  instead of counting up (TEST_OPCODE only)
+	 */
+	bool echo;
 	/** What send() returns instead of taking the command, if not 0 */
 	int send_err;
 	/** How often the controller has been given the command */
@@ -99,6 +103,19 @@ void test_cmd_respond(struct test_cmd_script *script);
  */
 int test_cmd_wait(const struct test_cmd_script *script, unsigned int count);
 
+/** Wait until the controller has responded @p count times to the commands of
+ *  @p script.
+ *
+ *  @retval 0 It has.
+ *  @retval -EAGAIN It has not within TEST_TIMEOUT of the last response.
+ */
+int test_rsp_wait(const struct test_cmd_script *script, unsigned int count);
+
+/** Wait until @p queue has run what has been submitted to it */
+void test_workq_flush(struct k_work_q *queue);
+
+/** Wait until the Bluetooth workqueue has run what has been submitted to it */
+void test_bt_workq_flush(void);
 
 /** Let every thread run until it waits, for a check of something that nothing
  *  signals: a command that must not have been sent, or a thread that is to
@@ -118,8 +135,14 @@ unsigned int test_cmd_bufs_hold(void);
 /** Free the command buffers in test_cmd_bufs */
 void test_cmd_bufs_release(void);
 
+/** Check that the command pool has all of its buffers, and counts them right */
+void test_cmd_pool_check(void);
+
 /** Deliver a Command Complete event for no command that grants a command credit */
 void test_credit_grant(void);
+
+/** Deliver a Command Complete event for no command that takes the credit back */
+void test_credit_revoke(void);
 
 /** Whether the Host resets the test controller, which it does unless the
  *  devicetree gives the controller the "no-reset" quirk.
