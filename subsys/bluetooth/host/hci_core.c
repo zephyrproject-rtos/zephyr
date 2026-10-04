@@ -45,6 +45,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/clock.h>
 #include <zephyr/toolchain.h>
+
 #include <soc.h>
 
 #include "addr_internal.h"
@@ -180,6 +181,9 @@ struct cmd_data {
 	/** HCI status of the command completion */
 	uint8_t  status;
 
+	/** Errno of a command that completed without a response, otherwise 0 */
+	uint8_t  err;
+
 	/** The command OpCode that the buffer contains */
 	uint16_t opcode;
 
@@ -213,6 +217,50 @@ void bt_hci_cmd_state_set_init(struct net_buf *buf,
 	state->bit = bit;
 	state->val = val;
 	cmd(buf)->state = state;
+}
+
+/* The command deadline. HCI matches a response to its command by position,
+ * so a command that is not answered, or a command queue that the controller
+ * no longer lets advance, cannot be skipped: the deadline is the point where
+ * the controller is given up on, see cmd_deadline_expired(). It runs while
+ * there is work for the command path, is started again on every step forward,
+ * and expires in interrupt context because the threads that could run it are
+ * the ones that wait for commands.
+ */
+static void cmd_deadline_expired(struct k_timer *timer);
+static K_TIMER_DEFINE(cmd_deadline, cmd_deadline_expired, NULL);
+
+/* The controller has granted a command credit while a command was with it,
+ * see cmd_credit_granted(). Protected by cmd_lock.
+ */
+static bool cmd_credit_kept;
+
+static bool cmd_work_pending(void)
+{
+	return bt_dev.sent_cmd != NULL || !sys_slist_is_empty(&bt_dev.cmd_tx_queue);
+}
+
+/* Called with cmd_lock held, after a step forward. An expiry that is under
+ * way is not waited for: it finds out by itself that it has been overtaken,
+ * see cmd_deadline_expired().
+ */
+static void cmd_deadline_restart(void)
+{
+	if (cmd_work_pending()) {
+		k_timer_start(&cmd_deadline, HCI_CMD_TIMEOUT, K_NO_WAIT);
+	} else {
+		k_timer_stop(&cmd_deadline);
+	}
+}
+
+/* Called with cmd_lock held, when work was added: it is no step forward, so
+ * a deadline that is running already is left alone.
+ */
+static void cmd_deadline_start(void)
+{
+	if (k_timer_remaining_ticks(&cmd_deadline) == 0) {
+		k_timer_start(&cmd_deadline, HCI_CMD_TIMEOUT, K_NO_WAIT);
+	}
 }
 
 /* HCI command buffers. Derive the needed size from both Command and Event
@@ -396,32 +444,95 @@ struct net_buf *bt_hci_cmd_alloc(k_timeout_t timeout)
 	net_buf_reserve(buf, BT_HCI_PKT_CMD_HDR_SIZE);
 
 	cmd(buf)->opcode = 0;
+	cmd(buf)->err = 0;
 	cmd(buf)->sync = NULL;
 	cmd(buf)->state = NULL;
 
 	return buf;
 }
 
+
+/* Take the command that is with the controller: buf if it still is that
+ * command, whichever it is if buf is NULL. The caller that gets it completes
+ * it, which makes this the one place where a response, a failed send, the
+ * deadline and bt_disable() settle who does.
+ */
+static struct net_buf *cmd_sent_take(struct net_buf *buf)
+{
+	k_spinlock_key_t key;
+	struct net_buf *sent;
+
+	key = k_spin_lock(&bt_dev.cmd_lock);
+
+	sent = bt_dev.sent_cmd;
+	if (sent != NULL && (buf == NULL || buf == sent)) {
+		bt_dev.sent_cmd = NULL;
+		/* Every caller gives the credit back or ends the command flow */
+		cmd_credit_kept = false;
+		cmd_deadline_restart();
+	} else {
+		sent = NULL;
+	}
+
+	k_spin_unlock(&bt_dev.cmd_lock, key);
+
+	return sent;
+}
+
+/* The controller accepts another command. The Host keeps to one command with
+ * the controller at a time, whatever the controller would accept: a response
+ * is matched to its command by position and opcode alone, so the response to
+ * a first command could complete a second one with the same opcode. A credit
+ * that arrives while a command is with the controller, in a Command Complete
+ * event for no command or as a count above one, is kept until that command
+ * has been answered, see hci_cmd_done().
+ */
+static void cmd_credit_granted(void)
+{
+	k_spinlock_key_t key;
+	bool give;
+
+	key = k_spin_lock(&bt_dev.cmd_lock);
+
+	give = (bt_dev.sent_cmd == NULL);
+	if (give) {
+		/* A step forward for a queue that waited for the credit */
+		cmd_deadline_restart();
+	} else {
+		cmd_credit_kept = true;
+	}
+
+	k_spin_unlock(&bt_dev.cmd_lock, key);
+
+	if (give) {
+		k_sem_give(&bt_dev.ncmd_sem);
+		bt_tx_irq_raise();
+	}
+}
+
+/* Complete a command that gets no response, releasing the reference that the
+ * queue or the sent command held.
+ */
+static void cmd_complete_local(struct net_buf *buf, int err)
+{
+	if (cmd(buf)->sync != NULL) {
+		cmd(buf)->err = (uint8_t)-err;
+		k_sem_give(cmd(buf)->sync);
+	}
+
+	net_buf_unref(buf);
+}
+
+static bool cmd_admission_open(void)
+{
+	return atomic_test_bit(bt_dev.flags, BT_DEV_OPEN) &&
+	       !atomic_test_bit(bt_dev.flags, BT_DEV_CMD_FAILED);
+}
+
 /* The command queue is a plain list under a spinlock: nothing ever waits on
  * it, and the lock lets a sender check that the transport is open and queue
  * its command in one step.
  */
-static struct net_buf *cmd_tx_queue_get(void)
-{
-	k_spinlock_key_t key;
-	sys_snode_t *node;
-
-	key = k_spin_lock(&bt_dev.cmd_lock);
-	node = sys_slist_get(&bt_dev.cmd_tx_queue);
-	k_spin_unlock(&bt_dev.cmd_lock, key);
-
-	if (node == NULL) {
-		return NULL;
-	}
-
-	return CONTAINER_OF(node, struct net_buf, node);
-}
-
 static struct net_buf *cmd_tx_queue_peek(void)
 {
 	k_spinlock_key_t key;
@@ -438,51 +549,121 @@ static struct net_buf *cmd_tx_queue_peek(void)
 	return CONTAINER_OF(node, struct net_buf, node);
 }
 
-/* Drop every queued command once the HCI transport has been closed,
- * completing synchronous senders with an error.
+/* Drop every queued command once the HCI transport has been closed or the
+ * controller has been given up on, completing synchronous senders with an
+ * error.
  */
 static void hci_cmd_queue_purge(void)
 {
-	struct net_buf *buf;
+	k_spinlock_key_t key;
+	sys_slist_t queue;
+	sys_snode_t *node;
+
+	key = k_spin_lock(&bt_dev.cmd_lock);
+	queue = bt_dev.cmd_tx_queue;
+	sys_slist_init(&bt_dev.cmd_tx_queue);
+	cmd_deadline_restart();
+	k_spin_unlock(&bt_dev.cmd_lock, key);
 
 	while (true) {
-		buf = cmd_tx_queue_get();
-		if (buf == NULL) {
+		struct net_buf *buf;
+
+		node = sys_slist_get(&queue);
+		if (node == NULL) {
 			break;
 		}
 
-		LOG_WRN("Dropping queued command 0x%04x: HCI transport closed", cmd(buf)->opcode);
+		buf = CONTAINER_OF(node, struct net_buf, node);
 
-		if (cmd(buf)->sync != NULL) {
-			cmd(buf)->status = BT_HCI_ERR_UNSPECIFIED;
-			k_sem_give(cmd(buf)->sync);
-		}
+		LOG_WRN("Dropping queued command 0x%04x", cmd(buf)->opcode);
 
-		net_buf_unref(buf);
+		cmd_complete_local(buf, -EHOSTDOWN);
 	}
 }
 
 /* Complete the command that was on its way to the controller when the HCI
  * transport was closed. Its response cannot arrive any more, and its sender
- * would otherwise wait for the command timeout.
+ * would otherwise wait for the command deadline.
  */
 static void hci_cmd_sent_purge(void)
 {
 	struct net_buf *buf;
 
-	buf = net_buf_take(&bt_dev.sent_cmd);
+	buf = cmd_sent_take(NULL);
 	if (buf == NULL) {
 		return;
 	}
 
 	LOG_WRN("Dropping sent command 0x%04x: HCI transport closed", cmd(buf)->opcode);
 
-	if (cmd(buf)->sync != NULL) {
-		cmd(buf)->status = BT_HCI_ERR_UNSPECIFIED;
-		k_sem_give(cmd(buf)->sync);
+	cmd_complete_local(buf, -EHOSTDOWN);
+}
+
+/* The deadline has passed without a step forward. Runs in interrupt context,
+ * where everything it does is in order: taking the lock, giving semaphores,
+ * submitting work, releasing buffers of a fixed pool.
+ */
+static void cmd_deadline_expired(struct k_timer *timer)
+{
+	k_spinlock_key_t key;
+	struct net_buf *sent;
+	uint16_t opcode = 0U;
+
+	key = k_spin_lock(&bt_dev.cmd_lock);
+
+	/* Started again or stopped while this call was on its way */
+	if (k_timer_remaining_ticks(timer) != 0 || !cmd_work_pending()) {
+		k_spin_unlock(&bt_dev.cmd_lock, key);
+		return;
 	}
 
-	net_buf_unref(buf);
+	if (bt_dev.sent_cmd == NULL &&
+	    (sys_slist_is_empty(&bt_dev.cmd_tx_queue) || k_sem_count_get(&bt_dev.ncmd_sem) != 0U)) {
+		/* It is not the controller that holds things up: no command
+		 * is with it, and none waits for a credit. What is left is
+		 * a TX processor that has not run. Nothing was sent, so no
+		 * response can be mismatched, and the controller is not
+		 * given up on.
+		 */
+		cmd_deadline_restart();
+		k_spin_unlock(&bt_dev.cmd_lock, key);
+
+		return;
+	}
+
+	/* No command is accepted from here on, so a response that still
+	 * arrives finds nothing that it could complete by mistake. Only
+	 * bt_disable() followed by bt_enable(), which resets the controller,
+	 * gets out of this state.
+	 */
+	atomic_set_bit(bt_dev.flags, BT_DEV_CMD_FAILED);
+
+	sent = bt_dev.sent_cmd;
+	bt_dev.sent_cmd = NULL;
+
+	k_spin_unlock(&bt_dev.cmd_lock, key);
+
+	if (sent != NULL) {
+		opcode = cmd(sent)->opcode;
+		cmd_complete_local(sent, -ETIMEDOUT);
+	}
+
+	hci_cmd_queue_purge();
+
+	/* A sender in the system workqueue may be waiting for the credit */
+	k_sem_give(&bt_dev.ncmd_sem);
+
+	/* The controller may fail to respond if:
+	 *  - It was never programmed or connected.
+	 *  - There was a fatal error.
+	 *
+	 * See the `BT_HCI_OP_` macros in hci_types.h or
+	 * Core_v5.4, Vol 4, Part E, Section 5.4.1 and Section 7
+	 * to map the opcode to the HCI command documentation.
+	 * Example: 0x0c03 represents HCI_Reset command.
+	 */
+	LOG_ERR("Controller unresponsive, command opcode 0x%04x timeout", opcode);
+	BT_ASSERT_MSG(false, "Controller unresponsive, command opcode 0x%04x timeout", opcode);
 }
 
 int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
@@ -491,8 +672,10 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 	bool open;
 	int err;
 
-	/* Make sure the HCI transport is open before attempting anything else */
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_OPEN)) {
+	/* Make sure the HCI transport is open, and the controller answering,
+	 * before attempting anything else.
+	 */
+	if (!cmd_admission_open()) {
 		if (buf != NULL) {
 			net_buf_unref(buf);
 		}
@@ -537,11 +720,13 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 	/* bt_disable() clears BT_DEV_OPEN before purging the queue, and the
 	 * purge takes the same lock: a command is either refused here or
 	 * found by the purge, which completes it like any other queued one.
+	 * The same holds for the purge of the command deadline.
 	 */
 	key = k_spin_lock(&bt_dev.cmd_lock);
-	open = atomic_test_bit(bt_dev.flags, BT_DEV_OPEN);
+	open = cmd_admission_open();
 	if (open) {
 		sys_slist_append(&bt_dev.cmd_tx_queue, &buf->node);
+		cmd_deadline_start();
 	}
 	k_spin_unlock(&bt_dev.cmd_lock, key);
 
@@ -564,6 +749,11 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 	int err;
 
 	if (!buf) {
+		/* No point in waiting for a buffer that would not be sent */
+		if (!cmd_admission_open()) {
+			return -EHOSTDOWN;
+		}
+
 		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
 			return -ENOBUFS;
@@ -606,35 +796,35 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 			cmd = cmd_tx_queue_peek();
 			LOG_DBG("process cmd %p want %p", cmd, buf);
 
-			/* Wait for a response from the Bluetooth Controller.
-			 * The Controller may fail to respond if:
-			 *  - It was never programmed or connected.
-			 *  - There was a fatal error.
-			 *
-			 * See the `BT_HCI_OP_` macros in hci_types.h or
-			 * Core_v5.4, Vol 4, Part E, Section 5.4.1 and Section 7
-			 * to map the opcode to the HCI command documentation.
-			 * Example: 0x0c03 represents HCI_Reset command.
+			/* Wait for the controller to accept the next command.
+			 * The command deadline ends the wait if it never does.
 			 */
-			__maybe_unused bool success = process_pending_cmd(HCI_CMD_TIMEOUT);
+			(void)process_pending_cmd(K_FOREVER);
 
-			if (!atomic_test_bit(bt_dev.flags, BT_DEV_OPEN)) {
-				/* The transport was closed while draining: the queue
-				 * has been purged, completing this command with an
-				 * error, so there is nothing left to send.
+			if (!cmd_admission_open()) {
+				/* The transport was closed, or the controller given
+				 * up on, while draining: the queue has been purged,
+				 * completing this command with an error, so there
+				 * is nothing left to send.
 				 */
 				break;
 			}
-
-			BT_ASSERT_MSG(success, "command opcode 0x%04x timeout", opcode);
-		} while (buf != cmd);
+		} while (cmd != NULL && buf != cmd);
 	}
 
-	/* Now that we have sent the command, suspend until the LL replies */
-	err = k_sem_take(&sync_sem, HCI_CMD_TIMEOUT);
-	BT_ASSERT_MSG(err == 0,
-		      "Controller unresponsive, command opcode 0x%04x timeout with err %d",
-		      opcode, err);
+	/* Now that we have sent the command, suspend until the LL replies.
+	 * There is no timeout here: a command that gets no response is
+	 * completed by the command deadline.
+	 */
+	(void)k_sem_take(&sync_sem, K_FOREVER);
+
+	if (cmd(buf)->err != 0U) {
+		err = -(int)cmd(buf)->err;
+		LOG_WRN("opcode 0x%04x not completed (err %d)", opcode, err);
+		net_buf_unref(buf);
+
+		return err;
+	}
 
 	status = cmd(buf)->status;
 	if (status) {
@@ -2748,6 +2938,9 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *evt_bu
 {
 	/* Original command buffer. */
 	struct net_buf *buf = NULL;
+	uint16_t expected = 0U;
+	k_spinlock_key_t key;
+	bool credit = false;
 
 	LOG_DBG("opcode 0x%04x status 0x%02x %s buf %p", opcode,
 		status, bt_hci_err_to_str(status), evt_buf);
@@ -2759,19 +2952,38 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *evt_bu
 		goto exit;
 	}
 
-	/* Take the original command buffer reference. */
-	buf = net_buf_take(&bt_dev.sent_cmd);
+	/* Take the original command buffer reference, unless the response
+	 * is for another command than the one that is with the controller.
+	 */
+	key = k_spin_lock(&bt_dev.cmd_lock);
 
-	if (!buf) {
-		LOG_ERR("No command sent for cmd complete 0x%04x", opcode);
-		goto exit;
+	buf = bt_dev.sent_cmd;
+	if (buf != NULL && cmd(buf)->opcode == opcode) {
+		bt_dev.sent_cmd = NULL;
+		credit = cmd_credit_kept;
+		cmd_credit_kept = false;
+		cmd_deadline_restart();
+	} else {
+		expected = (buf != NULL) ? cmd(buf)->opcode : 0U;
+		buf = NULL;
 	}
 
-	if (cmd(buf)->opcode != opcode) {
-		LOG_ERR("OpCode 0x%04x completed instead of expected 0x%04x", opcode,
-			cmd(buf)->opcode);
-		buf = atomic_ptr_set((atomic_ptr_t *)&bt_dev.sent_cmd, buf);
-		__ASSERT_NO_MSG(!buf);
+	k_spin_unlock(&bt_dev.cmd_lock, key);
+
+	if (credit) {
+		/* Granted while the command was with the controller */
+		k_sem_give(&bt_dev.ncmd_sem);
+		bt_tx_irq_raise();
+	}
+
+	if (buf == NULL) {
+		if (expected != 0U) {
+			LOG_ERR("OpCode 0x%04x completed instead of expected 0x%04x", opcode,
+				expected);
+		} else {
+			LOG_ERR("No command sent for cmd complete 0x%04x", opcode);
+		}
+
 		goto exit;
 	}
 
@@ -2835,8 +3047,7 @@ static void hci_cmd_complete(struct net_buf *buf)
 
 	/* Allow next command to be sent */
 	if (rsp.ncmd != 0) {
-		k_sem_give(&bt_dev.ncmd_sem);
-		bt_tx_irq_raise();
+		cmd_credit_granted();
 	}
 }
 
@@ -2861,8 +3072,7 @@ static void hci_cmd_status(struct net_buf *buf)
 
 	/* Allow next command to be sent */
 	if (rsp.ncmd != 0) {
-		k_sem_give(&bt_dev.ncmd_sem);
-		bt_tx_irq_raise();
+		cmd_credit_granted();
 	}
 }
 
@@ -3477,34 +3687,75 @@ static void hci_event(struct net_buf *buf)
 	net_buf_unref(buf);
 }
 
-static void hci_core_send_cmd(void)
+/* Hand the next queued command to the driver. The caller has taken the
+ * command credit.
+ */
+static bool hci_core_send_cmd(void)
 {
+	k_spinlock_key_t key;
 	struct net_buf *buf;
+	sys_snode_t *node;
 	int err;
 
-	/* Get next command */
-	LOG_DBG("fetch cmd");
-	buf = cmd_tx_queue_get();
-	BT_ASSERT(buf);
+	key = k_spin_lock(&bt_dev.cmd_lock);
 
-	/* Clear out any existing sent command */
-	if (bt_dev.sent_cmd) {
+	if (bt_dev.sent_cmd != NULL) {
+		/* Not reachable, as the credit is only given out once the
+		 * command that is with the controller has been answered, see
+		 * cmd_credit_granted(). Stay with one command at a time
+		 * regardless: its response could not be told from that of
+		 * this one.
+		 */
 		LOG_ERR("Uncleared pending sent_cmd");
-		net_buf_drop(&bt_dev.sent_cmd);
+		cmd_credit_kept = true;
+		k_spin_unlock(&bt_dev.cmd_lock, key);
+		return false;
 	}
 
+	/* The queue may have been purged since the caller looked at it */
+	node = cmd_admission_open() ? sys_slist_get(&bt_dev.cmd_tx_queue) : NULL;
+	if (node == NULL) {
+		k_spin_unlock(&bt_dev.cmd_lock, key);
+		k_sem_give(&bt_dev.ncmd_sem);
+		return false;
+	}
+
+	buf = CONTAINER_OF(node, struct net_buf, node);
+
+	/* The deadline runs before the driver gets the command: the response
+	 * may arrive from within the call.
+	 */
 	bt_dev.sent_cmd = net_buf_ref(buf);
+	cmd_deadline_restart();
+
+	k_spin_unlock(&bt_dev.cmd_lock, key);
 
 	LOG_DBG("Sending command 0x%04x (buf %p) to driver", cmd(buf)->opcode, buf);
 
 	err = bt_send(buf);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Unable to send to driver (err %d)", err);
-		k_sem_give(&bt_dev.ncmd_sem);
-		hci_cmd_done(cmd(buf)->opcode, BT_HCI_ERR_UNSPECIFIED, buf);
-		net_buf_unref(buf);
+
+		/* The driver did not take the command, and nothing of it
+		 * reached the controller: complete it and carry on with the
+		 * next one.
+		 */
+		if (cmd_sent_take(buf) != NULL) {
+			/* Both references are the engine's again. The one of
+			 * the queue goes first, so that the buffer is free by
+			 * the time anybody hears of the failure.
+			 */
+			net_buf_unref(buf);
+			k_sem_give(&bt_dev.ncmd_sem);
+			cmd_complete_local(buf, -EIO);
+		} else {
+			net_buf_unref(buf);
+		}
+
 		bt_tx_irq_raise();
 	}
+
+	return true;
 }
 
 #if defined(CONFIG_BT_CONN)
@@ -5011,7 +5262,9 @@ int bt_enable(bt_ready_cb_t cb)
 	} else {
 		k_sem_init(&bt_dev.ncmd_sem, 0, 1);
 	}
+	cmd_credit_kept = false;
 	sys_slist_init(&bt_dev.cmd_tx_queue);
+	atomic_clear_bit(bt_dev.flags, BT_DEV_CMD_FAILED);
 
 	if (IS_ENABLED(CONFIG_BT_HCI_SET_PUBLIC_ADDR)) {
 		/* Set on every enable, and cleared when there is no public
@@ -5124,8 +5377,10 @@ int bt_disable(void)
 		(void)k_work_cancel_sync(&rx_work, &sync);
 	}
 
-	/* Reset the Controller */
-	if (!drv_quirk_no_reset()) {
+	/* Reset the Controller, unless it has stopped answering commands: it
+	 * is then reset by the next bt_enable().
+	 */
+	if (!drv_quirk_no_reset() && !atomic_test_bit(bt_dev.flags, BT_DEV_CMD_FAILED)) {
 
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, NULL);
 		if (err) {
@@ -5161,8 +5416,8 @@ int bt_disable(void)
 #endif /* CONFIG_BT_CONN */
 
 	/* Mark the transport closed before purging the command queue: a
-	 * command queued after this point is taken back by its sender (see
-	 * bt_hci_cmd_send()), so nothing is left behind for the next enable.
+	 * command is refused after this point (see bt_hci_cmd_send()), so
+	 * nothing is left behind for the next enable.
 	 */
 	atomic_clear_bit(bt_dev.flags, BT_DEV_OPEN);
 	hci_cmd_queue_purge();
@@ -5488,15 +5743,14 @@ int bt_configure_data_path(uint8_t dir, uint8_t id, uint8_t vs_config_len,
 /* Return `true` if a command was processed/sent */
 static bool process_pending_cmd(k_timeout_t timeout)
 {
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_OPEN)) {
+	if (!cmd_admission_open()) {
 		hci_cmd_queue_purge();
 		return false;
 	}
 
 	if (!sys_slist_is_empty(&bt_dev.cmd_tx_queue)) {
 		if (k_sem_take(&bt_dev.ncmd_sem, timeout) == 0) {
-			hci_core_send_cmd();
-			return true;
+			return hci_core_send_cmd();
 		}
 	}
 

@@ -643,8 +643,8 @@ static ZTEST(bt_disable, test_command_in_flight_at_close)
 		   "bt_conn_disconnect() did not return");
 	zassert_true(disconnect_return_time - start < MSEC_PER_SEC,
 		     "bt_conn_disconnect() returned after %lld ms", disconnect_return_time - start);
-	zassert_equal(disconnect_err, -EIO, "bt_conn_disconnect() gave %d (!= %d)", disconnect_err,
-		      -EIO);
+	zassert_equal(disconnect_err, -EHOSTDOWN, "bt_conn_disconnect() gave %d (!= %d)",
+		      disconnect_err, -EHOSTDOWN);
 
 	bt_conn_unref(test_conn);
 	test_conn = NULL;
