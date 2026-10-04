@@ -61,5 +61,11 @@
 			#gpio-cells = <0x2>;
 			status = "okay";
 		};
+
+		test_native_linux_fuel_gauge: native_linux_fuel_gauge {
+			compatible = "zephyr,native-linux-fuel-gauge";
+			path = "/sys/class/power_supply/BAT0";
+			status = "okay";
+		};
 	};
 };
