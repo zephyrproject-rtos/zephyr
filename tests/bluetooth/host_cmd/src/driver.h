@@ -31,6 +31,10 @@ struct test_cmd_script {
 	uint8_t ncmd;
 	/** Length of the return parameters after the status (TEST_OPCODE only) */
 	uint8_t rp_len;
+	/** The return parameters repeat the first parameter byte of the command
+	 *  instead of counting up (TEST_OPCODE only)
+	 */
+	bool echo;
 	/** What send() returns instead of taking the command, if not 0 */
 	int send_err;
 	/** How often the controller has been given the command */
@@ -60,6 +64,9 @@ void test_cmd_respond(const struct test_cmd_script *script);
 
 /** Deliver a Command Complete event for no command that grants a command credit */
 void test_credit_grant(void);
+
+/** Deliver a Command Complete event for no command that takes the credit back */
+void test_credit_revoke(void);
 
 /** Whether the Host resets the test controller, which it does unless the
  *  devicetree gives the controller the "no-reset" quirk.
