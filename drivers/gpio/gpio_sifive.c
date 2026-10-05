@@ -84,20 +84,6 @@ static inline unsigned int gpio_sifive_pin_irq(unsigned int base_irq, int pin)
 	return pin_irq;
 }
 
-/* Given the PLIC source number, return the number of the GPIO pin associated
- * with the interrupt
- */
-static inline int gpio_sifive_plic_to_pin(unsigned int base_irq, int plic_irq)
-{
-	unsigned int level = irq_get_level(base_irq);
-
-	if (level == 2) {
-		base_irq = irq_from_level_2(base_irq);
-	}
-
-	return (plic_irq - base_irq);
-}
-
 static void gpio_sifive_irq_handler(const struct device *dev)
 {
 	struct gpio_sifive_data *data = DEV_GPIO_DATA(dev);
