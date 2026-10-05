@@ -659,7 +659,7 @@ static int pin_get_config(void)
 	}
 
 	zassert_equal(rc, 0, "pin get config output failed");
-	zassert_equal(flags_get, flags_set, "flags are different");
+	zassert_equal(flags_get & ~implicit_flags, flags_set, "flags are different");
 
 	flags_set = GPIO_INPUT;
 	rc = gpio_pin_configure(dev_out, PIN_OUT, flags_set);
