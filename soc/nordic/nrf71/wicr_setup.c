@@ -39,6 +39,10 @@ static const struct wicr_word wicr_words[] = {
 	{0x090, DT_REG_ADDR(DT_PHANDLE(WICR_NODE, ipcconfig_sparembox))},
 	{0x094, DT_REG_SIZE(DT_PHANDLE(WICR_NODE, ipcconfig_sparembox))},
 	{0x100, DT_REG_ADDR(DT_PHANDLE(WICR_NODE, data_vtfaddress))},
+#if DT_NODE_HAS_PROP(WICR_NODE, data_rfparams)
+	{0x104, DT_REG_ADDR(DT_PHANDLE(WICR_NODE, data_rfparams))},
+	{0x108, DT_REG_SIZE(DT_PHANDLE(WICR_NODE, data_rfparams))},
+#endif
 };
 
 int wicr_setup(void)
