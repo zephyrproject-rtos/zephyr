@@ -64,6 +64,8 @@ Modules are found by the Zephyr build system either via :ref:`west itself
 The contents of this page only apply to modules, and not to west projects in
 general (unless they are a module themselves).
 
+.. _modules_repositories:
+
 Module Repositories
 *******************
 
@@ -168,6 +170,38 @@ The main advantages of this approach is that the upstream repository history
 (that is, the original commit SHAs) is preserved in the module repository. The
 downside of this approach is that two additional merge commits are generated in
 the downstream main branch.
+
+.. _modules_hals:
+
+Hardware Abstraction Layer (HAL) modules
+****************************************
+
+If SoC support or vendor-specific drivers use a HAL module, the following
+guidelines apply in addition to the general requirements for modules.
+
+* A HAL should provide, at a minimum, the register definitions needed to
+  support the vendor hardware (SoC). It may also provide abstraction routines
+  of varying complexity to implement vendor-specific drivers in Zephyr.
+
+* A HAL that uses binary blobs must follow the :ref:`binary blob requirements
+  <bin-blobs>` and describe the blobs in :file:`zephyr/module.yml`, see
+  :ref:`modules-bin-blobs`.
+
+* A HAL must not contain or introduce vendor-specific solutions that conflict
+  with or prevent the generic solutions of the Zephyr project. Similarly, it
+  should not introduce solutions that duplicate Zephyr ones.
+
+* A HAL must not contain source code that is written exclusively for Zephyr.
+  This also includes Kconfig options defined and used in the Zephyr main tree
+  and devicetree macros. Zephyr-specific code belongs in
+  :file:`modules/hal_<vendor>/` in the Zephyr main tree, see
+  :ref:`modules_module_ext_root`. The only exception is the module integration
+  files in the :file:`zephyr/` folder of the HAL repository, such as
+  :file:`module.yml`, see :ref:`modules_repositories`.
+
+* A HAL should be self-contained. It must not depend on other software
+  packages, such as Python or NPM, or on other libraries, except for the C
+  standard library and the toolchain supported by Zephyr.
 
 
 Contributing to Zephyr modules
