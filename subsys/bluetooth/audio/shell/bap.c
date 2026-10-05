@@ -821,6 +821,10 @@ static int set_metadata(struct bt_audio_codec_cfg *codec_cfg, const char *meta_s
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 {
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		return;
+	}
+
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
 	(void)memset(snks[bt_conn_index(conn)], 0, sizeof(snks[0]));
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
