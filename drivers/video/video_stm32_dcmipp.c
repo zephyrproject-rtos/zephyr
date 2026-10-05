@@ -301,6 +301,25 @@ static const struct stm32_dcmipp_input_fmt {
 	INPUT_FMT(YUYV, YUV422, 8, YUV422_8),
 };
 
+#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
+static uint32_t stm32_dcmipp_to_hal_bayer_type(uint32_t pixelformat)
+{
+	uint32_t hal_fmt;
+
+	if (VIDEO_FMT_IS_BAYER_BGGR(pixelformat)) {
+		hal_fmt = DCMIPP_RAWBAYER_BGGR;
+	} else if (VIDEO_FMT_IS_BAYER_RGGB(pixelformat)) {
+		hal_fmt = DCMIPP_RAWBAYER_RGGB;
+	} else if (VIDEO_FMT_IS_BAYER_GBRG(pixelformat)) {
+		hal_fmt = DCMIPP_RAWBAYER_GBRG;
+	} else {
+		hal_fmt = DCMIPP_RAWBAYER_GRBG;
+	}
+
+	return hal_fmt;
+}
+#endif
+
 static const struct stm32_dcmipp_input_fmt *stm32_dcmipp_get_input_info(uint32_t pixelformat)
 {
 	int i;
@@ -1101,6 +1120,23 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 		}
 
 		if (VIDEO_FMT_IS_BAYER(dcmipp->source_fmt.pixelformat)) {
+			DCMIPP_RawBayer2RGBConfTypeDef raw_bayer_cfg;
+
+			HAL_DCMIPP_PIPE_GetISPRawBayer2RGBConfig(&dcmipp->hdcmipp, DCMIPP_PIPE1,
+								 &raw_bayer_cfg);
+			raw_bayer_cfg.RawBayerType =
+				stm32_dcmipp_to_hal_bayer_type(dcmipp->source_fmt.pixelformat);
+
+			/* Configure demosaicing */
+			hal_ret = HAL_DCMIPP_PIPE_SetISPRawBayer2RGBConfig(&dcmipp->hdcmipp,
+									   DCMIPP_PIPE1,
+									   &raw_bayer_cfg);
+			if (hal_ret != HAL_OK) {
+				LOG_ERR("Failed to configure demosaicing");
+				ret = -EIO;
+				goto out;
+			}
+
 			/* Enable demosaicing if input format is Bayer */
 			hal_ret = HAL_DCMIPP_PIPE_EnableISPRawBayer2RGB(&dcmipp->hdcmipp,
 									DCMIPP_PIPE1);
