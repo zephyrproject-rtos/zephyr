@@ -152,6 +152,7 @@ struct btp_mcp_search_cmd {
 } __packed;
 
 /* MCP events */
+#define BTP_MCP_OTS_LIST_FILTER_COUNT		3U
 #define BTP_MCP_DISCOVERED_EV			0x80U
 struct btp_mcp_discovered_ev {
 	bt_addr_le_t address;
@@ -192,6 +193,8 @@ struct btp_mcp_discovered_ev {
 		uint16_t obj_properties;
 		uint16_t oacp;
 		uint16_t olcp;
+		uint16_t obj_changed;
+		uint16_t obj_list_filter[BTP_MCP_OTS_LIST_FILTER_COUNT];
 	} ots_handles;
 } __packed;
 
