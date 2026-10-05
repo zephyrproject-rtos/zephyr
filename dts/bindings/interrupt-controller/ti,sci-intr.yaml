@@ -1,0 +1,60 @@
+# Copyright (c) 2026 Dhruv Menon <dhruvmenon1104@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Texas Instruments K3 Interrupt Router managed via TISCI.
+
+  The Interrupt Router muxes M interrupt inputs to N outputs. Configuration of
+  the per-output MUXCNTL registers is performed by System Firmware through the
+  TISCI resource-management IRQ set/release messages. Host software keeps track
+  of allocated outputs and translates them to the parent interrupt controller
+  (typically VIM on Cortex-R5) using ti,interrupt-ranges.
+
+  Devices that use this controller specify only the router input hardware
+  number; the driver allocates an output and programs the route at runtime.
+
+compatible: "ti,sci-intr"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupt-controller:
+    required: true
+
+  ti,sci:
+    type: phandle
+    required: true
+    description: Phandle to the TISCI system controller node.
+
+  ti,sci-dev-id:
+    type: int
+    required: true
+    description: TISCI device ID of this interrupt router instance.
+
+  ti,interrupt-ranges:
+    type: array
+    required: true
+    description: |
+      Translation triples of <output_base parent_irq_base limit> that map
+      interrupt-router output indices to the parent controller's input IRQs.
+      Multiple triples may be listed consecutively.
+
+  ti,intr-trigger-type:
+    type: int
+    enum: [1, 4]
+    description: |
+      Global trigger type for all outputs of this router (Linux IRQ_TYPE values):
+        1 = edge triggered  (mapped to Zephyr IRQ_TYPE_EDGE)
+        4 = level triggered (mapped to Zephyr IRQ_TYPE_LEVEL)
+      Used as the default parent-IRQ trigger when ti_sci_intr_connect() is
+      called without IRQ_TYPE_EDGE / IRQ_TYPE_LEVEL in flags.
+      When present, #interrupt-cells must be 1 (input hw number only).
+
+  "#interrupt-cells":
+    const: 1
+
+interrupt-cells:
+  - irq
