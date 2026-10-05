@@ -192,6 +192,7 @@ struct btp_mcp_discovered_ev {
 		uint16_t obj_properties;
 		uint16_t oacp;
 		uint16_t olcp;
+		uint16_t obj_changed;
 	} ots_handles;
 } __packed;
 
