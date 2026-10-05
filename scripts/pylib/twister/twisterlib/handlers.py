@@ -310,10 +310,10 @@ class BinaryHandler(Handler):
                         or harness.capture_coverage
                     ):
                         timeout_extended = True
-                        if harness.capture_coverage:
-                            timeout_time = time.time() + 30
+                        if harness.capture_coverage or self.options.enable_coverage:
+                            timeout_time = time.time() + COVERAGE_TIMEOUT_EXTENSION
                         else:
-                            timeout_time = time.time() + 2
+                            timeout_time = time.time() + POST_STATUS_TIMEOUT_EXTENSION
                 else:
                     reader_t.join(0)
                     break
