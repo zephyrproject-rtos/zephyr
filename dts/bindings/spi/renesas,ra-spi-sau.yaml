@@ -1,0 +1,32 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA SAU SPI
+
+compatible: "renesas,ra-spi-sau"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  reg:
+    required: true
+    description: |
+      SAU SPI instance index, with the unit number in the upper nibble and the
+      channel number in the lower nibble, matching the SPImn instance name in
+      the hardware manual. It is the node unit address only; the SAU unit and
+      channel used by this instance come from sau-channel.
+
+  sau-channel:
+    type: phandle
+    required: true
+    description: |
+      SAU channel used for this Simplified SPI instance. Simplified SPI uses
+      exactly one SAU channel for SCK, SI and SO, so a single phandle fully
+      identifies the instance. The channel node provides the channel index,
+      the SAU unit (through its parent), the interrupt and the clock.
