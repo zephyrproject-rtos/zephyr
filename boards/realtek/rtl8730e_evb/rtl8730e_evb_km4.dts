@@ -1,0 +1,93 @@
+/*
+ * Copyright (c) 2026 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * KM4 (Cortex-M55) non-secure image2, running from PSRAM (KM4_BD_DRAM).
+ * The vendor boot.bin brings up PSRAM before entering it.
+ */
+
+/dts-v1/;
+
+#include <arm/armv8.1-m.dtsi>
+#include <mem.h>
+#include <freq.h>
+#include "rtl8730e_evb_partitions.h"
+
+/ {
+	model = "Realtek RTL8730E EVB (KM4)";
+	compatible = "realtek,rtl8730e_evb";
+
+	clocks {
+		clk_sys: clk_sys {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(230)>;
+		};
+	};
+
+	chosen {
+		zephyr,sram             = &sram0;
+		zephyr,flash            = &flash0;
+		zephyr,flash-controller = &spic;
+		zephyr,code-partition   = &slot0_partition;
+		zephyr,console          = &loguart;
+		zephyr,shell-uart       = &loguart;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m55";
+			reg = <0>;
+		};
+	};
+
+	/*
+	 * KM4_BD_DRAM per ameba_layout.ld, non-secure view (secure alias 0x70000000).
+	 */
+	sram0: memory@60000020 {
+		compatible = "mmio-sram";
+		reg = <0x60000020 (0x6015B000 - 0x60000020)>;
+	};
+
+	soc {
+		rcc: rcc@42008000 {
+			compatible = "realtek,ameba-rcc";
+			reg = <0x42008000 0x400>;
+			#clock-cells = <1>;
+			status = "okay";
+		};
+
+		loguart: serial@4200c000 {
+			compatible = "realtek,ameba-loguart";
+			reg = <0x4200c000 0x200>;
+			clocks = <&rcc 0>;
+			interrupts = <8 3>;
+			current-speed = <1500000>;
+			status = "okay";
+		};
+
+		spic: flash-controller@44000000 {
+			compatible = "realtek,ameba-flash-controller";
+			reg = <0x44000000 0x400>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			flash0: flash@d000020 {
+				/* KM4 RSIP XIP logic window (KM4_IMG2_XIP) */
+				reg = <0x0d000020 DT_SIZE_M(8)>;
+#include "rtl8730e_evb_partitions.dtsi"
+			};
+		};
+	};
+};
+
+/* KM4 NVIC implements 3 priority bits */
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

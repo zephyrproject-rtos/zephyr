@@ -1,0 +1,7 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+# BUILD_WITH_TFA is outside the board/SoC Kconfig trees, so it is selected here.
+# Kconfig.rtl8730e_evb is also loaded standalone (e.g. by sysbuild).
+config BOARD_RTL8730E_EVB
+	select BUILD_WITH_TFA if BOARD_RTL8730E_EVB_RTL8730E_CA32

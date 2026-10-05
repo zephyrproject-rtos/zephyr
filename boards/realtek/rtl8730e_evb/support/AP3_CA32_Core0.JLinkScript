@@ -1,0 +1,539 @@
+// Copyright (c) 2026 Realtek Semiconductor Corp.
+// SPDX-License-Identifier: Apache-2.0
+
+/*********************************************************************
+*
+*             Constants (similar to defines)
+*
+**********************************************************************
+*/
+__constant U32 _APB_ADDR_DBGREGS_A32_0                     = 0x80030000;
+__constant U32 _APB_ADDR_DBGREGS_A32_1                     = 0x80032000;
+
+__constant U32 _APB_ADDR_CTIREGS_A32_0                     = 0x80038000;
+__constant U32 _APB_ADDR_CTIREGS_A32_1                     = 0x80039000;
+
+//
+// USER CONFIGURABLE
+//
+U32 _Index_APCA32 = 3;
+U32 _Index_CORE = 0;
+U32 _Addr_DBGREGS = _APB_ADDR_DBGREGS_A32_0;
+U32 _Addr_CTIREGS = _APB_ADDR_CTIREGS_A32_0;
+const char* _sExecCTIBaseAddr = "CORESIGHT_SetCSCTICoreBaseAddr=0x80038000";
+
+/*CPU Debug Architecture*/
+const U32 DBGDTRRX_EL0_OFFSET           = 0x080;
+const U32 EDITR_OFFSET                  = 0x084;
+const U32 EDSCR_OFFSET                  = 0x088;
+const U32 DBGDTRTX_EL0_OFFSET           = 0x08C;
+const U32 EDRCR_OFFSET                  = 0x090;
+const U32 OSLAR_EL1_OFFSET              = 0x300;
+const U32 EDPRCR_OFFSET                 = 0x310;
+const U32 EDPRSR_OFFSET                 = 0x314;
+const U32 EDLAR_OFFSET                  = 0xFB0;
+
+const U32 CTICONTROL_OFFSET             = 0x000;
+const U32 CTIINTACK_OFFSET              = 0x010;
+const U32 CTIAPPPULSE_OFFSET            = 0x01C;
+const U32 CTIINEN0_OFFSET               = 0x020;
+const U32 CTIOUTEN0_OFFSET              = 0x0A0;
+const U32 CTIGATE_OFFSET                = 0x140;
+const U32 CTILAR_OFFSET                 = 0xFB0;
+
+
+/*********************************************************************
+*
+*             _WriteAPReg
+*
+*    Function description
+*        Writes an AP register. Depends on the previous command (DPACC / APACC)
+*/
+void _WriteAPReg(unsigned int Address, unsigned int Data) {
+    JLINK_CORESIGHT_WriteAP(1, Address);
+    JLINK_CORESIGHT_WriteAP(3, Data);
+}
+
+/*********************************************************************
+*
+*             _ReadAPReg
+*
+*    Function description
+*        Read an AP register. Depends on the previous command (DPACC / APACC)
+*/
+int _ReadAPReg(unsigned int Address) {
+    int v;
+    JLINK_CORESIGHT_WriteAP(1, Address);
+    JLINK_CORESIGHT_ReadAP(3);
+
+    v = JLINK_CORESIGHT_ReadDP(3);
+    return v;
+}
+
+void HaltCPUAPBAP(void) {
+    int v, timeout;
+    timeout = 50;
+    /*if Cortex-A CPU access target memory, then CPU should be in debug mode!!!*/
+    _WriteAPReg(_Addr_DBGREGS + OSLAR_EL1_OFFSET, 0x0);
+    _WriteAPReg(_Addr_DBGREGS + EDLAR_OFFSET, 0xC5ACCE55);
+
+    v = _ReadAPReg(_Addr_DBGREGS + EDPRSR_OFFSET);
+    if(v & (1 << 4)) {
+        JLINK_SYS_Report1("    Target is in Debug mode: ", _Index_CORE);
+        return;
+    }
+
+    v = _ReadAPReg(_Addr_DBGREGS + EDSCR_OFFSET);
+    v = v | (1 << 14) & 0xFFFFFFE0;
+    _WriteAPReg(_Addr_DBGREGS + EDSCR_OFFSET, v);
+
+    _WriteAPReg(_Addr_CTIREGS + CTILAR_OFFSET, 0xC5ACCE55);
+    _WriteAPReg(_Addr_CTIREGS + CTICONTROL_OFFSET, 0x1);
+
+    v = _ReadAPReg(_Addr_CTIREGS + CTIGATE_OFFSET);
+    v = (v & 0xC) | 0x0;
+    _WriteAPReg(_Addr_CTIREGS + CTIGATE_OFFSET, v);
+
+    _WriteAPReg(_Addr_CTIREGS + CTIOUTEN0_OFFSET, 1);
+    _WriteAPReg(_Addr_CTIREGS + CTIAPPPULSE_OFFSET, 1);
+    _WriteAPReg(_Addr_CTIREGS + CTIINTACK_OFFSET, 1);
+    _WriteAPReg(_Addr_CTIREGS + CTIINTACK_OFFSET, 0);
+
+    do {
+        if(timeout == 0) {
+            JLINK_SYS_Report1("    Target Failed to enter Debug mode: ", _Index_CORE);
+            return;
+        }
+        timeout = timeout - 1;
+
+        v = _ReadAPReg(_Addr_DBGREGS + EDSCR_OFFSET);
+    } while((v & (1 << 14)) == 0);
+
+    JLINK_SYS_Report1("    Target Succed to enter Debug mode: ", _Index_CORE);
+}
+
+void WriteInstruction(U32 Dbg_Addr, U32 instruction)
+{
+    int v;
+    /*write instruction*/
+    _WriteAPReg(Dbg_Addr + EDITR_OFFSET, instruction);
+
+    /*poll until the instruction has been executed*/
+    do {
+        v = _ReadAPReg(Dbg_Addr + EDSCR_OFFSET);
+    } while((v & 0x01000000) != 0x01000000);
+}
+
+int ReadApbAPMem_ARMV7AR(U32 Address)
+{
+    int v;
+
+    /*if Cortex-A CPU access target memory, then CPU should be in debug mode!!!*/
+    /*Enable DSCR.ITRen*/
+    v = _ReadAPReg(_Addr_DBGREGS + EDSCR_OFFSET);
+    _WriteAPReg(_Addr_DBGREGS + EDSCR_OFFSET, (v | (1 << 13)));
+
+    /*write Address to DTRRX*/
+    _WriteAPReg(_Addr_DBGREGS + DBGDTRRX_EL0_OFFSET, Address);
+    /*MRC p14, #0x0, r1, c0, c5, #0*/
+    WriteInstruction(_Addr_DBGREGS, 0xee101e15);
+
+    /*ldr r0, [r1]*/
+    WriteInstruction(_Addr_DBGREGS, 0xe5910000);
+
+    /*MCR p14, #0x0, r0, c0, c5, #0*/
+    WriteInstruction(_Addr_DBGREGS, 0xee000e15);
+
+    do {
+        v = _ReadAPReg(_Addr_DBGREGS + EDSCR_OFFSET);
+        v = v >> 29;
+    } while (v == 0);
+    v = _ReadAPReg(_Addr_DBGREGS + DBGDTRTX_EL0_OFFSET);
+    JLINK_SYS_Report1(" Read Target Memory Address: ", Address);
+    JLINK_SYS_Report1(" = ", v);
+    return v;
+}
+
+int ReadApbAPMem_AARCH64(U32 Address)
+{
+    int v;
+
+    /*if Cortex-A CPU access target memory, then CPU should be in debug mode!!!*/
+    /*write Addr[63:32] to DTRTX*/
+    _WriteAPReg(_Addr_DBGREGS + DBGDTRTX_EL0_OFFSET, Address >> 32);
+    /*write Addr[31:0] to DTRRX*/
+    _WriteAPReg(_Addr_DBGREGS + DBGDTRRX_EL0_OFFSET, Address & 0xFFFFFFFF);
+
+    /*MRS X0, DTR*/
+    WriteInstruction(_Addr_DBGREGS, 0xd5330400);
+    /*LDR W1, [X0]*/
+    WriteInstruction(_Addr_DBGREGS, 0xb8400001);
+    /*MSR W1, DTRRX*/
+    WriteInstruction(_Addr_DBGREGS, 0xd5130501);
+
+    do {
+        v = _ReadAPReg(_Addr_DBGREGS + EDSCR_OFFSET);
+        v = v >> 29;
+    } while (v == 0);
+    v = _ReadAPReg(_Addr_DBGREGS + DBGDTRTX_EL0_OFFSET);
+    JLINK_SYS_Report1(" Read Target Memory Address: ", Address);
+    JLINK_SYS_Report1(" = ", v);
+    return v;
+}
+
+int ReadApbAPMem(U32 Address)
+{
+    int v;
+
+    /*if Cortex-A CPU access target memory, then CPU should be in debug mode!!!*/
+    /*write Address to DTRRX*/
+    _WriteAPReg(_Addr_DBGREGS + DBGDTRRX_EL0_OFFSET, Address);
+
+    /*MRC p14, #0x0, r1, c0, c5, #0*/
+    WriteInstruction(_Addr_DBGREGS, 0x1e15ee10);
+
+    /*ldr r0, [r1]*/
+    //WriteInstruction(_Addr_DBGREGS, 0x1b00f840);
+    WriteInstruction(_Addr_DBGREGS, 0x0b00f851);
+    //WriteInstruction(_Addr_DBGREGS, 0x0000e591);
+
+    /*MCR p14, #0x0, r0, c0, c5, #0*/
+    WriteInstruction(_Addr_DBGREGS, 0x0e15ee00);
+
+    do {
+        v = _ReadAPReg(_Addr_DBGREGS + EDSCR_OFFSET);
+        v = v >> 29;
+    } while (v == 0);
+    v = _ReadAPReg(_Addr_DBGREGS + DBGDTRTX_EL0_OFFSET);
+    JLINK_SYS_Report1(" Read Target Memory Address: ", Address);
+    JLINK_SYS_Report1(" = ", v);
+    return v;
+}
+
+void WriteApbAPMem_ARMV7AR(U32 Address, U32 Data)
+{
+    int v;
+
+    JLINK_SYS_Report1(" Write Target Memory Address: ", Address);
+    JLINK_SYS_Report1(" = ", Data);
+
+    /*if Cortex-A CPU access target memory, then CPU should be in debug mode!!!*/
+    /*Enable DSCR.ITRen*/
+    v = _ReadAPReg(_Addr_DBGREGS + EDSCR_OFFSET);
+    _WriteAPReg(_Addr_DBGREGS + EDSCR_OFFSET, (v | (1 << 13)));
+
+    /*Write Address to DTRRX*/
+    _WriteAPReg(_Addr_DBGREGS + DBGDTRRX_EL0_OFFSET, Address);
+    /*MRC p14, #0x0, r1, c0, c5, #0*/
+    WriteInstruction(_Addr_DBGREGS, 0xee101e15);
+    /*Write Data to DTRRX*/
+    _WriteAPReg(_Addr_DBGREGS + DBGDTRRX_EL0_OFFSET, Data);
+    /*MRC p14, #0x0, r1, c0, c5, #0*/
+    WriteInstruction(_Addr_DBGREGS, 0xee1000e15);
+
+    /*STR r0, [r1]*/
+    WriteInstruction(_Addr_DBGREGS, 0xe5810000);
+}
+
+void WriteApbAPMem_AARCH64(U32 Address, U32 Data)
+{
+    JLINK_SYS_Report1(" Write Target Memory Address: ", Address);
+    JLINK_SYS_Report1(" = ", Data);
+
+    /*if Cortex-A CPU access target memory, then CPU should be in debug mode!!!*/
+    /*write Addr[63:32] to DTRTX*/
+    _WriteAPReg(_Addr_DBGREGS + DBGDTRTX_EL0_OFFSET, Address >> 32);
+    /*write Addr[31:0] to DTRRX*/
+    _WriteAPReg(_Addr_DBGREGS + DBGDTRRX_EL0_OFFSET, Address & 0xFFFFFFFF);
+
+    /*MRS X0, DTR*/
+    WriteInstruction(_Addr_DBGREGS, 0xd5330400);
+    /*Write Data to DTRRX*/
+    _WriteAPReg(_Addr_DBGREGS + DBGDTRRX_EL0_OFFSET, Data);
+    /*MRS W1, DTRRX*/
+    WriteInstruction(_Addr_DBGREGS, 0xd5330501);
+
+    /*STR W1, [X0]*/
+    WriteInstruction(_Addr_DBGREGS, 0xb8000001);
+}
+
+void WriteApbAPMem(U32 Address, U32 Data)
+{
+    JLINK_SYS_Report1(" Write Target Memory Address: ", Address);
+    JLINK_SYS_Report1(" = ", Data);
+
+    /*if Cortex-A CPU access target memory, then CPU should be in debug mode!!!*/
+    /*write Address to DTRRX*/
+    _WriteAPReg(_Addr_DBGREGS + DBGDTRRX_EL0_OFFSET, Address);
+
+    /*MRC p14, #0x0, r1, c0, c5, #0*/
+    WriteInstruction(_Addr_DBGREGS, 0x1e15ee10);
+    /*Write Data to DTRRX*/
+    _WriteAPReg(_Addr_DBGREGS + DBGDTRRX_EL0_OFFSET, Data);
+    /*MRC p14, #0x0, r0, c0, c5, #0*/
+    WriteInstruction(_Addr_DBGREGS, 0x0e15ee10);
+
+    /*STR r0, [r1]*/
+    //WriteInstruction(_Addr_DBGREGS, 0x1b00f840);
+    WriteInstruction(_Addr_DBGREGS, 0x0b00f841);
+    //WriteInstruction(_Addr_DBGREGS, 0x0000e581);
+}
+
+void _DumpCoreStatus(U32 CoreIdx) {
+    int v;
+
+    U32 Dbg_Addr, Cti_Addr;
+    if(CoreIdx == 0) {
+        Dbg_Addr = _APB_ADDR_DBGREGS_A32_0;
+        Cti_Addr = _APB_ADDR_CTIREGS_A32_0;
+        JLINK_SYS_Report("Dump CA32 Core0 Status...");
+    } else {
+        Dbg_Addr = _APB_ADDR_DBGREGS_A32_1;
+        Cti_Addr = _APB_ADDR_CTIREGS_A32_1;
+        JLINK_SYS_Report("Dump CA32 Core1 Status...");
+    }
+
+    v = _ReadAPReg(Cti_Addr + 0x140);
+    JLINK_SYS_Report1("     Enable CTI Channel Gate register: ", v);
+
+    v = _ReadAPReg(Cti_Addr + 0x130);
+    JLINK_SYS_Report1("     CTI Trigger Input Status register: ", v);
+    v = _ReadAPReg(Cti_Addr + 0x134);
+    JLINK_SYS_Report1("     CTI Trigger Output Status registe: ", v);
+    v = _ReadAPReg(Cti_Addr + 0x138);
+    JLINK_SYS_Report1("     CTI Channel Input Status register: ", v);
+    v = _ReadAPReg(Cti_Addr + 0x13C);
+    JLINK_SYS_Report1("     CTI Channel Output Status register: ", v);
+
+
+    v = _ReadAPReg(Dbg_Addr + 0x310);
+    JLINK_SYS_Report1("     External Debug Power/Reset Control Register: ", v);
+
+    v = _ReadAPReg(Dbg_Addr + 0x314);
+    JLINK_SYS_Report1("     External Debug Processor Status Register: ", v);
+    if(v & (1 << 4)) {
+        JLINK_SYS_Report("    Target is halted!");
+    } else {
+        JLINK_SYS_Report("    Target is not halted!");
+    }
+
+    v = _ReadAPReg(Dbg_Addr + 0x088);
+    JLINK_SYS_Report1("     External Debug Status and Control Register: ", v);
+}
+
+/*********************************************************************
+*
+*             EnabelCrossTrigger
+*    Notes
+*        (1) core0 dbgtrigger ==== ch0 ==== core1 dbgreq
+*                core1 dbgtrigger ==== ch0 ==== core0 dbgreq
+*                ch1 ==== core0 DBGRESTART
+*                ch1 ==== core1 DBGRESTART
+*        (2) core0 halt <--> core1 halt
+*        (3) coreX run; coreY keep halt
+*
+*/
+void EnabelCrossTrigger(void) {
+    int v;
+    Report("******************************************************");
+    Report("J-Link script: EnabelCrossTrigger()");
+    Report("******************************************************");
+
+    v = _ReadAPReg(_APB_ADDR_CTIREGS_A32_0 + 0x140);
+    JLINK_SYS_Report1("Enable CTI Channel Gate register: ", v);
+    v = _ReadAPReg(_APB_ADDR_CTIREGS_A32_0 + 0xFC8);
+    JLINK_SYS_Report1("Device Configuration Register: ", v);
+    v = _ReadAPReg(_APB_ADDR_CTIREGS_A32_0 + 0xFB8);
+    JLINK_SYS_Report1("Authentication Status Registe: ", v);
+
+    _WriteAPReg(_APB_ADDR_CTIREGS_A32_0 + 0xFB0, 0xC5ACCE55); //LAR unlock 0xC5ACCE55 Clear the software lock.
+    _WriteAPReg(_APB_ADDR_CTIREGS_A32_0 + 0x000, 0x1);                //CTICONTROL.CTIEN
+    _WriteAPReg(_APB_ADDR_CTIREGS_A32_0 + 0x140, 0xF);                //CTIGATE.CTIGATEEN
+
+    _WriteAPReg(_APB_ADDR_CTIREGS_A32_1 + 0xFB0, 0xC5ACCE55); //LAR unlock 0xC5ACCE55 Clear the software lock.
+    _WriteAPReg(_APB_ADDR_CTIREGS_A32_1 + 0x000, 0x1);                //CTICONTROL.CTIEN
+    _WriteAPReg(_APB_ADDR_CTIREGS_A32_1 + 0x140, 0xF);                //CTIGATE.CTIGATEEN
+
+    /*core0 dbgtrigger ==== ch0 ==== core1 dbgreq*/
+    _WriteAPReg(_APB_ADDR_CTIREGS_A32_0 + 0x020, 1);         //CTIINEN0 enable Trigger input 0(DBGTRIGGER) @ CTI 0 to Channel 0
+    _WriteAPReg(_APB_ADDR_CTIREGS_A32_1 + 0x0A0, 1);         //CTIOUTEN0 enable Channel 0 to Trigger output 0(EDBGRQ) @ CTI 1
+
+    /*core1 dbgtrigger ==== ch0 ==== core0 dbgreq*/
+    _WriteAPReg(_APB_ADDR_CTIREGS_A32_1 + 0x020, 1);         //CTIINEN0 enable Trigger input 0(DBGTRIGGER) @ CTI 1 to Channel 0
+    _WriteAPReg(_APB_ADDR_CTIREGS_A32_0 + 0x0A0, 1);         //CTIOUTEN0 enable Channel 0 to Trigger output 0(EDBGRQ) @ CTI 0
+
+    /*ch1 ==== core0/1 DBGRESTART*/
+    _WriteAPReg(_APB_ADDR_CTIREGS_A32_0 + 0x0A4, 2);         //CTIOUTEN1 enable Channel 1 to Trigger output 1(EDBGRQ) @ CTI 0
+    _WriteAPReg(_APB_ADDR_CTIREGS_A32_1 + 0x0A4, 2);         //CTIOUTEN1 enable Channel 1 to Trigger output 1(EDBGRQ) @ CTI 1
+
+
+    /*core0 halt <--> core1 halt*/
+    _WriteAPReg(_APB_ADDR_CTIREGS_A32_0 + 0x01C, 1);         //CTIAPPPULSE Pulse channel 0 event for one clk cycl
+    JLINK_SYS_Sleep(100);                                    //wait 100ms to check CA32 status.
+
+    _DumpCoreStatus(0);
+    _DumpCoreStatus(1);
+
+    /*coreX run <--> coreY run*/
+    _WriteAPReg(_APB_ADDR_CTIREGS_A32_0 + 0x010, 1);         //CTIINTACK
+    _WriteAPReg(_APB_ADDR_CTIREGS_A32_1 + 0x010, 1);         //CTIINTACK
+    _WriteAPReg(_APB_ADDR_CTIREGS_A32_0 + 0x01C, 2);         //CTIAPPPULSE Pulse channel 1 event for one clk cycl
+    JLINK_SYS_Sleep(200);                                    //wait 200ms to check CA32 status.
+
+    _DumpCoreStatus(0);
+    _DumpCoreStatus(1);
+}
+
+void CTIIRQTest(void) {
+    Report("******************************************************");
+    Report("J-Link script: CTIIRQTest()");
+    Report("******************************************************");
+
+    _WriteAPReg(_APB_ADDR_CTIREGS_A32_0 + 0xFB0, 0xC5ACCE55); //LAR unlock 0xC5ACCE55 Clear the software lock.
+    _WriteAPReg(_APB_ADDR_CTIREGS_A32_0 + 0x000, 0x1);        //CTICONTROL.CTIEN
+    _WriteAPReg(_APB_ADDR_CTIREGS_A32_0 + 0x140, 0xF);        //CTIGATE.CTIGATEEN
+
+    _WriteAPReg(_APB_ADDR_CTIREGS_A32_1 + 0xFB0, 0xC5ACCE55); //LAR unlock 0xC5ACCE55 Clear the software lock.
+    _WriteAPReg(_APB_ADDR_CTIREGS_A32_1 + 0x000, 0x1);        //CTICONTROL.CTIEN
+    _WriteAPReg(_APB_ADDR_CTIREGS_A32_1 + 0x140, 0xF);        //CTIGATE.CTIGATEEN
+
+    /*ch2 ==== core0/1 CTIIRQ Test*/
+    _WriteAPReg(_APB_ADDR_CTIREGS_A32_0 + 0x0A8, 4);         //CTIOUTEN2 enable Channel 2 to Trigger output 2(CTIIRQ) @ CTI 0
+    _WriteAPReg(_APB_ADDR_CTIREGS_A32_1 + 0x0A8, 4);         //CTIOUTEN2 enable Channel 2 to Trigger output 2(CTIIRQ) @ CTI 1
+    _WriteAPReg(_APB_ADDR_CTIREGS_A32_0 + 0x01C, 4);         //CTIAPPPULSE Pulse channel 2 event for one clk cycl
+}
+
+void APWarmResetTest(void) {
+    int v;
+    Report("******************************************************");
+    Report("J-Link script: APWarmResetTest()");
+    Report("******************************************************");
+
+    v = _ReadAPReg(_Addr_DBGREGS + EDPRSR_OFFSET);
+    v = _ReadAPReg(_Addr_DBGREGS + EDPRSR_OFFSET);
+    JLINK_SYS_Report1("EDPRSR_OFFSET: ", v);
+    if(v == 0x0D) {
+        return;
+    }
+
+    HaltCPUAPBAP();
+    WriteApbAPMem(0x4200823C, 0x96969696);     //Write 0x96969696 to enable the write of reset control
+    WriteApbAPMem(0x42008238, 0x1);            //Write Bit[0] to enable reset other cpu's core and local cpu
+    // WriteApbAPMem(0x42008238, 0xC0000001);     //Write Bit[31] to trigger apsys_rst
+    // WriteApbAPMem(0x4200823C, 0x69696969);     //Write 0x69696969 will trigger the system if REG_SW_RST_CTRL set
+
+    _WriteAPReg(_Addr_DBGREGS + OSLAR_EL1_OFFSET, 0x0);
+    _WriteAPReg(_Addr_DBGREGS + EDLAR_OFFSET, 0xC5ACCE55);
+    _WriteAPReg(_Addr_DBGREGS + EDPRCR_OFFSET, 0x1);        //EDPRCR.CORENPDRQ
+
+    //The PE ignores writes to this bit if any of the following are true:
+    //* ExternalSecureInvasiveDebugEnabled() == FALSE
+    //* The Core power domain is either off or in a low-power state where the Core power domain registers cannot be accessed.
+    //* DoubleLockStatus() == TRUE (DBGOSDLR.DLK == '1' && DBGPRCR.CORENPDRQ == '0' && !Halted())
+    //* OSLSR.OSLK == 1 (OS lock is locked).
+    _WriteAPReg(_Addr_DBGREGS + EDPRCR_OFFSET, 0x2);        //EDPRCR.CWRR
+
+    JLINK_SYS_Sleep(200);                                    //wait 200ms to check CA32 status.
+}
+
+/*********************************************************************
+*
+*             ResetTarget
+*/
+void ResetTarget(void) {
+    int v;
+    int Speed;
+    int Ctrl;
+
+    Report("******************************************************");
+    Report("J-Link script: ResetTarget()");
+    Report("******************************************************");
+    Speed = JTAG_Speed;
+    JTAG_Speed = 100;
+    JTAG_WriteClocks(1);
+
+    //
+    // Select APB-AP and prepare control register
+    //
+    JLINK_CORESIGHT_WriteDP(2, (_Index_APCA32 << 24) | (0 << 4));    // Select AP[x], bank 0
+    Ctrl =    0
+             | (2 << 0)        // AP-access size. Fixed to 2: 32-bit
+             | (1 << 4)        // Auto increment TAR after read/write access. Increment is NOT performed on access to banked data registers 0-3.
+             | (1 << 31)       // Enable software access to the Debug APB bus.
+             ;
+    JLINK_CORESIGHT_WriteAP(0, Ctrl);
+    //
+    // Perform some other init steps which are required to get full control of the debug logic
+    //
+    _WriteAPReg(_Addr_DBGREGS + OSLAR_EL1_OFFSET, 0x0);
+    _WriteAPReg(_Addr_DBGREGS + EDLAR_OFFSET, 0xC5ACCE55);
+    _WriteAPReg(_Addr_DBGREGS + EDPRCR_OFFSET, 0x1);        //EDPRCR.CORENPDRQ
+    v = _ReadAPReg(_Addr_DBGREGS + EDPRSR_OFFSET);
+    JLINK_SYS_Report1("EDPRSR: ", v);
+
+    //
+    // Read & modify DSCR in order to enable debug halt mode
+    //
+    v = _ReadAPReg(_Addr_DBGREGS + EDSCR_OFFSET);
+    v |= (1 << 14);
+    _WriteAPReg(_Addr_DBGREGS + EDSCR_OFFSET, v);           // Enable debug halt mode by writing the EDSCR
+
+    //
+    // Halt CPU by writing the halt request bit in the DRCR
+    //
+    //_WriteAPReg(_Addr_DBGREGS + EDRCR_OFFSET, 1);
+
+    JTAG_WriteClocks(1);
+    JTAG_Speed = Speed;
+}
+
+/*********************************************************************
+*
+*             InitTarget
+*
+*    Notes
+*        (1) High-level functions like MEM_xxx functions must not be used here.
+*                They may only be used in SetupTarget() which is called later in the connect process.
+*/
+void InitTarget(void) {
+    Report("******************************************************");
+    Report("J-Link script: AmebaSmart (Cortex-A32 CPU0) J-Link script");
+    Report("******************************************************");
+    if (MAIN_ActiveTIF == JLINK_TIF_JTAG) {
+        JLINK_CORESIGHT_Configure("IRPre=0;DRPre=0;IRPost=0;DRPost=0;IRLenDevice=4");
+        JTAG_AllowTAPReset = 1;                     // J-Link is allowed to use a TAP reset for JTAG-chain auto-detection
+        JTAG_SetDeviceId(0, 0x4BA00477);    // 4-bits IRLen
+    } else {
+        JLINK_CORESIGHT_Configure("");        // Perform SWD init sequence
+    }
+    //
+    // For the AmebaSmart there is 1 JTAG/SWD device
+    // For Cortex-A devices: Each core has its own set of debug registers in the APB-AP memory map
+    // To connect to a specific core, just tell J-Link which debug registers to use
+    // NOTE: The selected core *must* be powered and enabled when leaving this function (InitTarget())
+    //
+    // For AmebaSmart:
+    // 0x80030000: Debug register Cortex-A32 core0
+    // 0x80032000: Debug register Cortex-A32 core1
+    //
+
+    // Set AP info for all APs in the device
+    //
+    JLINK_CORESIGHT_AddAP(0, CORESIGHT_AHB_AP);
+    JLINK_CORESIGHT_AddAP(1, CORESIGHT_AHB_AP);
+    JLINK_CORESIGHT_AddAP(2, CORESIGHT_AHB_AP);
+    JLINK_CORESIGHT_AddAP(3, CORESIGHT_APB_AP);
+
+    JLINK_CPU                                             = CORTEX_A32;
+    JLINK_CORESIGHT_IndexAPBAPToUse = _Index_APCA32;        // AP used as debug interface between J-Link and core to be debugged
+    JLINK_CORESIGHT_CoreBaseAddr        = _Addr_DBGREGS;        // Specify Coresight Core Debug Register address to use.
+    JLINK_ExecCommand(_sExecCTIBaseAddr);     // Specify CoreSight CTI address to use.
+
+    JTAG_WriteClocks(1);                                // Make sure that JTAG buffers are empty
+    JTAG_Speed = 1000;
+
+    ResetTarget();    // Reset and Halt Core
+    //EnabelCrossTrigger();
+    //CTIIRQTest();
+    //APWarmResetTest();
+}
