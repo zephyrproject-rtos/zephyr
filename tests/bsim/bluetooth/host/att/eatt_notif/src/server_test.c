@@ -159,7 +159,7 @@ void subscribed_cb(struct bt_conn *conn, uint8_t err,
 
 static struct bt_gatt_discover_params disc_params;
 static struct bt_gatt_subscribe_params subscribe_params;
-static void gatt_subscribe(void)
+static void gatt_subscribe(uint16_t value)
 {
 	int err;
 
@@ -169,7 +169,7 @@ static void gatt_subscribe(void)
 
 	subscribe_params.ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 	subscribe_params.disc_params = &disc_params,
-	subscribe_params.value = BT_GATT_CCC_NOTIFY;
+	subscribe_params.value = value;
 	subscribe_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 	subscribe_params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 
@@ -214,7 +214,7 @@ static void test_main(void)
 
 	/* Subscribe to the server characteristic. */
 	gatt_discover();
-	gatt_subscribe();
+	gatt_subscribe(BT_GATT_CCC_NOTIFY);
 
 	printk("Waiting for final sync\n");
 	bk_sync_wait();
@@ -222,7 +222,7 @@ static void test_main(void)
 	TEST_PASS("Server Passed");
 }
 
-static void test_mtu(void)
+static void mtu_test(uint16_t ccc_value)
 {
 	int err;
 	const struct bt_data ad[] = {
@@ -248,11 +248,21 @@ static void test_mtu(void)
 	}
 
 	gatt_discover();
-	gatt_subscribe();
+	gatt_subscribe(ccc_value);
 
 	WAIT_FOR_FLAG(flag_small_received);
 
 	TEST_PASS("Server Passed");
+}
+
+static void test_mtu(void)
+{
+	mtu_test(BT_GATT_CCC_NOTIFY);
+}
+
+static void test_ind_mtu(void)
+{
+	mtu_test(BT_GATT_CCC_INDICATE);
 }
 
 static const struct bst_test_instance test_server[] = {
@@ -263,6 +273,10 @@ static const struct bst_test_instance test_server[] = {
 	{
 		.test_id = "server_mtu",
 		.test_main_f = test_mtu
+	},
+	{
+		.test_id = "server_ind_mtu",
+		.test_main_f = test_ind_mtu
 	},
 	BSTEST_END_MARKER
 };
