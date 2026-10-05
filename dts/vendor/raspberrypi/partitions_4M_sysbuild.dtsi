@@ -12,10 +12,41 @@
 
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			reg = <0x0 0x10000>;
+			reg = <0x0 DT_SIZE_K(64)>;
 			label = "mcuboot";
 		};
 
+#ifdef WITH_CPU1_PARTITIONS
+		slot0_partition: partition@10000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x10000 DT_SIZE_K(256)>;
+			label = "image-0";
+		};
+
+		slot1_partition: partition@50000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x50000 DT_SIZE_K(256)>;
+			label = "image-1";
+		};
+
+		slot2_partition: partition@90000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x90000 DT_SIZE_K(256)>;
+			label = "image-0-cpu1";
+		};
+
+		slot3_partition: partition@d0000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0xd0000 DT_SIZE_K(256)>;
+			label = "image-1-cpu1";
+		};
+
+		storage_partition: partition@110000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x110000 0x2f0000>;
+			label = "storage";
+		};
+#else
 		slot0_partition: partition@10000 {
 			compatible = "zephyr,mapped-partition";
 			reg = <0x10000 0xd0000>;
@@ -33,5 +64,6 @@
 			reg = <0x1b0000 0x250000>;
 			label = "storage";
 		};
+#endif
 	};
 };
