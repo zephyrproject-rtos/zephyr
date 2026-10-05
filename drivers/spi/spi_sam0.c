@@ -418,6 +418,27 @@ static int spi_sam0_dma_rx_load(const struct device *dev, uint8_t *buf,
 	return dma_start(cfg->dma_dev, cfg->rx_dma_channel);
 }
 
+static void spi_sam0_dma_tx_error(const struct device *dma_dev, void *arg,
+				  uint32_t id, int error_code)
+{
+	struct spi_sam0_data *data = arg;
+	const struct device *dev = data->dev;
+	const struct spi_sam0_config *cfg = dev->config;
+
+	ARG_UNUSED(dma_dev);
+	ARG_UNUSED(id);
+
+	/*
+	 * spi_sam0_dma_rx_done() completes the transfer, but after a TX error
+	 * the receive channel never gets the rest of its bytes
+	 */
+	if (error_code < 0) {
+		dma_stop(cfg->dma_dev, cfg->rx_dma_channel);
+		spi_context_cs_control(&data->ctx, false);
+		spi_context_complete(&data->ctx, dev, -EIO);
+	}
+}
+
 static int spi_sam0_dma_tx_load(const struct device *dev, const uint8_t *buf,
 				size_t len)
 {
@@ -430,6 +451,8 @@ static int spi_sam0_dma_tx_load(const struct device *dev, const uint8_t *buf,
 	dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
 	dma_cfg.source_data_size = 1;
 	dma_cfg.dest_data_size = 1;
+	dma_cfg.user_data = dev->data;
+	dma_cfg.dma_callback = spi_sam0_dma_tx_error;
 	dma_cfg.block_count = 1;
 	dma_cfg.head_block = &dma_blk;
 	dma_cfg.dma_slot = cfg->tx_dma_request;
