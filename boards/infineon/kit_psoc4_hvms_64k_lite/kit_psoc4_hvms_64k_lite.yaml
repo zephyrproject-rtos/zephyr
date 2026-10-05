@@ -17,4 +17,10 @@ supported:
   - gpio
   - clock_control
   - pinctrl
+  - spi
+  - i2c
+  - counter
+  - pwm
+  - flash
+  - dma
 vendor: infineon
