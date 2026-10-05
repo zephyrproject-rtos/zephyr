@@ -12,6 +12,14 @@ compatible: "adi,adv7535"
 include: i2c-device.yaml
 
 properties:
+  reg:
+    enum:
+      - 0x39
+      - 0x3d
+    description: |
+      Main register map I2C address. The address is 0x39 when PD/AD is pulled
+      low and 0x3d when PD/AD is pulled high as power is applied.
+
   adi,edid-addr:
     type: int
     default: 0x3f
@@ -55,9 +63,9 @@ examples:
       #address-cells = <1>;
       #size-cells = <0>;
 
-      display-bridge@3d {
+      display-bridge@39 {
         compatible = "adi,adv7535";
-        reg = <0x3d>;
+        reg = <0x39>;
         dsi-device = <&adv7535_dsi>;
         display-timing = <&hdmi_timing>;
 
