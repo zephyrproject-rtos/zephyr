@@ -65,7 +65,7 @@ tests:
     harness_config:
       type: multi_line
       regex:
-        - "coming up"
+        - "(coming up|IPv4 address:|IPv6 address:)"
     integration_platforms:
       - stm32h573i_dk
     extra_configs:
@@ -77,7 +77,7 @@ tests:
     harness_config:
       type: multi_line
       regex:
-        - "coming up"
+        - "(coming up|IPv4 address:|IPv6 address:)"
     platform_allow:
       - nucleo_h563zi
       - nucleo_h743zi
