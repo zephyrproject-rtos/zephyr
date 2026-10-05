@@ -125,6 +125,7 @@ static inline int z_vrfy_smbus_block_read(const struct device *dev,
 {
 	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_SMBUS));
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(count, sizeof(uint8_t)));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(buf, SMBUS_BLOCK_BYTES_MAX));
 
 	return z_impl_smbus_block_read(dev, addr, cmd, count, buf);
 }
@@ -138,6 +139,7 @@ static inline int z_vrfy_smbus_block_pcall(const struct device *dev,
 	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_SMBUS));
 	K_OOPS(K_SYSCALL_MEMORY_READ(snd_buf, snd_count));
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(rcv_count, sizeof(uint8_t)));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(rcv_buf, SMBUS_BLOCK_BYTES_MAX));
 
 	return z_impl_smbus_block_pcall(dev, addr, cmd, snd_count, snd_buf,
 					rcv_count, rcv_buf);
