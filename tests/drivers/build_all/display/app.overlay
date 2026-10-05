@@ -915,7 +915,6 @@
 			test_adv7535: hdmi-bridge@3d {
 				compatible = "adi,adv7535";
 				reg = <0x3d>;
-				adi,addr-cec = <0x3b>;
 				dsi-device = <&test_adv7535_dsi>;
 				display-timing = <&test_adv7535_timing>;
 			};
