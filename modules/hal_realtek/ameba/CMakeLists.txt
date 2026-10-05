@@ -5,7 +5,8 @@
 
 add_subdirectory_ifdef(CONFIG_REALTEK_AMEBA_OS_WRAPPER os_wrapper)
 
-if(CONFIG_BUILD_ONLY_NO_BLOBS OR CONFIG_SOC_AMEBA_NP_DISABLED)
+# amebasmart builds every core from source, so NP disabled is normal there.
+if((CONFIG_BUILD_ONLY_NO_BLOBS OR CONFIG_SOC_AMEBA_NP_DISABLED) AND NOT CONFIG_SOC_SERIES_AMEBASMART)
   message(WARNING "
   ---------------------------------------------------------------------------------------
   Building only the Ameba SoC without binary blobs omits firmware for the non-Zephyr CPU.
