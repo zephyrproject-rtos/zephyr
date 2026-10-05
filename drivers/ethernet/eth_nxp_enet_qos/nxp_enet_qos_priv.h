@@ -99,6 +99,7 @@ struct nxp_enet_qos_tx_data {
 	struct net_pkt *pkt;
 	struct k_work tx_done_work;
 	struct net_buf *tx_header;
+	struct k_work_delayable watchdog;
 	volatile union nxp_enet_qos_tx_desc descriptors[NUM_TX_BUFDESC];
 };
 
