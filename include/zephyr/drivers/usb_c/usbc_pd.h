@@ -452,7 +452,7 @@ union pd_fixed_supply_pdo_source {
 		/** Dual-Role Power */
 		uint32_t dual_role_power : 1;
 		/** Fixed supply. SET TO PDO_FIXED  */
-		enum pdo_type type : 2;
+		uint32_t type : 2;
 	};
 	/** Raw PDO value */
 	uint32_t raw_value;
@@ -486,7 +486,7 @@ union pd_fixed_supply_pdo_sink {
 		/** Reserved – Shall be set to zero. */
 		uint32_t reserved0 : 3;
 		/** Fast Role Swap required USB Type-C Current */
-		enum pd_frs_type frs_required : 2;
+		uint32_t frs_required : 2;
 		/** Dual-Role Data */
 		uint32_t dual_role_data : 1;
 		/** USB Communications Capable */
@@ -498,7 +498,7 @@ union pd_fixed_supply_pdo_sink {
 		/** Dual-Role Power */
 		uint32_t dual_role_power : 1;
 		/** Fixed supply. SET TO PDO_FIXED  */
-		enum pdo_type type : 2;
+		uint32_t type : 2;
 	};
 	/** Raw PDO value */
 	uint32_t raw_value;
@@ -546,7 +546,7 @@ union pd_variable_supply_pdo_source {
 		/** Maximum Voltage in 50mV units */
 		uint32_t max_voltage : 10;
 		/** Variable supply. SET TO PDO_VARIABLE  */
-		enum pdo_type type : 2;
+		uint32_t type : 2;
 	};
 	/** Raw PDO value */
 	uint32_t raw_value;
@@ -566,7 +566,7 @@ union pd_variable_supply_pdo_sink {
 		/** Maximum Voltage in 50mV units */
 		uint32_t max_voltage : 10;
 		/** Variable supply. SET TO PDO_VARIABLE  */
-		enum pdo_type type : 2;
+		uint32_t type : 2;
 	};
 	/** Raw PDO value */
 	uint32_t raw_value;
@@ -614,7 +614,7 @@ union pd_battery_supply_pdo_source {
 		/** Maximum Voltage in 50mV units */
 		uint32_t max_voltage : 10;
 		/** Battery supply. SET TO PDO_BATTERY  */
-		enum pdo_type type : 2;
+		uint32_t type : 2;
 	};
 	/** Raw PDO value */
 	uint32_t raw_value;
@@ -634,7 +634,7 @@ union pd_battery_supply_pdo_sink {
 		/** Maximum Voltage in 50mV units */
 		uint32_t max_voltage : 10;
 		/** Battery supply. SET TO PDO_BATTERY  */
-		enum pdo_type type : 2;
+		uint32_t type : 2;
 	};
 	/** Raw PDO value */
 	uint32_t raw_value;
@@ -696,7 +696,7 @@ union pd_augmented_supply_pdo_source {
 		 */
 		uint32_t reserved3 : 2;
 		/** Augmented Power Data Object (APDO). SET TO PDO_AUGMENTED */
-		enum pdo_type type : 2;
+		uint32_t type : 2;
 	};
 	/** Raw PDO value */
 	uint32_t raw_value;
@@ -728,7 +728,7 @@ union pd_augmented_supply_pdo_sink {
 		 */
 		uint32_t reserved3 : 2;
 		/** Augmented Power Data Object (APDO). SET TO PDO_AUGMENTED */
-		enum pdo_type type : 2;
+		uint32_t type : 2;
 	};
 	/** Raw PDO value */
 	uint32_t raw_value;
