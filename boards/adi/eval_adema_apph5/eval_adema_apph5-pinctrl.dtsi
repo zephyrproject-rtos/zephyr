@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2026 Analog Devices Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/h5/stm32h573zitx-pinctrl.dtsi>
+
+/* Override SPI1 pin biasing to match ADEMA127 requirements (SPI Mode 3, CPOL=1) */
+&spi1_sck_pa5 {
+	bias-pull-up;
+};
+
+&spi1_miso_pa6 {
+	bias-disable;
+};
+
+&spi1_mosi_pa7 {
+	bias-pull-up;
+};
