@@ -523,6 +523,7 @@ static void pf1550_int_routine_work_handler(struct k_work *work)
 {
 	struct charger_pf1550_data *data =
 		CONTAINER_OF(work, struct charger_pf1550_data, int_routine_work);
+	const struct charger_pf1550_config *config = data->dev->config;
 	uint8_t int_src;
 	int ret;
 
@@ -557,6 +558,11 @@ static void pf1550_int_routine_work_handler(struct k_work *work)
 
 	if (data->charger_online != CHARGER_ONLINE_OFFLINE) {
 		(void)pf1550_update_properties(data->dev);
+	}
+
+	/* INTB stays asserted if an event was raised while handling, no new edge follows */
+	if (gpio_pin_get_dt(&config->int_gpio) == 1) {
+		(void)k_work_submit(&data->int_routine_work);
 	}
 }
 
