@@ -608,7 +608,12 @@ static int dma_stm32_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-#if !defined(CONFIG_SOC_SERIES_STM32C5X)
+/*
+ * TODO: handle SoCs that embed only LPDMA in a proper manner.
+ */
+#if !defined(CONFIG_SOC_SERIES_STM32C5X) \
+	&& !defined(CONFIG_SOC_STM32WBA23XX) \
+	&& !defined(CONFIG_SOC_STM32WBA25XX)
 	if ((config->source_burst_length % config->source_data_size) != 0) {
 		LOG_ERR("Source burst length %d is not aligned to source data size %d",
 			config->source_burst_length, config->source_data_size);
