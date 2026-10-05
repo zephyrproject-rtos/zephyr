@@ -10,7 +10,6 @@ include: i2c-device.yaml
 properties:
   reset-gpios:
     type: phandle-array
-    required: true
 
   use-volume-control-pin:
     type: boolean
@@ -18,6 +17,17 @@ properties:
       Control the volume of the codec using the VOL/MICDET pin. This pin is
       shared with the microphone detection function, so it will not work if
       the microphone detection function is enabled.
+
+  use-internal-pll-with-bclk:
+    type: boolean
+    description: |
+      Use the internal PLL to generate the required clocks from BCLK.
+
+  round-up-slot-width-for-internal-pll:
+    type: boolean
+    description: |
+      Some SoC (like STM32) use 32 bit slots to transport 20 or 24 bit
+      samples. If this is the case with your SoC, set this boolean.
 
   speaker-gain:
     type: int
