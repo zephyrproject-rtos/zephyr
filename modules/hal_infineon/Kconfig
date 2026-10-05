@@ -21,6 +21,11 @@ config USE_INFINEON_ADC
 	help
 	  Enable Analog-to-Digital Converter (ADC) HAL module driver for Infineon devices
 
+config USE_INFINEON_SAR2_ADC
+	bool
+	help
+	  Enable the SAR2 ADC (cy_sar2) PDL library support for Infineon Traveo T2G devices
+
 config USE_INFINEON_LPCOMP
 	bool
 	help
