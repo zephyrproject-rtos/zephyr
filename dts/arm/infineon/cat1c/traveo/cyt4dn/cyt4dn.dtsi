@@ -574,6 +574,74 @@
 			status = "disabled";
 		};
 
+		canfd0: canfd@40520000 {
+			compatible = "infineon,canfd-controller";
+			reg = <0x40520000 0x20000>, <0x40530000 0x4000>;
+			reg-names = "wrapper", "mram";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+			status = "disabled";
+
+			can0_0: can@40520000 {
+				compatible = "infineon,can";
+				reg = <0x40520000 0x200>, <0x40530000 0x2000>;
+				reg-names = "m_can", "message_ram";
+				clk-dst = <IFX_PCLK_CANFD0_CH0>;
+				bosch,mram-cfg = <0x0 28 8 3 3 1 3 3>;
+				interrupt-parent = <&intmux_ch4>;
+				interrupts = <90 0>, <96 0>;
+				interrupt-names = "int0", "int1";
+				status = "disabled";
+			};
+
+			can0_1: can@40520200 {
+				compatible = "infineon,can";
+				reg = <0x40520200 0x200>, <0x40530000 0x4000>;
+				reg-names = "m_can", "message_ram";
+				clk-dst = <IFX_PCLK_CANFD0_CH1>;
+				bosch,mram-cfg = <0x2000 28 8 3 3 1 3 3>;
+				interrupt-parent = <&intmux_ch4>;
+				interrupts = <91 0>, <97 0>;
+				interrupt-names = "int0", "int1";
+				status = "disabled";
+			};
+		};
+
+		canfd1: canfd@40540000 {
+			compatible = "infineon,canfd-controller";
+			reg = <0x40540000 0x20000>, <0x40550000 0x4000>;
+			reg-names = "wrapper", "mram";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+			status = "disabled";
+
+			can1_0: can@40540000 {
+				compatible = "infineon,can";
+				reg = <0x40540000 0x200>, <0x40550000 0x2000>;
+				reg-names = "m_can", "message_ram";
+				clk-dst = <IFX_PCLK_CANFD1_CH0>;
+				bosch,mram-cfg = <0x0 28 8 3 3 1 3 3>;
+				interrupt-parent = <&intmux_ch4>;
+				interrupts = <102 0>, <108 0>;
+				interrupt-names = "int0", "int1";
+				status = "disabled";
+			};
+
+			can1_1: can@40540200 {
+				compatible = "infineon,can";
+				reg = <0x40540200 0x200>, <0x40550000 0x4000>;
+				reg-names = "m_can", "message_ram";
+				clk-dst = <IFX_PCLK_CANFD1_CH1>;
+				bosch,mram-cfg = <0x2000 28 8 3 3 1 3 3>;
+				interrupt-parent = <&intmux_ch4>;
+				interrupts = <103 0>, <109 0>;
+				interrupt-names = "int0", "int1";
+				status = "disabled";
+			};
+		};
+
 		m7_0_itcm: itcm@a0000000 {
 			compatible = "zephyr,memory-region", "arm,itcm";
 			reg = <0xa0000000 DT_SIZE_K(64)>;
