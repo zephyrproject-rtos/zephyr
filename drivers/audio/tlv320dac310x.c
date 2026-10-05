@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT ti_tlv320dac
 
 #include <errno.h>
+#include <math.h>
 
 #include <zephyr/sys/util.h>
 
@@ -23,28 +24,91 @@ LOG_MODULE_REGISTER(tlv320dac310x);
 #define CODEC_OUTPUT_VOLUME_MAX		0
 #define CODEC_OUTPUT_VOLUME_MIN		(-78 * 2)
 
-struct codec_driver_config {
-	struct i2c_dt_spec bus;
-	struct gpio_dt_spec reset_gpio;
-	uint8_t speaker_gain;
+/*
+ * TLV320DAC3100: compact clock table, PLL source = BCLK, D = 0,
+ * slot width = word width (BCLK = 2 * bits * fs).
+ *
+ * Key   (32 bit): fs << 8 | bits               (e.g. 48 kHz, 32 bit -> 0x00BB8020)
+ * Value (32 bit): [30:21] DOSR   [20:17] NDAC   [16:13] MDAC
+ *                 [12:7]  J      [6:3]   R      [2:0]   P        bit 31 unused
+ *
+ * NDAC and MDAC are limited to 1..15, which is sufficient for all entries. Combinations that are
+ * not possible (BCLK/P < 512 kHz) are absent from the table; the lookup returns false.
+ */
+
+#if DT_ANY_INST_HAS_BOOL_STATUS_OKAY(use_internal_pll_with_bclk)
+
+#define DAC3100_KEY(fs, bits) (((uint32_t)(fs) << 8) | (uint32_t)(bits))
+
+#define DAC3100_VAL(p, r, j, ndac, mdac, dosr)                                                     \
+	((((uint32_t)(p) & 7u) << 0) | (((uint32_t)(r) & 15u) << 3) |                              \
+	 (((uint32_t)(j) & 63u) << 7) | (((uint32_t)(mdac) & 15u) << 13) |                         \
+	 (((uint32_t)(ndac) & 15u) << 17) | (((uint32_t)(dosr) & 1023u) << 21))
+
+/* Field extraction. */
+#define DAC3100_P(v)    (((uint32_t)(v) >> 0) & 7u)
+#define DAC3100_R(v)    (((uint32_t)(v) >> 3) & 15u)
+#define DAC3100_J(v)    (((uint32_t)(v) >> 7) & 63u)
+#define DAC3100_MDAC(v) (((uint32_t)(v) >> 13) & 15u)
+#define DAC3100_NDAC(v) (((uint32_t)(v) >> 17) & 15u)
+#define DAC3100_DOSR(v) (((uint32_t)(v) >> 21) & 1023u)
+
+struct dac3100_clk_entry {
+	uint32_t key;
+	uint32_t val;
 };
 
-struct codec_driver_data {
-	struct reg_addr	reg_addr_cache;
+/* Sorted by ascending key. */
+static const struct dac3100_clk_entry dac3100_clk_table[] = {
+	{DAC3100_KEY(8000, 32), DAC3100_VAL(1, 3, 56, 14, 1, 768)},
+	{DAC3100_KEY(11025, 24), DAC3100_VAL(1, 4, 40, 15, 1, 512)},
+	{DAC3100_KEY(11025, 32), DAC3100_VAL(1, 2, 60, 15, 1, 512)},
+	{DAC3100_KEY(12000, 24), DAC3100_VAL(1, 4, 40, 15, 1, 512)},
+	{DAC3100_KEY(12000, 32), DAC3100_VAL(1, 2, 56, 14, 1, 512)},
+	{DAC3100_KEY(16000, 16), DAC3100_VAL(1, 3, 56, 14, 1, 384)},
+	{DAC3100_KEY(16000, 20), DAC3100_VAL(1, 3, 48, 15, 1, 384)},
+	{DAC3100_KEY(16000, 24), DAC3100_VAL(1, 2, 56, 14, 1, 384)},
+	{DAC3100_KEY(16000, 32), DAC3100_VAL(1, 2, 42, 14, 1, 384)},
+	{DAC3100_KEY(22050, 16), DAC3100_VAL(1, 2, 60, 5, 3, 256)},
+	{DAC3100_KEY(22050, 20), DAC3100_VAL(1, 2, 48, 5, 3, 256)},
+	{DAC3100_KEY(22050, 24), DAC3100_VAL(1, 2, 40, 5, 3, 256)},
+	{DAC3100_KEY(22050, 32), DAC3100_VAL(1, 1, 60, 5, 3, 256)},
+	{DAC3100_KEY(24000, 16), DAC3100_VAL(1, 2, 56, 7, 2, 256)},
+	{DAC3100_KEY(24000, 20), DAC3100_VAL(1, 2, 48, 5, 3, 256)},
+	{DAC3100_KEY(24000, 24), DAC3100_VAL(1, 2, 40, 5, 3, 256)},
+	{DAC3100_KEY(24000, 32), DAC3100_VAL(1, 1, 56, 7, 2, 256)},
+	{DAC3100_KEY(32000, 16), DAC3100_VAL(1, 2, 42, 7, 2, 192)},
+	{DAC3100_KEY(32000, 20), DAC3100_VAL(1, 2, 36, 5, 3, 192)},
+	{DAC3100_KEY(32000, 24), DAC3100_VAL(1, 1, 56, 7, 2, 192)},
+	{DAC3100_KEY(32000, 32), DAC3100_VAL(1, 1, 42, 7, 2, 192)},
+	{DAC3100_KEY(44100, 16), DAC3100_VAL(1, 1, 60, 5, 3, 128)},
+	{DAC3100_KEY(44100, 20), DAC3100_VAL(1, 1, 48, 5, 3, 128)},
+	{DAC3100_KEY(44100, 24), DAC3100_VAL(1, 1, 40, 5, 3, 128)},
+	{DAC3100_KEY(44100, 32), DAC3100_VAL(1, 1, 30, 5, 3, 128)},
+	{DAC3100_KEY(48000, 16), DAC3100_VAL(1, 1, 56, 2, 7, 128)},
+	{DAC3100_KEY(48000, 20), DAC3100_VAL(1, 1, 48, 5, 3, 128)},
+	{DAC3100_KEY(48000, 24), DAC3100_VAL(1, 1, 40, 5, 3, 128)},
+	{DAC3100_KEY(48000, 32), DAC3100_VAL(1, 1, 28, 2, 7, 128)},
+	{DAC3100_KEY(88200, 16), DAC3100_VAL(1, 1, 30, 3, 5, 64)},
+	{DAC3100_KEY(88200, 20), DAC3100_VAL(1, 1, 24, 3, 5, 64)},
+	{DAC3100_KEY(88200, 24), DAC3100_VAL(1, 1, 20, 3, 5, 64)},
+	{DAC3100_KEY(88200, 32), DAC3100_VAL(1, 1, 15, 3, 5, 64)},
+	{DAC3100_KEY(96000, 16), DAC3100_VAL(1, 1, 28, 2, 7, 64)},
+	{DAC3100_KEY(96000, 20), DAC3100_VAL(1, 1, 24, 3, 5, 64)},
+	{DAC3100_KEY(96000, 24), DAC3100_VAL(1, 1, 20, 3, 5, 64)},
+	{DAC3100_KEY(96000, 32), DAC3100_VAL(1, 1, 14, 2, 7, 64)},
+	{DAC3100_KEY(176400, 16), DAC3100_VAL(1, 1, 16, 2, 8, 32)},
+	{DAC3100_KEY(176400, 20), DAC3100_VAL(5, 2, 32, 2, 8, 32)},
+	{DAC3100_KEY(176400, 24), DAC3100_VAL(1, 1, 12, 3, 6, 32)},
+	{DAC3100_KEY(176400, 32), DAC3100_VAL(1, 1, 8, 2, 8, 32)},
+	{DAC3100_KEY(192000, 16), DAC3100_VAL(1, 1, 14, 2, 7, 32)},
+	{DAC3100_KEY(192000, 20), DAC3100_VAL(5, 1, 56, 2, 7, 32)},
+	{DAC3100_KEY(192000, 24), DAC3100_VAL(3, 1, 28, 2, 7, 32)},
+	{DAC3100_KEY(192000, 32), DAC3100_VAL(1, 1, 7, 2, 7, 32)},
 };
 
-static struct codec_driver_config codec_device_config = {
-	.bus		= I2C_DT_SPEC_INST_GET(0),
-	.reset_gpio	= GPIO_DT_SPEC_INST_GET(0, reset_gpios),
-	.speaker_gain	= DT_INST_PROP(0, speaker_gain),
-};
+#endif /* DT_ANY_INST_HAS_BOOL_STATUS_OKAY(use_internal_pll_with_bclk) */
 
-static struct codec_driver_data codec_device_data;
-
-static void codec_write_reg(const struct device *dev, struct reg_addr reg,
-			    uint8_t val);
-static void codec_read_reg(const struct device *dev, struct reg_addr reg,
-			   uint8_t *val);
 static void codec_soft_reset(const struct device *dev);
 static int codec_configure_dai(const struct device *dev, audio_dai_cfg_t *cfg);
 static int codec_configure_clocks(const struct device *dev,
@@ -55,6 +119,9 @@ static enum osr_multiple codec_get_osr_multiple(audio_dai_cfg_t *cfg);
 static void codec_configure_output(const struct device *dev);
 static int codec_set_output_volume(const struct device *dev, int vol, audio_channel_t channel);
 
+static void codec_write_reg(const struct device *dev, struct reg_addr reg, uint8_t val);
+static void codec_read_reg(const struct device *dev, struct reg_addr reg, uint8_t *val);
+
 #if (LOG_LEVEL >= LOG_LEVEL_DEBUG)
 static void codec_read_all_regs(const struct device *dev);
 #define CODEC_DUMP_REGS(dev)	codec_read_all_regs((dev))
@@ -64,7 +131,7 @@ static void codec_read_all_regs(const struct device *dev);
 
 static int codec_initialize(const struct device *dev)
 {
-	const struct codec_driver_config *const dev_cfg = dev->config;
+	const struct tlv320dac310x_config *const dev_cfg = dev->config;
 
 	if (!device_is_ready(dev_cfg->bus.bus)) {
 		LOG_ERR("I2C device not ready");
@@ -72,17 +139,15 @@ static int codec_initialize(const struct device *dev)
 	}
 
 	if (!gpio_is_ready_dt(&dev_cfg->reset_gpio)) {
-		LOG_ERR("GPIO device not ready");
-		return -ENODEV;
+		LOG_ERR("No device reset gpio, have to use soft reset");
 	}
 
 	return 0;
 }
 
-static int codec_configure(const struct device *dev,
-			   struct audio_codec_cfg *cfg)
+static int codec_configure(const struct device *dev, struct audio_codec_cfg *cfg)
 {
-	const struct codec_driver_config *const dev_cfg = dev->config;
+	const struct tlv320dac310x_config *const dev_cfg = dev->config;
 	int ret;
 
 	if (cfg->dai_type != AUDIO_DAI_TYPE_I2S) {
@@ -90,16 +155,25 @@ static int codec_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	/* Configure reset GPIO, and set the line to inactive, which will also
-	 * de-assert the reset line and thus enable the codec.
-	 */
-	ret = gpio_pin_configure_dt(&dev_cfg->reset_gpio, GPIO_OUTPUT_INACTIVE);
-	if (ret < 0) {
-		LOG_ERR("Failed to configure reset GPIO (%d)", ret);
-		return ret;
+	if (gpio_is_ready_dt(&dev_cfg->reset_gpio)) {
+		ret = gpio_pin_configure_dt(&dev_cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
+		if (ret < 0) {
+			LOG_ERR("Failed to configure reset GPIO (%d)", ret);
+			return ret;
+		}
+
+		k_usleep(1);
+
+		ret = gpio_pin_configure_dt(&dev_cfg->reset_gpio, GPIO_OUTPUT_INACTIVE);
+		if (ret < 0) {
+			LOG_ERR("Failed to configure reset GPIO (%d)", ret);
+			return ret;
+		}
+	} else {
+		codec_soft_reset(dev);
 	}
 
-	codec_soft_reset(dev);
+	k_msleep(10);
 
 	ret = codec_configure_clocks(dev, cfg);
 	if (ret == 0) {
@@ -235,8 +309,8 @@ static int codec_apply_properties(const struct device *dev)
 static void codec_write_reg(const struct device *dev, struct reg_addr reg,
 			    uint8_t val)
 {
-	struct codec_driver_data *const dev_data = dev->data;
-	const struct codec_driver_config *const dev_cfg = dev->config;
+	struct tlv320dac310x_data *const dev_data = dev->data;
+	const struct tlv320dac310x_config *const dev_cfg = dev->config;
 
 	/* set page if different */
 	if (dev_data->reg_addr_cache.page != reg.page) {
@@ -252,8 +326,8 @@ static void codec_write_reg(const struct device *dev, struct reg_addr reg,
 static void codec_read_reg(const struct device *dev, struct reg_addr reg,
 			   uint8_t *val)
 {
-	struct codec_driver_data *const dev_data = dev->data;
-	const struct codec_driver_config *const dev_cfg = dev->config;
+	struct tlv320dac310x_data *const dev_data = dev->data;
+	const struct tlv320dac310x_config *const dev_cfg = dev->config;
 
 	/* set page if different */
 	if (dev_data->reg_addr_cache.page != reg.page) {
@@ -275,6 +349,16 @@ static void codec_soft_reset(const struct device *dev)
 static int codec_configure_dai(const struct device *dev, audio_dai_cfg_t *cfg)
 {
 	uint8_t val;
+#if DT_ANY_INST_HAS_BOOL_STATUS_OKAY(use_internal_pll_with_bclk)
+	const struct tlv320dac310x_config *const dev_cfg = dev->config;
+
+	if (dev_cfg->use_internal_pll_with_bclk) {
+		if (cfg->i2s.options & I2S_OPT_BIT_CLK_CONTROLLER) {
+			LOG_ERR("Cannot set BCLK as output when PLL is clocked by BCLK");
+			return -EINVAL;
+		}
+	}
+#endif
 
 	/* configure I2S interface */
 	val = IF_CTRL_IFTYPE(IF_CTRL_IFTYPE_I2S);
@@ -309,9 +393,52 @@ static int codec_configure_dai(const struct device *dev, audio_dai_cfg_t *cfg)
 	return 0;
 }
 
-static int codec_configure_clocks(const struct device *dev,
-				  struct audio_codec_cfg *cfg)
+#if DT_ANY_INST_HAS_BOOL_STATUS_OKAY(use_internal_pll_with_bclk)
+
+static bool dac3100_clk_lookup(uint32_t fs, uint32_t bits, uint32_t *val)
 {
+	const uint32_t key = DAC3100_KEY(fs, bits);
+
+	for (size_t i = 0; i < ARRAY_SIZE(dac3100_clk_table); i++) {
+		if (dac3100_clk_table[i].key == key) {
+			*val = dac3100_clk_table[i].val;
+			return true;
+		}
+	}
+	return false;
+}
+
+struct dac310x_pll_cfg {
+	uint8_t p;
+	uint8_t r;
+	uint8_t j;
+};
+
+static bool codec_configure_pll(const struct device *dev, const struct dac310x_pll_cfg *pll)
+{
+	/* Validate all input ranges */
+	if (pll->p < 1 || pll->p > 8) {
+		return false;
+	}
+	if (pll->r < 1 || pll->r > 16) {
+		return false;
+	}
+	if (pll->j < 1 || pll->j > 63) {
+		return false;
+	}
+	codec_write_reg(dev, PLL_P_R_ADDR, PLL_P_DIV(pll->p) | PLL_R_MUL(pll->r));
+	codec_write_reg(dev, PLL_J_ADDR, PLL_J(pll->j));
+
+	return true;
+}
+
+#endif
+
+static int codec_configure_clocks(const struct device *dev, struct audio_codec_cfg *cfg)
+{
+#if DT_ANY_INST_HAS_BOOL_STATUS_OKAY(use_internal_pll_with_bclk)
+	const struct tlv320dac310x_config *const dev_cfg = dev->config;
+#endif
 	int dac_clk, mod_clk;
 	struct i2s_config *i2s;
 	int osr, osr_min, osr_max;
@@ -319,9 +446,55 @@ static int codec_configure_clocks(const struct device *dev,
 	int mdac, ndac, bclk_div, mclk_div;
 
 	i2s = &cfg->dai_cfg.i2s;
-	LOG_DBG("MCLK %u Hz PCM Rate: %u Hz", cfg->mclk_freq,
-			i2s->frame_clk_freq);
 
+#if DT_ANY_INST_HAS_BOOL_STATUS_OKAY(use_internal_pll_with_bclk)
+	if (dev_cfg->use_internal_pll_with_bclk) {
+		uint8_t pll_p_r = 0;
+		uint32_t dac3100_config = 0;
+
+		if (!dac3100_clk_lookup(i2s->frame_clk_freq, i2s->word_size, &dac3100_config)) {
+			LOG_ERR("Unable to find suitable pll values");
+			return -EINVAL;
+		}
+
+		struct dac310x_pll_cfg pll_config = {.p = DAC3100_P(dac3100_config),
+						     .r = DAC3100_R(dac3100_config),
+						     .j = DAC3100_J(dac3100_config)};
+
+		mdac = DAC3100_MDAC(dac3100_config);
+		ndac = DAC3100_NDAC(dac3100_config);
+		osr = DAC3100_DOSR(dac3100_config);
+
+		mod_clk = i2s->frame_clk_freq * osr;
+		dac_clk = mod_clk * mdac;
+
+		if (i2s->options & I2S_OPT_BIT_CLK_CONTROLLER) {
+			LOG_ERR("Internal PLL with BCLK requires bit clock target mode");
+			return -EINVAL;
+		}
+
+		codec_write_reg(dev, CLOCK_GEN_MUX_ADDR,
+				CLOCK_PLL_CLKIN(CLOCK_PLL_CLKIN_BCLK) |
+					CLOCK_CODEC_CLKIN(CLOCK_CODEC_CLKIN_PLL_CLK));
+
+		codec_configure_pll(dev, &pll_config);
+
+		/* set NDAC, then MDAC, followed by OSR */
+		codec_write_reg(dev, NDAC_DIV_ADDR, (uint8_t)(NDAC_DIV(ndac) | NDAC_POWER_UP_MASK));
+		codec_write_reg(dev, MDAC_DIV_ADDR, (uint8_t)(MDAC_DIV(mdac) | MDAC_POWER_UP_MASK));
+		codec_write_reg(dev, OSR_MSB_ADDR, (uint8_t)((osr >> 8) & OSR_MSB_MASK));
+		codec_write_reg(dev, OSR_LSB_ADDR, (uint8_t)(osr & OSR_LSB_MASK));
+
+		/* Power PLL */
+		codec_read_reg(dev, PLL_P_R_ADDR, &pll_p_r);
+		pll_p_r |= PLL_POWER_UP;
+		codec_write_reg(dev, PLL_P_R_ADDR, pll_p_r);
+
+		return 0;
+	}
+#endif /* DT_ANY_INST_HAS_BOOL_STATUS_OKAY(use_internal_pll_with_bclk) */
+
+	LOG_DBG("MCLK %u Hz PCM Rate: %u Hz", cfg->mclk_freq, i2s->frame_clk_freq);
 	if (cfg->mclk_freq <= DAC_PROC_CLK_FREQ_MAX) {
 		/* use MCLK frequency as the DAC processing clock */
 		ndac = 1;
@@ -339,8 +512,7 @@ static int codec_configure_clocks(const struct device *dev,
 	 * cfg->i2s.frame_clk_freq and
 	 * DAC_MOD_CLK_FREQ_MIN <= MOD clock <= DAC_MOD_CLK_FREQ_MAX
 	 */
-	osr_min = (DAC_MOD_CLK_FREQ_MIN + i2s->frame_clk_freq - 1) /
-		i2s->frame_clk_freq;
+	osr_min = (DAC_MOD_CLK_FREQ_MIN + i2s->frame_clk_freq - 1) / i2s->frame_clk_freq;
 	osr_max = DAC_MOD_CLK_FREQ_MAX / i2s->frame_clk_freq;
 
 	/* round min and max values to the required multiple */
@@ -368,34 +540,28 @@ static int codec_configure_clocks(const struct device *dev,
 		return -EINVAL;
 	}
 
-	LOG_DBG("Processing freq: %u Hz Modulator freq: %u Hz",
-			dac_clk, mod_clk);
+	LOG_DBG("Processing freq: %u Hz Modulator freq: %u Hz", dac_clk, mod_clk);
 	LOG_DBG("NDAC: %u MDAC: %u OSR: %u", ndac, mdac, osr);
 
 	if (i2s->options & I2S_OPT_BIT_CLK_CONTROLLER) {
 		bclk_div = osr * mdac / (i2s->word_size * 2U); /* stereo */
 		if ((bclk_div * i2s->word_size * 2) != (osr * mdac)) {
 			LOG_ERR("Unable to generate BCLK %u from MCLK %u",
-				i2s->frame_clk_freq * i2s->word_size * 2U,
-				cfg->mclk_freq);
+				i2s->frame_clk_freq * i2s->word_size * 2U, cfg->mclk_freq);
 			return -EINVAL;
 		}
 		LOG_DBG("I2S controller BCLKDIV: %u", bclk_div);
-		codec_write_reg(dev, BCLK_DIV_ADDR,
-				BCLK_DIV_POWER_UP | BCLK_DIV(bclk_div));
+		codec_write_reg(dev, BCLK_DIV_ADDR, BCLK_DIV_POWER_UP | BCLK_DIV(bclk_div));
 	}
 
 	/* set NDAC, then MDAC, followed by OSR */
-	codec_write_reg(dev, NDAC_DIV_ADDR,
-			(uint8_t)(NDAC_DIV(ndac) | NDAC_POWER_UP_MASK));
-	codec_write_reg(dev, MDAC_DIV_ADDR,
-			(uint8_t)(MDAC_DIV(mdac) | MDAC_POWER_UP_MASK));
+	codec_write_reg(dev, NDAC_DIV_ADDR, (uint8_t)(NDAC_DIV(ndac) | NDAC_POWER_UP_MASK));
+	codec_write_reg(dev, MDAC_DIV_ADDR, (uint8_t)(MDAC_DIV(mdac) | MDAC_POWER_UP_MASK));
 	codec_write_reg(dev, OSR_MSB_ADDR, (uint8_t)((osr >> 8) & OSR_MSB_MASK));
 	codec_write_reg(dev, OSR_LSB_ADDR, (uint8_t)(osr & OSR_LSB_MASK));
 
 	if (i2s->options & I2S_OPT_BIT_CLK_CONTROLLER) {
-		codec_write_reg(dev, BCLK_DIV_ADDR,
-				BCLK_DIV(bclk_div) | BCLK_DIV_POWER_UP);
+		codec_write_reg(dev, BCLK_DIV_ADDR, BCLK_DIV(bclk_div) | BCLK_DIV_POWER_UP);
 	}
 
 	/* calculate MCLK divider to get ~1MHz */
@@ -450,7 +616,7 @@ static enum osr_multiple codec_get_osr_multiple(audio_dai_cfg_t *cfg)
 
 static void codec_configure_output(const struct device *dev)
 {
-	const struct codec_driver_config *const dev_cfg = dev->config;
+	const struct tlv320dac310x_config *const dev_cfg = dev->config;
 	uint8_t val;
 
 	/*
@@ -462,13 +628,15 @@ static void codec_configure_output(const struct device *dev)
 	val |= HEADPHONE_DRV_CM(CM_VOLTAGE_1P65) | HEADPHONE_DRV_RESERVED;
 	codec_write_reg(dev, HEADPHONE_DRV_ADDR, val);
 
-#if DT_INST_PROP(0, use_volume_control_pin)
-	/*
-	 * set mic detect and volume control pin to volume control function.
-	 * See chapter "6.3.10.2 DAC Digital-Volume Control" and chapter
-	 * "6.3.10.3 Volume Control Pin" in the TLV320DAC3100 datasheet.
-	 */
-	codec_write_reg(dev, VOL_MICDET_ADC_CTRL_ADDR, VOL_MICDET_VOL_CTRL_PIN);
+#if DT_ANY_INST_HAS_BOOL_STATUS_OKAY(use_volume_control_pin)
+	if (dev_cfg->use_volume_control_pin) {
+		/*
+		 * set mic detect and volume control pin to volume control function.
+		 * See chapter "6.3.10.2 DAC Digital-Volume Control" and chapter
+		 * "6.3.10.3 Volume Control Pin" in the TLV320DAC3100 datasheet.
+		 */
+		codec_write_reg(dev, VOL_MICDET_ADC_CTRL_ADDR, VOL_MICDET_VOL_CTRL_PIN);
+	}
 #endif
 
 	/* enable pop removal on power down/up */
@@ -626,13 +794,27 @@ static void codec_read_all_regs(const struct device *dev)
 #endif
 
 static DEVICE_API(audio_codec, codec_driver_api) = {
-	.configure		= codec_configure,
-	.start_output		= codec_start_output,
-	.stop_output		= codec_stop_output,
-	.set_property		= codec_set_property,
-	.apply_properties	= codec_apply_properties,
+	.configure = codec_configure,
+	.start_output = codec_start_output,
+	.stop_output = codec_stop_output,
+	.set_property = codec_set_property,
+	.apply_properties = codec_apply_properties,
 };
 
-DEVICE_DT_INST_DEFINE(0, codec_initialize, NULL, &codec_device_data,
-		&codec_device_config, POST_KERNEL,
-		CONFIG_AUDIO_CODEC_INIT_PRIORITY, &codec_driver_api);
+#define TLV320DAC31X_DEFINE(inst)                                                                  \
+	static struct tlv320dac310x_data codec_device_data_##inst;                                 \
+                                                                                                   \
+	static struct tlv320dac310x_config codec_device_config_##inst = {                          \
+		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
+		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),                    \
+		.speaker_gain = DT_INST_PROP(inst, speaker_gain),                                  \
+		.use_volume_control_pin = (bool)DT_INST_PROP_OR(inst, use_volume_control_pin, 0),  \
+		.use_internal_pll_with_bclk =                                                      \
+			(bool)DT_INST_PROP_OR(inst, use_internal_pll_with_bclk, 0),                \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, codec_initialize, NULL, &codec_device_data_##inst,             \
+			      &codec_device_config_##inst, POST_KERNEL,                            \
+			      CONFIG_AUDIO_CODEC_INIT_PRIORITY, &codec_driver_api);
+
+DT_INST_FOREACH_STATUS_OKAY(TLV320DAC31X_DEFINE)

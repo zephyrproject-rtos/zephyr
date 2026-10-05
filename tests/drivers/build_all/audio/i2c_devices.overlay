@@ -41,6 +41,8 @@
 				status = "okay";
 				reg = <0x1>;
 				reset-gpios = <&test_gpio 0 0>;
+				use-internal-pll-with-bclk;
+				use-volume-control-pin;
 			};
 
 			test_i2c_pcm1681: pcm1681@2 {
