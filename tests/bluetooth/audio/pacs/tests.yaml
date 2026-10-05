@@ -56,3 +56,35 @@ tests:
       - CONFIG_BT_PAC_SNK_LOC=n
       - CONFIG_BT_PAC_SRC=y
       - CONFIG_BT_PAC_SRC_LOC=n
+  bluetooth.audio.pacs.test_snk_pac_notifiable:
+    extra_configs:
+      - CONFIG_BT_PAC_SNK=y
+      - CONFIG_BT_PAC_SNK_LOC=y
+      - CONFIG_BT_PAC_SNK_NOTIFIABLE=y
+      - CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE=n
+      - CONFIG_BT_PAC_SRC=n
+      - CONFIG_BT_PAC_SRC_LOC=n
+  bluetooth.audio.pacs.test_snk_loc_notifiable:
+    extra_configs:
+      - CONFIG_BT_PAC_SNK=y
+      - CONFIG_BT_PAC_SNK_LOC=y
+      - CONFIG_BT_PAC_SNK_NOTIFIABLE=n
+      - CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE=y
+      - CONFIG_BT_PAC_SRC=n
+      - CONFIG_BT_PAC_SRC_LOC=n
+  bluetooth.audio.pacs.test_src_pac_notifiable:
+    extra_configs:
+      - CONFIG_BT_PAC_SNK=n
+      - CONFIG_BT_PAC_SNK_LOC=n
+      - CONFIG_BT_PAC_SRC=y
+      - CONFIG_BT_PAC_SRC_LOC=y
+      - CONFIG_BT_PAC_SRC_NOTIFIABLE=y
+      - CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE=n
+  bluetooth.audio.pacs.test_src_loc_notifiable:
+    extra_configs:
+      - CONFIG_BT_PAC_SNK=n
+      - CONFIG_BT_PAC_SNK_LOC=n
+      - CONFIG_BT_PAC_SRC=y
+      - CONFIG_BT_PAC_SRC_LOC=y
+      - CONFIG_BT_PAC_SRC_NOTIFIABLE=n
+      - CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE=y
