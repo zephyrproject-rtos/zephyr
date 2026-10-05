@@ -14,6 +14,8 @@
 
 #include <stdint.h>
 
+#include <zephyr/toolchain.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
