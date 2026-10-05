@@ -113,6 +113,12 @@ static void spi_mcux_isr(const struct device *dev)
 	struct spi_mcux_data *data = dev->data;
 	ECSPI_Type *base = config->base;
 
+	/* Not part of a transfer: disable all interrupts, the HAL would only disable the TX ones */
+	if (data->handle.txRemainingBytes == 0U && data->handle.rxRemainingBytes == 0U) {
+		ECSPI_DisableInterrupts(base, kECSPI_AllInterruptEnable);
+		return;
+	}
+
 	ECSPI_MasterTransferHandleIRQ(base, &data->handle);
 }
 
