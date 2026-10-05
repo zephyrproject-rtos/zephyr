@@ -340,6 +340,13 @@ static LLEXT_CONST uint8_t align_ext[] LLEXT_SECT ELF_ALIGN = {
 };
 LLEXT_LOAD_UNLOAD(align)
 
+#ifdef CONFIG_XTENSA
+static LLEXT_CONST uint8_t weak_undef_ext[] LLEXT_SECT ELF_ALIGN = {
+	#include "weak_undef.inc"
+};
+LLEXT_LOAD_UNLOAD(weak_undef)
+#endif
+
 #ifdef CONFIG_CPP
 static LLEXT_CONST uint8_t weak_vtable_ext[] LLEXT_SECT ELF_ALIGN = {
 	#include "weak_vtable.inc"
