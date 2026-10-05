@@ -159,9 +159,11 @@ LOG_MODULE_REGISTER(video_ov2640, CONFIG_VIDEO_LOG_LEVEL);
 
 #define REG32               0x32
 
-#define OV2640_BASE_FPS 15
+#define OV2640_BASE_FPS_24MHZ 15
 #define OV2640_NATIVE_WIDTH 1600
 #define OV2640_NATIVE_HEIGHT 1200
+
+static const uint8_t ov2640_clock_dividers[] = {1, 2, 4};
 
 struct ov2640_config {
 	struct i2c_dt_spec i2c;
@@ -171,6 +173,7 @@ struct ov2640_config {
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(powerdown_gpios)
 	struct gpio_dt_spec powerdown_gpios;
 #endif
+	uint32_t mclk_freq;
 	uint8_t drive_strength : 4;
 	uint8_t clock_multiplier : 2;
 	uint8_t vsync_active : 1;
@@ -195,6 +198,7 @@ struct ov2640_ctrls {
 struct ov2640_data {
 	struct ov2640_ctrls ctrls;
 	struct video_format fmt;
+	int64_t link_freq[ARRAY_SIZE(ov2640_clock_dividers)];
 	uint64_t frmival_msec;
 	uint8_t clock_divider;
 	uint8_t bank;
@@ -211,14 +215,7 @@ static const char *const ov2640_test_pattern_menu[] = {
 	NULL
 };
 
-/* Need to keep these two sychronized */
-static const uint8_t ov2640_clock_dividers[] = {1, 2, 4};
-const int64_t ov2640_link_freq[] = {
-	MHZ(168), MHZ(72), MHZ(36)
-};
-
 static const struct ov2640_reg ov2640_default_regs[] = {
-	/* Minimal init sequence */
 	{BANK_SEL, BANK_SEL_DSP},
 	{0x2c, 0xff},
 	{0x2e, 0xdf},
@@ -387,21 +384,26 @@ static const struct ov2640_reg ov2640_default_regs[] = {
 	{0xe1, 0x77},
 	{0xdd, 0x7f},
 	{CTRL0, CTRL0_YUV422 | CTRL0_YUV_EN | CTRL0_RGB_EN},
-};
 
-static const struct ov2640_reg uxga_regs[] = {
+	/* Configure the DSP image source to the native resolution */
+
 	{BANK_SEL, BANK_SEL_SENSOR},
-	/* DSP input image resolution and window size control */
+	{HSIZE8, (OV2640_NATIVE_WIDTH >> 3)},
+	{VSIZE8, (OV2640_NATIVE_HEIGHT >> 3)},
+	{XOFFL, 0x00},
+	{YOFFL, 0x00},
+	{H_SIZE, ((OV2640_NATIVE_WIDTH >> 2) & 0xFF)},
+	{V_SIZE, ((OV2640_NATIVE_HEIGHT >> 2) & 0xFF)},
+	{VHYX, ((OV2640_NATIVE_HEIGHT >> 3) & 0x80) | ((OV2640_NATIVE_WIDTH >> 7) & 0x08)},
+	{TEST, (OV2640_NATIVE_WIDTH >> 4) & 0x80},
+	{BANK_SEL, BANK_SEL_SENSOR},
 	{COM7, COM7_RES_UXGA},
-	{COM1, 0x0F},        /* UXGA=0x0F, SVGA=0x0A, CIF=0x06 */
-
-	{HREFST, 0x11}, /* UXGA=0x11, SVGA/CIF=0x11 */
-	{HREFEND, 0x75},  /* UXGA=0x75, SVGA/CIF=0x43 */
-
-	{VSTRT, 0x01},  /* UXGA=0x01, SVGA/CIF=0x00 */
-	{VEND, 0x97},   /* UXGA=0x97, SVGA/CIF=0x4b */
-	{0x3d, 0x34},   /* UXGA=0x34, SVGA/CIF=0x38 */
-
+	{COM1, 0x0F},
+	{HREFST, 0x11},
+	{HREFEND, 0x75},
+	{VSTRT, 0x01},
+	{VEND, 0x97},
+	{0x3d, 0x34},
 	{0x35, 0x88},
 	{0x22, 0x0a},
 	{0x37, 0x40},
@@ -411,37 +413,11 @@ static const struct ov2640_reg uxga_regs[] = {
 	{0x0e, 0x01},
 	{0x42, 0x83},
 
-	/*
-	 * Set DSP input image size and offset.
-	 * The sensor output image can be scaled with OUTW/OUTH
-	 */
 	{BANK_SEL, BANK_SEL_DSP},
 	{R_BYPASS, R_BYPASS_DSP_YES},
-
 	{RESET, RESET_DVP},
-	{HSIZE8, (OV2640_NATIVE_WIDTH >> 3)}, /* Image Horizontal Size WIDTH[10:3] */
-	{VSIZE8, (OV2640_NATIVE_HEIGHT >> 3)}, /* Image Vertical Size HEIGHT[10:3] */
-
-	/* {H_SIZE[11], H_SIZE[2:0], V_SIZE[2:0]} */
-	{SIZEL,
-	 (OV2640_NATIVE_WIDTH >> 10) << 6 |
-	 (OV2640_NATIVE_WIDTH & 0x7) << 3 |
-	 (OV2640_NATIVE_HEIGHT & 0x7) << 0},
-
-	{XOFFL, 0x00},                       /* OFFSET_X[7:0] */
-	{YOFFL, 0x00},                       /* OFFSET_Y[7:0] */
-	{H_SIZE, ((OV2640_NATIVE_WIDTH >> 2) & 0xFF)}, /* H_SIZE[7:0] real/4 */
-	{V_SIZE, ((OV2640_NATIVE_HEIGHT >> 2) & 0xFF)}, /* V_SIZE[7:0] real/4 */
-
-	/* V_SIZE[8]/OFFSET_Y[10:8]/H_SIZE[8]/OFFSET_X[10:8] */
-	{VHYX, ((OV2640_NATIVE_HEIGHT >> 3) & 0x80) | ((OV2640_NATIVE_WIDTH >> 7) & 0x08)},
-	{TEST, (OV2640_NATIVE_WIDTH >> 4) & 0x80}, /* H_SIZE[9] */
-
 	{CTRL2, CTRL2_DCW_EN | CTRL2_SDE_EN | CTRL2_UV_AVG_EN | CTRL2_CMX_EN | CTRL2_UV_ADJ_EN},
-
-	/* H_DIVIDER/V_DIVIDER */
 	{CTRLI, CTRLI_LP_DP | 0x00},
-	/* DVP prescaler */
 	{R_DVP_SP, R_DVP_SP_AUTO_MODE | 0x04},
 	{R_BYPASS, R_BYPASS_DSP_NO},
 	{RESET, 0x00},
@@ -721,9 +697,10 @@ static int ov2640_apply_config(const struct device *dev)
 
 	k_msleep(1);
 
-	/* DSP configuration in UXGA */
-
-	ret = ov2640_write_all(dev, uxga_regs, ARRAY_SIZE(uxga_regs));
+	ret = ov2640_write_dsp_reg(dev, SIZEL,
+		(data->fmt.width >> 10) << 6 |
+		(data->fmt.width & 0x7) << 3 |
+		(data->fmt.height & 0x7) << 0);
 	if (ret < 0) {
 		return ret;
 	}
@@ -800,7 +777,8 @@ static int ov2640_enum_frmival(const struct device *dev, struct video_frmival_en
 	}
 
 	fie->type = VIDEO_FRMIVAL_TYPE_DISCRETE;
-	fie->discrete.numerator = (uint64_t)(USEC_PER_SEC / OV2640_BASE_FPS)
+	fie->discrete.numerator =
+		(uint64_t)USEC_PER_SEC / OV2640_BASE_FPS_24MHZ * cfg->mclk_freq / MHZ(24)
 		/ cfg->clock_multiplier * ov2640_clock_dividers[fie->index];
 	fie->discrete.denominator = USEC_PER_SEC;
 
@@ -1115,7 +1093,7 @@ static int ov2640_init_controls(const struct device *dev)
 	}
 
 	ret = video_init_int_menu_ctrl(&ctrls->link_freq, dev, VIDEO_CID_LINK_FREQ,
-				       0, ov2640_link_freq, ARRAY_SIZE(ov2640_link_freq));
+				       0, data->link_freq, ARRAY_SIZE(data->link_freq));
 	if (ret < 0) {
 		return ret;
 	}
@@ -1135,6 +1113,11 @@ static int ov2640_init(const struct device *dev)
 	if (!device_is_ready(cfg->i2c.bus)) {
 		LOG_ERR("Bus device is not ready");
 		return -ENODEV;
+	}
+
+	for (size_t i = 0; i < ARRAY_SIZE(ov2640_clock_dividers); i++) {
+		data->link_freq[i] =
+			cfg->mclk_freq * 3 * cfg->clock_multiplier / ov2640_clock_dividers[i];
 	}
 
 	ret = ov2640_init_controls(dev);
@@ -1278,6 +1261,7 @@ static int ov2640_init(const struct device *dev)
 		.i2c = I2C_DT_SPEC_INST_GET(n),							\
 		OV2640_RESET_GPIO(n)								\
 		OV2640_POWERDOWN_GPIO(n)							\
+		.mclk_freq = DT_PROP(DT_INST_PHANDLE(n, clocks), clock_frequency),		\
 		.clock_multiplier = DT_INST_PROP(n, clock_multiplier),				\
 		.drive_strength = DT_INST_PROP(n, drive_strength),				\
 		.jpeg_hsync = DT_INST_PROP(n, jpeg_hsync),					\

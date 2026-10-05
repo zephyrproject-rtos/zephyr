@@ -23,6 +23,8 @@
 		clock-multiplier = <2>;
 		status = "okay";
 
+		clocks = <&dvp_24pin_clock>;
+
 		port {
 			ov2640_ep_out: endpoint {
 				remote-endpoint-label = "dvp_24pin_ep_in";

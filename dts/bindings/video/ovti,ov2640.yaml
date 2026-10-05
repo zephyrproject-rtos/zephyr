@@ -42,6 +42,11 @@ properties:
       Select the multiplier applied to XVCLK (input clock pin), clocking the sensor internal
       elements, also affecting the maximal pixel rate and frame rate.
 
+  clocks:
+    required: true
+    description: |
+      Reference to then node of the clock providing the MCLK (aka XCLK/SYSCLK) signal.
+
   drive-strength:
     type: int
     default: 1

@@ -7,6 +7,7 @@
 /dts-v1/;
 #include "xiao_esp32s3_procpu_common.dtsi"
 #include <espressif/partitions_0x0_amp.dtsi>
+#include <freq.h>
 
 / {
 	model = "Seeed Xiao ESP32S3 PROCPU Sense";
@@ -14,6 +15,14 @@
 
 	chosen {
 		zephyr,camera = &lcd_cam_dvp;
+	};
+
+	clocks {
+		ov2640_input_clock: dvp-mclk {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(10)>;
+			#clock-cells = <0>;
+		};
 	};
 };
 
@@ -28,6 +37,8 @@
 		reg = <0x30>;
 		status = "okay";
 		clock-rate-control = <0x80>;
+
+		clocks = <&ov2640_input_clock>;
 
 		port {
 			ov2640_ep_out: endpoint {
