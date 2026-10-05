@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: eval_adema_apph5
+  full_name: ADI EVAL-ADEMA-APPH5 (STM32H573ZI)
+  vendor: adi
+  socs:
+    - name: stm32h573xx
