@@ -71,6 +71,10 @@ int task_wdt_init(const struct device *hw_wdt);
  *                    task_wdt_feed().
  * @retval -EINVAL If the reload_period is invalid.
  * @retval -ENOMEM If no more timeouts can be installed.
+ *
+ * @note When a hardware watchdog is used as a fallback, the first call
+ *       starts it and must be made from a thread: the driver may sleep
+ *       in wdt_setup() while the hardware takes its configuration.
  */
 int task_wdt_add(uint32_t reload_period, task_wdt_callback_t callback,
 		 void *user_data);

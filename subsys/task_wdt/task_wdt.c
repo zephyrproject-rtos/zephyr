@@ -52,6 +52,12 @@ static bool task_wdt_initialized;
 static const struct device *hw_wdt_dev;
 static int hw_wdt_channel;
 static bool hw_wdt_started;
+/*
+ * Serialises the one-time wdt_setup() of the hardware fallback. A driver
+ * may sleep in wdt_setup() while the peripheral takes its configuration,
+ * so it must not run under channels_lock.
+ */
+static struct k_mutex hw_wdt_lock;
 #endif
 
 static void schedule_next_timeout(int64_t current_ticks)
@@ -139,6 +145,7 @@ int task_wdt_init(const struct device *hw_wdt)
 		wdt_config.callback = NULL;
 
 		hw_wdt_dev = hw_wdt;
+		k_mutex_init(&hw_wdt_lock);
 		hw_wdt_channel = wdt_install_timeout(hw_wdt_dev, &wdt_config);
 		if (hw_wdt_channel < 0) {
 			LOG_ERR("hw_wdt install timeout failed: %d", hw_wdt_channel);
@@ -170,6 +177,37 @@ int task_wdt_add(uint32_t reload_period, task_wdt_callback_t callback,
 	 * k_spin_lock instead of k_sched_lock required here to avoid being interrupted by a
 	 * triggering other task watchdog channel (executed in ISR context).
 	 */
+#ifdef CONFIG_TASK_WDT_HW_FALLBACK
+	/*
+	 * Start the hardware watchdog before taking the channel spinlock.
+	 * wdt_setup() may sleep (the MCUX wdog32 driver waits 2.5 periods of
+	 * the watchdog clock for the configuration to take effect), and a
+	 * sleep under channels_lock lets another thread's task_wdt_feed() run
+	 * a scheduling pass that sees this channel with its period set and
+	 * its deadline still parked at K_TICKS_FOREVER, takes that as the
+	 * earliest deadline, and fires the timer at once: the channel expires
+	 * right after registration with nobody at fault. The first channel
+	 * therefore has to be added from a thread when a hardware fallback
+	 * is in use.
+	 */
+	if (hw_wdt_dev != NULL && !hw_wdt_started) {
+		k_mutex_lock(&hw_wdt_lock, K_FOREVER);
+		if (!hw_wdt_started) {
+			wdt_setup(hw_wdt_dev,
+				0
+#ifdef CONFIG_TASK_WDT_HW_FALLBACK_PAUSE_HALTED_BY_DBG
+				| WDT_OPT_PAUSE_HALTED_BY_DBG
+#endif
+#ifdef CONFIG_TASK_WDT_HW_FALLBACK_PAUSE_IN_SLEEP
+				| WDT_OPT_PAUSE_IN_SLEEP
+#endif
+			);
+			hw_wdt_started = true;
+		}
+		k_mutex_unlock(&hw_wdt_lock);
+	}
+#endif
+
 	key = k_spin_lock(&channels_lock);
 
 	/* look for unused channel (reload_period set to 0) */
@@ -179,23 +217,6 @@ int task_wdt_add(uint32_t reload_period, task_wdt_callback_t callback,
 			channels[id].user_data = user_data;
 			channels[id].timeout_abs_ticks = K_TICKS_FOREVER;
 			channels[id].callback = callback;
-
-#ifdef CONFIG_TASK_WDT_HW_FALLBACK
-			if (!hw_wdt_started && hw_wdt_dev) {
-				/* also start fallback hw wdt */
-				wdt_setup(hw_wdt_dev,
-					0
-#ifdef CONFIG_TASK_WDT_HW_FALLBACK_PAUSE_HALTED_BY_DBG
-					| WDT_OPT_PAUSE_HALTED_BY_DBG
-#endif
-#ifdef CONFIG_TASK_WDT_HW_FALLBACK_PAUSE_IN_SLEEP
-					| WDT_OPT_PAUSE_IN_SLEEP
-#endif
-				);
-				hw_wdt_started = true;
-			}
-#endif
-			/* must be called after hw wdt has been started */
 			task_wdt_feed(id);
 
 			k_spin_unlock(&channels_lock, key);
