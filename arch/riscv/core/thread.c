@@ -323,6 +323,7 @@ FUNC_NORETURN void z_riscv_switch_to_main_no_multithreading(k_thread_entry_t mai
 	/* infinite loop */
 	irq_lock();
 	while (true) {
+		k_cpu_idle();
 	}
 
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
