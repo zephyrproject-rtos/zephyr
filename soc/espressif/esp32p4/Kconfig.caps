@@ -17,6 +17,14 @@ config SOC_ESP32_PM_CPU_RETENTION_BY_SW
 	bool
 	default y
 
+config SOC_ESP32_FLASH_SUPPORTED
+	bool
+	default y
+
+config SOC_ESP32_PM_SUPPORT_VDDSDIO_PD
+	bool
+	default y
+
 config SOC_ESP32_ETM_SUPPORTED
 	bool
 	default y
