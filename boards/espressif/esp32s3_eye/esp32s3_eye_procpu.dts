@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 #include <espressif/partitions_0x0_amp.dtsi>
 #include <zephyr/dt-bindings/display/panel.h>
+#include <freq.h>
 
 / {
 	model = "Espressif ESP32S3-EYE PROCPU";
@@ -43,6 +44,14 @@
 			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "BOOT Button";
 			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	clocks {
+		ov2640_input_clock: cam-clk {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(10)>;
+			#clock-cells = <0>;
 		};
 	};
 
@@ -141,11 +150,12 @@
 		compatible = "ovti,ov2640";
 		reg = <0x30>;
 		status = "okay";
-		clock-rate-control = <0x80>;
+
+		clocks = <&ov2640_input_clock>;
 
 		port {
 			ov2640_ep_out: endpoint {
-				remote-endpoint = <&dvp_ep_in>;
+				remote-endpoint-label = "dvp_ep_in";
 				vsync-active = <1>;
 				hsync-active = <1>;
 			};
@@ -166,7 +176,7 @@
 
 	port {
 		dvp_ep_in: endpoint {
-			remote-endpoint = <&ov2640_ep_out>;
+			remote-endpoint-label = "ov2640_ep_out";
 			vsync-active = <1>;
 			hsync-active = <1>;
 		};

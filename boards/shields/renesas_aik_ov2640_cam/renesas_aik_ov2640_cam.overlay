@@ -5,10 +5,19 @@
  */
 
 #include <zephyr/dt-bindings/video/video-interfaces.h>
+#include <freq.h>
 
 / {
 	chosen {
 		zephyr,camera = &dvp_20pin_interface;
+	};
+
+	clocks {
+		ov2640_clock: dvp-mclk {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(10)>;
+			#clock-cells = <0>;
+		};
 	};
 };
 
@@ -19,6 +28,7 @@
 		compatible = "ovti,ov2640";
 		reg = <0x30>;
 		reset-gpios = <&dvp_20pin_connector DVP_20PIN_PEN GPIO_ACTIVE_LOW>;
+		clocks = <&ov2640_clock>;
 
 		port {
 			ov2640_ep_out: endpoint {

@@ -9,6 +9,7 @@
 #include <st/h7/stm32h743vitx-pinctrl.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+#include <freq.h>
 
 / {
 	model = "WeAct Studio MiniSTM32H743 Core Board";
@@ -36,6 +37,14 @@
 			label = "User PB";
 			gpios = <&gpioc 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	clocks {
+		dvp_24pin_clock: dvp-mclk {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(12)>;
+			#clock-cells = <0>;
 		};
 	};
 
