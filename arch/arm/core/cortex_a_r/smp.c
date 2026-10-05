@@ -161,6 +161,9 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz, arch_cpustart_
 	/* barrier to guarantee completion of the cache flush above. */
 	barrier_dsync_fence_full();
 
+	/* SoC powers the core (rails, isolation) before PSCI boots it. */
+	soc_cpu_power_on(cpu_mpid);
+
 #ifdef CONFIG_PM_CPU_OPS
 	/*
 	 * Platforms that hold secondaries powered off until requested need
