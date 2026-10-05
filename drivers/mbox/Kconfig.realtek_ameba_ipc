@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config MBOX_REALTEK_AMEBA_IPC
+	bool "Realtek RTL8730E (AmebaSmart) IPC mailbox driver"
+	default y
+	depends on DT_HAS_REALTEK_RTL8730E_IPC_ENABLED
+	help
+	  RTL8730E IPC doorbell as an MBOX controller; the mbox cell is the
+	  absolute IPC register bit (0..31). Carries the CA32 <-> KM4 and
+	  CA32 <-> KM0 rpmsg links.
