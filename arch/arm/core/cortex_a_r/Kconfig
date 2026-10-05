@@ -51,6 +51,11 @@ config CPU_CORTEX_A32
 
 if CPU_AARCH32_CORTEX_A
 
+config HAS_ARM_SMCCC
+	bool
+	help
+	  SMC and HVC calling convention support on ARMv8-A AArch32.
+
 config ARM_A_PROFILE_AARCH32
 	bool
 	help
@@ -69,6 +74,7 @@ config ARMV7_A
 config AARCH32_ARMV8_A
 	bool
 	select ARM_A_PROFILE_AARCH32
+	select HAS_ARM_SMCCC
 	select ATOMIC_OPERATIONS_BUILTIN
 	select ISA_ARM
 	select SCHED_IPI_SUPPORTED if SMP
