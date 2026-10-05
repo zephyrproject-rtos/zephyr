@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2026 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * KM4 (Cortex-M55) is an rpmsg remote on IPCNP, NVIC IRQ 24.
+ *
+ * mbox cells are absolute register bits (see realtek,rtl8730e-ipc.yaml):
+ *   tx = bit 2  (NP_TO_AP ch2)
+ *   rx = bit 21 (AP_TO_NP ch5, RX-full group starts at bit 16)
+ *
+ * The vrings sit above KM4 sram0 (0x60000020..0x6015B000), so sram0 needs no
+ * shrink. KM4 has a D-cache, so ATTR_MPU_RAM_NOCACHE maps the region non-cacheable.
+ */
+
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	sram_ipc: memory@60700000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x60700000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "SRAM_IPC";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
+	};
+
+	soc {
+		ipc_mbox: mbox@41000500 {
+			compatible = "realtek,rtl8730e-ipc";
+			reg = <0x41000500 0x14>;
+			interrupt-parent = <&nvic>;
+			interrupts = <24 3>;
+			#mbox-cells = <1>;
+			status = "okay";
+		};
+	};
+
+	ipc {
+		ipc0: ipc0 {
+			compatible = "zephyr,ipc-openamp-static-vrings";
+			memory-region = <&sram_ipc>;
+			mboxes = <&ipc_mbox 2>, <&ipc_mbox 21>;
+			mbox-names = "tx", "rx";
+			role = "remote";
+			status = "okay";
+		};
+	};
+};
