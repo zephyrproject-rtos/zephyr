@@ -10,3 +10,7 @@ target_sources(app PRIVATE src/main.c)
 
 zephyr_compile_definitions(CONFIG_NET_DHCPV6)
 zephyr_compile_definitions(CONFIG_NET_DHCPV6_LOG_LEVEL=LOG_LEVEL_ERR)
+
+if(CONFIG_NET_IPV6_ND)
+  zephyr_compile_definitions(CONFIG_NET_DHCPV6_START_ON_RA)
+endif()
