@@ -828,3 +828,8 @@ Network socket tracing
 ======================
 
 .. doxygengroup:: subsys_tracing_apis_socket
+
+zbus tracing
+============
+
+.. doxygengroup:: subsys_tracing_apis_zbus
