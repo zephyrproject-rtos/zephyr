@@ -80,6 +80,7 @@ config HTTP_SERVER_VERSION_1
 config HTTP_SERVER_VERSION_2
 	bool "HTTP/2 support"
 	select NET_TCP if NET_NATIVE
+	select HTTP2_COMMON
 	default y
 	help
 	  Support HTTP/2 version.
@@ -336,6 +337,10 @@ config HTTP_SERVER_COMPLETE_STATUS_PHRASES
 	  compliance or client behavior.
 
 endif
+
+# Hidden option for the HTTP/2 frame and HPACK code shared by server and client
+config HTTP2_COMMON
+	bool
 
 # Hidden option to avoid having multiple individual options that are ORed together
 config HTTP
