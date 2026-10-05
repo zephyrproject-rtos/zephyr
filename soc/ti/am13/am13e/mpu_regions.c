@@ -23,7 +23,7 @@ const struct arm_mpu_region mpu_regions[] = {
 					 DT_REG_SIZE(DT_NODELABEL(sram0_1_2)))),
 	MPU_REGION_ENTRY("SRAM3_CAHB", DT_REG_ADDR(DT_NODELABEL(sram3_cahb)),
 			 REGION_RAM_ATTR(DT_REG_ADDR(DT_NODELABEL(sram3_cahb)),
-					 DT_REG_ADDR(DT_NODELABEL(sram3_cahb)))),
+					 DT_REG_SIZE(DT_NODELABEL(sram3_cahb)))),
 };
 
 const struct arm_mpu_config mpu_config = {
