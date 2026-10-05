@@ -266,7 +266,10 @@ bool pm_system_suspend(int32_t kernel_ticks)
 	if (!IS_ENABLED(CONFIG_PM_STATE_SET_IRQ_UNLOCKED)) {
 		_kernel.idle = 0;
 	}
-	pm_state_set(z_cpus_pm_state[id]->state, z_cpus_pm_state[id]->substate_id);
+	/* pm_system_resume() clears z_cpus_pm_state[id] before the exit trace. */
+	enum pm_state state = z_cpus_pm_state[id]->state;
+
+	pm_state_set(state, z_cpus_pm_state[id]->substate_id);
 
 	/* Wake up sequence starts here */
 
@@ -278,9 +281,7 @@ bool pm_system_suspend(int32_t kernel_ticks)
 
 	pm_system_resume();
 	k_sched_unlock();
-	SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks,
-				   z_cpus_pm_state[id] ?
-				   z_cpus_pm_state[id]->state : PM_STATE_ACTIVE);
+	SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks, state);
 
 	return true;
 }
