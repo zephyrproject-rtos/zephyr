@@ -153,13 +153,19 @@ static int init_mem_slab_obj_core_list(void)
 		k_object_init(slab);
 
 #ifdef CONFIG_OBJ_CORE_MEM_SLAB
-		k_obj_core_init_and_link(K_OBJ_CORE(slab), &obj_type_mem_slab);
+		k_obj_core_init(K_OBJ_CORE(slab), &obj_type_mem_slab);
 #ifdef CONFIG_OBJ_CORE_STATS_MEM_SLAB
 		k_obj_core_stats_register(K_OBJ_CORE(slab), &slab->info,
 					  sizeof(struct k_mem_slab_info));
 #endif /* CONFIG_OBJ_CORE_STATS_MEM_SLAB */
 #endif /* CONFIG_OBJ_CORE_MEM_SLAB */
 	}
+
+#ifdef CONFIG_OBJ_CORE_MEM_SLAB
+	k_obj_type_init_range(&obj_type_mem_slab, STRUCT_SECTION_START(k_mem_slab),
+			      STRUCT_SECTION_END(k_mem_slab), sizeof(struct k_mem_slab),
+			      false);
+#endif /* CONFIG_OBJ_CORE_MEM_SLAB */
 
 out:
 	return rc;
