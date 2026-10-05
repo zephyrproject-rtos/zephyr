@@ -444,7 +444,7 @@ int smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 			rsp = NULL;
 		} else if (IS_ENABLED(CONFIG_SMP_CLIENT) && (req_hdr.nh_op == MGMT_OP_READ_RSP ||
 			   req_hdr.nh_op == MGMT_OP_WRITE_RSP)) {
-			rc = smp_client_single_response(req, &req_hdr);
+			rc = smp_client_single_response(streamer->smpt, req, &req_hdr);
 
 			if (rc == MGMT_ERR_EOK) {
 				handler_found = true;
