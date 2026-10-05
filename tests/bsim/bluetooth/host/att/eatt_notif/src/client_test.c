@@ -26,6 +26,7 @@ CREATE_FLAG(flag_discover_complete);
 CREATE_FLAG(flag_is_encrypted);
 CREATE_FLAG(flag_mtu_exchanged);
 CREATE_FLAG(flag_small_sent);
+CREATE_FLAG(flag_small_indicated);
 
 static struct bt_conn *g_conn;
 static const struct bt_gatt_attr *local_attr;
@@ -165,7 +166,7 @@ static void gatt_discover(void)
 
 BT_GATT_SERVICE_DEFINE(g_svc,
 	BT_GATT_PRIMARY_SERVICE(TEST_SERVICE_UUID),
-	BT_GATT_CHARACTERISTIC(TEST_CHRC_UUID, BT_GATT_CHRC_NOTIFY,
+	BT_GATT_CHARACTERISTIC(TEST_CHRC_UUID, BT_GATT_CHRC_NOTIFY | BT_GATT_CHRC_INDICATE,
 			       BT_GATT_PERM_READ, NULL, NULL, NULL),
 	BT_GATT_CCC(NULL,
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE));
@@ -265,18 +266,17 @@ static void small_sent(struct bt_conn *conn, void *user_data)
 	SET_FLAG(flag_small_sent);
 }
 
-static void test_mtu(void)
+/* The ATT_MTU of the UATT bearer, read while it is the only bearer */
+static uint16_t uatt_mtu;
+
+/* Connect, optionally exchange the ATT_MTU, connect the EATT bearers and wait
+ * for the peer to subscribe.
+ */
+static void mtu_test_setup(bool exchange_mtu)
 {
 	static struct bt_gatt_exchange_params exchange_params = {
 		.func = exchange_func,
 	};
-	static const uint8_t data[100];
-	struct bt_gatt_notify_params params = {
-		.attr = &g_svc.attrs[1],
-		.data = data,
-		.chan_opt = BT_ATT_CHAN_OPT_ENHANCED_ONLY,
-	};
-	uint16_t uatt_mtu;
 	int err;
 
 	device_sync_init(PERIPHERAL_ID);
@@ -293,12 +293,14 @@ static void test_mtu(void)
 
 	WAIT_FOR_FLAG(flag_is_connected);
 
-	err = bt_gatt_exchange_mtu(g_conn, &exchange_params);
-	if (err != 0) {
-		FAIL("MTU exchange failed (err %d)\n", err);
-	}
+	if (exchange_mtu) {
+		err = bt_gatt_exchange_mtu(g_conn, &exchange_params);
+		if (err != 0) {
+			FAIL("MTU exchange failed (err %d)\n", err);
+		}
 
-	WAIT_FOR_FLAG(flag_mtu_exchanged);
+		WAIT_FOR_FLAG(flag_mtu_exchanged);
+	}
 
 	/* The UATT bearer is the only one so far, so this is its ATT_MTU */
 	uatt_mtu = bt_gatt_get_mtu(g_conn);
@@ -321,6 +323,19 @@ static void test_mtu(void)
 
 	/* Wait for the peer to subscribe */
 	device_sync_wait();
+}
+
+static void test_mtu(void)
+{
+	static const uint8_t data[100];
+	struct bt_gatt_notify_params params = {
+		.attr = &g_svc.attrs[1],
+		.data = data,
+		.chan_opt = BT_ATT_CHAN_OPT_ENHANCED_ONLY,
+	};
+	int err;
+
+	mtu_test_setup(true);
 
 	/* With this configuration the EATT bearers have a smaller ATT_MTU than
 	 * the UATT bearer, so a notification that fills the UATT ATT_MTU fits
@@ -349,6 +364,84 @@ static void test_mtu(void)
 	PASS("Client Passed\n");
 }
 
+static void small_indicated(struct bt_conn *conn, struct bt_gatt_indicate_params *params,
+			    uint8_t err)
+{
+	if (err != 0U) {
+		FAIL("Indication failed (err 0x%02x)\n", err);
+	}
+
+	SET_FLAG(flag_small_indicated);
+}
+
+/* Indicate a value whose PDU fills @p mtu, which no bearer that @p chan_opt
+ * allows can carry, and then a one-octet value, which must not wait for the
+ * first one.
+ */
+static void indicate_beyond_mtu(enum bt_att_chan_opt chan_opt, uint16_t mtu)
+{
+	static const uint8_t data[100];
+	static struct bt_gatt_indicate_params large;
+	static struct bt_gatt_indicate_params small;
+	int err;
+
+	large.attr = &g_svc.attrs[1];
+	large.data = data;
+	large.len = mtu - 3U;
+	large.chan_opt = chan_opt;
+	if (large.len > sizeof(data)) {
+		FAIL("ATT_MTU too large\n");
+	}
+
+	err = bt_gatt_indicate(g_conn, &large);
+	if (err != 0) {
+		FAIL("Indication of %u octets failed (err %d)\n", large.len, err);
+	}
+
+	small.attr = &g_svc.attrs[1];
+	small.data = data;
+	small.len = 1U;
+	small.func = small_indicated;
+	small.chan_opt = chan_opt;
+
+	err = bt_gatt_indicate(g_conn, &small);
+	if (err != 0) {
+		FAIL("Indication failed (err %d)\n", err);
+	}
+
+	WAIT_FOR_FLAG(flag_small_indicated);
+}
+
+static void test_ind_mtu(void)
+{
+	mtu_test_setup(true);
+
+	/* An indication restricted to EATT that fills the UATT ATT_MTU, which
+	 * is larger than that of the EATT bearers here.
+	 */
+	indicate_beyond_mtu(BT_ATT_CHAN_OPT_ENHANCED_ONLY, uatt_mtu);
+
+	PASS("Client Passed\n");
+}
+
+static void test_uatt_ind_mtu(void)
+{
+	mtu_test_setup(false);
+
+	/* Without an ATT_MTU exchange the UATT bearer keeps the default ATT_MTU,
+	 * which is smaller than that of the EATT bearers. An indication
+	 * restricted to UATT that fills the EATT ATT_MTU is accepted all the
+	 * same.
+	 */
+	if (uatt_mtu >= bt_gatt_get_mtu(g_conn)) {
+		FAIL("UATT MTU not smaller than EATT MTU\n");
+	}
+
+	indicate_beyond_mtu(BT_ATT_CHAN_OPT_UNENHANCED_ONLY, bt_gatt_get_mtu(g_conn));
+
+	PASS("Client Passed\n");
+}
+
 static const struct bst_test_instance test_vcs[] = {
 	{
 		.test_id = "client",
@@ -361,6 +454,18 @@ static const struct bst_test_instance test_vcs[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_mtu
+	},
+	{
+		.test_id = "client_ind_mtu",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_ind_mtu
+	},
+	{
+		.test_id = "client_uatt_ind_mtu",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_uatt_ind_mtu
 	},
 	BSTEST_END_MARKER
 };
