@@ -354,6 +354,20 @@ static LLEXT_CONST uint8_t weak_vtable_ext[] LLEXT_SECT ELF_ALIGN = {
 LLEXT_LOAD_UNLOAD(weak_vtable,
 	.kernel_only = true
 )
+
+static LLEXT_CONST uint8_t cpp_dispatch_ext[] LLEXT_SECT ELF_ALIGN = {
+	#include "cpp_dispatch.inc"
+};
+LLEXT_LOAD_UNLOAD(cpp_dispatch,
+	.kernel_only = true
+)
+
+static LLEXT_CONST uint8_t cpp_multi_tu_ext[] LLEXT_SECT ELF_ALIGN = {
+	#include "cpp_multi_tu.inc"
+};
+LLEXT_LOAD_UNLOAD(cpp_multi_tu,
+	.kernel_only = true
+)
 #endif
 
 #if defined(CONFIG_ARM64) && defined(CONFIG_THREAD_LOCAL_STORAGE)
