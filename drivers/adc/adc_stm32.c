@@ -397,6 +397,22 @@ static const struct adc_stm32_clk_cfg *adc_stm32_get_clk_cfg(const struct adc_su
 	}
 }
 
+static void adc_stm32_pm_policy_state_lock_get(void)
+{
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	if (IS_ENABLED(CONFIG_PM_S2RAM)) {
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+	}
+}
+
+static void adc_stm32_pm_policy_state_lock_put(void)
+{
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	if (IS_ENABLED(CONFIG_PM_S2RAM)) {
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+	}
+}
+
 #ifdef CONFIG_ADC_STM32_VREFINT_CALIBRATE
 
 static int adc_stm32_ref_get(const struct device *dev, enum adc_reference ref, uint16_t *vref_mv)
@@ -1090,12 +1106,6 @@ static void dma_callback(const struct device *dev, void *user_data,
 			 * the address is in a non-cacheable SRAM region.
 			 */
 			adc_context_on_sampling_done(&data->ctx, dev);
-			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE,
-						 PM_ALL_SUBSTATES);
-			if (IS_ENABLED(CONFIG_PM_S2RAM)) {
-				pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM,
-							 PM_ALL_SUBSTATES);
-			}
 		} else if (status < 0) {
 			LOG_ERR("DMA sampling complete, but DMA reported error %d", status);
 			data->dma_error = status;
@@ -1316,6 +1326,7 @@ static int start_inj_read(const struct device *dev, const struct adc_sequence *s
 
 	LL_ADC_EnableIT_JEOS(adc);
 
+	adc_stm32_pm_policy_state_lock_get();
 	adc_context_start_read(&data->inj_ctx, sequence);
 
 	return adc_context_wait_for_completion(&data->inj_ctx);
@@ -1652,6 +1663,7 @@ static int start_read(const struct device *dev, const struct adc_sequence *seque
 	adc_stm32_enable_eoc_it(adc);
 #endif /* CONFIG_ADC_STM32_DMA */
 
+	adc_stm32_pm_policy_state_lock_get();
 #ifdef CONFIG_ADC_STREAM
 	data->ctx.asynchronous = true;
 	adc_context_start_sampling(&data->ctx);
@@ -1734,11 +1746,6 @@ static void adc_stm32_isr(const struct device *dev)
 		}
 
 		adc_context_on_sampling_done(&data->inj_ctx, dev);
-		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-
-		if (IS_ENABLED(CONFIG_PM_S2RAM)) {
-			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
-		}
 	}
 #endif /* CONFIG_ADC_STM32_INJECTED_CHANNELS */
 
@@ -1750,12 +1757,6 @@ static void adc_stm32_isr(const struct device *dev)
 		if (++data->samples_count == data->channel_count) {
 			data->samples_count = 0;
 			adc_context_on_sampling_done(&data->ctx, dev);
-			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE,
-						 PM_ALL_SUBSTATES);
-			if (IS_ENABLED(CONFIG_PM_S2RAM)) {
-				pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM,
-							 PM_ALL_SUBSTATES);
-			}
 		}
 #else /* CONFIG_ADC_STREAM */
 		const struct adc_driver_api *api = DEVICE_API_GET(adc, dev);
@@ -1811,6 +1812,9 @@ static void adc_context_on_complete(struct adc_context *ctx, int status)
 
 	ARG_UNUSED(status);
 
+	/* Put policy lock taken when the read started and held across all of its samplings */
+	adc_stm32_pm_policy_state_lock_put();
+
 #ifndef CONFIG_ADC_STM32_INJECTED_CHANNELS
 	/* Reset acquisition time used for the sequence */
 	data->acq_time_index[0] = -1;
@@ -1864,10 +1868,6 @@ static int adc_stm32_read(const struct device *dev,
 #endif /* CONFIG_ADC_STM32_INJECTED_CHANNELS */
 
 	adc_context_lock(ctx, asynchronous, async_sig);
-	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-	if (IS_ENABLED(CONFIG_PM_S2RAM)) {
-		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
-	}
 	error = read_fn(dev, sequence);
 	adc_context_release(ctx, error);
 
