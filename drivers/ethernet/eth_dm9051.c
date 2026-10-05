@@ -627,22 +627,11 @@ static int eth_dm9051_rx(const struct device *dev)
 			goto out_update_errors_rx;
 		}
 
-		/* Push the net_pkt in the network stack */
+		/* Push the net_pkt in the network stack, whose L2 counts it in the RX statistics */
 		ret = net_recv_data(data->iface, pkt);
 		if (ret < 0) {
 			net_pkt_unref(pkt);
 			goto out_update_errors_rx;
-		}
-
-		/* Update ethernet statistics */
-		eth_stats_update_bytes_rx(data->iface, net_pkt_get_len(pkt));
-		eth_stats_update_pkts_rx(data->iface);
-		if (net_eth_is_addr_broadcast(&NET_ETH_HDR(pkt)->dst)) {
-			eth_stats_update_broadcast_rx(data->iface);
-		} else if (net_eth_is_addr_multicast(&NET_ETH_HDR(pkt)->dst)) {
-			eth_stats_update_multicast_rx(data->iface);
-		} else {
-			/* Unicast frame */
 		}
 	}
 
