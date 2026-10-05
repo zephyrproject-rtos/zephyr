@@ -460,6 +460,31 @@ tests:
       - ek_ra8p1/r7ka8p1kflcac/cm85
       - mck_ra8t2/r7ka8t2lflcac/cm85
       - ek_ra8t2/r7ka8t2lflcac/cm85
+  drivers.spi.loopback.renesas_sau_spi:
+    filter: dt_compat_enabled("renesas,ra-spi-sau")
+    min_ram: 12
+    integration_platforms:
+      - fpb_ra0e1
+    platform_allow:
+      - fpb_ra0e1
+  drivers.spi.loopback.renesas_sau_spi.no_async:
+    filter: dt_compat_enabled("renesas,ra-spi-sau")
+    min_ram: 12
+    extra_configs:
+      - CONFIG_SPI_ASYNC=n
+    integration_platforms:
+      - fpb_ra0e1
+    platform_allow:
+      - fpb_ra0e1
+  drivers.spi.loopback.renesas_sau_spi.dtc:
+    filter: dt_compat_enabled("renesas,ra-spi-sau")
+    min_ram: 12
+    extra_configs:
+      - CONFIG_SPI_RENESAS_RA_SAU_DTC=y
+    integration_platforms:
+      - fpb_ra0e1
+    platform_allow:
+      - fpb_ra0e1
   drivers.spi.loopback.renesas_sci_b_spi:
     filter: dt_compat_enabled("renesas,ra-spi-sci-b")
     extra_args:
