@@ -866,7 +866,7 @@ static int dma_dw_axi_suspend(const struct device *dev, uint32_t channel)
 			k_busy_wait(10));
 	if (ret == 0) {
 		LOG_ERR("channel suspend failed");
-		return ret;
+		return -ETIMEDOUT;
 	}
 
 	return 0;
