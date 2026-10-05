@@ -83,21 +83,29 @@ if(CONFIG_LLEXT_VENEERS)
   generate_inc_file_for_target(app ${ext_bin} ${ext_inc})
 endif()
 
-# C++ extension exercising virtual dispatch through a weak vtable
+# C++ extensions exercising virtual dispatch, vtable relocations and weak
+# symbols emitted for C++ code
 if(CONFIG_CPP)
-  add_llext_target(weak_vtable_ext
-    OUTPUT  ${PROJECT_BINARY_DIR}/llext/weak_vtable.llext
-    SOURCES ${PROJECT_SOURCE_DIR}/src/weak_vtable_ext.cpp
-  )
-  get_target_property(weak_vtable_lib weak_vtable_ext lib_target)
-  target_compile_options(${weak_vtable_lib} PRIVATE
-    $<$<COMPILE_LANGUAGE:CXX>:-std=c++17>
-    -fno-rtti
-    -fno-exceptions
-  )
-  generate_inc_file_for_target(app ${PROJECT_BINARY_DIR}/llext/weak_vtable.llext
-    ${ZEPHYR_BINARY_DIR}/include/generated/weak_vtable.inc
-  )
+  function(add_cpp_llext_test ext_name)
+    list(TRANSFORM ARGN PREPEND ${PROJECT_SOURCE_DIR}/src/)
+    add_llext_target(${ext_name}_ext
+      OUTPUT  ${PROJECT_BINARY_DIR}/llext/${ext_name}.llext
+      SOURCES ${ARGN}
+    )
+    get_target_property(ext_lib ${ext_name}_ext lib_target)
+    target_compile_options(${ext_lib} PRIVATE
+      $<$<COMPILE_LANGUAGE:CXX>:-std=c++17>
+      -fno-rtti
+      -fno-exceptions
+    )
+    generate_inc_file_for_target(app ${PROJECT_BINARY_DIR}/llext/${ext_name}.llext
+      ${ZEPHYR_BINARY_DIR}/include/generated/${ext_name}.inc
+    )
+  endfunction()
+
+  add_cpp_llext_test(weak_vtable weak_vtable_ext.cpp)
+  add_cpp_llext_test(cpp_dispatch cpp_dispatch_ext.cpp)
+  add_cpp_llext_test(cpp_multi_tu cpp_multi_tu_ext1.cpp cpp_multi_tu_ext2.cpp)
 endif()
 
 # An extension referencing the thread-local errno, exercising the AArch64
