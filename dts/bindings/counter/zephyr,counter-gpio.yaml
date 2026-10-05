@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: Copyright RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+title: Counter reading the kernel clock, capturing on GPIO
+
+description: |
+  Boards whose timer hardware does not reach the pin an event arrives on can
+  still timestamp that event, at the cost of the interrupt latency. The ticks
+  the capture reports are kernel ticks, so they need no conversion to be
+  compared with anything else the system timestamps.
+
+  Each entry in gpios is one capture channel, numbered in the order given:
+
+    pps: counter-gpio {
+        compatible = "zephyr,counter-gpio";
+        gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+        #counter-capture-cells = <2>;
+    };
+
+compatible: "zephyr,counter-gpio"
+
+include: base.yaml
+
+properties:
+  gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Lines to capture on, one per channel.
+
+counter-capture-cells:
+  - channel
+  - flags

@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_GPIO
+	bool "Kernel clock counter with GPIO capture"
+	default y
+	depends on DT_HAS_ZEPHYR_COUNTER_GPIO_ENABLED
+	select GPIO
+	help
+	  Counter that reads the kernel clock and captures on GPIO edges, for
+	  boards whose timer hardware does not reach the pin an event arrives
+	  on.
