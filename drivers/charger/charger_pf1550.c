@@ -304,6 +304,12 @@ static int pf1550_get_interrupt_source(const struct device *dev, uint8_t *int_a)
 	int ret;
 
 	ret = i2c_reg_read_byte_dt(&config->bus, CHARGER_CHG_INT, &buf);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Interrupt bits are write-1-to-clear, INTB stays asserted until cleared */
+	ret = i2c_reg_write_byte_dt(&config->bus, CHARGER_CHG_INT, buf);
 
 	if (int_a) {
 		*int_a = buf;
@@ -322,7 +328,8 @@ static int pf1550_enable_interrupts(const struct device *dev)
 		return ret;
 	}
 
-	return i2c_reg_write_byte_dt(&config->bus, CHARGER_CHG_INT_MASK, CHG_INT_ENABLE_ALL);
+	return i2c_reg_write_byte_dt(&config->bus, CHARGER_CHG_INT_MASK,
+				     (uint8_t)~CHG_INT_ENABLE_ALL);
 }
 
 static int pf1550_led_config(const struct device *dev)
