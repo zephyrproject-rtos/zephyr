@@ -5,3 +5,7 @@ tests:
     harness: shield
     tags: shield
     depends_on: arduino_i2s
+    platform_allow:
+      - nucleo_f411re
+    integration_platforms:
+      - nucleo_f411re
