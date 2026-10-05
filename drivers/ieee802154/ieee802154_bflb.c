@@ -50,11 +50,14 @@ LOG_MODULE_REGISTER(ieee802154_bflb, CONFIG_IEEE802154_DRIVER_LOG_LEVEL);
 #define IEEE802154_BFLB_TX_POWER_MIN LMAC154_TX_POWER_0dBm
 #define IEEE802154_BFLB_TX_POWER_MAX LMAC154_TX_POWER_14dBm
 
+#define IEEE802154_BFLB_CSMA_CA_MAX_BACKOFF_MAX 15U
+
 /* Radio bring-up values only; the stack reconfigures both through the
  * radio API (e.g. CONFIG_OPENTHREAD_CHANNEL / OPENTHREAD_DEFAULT_TX_POWER).
  */
-#define IEEE802154_BFLB_DEFAULT_CHANNEL  11U
-#define IEEE802154_BFLB_DEFAULT_TX_POWER 10
+#define IEEE802154_BFLB_DEFAULT_CHANNEL		11U
+#define IEEE802154_BFLB_DEFAULT_TX_POWER	10
+#define IEEE802154_BFLB_DEFAULT_CSMA_CA_BACKOFF	4U
 
 /* IRQ numbers from device tree */
 #define M154_IRQ      DT_INST_IRQ_BY_NAME(0, m154, irq)
@@ -126,15 +129,59 @@ static K_WORK_DELAYABLE_DEFINE(ed_scan_work, ed_scan_work_handler);
  */
 static void bflb_rx_cb(lmac154_rx_status_t status, lmac154_receiveInfo_t *info, uint32_t *frame)
 {
+#ifdef CONFIG_IEEE802154_DRIVER_LOG_LEVEL_DBG
+	lmac154_rf_state_t state = lmac154_getRFState();
+	char *status_str, *state_str;
+
+	if (status == LMAC154_RX_STATUS_ACK_ERR) {
+		status_str = "ACK ERR";
+	} else if (status == LMAC154_RX_STATUS_ACK_SENT) {
+		status_str = "ACK SENT";
+	} else if (status == LMAC154_RX_STATUS_RX_DONE) {
+		status_str = "DONE";
+	} else {
+		status_str = "NONE";
+	}
+
+	if (state == LMAC154_RF_STATE_RX_TRIG) {
+		state_str = "RX TRIG";
+	} else if (state == LMAC154_RF_STATE_RX) {
+		state_str = "RX";
+	} else if (state == LMAC154_RF_STATE_RX_DOING) {
+		state_str = "RX DOING";
+	} else if (state == LMAC154_RF_STATE_ACK_DOING) {
+		state_str = "ACK DOING";
+	} else if (state == LMAC154_RF_STATE_TX) {
+		state_str = "TX";
+	} else if (state == LMAC154_RF_STATE_CSMA) {
+		state_str = "CSMA";
+	} else if (state == LMAC154_RF_STATE_IDLE) {
+		state_str = "IDLE";
+	} else {
+		state_str = "OTHER";
+	}
+
+	LOG_DBG("Status: %s, %p src_addr: %x %x, error: %u, state: %s", status_str, frame,
+		info->src_addr.xaddr[0], info->src_addr.xaddr[1], info->rx_error, state_str);
+	LOG_DBG("frame len: %d, is_tx_acking: %d ackred?: %d, nbr_idx: %d", info->rx_length,
+		info->is_tx_acking, IEEE802154_BFLB_FRAME_IS_ACK_REQ(((uint8_t *)frame)[0]),
+		(uint8_t)info->nbr_idx);
+#endif
+
 	if (status == LMAC154_RX_STATUS_ACK_ERR) {
 		return;
 	}
 
-	if (status == LMAC154_RX_STATUS_RX_DONE) {
+	if ((status == LMAC154_RX_STATUS_RX_DONE && !info->is_tx_acking)
+	    || status == LMAC154_RX_STATUS_ACK_SENT) {
 		if (info->rx_error != 0U) {
 			LOG_DBG("rx_cb: rx_error=0x%04x len=%u", info->rx_error, info->rx_length);
 		}
 		lmac154_rxDoneEvent((uint8_t *)frame, info->rx_length, 0U);
+		/* Immediately re-arm RX when an ack-less packet is received */
+		if (status == LMAC154_RX_STATUS_RX_DONE) {
+			lmac154_enableRx();
+		}
 	}
 }
 
@@ -292,8 +339,14 @@ static enum ieee802154_hw_caps bflb_ieee802154_get_capabilities(const struct dev
 {
 	ARG_UNUSED(dev);
 
+#if defined(CONFIG_SOC_SERIES_BL61X)
+	return IEEE802154_HW_FCS | IEEE802154_HW_FILTER | IEEE802154_HW_PROMISC
+	       | IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_RX_TX_ACK | IEEE802154_HW_ENERGY_SCAN
+	       | IEEE802154_HW_CSMA;
+#else
 	return IEEE802154_HW_FCS | IEEE802154_HW_FILTER | IEEE802154_HW_PROMISC |
 	       IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_RX_TX_ACK | IEEE802154_HW_ENERGY_SCAN;
+#endif
 }
 
 static int bflb_ieee802154_cca(const struct device *dev)
@@ -362,6 +415,10 @@ static int bflb_ieee802154_set_txpower(const struct device *dev, int16_t dbm)
 {
 	ARG_UNUSED(dev);
 
+	if (dbm == bflb_ieee802154_data_inst.tx_power && dbm == (int16_t)lmac154_getTxPower()) {
+		return 0;
+	}
+
 	/* Clamp to hardware range */
 	if (dbm < IEEE802154_BFLB_TX_POWER_MIN) {
 		dbm = IEEE802154_BFLB_TX_POWER_MIN;
@@ -377,6 +434,8 @@ static int bflb_ieee802154_set_txpower(const struct device *dev, int16_t dbm)
 #endif
 	bflb_ieee802154_data_inst.tx_power = dbm;
 
+	LOG_DBG("Tx power set: %d", lmac154_getTxPower());
+
 	return 0;
 }
 
@@ -387,7 +446,7 @@ static int bflb_ieee802154_tx(const struct device *dev, enum ieee802154_tx_mode 
 	uint8_t len = frag->len;
 	bool csma = false;
 #if defined(CONFIG_SOC_SERIES_BL61X)
-	static lmac154_txParam_t tp;
+	static lmac154_txParam_ext_t tp;
 	static uint8_t __aligned(16) tx_buf[IEEE802154_BFLB_MAX_PKT_LEN];
 	unsigned int key;
 	int iret;
@@ -431,20 +490,25 @@ static int bflb_ieee802154_tx(const struct device *dev, enum ieee802154_tx_mode 
 	tp.pkt_length = len;
 	tp.tx_channel = (uint8_t)(bflb_ieee802154_data_inst.channel - IEEE802154_BFLB_CHANNEL_MIN);
 	tp.resume_channel = tp.tx_channel;
-	tp.csma_ca_max_backoff = 0U;
-	tp.is_cca = 0U;
+	tp.csma_ca_max_backoff = bflb_ieee802154_data_inst.csma_ca_backoffs;
+	tp.is_cca = csma ? 1U : 0U;
 	tp.tx_done_cb = bflb_tx_done_cb;
 	tp.next = NULL;
+	tp.is_tx_security = 0;
 
 	key = irq_lock();
-	iret = lmac154_triggerParamTx(&tp);
+	iret = lmac154_triggerParamTxExt(&tp);
 	irq_unlock(key);
 
-	if (iret != 0) {
+	if (iret < 0) {
 		lmac154_resetTx();
 		lmac154_enableRx();
-		LOG_DBG("triggerParamTx busy: %d", iret);
+		LOG_DBG("mode: %s, triggerParamTx busy: %d",
+			mode == IEEE802154_TX_MODE_DIRECT ? "DIRECT" : "CCA/CSMA", iret);
 		return -EBUSY;
+	} else if (iret > 0) {
+		LOG_DBG("mode: %s, queued: %d",
+			mode == IEEE802154_TX_MODE_DIRECT ? "DIRECT" : "CCA/CSMA", iret);
 	}
 #else
 	lmac154_triggerTx(data, len, csma ? 1U : 0U);
@@ -501,6 +565,10 @@ static int bflb_ieee802154_start(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
+	if (bflb_ieee802154_data_inst.started) {
+		return -EALREADY;
+	}
+
 #if defined(CONFIG_SOC_SERIES_BL61X)
 	lmac154_enable1stStack();
 	lmac154_registerEventCallback(LMAC154_STACK_1, bflb_rx_cb);
@@ -545,6 +613,14 @@ static int bflb_ieee802154_configure(const struct device *dev, enum ieee802154_c
 	case IEEE802154_CONFIG_EVENT_HANDLER:
 		/* Not supported */
 		break;
+#if defined(CONFIG_SOC_SERIES_BL61X)
+	case IEEE802154_CONFIG_CSMA_CA_BACKOFFS:
+		if (config->csma_ca_backoffs > IEEE802154_BFLB_CSMA_CA_MAX_BACKOFF_MAX) {
+			return -EINVAL;
+		}
+		bflb_ieee802154_data_inst.csma_ca_backoffs = config->csma_ca_backoffs;
+		break;
+#endif
 	default:
 		return -ENOTSUP;
 	}
@@ -737,6 +813,7 @@ static int bflb_ieee802154_init(const struct device *dev)
 	data->channel = IEEE802154_BFLB_DEFAULT_CHANNEL;
 	lmac154_setTxPower(LMAC154_TX_POWER_10dBm);
 	data->tx_power = IEEE802154_BFLB_DEFAULT_TX_POWER;
+	data->csma_ca_backoffs = IEEE802154_BFLB_DEFAULT_CSMA_CA_BACKOFF;
 
 	lmac154_setLongAddr(data->mac);
 
