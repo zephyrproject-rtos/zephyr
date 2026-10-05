@@ -505,7 +505,7 @@ static uint32_t handle_r1_errors(uint32_t resp)
 	}
 	return err;
 }
-
+#ifdef SDMMC_SDIO_R5_ERRORBITS
 static uint32_t handle_r5_errors(uint32_t resp)
 {
 	uint32_t err = 0;
@@ -530,16 +530,14 @@ static uint32_t handle_r5_errors(uint32_t resp)
 	if (err == 0) {
 		err = SDMMC_ERROR_GENERAL_UNKNOWN_ERR;
 	}
+
 	return err;
 }
-
+#endif
 static uint32_t handle_r6_errors(uint32_t resp)
 {
 	uint32_t err = 0;
 
-	if ((resp & SDMMC_SDIO_R5_ERRORBITS) == 0U) {
-		return 0;
-	}
 	if (resp & SDMMC_R6_ILLEGAL_CMD) {
 		err |= SDMMC_ERROR_ILLEGAL_CMD;
 	}
@@ -576,11 +574,11 @@ static int validate_response_err_flags(struct sdhc_stm32_data *dev_data, struct 
 	case SD_RSP_TYPE_R1:
 		err = handle_r1_errors(resp);
 		break;
-
+#ifdef SDMMC_SDIO_R5_ERRORBITS
 	case SD_RSP_TYPE_R5:
 		err = handle_r5_errors(resp);
 		break;
-
+#endif
 	case SD_RSP_TYPE_R6:
 		err = handle_r6_errors(resp);
 		break;
@@ -927,7 +925,13 @@ static void sdhc_stm32_config_sdio_dpsm(SDMMC_TypeDef *instance, bool is_block_m
 	}
 
 	config->TransferDir = is_write ? SDMMC_TRANSFER_DIR_TO_CARD : SDMMC_TRANSFER_DIR_TO_SDMMC;
-	config->TransferMode = is_block_mode ? SDMMC_TRANSFER_MODE_BLOCK : SDMMC_TRANSFER_MODE_SDIO;
+#ifdef SDMMC_TRANSFER_MODE_SDIO
+	config->TransferMode = is_block_mode ? SDMMC_TRANSFER_MODE_BLOCK :
+					       SDMMC_TRANSFER_MODE_SDIO;
+#else
+	config->TransferMode = SDMMC_TRANSFER_MODE_BLOCK;
+#endif
+
 	config->DPSM = SDMMC_DPSM_DISABLE;
 }
 
@@ -1050,10 +1054,10 @@ static int sdhc_stm32_mmc_read_ext_csd(struct sdhc_stm32_data *dev_data, SDMMC_T
 	res = WAIT_FOR(__SDMMC_GET_FLAG(instance, SDMMC_WAIT_RX_FLAGS),
 		       data->timeout_ms * USEC_PER_MSEC, ({
 			if (__SDMMC_GET_FLAG(instance, SDMMC_FLAG_RXFIFOHF) &&
-			    (dataremaining >= SDMMC_FIFO_SIZE)) {
+			    (dataremaining >= SDMMC_HALFFIFOBYTES)) {
 				sdhc_stm32_read_fifo_block(instance, &tempbuff);
-				dataremaining -= SDMMC_FIFO_SIZE;
-			} else if (dataremaining < SDMMC_FIFO_SIZE) {
+				dataremaining -= SDMMC_HALFFIFOBYTES;
+			} else if (dataremaining < SDMMC_HALFFIFOBYTES) {
 				sdhc_stm32_read_remaining_bytes(instance, &tempbuff,
 								&dataremaining);
 			}
