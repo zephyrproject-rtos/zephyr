@@ -5,18 +5,32 @@ title: Analog Devices ADV7535 MIPI DSI to HDMI bridge
 
 description: |
   The ADV7535 is an I2C-controlled bridge that converts MIPI DSI video to HDMI.
-  Its CEC/DSI register map uses a secondary I2C address. The MIPI DSI endpoint
-  is represented separately as a child of the MIPI DSI host.
+  The MIPI DSI endpoint is represented separately as a child of the MIPI DSI host.
 
 compatible: "adi,adv7535"
 
 include: i2c-device.yaml
 
 properties:
+  adi,edid-addr:
+    type: int
+    default: 0x3f
+    description: Optional EDID I2C address. Default is the power-on reset value of the register.
+  adi,packet-addr:
+    type: int
+    default: 0x38
+    description: Optional packet I2C address. Default is the power-on reset value of the register.
   adi,cec-addr:
     type: int
     default: 0x3c
     description: Optional CEC I2C address. Default is the power-on reset value of the register.
+
+  adi,fixed-addr:
+    type: int
+    default: 0x00
+    description: |
+      This should be set to a non-conflicting I2C address.
+      Default is the power-on reset value of the register.
 
   dsi-device:
     type: phandle
@@ -46,6 +60,12 @@ examples:
         reg = <0x3d>;
         dsi-device = <&adv7535_dsi>;
         display-timing = <&hdmi_timing>;
+
+        /* Optional I2C addresses, if omitted defaults are used */
+        adi,edid-addr = <0x3f>;
+        adi,packet-addr = <0x38>;
+        adi,cec-addr = <0x3c>;
+        adi,fixed-addr = <0x00>;
       };
     };
 
