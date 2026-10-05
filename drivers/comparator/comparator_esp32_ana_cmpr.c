@@ -43,7 +43,7 @@ static int ana_cmpr_esp32_get_output(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	/*
-	 * This IP revision (v1: P4/C5/H2) only latches edge-cross events;
+	 * This IP revision (v1: P4/C5/C61/H2) only latches edge-cross events;
 	 * there is no register reflecting the instantaneous source-vs-reference
 	 * comparison result. The source pad's digital input buffer is also
 	 * disabled by ana_cmpr_esp32_init() since the comparator senses it
