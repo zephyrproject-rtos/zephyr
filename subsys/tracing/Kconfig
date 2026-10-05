@@ -482,6 +482,15 @@ config TRACING_GPIO
 	help
 	  Enable tracing GPIO.
 
+config TRACING_ZBUS
+	bool "Tracing zbus"
+	depends on ZBUS
+	default y
+	help
+	  Enable tracing zbus: channel publish, read, notify, claim and finish,
+	  each observer the dispatcher notifies, subscribers waiting for a
+	  notification, and async listener callbacks.
+
 config TRACING_IDLE
 	bool "Tracing Idle"
 	default y
