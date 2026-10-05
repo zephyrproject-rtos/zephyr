@@ -21,3 +21,9 @@ properties:
   reset-gpios:
     type: phandle-array
     description: RESETn pin
+  initial-soft-reset:
+    type: boolean
+    description: |
+      When set, the flash driver performs software reset of the flash chip
+      each time it powers the chip up: at initialization, or when the power
+      domain of the chip turns on.
