@@ -201,6 +201,29 @@ secondary_core:
 
 primary_core:
 #endif
+#ifdef CONFIG_ARM_MMU
+	/*
+	 * The MMU is off, so nothing written so far went through the data
+	 * cache, but a previous boot stage may have left lines over our RAM.
+	 * Drop them before writing to it, so they are neither written back
+	 * over it nor read back once the MMU and data cache are on.
+	 * Only the primary core may do this: a secondary core started later
+	 * would discard the primary core's live data.
+	 */
+	mrs	x0, ctr_el0
+	ubfx	x0, x0, #16, #4		/* DminLine: log2 of words per line */
+	mov	x1, #4
+	lsl	x0, x1, x0		/* line size in bytes */
+	sub	x3, x0, #1
+	ldr	x1, =_image_ram_start
+	ldr	x2, =_image_ram_end
+	bic	x1, x1, x3
+1:	dc	ivac, x1
+	add	x1, x1, x0
+	cmp	x1, x2
+	b.lo	1b
+	dsb	sy
+#endif
 #ifdef CONFIG_FWARGS_HANDLER_HOOK
 	ldr	x0, =z_arm64_fwargs
 	stp	x19, x20, [x0]
