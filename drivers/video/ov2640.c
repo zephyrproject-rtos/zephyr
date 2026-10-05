@@ -85,6 +85,9 @@ LOG_MODULE_REGISTER(video_ov2640, CONFIG_VIDEO_LOG_LEVEL);
 #define BANK_SEL_DSP    0x00
 #define BANK_SEL_SENSOR 0x01
 
+#define OV2640_MARGIN 10
+#define OV2640_BUS_WIDTH 8
+
 /* Sensor register bank FF=0x01*/
 
 #define COM1        0x03
@@ -258,7 +261,6 @@ static const struct ov2640_reg ov2640_default_regs[] = {
 	{0x88, 0x3f},
 	{0xd7, 0x03},
 	{0xd9, 0x10},
-	{R_DVP_SP, R_DVP_SP_AUTO_MODE | 0x2},
 	{0xc8, 0x08},
 	{0xc9, 0x80},
 	{BPADDR, 0x00},
@@ -390,7 +392,6 @@ static const struct ov2640_reg ov2640_default_regs[] = {
 	{RESET, RESET_DVP},
 	{CTRL2, CTRL2_DCW_EN | CTRL2_SDE_EN | CTRL2_UV_AVG_EN | CTRL2_CMX_EN | CTRL2_UV_ADJ_EN},
 	{CTRLI, CTRLI_LP_DP | 0x00},
-	{R_DVP_SP, R_DVP_SP_AUTO_MODE | 0x04},
 	{R_BYPASS, R_BYPASS_DSP_NO},
 	{RESET, 0x00},
 };
@@ -590,6 +591,9 @@ static int ov2640_apply_config(const struct device *dev)
 {
 	const struct ov2640_config *cfg = dev->config;
 	struct ov2640_data *data = dev->data;
+	uint32_t sysclk_freq;
+	uint32_t target_freq;
+	uint32_t pclk_divider;
 	uint8_t val;
 	int ret;
 
@@ -693,6 +697,22 @@ static int ov2640_apply_config(const struct device *dev)
 		(data->fmt.width >> 10) << 6 |
 		(data->fmt.width & 0x7) << 3 |
 		(data->fmt.height & 0x7) << 0);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Scale PCLK down to the minimum */
+
+	sysclk_freq = 3 * cfg->mclk_freq * cfg->clock_multiplier / data->clock_divider;
+
+	target_freq = (uint64_t)
+		(data->fmt.height + data->ctrls.vblank.val) * (data->fmt.width + OV2640_MARGIN)
+		* video_bits_per_pixel(data->fmt.pixelformat) / OV2640_BUS_WIDTH
+		/ data->frmival_nsec * NSEC_PER_SEC;
+
+	pclk_divider = MIN(sysclk_freq / target_freq, 0x1f);
+
+	ret = ov2640_write_dsp_reg(dev, R_DVP_SP, pclk_divider);
 	if (ret < 0) {
 		return ret;
 	}
