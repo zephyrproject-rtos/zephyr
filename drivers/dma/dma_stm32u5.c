@@ -69,6 +69,30 @@ LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
 #define STM32_DMA_GET_CHANNEL(dmax, idx) (dmax), dma_stm32_id_to_stream(idx)
 #endif /* CONFIG_STM32_HAL2 */
 
+#if defined(CONFIG_SOC_STM32WBA23XX) || defined(CONFIG_SOC_STM32WBA25XX)
+/*
+ * TODO: remove this as soon as possible!!!
+ *
+ * Workaround for defect in STM32CubeWBA v1.10.0: LL_DMA_SetDestIncMode()
+ * function is wrongly gated behind #ifdef GPDMA1, which prevents its use
+ * on STM32WBA2x SoCs. Implement the function in baremetal here instead.
+ *
+ * ST Internal Reference: HAL1-28329
+ */
+#include <stm32_bitops.h>
+
+static inline void ll_dma_set_dest_inc_mode(DMA_TypeDef *DMAx, uint32_t Channel, uint32_t DestInc)
+{
+	uintptr_t dmac_base = (uintptr_t)DMAx;
+	DMA_Channel_TypeDef *dma_ch = (void *)(dmac_base + LL_DMA_CH_OFFSET_TAB[Channel]);
+
+	stm32_reg_modify_bits(&dma_ch->CTR1, DMA_CTR1_DINC, DestInc);
+}
+#else
+/* NOTE: must use a passthrough macro because signature isn't stable across series */
+#define ll_dma_set_dest_inc_mode LL_DMA_SetDestIncMode
+#endif /* CONFIG_SOC_STM32WBA23XX || CONFIG_SOC_STM32WBA25XX */
+
 static const uint32_t table_src_size[] = {
 	STM32_DMA_SRC_DATA_WIDTH_BYTE,
 	STM32_DMA_SRC_DATA_WIDTH_HALFWORD,
@@ -542,11 +566,11 @@ static int dma_stm32_configure(const struct device *dev,
 	/* This part is for dest */
 	switch (config->head_block->dest_addr_adj) {
 	case DMA_ADDR_ADJ_INCREMENT:
-		LL_DMA_SetDestIncMode(STM32_DMA_GET_CHANNEL(dma, id),
+		ll_dma_set_dest_inc_mode(STM32_DMA_GET_CHANNEL(dma, id),
 				      STM32_DMA_DEST_ADDR_INCREMENTED);
 		break;
 	case DMA_ADDR_ADJ_NO_CHANGE:
-		LL_DMA_SetDestIncMode(STM32_DMA_GET_CHANNEL(dma, id), STM32_DMA_DEST_ADDR_FIXED);
+		ll_dma_set_dest_inc_mode(STM32_DMA_GET_CHANNEL(dma, id), STM32_DMA_DEST_ADDR_FIXED);
 		break;
 	case DMA_ADDR_ADJ_DECREMENT:
 		return -ENOTSUP;
