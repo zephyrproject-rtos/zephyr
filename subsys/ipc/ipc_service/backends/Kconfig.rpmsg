@@ -23,11 +23,21 @@ config IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET
 
 config IPC_SERVICE_BACKEND_RPMSG_SHMEM_INIT_PRIORITY
 	int "Shared memory reset init priority"
-	depends on IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET
+	depends on IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET || \
+			IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET_REMOTE
 	default 1
 	help
 	  Initialization priority for shared memory reset performed by the
 	  RPMsg static vrings backend.
+
+config IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET_REMOTE
+	bool "Reset shared memory state also on the remote"
+	help
+	  IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET for 'remote' instances, so a
+	  stale DRIVER_OK retained across reset does not make the remote
+	  announce into vrings the host has not set up yet. Enable only if the
+	  remote always boots before the host opens the instance, else it can
+	  erase a live DRIVER_OK.
 
 config IPC_SERVICE_BACKEND_RPMSG_NUM_ENDPOINTS_PER_INSTANCE
 	int "Max number of registered endpoints per instance"
