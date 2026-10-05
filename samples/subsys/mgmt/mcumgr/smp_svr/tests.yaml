@@ -131,6 +131,16 @@ tests:
       - mg100
     integration_platforms:
       - nrf52840dk/nrf52840
+  sample.mcumgr.smp_svr.serial.async:
+    extra_args: EXTRA_CONF_FILE="serial.conf"
+    extra_configs:
+      - CONFIG_UART_ASYNC_API=y
+      - CONFIG_UART_0_INTERRUPT_DRIVEN=n
+      - CONFIG_MCUMGR_TRANSPORT_UART_ASYNC=y
+    platform_allow:
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - nrf52840dk/nrf52840
   sample.mcumgr.smp_svr.shell:
     extra_args: EXTRA_CONF_FILE="shell.conf"
     platform_allow:
