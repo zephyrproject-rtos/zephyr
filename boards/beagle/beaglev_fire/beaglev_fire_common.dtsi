@@ -16,12 +16,12 @@
 	aliases {};
 
 	beaglev {
-		#address-cells = <2>;
+		#address-cells = <1>;
 		#size-cells = <1>;
 
-		ddr_cached_high: memory@1000000000 {
+		ddr_cached_high: memory@80200000 {
 			compatible = "mmio-sram";
-			reg = <0x10 0x00000000 0x80000000>; /* 2GB */
+			reg = <0x80200000 (DT_SIZE_G(2) - DT_SIZE_M(2))>; /* 2GB */
 		};
 	};
 
