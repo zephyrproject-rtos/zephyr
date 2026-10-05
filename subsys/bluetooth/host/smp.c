@@ -195,17 +195,17 @@ struct bt_smp {
 	/* MacKey */
 	uint8_t				mackey[16];
 
-	/* LE SC passkey */
-	uint32_t				passkey;
-
-	/* LE SC passkey round */
-	uint8_t				passkey_round;
-
 	/* LE SC local OOB data */
 	const struct bt_le_oob_sc_data	*oobd_local;
 
 	/* LE SC remote OOB data */
 	const struct bt_le_oob_sc_data	*oobd_remote;
+
+	/* LE SC passkey */
+	uint32_t				passkey;
+
+	/* LE SC passkey round */
+	uint8_t				passkey_round;
 
 	/* Local key distribution */
 	uint8_t				local_dist;
