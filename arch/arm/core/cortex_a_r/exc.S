@@ -279,6 +279,19 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
 	pop {r0}
 
 	z_arm_cortex_ar_enter_exc
+
+#if defined(CONFIG_FPU_SHARING)
+	/*
+	 * Lazy FPU enable: returns 0 if this was a VFP access with FPEXC.EN=0,
+	 * now enabled, so the instruction is retried. The call clobbers r0, so
+	 * the ESF pointer (sp) is restored before the fatal handler.
+	 */
+	bl z_arm_fault_undef_instruction_fp
+	cmp r0, #0
+	beq z_arm_cortex_ar_exit_exc
+	mov r0, sp
+#endif /* CONFIG_FPU_SHARING */
+
 	bl z_arm_fault_undef_instruction
 	b z_arm_cortex_ar_exit_exc
 
