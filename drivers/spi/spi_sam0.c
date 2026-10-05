@@ -612,14 +612,19 @@ static int spi_sam0_transceive(const struct device *dev,
 
 		spi_sam0_dma_advance_segment(dev);
 		retval = spi_sam0_dma_advance_buffers(dev);
-		if (retval != 0) {
-			dma_stop(cfg->dma_dev, cfg->tx_dma_channel);
-			dma_stop(cfg->dma_dev, cfg->rx_dma_channel);
-
-			spi_context_cs_control(&data->ctx, false);
-		} else {
+		if (retval == 0) {
 			/* Wait for DMA completion signaled by spi_sam0_dma_rx_done() */
 			retval = spi_context_wait_for_completion(&data->ctx);
+		}
+
+		if (retval < 0) {
+			/*
+			 * The DMA callbacks have already done this for their own
+			 * errors, but not for a failed setup or a timeout
+			 */
+			dma_stop(cfg->dma_dev, cfg->tx_dma_channel);
+			dma_stop(cfg->dma_dev, cfg->rx_dma_channel);
+			spi_context_cs_control(&data->ctx, false);
 		}
 		spi_context_release(&data->ctx, retval);
 
