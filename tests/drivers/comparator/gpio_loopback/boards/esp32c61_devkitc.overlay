@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/*
+ * Drive ana_cmpr0's own source pad (GPIO9) directly as a digital output
+ * instead of a separate jumpered pin. GPIO9 also controls the boot mode
+ * after the reset is released and is connected to the BOOT button.
+ */
+/ {
+	aliases {
+		test-comp = &ana_cmpr0;
+	};
+
+	zephyr,user {
+		test-gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&ana_cmpr0 {
+	ref-source = "internal";
+	ref-voltage = <50>;
+	status = "okay";
+};
