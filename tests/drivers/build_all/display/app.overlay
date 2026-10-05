@@ -1038,7 +1038,6 @@
 				reg = <0x3d>;
 				dsi-device = <&test_adv7535_dsi>;
 				display-timing = <&test_adv7535_timing>;
-				adi,addr-cec = <0x3b>;
 			};
 		};
 
