@@ -169,6 +169,29 @@ The main advantages of this approach is that the upstream repository history
 downside of this approach is that two additional merge commits are generated in
 the downstream main branch.
 
+.. _modules_hals:
+
+Hardware Abstraction Layer (HAL) modules
+****************************************
+
+If SoC support or vendor-specific drivers use a HAL module, the following
+guidelines apply in addition to the general requirements for modules.
+
+* A HAL should provide, at a minimum, the register definitions needed to
+  support the vendor hardware (SoC). It may also provide abstraction routines
+  of varying complexity to implement vendor-specific drivers in Zephyr.
+
+* A HAL should not contain or introduce vendor-specific solutions that conflict
+  with, duplicate or prevent the generic solutions of the Zephyr project.
+
+* A HAL should not contain code that is written exclusively for Zephyr. This
+  also includes Kconfig options defined and used in the zephyr main tree and
+  devicetree macros. Such adaptation code belongs in the ``modules/``
+  directory in the zephyr main tree.
+
+* A HAL should be self-contained and shall not depend on other software
+  packages, such as Python or NPM, or on other libraries.
+
 
 Contributing to Zephyr modules
 ******************************
