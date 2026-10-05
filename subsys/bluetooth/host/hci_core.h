@@ -376,6 +376,36 @@ struct bt_dev_br {
 #define BT_DEV_VS_FEAT_MAX  1
 #define BT_DEV_VS_CMDS_MAX  2
 
+/* The Read Local Supported Commands response is 64 octets, but there's no
+ * point in storing all of it when the host only checks a few commands. Each
+ * of these gets a bit in bt_dev.supported_commands instead, set by
+ * read_supported_commands_complete(). A new entry is needed whenever the
+ * host starts checking another command.
+ */
+enum bt_dev_cmd {
+	/* Write Connection Accept Timeout */
+	BT_DEV_CMD_WRITE_CONN_ACCEPT_TIMEOUT,
+	/* Set Controller To Host Flow Control */
+	BT_DEV_CMD_SET_CTL_TO_HOST_FLOW,
+	/* LE Set Host Channel Classification */
+	BT_DEV_CMD_LE_SET_HOST_CHAN_CLASSIF,
+	/* LE Rand */
+	BT_DEV_CMD_LE_RAND,
+	/* LE Read Supported States */
+	BT_DEV_CMD_LE_READ_SUPP_STATES,
+	/* LE Set Privacy Mode */
+	BT_DEV_CMD_LE_SET_PRIVACY_MODE,
+	/* LE Read Buffer Size [v2] */
+	BT_DEV_CMD_LE_READ_BUFFER_SIZE_V2,
+	/* LE Read All Local Supported Features */
+	BT_DEV_CMD_LE_READ_ALL_LOCAL_SUPPORTED_FEATURES,
+	/* LE CS Read Local Supported Capabilities [v2] */
+	BT_DEV_CMD_LE_CS_READ_LOCAL_SUPPORTED_CAPABILITIES_V2,
+
+	/* Total number of commands - must be at the end */
+	BT_DEV_CMD_NUM,
+};
+
 /* State tracking for the local Bluetooth controller */
 struct bt_dev {
 	/* Local Identity Address(es) */
@@ -426,9 +456,6 @@ struct bt_dev {
 	/* LMP features (pages 0, 1, 2) */
 	uint8_t			features[LMP_FEAT_PAGES_COUNT][8];
 
-	/* Supported commands */
-	uint8_t			supported_commands[64];
-
 #if defined(CONFIG_BT_HCI_VS)
 	/* Vendor HCI support */
 	uint8_t                    vs_commands[BT_DEV_VS_CMDS_MAX];
@@ -437,6 +464,9 @@ struct bt_dev {
 	struct k_work           init;
 
 	ATOMIC_DEFINE(flags, BT_DEV_NUM_FLAGS);
+
+	/* Supported commands, one bit per enum bt_dev_cmd */
+	ATOMIC_DEFINE(supported_commands, BT_DEV_CMD_NUM);
 
 	/* LE controller specific features */
 	struct bt_dev_le	le;
@@ -494,6 +524,12 @@ struct bt_dev {
 };
 
 extern struct bt_dev bt_dev;
+
+/* Check if the controller supports one of the commands that the host checks */
+static inline bool bt_dev_cmd_supported(enum bt_dev_cmd cmd)
+{
+	return atomic_test_bit(bt_dev.supported_commands, cmd);
+}
 
 /* Assert that the current thread holds the host lock. k_mutex resets the
  * owner on the final unlock, so the owner check alone is exact.
