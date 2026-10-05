@@ -155,20 +155,6 @@
 		};
 	};
 
-	fmu: flash-controller@95000 {
-		compatible = "nxp,msf1";
-		reg = <0x95000 0x1000>;
-		interrupts = <12 0>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-		status = "disabled";
-
-		uuid: uuid@1100800 {
-			compatible = "nxp,lpc-uid";
-			reg = <0x1100800 0x10>;
-		};
-	};
-
 	portb: pinmux@bc000 {
 		compatible = "nxp,port-pinmux";
 		reg = <0xbc000 0x1000>;
@@ -304,5 +290,18 @@
 		compatible = "fixed-clock";
 		clock-frequency = <DT_FREQ_M(1)>;
 		#clock-cells = <0>;
+	};
+};
+
+&fmu {
+	compatible = "nxp,msf1";
+	interrupts = <12 0>;
+	#address-cells = <1>;
+	#size-cells = <1>;
+	status = "disabled";
+
+	uuid: uuid@1100800 {
+		compatible = "nxp,lpc-uid";
+		reg = <0x1100800 0x10>;
 	};
 };
