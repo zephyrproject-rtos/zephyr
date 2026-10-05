@@ -40,6 +40,18 @@
 				pinmux = <DT_CAT1_PINMUX(17, 0, HSIOM_SEL_ACT_14)>;
 				drive-push-pull;
 			};
+
+			/omit-if-no-ref/ p0_4_scb11_i2c_scl: p0_4_scb11_i2c_scl {
+				pinmux = <DT_CAT1_PINMUX(0, 4, HSIOM_SEL_ACT_15)>;
+				drive-open-drain;
+				input-enable;
+			};
+
+			/omit-if-no-ref/ p0_5_scb11_i2c_sda: p0_5_scb11_i2c_sda {
+				pinmux = <DT_CAT1_PINMUX(0, 5, HSIOM_SEL_ACT_15)>;
+				drive-open-drain;
+				input-enable;
+			};
 		};
 	};
 };
