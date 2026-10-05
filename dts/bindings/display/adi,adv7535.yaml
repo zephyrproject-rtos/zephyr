@@ -15,8 +15,8 @@ include: i2c-device.yaml
 properties:
   adi,addr-cec:
     type: int
-    required: true
-    description: Seven-bit address of the CEC/DSI register map.
+    default: 0x3c
+    description: Optional CEC I2C address. Default is the power-on reset value of the register.
 
   dsi-device:
     type: phandle
@@ -44,7 +44,6 @@ examples:
       display-bridge@3d {
         compatible = "adi,adv7535";
         reg = <0x3d>;
-        adi,addr-cec = <0x3b>;
         dsi-device = <&adv7535_dsi>;
         display-timing = <&hdmi_timing>;
       };
