@@ -91,3 +91,13 @@
 	pinctrl-0 = <&uart2_default>;
 	pinctrl-names = "default";
 };
+
+&spi00 {
+	pinctrl-0 = <&spi00_default>;
+	pinctrl-names = "default";
+};
+
+&spi20 {
+	pinctrl-0 = <&spi20_default>;
+	pinctrl-names = "default";
+};
