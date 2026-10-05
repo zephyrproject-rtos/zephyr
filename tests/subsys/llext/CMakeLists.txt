@@ -52,6 +52,11 @@ if(CONFIG_LLEXT_RODATA_NO_RELOC AND NOT CONFIG_XTENSA)
     list(APPEND ext_names rodata_no_reloc)
 endif()
 
+if(CONFIG_XTENSA)
+    # Only llext_link_plt(), used for all Xtensa relocations, accepts undefined weak symbols
+    list(APPEND ext_names weak_undef)
+endif()
+
 # generate extension targets for each extension in 'ext_names'
 foreach(ext_name ${ext_names})
   set(ext_src ${PROJECT_SOURCE_DIR}/src/${ext_name}_ext.c)
