@@ -1377,6 +1377,18 @@ int arch_mem_domain_thread_remove(struct k_thread *thread)
 
 	return 0;
 }
+
+void arch_mem_domain_apply_current(void)
+{
+	unsigned int key = arch_irq_lock();
+
+	/* the kernel runs behind the user view of the PMP: rewrite it before carrying on */
+	z_riscv_pmp_usermode_enable(_current);
+#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC
+	z_riscv_pmp_kernelmode_enable(_current);
+#endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC */
+	arch_irq_unlock(key);
+}
 #define IS_WITHIN(inner_start, inner_size, outer_start, outer_size) \
 	((inner_start) >= (outer_start) && (inner_size) <= (outer_size) && \
 	 ((inner_start) - (outer_start)) <= ((outer_size) - (inner_size)))
