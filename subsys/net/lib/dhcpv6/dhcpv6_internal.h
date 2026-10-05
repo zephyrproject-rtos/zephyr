@@ -201,4 +201,17 @@ static inline int net_dhcpv6_init(void)
 }
 #endif /* CONFIG_NET_DHCPV6 */
 
+#if defined(CONFIG_NET_DHCPV6_START_ON_RA)
+/* Called by IPv6 Neighbor Discovery for each accepted Router Advertisement. */
+void net_dhcpv6_handle_ra(struct net_if *iface, bool managed, bool other);
+#else
+static inline void net_dhcpv6_handle_ra(struct net_if *iface, bool managed,
+					bool other)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(managed);
+	ARG_UNUSED(other);
+}
+#endif /* CONFIG_NET_DHCPV6_START_ON_RA */
+
 #endif /* DHCPV6_INTERNAL_H_ */
