@@ -793,7 +793,7 @@ static int dma_dw_axi_stop(const struct device *dev, uint32_t channel)
 	sys_write64(CH_SUSP(channel), reg_base + DMA_DW_AXI_CHENREG);
 
 	/* Try to disable the channel */
-	sys_clear_bit(reg_base + DMA_DW_AXI_CHENREG, channel);
+	sys_write64(CH_EN_WE(channel), reg_base + DMA_DW_AXI_CHENREG);
 
 	/* Bit [channel+16] is the write-enable mask for the channel-enable
 	 * bit above. Hardware only latches the write to the enable bit
