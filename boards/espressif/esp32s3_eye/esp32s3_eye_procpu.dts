@@ -146,6 +146,8 @@
 		port {
 			ov2640_ep_out: endpoint {
 				remote-endpoint = <&dvp_ep_in>;
+				vsync-active = <1>;
+				hsync-active = <1>;
 			};
 		};
 	};
@@ -165,6 +167,8 @@
 	port {
 		dvp_ep_in: endpoint {
 			remote-endpoint = <&ov2640_ep_out>;
+			vsync-active = <1>;
+			hsync-active = <1>;
 		};
 	};
 };

@@ -24,6 +24,9 @@
 			ov2640_ep_out: endpoint {
 				remote-endpoint-label = "dvp_20pin_ep_in";
 				bus-type = <VIDEO_BUS_TYPE_PARALLEL>;
+				hsync-active = <1>;
+				vsync-active = <1>;
+				pclk-sample = <1>;
 			};
 		};
 	};

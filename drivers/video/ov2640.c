@@ -85,12 +85,6 @@ LOG_MODULE_REGISTER(video_ov2640, CONFIG_VIDEO_LOG_LEVEL);
 #define BANK_SEL_DSP    0x00
 #define BANK_SEL_SENSOR 0x01
 
-/* This COM10 register is actually located on the DSP register bank, and only affects the signals
- * output by the DSP is enabled. The defaults are different from the default of the documented
- * COM10, which is why every other driver sets it to 0x00 to keep it consistent.
- */
-#define COM10 0x15
-
 /* Sensor register bank FF=0x01*/
 
 #define COM1        0x03
@@ -157,6 +151,9 @@ LOG_MODULE_REGISTER(video_ov2640, CONFIG_VIDEO_LOG_LEVEL);
 #define COM9_AGC_GAIN_8x 0x02
 #define COM9_AGC_SET(x)  (COM9_DEFAULT | (x << 5))
 
+/* Does not seem to have any effect, see devicetree bindings */
+#define COM10 0x15
+
 #define VV                  0x26
 #define VV_AGC_TH_SET(h, l) ((h << 4) | (l & 0x0F))
 
@@ -174,9 +171,10 @@ struct ov2640_config {
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(powerdown_gpios)
 	struct gpio_dt_spec powerdown_gpios;
 #endif
-	uint8_t clock_multiplier;
-	uint8_t drive_strength;
-	bool jpeg_hsync;
+	uint8_t drive_strength : 4;
+	uint8_t clock_multiplier : 2;
+	uint8_t vsync_active : 1;
+	uint8_t jpeg_hsync : 1;
 };
 
 struct ov2640_ctrls {
@@ -225,7 +223,6 @@ static const struct ov2640_reg ov2640_default_regs[] = {
 	{0x2c, 0xff},
 	{0x2e, 0xdf},
 	{BANK_SEL, BANK_SEL_SENSOR},
-	{0xff, 0x01},
 	{0x3c, 0x32},
 	{0x11, 0x80},
 	{0x2c, 0x0c},
@@ -446,15 +443,6 @@ static const struct ov2640_reg uxga_regs[] = {
 	{CTRLI, CTRLI_LP_DP | 0x00},
 	/* DVP prescaler */
 	{R_DVP_SP, R_DVP_SP_AUTO_MODE | 0x04},
-
-	/* Same defaults as when DSP is turned off (the other "COM10", which is non-configurable,
-	 * the datasheet has an errata to correct it but the errata does not mention the
-	 * "other COM10", see notes above.
-	 *
-	 * This controls h-sync, v-sync, and pclk polarities.
-	 */
-	{COM10, 0x00},
-
 	{R_BYPASS, R_BYPASS_DSP_NO},
 	{RESET, 0x00},
 };
@@ -496,12 +484,22 @@ static const uint8_t saturation_regs[NUM_SATURATION_LEVELS + 1][5] = {
 		.height_min = 12, .height_max = 1200, .height_step = 1,                            \
 	}
 
-static const struct video_format_cap ov2640_fmts[] = {
+static const struct video_format_cap ov2640_fmts_with_dsp[] = {
 	OV2640_VIDEO_FORMAT_CAP(VIDEO_PIX_FMT_RGB565),
 	OV2640_VIDEO_FORMAT_CAP(VIDEO_PIX_FMT_RGB565X),
 	OV2640_VIDEO_FORMAT_CAP(VIDEO_PIX_FMT_YUYV),
 	OV2640_VIDEO_FORMAT_CAP(VIDEO_PIX_FMT_UYVY),
 	OV2640_VIDEO_FORMAT_CAP(VIDEO_PIX_FMT_JPEG),
+	{0},
+};
+
+static const struct video_format_cap ov2640_fmts_without_dsp[] = {
+	/* With DSP element turned off, no subsampling */
+	{
+		.pixelformat = VIDEO_PIX_FMT_SBGGR8,
+		.width_min = 1600, .width_max = 1600, .width_step = 0,
+		.height_min = 1200, .height_max = 1200, .height_step = 0,
+	},
 	{0},
 };
 
@@ -656,6 +654,9 @@ static int ov2640_apply_config(const struct device *dev)
 	/* Pixel format */
 
 	switch (data->fmt.pixelformat) {
+	case VIDEO_PIX_FMT_SBGGR8:
+		/* Keep the DSP cores turned off and return now, this will output bayer data */
+		return 0;
 	case VIDEO_PIX_FMT_JPEG:
 		if (cfg->jpeg_hsync) {
 			ret = ov2640_write_dsp_reg(
@@ -739,6 +740,25 @@ static int ov2640_apply_config(const struct device *dev)
 	return ret;
 }
 
+static const struct video_format_cap *ov2640_get_format_caps(const struct device *dev)
+{
+	const struct ov2640_config *cfg = dev->config;
+
+	/* See devicetree bindings. */
+	if (cfg->vsync_active) {
+		return ov2640_fmts_with_dsp;
+	} else {
+		return ov2640_fmts_without_dsp;
+	}
+}
+
+static int ov2640_get_caps(const struct device *dev, struct video_caps *caps)
+{
+	caps->format_caps = ov2640_get_format_caps(dev);
+
+	return 0;
+}
+
 static int ov2640_set_format(const struct device *dev, struct video_format *fmt)
 {
 	struct ov2640_data *data = dev->data;
@@ -750,7 +770,7 @@ static int ov2640_set_format(const struct device *dev, struct video_format *fmt)
 		return 0;
 	}
 
-	ret = video_format_caps_index(ov2640_fmts, fmt, &index);
+	ret = video_format_caps_index(ov2640_get_format_caps(dev), fmt, &index);
 	if (ret < 0) {
 		LOG_ERR("Format %s %ux%u not supported",
 			VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height);
@@ -839,12 +859,6 @@ static int ov2640_set_stream(const struct device *dev, bool stream, enum video_b
 		}
 	}
 
-	return 0;
-}
-
-static int ov2640_get_caps(const struct device *dev, struct video_caps *caps)
-{
-	caps->format_caps = ov2640_fmts;
 	return 0;
 }
 
@@ -1208,7 +1222,7 @@ static int ov2640_init(const struct device *dev)
 	/* Defaults */
 
 	ret = ov2640_set_format(dev, &(struct video_format){
-		.pixelformat = ov2640_fmts[0].pixelformat,
+		.pixelformat = ov2640_get_format_caps(dev)->pixelformat,
 		.width = OV2640_NATIVE_WIDTH,
 		.height = OV2640_NATIVE_HEIGHT,
 	});
@@ -1267,6 +1281,7 @@ static int ov2640_init(const struct device *dev)
 		.clock_multiplier = DT_INST_PROP(n, clock_multiplier),				\
 		.drive_strength = DT_INST_PROP(n, drive_strength),				\
 		.jpeg_hsync = DT_INST_PROP(n, jpeg_hsync),					\
+		.vsync_active = DT_PROP(DT_INST_ENDPOINT_BY_ID(n, 0, 0), vsync_active),		\
 	};											\
 												\
 	static struct ov2640_data ov2640_data_##n;						\
