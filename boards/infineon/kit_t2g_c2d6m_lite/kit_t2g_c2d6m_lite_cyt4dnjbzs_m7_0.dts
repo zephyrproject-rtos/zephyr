@@ -25,6 +25,14 @@
 		zephyr,code-partition = &m7_0_partition;
 		zephyr,console = &uart7;
 		zephyr,shell-uart = &uart7;
+		zephyr,canbus = &can0;
+	};
+
+	transceiver0: can-phy0 {
+		compatible = "can-transceiver-gpio";
+		enable-gpios = <&gpio_prt5 4 GPIO_ACTIVE_LOW>;
+		max-bitrate = <5000000>;
+		#phy-cells = <0>;
 	};
 
 	gpio_keys {
@@ -50,6 +58,27 @@
 	status = "okay";
 };
 
+&gpio_prt5 {
+	status = "okay";
+};
+
 &gpio_prt9 {
 	status = "okay";
+};
+
+&peri0_group1_16bit_0 {
+	status = "okay";
+};
+
+&canfd0 {
+	status = "okay";
+};
+
+can0: &can0_1 {
+	status = "okay";
+	clocks = <&peri0_group1_16bit_0>;
+	clock-frequency = <40000000>;
+	pinctrl-0 = <&p5_3_can0_1_rx &p5_2_can0_1_tx>;
+	pinctrl-names = "default";
+	phys = <&transceiver0>;
 };
