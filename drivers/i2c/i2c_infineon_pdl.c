@@ -16,6 +16,8 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/clock_control_ifx_cat1.h>
+#include <zephyr/drivers/clock_control/clock_control_ifx.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
@@ -74,7 +76,9 @@ struct ifx_cat1_i2c_data {
 	struct k_sem transfer_sem;
 	bool error;
 	bool rx_overrun;
+#if !defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2)
 	struct ifx_cat1_clock clock;
+#endif
 	struct i2c_target_config *p_target_config;
 	uint8_t i2c_target_wr_byte;
 	uint8_t target_wr_buffer[CONFIG_I2C_INFINEON_CAT1_TARGET_BUF];
@@ -92,6 +96,10 @@ struct ifx_cat1_i2c_config {
 	uint8_t irq_priority;
 	uint32_t irq_num;
 	en_clk_dst_t clk_dst;
+#if defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2)
+	const struct device *clk_dev;
+	struct ifx_clk_peri clk_info;
+#endif
 	void (*irq_config_func)(const struct device *dev);
 	cy_cb_scb_i2c_handle_events_t i2c_handle_events_func;
 	k_timeout_t transfer_timeout;
@@ -341,6 +349,61 @@ void ifx_cat1_i2c_register_callback(const struct device *dev,
  *
  * Returns 0 on success, negative errno otherwise.
  */
+#if defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2)
+static int _i2c_set_peri_divider(const struct device *dev, uint32_t freq, bool is_target_mode)
+{
+/* Controller mode oversampling clock frequencies */
+#define _SCB_PERI_CLOCK_CTRL_STD  2000000UL
+#define _SCB_PERI_CLOCK_CTRL_FST  8000000UL
+#define _SCB_PERI_CLOCK_CTRL_FSTP 24000000UL
+
+/* Target mode oversampling clock frequencies */
+#define _SCB_PERI_CLOCK_TGT_STD  8000000UL
+#define _SCB_PERI_CLOCK_TGT_FST  12000000UL
+#define _SCB_PERI_CLOCK_TGT_FSTP 24000000UL
+
+	const struct ifx_cat1_i2c_config *const config = dev->config;
+	CySCB_Type *base = config->base;
+	uint32_t peri_freq = 0;
+	uint32_t data_rate;
+	int ret;
+
+	/* Map I2C data rate to the required SCB oversampling clock frequency */
+	if (freq == 0) {
+		return -EINVAL;
+	} else if (freq <= CY_SCB_I2C_STD_DATA_RATE) {
+		peri_freq = is_target_mode ? _SCB_PERI_CLOCK_TGT_STD : _SCB_PERI_CLOCK_CTRL_STD;
+	} else if (freq <= CY_SCB_I2C_FST_DATA_RATE) {
+		peri_freq = is_target_mode ? _SCB_PERI_CLOCK_TGT_FST : _SCB_PERI_CLOCK_CTRL_FST;
+	} else if (freq <= CY_SCB_I2C_FSTP_DATA_RATE) {
+		peri_freq = is_target_mode ? _SCB_PERI_CLOCK_TGT_FSTP : _SCB_PERI_CLOCK_CTRL_FSTP;
+	} else {
+		return -EINVAL;
+	}
+
+	ret = clock_control_set_rate(config->clk_dev,
+				     (clock_control_subsys_t)&config->clk_info, &peri_freq);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = clock_control_get_rate(config->clk_dev,
+				     (clock_control_subsys_t)&config->clk_info, &peri_freq);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* SetDataRate returns the achieved SCL rate, or 0 if none is valid. */
+	data_rate = Cy_SCB_I2C_SetDataRate(base, freq, peri_freq);
+	if (data_rate == 0U) {
+		LOG_ERR("Failed to derive a valid I2C data rate from clk_scb %u Hz",
+			(unsigned int)peri_freq);
+		return -EIO;
+	}
+
+	return 0;
+}
+#else
 static int _i2c_set_peri_divider(const struct device *dev, uint32_t freq, bool is_target_mode)
 {
 /* Controller mode oversampling clock frequencies */
@@ -473,6 +536,7 @@ static int _i2c_set_peri_divider(const struct device *dev, uint32_t freq, bool i
 
 	return 0;
 }
+#endif
 
 /**
  * @brief Apply a bus configuration and re-initialise the SCB.
@@ -1034,7 +1098,9 @@ static int ifx_cat1_i2c_init(const struct device *dev)
 	struct ifx_cat1_i2c_data *data = dev->data;
 	const struct ifx_cat1_i2c_config *config = dev->config;
 	int ret;
+#if !defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2)
 	cy_rslt_t result;
+#endif
 
 	/* Configure semaphores */
 	ret = k_sem_init(&data->transfer_sem, 0, 1);
@@ -1053,11 +1119,13 @@ static int ifx_cat1_i2c_init(const struct device *dev)
 		return ret;
 	}
 
+#if !defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2)
 	/* Connect this SCB to the peripheral clock */
 	result = ifx_cat1_utils_peri_pclk_assign_divider(config->clk_dst, &data->clock);
 	if (result != CY_RSLT_SUCCESS) {
 		return -EIO;
 	}
+#endif
 
 	/* Initial value for async operations */
 	data->pending = CAT1_I2C_PENDING_NONE;
@@ -1124,18 +1192,22 @@ static int ifx_cat1_i2c_pm_action(const struct device *dev, enum pm_device_actio
 		 * Power was lost: re-init the I2C block - re-apply pinctrl,
 		 * re-assign the clock divider, and replay the retained config.
 		 */
-		cy_rslt_t result;
 		int ret;
+#if !defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2)
+		cy_rslt_t result;
+#endif
 
 		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 		if (ret < 0) {
 			return ret;
 		}
 
+#if !defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2)
 		result = ifx_cat1_utils_peri_pclk_assign_divider(config->clk_dst, &data->clock);
 		if (result != CY_RSLT_SUCCESS) {
 			return -EIO;
 		}
+#endif
 
 		ret = ifx_cat1_i2c_configure(dev, 0);
 		if (ret < 0) {
@@ -1402,7 +1474,9 @@ static DEVICE_API(i2c, i2c_cat1_driver_api) = {
 #endif /* CONFIG_I2C_RTIO */
 };
 
-#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+#if defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2)
+#define I2C_PERI_CLOCK_INIT(n)
+#elif defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 #define I2C_PERI_CLOCK_INIT(n)                                                                     \
 	.clock = {                                                                                 \
 		.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(                                         \
@@ -1419,6 +1493,14 @@ static DEVICE_API(i2c, i2c_cat1_driver_api) = {
 			DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                             \
 		.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                            \
 	},
+#endif
+
+#if defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2)
+#define CLOCK_GET(n) \
+	.clk_dev = DEVICE_DT_GET(DT_PARENT(DT_INST_CLOCKS_CTLR(n))), \
+	.clk_info = IFX_CLK_PERI_DT_INST_SPEC_GET(n),
+#else
+#define CLOCK_GET(n)
 #endif
 
 #ifdef CONFIG_I2C_INFINEON_BUS_RECOVERY
@@ -1457,6 +1539,7 @@ static DEVICE_API(i2c, i2c_cat1_driver_api) = {
 		.irq_config_func = ifx_cat1_i2c_irq_config_func_##n,                               \
 		.i2c_handle_events_func = i2c_handle_events_func_##n,                              \
 		.transfer_timeout = I2C_DT_INST_TRANSFER_TIMEOUT(n),                               \
+		CLOCK_GET(n)                                                                       \
 		I2C_CAT1_SCL_INIT(n) I2C_CAT1_SDA_INIT(n)};                                        \
                                                                                                    \
 	static struct ifx_cat1_i2c_data ifx_cat1_i2c_data##n = {                                   \
