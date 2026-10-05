@@ -46,6 +46,24 @@ enum http2_frame_type {
 
 /** @cond INTERNAL_HIDDEN */
 
+enum http2_error {
+	HTTP2_ERROR_NO_ERROR = 0x00,
+	HTTP2_ERROR_PROTOCOL_ERROR = 0x01,
+	HTTP2_ERROR_INTERNAL_ERROR = 0x02,
+	HTTP2_ERROR_FLOW_CONTROL_ERROR = 0x03,
+	HTTP2_ERROR_SETTINGS_TIMEOUT = 0x04,
+	HTTP2_ERROR_STREAM_CLOSED = 0x05,
+	HTTP2_ERROR_FRAME_SIZE_ERROR = 0x06,
+	HTTP2_ERROR_REFUSED_STREAM = 0x07,
+	HTTP2_ERROR_CANCEL = 0x08,
+	HTTP2_ERROR_COMPRESSION_ERROR = 0x09,
+	HTTP2_ERROR_CONNECT_ERROR = 0x0a,
+	HTTP2_ERROR_ENHANCE_YOUR_CALM = 0x0b,
+	HTTP2_ERROR_INADEQUATE_SECURITY = 0x0c,
+	HTTP2_ERROR_HTTP_1_1_REQUIRED = 0x0d,
+};
+
+#define HTTP2_FLAG_ACK          0x01
 #define HTTP2_FLAG_SETTINGS_ACK 0x01
 #define HTTP2_FLAG_END_HEADERS  0x04
 #define HTTP2_FLAG_END_STREAM   0x01
@@ -62,8 +80,20 @@ enum http2_frame_type {
 #define HTTP2_HEADERS_FRAME_PRIORITY_LEN 5
 #define HTTP2_PRIORITY_FRAME_LEN 5
 #define HTTP2_RST_STREAM_FRAME_LEN 4
+#define HTTP2_GOAWAY_FRAME_LEN 8
+#define HTTP2_PING_FRAME_LEN 8
+#define HTTP2_WINDOW_UPDATE_FRAME_LEN 4
 
 /** @endcond */
+
+/** @brief HTTP/2 frame representation. */
+struct http2_frame {
+	uint32_t length; /**< Frame payload length. */
+	uint32_t stream_identifier; /**< Stream ID the frame belongs to. */
+	uint8_t type; /**< Frame type. */
+	uint8_t flags; /**< Frame flags. */
+	uint8_t padding_len; /**< Frame padding length. */
+};
 
 /** HTTP2 settings field */
 struct http2_settings_field {
