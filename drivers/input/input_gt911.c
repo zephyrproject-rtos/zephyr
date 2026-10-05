@@ -304,9 +304,26 @@ static int gt911_init(const struct device *dev)
 
 	int r;
 
-	if (!gpio_is_ready_dt(&config->int_gpio)) {
-		LOG_ERR_DEVICE_NOT_READY(config->int_gpio.port);
-		return -ENODEV;
+	if (config->int_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&config->int_gpio)) {
+			LOG_ERR_DEVICE_NOT_READY(config->int_gpio.port);
+			return -ENODEV;
+		}
+
+		/*
+		* We need to configure the int-pin to 0, in order to enter the
+		* AddressMode0. Keeping the INT pin low during the reset sequence
+		* should result in the device selecting an I2C address of 0x5D.
+		* Note that if an alternate I2C address is set, we will probe
+		* for the alternate address if 0x5D does not work. This is useful
+		* for boards that do not route the INT pin, or only permit it
+		* to be used as an input
+		*/
+		r = gpio_pin_configure_dt(&config->int_gpio, GPIO_OUTPUT_INACTIVE);
+		if (r < 0) {
+			LOG_ERR("Could not configure int GPIO pin");
+			return r;
+		}
 	}
 
 	if (config->rst_gpio.port != NULL) {
@@ -322,20 +339,6 @@ static int gt911_init(const struct device *dev)
 		}
 	}
 
-	/*
-	 * We need to configure the int-pin to 0, in order to enter the
-	 * AddressMode0. Keeping the INT pin low during the reset sequence
-	 * should result in the device selecting an I2C address of 0x5D.
-	 * Note that if an alternate I2C address is set, we will probe
-	 * for the alternate address if 0x5D does not work. This is useful
-	 * for boards that do not route the INT pin, or only permit it
-	 * to be used as an input
-	 */
-	r = gpio_pin_configure_dt(&config->int_gpio, GPIO_OUTPUT_INACTIVE);
-	if (r < 0) {
-		LOG_ERR("Could not configure int GPIO pin");
-		return r;
-	}
 	/* Delay at least 10 ms after power on before we configure gt911 */
 	k_sleep(K_MSEC(20));
 	if (config->rst_gpio.port != NULL) {
@@ -350,10 +353,12 @@ static int gt911_init(const struct device *dev)
 	/* hold down 50ms to make sure the address available */
 	k_sleep(K_MSEC(50));
 
-	r = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
-	if (r < 0) {
-		LOG_ERR("Could not configure interrupt GPIO pin");
-		return r;
+	if (config->int_gpio.port != NULL) {
+		r = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
+		if (r < 0) {
+			LOG_ERR("Could not configure interrupt GPIO pin");
+			return r;
+		}
 	}
 
 #ifdef CONFIG_INPUT_GT911_INTERRUPT
@@ -478,7 +483,7 @@ static void gt911_##n##_pm_state_exit(enum pm_state state)                      
 		.common = INPUT_TOUCH_DT_INST_COMMON_CONFIG_INIT(index),		           \
 		.bus = I2C_DT_SPEC_INST_GET(index),                                                \
 		.rst_gpio = GPIO_DT_SPEC_INST_GET_OR(index, reset_gpios, {0}),                     \
-		.int_gpio = GPIO_DT_SPEC_INST_GET(index, irq_gpios),                               \
+		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(index, irq_gpios, {0}),                       \
 		.alt_addr = DT_INST_PROP_OR(index, alt_addr, 0),                                   \
 	};                                                                                         \
 	GT911_PM_NOTIFIER_FUNCS(index)                                                             \
