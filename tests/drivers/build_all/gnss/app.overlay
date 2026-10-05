@@ -4,7 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/counter/counter-capture.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
 / {
+	test_gnss_pps: counter-gpio {
+		compatible = "zephyr,counter-gpio";
+		gpios = <&test_gpio 0 GPIO_ACTIVE_HIGH>;
+		#counter-capture-cells = <2>;
+	};
+
 	test {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -17,6 +26,7 @@
 
 			gnss_nmea_generic: gnss-nmea-generic {
 				compatible = "gnss-nmea-generic";
+				counter-captures = <&test_gnss_pps 0 COUNTER_CAPTURE_RISING_EDGE>;
 			};
 
 			gnss_air530z: air530z {
@@ -39,6 +49,14 @@
 			gnss_f9p: f9p {
 				compatible = "u-blox,f9p";
 			};
+		};
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			reg = <0xdeadbeef 0x1000>;
+			gpio-controller;
+			#gpio-cells = <0x2>;
+			status = "okay";
 		};
 	};
 };
