@@ -139,6 +139,9 @@ void entry_cpu_exception_extend(void *p1, void *p2, void *p3)
 	 * Misaligned word store triggers ALN trap (Class 2 TIN 4).
 	 */
 	*(volatile int *)1 = 0;
+#elif defined(CONFIG_HEXAGON)
+	/* A duplex instruction that writes to r0 twice raises a CPU exception. */
+	__asm__ volatile(".word 0x0");
 #else
 	/* used to create a divide by zero error on X86 and MIPS */
 	volatile int error;
