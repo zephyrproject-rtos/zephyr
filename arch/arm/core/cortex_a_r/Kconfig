@@ -56,6 +56,14 @@ config HAS_ARM_SMCCC
 	help
 	  SMC and HVC calling convention support on ARMv8-A AArch32.
 
+config CORTEX_A_R_PRIMARY_CORE_MPID_ZERO
+	bool
+	depends on SMP
+	help
+	  The core with MPID 0 is always primary; secondaries are started later
+	  (e.g. PSCI CPU_ON). reset.S uses an MPID check instead of voting, whose
+	  state sits in uninitialised RAM that a warm reset retains and deadlocks.
+
 config ARM_A_PROFILE_AARCH32
 	bool
 	help
