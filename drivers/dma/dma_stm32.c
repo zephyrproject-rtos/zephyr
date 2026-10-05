@@ -803,7 +803,9 @@ static int dma_stm32_configure(const struct device *dev,
 	DMA_InitStruct.FIFOThreshold = stm32_dma_get_fifo_threshold(
 					config->head_block->fifo_mode_control);
 
-	if (stm32_dma_check_fifo_mburst(&DMA_InitStruct)) {
+	if (stm32_dma_check_fifo_mburst(DMA_InitStruct.MemoryOrM2MDstDataSize,
+					DMA_InitStruct.MemBurst,
+					DMA_InitStruct.FIFOThreshold)) {
 		DMA_InitStruct.FIFOMode = LL_DMA_FIFOMODE_ENABLE;
 	} else {
 		DMA_InitStruct.FIFOMode = LL_DMA_FIFOMODE_DISABLE;
