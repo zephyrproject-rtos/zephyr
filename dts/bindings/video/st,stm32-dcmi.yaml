@@ -23,7 +23,7 @@ properties:
     description: |
       phandle of DMA controller. The DMA controller should be compatible with
       DMA channel specifier. Specifies a phandle reference to the dma controller,
-      the channel number, the slot number, channel configuration and finally features.
+      the channel number, the slot number, channel configuration and optionally features.
 
       dmas = <&dma1 0 75 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_PERIPH_NO_INC |
               STM32_DMA_MEM_INC | STM32_DMA_PERIPH_8BITS | STM32_DMA_MEM_32BITS |
