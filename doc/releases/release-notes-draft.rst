@@ -154,6 +154,12 @@ Libraries / Subsystems
     command was run without that argument and its remaining arguments, which usually failed
     with a wrong argument count.
 
+* zbus
+
+  * Channel operations, observer notifications, subscriber wake-ups and async listener
+    callbacks can be traced with :kconfig:option:`CONFIG_TRACING_ZBUS`, and the CTF backend
+    records them, see :ref:`zbus_tracing`.
+
 Devicetree
 **********
 
