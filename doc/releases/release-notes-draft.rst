@@ -103,6 +103,13 @@ New APIs and options
   * Added PSA Protected Storage backend, enable with
     :kconfig:option:`CONFIG_FIDO2_STORAGE_PSA_PROTECTED_STORAGE`
 
+* Networking
+
+  * Add :kconfig:option:`CONFIG_NET_DHCPV6_START_ON_RA` to start the DHCPv6
+    client automatically based on the M and O flags of received Router
+    Advertisements, in stateful mode with the M flag and in stateless mode
+    (Information-request only) with the O flag.
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
