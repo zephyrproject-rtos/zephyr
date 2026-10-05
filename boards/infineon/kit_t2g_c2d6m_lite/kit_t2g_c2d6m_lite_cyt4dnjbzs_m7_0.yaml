@@ -15,5 +15,6 @@ toolchain:
   - gnuarmemb
 supported:
   - gpio
+  - i2c
   - uart
 vendor: infineon

@@ -53,3 +53,18 @@
 &gpio_prt9 {
 	status = "okay";
 };
+
+&peri0_group1_16bit_0 {
+	status = "okay";
+};
+
+i2c11: &scb11 {
+	compatible = "infineon,i2c";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clocks = <&peri0_group1_16bit_0>;
+	clock-frequency = <100000>;
+	pinctrl-0 = <&p0_4_scb11_i2c_scl &p0_5_scb11_i2c_sda>;
+	pinctrl-names = "default";
+};
