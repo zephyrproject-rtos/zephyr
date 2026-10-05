@@ -1668,15 +1668,20 @@ ZTEST(net_iface, test_ipv6_iid_stable)
 #if defined(CONFIG_NET_IPV6_IID_STABLE)
 	struct net_in6_addr iid_addr = { };
 	struct net_in6_addr expected_addr = { };
+	struct net_in6_addr again_addr = { };
 
 	generate_iid(eth_iface, &expected_addr, &iid_addr);
 
-	/* Make sure that EUI-64 bytes are not there */
-	zassert_not_equal(iid_addr.s6_addr[11], 0xff);
-	zassert_not_equal(iid_addr.s6_addr[12], 0xfe);
-
+	/* The IID is random, so compare the whole IID; any single byte can
+	 * match the EUI-64 pattern by chance.
+	 */
 	zassert_true(memcmp(&expected_addr, &iid_addr, sizeof(struct net_in6_addr)) != 0,
 		     "IID is EUI-64 instead of randomized");
+
+	generate_iid(eth_iface, &expected_addr, &again_addr);
+
+	zassert_mem_equal(&iid_addr, &again_addr, sizeof(struct net_in6_addr),
+			  "IID is not stable for the same inputs");
 #else
 	ztest_test_skip();
 #endif
