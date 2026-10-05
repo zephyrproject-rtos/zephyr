@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -12,6 +13,7 @@
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/lc3.h>
 #include <zephyr/bluetooth/audio/pacs.h>
+#include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/gatt.h>
@@ -28,6 +30,12 @@
 LOG_MODULE_REGISTER(pacs_notify_server_test, LOG_LEVEL_DBG);
 
 extern enum bst_result_t bst_result;
+
+extern void bt_conn_suspend_tx(bool suspend);
+
+CREATE_FLAG(flag_att_tx_exhausted);
+
+static int att_tx_fill_err;
 
 static struct bt_audio_codec_cap lc3_codec_1 =
 	BT_AUDIO_CODEC_CAP_LC3(BT_AUDIO_CODEC_CAP_FREQ_16KHZ | BT_AUDIO_CODEC_CAP_FREQ_24KHZ,
@@ -346,12 +354,105 @@ static void test_main(void)
 	PASS("PACS Notify Server passed\n");
 }
 
+static void att_tx_fill_handler(struct k_work *work)
+{
+	static const uint8_t data;
+
+	ARG_UNUSED(work);
+
+	for (size_t i = 0U; i <= CONFIG_BT_ATT_TX_COUNT; i++) {
+		att_tx_fill_err = bt_gatt_write_without_response(
+			default_conn, BT_ATT_FIRST_ATTRIBUTE_HANDLE, &data, sizeof(data), false);
+		if (att_tx_fill_err != 0) {
+			break;
+		}
+	}
+
+	SET_FLAG(flag_att_tx_exhausted);
+}
+
+static K_WORK_DEFINE(att_tx_fill_work, att_tx_fill_handler);
+
+static void test_main_retry(void)
+{
+	struct bt_le_ext_adv *ext_adv;
+	const struct bt_pacs_register_param pacs_param = {
+		.snk_pac = true,
+		.snk_loc = true,
+		.src_pac = true,
+		.src_loc = true,
+	};
+	const struct bt_gatt_attr *snk_pac_attr;
+	int err;
+
+	err = bt_enable(NULL);
+	if (err != 0) {
+		FAIL("Bluetooth enable failed (err %d)", err);
+		return;
+	}
+
+	err = bt_pacs_register(&pacs_param);
+	if (err != 0) {
+		FAIL("Could not register PACS (err %d)\n", err);
+		return;
+	}
+
+	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &caps_1);
+	if (err != 0) {
+		FAIL("Failed to register sink PAC (err %d)\n", err);
+		return;
+	}
+
+	setup_connectable_adv(&ext_adv);
+
+	WAIT_FOR_FLAG(flag_connected);
+
+	snk_pac_attr = bt_gatt_find_by_uuid(NULL, 0, BT_UUID_PACS_SNK);
+	if (snk_pac_attr == NULL) {
+		FAIL("No Sink PAC attribute\n");
+		return;
+	}
+
+	while (!bt_gatt_is_subscribed(default_conn, snk_pac_attr, BT_GATT_CCC_NOTIFY)) {
+		k_sleep(K_MSEC(10U));
+	}
+
+	k_sleep(K_SECONDS(1U));
+
+	bt_conn_suspend_tx(true);
+	k_work_submit(&att_tx_fill_work);
+	WAIT_FOR_FLAG(flag_att_tx_exhausted);
+	if (att_tx_fill_err != -ENOMEM) {
+		FAIL("ATT TX buffers not exhausted (err %d)\n", att_tx_fill_err);
+		return;
+	}
+
+	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &caps_2);
+	if (err != 0) {
+		FAIL("Failed to register sink PAC (err %d)\n", err);
+		return;
+	}
+
+	k_sleep(K_MSEC(200U));
+	bt_conn_suspend_tx(false);
+
+	WAIT_FOR_UNSET_FLAG(flag_connected);
+
+	PASS("PACS Notify Retry Server passed\n");
+}
+
 static const struct bst_test_instance test_pacs_notify_server[] = {
 	{
 		.test_id = "pacs_notify_server",
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
+	},
+	{
+		.test_id = "pacs_notify_retry_server",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_retry,
 	},
 	BSTEST_END_MARKER,
 };

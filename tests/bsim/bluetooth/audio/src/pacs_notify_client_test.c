@@ -51,6 +51,7 @@ CREATE_FLAG(flag_available_contexts_discovered);
 CREATE_FLAG(flag_supported_contexts_discovered);
 CREATE_FLAG(flag_all_notifications_received);
 CREATE_FLAG(flag_available_contexts_received);
+CREATE_FLAG(flag_snk_pac_received);
 
 static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
 
@@ -73,6 +74,7 @@ static uint8_t pacs_notify_handler(struct bt_conn *conn,
 	if (params == &pacs_instance.sink_pacs_sub) {
 		LOG_DBG("Received sink_pacs_sub notification");
 		pacs_instance.notify_received_mask |= BIT(0U);
+		SET_FLAG(flag_snk_pac_received);
 	} else if (params == &pacs_instance.source_pacs_sub) {
 		LOG_DBG("Received source_pacs_sub notification");
 		pacs_instance.notify_received_mask |= BIT(1U);
@@ -621,12 +623,53 @@ static void test_main(void)
 	PASS("GATT client Passed\n");
 }
 
+static void test_main_retry(void)
+{
+	int err;
+
+	err = bt_enable(NULL);
+	if (err != 0) {
+		FAIL("Bluetooth enable failed (err %d)", err);
+		return;
+	}
+
+	bt_le_scan_cb_register(&common_scan_cb);
+
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
+	if (err != 0) {
+		FAIL("Could not start scanning (err %d)", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_connected);
+
+	update_security(default_conn);
+
+	discover_and_subscribe_snk_pacs();
+	WAIT_FOR_FLAG(flag_pacs_snk_discovered);
+
+	LOG_DBG("Waiting for Sink PAC notification");
+	WAIT_FOR_FLAG(flag_snk_pac_received);
+
+	err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	__ASSERT_NO_MSG(err == 0);
+	WAIT_FOR_UNSET_FLAG(flag_connected);
+
+	PASS("PACS Notify Retry Client passed\n");
+}
+
 static const struct bst_test_instance test_pacs_notify_client[] = {
 	{
 		.test_id = "pacs_notify_client",
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
+	},
+	{
+		.test_id = "pacs_notify_retry_client",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_retry,
 	},
 	BSTEST_END_MARKER,
 };

@@ -141,7 +141,7 @@ static int pacs_gatt_notify(struct bt_conn *conn,
 			    uint16_t len);
 static void deferred_nfy_work_handler(struct k_work *work);
 
-static K_WORK_DEFINE(deferred_nfy_work, deferred_nfy_work_handler);
+static K_WORK_DELAYABLE_DEFINE(deferred_nfy_work, deferred_nfy_work_handler);
 
 struct pac_records_build_data {
 	struct bt_pacs_read_rsp *rsp;
@@ -358,7 +358,7 @@ static int set_available_contexts(uint16_t contexts, uint16_t *available,
 	*available = contexts;
 
 	pacs_set_notify_bit(FLAG_AVAILABLE_AUDIO_CONTEXT_CHANGED);
-	k_work_submit(&deferred_nfy_work);
+	k_work_schedule(&deferred_nfy_work, K_NO_WAIT);
 
 	return 0;
 }
@@ -392,7 +392,7 @@ static int set_supported_contexts(uint16_t contexts, uint16_t *supported,
 
 	if (IS_ENABLED(CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE)) {
 		pacs_set_notify_bit(FLAG_SUPPORTED_AUDIO_CONTEXT_CHANGED);
-		k_work_submit(&deferred_nfy_work);
+		k_work_schedule(&deferred_nfy_work, K_NO_WAIT);
 	}
 
 	return 0;
@@ -467,7 +467,7 @@ static void set_snk_location(enum bt_audio_location audio_location)
 
 		if (IS_ENABLED(CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE)) {
 			pacs_set_notify_bit(FLAG_SINK_AUDIO_LOCATIONS_CHANGED);
-			k_work_submit(&deferred_nfy_work);
+			k_work_schedule(&deferred_nfy_work, K_NO_WAIT);
 		}
 	}
 }
@@ -580,7 +580,7 @@ static void set_src_location(enum bt_audio_location audio_location)
 
 		if (IS_ENABLED(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE)) {
 			pacs_set_notify_bit(FLAG_SOURCE_AUDIO_LOCATIONS_CHANGED);
-			k_work_submit(&deferred_nfy_work);
+			k_work_schedule(&deferred_nfy_work, K_NO_WAIT);
 		}
 	}
 }
@@ -1061,11 +1061,7 @@ static int pac_notify(struct bt_conn *conn, enum bt_audio_dir dir)
 
 	k_sem_give(&read_buf_sem);
 
-	if (err == -ENOTCONN) {
-		return 0;
-	} else {
-		return 0;
-	}
+	return err;
 }
 #endif /* CONFIG_BT_PAC_SNK_NOTIFIABLE || CONFIG_BT_PAC_SRC_NOTIFIABLE */
 
@@ -1116,7 +1112,7 @@ void pacs_gatt_notify_complete_cb(struct bt_conn *conn, void *user_data)
 
 	/* Notification done, clear bit and reschedule work */
 	atomic_clear_bit(pacs.flags, PACS_FLAG_NOTIFY_RDY);
-	k_work_submit(&deferred_nfy_work);
+	k_work_schedule(&deferred_nfy_work, K_NO_WAIT);
 }
 
 static int pacs_gatt_notify(struct bt_conn *conn,
@@ -1159,6 +1155,7 @@ static void notify_cb(struct bt_conn *conn, void *data)
 {
 	struct pacs_client *client;
 	struct bt_conn_info info;
+	bool retry = false;
 	int err = 0;
 
 	ARG_UNUSED(data);
@@ -1193,6 +1190,8 @@ static void notify_cb(struct bt_conn *conn, void *data)
 		err = pac_notify(conn, BT_AUDIO_DIR_SINK);
 		if (err == 0) {
 			atomic_clear_bit(client->flags, FLAG_SINK_PAC_CHANGED);
+		} else if (err == -ENOMEM || err == -EBUSY) {
+			retry = true;
 		}
 	}
 #endif /* CONFIG_BT_PAC_SNK_NOTIFIABLE */
@@ -1204,6 +1203,8 @@ static void notify_cb(struct bt_conn *conn, void *data)
 		err = pac_notify_loc(conn, BT_AUDIO_DIR_SINK);
 		if (err == 0) {
 			atomic_clear_bit(client->flags, FLAG_SINK_AUDIO_LOCATIONS_CHANGED);
+		} else if (err == -ENOMEM) {
+			retry = true;
 		}
 	}
 #endif /* CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE */
@@ -1215,6 +1216,8 @@ static void notify_cb(struct bt_conn *conn, void *data)
 		err = pac_notify(conn, BT_AUDIO_DIR_SOURCE);
 		if (err == 0) {
 			atomic_clear_bit(client->flags, FLAG_SOURCE_PAC_CHANGED);
+		} else if (err == -ENOMEM || err == -EBUSY) {
+			retry = true;
 		}
 	}
 #endif /* CONFIG_BT_PAC_SRC_NOTIFIABLE */
@@ -1226,6 +1229,8 @@ static void notify_cb(struct bt_conn *conn, void *data)
 		err = pac_notify_loc(conn, BT_AUDIO_DIR_SOURCE);
 		if (err == 0) {
 			atomic_clear_bit(client->flags, FLAG_SOURCE_AUDIO_LOCATIONS_CHANGED);
+		} else if (err == -ENOMEM) {
+			retry = true;
 		}
 	}
 #endif /* CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE */
@@ -1236,6 +1241,8 @@ static void notify_cb(struct bt_conn *conn, void *data)
 		err = available_contexts_notify(conn);
 		if (err == 0) {
 			atomic_clear_bit(client->flags, FLAG_AVAILABLE_AUDIO_CONTEXT_CHANGED);
+		} else if (err == -ENOMEM) {
+			retry = true;
 		}
 	}
 
@@ -1246,9 +1253,15 @@ static void notify_cb(struct bt_conn *conn, void *data)
 		err = supported_contexts_notify(conn);
 		if (err == 0) {
 			atomic_clear_bit(client->flags, FLAG_SUPPORTED_AUDIO_CONTEXT_CHANGED);
+		} else if (err == -ENOMEM) {
+			retry = true;
 		}
 	}
 #endif /* CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE */
+
+	if (retry) {
+		k_work_schedule(&deferred_nfy_work, K_USEC(BT_AUDIO_NOTIFY_RETRY_DELAY_US));
+	}
 }
 
 static void deferred_nfy_work_handler(struct k_work *work)
@@ -1286,7 +1299,7 @@ static void pacs_auth_pairing_complete(struct bt_conn *conn, bool bonded)
 			memcpy(&pacs.clients[i].addr, bt_conn_get_dst(conn), sizeof(bt_addr_le_t));
 
 			/* Send out all pending notifications */
-			k_work_submit(&deferred_nfy_work);
+			k_work_schedule(&deferred_nfy_work, K_NO_WAIT);
 			return;
 		}
 	}
@@ -1344,7 +1357,7 @@ static void pacs_security_changed(struct bt_conn *conn, bt_security_t level,
 				 *  It's enough that one flag is set, as the defer work will go
 				 * through all notifiable characteristics
 				 */
-				k_work_submit(&deferred_nfy_work);
+				k_work_schedule(&deferred_nfy_work, K_NO_WAIT);
 				return;
 			}
 		}
@@ -1472,12 +1485,12 @@ int bt_pacs_cap_register(enum bt_audio_dir dir, struct bt_pacs_cap *cap)
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SNK_NOTIFIABLE) && dir == BT_AUDIO_DIR_SINK) {
 		pacs_set_notify_bit(FLAG_SINK_PAC_CHANGED);
-		k_work_submit(&deferred_nfy_work);
+		k_work_schedule(&deferred_nfy_work, K_NO_WAIT);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SRC_NOTIFIABLE) && dir == BT_AUDIO_DIR_SOURCE) {
 		pacs_set_notify_bit(FLAG_SOURCE_PAC_CHANGED);
-		k_work_submit(&deferred_nfy_work);
+		k_work_schedule(&deferred_nfy_work, K_NO_WAIT);
 	}
 
 	return 0;
@@ -1507,13 +1520,13 @@ int bt_pacs_cap_unregister(enum bt_audio_dir dir, struct bt_pacs_cap *cap)
 #if defined(CONFIG_BT_PAC_SNK_NOTIFIABLE)
 	case BT_AUDIO_DIR_SINK:
 		pacs_set_notify_bit(FLAG_SINK_PAC_CHANGED);
-		k_work_submit(&deferred_nfy_work);
+		k_work_schedule(&deferred_nfy_work, K_NO_WAIT);
 		break;
 #endif /* CONFIG_BT_PAC_SNK_NOTIFIABLE) */
 #if defined(CONFIG_BT_PAC_SRC_NOTIFIABLE)
 	case BT_AUDIO_DIR_SOURCE:
 		pacs_set_notify_bit(FLAG_SOURCE_PAC_CHANGED);
-		k_work_submit(&deferred_nfy_work);
+		k_work_schedule(&deferred_nfy_work, K_NO_WAIT);
 		break;
 #endif /* CONFIG_BT_PAC_SRC_NOTIFIABLE */
 	default:
@@ -1621,7 +1634,7 @@ int bt_pacs_conn_set_available_contexts_for_conn(struct bt_conn *conn, enum bt_a
 
 	/* Send notification on encrypted link only */
 	if (info.security.level > BT_SECURITY_L1) {
-		k_work_submit(&deferred_nfy_work);
+		k_work_schedule(&deferred_nfy_work, K_NO_WAIT);
 	}
 
 	return 0;
