@@ -1,6 +1,6 @@
 # Copyright (C) 2024 BeagleBoard.org Foundation
 # Copyright (C) 2024 Dhruv Menon <dhruvmenon1104@gmail.com>
-
+#
 # SPDX-License-Identifier: Apache-2.0
 
 config I2C_OMAP
@@ -8,8 +8,13 @@ config I2C_OMAP
 	default y
 	depends on DT_HAS_TI_OMAP_I2C_ENABLED
 	select PINCTRL
+	select I2C_OMAP_INTERRUPT if I2C_TARGET
 	help
 	  Enable the I2C driver for TI OMAP SoCs.
+
+	  When CONFIG_I2C_TARGET is also enabled, the driver exposes I2C
+	  target (slave) register/unregister callbacks. Target mode requires
+	  interrupt-driven operation (CONFIG_I2C_OMAP_INTERRUPT).
 
 config I2C_OMAP_INTERRUPT
 	bool "Interrupt-driven transfers"
@@ -18,6 +23,7 @@ config I2C_OMAP_INTERRUPT
 	help
 	  Handle I2C events in the ISR and block the caller on a completion
 	  semaphore. When disabled, status is polled in thread context.
+	  Required for CONFIG_I2C_TARGET support on this driver.
 
 config I2C_OMAP_BUS_RECOVERY
 	bool "Bus recovery support"
