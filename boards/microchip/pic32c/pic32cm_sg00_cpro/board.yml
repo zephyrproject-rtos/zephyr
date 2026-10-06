@@ -7,3 +7,5 @@ board:
   vendor: microchip
   socs:
     - name: pic32cm5112sg00100
+      variants:
+        - name: mcuboot
