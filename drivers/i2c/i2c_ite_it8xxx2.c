@@ -1079,6 +1079,8 @@ static void i2c_it8xxx2_isr(const struct device *dev)
 {
 	struct i2c_it8xxx2_data *data = dev->data;
 	const struct i2c_it8xxx2_config *config = dev->config;
+	uint8_t *base = config->base;
+	uint8_t __unused read_unused;
 
 #ifdef CONFIG_I2C_IT8XXX2_FIFO_MODE
 	volatile uint8_t *reg_mstfctrl = config->reg_mstfctrl;
@@ -1086,12 +1088,22 @@ static void i2c_it8xxx2_isr(const struct device *dev)
 	/* If done doing work, wake up the task waiting for the transfer. */
 	if (config->fifo_enable && (*reg_mstfctrl & IT8XXX2_SMB_FFEN)) {
 		if (i2c_fifo_transaction(dev)) {
+			/*
+			 * Read back HOSTA to synchronize preceding SMBus register writes
+			 * before returning from the ISR.
+			 */
+			read_unused = IT8XXX2_SMB_HOSTA(base);
 			return;
 		}
 	} else
 #endif
 	{
 		if (i2c_pio_transaction(dev)) {
+			/*
+			 * Read back HOSTA to synchronize preceding SMBus register writes
+			 * before returning from the ISR.
+			 */
+			read_unused = IT8XXX2_SMB_HOSTA(base);
 			return;
 		}
 	}
