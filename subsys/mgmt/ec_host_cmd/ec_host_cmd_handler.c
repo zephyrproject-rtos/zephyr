@@ -367,13 +367,12 @@ static void ec_host_cmd_log_request(const uint8_t *rx_buf)
 	if (IS_ENABLED(CONFIG_EC_HOST_CMD_LOG_DBG_BUFFERS)) {
 		if (rx_header->data_len) {
 			const uint8_t *rx_data = rx_buf + RX_HEADER_SIZE;
-			static const char dbg_fmt[] = "HC 0x%04x.%d:";
-			/* Use sizeof because "%04x" needs 4 bytes for command id, and
-			 * %d needs 2 bytes for version, so no additional buffer is required.
+			/* Buffer size accounts for "%04x" (4 chars) and "%d" (up to 3 chars for
+			 * uint8_t 0..255).
 			 */
-			char dbg_raw[sizeof(dbg_fmt)];
+			char dbg_raw[sizeof("HC 0xXXXX.YYY:")];
 
-			snprintf(dbg_raw, sizeof(dbg_raw), dbg_fmt, rx_header->cmd_id,
+			snprintf(dbg_raw, sizeof(dbg_raw), "HC 0x%04x.%d:", rx_header->cmd_id,
 				 rx_header->cmd_ver);
 			LOG_HEXDUMP_DBG(rx_data, rx_header->data_len, dbg_raw);
 
