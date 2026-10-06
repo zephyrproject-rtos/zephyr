@@ -89,21 +89,55 @@ static void wifi_ncp_mgmt_ep_event(sl_cpc_ep_t *ep, sl_cpc_ep_event_type_t type,
 	}
 }
 
+/* Hand a received Ethernet frame to the network stack. The CPC buffer is
+ * given back to the endpoint whatever the outcome.
+ */
+static void wifi_ncp_data_recv(const struct device *dev, const sl_cpc_buf_t *buf)
+{
+	struct wifi_ncp_data *data = dev->data;
+	struct net_pkt *pkt;
+
+	pkt = net_pkt_rx_alloc_with_buffer(data->iface, buf->len, AF_UNSPEC, 0, K_NO_WAIT);
+	if (!pkt) {
+		LOG_DBG("%s: no packet buffer, dropping %u bytes", dev->name, buf->len);
+		return;
+	}
+
+	if (net_pkt_write(pkt, buf->ptr, buf->len) < 0) {
+		LOG_ERR("%s: packet write failed", dev->name);
+		net_pkt_unref(pkt);
+		return;
+	}
+
+	if (net_recv_data(data->iface, pkt) < 0) {
+		LOG_DBG("%s: packet rejected by the stack", dev->name);
+		net_pkt_unref(pkt);
+	}
+}
+
 static void wifi_ncp_data_ep_event(sl_cpc_ep_t *ep, sl_cpc_ep_event_type_t type,
 				   const sl_cpc_ep_event_t *event, void *arg)
 {
 	const struct device *dev = arg;
+	const struct wifi_ncp_config *cfg = dev->config;
+	struct wifi_ncp_data_tx_slot *tx;
 	int status;
 
 	switch (type) {
 	case SL_CPC_EP_EVENT_RECV:
-		LOG_DBG("%s: data: %u bytes received", dev->name, event->recv.buf->len);
+		wifi_ncp_data_recv(dev, event->recv.buf);
 		status = sl_cpc_ep_push_recv_buf(ep, event->recv.buf);
 		if (status) {
 			LOG_ERR("%s: data: buffer lost: %d", dev->name, status);
 		}
 		break;
 	case SL_CPC_EP_EVENT_SEND_DONE:
+		if (event->send_done.status) {
+			LOG_ERR("%s: data: send failed: %d",
+				dev->name, event->send_done.status);
+		}
+		tx = CONTAINER_OF(event->send_done.frame, struct wifi_ncp_data_tx_slot, frame);
+		k_mem_slab_free(cfg->data_tx_slab, tx);
 		break;
 	default:
 		wifi_ncp_ep_link_event(dev, ep, type, event);
@@ -185,12 +219,46 @@ static enum ethernet_hw_caps wifi_ncp_get_capabilities(const struct device *dev,
 	return 0;
 }
 
+/* The Ethernet frame is copied: CPC needs a contiguous, aligned payload that
+ * stays valid until the send-done event, while the packet is released by the
+ * caller on return.
+ */
 static int wifi_ncp_send(const struct device *dev, struct net_pkt *pkt)
 {
-	ARG_UNUSED(dev);
-	ARG_UNUSED(pkt);
+	const struct wifi_ncp_config *cfg = dev->config;
+	struct wifi_ncp_data *data = dev->data;
+	struct wifi_ncp_data_tx_slot *slot;
+	size_t len = net_pkt_get_len(pkt);
+	int status;
+	int ret;
 
-	return -ENETDOWN;
+	if (len > NET_ETH_MAX_FRAME_SIZE) {
+		return -EMSGSIZE;
+	}
+
+	ret = k_mem_slab_alloc(cfg->data_tx_slab, (void **)&slot, K_NO_WAIT);
+	if (ret < 0) {
+		LOG_DBG("%s: no TX slot", dev->name);
+		return -ENOMEM;
+	}
+
+	net_pkt_cursor_init(pkt);
+	ret = net_pkt_read(pkt, slot->data, len);
+	if (ret < 0) {
+		k_mem_slab_free(cfg->data_tx_slab, slot);
+		return ret;
+	}
+
+	sl_cpc_buf_init(&slot->buf, slot->data, len);
+	memset(&slot->frame, 0, sizeof(slot->frame));
+	status = sl_cpc_ep_send(&data->data_ep, &slot->buf, &slot->frame, NULL);
+	if (status) {
+		LOG_ERR("%s: send failed: %d", dev->name, status);
+		k_mem_slab_free(cfg->data_tx_slab, slot);
+		return -EIO;
+	}
+
+	return 0;
 }
 
 static uint32_t wifi_ncp_get_iface_caps(const struct device *dev, struct net_if *iface)
@@ -281,10 +349,14 @@ static const struct net_wifi_mgmt_offload wifi_ncp_api = {
 };
 
 #define WIFI_NCP_DEFINE(inst)                                                                      \
+	K_MEM_SLAB_DEFINE_STATIC(wifi_ncp_data_tx_slab##inst,                                      \
+				 sizeof(struct wifi_ncp_data_tx_slot),                             \
+				 CONFIG_WIFI_SILABS_NCP_DATA_TX_COUNT, SL_CPC_BUF_MIN_ALIGNMENT);  \
 	static struct wifi_ncp_data wifi_ncp_data##inst;                                           \
 	static const struct wifi_ncp_config wifi_ncp_config##inst = {                              \
 		.parent = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                     \
 		.mac = NET_ETH_MAC_DT_INST_CONFIG_INIT(inst),                                      \
+		.data_tx_slab = &wifi_ncp_data_tx_slab##inst,                                      \
 	};                                                                                         \
 	NET_DEVICE_DT_INST_DEFINE(inst, wifi_ncp_init, NULL, &wifi_ncp_data##inst,                 \
 				  &wifi_ncp_config##inst, CONFIG_WIFI_SILABS_NCP_INIT_PRIORITY,    \
