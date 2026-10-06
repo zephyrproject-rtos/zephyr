@@ -63,6 +63,8 @@ LOG_MODULE_REGISTER(CS40L26, CONFIG_HAPTICS_LOG_LEVEL);
 #define CS40L26_MBOX_PREVENT_HIBERNATION 0x02000003U
 #define CS40L26_MBOX_ALLOW_HIBERNATION   0x02000004U
 #define CS40L26_MBOX_PAUSE_PLAYBACK      0x05000000U
+#define CS40L26_MBOX_F0_EST              0x07000001U
+#define CS40L26_MBOX_REDC_EST            0x07000002U
 
 /* Wavetable commands */
 #define CS40L26_ROM_BANK_CMD 0x01800000
@@ -703,7 +705,7 @@ static int cs40l26_calibrate_f0(const struct device *const dev, uint32_t *const 
 	struct cs40l26_data *const data = dev->data;
 	int ret;
 
-	ret = cs40l26_write_mailbox(dev, CS40L26_F0_EST_START);
+	ret = cs40l26_write_mailbox(dev, CS40L26_MBOX_F0_EST);
 	if (ret < 0) {
 		return ret;
 	}
@@ -733,7 +735,7 @@ static int cs40l26_calibrate_redc(const struct device *const dev, uint32_t *cons
 	struct cs40l26_data *const data = dev->data;
 	int ret;
 
-	ret = cs40l26_write_mailbox(dev, CS40L26_REDC_EST_START);
+	ret = cs40l26_write_mailbox(dev, CS40L26_MBOX_REDC_EST);
 	if (ret < 0) {
 		return ret;
 	}
