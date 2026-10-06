@@ -9,6 +9,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/mgmt/ec_host_cmd/backend.h>
 #include <zephyr/mgmt/ec_host_cmd/ec_host_cmd.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/usb/usbd.h>
 #include <zephyr/ztest.h>
 
@@ -202,6 +203,32 @@ ZTEST(ec_host_cmd_usb, test_usb_valid_request_succeeds)
 
 	send_usb_host_cmd_request(EC_HOST_REQUEST_VERSION, CMD_TEST_ID, &req, sizeof(req));
 	complete_usb_in_transfers(EC_HOST_CMD_SUCCESS, &expected_resp, sizeof(expected_resp));
+	zassert_equal(mock_ep_out_enqueue_count, 2);
+	zassert_not_null(mock_ep_out_buf);
+}
+
+ZTEST(ec_host_cmd_usb, test_usb_short_header_triggers_reset)
+{
+	const size_t short_header_len = sizeof(struct ec_host_cmd_request_header) - 1;
+	struct net_buf *out_buf = mock_ep_out_buf;
+
+	zassert_not_null(out_buf, "EP OUT must be armed");
+	memset(out_buf->data, 0, short_header_len);
+	out_buf->len = short_header_len;
+	zassert_ok(test_c_data->api->request(test_c_data, out_buf, 0));
+
+	/* Wait for reset_work to execute and re-arm the OUT endpoint */
+	zassert_true(WAIT_FOR(mock_ep_out_enqueue_count == 2, 1000 * USEC_PER_MSEC, k_msleep(1)),
+		     "Timeout waiting for reset_work to re-arm EP OUT");
+
+	zassert_is_null(mock_ep_in_buf);
+	zassert_not_null(mock_ep_out_buf);
+}
+
+ZTEST(ec_host_cmd_usb, test_usb_exact_header_fail_truncated)
+{
+	send_usb_host_cmd_request(EC_HOST_REQUEST_VERSION, CMD_TEST_ID, NULL, 0);
+	complete_usb_in_transfers(EC_HOST_CMD_REQUEST_TRUNCATED, NULL, 0);
 	zassert_equal(mock_ep_out_enqueue_count, 2);
 	zassert_not_null(mock_ep_out_buf);
 }
