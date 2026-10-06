@@ -146,4 +146,21 @@ config PRECISION_PPS_OUTPUT_POLL_INTERVAL_MS
 	  at the cost of more work. This does not set the hardware pulse period.
 
 endif # PRECISION_PPS_OUTPUT
+
+config PRECISION_TIMING_SHELL
+	bool "Precision timing shell"
+	depends on SHELL
+	depends on MULTITHREADING
+	help
+	  Enable a runtime registry and shell commands for inspecting precision
+	  clocks and controlling scheduled clock outputs.
+
+config PRECISION_TIMING_SHELL_MAX_INSTANCES
+	int "Maximum number of precision timing shell instances"
+	default 4
+	range 1 16
+	depends on PRECISION_TIMING_SHELL
+	help
+	  Set the fixed capacity of the precision timing shell registry.
+
 endif # PRECISION_TIMING
