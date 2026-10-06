@@ -32,7 +32,7 @@ The data sending process is following:
 * The sender allocates one or more blocks from the pool.
   If there are not enough sequential blocks, a thread context waits using the timeout provided in the parameter that also includes K_FOREVER and K_NO_WAIT.
 * The allocated blocks are filled with data.
-  At the beginning of the first block there is a 32 bit message header with length, endpoint ID and own block index.
+  At the beginning of the first block there is a 32 bit message header with the data size, own block index and endpoint address.
   For the zero-copy case, this is done by the caller, otherwise, it is copied automatically.
   During this time other threads are not blocked in any way as long as there are enough free blocks for them.
   They can allocate, send data and receive data.
