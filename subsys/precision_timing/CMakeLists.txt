@@ -22,3 +22,9 @@ zephyr_library_sources_ifdef(CONFIG_PRECISION_CLOCK_OUTPUT
 zephyr_library_sources_ifdef(CONFIG_PRECISION_PPS_OUTPUT
   precision_pps_output.c
 )
+
+zephyr_library_sources_ifdef(CONFIG_PRECISION_TIMING_SHELL
+  precision_timing_shell.c
+)
+
+zephyr_linker_sources_ifdef(CONFIG_PRECISION_TIMING_SHELL SECTIONS precision_timing_shell.ld)
