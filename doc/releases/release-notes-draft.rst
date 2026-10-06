@@ -65,6 +65,13 @@ New APIs and options
 
 * Bluetooth
 
+  * Audio
+
+    * :c:func:`bt_pacs_get_location`
+    * :c:struct:`bt_pacs_cb`
+    * :c:func:`bt_pacs_register_cb`
+    * :c:func:`bt_pacs_unregister_cb`
+
   * Host
 
     * :c:func:`bt_addr_matches_irk`
