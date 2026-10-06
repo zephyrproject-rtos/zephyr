@@ -164,6 +164,37 @@ or runtime support. Output providers use the public
 :c:struct:`precision_clock_output_status` directly; the PTP adapter needs neither
 duplicate structures nor member-by-member conversions.
 
+The STM32 Ethernet provider exposes FlexPPS channel zero when
+:kconfig:option:`CONFIG_PTP_CLOCK_STM32_HAL_OUTPUT` is enabled and supported by
+the MAC. Its resolution is derived from
+:kconfig:option:`CONFIG_ETH_STM32_HAL_PTP_CLOCK_SRC_HZ`, and the first edge must
+meet the hardware alignment, lead-time, and 32-bit seconds-register limits.
+
+For the STM32 HAL provider, select output pins with ``pinctrl-0`` and
+``pinctrl-names = "default"`` on the ``ptp_clock`` devicetree node, not the
+Ethernet MAC node. The PTP driver applies this optional state during clock
+initialization, independently of scheduled-output support, and propagates
+pinctrl errors as initialization failures. A clock without pinctrl still
+supports timestamping. Disabling the PTP node prevents that driver from
+configuring its pins; the MAC's RMII pin configuration is unaffected.
+
+STM32H562/H563/H573 erratum ES0565 section 2.22.9 documents incorrect
+FlexPPS pulse-train intervals in fine timestamp mode. On those devices the
+provider keeps fine clock correction and emits absolute single pulses,
+rearming each next pulse on a dedicated workqueue after a monotonic
+falling-edge guard. It therefore accepts only a one-second period and reports
+a pulse-width range, capped at 500 milliseconds, that reserves enough time to
+rearm safely across the configured clock-rate envelope.
+
+This single-pulse approach differs from ST's documented coarse-correction
+workaround and has been measured on STM32H563.
+
+STM32H742/H743/H750/H753 are affected by ES0392 section 2.26.19 and cannot
+enable scheduled output until a workaround is validated on those devices.
+Their PTP clocks retain fine timestamp correction; the output feature does
+not change the shared PHC to coarse correction. Other H7 variants are not
+covered by this device exclusion.
+
 Autonomous PPS output
 *********************
 
