@@ -253,6 +253,19 @@ static int dwmac_ptp_init(const struct device *dev)
 
 	sys_write32(ctrl, base + DWMAC_PTP_CTRL_REG);
 
+#if defined(DWMAC_PTP_PPSCR_REG)
+	/*
+	 * PPSCTRL selects bit (30 - PPSCTRL) of the sub-second field as the PPS
+	 * output. In digital rollover that field wraps at 10^9 - 1, so bit 30
+	 * never toggles and the reset value of 0 leaves the output stuck low.
+	 * Select bit 29 instead, which gives one pulse per second.
+	 */
+	if (IS_ENABLED(CONFIG_PTP_CLOCK_DWC_MAC_DIGITAL_ROLLOVER)) {
+		sys_write32(FIELD_PREP(DWMAC_PTP_PPSCR_PPSCTRL, 1),
+			base + DWMAC_PTP_PPSCR_REG);
+	}
+#endif
+
 	return 0;
 }
 
