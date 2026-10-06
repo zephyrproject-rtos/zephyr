@@ -5,7 +5,10 @@ description: Silabs Siwx91x RTC (Real-Time Counter)
 
 compatible: "silabs,siwx91x-rtc"
 
-include: rtc.yaml
+include:
+  - rtc.yaml
+  - rtc-device.yaml
+  - wuc-device.yaml
 
 properties:
   reg:
