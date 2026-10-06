@@ -74,3 +74,35 @@
 		status = "okay";
 	};
 };
+
+/* MCU_0_R5_0 (non-secure): host 30, secure-proxy threads 18/19 */
+&dmsc {
+	ti,host-id = <30>;
+	mboxes = <&secure_proxy_main 18>, <&secure_proxy_main 19>;
+};
+
+/*
+ * MCU secure-proxy response has no direct VIM wire in the TISCI table; use the
+ * conventional INTAGGR-backed VIM line 64 (same convention as AM64x R5).
+ */
+&secure_proxy_main {
+	interrupt-names = "rx_18";
+	interrupts = <0 64 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+/*
+ * MAIN GPIOMUX INTROUTER outputs wired to MCU R5F VIM:
+ *   out 34..35 -> VIM 32..33
+ */
+&main_gpio_intr {
+	ti,interrupt-ranges = <34 32 2>;
+};
+
+/*
+ * WKUP_MCU GPIOMUX INTROUTER outputs wired to MCU R5F VIM:
+ *   out 4..7 -> VIM 104..107
+ */
+&mcu_gpio_intr {
+	ti,interrupt-ranges = <4 104 4>;
+};

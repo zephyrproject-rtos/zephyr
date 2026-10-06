@@ -74,3 +74,37 @@
 		status = "okay";
 	};
 };
+
+/* MAIN_0_R5_1 (non-secure): host 38, secure-proxy threads 6/7 */
+&dmsc {
+	ti,host-id = <38>;
+	mboxes = <&secure_proxy_main 6>, <&secure_proxy_main 7>;
+};
+
+&secure_proxy_main {
+	interrupt-names = "rx_6";
+	interrupts = <0 65 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+/*
+ * MAIN GPIOMUX INTROUTER outputs wired to MAIN R5F VIM:
+ *   out 16..19 -> VIM 104..107
+ *   out 20..21 -> VIM 56..57
+ *   out 32..33 -> VIM 58..59
+ */
+&main_gpio_intr {
+	ti,interrupt-ranges = <16 104 4>,
+			      <20 56 2>,
+			      <32 58 2>;
+};
+
+/*
+ * WKUP_MCU GPIOMUX INTROUTER outputs wired to MAIN R5F VIM:
+ *   out 12..13 -> VIM 32..33
+ *   out 14..15 -> VIM 60..61
+ */
+&mcu_gpio_intr {
+	ti,interrupt-ranges = <12 32 2>,
+			      <14 60 2>;
+};

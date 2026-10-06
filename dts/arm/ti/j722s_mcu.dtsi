@@ -13,6 +13,20 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	mcu_gpio_intr: interrupt-controller@4210000 {
+		compatible = "ti,sci-intr";
+		reg = <0x4210000 0x200>;
+		ti,intr-trigger-type = <1>;
+		interrupt-controller;
+		#interrupt-cells = <1>;
+		ti,sci = <&dmsc>;
+		ti,sci-dev-id = <5>;
+		/* R5-specific ti,interrupt-ranges set in main_r5 / mcu_r5 dtsi */
+		ti,interrupt-ranges = <4 104 4>;
+		interrupt-parent = <&vim>;
+		status = "disabled";
+	};
+
 	mcu_gpio0: gpio@4201010 {
 		compatible = "ti,davinci-gpio";
 		reg = <0x4201010 0x28>;
