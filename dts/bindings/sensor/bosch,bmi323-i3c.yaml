@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: BMI323 motion tracking device accessed through I3C bus
+
+compatible: "bosch,bmi323"
+
+include: ["i3c-device.yaml", "bosch,bmi323.yaml"]
