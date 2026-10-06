@@ -16,6 +16,14 @@ LOG_MODULE_REGISTER(wifi_credentials_backend, CONFIG_WIFI_CREDENTIALS_LOG_LEVEL)
 BUILD_ASSERT(CONFIG_WIFI_CREDENTIALS_MAX_ENTRIES <= ZEPHYR_PSA_WIFI_CREDENTIALS_KEY_ID_RANGE_SIZE,
 	     "Wi-Fi credentials management PSA key ID range exceeds officially allocated range.");
 
+#if defined(CONFIG_SECURE_STORAGE)
+/* Size of the metadata stored together with a persistent key */
+#define PERSISTENT_KEY_METADATA_LEN 36
+
+BUILD_ASSERT(ENTRY_MAX_LEN + PERSISTENT_KEY_METADATA_LEN <= CONFIG_SECURE_STORAGE_ITS_MAX_DATA_SIZE,
+	     "CONFIG_SECURE_STORAGE_ITS_MAX_DATA_SIZE is too small for a Wi-Fi credentials entry.");
+#endif
+
 int wifi_credentials_backend_init(void)
 {
 	psa_status_t ret;
@@ -60,6 +68,10 @@ int wifi_credentials_store_entry(size_t idx, const void *buf, size_t buf_len)
 	if (ret == PSA_ERROR_ALREADY_EXISTS) {
 		LOG_ERR("psa_import_key failed, duplicate key: %d", ret);
 		return -EEXIST;
+	} else if (ret == PSA_ERROR_NOT_SUPPORTED) {
+		LOG_ERR("psa_import_key failed, err: %d. The PSA Crypto API provider "
+			"must support persistent keys of %zu bytes", ret, buf_len);
+		return -ENOTSUP;
 	} else if (ret != PSA_SUCCESS) {
 		LOG_ERR("psa_import_key failed, err: %d", ret);
 		return -EFAULT;
