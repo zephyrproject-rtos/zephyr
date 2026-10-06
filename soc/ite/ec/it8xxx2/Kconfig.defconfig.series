@@ -25,7 +25,7 @@ config VCMP_IT8XXX2_INIT_PRIORITY
 
 config NUM_IRQS
 	default 221 if SOC_IT82000BW
-	default 185
+	default 186
 
 config DYNAMIC_INTERRUPTS
 	default y
