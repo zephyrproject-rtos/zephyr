@@ -533,14 +533,32 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 			 * in non-overlapping timeline when auxiliary and
 			 * Periodic Advertising have similar event interval.
 			 */
-			ticks_anchor_sync = ticker_ticks_now_get() +
-				HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
+			ticks_anchor_sync = ticker_ticks_now_get();
 
 #if defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
 			err = ull_sched_adv_aux_sync_free_anchor_get(sync->ull.ticks_slot,
 								     &ticks_anchor_sync);
 			if (!err) {
-				ticks_anchor_sync += HAL_TICKER_US_TO_TICKS(
+				const struct ll_adv_aux_set *aux_set;
+				const struct pdu_adv *pdu;
+				uint32_t ticks_slot;
+				uint32_t ticks_diff;
+				uint32_t slot_us;
+				uint8_t pdu_len;
+
+				aux_set = HDR_LLL2ULL(lll_aux);
+
+				pdu = (const struct pdu_adv *)lll_aux->data.pdu[sec_idx];
+				pdu_len = pdu->len - pdu->adv_ext_ind.ext_hdr_len -
+					  PDU_AC_EXT_HEADER_SIZE_MIN + PDU_AC_EXT_HEADER_SIZE_MAX;
+				slot_us = ull_adv_aux_time_get(aux_set, pdu_len, 0U);
+
+				ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(slot_us);
+				ticks_diff = ticker_ticks_diff_get(ticks_slot,
+								   aux_set->ull.ticks_slot);
+
+				ticks_anchor_sync += ticks_diff;
+				ticks_anchor_sync += HAL_TICKER_US_TO_TICKS_CEIL(
 					MAX(EVENT_MAFS_US,
 					    EVENT_OVERHEAD_START_US) -
 					EVENT_OVERHEAD_START_US +
@@ -554,8 +572,7 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 			 */
 			lll_aux = adv->lll.aux;
 			aux = HDR_LLL2ULL(lll_aux);
-			ticks_anchor_aux = ticker_ticks_now_get() +
-				HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
+			ticks_anchor_aux = ticker_ticks_now_get();
 			ticks_slot_overhead_aux =
 				ull_adv_aux_evt_init(aux, &ticks_anchor_aux);
 
@@ -563,7 +580,7 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 	(CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET == 0)
 			ticks_anchor_sync = ticks_anchor_aux +
 				ticks_slot_overhead_aux + aux->ull.ticks_slot +
-				HAL_TICKER_US_TO_TICKS(
+				HAL_TICKER_US_TO_TICKS_CEIL(
 					MAX(EVENT_MAFS_US,
 					    EVENT_OVERHEAD_START_US) -
 					EVENT_OVERHEAD_START_US +
@@ -594,10 +611,11 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 			/* Keep aux interval equal or higher than primary PDU
 			 * interval.
 			 */
-			aux->interval = adv->interval +
-					(HAL_TICKER_TICKS_TO_US(
-						ULL_ADV_RANDOM_DELAY) /
-						ADV_INT_UNIT_US);
+			aux->interval =	DIV_ROUND_UP(
+				ROUND_DOWN((((uint64_t)adv->interval * ADV_INT_UNIT_US) +
+					    HAL_TICKER_TICKS_TO_US(ULL_ADV_RANDOM_DELAY)),
+					   HAL_TICKER_TICKS_TO_US(ULL_ADV_RANDOM_DELAY)),
+				PERIODIC_INT_UNIT_US);
 
 			ret = ull_adv_aux_start(aux, ticks_anchor_aux,
 						ticks_slot_overhead_aux);

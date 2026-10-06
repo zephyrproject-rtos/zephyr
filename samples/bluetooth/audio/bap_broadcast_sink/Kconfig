@@ -29,6 +29,12 @@ config SCAN_DELAY
 	  Time to advertise connectable for a Broadcast Assistant to connect
 	  before starting scanning for Broadcast Sources.
 
+config SCAN_BACKGROUND
+	bool "Keep background scanning"
+	depends on SCAN_SELF
+	help
+	  Keep scanning in the background.
+
 config TARGET_BROADCAST_NAME
 	string "Target Broadcast Device Name"
 	default ""
@@ -49,16 +55,27 @@ config ENABLE_LC3
 	# By default let's enable it in the platforms we know are capable of supporting it
 	default y
 	depends on CPU_HAS_FPU && \
-		(ARCH_POSIX || SOC_COMPATIBLE_NRF52X || SOC_COMPATIBLE_NRF5340_CPUAPP || \
-			SOC_MIMXRT1062 || SOC_SF32LB525UC6)
+		   (ARCH_POSIX || \
+		    SOC_COMPATIBLE_NRF52X || \
+		    SOC_COMPATIBLE_NRF5340_CPUAPP || \
+		    SOC_COMPATIBLE_NRF54LX || \
+		    SOC_MIMXRT1062 || \
+		    SOC_SERIES_NRF54H || \
+		    SOC_SF32LB525UC6)
 	select LIBLC3
 	select FPU
+
+config STEREO_AUDIO_OUTPUT
+	bool
+	help
+	  Decoded audio is resampled to 48 kHz and queued as interleaved stereo for the output.
 
 config USE_USB_AUDIO_OUTPUT
 	bool "Use USB Audio as output"
 	depends on ENABLE_LC3
 	select USB_DEVICE_STACK_NEXT
 	select USBD_AUDIO2_CLASS
+	select STEREO_AUDIO_OUTPUT
 	help
 	  Enables USB audio as output as a USB peripheral. This does not support providing USB
 	  audio to e.g. speakers that are also USB peripherals, but can be connected to e.g. a
@@ -71,6 +88,22 @@ config USE_CODEC_AUDIO_OUTPUT
 	help
 	  Enables codec audio as output. This uses the hardware audio codec for audio playback.
 	  Supports audio output through the codec driver.
+
+config USE_I2S_CODEC_AUDIO_OUTPUT
+	bool "Use a CS47L63 codec over I2S as output"
+	depends on ENABLE_LC3
+	depends on !USE_USB_AUDIO_OUTPUT && !USE_CODEC_AUDIO_OUTPUT
+	depends on DT_HAS_CIRRUS_CS47L63_ENABLED
+	depends on $(dt_alias_enabled,codec0) && $(dt_alias_enabled,i2s-codec-tx)
+	select I2S
+	select AUDIO
+	select AUDIO_CODEC
+	select INPUT
+	select STEREO_AUDIO_OUTPUT
+	help
+	  Plays the decoded audio over I2S, from the i2s-codec-tx alias, through the codec0 CS47L63
+	  as I2S target. The CS47L63 headphone output is mono, so left and right are mixed to
+	  (L+R)/2. The volume up, volume down and mute input keys control the codec output.
 
 config USE_SPECIFIC_BROADCAST_CHANNEL
 	bool "Use specific Broadcast Channel Audio Location"

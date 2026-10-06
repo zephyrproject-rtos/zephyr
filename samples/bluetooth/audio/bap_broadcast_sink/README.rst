@@ -53,6 +53,22 @@ In that case you can pair this application core image with the
 :zephyr:code-sample:`bluetooth_hci_ipc` sample
 :zephyr_file:`samples/bluetooth/hci_ipc/extra-iso-bt_ll_sw_split.conf` extra configuration.
 
+Building for an nRF5340 Audio DK
+--------------------------------
+
+On the :zephyr:board:`nrf5340_audio_dk` the sample uses USB Audio as output by default. With
+``FILE_SUFFIX=i2s_codec`` it plays the received audio on the headphone output through the on-board
+CS47L63 codec instead (:kconfig:option:`CONFIG_USE_I2S_CODEC_AUDIO_OUTPUT`). Both channels of a
+stereo broadcast are mixed to the mono headphone output. Buttons 1 and 2 lower and raise the
+volume, button 3 mutes and unmutes.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/audio/bap_broadcast_sink/
+   :board: nrf5340_audio_dk/nrf5340/cpuapp
+   :goals: build
+   :west-args: --sysbuild
+   :gen-args: -DFILE_SUFFIX=i2s_codec
+
 Building for a simulated nrf5340bsim
 ------------------------------------
 
