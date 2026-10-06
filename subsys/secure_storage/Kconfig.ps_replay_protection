@@ -1,0 +1,46 @@
+# Copyright (c) 2026 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+choice SECURE_STORAGE_PS_REPLAY_PROTECTION_IMPLEMENTATION
+	prompt "Protected Storage (PS) replay protection implementation"
+	default SECURE_STORAGE_PS_REPLAY_PROTECTION_RANDOM
+
+config SECURE_STORAGE_PS_REPLAY_PROTECTION_RANDOM
+	bool "Random value"
+	select PSA_CRYPTO
+	help
+	  Generate a new random value with psa_generate_random() each time the
+	  entry is written. Its size is set by
+	  CONFIG_SECURE_STORAGE_PS_REPLAY_PROTECTION_SIZE (4 bytes by default).
+
+config SECURE_STORAGE_PS_REPLAY_PROTECTION_COUNTER
+	bool "Counter"
+	select PSA_CRYPTO
+	help
+	  Pick a random initial value and increment it by 1 each time the entry
+	  is overwritten. The counter has a length of
+	  CONFIG_SECURE_STORAGE_PS_REPLAY_PROTECTION_SIZE bytes and it's stored
+	  in big endian format.
+
+config SECURE_STORAGE_PS_REPLAY_PROTECTION_CUSTOM
+	bool "Use a custom solution for replay protection"
+	help
+	  Implement the secure_storage_ps_get_replay_protection() function
+	  declared in <zephyr/secure_storage/ps/replay_protection.h>
+	  and set CONFIG_SECURE_STORAGE_PS_REPLAY_PROTECTION_SIZE appropriately.
+
+endchoice # SECURE_STORAGE_PS_REPLAY_PROTECTION_IMPLEMENTATION
+
+config SECURE_STORAGE_PS_REPLAY_PROTECTION_SIZE
+	int "Size of replay protection data stored in ITS"
+	range 1 SECURE_STORAGE_ITS_MAX_DATA_SIZE
+	default 4 if SECURE_STORAGE_PS_REPLAY_PROTECTION_RANDOM || \
+		     SECURE_STORAGE_PS_REPLAY_PROTECTION_COUNTER
+	help
+	  Size of the replay protection value of each PS entry. The value is
+	  stored in ITS, together with the entry's create flags, and passed to
+	  the PS transform module, which binds it to the data stored in PS.
+	  Note: as the create flags take one byte, the actual maximum is
+	        CONFIG_SECURE_STORAGE_ITS_MAX_DATA_SIZE - 1. Kconfig cannot
+	        express this, so the upper bound of the range is one byte too
+	        large and a build-time assertion enforces the exact limit.
