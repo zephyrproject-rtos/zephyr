@@ -4,12 +4,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SPI_XLNX_ZYNQMP_GQSPI
-	bool "Xilinx ZynqMP GQSPI driver"
+	bool "AMD Xilinx ZynqMP/Versal GQSPI driver"
 	default y
-	depends on DT_HAS_XLNX_ZYNQMP_QSPI_1_0_ENABLED
+	depends on DT_HAS_XLNX_ZYNQMP_QSPI_1_0_ENABLED || DT_HAS_XLNX_VERSAL_QSPI_1_0_ENABLED
 	select EVENTS
 	help
-	  Enable Xilinx ZynqMP Generic Quad SPI driver.
+	  Enable AMD Xilinx ZynqMP and Versal Generic Quad SPI driver.
 	  This is normally used with QSPI flash devices but can also be used
 	  with other SPI devices. Single, dual, and quad line transfers are
 	  supported when SPI_EXTENDED_MODES is enabled.
