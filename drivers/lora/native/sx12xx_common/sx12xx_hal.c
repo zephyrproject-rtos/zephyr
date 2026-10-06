@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2026 Carlo Caione <ccaione@baylibre.com>
+ * Copyright (c) 2026 Giuseppe Fabiano <gfabiano40@gmail.com>
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,12 +10,10 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/byteorder.h>
 
-#include "sx126x.h"
+#include "sx12xx_hal.h"
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(sx126x_hal_common, CONFIG_LORA_LOG_LEVEL);
-
-#define SX126X_BUSY_DEFAULT_TIMEOUT 1000
+LOG_MODULE_REGISTER(sx12xx_hal, CONFIG_LORA_LOG_LEVEL);
 
 static int spi_transfer(const struct spi_dt_spec *spi,
 			const uint8_t *hdr, size_t hdr_len,
@@ -39,9 +38,11 @@ static int spi_transfer(const struct spi_dt_spec *spi,
 	return spi_transceive_dt(spi, &tx_set, read ? &rx_set : NULL);
 }
 
-int sx126x_hal_wait_busy(const struct device *dev, uint32_t timeout_ms)
+int sx12xx_hal_wait_busy(const struct device *dev, uint32_t timeout_ms)
 {
-	if (!WAIT_FOR(!sx126x_hal_is_busy(dev),
+	const struct sx12xx_hal_config *config = dev->config;
+
+	if (!WAIT_FOR(!config->is_busy(dev),
 		      timeout_ms * 1000,
 		      k_msleep(1))) {
 		LOG_WRN("Busy timeout after %u ms", timeout_ms);
@@ -51,18 +52,9 @@ int sx126x_hal_wait_busy(const struct device *dev, uint32_t timeout_ms)
 	return 0;
 }
 
-void sx126x_hal_set_antenna_enable(const struct device *dev, bool enable)
+void sx12xx_hal_set_rf_switch(const struct device *dev, bool enable, bool tx)
 {
-	const struct sx126x_hal_config *config = dev->config;
-
-	if (config->antenna_enable.port != NULL) {
-		gpio_pin_set_dt(&config->antenna_enable, enable);
-	}
-}
-
-void sx126x_hal_set_rf_switch(const struct device *dev, bool enable, bool tx)
-{
-	const struct sx126x_hal_config *config = dev->config;
+	const struct sx12xx_hal_config *config = dev->config;
 
 	if (config->tx_enable.port != NULL) {
 		gpio_pin_set_dt(&config->tx_enable, enable && tx);
@@ -73,7 +65,7 @@ void sx126x_hal_set_rf_switch(const struct device *dev, bool enable, bool tx)
 	}
 }
 
-int sx126x_hal_configure_gpio(const struct gpio_dt_spec *gpio,
+int sx12xx_hal_configure_gpio(const struct gpio_dt_spec *gpio,
 			      gpio_flags_t flags, const char *name)
 {
 	int ret;
@@ -96,10 +88,10 @@ int sx126x_hal_configure_gpio(const struct gpio_dt_spec *gpio,
 	return 0;
 }
 
-int sx126x_hal_wakeup(const struct device *dev)
+int sx12xx_hal_wakeup(const struct device *dev)
 {
-	const struct sx126x_hal_config *config = dev->config;
-	uint8_t buf[2] = { SX126X_CMD_GET_STATUS, 0x00 };
+	const struct sx12xx_hal_config *config = dev->config;
+	uint8_t buf[2] = { SX12XX_CMD_GET_STATUS, 0x00 };
 	struct spi_buf tx_buf = {
 		.buf = buf,
 		.len = sizeof(buf),
@@ -122,17 +114,17 @@ int sx126x_hal_wakeup(const struct device *dev)
 		return ret;
 	}
 
-	return sx126x_hal_wait_busy(dev, SX126X_BUSY_DEFAULT_TIMEOUT);
+	return sx12xx_hal_wait_busy(dev, SX12XX_BUSY_DEFAULT_TIMEOUT);
 }
 
-int sx126x_hal_write_cmd(const struct device *dev, uint8_t opcode,
+int sx12xx_hal_write_cmd(const struct device *dev, uint8_t opcode,
 			 const uint8_t *data, size_t len)
 {
-	const struct sx126x_hal_config *config = dev->config;
+	const struct sx12xx_hal_config *config = dev->config;
 	uint8_t hdr[1] = { opcode };
 	int ret;
 
-	ret = sx126x_hal_wait_busy(dev, SX126X_BUSY_DEFAULT_TIMEOUT);
+	ret = sx12xx_hal_wait_busy(dev, SX12XX_BUSY_DEFAULT_TIMEOUT);
 	if (ret < 0) {
 		return ret;
 	}
@@ -143,8 +135,8 @@ int sx126x_hal_write_cmd(const struct device *dev, uint8_t opcode,
 		return ret;
 	}
 
-	if (opcode != SX126X_CMD_SET_SLEEP) {
-		ret = sx126x_hal_wait_busy(dev, SX126X_BUSY_DEFAULT_TIMEOUT);
+	if (opcode != SX12XX_CMD_SET_SLEEP) {
+		ret = sx12xx_hal_wait_busy(dev, SX12XX_BUSY_DEFAULT_TIMEOUT);
 	} else {
 		/*
 		 * The chip needs time to fully enter sleep mode before the
@@ -156,14 +148,14 @@ int sx126x_hal_write_cmd(const struct device *dev, uint8_t opcode,
 	return ret;
 }
 
-int sx126x_hal_read_cmd(const struct device *dev, uint8_t opcode,
+int sx12xx_hal_read_cmd(const struct device *dev, uint8_t opcode,
 			uint8_t *data, size_t len)
 {
-	const struct sx126x_hal_config *config = dev->config;
+	const struct sx12xx_hal_config *config = dev->config;
 	uint8_t hdr[2] = { opcode, 0x00 };
 	int ret;
 
-	ret = sx126x_hal_wait_busy(dev, SX126X_BUSY_DEFAULT_TIMEOUT);
+	ret = sx12xx_hal_wait_busy(dev, SX12XX_BUSY_DEFAULT_TIMEOUT);
 	if (ret < 0) {
 		return ret;
 	}
@@ -177,19 +169,19 @@ int sx126x_hal_read_cmd(const struct device *dev, uint8_t opcode,
 	return 0;
 }
 
-int sx126x_hal_write_regs(const struct device *dev, uint16_t address,
+int sx12xx_hal_write_regs(const struct device *dev, uint16_t address,
 			  const uint8_t *data, size_t len)
 {
-	const struct sx126x_hal_config *config = dev->config;
+	const struct sx12xx_hal_config *config = dev->config;
 	uint8_t hdr[3];
 	int ret;
 
-	ret = sx126x_hal_wait_busy(dev, SX126X_BUSY_DEFAULT_TIMEOUT);
+	ret = sx12xx_hal_wait_busy(dev, SX12XX_BUSY_DEFAULT_TIMEOUT);
 	if (ret < 0) {
 		return ret;
 	}
 
-	hdr[0] = SX126X_CMD_WRITE_REGISTER;
+	hdr[0] = config->opcodes->write_register;
 	sys_put_be16(address, &hdr[1]);
 
 	ret = spi_transfer(&config->spi, hdr, sizeof(hdr), (uint8_t *)data, len, false);
@@ -198,22 +190,22 @@ int sx126x_hal_write_regs(const struct device *dev, uint16_t address,
 		return ret;
 	}
 
-	return sx126x_hal_wait_busy(dev, SX126X_BUSY_DEFAULT_TIMEOUT);
+	return sx12xx_hal_wait_busy(dev, SX12XX_BUSY_DEFAULT_TIMEOUT);
 }
 
-int sx126x_hal_read_regs(const struct device *dev, uint16_t address,
+int sx12xx_hal_read_regs(const struct device *dev, uint16_t address,
 			 uint8_t *data, size_t len)
 {
-	const struct sx126x_hal_config *config = dev->config;
+	const struct sx12xx_hal_config *config = dev->config;
 	uint8_t hdr[4];
 	int ret;
 
-	ret = sx126x_hal_wait_busy(dev, SX126X_BUSY_DEFAULT_TIMEOUT);
+	ret = sx12xx_hal_wait_busy(dev, SX12XX_BUSY_DEFAULT_TIMEOUT);
 	if (ret < 0) {
 		return ret;
 	}
 
-	hdr[0] = SX126X_CMD_READ_REGISTER;
+	hdr[0] = config->opcodes->read_register;
 	sys_put_be16(address, &hdr[1]);
 	hdr[3] = 0x00;
 
@@ -226,14 +218,14 @@ int sx126x_hal_read_regs(const struct device *dev, uint16_t address,
 	return 0;
 }
 
-int sx126x_hal_write_buffer(const struct device *dev, uint8_t offset,
+int sx12xx_hal_write_buffer(const struct device *dev, uint8_t offset,
 			    const uint8_t *data, size_t len)
 {
-	const struct sx126x_hal_config *config = dev->config;
-	uint8_t hdr[2] = { SX126X_CMD_WRITE_BUFFER, offset };
+	const struct sx12xx_hal_config *config = dev->config;
+	uint8_t hdr[2] = { config->opcodes->write_buffer, offset };
 	int ret;
 
-	ret = sx126x_hal_wait_busy(dev, SX126X_BUSY_DEFAULT_TIMEOUT);
+	ret = sx12xx_hal_wait_busy(dev, SX12XX_BUSY_DEFAULT_TIMEOUT);
 	if (ret < 0) {
 		return ret;
 	}
@@ -244,17 +236,17 @@ int sx126x_hal_write_buffer(const struct device *dev, uint8_t offset,
 		return ret;
 	}
 
-	return sx126x_hal_wait_busy(dev, SX126X_BUSY_DEFAULT_TIMEOUT);
+	return sx12xx_hal_wait_busy(dev, SX12XX_BUSY_DEFAULT_TIMEOUT);
 }
 
-int sx126x_hal_read_buffer(const struct device *dev, uint8_t offset,
+int sx12xx_hal_read_buffer(const struct device *dev, uint8_t offset,
 			   uint8_t *data, size_t len)
 {
-	const struct sx126x_hal_config *config = dev->config;
-	uint8_t hdr[3] = { SX126X_CMD_READ_BUFFER, offset, 0x00 };
+	const struct sx12xx_hal_config *config = dev->config;
+	uint8_t hdr[3] = { config->opcodes->read_buffer, offset, 0x00 };
 	int ret;
 
-	ret = sx126x_hal_wait_busy(dev, SX126X_BUSY_DEFAULT_TIMEOUT);
+	ret = sx12xx_hal_wait_busy(dev, SX12XX_BUSY_DEFAULT_TIMEOUT);
 	if (ret < 0) {
 		return ret;
 	}
