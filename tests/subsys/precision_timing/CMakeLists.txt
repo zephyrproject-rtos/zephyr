@@ -10,4 +10,5 @@ project(precision_timing)
 target_sources(app PRIVATE
   src/clock_output.c
   src/main.c
+  src/ptp_clock_output.c
 )
