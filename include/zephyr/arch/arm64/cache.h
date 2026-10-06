@@ -22,8 +22,6 @@ extern "C" {
 #define K_CACHE_INVD		BIT(1)
 #define K_CACHE_WB_INVD		(K_CACHE_WB | K_CACHE_INVD)
 
-#if defined(CONFIG_DCACHE)
-
 #define	CTR_EL0_DMINLINE_SHIFT		16
 #define	CTR_EL0_DMINLINE_MASK		BIT_MASK(4)
 #define	CTR_EL0_CWG_SHIFT		24
@@ -273,8 +271,6 @@ static ALWAYS_INLINE void arch_dcache_disable(void)
 {
 	/* nothing */
 }
-
-#endif /* CONFIG_DCACHE */
 
 #if defined(CONFIG_ICACHE)
 
