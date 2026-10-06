@@ -114,6 +114,9 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 				 */
 				region_alloc = ROUND_UP(region_alloc, LLEXT_PMP_GRANULARITY);
 				region_align = MAX(region_align, LLEXT_PMP_GRANULARITY);
+			} else if (IS_ENABLED(CONFIG_XTENSA_MPU)) {
+				region_alloc = ROUND_UP(region_alloc, LLEXT_PAGE_SIZE);
+				region_align = MAX(region_align, LLEXT_PAGE_SIZE);
 			} else {
 				LOG_ERR("region %d: no memory protection alignment "
 					"rule for this architecture", mem_idx);
