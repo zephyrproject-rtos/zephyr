@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: 2026 Yousef Kitaneh
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_OPENTITAN
+	bool "lowRISC OpenTitan GPIO driver"
+	default y
+	depends on DT_HAS_LOWRISC_OPENTITAN_GPIO_ENABLED
+	help
+	  Enable the GPIO driver for the lowRISC OpenTitan GPIO controller.
