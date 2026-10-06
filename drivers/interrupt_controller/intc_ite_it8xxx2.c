@@ -102,7 +102,7 @@ void ite_intc_isr_clear(unsigned int irq)
 	uint32_t g, i;
 	volatile uint8_t *isr;
 
-	if (irq > CONFIG_NUM_IRQS) {
+	if (irq >= CONFIG_NUM_IRQS) {
 		return;
 	}
 	g = irq / MAX_REGISR_IRQ_NUM;
@@ -117,7 +117,7 @@ void __soc_ram_code ite_intc_irq_enable(unsigned int irq)
 	volatile uint8_t *en;
 	volatile uint8_t _ier __unused;
 
-	if (irq > CONFIG_NUM_IRQS) {
+	if (irq >= CONFIG_NUM_IRQS) {
 		return;
 	}
 	g = irq / MAX_REGISR_IRQ_NUM;
@@ -142,7 +142,7 @@ void __soc_ram_code ite_intc_irq_disable(unsigned int irq)
 	volatile uint8_t *en;
 	volatile uint8_t _ier __unused;
 
-	if (irq > CONFIG_NUM_IRQS) {
+	if (irq >= CONFIG_NUM_IRQS) {
 		return;
 	}
 	g = irq / MAX_REGISR_IRQ_NUM;
@@ -166,7 +166,7 @@ void ite_intc_irq_polarity_set(unsigned int irq, unsigned int flags)
 	uint32_t g, i;
 	volatile uint8_t *tri;
 
-	if ((irq > CONFIG_NUM_IRQS) || ((flags&IRQ_TYPE_EDGE_BOTH) == IRQ_TYPE_EDGE_BOTH)) {
+	if ((irq >= CONFIG_NUM_IRQS) || ((flags & IRQ_TYPE_EDGE_BOTH) == IRQ_TYPE_EDGE_BOTH)) {
 		return;
 	}
 	g = irq / MAX_REGISR_IRQ_NUM;
@@ -190,7 +190,7 @@ int __soc_ram_code ite_intc_irq_is_enable(unsigned int irq)
 	uint32_t g, i;
 	volatile uint8_t *en;
 
-	if (irq > CONFIG_NUM_IRQS) {
+	if (irq >= CONFIG_NUM_IRQS) {
 		return 0;
 	}
 	g = irq / MAX_REGISR_IRQ_NUM;
