@@ -7,8 +7,10 @@ config TI_SCI_INTR
 	depends on DT_HAS_TI_SCI_INTR_ENABLED
 	depends on TISCI
 	select DYNAMIC_INTERRUPTS
+	select MULTI_LEVEL_INTERRUPTS if DT_HAS_TI_SCI_INTR_OUT_ENABLED
+	select 2ND_LEVEL_INTERRUPTS if DT_HAS_TI_SCI_INTR_OUT_ENABLED
 	help
 	  Enable support for Texas Instruments K3 Interrupt Router blocks that
 	  are programmed through TISCI (for example MAIN/MCU GPIOMUX INTROUTER
-	  on J722S). Device trees specify only router input IDs; outputs are
-	  allocated and routed at runtime.
+	  on J722S). With ti,sci-intr-out children, peripherals use ordinary
+	  IRQ_CONNECT / irq_enable; the parent programs the TISCI route.

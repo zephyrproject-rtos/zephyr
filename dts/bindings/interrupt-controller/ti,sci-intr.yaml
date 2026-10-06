@@ -10,8 +10,11 @@ description: |
   of allocated outputs and translates them to the parent interrupt controller
   (typically VIM on Cortex-R5) using ti,interrupt-ranges.
 
-  Devices that use this controller specify only the router input hardware
-  number; the driver allocates an output and programs the route at runtime.
+  Expose each host IR output as a child `ti,sci-intr-out` node (reg = output
+  index, interrupts = parent VIM/GIC line). Peripherals set interrupt-parent to
+  that child and pass only the IR input number (plus a zero priority cell).
+  Drivers then use ordinary IRQ_CONNECT / irq_enable; the parent programs the
+  TISCI route when the IRQ is enabled.
 
 compatible: "ti,sci-intr"
 
@@ -23,6 +26,12 @@ properties:
 
   interrupt-controller:
     required: true
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 0
 
   ti,sci:
     type: phandle
@@ -49,9 +58,8 @@ properties:
       Global trigger type for all outputs of this router (Linux IRQ_TYPE values):
         1 = edge triggered  (mapped to Zephyr IRQ_TYPE_EDGE)
         4 = level triggered (mapped to Zephyr IRQ_TYPE_LEVEL)
-      Used as the default parent-IRQ trigger when ti_sci_intr_connect() is
-      called without IRQ_TYPE_EDGE / IRQ_TYPE_LEVEL in flags.
-      When present, #interrupt-cells must be 1 (input hw number only).
+      Used as the default parent-IRQ trigger when connecting an output.
+      When present, child ti,sci-intr-out nodes use #interrupt-cells = 2.
 
   "#interrupt-cells":
     const: 1

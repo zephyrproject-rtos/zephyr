@@ -12,23 +12,28 @@
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/devicetree/interrupt_controller.h>
 #include <zephyr/drivers/firmware/tisci/tisci.h>
 #include <zephyr/drivers/interrupt_controller/intc_ti_sci_intr.h>
 #include <zephyr/dt-bindings/interrupt-controller/ti-vim.h>
 #include <zephyr/irq.h>
+#include <zephyr/irq_multilevel.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/sys/util.h>
 
+#include "sw_isr_common.h"
+
 LOG_MODULE_REGISTER(ti_sci_intr, CONFIG_INTC_LOG_LEVEL);
 
 /* Max <out parent limit> triples accepted from ti,interrupt-ranges. */
 #define TI_SCI_INTR_MAX_RANGES 8U
-/* Max concurrent routes tracked by this driver. */
+/* Max concurrent routes tracked by the dynamic connect() API. */
 #define TI_SCI_INTR_MAX_ROUTES 32U
 /* Max IR outputs covered by the host resource-range bitmap. */
 #define TI_SCI_INTR_MAX_OUTPUTS 256U
+#define TI_SCI_INTR_INPUT_NONE  UINT16_MAX
 
 BUILD_ASSERT(TI_SCI_INTR_MAX_ROUTES <= 32U,
 	     "route_busy bitmask assumes TI_SCI_INTR_MAX_ROUTES <= 32");
@@ -57,6 +62,24 @@ struct ti_sci_intr_data {
 	uint32_t output_busy[DIV_ROUND_UP(TI_SCI_INTR_MAX_OUTPUTS, 32U)];
 	struct ti_sci_intr_route routes[TI_SCI_INTR_MAX_ROUTES];
 };
+
+#if defined(CONFIG_MULTI_LEVEL_INTERRUPTS) && DT_HAS_COMPAT_STATUS_OKAY(ti_sci_intr_out)
+
+/*
+ * One host-side IR output (ti,sci-intr-out child). Peripherals name it as
+ * interrupt-parent and pass the IR input in interrupts. irq_enable() programs
+ * TISCI and unmasks the parent VIM line; the demux ISR dispatches the L2 client.
+ */
+struct ti_sci_intr_out {
+	const struct device *router;
+	uint16_t output;
+	unsigned int vim_irq;
+	uint32_t vim_flags;
+	uint16_t active_input;
+	bool routed;
+};
+
+#endif /* CONFIG_MULTI_LEVEL_INTERRUPTS && ti_sci_intr_out */
 
 static inline bool ti_sci_intr_route_is_used(const struct ti_sci_intr_data *data, size_t idx)
 {
@@ -196,8 +219,27 @@ static int ti_sci_intr_set(const struct ti_sci_intr_config *cfg, uint16_t input,
 		.dst_host_irq = output,
 		.secondary_host = TISCI_IRQ_SECONDARY_HOST_INVALID,
 	};
+	struct tisci_irq_release_req rel = {
+		.valid_params = TISCI_MSG_VALUE_RM_DST_ID_VALID |
+				TISCI_MSG_VALUE_RM_DST_HOST_IRQ_VALID,
+		.src_id = cfg->sci_dev_id,
+		.src_index = input,
+		.dst_id = cfg->sci_dev_id,
+		.dst_host_irq = output,
+		.secondary_host = TISCI_IRQ_SECONDARY_HOST_INVALID,
+	};
+	int ret;
 
-	return tisci_cmd_rm_irq_set(cfg->sci, &req);
+	/* Drop a stale Linux/SYSFW route on this input before claiming it. */
+	(void)tisci_cmd_rm_irq_release(cfg->sci, &rel);
+	ret = tisci_cmd_rm_irq_set(cfg->sci, &req);
+	if (ret != 0) {
+		rel.valid_params = 0;
+		(void)tisci_cmd_rm_irq_release(cfg->sci, &rel);
+		ret = tisci_cmd_rm_irq_set(cfg->sci, &req);
+	}
+
+	return ret;
 }
 
 static int ti_sci_intr_release(const struct ti_sci_intr_config *cfg, uint16_t input,
@@ -215,6 +257,293 @@ static int ti_sci_intr_release(const struct ti_sci_intr_config *cfg, uint16_t in
 
 	return tisci_cmd_rm_irq_release(cfg->sci, &req);
 }
+
+#if defined(CONFIG_MULTI_LEVEL_INTERRUPTS) && DT_HAS_COMPAT_STATUS_OKAY(ti_sci_intr_out)
+
+#define TI_SCI_INTR_OUT_ENTRY(child)                                                               \
+	{                                                                                          \
+		.router = DEVICE_DT_GET(DT_PARENT(child)),                                         \
+		.output = DT_REG_ADDR(child),                                                      \
+		.vim_irq = DT_IRQ(child, irq),                                                     \
+		.vim_flags = DT_IRQ(child, flags),                                                 \
+		.active_input = TI_SCI_INTR_INPUT_NONE,                                            \
+		.routed = false,                                                                   \
+	},
+
+#define TI_SCI_INTR_OUT_ENTRIES_INST(n)                                                            \
+	DT_INST_FOREACH_CHILD_STATUS_OKAY(n, TI_SCI_INTR_OUT_ENTRY)
+
+static struct ti_sci_intr_out ti_sci_intr_outs[] = {
+	DT_INST_FOREACH_STATUS_OKAY(TI_SCI_INTR_OUT_ENTRIES_INST)
+};
+
+/*
+ * Map each child to its slot in ti_sci_intr_outs[]. Assumes a single
+ * ti,sci-intr instance contributes all outs (true on J722S Main R5).
+ */
+#define TI_SCI_INTR_OUT_IDX(child) DT_NODE_CHILD_IDX(child)
+
+struct ti_sci_intr_pending {
+	unsigned int irq;
+	struct k_work_delayable work;
+};
+
+static struct ti_sci_intr_pending ti_sci_intr_pending_enables[ARRAY_SIZE(ti_sci_intr_outs)];
+static struct k_work_delayable ti_sci_intr_route_log_work;
+static bool ti_sci_intr_route_log_scheduled;
+
+static void ti_sci_intr_irq_enable_inner(unsigned int irq, bool from_work);
+
+static void ti_sci_intr_pending_work_handler(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct ti_sci_intr_pending *pending =
+		CONTAINER_OF(dwork, struct ti_sci_intr_pending, work);
+
+	ti_sci_intr_irq_enable_inner(pending->irq, true);
+}
+
+static void ti_sci_intr_route_log_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	bool any = false;
+
+	for (size_t i = 0; i < ARRAY_SIZE(ti_sci_intr_outs); i++) {
+		struct ti_sci_intr_out *out = &ti_sci_intr_outs[i];
+
+		if (out->routed && out->active_input != TI_SCI_INTR_INPUT_NONE) {
+			printk("ti_sci_intr: IR in %u -> out %u (VIM %u)\n", out->active_input,
+			       out->output, out->vim_irq);
+			any = true;
+		}
+	}
+
+	if (!any) {
+		printk("ti_sci_intr: no active IR routes\n");
+	}
+}
+
+void ti_sci_intr_log_routes(void)
+{
+	ti_sci_intr_route_log_handler(NULL);
+}
+
+static void ti_sci_intr_schedule_route_log(void)
+{
+	if (ti_sci_intr_route_log_scheduled) {
+		return;
+	}
+
+	ti_sci_intr_route_log_scheduled = true;
+	k_work_init_delayable(&ti_sci_intr_route_log_work, ti_sci_intr_route_log_handler);
+	(void)k_work_schedule(&ti_sci_intr_route_log_work, K_MSEC(800));
+}
+
+static void ti_sci_intr_demux(const void *arg)
+{
+	struct ti_sci_intr_out *out = (struct ti_sci_intr_out *)arg;
+	unsigned int zephyr_irq;
+	uint32_t table_idx;
+
+	if (out == NULL || out->active_input == TI_SCI_INTR_INPUT_NONE) {
+		return;
+	}
+
+	zephyr_irq = irq_to_level_2(out->active_input) | out->vim_irq;
+	table_idx = z_get_sw_isr_table_idx(zephyr_irq);
+
+#if defined(CONFIG_GEN_SW_ISR_TABLE_ARRAY)
+	_sw_isr_table[table_idx].isr(_sw_isr_table[table_idx].arg);
+#elif defined(CONFIG_GEN_SW_ISR_TABLE_SWITCH)
+	struct _isr_table_entry entry;
+
+	get_isr_entry(table_idx, &entry);
+	entry.isr(entry.arg);
+#endif
+}
+
+static struct ti_sci_intr_out *ti_sci_intr_out_by_vim(unsigned int vim_irq)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(ti_sci_intr_outs); i++) {
+		if (ti_sci_intr_outs[i].vim_irq == vim_irq) {
+			return &ti_sci_intr_outs[i];
+		}
+	}
+
+	return NULL;
+}
+
+static struct ti_sci_intr_out *ti_sci_intr_out_by_output(const struct device *router,
+							uint16_t output)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(ti_sci_intr_outs); i++) {
+		if (ti_sci_intr_outs[i].router == router &&
+		    ti_sci_intr_outs[i].output == output) {
+			return &ti_sci_intr_outs[i];
+		}
+	}
+
+	return NULL;
+}
+
+void ti_sci_intr_irq_enable(unsigned int irq)
+{
+	ti_sci_intr_irq_enable_inner(irq, false);
+}
+
+static void ti_sci_intr_irq_enable_inner(unsigned int irq, bool from_work)
+{
+	unsigned int vim_irq = irq_parent_level_2(irq);
+	uint16_t input = (uint16_t)irq_from_level_2(irq);
+	struct ti_sci_intr_out *out;
+	const struct ti_sci_intr_config *cfg;
+	struct ti_sci_intr_data *data;
+	k_spinlock_key_t key;
+	size_t out_idx;
+	int ret;
+
+	out = ti_sci_intr_out_by_vim(vim_irq);
+	if (out == NULL || out->router == NULL) {
+		LOG_ERR("No ti,sci-intr-out for VIM %u", vim_irq);
+		return;
+	}
+
+	out_idx = (size_t)(out - ti_sci_intr_outs);
+	cfg = out->router->config;
+	data = out->router->data;
+
+	if (!device_is_ready(out->router) || !device_is_ready(cfg->sci)) {
+		if (!from_work && out_idx < ARRAY_SIZE(ti_sci_intr_pending_enables)) {
+			struct ti_sci_intr_pending *pending = &ti_sci_intr_pending_enables[out_idx];
+
+			pending->irq = irq;
+			k_work_init_delayable(&pending->work, ti_sci_intr_pending_work_handler);
+			(void)k_work_schedule(&pending->work, K_MSEC(500));
+			LOG_DBG("Deferring IR in %u enable (TISCI not ready)", input);
+		} else {
+			LOG_ERR("Router/TISCI not ready for IR in %u", input);
+		}
+		return;
+	}
+
+	key = k_spin_lock(&data->lock);
+	if (out->active_input != TI_SCI_INTR_INPUT_NONE && out->active_input != input) {
+		k_spin_unlock(&data->lock, key);
+		LOG_ERR("IR out %u busy (in %u), rejecting in %u", out->output, out->active_input,
+			input);
+		return;
+	}
+	out->active_input = input;
+	ti_sci_intr_output_set_busy(data, out->output);
+	k_spin_unlock(&data->lock, key);
+
+	if (!out->routed) {
+		ret = ti_sci_intr_set(cfg, input, out->output);
+		if (ret != 0) {
+			LOG_ERR("TISCI irq set IR in %u -> out %u failed (%d)", input, out->output,
+				ret);
+			key = k_spin_lock(&data->lock);
+			out->active_input = TI_SCI_INTR_INPUT_NONE;
+			ti_sci_intr_output_clear_busy(data, out->output);
+			k_spin_unlock(&data->lock, key);
+			return;
+		}
+		out->routed = true;
+		printk("ti_sci_intr: IR in %u -> out %u (VIM %u)\n", input, out->output, vim_irq);
+		ti_sci_intr_schedule_route_log();
+	}
+
+	z_vim_irq_enable(vim_irq);
+}
+
+void ti_sci_intr_irq_disable(unsigned int irq)
+{
+	unsigned int vim_irq = irq_parent_level_2(irq);
+	uint16_t input = (uint16_t)irq_from_level_2(irq);
+	struct ti_sci_intr_out *out;
+	const struct ti_sci_intr_config *cfg;
+	struct ti_sci_intr_data *data;
+	k_spinlock_key_t key;
+
+	out = ti_sci_intr_out_by_vim(vim_irq);
+	if (out == NULL || out->router == NULL) {
+		return;
+	}
+
+	if (out->active_input != input) {
+		return;
+	}
+
+	cfg = out->router->config;
+	data = out->router->data;
+
+	z_vim_irq_disable(vim_irq);
+
+	if (out->routed) {
+		(void)ti_sci_intr_release(cfg, input, out->output);
+		out->routed = false;
+	}
+
+	key = k_spin_lock(&data->lock);
+	out->active_input = TI_SCI_INTR_INPUT_NONE;
+	ti_sci_intr_output_clear_busy(data, out->output);
+	k_spin_unlock(&data->lock, key);
+}
+
+int ti_sci_intr_irq_is_enabled(unsigned int irq)
+{
+	unsigned int vim_irq = irq_parent_level_2(irq);
+	uint16_t input = (uint16_t)irq_from_level_2(irq);
+	struct ti_sci_intr_out *out = ti_sci_intr_out_by_vim(vim_irq);
+
+	if (out == NULL || out->active_input != input || !out->routed) {
+		return 0;
+	}
+
+	return z_vim_irq_is_enabled(vim_irq);
+}
+
+void ti_sci_intr_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
+{
+	unsigned int vim_irq = irq_parent_level_2(irq);
+	struct ti_sci_intr_out *out = ti_sci_intr_out_by_vim(vim_irq);
+	uint32_t vim_flags = flags;
+
+	if (out != NULL && (vim_flags & (IRQ_TYPE_EDGE | IRQ_TYPE_LEVEL)) == 0U) {
+		vim_flags = out->vim_flags;
+	}
+
+	z_vim_irq_priority_set(vim_irq, prio, vim_flags);
+}
+
+#define TI_SCI_INTR_OUT_PARENT_ENTRY(child)                                                        \
+	IRQ_PARENT_ENTRY_DEFINE(CONCAT(ti_sci_intr_agg_, DT_NODE_FULL_NAME_TOKEN(child)), NULL,    \
+				DT_IRQN(child), INTC_CHILD_ISR_TBL_OFFSET(child),                  \
+				DT_INTC_GET_AGGREGATOR_LEVEL(child));
+
+#define TI_SCI_INTR_OUT_PARENT_ENTRIES_INST(n)                                                     \
+	DT_INST_FOREACH_CHILD_STATUS_OKAY(n, TI_SCI_INTR_OUT_PARENT_ENTRY)
+
+DT_INST_FOREACH_STATUS_OKAY(TI_SCI_INTR_OUT_PARENT_ENTRIES_INST)
+
+#define TI_SCI_INTR_OUT_CONNECT(child)                                                             \
+	IRQ_CONNECT(DT_IRQN(child), DT_IRQ(child, priority), ti_sci_intr_demux,                    \
+		    &ti_sci_intr_outs[TI_SCI_INTR_OUT_IDX(child)], DT_IRQ(child, flags))
+
+#define TI_SCI_INTR_OUT_CONNECT_INST(n)                                                            \
+	DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(n, TI_SCI_INTR_OUT_CONNECT, (;))
+
+static int ti_sci_intr_mli_setup(void)
+{
+	DT_INST_FOREACH_STATUS_OKAY(TI_SCI_INTR_OUT_CONNECT_INST);
+
+	return 0;
+}
+
+SYS_INIT(ti_sci_intr_mli_setup, PRE_KERNEL_2, CONFIG_INTC_INIT_PRIORITY);
+
+#endif /* CONFIG_MULTI_LEVEL_INTERRUPTS && ti_sci_intr_out */
 
 int ti_sci_intr_connect(const struct device *dev, uint16_t input,
 			void (*isr)(const void *arg), const void *arg, uint32_t priority,
@@ -271,6 +600,36 @@ int ti_sci_intr_connect(const struct device *dev, uint16_t input,
 
 	k_spin_unlock(&data->lock, key);
 
+#if defined(CONFIG_MULTI_LEVEL_INTERRUPTS) && DT_HAS_COMPAT_STATUS_OKAY(ti_sci_intr_out)
+	{
+		struct ti_sci_intr_out *out = ti_sci_intr_out_by_output(dev, output);
+		unsigned int ml_irq;
+
+		if (out == NULL) {
+			key = k_spin_lock(&data->lock);
+			ti_sci_intr_clear_route(data, route);
+			k_spin_unlock(&data->lock, key);
+			return -ENODEV;
+		}
+
+		/*
+		 * Demux owns the VIM ISR. Install the client on the L2 table and
+		 * enable through the multi-level path (TISCI + VIM).
+		 */
+		ml_irq = irq_to_level_2(input) | parent_irq;
+		ret = irq_connect_dynamic(ml_irq, priority, isr, arg, irq_flags);
+		if (ret < 0) {
+			key = k_spin_lock(&data->lock);
+			ti_sci_intr_clear_route(data, route);
+			k_spin_unlock(&data->lock, key);
+			return ret;
+		}
+
+		irq_enable(ml_irq);
+		LOG_DBG("MLI routed input %u -> output %u (VIM %u)", input, output, parent_irq);
+		return 0;
+	}
+#else
 	ret = ti_sci_intr_set(cfg, input, output);
 	if (ret != 0) {
 		LOG_ERR("TISCI irq set failed for input %u output %u (%d)", input, output,
@@ -296,6 +655,7 @@ int ti_sci_intr_connect(const struct device *dev, uint16_t input,
 	LOG_DBG("Routed input %u -> output %u (parent IRQ %u)", input, output, parent_irq);
 
 	return 0;
+#endif
 }
 
 int ti_sci_intr_disconnect(const struct device *dev, uint16_t input)
@@ -327,6 +687,18 @@ int ti_sci_intr_disconnect(const struct device *dev, uint16_t input)
 	ti_sci_intr_clear_route(data, route);
 	k_spin_unlock(&data->lock, key);
 
+#if defined(CONFIG_MULTI_LEVEL_INTERRUPTS) && DT_HAS_COMPAT_STATUS_OKAY(ti_sci_intr_out)
+	{
+		unsigned int ml_irq = irq_to_level_2(route_copy.input) | route_copy.parent_irq;
+
+		irq_disable(ml_irq);
+		z_isr_install(ml_irq, z_irq_spurious, NULL);
+		ARG_UNUSED(cfg);
+		ARG_UNUSED(route_idx);
+		ARG_UNUSED(ret);
+		return 0;
+	}
+#else
 	irq_disable(route_copy.parent_irq);
 	z_isr_install(route_copy.parent_irq, z_irq_spurious, NULL);
 
@@ -350,6 +722,7 @@ int ti_sci_intr_disconnect(const struct device *dev, uint16_t input)
 	}
 
 	return 0;
+#endif
 }
 
 int ti_sci_intr_get_parent_irq(const struct device *dev, uint16_t input, unsigned int *parent_irq)
@@ -361,6 +734,16 @@ int ti_sci_intr_get_parent_irq(const struct device *dev, uint16_t input, unsigne
 	if (dev == NULL || parent_irq == NULL) {
 		return -EINVAL;
 	}
+
+#if defined(CONFIG_MULTI_LEVEL_INTERRUPTS) && DT_HAS_COMPAT_STATUS_OKAY(ti_sci_intr_out)
+	for (size_t i = 0; i < ARRAY_SIZE(ti_sci_intr_outs); i++) {
+		if (ti_sci_intr_outs[i].router == dev &&
+		    ti_sci_intr_outs[i].active_input == input) {
+			*parent_irq = ti_sci_intr_outs[i].vim_irq;
+			return 0;
+		}
+	}
+#endif
 
 	data = dev->data;
 

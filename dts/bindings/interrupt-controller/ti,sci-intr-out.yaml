@@ -1,0 +1,43 @@
+# Copyright (c) 2026 Dhruv Menon <dhruvmenon1104@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  One host-side output of a TI K3 SCI-managed interrupt router (ti,sci-intr).
+
+  Each node represents a fixed IR output index (reg) that is hard-wired to a
+  parent VIM/GIC IRQ (interrupts). Peripherals that need the INTROUTER name
+  this node as interrupt-parent and pass the IR *input* number:
+
+    main_gpio_intr_16: interrupt-controller@10 {
+        compatible = "ti,sci-intr-out";
+        reg = <16>;
+        interrupt-controller;
+        #interrupt-cells = <2>;
+        interrupt-parent = <&vim>;
+        interrupts = <0 104 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+    };
+
+    main_i2c4: i2c@fe80000 {
+        interrupt-parent = <&main_gpio_intr_16>;
+        interrupts = <178 0>;   /* IR input 178; L2 priority cell must be 0 */
+    };
+
+  On irq_enable(), the parent ti,sci-intr driver programs TISCI to route the
+  IR input onto this output and enables the parent VIM line. Peripheral
+  drivers use ordinary IRQ_CONNECT(DT_IRQN(...)) / irq_enable().
+
+compatible: "ti,sci-intr-out"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+    description: Interrupt-router output index (host-side dst_host_irq).
+
+  "#interrupt-cells":
+    const: 2
+
+interrupt-cells:
+  - irq
+  - priority
