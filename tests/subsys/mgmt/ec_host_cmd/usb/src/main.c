@@ -233,4 +233,27 @@ ZTEST(ec_host_cmd_usb, test_usb_exact_header_fail_truncated)
 	zassert_not_null(mock_ep_out_buf);
 }
 
+static void verify_invalid_protocol_version(uint8_t version)
+{
+	send_usb_host_cmd_request(version, CMD_TEST_ID, NULL, 0);
+	complete_usb_in_transfers(EC_HOST_CMD_INVALID_HEADER, NULL, 0);
+	zassert_equal(mock_ep_out_enqueue_count, 2);
+	zassert_not_null(mock_ep_out_buf);
+}
+
+ZTEST(ec_host_cmd_usb, test_usb_invalid_prtcl_ver_v2_fail_invalid_header)
+{
+	verify_invalid_protocol_version(2);
+}
+
+ZTEST(ec_host_cmd_usb, test_usb_invalid_prtcl_ver_v4_fail_invalid_header)
+{
+	verify_invalid_protocol_version(4);
+}
+
+ZTEST(ec_host_cmd_usb, test_usb_invalid_prtcl_ver_max_fail_invalid_header)
+{
+	verify_invalid_protocol_version(UINT8_MAX);
+}
+
 ZTEST_SUITE(ec_host_cmd_usb, NULL, usb_test_setup, usb_test_before, NULL, NULL);
