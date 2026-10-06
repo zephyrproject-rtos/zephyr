@@ -460,6 +460,7 @@ int usbh_device_set_configuration(struct usb_device *const udev, const uint8_t n
 		LOG_ERR("Configuration descriptor read mismatch");
 		k_heap_free(&usb_device_heap, udev->cfg_desc);
 		udev->cfg_desc = NULL;
+		err = -EINVAL;
 		goto error;
 	}
 
