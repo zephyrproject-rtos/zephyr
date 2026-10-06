@@ -175,4 +175,13 @@ config PRECISION_PPS_OUTPUT_POLL_INTERVAL_MS
 	  at the cost of more work. This does not set the hardware pulse period.
 
 endif # PRECISION_PPS_OUTPUT
+
+config PRECISION_TIMING_SHELL
+	bool "Precision timing shell"
+	depends on SHELL
+	help
+	  Enable shell commands for inspecting precision clocks and controlling
+	  scheduled clock outputs. Clocks are registered statically at build time
+	  with PRECISION_TIMING_SHELL_REGISTER().
+
 endif # PRECISION_TIMING
