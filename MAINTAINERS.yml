@@ -5412,6 +5412,7 @@ Precision Timing:
   files:
     - include/zephyr/drivers/precision_clock_output.h
     - include/zephyr/precision_timing/
+    - samples/net/pps_out/
     - samples/subsys/precision_timing/
     - subsys/precision_timing/
     - tests/subsys/precision_timing/
@@ -5419,6 +5420,7 @@ Precision Timing:
   labels:
     - "area: Precision Timing"
   tests:
+    - sample.net.pps_out
     - sample.subsys.precision_timing
     - subsys.precision_timing
 

@@ -1,0 +1,15 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&mac {
+	pinctrl-0 = <&eth_rmii_rxd0_pc4
+		     &eth_rmii_rxd1_pc5
+		     &eth_rmii_ref_clk_pa1
+		     &eth_rmii_crs_dv_pa7
+		     &eth_rmii_tx_en_pg11
+		     &eth_rmii_txd0_pg13
+		     &eth_rmii_txd1_pb15
+		     &eth_pps_out_pg8>;
+};
