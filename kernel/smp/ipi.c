@@ -227,12 +227,13 @@ void signal_pending_ipi(void)
 	 * is left set so the next interrupt entry on this CPU will see
 	 * it and run the scheduler.
 	 *
-	 * When rescheduling, callers must ensure that signal_pending_ipi()
-	 * is invoked while the scheduler lock is still held. Holding the
-	 * lock ensures the scheduling decision and IPI dispatch are atomic:
-	 * either a concurrent flag_ipi() lands before the lock is acquired
-	 * (and the CPU sees the new thread), or it lands after the lock is
-	 * released (and the other CPU dispatches the IPI).
+	 * Hold the scheduler lock when this drain is atomic with picking the
+	 * next thread: z_swap_next_thread() and z_get_next_switch_handle().
+	 * A no-swap reschedule does not pick a thread. Draining there under
+	 * the caller's object lock, or with only IRQs masked, is the normal
+	 * path out of z_sched_wake() and z_ready_thread(). An early drain
+	 * still delivers the IPI. The target schedules after it takes
+	 * _sched_spinlock.
 	 */
 
 #if defined(CONFIG_SCHED_IPI_SUPPORTED)
