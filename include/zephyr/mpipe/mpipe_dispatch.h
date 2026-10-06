@@ -47,19 +47,17 @@
 #include <zephyr/mpipe/mpipe_structure.h>
 
 /**
- * @enum mpipe_dispatch_type
  * @brief Supported dispatch types.
  */
 enum mpipe_dispatch_type {
-	MPIPE_DISPATCH_UNKNOWN = 0,     /**< Unknown dispatch type */
-	MPIPE_DISPATCH_EOS,             /**< EOS dispatch type */
-	MPIPE_DISPATCH_CAPS,            /**< CAPS dispatch type */
-	MPIPE_DISPATCH_BUFFER_POOL,     /**< Buffer pool negotiation type */
+	MPIPE_DISPATCH_UNKNOWN = 0,     /**< Uninitialized dispatch */
+	MPIPE_DISPATCH_EOS,             /**< End of stream, an event */
+	MPIPE_DISPATCH_CAPS,            /**< Capability, a query or an event */
+	MPIPE_DISPATCH_BUFFER_POOL,     /**< Buffer pool, a query */
 	MPIPE_DISPATCH_END = UINT8_MAX, /**< Maximum dispatch type identifier */
 };
 
 /**
- * @struct mpipe_dispatch
  * @brief A query or an event traveling a pad link.
  *
  * A dispatch travels a synchronous walk, so it references storage that
@@ -80,10 +78,9 @@ struct mpipe_dispatch {
 	/**
 	 * The capability carried, or NULL when the dispatch carries none.
 	 *
-	 * The creator points this at storage it owns for the whole walk;
-	 * every other element reads through it and answers by copying INTO
-	 * it. Repointing it at storage of your own dangles the moment your
-	 * frame returns.
+	 * The creator points this at storage it owns for the whole walk; every
+	 * other element reads through it and answers by copying into it, never
+	 * by repointing it.
 	 *
 	 * | Value | On a query (in/out storage) | On an event (an announcement) |
 	 * | :--- | :--- | :--- |

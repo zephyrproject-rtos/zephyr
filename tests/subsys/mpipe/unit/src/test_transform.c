@@ -5,16 +5,9 @@
  */
 
 /*
- * The transform's caps walk, mpipe_transform.c.
- *
- * Three enumerations nest here: this pad's candidates, the element's mappings
- * of one candidate onto the other side, and the mapping of the peer's answer
- * back again. The peer is the only place the walk is visible from outside, so
- * the fake below records every capability it is handed - that sequence is the
- * enumeration order, which is what makes the ordering assertions possible.
- *
- * Capabilities carry a single unsigned field, so an intersection either matches
- * exactly or fails, and nothing in a test turns on how fields merge.
+ * The transform's caps walk. The fake peer records every capability it is
+ * offered, which is the enumeration order the assertions check. Capabilities
+ * carry one unsigned field, so an intersection matches exactly or fails.
  */
 
 #include <zephyr/kernel.h>
@@ -59,7 +52,7 @@ struct mpipe_transform_api_fixture {
 	uint32_t offered[8];
 	size_t offered_len;
 
-	/* transform_caps behaviours the walk has to cope with */
+	/* transform_caps behaviors the walk has to cope with */
 	bool eagain_at_zero;
 	bool always_eagain;
 };
@@ -301,11 +294,7 @@ ZTEST_F(mpipe_transform_api, test_an_index_producing_nothing_is_skipped)
 	zassert_equal(value_of(&caps), CAP_A, "the answer was not the candidate");
 }
 
-/*
- * An element that never reports the end must not spin forever. The walk gives
- * up past UINT16_MAX and reports it, which is the same guard mpipe_pad_enum_caps()
- * applies to a pad. This case hangs rather than fails if the guard is removed.
- */
+/* An element that never reports the end must not spin: the walk gives up past UINT16_MAX */
 ZTEST_F(mpipe_transform_api, test_a_mapping_that_never_ends_terminates)
 {
 	static const uint32_t candidates[] = {CAP_A};

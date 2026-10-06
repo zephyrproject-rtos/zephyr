@@ -238,7 +238,7 @@ ZTEST_F(test_dump, test_dump_caps_renders_audio_fields)
 	struct mpipe_structure caps;
 
 	zassert_ok(mpipe_structure_init_fields(&caps, MPIPE_MEDIA_AUDIO_PCM, MPIPE_CAPS_SAMPLE_RATE,
-					       MPIPE_TYPE_UINT, 48000, MPIPE_CAPS_NUM_OF_CHANNEL,
+					       MPIPE_TYPE_UINT, 48000, MPIPE_CAPS_NUM_CHANNELS,
 					       MPIPE_TYPE_UINT, 2, MPIPE_CAPS_INTERLEAVED,
 					       MPIPE_TYPE_BOOLEAN, true, MPIPE_CAPS_END));
 

@@ -68,7 +68,7 @@ struct mpipe_dispatch;
 struct zbus_channel;
 
 /** @cond INTERNAL_HIDDEN */
-#if defined(CONFIG_MPIPE_DUMP)
+#if defined(CONFIG_MPIPE_ELEMENT_NAME)
 #define MPIPE_ELEMENT_SET_NAME(e, n) ((e)->name = (n))
 #else
 #define MPIPE_ELEMENT_SET_NAME(e, n) ((void)0)
@@ -82,6 +82,7 @@ struct zbus_channel;
  *
  * @param cur Current state, see @ref mpipe_state
  * @param target Target state, see @ref mpipe_state
+ *
  * @return Next intermediate state
  *
  */
@@ -93,6 +94,7 @@ struct zbus_channel;
  *
  * @param cur Current state
  * @param next Next state
+ *
  * @return State transition value
  */
 #define MPIPE_STATE_TRANSITION(cur, next) (((cur) << 2) | (next))
@@ -103,6 +105,7 @@ struct zbus_channel;
  * Given a state transition, extract the current state.
  *
  * @param trans A transition state, see @ref mpipe_state_change
+ *
  * @return The current state
  *
  */
@@ -114,6 +117,7 @@ struct zbus_channel;
  * Given a state transition, extract the next state.
  *
  * @param trans A transition state, see @ref mpipe_state_change
+ *
  * @return The next state
  *
  */
@@ -134,9 +138,7 @@ enum mpipe_state {
 };
 
 /**
- * @brief enum mpipe_state_change
- *
- * Different possible state changes that an element can go through.
+ * @brief Transition between two adjacent states
  */
 enum mpipe_state_change {
 	/** State change from READY to PAUSED */
@@ -166,12 +168,12 @@ struct mpipe_element {
 	/** Base object */
 	struct mpipe_object object;
 
-#if defined(CONFIG_MPIPE_DUMP) || defined(__DOXYGEN__)
+#if defined(CONFIG_MPIPE_ELEMENT_NAME) || defined(__DOXYGEN__)
 	/**
 	 * Name of the element, set to its type by the element's init function and
 	 * overridable per instance with @ref mpipe_element_set_name. Debugging only.
 	 *
-	 * @kconfig_dep{CONFIG_MPIPE_DUMP}
+	 * @kconfig_dep{CONFIG_MPIPE_ELEMENT_NAME}
 	 */
 	const char *name;
 #endif
@@ -196,7 +198,7 @@ struct mpipe_element {
  * Initializes the base @ref mpipe_element structure.
  *
  * @param self Pointer to the @ref mpipe_element to initialize.
- * @param id   Unique element identifier.
+ * @param id   Element identifier, unique within its bin. UINT8_MAX is reserved.
  *
  * @return 0 on success, negative errno otherwise.
  */
@@ -211,11 +213,11 @@ int mpipe_element_init(struct mpipe_element *self, uint8_t id);
  * apart in a dump.
  *
  * @code
- * ret = mpipe_vid_transform_init(&jpeg_dec, JPEG_DEC_ID);
- * mpipe_element_set_name(&jpeg_dec.transform.element, "jpeg_dec");
+ * ret = mpipe_queue_init(&queue, QUEUE_ID);
+ * mpipe_element_set_name(&queue.transform.element, "video_queue");
  * @endcode
  *
- * Compiles to nothing when @kconfig{CONFIG_MPIPE_DUMP} is disabled, so @p name
+ * Compiles to nothing when @kconfig{CONFIG_MPIPE_ELEMENT_NAME} is disabled, so @p name
  * costs no ROM in a build without the dump.
  *
  * @param self Element to name.
@@ -259,15 +261,16 @@ void mpipe_element_add_pad(struct mpipe_element *element, struct mpipe_pad *pad)
 /**
  * @brief Link elements together
  *
- * Links multiple elements together in a chain. Elements should have only
- * one source and/or one sink pad. If not, the first src/sink pads will be used.
- * The function takes a variable number of elements and links them sequentially.
+ * Links each element to the next through their first unlinked source and sink
+ * pads. A link whose pad capabilities cannot intersect is refused.
  *
  * @param element_1 First element in the chain
  * @param element_2 Second element in the chain
  * @param ... Additional elements to link (terminated by NULL)
  *
- * @return 0 on success, negative errno on failure
+ * @retval 0 Success.
+ * @retval -EINVAL An element has no unlinked pad in the needed direction
+ * @retval -ENOTSUP The capabilities of the two pads cannot intersect
  */
 int mpipe_element_link(struct mpipe_element *element_1, struct mpipe_element *element_2, ...);
 
@@ -280,6 +283,7 @@ int mpipe_element_link(struct mpipe_element *element_1, struct mpipe_element *el
  *
  * @param element The element to change state of
  * @param state The element's new @ref mpipe_state
+ *
  * @return 0 on success, else the errno of the element that refused a transition
  * @retval -ENOSYS The element has no set_state hook
  * @retval -EINPROGRESS Reserved: the transition completes asynchronously
