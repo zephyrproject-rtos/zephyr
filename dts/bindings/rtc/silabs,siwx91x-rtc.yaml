@@ -13,3 +13,8 @@ include:
 properties:
   reg:
     required: true
+
+  wakeup-ctrls:
+    description: |
+      Optional SiWx91x WUC source used to wake the system from an RTC alarm.
+      Set to <&wuc0 SIWX91X_WUC_RTC_ALARM>.
