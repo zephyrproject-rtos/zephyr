@@ -8,13 +8,14 @@ config I2C_OMAP
 	default y
 	depends on DT_HAS_TI_OMAP_I2C_ENABLED
 	select PINCTRL
-	select I2C_OMAP_INTERRUPT if I2C_TARGET
+	select I2C_OMAP_INTERRUPT if I2C_TARGET || I2C_RTIO
 	help
 	  Enable the I2C driver for TI OMAP SoCs.
 
 	  When CONFIG_I2C_TARGET is also enabled, the driver exposes I2C
-	  target (slave) register/unregister callbacks. Target mode requires
-	  interrupt-driven operation (CONFIG_I2C_OMAP_INTERRUPT).
+	  target (slave) register/unregister callbacks. Target mode and
+	  native RTIO both require interrupt-driven operation
+	  (CONFIG_I2C_OMAP_INTERRUPT).
 
 config I2C_OMAP_INTERRUPT
 	bool "Interrupt-driven transfers"
@@ -23,7 +24,8 @@ config I2C_OMAP_INTERRUPT
 	help
 	  Handle I2C events in the ISR and block the caller on a completion
 	  semaphore. When disabled, status is polled in thread context.
-	  Required for CONFIG_I2C_TARGET support on this driver.
+	  Required for CONFIG_I2C_TARGET and CONFIG_I2C_RTIO support on this
+	  driver.
 
 config I2C_OMAP_BUS_RECOVERY
 	bool "Bus recovery support"
