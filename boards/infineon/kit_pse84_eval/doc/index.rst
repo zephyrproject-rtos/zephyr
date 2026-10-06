@@ -850,13 +850,13 @@ References
 **********
 
 .. _KIT_PSE84_EVAL:
-    https://www.infineon.com/evaluation-board/KIT-PSE84-EVK
+    https://www.infineon.com/evaluation-board/KIT-PSE84-EVAL
 
 .. _PSOC Edge E84 SoC Website:
     https://www.infineon.com/products/microcontroller/32-bit-psoc-arm-cortex/32-bit-psoc-edge-arm/psoc-edge-e84
 
 .. _KIT_PSE84_EVAL Board Website:
-    https://www.infineon.com/evaluation-board/KIT-PSE84-EVK
+    https://www.infineon.com/evaluation-board/KIT-PSE84-EVAL
 
 .. _ModusToolbox™ Programming Tools:
     https://softwaretools.infineon.com/tools/com.ifx.tb.tool.modustoolboxprogtools
