@@ -33,3 +33,7 @@ endif() # CONFIG_SECURE_STORAGE_PS_TRANSFORM_IMPLEMENTATION_AEAD
 if(CONFIG_SECURE_STORAGE_PS_STORE_SETTINGS_NAME_CUSTOM)
   make_available(ps/store/settings.h)
 endif()
+
+if(CONFIG_SECURE_STORAGE_PS_REPLAY_PROTECTION_CUSTOM)
+  make_available(ps/replay_protection.h)
+endif()
