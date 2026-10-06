@@ -15,6 +15,16 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(sx12xx_hal, CONFIG_LORA_LOG_LEVEL);
 
+/*
+ * How long to read BUSY back to back before sleeping on it, within the same
+ * timeout. Every command waits for BUSY low twice, before it is sent and
+ * after, and BUSY drops within a few hundred microseconds: on an SX1280
+ * under traffic, a fifth of the waits found it high, nearly all for 10 to
+ * 200 us and none for 500. A sleep costs at least a millisecond, so spinning
+ * for less saves nothing.
+ */
+#define SX12XX_BUSY_SPIN_US 1000U
+
 static int spi_transfer(const struct spi_dt_spec *spi,
 			const uint8_t *hdr, size_t hdr_len,
 			uint8_t *data, size_t data_len, bool read)
@@ -41,15 +51,16 @@ static int spi_transfer(const struct spi_dt_spec *spi,
 int sx12xx_hal_wait_busy(const struct device *dev, uint32_t timeout_ms)
 {
 	const struct sx12xx_hal_config *config = dev->config;
+	uint32_t timeout_us = timeout_ms * USEC_PER_MSEC;
+	uint32_t spin_us = MIN(timeout_us, SX12XX_BUSY_SPIN_US);
 
-	if (!WAIT_FOR(!config->is_busy(dev),
-		      timeout_ms * 1000,
-		      k_msleep(1))) {
-		LOG_WRN("Busy timeout after %u ms", timeout_ms);
-		return -ETIMEDOUT;
+	if (WAIT_FOR(!config->is_busy(dev), spin_us, NULL) ||
+	    WAIT_FOR(!config->is_busy(dev), timeout_us - spin_us, k_msleep(1))) {
+		return 0;
 	}
 
-	return 0;
+	LOG_WRN("Busy timeout after %u ms", timeout_ms);
+	return -ETIMEDOUT;
 }
 
 void sx12xx_hal_set_rf_switch(const struct device *dev, bool enable, bool tx)
