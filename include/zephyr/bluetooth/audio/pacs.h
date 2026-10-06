@@ -18,7 +18,7 @@
  * @defgroup bt_pacs Published Audio Capabilities Service (PACS)
  *
  * @since 3.0
- * @version 0.8.0
+ * @version 0.9.0
  *
  * @ingroup bluetooth
  * @{
@@ -164,6 +164,70 @@ int bt_pacs_cap_unregister(enum bt_audio_dir dir, struct bt_pacs_cap *cap);
  */
 int bt_pacs_set_location(enum bt_audio_dir dir,
 			 enum bt_audio_location location);
+
+/**
+ * @brief Get the location for an endpoint type
+ *
+ * @param[in]  dir      Direction of the endpoints to get the location for.
+ * @param[out] location Pointer to store the location.
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if @p location is NULL, @p dir is invalid or the location for @p dir is not
+ *         supported (see @kconfig{CONFIG_BT_PAC_SNK_LOC} and @kconfig{CONFIG_BT_PAC_SRC_LOC})
+ *         or not registered (see @ref bt_pacs_register_param), or PACS is not registered
+ *         (see bt_pacs_register())
+ */
+int bt_pacs_get_location(enum bt_audio_dir dir, enum bt_audio_location *location);
+
+/**
+ * @brief Struct to hold the PACS callbacks
+ *
+ * These can be registered for usage with bt_pacs_register_cb().
+ */
+struct bt_pacs_cb {
+	/**
+	 * @brief A client changed the location
+	 *
+	 * Called when a client wrote a location different from the current one. Not called for
+	 * locations set with bt_pacs_set_location().
+	 *
+	 * Requires @kconfig{CONFIG_BT_PAC_SNK_LOC_WRITEABLE} or
+	 * @kconfig{CONFIG_BT_PAC_SRC_LOC_WRITEABLE}.
+	 *
+	 * @param conn     The connection of the client that wrote the location.
+	 * @param dir      Direction of the location that changed.
+	 * @param location The new location.
+	 */
+	void (*location)(struct bt_conn *conn, enum bt_audio_dir dir,
+			 enum bt_audio_location location);
+
+	/** @cond INTERNAL_HIDDEN */
+	/** Internally used field for list handling */
+	sys_snode_t _node;
+	/** @endcond */
+};
+
+/**
+ * @brief Registers callbacks for PACS
+ *
+ * @param cb Pointer to the callback structure.
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if @p cb is NULL
+ * @retval -EEXIST if @p cb is already registered
+ */
+int bt_pacs_register_cb(struct bt_pacs_cb *cb);
+
+/**
+ * @brief Unregisters callbacks for PACS
+ *
+ * @param cb Pointer to the callback structure.
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if @p cb is NULL
+ * @retval -ENOENT if @p cb is not registered
+ */
+int bt_pacs_unregister_cb(struct bt_pacs_cb *cb);
 
 /**
  * @brief Set the available contexts for an endpoint type

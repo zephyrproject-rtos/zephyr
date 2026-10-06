@@ -608,6 +608,10 @@ New APIs and options
     * :c:member:`bt_cap_initiator_cb.unicast_stop_disabled`
     * :c:member:`bt_cap_initiator_cb.unicast_stop_stopped`
     * :c:member:`bt_cap_initiator_cb.unicast_stop_released`
+    * :c:struct:`bt_pacs_cb`
+    * :c:func:`bt_pacs_register_cb`
+    * :c:func:`bt_pacs_unregister_cb`
+    * :c:func:`bt_pacs_get_location`
     * :c:func:`bt_vocs_client_free_instance`
 
   * Classic
