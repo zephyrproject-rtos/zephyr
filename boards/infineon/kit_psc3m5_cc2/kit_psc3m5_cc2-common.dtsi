@@ -25,12 +25,18 @@
 
 		user_led0: led_0 {
 			label = "LED_0";
-			gpios = <&gpio_prt9 4 GPIO_ACTIVE_LOW>;
+			/* P9.4 - silkscreen LED1, D1 Yellow. Pin drives the
+			 * anode, cathode to GND through R109 680R.
+			 */
+			gpios = <&gpio_prt9 4 GPIO_ACTIVE_HIGH>;
 		};
 
 		user_led1: led_1 {
 			label = "LED_1";
-			gpios = <&gpio_prt9 5 GPIO_ACTIVE_LOW>;
+			/* P9.5 - silkscreen LED2, D2 Red. Pin drives the
+			 * anode, cathode to GND through R110 680R.
+			 */
+			gpios = <&gpio_prt9 5 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
