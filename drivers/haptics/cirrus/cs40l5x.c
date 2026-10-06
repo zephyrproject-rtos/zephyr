@@ -395,7 +395,7 @@ static int cs40l5x_write_mailbox(const struct device *const dev, const uint32_t 
 
 	LOG_INST_DBG(config->log, "failed write to mailbox (%d)", ret);
 
-	return 0;
+	return -ETIME;
 }
 
 static int cs40l5x_increment_mailbox(const struct device *const dev, uint32_t *const mbox_ptr)
