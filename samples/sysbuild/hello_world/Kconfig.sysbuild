@@ -40,3 +40,4 @@ config REMOTE_BOARD
 	default "$(BOARD)/max78002/rv32" if SOC_MAX78002_M4
 	default "$(BOARD)/max78000/rv32" if SOC_MAX78000_M4
 	default "$(BOARD)/max32666/cpu1" if SOC_MAX32666_CPU0
+	default "$(BOARD)/rp2350a/m33_1" if SOC_RP2350A_M33_0
