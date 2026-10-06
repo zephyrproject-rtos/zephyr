@@ -8,6 +8,11 @@ properties:
   interrupts:
     description: Interrupt specifier for the I2C controller.
     required: true
+  clocks:
+    description: |
+      Module functional/input clock (I2Ci_SYS_CLK) used for PSC/SCLL/SCLH.
+      Not the I2C bus bitrate — that is clock-frequency.
+      When omitted, the driver assumes 96 MHz (TRM example rate).
   pinctrl-0:
     description: Pin control groups for this I2C instance.
     required: true
@@ -15,5 +20,5 @@ properties:
     description: Names for the pin control groups.
     required: true
   clock-frequency:
-    description: The frequency of the I2C bus.
+    description: I2C bus bitrate in Hz (e.g. I2C_BITRATE_STANDARD).
     required: true
