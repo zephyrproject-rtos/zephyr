@@ -1420,6 +1420,7 @@ Found disallowed Kconfig symbol in SoC Kconfig files: {sym_name:35}
         os.environ["KCONFIG_BINARY_DIR"] = kconfiglib_dir
         os.environ['DEVICETREE_CONF'] = "dummy"
         kconfig_env_file = os.path.join(kconfiglib_dir, "kconfig_module_dirs.env")
+        settings_file = os.path.join(kconfiglib_dir, "settings_file.txt")
 
         try:
             # For multi repo support
@@ -1427,7 +1428,7 @@ Found disallowed Kconfig symbol in SoC Kconfig files: {sym_name:35}
                 kconfig_env_file,
                 os.path.join(kconfiglib_dir, "Kconfig.modules"),
                 os.path.join(kconfiglib_dir, "Kconfig.sysbuild.modules"),
-                os.path.join(kconfiglib_dir, "settings_file.txt"),
+                settings_file,
             )
 
             os.environ['HWM_SCHEME'] = 'v2'
@@ -1439,9 +1440,9 @@ Found disallowed Kconfig symbol in SoC Kconfig files: {sym_name:35}
             kconfig_file = os.path.join(kconfiglib_dir, 'boards', 'Kconfig')
             kconfig_boards_file = os.path.join(kconfiglib_dir, 'boards', 'Kconfig.boards')
 
-            board_roots = get_module_setting_root('board', "settings_file.txt")
+            board_roots = get_module_setting_root('board', settings_file)
             board_roots.insert(0, ZEPHYR_BASE)
-            soc_roots = get_module_setting_root('soc', "settings_file.txt")
+            soc_roots = get_module_setting_root('soc', settings_file)
             soc_roots.insert(0, ZEPHYR_BASE)
             root_args = argparse.Namespace(
                 **{
@@ -1568,6 +1569,7 @@ Found board redefining build system defined Kconfig symbol: CONFIG_{board_str}
         os.environ["KCONFIG_BINARY_DIR"] = kconfiglib_dir
         os.environ['DEVICETREE_CONF'] = "dummy"
         kconfig_env_file = os.path.join(kconfiglib_dir, "kconfig_module_dirs.env")
+        settings_file = os.path.join(kconfiglib_dir, "settings_file.txt")
 
         try:
             # For multi repo support
@@ -1575,7 +1577,7 @@ Found board redefining build system defined Kconfig symbol: CONFIG_{board_str}
                 kconfig_env_file,
                 os.path.join(kconfiglib_dir, "Kconfig.modules"),
                 os.path.join(kconfiglib_dir, "Kconfig.sysbuild.modules"),
-                os.path.join(kconfiglib_dir, "settings_file.txt"),
+                settings_file,
             )
 
             os.environ['HWM_SCHEME'] = 'v2'
@@ -1586,9 +1588,9 @@ Found board redefining build system defined Kconfig symbol: CONFIG_{board_str}
 
             kconfig_file = os.path.join(kconfiglib_dir, 'boards', 'Kconfig.defconfig')
 
-            board_roots = get_module_setting_root('board', "settings_file.txt")
+            board_roots = get_module_setting_root('board', settings_file)
             board_roots.insert(0, ZEPHYR_BASE)
-            soc_roots = get_module_setting_root('soc', "settings_file.txt")
+            soc_roots = get_module_setting_root('soc', settings_file)
             soc_roots.insert(0, ZEPHYR_BASE)
             root_args = argparse.Namespace(
                 **{
