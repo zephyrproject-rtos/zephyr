@@ -100,4 +100,13 @@ config BOARD_LATE_INIT_HOOK
 	  A custom board hook board_late_init_hook() is executed after the kernel and
 	  devices are initialized
 
+config SOC_SPURIOUS_IRQ_HOOK
+	bool
+	help
+	  Run an SoC hook on a spurious interrupt.
+
+	  A custom SoC hook soc_spurious_irq_hook() is executed from
+	  z_irq_spurious() after the error is logged and before
+	  z_riscv_fatal_error() raises K_ERR_SPURIOUS_IRQ.
+
 endmenu
