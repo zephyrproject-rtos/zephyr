@@ -9,6 +9,7 @@ config LORA_SX126X_NATIVE
 		   DT_HAS_ST_STM32WL_SUBGHZ_RADIO_ENABLED
 	select SPI
 	select GPIO
+	select LORA_SX12XX_NATIVE_COMMON
 	help
 	  Enable native driver for Semtech SX1261/SX1262 LoRa transceivers,
 	  including the STM32WL integrated sub-GHz radio.
