@@ -987,6 +987,8 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 					(int)server_len, servers[i]);
 				break;
 			}
+
+			ctx->servers[idx].if_index = 0;
 		}
 
 		ctx->servers[idx].source = source;
@@ -1058,6 +1060,8 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 
 			net_if_get_name(net_if_get_by_index(ctx->servers[idx].if_index),
 					iface_str, sizeof(iface_str));
+		} else {
+			ctx->servers[idx].if_index = 0;
 		}
 
 		dns_postprocess_server(ctx, idx);
