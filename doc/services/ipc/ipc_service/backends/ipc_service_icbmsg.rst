@@ -47,6 +47,19 @@ The data sending process is following:
 * The sender is performing a garbage collection by reading the consumer queue and freeing the buffers.
   Garbage collection is performed after sending any message or if there is no available buffers.
 
+The message header at the beginning of the first block has the following layout:
+
+.. mermaid::
+   :caption: ICBMsg message header layout
+   :alt: ICBMsg message header in memory order: data size (2 bytes), block
+         index (1 byte) and endpoint address (1 byte), followed by the data.
+
+   packet
+     0-15: "Data size"
+     16-23: "Block index"
+     24-31: "Endpoint address"
+     32-63: "Data (data size bytes)"
+
 Configuration
 =============
 
