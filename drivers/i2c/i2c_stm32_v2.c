@@ -236,15 +236,23 @@ static int dma_xfer_start(const struct device *dev, struct i2c_msg *msg, bool pr
 static void dma_finish(const struct device *dev, struct i2c_msg *msg)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
+	unsigned int key;
 
+	/* Protect CR1 read-modify-write operations against target ISR updates.
+	 * Keep DMA stop and cache maintenance outside the critical section.
+	 */
 	if ((msg->flags & I2C_MSG_READ) != 0U) {
+		key = irq_lock();
 		LL_I2C_DisableDMAReq_RX(cfg->i2c);
+		irq_unlock(key);
 		dma_stop(cfg->rx_dma.dev_dma, cfg->rx_dma.dma_channel);
 		if (!stm32_buf_in_nocache((uintptr_t)msg->buf, msg->len)) {
 			sys_cache_data_invd_range(msg->buf, msg->len);
 		}
 	} else {
+		key = irq_lock();
 		LL_I2C_DisableDMAReq_TX(cfg->i2c);
+		irq_unlock(key);
 		dma_stop(cfg->tx_dma.dev_dma, cfg->tx_dma.dma_channel);
 	}
 }
