@@ -707,6 +707,33 @@ ZTEST(ec_host_cmd, test_err_log_on_unverified_rx)
 		      "Expected 'HC 0x0001 err 6', got '%s'", last_log_str);
 }
 
+ZTEST(ec_host_cmd, test_no_log_on_invalid_response)
+{
+	const uint16_t oversized_len = UINT16_MAX - sizeof(struct ec_host_cmd_response_header) + 1;
+
+	hexdump_log_count = 0;
+	first_hexdump_len = 0;
+	last_hexdump_len = 0;
+
+	*host_to_dut = (struct rx_structure){
+		.header = {
+			.prtcl_ver = 3,
+			.cmd_id = EC_CMD_UNBOUNDED,
+			.cmd_ver = 1,
+			.data_len = sizeof(host_to_dut->unbounded),
+		},
+		.unbounded.bytes_to_write = oversized_len,
+	};
+
+	simulate_rx_data();
+	verify_tx_error(EC_HOST_CMD_INVALID_RESPONSE);
+	zassert_equal(hexdump_log_count, 1,
+		      "Rejected response must not trigger response hexdump (got %zu hexdumps)",
+		      hexdump_log_count);
+	zassert_equal(last_hexdump_len, sizeof(host_to_dut->unbounded),
+		      "Only the request payload should be hexdumped");
+}
+
 static void *ec_host_cmd_tests_setup(void)
 {
 	ec_host_cmd_backend_sim_install_send_cb(host_send, &sent);
