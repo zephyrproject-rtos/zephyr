@@ -78,35 +78,35 @@ int ti_sci_intr_get_parent_irq(const struct device *dev, uint16_t input, unsigne
 void ti_sci_intr_log_routes(void);
 
 /**
- * @brief Enable a multi-level IRQ whose parent is a ti,sci-intr-out.
+ * @brief Enable an IRQ, programming TISCI when @p irq is multi-level.
  *
- * Programs TISCI to route the L2 IR input onto the output wired to the L1 VIM
- * IRQ encoded in @p irq, then enables that VIM line.
+ * Level-1 IRQs are forwarded to VIM. Level-2 IRQs whose parent is a
+ * ti,sci-intr-out program the IR route and then enable the parent VIM line.
  *
- * @param irq Zephyr multi-level IRQ (IRQ_TO_L2(input) | vim_irq)
+ * @param irq Zephyr IRQ (level-1 VIM number, or IRQ_TO_L2(input) | vim_irq)
  */
 void ti_sci_intr_irq_enable(unsigned int irq);
 
 /**
- * @brief Disable a multi-level IRQ previously enabled with ti_sci_intr_irq_enable().
+ * @brief Disable an IRQ previously enabled with ti_sci_intr_irq_enable().
  *
- * @param irq Zephyr multi-level IRQ
+ * @param irq Zephyr IRQ
  */
 void ti_sci_intr_irq_disable(unsigned int irq);
 
 /**
- * @brief Query whether a multi-level ti,sci-intr IRQ is enabled.
+ * @brief Query whether an IRQ is enabled.
  *
- * @param irq Zephyr multi-level IRQ
+ * @param irq Zephyr IRQ
  *
  * @return non-zero if enabled
  */
 int ti_sci_intr_irq_is_enabled(unsigned int irq);
 
 /**
- * @brief Set priority/flags on the parent VIM line of a multi-level IRQ.
+ * @brief Set priority/flags on the VIM line for @p irq.
  *
- * @param irq   Zephyr multi-level IRQ
+ * @param irq   Zephyr IRQ
  * @param prio  Priority
  * @param flags VIM trigger flags
  */

@@ -389,6 +389,11 @@ static struct ti_sci_intr_out *ti_sci_intr_out_by_output(const struct device *ro
 
 void ti_sci_intr_irq_enable(unsigned int irq)
 {
+	if (irq_get_level(irq) == 1U) {
+		z_vim_irq_enable(irq);
+		return;
+	}
+
 	ti_sci_intr_irq_enable_inner(irq, false);
 }
 
@@ -459,13 +464,20 @@ static void ti_sci_intr_irq_enable_inner(unsigned int irq, bool from_work)
 
 void ti_sci_intr_irq_disable(unsigned int irq)
 {
-	unsigned int vim_irq = irq_parent_level_2(irq);
-	uint16_t input = (uint16_t)irq_from_level_2(irq);
+	unsigned int vim_irq;
+	uint16_t input;
 	struct ti_sci_intr_out *out;
 	const struct ti_sci_intr_config *cfg;
 	struct ti_sci_intr_data *data;
 	k_spinlock_key_t key;
 
+	if (irq_get_level(irq) == 1U) {
+		z_vim_irq_disable(irq);
+		return;
+	}
+
+	vim_irq = irq_parent_level_2(irq);
+	input = (uint16_t)irq_from_level_2(irq);
 	out = ti_sci_intr_out_by_vim(vim_irq);
 	if (out == NULL || out->router == NULL) {
 		return;
@@ -493,9 +505,17 @@ void ti_sci_intr_irq_disable(unsigned int irq)
 
 int ti_sci_intr_irq_is_enabled(unsigned int irq)
 {
-	unsigned int vim_irq = irq_parent_level_2(irq);
-	uint16_t input = (uint16_t)irq_from_level_2(irq);
-	struct ti_sci_intr_out *out = ti_sci_intr_out_by_vim(vim_irq);
+	unsigned int vim_irq;
+	uint16_t input;
+	struct ti_sci_intr_out *out;
+
+	if (irq_get_level(irq) == 1U) {
+		return z_vim_irq_is_enabled(irq);
+	}
+
+	vim_irq = irq_parent_level_2(irq);
+	input = (uint16_t)irq_from_level_2(irq);
+	out = ti_sci_intr_out_by_vim(vim_irq);
 
 	if (out == NULL || out->active_input != input || !out->routed) {
 		return 0;
@@ -506,9 +526,17 @@ int ti_sci_intr_irq_is_enabled(unsigned int irq)
 
 void ti_sci_intr_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {
-	unsigned int vim_irq = irq_parent_level_2(irq);
-	struct ti_sci_intr_out *out = ti_sci_intr_out_by_vim(vim_irq);
+	unsigned int vim_irq;
+	struct ti_sci_intr_out *out;
 	uint32_t vim_flags = flags;
+
+	if (irq_get_level(irq) == 1U) {
+		z_vim_irq_priority_set(irq, prio, flags);
+		return;
+	}
+
+	vim_irq = irq_parent_level_2(irq);
+	out = ti_sci_intr_out_by_vim(vim_irq);
 
 	if (out != NULL && (vim_flags & (IRQ_TYPE_EDGE | IRQ_TYPE_LEVEL)) == 0U) {
 		vim_flags = out->vim_flags;
