@@ -107,6 +107,7 @@ BUILD_ASSERT(offsetof(i2c_omap_regs_t, BUFSTAT) == 0xc0);
 #define I2C_OMAP_STAT_ROVR BIT(11) /* Receive overrun */
 #define I2C_OMAP_STAT_XUDF BIT(10) /* Transmit underflow */
 #define I2C_OMAP_STAT_AAS  BIT(9)  /* Address as target */
+#define I2C_OMAP_STAT_BF   BIT(8)  /* Bus free (STOP detected) */
 #define I2C_OMAP_STAT_XRDY BIT(4)  /* Transmit data ready */
 #define I2C_OMAP_STAT_RRDY BIT(3)  /* Receive data ready */
 #define I2C_OMAP_STAT_ARDY BIT(2)  /* Register access ready */
@@ -115,8 +116,9 @@ BUILD_ASSERT(offsetof(i2c_omap_regs_t, BUFSTAT) == 0xc0);
 
 /* IRQSTATUS is write-1-to-clear; writing 0 leaves a bit unchanged */
 #define I2C_OMAP_STAT_CLR_MASK                                                                     \
-	(I2C_OMAP_STAT_XDR | I2C_OMAP_STAT_RDR | I2C_OMAP_STAT_XRDY | I2C_OMAP_STAT_RRDY |         \
-	 I2C_OMAP_STAT_ARDY | I2C_OMAP_STAT_NACK | I2C_OMAP_STAT_AL)
+	(I2C_OMAP_STAT_XDR | I2C_OMAP_STAT_RDR | I2C_OMAP_STAT_AAS | I2C_OMAP_STAT_BF |            \
+	 I2C_OMAP_STAT_XRDY | I2C_OMAP_STAT_RRDY | I2C_OMAP_STAT_ARDY | I2C_OMAP_STAT_NACK |       \
+	 I2C_OMAP_STAT_AL)
 
 /* I2C System Test Register (I2C_OMAP_SYSTEST): */
 #define I2C_OMAP_SYSTEST_ST_EN       BIT(15)   /* System test enable */
@@ -167,6 +169,11 @@ struct i2c_omap_data {
 	uint32_t xfer_ll_result;
 	uint32_t irq_enable;
 #endif
+#if defined(CONFIG_I2C_TARGET) && defined(CONFIG_I2C_OMAP_INTERRUPT)
+	struct i2c_target_config *target_cfg;
+	bool target_first;
+	bool target_read_active;
+#endif
 	uint8_t fifo_size;
 	bool receiver;
 	bool bb_valid;
@@ -213,6 +220,167 @@ static void i2c_omap_update_irq_enable(const struct device *dev)
 	data->irq_enable = en;
 }
 
+#if defined(CONFIG_I2C_TARGET)
+static void i2c_omap_target_update_irq_enable(const struct device *dev)
+{
+	struct i2c_omap_data *data = DEV_DATA(dev);
+
+	/* Byte-oriented target: AAS/BF framing + RRDY/XRDY data path */
+	data->irq_enable = I2C_OMAP_STAT_AAS | I2C_OMAP_STAT_BF | I2C_OMAP_STAT_RRDY |
+			   I2C_OMAP_STAT_XRDY;
+}
+
+static void i2c_omap_target_isr(const struct device *dev)
+{
+	struct i2c_omap_data *data = DEV_DATA(dev);
+	volatile i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
+	const struct i2c_target_callbacks *cb;
+	uint32_t status;
+	uint8_t byte;
+	int ret;
+
+	if (data->target_cfg == NULL || data->target_cfg->callbacks == NULL) {
+		i2c_base_addr->IRQSTATUS = i2c_base_addr->IRQSTATUS;
+		return;
+	}
+
+	cb = data->target_cfg->callbacks;
+	status = i2c_base_addr->IRQSTATUS & data->irq_enable;
+
+	if (status & I2C_OMAP_STAT_AAS) {
+		LOG_DBG("target ISR AAS (addr-as-target) irqstat=0x%x", status);
+		i2c_base_addr->IRQSTATUS = I2C_OMAP_STAT_AAS;
+		data->target_first = true;
+		data->target_read_active = false;
+		status &= ~I2C_OMAP_STAT_AAS;
+	}
+
+	if (status & I2C_OMAP_STAT_RRDY) {
+		byte = (uint8_t)i2c_base_addr->DATA;
+		i2c_base_addr->IRQSTATUS = I2C_OMAP_STAT_RRDY;
+		LOG_DBG("target ISR RRDY byte=0x%02x first=%d", byte, data->target_first);
+
+		if (data->target_first) {
+			data->target_first = false;
+			if (cb->write_requested != NULL) {
+				ret = cb->write_requested(data->target_cfg);
+				if (ret < 0) {
+					/* OMAP target cannot NACK mid-byte; drop payload */
+					status &= ~I2C_OMAP_STAT_RRDY;
+					goto check_bf;
+				}
+			}
+		}
+		if (cb->write_received != NULL) {
+			(void)cb->write_received(data->target_cfg, byte);
+		}
+		status &= ~I2C_OMAP_STAT_RRDY;
+	}
+
+	if (status & I2C_OMAP_STAT_XRDY) {
+		byte = 0xff;
+
+		if (data->target_first) {
+			data->target_first = false;
+			data->target_read_active = true;
+			if (cb->read_requested != NULL) {
+				ret = cb->read_requested(data->target_cfg, &byte);
+				if (ret < 0) {
+					data->target_read_active = false;
+				}
+			}
+		} else if (data->target_read_active && cb->read_processed != NULL) {
+			ret = cb->read_processed(data->target_cfg, &byte);
+			if (ret < 0) {
+				data->target_read_active = false;
+				byte = 0xff;
+			}
+		}
+
+		LOG_DBG("target ISR XRDY byte=0x%02x", byte);
+		i2c_base_addr->DATA = byte;
+		i2c_base_addr->IRQSTATUS = I2C_OMAP_STAT_XRDY;
+		status &= ~I2C_OMAP_STAT_XRDY;
+	}
+
+check_bf:
+	if (status & I2C_OMAP_STAT_BF) {
+		LOG_DBG("target ISR BF (stop)");
+		i2c_base_addr->IRQSTATUS = I2C_OMAP_STAT_BF;
+		data->target_first = false;
+		data->target_read_active = false;
+		if (cb->stop != NULL) {
+			(void)cb->stop(data->target_cfg);
+		}
+	}
+}
+
+static int i2c_omap_target_register(const struct device *dev, struct i2c_target_config *cfg)
+{
+	struct i2c_omap_data *data = DEV_DATA(dev);
+	volatile i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
+
+	if (cfg == NULL || cfg->callbacks == NULL) {
+		return -EINVAL;
+	}
+	if ((cfg->flags & I2C_TARGET_FLAGS_ADDR_10_BITS) != 0U) {
+		return -ENOTSUP;
+	}
+
+	k_sem_take(&data->lock, K_FOREVER);
+
+	if (data->target_cfg != NULL || data->xfer_active) {
+		k_sem_give(&data->lock);
+		return -EBUSY;
+	}
+
+	data->target_cfg = cfg;
+	data->target_first = false;
+	data->target_read_active = false;
+
+	i2c_base_addr->CON = 0;
+	i2c_base_addr->OA = cfg->address & 0x7fU;
+	/* Threshold of 1 byte (TXTRSH/RXTRSH = 0) for Zephyr per-byte callbacks */
+	i2c_base_addr->BUF = I2C_OMAP_BUF_RXFIF_CLR | I2C_OMAP_BUF_TXFIF_CLR;
+
+	i2c_omap_target_update_irq_enable(dev);
+	i2c_base_addr->IRQSTATUS = I2C_OMAP_STAT_CLR_MASK;
+	i2c_base_addr->IRQENABLE_CLR = I2C_OMAP_IRQENABLE_ALL;
+	i2c_base_addr->IRQENABLE_SET = data->irq_enable;
+	/* Target mode: EN without MST */
+	i2c_base_addr->CON = I2C_OMAP_CON_EN;
+
+	k_sem_give(&data->lock);
+	return 0;
+}
+
+static int i2c_omap_target_unregister(const struct device *dev, struct i2c_target_config *cfg)
+{
+	struct i2c_omap_data *data = DEV_DATA(dev);
+	volatile i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
+
+	k_sem_take(&data->lock, K_FOREVER);
+
+	if (data->target_cfg == NULL || data->target_cfg != cfg) {
+		k_sem_give(&data->lock);
+		return -EINVAL;
+	}
+
+	data->target_cfg = NULL;
+	data->target_first = false;
+	data->target_read_active = false;
+
+	i2c_base_addr->CON = 0;
+	i2c_base_addr->OA = 0;
+	i2c_base_addr->IRQENABLE_CLR = I2C_OMAP_IRQENABLE_ALL;
+	i2c_omap_update_irq_enable(dev);
+	i2c_omap_init_ll(dev);
+
+	k_sem_give(&data->lock);
+	return 0;
+}
+#endif /* CONFIG_I2C_TARGET */
+
 static void i2c_omap_isr(const void *arg)
 {
 	const struct device *dev = arg;
@@ -220,6 +388,14 @@ static void i2c_omap_isr(const void *arg)
 	volatile i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
 	int result = RETRY;
 	int count = 0;
+
+#if defined(CONFIG_I2C_TARGET)
+	if (data->target_cfg != NULL) {
+		i2c_omap_target_isr(dev);
+		i2c_base_addr->EOI = 0;
+		return;
+	}
+#endif
 
 	if (!data->xfer_active) {
 		i2c_base_addr->IRQSTATUS = i2c_base_addr->IRQSTATUS;
@@ -871,6 +1047,13 @@ static int i2c_omap_transfer_main(const struct device *dev, struct i2c_msg msg[]
 
 	k_sem_take(&data->lock, K_FOREVER);
 
+#if defined(CONFIG_I2C_TARGET) && defined(CONFIG_I2C_OMAP_INTERRUPT)
+	if (data->target_cfg != NULL) {
+		k_sem_give(&data->lock);
+		return -EBUSY;
+	}
+#endif
+
 	ret = i2c_omap_wait_for_bb(dev);
 	if (ret < 0) {
 		k_sem_give(&data->lock);
@@ -926,6 +1109,10 @@ static DEVICE_API(i2c, i2c_omap_api) = {
 #ifdef CONFIG_I2C_OMAP_BUS_RECOVERY
 	.recover_bus = i2c_omap_recover_bus,
 #endif /* CONFIG_I2C_OMAP_BUS_RECOVERY */
+#if defined(CONFIG_I2C_TARGET) && defined(CONFIG_I2C_OMAP_INTERRUPT)
+	.target_register = i2c_omap_target_register,
+	.target_unregister = i2c_omap_target_unregister,
+#endif
 };
 
 /**
@@ -1032,8 +1219,6 @@ static int i2c_omap_init(const struct device *dev)
 	I2C_OMAP_DEFINE_CLK_SUBSYS(inst);                                                          \
 	LOG_INSTANCE_REGISTER(omap_i2c, inst, CONFIG_I2C_LOG_LEVEL);                               \
 	IF_ENABLED(CONFIG_I2C_OMAP_INTERRUPT, (I2C_OMAP_IRQ_CONFIG_DEFINE(inst);))                 \
-		}                                                                                      \
-	))                                                                                         \
 	static const struct i2c_omap_cfg i2c_omap_cfg_##inst = {                                   \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(inst)),                                           \
 		.irq = DT_INST_IRQN(inst),                                                         \
