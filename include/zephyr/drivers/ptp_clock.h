@@ -50,6 +50,10 @@ extern "C" {
  * @{
  */
 
+/** @cond INTERNAL_HIDDEN */
+struct precision_clock_output_provider;
+/** @endcond */
+
 /**
  * @brief Set the time of the PTP clock.
  * See ptp_clock_set() for argument description.
@@ -112,6 +116,19 @@ __subsystem struct ptp_clock_driver_api {
 	 * A driver that implements the deprecated @c rate_adjust may leave this unset.
 	 */
 	ptp_clock_api_adjust_rate_t adjust_rate;
+	/**
+	 * @driver_ops_optional Scheduled clock output provider extension.
+	 *
+	 * Optional reference to a protocol-neutral scheduled output provider
+	 * defined by @ref precision_clock_output_provider. Leave null when the
+	 * device does not expose scheduled outputs. A precision clock adapter
+	 * discovers the extension and bridges it onto the scheduled-output API.
+	 * The protocol-neutral contract is reusable by non-PTP clocks, avoiding
+	 * a second PTP-specific periodic-output API. This header only forward
+	 * declares the provider; drivers without output need no precision-timing
+	 * header or runtime support.
+	 */
+	const struct precision_clock_output_provider *output;
 };
 
 /**
