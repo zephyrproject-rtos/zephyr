@@ -30,8 +30,10 @@
 
 LOG_MODULE_REGISTER(omap_i2c, CONFIG_I2C_LOG_LEVEL);
 
-#define I2C_OMAP_TIMEOUT     100U
-#define I2C_OMAP_TRANSFER_TIMEOUT 1000U
+/* Short waits for soft-reset done and bus-busy (not the per-message xfer timeout) */
+#define I2C_OMAP_HW_TIMEOUT_MS  100U
+/* Per-message completion wait (poll loop or IRQ semaphore) */
+#define I2C_OMAP_MSG_TIMEOUT_MS 1000U
 /* OCP_SYSSTATUS bit definitions */
 #define SYSS_RESETDONE_MASK  BIT(0)
 #define I2C_OMAP_SYSC_SRST   BIT(1)
@@ -55,7 +57,8 @@ typedef struct {
 	uint8_t RESERVED_0[0x10]; /**< Reserved, offset: 0x0 */
 
 	uint32_t SYSC;          /**< System Configuration, offset: 0x10 */
-	uint8_t RESERVED_1[0x10];    /**< Reserved, offset: 0x14 - 0x24 */
+	uint8_t RESERVED_1[0xC];     /**< Reserved, offset: 0x14 - 0x1F */
+	uint32_t EOI;           /**< End Of Interrupt, offset: 0x20 */
 	uint32_t IRQSTATUS_RAW; /**< Interrupt Status Raw, offset: 0x24 */
 	uint32_t IRQSTATUS;     /**< Interrupt Status (W1C), offset: 0x28 */
 	uint32_t IRQENABLE_SET; /**< Interrupt Enable Set, offset: 0x2C */
@@ -78,6 +81,7 @@ typedef struct {
 } i2c_omap_regs_t;
 
 BUILD_ASSERT(offsetof(i2c_omap_regs_t, SYSC) == 0x10);
+BUILD_ASSERT(offsetof(i2c_omap_regs_t, EOI) == 0x20);
 BUILD_ASSERT(offsetof(i2c_omap_regs_t, IRQSTATUS_RAW) == 0x24);
 BUILD_ASSERT(offsetof(i2c_omap_regs_t, IRQSTATUS) == 0x28);
 BUILD_ASSERT(offsetof(i2c_omap_regs_t, SYSS) == 0x90);
@@ -157,6 +161,12 @@ struct i2c_omap_data {
 	struct i2c_omap_speed_config speed_config;
 	struct i2c_msg current_msg;
 	struct k_sem lock;
+#ifdef CONFIG_I2C_OMAP_INTERRUPT
+	struct k_sem xfer_done;
+	volatile bool xfer_active;
+	uint32_t xfer_ll_result;
+	uint32_t irq_enable;
+#endif
 	uint8_t fifo_size;
 	bool receiver;
 	bool bb_valid;
@@ -181,7 +191,63 @@ static void i2c_omap_init_ll(const struct device *dev)
 	i2c_base_addr->SCLH = data->speed_config.sclhstate;
 	i2c_base_addr->CON = I2C_OMAP_CON_EN;
 	i2c_base_addr->IRQSTATUS = I2C_OMAP_STAT_CLR_MASK;
+#ifdef CONFIG_I2C_OMAP_INTERRUPT
+	if (data->irq_enable != 0U) {
+		i2c_base_addr->IRQENABLE_SET = data->irq_enable;
+	}
+#endif
 }
+
+static int i2c_omap_transfer_message_ll(const struct device *dev);
+
+#ifdef CONFIG_I2C_OMAP_INTERRUPT
+static void i2c_omap_update_irq_enable(const struct device *dev)
+{
+	struct i2c_omap_data *data = DEV_DATA(dev);
+	uint32_t en = I2C_OMAP_STAT_XRDY | I2C_OMAP_STAT_RRDY | I2C_OMAP_STAT_ARDY |
+		    I2C_OMAP_STAT_NACK | I2C_OMAP_STAT_AL;
+
+	if (data->fifo_size != 0U) {
+		en |= I2C_OMAP_STAT_XDR | I2C_OMAP_STAT_RDR;
+	}
+	data->irq_enable = en;
+}
+
+static void i2c_omap_isr(const void *arg)
+{
+	const struct device *dev = arg;
+	struct i2c_omap_data *data = DEV_DATA(dev);
+	volatile i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
+	int result = RETRY;
+	int count = 0;
+
+	if (!data->xfer_active) {
+		i2c_base_addr->IRQSTATUS = i2c_base_addr->IRQSTATUS;
+		i2c_base_addr->EOI = 0;
+		return;
+	}
+
+	/*
+	 * Drain pending enabled events. RETRY means "more data later" (wait for
+	 * the next IRQ) — never busy-loop here when IRQSTATUS is empty.
+	 */
+	do {
+		if ((i2c_base_addr->IRQSTATUS & data->irq_enable) == 0U) {
+			break;
+		}
+		result = i2c_omap_transfer_message_ll(dev);
+		count++;
+	} while (result == RETRY && count < 100);
+
+	if (result != RETRY) {
+		data->xfer_ll_result = (uint32_t)result;
+		data->xfer_active = false;
+		k_sem_give(&data->xfer_done);
+	}
+
+	i2c_base_addr->EOI = 0;
+}
+#endif /* CONFIG_I2C_OMAP_INTERRUPT */
 
 /**
  * @brief Reset the OMAP I2C controller.
@@ -201,7 +267,7 @@ static int i2c_omap_reset(const struct device *dev)
 	sysc = i2c_base_addr->SYSC;
 	i2c_base_addr->CON &= ~I2C_OMAP_CON_EN;
 	i2c_base_addr->SYSC = sysc | I2C_OMAP_SYSC_SRST;
-	timeout = k_uptime_get() + I2C_OMAP_TIMEOUT;
+	timeout = k_uptime_get() + I2C_OMAP_HW_TIMEOUT_MS;
 	i2c_base_addr->CON = I2C_OMAP_CON_EN;
 	while (!(i2c_base_addr->SYSS & SYSS_RESETDONE_MASK)) {
 		if (k_uptime_get() > timeout) {
@@ -538,7 +604,7 @@ static int i2c_omap_wait_for_bb(const struct device *dev)
 {
 	struct i2c_omap_data *data = DEV_DATA(dev);
 	volatile i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
-	uint32_t timeout = k_uptime_get_32() + I2C_OMAP_TIMEOUT;
+	uint32_t timeout = k_uptime_get_32() + I2C_OMAP_HW_TIMEOUT_MS;
 
 	if (!data->bb_valid) {
 		return 0;
@@ -598,6 +664,9 @@ static int i2c_omap_transfer_message_ll(const struct device *dev)
 		i2c_base_addr->IRQSTATUS = I2C_OMAP_STAT_AL;
 	}
 	if (irq_raw & I2C_OMAP_STAT_ARDY) {
+		/* ProDB0017052: clear ARDY twice */
+		/* Mannnn, this took a long time to figure it out. */
+		i2c_base_addr->IRQSTATUS = I2C_OMAP_STAT_ARDY;
 		i2c_base_addr->IRQSTATUS = I2C_OMAP_STAT_ARDY;
 	}
 	if (irq_raw & (I2C_OMAP_STAT_ARDY | I2C_OMAP_STAT_NACK | I2C_OMAP_STAT_AL)) {
@@ -703,11 +772,6 @@ static int i2c_omap_transfer_message(const struct device *dev, struct i2c_msg *m
 	control_reg = i2c_base_addr->BUF;
 	control_reg |= I2C_OMAP_BUF_RXFIF_CLR | I2C_OMAP_BUF_TXFIF_CLR;
 	i2c_base_addr->BUF = control_reg;
-	/* If we're not polling, reset the command completion semaphore */
-	if (!polling) {
-		k_sem_reset(&data->lock);
-	}
-	/* Reset the command error status */
 	/* Prepare the control register for the I2C operation */
 	control_reg = I2C_OMAP_CON_EN | I2C_OMAP_CON_MST | I2C_OMAP_CON_STT;
 	/* Enable high-speed mode if required by the transfer speed */
@@ -724,24 +788,39 @@ static int i2c_omap_transfer_message(const struct device *dev, struct i2c_msg *m
 	}
 	/* Drop stale ARDY/NACK from a previous STP before arming STT */
 	i2c_base_addr->IRQSTATUS = I2C_OMAP_STAT_CLR_MASK;
-	/* Start the I2C transfer by writing the control register */
-	i2c_base_addr->CON = control_reg;
-	/* Poll for status until the transfer is complete */
-	/* Call a lower-level function to continue the transfer */
-	end = sys_timepoint_calc(K_MSEC(I2C_OMAP_TRANSFER_TIMEOUT));
-	do {
-		result = i2c_omap_transfer_message_ll(dev);
-	} while (result == RETRY && !sys_timepoint_expired(end));
 
-	/* If no errors occurred, return success */
-	if (!result) {
-		return 0;
+	end = sys_timepoint_calc(K_MSEC(I2C_OMAP_MSG_TIMEOUT_MS));
+#ifdef CONFIG_I2C_OMAP_INTERRUPT
+	if (!polling) {
+		k_sem_reset(&data->xfer_done);
+		/* Arm before CON: XRDY can assert immediately on STT|TRX */
+		data->xfer_active = true;
+		i2c_base_addr->CON = control_reg;
+		if (k_sem_take(&data->xfer_done, sys_timepoint_timeout(end)) != 0) {
+			data->xfer_active = false;
+			(void)i2c_omap_reset(dev);
+			i2c_omap_init_ll(dev);
+			return -ETIMEDOUT;
+		}
+		result = (int)data->xfer_ll_result;
+	} else
+#endif
+	{
+		/* Start the I2C transfer by writing the control register */
+		i2c_base_addr->CON = control_reg;
+		do {
+			result = i2c_omap_transfer_message_ll(dev);
+		} while (result == RETRY && !sys_timepoint_expired(end));
+
+		if (result == RETRY) {
+			(void)i2c_omap_reset(dev);
+			i2c_omap_init_ll(dev);
+			return -ETIMEDOUT;
+		}
 	}
 
-	if (result == RETRY) {
-		(void)i2c_omap_reset(dev);
-		i2c_omap_init_ll(dev);
-		return -ETIMEDOUT;
+	if (!result) {
+		return 0;
 	}
 
 	/* Handle timeout or specific error conditions */
@@ -822,14 +901,26 @@ static int i2c_omap_transfer_main(const struct device *dev, struct i2c_msg msg[]
  * @param addr Target address.
  * @return 0 on success, negative error code on failure.
  */
+#ifdef CONFIG_I2C_OMAP_INTERRUPT
+static int i2c_omap_transfer(const struct device *dev, struct i2c_msg msgs[], uint8_t num_msgs,
+			     uint16_t addr)
+{
+	return i2c_omap_transfer_main(dev, msgs, num_msgs, false, addr);
+}
+#else
 static int i2c_omap_transfer_polling(const struct device *dev, struct i2c_msg msgs[],
 						    uint8_t num_msgs, uint16_t addr)
 {
 	return i2c_omap_transfer_main(dev, msgs, num_msgs, true, addr);
 }
+#endif
 
 static DEVICE_API(i2c, i2c_omap_api) = {
+#ifdef CONFIG_I2C_OMAP_INTERRUPT
+	.transfer = i2c_omap_transfer,
+#else
 	.transfer = i2c_omap_transfer_polling,
+#endif
 	.configure = i2c_omap_configure,
 	.get_config = i2c_omap_get_config,
 #ifdef CONFIG_I2C_OMAP_BUS_RECOVERY
@@ -886,13 +977,19 @@ static int i2c_omap_init(const struct device *dev)
 		return ret;
 	}
 
-	i2c_omap_init_ll(dev);
-
 	fifo_depth_code = FIELD_GET(I2C_BUFSTAT_FIFODEPTH_MASK, DEV_I2C_BASE(dev)->BUFSTAT);
 	data->fifo_size = (uint8_t)((8U << fifo_depth_code) / 2U);
 	if (data->fifo_size == 0U) {
 		data->fifo_size = 8U;
 	}
+
+#ifdef CONFIG_I2C_OMAP_INTERRUPT
+	k_sem_init(&data->xfer_done, 0, 1);
+	data->xfer_active = false;
+	i2c_omap_update_irq_enable(dev);
+#endif
+
+	i2c_omap_init_ll(dev);
 
 	data->dev_config = I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(cfg->speed);
 
@@ -922,10 +1019,21 @@ static int i2c_omap_init(const struct device *dev)
 		static const clock_control_subsys_t i2c_omap_clk_subsys_##inst;             \
 	))
 
+#define I2C_OMAP_IRQ_CONFIG_DEFINE(inst)                                                           \
+	static void i2c_omap_irq_config_##inst(void)                                               \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), i2c_omap_isr,         \
+			    DEVICE_DT_INST_GET(inst), 0);                                          \
+		irq_enable(DT_INST_IRQN(inst));                                                    \
+	}
+
 #define I2C_OMAP_INIT(inst)                                                                        \
 	PINCTRL_DT_INST_DEFINE(inst);                                                              \
 	I2C_OMAP_DEFINE_CLK_SUBSYS(inst);                                                          \
 	LOG_INSTANCE_REGISTER(omap_i2c, inst, CONFIG_I2C_LOG_LEVEL);                               \
+	IF_ENABLED(CONFIG_I2C_OMAP_INTERRUPT, (I2C_OMAP_IRQ_CONFIG_DEFINE(inst);))                 \
+		}                                                                                      \
+	))                                                                                         \
 	static const struct i2c_omap_cfg i2c_omap_cfg_##inst = {                                   \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(inst)),                                           \
 		.irq = DT_INST_IRQN(inst),                                                         \
@@ -937,8 +1045,19 @@ static int i2c_omap_init(const struct device *dev)
                                                                                                    \
 	static struct i2c_omap_data i2c_omap_data_##inst;                                          \
                                                                                                    \
+	static int i2c_omap_init_##inst(const struct device *dev)                                  \
+	{                                                                                          \
+		int ret = i2c_omap_init(dev);                                                      \
+                                                                                                   \
+		if (ret == 0) {                                                                    \
+			IF_ENABLED(CONFIG_I2C_OMAP_INTERRUPT,                                      \
+				   (i2c_omap_irq_config_##inst();))                                \
+		}                                                                                  \
+		return ret;                                                                        \
+	}                                                                                          \
+                                                                                                   \
 	I2C_DEVICE_DT_INST_DEFINE(inst,                                                            \
-		i2c_omap_init,                                                                     \
+		i2c_omap_init_##inst,                                                              \
 		NULL,                                                                              \
 		&i2c_omap_data_##inst,                                                             \
 		&i2c_omap_cfg_##inst,                                                              \
