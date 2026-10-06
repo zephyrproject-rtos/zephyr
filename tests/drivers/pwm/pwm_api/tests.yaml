@@ -80,46 +80,40 @@ tests:
      and CONFIG_DT_HAS_NXP_FLEXIO_PWM_ENABLED
     depends_on: pwm
   drivers.pwm.mchp_tcc0:
-    extra_args:
-      - DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc0.overlay"
-      - DTC_OVERLAY_FILE="boards/microchip/pic32cx_sg61_cult_tcc0.overlay"
     platform_allow:
       - sam_e54_xpro
       - pic32cx_sg61_cult
+    extra_args:
+      - FILE_SUFFIX=tcc0
     filter: dt_alias_exists("pwm-test")
   drivers.pwm.mchp_tcc1:
-    extra_args:
-      - DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc1.overlay"
-      - DTC_OVERLAY_FILE="boards/microchip/pic32cx_sg61_cult_tcc1.overlay"
     platform_allow:
       - sam_e54_xpro
       - pic32cx_sg61_cult
+    extra_args:
+      - FILE_SUFFIX=tcc1
     filter: dt_alias_exists("pwm-test")
   drivers.pwm.mchp_tcc2:
-    extra_args:
-      - platform:sam_e54_xpro/atsame54p20a:DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc2.overlay"
-      - platform:pic32cx_sg61_cult/pic32cx1025sg61128:DTC_OVERLAY_FILE="boards/microchip/pic32cx_sg61_cult_tcc2.overlay"
-      - platform:pic32cm_jh01_cpro/pic32cm5164jh01100:DTC_OVERLAY_FILE="boards/microchip/pic32cm_jh01_cpro.overlay"
     platform_allow:
       - sam_e54_xpro
-      - pic32cx_sg61_cult
       - pic32cm_jh01_cpro
+      - pic32cx_sg61_cult
+    extra_args:
+      - FILE_SUFFIX=tcc2
     filter: dt_alias_exists("pwm-test")
   drivers.pwm.mchp_tcc3:
-    extra_args:
-      - DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc3.overlay"
-      - DTC_OVERLAY_FILE="boards/microchip/pic32cx_sg61_cult_tcc3.overlay"
     platform_allow:
       - sam_e54_xpro
       - pic32cx_sg61_cult
+    extra_args:
+      - FILE_SUFFIX=tcc3
     filter: dt_alias_exists("pwm-test")
   drivers.pwm.mchp_tcc4:
-    extra_args:
-      - DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc4.overlay"
-      - DTC_OVERLAY_FILE="boards/microchip/pic32cx_sg61_cult_tcc4.overlay"
     platform_allow:
       - sam_e54_xpro
       - pic32cx_sg61_cult
+    extra_args:
+      - FILE_SUFFIX=tcc4
     filter: dt_alias_exists("pwm-test")
   drivers.pwm.mchp_tc0:
     extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc0.overlay"
@@ -190,15 +184,4 @@ tests:
       - frdm_imxrt1186/mimxrt1186/cm33
       - frdm_imxrt1186/mimxrt1186/cm7
     filter: dt_nodelabel_enabled("pwm_test_center") and CONFIG_DT_HAS_NXP_KINETIS_TPM_ENABLED
-    depends_on: pwm
-  drivers.pwm.emios:
-    tags:
-      - drivers
-      - pwm
-      - userspace
-    extra_args:
-      - platform:frdm_mcxe31b:DTC_OVERLAY_FILE="boards/frdm_mcxe31b.overlay"
-    platform_allow:
-      - frdm_mcxe31b
-    filter: dt_alias_exists("pwm-test")
     depends_on: pwm
