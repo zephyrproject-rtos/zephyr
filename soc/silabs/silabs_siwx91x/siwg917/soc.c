@@ -48,7 +48,7 @@ void soc_early_init_hook(void)
 
 	/* End of remaining of SystemCoreClockUpdate() that is done in siwx91x clock manager init */
 
-	if (IS_ENABLED(CONFIG_PM)) {
+	if (IS_ENABLED(CONFIG_PM) || IS_ENABLED(CONFIG_POWEROFF)) {
 		siwx91x_power_init();
 	}
 }
