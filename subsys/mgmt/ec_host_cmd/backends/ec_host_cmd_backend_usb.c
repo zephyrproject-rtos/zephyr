@@ -116,7 +116,7 @@ struct ec_host_cmd_usb_ctx {
 	struct k_work_delayable reset_work;
 };
 
-static int expected_request_len(const struct ec_host_cmd_request_header *header)
+static size_t expected_request_len(const struct ec_host_cmd_request_header *header)
 {
 	/* Check host request version */
 	if (header->prtcl_ver != EC_HOST_REQUEST_VERSION) {
