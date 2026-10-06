@@ -38,6 +38,25 @@ implied, and the specific management procedure being requested. The
 available procedure requests depend on what has been implemented in
 the stack.
 
+.. mermaid::
+   :caption: Layout of a 64-bit request or event code, most significant bit first
+   :alt: 64-bit network management code: bits 0 to 51 hold the command, bits 52
+         to 58 the layer code, bit 59 the synchronous event flag, bits 60 and 61
+         the layer, bit 62 the on-interface flag and bit 63 the event flag.
+
+   ---
+   config:
+     packet:
+       bitOrder: descending
+   ---
+   packet
+     0-51: "Command"
+     52-58: "Layer code"
+     59: "Sync"
+     60-61: "Layer"
+     62: "Iface"
+     63: "Event"
+
 To avoid extra cost, all :c:func:`net_mgmt` calls are direct. Though this
 may change in a future release, it will not affect the users of this
 function.
