@@ -191,7 +191,7 @@ static int cs40l26_poll(const struct device *const dev, const uint32_t addr, con
 	LOG_INST_DBG(config->log, "timed out polling 0x%08x, expected 0x%08x but received 0x%08x",
 		     addr, val, reg_val);
 
-	return -EIO;
+	return -ETIME;
 }
 
 static inline bool cs40l26_valid_wavetable_source(const struct device *const dev,
