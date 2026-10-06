@@ -2198,14 +2198,15 @@ int hl78xx_edrx_get_time_to_sleep(const struct device *dev);
  *
  * After entering GNSS mode, call hl78xx_queue_gnss_search() to start fix acquisition.
  *
- * A request made while the modem is still registering is not served: it stays
- * pending until the modem registers, is then dropped at the carrier-on,
- * reported with HL78XX_GNSS_EVENT_START_BLOCKED, and must be made again. An
- * application that needs a fix meanwhile leaves GNSS to its next cycle. A power
- * down carries a pending request into the next session: a boot in airplane mode
- * serves it, a boot in fully functional mode drops it at the carrier-on. A
- * low-power build whose modem sleeps before the carrier comes up serves it from
- * sleep instead.
+ * A request made while the modem is not registered, still registering or
+ * searching again after a registration loss, is not served: it stays pending
+ * until the modem registers, is then dropped at the carrier-on, reported with
+ * HL78XX_GNSS_EVENT_START_BLOCKED, and must be made again. An application
+ * that needs a fix during the outage leaves GNSS to its next cycle. A power
+ * down carries a pending request into the next session: a boot in airplane
+ * mode serves it, a boot in fully functional mode drops it at the carrier-on.
+ * A low-power build whose modem sleeps before the carrier comes up serves it
+ * from sleep instead.
  *
  * @kconfig_dep{CONFIG_HL78XX_GNSS}
  *
