@@ -458,24 +458,40 @@ int siwx91x_nwp_apply_power_profile(const struct device *dev,
 
 	ARG_UNUSED(dev);
 
-	/* WiseConnect zeros the BT half of its cached coex profile on every
-	 * sl_wifi_disconnect(). Re-seed it so the combined profile doesn't
-	 * resolve to HIGH_PERFORMANCE and silently drop the PS request.
-	 */
-	if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
-		bt_profile.profile = ASSOCIATED_POWER_SAVE;
-		ret = sl_si91x_bt_set_performance_profile(&bt_profile);
-		if (ret) {
-			LOG_ERR("Failed to initiate power save in BLE mode");
-			return -EINVAL;
+	if (wifi_profile != NULL && wifi_profile->profile == DEEP_SLEEP_WITHOUT_RAM_RETENTION) {
+		/*
+		 * Push the Bluetooth half first. Sending the Wi-Fi half first
+		 * completes the combined coex profile and makes the NWP
+		 * unavailable before the Bluetooth request can be sent.
+		 */
+		if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
+			bt_profile.profile = DEEP_SLEEP_WITHOUT_RAM_RETENTION;
+			ret = sl_si91x_bt_set_performance_profile(&bt_profile);
+			if (ret) {
+				LOG_ERR("Failed to initiate power save in BLE mode");
+				return -EINVAL;
+			}
 		}
-	}
-	if (!IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X)) {
-		wifi_profile_default.profile = DEEP_SLEEP_WITH_RAM_RETENTION;
-		wifi_profile = &wifi_profile_default;
-	} else if (!wifi_profile) {
-		wifi_profile_default.profile = HIGH_PERFORMANCE;
-		wifi_profile = &wifi_profile_default;
+	} else {
+		/* WiseConnect zeros the BT half of its cached coex profile on every
+		 * sl_wifi_disconnect(). Re-seed it so the combined profile doesn't
+		 * resolve to HIGH_PERFORMANCE and silently drop the PS request.
+		 */
+		if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
+			bt_profile.profile = ASSOCIATED_POWER_SAVE;
+			ret = sl_si91x_bt_set_performance_profile(&bt_profile);
+			if (ret) {
+				LOG_ERR("Failed to initiate power save in BLE mode");
+				return -EINVAL;
+			}
+		}
+		if (!IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X)) {
+			wifi_profile_default.profile = DEEP_SLEEP_WITH_RAM_RETENTION;
+			wifi_profile = &wifi_profile_default;
+		} else if (!wifi_profile) {
+			wifi_profile_default.profile = HIGH_PERFORMANCE;
+			wifi_profile = &wifi_profile_default;
+		}
 	}
 	ret = sl_wifi_set_performance_profile_v2(wifi_profile);
 	if (ret) {
