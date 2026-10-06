@@ -29,6 +29,10 @@ config WIFI_SILABS_NCP_DATA_RX_COUNT
 	int "Number of Ethernet frame buffers handed to CPC"
 	default 4
 
+config WIFI_SILABS_NCP_DATA_TX_COUNT
+	int "Number of Ethernet frames in flight towards the co-processor"
+	default 4
+
 config WIFI_SILABS_NCP_MGMT_RX_COUNT
 	int "Number of management frame buffers handed to CPC"
 	default 2
