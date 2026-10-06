@@ -8,6 +8,7 @@ tests:
   drivers.led_strip.build:
     depends_on:
       - gpio
+      - led
       - spi
   drivers.led_strip.build.uart:
     depends_on:
