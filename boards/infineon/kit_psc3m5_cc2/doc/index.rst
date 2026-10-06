@@ -47,13 +47,16 @@ Connections and IOs
 LEDs
 ----
 
-+------+-------------------+
-| Name | GPIO Pin          |
-+======+===================+
-| LED0 | P9.4 (active low) |
-+------+-------------------+
-| LED1 | P9.5 (active low) |
-+------+-------------------+
++------+------------+--------+--------------------+
+| Name | Silkscreen | Colour | GPIO Pin           |
++======+============+========+====================+
+| LED0 | LED1       | Yellow | P9.4 (active high) |
++------+------------+--------+--------------------+
+| LED1 | LED2       | Red    | P9.5 (active high) |
++------+------------+--------+--------------------+
+
+Note that the devicetree names count from zero while the board silkscreen
+counts from one.
 
 Neither user LED can be driven from hardware PWM -- P9.4 and P9.5 have no
 TCPWM option.
