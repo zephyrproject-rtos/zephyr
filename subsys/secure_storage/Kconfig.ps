@@ -9,9 +9,10 @@ config SECURE_STORAGE_PS_IMPLEMENTATION_ZEPHYR
 	bool "Zephyr's PS implementation"
 	select SECURE_STORAGE_PS_TRANSFORM_MODULE
 	select SECURE_STORAGE_PS_STORE_MODULE
+	select SECURE_STORAGE_PS_REPLAY_PROTECTION_MODULE
 	help
 	  Use Zephyr's implementation of the PS API.
-	  It calls into the transform and store modules, which
+	  It calls into the transform, store and replay protection modules, which
 	  can be configured and have custom implementations.
 
 config SECURE_STORAGE_PS_IMPLEMENTATION_ITS
@@ -66,5 +67,19 @@ menuconfig SECURE_STORAGE_PS_STORE_MODULE
 if SECURE_STORAGE_PS_STORE_MODULE
 
 rsource "Kconfig.ps_store"
+
+endif
+
+menuconfig SECURE_STORAGE_PS_REPLAY_PROTECTION_MODULE
+	bool "PS replay protection module"
+	depends on SECURE_STORAGE_PS_IMPLEMENTATION_ZEPHYR
+	help
+	  The module that computes the replay protection value of the PS data
+	  that is written to and read from ITS. Zephyr's PS implementation calls
+	  into it.
+
+if SECURE_STORAGE_PS_REPLAY_PROTECTION_MODULE
+
+rsource "Kconfig.ps_replay_protection"
 
 endif
