@@ -167,6 +167,23 @@ static inline void xlnx_zynqmp_gqspi_write32(const struct device *dev,
 	sys_write32(value, config->base + (mm_reg_t)reg);
 }
 
+static int xlnx_zynqmp_gqspi_get_genfifo_mode(spi_operation_t operation, uint32_t *mode)
+{
+	switch (operation & SPI_LINES_MASK) {
+	case SPI_LINES_SINGLE:
+		*mode = GQSPI_GEN_FIFO_SPI_MODE_SINGLE;
+		return 0;
+	case SPI_LINES_DUAL:
+		*mode = GQSPI_GEN_FIFO_SPI_MODE_DUAL;
+		return 0;
+	case SPI_LINES_QUAD:
+		*mode = GQSPI_GEN_FIFO_SPI_MODE_QUAD;
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+
 static size_t xlnx_zynqmp_gqspi_genfifo_entry_count(size_t length)
 {
 	size_t count = 0;
@@ -249,6 +266,7 @@ static int xlnx_zynqmp_gqspi_configure(const struct device *dev, const struct sp
 	uint32_t max_frequency = spi_cfg->frequency;
 	uint32_t baud_div = 0;
 	uint32_t actual_frequency = config->ref_clock_freq / (2 << baud_div);
+	uint32_t genfifo_mode;
 
 	if (spi_context_configured(ctx, spi_cfg)) {
 		/* Configuration already active */
@@ -261,8 +279,8 @@ static int xlnx_zynqmp_gqspi_configure(const struct device *dev, const struct sp
 		return -ENOTSUP;
 	}
 
-	if ((spi_cfg->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
-		LOG_ERR("Only single line SPI supported");
+	if (xlnx_zynqmp_gqspi_get_genfifo_mode(spi_cfg->operation, &genfifo_mode) != 0) {
+		LOG_ERR("Unsupported line mode 0x%x", spi_cfg->operation & SPI_LINES_MASK);
 		return -ENOTSUP;
 	}
 
@@ -408,6 +426,7 @@ static int xlnx_zynqmp_gqspi_transceive(const struct device *dev, const struct s
 	const size_t num_bufs = max(tx_bufs ? tx_bufs->count : 0, rx_bufs ? rx_bufs->count : 0);
 	size_t genfifo_entries = 2;
 	size_t buf;
+	uint32_t genfifo_mode;
 
 	for (buf = 0; buf < num_bufs; buf++) {
 		size_t tx_bytes = 0;
@@ -446,6 +465,12 @@ static int xlnx_zynqmp_gqspi_transceive(const struct device *dev, const struct s
 		goto out;
 	}
 
+	ret = xlnx_zynqmp_gqspi_get_genfifo_mode(spi_cfg->operation, &genfifo_mode);
+	if (ret) {
+		goto out;
+	}
+	genfifo_mode <<= GQSPI_GEN_FIFO_SPI_MODE_SHIFT;
+
 	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, 1);
 
 	xlnx_zynqmp_gqspi_cs_control(dev, true);
@@ -478,7 +503,7 @@ static int xlnx_zynqmp_gqspi_transceive(const struct device *dev, const struct s
 			genfifo_entry |=
 				GQSPI_GEN_FIFO_CS_LOWER_MASK | GQSPI_GEN_FIFO_BUS_LOWER_MASK;
 		}
-		genfifo_entry |= GQSPI_GEN_FIFO_SPI_MODE_SINGLE << GQSPI_GEN_FIFO_SPI_MODE_SHIFT;
+		genfifo_entry |= genfifo_mode;
 
 		LOG_DBG("Buffer %zu, TX bytes: %zu, RX bytes: %zu, transfer bytes: %zu, "
 			"genfifo_entry: 0x%08x",
