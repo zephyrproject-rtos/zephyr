@@ -414,8 +414,6 @@ FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *
 		k_sem_take(&hc->rx_ready, K_FOREVER);
 		hc->state = EC_HOST_CMD_STATE_PROCESSING;
 
-		ec_host_cmd_log_request(rx->buf);
-
 		/* Check status of the rx data, that has been verified in
 		 * ec_host_cmd_send_received.
 		 */
@@ -423,6 +421,8 @@ FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *
 			ec_host_cmd_send_response(hc->rx_status, &args);
 			continue;
 		}
+
+		ec_host_cmd_log_request(rx->buf);
 
 		found_handler = NULL;
 		STRUCT_SECTION_FOREACH(ec_host_cmd_handler, handler) {
