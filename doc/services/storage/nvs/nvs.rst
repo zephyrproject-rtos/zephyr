@@ -25,6 +25,19 @@ completed. The actual data of the element can be protected by a different (and o
 CRC-32. Use the :kconfig:option:`CONFIG_NVS_DATA_CRC` configuration item to enable
 the data part CRC.
 
+.. mermaid::
+   :caption: NVS metadata entry layout
+   :alt: NVS metadata entry in memory order: id (2 bytes), data offset in
+         sector (2 bytes), data length (2 bytes), part (1 byte, unused) and
+         CRC-8 (1 byte).
+
+   packet
+     0-15: "id"
+     16-31: "Data offset"
+     32-47: "Data length"
+     48-55: "part (unused)"
+     56-63: "CRC-8"
+
 .. note:: The data CRC is checked only when the whole data of the element is read.
   The data CRC is not checked for a partial read, as it is stored at the end of the
   element data area.
