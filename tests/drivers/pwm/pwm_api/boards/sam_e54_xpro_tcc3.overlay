@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2025-2026 Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#define PWM_NODE    tcc3
+#define PWM_PINCTRL tcc3_pwm_default
+#include "mchp_pwm_api_support.dtsi"
+
+&pinctrl {
+	tcc3_pwm_default: tcc3_pwm_default {
+		group1 {
+			pinmux = <PB17F_TCC3_WO1>;
+		};
+	};
+};

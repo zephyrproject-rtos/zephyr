@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2025-2026 Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#define PWM_NODE    tcc4
+#define PWM_PINCTRL tcc4_pwm_default
+#include "mchp_pwm_api_support.dtsi"
+
+&pinctrl {
+	tcc4_pwm_default: tcc4_pwm_default {
+		group1 {
+			pinmux = <PB30F_TCC4_WO0>;
+		};
+	};
+};
