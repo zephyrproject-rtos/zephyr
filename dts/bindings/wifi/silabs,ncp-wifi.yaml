@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Wi-Fi station running on a Silicon Labs network co-processor. The
+  node is a child of the "silabs,ncp" device. Two CPC endpoints carry the
+  traffic: Ethernet frames on the data endpoint, commands and events of the
+  network processor on the management endpoint. The 802.11 association and
+  the key exchange are driven by the Zephyr supplicant.
+
+  Example:
+
+    &ncp {
+        ncp_wifi: wifi {
+            compatible = "silabs,ncp-wifi";
+        };
+    };
+
+compatible: "silabs,ncp-wifi"
+
+include: ethernet-controller.yaml
