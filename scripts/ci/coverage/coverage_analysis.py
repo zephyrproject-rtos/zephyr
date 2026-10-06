@@ -263,13 +263,11 @@ class Json_report:
                     "Uncovered_Functions": [],
                 }
                 for i_fun in covered_file['functions']:
-                    if i_fun['execution_count'] != 0:
-                        json_covered_funciton = {"Name": i_fun['name']}
-                        json_file['Covered_Functions'].append(json_covered_funciton)
-                for i_fun in covered_file['functions']:
-                    if i_fun['execution_count'] == 0:
-                        json_uncovered_funciton = {"Name": i_fun['name']}
-                        json_file['Uncovered_Functions'].append(json_uncovered_funciton)
+                    json_function = {"Name": i_fun.get('name', i_fun.get('demangled_name'))}
+                    if i_fun.get('execution_count', 0) != 0:
+                        json_file['Covered_Functions'].append(json_function)
+                    else:
+                        json_file['Uncovered_Functions'].append(json_function)
                 comp_exists = [x for x in json_files if x['Path'] == json_file['Path']]
                 if not comp_exists:
                     json_files.append(json_file)
