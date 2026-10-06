@@ -199,13 +199,21 @@ static void video_shell_print_buffer(const struct shell *sh, struct video_buffer
 	uint32_t line_offset = vbuf->line_offset;
 	uint32_t byte_offset = line_offset * fmt->pitch;
 	uint32_t bytes_in_buf = vbuf->bytesused;
-	uint32_t lines_in_buf = vbuf->bytesused / fmt->pitch;
+	uint32_t lines_in_buf = fmt->pitch == 0 ? fmt->height : vbuf->bytesused / fmt->pitch;
 
 	shell_print(sh, "Buffer %u/%u at %u ms, Bytes %u-%u/%u, Lines %u-%u/%u, Rate %u FPS %u ms",
 		    /* Buffer */ i + 1, num_buffer, vbuf->timestamp,
-		    /* Bytes */ byte_offset, byte_offset + bytes_in_buf, fmt->height * fmt->pitch,
+		    /* Bytes */ byte_offset, byte_offset + bytes_in_buf, fmt->size,
 		    /* Lines */ line_offset, line_offset + lines_in_buf, fmt->height,
 		    /* Rate */ frmrate_fps, frmival_msec);
+
+	if (vbuf->bytesused > 128 * 2) {
+		shell_hexdump(sh, vbuf->buffer, 128);
+		shell_print(sh, "...");
+		shell_hexdump(sh, vbuf->buffer + vbuf->bytesused - 128, 128);
+	} else {
+		shell_hexdump(sh, vbuf->buffer, vbuf->bytesused);
+	}
 }
 
 static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
@@ -222,7 +230,6 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 	uint32_t this_uptime;
 	uint32_t frmival_msec;
 	uint32_t frmrate_fps;
-	size_t buf_size;
 	unsigned long num_buffers;
 	int ret;
 
@@ -244,15 +251,13 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	buf_size = fmt.pitch * fmt.height;
-
 	shell_print(sh, "Preparing %u buffers of %u bytes each",
-		    CONFIG_VIDEO_BUFFER_POOL_NUM_MAX, buf_size);
+		    CONFIG_VIDEO_BUFFER_POOL_NUM_MAX, fmt.size);
 
 	for (int i = 0; i < ARRAY_SIZE(buffers); i++) {
-		buffers[i] = video_buffer_alloc(buf_size, K_NO_WAIT);
+		buffers[i] = video_buffer_alloc(fmt.size, K_NO_WAIT);
 		if (buffers[i] == NULL) {
-			shell_error(sh, "Failed to allocate buffer %u", i);
+			shell_error(sh, "Failed to allocate buffer %u of %u bytes", i, fmt.size);
 			goto end;
 		}
 
@@ -309,10 +314,6 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 
 end:
 	video_stream_stop(dev, VIDEO_BUF_TYPE_OUTPUT);
-
-	if (vbuf != NULL) {
-		video_buffer_release(vbuf);
-	}
 
 	while (video_dequeue(dev, &vbuf, K_NO_WAIT) == 0) {
 		video_buffer_release(vbuf);
@@ -405,6 +406,12 @@ static int video_shell_set_frmival(const struct shell *sh, const struct device *
 	ret = video_set_frmival(dev, &frmival);
 	if (ret < 0) {
 		shell_error(sh, "Failed to set frame interval");
+		return ret;
+	}
+
+	ret = video_get_frmival(dev, &frmival);
+	if (ret < 0) {
+		shell_error(sh, "Failed to read the frame interval back");
 		return ret;
 	}
 
