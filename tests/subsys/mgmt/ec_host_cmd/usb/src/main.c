@@ -256,4 +256,15 @@ ZTEST(ec_host_cmd_usb, test_usb_invalid_prtcl_ver_max_fail_invalid_header)
 	verify_invalid_protocol_version(UINT8_MAX);
 }
 
+ZTEST(ec_host_cmd_usb, test_usb_out_transfer_while_disabled_ignored)
+{
+	test_c_data->api->disable(test_c_data);
+	mock_ep_out_buf->len = sizeof(struct ec_host_cmd_request_header);
+	zassert_ok(test_c_data->api->request(test_c_data, mock_ep_out_buf, 0));
+
+	zassert_is_null(mock_ep_in_buf);
+	zassert_is_null(mock_ep_out_buf);
+	zassert_equal(mock_ep_out_enqueue_count, 1);
+}
+
 ZTEST_SUITE(ec_host_cmd_usb, NULL, usb_test_setup, usb_test_before, NULL, NULL);
