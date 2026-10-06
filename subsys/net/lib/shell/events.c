@@ -447,6 +447,14 @@ static char *get_l4_desc(struct event_msg *msg,
 		*desc = "IPv6 connectivity";
 		*desc2 = "lost";
 		break;
+	case NET_EVENT_L4_DNS_READY:
+		*desc = "Name resolution";
+		*desc2 = "available";
+		break;
+	case NET_EVENT_L4_DNS_LOST:
+		*desc = "Name resolution";
+		*desc2 = "lost";
+		break;
 	case NET_EVENT_DNS_SERVER_ADD: {
 		struct net_sockaddr *addr = (struct net_sockaddr *)msg->data;
 
