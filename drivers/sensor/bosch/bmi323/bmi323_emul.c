@@ -205,13 +205,13 @@ static int bmi323_emul_init(const struct emul *target, const struct device *pare
 }
 
 #ifdef CONFIG_BMI323_BUS_I2C
-static const struct i2c_emul_api bmi323_emul_api_i2c = {
+static const struct i2c_emul_api bmi323_emul_api_i2c __maybe_unused = {
 	.transfer = bmi323_emul_transfer_i2c,
 };
 #endif /* CONFIG_BMI323_BUS_I2C */
 
 #ifdef CONFIG_BMI323_BUS_SPI
-static const struct spi_emul_api bmi323_emul_api_spi = {
+static const struct spi_emul_api bmi323_emul_api_spi __maybe_unused = {
 	.io = bmi323_emul_io_spi,
 };
 #endif /* CONFIG_BMI323_BUS_SPI */
@@ -223,6 +223,11 @@ static const struct spi_emul_api bmi323_emul_api_spi = {
 #define BMI323_EMUL_BUS_API(n)                                                                     \
 	COND_CODE_1(DT_INST_ON_BUS(n, spi), (bmi323_emul_api_spi), (bmi323_emul_api_i2c))
 
-#define BMI323_EMUL(n) BMI323_EMUL_DEFINE(n, BMI323_EMUL_BUS_API(n))
+/*
+ * Only I2C and SPI are emulated. I3C instances also report as being on the
+ * I2C bus (I3C is backward compatible), so they are excluded explicitly.
+ */
+#define BMI323_EMUL(n)                                                                             \
+	COND_CODE_1(DT_INST_ON_BUS(n, i3c), (), (BMI323_EMUL_DEFINE(n, BMI323_EMUL_BUS_API(n))))
 
 DT_INST_FOREACH_STATUS_OKAY(BMI323_EMUL)

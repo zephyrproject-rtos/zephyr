@@ -83,6 +83,13 @@ test_i3c_bmm350: bmm350@900000803e0000009 {
 	drdy-gpios = <&test_gpio 0 0>;
 };
 
+test_i3c_bmi323: bmi323@a00000803e000000a {
+	compatible = "bosch,bmi323";
+	reg = <0xa 0x00000803 0xe000000a>;
+	assigned-address = <0xa>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
 test_i3c_icm56686: icm56686@680000046a00000011 {
 	compatible = "invensense,icm56686";
 	reg = <0x68 0x0 0x0>;

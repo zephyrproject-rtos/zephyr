@@ -198,6 +198,14 @@ struct bosch_bmi323_bus_api {
 
 	/* Initialize the bus */
 	int (*init)(const void *context);
+
+#ifdef CONFIG_BMI323_BUS_I3C
+	/*
+	 * After a target soft-reset that drops the I3C dynamic address,
+	 * restore it (SETDASA).
+	 */
+	int (*restore_da)(const void *context);
+#endif
 };
 
 struct bosch_bmi323_bus {
@@ -208,6 +216,7 @@ struct bosch_bmi323_bus {
 enum bmi323_bus_type {
 	BMI323_BUS_SPI = 0,
 	BMI323_BUS_I2C,
+	BMI323_BUS_I3C,
 };
 
 struct bosch_bmi323_data {
@@ -247,7 +256,7 @@ struct bosch_bmi323_data {
 	/*
 	 * Staging buffer layout:
 	 *   [0]            : data register address
-	 *   [1..off]       : bus dummy bytes (1 for SPI, 2 for I2C)
+	 *   [1..off]       : bus dummy bytes (1 for SPI, 2 for I2C/I3C)
 	 *   [1+off..14+off]: 14 bytes sensor data (accel XYZ, gyro XYZ, temp)
 	 * Worst case: 1 + 2 + 14 = 17 bytes.
 	 * Must remain valid until the completion callback fires.

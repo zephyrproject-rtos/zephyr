@@ -39,6 +39,13 @@ config BMI323_BUS_I2C
 	select I2C
 	select I2C_RTIO if SENSOR_ASYNC_API
 
+config BMI323_BUS_I3C
+	bool "BMI323 driver support for I3C bus"
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI323),i3c)
+	select I3C
+	select I3C_RTIO if SENSOR_ASYNC_API
+
 config EMUL_BMI323
 	bool "Emulator for the BMI323"
 	default y
