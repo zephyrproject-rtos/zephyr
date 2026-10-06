@@ -31,10 +31,23 @@ struct net_if;
 struct net_l2;
 
 /**
- * @brief Resend either NET_L4_CONNECTED or NET_L4_DISCONNECTED depending on whether connectivity
- * is currently available.
+ * @brief Resend L4 connectivity and DNS readiness events depending on current status.
+ *
+ * Events covered:
+ * - NET_EVENT_L4_CONNECTED / NET_EVENT_L4_DISCONNECTED
+ * - NET_EVENT_L4_IPV4_CONNECTED / NET_EVENT_L4_IPV4_DISCONNECTED
+ * - NET_EVENT_L4_IPV6_CONNECTED / NET_EVENT_L4_IPV6_DISCONNECTED
+ * - NET_EVENT_L4_DNS_READY / NET_EVENT_L4_DNS_LOST
  */
 void conn_mgr_mon_resend_status(void);
+
+/**
+ * @brief Check whether name resolution is currently available.
+ *
+ * @retval true if a usable DNS server is configured.
+ * @retval false otherwise.
+ */
+bool conn_mgr_dns_is_ready(void);
 
 /**
  * @brief Mark an iface to be ignored by conn_mgr.

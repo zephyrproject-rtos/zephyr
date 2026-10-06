@@ -84,6 +84,20 @@ When there are no longer any ready ifaces left, the :c:macro:`NET_EVENT_L4_DISCO
 
    These are similar to :c:macro:`NET_EVENT_L4_CONNECTED` and :c:macro:`NET_EVENT_L4_DISCONNECTED`, but specifically track whether IPv4- and IPv6-capable ifaces are ready.
 
+.. _conn_mgr_monitoring_dns:
+
+Name resolution readiness
+=========================
+
+:c:macro:`NET_EVENT_L4_CONNECTED` does not imply that host names can be resolved.
+For example, an iface may obtain an IPv6 address through SLAAC from a router that does not advertise any DNS server.
+
+Connection Manager therefore also emits events :c:macro:`NET_EVENT_L4_DNS_READY` and :c:macro:`NET_EVENT_L4_DNS_LOST` accordingly.
+Name resolution is considered available only when a DNS server is installed for an interface and address family that are ready.
+These events are system-wide and are not associated with any iface or address family.
+
+The current DNS readiness state can also be queried with :c:func:`conn_mgr_dns_is_ready`.
+
 .. _conn_mgr_monitoring_usage:
 
 Usage
