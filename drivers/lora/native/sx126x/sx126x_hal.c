@@ -115,6 +115,7 @@ int sx126x_hal_init(const struct device *dev)
 	/* Store device reference for callbacks */
 	data->dev = dev;
 	data->dio1_callback = NULL;
+	sx12xx_hal_init(dev);
 
 	/* Check SPI bus */
 	if (!spi_is_ready_dt(&config->common.spi)) {

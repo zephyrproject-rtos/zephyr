@@ -13,6 +13,7 @@
 #define ZEPHYR_DRIVERS_LORA_NATIVE_SX12XX_HAL_H_
 
 #include <zephyr/device.h>
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
 
@@ -42,6 +43,18 @@ struct sx12xx_hal_config {
 	struct gpio_dt_spec tx_enable;
 	struct gpio_dt_spec rx_enable;
 };
+
+/*
+ * The part of the device data the common functions use: the first member of
+ * the chip driver's data, as they take it from dev->data
+ */
+struct sx12xx_hal_data {
+	/* One transaction with the chip at a time: BUSY check and transfer */
+	struct k_mutex bus_lock;
+};
+
+/* Before any other call */
+void sx12xx_hal_init(const struct device *dev);
 
 int sx12xx_hal_wait_busy(const struct device *dev, uint32_t timeout_ms);
 
