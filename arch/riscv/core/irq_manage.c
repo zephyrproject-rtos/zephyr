@@ -57,6 +57,11 @@ FUNC_NORETURN void z_irq_spurious(const void *unused)
 		LOG_ERR("APLIC interrupt line causing the IRQ: %d (%p)", save_irq, save_dev);
 	}
 #endif
+
+#if defined(CONFIG_RISCV_SOC_HAS_SPURIOUS_IRQ_HOOK)
+	z_riscv_spurious_irq_hook();
+#endif
+
 	z_riscv_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 	CODE_UNREACHABLE;
 #endif /* CONFIG_EMPTY_IRQ_SPURIOUS */
