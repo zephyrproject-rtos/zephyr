@@ -11,4 +11,5 @@ config SPI_XLNX_ZYNQMP_GQSPI
 	help
 	  Enable Xilinx ZynqMP Generic Quad SPI driver.
 	  This is normally used with QSPI flash devices but can also be used
-	  with other SPI devices.
+	  with other SPI devices. Single, dual, and quad line transfers are
+	  supported when SPI_EXTENDED_MODES is enabled.
