@@ -6,15 +6,11 @@ config ZEPHYR_CMSIS_MODULE
 
 config HAS_CMSIS_CORE
 	bool
-	select HAS_CMSIS_CORE_A if CPU_AARCH32_CORTEX_A
-	select HAS_CMSIS_CORE_R if CPU_AARCH32_CORTEX_R
-
-if HAS_CMSIS_CORE
 
 config HAS_CMSIS_CORE_A
 	bool
+	select HAS_CMSIS_CORE
 
 config HAS_CMSIS_CORE_R
 	bool
-
-endif
+	select HAS_CMSIS_CORE
