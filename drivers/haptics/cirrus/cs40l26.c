@@ -710,10 +710,6 @@ static int cs40l26_calibrate_f0(const struct device *const dev, uint32_t *const 
 
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L26_INTERRUPT) && config->interrupt_gpio.port != NULL) {
 		ret = k_sem_take(&data->calibration_semaphore, CS40L26_T_F0);
-		if (ret < 0) {
-			LOG_INST_DBG(config->log, "timed out waiting for F0 complete (%d)", ret);
-			return ret;
-		}
 	} else {
 		ret = cs40l26_poll_mailbox(dev, CS40L26_F0_EST_START, CS40L26_T_CALIBRATION_START);
 		if (ret < 0) {
@@ -724,6 +720,7 @@ static int cs40l26_calibrate_f0(const struct device *const dev, uint32_t *const 
 		ret = cs40l26_poll_mailbox(dev, CS40L26_F0_EST_DONE, CS40L26_T_F0);
 	}
 	if (ret < 0) {
+		LOG_INST_DBG(config->log, "timed out waiting for F0 complete (%d)", ret);
 		return ret;
 	}
 
@@ -743,21 +740,18 @@ static int cs40l26_calibrate_redc(const struct device *const dev, uint32_t *cons
 
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L26_INTERRUPT) && config->interrupt_gpio.port != NULL) {
 		ret = k_sem_take(&data->calibration_semaphore, CS40L26_T_REDC);
-		if (ret < 0) {
-			LOG_INST_DBG(config->log, "timed out waiting for ReDC complete (%d)", ret);
-			return ret;
-		}
 	} else {
 		ret = cs40l26_poll_mailbox(dev, CS40L26_REDC_EST_START,
 					   CS40L26_T_CALIBRATION_START);
 		if (ret < 0) {
-			LOG_INST_DBG(config->log, "timed out waiting for F0 start (%d)", ret);
+			LOG_INST_DBG(config->log, "timed out waiting for ReDC start (%d)", ret);
 			return ret;
 		}
 
 		ret = cs40l26_poll_mailbox(dev, CS40L26_REDC_EST_DONE, CS40L26_T_REDC);
 	}
 	if (ret < 0) {
+		LOG_INST_DBG(config->log, "timed out waiting for ReDC complete (%d)", ret);
 		return ret;
 	}
 
