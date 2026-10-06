@@ -2,13 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SENSING
-	bool "Sensing Subsystem"
+	bool "Sensing Subsystem [DEPRECATED]"
 	default y
 	depends on DT_HAS_ZEPHYR_SENSING_ENABLED
 	select RTIO
 	select RTIO_CONSUME_SEM
 	select SENSOR
 	select SENSOR_ASYNC_API
+	select DEPRECATED
 	help
 	  Enable Sensing Subsystem.
 
