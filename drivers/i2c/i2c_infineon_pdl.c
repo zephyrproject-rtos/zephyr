@@ -1373,6 +1373,9 @@ static DEVICE_API(i2c, i2c_cat1_driver_api) = {
 #ifdef CONFIG_I2C_INFINEON_BUS_RECOVERY
 	.recover_bus = ifx_cat1_i2c_recover_bus,
 #endif /* CONFIG_I2C_INFINEON_BUS_RECOVERY */
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
+#endif /* CONFIG_I2C_RTIO */
 };
 
 #if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
