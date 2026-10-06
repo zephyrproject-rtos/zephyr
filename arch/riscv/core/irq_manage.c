@@ -11,6 +11,7 @@
 #include <zephyr/irq_multilevel.h>
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/pm/pm.h>
+#include <zephyr/platform/hooks.h>
 
 #ifdef CONFIG_RISCV_HAS_PLIC
 #include <zephyr/drivers/interrupt_controller/riscv_plic.h>
@@ -57,6 +58,9 @@ FUNC_NORETURN void z_irq_spurious(const void *unused)
 		LOG_ERR("APLIC interrupt line causing the IRQ: %d (%p)", save_irq, save_dev);
 	}
 #endif
+
+	soc_spurious_irq_hook();
+
 	z_riscv_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 	CODE_UNREACHABLE;
 #endif /* CONFIG_EMPTY_IRQ_SPURIOUS */
