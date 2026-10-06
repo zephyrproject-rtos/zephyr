@@ -137,6 +137,25 @@ Firmware metadata
    :kconfig:option:`CONFIG_BT_MESH_DFU_METADATA` option. The format of the metadata is presented in
    the table below.
 
+.. mermaid::
+   :caption: Firmware metadata layout, with both optional fields present
+   :alt: Firmware metadata layout in transmission order: major version (1 octet),
+         minor version (1 octet), revision (2 octets), build number (4 octets),
+         firmware size (3 octets), core type (1 octet), composition data hash
+         (4 octets), number of elements (2 octets) and variable-length
+         application-specific data.
+
+   packet
+     0-7: "Major"
+     8-15: "Minor"
+     16-31: "Revision"
+     32-63: "Build number"
+     64-87: "Firmware size"
+     88-95: "Core type"
+     96-127: "Composition hash"
+     128-143: "Number of elements"
+     144-159: "Application-specific data ..."
+
 +------------------------+--------------+----------------------------------------+
 | Field                  | Size (Bytes) | Description                            |
 +========================+==============+========================================+
