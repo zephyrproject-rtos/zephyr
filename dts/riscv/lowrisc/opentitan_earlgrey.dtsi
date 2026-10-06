@@ -91,6 +91,20 @@
 			status = "disabled";
 		};
 
+		gpio0: gpio@40040000 {
+			compatible = "lowrisc,opentitan-gpio";
+			reg = <0x40040000 0x40>;
+			interrupts = <33 1>, <34 1>, <35 1>, <36 1>, <37 1>, <38 1>, <39 1>, <40 1>,
+				     <41 1>, <42 1>, <43 1>, <44 1>, <45 1>, <46 1>, <47 1>, <48 1>,
+				     <49 1>, <50 1>, <51 1>, <52 1>, <53 1>, <54 1>, <55 1>, <56 1>,
+				     <57 1>, <58 1>, <59 1>, <60 1>, <61 1>, <62 1>, <63 1>, <64 1>;
+			interrupt-parent = <&plic>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <32>;
+			status = "disabled";
+		};
+
 		spi0: spi@40300000 {
 			compatible = "lowrisc,opentitan-spi";
 			status = "disabled";
