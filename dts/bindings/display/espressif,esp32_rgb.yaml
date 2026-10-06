@@ -1,0 +1,60 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Espressif RGB parallel display
+
+compatible: "espressif,esp32_rgb"
+
+include: display-controller.yaml
+
+properties:
+  pclk-frequency:
+    type: int
+    required: true
+    description: Pixel clock frequency in Hz
+
+  hsync-len:
+    type: int
+    required: true
+    description: Horizontal sync pulse width in pixel clocks
+
+  hback-porch:
+    type: int
+    required: true
+    description: Horizontal back porch width in pixel clocks
+
+  hfront-porch:
+    type: int
+    required: true
+    description: Horizontal front porch width in pixel clocks
+
+  vsync-len:
+    type: int
+    required: true
+    description: Vertical sync pulse width in lines
+
+  vback-porch:
+    type: int
+    required: true
+    description: Vertical back porch width in lines
+
+  vfront-porch:
+    type: int
+    required: true
+    description: Vertical front porch width in lines
+
+  pclk-active-negative:
+    type: boolean
+    description: Sample data on the falling edge of PCLK
+
+  data-width:
+    type: int
+    default: 16
+    enum: [8, 16]
+    description: Number of parallel data lines
+
+  dma-burst-size:
+    type: int
+    default: 64
+    enum: [16, 32, 64]
+    description: GDMA burst size in bytes
