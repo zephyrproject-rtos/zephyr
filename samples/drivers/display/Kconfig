@@ -33,6 +33,7 @@ config HEAP_MEM_POOL_ADD_SIZE_SAMPLE
 	default 16384 if SRAM_SIZE < 48
 	default 32768 if SRAM_SIZE < 80
 	default 196608 if QEMU_RAMFB_DISPLAY
+	default 81920 if ST7262
 	default 65536
 	help
 	  Maximum size of the buffer for rendering rectangles
