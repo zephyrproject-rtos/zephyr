@@ -170,6 +170,23 @@ ZTEST(wifi_credentials_backend_psa, test_add)
 	zassert_equal(psa_set_key_bits_fake.call_count, 2, "Set key bits call count mismatch");
 }
 
+ZTEST(wifi_credentials_backend_psa, test_add_errors)
+{
+	int ret;
+
+	psa_import_key_fake.return_val = PSA_ERROR_NOT_SUPPORTED;
+	ret = wifi_credentials_store_entry(idx, &example1,
+					   sizeof(struct wifi_credentials_personal));
+	zassert_equal(-ENOTSUP, ret, "Unsupported persistent key not reported");
+
+	psa_import_key_fake.return_val = PSA_ERROR_GENERIC_ERROR;
+	ret = wifi_credentials_store_entry(idx, &example1,
+					   sizeof(struct wifi_credentials_personal));
+	zassert_equal(-EFAULT, ret, "Import key failure not reported");
+
+	zassert_equal(psa_import_key_fake.call_count, 2, "Import key call count mismatch");
+}
+
 ZTEST(wifi_credentials_backend_psa, test_get)
 {
 	int ret;
