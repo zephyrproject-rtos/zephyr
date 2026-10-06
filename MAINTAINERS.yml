@@ -5410,6 +5410,7 @@ Precision Timing:
     - awojasinski
     - jukkar
   files:
+    - include/zephyr/drivers/precision_clock_output.h
     - include/zephyr/precision_timing/
     - samples/subsys/precision_timing/
     - subsys/precision_timing/
