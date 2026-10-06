@@ -324,6 +324,11 @@ struct hl78xx_power_down_status {
 	 * they do not compete with the shutdown for the command interface.
 	 */
 	bool shutdown_pending;
+	/** The PDP activation of the carrier-on failed while a power down was
+	 * pending and was left to it. An aborted power down hands the failure
+	 * back to the state machine.
+	 */
+	bool pdp_activation_held;
 };
 #endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 
@@ -521,6 +526,15 @@ struct hl78xx_low_power_status {
 #ifdef CONFIG_MODEM_HL78XX_PSM
 	struct hl78xx_psm_status psmev;
 	bool awaiting_psm_confirmation;
+	/* The confirmation window replaced a pending carrier-on timer: the
+	 * deferred restore, the DNS setup or a retry of either, due again if
+	 * the window ends with the modem registered.
+	 */
+	bool psm_window_displaced_step;
+	/* A deregistration report moved the window's deadline after the window
+	 * had expired: the expiry still queued is void, not a displaced step.
+	 */
+	bool psm_window_expiry_voided;
 #endif /* CONFIG_MODEM_HL78XX_PSM */
 
 #ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
@@ -533,6 +547,14 @@ struct hl78xx_low_power_status {
 #endif /* CONFIG_MODEM_HL78XX_EDRX */
 
 	bool restore_pending;
+	/* CARRIER_OFF removed the interface addresses and the DNS state. The
+	 * next carrier-on restores them whatever the wake classification says:
+	 * the modem may have kept its context, the host has not. Cleared once
+	 * the DNS setup that follows CGCONTRDP has completed, so a sleep entry
+	 * that interrupts the deferred restore, or the DNS setup behind it,
+	 * leaves it due.
+	 */
+	bool host_config_lost;
 };
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 
@@ -591,6 +613,11 @@ struct modem_status {
 	struct hl78xx_phone_functionality_work phone_functionality;
 	struct hl78xx_restart_status restart;
 	struct apn_state apn;
+	/* CARRIER_OFF was entered for a registration loss: its exit waits for
+	 * the modem in AWAIT_REGISTERED even when the registration came back
+	 * during the wait, instead of re-running the GPRS enable.
+	 */
+	bool carrier_off_registration_loss;
 
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 	struct hl78xx_wdsi_status wdsi;
@@ -992,6 +1019,23 @@ struct socket_read_data {
  * @retval false otherwise.
  */
 bool hl78xx_is_registered(struct hl78xx_data *data);
+
+/**
+ * @brief Forget every modem socket of the session that just ended.
+ *
+ * A modem restart ends the session on either variant; on the HL7800 so does a
+ * PSM or eDRX entry, since it does not retain socket contexts across
+ * hibernation. A receiver blocked on one of the sockets is woken and reads the
+ * end of the session, or fails with ENOTCONN on a datagram socket; poll()
+ * reports a stream socket readable from then on, as a closed TCP connection
+ * is, and a datagram socket until that read. The application then closes it
+ * or creates it again with bind() or connect(), or, on the HL7800 in a
+ * low-power build, with a sendto() on a datagram socket. An HL7800 sleep thus
+ * ends the exchanges in flight: a CoAP client sees its requests fail with -EIO
+ * and requests again after the wake. Defined in hl78xx_sockets.c; the next
+ * close of such a socket is local.
+ */
+void hl78xx_invalidate_socket_contexts(struct hl78xx_data *data);
 
 /**
  * @brief DNS resolution work callback.

@@ -917,6 +917,16 @@ static int hl78xx_power_down_apply_response(struct hl78xx_data *data,
 		LOG_INF("Power down aborted by application");
 		data->status.lpm.power_down.shutdown_pending = false;
 		hl78xx_power_down_allow_feeding(data);
+		/* A failed PDP activation or a registration loss reported while
+		 * the shutdown was pending was left to it; with the shutdown off,
+		 * the state machine takes it. The carrier-on timeout takes the
+		 * held activation failure, whatever the registration.
+		 */
+		if (data->status.lpm.power_down.pdp_activation_held) {
+			hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_TIMEOUT);
+		} else if (!hl78xx_is_registered(data)) {
+			hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_DEREGISTERED);
+		}
 		return 0;
 
 	default:

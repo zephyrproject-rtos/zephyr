@@ -171,6 +171,8 @@ struct hl78xx_socket_control {
 	int current_sock_fd;
 	int sizeof_socket_data;
 	int requested_socket_id;
+	/* The socket the KTCPCFG or KUDPCFG in flight creates; see create_socket() */
+	struct modem_socket *creating_sock;
 
 	bool socket_data_error;
 	bool tcp_state_check_pending;
@@ -590,6 +592,13 @@ static int hl78xx_socket_wait_data_timeout(struct hl78xx_socket_data *socket_dat
 	int ret;
 
 	k_sem_take(&socket_data->control.socket_config.sem_lock, K_FOREVER);
+	if (!modem_socket_id_is_assigned(&socket_data->control.socket_config, sock)) {
+		/* Retired since the caller validated it: the invalidation found
+		 * no waiter to wake, and nothing wakes one later.
+		 */
+		k_sem_give(&socket_data->control.socket_config.sem_lock);
+		return 0;
+	}
 	sock->is_waiting = true;
 	k_sem_give(&socket_data->control.socket_config.sem_lock);
 
@@ -667,6 +676,28 @@ void hl78xx_release_socket_comms(struct hl78xx_data *data)
 
 	k_sem_give(&socket_data->sync.lpm_wakeup_sem);
 }
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
+
+/**
+ * @brief The id that parks a socket of an ended modem session.
+ *
+ * Outside the table like the id that marks a fresh socket (base + len), and one
+ * past it, so that a socket kept from an ended session is told apart from one
+ * never created.
+ */
+static int hl78xx_retired_socket_id(const struct modem_socket_config *cfg)
+{
+	return cfg->base_socket_id + cfg->sockets_len + 1;
+}
+
+/**
+ * @brief Whether @p sock kept its descriptor through the end of a modem session.
+ */
+static bool hl78xx_socket_is_retired(const struct hl78xx_socket_data *socket_data,
+				     const struct modem_socket *sock)
+{
+	return sock->id == hl78xx_retired_socket_id(&socket_data->control.socket_config);
+}
 
 void hl78xx_invalidate_socket_contexts(struct hl78xx_data *data)
 {
@@ -677,16 +708,44 @@ void hl78xx_invalidate_socket_contexts(struct hl78xx_data *data)
 		return;
 	}
 
-	LOG_DBG("Invalidating all modem socket contexts (HL7800 sleep entry)");
+	LOG_DBG("Invalidating all modem socket contexts");
 
 	for (int i = 0; i < MDM_MAX_SOCKETS; i++) {
+		struct modem_socket_config *cfg = &socket_data->control.socket_config;
 		struct modem_socket *sock = &socket_data->control.sockets[i];
+		bool retired;
 
-		if (modem_socket_id_is_assigned(&socket_data->control.socket_config, sock)) {
+		/* Under the socket lock, against a close() of the same socket:
+		 * modem_socket_put() frees the slot under that lock, and an id
+		 * written after it would occupy the slot for good.
+		 */
+		k_sem_take(&cfg->sem_lock, K_FOREVER);
+		retired = modem_socket_id_is_assigned(cfg, sock);
+		if (retired) {
 			LOG_DBG("Invalidating socket fd=%d modem_id=%d", sock->sock_fd, sock->id);
-			sock->id = socket_data->control.socket_config.base_socket_id +
-				   socket_data->control.socket_config.sockets_len;
+			/* The descriptor stays with the application, the modem id
+			 * goes, until a re-creation gives it a new one.
+			 */
+			sock->id = hl78xx_retired_socket_id(cfg);
 			sock->is_connected = false;
+			/* Data queued by the ended session is gone with it: a read
+			 * would ask the modem for a socket it no longer has. A
+			 * poll() waiter is told the socket is readable: its read
+			 * finds the end of the session and clears the signal, so a
+			 * poll loop sees the end once. A re-creation clears it too.
+			 */
+			sock->packet_count = 0U;
+			(void)memset(sock->packet_sizes, 0, sizeof(sock->packet_sizes));
+			k_poll_signal_raise(&sock->sig_data_ready, 0);
+		}
+		k_sem_give(&cfg->sem_lock);
+
+		if (retired) {
+			/* A receiver blocked on the ended session waits for data that
+			 * never comes: woken now that the state is published, it reads
+			 * end of stream.
+			 */
+			modem_socket_data_ready(cfg, sock);
 		}
 
 		/* Reset TCP/UDP connection status tracking */
@@ -695,10 +754,10 @@ void hl78xx_invalidate_socket_contexts(struct hl78xx_data *data)
 		socket_data->conn.tcp_conn_status[i].err_code = TCP_SOCKET_ERROR;
 		socket_data->conn.udp_conn_status[i].is_created = false;
 		socket_data->conn.udp_conn_status[i].err_code = UDP_SOCKET_ERROR;
-		socket_data->conn.recv_timeouts[i] = K_FOREVER;
 	}
 }
 
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 static void hl78xx_send_wakeup_signal(struct hl78xx_socket_data *socket_data)
 {
 	hl78xx_delegate_event(socket_data->devices.mdata_global, MODEM_HL78XX_EVENT_RESUME);
@@ -1012,8 +1071,8 @@ void hl78xx_on_ktcpsocket_create(struct modem_chat *chat, char **argv, uint16_t 
 		LOG_DBG("unable to parse socket id from '%s'", argv[1]);
 		goto exit;
 	}
-	/* Try to find a reserved/new socket slot and assign the modem-provided id. */
-	sock = modem_socket_from_newid(&socket_data->control.socket_config);
+	/* The socket whose creation this response answers; see create_socket() */
+	sock = socket_data->control.creating_sock;
 	if (!sock) {
 		goto exit;
 	}
@@ -1065,8 +1124,8 @@ void hl78xx_on_kudpsocket_create(struct modem_chat *chat, char **argv, uint16_t 
 		LOG_DBG("unable to parse socket id from '%s'", argv[1]);
 		goto exit;
 	}
-	/* Try to find a reserved/new socket slot and assign the modem-provided id. */
-	sock = modem_socket_from_newid(&socket_data->control.socket_config);
+	/* The socket whose creation this response answers; see create_socket() */
+	sock = socket_data->control.creating_sock;
 	if (!sock) {
 		goto exit;
 	}
@@ -1466,18 +1525,36 @@ static int hl78xx_socket_get_network_context(struct hl78xx_data *data)
  */
 static int validate_socket(const struct modem_socket *sock, struct hl78xx_socket_data *socket_data)
 {
+	struct modem_socket_config *cfg = &socket_data->control.socket_config;
+	bool not_connected;
+	bool tcp_disconnected;
+	bool udp_not_created;
+
 	if (!sock) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	bool not_connected = (!sock->is_connected && sock->type != NET_SOCK_DGRAM);
-	bool tcp_disconnected =
+	/* A socket of an ended modem session keeps its descriptor but no modem
+	 * id: hl78xx_invalidate_socket_contexts() parks the id outside the
+	 * table, where the status arrays have no entry for it. It does so under
+	 * the socket lock, so the id checked here is the id the lookups index.
+	 */
+	k_sem_take(&cfg->sem_lock, K_FOREVER);
+	if (!modem_socket_id_is_assigned(cfg, sock)) {
+		k_sem_give(&cfg->sem_lock);
+		errno = ENOTCONN;
+		return -1;
+	}
+
+	not_connected = (!sock->is_connected && sock->type != NET_SOCK_DGRAM);
+	tcp_disconnected =
 		(sock->type == NET_SOCK_STREAM &&
 		 !socket_data->conn.tcp_conn_status[HL78XX_TCP_STATUS_ID(sock->id)].is_connected);
-	bool udp_not_created =
+	udp_not_created =
 		(sock->type == NET_SOCK_DGRAM &&
 		 !socket_data->conn.udp_conn_status[HL78XX_UDP_STATUS_ID(sock->id)].is_created);
+	k_sem_give(&cfg->sem_lock);
 
 	if (not_connected || tcp_disconnected || udp_not_created) {
 		errno = ENOTCONN;
@@ -2234,7 +2311,9 @@ static int format_ip_and_setup_tls(struct hl78xx_socket_data *socket_data,
 static int send_tcp_or_tls_config(struct modem_socket *sock, uint16_t dst_port, int af, int mode,
 				  struct hl78xx_socket_data *socket_data)
 {
+	struct modem_socket_config *cfg = &socket_data->control.socket_config;
 	int ret = 0;
+	bool created;
 	char cmd_buf[sizeof("AT+KTCPCFG=#,#,\"" MODEM_HL78XX_ADDRESS_FAMILY_FORMAT
 			    "\",#####,,,,#,,#") +
 		     MDM_MAX_HOSTNAME_LEN + NET_IPV6_ADDR_LEN];
@@ -2244,8 +2323,15 @@ static int send_tcp_or_tls_config(struct modem_socket *sock, uint16_t dst_port, 
 	ret = modem_dynamic_cmd_send(socket_data->devices.mdata_global, NULL, cmd_buf,
 				     strlen(cmd_buf), hl78xx_get_ktcpcfg_match(), 1,
 				     MDM_CMD_TIMEOUT, false);
-	if (ret < 0 ||
-	    socket_data->conn.tcp_conn_status[HL78XX_TCP_STATUS_ID(sock->id)].is_created == false) {
+	/* Under the socket lock: the session may have ended while the command
+	 * was in flight, and the socket been retired under that lock, where the
+	 * status arrays have no entry for its id.
+	 */
+	k_sem_take(&cfg->sem_lock, K_FOREVER);
+	created = modem_socket_id_is_assigned(cfg, sock) &&
+		  socket_data->conn.tcp_conn_status[HL78XX_TCP_STATUS_ID(sock->id)].is_created;
+	k_sem_give(&cfg->sem_lock);
+	if (ret < 0 || !created) {
 		LOG_ERR("%s ret:%d", cmd_buf, ret);
 		modem_socket_put(&socket_data->control.socket_config, sock->sock_fd);
 		/* Map negative internal return codes to positive errno; fall back to EIO
@@ -2290,8 +2376,11 @@ error:
 	return -1;
 }
 
-static int create_socket(struct modem_socket *sock, const struct net_sockaddr *addr,
-			 struct hl78xx_socket_data *data)
+/**
+ * @brief Send the KTCPCFG or KUDPCFG that creates @p sock; see create_socket().
+ */
+static int send_socket_create(struct modem_socket *sock, const struct net_sockaddr *addr,
+			      struct hl78xx_socket_data *data)
 {
 	LOG_DBG("entry fd=%d id=%d", sock->sock_fd, sock->id);
 	int af;
@@ -2326,6 +2415,53 @@ static int create_socket(struct modem_socket *sock, const struct net_sockaddr *a
 		af, dst_port, mode);
 	ret = send_tcp_or_tls_config(sock, dst_port, af, mode, data);
 	LOG_DBG("send_tcp_or_tls_config returned %d", ret);
+	return ret;
+}
+
+/**
+ * @brief Create @p sock on the modem, one creation at a time.
+ *
+ * Holds the AT channel lock, which is recursive, from the TLS set-up to the
+ * response, and records @p sock for the response handler: the response to its
+ * KTCPCFG or KUDPCFG carries the new modem id. A lookup by id could not tell
+ * the waiting sockets apart, since every fresh socket carries the same marker
+ * id.
+ */
+static int create_socket(struct modem_socket *sock, const struct net_sockaddr *addr,
+			 struct hl78xx_socket_data *data)
+{
+	struct modem_socket_config *cfg = &data->control.socket_config;
+	struct k_mutex *tx_lock = &data->devices.mdata_global->tx_lock;
+	unsigned int readable;
+	int signal_result;
+	int ret;
+
+	if (k_mutex_lock(tx_lock, K_SECONDS(MDM_CMD_TIMEOUT)) < 0) {
+		LOG_ERR("AT channel busy: socket fd=%d not created", sock->sock_fd);
+		errno = EBUSY;
+		return -1;
+	}
+	/* A retired socket was left readable for the end of its session; the
+	 * new session starts without that.
+	 */
+	k_poll_signal_check(&sock->sig_data_ready, &readable, &signal_result);
+	k_poll_signal_reset(&sock->sig_data_ready);
+	data->control.creating_sock = sock;
+	ret = send_socket_create(sock, addr, data);
+	data->control.creating_sock = NULL;
+	k_mutex_unlock(tx_lock);
+
+	if ((ret < 0) && (readable != 0U)) {
+		/* Still of the ended session: its receive still reads the end,
+		 * so poll() must keep reporting it.
+		 */
+		k_sem_take(&cfg->sem_lock, K_FOREVER);
+		if (hl78xx_socket_is_retired(data, sock)) {
+			k_poll_signal_raise(&sock->sig_data_ready, signal_result);
+		}
+		k_sem_give(&cfg->sem_lock);
+	}
+
 	return ret;
 }
 
@@ -2377,7 +2513,9 @@ static int socket_delete(struct hl78xx_socket_data *socket_data, struct modem_so
 
 static int offload_socket(int family, int type, int proto)
 {
+	struct modem_socket *sock;
 	int ret;
+	int slot;
 	/* defer modem's socket create call to bind(); use accessor and check */
 	struct hl78xx_socket_data *g = hl78xx_get_socket_global();
 
@@ -2392,6 +2530,14 @@ static int offload_socket(int family, int type, int proto)
 	if (ret < 0) {
 		hl78xx_set_errno_from_code(ret);
 		return -1;
+	}
+	/* A new socket blocks in recv() until SO_RCVTIMEO bounds the wait; the
+	 * slot still holds the timeout of its previous socket, or none at boot.
+	 */
+	sock = modem_socket_from_fd(&g->control.socket_config, ret);
+	slot = hl78xx_socket_slot_from_sock(g, sock);
+	if (slot >= 0) {
+		g->conn.recv_timeouts[slot] = K_FOREVER;
 	}
 	errno = 0;
 	return ret;
@@ -2425,6 +2571,11 @@ static int offload_close(void *obj)
 		socket_delete(socket_data, sock);
 		modem_socket_put(&socket_data->control.socket_config, sock->sock_fd);
 		sock->is_connected = false;
+	} else if (hl78xx_socket_is_retired(socket_data, sock)) {
+		/* Retired since the check above: nothing to close on the modem,
+		 * and the descriptor must not keep its slot.
+		 */
+		modem_socket_put(&socket_data->control.socket_config, sock->sock_fd);
 	}
 	/* Consider here successfully socket is closed */
 	return 0;
@@ -2447,8 +2598,13 @@ static int offload_bind(void *obj, const struct net_sockaddr *addr, net_socklen_
 	}
 	/*  Save bind address information */
 	memcpy(&sock->src, addr, sizeof(*addr));
-	/* Check if socket is allocated */
-	if (modem_socket_is_allocated(&socket_data->control.socket_config, sock)) {
+	/* Create the socket on the modem unless it holds a modem id already: a
+	 * second bind() would answer the creation for a live socket and free it.
+	 * A socket kept from an ended modem session is created again.
+	 */
+	if ((modem_socket_is_allocated(&socket_data->control.socket_config, sock) &&
+	     !modem_socket_id_is_assigned(&socket_data->control.socket_config, sock)) ||
+	    hl78xx_socket_is_retired(socket_data, sock)) {
 		/* Trigger socket creation */
 		ret = create_socket(sock, addr, socket_data);
 		LOG_DBG("create_socket returned %d", ret);
@@ -2464,7 +2620,9 @@ static int offload_connect(void *obj, const struct net_sockaddr *addr, net_sockl
 {
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	struct hl78xx_socket_data *socket_data = hl78xx_socket_data_from_sock(sock);
+	struct modem_socket_config *cfg;
 	int ret = 0;
+	int slot;
 	char cmd_buf[sizeof("AT+KTCPCFG=#\r")];
 	char ip_str[NET_IPV6_ADDR_LEN];
 
@@ -2472,12 +2630,14 @@ static int offload_connect(void *obj, const struct net_sockaddr *addr, net_sockl
 		errno = EINVAL;
 		return -1;
 	}
+	cfg = &socket_data->control.socket_config;
 	if (!hl78xx_is_registered(socket_data->devices.mdata_global)) {
 		errno = ENETUNREACH;
 		return -1;
 	}
-	/* make sure socket has been allocated */
-	if (modem_socket_is_allocated(&socket_data->control.socket_config, sock) == false) {
+	/* make sure socket has been allocated, or kept from an ended modem session */
+	if (!modem_socket_is_allocated(&socket_data->control.socket_config, sock) &&
+	    !hl78xx_socket_is_retired(socket_data, sock)) {
 		LOG_ERR("Invalid socket_id(%d) from fd:%d", sock->id, sock->sock_fd);
 		errno = EINVAL;
 		return -1;
@@ -2501,29 +2661,42 @@ static int offload_connect(void *obj, const struct net_sockaddr *addr, net_sockl
 		LOG_ERR("Error formatting IP string %d", ret);
 		return -1;
 	}
-	/* send connect command */
+	/* send connect command; its status is filed under the id the command
+	 * names, which a failed +KTCP_IND frees before the completion runs
+	 */
+	slot = HL78XX_TCP_STATUS_ID(sock->id);
 	snprintk(cmd_buf, sizeof(cmd_buf), "AT+KTCPCNX=%d", sock->id);
 	ret = modem_dynamic_cmd_send(socket_data->devices.mdata_global, NULL, cmd_buf,
 				     strlen(cmd_buf), hl78xx_get_ktcpind_match(), 1,
 				     MDM_CMD_TIMEOUT, false);
-	if (ret < 0 ||
-	    socket_data->conn.tcp_conn_status[HL78XX_TCP_STATUS_ID(sock->id)].is_connected ==
-		    false) {
+	/* Under the socket lock: the modem session may have ended while the
+	 * connect was in flight, and the socket been retired under that lock.
+	 * A retired socket has no entry in the status arrays.
+	 */
+	k_sem_take(&cfg->sem_lock, K_FOREVER);
+	if (hl78xx_socket_is_retired(socket_data, sock)) {
 		sock->is_connected = false;
+		k_sem_give(&cfg->sem_lock);
+		LOG_ERR("%s: the modem session ended", cmd_buf);
+		errno = ENOTCONN;
+		return -1;
+	}
+	if (ret < 0 || socket_data->conn.tcp_conn_status[slot].is_connected == false) {
+		int err_code = socket_data->conn.tcp_conn_status[slot].err_code;
+
+		sock->is_connected = false;
+		k_sem_give(&cfg->sem_lock);
 		LOG_ERR("%s ret:%d", cmd_buf, ret);
 		/* Map tcp_conn_status.err_code:
 		 * - positive values are assumed to be direct POSIX errno values -> pass
 		 * through
 		 * - zero or unknown -> use conservative EIO
 		 */
-		errno = (socket_data->conn.tcp_conn_status[HL78XX_TCP_STATUS_ID(sock->id)]
-				 .err_code > 0)
-				? socket_data->conn.tcp_conn_status[HL78XX_TCP_STATUS_ID(sock->id)]
-					  .err_code
-				: EIO;
+		errno = (err_code > 0) ? err_code : EIO;
 		return -1;
 	}
 	sock->is_connected = true;
+	k_sem_give(&cfg->sem_lock);
 	errno = 0;
 	return 0;
 }
@@ -2539,6 +2712,36 @@ static bool validate_recv_args(void *buf, size_t len, int flags)
 		return false;
 	}
 	return true;
+}
+
+/**
+ * @brief Result of a receive on a socket that has nothing to read from.
+ *
+ * Reads 0 with errno cleared, as an unconnected socket does, except for a
+ * datagram socket of an ended modem session: a datagram socket has no end of
+ * stream, and 0 would read as an empty datagram, so its receive fails.
+ *
+ * A socket of an ended session was made readable for poll() so that a waiter
+ * learns of the end. A stream socket stays readable, as a closed TCP
+ * connection does, and every receive reads its end of stream. The failing
+ * receive of a datagram socket clears the signal instead: left readable, a
+ * poll loop that retries the error spins on it, as the DNS dispatcher did on
+ * its resolver socket until the carrier-on re-created it.
+ *
+ * @retval 0 Nothing to read.
+ * @retval -1 Datagram socket of an ended modem session, errno ENOTCONN.
+ */
+static int hl78xx_recv_nothing_to_read(struct hl78xx_socket_data *socket_data,
+				       struct modem_socket *sock)
+{
+	if ((sock->type == NET_SOCK_DGRAM) && hl78xx_socket_is_retired(socket_data, sock)) {
+		k_poll_signal_reset(&sock->sig_data_ready);
+		errno = ENOTCONN;
+		return -1;
+	}
+
+	errno = 0;
+	return 0;
 }
 
 static int wait_for_data_if_needed(struct hl78xx_socket_data *socket_data,
@@ -2573,13 +2776,12 @@ static int wait_for_data_if_needed(struct hl78xx_socket_data *socket_data,
 		}
 	}
 
+	if (validate_socket(sock, socket_data) == -1) {
+		return hl78xx_recv_nothing_to_read(socket_data, sock);
+	}
 	if (flags & ZSOCK_MSG_DONTWAIT) {
 		errno = EAGAIN;
 		return -1;
-	}
-	if (validate_socket(sock, socket_data) == -1) {
-		errno = 0;
-		return 0;
 	}
 
 	slot = hl78xx_socket_slot_from_sock(socket_data, sock);
@@ -2595,7 +2797,13 @@ static int wait_for_data_if_needed(struct hl78xx_socket_data *socket_data,
 		return -1;
 	}
 
-	return modem_socket_next_packet_size(&socket_data->control.socket_config, sock);
+	size = modem_socket_next_packet_size(&socket_data->control.socket_config, sock);
+	if ((size == 0) && hl78xx_socket_is_retired(socket_data, sock)) {
+		/* Woken by the end of the modem session */
+		return hl78xx_recv_nothing_to_read(socket_data, sock);
+	}
+
+	return size;
 }
 
 static void prepare_read_command(struct hl78xx_socket_data *socket_data, char *sendbuf,
@@ -2813,10 +3021,21 @@ static int hl78xx_recv_precheck(struct modem_socket *sock, struct hl78xx_socket_
 
 	socket_data->control.requested_socket_id = -1;
 
+	/* A socket without a modem id, never created on the modem or of an
+	 * ended session, reads the end of the session whether the modem is
+	 * registered or not: poll() reports a retired socket readable until its
+	 * read clears the signal, and EAGAIN would make the two a busy loop.
+	 */
+	if (!modem_socket_id_is_assigned(&socket_data->control.socket_config, sock)) {
+		return hl78xx_recv_nothing_to_read(socket_data, sock);
+	}
+
 	/**
 	 * If modem is not registered yet, propagate EAGAIN to indicate try again
 	 * later. However, if the socket simply is not connected, return 0 with
-	 * errno cleared so upper layers treat this as no data available.
+	 * errno cleared so upper layers treat this as no data available; a
+	 * datagram socket of an ended modem session fails instead, see
+	 * hl78xx_recv_nothing_to_read().
 	 */
 	if (!hl78xx_is_registered(socket_data->devices.mdata_global)) {
 		errno = EAGAIN;
@@ -2824,8 +3043,7 @@ static int hl78xx_recv_precheck(struct modem_socket *sock, struct hl78xx_socket_
 	}
 
 	if (validate_socket(sock, socket_data) == -1) {
-		errno = 0;
-		return 0;
+		return hl78xx_recv_nothing_to_read(socket_data, sock);
 	}
 
 	if (!validate_recv_args(buf, len, flags)) {
