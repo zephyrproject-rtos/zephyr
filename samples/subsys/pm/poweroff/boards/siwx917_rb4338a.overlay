@@ -1,0 +1,28 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2026 Silicon Laboratories Inc.
+ */
+
+/ {
+	aliases {
+		rtc = &rtc0;
+		button = &button0;
+	};
+};
+
+&rtc0 {
+	status = "okay";
+	wakeup-source;
+	wakeup-ctrls = <&wuc0 SIWX91X_WUC_RTC_ALARM>;
+};
+
+&uulpgpio {
+	status = "okay";
+	wakeup-source;
+	wakeup-ctrls = <&wuc0 SIWX91X_WUC_GPIO>;
+};
+
+&button0 {
+	gpios = <&uulpgpio 2 (GPIO_ACTIVE_LOW | GPIO_INT_WAKEUP)>;
+};
