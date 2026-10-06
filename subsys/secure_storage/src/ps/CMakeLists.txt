@@ -57,3 +57,10 @@ if(CONFIG_SECURE_STORAGE_PS_STORE_IMPLEMENTATION_NONE)
     (CONFIG_SECURE_STORAGE_PS_STORE_IMPLEMENTATION_NONE)
     ")
 endif()
+
+zephyr_library_sources_ifdef(CONFIG_SECURE_STORAGE_PS_REPLAY_PROTECTION_RANDOM
+  replay_protection/random.c
+)
+zephyr_library_sources_ifdef(CONFIG_SECURE_STORAGE_PS_REPLAY_PROTECTION_COUNTER
+  replay_protection/counter.c
+)
