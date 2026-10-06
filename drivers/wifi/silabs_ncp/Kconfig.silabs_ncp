@@ -1,0 +1,36 @@
+# Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config WIFI_SILABS_NCP
+	bool "Silicon Labs network co-processor Wi-Fi driver"
+	default y
+	depends on DT_HAS_SILABS_NCP_WIFI_ENABLED
+	select WIFI_NM_WPA_SUPPLICANT
+	select EXPERIMENTAL
+	select NET_L2_ETHERNET
+	select NET_L2_WIFI_MGMT
+	select WIFI_USE_NATIVE_NETWORKING
+	help
+	  Wi-Fi driver for a station running on a Silicon Labs network
+	  co-processor. Ethernet frames and the commands of the network
+	  processor are carried by two CPC endpoints of the co-processor. The
+	  Zephyr supplicant drives the association and the key exchange.
+
+if WIFI_SILABS_NCP
+
+config WIFI_SILABS_NCP_INIT_PRIORITY
+	int "Initialization priority"
+	default 87
+	help
+	  Must be greater than MFD_SILABS_NCP_INIT_PRIORITY and lower than
+	  NET_INIT_PRIO.
+
+config WIFI_SILABS_NCP_DATA_RX_COUNT
+	int "Number of Ethernet frame buffers handed to CPC"
+	default 4
+
+config WIFI_SILABS_NCP_MGMT_RX_COUNT
+	int "Number of management frame buffers handed to CPC"
+	default 2
+
+endif # WIFI_SILABS_NCP
