@@ -2925,6 +2925,7 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 static int dns_server_close(struct dns_resolve_context *ctx,
 			    int server_idx)
 {
+	struct net_sockaddr_storage server_addr;
 	struct net_if *iface;
 	int closed_sock;
 
@@ -2943,28 +2944,29 @@ static int dns_server_close(struct dns_resolve_context *ctx,
 
 	(void)dns_dispatcher_unregister(&ctx->servers[server_idx].dispatcher);
 
-	if (ctx->servers[server_idx].dns_server_addr.ss_family == NET_AF_INET6) {
-		iface = net_if_ipv6_select_src_iface(
-			&net_sin6(net_sad(&ctx->servers[server_idx].dns_server_addr))->sin6_addr);
-	} else {
-		iface = net_if_ipv4_select_src_iface(
-			&net_sin(net_sad(&ctx->servers[server_idx].dns_server_addr))->sin_addr);
-	}
-
-	if (IS_ENABLED(CONFIG_NET_MGMT_EVENT_INFO)) {
-		net_mgmt_event_notify_with_info(
-			NET_EVENT_DNS_SERVER_DEL,
-			iface,
-			(void *)&ctx->servers[server_idx].dns_server_addr,
-			sizeof(ctx->servers[server_idx].dns_server_addr));
-	} else {
-		net_mgmt_event_notify(NET_EVENT_DNS_SERVER_DEL, iface);
-	}
+	server_addr = ctx->servers[server_idx].dns_server_addr;
 
 	zsock_close(closed_sock);
 
 	ctx->servers[server_idx].sock = -1;
 	ctx->servers[server_idx].dns_server_addr.ss_family = 0;
+
+	if (server_addr.ss_family == NET_AF_INET6) {
+		iface = net_if_ipv6_select_src_iface(&net_sin6(net_sad(&server_addr))->sin6_addr);
+	} else {
+		iface = net_if_ipv4_select_src_iface(&net_sin(net_sad(&server_addr))->sin_addr);
+	}
+
+	/* Emitted last so listeners only see the remaining servers */
+	if (IS_ENABLED(CONFIG_NET_MGMT_EVENT_INFO)) {
+		net_mgmt_event_notify_with_info(
+			NET_EVENT_DNS_SERVER_DEL,
+			iface,
+			(void *)&server_addr,
+			sizeof(server_addr));
+	} else {
+		net_mgmt_event_notify(NET_EVENT_DNS_SERVER_DEL, iface);
+	}
 
 	return 0;
 }
