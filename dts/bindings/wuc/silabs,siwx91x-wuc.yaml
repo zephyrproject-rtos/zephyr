@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Silicon Labs SiWx91x wake-up controller.
+
+  The controller routes always-on peripheral events to the MCU power-state
+  controller so that they can wake the SoC from low-power states.
+
+compatible: "silabs,siwx91x-wuc"
+
+include:
+  - base.yaml
+  - wuc-controller.yaml
+
+properties:
+  "#wakeup-ctrl-cells":
+    const: 1
+
+wakeup-ctrl-cells:
+  - id
