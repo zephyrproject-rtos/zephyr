@@ -7,6 +7,7 @@
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/clock/silabs/siwx91x-clock.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/wuc/silabs-siwx91x-wuc.h>
 #include <freq.h>
 
 / {
@@ -129,6 +130,14 @@
 			compatible = "silabs,siwx91x-wifi";
 			status = "disabled";
 		};
+	};
+
+	wuc0: wakeup-controller@2404813c {
+		compatible = "silabs,siwx91x-wuc";
+		reg = <0x2404813c 4>;
+		reg-names = "mcu_fsm";
+		#wakeup-ctrl-cells = <1>;
+		status = "okay";
 	};
 
 	soc {
@@ -648,6 +657,7 @@
 			interrupts = <28 0>;
 			interrupt-names = "rtc";
 			clocks = <&cmu_aon SIWX91X_CLK_RTC>;
+			alarms-count = <1>;
 			status = "disabled";
 		};
 
