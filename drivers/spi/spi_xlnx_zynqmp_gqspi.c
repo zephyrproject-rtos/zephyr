@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT xlnx_zynqmp_qspi_1_0
-
 #include <zephyr/device.h>
 #include <zephyr/drivers/spi.h>
 #include "spi_rtio.h"
@@ -23,6 +21,7 @@ LOG_MODULE_REGISTER(xlnx_zynqmp_gqspi, CONFIG_SPI_LOG_LEVEL);
  */
 
 enum xlnx_zynqmp_gqspi_registers {
+	GQSPI_IOU_TAPDLY_BYPASS = 0x03C,
 	GQSPI_CFG = 0x100,
 	GQSPI_ISR = 0x104,
 	GQSPI_IER = 0x108,
@@ -130,19 +129,27 @@ enum xlnx_zynqmp_gqspi_registers {
 	 GQSPIDMA_INT_TIMEOUT_MEM | GQSPIDMA_INT_TIMEOUT_STRM | GQSPIDMA_INT_AXI_BRESP_ERR |       \
 	 GQSPIDMA_INT_DONE)
 
-/* TODO: Tap delay non-bypass mode not yet supported */
-#define GQSPI_MAX_FREQ_LOOPBACK_DISABLE     40000000
+/* ZynqMP firmware-managed tap delay is not available in Zephyr. */
+#define GQSPI_MAX_FREQ_LOOPBACK_DISABLE     40000000U
 #define GQSPI_LPBK_DLY_ADJ_LOOPBACK_DISABLE 0x0
 #define GQSPI_DATA_DLY_ADJ_LOOPBACK_DISABLE 0x0
-#define GQSPI_MAX_FREQ_LOOPBACK_ENABLE      100000000
+#define GQSPI_MAX_FREQ_LOOPBACK_ENABLE      100000000U
 #define GQSPI_LPBK_DLY_ADJ_LOOPBACK_ENABLE  0x20
 #define GQSPI_DATA_DLY_ADJ_LOOPBACK_ENABLE  0xA0000000
+
+#define GQSPI_VERSAL_MAX_FREQ                  150000000U
+#define GQSPI_VERSAL_TAP_BYPASS_MAX_FREQ       37500000U
+#define GQSPI_IOU_TAPDLY_BYPASS_LQSPI_RX_MASK  BIT(2)
+#define GQSPI_LPBK_DLY_ADJ_USE_LOOPBACK_MASK   BIT(5)
+#define GQSPI_LPBK_DLY_ADJ_DELAY_1_MASK        BIT(3)
+#define GQSPI_DATA_DLY_ADJ_USE_DATA_DELAY_MASK BIT(31)
 
 struct xlnx_zynqmp_gqspi_config {
 	mm_reg_t base;
 	void (*irq_config_func)(const struct device *dev);
 	uint32_t ref_clock_freq;
 	bool shared_data_bus;
+	bool has_tapdelay;
 };
 
 struct xlnx_zynqmp_gqspi_data {
@@ -182,6 +189,36 @@ static int xlnx_zynqmp_gqspi_get_genfifo_mode(spi_operation_t operation, uint32_
 	default:
 		return -ENOTSUP;
 	}
+}
+
+static void xlnx_zynqmp_gqspi_set_tapdelay(const struct device *dev, uint32_t frequency)
+{
+	const struct xlnx_zynqmp_gqspi_config *config = dev->config;
+	uint32_t tapdelay_bypass = 0;
+	uint32_t loopback_delay = 0;
+	uint32_t data_delay = 0;
+
+	if (!config->has_tapdelay) {
+		if (frequency > GQSPI_MAX_FREQ_LOOPBACK_DISABLE) {
+			loopback_delay = GQSPI_LPBK_DLY_ADJ_LOOPBACK_ENABLE;
+			data_delay = GQSPI_DATA_DLY_ADJ_LOOPBACK_ENABLE;
+		}
+	} else if (frequency <= GQSPI_VERSAL_TAP_BYPASS_MAX_FREQ) {
+		tapdelay_bypass = GQSPI_IOU_TAPDLY_BYPASS_LQSPI_RX_MASK;
+	} else if (frequency <= GQSPI_MAX_FREQ_LOOPBACK_ENABLE) {
+		tapdelay_bypass = GQSPI_IOU_TAPDLY_BYPASS_LQSPI_RX_MASK;
+		loopback_delay = GQSPI_LPBK_DLY_ADJ_USE_LOOPBACK_MASK;
+		data_delay = GQSPI_DATA_DLY_ADJ_USE_DATA_DELAY_MASK;
+	} else {
+		loopback_delay =
+			GQSPI_LPBK_DLY_ADJ_USE_LOOPBACK_MASK | GQSPI_LPBK_DLY_ADJ_DELAY_1_MASK;
+	}
+
+	if (config->has_tapdelay) {
+		xlnx_zynqmp_gqspi_write32(dev, GQSPI_IOU_TAPDLY_BYPASS, tapdelay_bypass);
+	}
+	xlnx_zynqmp_gqspi_write32(dev, GQSPI_LPBK_DLY_ADJ, loopback_delay);
+	xlnx_zynqmp_gqspi_write32(dev, GQSPI_DATA_DLY_ADJ, data_delay);
 }
 
 static size_t xlnx_zynqmp_gqspi_genfifo_entry_count(size_t length)
@@ -264,6 +301,8 @@ static int xlnx_zynqmp_gqspi_configure(const struct device *dev, const struct sp
 	struct spi_context *ctx = &data->ctx;
 	const uint32_t word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
 	uint32_t max_frequency = spi_cfg->frequency;
+	uint32_t max_supported_frequency =
+		config->has_tapdelay ? GQSPI_VERSAL_MAX_FREQ : GQSPI_MAX_FREQ_LOOPBACK_ENABLE;
 	uint32_t baud_div = 0;
 	uint32_t actual_frequency = config->ref_clock_freq / (2 << baud_div);
 	uint32_t genfifo_mode;
@@ -294,8 +333,8 @@ static int xlnx_zynqmp_gqspi_configure(const struct device *dev, const struct sp
 		return -ENOTSUP;
 	}
 
-	if (max_frequency > GQSPI_MAX_FREQ_LOOPBACK_ENABLE) {
-		max_frequency = GQSPI_MAX_FREQ_LOOPBACK_ENABLE;
+	if (max_frequency > max_supported_frequency) {
+		max_frequency = max_supported_frequency;
 	}
 
 	while (actual_frequency > max_frequency && baud_div < GQSPI_CFG_BAUD_RATE_DIV_MASK) {
@@ -326,19 +365,7 @@ static int xlnx_zynqmp_gqspi_configure(const struct device *dev, const struct sp
 	LOG_DBG("GQSPI_CFG: 0x%08x", data->spi_cfg);
 	xlnx_zynqmp_gqspi_write32(dev, GQSPI_CFG, data->spi_cfg);
 
-	if (actual_frequency > GQSPI_MAX_FREQ_LOOPBACK_DISABLE) {
-		/* Enable loopback */
-		xlnx_zynqmp_gqspi_write32(dev, GQSPI_LPBK_DLY_ADJ,
-					  GQSPI_LPBK_DLY_ADJ_LOOPBACK_ENABLE);
-		xlnx_zynqmp_gqspi_write32(dev, GQSPI_DATA_DLY_ADJ,
-					  GQSPI_DATA_DLY_ADJ_LOOPBACK_ENABLE);
-	} else {
-		/* Disable loopback */
-		xlnx_zynqmp_gqspi_write32(dev, GQSPI_LPBK_DLY_ADJ,
-					  GQSPI_LPBK_DLY_ADJ_LOOPBACK_DISABLE);
-		xlnx_zynqmp_gqspi_write32(dev, GQSPI_DATA_DLY_ADJ,
-					  GQSPI_DATA_DLY_ADJ_LOOPBACK_DISABLE);
-	}
+	xlnx_zynqmp_gqspi_set_tapdelay(dev, actual_frequency);
 
 	xlnx_zynqmp_gqspi_write32(dev, GQSPI_EN, GQSPI_EN_ENABLE_MASK);
 	ctx->config = spi_cfg;
@@ -464,7 +491,6 @@ static int xlnx_zynqmp_gqspi_transceive(const struct device *dev, const struct s
 	if (ret) {
 		goto out;
 	}
-
 	ret = xlnx_zynqmp_gqspi_get_genfifo_mode(spi_cfg->operation, &genfifo_mode);
 	if (ret) {
 		goto out;
@@ -653,9 +679,8 @@ static int xlnx_zynqmp_gqspi_init(const struct device *dev)
 	LOG_DBG("GQSPI_CFG: 0x%08x", data->spi_cfg);
 	xlnx_zynqmp_gqspi_write32(dev, GQSPI_CFG, data->spi_cfg);
 
-	/* Enable loopback */
-	xlnx_zynqmp_gqspi_write32(dev, GQSPI_LPBK_DLY_ADJ, GQSPI_LPBK_DLY_ADJ_LOOPBACK_ENABLE);
-	xlnx_zynqmp_gqspi_write32(dev, GQSPI_DATA_DLY_ADJ, GQSPI_DATA_DLY_ADJ_LOOPBACK_ENABLE);
+	xlnx_zynqmp_gqspi_set_tapdelay(dev, config->has_tapdelay ? GQSPI_VERSAL_TAP_BYPASS_MAX_FREQ
+								 : GQSPI_MAX_FREQ_LOOPBACK_DISABLE);
 
 	xlnx_zynqmp_gqspi_write32(dev, GQSPI_EN, GQSPI_EN_ENABLE_MASK);
 
@@ -677,28 +702,30 @@ static DEVICE_API(spi, xlnx_zynqmp_gqspi_driver_api) = {
 	.release = xlnx_zynqmp_gqspi_release,
 };
 
-#define XLNX_ZYNQMP_GQSPI_INIT(n)                                                                  \
-	static void xlnx_zynqmp_gqspi_config_func_##n(const struct device *dev);                   \
+#define XLNX_GQSPI_INIT(node_id, tapdelay)                                                         \
+	static void xlnx_gqspi_config_func##node_id(const struct device *dev);                     \
                                                                                                    \
-	static const struct xlnx_zynqmp_gqspi_config xlnx_zynqmp_gqspi_config_##n = {              \
-		.base = DT_INST_REG_ADDR(n),                                                       \
-		.irq_config_func = xlnx_zynqmp_gqspi_config_func_##n,                              \
-		.ref_clock_freq = DT_INST_PROP(n, clock_frequency),                                \
-		.shared_data_bus = DT_INST_NODE_HAS_PROP(n, shared_data_bus)};                     \
+	static const struct xlnx_zynqmp_gqspi_config xlnx_gqspi_config##node_id = {                \
+		.base = DT_REG_ADDR(node_id),                                                      \
+		.irq_config_func = xlnx_gqspi_config_func##node_id,                                \
+		.ref_clock_freq = DT_PROP(node_id, clock_frequency),                               \
+		.shared_data_bus = DT_NODE_HAS_PROP(node_id, shared_data_bus),                     \
+		.has_tapdelay = tapdelay};                                                         \
                                                                                                    \
-	static struct xlnx_zynqmp_gqspi_data xlnx_zynqmp_gqspi_data_##n = {                        \
-		SPI_CONTEXT_INIT_LOCK(xlnx_zynqmp_gqspi_data_##n, ctx),                            \
-		SPI_CONTEXT_INIT_SYNC(xlnx_zynqmp_gqspi_data_##n, ctx)};                           \
+	static struct xlnx_zynqmp_gqspi_data xlnx_gqspi_data##node_id = {                          \
+		SPI_CONTEXT_INIT_LOCK(xlnx_gqspi_data##node_id, ctx),                              \
+		SPI_CONTEXT_INIT_SYNC(xlnx_gqspi_data##node_id, ctx)};                             \
                                                                                                    \
-	SPI_DEVICE_DT_INST_DEFINE(n, &xlnx_zynqmp_gqspi_init, NULL, &xlnx_zynqmp_gqspi_data_##n,   \
-				  &xlnx_zynqmp_gqspi_config_##n, POST_KERNEL,                      \
-				  CONFIG_SPI_INIT_PRIORITY, &xlnx_zynqmp_gqspi_driver_api);        \
+	SPI_DEVICE_DT_DEFINE(node_id, &xlnx_zynqmp_gqspi_init, NULL, &xlnx_gqspi_data##node_id,    \
+			     &xlnx_gqspi_config##node_id, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,   \
+			     &xlnx_zynqmp_gqspi_driver_api);                                       \
                                                                                                    \
-	static void xlnx_zynqmp_gqspi_config_func_##n(const struct device *dev)                    \
+	static void xlnx_gqspi_config_func##node_id(const struct device *dev)                      \
 	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), xlnx_zynqmp_gqspi_isr,      \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+		IRQ_CONNECT(DT_IRQN(node_id), DT_IRQ(node_id, priority), xlnx_zynqmp_gqspi_isr,    \
+			    DEVICE_DT_GET(node_id), 0);                                            \
+		irq_enable(DT_IRQN(node_id));                                                      \
 	}
 
-DT_INST_FOREACH_STATUS_OKAY(XLNX_ZYNQMP_GQSPI_INIT)
+DT_FOREACH_STATUS_OKAY_VARGS(xlnx_zynqmp_qspi_1_0, XLNX_GQSPI_INIT, false)
+DT_FOREACH_STATUS_OKAY_VARGS(xlnx_versal_qspi_1_0, XLNX_GQSPI_INIT, true)
