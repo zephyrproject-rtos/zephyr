@@ -252,13 +252,16 @@ B-frame: Basic information frame
 PDU used in Basic L2CAP mode. It contains the payload received from the upper
 layer or delivered to the upper layer as its payload.
 
-.. image:: img/l2cap_b_frame.drawio.svg
-  :align: center
-  :width: 45%
-  :alt: Representation of a B-frame PDU. The PDU is split into two rectangles,
-        the first one being the L2CAP header, its size is 4 octets and its made
-        of the PDU length and the channel ID. The second rectangle represents
-        the information payload and its size is less or equal to MPS.
+.. mermaid::
+   :caption: B-frame
+   :alt: B-frame PDU: a 4-octet L2CAP header made of a 2-octet PDU length and a
+         2-octet channel ID, followed by an information payload of at most MPS
+         octets.
+
+   packet
+     0-15: "PDU Length"
+     16-31: "Channel ID"
+     32-63: "Information payload (up to MPS octets)"
 
 .. _bluetooth_l2cap_k_frame:
 
@@ -268,24 +271,29 @@ K-frame: Credit-based frame
 PDU used in LE Credit Based Flow Control mode and Enhanced Credit Based Flow
 Control mode. It contains a SDU segment and additional protocol information.
 
-.. image:: img/l2cap_k_frame_1.drawio.svg
-  :width: 45%
-  :alt: Representation of a starting K-frame PDU. The PDU is split into three
-        rectangles, the first one being the L2CAP header, its size is 4 octets
-        and its made of the PDU length and the channel ID. The second rectangle
-        represents the L2CAP SDU length, its size is 2 octets. The third
-        rectangle represents the information payload and its size is less or
-        equal to MPS minus 2 octets. The information payload contains the L2CAP
-        SDU.
+.. mermaid::
+   :caption: First K-frame of an SDU
+   :alt: First K-frame PDU of an SDU: a 4-octet L2CAP header made of a 2-octet
+         PDU length and a 2-octet channel ID, a 2-octet L2CAP SDU length, and an
+         information payload of at most MPS minus 2 octets holding the start of
+         the SDU.
 
-.. image:: img/l2cap_k_frame.drawio.svg
-  :align: right
-  :width: 45%
-  :alt: Representation of K-frames PDUs after the starting one. The PDU is split
-        into two rectangles, the first one being the L2CAP header, its size is 4
-        octets and its made of the PDU length and the channel ID. The second
-        rectangle represents the information payload and its size is less or
-        equal to MPS. The information payload contains the L2CAP SDU.
+   packet
+     0-15: "PDU Length"
+     16-31: "Channel ID"
+     32-47: "SDU Length"
+     48-79: "Information payload (up to MPS - 2 octets)"
+
+.. mermaid::
+   :caption: Subsequent K-frames of an SDU
+   :alt: Subsequent K-frame PDUs of an SDU: a 4-octet L2CAP header made of a
+         2-octet PDU length and a 2-octet channel ID, followed by an information
+         payload of at most MPS octets holding the rest of the SDU.
+
+   packet
+     0-15: "PDU Length"
+     16-31: "Channel ID"
+     32-63: "Information payload (up to MPS octets)"
 
 Relevant Kconfig
 ----------------
