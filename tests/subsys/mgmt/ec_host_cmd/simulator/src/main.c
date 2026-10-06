@@ -4,19 +4,35 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <string.h>
 #include <zephyr/logging/log_backend.h>
 #include <zephyr/mgmt/ec_host_cmd/ec_host_cmd.h>
 #include <zephyr/mgmt/ec_host_cmd/simulator.h>
+#include <zephyr/sys/cbprintf.h>
 #include <zephyr/ztest.h>
 
 static size_t hexdump_log_count;
 static size_t first_hexdump_len;
 static size_t last_hexdump_len;
+static char last_log_str[128];
+static size_t last_log_str_pos;
+
+static int test_log_str_out(int c, void *ctx)
+{
+	ARG_UNUSED(ctx);
+	if (last_log_str_pos < sizeof(last_log_str) - 1) {
+		last_log_str[last_log_str_pos++] = (char)c;
+		last_log_str[last_log_str_pos] = '\0';
+	}
+	return c;
+}
 
 static void test_log_backend_process(const struct log_backend *const backend,
 				     union log_msg_generic *msg)
 {
 	size_t data_len = 0;
+	size_t pkg_len = 0;
+	uint8_t *pkg;
 
 	ARG_UNUSED(backend);
 	log_msg_get_data(&msg->log, &data_len);
@@ -26,6 +42,13 @@ static void test_log_backend_process(const struct log_backend *const backend,
 		}
 		hexdump_log_count++;
 		last_hexdump_len = data_len;
+	}
+
+	pkg = log_msg_get_package(&msg->log, &pkg_len);
+	if (pkg != NULL && pkg_len > 0) {
+		last_log_str_pos = 0;
+		last_log_str[0] = '\0';
+		cbpprintf(test_log_str_out, NULL, pkg);
 	}
 }
 
@@ -630,6 +653,58 @@ ZTEST(ec_host_cmd, test_rx_data_len_bounds)
 		zassert_equal(hexdump_log_count, 0,
 			      "Rejected request must not trigger hexdump log");
 	}
+}
+
+ZTEST(ec_host_cmd, test_err_log_on_unverified_rx)
+{
+	int rv;
+
+	/* Prime rx_ctx.buf with a valid command (cmd_id = EC_CMD_HELLO = 0x0001) */
+	*host_to_dut = (struct rx_structure){
+		.header = {
+			.prtcl_ver = 3,
+			.cmd_id = EC_CMD_HELLO,
+			.data_len = sizeof(host_to_dut->add),
+		},
+		.add = {
+			.in_data = 0x10203040,
+		},
+	};
+	simulate_rx_data();
+
+	/*
+	 * Send a 2-byte truncated packet so bytes 2..3 (cmd_id) in rx_ctx.buf
+	 * retain the stale 0x0001 value from the previous command.
+	 */
+	last_log_str[0] = '\0';
+	rv = ec_host_cmd_backend_sim_data_received(host_to_dut_buffer, 2);
+	zassert_equal(rv, 0, "Could not send data %d", rv);
+	rv = k_sem_take(&send_called, K_SECONDS(1));
+	zassert_equal(rv, 0, "Send was not called");
+	verify_tx_error(EC_HOST_CMD_REQUEST_TRUNCATED);
+	zassert_equal(strcmp(last_log_str, "HC rx err 13"), 0,
+		      "Expected 'HC rx err 13' without stale cmd_id, got '%s'", last_log_str);
+
+	/*
+	 * Verify that when verify_rx() succeeds and handler validation fails,
+	 * cmd_id is logged as expected.
+	 */
+	last_log_str[0] = '\0';
+	*host_to_dut = (struct rx_structure){
+		.header = {
+			.prtcl_ver = 3,
+			.cmd_id = EC_CMD_HELLO,
+			.cmd_ver = 3,
+			.data_len = sizeof(host_to_dut->add),
+		},
+		.add = {
+			.in_data = 0x10203040,
+		},
+	};
+	simulate_rx_data();
+	verify_tx_error(EC_HOST_CMD_INVALID_VERSION);
+	zassert_equal(strcmp(last_log_str, "HC 0x0001 err 6"), 0,
+		      "Expected 'HC 0x0001 err 6', got '%s'", last_log_str);
 }
 
 static void *ec_host_cmd_tests_setup(void)
