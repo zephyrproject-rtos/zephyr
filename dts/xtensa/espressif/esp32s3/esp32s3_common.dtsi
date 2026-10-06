@@ -427,6 +427,11 @@
 				#size-cells = <0>;
 				status = "disabled";
 			};
+
+			lcd_cam_dpi: lcd_cam_dpi {
+				compatible = "espressif,esp32-dpi-display";
+				status = "disabled";
+			};
 		};
 
 		usb_serial: uart@60038000 {

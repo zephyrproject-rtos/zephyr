@@ -1,0 +1,28 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config DISPLAY_ESP32_DPI
+	bool "Espressif ESP32 LCD_CAM DPI display controller"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_DPI_DISPLAY_ENABLED
+	depends on ESP32_LCD_CAM
+	depends on DT_HAS_ESPRESSIF_ESP32_GDMA_ENABLED
+	select DMA
+	select PINCTRL
+	select SHARED_MULTI_HEAP
+	help
+	  Enable driver for panels connected to the ESP32-S3 LCD_CAM
+	  parallel RGB (MIPI DPI) interface.
+
+if DISPLAY_ESP32_DPI
+
+config DISPLAY_ESP32_DPI_BOUNCE_BUFFER_LINES
+	int "DPI bounce buffer height in lines"
+	default 20
+	range 1 64
+	help
+	  Height of each of the two internal SRAM bounce buffers through
+	  which the PSRAM framebuffer is sent to the panel. The panel height
+	  must be a multiple of this value.
+
+endif

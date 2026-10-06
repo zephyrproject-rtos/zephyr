@@ -1,0 +1,67 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Espressif ESP32 LCD_CAM parallel RGB (MIPI DPI) display controller.
+
+  The controller streams a framebuffer over the LCD_CAM parallel RGB
+  interface with HSYNC, VSYNC, DE and PCLK. This is a role of the LCD_CAM
+  peripheral rather than a separate block, so the node is a child of the
+  "espressif,esp32-lcd-cam" node and carries no registers of its own. Pin
+  configuration and the "tx" DMA channel are taken from that parent node.
+
+compatible: "espressif,esp32-dpi-display"
+
+include: display-controller.yaml
+
+properties:
+  pclk-frequency:
+    type: int
+    required: true
+    description: Pixel clock frequency in Hz
+
+  hsync-len:
+    type: int
+    required: true
+    description: Horizontal sync pulse width in pixel clocks
+
+  hback-porch:
+    type: int
+    required: true
+    description: Horizontal back porch width in pixel clocks
+
+  hfront-porch:
+    type: int
+    required: true
+    description: Horizontal front porch width in pixel clocks
+
+  vsync-len:
+    type: int
+    required: true
+    description: Vertical sync pulse width in lines
+
+  vback-porch:
+    type: int
+    required: true
+    description: Vertical back porch width in lines
+
+  vfront-porch:
+    type: int
+    required: true
+    description: Vertical front porch width in lines
+
+  pclk-active-negative:
+    type: boolean
+    description: Sample data on the falling edge of PCLK
+
+  data-width:
+    type: int
+    default: 16
+    enum: [8, 16]
+    description: Number of parallel data lines
+
+  dma-burst-size:
+    type: int
+    default: 64
+    enum: [16, 32, 64]
+    description: GDMA burst size in bytes
