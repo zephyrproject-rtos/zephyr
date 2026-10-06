@@ -17,8 +17,8 @@
 
 	chosen {
 		zephyr,sram = &ddr1;
-		zephyr,console = &uart1;
-		zephyr,shell-uart = &uart1;
+		zephyr,console = &rpmsg0;
+		zephyr,shell-uart = &rpmsg0;
 		zephyr,ipc = &ipc0;
 		zephyr,ipc_shm = &ddr0;
 	};
@@ -51,6 +51,11 @@
 		mboxes = <&mbox3 0>, <&mbox3 1>;
 		mbox-names = "tx", "rx";
 	};
+
+	rpmsg0: rpmsg0 {
+		compatible = "rpmsg-uart";
+		status = "okay";
+	};
 };
 
 &uart1 {
@@ -58,4 +63,16 @@
 	pinctrl-0 = <&uart1_tx_default &uart1_rx_default>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+};
+
+&secure_proxy_main {
+	status = "okay";
+};
+
+&dmsc {
+	status = "okay";
+};
+
+&main_gpio_intr {
+	status = "okay";
 };
