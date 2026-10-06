@@ -28,12 +28,14 @@
 int siwx91x_nwp_mode_switch(const struct device *dev, uint8_t oper_mode, bool hidden_ssid,
 			    uint8_t max_num_sta);
 
-/*
+/**
  * @brief Apply the power profile for the NWP.
  *
- * Pushes both the Wi-Fi and BT halves of the NWP coex performance profile.
- * The BT half is re-seeded with ASSOCIATED_POWER_SAVE on every call because
- * WiseConnect zeros it on each Wi-Fi disconnect.
+ * Pushes both the Wi-Fi and Bluetooth halves of the NWP coexistence
+ * performance profile. For normal profiles, the Bluetooth half is re-seeded
+ * with ASSOCIATED_POWER_SAVE because WiseConnect zeros it on each Wi-Fi
+ * disconnect. When DEEP_SLEEP_WITHOUT_RAM_RETENTION is requested, both halves
+ * are set to that profile.
  *
  * @param[in] dev           NWP device.
  * @param[in] wifi_profile  Optional Wi-Fi performance profile to apply. If
