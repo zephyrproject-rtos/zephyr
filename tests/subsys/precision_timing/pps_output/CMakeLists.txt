@@ -3,8 +3,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-CONFIG_ZTEST=y
-CONFIG_PRECISION_TIMING=y
-CONFIG_PRECISION_CLOCK_OUTPUT=y
-CONFIG_PTP_CLOCK=y
-CONFIG_PTP_CLOCK_NATIVE=n
+cmake_minimum_required(VERSION 3.20.0)
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+project(precision_timing_pps_output)
+
+target_sources(app PRIVATE src/main.c)
