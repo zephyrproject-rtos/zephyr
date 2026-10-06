@@ -58,6 +58,7 @@ tests:
     integration_platforms:
       - qemu_cortex_m3
       - nsim/nsim_em
+      - mps3/an536/cpu0
     extra_configs:
       - CONFIG_MULTITHREADING=n
       - CONFIG_TEST_USERSPACE=n
