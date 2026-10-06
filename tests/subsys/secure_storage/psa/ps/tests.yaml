@@ -33,6 +33,12 @@ tests:
     extra_configs:
       - CONFIG_SECURE_STORAGE_64_BIT_UID=y
 
+  secure_storage.psa.ps.secure_storage.replay_protection.counter:
+    filter: CONFIG_SECURE_STORAGE
+    extra_args: *settings_extra_args
+    extra_configs:
+      - CONFIG_SECURE_STORAGE_PS_REPLAY_PROTECTION_COUNTER=y
+
   secure_storage.psa.ps.secure_storage.custom.aead_crypt:
     filter: CONFIG_SECURE_STORAGE and not CONFIG_SECURE_STORAGE_PS_STORE_IMPLEMENTATION_NONE
     extra_args: "EXTRA_CONF_FILE=\
@@ -52,11 +58,17 @@ tests:
       overlay-secure_storage.conf;overlay-transform_default.conf;overlay-store_custom.conf;\
       overlay-its_store_settings.conf"
 
-  secure_storage.psa.ps.secure_storage.custom.both:
+  secure_storage.psa.ps.secure_storage.custom.replay_protection:
+    filter: CONFIG_SECURE_STORAGE
+    extra_args: "EXTRA_CONF_FILE=\
+      overlay-secure_storage.conf;overlay-transform_default.conf;overlay-store_settings.conf;\
+      overlay-replay_protection_custom.conf;overlay-its_store_settings.conf"
+
+  secure_storage.psa.ps.secure_storage.custom.all:
     filter: CONFIG_SECURE_STORAGE
     extra_args: "EXTRA_CONF_FILE=\
       overlay-secure_storage.conf;overlay-transform_custom.conf;overlay-store_custom.conf;\
-      overlay-its_store_settings.conf"
+      overlay-replay_protection_custom.conf;overlay-its_store_settings.conf"
 
   secure_storage.psa.ps.tfm:
     filter: CONFIG_BUILD_WITH_TFM
