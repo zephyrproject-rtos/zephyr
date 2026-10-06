@@ -11,6 +11,14 @@ config I2C_OMAP
 	help
 	  Enable the I2C driver for TI OMAP SoCs.
 
+config I2C_OMAP_INTERRUPT
+	bool "Interrupt-driven transfers"
+	default y
+	depends on I2C_OMAP
+	help
+	  Handle I2C events in the ISR and block the caller on a completion
+	  semaphore. When disabled, status is polled in thread context.
+
 config I2C_OMAP_BUS_RECOVERY
 	bool "Bus recovery support"
 	default y if I2C_BUS_RECOVERY
