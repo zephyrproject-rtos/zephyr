@@ -1653,6 +1653,7 @@ static const struct sx12xx_hal_opcodes sx126x_opcodes = {
 };
 
 BUILD_ASSERT(offsetof(struct sx126x_hal_config, common) == 0);
+BUILD_ASSERT(offsetof(struct sx126x_data, hal.common) == 0);
 
 #define SX126X_HAL_COMMON_CONFIG(inst)						\
 	{									\

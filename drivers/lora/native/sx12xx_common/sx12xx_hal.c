@@ -88,6 +88,23 @@ int sx12xx_hal_configure_gpio(const struct gpio_dt_spec *gpio,
 	return 0;
 }
 
+static inline struct sx12xx_hal_data *hal_data(const struct device *dev)
+{
+	return dev->data;
+}
+
+void sx12xx_hal_init(const struct device *dev)
+{
+	k_mutex_init(&hal_data(dev)->bus_lock);
+}
+
+/*
+ * The functions below hold bus_lock from the BUSY check to the end of the
+ * transfer: the chip takes a command only while BUSY is low, and the IRQ
+ * work and the caller's thread both talk to it. Without the lock, a command
+ * sent right after the other thread's, past a BUSY check done before it, is
+ * lost.
+ */
 int sx12xx_hal_wakeup(const struct device *dev)
 {
 	const struct sx12xx_hal_config *config = dev->config;
@@ -102,6 +119,8 @@ int sx12xx_hal_wakeup(const struct device *dev)
 	};
 	int ret;
 
+	k_mutex_lock(&hal_data(dev)->bus_lock, K_FOREVER);
+
 	/*
 	 * Send a write-only GET_STATUS command. The NSS falling edge wakes
 	 * the chip from sleep. Use spi_write_dt() (TX-only) rather than
@@ -111,10 +130,13 @@ int sx12xx_hal_wakeup(const struct device *dev)
 	ret = spi_write_dt(&config->spi, &tx_set);
 	if (ret < 0) {
 		LOG_ERR("Wakeup SPI failed: %d", ret);
-		return ret;
+		goto out;
 	}
 
-	return sx12xx_hal_wait_busy(dev, SX12XX_BUSY_DEFAULT_TIMEOUT);
+	ret = sx12xx_hal_wait_busy(dev, SX12XX_BUSY_DEFAULT_TIMEOUT);
+out:
+	k_mutex_unlock(&hal_data(dev)->bus_lock);
+	return ret;
 }
 
 int sx12xx_hal_write_cmd(const struct device *dev, uint8_t opcode,
@@ -124,15 +146,17 @@ int sx12xx_hal_write_cmd(const struct device *dev, uint8_t opcode,
 	uint8_t hdr[1] = { opcode };
 	int ret;
 
+	k_mutex_lock(&hal_data(dev)->bus_lock, K_FOREVER);
+
 	ret = sx12xx_hal_wait_busy(dev, SX12XX_BUSY_DEFAULT_TIMEOUT);
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
 
 	ret = spi_transfer(&config->spi, hdr, sizeof(hdr), (uint8_t *)data, len, false);
 	if (ret < 0) {
 		LOG_ERR("SPI write failed: %d", ret);
-		return ret;
+		goto out;
 	}
 
 	if (opcode != SX12XX_CMD_SET_SLEEP) {
@@ -145,6 +169,8 @@ int sx12xx_hal_write_cmd(const struct device *dev, uint8_t opcode,
 		k_busy_wait(500);
 	}
 
+out:
+	k_mutex_unlock(&hal_data(dev)->bus_lock);
 	return ret;
 }
 
@@ -155,18 +181,23 @@ int sx12xx_hal_read_cmd(const struct device *dev, uint8_t opcode,
 	uint8_t hdr[2] = { opcode, 0x00 };
 	int ret;
 
+	k_mutex_lock(&hal_data(dev)->bus_lock, K_FOREVER);
+
 	ret = sx12xx_hal_wait_busy(dev, SX12XX_BUSY_DEFAULT_TIMEOUT);
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
 
 	ret = spi_transfer(&config->spi, hdr, sizeof(hdr), data, len, true);
 	if (ret < 0) {
 		LOG_ERR("SPI transceive failed: %d", ret);
-		return ret;
+		goto out;
 	}
 
-	return 0;
+	ret = 0;
+out:
+	k_mutex_unlock(&hal_data(dev)->bus_lock);
+	return ret;
 }
 
 int sx12xx_hal_write_regs(const struct device *dev, uint16_t address,
@@ -176,9 +207,11 @@ int sx12xx_hal_write_regs(const struct device *dev, uint16_t address,
 	uint8_t hdr[3];
 	int ret;
 
+	k_mutex_lock(&hal_data(dev)->bus_lock, K_FOREVER);
+
 	ret = sx12xx_hal_wait_busy(dev, SX12XX_BUSY_DEFAULT_TIMEOUT);
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
 
 	hdr[0] = config->opcodes->write_register;
@@ -187,10 +220,13 @@ int sx12xx_hal_write_regs(const struct device *dev, uint16_t address,
 	ret = spi_transfer(&config->spi, hdr, sizeof(hdr), (uint8_t *)data, len, false);
 	if (ret < 0) {
 		LOG_ERR("SPI write regs failed: %d", ret);
-		return ret;
+		goto out;
 	}
 
-	return sx12xx_hal_wait_busy(dev, SX12XX_BUSY_DEFAULT_TIMEOUT);
+	ret = sx12xx_hal_wait_busy(dev, SX12XX_BUSY_DEFAULT_TIMEOUT);
+out:
+	k_mutex_unlock(&hal_data(dev)->bus_lock);
+	return ret;
 }
 
 int sx12xx_hal_read_regs(const struct device *dev, uint16_t address,
@@ -200,9 +236,11 @@ int sx12xx_hal_read_regs(const struct device *dev, uint16_t address,
 	uint8_t hdr[4];
 	int ret;
 
+	k_mutex_lock(&hal_data(dev)->bus_lock, K_FOREVER);
+
 	ret = sx12xx_hal_wait_busy(dev, SX12XX_BUSY_DEFAULT_TIMEOUT);
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
 
 	hdr[0] = config->opcodes->read_register;
@@ -212,10 +250,13 @@ int sx12xx_hal_read_regs(const struct device *dev, uint16_t address,
 	ret = spi_transfer(&config->spi, hdr, sizeof(hdr), data, len, true);
 	if (ret < 0) {
 		LOG_ERR("SPI read regs failed: %d", ret);
-		return ret;
+		goto out;
 	}
 
-	return 0;
+	ret = 0;
+out:
+	k_mutex_unlock(&hal_data(dev)->bus_lock);
+	return ret;
 }
 
 int sx12xx_hal_write_buffer(const struct device *dev, uint8_t offset,
@@ -225,18 +266,23 @@ int sx12xx_hal_write_buffer(const struct device *dev, uint8_t offset,
 	uint8_t hdr[2] = { config->opcodes->write_buffer, offset };
 	int ret;
 
+	k_mutex_lock(&hal_data(dev)->bus_lock, K_FOREVER);
+
 	ret = sx12xx_hal_wait_busy(dev, SX12XX_BUSY_DEFAULT_TIMEOUT);
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
 
 	ret = spi_transfer(&config->spi, hdr, sizeof(hdr), (uint8_t *)data, len, false);
 	if (ret < 0) {
 		LOG_ERR("SPI write buffer failed: %d", ret);
-		return ret;
+		goto out;
 	}
 
-	return sx12xx_hal_wait_busy(dev, SX12XX_BUSY_DEFAULT_TIMEOUT);
+	ret = sx12xx_hal_wait_busy(dev, SX12XX_BUSY_DEFAULT_TIMEOUT);
+out:
+	k_mutex_unlock(&hal_data(dev)->bus_lock);
+	return ret;
 }
 
 int sx12xx_hal_read_buffer(const struct device *dev, uint8_t offset,
@@ -246,16 +292,21 @@ int sx12xx_hal_read_buffer(const struct device *dev, uint8_t offset,
 	uint8_t hdr[3] = { config->opcodes->read_buffer, offset, 0x00 };
 	int ret;
 
+	k_mutex_lock(&hal_data(dev)->bus_lock, K_FOREVER);
+
 	ret = sx12xx_hal_wait_busy(dev, SX12XX_BUSY_DEFAULT_TIMEOUT);
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
 
 	ret = spi_transfer(&config->spi, hdr, sizeof(hdr), data, len, true);
 	if (ret < 0) {
 		LOG_ERR("SPI read buffer failed: %d", ret);
-		return ret;
+		goto out;
 	}
 
-	return 0;
+	ret = 0;
+out:
+	k_mutex_unlock(&hal_data(dev)->bus_lock);
+	return ret;
 }

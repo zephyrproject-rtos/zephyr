@@ -40,6 +40,8 @@ struct sx126x_hal_config {
 };
 
 struct sx126x_hal_data {
+	/* First: the common functions take it from dev->data */
+	struct sx12xx_hal_data common;
 	struct gpio_callback dio1_cb;
 	void (*dio1_callback)(const struct device *dev);
 	const struct device *dev;
