@@ -12,10 +12,12 @@ on:
       - 'scripts/build/**'
       - 'scripts/checkpatch.pl'
       - 'scripts/checkpatch/**'
+      - 'scripts/ci/check_compliance.py'
       - 'scripts/cmake/**'
       - 'scripts/coredump/**'
       - 'scripts/kconfig/**'
       - 'scripts/schemas/hardening-schema.yaml'
+      - 'scripts/tests/compliance/**'
       - 'scripts/tests/hardenconfig/**'
       - 'samples/net/zperf/scripts/**'
       - '.github/workflows/scripts_tests.yml'
@@ -27,10 +29,12 @@ on:
       - 'scripts/build/**'
       - 'scripts/checkpatch.pl'
       - 'scripts/checkpatch/**'
+      - 'scripts/ci/check_compliance.py'
       - 'scripts/cmake/**'
       - 'scripts/coredump/**'
       - 'scripts/kconfig/**'
       - 'scripts/schemas/hardening-schema.yaml'
+      - 'scripts/tests/compliance/**'
       - 'scripts/tests/hardenconfig/**'
       - 'samples/net/zperf/scripts/**'
       - '.github/workflows/scripts_tests.yml'
@@ -90,4 +94,5 @@ jobs:
         run: |
           echo "Run script tests"
           pytest ./scripts/build ./scripts/checkpatch ./scripts/cmake ./scripts/coredump/tests \
-              ./scripts/kconfig ./scripts/tests/hardenconfig ./samples/net/zperf/scripts
+              ./scripts/kconfig ./scripts/tests/hardenconfig ./samples/net/zperf/scripts \
+              ./scripts/tests/compliance
