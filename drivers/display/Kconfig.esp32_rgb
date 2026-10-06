@@ -1,0 +1,25 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config DISPLAY_ESP32_RGB
+	bool "Espressif RGB panel on ESP32 LCD-CAM"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_RGB_ENABLED
+	select DMA
+	select PINCTRL
+	help
+	  Enable driver for Espressif RGB panels connected to the
+	  ESP32-S3 LCD-CAM parallel RGB interface.
+
+if DISPLAY_ESP32_RGB
+
+config ESP32_RGB_BOUNCE_BUFFER_LINES
+	int "RGB bounce buffer height in lines"
+	default 20
+	range 0 64
+	help
+	  When non-zero, scanout copies the PSRAM framebuffer into internal
+	  SRAM bounce buffers for GDMA (required for reliable ESP32-S3 RGB
+	  panels with octal PSRAM). Set to 0 to DMA directly from PSRAM.
+
+endif
