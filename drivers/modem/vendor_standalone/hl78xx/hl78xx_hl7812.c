@@ -201,9 +201,6 @@ static bool hl78xx_hl7812_on_gnss_mode_enter_lpm(struct hl78xx_data *data)
 
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 
-/* Defined in hl78xx_sockets.c */
-extern void hl78xx_invalidate_socket_contexts(struct hl78xx_data *data);
-
 /* -------------------------------------------------------------------------
  * GPIO6 handler
  * -------------------------------------------------------------------------
