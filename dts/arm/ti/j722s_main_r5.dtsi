@@ -92,11 +92,87 @@
  *   out 16..19 -> VIM 104..107
  *   out 20..21 -> VIM 56..57
  *   out 32..33 -> VIM 58..59
+ *
+ * Each output is a ti,sci-intr-out child so peripherals can use
+ * interrupt-parent = <&main_gpio_intr_N> with IR input in interrupts.
+ * NUM_2ND_LEVEL_AGGREGATORS is capped at 8, matching these eight outputs.
  */
 &main_gpio_intr {
 	ti,interrupt-ranges = <16 104 4>,
 			      <20 56 2>,
 			      <32 58 2>;
+
+	main_gpio_intr_16: interrupt-controller@10 {
+		compatible = "ti,sci-intr-out";
+		reg = <16>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
+		interrupt-parent = <&vim>;
+		interrupts = <0 104 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	};
+
+	main_gpio_intr_17: interrupt-controller@11 {
+		compatible = "ti,sci-intr-out";
+		reg = <17>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
+		interrupt-parent = <&vim>;
+		interrupts = <0 105 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	};
+
+	main_gpio_intr_18: interrupt-controller@12 {
+		compatible = "ti,sci-intr-out";
+		reg = <18>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
+		interrupt-parent = <&vim>;
+		interrupts = <0 106 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	};
+
+	main_gpio_intr_19: interrupt-controller@13 {
+		compatible = "ti,sci-intr-out";
+		reg = <19>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
+		interrupt-parent = <&vim>;
+		interrupts = <0 107 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	};
+
+	main_gpio_intr_20: interrupt-controller@14 {
+		compatible = "ti,sci-intr-out";
+		reg = <20>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
+		interrupt-parent = <&vim>;
+		interrupts = <0 56 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	};
+
+	main_gpio_intr_21: interrupt-controller@15 {
+		compatible = "ti,sci-intr-out";
+		reg = <21>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
+		interrupt-parent = <&vim>;
+		interrupts = <0 57 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	};
+
+	main_gpio_intr_32: interrupt-controller@20 {
+		compatible = "ti,sci-intr-out";
+		reg = <32>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
+		interrupt-parent = <&vim>;
+		interrupts = <0 58 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	};
+
+	main_gpio_intr_33: interrupt-controller@21 {
+		compatible = "ti,sci-intr-out";
+		reg = <33>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
+		interrupt-parent = <&vim>;
+		interrupts = <0 59 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	};
 };
 
 /*
