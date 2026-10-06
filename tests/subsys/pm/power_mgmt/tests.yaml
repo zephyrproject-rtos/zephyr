@@ -16,6 +16,11 @@ tests:
   pm.system.timer.restart:
     platform_allow:
       - qemu_cortex_m3
+    toolchain_allow:
+      - zephyr/gnu
+      - zephyr/llvm
+      - gnuarmemb
+      - cross-compile
     extra_args:
       - CONF_FILE="timer-restart.conf"
     extra_configs:
@@ -24,6 +29,11 @@ tests:
   pm.system.timer.legacy:
     platform_allow:
       - qemu_cortex_m3
+    toolchain_allow:
+      - zephyr/gnu
+      - zephyr/llvm
+      - gnuarmemb
+      - cross-compile
     extra_args:
       - CONF_FILE="timer-restart.conf"
     timeout: 10

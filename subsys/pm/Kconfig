@@ -68,7 +68,7 @@ config PM_STATE_SET_IRQ_UNLOCKED
 	  the zero-latency interrupt documentation for IRQ_ZERO_LATENCY behavior.
 
 config PM_EARLY_SYSTEM_TIMER_RESUME
-	bool "Resume the system timer before devices"
+	bool "Resume the system timer before devices [EXPERIMENTAL]"
 	depends on PM
 	default n
 	select EXPERIMENTAL

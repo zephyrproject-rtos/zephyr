@@ -13,4 +13,6 @@ config TEST_PROVIDE_PM_HOOKS
 
 config TEST_PM_TIMER_RESTART
 	bool "Test timer and PM resume ordering"
+	# The test relies on SysTick stopping its cycle counter for an infinite idle
+	# timeout with no LPM companion, then restarting it on idle exit.
 	depends on CORTEX_M_SYSTICK
