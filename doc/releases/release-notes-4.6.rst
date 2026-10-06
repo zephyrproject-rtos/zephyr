@@ -65,6 +65,12 @@ New APIs and options
 
 * Networking
 
+  * Connection manager
+
+    * Add name resolution readiness tracking, see :ref:`conn_mgr_monitoring_dns`:
+      :c:macro:`NET_EVENT_L4_DNS_READY`, :c:macro:`NET_EVENT_L4_DNS_LOST` and
+      :c:func:`conn_mgr_dns_is_ready`.
+
   * DNS
 
     * :c:func:`dns_resolve_get_server_families`

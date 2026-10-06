@@ -10,12 +10,16 @@ LOG_MODULE_REGISTER(conn_mgr, CONFIG_NET_CONNECTION_MANAGER_LOG_LEVEL);
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <errno.h>
+#include <string.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_log.h>
 #include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/socket_offload.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/net/conn_mgr_connectivity.h>
+#include <zephyr/net/conn_mgr_monitor.h>
+#include <zephyr/net/dns_resolve.h>
 #include "conn_mgr_private.h"
 
 #if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
@@ -44,6 +48,13 @@ static uint16_t last_ready_count_ipv6;
 static struct net_if *last_blame;
 static struct net_if *last_blame_ipv4;
 static struct net_if *last_blame_ipv6;
+
+/* Last reported DNS readiness */
+static bool last_dns_ready;
+
+/* Address families of the configured unicast DNS servers: unbound and per interface */
+static uint32_t dns_unbound_families;
+static uint32_t dns_bound_families[CONN_MGR_IFACE_MAX];
 
 /* Used to signal when modifications have been made that need to be responded to */
 K_SEM_DEFINE(conn_mgr_mon_updated, 1, 1);
@@ -106,6 +117,50 @@ static void conn_mgr_mon_set_ready(int idx, bool ready, bool ready_ipv4, bool re
 	}
 }
 
+/**
+ * @brief Refresh dns_unbound_families and dns_bound_families from the default resolver context.
+ */
+static void conn_mgr_mon_dns_snapshot(void)
+{
+	struct dns_resolve_context *ctx;
+
+	if (!IS_ENABLED(CONFIG_DNS_RESOLVER)) {
+		return;
+	}
+
+	ctx = dns_resolve_get_default();
+	dns_unbound_families = dns_resolve_get_server_families(ctx, 0);
+
+	ARRAY_FOR_EACH(dns_bound_families, i) {
+		dns_bound_families[i] = dns_resolve_get_server_families(ctx, i + 1);
+	}
+}
+
+/**
+ * @brief Check whether an interface provides name resolution.
+ *
+ * @param idx - index (in iface_states) of the iface to check.
+ * @retval true if a DNS server can be reached through the iface.
+ */
+static bool conn_mgr_mon_iface_has_dns(int idx)
+{
+	uint32_t families;
+
+	if ((iface_states[idx] & CONN_MGR_IF_READY) && socket_offload_dns_is_enabled()) {
+		/* Name resolution is offloaded and its servers are not visible to us */
+		return true;
+	}
+
+	if (!IS_ENABLED(CONFIG_DNS_RESOLVER)) {
+		return false;
+	}
+
+	families = dns_unbound_families | dns_bound_families[idx];
+
+	return ((iface_states[idx] & CONN_MGR_IF_READY_IPV4) && (families & BIT(NET_AF_INET))) ||
+	       ((iface_states[idx] & CONN_MGR_IF_READY_IPV6) && (families & BIT(NET_AF_INET6)));
+}
+
 static void conn_mgr_mon_handle_update(void)
 {
 	int idx;
@@ -127,6 +182,9 @@ static void conn_mgr_mon_handle_update(void)
 	struct net_if *blame = NULL;
 	struct net_if *blame_ipv4 = NULL;
 	struct net_if *blame_ipv6 = NULL;
+	bool dns_ready = false;
+
+	conn_mgr_mon_dns_snapshot();
 
 	k_mutex_lock(&conn_mgr_mon_lock, K_FOREVER);
 
@@ -182,6 +240,10 @@ static void conn_mgr_mon_handle_update(void)
 
 		/* Update readiness state flags with the (possibly) new values */
 		conn_mgr_mon_set_ready(idx, is_l4_ready, is_ipv4_ready, is_ipv6_ready);
+
+		if (conn_mgr_mon_iface_has_dns(idx)) {
+			dns_ready = true;
+		}
 	}
 
 	/* If the total number of ready ifaces changed, possibly send an event */
@@ -221,6 +283,13 @@ static void conn_mgr_mon_handle_update(void)
 		}
 		last_ready_count_ipv6 = ready_count_ipv6;
 		last_blame_ipv6 = blame_ipv6;
+	}
+
+	/* Notify DNS availability */
+	if (dns_ready != last_dns_ready) {
+		last_dns_ready = dns_ready;
+		net_mgmt_event_notify(dns_ready ? NET_EVENT_L4_DNS_READY : NET_EVENT_L4_DNS_LOST,
+				      NULL);
 	}
 
 	k_mutex_unlock(&conn_mgr_mon_lock);
@@ -271,7 +340,22 @@ void conn_mgr_mon_resend_status(void)
 		net_mgmt_event_notify(NET_EVENT_L4_IPV4_CONNECTED, last_blame_ipv4);
 	}
 
+	net_mgmt_event_notify(last_dns_ready ? NET_EVENT_L4_DNS_READY : NET_EVENT_L4_DNS_LOST,
+			      NULL);
+
 	k_mutex_unlock(&conn_mgr_mon_lock);
+}
+
+bool conn_mgr_dns_is_ready(void)
+{
+	bool ret;
+
+	k_mutex_lock(&conn_mgr_mon_lock, K_FOREVER);
+	/* Return the last reported value */
+	ret = last_dns_ready;
+	k_mutex_unlock(&conn_mgr_mon_lock);
+
+	return ret;
 }
 
 void conn_mgr_ignore_iface(struct net_if *iface)

@@ -226,6 +226,8 @@ enum {
 	NET_EVENT_L4_CMD_DNS_SERVERS_RECONFIGURED_VAL,
 	NET_EVENT_L4_CMD_IF_CONNECTED_VAL,
 	NET_EVENT_L4_CMD_IF_DISCONNECTED_VAL,
+	NET_EVENT_L4_CMD_DNS_READY_VAL,
+	NET_EVENT_L4_CMD_DNS_LOST_VAL,
 
 	NET_EVENT_L4_CMD_MAX
 };
@@ -252,6 +254,8 @@ enum net_event_l4_cmd {
 	NET_MGMT_CMD(NET_EVENT_L4_CMD_DNS_SERVERS_RECONFIGURED),
 	NET_MGMT_CMD(NET_EVENT_L4_CMD_IF_CONNECTED),
 	NET_MGMT_CMD(NET_EVENT_L4_CMD_IF_DISCONNECTED),
+	NET_MGMT_CMD(NET_EVENT_L4_CMD_DNS_READY),
+	NET_MGMT_CMD(NET_EVENT_L4_CMD_DNS_LOST),
 };
 
 /** @endcond */
@@ -541,6 +545,14 @@ enum net_event_l4_cmd {
 /** Event emitted when an interface is not considered connected. */
 #define NET_EVENT_L4_IF_DISCONNECTED			\
 	(NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_IF_DISCONNECTED)
+
+/** Event emitted when name resolution becomes available. */
+#define NET_EVENT_L4_DNS_READY				\
+	(NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_DNS_READY)
+
+/** Event emitted when name resolution is no longer available. */
+#define NET_EVENT_L4_DNS_LOST				\
+	(NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_DNS_LOST)
 
 /**
  * @brief Network Management event information structure
