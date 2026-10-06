@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# The vectors need to be inside BFM. When building MCUboot itself, MCUboot will completely land
+# inside BFM so it's not necessary to set it. When loading a Zephyr firmware with MCUboot, it will
+# relocate its vector tables itself during startup
+config ROMSTART_RELOCATION_ROM
+	default y if !MCUBOOT && !BOOTLOADER_MCUBOOT
+
+config ROMSTART_REGION_ADDRESS
+	default $(dt_nodelabel_reg_addr_hex,flash0)
+
+config ROMSTART_REGION_SIZE
+	default $(dt_nodelabel_reg_size_hex,boot_partition,0,k)
