@@ -734,6 +734,32 @@ ZTEST(ec_host_cmd, test_no_log_on_invalid_response)
 		      "Only the request payload should be hexdumped");
 }
 
+ZTEST(ec_host_cmd, test_log_on_request_max_version)
+{
+	hexdump_log_count = 0;
+	first_hexdump_len = 0;
+
+	*host_to_dut = (struct rx_structure){
+		.header = {
+			.prtcl_ver = 3,
+			.cmd_id = EC_CMD_HELLO,
+			.cmd_ver = UINT8_MAX,
+			.data_len = sizeof(host_to_dut->add),
+		},
+		.add.in_data = 0x10203040,
+	};
+
+	simulate_rx_data();
+
+	/* It should log the request hexdump, then fail validation. */
+	zassert_equal(hexdump_log_count, 1,
+		      "Request with max version should log the request hexdump");
+	zassert_equal(first_hexdump_len, sizeof(host_to_dut->add),
+		      "Unexpected request hexdump length");
+
+	verify_tx_error(EC_HOST_CMD_INVALID_VERSION);
+}
+
 static void *ec_host_cmd_tests_setup(void)
 {
 	ec_host_cmd_backend_sim_install_send_cb(host_send, &sent);
