@@ -103,6 +103,11 @@ static int cmd_i2c_recover(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	err = i2c_recover_bus(dev);
+	if (err == -ENOSYS) {
+		shell_error(sh, "I2C: Bus recovery is not supported by %s", argv[ARGV_DEV]);
+		return err;
+	}
+
 	if (err) {
 		shell_error(sh, "I2C: Bus recovery failed (err %d)", err);
 		return err;
@@ -372,6 +377,19 @@ static bool device_is_i2c(const struct device *dev)
 	return DEVICE_API_IS(i2c, dev);
 }
 
+static bool device_supports_i2c_recover(const struct device *dev)
+{
+	const struct i2c_driver_api *api;
+
+	if (!DEVICE_API_IS(i2c, dev)) {
+		return false;
+	}
+
+	api = DEVICE_API_GET(i2c, dev);
+
+	return api->recover_bus != NULL;
+}
+
 static void device_name_get(size_t idx, struct shell_static_entry *entry)
 {
 	const struct device *dev = shell_device_filter(idx, device_is_i2c);
@@ -382,7 +400,18 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 	entry->subcmd = NULL;
 }
 
+static void recover_device_name_get(size_t idx, struct shell_static_entry *entry)
+{
+	const struct device *dev = shell_device_filter(idx, device_supports_i2c_recover);
+
+	entry->syntax = (dev != NULL) ? dev->name : NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = NULL;
+}
+
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
+SHELL_DYNAMIC_CMD_CREATE(dsub_recover_device_name, recover_device_name_get);
 
 #ifdef CONFIG_I2C_TARGET
 SHELL_STATIC_SUBCMD_SET_CREATE(
@@ -404,8 +433,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_i2c_cmds,
 		      SHELL_HELP("Scan I2C devices",
 				 "<device>"),
 		      cmd_i2c_scan, 2, 0),
-	SHELL_CMD_ARG(recover, &dsub_device_name,
-		      SHELL_HELP("Recover I2C bus",
+	SHELL_CMD_ARG(recover, &dsub_recover_device_name,
+		      SHELL_HELP("Recover I2C bus if the driver supports it",
 				 "<device>"),
 		      cmd_i2c_recover, 2, 0),
 	SHELL_CMD_ARG(read, &dsub_device_name,
