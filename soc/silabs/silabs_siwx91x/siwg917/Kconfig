@@ -4,3 +4,4 @@
 
 config SOC_SERIES_SIWG917
 	select SOC_EARLY_INIT_HOOK
+	select HAS_POWEROFF
