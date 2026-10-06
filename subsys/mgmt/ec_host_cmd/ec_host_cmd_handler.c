@@ -309,10 +309,14 @@ int ec_host_cmd_send_response(enum ec_host_cmd_status status,
 	hc->state = EC_HOST_CMD_STATE_SENDING;
 
 	if (status != EC_HOST_CMD_SUCCESS) {
-		const struct ec_host_cmd_request_header *const rx_header =
-			(const struct ec_host_cmd_request_header *const)hc->rx_ctx.buf;
+		if (hc->rx_status == EC_HOST_CMD_SUCCESS) {
+			const struct ec_host_cmd_request_header *const rx_header =
+				(const struct ec_host_cmd_request_header *const)hc->rx_ctx.buf;
 
-		LOG_INF("HC 0x%04x err %d", rx_header->cmd_id, status);
+			LOG_INF("HC 0x%04x err %d", rx_header->cmd_id, status);
+		} else {
+			LOG_INF("HC rx err %d", status);
+		}
 		send_status_response(hc->backend, tx, status);
 		return status;
 	}
