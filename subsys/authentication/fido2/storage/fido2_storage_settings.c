@@ -115,6 +115,10 @@ static int settings_backend_find_by_rp(const uint8_t rp_id_hash[FIDO2_SHA256_SIZ
 
 	*count = 0;
 
+	if (max_creds == 0) {
+		return 0;
+	}
+
 	for (int i = 0; i < CONFIG_FIDO2_MAX_CREDENTIALS; ++i) {
 		char key[FIDO2_SETTINGS_KEY_MAX];
 
@@ -123,10 +127,12 @@ static int settings_backend_find_by_rp(const uint8_t rp_id_hash[FIDO2_SHA256_SIZ
 			continue;
 		}
 		if (memcmp(cred.rp_id_hash, rp_id_hash, FIDO2_SHA256_SIZE) == 0) {
-			if (*count < max_creds) {
-				memcpy(creds + *count, &cred, sizeof(cred));
-			}
+			memcpy(creds + *count, &cred, sizeof(cred));
 			(*count)++;
+
+			if (*count == max_creds) {
+				return 0;
+			}
 		}
 	}
 
