@@ -994,6 +994,13 @@ struct socket_read_data {
 bool hl78xx_is_registered(struct hl78xx_data *data);
 
 /**
+ * @brief Forget every modem socket of the session that just ended.
+ *
+ * Defined in hl78xx_sockets.c; the next close of such a socket is local.
+ */
+void hl78xx_invalidate_socket_contexts(struct hl78xx_data *data);
+
+/**
  * @brief DNS resolution work callback.
  *
  * @param dev Pointer to the device structure.

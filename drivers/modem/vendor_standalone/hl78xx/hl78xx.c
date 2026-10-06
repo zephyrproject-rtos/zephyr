@@ -770,6 +770,10 @@ void hl78xx_on_ksup(struct modem_chat *chat, char **argv, uint16_t argc, void *u
 		config->variant->on_ksup_lpm(data);
 #else
 		LOG_DBG("Modem unexpected restart detected %d", module_status);
+		/* The sockets of the ended session are gone with it; closing
+		 * them in the new one gets +CME ERROR: 910 (08-10 bench).
+		 */
+		hl78xx_invalidate_socket_contexts(data);
 		hl78xx_reset_modem_session_state(data);
 #ifdef CONFIG_HL78XX_GNSS
 		hl78xx_gnss_reset_session_state(data);
@@ -2658,6 +2662,15 @@ static void hl78xx_enable_gprs_event_handler(struct hl78xx_data *data, enum hl78
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_REGISTERED);
 		break;
 
+	case MODEM_HL78XX_EVENT_MDM_RESTART:
+		/* The restart arrived while this state ran its commands, so their
+		 * result is already queued behind it. Leave the way that result
+		 * would and handle the restart in the next state.
+		 */
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_AWAIT_REGISTERED);
+		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_MDM_RESTART);
+		break;
+
 	case MODEM_HL78XX_EVENT_SOCKET_READY:
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_CARRIER_ON);
 		break;
@@ -2970,9 +2983,12 @@ static void hl78xx_carrier_on_timeout_handler(struct hl78xx_data *data
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 #ifdef CONFIG_MODEM_HL78XX_PSM
 	if (data->status.lpm.awaiting_psm_confirmation) {
-		LOG_WRN("PSM confirmation timeout - deregistration likely due to "
-			"coverage loss, not low power transition");
 		data->status.lpm.awaiting_psm_confirmation = false;
+		if (!hl78xx_is_registered(data)) {
+			LOG_WRN("PSM confirmation timeout - deregistration likely due to "
+				"coverage loss, not low power transition");
+			hl78xx_enter_state(data, MODEM_HL78XX_STATE_CARRIER_OFF);
+		}
 		return;
 	}
 #endif /* CONFIG_MODEM_HL78XX_PSM */
@@ -3072,21 +3088,33 @@ static void hl78xx_carrier_on_event_handler(struct hl78xx_data *data, enum hl78x
 			break;
 		}
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+#ifdef CONFIG_MODEM_HL78XX_PSM
 		/* Start a brief timer to distinguish PSM-entry from real network loss.
 		 * If GPIO6 fires DEVICE_ASLEEP within this window, the modem is entering
-		 * PSM and we transition to SLEEP. Otherwise, the deregistration is due
-		 * to coverage loss or SIM issue and we go to AWAIT_REGISTERED.
+		 * PSM and we transition to SLEEP. Otherwise the timeout handler takes
+		 * the carrier down.
 		 */
-		hl78xx_start_timer(data, K_SECONDS(MDM_REGISTRATION_TIMEOUT));
-#ifdef CONFIG_MODEM_HL78XX_PSM
+		hl78xx_reschedule_timer(data, K_SECONDS(MDM_REGISTRATION_TIMEOUT));
 		data->status.lpm.awaiting_psm_confirmation = true;
 		if (config->variant->carrier_on_deregistered_psm) {
 			config->variant->carrier_on_deregistered_psm(data);
 		}
+#else
+		/* Without PSM a deregistration cannot be a sleep entry: the link is
+		 * gone. Take the same path as a failed PDP activation, with the same
+		 * power-down guard.
+		 */
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+		if (data->status.lpm.power_down.shutdown_pending) {
+			LOG_INF("Registration lost during a pending power down");
+			break;
+		}
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_CARRIER_OFF);
 #endif /* CONFIG_MODEM_HL78XX_PSM */
-		break;
 #else
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_AWAIT_REGISTERED);
+		hl78xx_start_timer(data, K_SECONDS(MDM_REGISTRATION_TIMEOUT));
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 		break;
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
@@ -3347,11 +3375,25 @@ static void hl78xx_carrier_off_event_handler(struct hl78xx_data *data, enum hl78
 			break;
 		}
 #endif /* CONFIG_HL78XX_GNSS */
+		if (!hl78xx_is_registered(data)) {
+			/* Registration loss: the modem keeps its configuration and
+			 * PDP context and searches again by itself. Wait for it, as
+			 * the build without low-power mode does, with the same
+			 * registration timeout the GPRS enable arms.
+			 */
+			hl78xx_enter_state(data, MODEM_HL78XX_STATE_AWAIT_REGISTERED);
+			hl78xx_start_timer(data, K_SECONDS(MDM_REGISTRATION_TIMEOUT));
+			break;
+		}
 		hl78xx_enter_lte_restore_state(data);
 		break;
 
 	case MODEM_HL78XX_EVENT_DEREGISTERED:
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_AWAIT_REGISTERED);
+		break;
+
+	case MODEM_HL78XX_EVENT_MDM_RESTART:
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_SCRIPT);
 		break;
 
 	case MODEM_HL78XX_EVENT_SUSPEND:

@@ -247,6 +247,7 @@ static void hl78xx_hl7800_on_ksup_lpm(struct hl78xx_data *data)
 			LOG_DBG("KSUP after config restart (state=%d) - "
 				"dispatching MDM_RESTART",
 				data->status.state);
+			hl78xx_invalidate_socket_contexts(data);
 			hl78xx_reset_modem_session_state(data);
 #ifdef CONFIG_HL78XX_GNSS
 			hl78xx_gnss_reset_session_state(data);

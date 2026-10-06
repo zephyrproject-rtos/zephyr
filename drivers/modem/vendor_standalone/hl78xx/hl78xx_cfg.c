@@ -890,6 +890,12 @@ static int hl78xx_power_down_apply_response(struct hl78xx_data *data,
 		(void)k_work_cancel_delayable(&data->work.power_down_shutdown_work);
 		data->status.lpm.power_down.shutdown_pending = false;
 		hl78xx_power_down_allow_feeding(data);
+		/* A registration loss reported while the shutdown was pending was
+		 * left to it; with the shutdown off, the state machine takes it.
+		 */
+		if (!hl78xx_is_registered(data)) {
+			hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_DEREGISTERED);
+		}
 		return 0;
 
 	default:
