@@ -50,7 +50,7 @@ static void sntp_service_handler(struct net_socket_service_event *pev)
 {
 	struct zsock_pollfd *pfd = &pev->event;
 	int sock = pfd->fd;
-	struct net_sockaddr_storage addr;
+	struct net_sockaddr_storage addr = { 0 };
 	net_socklen_t addrlen = sizeof(addr);
 	struct sntp_pkt request, reply;
 	struct timespec now;
