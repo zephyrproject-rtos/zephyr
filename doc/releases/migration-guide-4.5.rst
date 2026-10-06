@@ -2945,10 +2945,6 @@ POSIX
 Power Management
 ================
 
-* System PM preserves the legacy resume sequence by default: system-managed device resume,
-  :c:func:`pm_state_exit_post_ops`, PM exit notifications, then system timer idle-exit.
-  :kconfig:option:`CONFIG_SYSTEM_TIMER_RESET_BY_LPM` does not select a different PM sequence.
-
 * The new, default-off experimental option
   :kconfig:option:`CONFIG_PM_EARLY_SYSTEM_TIMER_RESUME` selects the sequence introduced by
   :github:`118977`: SoC post-ops, system timer idle-exit, device resume, then PM exit notifications.

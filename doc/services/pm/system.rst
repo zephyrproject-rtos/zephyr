@@ -96,8 +96,7 @@ interrupt key.
    platform-specific validation. SoC post-ops must not depend on resumed
    devices, and timer idle-exit must not depend on still-suspended devices.
    Timer idle-exit may also invoke :c:struct:`k_timer` expiry functions before
-   devices are resumed. ``CONFIG_SYSTEM_TIMER_RESET_BY_LPM`` does not control
-   this ordering.
+   devices are resumed.
 
 Architectures and SoCs that do not select ``CONFIG_PM_STATE_SET_IRQ_UNLOCKED``
 use the architecture hooks immediately around the low-power instruction so that

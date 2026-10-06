@@ -10,7 +10,10 @@ FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
 
 if(CONFIG_TEST_PM_TIMER_RESTART)
-  zephyr_link_libraries(-Wl,--wrap=sys_clock_idle_exit)
+  if(NOT LINKER MATCHES "^(ld|lld)$")
+    message(FATAL_ERROR "The timer resume test requires GNU ld or LLD for --wrap")
+  endif()
+  target_link_options(app PUBLIC "LINKER:--wrap=sys_clock_idle_exit")
 endif()
 
 target_include_directories(app
