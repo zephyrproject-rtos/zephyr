@@ -2011,13 +2011,22 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - ceolin
-  collaborators:
-    - tomi-font
   files:
     - drivers/entropy/
     - include/zephyr/drivers/entropy.h
     - tests/drivers/entropy/
     - doc/hardware/peripherals/entropy.rst
+  file-groups:
+    - name: PSA Crypto entropy driver
+      collaborators:
+        - tomi-font
+        - etienne-lms
+      files:
+        - drivers/entropy/entropy_psa_crypto.c
+        - drivers/entropy/Kconfig.psa_crypto
+        - include/zephyr/drivers/entropy.h
+        - tests/drivers/entropy/
+        - doc/hardware/peripherals/entropy.rst
   labels:
     - "area: Crypto / RNG"
   tests:
