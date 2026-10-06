@@ -103,24 +103,38 @@ int z_vrfy_k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size,
 #include <zephyr/syscalls/k_msgq_alloc_init_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-int k_msgq_cleanup(struct k_msgq *msgq)
+int z_msgq_cleanup(struct k_msgq *msgq, bool locked)
 {
 	int ret = 0;
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_msgq, cleanup, msgq);
 
-	CHECKIF(z_waitq_head(&msgq->wait_q) != NULL) {
+	CHECKIF(locked && (z_waitq_head_locked(&msgq->wait_q) != NULL)) {
+		ret = -EBUSY;
+		goto exit;
+	}
+
+	CHECKIF(!locked && (z_waitq_head(&msgq->wait_q) != NULL)) {
 		ret = -EBUSY;
 		goto exit;
 	}
 
 	if ((msgq->flags & K_MSGQ_FLAG_ALLOC) != 0U) {
-		k_free(msgq->buffer_start);
+		if (locked) {
+			k_free_sched_locked(msgq->buffer_start);
+		} else {
+			k_free(msgq->buffer_start);
+		}
 		msgq->flags &= ~K_MSGQ_FLAG_ALLOC;
 	}
 
 exit:
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, cleanup, msgq, ret);
 	return ret;
+}
+
+int k_msgq_cleanup(struct k_msgq *msgq)
+{
+	return z_msgq_cleanup(msgq, false);
 }
 
 static inline int put_msg_in_queue(struct k_msgq *msgq, const void *data,
