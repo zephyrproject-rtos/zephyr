@@ -12,9 +12,11 @@ on:
       - 'scripts/build/**'
       - 'scripts/checkpatch.pl'
       - 'scripts/checkpatch/**'
+      - 'scripts/ci/check_compliance.py'
       - 'scripts/cmake/**'
       - 'scripts/kconfig/**'
       - 'scripts/schemas/hardening-schema.yaml'
+      - 'scripts/tests/compliance/**'
       - 'scripts/tests/hardenconfig/**'
       - '.github/workflows/scripts_tests.yml'
   pull_request:
@@ -25,9 +27,11 @@ on:
       - 'scripts/build/**'
       - 'scripts/checkpatch.pl'
       - 'scripts/checkpatch/**'
+      - 'scripts/ci/check_compliance.py'
       - 'scripts/cmake/**'
       - 'scripts/kconfig/**'
       - 'scripts/schemas/hardening-schema.yaml'
+      - 'scripts/tests/compliance/**'
       - 'scripts/tests/hardenconfig/**'
       - '.github/workflows/scripts_tests.yml'
 
@@ -85,4 +89,5 @@ jobs:
           ZEPHYR_BASE: ./
         run: |
           echo "Run script tests"
-          pytest ./scripts/build ./scripts/checkpatch ./scripts/cmake ./scripts/kconfig ./scripts/tests/hardenconfig
+          pytest ./scripts/build ./scripts/checkpatch ./scripts/cmake ./scripts/kconfig \
+            ./scripts/tests/hardenconfig ./scripts/tests/compliance
