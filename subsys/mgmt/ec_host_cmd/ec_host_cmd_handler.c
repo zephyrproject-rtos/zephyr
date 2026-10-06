@@ -321,17 +321,17 @@ int ec_host_cmd_send_response(enum ec_host_cmd_status status,
 		return status;
 	}
 
-#ifdef CONFIG_EC_HOST_CMD_LOG_DBG_BUFFERS
-	if (args->output_buf_size) {
-		LOG_HEXDUMP_DBG(args->output_buf, args->output_buf_size, "HC resp:");
-	}
-#endif
-
 	status = prepare_response(tx, args->output_buf_size);
 	if (status != EC_HOST_CMD_SUCCESS) {
 		send_status_response(hc->backend, tx, status);
 		return status;
 	}
+
+#ifdef CONFIG_EC_HOST_CMD_LOG_DBG_BUFFERS
+	if (args->output_buf_size) {
+		LOG_HEXDUMP_DBG(args->output_buf, args->output_buf_size, "HC resp:");
+	}
+#endif
 
 	return hc->backend->api->send(hc->backend);
 }
