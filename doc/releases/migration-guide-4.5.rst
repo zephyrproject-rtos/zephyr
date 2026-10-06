@@ -1494,6 +1494,26 @@ PWM
 RTC
 ===
 
+* To use the Silicon Labs SiWx91x RTC driver as a wakeup source, applications
+  must add ``wakeup-ctrls`` to the RTC node and explicitly enable that source
+  with ``wuc_enable_wakeup_source_dt()`` after programming the alarm.
+
+  .. code-block:: devicetree
+
+     &rtc0 {
+             wakeup-ctrls = <&wuc0 SIWX91X_WUC_RTC_ALARM>;
+     };
+
+  .. code-block:: c
+
+     static const struct wuc_dt_spec rtc_wakeup =
+             WUC_DT_SPEC_GET(DT_NODELABEL(rtc0));
+
+     ret = rtc_alarm_set_time(rtc, 0U, alarm_mask, &alarm);
+     if (ret == 0) {
+             ret = wuc_enable_wakeup_source_dt(&rtc_wakeup);
+     }
+
 * The legacy counter-based DS3231 driver has been removed, completing the deprecation introduced in
   :github:`95221`. Applications using :dtcompatible:`maxim,ds3231`, ``CONFIG_COUNTER_MAXIM_DS3231``,
   or :file:`<zephyr/drivers/rtc/maxim_ds3231.h>` must migrate to the RTC subsystem driver.
