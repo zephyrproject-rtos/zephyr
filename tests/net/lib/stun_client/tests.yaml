@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Kirill Shypachov
+# SPDX-License-Identifier: Apache-2.0
+common:
+  depends_on: netif
+  tags:
+    - net
+    - stun
+  min_ram: 64
+  min_flash: 256
+  integration_platforms:
+    - native_sim
+tests:
+  net.stun.client: {}
+  net.stun.client.ipv4_only:
+    extra_configs:
+      - CONFIG_NET_IPV6=n
+  net.stun.client.ipv6_only:
+    extra_configs:
+      - CONFIG_NET_IPV4=n
+  # Without the commands of other libraries: the stack of the shell thread is
+  # then what STUN_SHELL itself asks for.
+  net.stun.client.shell:
+    extra_configs:
+      - CONFIG_SHELL=y
+      - CONFIG_SHELL_BACKEND_SERIAL=n
+      - CONFIG_SHELL_BACKEND_DUMMY=y
+      - CONFIG_NET_SHELL=y
+      - CONFIG_NET_SHELL_SHOW_DISABLED_COMMANDS=n
+      - CONFIG_STUN_SHELL=y
+      - CONFIG_INIT_STACKS=y
+      - CONFIG_THREAD_STACK_INFO=y
+  net.stun.client.shell_disabled:
+    extra_configs:
+      - CONFIG_SHELL=y
+      - CONFIG_SHELL_BACKEND_SERIAL=n
+      - CONFIG_SHELL_BACKEND_DUMMY=y
+      - CONFIG_NET_SHELL=y
+  net.stun.client.log:
+    extra_configs:
+      - CONFIG_LOG=y
+      - CONFIG_NET_LOG=y
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_LOG_PRINTK=n
+      - CONFIG_STUN_LOG_LEVEL_DBG=y

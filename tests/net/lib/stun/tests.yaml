@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Kirill Shypachov
+# SPDX-License-Identifier: Apache-2.0
+common:
+  tags:
+    - net
+    - stun
+  min_ram: 64
+  min_flash: 192
+  integration_platforms:
+    - native_sim
+tests:
+  net.stun: {}
+  net.stun.ipv4_only:
+    extra_configs:
+      - CONFIG_NET_IPV6=n
+  net.stun.ipv6_only:
+    extra_configs:
+      - CONFIG_NET_IPV4=n
+  # The records of the log are processed where they are made, so that a test
+  # sees them as soon as the call returns. The log takes its share of memory.
+  net.stun.log:
+    min_ram: 96
+    min_flash: 256
+    extra_configs:
+      - CONFIG_LOG=y
+      - CONFIG_NET_LOG=y
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_LOG_PRINTK=n
+      - CONFIG_STUN_LOG_LEVEL_DBG=y
+  net.stun.log.default:
+    min_ram: 96
+    min_flash: 256
+    extra_configs:
+      - CONFIG_LOG=y
+      - CONFIG_NET_LOG=y
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_LOG_PRINTK=n
