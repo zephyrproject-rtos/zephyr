@@ -23,6 +23,13 @@ LOG_MODULE_REGISTER(ti_ecap);
 
 #define DT_DRV_COMPAT ti_am3352_ecap
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(ti_pwren)
+#include <zephyr/drivers/syscon.h>
+#include <zephyr/kernel.h>
+
+#define TI_ECAP_SYSCTL_PWREN_KEY (0x26U << 24)
+#define TI_ECAP_PWREN_SETTLE_US 1U
+#endif
 struct ti_ecap_regs {
 	uint8_t RESERVED_1[0x10];        /**< Reserved, offset: 0x00 - 0x10 */
 	volatile uint32_t CAP3;          /**< Capture-3 Register, offset: 0x10 */
@@ -98,6 +105,12 @@ struct ti_ecap_cfg {
 	uint8_t mux_entries_count;
 	bool has_input_xbar;
 	uint8_t input_xbar_channel;
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(ti_pwren)
+	const struct device *pwren_syscon;
+	uint32_t pwren_offset;
+	uint8_t pwren_bit;
+	bool has_pwren;
+#endif
 };
 
 struct ti_ecap_data {
@@ -257,11 +270,48 @@ static int ti_ecap_configure_capture(const struct device *dev, uint32_t channel,
 }
 #endif /* CONFIG_PWM_CAPTURE */
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(ti_pwren)
+static int ti_ecap_pwren_enable(const struct ti_ecap_cfg *cfg)
+{
+	uint32_t bit;
+	uint32_t mask;
+	int ret;
+
+	if (!cfg->has_pwren) {
+		return 0;
+	}
+
+	if (!device_is_ready(cfg->pwren_syscon)) {
+		LOG_ERR("SYSCTL (pwren) device not ready");
+		return -ENODEV;
+	}
+
+	bit = BIT(cfg->pwren_bit);
+	mask = bit | TI_ECAP_SYSCTL_PWREN_KEY;
+	ret = syscon_update_bits(cfg->pwren_syscon, cfg->pwren_offset, mask, mask);
+	if (ret < 0) {
+		LOG_ERR("failed to set SYSCTL PWREN bit %u: %d", cfg->pwren_bit, ret);
+		return ret;
+	}
+
+	k_busy_wait(TI_ECAP_PWREN_SETTLE_US);
+
+	return 0;
+}
+#endif
+
 static int ti_ecap_init(const struct device *dev)
 {
 	const struct ti_ecap_cfg *cfg = DEV_CFG(dev);
 	struct ti_ecap_regs *regs;
 	int ret;
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(ti_pwren)
+	ret = ti_ecap_pwren_enable(cfg);
+	if (ret < 0) {
+		return ret;
+	}
+#endif
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 
@@ -393,6 +443,14 @@ static DEVICE_API(pwm, ti_ecap_api) = {
 		    (.has_input_xbar = true,                                                      \
 		     .input_xbar_channel = DT_INST_PHA_BY_NAME(n, mux_states, input, channel),), ())
 
+#define TI_ECAP_PWREN_INIT(n)                                                                      \
+	IF_ENABLED(DT_ANY_INST_HAS_PROP_STATUS_OKAY(ti_pwren),                                    \
+		   (COND_CODE_1(DT_INST_NODE_HAS_PROP(n, ti_pwren),                               \
+				(.has_pwren = true,                                               \
+				 .pwren_syscon = DEVICE_DT_GET(DT_INST_PHANDLE(n, ti_pwren)),     \
+				 .pwren_offset = DT_INST_PHA(n, ti_pwren, offset),                \
+				 .pwren_bit = DT_INST_PHA(n, ti_pwren, bit),), ())))
+
 #define TI_ECAP_INIT(n)                                                                            \
 	TI_ECAP_DEFINE_CLK_SUBSYS(n);                                                              \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
@@ -412,7 +470,8 @@ static DEVICE_API(pwm, ti_ecap_api) = {
 		.clock_subsys = ti_ecap_clk_subsys_##n,                                            \
 		.irq_config_func = ti_ecap_irq_config_func_##n,                                    \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		TI_ECAP_MUX_ENTRIES_INIT(n)};                                                      \
+		TI_ECAP_MUX_ENTRIES_INIT(n)                                                        \
+		TI_ECAP_PWREN_INIT(n)};                                                            \
                                                                                                    \
 	static struct ti_ecap_data ti_ecap_data_##n;                                               \
                                                                                                    \
