@@ -7,6 +7,7 @@
 #include <arm/armv8-m.dtsi>
 #include <mem.h>
 #include <freq.h>
+#include <zephyr/dt-bindings/clock/mspm0_clock.h>
 #include <zephyr/dt-bindings/misc/ti_am13e_sysctl.h>
 
 / {
