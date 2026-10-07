@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Kirill Shypachov
+# SPDX-License-Identifier: Apache-2.0
+sample:
+  description: Ask a STUN server for the public address of the device
+  name: STUN client
+common:
+  harness: net
+  tags:
+    - net
+    - stun
+  # The client takes its transaction id from sys_csrand_get(), which needs an
+  # entropy source.
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+tests:
+  sample.net.stun: {}
+  sample.net.stun.nsos:
+    extra_configs:
+      - CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME=y
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-nsos.conf"
