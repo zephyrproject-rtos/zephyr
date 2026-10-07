@@ -147,12 +147,24 @@ ZTEST(video_emul, test_video_frmival)
 ZTEST(video_emul, test_video_ctrl)
 {
 	struct video_control ctrl = {.id = VIDEO_CID_PRIVATE_BASE + 0x01, .val = 30};
+	uint32_t pixelformat = imager_caps.format_caps[0].pixelformat;
+	int64_t link_freq;
 
 	/* Emulated vendor specific control, expected to be supported by all imagers */
 	zexpect_ok(video_set_ctrl(imager_dev, &ctrl));
 	ctrl.val = 0;
 	zexpect_ok(video_get_ctrl(imager_dev, &ctrl));
 	zexpect_equal(ctrl.val, 30);
+
+	/* Test that the link frequency is accurate, assuming DVP 8-bit */
+	link_freq = video_get_dvp_link_freq(imager_dev, video_bits_per_pixel(pixelformat), 8);
+	printk("link %d\n", link_freq);
+	zexpect_equal(link_freq, MHZ(72));
+
+	/* Test that the link frequency is accurate, assuming MIPI-CSI 2-lanes */
+	link_freq = video_get_csi_link_freq(imager_dev, video_bits_per_pixel(pixelformat), 2);
+	printk("link %d\n", link_freq);
+	zexpect_equal(link_freq, MHZ(72));
 }
 
 ZTEST(video_emul, test_video_vbuf)
