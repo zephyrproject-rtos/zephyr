@@ -361,12 +361,6 @@ int main(void)
 	uint32_t last_ts = 0;
 	int ret;
 
-	/* When the video shell is enabled, do not run the capture loop unless requested */
-	if (IS_ENABLED(CONFIG_VIDEO_SHELL) && !IS_ENABLED(CONFIG_VIDEO_SHELL_AND_CAPTURE)) {
-		LOG_INF("Letting the user control the device with the video shell");
-		return 0;
-	}
-
 	transform_dev = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_videotrans));
 	if (transform_dev == NULL) {
 		transform_dev = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_videodec));
@@ -404,7 +398,7 @@ int main(void)
 		goto err;
 	}
 
-	if (DT_HAS_CHOSEN(zephyr_display)) {
+	if (DT_HAS_CHOSEN(zephyr_display) && IS_ENABLED(CONFIG_DISPLAY)) {
 		ret = app_setup_display(display_dev, transformed_fmt.pixelformat);
 		if (ret < 0) {
 			goto err;
@@ -443,7 +437,7 @@ int main(void)
 			goto err;
 		}
 
-		if (DT_HAS_CHOSEN(zephyr_display)) {
+		if (DT_HAS_CHOSEN(zephyr_display) && IS_ENABLED(CONFIG_DISPLAY)) {
 			ret = app_display_frame(display_dev, transformed_vbuf, &transformed_fmt);
 			if (ret != 0) {
 				LOG_WRN("Failed to display this frame");
