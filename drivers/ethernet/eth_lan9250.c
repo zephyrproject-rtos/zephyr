@@ -48,33 +48,49 @@ static int lan9250_write_sys_reg(const struct device *dev, uint16_t address, uin
 	return spi_write_dt(&config->spi, &tx);
 }
 
-static int lan9250_read_sys_reg(const struct device *dev, uint16_t address, uint32_t *value)
+/* Read data using the SPI Read instruction (up to 30 MHz) or, if enabled,
+ * the Fast Read instruction (up to 80 MHz), which needs one dummy byte.
+ */
+static int lan9250_read(const struct device *dev, uint16_t address, uint8_t *data, size_t len)
 {
 	const struct lan9250_config *config = dev->config;
-	uint8_t cmd[1] = {LAN9250_SPI_INSTR_READ};
-	uint8_t addr[2];
-	struct spi_buf tx_buf[3];
-	struct spi_buf rx_buf[3];
-	const struct spi_buf_set tx = {.buffers = tx_buf, .count = 3};
-	const struct spi_buf_set rx = {.buffers = rx_buf, .count = 3};
+	const bool fast = IS_ENABLED(CONFIG_ETH_LAN9250_SPI_FAST_READ);
+	/* Instruction, address and optional dummy byte */
+	uint8_t hdr[4] = {fast ? LAN9250_SPI_INSTR_FAST_READ : LAN9250_SPI_INSTR_READ};
+	size_t hdr_len = fast ? 4 : 3;
+	struct spi_buf tx_buf[2];
+	struct spi_buf rx_buf[2];
+	const struct spi_buf_set tx = {.buffers = tx_buf, .count = 2};
+	const struct spi_buf_set rx = {.buffers = rx_buf, .count = 2};
 
-	sys_put_be16(address, addr);
+	sys_put_be16(address, &hdr[1]);
 
-	tx_buf[0].buf = &cmd;
-	tx_buf[0].len = ARRAY_SIZE(cmd);
-	tx_buf[1].buf = addr;
-	tx_buf[1].len = ARRAY_SIZE(addr);
-	tx_buf[2].buf = NULL;
-	tx_buf[2].len = sizeof(uint32_t);
+	tx_buf[0].buf = hdr;
+	tx_buf[0].len = hdr_len;
+	tx_buf[1].buf = NULL;
+	tx_buf[1].len = len;
 
 	rx_buf[0].buf = NULL;
-	rx_buf[0].len = 1;
-	rx_buf[1].buf = NULL;
-	rx_buf[1].len = 2;
-	rx_buf[2].buf = value;
-	rx_buf[2].len = sizeof(uint32_t);
+	rx_buf[0].len = hdr_len;
+	rx_buf[1].buf = data;
+	rx_buf[1].len = len;
 
 	return spi_transceive_dt(&config->spi, &tx, &rx);
+}
+
+static int lan9250_read_sys_reg(const struct device *dev, uint16_t address, uint32_t *value)
+{
+	uint8_t data[4];
+	int ret;
+
+	ret = lan9250_read(dev, address, data, sizeof(data));
+	if (ret < 0) {
+		return ret;
+	}
+
+	*value = sys_get_le32(data);
+
+	return 0;
 }
 
 static int lan9250_wait_ready(const struct device *dev, uint16_t address, uint32_t mask,
@@ -564,29 +580,7 @@ static int lan9250_write_buf(const struct device *dev, uint8_t *data_buffer, uin
 
 static int lan9250_read_buf(const struct device *dev, uint8_t *data_buffer, uint16_t buf_len)
 {
-	const struct lan9250_config *config = dev->config;
-	uint8_t cmd[1] = {LAN9250_SPI_INSTR_READ};
-	uint8_t instr[2] = {(LAN9250_RX_DATA_FIFO >> 8) & 0xFF, (LAN9250_RX_DATA_FIFO & 0xFF)};
-	struct spi_buf tx_buf[3];
-	struct spi_buf rx_buf[3];
-	const struct spi_buf_set tx = {.buffers = tx_buf, .count = 3};
-	const struct spi_buf_set rx = {.buffers = rx_buf, .count = 3};
-
-	tx_buf[0].buf = &cmd;
-	tx_buf[0].len = ARRAY_SIZE(cmd);
-	tx_buf[1].buf = &instr;
-	tx_buf[1].len = ARRAY_SIZE(instr);
-	tx_buf[2].buf = NULL;
-	tx_buf[2].len = buf_len;
-
-	rx_buf[0].buf = NULL;
-	rx_buf[0].len = 1;
-	rx_buf[1].buf = NULL;
-	rx_buf[1].len = 2;
-	rx_buf[2].buf = data_buffer;
-	rx_buf[2].len = buf_len;
-
-	return spi_transceive_dt(&config->spi, &tx, &rx);
+	return lan9250_read(dev, LAN9250_RX_DATA_FIFO, data_buffer, buf_len);
 }
 
 /* Discard the current frame from the RX data FIFO. Its status has already

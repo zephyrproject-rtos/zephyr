@@ -23,8 +23,9 @@
 #define LAN9250_CRC_LEN 4U
 
 /* SPI instructions */
-#define LAN9250_SPI_INSTR_WRITE 0x02
-#define LAN9250_SPI_INSTR_READ  0x03
+#define LAN9250_SPI_INSTR_WRITE     0x02
+#define LAN9250_SPI_INSTR_READ      0x03
+#define LAN9250_SPI_INSTR_FAST_READ 0x0B
 
 /* TX command 'A' format */
 #define LAN9250_TX_CMD_A_INT_ON_COMP     0x80000000
