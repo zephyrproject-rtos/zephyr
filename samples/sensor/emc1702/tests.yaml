@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2026 Microchip Technology Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: EMC1702 high-side current sense and temperature monitor
+  description: Demonstration of the EMC1702 I2C current, voltage, power and
+    temperature monitor
+tests:
+  sample.sensor.emc1702:
+    build_only: true
+    depends_on: i2c
+    harness: console
+    tags: sensors
+    platform_allow:
+      - esp32s3_devkitc/esp32s3/procpu
+    integration_platforms:
+      - esp32s3_devkitc/esp32s3/procpu
+    filter: dt_compat_enabled("microchip,emc1702")
+    harness_config:
+      type: one_line
+      regex:
+        - "Tdie= (.*) C  Tamb= (.*) C  Vbus= (.*) V  I= (.*) A  P= (.*) W"
+      fixture: fixture_i2c_emc1702
