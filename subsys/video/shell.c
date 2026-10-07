@@ -237,6 +237,7 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 	uint32_t frmrate_fps;
 	size_t max_bytes = 0;
 	unsigned long num_buffers;
+	int error = 0;
 	int ret;
 
 	dev = device_get_binding(argv[1]);
@@ -302,6 +303,7 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 
 		ret = video_enqueue(dev, buffers[i]);
 		if (ret < 0) {
+			error = ret;
 			shell_error(sh, "Failed to enqueue buffer %u: %s", i, strerror(-ret));
 			goto end;
 		}
@@ -311,6 +313,7 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 
 	ret = video_stream_start(dev, VIDEO_BUF_TYPE_OUTPUT);
 	if (ret < 0) {
+		error = ret;
 		shell_error(sh, "Failed to start %s", dev->name);
 		goto end;
 	}
@@ -320,6 +323,7 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 	for (unsigned long i = 0; i < num_buffers;) {
 		ret = video_dequeue(dev, &vbuf, K_FOREVER);
 		if (ret < 0) {
+			error = ret;
 			shell_error(sh, "Failed to dequeue this buffer: %s", strerror(-ret));
 			goto end;
 		}
@@ -337,6 +341,7 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 
 		ret = video_enqueue(dev, vbuf);
 		if (ret < 0) {
+			error = ret;
 			shell_error(sh, "Failed to enqueue this buffer: %s", strerror(-ret));
 			goto end;
 		}
@@ -350,13 +355,21 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 		    num_buffers, frmival_msec, frmrate_fps, dev->name);
 
 end:
-	video_stream_stop(dev, VIDEO_BUF_TYPE_OUTPUT);
-
-	while (video_dequeue(dev, &vbuf, K_NO_WAIT) == 0) {
-		video_buffer_release(vbuf);
+	ret = video_stream_stop(dev, VIDEO_BUF_TYPE_OUTPUT);
+	if (ret < 0) {
+		error = ret;
+		shell_error(sh, "Failed to stop the video device after the capture");
 	}
 
-	return ret;
+	while (video_dequeue(dev, &vbuf, K_NO_WAIT) == 0) {
+		ret = video_buffer_release(vbuf);
+		if (ret < 0) {
+			error = ret;
+			shell_error(sh, "Failed to release video buffer %p", (void *)vbuf);
+		}
+	}
+
+	return error;
 }
 
 static void complete_video_dev(size_t idx, struct shell_static_entry *entry)
