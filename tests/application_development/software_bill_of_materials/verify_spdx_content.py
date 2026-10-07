@@ -223,11 +223,11 @@ class TestAppDocument:
         )
 
     def test_main_c_hash_correct(self, app_doc, source_dir):
-        """Test that main.c has the correct SHA1 and SHA256 hashes."""
+        """Test that main.c has the correct SHA1, SHA256 and SHA512 hashes."""
         main_c_spdx = find_file_by_name(app_doc, FILE_MAIN_C)
         assert main_c_spdx is not None, f"app.spdx: {FILE_MAIN_C} not found"
 
-        # Read file once for computing both hashes
+        # Read file once for computing all hashes
         main_c_path = os.path.join(source_dir, "src", "main.c")
         assert os.path.exists(main_c_path), f"Source file not found: {main_c_path}"
 
@@ -235,6 +235,7 @@ class TestAppDocument:
             file_content = f.read()
             expected_sha1 = hashlib.sha1(file_content, usedforsecurity=False).hexdigest()
             expected_sha256 = hashlib.sha256(file_content, usedforsecurity=False).hexdigest()
+            expected_sha512 = hashlib.sha512(file_content, usedforsecurity=False).hexdigest()
 
         # Validate SHA1 checksum
         sha1_checksums = [c for c in main_c_spdx.checksums if c.algorithm == ChecksumAlgorithm.SHA1]
@@ -254,6 +255,17 @@ class TestAppDocument:
         actual_sha256 = sha256_checksums[0].value
         assert actual_sha256 == expected_sha256, (
             f"app.spdx: main.c SHA256 mismatch. Expected '{expected_sha256}', got '{actual_sha256}'"
+        )
+
+        # Validate SHA512 checksum
+        sha512_checksums = [
+            c for c in main_c_spdx.checksums if c.algorithm == ChecksumAlgorithm.SHA512
+        ]
+        assert len(sha512_checksums) > 0, "app.spdx: main.c has no SHA512 checksum"
+
+        actual_sha512 = sha512_checksums[0].value
+        assert actual_sha512 == expected_sha512, (
+            f"app.spdx: main.c SHA512 mismatch. Expected '{expected_sha512}', got '{actual_sha512}'"
         )
 
     def test_main_c_license_correct(self, app_doc):
