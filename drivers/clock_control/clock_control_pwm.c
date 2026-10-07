@@ -47,6 +47,11 @@ static int clock_control_pwm_on(const struct device *dev, clock_control_subsys_t
 	}
 
 	spec = &config->pwm_dt;
+
+	if (!device_is_ready(spec->dev)) {
+		return -ENODEV;
+	}
+
 	if (data->clock_frequency == 0) {
 		ret = pwm_set_dt(spec, spec->period, spec->period / 2);
 	} else {
