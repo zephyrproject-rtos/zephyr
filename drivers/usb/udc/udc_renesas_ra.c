@@ -118,6 +118,7 @@ static void udc_event_xfer_next(const struct device *dev, const uint8_t ep)
 		}
 
 		if (err != FSP_SUCCESS) {
+			buf = udc_buf_get(ep_cfg);
 			LOG_ERR("ep 0x%02x error", ep);
 			udc_submit_ep_event(dev, buf, -ECONNREFUSED);
 		} else {
