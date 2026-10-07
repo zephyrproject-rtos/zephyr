@@ -1043,7 +1043,7 @@ int stm32_clock_control_init(const struct device *dev)
 	}
 
 	/* Update CMSIS variable */
-	SystemCoreClock = DT_PROP(DT_NODELABEL(cpusw), clock_frequency);
+	SystemCoreClock = STM32_CORE_FREQUENCY;
 
 	return r;
 }
