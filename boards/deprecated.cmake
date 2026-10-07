@@ -127,3 +127,9 @@ set(kit_psc3m6_evk_DEPRECATED
 set(kit_psc3m6_evk/psc3m6ges3ahq1_DEPRECATED
     kit_psc3m6_eval/psc3m6ges3ahq1
 )
+set(rak11160/stm32wle5xx_DEPRECATED
+    rak11162/stm32wle5xx
+)
+set(rak11160_DEPRECATED
+    rak11162
+)
