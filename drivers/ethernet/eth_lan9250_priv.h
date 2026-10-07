@@ -324,7 +324,7 @@ struct lan9250_runtime {
 
 	uint8_t mac_address[6];
 	struct gpio_callback gpio_cb;
-	struct k_sem tx_rx_sem;
+	struct k_mutex lock;
 	struct k_sem int_sem;
 	uint8_t buf[NET_ETH_MAX_FRAME_SIZE];
 };

@@ -650,12 +650,10 @@ static int lan9250_rx(const struct device *dev)
 		net_pkt_unref(pkt);
 	}
 
-	k_sem_give(&ctx->tx_rx_sem);
-
 	return 0;
 }
 
-static int lan9250_tx(const struct device *dev, struct net_pkt *pkt)
+static int lan9250_tx_frame(const struct device *dev, struct net_pkt *pkt)
 {
 	struct lan9250_runtime *ctx = dev->data;
 	size_t len = net_pkt_get_len(pkt);
@@ -672,8 +670,6 @@ static int lan9250_tx(const struct device *dev, struct net_pkt *pkt)
 
 	status_size = (regval & LAN9250_TX_FIFO_INF_TXSUSED) >> 16;
 	free_size = regval & LAN9250_TX_FIFO_INF_TXFREE;
-
-	k_sem_take(&ctx->tx_rx_sem, K_FOREVER);
 
 	/* TX command 'A' */
 	ret = lan9250_write_sys_reg(
@@ -707,9 +703,19 @@ static int lan9250_tx(const struct device *dev, struct net_pkt *pkt)
 		}
 	}
 
-	k_sem_give(&ctx->tx_rx_sem);
-
 	return 0;
+}
+
+static int lan9250_tx(const struct device *dev, struct net_pkt *pkt)
+{
+	struct lan9250_runtime *ctx = dev->data;
+	int ret;
+
+	k_mutex_lock(&ctx->lock, K_FOREVER);
+	ret = lan9250_tx_frame(dev, pkt);
+	k_mutex_unlock(&ctx->lock);
+
+	return ret;
 }
 
 static void lan9250_gpio_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
@@ -732,6 +738,8 @@ static void lan9250_thread(void *p1, void *p2, void *p3)
 
 	while (true) {
 		k_sem_take(&context->int_sem, K_FOREVER);
+
+		k_mutex_lock(&context->lock, K_FOREVER);
 
 		/* Save interrupt enable register value */
 		lan9250_read_sys_reg(dev, LAN9250_INT_EN, &ier);
@@ -760,6 +768,8 @@ static void lan9250_thread(void *p1, void *p2, void *p3)
 
 		/* Re-enable interrupts */
 		lan9250_write_sys_reg(dev, LAN9250_INT_EN, ier);
+
+		k_mutex_unlock(&context->lock);
 	}
 }
 
@@ -794,6 +804,38 @@ static void lan9250_iface_init(struct net_if *iface)
 			K_PRIO_COOP(CONFIG_ETH_LAN9250_RX_THREAD_PRIO), 0, K_NO_WAIT);
 }
 
+static int lan9250_set_promisc(const struct device *dev, bool enable)
+{
+	uint32_t reg;
+	int ret;
+
+	ret = lan9250_read_mac_reg(dev, LAN9250_HMAC_CR, &reg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* See Table 11-1 from the LAN9250 data sheet */
+	if (enable) {
+		if ((reg & LAN9250_HMAC_CR_PRMS) != 0) {
+			return -EALREADY;
+		}
+
+		reg &= ~LAN9250_HMAC_CR_MCPAS;
+		reg |= LAN9250_HMAC_CR_PRMS;
+		reg &= ~LAN9250_HMAC_CR_HO;
+	} else {
+		if ((reg & LAN9250_HMAC_CR_PRMS) == 0) {
+			return -EALREADY;
+		}
+
+		reg |= LAN9250_HMAC_CR_MCPAS;
+		reg &= ~LAN9250_HMAC_CR_PRMS;
+		reg &= ~LAN9250_HMAC_CR_HO;
+	}
+
+	return lan9250_write_mac_reg(dev, LAN9250_HMAC_CR, reg);
+}
+
 static int lan9250_set_config(const struct device *dev,
 			      struct net_if *iface __unused,
 			      enum ethernet_config_type type,
@@ -804,9 +846,11 @@ static int lan9250_set_config(const struct device *dev,
 
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
+		k_mutex_lock(&ctx->lock, K_FOREVER);
 		memcpy(ctx->mac_address, config->mac_address.addr,
 		       sizeof(ctx->mac_address));
 		ret = lan9250_set_macaddr(dev);
+		k_mutex_unlock(&ctx->lock);
 		if (ret < 0) {
 			LOG_ERR("Set mac address failed");
 			return ret;
@@ -821,33 +865,11 @@ static int lan9250_set_config(const struct device *dev,
 		return 0;
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
 		if (IS_ENABLED(CONFIG_NET_PROMISCUOUS_MODE)) {
-			uint32_t reg;
+			k_mutex_lock(&ctx->lock, K_FOREVER);
+			ret = lan9250_set_promisc(dev, config->promisc_mode);
+			k_mutex_unlock(&ctx->lock);
 
-			ret = lan9250_read_mac_reg(dev, LAN9250_HMAC_CR, &reg);
-			if (ret < 0) {
-				return ret;
-			}
-
-			/* See Table 11-1 from the LAN9250 data sheet */
-			if (config->promisc_mode) {
-				if ((reg & LAN9250_HMAC_CR_PRMS) != 0) {
-					return -EALREADY;
-				}
-
-				reg &= ~LAN9250_HMAC_CR_MCPAS;
-				reg |= LAN9250_HMAC_CR_PRMS;
-				reg &= ~LAN9250_HMAC_CR_HO;
-			} else {
-				if ((reg & LAN9250_HMAC_CR_PRMS) == 0) {
-					return -EALREADY;
-				}
-
-				reg |= LAN9250_HMAC_CR_MCPAS;
-				reg &= ~LAN9250_HMAC_CR_PRMS;
-				reg &= ~LAN9250_HMAC_CR_HO;
-			}
-
-			return lan9250_write_mac_reg(dev, LAN9250_HMAC_CR, reg);
+			return ret;
 		}
 
 		break;
@@ -953,7 +975,7 @@ static int lan9250_init(const struct device *dev)
 
 #define LAN9250_DEFINE(inst)                                                                       \
 	static struct lan9250_runtime lan9250_##inst##_runtime = {                                 \
-		.tx_rx_sem = Z_SEM_INITIALIZER(lan9250_##inst##_runtime.tx_rx_sem, 1, UINT_MAX),   \
+		.lock = Z_MUTEX_INITIALIZER(lan9250_##inst##_runtime.lock),                        \
 		.int_sem = Z_SEM_INITIALIZER(lan9250_##inst##_runtime.int_sem, 0, UINT_MAX),       \
 	};                                                                                         \
                                                                                                    \
