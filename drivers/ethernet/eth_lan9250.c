@@ -88,7 +88,7 @@ static int lan9250_wait_ready(const struct device *dev, uint16_t address, uint32
 		if (sys_timepoint_expired(end)) {
 			return -EIO;
 		}
-		k_busy_wait(USEC_PER_MSEC * 1U);
+		k_msleep(1);
 	}
 }
 
@@ -278,22 +278,6 @@ static int lan9250_set_macaddr(const struct device *dev)
 				     ctx->mac_address[4] | (ctx->mac_address[5] << 8));
 }
 
-static int lan9250_hw_cfg_check(const struct device *dev)
-{
-	uint32_t tmp;
-	int ret;
-
-	do {
-		ret = lan9250_read_sys_reg(dev, LAN9250_HW_CFG, &tmp);
-		if (ret < 0) {
-			return ret;
-		}
-		k_busy_wait(USEC_PER_MSEC * 1U);
-	} while ((tmp & LAN9250_HW_CFG_DEVICE_READY) == 0);
-
-	return 0;
-}
-
 static int lan9250_sw_reset(const struct device *dev)
 {
 	int ret;
@@ -315,8 +299,10 @@ static int lan9250_configure(const struct device *dev)
 	uint32_t tmp;
 	int ret;
 
-	ret = lan9250_hw_cfg_check(dev);
+	ret = lan9250_wait_ready(dev, LAN9250_HW_CFG, LAN9250_HW_CFG_DEVICE_READY,
+				 LAN9250_HW_CFG_DEVICE_READY, LAN9250_RESET_TIMEOUT);
 	if (ret < 0) {
+		LOG_ERR("Device not ready");
 		return ret;
 	}
 
@@ -327,7 +313,7 @@ static int lan9250_configure(const struct device *dev)
 	}
 
 	if ((tmp & LAN9250_ID_REV_CHIP_ID) != LAN9250_ID_REV_CHIP_ID_DEFAULT) {
-		LOG_ERR("ERROR: Bad Rev ID: %08x\n", tmp);
+		LOG_ERR("Bad Rev ID: %08x", tmp);
 		return -ENODEV;
 	}
 
@@ -474,8 +460,8 @@ static int lan9250_configure(const struct device *dev)
 	 *   - Link down
 	 */
 	ret = lan9250_write_phy_reg(dev, LAN9250_PHY_INTERRUPT_MASK,
-				    LAN9250_PHY_INTERRUPT_SOURCE_LINK_UP |
-					    LAN9250_PHY_INTERRUPT_SOURCE_LINK_DOWN);
+				    LAN9250_PHY_INTERRUPT_MASK_LINK_UP |
+					    LAN9250_PHY_INTERRUPT_MASK_LINK_DOWN);
 	if (ret < 0) {
 		return ret;
 	}
