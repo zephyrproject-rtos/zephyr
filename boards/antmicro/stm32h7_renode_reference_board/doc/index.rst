@@ -174,7 +174,7 @@ References
 
 .. _`STM32H7 Renode Reference Platform`: https://openhardware.antmicro.com/boards/stm32h7-renode-reference-platform
 
-.. _`STM32H7 Renode Reference Platform on Antmicro Designer`: https://designer.antmicro.com/library/devices/stm32h7-renode-reference-platform
+.. _`STM32H7 Renode Reference Platform on Antmicro Designer`: https://designer.antmicro.com/library/devices/stm32h7_renode_reference_board
 
 .. _`Renode simulation framework`: https://renode.io
 
