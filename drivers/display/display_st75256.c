@@ -180,15 +180,31 @@ static int st75256_write_pixels_MONO01(const struct device *dev, const uint16_t 
 				       const struct display_buffer_descriptor *desc)
 {
 	const struct st75256_config *config = dev->config;
-	struct display_buffer_descriptor mipi_desc;
+
+	/** TODO: Replace with working code or fail build
+	 *  Code forces linewise writing rendering MV setting without impact
+	 */
+	const bool MV = (config->flip_configuration & BIT(2)) ? true : false;
+
+	/** Describe a single send window's format */
+	struct display_buffer_descriptor mipi_desc = {
+		.width = desc->width,
+		.pitch = desc->width,
+		.buf_size = desc->width * (MV ? 1 : (desc->height / 8)),
+		.height = MV ? 8 : desc->height,
+	};
 	int ret;
 
-	for (int i = 0; i < desc->height / 8; i++) {
-		st75256_set_window(dev, x, y + i * 8, desc->width, desc->height);
-		st75256_start_write(dev);
-		mipi_desc.buf_size = desc->width;
-		mipi_desc.width = desc->width;
-		mipi_desc.height = 8;
+	/** For no MV this runs only one time writing the whole window */
+	for (uint32_t c = 0; c < desc->height; c += mipi_desc.height, buf += mipi_desc.width) {
+		ret = st75256_set_window(dev, x, y + c, mipi_desc.width, mipi_desc.height);
+		if (ret < 0) {
+			return ret;
+		}
+		ret = st75256_start_write(dev);
+		if (ret < 0) {
+			return ret;
+		}
 		ret = mipi_dbi_write_display(config->mipi_dev, &config->dbi_config, buf, &mipi_desc,
 					     PIXEL_FORMAT_MONO01);
 		if (ret < 0) {
@@ -212,9 +228,14 @@ static int st75256_write_pixels_L_8(const struct device *dev, const uint16_t x, 
 	int line_total = 0;
 
 	mipi_desc.pitch = desc->pitch;
-
-	st75256_set_window(dev, x, y, desc->width, desc->height);
-	st75256_start_write(dev);
+	ret = st75256_set_window(dev, x, y, desc->width, desc->height);
+	if (ret < 0) {
+		return ret;
+	}
+	ret = st75256_start_write(dev);
+	if (ret < 0) {
+		return ret;
+	}
 	while (line_count > line_total) {
 		l = 0;
 
