@@ -35,6 +35,35 @@ config WIFI_SILABS_NCP_DATA_TX_COUNT
 
 config WIFI_SILABS_NCP_MGMT_RX_COUNT
 	int "Number of management frame buffers handed to CPC"
+	default 4
+	help
+	  The buffers are held until the work queue has handled the frames.
+
+config WIFI_SILABS_NCP_MGMT_TX_COUNT
+	int "Number of management frames in flight towards the co-processor"
 	default 2
+
+config WIFI_SILABS_NCP_WQ_STACK_SIZE
+	int "Stack size of the work queue handling the management frames"
+	default 4096
+	help
+	  The confirmations and the indications of the network processor are
+	  handled on this work queue, which calls into the supplicant.
+
+config WIFI_SILABS_NCP_WQ_PRIORITY
+	int "Priority of the work queue handling the management frames"
+	default 7
+
+config WIFI_SILABS_NCP_CMD_TIMEOUT_MS
+	int "Time to wait for the confirmation of a command, in milliseconds"
+	default 2000
+
+config WIFI_SILABS_NCP_SCAN_RESULTS
+	int "Number of scan results kept for the supplicant"
+	default 16
+
+config WIFI_SILABS_NCP_SCAN_IE_MAX
+	int "Bytes of information elements kept per scan result"
+	default 512
 
 endif # WIFI_SILABS_NCP

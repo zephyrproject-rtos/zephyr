@@ -13,6 +13,7 @@
 #include <zephyr/net/net_if.h>
 
 #include "wifi_ncp.h"
+#include "wifi_ncp_sta.h"
 
 LOG_MODULE_DECLARE(wifi_ncp, CONFIG_WIFI_LOG_LEVEL);
 
