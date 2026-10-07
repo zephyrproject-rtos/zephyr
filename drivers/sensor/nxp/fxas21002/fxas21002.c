@@ -319,6 +319,10 @@ static int fxas21002_init(const struct device *dev)
 	uint32_t transition_time;
 	uint8_t whoami;
 
+#ifdef CONFIG_SENSOR_ASYNC_API
+	mpsc_init(&data->io_q);
+#endif
+
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	uint8_t ctrlreg1;
 
@@ -449,6 +453,10 @@ static DEVICE_API(sensor, fxas21002_driver_api) = {
 #if CONFIG_FXAS21002_TRIGGER
 	.trigger_set = fxas21002_trigger_set,
 #endif
+#ifdef CONFIG_SENSOR_ASYNC_API
+	.submit = fxas21002_submit,
+	.get_decoder = fxas21002_get_decoder,
+#endif
 };
 
 #define FXAS21002_CONFIG_I2C(inst)								\
@@ -466,6 +474,13 @@ static DEVICE_API(sensor, fxas21002_driver_api) = {
 #define FXAS21002_DEFINE(inst)									\
 	static struct fxas21002_data fxas21002_data_##inst;					\
 												\
+	IF_ENABLED(CONFIG_SENSOR_ASYNC_API, (							\
+		RTIO_DEFINE(fxas21002_rtio_##inst, 16, 16);					\
+		COND_CODE_1(DT_INST_ON_BUS(inst, spi),						\
+			(SPI_DT_IODEV_DEFINE(fxas21002_bus_##inst, DT_DRV_INST(inst),		\
+				SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8));),			\
+			(I2C_DT_IODEV_DEFINE(fxas21002_bus_##inst, DT_DRV_INST(inst));))	\
+	))											\
 	static const struct fxas21002_config fxas21002_config_##inst = {			\
 	COND_CODE_1(DT_INST_ON_BUS(inst, spi),							\
 		    (FXAS21002_CONFIG_SPI(inst)),						\
@@ -473,6 +488,10 @@ static DEVICE_API(sensor, fxas21002_driver_api) = {
 		.whoami = CONFIG_FXAS21002_WHOAMI,						\
 		.range = CONFIG_FXAS21002_RANGE,						\
 		.dr = CONFIG_FXAS21002_DR,							\
+		IF_ENABLED(CONFIG_SENSOR_ASYNC_API, (						\
+			.r = &fxas21002_rtio_##inst,						\
+			.bus_iodev = &fxas21002_bus_##inst,					\
+		))										\
 		IF_ENABLED(CONFIG_FXAS21002_TRIGGER,						\
 			   (COND_CODE_1(CONFIG_FXAS21002_DRDY_INT1,				\
 					(.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios,	\

@@ -8,7 +8,11 @@ menuconfig FXAS21002
 	default y
 	depends on DT_HAS_NXP_FXAS21002_ENABLED
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_NXP_FXAS21002),i2c)
+	select I2C_RTIO if SENSOR_ASYNC_API && \
+	$(dt_compat_on_bus,$(DT_COMPAT_NXP_FXAS21002),i2c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_NXP_FXAS21002),spi)
+	select SPI_RTIO if SENSOR_ASYNC_API && \
+	$(dt_compat_on_bus,$(DT_COMPAT_NXP_FXAS21002),spi)
 	help
 	  Enable driver for the FXAS21002 gyroscope
 
@@ -73,6 +77,13 @@ config FXAS21002_TRIGGER
 	bool
 
 if FXAS21002_TRIGGER
+
+config FXAS21002_STREAM
+	bool "Async data-ready streaming"
+	depends on SENSOR_ASYNC_API
+	depends on GPIO
+	help
+	  Stream samples through the sensor RTIO API on the data-ready pin.
 
 config FXAS21002_DRDY_INT1
 	bool "Data ready interrupt to INT1 pin"

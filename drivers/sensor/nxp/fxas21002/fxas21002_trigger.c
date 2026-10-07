@@ -26,11 +26,19 @@ static void fxas21002_gpio_callback(const struct device *dev,
 
 	gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_DISABLE);
 
+#ifdef CONFIG_FXAS21002_STREAM
+	if (data->streaming_sqe != NULL) {
+		fxas21002_stream_irq_handler(data->dev);
+		return;
+	}
+#endif
+
 #if defined(CONFIG_FXAS21002_TRIGGER_OWN_THREAD)
 	k_sem_give(&data->trig_sem);
 #elif defined(CONFIG_FXAS21002_TRIGGER_GLOBAL_THREAD)
 	k_work_submit(&data->work);
 #endif
+
 }
 
 static int fxas21002_handle_drdy_int(const struct device *dev)
