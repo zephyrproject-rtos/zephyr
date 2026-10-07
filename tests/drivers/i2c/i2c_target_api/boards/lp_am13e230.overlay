@@ -1,0 +1,78 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * I2C loopback wiring for LP-AM13E230:
+ *
+ * Wire PA10 <-> PA23 (SCL) and PA11 <-> PA22 (SDA).
+ * Internal pull-ups are enabled on all four pins.
+ */
+
+&pinctrl {
+	uc2_sda_pa11_pu: uc2_sda_pa11_pu {
+		pinmux = <MSP_PINMUX(12, 4)>;
+		input-enable;
+		drive-open-drain;
+		bias-pull-up;
+	};
+
+	uc2_scl_pa10_pu: uc2_scl_pa10_pu {
+		pinmux = <MSP_PINMUX(11, 12)>;
+		input-enable;
+		drive-open-drain;
+		bias-pull-up;
+	};
+
+	uc5_sda_pa22_pu: uc5_sda_pa22_pu {
+		pinmux = <MSP_PINMUX(23, 7)>;
+		input-enable;
+		drive-open-drain;
+		bias-pull-up;
+	};
+
+	uc5_scl_pa23_pu: uc5_scl_pa23_pu {
+		pinmux = <MSP_PINMUX(24, 7)>;
+		input-enable;
+		drive-open-drain;
+		bias-pull-up;
+	};
+};
+
+&unicomm2 {
+	status = "okay";
+};
+
+&unicomm2_i2c {
+	pinctrl-0 = <&uc2_sda_pa11_pu &uc2_scl_pa10_pu>;
+	pinctrl-names = "default";
+	unicomm-advanced-i2c;
+	status = "okay";
+
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		address-width = <8>;
+		size = <256>;
+	};
+};
+
+&unicomm5 {
+	status = "okay";
+};
+
+&unicomm5_i2c {
+	pinctrl-0 = <&uc5_sda_pa22_pu &uc5_scl_pa23_pu>;
+	pinctrl-names = "default";
+	unicomm-advanced-i2c;
+	status = "okay";
+
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		address-width = <8>;
+		size = <256>;
+	};
+};
