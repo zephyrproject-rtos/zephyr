@@ -1,0 +1,117 @@
+# Copyright (c) 2026  Microchip Technology Inc. and its subsidiaries
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Microchip EMC1702 high-side current sense and dual temperature monitor.
+
+  Measures bus voltage on SENSE+, voltage across an external sense resistor
+  (VSENSE), internal die temperature, ambient temperature and computes
+  power as a ratio.
+
+  The external (ambient) temperature channel is only usable when a diode is
+  wired to DP/DN. For setups without the external temperature diode must leave
+  external-diode-is-present unset, in which case the external channel is
+  masked in hardware and SENSOR_CHAN_AMBIENT_TEMP / SENSOR_CHAN_EMC1702_FAULT
+  report -ENOTSUP.
+
+  The driver has trigger support. When enabled, the GPIO pins will indicate when
+  a limit has been passed.
+
+  Datasheet can be found at https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/EMC1702-Data-Sheet-DS20006455A.pdf
+
+compatible: "microchip,emc1702"
+
+include: i2c-device.yaml
+
+properties:
+  sense-resistor-milliohms:
+    type: int
+    default: 10
+    min: 1
+    description: |
+      Value of the external sense resistor in milliohms. Used to convert the
+      measured VSENSE differential voltage into current.
+
+  current-sense-range-mv:
+    type: int
+    default: 80
+    enum: [10, 20, 40, 80]
+    description: |
+      Full-scale range of the differential voltage measurement across the
+      sense resistor, in millivolts. Defaults to 80 mV (the chip's default
+      and trimmed accuracy point per the datasheet).
+
+  current-sense-sampling-time:
+    type: int
+    default: 82
+    enum: [82, 164, 328]
+    description: |
+      Set the amount of time the capacitor is allowed to charge in ms.
+
+  current-sense-queue:
+    type: int
+    default: 1
+    enum: [1, 2, 3, 4]
+    description: |
+      Set the number of consecutive sense voltage measurements that must be
+      over limit to flag an alarm.
+
+  voltage-source-queue:
+    type: int
+    default: 1
+    enum: [1, 2, 3, 4]
+    description: |
+      Set the number of consecutive source voltage measurements that must be
+      over limit to flag an alarm.
+
+  external-diode-is-present:
+    type: boolean
+    description: |
+      When true, an external diode is connected to the DP/DN pins and the
+      external temperature channel is enabled. When false (default) the
+      external channel is masked in the Channel Mask register so that a
+      missing/open diode cannot assert ALERT, the diode-fault check is
+      skipped, and the ambient temperature channel is reported as
+      unsupported.
+
+  resistance-error-correction:
+    type: boolean
+    description: |
+      When true, the resistance error correction is applied to
+      the external diode. Ignored when external-diode-is-present is false.
+
+  conversion-rate:
+    type: int
+    default: 4000
+    enum: [62, 125, 250, 500, 1000, 2000, 4000, 8000]
+    description: |
+      Set conversion rate in ms for temperature, current and voltage channels.
+
+  alert-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the EMC1702 ALERT pin (open-drain, active low).
+      Required when CONFIG_EMC1702_TRIGGER is enabled. The pin should be
+      configured GPIO_ACTIVE_LOW and may use GPIO_PULL_UP if no external
+      pull-up is present on the board.
+
+  smbus-timeout:
+    type: boolean
+    description: |
+      When true, the SMBus timeout feature is enabled.
+
+  therm-consecutive:
+    type: int
+    default: 4
+    enum: [1, 2, 3, 4]
+    description: |
+      Set the number of consecutive measurements that must exceed the
+      thermal critical limit before the THERM pin is asserted.
+
+  alert-consecutive:
+    type: int
+    default: 1
+    enum: [1, 2, 3, 4]
+    description: |
+      Set the number of consecutive measurements that must exceed the
+      thermal alert limit or diode fault before the ALERT pin is asserted.
