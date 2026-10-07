@@ -8,4 +8,5 @@ ram: 256
 flash: 1024
 supported:
   - dma
+  - rtc
 vendor: ti
