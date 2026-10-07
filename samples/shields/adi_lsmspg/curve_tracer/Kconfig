@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Analog Devices, Inc
+# SPDX-License-Identifier: Apache-2.0
+
+menu "ADALM-LSMSPG curve tracer"
+
+config CURVE_TRACER_RSENSE_MOHM
+	int "Collector sense resistor (milliohm)"
+	default 49900
+	help
+	  Rsense_npn on the ADALM-LSMSPG schematic is 49.9 ohm. The no-OS
+	  example uses 47 ohm (47000).
+
+config CURVE_TRACER_RBASE_OHM
+	int "Base resistor (ohm)"
+	default 49900
+	help
+	  Rbase_npn on the ADALM-LSMSPG schematic is 49.9 kohm. The no-OS
+	  example uses 47 kohm (47000).
+
+endmenu
+
+source "Kconfig.zephyr"
