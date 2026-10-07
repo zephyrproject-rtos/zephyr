@@ -5,8 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/wl/stm32wle5Xc.dtsi>
-#include <st/wl/stm32wle5ccux-pinctrl.dtsi>
+#include <rakwireless/rak11160.dtsi>
 
 / {
 	compatible = "rakwireless,rak11160";
@@ -41,61 +40,12 @@
 	};
 };
 
-&pll {
-	div-m = <1>;
-	mul-n = <6>;
-	div-r = <4>;
-	div-q = <4>;
-	clocks = <&clk_hse>;
+&lora {
 	status = "okay";
 };
 
-&rcc {
-	clocks = <&pll>;
-	clock-frequency = <DT_FREQ_M(48)>;
-	cpu1-prescaler = <1>;
-	ahb3-prescaler = <1>;
-	apb1-prescaler = <1>;
-	apb2-prescaler = <1>;
-};
-
-&clk_hse {
-	clock-frequency = <DT_FREQ_M(32)>;
-	hse-tcxo;
+&wifi {
 	status = "okay";
-};
-
-&clk_lse {
-	clock-frequency = <32768>;
-	status = "okay";
-};
-
-&subghzspi {
-	status = "okay";
-
-	lora: radio@0 {
-		antenna-enable-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
-		tx-enable-gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
-		rx-enable-gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
-		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_1V8>;
-		tcxo-power-startup-delay-ms = <5>;
-		power-amplifier-output = "rfo-hp";
-		rfo-hp-max-power = <22>;
-		status = "okay";
-	};
-};
-
-&usart1 {
-	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
-	pinctrl-names = "default";
-	current-speed = <115200>;
-	status = "okay";
-
-	wifi: esp-at {
-		compatible = "espressif,esp-at";
-		power-gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
-		status = "okay";
-	};
 };
 
 &usart2 {
@@ -128,14 +78,6 @@
 };
 
 &iwdg {
-	status = "okay";
-};
-
-&aes {
-	status = "okay";
-};
-
-&rng {
 	status = "okay";
 };
 
