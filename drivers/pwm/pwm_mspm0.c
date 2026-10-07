@@ -821,17 +821,17 @@ static void mspm0_cc_isr(const struct device *dev)
 /* Device instantiation */
 
 #ifdef CONFIG_PWM_CAPTURE
-#define MSP_CC_IRQ_REGISTER(n)							\
+#define MSP_CC_IRQ_REGISTER(n)                                                                     \
 	static void mspm0_pwm_## n ##_irq_register(const struct device *dev)                       \
-	{									\
-		const struct pwm_mspm0_config *config = dev->config;		\
-		if (!config->is_capture) {					\
-			return;							\
-		}								\
-		IRQ_CONNECT(DT_IRQN(DT_INST_PARENT(n)),				\
-			    DT_IRQ(DT_INST_PARENT(n), priority), mspm0_cc_isr,	\
-			    DEVICE_DT_INST_GET(n), 0);				\
-		irq_enable(DT_IRQN(DT_INST_PARENT(n)));				\
+	{                                                                                          \
+		const struct pwm_mspm0_config *config = dev->config;                               \
+		if (!config->is_capture) {                                                         \
+			return;                                                                    \
+		}                                                                                  \
+		IRQ_CONNECT(DT_IRQN(DT_INST_PARENT(n)),                                            \
+			    DT_IRQ(DT_INST_PARENT(n), priority), mspm0_cc_isr,                     \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_IRQN(DT_INST_PARENT(n)));                                            \
 	}
 #else
 #define MSP_CC_IRQ_REGISTER(n)
@@ -852,8 +852,8 @@ static void mspm0_cc_isr(const struct device *dev)
 	BUILD_ASSERT(DT_PROP(DT_INST_PARENT(n), ti_clk_div) >= 1,                                  \
 		     "ti,clk-div must be >= 1 (0 underflows clk_div_reg)");                        \
                                                                                                    \
-	static struct pwm_mspm0_data pwm_mspm0_data_ ## n = {			\
-		.period = DT_PROP(DT_DRV_INST(n), ti_period),			\
+	static struct pwm_mspm0_data pwm_mspm0_data_ ## n = {                                      \
+		.period = DT_PROP(DT_DRV_INST(n), ti_period),                                      \
 		IF_ENABLED(CONFIG_PWM_CAPTURE,                                                     \
 		(COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), ti_cc_mode),                         \
 			(.cmode = MSPM0_CAPTURE_MODE(                                              \
@@ -887,14 +887,14 @@ static void mspm0_cc_isr(const struct device *dev)
 		IF_ENABLED(CONFIG_PWM_CAPTURE,                                                     \
 		(.irq_config_func = COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), ti_cc_mode),	   \
 						(mspm0_pwm_## n ##_irq_register), (NULL))))        \
-	};									\
-										\
-	DEVICE_DT_INST_DEFINE(n,						\
-			      pwm_mspm0_init,					\
-			      NULL,						\
-			      &pwm_mspm0_data_ ## n,				\
-			      &pwm_mspm0_config_ ## n,				\
-			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,		\
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n,                                                                   \
+			      pwm_mspm0_init,                                                      \
+			      NULL,                                                                \
+			      &pwm_mspm0_data_ ## n,                                               \
+			      &pwm_mspm0_config_ ## n,                                             \
+			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,                               \
 			      &pwm_mspm0_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_DEVICE_INIT_MSPM0)
