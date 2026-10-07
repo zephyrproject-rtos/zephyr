@@ -212,6 +212,11 @@ Boards
   The root compatible of the LPCXpresso54114 board is now ``nxp,lpc5411x`` instead of
   ``nxp,lpc54xxx``. (:github:`125465`)
 
+* Antmicro ``stm32h7_renode_reference_board`` has been renamed to
+  ``stm32h7_renode_reference_platform``. The previous ``-b stm32h7_renode_reference_board``
+  and ``-b stm32h7_renode_reference_board/stm32h753xx`` are deprecated and now map to
+  ``stm32h7_renode_reference_platform`` and ``stm32h7_renode_reference_platform/stm32h753xx``.
+
 * On :zephyr:board:`mimxrt1180_evk`, the optional DTS overlay files
   (:file:`cm33_sram_dtcm.overlay`, :file:`cm7_code_hyperram.overlay`,
   :file:`cm7_flash_boot.overlay`) and on :zephyr:board:`frdm_imxrt1186` the
