@@ -13,6 +13,7 @@
 #include "kit_pse84_ai_common.dtsi"
 #include "kit_pse84_ai_memory_map.dtsi"
 #include "kit_pse84_ai_memory_map_rram.dtsi"
+#include "kit_pse84_ai_memory_map_rram.dtsi"
 
 / {
 	model = "kit_pse84_ai";
@@ -77,5 +78,13 @@ uart4: &scb4 {
 			fw-download-speed = <115200>;
 			hci-operation-speed = <115200>;
 		};
+	};
+};
+
+&flash0 {
+	partitions {
+		slot0_partition: partition@340000 {};
+
+		slot1_partition: partition@940000 {};
 	};
 };
