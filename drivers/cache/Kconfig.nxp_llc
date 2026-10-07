@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config CACHE_NXP_LLC
+	bool "NXP CodaCache last-level cache driver"
+	default y
+	depends on DT_HAS_NXP_LLC_ENABLED
+	depends on EXTERNAL_CACHE
+	select CACHE_HAS_DRIVER
+	help
+	  Enable the NXP CodaCache last-level cache (LLC) backend. This single
+	  drivers/cache backend serves BOTH cache levels behind Zephyr's
+	  level-less cache API: the CPU L1 (through the CMSIS SCB helpers) and
+	  the CodaCache LLC in front of the external-memory windows. Selecting
+	  EXTERNAL_CACHE removes the arch Cortex-M L1 backend
+	  (arch/arm/core/cortex_m/cache.c, gated on ARCH_CACHE) from the build,
+	  so this driver must cover both levels.
+
+	  DMA buffers must not be placed in the LLC-cached aliases. See the
+	  placement rule and its reasons in drivers/cache/cache_nxp_llc.c.
