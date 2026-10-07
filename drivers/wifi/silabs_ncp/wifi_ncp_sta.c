@@ -187,7 +187,7 @@ static void wifi_ncp_join_status(const struct device *dev, const uint8_t *hdr,
 
 	k_mutex_lock(&sta->lock, K_FOREVER);
 	state = sta->state;
-	if (state == WIFI_NCP_STA_JOINING) {
+	if (state == WIFI_NCP_STA_JOINING && status != SLI_STATUS_JOIN_SAE_TRIGGER) {
 		sta->state = !status ? WIFI_NCP_STA_ASSOCIATED : WIFI_NCP_STA_IDLE;
 	}
 	k_mutex_unlock(&sta->lock);
@@ -199,6 +199,22 @@ static void wifi_ncp_join_status(const struct device *dev, const uint8_t *hdr,
 	memset(&event, 0, sizeof(event));
 	if (state != WIFI_NCP_STA_JOINING) {
 		LOG_WRN("%s: unexpected join status 0x%04x", dev->name, status);
+	} else if (status == SLI_STATUS_JOIN_SAE_TRIGGER) {
+		/* The co-processor waits for the supplicant to authenticate;
+		 * the join goes on once SLI_MGMTIF_CMD_SAE_CONFIRM_SUCCESS is
+		 * sent and is confirmed later.
+		 */
+		LOG_INF("%s: SAE authentication requested", dev->name);
+		if (!data->supp.cb.external_auth) {
+			LOG_ERR("%s: the supplicant cannot authenticate", dev->name);
+			return;
+		}
+		event.external_auth.action = EXT_AUTH_START;
+		event.external_auth.bssid = sta->bssid;
+		event.external_auth.ssid = sta->ssid;
+		event.external_auth.ssid_len = sta->ssid_len;
+		event.external_auth.key_mgmt_suite = RSN_AUTH_KEY_MGMT_SAE;
+		data->supp.cb.external_auth(data->supp.if_ctx, &event);
 	} else if (!status) {
 		LOG_INF("%s: associated", dev->name);
 		event.assoc_info.addr = sta->bssid;
@@ -228,14 +244,28 @@ static void wifi_ncp_tx_status(const struct device *dev, const uint8_t *hdr, con
 		hdr[15]);
 }
 
+/* Authentication frame of the SAE exchange, for the supplicant */
+static void wifi_ncp_auth_rx(const struct device *dev, const uint8_t *hdr, const uint8_t *frame,
+			     size_t len)
+{
+	struct wifi_ncp_data *data = dev->data;
+	enum wifi_frequency_bands band = wifi_utils_chan_to_band(data->sta.channel);
+
+	ARG_UNUSED(hdr);
+
+	if (data->supp.if_ctx && data->supp.cb.mgmt_rx) {
+		data->supp.cb.mgmt_rx(data->supp.if_ctx, (char *)frame, len,
+				      wifi_utils_chan_to_freq(band, data->sta.channel), 0);
+	}
+}
+
 /* Confirmations of the deferred commands and indications */
 static const struct {
 	uint8_t id;
 	void (*fn)(const struct device *dev, const uint8_t *hdr, const uint8_t *frame, size_t len);
 } wifi_ncp_rx_handlers[] = {
-	{SLI_WIFI_IND_ON_AIR_MGMT, wifi_ncp_scan_add},
-	{SLI_WIFI_CMD_SCAN, wifi_ncp_scan_done},
-	{SLI_WIFI_CMD_JOIN, wifi_ncp_join_status},
+	{SLI_WIFI_IND_ON_AIR_MGMT, wifi_ncp_scan_add}, {SLI_WIFI_CMD_SCAN, wifi_ncp_scan_done},
+	{SLI_WIFI_CMD_JOIN, wifi_ncp_join_status},     {SLI_NWP_IND_ON_AIR_MGMT, wifi_ncp_auth_rx},
 	{SLI_NWP_IND_TX_STATUS, wifi_ncp_tx_status},
 };
 
@@ -753,6 +783,85 @@ int wifi_ncp_sta_get_conn_info(void *if_priv, struct wpa_conn_info *info)
 
 	memset(info, 0, sizeof(*info));
 	info->beacon_interval = data->sta.beacon_int;
+
+	return 0;
+}
+
+/* Authentication frames built by the supplicant for the SAE exchange. The
+ * co-processor is told when the commit is sent, and the confirmation of the
+ * transmission is reported as an acknowledgment.
+ */
+int wifi_ncp_sta_send_mlme(void *if_priv, const u8 *data_buf, size_t data_len, int noack,
+			   unsigned int freq, int no_cck, int offchanok, unsigned int wait_time,
+			   int cookie)
+{
+	const struct device *dev = if_priv;
+	struct wifi_ncp_data *data = dev->data;
+	struct wifi_ncp_nwp_hdr tx_hdr = {.command_id = SLI_WIFI_TX_DOT11_MGMT_FRAME};
+	struct wifi_ncp_nwp_hdr commit_hdr = {.command_id = SLI_MGMTIF_CMD_SAE_COMMIT_STATUS};
+	const struct ieee80211_mgmt *mgmt = (const struct ieee80211_mgmt *)data_buf;
+	sli_mgmtif_sae_commit_t commit = SLI_WIFI_SAE_COMMIT_STATE_TRUE;
+	uint16_t fc;
+	int ret;
+
+	ARG_UNUSED(noack);
+	ARG_UNUSED(freq);
+	ARG_UNUSED(no_cck);
+	ARG_UNUSED(offchanok);
+	ARG_UNUSED(wait_time);
+	ARG_UNUSED(cookie);
+
+	if (data_len < IEEE80211_HDRLEN + sizeof(mgmt->u.auth)) {
+		return -EINVAL;
+	}
+	fc = sys_le16_to_cpu(mgmt->frame_control);
+	if (WLAN_FC_GET_TYPE(fc) != WLAN_FC_TYPE_MGMT ||
+	    WLAN_FC_GET_STYPE(fc) != WLAN_FC_STYPE_AUTH) {
+		LOG_WRN("%s: only authentication frames can be sent", dev->name);
+		return -ENOTSUP;
+	}
+
+	ret = wifi_ncp_nwp_cmd(dev, &tx_hdr, data_buf, data_len, NULL, 0, NULL, NULL);
+	if (ret) {
+		LOG_ERR("%s: authentication frame transmission failed: %d", dev->name, ret);
+		return -EIO;
+	}
+
+	if (sys_le16_to_cpu(mgmt->u.auth.auth_transaction) == 1) {
+		ret = wifi_ncp_nwp_cmd(dev, &commit_hdr, &commit, sizeof(commit), NULL, 0, NULL,
+				       NULL);
+		if (ret) {
+			LOG_ERR("%s: SAE commit status failed: %d", dev->name, ret);
+			return -EIO;
+		}
+	}
+
+	if (data->supp.if_ctx && data->supp.cb.mgmt_tx_status) {
+		data->supp.cb.mgmt_tx_status(data->supp.if_ctx, data_buf, data_len, true);
+	}
+
+	return 0;
+}
+
+/* The SAE exchange is over: on success the co-processor associates, which
+ * confirms the join.
+ */
+int wifi_ncp_sta_send_external_auth_status(void *if_priv, struct external_auth *params)
+{
+	const struct device *dev = if_priv;
+	struct wifi_ncp_nwp_hdr hdr = {.command_id = SLI_MGMTIF_CMD_SAE_CONFIRM_SUCCESS};
+	int ret;
+
+	if (params->status != WLAN_STATUS_SUCCESS) {
+		LOG_WRN("%s: SAE authentication failed: %u", dev->name, params->status);
+		return 0;
+	}
+
+	ret = wifi_ncp_nwp_cmd(dev, &hdr, NULL, 0, NULL, 0, NULL, NULL);
+	if (ret) {
+		LOG_ERR("%s: SAE confirm success failed: %d", dev->name, ret);
+		return -EIO;
+	}
 
 	return 0;
 }
