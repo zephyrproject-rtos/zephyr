@@ -41,6 +41,8 @@
 			reg = <0x40448000 0x100>;
 			interrupts = <31 0>;
 			clocks = <&ckm MSPM0_CLOCK_MCLK>;
+			ti,pwren = <&sysctl MSPM_SYSCTL_PWREN_MCPERIPH
+				    MSPM_SYSCTL_PWREN_EQEP0_BIT>;
 			status = "disabled";
 		};
 
@@ -49,6 +51,8 @@
 			reg = <0x40449000 0x100>;
 			interrupts = <32 0>;
 			clocks = <&ckm MSPM0_CLOCK_MCLK>;
+			ti,pwren = <&sysctl MSPM_SYSCTL_PWREN_MCPERIPH
+				    MSPM_SYSCTL_PWREN_EQEP1_BIT>;
 			status = "disabled";
 		};
 
@@ -57,6 +61,8 @@
 			reg = <0x4044a000 0x100>;
 			interrupts = <33 0>;
 			clocks = <&ckm MSPM0_CLOCK_MCLK>;
+			ti,pwren = <&sysctl MSPM_SYSCTL_PWREN_MCPERIPH
+				    MSPM_SYSCTL_PWREN_EQEP2_BIT>;
 			status = "disabled";
 		};
 	};
