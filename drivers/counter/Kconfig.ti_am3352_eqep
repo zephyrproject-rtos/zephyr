@@ -11,11 +11,12 @@ config COUNTER_TI_AM3352_EQEP
 	  Enables the TI EQEP counter driver.
 
 config COUNTER_TI_AM3352_EQEP_VARIANT_AM13
-	bool "TI EQEP AM13E variant (QEPSRCSEL, Input X-BAR)"
+	bool "TI EQEP AM13E variant (QEPSRCSEL, Input X-BAR, PWREN)"
 	depends on COUNTER_TI_AM3352_EQEP
 	depends on SOC_SERIES_AM13E
 	default y
 	select MUX
 	select SYSCON
 	help
-	  Enable AM13E EQEP support: QEPSRCSEL and mux-states X-BAR routing.
+	  Enable AM13E EQEP support: QEPSRCSEL, mux-states X-BAR routing,
+	  and SYSCTL PWREN via ti,pwren.
