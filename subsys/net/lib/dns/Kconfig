@@ -65,10 +65,12 @@ config DNS_RESOLVER_ADDITIONAL_QUERIES
 
 config DNS_RESOLVER_AI_MAX_ENTRIES
 	int "Maximum number of IP addresses for DNS name"
+	default 4 if NET_IPV4 && NET_IPV6
 	default 2
 	help
 	  Defines the max number of IP addresses per domain name
-	  resolution the DNS resolver can handle.
+	  resolution the DNS resolver can handle. The dual-stack default
+	  leaves room for two addresses per family.
 
 config DNS_RESOLVER_MAX_ANSWER_SIZE
 	int "Max length of a DNS answer"
