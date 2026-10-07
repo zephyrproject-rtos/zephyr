@@ -37,6 +37,30 @@
 			#mux-state-cells = <2>;
 			status = "disabled";
 		};
+
+		eqep0: counter@40448000 {
+			compatible = "ti,am3352-eqep";
+			reg = <0x40448000 0x100>;
+			interrupts = <31 0>;
+			clocks = <&ckm MSPM0_CLOCK_MCLK>;
+			status = "disabled";
+		};
+
+		eqep1: counter@40449000 {
+			compatible = "ti,am3352-eqep";
+			reg = <0x40449000 0x100>;
+			interrupts = <32 0>;
+			clocks = <&ckm MSPM0_CLOCK_MCLK>;
+			status = "disabled";
+		};
+
+		eqep2: counter@4044a000 {
+			compatible = "ti,am3352-eqep";
+			reg = <0x4044a000 0x100>;
+			interrupts = <33 0>;
+			clocks = <&ckm MSPM0_CLOCK_MCLK>;
+			status = "disabled";
+		};
 	};
 
 	cpus {
