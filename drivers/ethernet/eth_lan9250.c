@@ -505,6 +505,20 @@ static int lan9250_configure(const struct device *dev)
 		return ret;
 	}
 
+	/* Configure HMAC flow control:
+	 *
+	 *   - Pause time sent in automatic pause frames: maximum. Pause frames
+	 *     with a pause time of zero are sent when the RX FIFO drains, see
+	 *     AFC_CFG.
+	 *   - Act on received pause frames (full duplex) and enable
+	 *     backpressure (half duplex), as pause is advertised by the PHY
+	 */
+	ret = lan9250_write_mac_reg(dev, LAN9250_HMAC_FLOW,
+				    LAN9250_HMAC_FLOW_FCPT_MAX | LAN9250_HMAC_FLOW_FCEN);
+	if (ret < 0) {
+		return ret;
+	}
+
 	/* Configure HMAC VLAN:
 	 *
 	 * If used, this register is typically set to the standard VLAN value of
