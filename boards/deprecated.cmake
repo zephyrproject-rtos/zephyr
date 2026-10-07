@@ -145,3 +145,9 @@ set(adp_xc7k/ae350_DEPRECATED
 set(adp_xc7k/ae350/clic_DEPRECATED
     adp_xc7k/ae350_d23/clic
 )
+set(stm32h7_renode_reference_board_DEPRECATED
+    stm32h7_renode_reference_platform
+)
+set(stm32h7_renode_reference_board/stm32h753xx_DEPRECATED
+    stm32h7_renode_reference_platform/stm32h753xx
+)

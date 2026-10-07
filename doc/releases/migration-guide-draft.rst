@@ -115,6 +115,11 @@ Boards
   that relied on the alias, such as :zephyr:code-sample:`blinky`, need an
   overlay pointing at a LED wired to the headers.
 
+* Antmicro ``stm32h7_renode_reference_board`` has been renamed to
+  ``stm32h7_renode_reference_platform``. The previous ``-b stm32h7_renode_reference_board``
+  and ``-b stm32h7_renode_reference_board/stm32h753xx`` are deprecated and now map to
+  ``stm32h7_renode_reference_platform`` and ``stm32h7_renode_reference_platform/stm32h753xx``.
+
 Device Drivers and Devicetree
 *****************************
 
