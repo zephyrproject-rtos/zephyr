@@ -42,6 +42,13 @@ properties:
     enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     description: QEPSRCSEL.QEPISEL value (AM13E-only). See ti,qepa-src.
 
+  ti,pwren:
+    type: phandle-array
+    specifier-space: pwren
+    description: |
+      Power-enable this peripheral via SYSCTL.PWREN_*.
+      Format: <&sysctl offset bit>.
+
 examples:
   - |
     &eqep0 {
