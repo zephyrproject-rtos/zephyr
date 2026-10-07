@@ -434,7 +434,7 @@ void z_riscv_log_saved_info(unsigned long cause)
 {
 	LOG_ERR("Spurious interrupt cause: %ld", cause);
 
-	if (cause == RISCV_IRQ_MEXT) {
+	if (cause == (IS_ENABLED(CONFIG_RISCV_S_MODE) ? RISCV_IRQ_SEXT : RISCV_IRQ_MEXT)) {
 		unsigned int irq = riscv_plic_get_irq();
 		const struct device *dev = riscv_plic_get_dev();
 
