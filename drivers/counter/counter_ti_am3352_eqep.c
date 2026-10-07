@@ -65,6 +65,8 @@ struct ti_eqep_regs {
 #define TI_EQEP_QDECCTL_SWAP BIT(10)
 
 /* QEP Control Register */
+#define TI_EQEP_QEPCTL_FREE_SOFT GENMASK(15, 14)
+#define TI_EQEP_QEPCTL_FREE_SOFT_RUNFREE 2
 #define TI_EQEP_QEPCTL_PCRM      GENMASK(13, 12)
 #define TI_EQEP_QEPCTL_PCRM_MAX  (0x1)
 #define TI_EQEP_QEPCTL_SWI       BIT(7)
@@ -480,6 +482,10 @@ static int ti_eqep_init(const struct device *dev)
 				  FIELD_PREP(TI_EQEP_QEPSRCSEL_QEPISEL, cfg->qepi_src);
 	}
 #endif /* CONFIG_COUNTER_TI_AM3352_EQEP_VARIANT_AM13 */
+
+	/* FREE_SOFT=run-free: keep QUTMR running under debugger halt. */
+	regs->QEPCTL = (regs->QEPCTL & ~TI_EQEP_QEPCTL_FREE_SOFT) |
+		       FIELD_PREP(TI_EQEP_QEPCTL_FREE_SOFT, TI_EQEP_QEPCTL_FREE_SOFT_RUNFREE);
 
 	/* irq connect */
 	cfg->irq_config_func();
