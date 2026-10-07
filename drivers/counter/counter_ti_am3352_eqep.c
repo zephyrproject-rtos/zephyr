@@ -168,8 +168,9 @@ static void ti_eqep_reset_counter(const struct device *dev, uint32_t top_value)
 		regs->QPOSINIT = top_value;
 	}
 
-	/* initialize counter */
+	/* SWI is sticky; pulse it so later QEPCTL writes do not re-init. */
 	regs->QEPCTL |= TI_EQEP_QEPCTL_SWI;
+	regs->QEPCTL &= ~TI_EQEP_QEPCTL_SWI;
 }
 
 static int ti_eqep_start(const struct device *dev)
