@@ -98,31 +98,13 @@ static const struct eth_esp32_config eth_esp32_config = {
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
-static eth_dma_rx_descriptor_t *rx_desc_next(struct eth_esp32_dev_data *dev_data,
-					     eth_dma_rx_descriptor_t *desc)
+static eth_dma_rx_descriptor_t *rx_desc_next(eth_dma_rx_descriptor_t *desc)
 {
-	if (EMAC_HAL_DMA_DESC_SIZE > 32) {
-		eth_dma_rx_descriptor_t *base =
-			(eth_dma_rx_descriptor_t *)dev_data->dma->descriptors;
-		uint32_t idx = desc - base;
-
-		return &base[(idx + 1) % CONFIG_ETH_ESP32_DMA_RX_BUFFER_NUM];
-	}
 	return ADDR_DMA_TO_CPU(desc->Buffer2NextDescAddr);
 }
 
-static eth_dma_tx_descriptor_t *tx_desc_next(struct eth_esp32_dev_data *dev_data,
-					     eth_dma_tx_descriptor_t *desc)
+static eth_dma_tx_descriptor_t *tx_desc_next(eth_dma_tx_descriptor_t *desc)
 {
-	if (EMAC_HAL_DMA_DESC_SIZE > 32) {
-		eth_dma_tx_descriptor_t *base =
-			(eth_dma_tx_descriptor_t *)(dev_data->dma->descriptors +
-						    sizeof(eth_dma_rx_descriptor_t) *
-							    CONFIG_ETH_ESP32_DMA_RX_BUFFER_NUM);
-		uint32_t idx = desc - base;
-
-		return &base[(idx + 1) % CONFIG_ETH_ESP32_DMA_TX_BUFFER_NUM];
-	}
 	return ADDR_DMA_TO_CPU(desc->Buffer2NextDescAddr);
 }
 
@@ -134,50 +116,32 @@ static void eth_esp32_reset_desc_chain(struct eth_esp32_dev_data *dev_data)
 							sizeof(eth_dma_rx_descriptor_t) *
 								CONFIG_ETH_ESP32_DMA_RX_BUFFER_NUM);
 
-	/* Initialize RX descriptor chain/ring */
+	/* Initialize RX descriptor chain */
 	for (int i = 0; i < CONFIG_ETH_ESP32_DMA_RX_BUFFER_NUM; i++) {
 		dev_data->rx_desc[i].RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
 		dev_data->rx_desc[i].RDES1.ReceiveBuffer1Size = CONFIG_ETH_ESP32_DMA_BUFFER_SIZE;
 		dev_data->rx_desc[i].RDES1.DisableInterruptOnComplete = 0;
 		dev_data->rx_desc[i].Buffer1Addr = ADDR_CPU_TO_DMA(dev_data->dma_rx_buf[i]);
-
-		if (EMAC_HAL_DMA_DESC_SIZE > 32) {
-			/* Ring mode: DMA strides sequentially, wraps at end-of-ring */
-			dev_data->rx_desc[i].RDES1.SecondAddressChained = 0;
-			if (i == CONFIG_ETH_ESP32_DMA_RX_BUFFER_NUM - 1) {
-				dev_data->rx_desc[i].RDES1.ReceiveEndOfRing = 1;
-			}
-		} else {
-			/* Chain mode: DMA follows Buffer2NextDescAddr */
-			dev_data->rx_desc[i].RDES1.SecondAddressChained = 1;
+		dev_data->rx_desc[i].RDES1.SecondAddressChained = 1;
+		dev_data->rx_desc[i].Buffer2NextDescAddr =
+			ADDR_CPU_TO_DMA(dev_data->rx_desc + i + 1);
+		if (i == CONFIG_ETH_ESP32_DMA_RX_BUFFER_NUM - 1) {
 			dev_data->rx_desc[i].Buffer2NextDescAddr =
-				ADDR_CPU_TO_DMA(dev_data->rx_desc + i + 1);
-			if (i == CONFIG_ETH_ESP32_DMA_RX_BUFFER_NUM - 1) {
-				dev_data->rx_desc[i].Buffer2NextDescAddr =
-					ADDR_CPU_TO_DMA(dev_data->rx_desc);
-			}
+				ADDR_CPU_TO_DMA(dev_data->rx_desc);
 		}
 	}
 
-	/* Initialize TX descriptor chain/ring */
+	/* Initialize TX descriptor chain */
 	for (int i = 0; i < CONFIG_ETH_ESP32_DMA_TX_BUFFER_NUM; i++) {
 		dev_data->tx_desc[i].TDES0.Own = EMAC_LL_DMADESC_OWNER_CPU;
 		dev_data->tx_desc[i].TDES1.TransmitBuffer1Size = CONFIG_ETH_ESP32_DMA_BUFFER_SIZE;
 		dev_data->tx_desc[i].Buffer1Addr = ADDR_CPU_TO_DMA(dev_data->dma_tx_buf[i]);
-
-		if (EMAC_HAL_DMA_DESC_SIZE > 32) {
-			dev_data->tx_desc[i].TDES0.SecondAddressChained = 0;
-			if (i == CONFIG_ETH_ESP32_DMA_TX_BUFFER_NUM - 1) {
-				dev_data->tx_desc[i].TDES0.TransmitEndRing = 1;
-			}
-		} else {
-			dev_data->tx_desc[i].TDES0.SecondAddressChained = 1;
+		dev_data->tx_desc[i].TDES0.SecondAddressChained = 1;
+		dev_data->tx_desc[i].Buffer2NextDescAddr =
+			ADDR_CPU_TO_DMA(dev_data->tx_desc + i + 1);
+		if (i == CONFIG_ETH_ESP32_DMA_TX_BUFFER_NUM - 1) {
 			dev_data->tx_desc[i].Buffer2NextDescAddr =
-				ADDR_CPU_TO_DMA(dev_data->tx_desc + i + 1);
-			if (i == CONFIG_ETH_ESP32_DMA_TX_BUFFER_NUM - 1) {
-				dev_data->tx_desc[i].Buffer2NextDescAddr =
-					ADDR_CPU_TO_DMA(dev_data->tx_desc);
-			}
+				ADDR_CPU_TO_DMA(dev_data->tx_desc);
 		}
 	}
 
@@ -244,13 +208,13 @@ static uint32_t eth_esp32_transmit_frame(struct eth_esp32_dev_data *dev_data, ui
 			       CONFIG_ETH_ESP32_DMA_BUFFER_SIZE);
 			sentout += CONFIG_ETH_ESP32_DMA_BUFFER_SIZE;
 		}
-		desc_iter = tx_desc_next(dev_data, desc_iter);
+		desc_iter = tx_desc_next(desc_iter);
 	}
 
 	/* Give descriptors to DMA */
 	for (size_t i = 0; i < bufcount; i++) {
 		dev_data->tx_desc->TDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
-		dev_data->tx_desc = tx_desc_next(dev_data, dev_data->tx_desc);
+		dev_data->tx_desc = tx_desc_next(dev_data->tx_desc);
 	}
 	emac_hal_transmit_poll_demand(&dev_data->hal);
 
@@ -286,15 +250,14 @@ static uint32_t eth_esp32_transmit_frame(struct eth_esp32_dev_data *dev_data, ui
 	return sentout;
 }
 
-static void eth_esp32_flush_rx_frame(struct eth_esp32_dev_data *dev_data,
-				     eth_dma_rx_descriptor_t *first_desc,
+static void eth_esp32_flush_rx_frame(eth_dma_rx_descriptor_t *first_desc,
 				     eth_dma_rx_descriptor_t *last_desc)
 {
 	eth_dma_rx_descriptor_t *desc = first_desc;
 
 	while (desc != last_desc) {
 		desc->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
-		desc = rx_desc_next(dev_data, desc);
+		desc = rx_desc_next(desc);
 	}
 	desc->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
 }
@@ -304,8 +267,8 @@ static void eth_esp32_drop_rx_frame(struct eth_esp32_dev_data *dev_data,
 				    eth_dma_rx_descriptor_t *first_desc,
 				    eth_dma_rx_descriptor_t *last_desc)
 {
-	eth_esp32_flush_rx_frame(dev_data, first_desc, last_desc);
-	dev_data->rx_desc = rx_desc_next(dev_data, last_desc);
+	eth_esp32_flush_rx_frame(first_desc, last_desc);
+	dev_data->rx_desc = rx_desc_next(last_desc);
 	emac_hal_receive_poll_demand(&dev_data->hal);
 }
 
@@ -394,7 +357,7 @@ static uint32_t eth_esp32_receive_frame(struct eth_esp32_dev_data *dev_data, uin
 				}
 			}
 		}
-		desc_iter = rx_desc_next(dev_data, desc_iter);
+		desc_iter = rx_desc_next(desc_iter);
 	}
 
 	*frames_remaining = (frame_count > 1) ? (frame_count - 1) : 0;
@@ -414,14 +377,14 @@ static uint32_t eth_esp32_receive_frame(struct eth_esp32_dev_data *dev_data, uin
 		buf += CONFIG_ETH_ESP32_DMA_BUFFER_SIZE;
 		remaining -= CONFIG_ETH_ESP32_DMA_BUFFER_SIZE;
 		desc_iter->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
-		desc_iter = rx_desc_next(dev_data, desc_iter);
+		desc_iter = rx_desc_next(desc_iter);
 	}
 	memcpy(buf, ADDR_DMA_TO_CPU(desc_iter->Buffer1Addr), remaining);
 
 	/* Return descriptors including any that held CRC */
 	while (!desc_iter->RDES0.LastDescriptor) {
 		desc_iter->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
-		desc_iter = rx_desc_next(dev_data, desc_iter);
+		desc_iter = rx_desc_next(desc_iter);
 	}
 
 #if defined(CONFIG_PTP_CLOCK_ESP32)
@@ -441,7 +404,7 @@ static uint32_t eth_esp32_receive_frame(struct eth_esp32_dev_data *dev_data, uin
 
 	desc_iter->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
 
-	dev_data->rx_desc = rx_desc_next(dev_data, desc_iter);
+	dev_data->rx_desc = rx_desc_next(desc_iter);
 	emac_hal_receive_poll_demand(&dev_data->hal);
 
 	return copy_len;
@@ -750,16 +713,6 @@ int eth_esp32_initialize(const struct device *dev)
 					  EMAC_LL_INTR_TRANSMIT_ENABLE |
 						  EMAC_LL_INTR_RECEIVE_BUFF_UNAVAILABLE_ENABLE |
 						  EMAC_LL_INTR_ABNORMAL_SUMMARY_ENABLE);
-
-	/*
-	 * The HAL sets desc_skip_len=0 assuming 32-byte descriptors.
-	 * On SoCs with cache-aligned descriptors (64B on P4), tell
-	 * the DMA to skip the padding between descriptors.
-	 */
-	if (EMAC_HAL_DMA_DESC_SIZE > 32) {
-		emac_ll_set_desc_skip_len(dev_data->hal.dma_regs,
-					  (EMAC_HAL_DMA_DESC_SIZE - 32) / 4);
-	}
 
 	res = generate_mac_addr(dev_data->mac_addr);
 	if (res != 0) {
