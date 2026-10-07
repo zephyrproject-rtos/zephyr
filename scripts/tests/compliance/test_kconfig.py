@@ -32,7 +32,7 @@ def board_tree(compliance, monkeypatch, tmp_path):
         tree = tmp_path / 'zephyr'
         (tree / 'scripts').mkdir(parents=True)
         (tree / 'scripts' / 'kconfig').symlink_to(ZEPHYR_BASE / 'scripts' / 'kconfig')
-        (tree / 'Kconfig.constants').write_text('')
+        (tree / 'Kconfig.constants').write_text((ZEPHYR_BASE / 'Kconfig.constants').read_text())
         monkeypatch.setattr(compliance, 'ZEPHYR_BASE', tree)
         monkeypatch.setenv('ZEPHYR_BASE', str(tree))
         monkeypatch.setenv('srctree', str(tree))
@@ -207,3 +207,25 @@ def test_board_model_matches_build_symbols(compliance, monkeypatch, tmp_path, bo
         for symbol in symbols:
             assert symbol in model.syms
             assert model.syms[symbol].type == kconfiglib.BOOL
+
+
+@pytest.mark.parametrize('filename', ['Kconfig', 'Kconfig.test'])
+@pytest.mark.parametrize('property_name', ['default', 'range'])
+@pytest.mark.parametrize('value', ['255', '$(UINT8_MAX)'])
+@pytest.mark.parametrize('typed', [False, True], ids=['valid', 'invalid'])
+def test_board_helper_constants(compliance, board_tree, filename, property_name, value, typed):
+    _, board_dir, _ = board_tree()
+    property_value = value if property_name == 'default' else f'0 {value}'
+    definition = '\tbool\n' if typed else '\tdefault y\n'
+    (board_dir / filename).write_text(
+        f'config LOCAL_LIMIT\n\tint\n\t{property_name} {property_value}\n\n'
+        f'config BOARD_TEST\n{definition}'
+    )
+
+    check = compliance.KconfigBasicNoModulesCheck()
+    check.check_redefined_board_kconfigs()
+
+    assert len(check.fmtd_failures) == int(typed)
+    if typed:
+        symbol = 'BOARD_TEST'
+        assert f'CONFIG_{symbol}' in check.fmtd_failures[0].text
