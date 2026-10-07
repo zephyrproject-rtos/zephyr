@@ -6,6 +6,7 @@
 
 #include <zephyr/drivers/video.h>
 #include <zephyr/video/video.h>
+#include <zephyr/dt-bindings/video/video-interfaces.h>
 #include <zephyr/ztest.h>
 
 const struct device *rx_dev = DEVICE_DT_GET(DT_NODELABEL(test_video_emul_rx));
@@ -135,12 +136,29 @@ ZTEST(video_common, test_video_frmival)
 ZTEST(video_common, test_video_ctrl)
 {
 	struct video_control ctrl = {.id = VIDEO_CID_PRIVATE_BASE + 0x01, .val = 30};
+	int64_t link_freq = 0;
+	int ret;
 
 	/* Emulated vendor specific control, expected to be supported by all imagers */
 	zexpect_ok(video_set_ctrl(imager_dev, &ctrl));
 	ctrl.val = 0;
 	zexpect_ok(video_get_ctrl(imager_dev, &ctrl));
 	zexpect_equal(ctrl.val, 30);
+
+	/* Test that the link frequency is accurate */
+	ret = video_get_link_freq(imager_dev, &link_freq, VIDEO_BUS_TYPE_CSI2_DPHY, 0, 2);
+	zexpect_ok(ret);
+	zexpect_equal(link_freq, MHZ(72));
+
+	/* Test that the link frequency is accurate */
+	ret = video_get_link_freq(imager_dev, &link_freq, VIDEO_BUS_TYPE_PARALLEL, 0, 8);
+	zexpect_ok(ret);
+	zexpect_equal(link_freq, MHZ(72));
+
+	/* Test the error paths */
+	ret = video_get_link_freq(imager_dev, &link_freq, VIDEO_BUS_TYPE_PARALLEL, 0, 8);
+	zexpect_ok(ret);
+	zexpect_equal(link_freq, MHZ(72));
 }
 
 ZTEST(video_common, test_video_vbuf)
