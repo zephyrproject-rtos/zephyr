@@ -35,4 +35,22 @@ int wifi_ncp_sta_scan_abort(void *if_priv);
 
 int wifi_ncp_sta_get_scan_results(void *if_priv);
 
+int wifi_ncp_sta_associate(void *if_priv, struct wpa_driver_associate_params *params);
+
+int wifi_ncp_sta_deauthenticate(void *if_priv, const char *addr, unsigned short reason_code);
+
+int wifi_ncp_sta_set_key(void *if_priv, const unsigned char *ifname, enum wpa_alg alg,
+			 const unsigned char *addr, int key_idx, int set_tx,
+			 const unsigned char *seq, size_t seq_len, const unsigned char *key,
+			 size_t key_len, enum key_flag key_flag);
+
+int wifi_ncp_sta_set_supp_port(void *if_priv, int authorized, char *bssid);
+
+int wifi_ncp_sta_tx_control_port(void *if_priv, const unsigned char *dest, unsigned short proto,
+				 const unsigned char *buf, size_t len, int no_encrypt);
+
+int wifi_ncp_sta_signal_poll(void *if_priv, struct wpa_signal_info *si, unsigned char *bssid);
+
+int wifi_ncp_sta_get_conn_info(void *if_priv, struct wpa_conn_info *info);
+
 #endif /* ZEPHYR_DRIVERS_WIFI_SILABS_NCP_WIFI_NCP_STA_H_ */
