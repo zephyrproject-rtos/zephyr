@@ -225,6 +225,14 @@
 			status = "disabled";
 		};
 
+		sdm0: sdm@3f404f00 {
+			compatible = "espressif,esp32-sdm";
+			reg = <0x3f404f00 0x40>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		gpio0: gpio@3f404000 {
 			compatible = "espressif,esp32-gpio";
 			gpio-controller;

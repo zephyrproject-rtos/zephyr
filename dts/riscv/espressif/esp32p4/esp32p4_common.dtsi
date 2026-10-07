@@ -425,6 +425,14 @@
 			status = "disabled";
 		};
 
+		sdm0: sdm@500e0f00 {
+			compatible = "espressif,esp32-sdm";
+			reg = <0x500e0f00 0x40>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		twai0: can@500d7000 {
 			compatible = "espressif,esp32-twai";
 			reg = <0x500d7000 DT_SIZE_K(4)>;
