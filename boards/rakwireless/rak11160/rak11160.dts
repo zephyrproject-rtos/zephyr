@@ -9,7 +9,7 @@
 #include <st/wl/stm32wle5ccux-pinctrl.dtsi>
 
 / {
-	compatible = "stm32,rak11160_stm32wl";
+	compatible = "rakwireless,rak11160";
 	model = "RAKWireless RAK11160 WisDuo LPWAN Module";
 
 	chosen {
