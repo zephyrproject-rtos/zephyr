@@ -55,6 +55,12 @@ Bluetooth
 Networking
 **********
 
+* For ``AF_UNSPEC`` lookups, :c:func:`zsock_getaddrinfo` now returns IPv6 addresses before IPv4
+  ones, unless only the IPv4 addresses are reachable, and queries AAAA records before A records.
+  Applications that use the first result now connect over IPv6 where they used IPv4. Enable
+  :kconfig:option:`CONFIG_NET_SOCKETS_DNS_PREFER_IPV4` to keep IPv4 first, for example with
+  offloaded network interfaces, where reachability cannot be determined.
+
 Other subsystems
 ****************
 
