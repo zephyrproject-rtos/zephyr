@@ -10,6 +10,20 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/logging/log.h>
 
+#ifdef CONFIG_CLOCK_CONTROL_TISCI
+#include <zephyr/drivers/clock_control/tisci_clock_control.h>
+#endif
+
+#ifdef CONFIG_CLOCK_CONTROL_MSPM0
+#include <zephyr/drivers/clock_control/mspm0_clock_control.h>
+#endif
+
+#ifdef CONFIG_COUNTER_TI_AM3352_EQEP_VARIANT_AM13
+#include <zephyr/drivers/mux.h>
+#include <zephyr/dt-bindings/counter/ti_am3352_eqep.h>
+
+#endif
+
 LOG_MODULE_REGISTER(ti_eqep);
 
 #define DT_DRV_COMPAT ti_am3352_eqep
@@ -39,6 +53,10 @@ struct ti_eqep_regs {
 	uint8_t RESERVED_4[0x4];    /**< Reserved, offset: 0x3A - 0x3E */
 	volatile uint16_t QCTLAT;   /**< QEP Capture Timer Latch Register, offset: 0x3E */
 	volatile uint16_t QCPRDLAT; /**< QEP Capture Period Latch Register, offset: 0x40 */
+#ifdef CONFIG_COUNTER_TI_AM3352_EQEP_VARIANT_AM13
+	uint8_t RESERVED_5[0x2A];   /**< Reserved, offset: 0x42 - 0x6C */
+	volatile uint32_t QEPSRCSEL; /**< QEP Source Select, offset: 0x6C */
+#endif
 };
 
 /* Quadrature Decoder Control Register */
@@ -47,14 +65,14 @@ struct ti_eqep_regs {
 #define TI_EQEP_QDECCTL_SWAP BIT(10)
 
 /* QEP Control Register */
-#define TI_EQEP_QEPCTL_PCRM     GENMASK(13, 12)
-#define TI_EQEP_QEPCTL_PCRM_MAX (0x1)
-#define TI_EQEP_QEPCTL_SWI      BIT(7)
-#define TI_EQEP_QEPCTL_SEL      BIT(6)
-#define TI_EQEP_QEPCTL_IEL      GENMASK(5, 4)
-#define TI_EQEP_QEPCTL_QPEN     BIT(3)
-#define TI_EQEP_QEPCTL_QCLM     BIT(2)
-#define TI_EQEP_QEPCTL_UTE      BIT(1)
+#define TI_EQEP_QEPCTL_PCRM      GENMASK(13, 12)
+#define TI_EQEP_QEPCTL_PCRM_MAX  (0x1)
+#define TI_EQEP_QEPCTL_SWI       BIT(7)
+#define TI_EQEP_QEPCTL_SEL       BIT(6)
+#define TI_EQEP_QEPCTL_IEL       GENMASK(5, 4)
+#define TI_EQEP_QEPCTL_QPEN      BIT(3)
+#define TI_EQEP_QEPCTL_QCLM      BIT(2)
+#define TI_EQEP_QEPCTL_UTE       BIT(1)
 
 /* Position Compare Control Register */
 #define TI_EQEP_QPOSCTL_PCSHDW BIT(15)
@@ -70,6 +88,12 @@ struct ti_eqep_regs {
 #define TI_EQEP_QCAPCTL_CCPS GENMASK(6, 4)
 #define TI_EQEP_QCAPCTL_UPPS GENMASK(3, 0)
 
+#ifdef CONFIG_COUNTER_TI_AM3352_EQEP_VARIANT_AM13
+#define TI_EQEP_QEPSRCSEL_QEPASEL GENMASK(3, 0)
+#define TI_EQEP_QEPSRCSEL_QEPBSEL GENMASK(7, 4)
+#define TI_EQEP_QEPSRCSEL_QEPISEL GENMASK(11, 8)
+#endif
+
 /* Interrupt Types - used in multiple registers */
 #define TI_EQEP_INT_UTOI BIT(11) /* Timeout Event */
 #define TI_EQEP_INT_IELI BIT(10) /* Index Event */
@@ -84,6 +108,13 @@ struct ti_eqep_regs {
 #define DEV_DATA(dev) ((struct ti_eqep_data *)(dev)->data)
 #define DEV_REGS(dev) ((struct ti_eqep_regs *)DEVICE_MMIO_NAMED_GET(dev, base))
 
+#ifdef CONFIG_COUNTER_TI_AM3352_EQEP_VARIANT_AM13
+struct ti_eqep_mux_entry {
+	const struct device *dev;
+	const struct mux_state *state;
+};
+#endif
+
 struct ti_eqep_cfg {
 	struct counter_config_info info;
 
@@ -92,6 +123,14 @@ struct ti_eqep_cfg {
 	clock_control_subsys_t clock_subsys;
 	const struct pinctrl_dev_config *pcfg;
 	void (*irq_config_func)();
+#ifdef CONFIG_COUNTER_TI_AM3352_EQEP_VARIANT_AM13
+	const struct ti_eqep_mux_entry *mux_entries;
+	uint8_t mux_entries_count;
+	bool has_src_select;
+	uint8_t qepa_src;
+	uint8_t qepb_src;
+	uint8_t qepi_src;
+#endif
 };
 
 struct ti_eqep_data {
@@ -415,6 +454,32 @@ static int ti_eqep_init(const struct device *dev)
 		return ret;
 	}
 
+#ifdef CONFIG_COUNTER_TI_AM3352_EQEP_VARIANT_AM13
+	for (uint8_t i = 0; i < cfg->mux_entries_count; i++) {
+		const struct ti_eqep_mux_entry *entry = &cfg->mux_entries[i];
+
+		if (!device_is_ready(entry->dev)) {
+			LOG_ERR("xbar device not ready");
+			return -ENODEV;
+		}
+
+		ret = mux_state_apply(entry->dev, entry->state);
+		if (ret < 0) {
+			LOG_ERR("failed to apply mux state %d: %d", i, ret);
+			return ret;
+		}
+	}
+
+	if (cfg->has_src_select) {
+		regs->QEPSRCSEL = (regs->QEPSRCSEL &
+				   ~(TI_EQEP_QEPSRCSEL_QEPASEL | TI_EQEP_QEPSRCSEL_QEPBSEL |
+				     TI_EQEP_QEPSRCSEL_QEPISEL)) |
+				  FIELD_PREP(TI_EQEP_QEPSRCSEL_QEPASEL, cfg->qepa_src) |
+				  FIELD_PREP(TI_EQEP_QEPSRCSEL_QEPBSEL, cfg->qepb_src) |
+				  FIELD_PREP(TI_EQEP_QEPSRCSEL_QEPISEL, cfg->qepi_src);
+	}
+#endif /* CONFIG_COUNTER_TI_AM3352_EQEP_VARIANT_AM13 */
+
 	/* irq connect */
 	cfg->irq_config_func();
 
@@ -435,7 +500,11 @@ static void ti_eqep_isr(const struct device *dev)
 	struct ti_eqep_regs *regs = DEV_REGS(dev);
 	struct ti_eqep_data *data = DEV_DATA(dev);
 	uint16_t flg = regs->INTFLG;
+	uint16_t unknown = flg & ~(TI_EQEP_INT_PCOI | TI_EQEP_INT_PCUI | TI_EQEP_INT_PCMI |
+				    TI_EQEP_INT_SELI | TI_EQEP_INT_IELI | TI_EQEP_INT_UTOI |
+				    TI_EQEP_INT_GLOB);
 
+	/* Service every pending flag; multiple events can be set together. */
 	if (flg & (TI_EQEP_INT_PCOI | TI_EQEP_INT_PCUI)) {
 		if (data->top_callback) {
 			data->top_callback(dev, data->top_user_data);
@@ -443,7 +512,9 @@ static void ti_eqep_isr(const struct device *dev)
 
 		/* clear overflow/underflow */
 		regs->INTCLR |= (TI_EQEP_INT_PCOI | TI_EQEP_INT_PCUI);
-	} else if (flg & TI_EQEP_INT_PCMI) {
+	}
+
+	if (flg & TI_EQEP_INT_PCMI) {
 		enum ti_eqep_alarm_channel chan = TI_EQEP_ALARM_CHAN_COMPARE;
 		counter_alarm_callback_t cb = data->alarm_callback[chan];
 		void *user_data = data->alarm_user_data[chan];
@@ -460,7 +531,9 @@ static void ti_eqep_isr(const struct device *dev)
 
 		/* clear compare interrupt */
 		regs->INTCLR |= TI_EQEP_INT_PCMI;
-	} else if (flg & TI_EQEP_INT_SELI) {
+	}
+
+	if (flg & TI_EQEP_INT_SELI) {
 		enum ti_eqep_alarm_channel chan = TI_EQEP_ALARM_CHAN_STROBE;
 		counter_alarm_callback_t cb = data->alarm_callback[chan];
 		void *user_data = data->alarm_user_data[chan];
@@ -474,7 +547,9 @@ static void ti_eqep_isr(const struct device *dev)
 
 		/* clear strobe interrupt */
 		regs->INTCLR |= TI_EQEP_INT_SELI;
-	} else if (flg & TI_EQEP_INT_IELI) {
+	}
+
+	if (flg & TI_EQEP_INT_IELI) {
 		enum ti_eqep_alarm_channel chan = TI_EQEP_ALARM_CHAN_INDEX;
 		counter_alarm_callback_t cb = data->alarm_callback[chan];
 		void *user_data = data->alarm_user_data[chan];
@@ -488,7 +563,9 @@ static void ti_eqep_isr(const struct device *dev)
 
 		/* clear index interrupt */
 		regs->INTCLR |= TI_EQEP_INT_IELI;
-	} else if (flg & TI_EQEP_INT_UTOI) {
+	}
+
+	if (flg & TI_EQEP_INT_UTOI) {
 		enum ti_eqep_alarm_channel chan = TI_EQEP_ALARM_CHAN_TIMEOUT;
 		counter_alarm_callback_t cb = data->alarm_callback[chan];
 		void *user_data = data->alarm_user_data[chan];
@@ -502,10 +579,12 @@ static void ti_eqep_isr(const struct device *dev)
 
 		/* clear timeout interrupt */
 		regs->INTCLR |= TI_EQEP_INT_UTOI;
-	} else {
-		LOG_ERR("unknown interrupt %u encountered, clearing", flg);
+	}
 
-		regs->INTCLR |= flg;
+	if (unknown != 0U) {
+		LOG_ERR("unknown interrupt %u encountered, clearing", unknown);
+
+		regs->INTCLR |= unknown;
 	}
 
 	/* clear global interrupt */
@@ -639,15 +718,62 @@ int z_impl_ti_eqep_get_latched_capture_values(const struct device *dev, uint32_t
 	), (COND_CODE_1(CONFIG_CLOCK_CONTROL_ARM_SCMI,                                             \
 		(static const clock_control_subsys_t ti_eqep_clk_subsys_##n =                      \
 			(clock_control_subsys_t)DT_INST_PHA(n, clocks, name);                      \
-	), (BUILD_ASSERT(0, "Unsupported clock controller");))))
+	), (COND_CODE_1(CONFIG_CLOCK_CONTROL_MSPM0,                                                \
+		(static const struct mspm0_sys_clock ti_eqep_mspm0_sys_clock_##n =                \
+			MSPM0_CLOCK_SUBSYS_FN(n);                                                  \
+		static const clock_control_subsys_t ti_eqep_clk_subsys_##n =                     \
+			(clock_control_subsys_t)&ti_eqep_mspm0_sys_clock_##n;                     \
+	), (BUILD_ASSERT(0, "Unsupported clock controller");))))))
+
+#ifdef CONFIG_COUNTER_TI_AM3352_EQEP_VARIANT_AM13
+#define TI_EQEP_MUX_ENTRY(node_id, prop, idx)                                                      \
+	{                                                                                          \
+		.dev = MUX_STATE_DT_DEV_GET_BY_IDX(node_id, idx),                                  \
+		.state = MUX_STATE_DT_GET_BY_IDX(node_id, idx),                                    \
+	}
+
+#define TI_EQEP_MUX_ENTRIES_DEFINE(n)                                                              \
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, mux_states),                                          \
+		   (MUX_STATE_DT_INST_SPEC_DEFINE_ALL(n);                                         \
+		    static const struct ti_eqep_mux_entry ti_eqep_mux_entries_##n[] = {          \
+			    DT_INST_FOREACH_PROP_ELEM_SEP(n, mux_states, TI_EQEP_MUX_ENTRY,      \
+							   (,))};))
+
+#define TI_EQEP_MUX_ENTRIES_INIT(n)                                                                \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, mux_states),                                         \
+		    (.mux_entries = ti_eqep_mux_entries_##n,                                      \
+		     .mux_entries_count = ARRAY_SIZE(ti_eqep_mux_entries_##n),), ())
+
+#define TI_EQEP_HAS_SRC_SELECT(n)                                                                  \
+	UTIL_OR(DT_INST_NODE_HAS_PROP(n, mux_states),                                             \
+	UTIL_OR(DT_INST_NODE_HAS_PROP(n, ti_qepa_src),                                             \
+	UTIL_OR(DT_INST_NODE_HAS_PROP(n, ti_qepb_src),                                             \
+		DT_INST_NODE_HAS_PROP(n, ti_qepi_src))))
+
+#define TI_EQEP_SRC_SELECT_INIT(n)                                                                 \
+	COND_CODE_1(TI_EQEP_HAS_SRC_SELECT(n),                                                     \
+		    (.has_src_select = true,                                                      \
+		     .qepa_src = DT_INST_PROP_OR(n, ti_qepa_src, TI_EQEP_SRC_INPUT_XBAR),         \
+		     .qepb_src = DT_INST_PROP_OR(n, ti_qepb_src, TI_EQEP_SRC_INPUT_XBAR),         \
+		     .qepi_src = DT_INST_PROP_OR(n, ti_qepi_src, TI_EQEP_SRC_INPUT_XBAR),), ())
+
+#else /* !CONFIG_COUNTER_TI_AM3352_EQEP_VARIANT_AM13 */
+#define TI_EQEP_MUX_ENTRIES_DEFINE(n)
+#define TI_EQEP_MUX_ENTRIES_INIT(n)
+#define TI_EQEP_SRC_SELECT_INIT(n)
+#endif /* CONFIG_COUNTER_TI_AM3352_EQEP_VARIANT_AM13 */
 
 #define TI_EQEP_INIT(n)                                                                            \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	TI_EQEP_DEFINE_CLK_SUBSYS(n);                                                              \
+	TI_EQEP_MUX_ENTRIES_DEFINE(n);                                                             \
 	static void ti_eqep_irq_config_func_##n(void)                                              \
 	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), ti_eqep_isr,                \
-			    DEVICE_DT_INST_GET(n), DT_INST_IRQ(n, flags));                         \
+		IRQ_CONNECT(                                                                       \
+			DT_INST_IRQN(n), DT_INST_IRQ(n, priority), ti_eqep_isr,                    \
+			DEVICE_DT_INST_GET(n),                                                     \
+			COND_CODE_1(DT_INST_IRQ_HAS_CELL(n, flags),                            \
+					(DT_INST_IRQ(n, flags)), (0)));    \
 		irq_enable(DT_INST_IRQN(n));                                                       \
 	}                                                                                          \
 	static struct ti_eqep_cfg ti_eqep_config_##n = {                                           \
@@ -661,7 +787,8 @@ int z_impl_ti_eqep_get_latched_capture_values(const struct device *dev, uint32_t
 		.clock_subsys = ti_eqep_clk_subsys_##n,                                            \
 		.irq_config_func = ti_eqep_irq_config_func_##n,                                    \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-	};                                                                                         \
+		TI_EQEP_MUX_ENTRIES_INIT(n)                                                        \
+		TI_EQEP_SRC_SELECT_INIT(n)};                                                           \
                                                                                                    \
 	static struct ti_eqep_data ti_eqep_data_##n;                                               \
                                                                                                    \

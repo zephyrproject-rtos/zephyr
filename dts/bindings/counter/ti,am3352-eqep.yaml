@@ -1,9 +1,38 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 Texas Instruments
 # SPDX-License-Identifier: Apache-2.0
 
-description: TI Enhanced Quadrature Encoder Pulse based counter
+description: |
+  TI Enhanced Quadrature Encoder Pulse based counter
 
-include: [base.yaml, pinctrl-device.yaml]
+  On SoCs where the EQEP inputs are reachable only through a crossbar
+  (e.g. AM13E), reference the Input X-BAR via "mux-states" instead of
+  adding SoC-specific pinmux logic to this driver. Each EQEP input is
+  hard-wired to a fixed Input X-BAR channel (EQEP0A = INPUT17 / channel
+  16, and so on); the board or overlay routes a GPIO into that channel
+  and names the entry:
+
+    &eqep0 {
+            pinctrl-0 = <&gpio_pb11>;
+            pinctrl-names = "default";
+
+            /* PB11 (GPIO43) -> INPUTXBAR17 (ch 16) -> EQEP0A */
+            mux-states = <&xbar1 16 AM13E230_XBAR_IN_STATE(43, 1)>;
+            mux-state-names = "qepa";
+    };
+
+  Presence of "mux-states" also selects the Input X-BAR as the EQEP
+  source in QEPSRCSEL (AM13E-only), since that mux is internal to the
+  EQEP and separate from the crossbar itself.
+
+  QEPA/QEPB/QEPI can instead be sourced from an on-chip comparator or
+  the PWM crossbar (AM13E-only); these need no pinctrl or mux entry,
+  so set the QEPSRCSEL field directly:
+
+    &eqep0 {
+            ti,qepa-src = <TI_EQEP_SRC_CMPSS1>;
+    };
+
+include: [base.yaml, pinctrl-device.yaml, mux-consumer.yaml]
 
 compatible: "ti,am3352-eqep"
 
@@ -13,3 +42,23 @@ properties:
 
   interrupts:
     required: true
+
+  ti,qepa-src:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    description: |
+      QEPSRCSEL.QEPASEL value (AM13E-only): Input X-BAR (0, default),
+      CMPSS0-3 CTRIPH (1-4), or PWMXBAR1-8 (5-12). See
+      include/zephyr/dt-bindings/counter/ti_am3352_eqep.h and TRM
+      Table 25-1. When "mux-states" names a "qepa" entry and this
+      property is absent, 0 (Input X-BAR) is used.
+
+  ti,qepb-src:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    description: QEPSRCSEL.QEPBSEL value (AM13E-only). See ti,qepa-src.
+
+  ti,qepi-src:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    description: QEPSRCSEL.QEPISEL value (AM13E-only). See ti,qepa-src.
