@@ -665,6 +665,8 @@ class SPDX3Serializer:
                     hash_obj.algorithm = spdx.HashAlgorithm.sha1
                 elif hash_type == "SHA256":
                     hash_obj.algorithm = spdx.HashAlgorithm.sha256
+                elif hash_type == "SHA512":
+                    hash_obj.algorithm = spdx.HashAlgorithm.sha512
                 elif hash_type == "MD5":
                     hash_obj.algorithm = spdx.HashAlgorithm.md5
                 else:
