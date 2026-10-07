@@ -62,35 +62,19 @@ K_TIMER_DEFINE(smp_raw_uart_input_timer, smp_raw_uart_input_timeout_handler, NUL
 #endif
 
 /**
- * Processes a single line (fragment) coming from the MCUmgr UART driver.
+ * Processes received data up to the end of the current packet, returning the number of bytes used.
  */
-static void smp_raw_uart_process_frag(struct uart_mcumgr_rx_buf *rx_buf)
+static size_t smp_raw_uart_process_data(const uint8_t *data, size_t len)
 {
 	struct net_buf *nb;
+	size_t consumed;
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT
-	bool first_receive = true;
-
-	if (clear_buffer == true) {
-		if (mcumgr_raw_uart_rx_ctxt.nb != NULL) {
-			smp_packet_free(mcumgr_raw_uart_rx_ctxt.nb);
-			mcumgr_raw_uart_rx_ctxt.nb = NULL;
-		}
-
-		clear_buffer = false;
-	} else if (mcumgr_raw_uart_rx_ctxt.nb != NULL) {
-		first_receive = false;
-	} else {
-		/* Empty else that does nothing to stop a code checker pointlessly complaining. */
-	}
+	bool first_receive = (mcumgr_raw_uart_rx_ctxt.nb == NULL);
 #endif
 
-	/* Decode the fragment and write the result to the global receive context. */
-	nb = mcumgr_serial_process_frag(&mcumgr_raw_uart_rx_ctxt,
-					rx_buf->data, rx_buf->length);
-
-	/* Release the encoded fragment. */
-	uart_mcumgr_free_rx_buf(rx_buf);
+	/* Decode up to the end of the current packet into the global receive context. */
+	nb = mcumgr_serial_process_raw(&mcumgr_raw_uart_rx_ctxt, data, len, &consumed);
 
 	/* If a complete packet has been received, pass it to SMP for processing. */
 	if (nb != NULL) {
@@ -113,6 +97,39 @@ static void smp_raw_uart_process_frag(struct uart_mcumgr_rx_buf *rx_buf)
 	} else {
 		/* Empty else that does nothing to stop a code checker pointlessly complaining. */
 	}
+
+	return consumed;
+}
+
+/**
+ * Processes a buffer of data coming from the MCUmgr UART driver. A buffer can complete several
+ * packets.
+ */
+static void smp_raw_uart_process_frag(struct uart_mcumgr_rx_buf *rx_buf)
+{
+	const uint8_t *data = rx_buf->data;
+	size_t len = rx_buf->length;
+	size_t consumed;
+
+#ifdef CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT
+	if (clear_buffer == true) {
+		if (mcumgr_raw_uart_rx_ctxt.nb != NULL) {
+			smp_packet_free(mcumgr_raw_uart_rx_ctxt.nb);
+			mcumgr_raw_uart_rx_ctxt.nb = NULL;
+		}
+
+		clear_buffer = false;
+	}
+#endif
+
+	while (len > 0) {
+		consumed = smp_raw_uart_process_data(data, len);
+		data += consumed;
+		len -= consumed;
+	}
+
+	/* Release the received data. */
+	uart_mcumgr_free_rx_buf(rx_buf);
 }
 
 static uint16_t smp_raw_uart_get_mtu(const struct net_buf *nb)
