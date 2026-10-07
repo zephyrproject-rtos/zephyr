@@ -59,8 +59,6 @@ LOG_MODULE_REGISTER(flash_stm32_qspi, CONFIG_FLASH_LOG_LEVEL);
 
 #define STM32_QSPI_UNKNOWN_MODE (0xFF)
 
-#define STM32_QSPI_USE_DMA DT_NODE_HAS_PROP(DT_INST_PARENT(0), dmas)
-
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_qspi_nor)
 
 /* In dual-flash mode, total size is twice the size of one flash component */
@@ -317,7 +315,7 @@ static int qspi_read_access(const struct device *dev, QSPI_CommandTypeDef *cmd,
 		return -EIO;
 	}
 
-#if STM32_QSPI_USE_DMA
+#if CONFIG_QSPI_STM32_DMA
 	hal_ret = HAL_QSPI_Receive_DMA(&dev_data->hqspi, data);
 #else
 	hal_ret = HAL_QSPI_Receive_IT(&dev_data->hqspi, data);
@@ -353,7 +351,7 @@ static int qspi_write_access(const struct device *dev, QSPI_CommandTypeDef *cmd,
 		return -EIO;
 	}
 
-#if STM32_QSPI_USE_DMA
+#if CONFIG_QSPI_STM32_DMA
 	hal_ret = HAL_QSPI_Transmit_DMA(&dev_data->hqspi, (uint8_t *)data);
 #else
 	hal_ret = HAL_QSPI_Transmit_IT(&dev_data->hqspi, (uint8_t *)data);
@@ -928,7 +926,7 @@ static void flash_stm32_qspi_isr(const struct device *dev)
 }
 
 /* This function is executed in the interrupt context */
-#if STM32_QSPI_USE_DMA
+#if CONFIG_QSPI_STM32_DMA
 static void qspi_dma_callback(const struct device *dev, void *arg,
 			 uint32_t channel, int status)
 {
@@ -1517,7 +1515,7 @@ static int flash_stm32_qspi_init(const struct device *dev)
 #if STM32_QSPI_RESET_GPIO
 	flash_stm32_qspi_gpio_reset(dev);
 #endif
-#if STM32_QSPI_USE_DMA
+#if CONFIG_QSPI_STM32_DMA
 	/*
 	 * DMA configuration
 	 * Due to use of QSPI HAL API in current driver,
@@ -1558,7 +1556,7 @@ static int flash_stm32_qspi_init(const struct device *dev)
 		return -EIO;
 	}
 
-#endif /* STM32_QSPI_USE_DMA */
+#endif /* CONFIG_QSPI_STM32_DMA */
 
 	/* Clock configuration */
 	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
