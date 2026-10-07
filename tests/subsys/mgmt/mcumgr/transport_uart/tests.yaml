@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - mcumgr
+    - transport_uart
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+tests:
+  mgmt.mcumgr.transport.uart.chosen:
+    extra_args: DTC_OVERLAY_FILE="chosen.overlay"
+    extra_configs:
+      - CONFIG_BASE64=y
+      - CONFIG_CRC=y
+      - CONFIG_MCUMGR_TRANSPORT_UART=y
+  mgmt.mcumgr.transport.uart.chosen.async:
+    extra_args: DTC_OVERLAY_FILE="chosen.overlay"
+    extra_configs:
+      - CONFIG_BASE64=y
+      - CONFIG_CRC=y
+      - CONFIG_MCUMGR_TRANSPORT_UART=y
+      - CONFIG_UART_ASYNC_API=y
+      - CONFIG_MCUMGR_TRANSPORT_UART_ASYNC=y
+  mgmt.mcumgr.transport.uart.chosen.raw:
+    extra_args: DTC_OVERLAY_FILE="chosen.overlay"
+    extra_configs:
+      - CONFIG_UART_MCUMGR_RAW_PROTOCOL=y
+      - CONFIG_MCUMGR_TRANSPORT_RAW_UART=y
+      - CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT=y
+      - CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT_TIME_MS=50
+  mgmt.mcumgr.transport.uart.chosen.raw.async:
+    extra_args: DTC_OVERLAY_FILE="chosen.overlay"
+    extra_configs:
+      - CONFIG_UART_MCUMGR_RAW_PROTOCOL=y
+      - CONFIG_MCUMGR_TRANSPORT_RAW_UART=y
+      - CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT=y
+      - CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT_TIME_MS=50
+      - CONFIG_UART_ASYNC_API=y
+      - CONFIG_MCUMGR_TRANSPORT_UART_ASYNC=y

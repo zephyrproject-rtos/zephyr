@@ -1,0 +1,21 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,uart-mcumgr = &euart0;
+	};
+
+	euart0: uart-emul0 {
+		compatible = "zephyr,uart-emul";
+		status = "okay";
+		current-speed = <0>;
+		rx-fifo-size = <1024>;
+		tx-fifo-size = <1024>;
+		/* Return up to 32 bytes per FIFO read, so data reaches the driver in chunks */
+		latch-buffer-size = <32>;
+	};
+};
