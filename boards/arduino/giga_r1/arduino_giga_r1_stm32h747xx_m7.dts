@@ -69,11 +69,13 @@
 };
 
 &pll2 {
+	status = "okay";
 	clocks = <&clk_hse>;
+	/* PLL2_R = 16 MHz / 4 * 100 / 2 = 200 MHz for the FMC kernel clock. */
 	div-m = <4>;
-	mul-n = <50>;
-	div-p = <50>;
-	div-q = <2>;
+	mul-n = <100>;
+	div-p = <100>;
+	div-q = <4>;
 	div-r = <2>;
 };
 
@@ -230,6 +232,8 @@
 
 &fmc {
 	status = "okay";
+	clocks = <&rcc STM32_CLOCK(AHB3, 12)>,
+		 <&rcc STM32_SRC_PLL2_R FMC_SEL(2)>;
 	pinctrl-0 = <&fmc_nbl0_pe0 &fmc_nbl1_pe1
 		     &fmc_sdclk_pg8 &fmc_sdnwe_ph5 &fmc_sdcke0_ph2
 		     &fmc_sdne0_ph3 &fmc_sdnras_pf11 &fmc_sdncas_pg15
@@ -246,10 +250,15 @@
 	sdram {
 		status = "okay";
 
-		power-up-delay = <100>;
+		power-up-delay = <200>;
 		num-auto-refresh = <8>;
 		mode-register = <0x220>;
-		refresh-rate = <603>;
+		/*
+		 * AS4C4M16SA-6 requires 4096 refreshes per 64 ms (tREFI <= 15.6 us).
+		 * SDCLK = PLL2_R / 2 = 100 MHz. The STM32 refresh counter is
+		 * COUNT = 15.6 us * 100 MHz - 20 = 1540.
+		 */
+		refresh-rate = <1540>;
 
 		bank@0 {
 			reg = <0>;
@@ -261,7 +270,7 @@
 					    STM32_FMC_SDRAM_SDCLK_PERIOD_2
 					    STM32_FMC_SDRAM_RBURST_ENABLE
 					    STM32_FMC_SDRAM_RPIPE_0>;
-			st,sdram-timing = <2 6 4 6 2 2 2>;
+			st,sdram-timing = <2 7 5 6 2 2 3>;
 		};
 	};
 };
