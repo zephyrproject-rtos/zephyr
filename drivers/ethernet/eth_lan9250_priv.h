@@ -69,6 +69,7 @@
 
 /* LAN9250 PHY registers */
 #define LAN9250_PHY_BASIC_CONTROL            0x00
+#define LAN9250_PHY_BASIC_STATUS             0x01
 #define LAN9250_PHY_AN_ADV                   0x04
 #define LAN9250_PHY_SPECIAL_MODES            0x12
 #define LAN9250_PHY_SPECIAL_CONTROL_STAT_IND 0x1B
@@ -256,6 +257,9 @@
 #define LAN9250_PHY_BASIC_CONTROL_PHY_RST_AN        0x0200
 #define LAN9250_PHY_BASIC_CONTROL_PHY_DUPLEX        0x0100
 #define LAN9250_PHY_BASIC_CONTROL_PHY_COL_TEST      0x0080
+
+/* PHY Basic Status Register (PHY_BASIC_STATUS) */
+#define LAN9250_PHY_BASIC_STATUS_LINK_STATUS 0x0004
 
 /* PHY Auto-Negotiation Advertisement Register (PHY_AN_ADV) */
 #define LAN9250_PHY_AN_ADV_NEXT_PAGE          0x8000

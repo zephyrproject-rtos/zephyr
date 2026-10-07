@@ -725,6 +725,92 @@ static void lan9250_gpio_callback(const struct device *dev, struct gpio_callback
 	k_sem_give(&context->int_sem);
 }
 
+static int lan9250_handle_link(const struct device *dev)
+{
+	struct lan9250_runtime *context = dev->data;
+	uint16_t tmp;
+	int ret;
+
+	/* Read PHY interrupt source register */
+	ret = lan9250_read_phy_reg(dev, LAN9250_PHY_INTERRUPT_SOURCE, &tmp);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if ((tmp & (LAN9250_PHY_INTERRUPT_SOURCE_LINK_UP |
+		    LAN9250_PHY_INTERRUPT_SOURCE_LINK_DOWN)) == 0) {
+		return 0;
+	}
+
+	/* Link up and down may both be latched after a short link drop, so
+	 * report the current link status. The link status bit latches low,
+	 * read it twice.
+	 */
+	ret = lan9250_read_phy_reg(dev, LAN9250_PHY_BASIC_STATUS, &tmp);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = lan9250_read_phy_reg(dev, LAN9250_PHY_BASIC_STATUS, &tmp);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if ((tmp & LAN9250_PHY_BASIC_STATUS_LINK_STATUS) != 0) {
+		net_eth_carrier_on(context->iface);
+	} else {
+		net_eth_carrier_off(context->iface);
+	}
+
+	return 0;
+}
+
+static int lan9250_handle_irq(const struct device *dev)
+{
+	uint32_t int_sts;
+	uint32_t ier;
+	int ret;
+
+	/* Save interrupt enable register value */
+	ret = lan9250_read_sys_reg(dev, LAN9250_INT_EN, &ier);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Disable interrupts to release the interrupt line */
+	ret = lan9250_write_sys_reg(dev, LAN9250_INT_EN, 0);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Read interrupt status register */
+	ret = lan9250_read_sys_reg(dev, LAN9250_INT_STS, &int_sts);
+	if (ret < 0) {
+		goto reenable;
+	}
+
+	if ((int_sts & LAN9250_INT_STS_PHY_INT) != 0) {
+		ret = lan9250_handle_link(dev);
+		if (ret < 0) {
+			LOG_ERR("PHY interrupt handling failed: %d", ret);
+		}
+	}
+
+	if ((int_sts & LAN9250_INT_STS_RSFL) != 0) {
+		ret = lan9250_write_sys_reg(dev, LAN9250_INT_STS, LAN9250_INT_STS_RSFL);
+		if (ret == 0) {
+			ret = lan9250_rx(dev);
+		}
+		if (ret < 0) {
+			LOG_ERR("RX failed: %d", ret);
+		}
+	}
+
+reenable:
+	/* Re-enable interrupts */
+	return lan9250_write_sys_reg(dev, LAN9250_INT_EN, ier);
+}
+
 static void lan9250_thread(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p2);
@@ -732,44 +818,18 @@ static void lan9250_thread(void *p1, void *p2, void *p3)
 
 	const struct device *dev = p1;
 	struct lan9250_runtime *context = dev->data;
-	uint32_t int_sts;
-	uint16_t tmp = 0;
-	uint32_t ier;
+	int ret;
 
 	while (true) {
 		k_sem_take(&context->int_sem, K_FOREVER);
 
 		k_mutex_lock(&context->lock, K_FOREVER);
-
-		/* Save interrupt enable register value */
-		lan9250_read_sys_reg(dev, LAN9250_INT_EN, &ier);
-
-		/* Disable interrupts to release the interrupt line */
-		lan9250_write_sys_reg(dev, LAN9250_INT_EN, 0);
-
-		/* Read interrupt status register */
-		lan9250_read_sys_reg(dev, LAN9250_INT_STS, &int_sts);
-
-		if ((int_sts & LAN9250_INT_STS_PHY_INT) != 0) {
-
-			/* Read PHY interrupt source register */
-			lan9250_read_phy_reg(dev, LAN9250_PHY_INTERRUPT_SOURCE, &tmp);
-			if (tmp & LAN9250_PHY_INTERRUPT_SOURCE_LINK_UP) {
-				net_eth_carrier_on(context->iface);
-			} else if (tmp & LAN9250_PHY_INTERRUPT_SOURCE_LINK_DOWN) {
-				net_eth_carrier_off(context->iface);
-			}
-		}
-
-		if ((int_sts & LAN9250_INT_STS_RSFL) != 0) {
-			lan9250_write_sys_reg(dev, LAN9250_INT_STS, LAN9250_INT_STS_RSFL);
-			lan9250_rx(dev);
-		}
-
-		/* Re-enable interrupts */
-		lan9250_write_sys_reg(dev, LAN9250_INT_EN, ier);
-
+		ret = lan9250_handle_irq(dev);
 		k_mutex_unlock(&context->lock);
+
+		if (ret < 0) {
+			LOG_ERR("Interrupt handling failed: %d", ret);
+		}
 	}
 }
 
