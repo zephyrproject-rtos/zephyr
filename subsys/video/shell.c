@@ -338,6 +338,7 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 
 		ret = video_enqueue(dev, vbuf);
 		if (ret < 0) {
+			error = ret;
 			shell_error(sh, "Failed to enqueue buffer %u: %s", i, strerror(-ret));
 
 			ret = video_buffer_release(vbuf);
@@ -354,6 +355,7 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 
 	ret = video_stream_start(dev, VIDEO_BUF_TYPE_OUTPUT);
 	if (ret < 0) {
+		error = ret;
 		shell_error(sh, "Failed to start %s", dev->name);
 		goto end;
 	}
@@ -363,6 +365,7 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 	for (unsigned long i = 0; i < num_buffers;) {
 		ret = video_dequeue(dev, &vbuf, K_FOREVER);
 		if (ret < 0) {
+			error = ret;
 			shell_error(sh, "Failed to dequeue this buffer: %s", strerror(-ret));
 			goto end;
 		}
@@ -380,6 +383,7 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 
 		ret = video_enqueue(dev, vbuf);
 		if (ret < 0) {
+			error = ret;
 			shell_error(sh, "Failed to enqueue this buffer: %s", strerror(-ret));
 
 			ret = video_buffer_release(vbuf);
@@ -400,7 +404,11 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 		    num_buffers, frmival_msec, frmrate_fps, dev->name);
 
 end:
-	video_stream_stop(dev, VIDEO_BUF_TYPE_OUTPUT);
+	ret = video_stream_stop(dev, VIDEO_BUF_TYPE_OUTPUT);
+	if (ret < 0) {
+		error = ret;
+		shell_error(sh, "Failed to stop the video device after the capture");
+	}
 
 	vbuf = &(struct video_buffer){.type = VIDEO_BUF_TYPE_OUTPUT};
 	while (video_dequeue(dev, &vbuf, K_NO_WAIT) == 0) {
@@ -411,7 +419,7 @@ end:
 		}
 	}
 
-	return ret;
+	return error;
 }
 
 static void complete_video_dev(size_t idx, struct shell_static_entry *entry)
