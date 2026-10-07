@@ -1,4 +1,4 @@
-.. zephyr:board:: stm32h7_renode_reference_board
+.. zephyr:board:: stm32h7_renode_reference_platform
 
 Overview
 ********
@@ -94,7 +94,7 @@ Supported Features
 Connections and IOs
 ===================
 
-Antmicro's STM32H7 Renode Reference Platform board uses the following default pin mappings for peripherals:
+Antmicro's STM32H7 Renode Reference Platform uses the following default pin mappings for peripherals:
 
 - USART2 TX/RX : PD5/PA3
 - I2C1 SCL/SDA : PB6/PB7
@@ -122,7 +122,7 @@ Programming and Debugging
 
 .. zephyr:board-supported-runners::
 
-Applications for the ``stm32h7_renode_reference_board`` board target can be built and flashed in the usual way (see :ref:`build_an_application` and :ref:`application_run` for more details).
+Applications for the ``stm32h7_renode_reference_platform`` board target can be built and flashed in the usual way (see :ref:`build_an_application` and :ref:`application_run` for more details).
 
 Flashing
 ========
@@ -134,10 +134,10 @@ Here is an example for :zephyr:code-sample:`hello_world`.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32h7_renode_reference_board
+   :board: stm32h7_renode_reference_platform
    :goals: build flash
 
-Then run a serial host program to connect with the Renode Reference Platform board, e.g. using
+Then run a serial host program to connect with the Renode Reference Platform, e.g. using
 picocom:
 
 .. code-block:: console
@@ -153,7 +153,7 @@ picocom:
 
    .. code-block:: console
 
-       $ scripts/twister --device-testing --device-serial /dev/ttyUSB2 --device-serial-baud 115200 -p stm32h7_renode_reference_board --flash-before --device-flash-timeout=120 -v
+       $ scripts/twister --device-testing --device-serial /dev/ttyUSB2 --device-serial-baud 115200 -p stm32h7_renode_reference_platform --flash-before --device-flash-timeout=120 -v
 
 Debugging
 =========
@@ -163,7 +163,7 @@ You can debug an application in the usual way. Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: stm32h7_renode_reference_board
+   :board: stm32h7_renode_reference_platform
    :maybe-skip-config:
    :goals: debug
 
@@ -174,7 +174,7 @@ References
 
 .. _`STM32H7 Renode Reference Platform`: https://openhardware.antmicro.com/boards/stm32h7-renode-reference-platform
 
-.. _`STM32H7 Renode Reference Platform on Antmicro Designer`: https://designer.antmicro.com/library/devices/stm32h7-renode-reference-platform
+.. _`STM32H7 Renode Reference Platform on Antmicro Designer`: https://designer.antmicro.com/library/devices/stm32h7_renode_reference_platform
 
 .. _`Renode simulation framework`: https://renode.io
 
