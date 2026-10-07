@@ -1,0 +1,86 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Kirill Shypachov
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig STUN
+	bool "STUN (Session Traversal Utilities for NAT) library [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select PSA_CRYPTO
+	select PSA_WANT_ALG_HMAC
+	select PSA_WANT_KEY_TYPE_HMAC
+	select PSA_WANT_ALG_SHA_1
+	select PSA_WANT_ALG_SHA_256
+	select CRC
+	help
+	  STUN message codec as defined in RFC 8489: parsing and building of
+	  messages, the MESSAGE-INTEGRITY and MESSAGE-INTEGRITY-SHA256
+	  attributes (computed through the PSA Crypto API), FINGERPRINT, the
+	  attributes ICE (RFC 8445) adds, and the Binding transaction. The
+	  library does no I/O.
+
+if STUN
+
+module = STUN
+module-dep = NET_LOG
+module-str = Log level for STUN
+module-help = Enable the log of the STUN library.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config STUN_CLIENT
+	bool "STUN client over UDP sockets"
+	depends on NET_SOCKETS && NET_UDP
+	select CSPRNG_NEEDED
+	help
+	  Blocking calls that ask a STUN server for the address it sees this
+	  device at, on a socket of the caller or on one opened for the
+	  purpose. The transaction id of a request has to be unpredictable
+	  (RFC 8489 section 5), so the client needs a cryptographically
+	  secure random number generator. A server given by host name, not
+	  by literal address, also needs DNS_RESOLVER.
+
+if STUN_CLIENT
+
+config STUN_CLIENT_SOFTWARE
+	string "SOFTWARE attribute of the client's requests"
+	default "Zephyr"
+	help
+	  What the client describes itself as to the server (RFC 8489
+	  sections 6.1 and 14.14), at most 96 bytes. Leave it empty to send
+	  no SOFTWARE attribute; a version number here tells an observer what
+	  to attack.
+
+config STUN_CLIENT_RX_BUF_SIZE
+	int "Size of the client's receive buffer"
+	default 576
+	range 128 1500
+	help
+	  The client receives into a buffer of this size on the stack of its
+	  caller. A STUN message over UDP is meant to stay below 576 bytes
+	  (RFC 8489 section 6.1); a response to a Binding request is some
+	  100 to 200 bytes with the attributes servers add to it. A datagram
+	  that does not fit is not taken for an answer, and the query ends
+	  with a timeout.
+
+endif # STUN_CLIENT
+
+config STUN_SHELL
+	bool "STUN shell commands"
+	depends on STUN_CLIENT && NET_SHELL
+	help
+	  Add "net stun" to the network shell: "net stun server" names the
+	  STUN server to ask, "net stun query" asks it for the address it
+	  sees this device at and prints the answer. The query runs in the
+	  thread of the shell and takes some 2.5 KB of its stack on a 32-bit
+	  target, so SHELL_STACK_SIZE defaults to 4096 with this option.
+
+config STUN_SHELL_SERVER
+	string "STUN server the shell commands start with"
+	depends on STUN_SHELL
+	default ""
+	help
+	  Host name or literal address of the server "net stun query" asks
+	  until "net stun server" names another, 63 characters at most; its
+	  port is the default one, 3478. Empty by default: which server a
+	  device talks to is for whoever builds the image to say.
+
+endif # STUN
