@@ -1,6 +1,8 @@
 sample:
   name: Video capture
+
 tests:
+
   sample.video.capture:
     tags:
       - video
@@ -42,26 +44,30 @@ tests:
     integration_platforms:
       - mimxrt1064_evk/mimxrt1064
       - mimxrt1170_evk/mimxrt1176/cm7
-  sample.video.capture.shell:
+
+  sample.video.capture.native_sim:
     tags:
       - video
       - samples
-      - shell
+      - shield
     extra_configs:
-      - CONFIG_VIDEO_SHELL=y
       - CONFIG_FPU=y
       - CONFIG_DISPLAY=n
     extra_args:
       - platform:native_sim/native/64:SNIPPET="video-sw-generator"
     harness: console
     harness_config:
-      type: one_line
+      type: multi_line
+      ordered: true
       regex:
-        - "Letting the user control the device with the video shell"
+        - "Got frame \\d+"
+        - "size: \\d+;"
+        - "timestamp \\d+"
     platform_allow:
       - native_sim/native/64
     integration_platforms:
       - native_sim/native/64
+
   sample.video.capture.pngdec:
     tags:
       - video
