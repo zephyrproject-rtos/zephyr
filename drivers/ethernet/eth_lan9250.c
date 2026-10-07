@@ -404,18 +404,6 @@ static int lan9250_configure(const struct device *dev)
 		return ret;
 	}
 
-	/* Configure PHY basic control:
-	 *
-	 *   - Auto-Negotiation for 10/100 Mbits and Half/Full Duplex
-	 */
-	ret = lan9250_write_phy_reg(dev, LAN9250_PHY_BASIC_CONTROL,
-				    LAN9250_PHY_BASIC_CONTROL_PHY_AN |
-					    LAN9250_PHY_BASIC_CONTROL_PHY_SPEED_SEL_LSB |
-					    LAN9250_PHY_BASIC_CONTROL_PHY_DUPLEX);
-	if (ret < 0) {
-		return ret;
-	}
-
 	/* Configure PHY auto-negotiation advertisement capability:
 	 *
 	 *   - Asymmetric pause
@@ -430,6 +418,20 @@ static int lan9250_configure(const struct device *dev)
 			LAN9250_PHY_AN_ADV_100BTX_HD | LAN9250_PHY_AN_ADV_100BTX_FD |
 			LAN9250_PHY_AN_ADV_10BT_HD | LAN9250_PHY_AN_ADV_10BT_FD |
 			LAN9250_PHY_AN_ADV_SELECTOR_DEFAULT);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Configure PHY basic control:
+	 *
+	 *   - Auto-Negotiation for 10/100 Mbits and Half/Full Duplex
+	 *   - Restart Auto-Negotiation to apply the advertisement
+	 */
+	ret = lan9250_write_phy_reg(dev, LAN9250_PHY_BASIC_CONTROL,
+				    LAN9250_PHY_BASIC_CONTROL_PHY_AN |
+					    LAN9250_PHY_BASIC_CONTROL_PHY_RST_AN |
+					    LAN9250_PHY_BASIC_CONTROL_PHY_SPEED_SEL_LSB |
+					    LAN9250_PHY_BASIC_CONTROL_PHY_DUPLEX);
 	if (ret < 0) {
 		return ret;
 	}
@@ -488,8 +490,8 @@ static int lan9250_configure(const struct device *dev)
 
 	/* Configure HMAC control:
 	 *
-	 *   - Automatically strip the pad field on incoming packets
-	 *   - Full duplex
+	 *   - No pad stripping, so that every RX frame includes the CRC
+	 *   - Full duplex, updated from the PHY on link up
 	 *   - TX enable
 	 *   - RX enable
 	 *   - Pass all multicast frames
@@ -497,8 +499,8 @@ static int lan9250_configure(const struct device *dev)
 	 *   - Promiscuous disabled
 	 */
 	ret = lan9250_write_mac_reg(dev, LAN9250_HMAC_CR,
-				    LAN9250_HMAC_CR_PADSTR | LAN9250_HMAC_CR_TXEN |
-					    LAN9250_HMAC_CR_RXEN | LAN9250_HMAC_CR_FDPX);
+				    LAN9250_HMAC_CR_TXEN | LAN9250_HMAC_CR_RXEN |
+					    LAN9250_HMAC_CR_FDPX | LAN9250_HMAC_CR_MCPAS);
 	if (ret < 0) {
 		return ret;
 	}
@@ -784,6 +786,38 @@ static void lan9250_gpio_callback(const struct device *dev, struct gpio_callback
 	k_sem_give(&context->int_sem);
 }
 
+static int lan9250_update_duplex(const struct device *dev)
+{
+	uint16_t phy_sts;
+	uint32_t mac_cr;
+	uint32_t new_cr;
+	int ret;
+
+	ret = lan9250_read_phy_reg(dev, LAN9250_PHY_SPECIAL_CONTROL_STATUS, &phy_sts);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = lan9250_read_mac_reg(dev, LAN9250_HMAC_CR, &mac_cr);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if ((phy_sts & LAN9250_PHY_SPECIAL_CONTROL_STATUS_SPEED_FDPX) != 0) {
+		new_cr = mac_cr | LAN9250_HMAC_CR_FDPX;
+	} else {
+		new_cr = mac_cr & ~LAN9250_HMAC_CR_FDPX;
+	}
+
+	LOG_DBG("Link %s duplex", (new_cr & LAN9250_HMAC_CR_FDPX) != 0 ? "full" : "half");
+
+	if (new_cr == mac_cr) {
+		return 0;
+	}
+
+	return lan9250_write_mac_reg(dev, LAN9250_HMAC_CR, new_cr);
+}
+
 static int lan9250_handle_link(const struct device *dev)
 {
 	struct lan9250_runtime *context = dev->data;
@@ -816,6 +850,12 @@ static int lan9250_handle_link(const struct device *dev)
 	}
 
 	if ((tmp & LAN9250_PHY_BASIC_STATUS_LINK_STATUS) != 0) {
+		/* Match the MAC duplex mode to the negotiated one */
+		ret = lan9250_update_duplex(dev);
+		if (ret < 0) {
+			return ret;
+		}
+
 		net_eth_carrier_on(context->iface);
 	} else {
 		net_eth_carrier_off(context->iface);
