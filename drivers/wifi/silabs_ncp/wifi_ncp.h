@@ -24,8 +24,21 @@
 #define WIFI_NCP_DATA_EP_ID 12
 #define WIFI_NCP_MGMT_EP_ID 11
 
-/* Largest Ethernet frame, as a CPC payload */
-#define WIFI_NCP_DATA_MTU ROUND_UP(NET_ETH_MAX_FRAME_SIZE, SL_CPC_BUF_MIN_ALIGNMENT)
+/* Every frame exchanged with the network processor, on both endpoints,
+ * starts with this descriptor. On the data endpoint the only command is
+ * "data", 0, and the descriptor is all zeros.
+ */
+struct wifi_ncp_nwp_hdr {
+	uint8_t reserved1[2];
+	uint8_t command_id;
+	uint8_t reserved2[13];
+} __packed;
+
+#define WIFI_NCP_NWP_CMD_DATA 0
+
+/* Largest Ethernet frame with its descriptor, as a CPC payload */
+#define WIFI_NCP_DATA_MTU                                                                          \
+	ROUND_UP(sizeof(struct wifi_ncp_nwp_hdr) + NET_ETH_MAX_FRAME_SIZE, SL_CPC_BUF_MIN_ALIGNMENT)
 /* Largest frame exchanged with the network processor */
 #define WIFI_NCP_MGMT_MTU 2048
 
