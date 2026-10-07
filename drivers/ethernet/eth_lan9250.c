@@ -22,6 +22,10 @@
 
 LOG_MODULE_REGISTER(eth_lan9250, CONFIG_ETHERNET_LOG_LEVEL);
 
+#define LAN9250_RX_DATA_OFFSET 4U
+#define LAN9250_RX_MIN_LEN     (sizeof(struct net_eth_hdr) + LAN9250_CRC_LEN)
+#define LAN9250_RX_MAX_LEN     (NET_ETH_MAX_FRAME_SIZE + LAN9250_CRC_LEN)
+
 static int lan9250_write_sys_reg(const struct device *dev, uint16_t address, uint32_t data)
 {
 	const struct lan9250_config *config = dev->config;
@@ -569,13 +573,99 @@ static int lan9250_read_buf(const struct device *dev, uint8_t *data_buffer, uint
 	return spi_transceive_dt(&config->spi, &tx, &rx);
 }
 
-static int lan9250_rx(const struct device *dev)
+/* Discard the current frame from the RX data FIFO. Its status has already
+ * been read from the RX status FIFO.
+ */
+static int lan9250_rx_discard(const struct device *dev, uint16_t pkt_len)
+{
+	/* RX data offset and frame data, padded to a DWORD */
+	uint16_t dwords = (LAN9250_RX_DATA_OFFSET + pkt_len + 3) / 4;
+	uint32_t tmp;
+	int ret;
+
+	/* Fast-forward needs at least 4 DWORDs of frame data in the FIFO */
+	if (((pkt_len + 3) / 4) < 4) {
+		for (uint16_t i = 0; i < dwords; i++) {
+			ret = lan9250_read_sys_reg(dev, LAN9250_RX_DATA_FIFO, &tmp);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+
+		return 0;
+	}
+
+	ret = lan9250_write_sys_reg(dev, LAN9250_RX_DP_CTRL, LAN9250_RX_DP_CTRL_RX_FFWD);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return lan9250_wait_ready(dev, LAN9250_RX_DP_CTRL, LAN9250_RX_DP_CTRL_RX_FFWD, 0,
+				  LAN9250_MAC_TIMEOUT);
+}
+
+static int lan9250_rx_frame(const struct device *dev)
 {
 	struct lan9250_runtime *ctx = dev->data;
-	const uint16_t buf_rx_size = CONFIG_NET_BUF_DATA_SIZE;
 	struct net_pkt *pkt;
-	struct net_buf *pkt_buf;
 	uint16_t pkt_len;
+	uint32_t tmp;
+	int ret;
+
+	/* Check packet status, the length includes the CRC */
+	ret = lan9250_read_sys_reg(dev, LAN9250_RX_STATUS_FIFO, &tmp);
+	if (ret < 0) {
+		return ret;
+	}
+	pkt_len = (tmp & LAN9250_RX_STS_PACKET_LEN) >> 16;
+
+	if (((tmp & LAN9250_RX_STS_ES) != 0) || (pkt_len < LAN9250_RX_MIN_LEN) ||
+	    (pkt_len > LAN9250_RX_MAX_LEN)) {
+		LOG_DBG("Dropping RX frame, status 0x%08x", tmp);
+		eth_stats_update_errors_rx(ctx->iface);
+		return lan9250_rx_discard(dev, pkt_len);
+	}
+
+	/* Read dummy  data */
+	ret = lan9250_read_sys_reg(dev, LAN9250_RX_DATA_FIFO, &tmp);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Read the frame including CRC and padding in one DWORD-aligned
+	 * transfer, so that the RX data FIFO is at the next frame afterwards.
+	 */
+	ret = lan9250_read_buf(dev, ctx->buf, LAN9250_ALIGN(pkt_len));
+	if (ret < 0) {
+		return ret;
+	}
+	pkt_len -= LAN9250_CRC_LEN;
+
+	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, pkt_len, NET_AF_UNSPEC, 0,
+					   K_MSEC(CONFIG_ETH_LAN9250_BUF_ALLOC_TIMEOUT));
+	if (pkt == NULL) {
+		LOG_ERR("%s: Could not allocate rx buffer", dev->name);
+		eth_stats_update_errors_rx(ctx->iface);
+		return 0;
+	}
+
+	if (net_pkt_write(pkt, ctx->buf, pkt_len) < 0) {
+		LOG_ERR("%s: Could not copy rx frame", dev->name);
+		eth_stats_update_errors_rx(ctx->iface);
+		net_pkt_unref(pkt);
+		return 0;
+	}
+
+	/* Feed buffer frame to IP stack */
+	if (net_recv_data(ctx->iface, pkt) < 0) {
+		net_pkt_unref(pkt);
+	}
+
+	return 0;
+}
+
+static int lan9250_rx(const struct device *dev)
+{
 	uint8_t pktcnt;
 	uint32_t tmp;
 	int ret;
@@ -585,69 +675,16 @@ static int lan9250_rx(const struct device *dev)
 	if (ret < 0) {
 		return ret;
 	}
-	pktcnt = (tmp & 0x00ff0000) >> 16;
+	pktcnt = (tmp & LAN9250_RX_FIFO_INF_RXSUSED) >> 16;
 
-	/* Check packet length */
-	ret = lan9250_read_sys_reg(dev, LAN9250_RX_STATUS_FIFO, &tmp);
-	if (ret < 0) {
-		return ret;
-	}
-	pkt_len = (tmp & LAN9250_RX_STS_PACKET_LEN) >> 16;
-
-	if (pktcnt == 0 || pkt_len == 0) {
-		return 0;
-	}
-
-	/* Read dummy  data */
-	ret = lan9250_read_sys_reg(dev, LAN9250_RX_DATA_FIFO, &tmp);
-	if (ret < 0) {
-		return ret;
-	}
-	pkt_len -= 4;
-
-	if (pkt_len > NET_ETH_MAX_FRAME_SIZE) {
-		LOG_ERR("Maximum frame length exceeded, it should be: %d", NET_ETH_MAX_FRAME_SIZE);
-		eth_stats_update_errors_rx(ctx->iface);
-	}
-
-	/* Get the frame from the buffer */
-	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, pkt_len, NET_AF_UNSPEC, 0,
-					   K_MSEC(CONFIG_ETH_LAN9250_BUF_ALLOC_TIMEOUT));
-	if (!pkt) {
-		LOG_ERR("%s: Could not allocate rx buffer", dev->name);
-		eth_stats_update_errors_rx(ctx->iface);
-		return 0;
-	}
-
-	pkt_buf = pkt->buffer;
-
-	do {
-		uint8_t *data_ptr = pkt_buf->data;
-		uint16_t data_len;
-
-		if (pkt_len > buf_rx_size) {
-			data_len = buf_rx_size;
-		} else {
-			data_len = pkt_len;
-		}
-		pkt_len -= data_len;
-
-		ret = lan9250_read_buf(dev, data_ptr, data_len);
+	/* Frames arriving from now on set INT_STS.RSFL again and are handled
+	 * on the next interrupt.
+	 */
+	for (; pktcnt > 0; pktcnt--) {
+		ret = lan9250_rx_frame(dev);
 		if (ret < 0) {
 			return ret;
 		}
-		net_buf_add(pkt_buf, data_len);
-		pkt_buf = pkt_buf->frags;
-	} while (pkt_len > 0);
-
-	ret = lan9250_read_sys_reg(dev, LAN9250_RX_DATA_FIFO, &tmp);
-	if (ret < 0) {
-		return ret;
-	}
-
-	/* Feed buffer frame to IP stack */
-	if (net_recv_data(ctx->iface, pkt) < 0) {
-		net_pkt_unref(pkt);
 	}
 
 	return 0;

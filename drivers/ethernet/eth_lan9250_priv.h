@@ -20,6 +20,8 @@
 
 #define LAN9250_ALIGN(v) (((v) + 3) & (~3))
 
+#define LAN9250_CRC_LEN 4U
+
 /* SPI instructions */
 #define LAN9250_SPI_INSTR_WRITE 0x02
 #define LAN9250_SPI_INSTR_READ  0x03
@@ -36,6 +38,7 @@
 
 /* RX status format */
 #define LAN9250_RX_STS_PACKET_LEN 0x3FFF0000
+#define LAN9250_RX_STS_ES         0x00008000
 
 /* LAN9250 System registers */
 #define LAN9250_RX_DATA_FIFO   0x0000
@@ -51,6 +54,7 @@
 #define LAN9250_RX_CFG         0x006C
 #define LAN9250_TX_CFG         0x0070
 #define LAN9250_HW_CFG         0x0074
+#define LAN9250_RX_DP_CTRL     0x0078
 #define LAN9250_RX_FIFO_INF    0x007C
 #define LAN9250_TX_FIFO_INF    0x0080
 #define LAN9250_PMT_CTRL       0x0084
@@ -179,6 +183,9 @@
 #define LAN9250_HW_CFG_TX_FIF_SZ_12KB       0x000C0000
 #define LAN9250_HW_CFG_TX_FIF_SZ_13KB       0x000D0000
 #define LAN9250_HW_CFG_TX_FIF_SZ_14KB       0x000E0000
+
+/* RX Datapath Control register */
+#define LAN9250_RX_DP_CTRL_RX_FFWD 0x80000000
 
 /* RX FIFO Information register */
 #define LAN9250_RX_FIFO_INF_RXSUSED 0x00FF0000
@@ -331,7 +338,8 @@ struct lan9250_runtime {
 	struct gpio_callback gpio_cb;
 	struct k_mutex lock;
 	struct k_sem int_sem;
-	uint8_t buf[LAN9250_ALIGN(NET_ETH_MAX_FRAME_SIZE)];
+	/* Largest TX frame or RX frame with CRC, DWORD-aligned */
+	uint8_t buf[LAN9250_ALIGN(NET_ETH_MAX_FRAME_SIZE + LAN9250_CRC_LEN)];
 };
 
 #endif /*_LAN9250_*/
