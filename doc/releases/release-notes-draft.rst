@@ -80,6 +80,11 @@ Libraries / Subsystems
     :c:macro:`NET_EVENT_L4_DNS_LOST` and :c:func:`conn_mgr_dns_is_ready`.
   * :c:func:`dns_resolve_get_server_families` reports the address families of the
     available unicast DNS servers.
+  * :c:func:`zsock_getaddrinfo` orders ``AF_UNSPEC`` results as per a subset of
+    :rfc:`6724`: reachable destinations first, then IPv6 before IPv4. Dual-stack
+    applications that use the first result now connect over IPv6 when it is
+    usable. :kconfig:option:`CONFIG_NET_SOCKETS_DNS_PREFER_IPV4` restores the
+    preference of IPv4, see the :ref:`migration guide <migration_4.6>`.
 
   * Ethernet bridge
 
