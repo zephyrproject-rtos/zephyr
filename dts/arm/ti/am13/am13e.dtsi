@@ -7,6 +7,7 @@
 #include <arm/armv8-m.dtsi>
 #include <mem.h>
 #include <freq.h>
+#include <zephyr/dt-bindings/misc/ti_am13e_sysctl.h>
 
 / {
 	soc {
@@ -18,6 +19,8 @@
 		xbar1: xbar@40468000 {
 			compatible = "ti,am13e230-xbar-in";
 			reg = <0x40468000 0x1000>;
+			ti,pwren = <&sysctl AM13E_SYSCTL_PWREN_MCPERIPH
+				    AM13E_SYSCTL_PWREN_XBAR_BIT>;
 
 			#mux-control-cells = <1>;
 			#mux-state-cells = <2>;
@@ -27,6 +30,8 @@
 		xbar2: xbar@4046a000 {
 			compatible = "ti,am13e230-xbar-out";
 			reg = <0x4046a000 0x1000>;
+			ti,pwren = <&sysctl AM13E_SYSCTL_PWREN_MCPERIPH
+				    AM13E_SYSCTL_PWREN_XBAR_BIT>;
 
 			#mux-control-cells = <1>;
 			#mux-state-cells = <2>;
@@ -149,8 +154,9 @@
 
 	soc {
 		sysctl: syscon@400af000 {
-			compatible = "syscon";
+			compatible = "ti,am13e-sysctl", "syscon";
 			reg = <0x400af000 0x2000>;
+			#pwren-cells = <2>;
 			status = "okay";
 		};
 
