@@ -39,9 +39,6 @@ class ScannerConfig:
     # should we calculate SHA512 hashes for each Component's Files?
     do_sha512: bool = True
 
-    # should we calculate MD5 hashes for each Component's Files?
-    do_md5: bool = False
-
 
 def split_expression(expression):
     """
@@ -192,15 +189,13 @@ def scan_sbom_graph(cfg, sbom_graph):
             if not hashes:
                 _logger.warning("unable to get hashes for file %s; skipping", f.path)
                 continue
-            h_sha1, h_sha256, h_sha512, h_md5 = hashes
+            h_sha1, h_sha256, h_sha512 = hashes
             f.size = os.path.getsize(f.path)
             f.hashes["SHA1"] = h_sha1
             if cfg.do_sha256:
                 f.hashes["SHA256"] = h_sha256
             if cfg.do_sha512:
                 f.hashes["SHA512"] = h_sha512
-            if cfg.do_md5:
-                f.hashes["MD5"] = h_md5
 
             # if the file is a module blob, cross-check it against the
             # checksum its module declares for it
