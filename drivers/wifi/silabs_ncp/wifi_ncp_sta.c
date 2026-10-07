@@ -172,8 +172,41 @@ static void wifi_ncp_scan_done(const struct device *dev, const uint8_t *hdr, con
 	}
 }
 
+/* The co-processor lost the connection: a join frame with an error status
+ * comes without request.
+ */
+static void wifi_ncp_disconnected(const struct device *dev, uint16_t status, const uint8_t *payload,
+				  size_t len)
+{
+	struct wifi_ncp_data *data = dev->data;
+	struct wifi_ncp_sta *sta = &data->sta;
+	union wpa_event_data event;
+	struct ieee80211_mgmt mgmt;
+
+	LOG_INF("%s: disconnected: 0x%04x", dev->name, status);
+	net_if_dormant_on(data->iface);
+
+	if (!data->supp.if_ctx || !data->supp.cb.deauth) {
+		return;
+	}
+
+	memset(&event, 0, sizeof(event));
+	event.deauth_info.addr = sta->bssid;
+	if (status == SLI_STATUS_DEAUTHENTICATION_RECEIVED_FROM_AP && len >= 1) {
+		event.deauth_info.reason_code = payload[0];
+	} else {
+		event.deauth_info.reason_code = WLAN_REASON_UNSPECIFIED;
+	}
+	event.deauth_info.locally_generated = (status == SLI_STATUS_DEAUTH_REQUEST_FROM_SUPPLICANT);
+	/* driver_zephyr.c reads the BSSID from the frame */
+	memset(&mgmt, 0, sizeof(mgmt));
+	memcpy(mgmt.bssid, sta->bssid, NET_ETH_ADDR_LEN);
+	data->supp.cb.deauth(data->supp.if_ctx, &event, &mgmt);
+}
+
 /* Deferred confirmation of the join. The result is reported to the
- * supplicant, which then runs the key exchange.
+ * supplicant, which then runs the key exchange. Once associated, the same
+ * frame reports the loss of the connection.
  */
 static void wifi_ncp_join_status(const struct device *dev, const uint8_t *hdr,
 				 const uint8_t *payload, size_t len)
@@ -189,8 +222,15 @@ static void wifi_ncp_join_status(const struct device *dev, const uint8_t *hdr,
 	state = sta->state;
 	if (state == WIFI_NCP_STA_JOINING && status != SLI_STATUS_JOIN_SAE_TRIGGER) {
 		sta->state = !status ? WIFI_NCP_STA_ASSOCIATED : WIFI_NCP_STA_IDLE;
+	} else if (state == WIFI_NCP_STA_ASSOCIATED && status) {
+		sta->state = WIFI_NCP_STA_IDLE;
 	}
 	k_mutex_unlock(&sta->lock);
+
+	if (state == WIFI_NCP_STA_ASSOCIATED && status) {
+		wifi_ncp_disconnected(dev, status, payload, len);
+		return;
+	}
 
 	if (!data->supp.if_ctx || !data->supp.cb.assoc_resp) {
 		return;
