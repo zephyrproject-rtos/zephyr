@@ -5,6 +5,7 @@ config REGULATOR_MSPM0_VREF
 	bool "TI MSPM0 VREF peripheral driver"
 	depends on REGULATOR
 	depends on DT_HAS_TI_MSPM0_VREF_ENABLED
+	select PINCTRL
 	default y
 	help
 	  Enable the MSPM0 VREF driver
