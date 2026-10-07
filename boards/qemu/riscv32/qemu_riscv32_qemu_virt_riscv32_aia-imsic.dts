@@ -25,7 +25,8 @@
 
 &aplic {
 	msi-parent = <&imsic0>;
-	interrupts-extended = <&hlic0 0x0b>;
+	interrupts-extended = <&hlic0 0x0b &hlic1 0x0b &hlic2 0x0b &hlic3 0x0b
+			       &hlic4 0x0b &hlic5 0x0b &hlic6 0x0b &hlic7 0x0b>;
 };
 
 &{/soc} {
