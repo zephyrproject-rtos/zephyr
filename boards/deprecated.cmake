@@ -163,3 +163,9 @@ set(stm32h7_renode_reference_board_DEPRECATED
 set(stm32h7_renode_reference_board/stm32h753xx_DEPRECATED
     stm32h7_renode_reference_platform/stm32h753xx
 )
+set(rak11160/stm32wle5xx_DEPRECATED
+    rak11162/stm32wle5xx
+)
+set(rak11160_DEPRECATED
+    rak11162
+)
