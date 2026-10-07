@@ -34,7 +34,7 @@ description: |
 
 compatible: "ti,am13e230-xbar-in"
 
-include: [base.yaml, mux-controller.yaml]
+include: [base.yaml, mux-controller.yaml, ti-sysctl-pwren.yaml]
 
 properties:
   reg:

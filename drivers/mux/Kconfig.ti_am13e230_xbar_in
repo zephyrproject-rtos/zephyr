@@ -5,5 +5,6 @@ config MUX_TI_AM13E230_XBAR_IN
 	bool "TI AM13E230 Input XBAR driver"
 	default y
 	depends on DT_HAS_TI_AM13E230_XBAR_IN_ENABLED
+	select SYSCON if DT_HAS_TI_AM13E_SYSCTL_ENABLED
 	help
 	  Enable the TI AM13E230 Input XBAR (crossbar) multiplexer driver.
