@@ -27,7 +27,7 @@ The module has below hardware features:
    :align: center
    :alt: RAK11160-pinout
 
-For more information about the RAK3112 stamp module:
+For more information about the RAK11160 stamp module:
 
 - `WisDuo RAK11160 Website`_
 - `STM32WLE5CC on www.st.com`_
@@ -49,7 +49,7 @@ Build the Zephyr kernel and application, then flash it to the device:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: rak11160
+   :board: rak11160/stm32wle5xx
    :goals: build flash
 
 Run a serial terminal to connect with your board. ``usart2`` is the only UART
