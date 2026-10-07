@@ -10,10 +10,10 @@
 #include <zephyr/dt-bindings/led/led.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <st/h7/stm32h753Xi.dtsi>
-#include "stm32h7_renode_reference_board-pinctrl.dtsi"
+#include "stm32h7_renode_reference_platform-pinctrl.dtsi"
 
 / {
-	compatible = "antmicro,stm32h7_renode_reference_board";
+	compatible = "antmicro,stm32h7_renode_reference_platform";
 	model = "Antmicro STM32H7 Renode Reference Platform";
 
 	chosen {
@@ -364,11 +364,11 @@ zephyr_udc0: &usbotg_fs {
 	clock-names = "qspix";
 	clock-frequency = <DT_FREQ_M(72)>;
 	op-mode = "MSPI_OP_MODE_CONTROLLER";
-	st,cs-high-time = <4>;
 	pinctrl-0 = <&quadspi_clk_pf10 &quadspi_ncs_pb10
 		     &quadspi_bk1_io0_pf8 &quadspi_bk1_io1_pf9
 		     &quadspi_bk1_io2_pf7 &quadspi_bk1_io3_pf6>;
 	pinctrl-names = "default";
+	st,cs-high-time = <4>;
 	status = "okay";
 
 	ext_flash_ctrl: nor-flash-controller@0 {

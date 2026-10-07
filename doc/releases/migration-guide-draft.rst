@@ -184,6 +184,11 @@ Boards
   CPU ``clock-frequency`` when ``/cpus`` has no ``timebase-frequency``. Out-of-tree boards must
   set ``timebase-frequency`` on the ``/cpus`` node. (:github:`124446`)
 
+* Antmicro ``stm32h7_renode_reference_board`` has been renamed to
+  ``stm32h7_renode_reference_platform``. The previous ``-b stm32h7_renode_reference_board``
+  and ``-b stm32h7_renode_reference_board/stm32h753xx`` are deprecated and now map to
+  ``stm32h7_renode_reference_platform`` and ``stm32h7_renode_reference_platform/stm32h753xx``.
+
 Device Drivers and Devicetree
 *****************************
 
