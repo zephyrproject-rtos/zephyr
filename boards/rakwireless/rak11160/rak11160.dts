@@ -34,14 +34,6 @@
 		};
 	};
 
-	/* Regulator controlling ESP8684 enable */
-	esp8684_enable: esp8684-enable {
-		compatible = "regulator-fixed";
-		regulator-name = "esp8684_enable";
-		enable-gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
-		regulator-boot-off;
-	};
-
 	aliases {
 		led0 = &green_led;
 		lora0 = &lora;
@@ -99,8 +91,9 @@
 	current-speed = <115200>;
 	status = "okay";
 
-	espc2 {
+	wifi: esp-at {
 		compatible = "espressif,esp-at";
+		power-gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
 		status = "okay";
 	};
 };
