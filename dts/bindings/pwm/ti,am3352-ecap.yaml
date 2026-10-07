@@ -47,6 +47,13 @@ properties:
   "#pwm-cells":
     const: 3
 
+  ti,pwren:
+    type: phandle-array
+    specifier-space: pwren
+    description: |
+      Power-enable this peripheral via SYSCTL.PWREN_*.
+      Format: <&sysctl offset bit>.
+
 pwm-cells:
   - channel
   - period
