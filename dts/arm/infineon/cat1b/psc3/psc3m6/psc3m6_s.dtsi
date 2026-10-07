@@ -66,6 +66,13 @@
 			status = "disabled";
 		};
 
+		mcwdt0: mcwdt@5220d000 {
+			compatible = "infineon,lp-timer";
+			reg = <0x5220d000 0x40>;
+			interrupts = <32 4>;
+			status = "disabled";
+		};
+
 		rtc0: rtc@52220000 {
 			compatible = "infineon,rtc";
 			reg = <0x52220000 0xff0c>;
@@ -273,6 +280,7 @@
 			reg = <0x52820000 0xfe0>;
 			interrupts = <31 4>;
 			clk-dst = <0x400>;
+			zephyr,disabling-power-states = <&deepsleep &deepsleep_ram>;
 			status = "disabled";
 		};
 
@@ -281,6 +289,7 @@
 			reg = <0x52840000 0xfe0>;
 			interrupts = <39 4>;
 			clk-dst = <0x402>;
+			zephyr,disabling-power-states = <&deepsleep &deepsleep_ram>;
 			status = "disabled";
 		};
 
@@ -289,6 +298,7 @@
 			reg = <0x52850000 0xfe0>;
 			interrupts = <40 4>;
 			clk-dst = <0x404>;
+			zephyr,disabling-power-states = <&deepsleep &deepsleep_ram>;
 			status = "disabled";
 		};
 
@@ -297,6 +307,7 @@
 			reg = <0x52860000 0xfe0>;
 			interrupts = <41 4>;
 			clk-dst = <0x406>;
+			zephyr,disabling-power-states = <&deepsleep &deepsleep_ram>;
 			status = "disabled";
 		};
 
@@ -305,6 +316,7 @@
 			reg = <0x52870000 0xfe0>;
 			interrupts = <42 4>;
 			clk-dst = <0x408>;
+			zephyr,disabling-power-states = <&deepsleep &deepsleep_ram>;
 			status = "disabled";
 		};
 
@@ -313,6 +325,7 @@
 			reg = <0x52c00000 0xfe0>;
 			interrupts = <43 4>;
 			clk-dst = <0x600>;
+			zephyr,disabling-power-states = <&deepsleep &deepsleep_ram>;
 			status = "disabled";
 		};
 	};
