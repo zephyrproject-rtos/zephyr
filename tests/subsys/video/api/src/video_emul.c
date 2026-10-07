@@ -153,6 +153,18 @@ ZTEST(video_emul, test_video_ctrl)
 	ctrl.val = 0;
 	zexpect_ok(video_get_ctrl(imager_dev, &ctrl));
 	zexpect_equal(ctrl.val, 30);
+
+	/* Test that the link frequency is accurate */
+	ret = video_get_link_freq(imager_dev, &link_freq, VIDEO_BUS_TYPE_CSI2_DPHY,
+					video_bits_per_pixel(pixelformat), 8);
+	zexpect_ok(ret);
+	zexpect_equal(link_freq, MHZ(72));
+
+	/* Test that the link frequency is accurate */
+	ret = video_get_link_freq(imager_dev, &link_freq, VIDEO_BUS_TYPE_PARALLEL,
+					video_bits_per_pixel(pixelformat), 2);
+	zexpect_ok(ret);
+	zexpect_equal(link_freq, MHZ(72));
 }
 
 ZTEST(video_emul, test_video_vbuf)
