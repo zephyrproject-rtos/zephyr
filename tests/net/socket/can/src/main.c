@@ -5,7 +5,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
+
 #include <zephyr/logging/log.h>
+#include <zephyr/net/socket.h>
 #include <zephyr/net/socketcan.h>
 #include <zephyr/net/socketcan_utils.h>
 #include <zephyr/ztest.h>
@@ -149,3 +152,60 @@ ZTEST(socket_can, test_can_filter_to_socketcan_filter)
 }
 
 ZTEST_SUITE(socket_can, NULL, NULL, NULL, NULL, NULL);
+
+#if defined(CONFIG_NET_SOCKETS_CAN)
+
+static int fd = -1;
+
+static void socket_can_unbound_before(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	fd = zsock_socket(NET_AF_CAN, NET_SOCK_RAW, NET_CAN_RAW);
+	zassert_true(fd >= 0, "socket() failed (%d)", errno);
+}
+
+static void socket_can_unbound_after(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	if (fd >= 0) {
+		(void)zsock_close(fd);
+		fd = -1;
+	}
+}
+
+/**
+ * @brief Test that CAN_RAW_FILTER cannot be set before the socket is bound
+ */
+ZTEST(socket_can_unbound, test_setsockopt_filter)
+{
+	struct socketcan_filter sfilter = {
+		.can_id = 0x1,
+		.can_mask = 0x7ffU,
+	};
+	int ret;
+
+	ret = zsock_setsockopt(fd, NET_SOL_CAN_RAW, NET_CAN_RAW_FILTER, &sfilter, sizeof(sfilter));
+	zexpect_equal(ret, -1, "setsockopt() succeeded on unbound socket");
+	zexpect_equal(errno, ENODEV, "Unexpected errno (%d)", errno);
+}
+
+/**
+ * @brief Test that CAN_RAW_FILTER cannot be read before the socket is bound
+ */
+ZTEST(socket_can_unbound, test_getsockopt_filter)
+{
+	struct socketcan_filter sfilter;
+	net_socklen_t optlen = sizeof(sfilter);
+	int ret;
+
+	ret = zsock_getsockopt(fd, NET_SOL_CAN_RAW, NET_CAN_RAW_FILTER, &sfilter, &optlen);
+	zexpect_equal(ret, -1, "getsockopt() succeeded on unbound socket");
+	zexpect_equal(errno, ENODEV, "Unexpected errno (%d)", errno);
+}
+
+ZTEST_SUITE(socket_can_unbound, NULL, NULL, socket_can_unbound_before, socket_can_unbound_after,
+	    NULL);
+
+#endif /* CONFIG_NET_SOCKETS_CAN */
