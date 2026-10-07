@@ -991,7 +991,7 @@ class KconfigCheck(ComplianceTest):
                 fp.write('\t bool\n')
                 for qualifier in list_boards.board_v2_qualifiers(board):
                     board_str = (
-                        'BOARD_' + board.name + '_' + re.sub(r"[^a-zA-Z0-9_]", "_", qualifier)
+                        'BOARD_' + re.sub(r"[^a-zA-Z0-9_]", "_", board.name + '/' + qualifier)
                     ).upper()
                     fp.write('config  ' + board_str + '\n')
                     fp.write('\t bool\n')
@@ -1522,7 +1522,7 @@ Found board redefining build system defined Kconfig symbol: CONFIG_{board_str}
 
                     for qualifier in list_boards.board_v2_qualifiers(board):
                         board_str = (
-                            'BOARD_' + board.name + '_' + re.sub(r"[^a-zA-Z0-9_]", "_", qualifier)
+                            'BOARD_' + re.sub(r"[^a-zA-Z0-9_]", "_", board.name + '/' + qualifier)
                         ).upper()
 
                         if board_str in board_defined_kconfigs:
