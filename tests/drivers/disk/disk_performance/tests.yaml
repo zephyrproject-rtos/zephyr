@@ -31,3 +31,14 @@ tests:
       - DTC_OVERLAY_FILE="./boards/mikroe_flash_5_click.overlay"
     platform_allow:
       - frdm_mcxn947/mcxn947/cpu0
+  drivers.disk.disk_performance.sdhc_spi.renesas_ra_sau_spi:
+    depends_on: spi
+    min_ram: 12
+    harness: ztest
+    harness_config:
+      fixture: fixture_sdhc
+    filter: dt_compat_enabled("zephyr,sdhc-spi-slot") and dt_compat_enabled("renesas,ra-spi-sau")
+    integration_platforms:
+      - fpb_ra0e1
+    platform_allow:
+      - fpb_ra0e1
