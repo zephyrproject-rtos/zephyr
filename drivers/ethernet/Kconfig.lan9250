@@ -8,6 +8,7 @@ menuconfig ETH_LAN9250
 	bool "LAN9250 Ethernet Controller"
 	default y
 	depends on DT_HAS_MICROCHIP_LAN9250_ENABLED
+	select GPIO
 	select SPI
 	help
 	  LAN9250 Stand-Alone Ethernet Controller
