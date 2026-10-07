@@ -128,6 +128,16 @@
 #define ESP_I2CEXT1_SDA_IN  71 /**< I2C1 SDA input */
 #define ESP_I2CEXT1_SDA_OUT 71 /**< I2C1 SDA output */
 
+/* GPIO sigma-delta */
+#define ESP_GPIO_SD0_OUT 72 /**< GPIO sigma-delta output 0 */
+#define ESP_GPIO_SD1_OUT 73 /**< GPIO sigma-delta output 1 */
+#define ESP_GPIO_SD2_OUT 74 /**< GPIO sigma-delta output 2 */
+#define ESP_GPIO_SD3_OUT 75 /**< GPIO sigma-delta output 3 */
+#define ESP_GPIO_SD4_OUT 76 /**< GPIO sigma-delta output 4 */
+#define ESP_GPIO_SD5_OUT 77 /**< GPIO sigma-delta output 5 */
+#define ESP_GPIO_SD6_OUT 78 /**< GPIO sigma-delta output 6 */
+#define ESP_GPIO_SD7_OUT 79 /**< GPIO sigma-delta output 7 */
+
 /* I2S0 */
 #define ESP_I2S0_O_BCK_IN  25 /**< I2S0 output BCK input */
 #define ESP_I2S0_O_BCK_OUT 25 /**< I2S0 output BCK output */
