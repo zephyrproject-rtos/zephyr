@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <zephyr/sys/crc.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/base64.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
@@ -221,6 +222,57 @@ struct net_buf *mcumgr_serial_process_frag(struct mcumgr_serial_rx_ctxt *rx_ctxt
 	rx_ctxt->nb = NULL;
 	return nb;
 }
+
+#if defined(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_RAW_BINARY_NON_SMP_OVER_CONSOLE)
+/**
+ * Returns the number of bytes the raw packet being received still needs: the rest of the header
+ * until it is complete, then the rest of the packet. This is always at least 1.
+ */
+static size_t mcumgr_serial_raw_bytes_needed(const struct mcumgr_serial_rx_ctxt *rx_ctxt)
+{
+	const struct smp_hdr *hdr;
+	size_t held = (rx_ctxt->nb == NULL) ? 0 : rx_ctxt->nb->len;
+	size_t total;
+
+	if (held < sizeof(struct smp_hdr)) {
+		return sizeof(struct smp_hdr) - held;
+	}
+
+	hdr = (const struct smp_hdr *)rx_ctxt->nb->data;
+	total = sys_be16_to_cpu(hdr->nh_len) + sizeof(struct smp_hdr);
+
+	return (total > held) ? (total - held) : 1;
+}
+
+struct net_buf *mcumgr_serial_process_raw(struct mcumgr_serial_rx_ctxt *rx_ctxt,
+					  const uint8_t *data, size_t len, size_t *consumed)
+{
+	struct net_buf *nb;
+	size_t chunk_len = MIN(len, mcumgr_serial_raw_bytes_needed(rx_ctxt));
+
+	*consumed = chunk_len;
+
+	if (chunk_len == 0) {
+		return NULL;
+	}
+
+	if (rx_ctxt->nb == NULL) {
+		rx_ctxt->nb = smp_packet_alloc();
+		if (rx_ctxt->nb == NULL) {
+			return NULL;
+		}
+		net_buf_reset(rx_ctxt->nb);
+	}
+
+	if (mcumgr_serial_process_frag_raw(rx_ctxt, data, chunk_len) == false) {
+		return NULL;
+	}
+
+	nb = rx_ctxt->nb;
+	rx_ctxt->nb = NULL;
+	return nb;
+}
+#endif
 
 #if defined(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_SMP_OVER_CONSOLE)
 /**

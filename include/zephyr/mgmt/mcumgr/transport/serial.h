@@ -83,6 +83,9 @@ typedef int (*mcumgr_serial_tx_cb)(const void *data, int len);
  * net_buf containing the decoded request.  It is the caller's responsibility
  * to free the net_buf after it has been processed.
  *
+ * For raw (non SMP over console) data that may hold more than one packet, use
+ * mcumgr_serial_process_raw() instead.
+ *
  * @param rx_ctxt               The receive context associated with the serial
  *                                  transport being used.
  * @param frag                  The incoming fragment to process.
@@ -96,6 +99,33 @@ typedef int (*mcumgr_serial_tx_cb)(const void *data, int len);
 struct net_buf *mcumgr_serial_process_frag(
 	struct mcumgr_serial_rx_ctxt *rx_ctxt,
 	const uint8_t *frag, int frag_len);
+
+/**
+ * @brief Processes received raw (non SMP over console) mcumgr data.
+ *
+ * Uses data only up to the end of the packet currently being received, so a
+ * buffer holding the end of one packet and the start of the next can be
+ * processed by calling this function again with the rest of the buffer until
+ * all of it has been consumed. Invalid packets are dropped at the same points
+ * as when the data is passed to mcumgr_serial_process_frag() one byte at a
+ * time.
+ *
+ * @param rx_ctxt               The receive context associated with the serial
+ *                                  transport being used.
+ * @param data                  The received data.
+ * @param len                   The length of the data, in bytes.
+ * @param consumed              Set to the number of bytes of the data that
+ *                                  were used, which is at least 1 if len is
+ *                                  not 0.
+ *
+ * @return                      A net_buf containing the decoded request if a
+ *                                  complete and valid request has been
+ *                                  received. It is the caller's
+ *                                  responsibility to free it.
+ *                              NULL if the packet is incomplete or invalid.
+ */
+struct net_buf *mcumgr_serial_process_raw(struct mcumgr_serial_rx_ctxt *rx_ctxt,
+					  const uint8_t *data, size_t len, size_t *consumed);
 
 /**
  * @brief Encodes and transmits an mcumgr packet over serial.
