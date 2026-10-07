@@ -23,6 +23,7 @@
 #include <zephyr/random/random.h>
 
 #include "wifi_ncp.h"
+#include "wifi_ncp_sta.h"
 #include "wifi_ncp_supp.h"
 
 LOG_MODULE_REGISTER(wifi_ncp, CONFIG_WIFI_LOG_LEVEL);
@@ -66,22 +67,89 @@ static void wifi_ncp_ep_link_event(const struct device *dev, sl_cpc_ep_t *ep,
 	}
 }
 
+/* Handle the received management frames in order, on the work queue, then
+ * give the buffers back to CPC.
+ */
+static void wifi_ncp_mgmt_rx_work(struct k_work *work)
+{
+	struct wifi_ncp_data *data = CONTAINER_OF(work, struct wifi_ncp_data, mgmt_rx_work);
+	const struct device *dev = data->dev;
+	struct wifi_ncp_mgmt_rx_slot *slot;
+	int status;
+
+	while ((slot = k_fifo_get(&data->mgmt_rx_pending, K_NO_WAIT))) {
+		wifi_ncp_sta_rx(dev, slot->buf.ptr, slot->buf.len);
+
+		status = sl_cpc_ep_push_recv_buf(&data->mgmt_ep, &slot->buf);
+		if (status) {
+			LOG_ERR("%s: mgmt: buffer lost: %d", dev->name, status);
+		}
+	}
+}
+
+int wifi_ncp_nwp_send(const struct device *dev, const struct wifi_ncp_nwp_hdr *hdr,
+		      const void *head, size_t head_len, const void *body, size_t body_len)
+{
+	const struct wifi_ncp_config *cfg = dev->config;
+	struct wifi_ncp_data *data = dev->data;
+	struct wifi_ncp_mgmt_tx_slot *slot;
+	size_t len = sizeof(struct wifi_ncp_nwp_hdr) + head_len + body_len;
+	int status;
+	int ret;
+
+	if (len > WIFI_NCP_MGMT_MTU) {
+		return -EMSGSIZE;
+	}
+
+	ret = k_mem_slab_alloc(cfg->mgmt_tx_slab, (void **)&slot, WIFI_NCP_CONNECT_TIMEOUT);
+	if (ret < 0) {
+		LOG_ERR("%s: no management TX slot", dev->name);
+		return -ENOMEM;
+	}
+
+	memcpy(slot->data, hdr, sizeof(struct wifi_ncp_nwp_hdr));
+	if (head_len > 0) {
+		memcpy(slot->data + sizeof(struct wifi_ncp_nwp_hdr), head, head_len);
+	}
+	if (body_len > 0) {
+		memcpy(slot->data + sizeof(struct wifi_ncp_nwp_hdr) + head_len, body, body_len);
+	}
+	sl_cpc_buf_init(&slot->buf, slot->data, len);
+	memset(&slot->frame, 0, sizeof(slot->frame));
+	status = sl_cpc_ep_send(&data->mgmt_ep, &slot->buf, &slot->frame, NULL);
+	if (status) {
+		LOG_ERR("%s: mgmt: send failed: %d", dev->name, status);
+		k_mem_slab_free(cfg->mgmt_tx_slab, slot);
+		return -EIO;
+	}
+
+	return 0;
+}
+
 /* Runs in the CPC context: keep it short */
 static void wifi_ncp_mgmt_ep_event(sl_cpc_ep_t *ep, sl_cpc_ep_event_type_t type,
 				   const sl_cpc_ep_event_t *event, void *arg)
 {
 	const struct device *dev = arg;
-	int status;
+	const struct wifi_ncp_config *cfg = dev->config;
+	struct wifi_ncp_data *data = dev->data;
+	struct wifi_ncp_mgmt_rx_slot *rx;
+	struct wifi_ncp_mgmt_tx_slot *tx;
 
 	switch (type) {
 	case SL_CPC_EP_EVENT_RECV:
 		LOG_DBG("%s: mgmt: %u bytes received", dev->name, event->recv.buf->len);
-		status = sl_cpc_ep_push_recv_buf(ep, event->recv.buf);
-		if (status) {
-			LOG_ERR("%s: mgmt: buffer lost: %d", dev->name, status);
-		}
+		rx = CONTAINER_OF(event->recv.buf, struct wifi_ncp_mgmt_rx_slot, buf);
+		k_fifo_put(&data->mgmt_rx_pending, rx);
+		k_work_submit_to_queue(&data->wq, &data->mgmt_rx_work);
 		break;
 	case SL_CPC_EP_EVENT_SEND_DONE:
+		if (event->send_done.status) {
+			LOG_ERR("%s: mgmt: send failed: %d",
+				dev->name, event->send_done.status);
+		}
+		tx = CONTAINER_OF(event->send_done.frame, struct wifi_ncp_mgmt_tx_slot, frame);
+		k_mem_slab_free(cfg->mgmt_tx_slab, tx);
 		break;
 	default:
 		wifi_ncp_ep_link_event(dev, ep, type, event);
@@ -201,10 +269,14 @@ static void wifi_ncp_iface_init(struct net_if *iface)
 
 	data->iface = iface;
 
-	/* The address of the co-processor is not retrieved yet, start with a
-	 * locally administered one.
+	/* The address of the co-processor, else the devicetree one, else a
+	 * locally administered one
 	 */
-	if (net_eth_mac_load(&cfg->mac, mac) < 0) {
+	static const uint8_t no_mac[NET_ETH_ADDR_LEN];
+
+	if (memcmp(data->mac, no_mac, sizeof(no_mac))) {
+		memcpy(mac, data->mac, sizeof(mac));
+	} else if (net_eth_mac_load(&cfg->mac, mac) < 0) {
 		sys_rand_get(mac, sizeof(mac));
 		mac[0] &= ~0x01U;
 		mac[0] |= 0x02U;
@@ -304,11 +376,20 @@ static int wifi_ncp_init(const struct device *dev)
 
 	data->dev = dev;
 	k_sem_init(&data->connected, 0, 2);
+	k_fifo_init(&data->mgmt_rx_pending);
+	k_work_init(&data->mgmt_rx_work, wifi_ncp_mgmt_rx_work);
+	k_mutex_init(&data->cmd.lock);
+	k_sem_init(&data->cmd.done, 0, 1);
+	k_mutex_init(&data->sta.scan_lock);
 
 	if (!device_is_ready(cfg->parent)) {
 		LOG_ERR("%s: co-processor not ready", dev->name);
 		return -ENODEV;
 	}
+
+	k_work_queue_init(&data->wq);
+	k_work_queue_start(&data->wq, data->wq_stack, K_KERNEL_STACK_SIZEOF(data->wq_stack),
+			   K_PRIO_PREEMPT(CONFIG_WIFI_SILABS_NCP_WQ_PRIORITY), NULL);
 
 	ret = wifi_ncp_ep_open(dev, &data->mgmt_ep, WIFI_NCP_MGMT_EP_ID, WIFI_NCP_MGMT_MTU,
 			       &data->mgmt_rx[0].buf, sizeof(data->mgmt_rx[0]),
@@ -334,7 +415,7 @@ static int wifi_ncp_init(const struct device *dev)
 		}
 	}
 
-	return 0;
+	return wifi_ncp_sta_init(dev);
 }
 
 /* Operations the Zephyr supplicant calls on the driver */
@@ -343,6 +424,9 @@ static const struct zep_wpa_supp_dev_ops wifi_ncp_supp_ops = {
 	.deinit = wifi_ncp_supp_deinit,
 	.get_capa = wifi_ncp_supp_get_capa,
 	.get_wiphy = wifi_ncp_supp_get_wiphy,
+	.scan2 = wifi_ncp_sta_scan,
+	.scan_abort = wifi_ncp_sta_scan_abort,
+	.get_scan_results2 = wifi_ncp_sta_get_scan_results,
 };
 
 static const struct wifi_mgmt_ops wifi_ncp_mgmt_ops = {
@@ -362,11 +446,15 @@ static const struct net_wifi_mgmt_offload wifi_ncp_api = {
 	K_MEM_SLAB_DEFINE_STATIC(wifi_ncp_data_tx_slab##inst,                                      \
 				 sizeof(struct wifi_ncp_data_tx_slot),                             \
 				 CONFIG_WIFI_SILABS_NCP_DATA_TX_COUNT, SL_CPC_BUF_MIN_ALIGNMENT);  \
+	K_MEM_SLAB_DEFINE_STATIC(wifi_ncp_mgmt_tx_slab##inst,                                      \
+				 sizeof(struct wifi_ncp_mgmt_tx_slot),                             \
+				 CONFIG_WIFI_SILABS_NCP_MGMT_TX_COUNT, SL_CPC_BUF_MIN_ALIGNMENT);  \
 	static struct wifi_ncp_data wifi_ncp_data##inst;                                           \
 	static const struct wifi_ncp_config wifi_ncp_config##inst = {                              \
 		.parent = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                     \
 		.mac = NET_ETH_MAC_DT_INST_CONFIG_INIT(inst),                                      \
 		.data_tx_slab = &wifi_ncp_data_tx_slab##inst,                                      \
+		.mgmt_tx_slab = &wifi_ncp_mgmt_tx_slab##inst,                                      \
 	};                                                                                         \
 	NET_DEVICE_DT_INST_DEFINE(inst, wifi_ncp_init, NULL, &wifi_ncp_data##inst,                 \
 				  &wifi_ncp_config##inst, CONFIG_WIFI_SILABS_NCP_INIT_PRIORITY,    \

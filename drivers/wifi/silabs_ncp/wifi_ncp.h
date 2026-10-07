@@ -6,6 +6,7 @@
 #ifndef ZEPHYR_DRIVERS_WIFI_SILABS_NCP_WIFI_NCP_H_
 #define ZEPHYR_DRIVERS_WIFI_SILABS_NCP_WIFI_NCP_H_
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include <zephyr/device.h>
@@ -17,6 +18,7 @@
 #include <drivers/driver_zephyr.h>
 
 #include "sl_cpc.h"
+#include "sli_nwp.h"
 
 /* CPC endpoints of the Wi-Fi station. Provisional: the identifiers are not
  * assigned yet.
@@ -36,6 +38,23 @@ struct wifi_ncp_nwp_hdr {
 
 #define WIFI_NCP_NWP_CMD_DATA 0
 
+/* Bytes of the descriptor used beyond the command identifier. The status
+ * of a confirmation sits at the same place as in the SiWx91x host driver;
+ * the others follow the descriptions of sli_nwp.h (DW1.B3 = byte 7,
+ * DW2.B0 = byte 8).
+ */
+#define WIFI_NCP_NWP_DESC_EXT_SIZE 4
+#define WIFI_NCP_NWP_DESC_IFACE    7
+#define WIFI_NCP_NWP_DESC_CHANNEL  8
+#define WIFI_NCP_NWP_DESC_STATUS   12
+
+static inline uint16_t wifi_ncp_nwp_status(const struct wifi_ncp_nwp_hdr *hdr)
+{
+	const uint8_t *desc = (const uint8_t *)hdr;
+
+	return desc[WIFI_NCP_NWP_DESC_STATUS] | (desc[WIFI_NCP_NWP_DESC_STATUS + 1] << 8);
+}
+
 /* Largest Ethernet frame with its descriptor, as a CPC payload */
 #define WIFI_NCP_DATA_MTU                                                                          \
 	ROUND_UP(sizeof(struct wifi_ncp_nwp_hdr) + NET_ETH_MAX_FRAME_SIZE, SL_CPC_BUF_MIN_ALIGNMENT)
@@ -48,7 +67,9 @@ struct wifi_ncp_data_rx_slot {
 	uint8_t data[WIFI_NCP_DATA_MTU] __aligned(SL_CPC_BUF_MIN_ALIGNMENT);
 };
 
+/* Received management frames are queued until the work queue handles them */
 struct wifi_ncp_mgmt_rx_slot {
+	void *fifo_reserved;
 	sl_cpc_buf_t buf;
 	uint8_t data[WIFI_NCP_MGMT_MTU] __aligned(SL_CPC_BUF_MIN_ALIGNMENT);
 };
@@ -58,6 +79,47 @@ struct wifi_ncp_data_tx_slot {
 	sl_cpc_buf_t buf;
 	sl_cpc_frame_t frame;
 	uint8_t data[WIFI_NCP_DATA_MTU] __aligned(SL_CPC_BUF_MIN_ALIGNMENT);
+};
+
+struct wifi_ncp_mgmt_tx_slot {
+	sl_cpc_buf_t buf;
+	sl_cpc_frame_t frame;
+	uint8_t data[WIFI_NCP_MGMT_MTU] __aligned(SL_CPC_BUF_MIN_ALIGNMENT);
+};
+
+/* Command waiting for its confirmation. One at a time: the lock serializes
+ * the callers, the confirmation is matched on the work queue while the caller
+ * waits.
+ */
+struct wifi_ncp_cmd {
+	struct k_mutex lock;
+	struct k_sem done;
+	bool pending;
+	uint8_t id;
+	uint16_t status;
+	/* Payload of the confirmation: capacity on entry, length on return */
+	uint8_t *resp;
+	size_t resp_size;
+};
+
+/* Beacon or probe response kept from the last scan */
+struct wifi_ncp_scan_entry {
+	bool used;
+	uint8_t bssid[NET_ETH_ADDR_LEN];
+	uint8_t channel;
+	uint16_t beacon_int;
+	uint16_t caps;
+	uint16_t ie_len;
+	uint8_t ie[CONFIG_WIFI_SILABS_NCP_SCAN_IE_MAX];
+};
+
+/* Station state driven by the supplicant */
+struct wifi_ncp_sta {
+	struct k_mutex scan_lock;
+	bool scanning;
+	struct wifi_ncp_scan_entry scan[CONFIG_WIFI_SILABS_NCP_SCAN_RESULTS];
+	/* Scan result handed to the supplicant, built from one entry */
+	uint8_t scratch[sizeof(struct wpa_scan_res) + CONFIG_WIFI_SILABS_NCP_SCAN_IE_MAX];
 };
 
 /* State shared with the Zephyr supplicant */
@@ -70,18 +132,36 @@ struct wifi_ncp_config {
 	const struct device *parent;
 	struct net_eth_mac_config mac;
 	struct k_mem_slab *data_tx_slab;
+	struct k_mem_slab *mgmt_tx_slab;
 };
 
 struct wifi_ncp_data {
 	const struct device *dev;
 	struct net_if *iface;
+	/* Address reported by the co-processor, zero when unknown */
+	uint8_t mac[NET_ETH_ADDR_LEN];
 	/* Both endpoints are connected once the device is ready */
 	sl_cpc_ep_t data_ep;
 	sl_cpc_ep_t mgmt_ep;
 	struct k_sem connected;
+	/* Management frames are handled out of the CPC context */
+	struct k_work_q wq;
+
+	K_KERNEL_STACK_MEMBER(wq_stack, CONFIG_WIFI_SILABS_NCP_WQ_STACK_SIZE);
+
+	struct k_work mgmt_rx_work;
+	struct k_fifo mgmt_rx_pending;
+	struct wifi_ncp_cmd cmd;
+	struct wifi_ncp_sta sta;
 	struct wifi_ncp_supp supp;
 	struct wifi_ncp_data_rx_slot data_rx[CONFIG_WIFI_SILABS_NCP_DATA_RX_COUNT];
 	struct wifi_ncp_mgmt_rx_slot mgmt_rx[CONFIG_WIFI_SILABS_NCP_MGMT_RX_COUNT];
 };
+
+/* Queue a frame on the management endpoint: the descriptor, then the two
+ * optional parts of the payload.
+ */
+int wifi_ncp_nwp_send(const struct device *dev, const struct wifi_ncp_nwp_hdr *hdr,
+		      const void *head, size_t head_len, const void *body, size_t body_len);
 
 #endif /* ZEPHYR_DRIVERS_WIFI_SILABS_NCP_WIFI_NCP_H_ */
