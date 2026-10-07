@@ -16,6 +16,7 @@
 #define LAN9250_PHY_TIMEOUT           2000
 #define LAN9250_MAC_TIMEOUT           2000
 #define LAN9250_RESET_TIMEOUT         5000
+#define LAN9250_TX_TIMEOUT            100
 
 #define LAN9250_ALIGN(v) (((v) + 3) & (~3))
 
@@ -330,7 +331,7 @@ struct lan9250_runtime {
 	struct gpio_callback gpio_cb;
 	struct k_mutex lock;
 	struct k_sem int_sem;
-	uint8_t buf[NET_ETH_MAX_FRAME_SIZE];
+	uint8_t buf[LAN9250_ALIGN(NET_ETH_MAX_FRAME_SIZE)];
 };
 
 #endif /*_LAN9250_*/

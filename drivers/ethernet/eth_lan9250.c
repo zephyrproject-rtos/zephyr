@@ -660,16 +660,38 @@ static int lan9250_tx_frame(const struct device *dev, struct net_pkt *pkt)
 	uint32_t regval;
 	uint16_t free_size;
 	uint8_t status_size;
+	k_timepoint_t end;
 	uint32_t tmp;
 	int ret;
 
-	ret = lan9250_read_sys_reg(dev, LAN9250_TX_FIFO_INF, &regval);
-	if (ret < 0) {
-		return ret;
+	if (len > NET_ETH_MAX_FRAME_SIZE) {
+		LOG_ERR("TX frame too long: %zu", len);
+		return -EMSGSIZE;
+	}
+
+	/* Wait for room for TX commands 'A' and 'B' and the padded frame */
+	end = sys_timepoint_calc(K_MSEC(LAN9250_TX_TIMEOUT));
+	while (true) {
+		ret = lan9250_read_sys_reg(dev, LAN9250_TX_FIFO_INF, &regval);
+		if (ret < 0) {
+			return ret;
+		}
+
+		free_size = regval & LAN9250_TX_FIFO_INF_TXFREE;
+		if (free_size >= LAN9250_ALIGN(len) + 2 * sizeof(uint32_t)) {
+			break;
+		}
+
+		if (sys_timepoint_expired(end)) {
+			LOG_ERR("TX FIFO full");
+			eth_stats_update_errors_tx(ctx->iface);
+			return -EBUSY;
+		}
+
+		k_msleep(1);
 	}
 
 	status_size = (regval & LAN9250_TX_FIFO_INF_TXSUSED) >> 16;
-	free_size = regval & LAN9250_TX_FIFO_INF_TXFREE;
 
 	/* TX command 'A' */
 	ret = lan9250_write_sys_reg(
