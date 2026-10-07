@@ -1461,6 +1461,7 @@ Found disallowed Kconfig symbol in SoC Kconfig files: {sym_name:35}
             v2_boards = list_boards.find_v2_boards(root_args).values()
 
             with open(kconfig_boards_file, 'w') as fp:
+                fp.write('source "Kconfig.constants"\n')
                 for board in v2_boards:
                     fp.write(
                         'source "'
@@ -1476,6 +1477,7 @@ Found disallowed Kconfig symbol in SoC Kconfig files: {sym_name:35}
                             )
 
             with open(kconfig_file, 'w') as fp:
+                fp.write('source "Kconfig.constants"\n')
                 for board in v2_boards:
                     for board_dir in board.directories:
                         fp.write('osource "' + (board_dir / 'Kconfig').as_posix() + '"\n')
