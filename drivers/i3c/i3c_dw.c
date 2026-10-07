@@ -1808,6 +1808,11 @@ static int dw_i3c_target_ibi_raise_tir(const struct device *dev, struct i3c_ibi 
 	/* wait for SLV_IBI_RESP update */
 	status = k_sem_take(&data->ibi_sts_sem, K_MSEC(100));
 	if (status != 0) {
+		/* The request stays armed here and the IP keeps re-arbitrating for it;
+		 * SLV_INTR_REQ.SIR is not writable once in flight, so there is nothing
+		 * the target can withdraw.
+		 */
+		LOG_WRN("%s: no IBI TIR status within timeout", dev->name);
 		return -ETIMEDOUT;
 	}
 
