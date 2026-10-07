@@ -785,6 +785,79 @@ class TestSnippetStrategy:
         s._check_manifest(manifest, "my-snippet", acc)
         assert len(acc) == 1
 
+    def test_check_manifest_extra_args_snippet(self, tmp_path):
+        manifest = tmp_path / "testcase.yaml"
+        manifest.write_text(
+            textwrap.dedent("""\
+            tests:
+              my.test:
+                extra_args: SNIPPET="my-snippet"
+        """)
+        )
+        s = self._strategy(tmp_path)
+        acc: set = set()
+        s._check_manifest(manifest, "my-snippet", acc)
+        assert len(acc) == 1
+
+    def test_check_manifest_conditional_extra_args_snippet(self, tmp_path):
+        manifest = tmp_path / "testcase.yaml"
+        manifest.write_text(
+            textwrap.dedent("""\
+            tests:
+              my.test:
+                extra_args:
+                  - platform:native_sim/native:SNIPPET="my-snippet"
+        """)
+        )
+        s = self._strategy(tmp_path)
+        acc: set = set()
+        s._check_manifest(manifest, "my-snippet", acc)
+        assert len(acc) == 1
+
+    def test_check_manifest_multiple_extra_args_snippets(self, tmp_path):
+        manifest = tmp_path / "testcase.yaml"
+        manifest.write_text(
+            textwrap.dedent("""\
+            tests:
+              my.test:
+                extra_args:
+                  - SNIPPET="other-snippet;my-snippet"
+        """)
+        )
+        s = self._strategy(tmp_path)
+        acc: set = set()
+        s._check_manifest(manifest, "my-snippet", acc)
+        assert len(acc) == 1
+
+    def test_check_manifest_child_image_snippet_not_matched(self, tmp_path):
+        manifest = tmp_path / "testcase.yaml"
+        manifest.write_text(
+            textwrap.dedent("""\
+            tests:
+              my.test:
+                extra_args:
+                  - child_SNIPPET=my-snippet
+        """)
+        )
+        s = self._strategy(tmp_path)
+        acc: set = set()
+        s._check_manifest(manifest, "my-snippet", acc)
+        assert len(acc) == 0
+
+    def test_check_manifest_extra_args_snippet_exact_match(self, tmp_path):
+        manifest = tmp_path / "testcase.yaml"
+        manifest.write_text(
+            textwrap.dedent("""\
+            tests:
+              my.test:
+                extra_args: SNIPPET="my-snippet-extra"
+        """)
+        )
+        s = self._strategy(tmp_path)
+        acc: set = set()
+        s._check_manifest(manifest, "my-snippet", acc)
+        assert len(acc) == 0
+
     def test_check_manifest_no_match(self, tmp_path):
         manifest = tmp_path / "testcase.yaml"
         manifest.write_text(
@@ -815,6 +888,23 @@ class TestSnippetStrategy:
         acc: set = set()
         s._check_manifest(manifest, "my-snippet", acc)
         assert len(acc) == 1
+
+    def test_check_manifest_invalid_snippet_args_not_matched(self, tmp_path):
+        manifest = tmp_path / "testcase.yaml"
+        manifest.write_text(
+            textwrap.dedent("""\
+            tests:
+              my.test:
+                extra_args:
+                  - unknown:posix:SNIPPET=my-snippet
+                  - OPTION=x:SNIPPET=my-snippet
+                  - arch:posix:other:SNIPPET=my-snippet
+            """)
+        )
+        s = self._strategy(tmp_path)
+        acc: set = set()
+        s._check_manifest(manifest, "my-snippet", acc)
+        assert len(acc) == 0
 
     def test_analyze_non_snippet_files_ignored(self, tmp_path):
         s = self._strategy(tmp_path)
