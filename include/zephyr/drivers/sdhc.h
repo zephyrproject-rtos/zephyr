@@ -240,6 +240,8 @@ struct sdhc_host_props {
 	bool hs400_support; /**< HS400 support */
 	bool hs400_enhanced_strobe_support; /**< HS400 enhanced strobe support */
 	bool is_spi; /*!< Is the host using SPI mode */
+	/* Skip the generic SD CMD0/CMD8 initialization preamble. */
+	bool skip_sd_common_init;
 };
 
 /**
