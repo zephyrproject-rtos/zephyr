@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI AM13E System Control (SYSCTL) register module
+
+compatible: "ti,am13e-sysctl"
+
+include: syscon.yaml
+
+properties:
+  "#pwren-cells":
+    type: int
+    const: 2
+    description: Number of items in a PWREN specifier (<offset bit>).
+
+pwren-cells:
+  - offset
+  - bit

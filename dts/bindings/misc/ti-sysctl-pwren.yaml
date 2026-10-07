@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+# Common SYSCTL PWREN consumer property for AM13E peripherals.
+
+properties:
+  ti,pwren:
+    type: phandle-array
+    specifier-space: pwren
+    description: |
+      Power-enable this peripheral via SYSCTL.PWREN_*.
+      Format: <&sysctl offset bit>.
