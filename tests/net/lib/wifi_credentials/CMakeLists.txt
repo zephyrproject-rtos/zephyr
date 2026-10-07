@@ -9,8 +9,13 @@ cmake_minimum_required(VERSION 3.28.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(wifi_credentials_test)
 
-FILE(GLOB app_sources src/*.c)
-target_sources(app PRIVATE ${app_sources})
+if(CONFIG_WIFI_CREDENTIALS)
+  # The library is built with the backend selected in Kconfig.
+  target_sources(app PRIVATE src/backend_psa.c)
+  return()
+endif()
+
+target_sources(app PRIVATE src/main.c)
 
 target_sources(app
   PRIVATE
