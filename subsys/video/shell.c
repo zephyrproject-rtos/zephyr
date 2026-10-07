@@ -313,10 +313,16 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 		    num_buffers, frmival_msec, frmrate_fps, dev->name);
 
 end:
-	video_stream_stop(dev, VIDEO_BUF_TYPE_OUTPUT);
+	ret = video_stream_stop(dev, VIDEO_BUF_TYPE_OUTPUT);
+	if (ret < 0) {
+		shell_error(sh, "Failed to stop the video device after the capture");
+	}
 
 	while (video_dequeue(dev, &vbuf, K_NO_WAIT) == 0) {
-		video_buffer_release(vbuf);
+		ret = video_buffer_release(vbuf);
+		if (ret < 0) {
+			shell_error(sh, "Failed to release video buffer %p", (void *)vbuf);
+		}
 	}
 
 	return ret;
