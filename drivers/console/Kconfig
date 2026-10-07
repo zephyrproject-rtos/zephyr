@@ -217,8 +217,9 @@ config UART_MCUMGR_RX_BUF_SIZE
 	int "Size of receive buffer for MCUmgr fragments received over UART, in bytes"
 	default 128
 	help
-	  Specifies the size of the MCUmgr UART receive buffer, in bytes. This value must be large
-	  enough to accommodate any line sent by an MCUmgr client.
+	  Specifies the size of the MCUmgr UART receive buffer, in bytes. If using SMP over console,
+	  this value must be large enough to accommodate any line sent by an MCUmgr client. If using
+	  raw UART (non-SMP over console), received data is passed on in chunks of up to this size.
 
 config UART_MCUMGR_RX_BUF_COUNT
 	int "Number of receive buffers for MCUmgr fragments received over UART"
@@ -230,9 +231,9 @@ config UART_MCUMGR_RX_BUF_COUNT
 	  how many fragments can be queued for processing. It does not limit the size of an SMP
 	  packet, which is set by MCUMGR_TRANSPORT_NETBUF_SIZE.
 
-	  If using raw UART (non-SMP over console) this is the size of the buffer passed to the
-	  SMP handling code which will directly be put into a netbuf, therefore unlike SMP over
-	  console, the value of this should not need to be changed from the default.
+	  If using raw UART (non-SMP over console), each buffer holds a chunk of received data that
+	  is passed to the SMP handling code and released straight away, so unlike SMP over console,
+	  the value of this should not need to be changed from the default.
 
 config UART_MCUMGR_RAW_PROTOCOL
 	bool "Raw (non-SMP over console) protocol"

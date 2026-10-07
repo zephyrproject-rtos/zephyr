@@ -25,10 +25,10 @@ static const struct device *const uart_mcumgr_dev =
 /** Callback to execute when a valid fragment has been received. */
 static uart_mcumgr_recv_fn *uart_mcumgr_recv_cb;
 
+#if !defined(CONFIG_UART_MCUMGR_RAW_PROTOCOL)
 /** Contains the fragment currently being received. */
 static struct uart_mcumgr_rx_buf *uart_mcumgr_cur_buf;
 
-#if !defined(CONFIG_UART_MCUMGR_RAW_PROTOCOL)
 /**
  * Whether the line currently being read should be ignored.  This is true if
  * the line is too long or if there is no buffer available to hold it.
@@ -80,51 +80,61 @@ static int uart_mcumgr_read_chunk(void *buf, int capacity)
 }
 #endif
 
+#if defined(CONFIG_UART_MCUMGR_RAW_PROTOCOL)
 /**
- * Processes a single incoming byte.
+ * Passes a chunk of received raw data to the transport, in as many receive buffers as needed.
+ */
+static void uart_mcumgr_rx_raw(const uint8_t *data, int len)
+{
+	struct uart_mcumgr_rx_buf *rx_buf;
+	int copy_len;
+
+	while (len > 0) {
+		rx_buf = uart_mcumgr_alloc_rx_buf();
+		if (rx_buf == NULL) {
+			LOG_WRN("Insufficient buffers, fragment dropped");
+			return;
+		}
+
+		copy_len = MIN(len, (int)sizeof(rx_buf->data));
+		memcpy(rx_buf->data, data, copy_len);
+		rx_buf->length = copy_len;
+		data += copy_len;
+		len -= copy_len;
+
+		uart_mcumgr_recv_cb(rx_buf);
+	}
+}
+#else
+/**
+ * Processes a single incoming byte of SMP over console data.
  */
 static struct uart_mcumgr_rx_buf *uart_mcumgr_rx_byte(uint8_t byte)
 {
 	struct uart_mcumgr_rx_buf *rx_buf;
 
-#if !defined(CONFIG_UART_MCUMGR_RAW_PROTOCOL)
 	if (!uart_mcumgr_ignoring) {
-#endif
 		if (uart_mcumgr_cur_buf == NULL) {
 			uart_mcumgr_cur_buf = uart_mcumgr_alloc_rx_buf();
 			if (uart_mcumgr_cur_buf == NULL) {
 				LOG_WRN("Insufficient buffers, fragment dropped");
-#if !defined(CONFIG_UART_MCUMGR_RAW_PROTOCOL)
 				uart_mcumgr_ignoring = true;
-#endif
 			}
 		}
-#if !defined(CONFIG_UART_MCUMGR_RAW_PROTOCOL)
 	}
-#endif
 
 	rx_buf = uart_mcumgr_cur_buf;
-#if !defined(CONFIG_UART_MCUMGR_RAW_PROTOCOL)
 	if (!uart_mcumgr_ignoring) {
-#endif
 		if (rx_buf->length >= sizeof(rx_buf->data)) {
 			LOG_WRN("Line too long, fragment dropped");
 			uart_mcumgr_free_rx_buf(uart_mcumgr_cur_buf);
 			uart_mcumgr_cur_buf = NULL;
-#if !defined(CONFIG_UART_MCUMGR_RAW_PROTOCOL)
 			uart_mcumgr_ignoring = true;
-#endif
 		} else {
 			rx_buf->data[rx_buf->length++] = byte;
 		}
-#if !defined(CONFIG_UART_MCUMGR_RAW_PROTOCOL)
 	}
-#endif
 
-#if defined(CONFIG_UART_MCUMGR_RAW_PROTOCOL)
-	uart_mcumgr_cur_buf = NULL;
-	return rx_buf;
-#else
 	if (byte == '\n') {
 		/* Fragment complete. */
 		if (uart_mcumgr_ignoring) {
@@ -136,16 +146,31 @@ static struct uart_mcumgr_rx_buf *uart_mcumgr_rx_byte(uint8_t byte)
 	}
 
 	return NULL;
+}
+#endif
+
+/**
+ * Processes a chunk of received data.
+ */
+static void uart_mcumgr_rx_data(const uint8_t *data, int len)
+{
+#if defined(CONFIG_UART_MCUMGR_RAW_PROTOCOL)
+	uart_mcumgr_rx_raw(data, len);
+#else
+	struct uart_mcumgr_rx_buf *rx_buf;
+
+	for (int i = 0; i < len; i++) {
+		rx_buf = uart_mcumgr_rx_byte(data[i]);
+		if (rx_buf != NULL) {
+			uart_mcumgr_recv_cb(rx_buf);
+		}
+	}
 #endif
 }
 
 #if defined(CONFIG_MCUMGR_TRANSPORT_UART_ASYNC)
 static void uart_mcumgr_async(const struct device *dev, struct uart_event *evt, void *user_data)
 {
-	struct uart_mcumgr_rx_buf *rx_buf;
-	uint8_t *p;
-	int len;
-
 	ARG_UNUSED(dev);
 
 	switch (evt->type) {
@@ -153,15 +178,7 @@ static void uart_mcumgr_async(const struct device *dev, struct uart_event *evt, 
 	case UART_TX_ABORTED:
 		break;
 	case UART_RX_RDY:
-		len = evt->data.rx.len;
-		p = &evt->data.rx.buf[evt->data.rx.offset];
-
-		for (int i = 0; i < len; i++) {
-			rx_buf = uart_mcumgr_rx_byte(p[i]);
-			if (rx_buf != NULL) {
-				uart_mcumgr_recv_cb(rx_buf);
-			}
-		}
+		uart_mcumgr_rx_data(&evt->data.rx.buf[evt->data.rx.offset], evt->data.rx.len);
 		break;
 	case UART_RX_DISABLED:
 		async_current = 0;
@@ -190,10 +207,8 @@ static void uart_mcumgr_async(const struct device *dev, struct uart_event *evt, 
  */
 static void uart_mcumgr_isr(const struct device *unused, void *user_data)
 {
-	struct uart_mcumgr_rx_buf *rx_buf;
 	uint8_t buf[32];
 	int chunk_len;
-	int i;
 
 	ARG_UNUSED(unused);
 	ARG_UNUSED(user_data);
@@ -210,12 +225,7 @@ static void uart_mcumgr_isr(const struct device *unused, void *user_data)
 			break;
 		}
 
-		for (i = 0; i < chunk_len; i++) {
-			rx_buf = uart_mcumgr_rx_byte(buf[i]);
-			if (rx_buf != NULL) {
-				uart_mcumgr_recv_cb(rx_buf);
-			}
-		}
+		uart_mcumgr_rx_data(buf, chunk_len);
 	}
 }
 #endif
