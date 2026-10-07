@@ -1,4 +1,4 @@
-identifier: rak11160
+identifier: rak11160/stm32wle5xx
 name: RAK11160
 type: mcu
 arch: arm
@@ -16,4 +16,4 @@ supported:
   - uart
   - watchdog
   - lora
-vendor: rak
+vendor: rakwireless
