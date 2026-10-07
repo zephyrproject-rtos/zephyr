@@ -509,33 +509,18 @@ static int mpipe_img_jpeg_parser_chain_fn(struct mpipe_pad *pad, struct net_buf 
 	if (jpeg_parser->partial_frame != NULL) {
 		struct net_buf *partial = jpeg_parser->partial_frame;
 		uint32_t partial_used = mpipe_buffer_get_meta(partial)->bytes_used;
-		uint8_t *partial_eoi;
-		bool boundary_eoi = false;
+		size_t to_copy;
 
-		/* Search EOI across [partial_frame + in_buf] by concatenating temporarily */
-		/* First, look for EOI within partial itself */
-		partial_eoi = find_jpeg_eoi(partial->data, partial_used);
-		if (partial_eoi == NULL) {
-			/*
-			 * Look for EOI in the in_buf, but account for possible 0xFF at the end
-			 * of partial
-			 */
-			bool boundary_ff = (partial_used > 0 &&
-					    partial->data[partial_used - 1] == JPEG_EOI_BYTE0);
-			boundary_eoi = (boundary_ff && in_used > 0 && data[0] == JPEG_EOI_BYTE1);
+		/*
+		 * The partial frame never holds an EOI: its bytes were all scanned
+		 * before being stored. Only this buffer is scanned, plus an EOI split
+		 * across the two, so each byte is looked at once.
+		 */
+		bool boundary_eoi = (partial_used > 0U &&
+				     partial->data[partial_used - 1U] == JPEG_EOI_BYTE0 &&
+				     in_used > 0U && data[0] == JPEG_EOI_BYTE1);
 
-			eoi_ptr = find_jpeg_eoi(data, in_used);
-			if (boundary_eoi) {
-				/*
-				 * EOI spans boundary: partial ends with 0xFF, in_buf starts with
-				 * 0xD9
-				 */
-				eoi_ptr = data;
-			}
-		} else {
-			eoi_ptr = partial_eoi;
-		}
-
+		eoi_ptr = boundary_eoi ? data : find_jpeg_eoi(data, in_used);
 		if (eoi_ptr == NULL) {
 			/* Still partial: append everything */
 			if (append_to_partial(partial, data, in_used) < 0) {
@@ -547,28 +532,18 @@ static int mpipe_img_jpeg_parser_chain_fn(struct mpipe_pad *pad, struct net_buf 
 			return 0;
 		}
 
-		/* We have EOI; copy bytes up to and including EOI into partial */
-		size_t to_copy;
-
-		if (eoi_ptr == partial_eoi) {
-			to_copy = 0;
-		} else {
-			/* eoi_ptr points into input buffer */
-			to_copy = (size_t)(eoi_ptr - data) + 2U;
-		}
-
-		if (to_copy > 0) {
-			if (append_to_partial(partial, data, to_copy) < 0) {
-				LOG_ERR("Partial buffer overflow");
-				net_buf_unref(in_buf);
-				return -ENOBUFS;
-			}
+		/* Copy the bytes up to and including the EOI; a split one only lacks 0xD9 */
+		to_copy = boundary_eoi ? 1U : (size_t)(eoi_ptr - data) + 2U;
+		if (append_to_partial(partial, data, to_copy) < 0) {
+			LOG_ERR("Partial buffer overflow");
+			net_buf_unref(in_buf);
+			return -ENOBUFS;
 		}
 
 		/* The partial buffer now holds a complete JPEG frame; output it */
 		*out_buf = partial;
 		jpeg_parser->partial_frame = NULL;
-		parse_offset = boundary_eoi ? 1U : to_copy;
+		parse_offset = to_copy;
 	}
 
 	/* Parse remaining data in input buffer for complete frames */
