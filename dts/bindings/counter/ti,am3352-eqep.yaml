@@ -32,7 +32,7 @@ description: |
             ti,qepa-src = <TI_EQEP_SRC_CMPSS1>;
     };
 
-include: [base.yaml, pinctrl-device.yaml, mux-consumer.yaml]
+include: [base.yaml, pinctrl-device.yaml, mux-consumer.yaml, ti-sysctl-pwren.yaml]
 
 compatible: "ti,am3352-eqep"
 

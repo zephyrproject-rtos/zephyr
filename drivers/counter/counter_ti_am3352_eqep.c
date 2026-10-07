@@ -20,8 +20,12 @@
 
 #ifdef CONFIG_COUNTER_TI_AM3352_EQEP_VARIANT_AM13
 #include <zephyr/drivers/mux.h>
+#include <zephyr/drivers/syscon.h>
 #include <zephyr/dt-bindings/counter/ti_am3352_eqep.h>
+#include <zephyr/kernel.h>
 
+#define TI_EQEP_SYSCTL_PWREN_KEY (0x26U << 24)
+#define TI_EQEP_PWREN_SETTLE_US 1U
 #endif
 
 LOG_MODULE_REGISTER(ti_eqep);
@@ -132,6 +136,10 @@ struct ti_eqep_cfg {
 	uint8_t qepa_src;
 	uint8_t qepb_src;
 	uint8_t qepi_src;
+	const struct device *pwren_syscon;
+	uint32_t pwren_offset;
+	uint8_t pwren_bit;
+	bool has_pwren;
 #endif
 };
 
@@ -442,11 +450,48 @@ static int ti_eqep_set_guard_period(const struct device *dev, uint32_t ticks, ui
 	return 0;
 }
 
+#ifdef CONFIG_COUNTER_TI_AM3352_EQEP_VARIANT_AM13
+static int ti_eqep_pwren_enable(const struct ti_eqep_cfg *cfg)
+{
+	uint32_t bit;
+	uint32_t mask;
+	int ret;
+
+	if (!cfg->has_pwren) {
+		return 0;
+	}
+
+	if (!device_is_ready(cfg->pwren_syscon)) {
+		LOG_ERR("SYSCTL (pwren) device not ready");
+		return -ENODEV;
+	}
+
+	bit = BIT(cfg->pwren_bit);
+	mask = bit | TI_EQEP_SYSCTL_PWREN_KEY;
+	ret = syscon_update_bits(cfg->pwren_syscon, cfg->pwren_offset, mask, mask);
+	if (ret < 0) {
+		LOG_ERR("failed to set SYSCTL PWREN bit %u: %d", cfg->pwren_bit, ret);
+		return ret;
+	}
+
+	k_busy_wait(TI_EQEP_PWREN_SETTLE_US);
+
+	return 0;
+}
+#endif /* CONFIG_COUNTER_TI_AM3352_EQEP_VARIANT_AM13 */
+
 static int ti_eqep_init(const struct device *dev)
 {
 	const struct ti_eqep_cfg *cfg = DEV_CFG(dev);
 	struct ti_eqep_regs *regs;
 	int ret;
+
+#ifdef CONFIG_COUNTER_TI_AM3352_EQEP_VARIANT_AM13
+	ret = ti_eqep_pwren_enable(cfg);
+	if (ret < 0) {
+		return ret;
+	}
+#endif
 
 	DEVICE_MMIO_NAMED_MAP(dev, base, K_MEM_CACHE_NONE);
 	regs = DEV_REGS(dev);
@@ -764,10 +809,17 @@ int z_impl_ti_eqep_get_latched_capture_values(const struct device *dev, uint32_t
 		     .qepb_src = DT_INST_PROP_OR(n, ti_qepb_src, TI_EQEP_SRC_INPUT_XBAR),         \
 		     .qepi_src = DT_INST_PROP_OR(n, ti_qepi_src, TI_EQEP_SRC_INPUT_XBAR),), ())
 
+#define TI_EQEP_PWREN_INIT(n)                                                                      \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, ti_pwren),                                           \
+		    (.has_pwren = true,                                                           \
+		     .pwren_syscon = DEVICE_DT_GET(DT_INST_PHANDLE(n, ti_pwren)),                 \
+		     .pwren_offset = DT_INST_PHA(n, ti_pwren, offset),                            \
+		     .pwren_bit = DT_INST_PHA(n, ti_pwren, bit),), ())
 #else /* !CONFIG_COUNTER_TI_AM3352_EQEP_VARIANT_AM13 */
 #define TI_EQEP_MUX_ENTRIES_DEFINE(n)
 #define TI_EQEP_MUX_ENTRIES_INIT(n)
 #define TI_EQEP_SRC_SELECT_INIT(n)
+#define TI_EQEP_PWREN_INIT(n)
 #endif /* CONFIG_COUNTER_TI_AM3352_EQEP_VARIANT_AM13 */
 
 #define TI_EQEP_INIT(n)                                                                            \
@@ -795,7 +847,8 @@ int z_impl_ti_eqep_get_latched_capture_values(const struct device *dev, uint32_t
 		.irq_config_func = ti_eqep_irq_config_func_##n,                                    \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		TI_EQEP_MUX_ENTRIES_INIT(n)                                                        \
-		TI_EQEP_SRC_SELECT_INIT(n)};                                                           \
+		TI_EQEP_SRC_SELECT_INIT(n)                                                         \
+		TI_EQEP_PWREN_INIT(n)};                                                            \
                                                                                                    \
 	static struct ti_eqep_data ti_eqep_data_##n;                                               \
                                                                                                    \
