@@ -169,8 +169,8 @@ int mpu6050_init(const struct device *dev)
 	if (id == MPU6050_CHIP_ID || id == MPU9250_CHIP_ID || id == MPU6880_CHIP_ID) {
 		LOG_DBG("MPU6050/MPU9250/MPU6880 detected");
 		drv_data->device_type = DEVICE_TYPE_MPU6050;
-	} else if (id == MPU6500_CHIP_ID) {
-		LOG_DBG("MPU6500 detected");
+	} else if (id == MPU6500_CHIP_ID || id == MPU6515_CHIP_ID) {
+		LOG_DBG("MPU6500/MPU6515 detected");
 		drv_data->device_type = DEVICE_TYPE_MPU6500;
 	} else {
 		LOG_ERR("Invalid chip ID.");
