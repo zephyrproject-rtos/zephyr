@@ -264,28 +264,15 @@ int video_get_ctrl_int_menu(const struct device *dev, uint32_t cid, int64_t *val
  * consideration the bits per pixel of the format and the number of lanes.
  *
  * @param dev Video device to query.
+ * @param val Pointer where the result is stored.
+ * @param bus_type Type of bus, (@ref VIDEO_BUS_TYPE_CSI2_DPHY, @ref VIDEO_BUS_TYPE_PARALLEL...)
  * @param bpp Amount of bits per pixel of the pixel format produced by the device
  * @param lane_nb Number of CSI-2 lanes used
+ *
+ * @retval 0 on success, otherwise a negative error code
  */
-int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t lane_nb);
-
-/**
- * @brief Return the link-frequency advertised by a device
- *
- * Device exposing a DVP link should advertise at least one of the following two controls:
- *   - @ref VIDEO_CID_LINK_FREQ
- *   - @ref VIDEO_CID_PIXEL_RATE
- *
- * At first the helper will try read the @ref VIDEO_CID_LINK_FREQ and if not available will
- * approximate the link-frequency from the @ref VIDEO_CID_PIXEL_RATE value, taking into
- * consideration the bits per pixel of the format and the bus width (number of signals).
- *
- * @param dev Video device to query.
- * @param bpp Amount of bits per pixel of the pixel format produced by the device
- * @param bus_width Number of data signals for this bus.
- */
-int64_t video_get_dvp_link_freq(const struct device *dev, uint8_t bpp, uint8_t bus_width);
-
+int video_get_link_freq(const struct device *dev, int64_t *val,
+			uint8_t bus_type, uint8_t bpp, uint8_t lane_nb);
 /**
  * @}
  */

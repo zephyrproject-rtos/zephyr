@@ -543,8 +543,8 @@ int video_get_ctrl_menu(const struct device *dev, uint32_t cid, const char **str
 	return 0;
 }
 
-static int video_get_link_freq(const struct device *dev, int64_t *val,
-			       uint8_t bus_type, uint8_t bpp, uint8_t lane_nb)
+int video_get_link_freq(const struct device *dev, int64_t *val,
+			uint8_t bus_type, uint8_t bpp, uint8_t lane_nb)
 {
 	struct video_control pixel_rate_ctrl = {.id = VIDEO_CID_PIXEL_RATE};
 	int64_t link_freq = 0;
@@ -556,18 +556,15 @@ static int video_get_link_freq(const struct device *dev, int64_t *val,
 
 	/* Try to get the LINK_FREQ value from the source device */
 	ret = video_get_ctrl_int_menu(dev, VIDEO_CID_LINK_FREQ, &link_freq);
-	if (ret == -ENOTSUP) {
-		goto fallback;
+	if (ret == 0) {
+		*val = link_freq;
+		return 0;
 	}
 	if (ret < 0) {
 		LOG_ERR("Error while querying %s LINK_FREQUENCY", dev->name);
 		return ret;
 	}
 
-	*val = link_freq;
-	return 0;
-
-fallback:
 	/* If VIDEO_CID_LINK_FREQ is not available, approximate from VIDEO_CID_PIXEL_RATE */
 	ret = video_get_ctrl(dev, &pixel_rate_ctrl);
 	if (ret < 0) {
@@ -575,28 +572,17 @@ fallback:
 		return ret;
 	}
 
-	if (bus_type == VIDEO_BUS_TYPE_CSI2_DPHY) {
+	switch (bus_type) {
+	case VIDEO_BUS_TYPE_CSI2_DPHY:
 		/* CSI D-PHY is using a DDR data bus so bitrate is twice the frequency */
 		*val = pixel_rate_ctrl.val64 * bpp / (2 * lane_nb);
 		return 0;
-	}
-
-	if (bus_type == VIDEO_BUS_TYPE_PARALLEL) {
+	case VIDEO_BUS_TYPE_PARALLEL:
 		/* DVP is using a parallel data bus with one bit per lane per clock */
 		*val = pixel_rate_ctrl.val64 * bpp / lane_nb;
 		return 0;
+	default:
+		LOG_ERR("Unsupported bus type %u", bus_type);
+		return -ENOTSUP;
 	}
-
-	LOG_ERR("Unsupported bus type %u", bus_type);
-	return -ENOTSUP;
-}
-
-int video_get_csi_link_freq(const struct device *dev, int64_t *val, uint8_t bpp, uint8_t lane_nb)
-{
-	return video_get_link_freq(dev, VIDEO_BUS_TYPE_CSI2_DPHY, bpp, lane_nb);
-}
-
-int video_get_dvp_link_freq(const struct device *dev, int64_t *val, uint8_t bpp, uint8_t bus_width)
-{
-	return video_get_link_freq(dev, VIDEO_BUS_TYPE_PARALLEL, bpp, bus_width);
 }
