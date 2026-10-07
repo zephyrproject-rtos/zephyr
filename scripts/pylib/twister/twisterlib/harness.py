@@ -577,7 +577,9 @@ class Script(Harness):
         self._output = []
         log_prefix = self.log_prefix or self.__class__.__name__.upper()
         while proc.stdout.readable() and proc.poll() is None:
-            line = proc.stdout.readline().decode().rstrip()
+            # errors="replace": a non-UTF-8 serial byte must not crash this reader
+            # thread (which would stop capturing the DUT's output mid-run).
+            line = proc.stdout.readline().decode(errors="replace").rstrip()
             if not line:
                 continue
             self._output.append(line)
