@@ -106,20 +106,8 @@ struct mpsc_pbuf_buffer {
 	/** Lock. */
 	struct k_spinlock lock;
 
-	/** User callback called whenever packet is dropped.
-	 *
-	 * May be NULL if unneeded.
-	 */
-	mpsc_pbuf_notify_drop notify_drop;
-
-	/** Callback for getting packet length. */
-	mpsc_pbuf_get_wlen get_wlen;
-
-	/* Buffer. */
-	uint32_t *buf;
-
-	/* Buffer size in 32 bit words. */
-	uint32_t size;
+	/** Configuration. */
+	const struct mpsc_pbuf_buffer_config *config;
 
 	/* Store max buffer usage. */
 	uint32_t max_usage;
@@ -147,10 +135,22 @@ struct mpsc_pbuf_buffer_config {
  *
  * @param buffer Buffer.
  *
- * @param config Configuration.
+ * @param config Configuration. Must be valid as long as the buffer is in use.
  */
 void mpsc_pbuf_init(struct mpsc_pbuf_buffer *buffer,
 		    const struct mpsc_pbuf_buffer_config *config);
+
+/** @brief Check if a buffer is initialized.
+ *
+ * @param buffer Buffer.
+ *
+ * @return true if initialized.
+ * @return false if not initialized.
+ */
+static inline bool mpsc_pbuf_is_init(struct mpsc_pbuf_buffer *buffer)
+{
+	return buffer->config != NULL;
+}
 
 /** @brief Allocate a packet.
  *
