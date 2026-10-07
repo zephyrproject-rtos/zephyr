@@ -577,6 +577,22 @@ static void phy_link_state_changed(const struct device *phy_dev __unused,
 				   void *user_data)
 {
 	struct net_if *iface = (struct net_if *)user_data;
+	struct eth_esp32_dev_data *dev_data = net_if_get_device(iface)->data;
+
+	if (state->is_up) {
+		bool is_100m = PHY_LINK_IS_SPEED_100M(state->speed);
+
+#if !defined(CONFIG_SOC_SERIES_ESP32)
+		/* The RMII reference clock is 50 MHz; RX/TX need 25 MHz or 2.5 MHz. */
+		if (DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii)) {
+			emac_hal_clock_rmii_rx_tx_div(&dev_data->hal, is_100m ? 1 : 19);
+		}
+#endif
+		emac_hal_set_speed(&dev_data->hal, is_100m ? ETH_SPEED_100M : ETH_SPEED_10M);
+		emac_hal_set_duplex(&dev_data->hal, PHY_LINK_IS_FULL_DUPLEX(state->speed)
+							    ? ETH_DUPLEX_FULL
+							    : ETH_DUPLEX_HALF);
+	}
 
 	net_eth_carrier_set(iface, state->is_up);
 }
