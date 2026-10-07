@@ -1,0 +1,77 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+title: STM32H7P Reset and Clock Controller (RCC)
+
+description: |
+  The STM32H7P RCC is responsible for managing the on-chip clock generators,
+  selecting the System Clock (SYSCLK / sys_ck) as well as controlling the
+  various peripheral clocks.
+
+  Refer to st,stm32-rcc for information about peripheral gate and domain clock
+  configuration.
+
+compatible: "st,stm32h7p-rcc"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#clock-cells":
+    const: 2
+
+  clock-frequency:
+    type: int
+    required: true
+    description: CPU clock frequency in Hz (rcc_cpu_ck)
+
+  cpre:
+    type: int
+    required: true
+    description: CPU domain core prescaler
+    enum: [1, 2, 4, 8, 16, 64, 128, 256, 512]
+
+  bmpre:
+    type: int
+    required: true
+    description: Bus matrix prescaler
+    enum: [1, 2]
+
+  ppre1:
+    type: int
+    required: true
+    description: APB1 prescaler
+    enum: [1, 2, 4, 8, 16]
+
+  ppre2:
+    type: int
+    required: true
+    description: APB2 prescaler
+    enum: [1, 2, 4, 8, 16]
+
+  ppre4:
+    type: int
+    required: true
+    description: APB4 prescaler
+    enum: [1, 2, 4, 8, 16]
+
+  st,clock-sources:
+    type: phandles
+    dependency-mode: ignore
+    description: |
+      List of nodes representing intermediate clock muxes.
+      These nodes should have compatible "st,stm32-clock-mux".
+
+  st,clock-source-identifiers:
+    type: array
+    description: |
+      List of identifiers for the intermediate clock mux nodes specified in
+      property "st,clock-sources"; element at index N is mapped to the Nth
+      cell of that property and should be the STM32_SRC_xxx value defined
+      in `stm32h7p_clock.h` which corresponds to that clock mux.
+
+clock-cells:
+  - bus
+  - bits
