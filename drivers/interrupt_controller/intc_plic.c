@@ -432,7 +432,7 @@ const struct device *riscv_plic_get_dev(void)
 
 void z_riscv_log_saved_irq_and_device(unsigned long cause)
 {
-	if (cause == RISCV_IRQ_MEXT) {
+	if (cause == (IS_ENABLED(CONFIG_RISCV_S_MODE) ? RISCV_IRQ_SEXT : RISCV_IRQ_MEXT)) {
 		unsigned int irq = riscv_plic_get_irq();
 		const struct device *dev = riscv_plic_get_dev();
 
