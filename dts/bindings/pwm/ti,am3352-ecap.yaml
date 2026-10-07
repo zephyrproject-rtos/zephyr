@@ -29,7 +29,8 @@ description: |
   since ECCTL0 is a mux internal to the eCAP, separate from the crossbar
   itself.
 
-include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml, mux-consumer.yaml]
+include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml, mux-consumer.yaml,
+          ti-sysctl-pwren.yaml]
 
 compatible: "ti,am3352-ecap"
 

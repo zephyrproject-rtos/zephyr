@@ -43,6 +43,8 @@
 			compatible = "ti,am3352-ecap";
 			reg = <0x40440000 0x40>;
 			clocks = <&ckm MSPM0_CLOCK_MCLK>;
+			ti,pwren = <&sysctl AM13E_SYSCTL_PWREN_MCPERIPH
+				    AM13E_SYSCTL_PWREN_ECAP0_BIT>;
 
 			#pwm-cells = <3>;
 			status = "disabled";
@@ -52,6 +54,8 @@
 			compatible = "ti,am3352-ecap";
 			reg = <0x40441000 0x40>;
 			clocks = <&ckm MSPM0_CLOCK_MCLK>;
+			ti,pwren = <&sysctl AM13E_SYSCTL_PWREN_MCPERIPH
+				    AM13E_SYSCTL_PWREN_ECAP1_BIT>;
 
 			#pwm-cells = <3>;
 			status = "disabled";
