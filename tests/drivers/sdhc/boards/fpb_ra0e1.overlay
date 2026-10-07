@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * A Digilent Pmod microSD plugged straight into the Pmod 1 connector, which carries the SPI00
+ * signals and defaults to Pmod Type 2A (expanded SPI), so no jumper changes are needed:
+ *
+ *   PMOD1-1  CS    P103 (GPIO)      PMOD1-4  SCK   P102 / SCK00_A
+ *   PMOD1-2  MOSI  P101 / SO00_A    PMOD1-5  GND
+ *   PMOD1-3  MISO  P100 / SI00_A    PMOD1-6  VCC   +3.3 V
+ *
+ * SPI00 is SAU0 channel 0, which uart0 also uses, so the console moves to uart2.
+ */
+
+/ {
+	aliases {
+		sdhc0 = &sdcard;
+	};
+
+	chosen {
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+	};
+};
+
+&uart0 {
+	status = "disabled";
+};
+
+&uart2 {
+	status = "okay";
+};
+
+&ioport1 {
+	status = "okay";
+};
+
+&spi00 {
+	status = "okay";
+	cs-gpios = <&ioport1 3 GPIO_ACTIVE_LOW>;
+
+	sdcard: sdcard@0 {
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <0>;
+		status = "okay";
+		spi-max-frequency = <1000000>;
+
+		sdmmc {
+			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
+			status = "okay";
+		};
+	};
+};
