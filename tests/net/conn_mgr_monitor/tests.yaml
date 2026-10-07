@@ -11,3 +11,9 @@ tests:
   net.conn_mgr.dad:
     extra_configs:
       - CONFIG_NET_IPV6_DAD=y
+  net.conn_mgr.dns:
+    extra_configs:
+      - CONFIG_NET_IPV6_DAD=n
+      - CONFIG_DNS_RESOLVER=y
+      - CONFIG_DNS_RESOLVER_MAX_SERVERS=2
+      - CONFIG_NET_MAX_CONTEXTS=8
