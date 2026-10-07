@@ -13,6 +13,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/wifi.h>
 #include <zephyr/sys/util.h>
 
 #include <drivers/driver_zephyr.h>
@@ -113,13 +114,36 @@ struct wifi_ncp_scan_entry {
 	uint8_t ie[CONFIG_WIFI_SILABS_NCP_SCAN_IE_MAX];
 };
 
+/* Largest RSN element the supplicant may ask to associate with */
+#define WIFI_NCP_WPA_IE_MAX 64
+
+enum wifi_ncp_sta_state {
+	WIFI_NCP_STA_IDLE,
+	/* Join sent, waiting for its deferred confirmation */
+	WIFI_NCP_STA_JOINING,
+	WIFI_NCP_STA_ASSOCIATED,
+};
+
 /* Station state driven by the supplicant */
 struct wifi_ncp_sta {
-	struct k_mutex scan_lock;
+	struct k_mutex lock;
 	bool scanning;
 	struct wifi_ncp_scan_entry scan[CONFIG_WIFI_SILABS_NCP_SCAN_RESULTS];
-	/* Scan result handed to the supplicant, built from one entry */
-	uint8_t scratch[sizeof(struct wpa_scan_res) + CONFIG_WIFI_SILABS_NCP_SCAN_IE_MAX];
+	enum wifi_ncp_sta_state state;
+	/* The BSS being joined or joined */
+	uint8_t bssid[NET_ETH_ADDR_LEN];
+	uint8_t ssid[WIFI_SSID_MAX_LEN];
+	size_t ssid_len;
+	uint8_t channel;
+	uint16_t beacon_int;
+	unsigned int key_mgmt;
+	uint8_t wpa_ie[WIFI_NCP_WPA_IE_MAX];
+	size_t wpa_ie_len;
+	/* Scan result handed to the supplicant or join information sent to
+	 * the co-processor, built from one entry
+	 */
+	uint8_t scratch[MAX(sizeof(struct wpa_scan_res) + CONFIG_WIFI_SILABS_NCP_SCAN_IE_MAX,
+			    sizeof(sli_wifi_sta_join_ap_info_t))] __aligned(4);
 };
 
 /* State shared with the Zephyr supplicant */
