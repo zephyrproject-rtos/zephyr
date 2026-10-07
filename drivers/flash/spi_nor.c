@@ -120,6 +120,8 @@ struct spi_nor_config {
 #endif /* CONFIG_SPI_NOR_SFDP_DEVICETREE */
 #endif /* CONFIG_SPI_NOR_SFDP_RUNTIME */
 
+	uint32_t wait_ready_timeout_ms;
+
 	/* Optional bits in SR to be cleared on startup.
 	 *
 	 * This information cannot be derived from SFDP.
@@ -520,12 +522,14 @@ static int spi_nor_access(const struct device *const dev,
 static int spi_nor_wait_until_ready(const struct device *dev, k_timeout_t poll_delay)
 {
 	const struct spi_nor_config *cfg = dev->config;
+	k_timepoint_t end = sys_timepoint_calc(K_MSEC(cfg->wait_ready_timeout_ms));
+	bool expired;
 	int ret;
 	uint8_t reg;
 
 	ARG_UNUSED(poll_delay);
 
-	while (true) {
+	do {
 		/* If flag status register is present, check it rather than the standard
 		 * status register since it allows better error detection. Also, some devices
 		 * that have it require it to be read after a program operation.
@@ -567,11 +571,17 @@ static int spi_nor_wait_until_ready(const struct device *dev, k_timeout_t poll_d
 				break;
 			}
 		}
+		expired = sys_timepoint_expired(end);
+		if (expired) {
+			LOG_ERR("Timeout waiting until ready");
+			ret = -ETIMEDOUT;
+		} else {
 #ifdef CONFIG_SPI_NOR_SLEEP_WHILE_WAITING_UNTIL_READY
-		/* Don't monopolise the CPU while waiting for ready */
-		k_sleep(poll_delay);
+			/* Don't monopolise the CPU while waiting for ready */
+			k_sleep(poll_delay);
 #endif /* CONFIG_SPI_NOR_SLEEP_WHILE_WAITING_UNTIL_READY */
-	}
+		}
+	} while (!expired && ret == 0);
 	return ret;
 }
 
@@ -1844,6 +1854,12 @@ static DEVICE_API(flash, spi_nor_api) = {
 					(DT_INST_PROP(idx, has_lock) & 0xFF),		\
 					"Need support for lock clear beyond SR1");))
 
+#define WAIT_READY_TIMEOUT_DEFINE(idx)							\
+	BUILD_ASSERT(IS_ENABLED(CONFIG_TIMEOUT_64BIT) ||				\
+		     k_ms_to_ticks_ceil64(DT_INST_PROP(idx, wait_ready_timeout_ms)) <	\
+			     UINT32_MAX,						\
+		     "wait-ready-timeout-ms does not fit a 32-bit timeout");
+
 #define CONFIGURE_4BYTE_ADDR(idx) .enter_4byte_addr = DT_INST_PROP_OR(idx, enter_4byte_addr, 0),
 
 #define INIT_T_ENTER_DPD(idx)								\
@@ -1907,6 +1923,7 @@ static DEVICE_API(flash, spi_nor_api) = {
 		.use_4b_addr_opcodes = DT_INST_PROP(idx, use_4b_addr_opcodes),			\
 		.has_flsr = DT_INST_PROP(idx, use_flag_status_register),			\
 		.use_fast_read = DT_INST_PROP(idx, use_fast_read),				\
+		.wait_ready_timeout_ms = DT_INST_PROP(idx, wait_ready_timeout_ms),		\
 		IF_ENABLED(INST_HAS_LOCK(idx), (.has_lock = DT_INST_PROP(idx, has_lock),))	\
 		IF_ENABLED(ANY_INST_HAS_DPD, (INIT_T_ENTER_DPD(idx),))				\
 		IF_ENABLED(UTIL_AND(ANY_INST_HAS_DPD, ANY_INST_HAS_T_EXIT_DPD),			\
@@ -1928,6 +1945,7 @@ static DEVICE_API(flash, spi_nor_api) = {
 	ASSIGN_PM(idx)								\
 	ATTRIBUTES_DEFINE(idx)							\
 	LOCK_DEFINE(idx)							\
+	WAIT_READY_TIMEOUT_DEFINE(idx)						\
 	GENERATE_CONFIG_STRUCT(idx)						\
 	static struct spi_nor_data spi_nor_##idx##_data;			\
 	DEVICE_DT_INST_DEFINE(idx, &spi_nor_init, PM_DEVICE_DT_INST_GET(idx),	\
