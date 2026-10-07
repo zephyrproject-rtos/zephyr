@@ -61,6 +61,8 @@
 #include <zephyr/dt-bindings/clock/stm32h5_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32H7X)
 #include <zephyr/dt-bindings/clock/stm32h7_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32H7PX)
+#include <zephyr/dt-bindings/clock/stm32h7p_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
 #include <zephyr/dt-bindings/clock/stm32h7rs_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32L0X)
@@ -138,8 +140,11 @@
 
 #define STM32_TIMER_PRESCALER	DT_PROP(DT_NODELABEL(rcc), timpre)
 
-/** STM2H7RS specific RCC dividers */
-#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+/** STM32H7-like specific RCC dividers */
+#if defined(CONFIG_SOC_SERIES_STM32H7PX)
+#define STM32_CPRE	DT_PROP(DT_NODELABEL(rcc), cpre)
+#define STM32_BMPRE	DT_PROP(DT_NODELABEL(rcc), bmpre)
+#elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
 #define STM32_D1CPRE	DT_PROP(DT_NODELABEL(rcc), dcpre)
 #else
 #define STM32_D1CPRE	DT_PROP(DT_NODELABEL(rcc), d1cpre)
@@ -747,6 +752,10 @@
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(perck), st_stm32_clock_mux, okay)
 #define STM32_CKPER_ENABLED	1
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(adckerck), st_stm32_clock_mux, okay)
+#define STM32_ADCKERCK_ENABLED	1
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(cpusw), st_stm32_clock_mux, okay)
