@@ -9,6 +9,9 @@ common:
 tests:
   net.socket.get_addr_info:
     min_ram: 21
+  net.socket.get_addr_info.prefer_ipv4:
+    extra_configs:
+      - CONFIG_NET_SOCKETS_DNS_PREFER_IPV4=y
   net.socket.get_addr_info.timeout:
     extra_configs:
       - CONFIG_NET_SOCKETS_DNS_TIMEOUT=2000
