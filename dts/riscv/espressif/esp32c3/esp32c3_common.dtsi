@@ -159,6 +159,14 @@
 			ngpios = <26>;   /* 0..25 */
 		};
 
+		sdm0: sdm@60004f00 {
+			compatible = "espressif,esp32-sdm";
+			reg = <0x60004f00 0x40>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		xt_wdt: xt_wdt@60008004 {
 			compatible = "espressif,esp32-xt-wdt";
 			reg = <0x60008004 0x4>;
