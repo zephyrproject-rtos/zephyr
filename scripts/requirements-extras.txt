@@ -29,3 +29,6 @@ PyGithub
 
 # used to generate devicetree dependency graphs
 graphviz
+
+# Script used to build valid firmware images for TI LPF3 MCUs
+ti-simplelink-crc-tool >= 1.2.6
