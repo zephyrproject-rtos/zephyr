@@ -1,6 +1,6 @@
-# Copyright (c) 2025 RAKwireless Technology Co., Ltd. <www.rakwireless.com>
-# Sercan Erat <sercanerat@gmail.com>
+# SPDX-FileCopyrightText: Copyright (c) 2025 RAKwireless Technology Co., Ltd. <www.rakwireless.com>
 # SPDX-License-Identifier: Apache-2.0
+# Sercan Erat <sercanerat@gmail.com>
 
 board_runner_args(pyocd "--target=stm32wle5ccux")
 board_runner_args(pyocd "--flash-opt=-O cmsis_dap.limit_packets=1")
