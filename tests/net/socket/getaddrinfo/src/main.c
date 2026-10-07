@@ -10,9 +10,11 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <stdio.h>
 #include <zephyr/ztest_assert.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/sem.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/dns_resolve.h>
+#include <zephyr/net/net_if.h>
 #include <zephyr/net/net_log.h>
 #include <zephyr/net_buf.h>
 
@@ -37,6 +39,7 @@ static struct net_sockaddr_in addr_v4;
 static struct net_sockaddr_in6 addr_v6;
 
 static int queries_received;
+static bool answer_queries;
 static int expected_query_count =
 	CONFIG_NET_SOCKETS_DNS_BACKOFF_INTERVAL >= CONFIG_NET_SOCKETS_DNS_TIMEOUT ?
 	2 :
@@ -108,6 +111,61 @@ static bool check_dns_query(uint8_t *buf, int buf_len)
 	return true;
 }
 
+static const uint8_t answer_addrs_v4[][4] = {
+	{ 192, 0, 2, 10 },
+	{ 192, 0, 2, 11 },
+};
+
+static const uint8_t answer_addrs_v6[][16] = {
+	{ 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x10 },
+	{ 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x11 },
+};
+
+/* Answer the query in recv_buf with two A or AAAA records */
+static void send_answer(int sock, const struct net_sockaddr *addr,
+			net_socklen_t addr_len, int len)
+{
+	uint8_t buf[MAX_BUF_SIZE];
+	uint16_t qtype;
+	int pos = 12;
+
+	/* Skip the question name */
+	while (pos < len && recv_buf[pos] != 0) {
+		pos += recv_buf[pos] + 1;
+	}
+
+	pos++;
+	if (pos + 4 > len) {
+		return;
+	}
+
+	qtype = sys_get_be16(&recv_buf[pos]);
+	pos += 4;
+
+	memcpy(buf, recv_buf, pos);
+	buf[2] = 0x81; /* Response, recursion desired */
+	buf[3] = 0x80; /* Recursion available */
+	sys_put_be16(2, &buf[6]); /* ANCOUNT */
+	memset(&buf[8], 0, 4); /* NSCOUNT, ARCOUNT */
+
+	for (int i = 0; i < 2; i++) {
+		const uint8_t *rdata = qtype == DNS_RR_TYPE_A ?
+				       answer_addrs_v4[i] : answer_addrs_v6[i];
+		uint16_t rdlen = qtype == DNS_RR_TYPE_A ?
+				 sizeof(answer_addrs_v4[i]) : sizeof(answer_addrs_v6[i]);
+
+		sys_put_be16(0xc00c, &buf[pos]); /* Pointer to the question name */
+		sys_put_be16(qtype, &buf[pos + 2]);
+		sys_put_be16(DNS_CLASS_IN, &buf[pos + 4]);
+		sys_put_be32(60, &buf[pos + 6]); /* TTL */
+		sys_put_be16(rdlen, &buf[pos + 10]);
+		memcpy(&buf[pos + 12], rdata, rdlen);
+		pos += 12 + rdlen;
+	}
+
+	(void)zsock_sendto(sock, buf, pos, 0, addr, addr_len);
+}
+
 static void process_dns(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p1);
@@ -117,7 +175,7 @@ static void process_dns(void *p1, void *p2, void *p3)
 	struct zsock_pollfd pollfds[2];
 	struct net_sockaddr *addr;
 	net_socklen_t addr_len;
-	int ret, idx;
+	int ret, idx, len;
 
 	NET_DBG("Waiting for IPv4 DNS packets on port %d",
 		net_ntohs(addr_v4.sin_port));
@@ -160,9 +218,14 @@ static void process_dns(void *p1, void *p2, void *p3)
 
 				NET_DBG("Received DNS query");
 
+				len = ret;
 				ret = check_dns_query(recv_buf,
 						      sizeof(recv_buf));
 				if (ret) {
+					if (answer_queries) {
+						send_answer(pollfds[idx].fd, addr, addr_len, len);
+					}
+
 					(void)sys_sem_give(&wait_data);
 				}
 			}
@@ -267,6 +330,103 @@ ZTEST(net_socket_getaddrinfo, test_getaddrinfo_cancelled)
 	zassert_equal(ret, DNS_EAI_CANCELED, "Invalid result");
 
 	zsock_freeaddrinfo(res);
+}
+
+static void check_result_order(struct zsock_addrinfo *res, int first)
+{
+	int second = first == NET_AF_INET6 ? NET_AF_INET : NET_AF_INET6;
+	int families[] = { first, first, second, second };
+	struct zsock_addrinfo *ai = res;
+
+	for (int i = 0; i < ARRAY_SIZE(families); i++) {
+		zassert_not_null(ai, "Missing result %d", i);
+		zassert_equal(ai->ai_family, families[i], "Invalid family for result %d", i);
+		zassert_equal_ptr(ai->ai_addr, net_sad(&ai->_ai_addr),
+				  "Invalid address pointer for result %d", i);
+
+		/* Results of a family keep the order of the DNS answer */
+		if (ai->ai_family == NET_AF_INET) {
+			zassert_mem_equal(&net_sin(ai->ai_addr)->sin_addr,
+					  answer_addrs_v4[i % 2], 4, "Invalid address %d", i);
+		} else {
+			zassert_mem_equal(&net_sin6(ai->ai_addr)->sin6_addr,
+					  answer_addrs_v6[i % 2], 16, "Invalid address %d", i);
+		}
+
+		ai = ai->ai_next;
+	}
+
+	zassert_is_null(ai, "Too many results");
+}
+
+static void check_getaddrinfo_order(int first)
+{
+	struct zsock_addrinfo *res = NULL;
+	int ret;
+
+	ret = zsock_getaddrinfo(QUERY_HOST, NULL, NULL, &res);
+	zassert_equal(ret, 0, "Invalid result (%d)", ret);
+	check_result_order(res, first);
+	zsock_freeaddrinfo(res);
+}
+
+ZTEST(net_socket_getaddrinfo, test_getaddrinfo_result_order)
+{
+	/* Not on the subnet of the DNS answers with the default netmask */
+	struct net_in_addr addr4 = { { { 198, 51, 100, 1 } } };
+	struct net_in_addr gw4 = { { { 198, 51, 100, 254 } } };
+	struct net_in_addr onlink4 = { { { 192, 0, 2, 1 } } };
+	struct net_in_addr no_gw4 = { 0 };
+	struct net_in6_addr addr6 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+					  0, 0, 0, 0, 0, 0, 0, 0x01 } } };
+	struct net_in6_addr prefix6 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+					    0, 0, 0, 0, 0, 0, 0, 0 } } };
+	struct net_in6_addr router6 = { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0,
+					    0, 0, 0, 0, 0, 0, 0, 0xfe } } };
+	const int preferred = IS_ENABLED(CONFIG_NET_SOCKETS_DNS_PREFER_IPV4) ?
+			      NET_AF_INET : NET_AF_INET6;
+	struct net_if *iface = net_if_get_default();
+	struct net_if_router *router;
+
+	answer_queries = true;
+
+	/* No reachable destination: the preferred family comes first */
+	check_getaddrinfo_order(preferred);
+
+	/* IPv6 address without a route, IPv4 address with a gateway: IPv4 first */
+	zassert_not_null(net_if_ipv6_addr_add(iface, &addr6, NET_ADDR_MANUAL, 0),
+			 "Cannot add IPv6 address");
+	zassert_not_null(net_if_ipv4_addr_add(iface, &addr4, NET_ADDR_MANUAL, 0),
+			 "Cannot add IPv4 address");
+	net_if_ipv4_set_gw(iface, &gw4);
+	check_getaddrinfo_order(NET_AF_INET);
+
+	/* IPv6 default router: both reachable, the preferred family comes first */
+	router = net_if_ipv6_router_add(iface, &router6, true, 0);
+	zassert_not_null(router, "Cannot add IPv6 router");
+	check_getaddrinfo_order(preferred);
+
+	/* No IPv4 gateway: only IPv6 reachable */
+	net_if_ipv4_set_gw(iface, &no_gw4);
+	check_getaddrinfo_order(NET_AF_INET6);
+
+	/* No IPv6 router but an on-link IPv6 prefix: only IPv6 reachable */
+	zassert_true(net_if_ipv6_router_rm(router), "Cannot remove IPv6 router");
+	zassert_not_null(net_if_ipv6_prefix_add(iface, &prefix6, 64, UINT32_MAX),
+			 "Cannot add IPv6 prefix");
+	check_getaddrinfo_order(NET_AF_INET6);
+
+	/* IPv4 address on the subnet of the DNS answers: both reachable */
+	zassert_true(net_if_ipv4_addr_rm(iface, &addr4), "Cannot remove IPv4 address");
+	zassert_not_null(net_if_ipv4_addr_add(iface, &onlink4, NET_ADDR_MANUAL, 0),
+			 "Cannot add IPv4 address");
+	check_getaddrinfo_order(preferred);
+
+	zassert_true(net_if_ipv6_prefix_rm(iface, &prefix6, 64), "Cannot remove IPv6 prefix");
+	zassert_true(net_if_ipv4_addr_rm(iface, &onlink4), "Cannot remove IPv4 address");
+	zassert_true(net_if_ipv6_addr_rm(iface, &addr6), "Cannot remove IPv6 address");
+
+	answer_queries = false;
 }
 
 ZTEST(net_socket_getaddrinfo, test_getaddrinfo_no_host)
