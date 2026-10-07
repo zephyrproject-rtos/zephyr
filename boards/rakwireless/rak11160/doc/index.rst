@@ -52,8 +52,9 @@ Build the Zephyr kernel and application, then flash it to the device:
    :board: rak11160
    :goals: build flash
 
-Run a serial terminal to connect with your board. By default, ``usart1`` is
-accessible via the USB to TTL converter.
+Run a serial terminal to connect with your board. ``usart2`` is the only UART
+the module brings out, on pins 40 and 41; ``usart1`` is wired to the onboard
+ESP8684 and does not leave the module.
 
 - Speed: 115200
 - Data: 8 bits
