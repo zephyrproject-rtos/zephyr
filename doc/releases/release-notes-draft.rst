@@ -63,6 +63,11 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
+* Networking
+
+  * :kconfig:option:`CONFIG_NET_SOCKETS_DNS_PREFER_IPV4` to return IPv4 addresses before IPv6
+    ones from :c:func:`zsock_getaddrinfo`.
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
@@ -107,3 +112,9 @@ Other notable changes
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the api/driver/Kconfig/board page above?
+
+* Networking
+
+  * :c:func:`zsock_getaddrinfo` now orders ``AF_UNSPEC`` results as per a subset of
+    :rfc:`6724`: reachable destinations first, then IPv6 before IPv4. The query for the
+    preferred family is sent first. See the :ref:`migration guide <migration_4.6>`.
