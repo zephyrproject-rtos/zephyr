@@ -929,15 +929,12 @@ ZTEST_USER(uart_async_timeout, test_forever_timeout)
 	zassert_not_equal(k_sem_take(&rx_rdy, K_MSEC(1000)), 0,
 			  "RX_RDY timeout");
 
-	uart_rx_disable(uart_dev);
-	zassert_equal(k_sem_take(&rx_buf_released, K_MSEC(100)), 0,
-		      "RX_BUF_RELEASED timeout");
-	zassert_equal(k_sem_take(&rx_disabled, K_MSEC(100)), 0,
-		      "RX_DISABLED timeout");
-
+	/* Keep RX enabled across both writes so together they fill the buffer
+	 * and produce a single RX_RDY. Re-enabling in between would start a
+	 * fresh buffer that 95 bytes never fill under SYS_FOREVER_US.
+	 */
 	xfer_len = 95;
 
-	uart_rx_enable(uart_dev, rx_buf, sizeof(rx_buf), SYS_FOREVER_US);
 	uart_tx(uart_dev, tx_buf, xfer_len, SYS_FOREVER_US);
 
 	zassert_not_equal(k_sem_take(&tx_aborted, K_MSEC(1000)), 0,
@@ -946,9 +943,9 @@ ZTEST_USER(uart_async_timeout, test_forever_timeout)
 	zassert_equal(k_sem_take(&rx_rdy, K_MSEC(100)), 0, "RX_RDY timeout");
 
 #if defined(CONFIG_DCACHE)
-	sys_cache_data_invd_range(rx_buf, xfer_len);
+	sys_cache_data_invd_range(rx_buf, sizeof(rx_buf));
 #endif
-	zassert_equal(memcmp(tx_buf, rx_buf, xfer_len), 0, "Buffers not equal");
+	zassert_equal(memcmp(tx_buf, rx_buf, sizeof(rx_buf)), 0, "Buffers not equal");
 
 	uart_rx_disable(uart_dev);
 	zassert_equal(k_sem_take(&rx_buf_released, K_MSEC(100)),
@@ -1249,6 +1246,12 @@ static ZTEST_BMEM uint8_t tx_buffer[VAR_LENGTH_TX_BUF_SIZE];
 	zassert_true(ret == 0, "[buff=%zu][tx=%zu]Failed to TX: %d\n", buf_len, tx_len, ret);
 	k_msleep(10);
 
+	/* Await only this iteration's RX_DISABLED: reset first so a leftover
+	 * give from the previous iteration can't satisfy the wait early and
+	 * leave RX still tearing down, which makes the next uart_rx_enable()
+	 * return -EBUSY (seen on nrf54L/nrf54H).
+	 */
+	k_sem_reset(&rx_disabled);
 	uart_rx_disable(uart_dev);
 	zassert_equal(k_sem_take(&rx_disabled, K_MSEC(500)), 0,
 		      "[buff=%zu][tx=%zu]RX_DISABLED timeout\n", buf_len, tx_len);
