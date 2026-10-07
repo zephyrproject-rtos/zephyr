@@ -628,6 +628,14 @@
 			ngpios = <23>;
 		};
 
+		sdm0: sdm@500e0f00 {
+			compatible = "espressif,esp32-sdm";
+			reg = <0x500e0f00 0x28>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		systimer0: systimer@500e2000 {
 			compatible = "espressif,esp32-systimer";
 			reg = <0x500e2000 DT_SIZE_K(4)>;
