@@ -434,6 +434,8 @@ static const struct zep_wpa_supp_dev_ops wifi_ncp_supp_ops = {
 	.tx_control_port = wifi_ncp_sta_tx_control_port,
 	.signal_poll = wifi_ncp_sta_signal_poll,
 	.get_conn_info = wifi_ncp_sta_get_conn_info,
+	.send_mlme = wifi_ncp_sta_send_mlme,
+	.send_external_auth_status = wifi_ncp_sta_send_external_auth_status,
 };
 
 static const struct wifi_mgmt_ops wifi_ncp_mgmt_ops = {
