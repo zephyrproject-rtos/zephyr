@@ -89,10 +89,10 @@ The current order is:
    * - 3
      - :class:`SnippetStrategy`
      - Yes
-     - Snippet changes are self-contained: only tests that declare the snippet
-       in ``required_snippets`` need to run.  Consuming prevents downstream
-       strategies from treating a snippet YAML as an unknown configuration
-       file.
+     - Snippet changes select test roots that use the snippet through
+       ``required_snippets`` or an application ``SNIPPET`` extra argument.
+       Consuming prevents downstream strategies from treating a snippet YAML
+       as an unknown configuration file.
    * - 4
      - :class:`BoardStrategy`
      - Yes

@@ -780,8 +780,8 @@ class Orchestrator:
 
 
 class SnippetStrategy(SelectionStrategy):
-    """For changed files under ``snippets/``, run tests that declare that
-    snippet as a ``required_snippets`` dependency.
+    """For changed files under ``snippets/``, run tests that declare a
+    dependency on the changed snippet.
 
     Resolution chain
     ----------------
@@ -792,10 +792,10 @@ class SnippetStrategy(SelectionStrategy):
        snippet identifier (e.g. ``nordic-log-stm``).  Snippets without a
        ``snippet.yml`` ancestor (vendor group directories) are skipped.
 
-    3. Grep ``tests/`` and ``samples/`` for ``tests.yaml`` files that contain
-       the snippet name string, then parse each found manifest to confirm the
-       snippet name actually appears in a ``required_snippets:`` list of at
-       least one test entry.
+    3. Search ``tests/`` and ``samples/`` for ``tests.yaml`` files that contain
+       the snippet name string, then parse each found manifest to confirm that
+       a test entry declares the snippet through ``required_snippets:`` or an
+       application ``SNIPPET`` extra argument.
 
     4. Walk up from the confirmed YAML file to the test root (the directory
        that contains the ``tests.yaml``) and emit a
@@ -847,7 +847,7 @@ class SnippetStrategy(SelectionStrategy):
             test_roots = self._find_test_roots_for_snippet(snippet_name)
             if not test_roots:
                 log.info(
-                    "[%s] snippet '%s': no tests with required_snippets found.",
+                    "[%s] snippet '%s': no dependent tests found.",
                     self.name,
                     snippet_name,
                 )
@@ -898,13 +898,65 @@ class SnippetStrategy(SelectionStrategy):
             current = current.parent
         return None
 
-    def _find_test_roots_for_snippet(self, snippet_name):
-        """Return the set of test-root directories that require *snippet_name*.
+    @staticmethod
+    def _extra_args_use_snippet(extra_args, snippet_name):
+        if isinstance(extra_args, str):
+            args = [extra_args]
+        elif isinstance(extra_args, list):
+            args = extra_args
+        else:
+            return False
 
-        Grepping for the snippet name string in ``tests.yaml`` files is fast.
-        Each hit is then parsed to confirm
-        the name actually appears in a ``required_snippets:`` list.
-        The confirmed YAML's directory is the ``-T`` root.
+        for arg in args:
+            if not isinstance(arg, str):
+                continue
+
+            parts = arg.split(":")
+
+            if len(parts) == 1:
+                assignment = parts[0]
+            elif len(parts) == 3 and parts[0] in ("arch", "platform", "simulation") and parts[1]:
+                assignment = parts[2]
+            else:
+                continue
+
+            if not assignment.startswith("SNIPPET="):
+                continue
+
+            value = assignment[len("SNIPPET=") :].strip()
+
+            if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
+                value = value[1:-1]
+
+            if snippet_name in (name.strip() for name in value.split(";")):
+                return True
+
+        return False
+
+    def _test_uses_snippet(self, test_data, snippet_name):
+        if not isinstance(test_data, dict):
+            return False
+
+        required_snippets = test_data.get("required_snippets") or []
+
+        if isinstance(required_snippets, str):
+            required_snippets = [required_snippets]
+
+        if snippet_name in required_snippets:
+            return True
+
+        return self._extra_args_use_snippet(
+            test_data.get("extra_args"),
+            snippet_name,
+        )
+
+    def _find_test_roots_for_snippet(self, snippet_name):
+        """Return the set of test-root directories that use *snippet_name*.
+
+        Each ``tests.yaml`` manifest containing the snippet name is parsed to
+        confirm that the snippet is declared through ``required_snippets`` or an
+        application ``SNIPPET`` extra argument. The confirmed YAML's directory is
+        the ``-T`` root.
         """
         test_roots: set = set()
         search_roots = [
@@ -920,7 +972,7 @@ class SnippetStrategy(SelectionStrategy):
 
     def _check_manifest(self, manifest_path, snippet_name, acc):
         """Parse *manifest_path* and add its directory to *acc* if any test
-        entry lists *snippet_name* under ``required_snippets``."""
+        entry declares a dependency on *snippet_name*."""
         try:
             content = manifest_path.read_text(encoding="utf-8", errors="replace")
             # Fast pre-filter: skip files that don't even mention the name
@@ -933,7 +985,7 @@ class SnippetStrategy(SelectionStrategy):
             return
         # Check top-level common section
         common = data.get("common", {}) or {}
-        if snippet_name in (common.get("required_snippets") or []):
+        if self._test_uses_snippet(common, snippet_name):
             rel = os.path.relpath(manifest_path.parent, self._zephyr_base)
             acc.add(rel)
             return
@@ -942,7 +994,7 @@ class SnippetStrategy(SelectionStrategy):
             for test_data in (data.get(section_key) or {}).values():
                 if not isinstance(test_data, dict):
                     continue
-                if snippet_name in (test_data.get("required_snippets") or []):
+                if self._test_uses_snippet(test_data, snippet_name):
                     rel = os.path.relpath(manifest_path.parent, self._zephyr_base)
                     acc.add(rel)
                     return
