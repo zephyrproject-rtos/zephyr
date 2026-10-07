@@ -61,6 +61,11 @@ Boards
   (P2.0 to P2.2) was removed. SCB2 is now ``arduino_spi`` on the Arduino header pins D11 to D13
   (P10.0 to P10.2), disabled by default.
 
+* Antmicro ``stm32h7_renode_reference_board`` has been renamed to
+  ``stm32h7_renode_reference_platform``. The previous ``-b stm32h7_renode_reference_board``
+  and ``-b stm32h7_renode_reference_board/stm32h753xx`` are deprecated and now map to
+  ``stm32h7_renode_reference_platform`` and ``stm32h7_renode_reference_platform/stm32h753xx``.
+
 Device Drivers and Devicetree
 *****************************
 

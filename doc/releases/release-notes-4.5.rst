@@ -1173,7 +1173,7 @@ New Boards
 * Antmicro
 
   * :zephyr:board:`stm32h7_hdmi_board` (``stm32h7_hdmi_board``)
-  * :zephyr:board:`stm32h7_renode_reference_board` (``stm32h7_renode_reference_board``)
+  * STM32H7 Renode Reference Platform (``stm32h7_renode_reference_board``)
 
 * Arduino
 
