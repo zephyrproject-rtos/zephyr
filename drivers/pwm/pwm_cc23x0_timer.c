@@ -42,9 +42,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_PWM_LOG_LEVEL);
 #define LGPT_MAX_CHANNELS       3
 
 /* Output enable bits in CxCFG */
-#define LGPT_CxCFG_OUT0         0x100
-#define LGPT_CxCFG_OUT1         0x200
-#define LGPT_CxCFG_OUT2         0x400
+#define LGPT_CxCFG_OUT0 0x100
+#define LGPT_CxCFG_OUT1 0x200
+#define LGPT_CxCFG_OUT2 0x400
 
 struct pwm_channel_state {
 	uint32_t period;
@@ -119,8 +119,7 @@ static void pwm_cc23x0_start_timer(const struct pwm_cc23x0_config *config)
 	barrier_dsync_fence_full();
 }
 
-static void pwm_cc23x0_set_initial_target(const struct pwm_cc23x0_config *config,
-					  uint32_t period)
+static void pwm_cc23x0_set_initial_target(const struct pwm_cc23x0_config *config, uint32_t period)
 {
 	HWREG(config->base + LGPT_O_TGT) = period;
 }
@@ -128,40 +127,56 @@ static void pwm_cc23x0_set_initial_target(const struct pwm_cc23x0_config *config
 static uint32_t pwm_cc23x0_cxcfg_offset(uint32_t channel)
 {
 	switch (channel) {
-	case 0: return LGPT_O_C0CFG;
-	case 1: return LGPT_O_C1CFG;
-	case 2: return LGPT_O_C2CFG;
-	default: return LGPT_O_C0CFG;
+	case 0:
+		return LGPT_O_C0CFG;
+	case 1:
+		return LGPT_O_C1CFG;
+	case 2:
+		return LGPT_O_C2CFG;
+	default:
+		return LGPT_O_C0CFG;
 	}
 }
 
 static uint32_t pwm_cc23x0_cxcc_offset(uint32_t channel)
 {
 	switch (channel) {
-	case 0: return LGPT_O_C0CC;
-	case 1: return LGPT_O_C1CC;
-	case 2: return LGPT_O_C2CC;
-	default: return LGPT_O_C0CC;
+	case 0:
+		return LGPT_O_C0CC;
+	case 1:
+		return LGPT_O_C1CC;
+	case 2:
+		return LGPT_O_C2CC;
+	default:
+		return LGPT_O_C0CC;
 	}
 }
 
 static uint32_t pwm_cc23x0_pcxcc_offset(uint32_t channel)
 {
 	switch (channel) {
-	case 0: return LGPT_O_PC0CC;
-	case 1: return LGPT_O_PC1CC;
-	case 2: return LGPT_O_PC2CC;
-	default: return LGPT_O_PC0CC;
+	case 0:
+		return LGPT_O_PC0CC;
+	case 1:
+		return LGPT_O_PC1CC;
+	case 2:
+		return LGPT_O_PC2CC;
+	default:
+		return LGPT_O_PC0CC;
 	}
 }
 
 static uint32_t pwm_cc23x0_out_enable(uint32_t channel)
 {
 	switch (channel) {
-	case 0: return LGPT_CxCFG_OUT0;
-	case 1: return LGPT_CxCFG_OUT1;
-	case 2: return LGPT_CxCFG_OUT2;
-	default: return LGPT_CxCFG_OUT0;
+	case 0:
+		return LGPT_CxCFG_OUT0;
+	case 1:
+		return LGPT_CxCFG_OUT1;
+	case 2:
+		return LGPT_CxCFG_OUT2;
+	default:
+		return LGPT_CxCFG_OUT0;
 	}
 }
 
@@ -184,15 +199,15 @@ static void pwm_cc23x0_enable_complementary_output(const struct pwm_cc23x0_confi
 	switch (channel) {
 	case 0:
 		mask = LGPT_IOCTL_COUT0_M;
-		inv  = LGPT_IOCTL_COUT0_INV;
+		inv = LGPT_IOCTL_COUT0_INV;
 		break;
 	case 1:
 		mask = LGPT_IOCTL_COUT1_M;
-		inv  = LGPT_IOCTL_COUT1_INV;
+		inv = LGPT_IOCTL_COUT1_INV;
 		break;
 	case 2:
 		mask = LGPT_IOCTL_COUT2_M;
-		inv  = LGPT_IOCTL_COUT2_INV;
+		inv = LGPT_IOCTL_COUT2_INV;
 		break;
 	default:
 		return;
@@ -204,9 +219,8 @@ static void pwm_cc23x0_enable_complementary_output(const struct pwm_cc23x0_confi
 	HWREG(config->base + LGPT_O_IOCTL) = val;
 }
 
-static void pwm_cc23x0_set_initial_compare(const struct pwm_cc23x0_config *config,
-					   uint32_t channel, uint32_t pulse,
-					   uint8_t capture_compare_action)
+static void pwm_cc23x0_set_initial_compare(const struct pwm_cc23x0_config *config, uint32_t channel,
+					   uint32_t pulse, uint8_t capture_compare_action)
 {
 	HWREG(config->base + pwm_cc23x0_cxcc_offset(channel)) = pulse;
 	HWREG(config->base + pwm_cc23x0_cxcfg_offset(channel)) =
@@ -214,14 +228,13 @@ static void pwm_cc23x0_set_initial_compare(const struct pwm_cc23x0_config *confi
 	pwm_cc23x0_enable_complementary_output(config, channel);
 }
 
-static void pwm_cc23x0_set_next_target(const struct pwm_cc23x0_config *config,
-				       uint32_t period)
+static void pwm_cc23x0_set_next_target(const struct pwm_cc23x0_config *config, uint32_t period)
 {
 	HWREG(config->base + LGPT_O_PTGT) = period;
 }
 
-static void pwm_cc23x0_set_next_compare(const struct pwm_cc23x0_config *config,
-					uint32_t channel, uint32_t pulse)
+static void pwm_cc23x0_set_next_compare(const struct pwm_cc23x0_config *config, uint32_t channel,
+					uint32_t pulse)
 {
 	HWREG(config->base + pwm_cc23x0_pcxcc_offset(channel)) = pulse;
 }
@@ -231,8 +244,8 @@ static void pwm_cc23x0_set_next_compare(const struct pwm_cc23x0_config *config,
  * CC23x0 PWM output pins are typically the complementary CxN signals;
  * caller supplies the OUTCTL bit polarity, not the pin polarity.
  */
-static void pwm_cc23x0_set_output_level(const struct pwm_cc23x0_config *config,
-					uint32_t channel, bool level_high)
+static void pwm_cc23x0_set_output_level(const struct pwm_cc23x0_config *config, uint32_t channel,
+					bool level_high)
 {
 	uint32_t outctl_val;
 
@@ -245,8 +258,8 @@ static void pwm_cc23x0_set_output_level(const struct pwm_cc23x0_config *config,
 	HWREG(config->base + LGPT_O_OUTCTL) = outctl_val;
 }
 
-static int pwm_cc23x0_set_cycles(const struct device *dev, uint32_t channel,
-				 uint32_t period, uint32_t pulse, pwm_flags_t flags)
+static int pwm_cc23x0_set_cycles(const struct device *dev, uint32_t channel, uint32_t period,
+				 uint32_t pulse, pwm_flags_t flags)
 {
 	const struct pwm_cc23x0_config *config = dev->config;
 	struct pwm_cc23x0_data *data = dev->data;
@@ -256,16 +269,14 @@ static int pwm_cc23x0_set_cycles(const struct device *dev, uint32_t channel,
 	bool was_running;
 	int ret;
 
-	LOG_DBG("set cycles ch=%u period=%u pulse=%u flags=0x%x",
-		channel, period, pulse, flags);
+	LOG_DBG("set cycles ch=%u period=%u pulse=%u flags=0x%x", channel, period, pulse, flags);
 
 	if (channel >= LGPT_MAX_CHANNELS) {
 		LOG_ERR("Invalid channel ID: %u", channel);
 		return -ENOTSUP;
 	}
 
-	if ((config->base != LGPT3_BASE) &&
-	    (pulse > 0xffff || period > 0xffff || pulse > period)) {
+	if ((config->base != LGPT3_BASE) && (pulse > 0xffff || period > 0xffff || pulse > period)) {
 		LOG_ERR("Period or pulse out of range for 16-bit timer");
 		return -EINVAL;
 	} else if (pulse > 0xffffff || period > 0xffffff || pulse > period) {
@@ -321,8 +332,7 @@ static int pwm_cc23x0_set_cycles(const struct device *dev, uint32_t channel,
 		}
 
 		pwm_cc23x0_set_initial_target(config, period);
-		pwm_cc23x0_set_initial_compare(config, channel, pulse,
-					       capture_compare_action);
+		pwm_cc23x0_set_initial_compare(config, channel, pulse, capture_compare_action);
 
 		barrier_dsync_fence_full();
 
@@ -366,50 +376,70 @@ static int pwm_cc23x0_get_cycles_per_sec(const struct device *dev, uint32_t chan
 static uint32_t pwm_cc23x0_cxccnc_offset(uint32_t channel)
 {
 	switch (channel) {
-	case 0: return LGPT_O_C0CCNC;
-	case 1: return LGPT_O_C1CCNC;
-	case 2: return LGPT_O_C2CCNC;
-	default: return LGPT_O_C0CCNC;
+	case 0:
+		return LGPT_O_C0CCNC;
+	case 1:
+		return LGPT_O_C1CCNC;
+	case 2:
+		return LGPT_O_C2CCNC;
+	default:
+		return LGPT_O_C0CCNC;
 	}
 }
 
 static uint32_t pwm_cc23x0_pcxccnc_offset(uint32_t channel)
 {
 	switch (channel) {
-	case 0: return LGPT_O_PC0CCNC;
-	case 1: return LGPT_O_PC1CCNC;
-	case 2: return LGPT_O_PC2CCNC;
-	default: return LGPT_O_PC0CCNC;
+	case 0:
+		return LGPT_O_PC0CCNC;
+	case 1:
+		return LGPT_O_PC1CCNC;
+	case 2:
+		return LGPT_O_PC2CCNC;
+	default:
+		return LGPT_O_PC0CCNC;
 	}
 }
 
 static uint32_t pwm_cc23x0_cxcc_irq_mask(uint32_t channel)
 {
 	switch (channel) {
-	case 0: return LGPT_RIS_C0CC;
-	case 1: return LGPT_RIS_C1CC;
-	case 2: return LGPT_RIS_C2CC;
-	default: return LGPT_RIS_C0CC;
+	case 0:
+		return LGPT_RIS_C0CC;
+	case 1:
+		return LGPT_RIS_C1CC;
+	case 2:
+		return LGPT_RIS_C2CC;
+	default:
+		return LGPT_RIS_C0CC;
 	}
 }
 
 static uint32_t pwm_cc23x0_cxcfg_per_pulse_meas(uint32_t channel)
 {
 	switch (channel) {
-	case 0: return LGPT_C0CFG_CCACT_PER_PULSE_WIDTH_MEAS;
-	case 1: return LGPT_C1CFG_CCACT_PER_PULSE_WIDTH_MEAS;
-	case 2: return LGPT_C2CFG_CCACT_PER_PULSE_WIDTH_MEAS;
-	default: return LGPT_C0CFG_CCACT_PER_PULSE_WIDTH_MEAS;
+	case 0:
+		return LGPT_C0CFG_CCACT_PER_PULSE_WIDTH_MEAS;
+	case 1:
+		return LGPT_C1CFG_CCACT_PER_PULSE_WIDTH_MEAS;
+	case 2:
+		return LGPT_C2CFG_CCACT_PER_PULSE_WIDTH_MEAS;
+	default:
+		return LGPT_C0CFG_CCACT_PER_PULSE_WIDTH_MEAS;
 	}
 }
 
 static uint32_t pwm_cc23x0_cxcfg_input_io(uint32_t channel)
 {
 	switch (channel) {
-	case 0: return LGPT_C0CFG_INPUT_IO;
-	case 1: return LGPT_C1CFG_INPUT_IO;
-	case 2: return LGPT_C2CFG_INPUT_IO;
-	default: return LGPT_C0CFG_INPUT_IO;
+	case 0:
+		return LGPT_C0CFG_INPUT_IO;
+	case 1:
+		return LGPT_C1CFG_INPUT_IO;
+	case 2:
+		return LGPT_C2CFG_INPUT_IO;
+	default:
+		return LGPT_C0CFG_INPUT_IO;
 	}
 }
 
@@ -442,7 +472,7 @@ static void pwm_cc23x0_isr(const void *arg)
 	barrier_dsync_fence_full();
 
 	if (mis & cxcc_mask) {
-		uint32_t period   = HWREG(base + pwm_cc23x0_cxccnc_offset(channel));
+		uint32_t period = HWREG(base + pwm_cc23x0_cxccnc_offset(channel));
 		uint32_t low_time = HWREG(base + pwm_cc23x0_pcxccnc_offset(channel));
 		uint32_t pulse;
 
@@ -466,14 +496,12 @@ static void pwm_cc23x0_isr(const void *arg)
 			lgpt_capture_active[cfg->lgpt_id].dev = NULL;
 			irq_disable(cfg->irq_num);
 		}
-		data->capture.callback(dev, channel, period, pulse, 0,
-				       data->capture.user_data);
+		data->capture.callback(dev, channel, period, pulse, 0, data->capture.user_data);
 	}
 }
 
 static int pwm_cc23x0_configure_capture(const struct device *dev, uint32_t channel,
-					pwm_flags_t flags,
-					pwm_capture_callback_handler_t cb,
+					pwm_flags_t flags, pwm_capture_callback_handler_t cb,
 					void *user_data)
 {
 	const struct pwm_cc23x0_config *cfg = dev->config;
@@ -495,22 +523,19 @@ static int pwm_cc23x0_configure_capture(const struct device *dev, uint32_t chann
 
 	falling = (flags & PWM_POLARITY_INVERTED) != 0;
 	/* SimpleLink LGPTimerLPF3 reference always sets OUTx_EN even for capture. */
-	ccfg = pwm_cc23x0_cxcfg_per_pulse_meas(channel)
-	     | pwm_cc23x0_cxcfg_input_io(channel)
-	     | pwm_cc23x0_out_enable(channel)
-	     | pwm_cc23x0_cxcfg_edge(channel, falling);
+	ccfg = pwm_cc23x0_cxcfg_per_pulse_meas(channel) | pwm_cc23x0_cxcfg_input_io(channel) |
+	       pwm_cc23x0_out_enable(channel) | pwm_cc23x0_cxcfg_edge(channel, falling);
 
 	HWREG(cfg->base + pwm_cc23x0_cxcfg_offset(channel)) = ccfg;
 	HWREG(cfg->base + LGPT_O_TGT) = cfg->max_top_value;
 	barrier_dsync_fence_full();
 
-	data->capture.callback      = cb;
-	data->capture.user_data     = user_data;
-	data->capture.flags         = flags;
+	data->capture.callback = cb;
+	data->capture.user_data = user_data;
+	data->capture.flags = flags;
 	data->capture.is_continuous = !!(flags & PWM_CAPTURE_MODE_CONTINUOUS);
 
-	LOG_DBG("configure_capture ch=%u ccfg=0x%x top=0x%x",
-		channel, ccfg, cfg->max_top_value);
+	LOG_DBG("configure_capture ch=%u ccfg=0x%x top=0x%x", channel, ccfg, cfg->max_top_value);
 
 	return 0;
 }
@@ -539,10 +564,9 @@ static int pwm_cc23x0_enable_capture(const struct device *dev, uint32_t channel)
 
 	lgpt_capture_active[cfg->lgpt_id].dev = dev;
 	lgpt_capture_active[cfg->lgpt_id].channel = channel;
-	irq_connect_dynamic(cfg->irq_num, cfg->irq_priority,
-			    pwm_cc23x0_isr, dev, 0);
+	irq_connect_dynamic(cfg->irq_num, cfg->irq_priority, pwm_cc23x0_isr, dev, 0);
 
-	HWREG(cfg->base + LGPT_O_ICLR)  = cxcc_mask | LGPT_RIS_TGT;
+	HWREG(cfg->base + LGPT_O_ICLR) = cxcc_mask | LGPT_RIS_TGT;
 	HWREG(cfg->base + LGPT_O_IMSET) = cxcc_mask;
 	barrier_dsync_fence_full();
 
@@ -551,8 +575,7 @@ static int pwm_cc23x0_enable_capture(const struct device *dev, uint32_t channel)
 	pwm_cc23x0_start_timer(cfg);
 	irq_enable(cfg->irq_num);
 
-	LOG_DBG("enable_capture lgpt_id=%d ch=%u irq=%d",
-		cfg->lgpt_id, channel, cfg->irq_num);
+	LOG_DBG("enable_capture lgpt_id=%d ch=%u irq=%d", cfg->lgpt_id, channel, cfg->irq_num);
 
 	return 0;
 }
@@ -572,7 +595,7 @@ static int pwm_cc23x0_disable_capture(const struct device *dev, uint32_t channel
 	irq_disable(cfg->irq_num);
 	HWREG(cfg->base + LGPT_O_IMCLR) = cxcc_mask;
 	pwm_cc23x0_stop_timer(cfg);
-	HWREG(cfg->base + LGPT_O_ICLR)  = cxcc_mask | LGPT_RIS_TGT;
+	HWREG(cfg->base + LGPT_O_ICLR) = cxcc_mask | LGPT_RIS_TGT;
 	barrier_dsync_fence_full();
 
 	data->capture.is_capturing = false;
@@ -585,13 +608,13 @@ static int pwm_cc23x0_disable_capture(const struct device *dev, uint32_t channel
 
 #endif /* CONFIG_PWM_CAPTURE */
 
-static const struct pwm_driver_api pwm_cc23x0_driver_api = {
+static DEVICE_API(pwm, pwm_cc23x0_driver_api) = {
 	.set_cycles = pwm_cc23x0_set_cycles,
 	.get_cycles_per_sec = pwm_cc23x0_get_cycles_per_sec,
 #ifdef CONFIG_PWM_CAPTURE
 	.configure_capture = pwm_cc23x0_configure_capture,
-	.enable_capture    = pwm_cc23x0_enable_capture,
-	.disable_capture   = pwm_cc23x0_disable_capture,
+	.enable_capture = pwm_cc23x0_enable_capture,
+	.disable_capture = pwm_cc23x0_disable_capture,
 #endif
 };
 
@@ -650,50 +673,48 @@ static int pwm_cc23x0_pm_action(const struct device *dev, enum pm_device_action 
 #define DT_TIMER(idx)           DT_INST_PARENT(idx)
 #define DT_TIMER_BASE_ADDR(idx) (DT_REG_ADDR(DT_TIMER(idx)))
 
-#define PWM_CC23X0_INIT_FUNC(idx)							\
-	static int pwm_cc23x0_init##idx(const struct device *dev)			\
-	{										\
-		const struct pwm_cc23x0_config *config = dev->config;			\
-		int ret;								\
-											\
-		LOG_DBG("PWM cc23x0 base=[%x]", config->base);				\
-											\
-		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);		\
-		if (ret < 0) {								\
-			LOG_ERR("[ERR] failed to setup PWM pinctrl");			\
-			return ret;							\
-		}									\
-											\
-		pwm_cc23x0_clock_action(dev, true);					\
-											\
-		return 0;								\
+#define PWM_CC23X0_INIT_FUNC(idx)                                                                  \
+	static int pwm_cc23x0_init##idx(const struct device *dev)                                  \
+	{                                                                                          \
+		const struct pwm_cc23x0_config *config = dev->config;                              \
+		int ret;                                                                           \
+                                                                                                   \
+		LOG_DBG("PWM cc23x0 base=[%x]", config->base);                                     \
+                                                                                                   \
+		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);                    \
+		if (ret < 0) {                                                                     \
+			LOG_ERR("[ERR] failed to setup PWM pinctrl");                              \
+			return ret;                                                                \
+		}                                                                                  \
+                                                                                                   \
+		pwm_cc23x0_clock_action(dev, true);                                                \
+                                                                                                   \
+		return 0;                                                                          \
 	}
 
-#define PWM_DEVICE_INIT(idx)								\
-	PM_DEVICE_DT_INST_DEFINE(idx, pwm_cc23x0_pm_action);				\
-	PWM_CC23X0_INIT_FUNC(idx);							\
-	PINCTRL_DT_INST_DEFINE(idx);							\
-	LOG_INSTANCE_REGISTER(LOG_MODULE_NAME, idx, CONFIG_PWM_LOG_LEVEL);		\
-											\
-	static const struct pwm_cc23x0_config pwm_cc23x0_##idx##_config = {		\
-		.base = DT_TIMER_BASE_ADDR(idx),					\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),				\
-		.lgpt_id = (DT_TIMER_BASE_ADDR(idx) - LGPT0_BASE) >> 12,		\
+#define PWM_DEVICE_INIT(idx)                                                                       \
+	PM_DEVICE_DT_INST_DEFINE(idx, pwm_cc23x0_pm_action);                                       \
+	PWM_CC23X0_INIT_FUNC(idx);                                                                 \
+	PINCTRL_DT_INST_DEFINE(idx);                                                               \
+	LOG_INSTANCE_REGISTER(LOG_MODULE_NAME, idx, CONFIG_PWM_LOG_LEVEL);                         \
+                                                                                                   \
+	static const struct pwm_cc23x0_config pwm_cc23x0_##idx##_config = {                        \
+		.base = DT_TIMER_BASE_ADDR(idx),                                                   \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                       \
+		.lgpt_id = (DT_TIMER_BASE_ADDR(idx) - LGPT0_BASE) >> 12,                           \
 		IF_ENABLED(CONFIG_PWM_CAPTURE, (					\
 		.irq_num      = DT_IRQN(DT_INST_PARENT(idx)),				\
 		.irq_priority = DT_IRQ(DT_INST_PARENT(idx), priority),			\
 		.max_top_value = DT_PROP(DT_INST_PARENT(idx), max_top_value),		\
-		))									\
-	};										\
-											\
-	static struct pwm_cc23x0_data pwm_cc23x0_##idx##_data = {			\
-		.prescale = DT_PROP(DT_INST_PARENT(idx), clk_prescale),			\
-		.base_clk = DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency),		\
-	};										\
-											\
-	DEVICE_DT_INST_DEFINE(idx, pwm_cc23x0_init##idx, PM_DEVICE_DT_INST_GET(idx),	\
-			      &pwm_cc23x0_##idx##_data, &pwm_cc23x0_##idx##_config,	\
-			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,			\
-			      &pwm_cc23x0_driver_api)
+		)) };      \
+                                                                                                   \
+	static struct pwm_cc23x0_data pwm_cc23x0_##idx##_data = {                                  \
+		.prescale = DT_PROP(DT_INST_PARENT(idx), clk_prescale),                            \
+		.base_clk = DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency),                        \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(idx, pwm_cc23x0_init##idx, PM_DEVICE_DT_INST_GET(idx),               \
+			      &pwm_cc23x0_##idx##_data, &pwm_cc23x0_##idx##_config, POST_KERNEL,   \
+			      CONFIG_PWM_INIT_PRIORITY, &pwm_cc23x0_driver_api)
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_DEVICE_INIT);
