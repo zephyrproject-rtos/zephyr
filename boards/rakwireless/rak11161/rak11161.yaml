@@ -1,0 +1,19 @@
+identifier: rak11161/stm32wle5xx
+name: RAK11161 Breakout Board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 64
+flash: 256
+supported:
+  - counter
+  - gpio
+  - i2c
+  - nvs
+  - spi
+  - uart
+  - watchdog
+  - lora
+vendor: rakwireless
