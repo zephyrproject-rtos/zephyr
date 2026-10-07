@@ -15,6 +15,7 @@
 LOG_MODULE_REGISTER(net_sock_addr, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
+#include <zephyr/net/net_if.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_log.h>
 #include <zephyr/net/socket.h>
@@ -190,6 +191,133 @@ again:
 	return st;
 }
 
+struct addrconfig_state {
+	int family;
+	bool found;
+};
+
+static void addrconfig_addr_cb(struct net_if *iface, struct net_if_addr *addr,
+			       void *user_data)
+{
+	struct addrconfig_state *state = user_data;
+
+	ARG_UNUSED(iface);
+
+	if (addr->addr_state != NET_ADDR_PREFERRED) {
+		return;
+	}
+
+	if (addr->address.family == NET_AF_INET6) {
+		const struct net_in6_addr *in6 = &addr->address.in6_addr;
+
+		if (!net_ipv6_is_addr_loopback(in6) && !net_ipv6_is_ll_addr(in6)) {
+			state->found = true;
+		}
+	} else if (addr->address.family == NET_AF_INET) {
+		const struct net_in_addr *in = &addr->address.in_addr;
+
+		if (!net_ipv4_is_addr_loopback(in) && !net_ipv4_is_ll_addr(in)) {
+			state->found = true;
+		}
+	}
+}
+
+static void addrconfig_iface_cb(struct net_if *iface, void *user_data)
+{
+	struct addrconfig_state *state = user_data;
+
+	if (state->found || !net_if_is_up(iface)) {
+		return;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && state->family == NET_AF_INET6) {
+		net_if_ipv6_addr_foreach(iface, addrconfig_addr_cb, state);
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && state->family == NET_AF_INET) {
+		net_if_ipv4_addr_foreach(iface, addrconfig_addr_cb, state);
+	}
+}
+
+/* For AI_ADDRCONFIG: check whether an up interface has a preferred address
+ * of the given family. Loopback and link-local addresses are not counted.
+ */
+static bool family_is_configured(int family)
+{
+	struct addrconfig_state state = {
+		.family = family,
+		.found = false,
+	};
+
+	net_if_foreach(addrconfig_iface_cb, &state);
+
+	return state.found;
+}
+
+static bool family_is_queried(int family, int hints_family, int ai_flags)
+{
+	if (hints_family != NET_AF_UNSPEC && hints_family != family) {
+		return false;
+	}
+
+	if (family == NET_AF_INET6 && !IS_ENABLED(CONFIG_NET_IPV6)) {
+		return false;
+	}
+
+	if (family == NET_AF_INET && !IS_ENABLED(CONFIG_NET_IPV4)) {
+		return false;
+	}
+
+	if ((ai_flags & ZSOCK_AI_ADDRCONFIG) && !family_is_configured(family)) {
+		NET_DBG("AI_ADDRCONFIG: no %s address, skipping query",
+			family == NET_AF_INET6 ? "IPv6" : "IPv4");
+		return false;
+	}
+
+	return true;
+}
+
+/* Order results as per a minimal interpretation of RFC 6724. From rule #1
+ * we prioritize addresses on an available family. From rule #6 we prioritize
+ * IPv6 over IPv4.
+ */
+static void sort_results(struct zsock_addrinfo *ai_arr, uint16_t count)
+{
+	struct zsock_addrinfo tmp;
+	bool prefer_ipv4 = IS_ENABLED(CONFIG_NET_SOCKETS_DNS_PREFER_IPV4);
+	int first = prefer_ipv4 ? NET_AF_INET : NET_AF_INET6;
+	int second = prefer_ipv4 ? NET_AF_INET6 : NET_AF_INET;
+	uint16_t pos = 0U;
+
+	if (!IS_ENABLED(CONFIG_NET_IPV4) || !IS_ENABLED(CONFIG_NET_IPV6) || count < 2U) {
+		return;
+	}
+
+	if (!family_is_configured(first) && family_is_configured(second)) {
+		first = second;
+	}
+
+	for (uint16_t idx = 0U; idx < count; idx++) {
+		if (ai_arr[idx].ai_family != first) {
+			continue;
+		}
+
+		if (idx != pos) {
+			tmp = ai_arr[idx];
+			memmove(&ai_arr[pos + 1U], &ai_arr[pos],
+				(idx - pos) * sizeof(ai_arr[0]));
+			ai_arr[pos] = tmp;
+		}
+
+		pos++;
+	}
+
+	/* Entries have self-pointers. Fix them after we moved them */
+	for (uint16_t idx = 0U; idx < count; idx++) {
+		ai_arr[idx].ai_addr = net_sad(&ai_arr[idx]._ai_addr);
+		ai_arr[idx].ai_canonname = ai_arr[idx]._ai_canonname;
+		ai_arr[idx].ai_next = &ai_arr[idx + 1U];
+	}
+}
+
 static int getaddrinfo_null_host(int port, const struct zsock_addrinfo *hints,
 				struct zsock_addrinfo *res)
 {
@@ -280,21 +408,19 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 	ai_state.dns_id = 0;
 	k_sem_init(&ai_state.sem, 0, K_SEM_MAX_LIMIT);
 
-	/* If family is NET_AF_UNSPEC, then we query IPv4 address first
-	 * if IPv4 is enabled in the config.
+	/* RFC 6724 has IPv6 take precedence over IPv4. Sorting
+	 * is done after fetching both families, but we fetch IPv6
+	 * first to favor it should we run out of slots.
 	 */
-	if ((family != NET_AF_INET6) && IS_ENABLED(CONFIG_NET_IPV4)) {
-		st1 = exec_query(host, NET_AF_INET, &ai_state);
+	if (family_is_queried(NET_AF_INET6, family, ai_flags)) {
+		st1 = exec_query(host, NET_AF_INET6, &ai_state);
 		if (st1 == DNS_EAI_AGAIN) {
 			return st1;
 		}
 	}
 
-	/* If family is NET_AF_UNSPEC, the IPv4 query has been already done
-	 * so we can do IPv6 query next if IPv6 is enabled in the config.
-	 */
-	if ((family != NET_AF_INET) && IS_ENABLED(CONFIG_NET_IPV6)) {
-		st2 = exec_query(host, NET_AF_INET6, &ai_state);
+	if (family_is_queried(NET_AF_INET, family, ai_flags)) {
+		st2 = exec_query(host, NET_AF_INET, &ai_state);
 		if (st2 == DNS_EAI_AGAIN) {
 			return st2;
 		}
@@ -311,6 +437,10 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 			return st1;
 		}
 		return st2;
+	}
+
+	if (family == NET_AF_UNSPEC) {
+		sort_results(ai_state.ai_arr, ai_state.idx);
 	}
 
 	/* Mark entry as last */

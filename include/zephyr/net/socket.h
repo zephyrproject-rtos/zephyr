@@ -817,7 +817,7 @@ __syscall int z_zsock_getaddrinfo_internal(const char *host,
 #define ZSOCK_AI_V4MAPPED 0x8
 /** May return both native IPv6 and mapped IPv4 address for IPv6 */
 #define ZSOCK_AI_ALL 0x10
-/** IPv4/IPv6 support depends on local system config */
+/** Only query IPv4/IPv6 if we have a corresponding address up */
 #define ZSOCK_AI_ADDRCONFIG 0x20
 /** Assume service (port) is numeric */
 #define ZSOCK_AI_NUMERICSERV 0x400
