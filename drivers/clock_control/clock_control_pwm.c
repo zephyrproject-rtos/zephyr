@@ -83,6 +83,20 @@ static int clock_control_pwm_on(const struct device *dev, clock_control_subsys_t
 	return 0;
 }
 
+static enum clock_control_status clock_control_pwm_get_status(const struct device *dev,
+							      clock_control_subsys_t sys)
+{
+	const struct clock_control_pwm_data *data = dev->data;
+	const struct clock_control_pwm_config *config = dev->config;
+	int id = (int)sys;
+
+	if (id >= NUM_PWM_CLOCKS || !device_is_ready(config->pwm_dt.dev)) {
+		return CLOCK_CONTROL_STATUS_UNKNOWN;
+	}
+
+	return data->is_enabled ? CLOCK_CONTROL_STATUS_ON : CLOCK_CONTROL_STATUS_OFF;
+}
+
 static int clock_control_pwm_get_rate(const struct device *dev, clock_control_subsys_t sys,
 				      uint32_t *rate)
 {
@@ -137,6 +151,7 @@ static int clock_control_pwm_init(const struct device *dev)
 static DEVICE_API(clock_control, clock_control_pwm_api) = {
 	.on = clock_control_pwm_on,
 	.get_rate = clock_control_pwm_get_rate,
+	.get_status = clock_control_pwm_get_status,
 	.set_rate = clock_control_pwm_set_rate,
 };
 
