@@ -95,15 +95,24 @@ static void wifi_ncp_mgmt_ep_event(sl_cpc_ep_t *ep, sl_cpc_ep_event_type_t type,
 static void wifi_ncp_data_recv(const struct device *dev, const sl_cpc_buf_t *buf)
 {
 	struct wifi_ncp_data *data = dev->data;
+	const struct wifi_ncp_nwp_hdr *hdr = buf->ptr;
+	size_t len;
 	struct net_pkt *pkt;
 
-	pkt = net_pkt_rx_alloc_with_buffer(data->iface, buf->len, AF_UNSPEC, 0, K_NO_WAIT);
+	if (buf->len < sizeof(struct wifi_ncp_nwp_hdr) ||
+	    hdr->command_id != WIFI_NCP_NWP_CMD_DATA) {
+		LOG_WRN("%s: unexpected data frame (%u bytes), dropping", dev->name, buf->len);
+		return;
+	}
+	len = buf->len - sizeof(struct wifi_ncp_nwp_hdr);
+
+	pkt = net_pkt_rx_alloc_with_buffer(data->iface, len, AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
-		LOG_DBG("%s: no packet buffer, dropping %u bytes", dev->name, buf->len);
+		LOG_DBG("%s: no packet buffer, dropping %u bytes", dev->name, len);
 		return;
 	}
 
-	if (net_pkt_write(pkt, buf->ptr, buf->len) < 0) {
+	if (net_pkt_write(pkt, hdr + 1, len) < 0) {
 		LOG_ERR("%s: packet write failed", dev->name);
 		net_pkt_unref(pkt);
 		return;
@@ -219,9 +228,9 @@ static enum ethernet_hw_caps wifi_ncp_get_capabilities(const struct device *dev,
 	return 0;
 }
 
-/* The Ethernet frame is copied: CPC needs a contiguous, aligned payload that
- * stays valid until the send-done event, while the packet is released by the
- * caller on return.
+/* The Ethernet frame is copied behind its descriptor: CPC needs a
+ * contiguous, aligned payload that stays valid until the send-done event,
+ * while the packet is released by the caller on return.
  */
 static int wifi_ncp_send(const struct device *dev, struct net_pkt *pkt)
 {
@@ -242,14 +251,15 @@ static int wifi_ncp_send(const struct device *dev, struct net_pkt *pkt)
 		return -ENOMEM;
 	}
 
+	memset(slot->data, 0, sizeof(struct wifi_ncp_nwp_hdr));
 	net_pkt_cursor_init(pkt);
-	ret = net_pkt_read(pkt, slot->data, len);
+	ret = net_pkt_read(pkt, slot->data + sizeof(struct wifi_ncp_nwp_hdr), len);
 	if (ret < 0) {
 		k_mem_slab_free(cfg->data_tx_slab, slot);
 		return ret;
 	}
 
-	sl_cpc_buf_init(&slot->buf, slot->data, len);
+	sl_cpc_buf_init(&slot->buf, slot->data, sizeof(struct wifi_ncp_nwp_hdr) + len);
 	memset(&slot->frame, 0, sizeof(slot->frame));
 	status = sl_cpc_ep_send(&data->data_ep, &slot->buf, &slot->frame, NULL);
 	if (status) {
