@@ -393,6 +393,7 @@ static void rpi_pico_handle_xfer_next(const struct device *dev,
 	}
 
 	if (err != 0) {
+		buf = udc_buf_get(cfg);
 		udc_submit_ep_event(dev, buf, -ECONNREFUSED);
 	} else {
 		udc_ep_set_busy(cfg, true);
