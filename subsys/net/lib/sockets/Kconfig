@@ -66,6 +66,7 @@ config HEAP_MEM_POOL_ADD_SIZE_GETADDRINFO
 	# Defaults to heap memory needed for a single getaddrinfo() call in
 	# a default configuration on 64-bit platform
 	int
+	default 520 if DNS_RESOLVER && NET_IPV4 && NET_IPV6
 	default 280
 	depends on DNS_RESOLVER || NET_IP
 
