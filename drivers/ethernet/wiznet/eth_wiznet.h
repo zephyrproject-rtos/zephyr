@@ -108,7 +108,7 @@ int wiznet_command(const struct device *dev, uint8_t cmd);
 int wiznet_readbuf(const struct device *dev, uint16_t offset, uint8_t *buf, size_t len);
 int wiznet_writebuf(const struct device *dev, uint16_t offset, uint8_t *buf, size_t len);
 
-void wiznet_rx(const struct device *dev);
+int wiznet_rx(const struct device *dev);
 int wiznet_tx(const struct device *dev, struct net_pkt *pkt);
 
 void wiznet_iface_init(struct net_if *iface);
@@ -117,6 +117,7 @@ int wiznet_set_config(const struct device *dev, struct net_if *iface,
 		      enum ethernet_config_type type, const struct ethernet_config *config);
 int wiznet_hw_start(const struct device *dev, struct net_if *iface);
 int wiznet_hw_stop(const struct device *dev, struct net_if *iface);
+void wiznet_hw_reset(const struct device *dev);
 const struct device *wiznet_get_phy(const struct device *dev, struct net_if *iface);
 int wiznet_get_link_state(const struct device *dev, struct phy_link_state *state);
 
