@@ -10,8 +10,8 @@
  *
  */
 
-#ifndef ZEPHYR_INCLUDE_NET_RTP_TRANSPORT_H_
-#define ZEPHYR_INCLUDE_NET_RTP_TRANSPORT_H_
+#ifndef ZEPHYR_SUBSYS_NET_LIB_RTP_RTP_TRANSPORT_H_
+#define ZEPHYR_SUBSYS_NET_LIB_RTP_RTP_TRANSPORT_H_
 
 #include <zephyr/net/rtp.h>
 
@@ -82,4 +82,4 @@ int rtp_transport_net_pkt_send(struct rtp_session *session, struct rtp_packet *r
 
 #endif /* CONFIG_RTP_TRANSPORT_NET_PKT */
 
-#endif /* ZEPHYR_INCLUDE_NET_RTP_TRANSPORT_H_ */
+#endif /* ZEPHYR_SUBSYS_NET_LIB_RTP_RTP_TRANSPORT_H_ */
