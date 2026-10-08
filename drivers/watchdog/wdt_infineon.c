@@ -61,7 +61,6 @@ typedef struct {
 #else
 /* ILO, PILO, BAK all run at 32768 Hz - Period is ~0.030518 ms */
 #define IFX_WDT_MAX_TIMEOUT_MS  6000
-#define IFX_WDT_MAX_IGNORE_BITS 12
 /* ILO Frequency = 32768 Hz, ILO Period = 1 / 32768 Hz = .030518 ms */
 static const wdt_ignore_bits_data_t ifx_wdt_ignore_data[] = {
 	{4000, 3001}, /* 0 bit(s): min period: 4000ms, max period: 6000ms, round up from 3001+ms */
@@ -81,7 +80,6 @@ static const wdt_ignore_bits_data_t ifx_wdt_ignore_data[] = {
 #endif
 #elif defined(CY_IP_S8SRSSLT)
 #define IFX_WDT_MAX_TIMEOUT_MS        4915
-#define IFX_WDT_MAX_IGNORE_BITS       12
 /* Cy_SysClk_IloCompensate function execution time is always ~ 1ms */
 #define IFX_ILO_COMPENSATE_TIMEOUT_MS 2
 
@@ -103,7 +101,6 @@ static const wdt_ignore_bits_data_t ifx_wdt_ignore_data[] = {
 #elif (defined(CY_IP_MXS40SSRSS) || defined(CY_IP_MXS22SRSS)) && (IFX_WDT_MATCH_BITS == 22)
 /* ILO Frequency = 32768 Hz, ILO Period = 1 / 32768 Hz = .030518 ms */
 #define IFX_WDT_MAX_TIMEOUT_MS  384000
-#define IFX_WDT_MAX_IGNORE_BITS (IFX_WDT_MATCH_BITS - 4)
 static const wdt_ignore_bits_data_t ifx_wdt_ignore_data[] = {
 	/* 0 bit(s): min period: 256000ms, max period: 384000ms, round up from 192001+ms */
 	{256000, 192001},
@@ -147,7 +144,6 @@ static const wdt_ignore_bits_data_t ifx_wdt_ignore_data[] = {
 #elif defined(CY_IP_MXS40SSRSS) && (IFX_WDT_MATCH_BITS == 32)
 /* ILO Frequency = 32768 Hz, ILO Period = 1 / 32768 Hz = .030518 ms */
 #define IFX_WDT_MAX_TIMEOUT_MS  393211435
-#define IFX_WDT_MAX_IGNORE_BITS (IFX_WDT_MATCH_BITS - 4)
 static const wdt_ignore_bits_data_t ifx_wdt_ignore_data[] = {
 	/* 0 bit(s): min period: 262147000ms, max period: 393221000ms, round up from 196610001+ms */
 	{262147000, 196610001},
@@ -230,8 +226,9 @@ struct ifx_cat1_wdt_data {
 static struct ifx_cat1_wdt_data wdt_data;
 
 #if !defined(CY_IP_S8SRSSLT)
-#define IFX_DETERMINE_MATCH_BITS(bits)      ((IFX_WDT_MAX_IGNORE_BITS) - (bits))
-#define IFX_GET_COUNT_FROM_MATCH_BITS(bits) (2UL << IFX_DETERMINE_MATCH_BITS(bits))
+/* PDL WDT_MAX_IGNORE_BITS is the index of the top counter bit */
+#define IFX_DETERMINE_MATCH_BITS(bits)      ((WDT_MAX_IGNORE_BITS) - (bits))
+#define IFX_GET_COUNT_FROM_MATCH_BITS(bits) (2ULL << IFX_DETERMINE_MATCH_BITS(bits))
 #endif
 
 __STATIC_INLINE uint32_t ifx_wdt_timeout_to_match(uint32_t timeout_ms, uint32_t ignore_bits,
@@ -254,7 +251,7 @@ __STATIC_INLINE uint32_t ifx_wdt_timeout_to_match(uint32_t timeout_ms, uint32_t 
 #else
 	ARG_UNUSED(dev_data);
 
-	uint32_t wrap_count_for_ignore_bits = (IFX_GET_COUNT_FROM_MATCH_BITS(ignore_bits));
+	uint64_t wrap_count_for_ignore_bits = IFX_GET_COUNT_FROM_MATCH_BITS(ignore_bits);
 	/* 64-bit: timeout_ms * ILO_FREQ exceeds 32 bits above ~131 s */
 	uint64_t timeout_count = ((uint64_t)timeout_ms * CY_SYSCLK_ILO_FREQ) / 1000U;
 
@@ -266,7 +263,7 @@ __STATIC_INLINE uint32_t ifx_wdt_timeout_to_match(uint32_t timeout_ms, uint32_t 
 /* Rounds up *timeout_ms if it's outside of the valid timeout range (ifx_wdt_ignore_data) */
 __STATIC_INLINE uint32_t ifx_wdt_timeout_to_ignore_bits(uint32_t *timeout_ms)
 {
-	for (uint32_t i = 0; i <= IFX_WDT_MAX_IGNORE_BITS; i++) {
+	for (uint32_t i = 0U; i < ARRAY_SIZE(ifx_wdt_ignore_data); i++) {
 		if (*timeout_ms >= ifx_wdt_ignore_data[i].round_threshold_ms) {
 			if (*timeout_ms < ifx_wdt_ignore_data[i].min_period_ms) {
 				*timeout_ms = ifx_wdt_ignore_data[i].min_period_ms;
@@ -274,7 +271,7 @@ __STATIC_INLINE uint32_t ifx_wdt_timeout_to_ignore_bits(uint32_t *timeout_ms)
 			return i;
 		}
 	}
-	return IFX_WDT_MAX_IGNORE_BITS; /* Ideally should never reach this */
+	return ARRAY_SIZE(ifx_wdt_ignore_data) - 1U; /* Ideally should never reach this */
 }
 
 #if IFX_WDT_IS_IRQ_EN
