@@ -18,6 +18,7 @@ tests:
         - tests_scripts/anonymous.sh
         - tests_scripts/anonymous_other.sh
         - tests_scripts/connect_fal.sh
+        - tests_scripts/aux_connect_req.sh
 
   bluetooth.controller.advx.ticker_expire_info:
     extra_overlay_confs:
