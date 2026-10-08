@@ -17,8 +17,8 @@ struct lll_conn_iso_stream_rxtx {
 	uint64_t phy:3;            /* PHY */
 	uint64_t rfu0:1;
 
-	uint8_t bn_curr:4;        /* Current burst number */
-	uint8_t rfu1:4;
+	uint8_t bn_curr:5;        /* Current burst number */
+	uint8_t rfu1:3;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	struct ccm ccm;
