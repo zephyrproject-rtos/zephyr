@@ -2255,6 +2255,39 @@ int hl78xx_recover_post_restart_timeout(struct hl78xx_data *data,
 	ARG_UNUSED(failure);
 
 	ret = hl78xx_run_init_fail_script(data);
+#ifdef CONFIG_MODEM_HL78XX_AUTO_BAUDRATE
+	if (ret == -EAGAIN) {
+		const struct hl78xx_config *config = data->devices.hl78xx->config;
+		struct uart_config start_cfg;
+
+		/* No usable answer at this rate: +KSUP most likely went out at another
+		 * one. Find the modem's rate and move it to the target; only a switch
+		 * saved with AT&W survives the soft reset this recovery resumes in.
+		 */
+		ret = uart_config_get(config->uart, &start_cfg);
+		if (ret < 0) {
+			LOG_ERR("Failed to get UART config: %d", ret);
+			return ret;
+		}
+		ret = hl78xx_detect_current_baudrate(data);
+		if ((ret == 0) && IS_ENABLED(CONFIG_MODEM_HL78XX_AUTOBAUD_CHANGE_PERSISTENT)) {
+			ret = hl78xx_switch_baudrate(data, data->status.uart.target_baudrate);
+		}
+		if (ret == 0) {
+			/* It answered, so it has booted: its next +KSUP is a restart */
+			data->status.boot.is_booted_previously = true;
+			ret = hl78xx_run_init_fail_script(data);
+		}
+		/* On failure the restart fallback follows: give it the starting rate back */
+		if (ret < 0) {
+			if (uart_configure(config->uart, &start_cfg) < 0) {
+				LOG_ERR("Failed to restore UART baud rate %u", start_cfg.baudrate);
+			} else {
+				data->status.uart.current_baudrate = start_cfg.baudrate;
+			}
+		}
+	}
+#endif /* CONFIG_MODEM_HL78XX_AUTO_BAUDRATE */
 	if (ret < 0) {
 		LOG_ERR("Failed to query KSREP configuration: %d", ret);
 		return ret;
