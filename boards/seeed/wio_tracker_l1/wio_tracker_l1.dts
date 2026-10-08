@@ -80,6 +80,12 @@
 		power-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
 	};
 
+	charger: charger {
+		compatible = "zephyr,charger-gpio";
+		charging-gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
+		charge-done-gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
+	};
+
 	buzzer: buzzer {
 		compatible = "pwm-buzzer";
 		pwms = <&pwm0 0 PWM_HZ(2700) PWM_POLARITY_NORMAL>;
@@ -90,6 +96,7 @@
 		sw0 = &button0;
 		lora0 = &lora;
 		gnss = &gnss;
+		charger0 = &charger;
 		buzzer0 = &buzzer;
 		watchdog0 = &wdt0;
 	};

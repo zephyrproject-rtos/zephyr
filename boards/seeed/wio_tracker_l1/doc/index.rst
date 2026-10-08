@@ -84,6 +84,10 @@ Connections and IOs
 +-------+-----------+--------------+----------------------------+
 | P0.31 | AIN7      | ADC          | Battery voltage sense      |
 +-------+-----------+--------------+----------------------------+
+| P1.13 | IN        | GPIO         | Charging (active low)      |
++-------+-----------+--------------+----------------------------+
+| P1.15 | IN        | GPIO         | Charge done (active low)   |
++-------+-----------+--------------+----------------------------+
 | P0.21 | OUT       | QSPI SCK     | Puya P25Q16H flash         |
 +-------+-----------+--------------+----------------------------+
 | P0.20 | I/O       | QSPI IO0     | Puya P25Q16H flash         |
@@ -110,6 +114,12 @@ the receiver starts in standby. Resume it with ``pm_device_action_run()`` and
 ``PM_DEVICE_ACTION_RESUME`` before receiving navigation data. Suspending it with
 ``PM_DEVICE_ACTION_SUSPEND`` drives its wake pin low and stops the UART. The reset signal is
 inverted by a transistor and is asserted for 100 ms during driver initialization.
+
+Enable :kconfig:option:`CONFIG_CHARGER` to query ``CHARGER_PROP_STATUS`` on the ``charger0``
+alias. The CN3165 exposes charging and charge-complete inputs. Charging is controlled by the
+hardware, so software cannot enable or disable it. When neither status input is active, the
+driver reports ``CHARGER_STATUS_NOT_CHARGING``; these signals alone do not distinguish a missing
+power source from suspended charging.
 
 Programming and Debugging
 *************************
