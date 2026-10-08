@@ -38,3 +38,4 @@ config REMOTE_BOARD
 	default "versal2_rpu" if SOC_AMD_VERSAL2_RPU
 	default "versalnet_rpu" if SOC_AMD_VERSALNET_RPU
 	default "nrf7120dk/nrf7120/cpuflpr" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "nrf7120dk/nrf7120/cpuapp"
+	default "nrf7120dk/nrf7120e/cpuflpr" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "nrf7120dk/nrf7120e/cpuapp"
