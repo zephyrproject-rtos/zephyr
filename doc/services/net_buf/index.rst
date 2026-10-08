@@ -476,6 +476,51 @@ Debugging
   :c:func:`net_buf_is_valid` checks on demand that a buffer is consistent
   and still referenced.
 
+Common Mistakes
+***************
+
+Ownership
+  A buffer that is not released on an error path is lost to its pool, and
+  the pool runs dry much later, far from the cause. A buffer that is
+  released twice can return to its pool while another owner still uses
+  it. Follow the rules in `Ownership`_: every reference has one owner, a
+  move to a queue or to a function that always takes ownership is written
+  with :c:func:`net_buf_take`, and a stored reference is released with
+  :c:func:`net_buf_drop`.
+
+Two threads on one buffer
+  The pool is protected against concurrent allocation and release, but
+  the fields of a buffer are not: two threads must not change the
+  ``data``, ``len`` or ``frags`` of one buffer at the same time. Pass the
+  buffer from one thread to the other through a queue, or let each hold
+  its own reference and leave the buffer unchanged. Pulling data changes
+  it too: a thread that parses a shared buffer pulls from a
+  :c:struct:`net_buf_simple` of its own, set up with
+  :c:func:`net_buf_simple_clone`, which points to the same data.
+
+Headroom and tailroom
+  :c:func:`net_buf_push` needs headroom, which :c:func:`net_buf_reserve`
+  sets aside before any data is added, and :c:func:`net_buf_add` needs
+  tailroom: the room left for more data is :c:func:`net_buf_tailroom`,
+  not ``size``. Running out of either is checked only by assertions,
+  which are disabled by default, or by
+  :kconfig:option:`CONFIG_NET_BUF_HARDENING`. A push or a pull also
+  moves the ``data`` pointer, so a copy of it taken before is stale
+  afterwards, and nothing checks that.
+
+Pool sizing
+  A pool shared by independent data flows, such as transmit and receive,
+  lets one of them starve the other. Give each flow its own pool and size
+  it from the number of buffers that are in use at the same time,
+  measured with :kconfig:option:`CONFIG_NET_BUF_POOL_USAGE` (see
+  `Debugging`_).
+
+User data
+  Every layer that holds a buffer can read and write its user data, and
+  the user data changes hands together with the buffer. Do not assume
+  that it is preserved when the buffer is passed on, unless the receiving
+  API documents that. State that only one module needs can instead be
+  kept in an array next to the pool, indexed with :c:func:`net_buf_id`.
 
 API Reference
 *************
