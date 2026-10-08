@@ -56,6 +56,12 @@
 				status = "okay";
 			};
 
+			test_i2c_tas2560: tas2560@4c {
+				compatible = "ti,tas2560";
+				reg = <0x4c>;
+				status = "okay";
+			};
+
 			test_i2c_aw88298: aw88298@5 {
 				compatible = "awinic,aw88298";
 				status = "okay";
