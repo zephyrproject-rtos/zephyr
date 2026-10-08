@@ -15,6 +15,53 @@ Network buffers are a core concept of how the networking stack
 (as well as the Bluetooth stack) pass data around. The API for them is
 defined in :zephyr_file:`include/zephyr/net_buf.h`:.
 
+Buffer Layout
+*************
+
+The data of a buffer is kept in a block of storage whose size is fixed
+when the buffer is allocated. The data does not have to start at the
+beginning of the storage: there can be free space before it, called the
+headroom, and after it, called the tailroom.
+
+.. mermaid::
+   :caption: Layout of a network buffer
+   :alt: The storage of a buffer from __buf to __buf + size, divided into
+         headroom, len and tailroom. The data pointer marks the boundary
+         between headroom and len, and data + len the boundary between len
+         and tailroom. The size arrow spans all three.
+
+   block-beta
+     columns 12
+     p0["__buf"] space:2 p1["data"] space:4 p2["data + len"] space:2 p3["__buf + size"]
+     headroom["headroom"]:3 len["len"]:5 tailroom["tailroom"]:4
+     size<["size"]>(x):12
+
+     classDef ptr fill:none,stroke:none
+     classDef free stroke-dasharray:5,fill-opacity:0.3
+     class p0,p1,p2,p3 ptr
+     class headroom,tailroom free
+
+Four fields of the buffer describe this layout:
+
+``data``
+  Points to the start of the data.
+
+``len``
+  Length of the data behind the ``data`` pointer.
+
+``size``
+  Size of the storage, headroom and tailroom included.
+
+``__buf``
+  Start of the storage. Not to be accessed directly: use the ``data``
+  pointer instead.
+
+The headroom is returned by :c:func:`net_buf_headroom`, the tailroom by
+:c:func:`net_buf_tailroom`, and :c:func:`net_buf_tail` returns
+``data + len``, where the next byte added to the buffer goes. The room
+left for more data is the tailroom, not ``size`` minus ``len``:
+``size`` counts the headroom as well.
+
 Creating buffers
 ****************
 
@@ -64,6 +111,26 @@ Common Operations
 The network buffer API provides some useful helpers for encoding and
 decoding data in the buffers. To fully understand these helpers it's
 good to understand the basic names of operations used with them:
+
+.. mermaid::
+   :caption: Where the four operations change the data of a buffer
+   :alt: The buffer as headroom, len and tailroom. Push moves the start of
+         the data into the headroom and pull moves it towards the end.
+         Add moves the end of the data into the tailroom and remove moves
+         it towards the start.
+
+   block-beta
+     columns 24
+     space:2 push<["push"]>(left):4 space:10 add<["add"]>(right):4 space:4
+     headroom["headroom"]:6 len["len"]:10 tailroom["tailroom"]:8
+     space:6 pull<["pull"]>(right):4 space:2 remove<["remove"]>(left):4 space:8
+
+     classDef free stroke-dasharray:5,fill-opacity:0.3
+     class headroom,tailroom free
+
+Add and Remove work at the end of the data and change only ``len``.
+Push and Pull work at the start of the data and move the ``data``
+pointer as well.
 
 Add
   Add data to the end of the buffer. Modifies the data length value
