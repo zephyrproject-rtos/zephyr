@@ -30,9 +30,9 @@
 #include "pdu.h"
 
 #include "lll.h"
-#include "lll/lll_adv_types.h"
+#include "lll_adv_types.h"
 #include "lll_adv.h"
-#include "lll/lll_adv_pdu.h"
+#include "lll_adv_pdu.h"
 #include "lll_adv_iso.h"
 #include "lll/lll_df_types.h"
 #include "lll_sync.h"
