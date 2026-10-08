@@ -301,3 +301,13 @@ static inline void lll_adv_pdu_linked_append_end(struct pdu_adv *pdu,
 	lll_adv_pdu_linked_append(pdu, last);
 }
 #endif
+
+bool lll_adv_scan_req_check(struct lll_adv *lll, struct pdu_adv *sr,
+			    uint8_t tx_addr, uint8_t *addr,
+			    uint8_t rx_addr, uint8_t *tgt_addr,
+			    uint8_t devmatch_ok, uint8_t *rl_idx);
+
+bool lll_adv_connect_ind_check(struct lll_adv *lll, struct pdu_adv *ci,
+			       uint8_t tx_addr, uint8_t *addr,
+			       uint8_t rx_addr, uint8_t *tgt_addr,
+			       uint8_t devmatch_ok, uint8_t *rl_idx);
