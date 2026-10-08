@@ -1,0 +1,36 @@
+# Copyright (c) 2026 Chrispine Tinega <dev@chrispinetinega.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Remoteproc control messages for a TI K3 remote core.
+
+  TI's Linux kernel stops a K3 remote core by sending RP_MBOX_SHUTDOWN over
+  the mailbox and waiting for RP_MBOX_SHUTDOWN_ACK. This IPM device sits in
+  front of the IPM device that carries the mailbox. It answers the request
+  and halts the core for the host to reset, and passes every other message
+  through. Point zephyr,ipc at it, and the application needs no change:
+
+    chosen {
+      zephyr,ipc = &rproc_ipm;
+    };
+
+    rproc_ipm: rproc-ipm {
+      compatible = "ti,k3-rproc-ipm";
+      ipm-node = <&ipc0>;
+    };
+
+    ipc0: ipc {
+      compatible = "zephyr,mbox-ipm";
+      mboxes = <&mbox0 0>, <&mbox0 1>;
+      mbox-names = "tx", "rx";
+    };
+
+compatible: "ti,k3-rproc-ipm"
+
+include: base.yaml
+
+properties:
+  ipm-node:
+    type: phandle
+    required: true
+    description: The IPM device that carries the mailbox.
