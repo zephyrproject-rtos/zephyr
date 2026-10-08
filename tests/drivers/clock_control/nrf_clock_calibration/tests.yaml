@@ -40,7 +40,9 @@ tests:
       - CONFIG_CLOCK_CONTROL_NRF_USES_TEMP_SENSOR=n
     platform_allow:
       - nrf7120dk/nrf7120/cpuapp
+      - nrf7120dk/nrf7120e/cpuapp
       - nrf7120dk/nrf7120/cpuapp/ns
+      - nrf7120dk/nrf7120e/cpuapp/ns
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE="boards/lfrc.overlay"
   drivers.clock.nrf52_clock_calibration:
@@ -87,6 +89,7 @@ tests:
       - nrf54lv10dk/nrf54lv10a/cpuapp
       - nrf54lv10dk/nrf54lv10a/cpuapp/ns
       - nrf7120dk/nrf7120/cpuapp
+      - nrf7120dk/nrf7120e/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
     integration_platforms:
       - nrf51dk/nrf51822
