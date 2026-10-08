@@ -241,6 +241,46 @@ The Add and Push operations are used when encoding data into the buffer,
 whereas the Remove and Pull operations are used when decoding data from a
 buffer.
 
+Simple Buffers
+**************
+
+:c:struct:`net_buf` is built around :c:struct:`net_buf_simple`, which has
+only the four fields of the buffer layout. What :c:struct:`net_buf` adds
+is what a buffer needs to be passed between contexts: the reference
+count, the pool that the buffer returns to, the link for FIFOs and lists,
+the fragment chain and the user data.
+
+A :c:struct:`net_buf_simple` is enough for a buffer that one function or
+object uses on its own, such as a short message encoded on the stack.
+:c:macro:`NET_BUF_SIMPLE_DEFINE` defines one together with its storage,
+and :c:macro:`NET_BUF_SIMPLE_DEFINE_STATIC` a static one. Each of the
+add, remove, push and pull functions has a ``net_buf_simple_`` variant:
+
+.. code-block:: c
+
+   NET_BUF_SIMPLE_DEFINE(msg, 8);
+
+   net_buf_simple_add_u8(&msg, opcode);
+   net_buf_simple_add_le16(&msg, handle);
+
+A parser that hands a buffer to code that pulls data from it can save the
+position of the data first with :c:func:`net_buf_simple_save` and return
+to it afterwards with :c:func:`net_buf_simple_restore`:
+
+.. code-block:: c
+
+   NET_BUF_SIMPLE_DEFINE(msg, 32);
+   struct net_buf_simple_state state;
+
+   net_buf_simple_add_mem(&msg, data, len);
+
+   net_buf_simple_save(&msg, &state);
+   err = parse_header(&msg);
+   net_buf_simple_restore(&msg, &state);
+
+The saved state is the position of the data, not its content: data
+written into the buffer in between is not undone.
+
 Reference Counting
 ******************
 
