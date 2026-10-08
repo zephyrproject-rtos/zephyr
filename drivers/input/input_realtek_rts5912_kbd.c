@@ -166,7 +166,7 @@ static int input_kbd_matrix_pm_action_suspend(const struct device *dev)
 	int ret;
 
 	ret = clock_control_off(config->clk_dev, (clock_control_subsys_t)&config->sccon_cfg);
-	if (ret != 0) {
+	if (ret != 0 && ret != -ENOTSUP) {
 		LOG_ERR("clock_control_off failed: %d", ret);
 		return ret;
 	}
