@@ -164,6 +164,18 @@ no data for it. The buffer starts with all of that storage as its data,
 so it has no tailroom, and releasing the buffer does not release the
 storage: the caller keeps it valid for as long as the buffer exists.
 
+Allocation Timeouts
+===================
+
+The timeout of an allocation is how long it may wait for a free buffer
+and, in a variable pool, for memory for the data. An interrupt handler
+cannot wait and has to use :c:macro:`K_NO_WAIT`.
+
+A thread that waits with :c:macro:`K_FOREVER` on a pool whose buffers
+only it frees, directly or through work that it processes itself, never
+wakes up. Use a finite timeout in such a context and handle the ``NULL``
+return.
+
 Common Operations
 *****************
 
@@ -432,6 +444,37 @@ correct after the call whatever the outcome:
 
 Changing an existing function to this form breaks its callers, so it is
 best done when the function is reworked anyway.
+
+Debugging
+*********
+
+:kconfig:option:`CONFIG_NET_BUF_LOG` enables the logs of the network
+buffer library. At the warning log level or higher, an allocation with
+:c:macro:`K_FOREVER` that finds the pool empty then logs that the pool is
+low on buffers, logs again every
+:kconfig:option:`CONFIG_NET_BUF_WARN_ALLOC_INTERVAL` seconds for as long
+as it is blocked, and logs how long it was blocked once it gets a buffer.
+With the option set to 0 there are no periodic messages in between. This
+points at the deadlock described in `Allocation Timeouts`_.
+
+:kconfig:option:`CONFIG_NET_BUF_POOL_USAGE` tracks the use of each pool.
+:c:func:`net_buf_get_available` returns the number of free buffers in a
+pool and :c:func:`net_buf_get_max_used` the highest number of buffers in
+use at the same time, which helps to size the pool. The log messages
+then name the pool.
+
+:kconfig:option:`CONFIG_NET_BUF_HARDENING` adds checks to the add,
+remove, push and pull functions that do not depend on assertions. An
+operation that would go outside the storage of the buffer, or that finds
+the fields of the buffer inconsistent, is refused without touching the
+data: functions that return a pointer return ``NULL``, those that return
+a value return 0, and those that return nothing skip the write, so the
+caller cannot always tell that the operation was refused. Without the
+option, assertions check that an operation fits in the room the buffer
+has, but not that its fields are consistent, and assertions are disabled
+by default.
+:c:func:`net_buf_is_valid` makes the same consistency check on demand,
+and also checks that the buffer is still referenced.
 
 
 API Reference
