@@ -337,24 +337,24 @@ These functions work on the data of a whole chain:
   Removes data from the start of the chain, releases the fragments it
   empties, and returns what is left of the chain.
 
-Reference Counting
-******************
-
-Each network buffer is reference counted. The buffer is initially
-acquired from a free buffers pool by calling :c:func:`net_buf_alloc()`,
-resulting in a buffer with reference count 1. The reference count can be
-incremented with :c:func:`net_buf_ref()` or decremented with
-:c:func:`net_buf_unref()`. When the count drops to zero the buffer is
-automatically placed back to the free buffers pool.
-
 Ownership
 *********
 
-Each reference to a buffer has exactly one owner. The owner either
-releases its reference with :c:func:`net_buf_unref` or moves it to a new
-owner, such as a FIFO, a list or a function that takes ownership of the
-buffer. After the move the previous owner must no longer use the buffer,
-unless it holds another reference of its own.
+Network buffers are reference counted. A newly allocated buffer has one
+reference, and the buffer returns to its pool when the last reference is
+released. Each reference has exactly one owner. The owner either moves
+the reference to a new owner, such as a FIFO, a list or a function that
+takes ownership of the buffer, or releases it. After the move the
+previous owner must no longer use the buffer, unless it holds another
+reference of its own, acquired with :c:func:`net_buf_ref`.
+
+Two helpers operate on the pointer that holds a reference, so that the
+previous owner is left with ``NULL`` instead of a pointer to a buffer it
+no longer owns. :c:func:`net_buf_take` moves the reference out of the
+pointer, and :c:func:`net_buf_drop` releases it. :c:func:`net_buf_drop`
+is meant for a pointer that outlives the release, such as a structure
+member, or one that may already be ``NULL``. A local pointer that holds a
+reference as it goes out of scope only needs :c:func:`net_buf_unref`.
 
 A fragment chain is owned through its head. Each buffer in the chain
 owns a reference to the next fragment and releases it when the buffer
@@ -379,14 +379,6 @@ Takes ownership
 Takes ownership on success
   The reference moves only if the function succeeds. On error the caller
   still owns the buffer.
-
-Two helpers operate on the pointer that holds a reference, so that the
-previous owner is left with ``NULL`` instead of a pointer to a buffer it
-no longer owns. :c:func:`net_buf_take` moves the reference out of the
-pointer, and :c:func:`net_buf_drop` releases it. :c:func:`net_buf_drop`
-is meant for a pointer that outlives the release, such as a structure
-member, or one that may already be ``NULL``. A local pointer that holds a
-reference as it goes out of scope only needs :c:func:`net_buf_unref`.
 
 Putting a buffer in a FIFO or a list moves the reference to the queue.
 The receiving side may process and free the buffer even before
