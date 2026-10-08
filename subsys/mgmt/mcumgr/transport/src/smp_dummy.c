@@ -169,7 +169,7 @@ static uint16_t smp_dummy_get_mtu(const struct net_buf *nb)
 	return CONFIG_MCUMGR_TRANSPORT_DUMMY_RX_BUF_SIZE;
 }
 
-int dummy_mcumgr_send_raw(const void *data, int len)
+int dummy_mcumgr_send_raw(const void *data, int len, void *ctx)
 {
 	uint16_t data_size =
 	MIN(len, (sizeof(smp_send_buffer) - smp_send_pos - 1));
@@ -635,7 +635,7 @@ static int mcumgr_dummy_tx_small(const void *data, int len,
 	__ASSERT_NO_MSG(rc == 0);
 	__ASSERT_NO_MSG(dst_len == 4);
 
-	return cb(b64, 4);
+	return cb(b64, 4, NULL);
 }
 
 /**
@@ -673,7 +673,7 @@ int mcumgr_dummy_tx_frame(const uint8_t *data, bool first, int len,
 		u16 = sys_cpu_to_be16(MCUMGR_SERIAL_HDR_FRAG);
 	}
 
-	rc = cb(&u16, sizeof(u16));
+	rc = cb(&u16, sizeof(u16), NULL);
 	if (rc != 0) {
 		return rc;
 	}
@@ -756,7 +756,7 @@ int mcumgr_dummy_tx_frame(const uint8_t *data, bool first, int len,
 		dst_off += 4;
 	}
 
-	rc = cb("\n", 1);
+	rc = cb("\n", 1, NULL);
 	if (rc != 0) {
 		return rc;
 	}
@@ -793,7 +793,7 @@ static int mcumgr_dummy_tx_pkt(const uint8_t *data, int len, mcumgr_serial_tx_cb
 	return 0;
 }
 
-static int smp_receive(const void *data, int len)
+static int smp_receive(const void *data, int len, void *ctx)
 {
 	uint16_t data_size =
 		MIN(len, (sizeof(smp_receive_buffer) - smp_receive_pos - 1));
