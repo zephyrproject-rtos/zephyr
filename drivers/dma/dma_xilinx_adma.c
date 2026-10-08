@@ -73,7 +73,9 @@
 #define XILINX_ADMA_DESC_CTRL_SIZE_256 0x2
 #define XILINX_ADMA_DESC_CTRL_COHRNT   0x1
 
-#define XILINX_ADMA_START 0x1
+#define XILINX_ADMA_START          0x1
+#define XILINX_ADMA_STS_STATE_MASK GENMASK(1, 0)
+#define XILINX_ADMA_STS_STATE_BUSY 0x2
 
 /* Interrupt Mask specific definitions */
 #define XILINX_ADMA_INT_ERR                                                                        \
@@ -412,7 +414,7 @@ static int dma_xilinx_adma_get_status(const struct device *dev, uint32_t channel
 	key = k_spin_lock(&data->lock);
 
 	status = adma_read_reg(&reg->chan_sts);
-	stat->busy = !!(status & XILINX_ADMA_START);
+	stat->busy = (status & XILINX_ADMA_STS_STATE_MASK) == XILINX_ADMA_STS_STATE_BUSY;
 	stat->dir = MEMORY_TO_MEMORY;
 
 	k_spin_unlock(&data->lock, key);
