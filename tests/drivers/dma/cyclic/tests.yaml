@@ -9,4 +9,6 @@ tests:
       - xmc45_relax_kit
       - pic32cz_ca80_cult
       - sam_e54_xpro
+      - kit_psoc4_hvms_64k_lite
+      - kit_psoc4_hvms_128k_lite
     filter: dt_nodelabel_enabled("tst_dma0")
