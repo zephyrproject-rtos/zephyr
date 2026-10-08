@@ -25,6 +25,8 @@ LOG_MODULE_DECLARE(wifi_ncp, CONFIG_WIFI_LOG_LEVEL);
 
 BUILD_ASSERT(offsetof(sli_wifi_sta_join_ap_info_t, scan_result) == 0);
 
+static void wifi_ncp_scan_report(const struct device *dev, scan_result_cb_t cb);
+
 int wifi_ncp_nwp_cmd(const struct device *dev, const struct wifi_ncp_nwp_hdr *hdr, const void *head,
 		     size_t head_len, const void *body, size_t body_len, void *resp,
 		     size_t *resp_size)
@@ -151,6 +153,7 @@ static void wifi_ncp_scan_done(const struct device *dev, const uint8_t *hdr, con
 	struct wifi_ncp_data *data = dev->data;
 	struct wifi_ncp_sta *sta = &data->sta;
 	union wpa_event_data event;
+	scan_result_cb_t cb;
 	uint16_t status = wifi_ncp_nwp_status((const struct wifi_ncp_nwp_hdr *)hdr);
 
 	ARG_UNUSED(frame);
@@ -163,10 +166,14 @@ static void wifi_ncp_scan_done(const struct device *dev, const uint8_t *hdr, con
 		return;
 	}
 	sta->scanning = false;
+	cb = sta->scan_cb;
+	sta->scan_cb = NULL;
 	k_mutex_unlock(&sta->lock);
 
 	LOG_DBG("%s: scan done: 0x%04x", dev->name, status);
-	if (data->supp.if_ctx && data->supp.cb.scan_done) {
+	if (cb) {
+		wifi_ncp_scan_report(dev, cb);
+	} else if (data->supp.if_ctx && data->supp.cb.scan_done) {
 		memset(&event, 0, sizeof(event));
 		data->supp.cb.scan_done(data->supp.if_ctx, &event);
 	}
@@ -341,23 +348,24 @@ void wifi_ncp_sta_rx(const struct device *dev, const uint8_t *frame, size_t len)
 		wifi_ncp_nwp_status(hdr), payload_len);
 }
 
-int wifi_ncp_sta_scan(void *if_priv, struct wpa_driver_scan_params *params)
+/* Start a scan, on one channel or all of them, for one SSID or any. The
+ * results are reported to cb when given, else to the supplicant.
+ */
+static int wifi_ncp_scan_start(const struct device *dev, uint8_t channel, const uint8_t *ssid,
+			       size_t ssid_len, bool passive, scan_result_cb_t cb)
 {
-	const struct device *dev = if_priv;
 	struct wifi_ncp_data *data = dev->data;
 	struct wifi_ncp_sta *sta = &data->sta;
 	struct wifi_ncp_nwp_hdr hdr = {.command_id = SLI_WIFI_CMD_SCAN};
-	sli_mgmtif_request_scan_t req;
+	sli_mgmtif_request_scan_t req = { };
 	int ret;
 
-	memset(&req, 0, sizeof(req));
-	/* A single frequency restricts the scan, anything else scans all */
-	if (params->freqs && params->freqs[0] && !params->freqs[1]) {
-		req.scan_req.channel[0] = wifi_utils_freq_to_chan(params->freqs[0]);
+	req.scan_req.channel[0] = channel;
+	if (ssid && ssid_len > 0 && ssid_len < SLI_WIFI_SSID_LEN) {
+		memcpy(req.scan_req.ssid, ssid, ssid_len);
 	}
-	if (params->num_ssids > 0 && params->ssids[0].ssid_len > 0 &&
-	    params->ssids[0].ssid_len < SLI_WIFI_SSID_LEN) {
-		memcpy(req.scan_req.ssid, params->ssids[0].ssid, params->ssids[0].ssid_len);
+	if (passive) {
+		req.scan_req.pscan_bitmap = SLI_WIFI_ENABLE_PASSIVE_SCAN;
 	}
 	req.scan_req.power_level = SLI_WIFI_TX_POWER_DECIDBM_MAX;
 
@@ -370,6 +378,7 @@ int wifi_ncp_sta_scan(void *if_priv, struct wpa_driver_scan_params *params)
 		sta->scan[i].used = false;
 	}
 	sta->scanning = true;
+	sta->scan_cb = cb;
 	k_mutex_unlock(&sta->lock);
 
 	/* The confirmation comes once the scan is over */
@@ -377,10 +386,54 @@ int wifi_ncp_sta_scan(void *if_priv, struct wpa_driver_scan_params *params)
 	if (ret < 0) {
 		k_mutex_lock(&sta->lock, K_FOREVER);
 		sta->scanning = false;
+		sta->scan_cb = NULL;
 		k_mutex_unlock(&sta->lock);
 	}
 
 	return ret;
+}
+
+int wifi_ncp_sta_scan(void *if_priv, struct wpa_driver_scan_params *params)
+{
+	const struct device *dev = if_priv;
+	const uint8_t *ssid = NULL;
+	size_t ssid_len = 0;
+	uint8_t channel = 0;
+
+	/* A single frequency restricts the scan, anything else scans all */
+	if (params->freqs && params->freqs[0] && !params->freqs[1]) {
+		channel = wifi_utils_freq_to_chan(params->freqs[0]);
+	}
+	if (params->num_ssids > 0) {
+		ssid = params->ssids[0].ssid;
+		ssid_len = params->ssids[0].ssid_len;
+	}
+
+	return wifi_ncp_scan_start(dev, channel, ssid, ssid_len, false, NULL);
+}
+
+int wifi_ncp_sta_mgmt_scan(const struct device *dev, struct net_if *iface,
+			   struct wifi_scan_params *params, scan_result_cb_t cb)
+{
+	const uint8_t *ssid = NULL;
+	size_t ssid_len = 0;
+	uint8_t channel = 0;
+	bool passive = false;
+
+	ARG_UNUSED(iface);
+
+	if (params) {
+		if (params->band_chan[0].channel && !params->band_chan[1].channel) {
+			channel = params->band_chan[0].channel;
+		}
+		if (params->ssids[0]) {
+			ssid = params->ssids[0];
+			ssid_len = strlen(params->ssids[0]);
+		}
+		passive = (params->scan_type == WIFI_SCAN_TYPE_PASSIVE);
+	}
+
+	return wifi_ncp_scan_start(dev, channel, ssid, ssid_len, passive, cb);
 }
 
 int wifi_ncp_sta_scan_abort(void *if_priv)
@@ -489,6 +542,76 @@ static const uint8_t *wifi_ncp_ie_find_vendor(const uint8_t *ies, size_t len, co
 	}
 
 	return NULL;
+}
+
+/* Security of a BSS, from its RSN or WPA element */
+static void wifi_ncp_scan_security(const struct wifi_ncp_scan_entry *entry,
+				   struct wifi_scan_result *res)
+{
+	static const uint8_t wpa_oui[] = {0x00, 0x50, 0xf2};
+	const uint8_t *ie;
+	struct wpa_ie_data rsn;
+
+	ie = wifi_ncp_ie_find(entry->ie, entry->ie_len, WLAN_EID_RSN);
+	if (ie && !wpa_parse_wpa_ie_rsn(ie, 2 + ie[1], &rsn)) {
+		if (rsn.key_mgmt & WPA_KEY_MGMT_SAE) {
+			res->security = WIFI_SECURITY_TYPE_SAE;
+		} else if (rsn.key_mgmt & WPA_KEY_MGMT_PSK_SHA256) {
+			res->security = WIFI_SECURITY_TYPE_PSK_SHA256;
+		} else if (rsn.key_mgmt & WPA_KEY_MGMT_PSK) {
+			res->security = WIFI_SECURITY_TYPE_PSK;
+		} else {
+			res->security = WIFI_SECURITY_TYPE_UNKNOWN;
+		}
+		if (rsn.capabilities & WPA_CAPABILITY_MFPR) {
+			res->mfp = WIFI_MFP_REQUIRED;
+		} else if (rsn.capabilities & WPA_CAPABILITY_MFPC) {
+			res->mfp = WIFI_MFP_OPTIONAL;
+		}
+		return;
+	}
+	if (wifi_ncp_ie_find_vendor(entry->ie, entry->ie_len, wpa_oui, 1)) {
+		res->security = WIFI_SECURITY_TYPE_WPA_PSK;
+	} else if (entry->caps & WLAN_CAPABILITY_PRIVACY) {
+		res->security = WIFI_SECURITY_TYPE_WEP;
+	} else {
+		res->security = WIFI_SECURITY_TYPE_NONE;
+	}
+}
+
+/* Report the kept results through the Wi-Fi management API. The signal level
+ * is not known.
+ */
+static void wifi_ncp_scan_report(const struct device *dev, scan_result_cb_t cb)
+{
+	struct wifi_ncp_data *data = dev->data;
+	struct wifi_ncp_sta *sta = &data->sta;
+	struct wifi_scan_result res;
+	const uint8_t *ie;
+
+	k_mutex_lock(&sta->lock, K_FOREVER);
+	for (size_t i = 0; i < ARRAY_SIZE(sta->scan); i++) {
+		const struct wifi_ncp_scan_entry *entry = &sta->scan[i];
+
+		if (!entry->used) {
+			continue;
+		}
+		memset(&res, 0, sizeof(res));
+		ie = wifi_ncp_ie_find(entry->ie, entry->ie_len, WLAN_EID_SSID);
+		if (ie && ie[1] <= WIFI_SSID_MAX_LEN) {
+			res.ssid_length = ie[1];
+			memcpy(res.ssid, &ie[2], ie[1]);
+		}
+		memcpy(res.mac, entry->bssid, WIFI_MAC_ADDR_LEN);
+		res.mac_length = WIFI_MAC_ADDR_LEN;
+		res.channel = entry->channel;
+		res.band = wifi_utils_chan_to_band(entry->channel);
+		wifi_ncp_scan_security(entry, &res);
+		cb(data->iface, 0, &res);
+	}
+	k_mutex_unlock(&sta->lock);
+
+	cb(data->iface, 0, NULL);
 }
 
 /* Describe the selected BSS to the co-processor, from the beacon kept during

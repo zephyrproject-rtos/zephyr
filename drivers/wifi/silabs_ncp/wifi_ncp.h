@@ -14,6 +14,7 @@
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/wifi.h>
+#include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/sys/util.h>
 
 #include <drivers/driver_zephyr.h>
@@ -128,6 +129,10 @@ enum wifi_ncp_sta_state {
 struct wifi_ncp_sta {
 	struct k_mutex lock;
 	bool scanning;
+	/* Set when the scan was requested through the Wi-Fi management API
+	 * rather than by the supplicant
+	 */
+	scan_result_cb_t scan_cb;
 	struct wifi_ncp_scan_entry scan[CONFIG_WIFI_SILABS_NCP_SCAN_RESULTS];
 	enum wifi_ncp_sta_state state;
 	/* The BSS being joined or joined */
