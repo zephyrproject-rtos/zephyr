@@ -47,7 +47,10 @@ psa_status_t secure_storage_ps_store_get(psa_storage_uid_t uid, size_t data_size
  *
  * @param uid The entry's UID.
  *
- * @return `PSA_SUCCESS` on success, anything else on failure.
+ * @retval PSA_SUCCESS              The removal succeeded, or the entry did not exist.
+ * @retval PSA_ERROR_DOES_NOT_EXIST The entry did not exist. Treated like `PSA_SUCCESS`.
+ * @return Anything else on failure. `psa_ps_remove()` then returns
+ *         `PSA_ERROR_STORAGE_FAILURE`.
  */
 psa_status_t secure_storage_ps_store_remove(psa_storage_uid_t uid);
 

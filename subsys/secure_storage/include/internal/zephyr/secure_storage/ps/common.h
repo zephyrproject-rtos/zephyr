@@ -16,7 +16,6 @@
 /** The maximum size, in bytes, of an entry's data after it has been transformed for storage. */
 enum { SECURE_STORAGE_PS_TRANSFORM_MAX_STORED_DATA_SIZE
 	= CONFIG_SECURE_STORAGE_PS_MAX_DATA_SIZE
-	  + sizeof(secure_storage_packed_create_flags_t)
 	  + CONFIG_SECURE_STORAGE_PS_TRANSFORM_OUTPUT_OVERHEAD };
 
 /** The size, in bytes, of an entry's data given its size once transformed for storage. */
