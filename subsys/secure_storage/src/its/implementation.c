@@ -18,14 +18,9 @@ BUILD_ASSERT(1 << SECURE_STORAGE_ITS_CALLER_ID_BIT_SIZE >= SECURE_STORAGE_ITS_CA
 BUILD_ASSERT(SECURE_STORAGE_ITS_CALLER_ID_BIT_SIZE + SECURE_STORAGE_ITS_UID_BIT_SIZE == 32);
 #endif
 
-/* For logging a `secure_storage_its_uid_t`, whose width depends on the configuration. */
-#ifdef CONFIG_SECURE_STORAGE_64_BIT_UID
-#define UID_FMT           "%u/%#llx"
-#define UID_ARGS(its_uid) (its_uid).caller_id, (unsigned long long)(its_uid).uid
-#else
-#define UID_FMT           "%u/%#lx"
-#define UID_ARGS(its_uid) (its_uid).caller_id, (unsigned long)(its_uid).uid
-#endif
+/* For logging a `secure_storage_its_uid_t`. */
+#define UID_FMT           "%u/" PSA_UID_FMT
+#define UID_ARGS(its_uid) (its_uid).caller_id, PSA_UID_ARGS((its_uid).uid)
 
 static psa_status_t make_its_uid(secure_storage_its_caller_id_t caller_id, psa_storage_uid_t uid,
 				 secure_storage_its_uid_t *its_uid)
