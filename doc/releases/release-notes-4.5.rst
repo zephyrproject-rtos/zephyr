@@ -803,6 +803,10 @@ New APIs and options
   * :kconfig:option:`CONFIG_FIDO2_BLE_KEEPALIVE_INTERVAL_MS`
   * :kconfig:option:`CONFIG_FIDO2_BLE_RX_TIMEOUT_MS`
 
+* File system
+
+  * :c:func:`fs_unmount_path` to unmount a volume by mount-point path
+
 * Fuel Gauge
 
   * :c:func:`fuel_gauge_set_buffer_prop` and the optional
