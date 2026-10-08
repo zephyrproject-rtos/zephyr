@@ -1683,6 +1683,9 @@ static bool isr_rx_connect_rsp_check(struct lll_scan *lll,
 				     struct pdu_adv *pdu_tx,
 				     struct pdu_adv *pdu_rx, uint8_t rl_idx)
 {
+	const uint8_t *adva;
+	bool is_adva;
+
 	if (unlikely(pdu_rx->type != PDU_ADV_TYPE_AUX_CONNECT_RSP)) {
 		return false;
 	}
@@ -1698,9 +1701,21 @@ static bool isr_rx_connect_rsp_check(struct lll_scan *lll,
 		return false;
 	}
 
-	return lll_scan_adva_check(lll, pdu_rx->tx_addr,
-			&pdu_rx->adv_ext_ind.ext_hdr.data[ADVA_OFFSET],
-			rl_idx) &&
+	adva = &pdu_rx->adv_ext_ind.ext_hdr.data[ADVA_OFFSET];
+
+	/* With the Filter Accept List, the Host gives no peer address, so the
+	 * advertiser is the one the AUX_CONNECT_REQ was sent to.
+	 */
+	if ((lll->filter_policy & SCAN_FP_FILTER) != 0U) {
+		is_adva = (pdu_rx->tx_addr == pdu_tx->rx_addr) &&
+			  (memcmp(adva, pdu_tx->connect_ind.adv_addr,
+				  BDADDR_SIZE) == 0);
+	} else {
+		is_adva = lll_scan_adva_check(lll, pdu_rx->tx_addr, adva,
+					      rl_idx);
+	}
+
+	return is_adva &&
 	       (pdu_rx->rx_addr == pdu_tx->tx_addr) &&
 	       (memcmp(&pdu_rx->adv_ext_ind.ext_hdr.data[TGTA_OFFSET],
 		       pdu_tx->connect_ind.init_addr, BDADDR_SIZE) == 0);

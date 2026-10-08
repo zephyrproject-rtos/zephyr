@@ -13,3 +13,4 @@ tests:
         - tests_scripts/scan_req_tgta.sh
         - tests_scripts/anonymous.sh
         - tests_scripts/anonymous_other.sh
+        - tests_scripts/connect_fal.sh
