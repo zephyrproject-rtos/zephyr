@@ -158,8 +158,10 @@ struct net_buf *smp_dummy_get_outgoing(void)
  * Enqueues a received SMP fragment for later processing.  This function
  * executes in the interrupt context.
  */
-static void smp_dummy_rx_frag(struct uart_mcumgr_rx_buf *rx_buf)
+static void smp_dummy_rx_frag(struct uart_mcumgr_rx_buf *rx_buf, void *user_data)
 {
+	ARG_UNUSED(user_data);
+
 	k_fifo_put(&smp_dummy_rx_fifo, rx_buf);
 	k_work_submit(&smp_dummy_work);
 }
@@ -386,7 +388,7 @@ void dummy_mcumgr_add_data(uint8_t *data, uint16_t data_size)
 	for (i = 0; i < data_size; i++) {
 		rx_buf = dummy_mcumgr_rx_byte(data[i]);
 		if (rx_buf != NULL) {
-			dummy_mgumgr_recv_cb(rx_buf);
+			dummy_mgumgr_recv_cb(rx_buf, NULL);
 		}
 	}
 }
