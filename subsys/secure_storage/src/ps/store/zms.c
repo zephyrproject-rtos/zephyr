@@ -9,9 +9,15 @@
 LOG_MODULE_DECLARE(secure_storage_ps, CONFIG_SECURE_STORAGE_LOG_LEVEL);
 
 BUILD_ASSERT(CONFIG_SECURE_STORAGE_PS_STORE_ZMS_SECTOR_SIZE
-	     > 2 * CONFIG_SECURE_STORAGE_PS_MAX_DATA_SIZE);
+	     > 2 * SECURE_STORAGE_PS_TRANSFORM_MAX_STORED_DATA_SIZE);
 
 #define PARTITION_DT_NODE DT_CHOSEN(zephyr_secure_storage_ps_partition)
+
+#ifdef CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_ZMS
+BUILD_ASSERT(!DT_SAME_NODE(DT_CHOSEN(zephyr_secure_storage_ps_partition),
+			   DT_CHOSEN(zephyr_secure_storage_its_partition)),
+	     "ITS and PS must use different storage partitions");
+#endif /* CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_ZMS */
 
 static struct zms_fs s_zms = {
 	.flash_device = PARTITION_NODE_DEVICE(PARTITION_DT_NODE),
