@@ -23,6 +23,7 @@
 #include "bs_pc_2G4.h"
 #include "bs_pc_2G4_types.h"
 #include "bs_pc_2G4_utils.h"
+#include "crc.h"
 #include "nsi_hw_scheduler.h"
 #include "nsi_hws_models_if.h"
 #include "nsi_utils.h"
@@ -149,50 +150,6 @@ static int8_t rssi_dbm_get(p2G4_rssi_power_t rssi)
 	}
 
 	return (int8_t)dbm;
-}
-
-static uint8_t rev_8(uint8_t in)
-{
-	in = ((in & 0xF0U) >> 4) | ((in & 0x0FU) << 4);
-	in = ((in & 0xCCU) >> 2) | ((in & 0x33U) << 2);
-	in = ((in & 0xAAU) >> 1) | ((in & 0x55U) << 1);
-
-	return in;
-}
-
-static uint32_t rev_24(uint32_t in)
-{
-	return ((uint32_t)rev_8(in) << 16) | ((uint32_t)rev_8(in >> 8) << 8) | rev_8(in >> 16);
-}
-
-/* Bluetooth LE CRC24 (Core spec Vol 6, Part B, 3.1.1), as transmitted. The
- * shift register is processed LSB first, so the polynomial (0xDA6000) and the
- * initial value are bit reversed, and the CRC is computed a byte at a time.
- */
-static uint32_t crc_table[256];
-
-static void crc_table_init(void)
-{
-	for (uint32_t i = 0U; i < 256U; i++) {
-		uint32_t crc = i;
-
-		for (int bit = 0; bit < 8; bit++) {
-			crc = ((crc & 1U) != 0U) ? ((crc >> 1) ^ 0xDA6000U) : (crc >> 1);
-		}
-
-		crc_table[i] = crc;
-	}
-}
-
-static uint32_t ble_crc24(const uint8_t *data, size_t len, uint32_t crc_init)
-{
-	uint32_t crc = rev_24(crc_init & 0xFFFFFFU);
-
-	for (size_t i = 0U; i < len; i++) {
-		crc = (crc >> 8) ^ crc_table[(crc ^ data[i]) & 0xFFU];
-	}
-
-	return crc;
 }
 
 static bs_time_t time_from_cntr(uint32_t value)
@@ -378,10 +335,12 @@ static void rx_end_handle(struct op *op)
 		}
 
 		if (status == BSR_STATUS_OK) {
-			uint32_t crc = ble_crc24(op->pkt, size - BSR_CRC_LEN, op->cfg.crc_init);
-			const uint8_t *rx_crc = &op->pkt[size - BSR_CRC_LEN];
+			uint8_t rx_crc[BSR_CRC_LEN];
 
-			if (crc != (rx_crc[0] | (rx_crc[1] << 8) | (rx_crc[2] << 16))) {
+			/* The CRC computed replaces the received one */
+			(void)memcpy(rx_crc, &op->pkt[size - BSR_CRC_LEN], BSR_CRC_LEN);
+			append_crc_ble(op->pkt, size - BSR_CRC_LEN, op->cfg.crc_init);
+			if (memcmp(rx_crc, &op->pkt[size - BSR_CRC_LEN], BSR_CRC_LEN) != 0) {
 				status = BSR_STATUS_CRC_ERR;
 			}
 		}
@@ -450,11 +409,7 @@ static void tx_start(struct op *op)
 	memcpy(op->pkt, op->tx_pdu, BSR_PDU_HEADER_LEN + len);
 
 	op->pkt_len = BSR_PDU_HEADER_LEN + len + BSR_CRC_LEN;
-	uint32_t crc = ble_crc24(op->pkt, BSR_PDU_HEADER_LEN + len, op->cfg.crc_init);
-
-	op->pkt[BSR_PDU_HEADER_LEN + len] = crc & 0xFF;
-	op->pkt[BSR_PDU_HEADER_LEN + len + 1] = (crc >> 8) & 0xFF;
-	op->pkt[BSR_PDU_HEADER_LEN + len + 2] = (crc >> 16) & 0xFF;
+	append_crc_ble(op->pkt, BSR_PDU_HEADER_LEN + len, op->cfg.crc_init);
 
 	dur = pream_and_addr_us(op->cfg.phy) + bytes_us(op->cfg.phy, op->pkt_len);
 
@@ -643,8 +598,6 @@ NSI_HW_EVENT(timer_cntr, cntr_timer_triggered, 50);
 void bsr_init(unsigned int radio_irq, unsigned int cntr_irq)
 {
 	memset(&bsr, 0, sizeof(bsr));
-
-	crc_table_init();
 
 	bsr.radio_irq = radio_irq;
 	bsr.cntr_irq = cntr_irq;
