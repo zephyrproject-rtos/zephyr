@@ -1,0 +1,17 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,uart-mcumgr = &uart_chosen;
+	};
+
+	uart_chosen: uart-chosen {
+		compatible = "vnd,serial";
+		status = "okay";
+		buffer-size = <1024>;
+	};
+};
