@@ -571,17 +571,18 @@ static bool zms_empty_ate_valid(struct zms_fs *fs, const struct zms_ate *entry)
 		(entry->len == 0xffff) && (entry->id == ZMS_HEAD_ID));
 }
 
-/* zms_gc_done_ate_valid validates a garbage collector done ATE
+/* zms_gc_done_ate_valid validates a garbage collector done ATE of the write sector
  * Valid gc_done_ate:
- * - valid ate
+ * - valid ate, with the cycle_cnt of the write sector. On devices without
+ *   explicit erase, a gc_done ATE of a previous use of the sector stays in the
+ *   sector, but it has another cycle_cnt.
  * - len = 0
  * - id = ZMS_HEAD_ID
  * return true if valid, false otherwise
  */
 static bool zms_gc_done_ate_valid(struct zms_fs *fs, const struct zms_ate *entry)
 {
-	return (zms_ate_valid_different_sector(fs, entry, entry->cycle_cnt) && (!entry->len) &&
-		(entry->id == ZMS_HEAD_ID));
+	return (zms_ate_valid(fs, entry) && (!entry->len) && (entry->id == ZMS_HEAD_ID));
 }
 
 /* zms_sector_closed checks whether the current sector is closed, which would imply
@@ -1536,7 +1537,6 @@ static int zms_init(struct zms_fs *fs)
 		struct zms_ate gc_done_ate;
 		uint32_t saved_full_cycle_cnt = 0;
 
-		fs->sector_cycle = empty_ate.cycle_cnt;
 		addr = fs->ate_wra + fs->ate_size;
 		while (SECTOR_OFFSET(addr) < (fs->sector_size - 2 * fs->ate_size)) {
 			rc = zms_flash_ate_rd(fs, addr, &gc_done_ate);
