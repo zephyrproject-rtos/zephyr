@@ -1446,6 +1446,26 @@ static int zms_init(struct zms_fs *fs)
 		}
 	}
 
+	/* The write sector can have no empty ATE: ZMS never used it before and a
+	 * reset occurred after the close of the previous sector, before ZMS added the
+	 * empty ATE. Add it now, otherwise the new ATEs get an incorrect cycle_cnt.
+	 */
+	rc = zms_get_sector_cycle(fs, addr, &fs->sector_cycle);
+	if (rc == -ENOENT) {
+		rc = zms_flash_erase_sector(fs, addr);
+		if (rc) {
+			goto end;
+		}
+		rc = zms_add_empty_ate(fs, addr, 0);
+		if (rc) {
+			goto end;
+		}
+		rc = zms_get_sector_cycle(fs, addr, &fs->sector_cycle);
+	}
+	if (rc) {
+		goto end;
+	}
+
 	/* addr contains address of closing ate in the most recent sector,
 	 * search for the last valid ate using the recover_last_ate routine
 	 * and also update the data_wra

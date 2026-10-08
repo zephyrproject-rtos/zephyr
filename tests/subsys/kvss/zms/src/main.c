@@ -865,6 +865,30 @@ ZTEST_F(zms, test_zms_reset_before_gc_on_used_sector)
 }
 
 /**
+ * @brief Test a reset before ZMS uses a new sector for the first time.
+ *
+ * The next sector was never used, so it has no empty ATE. The reset occurs
+ * after step 1, before ZMS writes the empty ATE of the next sector. After the
+ * reset, ZMS must read the value of a write.
+ */
+ZTEST_F(zms, test_zms_reset_before_first_use_of_sector)
+{
+	skip_if_explicit_erase(fixture);
+	erase_zms_area(fixture);
+	restart(fixture);
+
+	write_value(fixture, 1, 0x11111111);
+
+	reset_at_write_to(fixture, sector_after(fixture, write_sector(fixture)));
+	(void)zms_sector_use_next(&fixture->fs);
+	zassert_true(reset.occurred, "no reset");
+	restart(fixture);
+
+	write_value(fixture, 1, 0x22222222);
+	check_value(fixture, 1, 0x22222222);
+}
+
+/**
  * @brief Test a reset before the erase of the oldest sector.
  *
  * The reset occurs after step 3, before step 4. Thus the gc_done ATE of the
