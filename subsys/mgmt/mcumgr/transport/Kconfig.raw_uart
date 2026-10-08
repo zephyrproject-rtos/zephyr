@@ -12,13 +12,17 @@ menuconfig MCUMGR_TRANSPORT_RAW_UART
 	bool "Raw UART (non-SMP over console) MCUmgr transport"
 	depends on CONSOLE
 	depends on UART_MCUMGR
-	depends on UART_MCUMGR_RAW_PROTOCOL
 	select MCUMGR_TRANSPORT_SERIAL_HAS_RAW_BINARY_NON_SMP_OVER_CONSOLE
 	help
 	  Enables handling of MCUmgr commands received over UART, which are not encoded in the SMP
 	  over console format (without additional fields or base64 encoding). This is an even
 	  lighter-weight alternative to CONFIG_MCUMGR_TRANSPORT_UART. It allows MCUmgr commands
 	  to be received over a binary (non-textual) UART without requiring an additional thread.
+
+	  The transport runs on the UART of each enabled zephyr,smp-uart-raw devicetree node.
+	  When no zephyr,smp-uart or zephyr,smp-uart-raw node of an enabled transport exists, it
+	  runs on the zephyr,uart-mcumgr chosen UART if UART_MCUMGR_RAW_PROTOCOL is enabled. It
+	  can be enabled together with MCUMGR_TRANSPORT_UART.
 
 if MCUMGR_TRANSPORT_RAW_UART
 

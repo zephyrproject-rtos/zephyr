@@ -243,6 +243,10 @@ config UART_MCUMGR_RAW_PROTOCOL
 	  Commands sent to/by the device will be in raw MCUmgr format instead of SMP over console
 	  format - this means without base64 encoding and additional console-specific parts added.
 
+	  This selects the framing on the zephyr,uart-mcumgr chosen UART, and has no effect once a
+	  zephyr,smp-uart or zephyr,smp-uart-raw devicetree node of an enabled MCUmgr UART
+	  transport exists.
+
 endif # UART_MCUMGR
 
 config XTENSA_SIM_CONSOLE
