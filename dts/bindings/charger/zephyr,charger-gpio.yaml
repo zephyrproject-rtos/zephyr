@@ -1,7 +1,10 @@
 # Copyright 2026 Embeint Inc
 # SPDX-License-Identifier: Apache-2.0
 
-description: GPIO controlled charging state.
+description: |
+  GPIO controlled charging state and status inputs. At least one of
+  ctrl-gpios or charging-gpios must be provided. Status-only devices do not
+  support enabling or disabling charging through the driver.
 
 compatible: "zephyr,charger-gpio"
 
@@ -10,3 +13,15 @@ properties:
     type: phandle-array
     description: |
       Pin that controls the charging state. Charging is enabled when active.
+
+  charging-gpios:
+    type: phandle-array
+    description: |
+      Input that is active while charging. When inactive, the charger reports
+      not charging unless charge-done-gpios is active.
+
+  charge-done-gpios:
+    type: phandle-array
+    description: |
+      Input that is active when charging is complete. Requires charging-gpios.
+      If both status inputs are active, the charger reports unknown status.
