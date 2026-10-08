@@ -26,7 +26,7 @@ int z_vrfy_hwinfo_get_device_eui64(uint8_t *buffer)
 int z_vrfy_hwinfo_get_reset_cause(uint32_t *cause)
 {
 	int ret;
-	uint32_t cause_copy;
+	uint32_t cause_copy = 0U;
 
 	ret = z_impl_hwinfo_get_reset_cause(&cause_copy);
 	K_OOPS(k_usermode_to_copy(cause, &cause_copy, sizeof(uint32_t)));
@@ -45,7 +45,7 @@ int z_vrfy_hwinfo_clear_reset_cause(void)
 int z_vrfy_hwinfo_get_supported_reset_cause(uint32_t *supported)
 {
 	int ret;
-	uint32_t supported_copy;
+	uint32_t supported_copy = 0U;
 
 	ret = z_impl_hwinfo_get_supported_reset_cause(&supported_copy);
 	K_OOPS(k_usermode_to_copy(supported, &supported_copy, sizeof(uint32_t)));
