@@ -151,6 +151,21 @@ static const struct bt_mesh_blob_io dummy_blob_io = {
 	.wr = dummy_blob_chunk_wr,
 };
 
+static int dummy_blob_open_fail(const struct bt_mesh_blob_io *io,
+				const struct bt_mesh_blob_xfer *xfer,
+				enum bt_mesh_blob_io_mode mode)
+{
+	return -EIO;
+}
+
+static const struct bt_mesh_blob_io dummy_blob_io_open_fail = {
+	.open = dummy_blob_open_fail,
+	.rd = dummy_blob_chunk_rd,
+	.wr = dummy_blob_chunk_wr,
+};
+
+static bool dist_io_open_fail;
+
 static int dist_fw_recv(struct bt_mesh_dfd_srv *srv,
 			const struct bt_mesh_dfu_slot *slot,
 			const struct bt_mesh_blob_io **io)
@@ -169,7 +184,7 @@ static int dist_fw_send(struct bt_mesh_dfd_srv *srv,
 			const struct bt_mesh_dfu_slot *slot,
 			const struct bt_mesh_blob_io **io)
 {
-	*io = &dummy_blob_io;
+	*io = dist_io_open_fail ? &dummy_blob_io_open_fail : &dummy_blob_io;
 
 	return 0;
 }
@@ -192,7 +207,9 @@ static void dist_phase_changed(struct bt_mesh_dfd_srv *srv, enum bt_mesh_dfd_pha
 			 * so prev_phase has not been observed yet.
 			 */
 			ASSERT_TRUE(prev_phase == BT_MESH_DFD_PHASE_APPLYING_UPDATE ||
-				    (recover && prev_phase == BT_MESH_DFD_PHASE_IDLE));
+				    (recover && prev_phase == BT_MESH_DFD_PHASE_IDLE) ||
+				    (dist_io_open_fail &&
+				     prev_phase == BT_MESH_DFD_PHASE_TRANSFER_ACTIVE));
 		}
 
 		k_sem_give(&dfu_dist_ended);
@@ -957,6 +974,41 @@ static void test_dist_dfu_self_update_remote_fail(void)
 		 */
 		dist_self_update_pre_reboot();
 	}
+
+	PASS();
+}
+
+static void test_dist_dfu_self_update_xfer_fail(void)
+{
+	enum bt_mesh_dfd_status status;
+
+	/* The self-target verifies during Firmware Update Start, then the BLOB read
+	 * stream fails to open before the Apply step, so its image must not be applied.
+	 */
+	dist_io_open_fail = true;
+	expect_dfu_apply = false;
+
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	bt_mesh_device_setup(&prov, &dist_comp_self_update);
+	dist_self_update_prov_and_conf(DIST_ADDR);
+
+	ASSERT_TRUE(slot_add(NULL));
+
+	status = bt_mesh_dfd_srv_receiver_add(&dfd_srv, DIST_ADDR + 1, 0);
+	ASSERT_EQUAL(BT_MESH_DFD_SUCCESS, status);
+
+	/* Absent remote receiver; it only keeps the Transfer step from being skipped. */
+	status = bt_mesh_dfd_srv_receiver_add(&dfd_srv, TARGET_ADDR + 1, 0);
+	ASSERT_EQUAL(BT_MESH_DFD_SUCCESS, status);
+
+	dist_dfu_start();
+
+	if (k_sem_take(&dfu_dist_ended, K_SECONDS(DFU_TIMEOUT))) {
+		FAIL("Distribution did not end");
+	}
+
+	ASSERT_EQUAL(BT_MESH_DFD_PHASE_FAILED, dfd_srv.phase);
+	ASSERT_EQUAL(BT_MESH_DFU_PHASE_VERIFY_OK, dfu_srv.update.phase);
 
 	PASS();
 }
@@ -2077,6 +2129,8 @@ static const struct bst_test_instance test_dfu[] = {
 		  "Distributor self-update completes while a remote target fails"),
 	TEST_CASE(dist, dfu_self_update_group,
 		  "Distributor self-update with a multicast distribution"),
+	TEST_CASE(dist, dfu_self_update_xfer_fail,
+		  "Distributor self-update fails before the Apply step"),
 	TEST_CASE(dist, dfu_slot_create, "Distributor creates image slots"),
 	TEST_CASE(dist, dfu_slot_create_recover,
 		      "Distributor recovers created image slots from persistent storage"),
