@@ -52,7 +52,9 @@ void bt_bap_qos_cfg_to_iso_qos(struct bt_iso_chan_io_qos *io, const struct bt_ba
 {
 	io->sdu = qos_cfg->sdu;
 	io->phy = qos_cfg->phy;
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT) || defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 	io->rtn = qos_cfg->rtn;
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT || CONFIG_BT_BAP_BROADCAST_SOURCE */
 #if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	io->burst_number = qos_cfg->burst_number;
 	io->max_pdu = qos_cfg->max_pdu;
@@ -191,12 +193,19 @@ bool bt_bap_qos_cfg_eq(const struct bt_bap_qos_cfg *a, const struct bt_bap_qos_c
 	       a->rtn == b->rtn &&
 	       a->sdu == b->sdu &&
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || defined(CONFIG_BT_BAP_UNICAST)
-	       a->latency == b->latency &&
+	       a->rtn == b->rtn && a->latency == b->latency &&
 #endif /*  CONFIG_BT_BAP_BROADCAST_SOURCE || CONFIG_BT_BAP_UNICAST */
 #if defined(CONFIG_BT_ISO_TEST_PARAMS)
-	       a->max_pdu == b->max_pdu &&
-	       a->burst_number == b->burst_number &&
+	       a->max_pdu == b->max_pdu && a->burst_number == b->burst_number &&
 	       a->num_subevents == b->num_subevents &&
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+	       a->big.irc == b->big.irc && a->big.pto == b->big.pto &&
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
+#if defined(CONFIG_BT_BAP_UNICAST)
+	       a->test.cig.flush_timeout == b->test.cig.flush_timeout &&
+	       a->test.cig.wca == b->test.cig.wca &&
+#endif /* CONFIG_BT_BAP_UNICAST */
+	       a->test.iso_interval == b->test.iso_interval &&
 #endif /* CONFIG_BT_ISO_TEST_PARAMS */
 	       a->interval == b->interval;
 }

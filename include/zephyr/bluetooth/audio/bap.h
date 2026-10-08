@@ -234,72 +234,142 @@ enum {
 	BT_BAP_QOS_CFG(_interval, BT_BAP_QOS_CFG_FRAMING_FRAMED, BT_BAP_QOS_CFG_2M, _sdu, _rtn,    \
 		       _latency, _pd)
 
-/** @brief QoS configuration structure. */
+/**
+ * @brief BIG-specific ISO test parameters (broadcast source).
+ */
+struct bt_bap_qos_big_test_cfg {
+	/**
+	 * @brief ISO Test Parameters
+	 *
+	 * Parameters used for ISO testing, including Instantaneous Retransmission Count (IRC),
+	 *
+	 * Value range @ref BT_ISO_IRC_MIN to @ref BT_ISO_IRC_MAX for IRC,
+	 */
+	uint8_t irc;
+	/**
+	 * @brief Packet Transmission Offset (PTO)
+	 *
+	 * This is a recommendation to the controller, and the actual PTO may be different than
+	 * this.
+	 *
+	 *
+	 * Value range @ref BT_ISO_PTO_MIN to @ref BT_ISO_PTO_MAX.
+	 *
+	 */
+	uint8_t pto;
+};
+
+/**
+ * @brief CIG/CIS-specific ISO test parameters (unicast).
+ */
+struct bt_bap_qos_cig_test_cfg {
+	/**
+	 * @brief Flush Timeout (FT)
+	 *
+	 * The flush timeout in multiples of ISO_Interval for each payload sent from the Central to
+	 * Peripheral.
+	 *
+	 * Value range @ref BT_ISO_FT_MIN to @ref BT_ISO_FT_MAX.
+	 */
+	uint16_t flush_timeout;
+
+	/**
+	 * @brief Worst case Clock Accuracy (WCA)
+	 *
+	 * The worst case clock accuracy in parts per million (ppm).
+	 *
+	 * Value range @ref BT_ISO_WCA_MIN to @ref BT_ISO_WCA_MAX.
+	 */
+	uint16_t wca;
+};
+
+/** @brief QoS configuration structure.
+ *
+ * This structure can be changed up and until bt_bap_stream_qos() has been called.
+ * Once a stream has been QoS configured, modifying this field does not modify the value.
+ * It is however possible to modify this field and call bt_bap_stream_qos() again to update
+ * the value, assuming that the stream is in the correct state.
+ */
 struct bt_bap_qos_cfg {
 	/**
 	 * @brief Presentation Delay in microseconds
-	 *
-	 * This value can be changed up and until bt_bap_stream_qos() has been called.
-	 * Once a stream has been QoS configured, modifying this field does not modify the value.
-	 * It is however possible to modify this field and call bt_bap_stream_qos() again to update
-	 * the value, assuming that the stream is in the correct state.
 	 *
 	 * Value range 0 to @ref BT_AUDIO_PD_MAX.
 	 */
 	uint32_t pd;
 
 	/**
-	 * @brief Connected Isochronous Group (CIG) parameters
+	 * @brief QoS Framing
 	 *
-	 * The fields in this struct affect the value sent to the controller via HCI
-	 * when creating the CIG. Once the group has been created with
-	 * bt_bap_unicast_group_create(), modifying these fields will not affect the group.
+	 * Allowed values are @ref BT_BAP_QOS_CFG_FRAMING_UNFRAMED and
+	 * @ref BT_BAP_QOS_CFG_FRAMING_FRAMED.
 	 */
-	struct {
-		/** QoS Framing */
-		enum bt_bap_qos_cfg_framing framing;
+	enum bt_bap_qos_cfg_framing framing;
 
-		/**
-		 * @brief PHY
-		 *
-		 * Allowed values are @ref BT_BAP_QOS_CFG_1M, @ref BT_BAP_QOS_CFG_2M and
-		 * @ref BT_BAP_QOS_CFG_CODED.
-		 */
-		uint8_t phy;
+	/**
+	 * @brief ISO packing mode
+	 *
+	 * @ref BT_ISO_PACKING_SEQUENTIAL or @ref BT_ISO_PACKING_INTERLEAVED.
+	 */
+	uint8_t packing;
 
-		/**
-		 * @brief Retransmission Number
-		 *
-		 * This a recommendation to the controller, and the actual retransmission number
-		 * may be different than this.
-		 */
-		uint8_t rtn;
+	/**
+	 * @brief PHY
+	 *
+	 * Allowed values are @ref BT_BAP_QOS_CFG_1M, @ref BT_BAP_QOS_CFG_2M and
+	 * @ref BT_BAP_QOS_CFG_CODED.
+	 */
+	uint8_t phy;
 
-		/**
-		 * @brief Maximum SDU size
-		 *
-		 * Value range @ref BT_ISO_MIN_SDU to @ref BT_ISO_MAX_SDU.
-		 */
-		uint16_t sdu;
+	/**
+	 * @brief SDU Interval
+	 *
+	 * Value range @ref BT_ISO_SDU_INTERVAL_MIN to @ref BT_ISO_SDU_INTERVAL_MAX
+	 */
+	uint32_t interval;
+
+	/**
+	 * @brief Maximum SDU size
+	 *
+	 * Value range @ref BT_ISO_MIN_SDU to @ref BT_ISO_MAX_SDU.
+	 */
+	uint16_t sdu;
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || defined(CONFIG_BT_BAP_UNICAST) ||                   \
 	defined(__DOXYGEN__)
-		/**
-		 * @brief Maximum Transport Latency
-		 *
-		 * Not used for the @kconfig{CONFIG_BT_BAP_BROADCAST_SINK} role.
-		 */
-		uint16_t latency;
+	/**
+	 * @brief Maximum Transport Latency
+	 *
+	 * Not used for the @kconfig{CONFIG_BT_BAP_BROADCAST_SINK} role.
+	 */
+	uint16_t latency;
+	/**
+	 * @brief Retransmission Number
+	 *
+	 * This a recommendation to the controller, and the actual retransmission number
+	 * may be different than this.
+	 */
+	uint8_t rtn;
 #endif /*  CONFIG_BT_BAP_BROADCAST_SOURCE || CONFIG_BT_BAP_UNICAST */
 
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	/**
+	 * @brief ISO test group configuration structure.
+	 *
+	 * The fields in this struct affect the value sent to the controller via HCI
+	 * when creating the CIG or the BIG. Once the group has been created with
+	 * bt_bap_unicast_group_create(), modifying these fields will not affect the group.
+	 */
+	struct {
 		/**
-		 * @brief SDU Interval
+		 * @brief ISO Interval
 		 *
-		 * Value range @ref BT_ISO_SDU_INTERVAL_MIN to @ref BT_ISO_SDU_INTERVAL_MAX
+		 * This is the interval at which ISO packets are transmitted.
+		 *
+		 * Value range @ref BT_ISO_ISO_INTERVAL_MIN to @ref BT_ISO_ISO_INTERVAL_MAX.
 		 */
-		uint32_t interval;
+		uint16_t iso_interval;
 
-#if defined(CONFIG_BT_ISO_TEST_PARAMS) || defined(__DOXYGEN__)
 		/**
 		 * @brief Maximum PDU size
 		 *
@@ -328,8 +398,28 @@ struct bt_bap_qos_cfg {
 		 * Value range @ref BT_ISO_NSE_MIN to @ref BT_ISO_NSE_MAX.
 		 */
 		uint8_t num_subevents;
-#endif /* CONFIG_BT_ISO_TEST_PARAMS */
+
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || defined(__DOXYGEN__)
+		/**
+		 * @brief Test configuration specific to the BIG
+		 *
+		 * This field is used to configure ISO test parameters specific to the BIG.
+		 *
+		 */
+		struct bt_bap_qos_big_test_cfg big;
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
+
+#if defined(CONFIG_BT_BAP_UNICAST) || defined(__DOXYGEN__)
+		/**
+		 * @brief Test configuration specific to the CIG
+		 *
+		 * This field is used to configure ISO test parameters specific to the CIG.
+		 *
+		 */
+		struct bt_bap_qos_cig_test_cfg cig;
+#endif /* CONFIG_BT_BAP_UNICAST */
 	};
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 };
 
 /** Periodic advertising state reported by the Scan Delegator */
