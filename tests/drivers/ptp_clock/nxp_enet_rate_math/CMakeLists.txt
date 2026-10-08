@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+
+cmake_minimum_required(VERSION 3.28.0)
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+project(ptp_clock_nxp_enet_rate_math)
+
+target_sources(app PRIVATE
+  src/main.c
+  ${ZEPHYR_BASE}/drivers/ptp_clock/ptp_clock_nxp_enet_rate_math.c
+)
+
+target_include_directories(app PRIVATE ${ZEPHYR_BASE}/drivers/ptp_clock)
