@@ -31,6 +31,10 @@ void wifi_ncp_sta_rx(const struct device *dev, const uint8_t *frame, size_t len)
 /* Supplicant operations */
 int wifi_ncp_sta_scan(void *if_priv, struct wpa_driver_scan_params *params);
 
+/* Wi-Fi management operation */
+int wifi_ncp_sta_mgmt_scan(const struct device *dev, struct net_if *iface,
+			   struct wifi_scan_params *params, scan_result_cb_t cb);
+
 int wifi_ncp_sta_scan_abort(void *if_priv);
 
 int wifi_ncp_sta_get_scan_results(void *if_priv);
