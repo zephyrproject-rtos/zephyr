@@ -11,10 +11,8 @@
  * This header may be included when providing a custom implementation of the
  * PS store module (@kconfig{CONFIG_SECURE_STORAGE_PS_STORE_IMPLEMENTATION_CUSTOM}).
  *
- * The PS implementation serializes the operations that modify the storage medium, but a
- * retrieval can happen concurrently with one of them. The operations must therefore be
- * atomic with respect to each other, so that a retrieval returns either the previous or the
- * new data of an entry, never a mix of both.
+ * The PS implementation serializes all the operations on entries, so the functions of
+ * this module are never called concurrently.
  */
 #include <zephyr/secure_storage/ps/common.h>
 
