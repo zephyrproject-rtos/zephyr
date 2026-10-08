@@ -53,6 +53,7 @@ static struct bt_mesh_cfg_cli cfg_cli;
 static struct bt_mesh_sar_cfg_cli sar_cfg_cli;
 
 static int dfu_targets_cnt;
+static int dfu_group;
 static bool dfu_fail_confirm;
 static bool recover;
 static bool expect_fail;
@@ -114,6 +115,13 @@ static void test_args_parse(int argc, char *argv[])
 			.name = "{0, 1}",
 			.option = "recover",
 			.descript = "Recover DFU server phase"
+		},
+		{
+			.dest = &dfu_group,
+			.type = 'i',
+			.name = "{group address}",
+			.option = "group",
+			.descript = "Distribution Multicast Address, 0 for unicast"
 		},
 	};
 
@@ -449,6 +457,27 @@ static void common_app_bind(uint16_t addr, struct bind_params *params, size_t nu
 	}
 }
 
+static void target_group_sub_add(uint16_t addr, uint16_t elem_addr)
+{
+	const uint16_t mod_ids[] = { BT_MESH_MODEL_ID_BLOB_SRV, BT_MESH_MODEL_ID_DFU_SRV };
+	uint8_t status;
+	int err;
+
+	if (!dfu_group) {
+		return;
+	}
+
+	for (size_t i = 0; i < ARRAY_SIZE(mod_ids); i++) {
+		err = bt_mesh_cfg_cli_mod_sub_add(0, addr, elem_addr, dfu_group, mod_ids[i],
+						  &status);
+		if (err || status) {
+			FAIL("Model %#4x sub add failed (err %d, status %u)", mod_ids[i], err,
+			     status);
+			return;
+		}
+	}
+}
+
 static void dist_prov_and_conf(uint16_t addr)
 {
 	provision(addr);
@@ -476,6 +505,7 @@ static void dist_self_update_prov_and_conf(uint16_t addr)
 	};
 
 	common_app_bind(addr, &bind_params[0], ARRAY_SIZE(bind_params));
+	target_group_sub_add(addr, addr + 1);
 	common_sar_conf(addr);
 }
 
@@ -497,6 +527,7 @@ static void target_prov_and_conf_default(void)
 	};
 
 	target_prov_and_conf(addr, bind_params, ARRAY_SIZE(bind_params));
+	target_group_sub_add(addr, addr);
 }
 
 static struct bt_mesh_dfu_slot *slot_reserve_and_set(size_t size, uint8_t *fwid, size_t fwid_len,
@@ -558,7 +589,7 @@ static void dist_dfu_start(void)
 		.app_idx = 0,
 		.timeout_base = 10,
 		.slot_idx = 0,
-		.group = 0,
+		.group = dfu_group,
 		.xfer_mode = BT_MESH_BLOB_XFER_MODE_PUSH,
 		.ttl = 2,
 		.apply = true,
@@ -925,6 +956,31 @@ static void test_dist_dfu_self_update_remote_fail(void)
 		 * own fail-confirm argument.
 		 */
 		dist_self_update_pre_reboot();
+	}
+
+	PASS();
+}
+
+static void test_dist_dfu_self_update_group(void)
+{
+	ASSERT_TRUE(dfu_targets_cnt > 1);
+	ASSERT_TRUE(BT_MESH_ADDR_IS_GROUP(dfu_group));
+
+	/* The self-target is subscribed to the Distribution Multicast Address, so
+	 * group-addressed messages reach it over loopback even though it is
+	 * skipped. Its apply must still wait until the remote target is confirmed.
+	 */
+	dist_self_update_distribute();
+
+	if (k_sem_take(&dfu_dist_ended, K_SECONDS(DFU_TIMEOUT))) {
+		FAIL("Distribution did not end");
+	}
+
+	ASSERT_EQUAL(BT_MESH_DFD_PHASE_COMPLETED, dfd_srv.phase);
+	ASSERT_EQUAL(1, dist_completed_cnt);
+	for (int i = 0; i < dfu_targets_cnt; i++) {
+		ASSERT_EQUAL(BT_MESH_DFU_SUCCESS, dfd_srv.targets[i].status);
+		ASSERT_EQUAL(BT_MESH_DFU_PHASE_APPLY_SUCCESS, dfd_srv.targets[i].phase);
 	}
 
 	PASS();
@@ -2019,6 +2075,8 @@ static const struct bst_test_instance test_dfu[] = {
 		  "Distributor self-update applied inside the callback"),
 	TEST_CASE(dist, dfu_self_update_remote_fail,
 		  "Distributor self-update completes while a remote target fails"),
+	TEST_CASE(dist, dfu_self_update_group,
+		  "Distributor self-update with a multicast distribution"),
 	TEST_CASE(dist, dfu_slot_create, "Distributor creates image slots"),
 	TEST_CASE(dist, dfu_slot_create_recover,
 		      "Distributor recovers created image slots from persistent storage"),
