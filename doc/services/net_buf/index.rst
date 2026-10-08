@@ -167,6 +167,18 @@ no data for it. The buffer starts with all of that storage as its data,
 so it has no tailroom, and releasing the buffer does not release the
 storage: the caller keeps it valid for as long as the buffer exists.
 
+Allocation Timeouts
+===================
+
+The timeout of an allocation is how long it may wait for a free buffer
+and, in a variable pool, for memory for the data. An interrupt handler
+cannot wait and has to use :c:macro:`K_NO_WAIT`.
+
+A thread that waits with :c:macro:`K_FOREVER` on a pool whose buffers
+only it frees, directly or through work that it processes itself, never
+wakes up. Use a finite timeout in such a context and handle the ``NULL``
+return.
+
 Common Operations
 *****************
 
@@ -442,6 +454,27 @@ correct after the call whatever the outcome:
 
 Changing an existing function to this form breaks its callers, so it is
 best done when the function is reworked anyway.
+
+Debugging
+*********
+
+:kconfig:option:`CONFIG_NET_BUF_LOG`
+  Enables the logs of the library. At the warning log level or higher,
+  one of them is a warning when an allocation with :c:macro:`K_FOREVER`
+  has to wait for a buffer, which points at the deadlock described in
+  `Allocation Timeouts`_.
+
+:kconfig:option:`CONFIG_NET_BUF_POOL_USAGE`
+  Tracks how many buffers of each pool are free and the most that were in
+  use at the same time, returned by :c:func:`net_buf_get_available` and
+  :c:func:`net_buf_get_max_used`. This helps to size a pool.
+
+:kconfig:option:`CONFIG_NET_BUF_HARDENING`
+  Adds checks to the add, remove, push and pull functions that do not
+  depend on assertions, which are disabled by default. An operation that
+  is refused does not always report it to the caller.
+  :c:func:`net_buf_is_valid` checks on demand that a buffer is consistent
+  and still referenced.
 
 
 API Reference
