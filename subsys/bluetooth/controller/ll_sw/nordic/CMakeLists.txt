@@ -11,6 +11,7 @@ zephyr_library_sources(
 if(CONFIG_BT_BROADCASTER)
   zephyr_library_sources(
     lll/lll_adv.c
+    ../lll_adv_pdu.c
     )
   zephyr_library_sources_ifdef(
     CONFIG_BT_CTLR_ADV_EXT
