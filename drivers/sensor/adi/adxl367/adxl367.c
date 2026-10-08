@@ -798,14 +798,30 @@ static int adxl367_attr_set_thresh(const struct device *dev,
 				   const struct sensor_value *val)
 {
 	const struct adxl367_dev_config *cfg = dev->config;
+	struct adxl367_data *data = dev->data;
 	struct adxl367_activity_threshold threshold;
 	int64_t llvalue;
 	int32_t value;
+	int32_t sensitivity;
 	int64_t micro_ms2 = val->val1 * 1000000LL + val->val2;
 
-	llvalue = llabs((micro_ms2 * 10) / SENSOR_G);
+	switch (data->range) {
+	case ADXL367_2G_RANGE:
+		sensitivity = ADXL367_ACCEL_2G_LSB_PER_G;
+		break;
+	case ADXL367_4G_RANGE:
+		sensitivity = ADXL367_ACCEL_4G_LSB_PER_G;
+		break;
+	case ADXL367_8G_RANGE:
+		sensitivity = ADXL367_ACCEL_8G_LSB_PER_G;
+		break;
+	default:
+		return -EINVAL;
+	}
 
-	value = (int32_t) llvalue;
+	llvalue = llabs((micro_ms2 * sensitivity) / SENSOR_G);
+
+	value = (int32_t)llvalue;
 
 	threshold.value = value;
 	if (attr == SENSOR_ATTR_UPPER_THRESH) {
