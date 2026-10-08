@@ -78,7 +78,7 @@ found in :ref:`nordic_segger_flashing`.
 
 To build and program the sample to the nRF54LM20 DK, complete the following steps:
 
-First, connect the nRF54LM20 DK to you computer using the IMCU USB port on the DK.
+First, connect the nRF54LM20 DK to your computer using the IMCU USB port on the DK.
 Next, build the sample by running the following command:
 
 .. zephyr-app-commands::
