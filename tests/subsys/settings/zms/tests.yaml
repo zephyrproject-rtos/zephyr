@@ -10,6 +10,7 @@ tests:
     extra_configs:
       - CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE=n
       - CONFIG_FLASH_SIMULATOR_CALLBACKS=y
+      - CONFIG_SETTINGS_ZMS_RELINK_NAMES=y
     platform_allow:
       - native_sim
       - qemu_x86

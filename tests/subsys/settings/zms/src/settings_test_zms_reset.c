@@ -24,6 +24,7 @@
 #include <zephyr/ztest.h>
 
 #include <settings_priv.h>
+#include <settings/settings_zms.h>
 #include "zms_priv.h"
 
 #define AREA_DEV    PARTITION_DEVICE(storage_partition)
@@ -176,6 +177,51 @@ ZTEST(settings_zms_reset, test_setting_saved_after_reset_is_loaded)
 	(void)zms_sector_use_next(settings_fs());
 	zassert_true(reset.occurred, "no reset");
 	restart();
+
+	zassert_ok(settings_save_one("test/b", &second, sizeof(second)));
+	restart();
+
+	zassert_ok(settings_load_subtree_direct("test", load_cb, &loaded));
+	zassert_equal(loaded, second, "loaded value of test/b is %u, expected %u", loaded, second);
+}
+
+/**
+ * @brief Test that the backend loads a setting again that is not in the linked list.
+ *
+ * The test breaks the linked list after setting "test/a", as the recovery of a
+ * broken linked list does. Then setting "test/b" is not in the linked list, but
+ * its name and its value are still in ZMS. At the next initialization, the
+ * backend must add "test/b" to the linked list again.
+ */
+ZTEST(settings_zms_reset, test_setting_not_in_linked_list_is_loaded)
+{
+	const uint32_t first = 1;
+	const uint32_t second = 2;
+	struct settings_hash_linked_list head;
+	struct settings_hash_linked_list node_a;
+	uint32_t loaded = 0;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_SETTINGS_ZMS_RELINK_NAMES);
+
+	erase_settings_area();
+	restart();
+
+	/* The linked list is: head, "test/a", "test/b" */
+	zassert_ok(settings_save_one("test/a", &first, sizeof(first)));
+	zassert_ok(settings_save_one("test/b", &first, sizeof(first)));
+
+	/* Break the linked list after "test/a" */
+	zassert_equal(zms_read(settings_fs(), ZMS_LL_HEAD_HASH_ID, &head, sizeof(head)),
+		      sizeof(head));
+	zassert_equal(zms_read(settings_fs(), head.next_hash, &node_a, sizeof(node_a)),
+		      sizeof(node_a));
+	node_a.next_hash = 0;
+	zassert_equal(zms_write(settings_fs(), head.next_hash, &node_a, sizeof(node_a)),
+		      sizeof(node_a));
+	restart();
+
+	zassert_ok(settings_load_subtree_direct("test", load_cb, &loaded));
+	zassert_equal(loaded, first, "loaded value of test/b is %u, expected %u", loaded, first);
 
 	zassert_ok(settings_save_one("test/b", &second, sizeof(second)));
 	restart();
