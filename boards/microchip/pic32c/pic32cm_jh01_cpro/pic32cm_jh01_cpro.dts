@@ -234,10 +234,6 @@ i2c0: &sercom3 {
 	status = "okay";
 };
 
-&dmac {
-	status = "okay";
-};
-
 &tcc2 {
 	compatible = "microchip,tcc-g1-pwm";
 	#pwm-cells = <3>;
