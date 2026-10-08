@@ -225,10 +225,9 @@ static void video_shell_print_buffer(const struct shell *sh, struct video_buffer
 static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
+	struct video_caps caps = {.type = VIDEO_BUF_TYPE_OUTPUT};
 	struct video_format fmt = {.type = VIDEO_BUF_TYPE_OUTPUT};
-	struct video_buffer *buffers[CONFIG_VIDEO_BUFFER_POOL_NUM_MAX] = {NULL};
-	struct video_buffer vbuf0 = {.type = VIDEO_BUF_TYPE_OUTPUT};
-	struct video_buffer *vbuf = &vbuf0;
+	struct video_buffer *vbuf = &(struct video_buffer){.type = VIDEO_BUF_TYPE_OUTPUT};
 	struct sys_getopt_state *opt = sys_getopt_state_get();
 	uint32_t first_uptime;
 	uint32_t prev_uptime;
@@ -236,7 +235,9 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 	uint32_t frmival_msec;
 	uint32_t frmrate_fps;
 	size_t max_bytes = 0;
-	unsigned long num_buffers;
+	size_t buf_align = 0;
+	size_t num_allocated = 0;
+	size_t num_buffers;
 	int ret;
 
 	dev = device_get_binding(argv[1]);
@@ -246,16 +247,38 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 		return ret;
 	}
 
+	ret = video_get_caps(dev, &caps);
+	if (ret < 0) {
+		shell_error(sh, "Failed to query %s capabilities", dev->name);
+		return -ENODEV;
+	}
+
 	opt->optind = 2;
 
-	while ((ret = sys_getopt(argc, argv, "b:")) != -1) {
+	while ((ret = sys_getopt(argc, argv, "p:n:a:")) != -1) {
 		switch (ret) {
-		case 'b':
+		case 'p':
 			ret = 0;
-			max_bytes = shell_strtol(opt->optarg, 10, &ret);;
+			max_bytes = shell_strtol(opt->optarg, 10, &ret);
 			if (ret != 0) {
-				shell_warn(sh, "Invalid max bytes %d", max_bytes);
-				return -EINVAL;
+				shell_warn(sh, "Invalid number of bytes %s", opt->optarg);
+				return ret;
+			}
+			break;
+		case 'n':
+			ret = 0;
+			num_allocated = shell_strtol(opt->optarg, 10, &ret);
+			if (ret != 0) {
+				shell_warn(sh, "Invalid number of buffers %s", opt->optarg);
+				return ret;
+			}
+			break;
+		case 'a':
+			ret = 0;
+			buf_align = shell_strtol(opt->optarg, 10, &ret);
+			if (ret != 0) {
+				shell_warn(sh, "Invalid alignment size %s", opt->optarg);
+				return ret;
 			}
 			break;
 		default:
@@ -273,39 +296,52 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	ret = video_get_format(dev, &fmt);
-	if (ret < 0) {
-		shell_error(sh, "Failed to get the current format interval");
-		return ret;
-	}
-
 	num_buffers = shell_strtoull(argv[0], 10, &ret);
 	if (ret != 0) {
 		shell_error(sh, "Invalid integer '%s' for this type", argv[0]);
 		return ret;
 	}
 
-	shell_print(sh, "Preparing %u buffers of %u bytes each",
-		    CONFIG_VIDEO_BUFFER_POOL_NUM_MAX, fmt.size);
+	if (num_allocated == 0) {
+		num_allocated = caps.min_vbuf_count;
+	}
 
-	for (int i = 0; i < ARRAY_SIZE(buffers); i++) {
-		buffers[i] = video_buffer_alloc(fmt.size, K_NO_WAIT);
-		if (buffers[i] == NULL) {
+	if (buf_align == 0) {
+		buf_align = caps.buf_align;
+	}
+
+	ret = video_get_format(dev, &fmt);
+	if (ret < 0) {
+		shell_error(sh, "Failed to get the current format");
+		return ret;
+	}
+
+	shell_print(sh, "Preparing %u buffers of %u bytes each", num_allocated, fmt.size);
+
+	for (int i = 0; i < num_allocated; i++) {
+		vbuf = video_buffer_aligned_alloc(fmt.size, buf_align, K_NO_WAIT);
+		if (vbuf == NULL) {
 			shell_error(sh, "Failed to allocate buffer %u of %u bytes", i, fmt.size);
 			goto end;
 		}
 
 		/* Only queueing of output buffers is supported for now */
-		buffers[i]->type = VIDEO_BUF_TYPE_OUTPUT;
+		vbuf->type = VIDEO_BUF_TYPE_OUTPUT;
 
-		ret = video_enqueue(dev, buffers[i]);
+		ret = video_enqueue(dev, vbuf);
 		if (ret < 0) {
 			shell_error(sh, "Failed to enqueue buffer %u: %s", i, strerror(-ret));
+
+			ret = video_buffer_release(vbuf);
+			if (ret) {
+				shell_error(sh, "Failed to release video buffer %u", vbuf->index);
+			}
+
 			goto end;
 		}
 	}
 
-	shell_print(sh, "Starting the capture of %lu buffers from %s", num_buffers, dev->name);
+	shell_print(sh, "Starting the capture of %zu buffers from %s", num_buffers, dev->name);
 
 	ret = video_stream_start(dev, VIDEO_BUF_TYPE_OUTPUT);
 	if (ret < 0) {
@@ -336,6 +372,12 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 		ret = video_enqueue(dev, vbuf);
 		if (ret < 0) {
 			shell_error(sh, "Failed to enqueue this buffer: %s", strerror(-ret));
+
+			ret = video_buffer_release(vbuf);
+			if (ret) {
+				shell_error(sh, "Failed to release video buffer %u", vbuf->index);
+			}
+
 			goto end;
 		}
 	}
@@ -344,7 +386,7 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 	frmrate_fps =
 		(frmival_msec == 0) ? (UINT32_MAX) : (num_buffers * MSEC_PER_SEC / frmival_msec);
 
-	shell_print(sh, "Capture of %lu buffers in %u ms in total, %u FPS on average, stopping %s",
+	shell_print(sh, "Capture of %zu buffers in %u ms in total, %u FPS on average, stopping %s",
 		    num_buffers, frmival_msec, frmrate_fps, dev->name);
 
 end:
@@ -356,7 +398,7 @@ end:
 	while (video_dequeue(dev, &vbuf, K_NO_WAIT) == 0) {
 		ret = video_buffer_release(vbuf);
 		if (ret < 0) {
-			shell_error(sh, "Failed to release video buffer %p", (void *)vbuf);
+			shell_error(sh, "Failed to release video buffer %u", vbuf->index);
 		}
 	}
 
@@ -484,7 +526,7 @@ static int cmd_video_frmival(const struct shell *sh, size_t argc, char **argv)
 
 	ret = video_get_format(dev, &fmt);
 	if (ret < 0) {
-		shell_error(sh, "Failed to get the current format interval");
+		shell_error(sh, "Failed to get the current format");
 		return ret;
 	}
 
@@ -633,7 +675,7 @@ static int video_shell_set_format(const struct shell *sh, const struct device *d
 static int cmd_video_format(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
-	struct video_caps caps = {0};
+	struct video_caps caps = {.type = VIDEO_BUF_TYPE_OUTPUT};
 	struct video_format fmt = {0};
 	enum video_buf_type type;
 	char *arg_device = argv[1];
@@ -660,7 +702,7 @@ static int cmd_video_format(const struct shell *sh, size_t argc, char **argv)
 
 	ret = video_get_format(dev, &fmt);
 	if (ret < 0) {
-		shell_error(sh, "Failed to query %s capabilities", dev->name);
+		shell_error(sh, "Failed to query %s format", dev->name);
 		return -ENODEV;
 	}
 
@@ -1359,8 +1401,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_video_cmds,
 		cmd_video_stop, 2, 0),
 	SHELL_CMD_ARG(capture, &dsub_video_dev,
 		SHELL_HELP("Capture a given number of buffers from a device",
-			   "<device> [-b <max-bytes-printed>] <num-buffers>"),
-		cmd_video_capture, 3, 2),
+			   "<device> [-p <bytes-printed>] [-n <bufs-allocated>] [-a <alignment>]"
+			   " <bufs-total>"),
+		cmd_video_capture, 3, 6),
 	SHELL_CMD_ARG(format, &dsub_video_format_dev,
 		SHELL_HELP("Query or set the video format of a device",
 			   "<device> <dir> [<fourcc> <width>x<height>]"),
