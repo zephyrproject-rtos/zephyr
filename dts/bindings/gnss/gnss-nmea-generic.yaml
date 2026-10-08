@@ -11,6 +11,32 @@ compatible: "gnss-nmea-generic"
 include:
   - uart-device.yaml
 
+properties:
+  enable-gpios:
+    type: phandle-array
+    description: |
+      GPIO that enables the receiver when active and puts it into standby
+      when inactive. The driver asserts this signal on resume and deasserts
+      it on suspend.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      GPIO that resets the receiver when active. The driver pulses this
+      signal during initialization. Requires reset-assert-duration-ms.
+
+  reset-assert-duration-ms:
+    type: int
+    description: Minimum reset pulse duration in milliseconds.
+
+  startup-delay-ms:
+    type: int
+    default: 0
+    description: |
+      Delay in milliseconds after asserting enable-gpios before communicating
+      with the receiver. The default preserves operation without an enable
+      signal. Set this to the receiver's wake-up time when enable-gpios is used.
+
 examples:
   - |
     &uart0 {

@@ -101,6 +101,12 @@ New Samples
 Libraries / Subsystems
 **********************
 
+Devicetree
+**********
+
+* :dtcompatible:`gnss-nmea-generic` supports optional enable and reset GPIOs, with configurable
+  reset pulse and wake-up delays.
+
 Other notable changes
 *********************
 
