@@ -24,6 +24,7 @@ tests:
       - nrf54lm20dk/nrf54lm20b/cpuapp
       - nrf54lv10dk/nrf54lv10a/cpuapp
       - nrf7120dk/nrf7120/cpuapp
+      - nrf7120dk/nrf7120e/cpuapp
       - nucleo_h723zg/stm32h723xx
       - ophelia4ev/nrf54l15/cpuapp
     integration_platforms:
