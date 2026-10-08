@@ -19,7 +19,7 @@
  * @brief Legacy assertion with an optional message.
  *
  * Compatibility shim for the historical __ASSERT() macro. It forwards to the
- * private ZASSERT_M() macro using the DEFAULT module, whose level is
+ * private ZASSERT_IMPL_M() macro using the DEFAULT module, whose level is
  * CONFIG_ASSERT_MODULE_DEFAULT_LEVEL. New code should use ZASSERT() instead.
  *
  * @param test Condition to check. A fatal error is raised if it is false.

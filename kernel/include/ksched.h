@@ -28,7 +28,8 @@ BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO
 	  && (prio) <= K_LOWEST_APPLICATION_THREAD_PRIO))
 
 #define Z_ASSERT_VALID_PRIO(prio, entry_point) do { \
-	__ASSERT(Z_VALID_PRIO((prio), (entry_point)), \
+	ZASSERT_MODULE(KERNEL); \
+	ZASSERT(Z_VALID_PRIO((prio), (entry_point)), \
 		 "invalid priority (%d); allowed range: %d to %d", \
 		 (prio), \
 		 K_LOWEST_APPLICATION_THREAD_PRIO, \
@@ -36,7 +37,10 @@ BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO
 	} while (false)
 #else
 #define Z_VALID_PRIO(prio, entry_point) ((prio) == -1)
-#define Z_ASSERT_VALID_PRIO(prio, entry_point) __ASSERT((prio) == -1, "")
+#define Z_ASSERT_VALID_PRIO(prio, entry_point) do { \
+	ZASSERT_MODULE(KERNEL); \
+	ZASSERT((prio) == -1); \
+	} while (false)
 #endif /* CONFIG_MULTITHREADING */
 
 #ifdef __cplusplus
@@ -218,7 +222,8 @@ static inline bool _is_valid_prio(int prio, k_thread_entry_t entry_point)
 
 static ALWAYS_INLINE _wait_q_t *pended_on_thread(struct k_thread *thread)
 {
-	__ASSERT_NO_MSG(thread->base.pended_on);
+	ZASSERT_MODULE(KERNEL);
+	ZASSERT(thread->base.pended_on);
 
 	return thread->base.pended_on;
 }
