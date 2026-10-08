@@ -15,26 +15,6 @@
 
 LOG_MODULE_REGISTER(secure_storage_ps, CONFIG_SECURE_STORAGE_LOG_LEVEL);
 
-/* PS entries follow the same UID constraints as ITS ones. */
-static psa_status_t check_uid(psa_storage_uid_t uid)
-{
-	if (uid == 0) {
-		return PSA_ERROR_INVALID_ARGUMENT;
-	}
-
-#ifndef CONFIG_SECURE_STORAGE_64_BIT_UID
-	/* Check that the UID is not bigger than the maximum defined size. */
-	if (uid & GENMASK64(63, SECURE_STORAGE_ITS_UID_BIT_SIZE)) {
-		LOG_DBG("UID %#llx cannot be used as it has bits set past "
-			"the first " STRINGIFY(SECURE_STORAGE_ITS_UID_BIT_SIZE) " ones.",
-			(unsigned long long)uid);
-		return PSA_ERROR_INVALID_ARGUMENT;
-	}
-#endif /* !CONFIG_SECURE_STORAGE_64_BIT_UID */
-
-	return PSA_SUCCESS;
-}
-
 BUILD_ASSERT(SECURE_STORAGE_ALL_CREATE_FLAGS
 	     <= (1 << (8 * sizeof(secure_storage_packed_create_flags_t))) - 1);
 
@@ -283,9 +263,6 @@ static psa_status_t ps_set(psa_storage_uid_t uid,
 	struct its_stored_data *its_data_rollback = NULL;
 	const uint8_t *curr_replay_protection = NULL;
 
-	if (check_uid(uid) != PSA_SUCCESS) {
-		return PSA_ERROR_INVALID_ARGUMENT;
-	}
 	if ((create_flags & ~SECURE_STORAGE_ALL_CREATE_FLAGS) != 0U) {
 		return PSA_ERROR_NOT_SUPPORTED;
 	}
@@ -340,10 +317,6 @@ static psa_status_t ps_get(psa_storage_uid_t uid, size_t data_offset, size_t dat
 	struct its_stored_data its_data;
 	psa_status_t ret;
 
-	if (check_uid(uid) != PSA_SUCCESS) {
-		return PSA_ERROR_INVALID_ARGUMENT;
-	}
-
 	ret = get_its_data(uid, &its_data);
 	if (ret != PSA_SUCCESS) {
 		return ret;
@@ -388,10 +361,6 @@ static psa_status_t ps_get_info(psa_storage_uid_t uid, struct psa_storage_info_t
 	struct its_stored_data its_data;
 	psa_status_t ret;
 
-	if (check_uid(uid) != PSA_SUCCESS) {
-		return PSA_ERROR_INVALID_ARGUMENT;
-	}
-
 	ret = get_its_data(uid, &its_data);
 	if (ret != PSA_SUCCESS) {
 		return ret;
@@ -417,10 +386,6 @@ static psa_status_t ps_remove(psa_storage_uid_t uid)
 	struct its_stored_data its_data;
 	psa_status_t ret;
 	bool its_exist;
-
-	if (check_uid(uid) != PSA_SUCCESS) {
-		return PSA_ERROR_INVALID_ARGUMENT;
-	}
 
 	ret = get_its_data(uid, &its_data);
 	if (ret == PSA_ERROR_GENERIC_ERROR) {
