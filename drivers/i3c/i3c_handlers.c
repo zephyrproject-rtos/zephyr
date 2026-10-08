@@ -24,6 +24,8 @@ static int copy_ccc_and_do(const struct device *dev,
 		K_OOPS(K_SYSCALL_MEMORY_ARRAY_WRITE(copy.ccc.data,
 						    copy.ccc.data_len,
 						    sizeof(*copy.ccc.data)));
+	} else {
+		K_OOPS(K_SYSCALL_VERIFY(copy.ccc.data_len == 0U));
 	}
 
 	user_payloads = copy.targets.payloads;
@@ -47,6 +49,10 @@ static int copy_ccc_and_do(const struct device *dev,
 
 		for (i = 0; i < copy.targets.num_targets; i++) {
 			if (kernel_payloads[i].data == NULL) {
+				if (kernel_payloads[i].data_len != 0U) {
+					k_free(kernel_payloads);
+					K_OOPS(K_SYSCALL_VERIFY(false));
+				}
 				continue;
 			}
 			/* rnw=1: Read (driver writes buffer); rnw=0: Write (driver reads). */
@@ -73,6 +79,7 @@ static int copy_ccc_and_do(const struct device *dev,
 
 		k_free(kernel_payloads);
 	} else {
+		K_OOPS(K_SYSCALL_VERIFY(copy.targets.num_targets == 0U));
 		ret = z_impl_i3c_do_ccc(dev, &copy);
 	}
 
