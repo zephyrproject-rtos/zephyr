@@ -345,7 +345,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_iccid)
 		p = strchr(mdata.mdm_iccid, ' ');
 		if (p) {
 			out_len = strlen(p + 1);
-			memmove(mdata.mdm_iccid, p + 1, len + 1);
+			memmove(mdata.mdm_iccid, p + 1, out_len + 1);
 		}
 	}
 
