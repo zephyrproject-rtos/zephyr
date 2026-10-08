@@ -2025,6 +2025,15 @@ USB
   their API struct definitions and switch their API instances to ``DEVICE_API(uhc, ...)``.
   (:github:`108414`)
 
+* :c:struct:`usb_device` hub topology fields were renamed and extended for integrated host
+  controllers (xHCI). Replace ``hub`` with :c:member:`usb_device.parent`, ``level`` with
+  :c:member:`usb_device.depth` (0 for the root-tier device, previously ``level`` was 1), and
+  initialize :c:member:`usb_device.slot_id` to 0 until the HCD assigns a slot. Out-of-tree USB
+  host stack or class code must use the new names. Optional :c:struct:`uhc_driver_api` hooks
+  and the matching :ref:`uhc_api` helpers (:c:func:`uhc_add_endpoints`,
+  :c:func:`uhc_assign_address`, and related functions) are NULL-safe no-ops or return
+  :c:macro:`-ENOTSUP` where documented when a driver does not implement them.
+
 * The ``clock-reference`` property of :dtcompatible:`st,stm32u5-otghs-phy` is now deprecated
   and should be removed from DTS files; the underlying driver will compute the correct value
   automatically if the property doesn't exist (and honor it otherwise). (:github:`117882`)
