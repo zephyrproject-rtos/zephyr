@@ -92,4 +92,43 @@ add_subdirectory(${ZEPHYR_BASE}/boards/native/common/extra_args/
   ${CMAKE_CURRENT_BINARY_DIR}/extra_args
 )
 
+if(CONFIG_DT_HAS_ZEPHYR_BSIM_2G4_RADIO_ENABLED)
+  add_subdirectory("${ZEPHYR_BASE}/boards/native/common/bsim_2g4_radio"
+    "${CMAKE_CURRENT_BINARY_DIR}/bsim_2g4_radio"
+  )
+  target_sources(native_simulator INTERFACE
+    "common/bs_2g4_radio_nrf_bsim.c"
+  )
+
+  # Tests set the test cheats of the nRF RADIO model, which then have to
+  # reach the radio model in use.
+  target_link_options(native_simulator INTERFACE
+    -Wl,--wrap=hw_radio_testcheat_set_tx_power_gain
+    -Wl,--wrap=hw_radio_testcheat_set_rx_power_gain
+    -Wl,--wrap=hw_radio_testcheat_disable_tx
+    -Wl,--wrap=hw_radio_testcheat_disable_rx
+  )
+
+  # The radio model may be given the interrupt line of RTC0, which the driver
+  # of an enabled RTC0 would take too.
+  dt_comp_path(bsr_path COMPATIBLE "zephyr,bsim-2g4-radio")
+  dt_prop(bsr_irqs PATH "${bsr_path}" PROPERTY "interrupts")
+  dt_nodelabel(rtc0_path NODELABEL "rtc0")
+  if(DEFINED rtc0_path)
+    dt_node_has_status(rtc0_okay PATH "${rtc0_path}" STATUS okay)
+    dt_prop(rtc0_irq PATH "${rtc0_path}" PROPERTY "interrupts" INDEX 0)
+  endif()
+  if(rtc0_okay)
+    list(LENGTH bsr_irqs bsr_irqs_len)
+    math(EXPR bsr_irqs_last "${bsr_irqs_len} - 1")
+    # The interrupts property holds <irq priority> pairs
+    foreach(i RANGE 0 ${bsr_irqs_last} 2)
+      list(GET bsr_irqs ${i} irq)
+      if(irq EQUAL rtc0_irq)
+        message(FATAL_ERROR "zephyr,bsim-2g4-radio uses interrupt ${irq} of the enabled RTC0")
+      endif()
+    endforeach()
+  endif()
+endif()
+
 include(../common/natsim_config.cmake)
