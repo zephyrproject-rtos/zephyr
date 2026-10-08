@@ -13,6 +13,7 @@ target_link_libraries(app PRIVATE
 target_sources(app PRIVATE
   "src/main.c"
   "src/anonymous.c"
+  "src/connect.c"
 )
 
 zephyr_include_directories(
