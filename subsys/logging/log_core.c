@@ -891,6 +891,29 @@ void z_log_msg_remote_notify(const struct log_link *link, size_t new_msgs)
 		return;
 	}
 
+	if (IS_ENABLED(CONFIG_LOG_FRONTEND) && IS_ENABLED(CONFIG_LOG_FRONTEND_EXT_TS_API) &&
+	    IS_ENABLED(CONFIG_LOG_FRONTEND_ONLY)) {
+		union log_msg_generic *msg;
+
+		/* Process messages to the frontend. */
+		for (size_t i = 0; i < new_msgs; i++) {
+			msg = log_link_get_msg(link);
+			if (msg != NULL) {
+				size_t data_len;
+				uint8_t *data = log_msg_get_data(&msg->log, &data_len);
+
+				log_frontend_msg_with_timestamp(msg->log.hdr.source,
+					msg->log.hdr.desc,
+					msg->log.data,
+					data,
+					msg->log.hdr.timestamp);
+				log_link_put_msg(link, msg);
+			}
+		}
+
+		return;
+	}
+
 	/* If in immediate mode, process the message immediately. */
 	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
 		k_spinlock_key_t key;
