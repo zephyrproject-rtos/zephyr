@@ -33,6 +33,13 @@ tests:
       - pic32cz_ca90_cult
       - pic32cm_sg00_cpro
       - pic32cm_gc00_cpro
+      - kit_psc3m5_cc2
+      - kit_psc3m5_evk
+      - kit_psc3m6_evk
+      - kit_pse84_ai/pse846gps2dbzc4a/m33
+      - kit_pse84_ai/pse846gps2dbzc4a/m55
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
       - ophelia4ev/nrf54l15/cpuapp

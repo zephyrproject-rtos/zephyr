@@ -67,6 +67,8 @@ config TEST_WDT_WINDOW_MAX_ALLOWED
 		SOC_FAMILY_MICROCHIP_PIC32CM_SG_GC
 	default 0xFFFFFFFF if SOC_IT51XXX
 	default 0x6667 if SOC_SERIES_M48X
+	default 0x176FEE2B if SOC_SERIES_PSC3
+	default 0x5DC00 if SOC_SERIES_PSE84
 	default 0xFFFFFFF
 	help
 	  Maximal value of the Watchdog timeout passed in the
@@ -92,5 +94,14 @@ config TEST_WDT_FEED_CAN_STALL
 	  Set this Kconfig to 'y' if wdt_feed() may return -EAGAIN when completing
 	  the feed operation would stall the caller, for example due to an in-progress
 	  watchdog operation such as a previous wdt_feed() call.
+
+config TEST_WDT_CALLBACK_EARLY_WARNING
+	bool "Watchdog callback fires before the timeout expires"
+	default y if DT_HAS_INFINEON_WATCHDOG_ENABLED
+	help
+	  Set this Kconfig to 'y' if the timeout callback is an early warning that
+	  fires well before the timeout expires. Tests that use the callback to
+	  detect an expired timeout then install their timeouts without a callback
+	  and only check that no reset occurs.
 
 source "Kconfig.zephyr"
