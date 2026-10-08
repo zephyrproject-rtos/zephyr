@@ -1,4 +1,4 @@
-# General configuration options
+## General configuration options
 
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
 # Copyright (c) 2016 Intel Corporation
@@ -263,6 +263,7 @@ config MCUBOOT_BOOTLOADER_MODE_RAM_LOAD
 
 config MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT
 	bool "MCUboot has been configured for RAM LOAD with revert"
+	select MCUBOOT_BOOTUTIL_LIB_FOR_REVERT if MCUBOOT_BOOTUTIL_LIB
 	select MCUBOOT_BOOTLOADER_MODE_HAS_NO_DOWNGRADE
 	select MCUBOOT_BOOTLOADER_NO_DOWNGRADE
 	imply MCUBOOT_GENERATE_CONFIRMED_IMAGE
@@ -301,7 +302,7 @@ config MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
 config MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT
 	bool "MCUboot has been configured for DirectXIP with revert"
 	select MCUBOOT_BOOTUTIL_LIB
-	select MCUBOOT_BOOTUTIL_LIB_FOR_DIRECT_XIP
+	select MCUBOOT_BOOTUTIL_LIB_FOR_REVERT
 	select MCUBOOT_BOOTLOADER_MODE_HAS_NO_DOWNGRADE
 	select MCUBOOT_BOOTLOADER_NO_DOWNGRADE
 	imply MCUBOOT_GENERATE_CONFIRMED_IMAGE
@@ -416,13 +417,25 @@ config BOOT_IMAGE_ACCESS_HOOKS
 	  It is up to the application project to add source file which
 	  implements hooks to the build.
 
+config MCUBOOT_BOOTUTIL_LIB_FOR_REVERT
+	bool
+	help
+	  Adds support for setting for test and confirming images when bootloader is in direct-xip
+	  with revert or RAM load with revert modes.
+
 if MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT
 
 config MCUBOOT_BOOTUTIL_LIB_FOR_DIRECT_XIP
 	bool
+	select MCUBOOT_BOOTUTIL_LIB_FOR_REVERT
+	select DEPRECATED
 	help
 	  Adds support for setting for test and confirming images
 	  when bootloader is in DirectXIP-revert mode.
+
+	  This Kconfig has been deprecated in favour of MCUBOOT_BOOTUTIL_LIB_FOR_REVERT, as it
+	  applies to RAM load with revert also.
+
 endif
 
 DT_CHOSEN_ZEPHYR_FLASH := zephyr,flash
