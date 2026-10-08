@@ -391,6 +391,13 @@ static int video_esp32_get_frmival(const struct device *dev, struct video_frmiva
 	return video_get_frmival(cfg->source_dev, frmival);
 }
 
+static int video_esp32_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
+{
+	const struct video_esp32_config *cfg = dev->config;
+
+	return video_enum_frmival(cfg->source_dev, fie);
+}
+
 static int video_esp32_init(const struct device *dev)
 {
 	const struct video_esp32_config *cfg = dev->config;
@@ -455,6 +462,7 @@ static DEVICE_API(video, esp32_driver_api) = {
 	.get_selection = video_esp32_get_selection,
 	.set_frmival = video_esp32_set_frmival,
 	.get_frmival = video_esp32_get_frmival,
+	.enum_frmival = video_esp32_enum_frmival,
 #ifdef CONFIG_POLL
 	.set_signal = video_esp32_set_signal,
 #endif
