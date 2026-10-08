@@ -1774,7 +1774,7 @@ static int mspi_validate_config(const struct mspi_cfg *config, uint32_t max_freq
 		return -ENOTSUP;
 	}
 
-	if (config->num_periph > MSPI_MAX_DEVICE) {
+	if (config->sw_multi_periph && config->num_periph > MSPI_MAX_DEVICE) {
 		LOG_ERR("Invalid MSPI peripheral number");
 		return -ENOTSUP;
 	}
