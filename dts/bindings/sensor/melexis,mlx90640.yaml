@@ -1,0 +1,51 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Melexis MLX90640 32x24 far infrared thermal array.
+
+    The sensor is accessed over I2C using 16-bit register addresses.
+    Default 7-bit address is 0x33. A complete frame is 768 pixels
+    (row-major, 32 columns). See the datasheet at
+    https://www.melexis.com/en/documents/documentation/datasheets/datasheet-mlx90640
+
+compatible: "melexis,mlx90640"
+
+include: [sensor-device.yaml, i2c-device.yaml, power.yaml]
+
+properties:
+  refresh-rate:
+    type: int
+    default: 2
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+    description: |
+      RAM subpage refresh-rate field written to Control register 1 (0x800D)
+      bits 9:7. Encoded values:
+
+        0 = 0.5 Hz, 1 = 1 Hz, 2 = 2 Hz, 3 = 4 Hz,
+        4 = 8 Hz, 5 = 16 Hz, 6 = 32 Hz, 7 = 64 Hz
+
+      Use the MLX90640_REFRESH_* macros from
+      include/zephyr/dt-bindings/sensor/mlx90640.h.
+
+  emissivity:
+    type: int
+    default: 950000
+    description: |
+      Default object emissivity in millionths (950000 = 0.95). Can be
+      overridden at runtime with MLX90640_SENSOR_ATTR_EMISSIVITY.
+
+  ta-shift:
+    type: int
+    default: 8
+    description: |
+      Reflected-temperature shift in degrees Celsius subtracted from Ta
+      (datasheet open-air typical value is 8).

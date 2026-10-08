@@ -32,6 +32,7 @@
 #include <zephyr/dt-bindings/sensor/tmp11x.h>
 #include <zephyr/dt-bindings/sensor/tmp114.h>
 #include <zephyr/dt-bindings/sensor/icm566xx.h>
+#include <zephyr/dt-bindings/sensor/mlx90640.h>
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
@@ -1759,4 +1760,10 @@ test_i2c_adxl373: adxl373@e4 {
 	compatible = "adi,adxl373";
 	reg = <0xe4>;
 	int1-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_mlx90640: mlx90640@e5 {
+	compatible = "melexis,mlx90640";
+	reg = <0xe5>;
+	refresh-rate = <MLX90640_REFRESH_2_HZ>;
 };
