@@ -1,0 +1,57 @@
+# Copyright (c) 2016-2026 Vinayak Kariappa Chettimada
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig USE_NANOBE_SWITCH
+	bool "Nanobe threads [EXPERIMENTAL]"
+	depends on CPU_CORTEX_M
+	depends on ARMV7_M_ARMV8_M_MAINLINE
+	depends on MULTITHREADING
+	depends on !USE_SWITCH
+	depends on !ARM_STORE_EXC_RETURN
+	depends on !ARM_PAC_PER_THREAD
+	select EXPERIMENTAL
+	help
+	  Use nanobes, minimal execution contexts with their own stack, as
+	  the Zephyr threads. The kernel thread APIs and the Zephyr scheduler
+	  are unchanged, the thread context switch is a nanobe switch: it
+	  saves only the callee-saved registers on the outgoing thread's
+	  stack and swaps the stack pointer, in thread mode.
+
+	  All scheduling decisions are taken in thread mode. Interrupt
+	  service routines that ready or halt threads only defer the
+	  decision; interrupt exit then injects a reschedule into the
+	  interrupted thread, which decides and switches in thread mode.
+	  PendSV is not used and interrupt entry has no scheduling code.
+
+	  Nanobes may also be used directly, inside one Zephyr thread (the
+	  nanobe owner thread), with a simple round robin nanobe scheduler
+	  with a lock, sleep and semaphores.
+
+	  Time slicing (TIMESLICING) is disabled by default; if enabled, time
+	  slice expiry is handled in thread mode.
+
+	  The nanobe stacks are not covered by hardware stack limit checking
+	  (PSPLIM) and nanobes run privileged, hence enabling
+	  USE_NANOBE_SWITCH disables BUILTIN_STACK_GUARD and USERSPACE.
+
+	  See include/zephyr/kernel/nanobe.h.
+
+if USE_NANOBE_SWITCH
+
+config NANOBE_INJECTION
+	bool "Nanobe ISR call injection"
+	help
+	  Enable nanobe_isr_inject(), which lets an interrupt service routine
+	  redirect its exception return to execute a call (e.g.
+	  nanobe_sched_yield()) in thread mode on the interrupted nanobe owner
+	  thread's stack, before transparently resuming the interrupted code.
+	  This provides interrupt driven pre-emptive nanobe scheduling.
+
+config NANOBE_FPU
+	bool
+	default y if FPU && CPU_HAS_FPU
+	help
+	  Save and restore the callee-saved FP registers on nanobe switch and
+	  the caller-saved FP context around injected calls.
+
+endif # USE_NANOBE_SWITCH

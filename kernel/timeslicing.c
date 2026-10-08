@@ -69,6 +69,29 @@ static void slice_timeout(struct _timeout *timeout)
 
 	atomic_set(&slice_expired[cpu], 1);
 
+#ifdef CONFIG_USE_NANOBE_SWITCH
+#ifdef CONFIG_TIMESLICE_PER_THREAD
+	/* The expiry callback is called in interrupt context */
+	k_spinlock_key_t key = z_sched_spinlock_lock();
+	struct k_thread *curr = _current;
+	k_thread_timeslice_fn_t handler = curr->base.slice_expired;
+
+	if (z_time_slice_size(curr) == 0) {
+		handler = NULL;
+	}
+	z_sched_spinlock_unlock(key);
+
+	if (handler != NULL) {
+		handler(curr, curr->base.slice_data);
+	}
+#endif /* CONFIG_TIMESLICE_PER_THREAD */
+
+	/* The slice rotation is done in thread mode by z_time_slice(), called
+	 * from z_sched_deferred_reschedule().
+	 */
+	z_sched_deferred |= Z_SCHED_DEFERRED_UPDATE;
+#endif /* CONFIG_USE_NANOBE_SWITCH */
+
 	/* We need an IPI if we just handled a timeslice expiration
 	 * for a different CPU.
 	 */
@@ -182,7 +205,8 @@ void z_time_slice(void)
 #ifdef CONFIG_TIMESLICE_PER_THREAD
 		k_thread_timeslice_fn_t handler = curr->base.slice_expired;
 
-		if (handler != NULL) {
+		/* With nanobe switch, called by slice_timeout() */
+		if (!IS_ENABLED(CONFIG_USE_NANOBE_SWITCH) && (handler != NULL)) {
 			z_sched_spinlock_unlock(key);
 			handler(curr, curr->base.slice_data);
 			key = z_sched_spinlock_lock();
