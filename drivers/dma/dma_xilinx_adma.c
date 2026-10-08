@@ -443,6 +443,13 @@ static int dma_xilinx_adma_configure(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
+	for (struct dma_block_config *block = current_block; block; block = block->next_block) {
+		if (block->block_size == 0U) {
+			LOG_ERR("DMA block size must be nonzero");
+			return -EINVAL;
+		}
+	}
+
 	if (dma_cfg->dest_data_size != dma_cfg->source_data_size) {
 		LOG_ERR("Source and dest data size differ.");
 		return -EINVAL;
