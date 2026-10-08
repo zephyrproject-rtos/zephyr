@@ -37,7 +37,11 @@
  * `CONFIG_SECURE_STORAGE_PS_TRANSFORM_OUTPUT_OVERHEAD` minus
  * `CONFIG_SECURE_STORAGE_PS_TRANSFORM_AEAD_NONCE_SIZE`; decryption must remove the same expansion.
  *
- * @return `PSA_SUCCESS` on success, anything else on failure.
+ * @retval PSA_SUCCESS                 The operation succeeded.
+ * @retval PSA_ERROR_INVALID_SIGNATURE On decryption, the authentication of `input` and `add_data`
+ *                                     failed. This is how a tampered or replayed entry is
+ *                                     detected, so it must not be reported as another error.
+ * @return Anything else on other failures.
  */
 psa_status_t secure_storage_ps_transform_aead_crypt(
 		psa_key_usage_t operation, psa_storage_uid_t uid,
