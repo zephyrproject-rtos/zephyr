@@ -18,6 +18,7 @@ common:
     - nrf54lm20bsim/nrf54lm20a/cpuapp
     - nrf54lv10dk/nrf54lv10a/cpuapp
     - nrf7120dk/nrf7120/cpuapp
+    - nrf7120dk/nrf7120e/cpuapp
     - nrf9160dk/nrf9160
     - ophelia4ev/nrf54l15/cpuapp
   integration_platforms:
