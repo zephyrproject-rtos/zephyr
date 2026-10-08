@@ -1530,7 +1530,7 @@ static int mspi_stm32_ospi_pm_action(const struct device *dev, enum pm_device_ac
 		.duplex = DT_INST_ENUM_IDX_OR(index, duplex, MSPI_HALF_DUPLEX),                    \
 		.max_freq = DT_INST_PROP(index, clock_frequency),                                  \
 		.dqs_support = DT_INST_PROP(index, dqs_support),                                   \
-		.num_periph = DT_INST_CHILD_NUM(index),                                            \
+		.num_periph = DT_INST_CHILD_NUM_STATUS_OKAY(index),                                \
 		.sw_multi_periph = DT_INST_PROP(index, software_multiperipheral),                  \
 	}
 
