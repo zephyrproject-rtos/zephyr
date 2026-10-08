@@ -116,6 +116,7 @@ tests:
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf7120dk/nrf7120/cpuapp
+      - nrf7120dk/nrf7120e/cpuapp
     harness_config:
       fixture: gpio_loopback
   drivers.flash.common.nrf54lm20a:
@@ -339,6 +340,7 @@ tests:
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf7120dk/nrf7120/cpuapp
+      - nrf7120dk/nrf7120e/cpuapp
     extra_args:
       - FILE_SUFFIX="w25n01gv"
       - EXTRA_CONF_FILE="./boards/mikroe_flash_5_click.conf"
