@@ -411,7 +411,14 @@ bool lll_scan_aux_addr_match_get(const struct lll_scan *lll,
 	const struct pdu_adv_ext_hdr *ext_hdr;
 
 	ext_hdr = &pdu->adv_ext_ind.ext_hdr;
-	if (unlikely(!ext_hdr->adv_addr)) {
+
+	/* Without an extended header, there are no flags and no AdvA. What
+	 * the radio matched where a legacy PDU has its AdvA is no address.
+	 */
+	if (unlikely((pdu->adv_ext_ind.ext_hdr_len == 0U) || (ext_hdr->adv_addr == 0U))) {
+		*devmatch_ok = 0U;
+		*irkmatch_ok = 0U;
+
 		return false;
 	}
 
