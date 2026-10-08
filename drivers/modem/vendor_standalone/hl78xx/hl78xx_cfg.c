@@ -2081,6 +2081,7 @@ int hl78xx_switch_baudrate(struct hl78xx_data *data, uint32_t target_baudrate)
 	char cmd_buf[32] = {0};
 	const struct hl78xx_config *config = data->devices.hl78xx->config;
 	struct uart_config uart_cfg;
+	bool saved = true;
 	int ret;
 
 	if (data->status.uart.current_baudrate == target_baudrate) {
@@ -2145,6 +2146,7 @@ int hl78xx_switch_baudrate(struct hl78xx_data *data, uint32_t target_baudrate)
 	if (ret < 0) {
 		LOG_WRN("Failed to save baud rate to NVRAM: %d (will be temporary)", ret);
 		/* Continue anyway - baud rate is still active for current session */
+		saved = false;
 	} else {
 		LOG_DBG("Baud rate configuration saved to NVRAM");
 	}
@@ -2152,7 +2154,7 @@ int hl78xx_switch_baudrate(struct hl78xx_data *data, uint32_t target_baudrate)
 	data->status.uart.current_baudrate = target_baudrate;
 	LOG_INF("Successfully switched to baud rate %d", target_baudrate);
 
-	return 0;
+	return saved ? 0 : 1;
 }
 #endif /* CONFIG_MODEM_HL78XX_AUTO_BAUDRATE */
 
@@ -2286,6 +2288,70 @@ int hl78xx_recover_post_restart_timeout(struct hl78xx_data *data,
 	ARG_UNUSED(failure);
 
 	ret = hl78xx_run_init_fail_script(data);
+#ifdef CONFIG_MODEM_HL78XX_AUTO_BAUDRATE
+	if (ret == -EAGAIN) {
+		const struct hl78xx_config *config = data->devices.hl78xx->config;
+		struct uart_config start_cfg;
+		uint32_t boot_rate;
+
+		/* No usable answer at this rate: +KSUP most likely went out at another
+		 * one. Find the modem's rate and move it to the target; only a switch
+		 * saved with AT&W survives the soft reset this recovery resumes in.
+		 */
+		ret = uart_config_get(config->uart, &start_cfg);
+		if (ret < 0) {
+			LOG_ERR("Failed to get UART config: %d", ret);
+			return ret;
+		}
+		/* The rate the modem comes back at from the restart fallback: the
+		 * starting one until it is found, so that a modem only hung at the
+		 * right rate is still reached.
+		 */
+		boot_rate = start_cfg.baudrate;
+		ret = hl78xx_detect_current_baudrate(data);
+		if (ret == 0) {
+			/* Found. This recovery follows a restart of the modem, so it
+			 * restarts at the rate it came up at, until a switch is saved.
+			 */
+			boot_rate = data->status.uart.current_baudrate;
+		}
+		if ((ret == 0) && IS_ENABLED(CONFIG_MODEM_HL78XX_AUTOBAUD_CHANGE_PERSISTENT)) {
+			ret = hl78xx_switch_baudrate(data, data->status.uart.target_baudrate);
+			if (ret > 0) {
+				/* Switched but not saved: the soft reset would revert the
+				 * modem to the rate it was found at, with the UART left at
+				 * the target. Put it back now and carry on at that rate,
+				 * as a build without a persistent change does.
+				 */
+				LOG_WRN("Rate not saved: moving the modem back to %u baud",
+					boot_rate);
+				ret = hl78xx_switch_baudrate(data, boot_rate);
+				if (ret > 0) {
+					ret = 0;
+				}
+			} else if (ret == 0) {
+				/* Saved there: it restarts at the target from now on */
+				boot_rate = data->status.uart.target_baudrate;
+			}
+		}
+		if (ret == 0) {
+			/* It answered, so it has booted: its next +KSUP is a restart */
+			data->status.boot.is_booted_previously = true;
+			ret = hl78xx_run_init_fail_script(data);
+		}
+		/* On failure the restart fallback follows: give the UART the rate the
+		 * modem comes back at.
+		 */
+		if (ret < 0) {
+			start_cfg.baudrate = boot_rate;
+			if (uart_configure(config->uart, &start_cfg) < 0) {
+				LOG_ERR("Failed to restore UART baud rate %u", boot_rate);
+			} else {
+				data->status.uart.current_baudrate = boot_rate;
+			}
+		}
+	}
+#endif /* CONFIG_MODEM_HL78XX_AUTO_BAUDRATE */
 	if (ret < 0) {
 		LOG_ERR("Failed to query KSREP configuration: %d", ret);
 		return ret;

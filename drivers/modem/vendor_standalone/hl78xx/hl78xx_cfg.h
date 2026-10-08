@@ -122,6 +122,16 @@ int hl78xx_band_bitmap_to_number(const char *bmp);
 int configure_uart_for_auto_baudrate(struct hl78xx_data *data, uint32_t baudrate);
 int hl78xx_try_baudrate(struct hl78xx_data *data, uint32_t baudrate);
 int hl78xx_detect_current_baudrate(struct hl78xx_data *data);
+/**
+ * @brief Move the modem and the UART to @p target_baudrate.
+ *
+ * @retval 0 Switched, and saved to the modem's non-volatile memory where
+ *           CONFIG_MODEM_HL78XX_AUTOBAUD_CHANGE_PERSISTENT asks for it.
+ * @retval 0 Already at that rate.
+ * @retval 1 Switched, but the save failed: the modem reverts to its saved
+ *           rate at its next reset.
+ * @retval <0 The switch failed.
+ */
 int hl78xx_switch_baudrate(struct hl78xx_data *data, uint32_t target_baudrate);
 #endif /* CONFIG_MODEM_HL78XX_AUTO_BAUDRATE */
 
