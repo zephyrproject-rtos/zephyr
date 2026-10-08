@@ -1,0 +1,16 @@
+# SCD30 CO2 sensor configuration options
+
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config SCD30
+	bool "Sensirion SCD30 CO2 Sensor"
+	default y
+	depends on DT_HAS_SENSIRION_SCD30_ENABLED
+	select I2C
+	select CRC
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_SENSIRION_SCD30),ready-gpios)
+	help
+	  Enable driver for the Sensirion SCD30 carbon dioxide sensor.
+	  Optional ready-gpios uses GPIO for data-ready; otherwise I2C
+	  get-data-ready polling is used.

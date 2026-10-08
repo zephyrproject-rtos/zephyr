@@ -1,0 +1,27 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Sensirion SCD30 photoelectric NDIR CO2 sensor IC.
+
+  The SCD30 also includes a humidity and temperature sensor.
+
+compatible: "sensirion,scd30"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  measurement-interval:
+    type: int
+    default: 2
+    description: |
+      Continuous measurement interval in seconds. Legal range is 2 to 1800.
+      Power-up / factory default is 2 seconds.
+
+  ready-gpios:
+    type: phandle-array
+    description: |
+      Optional data-ready (RDY) output. Active high when a new measurement is
+      available. When present, sample_fetch uses this pin instead of the I2C
+      get-data-ready command. Without this property, readiness is polled over
+      I2C.
