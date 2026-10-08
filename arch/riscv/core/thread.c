@@ -29,6 +29,7 @@ bool z_riscv_thread_is_user_mode(void)
 EXPORT_SYMBOL(z_riscv_thread_is_user_mode);
 #endif
 
+#if !defined(CONFIG_USE_NANOBE_SWITCH)
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		     char *stack_ptr, k_thread_entry_t entry,
 		     void *p1, void *p2, void *p3)
@@ -134,6 +135,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	/* our switch handle is the thread pointer itself */
 	thread->switch_handle = thread;
 }
+#endif /* !CONFIG_USE_NANOBE_SWITCH */
 
 #ifdef CONFIG_USERSPACE
 

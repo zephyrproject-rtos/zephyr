@@ -10,8 +10,9 @@
  *
  * A nanobe is a minimal co-operative execution context with its own stack
  * but no thread object, no priority and no kernel bookkeeping; switching
- * between nanobes only saves and restores the AAPCS callee-saved registers
- * and swaps the stack pointer.
+ * between nanobes only saves and restores the callee-saved registers of the
+ * architecture calling convention (AAPCS on Arm Cortex-M, RISC-V psABI on
+ * RISC-V) and swaps the stack pointer.
  *
  * With @kconfig{CONFIG_USE_NANOBE_SWITCH}, the Zephyr threads are nanobes: the kernel
  * thread APIs are unchanged, a thread context switch is a nanobe switch and
@@ -59,7 +60,11 @@ typedef void (*nanobe_t)(void);
 typedef void (*nanobe_arg_t)(void *arg);
 
 /** @brief Required alignment of a nanobe stack. */
+#if defined(CONFIG_RISCV)
+#define NANOBE_STACK_ALIGN 16
+#else
 #define NANOBE_STACK_ALIGN 8
+#endif
 
 /**
  * @brief Statically define a nanobe stack.
@@ -317,10 +322,40 @@ int nanobe_isr_inject(nanobe_t callee);
 /* Nanobe scheduler lock, see nanobe_sched_lock() */
 extern volatile uint8_t z_nanobe_sgrd;
 
+/* Injection in progress (guard), injection re-run (trigger), the return
+ * address and the callee of the injected call, see kernel/nanobe.c.
+ */
+extern volatile uint8_t z_nanobe_igrd;
+extern volatile uint8_t z_nanobe_itrg;
+extern volatile uintptr_t z_nanobe_iret;
+extern volatile nanobe_t z_nanobe_ical;
+
+/* Injection syringe, executed in thread mode on the interrupted stack,
+ * implemented by the architecture.
+ */
+void z_nanobe_syringe(void);
+
 /* Prepare an initial nanobe frame, as nanobe_init_arg() but without
- * recording the nanobe owner thread.
+ * recording the nanobe owner thread. Implemented by the architecture.
  */
 void *z_nanobe_frame_init(nanobe_arg_t entry, void *arg, void *stack_top);
+
+/* Check, from an interrupt service routine, whether the interrupt returns to
+ * a thread mode context into which a call can be injected. Implemented by
+ * the architecture.
+ *
+ * @retval 0 Injection possible.
+ * @retval -EPERM Not returning to thread mode, i.e. nested interrupt.
+ * @retval -EBUSY Interrupted context can only be resumed by exception return.
+ */
+int z_nanobe_arch_isr_inject_check(void);
+
+/* Save the return address of the interrupted thread mode context in
+ * z_nanobe_iret and redirect the interrupt return into z_nanobe_syringe().
+ * Implemented by the architecture, called only after a successful
+ * z_nanobe_arch_isr_inject_check().
+ */
+void z_nanobe_arch_isr_inject_redirect(void);
 
 /* Inject a call into the interrupted thread mode context, as
  * nanobe_isr_inject() but into any thread and regardless of the nanobe
@@ -330,7 +365,8 @@ void *z_nanobe_frame_init(nanobe_arg_t entry, void *arg, void *stack_top);
 int z_nanobe_isr_inject(nanobe_t callee);
 
 /* Discard the IT block and interrupted LDM/STM continuation state of the
- * interrupted thread mode context, which must never be resumed.
+ * interrupted thread mode context, which must never be resumed. Arm
+ * Cortex-M only.
  */
 void z_nanobe_isr_iciit_discard(void);
 

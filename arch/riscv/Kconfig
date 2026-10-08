@@ -339,8 +339,8 @@ config RISCV_HAS_PLIC
 config RISCV_HAS_CLIC
 	bool
 	depends on RISCV_PRIVILEGED
-	select RISCV_ALWAYS_SWITCH_THROUGH_ECALL if MULTITHREADING
-	select CLIC_SUPPORT_INTERRUPT_LEVEL if !NRFX_CLIC
+	select RISCV_ALWAYS_SWITCH_THROUGH_ECALL if MULTITHREADING && !USE_NANOBE_SWITCH
+	select CLIC_SUPPORT_INTERRUPT_LEVEL if !NRFX_CLIC || (USE_NANOBE_SWITCH && !NANOBE_HW_STACKING)
 	help
 	  Does the SOC provide support for a Core-Local Interrupt Controller (CLIC).
 
@@ -574,6 +574,7 @@ endif #RISCV_PMP
 config PMP_STACK_GUARD
 	bool
 	depends on HW_STACK_PROTECTION
+	depends on !USE_NANOBE_SWITCH
 	select PMP_KERNEL_MODE_DYNAMIC if MULTITHREADING
 
 config PMP_STACK_GUARD_MIN_SIZE
@@ -685,6 +686,7 @@ config RISCV_HAS_CUSTOM_STACK_GUARD
 config CUSTOM_STACK_GUARD
 	bool "Thread Stack Guards based on custom stack guard"
 	depends on RISCV_HAS_CUSTOM_STACK_GUARD
+	depends on !USE_NANOBE_SWITCH
 	select THREAD_STACK_INFO
 	help
 	  Enable Thread/Interrupt Stack Guards via custom stack guard.
@@ -705,7 +707,7 @@ config RISCV_STACK_PROTECTION
 	bool
 	default y if HW_STACK_PROTECTION
 	imply CUSTOM_STACK_GUARD if RISCV_HAS_CUSTOM_STACK_GUARD
-	select PMP_STACK_GUARD if (!CUSTOM_STACK_GUARD && RISCV_PMP)
+	select PMP_STACK_GUARD if (!CUSTOM_STACK_GUARD && RISCV_PMP && !USE_NANOBE_SWITCH)
 	help
 	  This option enables either:
 	  - The custom stack guard, or

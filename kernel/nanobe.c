@@ -11,38 +11,18 @@
  *
  * The architecture specific context switch (nanobe_switch()), the nanobe
  * entry trampoline and the injection syringe are implemented in assembly,
- * see arch/arm/core/cortex_m/nanobe.S.
+ * see arch/arm/core/cortex_m/nanobe.S and arch/riscv/core/nanobe.S. The
+ * initial nanobe frame and the redirection of an interrupted context's return
+ * address are implemented by the architecture, see z_nanobe_frame_init(),
+ * z_nanobe_arch_isr_inject_check() and z_nanobe_arch_isr_inject_redirect().
  */
 
 #include <errno.h>
-#include <string.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/kernel/nanobe.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
-
-#include <cmsis_core.h>
-
-/* Context frame saved on a nanobe stack by nanobe_switch(), lowest address
- * first. Must match the push/pop sequence in nanobe.S.
- */
-struct nanobe_frame {
-	uint32_t igrd;
-#if defined(CONFIG_NANOBE_FPU)
-	uint32_t s16_s31[16];
-#endif
-	uint32_t r8, r9, r10, r11;
-	uint32_t r4, r5, r6, r7;
-	uint32_t pc;
-};
-
-BUILD_ASSERT((sizeof(struct nanobe_frame) % NANOBE_STACK_ALIGN) == 0);
-
-/* Nanobe entry trampoline, calls the entry function held in r4 with the
- * argument held in r5.
- */
-extern void z_nanobe_entry(void);
 
 /* Scheduler lock (guard) and pending yield (trigger), shared with nanobe.S */
 volatile uint8_t z_nanobe_sgrd;
@@ -53,11 +33,8 @@ volatile uint8_t z_nanobe_strg;
  */
 volatile uint8_t z_nanobe_igrd;
 volatile uint8_t z_nanobe_itrg;
-volatile uint32_t z_nanobe_iret;
+volatile uintptr_t z_nanobe_iret;
 volatile nanobe_t z_nanobe_ical;
-
-/* Injection syringe, executed in thread mode on the interrupted stack */
-extern void z_nanobe_syringe(void);
 
 static struct k_thread *volatile nanobe_owner;
 
@@ -89,25 +66,6 @@ static inline void **sched_next(void *nanobe_sp)
 	return (void **)nanobe_sp - 1;
 }
 
-void *z_nanobe_frame_init(nanobe_arg_t entry, void *arg, void *stack_top)
-{
-	struct nanobe_frame *frame;
-	uintptr_t top;
-
-	__ASSERT_NO_MSG(entry != NULL);
-	__ASSERT_NO_MSG(stack_top != NULL);
-
-	top = ROUND_DOWN((uintptr_t)stack_top, NANOBE_STACK_ALIGN);
-	frame = (struct nanobe_frame *)top - 1;
-
-	(void)memset(frame, 0, sizeof(*frame));
-	frame->r4 = (uint32_t)(uintptr_t)entry;
-	frame->r5 = (uint32_t)(uintptr_t)arg;
-	frame->pc = (uint32_t)(uintptr_t)z_nanobe_entry;
-
-	return frame;
-}
-
 void *nanobe_init_arg(nanobe_arg_t entry, void *arg, void *stack_top)
 {
 	bool owner;
@@ -122,7 +80,8 @@ void *nanobe_init_arg(nanobe_arg_t entry, void *arg, void *stack_top)
 void *nanobe_init(nanobe_t entry, void *stack_top)
 {
 	/* Calling a void (void) function with an argument is harmless under
-	 * the AAPCS, the argument register is caller-saved.
+	 * the AAPCS and the RISC-V calling convention, the argument register
+	 * is caller-saved.
 	 */
 	return nanobe_init_arg((nanobe_arg_t)(uintptr_t)entry, NULL, stack_top);
 }
@@ -303,39 +262,18 @@ void nanobe_sem_give(struct nanobe_sem *sem)
 	irq_unlock(key);
 }
 
-/* Stacked xPSR ICI/IT bits, EPSR[26:25] and EPSR[15:10] */
-#define NANOBE_XPSR_ICI_IT_MASK 0x0600FC00UL
-
-/* Stacked xPSR Thumb bit, EPSR[24] */
-#define NANOBE_XPSR_T BIT(24)
-
-/* Offsets, in words, of the return address and xPSR in the basic exception
- * stack frame; same in the extended (FPU) frame.
- */
-#define NANOBE_ESF_PC   6
-#define NANOBE_ESF_XPSR 7
-
 static int isr_inject(nanobe_t callee, bool owner)
 {
-	uint32_t *esf;
+	int err;
 
 	__ASSERT_NO_MSG(callee != NULL);
 
-	/* Only when returning to thread mode, i.e. not a nested exception */
-	if ((SCB->ICSR & SCB_ICSR_RETTOBASE_Msk) == 0U) {
-		return -EPERM;
-	}
-
-	/* Interrupted thread mode code uses the PSP, the exception stack frame
-	 * is at the top of the process stack.
+	/* Only when returning to an interrupted thread mode context that can
+	 * be resumed by the syringe.
 	 */
-	esf = (uint32_t *)__get_PSP();
-
-	/* An interruptible-continuable instruction or IT block state cannot be
-	 * restored other than by exception return.
-	 */
-	if ((esf[NANOBE_ESF_XPSR] & NANOBE_XPSR_ICI_IT_MASK) != 0U) {
-		return -EBUSY;
+	err = z_nanobe_arch_isr_inject_check();
+	if (err != 0) {
+		return err;
 	}
 
 	if (owner && (z_nanobe_sgrd != 0U)) {
@@ -360,18 +298,12 @@ static int isr_inject(nanobe_t callee, bool owner)
 	}
 
 	z_nanobe_igrd = 1U;
-
-	/* Syringe returns using a Thumb interworking pop {pc} */
-	z_nanobe_iret = esf[NANOBE_ESF_PC] | 1U;
 	z_nanobe_ical = callee;
 
-	/* Exception return address must have bit[0] cleared */
-	esf[NANOBE_ESF_PC] = (uint32_t)(uintptr_t)z_nanobe_syringe & ~1UL;
-
-	/* Syringe is Thumb code, also when the interrupted context faulted on
-	 * an invalid EPSR.T, e.g. a thread being aborted.
+	/* Save the interrupted return address in z_nanobe_iret and return
+	 * into the syringe instead.
 	 */
-	esf[NANOBE_ESF_XPSR] |= NANOBE_XPSR_T;
+	z_nanobe_arch_isr_inject_redirect();
 
 	return 0;
 }
@@ -387,13 +319,6 @@ int nanobe_isr_inject(nanobe_t callee)
 	return isr_inject(callee, true);
 }
 #endif /* CONFIG_NANOBE_INJECTION */
-
-void z_nanobe_isr_iciit_discard(void)
-{
-	uint32_t *esf = (uint32_t *)__get_PSP();
-
-	esf[NANOBE_ESF_XPSR] &= ~NANOBE_XPSR_ICI_IT_MASK;
-}
 
 int z_nanobe_isr_inject(nanobe_t callee)
 {

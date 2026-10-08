@@ -95,6 +95,11 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 static ALWAYS_INLINE void
 arch_switch(void *switch_to, void **switched_from)
 {
+#if defined(CONFIG_USE_NANOBE_SWITCH)
+	extern void z_riscv_nanobe_switch(void *switch_to, void **switched_from);
+
+	z_riscv_nanobe_switch(switch_to, switched_from);
+#else
 	extern void z_riscv_switch(struct k_thread *new, struct k_thread *old);
 	struct k_thread *new = switch_to;
 	struct k_thread *old = CONTAINER_OF(switched_from, struct k_thread,
@@ -104,6 +109,7 @@ arch_switch(void *switch_to, void **switched_from)
 #else
 	z_riscv_switch(new, old);
 #endif
+#endif /* CONFIG_USE_NANOBE_SWITCH */
 }
 
 void z_riscv_fatal_error(unsigned int reason,
