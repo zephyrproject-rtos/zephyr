@@ -14,13 +14,15 @@ config SECURE_STORAGE_PS_TRANSFORM_IMPLEMENTATION_CUSTOM
 	help
 	  Implement the functions declared in <zephyr/secure_storage/ps/transform.h>
 	  and set CONFIG_SECURE_STORAGE_PS_TRANSFORM_OUTPUT_OVERHEAD appropriately.
+	  The implementation must bind the replay protection value passed to it
+	  to the stored data, or the PS data is not protected against replay.
 	  The header is made available when this Kconfig option is enabled.
 
 endchoice # SECURE_STORAGE_PS_TRANSFORM_IMPLEMENTATION
 
 config SECURE_STORAGE_PS_TRANSFORM_OUTPUT_OVERHEAD
 	int "Overhead, in bytes, associated with the transformation of an entry's data for storage"
-	range 0 1000
+	range 1 1000
 	# authentication tag (16) + nonce (12)
 	default 28 if SECURE_STORAGE_PS_TRANSFORM_IMPLEMENTATION_AEAD \
 		&& SECURE_STORAGE_PS_TRANSFORM_AEAD_NONCE_SIZE = 12
@@ -28,6 +30,9 @@ config SECURE_STORAGE_PS_TRANSFORM_OUTPUT_OVERHEAD
 	help
 	  This indicates how many more bytes a PS entry's data will be once it
 	  has been processed by the secure_storage_ps_transform_to_store() function.
+	  The minimum value of 1 ensures that some data is written to the PS
+	  store even for an empty entry, as some storage backends (e.g. ZMS)
+	  interpret a 0-byte write as a deletion.
 
 if SECURE_STORAGE_PS_TRANSFORM_IMPLEMENTATION_AEAD
 
