@@ -1027,7 +1027,7 @@ static int can_rcar_init(const struct device *dev)
 	/* reset the registers */
 	ret = clock_control_off(config->clock_dev,
 				(clock_control_subsys_t)&config->mod_clk);
-	if (ret < 0) {
+	if (ret != 0 && ret != -ENOTSUP) {
 		return ret;
 	}
 
