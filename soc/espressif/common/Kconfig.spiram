@@ -10,10 +10,12 @@ config ESP_SPIRAM
 	bool "Support for external, SPI-connected RAM"
 	default n if MCUBOOT
 	default n if ESP32_USE_UNSUPPORTED_REVISION && SOC_SERIES_ESP32
-	select SHARED_MULTI_HEAP
 	help
 	  This enables support for an external SPI RAM chip, connected in
 	  parallel with the main SPI flash chip.
+
+configdefault SHARED_MULTI_HEAP
+	default y if ESP_SPIRAM
 
 menu "SPI RAM config"
 	depends on ESP_SPIRAM
