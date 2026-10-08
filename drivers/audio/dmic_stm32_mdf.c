@@ -733,7 +733,9 @@ static int dmic_stm32_mdf_pm_deinit(const struct device *dev)
 	/* Turn off MDF peripheral clock */
 	ret = clock_control_off(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 				(clock_control_subsys_t)&cfg->pclken);
-	if (ret < 0) {
+	if (ret == -ENOTSUP) {
+		ret = 0;
+	} else if (ret != 0) {
 		LOG_ERR("Could not disable peripheral clock: %d", ret);
 	}
 
