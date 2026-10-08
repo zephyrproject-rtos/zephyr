@@ -105,7 +105,7 @@ ZTEST(workqueue_api, test_workq_start_stop)
  */
 ZTEST(workqueue_api, test_workq_stop_essential)
 {
-	struct k_work_q work_q = {};
+	static struct k_work_q work_q;
 	struct k_work_queue_config cfg = {
 		.name = "test_work_q",
 		.no_yield = true,
