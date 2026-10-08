@@ -15,6 +15,7 @@
 #include "bstests.h"
 #include "babblekit/flags.h"
 #include "babblekit/testcase.h"
+#include "testlib/conn.h"
 
 /* The static random identity address of the advertiser, C0:00:00:00:00:01 */
 static const bt_addr_le_t adv_addr = {
@@ -83,6 +84,29 @@ static void test_conn_adv(void)
 	TEST_PASS("conn_adv");
 }
 
+static void test_conn_init(void)
+{
+	struct bt_conn *conn = NULL;
+	int err;
+
+	TEST_START("conn_init");
+
+	err = bt_enable(NULL);
+	TEST_ASSERT(err == 0, "Bluetooth init failed (err %d)", err);
+
+	err = bt_conn_cb_register(&conn_cb);
+	TEST_ASSERT(err == 0, "Callback register failed (err %d)", err);
+
+	err = bt_testlib_connect(&adv_addr, &conn);
+	TEST_ASSERT(err == 0, "Connection failed (err %d)", err);
+
+	connection_check();
+
+	bt_testlib_conn_unref(&conn);
+
+	TEST_PASS("conn_init");
+}
+
 static void test_conn_init_fal(void)
 {
 	int err;
@@ -111,6 +135,11 @@ static const struct bst_test_instance test_def[] = {
 		.test_id = "conn_adv",
 		.test_descr = "Connectable extended advertising",
 		.test_main_f = test_conn_adv,
+	},
+	{
+		.test_id = "conn_init",
+		.test_descr = "Initiator",
+		.test_main_f = test_conn_init,
 	},
 	{
 		.test_id = "conn_init_fal",
