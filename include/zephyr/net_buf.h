@@ -1669,7 +1669,7 @@ void net_buf_slist_put(sys_slist_t *list, struct net_buf *buf);
  *
  * @param list Which list to take the buffer from.
  *
- * @return New buffer or NULL if the FIFO is empty.
+ * @return Buffer, or NULL if the list is empty.
  */
 struct net_buf * __must_check net_buf_slist_get(sys_slist_t *list);
 
