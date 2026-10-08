@@ -6,6 +6,7 @@ zephyr_library_link_libraries(subsys__bluetooth)
 zephyr_library_sources(
   lll/lll.c
   lll/lll_clock.c
+  ../lll_prepare_pipeline.c
   )
 if(CONFIG_BT_BROADCASTER)
   zephyr_library_sources(
