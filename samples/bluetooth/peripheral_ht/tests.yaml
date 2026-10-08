@@ -46,6 +46,9 @@ tests:
   sample.bluetooth.peripheral_ht.pytest_demo:
     platform_allow:
       - nrf52840dk/nrf52840
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+      - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
     harness: pytest
     harness_config:
       pytest_root:
