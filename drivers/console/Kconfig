@@ -211,20 +211,23 @@ config UART_MCUMGR
 	  contrary to console UART driver) and all aspects of received protocol
 	  data are handled by an application provided callback.
 
+	  The MCUmgr UART transports use it, and other code can define instances on its own
+	  UARTs with UART_MCUMGR_DEFINE().
+
 if UART_MCUMGR
 
 config UART_MCUMGR_RX_BUF_SIZE
 	int "Size of receive buffer for MCUmgr fragments received over UART, in bytes"
 	default 128
 	help
-	  Specifies the size of the MCUmgr UART receive buffer, in bytes. This value must be large
+	  Specifies the size of the MCUmgr UART receive buffers, in bytes. This value must be large
 	  enough to accommodate any line sent by an MCUmgr client.
 
 config UART_MCUMGR_RX_BUF_COUNT
 	int "Number of receive buffers for MCUmgr fragments received over UART"
 	default 2
 	help
-	  Specifies the number of the MCUmgr UART receive buffers. Receive buffers hold received
+	  Specifies the number of receive buffers of each MCUmgr UART. Receive buffers hold received
 	  MCUmgr fragments prior to reassembly. If using SMP over console, each buffer holds one
 	  received line until it has been decoded into the SMP packet buffer, so this value limits
 	  how many fragments can be queued for processing. It does not limit the size of an SMP
