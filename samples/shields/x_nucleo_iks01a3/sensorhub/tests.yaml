@@ -12,3 +12,4 @@ tests:
       - frdm_rw612
       - lpcxpresso55s16
       - mimxrt1010_evk
+      - stm32mp157x_dk2/stm32mp157fxx

@@ -14,6 +14,7 @@ tests:
       - frdm_rw612
       - lpcxpresso55s16
       - stm32mp157x_dk2/stm32mp157cxx
+      - stm32mp157x_dk2/stm32mp157fxx
       - pan1781_evb
       - pan1782_evb
       - mimxrt1010_evk
