@@ -965,6 +965,18 @@ This approach has two main benefits:
 
 See :zephyr:code-sample:`shell-module` for details on how to enable remote shell.
 
+Security considerations
+=======================
+
+The host and the remote client validate commands and message lengths received from each other.
+Print messages are not validated: the host formats the :ref:`cbprintf package <cbprintf_packaging>`
+received from the remote client as is. The format string and string arguments in the package can
+point to any host address, and ``%n`` writes to host memory when
+:kconfig:option:`CONFIG_CBPRINTF_N_SPECIFIER` is enabled. With
+:kconfig:option:`CONFIG_SHELL_REMOTE_CLI_SKIP_RO_STRINGS` enabled, the host reads read-only
+strings directly from the remote core memory by design. Enable
+:kconfig:option:`CONFIG_SHELL_REMOTE` only if the host core trusts every remote client core.
+
 Configuration
 =============
 
