@@ -8,6 +8,7 @@ if BT_LL_SW_SPLIT
 config BT_LLL_VENDOR_NORDIC
 	bool "Use Nordic LLL"
 	depends on SOC_COMPATIBLE_NRF
+	depends on !$(dt_compat_enabled,$(DT_COMPAT_ZEPHYR_BSIM_2G4_RADIO))
 	depends on !$(dt_nodelabel_enabled,timer0)
 	depends on !$(dt_nodelabel_enabled,rtc0)
 
@@ -104,6 +105,29 @@ config BT_LLL_VENDOR_OPENISA
 	default y
 	help
 	  Use OpenISA Lower Link Layer implementation.
+
+config BT_LLL_VENDOR_BSIM
+	bool "Use BabbleSim LLL"
+	depends on $(dt_compat_enabled,$(DT_COMPAT_ZEPHYR_BSIM_2G4_RADIO))
+	depends on ARCH_POSIX
+	# Only the broadcaster role is implemented so far
+	depends on !BT_OBSERVER && !BT_CONN
+
+	select BT_CTLR_ENTROPY_SUPPORT
+	select BT_CTLR_CRYPTO_SUPPORT
+	select BT_CTLR_XTAL_ADVANCED_SUPPORT
+	select BT_CTLR_ULL_LLL_PRIO_SUPPORT
+
+	select BT_TICKER_UPDATE if BT_BROADCASTER
+	select BT_TICKER_CNTR_FREE_RUNNING
+
+	default y
+	help
+	  Use the BabbleSim Lower Link Layer implementation, which runs on the
+	  packet level 2.4GHz radio model of the BabbleSim boards instead of a
+	  vendor radio model, so that Link Layer features can be developed and
+	  tested in simulation without depending on a vendor LLL. A
+	  "zephyr,bsim-2g4-radio" devicetree node selects it.
 
 # BT_CTLR_DF_SUPPORT is a wrapper for all DF features. Here we select features that are supported by
 # Zephyr's Bluetooth LE Controller.
