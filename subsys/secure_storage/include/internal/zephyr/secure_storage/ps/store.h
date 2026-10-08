@@ -39,6 +39,7 @@ psa_status_t secure_storage_ps_store_set(psa_storage_uid_t uid,
  *
  * @retval PSA_SUCCESS               The read succeeded.
  * @retval PSA_ERROR_DOES_NOT_EXIST  The entry was not found from the storage.
+ * @retval PSA_ERROR_DATA_CORRUPT    The stored entry is larger than data_size.
  * @retval PSA_ERROR_STORAGE_FAILURE Some storage failure happened.
  */
 psa_status_t secure_storage_ps_store_get(psa_storage_uid_t uid, size_t data_size,

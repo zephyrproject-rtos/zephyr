@@ -74,42 +74,32 @@ psa_status_t secure_storage_ps_store_set(psa_storage_uid_t uid,
 	}
 }
 
-struct load_params {
-	const size_t data_size;
-	uint8_t *const data;
-	ssize_t ret;
-};
-
-static int load_direct_setting(const char *key, size_t len, settings_read_cb read_cb,
-			       void *cb_arg, void *param)
-{
-	(void)key;
-	struct load_params *load_params = param;
-
-	load_params->ret = read_cb(cb_arg, load_params->data, MIN(load_params->data_size, len));
-	return 0;
-}
-
 psa_status_t secure_storage_ps_store_get(psa_storage_uid_t uid, size_t data_size,
 					  void *data, size_t *data_length)
 {
 	psa_status_t ret;
+	ssize_t settings_ret;
 	char name[SECURE_STORAGE_PS_STORE_SETTINGS_NAME_BUF_SIZE];
-	struct load_params load_params = {.data_size = data_size, .data = data, .ret = -ENOENT};
 
 	secure_storage_ps_store_settings_get_name(uid, name);
 
-	settings_load_subtree_direct(name, load_direct_setting, &load_params);
-	if (load_params.ret > 0) {
-		*data_length = load_params.ret;
+	settings_ret = settings_load_one(name, data, data_size);
+	if (settings_ret > (ssize_t)data_size) {
+		/* Note: 'settings_load_one()' fills 'data' with at most 'data_size'
+		 * bytes but returns the length of the stored value, which can be
+		 * larger. If that happens then return a data corrupted failure.
+		 */
+		ret = PSA_ERROR_DATA_CORRUPT;
+	} else if (settings_ret > 0) {
+		*data_length = settings_ret;
 		ret = PSA_SUCCESS;
-	} else if (load_params.ret == 0 || load_params.ret == -ENOENT) {
+	} else if (settings_ret == 0 || settings_ret == -ENOENT) {
 		ret = PSA_ERROR_DOES_NOT_EXIST;
 	} else {
 		ret = PSA_ERROR_STORAGE_FAILURE;
 	}
-	LOG_DBG("%s %s for up to %zu bytes. (%zd)", (ret != PSA_ERROR_STORAGE_FAILURE) ?
-		"Loaded" : "Failed to load", name, data_size, load_params.ret);
+	LOG_DBG("%s %s for up to %zu bytes. (%zd)", (ret == PSA_SUCCESS) ?
+		"Loaded" : "Failed to load", name, data_size, settings_ret);
 	return ret;
 }
 
