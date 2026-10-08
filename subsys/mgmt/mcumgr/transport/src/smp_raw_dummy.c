@@ -83,9 +83,11 @@ void smp_raw_dummy_clear_state(void)
 /**
  * Processes a single line (fragment) coming from the mcumgr UART driver.
  */
-static void smp_raw_dummy_process_frag(struct uart_mcumgr_rx_buf *rx_buf)
+static void smp_raw_dummy_process_frag(struct uart_mcumgr_rx_buf *rx_buf, void *user_data)
 {
 	struct net_buf *nb;
+
+	ARG_UNUSED(user_data);
 
 	/* Decode the fragment and write the result to the global receive
 	 * context.
@@ -337,7 +339,7 @@ void smp_raw_dummy_mcumgr_add_data(uint8_t *data, uint16_t data_size)
 	for (i = 0; i < data_size; i++) {
 		rx_buf = smp_raw_dummy_mcumgr_rx_byte(data[i]);
 		if (rx_buf != NULL) {
-			dummy_mgumgr_recv_cb(rx_buf);
+			dummy_mgumgr_recv_cb(rx_buf, NULL);
 		}
 	}
 }
