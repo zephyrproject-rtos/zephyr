@@ -1,0 +1,18 @@
+tests:
+  bluetooth.ll.bsim_lll.adv:
+    tags:
+      - bluetooth
+    depends_on: bsim
+    build: false
+    platform_allow:
+      - nrf52_bsim/native
+    harness: bsim
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - tests_scripts
+    required_applications:
+      - application: bluetooth.ll.bsim_lll.advertiser
+        path: advertiser
+      - application: bluetooth.ll.bsim_lll.scanner
+        path: scanner
