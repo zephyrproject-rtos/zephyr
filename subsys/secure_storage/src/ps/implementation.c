@@ -172,9 +172,8 @@ static psa_status_t ps_set(psa_storage_uid_t uid,
 	return ret;
 }
 
-psa_status_t secure_storage_ps_get(const psa_storage_uid_t uid,
-				   size_t data_offset, size_t data_size,
-				   void *p_data, size_t *p_data_length)
+static psa_status_t ps_get(psa_storage_uid_t uid, size_t data_offset, size_t data_size,
+			   void *p_data, size_t *p_data_length)
 {
 	psa_status_t ret;
 	uint8_t stored_data[SECURE_STORAGE_PS_TRANSFORM_MAX_STORED_DATA_SIZE];
@@ -212,8 +211,7 @@ psa_status_t secure_storage_ps_get(const psa_storage_uid_t uid,
 	return ret;
 }
 
-psa_status_t secure_storage_ps_get_info(const psa_storage_uid_t uid,
-					struct psa_storage_info_t *p_info)
+static psa_status_t ps_get_info(psa_storage_uid_t uid, struct psa_storage_info_t *p_info)
 {
 	psa_status_t ret;
 	uint8_t data[CONFIG_SECURE_STORAGE_PS_MAX_DATA_SIZE];
@@ -263,11 +261,35 @@ static psa_status_t ps_remove(psa_storage_uid_t uid)
 	return ret;
 }
 
-/* Serializes the operations that modify an entry, which read it back before deciding what
- * to write or remove. Retrieving an entry doesn't need it, as it makes a single call to the
- * store module and then works on ps own copy of the data.
+/* Serializes all the operations on entries. The ones that modify an entry read it back
+ * before deciding what to write or remove.
  */
-static K_MUTEX_DEFINE(s_write_mutex);
+static K_MUTEX_DEFINE(s_mutex);
+
+psa_status_t secure_storage_ps_get(const psa_storage_uid_t uid,
+				   size_t data_offset, size_t data_size,
+				   void *p_data, size_t *p_data_length)
+{
+	psa_status_t ret;
+
+	k_mutex_lock(&s_mutex, K_FOREVER);
+	ret = ps_get(uid, data_offset, data_size, p_data, p_data_length);
+	k_mutex_unlock(&s_mutex);
+
+	return ret;
+}
+
+psa_status_t secure_storage_ps_get_info(const psa_storage_uid_t uid,
+					struct psa_storage_info_t *p_info)
+{
+	psa_status_t ret;
+
+	k_mutex_lock(&s_mutex, K_FOREVER);
+	ret = ps_get_info(uid, p_info);
+	k_mutex_unlock(&s_mutex);
+
+	return ret;
+}
 
 psa_status_t secure_storage_ps_set(const psa_storage_uid_t uid,
 				   size_t data_length, const void *p_data,
@@ -275,9 +297,9 @@ psa_status_t secure_storage_ps_set(const psa_storage_uid_t uid,
 {
 	psa_status_t ret;
 
-	k_mutex_lock(&s_write_mutex, K_FOREVER);
+	k_mutex_lock(&s_mutex, K_FOREVER);
 	ret = ps_set(uid, data_length, p_data, create_flags);
-	k_mutex_unlock(&s_write_mutex);
+	k_mutex_unlock(&s_mutex);
 
 	return ret;
 }
@@ -286,9 +308,9 @@ psa_status_t secure_storage_ps_remove(const psa_storage_uid_t uid)
 {
 	psa_status_t ret;
 
-	k_mutex_lock(&s_write_mutex, K_FOREVER);
+	k_mutex_lock(&s_mutex, K_FOREVER);
 	ret = ps_remove(uid);
-	k_mutex_unlock(&s_write_mutex);
+	k_mutex_unlock(&s_mutex);
 
 	return ret;
 }
