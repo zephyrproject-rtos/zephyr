@@ -108,14 +108,14 @@
 	 * Applications can override the reg properties of either
 	 * sram_data or sram_code nodes to change the balance of SRAM access partitioning.
 	 */
-	sram_data: memory@40000 {
-		compatible = "mmio-sram";
-		reg = <0x40000 DT_SIZE_K(960)>;
-	};
-
 	sram_code: memory@0 {
 		compatible = "mmio-sram";
 		reg = <0x00000000 DT_SIZE_K(256)>;
+	};
+
+	sram_data: memory@40000 {
+		compatible = "mmio-sram";
+		reg = <0x40000 DT_SIZE_K(960)>;
 	};
 };
 
