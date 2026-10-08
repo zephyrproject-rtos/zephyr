@@ -15,12 +15,16 @@ menuconfig MCUMGR_TRANSPORT_UART
 	depends on BASE64
 	depends on CRC
 	depends on UART_MCUMGR
-	depends on !UART_MCUMGR_RAW_PROTOCOL
 	select MCUMGR_TRANSPORT_SERIAL_HAS_SMP_OVER_CONSOLE
 	help
 	  Enables handling of SMP commands received over UART. This is a lightweight alternative
 	  to MCUMGR_TRANSPORT_SHELL. It allows MCUmgr commands to be received over UART without
 	  requiring an additional thread.
+
+	  The transport runs on the UART of each enabled zephyr,smp-uart devicetree node. When
+	  no zephyr,smp-uart or zephyr,smp-uart-raw node of an enabled transport exists, it runs
+	  on the zephyr,uart-mcumgr chosen UART, unless UART_MCUMGR_RAW_PROTOCOL is enabled. It
+	  can be enabled together with MCUMGR_TRANSPORT_RAW_UART.
 
 if MCUMGR_TRANSPORT_UART
 
