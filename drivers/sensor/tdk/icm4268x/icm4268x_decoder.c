@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Google LLC
+ * Copyright (c) 2026 RAKwireless Technology Limited
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +31,12 @@ static const struct icm4268x_reg_val_pair table_accel_shift_to_reg[][5] = {
 		{.val = 6, .reg = ICM42686_DT_ACCEL_FS_4},
 		{.val = 5, .reg = ICM42686_DT_ACCEL_FS_2},
 	},
+	[ICM4268X_VARIANT_IIM42652] = {
+		{.val = 8, .reg = ICM42688_DT_ACCEL_FS_16},
+		{.val = 7, .reg = ICM42688_DT_ACCEL_FS_8},
+		{.val = 6, .reg = ICM42688_DT_ACCEL_FS_4},
+		{.val = 5, .reg = ICM42688_DT_ACCEL_FS_2},
+	},
 };
 
 static const struct icm4268x_reg_val_pair table_gyro_shift_to_reg[][8] = {
@@ -52,6 +59,16 @@ static const struct icm4268x_reg_val_pair table_gyro_shift_to_reg[][8] = {
 		{.val = 2,  .reg = ICM42686_DT_GYRO_FS_125},
 		{.val = 1,   .reg = ICM42686_DT_GYRO_FS_62_5},
 		{.val = 0,   .reg = ICM42686_DT_GYRO_FS_31_25},
+	},
+	[ICM4268X_VARIANT_IIM42652] = {
+		{.val = 6, .reg = ICM42688_DT_GYRO_FS_2000},
+		{.val = 5, .reg = ICM42688_DT_GYRO_FS_1000},
+		{.val = 4, .reg = ICM42688_DT_GYRO_FS_500},
+		{.val = 3, .reg = ICM42688_DT_GYRO_FS_250},
+		{.val = 2, .reg = ICM42688_DT_GYRO_FS_125},
+		{.val = 1, .reg = ICM42688_DT_GYRO_FS_62_5},
+		{.val = 0, .reg = ICM42688_DT_GYRO_FS_31_25},
+		{.val = -1, .reg = ICM42688_DT_GYRO_FS_15_625},
 	},
 };
 

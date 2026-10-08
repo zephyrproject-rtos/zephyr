@@ -1,12 +1,18 @@
 /*
  * Copyright (c) 2022 Intel Corporation
+ * Copyright (c) 2026 RAKwireless Technology Limited
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
+
+#include "icm4268x_bus_io.h"
 #include "icm4268x_spi.h"
 #include "icm4268x_reg.h"
+
+LOG_MODULE_DECLARE(ICM4268X, CONFIG_SENSOR_LOG_LEVEL);
 
 static inline int spi_write_register(const struct spi_dt_spec *bus, uint8_t reg, uint8_t data)
 {
@@ -98,3 +104,40 @@ int icm4268x_spi_single_write(const struct spi_dt_spec *bus, uint16_t reg, uint8
 
 	return res;
 }
+
+#if ICM4268X_BUS_SPI
+static int icm4268x_bus_check_spi(const union icm4268x_bus_cfg *bus)
+{
+	if (!spi_is_ready_dt(&bus->spi)) {
+		LOG_ERR_DEVICE_NOT_READY(bus->spi.bus);
+		return -ENODEV;
+	}
+
+	return 0;
+}
+
+static int icm4268x_reg_read_spi(const union icm4268x_bus_cfg *bus, uint16_t reg,
+				 uint8_t *data, size_t len)
+{
+	return icm4268x_spi_read(&bus->spi, reg, data, len);
+}
+
+static int icm4268x_reg_write_spi(const union icm4268x_bus_cfg *bus, uint16_t reg,
+				  uint8_t data)
+{
+	return icm4268x_spi_single_write(&bus->spi, reg, data);
+}
+
+static int icm4268x_reg_update_spi(const union icm4268x_bus_cfg *bus, uint16_t reg,
+				   uint8_t mask, uint8_t data)
+{
+	return icm4268x_spi_update_register(&bus->spi, reg, mask, data);
+}
+
+const struct icm4268x_bus_io icm4268x_bus_io_spi = {
+	.check = icm4268x_bus_check_spi,
+	.read = icm4268x_reg_read_spi,
+	.write = icm4268x_reg_write_spi,
+	.update = icm4268x_reg_update_spi,
+};
+#endif /* ICM4268X_BUS_SPI */

@@ -2,6 +2,7 @@
 # Copyright (c) 2022 Esco Medical ApS
 # Copyright (c) 2020 TDK Invensense
 # Copyright (c) 2025 Croxel, Inc.
+# Copyright (c) 2026 RAKwireless Technology Limited
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
@@ -12,7 +13,7 @@ description: |
     and use the macros defined there.
 
 compatible: "invensense,icm42686"
-include: ["invensense,icm4268x.yaml"]
+include: [spi-device.yaml, "invensense,icm4268x.yaml"]
 
 examples:
   - |
