@@ -25,6 +25,18 @@ zephyr_library_sources_ifdef(
 )
 
 zephyr_library_sources_ifdef(
+  CONFIG_USBH_MSC
+  usbh_msc.c
+)
+
+zephyr_library_sources_ifdef(
+  CONFIG_USBH_MSC_CLASS
+  usbh_msc_bot.c
+  usbh_msc_scsi.c
+  msc/usb_msc_lun.c
+)
+
+zephyr_library_sources_ifdef(
   CONFIG_USBH_VIDEO_CLASS
   class/usbh_uvc.c
 )

@@ -49,13 +49,21 @@ config USBH_MAX_UHC_MSG
 
 rsource "Kconfig.usbip"
 rsource "Kconfig.hub"
+rsource "Kconfig.msc"
 rsource "class/Kconfig"
 
 config USBH_STACK_SIZE
 	int "USB host stack thread stack size"
+	default 8192 if USBH_MSC_DISK_PARTITION
+	default 4096 if USBH_MSC_DISK
 	default 1024
 	help
 	  Stack size in bytes for the USB host worker threads (main and bus).
+
+	  MSC storage bringup with partition discovery runs on the host thread
+	  and calls disk_partition helpers; that path needs roughly 1.5 KiB for
+	  the partition table plus a sector buffer on top of SCSI/BOT frames.
+	  Keep at least 8192 when USBH_MSC_DISK_PARTITION is enabled.
 
 config USBH_USB2_ENUM_SCHEME
 	bool "USB2 enumeration (64-byte GET_DESCRIPTOR before SET_ADDRESS)"
