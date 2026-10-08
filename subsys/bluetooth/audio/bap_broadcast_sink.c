@@ -1078,7 +1078,6 @@ static int bt_bap_broadcast_sink_setup_stream(struct bt_bap_broadcast_sink *sink
 	ep->qos.pd = bt_bap_base_get_pres_delay((const struct bt_bap_base *)sink->base);
 	ep->qos.framing = sink->biginfo.framing;
 	ep->qos.phy = sink->biginfo.phy;
-	ep->qos.rtn = 0U; /* unknown for broadcast sinks */
 	ep->qos.sdu = sink->biginfo.max_sdu;
 	ep->qos.interval = sink->biginfo.sdu_interval;
 #if defined(CONFIG_BT_ISO_TEST_PARAMS)
