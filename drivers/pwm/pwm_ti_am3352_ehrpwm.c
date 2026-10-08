@@ -62,6 +62,9 @@ struct ti_ehrpwm_regs {
 #define TI_EHRPWM_AQCTL_PRD GENMASK(3, 2)
 #define TI_EHRPWM_AQCTL_ZRO GENMASK(1, 0)
 
+/* Flag for setting zero and period in AQCTL Registers. */
+#define TI_EHRPWM_USE_AQ_SET_ZRO_PRD  BIT(8)
+
 /* Action Qualifier Software Force Register */
 #define TI_EHRPWM_AQSFRC_RLDCSF GENMASK(7, 6)
 
@@ -183,13 +186,14 @@ static int ti_ehrpwm_configure_tbctl(const struct device *dev, uint32_t channel,
 	return -1;
 }
 
-static int ti_ehrpwm_configure_aq(const struct device *dev, uint32_t channel, bool polarity)
+static int ti_ehrpwm_configure_aq(const struct device *dev, uint32_t channel, uint32_t flags)
 {
 	struct ti_ehrpwm_data *data = DEV_DATA(dev);
 	struct ti_ehrpwm_regs *regs = DEV_REGS(dev);
 	uint16_t aqctl_upmask;
 	uint16_t aqctl_downmask;
 	uint16_t aqctl;
+	uint8_t polarity;
 
 	if (channel == 0) {
 		aqctl = regs->AQCTLA;
@@ -201,15 +205,19 @@ static int ti_ehrpwm_configure_aq(const struct device *dev, uint32_t channel, bo
 		aqctl_downmask = TI_EHRPWM_AQCTL_CBD;
 	}
 
+	if(flags & TI_EHRPWM_USE_AQ_SET_ZRO_PRD) {
+		aqctl_upmask = TI_EHRPWM_AQCTL_ZRO;
+		aqctl_downmask = TI_EHRPWM_AQCTL_PRD;
+	}
+
+	polarity = flags & 1;
+
 	aqctl &= ~(TI_EHRPWM_AQCTL_ZRO | TI_EHRPWM_AQCTL_PRD | aqctl_upmask | aqctl_downmask);
 	if (polarity == PWM_POLARITY_NORMAL) {
 		/* active-high */
 		aqctl |= FIELD_PREP(aqctl_upmask, TI_EHRPWM_AQCTL_FLD_CLR);
 
-		aqctl &= ~TI_EHRPWM_AQCTL_PRD;
-
 		if (data->symmetric) {
-			aqctl &= ~TI_EHRPWM_AQCTL_ZRO;
 			aqctl |= FIELD_PREP(aqctl_downmask, TI_EHRPWM_AQCTL_FLD_SET);
 		} else {
 			aqctl |= FIELD_PREP(TI_EHRPWM_AQCTL_ZRO, TI_EHRPWM_AQCTL_FLD_SET);
@@ -219,10 +227,7 @@ static int ti_ehrpwm_configure_aq(const struct device *dev, uint32_t channel, bo
 		/* active-low */
 		aqctl |= FIELD_PREP(aqctl_upmask, TI_EHRPWM_AQCTL_FLD_SET);
 
-		aqctl &= ~TI_EHRPWM_AQCTL_ZRO;
-
 		if (data->symmetric) {
-			aqctl &= ~TI_EHRPWM_AQCTL_PRD;
 			aqctl |= FIELD_PREP(aqctl_downmask, TI_EHRPWM_AQCTL_FLD_CLR);
 		} else {
 			aqctl |= FIELD_PREP(TI_EHRPWM_AQCTL_PRD, TI_EHRPWM_AQCTL_FLD_CLR);
@@ -372,7 +377,7 @@ static int ti_ehrpwm_set_cycles(const struct device *dev, uint32_t channel, uint
 	}
 
 	/* configure action qualifier */
-	err = ti_ehrpwm_configure_aq(dev, channel, flags & PWM_POLARITY_MASK);
+	err = ti_ehrpwm_configure_aq(dev, channel, flags);
 	if (err != 0) {
 		LOG_ERR("failed to configure action qualifier");
 		return err;
