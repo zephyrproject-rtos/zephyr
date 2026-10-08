@@ -84,7 +84,9 @@ tests:
   sample.sysbuild.hello_world.nrf7120_cpuflpr:
     platform_allow:
       - nrf7120dk/nrf7120/cpuapp
+      - nrf7120dk/nrf7120e/cpuapp
     integration_platforms:
       - nrf7120dk/nrf7120/cpuapp
+      - nrf7120dk/nrf7120e/cpuapp
     extra_args:
       - hello_world_SNIPPET=nordic-flpr
