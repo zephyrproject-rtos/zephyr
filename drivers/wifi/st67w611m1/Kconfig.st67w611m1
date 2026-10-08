@@ -81,6 +81,14 @@ config ST67W611M1_WIFI_AUTO_CONNECT
 	  the Wi-Fi management API. The setting is only written when it differs
 	  from the module's current value, as the module persists it to flash.
 
+config ST67W611M1_LOW_POWER
+	bool "Low power support"
+	default y
+	help
+	  Configure DTIM based sleep at init and provide the power save
+	  and TWT Wi-Fi management operations. Disable if the module
+	  firmware does not support low power.
+
 configdefault NET_MGMT_EVENT_STACK_SIZE
 	default 2048
 
