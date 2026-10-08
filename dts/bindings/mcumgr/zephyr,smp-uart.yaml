@@ -1,0 +1,30 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: MCUmgr SMP over console transport on a UART
+
+description: |
+  Runs the MCUmgr UART transport, CONFIG_MCUMGR_TRANSPORT_UART, on the parent
+  UART. Packets use the SMP over console framing: base64-encoded frames with a
+  CRC16, each ending in a newline, so the UART can also carry text such as logs.
+
+  The node must be the only enabled child of its UART.
+
+  The zephyr,uart-mcumgr chosen UART is used by the MCUmgr UART transports only
+  when no zephyr,smp-uart or zephyr,smp-uart-raw node of an enabled transport
+  exists. Nodes whose transport is disabled are ignored. Boards set the chosen
+  node; applications add these nodes to run MCUmgr on other or several UARTs.
+
+compatible: "zephyr,smp-uart"
+
+include: uart-device.yaml
+
+examples:
+  - |
+    &uart1 {
+        status = "okay";
+
+        smp-uart {
+            compatible = "zephyr,smp-uart";
+        };
+    };
