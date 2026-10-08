@@ -113,11 +113,6 @@ static void apply_rsp_sent(int err, void *cb_params)
 
 	store_state(srv);
 
-	if (srv->update.self_update) {
-		LOG_DBG("Self-update: deferring apply");
-		return;
-	}
-
 	err = srv->cb->apply(srv, &srv->imgs[srv->update.idx]);
 	if (err) {
 		srv->update.phase = BT_MESH_DFU_PHASE_IDLE;
@@ -349,7 +344,6 @@ static int handle_start(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx 
 	srv->update.ttl = ttl;
 	srv->update.timeout_base = timeout_base;
 	srv->update.meta = meta_checksum;
-	srv->update.self_update = bt_mesh_has_addr(ctx->addr);
 
 	io = NULL;
 	err = srv->cb->start(srv, &srv->imgs[idx], buf, &io);
@@ -432,6 +426,11 @@ static int handle_apply(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx 
 	};
 
 	LOG_DBG("");
+
+	/* The local Distribution Server applies its own image after the Confirm step. */
+	if (bt_mesh_has_addr(ctx->addr)) {
+		return 0;
+	}
 
 	if (srv->update.phase == BT_MESH_DFU_PHASE_APPLYING) {
 		update_status_rsp(srv, ctx, BT_MESH_DFU_SUCCESS, NULL);
@@ -627,6 +626,16 @@ void bt_mesh_dfu_srv_cancel(struct bt_mesh_dfu_srv *srv)
 	(void)bt_mesh_blob_srv_cancel(&srv->blob);
 }
 
+void bt_mesh_dfu_srv_apply_settle(struct bt_mesh_dfu_srv *srv)
+{
+	if (srv->update.phase != BT_MESH_DFU_PHASE_APPLYING) {
+		return;
+	}
+
+	srv->update.phase = BT_MESH_DFU_PHASE_IDLE;
+	store_state(srv);
+}
+
 void bt_mesh_dfu_srv_applied(struct bt_mesh_dfu_srv *srv)
 {
 	if (srv->update.phase != BT_MESH_DFU_PHASE_APPLYING) {
@@ -636,14 +645,10 @@ void bt_mesh_dfu_srv_applied(struct bt_mesh_dfu_srv *srv)
 
 	LOG_DBG("");
 
-	srv->update.phase = BT_MESH_DFU_PHASE_IDLE;
-	store_state(srv);
+	bt_mesh_dfu_srv_apply_settle(srv);
 
-	/* Not set after a reboot, so the Distribution Server's own resume path
-	 * does not complete the distribution before the Confirm step re-runs.
-	 */
-	if (IS_ENABLED(CONFIG_BT_MESH_DFD_SRV) && srv->update.self_update) {
-		bt_mesh_dfd_srv_self_applied();
+	if (IS_ENABLED(CONFIG_BT_MESH_DFD_SRV)) {
+		bt_mesh_dfd_srv_self_applied(srv);
 	}
 }
 
@@ -658,7 +663,8 @@ int bt_mesh_dfu_srv_apply_deferred(struct bt_mesh_dfu_srv *srv)
 {
 	int err;
 
-	if (srv->update.phase != BT_MESH_DFU_PHASE_APPLYING) {
+	if (srv->update.phase != BT_MESH_DFU_PHASE_VERIFY_OK &&
+	    srv->update.phase != BT_MESH_DFU_PHASE_APPLYING) {
 		return 0;
 	}
 
@@ -667,6 +673,13 @@ int bt_mesh_dfu_srv_apply_deferred(struct bt_mesh_dfu_srv *srv)
 		erase_state(srv);
 		return -EINVAL;
 	}
+
+	/* The self-target never receives Firmware Update Apply, so make the
+	 * Section 6.1.2.3 phase transition here and persist it before the
+	 * callback, which may reboot.
+	 */
+	srv->update.phase = BT_MESH_DFU_PHASE_APPLYING;
+	store_state(srv);
 
 	err = srv->cb->apply(srv, &srv->imgs[srv->update.idx]);
 	if (err) {
@@ -679,7 +692,8 @@ int bt_mesh_dfu_srv_apply_deferred(struct bt_mesh_dfu_srv *srv)
 
 void bt_mesh_dfu_srv_apply_cancel(struct bt_mesh_dfu_srv *srv)
 {
-	if (srv->update.phase != BT_MESH_DFU_PHASE_APPLYING) {
+	if (srv->update.phase != BT_MESH_DFU_PHASE_VERIFY_OK &&
+	    srv->update.phase != BT_MESH_DFU_PHASE_APPLYING) {
 		return;
 	}
 

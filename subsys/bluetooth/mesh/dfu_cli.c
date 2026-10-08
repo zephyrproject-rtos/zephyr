@@ -340,32 +340,6 @@ static void send_info_get(struct bt_mesh_blob_cli *b, uint16_t dst)
 	struct bt_mesh_dfu_cli *cli = DFU_CLI(b);
 	struct bt_mesh_msg_ctx ctx = MSG_CTX(cli, dst);
 
-	if (bt_mesh_has_addr(dst)) {
-		const struct bt_mesh_elem *elem = bt_mesh_elem_find(dst);
-		const struct bt_mesh_model *mod =
-			elem ? bt_mesh_model_find(elem, BT_MESH_MODEL_ID_DFU_SRV) : NULL;
-		struct bt_mesh_dfu_srv *dfu_srv = mod ? mod->rt->user_data : NULL;
-
-		if (dfu_srv &&
-		    dfu_srv->update.phase == BT_MESH_DFU_PHASE_APPLYING) {
-			struct bt_mesh_dfu_target *target = target_get(cli, dst);
-
-			/* The local DFU Server defers its apply callback until
-			 * the Confirm step completes (see dfu_confirmed() in
-			 * dfd_srv.c), so it will reject Firmware Update
-			 * Information Get with EBUSY per MshDFUv1.0 Section 7.2.
-			 * Retrying only delays confirmed() from triggering the
-			 * deferred apply. Ack the self-target immediately and
-			 * drive the broadcast state machine forward.
-			 */
-			if (target) {
-				blob_cli_broadcast_rsp(&cli->blob, &target->blob);
-			}
-			blob_cli_broadcast_tx_complete(&cli->blob);
-			return;
-		}
-	}
-
 	cli->req.img_cnt = 0xff;
 
 	info_get(cli, &ctx, 0, cli->req.img_cnt, &send_cb);
@@ -488,6 +462,17 @@ static void skip_targets_from_broadcast(struct bt_mesh_dfu_cli *cli, bool skip)
 	}
 }
 
+static void skip_self_target(struct bt_mesh_dfu_cli *cli, bool skip)
+{
+	struct bt_mesh_dfu_target *target;
+
+	TARGETS_FOR_EACH(cli, target) {
+		if (bt_mesh_has_addr(target->blob.addr)) {
+			target->blob.skip = skip;
+		}
+	}
+}
+
 static bool transfer_skip(struct bt_mesh_dfu_cli *cli)
 {
 	struct bt_mesh_dfu_target *target;
@@ -590,6 +575,11 @@ static void apply(struct bt_mesh_dfu_cli *cli)
 
 	LOG_DBG("");
 
+	/* The self-target applies from dfd_srv once the Confirm step is done,
+	 * so it takes no part in the Apply and Confirm broadcasts.
+	 */
+	skip_self_target(cli, true);
+
 	cli->xfer.state = STATE_APPLY;
 	cli->op = BT_MESH_DFU_OP_UPDATE_STATUS;
 
@@ -677,15 +667,11 @@ static void confirmed(struct bt_mesh_blob_cli *b)
 			LOG_DBG("Target 0x%04x still provisioned", target->blob.addr);
 			target->phase = BT_MESH_DFU_PHASE_APPLY_FAIL;
 			target_failed(cli, target, BT_MESH_DFU_ERR_INTERNAL);
+		} else if (target->blob.skip) {
+			/* Took no part in the Apply and Confirm broadcasts. */
+			success = true;
+			continue;
 		} else if (!target->blob.acked) {
-			if (bt_mesh_has_addr(target->blob.addr)) {
-				/* Self-target deferred apply until distribution
-				 * completes, so it can't confirm yet.
-				 */
-				success = true;
-				continue;
-			}
-
 			LOG_DBG("Target 0x%04x failed to respond", target->blob.addr);
 			target->phase = BT_MESH_DFU_PHASE_APPLY_FAIL;
 			target_failed(cli, target, BT_MESH_DFU_ERR_INTERNAL);
@@ -693,6 +679,8 @@ static void confirmed(struct bt_mesh_blob_cli *b)
 			success = true;
 		}
 	}
+
+	skip_self_target(cli, false);
 
 	if (success) {
 		cli->xfer.state = STATE_IDLE;
@@ -786,6 +774,11 @@ static int handle_status(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx
 		return -ENOENT;
 	}
 
+	/* A skipped target can still answer a group-addressed message. */
+	if (target->blob.skip) {
+		return 0;
+	}
+
 	LOG_DBG("%u phase: %u, cur state: %u", status, phase, cli->xfer.state);
 
 	target->phase = phase;
@@ -842,24 +835,14 @@ static int handle_status(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx
 			return 0;
 		}
 
-		if (phase == BT_MESH_DFU_PHASE_APPLYING &&
-		    !bt_mesh_has_addr(target->blob.addr)) {
-			/* MshDFUv1.0 Section 6.2.2.4 requires the Confirm step to
-			 * wait until the targets have applied. Keep repeating
-			 * Firmware Update Apply (Section 7.1.2.6) until the
-			 * target leaves Applying Update, otherwise the Confirm
-			 * step reads the old Firmware ID.
-			 */
-			LOG_DBG("Target 0x%04x still applying", target->blob.addr);
-			return 0;
-		}
-
-		/* The self-target defers its apply until the Confirm step
-		 * completes, so it never leaves Applying Update on its own.
+		/* MshDFUv1.0 Section 6.2.2.4 requires the Confirm step to wait
+		 * until the targets have applied. Keep repeating Firmware
+		 * Update Apply (Section 7.1.2.6) until the target leaves
+		 * Applying Update, otherwise the Confirm step reads the old
+		 * Firmware ID. Once installed, the target answers Wrong Phase
+		 * with phase Idle (Section 6.1.3.6), which is acknowledged
+		 * above.
 		 */
-		LOG_DBG("Target 0x%04x accepted apply (phase %u)",
-			target->blob.addr, phase);
-		blob_cli_broadcast_rsp(&cli->blob, &target->blob);
 		return 0;
 	} else if (cli->xfer.state == STATE_CONFIRM) {
 		if (phase == BT_MESH_DFU_PHASE_APPLYING) {
@@ -896,6 +879,13 @@ static int handle_info_status(const struct bt_mesh_model *mod, struct bt_mesh_ms
 	    (cli->req.type == REQ_IMG && cli->req.addr != ctx->addr)) {
 		LOG_WRN("Unexpected info status from 0x%04x", ctx->addr);
 		return 0;
+	}
+
+	if (cli->req.type != REQ_IMG) {
+		target = target_get(cli, ctx->addr);
+		if (target && target->blob.skip) {
+			return 0;
+		}
 	}
 
 	img_cnt = net_buf_simple_pull_u8(buf);
@@ -1105,6 +1095,7 @@ int bt_mesh_dfu_cli_send(struct bt_mesh_dfu_cli *cli,
 	TARGETS_FOR_EACH(cli, target) {
 		target->status = BT_MESH_DFU_SUCCESS;
 		target->phase = BT_MESH_DFU_PHASE_UNKNOWN;
+		target->blob.skip = 0U;
 	}
 
 	initiate(cli);
