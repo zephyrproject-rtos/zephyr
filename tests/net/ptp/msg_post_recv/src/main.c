@@ -47,9 +47,9 @@ int ptp_tlv_post_recv(struct ptp_tlv **p_tlv)
 	return tlv_post_recv_ret;
 }
 
-void ptp_tlv_pre_send(struct ptp_tlv *tlv)
+void ptp_tlv_pre_send(struct ptp_tlv **p_tlv)
 {
-	last_pre_send_tlv = tlv;
+	last_pre_send_tlv = *p_tlv;
 	tlv_pre_send_calls++;
 }
 
