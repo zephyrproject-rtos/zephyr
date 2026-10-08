@@ -101,9 +101,10 @@ DTS_ENABLED_NO_COMPAT = """
 };
 """
 
-# Aliases, labels, /chosen entries and compatibles for the unresolved node identifier
-# diagnoses: 'led0' is a label without an alias of that name and 'my-foo' an alias
-# without a label of that name. Two nodes share vnd,foo-device, one of them disabled.
+# Aliases, labels, /chosen entries, compatibles and properties for the unresolved node
+# identifier diagnoses: 'led0' is a label without an alias of that name and 'my-foo'
+# an alias without a label of that name. Two nodes share vnd,foo-device, one of them
+# disabled.
 DTS_REFERENCES = """
 /dts-v1/;
 
@@ -126,6 +127,16 @@ DTS_REFERENCES = """
 	};
 
 	led0: led-0 {
+	};
+
+	gpio0: gpio-controller {
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+
+	/* No binding declares 'gpios' here, so no macros are generated for it */
+	raw_led: raw-led {
+		gpios = <&gpio0 1 0>;
 	};
 };
 """

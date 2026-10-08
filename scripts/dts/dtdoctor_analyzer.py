@@ -33,7 +33,7 @@ sys.path.insert(0, str(Path(__file__).parents[1] / "kconfig"))
 
 import kconfiglib
 from devicetree import edtlib
-from gen_defines import str2ident
+from gen_defines import node_z_path_id, str2ident
 from tabulate import tabulate
 
 
@@ -287,6 +287,74 @@ def handle_invalid_node() -> list[str]:
     ]
 
 
+def describe_node(node: edtlib.Node) -> str:
+    if not node.aliases:
+        return f"'{format_node(node)}'"
+    kind = "alias" if len(node.aliases) == 1 else "aliases"
+    return f"'{format_node(node)}' ({kind} {', '.join(repr(a) for a in node.aliases)})"
+
+
+def handle_missing_property(node: edtlib.Node, token: str) -> list[str]:
+    # All properties set in the devicetree, not only those the node's binding declares
+    names = {str2ident(name): name for name in node._node.props}
+
+    if token not in names:
+        lines = [f"{describe_node(node)} has no '{token.replace('_', '-')}' property."]
+        if names:
+            lines.append("")
+            lines.extend(wrap_list("Properties set on this node:", sorted(names.values())))
+        return lines
+
+    # Property macros come from the binding (edtlib rejects properties a binding does
+    # not declare), so a node without one has none
+    if not node.binding_path:
+        return [
+            f"{describe_node(node)} has a '{names[token]}' property, but the node has no",
+            "binding, so no devicetree macros are generated for it.",
+        ]
+
+    return []
+
+
+def handle_missing_child(node: edtlib.Node, token: str) -> list[str]:
+    lines = [f"{describe_node(node)} has no child node matching '{token}'."]
+
+    children = {str2ident(name): name for name in node.children}
+    similar = difflib.get_close_matches(token, list(children), n=5)
+    if similar:
+        lines.append("")
+        lines.extend(wrap_list("Similar child nodes:", [children[s] for s in similar]))
+    return lines
+
+
+def handle_unresolved_path(edt: edtlib.EDT, ident: str) -> list[str]:
+    # Find the deepest node whose path identifier is a prefix of 'ident'. What follows it
+    # is a property (_P_<prop>), a child (_S_<name>) or another suffix, each starting with
+    # an uppercase letter unlike the lowercase node names.
+    node, rest = None, ""
+    for n in edt.nodes:
+        pid = f"DT_{node_z_path_id(n)}"
+        tail = ident[len(pid) :]
+        if (
+            ident.startswith(pid)
+            and re.match(r"_[A-Z]", tail)
+            and (node is None or len(tail) < len(rest))
+        ):
+            node, rest = n, tail
+    if node is None:
+        return []
+
+    m = re.match(r"_P_([a-z0-9_]+?)(?=_[A-Z])", rest)
+    if m:
+        return handle_missing_property(node, m.group(1))
+
+    m = re.match(r"_S_([a-z0-9_]+?)(?=_[A-Z])", rest)
+    if m:
+        return handle_missing_child(node, m.group(1))
+
+    return []
+
+
 def handle_unresolved_node_id(edt: edtlib.EDT, ident: str) -> list[str]:
     """
     Handle diagnosis for a node identifier that does not resolve to a node. The compiler
@@ -301,7 +369,9 @@ def handle_unresolved_node_id(edt: edtlib.EDT, ident: str) -> list[str]:
     # starts with an uppercase letter
     m = re.fullmatch(r"DT_(N_ALIAS|N_NODELABEL|CHOSEN|N_INST)_([a-z0-9_]+?)(_[A-Z]\w*)?_ORD", ident)
     if not m:
-        return []
+        # A node path identifier (DT_PATH() or a resolved alias, label, ...) followed by
+        # a property or child that does not exist
+        return handle_unresolved_path(edt, ident)
 
     handlers = {
         "N_ALIAS": handle_missing_alias,

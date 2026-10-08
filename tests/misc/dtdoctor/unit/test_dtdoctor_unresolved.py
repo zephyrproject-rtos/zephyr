@@ -114,3 +114,39 @@ def test_wrap_list_keeps_names_whole():
     assert len(lines) > 1
     assert all(len(line) <= 76 for line in lines)
     assert all(any(name in line for line in lines) for name in names)
+
+
+def test_missing_property(edt):
+    out = diagnose(edt, "DT_N_S_led_0_P_gpios_IDX_0_PH_ORD")
+    assert "'led0: /led-0' has no 'gpios' property." in out
+
+
+def test_missing_property_through_alias(edt):
+    # DT_ALIAS(my_foo) resolved, so the identifier is the node's path identifier
+    out = diagnose(edt, "DT_N_S_foo_device_P_io_channels_IDX_0_PH_ORD")
+    assert "'foo_dev: /foo-device' (alias 'my-foo') has no 'io-channels' property." in out
+    assert "Properties set on this node: compatible" in out
+
+
+def test_property_on_node_without_binding(edt):
+    out = diagnose(edt, "DT_N_S_raw_led_P_gpios_IDX_0_PH_ORD")
+    assert "'raw_led: /raw-led' has a 'gpios' property, but the node has no" in out
+    assert "binding, so no devicetree macros are generated for it." in out
+
+
+def test_missing_child(edt):
+    out = diagnose(edt, "DT_N_S_foo_devic_ORD")
+    assert "'/' has no child node matching 'foo_devic'." in out
+    assert "Similar child nodes: foo-device" in out
+
+
+def test_missing_grandchild(edt):
+    out = diagnose(edt, "DT_N_S_foo_device_S_child_ORD")
+    assert "'foo_dev: /foo-device' (alias 'my-foo') has no child node matching 'child'." in out
+
+
+def test_declared_property_yields_nothing(edt):
+    # The node and property exist; the failure is elsewhere (e.g. an out-of-range index)
+    assert (
+        dtdoctor_analyzer.handle_unresolved_node_id(edt, "DT_N_S_foo_device_P_compatible_ORD") == []
+    )
