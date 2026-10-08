@@ -115,6 +115,10 @@ the receiver starts in standby. Resume it with ``pm_device_action_run()`` and
 ``PM_DEVICE_ACTION_SUSPEND`` drives its wake pin low and stops the UART. The reset signal is
 inverted by a transistor and is asserted for 100 ms during driver initialization.
 
+Enable :kconfig:option:`CONFIG_SENSOR` and :kconfig:option:`CONFIG_ADC` to read the battery
+voltage through the ``vbatt`` node. The 10 kOhm / 10 kOhm divider has a 100 nF filter capacitor;
+the driver waits 5 ms after enabling the divider before sampling.
+
 Enable :kconfig:option:`CONFIG_CHARGER` to query ``CHARGER_PROP_STATUS`` on the ``charger0``
 alias. The CN3165 exposes charging and charge-complete inputs. Charging is controlled by the
 hardware, so software cannot enable or disable it. When neither status input is active, the
