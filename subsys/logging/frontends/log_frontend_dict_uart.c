@@ -227,27 +227,27 @@ static void uart_isr_callback(const struct device *dev, void *user_data)
 
 static inline void hdr_fill(struct log_dict_output_normal_msg_hdr_t *hdr,
 			    const void *source,
-			    const struct log_msg_desc desc)
+			    const struct log_msg_desc desc, log_timestamp_t timestamp)
 {
 	hdr->type = MSG_NORMAL;
 	hdr->domain = desc.domain;
 	hdr->level = desc.level;
 	hdr->package_len = desc.package_len;
 	hdr->data_len = desc.data_len;
-	hdr->timestamp = z_log_timestamp();
+	hdr->timestamp = timestamp;
 	hdr->source = (source != NULL) ? log_source_id(source) : 0U;
 }
 
 /* Handle logging message in synchronous manner, in panic mode. */
 static void sync_msg(const void *source,
 		     const struct log_msg_desc desc,
-		     uint8_t *package, const void *data)
+		     uint8_t *package, const void *data, log_timestamp_t timestamp)
 {
 	struct log_dict_output_normal_msg_hdr_t hdr;
 	uint8_t *datas[3] = {(uint8_t *)&hdr, package, (uint8_t *)data};
 	size_t len[3] = {sizeof(hdr), desc.package_len, desc.data_len};
 
-	hdr_fill(&hdr, source, desc);
+	hdr_fill(&hdr, source, desc, timestamp);
 
 	for (int i = 0; i < ARRAY_SIZE(datas); i++) {
 		for (int j = 0; j < len[i]; j++) {
@@ -256,9 +256,9 @@ static void sync_msg(const void *source,
 	}
 }
 
-void log_frontend_msg(const void *source,
+void log_frontend_msg_with_timestamp(const void *source,
 		      const struct log_msg_desc desc,
-		      uint8_t *package, const void *data)
+		      uint8_t *package, const void *data, log_timestamp_t timestamp)
 {
 	uint16_t strl[4];
 	struct log_msg_desc outdesc = desc;
@@ -271,7 +271,7 @@ void log_frontend_msg(const void *source,
 	size_t total_wlen = DIV_ROUND_UP(total_len, sizeof(uint32_t));
 
 	if (in_panic) {
-		sync_msg(source, desc, package, data);
+		sync_msg(source, desc, package, data, timestamp);
 	}
 
 	union log_frontend_pkt generic_pkt;
@@ -289,7 +289,7 @@ void log_frontend_msg(const void *source,
 	pkt->hdr.len = total_wlen;
 	pkt->hdr.noff = sizeof(uint32_t) * total_wlen - total_len;
 	outdesc.package_len = plen;
-	hdr_fill(&pkt->data_hdr, source, outdesc);
+	hdr_fill(&pkt->data_hdr, source, outdesc, timestamp);
 
 	plen = cbprintf_package_copy(package, desc.package_len,
 				     pkt->data, plen,
@@ -308,6 +308,16 @@ void log_frontend_msg(const void *source,
 	if (dev_ready && (atomic_inc(&active_cnt) == 0)) {
 		tx();
 	}
+}
+
+void log_frontend_msg(const void *source,
+		      const struct log_msg_desc desc,
+		      uint8_t *package, const void *data)
+{
+	log_timestamp_t timestamp = IS_ENABLED(CONFIG_LOG_TIMESTAMP_64BIT) ?
+		sys_clock_tick_get() : k_cycle_get_32();
+
+	log_frontend_msg_with_timestamp(source, desc, package, data, timestamp);
 }
 
 void log_frontend_panic(void)
