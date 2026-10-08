@@ -1462,7 +1462,7 @@ static int i2c_dw_pm_action(const struct device *dev, enum pm_device_action acti
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks)
 		if (rom->clk_dev != NULL) {
 			ret = clock_control_off(rom->clk_dev, rom->clk_id);
-			if (ret < 0 && ret != -EALREADY && ret != -ENOSYS) {
+			if (ret != 0 && ret != -EALREADY && ret != -ENOSYS && ret != -ENOTSUP) {
 				return ret;
 			}
 		}

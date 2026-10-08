@@ -503,7 +503,7 @@ static int mcux_lpi2c_suspend(const struct device *dev)
 	const struct mcux_lpi2c_config *config = dev->config;
 
 	ret = clock_control_off(config->clock_dev, config->clock_subsys);
-	if (ret < 0) {
+	if (ret != 0 && ret != -ENOTSUP) {
 		LOG_ERR("failed clock off lpi2c");
 		return ret;
 	}

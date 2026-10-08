@@ -526,7 +526,7 @@ static int i2c_silabs_pm_action(const struct device *dev, enum pm_device_action 
 
 		/* Disable clock */
 		ret = clock_control_off(config->clock, (clock_control_subsys_t)&config->clock_cfg);
-		if (ret < 0) {
+		if (ret != 0 && ret != -ENOTSUP) {
 			return ret;
 		}
 
