@@ -233,10 +233,14 @@
 			#address-cells = <1>;
 			#interrupt-cells = <2>;
 			interrupt-controller;
-			interrupts-extended = <&cpu0_intc 11 &cpu1_intc 11
-					       &cpu2_intc 11 &cpu3_intc 11
-					       &cpu4_intc 11 &cpu5_intc 11
-					       &cpu6_intc 11 &cpu7_intc 11>;
+			interrupts-extended = <&cpu0_intc 11 &cpu0_intc 9
+					       &cpu1_intc 11 &cpu1_intc 9
+					       &cpu2_intc 11 &cpu2_intc 9
+					       &cpu3_intc 11 &cpu3_intc 9
+					       &cpu4_intc 11 &cpu4_intc 9
+					       &cpu5_intc 11 &cpu5_intc 9
+					       &cpu6_intc 11 &cpu6_intc 9
+					       &cpu7_intc 11 &cpu7_intc 9>;
 			riscv,max-priority = <255>;
 			riscv,ndev = <1023>;
 		};
