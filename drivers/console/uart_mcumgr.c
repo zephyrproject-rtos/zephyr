@@ -231,9 +231,11 @@ static void uart_mcumgr_isr(const struct device *unused, void *user_data)
 /**
  * Sends raw data over the UART.
  */
-static int uart_mcumgr_send_raw(const void *data, int len)
+static int uart_mcumgr_send_raw(const void *data, int len, void *ctx)
 {
 	const uint8_t *u8p;
+
+	ARG_UNUSED(ctx);
 
 	u8p = data;
 	while (len--) {
@@ -246,9 +248,9 @@ static int uart_mcumgr_send_raw(const void *data, int len)
 int uart_mcumgr_send(const uint8_t *data, int len)
 {
 #if defined(CONFIG_UART_MCUMGR_RAW_PROTOCOL)
-	return uart_mcumgr_send_raw(data, len);
+	return uart_mcumgr_send_raw(data, len, NULL);
 #else
-	return mcumgr_serial_tx_pkt(data, len, uart_mcumgr_send_raw);
+	return mcumgr_serial_tx_pkt(data, len, uart_mcumgr_send_raw, NULL);
 #endif
 }
 
