@@ -535,7 +535,7 @@ static int dma_xilinx_adma_configure(const struct device *dev, uint32_t channel,
 		}
 
 		val = adma_read_reg(&reg->chan_cntrl0);
-		val |= XILINX_ADMA_POINT_TYPE_SG;
+		val = (val & ~XILINX_ADMA_MODE_MASK) | XILINX_ADMA_POINT_TYPE_SG;
 		adma_write_reg(val, &reg->chan_cntrl0);
 
 		LOG_DBG("Configured SG mode with %d descriptors", desc_count);
@@ -546,9 +546,9 @@ static int dma_xilinx_adma_configure(const struct device *dev, uint32_t channel,
 		data->chan.block = current_block->block_size;
 
 		val = adma_read_reg(&reg->chan_cntrl0);
-		val &= ~XILINX_ADMA_POINT_TYPE_SG;
+		val &= ~(XILINX_ADMA_POINT_TYPE_SG | XILINX_ADMA_MODE_MASK);
 		if (dma_cfg->channel_direction == XILINX_ADMA_DIR_WRITE_ONLY) {
-			val = (val & ~XILINX_ADMA_MODE_MASK) | XILINX_ADMA_WRONLY_MASK;
+			val |= XILINX_ADMA_WRONLY_MASK;
 		}
 		adma_write_reg(val, &reg->chan_cntrl0);
 	}
