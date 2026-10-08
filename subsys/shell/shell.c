@@ -1738,7 +1738,7 @@ static int instance_init(const struct shell *sh,
 	}
 
 	k_event_init(&sh->ctx->signal_event);
-	k_sem_init(&sh->ctx->lock_sem, 1, 1);
+	k_mutex_init(&sh->ctx->lock_mtx);
 
 	if (IS_ENABLED(CONFIG_SHELL_STATS)) {
 		sh->stats->log_lost_cnt = 0;
