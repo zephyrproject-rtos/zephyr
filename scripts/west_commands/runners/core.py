@@ -833,7 +833,7 @@ class ZephyrBinaryRunner(abc.ABC):
         return name.lower().replace('-', '')
 
     @staticmethod
-    def resolve_port_by_chip(detect_func, target, logger, priority_vids=None):
+    def resolve_port_by_chip(detect_func, target, logger, priority_vids=None, usb_only=False):
         '''Probe serial ports and return the first one whose connected chip
         matches the normalized target name.
 
@@ -846,6 +846,8 @@ class ZephyrBinaryRunner(abc.ABC):
         :param priority_vids: optional list of USB VIDs whose ports are
                              probed first, to avoid resetting unrelated
                              serial adapters.
+        :param usb_only:    if true, probe USB serial adapters only, skipping
+                             ports such as legacy UARTs that report no USB VID.
 
         Returns the matching port device path, or None when no match is
         found.'''
@@ -858,6 +860,8 @@ class ZephyrBinaryRunner(abc.ABC):
         priority_vids = priority_vids or []
         ports = sorted(serial.tools.list_ports.comports(),
                        key=lambda p: (p.vid not in priority_vids, p.device))
+        if usb_only:
+            ports = [p for p in ports if p.vid is not None]
 
         for info in ports:
             port = info.device
