@@ -71,6 +71,14 @@ tests:
       - nrf52833dk/nrf52833
       - nrf52840dk/nrf52840
       - nrf5340dk/nrf5340/cpuapp
+  sample.mcumgr.smp_svr.dual-uart:
+    extra_args:
+      - EXTRA_CONF_FILE="dual-uart.conf"
+      - EXTRA_DTC_OVERLAY_FILE="dual-uart.overlay"
+    platform_allow:
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - nrf52840dk/nrf52840
   sample.mcumgr.smp_svr.serial:
     extra_args: EXTRA_CONF_FILE="serial.conf"
     platform_allow:
