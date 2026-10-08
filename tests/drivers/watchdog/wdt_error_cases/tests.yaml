@@ -16,6 +16,7 @@ tests:
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - nrf54lm20dk/nrf54lm20b/cpuapp
       - nrf7120dk/nrf7120/cpuapp
+      - nrf7120dk/nrf7120e/cpuapp
       - nrf9280pdk/nrf9280/cpuapp
       - nrf9280pdk/nrf9280/cpurad
       - ophelia4ev/nrf54l15/cpuapp
