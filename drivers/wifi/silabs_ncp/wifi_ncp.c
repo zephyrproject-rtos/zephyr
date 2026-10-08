@@ -439,6 +439,7 @@ static const struct zep_wpa_supp_dev_ops wifi_ncp_supp_ops = {
 };
 
 static const struct wifi_mgmt_ops wifi_ncp_mgmt_ops = {
+	.scan = wifi_ncp_sta_mgmt_scan,
 	.iface_status = wifi_ncp_iface_status,
 	.get_iface_caps = wifi_ncp_get_iface_caps,
 };
