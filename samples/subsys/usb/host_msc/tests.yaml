@@ -1,0 +1,9 @@
+sample:
+  name: USB host MSC sample
+tests:
+  sample.usb.host_msc:
+    build_only: true
+    platform_allow:
+      - versal_apu
+    tags:
+      - usb
