@@ -11,6 +11,7 @@ target_link_libraries(app PRIVATE babblekit)
 target_sources(app PRIVATE
   "src/main.c"
   "src/scan_req_tgta.c"
+  "src/anonymous.c"
 )
 
 zephyr_include_directories(
