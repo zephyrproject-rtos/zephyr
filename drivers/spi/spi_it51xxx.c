@@ -550,7 +550,9 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 
 	ret = clock_control_off(cfg->clk_dev, (clock_control_subsys_t *)&cfg->clk_cfg);
-	if (ret) {
+	if (ret == -ENOTSUP) {
+		ret = 0;
+	} else if (ret != 0) {
 		LOG_ERR("failed to turn off spi clock %d", ret);
 	}
 out:
