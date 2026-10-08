@@ -90,6 +90,10 @@ typedef void (*eth_bridge_fdb_entry_cb_t)(struct eth_bridge_fdb_entry *entry, vo
  */
 void eth_bridge_fdb_foreach(eth_bridge_fdb_entry_cb_t cb, void *user_data);
 
+#ifdef __cplusplus
+}
+#endif
+
 /**
  * @}
  */
