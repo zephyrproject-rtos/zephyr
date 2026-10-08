@@ -10,6 +10,7 @@
  * @brief A driver for sending and receiving mcumgr packets over UART.
  */
 
+#include <errno.h>
 #include <string.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/uart.h>
@@ -19,40 +20,29 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uart_mcumgr, CONFIG_MCUMGR_TRANSPORT_LOG_LEVEL);
 
-static const struct device *const uart_mcumgr_dev =
-	DEVICE_DT_GET(DT_CHOSEN(zephyr_uart_mcumgr));
-
-/** Callback to execute when a valid fragment has been received. */
-static uart_mcumgr_recv_fn *uart_mcumgr_recv_cb;
-
-/** Contains the fragment currently being received. */
-static struct uart_mcumgr_rx_buf *uart_mcumgr_cur_buf;
-
-#if !defined(CONFIG_UART_MCUMGR_RAW_PROTOCOL)
 /**
- * Whether the line currently being read should be ignored.  This is true if
- * the line is too long or if there is no buffer available to hold it.
+ * Whether an instance uses raw framing. Constant when only one framing is built.
  */
-static bool uart_mcumgr_ignoring;
-#endif
+static inline bool uart_mcumgr_is_raw(const struct uart_mcumgr *mcumgr)
+{
+	if (!IS_ENABLED(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_SMP_OVER_CONSOLE)) {
+		return true;
+	}
 
-/** Contains buffers to hold incoming request fragments. */
-K_MEM_SLAB_DEFINE_TYPE(uart_mcumgr_slab, struct uart_mcumgr_rx_buf,
-		       CONFIG_UART_MCUMGR_RX_BUF_COUNT);
+	if (!IS_ENABLED(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_RAW_BINARY_NON_SMP_OVER_CONSOLE)) {
+		return false;
+	}
 
-#if defined(CONFIG_MCUMGR_TRANSPORT_UART_ASYNC)
-uint8_t async_buffer[CONFIG_MCUMGR_TRANSPORT_UART_ASYNC_BUFS]
-		    [CONFIG_MCUMGR_TRANSPORT_UART_ASYNC_BUF_SIZE];
-static int async_current;
-#endif
+	return mcumgr->framing == UART_MCUMGR_FRAMING_RAW;
+}
 
-static struct uart_mcumgr_rx_buf *uart_mcumgr_alloc_rx_buf(void)
+static struct uart_mcumgr_rx_buf *uart_mcumgr_alloc_rx_buf(struct uart_mcumgr *mcumgr)
 {
 	struct uart_mcumgr_rx_buf *rx_buf;
 	void *block;
 	int rc;
 
-	rc = k_mem_slab_alloc(&uart_mcumgr_slab, &block, K_NO_WAIT);
+	rc = k_mem_slab_alloc(mcumgr->rx_slab, &block, K_NO_WAIT);
 	if (rc != 0) {
 		return NULL;
 	}
@@ -62,99 +52,93 @@ static struct uart_mcumgr_rx_buf *uart_mcumgr_alloc_rx_buf(void)
 	return rx_buf;
 }
 
-void uart_mcumgr_free_rx_buf(struct uart_mcumgr_rx_buf *rx_buf)
+void uart_mcumgr_free_rx_buf(struct uart_mcumgr *mcumgr, struct uart_mcumgr_rx_buf *rx_buf)
 {
 	void *block;
 
 	block = rx_buf;
-	k_mem_slab_free(&uart_mcumgr_slab, block);
+	k_mem_slab_free(mcumgr->rx_slab, block);
 }
 
 #if !defined(CONFIG_MCUMGR_TRANSPORT_UART_ASYNC)
 /**
  * Reads a chunk of received data from the UART.
  */
-static int uart_mcumgr_read_chunk(void *buf, int capacity)
+static int uart_mcumgr_read_chunk(struct uart_mcumgr *mcumgr, void *buf, int capacity)
 {
-	return uart_fifo_read(uart_mcumgr_dev, buf, capacity);
+	return uart_fifo_read(mcumgr->dev, buf, capacity);
 }
 #endif
 
 /**
  * Processes a single incoming byte.
  */
-static struct uart_mcumgr_rx_buf *uart_mcumgr_rx_byte(uint8_t byte)
+static struct uart_mcumgr_rx_buf *uart_mcumgr_rx_byte(struct uart_mcumgr *mcumgr, uint8_t byte)
 {
 	struct uart_mcumgr_rx_buf *rx_buf;
 
-#if !defined(CONFIG_UART_MCUMGR_RAW_PROTOCOL)
+	if (uart_mcumgr_is_raw(mcumgr)) {
+		/* Raw packets have no line structure, so each byte is a fragment. */
+		rx_buf = uart_mcumgr_alloc_rx_buf(mcumgr);
+		if (rx_buf == NULL) {
+			LOG_WRN("Insufficient buffers, fragment dropped");
+			return NULL;
+		}
+
+		rx_buf->data[rx_buf->length++] = byte;
+		return rx_buf;
+	}
+
 	/* Frame markers never occur inside a frame, so they always start a new line. */
 	if (byte == MCUMGR_SERIAL_HDR_PKT_1 || byte == MCUMGR_SERIAL_HDR_FRAG_1) {
-		uart_mcumgr_ignoring = false;
-		if (uart_mcumgr_cur_buf != NULL) {
-			uart_mcumgr_cur_buf->length = 0;
+		mcumgr->ignoring = false;
+		if (mcumgr->cur_buf != NULL) {
+			mcumgr->cur_buf->length = 0;
 		}
 	}
 
-	if (!uart_mcumgr_ignoring) {
-#endif
-		if (uart_mcumgr_cur_buf == NULL) {
-			uart_mcumgr_cur_buf = uart_mcumgr_alloc_rx_buf();
-			if (uart_mcumgr_cur_buf == NULL) {
+	if (!mcumgr->ignoring) {
+		if (mcumgr->cur_buf == NULL) {
+			mcumgr->cur_buf = uart_mcumgr_alloc_rx_buf(mcumgr);
+			if (mcumgr->cur_buf == NULL) {
 				LOG_WRN("Insufficient buffers, fragment dropped");
-#if !defined(CONFIG_UART_MCUMGR_RAW_PROTOCOL)
-				uart_mcumgr_ignoring = true;
-#endif
+				mcumgr->ignoring = true;
 			}
 		}
-#if !defined(CONFIG_UART_MCUMGR_RAW_PROTOCOL)
 	}
-#endif
 
-	rx_buf = uart_mcumgr_cur_buf;
-#if !defined(CONFIG_UART_MCUMGR_RAW_PROTOCOL)
-	if (!uart_mcumgr_ignoring) {
-#endif
+	rx_buf = mcumgr->cur_buf;
+	if (!mcumgr->ignoring) {
 		if (rx_buf->length >= sizeof(rx_buf->data)) {
 			LOG_WRN("Line too long, fragment dropped");
-			uart_mcumgr_free_rx_buf(uart_mcumgr_cur_buf);
-			uart_mcumgr_cur_buf = NULL;
-#if !defined(CONFIG_UART_MCUMGR_RAW_PROTOCOL)
-			uart_mcumgr_ignoring = true;
-#endif
+			uart_mcumgr_free_rx_buf(mcumgr, mcumgr->cur_buf);
+			mcumgr->cur_buf = NULL;
+			mcumgr->ignoring = true;
 		} else {
 			rx_buf->data[rx_buf->length++] = byte;
 		}
-#if !defined(CONFIG_UART_MCUMGR_RAW_PROTOCOL)
 	}
-#endif
 
-#if defined(CONFIG_UART_MCUMGR_RAW_PROTOCOL)
-	uart_mcumgr_cur_buf = NULL;
-	return rx_buf;
-#else
 	if (byte == '\n') {
 		/* Fragment complete. */
-		if (uart_mcumgr_ignoring) {
-			uart_mcumgr_ignoring = false;
+		if (mcumgr->ignoring) {
+			mcumgr->ignoring = false;
 		} else {
-			uart_mcumgr_cur_buf = NULL;
+			mcumgr->cur_buf = NULL;
 			return rx_buf;
 		}
 	}
 
 	return NULL;
-#endif
 }
 
 #if defined(CONFIG_MCUMGR_TRANSPORT_UART_ASYNC)
 static void uart_mcumgr_async(const struct device *dev, struct uart_event *evt, void *user_data)
 {
+	struct uart_mcumgr *mcumgr = user_data;
 	struct uart_mcumgr_rx_buf *rx_buf;
 	uint8_t *p;
 	int len;
-
-	ARG_UNUSED(dev);
 
 	switch (evt->type) {
 	case UART_TX_DONE:
@@ -165,14 +149,14 @@ static void uart_mcumgr_async(const struct device *dev, struct uart_event *evt, 
 		p = &evt->data.rx.buf[evt->data.rx.offset];
 
 		for (int i = 0; i < len; i++) {
-			rx_buf = uart_mcumgr_rx_byte(p[i]);
+			rx_buf = uart_mcumgr_rx_byte(mcumgr, p[i]);
 			if (rx_buf != NULL) {
-				uart_mcumgr_recv_cb(rx_buf);
+				mcumgr->recv_cb(rx_buf, mcumgr->user_data);
 			}
 		}
 		break;
 	case UART_RX_DISABLED:
-		async_current = 0;
+		mcumgr->async_current = 0;
 		break;
 	case UART_RX_BUF_REQUEST:
 		/*
@@ -182,10 +166,10 @@ static void uart_mcumgr_async(const struct device *dev, struct uart_event *evt, 
 		 * than UART will receive them and, since there is nothing to release, only
 		 * UART_RX_BUF_REQUEST is processed.
 		 */
-		++async_current;
-		async_current %= CONFIG_MCUMGR_TRANSPORT_UART_ASYNC_BUFS;
-		uart_rx_buf_rsp(dev, async_buffer[async_current],
-				sizeof(async_buffer[async_current]));
+		++mcumgr->async_current;
+		mcumgr->async_current %= CONFIG_MCUMGR_TRANSPORT_UART_ASYNC_BUFS;
+		uart_rx_buf_rsp(dev, mcumgr->async_buf[mcumgr->async_current],
+				sizeof(mcumgr->async_buf[mcumgr->async_current]));
 		break;
 	case UART_RX_BUF_RELEASED:
 	case UART_RX_STOPPED:
@@ -198,30 +182,30 @@ static void uart_mcumgr_async(const struct device *dev, struct uart_event *evt, 
  */
 static void uart_mcumgr_isr(const struct device *unused, void *user_data)
 {
+	struct uart_mcumgr *mcumgr = user_data;
 	struct uart_mcumgr_rx_buf *rx_buf;
 	uint8_t buf[32];
 	int chunk_len;
 	int i;
 
 	ARG_UNUSED(unused);
-	ARG_UNUSED(user_data);
 
-	uart_irq_update(uart_mcumgr_dev);
+	uart_irq_update(mcumgr->dev);
 
-	if (uart_irq_rx_ready(uart_mcumgr_dev) <= 0) {
+	if (uart_irq_rx_ready(mcumgr->dev) <= 0) {
 		return;
 	}
 
 	while (true) {
-		chunk_len = uart_mcumgr_read_chunk(buf, sizeof(buf));
+		chunk_len = uart_mcumgr_read_chunk(mcumgr, buf, sizeof(buf));
 		if (chunk_len <= 0) {
 			break;
 		}
 
 		for (i = 0; i < chunk_len; i++) {
-			rx_buf = uart_mcumgr_rx_byte(buf[i]);
+			rx_buf = uart_mcumgr_rx_byte(mcumgr, buf[i]);
 			if (rx_buf != NULL) {
-				uart_mcumgr_recv_cb(rx_buf);
+				mcumgr->recv_cb(rx_buf, mcumgr->user_data);
 			}
 		}
 	}
@@ -233,52 +217,73 @@ static void uart_mcumgr_isr(const struct device *unused, void *user_data)
  */
 static int uart_mcumgr_send_raw(const void *data, int len, void *ctx)
 {
+	struct uart_mcumgr *mcumgr = ctx;
 	const uint8_t *u8p;
-
-	ARG_UNUSED(ctx);
 
 	u8p = data;
 	while (len--) {
-		uart_poll_out(uart_mcumgr_dev, *u8p++);
+		uart_poll_out(mcumgr->dev, *u8p++);
 	}
 
 	return 0;
 }
 
-int uart_mcumgr_send(const uint8_t *data, int len)
+int uart_mcumgr_send(struct uart_mcumgr *mcumgr, const uint8_t *data, int len)
 {
-#if defined(CONFIG_UART_MCUMGR_RAW_PROTOCOL)
-	return uart_mcumgr_send_raw(data, len, NULL);
-#else
-	return mcumgr_serial_tx_pkt(data, len, uart_mcumgr_send_raw, NULL);
+#if defined(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_SMP_OVER_CONSOLE)
+	if (!uart_mcumgr_is_raw(mcumgr)) {
+		return mcumgr_serial_tx_pkt(data, len, uart_mcumgr_send_raw, mcumgr);
+	}
 #endif
+
+	return uart_mcumgr_send_raw(data, len, mcumgr);
 }
 
 #if defined(CONFIG_MCUMGR_TRANSPORT_UART_ASYNC)
-static void uart_mcumgr_setup(const struct device *uart)
+static int uart_mcumgr_setup(struct uart_mcumgr *mcumgr)
 {
-	uart_callback_set(uart, uart_mcumgr_async, NULL);
+	int rc;
 
-	uart_rx_enable(uart, async_buffer[0], sizeof(async_buffer[0]),
-		       CONFIG_MCUMGR_TRANSPORT_UART_ASYNC_RX_TIMEOUT_US);
+	rc = uart_callback_set(mcumgr->dev, uart_mcumgr_async, mcumgr);
+	if (rc != 0) {
+		return rc;
+	}
+
+	return uart_rx_enable(mcumgr->dev, mcumgr->async_buf[0], sizeof(mcumgr->async_buf[0]),
+			      CONFIG_MCUMGR_TRANSPORT_UART_ASYNC_RX_TIMEOUT_US);
 }
 #else
-static void uart_mcumgr_setup(const struct device *uart)
+static int uart_mcumgr_setup(struct uart_mcumgr *mcumgr)
 {
-	uart_irq_rx_disable(uart);
-	uart_irq_tx_disable(uart);
+	int rc;
 
-	uart_irq_callback_set(uart, uart_mcumgr_isr);
+	uart_irq_rx_disable(mcumgr->dev);
+	uart_irq_tx_disable(mcumgr->dev);
 
-	uart_irq_rx_enable(uart);
+	rc = uart_irq_callback_user_data_set(mcumgr->dev, uart_mcumgr_isr, mcumgr);
+	if (rc != 0) {
+		return rc;
+	}
+
+	uart_irq_rx_enable(mcumgr->dev);
+
+	return 0;
 }
 #endif
 
-void uart_mcumgr_register(uart_mcumgr_recv_fn *cb)
+int uart_mcumgr_register(struct uart_mcumgr *mcumgr, uart_mcumgr_recv_fn *cb, void *user_data)
 {
-	uart_mcumgr_recv_cb = cb;
+	int rc = -ENODEV;
 
-	if (device_is_ready(uart_mcumgr_dev)) {
-		uart_mcumgr_setup(uart_mcumgr_dev);
+	if (device_is_ready(mcumgr->dev)) {
+		mcumgr->recv_cb = cb;
+		mcumgr->user_data = user_data;
+		rc = uart_mcumgr_setup(mcumgr);
 	}
+
+	if (rc != 0) {
+		LOG_ERR("%s setup failed: %d", mcumgr->dev->name, rc);
+	}
+
+	return rc;
 }

@@ -10,13 +10,15 @@ config MCUMGR_TRANSPORT_SERIAL_HAS_SMP_OVER_CONSOLE
 	bool
 	help
 	  Hidden Kconfig selected by transports that implement the SMP over console transport and
-	  need this functionality to be available in the serial_util.c file.
+	  need this functionality to be available in the serial_util.c file and the MCUmgr UART
+	  driver.
 
 config MCUMGR_TRANSPORT_SERIAL_HAS_RAW_BINARY_NON_SMP_OVER_CONSOLE
 	bool
 	help
 	  Hidden Kconfig selected by transports that implement the raw binary non-SMP over console
-	  serial transport and need this functionality to be available in the serial_util.c file.
+	  serial transport and need this functionality to be available in the serial_util.c file
+	  and the MCUmgr UART driver.
 
 if (MCUMGR_TRANSPORT_UART || MCUMGR_TRANSPORT_RAW_UART) && UART_ASYNC_API
 

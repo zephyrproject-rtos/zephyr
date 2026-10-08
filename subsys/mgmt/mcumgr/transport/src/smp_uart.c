@@ -33,6 +33,9 @@ static void smp_uart_process_rx_queue(struct k_work *work);
 K_FIFO_DEFINE(smp_uart_rx_fifo);
 K_WORK_DEFINE(smp_uart_work, smp_uart_process_rx_queue);
 
+UART_MCUMGR_DEFINE(smp_uart_mcumgr, DEVICE_DT_GET(DT_CHOSEN(zephyr_uart_mcumgr)),
+		   UART_MCUMGR_FRAMING_SMP_OVER_CONSOLE);
+
 static struct mcumgr_serial_rx_ctxt smp_uart_rx_ctxt;
 static struct smp_transport smp_uart_transport;
 #if defined(CONFIG_SMP_CLIENT) || defined(CONFIG_MCUMGR_GRP_TRANSPORT)
@@ -59,7 +62,7 @@ static void smp_uart_process_frag(struct uart_mcumgr_rx_buf *rx_buf)
 					rx_buf->data, rx_buf->length);
 
 	/* Release the encoded fragment. */
-	uart_mcumgr_free_rx_buf(rx_buf);
+	uart_mcumgr_free_rx_buf(&smp_uart_mcumgr, rx_buf);
 
 	/* If a complete packet has been received, pass it to SMP for
 	 * processing.
@@ -82,8 +85,10 @@ static void smp_uart_process_rx_queue(struct k_work *work)
  * Enqueues a received SMP fragment for later processing.  This function
  * executes in the interrupt context.
  */
-static void smp_uart_rx_frag(struct uart_mcumgr_rx_buf *rx_buf)
+static void smp_uart_rx_frag(struct uart_mcumgr_rx_buf *rx_buf, void *user_data)
 {
+	ARG_UNUSED(user_data);
+
 	k_fifo_put(&smp_uart_rx_fifo, rx_buf);
 	k_work_submit(&smp_uart_work);
 }
@@ -97,7 +102,7 @@ static int smp_uart_tx_pkt(struct net_buf *nb)
 {
 	int rc;
 
-	rc = uart_mcumgr_send(nb->data, nb->len);
+	rc = uart_mcumgr_send(&smp_uart_mcumgr, nb->data, nb->len);
 	smp_packet_free(nb);
 
 	return rc;
@@ -199,15 +204,20 @@ static int smp_uart_init(void)
 #endif
 
 	rc = smp_transport_init(&smp_uart_transport);
-
-	if (rc == 0) {
-		uart_mcumgr_register(smp_uart_rx_frag);
-#if defined(CONFIG_SMP_CLIENT) || defined(CONFIG_MCUMGR_GRP_TRANSPORT)
-		smp_client_transport_register(&smp_client_transport);
-#endif
+	if (rc != 0) {
+		return rc;
 	}
 
-	return rc;
+	rc = uart_mcumgr_register(&smp_uart_mcumgr, smp_uart_rx_frag, NULL);
+	if (rc != 0) {
+		return rc;
+	}
+
+#if defined(CONFIG_SMP_CLIENT) || defined(CONFIG_MCUMGR_GRP_TRANSPORT)
+	smp_client_transport_register(&smp_client_transport);
+#endif
+
+	return 0;
 }
 
 SYS_INIT(smp_uart_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
