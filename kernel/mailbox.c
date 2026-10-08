@@ -21,6 +21,8 @@
 #include <kernel_internal.h>
 #include <wait_q.h>
 
+ZASSERT_MODULE(KERNEL);
+
 #define SYNCHRONOUS_MATCH_FOUND  1
 #define ASYNCHRONOUS_MATCH_FOUND 2
 
@@ -349,6 +351,8 @@ static int mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 	       k_timeout_t timeout)
 {
+	ZASSERT(!arch_is_in_isr(), "Calling %s from ISR is not allowed.", __func__);
+
 	/* configure things for a synchronous send, then send the message */
 	tx_msg->_syncing_thread = _current;
 
@@ -459,6 +463,8 @@ int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 {
 	k_spinlock_key_t key;
 	int result;
+
+	ZASSERT(!arch_is_in_isr(), "Calling %s from ISR is not allowed.", __func__);
 
 	/* save receiver id so it can be used during message matching */
 	rx_msg->tx_target_thread = _current;
