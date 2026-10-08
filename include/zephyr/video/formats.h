@@ -685,7 +685,8 @@ extern "C" {
  */
 #define VIDEO_FOREACH_RGB_NON_PACKED(X, ...)					\
 	X(VIDEO_PIX_FMT_BGR24, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_RGB24, __VA_ARGS__)
+	X(VIDEO_PIX_FMT_RGB24, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_RGB24P, __VA_ARGS__)
 
 /**
  * 24 bit RGB format with 8 bit per component
@@ -704,6 +705,20 @@ extern "C" {
  * @endcode
  */
 #define VIDEO_PIX_FMT_RGB24 VIDEO_FOURCC('R', 'G', 'B', '3')
+
+/**
+ * 24 bit planar RGB format with 8 bit per component.
+ *
+ * @code{.unparsed}
+ * | Rrrrrrrr | Rrrrrrrr | ... |
+ * | ... |
+ * | Gggggggg | Gggggggg | ... |
+ * | ... |
+ * | Bbbbbbbb | Bbbbbbbb | ... |
+ * | ... |
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_RGB24P VIDEO_FOURCC('R', 'G', '3', 'P')
 
 /**
  * @brief Repeat a macro for every RGB alpha format, passed as first parameter
@@ -1326,6 +1341,7 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 		return 16;
 	case VIDEO_PIX_FMT_BGR24:
 	case VIDEO_PIX_FMT_RGB24:
+	case VIDEO_PIX_FMT_RGB24P:
 	case VIDEO_PIX_FMT_NV24:
 	case VIDEO_PIX_FMT_NV42:
 	case VIDEO_PIX_FMT_YUV24:
