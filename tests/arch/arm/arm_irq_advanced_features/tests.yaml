@@ -20,3 +20,6 @@ tests:
       - kit_t2g_c2d6m_lite/cyt4dnjbzs/m7_1
   arch.arm.irq_advanced_features.secure_fw:
     filter: CONFIG_TRUSTED_EXECUTION_SECURE
+  arch.arm.irq_advanced_features.ns:
+    platform_allow:
+      - nrf54lv10dk/nrf54lv10a/cpuapp/ns
