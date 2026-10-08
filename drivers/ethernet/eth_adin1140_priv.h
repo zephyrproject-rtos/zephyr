@@ -45,6 +45,25 @@
  */
 #define ADIN1140_RX_TIMESTAMP_LEN           8U
 
+/* Vendor extension field on the standard OA-TC6 transmit data header (bits
+ * [7:6], between the generic EBO and P fields) -- requests a hardware
+ * timestamp capture of the frame's actual departure onto the wire.
+ */
+#define ADIN1140_DATA_HDR_TSC               GENMASK(7, 6)
+#define ADIN1140_TSC_CAPTURE_A              0x1
+
+/* MAC register map (MMS 0x0) -- transmit timestamp capture completion. */
+#define ADIN1140_MAC_STATUS0                MMS_REG(0x0, 0x08)
+#define ADIN1140_MAC_STATUS0_TTSCAA         BIT(8)
+
+/* MAC register map (MMS 0x0) -- transmit timestamp capture A result,
+ * 32-bit seconds + 32-bit nanoseconds, matching the FTSE RX prefix format.
+ */
+#define ADIN1140_MAC_TTSCAH                 MMS_REG(0x0, 0x10)
+#define ADIN1140_MAC_TTSCAL                 MMS_REG(0x0, 0x11)
+#define ADIN1140_TTSCAA_POLL_MAX_RETRIES    20U
+#define ADIN1140_TTSCAA_POLL_INTERVAL_US    100U
+
 /* ADIN1140 Registers (non-OA) */
 #define ADIN1140_MAC_RST_STATUS            MMS_REG(0x1, 0x3B)
 #define ADIN1140_A0_CFG_FIELDS_1           MMS_REG(0xA, 0xB703)
