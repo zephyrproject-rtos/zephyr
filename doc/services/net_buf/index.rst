@@ -284,6 +284,68 @@ to it afterwards with :c:func:`net_buf_simple_restore`:
 The saved state is the position of the data, not its content: data
 written into the buffer in between is not undone.
 
+Fragments
+*********
+
+Data that does not fit in one buffer, or that is put together from
+pieces, is kept in a chain of buffers linked through their ``frags``
+field. The first buffer of the chain is its head.
+
+.. mermaid::
+   :caption: A chain of three buffers
+   :alt: Three buffers in a row, each with its own headroom, data and
+         tailroom. The frags field of the head points to the second
+         buffer, the frags field of the second buffer to the third, and
+         the frags field of the third is NULL.
+
+   block-beta
+     columns 17
+     block:b0:4
+       columns 4
+       t0["head"]:4
+       h0[" "] l0["len"]:2 r0[" "]
+       f0["frags"]:4
+     end
+     a0<["&nbsp;"]>(right)
+     block:b1:4
+       columns 4
+       t1["fragment"]:4
+       h1[" "] l1["len"]:3
+       f1["frags"]:4
+     end
+     a1<["&nbsp;"]>(right)
+     block:b2:4
+       columns 4
+       t2["fragment"]:4
+       l2["len"]:3 r2[" "]
+       f2["frags"]:4
+     end
+     a2<["&nbsp;"]>(right)
+     n["NULL"]:2
+
+     classDef ptr fill:none,stroke:none
+     classDef free stroke-dasharray:5,fill-opacity:0.3
+     class t0,t1,t2,n ptr
+     class h0,r0,h1,r2 free
+
+Each buffer of the chain has its own headroom and tailroom, and its
+``len`` counts only its own data. :c:func:`net_buf_frags_len` returns the
+length of the data in the whole chain.
+
+:c:func:`net_buf_frag_add` adds a fragment to the end of a chain,
+:c:func:`net_buf_frag_insert` inserts one after a given buffer, and
+:c:func:`net_buf_frag_del` removes one and releases the chain's
+reference to it. Who owns the buffers of a chain is described in
+`Ownership`_.
+
+Some functions work on the data of a whole chain:
+:c:func:`net_buf_linearize` copies data out of it into a contiguous
+buffer, :c:func:`net_buf_append_bytes` adds data to its end and allocates
+more fragments as needed, and :c:func:`net_buf_data_match` compares data
+with its content. Each returns a length that can be less than requested.
+:c:func:`net_buf_skip` removes data from the start of a chain, releases
+the fragments it empties and returns what is left of the chain.
+
 Reference Counting
 ******************
 
