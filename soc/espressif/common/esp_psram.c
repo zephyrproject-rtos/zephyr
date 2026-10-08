@@ -139,10 +139,11 @@ static int esp32p4_psram_init(void)
 {
 	esp_init_psram();
 
+#if defined(CONFIG_SHARED_MULTI_HEAP)
 	if (esp_psram_smh_init()) {
 		printk("Failed to initialize PSRAM shared multi heap\n");
 	}
-
+#endif
 	return 0;
 }
 
