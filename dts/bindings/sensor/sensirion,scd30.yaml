@@ -1,0 +1,32 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Sensirion SCD30 NDIR CO2, humidity and temperature sensor module.
+
+  The I2C address is 0x61. The bus runs at 100 kHz or slower and the
+  controller must support clock stretching. Sensirion recommends 50 kHz
+  or less. The RDY pin is high when a new measurement can be read.
+
+compatible: "sensirion,scd30"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  measurement-interval:
+    type: int
+    default: 2
+    min: 2
+    max: 1800
+    description: |
+      Continuous measurement interval in seconds. The interface manual
+      allows 2 to 1800. The initial value is 2 seconds and is kept in
+      non-volatile memory across power cycles.
+
+  ready-gpios:
+    type: phandle-array
+    description: |
+      Optional data-ready (RDY) output. Active high when a new measurement is
+      available. When present, sample_fetch uses this pin instead of the I2C
+      get-data-ready command. Without this property, readiness is polled over
+      I2C.
