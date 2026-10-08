@@ -76,6 +76,7 @@
 #define XILINX_ADMA_START          0x1
 #define XILINX_ADMA_STS_STATE_MASK GENMASK(1, 0)
 #define XILINX_ADMA_STS_STATE_BUSY 0x2
+#define XILINX_ADMA_STS_STATE_ERR  0x3
 
 /* Interrupt Mask specific definitions */
 #define XILINX_ADMA_INT_ERR                                                                        \
@@ -252,6 +253,7 @@ static void dma_xilinx_adma_isr(const struct device *dev)
 	int callback_status = DMA_STATUS_COMPLETE;
 	k_spinlock_key_t key;
 	uint32_t status;
+	uint32_t chan_state;
 
 	key = k_spin_lock(&data->lock);
 
@@ -269,8 +271,10 @@ static void dma_xilinx_adma_isr(const struct device *dev)
 	(void)adma_read_reg(&reg->chan_irq_src_acct);
 	(void)adma_read_reg(&reg->chan_irq_dst_acct);
 
-	if (status & XILINX_ADMA_INT_ERR) {
-		LOG_ERR("DMA AXI error occurred:0x%x", status);
+	/* A DONE interrupt can also accompany a transfer that ended with errors. */
+	chan_state = adma_read_reg(&reg->chan_sts) & XILINX_ADMA_STS_STATE_MASK;
+	if ((status & XILINX_ADMA_INT_ERR) || chan_state == XILINX_ADMA_STS_STATE_ERR) {
+		LOG_ERR("DMA error occurred: IRQ=0x%x STATE=0x%x", status, chan_state);
 		callback_status = -EIO;
 	} else if ((status & XILINX_ADMA_INT_OVRFL) && !(status & XILINX_ADMA_INT_DONE)) {
 		LOG_ERR("DMA overflow error occurred: 0x%x", status);
