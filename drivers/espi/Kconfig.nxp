@@ -25,7 +25,7 @@ config ESPI_TAF_NXP
 	select FLASH
 	help
 	  Enable the NXP eSPI Target Attached Flash (TAF) driver. This is a
-	  separate device bound to the espi_saf_driver_api. It shares the parent
+	  separate device bound to the espi_taf_driver_api. It shares the parent
 	  nxp,espi controller register block and interrupt, the parent driver
 	  forwards host flash requests to this driver, which services them
 	  against the local flash device and posts the completion back to the

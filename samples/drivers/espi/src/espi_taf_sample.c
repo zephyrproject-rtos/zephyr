@@ -9,7 +9,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/espi.h>
-#include <zephyr/drivers/espi_saf.h>
+#include <zephyr/drivers/espi_taf.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/random/random.h>
@@ -52,7 +52,7 @@ static uint8_t tafbuf2[TAF_TEST_BUF_SIZE] __aligned(4);
  * Size is 16Mbytes, it requires no continuous mode prefix, or
  * other special TAF configuration.
  */
-static const struct espi_saf_flash_cfg flash_w25q128 = {
+static const struct espi_taf_flash_cfg flash_w25q128 = {
 	.flashsz = 0x1000000U,
 	.opa = MCHP_SAF_OPCODE_REG_VAL(0x06U, 0x75U, 0x7aU, 0x05U),
 	.opb = MCHP_SAF_OPCODE_REG_VAL(0x20U, 0x52U, 0xd8U, 0x02U),
@@ -72,7 +72,7 @@ static const struct espi_saf_flash_cfg flash_w25q128 = {
  * Use TAF hardware default TAG map.
  */
 #ifdef CONFIG_ESPI_TAF_XEC_V2
-static const struct espi_saf_cfg taf_cfg1 = {
+static const struct espi_taf_cfg taf_cfg1 = {
 	.nflash_devices = 1U,
 	.hwcfg = {.version = 2U,
 		  .flags = 0U,
@@ -83,9 +83,9 @@ static const struct espi_saf_cfg taf_cfg1 = {
 		  .generic_descr = {MCHP_SAF_EXIT_CM_DESCR12, MCHP_SAF_EXIT_CM_DESCR13,
 				    MCHP_SAF_POLL_DESCR14, MCHP_SAF_POLL_DESCR15},
 		  .tag_map = {0U, 0U, 0U}},
-	.flash_cfgs = (struct espi_saf_flash_cfg *)&flash_w25q128};
+	.flash_cfgs = (struct espi_taf_flash_cfg *)&flash_w25q128};
 #else
-static const struct espi_saf_cfg taf_cfg1 = {
+static const struct espi_taf_cfg taf_cfg1 = {
 	.nflash_devices = 1U,
 	.hwcfg = {.qmspi_freq_hz = 0U,
 		  .qmspi_cs_timing = 0U,
@@ -94,13 +94,13 @@ static const struct espi_saf_cfg taf_cfg1 = {
 		  .generic_descr = {MCHP_SAF_EXIT_CM_DESCR12, MCHP_SAF_EXIT_CM_DESCR13,
 				    MCHP_SAF_POLL_DESCR14, MCHP_SAF_POLL_DESCR15},
 		  .tag_map = {0U, 0U, 0U}},
-	.flash_cfgs = (struct espi_saf_flash_cfg *)&flash_w25q128};
+	.flash_cfgs = (struct espi_taf_flash_cfg *)&flash_w25q128};
 #endif
 
 /*
  * Example for TAF driver set protection regions API.
  */
-static const struct espi_saf_pr w25q128_protect_regions[2] = {
+static const struct espi_taf_pr w25q128_protect_regions[2] = {
 	{
 		.start = 0xe00000U,
 		.size = 0x100000U,
@@ -119,7 +119,7 @@ static const struct espi_saf_pr w25q128_protect_regions[2] = {
 	},
 };
 
-static const struct espi_saf_protection saf_pr_w25q128 = {.nregions = 2U,
+static const struct espi_taf_protection saf_pr_w25q128 = {.nregions = 2U,
 							  .pregions = w25q128_protect_regions};
 
 /* Transmit command opcode plus optional params and optionally read a response
@@ -287,14 +287,14 @@ int espi_taf_init(void)
 {
 	int ret;
 
-	ret = espi_saf_config(espi_taf_dev, (struct espi_saf_cfg *)&taf_cfg1);
+	ret = espi_taf_config(espi_taf_dev, (struct espi_taf_cfg *)&taf_cfg1);
 	if (ret) {
 		LOG_ERR("Failed to configure eSPI TAF error %d", ret);
 	} else {
 		LOG_INF("eSPI TAF configured successfully!");
 	}
 
-	ret = espi_saf_set_protection_regions(espi_taf_dev, &saf_pr_w25q128);
+	ret = espi_taf_set_protection_regions(espi_taf_dev, &saf_pr_w25q128);
 	if (ret) {
 		LOG_ERR("Failed to set TAF protection region(s) %d", ret);
 	} else {
@@ -304,7 +304,7 @@ int espi_taf_init(void)
 	return ret;
 }
 
-static int pr_check_range(mm_reg_t taf_base, const struct espi_saf_pr *pr)
+static int pr_check_range(mm_reg_t taf_base, const struct espi_taf_pr *pr)
 {
 	uint32_t expected_limit = pr->start + pr->size - 1U;
 	uint32_t start = (sys_read32(taf_base + MCHP_SAF_PR_START_OFS(pr->pr_num)) &
@@ -324,7 +324,7 @@ static int pr_check_range(mm_reg_t taf_base, const struct espi_saf_pr *pr)
 	return 0;
 }
 
-static int pr_check_enable(mm_reg_t taf_base, const struct espi_saf_pr *pr)
+static int pr_check_enable(mm_reg_t taf_base, const struct espi_taf_pr *pr)
 {
 	uint32_t start = (sys_read32(taf_base + MCHP_SAF_PR_START_OFS(pr->pr_num)) &
 			  MCHP_SAF_PROT_RG_START_MASK);
@@ -344,7 +344,7 @@ static int pr_check_enable(mm_reg_t taf_base, const struct espi_saf_pr *pr)
 	return -2;
 }
 
-static int pr_check_lock(mm_reg_t taf_base, const struct espi_saf_pr *pr)
+static int pr_check_lock(mm_reg_t taf_base, const struct espi_taf_pr *pr)
 {
 	uint32_t lockbm = sys_read32(taf_base + MCHP_SAF_PROT_LOCK_OFS);
 
@@ -362,7 +362,7 @@ static int pr_check_lock(mm_reg_t taf_base, const struct espi_saf_pr *pr)
 }
 
 /* NOTE: bit[0] of bit map registers is read-only = 1 */
-static int pr_check_master_bm(mm_reg_t taf_base, const struct espi_saf_pr *pr)
+static int pr_check_master_bm(mm_reg_t taf_base, const struct espi_taf_pr *pr)
 {
 	uint32_t webm = (sys_read32(taf_base + MCHP_SAF_PR_WBM_OFS(pr->pr_num)) &
 			 MCHP_SAF_PROT_RG_WBM_MASK);
@@ -376,10 +376,10 @@ static int pr_check_master_bm(mm_reg_t taf_base, const struct espi_saf_pr *pr)
 	return 0;
 }
 
-static int espi_taf_test_pr1(const struct espi_saf_protection *spr)
+static int espi_taf_test_pr1(const struct espi_taf_protection *spr)
 {
 	mm_reg_t taf_base = (mm_reg_t)(TAF_BASE_ADDR);
-	const struct espi_saf_pr *pr;
+	const struct espi_taf_pr *pr;
 	int rc;
 
 	LOG_INF("espi_taf_test_pr1");
@@ -428,7 +428,7 @@ static int taf_read(uint32_t spi_addr, uint8_t *dest, uint32_t reqlen, uint32_t 
 {
 	int rc = 0;
 	uint32_t chunk_len = 0, n = 0, nr = 0;
-	struct espi_saf_packet taf_pkt = {0};
+	struct espi_taf_packet taf_pkt = {0};
 
 	if (dest == NULL) {
 		return -EINVAL;
@@ -450,7 +450,7 @@ static int taf_read(uint32_t spi_addr, uint8_t *dest, uint32_t reqlen, uint32_t 
 
 		taf_pkt.len = chunk_len;
 
-		rc = espi_saf_flash_read(espi_taf_dev, &taf_pkt);
+		rc = espi_taf_flash_read(espi_taf_dev, &taf_pkt);
 		if (rc != 0) {
 			LOG_INF("%s: error = %d: chunk_len = %u "
 				"spi_addr = %x",
@@ -479,7 +479,7 @@ static int taf_read(uint32_t spi_addr, uint8_t *dest, uint32_t reqlen, uint32_t 
 static int taf_erase_block(uint32_t spi_addr, enum taf_erase_size ersz)
 {
 	int rc;
-	struct espi_saf_packet taf_pkt = {0};
+	struct espi_taf_packet taf_pkt = {0};
 
 	switch (ersz) {
 	case TAF_ERASE_4K:
@@ -500,7 +500,7 @@ static int taf_erase_block(uint32_t spi_addr, enum taf_erase_size ersz)
 
 	taf_pkt.flash_addr = spi_addr;
 
-	rc = espi_saf_flash_erase(espi_taf_dev, &taf_pkt);
+	rc = espi_taf_flash_erase(espi_taf_dev, &taf_pkt);
 	if (rc != 0) {
 		LOG_INF("espi_taf_test1: erase fail = %d", rc);
 		return rc;
@@ -515,7 +515,7 @@ static int taf_erase_block(uint32_t spi_addr, enum taf_erase_size ersz)
 static int taf_page_prog(uint32_t spi_addr, const uint8_t *src, int progsz)
 {
 	int rc, chunk_len, n;
-	struct espi_saf_packet taf_pkt = {0};
+	struct espi_taf_packet taf_pkt = {0};
 
 	if ((src == NULL) || (progsz < 0) || (progsz > 256)) {
 		return -EINVAL;
@@ -537,7 +537,7 @@ static int taf_page_prog(uint32_t spi_addr, const uint8_t *src, int progsz)
 
 		taf_pkt.len = (uint32_t)chunk_len;
 
-		rc = espi_saf_flash_write(espi_taf_dev, &taf_pkt);
+		rc = espi_taf_flash_write(espi_taf_dev, &taf_pkt);
 		if (rc != 0) {
 			LOG_INF("%s: error = %d: erase fail spi_addr = 0x%X", __func__, rc,
 				spi_addr);
@@ -559,7 +559,7 @@ int espi_taf_test1(uint32_t spi_addr)
 	uint32_t n = 0, num_bytes_to_read = 0, num_bytes_read = 0;
 	uint32_t saddr = 0, progsz = 0, chunksz = 0;
 
-	rc = espi_saf_activate(espi_taf_dev);
+	rc = espi_taf_activate(espi_taf_dev);
 	LOG_INF("%s: activate = %d", __func__, rc);
 
 	if (spi_addr & 0xfffU) {

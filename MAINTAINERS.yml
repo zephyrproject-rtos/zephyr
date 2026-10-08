@@ -1999,7 +1999,7 @@ Documentation Infrastructure:
     - samples/drivers/espi/
     - dts/bindings/espi/
     - doc/hardware/peripherals/espi.rst
-    - include/zephyr/drivers/espi_saf.h
+    - include/zephyr/drivers/espi_taf.h
     - tests/drivers/espi/
   labels:
     - "area: eSPI"

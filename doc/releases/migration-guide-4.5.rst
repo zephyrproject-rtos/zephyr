@@ -879,6 +879,15 @@ ESPI
   ``intel-rvp,board-power`` to ``intel,rvp-board-power``. Out-of-tree board overlays for this
   sample must use the new compatible.
 
+* The eSPI SAF API has been renamed to eSPI TAF (Target Attached Flash) to match the eSPI 1.5
+  specification terminology. The header ``<zephyr/drivers/espi_saf.h>`` was renamed to
+  ``<zephyr/drivers/espi_taf.h>`` and every ``espi_saf_*`` function, type and structure was
+  renamed to ``espi_taf_*``, e.g. ``espi_saf_config()`` to ``espi_taf_config()`` and
+  ``struct espi_saf_packet`` to ``struct espi_taf_packet``. Out-of-tree drivers must use
+  ``DEVICE_API(espi_taf, ...)`` and define ``struct espi_taf_hw_cfg``,
+  ``struct espi_taf_flash_cfg``, ``struct espi_taf_pr`` and ``struct espi_taf_protection``
+  in their SoC headers. No compatibility aliases are provided.
+
 Ethernet
 ========
 
