@@ -150,7 +150,7 @@ extern "C" {
 /**
  * @brief Repeat a macro for every Bayer MIPI-packed format, passed as first parameter
  *
- * A red, green, blue channel for every pixel, other than 8-bit per pixel.
+ * Either a red, green or blue channel for every pixel.
  *
  * @param X macro to replicate
  * @param ... extra parameters
@@ -280,7 +280,7 @@ extern "C" {
 /**
  * @brief Repeat a macro for every Bayer non-packed format, passed as first parameter
  *
- * A red, green, blue channel for every pixel, other than 8-bit per pixel.
+ * Either a red, green or blue channel for every pixel.
  *
  * @param X macro to replicate
  * @param ... extra parameters
