@@ -18,6 +18,10 @@ LOG_MODULE_REGISTER(st75256, CONFIG_DISPLAY_LOG_LEVEL);
 #include <zephyr/drivers/mipi_dbi.h>
 #include <zephyr/kernel.h>
 
+#define ST75256_COLUMN_ADDR_RANGE    256U
+#define ST75256_PAGE_ADDR_RANGE_GREY (0x29 * 4U)
+#define ST75256_PAGE_ADDR_RANGE_MONO (0x15 * 8U)
+
 #define ST75256_EXTCOM   0x30
 #define ST75256_EXTCOM_1 ST75256_EXTCOM
 #define ST75256_EXTCOM_2 ST75256_EXTCOM + 1
@@ -135,21 +139,32 @@ static int st75256_blanking_off(const struct device *dev)
 	return st75256_write_command(dev, ST75256_DISPLAY_ON, NULL, 0);
 }
 
-static int st75256_set_window(const struct device *dev, int x, int y, int width, int height)
+static int st75256_set_window(const struct device *dev, uint16_t x, uint16_t y, uint16_t width,
+			      uint16_t height)
 {
 	struct st75256_data *data = dev->data;
 	int ret;
-	uint8_t x_position[] = {x, x + width - 1};
-	uint8_t y_position[2];
+	const struct st75256_config *config = dev->config;
 
-	if (data->current_pixel_format == PIXEL_FORMAT_L_8) {
-		y_position[0] = y / 4;
-		y_position[1] = ((y + height) / 4) - 1;
-	} else {
-		y_position[0] = y / 8;
-		y_position[1] = ((y + height) / 8) - 1;
+	/* Extrapolate states of MX, MY bits (data scan mirror) and grey vs monochrome */
+	const bool mx = config->flip_configuration & BIT(1);
+	const bool my = config->flip_configuration & BIT(0);
+	const bool grey = data->current_pixel_format == PIXEL_FORMAT_L_8;
+
+	/* If mx or my is set offset by the memory area not used by the display */
+	if (mx) {
+		x += ST75256_COLUMN_ADDR_RANGE - config->width;
+	}
+	if (my) {
+		y += (grey ? ST75256_PAGE_ADDR_RANGE_GREY : ST75256_PAGE_ADDR_RANGE_MONO) -
+		     config->height;
 	}
 
+	/* Start and end line, for y divided by the pixel per byte */
+	uint8_t x_position[] = {x, x + width - 1};
+	uint8_t y_position[] = {y / (grey ? 4 : 8), (y + height) / (grey ? 4 : 8) - 1};
+
+	/* TODO: MV handling is missing offset constants depends on it*/
 	ret = st75256_write_command(dev, ST75256_EXTCOM_1, NULL, 0);
 	if (ret < 0) {
 		return ret;
@@ -181,12 +196,12 @@ static int st75256_write_pixels_MONO01(const struct device *dev, const uint16_t 
 {
 	const struct st75256_config *config = dev->config;
 
-	/** TODO: Replace with working code or fail build
+	/* TODO: Replace with working code or fail build
 	 *  Code forces linewise writing rendering MV setting without impact
 	 */
 	const bool MV = (config->flip_configuration & BIT(2)) ? true : false;
 
-	/** Describe a single send window's format */
+	/* Describe a single send window's format */
 	struct display_buffer_descriptor mipi_desc = {
 		.width = desc->width,
 		.pitch = desc->width,
@@ -195,7 +210,7 @@ static int st75256_write_pixels_MONO01(const struct device *dev, const uint16_t 
 	};
 	int ret;
 
-	/** For no MV this runs only one time writing the whole window */
+	/* For no MV this runs only one time writing the whole window */
 	for (uint32_t c = 0; c < desc->height; c += mipi_desc.height, buf += mipi_desc.width) {
 		ret = st75256_set_window(dev, x, y + c, mipi_desc.width, mipi_desc.height);
 		if (ret < 0) {
