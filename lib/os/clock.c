@@ -147,8 +147,10 @@ int z_impl_sys_clock_settime(int clock_id, const struct timespec *tp)
 #ifdef CONFIG_USERSPACE
 int z_vrfy_sys_clock_settime(int clock_id, const struct timespec *ts)
 {
-	K_OOPS(K_SYSCALL_MEMORY_READ(ts, sizeof(*ts)));
-	return z_impl_sys_clock_settime(clock_id, ts);
+	struct timespec ts_copy;
+
+	K_OOPS(k_usermode_from_copy(&ts_copy, ts, sizeof(ts_copy)));
+	return z_impl_sys_clock_settime(clock_id, &ts_copy);
 }
 #include <zephyr/syscalls/sys_clock_settime_mrsh.c>
 #endif /* CONFIG_USERSPACE */
@@ -213,11 +215,13 @@ int z_impl_sys_clock_nanosleep(int clock_id, int flags, const struct timespec *r
 int z_vrfy_sys_clock_nanosleep(int clock_id, int flags, const struct timespec *rqtp,
 			       struct timespec *rmtp)
 {
-	K_OOPS(K_SYSCALL_MEMORY_READ(rqtp, sizeof(*rqtp)));
+	struct timespec rqtp_copy;
+
+	K_OOPS(k_usermode_from_copy(&rqtp_copy, rqtp, sizeof(rqtp_copy)));
 	if (rmtp != NULL) {
 		K_OOPS(K_SYSCALL_MEMORY_WRITE(rmtp, sizeof(*rmtp)));
 	}
-	return z_impl_sys_clock_nanosleep(clock_id, flags, rqtp, rmtp);
+	return z_impl_sys_clock_nanosleep(clock_id, flags, &rqtp_copy, rmtp);
 }
 #include <zephyr/syscalls/sys_clock_nanosleep_mrsh.c>
 #endif /* CONFIG_USERSPACE */
