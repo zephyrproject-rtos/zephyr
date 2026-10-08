@@ -82,6 +82,30 @@ static void test_conn_adv(void)
 	TEST_PASS("conn_adv");
 }
 
+static void test_conn_init(void)
+{
+	struct bt_conn *conn;
+	bt_addr_le_t addr;
+	int err;
+
+	TEST_START("conn_init");
+
+	err = bt_addr_le_from_str(ADV_ADDR, &addr);
+	TEST_ASSERT(err == 0, "Invalid address (err %d)", err);
+
+	err = bt_enable(NULL);
+	TEST_ASSERT(err == 0, "Bluetooth init failed (err %d)", err);
+
+	err = bt_conn_le_create(&addr, BT_CONN_LE_CREATE_CONN, BT_LE_CONN_PARAM_DEFAULT, &conn);
+	TEST_ASSERT(err == 0, "Connection create failed (err %d)", err);
+
+	bt_conn_unref(conn);
+
+	connection_check();
+
+	TEST_PASS("conn_init");
+}
+
 static void test_conn_init_fal(void)
 {
 	bt_addr_le_t addr;
@@ -111,6 +135,11 @@ static const struct bst_test_instance test_def[] = {
 		.test_id = "conn_adv",
 		.test_descr = "Connectable extended advertising",
 		.test_main_f = test_conn_adv,
+	},
+	{
+		.test_id = "conn_init",
+		.test_descr = "Initiator",
+		.test_main_f = test_conn_init,
 	},
 	{
 		.test_id = "conn_init_fal",

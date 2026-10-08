@@ -14,3 +14,4 @@ tests:
         - tests_scripts/anonymous.sh
         - tests_scripts/anonymous_other.sh
         - tests_scripts/connect_fal.sh
+        - tests_scripts/aux_connect_req.sh
