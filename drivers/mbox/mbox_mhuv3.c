@@ -619,6 +619,10 @@ static int mbox_mhuv3_sender_send_data(const struct device *dev,
 	struct mbox_mhuv3_channel *chan = mbox_mhuv3_get_channel(dev, channel_id);
 	int ret;
 
+	if (chan == NULL) {
+		return -EINVAL;
+	}
+
 	ret = chan->ops->last_tx_done(dev, chan);
 	if (ret) {
 		return ret;
