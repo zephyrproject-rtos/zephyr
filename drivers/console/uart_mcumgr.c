@@ -60,7 +60,6 @@ void uart_mcumgr_free_rx_buf(struct uart_mcumgr *mcumgr, struct uart_mcumgr_rx_b
 	k_mem_slab_free(mcumgr->rx_slab, block);
 }
 
-#if !defined(CONFIG_MCUMGR_TRANSPORT_UART_ASYNC)
 /**
  * Reads a chunk of received data from the UART.
  */
@@ -68,7 +67,6 @@ static int uart_mcumgr_read_chunk(struct uart_mcumgr *mcumgr, void *buf, int cap
 {
 	return uart_fifo_read(mcumgr->dev, buf, capacity);
 }
-#endif
 
 /**
  * Processes a single incoming byte.
@@ -176,7 +174,8 @@ static void uart_mcumgr_async(const struct device *dev, struct uart_event *evt, 
 		break;
 	}
 }
-#else
+#endif
+
 /**
  * ISR that is called when UART bytes are received.
  */
@@ -210,7 +209,6 @@ static void uart_mcumgr_isr(const struct device *unused, void *user_data)
 		}
 	}
 }
-#endif
 
 /**
  * Sends raw data over the UART.
@@ -239,23 +237,23 @@ int uart_mcumgr_send(struct uart_mcumgr *mcumgr, const uint8_t *data, int len)
 	return uart_mcumgr_send_raw(data, len, mcumgr);
 }
 
-#if defined(CONFIG_MCUMGR_TRANSPORT_UART_ASYNC)
 static int uart_mcumgr_setup(struct uart_mcumgr *mcumgr)
 {
 	int rc;
 
+#if defined(CONFIG_MCUMGR_TRANSPORT_UART_ASYNC)
 	rc = uart_callback_set(mcumgr->dev, uart_mcumgr_async, mcumgr);
-	if (rc != 0) {
-		return rc;
+	if (rc == 0) {
+		return uart_rx_enable(mcumgr->dev, mcumgr->async_buf[0],
+				      sizeof(mcumgr->async_buf[0]),
+				      CONFIG_MCUMGR_TRANSPORT_UART_ASYNC_RX_TIMEOUT_US);
 	}
 
-	return uart_rx_enable(mcumgr->dev, mcumgr->async_buf[0], sizeof(mcumgr->async_buf[0]),
-			      CONFIG_MCUMGR_TRANSPORT_UART_ASYNC_RX_TIMEOUT_US);
-}
-#else
-static int uart_mcumgr_setup(struct uart_mcumgr *mcumgr)
-{
-	int rc;
+	/* Use the interrupt-driven API on UARTs without the asynchronous API */
+	if (rc != -ENOSYS && rc != -ENOTSUP) {
+		return rc;
+	}
+#endif
 
 	uart_irq_rx_disable(mcumgr->dev);
 	uart_irq_tx_disable(mcumgr->dev);
@@ -269,7 +267,6 @@ static int uart_mcumgr_setup(struct uart_mcumgr *mcumgr)
 
 	return 0;
 }
-#endif
 
 int uart_mcumgr_register(struct uart_mcumgr *mcumgr, uart_mcumgr_recv_fn *cb, void *user_data)
 {

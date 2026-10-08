@@ -25,7 +25,8 @@ if (MCUMGR_TRANSPORT_UART || MCUMGR_TRANSPORT_RAW_UART) && UART_ASYNC_API
 menuconfig MCUMGR_TRANSPORT_UART_ASYNC
 	bool "Use async UART API when available"
 	help
-	  The option enables use of UART async API when available for selected MCUmgr UART port.
+	  Use the UART async API on each MCUmgr UART that supports it. The others use the
+	  interrupt-driven API.
 
 if MCUMGR_TRANSPORT_UART_ASYNC
 
