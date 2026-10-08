@@ -183,7 +183,7 @@ static int tlv_mgmt_post_recv(struct ptp_tlv_mgmt **p_mgmt_tlv, uint16_t length)
 
 		break;
 	case PTP_MGMT_USER_DESCRIPTION:
-		container = CONTAINER_OF((void *)mgmt_tlv, struct ptp_tlv_container, tlv);
+		container = CONTAINER_OF((void *)p_mgmt_tlv, struct ptp_tlv_container, tlv);
 
 		if (length < sizeof(struct ptp_text)) {
 			return -EBADMSG;
@@ -260,8 +260,9 @@ static int tlv_mgmt_post_recv(struct ptp_tlv_mgmt **p_mgmt_tlv, uint16_t length)
 	return 0;
 }
 
-static void tlv_mgmt_pre_send(struct ptp_tlv_mgmt *mgmt_tlv)
+static void tlv_mgmt_pre_send(struct ptp_tlv_mgmt **p_mgmt_tlv)
 {
+	struct ptp_tlv_mgmt *mgmt_tlv = *p_mgmt_tlv;
 	enum ptp_mgmt_id id = (enum ptp_mgmt_id)mgmt_tlv->id;
 	struct ptp_tlv_mgmt_clock_desc *clock_desc;
 	struct ptp_tlv_time_prop_ds *time_prop_ds;
@@ -274,11 +275,11 @@ static void tlv_mgmt_pre_send(struct ptp_tlv_mgmt *mgmt_tlv)
 
 	switch (id) {
 	case PTP_MGMT_CLOCK_DESCRIPTION:
-		container = CONTAINER_OF((void *)mgmt_tlv, struct ptp_tlv_container, tlv);
+		container = CONTAINER_OF((void *)p_mgmt_tlv, struct ptp_tlv_container, tlv);
 		clock_desc = &container->clock_desc;
 
-		tlv_htons(&clock_desc->type);
-		tlv_htons(&clock_desc->phy_addr_len);
+		tlv_htons(clock_desc->type);
+		tlv_htons(clock_desc->phy_addr_len);
 		tlv_htons(&clock_desc->protocol_addr->protocol);
 		tlv_htons(&clock_desc->protocol_addr->addr_len);
 		break;
@@ -398,10 +399,11 @@ int ptp_tlv_post_recv(struct ptp_tlv **p_tlv)
 	return ret;
 }
 
-void ptp_tlv_pre_send(struct ptp_tlv *tlv)
+void ptp_tlv_pre_send(struct ptp_tlv **p_tlv)
 {
 	struct ptp_tlv_mgmt_err *mgmt_err;
 	struct ptp_tlv_mgmt *mgmt;
+	struct ptp_tlv *tlv = *p_tlv;
 
 	switch (ptp_tlv_type(tlv)) {
 	case PTP_TLV_TYPE_MANAGEMENT:
@@ -409,7 +411,7 @@ void ptp_tlv_pre_send(struct ptp_tlv *tlv)
 
 		/* Check if management TLV contains data */
 		if (tlv->length > sizeof(mgmt->id)) {
-			tlv_mgmt_pre_send(mgmt);
+			tlv_mgmt_pre_send((struct ptp_tlv_mgmt **)p_tlv);
 		}
 		mgmt->id = net_htons(mgmt->id);
 		break;
