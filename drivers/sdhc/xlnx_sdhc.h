@@ -27,6 +27,7 @@
 
 /* Bit map for present stage register */
 #define XLNX_SDHC_PSR_INHIBIT_DAT_MASK	BIT(1)
+#define XLNX_SDHC_INTR_BWR_MASK         BIT(4)
 #define XLNX_SDHC_INTR_BRR_MASK		BIT(5)
 #define XLNX_SDHC_PSR_CARD_INSRT_MASK	BIT(16)
 #define XLNX_SDHC_CARD_BUSY		0x1F00000U
@@ -200,6 +201,18 @@
 #define XLNX_SDHC_SD_SLOT		0x0U
 #define XLNX_SDHC_EMMC_SLOT		0X1U
 
+/*
+ * SDHCI-standard register block. A plain (non-packed) struct on purpose: every
+ * register already sits at its naturally-aligned offset, so this matches the
+ * hardware layout with no padding (the BUILD_ASSERTs in xlnx_sdhc.c pin the key
+ * offsets so the layout cannot drift) AND lets the compiler emit natural-width
+ * accesses. A __packed struct makes the compiler assume 1-byte alignment and
+ * split each 16/32-bit MMIO access into byte accesses; on the Zynq-7000
+ * controller generation the interrupt status/enable registers (0x34..0x3A)
+ * silently drop byte-wide writes, which leaves status-enable stuck at 0 so
+ * Command-Complete can never latch and card detection never completes. Natural-
+ * width accesses are what the SDHCI programming model expects on every part.
+ */
 struct reg_base {
 	volatile uint32_t sdma_sysaddr;  /**< SDMA System Address */
 	volatile uint16_t block_size;    /**< Block Size */
@@ -285,5 +298,5 @@ struct reg_base {
 	volatile uint32_t reserved3[15261];
 	volatile uint32_t itap_dly; /**< Input Tap Delay Select */
 	volatile uint32_t otap_dly; /**< Output Tap Delay Select */
-} __packed;
+};
 #endif /* __XLNX_SDHC_H__ */

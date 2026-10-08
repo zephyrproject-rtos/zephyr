@@ -4,14 +4,21 @@
 config XLNX_SDHC
 	bool "xlnx sdhc driver"
 	default y
-	depends on DT_HAS_XLNX_VERSAL_8_9A_ENABLED
+	depends on DT_HAS_XLNX_VERSAL_8_9A_ENABLED || DT_HAS_XLNX_ZYNQ_8_9A_ENABLED
 	select SDHC_SUPPORTS_NATIVE_MODE
 	select SDHC_SUPPORTS_UHS
 	select EVENTS
-	select CLOCK_CONTROL
-	select CLOCK_CONTROL_FIXED_RATE_CLOCK
+	# Only the Versal controller sources its input clock from a
+	# clock_control provider; Zynq-7000 uses a fixed "clock-frequency"
+	# devicetree property instead, so a Zynq-only build must not pull in
+	# the (then unused) fixed-rate clock driver.
+	select CLOCK_CONTROL if DT_HAS_XLNX_VERSAL_8_9A_ENABLED
+	select CLOCK_CONTROL_FIXED_RATE_CLOCK if DT_HAS_XLNX_VERSAL_8_9A_ENABLED
 	help
-	  Enable xilinx SD/EMMC host controller driver
+	  Enable the Xilinx SD/eMMC host controller driver. Covers the Versal
+	  SDHC (ADMA2, UHS, PHY tap-delay) and, in PIO/polling mode, the older
+	  Zynq-7000 PS SD/SDIO controller. Per-SoC differences (DMA vs PIO,
+	  clock source, UHS) are selected from devicetree.
 
 if XLNX_SDHC
 

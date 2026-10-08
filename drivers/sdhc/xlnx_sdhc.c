@@ -21,6 +21,26 @@
 
 LOG_MODULE_REGISTER(xlnx_sdhc, CONFIG_SD_LOG_LEVEL);
 
+/*
+ * Pin the SDHCI register offsets. struct reg_base is a plain (non-packed) struct
+ * that must land byte-for-byte on the standard SDHCI map plus the Xilinx CQE/PHY
+ * tail; if a field ever drifts (padding, a wrong type) these fail the build. The
+ * tail offsets confirm de-packing did not move the Versal-specific registers.
+ */
+BUILD_ASSERT(offsetof(struct reg_base, block_size) == 0x04);
+BUILD_ASSERT(offsetof(struct reg_base, argument) == 0x08);
+BUILD_ASSERT(offsetof(struct reg_base, present_state) == 0x24);
+BUILD_ASSERT(offsetof(struct reg_base, clock_ctrl) == 0x2C);
+BUILD_ASSERT(offsetof(struct reg_base, normal_int_stat) == 0x30);
+BUILD_ASSERT(offsetof(struct reg_base, normal_int_stat_en) == 0x34);
+BUILD_ASSERT(offsetof(struct reg_base, capabilities) == 0x40);
+BUILD_ASSERT(offsetof(struct reg_base, adma_sys_addr) == 0x58);
+BUILD_ASSERT(offsetof(struct reg_base, host_cntrl_version) == 0xFE);
+BUILD_ASSERT(offsetof(struct reg_base, cq_ver) == 0x200);
+BUILD_ASSERT(offsetof(struct reg_base, phy_ctrl1) == 0x270);
+BUILD_ASSERT(offsetof(struct reg_base, itap_dly) == 0xF0F8);
+BUILD_ASSERT(offsetof(struct reg_base, otap_dly) == 0xF0FC);
+
 #define CHECK_BITS(b) ((uint64_t)1 << (b))
 
 #define XLNX_SDHC_SLOT_TYPE(dev) \
@@ -78,8 +98,12 @@ struct sd_data {
 struct xlnx_sdhc_config {
 	/* MMIO mapping information for SDHC register base address */
 	DEVICE_MMIO_ROM;
-	/**< Pointer to the device structure representing the clock bus */
+	/**< Clock bus device, or NULL when the input clock is fixed (see fixed_clock) */
 	const struct device *clock_dev;
+	/**< Fixed input clock in Hz, used when clock_dev == NULL (Zynq-7000 has no
+	 * clock_control provider in Zephyr; the board states the SDIO ref clock)
+	 */
+	uint32_t fixed_clock;
 	/**< Callback to the device interrupt configuration api */
 	void (*irq_config_func)(const struct device *dev);
 	/**< Card detection pin available or not */
@@ -88,6 +112,10 @@ struct xlnx_sdhc_config {
 	bool hs200_mode;
 	/**< Support hs400 mode */
 	bool hs400_mode;
+	/**< PIO/polling transfer instead of ADMA2 (Zynq-7000: ADMA2 unverified, and
+	 * this generation has no PHY/tap-delay block, so no UHS either)
+	 */
+	bool pio_mode;
 	/**< delay given to card to power up or down fully */
 	uint16_t powerdelay;
 };
@@ -458,7 +486,13 @@ static int8_t xlnx_sdhc_cmd(const struct device *dev, struct sdhc_command *cmd, 
 		k_event_clear(&dev_data->irq_event, XLNX_SDHC_TXFR_INTR_EN_MASK);
 	}
 
-	reg->transfer_mode = dev_data->transfermode;
+	/*
+	 * A command with no data phase must not assert data-transfer bits in
+	 * Transfer Mode alongside Command-Present=0. Versal tolerates leftover
+	 * bits here, but the Zynq-7000 controller rejects the command, so write
+	 * the spec-correct 0 for no-data commands.
+	 */
+	reg->transfer_mode = data ? dev_data->transfermode : 0;
 	reg->cmd = command;
 
 	/* Check for response */
@@ -522,11 +556,70 @@ static int8_t xlnx_sdhc_xfr(const struct device *dev, struct sdhc_data *data)
 
 /**
  * @brief
+ * PIO (no-DMA) block transfer: one buffer-ready wait per block, then the CPU
+ * copies the Buffer Data Port. Used when config->pio_mode is set (Zynq-7000).
+ * AUTO_CMD12 (set by the caller's transfer mode) closes out a multi-block
+ * command, so no cache maintenance or ADMA2 descriptor table is involved.
+ */
+static int8_t xlnx_sdhc_pio_xfr(const struct device *dev, struct sdhc_data *data, bool read)
+{
+	volatile struct reg_base *reg = (struct reg_base *)DEVICE_MMIO_GET(dev);
+	uint8_t *buf = data->data;
+	uint32_t ready_mask = read ? XLNX_SDHC_INTR_BRR_MASK : XLNX_SDHC_INTR_BWR_MASK;
+	int8_t ret;
+
+	for (uint32_t blk = 0; blk < data->blocks; blk++) {
+		ret = xlnx_sdhc_wait_for_events((void *)&reg->normal_int_stat, data->timeout_ms,
+						ready_mask | XLNX_SDHC_INTR_ERR_MASK);
+		if (ret != 0) {
+			LOG_ERR("Block %u/%u buffer-ready timeout", blk, data->blocks);
+			return ret;
+		}
+		if ((reg->normal_int_stat & XLNX_SDHC_INTR_ERR_MASK) != 0U) {
+			LOG_ERR("Error during block %u/%u", blk, data->blocks);
+			reg->err_int_stat = XLNX_SDHC_ERROR_INTR_ALL;
+			return -EIO;
+		}
+		reg->normal_int_stat = ready_mask;
+
+		for (uint32_t i = 0; i < data->block_size / 4U; i++) {
+			if (read) {
+				uint32_t w = reg->data_port;
+
+				memcpy(buf + (blk * data->block_size) + (i * 4U), &w, 4U);
+			} else {
+				uint32_t w;
+
+				memcpy(&w, buf + (blk * data->block_size) + (i * 4U), 4U);
+				reg->data_port = w;
+			}
+		}
+	}
+
+	ret = xlnx_sdhc_wait_for_events((void *)&reg->normal_int_stat, data->timeout_ms,
+					XLNX_SDHC_INTR_TC_MASK | XLNX_SDHC_INTR_ERR_MASK);
+	if (ret != 0) {
+		LOG_ERR("Transfer-complete timeout");
+		return ret;
+	}
+	if ((reg->normal_int_stat & XLNX_SDHC_INTR_ERR_MASK) != 0U) {
+		LOG_ERR("Error at transfer complete");
+		reg->err_int_stat = XLNX_SDHC_ERROR_INTR_ALL;
+		return -EIO;
+	}
+	reg->normal_int_stat = XLNX_SDHC_INTR_TC_MASK;
+
+	return 0;
+}
+
+/**
+ * @brief
  * Performs data and command transfer and check for transfer complete
  */
 static int xlnx_sdhc_transfer(const struct device *dev, struct sdhc_command *cmd,
 		struct sdhc_data *data)
 {
+	const struct xlnx_sdhc_config *config = dev->config;
 	volatile struct reg_base *reg = (struct reg_base *)DEVICE_MMIO_GET(dev);
 	struct sd_data *dev_data = dev->data;
 	struct sdhc_data bounce_data;
@@ -552,6 +645,15 @@ static int xlnx_sdhc_transfer(const struct device *dev, struct sdhc_command *cmd
 		cache_len = data_len;
 		dma_buf = data->data;
 		read = (dev_data->transfermode & XLNX_SDHC_TM_DAT_DIR_SEL_MASK) != 0U;
+
+		if (config->pio_mode) {
+			/* No DMA: issue the command, then copy via the data port. */
+			ret = xlnx_sdhc_cmd(dev, cmd, true);
+			if (ret != 0) {
+				return ret;
+			}
+			return xlnx_sdhc_pio_xfr(dev, data, read);
+		}
 
 		cache_line_size = sys_cache_data_line_size_get();
 		if (read && (cache_line_size != 0U)) {
@@ -655,13 +757,17 @@ static int xlnx_sdhc_transfer(const struct device *dev, struct sdhc_command *cmd
 static int xlnx_sdhc_request(const struct device *dev, struct sdhc_command *cmd,
 		struct sdhc_data *data)
 {
+	const struct xlnx_sdhc_config *config = dev->config;
 	struct sd_data *dev_data = dev->data;
 	int ret;
 
 	if (dev_data->transfermode == 0U) {
-		dev_data->transfermode = XLNX_SDHC_TM_DMA_EN_MASK |
-			XLNX_SDHC_TM_BLK_CNT_EN_MASK |
-			XLNX_SDHC_TM_DAT_DIR_SEL_MASK;
+		dev_data->transfermode =
+			XLNX_SDHC_TM_BLK_CNT_EN_MASK | XLNX_SDHC_TM_DAT_DIR_SEL_MASK;
+		/* PIO mode leaves TM_DMA_EN clear; ADMA2 otherwise. */
+		if (!config->pio_mode) {
+			dev_data->transfermode |= XLNX_SDHC_TM_DMA_EN_MASK;
+		}
 	}
 
 	switch (cmd->opcode) {
@@ -720,7 +826,10 @@ static int xlnx_sdhc_host_props(const struct device *dev, struct sdhc_host_props
 	const uint64_t cap = reg->capabilities;
 	const uint64_t current = reg->max_current_cap;
 
-	props->f_max = SD_CLOCK_208MHZ;
+	/* PIO mode (Zynq-7000) has no PHY/tap-delay block, so no UHS: cap at High
+	 * Speed. The ADMA2 path keeps the controller's full 208 MHz ceiling.
+	 */
+	props->f_max = config->pio_mode ? SD_CLOCK_50MHZ : SD_CLOCK_208MHZ;
 	props->f_min = SDMMC_CLOCK_400KHZ;
 
 	props->power_delay = config->powerdelay;
@@ -747,8 +856,17 @@ static int xlnx_sdhc_host_props(const struct device *dev, struct sdhc_host_props
 	props->host_caps.sdr104_support = XLNX_SDHC_GET_HOST_PROP_BIT(cap,
 			XLNX_SDHC_SDR104_SUPPORT);
 	props->host_caps.sdr50_support = XLNX_SDHC_GET_HOST_PROP_BIT(cap, XLNX_SDHC_SDR50_SUPPORT);
-	props->host_caps.slot_type = (uint8_t)((cap >> XLNX_SDHC_SLOT_TYPE_SHIFT) &
-			XLNX_SDHC_SLOT_TYPE_GET);
+	/*
+	 * Zynq-7000 reports slot type 01 ("embedded slot for one device") in
+	 * Capabilities, but every known carrier wires a removable SD card slot.
+	 * Force the SD slot type in PIO mode so the shared eMMC command-framing
+	 * and power-sequencing paths are not taken (they reject CMD8/R7 and
+	 * assert the eMMC hardware reset, which breaks SD card init).
+	 */
+	props->host_caps.slot_type =
+		config->pio_mode
+			? XLNX_SDHC_SD_SLOT
+			: (uint8_t)((cap >> XLNX_SDHC_SLOT_TYPE_SHIFT) & XLNX_SDHC_SLOT_TYPE_GET);
 	props->host_caps.bus_8_bit_support = XLNX_SDHC_GET_HOST_PROP_BIT(cap,
 			XLNX_SDHC_8BIT_SUPPORT);
 	props->bus_4_bit_support = XLNX_SDHC_GET_HOST_PROP_BIT(cap,
@@ -883,10 +1001,14 @@ static int xlnx_sdhc_set_clock(const struct device *dev, enum sdhc_clock_speed s
 	}
 
 	/* Get input clock rate */
-	ret = clock_control_get_rate(config->clock_dev, NULL, &dev_data->maxclock);
-	if (ret != 0) {
-		LOG_ERR("Failed to get clock\n");
-		return ret;
+	if (config->clock_dev != NULL) {
+		ret = clock_control_get_rate(config->clock_dev, NULL, &dev_data->maxclock);
+		if (ret != 0) {
+			LOG_ERR("Failed to get clock");
+			return ret;
+		}
+	} else {
+		dev_data->maxclock = config->fixed_clock;
 	}
 
 	/* Calculate clock */
@@ -1350,8 +1472,10 @@ static int xlnx_sdhc_host_reset(const struct device *dev)
 	/* Data line time out interval */
 	reg->timeout_ctrl = XLNX_SDHC_DAT_LINE_TIMEOUT;
 
-	/* Select ADMA2 */
-	reg->host_ctrl1 = XLNX_SDHC_ADMA2_64;
+	if (config->pio_mode == false) {
+		/* Select ADMA2 (PIO mode transfers through the data port instead) */
+		reg->host_ctrl1 = XLNX_SDHC_ADMA2_64;
+	}
 
 	reg->block_size = XLNX_SDHC_BLK_SIZE_512;
 
@@ -1445,7 +1569,7 @@ static int xlnx_sdhc_init(const struct device *dev)
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 
-	if (device_is_ready(config->clock_dev) == 0) {
+	if ((config->clock_dev != NULL) && (device_is_ready(config->clock_dev) == 0)) {
 		LOG_ERR("Clock control device not ready");
 		return -ENODEV;
 	}
@@ -1509,21 +1633,44 @@ static DEVICE_API(sdhc, xlnx_sdhc_api) = {
 #define XLNX_SDHC_INTR_FUNC_REG_API(n) COND_CODE_1(DT_INST_NODE_HAS_PROP(n, interrupts),          \
 		(XLNX_SDHC_INTR_FUNC_REG(n)), (XLNX_SDHC_INTR_FUNC_REG_NULL))
 
-#define XLNX_SDHC_INIT(n)                                                                         \
-	XLNX_SDHC_INTR_CONFIG_API(n)                                                              \
-	const static struct xlnx_sdhc_config xlnx_sdhc_inst_##n = {                               \
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                             \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                               \
-		XLNX_SDHC_INTR_FUNC_REG_API(n)                                                    \
-		.broken_cd = DT_INST_PROP_OR(n, broken_cd, 0),                                    \
-		.powerdelay = DT_INST_PROP_OR(n, power_delay_ms, 0),                              \
-		.hs200_mode = DT_INST_PROP_OR(n, mmc_hs200_1_8v, 0),                              \
-		.hs400_mode = DT_INST_PROP_OR(n, mmc_hs400_1_8v, 0),                              \
-	};                                                                                        \
-	static struct sd_data data##n;                                                            \
-	                                                                                          \
-	DEVICE_DT_INST_DEFINE(n, xlnx_sdhc_init, NULL, &data##n,                                  \
-			&xlnx_sdhc_inst_##n, POST_KERNEL,                                         \
-			CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &xlnx_sdhc_api);
+/*
+ * The input clock comes from a clock_control provider when the node has a
+ * `clocks` phandle (Versal); otherwise it is a fixed `clock-frequency`
+ * (Zynq-7000, which has no clock_control provider in Zephyr).
+ */
+#define XLNX_SDHC_CLOCK_DEV(n)                                                                     \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),                                              \
+		    (DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n))), (NULL))
 
+#define XLNX_SDHC_INIT(n)                                                                          \
+	XLNX_SDHC_INTR_CONFIG_API(n)                                                               \
+	const static struct xlnx_sdhc_config xlnx_sdhc_inst_##n = {                                \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
+		.clock_dev = XLNX_SDHC_CLOCK_DEV(n),                                               \
+		.fixed_clock = DT_INST_PROP_OR(n, clock_frequency, 0),                             \
+		XLNX_SDHC_INTR_FUNC_REG_API(n).broken_cd = DT_INST_PROP_OR(n, broken_cd, 0),       \
+		.powerdelay = DT_INST_PROP_OR(n, power_delay_ms, 0),                               \
+		.hs200_mode = DT_INST_PROP_OR(n, mmc_hs200_1_8v, 0),                               \
+		.hs400_mode = DT_INST_PROP_OR(n, mmc_hs400_1_8v, 0),                               \
+		.pio_mode = DT_INST_PROP_OR(n, pio_mode, 0),                                       \
+	};                                                                                         \
+	static struct sd_data data##n;                                                             \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, xlnx_sdhc_init, NULL, &data##n, &xlnx_sdhc_inst_##n, POST_KERNEL, \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &xlnx_sdhc_api);
+
+DT_INST_FOREACH_STATUS_OKAY(XLNX_SDHC_INIT)
+
+/*
+ * Xilinx Zynq-7000 PS SD/SDIO controller: the same Arasan-derived 8.9a IP, one
+ * generation older. It has no PHY/tap-delay block (so no UHS), no clock_control
+ * provider in Zephyr, and its ADMA2 path is not yet hardware-verified -- so a
+ * Zynq node sets `pio-mode` and `clock-frequency` and omits `clocks`. All of
+ * that is expressed through devicetree; the code above is shared unchanged.
+ *
+ * A single build never has both an okay Versal and an okay Zynq node (they are
+ * different SoCs), so the per-instance statics above never collide.
+ */
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT xlnx_zynq_8_9a
 DT_INST_FOREACH_STATUS_OKAY(XLNX_SDHC_INIT)
