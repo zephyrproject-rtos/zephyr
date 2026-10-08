@@ -30,6 +30,7 @@ add_subdirectory_ifdef(CONFIG_NETMIDI2_HOST          midi2)
 add_subdirectory_ifdef(CONFIG_SSH                    ssh)
 add_subdirectory_ifdef(CONFIG_WIREGUARD              wireguard)
 add_subdirectory_ifdef(CONFIG_QUIC                   quic)
+add_subdirectory_ifdef(CONFIG_STUN                   stun)
 
 if(CONFIG_NET_DHCPV4 OR CONFIG_NET_DHCPV4_SERVER)
   add_subdirectory(dhcpv4)

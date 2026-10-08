@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Kirill Shypachov
+# SPDX-License-Identifier: Apache-2.0
+
+config NET_SAMPLE_STUN_SERVER
+	string "STUN server"
+	default "stun.cloudflare.com"
+	help
+	  Host name or literal address of the STUN server the sample asks
+	  for the public address of the device. Any STUN server will do: a
+	  public one, or one that runs in the local network.
+
+config NET_SAMPLE_STUN_SERVER_PORT
+	int "STUN server port"
+	default 3478
+	range 1 65535
+
+config NET_SAMPLE_STUN_TIMEOUT_MS
+	int "Longest time to wait for the answer, in milliseconds"
+	default 5000
+	range 1 39500
+	help
+	  The request is sent again 0.5, 1.5 and 3.5 seconds after the first
+	  time, and so on for 39.5 seconds (RFC 8489 section 6.2.1). The
+	  default leaves time for four transmissions.
+
+source "Kconfig.zephyr"
