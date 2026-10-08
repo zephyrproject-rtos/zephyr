@@ -69,16 +69,12 @@ BUILD_ASSERT(offsetof(struct wwdt_mspm0_regs, wwdtstat) == 0x110CU);
 #define WWDT_RSTCTL_ASSERT  0x00000001U
 
 /* WWDTCTL0 — key required on every write; wrong key -> ESM error */
-#define WWDT_CTL0_KEY         0xC9000000U
-/* PER field [6:4] */
-#define WWDT_CTL0_PER_25      0x00000000U
-#define WWDT_CTL0_PER_21      0x00000010U
-#define WWDT_CTL0_PER_18      0x00000020U
-#define WWDT_CTL0_PER_15      0x00000030U
-#define WWDT_CTL0_PER_12      0x00000040U
-#define WWDT_CTL0_PER_10      0x00000050U
-#define WWDT_CTL0_PER_8       0x00000060U
-#define WWDT_CTL0_PER_6       0x00000070U
+#define WWDT_CTL0_KEY          0xC9000000U
+/* PER field [6:4] — total counter bit-width index */
+#define WWDT_CTL0_PER_MASK     GENMASK(6, 4)
+/* CLKDIV field [2:0] — divide clock by CLKDIV+1 (÷1..÷8) */
+#define WWDT_CTL0_CLKDIV_MASK  GENMASK(2, 0)
+#define WWDT_MAX_CLKDIV        8U
 /* WINDOW0 [10:8] and WINDOW1 [14:12] field offsets */
 #define WWDT_CTL0_WINDOW0_OFS 8U
 #define WWDT_CTL0_WINDOW1_OFS 12U
@@ -133,30 +129,16 @@ struct wwdt_mspm0_data {
 	 * the hardware counter cannot be stopped. volatile: written by thread
 	 * (disable()), read by INTTIM ISR.
 	 */
-	volatile bool is_setup;
+	atomic_t is_setup;     /* written by thread, read by INTTIM ISR */
 	volatile wdt_callback_t callback; /* volatile: written by thread, read by ISR */
 	struct k_mutex lock;
-};
-
-struct wwdt_period_lut {
-	uint32_t period_count; /* WWDTCTL0.PER raw value */
-	uint32_t per_counts;   /* 2^n counter counts      */
 };
 
 static int wwdt_mspm0_calculate_timeout_periods(const struct device *dev,
 						const struct wdt_timeout_cfg *cfg)
 {
-	/* PER field values and their corresponding counter bit-widths */
-	static const struct wwdt_period_lut period_lut[] = {
-		{WWDT_CTL0_PER_6,  64},
-		{WWDT_CTL0_PER_8,  256},
-		{WWDT_CTL0_PER_10, 1024},
-		{WWDT_CTL0_PER_12, 4096},
-		{WWDT_CTL0_PER_15, 32768},
-		{WWDT_CTL0_PER_18, 262144},
-		{WWDT_CTL0_PER_21, 2097152},
-		{WWDT_CTL0_PER_25, 33554432},
-	};
+	/* PER index i → counter width 2^per_exp[i]; ascending order. */
+	static const uint8_t per_exp[] = { 6, 8, 10, 12, 15, 18, 21, 25 };
 	const struct wwdt_mspm0_config *config = dev->config;
 	struct wwdt_mspm0_data *data = dev->data;
 	struct mspm0_sys_clock clock_subsys = config->clock_subsys;
@@ -184,21 +166,22 @@ static int wwdt_mspm0_calculate_timeout_periods(const struct device *dev,
 	 */
 	static const uint8_t window_sixteenths[] = {0, 2, 3, 4, 8, 12, 13, 14};
 
-	/* Compute max achievable timeout: 8 * 2^25 / clock_freq * 1000 ms */
+	/* Compute max achievable timeout: WWDT_MAX_CLKDIV * 2^25 / clock_freq * 1000 ms */
 	uint32_t abs_max_ms =
-		(uint32_t)(((uint64_t)8 * period_lut[7].per_counts * 1000U) / clock_freq);
+		(uint32_t)(((uint64_t)WWDT_MAX_CLKDIV * BIT(per_exp[7]) * 1000U) / clock_freq);
 
 	if (max_ms > abs_max_ms || min_ms >= max_ms) {
 		LOG_ERR("Invalid window timing (max=%u ms, abs_max=%u ms)", max_ms, abs_max_ms);
 		return -EINVAL;
 	}
 
-	/* Find the smallest PER where max_timeout_ms (at CLKDIV=7) >= max_ms */
+	/* Find the smallest PER where max_timeout_ms (at CLKDIV=WWDT_MAX_CLKDIV-1) >= max_ms */
 	uint32_t lut_idx = 0;
 
-	for (uint32_t i = 0; i < ARRAY_SIZE(period_lut); i++) {
+	for (uint32_t i = 0; i < ARRAY_SIZE(per_exp); i++) {
 		uint32_t max_timeout_ms =
-			(uint32_t)(((uint64_t)8 * period_lut[i].per_counts * 1000U) / clock_freq);
+			(uint32_t)(((uint64_t)WWDT_MAX_CLKDIV * BIT(per_exp[i]) * 1000U) /
+				   clock_freq);
 
 		if (max_ms <= max_timeout_ms) {
 			lut_idx = i;
@@ -206,7 +189,8 @@ static int wwdt_mspm0_calculate_timeout_periods(const struct device *dev,
 		}
 	}
 
-	data->period_count = (uint8_t)period_lut[lut_idx].period_count;
+	data->period_count = (uint8_t)FIELD_PREP(WWDT_CTL0_PER_MASK,
+						 ARRAY_SIZE(per_exp) - 1U - lut_idx);
 
 	/*
 	 * Walk CLKDIV 0->7 to find the smallest divider where the timeout
@@ -214,15 +198,16 @@ static int wwdt_mspm0_calculate_timeout_periods(const struct device *dev,
 	 */
 	uint32_t actual_timeout = 0;
 
-	for (data->clock_divider = 0; data->clock_divider < 8; data->clock_divider++) {
+	for (data->clock_divider = 0; data->clock_divider < WWDT_MAX_CLKDIV;
+	     data->clock_divider++) {
 		actual_timeout = (uint32_t)(((uint64_t)(data->clock_divider + 1U) *
-					     period_lut[lut_idx].per_counts * 1000U) /
+					     BIT(per_exp[lut_idx]) * 1000U) /
 					    clock_freq);
 		if (max_ms <= actual_timeout) {
 			break;
 		}
 	}
-	data->clock_divider = MIN(data->clock_divider, 7U);
+	data->clock_divider = MIN(data->clock_divider, WWDT_MAX_CLKDIV - 1U);
 
 	/* Find the smallest closed-window fraction that enforces min_ms */
 	for (window_idx = 0; window_idx < ARRAY_SIZE(window_sixteenths); window_idx++) {
@@ -273,7 +258,7 @@ static void wwdt_mspm0_isr(const struct device *dev)
 	 * exists. is_setup=false (set by disable() before any IRQ operations)
 	 * is the software gate against spurious fires.
 	 */
-	if (!data->is_setup) {
+	if (!atomic_get(&data->is_setup)) {
 		return;
 	}
 
@@ -295,7 +280,7 @@ static int wwdt_mspm0_setup(const struct device *dev, uint8_t options)
 		return -EINVAL;
 	}
 
-	if (data->is_setup) {
+	if (atomic_get(&data->is_setup)) {
 		LOG_ERR("WWDT already running — call wdt_disable() first");
 		k_mutex_unlock(&data->lock);
 		return -EBUSY;
@@ -318,7 +303,8 @@ static int wwdt_mspm0_setup(const struct device *dev, uint8_t options)
 	if (data->is_interval_mode) {
 		/* Interval-timer mode: INTTIM fires on each expiry, auto-reloads, no reset.
 		 */
-		uint32_t ctl0 = WWDT_CTL0_KEY | (uint32_t)data->clock_divider |
+		uint32_t ctl0 = WWDT_CTL0_KEY |
+				(data->clock_divider & WWDT_CTL0_CLKDIV_MASK) |
 				(uint32_t)data->period_count | WWDT_CTL0_MODE_INTERVAL;
 
 		base->wwdtctl0 = ctl0;
@@ -342,7 +328,7 @@ static int wwdt_mspm0_setup(const struct device *dev, uint8_t options)
 		 * but keeping the critical section short is still good
 		 * practice.
 		 */
-		data->is_setup = true;
+		atomic_set(&data->is_setup, 1);
 		k_mutex_unlock(&data->lock);
 		config->irq_config_func(dev);
 		return 0;
@@ -368,11 +354,11 @@ static int wwdt_mspm0_setup(const struct device *dev, uint8_t options)
 	 * WINDOW0 encoding is at bits [10:8]; WINDOW1 uses the same encoding
 	 * but at bits [14:12] — shift left by (12 - 8) = 4.
 	 */
-	base->wwdtctl0 = WWDT_CTL0_KEY | (uint32_t)data->clock_divider |
+	base->wwdtctl0 = WWDT_CTL0_KEY | (data->clock_divider & WWDT_CTL0_CLKDIV_MASK) |
 			 (uint32_t)data->period_count | window0_closed |
 			 (window1_closed << (WWDT_CTL0_WINDOW1_OFS - WWDT_CTL0_WINDOW0_OFS));
 
-	data->is_setup = true;
+	atomic_set(&data->is_setup, 1);
 	k_mutex_unlock(&data->lock);
 	return 0;
 }
@@ -394,9 +380,9 @@ static int wwdt_mspm0_disable(const struct device *dev)
 		 * "logically stopped" indicator.
 		 * is_setup cleared FIRST so any pending ISR sees it before irq_disable.
 		 */
-		int ret = data->is_setup ? 0 : -EFAULT;
+		int ret = atomic_get(&data->is_setup) ? 0 : -EFAULT;
 
-		data->is_setup = false;
+		atomic_set(&data->is_setup, 0);
 		data->is_interval_mode = false;
 		data->callback = NULL;
 		data->timeout_valid = false;
@@ -418,7 +404,7 @@ static int wwdt_mspm0_disable(const struct device *dev)
 	 * reset. -EFAULT if never started (also frees the install slot),
 	 * -EPERM if started.
 	 */
-	if (data->is_setup) {
+	if (atomic_get(&data->is_setup)) {
 		k_mutex_unlock(&data->lock);
 		return -EPERM;
 	}
@@ -438,7 +424,7 @@ static int wwdt_mspm0_install_timeout(const struct device *dev, const struct wdt
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
-	if (data->is_setup) {
+	if (atomic_get(&data->is_setup)) {
 		LOG_ERR("Install timeout failed. WWDT is already running");
 		k_mutex_unlock(&data->lock);
 		return -EBUSY;
@@ -521,7 +507,7 @@ static int wwdt_mspm0_feed(const struct device *dev, int channel_id)
 	 * written regardless of software state.
 	 */
 	if (k_is_in_isr()) {
-		if (!data->is_setup) {
+		if (!atomic_get(&data->is_setup)) {
 			return -EINVAL;
 		}
 		base->wwdtcntrst = WWDT_CNTRST_KEY;
@@ -530,7 +516,7 @@ static int wwdt_mspm0_feed(const struct device *dev, int channel_id)
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
-	if (!data->is_setup) {
+	if (!atomic_get(&data->is_setup)) {
 		k_mutex_unlock(&data->lock);
 		return -EINVAL;
 	}
