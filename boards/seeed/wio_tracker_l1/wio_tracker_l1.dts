@@ -176,6 +176,10 @@
 
 	gnss: gnss-nmea-generic {
 		compatible = "gnss-nmea-generic";
+		enable-gpios = <&gpio1 9 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		reset-gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
+		reset-pulse-duration-ms = <100>;
+		startup-time-ms = <10>;
 		status = "okay";
 	};
 };

@@ -56,6 +56,10 @@ Connections and IOs
 +-------+-----------+--------------+----------------------------+
 | P0.26 | IN        | UART0 RX     | L76K GNSS TX               |
 +-------+-----------+--------------+----------------------------+
+| P1.09 | OUT       | GPIO         | L76K wake (active high)    |
++-------+-----------+--------------+----------------------------+
+| P1.06 | OUT       | GPIO         | L76K reset (active high)   |
++-------+-----------+--------------+----------------------------+
 | P0.05 | OUT       | TWIM0 SCL    | SH1106 OLED I\ :sup:`2`\ C |
 +-------+-----------+--------------+----------------------------+
 | P0.06 | I/O       | TWIM0 SDA    | SH1106 OLED I\ :sup:`2`\ C |
@@ -97,6 +101,15 @@ Supported Features
 ==================
 
 .. zephyr:board-supported-hw::
+
+Power Management
+================
+
+The L76K receiver uses the ``gnss`` alias. With :kconfig:option:`CONFIG_PM_DEVICE` enabled,
+the receiver starts in standby. Resume it with ``pm_device_action_run()`` and
+``PM_DEVICE_ACTION_RESUME`` before receiving navigation data. Suspending it with
+``PM_DEVICE_ACTION_SUSPEND`` drives its wake pin low and stops the UART. The reset signal is
+inverted by a transistor and is asserted for 100 ms during driver initialization.
 
 Programming and Debugging
 *************************
