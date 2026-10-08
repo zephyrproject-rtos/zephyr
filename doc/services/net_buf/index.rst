@@ -65,11 +65,13 @@ left for more data is the tailroom, not ``size`` minus ``len``:
 Creating buffers
 ****************
 
-Network buffers are created by first defining a pool of them:
+Network buffers are created by first defining a pool of them, with the
+macro of the pool's type (see `Pool Types`_). A pool of fixed-size
+buffers is defined with:
 
 .. code-block:: c
 
-   NET_BUF_POOL_DEFINE(pool_name, buf_count, buf_size, user_data_size, NULL);
+   NET_BUF_POOL_FIXED_DEFINE(pool_name, buf_count, buf_size, user_data_size, NULL);
 
 The pool is a static variable, so if it's needed to be exported to
 another module a separate pointer is needed.
@@ -93,8 +95,14 @@ to be prepended later, it's possible to reserve this headroom with:
 
 In addition to actual protocol data and generic parsing context, network
 buffers may also contain protocol-specific context, known as user data.
-Both the maximum data and user data capacity of the buffers is
-compile-time defined when declaring the buffer pool.
+The user data size is a property of the pool: every buffer of the pool
+has ``user_data_size`` bytes of it, returned by
+:c:func:`net_buf_user_data`.
+
+The last argument of the pool definition is an optional destroy
+callback. When the last reference to a buffer is released, the callback
+is called instead of returning the buffer to the pool, and it must
+eventually call :c:func:`net_buf_destroy` to return it.
 
 The buffers have native support for being passed through k_fifo kernel
 objects. Use :c:func:`k_fifo_put` and :c:func:`k_fifo_get` to pass buffer
@@ -104,6 +112,53 @@ Special functions exist for dealing with buffers in single linked lists,
 where the :c:func:`net_buf_slist_put` and :c:func:`net_buf_slist_get`
 functions must be used instead of :c:func:`sys_slist_append` and
 :c:func:`sys_slist_get`.
+
+Pool Types
+==========
+
+The pool type determines where the data of its buffers comes from:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 35 35
+
+   * - Pool
+     - Data storage
+     - Data allocation
+   * - :c:macro:`NET_BUF_POOL_FIXED_DEFINE`
+     - A static array with one chunk of ``data_size`` bytes per buffer.
+     - Always the full chunk. Never waits.
+   * - :c:macro:`NET_BUF_POOL_VAR_DEFINE`
+     - A heap of ``data_size`` bytes shared by the buffers of the pool.
+     - The size requested for each buffer. Waits for heap memory until the
+       allocation timeout expires.
+   * - :c:macro:`NET_BUF_POOL_VAR_ALIGN_DEFINE`
+     - Same as :c:macro:`NET_BUF_POOL_VAR_DEFINE`.
+     - Same as :c:macro:`NET_BUF_POOL_VAR_DEFINE`, with the start of the
+       data aligned to ``align`` and the allocation rounded up to a
+       multiple of it. A request for less than ``align`` bytes fails.
+   * - :c:macro:`NET_BUF_POOL_HEAP_DEFINE`
+     - The system heap, through :c:func:`k_malloc`. Needs
+       :kconfig:option:`CONFIG_HEAP_MEM_POOL_SIZE`.
+     - The size requested for each buffer. Never waits: fails at once when
+       the heap is exhausted.
+
+In every pool type the buffers themselves come from a fixed array of
+``buf_count`` entries, and an allocation waits for a free one until its
+timeout expires. The data is allocated after that, within what is left
+of the same timeout. An allocation from a heap pool can therefore return
+``NULL`` even with :c:macro:`K_FOREVER`. Each allocation from a variable
+or heap pool also uses a few bytes of the heap for bookkeeping, which
+the size of a variable pool's heap has to allow for.
+
+:c:func:`net_buf_alloc` allocates a buffer with the fixed data size of
+its pool and is meant for fixed pools: from a variable or heap pool it
+returns a buffer without data storage. Use :c:func:`net_buf_alloc_len`
+with those. :c:func:`net_buf_alloc_with_data` works with every pool type:
+the buffer then uses storage given by the caller, and the pool allocates
+no data for it. The buffer starts with all of that storage as its data,
+so it has no tailroom, and releasing the buffer does not release the
+storage: the caller keeps it valid for as long as the buffer exists.
 
 Common Operations
 *****************
