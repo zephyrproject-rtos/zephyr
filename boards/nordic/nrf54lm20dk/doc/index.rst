@@ -86,10 +86,10 @@ Next, build the sample by running the following command:
    :board: nrf54lm20dk/nrf54lm20b/cpuapp
    :goals: build flash
 
-Testing the LEDs and buttons in the nRF54LM20 DK
+Testing the LEDs and buttons on the nRF54LM20 DK
 ************************************************
 
-Test the nRF54LM20 DK with a :zephyr:code-sample:`blinky` sample.
+Test the nRF54LM20 DK with :zephyr:code-sample:`blinky` or :zephyr:code-sample:`button` samples.
 
 
 .. _nrf54lm20dk_nrf54lm20a:
