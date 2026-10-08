@@ -11,7 +11,7 @@ description: |
   iim42653.h and use the macros defined there.
 
 compatible: "invensense,iim42653"
-include: ["invensense,icm4268x.yaml"]
+include: [spi-device.yaml, "invensense,icm4268x.yaml"]
 
 examples:
   - |
