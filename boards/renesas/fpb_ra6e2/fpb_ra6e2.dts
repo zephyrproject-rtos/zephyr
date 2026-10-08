@@ -55,6 +55,21 @@
 		sw0 = &button0;
 		watchdog0 = &wdt;
 	};
+
+	pmod_header: pmod-header {
+		compatible = "digilent,pmod";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &ioport3 1 0>,	/* IO1/CS */
+			   <1 0 &ioport1 9 0>,	/* IO2/MOSI */
+			   <2 0 &ioport1 10 0>,	/* IO3/MISO */
+			   <3 0 &ioport1 11 0>,	/* IO4/SCK */
+			   <4 0 &ioport4 2 0>,	/* IO5/INT */
+			   <5 0 &ioport0 5 0>,	/* IO6/RESET */
+			   <6 0 &ioport1 7 0>,	/* IO7/CS2 */
+			   <7 0 &ioport1 6 0>;	/* IO8/CS3 */
+	};
 };
 
 &sci0 {
@@ -68,9 +83,17 @@
 	};
 };
 
-&spi0 {
+pmod_spi: &spi0 {
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&ioport0 {
+	status = "okay";
+};
+
+&ioport1 {
 	status = "okay";
 };
 
@@ -79,6 +102,10 @@
 };
 
 &ioport3 {
+	status = "okay";
+};
+
+&ioport4 {
 	status = "okay";
 };
 
