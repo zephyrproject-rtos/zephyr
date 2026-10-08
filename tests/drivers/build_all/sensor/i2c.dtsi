@@ -32,6 +32,7 @@
 #include <zephyr/dt-bindings/sensor/tmp11x.h>
 #include <zephyr/dt-bindings/sensor/tmp114.h>
 #include <zephyr/dt-bindings/sensor/icm566xx.h>
+#include <zephyr/dt-bindings/sensor/mlx90640.h>
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
@@ -1739,4 +1740,10 @@ test_i2c_cht8305: cht8305@e0 {
 test_i2c_sts35: sts35@e1 {
 	compatible = "sensirion,sts35";
 	reg = <0xe1>;
+};
+
+test_i2c_mlx90640: mlx90640@e2 {
+	compatible = "melexis,mlx90640";
+	reg = <0xe2>;
+	refresh-rate = <MLX90640_REFRESH_2_HZ>;
 };
