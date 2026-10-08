@@ -83,7 +83,7 @@ Next, build the sample by running the following command:
    :board: nrf7120dk/nrf7120/cpuapp
    :goals: build flash
 
-Testing the LEDs and buttons in the nRF7120 DK
-************************************************
+Testing the LEDs and buttons on the nRF7120 DK
+**********************************************
 
-Test the nRF7120 DK with a :zephyr:code-sample:`blinky` sample.
+Test the nRF7120 DK with :zephyr:code-sample:`blinky` or :zephyr:code-sample:`button` samples.
