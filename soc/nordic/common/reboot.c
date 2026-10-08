@@ -8,10 +8,17 @@
 #if defined(CONFIG_HAS_NORDIC_RAM_CTRL)
 #include <helpers/nrfx_ram_ctrl.h>
 #endif
+#if defined(CONFIG_IRONSIDE_TE_CLIENT)
+#include <ironside_client/services/platform.h>
+#endif
 
 void sys_arch_reboot(int type)
 {
 	ARG_UNUSED(type);
+
+#if defined(CONFIG_IRONSIDE_TE_CLIENT)
+	(void)ironside_platform_system_reset();
+#endif
 
 #ifdef CONFIG_NRF_FORCE_RAM_ON_REBOOT
 	uint8_t *ram_start;

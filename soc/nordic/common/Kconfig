@@ -13,6 +13,7 @@ config HAS_NORDIC_MULTI_OPTION_CLOCKS
 config NRF_FORCE_RAM_ON_REBOOT
 	bool "Force all RAM blocks to be powered on before rebooting"
 	depends on HAS_NORDIC_RAM_CTRL
+	depends on !IRONSIDE_TE_CLIENT
 	help
 	  RAM power configuration is preserved through soft reset,
 	  meaning that there is a risk of accessing powered off RAM blocks
