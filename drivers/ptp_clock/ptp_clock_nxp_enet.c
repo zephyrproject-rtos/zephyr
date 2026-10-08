@@ -19,6 +19,8 @@
 
 #include <fsl_enet.h>
 
+#include "ptp_clock_nxp_enet_rate_math.h"
+
 LOG_MODULE_REGISTER(ptp_clock_nxp_enet);
 
 struct ptp_clock_nxp_enet_config {
@@ -122,74 +124,90 @@ static int ptp_clock_nxp_enet_adjust(const struct device *dev,
 
 }
 
+/*
+ * Largest error of the average tick that the correction search accepts, relative to the tick.
+ * Over a 125 ms PTP sync interval 100 ppb is at most 12.5 ns of phase, which the servo takes
+ * out at the next sync. In exchange the INC_CORR - INC step stays small: on a whole-ns tick it
+ * is 1 or 2 ns in most cases, instead of tens of ns for the best possible rate.
+ */
+#define PTP_CLOCK_NXP_ENET_RATE_TOLERANCE 1.0e-7
+
+/*
+ * ENET_Ptp1588StartTimer() sets ATINC.INC to the tick truncated to whole nanoseconds. Find the
+ * ATINC.INC_CORR and ATCOR values that make the average tick the one of the clock rate times
+ * the ratio, which also absorbs the fractional part of the tick.
+ */
+static int ptp_clock_nxp_enet_correction(uint32_t clock_rate, double ratio, int *inc_corr,
+					 uint32_t *cor)
+{
+	int hw_inc = NSEC_PER_SEC / clock_rate;
+	double tick_ns = (double)NSEC_PER_SEC / (double)clock_rate;
+	/*
+	 * The fractional part of the tick plus the change asked for. Computing it as the
+	 * average tick minus INC would subtract two close values and lose the very small
+	 * changes that a servo asks for once it is locked.
+	 */
+	double frac_ns =
+		(double)(NSEC_PER_SEC % clock_rate) / (double)clock_rate + tick_ns * (ratio - 1.0);
+
+	return ptp_clock_nxp_enet_find_correction(
+		hw_inc, frac_ns, tick_ns * PTP_CLOCK_NXP_ENET_RATE_TOLERANCE,
+		ENET_ATINC_INC_CORR_MASK >> ENET_ATINC_INC_CORR_SHIFT,
+		ENET_ATCOR_COR_MASK >> ENET_ATCOR_COR_SHIFT, inc_corr, cor);
+}
+
 static int ptp_clock_nxp_enet_rate_adjust(const struct device *dev,
 					double ratio)
 {
 	const struct ptp_clock_nxp_enet_config *config = dev->config;
 	struct ptp_clock_nxp_enet_data *data = dev->data;
-	int corr;
-	int32_t mul;
-	double val;
 	uint32_t enet_ref_pll_rate;
+	uint32_t cor;
+	unsigned int key;
+	int inc_corr;
+	int ret;
 
 	if (!data->timer_running) {
 		return -ENODEV;
 	}
 
-	(void) clock_control_get_rate(config->clock_dev, config->clock_subsys,
-				&enet_ref_pll_rate);
-	int hw_inc = NSEC_PER_SEC / enet_ref_pll_rate;
-
-	/* No change needed. */
-	if ((ratio > 1.0 && ratio - 1.0 < 0.00000001) ||
-	   (ratio < 1.0 && 1.0 - ratio < 0.00000001)) {
-		return 0;
-	}
-
-	/* Limit possible ratio. */
-	if ((ratio > 1.0 + 1.0/(2 * hw_inc)) ||
-			(ratio < 1.0 - 1.0/(2 * hw_inc))) {
+	/*
+	 * Do not let a servo that went out of control reach the timer. Written so that a ratio
+	 * that is not a number is rejected too.
+	 */
+	if (!((ratio <= 1.0 + CONFIG_PTP_CLOCK_NXP_ENET_MAX_RATIO_PPM * 1.0e-6) &&
+	      (ratio >= 1.0 - CONFIG_PTP_CLOCK_NXP_ENET_MAX_RATIO_PPM * 1.0e-6))) {
 		return -EINVAL;
 	}
 
-	if (ratio < 1.0) {
-		corr = hw_inc - 1;
-		val = 1.0 / (hw_inc * (1.0 - ratio));
-	} else if (ratio > 1.0) {
-		corr = hw_inc + 1;
-		val = 1.0 / (hw_inc * (ratio - 1.0));
-	} else {
-		val = 0;
-		corr = hw_inc;
+	/*
+	 * The rate is read on every call rather than kept from the timer start, so that a timer
+	 * clock that is tuned while it runs (for example an audio PLL that follows a media
+	 * clock) is taken into account: the correction is computed for the tick the timer gets
+	 * now. INC does not change while the timer runs, so a rate that cannot be read, is not
+	 * usable or no longer gives the INC programmed at start is refused.
+	 */
+	ret = clock_control_get_rate(config->clock_dev, config->clock_subsys, &enet_ref_pll_rate);
+	if ((ret != 0) || !ptp_clock_nxp_enet_rate_usable(enet_ref_pll_rate) ||
+	    (NSEC_PER_SEC / enet_ref_pll_rate !=
+	     (data->base->ATINC & ENET_ATINC_INC_MASK) >> ENET_ATINC_INC_SHIFT)) {
+		return -EIO;
 	}
 
-	if (val >= INT32_MAX) {
-		/* Value is too high.
-		 * It is not possible to adjust the rate of the clock.
-		 */
-		mul = 0;
-	} else if (val < 1.0) {
-		/* Ratio of 1.0, no correction. */
-		mul = 0;
-	} else {
-		/*
-		 * The hardware corrects every (COR + 1) ticks, so COR is the
-		 * period minus one. The rate goes as 1 / period, so of the two
-		 * periods around val take the one with the closest rate. The
-		 * ratio limit above keeps the period at 2 or more.
-		 */
-		uint32_t period = (uint32_t)val;
-
-		if (val * (2.0 * period + 1.0) > 2.0 * period * (period + 1.0)) {
-			period++;
-		}
-
-		mul = period - 1;
+	/* There is no early return for a ratio of 1.0, the fractional tick still needs a value */
+	if (ptp_clock_nxp_enet_correction(enet_ref_pll_rate, ratio, &inc_corr, &cor) != 0) {
+		return -EINVAL;
 	}
 
 	k_mutex_lock(&data->ptp_mutex, K_FOREVER);
 
-	ENET_Ptp1588AdjustTimer(data->base, corr, mul);
+	/*
+	 * INC_CORR and COR are written one after the other. Keep an interrupt from running the
+	 * timer on the new INC_CORR with the old period for longer than the two writes take.
+	 */
+	key = irq_lock();
+	ENET_Ptp1588AdjustTimer(data->base, inc_corr, cor);
+	irq_unlock(key);
 
 	k_mutex_unlock(&data->ptp_mutex);
 
@@ -211,6 +229,8 @@ void nxp_enet_ptp_clock_callback(const struct device *dev,
 	if (event == NXP_ENET_MODULE_RESET) {
 		enet_ptp_config_t ptp_config;
 		uint32_t enet_ref_pll_rate;
+		uint32_t cor = 0U;
+		int inc_corr = 0;
 		uint8_t ptp_multicast[6] = { 0x01, 0x1B, 0x19, 0x00, 0x00, 0x00 };
 		uint8_t ptp_peer_multicast[6] = { 0x01, 0x80, 0xC2, 0x00, 0x00, 0x0E };
 
@@ -231,7 +251,9 @@ void nxp_enet_ptp_clock_callback(const struct device *dev,
 		/* Get enet handle from mac driver */
 		data->enet_handle = ptp_data->enet;
 
-		if (!ptp_clock_nxp_enet_rate_usable(enet_ref_pll_rate)) {
+		/* The fractional part of the tick must also be within reach of the correction */
+		if (!ptp_clock_nxp_enet_rate_usable(enet_ref_pll_rate) ||
+		    (ptp_clock_nxp_enet_correction(enet_ref_pll_rate, 1.0, &inc_corr, &cor) != 0)) {
 			LOG_ERR("1588 timer clock of %u Hz is not usable, timer not started",
 				enet_ref_pll_rate);
 			return;
@@ -240,6 +262,10 @@ void nxp_enet_ptp_clock_callback(const struct device *dev,
 		ENET_Ptp1588SetChannelMode(data->base, kENET_PtpTimerChannel3,
 				kENET_PtpChannelPulseHighonCompare, true);
 		ENET_Ptp1588StartTimer(data->base, ptp_config.ptp1588ClockSrc_Hz);
+
+		/* Make up for the fractional part of the tick that the start above cut off */
+		ENET_Ptp1588AdjustTimer(data->base, inc_corr, cor);
+
 		data->timer_running = true;
 		ptp_data->timer_running = true;
 		ENET_EnableInterrupts(data->base, ENET_TS_INTERRUPT);
