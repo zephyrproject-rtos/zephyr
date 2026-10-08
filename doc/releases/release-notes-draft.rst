@@ -117,6 +117,12 @@ Libraries / Subsystems
   * Added a HID Service server (:kconfig:option:`CONFIG_BT_HIDS`), the service
     the HID Device role of the HID over GATT Profile is built on.
 
+Devicetree
+**********
+
+* :dtcompatible:`gnss-nmea-generic` supports optional enable and reset GPIOs, with configurable
+  reset pulse and wake-up delays.
+
 Other notable changes
 *********************
 
