@@ -25,7 +25,6 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/ztest_assert.h>
 #include <zephyr/ztest_test.h>
-#include <sys/errno.h>
 
 #include "audio/bap_endpoint.h"
 #include "test_common.h"
@@ -126,6 +125,43 @@ static void cap_initiator_test_unicast_group_teardown(void *f)
 ZTEST_SUITE(cap_initiator_test_unicast_group, NULL, cap_initiator_test_unicast_group_setup,
 	    cap_initiator_test_unicast_group_before, cap_initiator_test_unicast_group_after,
 	    cap_initiator_test_unicast_group_teardown);
+
+static ZTEST_F(cap_initiator_test_unicast_group, test_bap_unicast_group_create_reconfig_cig_param)
+{
+	struct bt_bap_stream stream = {0};
+	struct bt_bap_unicast_group_stream_param stream_param = {
+		.stream = &stream,
+		.qos = fixture->qos_cfg,
+	};
+	struct bt_bap_unicast_group_stream_pair_param pair_param = {
+		.tx_param = &stream_param,
+	};
+	struct bt_bap_unicast_group_param group_param = {
+		.params_count = 1U,
+		.params = &pair_param,
+		.packing = BT_ISO_PACKING_SEQUENTIAL,
+		.sca = BT_GAP_SCA_UNKNOWN,
+	};
+	struct bt_bap_unicast_group *group;
+	int err;
+
+	err = bt_bap_unicast_group_create(&group_param, &group);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+
+	zexpect_equal(group->cig_param.packing, BT_ISO_PACKING_SEQUENTIAL);
+	zexpect_equal(group->cig_param.sca, BT_GAP_SCA_UNKNOWN);
+
+	group_param.packing = BT_ISO_PACKING_INTERLEAVED;
+	group_param.sca = BT_GAP_SCA_21_30;
+	err = bt_bap_unicast_group_reconfig(group, &group_param);
+	zexpect_equal(err, 0, "Unexpected return value %d", err);
+
+	zexpect_equal(group->cig_param.packing, BT_ISO_PACKING_INTERLEAVED);
+	zexpect_equal(group->cig_param.sca, BT_GAP_SCA_21_30);
+
+	err = bt_bap_unicast_group_delete(group);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+}
 
 static ZTEST_F(cap_initiator_test_unicast_group, test_initiator_unicast_group_create)
 {
@@ -446,6 +482,29 @@ static ZTEST_F(cap_initiator_test_unicast_group, test_initiator_unicast_group_ge
 	zassert_equal(err, 0, "Unexpected return value %d", err);
 
 	zassert_not_null(cap_info.unicast_group);
+}
+
+static ZTEST_F(cap_initiator_test_unicast_group,
+	       test_initiator_unicast_group_sca_forwarding)
+{
+	struct bt_cap_unicast_group_info cap_info;
+	int err;
+
+	fixture->group_param->sca = BT_GAP_SCA_31_50;
+	err = bt_cap_unicast_group_create(fixture->group_param, &fixture->unicast_group);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+
+	err = bt_cap_unicast_group_get_info(fixture->unicast_group, &cap_info);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+	zassert_equal(cap_info.unicast_group->cig_param.sca, BT_GAP_SCA_31_50);
+
+	fixture->group_param->sca = BT_GAP_SCA_0_20;
+	err = bt_cap_unicast_group_reconfig(fixture->unicast_group, fixture->group_param);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+
+	err = bt_cap_unicast_group_get_info(fixture->unicast_group, &cap_info);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+	zassert_equal(cap_info.unicast_group->cig_param.sca, BT_GAP_SCA_0_20);
 }
 
 static ZTEST_F(cap_initiator_test_unicast_group,
