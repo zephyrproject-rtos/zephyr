@@ -15,3 +15,6 @@ CONFIG_UART_CONSOLE=y
 
 # Enable MPU
 CONFIG_ARM_MPU=y
+
+# Enable Clock Control
+CONFIG_CLOCK_CONTROL=y

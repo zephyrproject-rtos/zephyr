@@ -52,7 +52,8 @@ static int post_status_stage(struct usbd_context *const uds_ctx)
 		}
 	}
 
-	if (setup->bRequest == USB_SREQ_SET_FEATURE &&
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    setup->bRequest == USB_SREQ_SET_FEATURE &&
 	    setup->wValue == USB_SFS_TEST_MODE) {
 		uint8_t mode = SF_TEST_MODE_SELECTOR(setup->wIndex);
 
@@ -279,6 +280,11 @@ static int sreq_set_feature(struct usbd_context *const uds_ctx)
 	}
 
 	if (unlikely(setup->wValue == USB_SFS_TEST_MODE)) {
+		if (!USBD_SUPPORTS_HIGH_SPEED) {
+			/* Test Mode is only required for High-Speed devices */
+			return -ENOTSUP;
+		}
+
 		return set_feature_test_mode(uds_ctx);
 	}
 

@@ -143,6 +143,7 @@
 		led0 = &led1;
 		sw0 = &button0;
 		watchdog0 = &wdt;
+		i2c-0 = &iic0;
 	};
 };
 
@@ -279,6 +280,17 @@
 	pinctrl-0 = <&iic1_default>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&iic0 {
+	interrupts = <88 1>, <87 1>, <86 1>, <85 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_M(1)>;
+	pinctrl-0 = <&iic0_default>;
+	pinctrl-names = "default";
 };
 
 &adc0 {

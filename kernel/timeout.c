@@ -106,15 +106,15 @@ static uint32_t elapsed(void)
  * tree-wide and live in timeout_q.h.
  */
 #if defined(CONFIG_TIMEOUT_BACKEND_MINHEAP)
-#include "timeout_minheap.h"
+#include "timeout/minheap.h"
 #elif defined(CONFIG_TIMEOUT_BACKEND_WHEEL)
-#include "timeout_wheel.h"
+#include "timeout/wheel.h"
 #elif defined(CONFIG_TIMEOUT_BACKEND_BUCKET)
-#include "timeout_bucket.h"
+#include "timeout/bucket.h"
 #elif defined(CONFIG_TIMEOUT_BACKEND_SKIPLIST)
-#include "timeout_skiplist.h"
+#include "timeout/skiplist.h"
 #else /* CONFIG_TIMEOUT_BACKEND_DLIST */
-#include "timeout_list.h"
+#include "timeout/list.h"
 #endif
 
 /*

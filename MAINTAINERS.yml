@@ -1290,6 +1290,21 @@ DSP subsystem:
   tests:
     - zdsp
 
+DT Doctor:
+  status: maintained
+  maintainers:
+    - kartben
+  files:
+    - cmake/sca/dtdoctor/
+    - doc/develop/sca/dtdoctor.rst
+    - scripts/dts/dtdoctor_analyzer.py
+    - scripts/dts/dtdoctor_sca_wrapper.py
+    - tests/misc/dtdoctor/
+  labels:
+    - "area: Devicetree"
+  tests:
+    - sca.dtdoctor
+
 Debug:
   status: maintained
   maintainers:
@@ -1442,7 +1457,7 @@ Disk:
     - drivers.disk
     - sd
 
-Display drivers:
+Display controllers:
   status: maintained
   maintainers:
     - JarmouniA
@@ -2432,7 +2447,7 @@ Documentation Infrastructure:
   tests:
     - drivers.mfd
 
-"Drivers: MIPI DBI":
+"Drivers: MIPI-DBI":
   status: maintained
   maintainers:
     - danieldegrasse
@@ -2447,7 +2462,7 @@ Documentation Infrastructure:
     - include/zephyr/dt-bindings/mipi_dbi/
     - tests/drivers/mipi_dbi/
   labels:
-    - "area: Display Controller"
+    - "area: MIPI-DBI"
   tests:
     - drivers.mipi_dbi
 

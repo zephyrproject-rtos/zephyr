@@ -921,8 +921,15 @@ New APIs and options
     context is active without reading the context internals.
   * Add :c:func:`coap_client_reregister_observe` to refresh an ongoing CoAP
     observation (:rfc:`7641` re-registration) without tearing it down.
+  * Add :c:func:`coap_age_is_newer` to compare CoAP Observe option values for
+    freshness (:rfc:`7641#section-3.4`).
   * :c:func:`net_config_init_clock_via_sntp` to set system clock via SNTP.
   * :c:func:`net_config_sntp_set_server`
+  * Add an experimental RTP (:rfc:`3550`) stack (:kconfig:option:`CONFIG_RTP`)
+    to send and receive media streams over UDP, with a BSD socket transport
+    (:kconfig:option:`CONFIG_RTP_TRANSPORT_SOCKET`) and a raw ``net_pkt``
+    transport (:kconfig:option:`CONFIG_RTP_TRANSPORT_NET_PKT`). See
+    :ref:`rtp_interface`.
 
 * POSIX
 

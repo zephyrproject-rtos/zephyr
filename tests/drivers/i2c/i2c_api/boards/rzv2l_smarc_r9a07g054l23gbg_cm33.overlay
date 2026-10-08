@@ -1,9 +1,0 @@
-/ {
-	aliases {
-		i2c-0 = &i2c3;
-	};
-};
-
-&i2c3 {
-	status = "okay";
-};

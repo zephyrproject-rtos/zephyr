@@ -233,21 +233,15 @@ int nxp_nbu_set_tx_power(int8_t level_dbm, uint8_t handle_type)
 
 #if defined(CONFIG_HCI_NXP_ENABLE_AUTO_SLEEP) || defined(CONFIG_HCI_NXP_SET_CAL_DATA) ||           \
 	defined(CONFIG_BT_HCI_SET_PUBLIC_ADDR)
-static int nxp_bt_send_vs_command(uint16_t opcode, const uint8_t *params, uint8_t params_len)
+/* The caller frames each command in a buffer of its own size, so that a build
+ * reserves stack only for the commands it sends.
+ */
+static int nxp_bt_send_vs_command(uint16_t opcode, struct net_buf_simple *cmd)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
 	struct bt_nxp_data *data = dev->data;
 
-	/* The calibration data is the longest of the vendor commands */
-	BT_HCI_PKT_CMD_DEFINE(cmd, HCI_CMD_STORE_BT_CAL_DATA_PARAM_LENGTH);
-
-	if (params_len > HCI_CMD_STORE_BT_CAL_DATA_PARAM_LENGTH) {
-		return -EINVAL;
-	}
-
-	(void)net_buf_simple_add_mem(&cmd, params, params_len);
-
-	return bt_hci_lockstep_cmd_send_sync(&data->lockstep, opcode, &cmd, NULL);
+	return bt_hci_lockstep_cmd_send_sync(&data->lockstep, opcode, cmd, NULL);
 }
 #endif
 
@@ -261,8 +255,12 @@ static int nxp_bt_enable_controller_autosleep(void)
 		0x00U  /* Idle timeout MSB */
 	};
 
+	BT_HCI_PKT_CMD_DEFINE(cmd, sizeof(params));
+
+	(void)net_buf_simple_add_mem(&cmd, params, sizeof(params));
+
 	/* Send the command */
-	return nxp_bt_send_vs_command(opcode, params, HCI_CMD_SET_BT_SLEEP_MODE_PARAM_LENGTH);
+	return nxp_bt_send_vs_command(opcode, &cmd);
 }
 
 static int nxp_bt_set_host_sleep_config(void)
@@ -273,8 +271,12 @@ static int nxp_bt_set_host_sleep_config(void)
 		0xFFU, /* BT_HIU_WAKE_GAP_WAIT_FOR_IRQ */
 	};
 
+	BT_HCI_PKT_CMD_DEFINE(cmd, sizeof(params));
+
+	(void)net_buf_simple_add_mem(&cmd, params, sizeof(params));
+
 	/* Send the command */
-	return nxp_bt_send_vs_command(opcode, params, HCI_CMD_BT_HOST_SLEEP_CONFIG_PARAM_LENGTH);
+	return nxp_bt_send_vs_command(opcode, &cmd);
 }
 #endif /* CONFIG_HCI_NXP_ENABLE_AUTO_SLEEP */
 
@@ -283,8 +285,12 @@ static int bt_nxp_set_calibration_data(void)
 {
 	uint16_t opcode = BT_OP(BT_OGF_VS, HCI_CMD_STORE_BT_CAL_DATA_OCF);
 
+	BT_HCI_PKT_CMD_DEFINE(cmd, sizeof(hci_cal_data_params));
+
+	(void)net_buf_simple_add_mem(&cmd, hci_cal_data_params, sizeof(hci_cal_data_params));
+
 	/* Send the command */
-	return nxp_bt_send_vs_command(opcode, hci_cal_data_params, sizeof(hci_cal_data_params));
+	return nxp_bt_send_vs_command(opcode, &cmd);
 }
 
 #if defined(CONFIG_HCI_NXP_SET_CAL_DATA_ANNEX100)
@@ -292,9 +298,13 @@ static int bt_nxp_set_calibration_data_annex100(void)
 {
 	uint16_t opcode = BT_OP(BT_OGF_VS, HCI_CMD_STORE_BT_CAL_DATA_ANNEX100_OCF);
 
+	BT_HCI_PKT_CMD_DEFINE(cmd, sizeof(hci_cal_data_annex100_params));
+
+	(void)net_buf_simple_add_mem(&cmd, hci_cal_data_annex100_params,
+				     sizeof(hci_cal_data_annex100_params));
+
 	/* Send the command */
-	return nxp_bt_send_vs_command(opcode, hci_cal_data_annex100_params,
-				      sizeof(hci_cal_data_annex100_params));
+	return nxp_bt_send_vs_command(opcode, &cmd);
 }
 #endif /* CONFIG_HCI_NXP_SET_CAL_DATA_ANNEX100 */
 
@@ -310,6 +320,8 @@ static int bt_nxp_set_mac_address(const bt_addr_t *public_addr)
 	uint8_t uuidLen;
 	uint32_t unique_val_crc = 0;
 	uint8_t params[HCI_CMD_BT_HOST_SET_MAC_ADDR_PARAM_LENGTH] = {BT_USER_BD, 0x06U};
+
+	BT_HCI_PKT_CMD_DEFINE(cmd, sizeof(params));
 
 	/* If no public address is provided by the user, use a unique address made
 	 * from the device's UID (unique ID)
@@ -340,8 +352,10 @@ static int bt_nxp_set_mac_address(const bt_addr_t *public_addr)
 	memcpy(&params[2], (const void *)bleDeviceAddress,
 	       BD_ADDR_UUID_PART_SIZE + BD_ADDR_OUI_PART_SIZE);
 
+	(void)net_buf_simple_add_mem(&cmd, params, sizeof(params));
+
 	/* Send the command */
-	return nxp_bt_send_vs_command(opcode, params, HCI_CMD_BT_HOST_SET_MAC_ADDR_PARAM_LENGTH);
+	return nxp_bt_send_vs_command(opcode, &cmd);
 }
 #endif /* CONFIG_BT_HCI_SET_PUBLIC_ADDR */
 

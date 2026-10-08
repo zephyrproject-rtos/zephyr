@@ -1052,6 +1052,23 @@ size_t coap_next_block(const struct coap_packet *cpkt,
 		       struct coap_block_context *ctx);
 
 /**
+ * @brief Compare Observe option values for freshness.
+ *
+ * Uses the serial number arithmetic of @rfc{7641,section-3.4}, without the
+ * 128-second timestamp clause, to decide whether the notification carrying
+ * Observe option value @p v2 was sent more recently than the one carrying
+ * @p v1.
+ *
+ * @param v1 Observe option value of the freshest notification so far,
+ *           0 to 2^24 - 1
+ * @param v2 Observe option value of the received notification, 0 to 2^24 - 1
+ *
+ * @retval true @p v2 is newer than @p v1
+ * @retval false @p v2 is not newer than @p v1
+ */
+bool coap_age_is_newer(uint32_t v1, uint32_t v2);
+
+/**
  * @brief Indicates that the remote device referenced by @a addr, with
  * @a request, wants to observe a resource.
  *

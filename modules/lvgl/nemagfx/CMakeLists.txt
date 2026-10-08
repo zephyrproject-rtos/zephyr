@@ -2,9 +2,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-if(CONFIG_LV_NEMA_HAL_CUSTOM)
-  zephyr_library_sources_ifdef(CONFIG_LV_USE_NEMA_GFX zephyr_nemagfx_hal.c)
-endif() # CONFIG_LV_NEMA_HAL_CUSTOM
+if(CONFIG_LV_Z_NEMA_HAL_CUSTOM)
+  zephyr_library_sources_ifdef(CONFIG_LV_Z_USE_NEMA_GFX zephyr_nemagfx_hal.c)
+endif() # CONFIG_LV_Z_NEMA_HAL_CUSTOM
 
 if(CONFIG_LV_NEMA_LIB_M33_REVC)
   set(NEMA_LIB_DIR cortex_m33_revC/gcc)

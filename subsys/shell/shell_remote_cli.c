@@ -203,10 +203,62 @@ static void cmd_get(struct shell_remote_cli *sh_remote, const struct shell_remot
 	}
 }
 
+/* Recursive search for the handler. It is using command buffer strings to validate that handler
+ * is matching the syntax. Implementation is recursive but it attempts to use minimal stack space.
+ */
+static int handler_find_in_subtree(const struct shell_static_entry *parent,
+				   shell_cmd_handler handler,
+				   struct shell_static_entry *dloc,
+				   struct shell_static_entry *dloc2,
+				   const char *cmd_buf, size_t cmd_len, size_t argc)
+{
+	const struct shell_static_entry *entry;
+	size_t idx = 0;
+
+	while ((entry = z_shell_cmd_get(parent, idx++, dloc)) != NULL) {
+		if (entry->handler == handler) {
+			return 0;
+		}
+
+		if (argc > 1) {
+			size_t i = 0;
+
+			/* Compare command syntax with command buffer content. */
+			while (entry->syntax[i] != '\0' && i < cmd_len &&
+			       entry->syntax[i] == cmd_buf[i]) {
+				i++;
+			}
+
+			if (cmd_buf[i] == '\0' && entry->syntax[i] == '\0') {
+				/* Syntax matched what is in the command buffer. */
+				i++;
+				return handler_find_in_subtree(entry, handler, dloc2, dloc,
+					&cmd_buf[i], cmd_len - i, argc - 1);
+			}
+		}
+	}
+
+	return -ENOENT;
+}
+
+/* Function checks if received handler is a valid shell command handler. */
+static int handler_is_shell_cmd(shell_cmd_handler handler, const char *data, size_t len,
+				size_t argc)
+{
+	struct shell_static_entry dloc, dloc2;
+
+	return handler_find_in_subtree(NULL, handler, &dloc, &dloc2, data, len, argc);
+}
+
 static void cmd_exec(struct shell_remote_cli *sh_remote, struct shell_remote_msg_exec *msg,
 		     size_t len)
 {
-	__ASSERT_NO_MSG(msg->argc <= CONFIG_SHELL_ARGC_MAX);
+	if (msg->argc > CONFIG_SHELL_ARGC_MAX || msg->argc == 0 || msg->argc < msg->cmd_lvl ||
+	    msg->handler == NULL) {
+		cmd_result(&sh_remote->ept, -EINVAL);
+		return;
+	}
+
 	char *argv[msg->argc];
 	char *data = msg->data;
 	uint32_t cnt = 0;
@@ -219,6 +271,7 @@ static void cmd_exec(struct shell_remote_cli *sh_remote, struct shell_remote_msg
 
 	LOG_DBG("Command execute request: argc:%d, cmd_lvl:%d, handler:%p, data:%s", msg->argc,
 		msg->cmd_lvl, msg->handler, data);
+
 	/* Copy arguments to the stack buffer as shell instance buffer may be used
 	 * for shell printing.
 	 */
@@ -230,6 +283,12 @@ static void cmd_exec(struct shell_remote_cli *sh_remote, struct shell_remote_msg
 		cnt++;
 		len -= slen;
 	} while ((cnt < msg->argc) && (len > 0));
+
+	err = handler_is_shell_cmd(msg->handler, data, args_len, msg->argc);
+	if (err < 0) {
+		cmd_result(&sh_remote->ept, err);
+		return;
+	}
 
 	err = msg->handler((const struct shell *)sh_remote, argc, cmd_argv);
 

@@ -1023,11 +1023,18 @@ use_interface_mtu:
 			net_pkt_set_iface(pkt, iface);
 		} else {
 			/* nexthop might be the nbr list, e.g. a link-local
-			 * address of a connected peer.
+			 * address of a connected peer. The entry is valid only
+			 * under the neighbor lock: once it is released, another
+			 * thread can remove the entry, which clears nbr->iface.
 			 */
-			nbr = net_ipv6_nbr_lookup(NULL, nexthop);
-			if (nbr) {
+			net_ipv6_nbr_lock();
+			nbr = nbr_lookup(&net_neighbor.table, NULL, nexthop);
+			if (nbr != NULL) {
 				iface = nbr->iface;
+			}
+			net_ipv6_nbr_unlock();
+
+			if (iface != NULL) {
 				net_pkt_set_iface(pkt, iface);
 			} else {
 				iface = net_pkt_iface(pkt);

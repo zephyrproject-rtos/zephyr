@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: Fake device without a driver, used by the DT Doctor integration test
+
+compatible: "vnd,dtdoctor-device"

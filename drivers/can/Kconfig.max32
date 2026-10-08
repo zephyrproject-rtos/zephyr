@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config CAN_MAX32
-	bool "ADI MAX32 CAN Driver"
+	bool "ADI MAX32 CAN driver"
 	default y
 	depends on DT_HAS_ADI_MAX32_CAN_ENABLED
 	select PINCTRL

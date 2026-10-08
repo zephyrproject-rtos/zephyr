@@ -13,4 +13,5 @@ toolchain:
 supported:
   - spi
   - sdhc
+  - pwm
 vendor: ti

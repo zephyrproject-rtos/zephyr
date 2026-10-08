@@ -171,8 +171,63 @@ ZTEST(ptp_msg_post_recv, test_unsupported_major_version_is_rejected)
 	init_header(&msg, PTP_MSG_SYNC, sizeof(struct ptp_sync_msg));
 	msg.header.version = 1;
 
-	zassert_equal(ptp_msg_post_recv(&port, &msg, sizeof(struct ptp_sync_msg)), -EBADMSG,
+	zassert_equal(ptp_msg_post_recv(&port, &msg, sizeof(struct ptp_sync_msg)), -EPROTONOSUPPORT,
 		      "unsupported PTP version should be rejected");
+}
+
+ZTEST(ptp_msg_post_recv, test_message_shorter_than_header_is_rejected)
+{
+	struct ptp_port port = {0};
+	struct ptp_msg msg;
+
+	init_msg_list(&msg);
+	init_header(&msg, PTP_MSG_SYNC, sizeof(struct ptp_sync_msg));
+
+	zassert_equal(ptp_msg_post_recv(&port, &msg, 0), -EBADMSG,
+		      "empty message should be rejected");
+	zassert_equal(ptp_msg_post_recv(&port, &msg, sizeof(struct ptp_header) - 1), -EBADMSG,
+		      "message shorter than the header should be rejected");
+
+	/* The version field is not trusted before the header is complete */
+	msg.header.version = 1;
+	zassert_equal(ptp_msg_post_recv(&port, &msg, sizeof(struct ptp_header) - 1), -EBADMSG,
+		      "truncated message of another version should be malformed");
+}
+
+ZTEST(ptp_msg_post_recv, test_version_is_checked_before_type_and_length)
+{
+	struct ptp_port port = {0};
+	struct ptp_msg msg;
+
+	/* Undefined type, other version: the type means nothing for this stack */
+	init_msg_list(&msg);
+	init_header(&msg, PTP_MSG_SYNC, sizeof(struct ptp_sync_msg));
+	msg.header.type_major_sdo_id = 0x0F;
+	msg.header.version = 1;
+
+	zassert_equal(ptp_msg_post_recv(&port, &msg, sizeof(struct ptp_header)),
+		      -EPROTONOSUPPORT, "unsupported version with undefined type");
+
+	/* Defined type, other version, too short for this stack's Sync */
+	init_msg_list(&msg);
+	init_header(&msg, PTP_MSG_SYNC, sizeof(struct ptp_sync_msg));
+	msg.header.version = 1;
+
+	zassert_equal(ptp_msg_post_recv(&port, &msg, sizeof(struct ptp_header)),
+		      -EPROTONOSUPPORT, "unsupported version with short length");
+}
+
+ZTEST(ptp_msg_post_recv, test_undefined_type_is_rejected)
+{
+	struct ptp_port port = {0};
+	struct ptp_msg msg;
+
+	init_msg_list(&msg);
+	init_header(&msg, PTP_MSG_SYNC, sizeof(struct ptp_sync_msg));
+	msg.header.type_major_sdo_id = 0x0F;
+
+	zassert_equal(ptp_msg_post_recv(&port, &msg, sizeof(struct ptp_msg)), -EBADMSG,
+		      "undefined message type should be rejected");
 }
 
 ZTEST(ptp_msg_post_recv, test_delay_resp_post_recv_converts_header_timestamp_and_port)

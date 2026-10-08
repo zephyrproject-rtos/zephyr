@@ -16,7 +16,7 @@ configdefault SHARED_INTERRUPTS
 config BUILD_OUTPUT_UF2_FAMILY_ID
 	default "0x00ff6919"
 
-configdefault LV_DRAW_DMA2D_HAL_INCLUDE
-	default "stm32l4xx.h" if LVGL && LV_USE_DRAW_DMA2D
+configdefault LV_Z_DRAW_DMA2D_HAL_INCLUDE
+	default "stm32l4xx.h" if LVGL && LV_Z_DRAW_DMA2D
 
 endif # SOC_SERIES_STM32L4X

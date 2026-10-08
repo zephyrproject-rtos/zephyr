@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config CAN_RENESAS_RA_CANFD
-	bool "Renesas RA CANFD"
+	bool "Renesas RA CANFD driver"
 	default y
 	depends on DT_HAS_RENESAS_RA_CANFD_ENABLED
 	select USE_RA_FSP_CANFD

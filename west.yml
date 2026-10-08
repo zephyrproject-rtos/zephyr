@@ -178,7 +178,7 @@ manifest:
       groups:
         - hal
     - name: hal_ethos_u
-      revision: 03567073fe2b9802c0bd73f9534da6f8a03924d1
+      revision: 5f0b9d1e17b245aefc308ee0d5a4543833b96b11
       path: modules/hal/ethos_u
       groups:
         - hal
@@ -235,7 +235,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 55d5b9e0341b8dc7612fca4e2f13d6086984709a
+      revision: 4f84c164c0f298dd2ffd806521ef66320a0bf3b1
       groups:
         - hal
     - name: hal_rpi_pico
@@ -322,7 +322,7 @@ manifest:
       revision: 874544f2a8a0212a0cc12e5eea51a024fd3d93d1
       path: modules/lib/loramac-node
     - name: lvgl
-      revision: d1fe35d350a1503db2ec7fd4dfff8e0cc26eea7e
+      revision: c9ffd4692de246eb911c7ba49b78a331b2c63c74
       path: modules/lib/gui/lvgl
     - name: mbedtls
       revision: c43f34b93797e81fd0257c30004dcd0ae332ae51
@@ -403,7 +403,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: b01f190e46afcb02b7f240d2b3ab961d6bca6c24
+      revision: 3d46d29fb296af1ff278ea3216e6fe0289a8fa7a
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

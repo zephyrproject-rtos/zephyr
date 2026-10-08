@@ -54,7 +54,7 @@ add it directly to your application's existing ``west.yml``:
      projects:
        - name: executorch
          url: https://github.com/pytorch/executorch
-         revision: v1.2.0
+         revision: v1.4.0
          path: modules/lib/executorch
          submodules: true
 
@@ -64,7 +64,7 @@ add it directly to your application's existing ``west.yml``:
 
    west update
 
-**Step 3:** Install ExecuTorch and dependencies:
+**Step 3:** Install ExecuTorch with the Arm Ethos-U dependencies:
 
 .. note::
 
@@ -73,9 +73,10 @@ add it directly to your application's existing ``west.yml``:
 
 .. code-block:: console
 
-   pip install executorch==1.2.0
-   pip install tosa-tools==2026.2.1
-   pip install ethos-u-vela==5.0.0
+   pip install "executorch[ethos_u]==1.4.0"
+
+The ``ethos_u`` extra installs the required Arm backend dependencies, including
+TOSA Tools and the Ethos-U Vela compiler.
 
 Build and run
 =============
@@ -323,22 +324,22 @@ inference, and CPU-only inference for devices without an NPU.
             .. code-block:: console
 
                cd ~/zephyrproject
-               python -m modules.lib.executorch.examples.arm.aot_arm_compiler \
+               python -m executorch.backends.arm.scripts.aot_arm_compiler \
                  --model_name=modules/lib/executorch/examples/arm/example_modules/add.py \
-                 --quantize --delegate -t ethos-u55-128 --output=add_u55_128.pte
+                 --quantize --delegate --target=ethos-u55-128 --output=add_u55_128.pte
 
          .. group-tab:: Windows
 
             .. code-block:: console
 
                cd ~/zephyrproject
-               python -m modules.lib.executorch.examples.arm.aot_arm_compiler `
+               python -m executorch.backends.arm.scripts.aot_arm_compiler `
                  --model_name=modules/lib/executorch/examples/arm/example_modules/add.py `
-                 --quantize --delegate -t ethos-u55-128 --output=add_u55_128.pte
+                 --quantize --delegate --target=ethos-u55-128 --output=add_u55_128.pte
 
       ``--delegate`` tells ``aot_arm_compiler`` to use the Ethos-U backend and
-      ``-t ethos-u55-128`` selects the Ethos-U variant and MAC count. These
-      must match your hardware or FVP configuration.
+      ``--target=ethos-u55-128`` selects the Ethos-U variant and MAC count.
+      These must match your hardware or FVP configuration.
 
       .. rubric:: Build and Run
 
@@ -378,9 +379,9 @@ inference, and CPU-only inference for devices without an NPU.
 
       .. code-block:: console
 
-         python -m modules.lib.executorch.examples.arm.aot_arm_compiler \
+         python -m executorch.backends.arm.scripts.aot_arm_compiler \
            --model_name=modules/lib/executorch/examples/arm/example_modules/add.py \
-           --quantize --target=cortex-m55+int8 --output=add_m55.pte
+           --quantize --target=cortex-m55 --output=add_m55.pte
 
       .. rubric:: Build and Run
 
