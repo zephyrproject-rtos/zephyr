@@ -94,7 +94,8 @@ zephyr_library_sources(
 zephyr_library_sources(
   hal/nrf5/cntr.c
   hal/nrf5/radio/radio.c
-  hal/nrf5/mayfly.c
+  ../../hal/mayfly.c
+  ../../hal/ticker.c
   hal/nrf5/ticker.c
   )
 
