@@ -7,7 +7,7 @@
 
 #include <soc.h>
 
-#include "hal/nrf5/swi.h"
+#include "hal/swi.h"
 
 #include "util/memq.h"
 #include "util/mayfly.h"
