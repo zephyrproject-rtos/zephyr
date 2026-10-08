@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Powersoft S.p.A.
+# SPDX-License-Identifier: Apache-2.0
+
+# This test compiles tlv.c directly, without enabling CONFIG_PTP, so the
+# PTP Kconfig entries it uses are redeclared here to give them defaults.
+
+config PTP_LOG_LEVEL
+	default 3
+
+config PTP_MSG_POLL_SIZE
+	default 4
+
+source "Kconfig.zephyr"
