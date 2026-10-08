@@ -19,18 +19,17 @@
 	pinctrl-1 = <&mspi1_sleep>;
 	pinctrl-2 = <&mspi1_flash>;
 	pinctrl-names = "default", "sleep", "flash";
-	status = "okay";
 
 	ce-gpios = <&gpio32_63 18 GPIO_ACTIVE_LOW>;
 
 	cmdq-buffer-location = ".mspi_buff";
 	cmdq-buffer-size = <256>;
+	status = "okay";
 
 	atxp032: atxp032@0 {
 		compatible = "ambiq,mspi-device", "atxp032";
-		size = <DT_SIZE_M(32)>;
 		reg = <0>;
-		status = "okay";
+		size = <DT_SIZE_M(32)>;
 		mspi-max-frequency = <48000000>;
 		mspi-io-mode = "MSPI_IO_MODE_OCTAL";
 		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
@@ -45,6 +44,7 @@
 		ce-break-config = <0 0>;
 		ambiq,timing-config-mask = <3>;
 		ambiq,timing-config = <0 8 0 0 0 0 0 0>;
+		status = "okay";
 	};
 };
 

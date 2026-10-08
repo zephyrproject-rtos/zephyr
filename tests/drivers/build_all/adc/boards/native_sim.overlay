@@ -24,21 +24,13 @@
 			status = "okay";
 		};
 
-		test_gpio: gpio@deadbeef {
-			compatible = "vnd,gpio";
-			gpio-controller;
-			reg = <0xdeadbeef 0x1000>;
-			#gpio-cells = <0x2>;
-			status = "okay";
-		};
-
 		test_i2c: i2c@11112222 {
-			#address-cells = <1>;
-			#size-cells = <0>;
 			compatible = "vnd,i2c";
 			reg = <0x11112222 0x1000>;
-			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			clock-frequency = <100000>;
+			status = "okay";
 
 			test_i2c_ads1013: ads1013@0 {
 				compatible = "ti,ads1013";
@@ -101,23 +93,13 @@
 
 			test_i2c_ad559x: ad559x@9 {
 				compatible = "adi,ad559x";
-				status = "okay";
 				reg = <0x9>;
 				#io-channel-cells = <1>;
 				reset-gpios = <&test_gpio 0 0>;
+				status = "okay";
 
 				test_i2c_ad559x_adc: adc-controller {
 					compatible = "adi,ad559x-adc";
-					#io-channel-cells = <1>;
-				};
-			};
-
-			test_i2c_m5pm1: pmic@6e {
-				compatible = "m5stack,m5pm1";
-				reg = <0x6e>;
-
-				test_i2c_m5pm1_adc: adc {
-					compatible = "m5stack,m5pm1-adc";
 					#io-channel-cells = <1>;
 				};
 			};
@@ -147,8 +129,8 @@
 
 				test_i2c_tla2528_adc: adc {
 					compatible = "ti,tla2528-adc";
-					status = "okay";
 					#io-channel-cells = <1>;
+					status = "okay";
 				};
 			};
 
@@ -199,14 +181,23 @@
 				reg = <0x55>;
 				#io-channel-cells = <1>;
 			};
+
+			test_i2c_m5pm1: pmic@6e {
+				compatible = "m5stack,m5pm1";
+				reg = <0x6e>;
+
+				test_i2c_m5pm1_adc: adc {
+					compatible = "m5stack,m5pm1-adc";
+					#io-channel-cells = <1>;
+				};
+			};
 		};
 
 		test_spi: spi@33334444 {
-			#address-cells = <1>;
-			#size-cells = <0>;
 			compatible = "vnd,spi";
 			reg = <0x33334444 0x1000>;
-			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			clock-frequency = <2000000>;
 
 			/* one entry for every devices at spi.dtsi */
@@ -241,6 +232,7 @@
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>;
+			status = "okay";
 
 			test_spi_mcp3204: mcp3204@0 {
 				compatible = "microchip,mcp3204";
@@ -429,10 +421,10 @@
 
 			test_spi_ad559x: ad559x@16 {
 				compatible = "adi,ad559x";
-				status = "okay";
 				reg = <0x16>;
 				spi-max-frequency = <0>;
 				reset-gpios = <&test_gpio 0 0>;
+				status = "okay";
 
 				test_spi_ad559x_adc: adc-controller {
 					compatible = "adi,ad559x-adc";
@@ -456,13 +448,6 @@
 				active-device = <1>;
 			};
 
-			test_spi_ad4130: ad41304@19 {
-				compatible = "adi,ad4130-adc";
-				reg = <0x19>;
-				spi-max-frequency = <0>;
-				#io-channel-cells = <1>;
-			};
-
 			test_spi_mcp356xr: mcp356xr@18 {
 				compatible = "microchip,mcp356xr";
 				reg = <0x1a>;
@@ -473,6 +458,13 @@
 				analog-clock-prescaler = <0>;
 				boost-current-bias = <0>;
 				irq-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_ad4130: ad41304@19 {
+				compatible = "adi,ad4130-adc";
+				reg = <0x19>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
 			};
 
 			test_spi_adc124s021: adc124s021@1b {
@@ -649,6 +641,14 @@
 				drdy-gpios = <&test_gpio 0 GPIO_ACTIVE_LOW>;
 				#io-channel-cells = <1>;
 			};
+		};
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			reg = <0xdeadbeef 0x1000>;
+			gpio-controller;
+			#gpio-cells = <0x2>;
+			status = "okay";
 		};
 	};
 };

@@ -9,36 +9,36 @@
 };
 
 &timer0 {
-	status = "okay";
 	prescaler = <1999>;
+	status = "okay";
 };
 
 &timer1 {
-	status = "okay";
 	prescaler = <1999>;
+	status = "okay";
 };
 
 &timer2 {
-	status = "okay";
 	prescaler = <1999>;
+	status = "okay";
 };
 
 &timer3 {
-	status = "okay";
 	prescaler = <1999>;
+	status = "okay";
 };
 
 &timer4 {
-	status = "okay";
 	prescaler = <1999>;
+	status = "okay";
 };
 
 &timer5 {
-	status = "okay";
 	prescaler = <1999>;
+	status = "okay";
 };
 
 &timer6 {
-	status = "okay";
 	prescaler = <1999>;
+	status = "okay";
 };

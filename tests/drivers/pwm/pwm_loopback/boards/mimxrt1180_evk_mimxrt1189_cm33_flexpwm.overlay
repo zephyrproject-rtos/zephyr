@@ -33,9 +33,9 @@
 };
 
 &flexpwm1_pwm0 {
-	status = "okay";
 	pinctrl-0 = <&flexpwm1_pwm0_default>;
 	pinctrl-names = "default";
 	input-filter-count = <1>;
 	input-filter-period = <1>;
+	status = "okay";
 };

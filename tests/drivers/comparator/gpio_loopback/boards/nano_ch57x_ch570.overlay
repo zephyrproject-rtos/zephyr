@@ -30,8 +30,8 @@
 };
 
 &cmp0 {
-	status = "okay";
 	pinctrl-0 = <&cmp0_pins>;
 	pinctrl-names = "default";
 	nref-voltage = <800>;
+	status = "okay";
 };

@@ -19,27 +19,27 @@
 };
 
 &spi22_sleep {
+
+	low-power-enable;
+
 	group1 {
 		psels = <NRF_PSEL(SPIM_SCK, 1, 11)>,
 			<NRF_PSEL(SPIM_MOSI, 1, 12)>,
 			<NRF_PSEL(SPIM_MISO, 1, 13)>;
 	};
-
-	low-power-enable;
 };
 
 &spi22 {
-	status = "okay";
 	pinctrl-0 = <&spi22_default>;
 	pinctrl-1 = <&spi22_sleep>;
 	pinctrl-names = "default", "sleep";
 	cs-gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
 	overrun-character = <0x00>;
+	status = "okay";
 
 	w25n01gv: spi-nand@0 {
 		compatible = "jedec,spi-nand";
 		reg = <0>;
-		status = "okay";
 		spi-max-frequency = <104000000>;
 
 		/* w25n01gv parameters */
@@ -52,6 +52,7 @@
 		page-program-duration-max = <700>;
 		page-read-duration-max = <200>;
 		reset-duration-max = <500>;
+		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -59,8 +60,8 @@
 			#size-cells = <1>;
 
 			storage_partition: partition@0 {
-				label = "storage";
 				reg = <0x0 DT_SIZE_M(2)>;
+				label = "storage";
 			};
 		};
 	};

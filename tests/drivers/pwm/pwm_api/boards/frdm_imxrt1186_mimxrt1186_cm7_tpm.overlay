@@ -26,8 +26,8 @@ pwm_test_center: &tpm2 {
 };
 
 &tpm2 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_tpm2>;
 	pinctrl-names = "default";
 	pwm-mode = <1>;
+	status = "okay";
 };

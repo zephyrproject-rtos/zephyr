@@ -11,12 +11,12 @@
 };
 
 &adc1 {
-	status = "okay";
 
 	pinctrl-0 = <&adc1_vinp0_pb3>;
 	pinctrl-names = "default";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	vinp0: channel@4 {
 		reg = <4>;

@@ -26,9 +26,9 @@
 	flexio_pwm: flexio_pwm {
 		compatible = "nxp,flexio-pwm";
 		#pwm-cells = <3>;
-		status = "okay";
 		pinctrl-0 = <&pinmux_flexio_pwm>;
 		pinctrl-names = "default";
+		status = "okay";
 
 		pwm_0 {
 			pin-id = <16>;

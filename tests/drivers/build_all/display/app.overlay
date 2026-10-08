@@ -22,28 +22,13 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		test_gpio: gpio@deadbeef {
-			compatible = "vnd,gpio";
-			gpio-controller;
-			reg = <0xdeadbeef 0x1000>;
-			#gpio-cells = <0x2>;
-			status = "okay";
-		};
-
-		test_pwm: pwm@deadba11 {
-			compatible = "vnd,pwm";
-			reg = <0xdeadba11 0x1000>;
-			#pwm-cells = <3>;
-			status = "okay";
-		};
-
 		test_mipi_dbi {
 			compatible = "zephyr,mipi-dbi-spi";
-			status = "okay";
 			dc-gpios = <&test_gpio 0 0>;
 			spi-dev = <&test_spi>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "okay";
 
 			test_mipi_dbi_ili9342c: ili9342c@0 {
 				compatible = "ilitek,ili9342c";
@@ -70,9 +55,9 @@
 
 			test_mipi_dbi_st7735r: st7735t@2 {
 				compatible = "sitronix,st7735r";
+				reg = <0x2>;
 				mipi-max-frequency = <250000000>;
 				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
-				reg = <0x2>;
 				/* Arbitrary values */
 				x-offset = <0>;
 				y-offset = <0>;
@@ -112,8 +97,8 @@
 
 			test_mipi_dbi_ssd1680: ssd1680@4 {
 				compatible = "gooddisplay,gdey0213b74", "solomon,ssd1680";
-				mipi-max-frequency = <4000000>;
 				reg = <0x4>;
+				mipi-max-frequency = <4000000>;
 				width = <250>;
 				height = <122>;
 				busy-gpios = <&test_gpio 0 0>;
@@ -122,8 +107,8 @@
 
 			test_uc8176_waveshare_epaper_gdew042t2: uc8176@5 {
 				compatible = "ultrachip,uc8176";
-				mipi-max-frequency = <4000000>;
 				reg = <0x5>;
+				mipi-max-frequency = <4000000>;
 				width = <400>;
 				height = <300>;
 				busy-gpios = <&test_gpio 0 0>;
@@ -184,8 +169,8 @@
 
 			test_mipi_dbi_st75256: st75256@a {
 				compatible = "sitronix,st75256";
-				mipi-max-frequency = <10000000>;
 				reg = <0xa>;
+				mipi-max-frequency = <10000000>;
 				width = <256>;
 				height = <128>;
 				booster-frequency = <0>;
@@ -255,8 +240,8 @@
 
 			test_mipi_dbi_ssd1351: ssd1351@e {
 				compatible = "solomon,ssd1351";
-				mipi-max-frequency = <10000000>;
 				reg = <0xe>;
+				mipi-max-frequency = <10000000>;
 				width = <128>;
 				height = <128>;
 				oscillator-freq = <0x0>;
@@ -291,8 +276,8 @@
 
 			test_mipi_dbi_ssd1357: ssd1357@10 {
 				compatible = "solomon,ssd1357";
-				mipi-max-frequency = <10000000>;
 				reg = <0x10>;
+				mipi-max-frequency = <10000000>;
 				width = <128>;
 				height = <128>;
 				oscillator-freq = <0x0>;
@@ -312,10 +297,10 @@
 				compatible = "ultrachip,uc8151d";
 				reg = <0x11>;
 				mipi-max-frequency = <4000000>;
-				status = "okay";
 				width = <128>;
 				height = <296>;
 				busy-gpios = <&test_gpio 0 0>;
+				status = "okay";
 
 				full {
 					/* Override CDI / VCOM for full refresh */
@@ -331,8 +316,8 @@
 
 			test_mipi_dbi_st7305: st7305@12 {
 				compatible = "sitronix,st7305";
-				mipi-max-frequency = <10000000>;
 				reg = <0x12>;
+				mipi-max-frequency = <10000000>;
 				width = <168>;
 				height = <384>;
 				start-line = <0>;
@@ -354,8 +339,8 @@
 
 			test_mipi_dbi_st7306: st7306@13 {
 				compatible = "sitronix,st7306";
-				mipi-max-frequency = <10000000>;
 				reg = <0x13>;
+				mipi-max-frequency = <10000000>;
 				width = <312>;
 				height = <400>;
 				start-line = <0>;
@@ -377,8 +362,8 @@
 
 			test_mipi_dbi_st7567: st7567@14 {
 				compatible = "sitronix,st7567";
-				mipi-max-frequency = <1000000>;
 				reg = <0x14>;
+				mipi-max-frequency = <1000000>;
 				width = <128>;
 				height = <64>;
 				column-offset = <0>;
@@ -437,8 +422,8 @@
 
 			test_spi_st7586s: st7586s@18 {
 				compatible = "sitronix,st7586s";
-				mipi-max-frequency = <10000000>;
 				reg = <0x18>;
+				mipi-max-frequency = <10000000>;
 				width = <384>;
 				height = <160>;
 				duty = <159>;
@@ -452,8 +437,8 @@
 
 			test_mipi_dbi_ssd1683: ssd1683@19 {
 				compatible = "solomon,ssd1683";
-				mipi-max-frequency = <4000000>;
 				reg = <0x19>;
+				mipi-max-frequency = <4000000>;
 				width = <300>;
 				height = <400>;
 				busy-gpios = <&test_gpio 0 0>;
@@ -510,6 +495,8 @@
 				busy-gpios = <&test_gpio 0 0>;
 				softstart = [37 3d 3d];
 
+				status = "okay";
+
 				full {
 					pwr = [03 10 3f 3f 03];
 					cdi = <0x17>;
@@ -517,8 +504,6 @@
 					pll = <0x09>;
 					vdcs = <0x07>;
 				};
-
-				status = "okay";
 			};
 
 			test_uc8253_gdey037t03_gray: uc8253@29 {
@@ -531,13 +516,13 @@
 				grayscale;
 				gray-level-planes = <0 2 1 3>;
 
+				status = "okay";
+
 				gray {
 					cdi = <0x97>;
 					ccset = <0x02>;
 					tsset = <0x5a>;
 				};
-
-				status = "okay";
 			};
 
 			test_mipi_dbi_pcd8544: pcd8544@2a {
@@ -553,13 +538,13 @@
 
 		test_mipi_dbi_xfr_16bit_write_only {
 			compatible = "zephyr,mipi-dbi-spi";
-			status = "okay";
 			dc-gpios = <&test_gpio 0 0>;
 			spi-dev = <&test_spi>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			xfr-min-bits = "MIPI_DBI_SPI_XFR_16BIT";
 			write-only;
+			status = "okay";
 
 			test_mipi_dbi_xfr_16bit_ili9342c: ili9342c@0 {
 				compatible = "ilitek,ili9342c";
@@ -591,7 +576,6 @@
 			status = "okay";
 
 			test_hx8394: hx8394@0 {
-				status = "okay";
 				compatible = "himax,hx8394";
 				reg = <0x0>;
 				reset-gpios = <&test_gpio 0 0>;
@@ -599,10 +583,10 @@
 				width = <720>;
 				height = <1280>;
 				pixel-format = <0>;
+				status = "okay";
 			};
 
 			test_nt35510: nt35510@1 {
-				status = "okay";
 				compatible = "frida,nt35510";
 				reg = <0x1>;
 				height = <800>;
@@ -612,10 +596,10 @@
 				data-lanes = <2>;
 				pixel-format = <0>;
 				rotation = <90>;
+				status = "okay";
 			};
 
 			test_otm8009a: otm8009a@2 {
-				status = "okay";
 				compatible = "orisetech,otm8009a";
 				reg = <0x2>;
 				height = <800>;
@@ -625,10 +609,10 @@
 				data-lanes = <2>;
 				pixel-format = <0>;
 				rotation = <90>;
+				status = "okay";
 			};
 
 			test_rm67162: rm67162@3 {
-				status = "okay";
 				compatible = "raydium,rm67162";
 				reg = <0x3>;
 				reset-gpios = <&test_gpio 0 0>;
@@ -638,10 +622,10 @@
 				width = <400>;
 				height = <392>;
 				pixel-format = <0>;
+				status = "okay";
 			};
 
 			test_rm68200: rm68200@4 {
-				status = "okay";
 				compatible = "raydium,rm68200";
 				reg = <0x4>;
 				reset-gpios = <&test_gpio 0 0>;
@@ -649,6 +633,7 @@
 				width = <720>;
 				height = <1280>;
 				pixel-format = <0>;
+				status = "okay";
 			};
 
 			test_st7701: st7701@5 {
@@ -678,7 +663,6 @@
 			};
 
 			hx8379c: hx8379c@6 {
-				status = "okay";
 				compatible = "himax,hx8379c";
 				reg = <0x6>;
 				width = <480>;
@@ -686,6 +670,7 @@
 				data-lanes = <2>;
 				pixel-format = <0>;
 				reset-gpios = <&test_gpio 0 0>;
+				status = "okay";
 
 				display-timings {
 					compatible = "zephyr,panel-timing";
@@ -703,7 +688,6 @@
 			};
 
 			test_co5300: co5300@7 {
-				status = "okay";
 				compatible = "raydium,rm67162";
 				reg = <0x7>;
 				reset-gpios = <&test_gpio 0 0>;
@@ -713,30 +697,30 @@
 				width = <466>;
 				height = <466>;
 				pixel-format = <0>;
+				status = "okay";
 			};
 
 			test_rm67199: rm67199@8 {
-				status = "okay";
 				compatible = "raydium,rm67199";
 				reg = <0x8>;
 				bl-gpios = <&test_gpio 0 0>;
 				reset-gpios = <&test_gpio 0 0>;
 				data-lanes = <4>;
 				pixel-format = <0>;
+				status = "okay";
 			};
 
 			test_rm692c9: rm692c9@9 {
-				status = "okay";
 				compatible = "raydium,rm692c9";
 				reg = <9>;
 				bl-gpios = <&test_gpio 0 0>;
 				reset-gpios = <&test_gpio 0 0>;
 				data-lanes = <4>;
 				pixel-format = <0>;
+				status = "okay";
 			};
 
 			test_ek79007: ek79007@a {
-				status = "okay";
 				compatible = "fitipower,ek79007";
 				reg = <0xa>;
 				reset-gpios = <&test_gpio 0 0>;
@@ -745,6 +729,7 @@
 				width = <1024>;
 				height = <600>;
 				pixel-format = <0>;
+				status = "okay";
 
 				display-timings {
 					compatible = "zephyr,panel-timing";
@@ -762,20 +747,53 @@
 			};
 
 			test_adv7535_dsi: adv7535@b {
-				status = "okay";
 				compatible = "adi,adv7535-dsi";
 				reg = <0xb>;
 				data-lanes = <4>;
 				pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
+				status = "okay";
+			};
+		};
+
+		test_led_strip_matrix {
+			compatible = "led-strip-matrix";
+
+			led-strips = <&test_led_strip_0>, <&test_led_strip_1>;
+			chain-lengths = <256>, <256>;
+			width = <32>;
+			height = <16>;
+			horizontal-modules = <2>;
+			vertical-modules = <1>;
+			circulative;
+			start-from-right;
+			status = "okay";
+		};
+
+		test_adv7535_timing_source {
+			compatible = "zephyr,dummy-dc";
+			width = <1920>;
+			height = <1080>;
+
+			test_adv7535_timing: display-timings {
+				compatible = "zephyr,panel-timing";
+				hsync-active = <0>;
+				vsync-active = <0>;
+				de-active = <0>;
+				pixelclk-active = <0>;
+				hsync-len = <44>;
+				hfront-porch = <88>;
+				hback-porch = <148>;
+				vsync-len = <5>;
+				vfront-porch = <4>;
+				vback-porch = <36>;
 			};
 		};
 
 		test_spi: spi@33334444 {
-			#address-cells = <1>;
-			#size-cells = <0>;
 			compatible = "vnd,spi";
 			reg = <0x33334444 0x1000>;
-			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			clock-frequency = <2000000>;
 
 			/* Chip select GPIOs for reg 0 through 9. Children at
@@ -786,6 +804,7 @@
 				    &test_gpio 0 3 &test_gpio 0 4 &test_gpio 0 5
 				    &test_gpio 0 6 &test_gpio 0 7 &test_gpio 0 8
 				    &test_gpio 0 9>;
+			status = "okay";
 
 			test_led_strip_0: lpd8806@0 {
 				compatible = "greeled,lpd8806";
@@ -795,50 +814,6 @@
 				color-mapping = <LED_COLOR_ID_RED
 						 LED_COLOR_ID_GREEN
 						 LED_COLOR_ID_BLUE>;
-			};
-
-			test_led_strip_1: ws2812_spi@1 {
-				compatible = "worldsemi,ws2812-spi";
-				reg = <0x1>;
-				spi-max-frequency = <2000000>;
-				spi-one-frame = <1>;
-				spi-zero-frame = <1>;
-				chain-length = <256>;
-				color-mapping = <0 1 2>;
-				reset-delay = <280>;
-			};
-
-			test_ls0xx: ls0xx@7 {
-				compatible = "sharp,ls0xx";
-				spi-max-frequency = <2000000>;
-				reg = <0x7>;
-				width = <128>;
-				height = <128>;
-				extcomin-gpios = <&test_gpio 0 0>;
-				extcomin-frequency = <60>;
-				disp-en-gpios = <&test_gpio 0 0>;
-			};
-
-			test_max7219: max7219@8 {
-				compatible = "maxim,max7219";
-				reg = <0x8>;
-				spi-max-frequency = <1000000>;
-				num-cascading = <1>;
-				intensity = <0>;
-				scan-limit = <7>;
-			};
-
-			test_it8951: it8951@9 {
-				compatible = "ite,it8951";
-				reg = <0x9>;
-				spi-max-frequency = <10000000>;
-				width = <1872>;
-				height = <1404>;
-				busy-gpios = <&test_gpio 0 0>;
-				reset-gpios = <&test_gpio 0 0>;
-				vcom-mv = <1400>;
-				initial-refresh-waveform = <0>;
-				refresh-waveform = <2>;
 			};
 
 			test_lt7680: lt7680@0 {
@@ -868,63 +843,85 @@
 					vsync-len = <3>;
 				};
 			};
+
+			test_led_strip_1: ws2812_spi@1 {
+				compatible = "worldsemi,ws2812-spi";
+				reg = <0x1>;
+				spi-max-frequency = <2000000>;
+				spi-one-frame = <1>;
+				spi-zero-frame = <1>;
+				chain-length = <256>;
+				color-mapping = <0 1 2>;
+				reset-delay = <280>;
+			};
+
+			test_ls0xx: ls0xx@7 {
+				compatible = "sharp,ls0xx";
+				reg = <0x7>;
+				spi-max-frequency = <2000000>;
+				width = <128>;
+				height = <128>;
+				extcomin-gpios = <&test_gpio 0 0>;
+				extcomin-frequency = <60>;
+				disp-en-gpios = <&test_gpio 0 0>;
+			};
+
+			test_max7219: max7219@8 {
+				compatible = "maxim,max7219";
+				reg = <0x8>;
+				spi-max-frequency = <1000000>;
+				num-cascading = <1>;
+				intensity = <0>;
+				scan-limit = <7>;
+			};
+
+			test_it8951: it8951@9 {
+				compatible = "ite,it8951";
+				reg = <0x9>;
+				spi-max-frequency = <10000000>;
+				width = <1872>;
+				height = <1404>;
+				busy-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 0 0>;
+				vcom-mv = <1400>;
+				initial-refresh-waveform = <0>;
+				refresh-waveform = <2>;
+			};
 		};
 
 		test_mspi: mspi@44445555 {
-			#address-cells = <1>;
-			#size-cells = <0>;
 			compatible = "zephyr,mspi-emul-controller";
 			reg = <0x44445555 0x1000>;
-			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			clock-frequency = <2000000>;
 			ce-gpios = <&test_gpio 0 0>;
+			status = "okay";
 
 			test_chipone_co5300: co5300@0 {
 				compatible = "chipone,co5300";
-				status = "okay";
 				reg = <0>;
 				mspi-max-frequency = <30000000>;
 				pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
 				width = <466>;
 				height = <466>;
+				status = "okay";
 			};
-		};
-
-		test_led_strip_matrix {
-			compatible = "led-strip-matrix";
-			status = "okay";
-
-			led-strips = <&test_led_strip_0>, <&test_led_strip_1>;
-			chain-lengths = <256>, <256>;
-			width = <32>;
-			height = <16>;
-			horizontal-modules = <2>;
-			vertical-modules = <1>;
-			circulative;
-			start-from-right;
 		};
 
 		test_i2c: i2c@60013000 {
-			#address-cells = <1>;
-			#size-cells = <0>;
 			compatible = "vnd,i2c";
 			reg = <0x60013000 0x1000>;
-			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			clock-frequency = <100000>;
-
-			test_adv7535: hdmi-bridge@3d {
-				compatible = "adi,adv7535";
-				reg = <0x3d>;
-				adi,addr-cec = <0x3b>;
-				dsi-device = <&test_adv7535_dsi>;
-				display-timing = <&test_adv7535_timing>;
-			};
+			status = "okay";
 
 			test_ist3931: ist3931@0 {
+				compatible = "istech,ist3931";
 				reg = <0x0>;
 				width = <64>;
 				height = <32>;
-				compatible = "istech,ist3931";
 				reset-gpios = <&test_gpio 1 0>;
 				x-offset = <0>;
 				y-offset = <32>;
@@ -1035,26 +1032,29 @@
 				phase-length = <0x22>;
 				vcomh-voltage = <0x2>;
 			};
+
+			test_adv7535: hdmi-bridge@3d {
+				compatible = "adi,adv7535";
+				reg = <0x3d>;
+				dsi-device = <&test_adv7535_dsi>;
+				display-timing = <&test_adv7535_timing>;
+				adi,addr-cec = <0x3b>;
+			};
 		};
 
-		test_adv7535_timing_source {
-			compatible = "zephyr,dummy-dc";
-			width = <1920>;
-			height = <1080>;
+		test_pwm: pwm@deadba11 {
+			compatible = "vnd,pwm";
+			reg = <0xdeadba11 0x1000>;
+			#pwm-cells = <3>;
+			status = "okay";
+		};
 
-			test_adv7535_timing: display-timings {
-				compatible = "zephyr,panel-timing";
-				hsync-active = <0>;
-				vsync-active = <0>;
-				de-active = <0>;
-				pixelclk-active = <0>;
-				hsync-len = <44>;
-				hfront-porch = <88>;
-				hback-porch = <148>;
-				vsync-len = <5>;
-				vfront-porch = <4>;
-				vback-porch = <36>;
-			};
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			reg = <0xdeadbeef 0x1000>;
+			gpio-controller;
+			#gpio-cells = <0x2>;
+			status = "okay";
 		};
 	};
 };

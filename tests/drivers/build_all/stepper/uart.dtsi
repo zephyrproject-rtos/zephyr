@@ -11,13 +11,13 @@
 
 adi_tmc51xx_uart: adi-tmc51xx {
 	compatible = "adi,tmc51xx";
-	status = "okay";
 
 	label = "tmc5160_uart_1";
 
 	en-pwm-mode;
 	test-mode; /* ADI TMC Global configuration flags */
 	clock-frequency = <16000000>; /* Internal/External Clock frequency */
+	status = "okay";
 
 	tmc51xx_stepper_driver: stepper-driver {
 		compatible = "adi,tmc51xx-stepper-driver";
@@ -55,21 +55,21 @@ adi_tmcm3216 {
 
 	adi_tmcm3216_uart: adi-tmcm3216@1 {
 		compatible = "adi,tmcm3216";
-		status = "okay";
 		reg = <0x1>;
 		de-gpios = <&test_gpio 0x01 GPIO_ACTIVE_HIGH>;
+		status = "okay";
 
 		stepper_driver_0: stepper-driver {
 			compatible = "adi,tmcm3216-stepper-driver";
-			status = "okay";
 			idx = <0>;
 			micro-step-res = <16>;
+			status = "okay";
 		};
 
 		stepper_ctrl_0: stepper-ctrl {
 			compatible = "adi,tmcm3216-stepper-ctrl";
-			status = "okay";
 			idx = <0>;
+			status = "okay";
 		};
 	};
 };

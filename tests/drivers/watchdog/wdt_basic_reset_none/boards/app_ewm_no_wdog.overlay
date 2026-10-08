@@ -10,8 +10,8 @@
 };
 
 &ewm0 {
-	status = "okay";
 	clk-divider = <3>;
+	status = "okay";
 };
 
 &wdog {

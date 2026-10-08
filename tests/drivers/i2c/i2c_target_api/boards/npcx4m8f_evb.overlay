@@ -9,10 +9,10 @@
 };
 
 &i2c1_0 {
-	status = "okay";
 	pinctrl-0 = <&i2c1_0_sda_scl_gp87_90>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	eeprom0: eeprom@54 {
 		compatible = "zephyr,i2c-target-eeprom";
@@ -27,10 +27,10 @@
 };
 
 &i2c2_0 {
-	status = "okay";
 	pinctrl-0 = <&i2c2_0_sda_scl_gp91_92>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	eeprom1: eeprom@56 {
 		compatible = "zephyr,i2c-target-eeprom";

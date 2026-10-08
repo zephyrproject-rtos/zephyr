@@ -10,8 +10,8 @@
 	partitions {
 		small_partition: partition@e0000 {
 			compatible = "zephyr,mapped-partition";
-			label = "small";
 			reg = <0x000e0000 DT_SIZE_K(128)>;
+			label = "small";
 		};
 	};
 };

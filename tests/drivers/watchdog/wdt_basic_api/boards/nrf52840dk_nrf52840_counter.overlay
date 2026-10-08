@@ -5,9 +5,9 @@
  */
 
 &timer0 {
-	status = "okay";
 	interrupts = <8 0>;
 	zli;
+	status = "okay";
 };
 
 &wdt0 {
@@ -17,7 +17,7 @@
 / {
 	wdt_counter: wdt-counter {
 		compatible = "zephyr,counter-watchdog";
-		status = "okay";
 		counter = <&timer0>;
+		status = "okay";
 	};
 };

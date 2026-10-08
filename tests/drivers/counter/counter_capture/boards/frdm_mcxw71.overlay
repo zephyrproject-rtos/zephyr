@@ -48,8 +48,8 @@
 
 &tpm1 {
 	compatible = "nxp,tpm-timer";
-	status = "okay";
 	#counter-capture-cells = <2>;
 	pinctrl-0 = <&pinmux_tpm1_capture_in>;
 	pinctrl-names = "default";
+	status = "okay";
 };

@@ -18,9 +18,9 @@
 	pinctrl-names = "default";
 	interrupts = <93 12>, <94 12>, <95 12>;
 	interrupt-names = "ssi_txi", "ssi_rxi", "ssi_if";
-	status = "okay";
 	clocks = <&pclkb MSTPC 8>, <&ssi_internal_clock 0>;
 	clock-names = "pclk", "audio-clock";
+	status = "okay";
 };
 
 &i2s1 {
@@ -28,9 +28,9 @@
 	pinctrl-names = "default";
 	interrupts = <91 12>, <92 12>;
 	interrupt-names = "ssi_rt", "ssi_if";
-	status = "okay";
 	clocks = <&pclkb MSTPC 7>, <&ssi_internal_clock 0>;
 	clock-names = "pclk", "audio-clock";
+	status = "okay";
 };
 
 &pwm2 {
@@ -41,10 +41,10 @@
 	status = "okay";
 
 	ssi_internal_clock: pwmclock {
-		status = "okay";
 		compatible = "pwm-clock";
 		#clock-cells = <1>;
 		pwms = <&pwm2 0 PWM_HZ(2822400) PWM_POLARITY_NORMAL>;
+		status = "okay";
 	};
 };
 

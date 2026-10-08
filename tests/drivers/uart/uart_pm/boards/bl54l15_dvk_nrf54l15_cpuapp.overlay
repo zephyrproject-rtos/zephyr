@@ -29,9 +29,9 @@
 };
 
 dut: &uart21 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart21_default>;
 	pinctrl-1 = <&uart21_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };

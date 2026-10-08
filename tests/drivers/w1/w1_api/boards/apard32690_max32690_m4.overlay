@@ -5,8 +5,8 @@
  */
 
 w1_0: &w1 {
-	status = "okay";
 	internal-pullup = <1>;
+	status = "okay";
 };
 
 #include "../w1_devices.dtsi"

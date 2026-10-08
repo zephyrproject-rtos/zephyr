@@ -44,9 +44,9 @@
 	pinctrl-names = "default";
 	interrupts = <61 12>, <62 12>;
 	interrupt-names = "calend", "convserr";
-	renesas,adc-method = "oversample";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	renesas,adc-method = "oversample";
 	status = "okay";
 
 	channel@0 {

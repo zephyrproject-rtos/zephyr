@@ -10,6 +10,6 @@
 };
 
 &i2c2 {
-	status = "okay";
 	duty-cycle-percent = <20>;
+	status = "okay";
 };

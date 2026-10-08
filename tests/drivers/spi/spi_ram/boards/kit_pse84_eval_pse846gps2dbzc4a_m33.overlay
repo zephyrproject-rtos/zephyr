@@ -21,7 +21,6 @@ spi1: &scb10 {
 	compatible = "infineon,spi";
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 
 	pinctrl-0 = <&p16_1_scb10_spi_m_mosi
 		     &p16_2_scb10_spi_m_miso
@@ -31,6 +30,7 @@ spi1: &scb10 {
 	cs-gpios = <&gpio_prt16 3 GPIO_ACTIVE_LOW>;
 
 	clocks = <&peri0_group1_16bit_2>;
+	status = "okay";
 };
 
 &peri0_group1_16bit_2 {

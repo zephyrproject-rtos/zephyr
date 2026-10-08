@@ -39,8 +39,8 @@
 
 				storage_partition: partition@0 {
 					compatible = "zephyr,mapped-partition";
-					label = "storage";
 					reg = <0x0 DT_SIZE_M(1)>;
+					label = "storage";
 				};
 			};
 		};

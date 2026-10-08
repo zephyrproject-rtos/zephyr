@@ -23,11 +23,11 @@
 };
 
 &arduino_spi {
-	status = "okay";
 	dmas = <&dma0 1 MAX32_DMA_SLOT_SPI1_TX>, <&dma0 2 MAX32_DMA_SLOT_SPI1_RX>;
 	dma-names = "tx", "rx";
 	pinctrl-0 = <&spi1a_miso_p1_28 &spi1a_mosi_p1_29 &spi1a_sck_p1_26>;
 	cs-gpios = <&gpio1 23 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
+	status = "okay";
 
 	dut_spi_dt: test-spi-dev@0 {
 		compatible = "vnd,spi-device";

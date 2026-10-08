@@ -58,17 +58,18 @@ ZTEST(gpio_reserved_ranges, test_reserved_ranges)
 			0, "");
 
 	/* GPIO_DT_INST_RESERVED_RANGES_NGPIOS */
-	zassert_equal(GPIO_DT_INST_RESERVED_RANGES_NGPIOS(0, 32), 0xdeadbeef,
+	zassert_equal(GPIO_DT_INST_RESERVED_RANGES_NGPIOS(0, 18), 0xfffc0418,
 			"");
-	zassert_equal(GPIO_DT_INST_RESERVED_RANGES_NGPIOS(1, 32), 0x7fffbeff,
+	zassert_equal(GPIO_DT_INST_RESERVED_RANGES_NGPIOS(1, 32), 0,
 			"");
-	zassert_equal(GPIO_DT_INST_RESERVED_RANGES_NGPIOS(2, 18), 0xfffc0418,
+	zassert_equal(GPIO_DT_INST_RESERVED_RANGES_NGPIOS(2, 16), 0xfffffff0,
 			"");
-	zassert_equal(GPIO_DT_INST_RESERVED_RANGES_NGPIOS(3, 16), 0xfffffff0,
+	zassert_equal(GPIO_DT_INST_RESERVED_RANGES_NGPIOS(3, 0), 0xffffffff,
 			"");
-	zassert_equal(GPIO_DT_INST_RESERVED_RANGES_NGPIOS(4, 0), 0xffffffff,
+	zassert_equal(GPIO_DT_INST_RESERVED_RANGES_NGPIOS(4, 32), 0x7fffbeff,
 			"");
-	zassert_equal(GPIO_DT_INST_RESERVED_RANGES_NGPIOS(5, 32), 0, "");
+	zassert_equal(GPIO_DT_INST_RESERVED_RANGES_NGPIOS(5, 32), 0xdeadbeef,
+			"");
 
 	/* GPIO_DT_RESERVED_RANGES */
 	zassert_equal(GPIO_DT_RESERVED_RANGES(TEST_GPIO_1), 0xdeadbeef, "");
@@ -79,12 +80,12 @@ ZTEST(gpio_reserved_ranges, test_reserved_ranges)
 	zassert_equal(GPIO_DT_RESERVED_RANGES(TEST_GPIO_6), 0x0, "");
 
 	/* GPIO_DT_INST_RESERVED_RANGES */
-	zassert_equal(GPIO_DT_INST_RESERVED_RANGES(0), 0xdeadbeef, "");
-	zassert_equal(GPIO_DT_INST_RESERVED_RANGES(1), 0x7fffbeff, "");
-	zassert_equal(GPIO_DT_INST_RESERVED_RANGES(2), 0xfffc0418, "");
-	zassert_equal(GPIO_DT_INST_RESERVED_RANGES(3), 0xfffffff0, "");
-	zassert_equal(GPIO_DT_INST_RESERVED_RANGES(4), 0xffffffff, "");
-	zassert_equal(GPIO_DT_INST_RESERVED_RANGES(5), 0x0, "");
+	zassert_equal(GPIO_DT_INST_RESERVED_RANGES(0), 0xfffc0418, "");
+	zassert_equal(GPIO_DT_INST_RESERVED_RANGES(1), 0, "");
+	zassert_equal(GPIO_DT_INST_RESERVED_RANGES(2), 0xfffffff0, "");
+	zassert_equal(GPIO_DT_INST_RESERVED_RANGES(3), 0xffffffff, "");
+	zassert_equal(GPIO_DT_INST_RESERVED_RANGES(4), 0x7fffbeff, "");
+	zassert_equal(GPIO_DT_INST_RESERVED_RANGES(5), 0xdeadbeef, "");
 }
 
 ZTEST(gpio_reserved_ranges, test_port_pin_mask_exc)
@@ -104,17 +105,17 @@ ZTEST(gpio_reserved_ranges, test_port_pin_mask_exc)
 			0xffffffff, "");
 
 	/* GPIO_DT_INST_PORT_PIN_MASK_NGPIOS_EXC */
-	zassert_equal(GPIO_DT_INST_PORT_PIN_MASK_NGPIOS_EXC(0, 32), 0x21524110,
+	zassert_equal(GPIO_DT_INST_PORT_PIN_MASK_NGPIOS_EXC(0, 18), 0x0003fbe7,
 			"");
-	zassert_equal(GPIO_DT_INST_PORT_PIN_MASK_NGPIOS_EXC(1, 32), 0x80004100,
+	zassert_equal(GPIO_DT_INST_PORT_PIN_MASK_NGPIOS_EXC(1, 16), 0x0000ffff,
 			"");
-	zassert_equal(GPIO_DT_INST_PORT_PIN_MASK_NGPIOS_EXC(2, 18), 0x0003fbe7,
+	zassert_equal(GPIO_DT_INST_PORT_PIN_MASK_NGPIOS_EXC(2, 16), 0x0000000f,
 			"");
-	zassert_equal(GPIO_DT_INST_PORT_PIN_MASK_NGPIOS_EXC(3, 16), 0x0000000f,
+	zassert_equal(GPIO_DT_INST_PORT_PIN_MASK_NGPIOS_EXC(3, 0), 0x00000000,
 			"");
-	zassert_equal(GPIO_DT_INST_PORT_PIN_MASK_NGPIOS_EXC(4, 0), 0x00000000,
+	zassert_equal(GPIO_DT_INST_PORT_PIN_MASK_NGPIOS_EXC(4, 32), 0x80004100,
 			"");
-	zassert_equal(GPIO_DT_INST_PORT_PIN_MASK_NGPIOS_EXC(5, 16), 0x0000ffff,
+	zassert_equal(GPIO_DT_INST_PORT_PIN_MASK_NGPIOS_EXC(5, 32), 0x21524110,
 			"");
 
 	/* GPIO_PORT_PIN_MASK_FROM_DT_NODE */
@@ -132,12 +133,12 @@ ZTEST(gpio_reserved_ranges, test_port_pin_mask_exc)
 			0xffffffff, "");
 
 	/* GPIO_PORT_PIN_MASK_FROM_DT_INST */
-	zassert_equal(GPIO_PORT_PIN_MASK_FROM_DT_INST(0), 0x21524110, "");
-	zassert_equal(GPIO_PORT_PIN_MASK_FROM_DT_INST(1), 0x80004100, "");
-	zassert_equal(GPIO_PORT_PIN_MASK_FROM_DT_INST(2), 0x0003fbe7, "");
-	zassert_equal(GPIO_PORT_PIN_MASK_FROM_DT_INST(3), 0x0000000f, "");
-	zassert_equal(GPIO_PORT_PIN_MASK_FROM_DT_INST(4), 0x00000000, "");
-	zassert_equal(GPIO_PORT_PIN_MASK_FROM_DT_INST(5), 0xffffffff, "");
+	zassert_equal(GPIO_PORT_PIN_MASK_FROM_DT_INST(0), 0x0003fbe7, "");
+	zassert_equal(GPIO_PORT_PIN_MASK_FROM_DT_INST(1), 0xffffffff, "");
+	zassert_equal(GPIO_PORT_PIN_MASK_FROM_DT_INST(2), 0x0000000f, "");
+	zassert_equal(GPIO_PORT_PIN_MASK_FROM_DT_INST(3), 0x00000000, "");
+	zassert_equal(GPIO_PORT_PIN_MASK_FROM_DT_INST(4), 0x80004100, "");
+	zassert_equal(GPIO_PORT_PIN_MASK_FROM_DT_INST(5), 0x21524110, "");
 }
 
 /* Test GPIO port configuration */

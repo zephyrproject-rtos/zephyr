@@ -7,7 +7,7 @@
 	pwmgen0: pwmgen@99999999 {
 		compatible = "adi,axi-pwmgen";
 		reg = <0x99999999 0x10000>;
-		adi,ref-clock-hz = <100000000>;
 		#pwm-cells = <3>;
+		adi,ref-clock-hz = <100000000>;
 	};
 };

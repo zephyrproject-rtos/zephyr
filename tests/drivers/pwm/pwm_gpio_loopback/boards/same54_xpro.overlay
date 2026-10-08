@@ -14,7 +14,6 @@
 };
 
 &tc0 {
-	status = "okay";
 	compatible = "atmel,sam0-tc-pwm";
 	/* Gives a maximum period of 1.1s for 120MHz main clock */
 	prescaler = <4>;
@@ -25,6 +24,7 @@
 
 	channels = <2>;
 	counter-size = <32>;
+	status = "okay";
 };
 
 &pinctrl {

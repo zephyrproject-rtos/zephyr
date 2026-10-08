@@ -10,7 +10,6 @@
 	};
 
 	test_gpio_emul: test_gpio_emul {
-		status = "okay";
 		compatible = "zephyr,gpio-emul";
 		gpio-controller;
 		#gpio-cells = <0x2>;
@@ -19,5 +18,6 @@
 		falling-edge;
 		high-level;
 		low-level;
+		status = "okay";
 	};
 };
