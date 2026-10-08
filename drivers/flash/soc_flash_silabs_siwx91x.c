@@ -115,6 +115,13 @@ static int flash_siwx91x_erase(const struct device *dev, off_t offset, size_t le
 	return 0;
 }
 
+static int flash_siwx91x_get_size(const struct device *dev, uint64_t *size)
+{
+	const struct siwx91x_config *cfg = dev->config;
+	*size = cfg->size;
+	return 0;
+}
+
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 static void flash_siwx91x_page_layout(const struct device *dev,
 				      const struct flash_pages_layout **layout, size_t *layout_size)
@@ -131,6 +138,7 @@ static DEVICE_API(flash, siwx91x_api) = {
 	.write = flash_siwx91x_write,
 	.erase = flash_siwx91x_erase,
 	.get_parameters = flash_siwx91x_get_parameters,
+	.get_size = flash_siwx91x_get_size,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_siwx91x_page_layout,
 #endif
