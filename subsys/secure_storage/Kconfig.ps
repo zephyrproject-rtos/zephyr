@@ -16,6 +16,9 @@ config SECURE_STORAGE_PS_IMPLEMENTATION_ZEPHYR
 	  can be configured and have custom implementations.
 	  The replay protection values are stored through the ITS API, so an ITS
 	  implementation (Zephyr's or a custom one) must be available.
+	  Note: as each replay protection value is stored as an ITS entry with
+	        the same UID as its PS entry, PS UIDs are subject to the same
+	        restrictions on ITS UIDs by its storage backend (ex: ZMS).
 	  Warning: the way entries are stored is not compatible with
 	           SECURE_STORAGE_PS_IMPLEMENTATION_ITS. Do not enable this on
 	           devices that already have PS entries stored with
