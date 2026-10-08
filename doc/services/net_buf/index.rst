@@ -187,63 +187,61 @@ good to understand the basic names of operations used with them:
      classDef free stroke-dasharray:5,fill-opacity:0.3
      class headroom,tailroom free
 
-Add and Remove work at the end of the data and change only ``len``.
-Push and Pull work at the start of the data and move the ``data``
-pointer as well.
+.. list-table::
+   :header-rows: 1
+   :widths: 12 18 18 22 30
 
-Add
-  Add data to the end of the buffer. Modifies the data length value
-  while leaving the actual data pointer intact. Requires that there is
-  enough tailroom in the buffer. Some examples of APIs for adding data:
+   * - Operation
+     - Works at
+     - Changes
+     - Needs
+     - Typical use
+   * - Add
+     - End of the data
+     - ``len``
+     - Enough tailroom
+     - Encoding a message from its start
+   * - Remove
+     - End of the data
+     - ``len``
+     - Enough data
+     - Decoding a trailer, such as a checksum
+   * - Push
+     - Start of the data
+     - ``data`` and ``len``
+     - Enough headroom
+     - Prepending the header of a lower layer
+   * - Pull
+     - Start of the data
+     - ``data`` and ``len``
+     - Enough data
+     - Decoding a header
 
-  .. code-block:: c
+Each operation has a function per type of data, for instance for Add:
 
-     void *net_buf_add(struct net_buf *buf, size_t len);
-     void *net_buf_add_mem(struct net_buf *buf, const void *mem, size_t len);
-     uint8_t *net_buf_add_u8(struct net_buf *buf, uint8_t value);
-     void net_buf_add_le16(struct net_buf *buf, uint16_t value);
-     void net_buf_add_le32(struct net_buf *buf, uint32_t value);
+``net_buf_add_mem()``
+  Copies a memory area.
 
-Remove
-  Remove data from the end of the buffer. Modifies the data length value
-  while leaving the actual data pointer intact. Some examples of APIs for
-  removing data:
+``net_buf_add_u8()``
+  Adds one byte.
 
-  .. code-block:: c
+``net_buf_add_le16()``, ``net_buf_add_be16()``
+  Add an integer in little-endian or big-endian byte order. Both byte
+  orders exist for 16, 24, 32, 40, 48 and 64 bits.
 
-     void *net_buf_remove_mem(struct net_buf *buf, size_t len);
-     uint8_t net_buf_remove_u8(struct net_buf *buf);
-     uint16_t net_buf_remove_le16(struct net_buf *buf);
-     uint32_t net_buf_remove_le32(struct net_buf *buf);
+Push, Pull and Remove have the same set, named ``net_buf_push_*()``,
+``net_buf_pull_*()`` and ``net_buf_remove_*()``. The byte and integer
+variants of Pull and Remove return the value they pulled or removed.
+:c:func:`net_buf_add`, :c:func:`net_buf_push` and :c:func:`net_buf_pull`
+move the boundary by a length without copying anything, and return a
+pointer into the buffer:
 
-Push
-  Prepend data to the beginning of the buffer. Modifies both the data
-  length value as well as the data pointer. Requires that there is
-  enough headroom in the buffer. Some examples of APIs for pushing data:
+.. code-block:: c
 
-  .. code-block:: c
+   struct foo_hdr *hdr = net_buf_push(buf, sizeof(*hdr));
 
-     void *net_buf_push(struct net_buf *buf, size_t len);
-     void *net_buf_push_mem(struct net_buf *buf, const void *mem, size_t len);
-     void net_buf_push_u8(struct net_buf *buf, uint8_t value);
-     void net_buf_push_le16(struct net_buf *buf, uint16_t value);
-
-Pull
-  Remove data from the beginning of the buffer. Modifies both the data
-  length value as well as the data pointer. Some examples of APIs for
-  pulling data:
-
-  .. code-block:: c
-
-     void *net_buf_pull(struct net_buf *buf, size_t len);
-     void *net_buf_pull_mem(struct net_buf *buf, size_t len);
-     uint8_t net_buf_pull_u8(struct net_buf *buf);
-     uint16_t net_buf_pull_le16(struct net_buf *buf);
-     uint32_t net_buf_pull_le32(struct net_buf *buf);
-
-The Add and Push operations are used when encoding data into the buffer,
-whereas the Remove and Pull operations are used when decoding data from a
-buffer.
+   hdr->opcode = FOO_OP_WRITE;
+   hdr->len = sys_cpu_to_le16(len);
 
 Simple Buffers
 **************
