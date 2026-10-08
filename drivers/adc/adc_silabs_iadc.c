@@ -782,7 +782,7 @@ static int iadc_pm_action(const struct device *dev, enum pm_device_action action
 	} else if (IS_ENABLED(CONFIG_PM_DEVICE) && (action == PM_DEVICE_ACTION_SUSPEND)) {
 		err = clock_control_off(config->clock_dev,
 					(clock_control_subsys_t)&config->clock_cfg);
-		if (err < 0) {
+		if (err != 0 && err != -ENOTSUP) {
 			return err;
 		}
 
