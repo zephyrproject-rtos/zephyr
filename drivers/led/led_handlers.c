@@ -6,6 +6,7 @@
 
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/drivers/led.h>
+#include <zephyr/sys/math_extras.h>
 
 static inline int z_vrfy_led_blink(const struct device *dev, uint32_t led,
 				   uint32_t delay_on, uint32_t delay_off)
@@ -37,7 +38,11 @@ static inline int
 z_vrfy_led_write_channels(const struct device *dev, uint32_t start_channel,
 			  uint32_t num_channels, const uint8_t *buf)
 {
+	uint32_t end_channel;
+
 	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_LED));
+	K_OOPS(K_SYSCALL_VERIFY_MSG(!u32_add_overflow(start_channel, num_channels, &end_channel),
+				    "channel range overflow"));
 	K_OOPS(K_SYSCALL_MEMORY_READ(buf, num_channels));
 	return z_impl_led_write_channels(dev, start_channel, num_channels, buf);
 }
