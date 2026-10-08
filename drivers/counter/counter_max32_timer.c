@@ -333,7 +333,7 @@ static int counter_max32_pm_suspend(const struct max32_tmr_config *const cfg)
 
 	/* Disable clock */
 	ret = clock_control_off(cfg->clock, (clock_control_subsys_t)&cfg->perclk);
-	if (ret) {
+	if (ret != 0 && ret != -ENOTSUP) {
 		return ret;
 	}
 
