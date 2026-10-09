@@ -154,6 +154,8 @@ zephyr_i2c: &i2c0 {
 		compatible = "ethernet-phy";
 		reg = <1>;
 		reset-gpios = <&gpio1 19 GPIO_ACTIVE_LOW>;
+		reset-assert-duration-us = <10000>;
+		reset-deassertion-timeout-ms = <10>;
 	};
 };
 
