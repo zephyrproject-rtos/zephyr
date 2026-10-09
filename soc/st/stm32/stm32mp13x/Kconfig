@@ -25,3 +25,17 @@ config SOC_SERIES_STM32MP13X_FSBL
 	  before DDR and the full clock tree have been initialized by a previous
 	  boot stage. This enables the clock configuration and memory mappings
 	  required to initialize external DDR.
+
+config SOC_SERIES_STM32MP13X_DDR_INIT
+	bool
+	default y if DT_HAS_ST_STM32MP13_DDR_ENABLED
+	depends on SOC_SERIES_STM32MP13X_FSBL
+	select USE_STM32_HAL_DDR
+	help
+	  Initialize the STM32MP13 DDR (Double Data Rate) controller and PHY
+	  (Physical Interface) from devicetree.
+
+config SOC_SERIES_STM32MP13X_DDR_INIT_PRIORITY
+	int
+	default 2
+	depends on SOC_SERIES_STM32MP13X_DDR_INIT
