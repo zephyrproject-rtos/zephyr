@@ -1,0 +1,112 @@
+/*
+ * Copyright (c) 2026 Fastbit Embedded Technologies
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f3/stm32f303Xc.dtsi>
+#include <st/f3/stm32f303c(b-c)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "fastbit_stm32_nano_connector.dtsi"
+
+/ {
+	model = "Fastbit STM32 Nano board";
+	compatible = "fastbit,stm32-nano";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,dtcm = &ccm0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		blue_led_1: led_1 {
+			gpios = <&gpioa 1 GPIO_ACTIVE_HIGH>;
+			label = "User LED1";
+		};
+
+		green_led_2: led_2 {
+			gpios = <&gpioa 2 GPIO_ACTIVE_HIGH>;
+			label = "User LED2";
+		};
+
+		red_led_3: led_3 {
+			gpios = <&gpioa 3 GPIO_ACTIVE_HIGH>;
+			label = "User LED3";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button: button {
+			label = "User";
+			gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &blue_led_1;
+		led1 = &green_led_2;
+		led2 = &red_led_3;
+		sw0 = &user_button;
+	};
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(8)>; /* 8 MHz crystal (Y1) */
+	status = "okay";
+};
+
+&pll {
+	prediv = <1>;
+	mul = <9>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(72)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <2>;
+	apb2-prescaler = <1>;
+};
+
+/* Console: reaches the on-board CH340N when slide switch SW4 is set to UART */
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+/* On-board IMU, also available on header P3 */
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+	scl-gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
+	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
+};
+
+/* Available on header P1 */
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+/* Available on header P2 */
+&spi2 {
+	pinctrl-0 = <&spi2_sck_pb13 &spi2_miso_pb14 &spi2_mosi_pb15>;
+	pinctrl-names = "default";
+	status = "okay";
+};
