@@ -119,7 +119,8 @@ static int fixed_factor_clk_init(const struct device *dev)
 		break;
 
 	case IFX_LF:
-#if defined(CONFIG_SOC_SERIES_PSOC4HVMS128K) || defined(CONFIG_SOC_SERIES_PSOC4HVMS64K)
+#if defined(CONFIG_SOC_SERIES_PSOC4HVMS128K) || defined(CONFIG_SOC_SERIES_PSOC4HVMS64K) ||         \
+	defined(CONFIG_SOC_SERIES_PSOC4HVPA144K)
 		/* The LFCLK source can only be switched with the WDT unlocked. */
 		Cy_WDT_Unlock();
 		err = Cy_SysClk_ClkLfSetSource((cy_en_sysclk_clklf_src_t)config->source_path);
