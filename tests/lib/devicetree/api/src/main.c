@@ -1001,17 +1001,21 @@ ZTEST(devicetree_api, test_reg)
 #define DT_DRV_COMPAT vnd_reg_holder_64
 ZTEST(devicetree_api, test_reg_64)
 {
+	/* Register names preserve their case. */
+	zassert_true(DT_REG_HAS_NAME(TEST_64BIT, TEST_NAME));
+	zassert_false(DT_REG_HAS_NAME(TEST_64BIT, test_name));
+
 	/* DT_REG_ADDR_U64 */
 	zassert_equal(DT_REG_ADDR_U64(TEST_64BIT), 0xffffffff11223344, "");
 
 	/* DT_REG_ADDR_BY_NAME_U64 */
-	zassert_equal(DT_REG_ADDR_BY_NAME_U64(TEST_64BIT, test_name), 0xffffffff11223344, "");
+	zassert_equal(DT_REG_ADDR_BY_NAME_U64(TEST_64BIT, TEST_NAME), 0xffffffff11223344, "");
 
 	/* DT_INST_REG_ADDR_U64 */
 	zassert_equal(DT_INST_REG_ADDR_U64(0), 0xffffffff11223344, "");
 
 	/* DT_INST_REG_ADDR_BY_NAME_U64 */
-	zassert_equal(DT_INST_REG_ADDR_BY_NAME_U64(0, test_name), 0xffffffff11223344, "");
+	zassert_equal(DT_INST_REG_ADDR_BY_NAME_U64(0, TEST_NAME), 0xffffffff11223344, "");
 }
 
 #undef DT_DRV_COMPAT
@@ -4164,6 +4168,37 @@ ZTEST(devicetree_api, test_mapped_partition)
 	zassert_equal(DT_MAPPED_PARTITION_ADDR(TEST_MAPPED_PARTITION_6), 0x100f9000);
 	zassert_equal(DT_MAPPED_PARTITION_ADDR(TEST_MAPPED_PARTITION_7), 0x100fb000);
 	zassert_equal(DT_MAPPED_PARTITION_ADDR(TEST_DISABLED_MAPPED_PARTITION), 0x89000);
+}
+
+ZTEST(devicetree_api, test_mapped_partition_execution)
+{
+	/* Execution uses the named range, translated through the parent flash ranges. */
+	zassert_equal(DT_REG_ADDR_BY_NAME(TEST_MAPPED_PARTITION_4, execution), 0x10000000);
+	zassert_equal(DT_REG_SIZE_BY_NAME(TEST_MAPPED_PARTITION_4, execution), 0x4000);
+
+	/* Storage still uses the first range, independently of the execution mapping. */
+	zassert_true(DT_REG_HAS_NAME(TEST_MAPPED_PARTITION_4, cpu_mapped));
+	zassert_equal(DT_REG_ADDR_BY_NAME(TEST_MAPPED_PARTITION_4, cpu_mapped), 0x100f8000);
+	zassert_equal(DT_REG_SIZE_BY_NAME(TEST_MAPPED_PARTITION_4, cpu_mapped), 0x8000);
+	zassert_equal(DT_MAPPED_PARTITION_ADDR(TEST_MAPPED_PARTITION_4), 0x100f8000);
+	zassert_equal(DT_MAPPED_PARTITION_OFFSET(TEST_MAPPED_PARTITION_4), 0xf8000);
+	zassert_equal(DT_REG_SIZE(TEST_MAPPED_PARTITION_4), 0x8000);
+
+	/* A partition without reg-names keeps its original address and size. */
+	zassert_equal(DT_REG_ADDR_BY_NAME_OR(TEST_MAPPED_PARTITION_6, execution,
+					     DT_REG_ADDR(TEST_MAPPED_PARTITION_6)),
+		      0x100f9000);
+	zassert_equal(DT_REG_SIZE_BY_NAME_OR(TEST_MAPPED_PARTITION_6, execution,
+					     DT_REG_SIZE(TEST_MAPPED_PARTITION_6)),
+		      0x1000);
+
+	/* A named storage range alone also falls back to the first range. */
+	zassert_equal(DT_REG_ADDR_BY_NAME_OR(TEST_MAPPED_PARTITION_2, execution,
+					     DT_REG_ADDR(TEST_MAPPED_PARTITION_2)),
+		      0xc000);
+	zassert_equal(DT_REG_SIZE_BY_NAME_OR(TEST_MAPPED_PARTITION_2, execution,
+					     DT_REG_SIZE(TEST_MAPPED_PARTITION_2)),
+		      0x76000);
 }
 
 ZTEST(devicetree_api, test_partition)
