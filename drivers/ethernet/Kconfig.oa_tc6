@@ -45,4 +45,17 @@ config OA_TC6_TX_RX_BUFFER_SIZE
 	  higher bandwidth. For SoCs with limited resources, set the value
 	  to at least 1 (68 bytes).
 
+config OA_TC6_INT_MODE_LEVEL
+	bool "Use level-triggered interrupts for OA TC6"
+	default y
+	help
+	  When enabled, the driver attempts to use level-triggered
+	  interrupts for the MAC-PHY INT pin. If the hardware does
+	  not support level-triggered interrupts (e.g. STM32F4
+	  series), the driver automatically falls back to
+	  edge-triggered interrupts.
+
+	  When disabled, the driver uses edge-triggered interrupts
+	  directly on all platforms.
+
 endif
