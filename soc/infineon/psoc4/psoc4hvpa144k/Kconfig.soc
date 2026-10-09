@@ -1,0 +1,61 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# MCU series
+config SOC_SERIES_PSOC4HVPA144K
+	bool
+	select SOC_FAMILY_INFINEON_PSOC4
+	help
+	  PSOC4 HVPA 144K Series MCU
+
+config SOC_SERIES
+	default "psoc4hvpa144k" if SOC_SERIES_PSOC4HVPA144K
+
+config SOC_CY8C4126LCE_HV403
+	bool
+	select SOC_SERIES_PSOC4HVPA144K
+
+config SOC_CY8C4126LCE_HV413
+	bool
+	select SOC_SERIES_PSOC4HVPA144K
+
+config SOC_CY8C4126LCE_HV423
+	bool
+	select SOC_SERIES_PSOC4HVPA144K
+
+config SOC_CY8C4127LCE_HV403
+	bool
+	select SOC_SERIES_PSOC4HVPA144K
+
+config SOC_CY8C4127LCE_HV413
+	bool
+	select SOC_SERIES_PSOC4HVPA144K
+
+config SOC_CY8C4127LCE_HV423
+	bool
+	select SOC_SERIES_PSOC4HVPA144K
+
+config SOC_CY8C4147LCE_HV403
+	bool
+	select SOC_SERIES_PSOC4HVPA144K
+
+config SOC_CY8C4147LCE_HV413
+	bool
+	select SOC_SERIES_PSOC4HVPA144K
+
+config SOC_CY8C4147LCE_HV423
+	bool
+	select SOC_SERIES_PSOC4HVPA144K
+
+config SOC
+	default "cy8c4126lce_hv403" if SOC_CY8C4126LCE_HV403
+	default "cy8c4126lce_hv413" if SOC_CY8C4126LCE_HV413
+	default "cy8c4126lce_hv423" if SOC_CY8C4126LCE_HV423
+	default "cy8c4127lce_hv403" if SOC_CY8C4127LCE_HV403
+	default "cy8c4127lce_hv413" if SOC_CY8C4127LCE_HV413
+	default "cy8c4127lce_hv423" if SOC_CY8C4127LCE_HV423
+	default "cy8c4147lce_hv403" if SOC_CY8C4147LCE_HV403
+	default "cy8c4147lce_hv413" if SOC_CY8C4147LCE_HV413
+	default "cy8c4147lce_hv423" if SOC_CY8C4147LCE_HV423

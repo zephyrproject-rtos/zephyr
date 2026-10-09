@@ -207,3 +207,14 @@ family:
     - name: cy8c4147lce_hvs123x
     - name: cy8c4147lce_hvs133
     - name: cy8c4147lce_hvs133x
+  - name: psoc4hvpa144k
+    socs:
+    - name: cy8c4126lce_hv403
+    - name: cy8c4126lce_hv413
+    - name: cy8c4126lce_hv423
+    - name: cy8c4127lce_hv403
+    - name: cy8c4127lce_hv413
+    - name: cy8c4127lce_hv423
+    - name: cy8c4147lce_hv403
+    - name: cy8c4147lce_hv413
+    - name: cy8c4147lce_hv423
