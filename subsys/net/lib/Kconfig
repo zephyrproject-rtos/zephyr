@@ -39,6 +39,8 @@ source "subsys/net/lib/ocpp/Kconfig"
 
 source "subsys/net/lib/quic/Kconfig"
 
+source "subsys/net/lib/stun/Kconfig"
+
 endmenu
 
 menu "Network Libraries"
