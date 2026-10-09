@@ -4,3 +4,8 @@ board:
   vendor: sifive
   socs:
     - name: fu540
+      variants:
+        - name: qemu
+          cpucluster: e51
+        - name: qemu
+          cpucluster: u54

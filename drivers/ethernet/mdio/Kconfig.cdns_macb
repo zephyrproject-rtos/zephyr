@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config MDIO_CDNS_MACB
+	bool "Cadence MACB/GEM MDIO controller driver"
+	default y
+	depends on DT_HAS_CDNS_MACB_MDIO_ENABLED
+	depends on ETH_CDNS_MACB_CORE
+	help
+	  Enable MDIO support for Cadence MACB/GEM Ethernet MACs, which
+	  expose the MDIO controller as a child node of the MAC.
+
+if MDIO_CDNS_MACB
+
+config MDIO_CDNS_MACB_IRQ
+	bool "Wait for the management frame done interrupt"
+	default y
+	depends on !QEMU_TARGET
+	help
+	  Wait for the interrupt of the MAC that signals the completion of a
+	  management frame, instead of polling the idle bit of the network
+	  status register. QEMU does not raise this interrupt: there a frame is
+	  done at once and the bus always reads idle.
+
+config MDIO_CDNS_MACB_IDLE_TIMEOUT_US
+	int "MDIO idle wait timeout"
+	default 10000
+	help
+	  Timeout in microseconds to wait for the MDIO bus to become idle
+	  before a read or write operation and for the operation to complete.
+
+endif # MDIO_CDNS_MACB

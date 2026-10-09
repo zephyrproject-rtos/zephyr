@@ -40,6 +40,82 @@
 				pinmux = <DT_CAT1_PINMUX(17, 0, HSIOM_SEL_ACT_14)>;
 				drive-push-pull;
 			};
+
+			/omit-if-no-ref/ p13_0_eth0_mdc: p13_0_eth0_mdc {
+				pinmux = <DT_CAT1_PINMUX(13, 0, HSIOM_SEL_ACT_12)>;
+				drive-push-pull;
+			};
+
+			/omit-if-no-ref/ p13_1_eth0_mdio: p13_1_eth0_mdio {
+				pinmux = <DT_CAT1_PINMUX(13, 1, HSIOM_SEL_ACT_12)>;
+				drive-push-pull;
+				input-enable;
+			};
+
+			/omit-if-no-ref/ p13_2_eth0_txd0: p13_2_eth0_txd0 {
+				pinmux = <DT_CAT1_PINMUX(13, 2, HSIOM_SEL_ACT_12)>;
+				drive-push-pull;
+			};
+
+			/omit-if-no-ref/ p13_3_eth0_txd1: p13_3_eth0_txd1 {
+				pinmux = <DT_CAT1_PINMUX(13, 3, HSIOM_SEL_ACT_12)>;
+				drive-push-pull;
+			};
+
+			/omit-if-no-ref/ p13_4_eth0_tx_clk: p13_4_eth0_tx_clk {
+				pinmux = <DT_CAT1_PINMUX(13, 4, HSIOM_SEL_ACT_12)>;
+				drive-push-pull;
+			};
+
+			/omit-if-no-ref/ p13_5_eth0_ref_clk: p13_5_eth0_ref_clk {
+				pinmux = <DT_CAT1_PINMUX(13, 5, HSIOM_SEL_ACT_12)>;
+				input-enable;
+			};
+
+			/omit-if-no-ref/ p13_6_eth0_txd2: p13_6_eth0_txd2 {
+				pinmux = <DT_CAT1_PINMUX(13, 6, HSIOM_SEL_ACT_12)>;
+				drive-push-pull;
+			};
+
+			/omit-if-no-ref/ p13_7_eth0_txd3: p13_7_eth0_txd3 {
+				pinmux = <DT_CAT1_PINMUX(13, 7, HSIOM_SEL_ACT_12)>;
+				drive-push-pull;
+			};
+
+			/omit-if-no-ref/ p14_0_eth0_tx_ctl: p14_0_eth0_tx_ctl {
+				pinmux = <DT_CAT1_PINMUX(14, 0, HSIOM_SEL_ACT_12)>;
+				drive-push-pull;
+			};
+
+			/omit-if-no-ref/ p14_2_eth0_rx_clk: p14_2_eth0_rx_clk {
+				pinmux = <DT_CAT1_PINMUX(14, 2, HSIOM_SEL_ACT_12)>;
+				input-enable;
+			};
+
+			/omit-if-no-ref/ p14_3_eth0_rxd0: p14_3_eth0_rxd0 {
+				pinmux = <DT_CAT1_PINMUX(14, 3, HSIOM_SEL_ACT_12)>;
+				input-enable;
+			};
+
+			/omit-if-no-ref/ p14_4_eth0_rxd1: p14_4_eth0_rxd1 {
+				pinmux = <DT_CAT1_PINMUX(14, 4, HSIOM_SEL_ACT_12)>;
+				input-enable;
+			};
+
+			/omit-if-no-ref/ p14_5_eth0_rxd2: p14_5_eth0_rxd2 {
+				pinmux = <DT_CAT1_PINMUX(14, 5, HSIOM_SEL_ACT_12)>;
+				input-enable;
+			};
+
+			/omit-if-no-ref/ p14_6_eth0_rxd3: p14_6_eth0_rxd3 {
+				pinmux = <DT_CAT1_PINMUX(14, 6, HSIOM_SEL_ACT_12)>;
+				input-enable;
+			};
+
+			/omit-if-no-ref/ p14_7_eth0_rx_ctl: p14_7_eth0_rx_ctl {
+				pinmux = <DT_CAT1_PINMUX(14, 7, HSIOM_SEL_ACT_12)>;
+				input-enable;
+			};
 		};
 	};
 };
