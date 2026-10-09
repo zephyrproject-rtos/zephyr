@@ -13,7 +13,7 @@ compatible: "adi,adv7535"
 include: i2c-device.yaml
 
 properties:
-  adi,addr-cec:
+  adi,cec-addr:
     type: int
     default: 0x3c
     description: Optional CEC I2C address. Default is the power-on reset value of the register.

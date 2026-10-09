@@ -261,9 +261,9 @@ fail:
 #define ADV7535_DEFINE(inst)                                                                       \
 	BUILD_ASSERT(DT_PROP(ADV7535_DSI(inst), pixel_format) == MIPI_DSI_PIXFMT_RGB888,           \
 		     "ADV7535 requires RGB888");                                                   \
-	BUILD_ASSERT(DT_INST_PROP(inst, adi_addr_cec) <= 0x7f,                                     \
+	BUILD_ASSERT(DT_INST_PROP(inst, adi_cec_addr) <= 0x7f,                                     \
 		     "ADV7535 CEC address must be seven-bit");                                     \
-	BUILD_ASSERT(DT_INST_PROP(inst, adi_addr_cec) != DT_INST_REG_ADDR(inst),                   \
+	BUILD_ASSERT(DT_INST_PROP(inst, adi_cec_addr) != DT_INST_REG_ADDR(inst),                   \
 		     "ADV7535 main and CEC addresses must differ");                                \
 	BUILD_ASSERT(DT_PROP(ADV7535_PANEL(inst), width) +                                         \
 				     DT_PROP(ADV7535_TIMING(inst), hsync_len) +                    \
@@ -280,7 +280,7 @@ fail:
 	static const struct adv7535_config adv7535_config_##inst = {                               \
 		.main = I2C_DT_SPEC_INST_GET(inst),                                                \
 		.cec = {.bus = DEVICE_DT_GET(DT_BUS(DT_DRV_INST(inst))),                           \
-			.addr = DT_INST_PROP(inst, adi_addr_cec)},                                 \
+			.addr = DT_INST_PROP(inst, adi_cec_addr)},                                 \
 		.mipi_dsi = DEVICE_DT_GET(DT_BUS(ADV7535_DSI(inst))),                              \
 		.channel = DT_REG_ADDR(ADV7535_DSI(inst)),                                         \
 		.data_lanes = DT_PROP_BY_IDX(ADV7535_DSI(inst), data_lanes, 0),                    \
