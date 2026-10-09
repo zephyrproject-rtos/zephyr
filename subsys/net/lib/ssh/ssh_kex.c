@@ -14,6 +14,7 @@ LOG_MODULE_DECLARE(ssh, CONFIG_SSH_LOG_LEVEL);
 #include "ssh_host_key.h"
 
 #include <psa/crypto.h>
+#include <zephyr/offloader/psa.h>
 
 #define KEXINIT_COOKIE_SIZE 16
 

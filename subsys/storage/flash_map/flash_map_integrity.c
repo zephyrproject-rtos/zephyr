@@ -19,6 +19,7 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/init.h>
 #include <psa/crypto.h>
+#include <zephyr/offloader/psa.h>
 
 int flash_area_check_int_sha256(const struct flash_area *fa,
 				const struct flash_area_check *fac)

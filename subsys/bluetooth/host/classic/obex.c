@@ -24,6 +24,7 @@
 
 #if defined(CONFIG_BT_OBEX_AUTH)
 #include <psa/crypto.h>
+#include <zephyr/offloader/psa.h>
 #include <mbedtls/constant_time.h>
 #endif /* CONFIG_BT_OBEX_AUTH */
 

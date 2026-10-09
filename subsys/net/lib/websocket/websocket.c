@@ -32,6 +32,7 @@ LOG_MODULE_REGISTER(net_websocket, CONFIG_NET_WEBSOCKET_LOG_LEVEL);
 #include <zephyr/sys/base64.h>
 
 #include <psa/crypto.h>
+#include <zephyr/offloader/psa.h>
 
 #include "net_private.h"
 #include "sockets_internal.h"

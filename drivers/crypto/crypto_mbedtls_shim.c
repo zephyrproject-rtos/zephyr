@@ -17,6 +17,7 @@
 #include <zephyr/sys/check.h>
 
 #include <psa/crypto.h>
+#include <zephyr/offloader/psa.h>
 
 #define MBEDTLS_SUPPORT (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | \
 		      CAP_NO_IV_PREFIX)

@@ -3,6 +3,7 @@
  */
 #include <zephyr/secure_storage/its/transform/aead.h>
 #include <psa/crypto.h>
+#include <zephyr/offloader/psa.h>
 
 #if defined(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_SCHEME_AES_GCM)
 #define PSA_KEY_TYPE PSA_KEY_TYPE_AES

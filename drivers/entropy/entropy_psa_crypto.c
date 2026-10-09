@@ -8,6 +8,7 @@
 
 #include <zephyr/drivers/entropy.h>
 #include <psa/crypto.h>
+#include <zephyr/offloader/psa.h>
 
 /* API implementation: PSA Crypto initialization */
 static int entropy_psa_crypto_rng_init(const struct device *dev)
