@@ -201,6 +201,12 @@ static psa_status_t store_entry(psa_storage_uid_t uid, size_t data_length, const
 		return PSA_ERROR_GENERIC_ERROR;
 	}
 
+	/* Some stores (e.g. ZMS) interpret a 0-byte write as a deletion. */
+	if (stored_data_len == 0) {
+		LOG_ERR("Transformed data for entry " PSA_UID_FMT " is empty", PSA_UID_ARGS(uid));
+		return PSA_ERROR_GENERIC_ERROR;
+	}
+
 	if (is_new_entry) {
 		/* In case of a new entry write PS first and then ITS. This
 		 * way if PS write fails and the entry was meant to be WRITE_ONCE
