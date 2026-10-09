@@ -373,6 +373,10 @@ static void *test_modem_ppp_setup(void)
 	 * result of using the macro MODEM_PPP_DEFINE()
 	 */
 	zassert_true(modem_ppp_init_internal(&ppp_net_dev) == 0, "Failed to run internal init");
+	/* The interface is not registered with the net stack, so nothing else
+	 * initialises its lock.
+	 */
+	k_mutex_init(&test_iface.lock);
 	net_if_flag_set(modem_ppp_get_iface(&ppp), NET_IF_UP);
 
 	const struct modem_backend_mock_config mock_config = {
@@ -490,6 +494,26 @@ ZTEST(modem_ppp, test_ppp_no_carrier_received)
 	zassert_ok(modem_ppp_attach(&ppp, mock_pipe), "Failed to reattach PPP");
 	zassert_true(net_if_is_carrier_ok(&test_iface), "Carrier should be on after attach");
 	zassert_false(ppp.state & BIT(MODEM_PPP_STATE_DEAD_BIT), "Attach should clear dead state");
+}
+
+/*
+ * net_if_down() holds the interface lock while it waits for the LCP
+ * Terminate-Ack. A 'NO CARRIER' arriving meanwhile must not stall the modem
+ * work queue on that lock: the frames behind it still have to be processed.
+ */
+ZTEST(modem_ppp, test_ppp_no_carrier_while_iface_locked)
+{
+	static const char *unsolicited_no_carrier = "\r\nNO CARRIER\r\n";
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_MODEM_DEDICATED_WORKQUEUE);
+
+	net_if_lock(&test_iface);
+	modem_backend_mock_put(&mock, unsolicited_no_carrier, strlen(unsolicited_no_carrier));
+	put_and_validate_wrapped_frame();
+	net_if_unlock(&test_iface);
+
+	k_msleep(100);
+	zassert_false(net_if_is_carrier_ok(&test_iface), "NO CARRIER should turn carrier off");
 }
 
 ZTEST(modem_ppp, test_ppp_no_carrier_received_first)
