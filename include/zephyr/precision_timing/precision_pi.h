@@ -21,7 +21,7 @@ extern "C" {
  * @brief Precision PI Controller
  * @defgroup precision_pi Precision PI Controller
  * @since 4.5
- * @version 0.1.0
+ * @version 0.2.0
  * @ingroup precision_timing
  * @{
  */
@@ -34,6 +34,10 @@ struct precision_pi {
 	double ki;
 	/** Accumulated integral term. */
 	double integral;
+	/** Largest magnitude of the integral term, 0 for no limit. */
+	double integral_limit;
+	/** Largest magnitude of the output, 0 for no limit. */
+	double output_limit;
 };
 
 /**
@@ -53,6 +57,21 @@ void precision_pi_init(struct precision_pi *pi, double kp, double ki);
  * @param pi Controller instance.
  */
 void precision_pi_reset(struct precision_pi *pi);
+
+/**
+ * @brief Set the limits of a PI controller.
+ *
+ * The integral term is held within +-@p integral_limit, so it cannot wind up
+ * while a large error lasts. The output is held within +-@p output_limit, and
+ * while the output is at that limit the integral term does not move further
+ * towards it. A limit of 0 disables it, which is the state after
+ * precision_pi_init().
+ *
+ * @param pi Controller instance.
+ * @param integral_limit Largest magnitude of the integral term, 0 for no limit.
+ * @param output_limit Largest magnitude of the output, 0 for no limit.
+ */
+void precision_pi_set_limits(struct precision_pi *pi, double integral_limit, double output_limit);
 
 /**
  * @brief Update a PI controller from an error sample.
