@@ -2,6 +2,7 @@
 # Copyright (c) 2020 Teslabs Engineering S.L.
 # Copyright (c) 2023 Fabian Blatz <fabianblatz@gmail.com>
 #
+# Copyright 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if(CONFIG_LVGL)
@@ -16,6 +17,7 @@ if(CONFIG_LVGL)
   zephyr_include_directories(include)
 
   add_subdirectory_ifdef(CONFIG_LV_Z_USE_NEMA_GFX nemagfx)
+  add_subdirectory_ifdef(CONFIG_LV_USE_GPU_VG_LITE gpu-vglite)
 
   zephyr_compile_definitions(LV_CONF_INCLUDE_SIMPLE=1)
   zephyr_library_compile_definitions(_POSIX_C_SOURCE=200809L)
@@ -52,6 +54,14 @@ if(CONFIG_LVGL)
 
       "${LVGL_DIR}/src/debugging/test/*"
   )
+
+  if(CONFIG_LV_USE_GPU_VG_LITE)
+    if(CONFIG_LV_USE_VG_LITE_DRIVER)
+    else()
+      # Exclude vg_lite_driver from LVGL source tree
+      list(APPEND LVGL_EXCLUDE_PATTERNS "${LVGL_DIR}/src/libs/vg_lite_driver/*")
+    endif()
+  endif()
 
   foreach(pattern IN LISTS LVGL_EXCLUDE_PATTERNS)
     file(GLOB_RECURSE LVGL_EXCLUDED CONFIGURE_DEPENDS ${pattern})
