@@ -10,6 +10,7 @@ target_link_libraries(app PRIVATE babblekit)
 
 target_sources(app PRIVATE
   src/main.c
+  src/zero_initial_credits.c
   )
 
 zephyr_include_directories(

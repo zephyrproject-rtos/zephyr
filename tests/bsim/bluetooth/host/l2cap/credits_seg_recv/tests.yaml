@@ -13,6 +13,8 @@ tests:
       bsim_exe_name: tests_bsim_bluetooth_host_l2cap_credits_seg_recv_prj_conf
       tests_scripts:
         - tests_scripts/l2cap_credits_seg_recv.sh
+        - tests_scripts/l2cap_zero_credits_in_req.sh
+        - tests_scripts/l2cap_zero_credits_in_rsp.sh
   bluetooth.host.l2cap.credits_seg_recv_ecred:
     harness_config:
       fixture: bsim_multi_test
