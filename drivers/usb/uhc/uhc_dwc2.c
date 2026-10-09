@@ -1352,6 +1352,23 @@ static void ch_data_drop_device(struct uhc_dwc2_data *const priv, struct usb_dev
 	}
 }
 
+/* Clearing a halt returns that endpoint to DATA0, halted or not (USB 2.0, 9.4.5) */
+static void ch_data_drop_ep(struct uhc_dwc2_data *const priv, struct usb_device *const udev,
+			    const uint8_t ep)
+{
+	if (USB_EP_GET_IDX(ep) == 0U) {
+		return;
+	}
+
+	for (uint8_t idx = 0; idx < ARRAY_SIZE(priv->ch_data); idx++) {
+		struct uhc_dwc2_channel_data *data = &priv->ch_data[idx];
+
+		if (data->udev == udev && data->ep == ep) {
+			*data = (struct uhc_dwc2_channel_data) {0};
+		}
+	}
+}
+
 static void ch_complete(const struct device *dev, struct uhc_dwc2_channel *const ch)
 {
 	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
@@ -1368,6 +1385,12 @@ static void ch_complete(const struct device *dev, struct uhc_dwc2_channel *const
 		if (setup->bRequest == USB_SREQ_SET_CONFIGURATION &&
 		    setup->RequestType.type == USB_REQTYPE_TYPE_STANDARD) {
 			ch_data_drop_device(priv, xfer->udev);
+		}
+		if (setup->bRequest == USB_SREQ_CLEAR_FEATURE &&
+		    setup->RequestType.type == USB_REQTYPE_TYPE_STANDARD &&
+		    setup->RequestType.recipient == USB_REQTYPE_RECIPIENT_ENDPOINT &&
+		    sys_le16_to_cpu(setup->wValue) == USB_SFS_ENDPOINT_HALT) {
+			ch_data_drop_ep(priv, xfer->udev, (uint8_t)sys_le16_to_cpu(setup->wIndex));
 		}
 		break;
 	case USB_EP_TYPE_BULK:
