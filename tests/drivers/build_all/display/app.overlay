@@ -912,11 +912,13 @@
 			status = "okay";
 			clock-frequency = <100000>;
 
-			test_adv7535: hdmi-bridge@3d {
+			test_adv7535: hdmi-bridge@39 {
 				compatible = "adi,adv7535";
-				reg = <0x3d>;
+				reg = <0x39>;
 				dsi-device = <&test_adv7535_dsi>;
 				display-timing = <&test_adv7535_timing>;
+				pd-gpios = <&test_gpio 0 0>;
+				int-gpios = <&test_gpio 0 0>;
 			};
 
 			test_ist3931: ist3931@0 {
