@@ -1981,12 +1981,41 @@ static void gptp_mi_port_role_static_time_receiver(void)
 }
 #endif
 
+#if defined(CONFIG_NET_GPTP_STATIC_TIME_TRANSMITTER)
+static void gptp_mi_port_role_static_time_transmitter(void)
+{
+	struct gptp_global_ds *global_ds = GPTP_GLOBAL_DS();
+	int port;
+
+	/* Static port roles, no BMCA: this system is the grandmaster and
+	 * every port is a time transmitter.
+	 */
+	for (port = GPTP_PORT_START; port <= GPTP_PORT_END; port++) {
+		gptp_change_port_state(port, GPTP_PORT_MASTER);
+	}
+
+	/* Port 0 is the time receiver of the local ClockMaster. */
+	gptp_change_port_state(0, GPTP_PORT_SLAVE);
+
+	/* ClockMasterSyncSend and the Follow_Up preciseOriginTimestamp
+	 * recognize the grandmaster role through gmPriority, which no
+	 * Announce ever fills in here.
+	 */
+	memcpy(global_ds->gm_priority.root_system_id.grand_master_id,
+	       GPTP_DEFAULT_DS()->clk_id, GPTP_CLOCK_ID_LEN);
+	global_ds->gm_present = true;
+}
+#endif
+
 static void gptp_mi_port_role_selection_state_machine(void)
 {
 	struct gptp_port_role_selection_state *state;
 
 #if defined(CONFIG_NET_GPTP_STATIC_TIME_RECEIVER)
 	gptp_mi_port_role_static_time_receiver();
+	return;
+#elif defined(CONFIG_NET_GPTP_STATIC_TIME_TRANSMITTER)
+	gptp_mi_port_role_static_time_transmitter();
 	return;
 #endif
 
@@ -2096,7 +2125,8 @@ void gptp_mi_port_sync_state_machines(int port)
 
 void gptp_mi_port_bmca_state_machines(int port)
 {
-#if defined(CONFIG_NET_GPTP_STATIC_TIME_RECEIVER)
+#if defined(CONFIG_NET_GPTP_STATIC_TIME_RECEIVER) || \
+	defined(CONFIG_NET_GPTP_STATIC_TIME_TRANSMITTER)
 	struct gptp_port_announce_receive_state *pa_rcv;
 	struct gptp_port_bmca_data *bmca_data;
 
