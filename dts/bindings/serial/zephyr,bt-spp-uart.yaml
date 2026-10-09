@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Xiaomi Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: UART over Bluetooth Classic SPP (RFCOMM) server
+
+compatible: "zephyr,bt-spp-uart"
+
+properties:
+  channel:
+    type: int
+    default: 10
+    description: |
+      RFCOMM server channel number (1-30), registered locally and advertised
+      via SDP. 0 means auto-allocate a dynamic channel.
+
+  tx-fifo-size:
+    type: int
+    default: 1024
+    description: |
+      Size of the virtual UART TX FIFO (ring buffer) in bytes.
+      The RX path has no byte FIFO: received RFCOMM frames are held as-is
+      and their per-frame credits provide native flow control.

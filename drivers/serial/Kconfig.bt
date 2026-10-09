@@ -27,3 +27,49 @@ config UART_BT_WORKQUEUE_STACK_SIZE
 	  Set UART NUS Work-queue Stack-size based on the application context.
 
 endif
+
+config UART_BT_SPP
+	bool "UART over Bluetooth Classic SPP (RFCOMM) [EXPERIMENTAL]"
+	depends on BT_CLASSIC
+	depends on DT_HAS_ZEPHYR_BT_SPP_UART_ENABLED
+	select BT_RFCOMM
+	select UART_INTERRUPT_DRIVEN
+	select EXPERIMENTAL
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  Enable the UART over Bluetooth Classic SPP driver, which can be used
+	  to pipe serial data over RFCOMM. This follows the same pattern as the
+	  NUS UART driver (CONFIG_UART_BT) but for BR/EDR connections.
+
+if UART_BT_SPP
+
+config UART_BT_SPP_WORKQUEUE_PRIORITY
+	int "SPP UART work-queue priority"
+	default MAIN_THREAD_PRIORITY
+	help
+	  Priority of the SPP UART work-queue thread.
+
+config UART_BT_SPP_WORKQUEUE_STACK_SIZE
+	int "SPP UART work-queue stack size"
+	default 1024
+	help
+	  Stack size of the SPP UART work-queue thread.
+
+config UART_BT_SPP_AUTO_START_BLUETOOTH
+	bool "Auto-enable Bluetooth stack and make BR/EDR connectable"
+	help
+	  Enable the Bluetooth stack and make the device BR/EDR connectable and
+	  discoverable once the SPP servers are registered. Useful to run
+	  applications that do not deal with Bluetooth themselves (e.g. a shell
+	  or console over SPP using the spp-console snippet).
+
+config UART_BT_SPP_TX_BUF_COUNT
+	int "SPP UART TX buffers per instance"
+	default 2
+	range 1 255
+	help
+	  Number of RFCOMM TX buffers in each SPP UART instance's pool. A buffer
+	  stays in use from the moment its frame is queued to RFCOMM until it
+	  has been sent, which may wait for a credit from the peer.
+
+endif # UART_BT_SPP
