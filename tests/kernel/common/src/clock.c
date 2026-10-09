@@ -15,8 +15,9 @@
 
 /** @cond INTERNAL_HIDDEN */
 struct timer_data {
-	int duration_count;
-	int stop_count;
+	/* Updated from ISR context; volatile keeps LTO from caching the reads. */
+	volatile int duration_count;
+	volatile int stop_count;
 };
 static void duration_expire(struct k_timer *timer);
 static void stop_expire(struct k_timer *timer);
