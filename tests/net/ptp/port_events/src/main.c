@@ -52,6 +52,7 @@ static int management_process_calls;
 static int timestamp_register_calls;
 static int timestamp_unregister_calls;
 static int clock_sync_calls;
+static int8_t last_sync_log_interval;
 static int clock_sync_with_delay_calls;
 static int clock_delay_calls;
 static int clock_pdelay_calls;
@@ -217,6 +218,11 @@ const struct ptp_current_ds *ptp_clock_current_ds(void)
 const struct ptp_time_prop_ds *ptp_clock_time_prop_ds(void)
 {
 	return &fake_time_prop_ds;
+}
+
+void ptp_clock_sync_interval_set(int8_t log_sync_interval)
+{
+	last_sync_log_interval = log_sync_interval;
 }
 
 void ptp_clock_synchronize(uint64_t ingress, uint64_t egress, bool ingress_ts_valid)
@@ -547,6 +553,7 @@ static void reset_fakes(void)
 	timestamp_register_calls = 0;
 	timestamp_unregister_calls = 0;
 	clock_sync_calls = 0;
+	last_sync_log_interval = 0;
 	clock_sync_with_delay_calls = 0;
 	clock_delay_calls = 0;
 	clock_pdelay_calls = 0;
@@ -1091,6 +1098,28 @@ ZTEST(ptp_port_events, test_event_gen_sync_follow_up_pair_synchronizes)
 		      "Follow_Up should not change port event state");
 	zassert_is_null(port.last_sync_fup, "matched Sync/Follow_Up should be consumed");
 	zassert_equal(clock_sync_calls, 1, "clock synchronization not requested");
+	zassert_equal(last_sync_log_interval, -1, "Sync interval not passed to the clock");
+	stop_port_timers(&port);
+}
+
+ZTEST(ptp_port_events, test_time_transmitter_change_resets_sync_interval)
+{
+	struct ptp_port port;
+
+	init_port(&port, PTP_PS_TIME_RECEIVER);
+	port.port_ds.log_sync_interval = -3;
+	/* The reset happens before the state machine, whichever state it picks */
+	port.state_machine = disabled_state_machine;
+
+	/* Same time transmitter: keep the interval learned from its Sync messages */
+	ptp_port_event_handle(&port, PTP_EVT_RS_TIME_RECEIVER, false);
+	zassert_equal(port.port_ds.log_sync_interval, -3,
+		      "interval changed without a new transmitter");
+
+	/* New time transmitter: the learned interval belonged to the previous one */
+	ptp_port_event_handle(&port, PTP_EVT_RS_TIME_RECEIVER, true);
+	zassert_equal(port.port_ds.log_sync_interval, CONFIG_PTP_SYNC_LOG_INTERVAL,
+		      "interval of the previous time transmitter kept");
 	stop_port_timers(&port);
 }
 

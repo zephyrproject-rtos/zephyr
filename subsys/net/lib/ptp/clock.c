@@ -9,6 +9,7 @@
 LOG_MODULE_REGISTER(ptp_clock, CONFIG_PTP_LOG_LEVEL);
 
 #include <inttypes.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -54,6 +55,13 @@ LOG_MODULE_REGISTER(ptp_clock, CONFIG_PTP_LOG_LEVEL);
 #define SYNC_SERVO_LOCK_SAMPLES 3U
 #define SYNC_SERVO_OUTLIER_SAMPLES 2U
 
+/*
+ * With PTP_SERVO_SCALE_GAINS_BY_SYNC_INTERVAL, an elapsed time longer than this
+ * many advertised Sync intervals is not used to scale the gains: after so many
+ * missing samples the next one is handled like a first sample.
+ */
+#define SYNC_SERVO_MAX_INTERVALS 16
+
 /**
  * @brief PTP Clock structure.
  */
@@ -87,6 +95,9 @@ struct ptp_clock {
 	uint8_t sync_servo_lock_samples;
 	uint8_t sync_servo_outlier_samples;
 	bool sync_servo_locked;
+	int8_t sync_log_interval;
+	/* Sync origin time of the last sample applied by the servo, 0 if none */
+	uint64_t sync_servo_last_t1;
 };
 
 __maybe_unused static struct ptp_clock ptp_clk = { 0 };
@@ -147,6 +158,11 @@ static bool clock_selected_tt_matches(const struct ptp_foreign_tt_clock *best)
 
 static void clock_selected_tt_update(const struct ptp_foreign_tt_clock *best)
 {
+	if (!clock_selected_tt_matches(best)) {
+		/* Origin timestamps of another time transmitter are another time base */
+		ptp_clk.sync_servo_last_t1 = 0U;
+	}
+
 	ptp_clk.selected_tt.sender = best->dataset.sender;
 	ptp_clk.selected_tt.grandmaster = best->dataset.clk_id;
 	ptp_clk.selected_tt.valid = true;
@@ -357,6 +373,7 @@ const struct ptp_clock *ptp_clock_init(void)
 	precision_pi_set_limits(&ptp_clk.pi,
 				(double)CONFIG_PRECISION_TIMING_PI_INTEGRAL_LIMIT_PPM * 1000.0,
 				(double)CONFIG_PRECISION_TIMING_PI_OUTPUT_LIMIT_PPM * 1000.0);
+	ptp_clk.sync_log_interval = CONFIG_PTP_SYNC_LOG_INTERVAL;
 
 	ret = zvfs_eventfd(0, ZVFS_EFD_NONBLOCK);
 	if (ret < 0) {
@@ -601,6 +618,7 @@ static void clock_servo_reset(void)
 	int ret;
 
 	precision_pi_reset(&ptp_clk.pi);
+	ptp_clk.sync_servo_last_t1 = 0U;
 	ptp_clk.sync_servo_lock_samples = 0;
 	ptp_clk.sync_servo_outlier_samples = 0;
 	ptp_clk.sync_servo_locked = false;
@@ -626,6 +644,36 @@ static void clock_servo_update_lock(int64_t offset)
 	    ptp_clk.sync_servo_lock_samples >= SYNC_SERVO_LOCK_SAMPLES) {
 		ptp_clk.sync_servo_locked = true;
 	}
+}
+
+void ptp_clock_sync_interval_set(int8_t log_sync_interval)
+{
+	ptp_clk.sync_log_interval = log_sync_interval;
+}
+
+/*
+ * Time since the last sample applied by the servo, in seconds, for scaling the
+ * PI gains. It is measured on the Sync origin timestamps, the time of the time
+ * transmitter, so lost Syncs and rejected samples count. The advertised Sync
+ * interval is used when there is no previous sample (first one, after a servo
+ * reset or a time transmitter change) or the elapsed time is not plausible.
+ */
+static double clock_servo_interval_s(void)
+{
+	double advertised_s = ldexp(1.0, ptp_clk.sync_log_interval);
+	uint64_t t1 = ptp_clk.timestamp.t1;
+	double elapsed_s;
+
+	if ((ptp_clk.sync_servo_last_t1 == 0U) || (t1 <= ptp_clk.sync_servo_last_t1)) {
+		return advertised_s;
+	}
+
+	elapsed_s = (double)(t1 - ptp_clk.sync_servo_last_t1) / (double)NSEC_PER_SEC;
+	if (elapsed_s > (SYNC_SERVO_MAX_INTERVALS * advertised_s)) {
+		return advertised_s;
+	}
+
+	return elapsed_s;
 }
 
 static uint64_t clock_abs_delta_u64(uint64_t a, uint64_t b)
@@ -745,7 +793,11 @@ static __noinline void clock_adjust_rate(const struct precision_clock *precision
 
 	ptp_clk.sync_servo_outlier_samples = 0;
 
-	ppb = precision_pi_update(&ptp_clk.pi, -offset);
+	if (IS_ENABLED(CONFIG_PTP_SERVO_SCALE_GAINS_BY_SYNC_INTERVAL)) {
+		ppb = precision_pi_update_interval(&ptp_clk.pi, -offset, clock_servo_interval_s());
+	} else {
+		ppb = precision_pi_update(&ptp_clk.pi, -offset);
+	}
 	ret = precision_clock_ppb_to_scaled_ppm(ppb, &scaled_ppm);
 	if (ret < 0) {
 		LOG_WRN_RATELIMIT("PTP PI output is out of range (ppb=%f), resetting servo",
@@ -763,6 +815,7 @@ static __noinline void clock_adjust_rate(const struct precision_clock *precision
 		return;
 	}
 
+	ptp_clk.sync_servo_last_t1 = ptp_clk.timestamp.t1;
 	clock_servo_update_lock(offset);
 }
 
