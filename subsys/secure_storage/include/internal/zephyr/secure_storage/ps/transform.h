@@ -24,6 +24,7 @@
  *                               called with a different replay protection value.
  * @param[out] stored_data       The buffer to which the transformed data is written.
  * @param[out] stored_data_len   On success, the number of bytes written to `stored_data`.
+ *                               It must be at least 1, even for empty data.
  *
  * @return `PSA_SUCCESS` on success, anything else on failure.
  */
