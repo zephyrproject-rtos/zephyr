@@ -159,8 +159,11 @@ static int fixed_rate_clk_init(const struct device *dev)
 		 * in the following ImoSetFrequency call.
 		 *
 		 * If increasing frequency this must be done before the adjustment.
+		 * Also done when the IMO already runs at the requested rate: the
+		 * boot ROM may leave HFCLK divided with fewer wait states than
+		 * the undivided IMO needs.
 		 */
-		if (config->rate > imo_freq) {
+		if (config->rate >= imo_freq) {
 			Cy_SysLib_SetWaitStates(config->rate/1000000UL);
 		}
 		int err = Cy_SysClk_ImoSetFrequency(config->rate);
