@@ -187,6 +187,11 @@
 		compatible = "zephyr,bt-hci-uart";
 		status = "okay";
 	};
+
+	slip0: slip {
+		compatible = "zephyr,slip-eth", "zephyr,slip";
+		status = "okay";
+	};
 };
 
 &hpet {

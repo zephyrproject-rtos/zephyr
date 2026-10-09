@@ -84,7 +84,7 @@ are shown like this:
 .. code-block:: console
 
     [00:00:00.000,000] <inf> net_dhcpv4_client_sample: Run dhcpv4 client
-    [00:00:00.000,000] <inf> net_dhcpv4_client_sample: Start on slip: index=1
+    [00:00:00.000,000] <inf> net_dhcpv4_client_sample: Start on eth0: index=1
     [00:00:07.080,000] <inf> net_dhcpv4: Received: 192.0.2.10
     [00:00:07.080,000] <inf> net_dhcpv4_client_sample:    Address[1]: 192.0.2.10
     [00:00:07.080,000] <inf> net_dhcpv4_client_sample:     Subnet[1]: 255.255.255.0

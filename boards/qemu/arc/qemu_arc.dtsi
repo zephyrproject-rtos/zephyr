@@ -65,6 +65,11 @@
 		interrupt-parent = <&intc>;
 		interrupts = <25 1>;
 		reg-shift = <2>;
+
+		slip0: slip {
+			compatible = "zephyr,slip-eth", "zephyr,slip";
+			status = "okay";
+		};
 	};
 
 	chosen {

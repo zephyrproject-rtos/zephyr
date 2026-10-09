@@ -839,6 +839,9 @@ New APIs and options
 * Network
 
   * Add :c:func:`net_eth_set_if_type_wifi` to set the ethernet interface type to Wi-Fi.
+  * The SLIP driver is now a devicetree device (:dtcompatible:`zephyr,slip-eth` and
+    :dtcompatible:`zephyr,slip`) placed under its UART node instead of using the ``uart_pipe``
+    driver. See the migration guide.
   * Add a public neighbor cache API: :c:func:`net_if_ipv4_nbr_flush` and
     :c:func:`net_if_ipv6_nbr_flush` drop the neighbors an interface has
     learned, and :c:func:`net_if_ipv4_nbr_rm` and :c:func:`net_if_ipv6_nbr_rm`

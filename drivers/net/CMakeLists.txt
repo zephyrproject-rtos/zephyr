@@ -4,6 +4,7 @@ zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_NET_LOOPBACK loopback.c)
 zephyr_library_sources_ifdef(CONFIG_NET_CANBUS canbus.c)
+zephyr_library_sources_ifdef(CONFIG_SLIP_COMMON slip_common.c)
 
 if(CONFIG_NET_NATIVE)
 zephyr_library_sources_ifdef(CONFIG_SLIP slip.c)

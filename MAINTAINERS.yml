@@ -4764,6 +4764,7 @@ Networking:
   files:
     - scripts/net/
     - drivers/net/
+    - dts/bindings/net/zephyr,slip.yaml
     - include/zephyr/net/
     - samples/net/
     - subsys/net/

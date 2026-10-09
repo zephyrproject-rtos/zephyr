@@ -145,10 +145,15 @@ endif # NET_PPP
 # SLIP options
 #
 menuconfig SLIP
-	bool "SLIP driver" if !QEMU_TARGET
+	bool "SLIP driver"
+	default y if !NET_TEST && !DT_HAS_ZEPHYR_SLIP_ETH_ENABLED
+	depends on DT_HAS_ZEPHYR_SLIP_ENABLED
 	depends on NET_NATIVE
-	select UART_PIPE
-	select UART_INTERRUPT_DRIVEN
+	depends on !QEMU_TARGET || NET_QEMU_SLIP
+	select NET_L2_DUMMY
+	select SLIP_COMMON
+	help
+	  SLIP driver carrying IP packets on the zephyr,slip node.
 
 if SLIP
 
@@ -156,33 +161,14 @@ config SLIP_DRV_NAME
 	string "SLIP Driver name"
 	default "slip"
 	help
-	  This option sets the driver name
+	  This option sets the network interface name
 
-module = SLIP
-module-dep = LOG
-module-str = Log level for slip driver
-module-help = Sets log level for slip driver.
-source "subsys/net/Kconfig.template.log_config.net"
-
-config SLIP_STATISTICS
-	bool "SLIP network connection statistics"
+config SLIP_INIT_PRIORITY
+	int "SLIP driver init priority"
+	default 60
 	help
-	  This option enables statistics support for SLIP driver.
-
-config SLIP_TAP
-	bool "Use TAP interface to host"
-	default y
-	help
-	  In TAP the Ethernet frames are transferred over SLIP.
-
-config SLIP_MAC_ADDR
-	string "MAC address for the interface"
-	help
-	  Specify a MAC address for the SLIP interface in the form of
-	  six hex 8-bit chars separated by colons (e.g.:
-	  aa:33:cc:22:e2:c0).  The default is an empty string, which
-	  means the code will make 00:00:5E:00:53:XX, where XX will be
-	  random.
+	  Initialization priority of the SLIP network device. It must be
+	  higher than the init priority of the UART it runs on.
 
 endif
 
@@ -309,3 +295,24 @@ config HEAP_MEM_POOL_ADD_SIZE_NET_NATIVE_SOCKETS_GETADDRINFO
 endif # NET_NATIVE_OFFLOADED_SOCKETS
 
 endif # NET_DRIVERS
+
+config SLIP_COMMON
+	bool
+	select UART_INTERRUPT_DRIVEN
+	help
+	  SLIP framing on a UART, shared by the SLIP network drivers.
+
+if SLIP_COMMON
+
+module = SLIP
+module-dep = LOG
+module-str = Log level for slip driver
+module-help = Sets log level for slip driver.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config SLIP_STATISTICS
+	bool "SLIP network connection statistics"
+	help
+	  This option enables statistics support for SLIP driver.
+
+endif # SLIP_COMMON

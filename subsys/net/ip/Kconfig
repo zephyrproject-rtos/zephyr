@@ -127,12 +127,11 @@ config NET_RAW_MODE
 	  net_pkt part. It is currently used only by IEEE 802.15.4 drivers,
 	  though any type of net drivers could use it.
 
-DT_CHOSEN_ZEPHYR_UART_PIPE := zephyr,uart-pipe
 DT_CHOSEN_ZEPHYR_PPP_UART := zephyr,ppp-uart
 
 choice NET_QEMU_NETWORKING
 	prompt "Qemu networking"
-	default NET_QEMU_PPP if NET_PPP
+	default NET_QEMU_PPP if NET_L2_PPP
 	default NET_QEMU_SLIP
 	depends on QEMU_TARGET
 	help
@@ -142,13 +141,16 @@ choice NET_QEMU_NETWORKING
 
 config NET_QEMU_SLIP
 	bool "SLIP"
-	depends on $(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_UART_PIPE))
+	depends on DT_HAS_ZEPHYR_SLIP_ENABLED || DT_HAS_ZEPHYR_SLIP_ETH_ENABLED || \
+		DT_HAS_ZEPHYR_IEEE802154_UART_PIPE_ENABLED
+	imply ETH_DRIVER if DT_HAS_ZEPHYR_SLIP_ETH_ENABLED
 	help
 	  Connect to host or to another Qemu via SLIP.
 
 config NET_QEMU_PPP
 	bool "PPP"
 	depends on NET_TEST || $(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_PPP_UART))
+	imply NET_DRIVERS
 	help
 	  Connect to host via PPP.
 
@@ -704,23 +706,6 @@ config NET_CONTEXT_CLAMP_PORT_RANGE
 
 endif # NET_RAW_MODE
 
-config NET_SLIP_TAP
-	bool "TAP SLIP driver"
-	depends on NET_QEMU_SLIP
-	depends on NET_NATIVE
-	select SLIP
-	select UART_PIPE
-	select UART_INTERRUPT_DRIVEN
-	select SLIP_TAP
-	select NET_L2_ETHERNET
-	imply ETH_DRIVER
-	default y if (QEMU_TARGET && !NET_TEST)
-	help
-	  SLIP TAP support is necessary when testing with QEMU. The host
-	  needs to have tunslip6 with TAP support running in order to
-	  communicate via the SLIP driver. See net-tools project at
-	  https://github.com/zephyrproject-rtos/net-tools for more details.
-
 config NET_TEST
 	bool "Network Testing"
 	help
@@ -730,7 +715,6 @@ config NET_TEST
 config NET_PKT_LARGE_DEFAULTS
 	bool "More networking packets by default"
 	default y if ETH_DRIVER
-	default y if NET_SLIP_TAP
 	default y if WIFI && !WIFI_USAGE_MODE_SCAN_ONLY
 	help
 	  Use larger defaults for the network packet and buffer pools.
