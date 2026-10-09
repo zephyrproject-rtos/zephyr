@@ -91,6 +91,7 @@ struct default_param {
 	void *buf;
 	size_t buf_len;
 	size_t *val_len;
+	bool *exists; /*< Flag when set indicates the setting has been found */
 };
 
 /* Default callback to set a Key/Value pair */
@@ -104,6 +105,7 @@ static int settings_set_default_cb(const char *name, size_t len, settings_read_c
 
 	name_len = settings_name_next(name, &next);
 	if (name_len == 0) {
+		*dest->exists = true;
 		rc = read_cb(cb_arg, dest->buf, MIN(dest->buf_len, len));
 		*dest->val_len = len;
 	}
@@ -170,6 +172,7 @@ ssize_t settings_load_one(const char *name, void *buf, size_t buf_len)
 {
 	struct settings_store *cs;
 	size_t val_len = 0;
+	bool exists = false;
 	int rc = 0;
 
 	/*
@@ -185,7 +188,8 @@ ssize_t settings_load_one(const char *name, void *buf, size_t buf_len)
 			struct default_param param = {
 				.buf = buf,
 				.buf_len = buf_len,
-				.val_len = &val_len
+				.val_len = &val_len,
+				.exists = &exists
 			};
 			const struct settings_load_arg arg = {
 				.subtree = name,
@@ -193,6 +197,9 @@ ssize_t settings_load_one(const char *name, void *buf, size_t buf_len)
 				.param = &param
 			};
 			rc = cs->cs_itf->csi_load(cs, &arg);
+			if (rc >= 0 && !exists) {
+				rc = -ENOENT;
+			}
 		}
 	}
 	settings_lock_release();
