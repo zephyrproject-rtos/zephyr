@@ -35,8 +35,8 @@ void relocate_vector_table(void)
 
 void soc_early_init_hook(void)
 {
-	/* Update CMSIS SystemCoreClock variable (HCLK) */
-	SystemCoreClock = 1000000000U;
+	/* Record the clock established by the previous boot stage. */
+	SystemCoreClockUpdate();
 
 	/* Clear TE bit to take exceptions in Thumb mode to fix the DDR init */
 	write_sctlr(read_sctlr() & ~SCTLR_TE_Msk);
