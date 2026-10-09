@@ -853,6 +853,7 @@ static void test_dist_dfu_self_update_apply_err(void)
 	}
 
 	ASSERT_EQUAL(BT_MESH_DFD_PHASE_FAILED, dfd_srv.phase);
+	ASSERT_EQUAL(BT_MESH_DFU_PHASE_APPLY_FAIL, dfd_srv.targets[0].phase);
 
 	PASS();
 }
@@ -870,6 +871,7 @@ static void test_dist_dfu_self_update_apply_sync(void)
 
 	ASSERT_EQUAL(BT_MESH_DFD_PHASE_COMPLETED, dfd_srv.phase);
 	ASSERT_EQUAL(BT_MESH_DFU_PHASE_IDLE, dfu_srv.update.phase);
+	ASSERT_EQUAL(BT_MESH_DFU_PHASE_APPLY_SUCCESS, dfd_srv.targets[0].phase);
 	ASSERT_EQUAL(1, dist_completed_cnt);
 
 	PASS();
@@ -896,6 +898,7 @@ static void test_dist_dfu_self_update_apply_async(void)
 
 	ASSERT_EQUAL(BT_MESH_DFD_PHASE_COMPLETED, dfd_srv.phase);
 	ASSERT_EQUAL(BT_MESH_DFU_PHASE_IDLE, dfu_srv.update.phase);
+	ASSERT_EQUAL(BT_MESH_DFU_PHASE_APPLY_SUCCESS, dfd_srv.targets[0].phase);
 	ASSERT_EQUAL(1, dist_completed_cnt);
 
 	PASS();
