@@ -260,15 +260,14 @@ static ssize_t settings_zms_load_one(struct settings_store *cs, const char *name
 	}
 
 	name_hash = settings_zms_find_hash_from_name(cf, name);
-	if (name_hash) {
-		/* we found a name_hash corresponding to name */
-		value_id = ZMS_DATA_ID_FROM_HASH(name_hash);
-		rc = zms_read(&cf->cf_zms, value_id, buf, buf_len);
-
-		return (rc == buf_len) ? zms_get_data_length(&cf->cf_zms, value_id) : rc;
+	if (!name_hash) {
+		return -ENOENT;
 	}
+	/* we found a name_hash corresponding to name */
+	value_id = ZMS_DATA_ID_FROM_HASH(name_hash);
+	rc = zms_read(&cf->cf_zms, value_id, buf, buf_len);
 
-	return 0;
+	return (rc == buf_len) ? zms_get_data_length(&cf->cf_zms, value_id) : rc;
 }
 
 /* Gets the next linked list node either from cache (if enabled) or from persistent
