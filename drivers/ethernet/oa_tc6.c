@@ -647,7 +647,7 @@ int oa_tc6_spi_thread(struct oa_tc6 *tc6)
 	}
 
 	if (tc6->spi_length == 0) {
-		return 0;
+		goto re_enable;
 	}
 
 	ret = oa_tc6_perform_spi(tc6);
@@ -662,7 +662,7 @@ int oa_tc6_spi_thread(struct oa_tc6 *tc6)
 			if (tc6->rca) {
 				k_sem_give(&tc6->spi_sem);
 			}
-			return 0;
+			goto re_enable;
 		}
 		LOG_ERR("Device error: %d\n", ret);
 		return ret;
@@ -677,6 +677,31 @@ int oa_tc6_spi_thread(struct oa_tc6 *tc6)
 	    (tc6->rca > 0)) {
 		k_sem_give(&tc6->spi_sem);
 	}
+
+re_enable:
+#ifdef CONFIG_OA_TC6_INT_MODE_LEVEL
+	if (tc6->int_mode_is_level && tc6->int_disabled_by_handler) {
+		ret = gpio_pin_interrupt_configure_dt(tc6->interrupt, GPIO_INT_LEVEL_ACTIVE);
+		if (ret < 0) {
+			LOG_ERR("Failed to re-enable level interrupt: %d", ret);
+			return ret;
+		}
+
+		/*
+		 * Race condition: Between re-enabling the interrupt above and
+		 * clearing the flag below, the ISR could fire and set int_flag.
+		 * Use IRQ lock to atomically check if an interrupt arrived after
+		 * re-enabling. If int_flag is set, leave int_disabled_by_handler
+		 * true so the ISR doesn't attempt to disable again.
+		 */
+		unsigned int key = irq_lock();
+
+		if (!tc6->int_flag) {
+			tc6->int_disabled_by_handler = false;
+		}
+		irq_unlock(key);
+	}
+#endif
 
 	return 0;
 }
@@ -769,6 +794,52 @@ static int oa_tc6_unmask_macphy_error_interrupts(struct oa_tc6 *tc6)
 	return oa_tc6_reg_write(tc6, OA_IMASK0, regval);
 }
 
+/**
+ * @brief Configure GPIO interrupt with hardware-aware mode selection.
+ *
+ * Attempts level-triggered mode first when CONFIG_OA_TC6_INT_MODE_LEVEL is
+ * enabled. Falls back to edge-triggered mode when the hardware does not
+ * support level interrupts (returns -ENOTSUP).
+ *
+ * @param tc6 Pointer to OA TC6 device structure.
+ *
+ * @retval 0 on success.
+ * @retval -errno on failure.
+ */
+static int oa_tc6_configure_interrupt_adaptive(struct oa_tc6 *tc6)
+{
+	int ret;
+
+#ifdef CONFIG_OA_TC6_INT_MODE_LEVEL
+	ret = gpio_pin_interrupt_configure_dt(tc6->interrupt, GPIO_INT_LEVEL_ACTIVE);
+	if (ret == 0) {
+		LOG_INF("Configured MAC-PHY interrupt as level-triggered");
+		tc6->configured_int_mode = GPIO_INT_MODE_LEVEL;
+		tc6->int_mode_is_level = true;
+		return 0;
+	}
+
+	if (ret == -ENOTSUP) {
+		LOG_WRN("Level-triggered interrupts not supported, "
+			"falling back to edge-triggered");
+	} else {
+		LOG_ERR("Failed to configure level-triggered interrupt: %d", ret);
+		return ret;
+	}
+#endif
+
+	ret = gpio_pin_interrupt_configure_dt(tc6->interrupt, GPIO_INT_EDGE_TO_ACTIVE);
+	if (ret == 0) {
+		LOG_INF("Configured MAC-PHY interrupt as edge-triggered");
+		tc6->configured_int_mode = GPIO_INT_MODE_EDGE;
+		tc6->int_mode_is_level = false;
+		return 0;
+	}
+
+	LOG_ERR("Failed to configure edge-triggered interrupt: %d", ret);
+	return ret;
+}
+
 static int oa_tc6_wait_for_reset(struct oa_tc6 *tc6)
 {
 	uint8_t i;
@@ -785,7 +856,7 @@ static int oa_tc6_wait_for_reset(struct oa_tc6 *tc6)
 	}
 
 	ret = oa_tc6_unmask_macphy_error_interrupts(tc6);
-	if (ret) {
+	if (ret != 0) {
 		LOG_ERR("MAC-PHY error interrupts unmask failed, %d", ret);
 		return ret;
 	}
@@ -795,6 +866,8 @@ static int oa_tc6_wait_for_reset(struct oa_tc6 *tc6)
 
 static int oa_tc6_gpio_reset(struct oa_tc6 *tc6)
 {
+	int ret;
+
 	tc6->rst_flag = false;
 	tc6->protected = false;
 
@@ -804,6 +877,12 @@ static int oa_tc6_gpio_reset(struct oa_tc6 *tc6)
 	k_busy_wait(10U);
 	/* deassert - end of reset indicated by IRQ_N low  */
 	gpio_pin_set_dt(tc6->reset, 0);
+
+	ret = oa_tc6_configure_interrupt_adaptive(tc6);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure MAC-PHY interrupt: %d", ret);
+		return ret;
+	}
 
 	return oa_tc6_wait_for_reset(tc6);
 }
@@ -838,6 +917,19 @@ static void oa_tc6_int_callback(const struct device *dev, struct gpio_callback *
 	ARG_UNUSED(pins);
 
 	struct oa_tc6 *tc6 = CONTAINER_OF(cb, struct oa_tc6, gpio_int_callback);
+
+#ifdef CONFIG_OA_TC6_INT_MODE_LEVEL
+	if (tc6->int_mode_is_level) {
+		int ret;
+
+		ret = gpio_pin_interrupt_configure_dt(tc6->interrupt, GPIO_INT_DISABLE);
+		if (ret < 0) {
+			LOG_ERR("Failed to disable interrupt in callback: %d", ret);
+			return;
+		}
+		tc6->int_disabled_by_handler = true;
+	}
+#endif
 
 	if (!tc6->rst_flag) {
 		k_sem_give(&tc6->int_sem);
@@ -887,15 +979,6 @@ int oa_tc6_init(struct oa_tc6 *tc6)
 		return ret;
 	}
 
-	gpio_pin_interrupt_configure_dt(tc6->interrupt, GPIO_INT_EDGE_TO_ACTIVE);
-
-	/* Start interruption-poll thread */
-	tc6->tid_int = k_thread_create(&tc6->thread, tc6->thread_stack,
-				       CONFIG_OA_TC6_IRQ_THREAD_STACK_SIZE,
-				       (k_thread_entry_t)oa_tc6_int_thread, (void *)tc6, NULL, NULL,
-				       K_PRIO_COOP(CONFIG_OA_TC6_IRQ_THREAD_PRIO), 0, K_NO_WAIT);
-	k_thread_name_set(tc6->tid_int, "oa_tc6_interrupt");
-
 	/* Perform HW reset - 'rst-gpios' required property set in DT */
 	if (!gpio_is_ready_dt(tc6->reset)) {
 		LOG_ERR("Reset GPIO device %s is not ready", tc6->reset->port->name);
@@ -907,6 +990,13 @@ int oa_tc6_init(struct oa_tc6 *tc6)
 		LOG_ERR("Failed to configure reset GPIO, %d", ret);
 		return ret;
 	}
+
+	/* Start interruption-poll thread */
+	tc6->tid_int = k_thread_create(&tc6->thread, tc6->thread_stack,
+				       CONFIG_OA_TC6_IRQ_THREAD_STACK_SIZE,
+				       (k_thread_entry_t)oa_tc6_int_thread, (void *)tc6, NULL, NULL,
+				       K_PRIO_COOP(CONFIG_OA_TC6_IRQ_THREAD_PRIO), 0, K_NO_WAIT);
+	k_thread_name_set(tc6->tid_int, "oa_tc6_interrupt");
 
 	return oa_tc6_gpio_reset(tc6);
 }
