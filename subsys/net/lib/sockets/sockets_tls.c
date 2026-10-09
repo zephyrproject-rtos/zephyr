@@ -2054,19 +2054,6 @@ static int tls_mbedtls_session_init(struct tls_session_context *session_ctx,
 {
 	int ret;
 
-#if defined(CONFIG_MBEDTLS_X509_CRT_PARSE_C)
-	/* For TLS clients, set hostname to empty string to enforce it's
-	 * verification - only if hostname option was not set. Otherwise
-	 * depend on user configuration.
-	 */
-	if (!is_server && !tls_ctx->options.is_hostname_set) {
-		ret = mbedtls_ssl_set_hostname(&session_ctx->ssl, "");
-		if (ret != 0) {
-			return -ENOMEM;
-		}
-	}
-#endif
-
 	ret = mbedtls_ssl_setup(&session_ctx->ssl, &tls_ctx->config);
 	if (ret != 0) {
 		/* According to Mbed TLS API documentation,
