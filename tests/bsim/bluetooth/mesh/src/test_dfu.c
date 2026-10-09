@@ -165,6 +165,7 @@ static const struct bt_mesh_blob_io dummy_blob_io_open_fail = {
 };
 
 static bool dist_io_open_fail;
+static bool dist_apply_manual;
 
 static int dist_fw_recv(struct bt_mesh_dfd_srv *srv,
 			const struct bt_mesh_dfu_slot *slot,
@@ -201,7 +202,8 @@ static void dist_phase_changed(struct bt_mesh_dfd_srv *srv, enum bt_mesh_dfd_pha
 	}
 
 	if (phase == BT_MESH_DFD_PHASE_COMPLETED ||
-	    phase == BT_MESH_DFD_PHASE_FAILED) {
+	    phase == BT_MESH_DFD_PHASE_FAILED ||
+	    (dist_apply_manual && phase == BT_MESH_DFD_PHASE_TRANSFER_SUCCESS)) {
 		if (phase == BT_MESH_DFD_PHASE_FAILED) {
 			/* On a recovery boot the phase history starts fresh,
 			 * so prev_phase has not been observed yet.
@@ -609,7 +611,7 @@ static void dist_dfu_start(void)
 		.group = dfu_group,
 		.xfer_mode = BT_MESH_BLOB_XFER_MODE_PUSH,
 		.ttl = 2,
-		.apply = true,
+		.apply = !dist_apply_manual,
 	};
 
 	status = bt_mesh_dfd_srv_start(&dfd_srv, &start_params);
@@ -1009,6 +1011,49 @@ static void test_dist_dfu_self_update_xfer_fail(void)
 
 	ASSERT_EQUAL(BT_MESH_DFD_PHASE_FAILED, dfd_srv.phase);
 	ASSERT_EQUAL(BT_MESH_DFU_PHASE_VERIFY_OK, dfu_srv.update.phase);
+
+	PASS();
+}
+
+static void test_dist_dfu_self_update_manual_apply(void)
+{
+	enum bt_mesh_dfd_status status;
+
+	/* Self-only distribution started without apply. The later Distribution
+	 * Apply completes the client's Apply step synchronously, as the only target
+	 * is skipped, so the distribution must already be in Applying Update.
+	 */
+	dist_apply_manual = true;
+
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	bt_mesh_device_setup(&prov, &dist_comp_self_update);
+	dist_self_update_prov_and_conf(DIST_ADDR);
+
+	ASSERT_TRUE(slot_add(NULL));
+
+	status = bt_mesh_dfd_srv_receiver_add(&dfd_srv, DIST_ADDR + 1, 0);
+	ASSERT_EQUAL(BT_MESH_DFD_SUCCESS, status);
+
+	dist_dfu_start();
+
+	if (k_sem_take(&dfu_dist_ended, K_SECONDS(DFU_TIMEOUT))) {
+		FAIL("Transfer did not end");
+	}
+
+	ASSERT_EQUAL(BT_MESH_DFD_PHASE_TRANSFER_SUCCESS, dfd_srv.phase);
+	ASSERT_EQUAL(BT_MESH_DFU_PHASE_VERIFY_OK, dfu_srv.update.phase);
+
+	status = bt_mesh_dfd_srv_apply(&dfd_srv);
+	ASSERT_EQUAL(BT_MESH_DFD_SUCCESS, status);
+
+	if (k_sem_take(&dfu_dist_ended, K_SECONDS(DFU_TIMEOUT))) {
+		FAIL("Distribution did not end");
+	}
+
+	ASSERT_EQUAL(BT_MESH_DFD_PHASE_COMPLETED, dfd_srv.phase);
+	ASSERT_EQUAL(BT_MESH_DFU_PHASE_IDLE, dfu_srv.update.phase);
+	ASSERT_EQUAL(BT_MESH_DFU_PHASE_APPLY_SUCCESS, dfd_srv.targets[0].phase);
+	ASSERT_EQUAL(1, dist_completed_cnt);
 
 	PASS();
 }
@@ -2205,6 +2250,8 @@ static const struct bst_test_instance test_dfu[] = {
 		  "Distributor self-update with a multicast distribution"),
 	TEST_CASE(dist, dfu_self_update_xfer_fail,
 		  "Distributor self-update fails before the Apply step"),
+	TEST_CASE(dist, dfu_self_update_manual_apply,
+		  "Distributor self-update applied by a later Distribution Apply"),
 	TEST_CASE(dist, dfu_slot_create, "Distributor creates image slots"),
 	TEST_CASE(dist, dfu_slot_create_recover,
 		      "Distributor recovers created image slots from persistent storage"),
