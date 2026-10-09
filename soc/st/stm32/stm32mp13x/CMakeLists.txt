@@ -28,6 +28,7 @@ if(CONFIG_SOC_SERIES_STM32MP13X_DDR_INIT)
   )
 endif()
 
+add_subdirectory(utils)
 
 zephyr_include_directories(.)
 

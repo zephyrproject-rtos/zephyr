@@ -16,6 +16,7 @@ on:
       - 'scripts/kconfig/**'
       - 'scripts/schemas/hardening-schema.yaml'
       - 'scripts/tests/hardenconfig/**'
+      - 'soc/st/stm32/stm32mp13x/utils/**'
       - '.github/workflows/scripts_tests.yml'
   pull_request:
     branches:
@@ -29,6 +30,7 @@ on:
       - 'scripts/kconfig/**'
       - 'scripts/schemas/hardening-schema.yaml'
       - 'scripts/tests/hardenconfig/**'
+      - 'soc/st/stm32/stm32mp13x/utils/**'
       - '.github/workflows/scripts_tests.yml'
 
 permissions:
@@ -85,4 +87,4 @@ jobs:
           ZEPHYR_BASE: ./
         run: |
           echo "Run script tests"
-          pytest ./scripts/build ./scripts/checkpatch ./scripts/cmake ./scripts/kconfig ./scripts/tests/hardenconfig
+          pytest ./scripts/build ./scripts/checkpatch ./scripts/cmake ./scripts/kconfig ./scripts/tests/hardenconfig ./soc/st/stm32/stm32mp13x/utils
