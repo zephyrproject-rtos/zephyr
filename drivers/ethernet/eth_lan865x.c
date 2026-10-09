@@ -237,6 +237,46 @@ static int lan865x_default_config(const struct device *dev)
 	return 0;
 }
 
+/**
+ * @brief Post-reset callback invoked by oa_tc6 recovery work handler.
+ *
+ * Restores all MAC and PHY configuration that the hardware reset wiped:
+ * 1. MAC-specific configuration (protected mode, fixup, MAC address, multicast).
+ * 2. PHY reset event to re-apply analog fixups and cached PLCA config.
+ * 3. Enable MAC TX/RX.
+ *
+ * @param priv The struct device pointer for the LAN865x MAC device.
+ *
+ * @retval 0 on success.
+ * @retval -errno on failure.
+ */
+static int lan865x_post_reset(void *priv)
+{
+	const struct device *dev = (const struct device *)priv;
+	const struct lan865x_config *cfg = dev->config;
+	int ret;
+
+	ret = lan865x_default_config(dev);
+	if (ret != 0) {
+		LOG_ERR("Recovery: MAC default config failed: %d", ret);
+		return ret;
+	}
+
+	ret = lan865x_phy_callback(cfg->phy, LAN865X_PHY_EVENT_RESET, NULL);
+	if (ret != 0) {
+		LOG_ERR("Recovery: PHY reset callback failed: %d", ret);
+		return ret;
+	}
+
+	ret = lan865x_mac_rxtx_control(dev, LAN865x_MAC_TXRX_ON);
+	if (ret != 0) {
+		LOG_ERR("Recovery: MAC TX/RX enable failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
 static int lan865x_init(const struct device *dev)
 {
 	const struct lan865x_config *cfg = dev->config;
@@ -253,7 +293,6 @@ static int lan865x_init(const struct device *dev)
 	/* Check SPI communication after reset */
 	ret = lan865x_check_spi(dev);
 	if (ret < 0) {
-
 		LOG_ERR("SPI communication is not working, %d", ret);
 		return ret;
 	}
@@ -266,7 +305,19 @@ static int lan865x_init(const struct device *dev)
 		return ret;
 	}
 
-	return lan865x_default_config(dev);
+	ret = lan865x_default_config(dev);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/*
+	 * Register the post-reset callback for error recovery.
+	 * Must be done after oa_tc6_init() but before the interface
+	 * goes live.
+	 */
+	oa_tc6_register_post_reset_cb(tc6, lan865x_post_reset, (void *)dev);
+
+	return 0;
 }
 
 static int lan865x_port_send(const struct device *dev, struct net_pkt *pkt)
