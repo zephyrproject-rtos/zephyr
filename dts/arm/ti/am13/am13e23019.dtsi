@@ -51,6 +51,16 @@
 			};
 		};
 
+		wdt0: wdt0@400d0000 {
+			compatible = "ti,mspm0-watchdog";
+			reg = <0x400d0000 0x2000>;
+			interrupts = <3 0>;
+			clocks = <&ckm MSPM0_CLOCK_LFCLK>;
+			ti,watchdog-reset-action = <1>;
+			closed-window = <0>;
+			status = "disabled";
+		};
+
 		timg4_0: timg4_0@40180000 {
 			compatible = "ti,mspm0-timer";
 			reg = <0x40180000 0x2000>;
