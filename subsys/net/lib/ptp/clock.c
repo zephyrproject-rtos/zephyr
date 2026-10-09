@@ -354,6 +354,9 @@ const struct ptp_clock *ptp_clock_init(void)
 
 	precision_pi_init(&ptp_clk.pi, (double)CONFIG_PRECISION_TIMING_PI_KP / 1000.0,
 			  (double)CONFIG_PRECISION_TIMING_PI_KI / 1000.0);
+	precision_pi_set_limits(&ptp_clk.pi,
+				(double)CONFIG_PRECISION_TIMING_PI_INTEGRAL_LIMIT_PPM * 1000.0,
+				(double)CONFIG_PRECISION_TIMING_PI_OUTPUT_LIMIT_PPM * 1000.0);
 
 	ret = zvfs_eventfd(0, ZVFS_EFD_NONBLOCK);
 	if (ret < 0) {
