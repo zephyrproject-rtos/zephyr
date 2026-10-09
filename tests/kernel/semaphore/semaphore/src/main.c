@@ -1071,6 +1071,7 @@ ZTEST_USER(semaphore, test_k_sem_correct_count_limit)
  *
  * @see k_sem_give()
  * @verifies ZEP-SRS-5-20
+ * @verifies ZEP-SRS-5-21
  */
 ZTEST(semaphore, test_sem_give_take_from_isr)
 {
