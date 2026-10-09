@@ -112,6 +112,15 @@ struct oa_tc6 {
 
 	struct gpio_callback gpio_int_callback;
 
+	/** Track which interrupt mode is actually configured */
+	enum gpio_int_mode configured_int_mode;
+
+	/** true when level-triggered interrupts are in use */
+	bool int_mode_is_level;
+
+	/** true when the ISR has temporarily disabled the level interrupt */
+	bool int_disabled_by_handler;
+
 	struct k_sem int_sem;
 
 	struct k_sem tx_rx_sem;
