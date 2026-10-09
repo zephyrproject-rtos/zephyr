@@ -171,6 +171,7 @@ int video_set_signal(const struct device *dev, struct k_poll_signal *sig);
  *
  * @retval 0 on success.
  * @retval -EINVAL Parameters are invalid.
+ * @retval -ERANGE Value outside of the control range.
  * @retval -ENOTSUP Format is not supported.
  * @retval -EIO General input / output error.
  */
