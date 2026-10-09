@@ -222,6 +222,37 @@ ZTEST(precision_timing, test_pi_instances_and_gains_are_independent)
 	zassert_double_close(second.integral, 0.0);
 }
 
+ZTEST(precision_timing, test_pi_integral_limit)
+{
+	struct precision_pi pi;
+
+	precision_pi_init(&pi, 1.0, 0.5);
+	precision_pi_set_limits(&pi, 2.0, 0.0);
+
+	zassert_double_close(precision_pi_update(&pi, 4.0), 6.0);
+	zassert_double_close(pi.integral, 2.0);
+	zassert_double_close(precision_pi_update(&pi, 4.0), 6.0);
+	zassert_double_close(pi.integral, 2.0);
+	zassert_double_close(precision_pi_update(&pi, -2.0), -1.0);
+	zassert_double_close(pi.integral, 1.0);
+}
+
+ZTEST(precision_timing, test_pi_output_limit_holds_integral)
+{
+	struct precision_pi pi;
+
+	precision_pi_init(&pi, 1.0, 0.5);
+	precision_pi_set_limits(&pi, 0.0, 5.0);
+
+	/* Unlimited output would be 6, and the integral would move to 2 */
+	zassert_double_close(precision_pi_update(&pi, 4.0), 5.0);
+	zassert_double_close(pi.integral, 0.0);
+	zassert_double_close(precision_pi_update(&pi, -12.0), -5.0);
+	zassert_double_close(pi.integral, 0.0);
+	zassert_double_close(precision_pi_update(&pi, -1.0), -1.5);
+	zassert_double_close(pi.integral, -0.5);
+}
+
 ZTEST(precision_timing, test_clock_dispatch_and_error_propagation)
 {
 	struct fake_clock_data data = {.time_ns = 123};
