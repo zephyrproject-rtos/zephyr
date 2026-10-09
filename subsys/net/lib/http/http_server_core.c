@@ -537,42 +537,47 @@ static void close_all_sockets(struct http_server_ctx *ctx)
 	}
 }
 
-static void client_release_resources(struct http_client_ctx *client)
+static void release_dynamic_resource(struct http_client_ctx *client,
+				     struct http_resource_detail *detail)
 {
-	struct http_resource_detail *detail;
 	struct http_resource_detail_dynamic *dynamic_detail;
 	struct http_request_ctx request_ctx;
 	struct http_response_ctx response_ctx;
 
+	if (detail == NULL || detail->type != HTTP_RESOURCE_TYPE_DYNAMIC) {
+		return;
+	}
+
+	dynamic_detail = (struct http_resource_detail_dynamic *)detail;
+
+	if (dynamic_detail->holder != client) {
+		return;
+	}
+
+	/* If the client still holds the resource at this point,
+	 * it means the transaction was not complete. Release
+	 * the resource and notify application.
+	 */
+	dynamic_detail->holder = NULL;
+
+	if (dynamic_detail->cb == NULL) {
+		return;
+	}
+
+	populate_request_ctx(&request_ctx, NULL, 0, NULL);
+
+	dynamic_detail->cb(client, HTTP_SERVER_TRANSACTION_ABORTED, &request_ctx, &response_ctx,
+			   dynamic_detail->user_data);
+}
+
+static void client_release_resources(struct http_client_ctx *client)
+{
 	HTTP_SERVICE_FOREACH(service) {
 		HTTP_SERVICE_FOREACH_RESOURCE(service, resource) {
-			detail = resource->detail;
-
-			if (detail->type != HTTP_RESOURCE_TYPE_DYNAMIC) {
-				continue;
-			}
-
-			dynamic_detail = (struct http_resource_detail_dynamic *)detail;
-
-			if (dynamic_detail->holder != client) {
-				continue;
-			}
-
-			/* If the client still holds the resource at this point,
-			 * it means the transaction was not complete. Release
-			 * the resource and notify application.
-			 */
-			dynamic_detail->holder = NULL;
-
-			if (dynamic_detail->cb == NULL) {
-				continue;
-			}
-
-			populate_request_ctx(&request_ctx, NULL, 0, NULL);
-
-			dynamic_detail->cb(client, HTTP_SERVER_TRANSACTION_ABORTED, &request_ctx,
-					   &response_ctx, dynamic_detail->user_data);
+			release_dynamic_resource(client, resource->detail);
 		}
+
+		release_dynamic_resource(client, service->res_fallback);
 	}
 }
 
