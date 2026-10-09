@@ -12,7 +12,7 @@
 #include <stdint.h>
 #include <time.h>
 
-#include <zephyr/posix/sys/time.h>
+#include <sys/time.h>
 #include <zephyr/sys/clock.h>
 #include <zephyr/sys/timeutil.h>
 
