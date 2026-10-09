@@ -1035,6 +1035,20 @@ static void bm_tgt_tx(const struct device *ctrl)
 	sys_write8(val, base + XEC_I2C_DATA_OFS);
 }
 
+static void xec_i2c_v3_bm_targ_restart(const struct device *ctrl)
+{
+	const struct xec_i2c_v3_bm_xcfg *cfg = ctrl->config;
+	struct xec_i2c_v3_bm_xdat *xdat = ctrl->data;
+	uintptr_t base = cfg->base;
+
+	xec_i2c_bm_cap_update(xdat, 0xB8U);
+	bm_tgt_restart(base);
+
+
+	soc_ecia_girq_status_clear(cfg->girq, cfg->girq_pos);
+	xec_i2c_bm_cap_update(xdat, 0xB9U);
+}
+
 /* Target-mode interrupt service. Dispatched from the top of the controller
  * ISR while a target is attached; master ops are -EBUSY then, so the
  * controller state machine is dormant and the two paths never interleave.
@@ -1051,6 +1065,22 @@ static void xec_i2c_v3_bm_isr_target(const struct device *ctrl)
 	const struct i2c_target_callbacks *cbs = (tcfg != NULL) ? tcfg->callbacks : NULL;
 
 	xec_i2c_bm_cap_update(xdat, 0xB0U);
+
+	if ((sr & (BM_SR_BER | BM_SR_LAB)) != 0) { /* Bus Error or Lost Arbitration */
+		xec_i2c_bm_cap_update(xdat, 0xB1U);
+		if ((cbs != NULL) && (cbs->error != NULL)) {
+			enum i2c_error_reason err_reason = I2C_ERROR_GENERIC;
+
+			if ((sr & BM_SR_LAB) != 0) {
+				err_reason = I2C_ERROR_ARBITRATION;
+			}
+
+			cbs->error(tcfg, err_reason);
+		}
+		bm_cmpl_clear(base, cmpl);
+		xec_i2c_v3_bm_targ_restart(ctrl);
+		return;
+	}
 
 	/* Target-transmit external STOP: after the host NACKs the final read
 	 * byte and issues STOP, NBB goes 0->1 and CMPL.IDLE latches (IDLE_IEN
@@ -1077,31 +1107,28 @@ static void xec_i2c_v3_bm_isr_target(const struct device *ctrl)
 		return;
 	}
 
-	/* External STOP after a write, or a bus error: end the transaction. */
-	if ((sr & (BM_SR_BER | BM_SR_STO)) != 0U) {
-		xec_i2c_bm_cap_update(xdat, 0xB4U);
+	if ((sr & BM_SR_STO) != 0) { /* external STOP detected? */
+		xec_i2c_bm_cap_update(xdat, 0xB5U);
 #ifdef CONFIG_I2C_TARGET_BUFFER_MODE
 		if (!xdat->target_read && xdat->tgt_rx_pos > 0U && cbs != NULL &&
 		    cbs->buf_write_received != NULL) {
-			xec_i2c_bm_cap_update(xdat, 0xB5U);
+			xec_i2c_bm_cap_update(xdat, 0xB6U);
 			cbs->buf_write_received(tcfg, cfg->tgt_rx_buf, xdat->tgt_rx_pos);
 		}
 		xdat->tgt_rx_pos = 0U;
 #endif
 		if (cbs != NULL && cbs->stop != NULL) {
-			xec_i2c_bm_cap_update(xdat, 0xB6U);
+			xec_i2c_bm_cap_update(xdat, 0xB7U);
 			cbs->stop(tcfg);
 		}
-		bm_cmpl_clear(base, cmpl);
-		bm_tgt_restart(base);
-		soc_ecia_girq_status_clear(cfg->girq, cfg->girq_pos);
-		xec_i2c_bm_cap_update(xdat, 0xB7U);
+
+		xec_i2c_v3_bm_targ_restart(ctrl);
 		return;
 	}
 
 	/* Address phase: AAT set with PIN clear (byte complete, addressed). */
 	if ((sr & (BM_SR_AAT | BM_SR_PIN)) == BM_SR_AAT) {
-		xec_i2c_bm_cap_update(xdat, 0xB8U);
+		xec_i2c_bm_cap_update(xdat, 0xBAU);
 		bm_tgt_addr(ctrl);
 		soc_ecia_girq_status_clear(cfg->girq, cfg->girq_pos);
 		return;
@@ -1109,10 +1136,10 @@ static void xec_i2c_v3_bm_isr_target(const struct device *ctrl)
 
 	/* Data phase. */
 	if (xdat->target_read) {
-		xec_i2c_bm_cap_update(xdat, 0xB9U);
+		xec_i2c_bm_cap_update(xdat, 0xBBU);
 		bm_tgt_tx(ctrl);
 	} else {
-		xec_i2c_bm_cap_update(xdat, 0xBAU);
+		xec_i2c_bm_cap_update(xdat, 0xBCU);
 		bm_tgt_rx(ctrl);
 	}
 	soc_ecia_girq_status_clear(cfg->girq, cfg->girq_pos);
@@ -1155,9 +1182,7 @@ static void xec_i2c_v3_bm_isr(const struct device *ctrl_dev)
 			bm_cmpl_clear(base, BM_CMPL_IDLE);
 			xec_i2c_v3_bm_finish(ctrl_dev);
 		}
-		xec_i2c_bm_cap_update(xdat, 0x83U);
-		soc_ecia_girq_status_clear(cfg->girq, cfg->girq_pos);
-		return;
+		goto isr_out;
 	}
 
 	/* No transfer in flight: quiesce and drop any spurious interrupt so a
@@ -1167,8 +1192,7 @@ static void xec_i2c_v3_bm_isr(const struct device *ctrl_dev)
 	    xdat->state != BM_STATE_READ) {
 		xec_i2c_bm_cap_update(xdat, 0x84U);
 		sys_write8(BM_CR_DFLT, base + XEC_I2C_CR_OFS);
-		soc_ecia_girq_status_clear(cfg->girq, cfg->girq_pos);
-		return;
+		goto isr_out;
 	}
 
 	xec_i2c_bm_cap_update(xdat, 0x85U);
@@ -1181,12 +1205,12 @@ static void xec_i2c_v3_bm_isr(const struct device *ctrl_dev)
 	if ((sr & BM_SR_BER) != 0U) {
 		xec_i2c_bm_cap_update(xdat, 0x86U);
 		xec_i2c_v3_bm_error(ctrl_dev, -EIO);
-		goto out;
+		goto isr_out;
 	}
 	if ((sr & BM_SR_LAB) != 0U) {
 		xec_i2c_bm_cap_update(xdat, 0x87U);
 		xec_i2c_v3_bm_error(ctrl_dev, -EAGAIN);
-		goto out;
+		goto isr_out;
 	}
 
 	switch (xdat->state) {
@@ -1345,7 +1369,7 @@ static void xec_i2c_v3_bm_isr(const struct device *ctrl_dev)
 		break;
 	}
 
-out:
+isr_out:
 	soc_ecia_girq_status_clear(cfg->girq, cfg->girq_pos);
 	xec_i2c_bm_cap_update(xdat, 0x8FU);
 }
