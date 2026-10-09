@@ -549,16 +549,11 @@ static void mcux_lpc_ctimer_isr(const struct device *dev)
 #endif
 }
 
-static int mcux_lpc_ctimer_init_common(const struct device *dev)
+static int mcux_lpc_ctimer_configure(const struct device *dev)
 {
 	const struct mcux_lpc_ctimer_config *config = dev->config;
 	struct mcux_lpc_ctimer_data *data = dev->data;
 	ctimer_config_t ctimer_config;
-
-	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
 
 #ifdef CONFIG_COUNTER_CAPTURE
 	int ret;
@@ -639,8 +634,7 @@ static int mcux_lpc_ctimer_pm_action(const struct device *dev, enum pm_device_ac
 	case PM_DEVICE_ACTION_TURN_OFF:
 		break;
 	case PM_DEVICE_ACTION_TURN_ON:
-		mcux_lpc_ctimer_init_common(dev);
-		break;
+		return mcux_lpc_ctimer_configure(dev);
 	default:
 		return -ENOTSUP;
 	}
@@ -649,6 +643,13 @@ static int mcux_lpc_ctimer_pm_action(const struct device *dev, enum pm_device_ac
 
 static int mcux_lpc_ctimer_init(const struct device *dev)
 {
+	const struct mcux_lpc_ctimer_config *config = dev->config;
+
+	if (!device_is_ready(config->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
 	/* Rest of the init is done from the PM_DEVICE_TURN_ON action
 	 * which is invoked by pm_device_driver_init().
 	 */
