@@ -1,0 +1,66 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Connect SERCOM4 MOSI (PC21/PAD0) -> SERCOM8 MOSI (PD24/PAD0) */
+/* Connect SERCOM4 SCK  (PC22/PAD1) -> SERCOM8 SCK  (PD25/PAD1) */
+/* Connect SERCOM4 CS   (PC25/GPIO) -> SERCOM8 SS   (PD26/PAD2) */
+/* Connect SERCOM4 MISO (PC24/PAD3) -> SERCOM8 MISO (PD27/PAD3) */
+
+&portc {
+	status = "okay";
+};
+
+&portd {
+	status = "okay";
+};
+
+&sercom4 {
+	compatible = "microchip,sercom-g1-spi";
+	dipo = <3>;
+	dopo = <0>;
+	interrupts = <83 2>, <84 2>, <85 2>, <86 2>, <87 2>, <88 2>, <89 2>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	cs-gpios = <&portc 25 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&sercom4_spi_cs_gpio>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	dut_spi_dt: test-spi-dev@0 {
+		compatible = "vnd,spi-device";
+		reg = <0>;
+	};
+};
+
+dut_spis: &sercom8 {
+	compatible = "microchip,sercom-g1-spi";
+	dipo = <0>;
+	dopo = <2>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&sercom8_spi_slave>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&pinctrl {
+	sercom4_spi_cs_gpio: sercom4_spi_cs_gpio {
+		group1 {
+			pinmux = <PC21D_SERCOM4_PAD0>, /* MOSI */
+				 <PC22D_SERCOM4_PAD1>, /* SCK  */
+				 <PC24D_SERCOM4_PAD3>; /* MISO */
+		};
+	};
+
+	sercom8_spi_slave: sercom8_spi_slave {
+		group1 {
+			pinmux = <PD24D_SERCOM8_PAD0>, /* MOSI */
+				 <PD25D_SERCOM8_PAD1>, /* SCK  */
+				 <PD26D_SERCOM8_PAD2>, /* SS   */
+				 <PD27D_SERCOM8_PAD3>; /* MISO */
+		};
+	};
+};
