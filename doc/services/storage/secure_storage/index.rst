@@ -52,8 +52,11 @@ and an explanation why. This is not an exhaustive list.
     storage entry IDs (e.g., with :ref:`ZMS <zms_api>` when
     :kconfig:option:`CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_ZMS` is enabled).
   | Zephyr defines numerical ranges to be used by different users of the API which guarantees that
-    there are no collisions and that they all fit within 30 bits.
+    there are no collisions.
     See the header files in :zephyr_file:`include/zephyr/psa` for more information.
+  | If you need the full 64-bit UID range, you can enable it with
+    :kconfig:option:`CONFIG_SECURE_STORAGE_64_BIT_UID`. However, be aware that even when it's enabled,
+    the ZMS implementation still reserves the bits 30 and 31 for the caller ID.
 
 * The data stored in the ITS is by default encrypted and authenticated (Against ``1.`` in
   `3.2. Internal Trusted Storage requirements <https://arm-software.github.io/psa-api/storage/1.0/overview/requirements.html#internal-trusted-storage-requirements>`_.)
