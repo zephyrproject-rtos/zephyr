@@ -58,6 +58,21 @@ config NET_GPTP_STATIC_TIME_RECEIVER
 	  external port configuration of IEEE 802.1AS-2020, chapter
 	  10.3.14, derived from IEEE 1588-2019, chapter 17.6.2.
 
+config NET_GPTP_STATIC_TIME_TRANSMITTER
+	bool "Static timeTransmitter operation"
+	depends on NET_GPTP_GM_CAPABLE
+	depends on !NET_GPTP_STATIC_TIME_RECEIVER
+	help
+	  Operate as the grandmaster of a network with static port roles,
+	  as used by the IEEE 802.1AS automotive profile. The BMCA and all
+	  Announce handling are bypassed, every port is pinned to the time
+	  transmitter ("master") state and asCapable is forced true. Pdelay
+	  requests are answered but not sent, as a time transmitter does
+	  not use the path delay. This matches the linuxptp ptp4l
+	  automotive time transmitter configuration (BMCA "noop",
+	  serverOnly, inhibit_announce, inhibit_delay_req, asCapable
+	  "true").
+
 config NET_GPTP_CLOCK_ACCURACY
 	hex "gPTP Clock Accuracy"
 	range 0 0xff
