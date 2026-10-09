@@ -337,7 +337,7 @@ static int eth_nxp_enet_rx(const struct device *dev)
 	} else if (status == kStatus_ENET_RxFrameError) {
 		enet_data_error_stats_t error_stats;
 
-		LOG_ERR("ENET_GetRxFrameSize return: %d", (int)status);
+		LOG_ERR_RATELIMIT("ENET_GetRxFrameSize return: %d", (int)status);
 
 		ENET_GetRxErrBeforeReadFrame(&data->enet_handle,
 					     &error_stats, RING_ID);
@@ -345,7 +345,7 @@ static int eth_nxp_enet_rx(const struct device *dev)
 	}
 
 	if (frame_length > NET_ETH_MAX_FRAME_SIZE) {
-		LOG_ERR("Frame too large (%d)", frame_length);
+		LOG_ERR_RATELIMIT("Frame too large (%d)", frame_length);
 		goto flush;
 	}
 
@@ -363,12 +363,12 @@ static int eth_nxp_enet_rx(const struct device *dev)
 	k_mutex_unlock(&data->rx_frame_buf_mutex);
 
 	if (status) {
-		LOG_ERR("ENET_ReadFrame failed: %d", (int)status);
+		LOG_ERR_RATELIMIT("ENET_ReadFrame failed: %d", (int)status);
 		goto error;
 	}
 
 	if (net_pkt_write(pkt, data->rx_frame_buf, frame_length)) {
-		LOG_ERR("Unable to write frame into the packet");
+		LOG_ERR_RATELIMIT("Unable to write frame into the packet");
 		goto error;
 	}
 
