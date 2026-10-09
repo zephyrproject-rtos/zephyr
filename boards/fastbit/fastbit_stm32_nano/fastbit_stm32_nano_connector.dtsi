@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2026 Fastbit Embedded Technologies
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	nano_header: connector {
+		compatible = "fastbit,nano-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = /* P1 */
+			   <1 0 &gpioc 13 0>,	/* P1.2 */
+			   <2 0 &gpioa 1 0>,	/* P1.3 */
+			   <3 0 &gpioa 2 0>,	/* P1.4 */
+			   <4 0 &gpioa 3 0>,	/* P1.5 */
+			   <5 0 &gpioa 4 0>,	/* P1.6 */
+			   <6 0 &gpioa 5 0>,	/* P1.7 */
+			   <7 0 &gpioa 6 0>,	/* P1.8 */
+			   <8 0 &gpioa 7 0>,	/* P1.9 */
+			   /* P2 */
+			   <10 0 &gpiob 0 0>,	/* P2.1 */
+			   <11 0 &gpiob 1 0>,	/* P2.2 */
+			   <12 0 &gpiob 10 0>,	/* P2.3 */
+			   <13 0 &gpiob 11 0>,	/* P2.4 */
+			   <14 0 &gpiob 12 0>,	/* P2.5 */
+			   <15 0 &gpiob 13 0>,	/* P2.6 */
+			   <16 0 &gpiob 14 0>,	/* P2.7 */
+			   <17 0 &gpiob 15 0>,	/* P2.8 */
+			   <18 0 &gpioa 9 0>,	/* P2.9 */
+			   <19 0 &gpioa 10 0>,	/* P2.10 */
+			   /* P3 */
+			   <21 0 &gpioa 8 0>,	/* P3.2 */
+			   <22 0 &gpioa 15 0>,	/* P3.3 */
+			   <23 0 &gpiob 4 0>,	/* P3.4 */
+			   <24 0 &gpiob 5 0>,	/* P3.5 */
+			   <25 0 &gpiob 6 0>,	/* P3.6 */
+			   <26 0 &gpiob 7 0>,	/* P3.7 */
+			   <27 0 &gpiob 8 0>,	/* P3.8 */
+			   <28 0 &gpiob 9 0>;	/* P3.9 */
+	};
+};
+
+nano_spi1: &spi1 {};
+
+nano_spi2: &spi2 {};
+
+nano_i2c1: &i2c1 {};
+
+nano_uart1: &usart1 {};
