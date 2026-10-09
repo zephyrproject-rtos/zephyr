@@ -201,8 +201,8 @@ enum video_colorfx {
  * @brief Video exposure type
  */
 enum video_exposure_type {
-	VIDEO_EXPOSURE_AUTO = 0,             /**< Automatic exposure. */
-	VIDEO_EXPOSURE_MANUAL = 1,           /**< Manual exposure. */
+	VIDEO_EXPOSURE_MANUAL = 0,           /**< Manual exposure. */
+	VIDEO_EXPOSURE_AUTO = 1,             /**< Automatic exposure. */
 	VIDEO_EXPOSURE_SHUTTER_PRIORITY = 2, /**< Shutter priority. */
 	VIDEO_EXPOSURE_APERTURE_PRIORITY = 3 /**< Aperture priority. */
 };
