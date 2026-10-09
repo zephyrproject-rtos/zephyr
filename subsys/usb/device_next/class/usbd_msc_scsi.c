@@ -173,6 +173,7 @@ struct scsi_inquiry_response {
 } __packed;
 
 #define MODE_SENSE_PAGE_CODE_ALL_PAGES		0x3F
+#define MODE_SENSE_WRITE_PROTECT                BIT(7)
 
 SCSI_CMD_STRUCT(MODE_SENSE_6) {
 	uint8_t opcode;
@@ -326,6 +327,13 @@ struct scsi_mode_sense_10_response {
 	uint16_t block_descriptor_length;
 } __packed;
 
+static bool disk_is_write_protected(const struct scsi_ctx *ctx)
+{
+	int status = disk_access_status(ctx->disk);
+
+	return status >= 0 && (status & DISK_STATUS_WR_PROTECT) != 0;
+}
+
 static int update_disk_info(struct scsi_ctx *const ctx)
 {
 	int status = disk_access_status(ctx->disk);
@@ -362,7 +370,8 @@ static int update_disk_info(struct scsi_ctx *const ctx)
 		status = -ENOMEM;
 	}
 
-	return status;
+	/* Write protection does not prevent the medium from being ready. */
+	return status < 0 ? status : status & ~DISK_STATUS_WR_PROTECT;
 }
 
 static size_t good(struct scsi_ctx *ctx, size_t data_in_bytes)
@@ -396,6 +405,15 @@ static size_t medium_error(struct scsi_ctx *ctx, enum scsi_additional_sense_code
 {
 	ctx->status = CHECK_CONDITION;
 	ctx->sense_key = MEDIUM_ERROR;
+	ctx->asc = asc;
+
+	return 0;
+}
+
+static size_t data_protect(struct scsi_ctx *ctx, enum scsi_additional_sense_code asc)
+{
+	ctx->status = CHECK_CONDITION;
+	ctx->sense_key = DATA_PROTECT;
 	ctx->asc = asc;
 
 	return 0;
@@ -597,7 +615,7 @@ SCSI_CMD_HANDLER(MODE_SENSE_6)
 
 	r.mode_data_length = 3;
 	r.medium_type = 0x00;
-	r.device_specific_parameter = 0x00;
+	r.device_specific_parameter = disk_is_write_protected(ctx) ? MODE_SENSE_WRITE_PROTECT : 0;
 	r.block_descriptor_length = 0x00;
 
 	BUILD_ASSERT(sizeof(r) <= CONFIG_USBD_MSC_SCSI_BUFFER_SIZE);
@@ -808,6 +826,10 @@ SCSI_CMD_HANDLER(WRITE_10)
 		return illegal_request(ctx, LOGICAL_BLOCK_ADDRESS_OUT_OF_RANGE);
 	}
 
+	if (disk_is_write_protected(ctx)) {
+		return data_protect(ctx, WRITE_PROTECTED);
+	}
+
 	ctx->write_cb = store_write_10;
 	ctx->lba = lba;
 	ctx->remaining_data = ctx->sector_size * transfer_length;
@@ -829,7 +851,7 @@ SCSI_CMD_HANDLER(MODE_SENSE_10)
 
 	r.mode_data_length = sys_cpu_to_be16(6);
 	r.medium_type = 0x00;
-	r.device_specific_parameter = 0x00;
+	r.device_specific_parameter = disk_is_write_protected(ctx) ? MODE_SENSE_WRITE_PROTECT : 0;
 	r.longlba = 0x00;
 	r.reserved5 = 0x00;
 	r.block_descriptor_length = sys_cpu_to_be16(0);
