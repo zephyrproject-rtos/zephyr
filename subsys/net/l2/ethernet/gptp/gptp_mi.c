@@ -948,26 +948,13 @@ static void gptp_mi_clk_master_sync_offset_state_machine(void)
 
 #if defined(CONFIG_NET_GPTP_GM_CAPABLE) && \
 	!defined(CONFIG_NET_GPTP_STATIC_TIME_RECEIVER)
-static inline void gptp_mi_setup_sync_send_time(void)
+static inline void gptp_mi_setup_sync_send_time(uint64_t current_time)
 {
 	struct gptp_clk_master_sync_snd_state *state;
-	struct gptp_global_ds *global_ds;
-	uint64_t time_helper;
 
 	state = &GPTP_STATE()->clk_master_sync_send;
-	global_ds = GPTP_GLOBAL_DS();
 
-	time_helper = state->sync_send_time.low;
-
-	state->sync_send_time.low +=
-		global_ds->clk_master_sync_itv;
-
-	/* Check for overflow */
-	if (state->sync_send_time.low < time_helper) {
-		state->sync_send_time.high += 1U;
-		state->sync_send_time.low =
-			UINT64_MAX - state->sync_send_time.low;
-	}
+	state->sync_send_time.low = current_time + GPTP_GLOBAL_DS()->clk_master_sync_itv;
 }
 
 static void gptp_mi_set_ps_sync_cmss(void)
@@ -1041,24 +1028,31 @@ static void gptp_mi_clk_master_sync_snd_state_machine(void)
 {
 	struct gptp_clk_master_sync_snd_state *state;
 	uint64_t current_time;
+	uint64_t sync_send_time;
 
 	state = &GPTP_STATE()->clk_master_sync_send;
+	current_time = gptp_get_current_master_time_nanosecond();
 
 	switch (state->state) {
 	case GPTP_CMS_SND_INITIALIZING:
-		gptp_mi_setup_sync_send_time();
+		gptp_mi_setup_sync_send_time(current_time);
 
 		state->state = GPTP_CMS_SND_INDICATION;
 		break;
 
 	case GPTP_CMS_SND_INDICATION:
-		current_time = gptp_get_current_master_time_nanosecond();
+		sync_send_time = state->sync_send_time.low;
 
-		if (current_time >= state->sync_send_time.low) {
+		/* A backward step of the clock leaves syncSendTime more than one
+		 * interval ahead. Send right away instead of waiting for the
+		 * clock to catch up with it.
+		 */
+		if ((current_time >= sync_send_time) ||
+		    ((sync_send_time - current_time) > GPTP_GLOBAL_DS()->clk_master_sync_itv)) {
 			gptp_mi_set_ps_sync_cmss();
 			gptp_mi_tx_ps_sync_cmss();
 
-			gptp_mi_setup_sync_send_time();
+			gptp_mi_setup_sync_send_time(current_time);
 		}
 
 		break;
