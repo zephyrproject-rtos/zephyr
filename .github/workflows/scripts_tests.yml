@@ -86,3 +86,6 @@ jobs:
         run: |
           echo "Run script tests"
           pytest ./scripts/build ./scripts/checkpatch ./scripts/cmake ./scripts/kconfig ./scripts/tests/hardenconfig
+
+      - name: Run relocation doctests
+        run: python -m doctest scripts/build/gen_relocate_app.py

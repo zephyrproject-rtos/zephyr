@@ -82,10 +82,10 @@ class SectionKind(Enum):
         """
         Return the kind of section that includes a section with the given name.
 
-        >>> SectionKind.for_section_with_name(".rodata.str1.4")
+        >>> SectionKind.for_section_named(".rodata.str1.4")
         <SectionKind.RODATA: 'rodata'>
-        >>> SectionKind.for_section_with_name(".device_deps")
-        None
+        >>> SectionKind.for_section_named(".device_deps") is None
+        True
         """
         if ".text." in name:
             return cls.TEXT
@@ -292,19 +292,9 @@ def assign_to_correct_mem_region(
     Generate a mapping of memory region to collection of output sections to be
     placed in each region.
     """
-    use_section_kinds, memory_region = section_kinds_from_memory_region(memory_region)
-
-    # Split |COPY/|NOKEEP flags before the numeric align suffix, else a region
-    # like "SRAM_4|COPY" makes int("4|COPY") throw.
-    memory_region, sep, flags = memory_region.partition('|')
-    flags = sep + flags
-    memory_region, _, align_size = memory_region.partition('_')
+    use_section_kinds, memory_region, align_size, keep_sections = parse_memory_region(memory_region)
     if align_size:
-        mpu_align[memory_region] = int(align_size)
-    memory_region = memory_region + flags
-
-    keep_sections = '|NOKEEP' not in memory_region
-    memory_region = memory_region.replace('|NOKEEP', '')
+        mpu_align[memory_region.partition('|')[0]] = align_size
 
     output_sections = {}
     for used_kind in use_section_kinds:
@@ -314,6 +304,62 @@ def assign_to_correct_mem_region(
         ]
 
     return {MemoryRegion(memory_region): output_sections}
+
+
+def parse_memory_region(location: str) -> 'tuple[set[SectionKind], str, int, bool]':
+    """
+    Parse a relocation location into (section kinds, region, alignment, keep).
+
+    The location has the form REGION[_KIND...][_ALIGN][|FLAG...]. Region names
+    may contain underscores; only a final all-digit component is an alignment.
+    COPY/NOCOPY stay attached to the returned region, NOKEEP clears keep.
+
+    >>> parse_memory_region('AXISRAM_SAFE_TEXT|COPY')
+    ({<SectionKind.TEXT: 'text'>}, 'AXISRAM_SAFE|COPY', 0, True)
+    >>> parse_memory_region('SRAM_FAST_TEXT_32|COPY|NOKEEP')
+    ({<SectionKind.TEXT: 'text'>}, 'SRAM_FAST|COPY', 32, False)
+    >>> parse_memory_region('SRAM_FAST_TEXT_32|NOKEEP|COPY')
+    ({<SectionKind.TEXT: 'text'>}, 'SRAM_FAST|COPY', 32, False)
+    >>> parse_memory_region('SRAM_FAST_TEXT_32|NOCOPY|NOKEEP')
+    ({<SectionKind.TEXT: 'text'>}, 'SRAM_FAST|NOCOPY', 32, False)
+    >>> parse_memory_region('SRAM_FAST_TEXT_32|NOKEEP|NOCOPY')
+    ({<SectionKind.TEXT: 'text'>}, 'SRAM_FAST|NOCOPY', 32, False)
+    >>> parse_memory_region('SRAM_TEXT_32|COPY')
+    ({<SectionKind.TEXT: 'text'>}, 'SRAM|COPY', 32, True)
+    >>> parse_memory_region('AXISRAM_SAFE_TEXT|NOCOPY')
+    ({<SectionKind.TEXT: 'text'>}, 'AXISRAM_SAFE|NOCOPY', 0, True)
+    >>> parse_memory_region('SRAM_FAST_TEXT_32')
+    ({<SectionKind.TEXT: 'text'>}, 'SRAM_FAST', 32, True)
+    >>> parse_memory_region('SRAM')[1:]
+    ('SRAM', 0, True)
+    >>> parse_memory_region('SRAM2_256')[1:]
+    ('SRAM2', 256, True)
+    >>> parse_memory_region('ext_ram_seg|COPY')[1:]
+    ('ext_ram_seg|COPY', 0, True)
+    >>> parse_memory_region('SRAM_FAST')[0] == set(SectionKind)
+    True
+    >>> parse_memory_region('SRAM_FAST')[1:]
+    ('SRAM_FAST', 0, True)
+    >>> kinds, region, align, keep = parse_memory_region('SRAM_FAST_TEXT_RODATA_32|COPY')
+    >>> kinds == {SectionKind.TEXT, SectionKind.RODATA}
+    True
+    >>> region, align, keep
+    ('SRAM_FAST|COPY', 32, True)
+    >>> parse_memory_region('SRAM_FAST_TEXT|NOKEEP')
+    ({<SectionKind.TEXT: 'text'>}, 'SRAM_FAST', 0, False)
+    """
+    kinds, location = section_kinds_from_memory_region(location)
+    region, *flags = location.split('|')
+
+    base, sep, suffix = region.rpartition('_')
+    align_size = 0
+    if sep and suffix.isdecimal():
+        region, align_size = base, int(suffix)
+
+    keep = 'NOKEEP' not in flags
+    flags = [flag for flag in flags if flag != 'NOKEEP']
+
+    return kinds, '|'.join((region, *flags)), align_size, keep
 
 
 def section_kinds_from_memory_region(memory_region: str) -> 'tuple[set[SectionKind], str]':
