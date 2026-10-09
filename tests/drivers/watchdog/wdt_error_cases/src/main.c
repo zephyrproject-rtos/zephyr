@@ -604,7 +604,8 @@ ZTEST(wdt_coverage, test_08b_wdt_disable_check_not_firing)
 	/* Clear flag that is set when the watchdog fires */
 	m_test_08b_value = 0U;
 
-	m_cfg_wdt0.callback = wdt_test_08b_cb;
+	m_cfg_wdt0.callback =
+		IS_ENABLED(CONFIG_TEST_WDT_CALLBACK_EARLY_WARNING) ? NULL : wdt_test_08b_cb;
 	m_cfg_wdt0.flags = DEFAULT_FLAGS;
 	/* Set timeout window to ~500 ms */
 	m_cfg_wdt0.window.max = 500U;
@@ -707,7 +708,8 @@ ZTEST(wdt_coverage, test_08d_wdt_disable_check_timeouts_uninstalled)
 	m_test_08d_B_value = 0U;
 
 	/* Configure Timeout A */
-	m_cfg_wdt0.callback = wdt_test_08d_A_cb;
+	m_cfg_wdt0.callback =
+		IS_ENABLED(CONFIG_TEST_WDT_CALLBACK_EARLY_WARNING) ? NULL : wdt_test_08d_A_cb;
 	m_cfg_wdt0.flags = DEFAULT_FLAGS;
 	/* Set timeout window to ~500 ms */
 	m_cfg_wdt0.window.max = 500U;
@@ -724,7 +726,8 @@ ZTEST(wdt_coverage, test_08d_wdt_disable_check_timeouts_uninstalled)
 	zassert_true(ret == 0, "Watchdog disable error, got unexpected value of %d", ret);
 
 	/* Configure Timeout B */
-	m_cfg_wdt0.callback = wdt_test_08d_B_cb;
+	m_cfg_wdt0.callback =
+		IS_ENABLED(CONFIG_TEST_WDT_CALLBACK_EARLY_WARNING) ? NULL : wdt_test_08d_B_cb;
 	m_cfg_wdt0.flags = DEFAULT_FLAGS;
 	/* Set timeout window to ~500 ms */
 	m_cfg_wdt0.window.max = 500U;

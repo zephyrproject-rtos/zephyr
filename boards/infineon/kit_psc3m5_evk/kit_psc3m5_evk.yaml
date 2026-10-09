@@ -21,4 +21,5 @@ supported:
   - dma
   - comparator
   - rtc
+  - watchdog
 vendor: infineon

@@ -61,7 +61,6 @@ typedef struct {
 #else
 /* ILO, PILO, BAK all run at 32768 Hz - Period is ~0.030518 ms */
 #define IFX_WDT_MAX_TIMEOUT_MS  6000
-#define IFX_WDT_MAX_IGNORE_BITS 12
 /* ILO Frequency = 32768 Hz, ILO Period = 1 / 32768 Hz = .030518 ms */
 static const wdt_ignore_bits_data_t ifx_wdt_ignore_data[] = {
 	{4000, 3001}, /* 0 bit(s): min period: 4000ms, max period: 6000ms, round up from 3001+ms */
@@ -81,7 +80,6 @@ static const wdt_ignore_bits_data_t ifx_wdt_ignore_data[] = {
 #endif
 #elif defined(CY_IP_S8SRSSLT)
 #define IFX_WDT_MAX_TIMEOUT_MS        4915
-#define IFX_WDT_MAX_IGNORE_BITS       12
 /* Cy_SysClk_IloCompensate function execution time is always ~ 1ms */
 #define IFX_ILO_COMPENSATE_TIMEOUT_MS 2
 
@@ -103,7 +101,6 @@ static const wdt_ignore_bits_data_t ifx_wdt_ignore_data[] = {
 #elif (defined(CY_IP_MXS40SSRSS) || defined(CY_IP_MXS22SRSS)) && (IFX_WDT_MATCH_BITS == 22)
 /* ILO Frequency = 32768 Hz, ILO Period = 1 / 32768 Hz = .030518 ms */
 #define IFX_WDT_MAX_TIMEOUT_MS  384000
-#define IFX_WDT_MAX_IGNORE_BITS (IFX_WDT_MATCH_BITS - 4)
 static const wdt_ignore_bits_data_t ifx_wdt_ignore_data[] = {
 	/* 0 bit(s): min period: 256000ms, max period: 384000ms, round up from 192001+ms */
 	{256000, 192001},
@@ -147,7 +144,6 @@ static const wdt_ignore_bits_data_t ifx_wdt_ignore_data[] = {
 #elif defined(CY_IP_MXS40SSRSS) && (IFX_WDT_MATCH_BITS == 32)
 /* ILO Frequency = 32768 Hz, ILO Period = 1 / 32768 Hz = .030518 ms */
 #define IFX_WDT_MAX_TIMEOUT_MS  393211435
-#define IFX_WDT_MAX_IGNORE_BITS (IFX_WDT_MATCH_BITS - 4)
 static const wdt_ignore_bits_data_t ifx_wdt_ignore_data[] = {
 	/* 0 bit(s): min period: 262147000ms, max period: 393221000ms, round up from 196610001+ms */
 	{262147000, 196610001},
@@ -217,7 +213,7 @@ struct ifx_cat1_wdt_data {
 	uint32_t wdt_initial_timeout_ms;
 	uint32_t wdt_rounded_timeout_ms;
 	uint32_t wdt_ignore_bits;
-#ifdef IFX_WDT_IS_IRQ_EN
+#if IFX_WDT_IS_IRQ_EN
 	wdt_callback_t callback;
 #endif
 	uint32_t timeout;
@@ -230,8 +226,9 @@ struct ifx_cat1_wdt_data {
 static struct ifx_cat1_wdt_data wdt_data;
 
 #if !defined(CY_IP_S8SRSSLT)
-#define IFX_DETERMINE_MATCH_BITS(bits)      ((IFX_WDT_MAX_IGNORE_BITS) - (bits))
-#define IFX_GET_COUNT_FROM_MATCH_BITS(bits) (2UL << IFX_DETERMINE_MATCH_BITS(bits))
+/* PDL WDT_MAX_IGNORE_BITS is the index of the top counter bit */
+#define IFX_DETERMINE_MATCH_BITS(bits)      ((WDT_MAX_IGNORE_BITS) - (bits))
+#define IFX_GET_COUNT_FROM_MATCH_BITS(bits) (2ULL << IFX_DETERMINE_MATCH_BITS(bits))
 #endif
 
 __STATIC_INLINE uint32_t ifx_wdt_timeout_to_match(uint32_t timeout_ms, uint32_t ignore_bits,
@@ -254,18 +251,19 @@ __STATIC_INLINE uint32_t ifx_wdt_timeout_to_match(uint32_t timeout_ms, uint32_t 
 #else
 	ARG_UNUSED(dev_data);
 
-	uint32_t wrap_count_for_ignore_bits = (IFX_GET_COUNT_FROM_MATCH_BITS(ignore_bits));
-	uint32_t timeout_count = ((timeout_ms * CY_SYSCLK_ILO_FREQ) / 1000UL);
+	uint64_t wrap_count_for_ignore_bits = IFX_GET_COUNT_FROM_MATCH_BITS(ignore_bits);
+	/* 64-bit: timeout_ms * ILO_FREQ exceeds 32 bits above ~131 s */
+	uint64_t timeout_count = ((uint64_t)timeout_ms * CY_SYSCLK_ILO_FREQ) / 1000U;
+
 	/* handle multiple possible wraps of WDT counter */
-	timeout_count = ((timeout_count + Cy_WDT_GetCount()) % wrap_count_for_ignore_bits);
-	return timeout_count;
+	return (uint32_t)((timeout_count + Cy_WDT_GetCount()) % wrap_count_for_ignore_bits);
 #endif
 }
 
 /* Rounds up *timeout_ms if it's outside of the valid timeout range (ifx_wdt_ignore_data) */
 __STATIC_INLINE uint32_t ifx_wdt_timeout_to_ignore_bits(uint32_t *timeout_ms)
 {
-	for (uint32_t i = 0; i <= IFX_WDT_MAX_IGNORE_BITS; i++) {
+	for (uint32_t i = 0U; i < ARRAY_SIZE(ifx_wdt_ignore_data); i++) {
 		if (*timeout_ms >= ifx_wdt_ignore_data[i].round_threshold_ms) {
 			if (*timeout_ms < ifx_wdt_ignore_data[i].min_period_ms) {
 				*timeout_ms = ifx_wdt_ignore_data[i].min_period_ms;
@@ -273,10 +271,10 @@ __STATIC_INLINE uint32_t ifx_wdt_timeout_to_ignore_bits(uint32_t *timeout_ms)
 			return i;
 		}
 	}
-	return IFX_WDT_MAX_IGNORE_BITS; /* Ideally should never reach this */
+	return ARRAY_SIZE(ifx_wdt_ignore_data) - 1U; /* Ideally should never reach this */
 }
 
-#ifdef IFX_WDT_IS_IRQ_EN
+#if IFX_WDT_IS_IRQ_EN
 static void ifx_cat1_wdt_isr_handler(const struct device *dev)
 {
 	struct ifx_cat1_wdt_data *dev_data = dev->data;
@@ -292,15 +290,20 @@ static int ifx_cat1_wdt_setup(const struct device *dev, uint8_t options)
 {
 	struct ifx_cat1_wdt_data *dev_data = dev->data;
 
-	/* Initialize the WDT */
-	if ((dev_data->timeout == 0) || (dev_data->timeout > IFX_WDT_MAX_TIMEOUT_MS)) {
-		LOG_ERR("Invalid timeout");
+	/* The WDT keeps counting when CPU in sleep */
+	if ((options & WDT_OPT_PAUSE_IN_SLEEP) != 0U) {
+		LOG_ERR("WDT_OPT_PAUSE_IN_SLEEP not supported");
 		return -ENOTSUP;
 	}
 
 	if (dev_data->wdt_initialized) {
 		LOG_ERR("Already initialized");
 		return -EBUSY;
+	}
+
+	if (!dev_data->timeout_installed) {
+		LOG_ERR("No timeout installed");
+		return -EINVAL;
 	}
 
 	/* Unlock and disable before doing other work */
@@ -387,7 +390,7 @@ static int ifx_cat1_wdt_setup(const struct device *dev, uint8_t options)
 		return -ENOMSG;
 	}
 
-#ifdef IFX_WDT_IS_IRQ_EN
+#if IFX_WDT_IS_IRQ_EN
 	if (dev_data->callback) {
 		Cy_WDT_UnmaskInterrupt();
 		irq_enable(DT_INST_IRQN(0));
@@ -400,10 +403,12 @@ static int ifx_cat1_wdt_setup(const struct device *dev, uint8_t options)
 static int ifx_cat1_wdt_disable(const struct device *dev)
 {
 	struct ifx_cat1_wdt_data *dev_data = dev->data;
+	bool was_enabled = dev_data->wdt_initialized;
 
-#ifdef IFX_WDT_IS_IRQ_EN
+#if IFX_WDT_IS_IRQ_EN
 	Cy_WDT_MaskInterrupt();
 	irq_disable(DT_INST_IRQN(0));
+	dev_data->callback = NULL;
 #endif
 
 #if defined(CY_IP_S8SRSSLT)
@@ -416,6 +421,12 @@ static int ifx_cat1_wdt_disable(const struct device *dev)
 	ifx_wdt_lock();
 
 	dev_data->wdt_initialized = false;
+	dev_data->timeout_installed = false;
+	dev_data->timeout = 0U;
+
+	if (!was_enabled) {
+		return -EFAULT;
+	}
 
 	return 0;
 }
@@ -424,29 +435,40 @@ static int ifx_cat1_wdt_install_timeout(const struct device *dev, const struct w
 {
 	struct ifx_cat1_wdt_data *dev_data = dev->data;
 
+	if (dev_data->wdt_initialized) {
+		LOG_ERR("Watchdog already running");
+		return -EBUSY;
+	}
+
 	if (dev_data->timeout_installed) {
 		LOG_ERR("No more timeouts can be installed");
 		return -ENOMEM;
 	}
 
-	if (cfg->flags && cfg->flags != WDT_FLAG_RESET_SOC) {
-		LOG_WRN("Watchdog config flags not supported");
-	}
-
-	if (cfg->callback) {
-#ifndef IFX_WDT_IS_IRQ_EN
-		LOG_WRN("Interrupt is not configured, can't set a callback.");
-#else
-		dev_data->callback = cfg->callback;
-#endif
+	if ((cfg->flags & WDT_FLAG_RESET_MASK) != WDT_FLAG_RESET_SOC) {
+		LOG_ERR("Only WDT_FLAG_RESET_SOC is supported");
+		return -ENOTSUP;
 	}
 
 	/* Window watchdog not supported */
-	if (cfg->window.min != 0U || cfg->window.max == 0U) {
+	if (cfg->window.min != 0U) {
 		return -EINVAL;
 	}
 
+	if ((cfg->window.max == 0U) || (cfg->window.max > IFX_WDT_MAX_TIMEOUT_MS)) {
+		return -EINVAL;
+	}
+
+#if IFX_WDT_IS_IRQ_EN
+	dev_data->callback = cfg->callback;
+#else
+	if (cfg->callback != NULL) {
+		LOG_WRN("Interrupt is not configured, can't set a callback.");
+	}
+#endif
+
 	dev_data->timeout = cfg->window.max;
+	dev_data->timeout_installed = true;
 
 	return 0;
 }
@@ -456,7 +478,11 @@ static int ifx_cat1_wdt_feed(const struct device *dev, int channel_id)
 	struct ifx_cat1_wdt_data *data = dev->data;
 
 	/* Only channel 0 is supported */
-	if (channel_id) {
+	if (channel_id != 0) {
+		return -EINVAL;
+	}
+
+	if (!data->wdt_initialized) {
 		return -EINVAL;
 	}
 
@@ -474,7 +500,7 @@ static int ifx_cat1_wdt_feed(const struct device *dev, int channel_id)
 static int ifx_cat1_wdt_init(const struct device *dev)
 {
 	struct ifx_cat1_wdt_data *data = dev->data;
-#ifdef IFX_WDT_IS_IRQ_EN
+#if IFX_WDT_IS_IRQ_EN
 	/* Connect WDT interrupt to ISR */
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), ifx_cat1_wdt_isr_handler,
 		    DEVICE_DT_INST_GET(0), 0);
