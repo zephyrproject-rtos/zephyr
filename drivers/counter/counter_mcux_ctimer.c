@@ -27,6 +27,8 @@ LOG_MODULE_REGISTER(mcux_ctimer, CONFIG_COUNTER_LOG_LEVEL);
 #define NUM_CHANNELS 4
 #endif
 
+#define CTIMER_MATCH_INT_MASK(chan) (CTIMER_MCR_MR0I_MASK << ((uint32_t)(chan) * 3U))
+
 #ifdef CONFIG_COUNTER_CAPTURE
 #define CTIMER_CAPTURE_INT_MASK(chan)    (CTIMER_CCR_CAP0I_MASK << ((uint32_t)(chan) * 3U))
 #define CTIMER_CAPTURE_STATUS_MASK(chan) (CTIMER_IR_CR0INT_MASK << (uint32_t)(chan))
@@ -174,7 +176,7 @@ static int mcux_lpc_ctimer_set_alarm(const struct device *dev, uint8_t chan_id,
 	 * armed by CTIMER_SetupMatch() below, which re-enables the interrupt, can
 	 * then reach the callback.
 	 */
-	CTIMER_DisableInterrupts(config->base, (1U << chan_id));
+	CTIMER_DisableInterrupts(config->base, CTIMER_MATCH_INT_MASK(chan_id));
 	CTIMER_ClearStatusFlags(config->base, (1U << chan_id));
 
 	data->channels[chan_id].alarm_callback = alarm_cfg->callback;
@@ -190,7 +192,7 @@ static int mcux_lpc_ctimer_cancel_alarm(const struct device *dev, uint8_t chan_i
 	const struct mcux_lpc_ctimer_config *config = dev->config;
 	struct mcux_lpc_ctimer_data *data = dev->data;
 
-	CTIMER_DisableInterrupts(config->base, (1 << chan_id));
+	CTIMER_DisableInterrupts(config->base, CTIMER_MATCH_INT_MASK(chan_id));
 	/*
 	 * Drop any match flag latched for this channel (see set_alarm) so a
 	 * cancelled alarm cannot be delivered once the channel is re-armed.
