@@ -23,8 +23,9 @@
 };
 
 &cpuapp_sram_app {
-	/* Shrink SRAM size to avoid overlap with retained memory region:
-	 * 192 - 4 = 188KB = 0x2f000
+	/* Shrink SRAM to avoid overlap with retained memory region. The SRAM ends at
+	 * 192 - 4 = 188KB = 0x2f000, and starts at 0x60 after the KMU push area, so the
+	 * size is that end offset minus 0x60.
 	 */
 	reg = <0x60 (0x2f000 - 0x60)>;
 };
