@@ -36,14 +36,17 @@ static int rv3032_temp_sample_fetch(const struct device *dev, enum sensor_channe
 	struct rv3032_temp_data *data = dev->data;
 	const struct rv3032_temp_config *config = dev->config;
 	uint8_t temp[2];
-	int16_t tmp_val1;
+	int16_t raw;
 
 	int ret = mfd_rv3032_read_regs(config->parent, RV3032_REG_TEMPERATURE_LSB, temp,
 				       sizeof(temp));
+	if (ret < 0) {
+		return ret;
+	}
 
-	data->val.val2 = ((temp[0] & 0xf0) >> 4)  * 625;
-	tmp_val1 = (temp[1] << 4) * 0.0625;
-	data->val.val1 = tmp_val1 < 0 ? -(tmp_val1 & 0xef) : tmp_val1;
+	raw = (int8_t)temp[1] * 16 + ((temp[0] & 0xf0) >> 4);
+	data->val.val1 = raw / 16;
+	data->val.val2 = (raw % 16) * 62500;
 
 	return ret;
 }
@@ -163,7 +166,7 @@ static int rv3032_temp_trigger_set(const struct device *dev, const struct sensor
 	mfd_rv3032_read_reg8(config->parent, RV3032_REG_TEMP_HIGH_THLD, &high);
 	mfd_rv3032_read_reg8(config->parent, RV3032_REG_CONTROL3, &ctrl);
 
-	LOG_DBG("TLOW[%d] THIGH[%d] CRTL3[%x]", low, high, ctrl);
+	LOG_DBG("TLOW[%d] THIGH[%d] CRTL3[%x]", (int8_t)low, (int8_t)high, ctrl);
 
 	return 0;
 }
