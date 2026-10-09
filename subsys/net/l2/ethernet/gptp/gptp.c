@@ -985,6 +985,9 @@ void net_gptp_init(void)
 #if defined(CONFIG_NET_GPTP_USE_DEFAULT_CLOCK_UPDATE)
 	precision_pi_init(&gptp_clock.pi, (double)CONFIG_PRECISION_TIMING_PI_KP / 1000.0,
 			  (double)CONFIG_PRECISION_TIMING_PI_KI / 1000.0);
+	precision_pi_set_limits(&gptp_clock.pi,
+				(double)CONFIG_PRECISION_TIMING_PI_INTEGRAL_LIMIT_PPM * 1000.0,
+				(double)CONFIG_PRECISION_TIMING_PI_OUTPUT_LIMIT_PPM * 1000.0);
 #endif
 
 	init_ports();

@@ -39,4 +39,31 @@ config PRECISION_TIMING_PI_KI
 	  Shorter Sync intervals may require a smaller gain to avoid
 	  oscillation.
 
+config PRECISION_TIMING_PI_INTEGRAL_LIMIT_PPM
+	int "PI controller integral term limit in ppm"
+	default 0
+	range 0 1000000
+	help
+	  Largest magnitude of the integral term of the PTP and gPTP clock PI
+	  controllers, in ppm. The integral term holds the estimate of the
+	  frequency error of the local clock, so the limit only needs to cover
+	  the tolerance of the oscillator with some margin. It stops the
+	  integral term from winding up while a large offset lasts.
+
+	  0 disables the limit.
+
+config PRECISION_TIMING_PI_OUTPUT_LIMIT_PPM
+	int "PI controller output limit in ppm"
+	default 0
+	range 0 1000000
+	help
+	  Largest magnitude of the rate correction requested by the PTP and
+	  gPTP clock PI controllers, in ppm. Set it below the largest rate
+	  correction the clock driver accepts, so that a large offset gives a
+	  correction at the limit instead of a request the driver rejects.
+	  While the output is at the limit, the integral term does not grow
+	  further.
+
+	  0 disables the limit.
+
 endif # PRECISION_TIMING
