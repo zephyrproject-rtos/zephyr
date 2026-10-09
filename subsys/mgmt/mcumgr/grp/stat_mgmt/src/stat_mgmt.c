@@ -48,7 +48,7 @@ stat_mgmt_count(const char *group_name, size_t *counter)
 
 	*counter = 0;
 
-	return stats_walk(hdr, stats_mgmt_count_plus_one, &counter);
+	return stats_walk(hdr, stats_mgmt_count_plus_one, counter);
 }
 
 static int
