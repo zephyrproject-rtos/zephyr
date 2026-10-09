@@ -66,6 +66,11 @@ LLEXT_HEAP_SECTIONS = (
 )
 
 
+# Metadata sections that must never be classified as relocatable code or data
+METADATA_SECTIONS = (".rel", ".rela")
+METADATA_SECTION_PREFIXES = (".rel.", ".rela.", ".ARM.exidx", ".ARM.extab")
+
+
 class SectionKind(Enum):
     TEXT = "text"
     RODATA = "rodata"
@@ -86,7 +91,16 @@ class SectionKind(Enum):
         <SectionKind.RODATA: 'rodata'>
         >>> SectionKind.for_section_named(".device_deps") is None
         True
+        >>> SectionKind.for_section_named(".text.foo")
+        <SectionKind.TEXT: 'text'>
+        >>> [SectionKind.for_section_named(n) for n in (
+        ...     ".rel", ".rela", ".rel.text.foo", ".rela.text.foo",
+        ...     ".ARM.exidx", ".ARM.extab", ".ARM.exidx.text.foo", ".ARM.extab.text.foo")]
+        [None, None, None, None, None, None, None, None]
         """
+        if name in METADATA_SECTIONS or name.startswith(METADATA_SECTION_PREFIXES):
+            # Relocation and unwind tables may contain ".text." in their name
+            return None
         if ".text." in name:
             return cls.TEXT
         elif ".rodata." in name:
