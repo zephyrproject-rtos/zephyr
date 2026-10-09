@@ -97,6 +97,29 @@
 
 #define OA_SPI_TX_RX_BUFFER_SIZE (CONFIG_OA_TC6_TX_RX_BUFFER_SIZE * 68)
 
+/** Maximum consecutive recovery attempts before declaring failure */
+#define OA_TC6_MAX_RESET_RETRIES 100
+
+/** Cooldown delay (ms) between recovery attempts */
+#define OA_TC6_RECOVERY_DELAY_MS 100
+
+/** Maximum time (ms) to wait for the recovery work handler to complete */
+#define OA_TC6_RECOVERY_TIMEOUT_MS 500
+
+/**
+ * @brief Post-reset callback type.
+ *
+ * Invoked after the OA TC6 framework has performed a hardware reset and
+ * re-applied the base TC6 configuration.  The callback restores any
+ * MAC/PHY-specific state wiped by the reset.
+ *
+ * @param priv Opaque pointer passed during registration.
+ *
+ * @retval 0 on success.
+ * @retval -errno on failure.
+ */
+typedef int (*oa_tc6_post_reset_cb_t)(void *priv);
+
 /**
  * @brief OA TC6 data.
  */
@@ -181,6 +204,29 @@ struct oa_tc6 {
 	uint8_t spi_tx_buf[OA_SPI_TX_RX_BUFFER_SIZE];
 	uint8_t spi_rx_buf[OA_SPI_TX_RX_BUFFER_SIZE];
 	bool rx_buf_overflow;
+
+	/* --- Error recovery fields --- */
+
+	/** Consecutive recovery attempt counter */
+	uint32_t reset_count;
+
+	/** Flag: a reset has been requested */
+	bool reset_request;
+
+	/** Work item for full recovery (runs on the system work queue) */
+	struct k_work recovery_work;
+
+	/** Signalled when the recovery work handler finishes */
+	struct k_sem recovery_done_sem;
+
+	/** Result from the recovery work handler (0 = success) */
+	int recovery_result;
+
+	/** Post-reset callback registered by the MAC driver */
+	oa_tc6_post_reset_cb_t post_reset_cb;
+
+	/** Opaque data passed to the post-reset callback */
+	void *post_reset_priv;
 
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_OA_TC6_IRQ_THREAD_STACK_SIZE);
 	struct k_thread thread;
@@ -424,4 +470,28 @@ int oa_tc6_init(struct oa_tc6 *tc6);
  * @return 0 if successful, <0 otherwise.
  */
 int oa_tc6_spi_thread(struct oa_tc6 *tc6);
+
+/**
+ * @brief Register a post-reset callback with the OA TC6 framework.
+ *
+ * The MAC driver calls this during initialisation to register a callback
+ * that is invoked after each successful hardware reset during error
+ * recovery.
+ *
+ * @param tc6  Pointer to the tc6 structure for the MAC-PHY.
+ * @param cb   Callback function, or NULL to unregister.
+ * @param priv Opaque pointer passed to the callback.
+ */
+void oa_tc6_register_post_reset_cb(struct oa_tc6 *tc6, oa_tc6_post_reset_cb_t cb, void *priv);
+
+/**
+ * @brief Request an asynchronous reset of the MAC-PHY.
+ *
+ * Can be called from any context to request that the interrupt thread
+ * performs a full reset and recovery cycle.
+ *
+ * @param tc6 Pointer to the tc6 structure for the MAC-PHY.
+ */
+void oa_tc6_request_reset(struct oa_tc6 *tc6);
+
 #endif /* OA_TC6_CFG_H__ */
