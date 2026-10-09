@@ -1,0 +1,53 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32MP13 RCC (Reset and Clock Control) peripheral
+
+compatible: "st,stm32mp13-rcc"
+
+include: st,stm32-rcc.yaml
+
+properties:
+  axi-prescaler:
+    type: int
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+
+  apb3-prescaler:
+    type: int
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+
+  apb4-prescaler:
+    type: int
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+
+  apb5-prescaler:
+    type: int
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+
+  apb6-prescaler:
+    type: int
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
