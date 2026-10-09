@@ -100,6 +100,14 @@
 			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				erase-block-size = <DT_SIZE_K(8)>;
+				write-block-size = <8>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
 		};
 
 		adc0: adc@4003b000 {
