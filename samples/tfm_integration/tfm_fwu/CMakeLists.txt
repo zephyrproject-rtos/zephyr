@@ -15,6 +15,8 @@ else()
   set(SWAPPED_APP_IMAGE "${SWAPPED_APP_BUILD_DIR}/zephyr_ns_signed.bin")
 endif()
 
+set_source_files_properties(${SWAPPED_APP_IMAGE} PROPERTIES GENERATED TRUE)
+
 generate_inc_file_for_target(
     app
     ${SWAPPED_APP_IMAGE}
