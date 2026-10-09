@@ -1360,6 +1360,14 @@ static void l2cap_chan_tx_give_credits(struct bt_l2cap_le_chan *chan,
 {
 	LOG_DBG("chan %p credits %u", chan, credits);
 
+	/* Connection requests and responses may carry 0 initial credits. Such
+	 * a channel is not sendable, and setting BT_L2CAP_STATUS_OUT for it
+	 * would keep the first real grant from resuming TX below.
+	 */
+	if (credits == 0U) {
+		return;
+	}
+
 	atomic_add(&chan->tx.credits, credits);
 
 	if (!atomic_test_and_set_bit(chan->chan.status, BT_L2CAP_STATUS_OUT)) {
