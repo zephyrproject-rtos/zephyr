@@ -6,14 +6,14 @@
  */
 
 /*
- * Common devicetree content for the kit_psc3m6_evk board variants.
+ * Common devicetree content for the kit_psc3m6_eval board variants.
  */
 
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "PSOC™ Control C3M6 Evaluation Kit";
-	compatible = "infineon,kit_psc3m6_evk", "infineon,PSC3M6";
+	compatible = "infineon,kit_psc3m6_eval", "infineon,PSC3M6";
 
 	aliases {
 		led0 = &user_led0;

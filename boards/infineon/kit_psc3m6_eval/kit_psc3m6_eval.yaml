@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-identifier: kit_psc3m6_evk
+identifier: kit_psc3m6_eval
 name: PSOC™ Control C3M6 Evaluation Kit
 type: mcu
 arch: arm
