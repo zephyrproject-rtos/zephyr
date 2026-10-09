@@ -1,9 +1,9 @@
-.. zephyr:board:: kit_psc3m6_evk
+.. zephyr:board:: kit_psc3m6_eval
 
 Overview
 ********
 
-The PSOC™ Control C3M6 Evaluation Kit (`KIT_PSC3M6_EVK`_) is an evaluation board for the
+The PSOC™ Control C3M6 Evaluation Kit (`KIT_PSC3M6_EVAL`_) is an evaluation board for the
 PSC3M6 microcontroller. The PSC3M6 is an Arm® Cortex®-M33 based SoC from Infineon's
 CAT1B family. The PSC3M6GES3AHQ1 variant on this board features 512 KB flash, 128 KB SRAM,
 and TrustZone-M security.
@@ -122,7 +122,7 @@ Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: kit_psc3m6_evk
+   :board: kit_psc3m6_eval
    :goals: build
 
 Programming and Debugging
@@ -148,7 +148,7 @@ Build and flash the application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: kit_psc3m6_evk
+   :board: kit_psc3m6_eval
    :goals: build flash
    :west-args: -p always
    :flash-args: --openocd <path/to/openocd>
@@ -156,7 +156,7 @@ Build and flash the application:
 References
 **********
 
-.. _KIT_PSC3M6_EVK:
+.. _KIT_PSC3M6_EVAL:
     https://www.infineon.com/evaluation-board/KIT-PSC3M6-EVAL
 
 .. _KIT_PSC3M6_EVAL User Guide:
