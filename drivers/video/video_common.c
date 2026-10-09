@@ -41,7 +41,7 @@ const char *const *video_get_std_menu_ctrl(uint32_t id)
 		"Disabled", "50 Hz", "60 Hz", "Auto", NULL,
 	};
 	static char const *const exposure_auto[] = {
-		"Auto Mode", "Manual Mode", "Shutter Priority Mode", "Aperture Priority Mode", NULL,
+		"Manual Mode", "Auto Mode", "Shutter Priority Mode", "Aperture Priority Mode", NULL,
 	};
 	static char const *const colorfx[] = {
 		"None", "Black & White", "Sepia", "Negative", "Emboss", "Sketch", "Sky Blue",
