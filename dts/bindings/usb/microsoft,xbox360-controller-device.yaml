@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Adrien RICCIARDI
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microsoft Xbox 360 controller
+
+compatible: "microsoft,xbox360-controller-device"
+
+include: base.yaml
