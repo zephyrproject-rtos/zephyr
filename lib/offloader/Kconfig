@@ -6,3 +6,31 @@ config OFFLOADER
 	help
 	  Run calls to stack-hungry APIs on dedicated threads instead of on the calling thread, so
 	  that only the engine threads need a stack large enough for them.
+
+
+config OFFLOADER_PSA
+	bool "Offload PSA Crypto calls"
+	depends on PSA_CRYPTO
+	select OFFLOADER
+	help
+	  Redirect the PSA Crypto calls onto dedicated worker thread so all callers can run on a
+	  much smaller stack than the PSA Crypto needs. This comes at the cost of preemption and
+	  context switching, but it is overwhelmingly beneficial for memory-constrained systems.
+
+if OFFLOADER_PSA
+
+config OFFLOADER_PSA_STACK_SIZE
+	int "PSA offloader engine stack size"
+	default 3072
+	help
+	  Stack size of each PSA offloader engine thread, in bytes. It must
+	  accommodate the deepest offloaded PSA call.
+
+config OFFLOADER_PSA_WORKERS
+	int "Number of PSA offloader engine threads"
+	default 1
+	help
+	  Number of PSA offloader engine threads. Each thread can handle one offloaded call at a
+	  time.
+
+endif # OFFLOADER_PSA
