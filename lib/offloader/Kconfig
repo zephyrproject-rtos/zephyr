@@ -1,0 +1,28 @@
+# Copyright (c) 2026 Måns Ansgariusson <mansgariusson@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig OFFLOADER
+	bool "Call offloader"
+	help
+	  Run calls to stack-hungry APIs on dedicated threads instead of on the calling thread, so
+	  that only the engine threads need a stack large enough for them.
+
+
+if OFFLOADER
+
+config OFFLOADER_INIT_PRIORITY
+	int "Offloader engine init priority"
+	default 10
+	help
+	  POST_KERNEL init priority of the offloader engine threads. It must be
+	  lower than the init priority of anything making offloaded calls from
+	  an init function.
+
+config OFFLOADER_PSA
+	bool "Offload PSA Crypto calls"
+	help
+	  Enables <zephyr/offloader/psa.h> which redirects the PSA Crypto calls it covers to
+	  dedicated engine threads. Allowing the caller(s) to use a much smaller stack, at the cost
+	  of a context switch and a shared dedicated worker thread.
+
+endif # OFFLOADER
