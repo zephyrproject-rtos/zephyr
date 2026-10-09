@@ -13,3 +13,6 @@ testing:
     - fpu
     - net
     - smp
+vendor: cdns
+ram: 65536
+flash: 16384
