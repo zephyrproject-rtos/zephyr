@@ -43,15 +43,16 @@ LOG_MODULE_REGISTER(ptp_clock, CONFIG_PTP_LOG_LEVEL);
  *   clock, because the PI output for them typically exceeds the PHC driver's
  *   rate range;
  * - three consecutive samples within 10 ms mark the frequency servo as locked;
- * - while locked, offsets above 100 ms are rejected, and two consecutive
- *   outliers reset the servo. A persistent offset is then stepped by the next
- *   sample.
+ * - while locked, offsets above the outlier threshold are rejected, and two
+ *   consecutive outliers reset the servo. The servo is then unlocked again,
+ *   so the next sample is handled by the rules above.
  *
  * The 100 ms bound is an acquisition fast path, not the usable rate range of
- * the PHC, which depends on the PI gains and the clock driver. Even below
- * 100 ms, an unlocked servo steps if the PI output is unrepresentable or the
- * driver rejects the rate with -EINVAL, -ERANGE or -ENOTSUP. Other errors
- * reset the servo without stepping; locked rate failures also only reset.
+ * the PHC, which depends on the PI gains and the clock driver. It is fixed and
+ * does not follow the outlier threshold. Even below 100 ms, an unlocked servo
+ * steps if the PI output is unrepresentable or the driver rejects the rate
+ * with -EINVAL, -ERANGE or -ENOTSUP. Other errors reset the servo without
+ * stepping; locked rate failures also only reset.
  * The PTP driver API does not specify range-error codes: -EINVAL is used by
  * existing range-checking drivers, but a driver reporting range rejection as
  * a generic error will retain the reset/reacquisition behavior.
@@ -60,9 +61,10 @@ LOG_MODULE_REGISTER(ptp_clock, CONFIG_PTP_LOG_LEVEL);
  * the configured Sync interval. These thresholds protect the PI controller from
  * bad timestamps; they are not clock-accuracy guarantees.
  */
-#define SYNC_SERVO_STEP_THRESHOLD_NS (1LL * NSEC_PER_SEC)
+#define SYNC_SERVO_STEP_THRESHOLD_NS ((int64_t)CONFIG_PTP_SERVO_STEP_THRESHOLD_MS * NSEC_PER_MSEC)
 #define SYNC_SERVO_LOCK_OFFSET_NS (10LL * NSEC_PER_MSEC)
-#define SYNC_SERVO_OUTLIER_NS (100LL * NSEC_PER_MSEC)
+#define SYNC_SERVO_OUTLIER_NS ((int64_t)CONFIG_PTP_SERVO_OUTLIER_THRESHOLD_MS * NSEC_PER_MSEC)
+#define SYNC_SERVO_UNLOCKED_STEP_NS (100LL * NSEC_PER_MSEC)
 #define SYNC_SERVO_LOCK_SAMPLES 3U
 #define SYNC_SERVO_OUTLIER_SAMPLES 2U
 
@@ -691,9 +693,10 @@ static __noinline int clock_step(const struct precision_clock *precision_clk,
 	precision_time_t target_time;
 	int ret;
 
-	LOG_WRN_RATELIMIT("Clock offset exceeds servo range (t1=%" PRIu64 ".%09u t2=%" PRIu64
-			  ".%09u delay=%lldns offset=%lldns phc_now=%" PRIu64
+	LOG_WRN_RATELIMIT("Clock offset exceeds servo range (step threshold %d ms, t1=%" PRIu64
+			  ".%09u t2=%" PRIu64 ".%09u delay=%lldns offset=%lldns phc_now=%" PRIu64
 			  ".%09u |t2-phc|=%" PRIu64 "ns)",
+			  CONFIG_PTP_SERVO_STEP_THRESHOLD_MS,
 			  ptp_clk.timestamp.t1 / NSEC_PER_SEC,
 			  (uint32_t)(ptp_clk.timestamp.t1 % NSEC_PER_SEC),
 			  ptp_clk.timestamp.t2 / NSEC_PER_SEC,
@@ -823,7 +826,7 @@ static void clock_synchronize_with_delay(uint64_t ingress, uint64_t egress,
 	/* If diff is too big for the frequency servo, ptp_clk needs to be set first. */
 	if (offset > SYNC_SERVO_STEP_THRESHOLD_NS || offset < -SYNC_SERVO_STEP_THRESHOLD_NS ||
 	    (!ptp_clk.sync_servo_locked &&
-	     (offset > SYNC_SERVO_OUTLIER_NS || offset < -SYNC_SERVO_OUTLIER_NS))) {
+	     (offset > SYNC_SERVO_UNLOCKED_STEP_NS || offset < -SYNC_SERVO_UNLOCKED_STEP_NS))) {
 		clock_step(precision_clk, current_time, offset, delay, phc_now_ns);
 		return;
 	}

@@ -29,4 +29,7 @@ config PRECISION_TIMING_PI_KI
 config PTP_PEER_DELAY_MAX_NS
 	default 10000000
 
+config PTP_SERVO_OUTLIER_THRESHOLD_MS
+	int "Offset above which a sample is an outlier, in milliseconds"
+
 source "Kconfig.zephyr"
