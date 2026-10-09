@@ -111,7 +111,7 @@ static int
 stat_mgmt_cb_encode(zcbor_state_t *zse, struct stat_mgmt_entry *entry)
 {
 	bool ok = zcbor_tstr_put_term(zse, entry->name, CONFIG_MCUMGR_GRP_STAT_MAX_NAME_LEN) &&
-		  zcbor_uint32_put(zse, entry->value);
+		  zcbor_uint64_put(zse, entry->value);
 
 	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
