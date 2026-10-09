@@ -442,20 +442,21 @@ def write_regs(node: edtlib.Node) -> None:
         idx_vals.append((f"{path_id}_REG_NUM", len(node.regs)))
 
     for i, reg in enumerate(node.regs):
+        name = edtlib.str_as_token(reg.name) if reg.name else None
         idx_vals.append((f"{path_id}_REG_IDX_{i}_EXISTS", 1))
         if reg.addr is not None:
             idx_macro = f"{path_id}_REG_IDX_{i}_VAL_ADDRESS"
             idx_vals.append((idx_macro, f"{reg.addr} /* {hex(reg.addr)} */"))
-            if reg.name:
-                name_vals.append((f"{path_id}_REG_NAME_{reg.name}_EXISTS", 1))
-                name_macro = f"{path_id}_REG_NAME_{reg.name}_VAL_ADDRESS"
+            if name:
+                name_vals.append((f"{path_id}_REG_NAME_{name}_EXISTS", 1))
+                name_macro = f"{path_id}_REG_NAME_{name}_VAL_ADDRESS"
                 name_vals.append((name_macro, f"DT_{idx_macro}"))
 
         if reg.size is not None:
             idx_macro = f"{path_id}_REG_IDX_{i}_VAL_SIZE"
             idx_vals.append((idx_macro, f"{reg.size} /* {hex(reg.size)} */"))
-            if reg.name:
-                name_macro = f"{path_id}_REG_NAME_{reg.name}_VAL_SIZE"
+            if name:
+                name_macro = f"{path_id}_REG_NAME_{name}_VAL_SIZE"
                 name_vals.append((name_macro, f"DT_{idx_macro}"))
 
     for macro, val in idx_vals:
