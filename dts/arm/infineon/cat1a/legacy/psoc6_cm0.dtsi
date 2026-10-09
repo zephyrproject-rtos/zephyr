@@ -22,9 +22,9 @@
 			compatible = "cypress,psoc6-intmux";
 			reg = <0x40210020 0x20>;
 			ranges = <0x0 0x40210020 0x20>;
-			status = "okay";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			status = "okay";
 
 			intmux_ch0: interrupt-controller@0 {
 				compatible = "cypress,psoc6-intmux-ch";

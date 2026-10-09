@@ -22,9 +22,9 @@
 		timebase-frequency = <DT_FREQ_M(200)>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a53";
 			reg = <0>;
+			device_type = "cpu";
 		};
 	};
 
@@ -33,10 +33,6 @@
 			compatible = "arm,psci-1.1";
 			method = "smc";
 		};
-	};
-
-	oc_sram: memory@70000000 {
-		reg = <0x70000000 DT_SIZE_K(64)>;
 	};
 
 	arch_timer: timer {
@@ -52,6 +48,21 @@
 		interrupt-parent = <&gic>;
 	};
 
+	main_padcfg0: syscon@f0000 {
+		compatible = "ti,control-module";
+		reg = <0xf0000 DT_SIZE_K(32)>;
+		ranges = <0x00 0xf0000 DT_SIZE_K(32)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ti,unlock-offsets = <0x1008 0x5008>;
+
+		pinctrl: pinctrl@4000 {
+			compatible = "ti,k3-pinctrl";
+			reg = <0x4000 0x2ac>;
+			status = "okay";
+		};
+	};
+
 	gic: interrupt-controller@1800000 {
 		compatible = "arm,gic-v3", "arm,gic";
 		reg = <0x01800000 0x10000>, /* GICD */
@@ -61,21 +72,6 @@
 		status = "okay";
 	};
 
-	main_padcfg0: syscon@f0000 {
-		compatible = "ti,control-module";
-		reg = <0xf0000 DT_SIZE_K(32)>;
-		ranges = <0x00 0xf0000 DT_SIZE_K(32)>;
-		ti,unlock-offsets = <0x1008 0x5008>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		pinctrl: pinctrl@4000 {
-			compatible = "ti,k3-pinctrl";
-			reg = <0x4000 0x2ac>;
-			status = "okay";
-		};
-	};
-
 	mbox0: mailbox0@29000000 {
 		compatible = "ti,omap-mailbox";
 		reg = <0x29000000 0x200>;
@@ -83,6 +79,10 @@
 		interrupt-parent = <&gic>;
 		usr-id = <0>;
 		#mbox-cells = <1>;
+	};
+
+	oc_sram: memory@70000000 {
+		reg = <0x70000000 DT_SIZE_K(64)>;
 	};
 };
 

@@ -17,9 +17,9 @@
 		timebase-frequency = <DT_FREQ_M(800)>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m7";
 			reg = <0>;
+			device_type = "cpu";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -42,9 +42,9 @@
 			reg = <0x0 DT_SIZE_K(128)>;
 		};
 
-		dtcm: dtcm@20000000 {
-			compatible = "nxp,imx-dtcm";
-			reg = <0x20000000 DT_SIZE_K(128)>;
+		ocram_s_code: code@180000 {
+			compatible = "nxp,imx-code-bus";
+			reg = <0x00180000 DT_SIZE_K(36)>;
 		};
 
 		ocram_code: code@900000 {
@@ -52,50 +52,21 @@
 			reg = <0x00900000 DT_SIZE_K(576)>;
 		};
 
-		ocram_sys: memory@20200000 {
-			device_type = "memory";
-			compatible = "nxp,imx-sys-bus";
-			reg = <0x20200000 DT_SIZE_K(576)>;
-		};
-
-		ocram_s_code: code@180000 {
-			compatible = "nxp,imx-code-bus";
-			reg = <0x00180000 DT_SIZE_K(36)>;
+		dtcm: dtcm@20000000 {
+			compatible = "nxp,imx-dtcm";
+			reg = <0x20000000 DT_SIZE_K(128)>;
 		};
 
 		ocram_s_sys: memory@20180000 {
-			device_type = "memory";
 			compatible = "nxp,imx-sys-bus";
 			reg = <0x20180000 DT_SIZE_K(36)>;
+			device_type = "memory";
 		};
 
-		ddr_code: code@80000000 {
-			device_type = "memory";
-			compatible = "nxp,imx-code-bus";
-			reg = <0x80000000 DT_SIZE_M(2)>;
-		};
-
-		ddr_sys: memory@80200000 {
-			device_type = "memory";
+		ocram_sys: memory@20200000 {
 			compatible = "nxp,imx-sys-bus";
-			reg = <0x80200000 DT_SIZE_M(2)>;
-		};
-
-		ccm: ccm@30380000 {
-			compatible = "nxp,imx-ccm";
-			reg = <0x30380000 DT_SIZE_K(64)>;
-			#clock-cells = <3>;
-		};
-
-		iomuxc: iomuxc@30330000 {
-			compatible = "nxp,imx-iomuxc";
-			reg = <0x30330000 DT_SIZE_K(64)>;
-			status = "okay";
-
-			pinctrl: pinctrl {
-				status = "okay";
-				compatible = "nxp,imx8mp-pinctrl";
-			};
+			reg = <0x20200000 DT_SIZE_K(576)>;
+			device_type = "memory";
 		};
 
 		gpio1: gpio@30200000 {
@@ -163,166 +134,21 @@
 			status = "disabled";
 		};
 
-		uart4: uart@30a60000 {
-			compatible = "nxp,imx-iuart";
-			reg = <0x30a60000 0x10000>;
-			interrupts = <29 3>;
-			clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>;
-			status = "disabled";
+		iomuxc: iomuxc@30330000 {
+			compatible = "nxp,imx-iomuxc";
+			reg = <0x30330000 DT_SIZE_K(64)>;
+			status = "okay";
+
+			pinctrl: pinctrl {
+				compatible = "nxp,imx8mp-pinctrl";
+				status = "okay";
+			};
 		};
 
-		uart1: uart@30860000 {
-			compatible = "nxp,imx-iuart";
-			reg = <0x30860000 0x10000>;
-			interrupts = <26 3>;
-			clocks = <&ccm IMX_CCM_UART1_CLK 0x7c 24>;
-			status = "disabled";
-		};
-
-		i2c1: i2c@30a20000 {
-			compatible = "nxp,ii2c";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x30a20000 0x10000>;
-			interrupts = <35 0>;
-			clocks = <&ccm IMX_CCM_I2C1_CLK 0 0>;
-			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW) |
-				RDC_DOMAIN_PERM(M7_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW))>;
-			status = "disabled";
-		};
-
-		i2c2: i2c@30a30000 {
-			compatible = "nxp,ii2c";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x30a30000 0x10000>;
-			interrupts = <36 0>;
-			clocks = <&ccm IMX_CCM_I2C2_CLK 0 0>;
-			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW) |
-				RDC_DOMAIN_PERM(M7_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW))>;
-			status = "disabled";
-		};
-
-		i2c3: i2c@30a40000 {
-			compatible = "nxp,ii2c";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x30a40000 0x10000>;
-			interrupts = <37 0>;
-			clocks = <&ccm IMX_CCM_I2C3_CLK 0 0>;
-			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW) |
-				RDC_DOMAIN_PERM(M7_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW))>;
-			status = "disabled";
-		};
-
-		i2c4: i2c@30a50000 {
-			compatible = "nxp,ii2c";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x30a50000 0x10000>;
-			interrupts = <38 0>;
-			clocks = <&ccm IMX_CCM_I2C4_CLK 0 0>;
-			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW) |
-				RDC_DOMAIN_PERM(M7_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW))>;
-			status = "disabled";
-		};
-
-		i2c5: i2c@30ad0000 {
-			compatible = "nxp,ii2c";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x30ad0000 0x10000>;
-			interrupts = <76 0>;
-			clocks = <&ccm IMX_CCM_I2C5_CLK 0 0>;
-			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW) |
-				RDC_DOMAIN_PERM(M7_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW))>;
-			status = "disabled";
-		};
-
-		i2c6: i2c@30ae0000 {
-			compatible = "nxp,ii2c";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x30ae0000 0x10000>;
-			interrupts = <77 0>;
-			clocks = <&ccm IMX_CCM_I2C6_CLK 0 0>;
-			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW) |
-				RDC_DOMAIN_PERM(M7_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW))>;
-			status = "disabled";
-		};
-
-		mailbox0: mailbox@30ab0000 {
-			compatible = "nxp,imx-mu";
-			reg = <0x30ab0000 DT_SIZE_K(64)>;
-			interrupts = <97 0>;
-			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW) |
-				RDC_DOMAIN_PERM(M7_DOMAIN_ID,
-						RDC_DOMAIN_PERM_RW))>;
-			status = "disabled";
-		};
-
-		ecspi1: spi@30820000 {
-			compatible = "nxp,imx-ecspi";
-			reg = <0x30820000 DT_SIZE_K(64)>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <31 3>;
-			clocks = <&ccm IMX_CCM_ECSPI1_CLK 0 0>;
-			status = "disabled";
-		};
-
-		ecspi2: spi@30830000 {
-			compatible = "nxp,imx-ecspi";
-			reg = <0x30830000 DT_SIZE_K(64)>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <32 3>;
-			clocks = <&ccm IMX_CCM_ECSPI2_CLK 0 0>;
-			status = "disabled";
-		};
-
-		ecspi3: spi@30840000 {
-			compatible = "nxp,imx-ecspi";
-			reg = <0x30840000 DT_SIZE_K(64)>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <33 3>;
-			clocks = <&ccm IMX_CCM_ECSPI3_CLK 0 0>;
-			status = "disabled";
-		};
-
-		sdma3: dma@30e00000 {
-			compatible = "nxp,sdma";
-			reg = <0x30e00000 DT_SIZE_K(64)>;
-			interrupts = <34 3>;
-			#dma-cells = <2>;
-			status = "disabled";
-		};
-
-		sai3: dai@30c30000 {
-			compatible = "nxp,dai-sai";
-			reg = <0x30c30000 DT_SIZE_K(64)>;
-			clocks = <&sai3_mclk1>;
-			clock-names = "mclk1";
-			interrupts = <50 3>;
-			dmas = <&sdma3 5 5>, <&sdma3 4 5>;
-			dma-names = "tx", "rx";
-			dai-index = <3>;
-			mclk-is-output;
-			status = "disabled";
+		ccm: ccm@30380000 {
+			compatible = "nxp,imx-ccm";
+			reg = <0x30380000 DT_SIZE_K(64)>;
+			#clock-cells = <3>;
 		};
 
 		pwm1: pwm@30660000 {
@@ -375,6 +201,180 @@
 						RDC_DOMAIN_PERM_RW))>;
 			#pwm-cells = <3>;
 			status = "disabled";
+		};
+
+		ecspi1: spi@30820000 {
+			compatible = "nxp,imx-ecspi";
+			reg = <0x30820000 DT_SIZE_K(64)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <31 3>;
+			clocks = <&ccm IMX_CCM_ECSPI1_CLK 0 0>;
+			status = "disabled";
+		};
+
+		ecspi2: spi@30830000 {
+			compatible = "nxp,imx-ecspi";
+			reg = <0x30830000 DT_SIZE_K(64)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <32 3>;
+			clocks = <&ccm IMX_CCM_ECSPI2_CLK 0 0>;
+			status = "disabled";
+		};
+
+		ecspi3: spi@30840000 {
+			compatible = "nxp,imx-ecspi";
+			reg = <0x30840000 DT_SIZE_K(64)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <33 3>;
+			clocks = <&ccm IMX_CCM_ECSPI3_CLK 0 0>;
+			status = "disabled";
+		};
+
+		uart1: uart@30860000 {
+			compatible = "nxp,imx-iuart";
+			reg = <0x30860000 0x10000>;
+			interrupts = <26 3>;
+			clocks = <&ccm IMX_CCM_UART1_CLK 0x7c 24>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@30a20000 {
+			compatible = "nxp,ii2c";
+			reg = <0x30a20000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <35 0>;
+			clocks = <&ccm IMX_CCM_I2C1_CLK 0 0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW) |
+				RDC_DOMAIN_PERM(M7_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW))>;
+			status = "disabled";
+		};
+
+		i2c2: i2c@30a30000 {
+			compatible = "nxp,ii2c";
+			reg = <0x30a30000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <36 0>;
+			clocks = <&ccm IMX_CCM_I2C2_CLK 0 0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW) |
+				RDC_DOMAIN_PERM(M7_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW))>;
+			status = "disabled";
+		};
+
+		i2c3: i2c@30a40000 {
+			compatible = "nxp,ii2c";
+			reg = <0x30a40000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <37 0>;
+			clocks = <&ccm IMX_CCM_I2C3_CLK 0 0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW) |
+				RDC_DOMAIN_PERM(M7_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW))>;
+			status = "disabled";
+		};
+
+		i2c4: i2c@30a50000 {
+			compatible = "nxp,ii2c";
+			reg = <0x30a50000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <38 0>;
+			clocks = <&ccm IMX_CCM_I2C4_CLK 0 0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW) |
+				RDC_DOMAIN_PERM(M7_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW))>;
+			status = "disabled";
+		};
+
+		uart4: uart@30a60000 {
+			compatible = "nxp,imx-iuart";
+			reg = <0x30a60000 0x10000>;
+			interrupts = <29 3>;
+			clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>;
+			status = "disabled";
+		};
+
+		mailbox0: mailbox@30ab0000 {
+			compatible = "nxp,imx-mu";
+			reg = <0x30ab0000 DT_SIZE_K(64)>;
+			interrupts = <97 0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW) |
+				RDC_DOMAIN_PERM(M7_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW))>;
+			status = "disabled";
+		};
+
+		i2c5: i2c@30ad0000 {
+			compatible = "nxp,ii2c";
+			reg = <0x30ad0000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <76 0>;
+			clocks = <&ccm IMX_CCM_I2C5_CLK 0 0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW) |
+				RDC_DOMAIN_PERM(M7_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW))>;
+			status = "disabled";
+		};
+
+		i2c6: i2c@30ae0000 {
+			compatible = "nxp,ii2c";
+			reg = <0x30ae0000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <77 0>;
+			clocks = <&ccm IMX_CCM_I2C6_CLK 0 0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW) |
+				RDC_DOMAIN_PERM(M7_DOMAIN_ID,
+						RDC_DOMAIN_PERM_RW))>;
+			status = "disabled";
+		};
+
+		sai3: dai@30c30000 {
+			compatible = "nxp,dai-sai";
+			reg = <0x30c30000 DT_SIZE_K(64)>;
+			clocks = <&sai3_mclk1>;
+			clock-names = "mclk1";
+			interrupts = <50 3>;
+			dmas = <&sdma3 5 5>, <&sdma3 4 5>;
+			dma-names = "tx", "rx";
+			dai-index = <3>;
+			mclk-is-output;
+			status = "disabled";
+		};
+
+		sdma3: dma@30e00000 {
+			compatible = "nxp,sdma";
+			reg = <0x30e00000 DT_SIZE_K(64)>;
+			interrupts = <34 3>;
+			#dma-cells = <2>;
+			status = "disabled";
+		};
+
+		ddr_code: code@80000000 {
+			compatible = "nxp,imx-code-bus";
+			reg = <0x80000000 DT_SIZE_M(2)>;
+			device_type = "memory";
+		};
+
+		ddr_sys: memory@80200000 {
+			compatible = "nxp,imx-sys-bus";
+			reg = <0x80200000 DT_SIZE_M(2)>;
+			device_type = "memory";
 		};
 	};
 };

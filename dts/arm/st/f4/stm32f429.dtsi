@@ -15,8 +15,8 @@
 			compatible = "st,stm32-dac";
 			reg = <0x40007400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 29)>;
-			status = "disabled";
 			#io-channel-cells = <1>;
+			status = "disabled";
 		};
 
 		ltdc: display-controller@40016800 {

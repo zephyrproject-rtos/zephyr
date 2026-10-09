@@ -10,47 +10,14 @@
 / {
 	clocks {
 		pll3: pll3 {
-			#clock-cells = <0>;
 			compatible = "st,stm32h5-pll-clock";
+			#clock-cells = <0>;
 			status = "disabled";
 		};
 	};
 
 	soc {
 		compatible = "st,stm32h523", "st,stm32h5", "simple-bus";
-
-		pinctrl: pin-controller@42020000 {
-			gpioe: gpio@42021000 {
-				compatible = "st,stm32-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				reg = <0x42021000 0x400>;
-				clocks = <&rcc STM32_CLOCK(AHB2, 4)>;
-			};
-
-			gpiof: gpio@42021400 {
-				compatible = "st,stm32-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				reg = <0x42021400 0x400>;
-				clocks = <&rcc STM32_CLOCK(AHB2, 5)>;
-			};
-
-			gpiog: gpio@42021800 {
-				compatible = "st,stm32-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				reg = <0x42021800 0x400>;
-				clocks = <&rcc STM32_CLOCK(AHB2, 6)>;
-			};
-		};
-
-		fmc: memory-controller@47000400 {
-			compatible = "st,stm32-fmc";
-			reg = <0x47000400 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB4, 16)>;
-			status = "disabled";
-		};
 
 		fdcan2: can@4000a800 {
 			compatible = "st,stm32-fdcan";
@@ -65,13 +32,30 @@
 			status = "disabled";
 		};
 
-		vrefbuf: vrefbuf@44007400 {
-			compatible = "st,stm32-vrefbuf";
-			reg = <0x44007400 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB3, 20)>;
-			resets = <&rctl STM32_RESET(APB3, 20)>;
-			ref-voltages = <2500000>, <2048000>, <1800000>;
-			status = "disabled";
+		pinctrl: pin-controller@42020000 {
+			gpioe: gpio@42021000 {
+				compatible = "st,stm32-gpio";
+				reg = <0x42021000 0x400>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&rcc STM32_CLOCK(AHB2, 4)>;
+			};
+
+			gpiof: gpio@42021400 {
+				compatible = "st,stm32-gpio";
+				reg = <0x42021400 0x400>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&rcc STM32_CLOCK(AHB2, 5)>;
+			};
+
+			gpiog: gpio@42021800 {
+				compatible = "st,stm32-gpio";
+				reg = <0x42021800 0x400>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&rcc STM32_CLOCK(AHB2, 6)>;
+			};
 		};
 
 		adc12_common: adc@42028000 {
@@ -94,6 +78,15 @@
 			noise-source-control = <0x2357f>;
 		};
 
+		vrefbuf: vrefbuf@44007400 {
+			compatible = "st,stm32-vrefbuf";
+			reg = <0x44007400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB3, 20)>;
+			resets = <&rctl STM32_RESET(APB3, 20)>;
+			ref-voltages = <2500000>, <2048000>, <1800000>;
+			status = "disabled";
+		};
+
 		pwr: power@44020800 {
 			wakeup-controller {
 				wkup@6 {
@@ -108,6 +101,13 @@
 					wkup-gpios = <&gpiod 3 STM32_PWR_WKUP_EVT_SRC_0>;
 				};
 			};
+		};
+
+		fmc: memory-controller@47000400 {
+			compatible = "st,stm32-fmc";
+			reg = <0x47000400 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB4, 16)>;
+			status = "disabled";
 		};
 	};
 };

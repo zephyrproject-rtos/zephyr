@@ -43,9 +43,9 @@
 	#size-cells = <0>;
 	pinctrl-0 = <&usart2_default>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <DT_FREQ_M(1)>;
 	cs-gpios = <&gpioc 2 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	lora0: lora@0 {
 		compatible = "semtech,sx1262";

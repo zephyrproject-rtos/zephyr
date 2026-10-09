@@ -8,9 +8,9 @@
 #include <adi/max32/max32xxx-m4.dtsi>
 
 &flash0 {
-	interrupts = <23 0>;
 	reg = <0x10000000 DT_SIZE_K(512)>;
 	ranges = <0x0 0x10000000 DT_SIZE_K(512)>;
+	interrupts = <23 0>;
 	erase-block-size = <8192>;
 };
 

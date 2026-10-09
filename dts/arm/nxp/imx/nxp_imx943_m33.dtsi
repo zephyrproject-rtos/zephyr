@@ -15,10 +15,10 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m33";
-			cpu-power-states = <&wait &stop &suspend>;
 			reg = <0>;
+			device_type = "cpu";
+			cpu-power-states = <&wait &stop &suspend>;
 			clock-frequency = <DT_FREQ_M(267)>;
 
 			#address-cells = <1>;
@@ -77,9 +77,9 @@
 
 		irqsteer: interrupt-controller@44770000 {
 			compatible = "nxp,irqsteer-intc";
+			reg = <0x44770000 DT_SIZE_K(64)>;
 			#size-cells = <0>;
 			#address-cells = <1>;
-			reg = <0x44770000 DT_SIZE_K(64)>;
 			nxp,irq-offset = <407>;
 			nxp,num-irqs = <960>;
 

@@ -18,424 +18,18 @@
 
 		cpu0: cpu@0 {
 			compatible = "renesas,rxv3e";
-			device_type = "cpu";
 			reg = <0>;
-			status = "okay";
-		};
-	};
-
-	icu: interrupt-controller@87006000 {
-		#interrupt-cells = <2>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-		compatible = "renesas,rx-icum";
-		interrupt-controller;
-		reg = <0x87006000 0x100>,
-		      <0x87006200 0x20>,
-		      <0x87006300 0x100>,
-		      <0x870062f0 0x02>,
-		      <0x87006c20 0x20>,
-		      <0x87006900 0x20>,
-		      <0x87006580 0x04>,
-		      <0x87006584 0x04>,
-		      <0x87006588 0x04>;
-		reg-names = "IR", "IER", "IPR", "FIR", "IRQCR",
-			    "SLIXR", "NMISR", "NMIER", "NMICLR";
-
-		swint1: swint1@870062e0 {
-			compatible = "renesas,rx-swint";
-			reg = <0x870062e0 0x01>;
-			interrupts = <27 14>;
-			interrupt-parent = <&icu>;
+			device_type = "cpu";
 			status = "okay";
 		};
 	};
 
 	soc {
+		compatible = "simple-bus";
 		#address-cells = <1>;
 		#size-cells = <1>;
 		device_type = "soc";
-		compatible = "simple-bus";
 		interrupt-parent = <&icu>;
-
-		ioport0: gpio@87c00000 {
-			compatible = "renesas,rx-gpio-ioport";
-			reg = <0x87c00000 0x20>;
-			port = <0>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <16>;
-			status = "disabled";
-		};
-
-		ioport1: gpio@87c00020 {
-			compatible = "renesas,rx-gpio-ioport";
-			reg = <0x87c00020 0x20>;
-			port = <1>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <16>;
-			status = "disabled";
-		};
-
-		ioport2: gpio@87c00040 {
-			compatible = "renesas,rx-gpio-ioport";
-			reg = <0x87c00040 0x20>;
-			port = <2>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <16>;
-			status = "disabled";
-		};
-
-		ioport3: gpio@87c00060 {
-			compatible = "renesas,rx-gpio-ioport";
-			reg = <0x87c00060 0x20>;
-			port = <3>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <16>;
-			status = "disabled";
-		};
-
-		ioport4: gpio@87c00080 {
-			compatible = "renesas,rx-gpio-ioport";
-			reg = <0x87c00080 0x20>;
-			port = <4>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <16>;
-			status = "disabled";
-		};
-
-		ioport5: gpio@87c000a0 {
-			compatible = "renesas,rx-gpio-ioport";
-			reg = <0x87c000a0 0x20>;
-			port = <5>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <16>;
-			status = "disabled";
-		};
-
-		ioport6: gpio@87c000c0 {
-			compatible = "renesas,rx-gpio-ioport";
-			reg = <0x87c000c0 0x20>;
-			port = <6>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <16>;
-			status = "disabled";
-		};
-
-		ioport7: gpio@87c000e0 {
-			compatible = "renesas,rx-gpio-ioport";
-			reg = <0x87c000e0 0x20>;
-			port = <7>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <16>;
-			status = "disabled";
-		};
-
-		ioport8: gpio@87c00100 {
-			compatible = "renesas,rx-gpio-ioport";
-			reg = <0x87c00100 0x20>;
-			port = <8>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <16>;
-			status = "disabled";
-		};
-
-		ioport9: gpio@87c00120 {
-			compatible = "renesas,rx-gpio-ioport";
-			reg = <0x87c00120 0x20>;
-			port = <9>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <16>;
-			status = "disabled";
-		};
-
-		ioporta: gpio@87c00140 {
-			compatible = "renesas,rx-gpio-ioport";
-			reg = <0x87c00140 0x20>;
-			port = <10>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <16>;
-			status = "disabled";
-		};
-
-		ioportb: gpio@87c00160 {
-			compatible = "renesas,rx-gpio-ioport";
-			reg = <0x87c00160 0x20>;
-			port = <11>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <16>;
-			status = "disabled";
-		};
-
-		ioportc: gpio@87c00180 {
-			compatible = "renesas,rx-gpio-ioport";
-			reg = <0x87c00180 0x20>;
-			port = <12>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <16>;
-			status = "disabled";
-		};
-
-		ioportd: gpio@87c001a0 {
-			compatible = "renesas,rx-gpio-ioport";
-			reg = <0x87c001a0 0x20>;
-			port = <13>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <16>;
-			status = "disabled";
-		};
-
-		ioporte: gpio@87c001c0 {
-			compatible = "renesas,rx-gpio-ioport";
-			reg = <0x87c001c0 0x20>;
-			port = <14>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <16>;
-			status = "disabled";
-		};
-
-		ioportf: gpio@87c001e0 {
-			compatible = "renesas,rx-gpio-ioport";
-			reg = <0x87c001e0 0x20>;
-			port = <15>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <16>;
-			status = "disabled";
-		};
-
-		ioportg: gpio@87c00200 {
-			compatible = "renesas,rx-gpio-ioport";
-			reg = <0x87c00200 0x20>;
-			port = <16>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <16>;
-			status = "disabled";
-		};
-
-		sci0: sci0@87458000 {
-			compatible = "renesas,rx-sci-b";
-			reg = <0x87458000 0x100>;
-			channel = <0>;
-			clocks = <&sciclk MSTPB 31>;
-			status = "disabled";
-
-			uart {
-				compatible = "renesas,rx-uart-sci-b";
-				status = "disabled";
-			};
-		};
-
-		sci1: sci1@87458100 {
-			compatible = "renesas,rx-sci-b";
-			reg = <0x87458100 0x100>;
-			channel = <1>;
-			clocks = <&sciclk MSTPB 30>;
-			status = "disabled";
-
-			uart {
-				compatible = "renesas,rx-uart-sci-b";
-				status = "disabled";
-			};
-		};
-
-		sci2: sci2@87458200 {
-			compatible = "renesas,rx-sci-b";
-			reg = <0x87458200 0x100>;
-			channel = <2>;
-			clocks = <&sciclk MSTPB 29>;
-			status = "disabled";
-
-			uart {
-				compatible = "renesas,rx-uart-sci-b";
-				status = "disabled";
-			};
-		};
-
-		sci3: sci3@87458300 {
-			compatible = "renesas,rx-sci-b";
-			reg = <0x87458300 0x100>;
-			channel = <3>;
-			clocks = <&sciclk MSTPB 28>;
-			status = "disabled";
-
-			uart {
-				compatible = "renesas,rx-uart-sci-b";
-				status = "disabled";
-			};
-		};
-
-		sci4: sci4@87458400 {
-			compatible = "renesas,rx-sci-b";
-			reg = <0x87458400 0x100>;
-			channel = <4>;
-			clocks = <&sciclk MSTPB 27>;
-			status = "disabled";
-
-			uart {
-				compatible = "renesas,rx-uart-sci-b";
-				status = "disabled";
-			};
-		};
-
-		sci5: sci5@87458500 {
-			compatible = "renesas,rx-sci-b";
-			reg = <0x87458500 0x100>;
-			channel = <5>;
-			clocks = <&sciclk MSTPB 26>;
-			status = "disabled";
-
-			uart {
-				compatible = "renesas,rx-uart-sci-b";
-				status = "disabled";
-			};
-		};
-
-		sci6: sci6@87458600 {
-			compatible = "renesas,rx-sci-b";
-			reg = <0x87458600 0x100>;
-			channel = <6>;
-			clocks = <&sciclk MSTPB 25>;
-			status = "disabled";
-
-			uart {
-				compatible = "renesas,rx-uart-sci-b";
-				status = "disabled";
-			};
-		};
-
-		sci7: sci7@87458700 {
-			compatible = "renesas,rx-sci-b";
-			reg = <0x87458700 0x100>;
-			channel = <7>;
-			clocks = <&sciclk MSTPB 24>;
-			status = "disabled";
-
-			uart {
-				compatible = "renesas,rx-uart-sci-b";
-				status = "disabled";
-			};
-		};
-
-		sci8: sci8@87458800 {
-			compatible = "renesas,rx-sci-b";
-			reg = <0x87458800 0x100>;
-			channel = <8>;
-			clocks = <&sciclk MSTPB 23>;
-			status = "disabled";
-
-			uart {
-				compatible = "renesas,rx-uart-sci-b";
-				status = "disabled";
-			};
-		};
-
-		sci9: sci9@87458900 {
-			compatible = "renesas,rx-sci-b";
-			reg = <0x87458900 0x100>;
-			channel = <9>;
-			clocks = <&sciclk MSTPB 22>;
-			status = "disabled";
-
-			uart {
-				compatible = "renesas,rx-uart-sci-b";
-				status = "disabled";
-			};
-		};
-
-		sci10: sci10@87458a00 {
-			compatible = "renesas,rx-sci-b";
-			reg = <0x87458a00 0x100>;
-			channel = <10>;
-			clocks = <&sciclk MSTPB 21>;
-			status = "disabled";
-
-			uart {
-				compatible = "renesas,rx-uart-sci-b";
-				status = "disabled";
-			};
-		};
-
-		sci11: sci11@87458b00 {
-			compatible = "renesas,rx-sci-b";
-			reg = <0x87458b00 0x100>;
-			channel = <11>;
-			clocks = <&sciclk MSTPB 20>;
-			status = "disabled";
-
-			uart {
-				compatible = "renesas,rx-uart-sci-b";
-				status = "disabled";
-			};
-		};
-
-		sci12: uart12@87458c00 {
-			compatible = "renesas,rx-sci-b";
-			reg = <0x87458c00 0x100>;
-			channel = <12>;
-			clocks = <&sciclk MSTPB 0>;
-			status = "disabled";
-
-			uart {
-				compatible = "renesas,rx-uart-sci-b";
-				status = "disabled";
-			};
-		};
-
-		cmt: timer@87826000 {
-			compatible = "renesas,rx-timer-cmt-start-control";
-			#address-cells = <1>;
-			#size-cells = <1>;
-			reg = <0x87826000 0x02>;
-			clocks = <&pclkb MSTPF 15>;
-			reg-names = "CMSTR0";
-			status = "okay";
-
-			cmt0: timer@87826002 {
-				compatible = "renesas,rx-timer-cmt";
-				#address-cells = <1>;
-				#size-cells = <1>;
-				reg = <0x87826002 0x02>,
-				      <0x87826004 0x02>,
-				      <0x87826006 0x02>;
-				reg-names = "CMCR", "CMCNT", "CMCOR";
-				interrupts = <28 1>;
-				interrupt-names = "cmi";
-				status = "okay";
-			};
-
-			cmt1: timer@87826008 {
-				compatible = "renesas,rx-timer-cmt";
-				reg = <0x87826008 0x02>,
-				      <0x8782600a 0x02>,
-				      <0x8782600c 0x02>;
-				reg-names = "CMCR", "CMCNT", "CMCOR";
-				interrupts = <29 1>;
-				interrupt-names = "cmi";
-				status = "disabled";
-			};
-		};
-
-		pinctrl: pin-controller@87c00800 {
-			compatible = "renesas,rx-pinctrl-pfs";
-			reg = <0x87c00800 0x3c0>;
-			status = "okay";
-		};
 
 		ofs_mem_cfg_sec: ofs-mem-cfg-sec@86c2e850 {
 			compatible = "renesas,ofs-memory";
@@ -446,15 +40,15 @@
 
 			ofs_dualsel: ofs-dualsel0@86c2e850 {
 				compatible = "zephyr,memory-region";
-				zephyr,memory-region = "OFS_DUALSEL";
 				reg = <0x86c2e850 0x4>;
+				zephyr,memory-region = "OFS_DUALSEL";
 				status = "disabled";
 			};
 
 			ofs_sas: ofs-sas@86c2e870 {
 				compatible = "zephyr,memory-region";
-				zephyr,memory-region = "OFS_SAS";
 				reg = <0x86c2e870 0x4>;
+				zephyr,memory-region = "OFS_SAS";
 				status = "disabled";
 			};
 
@@ -717,6 +311,412 @@
 				zephyr,memory-region = "OFS_OFSPS";
 				status = "disabled";
 			};
+		};
+
+		sci0: sci0@87458000 {
+			compatible = "renesas,rx-sci-b";
+			reg = <0x87458000 0x100>;
+			channel = <0>;
+			clocks = <&sciclk MSTPB 31>;
+			status = "disabled";
+
+			uart {
+				compatible = "renesas,rx-uart-sci-b";
+				status = "disabled";
+			};
+		};
+
+		sci1: sci1@87458100 {
+			compatible = "renesas,rx-sci-b";
+			reg = <0x87458100 0x100>;
+			channel = <1>;
+			clocks = <&sciclk MSTPB 30>;
+			status = "disabled";
+
+			uart {
+				compatible = "renesas,rx-uart-sci-b";
+				status = "disabled";
+			};
+		};
+
+		sci2: sci2@87458200 {
+			compatible = "renesas,rx-sci-b";
+			reg = <0x87458200 0x100>;
+			channel = <2>;
+			clocks = <&sciclk MSTPB 29>;
+			status = "disabled";
+
+			uart {
+				compatible = "renesas,rx-uart-sci-b";
+				status = "disabled";
+			};
+		};
+
+		sci3: sci3@87458300 {
+			compatible = "renesas,rx-sci-b";
+			reg = <0x87458300 0x100>;
+			channel = <3>;
+			clocks = <&sciclk MSTPB 28>;
+			status = "disabled";
+
+			uart {
+				compatible = "renesas,rx-uart-sci-b";
+				status = "disabled";
+			};
+		};
+
+		sci4: sci4@87458400 {
+			compatible = "renesas,rx-sci-b";
+			reg = <0x87458400 0x100>;
+			channel = <4>;
+			clocks = <&sciclk MSTPB 27>;
+			status = "disabled";
+
+			uart {
+				compatible = "renesas,rx-uart-sci-b";
+				status = "disabled";
+			};
+		};
+
+		sci5: sci5@87458500 {
+			compatible = "renesas,rx-sci-b";
+			reg = <0x87458500 0x100>;
+			channel = <5>;
+			clocks = <&sciclk MSTPB 26>;
+			status = "disabled";
+
+			uart {
+				compatible = "renesas,rx-uart-sci-b";
+				status = "disabled";
+			};
+		};
+
+		sci6: sci6@87458600 {
+			compatible = "renesas,rx-sci-b";
+			reg = <0x87458600 0x100>;
+			channel = <6>;
+			clocks = <&sciclk MSTPB 25>;
+			status = "disabled";
+
+			uart {
+				compatible = "renesas,rx-uart-sci-b";
+				status = "disabled";
+			};
+		};
+
+		sci7: sci7@87458700 {
+			compatible = "renesas,rx-sci-b";
+			reg = <0x87458700 0x100>;
+			channel = <7>;
+			clocks = <&sciclk MSTPB 24>;
+			status = "disabled";
+
+			uart {
+				compatible = "renesas,rx-uart-sci-b";
+				status = "disabled";
+			};
+		};
+
+		sci8: sci8@87458800 {
+			compatible = "renesas,rx-sci-b";
+			reg = <0x87458800 0x100>;
+			channel = <8>;
+			clocks = <&sciclk MSTPB 23>;
+			status = "disabled";
+
+			uart {
+				compatible = "renesas,rx-uart-sci-b";
+				status = "disabled";
+			};
+		};
+
+		sci9: sci9@87458900 {
+			compatible = "renesas,rx-sci-b";
+			reg = <0x87458900 0x100>;
+			channel = <9>;
+			clocks = <&sciclk MSTPB 22>;
+			status = "disabled";
+
+			uart {
+				compatible = "renesas,rx-uart-sci-b";
+				status = "disabled";
+			};
+		};
+
+		sci10: sci10@87458a00 {
+			compatible = "renesas,rx-sci-b";
+			reg = <0x87458a00 0x100>;
+			channel = <10>;
+			clocks = <&sciclk MSTPB 21>;
+			status = "disabled";
+
+			uart {
+				compatible = "renesas,rx-uart-sci-b";
+				status = "disabled";
+			};
+		};
+
+		sci11: sci11@87458b00 {
+			compatible = "renesas,rx-sci-b";
+			reg = <0x87458b00 0x100>;
+			channel = <11>;
+			clocks = <&sciclk MSTPB 20>;
+			status = "disabled";
+
+			uart {
+				compatible = "renesas,rx-uart-sci-b";
+				status = "disabled";
+			};
+		};
+
+		sci12: uart12@87458c00 {
+			compatible = "renesas,rx-sci-b";
+			reg = <0x87458c00 0x100>;
+			channel = <12>;
+			clocks = <&sciclk MSTPB 0>;
+			status = "disabled";
+
+			uart {
+				compatible = "renesas,rx-uart-sci-b";
+				status = "disabled";
+			};
+		};
+
+		cmt: timer@87826000 {
+			compatible = "renesas,rx-timer-cmt-start-control";
+			reg = <0x87826000 0x02>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			clocks = <&pclkb MSTPF 15>;
+			reg-names = "CMSTR0";
+			status = "okay";
+
+			cmt0: timer@87826002 {
+				compatible = "renesas,rx-timer-cmt";
+				reg = <0x87826002 0x02>,
+				      <0x87826004 0x02>,
+				      <0x87826006 0x02>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				reg-names = "CMCR", "CMCNT", "CMCOR";
+				interrupts = <28 1>;
+				interrupt-names = "cmi";
+				status = "okay";
+			};
+
+			cmt1: timer@87826008 {
+				compatible = "renesas,rx-timer-cmt";
+				reg = <0x87826008 0x02>,
+				      <0x8782600a 0x02>,
+				      <0x8782600c 0x02>;
+				reg-names = "CMCR", "CMCNT", "CMCOR";
+				interrupts = <29 1>;
+				interrupt-names = "cmi";
+				status = "disabled";
+			};
+		};
+
+		ioport0: gpio@87c00000 {
+			compatible = "renesas,rx-gpio-ioport";
+			reg = <0x87c00000 0x20>;
+			port = <0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport1: gpio@87c00020 {
+			compatible = "renesas,rx-gpio-ioport";
+			reg = <0x87c00020 0x20>;
+			port = <1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport2: gpio@87c00040 {
+			compatible = "renesas,rx-gpio-ioport";
+			reg = <0x87c00040 0x20>;
+			port = <2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport3: gpio@87c00060 {
+			compatible = "renesas,rx-gpio-ioport";
+			reg = <0x87c00060 0x20>;
+			port = <3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport4: gpio@87c00080 {
+			compatible = "renesas,rx-gpio-ioport";
+			reg = <0x87c00080 0x20>;
+			port = <4>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport5: gpio@87c000a0 {
+			compatible = "renesas,rx-gpio-ioport";
+			reg = <0x87c000a0 0x20>;
+			port = <5>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport6: gpio@87c000c0 {
+			compatible = "renesas,rx-gpio-ioport";
+			reg = <0x87c000c0 0x20>;
+			port = <6>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport7: gpio@87c000e0 {
+			compatible = "renesas,rx-gpio-ioport";
+			reg = <0x87c000e0 0x20>;
+			port = <7>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport8: gpio@87c00100 {
+			compatible = "renesas,rx-gpio-ioport";
+			reg = <0x87c00100 0x20>;
+			port = <8>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport9: gpio@87c00120 {
+			compatible = "renesas,rx-gpio-ioport";
+			reg = <0x87c00120 0x20>;
+			port = <9>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioporta: gpio@87c00140 {
+			compatible = "renesas,rx-gpio-ioport";
+			reg = <0x87c00140 0x20>;
+			port = <10>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioportb: gpio@87c00160 {
+			compatible = "renesas,rx-gpio-ioport";
+			reg = <0x87c00160 0x20>;
+			port = <11>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioportc: gpio@87c00180 {
+			compatible = "renesas,rx-gpio-ioport";
+			reg = <0x87c00180 0x20>;
+			port = <12>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioportd: gpio@87c001a0 {
+			compatible = "renesas,rx-gpio-ioport";
+			reg = <0x87c001a0 0x20>;
+			port = <13>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioporte: gpio@87c001c0 {
+			compatible = "renesas,rx-gpio-ioport";
+			reg = <0x87c001c0 0x20>;
+			port = <14>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioportf: gpio@87c001e0 {
+			compatible = "renesas,rx-gpio-ioport";
+			reg = <0x87c001e0 0x20>;
+			port = <15>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioportg: gpio@87c00200 {
+			compatible = "renesas,rx-gpio-ioport";
+			reg = <0x87c00200 0x20>;
+			port = <16>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		pinctrl: pin-controller@87c00800 {
+			compatible = "renesas,rx-pinctrl-pfs";
+			reg = <0x87c00800 0x3c0>;
+			status = "okay";
+		};
+	};
+
+	icu: interrupt-controller@87006000 {
+		compatible = "renesas,rx-icum";
+		reg = <0x87006000 0x100>,
+		      <0x87006200 0x20>,
+		      <0x87006300 0x100>,
+		      <0x870062f0 0x02>,
+		      <0x87006c20 0x20>,
+		      <0x87006900 0x20>,
+		      <0x87006580 0x04>,
+		      <0x87006584 0x04>,
+		      <0x87006588 0x04>;
+		#interrupt-cells = <2>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		interrupt-controller;
+		reg-names = "IR", "IER", "IPR", "FIR", "IRQCR",
+			    "SLIXR", "NMISR", "NMIER", "NMICLR";
+
+		swint1: swint1@870062e0 {
+			compatible = "renesas,rx-swint";
+			reg = <0x870062e0 0x01>;
+			interrupts = <27 14>;
+			interrupt-parent = <&icu>;
+			status = "okay";
 		};
 	};
 };

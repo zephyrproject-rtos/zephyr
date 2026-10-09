@@ -7,8 +7,8 @@
 / {
 	soc {
 		sram0: memory@400000 {
-			device_type = "memory";
 			reg = <0x00400000 0x80000>;
+			device_type = "memory";
 		};
 
 		uart0: uart@40020000 {

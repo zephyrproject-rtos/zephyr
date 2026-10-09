@@ -17,13 +17,23 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m4";
 			reg = <0>;
+			device_type = "cpu";
 		};
 	};
 
 	soc {
+		ocram_s_code: code@180000 {
+			compatible = "nxp,imx-code-bus";
+			reg = <0x00180000 DT_SIZE_K(32)>;
+		};
+
+		ocram_code: code@900000 {
+			compatible = "nxp,imx-code-bus";
+			reg = <0x00900000 DT_SIZE_K(256)>;
+		};
+
 		tcml_code: code@1ffe0000 {
 			compatible = "nxp,imx-itcm";
 			reg = <0x1ffe0000 DT_SIZE_K(128)>;
@@ -34,26 +44,16 @@
 			reg = <0x20000000 DT_SIZE_K(128)>;
 		};
 
-		ocram_code: code@900000 {
-			compatible = "nxp,imx-code-bus";
-			reg = <0x00900000 DT_SIZE_K(256)>;
+		ocram_s_sys: memory@20180000 {
+			compatible = "nxp,imx-sys-bus";
+			reg = <0x20180000 DT_SIZE_K(32)>;
+			device_type = "memory";
 		};
 
 		ocram_sys: memory@20200000 {
-			device_type = "memory";
 			compatible = "nxp,imx-sys-bus";
 			reg = <0x20200000 DT_SIZE_K(256)>;
-		};
-
-		ocram_s_code: code@180000 {
-			compatible = "nxp,imx-code-bus";
-			reg = <0x00180000 DT_SIZE_K(32)>;
-		};
-
-		ocram_s_sys: memory@20180000 {
 			device_type = "memory";
-			compatible = "nxp,imx-sys-bus";
-			reg = <0x20180000 DT_SIZE_K(32)>;
 		};
 
 		gpio1: gpio@30200000 {
@@ -125,8 +125,8 @@
 			status = "okay";
 
 			pinctrl: pinctrl {
-				status = "okay";
 				compatible = "nxp,imx8m-pinctrl";
+				status = "okay";
 			};
 		};
 
@@ -174,19 +174,19 @@
 			status = "disabled";
 		};
 
-		uart2: uart@30890000 {
-			compatible = "nxp,imx-iuart";
-			reg = <0x30890000 0x10000>;
-			interrupts = <27 3>;
-			clocks = <&ccm IMX_CCM_UART2_CLK 0x68 28>;
-			status = "disabled";
-		};
-
 		uart3: uart@30880000 {
 			compatible = "nxp,imx-iuart";
 			reg = <0x30880000 0x10000>;
 			interrupts = <28 3>;
 			clocks = <&ccm IMX_CCM_UART3_CLK 0x68 12>;
+			status = "disabled";
+		};
+
+		uart2: uart@30890000 {
+			compatible = "nxp,imx-iuart";
+			reg = <0x30890000 0x10000>;
+			interrupts = <27 3>;
+			clocks = <&ccm IMX_CCM_UART2_CLK 0x68 28>;
 			status = "disabled";
 		};
 

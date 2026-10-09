@@ -13,24 +13,11 @@
 };
 
 &peripheral {
-	dac1: dac@112000 {
-		compatible = "nxp,lpdac";
-		reg = <0x112000 0x1000>;
-		interrupts = <107 0>;
+	lpcmp2: lpcmp@53000 {
+		compatible = "nxp,lpcmp";
+		reg = <0x53000 0x1000>;
+		interrupts = <111 0>;
 		status = "disabled";
-		voltage-reference = <0>;
-		#io-channel-cells = <1>;
-		power-domains = <&core_domain>;
-		zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
-	};
-
-	dac2: dac@114000 {
-		compatible = "nxp,hpdac";
-		reg = <0x114000 0x1000>;
-		interrupts = <108 0>;
-		status = "disabled";
-		#io-channel-cells = <1>;
-		resolution = <14>;
 	};
 
 	flexpwm1: flexpwm@d0000 {
@@ -45,9 +32,9 @@
 			interrupts = <120 0>;
 			#pwm-cells = <3>;
 			clocks = <&syscon MCUX_BUS_CLK>;
+			run-in-wait;
 			nxp,prescaler = <128>;
 			status = "disabled";
-			run-in-wait;
 		};
 
 		flexpwm1_pwm1: pwm1 {
@@ -56,9 +43,9 @@
 			interrupts = <121 0>;
 			#pwm-cells = <3>;
 			clocks = <&syscon MCUX_BUS_CLK>;
+			run-in-wait;
 			nxp,prescaler = <128>;
 			status = "disabled";
-			run-in-wait;
 		};
 
 		flexpwm1_pwm2: pwm2 {
@@ -67,9 +54,9 @@
 			interrupts = <122 0>;
 			#pwm-cells = <3>;
 			clocks = <&syscon MCUX_BUS_CLK>;
+			run-in-wait;
 			nxp,prescaler = <128>;
 			status = "disabled";
-			run-in-wait;
 		};
 
 		flexpwm1_pwm3: pwm3 {
@@ -78,44 +65,10 @@
 			interrupts = <123 0>;
 			#pwm-cells = <3>;
 			clocks = <&syscon MCUX_BUS_CLK>;
+			run-in-wait;
 			nxp,prescaler = <128>;
 			status = "disabled";
-			run-in-wait;
 		};
-	};
-
-	lpcmp2: lpcmp@53000 {
-		compatible = "nxp,lpcmp";
-		reg = <0x53000 0x1000>;
-		interrupts = <111 0>;
-		status = "disabled";
-	};
-
-	opamp0: opamp@110000 {
-		compatible = "nxp,opamp";
-		reg = <0x110000 0x1000>;
-		status = "disabled";
-		operation-mode = "low_noise";
-		functional-mode = "follower";
-		clocks = <&syscon MCUX_OPAMP0_CLK>;
-	};
-
-	opamp1: opamp@113000 {
-		compatible = "nxp,opamp";
-		reg = <0x113000 0x1000>;
-		status = "disabled";
-		operation-mode = "low_noise";
-		functional-mode = "follower";
-		clocks = <&syscon MCUX_OPAMP1_CLK>;
-	};
-
-	opamp2: opamp@115000 {
-		compatible = "nxp,opamp";
-		reg = <0x115000 0x1000>;
-		status = "disabled";
-		operation-mode = "low_noise";
-		functional-mode = "follower";
-		clocks = <&syscon MCUX_OPAMP2_CLK>;
 	};
 
 	flexcan1: can@d8000 {
@@ -125,6 +78,53 @@
 		interrupt-names = "common";
 		clocks = <&syscon MCUX_FLEXCAN1_CLK>;
 		number-of-mb = <32>;
+		status = "disabled";
+	};
+
+	opamp0: opamp@110000 {
+		compatible = "nxp,opamp";
+		reg = <0x110000 0x1000>;
+		operation-mode = "low_noise";
+		functional-mode = "follower";
+		clocks = <&syscon MCUX_OPAMP0_CLK>;
+		status = "disabled";
+	};
+
+	dac1: dac@112000 {
+		compatible = "nxp,lpdac";
+		reg = <0x112000 0x1000>;
+		interrupts = <107 0>;
+		voltage-reference = <0>;
+		#io-channel-cells = <1>;
+		power-domains = <&core_domain>;
+		zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
+		status = "disabled";
+	};
+
+	opamp1: opamp@113000 {
+		compatible = "nxp,opamp";
+		reg = <0x113000 0x1000>;
+		operation-mode = "low_noise";
+		functional-mode = "follower";
+		clocks = <&syscon MCUX_OPAMP1_CLK>;
+		status = "disabled";
+	};
+
+	dac2: dac@114000 {
+		compatible = "nxp,hpdac";
+		reg = <0x114000 0x1000>;
+		interrupts = <108 0>;
+		#io-channel-cells = <1>;
+		resolution = <14>;
+		status = "disabled";
+	};
+
+	opamp2: opamp@115000 {
+		compatible = "nxp,opamp";
+		reg = <0x115000 0x1000>;
+		operation-mode = "low_noise";
+		functional-mode = "follower";
+		clocks = <&syscon MCUX_OPAMP2_CLK>;
 		status = "disabled";
 	};
 };

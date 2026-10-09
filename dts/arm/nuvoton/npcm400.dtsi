@@ -9,6 +9,8 @@
 #include "npcm/npcm4.dtsi"
 
 / {
+	soc {};
+
 	flash0: flash@80000 {
 		reg = <0x00080000 DT_SIZE_M(1)>;
 	};
@@ -17,6 +19,4 @@
 		compatible = "mmio-sram";
 		reg = <0x10008000 DT_SIZE_K(764)>;
 	};
-
-	soc {};
 };

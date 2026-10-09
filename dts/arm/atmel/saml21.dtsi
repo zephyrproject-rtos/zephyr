@@ -21,12 +21,12 @@
 			interrupts = <14 0>;
 			clocks = <&gclk 25>, <&mclk 0x1c 5>;
 			clock-names = "GCLK", "MCLK";
-			atmel,assigned-clocks = <&gclk 0>;
-			atmel,assigned-clock-names = "GCLK";
-			status = "disabled";
 
 			channels = <4>;
 			counter-size = <24>;
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
+			status = "disabled";
 		};
 
 		tcc1: tcc@42001800 {
@@ -35,12 +35,12 @@
 			interrupts = <15 0>;
 			clocks = <&gclk 25>, <&mclk 0x1c 6>;
 			clock-names = "GCLK", "MCLK";
-			atmel,assigned-clocks = <&gclk 0>;
-			atmel,assigned-clock-names = "GCLK";
-			status = "disabled";
 
 			channels = <4>;
 			counter-size = <24>;
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
+			status = "disabled";
 		};
 
 		tcc2: tcc@42001c00 {
@@ -49,12 +49,12 @@
 			interrupts = <16 0>;
 			clocks = <&gclk 26>, <&mclk 0x1c 7>;
 			clock-names = "GCLK", "MCLK";
-			atmel,assigned-clocks = <&gclk 0>;
-			atmel,assigned-clock-names = "GCLK";
-			status = "disabled";
 
 			channels = <2>;
 			counter-size = <16>;
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
+			status = "disabled";
 		};
 	};
 };

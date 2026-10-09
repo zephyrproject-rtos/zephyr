@@ -24,10 +24,10 @@
 			clic0: interrupt-controller@e2000000 {
 				/delete-property/ #plic-target-cells;
 				compatible = "riscv,clic";
+				reg = <0xe2000000 0x2000>;
 				#address-cells = <0>;
 				#interrupt-cells = <2>;
 				interrupt-controller;
-				reg = <0xe2000000 0x2000>;
 			};
 		};
 	};

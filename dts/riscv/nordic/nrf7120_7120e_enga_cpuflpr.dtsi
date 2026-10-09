@@ -30,23 +30,23 @@ clic: &cpuflpr_clic {};
 / {
 	soc {
 		compatible = "simple-bus";
-		interrupt-parent = <&cpuflpr_clic>;
 		ranges;
+		interrupt-parent = <&cpuflpr_clic>;
 
 		/* RAM02/03 is single cycle access for FLPR core while RAM00/01 is 2 cycle access */
 		cpuflpr_sram: memory@200e0000 {
 			compatible = "mmio-sram";
 			reg = <0x200e0000 DT_SIZE_K(120)>;
+			ranges = <0x0 0x200e0000 DT_SIZE_K(120)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x200e0000 DT_SIZE_K(120)>;
 
 			ram03_sram: memory@0 {
 				compatible = "mmio-sram";
 				reg = <0x0 DT_SIZE_K(120)>;
+				ranges = <0x0 0x0 DT_SIZE_K(120)>;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges = <0x0 0x0 DT_SIZE_K(120)>;
 			};
 		};
 	};
@@ -55,7 +55,6 @@ clic: &cpuflpr_clic {};
 &cpuflpr {
 	cpuflpr_vevif_rx: mailbox {
 		compatible = "nordic,nrf-vevif-task-rx";
-		status = "disabled";
 		interrupt-parent = <&cpuflpr_clic>;
 		interrupts = <16 NRF_DEFAULT_IRQ_PRIORITY>,
 			     <17 NRF_DEFAULT_IRQ_PRIORITY>,
@@ -67,6 +66,7 @@ clic: &cpuflpr_clic {};
 		#mbox-cells = <1>;
 		nordic,tasks = <7>;
 		nordic,tasks-mask = <0x007f0000>;
+		status = "disabled";
 	};
 };
 

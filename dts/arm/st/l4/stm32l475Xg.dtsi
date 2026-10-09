@@ -6,14 +6,6 @@
 #include <st/l4/stm32l475.dtsi>
 
 / {
-	sram0: memory@20000000 {
-		reg = <0x20000000 DT_SIZE_K(96)>;
-	};
-
-	sram1: memory@10000000 {
-		reg = <0x10000000 DT_SIZE_K(32)>;
-	};
-
 	soc {
 		flash-controller@40022000 {
 			flash0: flash@8000000 {
@@ -21,5 +13,13 @@
 				ranges = <0 0x8000000 DT_SIZE_K(1024)>;
 			};
 		};
+	};
+
+	sram1: memory@10000000 {
+		reg = <0x10000000 DT_SIZE_K(32)>;
+	};
+
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(96)>;
 	};
 };

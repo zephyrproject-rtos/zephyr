@@ -13,9 +13,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@1 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m55";
 			reg = <1>;
+			device_type = "cpu";
 			clock-frequency = <400000000>;
 			cpu-power-states = <&sleep &deepsleep>;
 		};
@@ -50,16 +50,16 @@
 		};
 	};
 
-	dtcm: dtcm@20000000 {
-		compatible = "zephyr,memory-region", "arm,dtcm";
-		reg = <0x20000000 DT_SIZE_K(256)>;
-		zephyr,memory-region = "DTCM";
-	};
-
 	itcm: itcm@0 {
 		compatible = "zephyr,memory-region", "arm,itcm";
 		reg = <0x00000000 DT_SIZE_K(256)>;
 		zephyr,memory-region = "ITCM";
+	};
+
+	dtcm: dtcm@20000000 {
+		compatible = "zephyr,memory-region", "arm,dtcm";
+		reg = <0x20000000 DT_SIZE_K(256)>;
+		zephyr,memory-region = "DTCM";
 	};
 };
 

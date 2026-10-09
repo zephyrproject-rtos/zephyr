@@ -9,18 +9,13 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
+	compatible = "efinix,sapphire";
 	#address-cells = <1>;
 	#size-cells = <1>;
 	model = "efinix,sapphire";
-	compatible = "efinix,sapphire";
 
 	chosen {
 		zephyr,sram = &ram0;
-	};
-
-	ram0: memory@f9000000 {
-		device_type = "memory";
-		reg = <0xf9000000 DT_SIZE_K(192)>;
 	};
 
 	cpus {
@@ -29,10 +24,10 @@
 		timebase-frequency = <DT_FREQ_M(100)>;
 
 		cpu@0 {
-			clock-frequency = <100000000>;
 			compatible = "efinix,vexriscv-sapphire", "riscv";
-			device_type = "cpu";
 			reg = <0>;
+			clock-frequency = <100000000>;
+			device_type = "cpu";
 			riscv,isa-base = "rv32i";
 			riscv,isa-extensions = "i", "m", "a", "zicsr", "zifencei";
 			status = "okay";
@@ -47,40 +42,26 @@
 	};
 
 	soc {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "efinix,sapphire";
 		ranges;
-
-		plic0: interrupt-controller@f8c00000 {
-			compatible = "sifive,plic-1.0.0";
-			#address-cells = <0>;
-			#interrupt-cells = <2>;
-			interrupt-controller;
-			interrupts-extended = <&hlic 11>;
-			reg = <0xf8c00000 0x0400000>;
-			riscv,max-priority = <3>;
-			riscv,ndev = <32>;
-		};
-
-		clint: clint@f8b00000 {
-			compatible = "sifive,clint0";
-			interrupts-extended = <&hlic 3 &hlic 7>;
-			reg = <0xf8b00000 0x10000>;
-		};
-
-		mtimer: timer@f8b0bff8 {
-			compatible = "riscv,machine-timer";
-			interrupts-extended = <&hlic 7>;
-			reg = <0xf8b0bff8 0x8 0xf8b04000 0x8>;
-			reg-names = "mtime", "mtimecmp";
-		};
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		timer0: timer@e0002800 {
 			compatible = "efinix,sapphire-timer0";
 			reg = <0xe0002800 0x40>;
 			interrupt-parent = <&plic0>;
 			interrupts = <19 0>;
+			status = "disabled";
+		};
+
+		uart0: uart@f8010000 {
+			compatible = "efinix,sapphire-uart0";
+			reg = <0xf8010000 0x40>;
+			interrupt-parent = <&plic0>;
+			interrupts = <1 1>;
+			reg-names = "base";
+			current-speed = <115200>;
 			status = "disabled";
 		};
 
@@ -96,14 +77,33 @@
 			status = "disabled";
 		};
 
-		uart0: uart@f8010000 {
-			compatible = "efinix,sapphire-uart0";
-			interrupt-parent = <&plic0>;
-			interrupts = <1 1>;
-			reg = <0xf8010000 0x40>;
-			reg-names = "base";
-			current-speed = <115200>;
-			status = "disabled";
+		clint: clint@f8b00000 {
+			compatible = "sifive,clint0";
+			reg = <0xf8b00000 0x10000>;
+			interrupts-extended = <&hlic 3 &hlic 7>;
 		};
+
+		mtimer: timer@f8b0bff8 {
+			compatible = "riscv,machine-timer";
+			reg = <0xf8b0bff8 0x8 0xf8b04000 0x8>;
+			interrupts-extended = <&hlic 7>;
+			reg-names = "mtime", "mtimecmp";
+		};
+
+		plic0: interrupt-controller@f8c00000 {
+			compatible = "sifive,plic-1.0.0";
+			reg = <0xf8c00000 0x0400000>;
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			interrupts-extended = <&hlic 11>;
+			riscv,max-priority = <3>;
+			riscv,ndev = <32>;
+		};
+	};
+
+	ram0: memory@f9000000 {
+		reg = <0xf9000000 DT_SIZE_K(192)>;
+		device_type = "memory";
 	};
 };

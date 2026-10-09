@@ -993,9 +993,9 @@
 #ifndef USE_NON_SECURE_ADDRESS_MAP
 / {
 	reserved-memory {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		/*
 		 * The KMU pushes keys to a fixed address at the start of SRAM,

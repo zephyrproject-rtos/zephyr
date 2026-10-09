@@ -10,10 +10,9 @@
 #include <zephyr/dt-bindings/reset/rk3588-cru-reset.h>
 
 / {
+	compatible = "rockchip,rk3588";
 	#address-cells = <1>;
 	#size-cells = <1>;
-
-	compatible = "rockchip,rk3588";
 	interrupt-parent = <&gic>;
 
 	cpus {
@@ -21,72 +20,61 @@
 		#size-cells = <0>;
 
 		a55_cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a55";
+			reg = <0x000>;
+			device_type = "cpu";
 			enable-method = "psci";
 			clock-frequency = <24000000>;
-			reg = <0x000>;
 		};
 
 		a55_cpu1: cpu@100 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a55";
-			enable-method = "psci";
 			reg = <0x100>;
+			device_type = "cpu";
+			enable-method = "psci";
 		};
 
 		a55_cpu2: cpu@200 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a55";
-			enable-method = "psci";
 			reg = <0x200>;
+			device_type = "cpu";
+			enable-method = "psci";
 		};
 
 		a55_cpu3: cpu@300 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a55";
-			enable-method = "psci";
 			reg = <0x300>;
+			device_type = "cpu";
+			enable-method = "psci";
 		};
 
 		a76_cpu0: cpu@400 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a76";
-			enable-method = "psci";
 			reg = <0x400>;
+			device_type = "cpu";
+			enable-method = "psci";
 		};
 
 		a76_cpu1: cpu@500 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a76";
-			enable-method = "psci";
 			reg = <0x500>;
+			device_type = "cpu";
+			enable-method = "psci";
 		};
 
 		a76_cpu2: cpu@600 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a76";
-			enable-method = "psci";
 			reg = <0x600>;
+			device_type = "cpu";
+			enable-method = "psci";
 		};
 
 		a76_cpu3: cpu@700 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a76";
-			enable-method = "psci";
 			reg = <0x700>;
+			device_type = "cpu";
+			enable-method = "psci";
 		};
-	};
-
-	gic: interrupt-controller@fe600000 {
-		#address-cells = <1>;
-		compatible = "arm,gic-v3", "arm,gic";
-		#interrupt-cells = <4>;
-		interrupt-controller;
-
-		reg = <0xfe600000 0x10000>, /* GICD */
-		      <0xfe680000 0x100000>; /* GICR */
-		status = "okay";
 	};
 
 	psci {
@@ -133,24 +121,6 @@
 		};
 	};
 
-	uart2: serial@feb50000 {
-		compatible = "rockchip,rk3588-uart", "ns16550";
-		reg = <0xfeb50000 0x100>;
-		interrupts = <GIC_SPI 333 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-		clock-frequency = <12000000>;
-		reg-shift = <2>;
-		status = "disabled";
-	};
-
-	uart3: serial@feb60000 {
-		compatible = "rockchip,rk3588-uart", "ns16550";
-		reg = <0xfeb60000 0x100>;
-		interrupts = <GIC_SPI 334 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-		clock-frequency = <24000000>;
-		reg-shift = <2>;
-		status = "disabled";
-	};
-
 	gmac0: ethernet@fe1b0000 {
 		compatible = "rockchip,rk3588-gmac", "snps,dwmac";
 		reg = <0xfe1b0000 0x10000>;
@@ -163,11 +133,11 @@
 			      "ptp_ref", "clk_mac_refout";
 		resets = <&cru_rst SRST_A_GMAC0>;
 		reset-names = "stmmaceth";
+		phy-connection-type = "rgmii";
 		snps,multicast-filter-bins = <64>;
 		snps,perfect-filter-entries = <5>;
 		rockchip,grf = <&sys_grf>;
 		rockchip,php-grf = <&php_grf>;
-		phy-connection-type = "rgmii";
 		status = "disabled";
 
 		mdio0: mdio {
@@ -194,11 +164,11 @@
 		clock-names = "stmmaceth", "clk_mac_ref", "pclk_mac", "aclk_mac", "ptp_ref";
 		resets = <&cru_rst SRST_A_GMAC1>;
 		reset-names = "stmmaceth";
+		phy-connection-type = "rgmii";
 		snps,multicast-filter-bins = <64>;
 		snps,perfect-filter-entries = <5>;
 		rockchip,grf = <&sys_grf>;
 		rockchip,php-grf = <&php_grf>;
-		phy-connection-type = "rgmii";
 		status = "disabled";
 
 		mdio1: mdio {
@@ -212,5 +182,34 @@
 			compatible = "snps,dwmac-ptp-clock";
 			status = "disabled";
 		};
+	};
+
+	gic: interrupt-controller@fe600000 {
+		compatible = "arm,gic-v3", "arm,gic";
+
+		reg = <0xfe600000 0x10000>, /* GICD */
+		      <0xfe680000 0x100000>; /* GICR */
+		#address-cells = <1>;
+		#interrupt-cells = <4>;
+		interrupt-controller;
+		status = "okay";
+	};
+
+	uart2: serial@feb50000 {
+		compatible = "rockchip,rk3588-uart", "ns16550";
+		reg = <0xfeb50000 0x100>;
+		interrupts = <GIC_SPI 333 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+		clock-frequency = <12000000>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	uart3: serial@feb60000 {
+		compatible = "rockchip,rk3588-uart", "ns16550";
+		reg = <0xfeb60000 0x100>;
+		interrupts = <GIC_SPI 334 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+		clock-frequency = <24000000>;
+		reg-shift = <2>;
+		status = "disabled";
 	};
 };

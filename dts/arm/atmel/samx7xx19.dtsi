@@ -9,10 +9,6 @@
 #include <mem.h>
 
 / {
-	sram0: memory@20400000 {
-		reg = <0x20400000 DT_SIZE_K(256)>;
-	};
-
 	soc {
 		flash-controller@400e0c00 {
 			flash0: flash@400000 {
@@ -21,5 +17,9 @@
 				erase-blocks = <&eefc 8 2048>, <&eefc 62 8192>;
 			};
 		};
+	};
+
+	sram0: memory@20400000 {
+		reg = <0x20400000 DT_SIZE_K(256)>;
 	};
 };

@@ -13,12 +13,6 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
-	pinctrl: pinctrl@f4000 {
-		compatible = "ti,k3-pinctrl";
-		reg = <0x000f4000 0x2b0>;
-		status = "okay";
-	};
-
 	main_gpio0: main-gpio0 {
 		#gpio-cells = <2>;
 		gpio-map = <0 0 &main_gpio0_0 0 0>, <1 0 &main_gpio0_0 1 0>,
@@ -71,33 +65,6 @@
 		gpio-map-pass-thru = <0x0 0x1>;
 	};
 
-	main_gpio0_0: gpio@600010 {
-		compatible = "ti,davinci-gpio";
-		reg = <0x00600010 0x28>;
-		gpio-controller;
-		#gpio-cells = <2>;
-		ngpios = <32>;
-		status = "disabled";
-	};
-
-	main_gpio0_1: gpio@600038 {
-		compatible = "ti,davinci-gpio";
-		reg = <0x00600038 0x28>;
-		gpio-controller;
-		#gpio-cells = <2>;
-		ngpios = <32>;
-		status = "disabled";
-	};
-
-	main_gpio0_2: gpio@600060 {
-		compatible = "ti,davinci-gpio";
-		reg = <0x00600060 0x28>;
-		gpio-controller;
-		#gpio-cells = <2>;
-		ngpios = <28>;
-		status = "disabled";
-	};
-
 	main_gpio1: main-gpio1 {
 		#gpio-cells = <2>;
 		gpio-map = <0 0 &main_gpio1_0 0 0>, <1 0 &main_gpio1_0 1 0>,
@@ -129,6 +96,39 @@
 			   <52 0 &main_gpio1_1 20 0>;
 		gpio-map-mask = <0xffff 0x0>;
 		gpio-map-pass-thru = <0x0 0x1>;
+	};
+
+	pinctrl: pinctrl@f4000 {
+		compatible = "ti,k3-pinctrl";
+		reg = <0x000f4000 0x2b0>;
+		status = "okay";
+	};
+
+	main_gpio0_0: gpio@600010 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00600010 0x28>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "disabled";
+	};
+
+	main_gpio0_1: gpio@600038 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00600038 0x28>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "disabled";
+	};
+
+	main_gpio0_2: gpio@600060 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00600060 0x28>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <28>;
+		status = "disabled";
 	};
 
 	main_gpio1_0: gpio@601010 {

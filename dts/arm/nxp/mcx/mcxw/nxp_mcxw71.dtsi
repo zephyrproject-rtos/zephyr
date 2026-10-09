@@ -8,13 +8,13 @@
 
 &fast_peripheral1 {
 	smu2: smu2@1c0000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x1c0000 DT_SIZE_K(40)>;
 		ranges = <0x0 0x1c0000 DT_SIZE_K(40)>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "zephyr,memory-region", "mmio-sram";
 		zephyr,memory-region = "SMU2";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
-		reg = <0x1c0000 DT_SIZE_K(40)>;
 
 		shmem_fwk: memory@78 {
 			reg = <0x78 0x8>;

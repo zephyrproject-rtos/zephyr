@@ -29,15 +29,15 @@
 	soc {
 		/* ITCM at 0x0, DTCM at 0x20000000, SRAM0..2 at 0x22000000 */
 		memory: memory@0 {
+			ranges = <0x0 0x0 0x30000000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x0 0x30000000>;
 		};
 
 		peripheral: peripheral@40000000 {
+			ranges = <0x40000000 0x40000000 0x10000000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x40000000 0x40000000 0x10000000>;
 		};
 
 		/* Two apertures per node: control registers and the XIP window. */

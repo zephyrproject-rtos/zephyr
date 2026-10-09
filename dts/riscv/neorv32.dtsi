@@ -57,10 +57,10 @@
 
 	soc {
 		compatible = "simple-bus";
+		ranges;
 		interrupt-parent = <&firq>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		imem: memory@0 {
 			compatible = "soc-nv-flash", "mmio-sram";
@@ -74,81 +74,81 @@
 
 		bootrom: rom@ffe00000 {
 			compatible = "neorv32,bootrom", "mmio-sram";
-			status = "disabled";
 			reg = <0xffe00000 0x10000>;
+			status = "disabled";
 		};
 
 		pwm: pwm@fff00000 {
 			compatible = "neorv32,pwm";
-			status = "disabled";
 			reg = <0xfff00000 0x10000>;
 			syscon = <&sysinfo>;
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		gptmr: timer@fff10000 {
 			compatible = "neorv32,gptmr";
-			status = "disabled";
 			reg = <0xfff10000 0x10000>;
 			interrupts = <12>;
 			syscon = <&sysinfo>;
+			status = "disabled";
 		};
 
 		clint: clint@fff40000 {
 			compatible = "neorv32,clint", "sifive,clint0";
-			status = "disabled";
 			reg = <0xfff40000 0x10000>;
 			interrupts-extended = <&intc 3>;
+			status = "disabled";
 		};
 
 		mtimer: timer@fff4bff8 {
 			compatible = "riscv,machine-timer";
-			status = "disabled";
 			reg = <0xfff4bff8 0x8 0xfff44000 0x8>;
 			reg-names = "mtime", "mtimecmp";
 			interrupts-extended = <&intc 7>;
+			status = "disabled";
 		};
 
 		uart0: serial@fff50000 {
 			compatible = "neorv32,uart";
-			status = "disabled";
 			reg = <0xfff50000 0x10000>;
 			interrupts = <2>, <3>;
 			interrupt-names = "RX", "TX";
 			syscon = <&sysinfo>;
+			status = "disabled";
 		};
 
 		uart1: serial@fff60000 {
 			compatible = "neorv32,uart";
-			status = "disabled";
 			reg = <0xfff60000 0x10000>;
 			interrupts = <4>, <5>;
 			interrupt-names = "RX", "TX";
 			syscon = <&sysinfo>;
+			status = "disabled";
 		};
 
 		trng: rng@fffa0000 {
 			compatible = "neorv32,trng";
-			status = "disabled";
 			reg = <0xfffa0000 0x10000>;
 			syscon = <&sysinfo>;
+			status = "disabled";
 		};
 
 		gpio: gpio@fffc0000 {
 			compatible = "neorv32,gpio";
-			status = "disabled";
 			reg = <0xfffc0000 0x10000>;
 			interrupts = <8>;
 			syscon = <&sysinfo>;
 			gpio-controller;
 			ngpios = <32>;
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		sysinfo: syscon@fffe0000 {
 			compatible = "neorv-sysinfo", "syscon";
-			status = "okay";
 			reg = <0xfffe0000 0x10000>;
+			status = "okay";
 		};
 	};
 };

@@ -97,15 +97,15 @@
 };
 
 &c40fc {
-	status = "okay";
 	ranges = <0x0 0x00400000 DT_SIZE_K(3920)>;
+	status = "okay";
 
 	flash0: flash@0 {
 		compatible = "nxp,c40-flash", "soc-nv-flash";
 		reg = <0x0 DT_SIZE_K(3920)>;
+		ranges;
 		erase-block-size = <DT_SIZE_K(8)>;
 		write-block-size = <8>;
-		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 	};
