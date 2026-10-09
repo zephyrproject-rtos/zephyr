@@ -60,6 +60,27 @@ Properties:
   FIFO: received RFCOMM frames are held as-is and their per-frame credits
   provide native flow control.
 
+Console and Shell
+*****************
+
+To redirect console and shell over SPP, use the built-in snippet:
+
+.. code-block:: console
+
+   west build -S spp-console [...]
+
+This sets ``zephyr,console`` and ``zephyr,shell-uart`` to the SPP UART device
+and enables :kconfig:option:`CONFIG_UART_BT_SPP_AUTO_START_BLUETOOTH`. A remote
+device (phone, PC) can connect via SPP and interact with the Zephyr shell.
+
+.. warning::
+
+   The snippet does not restrict who can connect. The driver requires an
+   encrypted link, but without authentication callbacks any nearby device can
+   pair with Just Works and then run every enabled shell command. Use it for
+   development only, or register authentication callbacks that confirm the
+   remote device.
+
 Data Flow
 *********
 
