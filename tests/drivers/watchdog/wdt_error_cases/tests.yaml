@@ -40,6 +40,9 @@ tests:
       - kit_pse84_ai/pse846gps2dbzc4a/m55
       - kit_pse84_eval/pse846gps2dbzc4a/m33
       - kit_pse84_eval/pse846gps2dbzc4a/m55
+      - cy8cproto_062_4343w
+      - cy8cproto_063_ble
+      - cyw920829m2evk_02/cyw20829b0lkml
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
