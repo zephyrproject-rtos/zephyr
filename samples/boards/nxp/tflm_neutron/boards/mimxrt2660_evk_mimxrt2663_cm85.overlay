@@ -1,0 +1,69 @@
+/*
+ * Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Board overlay for MIMXRT2660-EVK tflm_neutron sample.
+ *
+ * The board's default memory map is kept as-is: code executes in place from
+ * the XSPI0 NOR flash and data/BSS/heap/stack live in the XSPI1 PSRAM (both
+ * brought up by the boot ROM). External memory is cached by the SoC's LLC.
+ *
+ * This overlay repurposes the on-chip SRAM banks (SRAM0/1/2, 256 KB each,
+ * contiguous from 0x22000000) for the NPU workload. SRAM0+SRAM1 are merged
+ * into one non-cacheable region for the buffers the NPU DMAs into; SRAM2 is
+ * left as the SoC's normal cacheable region for the model and the system heap.
+ *
+ *   SRAM01_NPU    0x22000000, 512 KB, non-cacheable - the tensor arena the NPU
+ *                 DMAs into and the Neutron driver's DMA-shared data. Marking
+ *                 it non-cacheable keeps those buffers coherent with the NPU
+ *                 once the M85 L1 D-cache is on (the D-cache is off today; see
+ *                 soc.c), at no cost since the on-chip SRAM is not LLC-cached.
+ *   SRAM2         0x22080000, 256 KB, cacheable - the model (microcode/weights)
+ *                 copied out of flash, plus the libc malloc arena and k_heap
+ *                 pool the board CMakeLists relocates here. The model is
+ *                 read-only and the system heap is not NPU-shared, so neither
+ *                 needs to be non-cacheable.
+ *
+ * None of SRAM0/1/2 is the chosen sram (that is the XSPI1 PSRAM), so
+ * repurposing them here is safe.
+ */
+
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/*
+ * SRAM0+SRAM1: one contiguous 512 KB region for the tensor arena. SRAM0 is
+ * 0x22000000 and SRAM1 0x22040000 (contiguous), so give sram0 the combined
+ * size and disable the separate sram1 node.
+ */
+&sram1 {
+	status = "disabled";
+};
+
+&sram0 {
+	compatible = "zephyr,memory-region", "mmio-sram";
+	reg = <0x22000000 DT_SIZE_K(512)>;
+	zephyr,memory-region = "SRAM01_NPU";
+	zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
+};
+
+/*
+ * SRAM2 is left exactly as the SoC defines it: a normal cacheable "SRAM2"
+ * region. The board's own CMakeLists relocates the libc malloc arena and the
+ * k_heap pool there and that system placement is unchanged. Only the Neutron
+ * driver's DMA-shared data (nocache.ld) and the tensor arena need to be
+ * non-cacheable, and both live in the SRAM01_NPU region above; the model in
+ * SRAM2 is read-only and coherent without cache maintenance.
+ */
+
+/*
+ * Enable the XSPI0 controller node so the boot device resolves as XSPI serial
+ * NOR (DT_HAS_NXP_XSPI_ENABLED). Without it the SoC boot-device choice falls
+ * back to FlexSPI, CONFIG_ROM_START_OFFSET defaults to 0 and the boot header
+ * places the vector table at flash offset 0, which fails the link ("cannot
+ * move location counter backwards"). No XSPI flash driver is pulled in
+ * (CONFIG_FLASH stays off); this only fixes the boot-header offsets for the
+ * XIP-from-ROM layout the board already uses.
+ */
+&xspi0 {
+	status = "okay";
+};

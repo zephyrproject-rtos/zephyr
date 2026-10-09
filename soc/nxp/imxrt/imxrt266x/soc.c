@@ -24,6 +24,9 @@
 
 #include <fsl_common.h>
 #include <fsl_powercon.h>
+#include <fsl_power.h>
+
+#include <fsl_trdc_soc.h>
 
 /*
  * The ROM leaves SCB->VTOR at 0 and SystemInit() only relocates it for a RAM
@@ -69,6 +72,20 @@ static void soc_llc_init(void)
 
 	llc->CCUUEDR = LLC_CCUUEDR_PROTERRDETEN(1U) | LLC_CCUUEDR_MEMERRDETEN(1U);
 	llc->CCUCAOR = LLC_CCUCAOR_WRALLOCPARTIALEN(1U);
+}
+
+void soc_neutron_init(void)
+{
+	CMPT__TRDC->MDA_DFMT1[kTRDC_CMPT_MasterNPU].MDA_W_DFMT1[0] =
+		TRDC_MDA_W_DFMT1_DID(0) | TRDC_MDA_W_DFMT1_VLD_MASK;
+
+	POWER_SetDomainRunMode(kPOWER_DomainNpu, kPDCON_EventNoneOrActive);
+
+	CLOCK_EnableClock(kCLOCK_CMPT_npu_core);
+	CLOCK_EnableClock(kCLOCK_CMPT_npu_mem);
+
+	ARM_MPU_SetRegion(10U, ARM_MPU_RBAR(0x20900000, ARM_MPU_SH_NON, 0U, 0U, 1U),
+			  ARM_MPU_RLAR(0x20900FFF, MPU_MAIR_INDEX_DEVICE));
 }
 
 /*
@@ -125,6 +142,9 @@ void soc_early_init_hook(void)
 	 * it depends on has to be working already.
 	 */
 	soc_clock_init();
+#ifdef CONFIG_NXP_NEUTRON
+	soc_neutron_init();
+#endif
 }
 
 #ifdef CONFIG_NXP_IMXRT_BOOT_HEADER
