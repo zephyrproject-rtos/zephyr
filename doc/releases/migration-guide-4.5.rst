@@ -1604,6 +1604,12 @@ Serial
   driver, which now provides support for the Broadcom BCM283x auxiliary UART through vendor-specific
   extensions. (:github:`115112`)
 
+* The ``ambiq,pl011-uart`` devicetree binding and the Ambiq support in the PL011 serial driver have
+  been removed. Apollo2, Apollo3 and Apollo3 Blue Plus UART nodes now use the
+  :dtcompatible:`ambiq,uart` compatible, which is handled by the Ambiq UART driver. Out-of-tree
+  boards and SoCs that use ``ambiq,pl011-uart`` must switch to :dtcompatible:`ambiq,uart`.
+  (:github:`121456`)
+
 * :kconfig:option:`CONFIG_UART_NS16550_DW8250_DW_APB` now follows devicetree: it is
   enabled for :dtcompatible:`snps,dw-apb-uart` nodes and cannot be set otherwise. Add that
   compatible to the UART nodes instead of setting the option in Kconfig. (:github:`120368`)
