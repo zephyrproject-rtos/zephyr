@@ -39,3 +39,18 @@ config SOC_SERIES_STM32MP13X_DDR_INIT_PRIORITY
 	int
 	default 2
 	depends on SOC_SERIES_STM32MP13X_DDR_INIT
+
+config SOC_SERIES_STM32MP13X_BOOTROM_HEADER
+	bool "Generate an STM32MP13 BootROM image"
+	depends on SOC_SERIES_STM32MP13X_FSBL
+	select BUILD_OUTPUT_BIN
+	help
+	  Generate an unsigned STM32 version 2 image containing the Zephyr binary
+	  and the header required by the STM32MP13 BootROM (Boot Read-Only Memory).
+
+config SOC_SERIES_STM32MP13X_BOOTROM_HEADER_BINARY_TYPE
+	hex
+	default 0x10
+	depends on SOC_SERIES_STM32MP13X_BOOTROM_HEADER
+	help
+	  Set the STM32 binary type for a first-stage bootloader image.
