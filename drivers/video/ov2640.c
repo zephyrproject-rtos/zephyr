@@ -127,6 +127,8 @@ LOG_MODULE_REGISTER(video_ov2640, CONFIG_VIDEO_LOG_LEVEL);
 #define REG04_HREF_EN   0x08
 #define REG04_SET(x)    (REG04_DEFAULT | x)
 
+#define REG45           0x45
+
 #define COM2              0x09
 #define COM2_OUTPUT_DRIVE_MASK GENMASK(1, 0)
 #define COM2_STANDBY BIT(4)
@@ -186,7 +188,10 @@ struct ov2640_config {
 struct ov2640_ctrls {
 	struct video_ctrl hflip;
 	struct video_ctrl vflip;
-	struct video_ctrl exposure_auto;
+	struct {
+		struct video_ctrl exposure_auto;
+		struct video_ctrl exposure;
+	};
 	struct video_ctrl auto_white_balance;
 	struct video_ctrl autogain;
 	struct video_ctrl contrast;
@@ -216,6 +221,12 @@ static const char *const ov2640_test_pattern_menu[] = {
 	"Disabled",
 	"Color bars",
 	NULL
+};
+
+static char const *const ov2640_exposure_auto_menu[] = {
+	"Manual Mode",
+	"Auto Mode",
+	NULL,
 };
 
 static const struct ov2640_reg ov2640_default_regs[] = {
@@ -593,6 +604,27 @@ static int ov2640_read_sensor_reg(const struct device *dev, uint8_t addr, uint8_
 	return ov2640_read_reg(&cfg->i2c, addr, val);
 }
 
+static int ov2640_modify_sensor_reg(const struct device *dev, uint8_t addr, uint8_t mask,
+				    uint8_t val)
+{
+	uint8_t prev;
+	int ret;
+
+	ret = ov2640_read_sensor_reg(dev, addr, &prev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	val = (prev & ~mask) | FIELD_PREP(mask, val);
+
+	ret = ov2640_write_sensor_reg(dev, addr, val);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
+}
+
 static int ov2640_write_all(const struct device *dev, const struct ov2640_reg *regs, size_t num)
 {
 	const struct ov2640_config *cfg = dev->config;
@@ -869,8 +901,11 @@ static int ov2640_get_volatile_ctrl(const struct device *dev, uint32_t id)
 {
 	struct ov2640_data *data = dev->data;
 	struct ov2640_ctrls *ctrls = &data->ctrls;
+	uint8_t val;
+	int ret;
 
 	switch (id) {
+
 	case VIDEO_CID_LINK_FREQ:
 		for (int i = 0; i < ARRAY_SIZE(ov2640_clock_dividers); i++) {
 			if (data->clock_divider == ov2640_clock_dividers[i]) {
@@ -879,6 +914,32 @@ static int ov2640_get_volatile_ctrl(const struct device *dev, uint32_t id)
 			}
 		}
 		return -ENOENT;
+
+	case VIDEO_CID_EXPOSURE_AUTO:
+		ctrls->exposure.val = 0;
+
+		ret = ov2640_read_sensor_reg(dev, REG04, &val);
+		if (ret < 0) {
+			return ret;
+		}
+		ctrls->exposure.val |= (val & 0x3) << 0;
+
+		ret = ov2640_read_sensor_reg(dev, AEC, &val);
+		if (ret < 0) {
+			return ret;
+		}
+		ctrls->exposure.val |= (val & 0xff) << 2;
+
+		ret = ov2640_read_sensor_reg(dev, REG45, &val);
+		if (ret < 0) {
+			return ret;
+		}
+		ctrls->exposure.val |= (val & 0x3f) << 10;
+
+		LOG_INF("Exposure volatile %u", ctrls->exposure.val);
+
+		return 0;
+
 	default:
 		CODE_UNREACHABLE;
 		return -EINVAL;
@@ -941,24 +1002,49 @@ static int ov2640_set_ctrl(const struct device *dev, uint32_t id)
 
 		return ov2640_write_sensor_reg(dev, REG04, val);
 
-	case VIDEO_CID_EXPOSURE_AUTO:
-		if (ctrls->exposure_auto.val > 1) {
-			LOG_WRN("Exposure other than manual/auto not supported");
-			return -ENOTSUP;
-		}
+	case VIDEO_CID_EXPOSURE_AUTO: /* clustered with VIDEO_CID_EXPOSURE */
+		/* Auto */
 
 		ret = ov2640_read_sensor_reg(dev, COM8, &val);
 		if (ret < 0) {
 			return ret;
 		}
 
-		if (!ctrls->exposure_auto.val) {
+		if (ctrls->exposure_auto.val == VIDEO_EXPOSURE_AUTO) {
 			val |= COM8_AEC_EN;
 		} else {
 			val &= ~COM8_AEC_EN;
 		}
 
-		return ov2640_write_sensor_reg(dev, COM8, val);
+		ret = ov2640_write_sensor_reg(dev, COM8, val);
+		if (ret < 0) {
+			return ret;
+		}
+
+		/* Manual */
+
+		if (ctrls->exposure_auto.val == VIDEO_EXPOSURE_AUTO) {
+			return 0;
+		}
+
+		ret = ov2640_modify_sensor_reg(dev, REG04, GENMASK(1, 0),
+					       ctrls->exposure.val & 0x3);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ret = ov2640_write_sensor_reg(dev, AEC, ctrls->exposure.val >> 2);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ret = ov2640_modify_sensor_reg(dev, REG45, GENMASK(5, 0),
+					       (ctrls->exposure.val >> 10) & 0x3f);
+		if (ret < 0) {
+			return ret;
+		}
+
+		return 0;
 
 	case VIDEO_CID_AUTO_WHITE_BALANCE:
 		ret = ov2640_read_dsp_reg(dev, CTRL1, &val);
@@ -1061,11 +1147,6 @@ static int ov2640_init_controls(const struct device *dev)
 		return ret;
 	}
 
-	ret = video_init_menu_ctrl(&ctrls->exposure_auto, dev, VIDEO_CID_EXPOSURE_AUTO, 0, NULL);
-	if (ret < 0) {
-		return ret;
-	}
-
 	ret = video_init_ctrl(
 		&ctrls->auto_white_balance, dev, VIDEO_CID_AUTO_WHITE_BALANCE,
 		(struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 1});
@@ -1124,6 +1205,26 @@ static int ov2640_init_controls(const struct device *dev)
 	}
 	ctrls->link_freq.flags |= VIDEO_CTRL_FLAG_READ_ONLY;
 	ctrls->link_freq.flags |= VIDEO_CTRL_FLAG_VOLATILE;
+
+	/* Auto-exposure cluster */
+
+	ret = video_init_menu_ctrl(&ctrls->exposure_auto, dev, VIDEO_CID_EXPOSURE_AUTO,
+				   VIDEO_EXPOSURE_AUTO, ov2640_exposure_auto_menu);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = video_init_ctrl(&ctrls->exposure, dev, VIDEO_CID_EXPOSURE,
+			      (struct video_ctrl_range){.min = 0, .max = 0x7fff, .step = 1,
+							.def = 0400});
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = video_auto_cluster_ctrl(&ctrls->exposure_auto, 2, true);
+	if (ret < 0) {
+		return ret;
+	}
 
 	return 0;
 }
