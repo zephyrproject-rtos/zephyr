@@ -523,7 +523,7 @@ static int fs_mgmt_file_upload(struct smp_streamer *ctxt)
 		goto end;
 	}
 
-	if (file_data.len > 0) {
+	if (file_data.len > 0 || off == 0) {
 		/* Write the data chunk to the file. */
 		if (off == 0 && existing_file_size != 0) {
 			/* Offset is 0 and existing file exists with data, attempt to truncate
@@ -580,30 +580,32 @@ static int fs_mgmt_file_upload(struct smp_streamer *ctxt)
 			}
 		}
 
-		rc = fs_write(&fs_mgmt_ctxt.file, file_data.value, file_data.len);
+		if (file_data.len > 0) {
+			rc = fs_write(&fs_mgmt_ctxt.file, file_data.value, file_data.len);
 
-		if (rc > 0 && rc < file_data.len) {
-			/* Write all data failed, try again with data offset */
-			int retry_rc;
+			if (rc > 0 && rc < file_data.len) {
+				/* Write all data failed, try again with data offset */
+				int retry_rc;
 
-			retry_rc = fs_write(&fs_mgmt_ctxt.file, &file_data.value[rc],
-					    (file_data.len - rc));
+				retry_rc = fs_write(&fs_mgmt_ctxt.file, &file_data.value[rc],
+						    (file_data.len - rc));
 
-			if (retry_rc > 0) {
-				rc += retry_rc;
-			} else {
-				rc = retry_rc;
+				if (retry_rc > 0) {
+					rc += retry_rc;
+				} else {
+					rc = retry_rc;
+				}
 			}
-		}
 
-		if (rc < 0 || rc < file_data.len) {
-			ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_FS,
-					     FS_MGMT_ERR_FILE_WRITE_FAILED);
-			(void)fs_mgmt_cleanup();
-			goto end;
-		}
+			if (rc < 0 || rc < file_data.len) {
+				ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_FS,
+						     FS_MGMT_ERR_FILE_WRITE_FAILED);
+				(void)fs_mgmt_cleanup();
+				goto end;
+			}
 
-		fs_mgmt_ctxt.off += file_data.len;
+			fs_mgmt_ctxt.off += file_data.len;
+		}
 	}
 
 	/* Store offset since fs_mgmt_upload_download_finish_check invalidates it */
