@@ -1784,6 +1784,14 @@ int bt_conn_le_set_default_phy(uint8_t pref_tx_phy, uint8_t pref_rx_phy);
  *   - @ref BT_HCI_ERR_PAIRING_NOT_SUPPORTED (BR/EDR connections only)
  *   - @ref BT_HCI_ERR_UNACCEPT_CONN_PARAM
  *
+ *  For an established ACL connection the function does not wait for the
+ *  controller: a return value of zero means that the request to disconnect
+ *  has been queued. The @ref bt_conn_cb.disconnected callback is called once
+ *  the connection is gone. Should the controller reject the request, the
+ *  connection stays connected and a warning is logged. For the other
+ *  connection types, and for a connection that is still being created, the
+ *  function waits for the controller to answer and returns its verdict.
+ *
  *  @param conn Connection to disconnect.
  *  @param reason Reason code for the disconnection.
  *

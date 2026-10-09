@@ -25,6 +25,8 @@
 #include <zephyr/sys/clock.h>
 #include <zephyr/toolchain.h>
 
+#include "hci_cmd_op.h"
+
 typedef enum __packed {
 	BT_CONN_DISCONNECTED,         /* Disconnected, conn is completely down */
 	BT_CONN_DISCONNECT_COMPLETE,  /* Received disconn comp event, transition to DISCONNECTED */
@@ -79,6 +81,7 @@ enum {
 	BT_CONN_BR_GENERAL_BONDING,           /* BR general bonding */
 	BT_CONN_BR_PAIRING_INITIATOR,         /* local host starts authentication */
 	BT_CONN_CLEANUP,                      /* Disconnected, pending cleanup */
+	BT_CONN_TX_FAILED,                    /* Sending failed, pending disconnect */
 	BT_CONN_AUTO_INIT_PROCEDURES_DONE,    /* Auto-initiated procedures have run */
 	BT_CONN_PERIPHERAL_PARAM_UPDATE,      /* If periph param update timer fired */
 	BT_CONN_PERIPHERAL_PARAM_AUTO_UPDATE, /* If periph param auto update on timer fired */
@@ -108,6 +111,13 @@ struct bt_conn_le {
 	bt_addr_le_t init_addr;
 	bt_addr_le_t resp_addr;
 
+#if defined(CONFIG_BT_GAP_AUTO_UPDATE_CONN_PARAMS)
+	/* In the gap that the alignment of interval_us leaves after the
+	 * addresses, where it takes no room of its own.
+	 */
+	uint8_t  conn_param_retry_countdown;
+#endif
+
 	uint32_t interval_us;
 	uint16_t interval_min;
 	uint16_t interval_max;
@@ -116,10 +126,6 @@ struct bt_conn_le {
 	uint16_t timeout;
 	uint16_t pending_latency;
 	uint16_t pending_timeout;
-
-#if defined(CONFIG_BT_GAP_AUTO_UPDATE_CONN_PARAMS)
-	uint8_t  conn_param_retry_countdown;
-#endif
 
 	/** @brief Remote LE features
 	 *
@@ -245,11 +251,31 @@ struct bt_conn {
 	/* Connection error or reason for disconnect */
 	uint8_t			err;
 
+	/* Reason that disconnect_op gives the controller */
+	uint8_t			disconnect_reason;
+
 	bt_conn_state_t state;
+
+	/* Next buffer should be an ACL/ISO HCI fragment. Kept with the other
+	 * single-byte members, where it takes no room of its own.
+	 */
+	bool			next_is_frag;
+
 	struct net_buf		*rx;
 
 	/* Pending TX that are awaiting the NCP event. len(tx_pending) == in_ll */
 	sys_slist_t		tx_pending;
+
+	/* Holds the number of packets that have been sent to the controller but
+	 * not yet ACKd (by receiving an Number of Completed Packets). This
+	 * variable can be used for deriving a QoS or waterlevel scheme in order
+	 * to maximize throughput/latency.
+	 * It's an optimization so we don't chase `tx_pending` all the time.
+	 *
+	 * Placed here so that deferred_work, which is aligned to eight bytes,
+	 * follows without a gap in the common configurations.
+	 */
+	atomic_t		in_ll;
 
 	/* Completed TX for which we need to call the callback */
 	sys_slist_t		tx_complete;
@@ -266,6 +292,11 @@ struct bt_conn {
 	 * - Connection cleanup.
 	 */
 	struct k_work_delayable	deferred_work;
+
+	/* The HCI Disconnect command of this connection. While it is pending
+	 * it holds a reference to the connection.
+	 */
+	struct bt_hci_cmd_op	disconnect_op;
 
 	union {
 		struct bt_conn_le	le;
@@ -330,17 +361,6 @@ struct bt_conn {
 	 * This will be used by the TX processor to then fetch HCI frags from it.
 	 */
 	sys_snode_t		_conn_ready;
-
-	/* Holds the number of packets that have been sent to the controller but
-	 * not yet ACKd (by receiving an Number of Completed Packets). This
-	 * variable can be used for deriving a QoS or waterlevel scheme in order
-	 * to maximize throughput/latency.
-	 * It's an optimization so we don't chase `tx_pending` all the time.
-	 */
-	atomic_t		in_ll;
-
-	/* Next buffer should be an ACL/ISO HCI fragment */
-	bool			next_is_frag;
 
 	/* Must be at the end so that everything else in the structure can be
 	 * memset to zero without affecting the ref.

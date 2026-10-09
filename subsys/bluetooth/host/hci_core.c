@@ -45,6 +45,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/clock.h>
 #include <zephyr/toolchain.h>
+
 #include <soc.h>
 
 #include "addr_internal.h"
@@ -57,7 +58,9 @@
 #include "conn_internal.h"
 #include "crypto.h"
 #include "ecc.h"
+#include "future.h"
 #include "gatt_internal.h"
+#include "hci_cmd_op.h"
 #include "hci_core.h"
 #include "id.h"
 #include "iso_internal.h"
@@ -180,6 +183,9 @@ struct cmd_data {
 	/** HCI status of the command completion */
 	uint8_t  status;
 
+	/** Errno of a command that completed without a response, otherwise 0 */
+	uint8_t  err;
+
 	/** The command OpCode that the buffer contains */
 	uint16_t opcode;
 
@@ -188,6 +194,11 @@ struct cmd_data {
 
 	/** Used by bt_hci_cmd_send_sync. */
 	struct k_sem *sync;
+
+#if defined(CONFIG_BT_CONN)
+	/** Asynchronous operation that the buffer was encoded for, if any */
+	struct bt_hci_cmd_op *op;
+#endif /* CONFIG_BT_CONN */
 };
 
 static struct cmd_data cmd_data[BT_BUF_CMD_TX_COUNT];
@@ -215,12 +226,116 @@ void bt_hci_cmd_state_set_init(struct net_buf *buf,
 	cmd(buf)->state = state;
 }
 
+/* The command deadline. HCI matches a response to its command by position,
+ * so a command that is not answered, or a command queue that the controller
+ * no longer lets advance, cannot be skipped: the deadline is the point where
+ * the controller is given up on, see cmd_deadline_expired(). It runs while
+ * there is work for the command path, is started again on every step forward,
+ * and expires in interrupt context because the threads that could run it are
+ * the ones that wait for commands.
+ */
+static void cmd_deadline_expired(struct k_timer *timer);
+static K_TIMER_DEFINE(cmd_deadline, cmd_deadline_expired, NULL);
+
+/* The controller has granted a command credit while a command was with it,
+ * see cmd_credit_granted(). Protected by cmd_lock.
+ */
+static bool cmd_credit_kept;
+
+static bool cmd_work_pending(void)
+{
+#if defined(CONFIG_BT_CONN)
+	if (!sys_slist_is_empty(&bt_dev.cmd_op_queue)) {
+		return true;
+	}
+#endif /* CONFIG_BT_CONN */
+
+	return bt_dev.sent_cmd != NULL || !sys_slist_is_empty(&bt_dev.cmd_tx_queue);
+}
+
+/* Called with cmd_lock held, after a step forward. An expiry that is under
+ * way is not waited for: it finds out by itself that it has been overtaken,
+ * see cmd_deadline_expired().
+ */
+static void cmd_deadline_restart(void)
+{
+	if (cmd_work_pending()) {
+		k_timer_start(&cmd_deadline, HCI_CMD_TIMEOUT, K_NO_WAIT);
+	} else {
+		k_timer_stop(&cmd_deadline);
+	}
+}
+
+/* Called with cmd_lock held, when work was added: it is no step forward, so
+ * a deadline that is running already is left alone.
+ */
+static void cmd_deadline_start(void)
+{
+	if (k_timer_remaining_ticks(&cmd_deadline) == 0) {
+		k_timer_start(&cmd_deadline, HCI_CMD_TIMEOUT, K_NO_WAIT);
+	}
+}
+
 /* HCI command buffers. Derive the needed size from both Command and Event
  * buffer length since the buffer is also used for the response event i.e
  * command complete or command status.
  */
 #define CMD_BUF_SIZE MAX(BT_BUF_EVT_RX_SIZE, BT_BUF_CMD_TX_SIZE)
-NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, BT_BUF_CMD_TX_COUNT, CMD_BUF_SIZE, 0, NULL);
+#if defined(CONFIG_BT_CONN)
+/* A freed command buffer that is kept for the queued asynchronous commands
+ * instead of going back to the pool. Protected by cmd_lock.
+ */
+static struct net_buf *cmd_op_buf;
+
+static void hci_cmd_pool_destroy(struct net_buf *buf)
+{
+	k_spinlock_key_t key;
+	bool kept = false;
+
+	/* With an operation waiting for a buffer, keep this one for it: the
+	 * pool would hand it straight to a thread blocked in
+	 * bt_hci_cmd_alloc(), and a stream of such allocators would starve
+	 * the operations, which never block on the pool. The buffer is
+	 * referenced again before anybody can find it in the slot.
+	 */
+	key = k_spin_lock(&bt_dev.cmd_lock);
+	if (!sys_slist_is_empty(&bt_dev.cmd_op_queue)) {
+		if (cmd_op_buf == NULL) {
+			cmd_op_buf = net_buf_ref(buf);
+			kept = true;
+#if defined(CONFIG_NET_BUF_POOL_USAGE)
+			/* net_buf_unref() has counted the buffer as available
+			 * by now, which it is not.
+			 */
+			atomic_dec(&net_buf_pool_get(buf->pool_id)->avail_count);
+#endif /* CONFIG_NET_BUF_POOL_USAGE */
+		}
+
+		/* A step forward for operations that wait for a buffer,
+		 * unless it is the controller that everything waits for.
+		 */
+		if (bt_dev.sent_cmd == NULL) {
+			cmd_deadline_restart();
+		}
+	}
+	k_spin_unlock(&bt_dev.cmd_lock, key);
+
+	if (!kept) {
+		net_buf_destroy(buf);
+	}
+
+	/* An asynchronous command that waits for a buffer can go on now */
+	if (!sys_slist_is_empty(&bt_dev.cmd_op_queue)) {
+		bt_tx_irq_raise();
+	}
+}
+
+#define HCI_CMD_POOL_DESTROY hci_cmd_pool_destroy
+#else
+#define HCI_CMD_POOL_DESTROY NULL
+#endif /* CONFIG_BT_CONN */
+
+NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, BT_BUF_CMD_TX_COUNT, CMD_BUF_SIZE, 0, HCI_CMD_POOL_DESTROY);
 
 struct event_handler {
 	uint8_t event;
@@ -380,6 +495,22 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 }
 #endif /* defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL) */
 
+/* Set up an empty command buffer: room for the packet indicator and the HCI
+ * command header, no sender state.
+ */
+static void cmd_buf_prepare(struct net_buf *buf)
+{
+	net_buf_reserve(buf, BT_HCI_PKT_CMD_HDR_SIZE);
+
+	cmd(buf)->opcode = 0;
+	cmd(buf)->err = 0;
+	cmd(buf)->sync = NULL;
+	cmd(buf)->state = NULL;
+#if defined(CONFIG_BT_CONN)
+	cmd(buf)->op = NULL;
+#endif /* CONFIG_BT_CONN */
+}
+
 struct net_buf *bt_hci_cmd_alloc(k_timeout_t timeout)
 {
 	struct net_buf *buf;
@@ -392,46 +523,506 @@ struct net_buf *bt_hci_cmd_alloc(k_timeout_t timeout)
 
 	LOG_DBG("buf %p", buf);
 
-	/* Reserve room for the packet indicator and HCI command header */
-	net_buf_reserve(buf, BT_HCI_PKT_CMD_HDR_SIZE);
-
-	cmd(buf)->opcode = 0;
-	cmd(buf)->sync = NULL;
-	cmd(buf)->state = NULL;
+	cmd_buf_prepare(buf);
 
 	return buf;
 }
 
-/* Drop every queued command once the HCI transport has been closed,
- * completing synchronous senders with an error.
+#if defined(CONFIG_BT_CONN)
+/* Asynchronous HCI command operations. An operation is caller-owned storage
+ * for one command: it is queued without a command buffer, gets its buffer and
+ * its parameters from the TX processor, and then takes the path of every
+ * other command. All of its state changes are made with cmd_lock held, which
+ * is what lets a cancel and the engine agree on who has it.
  */
-static void hci_cmd_queue_purge(void)
+enum {
+	/* The caller's */
+	CMD_OP_IDLE,
+	/* In cmd_op_queue, without a buffer */
+	CMD_OP_QUEUED,
+	/* Encoded into a buffer that waits in cmd_tx_queue */
+	CMD_OP_BUFFERED,
+	/* With the controller, or being completed */
+	CMD_OP_SENT,
+	/* In cmd_done_list, for its callback to be run */
+	CMD_OP_DONE,
+};
+
+enum {
+	CMD_OP_KIND_FUTURE,
+	CMD_OP_KIND_CB,
+};
+
+static void cmd_done_handler(struct k_work *work)
 {
-	struct net_buf *buf;
+	ARG_UNUSED(work);
 
 	while (true) {
-		buf = k_fifo_get(&bt_dev.cmd_tx_queue, K_NO_WAIT);
-		if (buf == NULL) {
+		struct bt_hci_cmd_op *op;
+		k_spinlock_key_t key;
+		bt_hci_cmd_cb_t cb;
+		sys_snode_t *node;
+		int result;
+
+		key = k_spin_lock(&bt_dev.cmd_lock);
+
+		node = sys_slist_get(&bt_dev.cmd_done_list);
+		if (node == NULL) {
+			k_spin_unlock(&bt_dev.cmd_lock, key);
 			break;
 		}
 
-		LOG_WRN("Dropping queued command 0x%04x: HCI transport closed", cmd(buf)->opcode);
+		op = CONTAINER_OF(node, struct bt_hci_cmd_op, node);
+		cb = op->cb;
+		result = (op->err != 0U) ? -(int)op->err : (int)op->status;
+		op->state = CMD_OP_IDLE;
 
-		if (cmd(buf)->sync != NULL) {
-			cmd(buf)->status = BT_HCI_ERR_UNSPECIFIED;
-			k_sem_give(cmd(buf)->sync);
+		k_spin_unlock(&bt_dev.cmd_lock, key);
+
+		/* The operation is the caller's again and is not touched from
+		 * here on: the callback may send it again, or release the
+		 * object that it is part of.
+		 */
+		cb(op, result);
+	}
+}
+
+/* The callbacks run from one work item of the engine rather than from one in
+ * each operation: the kernel still touches a work item after its handler has
+ * returned, by which time the operation may be gone.
+ */
+static K_WORK_DEFINE(cmd_done_work, cmd_done_handler);
+
+/* Hand an operation back with its result. This only resolves a future or
+ * submits work, as it runs wherever a command completes: in the context of
+ * the driver, of the command deadline or of bt_disable(). The command buffer
+ * has been released by then.
+ */
+static void cmd_op_complete(struct bt_hci_cmd_op *op, int result)
+{
+	struct bt_future *fut;
+	k_spinlock_key_t key;
+	uint16_t opcode;
+
+	key = k_spin_lock(&bt_dev.cmd_lock);
+
+	if (op->kind == CMD_OP_KIND_CB) {
+		op->err = (result < 0) ? (uint8_t)-result : 0U;
+		op->state = CMD_OP_DONE;
+		sys_slist_append(&bt_dev.cmd_done_list, &op->node);
+
+		k_spin_unlock(&bt_dev.cmd_lock, key);
+
+		(void)bt_work_submit(&cmd_done_work);
+
+		return;
+	}
+
+	fut = op->fut;
+	opcode = op->opcode;
+	op->state = CMD_OP_IDLE;
+
+	k_spin_unlock(&bt_dev.cmd_lock, key);
+
+	if (fut != NULL) {
+		bt_future_complete(fut, result);
+	} else if (result != 0) {
+		/* Fire-and-forget: nobody else reports the failure */
+		LOG_WRN("opcode 0x%04x failed (%d)", opcode, result);
+	}
+}
+
+/* Take the operation off a command buffer that leaves the queue. Called with
+ * cmd_lock held. From here on the operation can only be awaited.
+ */
+static struct bt_hci_cmd_op *cmd_op_detach(struct net_buf *buf)
+{
+	struct bt_hci_cmd_op *op = cmd(buf)->op;
+
+	if (op != NULL) {
+		cmd(buf)->op = NULL;
+		op->state = CMD_OP_SENT;
+	}
+
+	return op;
+}
+
+/* The command of an operation is being handed to the driver. Called with
+ * cmd_lock held.
+ */
+static void cmd_op_sent(struct net_buf *buf)
+{
+	if (cmd(buf)->op != NULL) {
+		cmd(buf)->op->state = CMD_OP_SENT;
+	}
+}
+
+/* Store the response of the controller where the caller wants it. The return
+ * parameters are copied rather than handed over in the command buffer, so
+ * that the buffer is free again before anybody is told.
+ */
+static int cmd_op_rsp_store(struct bt_hci_cmd_op *op, uint8_t status, const struct net_buf *evt)
+{
+	size_t len = evt->len;
+	int result = status;
+
+	op->status = status;
+	op->rsp_len = (uint16_t)len;
+
+	if (op->rsp != NULL) {
+		net_buf_simple_reset(op->rsp);
+
+		if (len > net_buf_simple_tailroom(op->rsp)) {
+			len = net_buf_simple_tailroom(op->rsp);
+			result = -EMSGSIZE;
 		}
 
-		net_buf_unref(buf);
+		net_buf_simple_add_mem(op->rsp, evt->data, len);
 	}
+
+	return result;
+}
+#else
+static struct bt_hci_cmd_op *cmd_op_detach(struct net_buf *buf)
+{
+	ARG_UNUSED(buf);
+
+	return NULL;
+}
+
+static void cmd_op_sent(struct net_buf *buf)
+{
+	ARG_UNUSED(buf);
+}
+
+static void cmd_op_complete(struct bt_hci_cmd_op *op, int result)
+{
+	ARG_UNUSED(op);
+	ARG_UNUSED(result);
+}
+
+static int cmd_op_rsp_store(struct bt_hci_cmd_op *op, uint8_t status, const struct net_buf *evt)
+{
+	ARG_UNUSED(op);
+	ARG_UNUSED(evt);
+
+	return status;
+}
+#endif /* CONFIG_BT_CONN */
+
+/* Take the command that is with the controller: buf if it still is that
+ * command, whichever it is if buf is NULL. The caller that gets it completes
+ * it, which makes this the one place where a response, a failed send, the
+ * deadline and bt_disable() settle who does.
+ */
+static struct net_buf *cmd_sent_take(struct net_buf *buf)
+{
+	k_spinlock_key_t key;
+	struct net_buf *sent;
+
+	key = k_spin_lock(&bt_dev.cmd_lock);
+
+	sent = bt_dev.sent_cmd;
+	if (sent != NULL && (buf == NULL || buf == sent)) {
+		bt_dev.sent_cmd = NULL;
+		/* Every caller gives the credit back or ends the command flow */
+		cmd_credit_kept = false;
+		cmd_deadline_restart();
+	} else {
+		sent = NULL;
+	}
+
+	k_spin_unlock(&bt_dev.cmd_lock, key);
+
+	return sent;
+}
+
+/* The controller accepts another command. The Host keeps to one command with
+ * the controller at a time, whatever the controller would accept: a response
+ * is matched to its command by position and opcode alone, so the response to
+ * a first command could complete a second one with the same opcode. A credit
+ * that arrives while a command is with the controller, in a Command Complete
+ * event for no command or as a count above one, is kept until that command
+ * has been answered, see hci_cmd_done().
+ */
+static void cmd_credit_granted(void)
+{
+	k_spinlock_key_t key;
+	bool give;
+
+	key = k_spin_lock(&bt_dev.cmd_lock);
+
+	give = (bt_dev.sent_cmd == NULL);
+	if (give) {
+		/* A step forward for a queue that waited for the credit */
+		cmd_deadline_restart();
+	} else {
+		cmd_credit_kept = true;
+	}
+
+	k_spin_unlock(&bt_dev.cmd_lock, key);
+
+	if (give) {
+		k_sem_give(&bt_dev.ncmd_sem);
+		bt_tx_irq_raise();
+	}
+}
+
+/* Complete a command that gets no response, releasing the reference that the
+ * queue or the sent command held.
+ */
+static void cmd_complete_local(struct net_buf *buf, int err)
+{
+	struct bt_hci_cmd_op *op;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&bt_dev.cmd_lock);
+	op = cmd_op_detach(buf);
+	k_spin_unlock(&bt_dev.cmd_lock, key);
+
+	if (cmd(buf)->sync != NULL) {
+		cmd(buf)->err = (uint8_t)-err;
+		k_sem_give(cmd(buf)->sync);
+	}
+
+	net_buf_unref(buf);
+
+	if (op != NULL) {
+		cmd_op_complete(op, err);
+	}
+}
+
+static bool cmd_admission_open(void)
+{
+	return atomic_test_bit(bt_dev.flags, BT_DEV_OPEN) &&
+	       !atomic_test_bit(bt_dev.flags, BT_DEV_CMD_FAILED);
+}
+
+/* The command queue is a plain list under a spinlock: nothing ever waits on
+ * it, and the lock lets a sender check that the transport is open and queue
+ * its command in one step.
+ */
+static struct net_buf *cmd_tx_queue_peek(void)
+{
+	k_spinlock_key_t key;
+	sys_snode_t *node;
+
+	key = k_spin_lock(&bt_dev.cmd_lock);
+	node = sys_slist_peek_head(&bt_dev.cmd_tx_queue);
+	k_spin_unlock(&bt_dev.cmd_lock, key);
+
+	if (node == NULL) {
+		return NULL;
+	}
+
+	return CONTAINER_OF(node, struct net_buf, node);
+}
+
+#if defined(CONFIG_BT_CONN)
+/* Take the operations that have no buffer yet off their queue, to be
+ * completed with cmd_ops_complete() once cmd_lock has been released. Called
+ * with cmd_lock held. They are told to be on their way to completion, so
+ * that a cancel leaves them alone.
+ */
+static void cmd_ops_take(sys_slist_t *ops)
+{
+	sys_snode_t *node;
+
+	*ops = bt_dev.cmd_op_queue;
+	sys_slist_init(&bt_dev.cmd_op_queue);
+
+	SYS_SLIST_FOR_EACH_NODE(ops, node) {
+		CONTAINER_OF(node, struct bt_hci_cmd_op, node)->state = CMD_OP_SENT;
+	}
+}
+
+static void cmd_ops_complete(sys_slist_t *ops, int err)
+{
+	while (true) {
+		struct bt_hci_cmd_op *op;
+		sys_snode_t *node;
+
+		node = sys_slist_get(ops);
+		if (node == NULL) {
+			break;
+		}
+
+		op = CONTAINER_OF(node, struct bt_hci_cmd_op, node);
+
+		LOG_WRN("Dropping queued command 0x%04x (%d)", op->opcode, err);
+
+		cmd_op_complete(op, err);
+	}
+}
+#endif /* CONFIG_BT_CONN */
+
+/* Drop every queued command once the HCI transport has been closed or the
+ * controller has been given up on, completing synchronous senders with an
+ * error.
+ */
+static void hci_cmd_queue_purge(void)
+{
+	k_spinlock_key_t key;
+	sys_slist_t queue;
+	sys_snode_t *node;
+#if defined(CONFIG_BT_CONN)
+	struct net_buf *kept;
+	sys_slist_t ops;
+#endif /* CONFIG_BT_CONN */
+
+	key = k_spin_lock(&bt_dev.cmd_lock);
+	queue = bt_dev.cmd_tx_queue;
+	sys_slist_init(&bt_dev.cmd_tx_queue);
+#if defined(CONFIG_BT_CONN)
+	cmd_ops_take(&ops);
+
+	kept = cmd_op_buf;
+	cmd_op_buf = NULL;
+#endif /* CONFIG_BT_CONN */
+	cmd_deadline_restart();
+	k_spin_unlock(&bt_dev.cmd_lock, key);
+
+#if defined(CONFIG_BT_CONN)
+	if (kept != NULL) {
+		net_buf_unref(kept);
+	}
+#endif /* CONFIG_BT_CONN */
+
+	while (true) {
+		struct net_buf *buf;
+
+		node = sys_slist_get(&queue);
+		if (node == NULL) {
+			break;
+		}
+
+		buf = CONTAINER_OF(node, struct net_buf, node);
+
+		LOG_WRN("Dropping queued command 0x%04x", cmd(buf)->opcode);
+
+		cmd_complete_local(buf, -EHOSTDOWN);
+	}
+
+#if defined(CONFIG_BT_CONN)
+	cmd_ops_complete(&ops, -EHOSTDOWN);
+#endif /* CONFIG_BT_CONN */
+}
+
+/* Complete the command that was on its way to the controller when the HCI
+ * transport was closed. Its response cannot arrive any more, and its sender
+ * would otherwise wait for the command deadline.
+ */
+static void hci_cmd_sent_purge(void)
+{
+	struct net_buf *buf;
+
+	buf = cmd_sent_take(NULL);
+	if (buf == NULL) {
+		return;
+	}
+
+	LOG_WRN("Dropping sent command 0x%04x: HCI transport closed", cmd(buf)->opcode);
+
+	cmd_complete_local(buf, -EHOSTDOWN);
+}
+
+/* The deadline has passed without a step forward. Runs in interrupt context,
+ * where everything it does is in order: taking the lock, giving semaphores,
+ * submitting work, releasing buffers of a fixed pool.
+ */
+static void cmd_deadline_expired(struct k_timer *timer)
+{
+	k_spinlock_key_t key;
+	struct net_buf *sent;
+	uint16_t opcode = 0U;
+#if defined(CONFIG_BT_CONN)
+	struct net_buf *kept;
+	sys_slist_t ops;
+#endif /* CONFIG_BT_CONN */
+
+	key = k_spin_lock(&bt_dev.cmd_lock);
+
+	/* Started again or stopped while this call was on its way */
+	if (k_timer_remaining_ticks(timer) != 0 || !cmd_work_pending()) {
+		k_spin_unlock(&bt_dev.cmd_lock, key);
+		return;
+	}
+
+	if (bt_dev.sent_cmd == NULL &&
+	    (sys_slist_is_empty(&bt_dev.cmd_tx_queue) || k_sem_count_get(&bt_dev.ncmd_sem) != 0U)) {
+		/* It is not the controller that holds things up: no command
+		 * is with it, and none waits for a credit. What is left is
+		 * operations that got no command buffer, with the pool in
+		 * the hands of senders that keep their responses, or a TX
+		 * processor that has not run. Nothing was sent, so no
+		 * response can be mismatched: the operations are given up,
+		 * the controller is not.
+		 */
+#if defined(CONFIG_BT_CONN)
+		cmd_ops_take(&ops);
+
+		kept = cmd_op_buf;
+		cmd_op_buf = NULL;
+#endif /* CONFIG_BT_CONN */
+		cmd_deadline_restart();
+		k_spin_unlock(&bt_dev.cmd_lock, key);
+
+#if defined(CONFIG_BT_CONN)
+		if (kept != NULL) {
+			net_buf_unref(kept);
+		}
+
+		cmd_ops_complete(&ops, -ENOBUFS);
+#endif /* CONFIG_BT_CONN */
+
+		return;
+	}
+
+	/* No command is accepted from here on, so a response that still
+	 * arrives finds nothing that it could complete by mistake. Only
+	 * bt_disable() followed by bt_enable(), which resets the controller,
+	 * gets out of this state.
+	 */
+	atomic_set_bit(bt_dev.flags, BT_DEV_CMD_FAILED);
+
+	sent = bt_dev.sent_cmd;
+	bt_dev.sent_cmd = NULL;
+
+	k_spin_unlock(&bt_dev.cmd_lock, key);
+
+	if (sent != NULL) {
+		opcode = cmd(sent)->opcode;
+		cmd_complete_local(sent, -ETIMEDOUT);
+	}
+
+	hci_cmd_queue_purge();
+
+	/* A sender in the system workqueue may be waiting for the credit */
+	k_sem_give(&bt_dev.ncmd_sem);
+
+	/* The controller may fail to respond if:
+	 *  - It was never programmed or connected.
+	 *  - There was a fatal error.
+	 *
+	 * See the `BT_HCI_OP_` macros in hci_types.h or
+	 * Core_v5.4, Vol 4, Part E, Section 5.4.1 and Section 7
+	 * to map the opcode to the HCI command documentation.
+	 * Example: 0x0c03 represents HCI_Reset command.
+	 */
+	LOG_ERR("Controller unresponsive, command opcode 0x%04x timeout", opcode);
+	BT_ASSERT_MSG(false, "Controller unresponsive, command opcode 0x%04x timeout", opcode);
 }
 
 int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 {
+	k_spinlock_key_t key;
+	bool open;
 	int err;
 
-	/* Make sure the HCI transport is open before attempting anything else */
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_OPEN)) {
+	/* Make sure the HCI transport is open, and the controller answering,
+	 * before attempting anything else.
+	 */
+	if (!cmd_admission_open()) {
 		if (buf != NULL) {
 			net_buf_unref(buf);
 		}
@@ -473,16 +1064,20 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 		return err;
 	}
 
-	k_fifo_put(&bt_dev.cmd_tx_queue, buf);
-
-	/* bt_disable() clears BT_DEV_OPEN before purging the queue, so a
-	 * command queued by a sender that passed the check above just before
-	 * the transport was closed is either found by that purge or seen
-	 * here: take it back and fail the call. If the purge got to it first
-	 * it completes the command like any other queued one.
+	/* bt_disable() clears BT_DEV_OPEN before purging the queue, and the
+	 * purge takes the same lock: a command is either refused here or
+	 * found by the purge, which completes it like any other queued one.
+	 * The same holds for the purge of the command deadline.
 	 */
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_OPEN) &&
-	    k_queue_remove(&bt_dev.cmd_tx_queue._queue, buf)) {
+	key = k_spin_lock(&bt_dev.cmd_lock);
+	open = cmd_admission_open();
+	if (open) {
+		sys_slist_append(&bt_dev.cmd_tx_queue, &buf->node);
+		cmd_deadline_start();
+	}
+	k_spin_unlock(&bt_dev.cmd_lock, key);
+
+	if (!open) {
 		net_buf_unref(buf);
 		return -EHOSTDOWN;
 	}
@@ -491,6 +1086,248 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 
 	return 0;
 }
+
+#if defined(CONFIG_BT_CONN)
+/* Take the buffer that hci_cmd_pool_destroy() kept for the operations */
+static struct net_buf *cmd_op_buf_take(void)
+{
+	k_spinlock_key_t key;
+	struct net_buf *buf;
+
+	key = k_spin_lock(&bt_dev.cmd_lock);
+	buf = cmd_op_buf;
+	cmd_op_buf = NULL;
+	k_spin_unlock(&bt_dev.cmd_lock, key);
+
+	if (buf != NULL) {
+		net_buf_reset(buf);
+		cmd_buf_prepare(buf);
+	}
+
+	return buf;
+}
+
+/* Give the queued operations their command buffers, in order, for as long as
+ * the command pool has any. An operation that gets none stays queued; the
+ * pool's destroy callback keeps the next freed buffer for it and raises the
+ * TX processor.
+ */
+static void cmd_ops_dispatch(void)
+{
+	while (!sys_slist_is_empty(&bt_dev.cmd_op_queue)) {
+		struct bt_hci_cmd_op *op;
+		k_spinlock_key_t key;
+		struct net_buf *buf;
+		sys_snode_t *node;
+		int err;
+
+		buf = cmd_op_buf_take();
+		if (buf == NULL) {
+			buf = bt_hci_cmd_alloc(K_NO_WAIT);
+		}
+
+		if (buf == NULL) {
+			return;
+		}
+
+		key = k_spin_lock(&bt_dev.cmd_lock);
+
+		node = cmd_admission_open() ? sys_slist_get(&bt_dev.cmd_op_queue) : NULL;
+		if (node == NULL) {
+			/* Canceled or purged meanwhile */
+			k_spin_unlock(&bt_dev.cmd_lock, key);
+			net_buf_unref(buf);
+			return;
+		}
+
+		op = CONTAINER_OF(node, struct bt_hci_cmd_op, node);
+
+		/* The encoder runs in the same hold of the lock that takes the
+		 * operation off the queue: a cancel either comes before it and
+		 * the encoder never runs, or after it and finds the buffer.
+		 */
+		err = (op->encode != NULL) ? op->encode(buf, op) : 0;
+		if (err == 0) {
+			err = bt_hci_pkt_push_cmd_hdr(&buf->b, op->opcode);
+		}
+
+		if (err != 0) {
+			/* Refused by its encoder as stale */
+			op->state = CMD_OP_SENT;
+			k_spin_unlock(&bt_dev.cmd_lock, key);
+
+			net_buf_unref(buf);
+			cmd_op_complete(op, -ECANCELED);
+			continue;
+		}
+
+		cmd(buf)->opcode = op->opcode;
+		cmd(buf)->op = op;
+		op->state = CMD_OP_BUFFERED;
+		sys_slist_append(&bt_dev.cmd_tx_queue, &buf->node);
+
+		k_spin_unlock(&bt_dev.cmd_lock, key);
+	}
+}
+
+void bt_hci_cmd_op_init(struct bt_hci_cmd_op *op, uint16_t opcode, bt_hci_cmd_encode_t encode)
+{
+	op->opcode = opcode;
+	op->encode = encode;
+	op->state = CMD_OP_IDLE;
+}
+
+bool bt_hci_cmd_op_is_pending(struct bt_hci_cmd_op *op)
+{
+	k_spinlock_key_t key;
+	bool pending;
+
+	key = k_spin_lock(&bt_dev.cmd_lock);
+	pending = (op->state != CMD_OP_IDLE);
+	k_spin_unlock(&bt_dev.cmd_lock, key);
+
+	return pending;
+}
+
+static int cmd_op_submit(struct bt_hci_cmd_op *op, struct net_buf_simple *rsp, uint8_t kind,
+			 struct bt_future *fut, bt_hci_cmd_cb_t cb)
+{
+	k_spinlock_key_t key;
+
+	/* The checks and the append share the lock with the purge: an
+	 * operation is either refused here or found by the purge. Nothing of
+	 * the operation is written before it is known to be the caller's.
+	 */
+	key = k_spin_lock(&bt_dev.cmd_lock);
+
+	if (op->state != CMD_OP_IDLE) {
+		k_spin_unlock(&bt_dev.cmd_lock, key);
+		return -EBUSY;
+	}
+
+	if (!cmd_admission_open()) {
+		k_spin_unlock(&bt_dev.cmd_lock, key);
+		return -EHOSTDOWN;
+	}
+
+	op->kind = kind;
+	op->rsp = rsp;
+
+	if (kind == CMD_OP_KIND_CB) {
+		op->cb = cb;
+	} else {
+		op->fut = fut;
+		if (fut != NULL) {
+			bt_future_init(fut, NULL);
+		}
+	}
+
+	op->state = CMD_OP_QUEUED;
+	sys_slist_append(&bt_dev.cmd_op_queue, &op->node);
+	cmd_deadline_start();
+
+	k_spin_unlock(&bt_dev.cmd_lock, key);
+
+	bt_tx_irq_raise();
+
+	return 0;
+}
+
+int bt_hci_cmd_send_async(struct bt_hci_cmd_op *op, struct net_buf_simple *rsp,
+			  struct bt_future *fut)
+{
+	return cmd_op_submit(op, rsp, CMD_OP_KIND_FUTURE, fut, NULL);
+}
+
+int bt_hci_cmd_send_cb(struct bt_hci_cmd_op *op, struct net_buf_simple *rsp, bt_hci_cmd_cb_t cb)
+{
+	if (cb == NULL) {
+		return -EINVAL;
+	}
+
+	return cmd_op_submit(op, rsp, CMD_OP_KIND_CB, NULL, cb);
+}
+
+int bt_hci_cmd_op_cancel(struct bt_hci_cmd_op *op)
+{
+	struct net_buf *retired = NULL;
+	struct bt_future *fut = NULL;
+	struct net_buf *buf = NULL;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&bt_dev.cmd_lock);
+
+	switch (op->state) {
+	case CMD_OP_IDLE:
+		k_spin_unlock(&bt_dev.cmd_lock, key);
+		return -EALREADY;
+	case CMD_OP_QUEUED:
+		(void)sys_slist_find_and_remove(&bt_dev.cmd_op_queue, &op->node);
+		break;
+	case CMD_OP_BUFFERED:
+		/* The buffer leaves the queue here and now: the TX processor
+		 * only gets to it with a command credit, which may never
+		 * come, and the deadline would count it as work until then.
+		 */
+		SYS_SLIST_FOR_EACH_CONTAINER(&bt_dev.cmd_tx_queue, retired, node) {
+			if (cmd(retired)->op == op) {
+				break;
+			}
+		}
+
+		__ASSERT_NO_MSG(retired != NULL);
+		if (retired != NULL) {
+			cmd(retired)->op = NULL;
+			(void)sys_slist_find_and_remove(&bt_dev.cmd_tx_queue, &retired->node);
+		}
+		break;
+	default:
+		/* With the controller, or completed already */
+		k_spin_unlock(&bt_dev.cmd_lock, key);
+		return -EINPROGRESS;
+	}
+
+	if (op->kind == CMD_OP_KIND_FUTURE) {
+		fut = op->fut;
+	}
+
+	op->state = CMD_OP_IDLE;
+
+	/* Nothing may be left that the deadline is for */
+	if (!cmd_work_pending()) {
+		cmd_deadline_restart();
+	}
+
+	/* A buffer kept for the operations goes back to the pool when this
+	 * was the last one waiting.
+	 */
+	if (sys_slist_is_empty(&bt_dev.cmd_op_queue)) {
+		buf = cmd_op_buf;
+		cmd_op_buf = NULL;
+	}
+
+	k_spin_unlock(&bt_dev.cmd_lock, key);
+
+	if (retired != NULL) {
+		net_buf_unref(retired);
+	}
+
+	if (buf != NULL) {
+		net_buf_unref(buf);
+	}
+
+	/* A waiter must not be left behind; a callback is not invoked */
+	if (fut != NULL) {
+		bt_future_complete(fut, -ECANCELED);
+	}
+
+	return 0;
+}
+#else
+static void cmd_ops_dispatch(void)
+{
+}
+#endif /* CONFIG_BT_CONN */
 
 static bool process_pending_cmd(k_timeout_t timeout);
 int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
@@ -501,6 +1338,11 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 	int err;
 
 	if (!buf) {
+		/* No point in waiting for a buffer that would not be sent */
+		if (!cmd_admission_open()) {
+			return -EHOSTDOWN;
+		}
+
 		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
 			return -ENOBUFS;
@@ -540,38 +1382,38 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 		struct net_buf *cmd = NULL;
 
 		do {
-			cmd = k_fifo_peek_head(&bt_dev.cmd_tx_queue);
+			cmd = cmd_tx_queue_peek();
 			LOG_DBG("process cmd %p want %p", cmd, buf);
 
-			/* Wait for a response from the Bluetooth Controller.
-			 * The Controller may fail to respond if:
-			 *  - It was never programmed or connected.
-			 *  - There was a fatal error.
-			 *
-			 * See the `BT_HCI_OP_` macros in hci_types.h or
-			 * Core_v5.4, Vol 4, Part E, Section 5.4.1 and Section 7
-			 * to map the opcode to the HCI command documentation.
-			 * Example: 0x0c03 represents HCI_Reset command.
+			/* Wait for the controller to accept the next command.
+			 * The command deadline ends the wait if it never does.
 			 */
-			__maybe_unused bool success = process_pending_cmd(HCI_CMD_TIMEOUT);
+			(void)process_pending_cmd(K_FOREVER);
 
-			if (!atomic_test_bit(bt_dev.flags, BT_DEV_OPEN)) {
-				/* The transport was closed while draining: the queue
-				 * has been purged, completing this command with an
-				 * error, so there is nothing left to send.
+			if (!cmd_admission_open()) {
+				/* The transport was closed, or the controller given
+				 * up on, while draining: the queue has been purged,
+				 * completing this command with an error, so there
+				 * is nothing left to send.
 				 */
 				break;
 			}
-
-			BT_ASSERT_MSG(success, "command opcode 0x%04x timeout", opcode);
-		} while (buf != cmd);
+		} while (cmd != NULL && buf != cmd);
 	}
 
-	/* Now that we have sent the command, suspend until the LL replies */
-	err = k_sem_take(&sync_sem, HCI_CMD_TIMEOUT);
-	BT_ASSERT_MSG(err == 0,
-		      "Controller unresponsive, command opcode 0x%04x timeout with err %d",
-		      opcode, err);
+	/* Now that we have sent the command, suspend until the LL replies.
+	 * There is no timeout here: a command that gets no response is
+	 * completed by the command deadline.
+	 */
+	(void)k_sem_take(&sync_sem, K_FOREVER);
+
+	if (cmd(buf)->err != 0U) {
+		err = -(int)cmd(buf)->err;
+		LOG_WRN("opcode 0x%04x not completed (err %d)", opcode, err);
+		net_buf_unref(buf);
+
+		return err;
+	}
 
 	status = cmd(buf)->status;
 	if (status) {
@@ -1114,25 +1956,11 @@ static void hci_disconn_complete_prio(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
-static void hci_disconn_complete(struct net_buf *buf)
+/* The second half of a disconnection, after BT_CONN_DISCONNECT_COMPLETE.
+ * Consumes the reference of the caller.
+ */
+static void hci_conn_disconnected(struct bt_conn *conn)
 {
-	struct bt_hci_evt_disconn_complete *evt = (void *)buf->data;
-	uint16_t handle = sys_le16_to_cpu(evt->handle);
-	struct bt_conn *conn;
-
-	LOG_DBG("status 0x%02x %s handle %u reason 0x%02x",
-		evt->status, bt_hci_err_to_str(evt->status), handle, evt->reason);
-
-	if (evt->status) {
-		return;
-	}
-
-	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_ALL);
-	if (!conn) {
-		LOG_ERR("Unable to look up conn with handle %u", handle);
-		return;
-	}
-
 	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 
 	if (!bt_conn_is_le(conn)) {
@@ -1174,6 +2002,36 @@ static void hci_disconn_complete(struct net_buf *buf)
 #endif /* defined(CONFIG_BT_CENTRAL) && !defined(CONFIG_BT_FILTER_ACCEPT_LIST) */
 
 	bt_conn_unref(conn);
+}
+
+static void hci_disconn_complete(struct net_buf *buf)
+{
+	struct bt_hci_evt_disconn_complete *evt = (void *)buf->data;
+	uint16_t handle = sys_le16_to_cpu(evt->handle);
+	struct bt_conn *conn;
+
+	LOG_DBG("status 0x%02x %s handle %u reason 0x%02x",
+		evt->status, bt_hci_err_to_str(evt->status), handle, evt->reason);
+
+	if (evt->status) {
+		return;
+	}
+
+	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_ALL);
+	if (!conn) {
+		LOG_ERR("Unable to look up conn with handle %u", handle);
+		return;
+	}
+
+	hci_conn_disconnected(conn);
+}
+
+void bt_hci_conn_lost(struct bt_conn *conn, uint8_t reason)
+{
+	conn->err = reason;
+
+	bt_conn_set_state(conn, BT_CONN_DISCONNECT_COMPLETE);
+	hci_conn_disconnected(bt_conn_ref(conn));
 }
 
 int bt_hci_le_read_remote_features(struct bt_conn *conn)
@@ -2685,6 +3543,11 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *evt_bu
 {
 	/* Original command buffer. */
 	struct net_buf *buf = NULL;
+	struct bt_hci_cmd_op *op = NULL;
+	uint16_t expected = 0U;
+	k_spinlock_key_t key;
+	bool credit = false;
+	int result = 0;
 
 	LOG_DBG("opcode 0x%04x status 0x%02x %s buf %p", opcode,
 		status, bt_hci_err_to_str(status), evt_buf);
@@ -2696,19 +3559,45 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *evt_bu
 		goto exit;
 	}
 
-	/* Take the original command buffer reference. */
-	buf = net_buf_take(&bt_dev.sent_cmd);
+	/* Take the original command buffer reference, unless the response
+	 * is for another command than the one that is with the controller.
+	 */
+	key = k_spin_lock(&bt_dev.cmd_lock);
 
-	if (!buf) {
-		LOG_ERR("No command sent for cmd complete 0x%04x", opcode);
+	buf = bt_dev.sent_cmd;
+	if (buf != NULL && cmd(buf)->opcode == opcode) {
+		bt_dev.sent_cmd = NULL;
+		op = cmd_op_detach(buf);
+		credit = cmd_credit_kept;
+		cmd_credit_kept = false;
+		cmd_deadline_restart();
+	} else {
+		expected = (buf != NULL) ? cmd(buf)->opcode : 0U;
+		buf = NULL;
+	}
+
+	k_spin_unlock(&bt_dev.cmd_lock, key);
+
+	if (credit) {
+		/* Granted while the command was with the controller */
+		k_sem_give(&bt_dev.ncmd_sem);
+		bt_tx_irq_raise();
+	}
+
+	if (buf == NULL) {
+		if (expected != 0U) {
+			LOG_ERR("OpCode 0x%04x completed instead of expected 0x%04x", opcode,
+				expected);
+		} else {
+			LOG_ERR("No command sent for cmd complete 0x%04x", opcode);
+		}
+
 		goto exit;
 	}
 
-	if (cmd(buf)->opcode != opcode) {
-		LOG_ERR("OpCode 0x%04x completed instead of expected 0x%04x", opcode,
-			cmd(buf)->opcode);
-		buf = atomic_ptr_set((atomic_ptr_t *)&bt_dev.sent_cmd, buf);
-		__ASSERT_NO_MSG(!buf);
+	if (op != NULL) {
+		/* The response goes to the caller's storage, see below */
+		result = cmd_op_rsp_store(op, status, evt_buf);
 		goto exit;
 	}
 
@@ -2736,6 +3625,14 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *evt_bu
 exit:
 	if (buf) {
 		net_buf_unref(buf);
+	}
+
+	/* Only once the command buffer has been released: the operation's
+	 * owner may be slow to pick the result up, and must not hold up the
+	 * commands of everybody else by that.
+	 */
+	if (op != NULL) {
+		cmd_op_complete(op, result);
 	}
 }
 
@@ -2772,8 +3669,7 @@ static void hci_cmd_complete(struct net_buf *buf)
 
 	/* Allow next command to be sent */
 	if (rsp.ncmd != 0) {
-		k_sem_give(&bt_dev.ncmd_sem);
-		bt_tx_irq_raise();
+		cmd_credit_granted();
 	}
 }
 
@@ -2798,8 +3694,7 @@ static void hci_cmd_status(struct net_buf *buf)
 
 	/* Allow next command to be sent */
 	if (rsp.ncmd != 0) {
-		k_sem_give(&bt_dev.ncmd_sem);
-		bt_tx_irq_raise();
+		cmd_credit_granted();
 	}
 }
 
@@ -3414,34 +4309,78 @@ static void hci_event(struct net_buf *buf)
 	net_buf_unref(buf);
 }
 
-static void hci_core_send_cmd(void)
+/* Hand the next queued command to the driver. The caller has taken the
+ * command credit.
+ */
+static bool hci_core_send_cmd(void)
 {
+	k_spinlock_key_t key;
 	struct net_buf *buf;
+	sys_snode_t *node;
 	int err;
 
-	/* Get next command */
-	LOG_DBG("fetch cmd");
-	buf = k_fifo_get(&bt_dev.cmd_tx_queue, K_NO_WAIT);
-	BT_ASSERT(buf);
+	key = k_spin_lock(&bt_dev.cmd_lock);
 
-	/* Clear out any existing sent command */
-	if (bt_dev.sent_cmd) {
+	if (bt_dev.sent_cmd != NULL) {
+		/* Not reachable, as the credit is only given out once the
+		 * command that is with the controller has been answered, see
+		 * cmd_credit_granted(). Stay with one command at a time
+		 * regardless: its response could not be told from that of
+		 * this one.
+		 */
 		LOG_ERR("Uncleared pending sent_cmd");
-		net_buf_drop(&bt_dev.sent_cmd);
+		cmd_credit_kept = true;
+		k_spin_unlock(&bt_dev.cmd_lock, key);
+		return false;
 	}
 
+	/* The queue may have been purged since the caller looked at it */
+	node = cmd_admission_open() ? sys_slist_get(&bt_dev.cmd_tx_queue) : NULL;
+	if (node == NULL) {
+		k_spin_unlock(&bt_dev.cmd_lock, key);
+		k_sem_give(&bt_dev.ncmd_sem);
+		return false;
+	}
+
+	buf = CONTAINER_OF(node, struct net_buf, node);
+
+	/* An operation can only be awaited from here on */
+	cmd_op_sent(buf);
+
+	/* The deadline runs before the driver gets the command: the response
+	 * may arrive from within the call.
+	 */
 	bt_dev.sent_cmd = net_buf_ref(buf);
+	cmd_deadline_restart();
+
+	k_spin_unlock(&bt_dev.cmd_lock, key);
 
 	LOG_DBG("Sending command 0x%04x (buf %p) to driver", cmd(buf)->opcode, buf);
 
 	err = bt_send(buf);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Unable to send to driver (err %d)", err);
-		k_sem_give(&bt_dev.ncmd_sem);
-		hci_cmd_done(cmd(buf)->opcode, BT_HCI_ERR_UNSPECIFIED, buf);
-		net_buf_unref(buf);
+
+		/* The driver did not take the command, and nothing of it
+		 * reached the controller: complete it and carry on with the
+		 * next one.
+		 */
+		if (cmd_sent_take(buf) != NULL) {
+			/* Both references are the engine's again. The one of
+			 * the queue goes first, so that the buffer is free by
+			 * the time anybody hears of the failure.
+			 */
+			net_buf_unref(buf);
+			k_sem_give(&bt_dev.ncmd_sem);
+			cmd_complete_local(buf, -EIO);
+		} else {
+			net_buf_unref(buf);
+		}
+
 		bt_tx_irq_raise();
 	}
+
+	return true;
 }
 
 #if defined(CONFIG_BT_CONN)
@@ -4948,7 +5887,12 @@ int bt_enable(bt_ready_cb_t cb)
 	} else {
 		k_sem_init(&bt_dev.ncmd_sem, 0, 1);
 	}
-	k_fifo_init(&bt_dev.cmd_tx_queue);
+	cmd_credit_kept = false;
+	sys_slist_init(&bt_dev.cmd_tx_queue);
+#if defined(CONFIG_BT_CONN)
+	sys_slist_init(&bt_dev.cmd_op_queue);
+#endif /* CONFIG_BT_CONN */
+	atomic_clear_bit(bt_dev.flags, BT_DEV_CMD_FAILED);
 
 	if (IS_ENABLED(CONFIG_BT_HCI_SET_PUBLIC_ADDR)) {
 		/* Set on every enable, and cleared when there is no public
@@ -5016,8 +5960,15 @@ int bt_disable(void)
 	/* Clear BT_DEV_READY before disabling HCI link. It is not set if
 	 * bt_enable() failed after opening the transport, in which case a
 	 * failed disable must not set it either.
+	 *
+	 * The TX processor holds the host lock for a whole pass, so with the
+	 * lock held here no pass is under way in another thread when the
+	 * flag changes: what a pass has picked up has been sent, and every
+	 * later one holds back what is queued for the connections.
 	 */
+	bt_dev_lock();
 	was_ready = atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_READY);
+	bt_dev_unlock();
 
 #if defined(CONFIG_BT_BROADCASTER)
 	bt_adv_reset_adv_pool();
@@ -5054,14 +6005,18 @@ int bt_disable(void)
 		(void)k_work_cancel_sync(&rx_work, &sync);
 	}
 
-	/* Reset the Controller */
-	if (!drv_quirk_no_reset()) {
+	/* Reset the Controller, unless it has stopped answering commands: it
+	 * is then reset by the next bt_enable().
+	 */
+	if (!drv_quirk_no_reset() && !atomic_test_bit(bt_dev.flags, BT_DEV_CMD_FAILED)) {
 
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, NULL);
 		if (err) {
 			LOG_ERR("Failed to reset BLE controller");
 			if (was_ready) {
 				atomic_set_bit(bt_dev.flags, BT_DEV_READY);
+				/* Resume sending the data that was held back */
+				bt_tx_irq_raise();
 			}
 			atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLING);
 			return err;
@@ -5089,8 +6044,8 @@ int bt_disable(void)
 #endif /* CONFIG_BT_CONN */
 
 	/* Mark the transport closed before purging the command queue: a
-	 * command queued after this point is taken back by its sender (see
-	 * bt_hci_cmd_send()), so nothing is left behind for the next enable.
+	 * command is refused after this point (see bt_hci_cmd_send()), so
+	 * nothing is left behind for the next enable.
 	 */
 	atomic_clear_bit(bt_dev.flags, BT_DEV_OPEN);
 	hci_cmd_queue_purge();
@@ -5107,6 +6062,8 @@ int bt_disable(void)
 		atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLING);
 		return err;
 	}
+
+	hci_cmd_sent_purge();
 
 	/* Some functions rely on checking this bitfield */
 	memset(bt_dev.supported_commands, 0x00, sizeof(bt_dev.supported_commands));
@@ -5414,15 +6371,14 @@ int bt_configure_data_path(uint8_t dir, uint8_t id, uint8_t vs_config_len,
 /* Return `true` if a command was processed/sent */
 static bool process_pending_cmd(k_timeout_t timeout)
 {
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_OPEN)) {
+	if (!cmd_admission_open()) {
 		hci_cmd_queue_purge();
 		return false;
 	}
 
-	if (!k_fifo_is_empty(&bt_dev.cmd_tx_queue)) {
+	if (!sys_slist_is_empty(&bt_dev.cmd_tx_queue)) {
 		if (k_sem_take(&bt_dev.ncmd_sem, timeout) == 0) {
-			hci_core_send_cmd();
-			return true;
+			return hci_core_send_cmd();
 		}
 	}
 
@@ -5448,6 +6404,12 @@ static void tx_processor(struct k_work *item)
 	 * fine since the lock is recursive.
 	 */
 	bt_dev_lock();
+
+	/* The operations get their buffers here and nowhere else: their
+	 * encoders rely on the host lock, which a synchronous sender that
+	 * drains the command queue from the system workqueue does not hold.
+	 */
+	cmd_ops_dispatch();
 
 	if (process_pending_cmd(K_NO_WAIT)) {
 		/* If we processed a command, let the scheduler run before
