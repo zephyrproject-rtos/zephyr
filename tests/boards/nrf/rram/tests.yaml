@@ -15,6 +15,7 @@ tests:
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l15dk/nrf54l10/cpuapp
+      - nrf54lv10dk/nrf54lv10a/cpuapp
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
   boards.nrf.rram.skip_if_filled:
@@ -27,6 +28,7 @@ tests:
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l15dk/nrf54l10/cpuapp
+      - nrf54lv10dk/nrf54lv10a/cpuapp
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
   # Drive every flash op through write_op() (radio-sync ticker path) by
@@ -43,6 +45,7 @@ tests:
     extra_args: EXTRA_CONF_FILE=overlay-radio_sync.conf
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54lv10dk/nrf54lv10a/cpuapp
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
   boards.nrf.rram.radio_sync_skip:
@@ -52,5 +55,6 @@ tests:
     extra_args: EXTRA_CONF_FILE=overlay-radio_sync_skip.conf
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54lv10dk/nrf54lv10a/cpuapp
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
