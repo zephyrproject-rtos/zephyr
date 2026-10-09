@@ -185,7 +185,8 @@ config MODEM_CELLULAR_SHELL
 	  Enable shell commands for the cellular_modem driver, exposing
 	  cellular_modem_pause_periodic_script() /
 	  cellular_modem_resume_periodic_script() at runtime via a
-	  "cellular" shell command.
+	  "cellular" shell command, and printing the modem, SIM,
+	  registration and serving cell information (info).
 
 if DT_HAS_U_BLOX_LARA_R6_ENABLED
 

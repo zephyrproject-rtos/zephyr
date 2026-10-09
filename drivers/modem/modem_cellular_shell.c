@@ -4,7 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <string.h>
+
 #include <zephyr/device.h>
+#include <zephyr/drivers/cellular.h>
 #include <zephyr/drivers/modem/modem_cellular.h>
 #include <zephyr/shell/shell.h>
 
@@ -81,6 +84,158 @@ static int cmd_modem_cellular_resume(const struct shell *sh, size_t argc, char *
 	return 0;
 }
 
+static const char *registration_name(enum cellular_registration_status status)
+{
+	switch (status) {
+	case CELLULAR_REGISTRATION_NOT_REGISTERED:
+		return "not registered";
+	case CELLULAR_REGISTRATION_REGISTERED_HOME:
+		return "registered, home";
+	case CELLULAR_REGISTRATION_SEARCHING:
+		return "searching";
+	case CELLULAR_REGISTRATION_DENIED:
+		return "denied";
+	case CELLULAR_REGISTRATION_REGISTERED_ROAMING:
+		return "registered, roaming";
+	default:
+		return "unknown";
+	}
+}
+
+static const char *access_tech_name(enum cellular_access_technology tech)
+{
+	switch (tech) {
+	case CELLULAR_ACCESS_TECHNOLOGY_GSM:
+		return "GSM";
+	case CELLULAR_ACCESS_TECHNOLOGY_GSM_EGPRS:
+		return "EGPRS";
+	case CELLULAR_ACCESS_TECHNOLOGY_UTRAN:
+		return "UTRAN";
+	case CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN:
+		return "E-UTRAN (LTE/LTE-M)";
+	case CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN_NB_S1:
+		return "E-UTRAN NB-S1 (NB-IoT)";
+	case CELLULAR_ACCESS_TECHNOLOGY_NR_5G_CN:
+		return "NR";
+	default:
+		return "unknown";
+	}
+}
+
+static bool registration_is_registered(enum cellular_registration_status status)
+{
+	return (status == CELLULAR_REGISTRATION_REGISTERED_HOME) ||
+	       (status == CELLULAR_REGISTRATION_REGISTERED_ROAMING);
+}
+
+static void print_modem_info(const struct shell *sh, const struct device *dev,
+			     enum cellular_modem_info_type type, const char *label)
+{
+	/* Large enough for the longest string the driver stores (firmware version, model) */
+	char info[MODEM_CELLULAR_DATA_FW_VERSION_LEN];
+
+	if ((cellular_get_modem_info(dev, type, info, sizeof(info)) == 0) && (info[0] != '\0')) {
+		shell_print(sh, "%-20s%s", label, info);
+	}
+}
+
+static void print_imsi(const struct shell *sh, const struct device *dev)
+{
+	char imsi[MODEM_CELLULAR_DATA_IMSI_LEN];
+	size_t len;
+
+	if (cellular_get_modem_info(dev, CELLULAR_MODEM_INFO_SIM_IMSI, imsi, sizeof(imsi)) != 0) {
+		return;
+	}
+
+	/* The subscriber identity is personal data: show its first five digits (MCC and MNC)
+	 * only, as shell output often ends up in bug reports.
+	 */
+	len = strlen(imsi);
+	if (len > 5U) {
+		memset(&imsi[5], '*', len - 5U);
+		shell_print(sh, "%-20s%s", "imsi:", imsi);
+	}
+}
+
+/* Print the serving cell reported by the driver; return false when there is none. */
+static bool print_serving_cell(const struct shell *sh, const struct device *dev)
+{
+	struct cellular_evt_network_status net;
+
+	/* After a deregistration the driver keeps a report without a cell. */
+	if ((cellular_get_network_status(dev, &net) != 0) ||
+	    !registration_is_registered(net.status)) {
+		return false;
+	}
+
+	shell_print(sh, "%-20s%s", "access technology:", access_tech_name(net.access_tech));
+
+	if ((net.access_tech != CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN) &&
+	    (net.access_tech != CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN_NB_S1)) {
+		return false;
+	}
+
+	shell_print(sh, "%-20s%03u-%02u", "network (mcc-mnc):", net.cell.lte.mcc, net.cell.lte.mnc);
+	shell_print(sh, "%-20s%u (earfcn %u)", "band:", net.cell.lte.band,
+		    (unsigned int)net.cell.lte.earfcn);
+	if (net.cell.lte.gci != CELLULAR_EUTRAN_CELL_ID_INVALID) {
+		shell_print(sh, "%-20s%07x (tac %04x, pci %u)",
+			    "cell:", (unsigned int)net.cell.lte.gci, (unsigned int)net.cell.lte.tac,
+			    net.cell.lte.phys_cell_id);
+	}
+	shell_print(sh, "%-20s%d dBm", "rsrp:", net.cell.lte.rsrp);
+	shell_print(sh, "%-20s%d dB", "rsrq:", net.cell.lte.rsrq);
+
+	return true;
+}
+
+static void print_signal(const struct shell *sh, const struct device *dev)
+{
+	int16_t value;
+
+	if (cellular_get_signal(dev, CELLULAR_SIGNAL_RSSI, &value) == 0) {
+		shell_print(sh, "%-20s%d dBm", "rssi:", value);
+	}
+	if (cellular_get_signal(dev, CELLULAR_SIGNAL_RSRP, &value) == 0) {
+		shell_print(sh, "%-20s%d dBm", "rsrp:", value);
+	}
+	if (cellular_get_signal(dev, CELLULAR_SIGNAL_RSRQ, &value) == 0) {
+		shell_print(sh, "%-20s%d dB", "rsrq:", value);
+	}
+}
+
+static int cmd_modem_cellular_info(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	enum cellular_registration_status reg;
+
+	ARG_UNUSED(argc);
+
+	dev = modem_cellular_shell_get_device(sh, argv[1]);
+	if (dev == NULL) {
+		return -ENODEV;
+	}
+
+	print_modem_info(sh, dev, CELLULAR_MODEM_INFO_MANUFACTURER, "manufacturer:");
+	print_modem_info(sh, dev, CELLULAR_MODEM_INFO_MODEL_ID, "model:");
+	print_modem_info(sh, dev, CELLULAR_MODEM_INFO_FW_VERSION, "firmware:");
+	print_modem_info(sh, dev, CELLULAR_MODEM_INFO_IMEI, "imei:");
+	print_modem_info(sh, dev, CELLULAR_MODEM_INFO_SIM_ICCID, "iccid:");
+	print_imsi(sh, dev);
+
+	if (cellular_get_registration_status(dev, CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN, &reg) == 0) {
+		shell_print(sh, "%-20s%s", "lte registration:", registration_name(reg));
+	}
+
+	/* Without a serving cell report, ask the modem for the signal. */
+	if (!print_serving_cell(sh, dev)) {
+		print_signal(sh, dev);
+	}
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(modem_cellular_cmds,
 			       SHELL_CMD_ARG(pause, &dsub_device_name,
 					     SHELL_HELP("Pause periodic chat script", "<device>"),
@@ -88,6 +243,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(modem_cellular_cmds,
 			       SHELL_CMD_ARG(resume, &dsub_device_name,
 					     SHELL_HELP("Resume periodic chat script", "<device>"),
 					     cmd_modem_cellular_resume, 2, 0),
+			       SHELL_CMD_ARG(info, &dsub_device_name,
+					     SHELL_HELP("Print modem, SIM, registration and "
+							"serving cell information",
+							"<device>"),
+					     cmd_modem_cellular_info, 2, 0),
 			       SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(modem_cellular, &modem_cellular_cmds,
