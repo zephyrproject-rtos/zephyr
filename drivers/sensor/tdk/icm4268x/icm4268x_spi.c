@@ -12,7 +12,7 @@
 #include "icm4268x_spi.h"
 #include "icm4268x_reg.h"
 
-LOG_MODULE_DECLARE(ICM4268X, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_REGISTER(ICM4268X_SPI, CONFIG_SENSOR_LOG_LEVEL);
 
 static inline int spi_write_register(const struct spi_dt_spec *bus, uint8_t reg, uint8_t data)
 {

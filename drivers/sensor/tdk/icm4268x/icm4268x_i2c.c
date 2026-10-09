@@ -10,7 +10,7 @@
 #include "icm4268x_bus_io.h"
 #include "icm4268x_reg.h"
 
-LOG_MODULE_DECLARE(ICM4268X, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_REGISTER(ICM4268X_I2C, CONFIG_SENSOR_LOG_LEVEL);
 
 #if ICM4268X_BUS_I2C
 static int icm4268x_bus_check_i2c(const union icm4268x_bus_cfg *bus)
