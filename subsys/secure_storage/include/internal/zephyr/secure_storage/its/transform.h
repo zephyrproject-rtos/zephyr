@@ -41,7 +41,10 @@ psa_status_t secure_storage_its_transform_to_store(
  * @param[out] data_len        On success, the number of bytes written to `stored_data`.
  * @param[out] create_flags    On success, the entry's create flags.
  *
- * @return `PSA_SUCCESS` on success, anything else on failure.
+ * @retval PSA_SUCCESS                 The operation succeeded.
+ * @retval PSA_ERROR_INVALID_SIGNATURE The data failed authentication.
+ * @retval PSA_ERROR_DATA_CORRUPT      The data is corrupt.
+ * @retval Any other PSA_ERROR code.
  */
 psa_status_t secure_storage_its_transform_from_store(
 		secure_storage_its_uid_t uid, size_t stored_data_len,
