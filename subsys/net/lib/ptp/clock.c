@@ -40,16 +40,17 @@ LOG_MODULE_REGISTER(ptp_clock, CONFIG_PTP_LOG_LEVEL);
  * Servo acquisition policy:
  * - offsets above the step threshold are corrected by setting the clock;
  * - three consecutive samples within 10 ms mark the frequency servo as locked;
- * - while locked, offsets above 100 ms are rejected, and two consecutive
- *   outliers reset the servo. The next sample starts acquisition again.
+ * - while locked, offsets above the outlier threshold are rejected, and two
+ *   consecutive outliers reset the servo. The next sample starts acquisition
+ *   again.
  *
  * Lock is based on samples rather than elapsed time, so acquisition time follows
  * the configured Sync interval. These thresholds protect the PI controller from
  * bad timestamps; they are not clock-accuracy guarantees.
  */
-#define SYNC_SERVO_STEP_THRESHOLD_NS (1LL * NSEC_PER_SEC)
+#define SYNC_SERVO_STEP_THRESHOLD_NS ((int64_t)CONFIG_PTP_SERVO_STEP_THRESHOLD_MS * NSEC_PER_MSEC)
 #define SYNC_SERVO_LOCK_OFFSET_NS (10LL * NSEC_PER_MSEC)
-#define SYNC_SERVO_OUTLIER_NS (100LL * NSEC_PER_MSEC)
+#define SYNC_SERVO_OUTLIER_NS ((int64_t)CONFIG_PTP_SERVO_OUTLIER_THRESHOLD_MS * NSEC_PER_MSEC)
 #define SYNC_SERVO_LOCK_SAMPLES 3U
 #define SYNC_SERVO_OUTLIER_SAMPLES 2U
 
