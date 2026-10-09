@@ -1,0 +1,7 @@
+sample:
+  name: Xbox 360 USB controller sample
+tests:
+  sample.usb.usb_device_next.xbox360-controller:
+    depends_on:
+      - usbd
+    tags: usb

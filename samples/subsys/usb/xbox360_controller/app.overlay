@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2026 Adrien RICCIARDI
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	gamepad: xbox360 {
+		compatible = "microsoft,xbox360-controller-device";
+		status = "okay";
+	};
+};
