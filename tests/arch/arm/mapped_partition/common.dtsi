@@ -1,0 +1,27 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,code-partition = &test_partition;
+	};
+
+	zephyr,user {
+		expected-rom-address = <0x0>;
+		expected-rom-size = <0x30000>;
+		expected-storage-offset = <0x0>;
+		expected-storage-size = <0x30000>;
+	};
+};
+
+&{/soc/flash-controller@400fd000} {
+	ranges;
+};
+
+&flash0 {
+	ranges = <0x0 0x0 0x40000>;
+	#address-cells = <1>;
+	#size-cells = <1>;
+};

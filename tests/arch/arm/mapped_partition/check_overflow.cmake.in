@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+set(overflow_build "@CMAKE_CURRENT_BINARY_DIR@/overflow")
+set(linker_generator "@CONFIG_CMAKE_LINKER_GENERATOR@")
+if(NOT linker_generator)
+  set(linker_generator n)
+endif()
+
+set(ENV{ZEPHYR_BASE} "@ZEPHYR_BASE@")
+execute_process(
+  COMMAND "@CMAKE_COMMAND@" -S "@CMAKE_CURRENT_SOURCE_DIR@" -B "${overflow_build}"
+    -G "@CMAKE_GENERATOR@"
+    "-DBOARD=@BOARD@"
+    "-DPython3_EXECUTABLE=@PYTHON_EXECUTABLE@"
+    "-DZEPHYR_TOOLCHAIN_VARIANT=@ZEPHYR_TOOLCHAIN_VARIANT@"
+    "-DZEPHYR_SDK_INSTALL_DIR=@ZEPHYR_SDK_INSTALL_DIR@"
+    "-DZEPHYR_MODULES=@ZEPHYR_MODULES@"
+    "-DEXTRA_ZEPHYR_MODULES=@EXTRA_ZEPHYR_MODULES@"
+    "-DDTC_OVERLAY_FILE=larger_execution.overlay"
+    "-DCONFIG_CMAKE_LINKER_GENERATOR=${linker_generator}"
+    -DTEST_OVERFLOW_IMAGE=ON
+  RESULT_VARIABLE configure_result
+  OUTPUT_VARIABLE configure_output
+  ERROR_VARIABLE configure_error
+)
+file(WRITE "${overflow_build}/configure.log" "${configure_output}${configure_error}")
+if(NOT configure_result EQUAL 0)
+  message(FATAL_ERROR "Overflow application configuration failed:\n"
+    "${configure_output}${configure_error}")
+endif()
+
+execute_process(
+  COMMAND "@CMAKE_COMMAND@" --build "${overflow_build}"
+  RESULT_VARIABLE build_result
+  OUTPUT_VARIABLE build_output
+  ERROR_VARIABLE build_error
+)
+set(build_log "${build_output}${build_error}")
+file(WRITE "${overflow_build}/build.log" "${build_log}")
+if(build_result EQUAL 0)
+  message(FATAL_ERROR "Image exceeding storage linked successfully")
+endif()
+if(NOT build_log MATCHES "region [`']FLASH' overflowed by [0-9]+ bytes")
+  message(FATAL_ERROR "Expected FLASH overflow, got:\n${build_log}")
+endif()
