@@ -255,7 +255,7 @@ fail:
 }
 
 #define ADV7535_DSI(inst)    DT_INST_PHANDLE(inst, dsi_device)
-#define ADV7535_TIMING(inst) DT_INST_PHANDLE(inst, display_timing)
+#define ADV7535_TIMING(inst) DT_PHANDLE(ADV7535_DSI(inst), display_timing)
 #define ADV7535_PANEL(inst)  DT_PARENT(ADV7535_TIMING(inst))
 
 #define ADV7535_DEFINE(inst)                                                                       \
