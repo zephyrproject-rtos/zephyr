@@ -61,6 +61,19 @@ Properties:
   FIFO: received RFCOMM frames are held as-is and their per-frame credits
   provide native flow control.
 
+Console and Shell
+*****************
+
+To redirect console and shell over SPP, use the built-in snippet:
+
+.. code-block:: console
+
+   west build -S spp-console [...]
+
+This sets ``zephyr,console`` and ``zephyr,shell-uart`` to the SPP UART device
+and enables :kconfig:option:`CONFIG_UART_BT_SPP_AUTO_START_BLUETOOTH`. A remote
+device (phone, PC) can connect via SPP and interact with the Zephyr shell.
+
 Data Flow
 *********
 
