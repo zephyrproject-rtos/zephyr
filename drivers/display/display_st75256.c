@@ -142,40 +142,34 @@ static int st75256_blanking_off(const struct device *dev)
 static int st75256_set_window(const struct device *dev, uint16_t x, uint16_t y, uint16_t width,
 			      uint16_t height)
 {
+	const struct st75256_config *config = dev->config;
 	struct st75256_data *data = dev->data;
 	int ret;
-	const struct st75256_config *config = dev->config;
 
 	/* Extrapolate states of MX, MY bits (data scan mirror) and grey vs monochrome */
 	const bool mx = config->flip_configuration & BIT(1);
 	const bool my = config->flip_configuration & BIT(0);
 	const bool grey = data->current_pixel_format == PIXEL_FORMAT_L_8;
-
+	/* Page address range and pixel per byte depend on pixel format*/
+	const uint16_t y_div = grey ? 2 : 3; /* performant division by 4 or 8 */
+	const uint16_t par = (grey ? ST75256_PAGE_ADDR_RANGE_GREY : ST75256_PAGE_ADDR_RANGE_MONO);
 	/* If mx or my is set offset by the memory area not used by the display */
-	if (mx) {
-		x += ST75256_COLUMN_ADDR_RANGE - config->width;
-	}
-	if (my) {
-		y += (grey ? ST75256_PAGE_ADDR_RANGE_GREY : ST75256_PAGE_ADDR_RANGE_MONO) -
-		     config->height;
-	}
+	const uint16_t x_off = mx ? ST75256_COLUMN_ADDR_RANGE - config->width : 0;
+	const uint16_t y_off = my ? par - config->height : 0;
 
-	/* Start and end line, for y divided by the pixel per byte */
-	uint8_t x_position[] = {x, x + width - 1};
-	uint8_t y_position[] = {y / (grey ? 4 : 8), (y + height) / (grey ? 4 : 8) - 1};
+	x += x_off;
+	y += y_off;
 
-	/* TODO: MV handling is missing offset constants depends on it*/
+	/* Start and end, column is 1 pixel broad (x direction), page depends on greyscale  */
+	uint8_t column_range[] = {x, x + width - 1};
+	uint8_t page_range[] = {y >> y_div, ((y + height) >> y_div) - 1};
+
+	/* Write the setup, only try next step if last step succeeded */
 	ret = st75256_write_command(dev, ST75256_EXTCOM_1, NULL, 0);
-	if (ret < 0) {
-		return ret;
-	}
+	ret = ret < 0 ? ret : st75256_write_command(dev, ST75256_PAGE_RANGE, page_range, 2);
+	ret = ret < 0 ? ret : st75256_write_command(dev, ST75256_COL_RANGE, column_range, 2);
 
-	ret = st75256_write_command(dev, ST75256_PAGE_RANGE, y_position, 2);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return st75256_write_command(dev, ST75256_COL_RANGE, x_position, 2);
+	return ret;
 }
 
 static int st75256_start_write(const struct device *dev)
@@ -196,37 +190,38 @@ static int st75256_write_pixels_MONO01(const struct device *dev, const uint16_t 
 {
 	const struct st75256_config *config = dev->config;
 
-	/* TODO: Replace with working code or fail build
-	 *  Code forces linewise writing rendering MV setting without impact
-	 */
-	const bool MV = (config->flip_configuration & BIT(2)) ? true : false;
+	/* Code forces linewise writing rendering MV setting without any impact */
+	const bool mv = (config->flip_configuration & BIT(2)) ? true : false;
 
 	/* Describe a single send window's format */
 	struct display_buffer_descriptor mipi_desc = {
 		.width = desc->width,
 		.pitch = desc->width,
-		.buf_size = desc->width * (MV ? 1 : (desc->height / 8)),
-		.height = MV ? 8 : desc->height,
+		.buf_size = desc->width * (mv ? 1 : (desc->height / 8)),
+		.height = mv ? 8 : desc->height,
 	};
-	int ret;
+	int ret = 0, ret_release = 0;
 
 	/* For no MV this runs only one time writing the whole window */
 	for (uint32_t c = 0; c < desc->height; c += mipi_desc.height, buf += mipi_desc.width) {
 		ret = st75256_set_window(dev, x, y + c, mipi_desc.width, mipi_desc.height);
 		if (ret < 0) {
-			return ret;
+			break;
 		}
 		ret = st75256_start_write(dev);
 		if (ret < 0) {
-			return ret;
+			break;
 		}
 		ret = mipi_dbi_write_display(config->mipi_dev, &config->dbi_config, buf, &mipi_desc,
 					     PIXEL_FORMAT_MONO01);
 		if (ret < 0) {
-			return ret;
+			break;
 		}
 	}
-	return mipi_dbi_release(config->mipi_dev, &config->dbi_config);
+
+	/* Release independent of previous errors, but early errors get priority return */
+	ret_release = mipi_dbi_release(config->mipi_dev, &config->dbi_config);
+	return ret < 0 ? ret : ret_release;
 }
 
 /* ST75256 4-level is greyscale is 4 pixels per byte vtiled.
