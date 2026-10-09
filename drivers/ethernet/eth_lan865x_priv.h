@@ -47,6 +47,29 @@
 /* Memory Map Sector (MMS) 10 (0xA) */
 #define LAN865x_DEVID MMS_REG(0xA, 0x094)
 
+/**
+ * @brief Events dispatched from the LAN865x MAC driver to the PHY driver.
+ */
+enum lan865x_phy_event {
+	/** Hardware reset occurred; PHY must re-apply fixups and config. */
+	LAN865X_PHY_EVENT_RESET = 0,
+};
+
+/**
+ * @brief PHY event callback implemented by the Microchip T1S PHY driver.
+ *
+ * Called by the LAN865x MAC driver after a hardware reset to re-apply
+ * vendor-specific configuration and cached PLCA settings.
+ *
+ * @param phy_dev The PHY device instance.
+ * @param event   The event that occurred.
+ * @param data    Optional event-specific data (unused for RESET).
+ *
+ * @retval 0 on success.
+ * @retval -errno on failure.
+ */
+int lan865x_phy_callback(const struct device *phy_dev, enum lan865x_phy_event event, void *data);
+
 struct lan865x_config {
 	const struct device *phy;
 	struct spi_dt_spec spi;

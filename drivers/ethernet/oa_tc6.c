@@ -623,8 +623,6 @@ int oa_tc6_spi_thread(struct oa_tc6 *tc6)
 	uint8_t tx_chunks;
 	int ret;
 
-	k_sem_take(&tc6->spi_sem, K_FOREVER);
-
 	if (tc6->waiting_net_pkt || tc6->ongoing_net_pkt) {
 		tc6->spi_length = oa_tc6_prepare_spi_tx_buf_from_net_pkt(tc6);
 	}
@@ -730,7 +728,7 @@ int oa_tc6_check_status(struct oa_tc6 *tc6)
 	uint32_t sts;
 
 	if (!tc6->sync) {
-		LOG_ERR("SYNC: Configuration lost, reset IC!");
+		LOG_ERR("SYNC: Configuration lost, attempting recovery!");
 		return -EIO;
 	}
 
@@ -838,17 +836,23 @@ static int oa_tc6_configure_interrupt_adaptive(struct oa_tc6 *tc6)
 
 static int oa_tc6_wait_for_reset(struct oa_tc6 *tc6)
 {
-	uint8_t i;
+	uint32_t sts;
 	int ret;
 
-	/* Wait for end of MAC-PHY reset */
-	for (i = 0; !tc6->rst_flag && i < OA_TC6_RESET_TIMEOUT; i++) {
-		k_msleep(1);
-	}
-
-	if (i == OA_TC6_RESET_TIMEOUT) {
-		LOG_ERR("MAC-PHY reset timeout reached!");
-		return -ENODEV;
+	if (!tc6->rst_flag) {
+		ret = k_sem_take(&tc6->int_sem, K_MSEC(OA_TC6_RESET_TIMEOUT));
+		if (ret == -EAGAIN) {
+			LOG_ERR("MAC-PHY reset timeout reached!");
+			return -ENODEV;
+		}
+		ret = oa_tc6_reg_read(tc6, OA_STATUS0, &sts);
+		if (ret < 0) {
+			return ret;
+		}
+		if (sts & OA_STATUS0_RESETC) {
+			oa_tc6_reg_write(tc6, OA_STATUS0, sts);
+			tc6->rst_flag = true;
+		}
 	}
 
 	ret = oa_tc6_unmask_macphy_error_interrupts(tc6);
@@ -883,27 +887,183 @@ static int oa_tc6_gpio_reset(struct oa_tc6 *tc6)
 	return oa_tc6_wait_for_reset(tc6);
 }
 
+/**
+ * @brief Reset volatile TC6 state that may be corrupted after a device error.
+ *
+ * Clears all transient software state and frees packet buffers in flight
+ * so the recovery path starts from a clean slate.
+ */
+static void oa_tc6_reset_volatile_state(struct oa_tc6 *tc6)
+{
+	if (tc6->ongoing_net_pkt) {
+		net_pkt_unref(tc6->ongoing_net_pkt);
+		tc6->ongoing_net_pkt = NULL;
+	}
+
+	if (tc6->waiting_net_pkt) {
+		net_pkt_unref(tc6->waiting_net_pkt);
+		tc6->waiting_net_pkt = NULL;
+		k_sem_give(&tc6->tx_enq_sem);
+	}
+
+	if (tc6->rx_pkt) {
+		net_pkt_unref(tc6->rx_pkt);
+		tc6->rx_pkt = NULL;
+	}
+
+	if (tc6->buf_rx) {
+		net_buf_unref(tc6->buf_rx);
+		tc6->buf_rx = NULL;
+		tc6->buf_rx_used = 0;
+	}
+
+	tc6->spi_length = 0;
+	tc6->tx_eth_len = 0;
+	tc6->tx_eth_frame_end = false;
+	tc6->rx_buf_overflow = false;
+	tc6->txc = 0;
+	tc6->rca = 0;
+	tc6->exst = false;
+	tc6->int_flag = false;
+}
+
+/**
+ * @brief Recovery work handler executed on the system work queue.
+ *
+ * Performs the full MAC-PHY recovery sequence:
+ * 1. Reset volatile software state (free packets, clear flags).
+ * 2. Perform GPIO hardware reset.
+ * 3. Re-enable SYNC and ZARFE.
+ * 4. Invoke post-reset callback so the MAC driver restores PHY/MAC config.
+ */
+static void oa_tc6_recovery_work_handler(struct k_work *work)
+{
+	struct oa_tc6 *tc6 = CONTAINER_OF(work, struct oa_tc6, recovery_work);
+	int ret;
+
+	oa_tc6_reset_volatile_state(tc6);
+
+	ret = oa_tc6_gpio_reset(tc6);
+	if (ret != 0) {
+		LOG_ERR("Recovery: GPIO reset failed: %d", ret);
+		tc6->recovery_result = ret;
+		k_sem_give(&tc6->recovery_done_sem);
+		return;
+	}
+
+	ret = oa_tc6_enable_sync(tc6);
+	if (ret != 0) {
+		LOG_ERR("Recovery: enable SYNC failed: %d", ret);
+		tc6->recovery_result = ret;
+		k_sem_give(&tc6->recovery_done_sem);
+		return;
+	}
+
+	ret = oa_tc6_zero_align_receive_frame_enable(tc6);
+	if (ret != 0) {
+		LOG_ERR("Recovery: enable ZARFE failed: %d", ret);
+		tc6->recovery_result = ret;
+		k_sem_give(&tc6->recovery_done_sem);
+		return;
+	}
+
+	if (tc6->post_reset_cb != NULL) {
+		ret = tc6->post_reset_cb(tc6->post_reset_priv);
+		if (ret != 0) {
+			LOG_ERR("Recovery: post-reset callback failed: %d", ret);
+			tc6->recovery_result = ret;
+			k_sem_give(&tc6->recovery_done_sem);
+			return;
+		}
+	}
+
+	tc6->recovery_result = 0;
+	k_sem_give(&tc6->recovery_done_sem);
+}
+
+/**
+ * @brief Interrupt/SPI processing thread with integrated error recovery.
+ *
+ * Processes SPI data transfers in the main loop. On non-transient errors
+ * (SYNC loss, SPI failure), the thread offloads full recovery to the system
+ * work queue and waits on recovery_done_sem. Bounded retry logic ensures
+ * the device is declared non-functional after OA_TC6_MAX_RESET_RETRIES
+ * consecutive failures.
+ */
 static void oa_tc6_int_thread(struct oa_tc6 *tc6)
 {
-	uint32_t sts;
+	int ret;
 
 	while (true) {
-		if (!tc6->rst_flag) {
-			k_sem_take(&tc6->int_sem, K_FOREVER);
-			oa_tc6_reg_read(tc6, OA_STATUS0, &sts);
-			if (sts & OA_STATUS0_RESETC) {
-				oa_tc6_reg_write(tc6, OA_STATUS0, sts);
-
-				tc6->rst_flag = true;
-			}
+		if (tc6->reset_request) {
+			tc6->reset_request = false;
+			goto do_recovery;
 		}
 
-		else {
-			if (oa_tc6_spi_thread(tc6)) {
-				LOG_ERR("Non recoverable error\n");
-				break;
-			}
+		k_sem_take(&tc6->spi_sem, K_FOREVER);
+		ret = oa_tc6_spi_thread(tc6);
+		if (ret == 0) {
+			tc6->reset_count = 0;
+			continue;
 		}
+
+		if (ret == -EAGAIN) {
+			continue;
+		}
+
+do_recovery:
+		if (tc6->reset_count >= OA_TC6_MAX_RESET_RETRIES) {
+			LOG_ERR("Recovery failed after %u attempts, "
+				"device non-functional",
+				OA_TC6_MAX_RESET_RETRIES);
+			if (tc6->iface != NULL) {
+				net_eth_carrier_off(tc6->iface);
+			}
+			break;
+		}
+
+		ret = gpio_pin_interrupt_configure_dt(tc6->interrupt, GPIO_INT_DISABLE);
+		if (ret < 0) {
+			LOG_ERR("Failed to disable interrupt before reset: %d", ret);
+			return;
+		}
+
+		tc6->reset_count++;
+		LOG_WRN("Device error, attempting recovery (%u/%u)", tc6->reset_count,
+			OA_TC6_MAX_RESET_RETRIES);
+
+		if (tc6->iface != NULL) {
+			net_eth_carrier_off(tc6->iface);
+		}
+
+		k_msleep(OA_TC6_RECOVERY_DELAY_MS);
+
+		k_work_submit(&tc6->recovery_work);
+
+		ret = k_sem_take(&tc6->recovery_done_sem, K_MSEC(OA_TC6_RECOVERY_TIMEOUT_MS));
+		if (ret == -EAGAIN) {
+			LOG_ERR("Recovery work timed out");
+			tc6->reset_request = true;
+			k_sem_give(&tc6->spi_sem);
+			continue;
+		}
+
+		if (tc6->recovery_result != 0) {
+			LOG_ERR("Recovery failed: %d, will retry", tc6->recovery_result);
+			tc6->reset_request = true;
+			k_sem_give(&tc6->spi_sem);
+			continue;
+		}
+
+		tc6->reset_count = 0;
+		LOG_INF("Device recovered successfully");
+
+		if (tc6->iface != NULL) {
+			net_eth_carrier_on(tc6->iface);
+		}
+
+		tc6->int_flag = true;
+		k_sem_give(&tc6->spi_sem);
 	}
 }
 
@@ -941,11 +1101,20 @@ int oa_tc6_init(struct oa_tc6 *tc6)
 
 	tc6->chunk_size = tc6->cps + OA_TC6_HDR_SIZE;
 
+	k_sem_init(&tc6->int_sem, 0, 1);
 	k_sem_init(&tc6->spi_sem, 0, 1);
 	k_sem_init(&tc6->tx_enq_sem, 0, 1);
+	k_sem_init(&tc6->recovery_done_sem, 0, 1);
 
 	tc6->waiting_net_pkt = NULL;
 	tc6->ongoing_net_pkt = NULL;
+
+	tc6->reset_count = 0;
+	tc6->reset_request = false;
+	tc6->recovery_result = 0;
+	k_work_init(&tc6->recovery_work, oa_tc6_recovery_work_handler);
+	tc6->post_reset_cb = NULL;
+	tc6->post_reset_priv = NULL;
 
 	if (!spi_is_ready_dt(tc6->spi)) {
 		LOG_ERR("SPI bus %s not ready", tc6->spi->bus->name);
@@ -995,4 +1164,16 @@ int oa_tc6_init(struct oa_tc6 *tc6)
 	k_thread_name_set(tc6->tid_int, "oa_tc6_interrupt");
 
 	return oa_tc6_gpio_reset(tc6);
+}
+
+void oa_tc6_register_post_reset_cb(struct oa_tc6 *tc6, oa_tc6_post_reset_cb_t cb, void *priv)
+{
+	tc6->post_reset_cb = cb;
+	tc6->post_reset_priv = priv;
+}
+
+void oa_tc6_request_reset(struct oa_tc6 *tc6)
+{
+	tc6->reset_request = true;
+	k_sem_give(&tc6->spi_sem);
 }
