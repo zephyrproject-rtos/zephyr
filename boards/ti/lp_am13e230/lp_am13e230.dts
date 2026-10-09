@@ -40,3 +40,11 @@
 	clock-frequency = <DT_FREQ_M(48)>;
 	ti,xtal-startup-delay-us = <500>;
 };
+
+&timg12_0 {
+	status = "okay";
+
+	counterg12_0: counterg12_0 {
+		status = "okay";
+	};
+};
