@@ -898,6 +898,7 @@ static inline void ch_process_control(const struct device *dev,
 				dma_addr = (mem_addr_t)net_buf_tail(xfer->buf);
 
 				/* TODO: Optimise: goto start_transfer */
+
 			} else {
 				/* Prepare the DATA OUT */
 				size = xfer->buf->len;
@@ -916,10 +917,14 @@ static inline void ch_process_control(const struct device *dev,
 	} else {
 		/* Finished DATA stage */
 		hctsiz = sys_read32((mem_addr_t)&ch->regs->hctsiz);
+
+		/* TODO: Check usabiity of remaining variable. Seems we don't need it at all. */
+
 		remaining = usb_dwc2_get_hctsiz_xfersize(hctsiz);
 		actual_len = ch->length - remaining;
 
 		/* TODO: Keep the previous DIR state, do not use it blindly from setup packet */
+
 		if (usb_reqtype_is_to_host(setup)) {
 			uint16_t total = sys_le16_to_cpu(setup->wLength);
 			bool short_packet;
@@ -929,7 +934,7 @@ static inline void ch_process_control(const struct device *dev,
 
 			short_packet = actual_len < ch->length;
 
-			LOG_DBG("Control DATA IN completed: prog=%u act=%u received=%u total=%u",
+			LOG_WRN("Control DATA IN completed: prog=%u act=%u received=%u total=%u",
 				ch->length, actual_len, xfer->buf->len, total);
 
 			if (ch->data->do_split &&
@@ -949,6 +954,7 @@ static inline void ch_process_control(const struct device *dev,
 				pkt_cnt  = calc_packet_count(size, xfer->mps);
 
 				/* TODO: Verify it. For split, packet count always have to be 1 */
+
 				ch->data->next_pid = calc_next_pid(ch->data->next_pid, pkt_cnt);
 
 				LOG_DBG("Control DATA IN next: size=%u received=%u left=%u pid=%u",
