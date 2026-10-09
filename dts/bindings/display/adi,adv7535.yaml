@@ -47,6 +47,26 @@ properties:
       Auxiliary adi,adv7535-dsi node describing the DSI link of this
       bridge. It is a child of the MIPI DSI host the bridge is wired to.
 
+  pd-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the PD/AD power-down pin. The pin level when the
+      ADV7535 power supplies are applied selects both the main I2C address and
+      the power-down polarity. A low level selects address 0x39 and active-high
+      power-down, while a high level selects address 0x3d and active-low
+      power-down. The GPIO flags must match the selected power-down polarity.
+      Although this GPIO is optional, connecting it is strongly recommended
+      because toggling the PD/AD pin resets more registers than a
+      register-based reset. The I2C address and power-down polarity are sampled
+      when power is applied. To change either setting, set the pin to the
+      desired level and power-cycle the board.
+
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Interrupt pin of ADV7535. Must be configured as active-low and pulled up.
+
   display-timing:
     type: phandle
     required: true
@@ -66,6 +86,8 @@ examples:
       display-bridge@39 {
         compatible = "adi,adv7535";
         reg = <0x39>;
+        pd-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+        int-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
         dsi-device = <&adv7535_dsi>;
         display-timing = <&hdmi_timing>;
 
