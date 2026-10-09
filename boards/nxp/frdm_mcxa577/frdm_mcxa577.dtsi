@@ -303,24 +303,32 @@
 };
 
 /*
- * External-PHY Ethernet is disabled by default so that ordinary samples keep
- * the on-board MCU-Link VCOM console on LPUART1. It is enabled for networking
- * applications by adding boards/nxp/frdm_mcxa577/dts/nxp,enet.overlay to the
- * build (EXTRA_DTC_OVERLAY_FILE), which also moves the console to LPUART2
- * because MII needs the LPUART1 VCOM pins (P1_8/P1_9 = ENET0_TXD2/TXD3).
- * See ERR053383: ENET can intermittently fail to receive in RMII mode, so the
- * Rev B board uses MII.
+ * Ethernet defaults to the on-SoC 10BASE-T1S PHY.
+ *
+ * The external 10/100 Mbit PHY is reached over MII and is available through the
+ * frdm_mcxa577/mcxa577/mii board variant.
  */
 
 &enet {
-	status = "disabled";
-	pinctrl-0 = <&pinmux_enet_qos>;
+	status = "okay";
+	pinctrl-0 = <&pinmux_t1s>;
 	pinctrl-names = "default";
-	phy-connection-type = "mii";
+	phy-connection-type = "internal";
 	zephyr,random-mac-address;
-	phy-handle = <&phy>;
+	phy-handle = <&t1s>;
 };
 
+&t1s {
+	status = "okay";
+	plca-enable;
+	plca-node-id = <1>;
+	plca-node-count = <8>;
+	plca-burst-count = <0>;
+	plca-burst-timer = <0x80>;
+	plca-to-timer = <0x20>;
+};
+
+/* External MII PHY and its MDIO bus: enabled by the mii board variant. */
 &enet_mdio {
 	status = "disabled";
 
