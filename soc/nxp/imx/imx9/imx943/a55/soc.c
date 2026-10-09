@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,6 +37,37 @@ static int soc_netc_clock_init(int clk_id)
 	return scmi_clock_rate_set(proto, &clk_cfg);
 }
 #endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm6), okay)
+/*
+ * TPM6 is in the WAKEUP domain. The NXP System Manager (SM) may not grant
+ * the A55 subsystem permission to enable IMX943_CLK_TPM6 via the standard
+ * clock_control_on() path; the SCMI clock driver silently returns success
+ * when state-control is not allowed, leaving the peripheral clock gated.
+ * Accessing gated TPM6 registers then causes a Synchronous External Abort
+ * (bus error). Explicitly set the clock parent and enable it here, before
+ * the PWM driver initialises at POST_KERNEL.
+ */
+static int tpm6_clk_init(void)
+{
+	const struct device *clk_dev = DEVICE_DT_GET(DT_NODELABEL(scmi_clk));
+	struct scmi_protocol *proto = clk_dev->data;
+	struct scmi_clock_config cfg = {0};
+	int ret;
+
+	/* Use the 24 MHz oscillator as the TPM6 clock source */
+	ret = scmi_clock_parent_set(proto, IMX943_CLK_TPM6, IMX943_CLK_24M);
+	if (ret) {
+		return ret;
+	}
+
+	/* Enable TPM6 clock */
+	cfg.attributes = SCMI_CLK_CONFIG_ENABLE_DISABLE(true);
+	cfg.clk_id = IMX943_CLK_TPM6;
+
+	return scmi_clock_config_set(proto, &cfg);
+}
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(pwm6), okay) */
 
 static int soc_init(void)
 {
@@ -100,6 +131,13 @@ static int soc_init(void)
 		return ret;
 	}
 #endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm6), okay)
+	ret = tpm6_clk_init();
+	if (ret) {
+		return ret;
+	}
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(pwm6), okay) */
 
 	return ret;
 }
