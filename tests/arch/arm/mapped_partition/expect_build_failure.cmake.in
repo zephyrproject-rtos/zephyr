@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+set(failure_build "@CMAKE_CURRENT_BINARY_DIR@/@EXPECT_FAILURE_NAME@")
+set(linker_generator "@CONFIG_CMAKE_LINKER_GENERATOR@")
+if(NOT linker_generator)
+  set(linker_generator n)
+endif()
+
+set(ENV{ZEPHYR_BASE} "@ZEPHYR_BASE@")
+execute_process(
+  COMMAND "@CMAKE_COMMAND@" -S "@CMAKE_CURRENT_SOURCE_DIR@" -B "${failure_build}"
+    -G "@CMAKE_GENERATOR@"
+    "-DBOARD=@BOARD@"
+    "-DPython3_EXECUTABLE=@PYTHON_EXECUTABLE@"
+    "-DZEPHYR_TOOLCHAIN_VARIANT=@ZEPHYR_TOOLCHAIN_VARIANT@"
+    "-DZEPHYR_SDK_INSTALL_DIR=@ZEPHYR_SDK_INSTALL_DIR@"
+    "-DZEPHYR_MODULES=@ZEPHYR_MODULES@"
+    "-DEXTRA_ZEPHYR_MODULES=@EXTRA_ZEPHYR_MODULES@"
+    "-DDTC_OVERLAY_FILE=@EXPECT_FAILURE_OVERLAY@"
+    "-DCONFIG_CMAKE_LINKER_GENERATOR=${linker_generator}"
+    @EXPECT_FAILURE_ARGS@
+  RESULT_VARIABLE configure_result
+  OUTPUT_VARIABLE configure_output
+  ERROR_VARIABLE configure_error
+)
+set(failure_log "${configure_output}${configure_error}")
+
+if(configure_result EQUAL 0)
+  execute_process(
+    COMMAND "@CMAKE_COMMAND@" --build "${failure_build}"
+    RESULT_VARIABLE build_result
+    OUTPUT_VARIABLE build_output
+    ERROR_VARIABLE build_error
+  )
+  string(APPEND failure_log "${build_output}${build_error}")
+  if(build_result EQUAL 0)
+    message(FATAL_ERROR "@EXPECT_FAILURE_NAME@: application built successfully")
+  endif()
+endif()
+
+file(WRITE "${failure_build}.log" "${failure_log}")
+if(NOT failure_log MATCHES "@EXPECT_FAILURE_REGEX@")
+  message(FATAL_ERROR "@EXPECT_FAILURE_NAME@: expected '@EXPECT_FAILURE_REGEX@', got:\n"
+    "${failure_log}")
+endif()
