@@ -622,6 +622,12 @@ config NXP_WIFI_SCHED_SCAN_MIN_INTERVAL
 	help
 	  Minimum intreval in seconds of sched_scan plan.
 	  This is to save power for some use cases.
+
+config NXP_WIFI_BG_SCAN
+	bool "Background scan enable"
+	default y
+	help
+	  Enable background scan.
 endmenu
 
 config NXP_WIFI_WMM_UAPSD
