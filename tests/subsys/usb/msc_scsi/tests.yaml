@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  usb.msc.scsi:
+    tags: usb
+    integration_platforms:
+      - qemu_cortex_m3
+      - native_sim
