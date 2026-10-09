@@ -1,0 +1,16 @@
+# Copyright (c) 2026 Adrien RICCIARDI
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config USBD_XBOX360_CONTROLLER_CLASS
+	bool "Xbox 360 controller USB class support"
+	help
+	  Enable the Xbox 360 controller device class support.
+
+if USBD_XBOX360_CONTROLLER_CLASS
+
+module = USBD_XBOX360_CONTROLLER
+module-str = usbd xbox360
+source "subsys/logging/Kconfig.template.log_config"
+
+endif
