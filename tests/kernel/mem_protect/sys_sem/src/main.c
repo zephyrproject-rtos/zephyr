@@ -696,6 +696,7 @@ ZTEST_USER(sys_sem_1cpu, test_sys_sem_take_multiple)
  * @see sys_sem_take()
  * @see sys_sem_count_get()
  * @verifies ZEP-SRS-5-20
+ * @verifies ZEP-SRS-5-21
  */
 ZTEST(sys_sem, test_sys_sem_give_take_from_isr)
 {
