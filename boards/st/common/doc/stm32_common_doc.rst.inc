@@ -112,7 +112,7 @@ Example build command:
 .. parsed-literal::
 
    west build -b |stm32wba_lp_board_target| samples/bluetooth/peripheral_hr -- \\
-     -DDTC_OVERLAY_FILE=boards/stm32wba_stdby.overlay \\
+     -DDTC_OVERLAY_FILE=boards/stm32wba_pwr_optim.overlay \\
      -DCONFIG_PM=y
 
 .. stm32wba_low_power_end
