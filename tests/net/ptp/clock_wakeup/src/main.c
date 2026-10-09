@@ -916,7 +916,7 @@ ZTEST(ptp_clock_wakeup, test_synchronize_steps_large_offset_while_unlocked)
 {
 	const uint64_t ingress = NSEC_PER_SEC;
 	const int64_t delay = 100;
-	const int64_t offset = -(SYNC_SERVO_OUTLIER_NS + 1);
+	const int64_t offset = -(SYNC_SERVO_UNLOCKED_STEP_NS + 1);
 
 	ptp_clk.phc = DEVICE_GET(fake_phc);
 	ptp_clk.current_ds.mean_delay = (ptp_timeinterval)delay << 16;
@@ -925,10 +925,32 @@ ZTEST(ptp_clock_wakeup, test_synchronize_steps_large_offset_while_unlocked)
 	ptp_clock_synchronize(ingress, ingress - delay - offset, true);
 
 	zassert_equal(fake_ptp_clock_set_calls, 1,
-		      "unlocked offset beyond the outlier bound should step the PHC");
+		      "unlocked offset beyond the unlocked step bound should step the PHC");
 	zassert_equal(fake_ptp_clock_rate_adjust_calls, 1,
 		      "only the servo reset should reach the rate control");
 	zassert_equal(fake_ptp_clock_applied_rate_ratio, 1.0, "step should use nominal rate");
+}
+
+/* The outlier threshold applies only while locked: an unlocked servo steps above
+ * the fixed bound, so an offset between the two is slewed.
+ */
+ZTEST(ptp_clock_wakeup, test_synchronize_slews_unlocked_offset_above_outlier_threshold)
+{
+	const uint64_t ingress = NSEC_PER_SEC;
+	const int64_t delay = 100;
+	const int64_t offset = 80LL * NSEC_PER_MSEC;
+
+	ptp_clk.phc = DEVICE_GET(fake_phc);
+	ptp_clk.current_ds.mean_delay = (ptp_timeinterval)delay << 16;
+	fake_ptp_clock_time.second = 1;
+
+	ptp_clock_synchronize(ingress, ingress - delay - offset, true);
+
+	zassert_equal(fake_ptp_clock_set_calls, 0,
+		      "unlocked offset below the fixed bound should not step the PHC");
+	zassert_equal(fake_ptp_clock_rate_adjust_calls, 1,
+		      "unlocked offset should drive the PI controller");
+	zassert_true(fake_ptp_clock_applied_rate_ratio < 1.0, "positive offset should slow clock");
 }
 
 ZTEST(ptp_clock_wakeup, test_synchronize_good_sample_clears_locked_outlier_count)
