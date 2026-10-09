@@ -561,6 +561,8 @@ config SYSTEM_WORKQUEUE_WORK_TIMEOUT_MS
 
 endmenu
 
+rsource "call_offloader/Kconfig"
+
 menu "Barrier Operations"
 config BARRIER_OPERATIONS_BUILTIN
 	bool
