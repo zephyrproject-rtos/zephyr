@@ -103,3 +103,15 @@ config OBJ_CORE_SEM
 
 config TRACING_SEMAPHORE
 		default n
+
+config PM_DEVICE_RUNTIME
+		default y
+
+config PM_DEVICE_RUNTIME_DEDICATED_WQ_STACK_SIZE
+		default 768
+
+config PM_DEVICE_SYSTEM_MANAGED
+		default y
+
+config PM_DEVICE
+		default y

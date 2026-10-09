@@ -150,9 +150,10 @@
 	cs-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 
 	mx25r80: mx25r8035f@0 {
+		status = "okay";
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		status = "disabled";
+		zephyr,pm-device-runtime-auto;
 		spi-max-frequency = <12000000>;
 		size = <0x800000>;
 		jedec-id = [c2 28 14];

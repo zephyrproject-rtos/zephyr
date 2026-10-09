@@ -18,6 +18,7 @@ config SOC_SERIES_CC23X0
 	select PM_DEVICE if PM
 	select HAS_POWEROFF
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+	select PM_DEVICE_DRIVER_NEEDS_DEDICATED_WQ if PM_DEVICE_RUNTIME
 
 menu "Bootloader Configuration"
 depends on SOC_SERIES_CC23X0

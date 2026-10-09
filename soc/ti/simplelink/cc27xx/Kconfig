@@ -22,7 +22,7 @@ config SOC_SERIES_CC27XX
 	select HAS_PM
 	select PM_DEVICE if PM
 	select HAS_POWEROFF
-
+	select PM_DEVICE_DRIVER_NEEDS_DEDICATED_WQ if PM_DEVICE_RUNTIME
 
 menu "Customer Configuration (CCFG)"
 depends on SOC_SERIES_CC27XX
