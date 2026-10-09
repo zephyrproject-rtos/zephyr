@@ -130,6 +130,33 @@ static void common_obj_core_test(uint32_t type_id, const char *str,
 	}
 }
 
+/**
+ * @brief Verify thread objects are tracked and untracked by the object core
+ * framework.
+ *
+ * @details
+ * Thread objects are registered with the object core framework when created.
+ * This test confirms a registered thread can be located through its object
+ * type, and that aborting the thread unregisters it from the framework.
+ *
+ * Test steps:
+ * - Locate the thread object type with k_obj_type_find().
+ * - Walk the type with k_obj_type_walk_locked()/_unlocked() and confirm both
+ *   the statically and dynamically created threads are found.
+ * - Abort both threads.
+ * - Walk the type again and confirm neither thread is found.
+ *
+ * Expected result:
+ * - Both threads are found while alive and absent after being aborted.
+ *
+ * @see k_obj_type_find()
+ * @see k_obj_type_walk_locked()
+ * @see k_obj_type_walk_unlocked()
+ * @verifies ZEP-SRS-35-1
+ * @verifies ZEP-SRS-35-2
+ * @verifies ZEP-SRS-35-3
+ * @verifies ZEP-SRS-35-4
+ */
 ZTEST(obj_core, test_obj_core_thread)
 {
 	k_thread_create(&thread2, thread2_stack,
@@ -178,6 +205,30 @@ ZTEST(obj_core, test_obj_core_thread)
 	zassert_equal(status, 0, "dynamic thread found with unlocked walk\n");
 }
 
+/**
+ * @brief Verify per-CPU and kernel objects are registered with the object core
+ * framework.
+ *
+ * @details
+ * The per-CPU structures and the global kernel structure are registered with
+ * the object core framework at boot. Using the existing object cores (no new
+ * ones are created), confirm each CPU object and the kernel object can be
+ * found by walking their respective object types.
+ *
+ * Test steps:
+ * - Find the CPU object type and walk it for each CPU's object core.
+ * - Find the kernel object type and walk it for the kernel object core.
+ *
+ * Expected result:
+ * - Every CPU object core and the kernel object core are found.
+ *
+ * @see k_obj_type_find()
+ * @see k_obj_type_walk_locked()
+ * @see k_obj_type_walk_unlocked()
+ * @verifies ZEP-SRS-35-1
+ * @verifies ZEP-SRS-35-3
+ * @verifies ZEP-SRS-35-4
+ */
 ZTEST(obj_core, test_obj_core_system)
 {
 	int  i;
@@ -198,12 +249,59 @@ ZTEST(obj_core, test_obj_core_system)
 			     K_OBJ_CORE(&_kernel), NULL);
 }
 
+/**
+ * @brief Verify system memory block objects are registered with the object core
+ * framework.
+ *
+ * @details
+ * A statically defined system memory block is registered with the object core
+ * framework. Confirm the memory block object type can be found and that walking
+ * it locates the registered object.
+ *
+ * Test steps:
+ * - Find the memory block object type with k_obj_type_find().
+ * - Walk the type (locked and unlocked) for the statically defined block.
+ *
+ * Expected result:
+ * - The registered system memory block object core is found.
+ *
+ * @see k_obj_type_find()
+ * @see k_obj_type_walk_locked()
+ * @see k_obj_type_walk_unlocked()
+ * @verifies ZEP-SRS-35-1
+ * @verifies ZEP-SRS-35-3
+ * @verifies ZEP-SRS-35-4
+ */
 ZTEST(obj_core, test_obj_core_sys_mem_block)
 {
 	common_obj_core_test(K_OBJ_TYPE_MEM_BLOCK_ID, "memory block",
 			     K_OBJ_CORE(&block1), NULL);
 }
 
+/**
+ * @brief Verify memory slab objects are registered with the object core
+ * framework.
+ *
+ * @details
+ * Both a statically defined and a dynamically initialized memory slab are
+ * registered with the object core framework. Confirm the memory slab object
+ * type can be found and that walking it locates both objects.
+ *
+ * Test steps:
+ * - Initialize a memory slab dynamically with k_mem_slab_init().
+ * - Find the memory slab object type and walk it (locked and unlocked) for both
+ *   the static and dynamic slabs.
+ *
+ * Expected result:
+ * - Both the static and dynamic memory slab object cores are found.
+ *
+ * @see k_obj_type_find()
+ * @see k_obj_type_walk_locked()
+ * @see k_obj_type_walk_unlocked()
+ * @verifies ZEP-SRS-35-1
+ * @verifies ZEP-SRS-35-3
+ * @verifies ZEP-SRS-35-4
+ */
 ZTEST(obj_core, test_obj_core_mem_slab)
 {
 	k_mem_slab_init(&slab2, slab2_buffer, 32, 8);
@@ -211,6 +309,29 @@ ZTEST(obj_core, test_obj_core_mem_slab)
 			     K_OBJ_CORE(&slab1), K_OBJ_CORE(&slab2));
 }
 
+/**
+ * @brief Verify timer objects are registered with the object core framework.
+ *
+ * @details
+ * Both a statically defined and a dynamically initialized timer are registered
+ * with the object core framework. Confirm the timer object type can be found
+ * and that walking it locates both objects.
+ *
+ * Test steps:
+ * - Initialize a timer dynamically with k_timer_init().
+ * - Find the timer object type and walk it (locked and unlocked) for both the
+ *   static and dynamic timers.
+ *
+ * Expected result:
+ * - Both the static and dynamic timer object cores are found.
+ *
+ * @see k_obj_type_find()
+ * @see k_obj_type_walk_locked()
+ * @see k_obj_type_walk_unlocked()
+ * @verifies ZEP-SRS-35-1
+ * @verifies ZEP-SRS-35-3
+ * @verifies ZEP-SRS-35-4
+ */
 ZTEST(obj_core, test_obj_core_timer)
 {
 	k_timer_init(&timer2, NULL, NULL);
@@ -218,6 +339,29 @@ ZTEST(obj_core, test_obj_core_timer)
 			     K_OBJ_CORE(&timer1), K_OBJ_CORE(&timer2));
 }
 
+/**
+ * @brief Verify stack objects are registered with the object core framework.
+ *
+ * @details
+ * Both a statically defined and a dynamically initialized stack are registered
+ * with the object core framework. Confirm the stack object type can be found
+ * and that walking it locates both objects.
+ *
+ * Test steps:
+ * - Initialize a stack dynamically with k_stack_init().
+ * - Find the stack object type and walk it (locked and unlocked) for both the
+ *   static and dynamic stacks.
+ *
+ * Expected result:
+ * - Both the static and dynamic stack object cores are found.
+ *
+ * @see k_obj_type_find()
+ * @see k_obj_type_walk_locked()
+ * @see k_obj_type_walk_unlocked()
+ * @verifies ZEP-SRS-35-1
+ * @verifies ZEP-SRS-35-3
+ * @verifies ZEP-SRS-35-4
+ */
 ZTEST(obj_core, test_obj_core_stack)
 {
 	k_stack_init(&stack2, stack2_buffer, 8);
@@ -232,6 +376,29 @@ ZTEST(obj_core, test_obj_core_queue)
 			     K_OBJ_CORE(&queue1), K_OBJ_CORE(&queue2));
 }
 
+/**
+ * @brief Verify FIFO objects are registered with the object core framework.
+ *
+ * @details
+ * Both a statically defined and a dynamically initialized FIFO are registered
+ * with the object core framework. Confirm the FIFO object type can be found
+ * and that walking it locates both objects.
+ *
+ * Test steps:
+ * - Initialize a FIFO dynamically with k_fifo_init().
+ * - Find the FIFO object type and walk it (locked and unlocked) for both the
+ *   static and dynamic FIFOs.
+ *
+ * Expected result:
+ * - Both the static and dynamic FIFO object cores are found.
+ *
+ * @see k_obj_type_find()
+ * @see k_obj_type_walk_locked()
+ * @see k_obj_type_walk_unlocked()
+ * @verifies ZEP-SRS-35-1
+ * @verifies ZEP-SRS-35-3
+ * @verifies ZEP-SRS-35-4
+ */
 ZTEST(obj_core, test_obj_core_fifo)
 {
 	k_fifo_init(&fifo2);
@@ -243,6 +410,29 @@ ZTEST(obj_core, test_obj_core_fifo)
 			     K_OBJ_CORE(&fifo1._queue), K_OBJ_CORE(&fifo2._queue));
 }
 
+/**
+ * @brief Verify LIFO objects are registered with the object core framework.
+ *
+ * @details
+ * Both a statically defined and a dynamically initialized LIFO are registered
+ * with the object core framework. Confirm the LIFO object type can be found
+ * and that walking it locates both objects.
+ *
+ * Test steps:
+ * - Initialize a LIFO dynamically with k_lifo_init().
+ * - Find the LIFO object type and walk it (locked and unlocked) for both the
+ *   static and dynamic LIFOs.
+ *
+ * Expected result:
+ * - Both the static and dynamic LIFO object cores are found.
+ *
+ * @see k_obj_type_find()
+ * @see k_obj_type_walk_locked()
+ * @see k_obj_type_walk_unlocked()
+ * @verifies ZEP-SRS-35-1
+ * @verifies ZEP-SRS-35-3
+ * @verifies ZEP-SRS-35-4
+ */
 ZTEST(obj_core, test_obj_core_lifo)
 {
 	k_lifo_init(&lifo2);
@@ -250,6 +440,29 @@ ZTEST(obj_core, test_obj_core_lifo)
 			     K_OBJ_CORE(&lifo1), K_OBJ_CORE(&lifo2));
 }
 
+/**
+ * @brief Verify pipe objects are registered with the object core framework.
+ *
+ * @details
+ * Both a statically defined and a dynamically initialized pipe are registered
+ * with the object core framework. Confirm the pipe object type can be found
+ * and that walking it locates both objects.
+ *
+ * Test steps:
+ * - Initialize a pipe dynamically with k_pipe_init().
+ * - Find the pipe object type and walk it (locked and unlocked) for both the
+ *   static and dynamic pipes.
+ *
+ * Expected result:
+ * - Both the static and dynamic pipe object cores are found.
+ *
+ * @see k_obj_type_find()
+ * @see k_obj_type_walk_locked()
+ * @see k_obj_type_walk_unlocked()
+ * @verifies ZEP-SRS-35-1
+ * @verifies ZEP-SRS-35-3
+ * @verifies ZEP-SRS-35-4
+ */
 ZTEST(obj_core, test_obj_core_pipe)
 {
 	k_pipe_init(&pipe2, pipe2_buffer, sizeof(pipe2_buffer));
@@ -257,6 +470,30 @@ ZTEST(obj_core, test_obj_core_pipe)
 			     K_OBJ_CORE(&pipe1), K_OBJ_CORE(&pipe2));
 }
 
+/**
+ * @brief Verify message queue objects are registered with the object core
+ * framework.
+ *
+ * @details
+ * Both a statically defined and a dynamically initialized message queue are
+ * registered with the object core framework. Confirm the message queue object
+ * type can be found and that walking it locates both objects.
+ *
+ * Test steps:
+ * - Initialize a message queue dynamically with k_msgq_init().
+ * - Find the message queue object type and walk it (locked and unlocked) for
+ *   both the static and dynamic message queues.
+ *
+ * Expected result:
+ * - Both the static and dynamic message queue object cores are found.
+ *
+ * @see k_obj_type_find()
+ * @see k_obj_type_walk_locked()
+ * @see k_obj_type_walk_unlocked()
+ * @verifies ZEP-SRS-35-1
+ * @verifies ZEP-SRS-35-3
+ * @verifies ZEP-SRS-35-4
+ */
 ZTEST(obj_core, test_obj_core_msgq)
 {
 	k_msgq_init(&msgq2, msgq2_buffer, 4, 4);
@@ -264,6 +501,29 @@ ZTEST(obj_core, test_obj_core_msgq)
 			     K_OBJ_CORE(&msgq1), K_OBJ_CORE(&msgq2));
 }
 
+/**
+ * @brief Verify mailbox objects are registered with the object core framework.
+ *
+ * @details
+ * Both a statically defined and a dynamically initialized mailbox are
+ * registered with the object core framework. Confirm the mailbox object type
+ * can be found and that walking it locates both objects.
+ *
+ * Test steps:
+ * - Initialize a mailbox dynamically with k_mbox_init().
+ * - Find the mailbox object type and walk it (locked and unlocked) for both the
+ *   static and dynamic mailboxes.
+ *
+ * Expected result:
+ * - Both the static and dynamic mailbox object cores are found.
+ *
+ * @see k_obj_type_find()
+ * @see k_obj_type_walk_locked()
+ * @see k_obj_type_walk_unlocked()
+ * @verifies ZEP-SRS-35-1
+ * @verifies ZEP-SRS-35-3
+ * @verifies ZEP-SRS-35-4
+ */
 ZTEST(obj_core, test_obj_core_mbox)
 {
 	k_mbox_init(&mbox2);
