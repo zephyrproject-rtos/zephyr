@@ -76,12 +76,32 @@ void precision_pi_set_limits(struct precision_pi *pi, double integral_limit, dou
 /**
  * @brief Update a PI controller from an error sample.
  *
+ * Same as precision_pi_update_interval() with an interval of 1.
+ *
  * @param pi Controller instance.
  * @param error Current control error.
  *
  * @return Controller output.
  */
 double precision_pi_update(struct precision_pi *pi, double error);
+
+/**
+ * @brief Update a PI controller from an error sample taken after an interval.
+ *
+ * The gains are given for an interval of 1 and are divided by @p interval.
+ * When the plant integrates the output over the interval, as a clock does with
+ * a rate correction, the loop gains per sample are then kp and ki for any
+ * interval, so the loop keeps its stability and damping when the sample rate
+ * changes.
+ *
+ * @param pi Controller instance.
+ * @param error Current control error.
+ * @param interval Time since the previous sample, in the unit the gains are
+ *                 given for. Must be greater than 0.
+ *
+ * @return Controller output.
+ */
+double precision_pi_update_interval(struct precision_pi *pi, double error, double interval);
 
 /** @} */
 

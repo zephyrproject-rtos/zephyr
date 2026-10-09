@@ -8,6 +8,7 @@
 #include <stdbool.h>
 
 #include <zephyr/precision_timing/precision_pi.h>
+#include <zephyr/sys/__assert.h>
 
 void precision_pi_init(struct precision_pi *pi, double kp, double ki)
 {
@@ -48,13 +49,20 @@ static double pi_clamp(double value, double limit)
 
 double precision_pi_update(struct precision_pi *pi, double error)
 {
+	return precision_pi_update_interval(pi, error, 1.0);
+}
+
+double precision_pi_update_interval(struct precision_pi *pi, double error, double interval)
+{
 	double integral;
 	double output;
 	double limited_output;
 	bool integral_moves_outward;
 
-	integral = pi_clamp(pi->integral + pi->ki * error, pi->integral_limit);
-	output = pi->kp * error + integral;
+	__ASSERT(interval > 0.0, "PI interval must be positive");
+
+	integral = pi_clamp(pi->integral + (pi->ki / interval) * error, pi->integral_limit);
+	output = (pi->kp / interval) * error + integral;
 	limited_output = pi_clamp(output, pi->output_limit);
 
 	if (limited_output != output) {
