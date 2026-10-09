@@ -253,6 +253,11 @@ Removed APIs and options
 
     * ``CONFIG_MCUMGR_GRP_OS_INFO_HARDWARE_INFO_SHORT_HARDWARE_PLATFORM``
 
+* Modem
+
+    * ``CONFIG_HL78XX_EVT_MONITOR_HEAP_SIZE``, replaced by
+      :kconfig:option:`CONFIG_HL78XX_EVT_MONITOR_QUEUE_DEPTH`
+
 * Networking
 
     * ``CONFIG_NET_TC_SKIP_FOR_HIGH_PRIO``
@@ -831,6 +836,13 @@ New APIs and options
 * Modem
 
   * :c:enumerator:`CELLULAR_MODEM_INFO_SERIAL_NUMBER`
+  * Sierra Wireless HL78xx:
+
+    * :c:func:`hl78xx_at_monitor_dropped_count`
+    * :c:func:`hl78xx_evt_monitor_dispatch`
+    * :c:func:`hl78xx_evt_monitor_dropped_count`
+    * :kconfig:option:`CONFIG_HL78XX_EVT_MONITOR_QUEUE_DEPTH`
+    * :kconfig:option:`CONFIG_MODEM_HL78XX_NTN_PDP_FAMILY`
 
 * Multimedia Pipeline
 
