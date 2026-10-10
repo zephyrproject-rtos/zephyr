@@ -403,7 +403,7 @@ static whd_result_t airoc_wifi_host_buffer_get(whd_buffer_t *buffer, whd_buffer_
 static void airoc_wifi_buffer_release(whd_buffer_t buffer, whd_buffer_dir_t direction)
 {
 	CY_UNUSED_PARAMETER(direction);
-	(void)net_buf_destroy((struct net_buf *)buffer);
+	net_buf_unref((struct net_buf *)buffer);
 }
 
 static uint8_t *airoc_wifi_buffer_get_current_piece_data_pointer(whd_buffer_t buffer)
@@ -916,8 +916,11 @@ static int airoc_mgmt_connect(const struct device *dev,
 
 	if (data->is_sta_connected) {
 		LOG_ERR("Already connected");
-		ret = -EALREADY;
-		goto error;
+		/* Reject duplicate requests without reporting that the active
+		 * connection failed or changing its operational state.
+		 */
+		k_sem_give(&data->sema_common);
+		return -EALREADY;
 	}
 
 	if (data->is_ap_up) {
