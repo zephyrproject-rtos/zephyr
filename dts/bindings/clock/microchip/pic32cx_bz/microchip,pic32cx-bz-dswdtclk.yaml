@@ -1,0 +1,16 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+include: [base.yaml]
+
+description: Deep Sleep Watchdog Timer Reference Clock configuration.
+compatible: "microchip,pic32cx-bz-dswdtclk"
+
+properties:
+  dswdtclk-src-sel:
+    type: string
+    enum:
+      - "sosc"
+      - "lprc"
+    default: "lprc"
+    description: Deep Sleep Watchdog Timer Reference Clock Select

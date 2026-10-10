@@ -1,0 +1,27 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+include: [base.yaml]
+
+description: Peripheral Bus Clock (PBCLK) configuration.
+compatible: "microchip,pic32cx-bz-pbclk"
+
+child-binding:
+  properties:
+    subsystem:
+      type: int
+      required: true
+      description: Clock subsystem
+
+    pbclk-div:
+      type: int
+      default: 1
+      description: Peripheral Clock Divisor Control value (1 - 128)
+
+    pbclk-en:
+      type: int
+      enum:
+        - 0
+        - 1
+      default: 1
+      description: Pbclk Enable
