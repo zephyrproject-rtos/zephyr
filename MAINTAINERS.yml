@@ -4197,6 +4197,7 @@ Microchip PIC32 Platforms:
     - sunil-abraham
     - AzharMCHP
     - nandojve
+    - TheArkadiuszGrzelka
   files:
     - boards/microchip/pic32*/
     - dts/arm/microchip/pic32*/
