@@ -31,3 +31,10 @@ config SOC_EGIS_ET171_VENDOR_FIRMWARE_SIZE
 	help
 	  Customize the firmware size info in the binary header.
 	  Unused if zero.
+
+config APPLY_ANALOG_FACTORY_CONFIGURATION
+	bool "Apply analog factory configuration"
+	default y
+	help
+	  Enable this option to apply the analog factory configuration
+	  registers for the Egis ET171 SoC during early boot.
