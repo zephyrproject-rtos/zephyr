@@ -19,11 +19,42 @@
 #define XEC_PCR_OSC_ID_OFS          0x0CU
 #define XEC_PCR_OSC_ID_PLL_LOCK_POS 8
 
-#define XEC_BASIC_TIMER_INSTANCES 6
-#define XEC_BASIC_TIMER_SPACING   0x20U
-#define XEC_BASIC_TIMER0_REG_BASE DT_REG_ADDR(DT_NODELABEL(timer0))
-#define XEC_BASIC_TIMER_CR_OFS    0x10U
-#define XEC_BASIC_TIMER_CR_EN_POS 0
+/*
+ * arch_busy_wait()'s free-running counter is not a Zephyr device (no
+ * PM_DEVICE hook), so it can't be stopped/restarted at the driver level.
+ * Derive its base address from the same "busy-wait-timer" DT phandle
+ * mchp_xec_rtos_timer.c uses to stop/restart. All other basic timers are
+ * Zephyr counter devices (drivers/counter/counter_mchp_xec.c) and are
+ * suspended/resumed via their own PM_DEVICE action.
+ */
+#if defined(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT) &&                                                   \
+	DT_NODE_HAS_PROP(DT_NODELABEL(rtimer), busy_wait_timer)
+#define BUSY_WAIT_TMR_ADDR DT_REG_ADDR(DT_PHANDLE(DT_NODELABEL(rtimer), busy_wait_timer))
+
+static void deep_sleep_save_busy_wait_timer(void)
+{
+	uintptr_t ctrl_addr = BUSY_WAIT_TMR_ADDR + MCHP_BTMR_CTRL_OFS;
+
+	sys_write32(sys_read32(ctrl_addr) & ~(MCHP_BTMR_CTRL_START | MCHP_BTMR_CTRL_ENABLE),
+		    ctrl_addr);
+}
+
+static void deep_sleep_restore_busy_wait_timer(void)
+{
+	uintptr_t ctrl_addr = BUSY_WAIT_TMR_ADDR + MCHP_BTMR_CTRL_OFS;
+
+	sys_write32(sys_read32(ctrl_addr) | MCHP_BTMR_CTRL_ENABLE | MCHP_BTMR_CTRL_START,
+		    ctrl_addr);
+}
+#else
+static void deep_sleep_save_busy_wait_timer(void)
+{
+}
+
+static void deep_sleep_restore_busy_wait_timer(void)
+{
+}
+#endif
 
 #if DT_NODE_EXISTS(DT_NODELABEL(uart3))
 #define MEC165XB_UART_INSTANCES 4
@@ -35,33 +66,7 @@
 
 #define XEC_UART0_REG_BASE DT_REG_ADDR(DT_NODELABEL(uart0))
 
-static uint8_t basic_timer_cr_save[XEC_BASIC_TIMER_INSTANCES];
 static uint8_t uart_actv_save[MEC165XB_UART_INSTANCES];
-
-static void save_basic_timers(void)
-{
-	mm_reg_t rb = (mm_reg_t)(XEC_BASIC_TIMER0_REG_BASE);
-
-	for (uint32_t n = 0; n < XEC_BASIC_TIMER_INSTANCES; n++) {
-		uint32_t temp = sys_read32(rb + XEC_BASIC_TIMER_CR_OFS);
-
-		sys_write32(temp & ~BIT(XEC_BASIC_TIMER_CR_EN_POS), rb + XEC_BASIC_TIMER_CR_OFS);
-		basic_timer_cr_save[n] = (uint8_t)(temp & BIT(XEC_BASIC_TIMER_CR_EN_POS));
-		rb += XEC_BASIC_TIMER_SPACING;
-	}
-}
-
-static void restore_basic_timers(void)
-{
-	mm_reg_t rb = (mm_reg_t)(XEC_BASIC_TIMER0_REG_BASE);
-
-	for (uint32_t n = 0; n < XEC_BASIC_TIMER_INSTANCES; n++) {
-		if (basic_timer_cr_save[n] != 0) {
-			sys_set_bit(rb + XEC_BASIC_TIMER_CR_OFS, XEC_BASIC_TIMER_CR_EN_POS);
-		}
-		rb += XEC_BASIC_TIMER_SPACING;
-	}
-}
 
 static void save_uarts(void)
 {
@@ -89,13 +94,13 @@ static void restore_uarts(void)
  */
 static void soc_deep_sleep_periph_save(void)
 {
-	save_basic_timers();
+	deep_sleep_save_busy_wait_timer();
 	save_uarts();
 }
 
 static void soc_deep_sleep_periph_restore(void)
 {
-	restore_basic_timers();
+	deep_sleep_restore_busy_wait_timer();
 	restore_uarts();
 }
 
