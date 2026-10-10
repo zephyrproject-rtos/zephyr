@@ -13,6 +13,11 @@
 		peripheral: peripheral@40000000 {
 			ranges = <0x0 0x40000000 0x10000000>;
 		};
+
+		fmu: flash-controller@40043000 {
+			reg = <0x40043000 0x1000>;
+			ranges;
+		};
 	};
 };
 

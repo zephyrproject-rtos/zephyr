@@ -854,31 +854,6 @@
 		status = "disabled";
 	};
 
-	fmu: flash-controller@43000 {
-		compatible = "nxp,msf1";
-		reg = <0x43000 0x1000>;
-		interrupts = <138 0>;
-		status = "disabled";
-
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		flash: flash@0 {
-			compatible = "soc-nv-flash";
-			reg = <0 DT_SIZE_M(2)>;
-			erase-block-size = <DT_SIZE_K(8)>;
-			write-block-size = <16>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			ranges;
-		};
-
-		uuid: uuid@1100000 {
-			compatible = "nxp,lpc-uid";
-			reg = <0x1100000 0x10>;
-		};
-	};
-
 	os_timer: timers@49000 {
 		compatible = "nxp,os-timer";
 		reg = <0x49000 0x1000>;
@@ -1486,6 +1461,30 @@
 		trng: rng {
 			compatible = "nxp,els-trng";
 		};
+	};
+};
+
+&fmu {
+	compatible = "nxp,msf1";
+	interrupts = <138 0>;
+	status = "disabled";
+
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	flash: flash@0 {
+		compatible = "soc-nv-flash";
+		reg = <0 DT_SIZE_M(2)>;
+		erase-block-size = <DT_SIZE_K(8)>;
+		write-block-size = <16>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+	};
+
+	uuid: uuid@1100000 {
+		compatible = "nxp,lpc-uid";
+		reg = <0x1100000 0x10>;
 	};
 };
 

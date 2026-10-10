@@ -17,6 +17,11 @@
 			ranges = <0x0 0x50000000 0x10000000>;
 		};
 
+		fmu: flash-controller@50043000 {
+			reg = <0x50043000 0x1000>;
+			ranges = <0x0 0x10000000 0x4000000>;
+		};
+
 		flexspi: spi@500c8000 {
 			reg = <0x500c8000 0x1000>, <0x90000000 DT_SIZE_M(8)>;
 			reg-names = "reg_base", "ahb";
