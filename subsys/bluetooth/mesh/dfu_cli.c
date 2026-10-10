@@ -713,8 +713,14 @@ static void cancel(struct bt_mesh_dfu_cli *cli)
 		.next = cancelled,
 		.acked = true
 	};
+	struct bt_mesh_dfu_target *target;
 
 	LOG_DBG("");
+
+	/* Cancel must also reach the targets skipped by the interrupted step. */
+	TARGETS_FOR_EACH(cli, target) {
+		target->blob.skip = 0U;
+	}
 
 	cli->op = BT_MESH_DFU_OP_UPDATE_STATUS;
 

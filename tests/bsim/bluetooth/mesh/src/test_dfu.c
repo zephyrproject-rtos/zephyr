@@ -83,6 +83,15 @@ static bool self_update_apply_fail;
  */
 static bool self_update_apply_err;
 
+/* Step of the update after which test_cli_cancel() cancels it. */
+enum cancel_step {
+	CANCEL_IN_TRANSFER,
+	CANCEL_AFTER_VERIFY,
+	CANCEL_AFTER_APPLY,
+};
+
+static int cancel_step;
+
 static void test_args_parse(int argc, char *argv[])
 {
 	bs_args_struct_t args_struct[] = {
@@ -115,6 +124,13 @@ static void test_args_parse(int argc, char *argv[])
 			.option = "recover",
 			.descript = "Recover DFU server phase"
 		},
+		{
+			.dest = &cancel_step,
+			.type = 'i',
+			.name = "{0: in transfer, 1: after verify, 2: after apply}",
+			.option = "cancel-step",
+			.descript = "Step after which the DFU Client cancels the update"
+		},
 	};
 
 	bs_args_parse_all_cmd_line(argc, argv, args_struct);
@@ -128,12 +144,15 @@ static int dummy_blob_chunk_wr(const struct bt_mesh_blob_io *io,
 	return 0;
 }
 
+static struct k_sem chunk_rd_sem;
+
 static int dummy_blob_chunk_rd(const struct bt_mesh_blob_io *io,
 			 const struct bt_mesh_blob_xfer *xfer,
 			 const struct bt_mesh_blob_block *block,
 			 const struct bt_mesh_blob_chunk *chunk)
 {
 	memset(chunk->data, 0, chunk->size);
+	k_sem_give(&chunk_rd_sem);
 
 	return 0;
 }
@@ -242,9 +261,15 @@ static struct k_sem dfu_verify_sem;
 static bool dfu_verify_fail;
 static bool expect_dfu_xfer_end = true;
 
+static bool dfu_cancel_expected;
+
 static void target_dfu_transfer_end(struct bt_mesh_dfu_srv *srv, const struct bt_mesh_dfu_img *img,
 				    bool success)
 {
+	if (dfu_cancel_expected && !success) {
+		return;
+	}
+
 	ASSERT_TRUE(expect_dfu_xfer_end);
 	ASSERT_TRUE(success);
 
@@ -1166,6 +1191,26 @@ static void target_dfu_no_change_post_reboot(void)
 	bt_mesh_device_setup(&prov, &target_comp);
 }
 
+static void test_target_dfu_cancel(void)
+{
+	dfu_cancel_expected = true;
+
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	bt_mesh_device_setup(&prov, &target_comp);
+	target_prov_and_conf_default();
+
+	/* The update ends when test_cli_cancel() cancels it or when it is applied. */
+	while (dfu_srv.update.phase == BT_MESH_DFU_PHASE_IDLE) {
+		k_sleep(K_MSEC(100));
+	}
+
+	while (dfu_srv.update.phase != BT_MESH_DFU_PHASE_IDLE) {
+		k_sleep(K_MSEC(100));
+	}
+
+	PASS();
+}
+
 static void test_target_dfu_no_change(void)
 {
 	if (recover) {
@@ -1317,6 +1362,104 @@ static const struct bt_mesh_comp cli_comp = {
 		},
 	.elem_count = 1,
 };
+
+static const struct bt_mesh_comp cli_comp_self = {
+	.elem =
+		(const struct bt_mesh_elem[]){
+			BT_MESH_ELEM(1,
+				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
+						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
+						BT_MESH_MODEL_SAR_CFG_SRV,
+						BT_MESH_MODEL_SAR_CFG_CLI(&sar_cfg_cli),
+						BT_MESH_MODEL_DFU_CLI(&dfu_cli)),
+				     BT_MESH_MODEL_NONE),
+			BT_MESH_ELEM(2,
+				     MODEL_LIST(BT_MESH_MODEL_DFU_SRV(&dfu_srv)),
+				     BT_MESH_MODEL_NONE),
+		},
+	.elem_count = 2,
+};
+
+static void test_cli_cancel(void)
+{
+	enum bt_mesh_dfu_phase local_phase = BT_MESH_DFU_PHASE_VERIFY_OK;
+	const struct bt_mesh_dfu_slot *slot;
+	int err;
+
+	/* The targets are the Firmware Update Server on this node's element 2, which
+	 * verifies without a transfer and is skipped by the Transfer step, and a
+	 * remote server running test_target_dfu_cancel().
+	 */
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	bt_mesh_device_setup(&prov, &cli_comp_self);
+	dist_self_update_prov_and_conf(DIST_ADDR);
+
+	ASSERT_TRUE(slot_add(&slot));
+
+	(void)target_srv_add(DIST_ADDR + 1, false);
+	(void)target_srv_add(TARGET_ADDR + 1, false);
+	dfu_cli_inputs_prepare(0);
+	dfu_cli_xfer.xfer.mode = BT_MESH_BLOB_XFER_MODE_PUSH;
+	dfu_cli_xfer.xfer.slot = slot;
+	dfu_cli_xfer.xfer.blob_id = TEST_BLOB_ID;
+
+	err = bt_mesh_dfu_cli_send(&dfu_cli, &dfu_cli_xfer.inputs, &dummy_blob_io,
+				   &dfu_cli_xfer.xfer);
+	if (err) {
+		FAIL("DFU Client send failed (err: %d)", err);
+	}
+
+	switch (cancel_step) {
+	case CANCEL_IN_TRANSFER:
+		if (k_sem_take(&chunk_rd_sem, K_SECONDS(DFU_TIMEOUT))) {
+			FAIL("Transfer did not start");
+		}
+		break;
+	case CANCEL_AFTER_VERIFY:
+	case CANCEL_AFTER_APPLY:
+		if (k_sem_take(&dfu_ended, K_SECONDS(DFU_TIMEOUT))) {
+			FAIL("Transfer did not end");
+		}
+		break;
+	default:
+		FAIL("Unknown cancel step %d", cancel_step);
+		return;
+	}
+
+	if (cancel_step == CANCEL_AFTER_APPLY) {
+		err = bt_mesh_dfu_cli_apply(&dfu_cli);
+		if (err) {
+			FAIL("DFU Client apply failed (err: %d)", err);
+		}
+
+		if (k_sem_take(&dfu_cli_applied_sem, K_SECONDS(DFU_TIMEOUT))) {
+			FAIL("Apply step did not complete");
+		}
+
+		/* The local server defers its apply to a Distribution Server. */
+		local_phase = BT_MESH_DFU_PHASE_APPLYING;
+	}
+
+	ASSERT_EQUAL(local_phase, dfu_srv.update.phase);
+
+	expect_fail = true;
+	err = bt_mesh_dfu_cli_cancel(&dfu_cli, NULL);
+	if (err) {
+		FAIL("DFU Client cancel failed (err: %d)", err);
+	}
+
+	if (k_sem_take(&dfu_ended, K_SECONDS(DFU_TIMEOUT))) {
+		FAIL("Cancel did not end");
+	}
+
+	for (int i = 0; i < dfu_cli_xfer.target_count; i++) {
+		ASSERT_EQUAL(BT_MESH_DFU_PHASE_TRANSFER_CANCELED, dfu_cli_xfer.targets[i].phase);
+	}
+
+	ASSERT_EQUAL(BT_MESH_DFU_PHASE_IDLE, dfu_srv.update.phase);
+
+	PASS();
+}
 
 static void cli_common_fail_on_init(void)
 {
@@ -1978,6 +2121,7 @@ static void test_target_dfu_stop(void)
 static void test_pre_init(void)
 {
 	k_sem_init(&dfu_dist_ended, 0, 1);
+	k_sem_init(&chunk_rd_sem, 0, 1);
 	k_sem_init(&dfu_ended, 0, 1);
 	k_sem_init(&caps_get_sem, 0, 1);
 	k_sem_init(&update_get_sem, 0, 1);
@@ -2027,6 +2171,7 @@ static const struct bst_test_instance test_dfu[] = {
 	TEST_CASE(dist, dfu_slot_idempotency,
 		      "Distributor checks that the DFU slot APIs are idempotent"),
 	TEST_CASE(cli, stop, "DFU Client stops at configured point of Firmware Distribution"),
+	TEST_CASE(cli, cancel, "DFU Client cancels an update at a given step"),
 	TEST_CASE(cli, fail_on_persistency, "DFU Client doesn't give up DFU Transfer"),
 	TEST_CASE(cli, all_targets_lost_on_metadata,
 		  "All targets fail to check metadata and Client ends DFU Transfer"),
@@ -2040,6 +2185,7 @@ static const struct bst_test_instance test_dfu[] = {
 		  "All targets fail on apply step and Client ends DFU Transfer"),
 
 	TEST_CASE(target, dfu_no_change, "Target node, Comp Data stays unchanged"),
+	TEST_CASE(target, dfu_cancel, "Target node, update is cancelled"),
 	TEST_CASE(target, dfu_new_comp_no_rpr, "Target node, Comp Data changes, no RPR"),
 	TEST_CASE(target, dfu_new_comp_rpr, "Target node, Comp Data changes, has RPR"),
 	TEST_CASE(target, dfu_unprov, "Target node, Comp Data changes, unprovisioned"),
