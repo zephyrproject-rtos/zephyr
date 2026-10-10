@@ -13,7 +13,6 @@
 };
 
 &timers1 {
-	status = "okay";
 	/**
 	 * Configure the TRGO output and counter mode of the timer instance.
 	 * A TRGO event is generated at each timer update event
@@ -21,16 +20,16 @@
 	 */
 	st,countermode = <STM32_TIM_COUNTERMODE_UP>;
 	st,mastermode = "UPDATE";
+	status = "okay";
 
 	pwm1: pwm {
-		status = "okay";
 		pinctrl-0 = <>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
 &timers3 {
-	status = "okay";
 	/**
 	 * Configure TIM3 to be reset every time TIM1 overflows.
 	 * Select TIM1 TRGO signal as input (= ITR0). Refer to RM0454 Rev.5
@@ -39,10 +38,11 @@
 	st,countermode = <STM32_TIM_COUNTERMODE_UP>;
 	st,slavemode = "reset";
 	st,trigger-selection = "ITR0";
+	status = "okay";
 
 	pwm3: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim3_ch3_pc8>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };

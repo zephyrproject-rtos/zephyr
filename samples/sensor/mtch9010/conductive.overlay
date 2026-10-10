@@ -6,7 +6,6 @@
 #include <zephyr/dt-bindings/sensor/mtch9010.h>
 
 &sercom1 {
-	status = "okay";
 	compatible = "atmel,sam0-uart";
 	current-speed = <38400>;
 	rxpo = <3>;
@@ -14,6 +13,7 @@
 
 	pinctrl-0 = <&sercom1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	my9010: mtch9010 {
 		compatible = "microchip,mtch9010";

@@ -20,8 +20,8 @@
 };
 
 dmic_dev: &pdm20 {
-	status = "okay";
 	pinctrl-0 = <&pdm20_default_alt>;
 	pinctrl-names = "default";
 	clock-source = "PCLK32M";
+	status = "okay";
 };

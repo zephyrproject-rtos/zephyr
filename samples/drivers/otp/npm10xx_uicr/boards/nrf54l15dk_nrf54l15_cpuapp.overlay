@@ -22,8 +22,8 @@
 };
 
 pmic_i2c: &i2c21 {
-	status = "okay";
 	pinctrl-0 = <&pmic_i2c_default>;
 	pinctrl-1 = <&pmic_i2c_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };

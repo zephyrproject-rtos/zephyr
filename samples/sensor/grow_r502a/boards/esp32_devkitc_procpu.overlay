@@ -12,10 +12,10 @@
 };
 
 &uart2 {
-	status = "okay";
 	current-speed = <57600>;
 	pinctrl-0 = <&uart2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	fps {
 		#address-cells = <1>;

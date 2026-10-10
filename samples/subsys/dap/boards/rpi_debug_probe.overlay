@@ -17,10 +17,10 @@
 
 	dp0 {
 		compatible = "zephyr,swdp-gpio";
-		status = "okay";
 		clk-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
 		dio-gpios = <&gpio0 14 GPIO_PULL_UP>;
 		port-write-cycles = <1>;
+		status = "okay";
 	};
 };
 

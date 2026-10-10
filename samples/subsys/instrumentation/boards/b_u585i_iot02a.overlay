@@ -15,17 +15,17 @@
 
 		retainedmem {
 			compatible = "zephyr,retained-ram";
-			status = "okay";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			status = "okay";
 
 			instrumentation_triggers: retention@0 {
 				compatible = "zephyr,retention";
-				status = "okay";
 
 				reg = <0x0 0x20>;
 
 				prefix = [be ef];
+				status = "okay";
 			};
 		};
 	};

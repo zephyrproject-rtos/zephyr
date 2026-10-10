@@ -12,11 +12,11 @@
 
 &i2c0 {
 	apds9306: apds9306@52 {
-		status = "okay";
 		compatible = "avago,apds9306";
 		reg = <0x52>;
 		gain = <1>;
 		resolution = <13>;
 		measurement-period = <2000>;
+		status = "okay";
 	};
 };

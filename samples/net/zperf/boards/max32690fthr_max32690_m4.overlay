@@ -36,8 +36,8 @@
 };
 
 &spi0 {
-	status = "okay";
 	cs-gpios = <&gpio2 26 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
+	status = "okay";
 
 	adin1140@0 {
 		compatible = "adi,adin1140";
@@ -45,9 +45,9 @@
 		spi-max-frequency = <DT_FREQ_M(25)>;
 		int-gpios = <&gpio0 8 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH | GPIO_PULL_UP)>;
 		wake-gpios = <&gpio0 24 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
-		status = "okay";
 		local-mac-address = [00 e0 22 fe da d0];
 		phy-handle = <&adin1140_phy>;
+		status = "okay";
 
 		mdio {
 			compatible = "adi,adin1140-mdio";
@@ -55,8 +55,8 @@
 			#size-cells = <0>;
 
 			adin1140_phy: ethernet-phy@0 {
-				reg = <0x0>;
 				compatible = "adi,adin1140-phy";
+				reg = <0x0>;
 				/* PLCA disabled; params below apply only when enabled.
 				 * Add "plca-enable;" to turn PLCA on.
 				 */

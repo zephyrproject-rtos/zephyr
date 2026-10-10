@@ -5,10 +5,10 @@
 
 /* Using USART2 on Arduino D0/D1 pins (PD9/PD8) for RS485 communication */
 &usart2 {
-	status = "okay";
 	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pd6>;
 	pinctrl-names = "default";
 	current-speed = <9600>;
+	status = "okay";
 
 	tmcm3216_bus: adi_tmcm3216 {
 		#address-cells = <1>;

@@ -18,17 +18,17 @@
 };
 
 &tim2 {
-	status = "okay";
 	/* Timer clock is 144 MHz (RCC HPRE_DIV1; WCH clock driver returns
 	 * AHB == APB1 == APB2). fade_led uses a 20 ms period = 50 Hz.
 	 * 144 MHz / 65536 / 50 Hz ~ 44, so pick prescaler 43 for a counter
 	 * clock of 3.27 MHz and a 20 ms period of ~65536 cycles.
 	 */
 	prescaler = <43>;
+	status = "okay";
 };
 
 &pwm2 {
-	status = "okay";
 	pinctrl-0 = <&pwm2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };

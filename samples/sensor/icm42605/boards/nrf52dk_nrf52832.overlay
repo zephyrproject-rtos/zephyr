@@ -25,16 +25,16 @@
 
 &spi0 {
 	compatible = "nordic,nrf-spi";
-	status = "okay";
 	pinctrl-0 = <&spi0_default_alt>;
 	pinctrl-1 = <&spi0_sleep_alt>;
 	pinctrl-names = "default", "sleep";
 	cs-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	icm42605@0 {
 		compatible = "invensense,icm42605";
-		spi-max-frequency = <24000000>;
 		reg = <0>;
+		spi-max-frequency = <24000000>;
 		int-gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;
 	};
 };

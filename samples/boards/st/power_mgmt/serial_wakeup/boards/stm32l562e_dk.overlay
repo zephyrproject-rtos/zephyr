@@ -52,7 +52,7 @@
 };
 
 &usart3 {
-	status = "okay";
 	pinctrl-1 = <&analog_pc10 &analog_pc11>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };

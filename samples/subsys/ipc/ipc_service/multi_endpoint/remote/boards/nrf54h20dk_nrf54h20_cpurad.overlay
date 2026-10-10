@@ -24,9 +24,9 @@
 		cpuapp_cpurad_ipc_b: ipc-2-3-b {
 			compatible = "zephyr,ipc-icbmsg";
 			dcache-alignment = <32>;
-			status = "okay";
 			mboxes = <&cpuapp_bellboard 20>,
 				 <&cpurad_bellboard 14>;
+			status = "okay";
 		};
 	};
 };
@@ -41,10 +41,10 @@
 };
 
 ipc1: &cpuapp_cpurad_ipc_b {
-	status = "okay";
 	mbox-names = "tx", "rx";
 	tx-region = <&cpurad_cpuapp_ipc_shm_b>;
 	rx-region = <&cpuapp_cpurad_ipc_shm_b>;
 	tx-blocks = <15>;
 	rx-blocks = <15>;
+	status = "okay";
 };

@@ -25,11 +25,11 @@
 
 / {
 	msc_disk0 {
-		status = "okay";
 		compatible = "zephyr,flash-disk";
 		partition = <&external_partition>;
 		disk-name = "SD";
 		/* cache-size == page erase size */
 		cache-size = <4096>;
+		status = "okay";
 	};
 };

@@ -5,13 +5,13 @@
  */
 
 &i2c0 {
-	th02@40 {
-		compatible = "hoperf,th02";
-		reg = <0x40>;
-	};
-
 	glcd: glcd@3e {
 		compatible = "seeed,grove-lcd-rgb";
 		reg = <0x3e>;
+	};
+
+	th02@40 {
+		compatible = "hoperf,th02";
+		reg = <0x40>;
 	};
 };

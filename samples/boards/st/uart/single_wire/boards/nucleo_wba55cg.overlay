@@ -5,17 +5,17 @@
  */
 
 &usart2 {
-	status = "okay";
 	pinctrl-0 = <&usart2_tx_pa12>;
 	current-speed = <115200>;
 	single-wire;
+	status = "okay";
 };
 
 &lpuart1 {
-	status = "okay";
 	pinctrl-0 = <&lpuart1_tx_pa2>;
 	current-speed = <115200>;
 	single-wire;
+	status = "okay";
 };
 
 &usart2_tx_pa12 {

@@ -10,6 +10,6 @@ i2s_rx: &sai1 {
 };
 
 i2s_tx: &sai1 {
-	status = "okay";
 	mclk-output;
+	status = "okay";
 };

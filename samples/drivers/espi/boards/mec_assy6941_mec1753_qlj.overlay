@@ -54,37 +54,37 @@
 
 /* Enable Target to Controller Virtual Wires GPIO 0 - 3 */
 &vw_t2c_gpio_0 {
-	status = "okay";
 	reset-state = "1";
 	reset-source = "ESPI_RESET";
+	status = "okay";
 };
 
 &vw_t2c_gpio_1 {
-	status = "okay";
 	reset-state = "1";
 	reset-source = "ESPI_RESET";
+	status = "okay";
 };
 
 &vw_t2c_gpio_2 {
-	status = "okay";
 	reset-state = "1";
 	reset-source = "ESPI_RESET";
+	status = "okay";
 };
 
 &vw_t2c_gpio_3 {
-	status = "okay";
 	reset-state = "1";
 	reset-source = "ESPI_RESET";
+	status = "okay";
 };
 
 &qspi0 {
 	compatible = "microchip,xec-qmspi-ldma";
-	status = "okay";
 	clock-frequency = <24000000>;
 	pinctrl-0 = <&qspi_shd_cs0_n_gpio055 &qspi_shd_clk_gpio056
 		     &qspi_shd_io0_gpio223 &qspi_shd_io1_gpio224
 		     &qspi_shd_io2_gpio227 &qspi_shd_io3_gpio016>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	spi_flash0: spi_flash@0 {
 		compatible = "jedec,spi-nor";

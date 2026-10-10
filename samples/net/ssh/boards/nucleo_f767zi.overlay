@@ -26,8 +26,8 @@
 		 * ZMS requires at least 2 sectors.
 		 */
 		storage_partition: partition@180000 {
-			label = "storage";
 			reg = <0x00180000 DT_SIZE_K(512)>;
+			label = "storage";
 		};
 	};
 };

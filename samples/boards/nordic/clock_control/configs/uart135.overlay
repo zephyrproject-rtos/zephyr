@@ -11,8 +11,8 @@
 };
 
 &uart135 {
-	status = "okay";
 	memory-regions = <&cpuapp_dma_region>;
+	status = "okay";
 };
 
 &fll16m {

@@ -12,9 +12,9 @@
 / {
 	zeth1: zeth1 {
 		compatible = "zephyr,native-tap";
-		status = "okay";
+		host-interface = "zeth1";
 		zephyr,random-mac-address;
 		zephyr,mac-address-prefix = [00 00 5e 00 53];
-		host-interface = "zeth1";
+		status = "okay";
 	};
 };

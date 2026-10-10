@@ -29,6 +29,6 @@
 };
 
 &rtc_counter {
-	status = "okay";
 	wakeup-source;
+	status = "okay";
 };

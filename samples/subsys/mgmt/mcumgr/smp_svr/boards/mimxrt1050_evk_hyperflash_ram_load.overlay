@@ -22,22 +22,22 @@
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x80007f00 0x100>;
 			ranges = <0x0 0x80007f00 0x100>;
-			zephyr,memory-region = "RetainedMem";
-			status = "okay";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			zephyr,memory-region = "RetainedMem";
+			status = "okay";
 
 			retainedmem {
 				compatible = "zephyr,retained-ram";
-				status = "okay";
 				ranges;
 				#address-cells = <1>;
 				#size-cells = <1>;
+				status = "okay";
 
 				boot_info0: boot_info@0 {
 					compatible = "zephyr,retention";
-					status = "okay";
 					reg = <0x0 0x100>;
+					status = "okay";
 				};
 			};
 		};

@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&i2c0 { /* SDA P0.26, SCL P0.27, ALERT P0.11 */
+&i2c0 {
+	clock-frequency = <I2C_BITRATE_STANDARD>; /* SDA P0.26, SCL P0.27, ALERT P0.11 */
 	status = "okay";
-	clock-frequency = <I2C_BITRATE_STANDARD>;
 
 	adt7420: adt7420@48 {
 		compatible = "adi,adt7420";

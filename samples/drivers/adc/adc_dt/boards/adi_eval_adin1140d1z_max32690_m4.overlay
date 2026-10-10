@@ -19,13 +19,13 @@
 };
 
 &adc {
-	status = "okay";
 	pinctrl-0 = <&adc_clk_ext_p0_9>;
 	pinctrl-names = "default";
 
 	#address-cells = <1>;
 	#size-cells = <0>;
 	#io-channel-cells = <1>;
+	status = "okay";
 
 	channel@0 {
 		reg = <0>;

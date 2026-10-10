@@ -8,8 +8,8 @@
 		group1 {
 			/* CMPA2 */
 			psels = <RX_PSEL(RX_PSEL_LVD, 14, 4)>;
-			renesas,analog-enable;
 			input-enable;
+			renesas,analog-enable;
 		};
 	};
 };

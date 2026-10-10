@@ -11,7 +11,6 @@
 / {
 	auxdisplay_0: auxdisplay {
 		compatible = "gpio-7-segment";
-		status = "okay";
 		columns = <3>;
 		rows = <1>;
 		segment-gpios = <&gpio0 0 0>,  /* A */
@@ -26,5 +25,6 @@
 			      <&gpio0 9 0>,  /* DIG2 */
 			      <&gpio0 10 0>;  /* DIG3 */
 		refresh-period-ms = <1>;
+		status = "okay";
 	};
 };

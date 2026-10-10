@@ -11,8 +11,8 @@
 };
 
 &rtc_timer {
-	status = "okay";
 
 	/* Configure device as wakeup source */
 	wakeup-source;
+	status = "okay";
 };

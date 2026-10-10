@@ -20,7 +20,6 @@
  * MEC15xx does not have clock monitor hardware.
  */
 &pcr {
-	status = "okay";
 	pll-32k-src = <MCHP_XEC_PLL_CLK32K_SRC_XTAL>;
 	periph-32k-src = <MCHP_XEC_PERIPH_CLK32K_SRC_XTAL_XTAL>;
 
@@ -29,4 +28,5 @@
 	/* debug only, not using 32KHZ_IN pin */
 	pinctrl-0 = <&tst_clk_out_gpio060 &clk_32khz_out_gpio221>;
 	pinctrl-names = "default";
+	status = "okay";
 };

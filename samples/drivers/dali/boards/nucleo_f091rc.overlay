@@ -26,10 +26,10 @@
 };
 
 &timers2 {
+	interrupts = <15 1>;
 	// set timebase to 1us/1MHz
 	st,prescaler = <47>;
 	status = "okay";
-	interrupts = <15 1>;
 
 	counter2: counter {
 		compatible = "st,stm32-counter";

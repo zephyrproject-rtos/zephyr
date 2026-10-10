@@ -15,17 +15,17 @@
  * wired to i2c1 externally.
  */
 &i2c1 {
+	compatible = "st,stm32-i2c-v2";
 	pinctrl-0 = <&i2c1_sda_pb7 &i2c1_scl_pb6>;
 	pinctrl-names = "default";
 	scl-gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
-	compatible = "st,stm32-i2c-v2";
 	status = "okay";
 
 	tmp1075_temperature: tmp1075@48 {
 		compatible = "ti,tmp1075";
-		friendly-name = "texas_temperature_tmp1075";
 		reg = <0x48>;
+		friendly-name = "texas_temperature_tmp1075";
 		alert-gpios = <&gpiob 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 		conversion-rate = <220000>;
 		lower-threshold = <27>;

@@ -11,9 +11,9 @@
 };
 
 &adc {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@6 {
 		reg = <6>;

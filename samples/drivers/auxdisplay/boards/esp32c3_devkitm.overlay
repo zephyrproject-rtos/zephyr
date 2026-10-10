@@ -9,11 +9,11 @@
 	cs-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
 
 	auxdisplay_0: auxdisplay@0 {
+		compatible = "ptc,pt6314";
 		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(1)>;
-		compatible = "ptc,pt6314";
-		status = "okay";
 		columns = <20>;
 		rows = <2>;
+		status = "okay";
 	};
 };

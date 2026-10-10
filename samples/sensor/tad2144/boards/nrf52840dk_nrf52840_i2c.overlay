@@ -22,8 +22,8 @@
 };
 
 &arduino_i2c {
-	status = "okay";
 	clock-frequency = <400000>;
+	status = "okay";
 
 	tad2144: tad2144@65 {
 		compatible = "invensense,tad2144";

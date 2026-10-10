@@ -72,8 +72,8 @@
 	pinctrl-0 = <&led0_gpio156>;
 	pinctrl-1 = <&led0_gpio156_sleep>;
 	pinctrl-names = "default", "sleep";
-	status = "okay";
 	#pwm-cells = <3>;
+	status = "okay";
 };
 
 &bbled1 {
@@ -82,8 +82,8 @@
 	pinctrl-0 = <&led1_gpio157>;
 	pinctrl-1 = <&led1_gpio157_sleep>;
 	pinctrl-names = "default", "sleep";
-	status = "okay";
 	#pwm-cells = <3>;
+	status = "okay";
 };
 
 &bbled2 {
@@ -92,8 +92,8 @@
 	pinctrl-0 = <&led2_gpio153>;
 	pinctrl-1 = <&led2_gpio153_sleep>;
 	pinctrl-names = "default", "sleep";
-	status = "okay";
 	#pwm-cells = <3>;
+	status = "okay";
 };
 
 &bbled3 {
@@ -102,6 +102,6 @@
 	pinctrl-0 = <&led3_gpio035>;
 	pinctrl-1 = <&led3_gpio035_sleep>;
 	pinctrl-names = "default", "sleep";
-	status = "okay";
 	#pwm-cells = <3>;
+	status = "okay";
 };

@@ -10,7 +10,6 @@
 };
 
 &adc0 {
-	status = "okay";
 	interrupt-parent = <&nvic>;
 	interrupts = <19 0>;
 	dma-mode;
@@ -18,6 +17,7 @@
 	dma-buffer-size = <128>;
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@5 {
 		reg = <5>;

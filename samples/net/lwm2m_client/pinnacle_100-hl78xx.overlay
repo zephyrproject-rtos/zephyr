@@ -11,7 +11,6 @@
 &uart1 {
 	hl7800: hl7800 {
 		compatible = "swir,hl7800";
-		status = "okay";
 		mdm-reset-gpios = <&gpio1 15 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
 		mdm-wake-gpios = <&gpio1 13 (GPIO_OPEN_SOURCE | GPIO_ACTIVE_HIGH)>;
 		mdm-pwr-on-gpios = <&gpio1 2 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
@@ -20,12 +19,13 @@
 		mdm-uart-dsr-gpios = <&gpio0 25 0>;
 		mdm-uart-cts-gpios = <&gpio0 15 0>;
 		mdm-gpio6-gpios = <&gpio1 12 0>;
+		status = "okay";
 
 		socket_offload: socket_offload {
 			compatible = "swir,hl7812-offload";
-			status = "okay";
 			/* optional properties for future: */
 			max-data-length = <512>;
+			status = "okay";
 		};
 
 		gnss: hl_gnss {

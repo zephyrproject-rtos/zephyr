@@ -71,7 +71,6 @@
  */
 &qspi0 {
 	compatible = "microchip,xec-qmspi-ldma";
-	status = "okay";
 
 	pinctrl-0 = <&shd_cs0_n_gpio055
 		     &shd_clk_gpio056
@@ -79,4 +78,5 @@
 		     &shd_io1_gpio224
 		     &shd_io2_gpio227
 		     &shd_io3_gpio016>;
+	status = "okay";
 };

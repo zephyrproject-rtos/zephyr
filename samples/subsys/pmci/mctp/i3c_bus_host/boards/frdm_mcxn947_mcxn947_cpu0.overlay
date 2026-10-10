@@ -8,10 +8,10 @@
 /* I3C SDA J5.3 */
 /* I3C SCL J5.4 */
 &i3c1 {
-	status = "okay";
 
 	i3c-scl-hz = <DT_FREQ_M(4)>;
 	i3c-od-scl-hz = <DT_FREQ_K(1500)>;
+	status = "okay";
 
 	mctp_endpoint0: mctp_endpoint0@20a00000011 {
 		compatible = "zephyr,mctp-i3c-endpoint";

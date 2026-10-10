@@ -16,10 +16,10 @@
 &sar_adc0 {
 	group-channel = "precision";
 	callback-select = "normal-end-chain";
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	vref-mv = <1800>;
+	status = "okay";
 
 	channel@2 {
 		reg = <2>;
@@ -56,9 +56,9 @@
 
 &sar_adc1 {
 	group-channel = "standard";
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@3 {
 		reg = <3>;

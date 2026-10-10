@@ -63,9 +63,9 @@
 &adc2 {
 	pinctrl-0 = <&adc2_in17_pa4>;
 	pinctrl-names = "default";
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@11 {
 		reg = <17>;

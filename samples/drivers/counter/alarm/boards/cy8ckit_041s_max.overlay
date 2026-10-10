@@ -6,12 +6,12 @@
  */
 
 &tcpwm0_1 {
-	status = "okay";
 	interrupts = <18 0>;
+	status = "okay";
 
 	counter0_1 {
-		status = "okay";
 		clocks = <&peri_clk_div3>;
+		status = "okay";
 	};
 };
 
