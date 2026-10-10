@@ -13,6 +13,8 @@ namespace
 std::atomic<uint8_t> atomic_u8;
 std::atomic<uint16_t> atomic_u16;
 std::atomic<uint32_t> atomic_u32;
+std::atomic<uint64_t> atomic_u64;
+std::atomic_flag atomic_flag = ATOMIC_FLAG_INIT;
 } // namespace
 
 /**
@@ -26,6 +28,8 @@ static void cxx_atomic_before(void *fixture)
 	atomic_u8.store(0);
 	atomic_u16.store(0);
 	atomic_u32.store(0);
+	atomic_u64.store(0);
+	atomic_flag.clear();
 }
 
 /**
@@ -97,6 +101,75 @@ ZTEST(cxx_atomic, test_u32_compare_exchange_weak)
 	zassert_false(success, "Exchange should have failed");
 	zassert_equal(atomic_u32.load(), desired, "Value should remain 0xDEADBEEF");
 	zassert_equal(expected, desired, "Expected should be updated to 0xDEADBEEF");
+}
+
+/**
+ * @brief Tests the 8-byte (uint64_t) atomic compare-exchange implementation.
+ */
+ZTEST(cxx_atomic, test_u64_compare_exchange_weak)
+{
+	uint64_t expected = 0;
+	const uint64_t desired = 0x1122334455667788ULL;
+
+	while (!atomic_u64.compare_exchange_weak(expected, desired)) {
+	}
+	zassert_equal(atomic_u64.load(), desired, "Value should have been updated");
+
+	expected = 0;
+	bool success = atomic_u64.compare_exchange_weak(expected, 0ULL);
+
+	zassert_false(success, "Exchange should have failed");
+	zassert_equal(atomic_u64.load(), desired, "Value should remain unchanged");
+	zassert_equal(expected, desired, "Expected should be updated");
+}
+
+/**
+ * @brief Tests load, store and exchange across the supported widths.
+ */
+ZTEST(cxx_atomic, test_load_store_exchange)
+{
+	atomic_u8.store(0x12);
+	zassert_equal(atomic_u8.load(), 0x12, "u8 store/load mismatch");
+	zassert_equal(atomic_u8.exchange(0x34), 0x12, "u8 exchange should return old value");
+	zassert_equal(atomic_u8.load(), 0x34, "u8 exchange should update value");
+
+	atomic_u64.store(0xAABBCCDDEEFF0011ULL);
+	zassert_equal(atomic_u64.load(), 0xAABBCCDDEEFF0011ULL, "u64 store/load mismatch");
+	zassert_equal(atomic_u64.exchange(1ULL), 0xAABBCCDDEEFF0011ULL,
+		      "u64 exchange should return old value");
+	zassert_equal(atomic_u64.load(), 1ULL, "u64 exchange should update value");
+}
+
+/**
+ * @brief Tests the read-modify-write fetch operations.
+ */
+ZTEST(cxx_atomic, test_fetch_ops)
+{
+	atomic_u32.store(0x00FF00FF);
+	zassert_equal(atomic_u32.fetch_add(1), 0x00FF00FF, "fetch_add should return old value");
+	zassert_equal(atomic_u32.load(), 0x00FF0100, "fetch_add should update value");
+	zassert_equal(atomic_u32.fetch_sub(0x100), 0x00FF0100, "fetch_sub should return old value");
+	zassert_equal(atomic_u32.fetch_or(0xFF000000), 0x00FF00FF, "fetch_or should return old");
+	zassert_equal(atomic_u32.fetch_and(0x0000FFFF), 0xFFFF00FF, "fetch_and should return old");
+	zassert_equal(atomic_u32.load(), 0x000000FF, "fetch_and should update value");
+	zassert_equal(atomic_u32.fetch_xor(0x000000FF), 0x000000FF, "fetch_xor should return old");
+	zassert_equal(atomic_u32.load(), 0x0U, "fetch_xor should update value");
+
+	atomic_u64.store(0);
+	zassert_equal(atomic_u64.fetch_add(0x1'0000'0000ULL), 0ULL, "u64 fetch_add old value");
+	zassert_equal(atomic_u64.load(), 0x1'0000'0000ULL, "u64 fetch_add should update value");
+}
+
+/**
+ * @brief Tests std::atomic_flag (test_and_set / clear).
+ */
+ZTEST(cxx_atomic, test_atomic_flag)
+{
+	zassert_false(atomic_flag.test_and_set(), "First test_and_set should return false");
+	zassert_true(atomic_flag.test_and_set(), "Second test_and_set should return true");
+	atomic_flag.clear();
+	zassert_false(atomic_flag.test_and_set(), "test_and_set after clear should return false");
+	atomic_flag.clear();
 }
 
 ZTEST_SUITE(cxx_atomic, nullptr, nullptr, cxx_atomic_before, nullptr, nullptr);
