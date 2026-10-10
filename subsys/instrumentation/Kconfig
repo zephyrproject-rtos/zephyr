@@ -6,15 +6,107 @@
 config INSTRUMENTATION
 	bool "Compiler Instrumentation Support"
 	select REBOOT
-	select UART_CONSOLE
-	select UART_INTERRUPT_DRIVEN
 	help
 	  Enable compiler-managed runtime system instrumentation. This requires
 	  a compiler that supports function instrumentation, and a backend for
-	  capturing and processing those instrumentation events from the target,
-	  like a serial port.
+	  capturing and processing those instrumentation events from the target.
 
 if INSTRUMENTATION
+
+choice INSTRUMENTATION_BACKEND_CHOICE
+	prompt "Instrumentation data backend"
+	default INSTRUMENTATION_BACKEND_UART
+	help
+	  Select how dumped instrumentation data (callgraph traces and profile
+	  deltas) leaves the target. Host control commands used by zaru.py
+	  remain UART-based and are only available with the UART backend.
+
+config INSTRUMENTATION_BACKEND_UART
+	bool "UART backend"
+	depends on SERIAL
+	select UART_CONSOLE
+	select UART_INTERRUPT_DRIVEN
+	help
+	  Dump instrumentation data over the console UART and accept host
+	  commands (status, trigger, dump_trace, etc.) on the same device.
+
+config INSTRUMENTATION_BACKEND_RAM
+	bool "RAM backend"
+	help
+	  Copy dumped instrumentation data into a dedicated RAM buffer that can
+	  be retrieved with a debugger (for example gdb dump binary memory).
+	  Trigger a dump by calling instr_dump_buffer() / instr_dump_deltas()
+	  from the debugger, or via dump-on-full if enabled.
+
+config INSTRUMENTATION_BACKEND_ITM
+	bool "ITM backend"
+	depends on ARMV7_M_ARMV8_M_MAINLINE
+	help
+	  Send dumped instrumentation data out an ITM stimulus port. Trace
+	  egress (SWO pin or TPIU parallel trace) is set up by the board or
+	  debug probe, not by this backend. Trigger a dump by calling
+	  instr_dump_buffer() / instr_dump_deltas(), or via dump-on-full.
+
+config INSTRUMENTATION_BACKEND_SEMIHOST
+	bool "Semihost backend"
+	depends on SEMIHOST
+	help
+	  Write dumped instrumentation data to ./instrumentation.bin on the
+	  host via semihosting (useful with QEMU). Trigger a dump by calling
+	  instr_dump_buffer() / instr_dump_deltas(), or via dump-on-full.
+	  Enable CONFIG_SEMIHOST alongside this option.
+
+endchoice
+
+config INSTRUMENTATION_BACKEND_NAME
+	string
+	default "instr_backend_uart" if INSTRUMENTATION_BACKEND_UART
+	default "instr_backend_ram" if INSTRUMENTATION_BACKEND_RAM
+	default "instr_backend_itm" if INSTRUMENTATION_BACKEND_ITM
+	default "instr_backend_semihost" if INSTRUMENTATION_BACKEND_SEMIHOST
+
+config INSTRUMENTATION_BACKEND_RAM_BUFFER_SIZE
+	int "RAM instrumentation dump buffer size"
+	default 12000
+	depends on INSTRUMENTATION_BACKEND_RAM
+	help
+	  Size of the RAM buffer that receives dumped instrumentation bytes.
+	  Dumping stops (and further output is dropped) once this buffer is
+	  full.
+
+if INSTRUMENTATION_BACKEND_ITM
+
+config INSTRUMENTATION_BACKEND_ITM_PORT
+	int "ITM stimulus port for instrumentation dumps"
+	default 2
+	range 0 31
+	help
+	  Stimulus port this backend writes. Default 2 keeps it clear of the
+	  SWO log backend (port 0) and the tracing ITM backend (port 1).
+
+config INSTRUMENTATION_BACKEND_ITM_BUS_ID
+	int "ITM ATB trace id"
+	default 1
+	range 0 127
+	help
+	  ATB trace id tagging the ITM stream on the trace bus.
+
+config INSTRUMENTATION_BACKEND_ITM_STALL
+	bool "Stall the core on a full stimulus port instead of dropping"
+	help
+	  Spin until the stimulus port drains instead of dropping the rest
+	  of a packet after a bounded poll. Lossless, but stalls the core
+	  if nothing drains the trace.
+
+config INSTRUMENTATION_BACKEND_ITM_POLL
+	int "Ready-bit poll count before dropping"
+	default 128
+	depends on !INSTRUMENTATION_BACKEND_ITM_STALL
+	help
+	  How many times to poll the stimulus port ready bit before
+	  dropping the rest of a packet.
+
+endif # INSTRUMENTATION_BACKEND_ITM
 
 config INSTRUMENTATION_MODE_CALLGRAPH
 	bool "Call graph mode (Tracing)"
