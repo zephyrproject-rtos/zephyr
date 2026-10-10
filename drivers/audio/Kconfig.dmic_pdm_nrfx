@@ -9,3 +9,15 @@ config AUDIO_DMIC_NRFX_PDM
 	select PINCTRL
 	help
 	  Enable support for nrfx PDM driver for nRF MCU series.
+
+if AUDIO_DMIC_NRFX_PDM
+
+config AUDIO_DMIC_NRFX_PDM_CUSTOM_RATIO
+	bool "Use custom decimation ratio mechanism."
+	help
+	  By default, PDM uses enumerated decimation ratio values.
+	  Provided that its supported by hardware, PDM can use
+	  custom ratio values which allow wider selection range,
+	  which comes with cost of longer configuration.
+
+endif # AUDIO_DMIC_NRFX_PDM
