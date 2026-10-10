@@ -45,6 +45,9 @@ K_KERNEL_STACK_ARRAY_DECLARE(z_arm_sys_stack,
 			    CONFIG_MP_MAX_NUM_CPUS,
 			    CONFIG_ARMV7_SVC_STACK_SIZE);
 
+/* Padded to whole cache lines so the DCIMVAC in reset.S cannot discard
+ * neighbouring data.
+ */
 struct boot_params {
 	uint32_t mpid;
 	char *irq_sp;
@@ -57,7 +60,7 @@ struct boot_params {
 	arch_cpustart_t fn;
 	void *arg;
 	int cpu_num;
-};
+} __aligned(CONFIG_DCACHE_LINE_SIZE);
 
 /* Offsets used in reset.S */
 BUILD_ASSERT(offsetof(struct boot_params, mpid) == BOOT_PARAM_MPID_OFFSET);
@@ -160,6 +163,9 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz, arch_cpustart_
 
 	/* barrier to guarantee completion of the cache flush above. */
 	barrier_dsync_fence_full();
+
+	/* SoC powers the core (rails, isolation) before PSCI boots it. */
+	soc_cpu_power_on(cpu_mpid);
 
 #ifdef CONFIG_PM_CPU_OPS
 	/*

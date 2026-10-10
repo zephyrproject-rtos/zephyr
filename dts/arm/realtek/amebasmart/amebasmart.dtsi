@@ -1,0 +1,395 @@
+/*
+ * Copyright (c) 2026 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+#include <arm/armv7-a.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/clock/amebasmart_clock.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/dma/ameba_dma.h>
+#include <zephyr/dt-bindings/pinctrl/amebasmart-pinctrl.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+
+	#address-cells = <1>;
+	#size-cells = <1>;
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a32";
+			reg = <0>;
+		};
+
+		cpu1: cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a32";
+			reg = <1>;
+		};
+	};
+
+	psci {
+		compatible = "arm,psci-0.2";
+		method = "smc";
+	};
+
+	soc {
+		compatible = "realtek,ameba-bus", "simple-bus";
+
+		interrupt-parent = <&gic>;
+
+		wifi0: wifi@40000000 {
+			compatible = "realtek,ameba-wifi";
+			reg = <0x40000000 0x40000>;
+			status = "disabled";
+		};
+
+		wifi1: wifi@40040000 {
+			compatible = "realtek,ameba-wifi";
+			reg = <0x40040000 0x40000>;
+			status = "disabled";
+		};
+
+		dma: dma@400e0000 {
+			compatible = "realtek,ameba-gdma";
+			reg = <0x400e0000 0x3c0>;
+			clocks = <&rcc AMEBA_GDMA_CLK>;
+			interrupts =
+				<GIC_SPI 25 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<GIC_SPI 26 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<GIC_SPI 27 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<GIC_SPI 28 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<GIC_SPI 29 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<GIC_SPI 30 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<GIC_SPI 31 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<GIC_SPI 32 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "CH0", "CH1", "CH2", "CH3",
+					  "CH4", "CH5", "CH6", "CH7";
+			#dma-cells = <3>;
+			dma-channels = <8>;
+			dma-buf-addr-alignment = <32>;
+			dma-buf-size-alignment = <32>;
+			status = "disabled";
+		};
+
+		spi0: spi@400e8000 {
+			compatible = "realtek,ameba-spi";
+			reg = <0x400e8000 0x100>;
+			interrupts = <GIC_SPI 40 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&rcc AMEBA_SPI0_CLK>;
+			dmas = <&dma 0 6 0>, <&dma 1 7 0>;
+			dma-names = "tx", "rx";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi1: spi@400e9000 {
+			compatible = "realtek,ameba-spi";
+			reg = <0x400e9000 0x100>;
+			interrupts = <GIC_SPI 41 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&rcc AMEBA_SPI1_CLK>;
+			dmas = <&dma 2 8 0>, <&dma 3 9 0>;
+			dma-names = "tx", "rx";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c0: i2c0@4200f000 {
+			compatible = "realtek,ameba-i2c";
+			reg = <0x4200f000 0x100>;
+			interrupts = <GIC_SPI 22 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&rcc AMEBA_I2C0_CLK>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c1: i2c1@400ef000 {
+			compatible = "realtek,ameba-i2c";
+			reg = <0x400ef000 0x100>;
+			interrupts = <GIC_SPI 55 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&rcc AMEBA_I2C1_CLK>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c2: i2c2@400f0000 {
+			compatible = "realtek,ameba-i2c";
+			reg = <0x400f0000 0x100>;
+			interrupts = <GIC_SPI 56 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&rcc AMEBA_I2C2_CLK>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		trng: trng@41009000 {
+			compatible = "realtek,ameba-trng";
+			reg = <0x41009000 0x200>;
+			clocks = <&rcc AMEBA_TRNG_CLK>;
+			status = "disabled";
+		};
+
+		/* The PWM Timer (TIM8) supports Input Capture Mode or PWM Mode */
+		pwm0: pwm@4100a000 {
+			compatible = "realtek,ameba-pwm";
+			reg = <0x4100a000 0x88>;
+			interrupts = <GIC_SPI 57 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			channel-count = <6>;
+			index = <0>;
+			clocks = <&rcc AMEBA_TIM8_CLK>;
+			#pwm-cells = <3>;
+			prescale = <39>;
+			status = "disabled";
+		};
+
+		/* High-speed basic timers TIM10-13 (1 MHz, 100 MHz bus / 100 prescaler) */
+		timer10: counter@4100a400 {
+			compatible = "realtek,ameba-counter";
+			reg = <0x4100a400 0x30>;
+			clocks = <&rcc AMEBA_TIM10_CLK>;
+			interrupts = <GIC_SPI 78 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clock-frequency = <DT_FREQ_M(1)>;
+			status = "disabled";
+		};
+
+		timer11: counter@4100a600 {
+			compatible = "realtek,ameba-counter";
+			reg = <0x4100a600 0x30>;
+			clocks = <&rcc AMEBA_TIM11_CLK>;
+			interrupts = <GIC_SPI 79 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clock-frequency = <DT_FREQ_M(1)>;
+			status = "disabled";
+		};
+
+		timer12: counter@4100a800 {
+			compatible = "realtek,ameba-counter";
+			reg = <0x4100a800 0x30>;
+			clocks = <&rcc AMEBA_TIM12_CLK>;
+			interrupts = <GIC_SPI 80 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clock-frequency = <DT_FREQ_M(1)>;
+			status = "disabled";
+		};
+
+		timer13: counter@4100aa00 {
+			compatible = "realtek,ameba-counter";
+			reg = <0x4100aa00 0x30>;
+			clocks = <&rcc AMEBA_TIM13_CLK>;
+			interrupts = <GIC_SPI 81 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clock-frequency = <DT_FREQ_M(1)>;
+			status = "disabled";
+		};
+
+		rcc: rcc@42008000 {
+			compatible = "realtek,ameba-rcc";
+			#clock-cells = <1>;
+			reg = <0x42008000 0x2000>;
+		};
+
+		pinctrl: pinctrl@42008a00 {
+			compatible = "realtek,ameba-pinctrl";
+			reg = <0x42008a00 0x200>;
+		};
+
+		/* Low-speed basic timers TIM0-7 (SDM32K/NCO32K clock domain, 32768 Hz). */
+		timer0: counter@4200b000 {
+			compatible = "realtek,ameba-counter";
+			reg = <0x4200b000 0x30>;
+			clocks = <&rcc AMEBA_TIM0_CLK>;
+			interrupts = <GIC_SPI 0 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		timer1: counter@4200b200 {
+			compatible = "realtek,ameba-counter";
+			reg = <0x4200b200 0x30>;
+			clocks = <&rcc AMEBA_TIM1_CLK>;
+			interrupts = <GIC_SPI 1 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		timer2: counter@4200b400 {
+			compatible = "realtek,ameba-counter";
+			reg = <0x4200b400 0x30>;
+			clocks = <&rcc AMEBA_TIM2_CLK>;
+			interrupts = <GIC_SPI 2 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		timer3: counter@4200b600 {
+			compatible = "realtek,ameba-counter";
+			reg = <0x4200b600 0x30>;
+			clocks = <&rcc AMEBA_TIM3_CLK>;
+			interrupts = <GIC_SPI 3 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		timer4: counter@4200b800 {
+			compatible = "realtek,ameba-counter";
+			reg = <0x4200b800 0x30>;
+			clocks = <&rcc AMEBA_TIM4_CLK>;
+			interrupts = <GIC_SPI 4 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		timer5: counter@4200ba00 {
+			compatible = "realtek,ameba-counter";
+			reg = <0x4200ba00 0x30>;
+			clocks = <&rcc AMEBA_TIM5_CLK>;
+			interrupts = <GIC_SPI 5 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		timer6: counter@4200bc00 {
+			compatible = "realtek,ameba-counter";
+			reg = <0x4200bc00 0x30>;
+			clocks = <&rcc AMEBA_TIM6_CLK>;
+			interrupts = <GIC_SPI 6 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		timer7: counter@4200be00 {
+			compatible = "realtek,ameba-counter";
+			reg = <0x4200be00 0x30>;
+			clocks = <&rcc AMEBA_TIM7_CLK>;
+			interrupts = <GIC_SPI 7 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		loguart: serial@4200c000 {
+			compatible = "realtek,ameba-loguart";
+			reg = <0x4200c000 0x200>;
+			clocks = <&rcc AMEBA_LOGUART_CLK>;
+			interrupts = <GIC_SPI 8 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0";
+			current-speed = <1500000>;
+			status = "disabled";
+		};
+
+		gpioa: gpio@4200d000 {
+			compatible = "realtek,ameba-gpio";
+			reg = <0x4200d000 0x400>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupts = <GIC_SPI 9 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		gpiob: gpio@4200d400 {
+			compatible = "realtek,ameba-gpio";
+			reg = <0x4200d400 0x400>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupts = <GIC_SPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		gpioc: gpio@4200d800 {
+			compatible = "realtek,ameba-gpio";
+			reg = <0x4200d800 0x400>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupts = <GIC_SPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		rtc: rtc@4200e000 {
+			compatible = "realtek,ameba-rtc";
+			reg = <0x4200e000 0x30>;
+			clocks = <&rcc AMEBA_RTC_CLK>;
+			interrupts = <GIC_SPI 12 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			alarms-count = <1>;
+			status = "disabled";
+		};
+
+		adc: adc@42012000 {
+			compatible = "realtek,ameba-adc";
+			reg = <0x42012000 0xac>;
+			clocks = <&rcc AMEBA_ADC_CLK>, <&rcc AMEBA_CTC_CLK>;
+			clock-names = "adc", "ctc";
+			interrupts = <GIC_SPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			channel-count = <6>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		spic: flash-controller@44000000 {
+			compatible = "realtek,ameba-flash-controller";
+			reg = <0x44000000 0x400>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			flash0: flash@e000020 {
+				compatible = "soc-nv-flash";
+				erase-block-size = <DT_SIZE_K(4)>;
+				write-block-size = <4>;
+			};
+		};
+
+		wdg: watchdog@410004c0 {
+			compatible = "realtek,ameba-watchdog";
+			reg = <0x410004c0 0x10>;
+			interrupts = <GIC_SPI 62 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			early-int-cnt-ms = <500>;
+			status = "disabled";
+		};
+
+		gic: interrupt-controller@a0101000 {
+			compatible = "arm,gic-v2", "arm,gic";
+			reg = <0xa0101000 0x1000>,
+			      <0xa0102000 0x2000>;
+
+			interrupt-controller;
+			#address-cells = <0>;
+			#interrupt-cells = <4>;
+			status = "okay";
+		};
+	};
+
+	arch_timer: timer {
+		compatible = "arm,armv8-timer";
+		interrupt-parent = <&gic>;
+		interrupt-names = "irq_0", "irq_1", "irq_2", "irq_3";
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			<GIC_PPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			<GIC_PPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			<GIC_PPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	};
+
+	dram0: memory@60300000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x60300000 0x500000>;
+	};
+
+	bt: bt {
+		compatible = "realtek,ameba-bt-hci";
+		status = "disabled";
+	};
+
+};

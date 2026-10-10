@@ -10,8 +10,9 @@
 LOG_MODULE_REGISTER(os_if_memory);
 
 #if (K_HEAP_MEM_POOL_SIZE > 0)
-#define _SYSTEM_HEAP (&_system_heap)
-extern struct sys_heap _system_heap;
+/* _system_heap is a struct k_heap; the stats API wants its .heap member. */
+#define _SYSTEM_HEAP (&_system_heap.heap)
+extern struct k_heap _system_heap;
 #endif
 
 void rtos_mem_init(void)
@@ -28,10 +29,20 @@ void rtos_mem_free(void *pbuf)
 	pbuf = NULL;
 }
 
+/*
+ * amebasmart buffers are shared across cores, so align to the largest line of any
+ * core (CA32 L1: 64 bytes, Cortex-M: 32).
+ */
+#ifdef CONFIG_SOC_SERIES_AMEBASMART
+#define RTOS_MEM_ALIGN MAX(CACHE_LINE_SIZE, 64)
+#else
+#define RTOS_MEM_ALIGN CACHE_LINE_SIZE
+#endif
+
 void *rtos_mem_malloc(uint32_t size)
 {
 #if (K_HEAP_MEM_POOL_SIZE > 0)
-	return k_aligned_alloc(CACHE_LINE_SIZE, CACHE_LINE_ALIGNMENT(size));
+	return k_aligned_alloc(RTOS_MEM_ALIGN, ROUND_UP(size, RTOS_MEM_ALIGN));
 #else
 	LOG_ERR("k_aligned_alloc not support.");
 	return NULL;

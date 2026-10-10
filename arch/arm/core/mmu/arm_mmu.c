@@ -558,6 +558,7 @@ static bool arm_mmu_remap_l1_section_to_l2_table(uint32_t va,
 
 	invalidate_tlb_all();
 	__set_SCTLR(reg_val);
+	barrier_isync_fence_full();
 
 	arch_irq_unlock(lock_key);
 
@@ -957,7 +958,13 @@ int z_arm_mmu_init(bool is_primary_core)
 	reg_val |= ARM_MMU_SCTLR_ICACHE_ENABLE_BIT;
 	reg_val |= ARM_MMU_SCTLR_DCACHE_ENABLE_BIT;
 	reg_val |= ARM_MMU_SCTLR_MMU_ENABLE_BIT;
+	/*
+	 * DSB makes table writes visible to the walker; ISB refetches under the new
+	 * mappings. Needed when firmware hands off with MMU and D-cache enabled.
+	 */
+	barrier_dsync_fence_full();
 	__set_SCTLR(reg_val);
+	barrier_isync_fence_full();
 
 	return 0;
 }

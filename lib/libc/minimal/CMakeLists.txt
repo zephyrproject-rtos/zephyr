@@ -24,6 +24,7 @@ zephyr_library_sources(
   source/stdlib/exit.c
   source/stdlib/qsort.c
   source/string/strerror.c
+  source/string/strcasecmp.c
   source/string/strncasecmp.c
   source/string/strstr.c
   source/string/string.c

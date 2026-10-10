@@ -1,0 +1,31 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: rtl8730e_evb/rtl8730e/ca32
+name: Realtek RTL8730E EVB (CA32)
+vendor: realtek
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 5120
+flash: 6144
+supported:
+  - pinctrl
+  - serial
+  - console
+  - clock_control
+  - dma
+  - spi
+  - uart
+  - i2c
+  - gpio
+  - flash
+  - counter
+  - rtc
+  - watchdog
+  - adc
+  - entropy
+  - smp
+  - pwm

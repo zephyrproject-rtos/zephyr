@@ -1,0 +1,27 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config RTL8730E_BUILD_KM4_APP
+	bool "Build the KM4 network-processor application as a second image"
+	help
+	  Also build the KM4 (Cortex-M55) application as a sysbuild image.
+	  Requires RTL8730E_KM4_APP_SOURCE_DIR.
+
+config RTL8730E_KM4_APP_SOURCE_DIR
+	string "Source directory of the KM4 application"
+	depends on RTL8730E_BUILD_KM4_APP
+	help
+	  KM4 application path, absolute or relative to APP_DIR.
+
+config RTL8730E_BUILD_KM0_APP
+	bool "Build the KM0 low-power application as a second image"
+	help
+	  Also build the KM0 (Cortex-M23) application as a sysbuild image, which
+	  requires RTL8730E_KM0_APP_SOURCE_DIR. merge_bin.py handle_amebasmart folds
+	  its image2 into the CA32 app.bin.
+
+config RTL8730E_KM0_APP_SOURCE_DIR
+	string "Source directory of the KM0 application"
+	depends on RTL8730E_BUILD_KM0_APP
+	help
+	  KM0 application path, absolute or relative to APP_DIR.

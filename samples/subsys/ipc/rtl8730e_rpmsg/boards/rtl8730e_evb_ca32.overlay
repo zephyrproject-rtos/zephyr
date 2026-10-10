@@ -1,0 +1,78 @@
+/*
+ * Copyright (c) 2026 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * CA32 is the rpmsg host for both remotes. Both instances share IPCAP and its
+ * GIC SPI 24, each on disjoint bits.
+ *
+ * mbox cells are absolute register bits (see realtek,rtl8730e-ipc.yaml):
+ *   KM4 link: tx = bit 5  (AP_TO_NP ch5), rx = bit 18 (NP_TO_AP ch2)
+ *   KM0 link: tx = bit 12 (AP_TO_LP ch4), rx = bit 28 (LP_TO_AP ch4)
+ *
+ * The Cortex-A arm_mmu ignores zephyr,memory-attr, so REGION_KM4_VRING and
+ * REGION_KM0_VRING in mmu_regions.c map the shared regions non-cacheable.
+ */
+
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	/*
+	 * KM4 vrings and buffers at the base of KM4_DRAM_HEAP_EXT. Non-secure
+	 * PSRAM at the same address on CA32 and KM4.
+	 */
+	sram_ipc: memory@60700000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x60700000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "SRAM_IPC";
+	};
+
+	/*
+	 * KM0 cannot reach PSRAM, so its vrings live in KM0 SRAM, which CA32 also
+	 * reaches. CA32 maps it non-cacheable through REGION_KM0_VRING.
+	 */
+	sram_ipc_lp: memory@2301b000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x2301b000 DT_SIZE_K(16)>;
+		zephyr,memory-region = "SRAM_IPC_LP";
+	};
+
+	soc {
+		ipc_mbox: mbox@41000580 {
+			compatible = "realtek,rtl8730e-ipc";
+			reg = <0x41000580 0x14>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 24 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			#mbox-cells = <1>;
+			status = "okay";
+		};
+	};
+
+	ipc {
+		ipc0: ipc0 {
+			compatible = "zephyr,ipc-openamp-static-vrings";
+			memory-region = <&sram_ipc>;
+			mboxes = <&ipc_mbox 5>, <&ipc_mbox 18>;
+			mbox-names = "tx", "rx";
+			role = "host";
+			status = "okay";
+		};
+
+		ipc1: ipc1 {
+			compatible = "zephyr,ipc-openamp-static-vrings";
+			memory-region = <&sram_ipc_lp>;
+			mboxes = <&ipc_mbox 12>, <&ipc_mbox 28>;
+			mbox-names = "tx", "rx";
+			role = "host";
+			status = "okay";
+		};
+	};
+};
+
+/*
+ * Shrink dram0 to CA32_BL3_DRAM_NS so .bss and heap stay off the KM4 vrings.
+ * AMEBASMART_DRAM_END follows, so REGION_KM4_VRING stays out of REGION_DRAM_BEYOND.
+ */
+&dram0 {
+	reg = <0x60300000 (0x60700000 - 0x60300000)>;
+};

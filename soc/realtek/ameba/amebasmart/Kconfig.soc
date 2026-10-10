@@ -1,0 +1,24 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_AMEBASMART
+	bool
+	select SOC_FAMILY_REALTEK_AMEBA
+
+config SOC_SERIES
+	default "amebasmart" if SOC_SERIES_AMEBASMART
+
+config SOC_RTL8730E_CA32
+	bool
+	select SOC_SERIES_AMEBASMART
+
+config SOC_RTL8730E_KM4
+	bool
+	select SOC_SERIES_AMEBASMART
+
+config SOC_RTL8730E_KM0
+	bool
+	select SOC_SERIES_AMEBASMART
+
+config SOC
+	default "rtl8730e" if SOC_RTL8730E_CA32 || SOC_RTL8730E_KM4 || SOC_RTL8730E_KM0

@@ -84,6 +84,12 @@ config SOC_PER_CORE_INIT_HOOK
 	  arch_kernel_init() for the primary core, and at the end of arch_secondary_cpu_init()
 	  for secondary cores.
 
+config SOC_CPU_POWER_ON_HOOK
+	bool
+	help
+	  Call soc_cpu_power_on() before PSCI CPU_ON for each secondary CPU.
+	  For SoCs that must sequence power rails or isolation release first.
+
 config BOARD_EARLY_INIT_HOOK
 	bool
 	help
