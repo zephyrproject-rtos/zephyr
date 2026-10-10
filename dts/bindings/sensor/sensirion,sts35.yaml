@@ -1,0 +1,29 @@
+# Copyright (c) 2026 Dotcom IoT LLP
+# SPDX-License-Identifier: Apache-2.0
+
+description: STS35-DIS high-accuracy digital temperature sensor
+
+compatible: "sensirion,sts35"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  repeatability:
+    type: int
+    default: 2
+    enum: [0, 1, 2]
+    description: |
+      Measurement repeatability setting.
+
+      0 = Low, 1 = Medium, 2 = High
+
+      Higher repeatability reduces measurement noise but requires a
+      longer measurement duration and may increase power consumption.
+
+      The default is 2 (High) because it gives the lowest noise
+      (0.04 degC, 3-sigma, compared to 0.08 degC for Medium and 0.15 degC
+      for Low), which suits a high-accuracy sensor. Measurements are
+      single-shot, so the longer conversion time (up to 15.5 ms,
+      compared to 4.5 ms for Low) is only spent when a sample is
+      requested. Select a lower value if latency or energy per sample
+      matters more than noise.
