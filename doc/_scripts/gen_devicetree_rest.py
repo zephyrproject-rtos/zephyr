@@ -404,7 +404,7 @@ def load_base_binding():
                           require_description=False)
 
 def load_driver_sources():
-    driver_sources = {}
+    driver_sources = defaultdict(list)
     dt_drv_compat_occurrences = defaultdict(list)
 
     dt_drv_compat_pattern = re.compile(r"#define DT_DRV_COMPAT\s+(.*)")
@@ -413,7 +413,7 @@ def load_driver_sources():
     folders_to_scan = ["boards", "drivers", "modules", "soc", "subsys"]
 
     # When looking at folders_to_scan, a file is considered as a likely driver source if:
-    # - There is only one and only one file with a "#define DT_DRV_COMPAT <compatible>" for a given
+    # - There is a file with a "#define DT_DRV_COMPAT <compatible>" for a given
     #   compatible.
     # - or, a file contains both a "#define DT_DRV_COMPAT <compatible>" and a
     #   DEVICE_DT_INST_DEFINE(...) call.
@@ -429,21 +429,16 @@ def load_driver_sources():
 
                 relative_path = filepath.relative_to(ZEPHYR_BASE)
 
-                # Find all DT_DRV_COMPAT occurrences in the file
-                dt_drv_compat_matches = dt_drv_compat_pattern.findall(content)
+                # Find all DT_DRV_COMPAT occurrences in the file. A compatible
+                # may be defined multiple times in one file, but it still has
+                # only one driver source.
+                dt_drv_compat_matches = set(dt_drv_compat_pattern.findall(content))
                 for compatible in dt_drv_compat_matches:
                     dt_drv_compat_occurrences[compatible].append(relative_path)
 
                 if dt_drv_compat_matches and device_dt_inst_define_pattern.search(content):
                     for compatible in dt_drv_compat_matches:
-                        if compatible in driver_sources:
-                            # Mark as ambiguous if multiple files define the same compatible
-                            driver_sources[compatible] = None
-                        else:
-                            driver_sources[compatible] = relative_path
-
-    # Remove ambiguous driver sources
-    driver_sources = {k: v for k, v in driver_sources.items() if v is not None}
+                        driver_sources[compatible].append(relative_path)
 
     # Consider DT_DRV_COMPATs with only one occurrence as driver sources
     for compatible, occurrences in dt_drv_compat_occurrences.items():
@@ -452,9 +447,9 @@ def load_driver_sources():
             # Assume the driver is defined in the enclosing folder if it's a header file
             if path.suffix == ".h":
                 path = path.parent
-            driver_sources[compatible] = path
+            driver_sources[compatible].append(path)
 
-    return driver_sources
+    return {compatible: sorted(paths) for compatible, paths in driver_sources.items()}
 
 def dump_content(bindings, base_binding, vnd_lookup, type_lookup, driver_sources, out_dir,
                  turbo_mode):
@@ -707,17 +702,26 @@ def write_orphans(bindings, base_binding, vnd_lookup, driver_sources, out_dir):
     logging.info('done writing :orphan: files; %d files needed updates',
                  num_written)
 
-def make_sidebar(compatible, vendor_name, vendor_ref_target, driver_path=None):
+def make_sidebar(compatible, vendor_name, vendor_ref_target, driver_paths=None):
+    sidebar_class = "dt-binding-overview"
+    if driver_paths and len(driver_paths) > 1:
+        sidebar_class += " dt-binding-overview-multiple-drivers"
+
     lines = [
         ".. sidebar:: Overview",
+        f"   :class: {sidebar_class}",
         "",
         f"   :Name: ``{compatible}``",
         f"   :Vendor: :ref:`{vendor_name} <{vendor_ref_target}>`",
         f"   :Used in: :zephyr:board-catalog:`List of boards <#compatibles={compatible}>` using",
         "               this compatible",
     ]
-    if driver_path:
-        lines.append(f"   :Driver: :zephyr_file:`{driver_path}`")
+    if driver_paths:
+        if len(driver_paths) == 1:
+            lines.append(f"   :Driver: :zephyr_file:`{driver_paths[0]}`")
+        else:
+            lines.append("   :Drivers:")
+            lines.extend(f"      * :zephyr_file:`{driver_path}`" for driver_path in driver_paths)
     return "\n".join(lines) + "\n"
 
 def print_binding_page(binding, base_names, vnd_lookup, driver_sources,dup_compats,
@@ -774,13 +778,13 @@ def print_binding_page(binding, base_names, vnd_lookup, driver_sources,dup_compa
     vnd = compatible_vnd(compatible)
     vendor_name = vnd_lookup.vendor(vnd)
     vendor_target = vnd_lookup.target(vnd)
-    driver_path = driver_sources.get(re.sub("[-,.@/+]", "_", compatible.lower()))
+    driver_paths = driver_sources.get(re.sub("[-,.@/+]", "_", compatible.lower()))
 
     sidebar_content = make_sidebar(
         compatible=compatible,
         vendor_name=vendor_name,
         vendor_ref_target=vendor_target,
-        driver_path=driver_path,
+        driver_paths=driver_paths,
     )
     print_block(sidebar_content, string_io)
 
