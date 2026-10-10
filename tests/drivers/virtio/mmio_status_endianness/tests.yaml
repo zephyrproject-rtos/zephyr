@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.virtio.mmio_status_endianness:
+    platform_allow:
+      - qemu_malta
+      - qemu_malta/qemu_malta/be
+      - qemu_x86
+      - qemu_cortex_a53
+      - qemu_riscv32
+      - qemu_leon3
+    tags:
+      - drivers
+      - virtio
