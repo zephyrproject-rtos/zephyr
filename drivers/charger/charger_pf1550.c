@@ -17,8 +17,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pf1550_charger, CONFIG_CHARGER_LOG_LEVEL);
 
-#define INT_ENABLE_DELAY K_MSEC(500)
-
 #define CHARGER_CHG_INT           (0x80 + 0x00)
 #define CHARGER_CHG_INT_MASK      (0x80 + 0x02)
 #define CHARGER_CHG_INT_OK        (0x80 + 0x04)
@@ -103,7 +101,6 @@ struct charger_pf1550_data {
 	const struct device *dev;
 	struct gpio_callback gpio_cb;
 	struct k_work int_routine_work;
-	struct k_work_delayable int_enable_work;
 	enum charger_status charger_status;
 	enum charger_online charger_online;
 	charger_status_notifier_t charger_status_notifier;
@@ -307,6 +304,12 @@ static int pf1550_get_interrupt_source(const struct device *dev, uint8_t *int_a)
 	int ret;
 
 	ret = i2c_reg_read_byte_dt(&config->bus, CHARGER_CHG_INT, &buf);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Interrupt bits are write-1-to-clear, INTB stays asserted until cleared */
+	ret = i2c_reg_write_byte_dt(&config->bus, CHARGER_CHG_INT, buf);
 
 	if (int_a) {
 		*int_a = buf;
@@ -325,7 +328,8 @@ static int pf1550_enable_interrupts(const struct device *dev)
 		return ret;
 	}
 
-	return i2c_reg_write_byte_dt(&config->bus, CHARGER_CHG_INT_MASK, CHG_INT_ENABLE_ALL);
+	return i2c_reg_write_byte_dt(&config->bus, CHARGER_CHG_INT_MASK,
+				     (uint8_t)~CHG_INT_ENABLE_ALL);
 }
 
 static int pf1550_led_config(const struct device *dev)
@@ -504,29 +508,10 @@ static int pf1550_set_prop(const struct device *dev, charger_prop_t prop,
 	}
 }
 
-static int pf1550_enable_interrupt_pin(const struct device *dev, bool enabled)
-{
-	const struct charger_pf1550_config *const config = dev->config;
-	gpio_flags_t flags;
-	int ret;
-
-	flags = enabled ? GPIO_INT_EDGE_TO_ACTIVE : GPIO_INT_DISABLE;
-
-	ret = gpio_pin_interrupt_configure_dt(&config->int_gpio, flags);
-	if (ret < 0) {
-		LOG_ERR("Could not %s interrupt GPIO callback: %d", enabled ? "enable" : "disable",
-			ret);
-	}
-
-	return ret;
-}
-
 static void pf1550_gpio_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
 	struct charger_pf1550_data *data = CONTAINER_OF(cb, struct charger_pf1550_data, gpio_cb);
 	int ret;
-
-	(void)pf1550_enable_interrupt_pin(data->dev, false);
 
 	ret = k_work_submit(&data->int_routine_work);
 	if (ret < 0) {
@@ -538,6 +523,7 @@ static void pf1550_int_routine_work_handler(struct k_work *work)
 {
 	struct charger_pf1550_data *data =
 		CONTAINER_OF(work, struct charger_pf1550_data, int_routine_work);
+	const struct charger_pf1550_config *config = data->dev->config;
 	uint8_t int_src;
 	int ret;
 
@@ -574,19 +560,10 @@ static void pf1550_int_routine_work_handler(struct k_work *work)
 		(void)pf1550_update_properties(data->dev);
 	}
 
-	ret = k_work_reschedule(&data->int_enable_work, INT_ENABLE_DELAY);
-	if (ret < 0) {
-		LOG_WRN("Could not reschedule int_enable_work: %d", ret);
+	/* INTB stays asserted if an event was raised while handling, no new edge follows */
+	if (gpio_pin_get_dt(&config->int_gpio) == 1) {
+		(void)k_work_submit(&data->int_routine_work);
 	}
-}
-
-static void pf1550_int_enable_work_handler(struct k_work *work)
-{
-	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
-	struct charger_pf1550_data *data =
-		CONTAINER_OF(dwork, struct charger_pf1550_data, int_enable_work);
-
-	(void)pf1550_enable_interrupt_pin(data->dev, true);
 }
 
 static int pf1550_configure_interrupt_pin(const struct device *dev)
@@ -614,6 +591,12 @@ static int pf1550_configure_interrupt_pin(const struct device *dev)
 		return ret;
 	}
 
+	ret = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+	if (ret < 0) {
+		LOG_ERR("Could not enable interrupt GPIO: %d", ret);
+		return ret;
+	}
+
 	return 0;
 }
 
@@ -635,14 +618,8 @@ static int pf1550_init(const struct device *dev)
 	}
 
 	k_work_init(&data->int_routine_work, pf1550_int_routine_work_handler);
-	k_work_init_delayable(&data->int_enable_work, pf1550_int_enable_work_handler);
 
 	ret = pf1550_configure_interrupt_pin(dev);
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = pf1550_enable_interrupt_pin(dev, true);
 	if (ret < 0) {
 		return ret;
 	}
