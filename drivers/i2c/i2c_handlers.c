@@ -71,14 +71,14 @@ static inline int z_vrfy_i2c_transfer(const struct device *dev,
 
 static inline int z_vrfy_i2c_target_driver_register(const struct device *dev)
 {
-	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_I2C));
+	K_OOPS(K_SYSCALL_DRIVER_I2C_TARGET(dev, driver_register));
 	return z_impl_i2c_target_driver_register(dev);
 }
 #include <zephyr/syscalls/i2c_target_driver_register_mrsh.c>
 
 static inline int z_vrfy_i2c_target_driver_unregister(const struct device *dev)
 {
-	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_I2C));
+	K_OOPS(K_SYSCALL_DRIVER_I2C_TARGET(dev, driver_unregister));
 	return z_impl_i2c_target_driver_unregister(dev);
 }
 #include <zephyr/syscalls/i2c_target_driver_unregister_mrsh.c>
