@@ -57,20 +57,18 @@ mem_addr_t gic_rdists[CONFIG_MP_MAX_NUM_CPUS];
 #define IGROUPR_VAL 0x0U
 #endif
 
-/*
- * We allocate memory for PROPBASE to cover 2 ^ lpi_id_bits LPIs to
- * deal with (one configuration byte per interrupt). PENDBASE has to
- * be 64kB aligned (one bit per LPI, plus 8192 bits for SPI/PPI/SGI).
- */
-#define ITS_MAX_LPI_NRBITS 16 /* 64K LPIs */
+/* One configuration byte and one pending bit per INTID. */
+#define ITS_MAX_LPI_NRBITS 16 /* 16-bit INTIDs */
+#define GIC_LPI_ID_BITS    DT_PROP_OR(GIC_V3_NODE, zephyr_lpi_id_bits, ITS_MAX_LPI_NRBITS)
 
-#define LPI_PROPBASE_SZ(nrbits) ROUND_UP(BIT(nrbits), KB(64))
+#define LPI_PROPBASE_SZ(nrbits) ROUND_UP(BIT(nrbits), KB(4))
 #define LPI_PENDBASE_SZ(nrbits) ROUND_UP(BIT(nrbits) / 8, KB(64))
 
 #ifdef CONFIG_GIC_V3_ITS
-static uintptr_t lpi_prop_table;
-
-atomic_t nlpi_intid = ATOMIC_INIT(8192);
+static uint8_t lpi_prop_table[LPI_PROPBASE_SZ(GIC_LPI_ID_BITS)] __aligned(KB(4));
+static uint8_t lpi_pend_tables[CONFIG_MP_MAX_NUM_CPUS][LPI_PENDBASE_SZ(GIC_LPI_ID_BITS)]
+	__aligned(KB(64));
+static unsigned int lpi_intid_limit;
 #endif
 
 static inline mem_addr_t gic_get_rdist(void)
@@ -105,7 +103,12 @@ static int gic_wait_rwp(uint32_t intid)
 #ifdef CONFIG_GIC_V3_ITS
 static void arm_gic_lpi_setup(unsigned int intid, bool enable)
 {
-	uint8_t *cfg = &((uint8_t *)lpi_prop_table)[intid - 8192];
+	uint8_t *cfg;
+
+	if ((intid < 8192U) || (intid >= lpi_intid_limit)) {
+		return;
+	}
+	cfg = &lpi_prop_table[intid - 8192U];
 
 	if (enable) {
 		*cfg |= BIT(0);
@@ -124,7 +127,12 @@ static void arm_gic_lpi_setup(unsigned int intid, bool enable)
 
 static void arm_gic_lpi_set_priority(unsigned int intid, unsigned int prio)
 {
-	uint8_t *cfg = &((uint8_t *)lpi_prop_table)[intid - 8192];
+	uint8_t *cfg;
+
+	if ((intid < 8192U) || (intid >= lpi_intid_limit)) {
+		return;
+	}
+	cfg = &lpi_prop_table[intid - 8192U];
 
 	*cfg &= 0xfc;
 	*cfg |= prio & 0xfc;
@@ -140,7 +148,12 @@ static void arm_gic_lpi_set_priority(unsigned int intid, unsigned int prio)
 
 static bool arm_gic_lpi_is_enabled(unsigned int intid)
 {
-	uint8_t *cfg = &((uint8_t *)lpi_prop_table)[intid - 8192];
+	uint8_t *cfg;
+
+	if ((intid < 8192U) || (intid >= lpi_intid_limit)) {
+		return false;
+	}
+	cfg = &lpi_prop_table[intid - 8192U];
 
 	return (*cfg & BIT(0));
 }
@@ -421,34 +434,27 @@ static void gicv3_rdist_enable(mem_addr_t rdist)
  */
 static void gicv3_rdist_setup_lpis(mem_addr_t rdist)
 {
-	unsigned int lpi_id_bits =
-		MIN(GICD_TYPER_IDBITS(sys_read32(GICD_TYPER)), ITS_MAX_LPI_NRBITS);
-	uintptr_t lpi_pend_table;
+	unsigned int lpi_id_bits = MIN(GICD_TYPER_IDBITS(sys_read32(GICD_TYPER)), GIC_LPI_ID_BITS);
+	uint8_t *lpi_pend_table = lpi_pend_tables[arch_curr_cpu()->id];
 	uint64_t reg, tmp;
 	uint32_t ctlr;
-
-	/* If not, alloc a common prop table for all redistributors */
-	if (!lpi_prop_table) {
-		lpi_prop_table = (uintptr_t)k_aligned_alloc(4 * 1024, LPI_PROPBASE_SZ(lpi_id_bits));
-		memset((void *)lpi_prop_table, 0, LPI_PROPBASE_SZ(lpi_id_bits));
-	}
-
-	lpi_pend_table = (uintptr_t)k_aligned_alloc(64 * 1024, LPI_PENDBASE_SZ(lpi_id_bits));
-	memset((void *)lpi_pend_table, 0, LPI_PENDBASE_SZ(lpi_id_bits));
-
-#ifdef CONFIG_GIC_V3_RDIST_DMA_NONCOHERENT
-	arch_dcache_flush_and_invd_range((void *)lpi_prop_table, LPI_PROPBASE_SZ(lpi_id_bits));
-	arch_dcache_flush_and_invd_range((void *)lpi_pend_table, LPI_PENDBASE_SZ(lpi_id_bits));
-#endif
 
 	ctlr = sys_read32(rdist + GICR_CTLR);
 	ctlr &= ~GICR_CTLR_ENABLE_LPIS;
 	sys_write32(ctlr, rdist + GICR_CTLR);
+	gic_wait_rwp(0U);
+	memset(lpi_pend_table, 0, sizeof(lpi_pend_tables[0]));
+
+#ifdef CONFIG_GIC_V3_RDIST_DMA_NONCOHERENT
+	arch_dcache_flush_and_invd_range(lpi_prop_table, sizeof(lpi_prop_table));
+	arch_dcache_flush_and_invd_range(lpi_pend_table, sizeof(lpi_pend_tables[0]));
+#endif
 
 	/* PROPBASE */
 	reg = (GIC_BASER_SHARE_INNER << GITR_PROPBASER_SHAREABILITY_SHIFT) |
 	      (GIC_BASER_CACHE_RAWAWB << GITR_PROPBASER_INNER_CACHE_SHIFT) |
-	      (lpi_prop_table & (GITR_PROPBASER_ADDR_MASK << GITR_PROPBASER_ADDR_SHIFT)) |
+	      ((uintptr_t)lpi_prop_table &
+	       (GITR_PROPBASER_ADDR_MASK << GITR_PROPBASER_ADDR_SHIFT)) |
 	      (GIC_BASER_CACHE_INNERLIKE << GITR_PROPBASER_OUTER_CACHE_SHIFT) |
 	      ((lpi_id_bits - 1) & GITR_PROPBASER_ID_BITS_MASK);
 	sys_write64(reg, rdist + GICR_PROPBASER);
@@ -466,7 +472,8 @@ static void gicv3_rdist_setup_lpis(mem_addr_t rdist)
 	/* PENDBASE */
 	reg = (GIC_BASER_SHARE_INNER << GITR_PENDBASER_SHAREABILITY_SHIFT) |
 	      (GIC_BASER_CACHE_RAWAWB << GITR_PENDBASER_INNER_CACHE_SHIFT) |
-	      (lpi_pend_table & (GITR_PENDBASER_ADDR_MASK << GITR_PENDBASER_ADDR_SHIFT)) |
+	      ((uintptr_t)lpi_pend_table &
+	       (GITR_PENDBASER_ADDR_MASK << GITR_PENDBASER_ADDR_SHIFT)) |
 	      (GIC_BASER_CACHE_INNERLIKE << GITR_PENDBASER_OUTER_CACHE_SHIFT) | GITR_PENDBASER_PTZ;
 	sys_write64(reg, rdist + GICR_PENDBASER);
 	/* Check SHAREABILITY validity */
@@ -768,6 +775,14 @@ static void __arm_gic_init(void)
 
 int arm_gic_init(const struct device *dev)
 {
+#ifdef CONFIG_GIC_V3_ITS
+	unsigned int lpi_id_bits = MIN(GICD_TYPER_IDBITS(sys_read32(GICD_TYPER)), GIC_LPI_ID_BITS);
+
+	if (lpi_id_bits < 14U) {
+		return -ENOTSUP;
+	}
+	lpi_intid_limit = MIN(BIT(lpi_id_bits), CONFIG_NUM_IRQS);
+#endif
 	gicv3_dist_init();
 
 	__arm_gic_init();

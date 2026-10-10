@@ -1,0 +1,12 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&its {
+	zephyr,device-id-bits = <9>;
+};
+
+&gic {
+	zephyr,lpi-id-bits = <14>;
+};
