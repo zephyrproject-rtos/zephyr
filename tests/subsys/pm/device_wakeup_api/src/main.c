@@ -11,6 +11,15 @@
 
 static const struct device *const dev =
 	DEVICE_DT_GET(DT_NODELABEL(gpio0));
+/* Same, but names standby in zephyr,wakeup-disabling-power-states. */
+static const struct device *const dev_no_wake =
+	DEVICE_DT_GET(DT_NODELABEL(gpio1));
+/* Same, but names suspend-to-ram in zephyr,disabling-power-states. */
+static const struct device *const dev_unpowered =
+	DEVICE_DT_GET(DT_NODELABEL(gpio2));
+/* Same, but names a state in each of the two properties. */
+static const struct device *const dev_both =
+	DEVICE_DT_GET(DT_NODELABEL(gpio3));
 static uint8_t sleep_count;
 
 
@@ -91,6 +100,52 @@ ZTEST(wakeup_device_1cpu, test_wakeup_device_api)
 
 	ret = pm_device_wakeup_is_enabled(dev);
 	zassert_false(ret, "Wakeup source is enabled");
+}
+
+ZTEST(wakeup_device_1cpu, test_wakeup_device_api_per_state)
+{
+	zassert_true(device_is_ready(dev_no_wake), "Device not ready");
+	zassert_true(device_is_ready(dev_unpowered), "Device not ready");
+
+	/* Names no state it cannot wake from: capable from every state, which
+	 * is what pm_device_wakeup_is_capable() has always reported.
+	 */
+	zassert_true(pm_device_wakeup_is_capable(dev), "Device not marked as capable");
+	zassert_true(pm_device_wakeup_is_capable_from_state(dev, PM_STATE_SUSPEND_TO_RAM, 0),
+		     "Device naming no state must be capable from every state");
+	zassert_true(pm_device_wakeup_is_capable_from_state(dev, PM_STATE_STANDBY, 0),
+		     "Device naming no state must be capable from every state");
+
+	/* zephyr,wakeup-disabling-power-states = <&state1>, i.e. not standby. */
+	zassert_true(pm_device_wakeup_is_capable(dev_no_wake), "Device not marked as capable");
+	zassert_false(pm_device_wakeup_is_capable_from_state(dev_no_wake, PM_STATE_STANDBY, 0),
+		      "Device must not be capable from a state it named");
+	zassert_true(pm_device_wakeup_is_capable_from_state(dev_no_wake,
+							   PM_STATE_SUSPEND_TO_RAM, 0),
+		     "Device must be capable from a state it did not name");
+
+	/* zephyr,disabling-power-states = <&state0>: unpowered in
+	 * suspend-to-ram, so not capable from it either, without the node
+	 * having to name the state twice.
+	 */
+	zassert_true(pm_device_wakeup_is_capable(dev_unpowered), "Device not marked as capable");
+	zassert_false(pm_device_wakeup_is_capable_from_state(dev_unpowered,
+							    PM_STATE_SUSPEND_TO_RAM, 0),
+		      "A state that removes the device power must not be wake capable");
+	zassert_true(pm_device_wakeup_is_capable_from_state(dev_unpowered, PM_STATE_STANDBY, 0),
+		     "Device must be capable from a state that keeps its power");
+
+	/* Names a state in each property: both answers come back false, and a
+	 * state named by neither is unaffected.
+	 */
+	zassert_true(device_is_ready(dev_both), "Device not ready");
+	zassert_false(pm_device_wakeup_is_capable_from_state(dev_both, PM_STATE_STANDBY, 0),
+		      "Device must not be capable from the state it named as no-wakeup");
+	zassert_false(pm_device_wakeup_is_capable_from_state(dev_both,
+							    PM_STATE_SUSPEND_TO_RAM, 0),
+		      "Device must not be capable from the state that removes its power");
+	zassert_true(pm_device_wakeup_is_capable_from_state(dev_both, PM_STATE_SOFT_OFF, 0),
+		     "Device must be capable from a state neither property names");
 }
 
 ZTEST(wakeup_device_1cpu, test_wakeup_device_system_pm)
