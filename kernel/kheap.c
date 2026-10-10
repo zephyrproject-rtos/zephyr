@@ -66,8 +66,12 @@ static void *z_heap_alloc_helper(struct k_heap *heap, size_t align, size_t bytes
 	while (ret == NULL) {
 		ret = sys_heap_allocator(&heap->heap, align, bytes);
 
-		if (!IS_ENABLED(CONFIG_MULTITHREADING) ||
-		    (ret != NULL) || K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		if (!IS_ENABLED(CONFIG_MULTITHREADING) || (ret != NULL)) {
+			break;
+		}
+
+		timeout = sys_timepoint_timeout(end);
+		if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 			break;
 		}
 
@@ -81,7 +85,6 @@ static void *z_heap_alloc_helper(struct k_heap *heap, size_t align, size_t bytes
 			 */
 		}
 
-		timeout = sys_timepoint_timeout(end);
 		(void) z_pend_curr(&heap->lock, key, &heap->wait_q, timeout);
 		key = k_spin_lock(&heap->lock);
 	}
@@ -161,17 +164,26 @@ void *k_heap_realloc(struct k_heap *heap, void *ptr, size_t bytes, k_timeout_t t
 	while (ret == NULL) {
 		ret = sys_heap_realloc(&heap->heap, ptr, bytes);
 
-		if (!IS_ENABLED(CONFIG_MULTITHREADING) ||
-		    (ret != NULL) || K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		/* A zero size realloc frees ptr and returns NULL: never retry it */
+		if (!IS_ENABLED(CONFIG_MULTITHREADING) || (ret != NULL) || (bytes == 0U)) {
 			break;
 		}
 
 		timeout = sys_timepoint_timeout(end);
+		if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+			break;
+		}
+
 		(void) z_pend_curr(&heap->lock, key, &heap->wait_q, timeout);
 		key = k_spin_lock(&heap->lock);
 	}
 
-	k_spin_unlock(&heap->lock, key);
+	if (IS_ENABLED(CONFIG_MULTITHREADING) && (ptr != NULL) && (bytes == 0U) &&
+	    (z_unpend_all(&heap->wait_q) != 0)) {
+		z_reschedule(&heap->lock, key);
+	} else {
+		k_spin_unlock(&heap->lock, key);
+	}
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_heap, realloc, heap, ptr, bytes, timeout, ret);
 
