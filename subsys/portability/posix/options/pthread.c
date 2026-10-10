@@ -471,6 +471,22 @@ static void posix_thread_finalize(struct posix_thread *t, void *retval)
 	pthread_key_obj *key_obj;
 	pthread_thread_data *thread_spec_data;
 	struct pthread_key_data *key_data;
+	sys_snode_t *node_cleanup = NULL;
+	struct __pthread_cleanup *c;
+
+	/* Execute all cleanup handlers pushed by this thread */
+	while (1) {
+		SYS_SEM_LOCK(&pthread_pool_lock) {
+			node_cleanup = sys_slist_get(&t->cleanup_list);
+		}
+		if (node_cleanup == NULL) {
+			break;
+		}
+		c = CONTAINER_OF(node_cleanup, struct __pthread_cleanup, node);
+		if (c->routine != NULL) {
+			c->routine(c->arg);
+		}
+	}
 
 	SYS_SLIST_FOR_EACH_NODE_SAFE(&t->key_list, node_l, node_s) {
 		thread_spec_data = (pthread_thread_data *)node_l;

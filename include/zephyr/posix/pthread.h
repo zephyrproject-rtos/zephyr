@@ -470,7 +470,7 @@ void __z_pthread_cleanup_pop(int execute);
 
 #define pthread_cleanup_push(_rtn, _arg)                                                           \
 	do /* enforce '{'-like behaviour */ {                                                      \
-		void *_z_pthread_cleanup[3];                                                       \
+		void *_z_pthread_cleanup[3] = {0};                                                 \
 		__z_pthread_cleanup_push(_z_pthread_cleanup, _rtn, _arg)
 
 #define pthread_cleanup_pop(_ex)                                                                   \
