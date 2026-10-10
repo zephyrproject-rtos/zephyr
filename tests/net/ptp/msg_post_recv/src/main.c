@@ -39,17 +39,17 @@ void ptp_tlv_free(struct ptp_tlv_container *tlv_container)
 	tlv_free_calls++;
 }
 
-int ptp_tlv_post_recv(struct ptp_tlv *tlv)
+int ptp_tlv_post_recv(struct ptp_tlv **p_tlv)
 {
-	last_post_recv_tlv = tlv;
+	last_post_recv_tlv = *p_tlv;
 	tlv_post_recv_calls++;
 
 	return tlv_post_recv_ret;
 }
 
-void ptp_tlv_pre_send(struct ptp_tlv *tlv)
+void ptp_tlv_pre_send(struct ptp_tlv **p_tlv)
 {
-	last_pre_send_tlv = tlv;
+	last_pre_send_tlv = *p_tlv;
 	tlv_pre_send_calls++;
 }
 

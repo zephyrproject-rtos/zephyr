@@ -176,7 +176,7 @@ static int msg_tlv_post_recv(struct ptp_msg *msg, int length)
 		suffix += tlv_container->tlv->length;
 		suffix_len += tlv_container->tlv->length;
 
-		ret = ptp_tlv_post_recv(tlv_container->tlv);
+		ret = ptp_tlv_post_recv(&tlv_container->tlv);
 		if (ret) {
 			ptp_tlv_free(tlv_container);
 			return ret;
@@ -204,7 +204,7 @@ static void msg_tlv_pre_send(struct ptp_msg *msg)
 	struct ptp_tlv_container *tlv_container;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&msg->tlvs, tlv_container, node) {
-		ptp_tlv_pre_send(tlv_container->tlv);
+		ptp_tlv_pre_send(&tlv_container->tlv);
 	}
 
 	/* No need to track TLVs attached to the message. */
