@@ -19,6 +19,21 @@
 				compatible = "st,mpxxdtyy";
 				reg = <0>;
 			};
+
+			test_i2s_max98357a: max98357a@1 {
+				compatible = "maxim,max98357a";
+				reg = <1>;
+				sdmode-gpios = <&test_gpio 0 0>;
+				gain-gpios = <&test_gpio 1 0>;
+			};
+		};
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			reg = <0xdeadbeef 0x1000>;
+			gpio-controller;
+			#gpio-cells = <0x2>;
+			status = "okay";
 		};
 	};
 };
