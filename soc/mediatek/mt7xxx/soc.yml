@@ -1,0 +1,6 @@
+family:
+  - name: mt7xxx
+    series:
+      - name: mt76x8
+        socs:
+          - name: mt7628
