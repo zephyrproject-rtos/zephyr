@@ -62,7 +62,8 @@ void configure_ui(void)
 	}
 }
 
-static void event_callback(const struct device *dev, struct gpio_callback *cb, uint32_t events)
+static void event_callback(const struct device *dev, struct mfd_npm13xx_event_callback *cb,
+			   npm13xx_event_t events)
 {
 	if (events & BIT(NPM13XX_EVENT_SHIPHOLD_PRESS)) {
 		printk("SHPHLD pressed\n");
@@ -74,18 +75,24 @@ static void event_callback(const struct device *dev, struct gpio_callback *cb, u
 
 void configure_events(void)
 {
+	int ret;
+
 	if (!device_is_ready(pmic)) {
 		printk("Pmic device not ready.\n");
 		return;
 	}
 
 	/* Setup callback for shiphold button press */
-	static struct gpio_callback event_cb;
+	static struct mfd_npm13xx_event_callback event_cb;
 
-	gpio_init_callback(&event_cb, event_callback, BIT(NPM13XX_EVENT_SHIPHOLD_PRESS) |
-			   BIT(NPM13XX_EVENT_SHIPHOLD_RELEASE));
+	event_cb.event_mask =
+		BIT(NPM13XX_EVENT_SHIPHOLD_PRESS) | BIT(NPM13XX_EVENT_SHIPHOLD_RELEASE);
+	event_cb.handler = event_callback;
 
-	mfd_npm13xx_add_callback(pmic, &event_cb);
+	ret = mfd_npm13xx_add_callback(pmic, &event_cb);
+	if (ret < 0) {
+		printk("Failed to add pmic event callback: %d\n", ret);
+	}
 }
 
 void read_sensors(void)
