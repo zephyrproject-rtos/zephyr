@@ -22,6 +22,7 @@ common:
     - mimxrt595_evk/mimxrt595s/cm33
     - mimxrt685_aud_evk/mimxrt685s/cm33
     - mimxrt685_evk/mimxrt685s/cm33
+    - am62l_evm/am62l3/a53
   integration_platforms:
     - native_sim
   modules:
