@@ -1,0 +1,146 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP SEMC SDRAM device
+
+compatible: "nxp,mcux-semc-sdram"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      SDRAM base address and size. The base address is programmed into the
+      SEMC base address register of the selected chip-select.
+
+  cs:
+    type: int
+    required: true
+    enum: [0, 1, 2, 3]
+    description: |
+      SEMC SDRAM chip-select number. The SEMC controller supports up to four
+      chip-selects, so several SDRAM nodes (one per enabled chip-select) can
+      be attached to the same controller.
+
+  clk-frequency:
+    type: int
+    required: true
+    description: SEMC clock frequency in Hz used to derive SDRAM timing.
+
+  port-size:
+    type: int
+    required: true
+    enum: [8, 16, 32]
+    description: SDRAM data bus width in bits.
+
+  burst-length:
+    type: int
+    required: true
+    enum: [1, 2, 4, 8]
+    description: SDRAM burst length.
+
+  column-bits:
+    type: int
+    required: true
+    enum: [8, 9, 10, 11, 12]
+    description: SDRAM column address bit width.
+
+  cas-latency:
+    type: int
+    required: true
+    enum: [1, 2, 3]
+    description: CAS latency in clock cycles.
+
+  t-precharge-to-act-ns:
+    type: int
+    required: true
+    max: 255
+    description: Precharge to activate wait time in nanoseconds (tRP).
+
+  t-act-to-readwrite-ns:
+    type: int
+    required: true
+    max: 255
+    description: Activate to read/write wait time in nanoseconds (tRCD).
+
+  t-refresh-recovery-ns:
+    type: int
+    required: true
+    max: 255
+    description: Refresh recovery time in nanoseconds (max of tRFC, tXSR).
+
+  t-write-recovery-ns:
+    type: int
+    required: true
+    max: 255
+    description: Write recovery time in nanoseconds (tWR).
+
+  t-cke-off-ns:
+    type: int
+    required: true
+    max: 255
+    description: CKE off minimum time in nanoseconds.
+
+  t-act-to-precharge-ns:
+    type: int
+    required: true
+    max: 255
+    description: Activate to precharge time in nanoseconds (tRAS).
+
+  t-self-ref-recovery-ns:
+    type: int
+    required: true
+    max: 255
+    description: Self refresh recovery time in nanoseconds (tXSR).
+
+  t-refresh-to-refresh-ns:
+    type: int
+    required: true
+    max: 255
+    description: Refresh to refresh wait time in nanoseconds (tRFC).
+
+  t-act-to-act-ns:
+    type: int
+    required: true
+    max: 255
+    description: Activate to activate wait time in nanoseconds (tRRD).
+
+  refresh-period-ns-per-row:
+    type: int
+    required: true
+    description: |
+      Refresh period in nanoseconds per row, e.g. 64 ms / 8192 rows for a
+      64 ms refresh period.
+
+  t-prescale-period-ns:
+    type: int
+    default: 0
+    description: |
+      Prescaler timer period in nanoseconds. When 0, the driver derives it
+      as 160 * (1000000000 / clk-frequency), matching the MCUX SDK example.
+
+  refresh-urgent-threshold:
+    type: int
+    default: 0
+    description: |
+      Refresh urgent threshold. When 0, the driver uses the value of
+      refresh-period-ns-per-row.
+
+  refresh-burst-length:
+    type: int
+    default: 1
+    description: Refresh burst length.
+
+  delay-chain:
+    type: int
+    default: 0
+    description: |
+      DQS delay chain value used to compensate timing when DQS is faster than
+      read data. Only used on SoCs with SEMC delay chain control.
+
+  auto-refresh-times:
+    type: int
+    default: 8
+    description: |
+      Additional auto refresh cycles run after mode register programming.
