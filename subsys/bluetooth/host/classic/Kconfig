@@ -695,6 +695,12 @@ config BT_DEFAULT_ROLE_SWITCH_ENABLE
 	  This option sets the controller's default link policy to
 	  enable/disable the role switch.
 
+config BT_DEFAULT_SNIFF_MODE_ENABLE
+	bool "Default Bluetooth Sniff Mode Enable/Disable State"
+	help
+	  This option sets the controller's default link policy to
+	  enable/disable the sniff mode.
+
 config BT_POWER_MODE_CONTROL
 	bool "Bluetooth Power Mode Control(Active/Sniff)"
 	help
