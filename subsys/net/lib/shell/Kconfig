@@ -27,7 +27,7 @@ config NET_SHELL_SHOW_DISABLED_COMMANDS
 config NET_SHELL_ETHERNET_SUPPORTED
 	bool "Ethernet related configuration"
 	default y
-	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_L2_ETHERNET
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_ARP
 
 config NET_SHELL_CAPTURE_SUPPORTED
 	bool "Packet capture configuration"
@@ -192,7 +192,7 @@ config NET_SHELL_TFTP_CLIENT_SUPPORTED
 config NET_SHELL_UDP_SUPPORTED
 	bool "Send / receive UDP data"
 	default y
-	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || (NET_NATIVE_UDP && NET_UDP)
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || (NET_NATIVE_UDP && NET_UDP && NET_CONTEXT)
 
 config NET_SHELL_VIRTUAL_SUPPORTED
 	bool "Virtual network interface management"

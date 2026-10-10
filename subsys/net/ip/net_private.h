@@ -95,6 +95,12 @@ static inline void socket_service_init(void) { }
 #endif
 
 #if defined(CONFIG_NET_NATIVE) || defined(CONFIG_NET_OFFLOAD)
+extern void net_pkt_init(void);
+#else
+static inline void net_pkt_init(void) { }
+#endif
+
+#if defined(CONFIG_NET_CONTEXT)
 extern const char *net_context_state(struct net_context *context);
 extern bool net_context_is_reuseaddr_set(struct net_context *context);
 extern bool net_context_is_reuseport_set(struct net_context *context);
@@ -102,12 +108,10 @@ extern bool net_context_is_v6only_set(struct net_context *context);
 extern bool net_context_is_recv_pktinfo_set(struct net_context *context);
 extern bool net_context_is_recv_hoplimit_set(struct net_context *context);
 extern bool net_context_is_timestamping_set(struct net_context *context);
-extern void net_pkt_init(void);
 int net_context_get_local_addr(struct net_context *context,
 			       struct net_sockaddr *addr,
 			       net_socklen_t *addrlen);
 #else
-static inline void net_pkt_init(void) { }
 static inline const char *net_context_state(struct net_context *context)
 {
 	ARG_UNUSED(context);
@@ -122,6 +126,11 @@ static inline bool net_context_is_reuseport_set(struct net_context *context)
 {
 	ARG_UNUSED(context);
 	return false;
+}
+static inline bool net_context_is_v6only_set(struct net_context *context)
+{
+	ARG_UNUSED(context);
+	return !IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6);
 }
 static inline bool net_context_is_recv_pktinfo_set(struct net_context *context)
 {
