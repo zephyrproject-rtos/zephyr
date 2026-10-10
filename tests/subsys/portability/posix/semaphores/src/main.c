@@ -361,4 +361,42 @@ ZTEST(posix_semaphores, test_named_semaphore)
 	zassert_equal(nsem_get_list_len(), 0);
 }
 
+/* POSIX: sem_timedwait() "shall not return an error of [ETIMEDOUT] before
+ * the absolute time specified by abstime has passed".  Offsets with
+ * sub-millisecond / sub-tick components must be rounded up, never down.
+ */
+ZTEST(posix_semaphores, test_sem_timedwait_not_early)
+{
+	sem_t sem;
+	struct timespec abstime;
+	struct timespec now;
+	/* deliberately not multiples of a millisecond or a tick */
+	const int64_t offsets_ns[] = {
+		1,
+		500000,                      /* 0.5 ms */
+		NSEC_PER_MSEC + 1,
+		10 * NSEC_PER_MSEC + 500000, /* 10.5 ms */
+		33333333,                    /* ~33.3 ms */
+	};
+
+	zassert_equal(sem_init(&sem, 0, 0), 0, "sem_init failed");
+
+	ARRAY_FOR_EACH(offsets_ns, i) {
+		zassert_equal(clock_gettime(CLOCK_REALTIME, &abstime), 0);
+		timespec_add(&abstime,
+			     &(struct timespec){.tv_sec = offsets_ns[i] / NSEC_PER_SEC,
+						.tv_nsec = offsets_ns[i] % NSEC_PER_SEC});
+
+		zassert_equal(sem_timedwait(&sem, &abstime), -1);
+		zassert_equal(errno, ETIMEDOUT);
+
+		zassert_equal(clock_gettime(CLOCK_REALTIME, &now), 0);
+		zassert_true(timespec_compare(&now, &abstime) >= 0,
+			     "sem_timedwait returned before abstime (offset %lld ns)",
+			     (long long)offsets_ns[i]);
+	}
+
+	zassert_equal(sem_destroy(&sem), 0, "semaphore is not destroyed");
+}
+
 ZTEST_SUITE(posix_semaphores, NULL, NULL, NULL, NULL, NULL);
