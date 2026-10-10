@@ -7,10 +7,9 @@
 #include <string.h>
 #include <zephyr/debug/coredump.h>
 #include <zephyr/kernel/thread.h>
+#include <cortex_m/exception.h>
 
 #define ARCH_HDR_VER 3
-
-uint32_t z_arm_coredump_fault_sp;
 
 struct arm_arch_block {
 	struct {
