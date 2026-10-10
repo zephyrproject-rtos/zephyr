@@ -200,18 +200,6 @@ static inline uint32_t calc_packet_count(const uint32_t size, const uint16_t mps
 	}
 }
 
-static inline uint8_t calc_next_pid(const uint8_t pid, const uint32_t pkt_cnt)
-{
-	/* If amount of packets are even - do not toggle */
-	if ((pkt_cnt & BIT(0)) == 0) {
-		return pid;
-	}
-
-	return (pid == USB_DWC2_HCTSIZ_PID_DATA0) ?
-		USB_DWC2_HCTSIZ_PID_DATA1 :
-		USB_DWC2_HCTSIZ_PID_DATA0;
-}
-
 static inline bool periodic_frame_overrun(uint16_t current_frame, uint16_t scheduled_frame)
 {
 	uint16_t delta;
@@ -931,7 +919,14 @@ static uint32_t ch_handle_in_bulk_control(const struct device *dev,
 				LOG_DBG("IN channel%d error, HCINT 0x%08x, retry %u",
 					ch->index, hcint, ch->error_count);
 				ch_events |= BIT(UHC_DWC2_CHANNEL_DO_REINIT);
+				ch_events |= BIT(UHC_DWC2_CHANNEL_DO_REWIND);
 			}
+		} else if ((hcint & USB_DWC2_HCINT_DTGERR) && ch->xfer->type == USB_EP_TYPE_BULK) {
+			/* The core acknowledged and dropped a repeated packet */
+			ch->error_count = 0U;
+			LOG_DBG("IN channel%d toggle error, HCINT 0x%08x", ch->index, hcint);
+			ch_events |= BIT(UHC_DWC2_CHANNEL_DO_REINIT);
+			ch_events |= BIT(UHC_DWC2_CHANNEL_DO_REWIND);
 		} else {
 			/* The channel halted without reporting a reason. Fail the
 			 * transfer instead of leaving the caller waiting.
@@ -1308,11 +1303,27 @@ static int ch_configure(const struct device *const dev, struct uhc_dwc2_channel 
 	return 0;
 }
 
+/*
+ * The core writes the PID of the next packet back to HCTSIZ when a channel
+ * halts, zero length packets included. Control transfers derive their PID
+ * from the stage instead.
+ */
+static void ch_save_toggle(struct uhc_dwc2_channel *const ch)
+{
+	uint32_t hctsiz;
+
+	if (ch->xfer->type == USB_EP_TYPE_CONTROL) {
+		return;
+	}
+
+	hctsiz = sys_read32((mem_addr_t)&ch->regs->hctsiz);
+	ch->data->next_pid = usb_dwc2_get_hctsiz_pid(hctsiz);
+}
+
 static void ch_complete_data(const struct device *dev, struct uhc_dwc2_channel *const ch)
 {
 	struct uhc_transfer *const xfer = ch->xfer;
 	uint32_t actual_len = ch->length;
-	uint32_t pkt_cnt;
 	uint32_t hctsiz;
 	uint32_t remaining;
 
@@ -1327,13 +1338,56 @@ static void ch_complete_data(const struct device *dev, struct uhc_dwc2_channel *
 		net_buf_add(xfer->buf, actual_len);
 	}
 
-	/* Precalculate next pid based on the packets actually transferred */
-	pkt_cnt = calc_packet_count(actual_len, xfer->mps);
-	ch->data->next_pid = calc_next_pid(ch->data->next_pid, pkt_cnt);
+	ch_save_toggle(ch);
 
 	LOG_DBG("Data on channel%u, prog=%u, act=%u, len=%u, mps=%u, next_pid=%u",
 		ch->index, ch->length, actual_len, xfer->buf->len,
 		xfer->mps, ch->data->next_pid);
+}
+
+/*
+ * Restart a halted bulk transfer where the wire left off instead of from the
+ * beginning. PKTCNT is only decremented for packets that completed their
+ * transaction, and every packet but the last one of a transfer is maximum
+ * sized, so it gives the amount of data the device has already seen.
+ */
+static void ch_rewind_bulk(struct uhc_dwc2_channel *const ch)
+{
+	struct uhc_transfer *const xfer = ch->xfer;
+	uint32_t pkt_cnt;
+	uint32_t remaining;
+	uint32_t xfered;
+
+	if (xfer->type != USB_EP_TYPE_BULK) {
+		return;
+	}
+
+	pkt_cnt = calc_packet_count(ch->length, xfer->mps);
+	remaining = usb_dwc2_get_hctsiz_pktcnt(sys_read32((mem_addr_t)&ch->regs->hctsiz));
+
+	ch_save_toggle(ch);
+
+	if (remaining > pkt_cnt) {
+		LOG_ERR("Channel%u PKTCNT %u above programmed %u",
+			ch->index, remaining, pkt_cnt);
+		return;
+	}
+
+	xfered = MIN((pkt_cnt - remaining) * xfer->mps, ch->length);
+	if (xfered == 0U) {
+		return;
+	}
+
+	LOG_DBG("Rewind channel%u, xfered=%u of %u, next_pid=%u",
+		ch->index, xfered, ch->length, ch->data->next_pid);
+
+	if (USB_EP_DIR_IS_IN(xfer->ep)) {
+		/* Keep what was received and resume into the tailroom */
+		sys_cache_data_invd_range(net_buf_tail(xfer->buf), xfered);
+		net_buf_add(xfer->buf, xfered);
+	} else {
+		net_buf_pull(xfer->buf, xfered);
+	}
 }
 
 static void ch_complete(const struct device *dev, struct uhc_dwc2_channel *const ch)
@@ -2118,6 +2172,7 @@ static void ch_handle_events(const struct device *dev, struct uhc_dwc2_channel *
 			err = -ECONNRESET;
 		} else if (events & BIT(UHC_DWC2_CHANNEL_EVENT_ERROR)) {
 			err = -EIO;
+			ch_save_toggle(ch);
 		} else if (events & BIT(UHC_DWC2_CHANNEL_EVENT_STALL)) {
 			err = -EPIPE;
 		} else if (events & BIT(UHC_DWC2_CHANNEL_EVENT_CPLT)) {
@@ -2133,8 +2188,7 @@ static void ch_handle_events(const struct device *dev, struct uhc_dwc2_channel *
 	} else {
 		/* Reinit/rewind transfer */
 		if (events & BIT(UHC_DWC2_CHANNEL_DO_REWIND)) {
-			/* TODO: Implement rewind xfer */
-			LOG_WRN("DO_REWIND not implemented yet");
+			ch_rewind_bulk(ch);
 		}
 
 		if (events & BIT(UHC_DWC2_CHANNEL_DO_REINIT)) {
