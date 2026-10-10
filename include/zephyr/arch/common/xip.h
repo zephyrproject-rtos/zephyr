@@ -11,14 +11,15 @@
 extern "C" {
 #endif
 
-#ifdef CONFIG_XIP
+/**
+ * @brief Copy sections whose load address differs from their virtual address
+ *
+ * With CONFIG_XIP this copies the data section and the other regions residing
+ * in ROM. TCM regions are copied unconditionally, as they are separate
+ * memories whose load address differs from their virtual address regardless
+ * of CONFIG_XIP.
+ */
 void arch_data_copy(void);
-#else
-static inline void arch_data_copy(void)
-{
-	/* Do nothing */
-}
-#endif /* CONFIG_XIP */
 #ifdef __cplusplus
 }
 #endif
