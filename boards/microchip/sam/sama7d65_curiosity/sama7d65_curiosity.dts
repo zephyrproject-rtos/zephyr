@@ -32,6 +32,7 @@
 		zephyr,canbus = &mcan1;
 		zephyr,console = &uart6;
 		zephyr,shell-uart = &uart6;
+		zephyr,system-timer = &pit64b0;
 	};
 
 	clocks {

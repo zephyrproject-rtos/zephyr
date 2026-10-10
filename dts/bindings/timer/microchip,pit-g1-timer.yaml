@@ -31,3 +31,20 @@ properties:
     description: |
       PIT input clock frequency in Hz. Used by the build system to derive
       CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC via Kconfig.defconfig.
+
+examples:
+  - |
+    /*
+     * Usage of PIT G1 as system timer:
+     * (1) enable and configure selected PIT instance
+     */
+    &pit {
+      status = "okay";
+    }
+
+    /* (2) select instance as system timer */
+    / {
+      chosen {
+        zephyr,system-timer = &pit;
+      };
+    };
