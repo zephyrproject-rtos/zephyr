@@ -1,0 +1,64 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+description: AMEBA I2S controller
+
+compatible: "realtek,ameba-i2s"
+
+include: [i2s-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  dmas:
+    required: true
+
+  dma-names:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  mclk-multiple:
+    type: int
+    description: |
+      MCLK rate as a multiple of the sample rate: MCLK = mclk-multiple * fs.
+      Requires mclk-fixed-max to be 0.
+    enum:
+      - 64
+      - 128
+      - 256
+
+  mclk-fixed-max:
+    type: int
+    description: |
+      Cap MCLK at this rate in Hz using the largest power-of-two divider that
+      stays below it, instead of tracking fs. Set to 0 to use mclk-multiple.
+    enum:
+      - 20000000
+      - 0
+
+  multiio:
+    type: boolean
+    description: |
+      Spread the channels over one data pin per channel pair, instead of
+      time-multiplexing them all onto a single pin (TDM).
+
+  clock-mode:
+    type: int
+    description: |
+      Rate in Hz of the SPORT clock source, which both selects the source and
+      is the value the BCLK and MCLK dividers are computed from. Use 40000000
+      for the crystal oscillator, 98304000 for the I2S PLL on sample rates
+      that are a multiple of 4 kHz, and 45158400 for the 44.1 kHz family.
+    enum:
+      - 40000000
+      - 98304000
+      - 45158400
