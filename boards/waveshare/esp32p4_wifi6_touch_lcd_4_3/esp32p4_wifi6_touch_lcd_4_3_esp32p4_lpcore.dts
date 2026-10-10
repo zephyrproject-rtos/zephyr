@@ -1,0 +1,40 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <espressif/esp32p4/esp32p4_lpcore.dtsi>
+#include <espressif/partitions_0x2000_default_32M.dtsi>
+
+/ {
+	model = "Waveshare ESP32-P4-WIFI6-Touch-LCD-4.3 LP Core";
+	compatible = "espressif,esp32p4";
+
+	chosen {
+		zephyr,sram = &sramlp;
+		zephyr,console = &lp_uart;
+		zephyr,shell-uart = &lp_uart;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_lpcore_partition;
+	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(32)>;
+	ranges = <0x0 0x0 DT_SIZE_M(32)>;
+};
+
+&lp_uart {
+	status = "okay";
+	current-speed = <115200>;
+
+	/* SoC default GPIO14/15 are wired to the ESP32-C6 SDIO interface;
+	 * use GPIO5/GPIO4, which the board only brings out on the 40-pin
+	 * header, for the console instead.
+	 */
+	tx-pin = <5>;
+	rx-pin = <4>;
+};
