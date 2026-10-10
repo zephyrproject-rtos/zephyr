@@ -24,9 +24,12 @@
 #include <zephyr/devicetree/interrupt_controller.h>
 #include <zephyr/shell/shell.h>
 
+#include <zephyr/logging/log.h>
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/drivers/interrupt_controller/riscv_plic.h>
 #include <zephyr/irq.h>
+
+LOG_MODULE_REGISTER(intc_plic, CONFIG_LOG_DEFAULT_LEVEL);
 
 #define PLIC_BASE_ADDR(n) DT_INST_REG_ADDR(n)
 /*
@@ -425,6 +428,16 @@ unsigned int riscv_plic_get_irq(void)
 const struct device *riscv_plic_get_dev(void)
 {
 	return save_dev[arch_curr_cpu()->id];
+}
+
+void z_riscv_log_saved_irq_and_device(unsigned long cause)
+{
+	if (cause == (IS_ENABLED(CONFIG_RISCV_S_MODE) ? RISCV_IRQ_SEXT : RISCV_IRQ_MEXT)) {
+		unsigned int irq = riscv_plic_get_irq();
+		const struct device *dev = riscv_plic_get_dev();
+
+		LOG_ERR("PLIC interrupt line causing the IRQ: %d (%p)", irq, dev);
+	}
 }
 
 #ifdef CONFIG_PLIC_IRQ_AFFINITY

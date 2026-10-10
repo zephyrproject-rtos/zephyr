@@ -78,6 +78,10 @@ extern void z_riscv_irq_vector_set(unsigned int irq);
 #define z_riscv_irq_vector_set(i) /* Nothing */
 #endif /* CONFIG_RISCV_HAS_CLIC */
 
+#if defined(CONFIG_RISCV_SOC_HAS_SPURIOUS_IRQ_HOOK)
+void z_riscv_spurious_irq_hook(void);
+#endif
+
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 { \
 	Z_ISR_DECLARE(irq_p + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET, \

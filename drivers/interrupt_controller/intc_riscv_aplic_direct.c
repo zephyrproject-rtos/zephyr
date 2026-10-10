@@ -6,6 +6,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/drivers/interrupt_controller/riscv_aia.h>
 #include <zephyr/drivers/interrupt_controller/riscv_aplic_direct.h>
 #include <zephyr/arch/riscv/icsr.h>
@@ -16,6 +17,8 @@
 
 #include "sw_isr_common.h"
 #include "intc_riscv_aplic_priv.h"
+
+LOG_MODULE_REGISTER(intc_riscv_aplic_direct, CONFIG_LOG_DEFAULT_LEVEL);
 
 /* APLIC registers are 32-bit memory-mapped */
 #define APLIC_REG_SIZE 32
@@ -134,6 +137,16 @@ unsigned int riscv_aplic_get_saved_irq(void)
 const struct device *riscv_aplic_get_saved_dev(void)
 {
 	return save_dev[arch_curr_cpu()->id];
+}
+
+void z_riscv_log_saved_irq_and_device(unsigned long cause)
+{
+	if (cause == (IS_ENABLED(CONFIG_RISCV_S_MODE) ? RISCV_IRQ_SEXT : RISCV_IRQ_MEXT)) {
+		unsigned int irq = riscv_aplic_get_saved_irq();
+		const struct device *dev = riscv_aplic_get_saved_dev();
+
+		LOG_ERR("APLIC interrupt line causing the IRQ: %d (%p)", irq, dev);
+	}
 }
 
 void aplic_irq_handler(const struct device *dev)

@@ -12,14 +12,12 @@
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/pm/pm.h>
 
-#ifdef CONFIG_RISCV_HAS_PLIC
-#include <zephyr/drivers/interrupt_controller/riscv_plic.h>
-#endif
-#ifdef CONFIG_RISCV_APLIC_DIRECT
-#include <zephyr/drivers/interrupt_controller/riscv_aplic_direct.h>
-#endif
-
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
+
+void __weak z_riscv_log_saved_irq_and_device(unsigned long cause)
+{
+	ARG_UNUSED(cause);
+}
 
 FUNC_NORETURN void z_irq_spurious(const void *unused)
 {
@@ -42,21 +40,12 @@ FUNC_NORETURN void z_irq_spurious(const void *unused)
 	cause &= CONFIG_RISCV_MCAUSE_EXCEPTION_MASK;
 
 	LOG_ERR("Spurious interrupt detected! IRQ: %ld", cause);
-#if defined(CONFIG_RISCV_HAS_PLIC)
-	if (cause == RISCV_IRQ_MEXT) {
-		unsigned int save_irq = riscv_plic_get_irq();
-		const struct device *save_dev = riscv_plic_get_dev();
+	z_riscv_log_saved_irq_and_device(cause);
 
-		LOG_ERR("PLIC interrupt line causing the IRQ: %d (%p)", save_irq, save_dev);
-	}
-#elif defined(CONFIG_RISCV_APLIC_DIRECT)
-	if (cause == RISCV_IRQ_MEXT) {
-		unsigned int save_irq = riscv_aplic_get_saved_irq();
-		const struct device *save_dev = riscv_aplic_get_saved_dev();
-
-		LOG_ERR("APLIC interrupt line causing the IRQ: %d (%p)", save_irq, save_dev);
-	}
+#if defined(CONFIG_RISCV_SOC_HAS_SPURIOUS_IRQ_HOOK)
+	z_riscv_spurious_irq_hook();
 #endif
+
 	z_riscv_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 	CODE_UNREACHABLE;
 #endif /* CONFIG_EMPTY_IRQ_SPURIOUS */
