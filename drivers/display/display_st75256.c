@@ -18,6 +18,10 @@ LOG_MODULE_REGISTER(st75256, CONFIG_DISPLAY_LOG_LEVEL);
 #include <zephyr/drivers/mipi_dbi.h>
 #include <zephyr/kernel.h>
 
+#define ST75256_COLUMN_ADDR_RANGE    256U
+#define ST75256_PAGE_ADDR_RANGE_GREY (0x29 * 4U)
+#define ST75256_PAGE_ADDR_RANGE_MONO (0x15 * 8U)
+
 #define ST75256_EXTCOM   0x30
 #define ST75256_EXTCOM_1 ST75256_EXTCOM
 #define ST75256_EXTCOM_2 ST75256_EXTCOM + 1
@@ -135,32 +139,37 @@ static int st75256_blanking_off(const struct device *dev)
 	return st75256_write_command(dev, ST75256_DISPLAY_ON, NULL, 0);
 }
 
-static int st75256_set_window(const struct device *dev, int x, int y, int width, int height)
+static int st75256_set_window(const struct device *dev, uint16_t x, uint16_t y, uint16_t width,
+			      uint16_t height)
 {
+	const struct st75256_config *config = dev->config;
 	struct st75256_data *data = dev->data;
 	int ret;
-	uint8_t x_position[] = {x, x + width - 1};
-	uint8_t y_position[2];
 
-	if (data->current_pixel_format == PIXEL_FORMAT_L_8) {
-		y_position[0] = y / 4;
-		y_position[1] = ((y + height) / 4) - 1;
-	} else {
-		y_position[0] = y / 8;
-		y_position[1] = ((y + height) / 8) - 1;
-	}
+	/* Extrapolate states of MX, MY bits (data scan mirror) and grey vs monochrome */
+	const bool mx = config->flip_configuration & BIT(1);
+	const bool my = config->flip_configuration & BIT(0);
+	const bool grey = data->current_pixel_format == PIXEL_FORMAT_L_8;
+	/* Page address range and pixel per byte depend on pixel format*/
+	const uint16_t y_div = grey ? 2 : 3; /* performant division by 4 or 8 */
+	const uint16_t par = (grey ? ST75256_PAGE_ADDR_RANGE_GREY : ST75256_PAGE_ADDR_RANGE_MONO);
+	/* If mx or my is set offset by the memory area not used by the display */
+	const uint16_t x_off = mx ? ST75256_COLUMN_ADDR_RANGE - config->width : 0;
+	const uint16_t y_off = my ? par - config->height : 0;
 
+	x += x_off;
+	y += y_off;
+
+	/* Start and end, column is 1 pixel broad (x direction), page depends on greyscale  */
+	uint8_t column_range[] = {x, x + width - 1};
+	uint8_t page_range[] = {y >> y_div, ((y + height) >> y_div) - 1};
+
+	/* Write the setup, only try next step if last step succeeded */
 	ret = st75256_write_command(dev, ST75256_EXTCOM_1, NULL, 0);
-	if (ret < 0) {
-		return ret;
-	}
+	ret = ret < 0 ? ret : st75256_write_command(dev, ST75256_PAGE_RANGE, page_range, 2);
+	ret = ret < 0 ? ret : st75256_write_command(dev, ST75256_COL_RANGE, column_range, 2);
 
-	ret = st75256_write_command(dev, ST75256_PAGE_RANGE, y_position, 2);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return st75256_write_command(dev, ST75256_COL_RANGE, x_position, 2);
+	return ret;
 }
 
 static int st75256_start_write(const struct device *dev)
@@ -180,22 +189,39 @@ static int st75256_write_pixels_MONO01(const struct device *dev, const uint16_t 
 				       const struct display_buffer_descriptor *desc)
 {
 	const struct st75256_config *config = dev->config;
-	struct display_buffer_descriptor mipi_desc;
-	int ret;
 
-	for (int i = 0; i < desc->height / 8; i++) {
-		st75256_set_window(dev, x, y + i * 8, desc->width, desc->height);
-		st75256_start_write(dev);
-		mipi_desc.buf_size = desc->width;
-		mipi_desc.width = desc->width;
-		mipi_desc.height = 8;
+	/* Code forces linewise writing rendering MV setting without any impact */
+	const bool mv = (config->flip_configuration & BIT(2)) ? true : false;
+
+	/* Describe a single send window's format */
+	struct display_buffer_descriptor mipi_desc = {
+		.width = desc->width,
+		.pitch = desc->width,
+		.buf_size = desc->width * (mv ? 1 : (desc->height / 8)),
+		.height = mv ? 8 : desc->height,
+	};
+	int ret = 0, ret_release = 0;
+
+	/* For no MV this runs only one time writing the whole window */
+	for (uint32_t c = 0; c < desc->height; c += mipi_desc.height, buf += mipi_desc.width) {
+		ret = st75256_set_window(dev, x, y + c, mipi_desc.width, mipi_desc.height);
+		if (ret < 0) {
+			break;
+		}
+		ret = st75256_start_write(dev);
+		if (ret < 0) {
+			break;
+		}
 		ret = mipi_dbi_write_display(config->mipi_dev, &config->dbi_config, buf, &mipi_desc,
 					     PIXEL_FORMAT_MONO01);
 		if (ret < 0) {
-			return ret;
+			break;
 		}
 	}
-	return mipi_dbi_release(config->mipi_dev, &config->dbi_config);
+
+	/* Release independent of previous errors, but early errors get priority return */
+	ret_release = mipi_dbi_release(config->mipi_dev, &config->dbi_config);
+	return ret < 0 ? ret : ret_release;
 }
 
 /* ST75256 4-level is greyscale is 4 pixels per byte vtiled.
@@ -212,9 +238,14 @@ static int st75256_write_pixels_L_8(const struct device *dev, const uint16_t x, 
 	int line_total = 0;
 
 	mipi_desc.pitch = desc->pitch;
-
-	st75256_set_window(dev, x, y, desc->width, desc->height);
-	st75256_start_write(dev);
+	ret = st75256_set_window(dev, x, y, desc->width, desc->height);
+	if (ret < 0) {
+		return ret;
+	}
+	ret = st75256_start_write(dev);
+	if (ret < 0) {
+		return ret;
+	}
 	while (line_count > line_total) {
 		l = 0;
 
