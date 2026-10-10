@@ -672,6 +672,11 @@ New APIs and options
     * :c:func:`bt_mesh_stat_lpn_timing_reset`
     * :kconfig:option:`CONFIG_BT_MESH_LPN_OFFER_WAIT_TIMEOUT`
 
+* Build system
+
+  * Added the :ref:`wisblock-console-uart0 <snippet-wisblock-console-uart0>` and
+    :ref:`wisblock-console-uart1 <snippet-wisblock-console-uart1>` snippets.
+
 * Clock control
 
   * :kconfig:option:`CLOCK_CONTROL_NRF_ONOFF`
