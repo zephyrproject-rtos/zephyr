@@ -61,5 +61,11 @@
 			ocv-capacity-table-0 = <0>;
 			charge-full-design-microamp-hours = <1350000>;
 		};
+
+		test_native_linux_fuel_gauge: native_linux_fuel_gauge {
+			compatible = "zephyr,native-linux-fuel-gauge";
+			path = "BAT0";
+			status = "okay";
+		};
 	};
 };
