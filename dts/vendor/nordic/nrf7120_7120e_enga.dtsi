@@ -901,7 +901,8 @@
 				reg = <0xe8000 0x1000>;
 				interrupts = <232 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
-				clocks = <&pclk32m>;
+				clocks = <&pclk32m>, <&audio_auxpll>;
+				clock-names = "pclk", "aclk";
 			};
 
 			spi23: spi@ed000 {
