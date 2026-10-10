@@ -8,6 +8,7 @@ mainmenu "TMP108 sample application"
 
 config APP_REPORT_TEMP_ALERTS
 	bool "Report over and under temperature alerts"
+	depends on TMP108_TRIGGER
 	default n
 
 config APP_ENABLE_ONE_SHOT
