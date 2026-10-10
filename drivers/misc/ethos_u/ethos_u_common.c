@@ -10,6 +10,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/cache.h>
+#include <zephyr/kernel/mm.h>
 
 #include <ethosu_driver.h>
 
@@ -101,6 +102,24 @@ int ethosu_semaphore_give(void *sem)
 	k_sem_give((struct k_sem *)sem);
 	return 0;
 }
+
+/*******************************************************************************
+ * Address remapping - override weak default from ethosu_device_u*.c
+ *
+ * The NPU is a bus master that issues DMA using physical addresses.
+ * On MMU-enabled targets (Cortex-A) the virtual addresses used by the
+ * CPU must be translated to physical addresses before being programmed
+ * into NPU registers.  Without an MMU the default identity remap in the
+ * core driver is used instead.
+ ******************************************************************************/
+
+#if defined(CONFIG_MMU)
+uint64_t ethosu_address_remap(uint64_t address, int index)
+{
+	ARG_UNUSED(index);
+	return (uint64_t)k_mem_phys_addr((void *)address);
+}
+#endif
 
 #if defined(CONFIG_ETHOS_U_DCACHE)
 void ethosu_flush_dcache(const uint64_t *base_addr,
