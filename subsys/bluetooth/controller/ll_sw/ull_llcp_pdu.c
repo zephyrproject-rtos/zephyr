@@ -730,6 +730,99 @@ void llcp_pdu_decode_length_rsp(struct ll_conn *conn, struct pdu_data *pdu)
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
+void llcp_pdu_encode_fsu_req(struct ll_conn *conn, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_fsu_req *p;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = sizeof(struct pdu_data_llctrl_fsu_req) + 1U;
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ;
+	p = &pdu->llctrl.fsu_req;
+
+	p->fsu_min = sys_cpu_to_le16(conn->lll.fsu.local.fsu_min);
+	p->fsu_max = sys_cpu_to_le16(conn->lll.fsu.local.fsu_max);
+	p->phys = conn->lll.fsu.local.phys;
+	p->spacing_type = sys_cpu_to_le16(conn->lll.fsu.local.spacing_type);
+}
+
+void llcp_pdu_encode_fsu_rsp(struct ll_conn *conn, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_fsu_rsp *p;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = sizeof(struct pdu_data_llctrl_fsu_rsp) + 1U;
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_RSP;
+	p = &pdu->llctrl.fsu_rsp;
+
+	p->fsu = sys_cpu_to_le16(conn->lll.fsu.local.fsu_min);
+	p->phys = conn->lll.fsu.local.phys;
+	p->spacing_type = sys_cpu_to_le16(conn->lll.fsu.local.spacing_type);
+	printk("%s: fsu %u\n", __func__, p->fsu);
+}
+
+void llcp_ntf_encode_fsu_change(struct ll_conn *conn, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_fsu_rsp *p;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = sizeof(struct pdu_data_llctrl_fsu_rsp) + 1U;
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_RSP;
+	p = &pdu->llctrl.fsu_rsp;
+
+	p->fsu = sys_cpu_to_le16(conn->lll.fsu.eff.fsu_min);
+	p->phys = conn->lll.fsu.local.phys;
+	p->spacing_type = sys_cpu_to_le16(conn->lll.fsu.eff.spacing_type);
+}
+
+void llcp_pdu_decode_fsu_req(struct ll_conn *conn, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_fsu_req *p;
+
+	p = &pdu->llctrl.fsu_req;
+	conn->lll.fsu.local.fsu_min = sys_le16_to_cpu(p->fsu_min);
+	conn->lll.fsu.local.fsu_max = sys_le16_to_cpu(p->fsu_max);
+	conn->lll.fsu.local.phys = p->phys & 0x07; /* mask out RFU bits */
+	conn->lll.fsu.local.spacing_type =
+		sys_le16_to_cpu(p->spacing_type & 0x1F); /* mask out RFU bits */
+	/* nitpic, perphy is confusing, call it phy*/
+	for (size_t i = 0; i < 3; i++) {
+		if (p->phys & BIT(i)) {
+			conn->lll.fsu.perphy[i].fsu_min =
+				sys_le16_to_cpu(p->fsu_min);
+			conn->lll.fsu.perphy[i].fsu_max =
+				sys_le16_to_cpu(p->fsu_max);
+			conn->lll.fsu.perphy[i].phys = p->phys & 0x07;
+			conn->lll.fsu.perphy[i].spacing_type =
+				sys_le16_to_cpu(p->spacing_type & 0x1F);
+		}
+	}
+}
+
+void llcp_pdu_decode_fsu_rsp(struct ll_conn *conn, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_fsu_rsp *p;
+
+	p = &pdu->llctrl.fsu_rsp;
+
+	conn->lll.fsu.local.fsu_min = sys_le16_to_cpu(p->fsu);
+	conn->lll.fsu.local.fsu_max = sys_le16_to_cpu(p->fsu);
+	conn->lll.fsu.local.phys = p->phys & 0x07; /* mask out RFU bits */
+	conn->lll.fsu.local.spacing_type =
+		sys_le16_to_cpu(p->spacing_type & 0x1F); /* mask out RFU bits */
+
+	for (size_t i = 0; i < 3; i++) {
+		if (p->phys & BIT(i)) {
+			conn->lll.fsu.perphy[i].fsu_min =
+				sys_le16_to_cpu(p->fsu);
+			conn->lll.fsu.perphy[i].fsu_max =
+				sys_le16_to_cpu(p->fsu);
+			conn->lll.fsu.perphy[i].phys = p->phys & 0x07;
+			conn->lll.fsu.perphy[i].spacing_type =
+				sys_le16_to_cpu(p->spacing_type & 0x1F);
+		}
+	}
+}
+
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 /*
  * Constant Tone Request Procedure Helper

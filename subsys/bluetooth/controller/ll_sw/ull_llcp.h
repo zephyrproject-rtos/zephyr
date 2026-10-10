@@ -144,6 +144,11 @@ void ull_cp_conn_param_req_neg_reply(struct ll_conn *conn, uint8_t error_code);
 uint8_t ull_cp_remote_dle_pending(struct ll_conn *conn);
 
 /**
+ * @brief Check if a remote frame space update is pending
+ */
+uint8_t ull_cp_remote_fsu_pending(struct ll_conn *conn);
+
+/**
  * @brief Check if a remote connection param reg is in the
  *        works.
  */
@@ -250,6 +255,12 @@ bool ull_lp_cc_is_enqueued(struct ll_conn *conn, const struct ll_conn_iso_stream
  * @brief Initiate a Channel Map Update Procedure.
  */
 uint8_t ull_cp_chan_map_update(struct ll_conn *conn, const uint8_t chm[5]);
+
+/**
+ * @brief Initiate frame space update procedure
+ */
+uint8_t ull_cp_fsu(struct ll_conn *conn, uint16_t fsu_min, uint16_t fsu_max,
+			   uint8_t phys, uint16_t spacing_type);
 
 /**
  * @brief Check if Channel Map Update Procedure is pending
