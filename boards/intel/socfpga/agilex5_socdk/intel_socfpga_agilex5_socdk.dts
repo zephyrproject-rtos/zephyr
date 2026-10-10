@@ -20,6 +20,7 @@
 
 	aliases {
 		led0 = &led0;
+		sdhc0 = &sdmmc;
 	};
 
 	leds {
@@ -41,6 +42,14 @@
 
 &sdmmc {
 	status = "okay";
+	no-1-8-v;
+	cdns,phy-cfg-sd-ds = <0x00780000 0x81a40040 0x00a000fe 0x28000001 0x00800004>;
+	cdns,phy-cfg-sd-hs = <0x00780001 0x81a40040 0x00000000 0x10000001 0x00800004>;
+	cdns,ctrl-cfg-sd-hs = <0x0001800c 0x00030000 0x00000101 0x000a0001>;
+	cdns,phy-cfg-emmc-sdr = <0x00780004 0x80a40040 0x04000004 0x38000001 0x00800004>;
+	cdns,ctrl-cfg-emmc-sdr = <0xf1c1800c 0x00020000 0x00000101 0x00090005>;
+	cdns,phy-cfg-emmc-hs200 = <0x00780004 0x81a40040 0x004d4d00 0x11000001 0x00000004>;
+	cdns,ctrl-cfg-emmc-hs200 = <0xf1c18000 0x00090000 0x00000101 0x000a0001>;
 
 	mmc {
 		/*SD Disk Access */
