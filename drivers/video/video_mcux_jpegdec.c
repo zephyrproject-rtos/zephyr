@@ -5,6 +5,7 @@
  */
 
 #include <errno.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
@@ -43,6 +44,8 @@ struct mcux_jpegdec_data {
 struct mcux_jpegdec_config {
 	JPEG_DECODER_Type base;
 	void (*irq_config_func)(const struct device *dev);
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
 };
 
 #define MCUX_JPEGDEC_WIDTH_HEIGHT_MIN  64U
@@ -464,6 +467,18 @@ static int mcux_jpegdec_init(const struct device *dev)
 	const struct mcux_jpegdec_config *config = dev->config;
 	struct mcux_jpegdec_data *data = dev->data;
 	jpegdec_config_t init_config;
+	int ret;
+
+	if (config->clock_dev != NULL) {
+		if (!device_is_ready(config->clock_dev)) {
+			return -ENODEV;
+		}
+
+		ret = clock_control_on(config->clock_dev, config->clock_subsys);
+		if (ret != 0) {
+			return ret;
+		}
+	}
 
 	k_mutex_init(&data->lock);
 	k_sem_init(&data->decode_done, 0, 1);
@@ -571,6 +586,12 @@ static void mcux_jpegdec_isr(const struct device *dev)
 			.core = (JPEGDEC_Type *)DT_INST_REG_ADDR_BY_IDX(n, 1),			\
 		},										\
 		.irq_config_func = mcux_jpegdec_irq_config_##n,					\
+		.clock_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),			\
+					 (DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n))), (NULL)),	\
+		.clock_subsys = COND_CODE_1(							\
+			DT_INST_NODE_HAS_PROP(n, clocks),					\
+			((clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name)),			\
+			((clock_control_subsys_t)0U)),						\
 	};											\
 	DEVICE_DT_INST_DEFINE(n, &mcux_jpegdec_init, NULL, &mcux_jpegdec_data_##n,		\
 		&mcux_jpegdec_config_##n, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,		\
