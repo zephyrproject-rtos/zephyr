@@ -21,21 +21,21 @@
 	 */
 	sram4_ipc0: memory@20040000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x20040000 DT_SIZE_K(8)>;
+		reg = <0x20040000 DT_SIZE_K(4)>;
 		zephyr,memory-region = "SRAM4_IPC0";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
 	};
 
-	sram4_ipc1: memory@20042000 {
+	sram4_ipc1: memory@20041000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x20042000 DT_SIZE_K(8)>;
+		reg = <0x20041000 DT_SIZE_K(4)>;
 		zephyr,memory-region = "SRAM4_IPC1";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
 	};
 
-	sram4_ipc2: memory@20044000 {
+	sram4_ipc2: memory@20042000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x20044000 DT_SIZE_K(8)>;
+		reg = <0x20042000 DT_SIZE_K(4)>;
 		zephyr,memory-region = "SRAM4_IPC2";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
 	};
@@ -75,8 +75,8 @@
 			notification-parent = <&ipc0>;
 			link-id = <1>;
 			role = "host";
-			priority = <1 PRIO_COOP>;
-			buffer-size = <128>;
+			zephyr,priority = <1 PRIO_COOP>;
+			zephyr,buffer-size = <128>;
 			status = "okay";
 		};
 
@@ -86,8 +86,8 @@
 			notification-parent = <&ipc0>;
 			link-id = <2>;
 			role = "host";
-			priority = <1 PRIO_COOP>;
-			buffer-size = <128>;
+			zephyr,priority = <1 PRIO_COOP>;
+			zephyr,buffer-size = <128>;
 			status = "okay";
 		};
 	};

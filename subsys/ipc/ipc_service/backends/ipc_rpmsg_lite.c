@@ -328,9 +328,19 @@ void platform_notify(uint32_t vector_id)
 	}
 
 	struct mbox_msg msg = {0};
+	int mtu = mbox_mtu_get_dt(&owner->mbox_tx);
 
+	if (mtu <= 0) {
+		return;
+	}
+
+	/*
+	 * Some MBOX drivers carry less than 32 bits per message (e.g. 24 bits
+	 * on nxp,mbox-mailbox) and reject larger payloads. The vector_id only
+	 * uses its low bits, so send as many bytes as the channel supports.
+	 */
 	msg.data = &vector_id;
-	msg.size = sizeof(vector_id);
+	msg.size = MIN(sizeof(vector_id), (size_t)mtu);
 
 	mbox_send_dt(&owner->mbox_tx, &msg);
 }
@@ -396,16 +406,30 @@ static void mbox_callback_process(struct k_work *item)
 
 	data = CONTAINER_OF(item, struct backend_data_t, mbox_work);
 
+	/*
+	 * rpmsg_lite_master_init() kicks the REMOTE before the HOST has
+	 * created its NS endpoint, and RPMSG-Lite drops messages for unknown
+	 * endpoints. Leave anything that arrives in between in the vring,
+	 * open() processes it once the NS endpoint exists.
+	 */
+	if (data->role == ROLE_HOST && data->ipc_rpmsg_inst.ns_handle == NULL) {
+#if defined(CONFIG_IPC_SERVICE_BACKEND_RPMSG_LITE_NOTIFY_QUEUE)
+		k_msgq_purge(&data->inst_mq);
+#endif
+		return;
+	}
+
 #if defined(CONFIG_IPC_SERVICE_BACKEND_RPMSG_LITE_NOTIFY_QUEUE)
 	/* Queue-based: Process all pending messages */
 	while (k_msgq_get(&data->inst_mq, &msg_data, K_NO_WAIT) == 0) {
 		uint32_t vq_id = RL_GET_Q_ID(msg_data);
 
 		/*
-		 * RPMSG-Lite VQ numbering: vq_id 0 is used by the HOST (master)
-		 * for TX notifications, vq_id 1 is used by the REMOTE (slave).
-		 * Each side's receive queue is the peer's send queue, so the
-		 * HOST processes rvq on vq_id 0 and the REMOTE on vq_id 1.
+		 * RPMSG-Lite VQ numbering: vring 0 carries REMOTE -> HOST
+		 * messages (HOST rvq, REMOTE tvq), vring 1 carries HOST ->
+		 * REMOTE messages (HOST tvq, REMOTE rvq). A kick on the peer's
+		 * send queue means new RX data, a kick on its receive queue
+		 * means TX buffers were returned (or, for the REMOTE, link up).
 		 */
 		if (data->role == ROLE_HOST) {
 			vq = (vq_id == 0) ? data->ipc_rpmsg_inst.rpmsg_lite_inst->rvq
@@ -424,10 +448,11 @@ static void mbox_callback_process(struct k_work *item)
 	uint32_t vq_id = RL_GET_Q_ID(msg_data);
 
 	/*
-	 * RPMSG-Lite VQ numbering: vq_id 0 is used by the HOST (master)
-	 * for TX notifications, vq_id 1 is used by the REMOTE (slave).
-	 * Each side's receive queue is the peer's send queue, so the
-	 * HOST processes rvq on vq_id 0 and the REMOTE on vq_id 1.
+	 * RPMSG-Lite VQ numbering: vring 0 carries REMOTE -> HOST
+	 * messages (HOST rvq, REMOTE tvq), vring 1 carries HOST ->
+	 * REMOTE messages (HOST tvq, REMOTE rvq). A kick on the peer's
+	 * send queue means new RX data, a kick on its receive queue
+	 * means TX buffers were returned (or, for the REMOTE, link up).
 	 */
 	if (data->role == ROLE_HOST) {
 		vq = (vq_id == 0) ? data->ipc_rpmsg_inst.rpmsg_lite_inst->rvq
@@ -441,26 +466,8 @@ static void mbox_callback_process(struct k_work *item)
 #endif
 }
 
-static void mbox_callback(const struct device *instance, uint32_t channel, void *user_data,
-			  struct mbox_msg *msg_data)
+static void queue_notification(struct backend_data_t *data, uint32_t vector_id)
 {
-	if (msg_data == NULL || msg_data->size < sizeof(uint32_t)) {
-		return;
-	}
-
-	uint32_t vector_id = *(const uint32_t *)msg_data->data;
-	uint32_t link_id = RL_GET_LINK_ID(vector_id);
-
-	if (link_id >= NUM_INSTANCES) {
-		return;
-	}
-
-	struct backend_data_t *data = g_inst_data_ref[link_id];
-
-	if (data == NULL) {
-		return;
-	}
-
 #if defined(CONFIG_IPC_SERVICE_BACKEND_RPMSG_LITE_NOTIFY_QUEUE)
 	/* Queue-based: Put message in queue for ordered processing */
 	if (k_msgq_put(&data->inst_mq, &vector_id, K_NO_WAIT) != 0) {
@@ -473,6 +480,33 @@ static void mbox_callback(const struct device *instance, uint32_t channel, void 
 #endif
 
 	k_work_submit_to_queue(&data->mbox_wq, &data->mbox_work);
+}
+
+static void mbox_callback(const struct device *instance, uint32_t channel, void *user_data,
+			  struct mbox_msg *msg_data)
+{
+	uint32_t vector_id = 0;
+
+	if (msg_data == NULL || msg_data->size == 0) {
+		return;
+	}
+
+	/* The payload may be shorter than 32 bits, see platform_notify() */
+	memcpy(&vector_id, msg_data->data, MIN(msg_data->size, sizeof(vector_id)));
+
+	uint32_t link_id = RL_GET_LINK_ID(vector_id);
+
+	if (link_id >= NUM_INSTANCES) {
+		return;
+	}
+
+	struct backend_data_t *data = g_inst_data_ref[link_id];
+
+	if (data == NULL) {
+		return;
+	}
+
+	queue_notification(data, vector_id);
 }
 
 static int mbox_init(const struct device *instance)
@@ -824,12 +858,13 @@ static int open(const struct device *instance)
 	}
 
 	if (conf->role == ROLE_REMOTE) {
-		int32_t rc;
+		uint32_t link_up;
 
-		rc = rpmsg_lite_wait_for_link_up(
+		/* Returns RL_TRUE when the link is up, RL_FALSE on timeout */
+		link_up = rpmsg_lite_wait_for_link_up(
 			ipc_rpmsg_inst->rpmsg_lite_inst,
 			CONFIG_IPC_SERVICE_BACKEND_RPMSG_LITE_LINK_UP_TIMEOUT_MS);
-		if (rc != RL_SUCCESS) {
+		if (link_up != RL_TRUE) {
 			err = -ETIMEDOUT;
 			goto error;
 		}
@@ -847,6 +882,11 @@ static int open(const struct device *instance)
 	if (ipc_rpmsg_inst->ns_handle == NULL) {
 		err = -EINVAL;
 		goto error;
+	}
+
+	if (conf->role == ROLE_HOST) {
+		/* Process REMOTE messages held back by mbox_callback_process() */
+		queue_notification(data, RL_GET_VQ_ID(conf->link_id, 0U));
 	}
 
 #if defined(RL_ALLOW_CUSTOM_SHMEM_CONFIG) && (RL_ALLOW_CUSTOM_SHMEM_CONFIG == 1)
@@ -1128,13 +1168,13 @@ static int backend_init(const struct device *instance)
 			(MBOX_DT_SPEC_INST_GET(i, tx)), ({0})),                                \
 		.mbox_rx = COND_CODE_1(DT_INST_NODE_HAS_PROP(i, mboxes),                       \
 			(MBOX_DT_SPEC_INST_GET(i, rx)), ({0})),                                \
-		.wq_prio = COND_CODE_1(DT_INST_NODE_HAS_PROP(i, priority),                    \
-			(DT_INST_PROP_BY_IDX(i, priority, 0)), (0)),                           \
-		.wq_prio_type = COND_CODE_1(DT_INST_NODE_HAS_PROP(i, priority),                \
-			(DT_INST_PROP_BY_IDX(i, priority, 1)), (PRIO_PREEMPT)),                \
-		.buffer_size = DT_INST_PROP_OR(i, buffer_size,                                 \
+		.wq_prio = COND_CODE_1(DT_INST_NODE_HAS_PROP(i, zephyr_priority),              \
+			(DT_INST_PROP_BY_IDX(i, zephyr_priority, 0)), (0)),                    \
+		.wq_prio_type = COND_CODE_1(DT_INST_NODE_HAS_PROP(i, zephyr_priority),         \
+			(DT_INST_PROP_BY_IDX(i, zephyr_priority, 1)), (PRIO_PREEMPT)),         \
+		.buffer_size = DT_INST_PROP_OR(i, zephyr_buffer_size,                          \
 			RL_BUFFER_PAYLOAD_SIZE + RPMSG_HEADER_SIZE),                           \
-		.buffer_count = DT_INST_PROP_OR(i, buffer_count, RL_BUFFER_COUNT),             \
+		.buffer_count = DT_INST_PROP_OR(i, zephyr_buffer_count, RL_BUFFER_COUNT),      \
 		.id = i,                                                                        \
 		.is_notification_owner = !DT_INST_NODE_HAS_PROP(i, notification_parent),       \
 	};                                                                                     \
