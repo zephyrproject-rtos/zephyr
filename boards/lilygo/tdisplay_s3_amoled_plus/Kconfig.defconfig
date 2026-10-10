@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# The W25Q128JV-IQ flash supports quad I/O
+choice ESPTOOLPY_FLASHMODE
+	default ESPTOOLPY_FLASHMODE_QIO
+endchoice
+
+if BOARD_TDISPLAY_S3_AMOLED_PLUS_ESP32S3_PROCPU
+
+# ESP32-S3R8 embeds 8 MB of octal PSRAM
+config ESP_SPIRAM
+	default y if !MCUBOOT
+
+choice SPIRAM_MODE
+	default SPIRAM_MODE_OCT
+endchoice
+
+# The display SPI controller transfers through GDMA
+configdefault DMA
+	default y if SPI
+
+if LVGL
+
+# 1.91" panel with 536 pixels across 44.2 mm
+configdefault LV_Z_DPI_DEF
+	default 308
+
+# RM67162 column and row windows must start on an even pixel and span an
+# even number of pixels.
+configdefault LV_Z_AREA_X_ALIGNMENT_WIDTH
+	default 2
+
+configdefault LV_Z_AREA_Y_ALIGNMENT_WIDTH
+	default 2
+
+endif # LVGL
+
+endif # BOARD_TDISPLAY_S3_AMOLED_PLUS_ESP32S3_PROCPU
