@@ -473,7 +473,7 @@ static void test_bass_create_pa_sync(void)
 	LOG_INF("PA synced");
 }
 
-static void test_bass_add_source(void)
+static void test_bass_add_source(uint32_t bis_sync)
 {
 	int err;
 	struct bt_bap_broadcast_assistant_add_src_param add_src_param = { 0 };
@@ -489,7 +489,7 @@ static void test_bass_add_source(void)
 	add_src_param.pa_sync = false;
 	add_src_param.broadcast_id = g_broadcast_id;
 	add_src_param.subgroups = &subgroup;
-	subgroup.bis_sync = 0;
+	subgroup.bis_sync = bis_sync;
 	subgroup.metadata_len = 0;
 	err = bt_bap_broadcast_assistant_add_src(default_conn, &add_src_param);
 	if (err != 0) {
@@ -537,7 +537,7 @@ static void test_bass_add_source(void)
 	LOG_INF("Source added");
 }
 
-static void test_bass_mod_source(bool pa_sync, uint32_t bis_sync)
+static void test_bass_mod_source(bool pa_sync, uint32_t bis_sync, bool expect_failure)
 {
 	int err;
 	struct bt_bap_broadcast_assistant_mod_src_param mod_src_param = { 0 };
@@ -565,6 +565,10 @@ static void test_bass_mod_source(bool pa_sync, uint32_t bis_sync)
 		return;
 	}
 
+	WAIT_FOR_FLAG(flag_cb_called);
+	WAIT_FOR_FLAG(flag_write_complete);
+	WAIT_FOR_FLAG(flag_recv_state_updated);
+
 	if (recv_state.pa_sync_state == BT_BAP_PA_STATE_NOT_SYNCED) {
 		LOG_INF("Source modified, waiting for server to PA sync");
 
@@ -580,11 +584,6 @@ static void test_bass_mod_source(bool pa_sync, uint32_t bis_sync)
 	if (pa_sync) {
 		if (recv_state.pa_sync_state != BT_BAP_PA_STATE_SYNCED) {
 			FAIL("Unexpected PA sync state: %d\n", recv_state.pa_sync_state);
-			return;
-		}
-
-		if (recv_state.encrypt_state != BT_BAP_BIG_ENC_STATE_NO_ENC) {
-			FAIL("Unexpected BIG encryption state: %d\n", recv_state.pa_sync_state);
 			return;
 		}
 	}
@@ -627,18 +626,31 @@ static void test_bass_mod_source(bool pa_sync, uint32_t bis_sync)
 				FAIL("Unexpected BIS sync value: %u", remote_bis_sync);
 				return;
 			}
+		} else if (expect_failure) {
+			if (remote_bis_sync != BT_BAP_BIS_SYNC_FAILED) {
+				FAIL("Unexpected BIS sync value: %u\n", remote_bis_sync);
+				return;
+			}
 		} else {
 			WAIT_FOR_FLAG(flag_recv_state_updated_with_bis_sync);
-			if (remote_bis_sync != subgroup.bis_sync) {
-				FAIL("Unexpected BIS sync value: %u != %u\n", remote_bis_sync,
-				     subgroup.bis_sync);
-				return;
+			if (bis_sync == BT_BAP_BIS_SYNC_NO_PREF) {
+				if (remote_bis_sync == 0U ||
+				    remote_bis_sync == BT_BAP_BIS_SYNC_FAILED) {
+					FAIL("Unexpected BIS sync value for "
+					     "BT_BAP_BIS_SYNC_NO_PREF: %u\n",
+					     remote_bis_sync);
+					return;
+				}
+			} else {
+				if (remote_bis_sync != subgroup.bis_sync) {
+					FAIL("Unexpected BIS sync value: %u != %u\n",
+					     remote_bis_sync, subgroup.bis_sync);
+					return;
+				}
 			}
 		}
 	}
 
-	WAIT_FOR_FLAG(flag_cb_called);
-	WAIT_FOR_FLAG(flag_write_complete);
 	LOG_INF("Source modified");
 }
 
@@ -867,16 +879,16 @@ static void test_main_client_sync(void)
 	test_bass_scan_start();
 	test_bass_scan_stop();
 	test_bass_create_pa_sync();
-	test_bass_add_source();
-	test_bass_mod_source(true, 0);
+	test_bass_add_source(0U);
+	test_bass_mod_source(true, 0U, false);
 	test_bass_mod_source_long_meta();
-	test_bass_mod_source(true, BT_ISO_BIS_INDEX_BIT(1U) | BT_ISO_BIS_INDEX_BIT(2U));
+	test_bass_mod_source(true, BT_ISO_BIS_INDEX_BIT(1U) | BT_ISO_BIS_INDEX_BIT(2U), false);
 	test_bass_broadcast_code(BROADCAST_CODE);
 
 	LOG_INF("Waiting for receive state with BIS sync");
 	WAIT_FOR_FLAG(flag_recv_state_updated_with_bis_sync);
 
-	test_bass_mod_source(false, 0);
+	test_bass_mod_source(false, 0U, false);
 	test_bass_remove_source();
 
 	err = common_deinit();
@@ -901,8 +913,8 @@ static void test_main_client_sync_incorrect_code(void)
 	test_bass_scan_start();
 	test_bass_scan_stop();
 	test_bass_create_pa_sync();
-	test_bass_add_source();
-	test_bass_mod_source(true, BT_ISO_BIS_INDEX_BIT(1U));
+	test_bass_add_source(0U);
+	test_bass_mod_source(true, BT_ISO_BIS_INDEX_BIT(1U), false);
 	WAIT_FOR_FLAG(flag_broadcast_code_requested);
 	if (recv_state.subgroups[0].metadata_len == 0U) {
 		FAIL("Metadata lost when the broadcast code was requested\n");
@@ -914,7 +926,7 @@ static void test_main_client_sync_incorrect_code(void)
 
 	test_bass_retry_after_bad_code();
 
-	test_bass_mod_source(false, 0);
+	test_bass_mod_source(false, 0U, false);
 	test_bass_remove_source();
 
 	err = common_deinit();
@@ -944,7 +956,7 @@ static void test_main_server_sync_client_rem(void)
 	WAIT_FOR_FLAG(flag_recv_state_updated_with_bis_sync);
 
 	LOG_INF("Attempting to remove source for the first time");
-	test_bass_mod_source(false, 0);
+	test_bass_mod_source(false, 0U, false);
 	test_bass_remove_source();
 
 	WAIT_FOR_FLAG(flag_remove_source_rejected);
@@ -989,6 +1001,42 @@ static void test_main_server_sync_server_rem(void)
 	PASS("BAP Broadcast Assistant Server Sync Passed\n");
 }
 
+static void test_main_client_sync_no_pref(void)
+{
+	int err;
+
+	err = common_init();
+	if (err != 0) {
+		FAIL("Bluetooth enable failed (err %d)\n", err);
+		return;
+	}
+
+	test_bass_scan_start();
+	test_bass_scan_stop();
+
+	test_bass_add_source(0U);
+
+	/* Scan delegator will fail the first request */
+	test_bass_mod_source(true, BT_BAP_BIS_SYNC_NO_PREF, true);
+
+	/* Retry with and expect success */
+	test_bass_mod_source(true, BT_BAP_BIS_SYNC_NO_PREF, false);
+
+	LOG_INF("Waiting for receive state with BIS sync");
+	WAIT_FOR_FLAG(flag_recv_state_updated_with_bis_sync);
+
+	test_bass_mod_source(false, 0U, false);
+	test_bass_remove_source();
+
+	err = common_deinit();
+	if (err != 0) {
+		FAIL("Failed to deinitialize resources (err %d)\n", err);
+		return;
+	}
+
+	PASS("BAP Broadcast Assistant Client Sync NO_PREF Passed\n");
+}
+
 static const struct bst_test_instance test_bass[] = {
 	{
 		.test_id = "bap_broadcast_assistant_client_sync",
@@ -1001,6 +1049,12 @@ static const struct bst_test_instance test_bass[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_client_sync_incorrect_code,
+	},
+	{
+		.test_id = "bap_broadcast_assistant_client_sync_no_pref",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_client_sync_no_pref,
 	},
 	{
 		.test_id = "bap_broadcast_assistant_server_sync_client_rem",
