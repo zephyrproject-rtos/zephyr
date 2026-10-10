@@ -107,10 +107,10 @@ static int lm75_temp_write(const struct device *dev, uint8_t reg, int16_t value)
 
 static void lm75_sensor_value_to_temp(const struct sensor_value *val, int16_t *temp)
 {
-	*temp = val->val1 * 10;
-	*temp += val->val2 / 100000U;
+	/* Register: 1/256 °C per LSB; division truncates toward zero */
+	int64_t t = ((int64_t)val->val1 * 1000000 + val->val2) * 256 / 1000000;
 
-	*temp = (*temp * 256) / 10;
+	*temp = (int16_t)CLAMP(t, INT16_MIN, INT16_MAX);
 }
 
 static void lm75_temp_to_sensor_value(int16_t temp, struct sensor_value *val)
