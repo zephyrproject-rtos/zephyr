@@ -1035,8 +1035,14 @@ static int udc_rpi_pico_init(const struct device *dev)
 static int udc_rpi_pico_shutdown(const struct device *dev)
 {
 	const struct rpi_pico_config *config = dev->config;
+	int err;
 
-	return clock_control_off(config->clk_dev, config->clk_sys);
+	err = clock_control_off(config->clk_dev, config->clk_sys);
+	if (err == -ENOTSUP) {
+		err = 0;
+	}
+
+	return err;
 }
 
 static int udc_rpi_pico_driver_preinit(const struct device *dev)
