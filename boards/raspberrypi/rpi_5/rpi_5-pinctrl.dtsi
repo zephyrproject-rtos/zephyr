@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/dt-bindings/pinctrl/rp1-pinctrl.h>
+#include <broadcom/rp1_common-pinctrl.dtsi>
 
 &pinctrl {
 	/* Not yet implemented BCM2712 side pinctrl. Put a stub definition at this time. */
