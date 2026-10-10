@@ -37,6 +37,7 @@ zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_TIMER ${pdl_drv_src_dir}/cy_tcp
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_UART ${pdl_drv_src_dir}/cy_scb_uart.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_WDT ${pdl_drv_src_dir}/cy_wdt.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_LPCOMP ${pdl_drv_src_dir}/cy_lpcomp.c)
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_MXCORDIC ${pdl_drv_src_dir}/cy_cordic.c)
 
 if(CONFIG_USE_INFINEON_UART OR CONFIG_USE_INFINEON_I2C OR CONFIG_USE_INFINEON_SPI)
   zephyr_library_sources(${pdl_drv_src_dir}/cy_scb_common.c)

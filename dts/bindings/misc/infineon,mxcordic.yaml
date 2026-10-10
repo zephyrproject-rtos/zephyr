@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon MXCORDIC hardware math accelerator.
+
+  The MXCORDIC IP block is a CORDIC (COordinate Rotation DIgital Computer)
+  engine found on PSOC Control C3 (PSC3) devices. It supports circular and
+  hyperbolic operating modes and is used to accelerate trigonometric,
+  hyperbolic and square-root computations.
+
+compatible: "infineon,mxcordic"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
