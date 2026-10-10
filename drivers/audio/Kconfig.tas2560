@@ -1,0 +1,11 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_TAS2560
+	bool "TAS2560 audio amplifier support"
+	default y
+	depends on DT_HAS_TI_TAS2560_ENABLED
+	select I2C
+	help
+	  Enable the TAS2560 Class-D amplifier. Playback is I2S with the PLL
+	  set to 1024 times the sample rate.
