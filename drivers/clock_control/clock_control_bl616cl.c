@@ -80,7 +80,7 @@ LOG_MODULE_REGISTER(clock_control_bl616cl, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #define CRYSTAL_FREQ_TO_ID(freq) CONCAT(CRYSTAL_ID_FREQ_, freq)
 
 #if CLK_SRC_IS(root, pll_top)
-#define CLK_AT_LEAST_MUL (BFLB_MUL_CLK(32,					\
+#define CLK_AT_LEAST_MUL (BFLB_MUL_CLK_XIP(32,					\
 	DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, pll_top), top_frequency),	\
 		BL616CL_PLL_TOP_FREQ))
 #else
@@ -465,7 +465,7 @@ static void clock_control_bl616cl_init_pll_setup(const bl616cl_pll_config *const
 
 	tmp = sys_read32(GLB_BASE + GLB_WIFIPLL_SDMIN_OFFSET);
 	tmp = (tmp & GLB_WIFIPLL_SDM_IN_UMSK)
-		| (BFLB_MUL_CLK(config->sdmin, top_frequency, BL616CL_PLL_TOP_FREQ)
+		| (BFLB_MUL_CLK_XIP(config->sdmin, top_frequency, BL616CL_PLL_TOP_FREQ)
 		<< GLB_WIFIPLL_SDM_IN_POS);
 	sys_write32(tmp, GLB_BASE + GLB_WIFIPLL_SDMIN_OFFSET);
 
