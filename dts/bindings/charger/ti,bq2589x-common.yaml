@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: Common properties of the TI BQ2589X family of battery chargers
+
+include: [battery.yaml, i2c-device.yaml]
+
+properties:
+  constant-charge-current-max-microamp:
+    required: true
+    description: |
+      Fast charge current target, programmed during driver initialization.
+      The value is rounded down to a 64 mA step.
+
+  constant-charge-voltage-max-microvolt:
+    required: true
+    description: |
+      Charge voltage regulation target, programmed during driver
+      initialization. Range: 3.840 V to 4.608 V. The value is rounded down
+      to a 16 mV step.
+
+  precharge-current-microamp:
+    description: |
+      Pre-charge current, programmed during driver initialization when
+      present. Range: 64 mA to 1024 mA. The value is rounded down to a
+      64 mA step.
+
+  charge-term-current-microamp:
+    description: |
+      Charge termination current, programmed during driver initialization
+      when present. Range: 64 mA to 1024 mA. The value is rounded down to a
+      64 mA step.
