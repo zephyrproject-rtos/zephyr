@@ -60,6 +60,12 @@ properties:
     description: |
       Indicates that the SDMMC_RSTN signal is present on the board.
 
+  cal-always-on:
+    type: boolean
+    description: |
+      Enable the analog calibration cell permanently.
+      (In case the SDCAL pin is wrongly connected.)
+
   auto-cmd12:
     type: boolean
     description: |
