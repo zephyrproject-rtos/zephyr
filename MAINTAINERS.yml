@@ -5068,6 +5068,7 @@ Networking:
   files:
     - doc/services/connectivity/networking/api/ieee802154.rst
     - include/zephyr/net/ieee802154*.h
+    - samples/net/ieee802154/
     - subsys/net/l2/ieee802154/
     - subsys/net/lib/config/ieee802154*
     - tests/net/ieee802154/
