@@ -8,3 +8,17 @@ config UHC_VIRTUAL
 	depends on DT_HAS_ZEPHYR_UHC_VIRTUAL_ENABLED
 	help
 	  Virtual USB host controller driver.
+
+config UHC_VIRTUAL_STACK_SIZE
+	int "Virtual controller driver internal thread stack size"
+	depends on UHC_VIRTUAL
+	default 512
+	help
+	  Virtual host controller driver internal thread stack size.
+
+config UHC_VIRTUAL_THREAD_PRIORITY
+	int "Virtual controller driver thread priority"
+	depends on UHC_VIRTUAL
+	default 8
+	help
+	  Virtual host controller driver thread priority.
