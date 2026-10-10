@@ -11,3 +11,11 @@ properties:
   reg:
     required: true
     description: device address on i2c bus
+
+  i2c-10-bit-address:
+    type: boolean
+    description: |
+      Enable 10-bit addressing mode for this I2C device.
+      When set, the device will use 10-bit addressing instead of the
+      default 7-bit addressing. The reg property should contain the
+      full 10-bit address value.
