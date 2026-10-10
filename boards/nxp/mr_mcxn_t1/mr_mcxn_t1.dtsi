@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 NXP
+ * SPDX-FileCopyrightText: 2025-2026 NXP
  * SPDX-FileCopyrightText: 2026 CogniPilot Foundation
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -245,16 +245,28 @@ mr_mcxn_t1_flexio_adc: &lpadc1 {};
 			reg = <0x00000000 DT_SIZE_K(80)>;
 		};
 
+		/*
+		 * slot0 and slot1 partitions must be equal in size for
+		 * MCUboot swap upgrades and are 968K each. The
+		 * storage_partition is 32K at the top of the 2MB
+		 * internal flash, ending at 0x200000.
+		 */
 		slot0_partition: partition@14000 {
 			compatible = "zephyr,mapped-partition";
 			label = "image-0";
-			reg = <0x00014000 DT_SIZE_K(984)>;
+			reg = <0x00014000 DT_SIZE_K(968)>;
 		};
 
-		slot1_partition: partition@10a000 {
+		slot1_partition: partition@106000 {
 			compatible = "zephyr,mapped-partition";
 			label = "image-1";
-			reg = <0x0010a000 DT_SIZE_K(984)>;
+			reg = <0x00106000 DT_SIZE_K(968)>;
+		};
+
+		storage_partition: partition@1f8000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x001f8000 DT_SIZE_K(32)>;
 		};
 	};
 };
