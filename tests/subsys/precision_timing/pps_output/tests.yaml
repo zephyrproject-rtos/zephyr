@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Philipp Steiner
+#
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - timing
+    - precision_timing
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim/native/64
+tests:
+  subsys.precision_timing.pps_output: {}
+  subsys.precision_timing.pps_output.configured_defaults:
+    extra_configs:
+      - CONFIG_PRECISION_PPS_OUTPUT_WIDTH_PROVIDER_DEFAULT=y
+      - CONFIG_PRECISION_PPS_OUTPUT_CHANNEL=1
+      - CONFIG_PRECISION_PPS_OUTPUT_PULSE_WIDTH_NS=300000000
+      - CONFIG_PRECISION_PPS_OUTPUT_START_GUARD_NS=20000000
+      - CONFIG_PRECISION_PPS_OUTPUT_STEP_LIMIT_NS=150000000
+      - CONFIG_PRECISION_PPS_OUTPUT_POLL_INTERVAL_MS=100

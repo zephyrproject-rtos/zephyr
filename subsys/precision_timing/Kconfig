@@ -39,4 +39,128 @@ config PRECISION_TIMING_PI_KI
 	  Shorter Sync intervals may require a smaller gain to avoid
 	  oscillation.
 
+config PRECISION_CLOCK_OUTPUT
+	bool "Scheduled precision clock output"
+	help
+	  Enable protocol-neutral scheduled clock outputs. Providers can expose
+	  hardware-timed output channels that drive periodic waveforms with explicit
+	  first-edge times, periods,
+	  and pulse-width policies in the owning precision clock's timescale.
+
+menuconfig PRECISION_PPS_OUTPUT
+	bool "Autonomous one-pulse-per-second clock output"
+	depends on PRECISION_CLOCK_OUTPUT
+	depends on MULTITHREADING
+	depends on SYS_CLOCK_EXISTS
+	help
+	  Enable a runtime-configured service that autonomously arms and
+	  maintains a fixed one-second periodic clock output. Each caller-owned
+	  instance targets an application-supplied precision clock, channel, and
+	  pulse-width policy. Instances detect clock hard steps and unconfigured,
+	  mismatched, or inactive output, then stop and rearm the channel on
+	  their own schedule. Arming is not gated on PTP lock or any other
+	  synchronization protocol state.
+
+	  All instances share a single subsystem-owned dedicated workqueue whose
+	  resources are configured below.
+
+if PRECISION_PPS_OUTPUT
+
+config PRECISION_PPS_OUTPUT_WORKQUEUE_STACK_SIZE
+	int "PPS output dedicated workqueue stack size"
+	default 1024
+	help
+	  Stack size in bytes of the dedicated workqueue thread shared by all
+	  precision PPS output instances. The thread runs the periodic polls and
+	  invokes the instance callbacks, so it must accommodate the deepest
+	  callback the application installs.
+
+config PRECISION_PPS_OUTPUT_WORKQUEUE_PRIORITY
+	int "PPS output dedicated workqueue priority"
+	default SYSTEM_WORKQUEUE_PRIORITY
+	help
+	  Thread priority of the dedicated workqueue shared by all precision PPS
+	  output instances. A negative value is a cooperative priority.
+
+config PRECISION_PPS_OUTPUT_CHANNEL
+	int "PPS output channel"
+	default 0
+	range 0 2147483647
+	help
+	  Default zero-based output channel used by the PPS configuration
+	  initializer. The selected provider must expose this channel. Explicit
+	  per-instance configurations can override these Kconfig defaults.
+
+choice PRECISION_PPS_OUTPUT_WIDTH_POLICY
+	prompt "PPS pulse-width policy"
+	default PRECISION_PPS_OUTPUT_WIDTH_EXACT
+	help
+	  Select whether the application requests the exact configured pulse
+	  width or accepts the provider's default width.
+
+config PRECISION_PPS_OUTPUT_WIDTH_EXACT
+	bool "Exact configured pulse width"
+
+config PRECISION_PPS_OUTPUT_WIDTH_PROVIDER_DEFAULT
+	bool "Provider default pulse width"
+
+endchoice
+
+config PRECISION_PPS_OUTPUT_PULSE_WIDTH_NS
+	int "Exact PPS pulse width (nanoseconds)"
+	default 200000000
+	range 1 999999999
+	help
+	  Requested high time of each one-second PPS pulse when the exact policy
+	  is selected. Must be shorter than one second and supported by the
+	  provider, including its width range and resolution. Unsupported exact
+	  requests fail when starting the service; they do not change policy.
+	  Ignored for provider-default width, whose duration is hardware-defined.
+
+config PRECISION_PPS_OUTPUT_START_GUARD_NS
+	int "PPS start guard (nanoseconds)"
+	default 10000000
+	range 0 1000000000
+	help
+	  Extra guard added to the provider's minimum lead time before aligning
+	  the first edge to a whole clock second, including after recovery.
+
+config PRECISION_PPS_OUTPUT_STEP_LIMIT_NS
+	int "PPS PHC step limit (nanoseconds)"
+	default 100000000
+	range 0 1000000000
+	help
+	  Threshold for the absolute discrepancy between precision-clock and
+	  monotonic elapsed time after allowing for the sampling intervals of
+	  both consecutive clock reads. Exceeding it stops and rearms the output.
+	  Zero tolerates no remaining discrepancy, so clock quantization and
+	  normal rate adjustments can trigger recovery.
+
+config PRECISION_PPS_OUTPUT_POLL_INTERVAL_MS
+	int "PPS status poll interval (milliseconds)"
+	default 250
+	range 1 60000
+	help
+	  Interval between clock and output-status checks on the PPS workqueue.
+	  Shorter intervals detect discontinuities and inactive output sooner,
+	  at the cost of more work. This does not set the hardware pulse period.
+
+endif # PRECISION_PPS_OUTPUT
+
+config PRECISION_TIMING_SHELL
+	bool "Precision timing shell"
+	depends on SHELL
+	depends on MULTITHREADING
+	help
+	  Enable a runtime registry and shell commands for inspecting precision
+	  clocks and controlling scheduled clock outputs.
+
+config PRECISION_TIMING_SHELL_MAX_INSTANCES
+	int "Maximum number of precision timing shell instances"
+	default 4
+	range 1 16
+	depends on PRECISION_TIMING_SHELL
+	help
+	  Set the fixed capacity of the precision timing shell registry.
+
 endif # PRECISION_TIMING

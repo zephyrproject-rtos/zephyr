@@ -42,6 +42,10 @@ extern "C" {
  * @{
  */
 
+/** @cond INTERNAL_HIDDEN */
+struct precision_clock_output_provider;
+/** @endcond */
+
 /**
  * @brief Set the time of the PTP clock.
  * See ptp_clock_set() for argument description.
@@ -86,6 +90,15 @@ __subsystem struct ptp_clock_driver_api {
 	 * @driver_ops_mandatory @copybrief ptp_clock_rate_adjust
 	 */
 	ptp_clock_api_rate_adjust_t rate_adjust;
+	/**
+	 * @driver_ops_optional Scheduled clock output provider extension.
+	 *
+	 * Optional reference to a protocol-neutral scheduled output provider
+	 * defined by @ref precision_clock_output_provider. Leave null when the
+	 * device does not expose scheduled outputs. A precision clock adapter
+	 * discovers the extension and bridges it onto the scheduled-output API.
+	 */
+	const struct precision_clock_output_provider *output;
 };
 
 /** @} */
