@@ -11,6 +11,7 @@ Prerequisites
 * A board with Bluetooth Classic support
 * Recommended boards:
 
+  * :zephyr:board:`sf32lb52_devkit_lcd <sf32lb52_devkit_lcd>`
   * :zephyr:board:`mimxrt1170_evk@B/mimxrt1176/cm7 <mimxrt1170_evk>`
 
 Building the Samples
@@ -22,7 +23,13 @@ To build any Bluetooth Classic sample, use the following commands:
 
    west build -p auto -b <board> samples/bluetooth/classic/<sample_name>
 
-For example, to build for :zephyr:board:`mimxrt1170_evk@B/mimxrt1176/cm7 <mimxrt1170_evk>`:
+For example, to build for :zephyr:board:`sf32lb52_devkit_lcd <sf32lb52_devkit_lcd>`:
+
+.. code-block:: bash
+
+   west build -p auto -b sf32lb52_devkit_lcd/sf32lb525uc6 samples/bluetooth/classic/<sample_name>
+
+Or for :zephyr:board:`mimxrt1170_evk@B/mimxrt1176/cm7 <mimxrt1170_evk>`:
 
 .. code-block:: bash
 
@@ -39,6 +46,7 @@ The following Kconfig options must be enabled for Bluetooth Classic functionalit
 
    CONFIG_BT=y
    CONFIG_BT_CLASSIC=y
+   CONFIG_BT_RFCOMM=y
 
 Enable verbose Bluetooth logging:
 
