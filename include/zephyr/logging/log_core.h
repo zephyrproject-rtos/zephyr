@@ -397,9 +397,8 @@ static inline char z_log_minimal_level_to_char(int level)
 	TOOLCHAIN_DISABLE_CLANG_WARNING(TOOLCHAIN_WARNING_USED_BUT_MARKED_UNUSED)                  \
 	do {                                                                                       \
 		Z_LOG_LEVEL_ALL_CHECK_BREAK(_level, _inst, _source)                                \
-		const char *_str = GET_ARG_N(1, __VA_ARGS__);                                      \
 		if (IS_ENABLED(CONFIG_LOG_MODE_MINIMAL)) {                                         \
-			Z_LOG_TO_PRINTK(_level, "%s", _str);                                       \
+			Z_LOG_TO_PRINTK(_level, "%s", GET_ARG_N(1, __VA_ARGS__));                  \
 			z_log_minimal_hexdump_print((_level), (const char *)(_data), (_len));      \
 			break;                                                                     \
 		}                                                                                  \
