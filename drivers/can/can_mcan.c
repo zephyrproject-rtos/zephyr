@@ -568,12 +568,16 @@ static void can_mcan_tx_event_handler(const struct device *dev)
 
 		__ASSERT_NO_MSG(tx_idx < cbs->num_tx);
 		tx_cb = cbs->tx[tx_idx].function;
-		user_data = cbs->tx[tx_idx].user_data;
-		cbs->tx[tx_idx].function = NULL;
 
-		k_sem_give(&data->tx_sem);
+		/* The bus-off handler may already have completed this Tx Buffer */
+		if (tx_cb != NULL) {
+			user_data = cbs->tx[tx_idx].user_data;
+			cbs->tx[tx_idx].function = NULL;
 
-		tx_cb(dev, 0, user_data);
+			k_sem_give(&data->tx_sem);
+
+			tx_cb(dev, 0, user_data);
+		}
 
 		err = can_mcan_read_reg(dev, CAN_MCAN_TXEFS, &txefs);
 		if (err != 0) {
