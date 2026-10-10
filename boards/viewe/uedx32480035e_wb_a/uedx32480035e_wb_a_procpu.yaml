@@ -16,4 +16,5 @@ supported:
   - dma
   - input
   - display
+  - zephyr_i2s
 vendor: viewe
