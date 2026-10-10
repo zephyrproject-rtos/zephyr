@@ -3,7 +3,7 @@ sample:
   name: dali-blinky
 common:
   tags: dali
-  filter: dt_nodelabel_enabled("dali0")
+  filter: dt_alias_exists("dali")
 tests:
   sample.drivers.dali.blinky.nucleo_f091rc:
     platform_allow:
