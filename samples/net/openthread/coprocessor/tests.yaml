@@ -43,6 +43,19 @@ tests:
     extra_args:
       - EXTRA_CONF_FILE=overlay-rcp.conf
       - CONFIG_BUILD_ONLY_NO_BLOBS=y
+  sample.net.openthread.coprocessor.rcp.thread_1_4:
+    build_only: true
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52833dk/nrf52833
+      - tlsr9518adk80d
+      - nucleo_wba55cg
+    integration_platforms:
+      - nrf52840dk/nrf52840
+    extra_args:
+      - EXTRA_CONF_FILE=overlay-rcp.conf
+      - CONFIG_OPENTHREAD_THREAD_VERSION_1_4=y
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
   sample.net.openthread.coprocessor.debug:
     build_only: true
     platform_allow:
