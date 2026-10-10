@@ -828,6 +828,11 @@ New APIs and options
       :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT_GROUP_ID_CUSTOM_FUNCTION` and
       :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT_INFO_FUNCTIONS`.
 
+* MFD
+
+  * :c:struct:`mfd_npm2100_event_callback`, :c:type:`npm2100_event_t` and
+    :c:type:`npm2100_callback_handler_t` (:github:`120768`).
+
 * Modem
 
   * :c:enumerator:`CELLULAR_MODEM_INFO_SERIAL_NUMBER`
