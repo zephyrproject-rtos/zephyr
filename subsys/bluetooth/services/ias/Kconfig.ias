@@ -31,7 +31,7 @@ endif # BT_IAS
 #### Immediate Alert Service Client ################################
 
 config BT_IAS_CLIENT
-	bool "Immediate Alert Service Client [Experimental]"
+	bool "Immediate Alert Service Client [EXPERIMENTAL]"
 	select BT_GATT_CLIENT
 	select EXPERIMENTAL
 	help
