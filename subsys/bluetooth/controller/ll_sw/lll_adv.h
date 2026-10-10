@@ -33,7 +33,7 @@ struct lll_adv_iso {
 	struct lll_hdr hdr;
 	struct lll_adv *adv;
 
-	uint8_t seed_access_addr[4];
+	uint8_t seed_access_addr[PDU_ACCESS_ADDR_SIZE];
 	uint8_t base_crc_init[2];
 	uint16_t latency_prepare;
 	uint16_t latency_event;
