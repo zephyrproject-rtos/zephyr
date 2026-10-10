@@ -1,0 +1,46 @@
+/*
+ * SPDX-FileCopyrightText: Copyright Panoramix Labs
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,camera = &dvp_24pin_interface;
+	};
+};
+
+&dvp_24pin_interface {
+	status = "okay";
+};
+
+&dvp_24pin_i2c {
+	status = "okay";
+
+	ov2640: ov2640@30 {
+		compatible = "ovti,ov2640";
+		reg = <0x30>;
+		drive-strength = <1>;
+		clock-multiplier = <2>;
+		status = "okay";
+
+		clocks = <&dvp_24pin_clock>;
+
+		port {
+			ov2640_ep_out: endpoint {
+				remote-endpoint-label = "dvp_24pin_ep_in";
+				bus-width = <8>;
+				/* See "Note:" on devicetree bindings */
+				hsync-active = <1>;
+				vsync-active = <1>;
+			};
+		};
+	};
+};
+
+&dvp_24pin_ep_in {
+	remote-endpoint-label = "ov2640_ep_out";
+	bus-width = <8>;
+	hsync-active = <1>;
+	vsync-active = <1>;
+	pclk-sample = <1>;
+};

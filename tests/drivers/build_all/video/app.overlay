@@ -17,6 +17,12 @@
 		#clock-cells = <0>;
 	};
 
+	ov2640_input_clock: ov2640-input-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <24000000>;
+		#clock-cells = <0>;
+	};
+
 	imx219_input_clock: imx219-input-clock {
 		compatible = "fixed-clock";
 		clock-frequency = <24000000>;
@@ -51,6 +57,7 @@
 			test_i2c_ov2640: ov2640@1 {
 				compatible = "ovti,ov2640";
 				reg = <0x1>;
+				clocks = <&ov2640_input_clock>;
 				reset-gpios = <&test_gpio 0 0>;
 			};
 

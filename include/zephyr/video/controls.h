@@ -201,8 +201,8 @@ enum video_colorfx {
  * @brief Video exposure type
  */
 enum video_exposure_type {
-	VIDEO_EXPOSURE_AUTO = 0,             /**< Automatic exposure. */
-	VIDEO_EXPOSURE_MANUAL = 1,           /**< Manual exposure. */
+	VIDEO_EXPOSURE_MANUAL = 0,           /**< Manual exposure. */
+	VIDEO_EXPOSURE_AUTO = 1,             /**< Automatic exposure. */
 	VIDEO_EXPOSURE_SHUTTER_PRIORITY = 2, /**< Shutter priority. */
 	VIDEO_EXPOSURE_APERTURE_PRIORITY = 3 /**< Aperture priority. */
 };
@@ -391,6 +391,12 @@ enum video_camera_orientation {
  * @{
  */
 #define VIDEO_CID_IMAGE_SOURCE_CLASS_BASE 0x009e0900
+
+/** Vertical blanking duration: duration (in lines) of the pause after the end of a frame */
+#define VIDEO_CID_VBLANK (VIDEO_CID_IMAGE_SOURCE_CLASS_BASE + 1)
+
+/** Horizontal blanking duration: duration (in pixels) of the pause after the end of a line */
+#define VIDEO_CID_HBLANK (VIDEO_CID_IMAGE_SOURCE_CLASS_BASE + 2)
 
 /**
  * @brief Analogue gain control
