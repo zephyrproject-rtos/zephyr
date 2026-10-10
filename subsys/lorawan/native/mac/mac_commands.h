@@ -2,12 +2,12 @@
  * Copyright (c) 2026 Carlo Caione <ccaione@baylibre.com>
  * SPDX-License-Identifier: Apache-2.0
  *
- * Native LoRaWAN MAC command framework (FOpts).
+ * Native LoRaWAN MAC command framework.
  *
  * MAC commands (LinkCheck, LinkADR, DutyCycle, etc.) ride in the
- * FOpts region of data frames (up to 15 bytes) — inline with the
- * frame header, not in FRMPayload.  This module owns the parse/emit
- * path: the frame builder asks it for pending uplink commands, the
+ * FOpts region of data frames (up to 15 bytes) or in FRMPayload at
+ * FPort zero. This module owns the parse/emit path: the frame builder
+ * asks it for pending uplink commands, the
  * frame parser hands it incoming downlink commands.
  */
 
@@ -54,31 +54,30 @@ enum lwan_mac_cmd {
 };
 
 /**
- * @brief Build the FOpts bytes for the next uplink frame.
+ * @brief Build MAC commands for the next uplink frame.
  *
  * Called by the frame builder before each uplink.  Records a snapshot
- * of what was emitted so mac_cmd_commit_ul_fopts() can drain the right
+ * of what was emitted so mac_cmd_commit_ul_commands() can drain the right
  * state once the frame is actually on the wire.
  *
  * @param ctx Stack context.
- * @param buf Output buffer for FOpts bytes.
- * @param max_len Capacity of @p buf (at most 15 per spec).
+ * @param buf Output buffer for FOpts or port-zero payload bytes.
+ * @param max_len Capacity of @p buf, limited by the regional payload size.
  * @return Number of bytes written to @p buf (0..@p max_len).
  */
-size_t mac_cmd_build_ul_fopts(struct lwan_ctx *ctx,
-			      uint8_t *buf, size_t max_len);
+size_t mac_cmd_build_ul_commands(struct lwan_ctx *ctx, uint8_t *buf, size_t max_len);
 
 /**
- * @brief Return the FOpts length expected for the next uplink frame.
+ * @brief Return the pending uplink MAC command length.
  *
- * This is a side-effect-free counterpart to mac_cmd_build_ul_fopts().
+ * This is a side-effect-free counterpart to mac_cmd_build_ul_commands().
  * It lets callers account for MAC command overhead before building a
  * frame.
  *
  * @param ctx Stack context.
- * @return Number of FOpts bytes the next uplink would carry.
+ * @return Length in bytes; values above 15 require a port-zero payload.
  */
-size_t mac_cmd_next_ul_fopts_len(const struct lwan_ctx *ctx);
+size_t mac_cmd_next_ul_commands_len(const struct lwan_ctx *ctx);
 
 /**
  * @brief Return the next application payload capacity after FOpts overhead.
@@ -91,16 +90,16 @@ uint8_t mac_cmd_next_payload_size(const struct lwan_ctx *ctx,
 				  uint8_t max_payload);
 
 /**
- * @brief Commit the FOpts snapshot recorded by the last build call.
+ * @brief Commit the MAC command snapshot recorded by the last build call.
  *
  * Called from the post-TX hook once the frame has been transmitted
- * successfully.  Clears the pending state for the commands that
- * actually went on the wire so they aren't re-emitted.  A failed TX
- * skips the commit, leaving the pending flags set for the next attempt.
+ * successfully. Clears transmitted commands and discards answers truncated
+ * at the regional payload limit. A failed TX skips the commit, leaving
+ * the commands pending for the next attempt.
  *
  * @param ctx Stack context.
  */
-void mac_cmd_commit_ul_fopts(struct lwan_ctx *ctx);
+void mac_cmd_commit_ul_commands(struct lwan_ctx *ctx);
 
 /**
  * @brief Process the MAC commands carried in a downlink FOpts field.
@@ -123,6 +122,18 @@ void mac_cmd_process_dl_fopts(struct lwan_ctx *ctx,
  *           LinkCheckAns is received; NULL clears the registration.
  */
 void mac_cmd_set_link_check_cb(lorawan_link_check_ans_cb_t cb);
+
+/**
+ * @brief Register the application's datarate callback.
+ * @param cb Callback; NULL clears the registration.
+ */
+void mac_cmd_set_dr_changed_cb(lorawan_dr_changed_cb_t cb);
+
+/**
+ * @brief Deliver a datarate notification from join or the downlink workqueue.
+ * @param dr Datarate to report.
+ */
+void mac_cmd_notify_dr_changed(enum lorawan_datarate dr);
 
 /**
  * @brief Deliver any pending LinkCheckAns to the registered callback.

@@ -137,8 +137,8 @@ struct lwan_region_ops {
 	 * @brief Validate and apply a ChMaskCntl + ChMask from a LinkADRReq.
 	 *
 	 * Validates the (@p ch_mask_cntl, @p ch_mask) pair against the
-	 * region's rules (reserved control values, default-channel
-	 * protection, non-empty result) and, only on success, commits the
+	 * region's rules (reserved control values, defined channels,
+	 * non-empty result) and, only on success, commits the
 	 * new enabled set to @p ch in place.  On failure @p ch is left
 	 * untouched.  The meaning of @p ch_mask_cntl is region-specific.
 	 *
