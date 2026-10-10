@@ -440,6 +440,17 @@ ZTEST(obj_core, test_obj_core_stack_storage)
 	struct k_work work;
 	struct k_work_sync sync;
 
+	if (IS_ENABLED(CONFIG_KERNEL_COHERENCE)) {
+		/* This test requires kernel objects to be in thread stack.
+		 * However, if CONFIG_KERNEL_COHERENCE is enabled, kernel
+		 * requries kernel objects to be in coherent memory due to
+		 * sys_cache_is_mem_coherent() check. Stack memory is not
+		 * considered coherent memory so the test will sure fail.
+		 * Therefore we simply skip this test.
+		 */
+		ztest_test_skip();
+	}
+
 	/* Objects in stack storage are counted, not registered, and leave
 	 * the registry intact once their frames are gone.
 	 */
