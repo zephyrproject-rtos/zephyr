@@ -190,6 +190,9 @@
 #define MAX30210_TEMP_REG_BYTES           2
 #define MAX30210_TEMP_SLOPE_MAX_REG_VALUE 255
 
+#define MAX30210_CONVERSION_POLL_INTERVAL_MS 5
+#define MAX30210_CONVERSION_POLL_COUNT       20
+
 struct max30210_config {
 	struct i2c_dt_spec i2c;
 
