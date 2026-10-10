@@ -1,0 +1,15 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config DEBUG_INFINEON_CAT1_TRACE
+	bool "Infineon CAT1 parallel trace port"
+	default y
+	depends on DT_HAS_INFINEON_CAT1_TRACE_ENABLED
+	depends on PINCTRL
+	help
+	  Route the Infineon CAT1 parallel trace port pins (trace clock and trace
+	  data) so an external trace probe can capture ETM/ITM instruction trace.
+	  This covers the CAT1 MCUs with the CoreSight SoC-600 DEBUG600 subsystem,
+	  such as PSOC Edge E84 and PSOC Control C3. HSIOM is a secure peripheral on
+	  these devices, so the trace pins can only be muxed by firmware running on
+	  the secure CM33.

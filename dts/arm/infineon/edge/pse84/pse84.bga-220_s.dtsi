@@ -2143,6 +2143,32 @@
 				drive-push-pull;
 				input-enable;
 			};
+
+			/* debug600 parallel trace port (SoC-600 TPIU, 4-bit) */
+			/omit-if-no-ref/ p20_0_debug600_trace_clock: p20_0_debug600_trace_clock {
+				pinmux = <DT_CAT1_PINMUX(20, 0, HSIOM_SEL_ACT_15)>;
+				drive-push-pull;
+			};
+
+			/omit-if-no-ref/ p20_1_debug600_trace_data3: p20_1_debug600_trace_data3 {
+				pinmux = <DT_CAT1_PINMUX(20, 1, HSIOM_SEL_ACT_15)>;
+				drive-push-pull;
+			};
+
+			/omit-if-no-ref/ p20_2_debug600_trace_data2: p20_2_debug600_trace_data2 {
+				pinmux = <DT_CAT1_PINMUX(20, 2, HSIOM_SEL_ACT_15)>;
+				drive-push-pull;
+			};
+
+			/omit-if-no-ref/ p20_3_debug600_trace_data1: p20_3_debug600_trace_data1 {
+				pinmux = <DT_CAT1_PINMUX(20, 3, HSIOM_SEL_ACT_15)>;
+				drive-push-pull;
+			};
+
+			/omit-if-no-ref/ p20_4_debug600_trace_data0: p20_4_debug600_trace_data0 {
+				pinmux = <DT_CAT1_PINMUX(20, 4, HSIOM_SEL_ACT_15)>;
+				drive-push-pull;
+			};
 		};
 	};
 };
