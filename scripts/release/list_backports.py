@@ -13,8 +13,9 @@ A formatted report is printed to standard output either in JSON or
 reStructuredText.
 
 Since an issue is required for all changes to release branches, merged PRs
-must have at least one instance of the phrase "Fixes #1234" in the body. This
-script will throw an error if a PR has been made without an associated issue.
+must reference at least one issue in the body using one of the closing
+keywords GitHub supports, e.g. "Fixes #1234". This script will throw an error
+if a PR has been made without an associated issue.
 
 Usage:
     ./scripts/release/list_backports.py \
@@ -281,32 +282,38 @@ class Backport(object):
         self._pulls_without_an_issue = []
         self._pulls_with_invalid_issues = {}
 
+        repository_re = rf"{re.escape(self._repo.organization.login)}/{re.escape(self._repo.name)}"
+
+        # Keywords GitHub accepts to link a pull request to an issue, see
+        # https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/linking-a-pull-request-to-an-issue
+        # They are case insensitive and may be followed by an optional colon.
+        CLOSING_KEYWORDS = r"\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\b[:]?[ \t]+"
+
+        issue_re = re.compile(
+            CLOSING_KEYWORDS
+            + rf"(?:#|{repository_re}#|https://github\.com/{repository_re}/issues/)"
+            + r"([1-9][0-9]*)\b",
+            re.IGNORECASE,
+        )
+
         for p in self._pulls:
             # check for issues in this pr
             issues_for_this_pr = {}
             with io.StringIO(p.body or '') as buf:
                 for line in buf.readlines():
                     line = line.strip()
-                    match = re.search(r"^Fixes[:]?\s*#([1-9][0-9]*).*", line)
-                    if not match:
-                        match = re.search(
-                            rf"^Fixes[:]?\s*https://github\.com/{self._repo.organization.login}/{self._repo.name}/issues/([1-9][0-9]*).*",
-                            line,
-                        )
-                    if not match:
-                        continue
-                    issue_number = int(match[1])
-                    issue = self._repo.get_issue(issue_number)
-                    if not issue:
-                        if not self._pulls_with_invalid_issues[p.number]:
-                            self._pulls_with_invalid_issues[p.number] = [issue_number]
-                        else:
-                            self._pulls_with_invalid_issues[p.number].append(issue_number)
-                        logging.error(
-                            f'https://github.com/{self._repo.organization.login}/{self._repo.name}/pull/{p.number} references invalid issue number {issue_number}'
-                        )
-                        continue
-                    issues_for_this_pr[issue_number] = issue
+                    for match in issue_re.finditer(line):
+                        issue_number = int(match[1])
+                        issue = self._repo.get_issue(issue_number)
+                        if not issue:
+                            self._pulls_with_invalid_issues.setdefault(p.number, []).append(
+                                issue_number
+                            )
+                            logging.error(
+                                f'https://github.com/{self._repo.organization.login}/{self._repo.name}/pull/{p.number} references invalid issue number {issue_number}'
+                            )
+                            continue
+                        issues_for_this_pr[issue_number] = issue
 
             # report prs missing issues later
             if len(issues_for_this_pr) == 0:
