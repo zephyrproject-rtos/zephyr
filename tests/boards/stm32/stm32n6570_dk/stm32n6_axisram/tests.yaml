@@ -1,8 +1,7 @@
 common:
-  build_only: true
   tags: drivers
 tests:
-  boards.stm32.stm32n6570_dk.stm32n6_axisram.build:
+  boards.stm32.stm32n6570_dk.stm32n6_axisram:
     extra_args: DTC_OVERLAY_FILE="boards/stm32n6570_dk.overlay"
     platform_allow:
       - stm32n6570_dk/stm32n657xx/sb
