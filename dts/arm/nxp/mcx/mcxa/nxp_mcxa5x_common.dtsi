@@ -199,6 +199,8 @@
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		power-domains = <&core_domain>;
+		zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 		status = "disabled";
 	};
 
@@ -211,6 +213,8 @@
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		power-domains = <&core_domain>;
+		zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 		status = "disabled";
 	};
 
@@ -223,6 +227,8 @@
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		power-domains = <&core_domain>;
+		zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 		status = "disabled";
 	};
 
@@ -235,6 +241,8 @@
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		power-domains = <&core_domain>;
+		zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 		status = "disabled";
 	};
 
@@ -247,6 +255,8 @@
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		power-domains = <&core_domain>;
+		zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 		status = "disabled";
 	};
 
