@@ -1,0 +1,37 @@
+# Analog Devices HMC7044 clock generator
+
+# Copyright (c) 2026 Analog Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_HMC7044
+	bool "HMC7044 dual-PLL clock generator"
+	default y
+	depends on DT_HAS_ADI_HMC7044_ENABLED
+	select SPI
+	help
+	  Enable the Analog Devices HMC7044 driver: a 14-output, dual-PLL,
+	  SPI-programmed jitter-attenuating clock generator and JESD204 SYSREF
+	  distributor.
+
+	  Output rates are programmed once from devicetree. set_rate(), async_on()
+	  and configure() are not implemented, because retuning an output divider
+	  under a live JESD204 link would break the link.
+
+if CLOCK_CONTROL_HMC7044
+
+config CLOCK_CONTROL_HMC7044_INIT_PRIORITY
+	int "HMC7044 clock generator init priority"
+	default 60
+	help
+	  Initialisation priority of the HMC7044 clock_control driver, within
+	  POST_KERNEL.
+
+	  Unlike most clock providers this driver cannot run at PRE_KERNEL_1: it
+	  is SPI-attached, and Zephyr SPI controllers initialise at POST_KERNEL
+	  (SPI_INIT_PRIORITY, default 50). This value must therefore stay
+	  strictly greater than SPI_INIT_PRIORITY -- a build assertion in the
+	  driver enforces that -- and every consumer of the HMC7044's rates must
+	  itself initialise later still, or it will query an unprogrammed chip.
+
+endif # CLOCK_CONTROL_HMC7044
