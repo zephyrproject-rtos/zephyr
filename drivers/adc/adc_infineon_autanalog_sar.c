@@ -36,12 +36,10 @@ LOG_MODULE_REGISTER(ifx_autanalog_sar_adc, CONFIG_ADC_LOG_LEVEL);
 #define ADC_AUTANALOG_SAR_DEFAULT_ACQUISITION_NS (1000u)
 #define ADC_AUTANALOG_SAR_RESOLUTION             12
 
-#define IFX_AUTANALOG_SAR_MAX_NUM_CHANNELS           32
-#define IFX_AUTANALOG_SAR_MAX_GPIO_CHANNELS          8
-#define IFX_AUTANALOG_SAR_MAX_MUX_CHANNELS           16
-#define IFX_AUTANALOG_SAR_MUX_CHANNEL_OFFSET         8
-#define IFX_AUTANALOG_SAR_NUM_SEQUENCERS             1
-#define IFX_AUTANALOG_SAR_NUM_ENABLED_CHANNELS(inst) DT_NUM_CHILDREN(DT_DRV_INST(inst))
+#define IFX_AUTANALOG_SAR_MAX_NUM_CHANNELS   32
+#define IFX_AUTANALOG_SAR_MAX_GPIO_CHANNELS  8
+#define IFX_AUTANALOG_SAR_MAX_MUX_CHANNELS   16
+#define IFX_AUTANALOG_SAR_MUX_CHANNEL_OFFSET 8
 
 #define IFX_AUTANALOG_SAR_SAMPLETIME_COUNT 4
 #define IFX_AUTANALOG_SAR_MAX_FIR_FILTERS  2
@@ -56,6 +54,9 @@ LOG_MODULE_REGISTER(ifx_autanalog_sar_adc, CONFIG_ADC_LOG_LEVEL);
  * STOP state.
  */
 #define IFX_AUTANALOG_SAR_AC_STATE_SAR_SAMPLE 2
+
+/* The AutAnalog SAR provides 32 sequencer table entries (states) per mode. */
+#define IFX_AUTANALOG_SAR_MAX_SEQ_ENTRIES 32
 
 #ifdef CONFIG_ADC_INFINEON_AUTANALOG_SAR_STREAM
 /* Maximum number of channels that can be streamed simultaneously (max number of FIFOs) */
@@ -146,6 +147,29 @@ struct ifx_autanalog_sar_fir_config {
 	uint8_t fifo_sel;
 };
 
+struct ifx_autanalog_sar_seq_hs_config {
+	uint8_t gpio_channels;
+	uint8_t mux_mode;
+	uint8_t mux0_sel;
+	uint8_t mux1_sel;
+	bool sample_time_en;
+	uint8_t sample_time_sel;
+	bool acc_en;
+	uint8_t acc_count;
+	uint8_t cal_req;
+	uint8_t next_action;
+};
+
+struct ifx_autanalog_sar_seq_lp_config {
+	uint8_t mux0_sel;
+	bool sample_time_en;
+	uint8_t sample_time_sel;
+	bool acc_en;
+	uint8_t acc_count;
+	uint8_t cal_req;
+	uint8_t next_action;
+};
+
 struct ifx_autanalog_sar_adc_config {
 	void (*irq_func)(void);
 	const struct device *mfd;
@@ -164,8 +188,20 @@ struct ifx_autanalog_sar_adc_config {
 	struct ifx_autanalog_sar_fir_config fir[IFX_AUTANALOG_SAR_MAX_FIR_FILTERS];
 	bool fifo_enabled;
 	struct ifx_autanalog_sar_fifo_config fifo_cfg;
+	uint8_t num_hs_seq;
+	const struct ifx_autanalog_sar_seq_hs_config *hs_seq;
+	uint8_t num_lp_seq;
+	const struct ifx_autanalog_sar_seq_lp_config *lp_seq;
 	bool lp_mode;
 	bool lp_diff_en;
+	/* Static sample-time mode: when true the 4 hardware sample-time slots are seeded
+	 * from the sample_times[] table below (ADC-node sample-times property) and
+	 * sequencer entries select a slot via sample_time_sel.  When false (default) the
+	 * slots are allocated dynamically from channel acquisition times.
+	 */
+	bool static_sample_time;
+	uint8_t num_sample_times;
+	uint16_t sample_times[IFX_AUTANALOG_SAR_SAMPLETIME_COUNT];
 };
 
 struct ifx_autanalog_sar_adc_channel_config {
@@ -208,11 +244,11 @@ struct ifx_autanalog_sar_adc_data {
 	cy_stc_autanalog_sar_sta_t pdl_adc_top_static_obj;
 
 	cy_stc_autanalog_sar_sta_hs_t pdl_adc_hs_static_obj;
-	cy_stc_autanalog_sar_seq_tab_hs_t pdl_adc_seq_hs_cfg_obj[IFX_AUTANALOG_SAR_NUM_SEQUENCERS];
+	cy_stc_autanalog_sar_seq_tab_hs_t *pdl_adc_seq_hs_cfg;
 
 	/* PDL structures for LP mode */
 	cy_stc_autanalog_sar_sta_lp_t pdl_adc_lp_static_obj;
-	cy_stc_autanalog_sar_seq_tab_lp_t pdl_adc_seq_lp_cfg_obj[IFX_AUTANALOG_SAR_NUM_SEQUENCERS];
+	cy_stc_autanalog_sar_seq_tab_lp_t *pdl_adc_seq_lp_cfg;
 
 	/* PDL structures for FIR filters */
 	cy_stc_autanalog_sar_fir_cfg_t pdl_fir_cfg[IFX_AUTANALOG_SAR_MAX_FIR_FILTERS];
@@ -267,6 +303,8 @@ static const uint32_t fifo_underflow_masks[8] = {
 	CY_AUTANALOG_INT_FIFO_UNDERFLOW6, CY_AUTANALOG_INT_FIFO_UNDERFLOW7,
 };
 
+static uint16_t ifx_calc_acquisition_timer_val(uint16_t acquisition_time, bool lp_mode);
+
 /**
  * @brief Initialize PDL structures for the ADC
  *
@@ -281,21 +319,36 @@ static void ifx_init_pdl_structs(struct ifx_autanalog_sar_adc_data *data,
 {
 	data->pdl_adc_top_obj = (cy_stc_autanalog_sar_t){
 		.sarStaCfg = &data->pdl_adc_top_static_obj,
-		/* This driver implementation uses only a single sequencer.  The sequencer is
-		 * reconfigured every time an adc read is started.  Hardware supports up to 32
-		 * sequencers, which can be used for more advanced ADC configurations.
-		 */
-		.hsSeqTabNum = cfg->lp_mode ? 0U : IFX_AUTANALOG_SAR_NUM_SEQUENCERS,
-		.hsSeqTabArr = cfg->lp_mode ? NULL : &data->pdl_adc_seq_hs_cfg_obj[0],
-		.lpSeqTabNum = cfg->lp_mode ? IFX_AUTANALOG_SAR_NUM_SEQUENCERS : 0U,
-		.lpSeqTabArr = cfg->lp_mode ? &data->pdl_adc_seq_lp_cfg_obj[0] : NULL,
+		.hsSeqTabNum = cfg->lp_mode ? 0U : cfg->num_hs_seq,
+		.hsSeqTabArr = cfg->lp_mode ? NULL : &data->pdl_adc_seq_hs_cfg[0],
+		.lpSeqTabNum = cfg->lp_mode ? cfg->num_lp_seq : 0U,
+		.lpSeqTabArr = cfg->lp_mode ? &data->pdl_adc_seq_lp_cfg[0] : NULL,
 		.firNum = cfg->fir_count,
 		.firCfg = (cfg->fir_count > 0) ? &data->pdl_fir_cfg[0] : NULL,
 		.fifoCfg = cfg->fifo_enabled ? &data->pdl_fifo_cfg : NULL,
 	};
 
-	if (!cfg->lp_mode) {
-		data->pdl_adc_seq_hs_cfg_obj[0] = (cy_stc_autanalog_sar_seq_tab_hs_t){
+	/* Populate HS sequencer entries from DT config or use defaults */
+	if (cfg->hs_seq != NULL) {
+		for (uint8_t i = 0; i < cfg->num_hs_seq; i++) {
+			data->pdl_adc_seq_hs_cfg[i] = (cy_stc_autanalog_sar_seq_tab_hs_t){
+				.chanEn = cfg->hs_seq[i].gpio_channels,
+				.muxMode = cfg->hs_seq[i].mux_mode,
+				.mux0Sel = cfg->hs_seq[i].mux0_sel,
+				.mux1Sel = cfg->hs_seq[i].mux1_sel,
+				.sampleTimeEn = cfg->hs_seq[i].sample_time_en,
+				.sampleTime = (cy_en_autanalog_sar_sample_time_t)cfg->hs_seq[i]
+						      .sample_time_sel,
+				.accEn = cfg->hs_seq[i].acc_en,
+				.accCount = (cy_en_autanalog_sar_acc_cnt_t)cfg->hs_seq[i].acc_count,
+				.calReq = (cy_en_autanalog_sar_calibrate_t)cfg->hs_seq[i].cal_req,
+				.nextAction =
+					(cy_en_autanalog_sar_next_act_t)cfg->hs_seq[i].next_action,
+			};
+		}
+	} else {
+		/* No DT sequencer entries: single entry with backward-compatible defaults */
+		data->pdl_adc_seq_hs_cfg[0] = (cy_stc_autanalog_sar_seq_tab_hs_t){
 			.chanEn = CY_AUTANALOG_SAR_CHAN_MASK_GPIO_DISABLED,
 			.muxMode = CY_AUTANALOG_SAR_CHAN_CFG_MUX_DISABLED,
 			.mux0Sel = CY_AUTANALOG_SAR_CHAN_CFG_MUX0,
@@ -307,8 +360,27 @@ static void ifx_init_pdl_structs(struct ifx_autanalog_sar_adc_data *data,
 			.calReq = CY_AUTANALOG_SAR_CAL_DISABLED,
 			.nextAction = CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP,
 		};
+	}
+
+	/* Populate LP sequencer entries from DT config or use defaults */
+	if (cfg->lp_seq != NULL) {
+		for (uint8_t i = 0; i < cfg->num_lp_seq; i++) {
+			data->pdl_adc_seq_lp_cfg[i] = (cy_stc_autanalog_sar_seq_tab_lp_t){
+				.chanEn = true,
+				.mux0Sel = cfg->lp_seq[i].mux0_sel,
+				.sampleTimeEn = cfg->lp_seq[i].sample_time_en,
+				.sampleTime = (cy_en_autanalog_sar_sample_time_t)cfg->lp_seq[i]
+						      .sample_time_sel,
+				.accEn = cfg->lp_seq[i].acc_en,
+				.accCount = (cy_en_autanalog_sar_acc_cnt_t)cfg->lp_seq[i].acc_count,
+				.calReq = (cy_en_autanalog_sar_calibrate_t)cfg->lp_seq[i].cal_req,
+				.nextAction =
+					(cy_en_autanalog_sar_next_act_t)cfg->lp_seq[i].next_action,
+			};
+		}
 	} else {
-		data->pdl_adc_seq_lp_cfg_obj[0] = (cy_stc_autanalog_sar_seq_tab_lp_t){
+		/* No DT LP sequencer entries: single entry with backward-compatible defaults */
+		data->pdl_adc_seq_lp_cfg[0] = (cy_stc_autanalog_sar_seq_tab_lp_t){
 			.chanEn = true,
 			.mux0Sel = 0,
 			.sampleTimeEn = true,
@@ -358,6 +430,20 @@ static void ifx_init_pdl_structs(struct ifx_autanalog_sar_adc_data *data,
 			.lpVref = (cy_en_autanalog_sar_vref_t)cfg->vref_source,
 			.lpSampleTime = {0, 0, 0, 0},
 		};
+	}
+
+	/* Static sample-time mode: seed the shared hardware slots from the ADC-node
+	 * sample-times table.  Channel setup then matches against these fixed slots and
+	 * sequencer entries reference them directly via sample-time-sel.
+	 */
+	if (cfg->static_sample_time) {
+		uint16_t *sample_times = cfg->lp_mode ? data->pdl_adc_lp_static_obj.lpSampleTime
+						      : data->pdl_adc_hs_static_obj.hsSampleTime;
+
+		for (uint8_t i = 0; i < cfg->num_sample_times; i++) {
+			sample_times[i] =
+				ifx_calc_acquisition_timer_val(cfg->sample_times[i], cfg->lp_mode);
+		}
 	}
 
 	/* Initialize FIR filter configurations from device tree */
@@ -462,7 +548,7 @@ static void ifx_autanalog_sar_complete_error(struct ifx_autanalog_sar_adc_data *
 static int ifx_build_hs_sequencer_entry(uint32_t channels, struct ifx_autanalog_sar_adc_data *data)
 {
 	uint8_t timer_index = IFX_AUTANALOG_SAR_SAMPLETIME_COUNT;
-	cy_stc_autanalog_sar_seq_tab_hs_t *seq_entry = &data->pdl_adc_seq_hs_cfg_obj[0];
+	cy_stc_autanalog_sar_seq_tab_hs_t *seq_entry = &data->pdl_adc_seq_hs_cfg[0];
 	uint32_t hw_channels = IFX_ADC_HW_CHANNELS_MASK(channels);
 	uint8_t gpio_channels = IFX_GPIO_CHANNELS_MASK(hw_channels);
 	uint16_t mux_channels = IFX_MUX_CHANNELS_MASK(hw_channels);
@@ -538,16 +624,14 @@ static int ifx_build_hs_sequencer_entry(uint32_t channels, struct ifx_autanalog_
 		}
 	}
 
+	/* Only update channel-related fields; sampleTimeEn, accEn, accCount,
+	 * calReq and nextAction are preserved from DT initialisation.
+	 */
 	seq_entry->sampleTime = (cy_en_autanalog_sar_sample_time_t)timer_index;
 	seq_entry->chanEn = gpio_channels;
 	seq_entry->muxMode = mux_mode;
 	seq_entry->mux0Sel = mux0_sel;
 	seq_entry->mux1Sel = mux1_sel;
-	seq_entry->sampleTimeEn = true;
-	seq_entry->accEn = false;
-	seq_entry->accCount = CY_AUTANALOG_SAR_ACC_CNT2;
-	seq_entry->calReq = CY_AUTANALOG_SAR_CAL_DISABLED;
-	seq_entry->nextAction = CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
 
 	return 0;
 } /* ifx_build_hs_sequencer_entry() */
@@ -567,7 +651,7 @@ static int ifx_build_hs_sequencer_entry(uint32_t channels, struct ifx_autanalog_
 static int ifx_build_lp_sequencer_entry(uint32_t channels, struct ifx_autanalog_sar_adc_data *data)
 {
 	uint16_t mux_channels = IFX_MUX_CHANNELS_MASK(channels);
-	cy_stc_autanalog_sar_seq_tab_lp_t *seq_entry = &data->pdl_adc_seq_lp_cfg_obj[0];
+	cy_stc_autanalog_sar_seq_tab_lp_t *seq_entry = &data->pdl_adc_seq_lp_cfg[0];
 	uint8_t mux_idx = 0xFF;
 	uint8_t ch_id;
 
@@ -605,17 +689,181 @@ static int ifx_build_lp_sequencer_entry(uint32_t channels, struct ifx_autanalog_
 
 	seq_entry->chanEn = true;
 	seq_entry->mux0Sel = mux_idx;
-	seq_entry->sampleTimeEn = true;
 	seq_entry->sampleTime =
 		(cy_en_autanalog_sar_sample_time_t)data->autanalog_channel_cfg[ch_id]
 			.sample_time_idx;
-	seq_entry->accEn = false;
-	seq_entry->accCount = CY_AUTANALOG_SAR_ACC_CNT2;
-	seq_entry->calReq = CY_AUTANALOG_SAR_CAL_DISABLED;
-	seq_entry->nextAction = CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
 
 	return 0;
 } /* ifx_build_lp_sequencer_entry() */
+
+/**
+ * @brief Collect and validate the sample-time slot for one sequencer channel.
+ *
+ * Confirms the referenced channel was configured by adc_channel_setup() and that every
+ * channel enabled in the same sequencer entry resolves to the same hardware sample-time
+ * slot.  The running slot for the entry is tracked through @p slot (0xFF means "not set").
+ *
+ * @param data Pointer to driver data structure.
+ * @param ch_id Hardware channel id referenced by the sequencer entry.
+ * @param slot In/out running slot for the entry.
+ *
+ * @return 0 on success, -EINVAL if the channel is unconfigured or conflicts.
+ */
+static int ifx_seq_collect_slot(struct ifx_autanalog_sar_adc_data *data, uint8_t ch_id,
+				uint8_t *slot)
+{
+	uint8_t ch_slot = data->autanalog_channel_cfg[ch_id].sample_time_idx;
+
+	if (ch_slot >= IFX_AUTANALOG_SAR_SAMPLETIME_COUNT) {
+		LOG_ERR("Sequencer references unconfigured channel %u", ch_id);
+		return -EINVAL;
+	}
+
+	if (*slot == 0xFF) {
+		*slot = ch_slot;
+	} else if (*slot != ch_slot) {
+		LOG_ERR("Channels in one sequencer entry must share the same sample time");
+		return -EINVAL;
+	}
+
+	return 0;
+} /* ifx_seq_collect_slot() */
+
+/**
+ * @brief Derive each DT sequencer entry's sample-time slot from its channels.
+ *
+ * In the default dynamic sample-time mode the 4 hardware slots are allocated on demand
+ * from channel acquisition times during adc_channel_setup().  A sequencer entry may only
+ * reference channels that share one slot; this routine looks that slot up, writes it into
+ * the runtime PDL entry and enables the programmable sample time, overriding the DT
+ * sample-time-sel property (which is only meaningful in static sample-time mode).  In
+ * static mode the entries keep the slot
+ * selected by sample-time-sel, so this routine is a no-op.
+ *
+ * @param data Pointer to driver data structure.
+ * @param cfg Pointer to driver configuration structure.
+ * @param lp_mode True to resolve the LP sequencer, false for the HS sequencer.
+ *
+ * @return 0 on success, negative error code on failure.
+ */
+static int ifx_apply_dynamic_seq_sample_times(struct ifx_autanalog_sar_adc_data *data,
+					      const struct ifx_autanalog_sar_adc_config *cfg,
+					      bool lp_mode)
+{
+	if (cfg->static_sample_time) {
+		return 0;
+	}
+
+	if (lp_mode) {
+		if (cfg->lp_seq == NULL) {
+			return 0;
+		}
+
+		for (uint8_t i = 0; i < cfg->num_lp_seq; i++) {
+			uint8_t ch_id =
+				cfg->lp_seq[i].mux0_sel + IFX_AUTANALOG_SAR_MUX_CHANNEL_OFFSET;
+			uint8_t slot = 0xFF;
+
+			if (ifx_seq_collect_slot(data, ch_id, &slot) != 0) {
+				return -EINVAL;
+			}
+
+			data->pdl_adc_seq_lp_cfg[i].sampleTime =
+				(cy_en_autanalog_sar_sample_time_t)slot;
+			data->pdl_adc_seq_lp_cfg[i].sampleTimeEn = true;
+		}
+
+		return 0;
+	}
+
+	if (cfg->hs_seq == NULL) {
+		return 0;
+	}
+
+	for (uint8_t i = 0; i < cfg->num_hs_seq; i++) {
+		const struct ifx_autanalog_sar_seq_hs_config *seq = &cfg->hs_seq[i];
+		uint8_t slot = 0xFF;
+
+		for (uint8_t ch = 0; ch < IFX_AUTANALOG_SAR_MAX_GPIO_CHANNELS; ch++) {
+			if ((seq->gpio_channels & BIT(ch)) == 0) {
+				continue;
+			}
+
+			if (ifx_seq_collect_slot(data, ch, &slot) != 0) {
+				return -EINVAL;
+			}
+		}
+
+		if (seq->mux_mode == IFX_AUTANALOG_SAR_MUX0_SINGLE_ENDED ||
+		    seq->mux_mode == IFX_AUTANALOG_SAR_MUX0_MUX1_SINGLE_ENDED ||
+		    seq->mux_mode == IFX_AUTANALOG_SAR_MUX0_PSEUDO_DIFF) {
+			uint8_t ch_id = seq->mux0_sel + IFX_AUTANALOG_SAR_MUX_CHANNEL_OFFSET;
+
+			if (ifx_seq_collect_slot(data, ch_id, &slot) != 0) {
+				return -EINVAL;
+			}
+		}
+
+		if (seq->mux_mode == IFX_AUTANALOG_SAR_MUX1_SINGLE_ENDED ||
+		    seq->mux_mode == IFX_AUTANALOG_SAR_MUX0_MUX1_SINGLE_ENDED) {
+			uint8_t ch_id = seq->mux1_sel + IFX_AUTANALOG_SAR_MUX_CHANNEL_OFFSET;
+
+			if (ifx_seq_collect_slot(data, ch_id, &slot) != 0) {
+				return -EINVAL;
+			}
+		}
+
+		if (slot == 0xFF) {
+			/* Entry samples no channels; leave its sample time untouched. */
+			continue;
+		}
+
+		data->pdl_adc_seq_hs_cfg[i].sampleTime = (cy_en_autanalog_sar_sample_time_t)slot;
+		data->pdl_adc_seq_hs_cfg[i].sampleTimeEn = true;
+	}
+
+	return 0;
+} /* ifx_apply_dynamic_seq_sample_times() */
+
+/**
+ * @brief Validate static-mode sequencer sample-time-sel references.
+ *
+ * In static sample-time mode each sequencer entry selects one of the seeded sample-time
+ * slots via sample-time-sel.  Reject any entry whose selector is past the seeded slots,
+ * since it would otherwise pick an unseeded 0-cycle slot with no error.
+ *
+ * @param cfg Pointer to driver configuration structure.
+ *
+ * @return 0 on success, -EINVAL if a selector is out of range.
+ */
+static int ifx_validate_static_sample_time_sel(const struct ifx_autanalog_sar_adc_config *cfg)
+{
+	if (!cfg->static_sample_time) {
+		return 0;
+	}
+
+	if (cfg->hs_seq != NULL) {
+		for (uint8_t i = 0; i < cfg->num_hs_seq; i++) {
+			if (cfg->hs_seq[i].sample_time_sel >= cfg->num_sample_times) {
+				LOG_ERR("HS seq %u sample-time-sel %u exceeds %u seeded slots", i,
+					cfg->hs_seq[i].sample_time_sel, cfg->num_sample_times);
+				return -EINVAL;
+			}
+		}
+	}
+
+	if (cfg->lp_seq != NULL) {
+		for (uint8_t i = 0; i < cfg->num_lp_seq; i++) {
+			if (cfg->lp_seq[i].sample_time_sel >= cfg->num_sample_times) {
+				LOG_ERR("LP seq %u sample-time-sel %u exceeds %u seeded slots", i,
+					cfg->lp_seq[i].sample_time_sel, cfg->num_sample_times);
+				return -EINVAL;
+			}
+		}
+	}
+
+	return 0;
+} /* ifx_validate_static_sample_time_sel() */
 
 /** @brief Start ADC sampling
  *
@@ -680,31 +928,54 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 		Cy_AutAnalog_SAR_ClearMuxChanResultStatus(0, mux_ch);
 	}
 
-	/* This implementation uses a single sequencer which is reconfigured for every ADC
-	 * read operation.  If needed, this can be extended to use multiple sequencers.
-	 */
 	if (cfg->lp_mode) {
-		if (ifx_build_lp_sequencer_entry(sequence->channels, data) != 0) {
-			LOG_ERR("Error building LP ADC Sequencer Configuration");
-			ifx_autanalog_sar_complete_error(data, -EINVAL);
-			return;
+		if (cfg->lp_seq != NULL) {
+			/* DT-defined LP sequencer: force last entry to single-shot */
+			data->pdl_adc_seq_lp_cfg[cfg->num_lp_seq - 1].nextAction =
+				CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
+			if (ifx_apply_dynamic_seq_sample_times(data, cfg, true) != 0) {
+				ifx_autanalog_sar_complete_error(data, -EINVAL);
+				return;
+			}
+			result_status = Cy_AutAnalog_SAR_LoadLPseqTable(
+				0, cfg->num_lp_seq, &data->pdl_adc_seq_lp_cfg[0]);
+		} else {
+			if (ifx_build_lp_sequencer_entry(sequence->channels, data) != 0) {
+				LOG_ERR("Error building LP ADC Sequencer Configuration");
+				ifx_autanalog_sar_complete_error(data, -EINVAL);
+				return;
+			}
+			data->pdl_adc_seq_lp_cfg[0].nextAction =
+				CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
+			result_status =
+				Cy_AutAnalog_SAR_LoadLPseqTable(0, 1, &data->pdl_adc_seq_lp_cfg[0]);
 		}
-
-		result_status = Cy_AutAnalog_SAR_LoadLPseqTable(0, IFX_AUTANALOG_SAR_NUM_SEQUENCERS,
-								&data->pdl_adc_seq_lp_cfg_obj[0]);
 	} else {
-		if (ifx_build_hs_sequencer_entry(sequence->channels, data) != 0) {
-			LOG_ERR("Error building HS ADC Sequencer Configuration");
-			ifx_autanalog_sar_complete_error(data, -EINVAL);
-			return;
+		if (cfg->hs_seq != NULL) {
+			/* DT-defined HS sequencer: force last entry to single-shot */
+			data->pdl_adc_seq_hs_cfg[cfg->num_hs_seq - 1].nextAction =
+				CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
+			if (ifx_apply_dynamic_seq_sample_times(data, cfg, false) != 0) {
+				ifx_autanalog_sar_complete_error(data, -EINVAL);
+				return;
+			}
+			result_status = Cy_AutAnalog_SAR_LoadHSseqTable(
+				0, cfg->num_hs_seq, &data->pdl_adc_seq_hs_cfg[0]);
+		} else {
+			if (ifx_build_hs_sequencer_entry(sequence->channels, data) != 0) {
+				LOG_ERR("Error building HS ADC Sequencer Configuration");
+				ifx_autanalog_sar_complete_error(data, -EINVAL);
+				return;
+			}
+			data->pdl_adc_seq_hs_cfg[0].nextAction =
+				CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
+			result_status = Cy_AutAnalog_SAR_LoadHSseqTable(
+				0, cfg->num_hs_seq, &data->pdl_adc_seq_hs_cfg[0]);
 		}
-
-		result_status = Cy_AutAnalog_SAR_LoadHSseqTable(0, IFX_AUTANALOG_SAR_NUM_SEQUENCERS,
-								&data->pdl_adc_seq_hs_cfg_obj[0]);
 	}
+
 	if (result_status != CY_AUTANALOG_SUCCESS) {
-		LOG_ERR("Error Loading ADC Sequencer Configuration: %u",
-			(unsigned int)result_status);
+		LOG_ERR("Failed to load ADC sequencer: %u", (unsigned int)result_status);
 		ifx_autanalog_sar_complete_error(data, -EIO);
 		return;
 	}
@@ -1197,8 +1468,22 @@ static int ifx_autanalog_sar_setup_mux_channel(struct ifx_autanalog_sar_adc_data
 static uint8_t ifx_find_sample_time_slot(struct ifx_autanalog_sar_adc_data *data, bool lp_mode,
 					 uint16_t timer_clock_cycles)
 {
+	const struct ifx_autanalog_sar_adc_config *cfg = data->dev->config;
 	uint16_t *sample_times = lp_mode ? data->pdl_adc_lp_static_obj.lpSampleTime
 					 : data->pdl_adc_hs_static_obj.hsSampleTime;
+
+	if (cfg->static_sample_time) {
+		/* Static mode: the slots are pre-seeded from the sample-times table.
+		 * Match an existing entry only; never allocate a new slot.
+		 */
+		for (size_t i = 0; i < cfg->num_sample_times; i++) {
+			if (sample_times[i] == timer_clock_cycles) {
+				return (uint8_t)i;
+			}
+		}
+
+		return 0xFF;
+	}
 
 	for (size_t i = 0; i < IFX_AUTANALOG_SAR_SAMPLETIME_COUNT; i++) {
 		if (sample_times[i] == timer_clock_cycles) {
@@ -1413,6 +1698,11 @@ static int ifx_autanalog_sar_adc_init(const struct device *dev)
 	 * use Infineon PDL APIs to initialize the ADC.
 	 */
 	ifx_init_pdl_structs(data, cfg);
+
+	if (ifx_validate_static_sample_time_sel(cfg) != 0) {
+		return -EINVAL;
+	}
+
 	result_val = Cy_AutAnalog_SAR_LoadConfig(0, &data->pdl_adc_top_obj);
 	if (result_val != CY_AUTANALOG_SUCCESS) {
 		LOG_ERR("Failed to initialize AutAnalog SAR ADC");
@@ -1920,19 +2210,28 @@ static void ifx_autanalog_sar_submit_stream(const struct device *dev,
 
 	/* Configure the sequencer for continuous mode */
 	if (cfg->lp_mode) {
-		if (ifx_build_lp_sequencer_entry(sequence->channels, data) != 0) {
-			LOG_ERR("Error building LP ADC sequencer for stream");
-			data->stream_sqe = NULL;
-			rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
-			return;
+		if (cfg->lp_seq != NULL) {
+			/* DT-defined LP sequencer: set last entry to continuous */
+			data->pdl_adc_seq_lp_cfg[cfg->num_lp_seq - 1].nextAction =
+				CY_AUTANALOG_SAR_NEXT_ACTION_GO_TO_ENTRY_ADDR;
+			if (ifx_apply_dynamic_seq_sample_times(data, cfg, true) != 0) {
+				data->stream_sqe = NULL;
+				rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
+				return;
+			}
+		} else {
+			if (ifx_build_lp_sequencer_entry(sequence->channels, data) != 0) {
+				LOG_ERR("Error building LP ADC sequencer for stream");
+				data->stream_sqe = NULL;
+				rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
+				return;
+			}
+			data->pdl_adc_seq_lp_cfg[0].nextAction =
+				CY_AUTANALOG_SAR_NEXT_ACTION_GO_TO_ENTRY_ADDR;
 		}
 
-		/* Set to continuous mode: loop back to start after each conversion */
-		data->pdl_adc_seq_lp_cfg_obj[0].nextAction =
-			CY_AUTANALOG_SAR_NEXT_ACTION_GO_TO_ENTRY_ADDR;
-
 		uint32_t result_status = Cy_AutAnalog_SAR_LoadLPseqTable(
-			0, IFX_AUTANALOG_SAR_NUM_SEQUENCERS, &data->pdl_adc_seq_lp_cfg_obj[0]);
+			0, cfg->num_lp_seq, &data->pdl_adc_seq_lp_cfg[0]);
 
 		if (result_status != CY_AUTANALOG_SUCCESS) {
 			LOG_ERR("Failed to load LP sequencer for stream: %u",
@@ -1942,19 +2241,28 @@ static void ifx_autanalog_sar_submit_stream(const struct device *dev,
 			return;
 		}
 	} else {
-		if (ifx_build_hs_sequencer_entry(sequence->channels, data) != 0) {
-			LOG_ERR("Error building ADC sequencer for stream");
-			data->stream_sqe = NULL;
-			rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
-			return;
+		if (cfg->hs_seq != NULL) {
+			/* DT-defined HS sequencer: set last entry to continuous */
+			data->pdl_adc_seq_hs_cfg[cfg->num_hs_seq - 1].nextAction =
+				CY_AUTANALOG_SAR_NEXT_ACTION_GO_TO_ENTRY_ADDR;
+			if (ifx_apply_dynamic_seq_sample_times(data, cfg, false) != 0) {
+				data->stream_sqe = NULL;
+				rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
+				return;
+			}
+		} else {
+			if (ifx_build_hs_sequencer_entry(sequence->channels, data) != 0) {
+				LOG_ERR("Error building ADC sequencer for stream");
+				data->stream_sqe = NULL;
+				rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
+				return;
+			}
+			data->pdl_adc_seq_hs_cfg[0].nextAction =
+				CY_AUTANALOG_SAR_NEXT_ACTION_GO_TO_ENTRY_ADDR;
 		}
 
-		/* Set to continuous mode: loop back to start after each conversion */
-		data->pdl_adc_seq_hs_cfg_obj[0].nextAction =
-			CY_AUTANALOG_SAR_NEXT_ACTION_GO_TO_ENTRY_ADDR;
-
 		uint32_t result_status = Cy_AutAnalog_SAR_LoadHSseqTable(
-			0, IFX_AUTANALOG_SAR_NUM_SEQUENCERS, &data->pdl_adc_seq_hs_cfg_obj[0]);
+			0, cfg->num_hs_seq, &data->pdl_adc_seq_hs_cfg[0]);
 
 		if (result_status != CY_AUTANALOG_SUCCESS) {
 			LOG_ERR("Failed to load sequencer for stream: %u",
@@ -2004,15 +2312,15 @@ int adc_ifx_autanalog_sar_stream_stop(const struct device *dev)
 	 * STOP state.
 	 */
 	if (cfg->lp_mode) {
-		data->pdl_adc_seq_lp_cfg_obj[0].nextAction =
+		data->pdl_adc_seq_lp_cfg[cfg->num_lp_seq - 1].nextAction =
 			CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
-		(void)Cy_AutAnalog_SAR_LoadLPseqTable(0, IFX_AUTANALOG_SAR_NUM_SEQUENCERS,
-						      &data->pdl_adc_seq_lp_cfg_obj[0]);
+		(void)Cy_AutAnalog_SAR_LoadLPseqTable(0, cfg->num_lp_seq,
+						      &data->pdl_adc_seq_lp_cfg[0]);
 	} else {
-		data->pdl_adc_seq_hs_cfg_obj[0].nextAction =
+		data->pdl_adc_seq_hs_cfg[cfg->num_hs_seq - 1].nextAction =
 			CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
-		(void)Cy_AutAnalog_SAR_LoadHSseqTable(0, IFX_AUTANALOG_SAR_NUM_SEQUENCERS,
-						      &data->pdl_adc_seq_hs_cfg_obj[0]);
+		(void)Cy_AutAnalog_SAR_LoadHSseqTable(0, cfg->num_hs_seq,
+						      &data->pdl_adc_seq_hs_cfg[0]);
 	}
 
 	/* Clear the streaming state under an interrupt lock so the final STOP scan's
@@ -2292,7 +2600,79 @@ static int ifx_autanalog_sar_get_decoder(const struct device *dev,
 		.watermark_mask = IFX_FIFO_WATERMARK_MASK(n),                                 \
 		}
 
+/* HS sequencer entry configuration from DT child nodes.
+ * Child nodes with compatible "infineon,autanalog-sar-seq-hs" are collected
+ * into a const config array.  The count drives the PDL sequencer table size.
+ */
+#define IFX_COUNT_SEQ_HS(child) + DT_NODE_HAS_COMPAT(child, infineon_autanalog_sar_seq_hs)
+
+/* Number of seq-hs-* child nodes defined in DT for instance n */
+#define IFX_HS_SEQ_DT_COUNT(n) (0 DT_INST_FOREACH_CHILD_STATUS_OKAY(n, IFX_COUNT_SEQ_HS))
+
+/* Effective PDL array size: at least 1 so there is always a runtime entry */
+#define IFX_HS_SEQ_PDL_COUNT(n) (IFX_HS_SEQ_DT_COUNT(n) + !IFX_HS_SEQ_DT_COUNT(n))
+
+/* Generate one config initialiser for an HS sequencer child node */
+#define IFX_SEQ_HS_CFG_ENTRY(child)                                                        \
+	COND_CODE_1(DT_NODE_HAS_COMPAT(child, infineon_autanalog_sar_seq_hs), (                \
+		{                                                                                  \
+			.gpio_channels = DT_PROP(child, gpio_channels),                            \
+			.mux_mode = DT_PROP(child, mux_mode),                                      \
+			.mux0_sel = DT_PROP(child, mux0_sel),                                      \
+			.mux1_sel = DT_PROP(child, mux1_sel),                                      \
+			.sample_time_en = DT_PROP(child, sample_time_en),                          \
+			.sample_time_sel = DT_PROP(child, sample_time_sel),                        \
+			.acc_en = DT_PROP(child, acc_en),                                          \
+			.acc_count = DT_PROP(child, acc_count),                                    \
+			.cal_req = DT_PROP(child, cal_req),                                        \
+			.next_action = DT_PROP(child, next_action),                                \
+		},                                                                                 \
+	), ())
+
+/* Declare the const config array of HS sequencer entries for instance n */
+#define IFX_SEQ_HS_CFG_ARRAY(n)                                                            \
+	static const struct ifx_autanalog_sar_seq_hs_config                                    \
+		ifx_sar_seq_hs_cfg_##n[] = {                                                       \
+		DT_INST_FOREACH_CHILD_STATUS_OKAY(n, IFX_SEQ_HS_CFG_ENTRY)                         \
+	}
+
+/* LP sequencer entry configuration from DT child nodes.
+ * Child nodes with compatible "infineon,autanalog-sar-seq-lp" are collected
+ * into a const config array.
+ */
+#define IFX_COUNT_SEQ_LP(child) + DT_NODE_HAS_COMPAT(child, infineon_autanalog_sar_seq_lp)
+
+/* Number of seq-lp-* child nodes defined in DT for instance n */
+#define IFX_LP_SEQ_DT_COUNT(n) (0 DT_INST_FOREACH_CHILD_STATUS_OKAY(n, IFX_COUNT_SEQ_LP))
+
+/* Effective PDL array size: at least 1 so there is always a runtime entry */
+#define IFX_LP_SEQ_PDL_COUNT(n) (IFX_LP_SEQ_DT_COUNT(n) + !IFX_LP_SEQ_DT_COUNT(n))
+
+/* Generate one config initialiser for an LP sequencer child node */
+#define IFX_SEQ_LP_CFG_ENTRY(child)                                                        \
+	COND_CODE_1(DT_NODE_HAS_COMPAT(child, infineon_autanalog_sar_seq_lp), (                \
+		{                                                                                  \
+			.mux0_sel = DT_PROP(child, mux0_sel),                                      \
+			.sample_time_en = DT_PROP(child, sample_time_en),                          \
+			.sample_time_sel = DT_PROP(child, sample_time_sel),                        \
+			.acc_en = DT_PROP(child, acc_en),                                          \
+			.acc_count = DT_PROP(child, acc_count),                                    \
+			.cal_req = DT_PROP(child, cal_req),                                        \
+			.next_action = DT_PROP(child, next_action),                                \
+		},                                                                                 \
+	), ())
+
+/* Declare the const config array of LP sequencer entries for instance n */
+#define IFX_SEQ_LP_CFG_ARRAY(n)                                                            \
+	static const struct ifx_autanalog_sar_seq_lp_config                                    \
+		ifx_sar_seq_lp_cfg_##n[] = {                                                       \
+		DT_INST_FOREACH_CHILD_STATUS_OKAY(n, IFX_SEQ_LP_CFG_ENTRY)                         \
+	}
+
 /* Device Instantiation */
+/* Expand one element of the ADC-node sample-times array */
+#define IFX_SAMPLE_TIME_ELEM(node_id, prop, idx) DT_PROP_BY_IDX(node_id, prop, idx)
+
 #define IFX_AUTANALOG_SAR_ADC_INIT(n)                                                              \
 	ADC_IFX_AUTANALOG_SAR_DRIVER_API(n);                                     \
 	/* Declare FIR coefficient arrays for each configured FIR filter */       \
@@ -2304,6 +2684,24 @@ static int ifx_autanalog_sar_get_decoder(const struct device *dev,
 			(IFX_FIR_COEFF_DECLARE(n, fir_1);), ())), ())                \
 	/* Per-channel DT config array */                                                          \
 	IFX_CHAN_DT_CFG_ARRAY(n);                                                                  \
+	/* HS sequencer config array (may be empty) */                                         \
+	IFX_SEQ_HS_CFG_ARRAY(n);                                                               \
+	/* LP sequencer config array (may be empty) */                                         \
+	IFX_SEQ_LP_CFG_ARRAY(n);                                                               \
+	/* Per-instance PDL sequencer arrays */                                                \
+	static cy_stc_autanalog_sar_seq_tab_hs_t                                               \
+		ifx_sar_hs_seq_pdl_##n[IFX_HS_SEQ_PDL_COUNT(n)];                                   \
+	static cy_stc_autanalog_sar_seq_tab_lp_t                                               \
+		ifx_sar_lp_seq_pdl_##n[IFX_LP_SEQ_PDL_COUNT(n)];                                   \
+	/* The hardware provides 32 sequencer table entries (states) per mode */               \
+	BUILD_ASSERT(IFX_HS_SEQ_PDL_COUNT(n) <= IFX_AUTANALOG_SAR_MAX_SEQ_ENTRIES,              \
+		     "Too many HS sequencer entries (hardware limit is 32)");                  \
+	BUILD_ASSERT(IFX_LP_SEQ_PDL_COUNT(n) <= IFX_AUTANALOG_SAR_MAX_SEQ_ENTRIES,              \
+		     "Too many LP sequencer entries (hardware limit is 32)");                  \
+	/* The hardware provides 4 shared sample-time slots per mode */                        \
+	BUILD_ASSERT(DT_INST_PROP_LEN_OR(n, sample_times, 0) <=                                 \
+			     IFX_AUTANALOG_SAR_SAMPLETIME_COUNT,                                   \
+		     "Too many sample-times (hardware provides 4 slots)");                     \
 	static void ifx_autanalog_sar_adc_config_func_##n(void);                                   \
 	static const struct ifx_autanalog_sar_adc_config ifx_autanalog_sar_adc_config_##n = {      \
 		.irq_func = ifx_autanalog_sar_adc_config_func_##n,                                 \
@@ -2329,13 +2727,26 @@ static int ifx_autanalog_sar_get_decoder(const struct device *dev,
 					(IFX_FIFO_CFG_INIT(n)), ({0})),            \
 		.num_dt_channels = ARRAY_SIZE(ifx_sar_chan_dt_cfg_##n),                            \
 		.dt_channels = ifx_sar_chan_dt_cfg_##n,                                            \
+		.num_hs_seq = IFX_HS_SEQ_PDL_COUNT(n),                                             \
+		.hs_seq = (IFX_HS_SEQ_DT_COUNT(n) > 0) ? ifx_sar_seq_hs_cfg_##n : NULL, \
+		.num_lp_seq = IFX_LP_SEQ_PDL_COUNT(n),                                             \
+		.lp_seq = (IFX_LP_SEQ_DT_COUNT(n) > 0) ? ifx_sar_seq_lp_cfg_##n : NULL, \
 		.lp_mode = DT_INST_PROP(n, lp_mode),                                               \
 		.lp_diff_en = DT_INST_PROP(n, lp_diff_en),                                         \
+		.static_sample_time = DT_INST_NODE_HAS_PROP(n, sample_times),                      \
+		.num_sample_times = DT_INST_PROP_LEN_OR(n, sample_times, 0),                       \
+		.sample_times = {                                                                  \
+			COND_CODE_1(DT_INST_NODE_HAS_PROP(n, sample_times),                        \
+				(DT_INST_FOREACH_PROP_ELEM_SEP(n, sample_times,                    \
+					IFX_SAMPLE_TIME_ELEM, (,))), ())                           \
+		},                                                                                 \
 	};                                                                                     \
 	static struct ifx_autanalog_sar_adc_data ifx_autanalog_sar_adc_data_##n = {                \
 		ADC_CONTEXT_INIT_LOCK(ifx_autanalog_sar_adc_data_##n, ctx),                        \
 		ADC_CONTEXT_INIT_TIMER(ifx_autanalog_sar_adc_data_##n, ctx),                       \
 		ADC_CONTEXT_INIT_SYNC(ifx_autanalog_sar_adc_data_##n, ctx),                        \
+		.pdl_adc_seq_hs_cfg = ifx_sar_hs_seq_pdl_##n,                                      \
+		.pdl_adc_seq_lp_cfg = ifx_sar_lp_seq_pdl_##n,                                      \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, &ifx_autanalog_sar_adc_init, NULL,                                \
 			      &ifx_autanalog_sar_adc_data_##n, &ifx_autanalog_sar_adc_config_##n,  \
