@@ -976,6 +976,13 @@ New APIs and options
   * :kconfig:option:`CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_SIZE_IS_CONFIGURABLE`
 
 
+* Sys
+
+  * ``sys_arch_reboot_prepare()``, a weak hook for the platform code that
+    implements ``sys_arch_reboot()``. :c:func:`sys_reboot` calls it before
+    locking interrupts, so that work which needs the scheduler, such as taking
+    a lock, can be done before the reset. Not an application API.
+
 * Timer
 
   * :c:func:`z_sys_clock_lpm_enter`
@@ -2460,6 +2467,12 @@ Libraries / Subsystems
 
   * TF-M can now be compiled using LLVM by setting ``ZEPHYR_TOOLCHAIN_VARIANT``
     to ``zephyr/llvm``.
+
+  * Fixed :c:func:`sys_reboot` blocking on the TF-M NS interface lock with
+    interrupts locked when another thread was in the middle of a Secure call,
+    which asserted with :kconfig:option:`CONFIG_SPIN_VALIDATE`. The lock is
+    now taken in ``sys_arch_reboot_prepare()`` before interrupts are locked.
+    (:github:`120042`)
 
 * DFU
 
