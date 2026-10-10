@@ -1,0 +1,18 @@
+sample:
+  description: Delta firmware update sample using the lib/delta primitive
+    with the bsdiff+heatshrink backend.
+  name: delta
+common:
+  sysbuild: true
+  tags:
+    - dfu
+    - delta
+  modules:
+    - heatshrink
+tests:
+  sample.subsys.dfu.delta:
+    platform_allow:
+      - nrf7002dk/nrf5340/cpuapp
+      - stm32f429i_disc1
+    integration_platforms:
+      - nrf7002dk/nrf5340/cpuapp

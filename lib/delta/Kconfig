@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Clovis Corde
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig DELTA
+	bool "Delta patching library"
+	help
+	  Generic binary delta patching primitive.
+
+if DELTA
+
+module = DELTA
+module-str = delta
+source "subsys/logging/Kconfig.template.log_config"
+
+rsource "backends/bsdiffhs/Kconfig"
+
+endif # DELTA
