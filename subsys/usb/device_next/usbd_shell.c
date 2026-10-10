@@ -196,7 +196,8 @@ static int cmd_usbd_default_config(const struct shell *sh,
 		return err;
 	}
 
-	if (usbd_caps_speed(my_uds_ctx) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_caps_speed(my_uds_ctx) == USBD_SPEED_HS) {
 		err = usbd_add_configuration(my_uds_ctx, USBD_SPEED_HS, &config_1_hs);
 		if (err) {
 			shell_error(sh, "dev: Failed to add HS configuration");
