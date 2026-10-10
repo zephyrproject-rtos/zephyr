@@ -134,6 +134,11 @@ struct modem_cellular_data {
 	uint8_t uart_backend_receive_buf[CONFIG_MODEM_CELLULAR_UART_BUFFER_SIZES];
 	uint8_t uart_backend_transmit_buf[CONFIG_MODEM_CELLULAR_UART_BUFFER_SIZES];
 	uint32_t original_baudrate;
+	/* Set once the set baudrate script has run and the UART has actually been moved to
+	 * CONFIG_MODEM_CELLULAR_NEW_BAUDRATE. Only consulted when the vendor configuration
+	 * sets uart_settings_permanent.
+	 */
+	bool uart_settings_applied;
 
 	/* CMUX */
 	struct modem_cmux cmux;
@@ -312,6 +317,16 @@ struct modem_cellular_vendor_config {
 	uint16_t shutdown_time_ms;
 	/** Force autostart regardless of the devicetree @c autostarts property. */
 	bool force_autostart;
+	/**
+	 * Modem keeps the UART settings applied by @c scripts.set_baudrate across both a reset
+	 * and a power cycle, for example because the script stores them with @c AT&W.
+	 *
+	 * Set this only when the script makes the settings persistent and the init script does
+	 * not depend on the set baudrate script having run. The driver then applies the settings
+	 * once and leaves the UART configuration untouched for the rest of its runtime, instead
+	 * of reverting to the UART node's @c current-speed before every reset and power pulse.
+	 */
+	bool uart_settings_permanent;
 };
 
 /** @cond INTERNAL_HIDDEN */
