@@ -38,11 +38,6 @@ The secure storage subsystem's implementation of the PSA Secure Storage API:
 
   This depends on device-specific security features and the configuration.
 
-* does not yet provide an implementation of the Protected Storage (PS) API as of this writing.
-
-  Instead, the PS API directly calls into the Internal Trusted Storage (ITS) API
-  (unless a `custom implementation <#whole-api>`_ of the PS API is provided).
-
 Below are some ways the implementation purposefully deviates from the specification
 and an explanation why. This is not an exhaustive list.
 
@@ -50,7 +45,8 @@ and an explanation why. This is not an exhaustive list.
 
   | This is an optimization done to make it more convenient to directly use the UIDs as
     storage entry IDs (e.g., with :ref:`ZMS <zms_api>` when
-    :kconfig:option:`CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_ZMS` is enabled).
+    :kconfig:option:`CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_ZMS` or
+    :kconfig:option:`CONFIG_SECURE_STORAGE_PS_STORE_IMPLEMENTATION_ZMS` is enabled).
   | Zephyr defines numerical ranges to be used by different users of the API which guarantees that
     there are no collisions and that they all fit within 30 bits.
     See the header files in :zephyr_file:`include/zephyr/psa` for more information.
@@ -73,6 +69,8 @@ and an explanation why. This is not an exhaustive list.
 
   In addition, the data stored in the ITS is not protected against replay attacks,
   because this requires storage that is protected by hardware.
+  This also limits the replay protection of the data stored via Zephyr's implementation of the
+  PS API, whose replay protection values are stored in the ITS (see `PS API`_).
 
 * The data stored via the PSA Secure Storage API is not protected from direct
   read/write by software or debugging. (Against ``2.`` and ``10.`` in
@@ -91,6 +89,8 @@ and an explanation why. This is not an exhaustive list.
     overwritten or removed: either by tampering with it, after which the subsystem treats it as
     corrupted and allows it to be replaced, or simply by erasing it, after which it appears never
     to have existed. Neither can be prevented by encrypting and authenticating the entry.
+  | With Zephyr's implementation of the PS API, the create flags of PS entries are stored in the
+    ITS, so this requires writing to the ITS storage medium, not only to the PS one.
 
 * The ``psa_its_get*()`` functions can return ``PSA_ERROR_INVALID_SIGNATURE`` and
   ``PSA_ERROR_DATA_CORRUPT``.
@@ -99,6 +99,27 @@ and an explanation why. This is not an exhaustive list.
   underlying it is protected by hardware, and thus that data read back from it is always intact.
   As it's not the case here, these error codes are passed on to let callers tell an entry that has
   been tampered with apart from an internal failure.
+
+* With Zephyr's implementation of the PS API, an interrupted ``psa_ps_set()`` does not always
+  retain the previous content of the entry. (Against ``11.`` in
+  `3.1. Protected Storage requirements <https://arm-software.github.io/psa-api/storage/1.0/overview/requirements.html#protected-storage-requirements>`_.)
+
+  | When an existing entry is overwritten, its new replay protection value is written to the ITS
+    before its data is written to PS. A power loss between the two writes makes the entry
+    unreadable until it is overwritten or removed: reading it returns
+    ``PSA_ERROR_INVALID_SIGNATURE``.
+  | ``PSA_STORAGE_FLAG_WRITE_ONCE`` is only added to the ITS data of an existing entry once its PS
+    data has been written, so that an interrupted write never leaves an entry that can be neither
+    read, overwritten nor removed. A power loss right after the PS data is written leaves the
+    entry readable but without the flag.
+  | If writing the PS data fails without a power loss, the previous ITS data is restored and the
+    previous content of the entry is retained.
+  | When an entry is created, or its ITS data cannot be read back, its data is written to PS
+    before its ITS data, which includes the create flags. A power loss between the two writes, or
+    a failure to write the ITS data, leaves the entry in its previous state: a new entry does not
+    exist and reading it returns ``PSA_ERROR_DOES_NOT_EXIST``. The PS data left behind is replaced
+    when the entry is created again, or deleted by ``psa_ps_remove()``, which returns
+    ``PSA_ERROR_DOES_NOT_EXIST`` in that case.
 
 Configuration
 *************
@@ -133,6 +154,73 @@ Have a look at the :kconfig:option-regex:`ITS transform and store Kconfig option
 
 It's especially recommended to use or implement a secure :kconfig:option-regex:`encryption
 key provider <CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_.*>`.
+
+PS API
+======
+
+Zephyr's implementation of the PS API
+(:kconfig:option:`CONFIG_SECURE_STORAGE_PS_IMPLEMENTATION_ZEPHYR`)
+makes use of the PS transform, store and replay protection modules, which can be configured and
+customized separately.
+Have a look at the :kconfig:option-regex:`PS transform, store and replay protection Kconfig options
+<CONFIG_SECURE_STORAGE_PS_(TRANSFORM|STORE|REPLAY_PROTECTION)_.*>` to see the different
+configuration possibilities.
+It is not enabled by default: with
+:kconfig:option:`CONFIG_SECURE_STORAGE_PS_IMPLEMENTATION_ITS` (the default), the PS API directly
+calls into the ITS API, and PS entries are stored like ITS entries.
+
+.. warning::
+
+   The two implementations store PS entries in incompatible ways, and no migration is done
+   when switching from one to the other. Do not switch the PS implementation on devices that
+   already have PS entries stored.
+
+   With :kconfig:option:`CONFIG_SECURE_STORAGE_PS_IMPLEMENTATION_ITS`, a PS entry is stored in
+   the ITS under the same UID that Zephyr's implementation uses for the create flags and replay
+   protection value of the entry. After switching to
+   :kconfig:option:`CONFIG_SECURE_STORAGE_PS_IMPLEMENTATION_ZEPHYR`, the data of a previously
+   stored entry is interpreted as its create flags and replay protection value.
+
+The create flags and the replay protection value of each entry are stored in the ITS, through the
+same interface and under the same caller ID that
+:kconfig:option:`CONFIG_SECURE_STORAGE_PS_IMPLEMENTATION_ITS` uses for whole PS entries.
+The ITS interface is thus unchanged, and Zephyr's implementation of the PS API works on top of
+both Zephyr's and a `custom <#whole-api>`_ implementation of the ITS API.
+:kconfig:option:`CONFIG_SECURE_STORAGE_ITS_MAX_DATA_SIZE` must be at least one byte larger than
+:kconfig:option:`CONFIG_SECURE_STORAGE_PS_REPLAY_PROTECTION_SIZE` to fit both.
+The replay protection value is passed to the PS transform module, which binds it to the data
+stored in PS, so that data replayed in PS fails to be read back. Thus, the PS data is only
+protected against replay as much as the ITS data is.
+By default (:kconfig:option:`CONFIG_SECURE_STORAGE_PS_REPLAY_PROTECTION_RANDOM`), a new random value
+is generated each time the entry is written, so an old version of the entry can be replayed if its
+value happens to repeat.
+With :kconfig:option:`CONFIG_SECURE_STORAGE_PS_REPLAY_PROTECTION_COUNTER`, the value starts from a
+random value when the entry is created and is incremented by one each time the entry is
+overwritten, so that it never repeats during the lifetime of the entry.
+
+With the AEAD transform
+(:kconfig:option:`CONFIG_SECURE_STORAGE_PS_TRANSFORM_IMPLEMENTATION_AEAD`), the PS data is always
+encrypted and authenticated, together with the UID and the replay protection value of the entry.
+``PSA_STORAGE_FLAG_NO_CONFIDENTIALITY`` and ``PSA_STORAGE_FLAG_NO_REPLAY_PROTECTION`` are accepted
+but have no effect. A custom transform
+(:kconfig:option:`CONFIG_SECURE_STORAGE_PS_TRANSFORM_IMPLEMENTATION_CUSTOM`) only provides the
+protection it implements, and must bind the replay protection value to the stored data for replay
+protection to work.
+
+The ZMS store module (:kconfig:option:`CONFIG_SECURE_STORAGE_PS_STORE_IMPLEMENTATION_ZMS`) needs
+a ``zephyr,secure-storage-ps-partition`` devicetree chosen property that points to a partition
+dedicated to the PS, separate from the one used by the ITS.
+
+``PSA_ERROR_DATA_CORRUPT`` is returned when the PS data of an entry is missing from the storage
+medium while its ITS data exists.
+If the ITS data of an entry cannot be read back, the entry can be overwritten or removed even if
+it was created with ``PSA_STORAGE_FLAG_WRITE_ONCE``, as its create flags are unknown.
+
+The optional ``psa_ps_create()`` and ``psa_ps_set_extended()`` functions are not supported:
+``psa_ps_get_support()`` returns 0 and they return ``PSA_ERROR_NOT_SUPPORTED``.
+
+It's especially recommended to use or implement a secure :kconfig:option-regex:`encryption
+key provider <CONFIG_SECURE_STORAGE_PS_TRANSFORM_AEAD_KEY_PROVIDER_.*>`.
 
 Samples
 *******

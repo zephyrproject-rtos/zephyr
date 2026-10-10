@@ -1,7 +1,7 @@
-/* Copyright (c) 2024 Nordic Semiconductor
+/* Copyright (c) 2026 BayLibre SAS
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/secure_storage/its/transform/aead.h>
+#include <zephyr/secure_storage/ps/transform/aead.h>
 #include <zephyr/drivers/hwinfo.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
@@ -9,48 +9,48 @@
 #include <string.h>
 #include <mbedtls/platform_util.h>
 
-LOG_MODULE_DECLARE(secure_storage_its, CONFIG_SECURE_STORAGE_LOG_LEVEL);
+LOG_MODULE_DECLARE(secure_storage_ps, CONFIG_SECURE_STORAGE_LOG_LEVEL);
 
 #define SHA256_OUTPUT_SIZE 32
 BUILD_ASSERT(SHA256_OUTPUT_SIZE == PSA_HASH_LENGTH(PSA_ALG_SHA_256));
-BUILD_ASSERT(SHA256_OUTPUT_SIZE >= CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_SIZE);
+BUILD_ASSERT(SHA256_OUTPUT_SIZE >= CONFIG_SECURE_STORAGE_PS_TRANSFORM_AEAD_KEY_SIZE);
 
 static psa_status_t hash_data_into_key(
 		size_t data_len, const void *data,
-		uint8_t key[static CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_SIZE])
+		uint8_t key[static CONFIG_SECURE_STORAGE_PS_TRANSFORM_AEAD_KEY_SIZE])
 {
 	size_t hash_len;
 
-#if CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_SIZE == SHA256_OUTPUT_SIZE
+#if CONFIG_SECURE_STORAGE_PS_TRANSFORM_AEAD_KEY_SIZE == SHA256_OUTPUT_SIZE
 	/* Save stack usage and avoid unnecessary memory operations.*/
 	return psa_hash_compute(PSA_ALG_SHA_256, data, data_len, key,
-				CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_SIZE, &hash_len);
+				CONFIG_SECURE_STORAGE_PS_TRANSFORM_AEAD_KEY_SIZE, &hash_len);
 #else
 	uint8_t hash_output[SHA256_OUTPUT_SIZE];
 	const psa_status_t ret = psa_hash_compute(PSA_ALG_SHA_256, data, data_len, hash_output,
 						  sizeof(hash_output), &hash_len);
 
 	if (ret == PSA_SUCCESS) {
-		memcpy(key, hash_output, CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_SIZE);
+		memcpy(key, hash_output, CONFIG_SECURE_STORAGE_PS_TRANSFORM_AEAD_KEY_SIZE);
 		mbedtls_platform_zeroize(hash_output, sizeof(hash_output));
 	}
 	return ret;
 #endif
 }
 
-#ifdef CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_DEVICE_ID_HASH
+#ifdef CONFIG_SECURE_STORAGE_PS_TRANSFORM_AEAD_KEY_PROVIDER_DEVICE_ID_HASH
 
-#define WARNING "Using a potentially insecure PSA ITS encryption key provider."
+#define WARNING "Using a potentially insecure PSA PS encryption key provider."
 
-psa_status_t secure_storage_its_transform_aead_get_key(
-		secure_storage_its_uid_t uid,
-		uint8_t key[static CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_SIZE])
+psa_status_t secure_storage_ps_transform_aead_get_key(
+		psa_storage_uid_t uid,
+		uint8_t key[static CONFIG_SECURE_STORAGE_PS_TRANSFORM_AEAD_KEY_SIZE])
 {
 	psa_status_t ret;
 	ssize_t hwinfo_ret;
 	struct {
 		uint8_t device_id[8];
-		secure_storage_its_uid_t uid; /* acts as a salt */
+		psa_storage_uid_t uid; /* acts as a salt */
 	} __packed data;
 
 	hwinfo_ret = hwinfo_get_device_eui64(data.device_id);
@@ -71,20 +71,20 @@ psa_status_t secure_storage_its_transform_aead_get_key(
 	return ret;
 }
 
-#elif defined(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_ENTRY_UID_HASH)
+#elif defined(CONFIG_SECURE_STORAGE_PS_TRANSFORM_AEAD_KEY_PROVIDER_ENTRY_UID_HASH)
 
-#define WARNING "Using an insecure PSA ITS encryption key provider."
+#define WARNING "Using an insecure PSA PS encryption key provider."
 
-psa_status_t secure_storage_its_transform_aead_get_key(
-		secure_storage_its_uid_t uid,
-		uint8_t key[static CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_SIZE])
+psa_status_t secure_storage_ps_transform_aead_get_key(
+		psa_storage_uid_t uid,
+		uint8_t key[static CONFIG_SECURE_STORAGE_PS_TRANSFORM_AEAD_KEY_SIZE])
 {
 	return hash_data_into_key(sizeof(uid), &uid, key);
 }
 
-#endif /* CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER */
+#endif /* CONFIG_SECURE_STORAGE_PS_TRANSFORM_AEAD_KEY_PROVIDER */
 
-#ifndef CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_NO_INSECURE_KEY_WARNING
+#ifndef CONFIG_SECURE_STORAGE_PS_TRANSFORM_AEAD_NO_INSECURE_KEY_WARNING
 
 static int warn_insecure_key(void)
 {
@@ -94,4 +94,4 @@ static int warn_insecure_key(void)
 }
 SYS_INIT(warn_insecure_key, APPLICATION, CONFIG_SECURE_STORAGE_INIT_PRIORITY);
 
-#endif /* !CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_NO_INSECURE_KEY_WARNING */
+#endif /* !CONFIG_SECURE_STORAGE_PS_TRANSFORM_AEAD_NO_INSECURE_KEY_WARNING */

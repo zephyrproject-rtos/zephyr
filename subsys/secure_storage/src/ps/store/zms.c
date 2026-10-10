@@ -1,24 +1,30 @@
-/* Copyright (c) 2024 Nordic Semiconductor
+/* Copyright (c) 2026 BayLibre SAS
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/secure_storage/its/store.h>
+#include <zephyr/secure_storage/ps/store.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/kvss/zms.h>
 #include <zephyr/storage/flash_map.h>
 
-LOG_MODULE_DECLARE(secure_storage_its, CONFIG_SECURE_STORAGE_LOG_LEVEL);
+LOG_MODULE_DECLARE(secure_storage_ps, CONFIG_SECURE_STORAGE_LOG_LEVEL);
 
-BUILD_ASSERT(CONFIG_SECURE_STORAGE_ITS_STORE_ZMS_SECTOR_SIZE
-	     > 2 * CONFIG_SECURE_STORAGE_ITS_MAX_DATA_SIZE);
+BUILD_ASSERT(CONFIG_SECURE_STORAGE_PS_STORE_ZMS_SECTOR_SIZE
+	     > 2 * SECURE_STORAGE_PS_TRANSFORM_MAX_STORED_DATA_SIZE);
 
-#define PARTITION_DT_NODE DT_CHOSEN(zephyr_secure_storage_its_partition)
+#define PARTITION_DT_NODE DT_CHOSEN(zephyr_secure_storage_ps_partition)
+
+#ifdef CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_ZMS
+BUILD_ASSERT(!DT_SAME_NODE(DT_CHOSEN(zephyr_secure_storage_ps_partition),
+			   DT_CHOSEN(zephyr_secure_storage_its_partition)),
+	     "ITS and PS must use different storage partitions");
+#endif /* CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_ZMS */
 
 static struct zms_fs s_zms = {
 	.flash_device = PARTITION_NODE_DEVICE(PARTITION_DT_NODE),
 	.offset = PARTITION_NODE_OFFSET(PARTITION_DT_NODE),
-	.sector_size = CONFIG_SECURE_STORAGE_ITS_STORE_ZMS_SECTOR_SIZE,
+	.sector_size = CONFIG_SECURE_STORAGE_PS_STORE_ZMS_SECTOR_SIZE,
 	.sector_count = PARTITION_NODE_SIZE(PARTITION_DT_NODE)/
-			CONFIG_SECURE_STORAGE_ITS_STORE_ZMS_SECTOR_SIZE,
+			CONFIG_SECURE_STORAGE_PS_STORE_ZMS_SECTOR_SIZE,
 };
 
 static int init_zms(void)
@@ -33,33 +39,12 @@ static int init_zms(void)
 }
 SYS_INIT(init_zms, APPLICATION, CONFIG_SECURE_STORAGE_INIT_PRIORITY);
 
-#ifdef CONFIG_SECURE_STORAGE_64_BIT_UID
-
-/* Bit position of the ITS caller ID in the ZMS entry ID. */
-#define ITS_CALLER_ID_POS 30
-/* Make sure that every ITS caller ID fits in ZMS entry IDs at the defined position. */
-BUILD_ASSERT(1 << (32 - ITS_CALLER_ID_POS) >= SECURE_STORAGE_ITS_CALLER_COUNT);
-
-static uint32_t zms_id_from(secure_storage_its_uid_t uid)
-{
-	__ASSERT_NO_MSG(!(uid.uid & GENMASK64(63, ITS_CALLER_ID_POS)));
-	return (uint32_t)uid.uid | (uid.caller_id << ITS_CALLER_ID_POS);
-}
-#else
-
-static uint32_t zms_id_from(secure_storage_its_uid_t uid)
-{
-	BUILD_ASSERT(sizeof(uid) == sizeof(uint32_t));
-	return *(uint32_t *)&uid;
-}
-#endif /* CONFIG_SECURE_STORAGE_64_BIT_UID */
-
-psa_status_t secure_storage_its_store_set(secure_storage_its_uid_t uid,
+psa_status_t secure_storage_ps_store_set(psa_storage_uid_t uid,
 					  size_t data_length, const void *data)
 {
 	psa_status_t psa_ret;
 	ssize_t zms_ret;
-	const uint32_t zms_id = zms_id_from(uid);
+	const uint32_t zms_id = uid;
 
 	zms_ret = zms_write(&s_zms, zms_id, data, data_length);
 	if (zms_ret == data_length) {
@@ -74,12 +59,12 @@ psa_status_t secure_storage_its_store_set(secure_storage_its_uid_t uid,
 	return psa_ret;
 }
 
-psa_status_t secure_storage_its_store_get(secure_storage_its_uid_t uid, size_t data_size,
+psa_status_t secure_storage_ps_store_get(psa_storage_uid_t uid, size_t data_size,
 					  void *data, size_t *data_length)
 {
 	psa_status_t psa_ret;
 	ssize_t zms_ret;
-	const uint32_t zms_id = zms_id_from(uid);
+	const uint32_t zms_id = uid;
 
 	zms_ret = zms_read(&s_zms, zms_id, data, data_size);
 	if (zms_ret > 0) {
@@ -95,10 +80,10 @@ psa_status_t secure_storage_its_store_get(secure_storage_its_uid_t uid, size_t d
 	return psa_ret;
 }
 
-psa_status_t secure_storage_its_store_remove(secure_storage_its_uid_t uid)
+psa_status_t secure_storage_ps_store_remove(psa_storage_uid_t uid)
 {
 	int ret;
-	const uint32_t zms_id = zms_id_from(uid);
+	const uint32_t zms_id = uid;
 
 	ret = zms_delete(&s_zms, zms_id);
 	LOG_DBG("%s %#x. (%d)", ret ? "Failed to delete" : "Deleted", zms_id, ret);

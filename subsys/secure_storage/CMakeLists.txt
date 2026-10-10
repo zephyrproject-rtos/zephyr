@@ -2,7 +2,9 @@
 
 zephyr_library()
 
-if(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_IMPLEMENTATION_AEAD AND CONFIG_TF_PSA_CRYPTO_BUILTIN)
+if((CONFIG_SECURE_STORAGE_ITS_TRANSFORM_IMPLEMENTATION_AEAD OR
+    CONFIG_SECURE_STORAGE_PS_TRANSFORM_IMPLEMENTATION_AEAD) AND
+   CONFIG_TF_PSA_CRYPTO_BUILTIN)
   zephyr_library_link_libraries(tfpsacrypto)
   # Inherit tfpsacrypto's private include directories for access to psa_crypto_driver_wrappers.h.
   zephyr_library_include_directories($<TARGET_PROPERTY:tfpsacrypto,INCLUDE_DIRECTORIES>)
@@ -24,6 +26,9 @@ function(make_available header)
   if((header MATCHES "^its") AND NOT (header STREQUAL "its/common.h"))
     make_available(its/common.h)
   endif()
+  if((header MATCHES "^ps") AND NOT (header STREQUAL "ps/common.h"))
+    make_available(ps/common.h)
+  endif()
   configure_file(include/internal/zephyr/secure_storage/${header}
                  ${CMAKE_BINARY_DIR}/zephyr/include/generated/zephyr/secure_storage/${header}
                  COPYONLY)
@@ -37,35 +42,5 @@ if(CONFIG_SECURE_STORAGE_PS_IMPLEMENTATION_CUSTOM)
   make_available(ps.h)
 endif()
 
-if(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_MODULE)
-
-  if(NOT CONFIG_SECURE_STORAGE_ITS_TRANSFORM_IMPLEMENTATION_AEAD)
-    make_available(its/transform.h)
-  endif()
-
-endif() # CONFIG_SECURE_STORAGE_ITS_TRANSFORM_MODULE
-
-if(CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_CUSTOM)
-  make_available(its/store.h)
-endif()
-
-if(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_IMPLEMENTATION_AEAD)
-
-  # Make the aead.h header available whenever none of the Zephyr-provided
-  # implementations are in use. In that case either the custom or an additional
-  # option added downstream is used, and it needs that header file.
-
-  if(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_CRYPT_CUSTOM
-  OR (NOT CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_SCHEME_AES_GCM
-      AND NOT CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_SCHEME_CHACHA20_POLY1305)
-  OR (NOT CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_DEVICE_ID_HASH
-      AND NOT CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_ENTRY_UID_HASH)
-  OR (NOT CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_NONCE_PROVIDER_DEFAULT))
-    make_available(its/transform/aead.h)
-  endif()
-
-endif() # CONFIG_SECURE_STORAGE_ITS_TRANSFORM_IMPLEMENTATION_AEAD
-
-if(CONFIG_SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_CUSTOM)
-  make_available(its/store/settings.h)
-endif()
+include(${CMAKE_CURRENT_SOURCE_DIR}/its.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/ps.cmake)

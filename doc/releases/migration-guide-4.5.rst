@@ -2984,6 +2984,13 @@ Secure Storage
   it can now fail, with ``PSA_ERROR_DOES_NOT_EXIST`` for instance, instead of always returning
   ``PSA_SUCCESS``. (:github:`118718`)
 
+* :kconfig:option:`CONFIG_SECURE_STORAGE_PS_IMPLEMENTATION_ITS` remains the default PS
+  implementation. The newly added
+  :kconfig:option:`CONFIG_SECURE_STORAGE_PS_IMPLEMENTATION_ZEPHYR` stores PS entries in a way that
+  is not compatible with it, and existing entries are not migrated. Do not enable it on devices
+  that already have PS entries stored, as these entries can no longer be read and may become
+  impossible to overwrite or remove. See :ref:`secure_storage` for details.
+
 Shell
 =====
 
