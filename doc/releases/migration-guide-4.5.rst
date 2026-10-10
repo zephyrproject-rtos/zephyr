@@ -189,6 +189,11 @@ Boards
   configuration that assigned the old symbol has to be updated, and fails to
   build until it is.
 
+* ``qemu_cortex_a9`` no longer has the ``zephyr,uart-pipe`` chosen node, so SLIP networking
+  (:kconfig:option:`CONFIG_NET_QEMU_SLIP`) is no longer available on it. The board now
+  defaults to Ethernet networking (:kconfig:option:`CONFIG_NET_QEMU_ETHERNET`) through the
+  emulated GEM.
+
 * On RP2040 and RP2350, the ``vreg`` node (:dtcompatible:`raspberrypi,core-supply-regulator`) is
   now ``disabled`` by default instead of ``okay``. Out-of-tree boards that need this regulator
   must set ``status = "okay"`` on the ``&vreg`` node.
@@ -955,6 +960,9 @@ Ethernet
   been updated accordingly, as have been the device trees of the Zynq-7000 and ZynqMP /
   UltraScale+ SoC families. (:github:`87313`)
 
+* The Xilinx GEM Ethernet driver is no longer disabled on QEMU targets without
+  :kconfig:option:`CONFIG_NET_QEMU_ETHERNET`.
+
 * Ethernet and Wi-Fi drivers that use :c:enumerator:`ETHERNET_CONFIG_TYPE_EXTRA_TX_PKT_HEADROOM` to request
   extra headroom for transmit packets must now select
   :kconfig:option:`CONFIG_NET_L2_ETHERNET_EXTRA_TX_PKT_HEADROOM`. (:github:`112924`)
@@ -998,6 +1006,10 @@ Ethernet
 * Boards with Ethernet interfaces should now enable :kconfig:option:`CONFIG_ETH_DRIVER` by default,
   instead of :kconfig:option:`CONFIG_NET_L2_ETHERNET`. The later is now enabled by default when the
   former is. (:github:`117121`)
+
+* :kconfig:option:`CONFIG_ETH_PHY_DRIVER` is no longer enabled by default. It is now selected by
+  the Ethernet drivers that need a PHY driver. Out-of-tree Ethernet drivers that use a PHY driver
+  must select it as well.
 
 Flash
 =====

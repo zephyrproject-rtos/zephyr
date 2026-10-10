@@ -3,6 +3,7 @@
 
 config ETH_WIZNET
 	bool
+	select ETH_PHY_DRIVER
 	help
 	  A WIZnet stand-alone Ethernet controller driver is in the build.
 
