@@ -1,0 +1,28 @@
+shields:
+  - name: seeed_xiao_display_0_96
+    full_name: XIAO 0.96" IPS Display
+    vendor: seeed
+    supported_features:
+      - audio
+      - display
+      - input
+      - sensor
+
+  - name: seeed_xiao_display_1_14
+    full_name: XIAO 1.14" IPS Display
+    vendor: seeed
+    supported_features:
+      - audio
+      - display
+      - input
+      - sensor
+
+  - name: seeed_xiao_display_1_47
+    full_name: XIAO 1.47" IPS Touch Display
+    vendor: seeed
+    supported_features:
+      - audio
+      - display
+      - input
+      - sdhc
+      - sensor
