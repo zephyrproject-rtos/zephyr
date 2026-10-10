@@ -90,7 +90,7 @@ static void prevent_false_prev_evt(void)
 	/* Clear interrupt that may have fired as we were setting the
 	 * comparator.
 	 */
-	NVIC_ClearPendingIRQ(TIMER0_IRQn);
+	k_irq_clear_pending(TIMER0_IRQn);
 }
 
 /* If settings is next tick from now, function attempts to set next tick. If
@@ -207,7 +207,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	 * QEMU.
 	 */
 	event_clear();
-	NVIC_ClearPendingIRQ(TIMER0_IRQn);
+	k_irq_clear_pending(TIMER0_IRQn);
 
 	uint32_t now = counter();
 
@@ -255,7 +255,7 @@ static int sys_clock_driver_init(void)
 	}
 
 	event_clear();
-	NVIC_ClearPendingIRQ(TIMER0_IRQn);
+	k_irq_clear_pending(TIMER0_IRQn);
 	int_enable();
 
 	return 0;

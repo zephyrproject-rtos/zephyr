@@ -187,7 +187,7 @@ static void compare_int_unlock(int32_t chan, bool key)
 		atomic_or(&int_mask, BIT(chan));
 		nrfy_rtc_int_enable(RTC, NRF_RTC_CHANNEL_INT_MASK(chan));
 		if (atomic_get(&force_isr_mask) & BIT(chan)) {
-			NVIC_SetPendingIRQ(RTC_IRQn);
+			k_irq_set_pending(RTC_IRQn);
 		}
 	}
 }
@@ -723,7 +723,7 @@ void sys_clock_disable(void)
 	nrf_rtc_task_trigger(RTC, NRF_RTC_TASK_STOP);
 	irq_disable(RTC_IRQn);
 	int_event_disable_rtc();
-	NVIC_ClearPendingIRQ(RTC_IRQn);
+	k_irq_clear_pending(RTC_IRQn);
 }
 
 static int sys_clock_driver_init(void)
@@ -741,7 +741,7 @@ static int sys_clock_driver_init(void)
 	nrfy_rtc_int_enable(RTC, NRF_RTC_INT_OVERFLOW_MASK);
 #endif
 
-	NVIC_ClearPendingIRQ(RTC_IRQn);
+	k_irq_clear_pending(RTC_IRQn);
 
 	IRQ_CONNECT(RTC_IRQn, DT_IRQ(DT_NODELABEL(RTC_LABEL), priority),
 		    rtc_nrf_isr, 0, 0);

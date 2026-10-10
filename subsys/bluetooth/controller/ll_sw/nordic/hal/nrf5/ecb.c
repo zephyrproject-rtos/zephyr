@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <zephyr/irq.h>
 #include <zephyr/sys/byteorder.h>
 
 #include <hal/nrf_ecb.h>
@@ -191,7 +192,7 @@ void ecb_encrypt_nonblocking(struct ecb *e)
 				    | ECB_INTENSET_ENDECB_Msk);
 
 	/* enable interrupt */
-	NVIC_ClearPendingIRQ(ECB_IRQn);
+	k_irq_clear_pending(ECB_IRQn);
 	irq_enable(ECB_IRQn);
 
 	/* start the encryption h/w */
