@@ -29,14 +29,6 @@
 			      DT_CHOSEN(zephyr_system_timer))),		\
 		(0))
 
-/* True for the instance chosen as the system-timer low-power companion. */
-#if DT_HAS_CHOSEN(zephyr_system_timer_companion)
-#define COUNTER_MCUX_LPTMR_IS_COMPANION(n)				\
-	DT_SAME_NODE(DT_DRV_INST(n), DT_CHOSEN(zephyr_system_timer_companion))
-#else
-#define COUNTER_MCUX_LPTMR_IS_COMPANION(n) 0
-#endif /* DT_HAS_CHOSEN(zephyr_system_timer_companion) */
-
 #define COUNTER_MCUX_LPTMR_COUNT_USABLE(n) + (!COUNTER_MCUX_LPTMR_IS_SYSTEM_TIMER(n))
 
 #define COUNTER_MCUX_LPTMR_DEVICE_COUNT \
@@ -57,7 +49,6 @@ struct mcux_lptmr_config {
 	unsigned int irqn;
 	void (*irq_config_func)(const struct device *dev);
 	struct wuc_dt_spec wuc;
-	bool is_companion;
 	bool wakeup_source;
 };
 
@@ -188,11 +179,12 @@ static int mcux_lptmr_set_alarm(const struct device *dev, uint8_t chan_id,
 	}
 
 	/*
-	 * Arm the wakeup controller so the alarm can wake the SoC: for the
-	 * system-timer companion, or when enabled as a wakeup source at run time.
+	 * Arm the wakeup controller so the alarm can wake the SoC. Without
+	 * CONFIG_PM_DEVICE there is no run-time flag, so the devicetree
+	 * wakeup-source property is the only control.
 	 */
 	if (mcux_lptmr_is_wakeup_source(dev) &&
-	    (config->is_companion || pm_device_wakeup_is_enabled(dev))) {
+	    (!IS_ENABLED(CONFIG_PM_DEVICE) || pm_device_wakeup_is_enabled(dev))) {
 		int err = wuc_enable_wakeup_source_dt(&config->wuc);
 
 		if (err != 0) {
@@ -626,7 +618,6 @@ static DEVICE_API(counter, mcux_lptmr_driver_api) = {
 		.irq_config_func = mcux_lptmr_irq_config_##n,			\
 		.wuc = COND_CODE_1(CONFIG_WUC,					\
 			(WUC_DT_SPEC_GET_OR(DT_DRV_INST(n), {0})), ({0})),	\
-		.is_companion = COUNTER_MCUX_LPTMR_IS_COMPANION(n),		\
 		.wakeup_source = DT_INST_PROP_OR(n, wakeup_source, 0),		\
 	};									\
 										\
