@@ -1,0 +1,5 @@
+tests:
+  uwb.api_core:
+    tags:
+      - uwb
+    filter: dt_chosen_enabled("zephyr,uwb-uci")
