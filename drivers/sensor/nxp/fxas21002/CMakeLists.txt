@@ -8,3 +8,5 @@ zephyr_library()
 
 zephyr_library_sources(fxas21002.c)
 zephyr_library_sources_ifdef(CONFIG_FXAS21002_TRIGGER fxas21002_trigger.c)
+zephyr_library_sources_ifdef(CONFIG_SENSOR_ASYNC_API fxas21002_rtio.c)
+zephyr_library_sources_ifdef(CONFIG_FXAS21002_STREAM fxas21002_stream.c)

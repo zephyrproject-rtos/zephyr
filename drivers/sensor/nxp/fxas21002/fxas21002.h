@@ -11,6 +11,10 @@
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 #include <zephyr/drivers/spi.h>
 #endif
+#if CONFIG_SENSOR_ASYNC_API
+#include <zephyr/rtio/rtio.h>
+#include <zephyr/sys/mpsc_lockfree.h>
+#endif
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 
@@ -91,6 +95,14 @@ union fxas21002_bus_cfg {
 #endif
 };
 
+struct fxas21002_encoded_data {
+	struct sensor_data_header header;
+	uint8_t status;
+	uint8_t range;
+	uint16_t sample_count;
+	int16_t raw[FXAS21002_MAX_NUM_CHANNELS];
+};
+
 struct fxas21002_config {
 	const union fxas21002_bus_cfg bus_cfg;
 	const struct fxas21002_io_ops *ops;
@@ -102,10 +114,29 @@ struct fxas21002_config {
 	enum fxas21002_range range;
 	uint8_t dr;
 	uint8_t inst_on_bus;
+#ifdef CONFIG_SENSOR_ASYNC_API
+	struct rtio *r;
+	struct rtio_iodev *bus_iodev;
+#endif
 };
 
 struct fxas21002_data {
 	struct k_sem sem;
+#ifdef CONFIG_SENSOR_ASYNC_API
+	struct k_spinlock mpsc_lock;
+	struct mpsc io_q;
+	struct rtio_iodev_sqe *pending_sqe;
+	uint8_t raw_buffer[10];
+	uint8_t spi_tx_buf[10];
+#endif
+#ifdef CONFIG_FXAS21002_STREAM
+	struct rtio_iodev_sqe *streaming_sqe;
+	uint64_t stream_timestamp;
+	uint8_t stream_buffer[10];
+	bool drdy_on;
+	bool stream_busy;
+	bool stream_defer;
+#endif
 #ifdef CONFIG_FXAS21002_TRIGGER
 	const struct device *dev;
 	struct gpio_callback gpio_cb;
@@ -173,4 +204,14 @@ int fxas21002_trigger_init(const struct device *dev);
 int fxas21002_trigger_set(const struct device *dev,
 			  const struct sensor_trigger *trig,
 			  sensor_trigger_handler_t handler);
+#endif
+#ifdef CONFIG_SENSOR_ASYNC_API
+void fxas21002_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
+int fxas21002_get_decoder(const struct device *dev,
+			  const struct sensor_decoder_api **decoder);
+#endif
+#ifdef CONFIG_FXAS21002_STREAM
+void fxas21002_submit_stream(const struct device *dev,
+			     struct rtio_iodev_sqe *iodev_sqe);
+void fxas21002_stream_irq_handler(const struct device *dev);
 #endif
