@@ -2715,6 +2715,17 @@ Other notable changes
     :c:struct:`wifi_p2p_params`, along with the new
     :c:macro:`WIFI_P2P_STATUS_BUF_SIZE` buffer-size macro.
 
+  * The Nordic nRF7000/nRF7001/nRF7002 devicetree compatibles
+    ``"nordic,nrf7000-spi"``, ``"nordic,nrf7000-qspi"``,
+    ``"nordic,nrf7001-spi"``, ``"nordic,nrf7001-qspi"``,
+    ``"nordic,nrf7002-spi"``, and ``"nordic,nrf7002-qspi"`` have been replaced
+    by the bare :dtcompatible:`nordic,nrf7000`, :dtcompatible:`nordic,nrf7001`,
+    and :dtcompatible:`nordic,nrf7002` compatibles, disambiguated by
+    ``on-bus``, matching the pattern already used for the MSPI variant and the
+    convention used elsewhere in the tree for multi-bus devices. Out-of-tree
+    boards, shields, and overlays instantiating an nRF70 node over SPI or QSPI
+    must update their ``compatible`` property accordingly.
+
 * MCUboot
 
   * :kconfig:option:`SB_CONFIG_BOOT_SIGNATURE_KEY_FILE` now accepts a comma-separated list of
