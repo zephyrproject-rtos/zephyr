@@ -20,6 +20,7 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(eth_ch9120, LOG_LEVEL_INF);
 
@@ -157,7 +158,7 @@ static int ch9120_send_cmd_wait(const struct ch9120_config *cfg, uint8_t cmd, co
 	uint8_t ack;
 	int ret = -EIO;
 	k_timepoint_t deadline;
-	uint8_t header[3] = {CH9120_HDR_0, CH9120_HDR_1, cmd};
+	uint8_t header[] = {CH9120_HDR_0, CH9120_HDR_1, cmd};
 	struct uart_config current_cfg;
 	const struct device *uart_dev = cfg->uart_dev;
 
@@ -176,7 +177,7 @@ static int ch9120_send_cmd_wait(const struct ch9120_config *cfg, uint8_t cmd, co
 
 	ch9120_uart_flush(uart_dev);
 
-	for (int i = 0; i < 3; i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(header); i++) {
 		uart_poll_out(uart_dev, header[i]);
 	}
 
@@ -222,7 +223,7 @@ static int ch9120_send_cmd_read(const struct ch9120_config *cfg, uint8_t cmd, co
 {
 	size_t indx;
 	k_timepoint_t deadline;
-	uint8_t header[3] = {CH9120_HDR_0, CH9120_HDR_1, cmd};
+	uint8_t header[] = {CH9120_HDR_0, CH9120_HDR_1, cmd};
 	struct uart_config current_cfg;
 	const struct device *uart_dev = cfg->uart_dev;
 
@@ -241,7 +242,7 @@ static int ch9120_send_cmd_read(const struct ch9120_config *cfg, uint8_t cmd, co
 
 	ch9120_uart_flush(uart_dev);
 
-	for (int i = 0; i < 3; i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(header); i++) {
 		uart_poll_out(uart_dev, header[i]);
 	}
 
@@ -444,7 +445,7 @@ static int ch9120_connect(void *obj, const struct net_sockaddr *addr, net_sockle
 		mode = CH9120_MODE_TCP_CLIENT;
 	}
 
-	ret = ch9120_send_cmd_wait(cfg, CH9120_CMD_SET_MODE, &mode, 1, K_MSEC(1000));
+	ret = ch9120_send_cmd_wait(cfg, CH9120_CMD_SET_MODE, &mode, sizeof(mode), K_MSEC(1000));
 	if (ret < 0) {
 		LOG_ERR("Failed to set mode : %d", ret);
 		goto err;
@@ -453,15 +454,17 @@ static int ch9120_connect(void *obj, const struct net_sockaddr *addr, net_sockle
 	dst_port = net_ntohs(net_sin(addr)->sin_port);
 	sys_put_le16(dst_port, port_bytes);
 
-	memcpy(dst_ip, &net_sin(addr)->sin_addr.s_addr, 4);
+	memcpy(dst_ip, &net_sin(addr)->sin_addr.s_addr, sizeof(dst_ip));
 
-	ret = ch9120_send_cmd_wait(cfg, CH9120_CMD_SET_TARGET_IP, dst_ip, 4, K_MSEC(1000));
+	ret = ch9120_send_cmd_wait(cfg, CH9120_CMD_SET_TARGET_IP, dst_ip, sizeof(dst_ip),
+				   K_MSEC(1000));
 	if (ret < 0) {
 		LOG_ERR("Failed to send destination IP :%d", ret);
 		goto err;
 	}
 
-	ret = ch9120_send_cmd_wait(cfg, CH9120_CMD_SET_TARGET_PORT, port_bytes, 2, K_MSEC(1000));
+	ret = ch9120_send_cmd_wait(cfg, CH9120_CMD_SET_TARGET_PORT, port_bytes, sizeof(port_bytes),
+				   K_MSEC(1000));
 	if (ret < 0) {
 		LOG_ERR("Failed to set dst port: %d", ret);
 		goto err;
@@ -551,6 +554,11 @@ static ssize_t ch9120_recvfrom(void *obj, void *buf, size_t len, int flags,
 	int ret;
 
 	ARG_UNUSED(flags);
+
+	if (!buf || len == 0) {
+		errno = EINVAL;
+		return -1;
+	}
 
 	if (addr != NULL && addrlen != NULL) {
 		*addrlen = sizeof(sck->dst);
@@ -738,7 +746,8 @@ static int ch9120_init(const struct device *dev)
 	k_msleep(500);
 
 	enable_flag = 0x01;
-	ret = ch9120_send_cmd_wait(cfg, CH9120_CMD_SET_DHCP, &enable_flag, 1, K_MSEC(1000));
+	ret = ch9120_send_cmd_wait(cfg, CH9120_CMD_SET_DHCP, &enable_flag, sizeof(enable_flag),
+				   K_MSEC(1000));
 	if (ret < 0) {
 		LOG_ERR("Failed to set dhcp:%d", ret);
 		return -1;
@@ -746,7 +755,8 @@ static int ch9120_init(const struct device *dev)
 	k_msleep(500);
 
 	sys_put_le32(target_baud, baud_bytes);
-	ret = ch9120_send_cmd_wait(cfg, CH9120_CMD_SET_BAUD, baud_bytes, 4, K_MSEC(1000));
+	ret = ch9120_send_cmd_wait(cfg, CH9120_CMD_SET_BAUD, baud_bytes, sizeof(baud_bytes),
+				   K_MSEC(1000));
 	if (ret < 0) {
 		LOG_ERR("Failed to set baud rate: %d", ret);
 		return ret;
