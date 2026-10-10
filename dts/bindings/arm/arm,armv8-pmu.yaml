@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: ARMv8 PMU
+
+description: |
+  ARMv8 PMUv3 performance monitors (programmed via EL1 system registers).
+
+  The hardware has no MMIO; this node exists to describe the GIC interrupt
+  that fires on PMU counter overflow when PMINTENSET_EL1 is used.
+
+compatible: "arm,armv8-pmu"
+
+include: base.yaml
+
+properties:
+  interrupts:
+    required: true
