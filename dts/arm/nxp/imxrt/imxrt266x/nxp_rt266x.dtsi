@@ -1911,6 +1911,23 @@
 	 */
 
 	/*
+	 * CodaCache last-level cache, in front of both XSPI windows described
+	 * above. It is declared here rather than in the per-part files because
+	 * its register base is an offset inside this block, so `ranges` gives
+	 * it the right address in both the secure and the non-secure view --
+	 * the same selection the SDK's CMPT__LLC_BASE makes on
+	 * __ARM_FEATURE_CMSE. The cached aliases follow the XSPI windows, so
+	 * they are derived from the XSPI nodes rather than restated here.
+	 */
+	cmpt_llc: cache-controller@441a0000 {
+		compatible = "nxp,llc";
+		reg = <0x441a0000 0x1000>;
+		cache-line-size = <128>;
+		nxp,cached-memories = <&xspi0>, <&xspi1>;
+		nxp,cached-alias-offset = <0x08000000>;
+	};
+
+	/*
 	 * The FlexSPI follower (COMM__FLEXSPI_FLR @ 0x4A0E0000, IRQ 303) is a
 	 * peripheral-mode interface rather than a NOR controller, and has no
 	 * Zephyr binding; it is deliberately not declared.

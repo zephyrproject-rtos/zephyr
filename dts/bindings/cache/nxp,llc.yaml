@@ -1,0 +1,48 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP CodaCache last-level cache (LLC) controller.
+
+  The LLC sits in front of one or more external-memory controllers. Each of
+  those controllers exposes its AHB window to the CPU twice: a direct window
+  that bypasses the LLC, and a cached alias at a fixed offset above it. Only
+  the cached alias is in the LLC address map, so maintenance by address takes
+  the cached-alias address even for a buffer the application reaches through
+  the direct window.
+
+  reg is the controller register block. nxp,cached-memories names the memory
+  controllers whose window this LLC caches: reg index 1 of each of those nodes
+  is its direct window, and the cached alias of that window is its base plus
+  nxp,cached-alias-offset.
+
+compatible: "nxp,llc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  cache-line-size:
+    type: int
+    required: true
+    description: |
+      LLC cache line size in bytes. Maintenance by address operates on whole
+      lines of this size, which is independent of the CPU L1 line size.
+
+  nxp,cached-memories:
+    type: phandles
+    required: true
+    description: |
+      Memory controllers whose AHB window is cached by this LLC. Index 1 of
+      each referenced node's reg is taken as that memory's direct
+      (LLC-bypassing) window base and size.
+
+  nxp,cached-alias-offset:
+    type: int
+    required: true
+    description: |
+      Offset from a direct window base to the LLC-cached alias of the same
+      memory, applied to every nxp,cached-memories window.
