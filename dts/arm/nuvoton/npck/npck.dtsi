@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <arm/armv7-m.dtsi>
-
 /* Macros for device tree declarations of npcx soc family */
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/npcx_clock.h>
@@ -296,24 +294,6 @@
 			#gpio-cells = <2>;
 		};
 
-		gpiostb0: gpio@400ab000 {
-			compatible = "nuvoton,npcx-gpio";
-			reg = <0x400ab000 0x2000>;
-			gpio-controller;
-			index = <0x12>;
-			ngpios = <8>;
-			#gpio-cells = <2>;
-		};
-
-		gpiostb1: gpio@400ad000 {
-			compatible = "nuvoton,npcx-gpio";
-			reg = <0x400ad000 0x2000>;
-			gpio-controller;
-			index = <0x13>;
-			ngpios = <8>;
-			#gpio-cells = <2>;
-		};
-
 		pwma: pwm@40080000 {
 			compatible = "nuvoton,npcx-pwm";
 			reg = <0x40080000 0x2000>;
@@ -362,7 +342,7 @@
 		pwmi: pwm@40090000 {
 			compatible = "nuvoton,npcx-pwm";
 			reg = <0x40090000 0x2000>;
-			pwm-channel = <9>;
+			pwm-channel = <8>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL0 0>;
 			#pwm-cells = <3>;
 			status = "disabled";
@@ -371,7 +351,7 @@
 		pwmj: pwm@40092000 {
 			compatible = "nuvoton,npcx-pwm";
 			reg = <0x40092000 0x2000>;
-			pwm-channel = <10>;
+			pwm-channel = <9>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL0 1>;
 			#pwm-cells = <3>;
 			status = "disabled";
@@ -380,7 +360,7 @@
 		pwmk: pwm@40094000 {
 			compatible = "nuvoton,npcx-pwm";
 			reg = <0x40094000 0x2000>;
-			pwm-channel = <11>;
+			pwm-channel = <10>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL0 2>;
 			#pwm-cells = <3>;
 			status = "disabled";
@@ -553,13 +533,6 @@
 			status = "disabled";
 		};
 
-		v2t0: adc-v2t0 {
-			compatible = "nuvoton,npcx-adc-v2t";
-			adc-dev = <&adc0>;
-			support-npckn-v1;
-			status = "disabled";
-		};
-
 		ps2_ctrl0: ps2@400b1000 {
 			compatible = "nuvoton,npcx-ps2-ctrl";
 			reg = <0x400b1000 0x1000>;
@@ -569,13 +542,13 @@
 			/* PS2 Channels - Please use them as PS2 node */
 			ps2_channel2: io_ps2_channel2 {
 				compatible = "nuvoton,npcx-ps2-channel";
-				channel = <0x02>;
+				channel = <0x01>;
 				status = "disabled";
 			};
 
 			ps2_channel3: io_ps2_channel3 {
 				compatible = "nuvoton,npcx-ps2-channel";
-				channel = <0x03>;
+				channel = <0x02>;
 				status = "disabled";
 			};
 		};
@@ -626,6 +599,16 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
+
+		lct0: lct@400dd000 {
+			compatible = "nuvoton,npck-lct";
+			reg = <0x400dd000 0x10>;
+			interrupts = <17 4>;
+			/* The maximum counter value is (16 weeks - 1 second) */
+			maximum-cnt-in-sec = <9676799>;
+			pwr-by-vsby;
+			status = "disabled";
+		};
 	};
 
 	soc-if {
@@ -642,16 +625,7 @@
 			compatible = "nuvoton,npcx-i2c-port";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			port = <NPCX_I2C_CTRL_PORT(0, 0)>;
-			controller = <&i2c_ctrl1>;
-			status = "disabled";
-		};
-
-		i2c1_b: io_i2c_ctrl1_portb {
-			compatible = "nuvoton,npcx-i2c-port";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			port = <NPCX_I2C_CTRL_PORT(0, 1)>;
+			port = <NPCX_I2C_CTRL_PORT(1, 0)>;
 			controller = <&i2c_ctrl1>;
 			status = "disabled";
 		};
@@ -660,7 +634,7 @@
 			compatible = "nuvoton,npcx-i2c-port";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			port = <NPCX_I2C_CTRL_PORT(1, 0)>;
+			port = <NPCX_I2C_CTRL_PORT(2, 0)>;
 			controller = <&i2c_ctrl2>;
 			status = "disabled";
 		};
@@ -669,7 +643,7 @@
 			compatible = "nuvoton,npcx-i2c-port";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			port = <NPCX_I2C_CTRL_PORT(1, 1)>;
+			port = <NPCX_I2C_CTRL_PORT(2, 1)>;
 			controller = <&i2c_ctrl2>;
 			status = "disabled";
 		};
@@ -678,7 +652,7 @@
 			compatible = "nuvoton,npcx-i2c-port";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			port = <NPCX_I2C_CTRL_PORT(2, 0)>;
+			port = <NPCX_I2C_CTRL_PORT(3, 0)>;
 			controller = <&i2c_ctrl3>;
 			status = "disabled";
 		};
@@ -687,7 +661,7 @@
 			compatible = "nuvoton,npcx-i2c-port";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			port = <NPCX_I2C_CTRL_PORT(2, 1)>;
+			port = <NPCX_I2C_CTRL_PORT(3, 1)>;
 			controller = <&i2c_ctrl3>;
 			status = "disabled";
 		};
@@ -696,16 +670,7 @@
 			compatible = "nuvoton,npcx-i2c-port";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			port = <NPCX_I2C_CTRL_PORT(3, 0)>;
-			controller = <&i2c_ctrl4>;
-			status = "disabled";
-		};
-
-		i2c4_b: io_i2c_ctrl4_portb {
-			compatible = "nuvoton,npcx-i2c-port";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			port = <NPCX_I2C_CTRL_PORT(3, 1)>;
+			port = <NPCX_I2C_CTRL_PORT(4, 0)>;
 			controller = <&i2c_ctrl4>;
 			status = "disabled";
 		};
@@ -714,7 +679,7 @@
 			compatible = "nuvoton,npcx-i2c-port";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			port = <NPCX_I2C_CTRL_PORT(4, 0)>;
+			port = <NPCX_I2C_CTRL_PORT(5, 0)>;
 			controller = <&i2c_ctrl5>;
 			status = "disabled";
 		};
@@ -724,7 +689,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			controller = <&i2c_ctrl6>;
-			port = <NPCX_I2C_CTRL_PORT(5, 0)>;
+			port = <NPCX_I2C_CTRL_PORT(6, 0)>;
 			status = "disabled";
 		};
 

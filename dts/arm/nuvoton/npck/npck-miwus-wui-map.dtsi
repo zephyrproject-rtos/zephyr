@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Nuvoton Technology Corporation.
+ * Copyright (c) 2024 Nuvoton Technology Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -252,10 +252,6 @@
 			miwus = <&miwu1 0 7>; /* GPIO87 */
 		};
 
-		wui_cr_sin1: wui1-1-7-1 {
-			miwus = <&miwu1 0 7>; /* CR_SIN */
-		};
-
 		/* MIWU group B */
 		wui_io90: wui1-2-0 {
 			miwus = <&miwu1 1 0>; /* GPIO90 */
@@ -313,10 +309,6 @@
 		/* MIWU group D */
 		wui_iob0: wui1-4-0 {
 			miwus = <&miwu1 3 0>; /* GPIOB0 */
-		};
-
-		wui_shi_cs: wui1-4-3 {
-			miwus = <&miwu1 3 3>; /* SHI_CS */
 		};
 
 		wui_cdbgpwrupreq: wui1-4-4 {
@@ -396,6 +388,10 @@
 
 		wui_ioe6: wui1-7-6 {
 			miwus = <&miwu1 6 6>; /* GPIOE6 */
+		};
+
+		wui_i3c: wui1-7-7 {
+			miwus = <&miwu1 6 7>; /* I3C */
 		};
 
 		/* MIWU group H */
@@ -516,6 +512,15 @@
 			miwus = <&miwu2 3 4>; /* HOST_C10 */
 		};
 
+		/* Support AMD S0i3 and Z8 */
+		wui_vw_amd_s0i3: wui2-4-0-alter {
+			miwus = <&miwu2 3 0>; /* AMD S0i3 */
+		};
+
+		wui_vw_amd_z8: wui2-4-1-alter {
+			miwus = <&miwu2 3 1>; /* AMD Z8 */
+		};
+
 		/* MIWU group E */
 		wui_iog5: wui2-5-5 {
 			miwus = <&miwu2 4 5>; /* GPIOG5 */
@@ -546,27 +551,6 @@
 			miwus = <&miwu2 5 4>; /* GPIOH4 */
 		};
 
-		/* MIWU group G */
-		wui_io_stb00: wui2-7-0 {
-			miwus = <&miwu2 6 0>; /* GPIO_STB00 */
-		};
-
-		wui_io_stb01: wui2-7-1 {
-			miwus = <&miwu2 6 1>; /* GPIO_STB01 */
-		};
-
-		wui_io_stb02: wui2-7-2 {
-			miwus = <&miwu2 6 2>; /* GPIO_STB02 */
-		};
-
-		wui_io_stb03: wui2-7-3 {
-			miwus = <&miwu2 6 3>; /* GPIO_STB03 */
-		};
-
-		wui_io_stb04: wui2-7-4 {
-			miwus = <&miwu2 6 4>; /* GPIO_STB04 */
-		};
-
 		/* MIWU group H */
 		wui_io_stb11_psl_in0: wui2-8-1 {
 			miwus = <&miwu2 7 1>; /* GPIO_STB11/PSL_IN0 */
@@ -582,10 +566,6 @@
 
 		wui_io_stb14_psl_in3: wui2-8-4 {
 			miwus = <&miwu2 7 4>; /* GPIO_STB14/PSL_IN3 */
-		};
-
-		wui_io_stb15_psl_in4: wui2-8-5 {
-			miwus = <&miwu2 7 5>; /* GPIO_STB15/PSL_IN4 */
 		};
 
 		wui_io_stb16_psl_in5: wui2-8-6 {

@@ -1,0 +1,369 @@
+/*
+ * Copyright (c) 2026 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Common pin-mux configurations in npck */
+#include <nuvoton/npck/npck-alts-map.dtsi>
+
+/* Specific pin-mux configurations in npck6 series */
+/ {
+	npcx-alts-map {
+		compatible = "nuvoton,npcx-pinctrl-conf";
+
+		/* SCFG DEVALT 1 */
+		alt1_urto2_sl: alt13 {
+			alts = <&scfg 0x01 0x3 0>;
+		};
+
+		alt1_no_sout_sl: alt13-inv {
+			alts = <&scfg 0x01 0x3 1>;
+		};
+
+		/* SCFG DEVALT 2 */
+		alt2_shd_vcc_spi: alt20 {
+			alts = <&scfg 0x02 0x0 0>;
+		};
+
+		alt2_bkfl_vcc_spi: alt27 {
+			alts = <&scfg 0x02 0x7 0>;
+		};
+
+		/* SCFG DEVALT 3 */
+		alt3_ta6_sl: alt36 {
+			alts = <&scfg 0x03 0x6 0>;
+		};
+
+		alt3_ta7_sl: alt37 {
+			alts = <&scfg 0x03 0x7 0>;
+		};
+
+		/* SCFG DEVALT 4 */
+		alt4_backup_spi: alt40 {
+			alts = <&scfg 0x04 0x0 0>;
+		};
+
+		alt4_nobackup_spi: alt40-inv {
+			alts = <&scfg 0x04 0x0 1>;
+		};
+
+		alt4_spip1_quad: alt47 {
+			alts = <&scfg 0x04 0x7 0>;
+		};
+
+		/* SCFG DEVALT 5 */
+		alt5_spip2_quad: alt54 {
+			alts = <&scfg 0x05 0x4 0>;
+		};
+
+		alt5_smb5a_pu_sl: alt56 {
+			alts = <&scfg 0x05 0x6 0>;
+		};
+
+		alt5_smb6a_pu_sl: alt57 {
+			alts = <&scfg 0x05 0x7 0>;
+		};
+
+		/* SCFG DEVALT 7 */
+		alt7_lclk_sl: alt70-inv {
+			alts = <&scfg 0x07 0x0 1>;
+		};
+
+		alt7_lad3_sl: alt71-inv {
+			alts = <&scfg 0x07 0x1 1>;
+		};
+
+		/* SCFG DEVALT 8 */
+		alt8_p_pwm_sl: alt80 {
+			alts = <&scfg 0x08 0x0 0>;
+		};
+
+		alt8_q_pwm_sl: alt83 {
+			alts = <&scfg 0x08 0x3 0>;
+		};
+
+		alt8_r_pwm_sl: alt84 {
+			alts = <&scfg 0x08 0x4 0>;
+		};
+
+		/* SCFG DEVALT A */
+		alta_lad1_sl: alta0-inv {
+			alts = <&scfg 0x0a 0x0 1>;
+		};
+
+		alta_lad0_sl: alta3-inv {
+			alts = <&scfg 0x0a 0x3 1>;
+		};
+
+		/* SCFG DEVALT C */
+		altc_ext_rstz: altc0-inv {
+			alts = <&scfg 0x0c 0x0 1>;
+		};
+
+		altc_lad2_sl: altc1-inv {
+			alts = <&scfg 0x0c 0x1 1>;
+		};
+
+		altc_i3c2a_sl: altc2 {
+			alts = <&scfg 0x0c 0x2 0>;
+		};
+
+		altc_i3c2b_sl: altc3 {
+			alts = <&scfg 0x0c 0x3 0>;
+		};
+
+		/* SCFG DEVALT E */
+		alte_e_pwm_sl: alte0 {
+			alts = <&scfg 0x0e 0x0 0>;
+		};
+
+		alte_g_pwm_sl: alte1 {
+			alts = <&scfg 0x0e 0x1 0>;
+		};
+
+		alte_h_pwm_sl: alte2 {
+			alts = <&scfg 0x0e 0x2 0>;
+		};
+
+		alte_l_pwm_sl: alte3 {
+			alts = <&scfg 0x0e 0x3 0>;
+		};
+
+		alte_m_pwm_sl: alte4 {
+			alts = <&scfg 0x0e 0x4 0>;
+		};
+
+		alte_n_pwm_sl: alte6 {
+			alts = <&scfg 0x0e 0x6 0>;
+		};
+
+		alte_o_pwm_sl: alte7 {
+			alts = <&scfg 0x0e 0x7 0>;
+		};
+
+		/* SCFG DEVALT 10 */
+		alt10_i3c3a_sl: alt104 {
+			alts = <&scfg 0x10 0x4 0>;
+		};
+
+		alt10_i3c4a_sl: alt105 {
+			alts = <&scfg 0x10 0x5 0>;
+		};
+
+		alt10_tb6_sl: alt106 {
+			alts = <&scfg 0x10 0x6 0>;
+		};
+
+		alt10_tb7_sl: alt107 {
+			alts = <&scfg 0x10 0x7 0>;
+		};
+
+		/* SCFG DEVALT 11 */
+		alt11_adc12_sl: alt114 {
+			alts = <&scfg 0x11 0x4 0>;
+		};
+
+		alt11_adc13_sl: alt115 {
+			alts = <&scfg 0x11 0x5 0>;
+		};
+
+		alt11_adc14_sl: alt116 {
+			alts = <&scfg 0x11 0x6 0>;
+		};
+
+		alt11_adc15_sl: alt117 {
+			alts = <&scfg 0x11 0x7 0>;
+		};
+
+		/* SCFG DEVALT DX */
+		altdx_osc32k_stable_sel: alt146 {
+			alts = <&scfg 0x14 0x6 0>;
+		};
+
+		/* SCFG DEVALT 13 */
+		alt13_prt_slct_sl: alt150 {
+			alts = <&scfg 0x15 0x0 0>;
+		};
+
+		alt13_vc1_sl: alt151 {
+			alts = <&scfg 0x15 0x1 0>;
+		};
+
+		alt13_vc2_sl: alt152 {
+			alts = <&scfg 0x15 0x2 0>;
+		};
+
+		alt13_vc3_sl: alt153 {
+			alts = <&scfg 0x15 0x3 0>;
+		};
+
+		alt13_ldrq: alt154 {
+			alts = <&scfg 0x15 0x4 0>;
+		};
+
+		alt13_usbd30_vbus_pde: alt156 {
+			alts = <&scfg 0x15 0x6 0>;
+		};
+
+		alt13_usbd20_vbus_sl: alt157 {
+			alts = <&scfg 0x15 0x7 0>;
+		};
+
+		/* SCFG DEVALT 14 */
+		alt14_smb7a_sl: alt160 {
+			alts = <&scfg 0x16 0x0 0>;
+		};
+
+		alt14_smb8a_sl: alt161 {
+			alts = <&scfg 0x16 0x1 0>;
+		};
+
+		alt14_smb9a_sl: alt162 {
+			alts = <&scfg 0x16 0x2 0>;
+		};
+
+		alt14_smb7a_pu_sl: alt164 {
+			alts = <&scfg 0x16 0x4 0>;
+		};
+
+		alt14_smb8a_pu_sl: alt165 {
+			alts = <&scfg 0x16 0x5 0>;
+		};
+
+		alt14_smb9a_pu_sl: alt166 {
+			alts = <&scfg 0x16 0x6 0>;
+		};
+
+		/* SCFG DEVALT 15 */
+		alt15_prt_pd0_sl: alt170 {
+			alts = <&scfg 0x17 0x0 0>;
+		};
+
+		alt15_prt_pd1_sl: alt171 {
+			alts = <&scfg 0x17 0x1 0>;
+		};
+
+		alt15_prt_pd2_sl: alt172 {
+			alts = <&scfg 0x17 0x2 0>;
+		};
+
+		alt15_prt_pd3_sl: alt173 {
+			alts = <&scfg 0x17 0x3 0>;
+		};
+
+		alt15_prt_pd4_sl: alt174 {
+			alts = <&scfg 0x17 0x4 0>;
+		};
+
+		alt15_prt_pd5_sl: alt175 {
+			alts = <&scfg 0x17 0x5 0>;
+		};
+
+		alt15_prt_pd6_sl: alt176 {
+			alts = <&scfg 0x17 0x6 0>;
+		};
+
+		alt15_prt_pd7_sl: alt177 {
+			alts = <&scfg 0x17 0x7 0>;
+		};
+
+		/* SCFG DEVALT 16 */
+		alt16_prt_pe_sl: alt180 {
+			alts = <&scfg 0x18 0x0 0>;
+		};
+
+		alt16_prt_busy_sl: alt181 {
+			alts = <&scfg 0x18 0x1 0>;
+		};
+
+		alt16_prt_ack_sl: alt182 {
+			alts = <&scfg 0x18 0x2 0>;
+		};
+
+		alt16_prt_err_sl: alt183 {
+			alts = <&scfg 0x18 0x3 0>;
+		};
+
+		alt16_prt_slin_sl: alt184 {
+			alts = <&scfg 0x18 0x4 0>;
+		};
+
+		alt16_prt_init_sl: alt185 {
+			alts = <&scfg 0x18 0x5 0>;
+		};
+
+		alt16_prt_afd_sl: alt186 {
+			alts = <&scfg 0x18 0x6 0>;
+		};
+
+		alt16_prt_stb_sl: alt187 {
+			alts = <&scfg 0x18 0x7 0>;
+		};
+
+		/* SCFG DEVALT 17 */
+		alt17_usbsw_sel: alt190 {
+			alts = <&scfg 0x19 0x0 0>;
+		};
+
+		alt17_usbsw_oen: alt191 {
+			alts = <&scfg 0x19 0x1 0>;
+		};
+
+		alt17_udc_sram_sleep_en: alt194 {
+			alts = <&scfg 0x19 0x4 0>;
+		};
+
+		alt17_udc_sram_pd: alt195 {
+			alts = <&scfg 0x19 0x5 0>;
+		};
+
+		/* SCFG DEVALT 18 */
+		alt18_phy1_ponrst: alt1a0 {
+			alts = <&scfg 0x1a 0x0 0>;
+		};
+
+		alt18_usbhphy1_pwrdn: alt1a2 {
+			alts = <&scfg 0x1a 0x2 0>;
+		};
+
+		alt18_usbhphy1_en: alt1a3 {
+			alts = <&scfg 0x1a 0x3 0>;
+		};
+
+		/* SCFG DEVALT 19 */
+		alt19_phy2_ponrst: alt1b0 {
+			alts = <&scfg 0x1b 0x0 0>;
+		};
+
+		alt19_usbhphy2_pwrdn: alt1b2 {
+			alts = <&scfg 0x1b 0x2 0>;
+		};
+
+		alt19_usbhphy2_en: alt1b3 {
+			alts = <&scfg 0x1b 0x3 0>;
+		};
+
+		/* SCFG DEVALT 20 */
+		alt20_phy3_ponrst: alt1c0 {
+			alts = <&scfg 0x1c 0x0 0>;
+		};
+
+		alt20_usbd20_sw_rst: alt1c2 {
+			alts = <&scfg 0x1c 0x2 0>;
+		};
+
+		alt20_usbdphy_en: alt1c3 {
+			alts = <&scfg 0x1c 0x3 0>;
+		};
+
+		/* SCFG DEVALT 1A */
+		alt1d0_i3c1a_pu_sl: alt1d0 {
+			alts = <&scfg 0x1d 0x0 0>;
+		};
+
+		alt1d0_i3c2b_pu_sl: alt1d1 {
+			alts = <&scfg 0x1d 0x1 0>;
+		};
+	};
+};
