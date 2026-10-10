@@ -6,6 +6,10 @@ if SOC_SERIES_APOLLO3X
 
 rsource "Kconfig.defconfig.apollo3*"
 
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_nodelabel_int_prop,stimer0,clock-frequency) if AMBIQ_STIMER_TIMER
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
+
 # Need to enlarge the IDLE stack size because the power
 # management operations are executed in the idle task
 config IDLE_STACK_SIZE

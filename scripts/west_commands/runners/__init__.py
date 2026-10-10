@@ -72,6 +72,7 @@ _names = [
     'stlink_gdbserver',
     'stm32cubeprogrammer',
     'stm32flash',
+    'svl',
     'sy1xx',
     'teensy',
     'trace32',
