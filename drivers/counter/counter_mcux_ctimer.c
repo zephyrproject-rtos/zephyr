@@ -595,6 +595,20 @@ static int mcux_lpc_ctimer_configure(const struct device *dev)
 	return 0;
 }
 
+static int mcux_lpc_ctimer_turn_on(const struct device *dev)
+{
+	const struct mcux_lpc_ctimer_config *config = dev->config;
+	int ret;
+
+	ret = mcux_lpc_ctimer_configure(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* A resume always follows a turn-on and takes the clock. */
+	return clock_control_off(config->clock_dev, config->clock_subsys);
+}
+
 static int mcux_lpc_ctimer_resume(const struct device *dev)
 {
 	const struct mcux_lpc_ctimer_config *config = dev->config;
@@ -632,13 +646,12 @@ static int mcux_lpc_ctimer_pm_action(const struct device *dev, enum pm_device_ac
 	case PM_DEVICE_ACTION_SUSPEND:
 		return mcux_lpc_ctimer_suspend(dev);
 	case PM_DEVICE_ACTION_TURN_OFF:
-		break;
+		return 0;
 	case PM_DEVICE_ACTION_TURN_ON:
-		return mcux_lpc_ctimer_configure(dev);
+		return mcux_lpc_ctimer_turn_on(dev);
 	default:
 		return -ENOTSUP;
 	}
-	return 0;
 }
 
 static int mcux_lpc_ctimer_init(const struct device *dev)
