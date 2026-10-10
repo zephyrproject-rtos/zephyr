@@ -96,11 +96,49 @@ static int wm8904_protocol_config(const struct device *dev, audio_dai_type_t dai
 	return 0;
 }
 
+static const struct {
+	uint16_t ratio;
+	wm8904_fs_ratio_t reg_val;
+} wm8904_fs_ratios[] = {
+	{64, kWM8904_FsRatio64X},     {128, kWM8904_FsRatio128X},
+	{192, kWM8904_FsRatio192X},   {256, kWM8904_FsRatio256X},
+	{384, kWM8904_FsRatio384X},   {512, kWM8904_FsRatio512X},
+	{768, kWM8904_FsRatio768X},   {1024, kWM8904_FsRatio1024X},
+	{1408, kWM8904_FsRatio1408X}, {1536, kWM8904_FsRatio1536X},
+};
+
+static wm8904_fs_ratio_t wm8904_closest_fs_ratio(uint32_t fs)
+{
+	size_t best_idx = 0;
+	uint32_t best_diff = UINT32_MAX;
+
+	for (size_t i = 0; i < ARRAY_SIZE(wm8904_fs_ratios); i++) {
+		uint32_t ratio = wm8904_fs_ratios[i].ratio;
+		uint32_t diff = (fs > ratio) ? (fs - ratio) : (ratio - fs);
+
+		if (diff < best_diff) {
+			best_diff = diff;
+			best_idx = i;
+		}
+	}
+
+	if (wm8904_fs_ratios[best_idx].ratio != fs) {
+		uint32_t error_permille = (best_diff * 1000U) / fs;
+
+		LOG_WRN("Fs ratio %u not supported; using closest supported ratio %u instead "
+			"(%u.%u%% error)",
+			fs, wm8904_fs_ratios[best_idx].ratio, error_permille / 10U,
+			error_permille % 10U);
+	}
+
+	return wm8904_fs_ratios[best_idx].reg_val;
+}
+
 static int wm8904_audio_fmt_config(const struct device *dev, audio_dai_cfg_t *cfg, uint32_t mclk)
 {
 	wm8904_sample_rate_t wm_sample_rate;
 	uint32_t fs;
-	uint16_t wmfs_ratio;
+	wm8904_fs_ratio_t wmfs_ratio;
 	uint16_t mclkDiv;
 	uint16_t word_size = cfg->i2s.word_size;
 
@@ -134,41 +172,7 @@ static int wm8904_audio_fmt_config(const struct device *dev, audio_dai_cfg_t *cf
 	wm8904_read_reg(dev, WM8904_REG_CLK_RATES_0, &mclkDiv);
 	fs = (mclk >> (mclkDiv & 0x1U)) / cfg->i2s.frame_clk_freq;
 
-	switch (fs) {
-	case 64:
-		wmfs_ratio = kWM8904_FsRatio64X;
-		break;
-	case 128:
-		wmfs_ratio = kWM8904_FsRatio128X;
-		break;
-	case 192:
-		wmfs_ratio = kWM8904_FsRatio192X;
-		break;
-	case 256:
-		wmfs_ratio = kWM8904_FsRatio256X;
-		break;
-	case 384:
-		wmfs_ratio = kWM8904_FsRatio384X;
-		break;
-	case 512:
-		wmfs_ratio = kWM8904_FsRatio512X;
-		break;
-	case 768:
-		wmfs_ratio = kWM8904_FsRatio768X;
-		break;
-	case 1024:
-		wmfs_ratio = kWM8904_FsRatio1024X;
-		break;
-	case 1408:
-		wmfs_ratio = kWM8904_FsRatio1408X;
-		break;
-	case 1536:
-		wmfs_ratio = kWM8904_FsRatio1536X;
-		break;
-	default:
-		LOG_WRN("Invalid Fs ratio: %d", fs);
-		return -EINVAL;
-	}
+	wmfs_ratio = wm8904_closest_fs_ratio(fs);
 
 	/* Disable SYSCLK */
 	wm8904_write_reg(dev, WM8904_REG_CLK_RATES_2, 0x00);
