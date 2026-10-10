@@ -1,0 +1,8 @@
+tests:
+  arch.common.irq_storm:
+    arch_allow: riscv
+    filter: CONFIG_RISCV and CONFIG_IRQ_DISPATCH_WRAPPER
+    platform_allow:
+      - qemu_riscv32
+      - qemu_riscv64
+    tags: interrupt

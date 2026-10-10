@@ -7,9 +7,13 @@
 
 #include <zephyr/device.h>
 #include <zephyr/irq.h>
+#include <zephyr/irq_multilevel.h>
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/util.h>
+
+#include "sw_isr_common.h"
 
 BUILD_ASSERT(CONFIG_MAX_IRQ_PER_AGGREGATOR < BIT(CONFIG_2ND_LEVEL_INTERRUPT_BITS),
 	     "L2 bits not enough to cover the number of L2 IRQs");
@@ -68,6 +72,40 @@ unsigned int z_get_sw_isr_irq_from_device(const struct device *dev)
 
 	return 0;
 }
+
+#ifdef CONFIG_IRQ_DISPATCH_WRAPPER
+unsigned int z_multilevel_idx_to_irq(unsigned int idx)
+{
+	unsigned int base;
+	unsigned int local;
+
+	if (idx >= IRQ_TABLE_SIZE) {
+		return 0;
+	}
+
+	/*
+	 * Rare path (storm mask handling), so compute on demand by
+	 * walking the linker-iterable intc_table instead of keeping a
+	 * reverse map around.
+	 */
+	STRUCT_SECTION_FOREACH_ALTERNATE(intc_table, _irq_parent_entry, intc) {
+		if (intc->offset < CONFIG_GEN_IRQ_START_VECTOR) {
+			continue;
+		}
+		base = intc->offset - CONFIG_GEN_IRQ_START_VECTOR;
+
+		if (idx < base || idx >= base + CONFIG_MAX_IRQ_PER_AGGREGATOR) {
+			continue;
+		}
+
+		local = idx - base;
+		return irq_to_level(local, intc->level) | intc->irq;
+	}
+
+	/* idx did not fall in any aggregator's slot range: level-1 IRQ. */
+	return idx + CONFIG_GEN_IRQ_START_VECTOR;
+}
+#endif /* CONFIG_IRQ_DISPATCH_WRAPPER */
 
 unsigned int z_get_sw_isr_table_idx(unsigned int irq)
 {
