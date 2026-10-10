@@ -2486,7 +2486,7 @@ static DEVICE_API(i3c, i3c_stm32_driver_api) = {
 };
 
 #ifdef CONFIG_I3C_STM32_DMA
-#define STM32_I3C_DMA_CHANNEL_INIT(index, dir, dir_cap, src_dev, dest_dev)                         \
+#define STM32_I3C_DMA_CHANNEL_INIT(index, dir, src_dev, dest_dev)                                  \
 	.dma_dev = DEVICE_DT_GET(STM32_DT_INST_DMA_CTLR(index, dir)),                              \
 	.dma_channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),                             \
 	.dma_cfg = {                                                                               \
@@ -2515,14 +2515,14 @@ static DEVICE_API(i3c, i3c_stm32_driver_api) = {
 #endif
 
 #ifdef CONFIG_I3C_STM32_DMA
-#define STM32_I3C_DMA_CHANNEL(index, dir, DIR, src, dest)                                          \
+#define STM32_I3C_DMA_CHANNEL(index, dir, src, dest)                                               \
 	.dma_##dir = {                                                                             \
 		COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),                                     \
-			    (STM32_I3C_DMA_CHANNEL_INIT(index, dir, DIR, src, dest)),              \
+			    (STM32_I3C_DMA_CHANNEL_INIT(index, dir, src, dest)),                   \
 			    (NULL))                                                                \
 	},
 #else
-#define STM32_I3C_DMA_CHANNEL(index, dir, DIR, src, dest)
+#define STM32_I3C_DMA_CHANNEL(index, dir, src, dest)
 #endif
 
 #ifdef CONFIG_I3C_STM32_COMBINED_INTERRUPT
@@ -2598,10 +2598,10 @@ static DEVICE_API(i3c, i3c_stm32_driver_api) = {
 		.drv_data.ctrl_config.scl_od_min.high_ns = DT_INST_PROP(index, od_thigh_min_ns),   \
 		.drv_data.ctrl_config.scl_od_min.low_ns = DT_INST_PROP(index, od_tlow_min_ns),     \
 		.drv_data.ctrl_config.scl_pp_min.high_ns = DT_INST_PROP(index, pp_thigh_min_ns),   \
-		STM32_I3C_DMA_CHANNEL(index, rx, RX, PERIPHERAL, MEMORY)                           \
-		STM32_I3C_DMA_CHANNEL(index, tx, TX, MEMORY, PERIPHERAL)                           \
-		STM32_I3C_DMA_CHANNEL(index, tc, TC, MEMORY, PERIPHERAL)                           \
-		STM32_I3C_DMA_CHANNEL(index, rs, RS, PERIPHERAL, MEMORY)};                         \
+		STM32_I3C_DMA_CHANNEL(index, rx, PERIPHERAL, MEMORY)                               \
+		STM32_I3C_DMA_CHANNEL(index, tx, MEMORY, PERIPHERAL)                               \
+		STM32_I3C_DMA_CHANNEL(index, tc, MEMORY, PERIPHERAL)                               \
+		STM32_I3C_DMA_CHANNEL(index, rs, PERIPHERAL, MEMORY)};	                           \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(index, i3c_stm32_pm_action);                                      \
                                                                                                    \

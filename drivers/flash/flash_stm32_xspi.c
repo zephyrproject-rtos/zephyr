@@ -2624,7 +2624,7 @@ static int flash_stm32_xspi_init(const struct device *dev)
 #define DMA_CHANNEL_CONFIG(node, dir)						\
 		DT_DMAS_CELL_BY_NAME(node, dir, channel_config)
 
-#define XSPI_DMA_CHANNEL_INIT(node, dir, dir_cap, src_dev, dest_dev)		\
+#define XSPI_DMA_CHANNEL_INIT(node, dir, src_dev, dest_dev)			\
 	.dev = DEVICE_DT_GET(DT_DMAS_CTLR(node)),				\
 	.channel = DT_DMAS_CELL_BY_NAME(node, dir, channel),			\
 	.reg = (DMA_TypeDef *)DT_REG_ADDR(					\
@@ -2642,14 +2642,14 @@ static int flash_stm32_xspi_init(const struct device *dev)
 	.dst_addr_increment = STM32_DMA_CONFIG_##dest_dev##_ADDR_INC(		\
 				DMA_CHANNEL_CONFIG(node, dir)),
 
-#define XSPI_DMA_CHANNEL(node, dir, DIR, src, dest)				\
+#define XSPI_DMA_CHANNEL(node, dir, src, dest)					\
 	.dma_##dir = {								\
 		COND_CODE_1(DT_DMAS_HAS_NAME(node, dir),			\
-			(XSPI_DMA_CHANNEL_INIT(node, dir, DIR, src, dest)),	\
+			(XSPI_DMA_CHANNEL_INIT(node, dir, src, dest)),		\
 			(NULL))							\
 		},
 #else
-#define XSPI_DMA_CHANNEL(node, dir, DIR, src, dest)
+#define XSPI_DMA_CHANNEL(node, dir, src, dest)
 #endif /* CONFIG_USE_STM32_HAL_DMA */
 
 #define DT_WRITEOC_PROP_OR(inst, default_value)							\
@@ -2759,8 +2759,8 @@ static int flash_stm32_xspi_init(const struct device *dev)
 				(.jedec_id = DT_INST_PROP(inst, jedec_id),))			\
 		))									\
 												\
-		XSPI_DMA_CHANNEL(STM32_XSPI_NODE(inst), tx, TX, MEMORY, PERIPHERAL)		\
-		XSPI_DMA_CHANNEL(STM32_XSPI_NODE(inst), rx, RX, PERIPHERAL, MEMORY)		\
+		XSPI_DMA_CHANNEL(STM32_XSPI_NODE(inst), tx, MEMORY, PERIPHERAL)			\
+		XSPI_DMA_CHANNEL(STM32_XSPI_NODE(inst), rx, PERIPHERAL, MEMORY)			\
 	};											\
 												\
 	DEVICE_DT_INST_DEFINE(inst, &flash_stm32_xspi_init, NULL,				\

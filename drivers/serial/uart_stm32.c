@@ -2645,7 +2645,7 @@ static int uart_stm32_pm_action(const struct device *dev, enum pm_device_action 
 
 #ifdef CONFIG_UART_ASYNC_API
 /* src_dev and dest_dev should be 'MEMORY' or 'PERIPHERAL'. */
-#define UART_DMA_CHANNEL_INIT(index, dir, dir_cap, src_dev, dest_dev)	\
+#define UART_DMA_CHANNEL_INIT(index, dir, src_dev, dest_dev)	        \
 	.dma_dev = DEVICE_DT_GET(STM32_DT_INST_DMA_CTLR(index, dir)),	\
 	.dma_channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),	\
 	.dma_cfg = {							\
@@ -2718,14 +2718,14 @@ static int uart_stm32_pm_action(const struct device *dev, enum pm_device_action 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API || CONFIG_PM */
 
 #ifdef CONFIG_UART_ASYNC_API
-#define UART_DMA_CHANNEL(index, dir, DIR, src, dest)				\
+#define UART_DMA_CHANNEL(index, dir, src, dest)					\
 	.dma_##dir = {								\
 		COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),			\
-			 (UART_DMA_CHANNEL_INIT(index, dir, DIR, src, dest)),	\
+			 (UART_DMA_CHANNEL_INIT(index, dir, src, dest)),	\
 			 (NULL))						\
 	},
 #else
-#define UART_DMA_CHANNEL(index, dir, DIR, src, dest)
+#define UART_DMA_CHANNEL(index, dir, src, dest)
 #endif
 
 #ifdef CONFIG_PM
@@ -2869,8 +2869,8 @@ static int uart_stm32_pm_action(const struct device *dev, enum pm_device_action 
 										\
 	static struct uart_stm32_data uart_stm32_data_##index = {		\
 		.uart_cfg = &uart_cfg_##index,					\
-		UART_DMA_CHANNEL(index, rx, RX, PERIPHERAL, MEMORY)		\
-		UART_DMA_CHANNEL(index, tx, TX, MEMORY, PERIPHERAL)		\
+		UART_DMA_CHANNEL(index, rx, PERIPHERAL, MEMORY)			\
+		UART_DMA_CHANNEL(index, tx, MEMORY, PERIPHERAL)			\
 	};									\
 										\
 	PM_DEVICE_DT_INST_DEFINE(index, uart_stm32_pm_action);			\

@@ -11,19 +11,26 @@ menuconfig FLASH_STM32_QSPI
 	default y
 	depends on DT_HAS_ST_STM32_QSPI_NOR_ENABLED
 	select USE_STM32_HAL_QSPI
-	select USE_STM32_HAL_MDMA if SOC_SERIES_STM32H7X
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_JESD216
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_EXPLICIT_ERASE
 	select PINCTRL
 	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_QSPI_NOR),reset-gpios)
-	select DMA if $(DT_STM32_QUADSPI_HAS_DMA)
-	select USE_STM32_HAL_DMA if $(DT_STM32_QUADSPI_HAS_DMA)
 	help
 	  Enable QSPI-NOR support on the STM32 family of processors.
 
 if FLASH_STM32_QSPI
+
+config QSPI_STM32_DMA
+	bool "STM32 MCU QSPI DMA support"
+	depends on $(DT_STM32_QUADSPI_HAS_DMA)
+	select USE_STM32_HAL_MDMA if SOC_SERIES_STM32H7X
+	select USE_STM32_HAL_DMA
+	select DMA
+	help
+	  Enable the QSPI DMA mode for QSPI instances
+	  that enable dma channels in their device tree node.
 
 config FLASH_STM32_QSPI_GENERIC_READ
 	bool "Generic read command extended operation"

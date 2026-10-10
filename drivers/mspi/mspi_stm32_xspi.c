@@ -2016,7 +2016,7 @@ static int mspi_stm32_xspi_pm_action(const struct device *dev, enum pm_device_ac
 #ifdef CONFIG_MSPI_DMA
 #define DMA_CHANNEL_CONFIG(node, dir) DT_DMAS_CELL_BY_NAME(node, dir, channel_config)
 
-#define XSPI_DMA_CHANNEL_INIT(node, dir, dir_cap, src_dev, dest_dev)                              \
+#define XSPI_DMA_CHANNEL_INIT(node, dir, src_dev, dest_dev)                                       \
 	.dev = DEVICE_DT_GET(DT_DMAS_CTLR(node)),                                                 \
 	.channel = DT_DMAS_CELL_BY_NAME(node, dir, channel),                                      \
 	.phys_addr = DT_REG_ADDR(DT_DMAS_CTLR(node)),                                              \
@@ -2031,10 +2031,10 @@ static int mspi_stm32_xspi_pm_action(const struct device *dev, enum pm_device_ac
 	.dst_addr_increment =                                                                     \
 		STM32_DMA_CONFIG_##dest_dev##_ADDR_INC(DMA_CHANNEL_CONFIG(node, dir)),
 
-#define XSPI_DMA_CHANNEL(node, dir, DIR, src, dest)                                               \
+#define XSPI_DMA_CHANNEL(node, dir, src, dest)                                                    \
 	.dma_##dir = {                                                                            \
 		COND_CODE_1(DT_DMAS_HAS_NAME(node, dir),                                          \
-			(XSPI_DMA_CHANNEL_INIT(node, dir, DIR, src, dest)),                       \
+			(XSPI_DMA_CHANNEL_INIT(node, dir, src, dest)),                            \
 			(NULL))                                                                   \
 	},
 #else
@@ -2091,8 +2091,8 @@ static int mspi_stm32_xspi_pm_action(const struct device *dev, enum pm_device_ac
 		.dev_cfg = {0},                                                                   \
 		.memmap_cfg = {0},                                                                \
 		.ctx.lock = Z_SEM_INITIALIZER(mspi_stm32_dev_data_##index.ctx.lock, 0, 1),        \
-		XSPI_DMA_CHANNEL(DT_DRV_INST(index), tx, TX, MEMORY, PERIPHERAL)                  \
-		XSPI_DMA_CHANNEL(DT_DRV_INST(index), rx, RX, PERIPHERAL, MEMORY)                  \
+		XSPI_DMA_CHANNEL(DT_DRV_INST(index), tx, MEMORY, PERIPHERAL)                      \
+		XSPI_DMA_CHANNEL(DT_DRV_INST(index), rx, PERIPHERAL, MEMORY)                      \
 	};                                                                                        \
                                                                                                   \
 	PM_DEVICE_DT_INST_DEFINE(index, mspi_stm32_xspi_pm_action);                               \
