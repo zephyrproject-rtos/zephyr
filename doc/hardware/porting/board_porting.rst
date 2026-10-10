@@ -152,6 +152,13 @@ qualifiers, the board name can be used as a board target. Conversely, if
 board qualifiers are part of the board definition, then the SoC can be omitted
 by leaving it out but including the corresponding forward-slashes: ``//``.
 
+Boards that need a longer qualifier prefix can declare a
+``default_qualifier`` in :file:`board.yml`. In that case the board name alone
+selects that default target, and any remaining qualifier suffix can still be
+provided relative to it by keeping the leading slash. For example, if the
+default qualifier is ``soc/cpuapp``, then ``plank`` resolves to
+``plank/soc/cpuapp`` and ``plank//ns`` resolves to ``plank/soc/cpuapp/ns``.
+
 Continuing with the example above, The board :zephyr:board:`bl5340_dvk` is a single SoC
 board where the SoC defines two CPU clusters: ``cpuapp`` and ``cpunet``. One of
 the CPU clusters, ``cpuapp``, additionally defines a non-secure board variant,

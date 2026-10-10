@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2026 Intel Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "../../../../../../../../boards/qemu/x86/qemu_x86_atom_virt.dts"

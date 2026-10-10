@@ -262,26 +262,18 @@ def _generate_platforms(board_roots, soc_roots, arch_roots):
                 for rev in board.revisions:
                     if rev.name:
                         target = f"{board.name}@{rev.name}/{qual}"
-                        alias2target[target] = target
-                        if rev.name == board.revision_default:
-                            alias2target[f"{board.name}/{qual}"] = target
-                        if '/' not in qual and len(board.socs) == 1:
-                            if rev.name == board.revision_default:
-                                alias2target[f"{board.name}"] = target
-                            alias2target[f"{board.name}@{rev.name}"] = target
+                        for alias in list_boards.board_v2_target_aliases(board, qual, rev.name):
+                            alias2target[alias] = target
                     else:
                         target = f"{board.name}/{qual}"
-                        alias2target[target] = target
-                        if '/' not in qual and len(board.socs) == 1 \
-                                and rev.name == board.revision_default:
-                            alias2target[f"{board.name}"] = target
+                        for alias in list_boards.board_v2_target_aliases(board, qual):
+                            alias2target[alias] = target
 
                     target2board[target] = board
             else:
                 target = f"{board.name}/{qual}"
-                alias2target[target] = target
-                if '/' not in qual and len(board.socs) == 1:
-                    alias2target[board.name] = target
+                for alias in list_boards.board_v2_target_aliases(board, qual):
+                    alias2target[alias] = target
                 target2board[target] = board
 
     for board_dir, data in dir2data.items():

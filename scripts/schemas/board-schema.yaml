@@ -64,6 +64,10 @@ $defs:
       vendor:
         type: string
         description: SoC family of the SoC on the board.
+      default_qualifier:
+        type: string
+        minLength: 1
+        description: Default board qualifier path to use when qualifiers are omitted.
       revision:
         type: object
         properties:
@@ -181,7 +185,9 @@ $defs:
           required: [extend]
         then:
           not:
-            required: [socs]
+            anyOf:
+              - required: [default_qualifier]
+              - required: [socs]
     additionalProperties: false
   runnerSchema:
     type: object
