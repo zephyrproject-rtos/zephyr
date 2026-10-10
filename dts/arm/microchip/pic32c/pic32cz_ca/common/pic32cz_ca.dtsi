@@ -152,10 +152,28 @@
 			status = "disabled";
 		};
 
+		eic: interrupt-controller@44800000 {
+			compatible = "microchip,eic-g1-intc";
+			reg = <0x44800000 0x3c>;
+			interrupts = <19 0>, <20 0>, <21 0>, <22 0>,
+				     <23 0>, <24 0>, <25 0>, <26 0>,
+				     <27 0>, <28 0>, <29 0>, <30 0>,
+				     <31 0>, <32 0>, <33 0>, <34 0>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_EIC>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_EIC>;
+			clock-names = "mclk", "gclk";
+			porta-unsupported-pins = <0x00000020>;
+			portc-unsupported-pins = <0x00110004>;
+			status = "disabled";
+		};
+
 		pinctrl: pinctrl@44840000 {
 			compatible = "microchip,port-g1-pinctrl";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			reg = <0x44840000 0x380>;
 			ranges = <0x44840000 0x44840000 0x380>;
 
 			porta: gpio@44840000 {

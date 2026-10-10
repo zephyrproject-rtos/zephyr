@@ -1,0 +1,14 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Connect EXT1 pin 5 (PB25) and EXT1 pin 6 (PB26) */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&portb 25 0>;
+		in-gpios = <&portb 26 0>;
+	};
+};

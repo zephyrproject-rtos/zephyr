@@ -7,3 +7,7 @@
 #include <mem.h>
 #include <microchip/pic32c/pic32cz_ca/common/pic32cz_ca_176.dtsi>
 #include <microchip/pic32c/pic32cz_ca/common/pic32cz_2051_ca.dtsi>
+
+&eic {
+	portc-unsupported-pins = <0x001f0004>;
+};
