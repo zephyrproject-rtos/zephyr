@@ -13,3 +13,7 @@ common:
   build_only: true
 tests:
   mgmt.mcumgr.transport.bluetooth: {}
+  mgmt.mcumgr.transport.bluetooth.central_only:
+    extra_configs:
+      - CONFIG_BT_PERIPHERAL=n
+      - CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL=n
