@@ -52,6 +52,11 @@ if(CONFIG_LLEXT_RODATA_NO_RELOC AND NOT CONFIG_XTENSA)
     list(APPEND ext_names rodata_no_reloc)
 endif()
 
+if(CONFIG_XTENSA)
+    # Only llext_link_plt(), used for all Xtensa relocations, accepts undefined weak symbols
+    list(APPEND ext_names weak_undef)
+endif()
+
 # generate extension targets for each extension in 'ext_names'
 foreach(ext_name ${ext_names})
   set(ext_src ${PROJECT_SOURCE_DIR}/src/${ext_name}_ext.c)
@@ -76,6 +81,31 @@ if(CONFIG_LLEXT_VENEERS)
   get_target_property(veneer_lib veneer_ext lib_target)
   target_compile_options(${veneer_lib} PRIVATE -mno-long-calls)
   generate_inc_file_for_target(app ${ext_bin} ${ext_inc})
+endif()
+
+# C++ extensions exercising virtual dispatch, vtable relocations and weak
+# symbols emitted for C++ code
+if(CONFIG_CPP)
+  function(add_cpp_llext_test ext_name)
+    list(TRANSFORM ARGN PREPEND ${PROJECT_SOURCE_DIR}/src/)
+    add_llext_target(${ext_name}_ext
+      OUTPUT  ${PROJECT_BINARY_DIR}/llext/${ext_name}.llext
+      SOURCES ${ARGN}
+    )
+    get_target_property(ext_lib ${ext_name}_ext lib_target)
+    target_compile_options(${ext_lib} PRIVATE
+      $<$<COMPILE_LANGUAGE:CXX>:-std=c++17>
+      -fno-rtti
+      -fno-exceptions
+    )
+    generate_inc_file_for_target(app ${PROJECT_BINARY_DIR}/llext/${ext_name}.llext
+      ${ZEPHYR_BINARY_DIR}/include/generated/${ext_name}.inc
+    )
+  endfunction()
+
+  add_cpp_llext_test(weak_vtable weak_vtable_ext.cpp)
+  add_cpp_llext_test(cpp_dispatch cpp_dispatch_ext.cpp)
+  add_cpp_llext_test(cpp_multi_tu cpp_multi_tu_ext1.cpp cpp_multi_tu_ext2.cpp)
 endif()
 
 # An extension referencing the thread-local errno, exercising the AArch64

@@ -666,7 +666,7 @@ static int llext_count_export_syms(struct llext_loader *ldr, struct llext *ext)
 			return -ENOEXEC;
 		}
 
-		if ((stt == STT_FUNC || stt == STT_OBJECT) && stb == STB_GLOBAL) {
+		if ((stt == STT_FUNC || stt == STT_OBJECT) && (stb == STB_GLOBAL || stb == STB_WEAK)) {
 			LOG_DBG("function symbol %d, name %s, type tag %d, bind %d, sect %d",
 				i, name, stt, stb, sect);
 			ext->sym_tab.sym_cnt++;
@@ -842,7 +842,7 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 		unsigned int shndx = sym.st_shndx;
 
 		if ((stt == STT_FUNC || stt == STT_OBJECT) &&
-		    stb == STB_GLOBAL && shndx != SHN_UNDEF) {
+		    (stb == STB_GLOBAL || stb == STB_WEAK) && shndx != SHN_UNDEF) {
 			if (shndx >= ext->sect_cnt) {
 				LOG_ERR("Symbol %d has invalid section index %u", i, shndx);
 				return -ENOEXEC;
