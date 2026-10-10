@@ -27,6 +27,8 @@ tests:
     integration_platforms:
       - native_sim/native/64
     extra_configs:
+      - CONFIG_MAIN_STACK_SIZE=2048
+      - CONFIG_ZTEST_STACK_SIZE=3072
       - CONFIG_ENTROPY_GENERATOR=y
   crypto.psa.without_entropy_driver:
     filter: not CONFIG_CSPRNG_ENABLED
@@ -43,3 +45,18 @@ tests:
       - CONFIG_TEST_RANDOM_GENERATOR=y
       # PSA Crypto needs some heap, but MINIMAL_LIBC has none by default.
       - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=2048
+      - CONFIG_MAIN_STACK_SIZE=2048
+      - CONFIG_ZTEST_STACK_SIZE=3072
+  crypto.psa.offloader:
+    filter: CONFIG_CSPRNG_ENABLED
+    tags:
+      - offloader
+    integration_platforms:
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_OFFLOADER=y
+      - CONFIG_OFFLOADER_PSA=y
+      - CONFIG_OFFLOADER_PSA_STACK_SIZE=3072
+      - CONFIG_MAIN_STACK_SIZE=1024
+      - CONFIG_ZTEST_STACK_SIZE=512
+      - CONFIG_ENTROPY_GENERATOR=y

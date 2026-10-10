@@ -41,6 +41,7 @@ LOG_MODULE_REGISTER(net_quic, CONFIG_QUIC_LOG_LEVEL);
 #include <mbedtls/constant_time.h>
 
 #include <psa/crypto.h>
+#include <zephyr/offloader/psa.h>
 #endif /* CONFIG_MBEDTLS */
 
 #if defined(CONFIG_MBEDTLS_DEBUG)

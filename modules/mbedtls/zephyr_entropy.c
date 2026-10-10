@@ -7,6 +7,7 @@
 #include <zephyr/drivers/entropy.h>
 #include <zephyr/random/random.h>
 #include <psa/crypto.h>
+#include <zephyr/offloader/psa.h>
 #include <mbedtls/platform.h>
 
 

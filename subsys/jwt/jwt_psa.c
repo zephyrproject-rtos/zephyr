@@ -11,6 +11,7 @@
 #include <zephyr/data/jwt.h>
 #include <zephyr/data/json.h>
 #include <psa/crypto.h>
+#include <zephyr/offloader/psa.h>
 
 #include "jwt.h"
 

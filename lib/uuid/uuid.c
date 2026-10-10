@@ -16,6 +16,7 @@
 
 #if defined(CONFIG_UUID_V5)
 #include <psa/crypto.h>
+#include <zephyr/offloader/psa.h>
 #endif
 
 #if defined(CONFIG_UUID_BASE64)

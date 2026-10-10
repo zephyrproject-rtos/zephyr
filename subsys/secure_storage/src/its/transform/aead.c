@@ -5,6 +5,7 @@
 #include <zephyr/secure_storage/its/transform/aead.h>
 #include <zephyr/sys/__assert.h>
 #include <psa/crypto.h>
+#include <zephyr/offloader/psa.h>
 
 BUILD_ASSERT(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_OUTPUT_OVERHEAD
 	     > CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_NONCE_SIZE);

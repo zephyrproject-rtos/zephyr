@@ -22,6 +22,7 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 
 #if defined(CONFIG_COAP_OSCORE)
 #include <psa/crypto.h>
+#include <zephyr/offloader/psa.h>
 #include <zephyr/net/coap_oscore.h>
 #include "coap_oscore_internal.h"
 

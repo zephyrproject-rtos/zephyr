@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(ssh, CONFIG_SSH_LOG_LEVEL);
 #include <zephyr/sys/minmax.h>
 
 #include <psa/crypto.h>
+#include <zephyr/offloader/psa.h>
 
 #ifdef CONFIG_SSH_IDENTITY_OVERRIDE_ENABLE
 #define ZEPHYR_SSH_IDENTITY CONFIG_SSH_IDENTITY_OVERRIDE

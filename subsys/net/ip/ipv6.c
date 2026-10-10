@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 
 #if defined(CONFIG_NET_IPV6_IID_STABLE) || defined(CONFIG_NET_IPV6_PE)
 #include <psa/crypto.h>
+#include <zephyr/offloader/psa.h>
 #endif
 
 #include <zephyr/net/net_core.h>

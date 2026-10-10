@@ -43,6 +43,7 @@
 #include <psa/crypto_struct.h>
 #include <psa/crypto_types.h>
 #include <psa/crypto_values.h>
+#include <zephyr/offloader/psa.h>
 #endif /* CONFIG_BT_GATT_CACHING */
 
 #include "att_internal.h"

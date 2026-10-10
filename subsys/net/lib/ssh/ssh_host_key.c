@@ -11,6 +11,7 @@
 LOG_MODULE_DECLARE(ssh, CONFIG_SSH_LOG_LEVEL);
 
 #include <psa/crypto.h>
+#include <zephyr/offloader/psa.h>
 #include <zephyr/net/ssh/keygen.h>
 
 #include "ssh_host_key.h"
