@@ -1036,7 +1036,7 @@ static void mcp251xfd_handle_interrupts(const struct device *dev)
 
 		if (!reg_int_hw) {
 			k_mutex_unlock(&dev_data->mutex);
-			continue;
+			goto check_int_pin;
 		}
 
 		*reg_int_hw = sys_le16_to_cpu(*reg_int_hw);
@@ -1110,6 +1110,7 @@ static void mcp251xfd_handle_interrupts(const struct device *dev)
 		}
 #endif
 
+check_int_pin:
 		/* Break from loop if INT pin is inactive */
 		consecutive_calls++;
 		ret = gpio_pin_get_dt(&dev_cfg->int_gpio_dt);
