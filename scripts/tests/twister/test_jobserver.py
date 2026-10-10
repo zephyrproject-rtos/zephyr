@@ -8,6 +8,8 @@ Tests for jobserver.py classes' methods
 
 import functools
 import os
+import re
+import stat
 import sys
 from contextlib import nullcontext
 from errno import ENOENT
@@ -21,7 +23,14 @@ pytestmark = pytest.mark.skipif(sys.platform != 'linux', reason='JobServer only 
 if sys.platform == 'linux':
     from fcntl import F_GETFL
 
-    from twisterlib.jobserver import GNUMakeJobClient, GNUMakeJobServer, JobClient, JobHandle
+    from twisterlib.jobserver import (
+        GNUMakeJobClient,
+        GNUMakeJobServer,
+        JobClient,
+        JobHandle,
+        _tool_version,
+        fifo_supported,
+    )
 
 
 def test_jobhandle(capfd):
@@ -454,3 +463,154 @@ def test_gnumakejobserver(jobs, expected_jobs):
         deleter()
 
     write_mock.assert_called_once_with(pipe[1], b'+' * expected_jobs)
+
+
+def install_tools(directory, tools):
+    """Create executables that answer --version with the given text."""
+    directory.mkdir(exist_ok=True)
+    for name, version_output in tools.items():
+        tool = directory / name
+        tool.write_text(f"#!/bin/sh\necho '{version_output}'\n")
+        tool.chmod(0o755)
+
+
+def test_tool_version(tmp_path, monkeypatch):
+    first = tmp_path / 'first'
+    second = tmp_path / 'second'
+    install_tools(first, {'ninja': '1.13.2', 'odd': 'no version here'})
+    install_tools(second, {'ninja-build': '1.11.1.git.kitware.jobserver-1'})
+    (first / 'broken').write_text('#!/bin/sh\nexit 1\n')
+    (first / 'broken').chmod(0o755)
+    monkeypatch.setenv('PATH', f'{first}{os.pathsep}{second}')
+
+    # Like CMake, take the first directory that has any of the names
+    assert _tool_version(('ninja-build', 'ninja'), r'(\d+)\.(\d+)') == (1, 13)
+    assert _tool_version(('ninja-build',), r'(\d+)\.(\d+)') == (1, 11)
+    assert _tool_version(('odd',), r'(\d+)\.(\d+)') == (0, 0)
+    assert _tool_version(('broken',), r'(\d+)\.(\d+)') == (0, 0)
+    assert _tool_version(('missing',), r'(\d+)\.(\d+)') is None
+
+
+TESTDATA_7 = [
+    ({'ninja': '1.13.2', 'make': 'GNU Make 4.4.1'}, True, True),
+    ({'ninja': '1.13.2', 'make': 'GNU Make 4.3'}, False, False),
+    ({'ninja': '1.13.2', 'make': 'GNU Make 4.4.1', 'gmake': 'GNU Make 4.3'}, False, False),
+    ({'ninja': '1.13.2', 'make': 'bmake 20240108'}, False, False),
+    ({'ninja': '1.13.2'}, True, False),
+    ({'ninja': '1.12.1', 'make': 'GNU Make 4.4.1'}, False, True),
+    ({'ninja': '1.11.1.git.kitware.jobserver-1', 'make': 'GNU Make 4.4.1'}, False, True),
+    ({'make': 'GNU Make 4.4.1'}, False, True),
+    ({}, False, False),
+]
+
+@pytest.mark.parametrize(
+    'tools, expected_ninja, expected_make',
+    TESTDATA_7,
+    ids=['recent tools', 'old make', 'old gmake', 'other make', 'no make', 'old ninja',
+         'kitware ninja', 'no ninja', 'no tools']
+)
+def test_fifo_supported(tmp_path, monkeypatch, tools, expected_ninja, expected_make):
+    install_tools(tmp_path, tools)
+    monkeypatch.setenv('PATH', str(tmp_path))
+
+    assert fifo_supported('ninja') == expected_ninja
+    assert fifo_supported('make') == expected_make
+
+
+TESTDATA_8 = [
+    (['CONFIG_ASSERT=y'], {}, True),
+    (['MAKE=/opt/make-4.3/bin/make'], {}, False),
+    (['CMAKE_MAKE_PROGRAM:FILEPATH=/opt/ninja'], {}, False),
+    (['CMAKE_PROGRAM_PATH=/opt/bin'], {}, False),
+    ([], {'CMAKE_PROGRAM_PATH': '/opt/bin'}, False),
+]
+
+@pytest.mark.parametrize(
+    'cmake_args, environment, expected',
+    TESTDATA_8,
+    ids=['unrelated argument', 'make', 'build tool', 'program path', 'program path variable']
+)
+def test_fifo_supported_selected_tools(tmp_path, monkeypatch, cmake_args, environment, expected):
+    install_tools(tmp_path, {'ninja': '1.13.2', 'make': 'GNU Make 4.4.1'})
+    monkeypatch.setenv('PATH', str(tmp_path))
+    monkeypatch.delenv('CMAKE_PROGRAM_PATH', raising=False)
+    for name, value in environment.items():
+        monkeypatch.setenv(name, value)
+
+    assert fifo_supported('ninja', cmake_args) == expected
+
+
+def test_gnumakejobserver_fifo():
+    jobs = 3
+    server = GNUMakeJobServer(jobs=jobs, fifo=True)
+    fifo_dir = server._fifo_dir
+    if fifo_dir is None:
+        pytest.skip('MAKEFLAGS cannot carry the name of the temporary directory')
+    path = os.path.join(fifo_dir, 'fifo')
+
+    assert stat.S_ISFIFO(os.stat(path).st_mode)
+    assert server.env() == {'MAKEFLAGS': f' -j{jobs} --jobserver-auth=fifo:{path}'}
+    assert server.pass_fds() == []
+
+    def tokens():
+        """Take every token a client can get from the named pipe, and put them back."""
+        client_fd = os.open(path, os.O_RDWR | os.O_NONBLOCK)
+        try:
+            taken = os.read(client_fd, jobs + 1)
+        except BlockingIOError:
+            taken = b''
+        os.write(client_fd, taken)
+        os.close(client_fd)
+        return taken
+
+    assert tokens() == b'+' * jobs
+    with server.get_job():
+        assert tokens() == b'+' * (jobs - 1)
+    assert tokens() == b'+' * jobs
+
+    del server
+    assert not os.path.exists(fifo_dir)
+
+
+@pytest.mark.parametrize('name', ['with space', 'with$dollar', 'back\\slash', "quo'te"])
+def test_gnumakejobserver_fifo_unusable_tmpdir(tmp_path, monkeypatch, name):
+    tmpdir = tmp_path / name
+    tmpdir.mkdir()
+    monkeypatch.setattr('tempfile.tempdir', str(tmpdir))
+
+    server = GNUMakeJobServer(jobs=2, fifo=True)
+
+    read_fd, write_fd = server.pass_fds()
+    assert server.env() == {'MAKEFLAGS': f' -j2 --jobserver-auth={read_fd},{write_fd}'}
+    assert os.listdir(tmpdir) == []
+
+
+def test_gnumakejobserver_fifo_failure(tmp_path, monkeypatch):
+    monkeypatch.setattr('tempfile.tempdir', str(tmp_path))
+    if not re.fullmatch(r'[\w./+-]+', str(tmp_path)):
+        pytest.skip('MAKEFLAGS cannot carry the name of the temporary directory')
+
+    with mock.patch('os.mkfifo', side_effect=PermissionError()), \
+         pytest.raises(PermissionError):
+        GNUMakeJobServer(jobs=2, fifo=True)
+
+    assert os.listdir(tmp_path) == []
+
+    opened = []
+    real_open = os.open
+
+    def open_reader_only(path, flags, *args, **kwargs):
+        if flags & os.O_ACCMODE == os.O_WRONLY:
+            raise PermissionError()
+        fd = real_open(path, flags, *args, **kwargs)
+        if os.path.basename(path) == 'fifo':
+            opened.append(fd)
+        return fd
+
+    with mock.patch('os.open', open_reader_only), pytest.raises(PermissionError):
+        GNUMakeJobServer(jobs=2, fifo=True)
+
+    assert os.listdir(tmp_path) == []
+    assert len(opened) == 1
+    with pytest.raises(OSError):
+        os.fstat(opened[0])
