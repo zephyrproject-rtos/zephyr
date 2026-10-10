@@ -211,6 +211,8 @@ zephyr_iterable_section(NAME k_kernel_init_pre_entry KVMA RAM_REGION GROUP RODAT
 
 zephyr_iterable_section(NAME k_kernel_init_post_entry KVMA RAM_REGION GROUP RODATA_REGION)
 
+zephyr_iterable_section(NAME z_static_work_q_data KVMA RAM_REGION GROUP RODATA_REGION)
+
 zephyr_iterable_section(NAME _static_thread_data KVMA RAM_REGION GROUP RODATA_REGION)
 
 if(CONFIG_BT_IAS)
