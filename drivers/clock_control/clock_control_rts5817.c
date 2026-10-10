@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/dt-bindings/clock/rts5817_clock.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/arch/common/sys_io.h>
 #include <zephyr/device.h>
 #include <errno.h>
@@ -1012,6 +1013,23 @@ static int rts_fp_clk_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int rts_fp_clk_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		rts_fp_clk_init(dev);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static struct rts_fp_clock_data rts_fp_clock_data = {
 	.syspll_frequency = 0,
 };
@@ -1022,8 +1040,11 @@ static const struct rts_fp_clock_config rts_fp_clock_config = {
 	.sck_div_base = DT_INST_REG_ADDR_BY_IDX(0, 2),
 };
 
-DEVICE_DT_INST_DEFINE(0, rts_fp_clk_init, NULL, &rts_fp_clock_data, &rts_fp_clock_config,
-		      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &rts_fp_clk_api);
+PM_DEVICE_DT_INST_DEFINE(0, rts_fp_clk_pm_action);
+
+DEVICE_DT_INST_DEFINE(0, rts_fp_clk_init, PM_DEVICE_DT_INST_GET(0), &rts_fp_clock_data,
+		      &rts_fp_clock_config, PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
+		      &rts_fp_clk_api);
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1,
 	     "Only one clock control instance can be supported");
