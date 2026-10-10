@@ -41,6 +41,20 @@
 		zephyr,console = &lpuart0;
 		zephyr,shell-uart = &lpuart0;
 	};
+
+	/* This node describes the GPIO pins of the MIPI FPC interface. */
+	nxp_mipi_connector: mipi-connector {
+		compatible = "gpio-nexus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio1 28 0>,		/* Pin 1, LEDK (backlight enable) */
+			   <21 0 &pcal6524 19 0>,	/* Pin 21, RESET */
+			   <22 0 &pcal6524 7 0>,	/* Pin 22, LPTE (tear effect) */
+			   <28 0 &pcal6524 20 0>,	/* Pin 28, CTP_RST */
+			   <29 0 &pcal6524 6 0>,	/* Pin 29, CTP_INT */
+			   <32 0 &pca9555 10 0>;	/* Pin 32, PWR_EN */
+	};
 };
 
 /*
@@ -105,3 +119,5 @@
 &psram {
 	status = "okay";
 };
+
+nxp_mipi_i2c: &lpi2c0 {};
