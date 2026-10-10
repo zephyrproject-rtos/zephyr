@@ -23,6 +23,8 @@
 		led2 = &led2;
 		sw0 = &btn0;
 		sw1 = &btn1;
+		watchdog0 = &wdt0;
+		watchdog1 = &wdt1;
 	};
 
 	chosen {
