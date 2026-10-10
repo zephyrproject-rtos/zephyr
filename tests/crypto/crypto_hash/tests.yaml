@@ -35,4 +35,5 @@ tests:
       - kit_pse84_ai/pse846gps2dbzc4a/m33
       - kit_pse84_ai/pse846gps2dbzc4a/m55
       - it51xxx_evb/it51526aw
+      - kit_psc3m6_evk/psc3m6ges3ahq1
     tags: crypto
