@@ -143,6 +143,19 @@ void *arm_m_lto_refs[2];
 /* Bitmask to determine if the XPSR indicates the exception frame was padded */
 #define XPSR_STACK_ALIGN BIT(9)
 
+/* EXC_RETURN value which will return to a Zephyr thread context. */
+#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) ||                                                 \
+	(!defined(CONFIG_ARMV8_M_SE) &&                                                            \
+	 (defined(CONFIG_ARMV8_M_MAINLINE) || defined(CONFIG_ARMV8_M_BASELINE)))
+/* Set S = 0 and ES = 0 if Zephyr is running as non-secure or there is
+ * no security extension and we're on v8m.
+ */
+#define ZEPHYR_EXC_RETURN 0xFFFFFFBC
+#else
+/* Set S = 1 and ES = 1 if Zephyr is running as secure, or if on v7m. */
+#define ZEPHYR_EXC_RETURN 0xFFFFFFFD
+#endif
+
 /* Unit test hook, unused in production */
 void *arm_m_last_switch_handle;
 
@@ -204,18 +217,6 @@ static bool pc_match(uint32_t pc, void *addr)
 	return ((pc ^ (uint32_t) addr) & ~1) == 0;
 }
 
-/* Reports if the passed return address is a valid EXC_RETURN (high
- * four bits set) that will restore to the PSP running in thread mode
- * (low four bits == 0xd).  That is an interrupted Zephyr thread
- * context.  For everything else, we just return directly via the
- * hardware-pushed stack frame with no special handling. See ARMv7M
- * manual B1.5.8.
- */
-static bool is_thread_return(uint32_t lr)
-{
-	return (lr & 0xf000000f) == 0xf000000d;
-}
-
 /* Returns true if the EXC_RETURN address indicates a FPU subframe was
  * pushed to the stack.  See ARMv7M manual B1.5.8.
  */
@@ -261,6 +262,21 @@ __attribute__((naked)) void arm_m_iciit_stub(void)
 	__asm__("udf #0;");
 }
 
+#ifdef CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
+/* Return to preempted secure-call workaround
+ *
+ * The only way to return to a secure call which has been preempted is from
+ * a handler context. Thus threads which have their context saved during an
+ * interrupted secure-call have their saved pc point to this function,
+ * which will trigger a HardFault, thus putting us in a handler context from
+ * which we can return to the secure call.
+ */
+__attribute__((naked)) void arm_m_secure_preempt_stub(void)
+{
+	__asm__("udf #0;");
+}
+#endif
+
 /* Called out of interrupt entry to test for an interrupted instruction */
 static void iciit_fixup(struct k_thread *th, struct hw_frame_base *hw, uint32_t xpsr)
 {
@@ -275,19 +291,36 @@ static void iciit_fixup(struct k_thread *th, struct hw_frame_base *hw, uint32_t 
 }
 
 /* Called out of fault handler from the UDF after an arch_switch() */
-bool arm_m_iciit_check(uint32_t msp, uint32_t psp, uint32_t lr)
+bool arm_m_udf_fixup_check(uint32_t msp, uint32_t psp, uint32_t lr)
 {
 	struct hw_frame_base *f = (void *)psp;
 
 	/* Look for undefined instruction faults from our stub */
-	if (pc_match(f->pc, arm_m_iciit_stub)) {
-		if (is_thread_return(lr)) {
-			f->pc = _current->arch.iciit_pc;
-			f->apsr = _current->arch.iciit_apsr;
-			_current->arch.iciit_pc = 0;
-			return true;
-		}
+	if (pc_match(f->pc, arm_m_iciit_stub) && is_thread_return(lr)) {
+		f->pc = _current->arch.iciit_pc;
+		f->apsr = _current->arch.iciit_apsr;
+		_current->arch.iciit_pc = 0;
+		return true;
 	}
+
+#ifdef CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
+	if (pc_match(f->pc, arm_m_secure_preempt_stub) && is_thread_return(lr)) {
+		/* At this point arm_m_switch has popped our dummy software
+		 * switch_frame.
+		 *
+		 * Restore the EXC_RETURN from the thread struct so we can return
+		 * back into the secure context.
+		 */
+		*arm_m_exc_lr_ptr = 0xFFFFFF00 | _current->arch.mode_exc_return;
+
+		/* Get rid of the HardFault frame so we return straight into
+		 * the preempted secure call.
+		 * The PSP is saved in r0 for this purpose.
+		 */
+		__set_PSP(f->r0);
+		return true;
+	}
+#endif
 	return false;
 }
 
@@ -295,6 +328,82 @@ bool arm_m_iciit_check(uint32_t msp, uint32_t psp, uint32_t lr)
 #define PSPLIM(f) ((f)->z.u.sw.psplim)
 #else
 #define PSPLIM(f) 0
+#endif
+
+#ifdef CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
+/* Called to construct a z_frame in the case that an interrupt is preempting a secure
+ * call, and that secure-call context is getting context switched out.
+ *
+ * The thread in a secure call that was preempted can ONLY be returned to by returning
+ * from an interrupt. That is, we cannot return to this thread via the cooperative
+ * arm_m_switch, which runs in thread mode. Rig the thread up to trap when its context
+ * is restored by arm_m_switch, so we can return from the exception, back to the secure
+ * context.
+ */
+void *arm_m_build_secure_preempt_frame(void *psp)
+{
+	struct z_frame *frame = (struct z_frame *)psp - 1;
+
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+	void *psplim = (void *)__get_PSPLIM();
+
+	frame->u.sw.psplim = (uint32_t)psplim;
+#endif
+
+#ifdef CONFIG_FPU
+	/* Preeempted secure calls never save FPU state:
+	 * If the Zephyr thread that made the secure call had FPU state,
+	 * TF-M must preserve the callee saved FP registers.
+	 *
+	 * If TF-M is using s16-s31 then the extended nonsecure-to-secure
+	 * stack frame will already have them saved. So we don't need to
+	 * bother.
+	 */
+	frame->have_fpu = false;
+#endif
+
+	frame->u.sw.apsr = 0x1000000;                             /* thumb bit! */
+	frame->u.sw.pc = (uint32_t)arm_m_secure_preempt_stub | 1; /* thumb bit! */
+	/* Save the PSP in r0. The arm_m_secure_preempt_stub triggers
+	 * a hardfault which may push a stack frame of varying size, depending on whether
+	 * the stack is aligned at an 8-byte boundary. To avoid having to explicitly
+	 * calculate the size, track the PSP before this frame was pushed.
+	 */
+	frame->u.sw.r0 = (uint32_t)psp;
+
+	/* The arm_m_exc_exit assembly stub doesn't need to save the callee saved
+	 * registers, because they're already stored in the extended secure-to-nonsecure
+	 * frame.
+	 */
+	arm_m_cs_ptrs.out = NULL;
+
+#ifdef CONFIG_FPU
+	return &frame->have_fpu;
+#else
+	return &frame->u.sw;
+#endif
+}
+
+/* Called when the frame pushed in the above function is being swapped back in on
+ * interrupt exit. Note that while we need to restore the PSPLIM and EXC_RETURN,
+ * the other registers are immaterial as returning to a secure context will
+ * restore them all.
+ */
+static void *arm_m_prepare_secure_return(struct z_frame *f)
+{
+	/* Restore PSPLIM and EXC_RETURN value */
+	arm_m_cs_ptrs.lr_save = (void *)(0xFFFFFF00 | (uint32_t)_current->arch.mode_exc_return);
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+	__set_PSPLIM(f->u.sw.psplim);
+#endif
+	/* No need to restore callee saved registers as hardware will do this
+	 * automatically from the extended nonsecure-to-secure frame.
+	 */
+	arm_m_cs_ptrs.in = NULL;
+	/* Previous stack pointer position */
+	return f + 1;
+}
+
 #endif
 
 /* Converts, in place, a pickled "switch" frame from a suspended
@@ -326,6 +435,15 @@ static void *arm_m_switch_to_cpu(void *sp)
 		}
 	} else {
 		f = CONTAINER_OF(sp, union frame, z.have_fpu);
+
+		/* Preempted secure calls never save FPU state, see
+		 * arm_m_build_secure_preempt_frame
+		 */
+#ifdef CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
+		if (pc_match(f->z.u.sw.pc, arm_m_secure_preempt_stub)) {
+			return arm_m_prepare_secure_return(&f->z);
+		}
+#endif
 		splim = PSPLIM(f);
 		padded = f->z.u.sw.apsr & XPSR_STACK_ALIGN;
 		if (padded) {
@@ -336,6 +454,13 @@ static void *arm_m_switch_to_cpu(void *sp)
 	}
 #else
 	f = CONTAINER_OF(sp, union frame, z.u.sw);
+
+#ifdef CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
+	if (pc_match(f->z.u.sw.pc, arm_m_secure_preempt_stub)) {
+		return arm_m_prepare_secure_return(&f->z);
+	}
+#endif
+
 	padded = f->z.u.sw.apsr & XPSR_STACK_ALIGN;
 	splim = PSPLIM(f);
 
@@ -358,6 +483,9 @@ static void *arm_m_switch_to_cpu(void *sp)
 	} else {
 		arm_m_cs_ptrs.in = &f->z.u.hw.r7;
 	}
+
+	/* returning to a normal Zephyr thread */
+	arm_m_cs_ptrs.lr_save = (void *)ZEPHYR_EXC_RETURN;
 
 	return padded ? &f->synth_a.base.base : &f->z.u.hw.base;
 }
@@ -505,7 +633,7 @@ void *arm_m_new_stack(char *base, uint32_t sz, void *entry, void *arg0, void *ar
 #endif
 }
 
-bool arm_m_do_switch(struct k_thread *last_thread, void *next);
+bool arm_m_do_switch(struct k_thread *last_thread, void *next, bool secure_preemption);
 
 bool arm_m_must_switch(void)
 {
@@ -514,18 +642,20 @@ bool arm_m_must_switch(void)
 	 * cycles by skipping the needless bits of arch_irq_lock().
 	 */
 	uint32_t pri = _EXC_IRQ_DEFAULT_PRIO;
+	bool secure_preemption = false;
 
 	__set_BASEPRI(pri);
 
-	/* Secure mode transitions can push a non-thread frame to the
-	 * stack.  If not enabled, we already know by construction
-	 * that we're handling the bottom level of the interrupt stack
-	 * and returning to thread mode.
-	 */
-	if ((IS_ENABLED(CONFIG_ARM_SECURE_FIRMWARE) || IS_ENABLED(CONFIG_ARM_NONSECURE_FIRMWARE)) &&
-	    !is_thread_return((uint32_t)arm_m_cs_ptrs.lr_save)) {
+#ifdef CONFIG_TRUSTED_EXECUTION_NONSECURE
+	/* Check S bit of EXC_RETURN. If S = 1 then we are preempting a secure call. */
+	secure_preemption = ((uint32_t)arm_m_cs_ptrs.lr_save) & (1 << 6);
+
+#ifndef CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
+	if (secure_preemption) {
 		return false;
 	}
+#endif
+#endif
 
 	struct k_thread *last_thread = _current;
 	void *next = z_sched_next_handle(last_thread);
@@ -534,16 +664,13 @@ bool arm_m_must_switch(void)
 		return false;
 	}
 
-	arm_m_do_switch(last_thread, next);
-	return true;
+	return arm_m_do_switch(last_thread, next, secure_preemption);
 }
 
-bool arm_m_do_switch(struct k_thread *last_thread, void *next)
+bool arm_m_do_switch(struct k_thread *last_thread, void *next, bool saving_preempted_secure_call)
 {
-	void *last;
+	void *last = (void *)__get_PSP();
 	bool fpu = fpu_state_pushed((uint32_t)arm_m_cs_ptrs.lr_save);
-
-	last = (void *)__get_PSP();
 
 #ifdef CONFIG_USERSPACE
 	/* Update CONTROL register's nPRIV bit to reflect user/syscall
@@ -573,7 +700,20 @@ bool arm_m_do_switch(struct k_thread *last_thread, void *next)
 	__set_CONTROL(control.w);
 #endif
 
+#ifdef CONFIG_ARM_STORE_EXC_RETURN
+	last_thread->arch.mode_exc_return = (uint32_t)arm_m_cs_ptrs.lr_save & 0xFF;
+#endif
+
+#ifdef CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
+	if (saving_preempted_secure_call) {
+		last = arm_m_build_secure_preempt_frame(last);
+	} else {
+		last = arm_m_cpu_to_switch(last_thread, last, fpu);
+	}
+#else
 	last = arm_m_cpu_to_switch(last_thread, last, fpu);
+#endif
+
 	next = arm_m_switch_to_cpu(next);
 	__set_PSP((uint32_t)next);
 
@@ -617,10 +757,9 @@ void arm_m_legacy_exit(void)
  * We know that r4-r11 of the interrupted thread have been restored
  * (other registers will be forgotten and can be clobbered).  First
  * call arm_m_must_switch() (which handles the other context switch
- * duties), and spill/fill if necessary.  If no context switch is
- * needed, we just return via the original LR.  If we are switching,
- * we synthesize a integer-only EXC_RETURN as FPU state switching was
- * handled in software already.
+ * duties), and spill/fill if necessary. Return via the LR in lr_save.
+ * If arm_m_must_switch does a context switch, this will be written
+ * with the correct LR for returning to the next thread.
  */
 #ifdef CONFIG_MULTITHREADING
 __attribute__((naked)) void arm_m_exc_exit(void)
@@ -629,11 +768,17 @@ __attribute__((naked)) void arm_m_exc_exit(void)
 		"  ldr r2, =arm_m_cs_ptrs;"
 		"  mov r3, #0;"
 		"  ldr lr, [r2, #8];" /* lr_save */
-		"  cbz r0, 1f;"
-		"  mov lr, #0xfffffffd;" /* integer-only LR */
-		"  ldm r2, {r0, r1};"    /* fields: out, in */
-		"  stm r0, {r4-r11};"    /* out is a switch_frame */
-		"  ldm r1!, {r7-r11};"   /* in is a synth_frame */
+		"  cbz r0, 1f;"       /* if 0, then no context restore at all*/
+		"  ldm r2, {r0, r1};" /* fields: out, in */
+#ifdef CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
+		"  cbz r0, 2f;" /* skip context save due to secure preemption*/
+#endif
+		"  stm r0, {r4-r11};" /* out is a switch_frame */
+		"2:"
+#ifdef CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
+		"  cbz r1, 1f;" /* skip context restore due to secure preemption */
+#endif
+		"  ldm r1!, {r7-r11};" /* in is a synth_frame */
 		"  ldm r1, {r4-r6};"
 		"1:\n"
 		"  msr basepri, r3;" /* release lock taken in must_switch */
