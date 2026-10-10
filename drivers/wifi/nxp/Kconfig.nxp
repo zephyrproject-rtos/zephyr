@@ -64,6 +64,7 @@ config NXP_RW610
 	depends on SOC_SERIES_RW6XX
 	select NXP_FW_LOADER
 	select NXP_RF_IMU
+	select NXP_WIFI_COMPRESS_PWTBL_SUPPORTED
 	help
 	  Select this option if you have a NXP RW610-based
 	  Wireless chip. This option will enable support
@@ -80,6 +81,7 @@ config NXP_88W8987
 config NXP_IW416
 	bool "NXP IW416 [EXPERIMENTAL]"
 	select EXPERIMENTAL
+	select NXP_WIFI_COMPRESS_PWTBL_SUPPORTED
 	help
 	  Enable NXP IW416 Wi-Fi connectivity,
 	  More information about IW416 device you can find on
@@ -88,6 +90,7 @@ config NXP_IW416
 config NXP_IW61X
 	bool "NXP IW61X [EXPERIMENTAL]"
 	select EXPERIMENTAL
+	select NXP_WIFI_COMPRESS_PWTBL_SUPPORTED
 	help
 	  Enable NXP IW61X Wi-Fi connectivity,
 	  More information about IW61X device you can find on
@@ -104,6 +107,7 @@ config NXP_88W8801
 
 config NXP_IW610
 	bool "NXP IW610"
+	select NXP_WIFI_COMPRESS_PWTBL_SUPPORTED
 	help
 	  Enable NXP IW610 Wi-Fi connectivity,
 	  More information about IW610 device you can find on
@@ -295,6 +299,15 @@ config NXP_IW611_MURATA_2DL_M2
 
 	  Detailed information about Type 2DL module you can find on
 	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type2dl
+
+config NXP_IW611_EZURIO_NX611
+	bool "NXP IW611-EZURIO-NX611"
+	select NXP_WIFI_COMPRESS_PWTBL_SUPPORTED
+	help
+	  Ezurio Sona NX611 is a small and very high performance module based
+	  on NXP IW611 combo chipset which supports Wi-Fi 802.11a/b/g/n/ac/ax +
+	  Bluetooth 5.4 BR/EDR/LE up to 600 Mbps PHY data rate on Wi-Fi and
+	  2Mbps PHY data rate on Bluetooth. Uses Ezurio-qualified firmware.
 
 config NXP_IW612_UBX_MAYA_W276_M2
 	bool "NXP IW612-UBX-MAYA-W276-M2"
@@ -1111,6 +1124,12 @@ config NXP_WIFI_RF_TEST_MODE
 	help
 	  This option enables WLAN test mode commands.
 
+config NXP_WIFI_COMPRESS_PWTBL_SUPPORTED
+	bool
+	help
+	  Selected by chipsets, modules and regulatory domains whose firmware
+	  ships compressed Tx power tables.
+
 if NXP_RW610 || NXP_IW61X || NXP_IW610 || NXP_IW416
 
 config NXP_WIFI_CLOCKSYNC
@@ -1122,13 +1141,14 @@ config NXP_WIFI_CLOCKSYNC
 config NXP_WIFI_COMPRESS_TX_PWTBL
 	bool "Compress TX Power Table Support"
 	default y
+	depends on NXP_WIFI_COMPRESS_PWTBL_SUPPORTED
 	help
 	  This option enables the use of Compress TX Power Table support.
 
 config NXP_WIFI_COMPRESS_RU_TX_PWTBL
 	bool "Compress RU TX Power Table Support"
 	default y
-	depends on !NXP_IW416
+	depends on !NXP_IW416 && NXP_WIFI_COMPRESS_PWTBL_SUPPORTED
 	help
 	  This option enables the use of Compress RU TX Power Table support.
 
