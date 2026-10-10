@@ -20,6 +20,11 @@
 		aon_peripheral: aon_peripheral@b0000000 {
 			ranges = <0x0 0xb0000000 0x10000000>;
 		};
+
+		temp0: temp0 {
+			compatible = "nxp,lpadc-temp40";
+			status = "disabled";
+		};
 	};
 };
 
