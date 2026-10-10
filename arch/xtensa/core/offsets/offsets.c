@@ -42,6 +42,7 @@ GEN_OFFSET_SYM(_xtensa_irq_bsa_t, threadptr);
 #endif
 
 #if XCHAL_HAVE_FP && defined(CONFIG_CPU_HAS_FPU) && defined(CONFIG_FPU_SHARING)
+GEN_OFFSET_SYM(_xtensa_irq_bsa_t, br);
 GEN_OFFSET_SYM(_xtensa_irq_bsa_t, fcr);
 GEN_OFFSET_SYM(_xtensa_irq_bsa_t, fsr);
 GEN_OFFSET_SYM(_xtensa_irq_bsa_t, fpu0);

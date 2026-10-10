@@ -86,7 +86,7 @@
  */
 
 #if XCHAL_HAVE_FP && defined(CONFIG_CPU_HAS_FPU) && defined(CONFIG_FPU_SHARING)
-# define _BSA_PADDING_FPU		(sizeof(uintptr_t) * 18U)
+# define _BSA_PADDING_FPU		(sizeof(uintptr_t) * 19U)
 #else
 # define _BSA_PADDING_FPU		(0)
 #endif
@@ -178,6 +178,7 @@ struct xtensa_irq_base_save_area {
 	uintptr_t a3;
 
 #if XCHAL_HAVE_FP && defined(CONFIG_CPU_HAS_FPU) && defined(CONFIG_FPU_SHARING)
+	uintptr_t br;
 	uintptr_t fcr;
 	uintptr_t fsr;
 	uintptr_t fpu0;
