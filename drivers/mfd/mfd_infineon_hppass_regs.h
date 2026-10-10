@@ -60,7 +60,10 @@ extern "C" {
  */
 
 /* SARADC calibration. */
+#define IFX_HPPASS_SARADC_CALOFFST(n)      (0x00070010U + (n) * 4U)
 #define IFX_HPPASS_SARADC_CALLIN(n)        (0x00070020U + (n) * 4U)
+#define IFX_HPPASS_SARADC_CALGAINC         0x00070060U
+#define IFX_HPPASS_SARADC_CALGAINF         0x00070064U
 
 /* ACTRLR (Autonomous Controller). */
 #define IFX_HPPASS_AC_CTRL                 0x000D0000U
@@ -151,6 +154,15 @@ extern "C" {
  * mirrored from SFLASH @c SAR_CAL_LIN_TABLE[].
  */
 #define IFX_HPPASS_SAR_CAL_LIN_TABLE_SIZE 16
+
+/**
+ * @brief Number of SAR offset calibration table entries.
+ *
+ * Fixed by silicon: 4 @c SARADC.CALOFFST[n] words.  These, together with
+ * @c CALGAINC / @c CALGAINF, are volatile: the block must be enabled to
+ * access them and they reset when it is disabled.
+ */
+#define IFX_HPPASS_SAR_CAL_OFFST_SIZE 4
 
 /**
  * @brief Mask of all sources reported by @c HPPASS_INTR (Regs TRM 20.1.96).
