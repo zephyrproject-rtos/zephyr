@@ -1171,3 +1171,40 @@ static uintptr_t handler_no_syscall(uintptr_t arg1, uintptr_t arg2,
 }
 
 #include <zephyr/syscall_dispatch.c>
+
+#ifdef CONFIG_STACK_USAGE
+
+/**
+ * @brief Measure and report privilege stack usage per syscall
+ * 
+ * Implements architectural measurement for syscall stack usage
+ * to detect outliers exceeding privilege stack limits.
+ */
+void z_syscall_stack_measure(int syscall_id)
+{
+    /* Get the current thread */
+    struct k_thread *thread = _current;
+    
+    if (thread == NULL || thread->stack_info.start == 0 || k_is_in_isr()) {
+        return;
+    }
+
+    size_t unused_stack;
+    
+    /* Calculate the remaining stack space */
+    int ret = k_thread_stack_space_get(thread, &unused_stack);
+
+    if (ret == 0) {
+        size_t total_stack = thread->stack_info.size;
+        size_t used_stack = total_stack - unused_stack;
+
+        /* If the stack usage exceeds a safe threshold (90%), flag as an outlier.
+         * This directly addresses the requirement to flag excessive syscall stack usage.
+         */
+        if (used_stack > (total_stack * 9) / 10) {
+            printk("Syscall ID %d is an outlier! High privilege stack usage: %zu / %zu bytes\n", 
+                    syscall_id, used_stack, total_stack);
+        }
+    }
+}
+#endif

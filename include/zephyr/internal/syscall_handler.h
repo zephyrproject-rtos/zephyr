@@ -722,4 +722,14 @@ static inline int k_object_validation_check(struct k_object *ko,
  * @}
  */
 
+#ifdef CONFIG_STACK_USAGE
+/**
+ * @brief Measure and report the stack usage for a specific syscall
+ * 
+ * @param syscall_id The ID of the syscall being executed
+ */
+extern void z_syscall_stack_measure(int syscall_id);
+#endif
+
 #endif /* ZEPHYR_INCLUDE_INTERNAL_SYSCALL_HANDLER_H_ */
+
