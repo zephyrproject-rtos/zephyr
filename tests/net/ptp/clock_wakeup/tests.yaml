@@ -11,3 +11,6 @@ common:
   depends_on: netif
 tests:
   net.ptp.clock_wakeup: {}
+  net.ptp.clock_wakeup.scaled_gains:
+    extra_configs:
+      - CONFIG_PTP_SERVO_SCALE_GAINS_BY_SYNC_INTERVAL=y

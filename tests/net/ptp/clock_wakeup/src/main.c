@@ -183,6 +183,12 @@ struct ptp_foreign_tt_clock *ptp_port_best_foreign(struct ptp_port *port)
 	return NULL;
 }
 
+bool ptp_port_id_eq(const struct ptp_port_id *p1, const struct ptp_port_id *p2)
+{
+	return memcmp(&p1->clk_id, &p2->clk_id, sizeof(p1->clk_id)) == 0 &&
+	       p1->port_number == p2->port_number;
+}
+
 enum ptp_port_state ptp_port_state(struct ptp_port *port)
 {
 	ARG_UNUSED(port);
@@ -613,6 +619,112 @@ ZTEST(ptp_clock_wakeup, test_synchronize_applies_pi_rate_adjustment)
 	zassert_equal(fake_ptp_clock_set_calls, 0, "small offset should not hard-step");
 	zassert_equal(fake_ptp_clock_rate_adjust_calls, 1, "rate adjust should be applied");
 	zassert_true(fake_ptp_clock_last_rate_ratio < 1.0, "positive offset should slow clock");
+}
+
+ZTEST(ptp_clock_wakeup, test_pi_gains_follow_sync_interval)
+{
+	const struct precision_clock *precision_clk =
+		precision_clock_ptp_get(&ptp_clk.precision_clock);
+	const double kp = (double)CONFIG_PRECISION_TIMING_PI_KP / 1000.0;
+	const double ki = (double)CONFIG_PRECISION_TIMING_PI_KI / 1000.0;
+	const double scale = IS_ENABLED(CONFIG_PTP_SERVO_SCALE_GAINS_BY_SYNC_INTERVAL) ? 4.0 : 1.0;
+	const int64_t offset = 1000;
+	double expected_ppb;
+
+	/* A Sync interval of 0.25 s scales the gains by 4 when scaling is enabled */
+	ptp_clock_sync_interval_set(-2);
+	clock_adjust_rate(precision_clk, offset);
+
+	expected_ppb = -(kp + ki) * scale * (double)offset;
+	zassert_equal(fake_ptp_clock_rate_adjust_calls, 1, "rate adjust should be applied");
+	zassert_within(fake_ptp_clock_last_rate_ratio, 1.0 + expected_ppb * 1.0e-9, 1.0e-10,
+		       "rate does not follow the Sync interval setting");
+}
+
+/* Rate ratio the PTP clock gets from a PI output in ppb */
+static double ratio_for_ppb(double ppb)
+{
+	int64_t scaled_ppm;
+
+	zassert_ok(precision_clock_ppb_to_scaled_ppm(ppb, &scaled_ppm));
+	return 1.0 + (double)scaled_ppm / (1000000.0 * PRECISION_CLOCK_SCALED_PPM_ONE);
+}
+
+ZTEST(ptp_clock_wakeup, test_pi_gains_follow_elapsed_time_after_lost_sync)
+{
+	const struct precision_clock *precision_clk =
+		precision_clock_ptp_get(&ptp_clk.precision_clock);
+	struct precision_pi reference;
+	double expected_ppb;
+
+	if (!IS_ENABLED(CONFIG_PTP_SERVO_SCALE_GAINS_BY_SYNC_INTERVAL)) {
+		ztest_test_skip();
+	}
+
+	precision_pi_init(&reference, (double)CONFIG_PRECISION_TIMING_PI_KP / 1000.0,
+			  (double)CONFIG_PRECISION_TIMING_PI_KI / 1000.0);
+	ptp_clock_sync_interval_set(-2);
+
+	/* First sample: no previous one, the advertised 0.25 s is used */
+	ptp_clk.timestamp.t1 = 10ULL * NSEC_PER_SEC;
+	clock_adjust_rate(precision_clk, 1000);
+	(void)precision_pi_update_interval(&reference, -1000.0, 0.25);
+
+	/* One Sync lost: 0.5 s since the previous sample */
+	ptp_clk.timestamp.t1 = 10ULL * NSEC_PER_SEC + 500ULL * NSEC_PER_MSEC;
+	clock_adjust_rate(precision_clk, 1000);
+	expected_ppb = precision_pi_update_interval(&reference, -1000.0, 0.5);
+
+	zassert_equal(fake_ptp_clock_rate_adjust_calls, 2, "both samples should adjust the rate");
+	zassert_within(fake_ptp_clock_last_rate_ratio, ratio_for_ppb(expected_ppb), 1.0e-12,
+		       "gains not scaled by the elapsed time");
+}
+
+ZTEST(ptp_clock_wakeup, test_pi_gains_use_advertised_interval_after_long_gap)
+{
+	const struct precision_clock *precision_clk =
+		precision_clock_ptp_get(&ptp_clk.precision_clock);
+	struct precision_pi reference;
+	double expected_ppb;
+
+	if (!IS_ENABLED(CONFIG_PTP_SERVO_SCALE_GAINS_BY_SYNC_INTERVAL)) {
+		ztest_test_skip();
+	}
+
+	precision_pi_init(&reference, (double)CONFIG_PRECISION_TIMING_PI_KP / 1000.0,
+			  (double)CONFIG_PRECISION_TIMING_PI_KI / 1000.0);
+	ptp_clock_sync_interval_set(-2);
+
+	ptp_clk.timestamp.t1 = 10ULL * NSEC_PER_SEC;
+	clock_adjust_rate(precision_clk, 1000);
+	(void)precision_pi_update_interval(&reference, -1000.0, 0.25);
+
+	/* 5 s without a sample, more than 16 advertised intervals */
+	ptp_clk.timestamp.t1 = 15ULL * NSEC_PER_SEC;
+	clock_adjust_rate(precision_clk, 1000);
+	expected_ppb = precision_pi_update_interval(&reference, -1000.0, 0.25);
+
+	zassert_within(fake_ptp_clock_last_rate_ratio, ratio_for_ppb(expected_ppb), 1.0e-12,
+		       "a long gap should fall back to the advertised interval");
+}
+
+ZTEST(ptp_clock_wakeup, test_time_transmitter_change_forgets_last_sample)
+{
+	struct ptp_foreign_tt_clock first = {0};
+	struct ptp_foreign_tt_clock second = {0};
+
+	first.dataset.sender.port_number = 1;
+	second.dataset.sender.port_number = 2;
+
+	clock_selected_tt_update(&first);
+	ptp_clk.sync_servo_last_t1 = 123U;
+
+	clock_selected_tt_update(&first);
+	zassert_equal(ptp_clk.sync_servo_last_t1, 123U, "same time transmitter: keep the sample");
+
+	clock_selected_tt_update(&second);
+	zassert_equal(ptp_clk.sync_servo_last_t1, 0U,
+		      "new time transmitter: its origin timestamps are another time base");
 }
 
 ZTEST(ptp_clock_wakeup, test_synchronize_resets_servo_after_rate_adjust_failure)

@@ -361,6 +361,41 @@ config PTP_PEER_DELAY_MAX_NS
 	  update meanLinkDelay. Adjust this sanity threshold to the expected network
 	  topology and PTP profile; it is not a clock-accuracy requirement.
 
+config PTP_SERVO_STEP_THRESHOLD_MS
+	int "Offset above which the clock is stepped, in milliseconds"
+	default 1000
+	range 1 1000000
+	help
+	  Offsets larger than this value are corrected by setting the clock
+	  instead of adjusting its rate, and the servo starts acquisition again.
+	  The check applies to every sample, also while the servo is locked.
+	  Keep the outlier threshold below this value, otherwise outliers are
+	  stepped instead of rejected.
+
+config PTP_SERVO_OUTLIER_THRESHOLD_MS
+	int "Offset above which a sample is an outlier, in milliseconds"
+	default 100
+	range 1 1000000
+	help
+	  While the servo is locked, samples with a larger offset are rejected,
+	  and two consecutive outliers reset the servo.
+
+config PTP_SERVO_SCALE_GAINS_BY_SYNC_INTERVAL
+	bool "Scale the PI gains by the Sync interval"
+	help
+	  The PI gains of PRECISION_TIMING_PI_KP and PRECISION_TIMING_PI_KI
+	  are taken as the gains for a Sync interval of one second, and are
+	  divided by the time since the previous servo update, measured on
+	  the Sync origin timestamps, so lost Sync messages and rejected
+	  samples count. The loop then keeps its stability and damping for
+	  any Sync interval. Without this option the gains are used as they
+	  are for every Sync message, so the loop gets slower and less damped
+	  with a shorter Sync interval.
+
+	  For the first update, after a servo reset or a time transmitter
+	  change, the advertised Sync interval of the multicast Sync messages
+	  is used instead, or PTP_SYNC_LOG_INTERVAL until one is received.
+
 config PTP_DISABLED_PRESENT
 	bool
 	default y
