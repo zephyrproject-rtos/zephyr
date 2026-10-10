@@ -10,6 +10,22 @@ config MFD_ITE_IT8801
 	  Enable the ITE IT8801 ioexpander multi-function device driver.
 	  This ioexpander provides a GPIO/PWM/Keyboard function via I2C bus.
 
+config EMUL_MFD_ITE_IT8801
+	bool "Emulate an ITE IT8801 multi-function device"
+	default y
+	depends on ZTEST && DT_HAS_ITE_IT8801_MFD_ENABLED
+	depends on EMUL
+	depends on GPIO_EMUL
+	select I2C_EMUL
+	help
+	  Enable the register-level I2C emulator for the ITE IT8801
+	  multi-function device. The backend API lets test code seed register
+	  state, press keys in an emulated keyboard matrix and inject I2C
+	  read/write failures so the IT8801 sub-drivers (keyboard, GPIO, PWM)
+	  can be exercised without real hardware. The SMB_INT# alert is
+	  signalled on the MFD's irq-gpios line, which must be a GPIO emulator
+	  pin.
+
 if MFD_ITE_IT8801
 
 config MFD_ITE_IT8801_ALTCTRL
