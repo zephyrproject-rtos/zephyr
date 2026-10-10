@@ -15,6 +15,7 @@ Hardware
 - 2048KB dual-bank on chip Flash
 - 640 KB RAM
 - 2x FlexCAN with FD, 1x RGB LED, 3x SW buttons
+- Ethernet: on-SoC 10BASE-T1S PHY, or 10/100 Mbit external PHY over MII
 - On-board MCU-Link debugger with CMSIS-DAP
 - Arduino Header, SmartDMA/Camera Header, mikroBUS
 
@@ -82,6 +83,43 @@ Serial Port
 
 The FRDM-MCXA577 SoC has 6 LPUART  interfaces for serial communication.
 LPUART0 is configured as UART for the console.
+
+Ethernet
+===========
+
+Support for two Ethernet options: the on-SoC 10BASE-T1S PHY with its on-board PMD transceiver,
+and a 10/100 Mbit external PHY over MII.
+
+10BASE-T1S (default)
+--------------------
+
+The default target ``frdm_mcxa577/mcxa577`` uses the on-SoC 10BASE-T1S PHY:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/zperf
+   :board: frdm_mcxa577
+   :goals: build
+
+External PHY over MII
+---------------------
+
+The ``frdm_mcxa577/mcxa577/mii`` variant uses the external 10/100 Mbit PHY:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/zperf
+   :board: frdm_mcxa577/mcxa577/mii
+   :goals: build
+
+MII needs P1_8/P1_9 for ENET0_TXD2/TXD3, which are also the LPUART1 MCU-Link VCOM pins.
+The variant therefore disables LPUART1 and moves the console/shell to LPUART2 (Arduino D0/D1 header,
+P2_11/P2_10); connect a USB-to-serial adapter there to get console output.
+
+The MII signals reach the external PHY only after the following solder-jumper
+rework (this rework is not applicable to 10BASE-T1S mode):
+
+- Short 2-3 (and disconnect 1-2) of SJ13 (TXD2), SJ14 (TXD3), SJ16 (RXD2),
+  SJ17 (RXD3), SJ18 (COL), SJ19 (CRS).
+- Disconnect 1-2 and 2-3 of SJ15 (RX_CLK) and SJ44 (RXER).
 
 Programming and Debugging
 *************************
