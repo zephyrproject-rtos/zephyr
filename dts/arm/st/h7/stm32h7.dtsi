@@ -21,6 +21,7 @@
 #include <zephyr/dt-bindings/memory-attr/memory-attr.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/sensor/qdec_stm32.h>
+#include <zephyr/dt-bindings/video/video-interfaces.h>
 #include <freq.h>
 #include <mem.h>
 
@@ -1281,6 +1282,13 @@
 					    STM32_DMA_MEM_32BITS |
 					    STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_FULL>;
 			status = "disabled";
+
+			port {
+				dcmi_ep_in: endpoint {
+					remote-endpoint-label = "";
+					bus-type = <VIDEO_BUS_TYPE_PARALLEL>;
+				};
+			};
 		};
 
 		sai1: sai1@40015800 {
