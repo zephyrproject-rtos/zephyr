@@ -1,0 +1,5 @@
+tests:
+  sample.subsys.random.entropy_rp2350:
+    build_only: true
+    platform_allow: rpi_pico2
+    tags: entropy random
