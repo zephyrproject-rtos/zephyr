@@ -19,3 +19,14 @@ config FLASH_RPI_PICO_READ_UNTRANSLATED
 	depends on SOC_SERIES_RP2350
 	help
 	  Bypass XIP cache and address translation hardware when reading from flash.
+
+config FLASH_RPI_PICO_LOCK_IRQS
+	bool "Lock IRQs during write and erase"
+	depends on FLASH_RPI_PICO
+	default y if XIP
+	help
+	  Disable interrupts while the pico-sdk write and erase routines run. The
+	  vector table and any handler in flash are unreachable during that window,
+	  so this is required whenever the application executes from flash. A
+	  RAM-linked application only needs it if an interrupt handler reads a
+	  memory-mapped flash partition.
