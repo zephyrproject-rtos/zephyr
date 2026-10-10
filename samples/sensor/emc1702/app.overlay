@@ -1,0 +1,46 @@
+/*
+ * Copyright (c) 2026  Microchip Technology Inc. and its subsidiaries
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Overlay for esp32s3_devkitc/esp32s3/procpu
+ *
+ * I2C0 on:
+ *   SDA = GPIO8
+ *   SCL = GPIO9
+ *
+ * Instantiates an EMC1702 sensor at I2C address 0x4C (Current 3 Click,
+ * ADDR_SEL strapped to GND via R6 = 0 ohm). Adjust sense-resistor-milliohms
+ * to match the actual Rsense on your setup.
+ */
+
+&pinctrl {
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO8>,
+				 <I2C0_SCL_GPIO9>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+
+	emc1702: emc1702@4c {
+		compatible = "microchip,emc1702";
+		reg = <0x4c>;
+		sense-resistor-milliohms = <10>;
+		current-sense-range-mv = <10>;
+		current-sense-sampling-time = <82>;
+		current-sense-queue = <1>;
+		voltage-source-queue = <1>;
+		resistance-error-correction;
+		conversion-rate = <4000>;
+		external-diode-is-present;
+	};
+};
