@@ -92,6 +92,59 @@ int radio_tx(const uint8_t *data, size_t len,
 	return 0;
 }
 
+#ifdef CONFIG_LORA_GFSK
+int radio_lbt(uint32_t freq, uint32_t bandwidth_hz, int16_t threshold_dbm, uint32_t scan_time_ms)
+{
+	/*
+	 * Nothing is demodulated, so the receiver only has to be wide enough:
+	 * the GFSK modem takes its bandwidth in Hz, where the LoRa one is
+	 * limited to the bandwidths LoRa itself uses. The bit rate and
+	 * deviation follow the width so the front end stays consistent.
+	 */
+	struct lora_modem_config_gfsk lbt_config = {
+		.frequency = freq,
+		.tx_power = 0,
+		.tx = false,
+		.bitrate = bandwidth_hz / 2,
+		.freq_deviation = bandwidth_hz / 4,
+		.bandwidth = bandwidth_hz,
+		.pulse_shape = LORA_GFSK_PULSE_SHAPE_BT_1_0,
+	};
+	int ret;
+
+	ret = lora_config_gfsk(radio_dev, &lbt_config);
+	if (ret != 0) {
+		LOG_ERR("LBT config failed: %d", ret);
+		return ret;
+	}
+
+	ret = lora_energy_detect(radio_dev, threshold_dbm, K_MSEC(scan_time_ms));
+	if (ret < 0) {
+		LOG_ERR("LBT failed: %d", ret);
+		return ret;
+	}
+
+	if (ret == 1) {
+		LOG_DBG("LBT: %u Hz busy", freq);
+		return -EBUSY;
+	}
+
+	return 0;
+}
+#else
+int radio_lbt(uint32_t freq, uint32_t bandwidth_hz, int16_t threshold_dbm, uint32_t scan_time_ms)
+{
+	ARG_UNUSED(freq);
+	ARG_UNUSED(bandwidth_hz);
+	ARG_UNUSED(threshold_dbm);
+	ARG_UNUSED(scan_time_ms);
+
+	LOG_ERR("LBT: requested without CONFIG_LORA_GFSK");
+
+	return -ENOTSUP;
+}
+#endif /* CONFIG_LORA_GFSK */
+
 uint32_t radio_airtime(uint32_t data_len)
 {
 	return lora_airtime(radio_dev, data_len);

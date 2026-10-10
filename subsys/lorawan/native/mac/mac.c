@@ -85,6 +85,31 @@ static int mac_try_rx_window(struct lwan_ctx *ctx,
 	return -EAGAIN;
 }
 
+int mac_lbt_check(struct lwan_ctx *ctx, uint32_t freq, uint8_t dr_idx)
+{
+	const struct lwan_region_ops *region = ctx->region;
+	uint32_t bandwidth_hz;
+	uint32_t scan_time_ms;
+	int16_t threshold_dbm;
+	int ret;
+
+	ARG_UNUSED(dr_idx);
+
+	if (region->get_lbt_params == NULL) {
+		return 0;
+	}
+
+	ret = region->get_lbt_params(freq, &bandwidth_hz, &threshold_dbm, &scan_time_ms);
+	if (ret == -ENOTSUP) {
+		return 0;
+	}
+	if (ret != 0) {
+		return ret;
+	}
+
+	return radio_lbt(freq, bandwidth_hz, threshold_dbm, scan_time_ms);
+}
+
 int mac_do_tx_rx(struct lwan_ctx *ctx, const struct mac_tx_params *params)
 {
 	const struct lwan_region_ops *region = ctx->region;
@@ -99,6 +124,10 @@ int mac_do_tx_rx(struct lwan_ctx *ctx, const struct mac_tx_params *params)
 				    &tx_dr, &tx_power);
 	if (ret != 0) {
 		return ret;
+	}
+
+	if (region->clamp_tx_power != NULL) {
+		region->clamp_tx_power(params->tx_freq, &tx_power);
 	}
 
 	LOG_INF("TX: freq=%u dr=%u power=%d", params->tx_freq, params->tx_dr_idx,
