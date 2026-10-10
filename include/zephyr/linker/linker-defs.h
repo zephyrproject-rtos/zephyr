@@ -162,6 +162,9 @@ extern char __rodata_region_start[];
 extern char __rodata_region_end[];
 extern char __rodata_region_size[];
 
+extern char __noinit_start[];
+extern char __noinit_end[];
+
 extern char _vector_start[];
 extern char _vector_end[];
 
@@ -243,6 +246,13 @@ extern char _nocache_load_ram_end[];
 extern char _nocache_load_ram_size[];
 extern char _nocache_load_rom_start[];
 #endif /* CONFIG_NOCACHE_MEMORY */
+
+#if defined(CONFIG_DCACHE_LINE_SIZE)
+extern char __dcacheline_exclusive_noinit_start[];
+extern char __dcacheline_exclusive_noinit_end[];
+extern char __dcacheline_exclusive_data_start[];
+extern char __dcacheline_exclusive_data_end[];
+#endif /* CONFIG_DCACHE_LINE_SIZE */
 
 /* Memory owned by the kernel. Start and end will be aligned for memory
  * management/protection hardware for the target architecture.

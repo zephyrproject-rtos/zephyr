@@ -18,7 +18,6 @@ LOG_MODULE_REGISTER(arm_mpu_wt_test, LOG_LEVEL_INF);
 /* Test memory configuration */
 #define TEST_PATTERN_COUNT 8
 #define TEST_MEMORY_SIZE (sizeof(uint32_t) * TEST_PATTERN_COUNT)
-#define CACHE_LINE_SIZE 32  /* Typical cache line size for ARM Cortex-M7/M33 */
 #define DMA_TIMEOUT_MS 1000
 #define DMA_CHANNEL 0
 
