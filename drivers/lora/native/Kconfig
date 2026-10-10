@@ -1,5 +1,11 @@
 # Copyright (c) 2026 Carlo Caione <ccaione@baylibre.com>
 # SPDX-License-Identifier: Apache-2.0
 
+config LORA_SX12XX_NATIVE_COMMON
+	bool
+	help
+	  Code shared by the native SX12xx drivers.
+
 rsource "sx126x/Kconfig"
+rsource "sx128x/Kconfig"
 rsource "lr11xx/Kconfig"

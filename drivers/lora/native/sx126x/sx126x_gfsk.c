@@ -137,7 +137,7 @@ static int sx126x_set_gfsk_modulation_params(const struct device *dev,
 	buf[4] = bw_reg;
 	sys_put_be24(SX126X_FREQ_TO_REG(gfsk->freq_deviation), &buf[5]);
 
-	return sx126x_hal_write_cmd(dev, SX126X_CMD_SET_MODULATION_PARAMS, buf, 8);
+	return sx12xx_hal_write_cmd(dev, SX126X_CMD_SET_MODULATION_PARAMS, buf, 8);
 }
 
 int sx126x_set_gfsk_packet_params(const struct device *dev,
@@ -155,7 +155,7 @@ int sx126x_set_gfsk_packet_params(const struct device *dev,
 	buf[7] = gfsk->packet_crc_disable ? SX126X_GFSK_CRC_OFF : SX126X_GFSK_CRC_2_BYTES_INV;
 	buf[8] = gfsk->whitening ? SX126X_GFSK_WHITENING_ON : SX126X_GFSK_WHITENING_OFF;
 
-	return sx126x_hal_write_cmd(dev, SX126X_CMD_SET_PACKET_PARAMS, buf, 9);
+	return sx12xx_hal_write_cmd(dev, SX126X_CMD_SET_PACKET_PARAMS, buf, 9);
 }
 
 static int sx126x_config_gfsk(const struct device *dev, const struct lora_modem_config_gfsk *gfsk)
@@ -178,7 +178,7 @@ static int sx126x_config_gfsk(const struct device *dev, const struct lora_modem_
 	}
 
 	if (gfsk->sync_word_len > 0) {
-		ret = sx126x_hal_write_regs(dev, SX126X_REG_GFSK_SYNC_WORD, gfsk->sync_word,
+		ret = sx12xx_hal_write_regs(dev, SX126X_REG_GFSK_SYNC_WORD, gfsk->sync_word,
 					    gfsk->sync_word_len);
 		if (ret < 0) {
 			return ret;
@@ -187,13 +187,13 @@ static int sx126x_config_gfsk(const struct device *dev, const struct lora_modem_
 
 	if (!gfsk->packet_crc_disable) {
 		sys_put_be16(SX126X_GFSK_CRC_INIT_CCITT, buf);
-		ret = sx126x_hal_write_regs(dev, SX126X_REG_GFSK_CRC_INIT_MSB, buf, 2);
+		ret = sx12xx_hal_write_regs(dev, SX126X_REG_GFSK_CRC_INIT_MSB, buf, 2);
 		if (ret < 0) {
 			return ret;
 		}
 
 		sys_put_be16(SX126X_GFSK_CRC_POLY_CCITT, buf);
-		ret = sx126x_hal_write_regs(dev, SX126X_REG_GFSK_CRC_POLY_MSB, buf, 2);
+		ret = sx12xx_hal_write_regs(dev, SX126X_REG_GFSK_CRC_POLY_MSB, buf, 2);
 		if (ret < 0) {
 			return ret;
 		}
@@ -204,7 +204,7 @@ static int sx126x_config_gfsk(const struct device *dev, const struct lora_modem_
 		 * else the register holds is the radio's, so read it back and
 		 * leave it alone.
 		 */
-		ret = sx126x_hal_read_regs(dev, SX126X_REG_GFSK_WHITENING_MSB, buf, 1);
+		ret = sx12xx_hal_read_regs(dev, SX126X_REG_GFSK_WHITENING_MSB, buf, 1);
 		if (ret < 0) {
 			return ret;
 		}
@@ -212,7 +212,7 @@ static int sx126x_config_gfsk(const struct device *dev, const struct lora_modem_
 		buf[0] = (buf[0] & ~SX126X_GFSK_WHITENING_MSB_MASK) |
 			 ((SX126X_GFSK_WHITENING_INIT >> 8) & SX126X_GFSK_WHITENING_MSB_MASK);
 		buf[1] = SX126X_GFSK_WHITENING_INIT & 0xFF;
-		ret = sx126x_hal_write_regs(dev, SX126X_REG_GFSK_WHITENING_MSB, buf, 2);
+		ret = sx12xx_hal_write_regs(dev, SX126X_REG_GFSK_WHITENING_MSB, buf, 2);
 		if (ret < 0) {
 			return ret;
 		}
