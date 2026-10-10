@@ -496,6 +496,25 @@ typedef enum {
 	CTF_EVENT_SYSCALL_EXIT = 0x183,
 	CTF_EVENT_THREAD_SLEEP_TICKS_ENTER = 0x184,
 	CTF_EVENT_THREAD_SLEEP_TICKS_EXIT = 0x185,
+	/* zbus */
+	CTF_EVENT_ZBUS_CHAN_PUB_ENTER = 0x186,
+	CTF_EVENT_ZBUS_CHAN_PUB_EXIT = 0x187,
+	CTF_EVENT_ZBUS_CHAN_READ_ENTER = 0x188,
+	CTF_EVENT_ZBUS_CHAN_READ_EXIT = 0x189,
+	CTF_EVENT_ZBUS_CHAN_NOTIFY_ENTER = 0x18A,
+	CTF_EVENT_ZBUS_CHAN_NOTIFY_EXIT = 0x18B,
+	CTF_EVENT_ZBUS_CHAN_CLAIM_ENTER = 0x18C,
+	CTF_EVENT_ZBUS_CHAN_CLAIM_EXIT = 0x18D,
+	CTF_EVENT_ZBUS_CHAN_FINISH_ENTER = 0x18E,
+	CTF_EVENT_ZBUS_CHAN_FINISH_EXIT = 0x18F,
+	CTF_EVENT_ZBUS_SUB_WAIT_ENTER = 0x190,
+	CTF_EVENT_ZBUS_SUB_WAIT_EXIT = 0x191,
+	CTF_EVENT_ZBUS_SUB_WAIT_MSG_ENTER = 0x192,
+	CTF_EVENT_ZBUS_SUB_WAIT_MSG_EXIT = 0x193,
+	CTF_EVENT_ZBUS_OBS_NOTIFY_ENTER = 0x194,
+	CTF_EVENT_ZBUS_OBS_NOTIFY_EXIT = 0x195,
+	CTF_EVENT_ZBUS_ASYNC_LISTENER_ENTER = 0x196,
+	CTF_EVENT_ZBUS_ASYNC_LISTENER_EXIT = 0x197,
 
 } ctf_event_t;
 
@@ -2467,6 +2486,102 @@ static inline void ctf_top_syscall_enter(uint32_t id, ctf_bounded_string_t name)
 static inline void ctf_top_syscall_exit(uint32_t id)
 {
 	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SYSCALL_EXIT), id);
+}
+
+/* zbus */
+
+static inline void ctf_top_zbus_chan_pub_enter(uint32_t chan_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_ZBUS_CHAN_PUB_ENTER), chan_id, timeout);
+}
+
+static inline void ctf_top_zbus_chan_pub_exit(uint32_t chan_id, uint32_t timeout, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_ZBUS_CHAN_PUB_EXIT), chan_id, timeout, ret);
+}
+
+static inline void ctf_top_zbus_chan_read_enter(uint32_t chan_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_ZBUS_CHAN_READ_ENTER), chan_id, timeout);
+}
+
+static inline void ctf_top_zbus_chan_read_exit(uint32_t chan_id, uint32_t timeout, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_ZBUS_CHAN_READ_EXIT), chan_id, timeout, ret);
+}
+
+static inline void ctf_top_zbus_chan_notify_enter(uint32_t chan_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_ZBUS_CHAN_NOTIFY_ENTER), chan_id, timeout);
+}
+
+static inline void ctf_top_zbus_chan_notify_exit(uint32_t chan_id, uint32_t timeout, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_ZBUS_CHAN_NOTIFY_EXIT), chan_id, timeout, ret);
+}
+
+static inline void ctf_top_zbus_chan_claim_enter(uint32_t chan_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_ZBUS_CHAN_CLAIM_ENTER), chan_id, timeout);
+}
+
+static inline void ctf_top_zbus_chan_claim_exit(uint32_t chan_id, uint32_t timeout, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_ZBUS_CHAN_CLAIM_EXIT), chan_id, timeout, ret);
+}
+
+static inline void ctf_top_zbus_chan_finish_enter(uint32_t chan_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_ZBUS_CHAN_FINISH_ENTER), chan_id);
+}
+
+static inline void ctf_top_zbus_chan_finish_exit(uint32_t chan_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_ZBUS_CHAN_FINISH_EXIT), chan_id, ret);
+}
+
+static inline void ctf_top_zbus_sub_wait_enter(uint32_t sub_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_ZBUS_SUB_WAIT_ENTER), sub_id, timeout);
+}
+
+static inline void ctf_top_zbus_sub_wait_exit(uint32_t sub_id, uint32_t timeout, uint32_t chan_id,
+					      int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_ZBUS_SUB_WAIT_EXIT), sub_id, timeout, chan_id,
+		  ret);
+}
+
+static inline void ctf_top_zbus_sub_wait_msg_enter(uint32_t sub_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_ZBUS_SUB_WAIT_MSG_ENTER), sub_id, timeout);
+}
+
+static inline void ctf_top_zbus_sub_wait_msg_exit(uint32_t sub_id, uint32_t timeout,
+						  uint32_t chan_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_ZBUS_SUB_WAIT_MSG_EXIT), sub_id, timeout, chan_id,
+		  ret);
+}
+
+static inline void ctf_top_zbus_obs_notify_enter(uint32_t obs_id, uint32_t chan_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_ZBUS_OBS_NOTIFY_ENTER), obs_id, chan_id);
+}
+
+static inline void ctf_top_zbus_obs_notify_exit(uint32_t obs_id, uint32_t chan_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_ZBUS_OBS_NOTIFY_EXIT), obs_id, chan_id, ret);
+}
+
+static inline void ctf_top_zbus_async_listener_enter(uint32_t listener_id, uint32_t chan_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_ZBUS_ASYNC_LISTENER_ENTER), listener_id, chan_id);
+}
+
+static inline void ctf_top_zbus_async_listener_exit(uint32_t listener_id, uint32_t chan_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_ZBUS_ASYNC_LISTENER_EXIT), listener_id, chan_id);
 }
 
 #endif /* SUBSYS_DEBUG_TRACING_CTF_TOP_H */

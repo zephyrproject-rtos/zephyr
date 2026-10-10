@@ -3501,6 +3501,185 @@
 /** @} */ /* end of subsys_tracing_apis_rtio */
 
 /**
+ * @brief zbus Tracing APIs
+ * @defgroup subsys_tracing_apis_zbus zbus Tracing APIs
+ * @ingroup subsys_tracing_apis
+ * @{
+ */
+
+/**
+ * @brief Trace zbus channel publish attempt entry
+ * @param chan Channel object
+ * @param timeout Timeout period
+ */
+#ifndef sys_port_trace_zbus_chan_pub_enter
+#define sys_port_trace_zbus_chan_pub_enter(chan, timeout)
+#endif
+
+/**
+ * @brief Trace zbus channel publish attempt outcome
+ * @param chan Channel object
+ * @param timeout Timeout period
+ * @param ret Return value
+ */
+#ifndef sys_port_trace_zbus_chan_pub_exit
+#define sys_port_trace_zbus_chan_pub_exit(chan, timeout, ret)
+#endif
+
+/**
+ * @brief Trace zbus channel read attempt entry
+ * @param chan Channel object
+ * @param timeout Timeout period
+ */
+#ifndef sys_port_trace_zbus_chan_read_enter
+#define sys_port_trace_zbus_chan_read_enter(chan, timeout)
+#endif
+
+/**
+ * @brief Trace zbus channel read attempt outcome
+ * @param chan Channel object
+ * @param timeout Timeout period
+ * @param ret Return value
+ */
+#ifndef sys_port_trace_zbus_chan_read_exit
+#define sys_port_trace_zbus_chan_read_exit(chan, timeout, ret)
+#endif
+
+/**
+ * @brief Trace zbus channel notify attempt entry
+ * @param chan Channel object
+ * @param timeout Timeout period
+ */
+#ifndef sys_port_trace_zbus_chan_notify_enter
+#define sys_port_trace_zbus_chan_notify_enter(chan, timeout)
+#endif
+
+/**
+ * @brief Trace zbus channel notify attempt outcome
+ * @param chan Channel object
+ * @param timeout Timeout period
+ * @param ret Return value
+ */
+#ifndef sys_port_trace_zbus_chan_notify_exit
+#define sys_port_trace_zbus_chan_notify_exit(chan, timeout, ret)
+#endif
+
+/**
+ * @brief Trace zbus channel claim attempt entry
+ * @param chan Channel object
+ * @param timeout Timeout period
+ */
+#ifndef sys_port_trace_zbus_chan_claim_enter
+#define sys_port_trace_zbus_chan_claim_enter(chan, timeout)
+#endif
+
+/**
+ * @brief Trace zbus channel claim attempt outcome
+ * @param chan Channel object
+ * @param timeout Timeout period
+ * @param ret Return value
+ */
+#ifndef sys_port_trace_zbus_chan_claim_exit
+#define sys_port_trace_zbus_chan_claim_exit(chan, timeout, ret)
+#endif
+
+/**
+ * @brief Trace zbus channel finish entry
+ * @param chan Channel object
+ */
+#ifndef sys_port_trace_zbus_chan_finish_enter
+#define sys_port_trace_zbus_chan_finish_enter(chan)
+#endif
+
+/**
+ * @brief Trace zbus channel finish outcome
+ * @param chan Channel object
+ * @param ret Return value
+ */
+#ifndef sys_port_trace_zbus_chan_finish_exit
+#define sys_port_trace_zbus_chan_finish_exit(chan, ret)
+#endif
+
+/**
+ * @brief Trace zbus subscriber wait attempt entry
+ * @param sub Subscriber observer object
+ * @param timeout Timeout period
+ */
+#ifndef sys_port_trace_zbus_sub_wait_enter
+#define sys_port_trace_zbus_sub_wait_enter(sub, timeout)
+#endif
+
+/**
+ * @brief Trace zbus subscriber wait attempt outcome
+ * @param sub Subscriber observer object
+ * @param timeout Timeout period
+ * @param chan Channel that notified the subscriber, or NULL when none did
+ * @param ret Return value
+ */
+#ifndef sys_port_trace_zbus_sub_wait_exit
+#define sys_port_trace_zbus_sub_wait_exit(sub, timeout, chan, ret)
+#endif
+
+/**
+ * @brief Trace zbus message subscriber wait attempt entry
+ * @param sub Subscriber observer object
+ * @param timeout Timeout period
+ */
+#ifndef sys_port_trace_zbus_sub_wait_msg_enter
+#define sys_port_trace_zbus_sub_wait_msg_enter(sub, timeout)
+#endif
+
+/**
+ * @brief Trace zbus message subscriber wait attempt outcome
+ * @param sub Subscriber observer object
+ * @param timeout Timeout period
+ * @param chan Channel that notified the subscriber, or NULL when none did
+ * @param ret Return value
+ */
+#ifndef sys_port_trace_zbus_sub_wait_msg_exit
+#define sys_port_trace_zbus_sub_wait_msg_exit(sub, timeout, chan, ret)
+#endif
+
+/**
+ * @brief Trace the zbus dispatcher starting to notify one observer of a channel
+ * @param obs Observer object
+ * @param chan Channel object
+ */
+#ifndef sys_port_trace_zbus_obs_notify_enter
+#define sys_port_trace_zbus_obs_notify_enter(obs, chan)
+#endif
+
+/**
+ * @brief Trace the zbus dispatcher done notifying one observer of a channel
+ * @param obs Observer object
+ * @param chan Channel object
+ * @param ret Return value
+ */
+#ifndef sys_port_trace_zbus_obs_notify_exit
+#define sys_port_trace_zbus_obs_notify_exit(obs, chan, ret)
+#endif
+
+/**
+ * @brief Trace a zbus async listener callback entry, in its work queue
+ * @param async_listener Async listener work item
+ * @param chan Channel object
+ */
+#ifndef sys_port_trace_zbus_async_listener_enter
+#define sys_port_trace_zbus_async_listener_enter(async_listener, chan)
+#endif
+
+/**
+ * @brief Trace a zbus async listener callback exit
+ * @param async_listener Async listener work item
+ * @param chan Channel object
+ */
+#ifndef sys_port_trace_zbus_async_listener_exit
+#define sys_port_trace_zbus_async_listener_exit(async_listener, chan)
+#endif
+
+/** @} */ /* end of subsys_tracing_apis_zbus */
+
+/**
  * @brief Tracing hooks provided only by specific backends
  * @defgroup subsys_tracing_apis_backend_ext Backend-specific extensions
  * @ingroup subsys_tracing_apis

@@ -3380,3 +3380,173 @@ event {
 		int32_t ret;
 	};
 };
+
+event {
+	name = zbus_chan_pub_enter;
+	id = 0x186;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = zbus_chan_pub_exit;
+	id = 0x187;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+event {
+	name = zbus_chan_read_enter;
+	id = 0x188;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = zbus_chan_read_exit;
+	id = 0x189;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+event {
+	name = zbus_chan_notify_enter;
+	id = 0x18A;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = zbus_chan_notify_exit;
+	id = 0x18B;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+event {
+	name = zbus_chan_claim_enter;
+	id = 0x18C;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = zbus_chan_claim_exit;
+	id = 0x18D;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+event {
+	name = zbus_chan_finish_enter;
+	id = 0x18E;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = zbus_chan_finish_exit;
+	id = 0x18F;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = zbus_sub_wait_enter;
+	id = 0x190;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = zbus_sub_wait_exit;
+	id = 0x191;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+		uint32_t chan;
+		int32_t ret;
+	};
+};
+
+event {
+	name = zbus_sub_wait_msg_enter;
+	id = 0x192;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = zbus_sub_wait_msg_exit;
+	id = 0x193;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+		uint32_t chan;
+		int32_t ret;
+	};
+};
+
+event {
+	name = zbus_obs_notify_enter;
+	id = 0x194;
+	fields := struct {
+		uint32_t id;
+		uint32_t chan;
+	};
+};
+
+event {
+	name = zbus_obs_notify_exit;
+	id = 0x195;
+	fields := struct {
+		uint32_t id;
+		uint32_t chan;
+		int32_t ret;
+	};
+};
+
+event {
+	name = zbus_async_listener_enter;
+	id = 0x196;
+	fields := struct {
+		uint32_t id;
+		uint32_t chan;
+	};
+};
+
+event {
+	name = zbus_async_listener_exit;
+	id = 0x197;
+	fields := struct {
+		uint32_t id;
+		uint32_t chan;
+	};
+};
