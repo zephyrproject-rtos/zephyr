@@ -803,7 +803,7 @@ static int adxl367_attr_set_thresh(const struct device *dev,
 	int32_t value;
 	int64_t micro_ms2 = val->val1 * 1000000LL + val->val2;
 
-	llvalue = llabs((micro_ms2 * 10) / SENSOR_G);
+	llvalue = llabs((micro_ms2 * 4000) / SENSOR_G);
 
 	value = (int32_t) llvalue;
 
