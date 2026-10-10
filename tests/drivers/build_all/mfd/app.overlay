@@ -32,7 +32,6 @@
 					status = "okay";
 					#address-cells = <1>;
 					#size-cells = <0>;
-					frequency = <1875>;
 				};
 
 				gpio_ext: sc18is606_gpio {
@@ -41,6 +40,27 @@
 					gpio-controller;
 					#gpio-cells = <2>;
 					ngpios = <3>;
+				};
+			};
+
+			sc18is602: sc18is602@29 {
+				compatible = "nxp,sc18is602";
+				status = "okay";
+				reg = <0x29>;
+
+				spi_ext_602: sc18is602_spi {
+					compatible = "nxp,sc18is60x-spi";
+					status = "okay";
+					#address-cells = <1>;
+					#size-cells = <0>;
+				};
+
+				gpio_ext_602: sc18is602_gpio {
+					compatible = "nxp,sc18is60x-gpio";
+					status = "okay";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <4>;
 				};
 			};
 

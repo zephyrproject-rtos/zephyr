@@ -1,10 +1,10 @@
 #
-# SPDX-FileCopyrightText: Copyright tinyvision.ai
+# SPDX-FileCopyrightText: Copyright Alif Semiconductor
 # SPDX-License-Identifier: Apache-2.0
 #
 description: |
-  NXP SC18IS606 I2C to SPI/GPIO bridge.
-  Functional sibling of nxp,sc18is602: 3 chip-selects and a 1024-byte buffer.
+  NXP SC18IS602/SC18IS602B I2C to SPI/GPIO bridge.
+  4 chip-selects and a 200-byte buffer.
   Child SPI/GPIO controllers must be added in the device tree. The device
   itself must be a child of an I2C controller.
 
@@ -13,35 +13,35 @@ description: |
     &i2c0 {
       status = "okay";
 
-      sc18is606: sc18is606@28 {
-        compatible = "nxp,sc18is606";
+      sc18is602: sc18is602@28 {
+        compatible = "nxp,sc18is602";
         status = "okay";
         reg = <0x28>;
 
-        spi_ext: sc18is606_spi {
+        spi_ext: sc18is602_spi {
           compatible = "nxp,sc18is60x-spi";
           status = "okay";
           #address-cells = <1>;
           #size-cells = <0>;
         };
 
-        gpio_ext: sc18is606_gpio {
+        gpio_ext: sc18is602_gpio {
           compatible = "nxp,sc18is60x-gpio";
           status = "okay";
           gpio-controller;
           #gpio-cells = <2>;
-          ngpios = <3>;
+          ngpios = <4>;
         };
       };
     };
 
-compatible: "nxp,sc18is606"
+compatible: "nxp,sc18is602"
 include: ["i2c-device.yaml", "nxp,sc18is60x-common.yaml"]
 
 properties:
   buffer-size:
-    const: 1024
-    default: 1024
+    const: 200
+    default: 200
   ss-count:
-    const: 3
-    default: 3
+    const: 4
+    default: 4
