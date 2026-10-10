@@ -1,0 +1,6 @@
+# Copyright (c) 2026 Bruno Vunderl
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ULANZI_TC001
+	select SOC_ESP32
+	select SOC_ESP32_PROCPU if BOARD_ULANZI_TC001_ESP32_PROCPU
