@@ -1,0 +1,57 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+menu "I2C role-switch echo sample"
+
+choice ROLE_SWITCH_ECHO_ROLE
+	prompt "Sample role"
+	default ROLE_SWITCH_ECHO_ROLE_REQUESTER
+
+config ROLE_SWITCH_ECHO_ROLE_REQUESTER
+	bool "Requester role"
+
+config ROLE_SWITCH_ECHO_ROLE_RESPONDER
+	bool "Responder role"
+
+endchoice
+
+config ROLE_SWITCH_ECHO_LOCAL_ADDR
+	int "Local target address"
+	default 17 if ROLE_SWITCH_ECHO_ROLE_REQUESTER
+	default 16 if ROLE_SWITCH_ECHO_ROLE_RESPONDER
+	range 0 127
+	help
+	  Local 7-bit I2C target address used by this board.
+
+config ROLE_SWITCH_ECHO_REMOTE_ADDR
+	int "Remote target address"
+	default 16 if ROLE_SWITCH_ECHO_ROLE_REQUESTER
+	default 17 if ROLE_SWITCH_ECHO_ROLE_RESPONDER
+	range 0 127
+	help
+	  Remote 7-bit I2C target address used by the peer board.
+
+config ROLE_SWITCH_ECHO_COUNT
+	int "Number of echo transactions"
+	default 100
+	range 1 100000
+	help
+	  Number of echo transactions to run before printing final status.
+
+config ROLE_SWITCH_ECHO_INTERVAL_MS
+	int "Requester interval in milliseconds"
+	default 500
+	range 1 60000
+	help
+	  Delay between requester transmissions.
+
+config ROLE_SWITCH_ECHO_PAYLOAD_SIZE
+	int "Payload size in bytes"
+	default 8
+	range 1 32
+	help
+	  Number of payload bytes used in each echo transaction.
+
+endmenu

@@ -1,0 +1,29 @@
+/*
+ * Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		role-switch-i2c = &flexcomm9_lpi2c9;
+	};
+};
+
+&flexcomm9 {
+	status = "okay";
+};
+
+&flexcomm9_lpuart9 {
+	status = "disabled";
+};
+
+&flexcomm9_lpspi9 {
+	status = "disabled";
+};
+
+&flexcomm9_lpi2c9 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&pinmux_flexcomm9_lpi2c>;
+	pinctrl-names = "default";
+};

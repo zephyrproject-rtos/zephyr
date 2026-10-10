@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -58,6 +58,18 @@
 		group0 {
 			pinmux = <FC7_P0_PIO3_2>,
 				 <FC7_P1_PIO3_3>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+			bias-pull-up;
+			drive-open-drain;
+		};
+	};
+
+	pinmux_flexcomm9_lpi2c: pinmux_flexcomm9_lpi2c {
+		group0 {
+			pinmux = <FC9_P0_PIO2_4>,
+				 <FC9_P1_PIO2_3>;
 			slew-rate = "fast";
 			drive-strength = "low";
 			input-enable;
