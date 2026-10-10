@@ -28,4 +28,11 @@
 				 <PC9D_SERCOM2_PAD1>;   /* SCK  */
 		};
 	};
+
+	tcc1_pwm_default: tcc1_pwm_default {
+		group1 {
+			pinmux = <PB10F_TCC1_WO0>,
+				 <PB11F_TCC1_WO1>;
+		};
+	};
 };
