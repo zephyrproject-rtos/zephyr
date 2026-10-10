@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_CC13X4_CC26X4
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/rtc-clock,clock-frequency)
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default $(dt_node_int_prop_int,/rtc-clock,clock-frequency)
+
+config NUM_IRQS
+	default 43
+
+config CORTEX_M_SYSTICK
+	default n
+
+endif
