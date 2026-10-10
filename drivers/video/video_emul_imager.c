@@ -245,8 +245,7 @@ static int emul_imager_get_frmival(const struct device *dev, struct video_frmiva
 {
 	struct emul_imager_data *data = dev->data;
 
-	frmival->numerator = 1;
-	frmival->denominator = data->mode->fps;
+	frmival->usec = data->mode->fps != 0 ? USEC_PER_SEC / data->mode->fps : 0;
 	return 0;
 }
 
@@ -264,8 +263,7 @@ static int emul_imager_enum_frmival(const struct device *dev, struct video_frmiv
 	mode = &emul_imager_modes[fmt_id][fie->index];
 
 	fie->type = VIDEO_FRMIVAL_TYPE_DISCRETE;
-	fie->discrete.numerator = 1;
-	fie->discrete.denominator = mode->fps;
+	fie->discrete.usec = mode->fps != 0 ? USEC_PER_SEC / mode->fps : 0;
 
 	return mode->fps == 0;
 }

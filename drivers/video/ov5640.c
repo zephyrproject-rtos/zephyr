@@ -707,7 +707,11 @@ static int ov5640_set_frmival(const struct device *dev, struct video_frmival *fr
 	uint8_t i, ind = 0;
 	uint32_t desired_frmrate, best_match = ov5640_frame_rates[ind];
 
-	desired_frmrate = DIV_ROUND_CLOSEST(frmival->denominator, frmival->numerator);
+	if (frmival->usec == 0U) {
+		return -EINVAL;
+	}
+
+	desired_frmrate = DIV_ROUND_CLOSEST(USEC_PER_SEC, frmival->usec);
 
 	/* Find the supported frame rate closest to the desired one */
 	for (i = 0; i < ARRAY_SIZE(ov5640_frame_rates); i++) {
@@ -743,8 +747,7 @@ static int ov5640_set_frmival(const struct device *dev, struct video_frmival *fr
 	/* Update pixerate control */
 	drv_data->ctrls.pixel_rate.val64 = drv_data->cur_mode->frmrate_config[ind].pixelrate;
 
-	frmival->numerator = 1;
-	frmival->denominator = best_match;
+	frmival->usec = USEC_PER_SEC / best_match;
 
 	return 0;
 }
@@ -857,8 +860,8 @@ static int ov5640_set_fmt(const struct device *dev, struct video_format *fmt)
 	}
 
 	/* Set frame rate */
-	def_frmival.denominator = drv_data->cur_mode->def_frmrate;
-	def_frmival.numerator = 1;
+	def_frmival.usec = drv_data->cur_mode->def_frmrate != 0 ?
+			   USEC_PER_SEC / drv_data->cur_mode->def_frmrate : 0;
 
 	return ov5640_set_frmival(dev, &def_frmival);
 }
@@ -1152,8 +1155,7 @@ static int ov5640_get_frmival(const struct device *dev, struct video_frmival *fr
 {
 	struct ov5640_data *drv_data = dev->data;
 
-	frmival->numerator = 1;
-	frmival->denominator = drv_data->cur_frmrate;
+	frmival->usec = drv_data->cur_frmrate != 0 ? USEC_PER_SEC / drv_data->cur_frmrate : 0;
 
 	return 0;
 }
@@ -1185,8 +1187,7 @@ static int ov5640_enum_frmival(const struct device *dev, struct video_frmival_en
 	}
 
 	fie->type = VIDEO_FRMIVAL_TYPE_DISCRETE;
-	fie->discrete.numerator = 1;
-	fie->discrete.denominator = ov5640_frame_rates[fie->index];
+	fie->discrete.usec = USEC_PER_SEC / ov5640_frame_rates[fie->index];
 
 	return 0;
 }

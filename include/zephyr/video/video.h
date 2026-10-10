@@ -345,35 +345,52 @@ int video_set_frmival(const struct device *dev, struct video_frmival *frmival);
 int video_get_frmival(const struct device *dev, struct video_frmival *frmival);
 
 /**
- * @brief Compute the difference between two frame intervals
+ * @brief Get frame interval value in microseconds
  *
- * @param frmival Frame interval to turn into microseconds.
+ * @param frmival Frame interval.
  *
  * @return The frame interval value in microseconds.
  */
-static inline uint64_t video_frmival_nsec(const struct video_frmival *frmival)
+static inline uint32_t video_frmival_usec(const struct video_frmival *frmival)
 {
-	if (frmival == NULL || frmival->denominator == 0) {
-		return -EINVAL;
+	if (frmival == NULL) {
+		return 0U;
 	}
 
-	return (uint64_t)NSEC_PER_SEC * frmival->numerator / frmival->denominator;
+	return frmival->usec;
+}
+
+/**
+ * @brief Turn a frame interval into nanoseconds
+ *
+ * @deprecated Use video_frmival_usec() instead.
+ *
+ * @param frmival Frame interval to turn into nanoseconds.
+ *
+ * @return The frame interval value in nanoseconds.
+ */
+__deprecated static inline uint64_t video_frmival_nsec(const struct video_frmival *frmival)
+{
+	if (frmival == NULL) {
+		return 0U;
+	}
+
+	return (uint64_t)frmival->usec * NSEC_PER_USEC;
 }
 
 /**
  * @brief Find the closest match to a frame interval value within a stepwise frame interval.
  *
  * @param stepwise The stepwise frame interval range to search
- * @param desired The frame interval for which find the closest match
- * @param match The resulting frame interval closest to @p desired
+ * @param desired The frame interval in microseconds for which to find the closest match
+ * @param match Pointer to store the resulting frame interval closest to @p desired in microseconds
  *
  * @retval 0 If successful.
  * @retval -EINVAL If parameters are invalid.
- * @retval -ERANGE If the step is zero or the result does not fit in 32-bit values.
+ * @retval -ERANGE If the step is zero.
  */
-int video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwise,
-				   const struct video_frmival *desired,
-				   struct video_frmival *match);
+int video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwise, uint32_t desired,
+				   uint32_t *match);
 
 /**
  * @brief Find the closest match to a frame interval value within a video device.
