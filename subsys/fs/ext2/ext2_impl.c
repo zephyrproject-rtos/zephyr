@@ -984,7 +984,8 @@ static int ext2_create_inode(struct ext2_data *fs, struct ext2_inode *parent,
 
 	/* fill inode with correct data */
 	inode->i_fs = fs;
-	inode->flags = 0;
+	/* Keep the allocation rollback pending until creation is complete. */
+	inode->flags = INODE_REMOVE;
 	inode->i_id = ino;
 	inode->i_size = 0;
 	inode->i_mode = type == FS_DIR_ENTRY_FILE ? EXT2_DEF_FILE_MODE : EXT2_DEF_DIR_MODE;
@@ -1003,7 +1004,12 @@ static int ext2_create_inode(struct ext2_data *fs, struct ext2_inode *parent,
 	}
 
 	rc = ext2_commit_inode(inode);
-	return rc;
+	if (rc < 0) {
+		return rc;
+	}
+
+	inode->flags &= ~INODE_REMOVE;
+	return 0;
 }
 
 struct ext2_direntry *ext2_create_direntry(const char *name, uint8_t namelen, uint32_t ino,
@@ -1154,6 +1160,9 @@ int ext2_create_file(struct ext2_inode *parent, struct ext2_inode *new_inode,
 		ret = rc;
 	}
 out:
+	if (ret < 0) {
+		new_inode->flags |= INODE_REMOVE;
+	}
 	k_heap_free(&direntry_heap, entry);
 	return ret;
 }
@@ -1240,6 +1249,9 @@ int ext2_create_dir(struct ext2_inode *parent, struct ext2_inode *new_inode,
 		ret = rc;
 	}
 out:
+	if (ret < 0) {
+		new_inode->flags |= INODE_REMOVE;
+	}
 	k_heap_free(&direntry_heap, entry);
 	return ret;
 }
