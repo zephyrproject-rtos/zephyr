@@ -3,11 +3,15 @@
 
 zephyr_sources_ifdef(CONFIG_SOC_SERIES_SIWG917 soc.c)
 zephyr_sources_ifdef(CONFIG_SILABS_SIWX91X_NWP siwx91x_nwp.c)
-zephyr_sources_ifdef(CONFIG_PM power.c)
+# The Si91x power manager is also needed by the poweroff path, which uses it
+# without the PM subsystem.
+if(CONFIG_PM OR CONFIG_POWEROFF)
+  zephyr_sources(power.c)
+endif()
 zephyr_sources_ifdef(CONFIG_SIWX91X_FIRMWARE_UPGRADE_SHELL siwx91x_fota_shell.c)
 zephyr_sources_ifdef(CONFIG_SIWX91X_VERSION_SHELL siwx91x_version_shell.c)
 zephyr_sources_ifdef(CONFIG_SIWX91X_CLOCK_SHELL siwx91x_clock_shell.c)
-
+zephyr_sources_ifdef(CONFIG_POWEROFF poweroff.c)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_SIWG917Y111MGABA
   SI91X_32kHz_EXTERNAL_OSCILLATOR=1
   SL_SI91X_ACX_MODULE=1
