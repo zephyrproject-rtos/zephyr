@@ -18,9 +18,8 @@ if SENSOR_DS3231
 
 config SENSOR_DS3231_INIT_PRIORITY
 	int "DS3231 sensor driver init priority"
-	default 86
+	default MFD_INIT_PRIORITY
 	help
-	Init priority for the DS3231 sensor driver. It must be
-	greater than MFD_INIT_PRIORITY.
+	Init priority for the DS3231 sensor driver.
 
 endif # SENSOR_DS3231

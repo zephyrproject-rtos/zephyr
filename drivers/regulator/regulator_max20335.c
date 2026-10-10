@@ -367,7 +367,7 @@ static DEVICE_API(regulator, api) = {
 												\
 	DEVICE_DT_INST_DEFINE(inst, regulator_max20335_common_init,				\
 			      NULL, NULL, &common_config_##inst, POST_KERNEL,			\
-			      CONFIG_REGULATOR_MAXIM_MAX20335_COMMON_INIT_PRIORITY,		\
+			      CONFIG_REGULATOR_MAXIM_MAX20335_INIT_PRIORITY,			\
 			      &parent_api);							\
 												\
 	REGULATOR_MAX20335_DEFINE_COND(inst, buck1, MAX20335_PMIC_SOURCE_BUCK1)			\

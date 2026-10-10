@@ -219,6 +219,6 @@ static DEVICE_API(entropy, entropy_maxq10xx_api) = {
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(_num, NULL, NULL, NULL,                                              \
 			      &entropy_maxq10xx_config##_num, POST_KERNEL,                         \
-			      CONFIG_MFD_MAXQ10XX_INIT_PRIORITY, &entropy_maxq10xx_api);
+			      CONFIG_MFD_INIT_PRIORITY, &entropy_maxq10xx_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_MAXQ10XX_ENTROPY);

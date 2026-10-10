@@ -14,7 +14,7 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config MFD_INIT_PRIORITY
 	int "Initialization priority"
-	default 80
+	default KERNEL_INIT_PRIORITY_DEVICE
 	help
 	  Multi-function devices initialization priority.
 

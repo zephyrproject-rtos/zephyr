@@ -58,11 +58,4 @@ config ADP5360_THREAD_STACK_SIZE
 	  "Use own thread" is selected. Ensure the stack size is sufficient for the interrupt
 	  handling logic to avoid stack overflows.
 
-config MFD_ADP5360_INIT_PRIORITY
-	int "MFD ADP5360 Init Priority"
-	default 70
-	depends on MFD_ADP5360
-	help
-	  Init priority for the Analog Devices ADP5360 MFD Subsystem.
-
 endif # MFD_ADP5360
