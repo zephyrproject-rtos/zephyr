@@ -1,0 +1,31 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  nRF71 antenna switch (ANTSW) select pin, shared between Wi-Fi and BLE.
+
+  A single SoC pin is wired to the antenna switch. Early boot code routes it
+  to the ANTSWC peripheral (GPIO PIN_CNF CTRLSEL = 5) via
+  nrf_gpio_pin_control_select() from soc_early_init_hook(). ANTSWC then
+  drives the line for Wi-Fi/BLE coexistence; the application core does not
+  bit-bang the switch in GPIO mode. Only the port and pin from sel-gpios are
+  used; GPIO flags are not interpreted.
+
+  Because this runs before the GPIO driver is initialized, the pin is
+  configured through the nrf_gpio HAL using the PSEL derived from this
+  property. The pin is SoC specific and is not meant to be changed at a board
+  level.
+
+  Powering the antenna switch is a separate concern handled by the pwr_antswc
+  node (nordic,nrf-pwr-antswc).
+
+compatible: "nordic,nrf71-antsw"
+
+include: base.yaml
+
+properties:
+  sel-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Antenna switch select line (port and pin only). Routed to ANTSWC at boot.
