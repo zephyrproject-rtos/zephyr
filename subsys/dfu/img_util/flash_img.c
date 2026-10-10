@@ -262,29 +262,24 @@ int flash_img_init_id(struct flash_img_context *ctx, uint8_t area_id)
 #endif
 }
 
-#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) || \
-	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT)
+#ifdef CONFIG_MCUBOOT_ACTIVE_SLOT_FROM_BLINFO
 uint8_t flash_img_get_upload_slot(void)
 {
 	uint8_t slot;
 
-	slot = boot_fetch_active_slot();
+	slot = boot_fetch_active_slot_area_id();
 
 	if (slot == PARTITION_ID(slot0_partition)) {
 		return PARTITION_ID(slot1_partition);
 	}
 	return PARTITION_ID(slot0_partition);
 }
-#else  /* CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD ||
-	* CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT
-	*/
+#else  /* CONFIG_MCUBOOT_ACTIVE_SLOT_FROM_BLINFO */
 uint8_t flash_img_get_upload_slot(void)
 {
 	return UPLOAD_FLASH_AREA_ID;
 }
-#endif /* CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD ||
-	* CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT
-	*/
+#endif /* CONFIG_MCUBOOT_ACTIVE_SLOT_FROM_BLINFO */
 
 int flash_img_init(struct flash_img_context *ctx)
 {
