@@ -174,6 +174,17 @@ RPI_PICO_PIO_DEFINE_PROGRAM(spi_sio_mode_0_0_rx, SPI_SIO_MODE_0_0_RX_WRAP_TARGET
 );
 #endif /* SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED */
 
+static inline uint32_t spi_pico_get_abs_gpio_pin(const struct gpio_dt_spec *gpio)
+{
+#if IS_ENABLED(CONFIG_SOC_RP2350B)
+	if (gpio->port == DEVICE_DT_GET(DT_INST(1, raspberrypi_pico_gpio_port))) {
+		return gpio->pin + DT_PROP(DT_INST(0, raspberrypi_pico_gpio_port), ngpios);
+	}
+#endif
+
+	return gpio->pin;
+}
+
 static float spi_pico_pio_clock_divisor(const uint32_t clock_freq, int cycles,
 					uint32_t spi_frequency)
 {
@@ -261,6 +272,28 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 	uint32_t rc = 0;
 	uint32_t clock_freq;
 	PIO pio = pio_rpi_pico_get_pio(dev_cfg->piodev);
+
+#if SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED
+	const uint32_t ngpios = DT_PROP(DT_INST(0, raspberrypi_pico_gpio_port), ngpios);
+	const uint32_t sio_abs = spi_pico_get_abs_gpio_pin(&dev_cfg->sio_gpio);
+	const uint32_t clk_abs = spi_pico_get_abs_gpio_pin(&dev_cfg->clk_gpio);
+	const uint32_t min_pin = MIN(sio_abs, clk_abs);
+	const uint32_t max_pin = MAX(sio_abs, clk_abs);
+
+	if (max_pin >= ngpios) {
+		if (min_pin < ngpios) {
+			LOG_ERR("SIO (%u) and CLK (%u) pins must belong to the same GPIO "
+				"register", sio_abs, clk_abs);
+			return -EINVAL;
+		}
+
+		rc = pio_set_gpio_base(pio, 16);
+		if (rc < 0) {
+			LOG_ERR("Failed to set PIO GPIO base to 16");
+			return rc;
+		}
+	}
+#endif
 
 	rc = clock_control_on(dev_cfg->clk_dev, dev_cfg->clk_id);
 	if (rc < 0) {
@@ -377,6 +410,7 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 	if (dev_cfg->sio_gpio.port) {
 #if SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED
 		const struct gpio_dt_spec *sio = &dev_cfg->sio_gpio;
+		const uint64_t pin_mask = BIT64(sio_abs) | BIT64(clk_abs);
 
 		float clock_div = spi_pico_pio_clock_divisor(clock_freq, SPI_SIO_MODE_0_0_TX_CYCLES,
 							     spi_cfg->frequency);
@@ -395,26 +429,23 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 		sm_config = pio_get_default_sm_config();
 
 		sm_config_set_clkdiv(&sm_config, clock_div);
-		sm_config_set_in_pins(&sm_config, sio->pin);
+		sm_config_set_in_pins(&sm_config, sio_abs);
 		sm_config_set_in_shift(&sm_config, lsb, true, data->bits);
-		sm_config_set_out_pins(&sm_config, sio->pin, 1);
+		sm_config_set_out_pins(&sm_config, sio_abs, 1);
 		sm_config_set_out_shift(&sm_config, lsb, false, data->bits);
 		hw_set_bits(&pio->input_sync_bypass, 1u << sio->pin);
 
-		sm_config_set_sideset_pins(&sm_config, clk->pin);
+		sm_config_set_sideset_pins(&sm_config, clk_abs);
 		sm_config_set_sideset(&sm_config, 1, false, false);
 		sm_config_set_wrap(
 			&sm_config,
 			data->pio_tx_offset + RPI_PICO_PIO_GET_WRAP_TARGET(spi_sio_mode_0_0_tx),
 			data->pio_tx_offset + RPI_PICO_PIO_GET_WRAP(spi_sio_mode_0_0_tx));
 
-		pio_sm_set_pindirs_with_mask(pio, data->pio_sm,
-					     (BIT(clk->pin) | BIT(sio->pin)),
-					     (BIT(clk->pin) | BIT(sio->pin)));
-		pio_sm_set_pins_with_mask(pio, data->pio_sm, 0,
-					  BIT(clk->pin) | BIT(sio->pin));
-		pio_gpio_init(pio, sio->pin);
-		pio_gpio_init(pio, clk->pin);
+		pio_sm_set_pindirs_with_mask64(pio, data->pio_sm, pin_mask, pin_mask);
+		pio_sm_set_pins_with_mask64(pio, data->pio_sm, 0, pin_mask);
+		pio_gpio_init(pio, sio_abs);
+		pio_gpio_init(pio, clk_abs);
 
 		pio_sm_init(pio, data->pio_sm, data->pio_tx_offset, &sm_config);
 		pio_sm_set_enabled(pio, data->pio_sm, true);
@@ -778,7 +809,7 @@ static void spi_pico_pio_txrx_3_wire(const struct device *dev)
 	const uint8_t *txbuf = data->spi_ctx.tx_buf;
 	uint8_t *rxbuf = data->spi_ctx.rx_buf;
 	uint32_t txrx;
-	int sio_pin = dev_cfg->sio_gpio.pin;
+	int sio_pin = spi_pico_get_abs_gpio_pin(&dev_cfg->sio_gpio);
 	uint32_t tx_size = data->spi_ctx.tx_len; /* Number of WORDS to send */
 	uint32_t rx_size = data->spi_ctx.rx_len; /* Number of WORDS to receive */
 	PIO pio = pio_rpi_pico_get_pio(dev_cfg->piodev);
@@ -790,8 +821,8 @@ static void spi_pico_pio_txrx_3_wire(const struct device *dev)
 					RPI_PICO_PIO_GET_WRAP_TARGET(spi_sio_mode_0_0_tx),
 				data->pio_tx_offset + RPI_PICO_PIO_GET_WRAP(spi_sio_mode_0_0_tx));
 		pio_sm_clear_fifos(pio, data->pio_sm);
-		pio_sm_set_pindirs_with_mask(pio, data->pio_sm, BIT(sio_pin),
-					     BIT(sio_pin));
+		pio_sm_set_pindirs_with_mask64(pio, data->pio_sm, BIT64(sio_pin),
+					     BIT64(sio_pin));
 		pio_sm_restart(pio, data->pio_sm);
 		pio_sm_clkdiv_restart(pio, data->pio_sm);
 		pio_sm_exec(pio, data->pio_sm, pio_encode_jmp(data->pio_tx_offset));
@@ -838,7 +869,7 @@ static void spi_pico_pio_txrx_3_wire(const struct device *dev)
 		pio_sm_set_wrap(pio, data->pio_sm, data->pio_rx_wrap_target,
 				data->pio_rx_wrap);
 		pio_sm_clear_fifos(pio, data->pio_sm);
-		pio_sm_set_pindirs_with_mask(pio, data->pio_sm, 0, BIT(sio_pin));
+		pio_sm_set_pindirs_with_mask64(pio, data->pio_sm, 0, BIT64(sio_pin));
 		pio_sm_restart(pio, data->pio_sm);
 		pio_sm_clkdiv_restart(pio, data->pio_sm);
 		pio_sm_put(pio, data->pio_sm, (rx_size * data->bits) - 1);
