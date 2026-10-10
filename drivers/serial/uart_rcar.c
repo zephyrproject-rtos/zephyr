@@ -62,6 +62,13 @@ struct uart_rcar_data {
 #define SCSMR_STOP      BIT(3)  /* Stop Bit Length */
 #define SCSMR_CKS1      BIT(1)  /* Clock Select 1 */
 #define SCSMR_CKS0      BIT(0)  /* Clock Select 0 */
+#define SCSMR_CKS_MASK  (SCSMR_CKS1 | SCSMR_CKS0)
+#define SCSMR_CKS_MAX   3U      /* Clock divided by 64 */
+
+/* SCBRR (Bit Rate Register) */
+#define SCBRR_MAX       255U
+
+#define SCIF_SAMPLING_RATE 16U
 
 /* SCSCR (Serial Control Register) */
 #define SCSCR_TEIE      BIT(11) /* Transmit End Interrupt Enable */
@@ -133,19 +140,47 @@ static void uart_rcar_write_16(const struct device *dev,
 	sys_write16(value, DEVICE_MMIO_GET(dev) + offs);
 }
 
-static void uart_rcar_set_baudrate(const struct device *dev,
-				   uint32_t baud_rate)
+static int uart_rcar_calc_baudrate(const struct device *dev, uint32_t baud_rate,
+				   uint8_t *cks, uint8_t *brr)
 {
 	struct uart_rcar_data *data = dev->data;
 	const struct uart_rcar_cfg *cfg = dev->config;
-	uint8_t reg_val;
+	uint32_t sampling_rate;
 
-	if (cfg->is_hscif) {
-		reg_val = data->clk_rate / (2 * (HSSRR_SRCYC_DEF_VAL + 1) * baud_rate) - 1;
-	} else {
-		reg_val = ((data->clk_rate + 16 * baud_rate) / (32 * baud_rate) - 1);
+	if ((baud_rate == 0U) || (data->clk_rate == 0U)) {
+		return -EINVAL;
 	}
-	uart_rcar_write_8(dev, SCBRR, reg_val);
+
+	sampling_rate = cfg->is_hscif ? (HSSRR_SRCYC_DEF_VAL + 1U) : SCIF_SAMPLING_RATE;
+
+	/*
+	 * HSBRR/SCBRR = clk_rate / (sampling_rate * 2^(2 * CKS + 1) * baud_rate) - 1.
+	 * Use the smallest clock prescaler for which HSBRR/SCBRR fits.
+	 */
+	for (uint32_t n = 0U; n <= SCSMR_CKS_MAX; n++) {
+		uint64_t clk_div = ((uint64_t)sampling_rate * baud_rate) << (2U * n + 1U);
+		uint64_t val;
+
+		if (cfg->is_hscif) {
+			val = data->clk_rate / clk_div;
+		} else {
+			val = (data->clk_rate + (clk_div / 2U)) / clk_div;
+		}
+
+		if (val == 0U) {
+			/* Baud rate too high for the clock rate */
+			return -EINVAL;
+		}
+
+		if (val <= (SCBRR_MAX + 1U)) {
+			*cks = (uint8_t)n;
+			*brr = (uint8_t)(val - 1U);
+			return 0;
+		}
+	}
+
+	/* Baud rate too low for the clock rate */
+	return -EINVAL;
 }
 
 static int uart_rcar_poll_in(const struct device *dev, unsigned char *p_char)
@@ -201,12 +236,19 @@ static int uart_rcar_configure(const struct device *dev,
 
 	uint16_t reg_val;
 	k_spinlock_key_t key;
+	uint8_t cks, brr;
+	int ret;
 
 	if (cfg->parity != UART_CFG_PARITY_NONE ||
 	    cfg->stop_bits != UART_CFG_STOP_BITS_1 ||
 	    cfg->data_bits != UART_CFG_DATA_BITS_8 ||
 	    cfg->flow_ctrl != UART_CFG_FLOW_CTRL_NONE) {
 		return -ENOTSUP;
+	}
+
+	ret = uart_rcar_calc_baudrate(dev, cfg->baudrate, &cks, &brr);
+	if (ret != 0) {
+		return ret;
 	}
 
 	key = k_spin_lock(&data->lock);
@@ -238,7 +280,8 @@ static int uart_rcar_configure(const struct device *dev,
 	/* Serial Configuration (8N1) & Clock divider selection */
 	reg_val = uart_rcar_read_16(dev, SCSMR);
 	reg_val &= ~(SCSMR_C_A | SCSMR_CHR | SCSMR_PE | SCSMR_O_E | SCSMR_STOP |
-		     SCSMR_CKS1 | SCSMR_CKS0);
+		     SCSMR_CKS_MASK);
+	reg_val |= FIELD_PREP(SCSMR_CKS_MASK, cks);
 	uart_rcar_write_16(dev, SCSMR, reg_val);
 
 	if (cfg_drv->is_hscif) {
@@ -247,7 +290,7 @@ static int uart_rcar_configure(const struct device *dev,
 	}
 
 	/* Set baudrate */
-	uart_rcar_set_baudrate(dev, cfg->baudrate);
+	uart_rcar_write_8(dev, SCBRR, brr);
 
 	/* FIFOs data count trigger configuration */
 	reg_val = uart_rcar_read_16(dev, SCFCR);
