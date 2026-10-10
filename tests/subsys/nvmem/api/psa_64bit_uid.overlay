@@ -1,0 +1,14 @@
+/**
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-FileCopyrightText: Copyright (c) 2026, Basalte bv
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Exercise the widening of cell addresses into 64-bit PSA storage UIDs.
+ * The ZMS store backing the test limits UIDs to 30 bits even with
+ * CONFIG_SECURE_STORAGE_64_BIT_UID, so stay below 2^30.
+ */
+&test_nvmem0 {
+	uid-base = <0x0 0x20000000>;
+};

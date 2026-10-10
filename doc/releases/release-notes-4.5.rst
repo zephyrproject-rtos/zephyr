@@ -939,6 +939,13 @@ New APIs and options
   * :kconfig:option:`CONFIG_POSIX_AEP_CHOICE_NETAPP`, a Zephyr-specific subprofile with the
     features of PSE52 plus the networking interfaces of PSE53, without multi-process support.
 
+* NVMEM
+
+  * Devices can now natively provide NVMEM cells by implementing the new NVMEM provider device
+    API class, see :c:struct:`nvmem_provider_driver_api`.
+  * NVMEM cells can now be backed by PSA Secure Storage entries, see
+    :kconfig:option:`CONFIG_NVMEM_PROVIDER_PSA_ITS` and :kconfig:option:`CONFIG_NVMEM_PROVIDER_PSA_PS`.
+
 * Power Management
 
   * :c:macro:`LOG_DBG_PM_DEVICE_RUNTIME_GET`
