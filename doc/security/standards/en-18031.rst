@@ -1,0 +1,695 @@
+.. _en_18031:
+
+RED Cybersecurity Standards (EN 18031)
+######################################
+
+.. warning::
+   This document is for informational purposes only and does not constitute legal advice.
+   Consult with your legal counsel for compliance guidance specific to your situation.
+
+Overview
+********
+
+The Radio Equipment Directive (RED, `Directive 2014/53/EU`_) defines essential requirements for
+radio equipment placed on the EU market. Its cybersecurity requirements in Article 3(3), points
+(d), (e) and (f), were activated by `Delegated Regulation (EU) 2022/30`_ and have been mandatory
+for new radio equipment since August 1, 2025.
+
+EN 18031 is the series of harmonized standards developed by CEN-CENELEC for these requirements.
+Applying it is voluntary, but equipment that meets the applicable parts benefits from a
+presumption of conformity with the corresponding essential requirements, within the restrictions
+listed when the standards were cited in the Official Journal of the European Union by
+`Implementing Decision (EU) 2025/138`_.
+
+.. admonition:: Key Dates
+   :class: important
+
+   * **January 12, 2022**: Delegated Regulation (EU) 2022/30 published
+   * **August 2024**: EN 18031-1, EN 18031-2 and EN 18031-3 published by CEN-CENELEC
+   * **January 30, 2025**: EN 18031 cited in the Official Journal, with restrictions
+   * **August 1, 2025**: Cybersecurity requirements of the RED apply to new radio equipment
+   * **December 11, 2027**: The Cyber Resilience Act applies in full
+
+The Cyber Resilience Act (:ref:`cra_faq`) covers the same products with broader requirements. The
+Commission has announced that the Delegated Regulation will be repealed once the CRA applies, so
+EN 18031 is mainly relevant for radio equipment placed on the market before December 11, 2027.
+The EN 18031 mechanisms map to a large part of the CRA essential requirements, so work done for
+EN 18031 carries over.
+
+EN 18031 applies to radio equipment as a whole, not to its software components. Zephyr cannot be
+certified against EN 18031 on its own, and the Zephyr Project has no obligations under the RED.
+This page explains the structure of the standard and lists the Zephyr features that manufacturers
+can use to meet its requirements.
+
+Structure of the Standard
+*************************
+
+Parts of the standard
+=====================
+
+EN 18031 consists of three parts, one for each of the RED cybersecurity requirements. A product
+has to meet every part that applies to it.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 15 15 35 35
+
+   * - Part
+     - RED article
+     - Objective
+     - Equipment in scope
+   * - EN 18031-1
+     - 3(3)(d)
+     - Radio equipment does not harm the network or its functioning, and does not misuse network
+       resources.
+     - Internet-connected radio equipment.
+   * - EN 18031-2
+     - 3(3)(e)
+     - Radio equipment protects the personal data and privacy of the user and subscriber.
+     - Internet-connected radio equipment that can process personal data, radio equipment
+       intended for childcare, toys and wearable radio equipment.
+   * - EN 18031-3
+     - 3(3)(f)
+     - Radio equipment protects against fraud.
+     - Internet-connected radio equipment that enables the transfer of money, monetary value or
+       virtual currency.
+
+Internet-connected radio equipment is equipment that can communicate over the internet itself,
+either directly or through other equipment such as a gateway, a router or a smartphone.
+
+Assets
+======
+
+Each part of EN 18031 protects a set of assets. The requirements refer to these assets to define
+what an access control, secure storage or secure communication mechanism has to protect.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 20 60
+
+   * - Asset
+     - Parts
+     - Examples
+   * - Security assets
+     - 1, 2, 3
+     - Cryptographic keys, passwords and other authenticators, security configuration, and the
+       security functions of the equipment.
+   * - Network assets
+     - 1
+     - Network functions and their configuration, such as routing and interface settings.
+   * - Privacy assets
+     - 2
+     - Personal information and the functions that process it, such as a camera, a microphone or
+       location data.
+   * - Financial assets
+     - 3
+     - Financial data and the functions that process transactions, such as payment credentials.
+
+.. _en_18031_mechanisms:
+
+Security mechanisms
+===================
+
+The requirements are grouped by security mechanism. Every mechanism starts with an applicability
+requirement which decides whether the mechanism is needed, followed by requirements on its
+appropriateness. The individual requirements are listed in :ref:`en_18031_mapping`.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 10 40 10 10 10
+
+   * - ID
+     - Mechanism
+     - Part 1
+     - Part 2
+     - Part 3
+   * - ACM
+     - Access control mechanism
+     - Y
+     - Y
+     - Y
+   * - AUM
+     - Authentication mechanism
+     - Y
+     - Y
+     - Y
+   * - SUM
+     - Secure update mechanism
+     - Y
+     - Y
+     - Y
+   * - SSM
+     - Secure storage mechanism
+     - Y
+     - Y
+     - Y
+   * - SCM
+     - Secure communication mechanism
+     - Y
+     - Y
+     - Y
+   * - RLM
+     - Resilience mechanism
+     - Y
+     -
+     -
+   * - LGM
+     - Logging mechanism
+     -
+     - Y
+     - Y
+   * - NMM
+     - Network monitoring mechanism
+     - Y
+     -
+     -
+   * - DLM
+     - Deletion mechanism
+     -
+     - Y
+     -
+   * - TCM
+     - Traffic control mechanism
+     - Y
+     -
+     -
+   * - UNM
+     - User notification mechanism
+     -
+     - Y
+     -
+   * - CCK
+     - Confidential cryptographic keys
+     - Y
+     - Y
+     - Y
+   * - GEC
+     - General equipment capabilities
+     - Y
+     - Y
+     - Y
+   * - CRY
+     - Cryptography
+     - Y
+     - Y
+     - Y
+
+NMM and TCM only apply to network equipment such as routers and gateways that forward traffic for
+other devices.
+
+Decision trees and assessment
+=============================
+
+EN 18031 does not prescribe specific technologies. Instead, each requirement comes with a
+rationale, guidance, examples and assessment criteria. The assessment is based on a decision tree
+for every requirement: the manufacturer answers its questions for each relevant asset, interface or
+mechanism of the equipment, and the path through the tree results in one of the following
+verdicts:
+
+* **PASS**: the requirement is met.
+* **FAIL**: the requirement is not met.
+* **NOT APPLICABLE**: the requirement does not apply, for example because the equipment has no
+  asset or interface of the relevant kind.
+
+The assessment criteria of each requirement distinguish between the following kinds of
+assessment:
+
+* **Conceptual assessment**: the documented design follows the decision tree to a PASS or NOT
+  APPLICABLE verdict.
+* **Functional completeness assessment**: the documentation covers all relevant assets,
+  interfaces and mechanisms of the equipment.
+* **Functional sufficiency assessment**: the implemented mechanisms work as documented, which
+  may require testing the equipment.
+
+The results of earlier requirements are inputs to later ones. For example, the assets identified
+for ACM-1 determine which authentication mechanisms are needed for AUM-1.
+
+For Manufacturers Using Zephyr
+******************************
+
+Does EN 18031 apply to my product?
+==================================
+
+EN 18031 is relevant if your product is radio equipment under the RED, which is the case for any
+product that intentionally emits or receives radio waves, for example over Bluetooth, Wi-Fi,
+IEEE 802.15.4, LoRa or cellular. It applies to products placed on the EU market on or after
+August 1, 2025, independent of when the product was first designed.
+
+Products that only use a wired connection are not in scope of the RED, but are in scope of the
+CRA. Some product categories that are covered by their own Union legislation, such as medical
+devices, in vitro diagnostic medical devices, motor vehicles, civil aviation products and
+electronic road toll systems, are excluded from some or all of the RED cybersecurity requirements.
+See Article 1 of `Delegated Regulation (EU) 2022/30`_ for the exact exclusions.
+
+Which parts of EN 18031 apply to my product?
+============================================
+
+Answer the following questions for your product:
+
+#. Can the product communicate over the internet, directly or through a gateway, a router or a
+   smartphone? If yes, EN 18031-1 applies.
+#. Can the product process personal data, or is it intended for childcare, a toy, or wearable?
+   If yes, EN 18031-2 applies. Childcare equipment, toys and wearables are in scope even without
+   an internet connection.
+#. Can the product transfer money, monetary value or virtual currency? If yes, EN 18031-3
+   applies.
+
+Most internet-connected products fall under EN 18031-1 and EN 18031-2, since user accounts,
+identifiers and location data already count as personal data.
+
+.. _en_18031_restrictions:
+
+Can I rely on EN 18031 for presumption of conformity?
+=====================================================
+
+Yes, within the restrictions listed in `Implementing Decision (EU) 2025/138`_. If one of the
+following restrictions applies to your product, meeting the affected requirement does not give a
+presumption of conformity:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 15 65
+
+   * - Requirements
+     - Parts
+     - Restriction
+   * - AUM-5-1, AUM-5-2
+     - 1, 2, 3
+     - The equipment lets the user choose not to use any password.
+   * - ACM-3 to ACM-6
+     - 2
+     - The access control mechanism categories used are not compatible with parental or guardian
+       control.
+   * - SUM-2
+     - 3
+     - The equipment processes financial assets and relies on only one of the update verification
+       methods listed in the standard. None of them is sufficient on its own.
+
+If you apply EN 18031 in full and none of the restrictions apply to your product, you can use
+internal production control (Module A, RED Annex II) and declare conformity yourself. Otherwise,
+for example if you apply the standard only in part or rely on an excluded option, you have to
+involve a notified body through EU-type examination (Module B and C, RED Annex III) or full
+quality assurance (Module H, RED Annex IV).
+
+What documentation do I need to provide?
+========================================
+
+The technical documentation required by RED Annex V has to show how the equipment meets the
+applicable parts of EN 18031. For each requirement, it typically includes:
+
+* The assets, interfaces and mechanisms of the equipment that the requirement applies to.
+* The path through the decision tree and the resulting verdict, with a justification for each
+  answer.
+* A description of how the mechanisms are implemented, for example which Zephyr subsystems and
+  Kconfig options are used.
+
+Some requirements, such as GEC-4 and GEC-7, ask for documentation of the equipment's interfaces
+and capabilities themselves. The EU declaration of conformity lists the parts of EN 18031 that
+were applied.
+
+Zephyr provides information that can be used in this documentation:
+
+* The build configuration (``zephyr/.config``) and the devicetree (``zephyr/zephyr.dts``) in the
+  build directory document which subsystems, services and interfaces are included in the image.
+* :ref:`west-spdx` generates a software bill of materials for the image.
+* :ref:`Zephyr Vulnerabilities <vulnerabilities>` lists known vulnerabilities and the releases
+  that fix them.
+
+.. _en_18031_mapping:
+
+Mapping to Zephyr Features
+**************************
+
+The following tables list the requirements of EN 18031 and the Zephyr features that can support a
+product in meeting them. The parts of the standard that use each mechanism are listed in
+:ref:`en_18031_mechanisms`. The mapping is informative: whether a requirement applies and whether
+it is met is decided by the manufacturer for the complete product, following the decision trees in
+the standard. The requirement text is only available in the standard itself.
+
+Requirements marked as product responsibility are not addressed by Zephyr and have to be
+implemented by the application or the product's hardware and processes.
+
+Access control mechanism (ACM)
+==============================
+
+.. list-table::
+   :header-rows: 1
+   :widths: 12 44 44
+
+   * - ID
+     - Title
+     - Zephyr support
+   * - ACM-1
+     - Applicability of access control mechanisms
+     - See ACM-2.
+   * - ACM-2
+     - Appropriate access control mechanisms
+     - Bluetooth GATT attribute permissions, MCUmgr Bluetooth transport permissions
+       (:kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT_PERM_RW_AUTHEN`).
+   * - ACM-3
+     - Default access control for children in toys
+     - Product responsibility.
+   * - ACM-4
+     - Default access control to children's privacy assets for toys and childcare equipment
+     - Product responsibility.
+   * - ACM-5
+     - Parental/Guardian access controls for children in toys
+     - Product responsibility.
+   * - ACM-6
+     - Parental/Guardian access controls for other entities' access to managed children's
+       privacy assets in toys
+     - Product responsibility.
+
+.. note::
+   :ref:`Restrictions <en_18031_restrictions>` from the Official Journal apply to ACM-3 to ACM-6.
+
+Authentication mechanism (AUM)
+==============================
+
+.. list-table::
+   :header-rows: 1
+   :widths: 12 44 44
+
+   * - ID
+     - Title
+     - Zephyr support
+   * - AUM-1-1
+     - Applicability of authentication mechanisms: network interface
+     - TLS/DTLS client and server authentication with credentials from
+       :ref:`sockets_tls_credentials_subsys`, Bluetooth pairing and bonding.
+   * - AUM-1-2
+     - Applicability of authentication mechanisms: user interface
+     - Product responsibility.
+   * - AUM-2-1
+     - Appropriate authentication mechanisms: one-factor authentication
+     - See AUM-1-1.
+   * - AUM-2-2
+     - Appropriate authentication mechanisms: two-factor authentication
+     - Product responsibility.
+   * - AUM-3
+     - Authenticator validation
+     - Peer certificate verification in :ref:`secure_sockets_interface`.
+   * - AUM-4
+     - Changing authenticators
+     - Product responsibility. TLS credentials can be replaced at runtime through
+       :ref:`sockets_tls_credentials_subsys`.
+   * - AUM-5-1
+     - Password strength: factory default passwords
+     - Product responsibility.
+   * - AUM-5-2
+     - Password strength: non-factory default passwords
+     - Product responsibility.
+   * - AUM-6
+     - Brute force protection
+     - Product responsibility.
+
+.. note::
+   :ref:`Restrictions <en_18031_restrictions>` from the Official Journal apply to AUM-5-1 and
+   AUM-5-2.
+
+Secure update mechanism (SUM)
+=============================
+
+.. list-table::
+   :header-rows: 1
+   :widths: 12 44 44
+
+   * - ID
+     - Title
+     - Zephyr support
+   * - SUM-1
+     - Applicability of update mechanisms
+     - :ref:`mcuboot`, :ref:`dfu`, :ref:`mcu_mgr`, LwM2M firmware update object
+       (:ref:`lwm2m_interface`).
+   * - SUM-2
+     - Secure updates
+     - Image signature verification and optional image encryption with :ref:`mcuboot`.
+   * - SUM-3
+     - Automated updates
+     - hawkBit (:zephyr:code-sample:`hawkbit-api`), UpdateHub
+       (:zephyr:code-sample:`updatehub-fota`), LwM2M firmware update object, LoRaWAN FUOTA
+       (:zephyr:code-sample:`lorawan-fuota`).
+
+.. note::
+   :ref:`Restrictions <en_18031_restrictions>` from the Official Journal apply to SUM-2.
+
+Secure storage mechanism (SSM)
+==============================
+
+.. list-table::
+   :header-rows: 1
+   :widths: 12 44 44
+
+   * - ID
+     - Title
+     - Zephyr support
+   * - SSM-1
+     - Applicability of secure storage mechanisms
+     - See SSM-2 and SSM-3.
+   * - SSM-2
+     - Appropriate integrity protection for secure storage mechanisms
+     - :ref:`secure_storage` (PSA Internal Trusted Storage and Protected Storage APIs),
+       :ref:`tfm`. Firmware integrity is protected by :ref:`mcuboot`.
+   * - SSM-3
+     - Appropriate confidentiality protection for secure storage mechanisms
+     - :ref:`secure_storage`, :ref:`tfm`.
+
+Secure communication mechanism (SCM)
+====================================
+
+.. list-table::
+   :header-rows: 1
+   :widths: 12 44 44
+
+   * - ID
+     - Title
+     - Zephyr support
+   * - SCM-1
+     - Applicability of secure communication mechanisms
+     - TLS and DTLS through :ref:`secure_sockets_interface`, Bluetooth LE security
+       (:kconfig:option:`CONFIG_BT_SMP_SC_ONLY`), Wi-Fi security modes (:ref:`wifi_mgmt`),
+       :ref:`thread_protocol_interface`, :ref:`lorawan_api`.
+   * - SCM-2
+     - Appropriate integrity and authenticity protection for secure communication mechanisms
+     - See SCM-1.
+   * - SCM-3
+     - Appropriate confidentiality protection for secure communication mechanisms
+     - See SCM-1.
+   * - SCM-4
+     - Appropriate replay protection for secure communication mechanisms
+     - See SCM-1.
+
+Resilience mechanism (RLM)
+==========================
+
+.. list-table::
+   :header-rows: 1
+   :widths: 12 44 44
+
+   * - ID
+     - Title
+     - Zephyr support
+   * - RLM-1
+     - Applicability and appropriateness of resilience mechanisms
+     - :ref:`net_pkt_filter_interface` (:kconfig:option:`CONFIG_NET_PKT_FILTER`), statically
+       sized network buffer pools, :ref:`watchdog_api`.
+
+Logging mechanism (LGM)
+=======================
+
+.. list-table::
+   :header-rows: 1
+   :widths: 12 44 44
+
+   * - ID
+     - Title
+     - Zephyr support
+   * - LGM-1
+     - Applicability of logging mechanisms
+     - :ref:`logging_api`.
+   * - LGM-2
+     - Persistent storage of log data
+     - File system log backend (:kconfig:option:`CONFIG_LOG_BACKEND_FS`) on
+       :ref:`file_system_api`.
+   * - LGM-3
+     - Minimum number of persistently stored events
+     - Product responsibility.
+   * - LGM-4
+     - Time-related information of persistently stored log data
+     - Real-time log timestamps (:kconfig:option:`CONFIG_LOG_TIMESTAMP_USE_REALTIME`), time
+       synchronization with :ref:`sntp_interface`, :ref:`rtc_api`.
+
+Network monitoring mechanism (NMM)
+==================================
+
+.. list-table::
+   :header-rows: 1
+   :widths: 12 44 44
+
+   * - ID
+     - Title
+     - Zephyr support
+   * - NMM-1
+     - Applicability and appropriateness of network monitoring mechanisms
+     - :ref:`net_stats_interface`, :ref:`net_mgmt_interface` events, packet capture
+       (:ref:`network_monitoring`).
+
+Deletion mechanism (DLM)
+========================
+
+.. list-table::
+   :header-rows: 1
+   :widths: 12 44 44
+
+   * - ID
+     - Title
+     - Zephyr support
+   * - DLM-1
+     - Applicability of deletion mechanisms
+     - Product responsibility. Stored data can be removed through :ref:`settings_api` and
+       :ref:`secure_storage`. These keep deleted entries in flash until the storage area is
+       garbage collected, so erasing the underlying partition with :ref:`flash_map_api` or
+       :ref:`flash_api` is needed to physically remove the data.
+
+Traffic control mechanism (TCM)
+===============================
+
+.. list-table::
+   :header-rows: 1
+   :widths: 12 44 44
+
+   * - ID
+     - Title
+     - Zephyr support
+   * - TCM-1
+     - Applicability of and appropriate traffic control mechanisms
+     - :ref:`net_pkt_filter_interface`.
+
+User notification mechanism (UNM)
+=================================
+
+.. list-table::
+   :header-rows: 1
+   :widths: 12 44 44
+
+   * - ID
+     - Title
+     - Zephyr support
+   * - UNM-1
+     - Applicability of user notification mechanisms
+     - Product responsibility.
+   * - UNM-2
+     - Appropriate user notification content
+     - Product responsibility.
+
+Confidential cryptographic keys (CCK)
+=====================================
+
+.. list-table::
+   :header-rows: 1
+   :widths: 12 44 44
+
+   * - ID
+     - Title
+     - Zephyr support
+   * - CCK-1
+     - Appropriate CCKs
+     - Key management through :ref:`psa_crypto`.
+   * - CCK-2
+     - CCK generation mechanisms
+     - On-device key generation through :ref:`psa_crypto`, :ref:`random_api` and
+       :ref:`entropy_api`.
+   * - CCK-3
+     - Preventing static default values for preinstalled CCKs
+     - Product responsibility (per-device key provisioning).
+
+General equipment capabilities (GEC)
+====================================
+
+.. list-table::
+   :header-rows: 1
+   :widths: 12 44 44
+
+   * - ID
+     - Title
+     - Zephyr support
+   * - GEC-1
+     - Up-to-date software and hardware with no publicly known exploitable vulnerabilities
+     - :ref:`vulnerabilities`, :ref:`reporting`, SBOM generation with :ref:`west-spdx`.
+   * - GEC-2
+     - Limit exposure of services via related network interfaces
+     - Only services enabled in Kconfig are built into the image. :ref:`hardening` reports
+       options that weaken security.
+   * - GEC-3
+     - Configuration of optional services and the related exposed network interfaces
+     - See GEC-2.
+   * - GEC-4
+     - Documentation of exposed network interfaces and exposed services via network interfaces
+     - Product responsibility.
+   * - GEC-5
+     - No unnecessary external interfaces
+     - Unused peripherals are left out of the build by setting their devicetree nodes to
+       ``status = "disabled"``.
+   * - GEC-6
+     - Input validation
+     - :ref:`syscall_verification` for user mode threads, fuzzing on ``native_sim``
+       (:kconfig:option:`CONFIG_ARCH_POSIX_LIBFUZZER`), run-time buffer overflow checks
+       (:kconfig:option:`CONFIG_FORTIFY_SOURCE_RUN_TIME`).
+   * - GEC-7
+     - Documentation of external sensing capabilities
+     - Product responsibility.
+   * - GEC-8
+     - Equipment integrity
+     - Secure boot with :ref:`mcuboot`, :ref:`tfm`.
+
+Cryptography (CRY)
+==================
+
+.. list-table::
+   :header-rows: 1
+   :widths: 12 44 44
+
+   * - ID
+     - Title
+     - Zephyr support
+   * - CRY-1
+     - Best practice cryptography
+     - :ref:`psa_crypto`.
+
+External Resources
+******************
+
+Official documentation
+======================
+
+* `Directive 2014/53/EU`_ (Radio Equipment Directive)
+* `Delegated Regulation (EU) 2022/30`_ (activation of the cybersecurity requirements)
+* `Delegated Regulation (EU) 2023/2444`_ (postponement of the date of application to
+  August 1, 2025)
+* `Implementing Decision (EU) 2025/138`_ (citation of EN 18031 in the Official Journal, with
+  restrictions)
+* `European Commission Radio Equipment Directive page
+  <https://single-market-economy.ec.europa.eu/sectors/electrical-and-electronic-engineering-industries-eei/radio-equipment-directive-red_en>`_
+
+The EN 18031 standards themselves can be obtained from the national standardization bodies of the
+CEN and CENELEC members.
+
+Related standards
+=================
+
+* :ref:`cra_faq`
+* :ref:`etsi_303645`
+
+Zephyr-specific resources
+=========================
+
+* :ref:`security-overview`
+* :ref:`reporting`
+* :ref:`Zephyr Vulnerabilities <vulnerabilities>`
+
+..
+
+.. _`Directive 2014/53/EU`: https://eur-lex.europa.eu/eli/dir/2014/53/oj
+.. _`Delegated Regulation (EU) 2022/30`: https://eur-lex.europa.eu/eli/reg_del/2022/30/oj
+.. _`Delegated Regulation (EU) 2023/2444`: https://eur-lex.europa.eu/eli/reg_del/2023/2444/oj
+.. _`Implementing Decision (EU) 2025/138`: https://eur-lex.europa.eu/eli/dec_impl/2025/138/oj
