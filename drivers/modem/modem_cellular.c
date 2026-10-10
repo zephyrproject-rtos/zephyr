@@ -254,11 +254,30 @@ void modem_cellular_emit_network_status(struct modem_cellular_data *data,
 	}
 }
 
-static void modem_cellular_invalidate_network_status(struct modem_cellular_data *data)
+static void modem_cellular_invalidate_cell_cache(struct modem_cellular_data *data)
 {
 	k_mutex_lock(&data->api_lock, K_FOREVER);
 	data->network_status_valid = false;
 	k_mutex_unlock(&data->api_lock);
+}
+
+void modem_cellular_add_neighbor_cell(struct modem_cellular_data *data,
+				      const struct cellular_neighbor_cell *cell)
+{
+	/* Runs on the modem work queue, writing into the buffer of the thread
+	 * blocked in modem_cellular_scan_neighbor_cells().
+	 */
+	if (data->neighbor_cells == NULL) {
+		return;
+	}
+
+	if (data->neighbor_cell_count >= data->neighbor_cell_capacity) {
+		data->neighbor_cells_truncated = true;
+		return;
+	}
+
+	data->neighbor_cells[data->neighbor_cell_count] = *cell;
+	data->neighbor_cell_count++;
 }
 
 static void modem_cellular_emit_modem_info(struct modem_cellular_data *data,
@@ -680,15 +699,15 @@ void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, uint16_t
 		   (modem_cellular_stats_on_reg_transition(data, was_registered,
 							   modem_cellular_is_registered(data))));
 
-	if (modem_cellular_is_registered(data)) {
-		/* Drop any cached serving cell on a registration change; it is stale
-		 * until the next periodic poll, so get_network_status() reports no
-		 * data rather than the previous (deregistered) snapshot.
-		 */
-		if (registration_prev != registration_status) {
-			modem_cellular_invalidate_network_status(data);
-		}
+	/* Drop the cached serving cell on any registration change, including
+	 * deregistration; it is stale until the next periodic poll. The
+	 * deregistration branch below re-reports the serving status.
+	 */
+	if (registration_prev != registration_status) {
+		modem_cellular_invalidate_cell_cache(data);
+	}
 
+	if (modem_cellular_is_registered(data)) {
 		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_REGISTERED);
 	} else {
 		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_DEREGISTERED);
@@ -2870,6 +2889,59 @@ static int modem_cellular_get_network_status(const struct device *dev,
 	return ret;
 }
 
+static int modem_cellular_scan_neighbor_cells(const struct device *dev,
+					      struct cellular_neighbor_cell *cells, uint8_t *count)
+{
+	const struct modem_cellular_config *config = dev->config;
+	struct modem_cellular_data *data = dev->data;
+	int ret;
+
+	if (config->vendor->scripts.neighbor_scan == NULL) {
+		return -ENOSYS;
+	}
+
+	if (cells == NULL || count == NULL || *count == 0) {
+		return -EINVAL;
+	}
+
+	/* Only the states that poll the modem answer a measurement request. */
+	if (data->state != MODEM_CELLULAR_STATE_AWAIT_DIAL &&
+	    data->state != MODEM_CELLULAR_STATE_AWAIT_REGISTERED &&
+	    data->state != MODEM_CELLULAR_STATE_REGISTERED) {
+		return -ENETDOWN;
+	}
+
+	/* Not api_lock: the measurement's own serving cell callback takes that on the
+	 * modem work queue, which would deadlock against a caller waiting here.
+	 */
+	if (!atomic_cas(&data->neighbor_scan_busy, 0, 1)) {
+		return -EBUSY;
+	}
+
+	data->neighbor_cells = cells;
+	data->neighbor_cell_capacity = *count;
+	data->neighbor_cell_count = 0;
+	data->neighbor_cells_truncated = false;
+
+	ret = modem_chat_run_script(&data->chat, config->vendor->scripts.neighbor_scan);
+	if (ret == -EBUSY) {
+		LOG_WRN("neighbour cell measurement busy, modem is mid-command");
+	} else if (ret < 0) {
+		LOG_ERR("neighbour cell measurement failed (%d)", ret);
+	} else {
+		LOG_DBG("neighbour cell measurement complete (%u cells)",
+			data->neighbor_cell_count);
+		*count = data->neighbor_cell_count;
+		ret = data->neighbor_cells_truncated ? -ENOMEM : 0;
+	}
+
+	data->neighbor_cells = NULL;
+	data->neighbor_cell_capacity = 0;
+	atomic_clear(&data->neighbor_scan_busy);
+
+	return ret;
+}
+
 static int modem_cellular_set_apn(const struct device *dev, const char *apn)
 {
 	struct modem_cellular_data *data = dev->data;
@@ -2975,6 +3047,7 @@ DEVICE_API(cellular, modem_cellular_api) = {
 	.get_modem_info = modem_cellular_get_modem_info,
 	.get_registration_status = modem_cellular_get_registration_status,
 	.get_network_status = modem_cellular_get_network_status,
+	.scan_neighbor_cells = modem_cellular_scan_neighbor_cells,
 	.set_apn = modem_cellular_set_apn,
 	.set_callback = modem_cellular_set_callback,
 	IF_ENABLED(CONFIG_MODEM_CELLULAR_STATS, (.get_stats = modem_cellular_get_stats,))

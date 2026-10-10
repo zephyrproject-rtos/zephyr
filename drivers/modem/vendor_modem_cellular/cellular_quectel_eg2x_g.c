@@ -18,6 +18,15 @@ MODEM_CHAT_MATCHES_DEFINE(quectel_eg2x_g_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATC
 			  MODEM_CHAT_MATCH("+QENG: ", ",", quectel_eg2x_g_on_qeng));
 
 /*
+ * The neighbourcell report spans several lines terminated by OK, or a bare
+ * ERROR while the modem is not camped (searching / limited service). Both
+ * terminate the step, so an ERROR while searching completes the measurement
+ * with no cells instead of aborting it.
+ */
+MODEM_CHAT_MATCHES_DEFINE(qeng_neighbourcell_match, MODEM_CHAT_MATCH("OK", "", NULL),
+			  MODEM_CHAT_MATCH("ERROR", "", NULL));
+
+/*
  * AT+CMUX <port_speed> is specified in 3GPP TS 27.007 defining values 1..6 (up to 230400);
  * the EG2X-G accepts vendor values for higher rates. The modem moves its multiplexer UART
  * to the named rate on CMUX entry, so it must track the host rate selected by
@@ -100,11 +109,25 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_eg2x_g_periodic_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGREG?", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CSQ", csq_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+QENG=\"servingcell\"", ok_match));
+			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+QENG=\"servingcell\"",
+							      allow_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(quectel_eg2x_g_periodic_chat_script,
 			 quectel_eg2x_g_periodic_chat_script_cmds, abort_matches,
 			 modem_cellular_chat_callback_handler, 4);
+
+/*
+ * The measurement repeats the serving cell query that the neighbour rows are
+ * compared against.
+ */
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_eg2x_g_neighbor_scan_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+QENG=\"servingcell\"",
+							      allow_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+QENG=\"neighbourcell\"",
+							      qeng_neighbourcell_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(quectel_eg2x_g_neighbor_scan_chat_script,
+			 quectel_eg2x_g_neighbor_scan_chat_script_cmds, abort_matches, NULL, 15);
 
 /*
  * Field positions in the LTE serving-cell report:
@@ -116,6 +139,23 @@ MODEM_CHAT_SCRIPT_DEFINE(quectel_eg2x_g_periodic_chat_script,
 
 /* RAT token as it appears in argv, i.e. with the QENG surrounding quotes. */
 #define QENG_LTE_RAT_TOKEN "\"LTE\""
+
+/*
+ * argv[0] is the "+QENG: " prefix; the comma-separated fields follow, so field N
+ * of the response is argv[N]. The cell-type token at argv[1] selects the report
+ * kind. Non-LTE RATs use a different field layout and are ignored.
+ */
+#define QENG_CELLTYPE_ARGV 1
+
+/*
+ * LTE neighbours are reported as "neighbourcell intra"/"neighbourcell inter"; a
+ * prefix match covers both, plus the bare GSM/WCDMA "neighbourcell" token that
+ * the RAT guard then filters out.
+ */
+#define QENG_NEIGHBOURCELL_PREFIX "\"neighbourcell"
+
+/* Placeholder the modem emits for a field it has not measured. */
+#define QENG_UNMEASURED_FIELD "-"
 
 enum {
 	QENG_LTE_RAT = 3,
@@ -131,6 +171,75 @@ enum {
 	QENG_LTE_MIN_ARGC = 16,
 };
 
+/*
+ * Neighbour cell (LTE intra/inter):
+ * +QENG: "neighbourcell intra","LTE",<earfcn>,<pcid>,<rsrq>,<rsrp>,<rssi>,...
+ * +QENG: "neighbourcell inter","LTE",<earfcn>,<pcid>,<rsrq>,<rsrp>,<rssi>,...
+ * Both layouts share the leading fields used here (rsrq precedes rsrp, unlike
+ * the serving-cell report).
+ */
+enum {
+	QENG_NBR_LTE_RAT = 2,
+	QENG_NBR_LTE_EARFCN = 3,
+	QENG_NBR_LTE_PCID = 4,
+	QENG_NBR_LTE_RSRQ = 5,
+	QENG_NBR_LTE_RSRP = 6,
+	QENG_NBR_LTE_MIN_ARGC = 7,
+};
+
+static void quectel_eg2x_g_parse_neighbourcell(struct modem_cellular_data *data, char **argv,
+					       uint16_t argc)
+{
+	struct cellular_neighbor_cell cell = {0};
+
+	/*
+	 * Only LTE neighbours carry these fields; GSM/WCDMA neighbours reported
+	 * while camped on LTE use a different layout.
+	 */
+	if (argc < QENG_NBR_LTE_MIN_ARGC ||
+	    strcmp(argv[QENG_NBR_LTE_RAT], QENG_LTE_RAT_TOKEN) != 0) {
+		return;
+	}
+
+	/*
+	 * Inter-frequency rows list a frequency even when no cell was found on it,
+	 * leaving "-" placeholders for the identity and measurement fields. Drop
+	 * those so the list holds only measured neighbours, not empty candidates.
+	 */
+	if (strcmp(argv[QENG_NBR_LTE_PCID], QENG_UNMEASURED_FIELD) == 0 ||
+	    strcmp(argv[QENG_NBR_LTE_RSRP], QENG_UNMEASURED_FIELD) == 0 ||
+	    strcmp(argv[QENG_NBR_LTE_RSRQ], QENG_UNMEASURED_FIELD) == 0) {
+		return;
+	}
+
+	cell.access_tech = CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN;
+
+	/* All neighbour fields are decimal and unquoted. */
+	cell.cell.lte.earfcn = (uint32_t)strtoul(argv[QENG_NBR_LTE_EARFCN], NULL, 10);
+	cell.cell.lte.phys_cell_id = (uint16_t)strtoul(argv[QENG_NBR_LTE_PCID], NULL, 10);
+	cell.cell.lte.rsrq = (int8_t)strtol(argv[QENG_NBR_LTE_RSRQ], NULL, 10);
+	cell.cell.lte.rsrp = (int16_t)strtol(argv[QENG_NBR_LTE_RSRP], NULL, 10);
+
+	/* Zero RSRP is an unmeasured candidate, not a dBm level. */
+	if (cell.cell.lte.rsrp == 0) {
+		return;
+	}
+
+	/*
+	 * The intra-frequency report echoes the camped cell as a row. PCI is
+	 * unique per EARFCN, so a row matching the serving (EARFCN, PCI) is the
+	 * serving cell, not a neighbour; drop it. The measurement script polls
+	 * servingcell before neighbourcell, so the cached value is current here.
+	 */
+	if (data->network_status_valid &&
+	    cell.cell.lte.earfcn == data->network_status.cell.lte.earfcn &&
+	    cell.cell.lte.phys_cell_id == data->network_status.cell.lte.phys_cell_id) {
+		return;
+	}
+
+	modem_cellular_add_neighbor_cell(data, &cell);
+}
+
 static void quectel_eg2x_g_on_qeng(struct modem_chat *chat, char **argv, uint16_t argc,
 				   void *user_data)
 {
@@ -139,6 +248,17 @@ static void quectel_eg2x_g_on_qeng(struct modem_chat *chat, char **argv, uint16_
 		.status = data->registration_status_lte,
 		.access_tech = data->access_tech,
 	};
+
+	/*
+	 * Neighbour cell reports share the "+QENG: " prefix but carry their own
+	 * field layout; handle them separately from the serving-cell report below.
+	 */
+	if (argc > QENG_CELLTYPE_ARGV &&
+	    strncmp(argv[QENG_CELLTYPE_ARGV], QENG_NEIGHBOURCELL_PREFIX,
+		    strlen(QENG_NEIGHBOURCELL_PREFIX)) == 0) {
+		quectel_eg2x_g_parse_neighbourcell(data, argv, argc);
+		return;
+	}
 
 	/*
 	 * Only the LTE report carries the fields below; a shorter line (state
@@ -171,6 +291,7 @@ static const struct modem_cellular_vendor_config quectel_eg2x_g_vendor = {
 		.init = &quectel_eg2x_g_init_chat_script,
 		.dial = &quectel_eg2x_g_dial_chat_script,
 		.periodic = &quectel_eg2x_g_periodic_chat_script,
+		.neighbor_scan = &quectel_eg2x_g_neighbor_scan_chat_script,
 	},
 	.unsol_matches = {
 		.matches = quectel_eg2x_g_unsol,
