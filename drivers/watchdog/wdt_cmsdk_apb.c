@@ -62,13 +62,15 @@ struct wdog_cmsdk_apb {
 #define WDOG_STRUCT \
 	((volatile struct wdog_cmsdk_apb *)(DT_INST_REG_ADDR(0)))
 
+#define CMSDK_WDT_RESET_FLAGS DT_INST_PROP(0, reset_flags)
+
 /* Keep reference of the device to pass it to the callback */
 const struct device *wdog_r;
 
 /* watchdog reload value in clock cycles */
 static unsigned int reload_cycles = CMSDK_APB_WDOG_RELOAD;
 static uint8_t assigned_channels;
-static uint8_t flags;
+static uint8_t flags = WDT_FLAG_RESET_SOC;
 static bool enabled;
 
 static void (*user_cb)(const struct device *dev, int channel_id);
@@ -98,8 +100,11 @@ static int wdog_cmsdk_apb_setup(const struct device *dev, uint8_t options)
 	wdog->intclr = CMSDK_APB_WDOG_INTCLR;
 	wdog->load = reload_cycles;
 
-	/* Start the watchdog counter with INTEN bit */
-	wdog->ctrl = (CMSDK_APB_WDOG_CTRL_RESEN | CMSDK_APB_WDOG_CTRL_INTEN);
+	/* Start the watchdog counter with INTEN; RESEN if a reset was requested */
+	wdog->ctrl = CMSDK_APB_WDOG_CTRL_INTEN;
+	if ((flags & WDT_FLAG_RESET_MASK) != WDT_FLAG_RESET_NONE) {
+		wdog->ctrl |= CMSDK_APB_WDOG_CTRL_RESEN;
+	}
 
 	enabled = true;
 	return 0;
@@ -125,6 +130,7 @@ static int wdog_cmsdk_apb_install_timeout(const struct device *dev,
 {
 	volatile struct wdog_cmsdk_apb *wdog = WDOG_STRUCT;
 	uint32_t clk_freq_khz = DT_INST_PROP_BY_PHANDLE(0, clocks, clock_frequency) / 1000;
+	uint8_t reset = config->flags & WDT_FLAG_RESET_MASK;
 
 	ARG_UNUSED(dev);
 
@@ -136,6 +142,11 @@ static int wdog_cmsdk_apb_install_timeout(const struct device *dev,
 	}
 	if (assigned_channels == 1) {
 		return -ENOMEM;
+	}
+	if (reset != WDT_FLAG_RESET_NONE) {
+		if ((CMSDK_WDT_RESET_FLAGS & reset) != reset) {
+			return -ENOTSUP;
+		}
 	}
 
 	/* Reload value */
