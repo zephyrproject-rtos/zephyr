@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Dev It Wise
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - net
+    - dns
+  toolchain_allow: host/llvm
+  platform_allow:
+    - native_sim/native/64
+tests:
+  net.dns.fuzz:
+    # The harness is driven by libFuzzer, which runs until it is told to
+    # stop; Twister only keeps it compiling against the parser's API.
+    build_only: true
