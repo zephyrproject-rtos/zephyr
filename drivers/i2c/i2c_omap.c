@@ -14,7 +14,14 @@
 #include <zephyr/irq.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util.h>
+
+#include "i2c-priv.h"
+
+#ifdef CONFIG_CLOCK_CONTROL_TISCI
+#include <zephyr/drivers/clock_control/tisci_clock_control.h>
+#endif
 
 #ifdef CONFIG_I2C_OMAP_BUS_RECOVERY
 #include "i2c_bitbang.h"
@@ -28,6 +35,12 @@ LOG_MODULE_REGISTER(omap_i2c, CONFIG_I2C_LOG_LEVEL);
 #define SYSS_RESETDONE_MASK  BIT(0)
 #define I2C_OMAP_SYSC_SRST   BIT(1)
 #define RETRY                -1
+/* OMAP I2C internal clock targets for PSC (TRM), not I2C_BITRATE_* bus rates */
+#define I2C_OMAP_DEFAULT_FCLK_HZ  96000000U
+#define I2C_OMAP_ICLK_STANDARD_HZ 4000000U
+#define I2C_OMAP_ICLK_FAST_HZ     9600000U
+#define I2C_OMAP_SCLL_TRIM        7U
+#define I2C_OMAP_SCLH_TRIM        5U
 /* Write to IRQENABLE_CLR to mask all interrupt sources */
 #define I2C_BUFSTAT_RX_MASK  GENMASK(13, 8)
 #define I2C_BUFSTAT_TX_MASK  GENMASK(5, 0)
@@ -124,13 +137,9 @@ struct i2c_omap_cfg {
 	DEVICE_MMIO_ROM;
 	uint32_t irq;
 	uint32_t speed;
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
 	const struct pinctrl_dev_config *pcfg;
-};
-
-enum i2c_omap_speed {
-	I2C_OMAP_SPEED_STANDARD,
-	I2C_OMAP_SPEED_FAST,
-	I2C_OMAP_SPEED_FAST_PLUS,
 };
 
 struct i2c_omap_speed_config {
@@ -141,7 +150,8 @@ struct i2c_omap_speed_config {
 
 struct i2c_omap_data {
 	DEVICE_MMIO_RAM;
-	enum i2c_omap_speed speed;
+	uint32_t speed;
+	uint32_t dev_config;
 	struct i2c_omap_speed_config speed_config;
 	struct i2c_msg current_msg;
 	struct k_sem lock;
@@ -203,6 +213,36 @@ static int i2c_omap_reset(const struct device *dev)
 	return 0;
 }
 
+static int i2c_omap_get_fclk(const struct device *dev, uint32_t *fclk_hz)
+{
+	const struct i2c_omap_cfg *cfg = DEV_CFG(dev);
+	int ret;
+
+	if (cfg->clock_dev == NULL) {
+		*fclk_hz = I2C_OMAP_DEFAULT_FCLK_HZ;
+		LOG_WRN("no clocks property; using default fclk %u Hz", I2C_OMAP_DEFAULT_FCLK_HZ);
+		return 0;
+	}
+
+	if (!device_is_ready(cfg->clock_dev)) {
+		LOG_ERR("clock controller not ready");
+		return -ENODEV;
+	}
+
+	ret = clock_control_get_rate(cfg->clock_dev, cfg->clock_subsys, fclk_hz);
+	if (ret < 0) {
+		LOG_ERR("clock_control_get_rate failed (%d)", ret);
+		return ret;
+	}
+
+	if (*fclk_hz == 0U) {
+		LOG_ERR("functional clock rate is zero");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 /**
  * @brief Set the speed of the OMAP I2C controller.
  *
@@ -218,28 +258,57 @@ static int i2c_omap_reset(const struct device *dev)
 static int i2c_omap_set_speed(const struct device *dev, uint32_t speed)
 {
 	struct i2c_omap_data *data = DEV_DATA(dev);
+	uint32_t internal_clk;
+	uint32_t psc;
+	uint32_t scl;
+	uint32_t scll;
+	uint32_t sclh;
+	uint32_t fclk_hz;
+	int ret;
 
-	/* If configured for High Speed */
-	switch (speed) {
-	case I2C_BITRATE_FAST:
-		/* Fast mode */
-		data->speed_config = (struct i2c_omap_speed_config){
-			.pscstate = 9,
-			.scllstate = 7,
-			.sclhstate = 5,
-		};
-		break;
-	case I2C_BITRATE_STANDARD:
-		/* Standard mode */
-		data->speed_config = (struct i2c_omap_speed_config){
-			.pscstate = 23,
-			.scllstate = 13,
-			.sclhstate = 15,
-		};
-		break;
-	default:
+	ret = i2c_omap_get_fclk(dev, &fclk_hz);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (speed > I2C_BITRATE_STANDARD) {
+		internal_clk = I2C_OMAP_ICLK_FAST_HZ;
+	} else {
+		internal_clk = I2C_OMAP_ICLK_STANDARD_HZ;
+	}
+
+	psc = fclk_hz / internal_clk;
+	if (psc == 0U) {
+		return -EINVAL;
+	}
+	psc -= 1U;
+
+	internal_clk = fclk_hz / (psc + 1U);
+	if (internal_clk < (speed * 2U)) {
 		return -ERANGE;
 	}
+
+	scl = internal_clk / speed;
+	if (scl <= (I2C_OMAP_SCLL_TRIM + I2C_OMAP_SCLH_TRIM)) {
+		return -ERANGE;
+	}
+
+	if (speed > I2C_BITRATE_STANDARD) {
+		scll = scl - (scl / 3U) - I2C_OMAP_SCLL_TRIM;
+		sclh = (scl / 3U) - I2C_OMAP_SCLH_TRIM;
+	} else {
+		scll = (scl / 2U) - I2C_OMAP_SCLL_TRIM;
+		sclh = (scl / 2U) - I2C_OMAP_SCLH_TRIM;
+	}
+
+	if ((scll > 0xffU) || (sclh > 0xffU)) {
+		return -ERANGE;
+	}
+
+	data->speed_config.pscstate = psc;
+	data->speed_config.scllstate = scll;
+	data->speed_config.sclhstate = sclh;
+	data->speed = speed;
 
 	return 0;
 }
@@ -258,6 +327,7 @@ static int i2c_omap_configure(const struct device *dev, uint32_t dev_config)
 {
 	uint32_t speed_cfg = I2C_BITRATE_STANDARD;
 	struct i2c_omap_data *data = DEV_DATA(dev);
+	int ret;
 
 	switch (I2C_SPEED_GET(dev_config)) {
 	case I2C_SPEED_STANDARD:
@@ -273,9 +343,20 @@ static int i2c_omap_configure(const struct device *dev, uint32_t dev_config)
 		return -ENOTSUP;
 	}
 	k_sem_take(&data->lock, K_FOREVER);
-	i2c_omap_set_speed(dev, speed_cfg);
-	i2c_omap_init_ll(dev);
+	ret = i2c_omap_set_speed(dev, speed_cfg);
+	if (ret == 0) {
+		i2c_omap_init_ll(dev);
+		data->dev_config = dev_config;
+	}
 	k_sem_give(&data->lock);
+	return ret;
+}
+
+static int i2c_omap_get_config(const struct device *dev, uint32_t *config)
+{
+	struct i2c_omap_data *data = DEV_DATA(dev);
+
+	*config = data->dev_config;
 	return 0;
 }
 
@@ -748,6 +829,7 @@ static int i2c_omap_transfer_polling(const struct device *dev, struct i2c_msg ms
 static DEVICE_API(i2c, i2c_omap_api) = {
 	.transfer = i2c_omap_transfer_polling,
 	.configure = i2c_omap_configure,
+	.get_config = i2c_omap_get_config,
 #ifdef CONFIG_I2C_OMAP_BUS_RECOVERY
 	.recover_bus = i2c_omap_recover_bus,
 #endif /* CONFIG_I2C_OMAP_BUS_RECOVERY */
@@ -797,16 +879,43 @@ static int i2c_omap_init(const struct device *dev)
 		data->fifo_size = 8U;
 	}
 
+	data->dev_config = I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(cfg->speed);
+
 	return 0;
 }
 
+/* clang-format off */
+#define I2C_OMAP_CLOCK_DEV(inst)                                                                   \
+	COND_CODE_1(DT_INST_CLOCKS_HAS_IDX(inst, 0),                                               \
+		    (DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst))), (NULL))
+
+#if defined(CONFIG_CLOCK_CONTROL_TISCI)
+#define I2C_OMAP_CLK_SUBSYS_DEFINE(inst) \
+	COND_CODE_1(DT_INST_CLOCKS_HAS_IDX(inst, 0), \
+		(static struct tisci_clock_config i2c_omap_tisci_clk_##inst = \
+			TISCI_GET_CLOCK_DETAILS_BY_INST(inst);), ())
+#else
+#define I2C_OMAP_CLK_SUBSYS_DEFINE(inst)
+#endif
+
+#define I2C_OMAP_CLK_SUBSYS(inst) \
+	COND_CODE_1(DT_INST_CLOCKS_HAS_IDX(inst, 0), \
+		(COND_CODE_1(CONFIG_CLOCK_CONTROL_TISCI, \
+			((clock_control_subsys_t)&i2c_omap_tisci_clk_##inst), \
+		(COND_CODE_1(CONFIG_CLOCK_CONTROL_ARM_SCMI, \
+			((clock_control_subsys_t)DT_INST_PHA(inst, clocks, name)), \
+			(NULL))))), (NULL))
+
 #define I2C_OMAP_INIT(inst)                                                                        \
 	PINCTRL_DT_INST_DEFINE(inst);                                                              \
+	I2C_OMAP_CLK_SUBSYS_DEFINE(inst);                                                         \
 	LOG_INSTANCE_REGISTER(omap_i2c, inst, CONFIG_I2C_LOG_LEVEL);                               \
 	static const struct i2c_omap_cfg i2c_omap_cfg_##inst = {                                   \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(inst)),                                           \
 		.irq = DT_INST_IRQN(inst),                                                         \
 		.speed = DT_INST_PROP(inst, clock_frequency),                                      \
+		.clock_dev = I2C_OMAP_CLOCK_DEV(inst),                                             \
+		.clock_subsys = I2C_OMAP_CLK_SUBSYS(inst),                                        \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
 	};                                                                                         \
                                                                                                    \
@@ -821,4 +930,5 @@ static int i2c_omap_init(const struct device *dev)
 		CONFIG_I2C_INIT_PRIORITY,                                                          \
 		&i2c_omap_api);
 
+/* clang-format on */
 DT_INST_FOREACH_STATUS_OKAY(I2C_OMAP_INIT)
