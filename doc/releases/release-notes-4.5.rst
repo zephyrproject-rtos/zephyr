@@ -50,6 +50,8 @@ Major enhancements with this release include:
   - :ref:`Precision timing <precision_timing>` for shared checked time arithmetic, clock operations,
     and PI control
   - :ref:`Video <video_api>` for controlling video drivers
+  - :ref:`SCSI mid-layer <scsi_midlayer>` for transport-neutral initiator command
+    execution and shared CDB helpers (USB device MSC uses opcodes only)
 
 An overview of the changes required or recommended when migrating your application from Zephyr
 v4.4.0 to Zephyr v4.5.0 can be found in the separate :ref:`migration guide<migration_4.5>`.
@@ -967,6 +969,17 @@ New APIs and options
   * :c:func:`ring_buf_get_ptr`
   * :c:func:`ring_buf_commit`
   * :c:func:`ring_buf_consume`
+
+* SCSI
+
+  * :ref:`SCSI mid-layer <scsi_midlayer>` (:c:func:`scsi_exec`, :c:func:`scsi_device_probe`,
+    CDB builders in :zephyr_file:`include/zephyr/scsi/scsi_cmd.h`)
+  * :c:func:`scsi_disk_register`, :c:func:`scsi_partition_walk`, and
+    :c:func:`scsi_partition_find_fat_volume` when
+    :kconfig:option:`CONFIG_DISK_DRIVER_SCSI` is enabled
+  * :c:func:`disk_partition_walk`, :c:func:`disk_partition_find_fat_volume`, and
+    :c:func:`disk_partition_find_ext2_volume` when :kconfig:option:`CONFIG_DISK_PARTITION`
+    is enabled
 
 * Secure Storage
 
