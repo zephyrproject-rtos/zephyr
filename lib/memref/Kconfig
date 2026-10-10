@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Måns Ansgariusson <mansgariusson@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Memref: shared memory references"
+
+config MEMREF
+	bool "Shared memory references"
+	help
+	  This option enables the shared memory references API, which
+	  allows multiple threads to share ownership of a memory block
+	  through reference counting.
+
+config MEMREF_DESTROY_CB
+	bool "Destroy callback support"
+	depends on MEMREF
+	help
+	  Store a per-allocation destroy callback in the memref control
+	  block, invoked with the user pointer just before the block is
+	  returned to its backend. Costs one pointer per allocation.
+
+endmenu
