@@ -15,10 +15,10 @@
 #define DNS_HEADER_SIZE	12
 
 static uint8_t dns_buf[MAX_BUF_SIZE];
-static uint16_t dns_buf_len;
+static uint32_t dns_buf_len;
 
 static uint8_t qname[MAX_BUF_SIZE];
-static uint16_t qname_len;
+static uint32_t qname_len;
 
 static struct dns_resolve_context dns_ctx;
 
@@ -51,7 +51,7 @@ static uint8_t query_mdns[] = {
 static uint16_t tid1 = 0xda0f;
 
 static int eval_query(const char *dname, uint16_t tid, enum dns_rr_type type,
-		      uint8_t *expected, uint16_t expected_len)
+		      uint8_t *expected, uint32_t expected_len)
 {
 	uint8_t *question;
 	int rc;
