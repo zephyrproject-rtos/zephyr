@@ -8,6 +8,7 @@ menuconfig ETH_LAN9250
 	bool "LAN9250 Ethernet Controller"
 	default y
 	depends on DT_HAS_MICROCHIP_LAN9250_ENABLED
+	select GPIO
 	select SPI
 	help
 	  LAN9250 Stand-Alone Ethernet Controller
@@ -28,6 +29,15 @@ config ETH_LAN9250_RX_THREAD_PRIO
 	help
 	  Priority level for internal thread which is ran for incoming
 	  packet processing.
+
+config ETH_LAN9250_SPI_FAST_READ
+	bool "Use the SPI Fast Read instruction"
+	default y
+	help
+	  Read registers and the RX data FIFO with the SPI Fast Read
+	  instruction (0x0B), which supports SPI clock rates up to 80 MHz.
+	  The Read instruction (0x03) is limited to 30 MHz. Fast Read adds
+	  one dummy byte to each read transfer.
 
 config ETH_LAN9250_BUF_ALLOC_TIMEOUT
 	int "Network buffer allocation timeout"
