@@ -649,11 +649,6 @@ void z_reschedule_irqlock(uint32_t key)
 	if (resched(key) && need_swap()) {
 		z_swap_irqlock(key);
 	} else {
-		/* TODO: We only hold the IRQ lock here, not the scheduler's
-		 * spinlock, violating the locking requirement documented in
-		 * signal_pending_ipi(). This can result in added delayed
-		 * rescheduling.
-		 */
 		signal_pending_ipi();
 		irq_unlock(key);
 	}
