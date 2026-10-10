@@ -10,3 +10,6 @@ supported:
   - spi
   - adc
   - gpio
+variants:
+  stm32_min_dev/stm32f103x8:
+    twister: true
