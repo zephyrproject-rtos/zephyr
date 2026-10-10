@@ -575,6 +575,8 @@ New APIs and options
   * :kconfig:option:`CONFIG_RISCV_SOC_SYSCALL_CLOSE_ECALL` (RISC-V SoC hook to leave the
     ecall exception before the user-mode syscall body runs, for SoCs that cannot deliver a
     fault raised by the body while that exception is open)
+  * :c:func:`semihost_exit` and :c:func:`semihost_debugger_attached` (report an exit reason
+    and status to the host through semihosting, see :ref:`semihost_guide`)
 
 * Audio
 
@@ -787,6 +789,8 @@ New APIs and options
     :c:func:`k_irq_lock`, :c:func:`k_irq_unlock`, :c:func:`k_irq_enable`,
     :c:func:`k_irq_disable`, :c:func:`k_irq_is_enabled`,
     :c:func:`k_irq_connect_dynamic` and :c:func:`k_irq_disconnect_dynamic`
+  * :kconfig:option:`CONFIG_SEMIHOST_EXIT_ON_FATAL_ERROR` (report fatal errors to an
+    attached debugger through semihosting)
 
 * LIN
 
@@ -994,6 +998,11 @@ New APIs and options
   * :c:func:`zbus_runtime_channel_init`
   * :c:func:`zbus_runtime_channel_register`
   * :c:func:`zbus_runtime_channel_unregister`
+
+* ZTest
+
+  * :kconfig:option:`CONFIG_ZTEST_SEMIHOST_EXIT` (report the test result to an attached
+    debugger through semihosting)
 
 .. zephyr-keep-sorted-stop
 

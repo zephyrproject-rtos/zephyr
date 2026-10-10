@@ -54,6 +54,21 @@ directory of the running process.
    /* Close the file */
    semihost_close(fd);
 
+Reporting Exit Status
+*********************
+
+:c:func:`semihost_exit` reports an exit reason and status to the host, which
+normally stops execution and uses the status as its exit code.
+
+.. code-block:: c
+
+   semihost_exit(SEMIHOST_EXIT_APPLICATION_EXIT, 0);
+
+A semihosting call faults if no debugger is attached, so :c:func:`semihost_exit`
+returns ``-ENODEV`` unless :c:func:`semihost_debugger_attached` reports one.
+Arm Cortex-M, except ARMv6-M, detects a debugger through ``DHCSR.C_DEBUGEN``.
+Other architectures report one only on emulated targets.
+
 Additional Functionality
 ************************
 
