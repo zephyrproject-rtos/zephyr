@@ -12,6 +12,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <errno.h>
+
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/conn.h>
@@ -28,8 +30,6 @@ static uint8_t new_call_index;
 static char remote_uri[CONFIG_BT_TBS_MAX_URI_LENGTH + 1];
 
 static K_SEM_DEFINE(sem_discovery_done, 0U, 1U);
-
-static struct bt_conn *default_conn;
 
 static void discover_cb(struct bt_conn *conn, int err, uint8_t tbs_count, bool gtbs_found)
 {
@@ -159,9 +159,9 @@ int ccp_call_ctrl_init(struct bt_conn *conn)
 {
 	int err;
 
-	default_conn = bt_conn_ref(conn);
 	err = bt_tbs_client_register_cb(&tbs_client_cb);
-	if (err != 0) {
+	if (err != 0 && err != -EEXIST) {
+		/* -EEXIST is expected when a later peer reconnects and re-runs init. */
 		return err;
 	}
 
@@ -175,11 +175,11 @@ int ccp_call_ctrl_init(struct bt_conn *conn)
 	return err;
 }
 
-int ccp_originate_call(void)
+int ccp_originate_call(struct bt_conn *conn)
 {
 	int err;
 
-	err = bt_tbs_client_originate_call(default_conn, BT_TBS_GTBS_INDEX, remote_uri);
+	err = bt_tbs_client_originate_call(conn, BT_TBS_GTBS_INDEX, remote_uri);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		printk("TBS originate call failed: %d\n", err);
 	}
@@ -187,11 +187,11 @@ int ccp_originate_call(void)
 	return err;
 }
 
-int ccp_terminate_call(void)
+int ccp_terminate_call(struct bt_conn *conn)
 {
 	int err;
 
-	err = bt_tbs_client_terminate_call(default_conn, BT_TBS_GTBS_INDEX, new_call_index);
+	err = bt_tbs_client_terminate_call(conn, BT_TBS_GTBS_INDEX, new_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		printk("TBS terminate call failed: %d\n", err);
 	}
