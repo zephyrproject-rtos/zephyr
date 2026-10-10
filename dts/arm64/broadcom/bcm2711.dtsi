@@ -269,6 +269,17 @@
 			status = "disabled";
 		};
 
+		spi0: spi@fe204000 {
+			compatible = "brcm,bcm2835-spi";
+			reg = <0xfe204000 0x200>;
+			interrupts = <GIC_SPI 118 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&clk_vpu>;
+			status = "disabled";
+		};
+
 		usb0: usb@fe980000 {
 			compatible = "brcm,bcm2835-usb", "snps,dwc2";
 			reg = <0xfe980000 0x10000>;
