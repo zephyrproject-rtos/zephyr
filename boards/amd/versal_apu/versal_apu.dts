@@ -39,3 +39,15 @@
 	current-speed = <115200>;
 	clock-frequency = <100000000>;
 };
+
+&ttc0_timer0 {
+	status = "okay";
+};
+
+&ttc0_timer1 {
+	status = "okay";
+};
+
+&ttc0_timer2 {
+	status = "okay";
+};
