@@ -1,0 +1,13 @@
+sample:
+  name: USB host MSD mass storage sample
+tests:
+  sample.subsys.usb.host.msd:
+    tags:
+      - usbh
+      - samples
+    platform_allow:
+      - rd_rw612_bga/rw612
+      - mimxrt700_evk/mimxrt798s/cm33_cpu0
+    integration_platforms:
+      - rd_rw612_bga/rw612
+      - mimxrt700_evk/mimxrt798s/cm33_cpu0

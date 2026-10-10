@@ -4,3 +4,5 @@
 
 rsource "Kconfig.uvc"
 rsource "Kconfig.hub"
+rsource "Kconfig.uac2"
+rsource "Kconfig.msd"
