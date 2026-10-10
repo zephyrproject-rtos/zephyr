@@ -1,0 +1,79 @@
+# Copyright (c) 2026 Christopher Ruehl
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Vishay VEML3328 RGBC,IR Sensor With I2C Interface.
+    See: https://www.vishay.com/en/product/84968/
+
+compatible: "vishay,veml3328"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  dg:
+    type: int
+    default: 0x00
+    description: |
+      DG setting as described in the datasheet on page 7.
+      The DG is set with Bit 13,12 at Register 0x00
+      Possible values are:
+        0x00 = DG x1  (0b00)
+        0x01 = DG x2  (0b01)
+        0x02 = DG x4  (0b10)
+        0x03 = Reserved, do not use
+    enum:
+      - 0x00
+      - 0x01
+      - 0x02
+
+  gain:
+    type: int
+    default: 0x00
+    description: |
+      Gain setting as described in the datasheet on page 7.
+      The gain is set with Bit 11,10 at Register 0x00
+      Possible values are:
+        0x00 = Gain x1  (0b00)
+        0x01 = Gain x2  (0b01)
+        0x02 = Gain x4  (0b10)
+        0x03 = Gain 1/2 (0b11)
+    enum:
+      - 0x00
+      - 0x01
+      - 0x02
+      - 0x03
+
+  it:
+    type: int
+    default: 0x00
+    description: |
+      Integration Time (IT), described in the datasheet on page 7.
+      IT is set with Bit 5,4 at Register 0x00
+      Possible values are:
+        0x00 = 50ms  (0b00)
+        0x01 = 100ms (0b01)
+        0x02 = 200ms (0b10)
+        0x03 = 400ms (0b11)
+    enum:
+      - 0x00
+      - 0x01
+      - 0x02
+      - 0x03
+
+  active-force-mode:
+    type: boolean
+    description: |
+      Active Force Mode, described in the datasheet on page 7.
+      The mode is set with Bit 3 at Register 0x00
+
+  sd-als-only:
+    type: boolean
+    description: |
+      Sense Ambiente Light only described in the datasheet on page 7.
+      SD_ALS_ONLY is set with Bit 14 at Register 0x00
+
+  sens:
+    type: boolean
+    description: |
+      Low Sensetivity, described in the datasheet on page 7.
+      Low Sensetivity (1/3) set with Bit 6 at Register 0x00
