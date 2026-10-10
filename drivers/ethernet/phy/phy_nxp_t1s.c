@@ -204,7 +204,11 @@ static DEVICE_API(ethphy, nxp_t1s_phy_api) = {
 	static const struct nxp_t1s_config nxp_t1s_##n##_config = {     \
 		.plca_config = {                                            \
 			.nodeId = DT_INST_PROP(n, plca_node_id),                \
-			.nodeCount = DT_INST_PROP(n, plca_node_count),          \
+			.nodeCount = COND_CODE_0( \
+				DT_INST_PROP(n, plca_node_id), \
+				(DT_INST_PROP(n, plca_node_count)), \
+				(DT_INST_PROP_OR(n, plca_node_count, 0)) \
+			), \
 			.toTimer = DT_INST_PROP(n, plca_to_timer),              \
 			.burstTimer = DT_INST_PROP(n, plca_burst_timer),        \
 			.maxBurstCount = DT_INST_PROP(n, plca_burst_count),     \
