@@ -5,7 +5,10 @@
  */
 
 &pinctrl {
-	/* "J9" connector (1:3V3, 2:SCL, 3:SDA, 4:GND), at the top */
+	/* "J9" connector (1:3V3, 2:SCL, 3:SDA, 4:GND), at the top, shared with
+	 * the touch controller, the DVP camera connector and, on the S1, the
+	 * audio codec
+	 */
 	i2c0_default: i2c0_default {
 		group1 {
 			pinmux = <GPIO0_I2C0_SCL>,
