@@ -1,0 +1,45 @@
+# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: Microchip SAMA7G5 CSI-2 Demux Controller (CSI2DC)
+
+description: |
+  The CSI-2 Demux Controller receives the CSI-2 packet stream from the MIPI
+  CSI-2 host controller on its IDI input and converts one virtual channel and
+  data type into an unpacked parallel video stream for the Image Sensor
+  Controller (ISC), through its internal video pipeline.
+
+  The sink port (port@0) describes the link to the CSI-2 host controller, the
+  source port (port@1) the parallel link to the ISC.
+
+compatible: "microchip,sama7g5-csi2dc"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  microchip,virtual-channel:
+    type: int
+    default: 0
+    enum: [0, 1, 2, 3]
+    description: |
+      CSI-2 virtual channel identifier demultiplexed into the video pipeline.
+
+  microchip,non-continuous-clock:
+    type: boolean
+    description: |
+      Set when the image sensor stops its CSI-2 clock lane between transmissions.
+      When absent, the clock lane is assumed to keep running, which is the case
+      for most sensors, and the MIPIFRN bit is set accordingly.
+
+child-binding:
+  child-binding:
+    child-binding:
+      include: video-interfaces.yaml

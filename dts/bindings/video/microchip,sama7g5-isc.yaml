@@ -1,0 +1,78 @@
+# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: Microchip SAMA7G5 Image Sensor Controller (XISC)
+
+description: |
+  The eXtended Image Sensor Controller samples a parallel video stream, either
+  from the CSI-2 Demux Controller (CSI2DC) or from the parallel camera pins, runs
+  it through its image processing pipeline and writes the frames to memory with
+  its own DMA master.
+
+  Raw Bayer input can either be written to memory unmodified, or converted by the
+  pipeline (white balance, Bayer interpolation, color correction, color space
+  conversion) into RGB or YUV frames.
+
+  The single input port describes the parallel link feeding the parallel front end.
+
+compatible: "microchip,sama7g5-isc"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  microchip,mipi-mode:
+    type: boolean
+    description: |
+      Set when the parallel front end is fed by the CSI2DC video pipeline instead
+      of the parallel camera pins. The front end then handles the data and clock
+      lines differently.
+
+  microchip,black-level-offset:
+    type: int
+    default: 0
+    description: |
+      Black level pedestal the sensor adds to its samples, in counts at a 10-bit
+      sample width, which the pipeline subtracts before interpolating the Bayer
+      pattern. The value is scaled to the width actually sampled, and the
+      hardware saturates it at 511.
+
+      The pedestal is a property of the sensor and of how it is configured, so
+      the default of zero leaves the samples untouched. Subtracting more than the
+      sensor actually adds darkens the image and clips the low end.
+
+  microchip,srgb-gamma:
+    type: boolean
+    description: |
+      Encode the frames the pipeline converts with the sRGB transfer function,
+      instead of leaving them linear.
+
+      Displays expect encoded input, so the frames of a board that leaves this
+      out look dark in the shadows and washed out elsewhere. Set it unless the
+      frames feed something that wants linear light, such as a further
+      processing stage of its own.
+
+      The property has no effect on raw Bayer output, which the pipeline writes
+      to memory untouched.
+
+  microchip,sensor-clock-div:
+    type: int
+    default: 0
+    description: |
+      Divider applied to the ISC peripheral clock to generate the camera sensor
+      reference clock (ISC_MCK), which also clocks the CSI2DC video pipeline.
+      The resulting rate is the peripheral clock divided by (div + 1).
+
+child-binding:
+  child-binding:
+    include: video-interfaces.yaml

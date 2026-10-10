@@ -13,6 +13,7 @@
 #include <zephyr/dt-bindings/gpio/microchip-sam-gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/video/video-interfaces.h>
 #include <microchip/sam/sama7/sama7g5/sama7g54.dtsi>
 
 / {
@@ -31,11 +32,23 @@
 	};
 
 	chosen {
+		zephyr,camera = &isc;
 		zephyr,sram = &ddram;
 		zephyr,canbus = &mcan0;
 		zephyr,console = &usart3;
 		zephyr,entropy = &trng;
 		zephyr,shell-uart = &usart3;
+	};
+
+	/*
+	 * Reference clock of the camera module on the CSI connector. The ISC_MCK
+	 * output of the SoC is not routed on this board, both of its pins being
+	 * used by the Ethernet MACs, so the module is clocked on board.
+	 */
+	camera_clk: camera-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <DT_FREQ_M(24)>;
+		#clock-cells = <0>;
 	};
 
 	clocks {
@@ -152,6 +165,40 @@
 	status = "okay";
 };
 
+&csi2dc {
+	/*
+	 * The IMX219 does gate its clock lane between packets, but that is a
+	 * property of the serial link and is described on the sensor endpoint,
+	 * where the D-PHY needs it. It must not be repeated here: it would tie
+	 * the demultiplexer's parallel output to the gated serial clock, leaving
+	 * the video pipe unable to drain between packets, and the packet buffer
+	 * overflows. Linux and the bare metal reference code both run the pipe
+	 * free running with this sensor.
+	 */
+	status = "okay";
+};
+
+&csi2host {
+	status = "okay";
+
+	/*
+	 * High-speed bit rate code of the D-PHY receiver for the two lane IMX219
+	 * link, as used by the Microchip bare-metal bring-up code for this sensor.
+	 */
+
+	ports {
+		port@1 {
+			reg = <1>;
+
+			csi2host_ep_in: endpoint {
+				remote-endpoint-label = "imx219_ep_out";
+				bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
+				data-lanes = <1 2>;
+			};
+		};
+	};
+};
+
 &dma0 {
 	status = "okay";
 };
@@ -184,6 +231,23 @@
 		pinctrl-0 = <&pinctrl_i2c8_default>;
 		pinctrl-names = "default";
 		status = "okay";
+
+		imx219: imx219@10 {
+			compatible = "sony,imx219";
+			reg = <0x10>;
+			clocks = <&camera_clk>;
+			/* XCLR of the camera module, released to enable the sensor */
+			reset-gpios = <&pioe 1 GPIO_ACTIVE_HIGH>;
+			status = "okay";
+
+			port {
+				imx219_ep_out: endpoint {
+					remote-endpoint-label = "csi2host_ep_in";
+					bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
+					data-lanes = <1 2>;
+				};
+			};
+		};
 
 		eeprom0: eeprom0@52 {
 			compatible = "atmel,24mac02e4", "atmel,at24";
@@ -313,6 +377,16 @@
 		int-gpios = <&pioa 21 GPIO_ACTIVE_LOW>;
 		microchip,interface-type = "rmii-25MHz";
 	};
+};
+
+&isc {
+	status = "okay";
+
+	/*
+	 * The converted frames are meant for a display or a host rather than for
+	 * further processing, so hand them over encoded instead of linear.
+	 */
+	microchip,srgb-gamma;
 };
 
 &mcan0 {

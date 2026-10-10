@@ -51,6 +51,101 @@ Connections and IOs
 
 The `SAMA7G54-EK User Guide`_ has detailed information about board connections.
 
+MIPI CSI-2 camera
+=================
+
+The Raspberry Pi CSI camera connector (J17) is wired to the MIPI CSI-2 capture
+pipeline of the SoC, made of three blocks chained together:
+
+.. code-block:: none
+
+   sensor --CSI-2--> csi2host --IDI--> csi2dc --parallel--> isc --> memory
+
+The board devicetree describes a `Raspberry Pi Camera Module 2`_ (Sony IMX219)
+attached to that connector: the sensor is controlled over ``i2c8`` at address
+0x10 and sends two CSI-2 D-PHY data lanes. The Image Sensor Controller is the
+``zephyr,camera`` chosen node, so the video samples capture from it directly:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/video/capture
+   :board: sama7g54_ek
+   :goals: build
+
+The controller writes raw Bayer frames (``SRGGB8``, ``SRGGB10``) to memory, or
+converts them to ``RGB565``, ``BGRX32``, ``YUYV`` or ``GREY`` with its image
+processing pipeline. Converted frames are gamma corrected with the sRGB transfer
+function, so they are ready for a display, but scaling, automatic white balance
+and automatic exposure are not implemented and the gains are fixed at unity.
+
+The contrast, brightness, hue and saturation of the ``YUYV`` and ``GREY`` frames
+are adjustable with the ``video ctrl`` shell command, as are the exposure time
+and the analog and digital gains of the sensor. Since nothing drives the exposure
+automatically, those are the controls to reach for when the image is too dark.
+
+The sensor is cropped to the requested resolution rather than scaled, and the
+pipeline has been exercised up to 1920x1080 at 30 frames per second. The sample
+configuration sizes its buffer pool for that resolution, so any smaller one can
+be selected at run time with the ``video format`` shell command.
+
+The D-PHY configuration clock is derived from the CSI generated clock (GCLK 33),
+which the driver programs to 26.6 MHz from one of the SoC PLLs.
+
+OV5647 camera module
+--------------------
+
+The `Raspberry Pi Camera Module 1`_ (OmniVision OV5647) fits the same connector,
+and an overlay describes it in place of the IMX219, at address 0x36 of ``i2c8``:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/video/capture
+   :board: sama7g54_ek
+   :gen-args: -DEXTRA_DTC_OVERLAY_FILE=boards/microchip/sam/sama7g54_ek/ov5647.overlay
+   :goals: build
+
+Only one of the two sensors can be described at a time, since the CSI-2 receiver
+binds to its source when the image is built.
+
+This sensor streams ``SBGGR10P`` alone, which the pipeline converts just as it
+does the raw formats of the IMX219, and it is cropped out of the middle of its
+2592x1944 pixel array the same way. Its own exposure and gain control run the
+image by default, so it does not need the manual gains the IMX219 does; the
+``video ctrl`` shell command switches either of them to manual, and the manual
+value then picks up where the automatic one left off.
+
+The module sits in the connector with its first row of pixels at the bottom of the
+scene, so the overlay sets ``vertical-flip`` to bring the frames the right way up.
+The sensor flips its pixel array and the window its own processing takes out of it
+together, which leaves the Bayer order the pipeline is told correct, and the
+``video ctrl`` shell command adjusts either axis at run time.
+
+The board supplies the sensor with 24 MHz rather than the 25 MHz it is nominally
+clocked at, so every rate derived from it comes out 4% low: the lanes run at
+420 Mbps and the full resolution reaches 15 frames per second.
+
+USB video device
+================
+
+The board can present the camera to a host as a USB webcam, over the USB device
+port that ``zephyr_udc0`` describes:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/usb/uvc
+   :board: sama7g54_ek
+   :goals: build
+
+``YUYV`` is the only pixel format the image processing pipeline and USB Video
+have in common, so it is the one offered to the host, at the resolutions between
+QQVGA and 720p that fit the buffer pool. The host picks one, and any standard
+UVC application can then display the stream:
+
+.. code-block:: console
+
+   v4l2-ctl --list-formats-ext
+   ffplay /dev/video0
+
+The frames travel on a bulk endpoint, so the frame rate that arrives is whatever
+the link sustains rather than the one the sensor is programmed for.
+
 Programming
 ***********
 
@@ -79,6 +174,12 @@ SAMA7G54 Evaluation Kit Page:
 
 .. _SAMA7G54-EK User Guide:
     https://ww1.microchip.com/downloads/aemDocuments/documents/MPU32/ProductDocuments/UserGuides/SAMA7G54-EK-User%27s-Guide-DS50003273.pdf
+
+.. _Raspberry Pi Camera Module 1:
+    https://www.raspberrypi.com/documentation/accessories/camera.html
+
+.. _Raspberry Pi Camera Module 2:
+    https://www.raspberrypi.com/documentation/accessories/camera.html
 
 .. _at91bootstrap:
     https://developerhelp.microchip.com/xwiki/bin/view/products/mcu-mpu/32bit-mpu/at91bootstrap/

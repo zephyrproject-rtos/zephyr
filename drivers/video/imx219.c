@@ -8,11 +8,13 @@
 #define DT_DRV_COMPAT sony_imx219
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/video/video.h>
 
 #include "video_common.h"
@@ -22,6 +24,18 @@ LOG_MODULE_REGISTER(imx219, CONFIG_VIDEO_LOG_LEVEL);
 #define IMX219_FULL_WIDTH		3280
 #define IMX219_FULL_HEIGHT		2464
 #define IMX219_CHIP_ID			0x0219
+
+/*
+ * Line length and pixel rate of the PLL configuration below, from which the frame
+ * length achieving a requested frame rate is derived, plus the shortest vertical
+ * blanking the sensor tolerates.
+ *
+ * The pixel array delivers two pixels per video timing clock cycle, so the rate is
+ * twice the video timing pixel clock of 24 / 3 * 57 / 5 = 91.2 MHz.
+ */
+#define IMX219_LINE_LENGTH		3448
+#define IMX219_PIXEL_RATE_HZ		182400000
+#define IMX219_VBLANK_MIN		32
 
 #define IMX219_REG8(addr)		((addr) | VIDEO_REG_ADDR16_DATA8)
 #define IMX219_REG16(addr)		((addr) | VIDEO_REG_ADDR16_DATA16_BE)
@@ -93,6 +107,7 @@ struct imx219_data {
 
 struct imx219_config {
 	struct i2c_dt_spec i2c;
+	struct gpio_dt_spec reset_gpio;
 	uint32_t input_clk_hz;
 };
 
@@ -128,7 +143,7 @@ static const struct video_reg imx219_init_regs[] = {
 	{IMX219_CCI_DPHY_CTRL, 0x00},		/* Timing auto */
 
 	/* Timing and format registers */
-	{IMX219_CCI_LINE_LENGTH_A, 3448},
+	{IMX219_CCI_LINE_LENGTH_A, IMX219_LINE_LENGTH},
 	{IMX219_CCI_X_ODD_INC_A, 1},
 	{IMX219_CCI_Y_ODD_INC_A, 1},
 
@@ -150,44 +165,67 @@ static const struct video_reg16 imx219_fmt_raw10_regs[] = {
 	{IMX219_REG_CSI_DATA_FORMAT_A1, 10},
 };
 
-/* TODO the FPS registers are currently tuned for 1920x1080 cropped resolution */
-
-static const struct video_reg imx219_fps_30_regs[] = {
+/*
+ * The output PLL sets the CSI-2 line rate and must agree with the link frequency
+ * reported through VIDEO_CID_LINK_FREQ, since the receiver programs its D-PHY from
+ * that value: with a 24 MHz input clock, PREPLLCK_OP_DIV of 3 and PLL_OP_MPY of 114
+ * the lanes run at 24 / 3 * 114 = 912 Mbps, i.e. IMX219_2DL_LINK_FREQ of 456 MHz DDR.
+ *
+ * The video timing PLL is set to read the pixel array out at the very same rate as
+ * the output stage transmits it, 24 / 3 * 57 / 5 = 91.2 MHz. Reading out any slower
+ * starves the transmitter part way through a line, and it can only cover the gap
+ * for as long as its output buffer holds, so the wider resolutions then yield no
+ * line at all. The frame rate is picked through the frame length instead.
+ */
+static const struct video_reg imx219_pll_regs[] = {
 	{IMX219_CCI_PREPLLCK_VT_DIV, 0x03},	/* Auto */
 	{IMX219_CCI_PREPLLCK_OP_DIV, 0x03},	/* Auto */
-	{IMX219_CCI_VTPXCK_DIV, 4},		/* Video Timing clock multiplier */
+	{IMX219_CCI_VTPXCK_DIV, 5},		/* Video timing pixel clock divider */
 	{IMX219_CCI_VTSYCK_DIV, 1},
 	{IMX219_CCI_OPPXCK_DIV, 10},		/* Output pixel clock divider */
 	{IMX219_CCI_OPSYCK_DIV, 1},
-	{IMX219_CCI_PLL_VT_MPY, 30},		/* Video Timing clock multiplier */
-	{IMX219_CCI_PLL_OP_MPY, 50},		/* Output clock multiplier */
+	{IMX219_CCI_PLL_VT_MPY, 57},		/* Video timing clock multiplier */
+	{IMX219_CCI_PLL_OP_MPY, 114},		/* Output clock multiplier */
 };
 
-static const struct video_reg imx219_fps_15_regs[] = {
-	{IMX219_CCI_PREPLLCK_VT_DIV, 0x03},	/* Auto */
-	{IMX219_CCI_PREPLLCK_OP_DIV, 0x03},	/* Auto */
-	{IMX219_CCI_VTPXCK_DIV, 4},		/* Video Timing clock multiplier */
-	{IMX219_CCI_VTSYCK_DIV, 1},
-	{IMX219_CCI_OPPXCK_DIV, 10},		/* Output pixel clock divider */
-	{IMX219_CCI_OPSYCK_DIV, 1},
-	{IMX219_CCI_PLL_VT_MPY, 15},		/* Video Timing clock multiplier */
-	{IMX219_CCI_PLL_OP_MPY, 50},		/* Output clock multiplier */
-};
+/*
+ * Number of lines per frame, vertical blanking included, that achieves the given
+ * frame rate at the fixed line length and pixel clock above. It is never shorter
+ * than the frame itself plus the minimum blanking, so the taller resolutions run
+ * slower than requested.
+ */
+static uint16_t imx219_frm_length(uint32_t height, uint32_t fps)
+{
+	uint32_t lines = IMX219_PIXEL_RATE_HZ / (IMX219_LINE_LENGTH * fps);
+
+	return MAX(lines, height + IMX219_VBLANK_MIN);
+}
+
+/* Frame rate that the frame length above actually achieves */
+static uint32_t imx219_frame_rate(uint32_t height, uint32_t fps)
+{
+	return IMX219_PIXEL_RATE_HZ / (IMX219_LINE_LENGTH * imx219_frm_length(height, fps));
+}
 
 enum {
 	IMX219_RAW8_FULL_FRAME,
 	IMX219_RAW10_FULL_FRAME,
 };
 
-/* TODO switch to video_set_selection() API for cropping instead */
+/*
+ * The Bayer order of the first row follows the image orientation, which is left at
+ * its reset value of no flip, so the array is read out starting on a red pixel.
+ *
+ * TODO switch to video_set_selection() API for cropping instead
+ */
 static const struct video_format_cap imx219_fmts[] = {
 	[IMX219_RAW8_FULL_FRAME] = {
-		.pixelformat = VIDEO_PIX_FMT_SBGGR8,
+		.pixelformat = VIDEO_PIX_FMT_SRGGB8,
 		.width_min = 4, .width_max = IMX219_FULL_WIDTH, .width_step = 4,
 		.height_min = 4, .height_max = IMX219_FULL_HEIGHT, .height_step = 4,
 	},
 	[IMX219_RAW10_FULL_FRAME] = {
-		.pixelformat = VIDEO_PIX_FMT_SBGGR10P,
+		.pixelformat = VIDEO_PIX_FMT_SRGGB10P,
 		.width_min = 4, .width_max = IMX219_FULL_WIDTH, .width_step = 4,
 		.height_min = 4, .height_max = IMX219_FULL_HEIGHT, .height_step = 4,
 	},
@@ -209,8 +247,8 @@ static int imx219_set_fmt(const struct device *dev, struct video_format *fmt)
 		{IMX219_CCI_X_OUTPUT_SIZE, fmt->width},
 		{IMX219_CCI_Y_OUTPUT_SIZE, fmt->height},
 
-		/* Make sure the mipi line is long enough for the new output size */
-		{IMX219_CCI_FRM_LENGTH_A, fmt->height + 20},
+		/* Frame length for the frame rate in use, at least the new output size */
+		{IMX219_CCI_FRM_LENGTH_A, imx219_frm_length(fmt->height, drv_data->fps)},
 
 		/* Test pattern size */
 		{IMX219_CCI_TP_WINDOW_WIDTH, fmt->width},
@@ -332,26 +370,16 @@ static int imx219_set_frmival(const struct device *dev, struct video_frmival *fr
 		return ret;
 	}
 
-	switch (fie.index) {
-	case IMX219_30FPS_IDX:
-		ret = video_write_cci_multiregs(&cfg->i2c, imx219_fps_30_regs,
-						ARRAY_SIZE(imx219_fps_30_regs));
-		break;
-	case IMX219_15FPS_IDX:
-		ret = video_write_cci_multiregs(&cfg->i2c, imx219_fps_15_regs,
-						ARRAY_SIZE(imx219_fps_15_regs));
-		break;
-	default:
-		CODE_UNREACHABLE;
-		return -EINVAL;
-	}
+	drv_data->fps = imx219_framerates[fie.index];
 
+	ret = video_write_cci_reg(&cfg->i2c, IMX219_CCI_FRM_LENGTH_A,
+				  imx219_frm_length(drv_data->fmt.height, drv_data->fps));
 	if (ret < 0) {
 		return ret;
 	}
 
 	frmival->numerator = 1;
-	frmival->denominator = drv_data->fps = imx219_framerates[fie.index];
+	frmival->denominator = imx219_frame_rate(drv_data->fmt.height, drv_data->fps);
 
 	return 0;
 }
@@ -361,7 +389,7 @@ static int imx219_get_frmival(const struct device *dev, struct video_frmival *fr
 	struct imx219_data *drv_data = dev->data;
 
 	frmival->numerator = 1;
-	frmival->denominator = drv_data->fps;
+	frmival->denominator = imx219_frame_rate(drv_data->fmt.height, drv_data->fps);
 
 	return 0;
 }
@@ -508,7 +536,7 @@ static int imx219_init(const struct device *dev)
 	};
 	struct video_frmival frmival = {
 		.numerator = 1,
-		.denominator = IMX219_15FPS,
+		.denominator = IMX219_30FPS,
 	};
 	uint32_t reg;
 	int ret;
@@ -516,6 +544,21 @@ static int imx219_init(const struct device *dev)
 	if (!device_is_ready(cfg->i2c.bus)) {
 		LOG_ERR("I2C device %s is not ready", cfg->i2c.bus->name);
 		return -ENODEV;
+	}
+
+	/* Release the sensor from hardware standby before talking to it */
+	if (cfg->reset_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&cfg->reset_gpio)) {
+			LOG_ERR("GPIO device %s is not ready", cfg->reset_gpio.port->name);
+			return -ENODEV;
+		}
+
+		ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
+		if (ret < 0) {
+			return ret;
+		}
+
+		k_sleep(K_MSEC(5));
 	}
 
 	k_sleep(K_MSEC(1));
@@ -554,12 +597,19 @@ static int imx219_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = imx219_set_fmt(dev, &fmt);
+	ret = video_write_cci_multiregs(&cfg->i2c, imx219_pll_regs,
+					ARRAY_SIZE(imx219_pll_regs));
 	if (ret < 0) {
 		return ret;
 	}
 
+	/* The frame rate comes first, since the format derives its frame length from it */
 	ret = imx219_set_frmival(dev, &frmival);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = imx219_set_fmt(dev, &fmt);
 	if (ret < 0) {
 		return ret;
 	}
@@ -572,6 +622,7 @@ static int imx219_init(const struct device *dev)
                                                                                                    \
 	static const struct imx219_config imx219_cfg_##n = {                                       \
 		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
+		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),                       \
 		.input_clk_hz = DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency),               \
 	};                                                                                         \
                                                                                                    \
