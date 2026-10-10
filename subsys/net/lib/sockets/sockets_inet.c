@@ -116,8 +116,8 @@ static void zsock_flush_queue(struct net_context *ctx)
 	/* Some threads might be waiting on recv, cancel the wait */
 	k_fifo_cancel_wait(&ctx->recv_q);
 
-	/* Wake reader if it was sleeping */
-	(void)k_condvar_signal(&ctx->cond.recv);
+	/* Wake readers if they were sleeping */
+	(void)k_condvar_broadcast(&ctx->cond.recv);
 }
 
 static int zsock_socket_internal(int family, int type, int proto)
@@ -1011,16 +1011,29 @@ int zsock_wait_data(struct net_context *ctx, k_timeout_t *timeout)
 	}
 
 	if (k_fifo_is_empty(&ctx->recv_q)) {
+		/* close() can run during the wait. Hold the context, so that the
+		 * next socket() cannot get it back and clear the error close()
+		 * leaves for us. An offloaded put clears IN_USE whatever the
+		 * refcount, so a reference would not keep that context.
+		 */
+		bool hold = !net_if_is_ip_offloaded(net_context_get_iface(ctx));
+
+		if (hold) {
+			net_context_ref(ctx);
+		}
+
 		/* Wait for the data to arrive but without holding a lock */
 		ret = k_condvar_wait(&ctx->cond.recv, ctx->cond.lock,
 				     *timeout);
-		if (ret < 0) {
-			return ret;
+		if (ret == 0 && sock_is_error(ctx)) {
+			ret = -sock_get_error(ctx);
 		}
 
-		if (sock_is_error(ctx)) {
-			return -sock_get_error(ctx);
+		if (hold) {
+			net_context_unref(ctx);
 		}
+
+		return ret;
 	}
 
 	return 0;

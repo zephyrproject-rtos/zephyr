@@ -298,6 +298,7 @@ static ssize_t zvfs_eventfd_rw_op(void *obj, void *buf, size_t sz,
 	k_spinlock_key_t key;
 	struct zvfs_eventfd *efd = obj;
 	struct k_mutex *lock = NULL;
+	struct k_mutex *now;
 	struct k_condvar *cond = NULL;
 
 	if (sz < sizeof(zvfs_eventfd_t)) {
@@ -373,6 +374,14 @@ static ssize_t zvfs_eventfd_rw_op(void *obj, void *buf, size_t sz,
 		/* wait for a write or close */
 		err = k_condvar_wait(cond, lock, K_FOREVER);
 		__ASSERT(err == 0, "k_condvar_wait() failed: %d", err);
+
+		/* After close(), the object can already belong to a new eventfd */
+		if (!zvfs_get_obj_lock_and_cond(obj, &zvfs_eventfd_fd_vtable, &now, NULL) ||
+		    (now != lock)) {
+			errno = EBADF;
+			ret = -1;
+			goto out;
+		}
 	}
 
 unlock:
@@ -438,28 +447,23 @@ int zvfs_eventfd_read(int fd, zvfs_eventfd_t *value)
 {
 	int ret;
 	void *obj;
-	int err;
-	struct k_mutex *lock = NULL;
-	struct k_condvar *cond = NULL;
+	const struct fd_op_vtable *vtable;
 
-	obj = zvfs_get_fd_obj(fd, &zvfs_eventfd_fd_vtable, EBADF);
+	obj = zvfs_fd_get_locked(fd, &vtable);
 	if (obj == NULL) {
 		return -1;
 	}
 
-	err = (int)zvfs_get_obj_lock_and_cond(obj, &zvfs_eventfd_fd_vtable, &lock, &cond);
-	__ASSERT((bool)err, "zvfs_get_obj_lock_and_cond() failed");
-	__ASSERT_NO_MSG(lock != NULL);
-	__ASSERT_NO_MSG(cond != NULL);
-
-	err = k_mutex_lock(lock, K_FOREVER);
-	__ASSERT(err == 0, "k_mutex_lock() failed: %d", err);
+	if (vtable != &zvfs_eventfd_fd_vtable) {
+		zvfs_fd_unlock_put(fd);
+		errno = EBADF;
+		return -1;
+	}
 
 	ret = zvfs_eventfd_rw_op(obj, value, sizeof(zvfs_eventfd_t), zvfs_eventfd_read_locked);
 	__ASSERT_NO_MSG(ret == -1 || ret == sizeof(zvfs_eventfd_t));
 
-	err = k_mutex_unlock(lock);
-	__ASSERT(err == 0, "k_mutex_unlock() failed: %d", err);
+	zvfs_fd_unlock_put(fd);
 
 	if (ret < 0) {
 		return -1;
@@ -472,28 +476,23 @@ int zvfs_eventfd_write(int fd, zvfs_eventfd_t value)
 {
 	int ret;
 	void *obj;
-	int err;
-	struct k_mutex *lock = NULL;
-	struct k_condvar *cond = NULL;
+	const struct fd_op_vtable *vtable;
 
-	obj = zvfs_get_fd_obj(fd, &zvfs_eventfd_fd_vtable, EBADF);
+	obj = zvfs_fd_get_locked(fd, &vtable);
 	if (obj == NULL) {
 		return -1;
 	}
 
-	err = (int)zvfs_get_obj_lock_and_cond(obj, &zvfs_eventfd_fd_vtable, &lock, &cond);
-	__ASSERT((bool)err, "zvfs_get_obj_lock_and_cond() failed");
-	__ASSERT_NO_MSG(lock != NULL);
-	__ASSERT_NO_MSG(cond != NULL);
-
-	err = k_mutex_lock(lock, K_FOREVER);
-	__ASSERT(err == 0, "k_mutex_lock() failed: %d", err);
+	if (vtable != &zvfs_eventfd_fd_vtable) {
+		zvfs_fd_unlock_put(fd);
+		errno = EBADF;
+		return -1;
+	}
 
 	ret = zvfs_eventfd_rw_op(obj, &value, sizeof(zvfs_eventfd_t), zvfs_eventfd_write_locked);
 	__ASSERT_NO_MSG(ret == -1 || ret == sizeof(zvfs_eventfd_t));
 
-	err = k_mutex_unlock(lock);
-	__ASSERT(err == 0, "k_mutex_unlock() failed: %d", err);
+	zvfs_fd_unlock_put(fd);
 
 	if (ret < 0) {
 		return -1;

@@ -1063,8 +1063,9 @@ static int wait(int sock, int timeout, int event)
 	}
 
 	if (ret == 1) {
+		/* poll() reports a socket closed while it waited as invalid */
 		if (fds.revents & ZSOCK_POLLNVAL) {
-			return -EBADF;
+			return -EINTR;
 		}
 
 		if (fds.revents & ZSOCK_POLLERR) {
@@ -1076,6 +1077,11 @@ static int wait(int sock, int timeout, int event)
 				NET_ERR("TLS underlying socket poll error %d",
 					-optval);
 				return -optval;
+			}
+
+			/* Closed while we waited, which interrupts the call */
+			if (errno == EBADF) {
+				return -EINTR;
 			}
 
 			return -EIO;
