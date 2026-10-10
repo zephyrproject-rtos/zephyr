@@ -12,7 +12,7 @@
 	status = "okay";
 };
 
-tst_dma0: &dmamux1 {
+&dmamux1 {
 	status = "okay";
 };
 
@@ -27,6 +27,12 @@ tst_dma0: &dmamux1 {
 	status = "okay";
 };
 
-tst_dma1: &dmamux2 {
+&dmamux2 {
 	status = "okay";
+};
+
+/ {
+	zephyr,user {
+		dma-test-devs = <&dmamux1>, <&dmamux2>;
+	};
 };
