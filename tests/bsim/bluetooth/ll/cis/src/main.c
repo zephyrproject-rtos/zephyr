@@ -256,6 +256,7 @@ static void iso_print_data(uint8_t *data, size_t data_len)
 	printk("\t %s\n", data_str);
 }
 
+static uint16_t offset_seq_num[CONFIG_BT_ISO_MAX_CHAN];
 static uint16_t expected_seq_num[CONFIG_BT_ISO_MAX_CHAN];
 
 static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *info,
@@ -273,11 +274,14 @@ static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *in
 	seq_num = sys_get_le32(buf->data);
 	if (info->flags & BT_ISO_FLAGS_VALID) {
 		if (seq_num != expected_seq_num[index]) {
+			printk("%s: info seq_num %u incoming seq_sum %u\n", __func__, info->seq_num,
+			       seq_num);
 			if (expected_seq_num[index]) {
 				FAIL("ISO data miss match, expected %u actual %u\n",
 				     expected_seq_num[index], seq_num);
 			}
 			expected_seq_num[index] = seq_num;
+			offset_seq_num[index] = info->seq_num - seq_num;
 		}
 
 		expected_seq_num[index] += 1U;
@@ -287,10 +291,26 @@ static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *in
 #elif defined(CONFIG_TEST_FT_CEN_SKIP_SUBEVENTS)
 		expected_seq_num[index] += ((CONFIG_TEST_FT_CEN_SKIP_EVENTS_COUNT - 1U) * 2U);
 #endif
+
+#if defined(CONFIG_TEST_FT_PER_SKIP_SUBEVENTS)
+	} else if ((info->seq_num - offset_seq_num[index]) >=
+		   (expected_seq_num[index] - ((CONFIG_TEST_FT_PER_SKIP_EVENTS_COUNT - 1U) * 2U)) &&
+		   (info->seq_num - offset_seq_num[index]) < expected_seq_num[index]) {
+		/* Accepted lost data due to skipped subevents */
+#endif
+
+#if defined(CONFIG_TEST_FT_CEN_SKIP_SUBEVENTS)
+	} else if ((info->seq_num - offset_seq_num[index]) >=
+		   (expected_seq_num[index] - ((CONFIG_TEST_FT_CEN_SKIP_EVENTS_COUNT - 1U) * 2U)) &&
+		   (info->seq_num - offset_seq_num[index]) < expected_seq_num[index]) {
+		/* Accepted lost data due to skipped subevents */
+#endif
+
 	} else if (expected_seq_num[index] &&
 		   expected_seq_num[index] < SEQ_NUM_MAX) {
 		FAIL("%s: Invalid ISO data after valid ISO data reception.\n"
-		     "Expected %u\n", __func__, expected_seq_num[index]);
+		     "Chan %u, Expected %u Actual %u info %u.\n", __func__, index,
+		     expected_seq_num[index], seq_num, info->seq_num);
 	}
 }
 
