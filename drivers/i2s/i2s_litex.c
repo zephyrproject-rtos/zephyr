@@ -572,8 +572,31 @@ static void i2s_litex_isr_tx(void *arg)
 	k_mem_slab_free(stream->cfg.mem_slab, mem_block);
 }
 
+static const struct i2s_config *i2s_litex_config_get(const struct device *dev,
+						    enum i2s_dir dir)
+{
+	struct i2s_litex_data *const dev_data = dev->data;
+	struct stream *stream_data;
+
+	if (dir == I2S_DIR_RX) {
+		stream_data = &dev_data->rx;
+	} else if (dir == I2S_DIR_TX) {
+		stream_data = &dev_data->tx;
+	} else {
+		LOG_ERR("either RX or TX direction must be selected");
+		return NULL;
+	}
+
+	if (stream_data->state == I2S_STATE_NOT_READY) {
+		return NULL;
+	}
+
+	return &stream_data->cfg;
+}
+
 static DEVICE_API(i2s, i2s_litex_driver_api) = {
 	.configure = i2s_litex_configure,
+	.config_get = i2s_litex_config_get,
 	.read = i2s_litex_read,
 	.write = i2s_litex_write,
 	.trigger = i2s_litex_trigger,

@@ -709,10 +709,39 @@ static int i2s_max32_write(const struct device *dev, void *mem_block, size_t siz
 	return 0;
 }
 
+static const struct i2s_config *i2s_max32_config_get(const struct device *dev,
+						    enum i2s_dir dir)
+{
+	const struct i2s_max32_cfg *cfg = dev->config;
+	const struct i2s_max32_stream *stream;
+	struct i2s_max32_stream_data *stream_data;
+
+	switch (dir) {
+	case I2S_DIR_TX:
+		stream = &cfg->tx;
+		break;
+	case I2S_DIR_RX:
+		stream = &cfg->rx;
+		break;
+	default:
+		LOG_ERR("Invalid I2S direction: %d", (int)dir);
+		return NULL;
+	}
+
+	stream_data = stream->data;
+
+	if (stream_data->state == I2S_STATE_NOT_READY) {
+		return NULL;
+	}
+
+	return &stream_data->i2s_cfg;
+}
+
 static DEVICE_API(i2s, i2s_max32_driver_api) = {
 	.read = i2s_max32_read,
 	.write = i2s_max32_write,
 	.configure = i2s_max32_configure,
+	.config_get = i2s_max32_config_get,
 	.trigger = i2s_max32_trigger,
 };
 
