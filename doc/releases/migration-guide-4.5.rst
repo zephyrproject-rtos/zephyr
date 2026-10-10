@@ -1995,6 +1995,9 @@ Timer
 USB
 ===
 
+* :c:macro:`HID_KEYBOARD_REPORT_DESC` now requires the maximum supported key usage ID as an
+  argument. Pass ``HID_KEY_MENU`` to preserve the previous report descriptor behavior.
+  (:github:`114344`)
 * On STM32N6, the ``clocks`` cell which configures the USBPHYC clock mux has been moved
   from :samp:`usbotg_hs{N}` to :samp:`usbphyc{N}` nodes at SoC DTSI level. Boards which
   use an STM32N6 SoC with custom clock mux configuration must now set the ``clocks``
