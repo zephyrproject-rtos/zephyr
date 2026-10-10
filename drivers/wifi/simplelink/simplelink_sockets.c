@@ -1173,35 +1173,39 @@ exit:
 	return retval;
 }
 
+static int simplelink_poll_prepare(void *obj, struct zvfs_pollfd *pfd,
+			struct k_poll_event **pev, struct k_poll_event *pev_end)
+{
+	ARG_UNUSED(obj);
+	ARG_UNUSED(pfd);
+	ARG_UNUSED(pev);
+	ARG_UNUSED(pev_end);
+
+	return -EXDEV;
+}
+
+static int simplelink_poll_update(void *obj, struct zvfs_pollfd *pfd, struct k_poll_event **pev)
+{
+	ARG_UNUSED(obj);
+	ARG_UNUSED(pfd);
+	ARG_UNUSED(pev);
+
+	return -EOPNOTSUPP;
+}
+
+static int simplelink_poll_offload(void *obj, struct zvfs_pollfd *fds, int nfds, int timeout)
+{
+	ARG_UNUSED(obj);
+
+	return simplelink_poll(fds, nfds, timeout);
+}
+
 static int simplelink_ioctl(void *obj, unsigned int request, va_list args)
 {
 	int sd = OBJ_TO_SD(obj);
 
-	switch (request) {
-	case ZFD_IOCTL_POLL_PREPARE:
-		return -EXDEV;
-
-	case ZFD_IOCTL_POLL_UPDATE:
-		return -EOPNOTSUPP;
-
-	case ZFD_IOCTL_POLL_OFFLOAD: {
-		struct zsock_pollfd *fds;
-		int nfds;
-		int timeout;
-
-		fds = va_arg(args, struct zsock_pollfd *);
-		nfds = va_arg(args, int);
-		timeout = va_arg(args, int);
-
-		return simplelink_poll(fds, nfds, timeout);
-	}
-
-	/* Otherwise, just forward to offloaded fcntl()
-	 * In Zephyr, fcntl() is just an alias of ioctl().
-	 */
-	default:
-		return simplelink_fcntl(sd, request, args);
-	}
+	/* In Zephyr, fcntl() is just an alias of ioctl(). */
+	return simplelink_fcntl(sd, request, args);
 }
 
 static ssize_t simplelink_read(void *obj, void *buffer, size_t count)
@@ -1221,6 +1225,9 @@ static const struct socket_op_vtable simplelink_socket_fd_op_vtable = {
 		.write = simplelink_write,
 		.close = simplelink_close,
 		.ioctl = simplelink_ioctl,
+		.poll_prepare = simplelink_poll_prepare,
+		.poll_update = simplelink_poll_update,
+		.poll_offload = simplelink_poll_offload,
 	},
 	.bind = simplelink_bind,
 	.connect = simplelink_connect,

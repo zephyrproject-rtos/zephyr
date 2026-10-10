@@ -485,6 +485,11 @@ Deprecated APIs and options
     mDNS (:kconfig:option:`CONFIG_MDNS_RESOLVER` /
     :kconfig:option:`CONFIG_MDNS_RESPONDER`) instead.
 
+  * Deprecated ``ZFD_IOCTL_POLL_PREPARE``, ``ZFD_IOCTL_POLL_UPDATE``, and
+    ``ZFD_IOCTL_POLL_OFFLOAD`` in favor of the typed ``poll_prepare``,
+    ``poll_update``, and ``poll_offload`` callbacks in
+    :c:struct:`fd_op_vtable`.
+
 * Networking Link layer
 
   * Deprecated :kconfig:option:`CONFIG_NET_L2_PTP`.

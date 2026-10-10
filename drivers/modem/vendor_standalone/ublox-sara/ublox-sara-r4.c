@@ -1703,30 +1703,21 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len,
 	return ret;
 }
 
+static int offload_poll_prepare(void *obj, struct zvfs_pollfd *pfd,
+			struct k_poll_event **pev, struct k_poll_event *pev_end)
+{
+	return modem_socket_poll_prepare(&mdata.socket_config, obj, pfd, pev, pev_end);
+}
+
+static int offload_poll_update(void *obj, struct zvfs_pollfd *pfd,
+			struct k_poll_event **pev)
+{
+	return modem_socket_poll_update(obj, pfd, pev);
+}
+
 static int offload_ioctl(void *obj, unsigned int request, va_list args)
 {
 	switch (request) {
-	case ZFD_IOCTL_POLL_PREPARE: {
-		struct zsock_pollfd *pfd;
-		struct k_poll_event **pev;
-		struct k_poll_event *pev_end;
-
-		pfd = va_arg(args, struct zsock_pollfd *);
-		pev = va_arg(args, struct k_poll_event **);
-		pev_end = va_arg(args, struct k_poll_event *);
-
-		return modem_socket_poll_prepare(&mdata.socket_config, obj, pfd, pev, pev_end);
-	}
-	case ZFD_IOCTL_POLL_UPDATE: {
-		struct zsock_pollfd *pfd;
-		struct k_poll_event **pev;
-
-		pfd = va_arg(args, struct zsock_pollfd *);
-		pev = va_arg(args, struct k_poll_event **);
-
-		return modem_socket_poll_update(obj, pfd, pev);
-	}
-
 	case ZVFS_F_GETFL:
 		return 0;
 
@@ -1919,6 +1910,8 @@ static const struct socket_op_vtable offload_socket_fd_op_vtable = {
 		.write = offload_write,
 		.close = offload_close,
 		.ioctl = offload_ioctl,
+		.poll_prepare = offload_poll_prepare,
+		.poll_update = offload_poll_update,
 	},
 	.bind = offload_bind,
 	.connect = offload_connect,
