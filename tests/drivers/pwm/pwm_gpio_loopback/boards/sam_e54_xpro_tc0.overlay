@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2025-2026 Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* connect PA05 to PB04 */
+
+#define PWM_NODE     tc0
+#define PWM_PINCTRL  tc0_pwm_default
+#include "mchp_pwm_loopback_support.dtsi"
+
+/ {
+	zephyr,user {
+		pwms = <&tc0 1 PWM_MSEC(20) 0>;
+		gpios = <&portb 4 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&portb {
+	status = "okay";
+};

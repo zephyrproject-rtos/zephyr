@@ -1,0 +1,16 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#define PWM_NODE    tc4
+#define PWM_PINCTRL tc4_pwm_default
+#include "mchp_pwm_api_support.dtsi"
+
+&pinctrl {
+	tc4_pwm_default: tc4_pwm_default {
+		group1 {
+			pinmux = <PA22E_TC4_WO0>;
+		};
+	};
+};
