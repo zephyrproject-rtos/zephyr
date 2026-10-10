@@ -34,6 +34,12 @@
 			status = "disabled";
 		};
 
+		prng0: prng@f0005000 {
+			compatible = "aesc,prng";
+			reg = <0xf0005000 0x1000>;
+			status = "disabled";
+		};
+
 		pinctrl: pinctrl@f0010000 {
 			compatible = "aesc,pinctrl";
 			reg = <0xf0010000 0x1000>;
