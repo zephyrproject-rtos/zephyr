@@ -12,4 +12,14 @@ tests:
       - mimxrt1170_evk@B/mimxrt1176/cm7
     tags: ipc
     sysbuild: true
-    harness: remote
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "IPC-service HOST \\[INST 0\\] demo started"
+        - "HOST \\[0\\]: 1"
+        - "HOST \\[0\\]: 3"
+        - "IPC-service HOST \\[INST 0\\] demo ended\\."
+        - "IPC-service HOST \\[INST 1\\] demo ended\\."
+        - "IPC-service HOST \\[INST 2\\] demo ended\\."
