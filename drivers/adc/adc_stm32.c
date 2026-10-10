@@ -514,6 +514,15 @@ static int adc_stm32_dma_start(const struct device *dev,
 	dma->dma_cfg.head_block = blk_cfg;
 	dma->dma_cfg.user_data = data;
 
+	/* DMA channel has not been initialized */
+	if (data->dma.channel < 0 || data->dma.channel == STM32_DMA_CHANNEL_AUTO) {
+		data->dma.channel = dma_request_channel(data->dma.dma_dev, NULL);
+		if (data->dma.channel < 0) {
+			LOG_ERR("Failed to request DMA channel: %d", data->dma.channel);
+			return -ENODEV;
+		}
+	}
+
 	ret = dma_config(data->dma.dma_dev, data->dma.channel,
 			 &dma->dma_cfg);
 	if (ret != 0) {
@@ -2738,7 +2747,7 @@ static int adc_stm32_get_decoder(const struct device *dev, const struct adc_deco
 #define ADC_SUB_STM32_DT_DMA_CHANNEL_INIT(node_id, src_dev, dest_dev)			\
 	.dma = {									\
 		.dma_dev = DEVICE_DT_GET(DT_DMAS_CTLR_BY_IDX(node_id, 0)),		\
-		.channel = DT_DMAS_CELL_BY_IDX(node_id, 0, channel),			\
+		.channel = DT_DMAS_CELL_BY_IDX_OR(node_id, 0, channel, -1),		\
 		.dma_cfg = {								\
 			.dma_slot = STM32_DT_DMA_SLOT_BY_IDX(node_id, 0),		\
 			.channel_direction = STM32_DMA_CONFIG_DIRECTION(		\
