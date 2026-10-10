@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2026 Aerlync Labs Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		clock-ref = &lptmr0;
+	};
+};
