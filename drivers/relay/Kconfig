@@ -1,0 +1,27 @@
+# Copyright (c) 2026 Siemens AG
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig RELAY
+	bool "Relay drivers [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Enable the relay driver class. Provides a hardware-agnostic on/off
+	  relay output API implemented by backend drivers.
+
+if RELAY
+
+module = RELAY
+module-str = relay
+source "subsys/logging/Kconfig.template.log_config"
+
+config RELAY_SHELL
+	bool "Relay shell"
+	depends on SHELL
+	help
+	  Enable shell commands to turn relays on and off and to read back their
+	  state, for any relay device in the system.
+
+source "drivers/relay/Kconfig.pwm"
+source "drivers/relay/Kconfig.gpio"
+
+endif # RELAY

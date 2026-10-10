@@ -1,0 +1,61 @@
+# Copyright (c) 2026 Siemens AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  PWM-driven relay.
+
+  Hardware-agnostic relay backed by a single standard Zephyr PWM channel. It
+  owns the relay semantics - on/off state and an optional pull-in/hold current
+  profile - and drives the coil through the PWM channel referenced by the
+  standard "pwms" property.
+
+  By default the coil is driven at full duty and held there. The pull-in and
+  refresh stages are opt-in: set "pull-in-time-ms" to give a stronger pull-in
+  pulse before dropping to "hold-duty-percent", and set "refresh-interval-ms"
+  to periodically re-pulse the coil. A stage set to 0 is skipped.
+
+  A board with several relays instantiates one node per relay. The PWM carrier
+  period and polarity/inversion flags come from the specifier cells of the
+  referenced backend.
+
+compatible: "zephyr,pwm-relay"
+
+include: base.yaml
+
+properties:
+  pwms:
+    type: phandle-array
+    required: true
+    description: |
+      The PWM channel specifier driving the relay coil. The PWM carrier period
+      and polarity/inversion flags are taken from the specifier cells of the
+      referenced backend.
+
+  pull-in-time-ms:
+    type: int
+    default: 0
+    description: |
+      Time in milliseconds the coil is driven at "pull-in-duty-percent" after
+      switching on before dropping to the hold duty. 0 disables the pull-in
+      pulse and drives the hold duty directly.
+
+  pull-in-duty-percent:
+    type: int
+    default: 100
+    description: |
+      PWM duty cycle (0-100 %) applied to pull in (and refresh) the relay coil.
+
+  refresh-interval-ms:
+    type: int
+    default: 0
+    description: |
+      Time in milliseconds between refresh pulses for a switched-on relay.
+      A refresh pulse re-applies the pull-in duty to keep the coil energized.
+      0 disables refreshing and holds the coil indefinitely.
+
+  hold-duty-percent:
+    type: int
+    default: 100
+    description: |
+      PWM duty cycle (0-100 %) applied to hold the relay coil after the optional
+      pull-in pulse. Set below "pull-in-duty-percent" to reduce holding current.

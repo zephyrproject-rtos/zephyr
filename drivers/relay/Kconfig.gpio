@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Siemens AG
+# SPDX-License-Identifier: Apache-2.0
+
+config RELAY_GPIO
+	bool "GPIO relay driver"
+	default y
+	depends on DT_HAS_ZEPHYR_GPIO_RELAY_ENABLED
+	select GPIO
+	help
+	  Enable the GPIO relay driver. Implements the relay API for a relay
+	  switched by a single GPIO.
+
+if RELAY_GPIO
+
+config RELAY_GPIO_INIT_PRIORITY
+	int "GPIO relay init priority"
+	default 91
+	help
+	  Device initialization priority for the GPIO relay. Must be greater than
+	  the GPIO controller's init priority so the controller is ready first.
+
+endif # RELAY_GPIO
