@@ -274,3 +274,14 @@
 		};
 	};
 };
+
+&wkup_vtm0 {
+	ti,maxt-outrg-thresh = <120000>;
+	ti,maxt-outrg-thresh0 = <105000>;
+	status = "okay";
+
+	sensor_0: sensor@0 {
+		reg = <0>;
+		ti,voltage-domain = <0>;
+	};
+};
