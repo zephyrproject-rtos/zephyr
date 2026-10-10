@@ -522,6 +522,8 @@ static inline bool dw_i3c_is_current_controller(const struct device *dev)
 
 #ifdef CONFIG_I3C_CONTROLLER
 
+static uint8_t odd_parity(uint8_t p);
+
 /*
  * Returns the index of the first free slot, or -1 when the table is full.
  * The return type must stay signed: truncating to uint8_t turns the
@@ -2193,7 +2195,7 @@ static int dw_i3c_attach_device(const struct device *dev, struct i3c_device_desc
 	 * Transfer commands take the target address from DAT DEV_DYNAMIC_ADDR.
 	 */
 	addr = desc->dynamic_addr != 0U ? desc->dynamic_addr : desc->static_addr;
-	dat |= DEV_ADDR_TABLE_DYNAMIC_ADDR(addr);
+	dat |= DEV_ADDR_TABLE_DYNAMIC_ADDR(addr | (odd_parity(addr) << 7));
 	dat |= DEV_ADDR_TABLE_STATIC_ADDR(desc->static_addr);
 	dat |= DEV_ADDR_TABLE_SIR_REJECT;
 
@@ -2222,9 +2224,9 @@ static int dw_i3c_reattach_device(const struct device *dev, struct i3c_device_de
 	dat = sys_read32(dw_i3c_regs(dev) +
 			 DEV_ADDR_TABLE_LOC(data->datstartaddr, dw_i3c_device_data->id));
 	dat &= ~DEV_ADDR_TABLE_DYNAMIC_ADDR_MASK;
-	sys_write32(DEV_ADDR_TABLE_DYNAMIC_ADDR(desc->dynamic_addr) | dat,
-		    dw_i3c_regs(dev) +
-			    DEV_ADDR_TABLE_LOC(data->datstartaddr, dw_i3c_device_data->id));
+	sys_write32(DEV_ADDR_TABLE_DYNAMIC_ADDR(desc->dynamic_addr |
+						(odd_parity(desc->dynamic_addr) << 7)) | dat,
+		    dw_i3c_regs(dev) + DEV_ADDR_TABLE_LOC(data->datstartaddr, dw_i3c_device_data->id));
 
 	return 0;
 }
