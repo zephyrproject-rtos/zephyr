@@ -29,6 +29,8 @@ struct bflb_ieee802154_data {
 	uint8_t ack_frame_buf[IEEE802154_BFLB_MAX_PKT_LEN];
 	uint8_t ack_frame_len;
 
+	uint8_t csma_ca_backoffs;
+
 	uint16_t channel;
 	int16_t tx_power;
 	bool promiscuous;
