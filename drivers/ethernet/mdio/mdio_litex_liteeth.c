@@ -10,8 +10,7 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/mdio.h>
-
-#include <soc.h>
+#include <zephyr/drivers/misc/litex/litex_csr.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(litex_liteeth_mdio, CONFIG_MDIO_LOG_LEVEL);

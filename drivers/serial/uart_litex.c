@@ -11,10 +11,9 @@
 #include <zephyr/init.h>
 #include <zephyr/irq.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/misc/litex/litex_csr.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/types.h>
-
-#include <soc.h>
 
 #if DT_ANY_INST_HAS_BOOL_STATUS_OKAY(rx_fifo_rx_we)
 #define USES_RX_FIFO_RX_WE 1
