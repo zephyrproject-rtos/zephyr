@@ -7,3 +7,5 @@ description: |
 compatible: "issi,is31fl3216a"
 
 include: i2c-device.yaml
+
+class: led
