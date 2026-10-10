@@ -19,6 +19,7 @@ config DMA_STM32
 config DMA_STM32U5
 	bool "STM32U5 series DMA driver"
 	select USE_STM32_LL_DMA
+	select USE_STM32_HAL_DMA if STM32_HAL2
 	default y
 	depends on DT_HAS_ST_STM32U5_DMA_ENABLED
 	help
