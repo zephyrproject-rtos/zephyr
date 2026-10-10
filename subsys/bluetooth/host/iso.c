@@ -483,18 +483,25 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 
 	__ASSERT(chan->iso != NULL, "NULL conn for iso chan %p", chan);
 
+	bt_iso_chan_set_state(chan, BT_ISO_STATE_DISCONNECTED);
+	bt_conn_set_state(chan->iso, BT_CONN_DISCONNECT_COMPLETE);
+
 #if defined(CONFIG_BT_ISO_TX)
 	struct net_buf *buf;
 
-	/* release buffers from tx_queue */
+	/* What is still queued has not been sent in full. It is reported
+	 * after what the controller had not acknowledged, and with the channel
+	 * disconnected, so that the callback cannot queue it again.
+	 */
 	while ((buf = k_fifo_get(&chan->iso->iso.txq, K_NO_WAIT))) {
 		__ASSERT_NO_MSG(!bt_buf_has_view(buf));
 		net_buf_unref(buf);
+
+		if (chan->ops->send_failed != NULL) {
+			chan->ops->send_failed(chan, -ESHUTDOWN);
+		}
 	}
 #endif /* CONFIG_BT_ISO_TX */
-
-	bt_iso_chan_set_state(chan, BT_ISO_STATE_DISCONNECTED);
-	bt_conn_set_state(chan->iso, BT_CONN_DISCONNECT_COMPLETE);
 
 	/* Calling disconnected before final cleanup allows users to use bt_iso_chan_get_info in
 	 * the callback and to be more similar to the ACL disconnected callback. This also means

@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Bluetooth HCI for test purposes. Unlike the test bindings that set the
+  "no-reset" quirk, this one leaves the quirks empty, so that the Host resets
+  the controller when it is enabled and disabled.
+
+compatible: "zephyr,bt-hci-test"
+
+include: bt-hci.yaml
+
+properties:
+  bt-hci-name:
+    default: "test"
+  bt-hci-bus:
+    default: "virtual"

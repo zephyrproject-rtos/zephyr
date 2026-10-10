@@ -1192,6 +1192,12 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 	/* Actions needed for entering the new state */
 	switch (conn->state) {
 	case BT_CONN_CONNECTED:
+		/* Not every object is zeroed before it is connected again (a
+		 * central CIS keeps its object), and what the last connection
+		 * left half sent is not to be continued on this one.
+		 */
+		conn->next_is_frag = false;
+
 		if (bt_conn_is_sco(conn)) {
 			if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
 				bt_sco_connected(conn);
