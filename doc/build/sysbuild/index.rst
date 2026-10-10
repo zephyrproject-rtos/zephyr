@@ -960,3 +960,129 @@ Running sysbuild with preset.
 
    The ``${fileDir}`` macro can be used to create portable paths relative to the application's
    directory.
+
+CMake cache variables are made available through the :file:`<build>/<image>_sysbuild_cache.txt`
+file. To use a variable located in :file:`<image>_sysbuild_cache.txt` you must fetch it with
+``zephyr_get()``.
+
+Example of using the ``FOO`` variable from a preset file:
+
+.. code-block:: cmake
+
+   zephyr_get(FOO)
+   message("Foo value is: ${FOO}")
+
+Another option is to request Sysbuild to forward the preset setting directly to the image.
+This must be done in the :file:`CMakePreset.json` using the ``CMAKE_PRESET`` setting.
+
+Example of a preset file, where the preset is forwarded:
+
+.. code-block:: json
+
+   {
+     "version": 7,
+     "cmakeMinimumRequired": {
+       "major": 3,
+       "minor": 27,
+       "patch": 0
+     },
+     "configurePresets": [
+       {
+         "name": "foo",
+         "cacheVariables": {
+           "CMAKE_PRESET": "${presetName}",
+           "<other_app_variable>": "<value>"
+         }
+       }
+     ]
+   }
+
+This will invoke CMake for the application image with the same CMake ``--preset=<name>`` that was
+passed to sysbuild, and thereby allow direct use of cache variables defined in the preset file.
+
+
+Sysbuild cache variable
+=======================
+
+Adding sysbuild cache variables in the application's :file:`CMakePresets.json` will result in
+warnings like ``Manually-specified variables were not used by the project:`` because the application
+has no knowledge of sysbuild specific variables.
+
+Sysbuild specific variables can be placed in a vendor specific section under the preset section to
+which it belongs, like this:
+
+.. code-block:: json
+
+   {
+     "version": 7,
+     "cmakeMinimumRequired": {
+       "major": 3,
+       "minor": 27,
+       "patch": 0
+     },
+     "configurePresets": [
+       {
+         "name": "foo",
+         "cacheVariables": {
+           "CMAKE_PRESET": "${presetName}",
+           "<other_app_variable>": "<value>"
+         },
+         "vendor": {
+           "sysbuild": {
+             "cacheVariables": {
+               "<sysbuild_variable>": "<value>"
+             }
+           }
+         }
+       }
+     ]
+   }
+
+If having multiple preset sections and want to share a single sysbuild base between then, then it's
+possible to create a dedicated sysbuild section and refer to this section from other preset
+sections.
+
+The dedicated sysbuild section must be specified with ``CMAKE_PRESET_SYSBUILD_FIELD`` for sysbuild
+to be able to load it.
+
+Example:
+
+.. code-block:: json
+
+   {
+     "version": 7,
+     "cmakeMinimumRequired": {
+       "major": 3,
+       "minor": 27,
+       "patch": 0
+     },
+     "configurePresets": [
+       {
+         "name": "sysbuild",
+         "hidden": true,
+         "vendor": {
+           "sysbuild": {
+             "cacheVariables": {
+               "<sysbuild_variable>": "<value>"
+             }
+           }
+         }
+       },
+       {
+         "name": "foo",
+         "cacheVariables": {
+           "CMAKE_PRESET": "${presetName}",
+           "CMAKE_PRESET_SYSBUILD_FIELD": "configurePresets;0;vendor;sysbuild;cacheVariables",
+           "<other_app_variable>": "<value>"
+         }
+       },
+       {
+         "name": "bar",
+         "cacheVariables": {
+           "CMAKE_PRESET": "${presetName}",
+           "CMAKE_PRESET_SYSBUILD_FIELD": "configurePresets;0;vendor;sysbuild;cacheVariables",
+           "<other_app_variable>": "<value>"
+         }
+       }
+     ]
+   }
