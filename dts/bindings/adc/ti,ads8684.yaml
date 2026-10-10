@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Ryomei Osaki
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI ADS8684 4-channel 16-bit SAR ADC
+
+compatible: "ti,ads8684"
+
+include: ti,ads868x-base.yaml
