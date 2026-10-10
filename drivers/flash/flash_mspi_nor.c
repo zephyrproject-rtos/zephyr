@@ -695,7 +695,8 @@ static int read_jedec_id(const struct device *dev, uint8_t *id)
 {
 	const struct flash_mspi_nor_config *dev_config = dev->config;
 	struct flash_mspi_nor_data *dev_data = dev->data;
-	uint8_t id_even[JESD216_READ_ID_LEN + 1] = {0};
+	uint8_t id_raw[JESD216_READ_ID_LEN * 2] = {0};
+	bool rdid_data_str = in_ddr(dev) && dev_data->cmd_info.rdid_data_str;
 	int rc;
 
 	set_up_xfer(dev, MSPI_RX, dev_config->control_xfer_mode);
@@ -706,21 +707,35 @@ static int read_jedec_id(const struct device *dev, uint8_t *id)
 		dev_data->packet.address = 0;
 	}
 
-	if (in_ddr(dev)) {
+	if (rdid_data_str) {
+		dev_data->packet.num_bytes = sizeof(id_raw);
+	} else if (in_ddr(dev)) {
 		dev_data->packet.num_bytes = JESD216_READ_ID_LEN + 1;
 	} else {
 		dev_data->packet.num_bytes = JESD216_READ_ID_LEN;
 	}
 
-	dev_data->packet.data_buf = id_even;
+	dev_data->packet.data_buf = id_raw;
 	rc = perform_xfer(dev, SPI_NOR_CMD_RDID);
 	if (rc < 0) {
 		LOG_ERR("Read JEDEC ID failed: %d", rc);
+		return rc;
 	}
 
-	memcpy(id, id_even, JESD216_READ_ID_LEN);
+	if (rdid_data_str) {
+		for (size_t i = 0; i < JESD216_READ_ID_LEN; i++) {
+			if (id_raw[2 * i] != id_raw[2 * i + 1]) {
+				LOG_ERR("Inconsistent DTR JEDEC ID byte %u", (unsigned int)i);
+				return -EIO;
+			}
 
-	return rc;
+			id[i] = id_raw[2 * i];
+		}
+	} else {
+		memcpy(id, id_raw, JESD216_READ_ID_LEN);
+	}
+
+	return 0;
 }
 
 static int verify_jedec_id(const struct device *dev)
