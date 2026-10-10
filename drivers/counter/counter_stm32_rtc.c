@@ -132,6 +132,7 @@ struct rtc_stm32_config {
 	uint32_t sync_prescaler;
 #endif  /* !CONFIG_SOC_SERIES_STM32F1X */
 	const struct stm32_pclken *pclken;
+	size_t pclken_count;
 #if DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_HSE
 	uint32_t hse_prescaler;
 #endif
@@ -748,10 +749,16 @@ static int rtc_stm32_init(const struct device *dev)
 
 	data->callback = NULL;
 
-	/* Enable RTC bus clock */
-	if (clock_control_on(clk, (clock_control_subsys_t) &cfg->pclken[0]) != 0) {
-		LOG_ERR("clock op failed");
-		return -EIO;
+	/* Enable the gate clocks; entry 1 selects the RTC source. */
+	for (size_t i = 0; i < cfg->pclken_count; i++) {
+		if (i == 1U) {
+			continue;
+		}
+
+		if (clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[i]) != 0) {
+			LOG_ERR("RTC clock enabling failed");
+			return -EIO;
+		}
 	}
 
 	/* Enable Backup access */
@@ -869,6 +876,7 @@ static const struct rtc_stm32_config rtc_config = {
 #error Invalid RTC SRC
 #endif
 	.pclken = rtc_clk,
+	.pclken_count = ARRAY_SIZE(rtc_clk),
 #if DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_HSE
 	.hse_prescaler = DT_INST_PROP_OR(0, hse_prescaler, RTC_HSE_PRESCALER),
 #endif
