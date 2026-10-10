@@ -1265,6 +1265,10 @@ New Boards
   * :zephyr:board:`rock_3b` (``rock_3b``)
   * :zephyr:board:`rock_5b_plus` (``rock_5b_plus``)
 
+* RAKwireless Technology Limited
+
+  * :zephyr:board:`rak3372` (``rak3372``)
+
 * Raspberry Pi Foundation
 
   * :zephyr:board:`rpi_zero_2w` (``rpi_zero_2w``)
