@@ -1728,3 +1728,10 @@ test_i2c_as7341: as7341@df {
 	compatible = "ams,as7341";
 	reg = <0xdf>;
 };
+
+test_i2c_cht8305: cht8305@e0 {
+	compatible = "sensylink,cht8305";
+	reg = <0xe0>;
+	heater;
+	disable-clock-stretching;
+};
