@@ -1,0 +1,11 @@
+tests:
+  kernel.demand_paging.domain_partition:
+    tags:
+      - kernel
+      - mmu
+      - demand_paging
+      - userspace
+    platform_allow:
+      - qemu_cortex_a53
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+      - qemu_x86_tiny
