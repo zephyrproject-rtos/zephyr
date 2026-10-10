@@ -57,4 +57,10 @@ void emulated_pm_stress_isr_get_submit(const struct device *dev);
  */
 int emulated_pm_stress_isr_get_result(const struct device *dev);
 
+/** Reset the maximum concurrent PM callback count. */
+void emulated_pm_stress_callback_max_reset(const struct device *dev);
+
+/** @return Maximum concurrent PM callbacks since the last reset. */
+int emulated_pm_stress_callback_max_get(const struct device *dev);
+
 #endif /* ZEPHYR_TESTS_SUBSYS_PM_DEVICE_RUNTIME_STRESS_EMULATED_PM_DEVICE_H_ */

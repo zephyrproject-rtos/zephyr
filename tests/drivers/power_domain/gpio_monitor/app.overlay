@@ -1,0 +1,30 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	gpio_emul: gpio_emul {
+		compatible = "zephyr,gpio-emul";
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <1>;
+		rising-edge;
+		falling-edge;
+		status = "okay";
+	};
+
+	test_domain: test_domain {
+		compatible = "power-domain-gpio-monitor";
+		gpios = <&gpio_emul 0 0>;
+		#power-domain-cells = <0>;
+		status = "okay";
+	};
+
+	test_child: test_child {
+		compatible = "test-power-domain-child";
+		power-domains = <&test_domain>;
+		status = "okay";
+	};
+};
