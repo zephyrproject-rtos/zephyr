@@ -503,6 +503,8 @@ struct usb_association_descriptor {
 #define USB_BCC_CDC_CONTROL		0x02
 /** HID device class. */
 #define USB_BCC_HID			0x03
+/** Image device class */
+#define USB_BCC_IMAGE			0x06
 /** Mass storage device class. */
 #define USB_BCC_MASS_STORAGE		0x08
 /** CDC data device class. */
