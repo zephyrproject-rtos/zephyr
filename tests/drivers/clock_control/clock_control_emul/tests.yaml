@@ -1,0 +1,16 @@
+common:
+  tags:
+    - drivers
+    - clock
+  platform_allow:
+    - native_sim/native/64
+
+tests:
+  drivers.clock.clock_control_emul.id:
+    extra_args: DTC_OVERLAY_FILE=dts/id.overlay
+  drivers.clock.clock_control_emul.clkid:
+    extra_args: DTC_OVERLAY_FILE=dts/clkid.overlay
+  drivers.clock.clock_control_emul.clk_id:
+    extra_args: DTC_OVERLAY_FILE=dts/clk_id.overlay
+  drivers.clock.clock_control_emul.rcar_cpg_mssr:
+    extra_args: DTC_OVERLAY_FILE=dts/rcar_cpg_mssr.overlay
