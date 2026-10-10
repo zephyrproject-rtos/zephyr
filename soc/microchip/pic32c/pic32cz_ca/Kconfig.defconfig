@@ -6,6 +6,12 @@ if SOC_FAMILY_MICROCHIP_PIC32CZ_CA
 config NUM_IRQS
 	default 240
 
+configdefault DCACHE
+	default n
+
+configdefault CACHE_MANAGEMENT
+	default y
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
 
