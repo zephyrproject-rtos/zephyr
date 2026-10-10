@@ -324,6 +324,16 @@ static int32_t prepare_regulator_voltage_scale(void)
 	}
 #endif
 
+#if defined(FLASH_OPTSR2_CPUFREQ_BOOST)
+	/* Above 520MHz, VOS0 voltage scale also requires OptionByte CPUFREQ_BOOST to be set */
+	if ((CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC > MHZ(520)) &&
+		(stm32_reg_read_bits(&FLASH->OPTSR2_PRG, FLASH_OPTSR2_CPUFREQ_BOOST)) !=
+			FLASH_OPTSR2_CPUFREQ_BOOST) {
+		__ASSERT(0, "CPU freq above 520MHz requires CPUFREQ_BOOST Option Byte");
+		return -ENOTSUP;
+	}
+#endif
+
 	return 0;
 }
 
@@ -1194,7 +1204,11 @@ int stm32_clock_control_init(const struct device *dev)
 	set_up_fixed_clock_sources();
 
 	/* Configure Voltage scale to comply with the desired system frequency */
-	prepare_regulator_voltage_scale();
+	r = prepare_regulator_voltage_scale();
+	if (r < 0) {
+		__ASSERT(0, "Voltage regulator setup failed");
+		return r;
+	}
 
 	/* Current hclk value */
 	old_hclk_freq = get_startup_hclk_frequency();
