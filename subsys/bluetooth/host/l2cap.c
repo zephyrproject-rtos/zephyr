@@ -807,7 +807,7 @@ int bt_l2cap_send_pdu(struct bt_l2cap_le_chan *le_chan, struct net_buf *pdu,
 	make_closure(pdu->user_data, cb, user_data);
 	LOG_DBG("push: pdu %p len %d cb %p userdata %p", pdu, pdu->len, cb, user_data);
 
-	k_fifo_put(&le_chan->tx_queue, pdu);
+	k_fifo_put(&le_chan->tx_queue, net_buf_take(&pdu));
 
 	raise_data_ready(le_chan); /* tis just a flag */
 
@@ -2858,7 +2858,7 @@ static void l2cap_chan_recv_queue(struct bt_l2cap_le_chan *chan,
 		return;
 	}
 
-	k_fifo_put(&chan->rx_queue, buf);
+	k_fifo_put(&chan->rx_queue, net_buf_take(&buf));
 	bt_work_submit(&chan->rx_work);
 }
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
@@ -3445,7 +3445,7 @@ static int bt_l2cap_dyn_chan_send(struct bt_l2cap_le_chan *le_chan, struct net_b
 	net_buf_push_le16(buf, sdu_len);
 
 	/* Put buffer on TX queue */
-	k_fifo_put(&le_chan->tx_queue, buf);
+	k_fifo_put(&le_chan->tx_queue, net_buf_take(&buf));
 
 	/* Always process the queue in the same context */
 	raise_data_ready(le_chan);
