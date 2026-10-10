@@ -40,7 +40,8 @@ struct fixed_rate_clock_config {
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_lp0)) ||                                         \
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_lp1)) ||                                         \
 	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_wco)) &&                                         \
-	 !IS_ENABLED(CONFIG_SOC_FAMILY_INFINEON_PSOC4))
+	 !IS_ENABLED(CONFIG_SOC_FAMILY_INFINEON_PSOC4)) ||                                         \
+	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_eco)) && IS_ENABLED(CONFIG_SOC_SERIES_PSE84))
 static void clock_startup_error(uint32_t error)
 {
 	(void)error; /* Suppress the compiler warning */
@@ -49,8 +50,21 @@ static void clock_startup_error(uint32_t error)
 }
 #endif
 
+#define CY_CFG_SYSCLK_ECO_ERROR 1
 #define CY_CFG_SYSCLK_PLL_ERROR 3
 #define CY_CFG_SYSCLK_WCO_ERROR 5
+
+/* Dedicated WCO and ECO crystal pins */
+#if defined(CONFIG_SOC_SERIES_PSE84)
+#define IFX_WCO_PORT    GPIO_PRT18
+#define IFX_ECO_PORT    GPIO_PRT19
+#define IFX_ECO_IN_PIN  0U
+#define IFX_ECO_OUT_PIN 1U
+#else
+#define IFX_WCO_PORT GPIO_PRT0
+#endif
+#define IFX_WCO_IN_PIN  1U
+#define IFX_WCO_OUT_PIN 0U
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_lp0)) ||                                             \
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_lp1))
@@ -134,12 +148,38 @@ static void clk_wco_init(void)
 #if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
 	Cy_SysClk_WcoEnable(500000UL);
 #else
-	(void)Cy_GPIO_Pin_FastInit(GPIO_PRT0, 1U, 0x00U, 0x00U, HSIOM_SEL_GPIO);
-	(void)Cy_GPIO_Pin_FastInit(GPIO_PRT0, 0U, 0x00U, 0x00U, HSIOM_SEL_GPIO);
+	(void)Cy_GPIO_Pin_FastInit(IFX_WCO_PORT, IFX_WCO_IN_PIN, 0x00U, 0x00U, HSIOM_SEL_GPIO);
+	(void)Cy_GPIO_Pin_FastInit(IFX_WCO_PORT, IFX_WCO_OUT_PIN, 0x00U, 0x00U, HSIOM_SEL_GPIO);
 	if (CY_SYSCLK_SUCCESS != Cy_SysClk_WcoEnable(1000000UL)) {
 		clock_startup_error(CY_CFG_SYSCLK_WCO_ERROR);
 	}
 #endif
+}
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_eco)) && defined(CONFIG_SOC_SERIES_PSE84)
+static void clk_eco_init(void)
+{
+	const cy_stc_clk_eco_config_t eco_config = {
+		.ecoClkfreq = DT_PROP(DT_NODELABEL(clk_eco), clock_frequency),
+		.ecoCtrim = DT_PROP(DT_NODELABEL(clk_eco), eco_ctrim),
+		.ecoGtrim = DT_PROP(DT_NODELABEL(clk_eco), eco_gtrim),
+		.ecoIboost = DT_PROP(DT_NODELABEL(clk_eco), eco_iboost),
+	};
+
+	(void)Cy_GPIO_Pin_FastInit(IFX_ECO_PORT, IFX_ECO_IN_PIN, CY_GPIO_DM_ANALOG, 0U,
+				   HSIOM_SEL_GPIO);
+	(void)Cy_GPIO_Pin_FastInit(IFX_ECO_PORT, IFX_ECO_OUT_PIN, CY_GPIO_DM_ANALOG, 0U,
+				   HSIOM_SEL_GPIO);
+
+	/* Both calls return CY_SYSCLK_INVALID_STATE if the ECO is already running */
+	if (Cy_SysClk_EcoManualConfigure(&eco_config) == CY_SYSCLK_BAD_PARAM) {
+		clock_startup_error(CY_CFG_SYSCLK_ECO_ERROR);
+	}
+	if (Cy_SysClk_EcoEnable(3000UL) == CY_SYSCLK_TIMEOUT) {
+		clock_startup_error(CY_CFG_SYSCLK_ECO_ERROR);
+	}
+	Cy_SysClk_EcoSetFrequency(eco_config.ecoClkfreq);
 }
 #endif
 
@@ -197,6 +237,12 @@ static int fixed_rate_clk_init(const struct device *dev)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_wco))
 	case IFX_WCO:
 		clk_wco_init();
+		break;
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_eco)) && defined(CONFIG_SOC_SERIES_PSE84)
+	case IFX_ECO:
+		clk_eco_init();
 		break;
 #endif
 

@@ -17,8 +17,11 @@ config CLOCK_CONTROL_IFX_FIXED_CLOCK
 	bool "Infineon fixed clock driver"
 	default y
 	depends on DT_HAS_INFINEON_FIXED_CLOCK_ENABLED
+	depends on !TRUSTED_EXECUTION_NONSECURE
 	help
 	  This option enables the Fixed clock driver for Infineon CAT1 family.
+	  Not available on non-secure builds, where the system clocks are
+	  owned and configured by the secure image.
 
 config INFINEON_SYSCLK_LOCK_NONE
 	bool
@@ -33,8 +36,12 @@ config CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK
 	bool "Infineon fixed factor clock driver"
 	default y
 	depends on DT_HAS_INFINEON_FIXED_FACTOR_CLOCK_ENABLED
+	depends on !TRUSTED_EXECUTION_NONSECURE
+	select USE_INFINEON_WDT if $(dt_nodelabel_enabled,clk_lf)
 	help
 	  This option enables the Fixed clock driver for Infineon CAT1 family.
+	  Not available on non-secure builds, where the system clocks are
+	  owned and configured by the secure image.
 
 config INFINEON_SYSCLK_HAS_CLK_PUMP
 	bool
@@ -81,4 +88,12 @@ config CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK_INIT_PRIORITY
 	  Infineon fixed factor clock control driver initialization priority.
 	  This should be lower than the priority of fixed factor clock driver
 	  to ensure the clock paths are initialized before.
+
+config CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK_LF_BAK_INIT_PRIORITY
+	int "Infineon clk_lf and clk_bak mux init priority"
+	default 31
+	help
+	  Initialization priority of the clk_lf and clk_bak mux nodes. This
+	  must be higher than CLOCK_CONTROL_INIT_PRIORITY so the mux inputs,
+	  such as the WCO, are running before the mux is switched.
 endif # CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK
