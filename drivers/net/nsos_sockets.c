@@ -279,21 +279,37 @@ static int nsos_close(void *obj)
 	k_spinlock_key_t key;
 	int ret;
 
-	ret = nsi_host_close(sock->poll.mid.fd);
-	if (ret < 0) {
-		errno = nsos_adapt_get_zephyr_errno();
-	}
-
 	key = k_spin_lock(&nsos_polls_lock);
 
 	SYS_DLIST_FOR_EACH_CONTAINER(&nsos_polls, poll, node) {
 		if (poll == &sock->poll) {
+			/* Wake up a thread blocked polling this socket. */
 			poll->mid.revents = ZSOCK_POLLHUP;
 			poll->mid.cb(&poll->mid);
+
+			/* The poll node is embedded in the socket object that is
+			 * about to be freed. Unlink it from the global poll list
+			 * and drop the adapter registration while holding the
+			 * lock, so neither the list, the adapter, nor a
+			 * concurrent poll's sys_dlist_append() is left pointing
+			 * into freed memory. This must happen before the host fd
+			 * is closed, as closing it implicitly removes it from the
+			 * adapter's poll set.
+			 */
+			poll->mid.cb = NULL;
+			poll->cond = NULL;
+			nsos_adapt_poll_remove(&poll->mid);
+			sys_dlist_remove(&poll->node);
+			break;
 		}
 	}
 
 	k_spin_unlock(&nsos_polls_lock, key);
+
+	ret = nsi_host_close(sock->poll.mid.fd);
+	if (ret < 0) {
+		errno = nsos_adapt_get_zephyr_errno();
+	}
 
 	nsi_host_free(sock);
 
