@@ -403,9 +403,11 @@ static int rtc_stm32_stop(const struct device *dev)
 #if defined(CONFIG_SOC_SERIES_STM32WBAX) || defined(CONFIG_SOC_SERIES_STM32U5X)
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	const struct rtc_stm32_config *cfg = dev->config;
+	int ret;
 
 	/* Disable RTC bus clock */
-	if (clock_control_off(clk, (clock_control_subsys_t) &cfg->pclken[0]) != 0) {
+	ret = clock_control_off(clk, (clock_control_subsys_t) &cfg->pclken[0]);
+	if (ret != 0 && ret != -ENOTSUP) {
 		LOG_ERR("RTC clock disabling failed");
 		return -EIO;
 	}
