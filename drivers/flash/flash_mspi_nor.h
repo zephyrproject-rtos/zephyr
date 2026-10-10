@@ -28,6 +28,9 @@ extern "C" {
 #if DT_ANY_INST_HAS_BOOL_STATUS_OKAY(has_dpd)
 #define WITH_DPD 1
 #endif
+#if DT_ANY_INST_HAS_BOOL_STATUS_OKAY(use_runtime_sfdp)
+#define WITH_RUNTIME_SFDP 1
+#endif
 
 #define CMD_EXTENSION_NONE    0
 #define CMD_EXTENSION_SAME    1
@@ -39,6 +42,56 @@ extern "C" {
 #define ENTER_4BYTE_ADDR_NONE  0
 #define ENTER_4BYTE_ADDR_B7    1
 #define ENTER_4BYTE_ADDR_06_B7 2
+
+#define USES_4BYTE_ADDR(inst) \
+	(DT_INST_ENUM_IDX(inst, mspi_io_mode) == MSPI_IO_MODE_OCTAL || \
+	 DT_INST_PROP(inst, use_4byte_addressing))
+
+#define DEFAULT_CMD_INFO(inst) { \
+	.pp_cmd = USES_4BYTE_ADDR(inst) \
+		? SPI_NOR_CMD_PP_4B \
+		: SPI_NOR_CMD_PP, \
+	.read_cmd = USES_4BYTE_ADDR(inst) \
+		  ? SPI_NOR_CMD_READ_FAST_4B \
+		  : SPI_NOR_CMD_READ_FAST, \
+	.read_mode_bit_cycles = 0, \
+	.read_dummy_cycles = 8, \
+	.uses_4byte_addr = USES_4BYTE_ADDR(inst), \
+	.cmd_extension = CMD_EXTENSION_NONE, \
+	.sfdp_addr_4 = false, \
+	.sfdp_dummy_20 = false, \
+	.rdsr_addr_4 = false, \
+	.rdsr_dummy = 0, \
+	.rdid_addr_4 = false, \
+	.rdid_dummy = 0, }
+
+#define DEFAULT_ERASE_TYPES_DEFINE(inst) \
+	static const struct jesd216_erase_type \
+	dev##inst##_erase_types[JESD216_NUM_ERASE_TYPES] = \
+		{{ .cmd = SPI_NOR_CMD_SE, \
+		   .exp = 0x0C }}; \
+	static const struct jesd216_erase_type \
+	dev##inst##_erase_types_4b[JESD216_NUM_ERASE_TYPES] = \
+		{{ .cmd = SPI_NOR_CMD_SE_4B, \
+		   .exp = 0x0C }}
+
+#define DEFAULT_ERASE_TYPES(inst) \
+	USES_4BYTE_ADDR(inst) ? dev##inst##_erase_types_4b \
+			      : dev##inst##_erase_types
+
+#define DEFAULT_SWITCH_INFO(inst) { \
+	.quad_enable_req = DT_INST_ENUM_IDX_OR(inst, quad_enable_requirements, \
+					       JESD216_DW15_QER_VAL_NONE), \
+	.octal_enable_req = OCTAL_ENABLE_REQ_NONE, \
+	.enter_4byte_addr = ENTER_4BYTE_ADDR_NONE }
+
+#define FLASH_SIZE_INST(inst) (DT_INST_PROP_OR(inst, size, 0) / 8)
+
+#define FLASH_PAGE_SIZE_INST(inst) \
+	DT_INST_PROP_OR(inst, page_size, \
+		COND_CODE_1(DT_INST_PROP(inst, use_runtime_sfdp), \
+			(0), \
+			(SPI_NOR_PAGE_SIZE)))
 
 struct flash_mspi_nor_cmd_info {
 	uint8_t read_cmd;
@@ -116,6 +169,7 @@ struct flash_mspi_nor_config {
 	bool single_io_addr      : 1;
 	bool initial_soft_reset  : 1;
 	bool has_dpd             : 1;
+	bool uses_runtime_sfdp   : 1;
 	enum mspi_xfer_mode control_xfer_mode;
 	enum mspi_xfer_mode data_xfer_mode;
 };
@@ -132,6 +186,13 @@ struct flash_mspi_nor_data {
 	const struct mspi_dev_cfg *last_applied_cfg;
 #if defined(WITH_DPD)
 	uint32_t enter_dpd_cycle;
+#endif
+#if defined(WITH_RUNTIME_SFDP)
+	uint32_t flash_size;
+	uint16_t page_size;
+#endif
+#if defined(WITH_RUNTIME_SFDP) && defined(CONFIG_FLASH_PAGE_LAYOUT)
+	struct flash_pages_layout layout;
 #endif
 	bool chip_initialized;
 	const struct mspi_dev_cfg *read_cfg;
