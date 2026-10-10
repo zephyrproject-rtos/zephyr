@@ -29,7 +29,7 @@ The features include the following:
   - Integrated hardware crypto engine supports AES256/192/128 and SHA256
   - Integrated audio codec
 
-For more information, Get application note and datasheet at `RTL872xCS/D Series`_ depending on chip you use.
+For more information, get the application note and datasheet from `RTL872XD-EVB`_.
 
 Supported Features
 ==================
@@ -56,7 +56,7 @@ Here is an example for building the :zephyr:code-sample:`hello_world` applicatio
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: rtl872xd_evb
+   :board: rtl872xd_evb/rtl872xd/ns
    :goals: build
 
 Flashing
@@ -75,7 +75,10 @@ See the ApplicationNote chapter Image Tool from documentation links for more det
 
 .. note::
 
-   For an empty chip, the bootloader and app image shall be downloaded.
+   For an empty chip, the bootloader and app image shall be downloaded:
+
+   - ``bootloader_all.bin``: ``0x08000000`` ~ ``0x08014000``
+   - ``km0_km4_app.bin``: ``0x08014000`` ~ ``0x08200000``
 
 Debugging
 *********
@@ -85,6 +88,5 @@ Using SWD through PB3(SWD_CLK) and PA27(SWD_DAT).
 References
 **********
 
-.. _`RTL872XD-EVB`: https://www.realmcu.com/en/Home/Products/RTL872xCS-RTL872xD-Series#
-.. _`RTL872xCS/D Series`: https://www.realmcu.com
-.. _`AmebaImageTool`: https://github.com/Ameba-AIoT/ameba-rtos/blob/master/tools/ameba/ImageTool/AmebaImageTool.exe
+.. _`RTL872XD-EVB`: https://aiot.realmcu.com/en/product/rtl872xd.html
+.. _`AmebaImageTool`: https://github.com/Ameba-AIoT/ameba-rtos-d/tree/main/tools/AmebaD/Image_Tool
