@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Asahi Kasei AK09940A 3-axis Electronic Magnetometer (I2C)
+
+description: |
+  Ultrahigh precision 3-axis TMR magnetometer with 18-bit output and a
+  temperature sensor. See
+  https://www.akm.com/global/en/products/tri-axis-magnetic-sensor/lineup-tri-axis-magnetic-sensor/ak09940a/
+
+compatible: "asahi-kasei,ak09940a"
+
+include: [i2c-device.yaml, "asahi-kasei,ak09940a-common.yaml"]
+
+examples:
+  - |
+    &i2c0 {
+        magnetometer@c {
+            compatible = "asahi-kasei,ak09940a";
+            reg = <0x0c>;
+            reset-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+            sensor-drive = "low-noise-1";
+        };
+    };

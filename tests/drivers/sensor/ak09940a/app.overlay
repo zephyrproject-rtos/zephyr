@@ -1,0 +1,22 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	ak09940a_i2c: ak09940a@c {
+		compatible = "asahi-kasei,ak09940a";
+		reg = <0x0c>;
+		reset-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+		sensor-drive = "low-noise-2";
+	};
+};
+
+&spi0 {
+	ak09940a_spi: ak09940a@0 {
+		compatible = "asahi-kasei,ak09940a";
+		reg = <0>;
+		spi-max-frequency = <3000000>;
+		sensor-drive = "ultra-low-power";
+	};
+};

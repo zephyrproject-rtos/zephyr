@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config AK09940A
+	bool "AK09940A magnetometer"
+	default y
+	depends on DT_HAS_ASAHI_KASEI_AK09940A_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ASAHI_KASEI_AK09940A),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ASAHI_KASEI_AK09940A),spi)
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ASAHI_KASEI_AK09940A),reset-gpios)
+	select I2C_RTIO if SENSOR_ASYNC_API && I2C
+	select SPI_RTIO if SENSOR_ASYNC_API && SPI
+	select RTIO_OP_DELAY if SENSOR_ASYNC_API
+	help
+	  Enable driver for the Asahi Kasei AK09940A 3-axis magnetometer.
+
+config EMUL_AK09940A
+	bool "Emulator for AK09940A"
+	default y
+	depends on AK09940A
+	depends on EMUL
+	help
+	  Enable the hardware emulator for the AK09940A. Doing so allows exercising
+	  sensor APIs for this magnetometer in native_sim and qemu.
