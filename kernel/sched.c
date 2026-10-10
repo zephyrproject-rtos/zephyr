@@ -164,9 +164,25 @@ void move_current_to_end_of_prio_q(void)
 	update_cache(1);
 }
 
+#ifdef CONFIG_USE_NANOBE_SWITCH
+uint8_t z_sched_deferred;
+#endif /* CONFIG_USE_NANOBE_SWITCH */
+
 static ALWAYS_INLINE void update_cache(int preempt_ok)
 {
 #ifndef CONFIG_SMP
+#ifdef CONFIG_USE_NANOBE_SWITCH
+	/* No scheduling decision in ISR context, it is taken in thread mode
+	 * by z_sched_deferred_reschedule(), injected on interrupt exit.
+	 */
+	if (arch_is_in_isr()) {
+		z_sched_deferred = Z_SCHED_DEFERRED_UPDATE |
+				   ((preempt_ok != 0) ? Z_SCHED_DEFERRED_PREEMPT_OK : 0U);
+		return;
+	}
+	z_sched_deferred = 0U;
+#endif /* CONFIG_USE_NANOBE_SWITCH */
+
 	struct k_thread *thread = next_up();
 
 	if (should_preempt(thread, preempt_ok)) {
@@ -393,6 +409,13 @@ static inline bool need_swap(void)
 	return true;
 #else
 	struct k_thread *new_thread;
+
+#ifdef CONFIG_USE_NANOBE_SWITCH
+	/* Take a scheduling decision deferred by an ISR */
+	if (z_sched_deferred != 0U) {
+		update_cache(z_sched_deferred & Z_SCHED_DEFERRED_PREEMPT_OK);
+	}
+#endif /* CONFIG_USE_NANOBE_SWITCH */
 
 	/* Check if the next ready thread is the same as the current thread */
 	new_thread = _kernel.ready_q.cache;
@@ -658,6 +681,29 @@ void z_reschedule_irqlock(uint32_t key)
 		irq_unlock(key);
 	}
 }
+
+#ifdef CONFIG_USE_NANOBE_SWITCH
+void z_sched_deferred_reschedule(void)
+{
+	unsigned int key = arch_irq_lock();
+
+	/* Injected into code that had interrupts locked (e.g. by a
+	 * zero-latency interrupt), the decision stays deferred.
+	 */
+	if (!arch_irq_unlocked(key)) {
+		arch_irq_unlock(key);
+		return;
+	}
+	arch_irq_unlock(key);
+
+#ifdef CONFIG_TIMESLICING
+	z_time_slice();
+#endif /* CONFIG_TIMESLICING */
+
+	/* need_swap() takes the deferred decision */
+	reschedule_locked(z_sched_spinlock_lock());
+}
+#endif /* CONFIG_USE_NANOBE_SWITCH */
 
 struct k_thread *z_swap_next_thread(void)
 {

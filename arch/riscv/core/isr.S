@@ -130,6 +130,9 @@ GTEXT(z_riscv_fatal_error)
 GTEXT(z_get_next_switch_handle)
 GTEXT(z_riscv_switch)
 GTEXT(z_riscv_thread_start)
+#ifdef CONFIG_USE_NANOBE_SWITCH
+GTEXT(z_riscv_nanobe_int_exit)
+#endif /* CONFIG_USE_NANOBE_SWITCH */
 
 #ifdef CONFIG_TRACING
 GTEXT(sys_trace_isr_enter)
@@ -832,6 +835,15 @@ on_irq_stack:
 #endif
 
 irq_done:
+#ifdef CONFIG_USE_NANOBE_SWITCH
+	/*
+	 * No context switch on interrupt exit: a scheduling decision deferred
+	 * by the ISR is injected into the interrupted thread, see
+	 * z_riscv_nanobe_int_exit().
+	 */
+	call z_riscv_nanobe_int_exit
+#endif /* CONFIG_USE_NANOBE_SWITCH */
+
 	/* Decrement _current_cpu->nested */
 	lw t2, ___cpu_t_nested_OFFSET(s0)
 	addi t2, t2, -1
@@ -858,7 +870,7 @@ irq_done:
 
 check_reschedule:
 
-#ifdef CONFIG_MULTITHREADING
+#if defined(CONFIG_MULTITHREADING) && !defined(CONFIG_USE_NANOBE_SWITCH)
 
 	/* Get pointer to current thread on this CPU */
 	lr a1, ___cpu_t_current_OFFSET(s0)
@@ -905,7 +917,7 @@ might_have_rescheduled:
 	/* reload s0 with &_current_cpu as it might have changed or be unset */
 	get_current_cpu s0
 
-#endif /* CONFIG_MULTITHREADING */
+#endif /* CONFIG_MULTITHREADING && !CONFIG_USE_NANOBE_SWITCH */
 
 no_reschedule:
 

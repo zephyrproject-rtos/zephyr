@@ -413,6 +413,7 @@ config USERSPACE
 	bool "User mode threads"
 	depends on ARCH_HAS_USERSPACE
 	depends on SRAM_REGION_PERMISSIONS
+	depends on !USE_NANOBE_SWITCH
 	select THREAD_STACK_INFO
 	select LINKER_USE_NO_RELAX
 	help

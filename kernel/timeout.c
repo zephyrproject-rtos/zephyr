@@ -412,7 +412,10 @@ void sys_clock_announce_locked(uint32_t ticks, k_spinlock_key_t key)
 	k_spin_unlock(&timeout_lock, key);
 
 #ifdef CONFIG_TIMESLICING
-	z_time_slice();
+	/* With nanobe switch, time slice expiry is handled in thread mode */
+	if (!IS_ENABLED(CONFIG_USE_NANOBE_SWITCH) || !arch_is_in_isr()) {
+		z_time_slice();
+	}
 #endif /* CONFIG_TIMESLICING */
 }
 

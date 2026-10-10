@@ -1,0 +1,84 @@
+# Copyright (c) 2016-2026 Vinayak Kariappa Chettimada
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig USE_NANOBE_SWITCH
+	bool "Nanobe threads [EXPERIMENTAL]"
+	depends on (CPU_CORTEX_M && ARMV7_M_ARMV8_M_MAINLINE && !USE_SWITCH && \
+		    !ARM_STORE_EXC_RETURN && !ARM_PAC_PER_THREAD) || \
+		   (RISCV && !RISCV_S_MODE && !SMP && !FPU)
+	depends on MULTITHREADING
+	select EXPERIMENTAL
+	help
+	  Use nanobes, minimal execution contexts with their own stack, as
+	  the Zephyr threads. The kernel thread APIs and the Zephyr scheduler
+	  are unchanged, the thread context switch is a nanobe switch: it
+	  saves only the callee-saved registers on the outgoing thread's
+	  stack and swaps the stack pointer, in thread mode.
+
+	  All scheduling decisions are taken in thread mode. Interrupt
+	  service routines that ready or halt threads only defer the
+	  decision; interrupt exit then injects a reschedule into the
+	  interrupted thread, which decides and switches in thread mode.
+	  PendSV is not used and interrupt entry has no scheduling code.
+
+	  On RISC-V, the thread context switch is the arch_switch() of
+	  USE_SWITCH, done in thread mode; no context switch is done on
+	  interrupt exit nor through ecall (RISCV_ALWAYS_SWITCH_THROUGH_ECALL
+	  is not used). The injected call returns to the interrupted code
+	  using mret. On the Nordic VPR, interrupt hardware stacking is
+	  disabled and the interrupt frame is saved in software, unless
+	  NANOBE_HW_STACKING is enabled.
+
+	  Nanobes may also be used directly, inside one Zephyr thread (the
+	  nanobe owner thread), with a simple round robin nanobe scheduler
+	  with a lock, sleep and semaphores.
+
+	  Time slicing (TIMESLICING) is disabled by default; if enabled, time
+	  slice expiry is handled in thread mode.
+
+	  The nanobe stacks are not covered by hardware stack limit checking
+	  (PSPLIM on Arm Cortex-M) and nanobes run privileged, hence enabling
+	  USE_NANOBE_SWITCH disables BUILTIN_STACK_GUARD and USERSPACE.
+	  On RISC-V, USE_NANOBE_SWITCH also disables the PMP and custom stack
+	  guards (PMP_STACK_GUARD, CUSTOM_STACK_GUARD), and of the SoCs with
+	  hardware ISR stacking (RISCV_SOC_HAS_ISR_STACKING) only the Nordic
+	  VPR is supported.
+
+	  See include/zephyr/kernel/nanobe.h.
+
+if USE_NANOBE_SWITCH
+
+config NANOBE_INJECTION
+	bool "Nanobe ISR call injection"
+	help
+	  Enable nanobe_isr_inject(), which lets an interrupt service routine
+	  redirect its exception return to execute a call (e.g.
+	  nanobe_sched_yield()) in thread mode on the interrupted nanobe owner
+	  thread's stack, before transparently resuming the interrupted code.
+	  This provides interrupt driven pre-emptive nanobe scheduling.
+
+config NANOBE_FPU
+	bool
+	default y if FPU && CPU_HAS_FPU
+	depends on CPU_CORTEX_M
+	help
+	  Save and restore the callee-saved FP registers on nanobe switch and
+	  the caller-saved FP context around injected calls.
+
+config NANOBE_HW_STACKING
+	bool "Nordic VPR interrupt hardware stacking"
+	depends on RISCV_CORE_NORDIC_VPR
+	help
+	  Keep the Nordic VPR interrupt hardware stacking enabled: the VPR
+	  stacks the caller-saved registers, mcause and mepc on interrupt
+	  entry and unstacks them on mret (RISCV_SOC_HAS_ISR_STACKING), and
+	  the injection syringe returns to the interrupted code through a
+	  hardware stacking frame.
+
+	  By default, hardware stacking is disabled at boot
+	  (VPRNORDICFEATURESDISABLE.INTHWSTACKING = NOAUTOSTACK) and the
+	  interrupt frame is saved and restored in software, including mcause
+	  (CLIC_SUPPORT_INTERRUPT_LEVEL); the injection syringe is the generic
+	  RISC-V one.
+
+endif # USE_NANOBE_SWITCH

@@ -27,6 +27,25 @@ void z_impl_k_thread_abort(k_tid_t thread)
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, abort, thread);
 
 	if (_current == thread) {
+#if defined(CONFIG_USE_NANOBE_SWITCH)
+		if (arch_is_in_isr()) {
+			/* Clear any system calls that may be pending as they
+			 * would run on the aborted thread's stack.
+			 */
+			SCB->SHCSR &= ~SCB_SHCSR_SVCALLPENDED_Msk;
+
+			z_thread_abort(thread);
+
+			/* Exceptions do not all exit through z_arm_int_exit(),
+			 * inject the reschedule into the aborted thread here.
+			 */
+			z_arm_nanobe_abort_exit();
+
+			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_thread, abort, thread);
+
+			return;
+		}
+#else
 		if (arch_is_in_isr()) {
 			/* ARM is unlike most arches in that this is true
 			 * even for non-peripheral interrupts, even though
@@ -47,6 +66,7 @@ void z_impl_k_thread_abort(k_tid_t thread)
 			 */
 			SCB->SHCSR &= ~SCB_SHCSR_SVCALLPENDED_Msk;
 		}
+#endif /* CONFIG_USE_NANOBE_SWITCH */
 	}
 
 	z_thread_abort(thread);

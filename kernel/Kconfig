@@ -580,7 +580,7 @@ menu "Timer API Options"
 
 config TIMESLICING
 	bool "Thread time slicing"
-	default y
+	default y if !USE_NANOBE_SWITCH
 	depends on SYS_CLOCK_EXISTS && (NUM_PREEMPT_PRIORITIES != 0)
 	help
 	  This option enables time slicing between preemptible threads of
@@ -1175,4 +1175,5 @@ config KERNEL_NO_LTO
 
 rsource "Kconfig.device"
 rsource "Kconfig.vm"
+rsource "Kconfig.nanobe"
 rsource "Kconfig.init"

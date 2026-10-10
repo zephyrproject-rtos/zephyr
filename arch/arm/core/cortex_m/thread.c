@@ -146,7 +146,10 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *sta
 	}
 #endif
 
-#ifdef CONFIG_USE_SWITCH
+#if defined(CONFIG_USE_NANOBE_SWITCH)
+	thread->callee_saved.psp = (uint32_t)z_arm_nanobe_new_thread(stack_ptr, entry_wrapper,
+								     entry, p1, p2, p3);
+#elif defined(CONFIG_USE_SWITCH)
 	thread->switch_handle = arm_m_new_stack((char *)stack, stack_ptr - (char *)stack,
 						entry_wrapper, entry, p1, p2, p3);
 	thread->arch.iciit_pc = 0;
@@ -173,7 +176,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *sta
 	thread->callee_saved.psp = (uint32_t)iframe;
 #endif
 
-#ifndef CONFIG_USE_SWITCH
+#if !defined(CONFIG_USE_SWITCH) && !defined(CONFIG_USE_NANOBE_SWITCH)
 	thread->arch.basepri = 0;
 #endif
 

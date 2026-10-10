@@ -31,7 +31,9 @@
 #include <kernel_offsets.h>
 
 #if !(defined(CONFIG_CPU_CORTEX_M) && defined(CONFIG_USE_SWITCH))
+#if !(defined(CONFIG_CPU_CORTEX_M) && defined(CONFIG_USE_NANOBE_SWITCH))
 GEN_OFFSET_SYM(_thread_arch_t, basepri);
+#endif
 GEN_OFFSET_SYM(_thread_arch_t, swap_return_value);
 #endif
 

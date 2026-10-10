@@ -48,7 +48,7 @@ GTEXT(z_arm_debug_monitor)
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-#ifndef CONFIG_USE_SWITCH
+#if !defined(CONFIG_USE_SWITCH) && !defined(CONFIG_USE_NANOBE_SWITCH)
 GTEXT(z_arm_pendsv)
 #endif
 GTEXT(z_arm_exc_spurious)

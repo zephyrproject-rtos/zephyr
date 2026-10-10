@@ -34,7 +34,10 @@ zephyr_library_sources(
   )
 
 zephyr_library_sources_ifdef(CONFIG_USE_SWITCH arm-m-switch.c)
-zephyr_library_sources_ifndef(CONFIG_USE_SWITCH exc_exit.c thread_abort.c swap_helper.S)
+zephyr_library_sources_ifndef(CONFIG_USE_SWITCH thread_abort.c)
+if(NOT CONFIG_USE_SWITCH AND NOT CONFIG_USE_NANOBE_SWITCH)
+  zephyr_library_sources(exc_exit.c swap_helper.S)
+endif()
 
 zephyr_library_sources_ifndef(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER irq_init.c)
 zephyr_library_sources_ifdef(CONFIG_GEN_SW_ISR_TABLE isr_wrapper.c)
@@ -47,6 +50,7 @@ zephyr_library_sources_ifdef(CONFIG_SEMIHOST semihost.c)
 zephyr_library_sources_ifdef(CONFIG_PM_S2RAM pm_s2ram.c pm_s2ram_asm.S)
 zephyr_library_sources_ifdef(CONFIG_ARCH_CACHE cache.c)
 zephyr_library_sources_ifdef(CONFIG_SW_VECTOR_RELAY irq_relay.S)
+zephyr_library_sources_ifdef(CONFIG_USE_NANOBE_SWITCH nanobe.S nanobe_thread.c)
 
 if(CONFIG_NULL_POINTER_EXCEPTION_DETECTION_DWT)
   zephyr_library_sources(debug.c)

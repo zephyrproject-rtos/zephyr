@@ -80,7 +80,17 @@ extern FUNC_NORETURN void z_arm_userspace_enter(k_thread_entry_t user_entry, voi
 
 extern void z_arm_fatal_error(unsigned int reason, const struct arch_esf *esf);
 
-#ifndef CONFIG_USE_SWITCH
+#if defined(CONFIG_USE_NANOBE_SWITCH)
+extern void *z_arm_nanobe_new_thread(char *stack_ptr, void *wrapper, k_thread_entry_t entry,
+				     void *p1, void *p2, void *p3);
+extern int z_arm_nanobe_swap(unsigned int key);
+extern void z_arm_nanobe_abort_exit(void);
+
+static ALWAYS_INLINE int arch_swap(unsigned int key)
+{
+	return z_arm_nanobe_swap(key);
+}
+#elif !defined(CONFIG_USE_SWITCH)
 static ALWAYS_INLINE int arch_swap(unsigned int key)
 {
 	/* store off key and return value */

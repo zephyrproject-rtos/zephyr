@@ -82,8 +82,10 @@ struct pac_keys {
 struct _thread_arch {
 
 #ifndef _ARM_M_SWITCH
+#if !(defined(CONFIG_CPU_CORTEX_M) && defined(CONFIG_USE_NANOBE_SWITCH))
 	/* interrupt locking key */
 	uint32_t basepri;
+#endif
 
 	/* r0 in stack frame cannot be written to reliably */
 	uint32_t swap_return_value;
