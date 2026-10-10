@@ -112,6 +112,21 @@ void config_enable_default_clocks(void);
 void config_regulator_voltage(uint32_t hclk_freq);
 int enabled_clock(uint32_t src_clk);
 
+/**
+ * @brief Set the STM32N6 CPU rate using the active IC1 divider.
+ *
+ * Requires CLOCK_STM32_N6_CPU_SCALING. May be called from thread or ISR
+ * context. The boot voltage must remain fixed and safely support the cpusw
+ * devicetree boot frequency. PLL, system timer, and peripheral rates are unchanged.
+ *
+ * @param hz Exact CPU frequency in Hz, no greater than 800 MHz or the boot rate.
+ * @retval 0 CPU rate updated, or already at this rate.
+ * @retval -EINVAL Zero, excessive, or unrepresentable frequency.
+ * @retval -ENOTSUP Unsupported CPU source, PLL mode, or retained configuration.
+ * @retval -EAGAIN Active IC1, PLL, or oscillator is not ready.
+ */
+int stm32_clock_control_set_cpu_rate(uint32_t hz);
+
 #if defined(STM32_CK48_ENABLED)
 uint32_t get_ck48_frequency(void);
 #endif
