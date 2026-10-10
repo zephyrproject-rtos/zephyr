@@ -10,8 +10,10 @@ import os
 import re
 import select
 import selectors
+import shutil
 import subprocess
 import sys
+import tempfile
 
 logger = logging.getLogger('twister')
 
@@ -73,9 +75,10 @@ class GNUMakeJobClient(JobClient):
     job.
     """
 
-    def __init__(self, inheritable_pipe, jobs, internal_jobs=0, makeflags=None):
+    def __init__(self, inheritable_pipe, jobs, internal_jobs=0, makeflags=None, fifo=None):
         self._makeflags = makeflags
         self._inheritable_pipe = inheritable_pipe
+        self._fifo = fifo
         self.jobs = jobs
         self._selector = selectors.DefaultSelector()
         if internal_jobs:
@@ -209,14 +212,78 @@ class GNUMakeJobClient(JobClient):
         if self.jobs:
             flag += f" -j{self.jobs}"
         if self.jobs != 1 and self._inheritable_pipe is not None:
-            flag += f" --jobserver-auth={self._inheritable_pipe[0]},{self._inheritable_pipe[1]}"
+            if self._fifo:
+                flag += f" --jobserver-auth=fifo:{self._fifo}"
+            else:
+                flag += f" --jobserver-auth={self._inheritable_pipe[0]},{self._inheritable_pipe[1]}"
         return {"MAKEFLAGS": flag}
 
     def pass_fds(self):
         """Returns the file descriptors that should be passed to subprocesses."""
-        if self.jobs != 1 and self._inheritable_pipe is not None:
+        if self.jobs != 1 and self._inheritable_pipe is not None and not self._fifo:
             return self._inheritable_pipe
         return []
+
+
+def _tool_version(names, pattern):
+    """Get the version of a build tool the way CMake would find it.
+
+    Args:
+        names: Names of the executable, in the order CMake tries them in each
+            directory of PATH.
+        pattern: Regular expression with the major and minor version as groups,
+            matched against the output of --version.
+
+    Returns:
+        A (major, minor) tuple, (0, 0) for a tool that does not report a
+        version, or None if the tool is not installed.
+    """
+    for directory in os.get_exec_path():
+        for name in names:
+            path = os.path.join(directory, name)
+            if not os.access(path, os.X_OK) or os.path.isdir(path):
+                continue
+            try:
+                out = subprocess.run(
+                    [path, "--version"], capture_output=True, text=True, check=True
+                ).stdout
+            except (OSError, subprocess.CalledProcessError):
+                return (0, 0)
+            match = re.match(pattern, out)
+            return (int(match.group(1)), int(match.group(2))) if match else (0, 0)
+    return None
+
+
+def fifo_supported(generator_cmd, cmake_args=()):
+    """Tell whether the build tools accept a job server given as a named pipe.
+
+    Ninja has been a job server client since 1.13 and takes no other form on
+    POSIX: it ignores a job server passed as a pair of file descriptors and
+    runs its own full set of jobs. GNU make takes a named pipe since 4.4, while
+    an older one stops with an error when it meets one. Native builds run make
+    below Ninja, so the named pipe is only usable when every make that may see
+    it is recent enough.
+
+    Args:
+        generator_cmd: The build tool that CMake runs, "ninja" or "make".
+        cmake_args: Extra NAME=VALUE definitions that the builds get.
+
+    Returns:
+        True if the job server can be passed as --jobserver-auth=fifo:PATH.
+    """
+    # The tools on PATH say nothing once the build is told which ones to run
+    selected = {"MAKE", "CMAKE_MAKE_PROGRAM", "CMAKE_PROGRAM_PATH"}
+    if "CMAKE_PROGRAM_PATH" in os.environ or any(
+        re.split("[:=]", arg)[0] in selected for arg in cmake_args
+    ):
+        return False
+    makes = [_tool_version((name,), r"GNU Make (\d+)\.(\d+)") for name in ("gmake", "make")]
+    if any(version is not None and version < (4, 4) for version in makes):
+        return False
+    if generator_cmd == "ninja":
+        ninja = _tool_version(("ninja-build", "ninja", "samu"), r"(\d+)\.(\d+)")
+        return ninja is not None and ninja >= (1, 13)
+    return any(version is not None for version in makes)
 
 
 class GNUMakeJobServer(GNUMakeJobClient):
@@ -226,11 +293,44 @@ class GNUMakeJobServer(GNUMakeJobClient):
     for specification.
     """
 
-    def __init__(self, jobs=0):
+    # Defaults for an instance whose construction failed
+    _inheritable_pipe = None
+    _internal_pipe = None
+    _fifo_dir = None
+
+    def __init__(self, jobs=0, fifo=False):
         if not jobs:
             jobs = multiprocessing.cpu_count()
         elif jobs > select.PIPE_BUF:
             jobs = select.PIPE_BUF
-        super().__init__(os.pipe(), jobs)
+        self._pid = os.getpid()
+        fifo_dir = tempfile.mkdtemp(prefix="twister-jobserver-") if fifo else None
+        if fifo_dir and not re.fullmatch(r"[\w./+-]+", fifo_dir):
+            # MAKEFLAGS cannot carry every path as it is
+            os.rmdir(fifo_dir)
+            fifo_dir = None
+        if fifo_dir:
+            path = os.path.join(fifo_dir, "fifo")
+            read_fd = None
+            try:
+                os.mkfifo(path, 0o600)
+                # A blocking open for reading would wait for a writer
+                read_fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
+                pipe = (read_fd, os.open(path, os.O_WRONLY))
+            except OSError:
+                if read_fd is not None:
+                    os.close(read_fd)
+                shutil.rmtree(fifo_dir, ignore_errors=True)
+                raise
+            self._fifo_dir = fifo_dir
+            super().__init__(pipe, jobs, fifo=path)
+        else:
+            super().__init__(os.pipe(), jobs)
 
         os.write(self._inheritable_pipe[1], b"+" * jobs)
+
+    def __del__(self):
+        super().__del__()
+        # Worker processes hold copies of this object
+        if self._fifo_dir and os.getpid() == self._pid:
+            shutil.rmtree(self._fifo_dir, ignore_errors=True)
