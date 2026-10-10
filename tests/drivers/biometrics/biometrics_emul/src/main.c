@@ -23,19 +23,21 @@ static const struct device *get_biometrics_device(void)
 ZTEST(biometrics_emul, test_get_capabilities)
 {
 	const struct device *dev = get_biometrics_device();
-	struct biometric_capabilities caps;
+	struct biometric_capabilities caps = {.async_operations = UINT32_MAX};
 	int ret;
 
 	ret = biometric_get_capabilities(dev, &caps);
 	zassert_equal(ret, 0, "Failed to get capabilities: %d", ret);
 
-	zassert_equal(caps.type, BIOMETRIC_TYPE_FINGERPRINT, "Expected fingerprint sensor type");
+	zassert_true(caps.supported_modalities & BIOMETRIC_MODALITY_FINGERPRINT,
+		     "Expected fingerprint modality");
 	zassert_true(caps.max_templates > 0, "max_templates should be > 0");
 	zassert_true(caps.template_size > 0, "template_size should be > 0");
 	zassert_true(caps.storage_modes & BIOMETRIC_STORAGE_DEVICE,
 		     "Should support device storage");
 	zassert_true(caps.enrollment_samples_required > 0,
 		     "enrollment_samples_required should be > 0");
+	zassert_equal(caps.async_operations, 0, "Should not advertise asynchronous operations");
 }
 
 ZTEST(biometrics_emul, test_attr_set_get)
