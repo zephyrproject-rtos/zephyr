@@ -1,0 +1,35 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IEEE802154_DW3000
+	bool "Qorvo DW3000 IEEE 802.15.4 driver"
+	default y
+	depends on DT_HAS_QORVO_DW3000_ENABLED
+	select GPIO
+	select SPI
+	help
+	  Driver for the Qorvo DW3000 family of IEEE 802.15.4 HRP UWB
+	  transceivers. It accepts the parts with one antenna port, the DW3110
+	  and the DW3210, and has been tested with the DW3110.
+
+	  The driver works with the IEEE 802.15.4 L2 or in raw mode, on
+	  channels 5 and 9. It leaves the transmit power at its reset value.
+
+if IEEE802154_DW3000
+
+config IEEE802154_DW3000_INIT_PRIO
+	int "DW3000 initialization priority"
+	default 80
+	help
+	  Initialization priority of the transceiver. The SPI bus and the GPIO
+	  controllers it is wired to have to be initialized before it.
+
+config IEEE802154_DW3000_RX_STACK_SIZE
+	int "DW3000 RX thread stack size"
+	default 1024
+	help
+	  Stack size of the thread that serves the interrupt line of a
+	  transceiver. Received frames are read from the transceiver and handed
+	  to the network stack on this thread.
+
+endif # IEEE802154_DW3000
