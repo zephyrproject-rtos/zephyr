@@ -110,6 +110,7 @@
 		xosc-frequency = <12000000>;
 		xosc-en = <1>;
 		xosc-xtal-en = <1>;
+		xosc-usb-ref-clock-div = "div1";
 	};
 
 	dpll: dpll {
@@ -275,5 +276,19 @@ i2c0: &sercom9 {
 
 &rtc {
 	prescaler = <1024>;
+	status = "okay";
+};
+
+zephyr_udc0: &usbhs1 {
+	drd-gpios = <&portd 0 GPIO_ACTIVE_LOW>;
+	vbus-enable-gpios = <&porte 9 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&portd {
+	status = "okay";
+};
+
+&porte {
 	status = "okay";
 };

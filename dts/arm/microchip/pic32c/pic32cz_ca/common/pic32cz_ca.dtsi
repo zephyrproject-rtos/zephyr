@@ -250,6 +250,16 @@
 			clock-names = "mclk", "gclk";
 			status = "disabled";
 		};
+
+		usbhs0: usb@4f010000 {
+			compatible = "microchip,pic32cz-usbhs";
+			reg = <0x4f010000 0x2000>;
+			interrupts = <213 0>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_HUSB0>;
+			clock-names = "mclk";
+			num-bidir-endpoints = <8>;
+			status = "disabled";
+		};
 	};
 };
 
