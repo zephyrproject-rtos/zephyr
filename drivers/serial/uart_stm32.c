@@ -2549,25 +2549,39 @@ static int uart_stm32_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static void uart_stm32_suspend_setup(const struct device *dev)
+static int uart_stm32_suspend_setup(const struct device *dev)
 {
 	const struct uart_stm32_config *config = dev->config;
 	USART_TypeDef *usart = config->usart;
 
 #ifdef USART_ISR_BUSY
 	/* Make sure that no USART transfer is on-going */
-	while (LL_USART_IsActiveFlag_BUSY(usart) == 1) {
+	if (!WAIT_FOR(LL_USART_IsActiveFlag_BUSY(usart) == 0, CONFIG_UART_STM32_SUSPEND_TIMEOUT_US,
+		      NULL)) {
+		LOG_ERR("%s: receiver busy, not suspending", dev->name);
+		return -EBUSY;
 	}
 #endif
-	while (LL_USART_IsActiveFlag_TC(usart) == 0) {
+
+	if (!WAIT_FOR(LL_USART_IsActiveFlag_TC(usart) == 1, CONFIG_UART_STM32_SUSPEND_TIMEOUT_US,
+		      NULL)) {
+		LOG_ERR("%s: transmission not complete, not suspending", dev->name);
+		return -EBUSY;
 	}
+
 #ifdef USART_ISR_REACK
 	/* Make sure that USART is ready for reception */
-	while (LL_USART_IsActiveFlag_REACK(usart) == 0) {
+	if (!WAIT_FOR(LL_USART_IsActiveFlag_REACK(usart) == 1, CONFIG_UART_STM32_SUSPEND_TIMEOUT_US,
+		      NULL)) {
+		LOG_ERR("%s: receiver not enabled, not suspending", dev->name);
+		return -EBUSY;
 	}
 #endif
+
 	/* Clear OVERRUN flag */
 	LL_USART_ClearFlag_ORE(usart);
+
+	return 0;
 }
 
 static int uart_stm32_pm_action(const struct device *dev, enum pm_device_action action)
@@ -2614,7 +2628,11 @@ static int uart_stm32_pm_action(const struct device *dev, enum pm_device_action 
 		}
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
-		uart_stm32_suspend_setup(dev);
+		err = uart_stm32_suspend_setup(dev);
+		if (err < 0) {
+			return err;
+		}
+
 		/* Stop device clock. Note: fixed clocks are not handled yet. */
 		err = clock_control_off(config->clock, (clock_control_subsys_t)&config->pclken[0]);
 		if (err < 0) {

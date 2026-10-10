@@ -39,6 +39,15 @@ config UART_STM32_ABNORMAL_RTS_ERRATUM_WORKAROUND
 	  protocol violation" on affected STM32 devices by managing RTS
 	  in software while keeping hardware CTS active.
 
+config UART_STM32_SUSPEND_TIMEOUT_US
+	int "Wait for the USART to go idle before suspending (us)"
+	default 100000
+	depends on PM_DEVICE
+	help
+	  Longest wait for reception, transmission and receive enable to
+	  settle before a suspend. The suspend fails with -EBUSY when it
+	  expires.
+
 config UART_STM32U5_ERRATA_DMAT_AFFECTED
 	bool
 	default y
