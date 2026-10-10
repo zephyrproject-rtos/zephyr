@@ -1,0 +1,28 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&wram {
+	reg = <0x10000 DT_SIZE_K(44)>;
+	ranges = <0x0 0x10000 DT_SIZE_K(44)>;
+};
+
+&all_ram {
+	reg = <0x62020000 DT_SIZE_K(108)>;
+	ranges = <0x0 0x62020000 DT_SIZE_K(108)>;
+};
+
+/ {
+	soc {
+		wifi_ram: memory@2203b000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x2203b000 DT_SIZE_K(84)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x2203b000 DT_SIZE_K(84)>;
+			zephyr,memory-region = "WIFI_RAM";
+		};
+	};
+};

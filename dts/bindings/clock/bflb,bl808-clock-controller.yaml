@@ -13,5 +13,11 @@ properties:
   "#clock-cells":
     const: 1
 
+  xtal-capcode:
+    type: int
+    description: |
+      Crystal load capacitor trim, 0 to 63, applied to both the input and
+      output capacitor codes. The reset default is used when absent.
+
 clock-cells:
   - id

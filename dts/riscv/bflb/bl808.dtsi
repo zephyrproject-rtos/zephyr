@@ -459,6 +459,19 @@
 			interrupt-parent = <&clic>;
 		};
 
+		wifi0: wifi@24000000 {
+			compatible = "bflb,wifi4";
+			reg = <0x24000000 0x1000>;
+			interrupts = <70 1>, <79 1>;
+			interrupt-names = "wifi", "wifi-ipc";
+			interrupt-parent = <&clic>;
+			status = "disabled";
+
+			pwr-table-11b = <17 17 17 17>;
+			pwr-table-11g = <15 15 15 15 15 15 15 15>;
+			pwr-table-11n = <14 14 14 14 14 14 14 14>;
+		};
+
 		psram_uhs_ctrl: psram-uhs@3000f000 {
 			compatible = "bflb,bl808-psram-uhs-controller";
 			reg = <0x3000f000 DT_SIZE_K(4)>;

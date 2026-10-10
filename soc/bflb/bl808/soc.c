@@ -368,7 +368,7 @@ void soc_early_init_hook(void)
 	soc_bl808_halt_secondary_cores();
 	system_sysmap_init();
 
-#if defined(CONFIG_BT_BFLB_BL808)
+#if defined(CONFIG_BT_BFLB_BL808) || defined(CONFIG_WIFI_BFLB)
 	/* WiFi PHY clock gate (shared RF block; BLE depends on it).
 	 * CGEN_CFG0 bit 7 may be TZC-locked once tzc_sec_psram_init runs
 	 * later — set it at the earliest opportunity.

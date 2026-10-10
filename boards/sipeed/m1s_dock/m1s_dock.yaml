@@ -13,7 +13,6 @@ toolchain:
   - zephyr
 testing:
   ignore_tags:
-    - net
     - bluetooth
 supported:
   - gpio
@@ -27,3 +26,4 @@ supported:
   - entropy
   - crypto
   - sdhc
+  - netif:wifi
