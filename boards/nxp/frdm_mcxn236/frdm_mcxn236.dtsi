@@ -273,6 +273,11 @@ zephyr_udc0: &usb1 {
 	phy-handle = <&usbphy1>;
 };
 
+/* Host role of the USB OTG controller. */
+zephyr_uhc0: &usb1_uhc {
+	phy-handle = <&usbphy1>;
+};
+
 &usbphy1 {
 	status = "okay";
 	tx-d-cal = <4>;
