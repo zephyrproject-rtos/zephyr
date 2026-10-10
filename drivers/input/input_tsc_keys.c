@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <zephyr/autoconf.h>
+#include <zephyr/arch/common/ffs.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
@@ -35,9 +36,13 @@ struct stm32_tsc_group_config {
 
 typedef void (*stm32_tsc_group_ready_cb)(uint32_t count_value, void *user_data);
 
+/* Each TSC group has at most 4 channel I/Os. */
+#define STM32_TSC_GROUP_MAX_IOS 4
+
 struct stm32_tsc_group_data {
-	stm32_tsc_group_ready_cb cb;
-	void *user_data;
+	stm32_tsc_group_ready_cb cb[STM32_TSC_GROUP_MAX_IOS];
+	void *user_data[STM32_TSC_GROUP_MAX_IOS];
+	uint8_t current_channel_bit;
 };
 
 struct stm32_tsc_config {
@@ -59,11 +64,49 @@ struct stm32_tsc_config {
 	bool iodef;
 	bool sync_acq;
 	bool sync_pol;
+	uint32_t acq_interval_ms;
 	void (*irq_func)(void);
 };
 
-int stm32_tsc_group_register_callback(const struct device *dev, uint8_t group_idx,
-				      stm32_tsc_group_ready_cb cb, void *user_data)
+struct stm32_tsc_data {
+	struct k_timer acq_timer;
+};
+
+void stm32_tsc_start(const struct device *dev);
+
+static void stm32_tsc_acq_timer_cb(struct k_timer *timer)
+{
+	const struct device *dev = k_timer_user_data_get(timer);
+
+	stm32_tsc_start(dev);
+}
+
+/**
+ * @brief Register a callback for a single channel I/O within a TSC group.
+ *
+ * The STM32 TSC peripheral can only acquire one channel I/O per group per
+ * acquisition. When a group declares more than one channel I/O via its
+ * channel-ios mask, the driver multiplexes acquisitions across those I/Os.
+ * This function binds @p cb to a specific channel I/O within @p group_idx so
+ * that the callback only fires for samples taken from that I/O.
+ *
+ * @param dev             Pointer to the STM32 TSC device.
+ * @param group_idx       Index of the group in device tree declaration order
+ *                        (0-based).
+ * @param channel_io_bit  Bit position (0..3) of the channel I/O within the
+ *                        group. TSC_IO1 -> 0, TSC_IO2 -> 1, TSC_IO3 -> 2,
+ *                        TSC_IO4 -> 3.
+ * @param cb              Callback invoked from ISR context after every
+ *                        acquisition of the selected channel I/O.
+ * @param user_data       Opaque pointer passed back to @p cb.
+ *
+ * @retval 0          Success.
+ * @retval -EINVAL    @p group_idx or @p channel_io_bit is out of range, or
+ *                    the bit is not part of the group's channel-ios mask.
+ */
+int stm32_tsc_group_register_channel_callback(const struct device *dev, uint8_t group_idx,
+					      uint8_t channel_io_bit,
+					      stm32_tsc_group_ready_cb cb, void *user_data)
 {
 	const struct stm32_tsc_config *config = dev->config;
 
@@ -72,17 +115,90 @@ int stm32_tsc_group_register_callback(const struct device *dev, uint8_t group_id
 		return -EINVAL;
 	}
 
+	if (channel_io_bit >= STM32_TSC_GROUP_MAX_IOS) {
+		LOG_ERR("%s: channel I/O bit %d is out of range", dev->name, channel_io_bit);
+		return -EINVAL;
+	}
+
+	if (!(config->group_config[group_idx].channel_ios & BIT(channel_io_bit))) {
+		LOG_ERR("%s: channel I/O bit %d not in group %d channel-ios mask", dev->name,
+			channel_io_bit, config->group_config[group_idx].group);
+		return -EINVAL;
+	}
+
 	struct stm32_tsc_group_data *group_data = &config->group_data[group_idx];
 
-	group_data->cb = cb;
-	group_data->user_data = user_data;
+	group_data->cb[channel_io_bit] = cb;
+	group_data->user_data[channel_io_bit] = user_data;
 
 	return 0;
+}
+
+/**
+ * @brief Register a callback for a TSC group (legacy single-channel API).
+ *
+ * Wrapper around stm32_tsc_group_register_channel_callback() retained for
+ * backwards compatibility. Only valid when the group declares exactly one
+ * channel I/O in its channel-ios mask. For multi-channel groups, callers
+ * must use stm32_tsc_group_register_channel_callback() directly to
+ * disambiguate which I/O the callback belongs to.
+ *
+ * @param dev          Pointer to the STM32 TSC device.
+ * @param group_idx    Index of the group in device tree declaration order
+ *                     (0-based).
+ * @param cb           Callback invoked from ISR context after every
+ *                     acquisition of the group's single channel I/O.
+ * @param user_data    Opaque pointer passed back to @p cb.
+ *
+ * @retval 0          Success.
+ * @retval -EINVAL    @p group_idx is out of range, or the group declares
+ *                    more than one channel I/O.
+ */
+int stm32_tsc_group_register_callback(const struct device *dev, uint8_t group_idx,
+				      stm32_tsc_group_ready_cb cb, void *user_data)
+{
+	const struct stm32_tsc_config *config = dev->config;
+	uint8_t mask;
+	int bit;
+
+	if (group_idx >= config->group_cnt) {
+		LOG_ERR("%s: group index %d is out of range", dev->name, group_idx);
+		return -EINVAL;
+	}
+
+	mask = config->group_config[group_idx].channel_ios;
+
+	if (POPCOUNT(mask) != 1) {
+		LOG_ERR("%s: group %d has multiple channel I/Os; "
+			"use stm32_tsc_group_register_channel_callback() instead",
+			dev->name, config->group_config[group_idx].group);
+		return -EINVAL;
+	}
+
+	bit = find_lsb_set(mask) - 1;
+
+	return stm32_tsc_group_register_channel_callback(dev, group_idx, (uint8_t)bit, cb,
+							 user_data);
 }
 
 void stm32_tsc_start(const struct device *dev)
 {
 	const struct stm32_tsc_config *config = dev->config;
+
+	/* Program IOCCR to select one channel I/O per group for this acquisition.
+	 * The TSC peripheral can only sample a single channel I/O per group per
+	 * acquisition; multi-channel groups are time-multiplexed across successive
+	 * stm32_tsc_start() calls, with the cursor advanced in the ISR.
+	 */
+	for (uint8_t i = 0; i < config->group_cnt; i++) {
+		const struct stm32_tsc_group_config *group = &config->group_config[i];
+		uint8_t bit = config->group_data[i].current_channel_bit;
+
+		sys_clear_bits((mem_addr_t)&config->tsc->IOCCR,
+			       GET_GROUP_BITS(0xfU, group->group));
+		sys_set_bits((mem_addr_t)&config->tsc->IOCCR,
+			     GET_GROUP_BITS(BIT(bit), group->group));
+	}
 
 	/* clear interrupts */
 	sys_set_bits((mem_addr_t)&config->tsc->ICR, TSC_ICR_EOAIC | TSC_ICR_MCEIC);
@@ -96,6 +212,23 @@ void stm32_tsc_start(const struct device *dev)
 	 */
 	/* start acquisition */
 	sys_set_bit((mem_addr_t)&config->tsc->CR, TSC_CR_START_Pos);
+}
+
+/* Return the next set bit of @p mask strictly after position @p after, wrapping
+ * around to the lowest set bit if none is found above. @p mask must be non-zero
+ * (validated at init time as the group's channel-ios property).
+ */
+static uint8_t next_channel_bit(uint8_t mask, uint8_t after)
+{
+	for (uint8_t i = 1; i <= STM32_TSC_GROUP_MAX_IOS; i++) {
+		uint8_t cand = (uint8_t)((after + i) % STM32_TSC_GROUP_MAX_IOS);
+
+		if (mask & BIT(cand)) {
+			return cand;
+		}
+	}
+
+	return after;
 }
 
 static int get_group_index(const struct device *dev, uint8_t group, uint8_t *group_idx)
@@ -148,10 +281,19 @@ static int stm32_tsc_handle_incoming_data(const struct device *dev)
 				}
 
 				struct stm32_tsc_group_data *data = &config->group_data[group_idx];
+				uint8_t bit = data->current_channel_bit;
+				stm32_tsc_group_ready_cb cb = data->cb[bit];
 
-				if (data->cb) {
-					data->cb(count_value, data->user_data);
+				if (cb != NULL) {
+					cb(count_value, data->user_data[bit]);
 				}
+
+				/* Advance the multiplex cursor for this group's next
+				 * acquisition. Done unconditionally so an unbound
+				 * channel I/O (cb == NULL) does not stall rotation.
+				 */
+				data->current_channel_bit =
+					next_channel_bit(group->channel_ios, bit);
 			}
 		}
 	}
@@ -162,11 +304,32 @@ static int stm32_tsc_handle_incoming_data(const struct device *dev)
 static void stm32_tsc_isr(const struct device *dev)
 {
 	const struct stm32_tsc_config *config = dev->config;
+	unsigned int key;
+
+	/* Lock IRQs for the duration of dispatch + cursor advance.
+	 *
+	 * stm32_tsc_start() reads each group's current_channel_bit to program
+	 * IOCCR, then fires START. If a higher-priority IRQ (e.g. sys_clock)
+	 * preempts this ISR mid-dispatch and runs the k_timer expiry which
+	 * calls stm32_tsc_start(), it will read a stale cursor (the value for
+	 * the just-completed acquisition, not the next one), program IOCCR
+	 * with the wrong I/O, and fire a new acquisition. The TSC ends up
+	 * sampling I/O X while the ISR (when it resumes and advances the
+	 * cursor) thinks the next sample will be I/O Y. The subsequent ISR
+	 * then dispatches cb[Y] with a count_value that physically came from
+	 * I/O X, corrupting Y's ring buffer.
+	 *
+	 * Holding PRIMASK across the entire ISR body forces stm32_tsc_start()
+	 * to wait until cursor advancement is complete before it can run.
+	 */
+	key = irq_lock();
 
 	/* disable interrupts */
 	sys_clear_bits((mem_addr_t)&config->tsc->IER, TSC_IER_EOAIE | TSC_IER_MCEIE);
 
 	stm32_tsc_handle_incoming_data(dev);
+
+	irq_unlock(key);
 }
 
 static int stm32_tsc_init(const struct device *dev)
@@ -242,6 +405,12 @@ static int stm32_tsc_init(const struct device *dev)
 	for (int i = 0; i < config->group_cnt; i++) {
 		const struct stm32_tsc_group_config *group = &config->group_config[i];
 
+		/* Initialize the multiplex cursor to the first enabled channel I/O.
+		 * Phase 2 will use this in stm32_tsc_start() to drive IOCCR.
+		 */
+		config->group_data[i].current_channel_bit =
+			(uint8_t)(find_lsb_set(group->channel_ios) - 1);
+
 		if (group->channel_ios & group->sampling_io) {
 			LOG_ERR("%s: group %d has the same channel and sampling I/O", dev->name,
 				group->group);
@@ -264,9 +433,9 @@ static int stm32_tsc_init(const struct device *dev)
 			(mem_addr_t)&config->tsc->IOHCR,
 			GET_GROUP_BITS(group->channel_ios | group->sampling_io, group->group));
 
-		/* set channel I/Os */
-		sys_set_bits((mem_addr_t)&config->tsc->IOCCR,
-			     GET_GROUP_BITS(group->channel_ios, group->group));
+		/* IOCCR is programmed dynamically by stm32_tsc_start() to select a
+		 * single channel I/O per acquisition (the multiplex cursor).
+		 */
 
 		/* set sampling I/O */
 		sys_set_bits((mem_addr_t)&config->tsc->IOSCR,
@@ -288,6 +457,17 @@ static int stm32_tsc_init(const struct device *dev)
 	sys_set_bit((mem_addr_t)&config->tsc->CR, TSC_CR_TSCE_Pos);
 
 	config->irq_func();
+
+	/* If a TSC-owned acquisition timer is configured, start it. Otherwise the
+	 * legacy per-tsc-keys-child timers drive acquisition (single-child only).
+	 */
+	if (config->acq_interval_ms != 0U) {
+		struct stm32_tsc_data *data = dev->data;
+
+		k_timer_init(&data->acq_timer, stm32_tsc_acq_timer_cb, NULL);
+		k_timer_user_data_set(&data->acq_timer, (void *)dev);
+		k_timer_start(&data->acq_timer, K_NO_WAIT, K_MSEC(config->acq_interval_ms));
+	}
 
 	return 0;
 }
@@ -318,6 +498,8 @@ static int stm32_tsc_init(const struct device *dev)
 	static struct stm32_tsc_group_data                                                         \
 		group_data_cfg_##index[DT_INST_CHILD_NUM_STATUS_OKAY(index)];                      \
                                                                                                    \
+	static struct stm32_tsc_data stm32_tsc_data_##index;                                       \
+                                                                                                   \
 	static const struct stm32_tsc_config stm32_tsc_cfg_##index = {                             \
 		.tsc = (TSC_TypeDef *)DT_INST_REG_ADDR(index),                                     \
 		.pclken = pclken_##index,                                                          \
@@ -336,10 +518,12 @@ static int stm32_tsc_init(const struct device *dev)
 		.iodef = DT_INST_PROP(index, st_iodef_float),                                      \
 		.sync_acq = DT_INST_PROP(index, st_synced_acquisition),                            \
 		.sync_pol = DT_INST_PROP(index, st_syncpol_rising),                                \
+		.acq_interval_ms = DT_INST_PROP_OR(index, st_acquisition_interval_ms, 0),          \
 		.irq_func = stm32_tsc_irq_init_##index,                                            \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(index, stm32_tsc_init, NULL, NULL, &stm32_tsc_cfg_##index,           \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+	DEVICE_DT_INST_DEFINE(index, stm32_tsc_init, NULL, &stm32_tsc_data_##index,                \
+			      &stm32_tsc_cfg_##index, POST_KERNEL,                                 \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_TSC_INIT)
 
@@ -356,6 +540,7 @@ struct input_tsc_keys_config {
 	int32_t noise_threshold;
 	int zephyr_code;
 	uint8_t group;
+	uint8_t channel_io;
 };
 
 static void input_tsc_sampling_timer_callback(struct k_timer *timer)
@@ -410,18 +595,50 @@ static int input_tsc_keys_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = stm32_tsc_group_register_callback(config->tsc_dev, group_index,
-						input_tsc_callback_handler, (void *)dev);
+	const struct stm32_tsc_config *parent_cfg = config->tsc_dev->config;
+	uint8_t channel_io_bit;
+
+	if (config->channel_io != 0U) {
+		/* Explicit channel-io property: convert single-bit value to
+		 * bit position. The DT enum already restricts values to
+		 * {1, 2, 4, 8}.
+		 */
+		channel_io_bit = (uint8_t)(find_lsb_set(config->channel_io) - 1);
+	} else {
+		/* No channel-io property: legacy single-channel mode. The
+		 * parent group must declare exactly one channel I/O.
+		 */
+		uint8_t mask = parent_cfg->group_config[group_index].channel_ios;
+
+		if (POPCOUNT(mask) != 1) {
+			LOG_ERR("%s: tsc-keys child of group %d has no channel-io property "
+				"but the group declares multiple channel I/Os",
+				config->tsc_dev->name, config->group);
+			return -EINVAL;
+		}
+		channel_io_bit = (uint8_t)(find_lsb_set(mask) - 1);
+	}
+
+	ret = stm32_tsc_group_register_channel_callback(config->tsc_dev, group_index,
+							channel_io_bit,
+							input_tsc_callback_handler, (void *)dev);
 
 	if (ret) {
-		LOG_ERR("%s: failed to register callback for group %d", config->tsc_dev->name,
-			config->group);
+		LOG_ERR("%s: failed to register callback for group %d channel I/O bit %d",
+			config->tsc_dev->name, config->group, channel_io_bit);
 		return ret;
 	}
 
-	k_timer_init(&data->sampling_timer, input_tsc_sampling_timer_callback, NULL);
-	k_timer_user_data_set(&data->sampling_timer, (void *)config->tsc_dev);
-	k_timer_start(&data->sampling_timer, K_NO_WAIT, K_MSEC(config->sampling_interval_ms));
+	/* If the parent TSC owns the acquisition timer, do not start a per-child
+	 * timer (multiple children calling stm32_tsc_start() would race on the
+	 * single START bit).
+	 */
+	if (parent_cfg->acq_interval_ms == 0U) {
+		k_timer_init(&data->sampling_timer, input_tsc_sampling_timer_callback, NULL);
+		k_timer_user_data_set(&data->sampling_timer, (void *)config->tsc_dev);
+		k_timer_start(&data->sampling_timer, K_NO_WAIT,
+			      K_MSEC(config->sampling_interval_ms));
+	}
 
 	return 0;
 }
@@ -436,6 +653,7 @@ static int input_tsc_keys_init(const struct device *dev)
 		.zephyr_code = DT_PROP(inst, zephyr_code),                                         \
 		.noise_threshold = DT_PROP(inst, noise_threshold),                                 \
 		.group = DT_PROP(DT_PARENT(inst), group),                                          \
+		.channel_io = DT_PROP_OR(inst, channel_io, 0),                                     \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_DEFINE(inst, input_tsc_keys_init, NULL, &tsc_keys_data_##inst,                   \

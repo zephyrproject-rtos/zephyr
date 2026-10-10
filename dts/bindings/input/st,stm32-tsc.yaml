@@ -90,6 +90,20 @@ properties:
       Set default state (not acquisition) of all channel I/Os to floating.
       push-pull down by default.
 
+  st,acquisition-interval-ms:
+    type: int
+    description: |
+      Period in milliseconds between successive acquisitions, driven by a
+      single timer owned by the TSC peripheral. When set, this is the
+      authoritative source of acquisition cadence and per-key
+      sampling-interval-ms is ignored for triggering acquisitions.
+
+      Required when more than one tsc-keys child is attached to the same TSC
+      (whether across groups or as multiple channel I/Os within a group),
+      because the peripheral has a single START bit and per-child timers
+      would race. When omitted, each tsc-keys child runs its own timer
+      (legacy single-child behaviour).
+
 child-binding:
   description: STM32 TSC group configuration
   properties:
@@ -103,7 +117,14 @@ child-binding:
     channel-ios:
       type: int
       required: true
-      description: Channel I/Os to be enabled
+      description: |
+        Bitmask of channel I/Os enabled in this group, formed by ORing TSC_IOn
+        defines. The TSC peripheral can only sample a single channel I/O per
+        group per acquisition; when more than one bit is set the driver
+        multiplexes acquisitions across those I/Os in round-robin order.
+
+        Each enabled channel I/O is exposed via a dedicated tsc-keys child
+        node that names the I/O via its channel-io property.
       min: 1
       max: 16
 
