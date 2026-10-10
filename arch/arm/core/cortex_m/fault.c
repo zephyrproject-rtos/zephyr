@@ -182,7 +182,7 @@ uint32_t z_check_thread_stack_fail(const uint32_t fault_addr, const uint32_t psp
  *
  * @brief Dump MemManage fault information
  *
- * See z_arm_fault_dump() for example.
+ * See z_arm_fault() for example.
  *
  * @return error code to identify the fatal error reason
  */
@@ -337,7 +337,7 @@ static uint32_t mem_manage_fault(struct arch_esf *esf, int from_hard_fault, bool
  *
  * @brief Dump BusFault information
  *
- * See z_arm_fault_dump() for example.
+ * See z_arm_fault() for example.
  *
  * @return error code to identify the fatal error reason.
  *
@@ -494,7 +494,7 @@ static int bus_fault(struct arch_esf *esf, int from_hard_fault, bool *recoverabl
  *
  * @brief Dump UsageFault information
  *
- * See z_arm_fault_dump() for example.
+ * See z_arm_fault() for example.
  *
  * @return error code to identify the fatal error reason
  */
@@ -557,7 +557,7 @@ static uint32_t usage_fault(const struct arch_esf *esf)
  *
  * @brief Dump SecureFault information
  *
- * See z_arm_fault_dump() for example.
+ * See z_arm_fault() for example.
  *
  * @return error code to identify the fatal error reason
  */
@@ -616,7 +616,7 @@ static uint32_t secure_fault(const struct arch_esf *esf, bool non_secure_esf)
  *
  * @brief Dump debug monitor exception information
  *
- * See z_arm_fault_dump() for example.
+ * See z_arm_fault() for example.
  *
  */
 static void debug_monitor(struct arch_esf *esf, bool *recoverable)
@@ -715,7 +715,7 @@ static inline bool z_arm_is_pc_valid(uintptr_t pc)
  *
  * @brief Dump hard fault information
  *
- * See z_arm_fault_dump() for example.
+ * See z_arm_fault() for example.
  *
  * @return error code to identify the fatal error reason
  */
@@ -785,7 +785,7 @@ static uint32_t hard_fault(struct arch_esf *esf, bool *recoverable, bool non_sec
  *
  * @brief Dump reserved exception information
  *
- * See z_arm_fault_dump() for example.
+ * See z_arm_fault() for example.
  *
  */
 static void reserved_exception(const struct arch_esf *esf, int fault)
