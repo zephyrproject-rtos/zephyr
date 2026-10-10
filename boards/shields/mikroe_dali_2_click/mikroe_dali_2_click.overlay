@@ -17,11 +17,13 @@
 		tx-flank-shift-us = <(-46)>;
 		rx-flank-shift-us = <(-68)>;
 
-		/* override the following based on your board */
-		counter = <&timer2>;
-		chan-id-rx = <0>;
-		chan-id-tx = <1>;
-		pwms = <&pwm0 0 PWM_USEC(41) PWM_POLARITY_NORMAL>;
+		/*
+		 * Defaults, a board overlay can override them. counter, pwms,
+		 * chan-id-rx and chan-id-tx are set by the board overlays.
+		 */
+		tx-rx-propagation-max-us = <2400>;
+		rx-max-latency-us = <80>;
+		rx-grey-area-us = <800>;
 		status = "okay";
 	};
 };
