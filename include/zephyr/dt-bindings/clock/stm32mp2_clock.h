@@ -27,6 +27,48 @@
 #define STM32_CLK		1U
 #define STM32_LP_CLK		2U
 
+/*
+ * Domain clock source IDs.
+ *
+ * These replace a STM32_CLOCK() specifier to query the rate of a clock source
+ * instead of a peripheral gate. The clock tree is owned by the Cortex-A35, so
+ * these entries are read-only: they can neither be gated nor re-routed from
+ * the Cortex-M33.
+ *
+ * Values must stay below STM32_CLOCK_PERIPH_MIN and must not collide with the
+ * IDs defined in stm32_common_clocks.h (STM32_SRC_SYSCLK/LSE/LSI).
+ */
+
+/* Bus clocks. STM32_SRC_SYSCLK is ck_icn_hs_mcu, the Cortex-M33 clock */
+#define STM32_SRC_ICN_LS_MCU	0x010
+#define STM32_SRC_PCLK1		0x011
+#define STM32_SRC_PCLK2		0x012
+#define STM32_SRC_PCLK3		0x013
+#define STM32_SRC_PCLK4		0x014
+#define STM32_SRC_PCLK5		0x015
+#define STM32_SRC_PCLKDBG	0x016
+
+/* Oscillators. LSE and LSI come from stm32_common_clocks.h */
+#define STM32_SRC_HSI		0x017
+#define STM32_SRC_HSE		0x018
+#define STM32_SRC_MSI		0x019
+
+/* PLL FOUTPOSTDIV outputs routed to the clock crossbar */
+#define STM32_SRC_PLL4		0x01A
+#define STM32_SRC_PLL5		0x01B
+#define STM32_SRC_PLL6		0x01C
+#define STM32_SRC_PLL7		0x01D
+#define STM32_SRC_PLL8		0x01E
+
+/*
+ * Output of clock crossbar (flexgen) channel @p ch, in the 0..63 range. Every
+ * peripheral kernel clock is fed by one of these channels, so declaring it is
+ * enough for the clock controller to resolve the peripheral rate.
+ */
+#define STM32_SRC_FLEXGEN_MIN	0x100
+#define STM32_SRC_FLEXGEN_MAX	0x13F
+#define STM32_SRC_FLEXGEN(ch)	(STM32_SRC_FLEXGEN_MIN + (ch))
+
 /* GPIO Peripheral */
 #define STM32_CLOCK_PERIPH_GPIOA	0x52C
 #define STM32_CLOCK_PERIPH_GPIOB	0x530
