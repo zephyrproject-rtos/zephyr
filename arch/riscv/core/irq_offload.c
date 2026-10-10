@@ -6,10 +6,11 @@
 
 #include <zephyr/irq_offload.h>
 #include <zephyr/arch/riscv/syscall.h>
+#include <zephyr/arch/riscv/csr.h>
 #include <ksched.h>
 
 #ifdef CONFIG_RISCV_S_MODE
-#ifdef CONFIG_FPU_SHARING
+#if defined(CONFIG_FPU_SHARING) && defined(CONFIG_RISCV_ISA_EXT_F)
 extern void z_riscv_fpu_enter_exc(void);
 extern void z_riscv_fpu_irq_offload_exit(void);
 #endif
@@ -26,18 +27,30 @@ void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 	 *
 	 * Mirror what _isr_wrapper does for FPU: disable FPU access on entry
 	 * and restore it on exit so FPU state is consistent with a real ISR.
+	 * With Zfinx there is no FPU access control, only the fcsr of the
+	 * interrupted context has to be preserved.
 	 */
 	unsigned int key = arch_irq_lock();
 
 #ifdef CONFIG_FPU_SHARING
 	_current->arch.exception_depth++;
+#ifdef CONFIG_RISCV_ISA_EXT_F
 	z_riscv_fpu_enter_exc();
+#endif
+#ifdef CONFIG_RISCV_ISA_EXT_ZFINX
+	unsigned long saved_fcsr = csr_read(fcsr);
+#endif
 #endif
 	arch_curr_cpu()->nested++;
 	routine(parameter);
 	arch_curr_cpu()->nested--;
 #ifdef CONFIG_FPU_SHARING
+#ifdef CONFIG_RISCV_ISA_EXT_F
 	z_riscv_fpu_irq_offload_exit();
+#endif
+#ifdef CONFIG_RISCV_ISA_EXT_ZFINX
+	csr_write(fcsr, saved_fcsr);
+#endif
 	_current->arch.exception_depth--;
 #endif
 
