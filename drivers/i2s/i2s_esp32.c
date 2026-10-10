@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * Copyright (c) 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,21 @@
 #include <esp_clk_tree.h>
 #include <esp_private/esp_clk_tree_common.h>
 #include <hal/i2s_hal.h>
+
+#ifdef CONFIG_PM
+#include <zephyr/pm/policy.h>
+#endif /* CONFIG_PM */
+
+#if defined(CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP) && defined(SOC_PAU_SUPPORTED)
+#define I2S_SLEEP_RETENTION_ENABLED 1
+#else
+#define I2S_SLEEP_RETENTION_ENABLED 0
+#endif
+
+#if I2S_SLEEP_RETENTION_ENABLED
+#include <hal/i2s_periph.h>
+#include <esp_private/sleep_retention.h>
+#endif /* I2S_SLEEP_RETENTION_ENABLED */
 
 #if !SOC_GDMA_SUPPORTED
 #include <soc/lldesc.h>
@@ -104,6 +119,9 @@ struct i2s_esp32_data {
 	enum i2s_dir active_dir;
 	bool tx_stop_without_draining;
 	i2s_hal_clock_info_t clk_info;
+#ifdef CONFIG_PM
+	bool pm_lock_held;
+#endif /* CONFIG_PM */
 #if I2S_ESP32_IS_DIR_EN(tx)
 	struct k_timer tx_deferred_transfer_timer;
 	const struct device *dev;
@@ -117,6 +135,46 @@ uint32_t i2s_esp32_get_source_clk_freq(i2s_clock_src_t clk_src)
 	esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_freq);
 	return clk_freq;
 }
+
+/* RX and TX share clocks, so the peripheral is idle only after both stop. */
+static bool IRAM_ATTR i2s_esp32_hw_busy(const struct device *dev)
+{
+	const struct i2s_esp32_cfg *dev_cfg = dev->config;
+
+#if I2S_ESP32_IS_DIR_EN(rx)
+	if (dev_cfg->rx.data != NULL && dev_cfg->rx.data->transferring) {
+		return true;
+	}
+#endif /* I2S_ESP32_IS_DIR_EN(rx) */
+
+#if I2S_ESP32_IS_DIR_EN(tx)
+	if (dev_cfg->tx.data != NULL && dev_cfg->tx.data->transferring) {
+		return true;
+	}
+#endif /* I2S_ESP32_IS_DIR_EN(tx) */
+
+	return false;
+}
+
+#ifdef CONFIG_PM
+static void IRAM_ATTR i2s_esp32_pm_policy_sync_lock(const struct device *dev)
+{
+	struct i2s_esp32_data *dev_data = dev->data;
+	unsigned int key = irq_lock();
+	bool must_lock = i2s_esp32_hw_busy(dev) || dev_data->state == I2S_STATE_RUNNING ||
+			 dev_data->state == I2S_STATE_STOPPING;
+
+	if (must_lock && !dev_data->pm_lock_held) {
+		dev_data->pm_lock_held = true;
+		pm_policy_state_all_lock_get();
+	} else if (!must_lock && dev_data->pm_lock_held) {
+		dev_data->pm_lock_held = false;
+		pm_policy_state_all_lock_put();
+	}
+
+	irq_unlock(key);
+}
+#endif /* CONFIG_PM */
 
 static esp_err_t i2s_esp32_calculate_clock(const struct i2s_config *i2s_cfg, uint8_t channel_length,
 					   i2s_hal_clock_info_t *i2s_hal_clock_info)
@@ -195,6 +253,37 @@ static int i2s_esp32_tx_stop_transfer(const struct device *dev);
 #endif
 static int i2s_esp32_stop_transfer(const struct device *dev, enum i2s_dir dir);
 
+/* Clear shared control bits only after both directions stop. */
+static void IRAM_ATTR i2s_esp32_stop_if_idle(const struct device *dev)
+{
+	const struct i2s_esp32_cfg *dev_cfg = dev->config;
+	const i2s_hal_context_t *hal = &dev_cfg->hal;
+
+	if (i2s_esp32_hw_busy(dev)) {
+		return;
+	}
+
+	i2s_hal_rx_stop(hal);
+	i2s_hal_tx_stop(hal);
+#if !SOC_GDMA_SUPPORTED
+	i2s_ll_enable_dma(hal->dev, false);
+#endif /* !SOC_GDMA_SUPPORTED */
+}
+
+static void IRAM_ATTR i2s_esp32_set_state(const struct device *dev, enum i2s_state state)
+{
+	struct i2s_esp32_data *dev_data = dev->data;
+#ifdef CONFIG_PM
+	unsigned int key = irq_lock();
+#endif /* CONFIG_PM */
+
+	dev_data->state = state;
+#ifdef CONFIG_PM
+	i2s_esp32_pm_policy_sync_lock(dev);
+	irq_unlock(key);
+#endif /* CONFIG_PM */
+}
+
 #if I2S_ESP32_IS_DIR_EN(rx)
 
 #if SOC_GDMA_SUPPORTED
@@ -218,13 +307,13 @@ static void IRAM_ATTR i2s_esp32_rx_callback(void *arg, int status)
 
 	if (stream->data->mem_block == NULL) {
 		LOG_DBG("RX mem_block NULL");
-		dev_data->state = I2S_STATE_ERROR;
+		i2s_esp32_set_state(dev, I2S_STATE_ERROR);
 		goto rx_disable;
 	}
 
 #if SOC_GDMA_SUPPORTED
 	if (status < 0) {
-		dev_data->state = I2S_STATE_ERROR;
+		i2s_esp32_set_state(dev, I2S_STATE_ERROR);
 		LOG_DBG("RX status bad: %d", status);
 		goto rx_disable;
 	}
@@ -233,7 +322,7 @@ static void IRAM_ATTR i2s_esp32_rx_callback(void *arg, int status)
 		k_mem_slab_free(stream->data->i2s_cfg.mem_slab, stream->data->mem_block);
 		stream->data->mem_block = NULL;
 		stream->data->mem_block_len = 0;
-		dev_data->state = I2S_STATE_ERROR;
+		i2s_esp32_set_state(dev, I2S_STATE_ERROR);
 		LOG_DBG("RX status bad: %d", status);
 		goto rx_disable;
 	}
@@ -262,7 +351,7 @@ static void IRAM_ATTR i2s_esp32_rx_callback(void *arg, int status)
 		err = dma_reload(stream->conf->dma_dev, stream->conf->dma_channel, (uint32_t)NULL,
 				(uint32_t)dst, chunk_len);
 		if (err < 0) {
-			dev_data->state = I2S_STATE_ERROR;
+			i2s_esp32_set_state(dev, I2S_STATE_ERROR);
 			LOG_DBG("Failed to reload DMA channel: %" PRIu32,
 				stream->conf->dma_channel);
 			goto rx_disable;
@@ -272,7 +361,7 @@ static void IRAM_ATTR i2s_esp32_rx_callback(void *arg, int status)
 
 		err = dma_start(stream->conf->dma_dev, stream->conf->dma_channel);
 		if (err < 0) {
-			dev_data->state = I2S_STATE_ERROR;
+			i2s_esp32_set_state(dev, I2S_STATE_ERROR);
 			LOG_DBG("Failed to start DMA channel: %" PRIu32, stream->conf->dma_channel);
 			goto rx_disable;
 		}
@@ -290,7 +379,7 @@ static void IRAM_ATTR i2s_esp32_rx_callback(void *arg, int status)
 
 	err = k_msgq_put(&stream->data->queue, &item, K_NO_WAIT);
 	if (err < 0) {
-		dev_data->state = I2S_STATE_ERROR;
+		i2s_esp32_set_state(dev, I2S_STATE_ERROR);
 		LOG_DBG("RX queue full");
 		goto rx_disable;
 	}
@@ -302,7 +391,7 @@ static void IRAM_ATTR i2s_esp32_rx_callback(void *arg, int status)
 	if (dev_data->state == I2S_STATE_STOPPING) {
 		if (dev_data->active_dir == I2S_DIR_RX ||
 		    (dev_data->active_dir == I2S_DIR_BOTH && !dev_cfg->tx.data->transferring)) {
-			dev_data->state = I2S_STATE_READY;
+			i2s_esp32_set_state(dev, I2S_STATE_READY);
 			goto rx_disable;
 		}
 	}
@@ -314,7 +403,7 @@ static void IRAM_ATTR i2s_esp32_rx_callback(void *arg, int status)
 	err = k_mem_slab_alloc(stream->data->i2s_cfg.mem_slab, &stream->data->mem_block, K_NO_WAIT);
 	if (err < 0) {
 		LOG_DBG("RX failed to allocate memory from slab: %i:", err);
-		dev_data->state = I2S_STATE_ERROR;
+		i2s_esp32_set_state(dev, I2S_STATE_ERROR);
 		goto rx_disable;
 	}
 	stream->data->mem_block_len = stream->data->i2s_cfg.block_size;
@@ -324,7 +413,7 @@ static void IRAM_ATTR i2s_esp32_rx_callback(void *arg, int status)
 		k_mem_slab_free(stream->data->i2s_cfg.mem_slab, stream->data->mem_block);
 		stream->data->mem_block = NULL;
 		stream->data->mem_block_len = 0;
-		dev_data->state = I2S_STATE_ERROR;
+		i2s_esp32_set_state(dev, I2S_STATE_ERROR);
 		LOG_DBG("Failed to restart RX transfer: %d", err);
 		goto rx_disable;
 	}
@@ -399,6 +488,9 @@ static int i2s_esp32_rx_start_transfer(const struct device *dev)
 #endif /* !SOC_GDMA_SUPPORTED */
 
 	stream->data->transferring = true;
+#ifdef CONFIG_PM
+	i2s_esp32_pm_policy_sync_lock(dev);
+#endif /* CONFIG_PM */
 
 	return 0;
 }
@@ -422,8 +514,7 @@ static int IRAM_ATTR i2s_esp32_rx_stop_transfer(const struct device *dev)
 	esp_intr_disable(stream->data->irq_handle);
 	i2s_hal_rx_stop_link(hal);
 	i2s_hal_rx_disable_intr(hal);
-	i2s_hal_rx_disable_dma(hal);
-	i2s_hal_clear_intr_status(hal, I2S_INTR_MAX);
+	i2s_hal_clear_intr_status(hal, I2S_LL_RX_EVENT_MASK | I2S_LL_EVENT_RX_DSCR_ERR);
 #endif /* SOC_GDMA_SUPPORTED */
 
 	/* Cleared before the status test: a failed stop must not strand STOPPING. */
@@ -445,6 +536,11 @@ static int IRAM_ATTR i2s_esp32_rx_stop_transfer(const struct device *dev)
 	stream->data->mem_block = NULL;
 #endif /* SOC_GDMA_SUPPORTED */
 	stream->data->mem_block_len = 0;
+
+	i2s_esp32_stop_if_idle(dev);
+#ifdef CONFIG_PM
+	i2s_esp32_pm_policy_sync_lock(dev);
+#endif /* CONFIG_PM */
 
 	return err;
 }
@@ -473,7 +569,7 @@ void IRAM_ATTR i2s_esp32_tx_compl_transfer(struct k_timer *timer)
 			if (dev_data->active_dir == I2S_DIR_TX ||
 			    (dev_data->active_dir == I2S_DIR_BOTH &&
 			     !dev_cfg->rx.data->transferring)) {
-				dev_data->state = I2S_STATE_READY;
+				i2s_esp32_set_state(dev, I2S_STATE_READY);
 			}
 			goto tx_disable;
 		}
@@ -481,7 +577,7 @@ void IRAM_ATTR i2s_esp32_tx_compl_transfer(struct k_timer *timer)
 
 	err = k_msgq_get(&stream->data->queue, &item, K_NO_WAIT);
 	if (err < 0) {
-		dev_data->state = I2S_STATE_ERROR;
+		i2s_esp32_set_state(dev, I2S_STATE_ERROR);
 		LOG_DBG("TX queue empty: %d", err);
 		goto tx_disable;
 	}
@@ -496,7 +592,7 @@ void IRAM_ATTR i2s_esp32_tx_compl_transfer(struct k_timer *timer)
 			stream->data->mem_block = NULL;
 			stream->data->mem_block_len = 0;
 		}
-		dev_data->state = I2S_STATE_ERROR;
+		i2s_esp32_set_state(dev, I2S_STATE_ERROR);
 		LOG_DBG("Failed to restart TX transfer: %d", err);
 		goto tx_disable;
 	}
@@ -531,7 +627,7 @@ static void IRAM_ATTR i2s_esp32_tx_callback(void *arg, int status)
 
 	if (stream->data->mem_block == NULL) {
 		LOG_DBG("TX mem_block NULL");
-		dev_data->state = I2S_STATE_ERROR;
+		i2s_esp32_set_state(dev, I2S_STATE_ERROR);
 		goto tx_disable;
 	}
 
@@ -541,7 +637,7 @@ static void IRAM_ATTR i2s_esp32_tx_callback(void *arg, int status)
 		 * proof that GDMA has released the buffer. No stop barrier runs
 		 * before this callback on the EOF-only TX path.
 		 */
-		dev_data->state = I2S_STATE_ERROR;
+		i2s_esp32_set_state(dev, I2S_STATE_ERROR);
 		LOG_DBG("TX bad status: %d", status);
 		goto tx_disable;
 	}
@@ -553,7 +649,7 @@ static void IRAM_ATTR i2s_esp32_tx_callback(void *arg, int status)
 
 #if !SOC_GDMA_SUPPORTED
 	if ((status & I2S_LL_EVENT_TX_DSCR_ERR) != 0) {
-		dev_data->state = I2S_STATE_ERROR;
+		i2s_esp32_set_state(dev, I2S_STATE_ERROR);
 		LOG_DBG("TX bad status: %d", status);
 		goto tx_disable;
 	}
@@ -645,6 +741,9 @@ static int i2s_esp32_tx_start_transfer(const struct device *dev)
 #endif /* !SOC_GDMA_SUPPORTED */
 
 	stream->data->transferring = true;
+#ifdef CONFIG_PM
+	i2s_esp32_pm_policy_sync_lock(dev);
+#endif /* CONFIG_PM */
 
 	return 0;
 }
@@ -670,8 +769,7 @@ static int IRAM_ATTR i2s_esp32_tx_stop_transfer(const struct device *dev)
 	esp_intr_disable(stream->data->irq_handle);
 	i2s_hal_tx_stop_link(hal);
 	i2s_hal_tx_disable_intr(hal);
-	i2s_hal_tx_disable_dma(hal);
-	i2s_hal_clear_intr_status(hal, I2S_INTR_MAX);
+	i2s_hal_clear_intr_status(hal, I2S_LL_TX_EVENT_MASK | I2S_LL_EVENT_TX_DSCR_ERR);
 #endif /* SOC_GDMA_SUPPORTED */
 
 	/* Cleared before the status test: a failed stop must not strand STOPPING. */
@@ -693,6 +791,11 @@ static int IRAM_ATTR i2s_esp32_tx_stop_transfer(const struct device *dev)
 	stream->data->mem_block = NULL;
 #endif /* SOC_GDMA_SUPPORTED */
 	stream->data->mem_block_len = 0;
+
+	i2s_esp32_stop_if_idle(dev);
+#ifdef CONFIG_PM
+	i2s_esp32_pm_policy_sync_lock(dev);
+#endif /* CONFIG_PM */
 
 	return err;
 }
@@ -1032,6 +1135,7 @@ static int IRAM_ATTR i2s_esp32_restart_dma(const struct device *dev, enum i2s_di
 
 #if I2S_ESP32_IS_DIR_EN(rx)
 	if (dir == I2S_DIR_RX) {
+		i2s_ll_rx_reset_fifo(hal->dev);
 		i2s_ll_rx_set_eof_num(hal->dev, chunk_len);
 	}
 #endif /* I2S_ESP32_IS_DIR_EN(rx) */
@@ -1067,9 +1171,46 @@ static int IRAM_ATTR i2s_esp32_restart_dma(const struct device *dev, enum i2s_di
 	return 0;
 }
 
+#if I2S_SLEEP_RETENTION_ENABLED
+static esp_err_t i2s_esp32_create_sleep_retention_cb(void *arg)
+{
+	uint32_t unit = (uint32_t)(uintptr_t)arg;
+
+	return sleep_retention_entries_create(i2s_reg_retention_info[unit].entry_array,
+					      i2s_reg_retention_info[unit].array_size,
+					      REGDMA_LINK_PRI_I2S,
+					      i2s_reg_retention_info[unit].retention_module);
+}
+
+static void i2s_esp32_sleep_retention_init(uint32_t unit)
+{
+	sleep_retention_module_t module = i2s_reg_retention_info[unit].retention_module;
+	sleep_retention_module_init_param_t init_param = {
+		.cbs = {.create = {.handle = i2s_esp32_create_sleep_retention_cb,
+				   .arg = (void *)(uintptr_t)unit}},
+		.attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
+		.depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)};
+	esp_err_t err = sleep_retention_module_init(module, &init_param);
+
+	if (err == ESP_OK) {
+		err = sleep_retention_module_allocate(module);
+	}
+
+	if (err == ESP_OK) {
+		err = sleep_retention_module_attach(module);
+	}
+
+	if (err != ESP_OK) {
+		LOG_WRN("I2S%u sleep retention init failed (%d)", (unsigned int)unit, err);
+	}
+}
+#endif /* I2S_SLEEP_RETENTION_ENABLED */
+
 static int i2s_esp32_initialize(const struct device *dev)
 {
+#if I2S_ESP32_IS_DIR_EN(tx)
 	struct i2s_esp32_data *dev_data = dev->data;
+#endif /* I2S_ESP32_IS_DIR_EN(tx) */
 	const struct i2s_esp32_cfg *dev_cfg = dev->config;
 	const struct device *clk_dev = dev_cfg->clock_dev;
 	const struct i2s_esp32_stream *stream;
@@ -1169,7 +1310,13 @@ static int i2s_esp32_initialize(const struct device *dev)
 	i2s_ll_clear_intr_status(hal->dev, I2S_INTR_MAX);
 #endif /* !SOC_GDMA_SUPPORTED */
 
-	dev_data->state = I2S_STATE_NOT_READY;
+	i2s_esp32_set_state(dev, I2S_STATE_NOT_READY);
+
+#if I2S_SLEEP_RETENTION_ENABLED
+	if (dev_cfg->unit < I2S_LL_GET(INST_NUM)) {
+		i2s_esp32_sleep_retention_init(dev_cfg->unit);
+	}
+#endif /* I2S_SLEEP_RETENTION_ENABLED */
 
 	LOG_DBG("%s initialized", dev->name);
 
@@ -1297,7 +1444,6 @@ static int i2s_esp32_config_check(const struct device *dev, enum i2s_dir dir,
 static int i2s_esp32_configure(const struct device *dev, enum i2s_dir dir,
 			       const struct i2s_config *i2s_cfg)
 {
-	struct i2s_esp32_data *dev_data = dev->data;
 	const struct i2s_esp32_cfg *dev_cfg = dev->config;
 	const struct i2s_esp32_stream *stream;
 	i2s_hal_slot_config_t slot_cfg = {0};
@@ -1329,7 +1475,7 @@ static int i2s_esp32_configure(const struct device *dev, enum i2s_dir dir,
 		}
 #endif /* I2S_ESP32_IS_DIR_EN(tx) */
 
-		dev_data->state = I2S_STATE_NOT_READY;
+		i2s_esp32_set_state(dev, I2S_STATE_NOT_READY);
 
 		return 0;
 	}
@@ -1426,7 +1572,7 @@ static int i2s_esp32_configure(const struct device *dev, enum i2s_dir dir,
 		i2s_ll_share_bck_ws(hal->dev, false);
 	}
 
-	dev_data->state = I2S_STATE_READY;
+	i2s_esp32_set_state(dev, I2S_STATE_READY);
 
 	return 0;
 }
@@ -1581,7 +1727,7 @@ static int i2s_esp32_trigger(const struct device *dev, enum i2s_dir dir, enum i2
 			irq_unlock(key);
 			return -EIO;
 		}
-		dev_data->state = I2S_STATE_RUNNING;
+		i2s_esp32_set_state(dev, I2S_STATE_RUNNING);
 		break;
 	case I2S_TRIGGER_STOP:
 		__fallthrough;
@@ -1607,9 +1753,9 @@ static int i2s_esp32_trigger(const struct device *dev, enum i2s_dir dir, enum i2
 				}
 			}
 #endif /* I2S_ESP32_IS_DIR_EN(tx) */
-			dev_data->state = I2S_STATE_STOPPING;
+			i2s_esp32_set_state(dev, I2S_STATE_STOPPING);
 		} else {
-			dev_data->state = I2S_STATE_READY;
+			i2s_esp32_set_state(dev, I2S_STATE_READY);
 		}
 		break;
 	case I2S_TRIGGER_DROP:
@@ -1623,23 +1769,23 @@ static int i2s_esp32_trigger(const struct device *dev, enum i2s_dir dir, enum i2
 		err = i2s_esp32_stop_transfer(dev, dir);
 		i2s_esp32_queue_drop(dev, dir);
 		if (err < 0) {
-			dev_data->state = I2S_STATE_ERROR;
+			i2s_esp32_set_state(dev, I2S_STATE_ERROR);
 			irq_unlock(key);
 			return -EIO;
 		}
-		dev_data->state = I2S_STATE_READY;
+		i2s_esp32_set_state(dev, I2S_STATE_READY);
 		break;
 	case I2S_TRIGGER_PREPARE:
 		err = i2s_esp32_stop_transfer(dev, dev_data->active_dir);
 		if (err < 0) {
 			LOG_DBG("PREPARE - stop transfer failed: %d", err);
-			dev_data->state = I2S_STATE_ERROR;
+			i2s_esp32_set_state(dev, I2S_STATE_ERROR);
 			irq_unlock(key);
 			return -EIO;
 		}
 
 		i2s_esp32_queue_drop(dev, dir);
-		dev_data->state = I2S_STATE_READY;
+		i2s_esp32_set_state(dev, I2S_STATE_READY);
 		break;
 	default:
 		LOG_DBG("Unsupported trigger command: %d", (int)cmd);
