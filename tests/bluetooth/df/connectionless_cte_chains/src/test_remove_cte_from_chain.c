@@ -25,9 +25,9 @@
 #include "hal/ccm.h"
 
 #include "lll.h"
-#include "lll/lll_adv_types.h"
+#include "lll_adv_types.h"
 #include "lll_adv.h"
-#include "lll/lll_adv_pdu.h"
+#include "lll_adv_pdu.h"
 #include "lll/lll_adv_internal.h"
 #include "lll_adv_sync.h"
 #include "lll/lll_df_types.h"

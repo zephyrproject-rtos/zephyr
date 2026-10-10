@@ -6,10 +6,12 @@ zephyr_library_link_libraries(subsys__bluetooth)
 zephyr_library_sources(
   lll/lll.c
   lll/lll_clock.c
+  ../lll_prepare_pipeline.c
   )
 if(CONFIG_BT_BROADCASTER)
   zephyr_library_sources(
     lll/lll_adv.c
+    ../lll_adv_pdu.c
     )
   zephyr_library_sources_ifdef(
     CONFIG_BT_CTLR_ADV_EXT
@@ -92,7 +94,8 @@ zephyr_library_sources(
 zephyr_library_sources(
   hal/nrf5/cntr.c
   hal/nrf5/radio/radio.c
-  hal/nrf5/mayfly.c
+  ../../hal/mayfly.c
+  ../../hal/ticker.c
   hal/nrf5/ticker.c
   )
 

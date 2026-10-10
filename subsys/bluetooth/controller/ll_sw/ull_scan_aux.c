@@ -33,9 +33,9 @@
 #include "lll_conn_iso.h"
 #include "lll_sync.h"
 #include "lll_sync_iso.h"
-#include "lll/lll_adv_types.h"
+#include "lll_adv_types.h"
 #include "lll_adv.h"
-#include "lll/lll_adv_pdu.h"
+#include "lll_adv_pdu.h"
 
 #include "ll_sw/ull_tx_queue.h"
 

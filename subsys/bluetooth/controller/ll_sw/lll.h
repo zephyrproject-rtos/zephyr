@@ -636,6 +636,7 @@ int lll_prepare(lll_is_abort_cb_t is_abort_cb,
 		lll_prepare_cb_t prepare_cb, int8_t event_prio,
 		struct lll_prepare_param *prepare_param);
 int lll_resume_enqueue(lll_prepare_cb_t resume_cb, int resume_prio);
+void lll_prepare_pipeline_init(void);
 int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 			lll_prepare_cb_t prepare_cb,
 			struct lll_prepare_param *prepare_param,
