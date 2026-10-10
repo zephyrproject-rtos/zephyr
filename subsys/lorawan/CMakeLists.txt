@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if(CONFIG_LORAWAN)
+  zephyr_library_sources(common.c)
   add_subdirectory_ifdef(CONFIG_LORA_MODULE_BACKEND_LORAMAC_NODE loramac-node)
   add_subdirectory_ifdef(CONFIG_LORA_MODULE_BACKEND_NATIVE native)
   add_subdirectory(emul)
