@@ -1,0 +1,12 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* The sample does not use the accelerometer. With its node enabled the driver
+ * is built in as soon as the sensor subsystem is on, which the clock
+ * calibration turns on, and brings the I2C driver with it.
+ */
+&mma8653fc {
+	status = "disabled";
+};
