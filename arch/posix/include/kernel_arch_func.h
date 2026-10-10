@@ -25,6 +25,11 @@ static inline void arch_kernel_init(void)
 	soc_per_core_init_hook();
 }
 
+#ifdef __APPLE__
+void arch_sys_init_run_level(unsigned int level);
+void arch_static_init_gnu(void);
+#endif
+
 static ALWAYS_INLINE void
 arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
 {

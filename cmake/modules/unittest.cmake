@@ -116,9 +116,16 @@ target_compile_options(test_interface INTERFACE
   -Wshadow
   )
 
-target_link_options(testbinary PRIVATE
-  -T "${ZEPHYR_BASE}/subsys/testsuite/include/zephyr/ztest_unittest.ld"
+if(CMAKE_HOST_APPLE)
+  zephyr_generate_macho_iterable_sections(
+    TARGET testbinary
+    LINKER_SCRIPT "${ZEPHYR_BASE}/subsys/testsuite/include/zephyr/ztest_unittest.ld"
   )
+else()
+  target_link_options(testbinary PRIVATE
+    -T "${ZEPHYR_BASE}/subsys/testsuite/include/zephyr/ztest_unittest.ld"
+  )
+endif()
 
 target_link_libraries(testbinary PRIVATE
   ${EXTRA_LDFLAGS_AS_LIST}

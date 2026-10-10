@@ -20,6 +20,7 @@ build*/
 !share/sysbuild/build
 !tests/drivers/build_all
 !scripts/pylib/build_helpers
+!scripts/tests/build_helpers
 cscope.*
 .dir
 
