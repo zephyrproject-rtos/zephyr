@@ -29,6 +29,7 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,canbus = &canfd0;
+		zephyr,entropy = &trng;
 	};
 
 	leds {
@@ -161,4 +162,8 @@
 	status = "okay";
 	pinctrl-0 = <&analog_pa23>;
 	pinctrl-names = "default";
+};
+
+&trng {
+	status = "okay";
 };
