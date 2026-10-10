@@ -22,5 +22,7 @@ config SOC_SERIES_BL70XL
 	select USE_DT_CODE_PARTITION
 	imply CODE_DATA_RELOCATION
 	imply FPU
+	imply REBOOT
 	imply REGULATOR
+	imply RETAINED_MEM
 	imply XIP
