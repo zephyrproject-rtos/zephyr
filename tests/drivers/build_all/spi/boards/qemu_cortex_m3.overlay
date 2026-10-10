@@ -17,4 +17,12 @@
 		tx-fifo-depth = <256>;
 		clock-frequency = <100000000>;
 	};
+
+	spi1: spi@88889000 {
+		compatible = "efinix,sapphire-spi";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x88889000 0x1000>;
+		clock-frequency = <100000000>;
+	};
 };
