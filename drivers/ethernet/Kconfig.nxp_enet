@@ -46,14 +46,47 @@ config ETH_NXP_ENET_RX_BUFFERS
 	default 6
 	range 6 16
 	help
-	  Set the number of RX buffers provided to the NXP ENET driver.
+	  Depth of the receive DMA buffer-descriptor ring.
 
 config ETH_NXP_ENET_TX_BUFFERS
 	int "Number of TX buffers for ethernet driver"
+	default 4 if ETH_NXP_ENET_TX_ZERO_COPY
 	default 1
 	range 1 16
 	help
-	  Set the number of TX buffers provided to the NXP ENET driver.
+	  Depth of the transmit DMA buffer-descriptor ring. Zero-copy TX submits
+	  into the HAL ready ring and reclaims through the dirty ring, so it
+	  needs at least two descriptors to make progress; a single-descriptor
+	  ring stalls every transmit with kStatus_ENET_TxFrameBusy. The copy
+	  path works with one descriptor.
+
+config ETH_NXP_ENET_TX_ZERO_COPY
+	bool "Zero-copy TX (DMA directly from net_buf fragments)"
+	depends on !ETH_NXP_ENET_USE_DTCM_FOR_DMA_BUFFER
+	depends on !PTP_CLOCK_NXP_ENET
+	help
+	  DMA directly from the net_buf fragments instead of copying each
+	  outgoing frame into a driver TX buffer, removing one memcpy per
+	  packet. Incompatible with DTCM DMA buffers (no cache maintenance)
+	  and the PTP Tx-timestamp path.
+
+config ETH_NXP_ENET_RX_ZERO_COPY
+	bool "Zero-copy RX (DMA directly into net_buf-backed buffers)"
+	depends on !ETH_NXP_ENET_USE_DTCM_FOR_DMA_BUFFER
+	depends on !PTP_CLOCK_NXP_ENET
+	help
+	  DMA directly into net_buf-backed buffers and wrap them into a net_pkt
+	  instead of copying each received frame out of a driver buffer,
+	  removing one memcpy per packet. Incompatible with DTCM DMA buffers
+	  (no cache maintenance) and the PTP Rx-timestamp path.
+
+config ETH_NXP_ENET_RX_ZERO_COPY_BUFFERS
+	int "Number of zero-copy RX buffers"
+	depends on ETH_NXP_ENET_RX_ZERO_COPY
+	default 32
+	range 8 512
+	help
+	  Size of the zero-copy RX buffer pool.
 
 config ETH_NXP_ENET_RX_THREAD_STACK_SIZE
 	int "NXP ENET RX thread stack size"
@@ -65,8 +98,7 @@ config ETH_NXP_ENET_RX_THREAD_PRIORITY
 	int "NXP ENET driver RX cooperative thread priority"
 	default 2
 	help
-	  ENET MAC Driver handles RX in cooperative workqueue thread.
-	  This options sets the priority of that thread.
+	  Priority level of the RX thread.
 
 config ETH_NXP_ENET_RMII_EXT_CLK
 	bool "RMII clock from external sources"
