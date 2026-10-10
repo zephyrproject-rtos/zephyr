@@ -18,6 +18,9 @@
  *     (§27.2.2 SAR ADC)
  *   - <em>PSOC Control C3 Mainline Registers TRM</em>, 002-39445
  *     (HPPASS_SAR_*)
+ *
+ * MCPASS v3 (PSC3M6) offsets and field positions come from the vendor headers
+ * cyip_hppass_v3.h and cy_hppass_sar.h.
  */
 
 #define DT_DRV_COMPAT infineon_hppass_sar_adc
@@ -33,6 +36,10 @@
 
 #include <infineon_hppass.h>
 #include "cy_hppass_sar.h"
+
+#if !defined(CY_IP_MXS40MCPASS_VERSION)
+#error "CY_IP_MXS40MCPASS_VERSION undefined; SAR register layout cannot be selected"
+#endif
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
@@ -122,11 +129,7 @@ const cy_stc_hppass_sar_t ifx_hppass_sar_pdl_cfg_struct_default = {
 	.fifo = NULL,
 };
 
-/*
- * Device supports 28 channels.
- * Channels 12..27 are multiplexed: samplers 12-15 each select one of four
- * channels (12-15, 16-19, 20-23, 24-27).
- */
+/* Mux samplers take four inputs each on v1 and six on v3. */
 #define HPPASS_SAR_ADC_MAX_CHANNELS       CY_HPPASS_SAR_CHAN_NUM
 #define DIRECT_CHANNEL_CNT                CY_HPPASS_SAR_DIR_SAMP_NUM
 #define MUXED_CHANNELS_PER_SAMPLER \
@@ -134,8 +137,13 @@ const cy_stc_hppass_sar_t ifx_hppass_sar_pdl_cfg_struct_default = {
 #define IFX_HPPASS_SAR_SAMPLER_GAIN_MSK   0x03
 #define IFX_HPPASS_SAR_SAMPLER_GAIN_WIDTH 2
 
-/* 28-channel mask, OR'd into CFG_RESULT_MASK (Regs TRM §20.1.18). */
-#define IFX_HPPASS_SAR_CHAN_MSK            ((1UL << HPPASS_SAR_ADC_MAX_CHANNELS) - 1UL)
+/* channel_id is a 5-bit field and adc_sequence.channels a 32-bit mask. */
+#define IFX_HPPASS_SAR_ADC_API_MAX_CHANNELS 32
+#define IFX_HPPASS_SAR_USABLE_CHANNELS                                                             \
+	MIN(HPPASS_SAR_ADC_MAX_CHANNELS, IFX_HPPASS_SAR_ADC_API_MAX_CHANNELS)
+
+/* Usable-channel mask, OR'd into CFG_RESULT_MASK (Regs TRM §20.1.18). */
+#define IFX_HPPASS_SAR_CHAN_MSK            GENMASK(IFX_HPPASS_SAR_USABLE_CHANNELS - 1, 0)
 /* Group 0 done bit, bit 0 of the ENTRY_DONE field in CFG_SAR_RESULT_INTR/_SET/_MASK/_MASKED
  * (Regs TRM §20.1.26-29).  Derived from the IP register header so the bit position tracks
  * silicon revisions rather than a hand-coded literal.
@@ -151,28 +159,48 @@ const cy_stc_hppass_sar_t ifx_hppass_sar_pdl_cfg_struct_default = {
  */
 #define IFX_HPPASS_SAR_SEQ_ENTRY(grp)     (0x100U + (grp) * 4U) /* SAR.SEQ_ENTRY[grp] */
 #define IFX_HPPASS_SAR_SAMP_GAIN          0x408U                /* SAR.CFG.SAMP_GAIN */
-#define IFX_HPPASS_SAR_CHAN_CFG(ch)       (0x430U + (ch) * 4U)  /* SAR.CFG.CHAN_CFG[ch] */
 #define IFX_HPPASS_SAR_CHAN_RESULT(ch)    (0x510U + (ch) * 4U)  /* SAR.CFG.CHAN_RESULT[ch] */
-#define IFX_HPPASS_SAR_RESULT_MASK        0x590U                /* SAR.CFG.RESULT_MASK */
-#define IFX_HPPASS_SAR_RESULT_UPDATED     0x594U                /* SAR.CFG.RESULT_UPDATED */
 #define IFX_HPPASS_SAR_RESULT_INTR        0x600U                /* SAR.CFG.SAR_RESULT_INTR */
 #define IFX_HPPASS_SAR_RESULT_INTR_MASK   0x608U                /* SAR.CFG.SAR_RESULT_INTR_MASK */
 #define IFX_HPPASS_SAR_RESULT_INTR_MASKED 0x60CU                /* SAR.CFG.SAR_RESULT_INTR_MASKED */
+
+#if (CY_IP_MXS40MCPASS_VERSION >= 3u)
+/* v3 drops the padding before CHAN_CFG[] and grows CHAN_RESULT[] to 36 entries. */
+#define IFX_HPPASS_SAR_SEQ_ENTRY_2(grp) (0x120U + (grp) * 4U) /* SAR.SEQ_ENTRY_2[grp] */
+#define IFX_HPPASS_SAR_CHAN_CFG(ch)     (0x420U + (ch) * 4U)  /* SAR.CFG.CHAN_CFG[ch] */
+#define IFX_HPPASS_SAR_RESULT_MASK      0x5A8U                /* SAR.CFG.RESULT_MASK */
+#define IFX_HPPASS_SAR_RESULT_UPDATED   0x5B0U                /* SAR.CFG.RESULT_UPDATED */
+#else
+#define IFX_HPPASS_SAR_CHAN_CFG(ch)   (0x430U + (ch) * 4U) /* SAR.CFG.CHAN_CFG[ch] */
+#define IFX_HPPASS_SAR_RESULT_MASK    0x590U               /* SAR.CFG.RESULT_MASK */
+#define IFX_HPPASS_SAR_RESULT_UPDATED 0x594U               /* SAR.CFG.RESULT_UPDATED */
+#endif
 
 /*
  * Field masks for SAR registers written as multi-field aggregates.
  * Values are composed with FIELD_PREP(); PSC3 runs little-endian (CFGEND=0).
  */
 
-/* SEQ_ENTRY0: per-group sampler enables, mux select, trigger source (Regs TRM 002-39445 §20.1.5).
- */
+/* SEQ_ENTRY0: per-group sampler enables, mux select (Regs TRM 002-39445 §20.1.5). */
 #define IFX_HPPASS_SAR_SEQ_DIRECT_SAMPLER_EN GENMASK(11, 0)  /* per direct sampler */
 #define IFX_HPPASS_SAR_SEQ_MUXED_SAMPLER_EN  GENMASK(15, 12) /* per mux sampler */
+
+#if (CY_IP_MXS40MCPASS_VERSION >= 3u)
+/* Widening the mux selects to 3 bits pushed trigger and timing into SEQ_ENTRY_2. */
+#define IFX_HPPASS_SAR_SEQ_MUX0_SEL       GENMASK(18, 16) /* mux 0 channel select */
+#define IFX_HPPASS_SAR_SEQ_MUX1_SEL       GENMASK(21, 19) /* mux 1 channel select */
+#define IFX_HPPASS_SAR_SEQ_MUX2_SEL       GENMASK(24, 22) /* mux 2 channel select */
+#define IFX_HPPASS_SAR_SEQ_MUX3_SEL       GENMASK(27, 25) /* mux 3 channel select */
+#define IFX_HPPASS_SAR_SEQ_ENTRY_2_TR_SEL GENMASK(27, 23) /* trigger source, SEQ_ENTRY_2 */
+#else
 #define IFX_HPPASS_SAR_SEQ_MUX0_SEL          GENMASK(17, 16) /* mux 0 channel select */
 #define IFX_HPPASS_SAR_SEQ_MUX1_SEL          GENMASK(19, 18) /* mux 1 channel select */
 #define IFX_HPPASS_SAR_SEQ_MUX2_SEL          GENMASK(21, 20) /* mux 2 channel select */
 #define IFX_HPPASS_SAR_SEQ_MUX3_SEL          GENMASK(23, 22) /* mux 3 channel select */
 #define IFX_HPPASS_SAR_SEQ_TR_SEL            GENMASK(27, 24) /* trigger source */
+#endif
+
+/* v3 keeps these in SEQ_ENTRY_2 instead of SEQ_ENTRY. */
 #define IFX_HPPASS_SAR_SEQ_SAMP_TIME_SEL     GENMASK(29, 28) /* sample-time gen */
 #define IFX_HPPASS_SAR_SEQ_PRIORITY          BIT(30)         /* group priority */
 #define IFX_HPPASS_SAR_SEQ_CONT              BIT(31)         /* continuous conversion */
@@ -180,6 +208,7 @@ const cy_stc_hppass_sar_t ifx_hppass_sar_pdl_cfg_struct_default = {
 /* CFG_CHAN_CFG0: per-channel differential/signed/range/avg/FIFO (Regs TRM 002-39445 §20.1.12). */
 #define IFX_HPPASS_SAR_CHAN_CFG_DIFFERENTIAL BIT(0)          /* differential input mode */
 #define IFX_HPPASS_SAR_CHAN_CFG_IS_SIGNED    BIT(1)          /* signed result format */
+#define IFX_HPPASS_SAR_CHAN_CFG_RIGHT_ALIGN  BIT(2)          /* v3 only; reserved on v1 */
 #define IFX_HPPASS_SAR_CHAN_CFG_RANGE_SEL    GENMASK(23, 20) /* input range select */
 #define IFX_HPPASS_SAR_CHAN_CFG_AVG_SEL      GENMASK(26, 24) /* averaging select */
 #define IFX_HPPASS_SAR_CHAN_CFG_FIFO_SEL     GENMASK(30, 28) /* result FIFO select */
@@ -218,17 +247,16 @@ struct ifx_hppass_sar_adc_data {
 };
 
 /*
- * ADC Channels 12-28 are grouped together in hardware using a mux.  The groupings are:
- * Sampler 12: Channels 12-15,
- * Sampler 13: Channels 16-19,
- * Sampler 14: Channels 20-23,
- * Sampler 15: Channels 24-27
+ * Channels past the direct samplers sit behind the mux samplers: 4 per sampler
+ * on v1, 6 on v3.  Bits past channel 31 drop off, which is the ADC API limit.
  */
-#define ADC_SAMPLER_12_CHANNEL_GROUP 0x0000F000
-#define ADC_SAMPLER_13_CHANNEL_GROUP 0x000F0000
-#define ADC_SAMPLER_14_CHANNEL_GROUP 0x00F00000
-#define ADC_SAMPLER_15_CHANNEL_GROUP 0x0F000000
+#define ADC_SAMPLER_CHANNEL_GROUP(n)                                                               \
+	((uint32_t)(BIT_MASK(MUXED_CHANNELS_PER_SAMPLER)                                           \
+		    << (DIRECT_CHANNEL_CNT + (n) * MUXED_CHANNELS_PER_SAMPLER)))
 #define ADC_SAMPLER_DIRECT_MASK      0x0FFF
+
+BUILD_ASSERT(IFX_HPPASS_SAR_USABLE_CHANNELS <= 32,
+	     "mux sampler group masks are 32-bit; channels above 31 are unreachable");
 
 /**
  * @brief Configure HPPASS SAR ADC group
@@ -237,51 +265,54 @@ struct ifx_hppass_sar_adc_data {
  * @param group Group number to configure (0-7)
  *
  * Configure SAR_SEQ_GROUP[group] to fire the requested channels on the next trigger.
- * Each mux sampler can select only one of its four inputs; returns -EINVAL if more than
+ * Each mux sampler can select only one of its inputs; returns -EINVAL if more than
  * one channel per mux group is requested.
  */
 static int ifx_hppass_sar_configure_group(mem_addr_t ctrl_base, uint32_t channels, uint32_t group)
 {
 	uint32_t mux_samp_msk = 0;
-	uint32_t mux_sel[4] = {0};
+	uint32_t mux_sel[CY_HPPASS_SAR_MUX_SAMP_NUM] = {0};
 
 	/* Check that no more than one channel is selected from each muxed group */
-	if (POPCOUNT(channels & ADC_SAMPLER_12_CHANNEL_GROUP) > 1 ||
-	    POPCOUNT(channels & ADC_SAMPLER_13_CHANNEL_GROUP) > 1 ||
-	    POPCOUNT(channels & ADC_SAMPLER_14_CHANNEL_GROUP) > 1 ||
-	    POPCOUNT(channels & ADC_SAMPLER_15_CHANNEL_GROUP) > 1) {
-
-		return -EINVAL;
+	for (uint32_t sampler = 0; sampler < CY_HPPASS_SAR_MUX_SAMP_NUM; sampler++) {
+		if (POPCOUNT(channels & ADC_SAMPLER_CHANNEL_GROUP(sampler)) > 1) {
+			return -EINVAL;
+		}
 	}
 
 	/* Determine which muxed samplers are needed and their mux select values. */
-	for (int channel_num = DIRECT_CHANNEL_CNT; channel_num < HPPASS_SAR_ADC_MAX_CHANNELS;
+	for (int channel_num = DIRECT_CHANNEL_CNT; channel_num < IFX_HPPASS_SAR_USABLE_CHANNELS;
 	     channel_num++) {
-		if (channels & (1 << channel_num)) {
+		if (channels & BIT(channel_num)) {
 			int sampler_num =
 				(channel_num - DIRECT_CHANNEL_CNT) / MUXED_CHANNELS_PER_SAMPLER;
 			int mux_setting =
 				(channel_num - DIRECT_CHANNEL_CNT) % MUXED_CHANNELS_PER_SAMPLER;
-			mux_samp_msk |= (1 << sampler_num);
+			mux_samp_msk |= BIT(sampler_num);
 			mux_sel[sampler_num] = mux_setting;
 		}
 	}
 
 	/* Single-shot conversion via SEQ_ENTRY0 (Regs TRM §20.1.5). */
-	uint32_t seq_entry_reg =
-		FIELD_PREP(IFX_HPPASS_SAR_SEQ_DIRECT_SAMPLER_EN,
-			   channels & ADC_SAMPLER_DIRECT_MASK) |
-		FIELD_PREP(IFX_HPPASS_SAR_SEQ_MUXED_SAMPLER_EN, mux_samp_msk) |
-		FIELD_PREP(IFX_HPPASS_SAR_SEQ_MUX0_SEL, mux_sel[0]) |
-		FIELD_PREP(IFX_HPPASS_SAR_SEQ_MUX1_SEL, mux_sel[1]) |
-		FIELD_PREP(IFX_HPPASS_SAR_SEQ_MUX2_SEL, mux_sel[2]) |
-		FIELD_PREP(IFX_HPPASS_SAR_SEQ_MUX3_SEL, mux_sel[3]) |
-		/* MFD wires TR0 to FW_PULSE via trig-in-0-type */
-		FIELD_PREP(IFX_HPPASS_SAR_SEQ_TR_SEL, CY_HPPASS_SAR_TRIG_0) |
-		FIELD_PREP(IFX_HPPASS_SAR_SEQ_SAMP_TIME_SEL,
-			   CY_HPPASS_SAR_SAMP_TIME_0);
+	uint32_t seq_entry_reg = FIELD_PREP(IFX_HPPASS_SAR_SEQ_DIRECT_SAMPLER_EN,
+					    channels & ADC_SAMPLER_DIRECT_MASK) |
+				 FIELD_PREP(IFX_HPPASS_SAR_SEQ_MUXED_SAMPLER_EN, mux_samp_msk) |
+				 FIELD_PREP(IFX_HPPASS_SAR_SEQ_MUX0_SEL, mux_sel[0]) |
+				 FIELD_PREP(IFX_HPPASS_SAR_SEQ_MUX1_SEL, mux_sel[1]) |
+				 FIELD_PREP(IFX_HPPASS_SAR_SEQ_MUX2_SEL, mux_sel[2]) |
+				 FIELD_PREP(IFX_HPPASS_SAR_SEQ_MUX3_SEL, mux_sel[3]);
 
+	/* MFD wires TR0 to FW_PULSE via trig-in-0-type */
+#if (CY_IP_MXS40MCPASS_VERSION >= 3u)
 	sys_write32(seq_entry_reg, ctrl_base + IFX_HPPASS_SAR_SEQ_ENTRY(group));
+	sys_write32(FIELD_PREP(IFX_HPPASS_SAR_SEQ_ENTRY_2_TR_SEL, CY_HPPASS_SAR_TRIG_0) |
+		    FIELD_PREP(IFX_HPPASS_SAR_SEQ_SAMP_TIME_SEL, CY_HPPASS_SAR_SAMP_TIME_0),
+		    ctrl_base + IFX_HPPASS_SAR_SEQ_ENTRY_2(group));
+#else
+	sys_write32(seq_entry_reg | FIELD_PREP(IFX_HPPASS_SAR_SEQ_TR_SEL, CY_HPPASS_SAR_TRIG_0) |
+		    FIELD_PREP(IFX_HPPASS_SAR_SEQ_SAMP_TIME_SEL, CY_HPPASS_SAR_SAMP_TIME_0),
+		    ctrl_base + IFX_HPPASS_SAR_SEQ_ENTRY(group));
+#endif
 
 	/*
 	 * Cross-talk compensation: adjusts per-sampler offset trim based on
@@ -309,8 +340,8 @@ static void ifx_hppass_get_group_results(mem_addr_t ctrl_base, uint32_t channels
 		return;
 	}
 
-	for (size_t i = 0; i < HPPASS_SAR_ADC_MAX_CHANNELS; i++) {
-		if (channels & (1 << i)) {
+	for (size_t i = 0; i < IFX_HPPASS_SAR_USABLE_CHANNELS; i++) {
+		if (channels & BIT(i)) {
 			int16_t result =
 				(int16_t)sys_read32(ctrl_base + IFX_HPPASS_SAR_CHAN_RESULT(i));
 			*data->buffer++ = result;
@@ -584,7 +615,7 @@ static int ifx_hppass_sar_adc_channel_setup(const struct device *dev,
 	struct ifx_hppass_sar_adc_data *data = dev->data;
 	mem_addr_t ctrl_base = cfg->ctrl_base;
 
-	if (channel_cfg->channel_id >= HPPASS_SAR_ADC_MAX_CHANNELS) {
+	if (channel_cfg->channel_id >= IFX_HPPASS_SAR_USABLE_CHANNELS) {
 		LOG_ERR("Invalid channel ID: %d", channel_cfg->channel_id);
 		return -EINVAL;
 	}
@@ -627,6 +658,11 @@ static int ifx_hppass_sar_adc_channel_setup(const struct device *dev,
 	 * gates this channel's result register.
 	 */
 	uint32_t chan_cfg_reg = 0U;
+
+#if (CY_IP_MXS40MCPASS_VERSION >= 3u)
+	/* v3 adds selectable alignment; keep results right-aligned as on v1. */
+	chan_cfg_reg |= IFX_HPPASS_SAR_CHAN_CFG_RIGHT_ALIGN;
+#endif
 
 	/*
 	 * RESULT_MASK and SAMP_GAIN are shared across all channels and are
@@ -756,61 +792,37 @@ static int ifx_hppass_sar_adc_init(const struct device *dev)
 /*
  * Devicetree channel mask generation
  *
- * dir_samp_en_mask:
- *   One bit per direct sampler channel (0..11) that has a child node.
- *
- * mux_samp_en_mask:
- *   One bit per mux sampler group:
- *     Bit0 -> any of channels 12..15 present
- *     Bit1 -> any of channels 16..19 present
- *     Bit2 -> any of channels 20..23 present
- *     Bit3 -> any of channels 24..27 present
+ * dir_samp_en_mask: one bit per direct sampler channel that has a child node.
+ * mux_samp_en_mask: one bit per mux sampler that has any of its channels present.
  */
 
 #define IFX_HPPASS_SAR_CH_EXISTS(inst, ch) \
 	DT_NODE_EXISTS(DT_CHILD_BY_UNIT_ADDR_INT(DT_DRV_INST(inst), ch))
 
-/* Direct sampler bitmap (0..11) */
+#define IFX_HPPASS_SAR_CH_BIT(ch, inst) (IFX_HPPASS_SAR_CH_EXISTS(inst, ch) ? BIT(ch) : 0)
+
+/* Every channel the devicetree declares, up to the 32 the API can address. */
+#define IFX_HPPASS_SAR_CHAN_PRESENT_MSK(inst)                                                      \
+	(LISTIFY(IFX_HPPASS_SAR_ADC_API_MAX_CHANNELS, IFX_HPPASS_SAR_CH_BIT, (|), inst))
+
 #define IFX_HPPASS_SAR_DIR_MASK(inst)                                                              \
-	((IFX_HPPASS_SAR_CH_EXISTS(inst, 0) ? BIT(0) : 0) |                                        \
-	 (IFX_HPPASS_SAR_CH_EXISTS(inst, 1) ? BIT(1) : 0) |                                        \
-	 (IFX_HPPASS_SAR_CH_EXISTS(inst, 2) ? BIT(2) : 0) |                                        \
-	 (IFX_HPPASS_SAR_CH_EXISTS(inst, 3) ? BIT(3) : 0) |                                        \
-	 (IFX_HPPASS_SAR_CH_EXISTS(inst, 4) ? BIT(4) : 0) |                                        \
-	 (IFX_HPPASS_SAR_CH_EXISTS(inst, 5) ? BIT(5) : 0) |                                        \
-	 (IFX_HPPASS_SAR_CH_EXISTS(inst, 6) ? BIT(6) : 0) |                                        \
-	 (IFX_HPPASS_SAR_CH_EXISTS(inst, 7) ? BIT(7) : 0) |                                        \
-	 (IFX_HPPASS_SAR_CH_EXISTS(inst, 8) ? BIT(8) : 0) |                                        \
-	 (IFX_HPPASS_SAR_CH_EXISTS(inst, 9) ? BIT(9) : 0) |                                        \
-	 (IFX_HPPASS_SAR_CH_EXISTS(inst, 10) ? BIT(10) : 0) |                                      \
-	 (IFX_HPPASS_SAR_CH_EXISTS(inst, 11) ? BIT(11) : 0))
+	(IFX_HPPASS_SAR_CHAN_PRESENT_MSK(inst) & ADC_SAMPLER_DIRECT_MASK)
 
-/* Group presence helpers */
-#define IFX_HPPASS_SAR_GRP0_PRESENT(inst)                                                          \
-	(IFX_HPPASS_SAR_CH_EXISTS(inst, 12) || IFX_HPPASS_SAR_CH_EXISTS(inst, 13) ||               \
-	 IFX_HPPASS_SAR_CH_EXISTS(inst, 14) || IFX_HPPASS_SAR_CH_EXISTS(inst, 15))
+#define IFX_HPPASS_SAR_MUX_BIT(inst, n)                                                            \
+	((IFX_HPPASS_SAR_CHAN_PRESENT_MSK(inst) & ADC_SAMPLER_CHANNEL_GROUP(n)) ? BIT(n) : 0)
 
-#define IFX_HPPASS_SAR_GRP1_PRESENT(inst)                                                          \
-	(IFX_HPPASS_SAR_CH_EXISTS(inst, 16) || IFX_HPPASS_SAR_CH_EXISTS(inst, 17) ||               \
-	 IFX_HPPASS_SAR_CH_EXISTS(inst, 18) || IFX_HPPASS_SAR_CH_EXISTS(inst, 19))
-
-#define IFX_HPPASS_SAR_GRP2_PRESENT(inst)                                                          \
-	(IFX_HPPASS_SAR_CH_EXISTS(inst, 20) || IFX_HPPASS_SAR_CH_EXISTS(inst, 21) ||               \
-	 IFX_HPPASS_SAR_CH_EXISTS(inst, 22) || IFX_HPPASS_SAR_CH_EXISTS(inst, 23))
-
-#define IFX_HPPASS_SAR_GRP3_PRESENT(inst)                                                          \
-	(IFX_HPPASS_SAR_CH_EXISTS(inst, 24) || IFX_HPPASS_SAR_CH_EXISTS(inst, 25) ||               \
-	 IFX_HPPASS_SAR_CH_EXISTS(inst, 26) || IFX_HPPASS_SAR_CH_EXISTS(inst, 27))
-
-/* Mux sampler enable mask (bit per group if any channel in that group exists) */
 #define IFX_HPPASS_SAR_MUX_MASK(inst)                                                              \
-	((IFX_HPPASS_SAR_GRP0_PRESENT(inst) ? BIT(0) : 0) |                                        \
-	 (IFX_HPPASS_SAR_GRP1_PRESENT(inst) ? BIT(1) : 0) |                                        \
-	 (IFX_HPPASS_SAR_GRP2_PRESENT(inst) ? BIT(2) : 0) |                                        \
-	 (IFX_HPPASS_SAR_GRP3_PRESENT(inst) ? BIT(3) : 0))
+	(IFX_HPPASS_SAR_MUX_BIT(inst, 0) | IFX_HPPASS_SAR_MUX_BIT(inst, 1) |                       \
+	 IFX_HPPASS_SAR_MUX_BIT(inst, 2) | IFX_HPPASS_SAR_MUX_BIT(inst, 3))
+
+/* A reg above 31 would truncate into the 5-bit channel_id and select another channel. */
+#define IFX_HPPASS_SAR_CHAN_ID_ASSERT(node_id)                                                     \
+	BUILD_ASSERT(DT_REG_ADDR(node_id) < IFX_HPPASS_SAR_USABLE_CHANNELS,                        \
+		     "SAR channel id exceeds device capacity or the Zephyr ADC API limit");
 
 /* Device instantiation */
 #define IFX_HPPASS_SAR_ADC_INIT(n)                                                                 \
+	DT_INST_FOREACH_CHILD_STATUS_OKAY(n, IFX_HPPASS_SAR_CHAN_ID_ASSERT)                        \
 	ADC_IFX_HPPASS_SAR_DRIVER_API(n);                                                          \
 	static void ifx_hppass_sar_adc_config_func_##n(void);                                      \
 	static const struct ifx_hppass_sar_adc_config ifx_hppass_sar_adc_config_##n = {            \

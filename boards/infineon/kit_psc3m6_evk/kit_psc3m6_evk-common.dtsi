@@ -9,6 +9,7 @@
  * Common devicetree content for the kit_psc3m6_evk board variants.
  */
 
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -153,4 +154,26 @@ uart4: &scb4 {
 
 &watchdog0 {
 	status = "okay";
+};
+
+/*
+ * HPPASS analog subsystem (MFD parent).
+ * The startup cascade values on &hppass_analog0 are vendor-recommended and set
+ * in the SoC dtsi.  Do not modify.
+ */
+&hppass_analog0 {
+	status = "okay";
+};
+
+&adc0 {
+	status = "okay";
+
+	/* On-board potentiometer on AN_B4, the first input of mux sampler 0. */
+	channel@c {
+		reg = <12>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+	};
 };
