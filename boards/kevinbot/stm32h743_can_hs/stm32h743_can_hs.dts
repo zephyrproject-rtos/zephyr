@@ -1,0 +1,243 @@
+/*
+ * Copyright (c) 2026 Kevin Ahr <kevin@kevinbot.net>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7/stm32h743Xi.dtsi>
+#include <st/h7/stm32h743iitx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/led/led.h>
+
+/ {
+	model = "STM32H743 CAN + USB-HS Dev Board";
+	compatible = "kevinbot,stm32h743_can_hs";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,udc = &usbotg_fs;
+		zephyr,canbus = &fdcan1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0_red: led_1 {
+			gpios = <&gpioa 7 GPIO_ACTIVE_HIGH>;
+			label = "Red LED";
+		};
+
+		led0_green: led_2 {
+			gpios = <&gpioc 8 GPIO_ACTIVE_HIGH>;
+			label = "Green LED";
+		};
+
+		led0_blue: led_3 {
+			gpios = <&gpioa 6 GPIO_ACTIVE_HIGH>;
+			label = "Blue LED";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		red_pwm_led: led_0 {
+			status = "okay";
+			pwms = <&pwm3 2 PWM_MSEC(10) PWM_POLARITY_NORMAL>;
+		};
+
+		green_pwm_led: led_1 {
+			status = "okay";
+			pwms = <&pwm3 3 PWM_MSEC(10) PWM_POLARITY_NORMAL>;
+		};
+
+		blue_pwm_led: led_2 {
+			status = "okay";
+			pwms = <&pwm3 1 PWM_MSEC(10) PWM_POLARITY_NORMAL>;
+		};
+	};
+
+	soc {
+		usbotg_hs: usb@40040000 {
+			compatible = "st,stm32-otghs";
+			reg = <0x40040000 0x40000>;
+			interrupts = <74 0>, <75 0>, <76 0>, <77 0>;
+			interrupt-names = "ep1_out", "ep1_in", "wkup", "otghs";
+			num-bidir-endpoints = <9>;
+			ram-size = <4096>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 25)>,
+				 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
+			phys = <&otghs_ulpi_phy>;
+			pinctrl-0 = <&usb_otg_hs_ulpi_ck_pa5
+				     &usb_otg_hs_ulpi_d0_pa3
+				     &usb_otg_hs_ulpi_d1_pb0
+				     &usb_otg_hs_ulpi_d2_pb1
+				     &usb_otg_hs_ulpi_d3_pb10
+				     &usb_otg_hs_ulpi_d4_pb11
+				     &usb_otg_hs_ulpi_d5_pb12
+				     &usb_otg_hs_ulpi_d6_pb13
+				     &usb_otg_hs_ulpi_d7_pb5
+				     &usb_otg_hs_ulpi_stp_pc0
+				     &usb_otg_hs_ulpi_dir_pi11
+				     &usb_otg_hs_ulpi_nxt_pc3_c>;
+			pinctrl-names = "default";
+			maximum-speed = "high-speed";
+		};
+
+		otghs_ulpi_phy: otghs_ulpis_phy {
+			compatible = "usb-ulpi-phy";
+			#phy-cells = <0>;
+			reset-gpios = <&gpioi 10 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	aliases {
+		red-pwm-led = &red_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
+		led0 = &led0_red;
+		led1 = &led0_green;
+		led2 = &led0_blue;
+		watchdog0 = &iwdg;
+		rtc = &rtc;
+	};
+};
+
+zephyr_udc0: &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+#include <../boards/common/usb/cdc_acm_serial.dtsi>
+
+&quadspi {
+	pinctrl-names = "default";
+	pinctrl-0 = <&quadspi_clk_pf10 &quadspi_bk1_ncs_pg6
+		     &quadspi_bk1_io0_pf8 &quadspi_bk1_io1_pf9
+		     &quadspi_bk1_io2_pe2 &quadspi_bk1_io3_pf6>;
+	flash-id = <1>;
+	status = "okay";
+
+	s25fl128l_qspi: qspi-nor-flash@0 {
+		compatible = "st,stm32-qspi-nor";
+		reg = <0>;
+		size = <DT_SIZE_M(128)>;
+		qspi-max-frequency = <133000000>;
+		cs-high-time = <7>; // ~52.6ns
+		status = "okay";
+		spi-bus-width = <4>;
+		writeoc = "PP_1_1_4";
+		reset-cmd;
+		reset-cmd-wait = <100>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			storage_partition: partition@0 {
+				label = "storage";
+				reg = <0x00000000 DT_SIZE_M(16)>;
+			};
+		};
+	};
+};
+
+&fdcan1 {
+	status = "okay";
+
+	clocks = <&rcc STM32_CLOCK(APB1_2, 8)>,
+		 <&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
+
+	pinctrl-0 = <&fdcan1_rx_pi9 &fdcan1_tx_ph13>;
+	pinctrl-names = "default";
+
+	can-transceiver {
+		max-bitrate = <8000000>;
+	};
+};
+
+&timers3 {
+	status = "okay";
+	st,prescaler = <1000>;
+
+	pwm3: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim3_ch1_pa6 &tim3_ch2_pa7 &tim3_ch3_pc8>;
+		pinctrl-names = "default";
+	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_lse {
+	driving-capability = <2>;
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk_hse {
+	hse-bypass;
+	clock-frequency = <DT_FREQ_M(8)>; /* STLink 8MHz clock */
+	status = "okay";
+};
+
+&pll {
+	div-m = <2>;
+	mul-n = <240>;
+	div-p = <2>;   /* 480MHz -> SYSCLK/CPU */
+	div-q = <20>;  /* 960MHz / 20 = 48MHz -> USB kernel clock */
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&pll2 {
+	div-m = <4>;
+	mul-n = <120>;
+	div-p = <2>;
+	div-q = <3>; /* gives 80MHz to the FDCAN */
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(480)>;
+	d1cpre = <1>;
+	hpre = <2>;
+	d1ppre = <2>;
+	d2ppre1 = <2>;
+	d2ppre2 = <2>;
+	d3ppre = <2>;
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB4, 16)>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	status = "okay";
+};
+
+&pwr {
+	power-supply = "ldo";
+};
+
+&rng {
+	status = "okay";
+};
+
+&backup_sram {
+	status = "okay";
+};
+
+&iwdg1 {
+	status = "okay";
+};
