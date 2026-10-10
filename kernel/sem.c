@@ -21,6 +21,7 @@
 
 #include <zephyr/toolchain.h>
 #include <wait_q.h>
+#include <ksem.h>
 #include <zephyr/sys/dlist.h>
 #include <ksched.h>
 #include <scheduler.h>
@@ -113,13 +114,20 @@ static inline bool sem_handle_poll_events(struct k_sem *sem)
 #endif /* CONFIG_POLL */
 }
 
-void z_impl_k_sem_give(struct k_sem *sem)
+static int sem_give(struct k_sem *sem, bool checked)
 {
 	struct k_spinlock *lock = sem_spinlock_get(sem);
 	k_spinlock_key_t key = k_spin_lock(lock);
 	bool resched;
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_sem, give, sem);
+
+	if (checked && (sem->count == sem->limit)) {
+		/* no thread can be pending on a semaphore at its limit */
+		k_spin_unlock(lock, key);
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_sem, give, sem);
+		return -EOVERFLOW;
+	}
 
 	if (z_sched_wake(&sem->wait_q, 0, NULL)) {
 		resched = true;
@@ -135,6 +143,18 @@ void z_impl_k_sem_give(struct k_sem *sem)
 	}
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_sem, give, sem);
+
+	return 0;
+}
+
+void z_impl_k_sem_give(struct k_sem *sem)
+{
+	(void)sem_give(sem, false);
+}
+
+int z_sem_give_checked(struct k_sem *sem)
+{
+	return sem_give(sem, true);
 }
 
 #ifdef CONFIG_USERSPACE
