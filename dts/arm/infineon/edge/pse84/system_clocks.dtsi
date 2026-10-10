@@ -32,6 +32,51 @@
 		status = "okay";
 	};
 
+	/* eco, crystal on P19.0/P19.1 */
+	clk_eco: clk_eco {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-clock";
+		clock-frequency = <0>;
+		system-clock = <IFX_ECO>;
+		status = "disabled";
+	};
+
+	/* ext, clock input on P7.4 */
+	clk_ext: clk_ext {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-clock";
+		clock-frequency = <0>;
+		system-clock = <IFX_EXT>;
+		status = "disabled";
+	};
+
+	/* wco, crystal on P18.0/P18.1 */
+	clk_wco: clk_wco {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-clock";
+		clock-frequency = <32768>;
+		system-clock = <IFX_WCO>;
+		status = "disabled";
+	};
+
+	clk_lf: clk_lf {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-factor-clock";
+		system-clock = <IFX_LF>;
+		instance = <0>;
+		source-path = <IFX_CAT1_CLKLF_IN_PILO>;
+		status = "disabled";
+	};
+
+	clk_bak: clk_bak {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-factor-clock";
+		system-clock = <IFX_BAK>;
+		instance = <0>;
+		source-path = <IFX_CAT1_CLKBAK_IN_CLKLF>;
+		status = "disabled";
+	};
+
 	dpll_hp: dpll_hp {
 		#clock-cells = <0>;
 		compatible = "infineon,fixed-clock";
