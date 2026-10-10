@@ -15,3 +15,8 @@ properties:
       The DRDYn pin of HDC sensor is open-drain, active low.
       If connected directly the MCU pin should be configured
       as pull-up, active low.
+
+  heater:
+    type: boolean
+    description: |
+      Use the heater. Consumption is 7mA when measuring.
