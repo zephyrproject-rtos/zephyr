@@ -1,0 +1,26 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_DMIC_MCUX_PDM
+	bool "NXP MICFIL PDM DMA-driven DMIC driver"
+	default y
+	depends on DT_HAS_NXP_DMIC_PDM_ENABLED
+	select DMA
+	select PINCTRL
+	help
+	  Enable the DMA-driven capture driver for the NXP PDM Microphone
+	  Interface (MICFIL), written against the fsl_pdm.h HAL. It implements
+	  the Zephyr dmic API with arbitrary logical-to-hardware channel maps by
+	  fanning the single MICFIL DMA request out to one eDMA channel per
+	  captured channel, chained together with the eDMA minor link.
+
+if AUDIO_DMIC_MCUX_PDM
+
+config AUDIO_DMIC_MCUX_PDM_QUEUE_SIZE
+	int "Number of RX buffers that can be queued"
+	default 8
+	help
+	  Depth of the message queue that holds completed capture blocks until
+	  the application reads them. Each queued entry is one memory-slab block.
+
+endif # AUDIO_DMIC_MCUX_PDM

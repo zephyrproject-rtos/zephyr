@@ -1,0 +1,97 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP PDM Microphone Interface (MICFIL), DMA-driven variant.
+
+  This binding drives the MICFIL peripheral through the eDMA engine using the
+  fsl_pdm.h HAL. It implements the Zephyr dmic API with arbitrary logical-to-
+  hardware channel maps by fanning the single MICFIL DMA request out to one
+  eDMA channel per captured channel, chained together with the eDMA minor link.
+
+  The "dmas" property must reference the base eDMA channel and the MICFIL DMA
+  request source. The driver consumes "num_chan" consecutive eDMA channels
+  starting from the base channel given in the first cell.
+
+compatible: "nxp,dmic-pdm"
+
+include:
+  - base.yaml
+  - pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  dmas:
+    required: true
+    description: |
+      eDMA specifier for the receive path. The channel cell is the base eDMA
+      channel; the driver reserves num_chan consecutive channels from there.
+      The source cell is the MICFIL DMA request source.
+
+  dma-names:
+    required: true
+    description: Must contain "rx".
+
+  quality-mode:
+    type: int
+    enum: [0, 1, 4, 5, 6, 7]
+    default: 0
+    description: |
+      Decimation filter quality mode.
+      0 = Medium, default value, PoR reset value of register
+      1 = High
+      4 = VeryLow2
+      5 = VeryLow1
+      6 = VeryLow0
+      7 = Low
+
+  cic-decimation-rate:
+    type: int
+    description: |
+      CIC filter decimation rate setting,
+      range is SoC specific, may [0, 15] or [8, 31].
+
+  fifo-watermark:
+    type: int
+    description: |
+      FIFO watermark level (implementation defined, typically 7),
+      range is SoC specific, may [0, 7] or [0, 15].
+
+  sample-rate:
+    type: int
+    enum: [8000, 12000, 16000, 24000, 32000, 48000, 96000]
+    description: |
+      Sample rate in Hz.
+
+child-binding:
+  description: |
+    NXP MICFIL channel. Can be used to configure DC remover cutoff frequency and gain.
+  include:
+    - name: base.yaml
+      property-allowlist:
+        - reg
+  properties:
+    reg:
+      required: true
+    dc-remover-cutoff-freq:
+      type: int
+      enum: [0, 1, 2, 3]
+      default: 0
+      description: |
+        DC remover cutoff frequency in Hz
+        0: 20Hz (FS=48KHz), default value, PoR reset value
+        1: 13.3Hz (FS=48KHz)
+        2: 40Hz (FS=48KHz)
+        3: DC remover is bypassed
+
+    decimation-filter-gain:
+      type: int
+      default: 0
+      description: |
+        Decimation filter gain setting, range: [0, 15].
+        Default is PoR reset value of register.
