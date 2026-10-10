@@ -30,3 +30,15 @@ tests:
   drivers.clock.stm32_clock_configuration.h5.pll_hse25_ahb_2_100:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_hse25_ahb_2_100.overlay"
     platform_allow: stm32h573i_dk
+  drivers.clock.stm32_clock_configuration.h5.sysclksrc_pll_hse24_100:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_hse24_100.overlay"
+    platform_allow: nucleo_h503rb
+  drivers.clock.stm32_clock_configuration.h5.sysclksrc_pll_hse24_240:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_hse24_240.overlay"
+    platform_allow: nucleo_h503rb
+  drivers.clock.stm32_clock_configuration.h5.sysclksrc_hse_24:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hse24.overlay"
+    platform_allow: nucleo_h503rb
+  drivers.clock.stm32_clock_configuration.h5.pll_hse24_ahb_2_100:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_hse24_ahb_2_100.overlay"
+    platform_allow: nucleo_h503rb
