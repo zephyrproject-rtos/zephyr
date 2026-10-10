@@ -1230,6 +1230,25 @@ ZTEST(prf, test_cbprintf_package_rw_string_indexes)
 	zassert_equal(addr, test_str1);
 }
 
+/* Test that only the part of a string covered by its precision is packaged. */
+ZTEST(prf, test_cbprintf_package_str_precision)
+{
+	if (!ENABLED_USE_PACKAGED) {
+		TC_PRINT("disabled\n");
+		return;
+	}
+
+	/* Longer than the package buffer, so it only fits if the copy is cut. */
+	static char str[512];
+	int rc;
+
+	memset(str, 'a', sizeof(str) - 1);
+	str[sizeof(str) - 1] = '\0';
+
+	TEST_PRF(&rc, "/%.4s/%.*s/%.*s/%.s/", str, 3, str, 0, str, str);
+	PRF_CHECK("/aaaa/aaa///", rc);
+}
+
 static int fsc_package_cb(int c, void *ctx)
 {
 	char **p = ctx;
