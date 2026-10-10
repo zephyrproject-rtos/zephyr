@@ -1357,12 +1357,21 @@ static int adv_start_ext(struct bt_le_ext_adv *adv,
 	return 0;
 }
 
+#if defined(CONFIG_BT_LIM_ADV)
 static void adv_timeout(struct k_work *work);
 
 int bt_le_lim_adv_cancel_timeout(struct bt_le_ext_adv *adv)
 {
 	return k_work_cancel_delayable(&adv->lim_adv_timeout_work);
 }
+#else
+int bt_le_lim_adv_cancel_timeout(struct bt_le_ext_adv *adv)
+{
+	ARG_UNUSED(adv);
+
+	return 0;
+}
+#endif /* CONFIG_BT_LIM_ADV */
 
 int bt_le_adv_start(const struct bt_le_adv_param *param,
 		    const struct bt_data *ad, size_t ad_len,
@@ -1370,6 +1379,11 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 {
 	struct bt_le_ext_adv *adv;
 	int err;
+
+	if (!IS_ENABLED(CONFIG_BT_LIM_ADV) && ad_is_limited(ad, ad_len)) {
+		/* Nothing would end the limited discoverable mode */
+		return -ENOTSUP;
+	}
 
 	err = adv_create_legacy();
 	if (err) {
@@ -1389,11 +1403,13 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		bt_le_adv_delete_legacy();
 	}
 
+#if defined(CONFIG_BT_LIM_ADV)
 	if (ad_is_limited(ad, ad_len)) {
 		k_work_init_delayable(&adv->lim_adv_timeout_work, adv_timeout);
 		bt_work_reschedule(&adv->lim_adv_timeout_work,
 				   K_SECONDS(CONFIG_BT_LIM_ADV_TIMEOUT));
 	}
+#endif /* CONFIG_BT_LIM_ADV */
 
 	return err;
 }
@@ -1753,7 +1769,7 @@ int bt_le_ext_adv_delete(struct bt_le_ext_adv *adv)
 }
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 
-
+#if defined(CONFIG_BT_LIM_ADV)
 static void adv_timeout(struct k_work *work)
 {
 	int err = 0;
@@ -1776,6 +1792,7 @@ static void adv_timeout(struct k_work *work)
 		LOG_WRN("Failed to stop advertising: %d", err);
 	}
 }
+#endif /* CONFIG_BT_LIM_ADV */
 
 #if defined(CONFIG_BT_PER_ADV)
 int bt_le_per_adv_set_param(struct bt_le_ext_adv *adv,
