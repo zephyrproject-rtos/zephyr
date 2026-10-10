@@ -181,6 +181,26 @@
 			tx-fifo-depth = <128>;
 		};
 
+		sdhci0: sdhci@e0100000 {
+			compatible = "xlnx,zynq-8.9a";
+			reg = <0xe0100000 0x1000>;
+			status = "disabled";
+			/* IOPLL-derived SDIO reference clock (UG585); the
+			 * Capabilities base-clock field reads 0 on silicon.
+			 */
+			clock-frequency = <50000000>;
+			/* No ADMA2 / UHS on this controller generation yet. */
+			pio-mode;
+		};
+
+		sdhci1: sdhci@e0101000 {
+			compatible = "xlnx,zynq-8.9a";
+			reg = <0xe0101000 0x1000>;
+			status = "disabled";
+			clock-frequency = <50000000>;
+			pio-mode;
+		};
+
 		psgpio: gpio@e000a000 {
 			compatible = "xlnx,ps-gpio";
 			status = "disabled";

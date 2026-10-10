@@ -1,0 +1,38 @@
+# Copyright (c) 2026 David Paul-Beier
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Xilinx Zynq-7000 PS SD/SDIO host controller (Arasan-derived SDHCI 8.9a IP,
+  UG585 ch. 13). Served by the shared drivers/sdhc/xlnx_sdhc.c driver, one
+  generation older than Versal: no PHY/tap-delay block (so no UHS), no
+  clock_control provider in Zephyr (the input clock is fixed), and the ADMA2
+  path is not yet hardware-verified. A node therefore sets "pio-mode" and
+  "clock-frequency" and omits "clocks"; the driver selects the PIO transfer
+  path and the fixed input clock from those devicetree properties.
+
+compatible: "xlnx,zynq-8.9a"
+
+include: [sdhc.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
+    description:
+      Input clock to the SD controller, in Hz. Used in place of a
+      clock_control provider (which does not exist for Zynq-7000 in Zephyr).
+
+  pio-mode:
+    type: boolean
+    description:
+      Use PIO/polling transfers instead of ADMA2. Required on Zynq-7000 until
+      the ADMA2 path is hardware-verified on this controller generation.
+
+  broken-cd:
+    type: boolean
+    description:
+      There is no usable card-detect signal into the controller on this board;
+      always report a card present instead of polling the CARD_INSRT bit.
