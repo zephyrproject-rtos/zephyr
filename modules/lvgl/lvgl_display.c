@@ -47,6 +47,7 @@ static void lvgl_wait_cb(lv_display_t *display)
 void lvgl_rounder_cb(lv_event_t *e)
 {
 	lv_area_t *area = lv_event_get_param(e);
+	lv_display_t *display = lv_event_get_user_data(e);
 #if CONFIG_LV_Z_AREA_X_ALIGNMENT_WIDTH != 1
 	__ASSERT(POPCOUNT(CONFIG_LV_Z_AREA_X_ALIGNMENT_WIDTH) == 1, "Invalid X alignment width");
 
@@ -59,6 +60,9 @@ void lvgl_rounder_cb(lv_event_t *e)
 	area->y1 &= ~(CONFIG_LV_Z_AREA_Y_ALIGNMENT_WIDTH - 1);
 	area->y2 |= (CONFIG_LV_Z_AREA_Y_ALIGNMENT_WIDTH - 1);
 #endif
+
+	area->x2 = MIN(area->x2, lv_display_get_horizontal_resolution(display) - 1);
+	area->y2 = MIN(area->y2, lv_display_get_vertical_resolution(display) - 1);
 }
 #endif
 

@@ -9,7 +9,10 @@ if LVGL
 
 # Let LVGL fully handle the buffers
 configdefault STM32_LTDC_FB_NUM
-	default 0
+	default 1
+
+configdefault LV_Z_VDB_SIZE
+	default 20
 
 configdefault LV_Z_VDB_ZEPHYR_REGION
 	default y
@@ -18,7 +21,7 @@ configdefault LV_Z_VDB_ZEPHYR_REGION_NAME
 	default "SRAM2"
 
 choice LV_Z_RENDERING_MODE
-	default LV_Z_DIRECT_RENDERING
+	default LV_Z_PARTIAL_REFRESH
 endchoice
 
 endif # LVGL
