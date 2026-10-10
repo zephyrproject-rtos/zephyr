@@ -92,6 +92,9 @@ static struct {
 	 */
 	size_t len;
 
+	/** Whether len is known. */
+	bool len_known;
+
 	/** Path of file being accessed. */
 	char path[CONFIG_MCUMGR_GRP_FS_PATH_LEN + 1];
 
@@ -127,6 +130,7 @@ static int fs_mgmt_cleanup(void)
 		fs_mgmt_ctxt.state = STATE_NO_UPLOAD_OR_DOWNLOAD;
 		fs_mgmt_ctxt.off = 0;
 		fs_mgmt_ctxt.len = 0;
+		fs_mgmt_ctxt.len_known = false;
 		memset(fs_mgmt_ctxt.path, 0, sizeof(fs_mgmt_ctxt.path));
 		rc = fs_close(&fs_mgmt_ctxt.file);
 		fs_mgmt_ctxt.transport = NULL;
@@ -196,7 +200,7 @@ static int fs_mgmt_upload_download_finish_check(void)
 {
 	int rc = FS_MGMT_ERR_OK;
 
-	if (fs_mgmt_ctxt.len > 0 && fs_mgmt_ctxt.off >= fs_mgmt_ctxt.len) {
+	if (fs_mgmt_ctxt.len_known && fs_mgmt_ctxt.off >= fs_mgmt_ctxt.len) {
 #if defined(CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK)
 		char path[CONFIG_MCUMGR_GRP_FS_PATH_LEN + 1];
 		struct fs_mgmt_file_access file_access_data = {
@@ -334,6 +338,7 @@ static int fs_mgmt_file_download(struct smp_streamer *ctxt)
 
 		strcpy(fs_mgmt_ctxt.path, path);
 		fs_mgmt_ctxt.state = STATE_DOWNLOAD;
+		fs_mgmt_ctxt.len_known = true;
 		fs_mgmt_ctxt.transport = ctxt->smpt;
 	}
 
@@ -491,6 +496,7 @@ static int fs_mgmt_file_upload(struct smp_streamer *ctxt)
 		 * still be closed automatically after a timeout.
 		 */
 		fs_mgmt_ctxt.len = len;
+		fs_mgmt_ctxt.len_known = true;
 		rc = fs_mgmt_filelen(file_name, &existing_file_size);
 
 		if (rc != 0) {
@@ -523,7 +529,7 @@ static int fs_mgmt_file_upload(struct smp_streamer *ctxt)
 		goto end;
 	}
 
-	if (file_data.len > 0) {
+	if (file_data.len > 0 || off == 0) {
 		/* Write the data chunk to the file. */
 		if (off == 0 && existing_file_size != 0) {
 			/* Offset is 0 and existing file exists with data, attempt to truncate
@@ -580,30 +586,32 @@ static int fs_mgmt_file_upload(struct smp_streamer *ctxt)
 			}
 		}
 
-		rc = fs_write(&fs_mgmt_ctxt.file, file_data.value, file_data.len);
+		if (file_data.len > 0) {
+			rc = fs_write(&fs_mgmt_ctxt.file, file_data.value, file_data.len);
 
-		if (rc > 0 && rc < file_data.len) {
-			/* Write all data failed, try again with data offset */
-			int retry_rc;
+			if (rc > 0 && rc < file_data.len) {
+				/* Write all data failed, try again with data offset */
+				int retry_rc;
 
-			retry_rc = fs_write(&fs_mgmt_ctxt.file, &file_data.value[rc],
-					    (file_data.len - rc));
+				retry_rc = fs_write(&fs_mgmt_ctxt.file, &file_data.value[rc],
+						    (file_data.len - rc));
 
-			if (retry_rc > 0) {
-				rc += retry_rc;
-			} else {
-				rc = retry_rc;
+				if (retry_rc > 0) {
+					rc += retry_rc;
+				} else {
+					rc = retry_rc;
+				}
 			}
-		}
 
-		if (rc < 0 || rc < file_data.len) {
-			ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_FS,
-					     FS_MGMT_ERR_FILE_WRITE_FAILED);
-			(void)fs_mgmt_cleanup();
-			goto end;
-		}
+			if (rc < 0 || rc < file_data.len) {
+				ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_FS,
+						     FS_MGMT_ERR_FILE_WRITE_FAILED);
+				(void)fs_mgmt_cleanup();
+				goto end;
+			}
 
-		fs_mgmt_ctxt.off += file_data.len;
+			fs_mgmt_ctxt.off += file_data.len;
+		}
 	}
 
 	/* Store offset since fs_mgmt_upload_download_finish_check invalidates it */
