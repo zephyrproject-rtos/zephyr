@@ -28,4 +28,18 @@
 				 <PC18D_SERCOM2_PAD1>;   /* SCK  */
 		};
 	};
+
+	can0_default: can0_default {
+		group1 {
+			pinmux = <PA10H_CAN0_RX>,
+				 <PA11H_CAN0_TX>;
+		};
+	};
+
+	can1_default: can1_default {
+		group1 {
+			pinmux = <PD12H_CAN1_RX>,
+				 <PD13H_CAN1_TX>;
+		};
+	};
 };
