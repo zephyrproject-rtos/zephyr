@@ -1,0 +1,263 @@
+# Copyright (c) 2026 Fabien Proriol
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig KNX_STACK
+	bool "KNX Stack"
+	select POLL
+	help
+	  Enable support of KNX Bus protocol
+
+	  POLL is required by the L2 TX thread, which k_poll()s across the
+	  two priority TX queues instead of blocking on a single k_msgq_get().
+
+if KNX_STACK
+
+module = KNX_STACK
+module-str = knx_core
+source "subsys/logging/Kconfig.template.log_config"
+
+config KNX_STACK_INIT_PRIO
+	int "Init stack priority"
+	default 90
+	help
+	  KNX initialization priority level. This number tells how
+	  early in the boot the knx stack is initialized.
+
+
+config KNX_DEBUG_VERBOSE_SYSTEM
+	bool "Verbose for all system frame"
+	depends on LOG
+	help
+	  Log every byte exchanged at the Physical Layer (L1).
+
+config KNX_DEBUG_VERBOSE_L1
+	bool "Verbose L1 Physical layer traces"
+	depends on LOG
+	help
+	  Log every byte exchanged at the Physical Layer (L1).
+
+config KNX_DEBUG_VERBOSE_L2
+	bool "Verbose L2 Data Link layer traces"
+	depends on LOG
+	help
+	  Log every frame received or transmitted at the Data Link Layer (L2).
+
+config KNX_DEBUG_VERBOSE_L3
+	bool "Verbose L3 Network layer traces"
+	depends on LOG
+	help
+	  Log every frame processed at the Network Layer (L3).
+
+config KNX_DEBUG_VERBOSE_L4
+	bool "Verbose L4 Transport layer traces"
+	depends on LOG
+	help
+	  Log every PDU processed at the Transport Layer (L4).
+
+config KNX_DEBUG_VERBOSE_L7
+	bool "Verbose L7 Application layer traces"
+	depends on LOG
+	help
+	  Log every APDU processed at the Application Layer (L7).
+
+config KNX_PKT_POOL_SIZE
+	int "KNX packet pool size"
+	default 16
+	help
+	  Number of knx_pkt slots in the memory slab.  Each slot is ~300 B.
+	  Minimum 8; 16 recommended to handle ETS download bursts.
+
+config KNX_L2_TX_QUEUE_DEPTH_HIGH
+	int "KNX L2 TX high-priority queue depth (System/Urgent)"
+	default 2
+	help
+	  Depth of the TX queue carrying KNX_PRIORITY_SYSTEM and
+	  KNX_PRIORITY_URGENT frames (ETS device programming, alarms, and
+	  anything the Transport Layer's 3 s L_Data.con / T_ACK window
+	  depends on). Always drained ahead of the low-priority queue by the
+	  L2 TX thread. Keep this small — high-priority traffic should never
+	  need to queue deeply on a healthy bus.
+
+config KNX_L2_TX_QUEUE_DEPTH_LOW
+	int "KNX L2 TX low-priority queue depth (Normal/Low)"
+	default 4
+	help
+	  Depth of the TX queue carrying KNX_PRIORITY_NORMAL and
+	  KNX_PRIORITY_LOW frames — ordinary group communication. Only
+	  drained by the L2 TX thread once the high-priority queue
+	  (KNX_L2_TX_QUEUE_DEPTH_HIGH) is empty. Replaces the old single
+	  KNX_L2_TX_QUEUE_DEPTH.
+
+config KNX_L2_RX_QUEUE_DEPTH
+	int "KNX L2 RX queue depth"
+	default 8
+
+config KNX_L2_TX_STACK_SIZE
+	int "KNX L2 TX thread stack size"
+	default 2048
+
+config KNX_L2_RX_STACK_SIZE
+	int "KNX L2 RX thread stack size"
+	default 4096
+
+config KNX_L2_TX_PRIO
+	int "KNX L2 TX thread preemptive priority"
+	default 5
+
+config KNX_L2_RX_PRIO
+	int "KNX L2 RX thread preemptive priority"
+	default 10
+
+config KNX_APP_WQ_STACK_SIZE
+	int "KNX application work-queue stack size"
+	default 3072
+	help
+	  Stack for the work-queue that runs L3..L7 RX dispatch and L4 timer
+	  callbacks.  Separate from the L2 RX thread so that slow L7 handlers
+	  (e.g. flash writes for A_Memory_Write) do not stall frame reception.
+
+config KNX_DPT
+	bool "KNX Datapoint Type (DPT) encode/decode library"
+	default y
+	help
+	  Compile the DPT encode/decode functions (DPT 1–20, DPT 232).
+	  Exposes <zephyr/knx/dpt.h>.  Disable to save ~8 KB flash.
+
+config KNX_DECLARE_APPLICATION_PROGRAM
+	bool "Publish PID_PROGRAM_VERSION from the firmware"
+	help
+	  On this device the application program IS the firmware — it is not
+	  downloadable — so the device can legitimately state which application it
+	  runs instead of waiting to be told.
+
+	  ETS reads PID_PROGRAM_VERSION back and refuses a partial download when it
+	  does not match the project ("the application program loaded in the device
+	  does not match the application projected in ETS"). With this enabled a
+	  factory-fresh unit already matches, so a partial download works without a
+	  prior full one.
+
+	  Disable it for the behaviour of the reference (Thelsing) stack: the
+	  property starts at all zeros and only ETS ever writes it, during a full
+	  download. That is the proven path, at the cost of always needing one full
+	  download first. The value is persisted either way.
+
+	  Note that a value ETS has written always wins — the firmware only fills
+	  the property in when the stored value is still all zeros.
+
+if KNX_DECLARE_APPLICATION_PROGRAM
+
+config KNX_APPLICATION_PROGRAM_ID
+	hex "Application program number, as declared in the ETS product database"
+	default 0x0000
+	range 0x0000 0xFFFF
+	help
+	  The manufacturer-assigned application program number of the application
+	  this firmware implements. Together with the manufacturer ID and
+	  KNX_APPLICATION_PROGRAM_VERSION it forms PID_PROGRAM_VERSION (PID 13,
+	  5 octets: manufacturer ID, application number, version).
+
+	  Read it from the <ApplicationProgram> element of the ETS product XML:
+	  ApplicationNumber. Note that 0 is a perfectly legal number, which is why
+	  this option is gated by a separate bool rather than using 0 as a
+	  "not set" sentinel.
+
+config KNX_APPLICATION_PROGRAM_VERSION
+	hex "Application program version octet, (major << 4) | minor"
+	default 0x00
+	range 0x00 0xFF
+	help
+	  Single-octet version of the application program, encoded as
+	  (major << 4) | minor. Version 0.1 is 0x01, 1.0 is 0x10, 2.3 is 0x23.
+
+	  Read it from the <ApplicationProgram> element of the ETS product XML:
+	  ApplicationVersion. It must match, or ETS treats the device as running a
+	  different application.
+
+endif # KNX_DECLARE_APPLICATION_PROGRAM
+
+config KNX_AUTHORIZE_GRANT_ALL
+	bool "Grant all A_Authorize_Request at level 0 (insecure default)"
+	default y
+	help
+	  When enabled, any A_Authorize_Request is answered with level 0
+	  (full access) regardless of the key supplied.  Disable once a
+	  proper key table / security layer is implemented.
+
+config KNX_AUTO_LOAD_TABLES
+	bool "Auto-load KNX tables on first boot"
+	default y
+	help
+	  When enabled, all five table interface objects (Address, Association,
+	  Group Object, Application Program, Interfaceprogram) start with
+	  LoadState = LS_LOADED. This allows group communication and ETS
+	  programming without a prior load-state sequence.
+
+	  Load State is persisted inside __memory (the same NVS blob as the
+	  downloaded tables), so this default is consulted only when __memory
+	  has no history to restore: first boot, an incompatible or corrupt
+	  NVS blob, or an explicit factory reset. On every other boot the
+	  restored Load State — whatever it genuinely was, LS_LOADED or not —
+	  is what the device reports, regardless of this option.
+
+config KNX_SETTINGS_DEBOUNCE_MS
+	int "KNX settings write debounce (ms)"
+	default 200
+	help
+	  Delay between the last memory_modified() call and the actual flash
+	  write.  Coalesces rapid ETS download bursts into a single NVS write.
+
+config KNX_APP_WQ_PRIO
+	int "KNX application work-queue priority"
+	default 11
+	help
+	  Must be lower priority (higher number) than the L2 RX thread so that
+	  the RX thread always wins for new frames.
+
+config KNX_GROUP_OBJECT_COUNT
+	int "Number of group objects (Group Object Table entries)"
+	default 1
+
+config KNX_MAX_ADDRESS_GROUP
+	int "Max number of entries in the Group Address Table"
+	default 256
+
+config KNX_MAX_ASSOCIATIONS
+	int "Max number of entries in the Association Table"
+	default 255
+
+config KNX_APPLICATION_PROGRAM_DATA_SIZE
+	int "Size in bytes reserved for the application program data"
+	default 1
+	help
+	  Number of bytes reserved in the persisted memory image for the
+	  application-defined struct application_program_data (parameters /
+	  calibration values written by ETS via A_Memory_Write). The KNX
+	  stack only needs this size to reserve storage — it never sees the
+	  struct's definition. The application must ensure this value is
+	  >= sizeof(struct application_program_data), e.g. with a
+	  BUILD_ASSERT next to the struct definition.
+
+config KNX_GROUP_OBJECTS_DATA_SIZE
+	int "Size in bytes reserved for the group object value storage"
+	default 1
+	help
+	  Number of bytes reserved in the persisted memory image for the
+	  application-defined struct group_objects_data (current values of
+	  the device's Group Objects). The KNX stack only needs this size to
+	  reserve storage — it never sees the struct's definition. The
+	  application must ensure this value is >= sizeof(struct
+	  group_objects_data), e.g. with a BUILD_ASSERT next to the struct
+	  definition.
+
+config KNX_INTERFACE_PROGRAM_DATA_SIZE
+	int "Size in bytes reserved for the Interfaceprogram Object's download segment"
+	default 1
+	help
+	  Number of bytes reserved in the persisted memory image for the
+	  Interfaceprogram Object (Object Type 4, "Application Program 2",
+	  Volume 6 Annex A.2.7). Mandatory for 07B0h conformance but not on
+	  this product's ETS download path, so the
+	  default of 1 byte is a placeholder segment; raise it only if a
+	  project actually targets object index 5 with A_Memory_Write.
+
+endif # KNX_STACK

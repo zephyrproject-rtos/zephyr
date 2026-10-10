@@ -1,0 +1,73 @@
+# Copyright (c) 2026 Fabien Proriol
+# SPDX-License-Identifier: Apache-2.0
+
+config NCN5130
+	bool "ON Semiconductor NCN5130 KNX TP1 transceiver"
+	depends on UART_ASYNC_API && KNX_STACK
+	select UART_WIDE_DATA
+	select UART_USE_RUNTIME_CONFIGURE
+	help
+	  Enable the NCN5130 KNX TP1 transceiver driver.
+
+	  Host link: 9-bit UART at 38400 bps (NCN5130 strapping TREQ/MODE1/MODE2/
+	  SCK-UC2 to GND, CSB-UC1 to VDD — datasheet Table 9, p.27).  The USART is
+	  configured as 9 data bits with hardware parity DISABLED: the 9th bit is
+	  nominally even parity, but the transceiver deliberately corrupts it to
+	  flag a KNX bus error on that octet, so parity is computed and checked in
+	  software.  This is why UART_WIDE_DATA is required — the async transfers
+	  use the uint16_t uart_*_u16() variants.
+
+	  Implements the KNX Physical Layer (L1) interface consumed by the KNX L2
+	  subsystem (Ph_Data__req/con/ind, Ph_Reset__req/con, Ph_Bus_Free,
+	  U_SetAddress__req, knx_l1_send_frame).
+
+if NCN5130
+
+config NCN5130_TRACE_RX
+	bool "Trace every received 9-bit word from the NCN5130"
+	depends on LOG
+	help
+	  Bring-up aid: log each received word as
+	  "rx <word> octet=<hex> p9=<9th bit> calc=<computed parity> OK|FLAGGED".
+
+	  This is the fastest way to tell a wrong 9th-bit convention (every word
+	  FLAGGED, or p9 systematically the complement of calc) from a genuine
+	  loss of frame synchronisation (words OK, but KNX data octets being
+	  matched against the single-byte service patterns).
+
+	  Logs from ISR context, one message per octet — far too slow to keep up
+	  with real bus traffic. Never enable it in a shipped build.
+
+config NCN5130_STATS_INTERVAL_MS
+	int "Interval between NCN5130 receive-statistics log lines (0 = off)"
+	default 0
+	depends on LOG
+	help
+	  When non-zero, periodically log the driver's receive counters: total
+	  words, 9th-bit mismatches, UART_RX_STOPPED events and ignored
+	  U_Reset.ind octets. A climbing "reset_ignored" means the receiver is
+	  desynchronised, not that the transceiver keeps resetting.
+
+config KNX_L_DATA_CON_TIMEOUT_MS
+	int "L_Data.con wait timeout (ms)"
+	default 30
+	help
+	  How long knx_l1_send_frame() waits for the NCN5130 to report
+	  L_Data.con (0x0B negative / 0x8B positive) after a frame is sent
+	  before treating it as -ETIMEDOUT and retrying. The
+	  transceiver's own acknowledge timeout is ~30 bit times (~3.1 ms at
+	  9600 bit/s); 30 ms leaves generous margin for host UART/DMA
+	  buffering while keeping the L2 TX thread's worst-case per-frame
+	  retry budget well inside the Transport Layer's 3 s T_ACK window,
+	  and short enough that a queued high-priority frame is never
+	  meaningfully delayed by an in-flight low-priority retry loop.
+
+endif # NCN5130
+
+config KNX_LOOPBACK
+	bool "KNX loopback L1 driver (for unit testing)"
+	depends on KNX_STACK
+	help
+	  Software loopback: knx_l1_send_frame() replays the frame back into
+	  Ph_Data__ind immediately.  Use instead of NCN5130 on native_sim or
+	  when no physical KNX bus is available.
