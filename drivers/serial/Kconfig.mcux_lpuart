@@ -28,4 +28,18 @@ config UART_NXP_LPUART_ASYNC_API_SUPPORT
 	help
 	  Indicates if LPUART has async api support by having dmas enabled for it
 
+config UART_MCUX_LPUART_ASYNC_RX_STOP_ON_ERROR
+	bool "Stop async reception on RX line errors"
+	default y
+	depends on UART_ASYNC_API && UART_NXP_LPUART_ASYNC_API_SUPPORT
+	help
+	  When enabled, an overrun, framing, noise or parity error during
+	  async reception is reported with UART_RX_STOPPED and reception is
+	  disabled. The application has to call uart_rx_enable() again.
+
+	  When disabled, the driver clears the error flags and keeps
+	  receiving. A character received with a framing, noise or parity
+	  error is still delivered, an overrun loses the character that was
+	  in the shift register. The errors are reported by uart_err_check().
+
 endif
