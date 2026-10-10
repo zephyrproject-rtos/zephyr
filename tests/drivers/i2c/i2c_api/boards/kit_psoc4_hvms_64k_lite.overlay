@@ -1,0 +1,38 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2c-0 = &i2c0;
+	};
+};
+
+i2c0: &scb0 {
+	compatible = "infineon,i2c";
+	status = "okay";
+	clock-frequency = <100000>;
+	clocks = <&peri_clk_div1>;
+	pinctrl-0 = <&p0_0_scb0_i2c_scl &p0_1_scb0_i2c_sda>;
+	pinctrl-names = "default";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+};
+
+&peri_clk_div1 {
+	status = "okay";
+};
+
+&p0_0_scb0_i2c_scl {
+	drive-open-drain;
+	input-enable;
+};
+
+&p0_1_scb0_i2c_sda {
+	drive-open-drain;
+	input-enable;
+};
