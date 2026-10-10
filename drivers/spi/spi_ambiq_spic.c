@@ -99,7 +99,7 @@ static void spi_ambiq_reset(const struct device *dev)
 	/* signal any thread waiting on sync semaphore */
 	spi_context_complete(ctx, dev, -ETIMEDOUT);
 	/* clean up for next xfer */
-	k_sem_reset(&ctx->sync);
+	spi_context_clear_completion(ctx);
 }
 
 static void spi_ambiq_isr(const struct device *dev)
