@@ -729,7 +729,9 @@ void ocpp_session_close(ocpp_session_handle_t hndl)
 	k_mutex_unlock(&gctx->ilock);
 
 	if (is_removed) {
+		/* Wait for current users of the session to release it */
 		k_mutex_lock(&sh->slock, K_FOREVER);
+		k_mutex_unlock(&sh->slock);
 		k_free(sh);
 	}
 }
