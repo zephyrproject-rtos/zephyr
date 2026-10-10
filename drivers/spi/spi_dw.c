@@ -198,7 +198,8 @@ static int spi_dw_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	/* Verify if requested op mode is relevant to this controller */
+#if !IS_ENABLED(CONFIG_SPI_DW_HSSI)
+	/* APB SSI: SSI_IS_MASTER is fixed in the netlist. */
 	if (config->operation & SPI_OP_MODE_PERIPHERAL) {
 		if (!(info->serial_target)) {
 			LOG_ERR("Peripheral mode not supported");
@@ -210,6 +211,14 @@ static int spi_dw_configure(const struct device *dev,
 			return -ENOTSUP;
 		}
 	}
+#else
+	/* DWC SSI: CTRLR0[31] MST is the role. 1 = controller, 0 = peripheral. */
+	if ((config->operation & SPI_OP_MODE_PERIPHERAL) &&
+	    !IS_ENABLED(CONFIG_SPI_PERIPHERAL)) {
+		LOG_ERR("Peripheral mode not supported");
+		return -ENOTSUP;
+	}
+#endif
 
 	if ((config->operation & SPI_TRANSFER_LSB) ||
 	    (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
@@ -261,6 +270,17 @@ static int spi_dw_configure(const struct device *dev,
 	if (SPI_MODE_GET(config->operation) & SPI_MODE_LOOP) {
 		ctrlr0 |= DW_SPI_CTRLR0_SRL;
 	}
+
+#if IS_ENABLED(CONFIG_SPI_DW_HSSI)
+	/* DWC_ssi stays a peripheral until this bit is set, so SCPOL never
+	 * reaches SCLK.
+	 */
+	if (config->operation & SPI_OP_MODE_PERIPHERAL) {
+		ctrlr0 &= ~(DW_SPI_CTRLR0_SSI_IS_MST);
+	} else {
+		ctrlr0 |= (DW_SPI_CTRLR0_SSI_IS_MST);
+	}
+#endif
 
 	/* Installing the configuration */
 	write_ctrlr0(dev, ctrlr0);
@@ -372,6 +392,8 @@ static int transceive(const struct device *dev,
 	int ret;
 
 	spi_context_lock(&spi->ctx, asynchronous, cb, userdata, config);
+
+	clear_bit_ssienr(dev);
 
 #ifdef CONFIG_PM_DEVICE
 	if (!pm_device_is_busy(dev)) {
