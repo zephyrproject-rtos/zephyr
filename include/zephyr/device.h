@@ -897,13 +897,41 @@ size_t z_device_get_all_static(const struct device **devices);
  * does not include the readiness checks of device_get_binding(). At minimum
  * this means that the device has been successfully initialized.
  *
+ * @param dev pointer to the device in question. This parameter must not be NULL.
+ *
+ * @retval true If the device is ready for use.
+ * @retval false If the device is not ready for use.
+ */
+__syscall bool device_is_ready_nonnull(const struct device *dev) __attribute_nonnull(1);
+
+/**
+ * @brief Verify that a device is ready for use.
+ *
+ * Indicates whether the provided device pointer is for a device known to be
+ * in a state where it can be used with its standard API.
+ *
+ * This can be used with device pointers captured from DEVICE_DT_GET(), which
+ * does not include the readiness checks of device_get_binding(). At minimum
+ * this means that the device has been successfully initialized.
+ *
  * @param dev pointer to the device in question.
  *
  * @retval true If the device is ready for use.
  * @retval false If the device is not ready for use or if a NULL device pointer
  * is passed as argument.
  */
-__syscall bool device_is_ready(const struct device *dev);
+static inline bool device_is_ready(const struct device *dev)
+{
+	/*
+	 * if an invalid device pointer is passed as argument, this call
+	 * reports the `device` as not ready for usage.
+	 */
+	if (dev == NULL) {
+		return false;
+	}
+
+	return device_is_ready_nonnull(dev);
+}
 
 /**
  * @brief Writes a "device not ready" warning message to the log.
