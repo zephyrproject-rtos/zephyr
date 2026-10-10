@@ -2680,6 +2680,12 @@ Other notable changes
 
 * Wi-Fi
 
+  * Added external PMKSA cache import and export support, controlled by
+    :kconfig:option:`CONFIG_WIFI_MGMT_PMKSA_IMPORT` and
+    :kconfig:option:`CONFIG_WIFI_MGMT_PMKSA_EXPORT`. New requests query and selectively flush
+    the cache, and new events report added and removed entries. The hostap backend implements
+    import, export, and selective flush. (:github:`115470`)
+
   * Removed the ``samples/net/wifi/test_certs/rsa2k`` enterprise test
     certificates (DES-encrypted private keys). Use ``rsa2k_no_des`` instead.
 
