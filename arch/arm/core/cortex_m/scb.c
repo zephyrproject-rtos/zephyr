@@ -60,6 +60,8 @@ void z_arm_clear_arm_mpu_config(void)
 
 	int num_regions = ((MPU->TYPE & MPU_TYPE_DREGION_Msk) >> MPU_TYPE_DREGION_Pos);
 
+	ARM_MPU_Disable();
+
 	for (i = 0; i < num_regions; i++) {
 		ARM_MPU_ClrRegion(i);
 	}
