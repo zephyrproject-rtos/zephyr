@@ -35,7 +35,7 @@
 #include <soc_pcr.h>
 #include <soc_pins.h>
 
-#include "soc_espi_saf_v1.h"
+#include "soc_espi_taf_v1.h"
 
 #endif
 #endif

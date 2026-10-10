@@ -440,19 +440,19 @@ int espi_test(void)
 	 * eSPI SAF EC portal flash tests before EC releases RSMRST# and
 	 * Host de-asserts ESPI_RESET#.
 	 */
-	ret = spi_saf_init();
+	ret = spi_taf_init();
 	if (ret) {
 		LOG_ERR("Unable to configure %d:%s", ret, qspi_dev->name);
 		return ret;
 	}
 
-	ret = espi_saf_init();
+	ret = espi_taf_init();
 	if (ret) {
 		LOG_ERR("Unable to configure %d:%s", ret, espi_saf_dev->name);
 		return ret;
 	}
 
-	ret = espi_saf_test1(SAF_SPI_TEST_ADDRESS);
+	ret = espi_taf_test1(TAF_SPI_TEST_ADDRESS);
 	if (ret) {
 		LOG_INF("eSPI SAF test1 returned error %d", ret);
 	}

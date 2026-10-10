@@ -40,7 +40,7 @@
 #include <zephyr/drivers/entropy.h>
 #include <zephyr/drivers/espi_emul.h>
 #include <zephyr/drivers/espi.h>
-/* drivers/espi_saf.h requires SoC specific header */
+/* drivers/espi_taf.h requires SoC specific header */
 #include <zephyr/drivers/flash.h>
 #include <zephyr/drivers/fpga.h>
 #include <zephyr/drivers/gpio.h>

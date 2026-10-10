@@ -8,8 +8,8 @@
  * @file Header containing definitions for MCHP eSPI SAF
  */
 
-#ifndef _SOC_ESPI_SAF_H_
-#define _SOC_ESPI_SAF_H_
+#ifndef _SOC_ESPI_TAF_H_
+#define _SOC_ESPI_TAF_H_
 
 #include <stdint.h>
 #include <zephyr/sys/util.h>
@@ -340,7 +340,7 @@
 #define MCHP_SAF_VER_1 0
 #define MCHP_SAF_VER_2 1
 
-struct espi_saf_hw_cfg {
+struct espi_taf_hw_cfg {
 	uint8_t version;
 	uint8_t flags;
 	uint8_t rsvd1;
@@ -380,7 +380,7 @@ struct espi_saf_hw_cfg {
 #define MCHP_FLASH_FLAG_V2_PD_CS0_EC_WK_EN BIT(10)
 #define MCHP_FLASH_FLAG_V2_PD_CS1_EC_WK_EN BIT(11)
 
-struct espi_saf_flash_cfg {
+struct espi_taf_flash_cfg {
 	uint8_t version;
 	uint8_t rsvd1;
 	uint16_t flags;
@@ -451,7 +451,7 @@ struct espi_saf_flash_cfg {
 #define MCHP_SAF_MSTR_EC           5U
 #define MCHP_SAF_MSTR_HOST_PCH_IE  6U
 
-struct espi_saf_pr {
+struct espi_taf_pr {
 	uint32_t start;
 	uint32_t size;
 	uint8_t master_bm_we;
@@ -460,9 +460,9 @@ struct espi_saf_pr {
 	uint8_t flags; /* bit[0]==1 is lock the region */
 };
 
-struct espi_saf_protection {
+struct espi_taf_protection {
 	size_t nregions;
-	const struct espi_saf_pr *pregions;
+	const struct espi_taf_pr *pregions;
 };
 
-#endif /* _SOC_ESPI_SAF_H_ */
+#endif /* _SOC_ESPI_TAF_H_ */

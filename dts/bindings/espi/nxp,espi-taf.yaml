@@ -8,7 +8,7 @@ description: |
   parent's register block and hardware interrupt; the parent eSPI driver
   owns the sole interrupt and forwards host flash requests to this driver
   through an internal bridge. The TAF driver binds the standard
-  espi_saf_driver_api so it can interface with espi_saf_* upper layers.
+  espi_taf_driver_api so it can interface with espi_taf_* upper layers.
 
   Representation:
 
