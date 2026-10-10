@@ -638,6 +638,29 @@ int lsm6dso_init_interrupt(const struct device *dev)
 		return ret;
 	}
 
+	/* configure interrupt pin polarity */
+	bool is_active_low = (cfg->gpio_drdy.dt_flags & GPIO_ACTIVE_LOW) != 0;
+
+	LOG_DBG("int pin is active low: %d", (int)is_active_low);
+	lsm6dso_h_lactive_t pin_polarity = is_active_low ? LSM6DSO_ACTIVE_LOW :
+							   LSM6DSO_ACTIVE_HIGH;
+
+	if (lsm6dso_pin_polarity_set(ctx, pin_polarity) < 0) {
+		LOG_DBG("failed to set pin polarity");
+		return -EIO;
+	}
+
+	/* configure interrupt pin drive mode */
+	LOG_DBG("int pin is open drain: %d", (int)cfg->int_open_drain);
+	lsm6dso_pp_od_t pin_mode = cfg->int_open_drain
+					? LSM6DSO_OPEN_DRAIN
+					: LSM6DSO_PUSH_PULL;
+
+	if (lsm6dso_pin_mode_set(ctx, pin_mode) < 0) {
+		LOG_DBG("failed to set pin mode");
+		return -EIO;
+	}
+
 	return gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy,
 					       GPIO_INT_EDGE_TO_ACTIVE);
 }
