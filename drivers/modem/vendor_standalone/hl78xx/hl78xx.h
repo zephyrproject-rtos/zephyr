@@ -961,13 +961,6 @@ struct hl78xx_variant_ops {
 	void (*on_kcellmeas_ready)(struct hl78xx_data *data);
 
 	/**
-	 * @brief Handle pending GNSS mode request on CARRIER_ON entry.
-	 *
-	 * @return true if the variant handled routing and the caller should return.
-	 */
-	bool (*carrier_on_gnss_pending)(struct hl78xx_data *data);
-
-	/**
 	 * @brief Handle GNSS mode enter request while low power mode is enabled.
 	 *
 	 * @return true if the variant handled the request and caller should return.
@@ -999,6 +992,13 @@ struct socket_read_data {
  * @retval false otherwise.
  */
 bool hl78xx_is_registered(struct hl78xx_data *data);
+
+/**
+ * @brief Forget every modem socket of the session that just ended.
+ *
+ * Defined in hl78xx_sockets.c; the next close of such a socket is local.
+ */
+void hl78xx_invalidate_socket_contexts(struct hl78xx_data *data);
 
 /**
  * @brief DNS resolution work callback.

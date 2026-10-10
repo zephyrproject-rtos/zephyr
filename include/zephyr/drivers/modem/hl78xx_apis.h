@@ -712,7 +712,10 @@ enum hl78xx_evt_type {
 	HL78XX_GNSS_EVENT_STOP,
 	/** GNSS position fix obtained. @kconfig_dep{CONFIG_HL78XX_GNSS} */
 	HL78XX_GNSS_EVENT_POSITION,
-	/** GNSS start failed because LTE is active (shared RF path)
+	/** GNSS request dropped because LTE holds the shared RF path: either the
+	 * GNSS start failed while LTE was active, or a queued GNSS mode request
+	 * was discarded when the carrier came up. The driver does not retry;
+	 * the application must request GNSS again.
 	 * @kconfig_dep{CONFIG_HL78XX_GNSS}
 	 */
 	HL78XX_GNSS_EVENT_START_BLOCKED,
@@ -1953,6 +1956,18 @@ int hl78xx_at_monitor_register(struct hl78xx_at_monitor_entry *mon);
 int hl78xx_at_monitor_unregister(struct hl78xx_at_monitor_entry *mon);
 
 /**
+ * @brief Number of deferred AT notifications dropped since boot.
+ *
+ * A parsed notification for the deferred (system workqueue) AT monitors is
+ * dropped, and logged at error level, when the copy heap of
+ * CONFIG_HL78XX_AT_MONITOR_HEAP_SIZE bytes cannot hold it. Direct monitors
+ * are never affected. The counter only grows; report deltas in telemetry.
+ *
+ * @return Number of dropped deferred AT notifications.
+ */
+uint32_t hl78xx_at_monitor_dropped_count(void);
+
+/**
  * @brief Set the event notification handler for HL78xx modem events.
  *
  * Registers a callback handler to receive asynchronous event notifications
@@ -2007,6 +2022,30 @@ int hl78xx_evt_monitor_register(struct hl78xx_evt_monitor_entry *mon);
  * @return -ENOENT if @p mon is not registered.
  */
 int hl78xx_evt_monitor_unregister(struct hl78xx_evt_monitor_entry *mon);
+
+/**
+ * @brief Number of deferred notifications dropped since boot.
+ *
+ * A notification for the deferred (system workqueue) monitors is dropped,
+ * and logged at error level, when the notification queue of
+ * CONFIG_HL78XX_EVT_MONITOR_QUEUE_DEPTH entries is full. Direct monitors are
+ * never affected. The counter only grows; report deltas in telemetry.
+ *
+ * @return Number of dropped deferred notifications.
+ */
+uint32_t hl78xx_evt_monitor_dropped_count(void);
+
+/**
+ * @brief Dispatch a notification to every registered event monitor.
+ *
+ * The driver installs this function as its event dispatcher at init. Direct
+ * monitors run in the caller's context; the notification is copied and queued
+ * for the deferred monitors, which run in the system workqueue. Public so
+ * that tests can drive the monitor library without the driver.
+ *
+ * @param notif Notification to dispatch. Copied for deferred delivery.
+ */
+void hl78xx_evt_monitor_dispatch(struct hl78xx_evt *notif);
 
 /**
  * @brief Convert HL78xx RAT mode to standard cellular API

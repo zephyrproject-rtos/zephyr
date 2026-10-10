@@ -667,6 +667,7 @@ void hl78xx_release_socket_comms(struct hl78xx_data *data)
 
 	k_sem_give(&socket_data->sync.lpm_wakeup_sem);
 }
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 
 void hl78xx_invalidate_socket_contexts(struct hl78xx_data *data)
 {
@@ -677,13 +678,18 @@ void hl78xx_invalidate_socket_contexts(struct hl78xx_data *data)
 		return;
 	}
 
-	LOG_DBG("Invalidating all modem socket contexts (HL7800 sleep entry)");
+	LOG_DBG("Invalidating all modem socket contexts");
 
 	for (int i = 0; i < MDM_MAX_SOCKETS; i++) {
 		struct modem_socket *sock = &socket_data->control.sockets[i];
 
 		if (modem_socket_id_is_assigned(&socket_data->control.socket_config, sock)) {
 			LOG_DBG("Invalidating socket fd=%d modem_id=%d", sock->sock_fd, sock->id);
+			/* A receiver blocked on the ended session waits for data that
+			 * never comes: wake it while the socket still counts as
+			 * connected, and it reads end of stream.
+			 */
+			modem_socket_data_ready(&socket_data->control.socket_config, sock);
 			sock->id = socket_data->control.socket_config.base_socket_id +
 				   socket_data->control.socket_config.sockets_len;
 			sock->is_connected = false;
@@ -699,6 +705,7 @@ void hl78xx_invalidate_socket_contexts(struct hl78xx_data *data)
 	}
 }
 
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 static void hl78xx_send_wakeup_signal(struct hl78xx_socket_data *socket_data)
 {
 	hl78xx_delegate_event(socket_data->devices.mdata_global, MODEM_HL78XX_EVENT_RESUME);
