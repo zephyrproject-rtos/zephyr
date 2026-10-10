@@ -1,6 +1,8 @@
 # Copyright (c) 2025-2026 Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
+rsource "../../common/Kconfig"
+
 config SOC_FAMILY_MICROCHIP_SAM_D5X_E5X
 	select ARM
 	select MICROCHIP_SAM

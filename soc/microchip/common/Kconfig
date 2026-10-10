@@ -1,0 +1,4 @@
+# SPDX-FileCopyrightText: Copyright 2026 Muhammed Asif
+# SPDX-License-Identifier: Apache-2.0
+
+rsource "drivers/Kconfig"
