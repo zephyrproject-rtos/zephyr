@@ -1,4 +1,4 @@
-identifier: stm32h7_renode_reference_board
+identifier: stm32h7_renode_reference_platform
 name: STM32H7 Renode Reference Platform
 type: mcu
 arch: arm

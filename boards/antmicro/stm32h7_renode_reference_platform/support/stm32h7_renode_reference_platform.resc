@@ -6,7 +6,7 @@
 
 $name?="STM32H7 Renode Reference Platform"
 mach create $name
-machine LoadPlatformDescription $ORIGIN/stm32h7_renode_reference_board.repl
+machine LoadPlatformDescription $ORIGIN/stm32h7_renode_reference_platform.repl
 
 showAnalyzer sysbus.usart2
 
