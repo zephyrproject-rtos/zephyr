@@ -640,3 +640,89 @@ void pq_dot_prod_f32(const float32_t *src_a, const float32_t *src_b,
 
 	*dst = sum;
 }
+
+/*
+ * Transform (FFT) functions.
+ *
+ * The FFT engine is fixed point, so unlike the arithmetic operations above the
+ * machine format is Q31 rather than float. The Q15 variant keeps a Q31 machine
+ * and temporary format and only narrows the external buffers (ref: NXP SDK
+ * fsl_powerquad_cmsis.c, PQ_SET_FFT_Q31_CONFIG / PQ_SET_FFT_Q15_CONFIG; note
+ * that AN12383 section 6.1.2 disagrees and gives a 16-bit temporary format).
+ *
+ * All prescalers are zero, which is what the SDK's CMSIS-compatible wrappers
+ * use, so the engine applies the same 1/fft_len scaling CMSIS-DSP does.
+ */
+static const pq_config_t pq_fft_q31_config = {
+	.inputAFormat = kPQ_32Bit,
+	.inputAPrescale = 0,
+	.inputBFormat = kPQ_32Bit,
+	.inputBPrescale = 0,
+	.outputFormat = kPQ_32Bit,
+	.outputPrescale = 0,
+	.tmpFormat = kPQ_32Bit,
+	.tmpPrescale = 0,
+	.machineFormat = kPQ_32Bit,
+	.tmpBase = PQ_TMP_BASE,
+};
+
+static const pq_config_t pq_fft_q15_config = {
+	.inputAFormat = kPQ_16Bit,
+	.inputAPrescale = 0,
+	.inputBFormat = kPQ_16Bit,
+	.inputBPrescale = 0,
+	.outputFormat = kPQ_16Bit,
+	.outputPrescale = 0,
+	.tmpFormat = kPQ_32Bit,
+	.tmpPrescale = 0,
+	.machineFormat = kPQ_32Bit,
+	.tmpBase = PQ_TMP_BASE,
+};
+
+static void pq_cfft(const pq_config_t *cfg, uint32_t fft_len, void *p, uint8_t ifft_flag)
+{
+	const void *hw_src = soc_powerquad_remap_addr(p);
+
+	k_mutex_lock(&pq_mutex, K_FOREVER);
+	PQ_SetConfig(PQ_BASE, cfg);
+
+	if (ifft_flag != 0U) {
+		PQ_TransformIFFT(PQ_BASE, fft_len, (void *)hw_src, p);
+	} else {
+		PQ_TransformCFFT(PQ_BASE, fft_len, (void *)hw_src, p);
+	}
+
+	PQ_WaitDone(PQ_BASE);
+	k_mutex_unlock(&pq_mutex);
+}
+
+static void pq_rfft(const pq_config_t *cfg, uint32_t fft_len, const void *src, void *dst)
+{
+	const void *hw_src = soc_powerquad_remap_addr(src);
+
+	k_mutex_lock(&pq_mutex, K_FOREVER);
+	PQ_SetConfig(PQ_BASE, cfg);
+	PQ_TransformRFFT(PQ_BASE, fft_len, (void *)hw_src, dst);
+	PQ_WaitDone(PQ_BASE);
+	k_mutex_unlock(&pq_mutex);
+}
+
+void pq_cfft_q15(uint32_t fft_len, q15_t *p, uint8_t ifft_flag)
+{
+	pq_cfft(&pq_fft_q15_config, fft_len, p, ifft_flag);
+}
+
+void pq_cfft_q31(uint32_t fft_len, q31_t *p, uint8_t ifft_flag)
+{
+	pq_cfft(&pq_fft_q31_config, fft_len, p, ifft_flag);
+}
+
+void pq_rfft_q15(uint32_t fft_len, const q15_t *src, q15_t *dst)
+{
+	pq_rfft(&pq_fft_q15_config, fft_len, src, dst);
+}
+
+void pq_rfft_q31(uint32_t fft_len, const q31_t *src, q31_t *dst)
+{
+	pq_rfft(&pq_fft_q31_config, fft_len, src, dst);
+}
