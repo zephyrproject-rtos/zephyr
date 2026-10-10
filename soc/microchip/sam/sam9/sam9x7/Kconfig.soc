@@ -1,0 +1,60 @@
+# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_SERIES_SAM9X7
+	bool
+	select SOC_FAMILY_MICROCHIP_SAM9
+	help
+	  Enable support for Microchip SAM9X7 Microprocessors.
+
+config SOC_SERIES
+	default "sam9x7" if SOC_SERIES_SAM9X7
+
+config SOC_SAM9X70
+	bool
+	select SOC_SERIES_SAM9X7
+
+config SOC_SAM9X72
+	bool
+	select SOC_SERIES_SAM9X7
+
+config SOC_SAM9X75
+	bool
+	select SOC_SERIES_SAM9X7
+
+config SOC_SAM9X75D1G
+	bool
+	select SOC_SAM9X75
+
+config SOC_SAM9X75D1GN2
+	bool
+	select SOC_SAM9X75
+
+config SOC_SAM9X75D2G
+	bool
+	select SOC_SAM9X75
+
+config SOC_SAM9X75D2GN4
+	bool
+	select SOC_SAM9X75
+
+config SOC_SAM9X75D5M
+	bool
+	select SOC_SAM9X75
+
+config SOC_SAM9X75D5MN0
+	bool
+	select SOC_SAM9X75
+
+config SOC
+	default "sam9x70" if SOC_SAM9X70
+	default "sam9x72" if SOC_SAM9X72
+	default "sam9x75" if SOC_SAM9X75
+	default "sam9x75d1g" if SOC_SAM9X75D1G
+	default "sam9x75d1gn2" if SOC_SAM9X75D1GN2
+	default "sam9x75d2g" if SOC_SAM9X75D2G
+	default "sam9x75d2gn4" if SOC_SAM9X75D2GN4
+	default "sam9x75d5m" if SOC_SAM9X75D5M
+	default "sam9x75d5mn0" if SOC_SAM9X75D5MN0

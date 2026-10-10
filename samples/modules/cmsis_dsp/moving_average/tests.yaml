@@ -3,6 +3,7 @@ sample:
   name: CMSIS DSP Moving Average
 tests:
   sample.modules.cmsis_dsp.moving_average:
+    filter: not CONFIG_CPU_ARM9
     tags:
       - samples
     integration_platforms:

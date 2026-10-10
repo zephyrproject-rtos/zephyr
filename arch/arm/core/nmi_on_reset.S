@@ -23,5 +23,10 @@ _ASM_FILE_PROLOGUE
 GTEXT(z_SysNmiOnReset)
 
 SECTION_FUNC(TEXT, z_SysNmiOnReset)
+#if defined(CONFIG_CPU_ARM926EJ_S)
+    /* DDI0198E - §12.1.1 Dynamic power management (wait for interrupt mode) */
+    mcr p15, 0, r0, c7, c0, 4
+#else
     wfi
+#endif
     b z_SysNmiOnReset
