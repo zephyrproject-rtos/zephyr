@@ -408,6 +408,10 @@ config SHELL_REMOTE
 	help
 	  If enabled, the shell supports remote clients.
 
+	  Print messages from remote clients are formatted without
+	  validation and can access any host memory. Enable only if the
+	  remote client cores are trusted.
+
 if SHELL_REMOTE
 
 config SHELL_REMOTE_MULTI_CLI
