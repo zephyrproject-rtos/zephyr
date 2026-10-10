@@ -18,6 +18,12 @@ extern struct bt_conn *conn_connected;
 extern uint32_t last_write_rate;
 extern uint32_t *write_countdown;
 extern void (*start_scan_func)(void);
+#if defined(CONFIG_USE_NOTIFY)
+extern uint32_t notify_rx_get(void);
+#if defined(CONFIG_USE_FULL_DUPLEX)
+extern int notify_data(struct bt_conn *conn);
+#endif
+#endif
 
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 			 struct net_buf_simple *ad)
@@ -125,6 +131,54 @@ uint32_t central_gatt_write(uint32_t count)
 		}
 
 		if (conn) {
+#if defined(CONFIG_USE_NOTIFY) && defined(CONFIG_USE_FULL_DUPLEX)
+			/* Full-duplex: the central both transmits notifications
+			 * (TX) and receives them from the peripheral (RX), mirroring
+			 * the peripheral. Terminate on its own TX countdown so the
+			 * two streams stay independent (as in the Write path).
+			 */
+			err = notify_data(conn);
+			bt_conn_unref(conn);
+
+			if (err != 0) {
+				/* Not subscribed yet (-EAGAIN) or the link is going
+				 * down (e.g. -ENOTCONN). Sleep rather than busy-loop
+				 * so lower priority threads (e.g. the HCI RX task) are
+				 * not starved and simulated time still advances in bsim.
+				 */
+				k_sleep(K_MSEC(10));
+				continue;
+			}
+
+			if (count != 0U) {
+				if ((count % 1000U) == 0U) {
+					printk("GATT Notify countdown %u\n", count);
+				}
+
+				count--;
+				if (!count) {
+					break;
+				}
+			}
+
+			k_yield();
+#elif defined(CONFIG_USE_NOTIFY)
+			/* Simplex: the central only subscribes and receives.
+			 * Reception happens in the subscribe callback. Terminate
+			 * once `count` notifications have been received.
+			 */
+			bt_conn_unref(conn);
+
+			if (count != 0U && notify_rx_get() >= count) {
+				break;
+			}
+
+			/* Sleep briefly instead of busy-looping, so it does not
+			 * starve lower priority threads (for example the HCI RX
+			 * task) while waiting for the notification count to increment.
+			 */
+			k_sleep(K_MSEC(100));
+#else
 			(void)write_cmd(conn);
 			bt_conn_unref(conn);
 
@@ -143,6 +197,7 @@ uint32_t central_gatt_write(uint32_t count)
 			}
 
 			k_yield();
+#endif
 		} else {
 			k_sleep(K_SECONDS(1));
 		}
