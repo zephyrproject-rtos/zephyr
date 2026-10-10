@@ -30,4 +30,14 @@
 			input-enable;
 		};
 	};
+
+	/* LPI2C1 on PIO2_24 (SDA) / PIO2_25 (SCL): touch controller on the RGB/DBI panels. */
+	pinmux_lpi2c1: pinmux_lpi2c1 {
+		group0 {
+			pinmux = <&main__iomuxc_pio2_24_hsp_lpi2c1_sda>,
+				 <&main__iomuxc_pio2_25_hsp_lpi2c1_scl>;
+			input-enable;
+			drive-open-drain;
+		};
+	};
 };
