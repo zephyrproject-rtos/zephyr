@@ -63,6 +63,7 @@ config MCUMGR_TRANSPORT_NETBUF_MIN_USER_DATA_SIZE
 	default 20 if MCUMGR_TRANSPORT_UDP && MCUMGR_TRANSPORT_UDP_IPV4 && NET_SOCKETS_PACKET
 	default 8 if MCUMGR_TRANSPORT_UDP && MCUMGR_TRANSPORT_UDP_IPV4
 	default 8 if MCUMGR_TRANSPORT_BT
+	default 12 if MCUMGR_TRANSPORT_ETHERNET
 	default 4
 	help
 	  Hidden option to determine minimum user data size.
@@ -75,8 +76,8 @@ config MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE
 	  The size, in bytes, of user data to allocate for each MCUmgr buffer.
 
 	  Different MCUmgr transports impose different requirements for this setting. A value of 4
-	  is sufficient for UART and shell, a value of 8 is sufficient for Bluetooth. For UDP, the
-	  userdata must be large enough to hold IPv4/IPv6 addresses.
+	  is sufficient for UART and shell, a value of 8 is sufficient for Bluetooth, a value of 12
+	  for raw Ethernet. For UDP, the userdata must be large enough to hold IPv4/IPv6 addresses.
 
 module = MCUMGR_TRANSPORT
 module-str = mcumgr_transport
@@ -97,6 +98,8 @@ rsource "Kconfig.shell"
 rsource "Kconfig.uart"
 
 rsource "Kconfig.udp"
+
+rsource "Kconfig.ethernet"
 
 rsource "Kconfig.spi"
 

@@ -39,6 +39,14 @@ tests:
       - frdm_k64f
     integration_platforms:
       - frdm_k64f
+  sample.mcumgr.smp_svr.eth:
+    extra_args:
+      - EXTRA_CONF_FILE="ethernet.conf"
+      - SB_CONFIG_MCUBOOT_MODE_OVERWRITE_ONLY=y
+    platform_allow:
+      - nucleo_h743zi
+    integration_platforms:
+      - nucleo_h743zi
   sample.mcumgr.smp_svr.udp-dtls:
     extra_args:
       - EXTRA_CONF_FILE="udp-dtls.conf"
