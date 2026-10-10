@@ -20,6 +20,17 @@ config ARM_SCMI_MAILBOX_TRANSPORT
 	  Enable support for SCMI transport based on shared memory
 	  and doorbells.
 
+config ARM_SCMI_OPTEE_TRANSPORT
+	bool "SCMI transport based on shared memory and OP-TEE"
+	default y
+	depends on DT_HAS_LINARO_SCMI_OPTEE_ENABLED
+	select ARM_SCMI_TRANSPORT_HAS_STATIC_CHANNELS
+	select TEE
+	select OPTEE
+	help
+	  Enable support for SCMI transport based on dynamic shared memory
+	  and OP-TEE PTA service.
+
 config ARM_SCMI_SMC_TRANSPORT
 	bool "SCMI transport based on shared memory and SMC"
 	default y
@@ -85,6 +96,7 @@ config ARM_SCMI_TRANSPORT_HAS_STATIC_CHANNELS
 
 config ARM_SCMI_TRANSPORT_INIT_PRIORITY
 	int "SCMI transport layer initialization priority"
+	default 55 if ARM_SCMI_OPTEE_TRANSPORT
 	default 20
 	help
 	  SCMI transport driver device initialization priority.

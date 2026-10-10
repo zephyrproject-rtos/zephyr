@@ -6,6 +6,9 @@ tests:
   sample.drivers.firmware.scmi:
     build_only: true
     filter: CONFIG_ARM_SCMI
-    integration_platforms:
+    platform_allow:
       - imx95_evk/mimx9596/m7
       - imx95_evk/mimx9596/a55
+      - qemu_cortex_a53
+    integration_platforms:
+      - qemu_cortex_a53
