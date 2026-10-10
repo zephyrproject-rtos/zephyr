@@ -34,6 +34,8 @@ static inline void timestamp_serialize(void)
 {
 	barrier_isync_fence_full();
 }
+#elif defined(CONFIG_CPU_M68000) || defined(CONFIG_CPU_M68010)
+#define timestamp_serialize() compiler_barrier()
 #elif defined(CONFIG_ARC)
 #define timestamp_serialize()
 #elif defined(CONFIG_ARCH_POSIX)

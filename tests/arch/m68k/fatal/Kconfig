@@ -1,0 +1,16 @@
+# Copyright (c) 2026 Dimitri Varpusvuori
+# SPDX-License-Identifier: Apache-2.0
+
+choice TEST_M68K_FATAL_TYPE
+	prompt "Fatal exception to trigger"
+	default TEST_M68K_FATAL_ILLEGAL_INSTRUCTION
+
+config TEST_M68K_FATAL_ILLEGAL_INSTRUCTION
+	bool "Illegal instruction"
+
+config TEST_M68K_FATAL_UNHANDLED_TRAP
+	bool "Unhandled TRAP #0"
+
+endchoice
+
+source "Kconfig.zephyr"
