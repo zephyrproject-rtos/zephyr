@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2026 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,console = &uart2;
+	};
+};
+
+/*
+ * UART2_TX -> PA25 <-> FT232 RX
+ * UART2_RX -> PA26 <-> FT232 TX
+ */
+
+&pinctrl {
+	status = "okay";
+};
+
+&uart2 {
+	pinctrl-0 = <&uart2_default>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&dma {
+	status = "okay";
+};

@@ -159,6 +159,54 @@
 			status = "disabled";
 		};
 
+		uart0: serial@4080c000 {
+			compatible = "realtek,ameba-uart";
+			reg = <0x4080c000 0x64>;
+			clocks = <&rcc AMEBA_UART0_CLK>;
+			interrupts = <20 0>;
+			current-speed = <115200>;
+			dmas = <&dma 2 1 0xa>,
+			       <&dma 3 0 0x214a1>;
+			dma-names = "rx", "tx";
+			status = "disabled";
+		};
+
+		uart1: serial@4080d000 {
+			compatible = "realtek,ameba-uart";
+			reg = <0x4080d000 0x64>;
+			clocks = <&rcc AMEBA_UART1_CLK>;
+			interrupts = <21 0>;
+			current-speed = <115200>;
+			dmas = <&dma 2 3 0xa>,
+			       <&dma 3 2 0x214a1>;
+			dma-names = "rx", "tx";
+			status = "disabled";
+		};
+
+		uart2: serial@4080e000 {
+			compatible = "realtek,ameba-uart";
+			reg = <0x4080e000 0x64>;
+			clocks = <&rcc AMEBA_UART2_CLK>;
+			interrupts = <22 0>;
+			current-speed = <115200>;
+			dmas = <&dma 2 5 0xa>,
+			       <&dma 3 4 0x214a1>;
+			dma-names = "rx", "tx";
+			status = "disabled";
+		};
+
+		uart3: serial@4080f000 {
+			compatible = "realtek,ameba-uart";
+			reg = <0x4080f000 0x64>;
+			clocks = <&rcc AMEBA_UART3_CLK>;
+			interrupts = <23 0>;
+			current-speed = <115200>;
+			dmas = <&dma 2 25 0xa>,
+			       <&dma 3 24 0x214a1>;
+			dma-names = "rx", "tx";
+			status = "disabled";
+		};
+
 		loguart: serial@40810000 {
 			compatible = "realtek,ameba-loguart";
 			reg = <0x40810000 0x100>;

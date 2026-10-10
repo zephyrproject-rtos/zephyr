@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* DUT: uart0, amebadplus.dtsi has no DMA entries — add them here. */
+
+&pinctrl {
+	status = "okay";
+};
+
+dut: &uart0 {
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+	dmas = <&dma 2 1 0xa>, <&dma 3 0 0x214a1>;
+	dma-names = "rx", "tx";
+	status = "okay";
+};
+
+&dma {
+	status = "okay";
+};
