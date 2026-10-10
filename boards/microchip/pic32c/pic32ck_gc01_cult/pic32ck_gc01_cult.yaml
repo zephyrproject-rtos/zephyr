@@ -12,5 +12,8 @@ ram: 512
 supported:
   - clock_control
   - gpio
+  - hwinfo
+  - i2c
   - pinctrl
+  - usbd
 vendor: microchip
