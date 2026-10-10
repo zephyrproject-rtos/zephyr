@@ -92,7 +92,7 @@ LOG_MODULE_REGISTER(flash_bflb, CONFIG_FLASH_LOG_LEVEL);
 #elif defined(CONFIG_SOC_SERIES_BL616CL)
 #define BFLB_XIP_BASE_BANK1	BL616CL_FLASH_XIP_BASE
 #define BFLB_XIP_BASE_BANK2	BL616CL_FLASH2_XIP_BASE
-#define BFLB_XIP_SIZE		(BL616CL_FLASH_XIP_BASE - BL616CL_FLASH_XIP_END)
+#define BFLB_XIP_SIZE		(BL616CL_FLASH_XIP_END - BL616CL_FLASH_XIP_BASE)
 #define BFLB_SF_CLK_REG_OFF	GLB_SF_CFG0_OFFSET
 #define BFLB_HAS_IF2		1
 #define BFLB_HAS_32B		1
@@ -119,6 +119,8 @@ LOG_MODULE_REGISTER(flash_bflb, CONFIG_FLASH_LOG_LEVEL);
 
 #define FLASH_READ32(address)		(*((volatile uint32_t *)(address)))
 #define FLASH_WRITE32(value, address)	(*((volatile uint32_t *)(address))) = value;
+
+#define THEORETICAL_CLEAR_MIN	24
 
 #include "flash_bflb.h"
 
@@ -245,7 +247,7 @@ static int flash_bflb_is_valid_range(struct flash_bflb_bank_data *data, off_t of
 		LOG_WRN("0x%lx: before start of flash", (long)offset);
 		return -EINVAL;
 	}
-	if ((data->cfg.size - offset) < len || len > data->cfg.size) {
+	if ((data->cfg.size - offset) < len || len > data->cfg.size || offset > data->cfg.size) {
 		LOG_WRN("0x%lx: ends past the end of flash", (long)offset);
 		return -EINVAL;
 	}
@@ -1380,7 +1382,7 @@ exit_here:
 
 static __ramfunc bool flash_bflb_flash_busy_wait(struct flash_bflb_bank_data *data)
 {
-	uint8_t tmp_bus = 0xFF;
+	uint8_t tmp_bus = data->cfg.reg.busy_bit_value ? 0 : 0xFF;
 	uint32_t counter = 0;
 
 	/* Cannot check if busy */
@@ -1388,8 +1390,8 @@ static __ramfunc bool flash_bflb_flash_busy_wait(struct flash_bflb_bank_data *da
 		return false;
 	}
 
-	while ((tmp_bus & BIT(data->cfg.reg.busy_bit)) != 0 && counter <
-		BFLB_FLASH_CHIP_BUSY_TIMEOUT) {
+	while ((tmp_bus & BIT(data->cfg.reg.busy_bit)) != data->cfg.reg.busy_bit_value
+		&& counter < BFLB_FLASH_CHIP_BUSY_TIMEOUT) {
 		flash_bflb_flash_read_register(data, data->cfg.reg.busy_index, &tmp_bus,
 					       data->cfg.reg.busy_read_len);
 		flash_bflb_settle_x(BFLB_FLASH_1RMS);
@@ -1397,7 +1399,7 @@ static __ramfunc bool flash_bflb_flash_busy_wait(struct flash_bflb_bank_data *da
 	}
 
 
-	if ((tmp_bus & BIT(data->cfg.reg.busy_bit)) != 0) {
+	if ((tmp_bus & BIT(data->cfg.reg.busy_bit)) != data->cfg.reg.busy_bit_value) {
 		flash_bflb_nxip_message_set(data, NXIP_MSG_BUSY_FLASH, 0, 0, 0);
 		return true;
 	}
@@ -1766,6 +1768,8 @@ static __ramfunc int flash_bflb_write(const struct device *dev, off_t address, c
 
 		/* need set offset to 0 to access? */
 		if (address < img_offset) {
+			locker = irq_lock();
+
 			sys_cache_data_flush_and_invd_all();
 
 			/* set offset to 0 to access first (likely)0x2000 of flash */
@@ -1778,6 +1782,8 @@ static __ramfunc int flash_bflb_write(const struct device *dev, off_t address, c
 			sys_cache_data_flush_and_invd_all();
 
 			flash_bflb_set_offset(data, img_offset);
+
+			irq_unlock(locker);
 		} else {
 			/* copy data we need */
 			flash_bflb_xip_memcpy((uint8_t *)buffer,
@@ -1787,6 +1793,11 @@ static __ramfunc int flash_bflb_write(const struct device *dev, off_t address, c
 
 		return 0;
 	}
+
+	/* Page size must not exceed buffer size. JEDEC defines the same as buffer size
+	 * as the maximum page size so this is extremely unlikely.
+	 */
+	__ASSERT_NO_MSG(data->cfg.page_size <= BFLB_FLASH_SF_BUF_SIZE);
 
 	/* interrupting would break, likely to access XIP*/
 	locker = irq_lock();
@@ -1812,9 +1823,7 @@ static __ramfunc int flash_bflb_write(const struct device *dev, off_t address, c
 			goto exit_here;
 		}
 
-		/* Get current position within page size,
-		 * this assumes page_size <= CTRL_BUF_SIZE
-		 */
+		/* Get current position within page size */
 		cur_len = data->cfg.page_size - ((address + i) % data->cfg.page_size);
 
 		if (cur_len > length - i) {
@@ -1972,12 +1981,12 @@ static __ramfunc int flash_bflb_get_jedec_id_internal(struct flash_bflb_bank_dat
 	struct bflb_flash_command get_jedecid = {0};
 	int ret;
 	int offset = 0;
-	uint32_t tmp[3];
+	uint32_t tmp[SPI_NOR_MAX_ID_LEN];
 
 	get_jedecid.spi_mode = BUS_NIO;
 	get_jedecid.cmd_buf[0] = SPI_NOR_CMD_RDID << 24;
 	get_jedecid.addr_size = 0;
-	get_jedecid.nb_data = 3;
+	get_jedecid.nb_data = SPI_NOR_MAX_ID_LEN;
 
 #define COND_BAD (out[0] == 0xff || out[1] == 0xff || out[0] == 0x0 || out[1] == 0x0)
 
@@ -1988,10 +1997,10 @@ static __ramfunc int flash_bflb_get_jedec_id_internal(struct flash_bflb_bank_dat
 		}
 
 		tmp[0] = FLASH_READ32(SF_CTRL_BUF_BASE);
-		tmp[1] = FLASH_READ32(SF_CTRL_BUF_BASE);
-		tmp[2] = FLASH_READ32(SF_CTRL_BUF_BASE);
+		tmp[1] = FLASH_READ32(SF_CTRL_BUF_BASE + 4U);
+		tmp[2] = FLASH_READ32(SF_CTRL_BUF_BASE + 8U);
 
-		flash_bflb_xip_memcpy(&(((uint8_t *)tmp)[offset]), out, 3);
+		flash_bflb_xip_memcpy(&(((uint8_t *)tmp)[offset]), out, SPI_NOR_MAX_ID_LEN);
 
 		/* Some devices want bits of address first
 		 * 0xff is not a possible manufacturer ID
@@ -2000,7 +2009,7 @@ static __ramfunc int flash_bflb_get_jedec_id_internal(struct flash_bflb_bank_dat
 			get_jedecid.addr_size = BFLB_FLASH_ADDR_SIZE;
 		} else if (COND_BAD) {
 			break;
-		} else if (out[offset] == 0x7f) {
+		} else if (out[0] == 0x7f && offset < 9) {
 			offset++;
 			get_jedecid.nb_data++;
 		} else {
@@ -2477,9 +2486,9 @@ static __ramfunc int flash_bflb_discovery(struct flash_bflb_bank_data *data, uin
 			struct jesd216_bfp bfp;
 		} bfp_u;
 		const struct jesd216_bfp *bfp = &bfp_u.bfp;
-		struct jesd216_bfp_dw14 dw14;
-		struct jesd216_bfp_dw15 dw15;
-		struct jesd216_instr instr;
+		struct jesd216_bfp_dw14 dw14 = {0};
+		struct jesd216_bfp_dw15 dw15 = {0};
+		struct jesd216_instr instr = {0};
 		uint8_t dummy_div = 2;
 		bool read_ok = false;
 
@@ -2620,10 +2629,13 @@ static __ramfunc int flash_bflb_discovery(struct flash_bflb_bank_data *data, uin
 				data->cfg.reg.busy_index = 3;
 				data->cfg.cmd.read_reg[3] = SPI_NOR_CMD_RDFLSR;
 				data->cfg.reg.busy_bit = 7;
+				data->cfg.reg.busy_read_len = 1;
+				data->cfg.reg.busy_bit_value = BIT(7);
 			} else {
 				data->cfg.reg.busy_bit = 0;
 				data->cfg.reg.busy_read_len = 1;
 				data->cfg.reg.busy_index = 0;
+				data->cfg.reg.busy_bit_value = 0;
 			}
 		} else {
 			flash_bflb_nxip_message_set(data, NXIP_MSG_SAD_SFDP,
@@ -2786,7 +2798,7 @@ static __ramfunc void flash_bflb_configure_timings(struct flash_bflb_bank_data *
 		if (data->cfg.pad.read_delay > 0) {
 			tmp |= SF_CTRL_SF2_IF_READ_DLY_EN_MSK;
 			tmp &= ~SF_CTRL_SF2_IF_READ_DLY_N_MSK;
-			tmp |= (data->cfg.pad.read_delay - 1U) << SF_CTRL_SF_IF_READ_DLY_N_POS;
+			tmp |= (data->cfg.pad.read_delay - 1U) << SF_CTRL_SF2_IF_READ_DLY_N_POS;
 		} else {
 			tmp &= ~SF_CTRL_SF2_IF_READ_DLY_EN_MSK;
 		}
@@ -3195,5 +3207,20 @@ static DEVICE_API(flash, flash_bflb_api) = {
 
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1, "There must be only one sf-controller");
+
+BUILD_ASSERT(sizeof(struct bflb_flash_command) < THEORETICAL_CLEAR_MIN,
+	"bflb_flash_command must be less than about 24 bytes to not use memset and need XIP");
+
+BUILD_ASSERT(sizeof(struct jesd216_bfp_dw14) < THEORETICAL_CLEAR_MIN,
+	"jesd216_bfp_dw14 must be less than about 24 bytes to not use memset and need XIP");
+
+BUILD_ASSERT(sizeof(struct jesd216_bfp_dw15) < THEORETICAL_CLEAR_MIN,
+	"jesd216_bfp_dw15 must be less than about 24 bytes to not use memset and need XIP");
+
+BUILD_ASSERT(sizeof(struct jesd216_instr) < THEORETICAL_CLEAR_MIN,
+	"jesd216_instr must be less than about 24 bytes to not use memset and need XIP");
+
+BUILD_ASSERT(sizeof(off_t) == sizeof(uint32_t),
+	"off_t math must stay 32-bit in RAM code to prevent usage of toolchain functions from XIP");
 
 DT_FOREACH_STATUS_OKAY(DT_DRV_COMPAT, FLASH_BFLB_CONTROLLER_INIT)
