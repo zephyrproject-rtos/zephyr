@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2023 Google LLC
  * Copyright (c) 2024 Croxel Inc.
+ * Copyright (c) 2026 RAKwireless Technology Limited
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +12,6 @@
 #include "icm4268x_decoder.h"
 #include "icm4268x_reg.h"
 #include "icm4268x_rtio.h"
-#include "icm4268x_spi.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ICM4268X_RTIO, CONFIG_SENSOR_LOG_LEVEL);
@@ -19,10 +19,9 @@ LOG_MODULE_REGISTER(ICM4268X_RTIO, CONFIG_SENSOR_LOG_LEVEL);
 static int icm4268x_rtio_sample_fetch(const struct device *dev, int16_t readings[7])
 {
 	uint8_t status;
-	const struct icm4268x_dev_cfg *cfg = dev->config;
 	uint8_t *buffer = (uint8_t *)readings;
 
-	int res = icm4268x_spi_read(&cfg->spi, REG_INT_STATUS, &status, 1);
+	int res = icm4268x_reg_read(dev, REG_INT_STATUS, &status, 1);
 
 	if (res) {
 		return res;
@@ -106,7 +105,13 @@ void icm4268x_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 	if (!cfg->is_streaming) {
 		icm4268x_submit_one_shot(dev, iodev_sqe);
 	} else if (IS_ENABLED(CONFIG_ICM4268X_STREAM)) {
-		icm4268x_submit_stream(dev, iodev_sqe);
+		const struct icm4268x_dev_data *data = dev->data;
+
+		if (data->cfg.fifo_en) {
+			icm4268x_submit_stream(dev, iodev_sqe);
+		} else {
+			rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
+		}
 	} else {
 		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
 	}

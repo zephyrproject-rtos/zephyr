@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Intel Corporation
+ * Copyright (c) 2026 RAKwireless Technology Limited
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,12 +10,12 @@
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
-#include <zephyr/drivers/spi.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/dt-bindings/sensor/icm42688.h>
 #include <zephyr/dt-bindings/sensor/icm42686.h>
 #include <stdlib.h>
 #include "icm4268x_bus.h"
+#include "icm4268x_bus_io.h"
 
 struct alignment {
 	int8_t index;
@@ -24,6 +25,7 @@ struct alignment {
 enum icm4268x_variant {
 	ICM4268X_VARIANT_ICM42688 = 0,
 	ICM4268X_VARIANT_ICM42686 = 1,
+	ICM4268X_VARIANT_IIM42652 = 2,
 };
 
 /** Helper struct used to map between values and DT-options (e.g: DT_ACCEL_FS) */
@@ -35,6 +37,7 @@ struct icm4268x_reg_val_pair {
 static const uint8_t table_accel_fs_to_reg_array_size[] = {
 	[ICM4268X_VARIANT_ICM42688] = 4, /* FS16 to FS2 */
 	[ICM4268X_VARIANT_ICM42686] = 5, /* FS32 to FS2 */
+	[ICM4268X_VARIANT_IIM42652] = 4, /* FS16 to FS2 */
 };
 
 static const struct icm4268x_reg_val_pair table_accel_fs_to_reg[][5] = {
@@ -50,6 +53,12 @@ static const struct icm4268x_reg_val_pair table_accel_fs_to_reg[][5] = {
 		{.val = 8, .reg = ICM42686_DT_ACCEL_FS_8},
 		{.val = 4, .reg = ICM42686_DT_ACCEL_FS_4},
 		{.val = 2, .reg = ICM42686_DT_ACCEL_FS_2},
+	},
+	[ICM4268X_VARIANT_IIM42652] = {
+		{.val = 16, .reg = ICM42688_DT_ACCEL_FS_16},
+		{.val = 8, .reg = ICM42688_DT_ACCEL_FS_8},
+		{.val = 4, .reg = ICM42688_DT_ACCEL_FS_4},
+		{.val = 2, .reg = ICM42688_DT_ACCEL_FS_2},
 	},
 };
 
@@ -81,6 +90,7 @@ static inline void icm4268x_accel_reg_to_fs(uint8_t fs, enum icm4268x_variant va
 static const uint8_t table_gyro_fs_to_reg_array_size[] = {
 	[ICM4268X_VARIANT_ICM42688] = 8, /* FS2000 to FS15_625 */
 	[ICM4268X_VARIANT_ICM42686] = 8, /* FS4000 to FS31_25 */
+	[ICM4268X_VARIANT_IIM42652] = 8, /* FS2000 to FS15_625 */
 };
 
 static const struct icm4268x_reg_val_pair table_gyro_fs_to_reg[][8] = {
@@ -103,6 +113,16 @@ static const struct icm4268x_reg_val_pair table_gyro_fs_to_reg[][8] = {
 		{.val = 12500000,  .reg = ICM42686_DT_GYRO_FS_125},
 		{.val = 6250000,   .reg = ICM42686_DT_GYRO_FS_62_5},
 		{.val = 3125000,   .reg = ICM42686_DT_GYRO_FS_31_25},
+	},
+	[ICM4268X_VARIANT_IIM42652] = {
+		{.val = 200000000, .reg = ICM42688_DT_GYRO_FS_2000},
+		{.val = 100000000, .reg = ICM42688_DT_GYRO_FS_1000},
+		{.val = 50000000,  .reg = ICM42688_DT_GYRO_FS_500},
+		{.val = 25000000,  .reg = ICM42688_DT_GYRO_FS_250},
+		{.val = 12500000,  .reg = ICM42688_DT_GYRO_FS_125},
+		{.val = 6250000,   .reg = ICM42688_DT_GYRO_FS_62_5},
+		{.val = 3125000,   .reg = ICM42688_DT_GYRO_FS_31_25},
+		{.val = 1562500,   .reg = ICM42688_DT_GYRO_FS_15_625},
 	},
 };
 
@@ -401,10 +421,41 @@ struct icm4268x_dev_data {
  * @brief Device config (struct device)
  */
 struct icm4268x_dev_cfg {
-	struct spi_dt_spec spi;
+	union icm4268x_bus_cfg bus;
+	const struct icm4268x_bus_io *bus_io;
 	struct gpio_dt_spec gpio_int1;
 	struct gpio_dt_spec gpio_int2;
 };
+
+static inline int icm4268x_reg_read(const struct device *dev, uint16_t reg, uint8_t *data,
+				    size_t len)
+{
+	const struct icm4268x_dev_cfg *cfg = dev->config;
+
+	return cfg->bus_io->read(&cfg->bus, reg, data, len);
+}
+
+static inline int icm4268x_reg_write(const struct device *dev, uint16_t reg, uint8_t data)
+{
+	const struct icm4268x_dev_cfg *cfg = dev->config;
+
+	return cfg->bus_io->write(&cfg->bus, reg, data);
+}
+
+static inline int icm4268x_reg_update(const struct device *dev, uint16_t reg, uint8_t mask,
+				      uint8_t data)
+{
+	const struct icm4268x_dev_cfg *cfg = dev->config;
+
+	return cfg->bus_io->update(&cfg->bus, reg, mask, data);
+}
+
+static inline int icm4268x_bus_check(const struct device *dev)
+{
+	const struct icm4268x_dev_cfg *cfg = dev->config;
+
+	return cfg->bus_io->check(&cfg->bus);
+}
 
 /**
  * @brief Reset the sensor
@@ -470,6 +521,12 @@ static const struct icm4268x_reg_val_pair table_accel_sensitivity_to_reg[][5] = 
 		{.val = 8192, .reg = ICM42686_DT_ACCEL_FS_4},
 		{.val = 16384, .reg = ICM42686_DT_ACCEL_FS_2},
 	},
+	[ICM4268X_VARIANT_IIM42652] = {
+		{.val = 2048, .reg = ICM42688_DT_ACCEL_FS_16},
+		{.val = 4096, .reg = ICM42688_DT_ACCEL_FS_8},
+		{.val = 8192, .reg = ICM42688_DT_ACCEL_FS_4},
+		{.val = 16384, .reg = ICM42688_DT_ACCEL_FS_2},
+	},
 };
 
 /**
@@ -526,6 +583,16 @@ static const struct icm4268x_reg_val_pair table_gyro_sensitivity_to_reg[][8] = {
 		{.val = 2620,  .reg = ICM42686_DT_GYRO_FS_125},
 		{.val = 5243,   .reg = ICM42686_DT_GYRO_FS_62_5},
 		{.val = 10486,   .reg = ICM42686_DT_GYRO_FS_31_25},
+	},
+	[ICM4268X_VARIANT_IIM42652] = {
+		{.val = 164, .reg = ICM42688_DT_GYRO_FS_2000},
+		{.val = 328, .reg = ICM42688_DT_GYRO_FS_1000},
+		{.val = 655, .reg = ICM42688_DT_GYRO_FS_500},
+		{.val = 1310, .reg = ICM42688_DT_GYRO_FS_250},
+		{.val = 2620, .reg = ICM42688_DT_GYRO_FS_125},
+		{.val = 5243, .reg = ICM42688_DT_GYRO_FS_62_5},
+		{.val = 10486, .reg = ICM42688_DT_GYRO_FS_31_25},
+		{.val = 20972, .reg = ICM42688_DT_GYRO_FS_15_625},
 	},
 };
 
