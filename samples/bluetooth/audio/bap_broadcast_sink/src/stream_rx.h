@@ -72,6 +72,7 @@ struct stream_rx {
 	lc3_decoder_mem_48k_t lc3_decoder_mem;
 	/** Reference to the LC3 decoder */
 	lc3_decoder_t lc3_decoder;
+	uint32_t lc3_disable_cnt;
 #endif /* defined(CONFIG_LIBLC3) */
 };
 
