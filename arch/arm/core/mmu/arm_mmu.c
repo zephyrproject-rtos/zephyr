@@ -21,9 +21,11 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
+#include <zephyr/cache.h>
 
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/spinlock.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel/mm.h>
@@ -37,27 +39,33 @@
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 /* Level 1 page table: always required, must be 16k-aligned */
-static struct arm_mmu_l1_page_table
-	l1_page_table __aligned(KB(16)) = {0};
+static struct arm_mmu_l1_page_table l1_page_table __aligned(KB(16)) = {0};
 /*
  * Array of level 2 page tables with 4k granularity:
  * each table covers a range of 1 MB, the number of L2 tables
  * is configurable.
  */
-static struct arm_mmu_l2_page_table
-	l2_page_tables[CONFIG_ARM_MMU_NUM_L2_TABLES] __aligned(KB(1)) = {0};
+static struct arm_mmu_l2_page_table l2_page_tables[CONFIG_ARM_MMU_NUM_L2_TABLES]
+	__aligned(KB(1)) = {0};
 /*
  * For each level 2 page table, a separate dataset tracks
  * if the respective table is in use, if so, to which 1 MB
  * virtual address range it is assigned, and how many entries,
  * each mapping a 4 kB page, it currently contains.
  */
-static struct arm_mmu_l2_page_table_status
-	l2_page_tables_status[CONFIG_ARM_MMU_NUM_L2_TABLES] = {0};
+static struct arm_mmu_l2_page_table_status l2_page_tables_status[CONFIG_ARM_MMU_NUM_L2_TABLES] = {
+	0};
 
 /* Available L2 tables count & next free index for an L2 table request */
 static uint32_t arm_mmu_l2_tables_free = CONFIG_ARM_MMU_NUM_L2_TABLES;
 static uint32_t arm_mmu_l2_next_free_table;
+
+/*
+ * Guards all L1/L2 page table content & the L2 table allocation state
+ * above against concurrent access from multiple cores. Must be held
+ * across any read-modify-write sequence touching the page tables.
+ */
+static struct k_spinlock arm_mmu_lock;
 
 /*
  * Static definition of all code & data memory regions of the
@@ -69,61 +77,68 @@ static const struct arm_mmu_flat_range mmu_zephyr_ranges[] = {
 	 * Mark the zephyr execution regions (data, bss, noinit, etc.)
 	 * cacheable, read / write and non-executable
 	 */
-	{ .name  = "zephyr_data",
-	  .start = (uint32_t)_image_ram_start,
-	  .end   = (uint32_t)_image_ram_end,
-	  .attrs = MT_NORMAL | MATTR_SHARED |
-		   MPERM_R | MPERM_W |
-		   MATTR_CACHE_OUTER_WB_WA | MATTR_CACHE_INNER_WB_WA},
-#if defined(CONFIG_AARCH32_ARMV8_A)
+	{.name = "zephyr_data",
+	 .start = (uint32_t)_image_ram_start,
+	 .end = (uint32_t)_image_ram_end,
+	 .attrs = MT_NORMAL | MATTR_SHARED | MPERM_R | MPERM_W | MATTR_CACHE_OUTER_WB_WA |
+		  MATTR_CACHE_INNER_WB_WA},
+#if defined(CONFIG_AARCH32_ARMV8_A) || defined(CONFIG_CPU_CORTEX_A7)
 	/* The ARMv8-A AArch32 implementation uses VBAR to hold the final vector
 	 * table address (_vector_start); map it here rather than requiring
 	 * each SoC to provide its own entry in mmu_regions.c.
 	 */
-	{ .name  = "vectors",
-	  .start = (uint32_t)_vector_start,
-	  .end   = (uint32_t)_vector_end,
-	  .attrs = MT_NORMAL | MATTR_SHARED |
-		   MPERM_R | MPERM_X |
-		   MATTR_CACHE_OUTER_WB_nWA | MATTR_CACHE_INNER_WB_nWA},
+	{.name = "vectors",
+	 .start = (uint32_t)_vector_start,
+	 .end = (uint32_t)_vector_end,
+	 .attrs = MT_NORMAL | MATTR_SHARED | MPERM_R | MPERM_X | MATTR_CACHE_OUTER_WB_nWA |
+		  MATTR_CACHE_INNER_WB_nWA},
 #endif
 
 	/* Mark text segment cacheable, read only and executable */
-	{ .name  = "zephyr_code",
-	  .start = (uint32_t)__text_region_start,
-	  .end   = (uint32_t)__text_region_end,
-	  .attrs = MT_NORMAL | MATTR_SHARED |
-	  /* The code needs to have write permission in order for
-	   * software breakpoints (which modify instructions) to work
-	   */
+	{.name = "zephyr_code",
+	 .start = (uint32_t)__text_region_start,
+	 .end = (uint32_t)__text_region_end,
+	 .attrs = MT_NORMAL | MATTR_SHARED |
+/* The code needs to have write permission in order for
+ * software breakpoints (which modify instructions) to work
+ */
 #if defined(CONFIG_GDBSTUB)
-		   MPERM_R | MPERM_X | MPERM_W |
+		  MPERM_R | MPERM_X | MPERM_W |
 #else
-		   MPERM_R | MPERM_X |
+		  MPERM_R | MPERM_X |
 #endif
-		   MATTR_CACHE_OUTER_WB_nWA | MATTR_CACHE_INNER_WB_nWA |
-		   MATTR_MAY_MAP_L1_SECTION},
+		  MATTR_CACHE_OUTER_WB_nWA | MATTR_CACHE_INNER_WB_nWA | MATTR_MAY_MAP_L1_SECTION},
 
 	/* Mark rodata segment cacheable, read only and non-executable */
-	{ .name  = "zephyr_rodata",
-	  .start = (uint32_t)__rodata_region_start,
-	  .end   = (uint32_t)__rodata_region_end,
-	  .attrs = MT_NORMAL | MATTR_SHARED |
-		   MPERM_R |
-		   MATTR_CACHE_OUTER_WB_nWA | MATTR_CACHE_INNER_WB_nWA |
-		   MATTR_MAY_MAP_L1_SECTION},
+	{.name = "zephyr_rodata",
+	 .start = (uint32_t)__rodata_region_start,
+	 .end = (uint32_t)__rodata_region_end,
+	 .attrs = MT_NORMAL | MATTR_SHARED | MPERM_R | MATTR_CACHE_OUTER_WB_nWA |
+		  MATTR_CACHE_INNER_WB_nWA | MATTR_MAY_MAP_L1_SECTION},
 #ifdef CONFIG_NOCACHE_MEMORY
 	/* Mark nocache segment read / write and non-executable */
-	{ .name  = "nocache",
-	  .start = (uint32_t)_nocache_ram_start,
-	  .end   = (uint32_t)_nocache_ram_end,
-	  .attrs = MT_STRONGLY_ORDERED |
-		   MPERM_R | MPERM_W},
+	{.name = "nocache",
+	 .start = (uint32_t)_nocache_ram_start,
+	 .end = (uint32_t)_nocache_ram_end,
+	 .attrs = MT_STRONGLY_ORDERED | MPERM_R | MPERM_W},
 #endif
 };
 
-static bool arm_mmu_l2_map_page(uint32_t va, uint32_t pa,
-				struct arm_mmu_perms_attrs perms_attrs);
+static bool arm_mmu_l2_map_page(uint32_t va, uint32_t pa, struct arm_mmu_perms_attrs perms_attrs);
+
+#ifdef CONFIG_SMP
+/*
+ * TLBIALLIS: invalidate entire unified TLB, Inner Shareable.
+ * Not provided by the vendored CMSIS core_ca.h/cmsis_cp15.h (which only
+ * expose the local-only TLBIALL, CRn=8 CRm=7 op2=0). Broadcasting the
+ * invalidation to all cores in the Inner Shareable domain is required
+ * as soon as more than one core walks the same (shared) page tables.
+ */
+static inline void __set_TLBIALLIS(uint32_t value)
+{
+	__set_CP(15, 0, value, 8, 3, 0);
+}
+#endif
 
 /**
  * @brief Invalidates the TLB
@@ -131,10 +146,29 @@ static bool arm_mmu_l2_map_page(uint32_t va, uint32_t pa,
  * is performed whenever the MMU is (re-)enabled or changes to the
  * page tables are made at run-time, as the TLB might contain entries
  * which are no longer valid once the changes are applied.
+ * Under CONFIG_SMP, the invalidation is broadcast to all cores in the
+ * Inner Shareable domain, as the page tables are shared between cores
+ * and a change made on one core must not leave stale TLB entries on
+ * another.
  */
 static void invalidate_tlb_all(void)
 {
+	/*
+	 * Ensure that any preceding page table writes have completed and are
+	 * visible to all cores in the (Inner) Shareable domain before the TLB
+	 * invalidate below is issued/broadcast. Without this, a core receiving
+	 * a broadcast invalidate could re-walk the page tables on a subsequent
+	 * TLB miss before the writing core's store has actually propagated,
+	 * observing stale data. Comp. ARM64's "dsb ishst" preceding its TLBI
+	 * in this driver's invalidate_tlb_all().
+	 */
+	barrier_dsync_fence_full();
+
+#ifdef CONFIG_SMP
+	__set_TLBIALLIS(0); /* 0 = opc2 = invalidate entire TLB, inner shareable */
+#else
 	__set_TLBIALL(0); /* 0 = opc2 = invalidate entire TLB */
+#endif
 	barrier_dsync_fence_full();
 	barrier_isync_fence_full();
 }
@@ -156,14 +190,16 @@ static struct arm_mmu_l2_page_table *arm_mmu_assign_l2_table(uint32_t va)
 
 	if (arm_mmu_l2_tables_free == 0) {
 		LOG_ERR("Cannot set up L2 page table for VA 0x%08X: "
-			"no more free L2 page tables available", va);
+			"no more free L2 page tables available",
+			va);
 		return NULL;
 	}
 
 	if (l2_page_tables_status[arm_mmu_l2_next_free_table].entries != 0) {
 		LOG_ERR("Cannot set up L2 page table for VA 0x%08X: "
 			"expected empty L2 table at index [%u], but the "
-			"entries value is %u", va, arm_mmu_l2_next_free_table,
+			"entries value is %u",
+			va, arm_mmu_l2_next_free_table,
 			l2_page_tables_status[arm_mmu_l2_next_free_table].entries);
 		return NULL;
 	}
@@ -186,10 +222,10 @@ static struct arm_mmu_l2_page_table *arm_mmu_assign_l2_table(uint32_t va)
 	 * impossible.
 	 */
 	--arm_mmu_l2_tables_free;
-	if (arm_mmu_l2_tables_free > 0)	{
+	if (arm_mmu_l2_tables_free > 0) {
 		do {
-			arm_mmu_l2_next_free_table = (arm_mmu_l2_next_free_table + 1) %
-						      CONFIG_ARM_MMU_NUM_L2_TABLES;
+			arm_mmu_l2_next_free_table =
+				(arm_mmu_l2_next_free_table + 1) % CONFIG_ARM_MMU_NUM_L2_TABLES;
 		} while (l2_page_tables_status[arm_mmu_l2_next_free_table].entries != 0);
 	}
 
@@ -280,9 +316,8 @@ static struct arm_mmu_perms_attrs arm_mmu_convert_attr_flags(uint32_t attrs)
 {
 	struct arm_mmu_perms_attrs perms_attrs = {0};
 
-	__ASSERT(((attrs & MT_MASK) > 0),
-		 "Cannot convert attrs word to PTE control bits: no "
-		 "memory type specified");
+	__ASSERT(((attrs & MT_MASK) > 0), "Cannot convert attrs word to PTE control bits: no "
+					  "memory type specified");
 	__ASSERT(!((attrs & MPERM_W) && !(attrs & MPERM_R)),
 		 "attrs must not define write permission without read "
 		 "permission");
@@ -306,19 +341,19 @@ static struct arm_mmu_perms_attrs arm_mmu_convert_attr_flags(uint32_t attrs)
 
 	if (attrs & MT_STRONGLY_ORDERED) {
 		/* Strongly ordered is always shareable, S bit is ignored */
-		perms_attrs.tex        = 0;
-		perms_attrs.cacheable  = 0;
+		perms_attrs.tex = 0;
+		perms_attrs.cacheable = 0;
 		perms_attrs.bufferable = 0;
-		perms_attrs.shared     = 0;
-		perms_attrs.domain     = ARM_MMU_DOMAIN_DEVICE;
+		perms_attrs.shared = 0;
+		perms_attrs.domain = ARM_MMU_DOMAIN_DEVICE;
 	} else if (attrs & MT_DEVICE) {
 		/*
 		 * Shareability of device memory is determined by TEX, C, B.
 		 * The S bit is ignored. C is always 0 for device memory.
 		 */
-		perms_attrs.shared    = 0;
+		perms_attrs.shared = 0;
 		perms_attrs.cacheable = 0;
-		perms_attrs.domain    = ARM_MMU_DOMAIN_DEVICE;
+		perms_attrs.domain = ARM_MMU_DOMAIN_DEVICE;
 
 		/*
 		 * ARM deprecates the marking of Device memory with a
@@ -327,7 +362,7 @@ static struct arm_mmu_perms_attrs arm_mmu_convert_attr_flags(uint32_t attrs)
 		 * that Device memory is never assigned a shareability
 		 * attribute of Non-shareable or Inner Shareable.
 		 */
-		perms_attrs.tex        = 0;
+		perms_attrs.tex = 0;
 		perms_attrs.bufferable = 1;
 	} else if (attrs & MT_NORMAL) {
 		/*
@@ -352,13 +387,13 @@ static struct arm_mmu_perms_attrs arm_mmu_convert_attr_flags(uint32_t attrs)
 		}
 
 		if (attrs & MATTR_CACHE_INNER_WB_WA) {
-			perms_attrs.cacheable  = ARM_MMU_C_CACHE_ATTRS_WB_WA;
+			perms_attrs.cacheable = ARM_MMU_C_CACHE_ATTRS_WB_WA;
 			perms_attrs.bufferable = ARM_MMU_B_CACHE_ATTRS_WB_WA;
 		} else if (attrs & MATTR_CACHE_INNER_WT_nWA) {
-			perms_attrs.cacheable  = ARM_MMU_C_CACHE_ATTRS_WT_nWA;
+			perms_attrs.cacheable = ARM_MMU_C_CACHE_ATTRS_WT_nWA;
 			perms_attrs.bufferable = ARM_MMU_B_CACHE_ATTRS_WT_nWA;
 		} else if (attrs & MATTR_CACHE_INNER_WB_nWA) {
-			perms_attrs.cacheable  = ARM_MMU_C_CACHE_ATTRS_WB_nWA;
+			perms_attrs.cacheable = ARM_MMU_C_CACHE_ATTRS_WB_nWA;
 			perms_attrs.bufferable = ARM_MMU_B_CACHE_ATTRS_WB_nWA;
 		}
 	}
@@ -421,16 +456,13 @@ static struct arm_mmu_perms_attrs arm_mmu_convert_attr_flags(uint32_t attrs)
  * @param perms_attrs Permission and attribute bits in the format
  *                    used in the MMU's L1 page table entries.
  */
-static void arm_mmu_l1_map_section(uint32_t va, uint32_t pa,
-				   struct arm_mmu_perms_attrs perms_attrs)
+static void arm_mmu_l1_map_section(uint32_t va, uint32_t pa, struct arm_mmu_perms_attrs perms_attrs)
 {
-	uint32_t l1_index = (va >> ARM_MMU_PTE_L1_INDEX_PA_SHIFT) &
-			    ARM_MMU_PTE_L1_INDEX_MASK;
+	uint32_t l1_index = (va >> ARM_MMU_PTE_L1_INDEX_PA_SHIFT) & ARM_MMU_PTE_L1_INDEX_MASK;
 
 	__ASSERT(l1_page_table.entries[l1_index].undefined.id == ARM_MMU_PTE_ID_INVALID,
 		 "Unexpected non-zero L1 PTE ID %u for VA 0x%08X / PA 0x%08X",
-		 l1_page_table.entries[l1_index].undefined.id,
-		 va, pa);
+		 l1_page_table.entries[l1_index].undefined.id, va, pa);
 
 	l1_page_table.entries[l1_index].l1_section_1m.id =
 		(ARM_MMU_PTE_ID_SECTION & perms_attrs.id_mask);
@@ -485,25 +517,27 @@ static bool arm_mmu_remap_l1_section_to_l2_table(uint32_t va,
 						 struct arm_mmu_l2_page_table *l2_page_table)
 {
 	struct arm_mmu_perms_attrs perms_attrs = {0};
-	uint32_t l1_index = (va >> ARM_MMU_PTE_L1_INDEX_PA_SHIFT) &
-			    ARM_MMU_PTE_L1_INDEX_MASK;
-	uint32_t rem_size = MB(1);
-	uint32_t reg_val;
-	int lock_key;
-	bool success = true;
+	uint32_t l1_index = (va >> ARM_MMU_PTE_L1_INDEX_PA_SHIFT) & ARM_MMU_PTE_L1_INDEX_MASK;
+	union arm_mmu_l1_page_table_entry new_l1_pte = {0};
+	uint32_t l2_page_table_index = ARM_MMU_L2_PT_INDEX(l2_page_table);
+	uint32_t base_va;
+	uint32_t page_va;
+	uint32_t i;
 
 	/*
 	 * Extract the permissions and attributes from the current 1 MB section entry.
 	 * This data will be carried over to the resulting L2 page table.
 	 */
 
-	perms_attrs.acc_perms = (l1_page_table.entries[l1_index].l1_section_1m.acc_perms2 << 1) |
+	perms_attrs.acc_perms =
+		(l1_page_table.entries[l1_index].l1_section_1m.acc_perms2 << 1) |
 		((l1_page_table.entries[l1_index].l1_section_1m.acc_perms10 >> 1) & 0x1);
 	perms_attrs.bufferable = l1_page_table.entries[l1_index].l1_section_1m.bufferable;
 	perms_attrs.cacheable = l1_page_table.entries[l1_index].l1_section_1m.cacheable;
 	perms_attrs.domain = l1_page_table.entries[l1_index].l1_section_1m.domain;
-	perms_attrs.id_mask = (l1_page_table.entries[l1_index].l1_section_1m.id ==
-			      ARM_MMU_PTE_ID_INVALID) ? 0x0 : 0x3;
+	perms_attrs.id_mask =
+		(l1_page_table.entries[l1_index].l1_section_1m.id == ARM_MMU_PTE_ID_INVALID) ? 0x0
+											     : 0x3;
 	perms_attrs.not_global = l1_page_table.entries[l1_index].l1_section_1m.not_global;
 	perms_attrs.non_sec = l1_page_table.entries[l1_index].l1_section_1m.non_sec;
 	perms_attrs.shared = l1_page_table.entries[l1_index].l1_section_1m.shared;
@@ -511,57 +545,58 @@ static bool arm_mmu_remap_l1_section_to_l2_table(uint32_t va,
 	perms_attrs.exec_never = l1_page_table.entries[l1_index].l1_section_1m.exec_never;
 
 	/*
-	 * Disable interrupts - no interrupts shall occur before the L2 table has
-	 * been set up in place of the former L1 section entry.
+	 * Fully populate all 256 L2 entries for the 1 MB range with attributes
+	 * identical to those of the section entry being replaced, before the
+	 * L2 table is ever linked into the L1 table. The mappings covered by
+	 * a L1 section entry are always identity-mapped (va == pa), see the
+	 * caller-side restriction documented at #arm_mmu_l1_map_section().
 	 */
+	base_va = va & ~(MB(1) - 1);
+	for (i = 0; i < ARM_MMU_PT_L2_NUM_ENTRIES; i++) {
+		page_va = base_va + i * KB(4);
 
-	lock_key = arch_irq_lock();
-
-	/*
-	 * Disable the MMU. The L1 PTE array and the L2 PT array may actually be
-	 * covered by the L1 PTE we're about to replace, so access to this data
-	 * must remain functional during the entire remap process. Yet, the only
-	 * memory areas for which L1 1 MB section entries are even considered are
-	 * those belonging to the Zephyr image. Those areas are *always* identity
-	 * mapped, so the MMU can be turned off and the relevant data will still
-	 * be available.
-	 */
-
-	reg_val = __get_SCTLR();
-	__set_SCTLR(reg_val & (~ARM_MMU_SCTLR_MMU_ENABLE_BIT));
-
-	/*
-	 * Clear the entire L1 PTE & re-configure it as a L2 PT reference
-	 * -> already sets the correct values for: zero0, zero1, impl_def.
-	 */
-	l1_page_table.entries[l1_index].word = 0;
-
-	l1_page_table.entries[l1_index].l2_page_table_ref.id = ARM_MMU_PTE_ID_L2_PT;
-	l1_page_table.entries[l1_index].l2_page_table_ref.domain = perms_attrs.domain;
-	l1_page_table.entries[l1_index].l2_page_table_ref.non_sec = perms_attrs.non_sec;
-	l1_page_table.entries[l1_index].l2_page_table_ref.l2_page_table_address =
-		(((uint32_t)l2_page_table >> ARM_MMU_PT_L2_ADDR_SHIFT) &
-		ARM_MMU_PT_L2_ADDR_MASK);
-
-	/* Align the target VA to the base address of the section we're converting */
-	va &= ~(MB(1) - 1);
-	while (rem_size > 0) {
-		if (!arm_mmu_l2_map_page(va, va, perms_attrs)) {
-			success = false;
-			break;
-		}
-		rem_size -= KB(4);
-		va += KB(4);
+		l2_page_table->entries[i].l2_page_4k.id =
+			(ARM_MMU_PTE_ID_SMALL_PAGE & perms_attrs.id_mask);
+		l2_page_table->entries[i].l2_page_4k.id |= perms_attrs.exec_never;
+		l2_page_table->entries[i].l2_page_4k.bufferable = perms_attrs.bufferable;
+		l2_page_table->entries[i].l2_page_4k.cacheable = perms_attrs.cacheable;
+		l2_page_table->entries[i].l2_page_4k.acc_perms10 =
+			((perms_attrs.acc_perms & 0x1) << 1) | 0x1;
+		l2_page_table->entries[i].l2_page_4k.tex = perms_attrs.tex;
+		l2_page_table->entries[i].l2_page_4k.acc_perms2 =
+			((perms_attrs.acc_perms >> 1) & 0x1);
+		l2_page_table->entries[i].l2_page_4k.shared = perms_attrs.shared;
+		l2_page_table->entries[i].l2_page_4k.not_global = perms_attrs.not_global;
+		l2_page_table->entries[i].l2_page_4k.pa_base =
+			((page_va >> ARM_MMU_PTE_L2_SMALL_PAGE_ADDR_SHIFT) &
+			 ARM_MMU_PTE_L2_SMALL_PAGE_ADDR_MASK);
 	}
+	l2_page_tables_status[l2_page_table_index].entries = ARM_MMU_PT_L2_NUM_ENTRIES;
 
-	/* Remap complete, re-enable the MMU, unlock the interrupts. */
+	/*
+	 * Build the replacement L1 PTE in a local variable, then commit it
+	 * with a single aligned store. l1_page_table.entries[l1_index] never
+	 * observes an invalid or half-built state, so no core (this one or
+	 * any other sharing this page table) can walk into a transient fault
+	 * while the conversion is in progress, and the local MMU does not
+	 * need to be disabled.
+	 */
+	new_l1_pte.l2_page_table_ref.id = ARM_MMU_PTE_ID_L2_PT;
+	new_l1_pte.l2_page_table_ref.domain = perms_attrs.domain;
+	new_l1_pte.l2_page_table_ref.non_sec = perms_attrs.non_sec;
+	new_l1_pte.l2_page_table_ref.l2_page_table_address =
+		(((uint32_t)l2_page_table >> ARM_MMU_PT_L2_ADDR_SHIFT) & ARM_MMU_PT_L2_ADDR_MASK);
 
+	l1_page_table.entries[l1_index].word = new_l1_pte.word;
+
+	/*
+	 * Make the new L1 PTE and the now-linked L2 table globally visible
+	 * and drop any stale translations for this range from every core's
+	 * TLB before the caller continues to modify the freshly-split-out
+	 * L2 entries.
+	 */
 	invalidate_tlb_all();
-	__set_SCTLR(reg_val);
-
-	arch_irq_unlock(lock_key);
-
-	return success;
+	return true;
 }
 
 /**
@@ -581,14 +616,11 @@ static bool arm_mmu_remap_l1_section_to_l2_table(uint32_t va,
  * @retval false Mapping failed. Usually means there are no free L2 page
  *               tables to be assigned.
  */
-static bool arm_mmu_l2_map_page(uint32_t va, uint32_t pa,
-				struct arm_mmu_perms_attrs perms_attrs)
+static bool arm_mmu_l2_map_page(uint32_t va, uint32_t pa, struct arm_mmu_perms_attrs perms_attrs)
 {
 	struct arm_mmu_l2_page_table *l2_page_table = NULL;
-	uint32_t l1_index = (va >> ARM_MMU_PTE_L1_INDEX_PA_SHIFT) &
-			    ARM_MMU_PTE_L1_INDEX_MASK;
-	uint32_t l2_index = (va >> ARM_MMU_PTE_L2_INDEX_PA_SHIFT) &
-			    ARM_MMU_PTE_L2_INDEX_MASK;
+	uint32_t l1_index = (va >> ARM_MMU_PTE_L1_INDEX_PA_SHIFT) & ARM_MMU_PTE_L1_INDEX_MASK;
+	uint32_t l2_index = (va >> ARM_MMU_PTE_L2_INDEX_PA_SHIFT) & ARM_MMU_PTE_L2_INDEX_MASK;
 
 	/*
 	 * Use the calculated L1 index in order to determine if a L2 page
@@ -601,7 +633,8 @@ static bool arm_mmu_l2_map_page(uint32_t va, uint32_t pa,
 		l2_page_table = arm_mmu_assign_l2_table(pa);
 		if (l2_page_table == NULL) {
 			LOG_ERR("Cannot map virtual address 0x%08X: "
-				"no L2 page table available", va);
+				"no L2 page table available",
+				va);
 			return false;
 		}
 	}
@@ -633,16 +666,15 @@ static bool arm_mmu_l2_map_page(uint32_t va, uint32_t pa,
 		l1_page_table.entries[l1_index].l2_page_table_ref.zero1 = 0;
 		l1_page_table.entries[l1_index].l2_page_table_ref.impl_def = 0;
 		l1_page_table.entries[l1_index].l2_page_table_ref.domain = 0; /* TODO */
-		l1_page_table.entries[l1_index].l2_page_table_ref.non_sec =
-			perms_attrs.non_sec;
+		l1_page_table.entries[l1_index].l2_page_table_ref.non_sec = perms_attrs.non_sec;
 		l1_page_table.entries[l1_index].l2_page_table_ref.l2_page_table_address =
 			(((uint32_t)l2_page_table >> ARM_MMU_PT_L2_ADDR_SHIFT) &
-			ARM_MMU_PT_L2_ADDR_MASK);
+			 ARM_MMU_PT_L2_ADDR_MASK);
 	} else if (l1_page_table.entries[l1_index].undefined.id == ARM_MMU_PTE_ID_L2_PT) {
 		/* The matching L1 PT entry already points to a L2 PT */
-		l2_page_table = (struct arm_mmu_l2_page_table *)
-				((l1_page_table.entries[l1_index].word &
-				(ARM_MMU_PT_L2_ADDR_MASK << ARM_MMU_PT_L2_ADDR_SHIFT)));
+		l2_page_table = (struct arm_mmu_l2_page_table *)((
+			l1_page_table.entries[l1_index].word &
+			(ARM_MMU_PT_L2_ADDR_MASK << ARM_MMU_PT_L2_ADDR_SHIFT)));
 		/*
 		 * The only configuration bit contained in the L2 PT entry is the
 		 * NS bit. Set it according to the attributes passed to this function,
@@ -653,8 +685,7 @@ static bool arm_mmu_l2_map_page(uint32_t va, uint32_t pa,
 		    perms_attrs.non_sec) {
 			LOG_WRN("NS bit mismatch in L2 PT reference at L1 index [%u], "
 				"re-configuring from %u to %u",
-				l1_index,
-				l1_page_table.entries[l1_index].l2_page_table_ref.non_sec,
+				l1_index, l1_page_table.entries[l1_index].l2_page_table_ref.non_sec,
 				perms_attrs.non_sec);
 			l1_page_table.entries[l1_index].l2_page_table_ref.non_sec =
 				perms_attrs.non_sec;
@@ -698,7 +729,7 @@ static bool arm_mmu_l2_map_page(uint32_t va, uint32_t pa,
 	l2_page_table->entries[l2_index].l2_page_4k.not_global = perms_attrs.not_global;
 	l2_page_table->entries[l2_index].l2_page_4k.pa_base =
 		((pa >> ARM_MMU_PTE_L2_SMALL_PAGE_ADDR_SHIFT) &
-		ARM_MMU_PTE_L2_SMALL_PAGE_ADDR_MASK);
+		 ARM_MMU_PTE_L2_SMALL_PAGE_ADDR_MASK);
 
 	return true;
 }
@@ -718,10 +749,8 @@ static bool arm_mmu_l2_map_page(uint32_t va, uint32_t pa,
 static bool arm_mmu_l2_unmap_page(uint32_t va)
 {
 	struct arm_mmu_l2_page_table *l2_page_table;
-	uint32_t l1_index = (va >> ARM_MMU_PTE_L1_INDEX_PA_SHIFT) &
-			    ARM_MMU_PTE_L1_INDEX_MASK;
-	uint32_t l2_index = (va >> ARM_MMU_PTE_L2_INDEX_PA_SHIFT) &
-			    ARM_MMU_PTE_L2_INDEX_MASK;
+	uint32_t l1_index = (va >> ARM_MMU_PTE_L1_INDEX_PA_SHIFT) & ARM_MMU_PTE_L1_INDEX_MASK;
+	uint32_t l2_index = (va >> ARM_MMU_PTE_L2_INDEX_PA_SHIFT) & ARM_MMU_PTE_L2_INDEX_MASK;
 
 	if (l1_page_table.entries[l1_index].undefined.id != ARM_MMU_PTE_ID_L2_PT) {
 		/*
@@ -733,9 +762,9 @@ static bool arm_mmu_l2_unmap_page(uint32_t va)
 		return true;
 	}
 
-	l2_page_table = (struct arm_mmu_l2_page_table *)
-			((l1_page_table.entries[l1_index].word &
-			(ARM_MMU_PT_L2_ADDR_MASK << ARM_MMU_PT_L2_ADDR_SHIFT)));
+	l2_page_table = (struct arm_mmu_l2_page_table *)((
+		l1_page_table.entries[l1_index].word &
+		(ARM_MMU_PT_L2_ADDR_MASK << ARM_MMU_PT_L2_ADDR_SHIFT)));
 
 	if (l2_page_table->entries[l2_index].word == 0) {
 		/*
@@ -753,10 +782,11 @@ static bool arm_mmu_l2_unmap_page(uint32_t va)
 	}
 
 	if ((l2_page_table->entries[l2_index].undefined.id & ARM_MMU_PTE_ID_SMALL_PAGE) !=
-			ARM_MMU_PTE_ID_SMALL_PAGE) {
+	    ARM_MMU_PTE_ID_SMALL_PAGE) {
 		LOG_ERR("Cannot unmap virtual memory at 0x%08X: invalid "
 			"page table entry type in level 2 page table at "
-			"L1 index [%u], L2 index [%u]", va, l1_index, l2_index);
+			"L1 index [%u], L2 index [%u]",
+			va, l1_index, l2_index);
 		return false;
 	}
 
@@ -779,7 +809,7 @@ static bool arm_mmu_l2_unmap_page(uint32_t va)
 static uint32_t arm_mmu_get_pt_attrs(void)
 {
 	for (uint32_t mem_range = 0; mem_range < ARRAY_SIZE(mmu_zephyr_ranges); mem_range++) {
-		uint32_t pa  = mmu_zephyr_ranges[mem_range].start;
+		uint32_t pa = mmu_zephyr_ranges[mem_range].start;
 		uint32_t end = mmu_zephyr_ranges[mem_range].end;
 
 		if (((uint32_t)&l1_page_table >= pa) && ((uint32_t)&l1_page_table < end)) {
@@ -812,9 +842,9 @@ static void arm_mmu_setup_ptables(void)
 
 	/* Set up the memory regions pre-defined by the image */
 	for (mem_range = 0; mem_range < ARRAY_SIZE(mmu_zephyr_ranges); mem_range++) {
-		pa          = mmu_zephyr_ranges[mem_range].start;
-		rem_size    = mmu_zephyr_ranges[mem_range].end - pa;
-		attrs       = mmu_zephyr_ranges[mem_range].attrs;
+		pa = mmu_zephyr_ranges[mem_range].start;
+		rem_size = mmu_zephyr_ranges[mem_range].end - pa;
+		attrs = mmu_zephyr_ranges[mem_range].attrs;
 		perms_attrs = arm_mmu_convert_attr_flags(attrs);
 
 		while (rem_size > 0) {
@@ -842,18 +872,15 @@ static void arm_mmu_setup_ptables(void)
 
 	/* Set up the memory regions defined at the SoC level */
 	for (mem_range = 0; mem_range < mmu_config.num_regions; mem_range++) {
-		pa          = (uint32_t)(mmu_config.mmu_regions[mem_range].base_pa);
-		va          = (uint32_t)(mmu_config.mmu_regions[mem_range].base_va);
-		rem_size    = (uint32_t)(mmu_config.mmu_regions[mem_range].size);
-		attrs       = mmu_config.mmu_regions[mem_range].attrs;
+		pa = (uint32_t)(mmu_config.mmu_regions[mem_range].base_pa);
+		va = (uint32_t)(mmu_config.mmu_regions[mem_range].base_va);
+		rem_size = (uint32_t)(mmu_config.mmu_regions[mem_range].size);
+		attrs = mmu_config.mmu_regions[mem_range].attrs;
 		perms_attrs = arm_mmu_convert_attr_flags(attrs);
 
 		while (rem_size > 0) {
-			if (rem_size >= MB(1) &&
-			    (pa & 0xFFFFF) == 0 &&
-			    (va & 0xFFFFF) == 0 &&
-			    pa == va &&
-			    (attrs & MATTR_MAY_MAP_L1_SECTION)) {
+			if (rem_size >= MB(1) && (pa & 0xFFFFF) == 0 && (va & 0xFFFFF) == 0 &&
+			    pa == va && (attrs & MATTR_MAY_MAP_L1_SECTION)) {
 				/*
 				 * Remaining area size > 1 MB & matching alignment
 				 * -> map a 1 MB section instead of individual 4 kB
@@ -909,8 +936,7 @@ int z_arm_mmu_init(bool is_primary_core)
 	__asm__ volatile("mcr p15, 0, %0, c2, c0, 1" : : "r"(reg_val));
 
 	/* Write TTBCR: EAE, security not yet relevant, N[2:0] = 0 */
-	__asm__ volatile("mcr p15, 0, %0, c2, c0, 2"
-			     : : "r"(reg_val));
+	__asm__ volatile("mcr p15, 0, %0, c2, c0, 2" : : "r"(reg_val));
 
 	/* Write TTBR0 */
 	reg_val = ((uint32_t)&l1_page_table.entries[0] & ~0x3FFF);
@@ -924,14 +950,11 @@ int z_arm_mmu_init(bool is_primary_core)
 	}
 
 	if (pt_attrs & MATTR_CACHE_OUTER_WB_WA) {
-		reg_val |= (ARM_MMU_TTBR_RGN_OUTER_WB_WA_CACHEABLE <<
-			    ARM_MMU_TTBR_RGN_SHIFT);
+		reg_val |= (ARM_MMU_TTBR_RGN_OUTER_WB_WA_CACHEABLE << ARM_MMU_TTBR_RGN_SHIFT);
 	} else if (pt_attrs & MATTR_CACHE_OUTER_WT_nWA) {
-		reg_val |= (ARM_MMU_TTBR_RGN_OUTER_WT_CACHEABLE <<
-			    ARM_MMU_TTBR_RGN_SHIFT);
+		reg_val |= (ARM_MMU_TTBR_RGN_OUTER_WT_CACHEABLE << ARM_MMU_TTBR_RGN_SHIFT);
 	} else if (pt_attrs & MATTR_CACHE_OUTER_WB_nWA) {
-		reg_val |= (ARM_MMU_TTBR_RGN_OUTER_WB_nWA_CACHEABLE <<
-			    ARM_MMU_TTBR_RGN_SHIFT);
+		reg_val |= (ARM_MMU_TTBR_RGN_OUTER_WB_nWA_CACHEABLE << ARM_MMU_TTBR_RGN_SHIFT);
 	}
 
 	if (pt_attrs & MATTR_CACHE_INNER_WB_WA) {
@@ -951,13 +974,29 @@ int z_arm_mmu_init(bool is_primary_core)
 
 	invalidate_tlb_all();
 
+	/*
+	 * The state of the I/D-cache RAMs is architecturally undefined out of
+	 * reset/power-up. Invalidate both caches before turning them on below,
+	 * otherwise stale/undefined tag entries left over in this core's cache
+	 * (e.g. from its power-up state) could spuriously "hit" and be served
+	 * instead of the actual memory contents once the cache is enabled.
+	 */
+	sys_cache_data_invd_all();
+	sys_cache_instr_invd_all();
+
+	/* Ensure these changes are seen before MMU is enabled */
+	barrier_isync_fence_full();
+
 	/* Enable the MMU and Cache in SCTLR */
-	reg_val  = __get_SCTLR();
+	reg_val = __get_SCTLR();
 	reg_val |= ARM_MMU_SCTLR_AFE_BIT;
 	reg_val |= ARM_MMU_SCTLR_ICACHE_ENABLE_BIT;
 	reg_val |= ARM_MMU_SCTLR_DCACHE_ENABLE_BIT;
 	reg_val |= ARM_MMU_SCTLR_MMU_ENABLE_BIT;
 	__set_SCTLR(reg_val);
+
+	/* Ensure the MMU enable takes effect immediately */
+	barrier_isync_fence_full();
 
 	return 0;
 }
@@ -983,11 +1022,12 @@ static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flag
 	uint32_t rem_size = (uint32_t)size;
 	uint32_t conv_flags = MPERM_R;
 	struct arm_mmu_perms_attrs perms_attrs;
-	int key;
+	k_spinlock_key_t key;
 
 	if (size == 0) {
 		LOG_ERR("Cannot map physical memory at 0x%08X: invalid "
-			"zero size", (uint32_t)phys);
+			"zero size",
+			(uint32_t)phys);
 		return -EINVAL;
 	}
 
@@ -1031,7 +1071,7 @@ static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flag
 
 	perms_attrs = arm_mmu_convert_attr_flags(conv_flags);
 
-	key = arch_irq_lock();
+	key = k_spin_lock(&arm_mmu_lock);
 
 	while (rem_size > 0) {
 		if (!arm_mmu_l2_map_page(va, pa, perms_attrs)) {
@@ -1039,7 +1079,7 @@ static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flag
 			 * The caller is expected to unmap the entire range in
 			 * order to clean up the partial mapping.
 			 */
-			arch_irq_unlock(key);
+			k_spin_unlock(&arm_mmu_lock, key);
 			return -ENOMEM;
 		}
 		rem_size -= (rem_size >= KB(4)) ? KB(4) : rem_size;
@@ -1047,7 +1087,7 @@ static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flag
 		pa += KB(4);
 	}
 
-	arch_irq_unlock(key);
+	k_spin_unlock(&arm_mmu_lock, key);
 
 	return 0;
 }
@@ -1100,7 +1140,7 @@ static int __arch_mem_unmap(void *addr, size_t size)
 {
 	uint32_t va = (uint32_t)addr;
 	uint32_t rem_size = (uint32_t)size;
-	int key;
+	k_spinlock_key_t key;
 
 	if (addr == NULL) {
 		LOG_ERR("Cannot unmap virtual memory: invalid NULL pointer");
@@ -1109,22 +1149,23 @@ static int __arch_mem_unmap(void *addr, size_t size)
 
 	if (size == 0) {
 		LOG_ERR("Cannot unmap virtual memory at 0x%08X: invalid "
-			"zero size", (uint32_t)addr);
+			"zero size",
+			(uint32_t)addr);
 		return -EINVAL;
 	}
 
-	key = arch_irq_lock();
+	key = k_spin_lock(&arm_mmu_lock);
 
 	while (rem_size > 0) {
 		if (!arm_mmu_l2_unmap_page(va)) {
-			arch_irq_unlock(key);
+			k_spin_unlock(&arm_mmu_lock, key);
 			return -EFAULT;
 		}
 		rem_size -= (rem_size >= KB(4)) ? KB(4) : rem_size;
 		va += KB(4);
 	}
 
-	arch_irq_unlock(key);
+	k_spin_unlock(&arm_mmu_lock, key);
 
 	return 0;
 }
@@ -1175,19 +1216,19 @@ int arch_mem_unmap(void *addr, size_t size)
  */
 int arch_page_phys_get(void *virt, uintptr_t *phys)
 {
-	uint32_t l1_index = ((uint32_t)virt >> ARM_MMU_PTE_L1_INDEX_PA_SHIFT) &
-			    ARM_MMU_PTE_L1_INDEX_MASK;
-	uint32_t l2_index = ((uint32_t)virt >> ARM_MMU_PTE_L2_INDEX_PA_SHIFT) &
-			    ARM_MMU_PTE_L2_INDEX_MASK;
+	uint32_t l1_index =
+		((uint32_t)virt >> ARM_MMU_PTE_L1_INDEX_PA_SHIFT) & ARM_MMU_PTE_L1_INDEX_MASK;
+	uint32_t l2_index =
+		((uint32_t)virt >> ARM_MMU_PTE_L2_INDEX_PA_SHIFT) & ARM_MMU_PTE_L2_INDEX_MASK;
 	struct arm_mmu_l2_page_table *l2_page_table;
 
 	uint32_t pa_resolved = 0;
 	uint32_t l2_pt_resolved;
 
 	int rc = 0;
-	int key;
+	k_spinlock_key_t key;
 
-	key = arch_irq_lock();
+	key = k_spin_lock(&arm_mmu_lock);
 
 	if (l1_page_table.entries[l1_index].undefined.id == ARM_MMU_PTE_ID_SECTION) {
 		/*
@@ -1232,7 +1273,7 @@ int arch_page_phys_get(void *virt, uintptr_t *phys)
 		rc = -EFAULT;
 	}
 
-	arch_irq_unlock(key);
+	k_spin_unlock(&arm_mmu_lock, key);
 
 	if (phys) {
 		*phys = (uintptr_t)pa_resolved;

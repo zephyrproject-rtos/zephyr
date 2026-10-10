@@ -1,0 +1,8 @@
+board:
+  name: qemu_cortex_a7
+  full_name: QEMU Emulation for Cortex-A7
+  vendor: qemu
+  socs:
+  - name: qemu_cortex_a7
+    variants:
+    - name: smp

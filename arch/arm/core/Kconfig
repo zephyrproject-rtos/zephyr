@@ -86,6 +86,7 @@ config CPU_AARCH32_CORTEX_A
 	select EXTRA_EXCEPTION_INFO if GDBSTUB
 	select DCACHE_LINE_SIZE_DETECT_SUPPORT
 	select ICACHE_LINE_SIZE_DETECT_SUPPORT
+	select HAS_ARM_SMCCC
 	help
 	  This option signifies the use of a CPU of the Cortex-A family.
 
@@ -99,6 +100,12 @@ config ARM_TRACK_ACTIVE_IRQ
 	  ISR wrapper records it per CPU, at the cost of a few instructions
 	  on every interrupt entry and exit. Works with both the GIC and a
 	  custom interrupt controller.
+
+config HAS_ARM_SMCCC
+	bool
+	help
+	  Include support for the Secure Monitor Call (SMC) and Hypervisor
+	  Call (HVC) instructions on Armv7 and above architectures.
 
 config GDBSTUB_BUF_SZ
 	# GDB for ARM expects up to 18 4-byte plus 8 12-byte
