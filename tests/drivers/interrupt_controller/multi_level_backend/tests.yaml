@@ -18,3 +18,19 @@ tests:
   drivers.interrupt_controller.intc_multi_level_backend.no_assert:
     extra_configs:
       - CONFIG_ASSERT=n
+  # Checks the generated _sw_isr_table against the runtime lookup, so it needs
+  # every aggregator offset gen_isr_tables.py reads to be set. The level 3
+  # region starts past the level 2 one (12 + 2 x 64 = 140 on these platforms)
+  # and a BUILD_ASSERT in the test catches a platform where it would not.
+  #
+  # The second level 2 aggregator is fabricated and sits on CPU line 8, which
+  # the RISC-V interrupt causes leave reserved: the odd lines are taken by the
+  # software, timer and external interrupts of both privilege modes, and line 3
+  # in particular carries the IPI on the SMP platforms.
+  drivers.interrupt_controller.intc_multi_level_backend.isr_table_placement:
+    extra_configs:
+      - CONFIG_TEST_ISR_TABLE_PLACEMENT=y
+      - CONFIG_2ND_LVL_INTR_01_OFFSET=8
+      - CONFIG_3RD_LVL_ISR_TBL_OFFSET=192
+      - CONFIG_3RD_LVL_INTR_00_OFFSET=5
+      - CONFIG_3RD_LVL_INTR_01_OFFSET=7
