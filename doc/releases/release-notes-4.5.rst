@@ -782,6 +782,8 @@ New APIs and options
   * :c:macro:`K_MSGQ_DEFINE_TYPE`
   * :c:macro:`K_MSGQ_DEFINE_STATIC_TYPE`
   * :c:func:`k_sleep_ticks`
+  * :c:func:`k_mem_domain_remove_thread`
+  * :c:func:`k_mem_domain_remove_all_threads`
   * Namespaced equivalents of the interrupt control APIs, preferred for new
     code; the unprefixed names remain fully supported:
     :c:func:`k_irq_lock`, :c:func:`k_irq_unlock`, :c:func:`k_irq_enable`,
@@ -2653,6 +2655,11 @@ Other notable changes
     :c:func:`k_thread_cpu_mask_disable` in PIN_ONLY mode triggers an assertion
     failure.  Use :c:func:`k_thread_cpu_pin` to reassign a thread to a
     different CPU.
+
+  * :c:func:`k_mem_domain_deinit` now works on every architecture that keeps no
+    per-domain data, including all MPU based ones, instead of returning ``-ENOTSUP``
+    unless the architecture selected ``CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT``.
+    Architectures with per-domain data and no release hook still return ``-ENOTSUP``.
 
 * Timer
 

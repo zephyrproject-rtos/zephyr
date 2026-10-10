@@ -178,6 +178,11 @@ Kernel
   :c:func:`k_obj_type_walk_locked` or :c:func:`k_obj_type_walk_unlocked` with
   the object type found by :c:func:`k_obj_type_find`.
 
+* The hidden ``CONFIG_MEM_DOMAIN_HAS_THREAD_LIST`` Kconfig option has been removed. Every
+  :c:struct:`k_mem_domain` now keeps the list of its member threads, so architectures and
+  out-of-tree code no longer need to select the option, and code that referenced it can drop
+  the conditional.
+
 Boards
 ******
 
