@@ -1,0 +1,109 @@
+# Copyright (c) 2026, Hubert Miś
+# SPDX-License-Identifier: Apache-2.0
+include: base.yaml
+
+title: LED matrix with rows and columns managed by separate LED drivers.
+
+description: |
+  Rows are responsible for controlling the power sources or sinks for the LEDs, while columns
+  handle the complementary power control.
+
+  The configuration requires one LED driver to manage the rows and another to manage the columns.
+  Each row is treated as a single channel by its respective driver, and the same applies to each
+  column.
+
+  The driver operates by cycling through the rows: it deactivates the currently active row, updates
+  the column states for the next row, activates the next row, and then pauses for the specified
+  refresh time before repeating the process.
+
+  Child nodes describe individual LEDs. The LED API index is the child's order among siblings
+  (0 for the first child). Each child maps that index to a matrix position via its row and col
+  properties. Positions must be unique and within num-rows / num-cols.
+
+compatible: "led-matrix"
+
+properties:
+  rows:
+    required: true
+    type: phandle
+    description: |
+      Reference to the LED driver controlling the rows.
+
+      Each row is controlled as one channel by the referred driver.
+
+  columns:
+    required: true
+    type: phandle
+    description: |
+      Reference to the LED driver controlling the columns.
+
+      Each column is controlled as one channel by the referred driver.
+
+  num-rows:
+    required: true
+    type: int
+    description: |
+      Number of rows available in this LED matrix.
+
+  num-cols:
+    required: true
+    type: int
+    description: |
+      Number of columns available in this LED matrix.
+
+  refresh-rate-ms:
+    required: true
+    type: int
+    description: |
+      Refresh rate of the LED matrix in milliseconds.
+
+      This defines the pause duration before cycling to the next row.
+
+child-binding:
+  description: |
+    Single LED in the matrix.
+
+    The LED API uses the child's sibling index (0-based order in the parent) as the LED number
+    passed to led_on() / led_off() / led_set_brightness(). row and col select where that LED sits
+    in the scanned framebuffer.
+
+  properties:
+    row:
+      required: true
+      type: int
+      description: Zero-based row index of this LED in the matrix.
+
+    col:
+      required: true
+      type: int
+      description: Zero-based column index of this LED in the matrix.
+
+examples:
+  - |
+    / {
+            led_matrix {
+                    compatible = "led-matrix";
+
+                    rows = <&leds>;
+                    num-rows = <2>;
+                    columns = <&pwm_leds>;
+                    num-cols = <2>;
+
+                    refresh-rate-ms = <5>;
+
+                    led_0 {
+                            row = <0>;
+                            col = <0>;
+                    };
+
+                    led_1 {
+                            row = <1>;
+                            col = <0>;
+                    };
+
+                    led_2 {
+                            row = <0>;
+                            col = <1>;
+                    };
+            };
+    };
