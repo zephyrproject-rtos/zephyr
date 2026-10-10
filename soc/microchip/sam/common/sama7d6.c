@@ -72,6 +72,7 @@ enum pll_component_id {
 	PLL_COMPID_FRAC,
 	PLL_COMPID_DIV0,
 	PLL_COMPID_DIV1,
+	PLL_COMPID_MAX,
 };
 
 /*
@@ -218,7 +219,7 @@ static struct sama7d65_pll {
 	uint8_t t;
 	uint8_t eid;
 	uint8_t safe_div;
-} sama7d65_plls[][PLL_ID_MAX] = {
+} sama7d65_plls[][PLL_COMPID_MAX] = {
 	[PLL_ID_CPU] = {
 		[PLL_COMPID_FRAC] = {
 			.n = "cpupll_fracck",
@@ -1081,7 +1082,7 @@ static int sam_pmc_register_pll(const struct device *dev, struct pmc_data *sama7
 	int ret, i, j;
 
 	for (i = 0; i < PLL_ID_MAX; i++) {
-		for (j = 0; j < 3; j++) {
+		for (j = 0; j < PLL_COMPID_MAX; j++) {
 			const struct device *parent_hw;
 
 			if (!sama7d65_plls[i][j].n) {
