@@ -1,0 +1,40 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip AC G2
+
+description: |
+  The analog comparator block on Microchip PIC32CM SG/GC, ATDF cmp_ac_u2501_v2.
+  It carries one register file, one clock pair and one interrupt line shared
+  by two comparators, so the block itself is one node and each comparator is
+  a child of it.
+
+  This node has no driver of its own. The comparator driver reaches up to it
+  for the register base, the clocks and the interrupt, and the first child to
+  initialize resets and enables the block for both.
+
+compatible: "microchip,ac-g2"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+    description: '"mclk" then "gclk".'
+
+  "#address-cells":
+    required: true
+    const: 1
+
+  "#size-cells":
+    required: true
+    const: 0

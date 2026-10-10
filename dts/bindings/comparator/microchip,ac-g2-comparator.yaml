@@ -1,0 +1,117 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip AC G2 comparator
+
+description: |
+  One comparator of the AC pair on Microchip PIC32CM SG/GC, ATDF
+  cmp_ac_u2501_v2. Must be a child of a microchip,ac-g2 node, which holds the
+  register base, the clocks and the shared interrupt.
+
+  The register layout differs from the one microchip,ac-g1-comparator drives:
+  there is no SCALER and no CALIB on this die, COMPCTRL lives inside a
+  CHANNEL group rather than at the top of the block, and the MUXNEG encodings
+  are not the same. Hence a separate compatible.
+
+  pinctrl-0 is not required: a comparator whose muxes name no pin needs no
+  pin configuration.
+
+compatible: "microchip,ac-g2-comparator"
+
+include:
+  - name: base.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      Comparator index within the block, 0 or 1. This is an index, not an
+      address: the block has a single register file and both comparators are
+      reached through it.
+
+  positive-mux-input:
+    type: string
+    required: true
+    enum:
+      - "pin0"
+      - "pin1"
+      - "pin2"
+      - "pin3"
+      - "int0"
+      - "int1"
+      - "int2"
+      - "dac"
+    description: |
+      COMPCTRL.MUXPOS. "pin0" to "pin3" are AC_AIN0 to AC_AIN3 and must then
+      appear in pinctrl-0. "int0" to "int2" are on-die analog sources and
+      "dac" is the block's own 7-bit reference DAC.
+
+  negative-mux-input:
+    type: string
+    required: true
+    enum:
+      - "pin0"
+      - "pin1"
+      - "pin2"
+      - "pin3"
+      - "int0"
+      - "bandgap"
+      - "gnd"
+      - "dac"
+    description: |
+      COMPCTRL.MUXNEG. "bandgap" is the internal 0.8 V reference, "gnd" is
+      ground, and "dac" is the block's own 7-bit reference DAC. Note that the
+      encodings differ from the positive mux and from the G1 block.
+
+  dac-value:
+    type: int
+    default: 0
+    description: |
+      DACCTRL.VALUEn, the 7-bit reference DAC feeding this comparator when
+      either mux selects "dac". The output is value / 128 of AVDD, so one
+      step is 25.8 mV at 3.3 V. Range 0 to 127. Ignored when neither mux
+      uses it.
+
+  hysteresis-level:
+    type: string
+    default: "hyst10"
+    enum:
+      - "hyst10"
+      - "hyst20"
+      - "hyst40"
+      - "hyst60"
+    description: |
+      COMPCTRL.HYST, the typical hysteresis band. Unlike the G1 block there
+      is no enable bit: hysteresis is always applied and this only selects
+      how much. The data sheet's minimum to maximum for each level is wider
+      than the typical figures the names carry - 2 to 14 mV, 6 to 26 mV,
+      20 to 56 mV and 32 to 86 mV.
+
+  filter-length:
+    type: string
+    default: "off"
+    enum:
+      - "off"
+      - "maj3"
+      - "maj5"
+    description: |
+      COMPCTRL.FLEN. A majority filter over 3 or 5 samples of the comparator
+      output, which costs latency and rejects glitches.
+
+  swap-inputs:
+    type: boolean
+    description: |
+      COMPCTRL.SWAP. Feeds MUXNEG to the positive input and MUXPOS to the
+      negative one, inverting the output. Used for offset cancellation.
+
+  low-speed:
+    type: boolean
+    description: |
+      COMPCTRL.SPEED set. The comparator draws less current and responds
+      more slowly. The default is the high-speed setting.
+
+  run-in-standby:
+    type: boolean
+    description: |
+      COMPCTRL.RUNSTDBY. Keeps the comparator running while the core sleeps.
