@@ -342,7 +342,7 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 	net_buf_destroy(buf);
 
 	/* Do nothing if controller to host flow control is not supported */
-	if (drv_quirk_no_flow_control() || !BT_CMD_TEST(bt_dev.supported_commands, 10, 5)) {
+	if (drv_quirk_no_flow_control() || !bt_dev_cmd_supported(BT_DEV_CMD_SET_CTL_TO_HOST_FLOW)) {
 		return;
 	}
 
@@ -671,7 +671,7 @@ int bt_hci_le_rand(void *buffer, size_t len)
 	int err;
 
 	/* Check first that HCI_LE_Rand is supported */
-	if (!BT_CMD_TEST(bt_dev.supported_commands, 27, 7)) {
+	if (!bt_dev_cmd_supported(BT_DEV_CMD_LE_RAND)) {
 		return -ENOTSUP;
 	}
 
@@ -2310,7 +2310,7 @@ static int set_flow_control(void)
 	}
 
 	/* Check if host flow control is actually supported */
-	if (!BT_CMD_TEST(bt_dev.supported_commands, 10, 5)) {
+	if (!bt_dev_cmd_supported(BT_DEV_CMD_SET_CTL_TO_HOST_FLOW)) {
 		LOG_WRN("Controller to host flow control not supported");
 		return 0;
 	}
@@ -3559,7 +3559,7 @@ static int read_le_local_supported_features(void)
 
 	/* Read Low Energy Supported Features */
 	if (IS_ENABLED(CONFIG_BT_LE_EXTENDED_FEAT_SET) &&
-	    BT_READ_ALL_LOCAL_FEATURES_SUPPORTED(bt_dev.supported_commands)) {
+	    bt_dev_cmd_supported(BT_DEV_CMD_LE_READ_ALL_LOCAL_SUPPORTED_FEATURES)) {
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_ALL_LOCAL_SUPPORTED_FEATURES, NULL,
 					   &rsp);
 		if (err != 0) {
@@ -3683,13 +3683,50 @@ static int le_set_host_feature(uint8_t bit_number, uint8_t bit_value)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_HOST_FEATURE, buf, NULL);
 }
 
+BUILD_ASSERT(BT_DEV_CMD_NUM <= NUM_BITS(bt_dev.supported_commands),
+	     "bt_dev.supported_commands has no room for all of enum bt_dev_cmd");
+
 static void read_supported_commands_complete(struct net_buf *buf)
 {
 	struct bt_hci_rp_read_supported_commands *rp = (void *)buf->data;
+	const uint8_t *cmds = rp->commands;
+	uint8_t supported = 0U;
 
 	LOG_DBG("status 0x%02x %s", rp->status, bt_hci_err_to_str(rp->status));
 
-	memcpy(bt_dev.supported_commands, rp->commands, sizeof(bt_dev.supported_commands));
+	if (BT_CMD_TEST(cmds, 10, 5) != 0U) {
+		supported |= BIT(BT_DEV_CMD_SET_CTL_TO_HOST_FLOW);
+	}
+
+	if (BT_CMD_TEST(cmds, 27, 3) != 0U) {
+		supported |= BIT(BT_DEV_CMD_LE_SET_HOST_CHAN_CLASSIF);
+	}
+
+	if (BT_CMD_TEST(cmds, 27, 7) != 0U) {
+		supported |= BIT(BT_DEV_CMD_LE_RAND);
+	}
+
+	if (BT_CMD_LE_STATES(cmds) != 0U) {
+		supported |= BIT(BT_DEV_CMD_LE_READ_SUPP_STATES);
+	}
+
+	if (BT_CMD_TEST(cmds, 39, 2) != 0U) {
+		supported |= BIT(BT_DEV_CMD_LE_SET_PRIVACY_MODE);
+	}
+
+	if (BT_CMD_TEST(cmds, 41, 5) != 0U) {
+		supported |= BIT(BT_DEV_CMD_LE_READ_BUFFER_SIZE_V2);
+	}
+
+	if (BT_READ_ALL_LOCAL_FEATURES_SUPPORTED(cmds) != 0U) {
+		supported |= BIT(BT_DEV_CMD_LE_READ_ALL_LOCAL_SUPPORTED_FEATURES);
+	}
+
+	if (BT_LE_CS_READ_LOCAL_SUPPORTED_CAPABILITIES_V2_SUPPORTED(cmds) != 0U) {
+		supported |= BIT(BT_DEV_CMD_LE_CS_READ_LOCAL_SUPPORTED_CAPABILITIES_V2);
+	}
+
+	bt_dev.supported_commands = supported;
 }
 
 static void read_local_features_complete(struct net_buf *buf)
@@ -3956,8 +3993,7 @@ static int le_set_event_mask(void)
 		/* Only set v2 event mask if controller supports it; v1-only CS controllers
 		 * may reject the Set Event Mask command if an unknown bit is set.
 		 */
-		if (BT_LE_CS_READ_LOCAL_SUPPORTED_CAPABILITIES_V2_SUPPORTED(
-				bt_dev.supported_commands)) {
+		if (bt_dev_cmd_supported(BT_DEV_CMD_LE_CS_READ_LOCAL_SUPPORTED_CAPABILITIES_V2)) {
 			mask |= BT_EVT_MASK_LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES_COMPLETE_V2;
 		}
 		mask |= BT_EVT_MASK_LE_CS_READ_REMOTE_FAE_TABLE_COMPLETE;
@@ -3986,8 +4022,7 @@ static int le_init_iso(void)
 		}
 	}
 
-	/* Octet 41, bit 5 is read buffer size V2 */
-	if (BT_CMD_TEST(bt_dev.supported_commands, 41, 5)) {
+	if (bt_dev_cmd_supported(BT_DEV_CMD_LE_READ_BUFFER_SIZE_V2)) {
 		/* Read ISO Buffer Size V2 */
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_BUFFER_SIZE_V2,
 					   NULL, &rsp);
@@ -4095,7 +4130,7 @@ static int le_init(void)
 	}
 
 	/* Read LE Supported States */
-	if (BT_CMD_LE_STATES(bt_dev.supported_commands)) {
+	if (bt_dev_cmd_supported(BT_DEV_CMD_LE_READ_SUPP_STATES)) {
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_SUPP_STATES, NULL,
 					   &rsp);
 		if (err) {
@@ -5175,7 +5210,7 @@ int bt_disable(void)
 	}
 
 	/* Some functions rely on checking this bitfield */
-	memset(bt_dev.supported_commands, 0x00, sizeof(bt_dev.supported_commands));
+	bt_dev.supported_commands = 0U;
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		bt_settings_flush();
@@ -5403,7 +5438,7 @@ int bt_le_set_chan_map(uint8_t chan_map[5])
 		return -ENOTSUP;
 	}
 
-	if (!BT_CMD_TEST(bt_dev.supported_commands, 27, 3)) {
+	if (!bt_dev_cmd_supported(BT_DEV_CMD_LE_SET_HOST_CHAN_CLASSIF)) {
 		LOG_WRN("Set Host Channel Classification command is "
 			"not supported");
 		return -ENOTSUP;
