@@ -3009,6 +3009,7 @@ def test_twisterrunner_run(
         return None
 
     instances = {'dummy instance': mock.Mock(metrics={'k': 'v'})}
+    instances['dummy instance'].testsuite.extra_args = ['platform:native_sim:MAKE=/opt/make']
     suites = [mock.Mock()]
     env_mock = mock.Mock()
 
@@ -3018,6 +3019,7 @@ def test_twisterrunner_run(
     tr.options.retry_build_errors = True
     tr.options.jobs = None
     tr.options.build_only = None
+    tr.options.extra_args = ['USE_CCACHE=0']
     for k, v in options.items():
         setattr(tr.options, k, v)
     tr.update_counting_before_pipeline = mock.Mock()
@@ -3028,6 +3030,7 @@ def test_twisterrunner_run(
     gnumakejobserver_mock().name='GNUMakeJobServer'
     jobclient_mock = mock.Mock()
     jobclient_mock().name='JobClient'
+    fifo_supported_mock = mock.Mock(return_value=True)
 
     processing_queue = deque()
     processing_ready = {}
@@ -3059,6 +3062,7 @@ def test_twisterrunner_run(
                     mock_client_from_environ), \
          mock.patch('twisterlib.runner.GNUMakeJobServer',
                     gnumakejobserver_mock), \
+         mock.patch('twisterlib.runner.fifo_supported', fifo_supported_mock), \
          mock.patch('twisterlib.runner.JobClient', jobclient_mock), \
          mock.patch('multiprocessing.cpu_count', return_value=8), \
          mock.patch('sys.platform', platform), \
@@ -3067,6 +3071,13 @@ def test_twisterrunner_run(
         tr.run()
 
     assert f'JOBS: {expected_jobs}' in caplog.text
+
+    if expected_jobserver == 'GNUMakeJobServer':
+        fifo_supported_mock.assert_called_once_with(
+            env_mock.generator_cmd,
+            ['USE_CCACHE=0', 'platform:native_sim:MAKE=/opt/make'],
+        )
+        gnumakejobserver_mock.assert_called_with(expected_jobs, fifo=True)
 
     assert tr.jobserver.name == expected_jobserver
 
