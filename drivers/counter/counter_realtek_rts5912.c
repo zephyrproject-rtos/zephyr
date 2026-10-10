@@ -22,6 +22,7 @@
  *   when the counters reach zero.
  */
 
+#include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/clock_control.h>
@@ -349,7 +350,7 @@ static int counter_rts5912_init(const struct device *dev)
                                                                                                    \
 	static void counter_rts5912_irq_config_##inst(void)                                        \
 	{                                                                                          \
-		NVIC_ClearPendingIRQ(DT_INST_IRQN(inst));                                          \
+		k_irq_clear_pending(DT_INST_IRQN(inst));                                          \
 		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), counter_rts5912_isr,  \
 			    DEVICE_DT_INST_GET(inst), 0);                                          \
 		irq_enable(DT_INST_IRQN(inst));                                                    \

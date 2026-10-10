@@ -7,6 +7,7 @@
 
 #define DT_DRV_COMPAT realtek_rts5912_uart
 
+#include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/uart.h>
@@ -93,7 +94,7 @@ static void uart_rts5912_pm_state_exit(const struct device *dev, enum pm_state s
 			pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 			k_work_reschedule(&rx_refresh_timeout_work, delay);
 		}
-		NVIC_ClearPendingIRQ(dev_data->rx_wakeup_pin_num);
+		k_irq_clear_pending(dev_data->rx_wakeup_pin_num);
 		irq_disable(dev_data->rx_wakeup_pin_num);
 		break;
 	default:
