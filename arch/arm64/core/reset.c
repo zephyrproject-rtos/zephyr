@@ -6,6 +6,7 @@
 
 #include <kernel_internal.h>
 #include <zephyr/arch/cache.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/sys/barrier.h>
 #if defined(CONFIG_GIC_V3)
 #include <zephyr/drivers/interrupt_controller/gic.h>
@@ -13,6 +14,20 @@
 #include "boot.h"
 
 void z_arm64_el2_init(void);
+
+/*
+ * Frequency of the system counter, published to software through CNTFRQ_EL0.
+ * The devicetree describes the counter whether or not it drives the system
+ * timer, so it is preferred over the Kconfig value, which only exists with a
+ * system clock.
+ */
+#if DT_NODE_HAS_PROP(DT_PATH(cpus, cpu_0), timebase_frequency)
+#define CNTFRQ_HZ DT_PROP(DT_PATH(cpus, cpu_0), timebase_frequency)
+#elif defined(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC)
+#define CNTFRQ_HZ CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
+#else
+#define CNTFRQ_HZ 0
+#endif
 
 void __weak z_arm64_el_highest_plat_init(void)
 {
@@ -36,8 +51,9 @@ void __weak z_arm64_el1_plat_init(void)
 
 void z_arm64_el_highest_init(void)
 {
-	if (is_el_highest_implemented()) {
-		write_cntfrq_el0(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+	/* Only the highest EL can set CNTFRQ_EL0: skip it when the rate is unknown */
+	if (is_el_highest_implemented() && (CNTFRQ_HZ != 0)) {
+		write_cntfrq_el0(CNTFRQ_HZ);
 	}
 
 	z_arm64_el_highest_plat_init();
