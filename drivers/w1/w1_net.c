@@ -19,27 +19,27 @@
 LOG_MODULE_REGISTER(w1, CONFIG_W1_LOG_LEVEL);
 
 #define W1_SEARCH_DISCREPANCY_INIT 0
-#define W1_SEARCH_LAST_SLAVE	   65
-#define W1_SEARCH_NO_SLAVE	   66
+#define W1_SEARCH_LAST_PERIPHERAL  65
+#define W1_SEARCH_NO_PERIPHERAL    66
 
-/* @brief Search bus for next slave.
+/* @brief Search bus for next peripheral.
  *
- * This function searches the next 1-Wire slave on the bus.
+ * This function searches the next 1-Wire peripheral on the bus.
  * It sets the found ROM and the last discrepancy in case more than one
- * slave took part in the search.
- * In case only one slave took part in the search, the discrepancy is set to
- * W1_SEARCH_LAST_SLAVE, and in case no slave participated in the search,
- * the discrepancy is set to W1_SEARCH_NO_SLAVE.
+ * peripheral took part in the search.
+ * In case only one peripheral took part in the search, the discrepancy is set to
+ * W1_SEARCH_LAST_PERIPHERAL, and in case no peripheral participated in the search,
+ * the discrepancy is set to W1_SEARCH_NO_PERIPHERAL.
  *
  * The implementation is similar to that suggested in the Maxim Integrated
  * application note 187.
  * @see https://www.analog.com/media/en/technical-documentation/app-notes/1wire-search-algorithm.pdf
- * The master reads the first ROM bit and its complementary value of all slaves.
+ * The controller reads the first ROM bit and its complementary value of all peripherals.
  * Due to physical characteristics, the value received is a
- * logical AND of all slaves' 1st bit. Slaves only continue to
- * participate in the search procedure if the next bit the master sends matches
- * their own addresses' bit. This allows the master to branch through 64-bit
- * addresses in order to detect all slaves.
+ * logical AND of all peripherals' 1st bit. Peripherals only continue to
+ * participate in the search procedure if the next bit the controller sends matches
+ * their own addresses' bit. This allows the controller to branch through 64-bit
+ * addresses in order to detect all peripherals.
 
  * The 1st bit received is stored in bit 1 of rom_inv_64, the 2nd in bit 2 and so
  * on, until bit 64.
@@ -61,9 +61,9 @@ LOG_MODULE_REGISTER(w1, CONFIG_W1_LOG_LEVEL);
  * @retval 0      If successful.
  * @retval -errno Negative error code in case of 1-wire read/write error.
  */
-static int search_slave(const struct device *dev, uint8_t command,
-			 uint8_t family, size_t *last_discrepancy,
-			 uint64_t *rom_inv_64)
+static int search_peripheral(const struct device *dev, uint8_t command,
+			     uint8_t family, size_t *last_discrepancy,
+			     uint64_t *rom_inv_64)
 {
 	int ret;
 	size_t next_discrepancy;
@@ -79,7 +79,7 @@ static int search_slave(const struct device *dev, uint8_t command,
 		return ret;
 	}
 	if (ret == 0) {
-		*last_discrepancy = W1_SEARCH_NO_SLAVE;
+		*last_discrepancy = W1_SEARCH_NO_PERIPHERAL;
 		return 0;
 	}
 
@@ -87,9 +87,9 @@ static int search_slave(const struct device *dev, uint8_t command,
 	if (ret < 0) {
 		return ret;
 	}
-	next_discrepancy = W1_SEARCH_LAST_SLAVE;
+	next_discrepancy = W1_SEARCH_LAST_PERIPHERAL;
 
-	for (size_t id_bit_nr = 1; id_bit_nr < W1_SEARCH_LAST_SLAVE; id_bit_nr++) {
+	for (size_t id_bit_nr = 1; id_bit_nr < W1_SEARCH_LAST_PERIPHERAL; id_bit_nr++) {
 		ret = w1_read_bit(dev);
 		if (ret < 0) {
 			return ret;
@@ -103,21 +103,21 @@ static int search_slave(const struct device *dev, uint8_t command,
 
 		if (last_id_bit && last_complement_id_bit) {
 			/*
-			 * No slave participating:
+			 * No peripheral participating:
 			 * We can stop following the branch.
 			 */
-			LOG_DBG("No slave participating");
-			*last_discrepancy = W1_SEARCH_NO_SLAVE;
+			LOG_DBG("No peripheral participating");
+			*last_discrepancy = W1_SEARCH_NO_PERIPHERAL;
 			return 0;
 		} else if (last_id_bit != last_complement_id_bit) {
 			/*
-			 * All slaves connected have same ROM bit value:
+			 * All peripherals connected have same ROM bit value:
 			 * We can directly follow last_id_bit branch.
 			 */
 		} else {
 			/*
 			 * Discrepancy detected: bit value at id_bit_nr does
-			 * not match for all slaves on the bus.
+			 * not match for all peripherals on the bus.
 			 */
 			if ((id_bit_nr > *last_discrepancy) ||
 			    ((id_bit_nr < *last_discrepancy) &&
@@ -141,7 +141,7 @@ static int search_slave(const struct device *dev, uint8_t command,
 		}
 
 		/*
-		 * Send and store the chosen bit: all not matching slaves will
+		 * Send and store the chosen bit: all not matching peripherals will
 		 * no longer participate in this search until they are reset.
 		 */
 		ret = w1_write_bit(dev, last_id_bit);
@@ -169,13 +169,13 @@ int z_impl_w1_search_bus(const struct device *dev, uint8_t command,
 	(void)w1_lock_bus(dev);
 
 	do {
-		ret = search_slave(dev, command, family, &last_discrepancy,
-				    &found_rom_inv_64);
+		ret = search_peripheral(dev, command, family, &last_discrepancy,
+					&found_rom_inv_64);
 		if (ret < 0) {
 			found_cnt = ret;
 			break;
 		}
-		if (last_discrepancy == W1_SEARCH_NO_SLAVE) {
+		if (last_discrepancy == W1_SEARCH_NO_PERIPHERAL) {
 			break;
 		}
 
@@ -197,7 +197,7 @@ int z_impl_w1_search_bus(const struct device *dev, uint8_t command,
 			callback(found_rom, user_data);
 		}
 
-	} while (last_discrepancy != W1_SEARCH_LAST_SLAVE);
+	} while (last_discrepancy != W1_SEARCH_LAST_PERIPHERAL);
 
 	(void)w1_unlock_bus(dev);
 	return found_cnt;
@@ -234,7 +234,7 @@ out:
 	return ret;
 };
 
-static int match_rom(const struct device *dev, const struct w1_slave_config *config)
+static int match_rom(const struct device *dev, const struct w1_peripheral_config *config)
 {
 	int ret;
 	uint8_t cmd;
@@ -272,7 +272,7 @@ static int match_rom(const struct device *dev, const struct w1_slave_config *con
 	return 0;
 };
 
-int w1_match_rom(const struct device *dev, const struct w1_slave_config *config)
+int w1_match_rom(const struct device *dev, const struct w1_peripheral_config *config)
 {
 	int ret;
 
@@ -302,7 +302,7 @@ out:
 	return ret;
 }
 
-static int skip_rom(const struct device *dev, const struct w1_slave_config *config)
+static int skip_rom(const struct device *dev, const struct w1_peripheral_config *config)
 {
 	int ret;
 	uint8_t cmd;
@@ -336,7 +336,7 @@ static int skip_rom(const struct device *dev, const struct w1_slave_config *conf
 	return 0;
 }
 
-int w1_skip_rom(const struct device *dev, const struct w1_slave_config *config)
+int w1_skip_rom(const struct device *dev, const struct w1_peripheral_config *config)
 {
 	int ret;
 
@@ -346,16 +346,17 @@ int w1_skip_rom(const struct device *dev, const struct w1_slave_config *config)
 	return ret;
 }
 
-static int reset_select(const struct device *dev, const struct w1_slave_config *config)
+static int reset_select(const struct device *dev, const struct w1_peripheral_config *config)
 {
-	if (IS_ENABLED(CONFIG_W1_NET_FORCE_MULTIDROP_ADDRESSING) || w1_get_slave_count(dev) > 1) {
+	if (IS_ENABLED(CONFIG_W1_NET_FORCE_MULTIDROP_ADDRESSING) ||
+	    w1_get_peripheral_count(dev) > 1) {
 		return match_rom(dev, config);
 	}
 
 	return skip_rom(dev, config);
 }
 
-int w1_reset_select(const struct device *dev, const struct w1_slave_config *config)
+int w1_reset_select(const struct device *dev, const struct w1_peripheral_config *config)
 {
 	int ret;
 
@@ -365,7 +366,7 @@ int w1_reset_select(const struct device *dev, const struct w1_slave_config *conf
 	return ret;
 }
 
-static int write_read(const struct device *dev, const struct w1_slave_config *config,
+static int write_read(const struct device *dev, const struct w1_peripheral_config *config,
 		      const uint8_t *write_buf, size_t write_len,
 		      uint8_t *read_buf, size_t read_len)
 {
@@ -387,7 +388,7 @@ static int write_read(const struct device *dev, const struct w1_slave_config *co
 	return w1_read_block(dev, read_buf, read_len);
 };
 
-int w1_write_read(const struct device *dev, const struct w1_slave_config *config,
+int w1_write_read(const struct device *dev, const struct w1_peripheral_config *config,
 		  const uint8_t *write_buf, size_t write_len,
 		  uint8_t *read_buf, size_t read_len)
 {

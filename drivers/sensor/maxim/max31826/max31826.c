@@ -68,7 +68,7 @@ struct max31826_config {
 };
 
 struct max31826_data {
-	struct w1_slave_config config;
+	struct w1_peripheral_config config;
 	struct max31826_scratchpad scratchpad;
 	bool lazy_loaded;
 };
@@ -84,7 +84,7 @@ static inline void max31826_temperature_from_raw(uint8_t *temp_raw,
 	val->val2 = (temp % 16) * 1000000 / 16;
 }
 
-static inline bool slave_responded(uint8_t *rx_buf, size_t len)
+static inline bool peripheral_responded(uint8_t *rx_buf, size_t len)
 {
 	uint8_t cmp_byte = 0xff;
 
@@ -112,8 +112,8 @@ static int max31826_read_scratchpad(const struct device *dev,
 		return ret;
 	}
 
-	if (!slave_responded((uint8_t *)scratchpad, sizeof(*scratchpad))) {
-		LOG_WRN("Slave not reachable");
+	if (!peripheral_responded((uint8_t *)scratchpad, sizeof(*scratchpad))) {
+		LOG_WRN("Peripheral not reachable");
 		return -ENODEV;
 	}
 
@@ -191,23 +191,23 @@ static int max31826_configure(const struct device *dev)
 	struct max31826_data *data = dev->data;
 
 	if (w1_reset_bus(cfg->bus) <= 0) {
-		LOG_ERR("No 1-Wire slaves connected");
+		LOG_ERR("No 1-Wire peripherals connected");
 		return -ENODEV;
 	}
 
 	/* In single drop configurations the rom can be read from device */
-	if (w1_get_slave_count(cfg->bus) == 1) {
+	if (w1_get_peripheral_count(cfg->bus) == 1) {
 		if (w1_rom_to_uint64(&data->config.rom) == 0ULL) {
 			(void)w1_read_rom(cfg->bus, &data->config.rom);
 		}
 	} else if (w1_rom_to_uint64(&data->config.rom) == 0ULL) {
-		LOG_DBG("nr: %d", w1_get_slave_count(cfg->bus));
-		LOG_ERR("ROM required, because multiple slaves are on the bus");
+		LOG_DBG("nr: %d", w1_get_peripheral_count(cfg->bus));
+		LOG_ERR("ROM required, because multiple peripherals are on the bus");
 		return -EINVAL;
 	}
 
 	if ((cfg->family != 0) && (cfg->family != data->config.rom.family)) {
-		LOG_ERR("Found 1-Wire slave is not a %s", dev->name);
+		LOG_ERR("Found 1-Wire peripheral is not a %s", dev->name);
 		return -EINVAL;
 	}
 
