@@ -21,8 +21,9 @@
 #   ZEPHYR_BASE appended at the end
 #
 # The following variables may be updated when this module completes:
-# - DTC_OVERLAY_FILE
-# - OVERLAY_CONFIG
+# - SB_EXTRA_CONF_FILE
+# - EXTRA_DTC_OVERLAY_FILE
+# - EXTRA_CONF_FILE
 #
 # The following targets will be defined when this CMake module completes:
 # - snippets: when invoked, a list of valid snippets will be printed
