@@ -32,8 +32,17 @@ struct shared_multi_heap_region smh_psram = {
 
 int esp_psram_smh_init(void)
 {
+#if SHARED_MULTI_HEAP
+	int ret;
+
 	shared_multi_heap_pool_init();
-	return shared_multi_heap_add(&smh_psram, NULL);
+	ret = shared_multi_heap_add(&smh_psram, NULL);
+	if (ret < 0) {
+		return ret;
+	}
+#endif
+
+	return 0;
 }
 
 #if defined(CONFIG_SOC_ESP32_SPI_MEM_SUPPORT_TIMING_TUNING)

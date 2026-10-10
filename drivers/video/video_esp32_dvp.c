@@ -146,6 +146,7 @@ static int video_esp32_set_stream(const struct device *dev, bool enable, enum vi
 		LOG_DBG("Stop streaming");
 
 		if (video_stream_stop(cfg->source_dev, type)) {
+			LOG_ERR("Failed to start source device %s", cfg->source_dev->name);
 			return -EIO;
 		}
 
@@ -162,13 +163,13 @@ static int video_esp32_set_stream(const struct device *dev, bool enable, enum vi
 	}
 
 	if (data->is_streaming) {
+		LOG_ERR("Cannot start %s, busy", dev->name);
 		return -EBUSY;
 	}
 
 	LOG_DBG("Start streaming");
 
 	error = dma_get_status(cfg->dma_dev, cfg->rx_dma_channel, &dma_status);
-
 	if (error) {
 		LOG_ERR("Unable to get Rx status (%d)", error);
 		return error;
@@ -229,8 +230,10 @@ static int video_esp32_set_stream(const struct device *dev, bool enable, enum vi
 
 	cam_hal_start_streaming(&data->hal);
 
-	if (video_stream_start(cfg->source_dev, type)) {
-		return -EIO;
+	error = video_stream_start(cfg->source_dev, type);
+	if (error) {
+		LOG_ERR("Failed to start source device %s", cfg->source_dev->name);
+		return error;
 	}
 	data->is_streaming = true;
 
@@ -277,11 +280,13 @@ static int video_esp32_set_fmt(const struct device *dev, struct video_format *fm
 
 	ret = video_set_format(cfg->source_dev, fmt);
 	if (ret < 0) {
+		LOG_ERR("Failed to apply format to the source %s", cfg->source_dev->name);
 		return ret;
 	}
 
 	ret = video_estimate_fmt_size(fmt);
 	if (ret < 0) {
+		LOG_ERR("Failed to estimate the format size");
 		return ret;
 	}
 
@@ -386,6 +391,13 @@ static int video_esp32_get_frmival(const struct device *dev, struct video_frmiva
 	return video_get_frmival(cfg->source_dev, frmival);
 }
 
+static int video_esp32_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
+{
+	const struct video_esp32_config *cfg = dev->config;
+
+	return video_enum_frmival(cfg->source_dev, fie);
+}
+
 static int video_esp32_init(const struct device *dev)
 {
 	const struct video_esp32_config *cfg = dev->config;
@@ -450,6 +462,7 @@ static DEVICE_API(video, esp32_driver_api) = {
 	.get_selection = video_esp32_get_selection,
 	.set_frmival = video_esp32_set_frmival,
 	.get_frmival = video_esp32_get_frmival,
+	.enum_frmival = video_esp32_enum_frmival,
 #ifdef CONFIG_POLL
 	.set_signal = video_esp32_set_signal,
 #endif
