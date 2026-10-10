@@ -89,6 +89,7 @@ tests:
       - CONFIG_BUILD_ONLY_NO_BLOBS=y
     platform_allow:
       - frdm_rw612
+      - nitrogen93_smarc/mimx9352/a55/nx611
       - rd_rw612_bga
   sample.net.wifi.esp32:
     extra_args:

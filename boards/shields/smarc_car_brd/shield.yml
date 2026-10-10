@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright 2026 Ezurio
+# SPDX-License-Identifier: Apache-2.0
+
+shield:
+  name: smarc_car_brd
+  full_name: Ezurio Universal SMARC Carrier Board
+  vendor: ezurio
+  supported_features:
+    - audio
+    - can
+    - ethernet
+    - gpio
+    - i2c
+    - i2s
+    - sdhc
+    - sdio
+    - spi
+    - uart
+    - usb

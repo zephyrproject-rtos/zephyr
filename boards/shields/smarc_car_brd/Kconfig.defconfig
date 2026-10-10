@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright 2026 Ezurio
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_SMARC_CAR_BRD
+
+config I2C_TCA954X_ROOT_INIT_PRIO
+	default 60
+
+config I2C_TCA954X_CHANNEL_INIT_PRIO
+	default 61
+
+# The WM8962 audio codec sits behind the TCA9546A mux channel (SC2), so
+# it must initialize after the channel driver (prio 61) is ready.
+if AUDIO_CODEC
+
+config AUDIO_CODEC_INIT_PRIORITY
+	default 62
+
+endif # AUDIO_CODEC
+
+endif # SHIELD_SMARC_CAR_BRD

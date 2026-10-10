@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright 2026 Ezurio
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: nitrogen93_smarc
+  full_name: Ezurio Nitrogen93 SMARC
+  vendor: ezurio
+  socs:
+    - name: mimx9352
+      variants:
+        - name: smp
+          cpucluster: a55
+        - name: nx611
+          cpucluster: a55

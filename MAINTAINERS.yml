@@ -3343,6 +3343,9 @@ Ezurio platforms:
     - greg-leach
   files:
     - boards/ezurio/
+    - boards/shields/smarc_car_brd/
+    - dts/bindings/gpio/smarc-gpio.yaml
+    - include/zephyr/dt-bindings/gpio/smarc-*.h
   labels:
     - "platform: Ezurio"
 
