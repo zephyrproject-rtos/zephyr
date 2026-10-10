@@ -1436,7 +1436,11 @@ void ll_rx_dequeue(void)
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	case NODE_RX_TYPE_APTO:
 #endif /* CONFIG_BT_CTLR_LE_PING */
-
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC_RSP)
+	case NODE_RX_TYPE_PAWR_DATA_REQUEST:
+	case NODE_RX_TYPE_PAWR_RESPONSE:
+		/** TODO: handle PAwR RX types */
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC_RSP */
 	case NODE_RX_TYPE_CHAN_SEL_ALGO:
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -1685,7 +1689,11 @@ void ll_rx_mem_release(void **node_rx)
 		case NODE_RX_TYPE_ISO_PDU:
 #endif
 		case NODE_RX_TYPE_PATH_LOSS:
-
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC_RSP)
+		case NODE_RX_TYPE_PAWR_DATA_REQUEST:
+		case NODE_RX_TYPE_PAWR_RESPONSE:
+		/** TODO: handle PAwR RX types */
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC_RSP */
 		/* Ensure that at least one 'case' statement is present for this
 		 * code block.
 		 */
@@ -3018,6 +3026,14 @@ static inline void rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
+
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC_RSP)
+	case NODE_RX_TYPE_PAWR_DATA_REQUEST:
+	case NODE_RX_TYPE_PAWR_RESPONSE:
+		(void)memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
+		ll_rx_put_sched(link, rx);
+		break;
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC_RSP */
 
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
 	case NODE_RX_TYPE_CIS_ESTABLISHED:

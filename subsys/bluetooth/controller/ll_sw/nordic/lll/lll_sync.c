@@ -37,7 +37,9 @@
 
 #include "lll_df.h"
 #include "lll_df_internal.h"
-
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_RSP)
+#include "ull_sync_types.h"
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_RSP */
 #include "ll_feat.h"
 
 #include <zephyr/bluetooth/hci_types.h>
@@ -62,6 +64,10 @@ static void isr_done(void *param);
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 static int iq_report_create_put(struct lll_sync *lll, uint8_t rssi_ready,
 				uint8_t packet_status);
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_RSP)
+static void isr_tx_response_slot(void *param);
+static void setup_response_slot_tx(struct lll_sync *lll);
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_RSP */
 static int iq_report_incomplete_create_put(struct lll_sync *lll);
 static void iq_report_incomplete_release_put(struct lll_sync *lll);
 static bool is_max_cte_reached(uint8_t max_cte_count, uint8_t cte_count);
@@ -439,7 +445,11 @@ static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx)
 
 	/* Reset chain PDU being scheduled by lll_sync context */
 	lll->is_aux_sched = 0U;
-
+	#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_RSP)
+	if (lll->is_rsp) {
+		lll->subevent_curr = 0;
+	}
+	#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_RSP */
 	/* Initialize Trx count */
 	trx_cnt = 0U;
 
@@ -1215,7 +1225,20 @@ static void isr_rx_done_cleanup(struct lll_sync *lll, uint8_t crc_ok, bool sync_
 		lll->abort_count = 0U;
 #endif /* CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN */
 	}
+	#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_RSP)
+	if (lll->is_rsp && crc_ok) {
+		struct ll_sync_set *sync;
+		struct ull_hdr *ull;
 
+		ull = HDR_LLL2ULL(lll);
+		sync = CONTAINER_OF(ull, struct ll_sync_set, ull);
+
+		if (sync->rsp_data.is_pending) {
+			setup_response_slot_tx(lll);
+			return;
+		}
+	}
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_RSP */
 	lll_isr_cleanup(lll);
 }
 
@@ -1450,3 +1473,45 @@ static enum sync_status sync_filtrate_by_cte_type(uint8_t cte_type_mask, uint8_t
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING && CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
 	return SYNC_STAT_ALLOWED;
 }
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_RSP)
+static void setup_response_slot_tx(struct lll_sync *lll)
+{
+	struct ll_sync_set *sync;
+	struct ull_hdr *ull;
+	struct pdu_adv *pdu_tx;
+	uint32_t delay_us;
+	uint8_t phy;
+
+	ull = HDR_LLL2ULL(lll);
+	sync = CONTAINER_OF(ull, struct ll_sync_set, ull);
+
+	delay_us = 2500U;
+
+	pdu_tx = (struct pdu_adv *)sync->rsp_data.data;
+
+	phy = lll->phy;
+	radio_phy_set(phy, PHY_FLAGS_S8);
+	radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, sync->rsp_data.len,
+			    RADIO_PKT_CONF_PHY(phy));
+	radio_pkt_tx_set(pdu_tx);
+
+	radio_isr_set(isr_tx_response_slot, lll);
+	radio_switch_complete_and_disable();
+
+	radio_tmr_tifs_set(delay_us);
+}
+
+static void isr_tx_response_slot(void *param)
+{
+	struct lll_sync *lll = param;
+	struct ll_sync_set *sync;
+	struct ull_hdr *ull;
+
+	ull = HDR_LLL2ULL(lll);
+	sync = CONTAINER_OF(ull, struct ll_sync_set, ull);
+
+	sync->rsp_data.is_pending = 0U;
+
+	lll_isr_done(lll);
+}
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_RSP */
