@@ -8,3 +8,6 @@ CONFIG_SERIAL=y
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 CONFIG_GPIO=y
+
+# Force a hex file - we need to have absolute addresses of the flash baked in
+CONFIG_BUILD_OUTPUT_HEX=y
