@@ -66,8 +66,15 @@ invalid_syscall:
 	/* Set K_ERR_CPU_EXCEPTION as reason */
 	mov	%d4, 0
 except_syscall:
+	/*
+	 * Build the CSA address from PCXI: the address is {PCXS, 6'b0, PCXO, 6'b0},
+	 * with PCXS in PCXI[19:16] and PCXO in PCXI[15:0]. Extract the segment
+	 * field instead of shifting the whole PCXI value, which would leave
+	 * PCXO[15:10] in address bits 27:22.
+	 */
 	mfcr  	%d15, TRICORE_PCXI
-	sh    	%d5, %d15, 12
+	extr.u	%d5, %d15, 16, 4
+	sh    	%d5, %d5, 28
 	insert	%d5, %d5, %d15, 6, 16
 	mov.a 	%a4, %d5
 	call  	z_tricore_fatal_error
