@@ -594,7 +594,7 @@ int usbh_device_connect(struct usbh_context *const ctx,
 
 	if (ctx->root == NULL) {
 		ctx->root = udev;
-		udev->level = 1;
+		udev->depth = 0;
 	}
 
 	err = usbh_device_init(udev);

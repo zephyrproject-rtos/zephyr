@@ -515,6 +515,9 @@ Deprecated APIs and options
 
   * Deprecated property ``clock-reference`` of :dtcompatible:`st,stm32u5-otghs-phy`.
     Do not specify the property; it is no longer required by the underlying driver.
+  * :ref:`uhc_api` optional HCD lifecycle hooks (enumeration, endpoint programming, and
+    disconnect cleanup) with public wrappers; see the migration guide for
+    :c:struct:`usb_device` field renames.
 
 * Video
 
@@ -979,6 +982,20 @@ New APIs and options
 * Timer
 
   * :c:func:`z_sys_clock_lpm_enter`
+
+* USB
+
+  * :c:enumerator:`UHC_EVT_DEV_CONNECTED_SS` in :c:enum:`uhc_event_type`
+  * :c:func:`uhc_add_endpoints`
+  * :c:func:`uhc_assign_address`
+  * :c:func:`uhc_attach_device`
+  * :c:func:`uhc_ep_sync_after_clear_feature`
+  * :c:func:`uhc_eps_verify_steady`
+  * :c:func:`uhc_free_dev`
+  * :c:func:`uhc_post_configure_steady`
+  * :c:func:`uhc_prepare_enum`
+  * :c:func:`uhc_release_device`
+  * Optional :c:struct:`uhc_driver_api` callbacks for the above helpers
 
 * USB Type-C
 
