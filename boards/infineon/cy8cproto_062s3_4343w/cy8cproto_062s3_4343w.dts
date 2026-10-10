@@ -30,7 +30,7 @@
 
 	soc {
 		watchdog0: watchdog@40260180 {
-			compatible = "infineon,cat1-watchdog";
+			compatible = "infineon,watchdog";
 			reg = <0x40260180 0xc>;
 			interrupts = <22 6>;
 			status = "disabled";
@@ -39,7 +39,7 @@
 };
 
 uart1: &scb1 {
-	compatible = "infineon,cat1-uart";
+	compatible = "infineon,uart";
 	status = "okay";
 	current-speed = <115200>;
 
@@ -48,7 +48,7 @@ uart1: &scb1 {
 };
 
 uart2: &scb2 {
-	compatible = "infineon,cat1-uart";
+	compatible = "infineon,uart";
 	status = "okay";
 
 	/* The UART bus speed (current_speed) for zephyr_bt_uart should be the same
@@ -68,7 +68,7 @@ uart2: &scb2 {
 
 		murata-1dx {
 			status = "okay";
-			compatible = "infineon,cyw43xxx-bt-hci";
+			compatible = "infineon,bt-hci-uart";
 			bt-reg-on-gpios = <&gpio_prt3 4 GPIO_ACTIVE_HIGH>;
 
 			/* Configuration UART speeds for firmware download (fw-download-speed)
@@ -134,7 +134,8 @@ uart2: &scb2 {
 };
 
 i2c6: &scb6 {
-	compatible = "infineon,cat1-i2c";
+	compatible = "infineon,i2c";
+	status = "okay";
 
 	/* I2C pins */
 	pinctrl-0 = <&p6_4_scb6_i2c_scl &p6_5_scb6_i2c_sda>;
