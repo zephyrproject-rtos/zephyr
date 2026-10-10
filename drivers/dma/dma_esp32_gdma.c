@@ -133,9 +133,11 @@ struct dma_esp32_channel {
 	int periph_id;
 	/* The peripheral a memory-to-memory pair selects, but does not use */
 	int m2m_periph_id;
+	bool cyclic;
 	dma_callback_t cb;
 	void *user_data;
 	esp_dma_desc_t desc_list[CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM];
+	esp_dma_desc_t restart_desc;
 #if CONFIG_PM
 	bool pm_lock_held;
 #endif
@@ -563,7 +565,7 @@ static void IRAM_ATTR dma_esp32_isr_handle(const struct device *dev, uint8_t rx_
 #endif
 
 static int dma_esp32_config_descriptor(struct dma_esp32_channel *dma_channel,
-				       struct dma_block_config *block)
+				       struct dma_block_config *block, bool cyclic)
 {
 	if (!block) {
 		LOG_ERR("At least one dma block is required");
@@ -641,8 +643,8 @@ static int dma_esp32_config_descriptor(struct dma_esp32_channel *dma_channel,
 			if (block->next_block) {
 				block = block->next_block;
 			} else {
-				desc_iter->next = NULL;
-				if (dma_channel->dir == DMA_TX) {
+				desc_iter->next = cyclic ? dma_channel->desc_list : NULL;
+				if (dma_channel->dir == DMA_TX && !cyclic) {
 					desc_iter->dw0.suc_eof = 1;
 				}
 				break;
@@ -653,7 +655,7 @@ static int dma_esp32_config_descriptor(struct dma_esp32_channel *dma_channel,
 		desc_iter += 1;
 	}
 
-	if (desc_iter == dma_channel->desc_list + ARRAY_SIZE(dma_channel->desc_list)) {
+	if (!cyclic && desc_iter == dma_channel->desc_list + ARRAY_SIZE(dma_channel->desc_list)) {
 		memset(dma_channel->desc_list, 0, sizeof(dma_channel->desc_list));
 		LOG_ERR("Run out of DMA descriptors. Increase CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM");
 		return -EINVAL;
@@ -715,6 +717,93 @@ static void dma_esp32_stop_barrier(struct dma_esp32_data *data, uint32_t channel
 	gdma_hal_clear_intr(&data->hal, channel_id, dir, mask);
 }
 
+/**
+ * @brief Configures how to restart an already looped channel.
+ *
+ * The skip-bytes is the number of bytes expected to already be consumed
+ * by the dma when dma_esp32_gdma_restart_channel() is called.
+ * It is meant to keep ring synchronized so those bytes won't
+ * be reread
+ *
+ * @param dev: The device
+ * @param channel: The DMA channel to configure
+ * @param skip_bytes: Number of bytes to skip
+ *
+ * @return 0 on success
+ */
+int dma_esp32_gdma_config_restart(const struct device *dev, uint32_t channel, size_t skip_bytes)
+{
+	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
+	struct dma_esp32_channel *dma_channel;
+	esp_dma_desc_t *restart;
+
+	if (channel >= config->dma_channel_max) {
+		LOG_ERR("Unsupported channel");
+		return -EINVAL;
+	}
+
+	dma_channel = &config->dma_channel[channel];
+	if ((dma_channel->dir != DMA_TX) || !dma_channel->cyclic) {
+		LOG_ERR("config_restart requires a cyclic TX channel");
+		return -EINVAL;
+	}
+
+	if ((skip_bytes >= dma_channel->desc_list[0].dw0.size) ||
+	    ((skip_bytes != 0U) && (skip_bytes < 4U))) {
+		LOG_ERR("Invalid restart skip: %u bytes", (uint32_t)skip_bytes);
+		return -EINVAL;
+	}
+
+	restart = &dma_channel->restart_desc;
+	*restart = dma_channel->desc_list[0];
+	restart->buffer = (void *)((uint8_t *)restart->buffer + skip_bytes);
+	restart->dw0.size -= skip_bytes;
+	restart->dw0.length -= skip_bytes;
+	restart->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
+	/* next copied from desc_list[0] already points into the ring
+	 * (desc_list[1], then looped back to the head at the terminal), so the
+	 * frame flows through the whole ring thereafter.
+	 */
+	sys_cache_data_flush_range(restart, sizeof(*restart));
+
+	return 0;
+}
+
+/**
+ * @brief Re-launch a cyclic TX channel.
+ *
+ * The restart can be configured by dma_esp32_gdma_config_restart()
+ *
+ * @param dev: The device
+ * @param channel: The DMA channel to restart
+ *
+ * @return 0 on success
+ */
+int IRAM_ATTR dma_esp32_gdma_restart_channel(const struct device *dev, uint32_t channel)
+{
+	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
+	struct dma_esp32_data *data = (struct dma_esp32_data *const)(dev)->data;
+	struct dma_esp32_channel *dma_channel;
+
+	if (channel >= config->dma_channel_max) {
+		LOG_ERR("Unsupported channel");
+		return -EINVAL;
+	}
+
+	dma_channel = &config->dma_channel[channel];
+	if ((dma_channel->dir != DMA_TX) || !dma_channel->cyclic) {
+		LOG_ERR("Restart requires a cyclic TX channel");
+		return -EINVAL;
+	}
+
+	gdma_ll_tx_reset_channel(data->hal.dev, dma_channel->channel_id);
+	gdma_ll_tx_set_desc_addr(data->hal.dev, dma_channel->channel_id,
+				 (uint32_t)(uintptr_t)&dma_channel->restart_desc);
+	gdma_ll_tx_start(data->hal.dev, dma_channel->channel_id);
+
+	return 0;
+}
+
 static int dma_esp32_config_rx(const struct device *dev, struct dma_esp32_channel *dma_channel,
 			       struct dma_config *config_dma)
 {
@@ -753,7 +842,7 @@ static int dma_esp32_config_rx(const struct device *dev, struct dma_esp32_channe
 	gdma_hal_clear_intr(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX,
 			    GDMA_LL_RX_EVENT_MASK);
 
-	return dma_esp32_config_descriptor(dma_channel, config_dma->head_block);
+	return dma_esp32_config_descriptor(dma_channel, config_dma->head_block, false);
 }
 
 static int dma_esp32_config_tx(const struct device *dev, struct dma_esp32_channel *dma_channel,
@@ -776,6 +865,8 @@ static int dma_esp32_config_tx(const struct device *dev, struct dma_esp32_channe
 	if (config_dma->source_burst_length) {
 		gdma_hal_enable_burst(&data->hal, dma_channel->channel_id,
 				      GDMA_CHANNEL_DIRECTION_TX, true, true);
+		gdma_hal_set_burst_size(&data->hal, dma_channel->channel_id,
+					GDMA_CHANNEL_DIRECTION_TX, config_dma->source_burst_length);
 	}
 
 	gdma_hal_set_priority(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX,
@@ -783,6 +874,7 @@ static int dma_esp32_config_tx(const struct device *dev, struct dma_esp32_channe
 
 	dma_channel->cb = config_dma->dma_callback;
 	dma_channel->user_data = config_dma->user_data;
+	dma_channel->cyclic = config_dma->cyclic;
 
 	gdma_hal_enable_intr(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX,
 			     GDMA_LL_TX_EVENT_MASK, false);
@@ -790,7 +882,7 @@ static int dma_esp32_config_tx(const struct device *dev, struct dma_esp32_channe
 	gdma_hal_clear_intr(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX,
 			    GDMA_LL_TX_EVENT_MASK);
 
-	return dma_esp32_config_descriptor(dma_channel, config_dma->head_block);
+	return dma_esp32_config_descriptor(dma_channel, config_dma->head_block, config_dma->cyclic);
 }
 
 static int dma_esp32_config(const struct device *dev, uint32_t channel,
@@ -936,7 +1028,10 @@ static int dma_esp32_start(const struct device *dev, uint32_t channel)
 						 (intptr_t)dma_channel->desc_list);
 		} else if (dma_channel->dir == DMA_TX) {
 			gdma_hal_enable_intr(&data->hal, dma_channel->channel_id,
-					     GDMA_CHANNEL_DIRECTION_TX, GDMA_LL_EVENT_TX_EOF, true);
+					     GDMA_CHANNEL_DIRECTION_TX,
+					     dma_channel->cyclic ? GDMA_LL_EVENT_TX_DONE
+								: GDMA_LL_EVENT_TX_EOF,
+					     true);
 			gdma_hal_start_with_desc(&data->hal, dma_channel->channel_id,
 						 GDMA_CHANNEL_DIRECTION_TX,
 						 (intptr_t)dma_channel->desc_list);
