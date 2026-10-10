@@ -242,5 +242,6 @@ rsource "Kconfig.input"
 rsource "Kconfig.shell"
 
 rsource "nemagfx/Kconfig"
+rsource "gpu-vglite/Kconfig"
 
 endif

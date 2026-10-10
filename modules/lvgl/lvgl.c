@@ -2,6 +2,7 @@
  * Copyright (c) 2018-2019 Jan Van Winkel <jan.van_winkel@dxplore.eu>
  * Copyright (c) 2025 Abderrahmane JARMOUNI
  *
+ * Copyright 2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -90,12 +91,16 @@ FOR_EACH(DISPLAY_NODE_CLASS_ASSERT, (), LV_DISPLAYS_IDX_LIST)
 	ROUND_UP(DISPLAY_WIDTH(n), 8))                                                             \
 	+ 8)
 #else
-#define BUFFER_SIZE(n)                                                                             \
-	(BUFFER_BITS_PER_PIXEL *                                                                   \
-	 ((CONFIG_LV_Z_VDB_SIZE * DISPLAY_WIDTH(n) * DISPLAY_HEIGHT(n)) / 100) / 8)
+#define BUFFER_STRIDE(n) \
+	ROUND_UP(DIV_ROUND_UP(DISPLAY_WIDTH(n) * CONFIG_LV_Z_BITS_PER_PIXEL, 8), \
+			CONFIG_LV_DRAW_BUF_STRIDE_ALIGN)
+
+#define BUFFER_SIZE(n) \
+	(ROUND_UP((CONFIG_LV_Z_VDB_SIZE * DISPLAY_HEIGHT(n)) / 100, 1) * BUFFER_STRIDE(n))
 #endif /* IS_MONOCHROME_DISPLAY */
 
 static uint32_t disp_buf_size[DT_ZEPHYR_DISPLAYS_COUNT] = {0};
+static uint32_t disp_buf_stride[DT_ZEPHYR_DISPLAYS_COUNT] = {0};
 static uint8_t *buf0_p[DT_ZEPHYR_DISPLAYS_COUNT] = {NULL};
 
 #ifdef CONFIG_LV_Z_DOUBLE_VDB
@@ -137,6 +142,8 @@ FOR_EACH(LV_BUFFERS_DEFINE, (), LV_DISPLAYS_IDX_LIST);
 
 #define LV_BUFFERS_REFERENCES(n)                                                                   \
 	disp_buf_size[n] = (uint32_t)BUFFER_SIZE(n);                                               \
+	IF_ENABLED(UTIL_NOT(IS_MONOCHROME_DISPLAY),                                                \
+			(disp_buf_stride[n] = (uint32_t)BUFFER_STRIDE(n);))                             \
 	buf0_p[n] = buf0_##n;                                                                      \
 	IF_ENABLED(CONFIG_LV_Z_DOUBLE_VDB, (buf1_p[n] = buf1_##n;))                                \
 	IF_ENABLED(ALLOC_MONOCHROME_CONV_BUFFER, (mono_vtile_buf_p[n] = mono_vtile_buf_##n;))
@@ -178,12 +185,25 @@ static void lvgl_log(lv_log_level_t level, const char *buf)
 
 static void lvgl_allocate_rendering_buffers_static(lv_display_t *display, int disp_idx)
 {
-#ifdef CONFIG_LV_Z_DOUBLE_VDB
-	lv_display_set_buffers(display, buf0_p[disp_idx], buf1_p[disp_idx], disp_buf_size[disp_idx],
-			       RENDER_MODE);
+	uint32_t stride;
+
+#if IS_MONOCHROME_DISPLAY
+	int32_t width = lv_display_get_horizontal_resolution(display);
+
+	stride = ROUND_UP(width, 8) / 8;
 #else
-	lv_display_set_buffers(display, buf0_p[disp_idx], NULL, disp_buf_size[disp_idx],
-			       RENDER_MODE);
+	stride = disp_buf_stride[disp_idx];
+#endif
+
+#ifdef CONFIG_LV_Z_DOUBLE_VDB
+	lv_display_set_buffers_with_stride(display, buf0_p[disp_idx],
+					    buf1_p[disp_idx],
+					    disp_buf_size[disp_idx], stride,
+					    RENDER_MODE);
+#else
+	lv_display_set_buffers_with_stride(display, buf0_p[disp_idx],  NULL,
+					    disp_buf_size[disp_idx], stride,
+					    RENDER_MODE);
 #endif /* CONFIG_LV_Z_DOUBLE_VDB */
 
 #if ALLOC_MONOCHROME_CONV_BUFFER

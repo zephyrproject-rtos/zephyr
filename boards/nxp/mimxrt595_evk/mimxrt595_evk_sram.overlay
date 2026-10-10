@@ -1,0 +1,18 @@
+/*
+ * Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&sram {
+	reg = <0x20000000 0x480000>;
+	ranges = <0x20000000 0x20000000 0x480000>;
+};
+
+&sram_code {
+	reg = <0x1b000 DT_SIZE_K(404)>;
+};
+
+/* Data region: Full 4608 KB */
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(4608)>;
+};
