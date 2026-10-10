@@ -2,8 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # The default 8 MMU translation tables are insufficient once the image
-# map and the SoC device regions are accounted for.
-CONFIG_MAX_XLAT_TABLES=12
+# map and the SoC device regions are accounted for, and userspace builds
+# need more for the memory domain tables.
+CONFIG_MAX_XLAT_TABLES=28
 
 # Serial / console
 CONFIG_SERIAL=y
