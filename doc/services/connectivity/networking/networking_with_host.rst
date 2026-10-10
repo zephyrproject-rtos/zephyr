@@ -16,6 +16,7 @@ Networking with the host system
    eth_bridge_native_sim_setup.rst
    qemu_802154_setup.rst
    armfvp_user_networking_setup.rst
+   nat_setup.rst
 
 While developing networking software, it is usually necessary to connect and
 exchange data with the host system like a Linux desktop computer.
@@ -89,3 +90,6 @@ possible:
     exists two host network interfaces ``zeth0`` and ``zeth1`` and the network
     packets are bridged between those two interfaces.
     See :ref:`networking_with_native_sim_eth_bridge` for details.
+
+Applications connected to the host system this way can also reach the Internet
+through it. See :ref:`networking_internet` for details.

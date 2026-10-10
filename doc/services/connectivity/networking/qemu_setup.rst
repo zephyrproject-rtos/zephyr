@@ -144,59 +144,12 @@ To stop the daemons, press Ctrl+C in the corresponding terminal windows
 
 Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
 
-.. _networking_internet:
+Accessing the Internet
+**********************
 
-Setting up Zephyr and NAT/masquerading on host to access Internet
-*****************************************************************
-
-To access the internet from a Zephyr application, some additional
-setup on the host may be required. This setup is common for both
-application running in QEMU and on real hardware, assuming that
-a development board is connected to the development host. If a
-board is connected to a dedicated router, it should not be needed.
-
-To access the internet from a Zephyr application using IPv4,
-a gateway should be set via DHCP or configured manually.
-For applications using the "Settings" facility (with the config option
-:kconfig:option:`CONFIG_NET_CONFIG_SETTINGS` enabled),
-set the :kconfig:option:`CONFIG_NET_CONFIG_MY_IPV4_GW` option to the IP address
-of the gateway. For apps not using the "Settings" facility, set up the
-gateway by calling the :c:func:`net_if_ipv4_set_gw` at runtime.
-For example: ``CONFIG_NET_CONFIG_MY_IPV4_GW="192.0.2.2"``
-
-To access the internet from a custom application running in QEMU, NAT
-(masquerading) should be set up for QEMU's source address. Assuming ``192.0.2.1`` is
-used and the Zephyr network interface is ``zeth``, the following command should be run as root:
-
-.. code-block:: console
-
-   iptables -t nat -A POSTROUTING -j MASQUERADE -s 192.0.2.1/24
-   iptables -I FORWARD 1 -i zeth -j ACCEPT
-   iptables -I FORWARD 1 -o zeth -m state --state RELATED,ESTABLISHED -j ACCEPT
-
-Additionally, IPv4 forwarding should be enabled on the host, and you may need to
-check that other firewall (iptables) rules don't interfere with masquerading.
-To enable IPv4 forwarding the following command should be run as root:
-
-.. code-block:: console
-
-   sysctl -w net.ipv4.ip_forward=1
-
-Some applications may also require a DNS server. A number of Zephyr-provided
-samples assume by default that the DNS server is available on the host
-(IP ``192.0.2.2``), which, in modern Linux distributions, usually runs at least
-a DNS proxy. When running with QEMU, it may be required to restart the host's
-DNS, so it can serve requests on the newly created TAP interface. For example,
-on Debian-based systems:
-
-.. code-block:: console
-
-   service dnsmasq restart
-
-An alternative to relying on the host's DNS server is to use one in the
-network. For example, ``8.8.8.8`` is a publicly available DNS server. You can
-configure it using :kconfig:option:`CONFIG_DNS_SERVER1` option.
-
+To access the internet from a Zephyr application running in QEMU, NAT
+(masquerading) has to be set up on the host. See :ref:`networking_internet`
+for details.
 
 Network connection between two QEMU VMs
 ***************************************
