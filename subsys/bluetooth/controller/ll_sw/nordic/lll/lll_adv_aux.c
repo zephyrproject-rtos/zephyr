@@ -784,8 +784,8 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux, uint8_t phy_flags_rx,
 
 	if ((pdu_rx->type == PDU_ADV_TYPE_AUX_SCAN_REQ) &&
 	    (pdu_rx->len == sizeof(struct pdu_adv_scan_req)) &&
-	    lll_adv_scan_req_check(lll, pdu_rx, tx_addr, addr, devmatch_ok,
-				   &rl_idx)) {
+	    lll_adv_scan_req_check(lll, pdu_rx, tx_addr, addr, rx_addr,
+				   tgt_addr, devmatch_ok, &rl_idx)) {
 		struct pdu_adv *sr_pdu;
 
 		sr_pdu = lll_adv_scan_rsp_curr_get(lll);

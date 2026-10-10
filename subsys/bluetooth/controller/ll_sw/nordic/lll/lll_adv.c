@@ -80,9 +80,10 @@ static bool isr_rx_sr_adva_check(uint8_t tx_addr, uint8_t *addr,
 				 struct pdu_adv *sr);
 
 
-static inline bool isr_rx_ci_tgta_check(struct lll_adv *lll,
-					uint8_t rx_addr, uint8_t *tgt_addr,
-					struct pdu_adv *ci, uint8_t rl_idx);
+static inline bool isr_rx_tgta_check(struct lll_adv *lll,
+				     uint8_t rx_addr, uint8_t *tgt_addr,
+				     uint8_t addr_type, uint8_t *addr,
+				     uint8_t rl_idx);
 static inline bool isr_rx_ci_adva_check(uint8_t tx_addr, uint8_t *addr,
 					struct pdu_adv *ci);
 
@@ -689,8 +690,25 @@ void lll_adv_prepare(void *param)
 
 bool lll_adv_scan_req_check(struct lll_adv *lll, struct pdu_adv *sr,
 			    uint8_t tx_addr, uint8_t *addr,
+			    uint8_t rx_addr, uint8_t *tgt_addr,
 			    uint8_t devmatch_ok, uint8_t *rl_idx)
 {
+	/* LL 4.3.2: filter policy shall be ignored for directed adv, which
+	 * only answers the device of its TargetA
+	 */
+	if (tgt_addr != NULL) {
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+		return ull_filter_lll_rl_addr_allowed(sr->tx_addr,
+						      sr->scan_req.scan_addr,
+						      rl_idx) &&
+#else
+		return (1) &&
+#endif
+		       isr_rx_sr_adva_check(tx_addr, addr, sr) &&
+		       isr_rx_tgta_check(lll, rx_addr, tgt_addr, sr->tx_addr,
+					 sr->scan_req.scan_addr, *rl_idx);
+	}
+
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	return ((((lll->filter_policy & BT_LE_ADV_FP_FILTER_SCAN_REQ) == 0) &&
 		 ull_filter_lll_rl_addr_allowed(sr->tx_addr,
@@ -749,8 +767,8 @@ bool lll_adv_connect_ind_check(struct lll_adv *lll, struct pdu_adv *ci,
 		return (1) &&
 #endif
 		       isr_rx_ci_adva_check(tx_addr, addr, ci) &&
-		       isr_rx_ci_tgta_check(lll, rx_addr, tgt_addr, ci,
-					    *rl_idx);
+		       isr_rx_tgta_check(lll, rx_addr, tgt_addr, ci->tx_addr,
+					 ci->connect_ind.init_addr, *rl_idx);
 	}
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
@@ -1584,8 +1602,8 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 	if ((pdu_rx->type == PDU_ADV_TYPE_SCAN_REQ) &&
 	    (pdu_rx->len == sizeof(struct pdu_adv_scan_req)) &&
 	    (tgt_addr == NULL) &&
-	    lll_adv_scan_req_check(lll, pdu_rx, tx_addr, addr, devmatch_ok,
-				    &rl_idx)) {
+	    lll_adv_scan_req_check(lll, pdu_rx, tx_addr, addr, rx_addr,
+				   tgt_addr, devmatch_ok, &rl_idx)) {
 		radio_isr_set(isr_tx_done, lll);
 		radio_switch_complete_and_disable();
 		radio_pkt_tx_set(lll_adv_scan_rsp_curr_get(lll));
@@ -1722,17 +1740,18 @@ static bool isr_rx_sr_adva_check(uint8_t tx_addr, uint8_t *addr,
 		!memcmp(addr, sr->scan_req.adv_addr, BDADDR_SIZE);
 }
 
-static inline bool isr_rx_ci_tgta_check(struct lll_adv *lll,
-					uint8_t rx_addr, uint8_t *tgt_addr,
-					struct pdu_adv *ci, uint8_t rl_idx)
+static inline bool isr_rx_tgta_check(struct lll_adv *lll,
+				     uint8_t rx_addr, uint8_t *tgt_addr,
+				     uint8_t addr_type, uint8_t *addr,
+				     uint8_t rl_idx)
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (rl_idx != FILTER_IDX_NONE && lll->rl_idx != FILTER_IDX_NONE) {
 		return rl_idx == lll->rl_idx;
 	}
 #endif /* CONFIG_BT_CTLR_PRIVACY */
-	return (rx_addr == ci->tx_addr) &&
-	       !memcmp(tgt_addr, ci->connect_ind.init_addr, BDADDR_SIZE);
+	return (rx_addr == addr_type) &&
+	       (memcmp(tgt_addr, addr, BDADDR_SIZE) == 0);
 }
 
 static inline bool isr_rx_ci_adva_check(uint8_t tx_addr, uint8_t *addr,
