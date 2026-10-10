@@ -33,15 +33,23 @@ SECTION_DATA_PROLOGUE(_NOCACHE_LOAD_SECTION_NAME,,)
 	_nocache_load_ram_start = .;
 	*(.nocache_load)
 	*(".nocache_load.*")
+	_nocache_load_ram_end = .;
+} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+_nocache_load_ram_size = _nocache_load_ram_end - _nocache_load_ram_start;
+_nocache_load_rom_start = LOADADDR(_NOCACHE_LOAD_SECTION_NAME);
 
+/*
+ * Pad the non-cached region up to the MPU/MMU alignment in a non-loadable
+ * section, so that the padding takes no space in ROM and is not copied to
+ * RAM at boot.
+ */
+SECTION_DATA_PROLOGUE(nocache_pad,(NOLOAD),)
+{
 #if defined(CONFIG_MMU)
 	MMU_ALIGN;
 #else
 	MPU_ALIGN(_nocache_ram_size);
 #endif
-	_nocache_load_ram_end = .;
 	_nocache_ram_end = .;
-} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-_nocache_load_ram_size = _nocache_load_ram_end - _nocache_load_ram_start;
-_nocache_load_rom_start = LOADADDR(_NOCACHE_LOAD_SECTION_NAME);
+} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 _nocache_ram_size = _nocache_ram_end - _nocache_ram_start;
