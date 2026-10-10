@@ -884,7 +884,8 @@ static void dfu_suspended(struct bt_mesh_dfu_cli *cli)
 	dfd_phase_set(srv, BT_MESH_DFD_PHASE_TRANSFER_SUSPENDED);
 }
 
-static struct bt_mesh_dfu_srv *self_target_dfu_srv(struct bt_mesh_dfd_srv *srv)
+static const struct bt_mesh_model *self_target_model(struct bt_mesh_dfd_srv *srv,
+						     struct bt_mesh_dfu_target **target)
 {
 	/* The spec requires the DFU Server (Target role element Y) to be on
 	 * a different element from the DFD Server (Distributor role element
@@ -902,12 +903,35 @@ static struct bt_mesh_dfu_srv *self_target_dfu_srv(struct bt_mesh_dfd_srv *srv)
 			 * element; it times out as an ordinary target.
 			 */
 			if (mod) {
-				return mod->rt->user_data;
+				if (target) {
+					*target = &srv->targets[i];
+				}
+
+				return mod;
 			}
 		}
 	}
 
 	return NULL;
+}
+
+static struct bt_mesh_dfu_srv *self_target_dfu_srv(struct bt_mesh_dfd_srv *srv)
+{
+	const struct bt_mesh_model *mod = self_target_model(srv, NULL);
+
+	return mod ? mod->rt->user_data : NULL;
+}
+
+/* MshDFUv1.0 Section 7.1.2.9: the skipped self-target bypasses the Confirm
+ * procedure, so record its outcome in the receiver entry here.
+ */
+static void self_target_phase_set(struct bt_mesh_dfd_srv *srv, enum bt_mesh_dfu_phase phase)
+{
+	struct bt_mesh_dfu_target *target = NULL;
+
+	if (self_target_model(srv, &target)) {
+		target->phase = phase;
+	}
 }
 
 static void dfd_srv_find_cb(const struct bt_mesh_model *mod,
@@ -921,7 +945,7 @@ static void dfd_srv_find_cb(const struct bt_mesh_model *mod,
 	}
 }
 
-void bt_mesh_dfd_srv_self_applied(void)
+void bt_mesh_dfd_srv_self_applied(struct bt_mesh_dfu_srv *dfu_srv)
 {
 	struct bt_mesh_dfd_srv *srv = NULL;
 
@@ -930,6 +954,11 @@ void bt_mesh_dfd_srv_self_applied(void)
 		return;
 	}
 
+	if (self_target_dfu_srv(srv) != dfu_srv) {
+		return;
+	}
+
+	self_target_phase_set(srv, BT_MESH_DFU_PHASE_APPLY_SUCCESS);
 	dfd_phase_set(srv, BT_MESH_DFD_PHASE_COMPLETED);
 }
 
@@ -988,12 +1017,15 @@ static void dfu_ended(struct bt_mesh_dfu_cli *cli,
 	}
 
 	if (reason != BT_MESH_DFU_SUCCESS) {
+		bool applying = srv->phase == BT_MESH_DFD_PHASE_APPLYING_UPDATE;
+
 		dfd_phase_set(srv, BT_MESH_DFD_PHASE_FAILED);
-		/* Remote targets failed to confirm (e.g. no target
-		 * reported new FWID). Distribution is over, safe to
-		 * apply deferred self-update.
-		 */
-		(void)trigger_self_apply(srv);
+
+		/* The self-target is owed its deferred apply only once Apply was requested. */
+		if (applying) {
+			(void)trigger_self_apply(srv);
+		}
+
 		return;
 	}
 
@@ -1061,6 +1093,7 @@ static void dfu_confirmed(struct bt_mesh_dfu_cli *cli)
 	 * async apply completes it from bt_mesh_dfd_srv_self_applied().
 	 */
 	if (trigger_self_apply(srv)) {
+		self_target_phase_set(srv, BT_MESH_DFU_PHASE_APPLY_FAIL);
 		dfd_phase_set(srv, BT_MESH_DFD_PHASE_FAILED);
 		return;
 	}
@@ -1200,7 +1233,10 @@ static int dfd_srv_model_start(const struct bt_mesh_model *mod)
 		struct bt_mesh_dfu_srv *dfu_srv = self_target_dfu_srv(srv);
 
 		if (dfu_srv && dfu_srv->update.phase == BT_MESH_DFU_PHASE_APPLYING) {
-			bt_mesh_dfu_srv_applied(dfu_srv);
+			/* Settle the phase without notifying, so the Confirm
+			 * step below decides the outcome.
+			 */
+			bt_mesh_dfu_srv_apply_settle(dfu_srv);
 		}
 	}
 
@@ -1528,14 +1564,18 @@ enum bt_mesh_dfd_status bt_mesh_dfd_srv_apply(struct bt_mesh_dfd_srv *srv)
 		return BT_MESH_DFD_SUCCESS;
 	}
 
-	err = bt_mesh_dfu_cli_apply(&srv->dfu);
-	if (err) {
+	/* Set before the Apply step, which completes synchronously for a self-only
+	 * distribution. dfd_phase_set() downgrades to FAILED if the state cannot be
+	 * persisted.
+	 */
+	dfd_phase_set(srv, BT_MESH_DFD_PHASE_APPLYING_UPDATE);
+	if (srv->phase != BT_MESH_DFD_PHASE_APPLYING_UPDATE) {
 		return BT_MESH_DFD_ERR_INTERNAL;
 	}
 
-	/* dfd_phase_set() downgrades to FAILED if the state cannot be persisted. */
-	dfd_phase_set(srv, BT_MESH_DFD_PHASE_APPLYING_UPDATE);
-	if (srv->phase != BT_MESH_DFD_PHASE_APPLYING_UPDATE) {
+	err = bt_mesh_dfu_cli_apply(&srv->dfu);
+	if (err) {
+		dfd_phase_set(srv, BT_MESH_DFD_PHASE_FAILED);
 		return BT_MESH_DFD_ERR_INTERNAL;
 	}
 

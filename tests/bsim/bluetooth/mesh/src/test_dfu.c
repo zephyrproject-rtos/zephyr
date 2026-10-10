@@ -53,6 +53,7 @@ static struct bt_mesh_cfg_cli cfg_cli;
 static struct bt_mesh_sar_cfg_cli sar_cfg_cli;
 
 static int dfu_targets_cnt;
+static int dfu_group;
 static bool dfu_fail_confirm;
 static bool recover;
 static bool expect_fail;
@@ -115,6 +116,13 @@ static void test_args_parse(int argc, char *argv[])
 			.option = "recover",
 			.descript = "Recover DFU server phase"
 		},
+		{
+			.dest = &dfu_group,
+			.type = 'i',
+			.name = "{group address}",
+			.option = "group",
+			.descript = "Distribution Multicast Address, 0 for unicast"
+		},
 	};
 
 	bs_args_parse_all_cmd_line(argc, argv, args_struct);
@@ -143,6 +151,22 @@ static const struct bt_mesh_blob_io dummy_blob_io = {
 	.wr = dummy_blob_chunk_wr,
 };
 
+static int dummy_blob_open_fail(const struct bt_mesh_blob_io *io,
+				const struct bt_mesh_blob_xfer *xfer,
+				enum bt_mesh_blob_io_mode mode)
+{
+	return -EIO;
+}
+
+static const struct bt_mesh_blob_io dummy_blob_io_open_fail = {
+	.open = dummy_blob_open_fail,
+	.rd = dummy_blob_chunk_rd,
+	.wr = dummy_blob_chunk_wr,
+};
+
+static bool dist_io_open_fail;
+static bool dist_apply_manual;
+
 static int dist_fw_recv(struct bt_mesh_dfd_srv *srv,
 			const struct bt_mesh_dfu_slot *slot,
 			const struct bt_mesh_blob_io **io)
@@ -161,7 +185,7 @@ static int dist_fw_send(struct bt_mesh_dfd_srv *srv,
 			const struct bt_mesh_dfu_slot *slot,
 			const struct bt_mesh_blob_io **io)
 {
-	*io = &dummy_blob_io;
+	*io = dist_io_open_fail ? &dummy_blob_io_open_fail : &dummy_blob_io;
 
 	return 0;
 }
@@ -178,13 +202,16 @@ static void dist_phase_changed(struct bt_mesh_dfd_srv *srv, enum bt_mesh_dfd_pha
 	}
 
 	if (phase == BT_MESH_DFD_PHASE_COMPLETED ||
-	    phase == BT_MESH_DFD_PHASE_FAILED) {
+	    phase == BT_MESH_DFD_PHASE_FAILED ||
+	    (dist_apply_manual && phase == BT_MESH_DFD_PHASE_TRANSFER_SUCCESS)) {
 		if (phase == BT_MESH_DFD_PHASE_FAILED) {
 			/* On a recovery boot the phase history starts fresh,
 			 * so prev_phase has not been observed yet.
 			 */
 			ASSERT_TRUE(prev_phase == BT_MESH_DFD_PHASE_APPLYING_UPDATE ||
-				    (recover && prev_phase == BT_MESH_DFD_PHASE_IDLE));
+				    (recover && prev_phase == BT_MESH_DFD_PHASE_IDLE) ||
+				    (dist_io_open_fail &&
+				     prev_phase == BT_MESH_DFD_PHASE_TRANSFER_ACTIVE));
 		}
 
 		k_sem_give(&dfu_dist_ended);
@@ -292,12 +319,12 @@ static int target_dfu_apply(struct bt_mesh_dfu_srv *srv, const struct bt_mesh_df
 
 	ASSERT_TRUE(expect_dfu_apply);
 
-	if (self_update_apply_err && srv->update.self_update) {
+	if (self_update_apply_err) {
 		k_sem_give(&dfu_ended);
 		return -EIO;
 	}
 
-	if (self_update_apply_fail && srv->update.self_update) {
+	if (self_update_apply_fail) {
 		/* Emulate power loss before the image swap: unlike the
 		 * self_update_reboot_emulation path below, target_fw_ver_curr
 		 * is deliberately NOT bumped, so the node keeps reporting the
@@ -307,7 +334,7 @@ static int target_dfu_apply(struct bt_mesh_dfu_srv *srv, const struct bt_mesh_df
 		return 0;
 	}
 
-	if (self_update_reboot_emulation && srv->update.self_update) {
+	if (self_update_reboot_emulation) {
 		/* Simulate reboot in the middle of self-update apply:
 		 * install the new firmware image (bump the reported FWID) but
 		 * do NOT call bt_mesh_dfu_srv_applied(). The DFU Server's
@@ -449,6 +476,27 @@ static void common_app_bind(uint16_t addr, struct bind_params *params, size_t nu
 	}
 }
 
+static void target_group_sub_add(uint16_t addr, uint16_t elem_addr)
+{
+	const uint16_t mod_ids[] = { BT_MESH_MODEL_ID_BLOB_SRV, BT_MESH_MODEL_ID_DFU_SRV };
+	uint8_t status;
+	int err;
+
+	if (!dfu_group) {
+		return;
+	}
+
+	for (size_t i = 0; i < ARRAY_SIZE(mod_ids); i++) {
+		err = bt_mesh_cfg_cli_mod_sub_add(0, addr, elem_addr, dfu_group, mod_ids[i],
+						  &status);
+		if (err || status) {
+			FAIL("Model %#4x sub add failed (err %d, status %u)", mod_ids[i], err,
+			     status);
+			return;
+		}
+	}
+}
+
 static void dist_prov_and_conf(uint16_t addr)
 {
 	provision(addr);
@@ -476,6 +524,7 @@ static void dist_self_update_prov_and_conf(uint16_t addr)
 	};
 
 	common_app_bind(addr, &bind_params[0], ARRAY_SIZE(bind_params));
+	target_group_sub_add(addr, addr + 1);
 	common_sar_conf(addr);
 }
 
@@ -497,6 +546,7 @@ static void target_prov_and_conf_default(void)
 	};
 
 	target_prov_and_conf(addr, bind_params, ARRAY_SIZE(bind_params));
+	target_group_sub_add(addr, addr);
 }
 
 static struct bt_mesh_dfu_slot *slot_reserve_and_set(size_t size, uint8_t *fwid, size_t fwid_len,
@@ -558,10 +608,10 @@ static void dist_dfu_start(void)
 		.app_idx = 0,
 		.timeout_base = 10,
 		.slot_idx = 0,
-		.group = 0,
+		.group = dfu_group,
 		.xfer_mode = BT_MESH_BLOB_XFER_MODE_PUSH,
 		.ttl = 2,
-		.apply = true,
+		.apply = !dist_apply_manual,
 	};
 
 	status = bt_mesh_dfd_srv_start(&dfd_srv, &start_params);
@@ -828,6 +878,7 @@ static void test_dist_dfu_self_update_apply_err(void)
 	}
 
 	ASSERT_EQUAL(BT_MESH_DFD_PHASE_FAILED, dfd_srv.phase);
+	ASSERT_EQUAL(BT_MESH_DFU_PHASE_APPLY_FAIL, dfd_srv.targets[0].phase);
 
 	PASS();
 }
@@ -845,6 +896,7 @@ static void test_dist_dfu_self_update_apply_sync(void)
 
 	ASSERT_EQUAL(BT_MESH_DFD_PHASE_COMPLETED, dfd_srv.phase);
 	ASSERT_EQUAL(BT_MESH_DFU_PHASE_IDLE, dfu_srv.update.phase);
+	ASSERT_EQUAL(BT_MESH_DFU_PHASE_APPLY_SUCCESS, dfd_srv.targets[0].phase);
 	ASSERT_EQUAL(1, dist_completed_cnt);
 
 	PASS();
@@ -871,6 +923,7 @@ static void test_dist_dfu_self_update_apply_async(void)
 
 	ASSERT_EQUAL(BT_MESH_DFD_PHASE_COMPLETED, dfd_srv.phase);
 	ASSERT_EQUAL(BT_MESH_DFU_PHASE_IDLE, dfu_srv.update.phase);
+	ASSERT_EQUAL(BT_MESH_DFU_PHASE_APPLY_SUCCESS, dfd_srv.targets[0].phase);
 	ASSERT_EQUAL(1, dist_completed_cnt);
 
 	PASS();
@@ -922,6 +975,109 @@ static void test_dist_dfu_self_update_remote_fail(void)
 		 * own fail-confirm argument.
 		 */
 		dist_self_update_pre_reboot();
+	}
+
+	PASS();
+}
+
+static void test_dist_dfu_self_update_xfer_fail(void)
+{
+	enum bt_mesh_dfd_status status;
+
+	/* The self-target verifies during Firmware Update Start, then the BLOB read
+	 * stream fails to open before the Apply step, so its image must not be applied.
+	 */
+	dist_io_open_fail = true;
+	expect_dfu_apply = false;
+
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	bt_mesh_device_setup(&prov, &dist_comp_self_update);
+	dist_self_update_prov_and_conf(DIST_ADDR);
+
+	ASSERT_TRUE(slot_add(NULL));
+
+	status = bt_mesh_dfd_srv_receiver_add(&dfd_srv, DIST_ADDR + 1, 0);
+	ASSERT_EQUAL(BT_MESH_DFD_SUCCESS, status);
+
+	/* Absent remote receiver; it only keeps the Transfer step from being skipped. */
+	status = bt_mesh_dfd_srv_receiver_add(&dfd_srv, TARGET_ADDR + 1, 0);
+	ASSERT_EQUAL(BT_MESH_DFD_SUCCESS, status);
+
+	dist_dfu_start();
+
+	if (k_sem_take(&dfu_dist_ended, K_SECONDS(DFU_TIMEOUT))) {
+		FAIL("Distribution did not end");
+	}
+
+	ASSERT_EQUAL(BT_MESH_DFD_PHASE_FAILED, dfd_srv.phase);
+	ASSERT_EQUAL(BT_MESH_DFU_PHASE_VERIFY_OK, dfu_srv.update.phase);
+
+	PASS();
+}
+
+static void test_dist_dfu_self_update_manual_apply(void)
+{
+	enum bt_mesh_dfd_status status;
+
+	/* Self-only distribution started without apply. The later Distribution
+	 * Apply completes the client's Apply step synchronously, as the only target
+	 * is skipped, so the distribution must already be in Applying Update.
+	 */
+	dist_apply_manual = true;
+
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	bt_mesh_device_setup(&prov, &dist_comp_self_update);
+	dist_self_update_prov_and_conf(DIST_ADDR);
+
+	ASSERT_TRUE(slot_add(NULL));
+
+	status = bt_mesh_dfd_srv_receiver_add(&dfd_srv, DIST_ADDR + 1, 0);
+	ASSERT_EQUAL(BT_MESH_DFD_SUCCESS, status);
+
+	dist_dfu_start();
+
+	if (k_sem_take(&dfu_dist_ended, K_SECONDS(DFU_TIMEOUT))) {
+		FAIL("Transfer did not end");
+	}
+
+	ASSERT_EQUAL(BT_MESH_DFD_PHASE_TRANSFER_SUCCESS, dfd_srv.phase);
+	ASSERT_EQUAL(BT_MESH_DFU_PHASE_VERIFY_OK, dfu_srv.update.phase);
+
+	status = bt_mesh_dfd_srv_apply(&dfd_srv);
+	ASSERT_EQUAL(BT_MESH_DFD_SUCCESS, status);
+
+	if (k_sem_take(&dfu_dist_ended, K_SECONDS(DFU_TIMEOUT))) {
+		FAIL("Distribution did not end");
+	}
+
+	ASSERT_EQUAL(BT_MESH_DFD_PHASE_COMPLETED, dfd_srv.phase);
+	ASSERT_EQUAL(BT_MESH_DFU_PHASE_IDLE, dfu_srv.update.phase);
+	ASSERT_EQUAL(BT_MESH_DFU_PHASE_APPLY_SUCCESS, dfd_srv.targets[0].phase);
+	ASSERT_EQUAL(1, dist_completed_cnt);
+
+	PASS();
+}
+
+static void test_dist_dfu_self_update_group(void)
+{
+	ASSERT_TRUE(dfu_targets_cnt > 1);
+	ASSERT_TRUE(BT_MESH_ADDR_IS_GROUP(dfu_group));
+
+	/* The self-target is subscribed to the Distribution Multicast Address, so
+	 * group-addressed messages reach it over loopback even though it is
+	 * skipped. Its apply must still wait until the remote target is confirmed.
+	 */
+	dist_self_update_distribute();
+
+	if (k_sem_take(&dfu_dist_ended, K_SECONDS(DFU_TIMEOUT))) {
+		FAIL("Distribution did not end");
+	}
+
+	ASSERT_EQUAL(BT_MESH_DFD_PHASE_COMPLETED, dfd_srv.phase);
+	ASSERT_EQUAL(1, dist_completed_cnt);
+	for (int i = 0; i < dfu_targets_cnt; i++) {
+		ASSERT_EQUAL(BT_MESH_DFU_SUCCESS, dfd_srv.targets[i].status);
+		ASSERT_EQUAL(BT_MESH_DFU_PHASE_APPLY_SUCCESS, dfd_srv.targets[i].phase);
 	}
 
 	PASS();
@@ -1317,6 +1473,80 @@ static const struct bt_mesh_comp cli_comp = {
 		},
 	.elem_count = 1,
 };
+
+static const struct bt_mesh_comp cli_comp_self = {
+	.elem =
+		(const struct bt_mesh_elem[]){
+			BT_MESH_ELEM(1,
+				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
+						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
+						BT_MESH_MODEL_SAR_CFG_SRV,
+						BT_MESH_MODEL_SAR_CFG_CLI(&sar_cfg_cli),
+						BT_MESH_MODEL_DFU_CLI(&dfu_cli)),
+				     BT_MESH_MODEL_NONE),
+			BT_MESH_ELEM(2,
+				     MODEL_LIST(BT_MESH_MODEL_DFU_SRV(&dfu_srv)),
+				     BT_MESH_MODEL_NONE),
+		},
+	.elem_count = 2,
+};
+
+static void test_cli_self_cancel(void)
+{
+	const struct bt_mesh_dfu_slot *slot;
+	int err;
+
+	/* Standalone Firmware Update Client whose only target is the local Firmware
+	 * Update Server: no Distribution Server cleans up the local server, so Cancel
+	 * has to reach it.
+	 */
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	bt_mesh_device_setup(&prov, &cli_comp_self);
+	dist_self_update_prov_and_conf(DIST_ADDR);
+
+	ASSERT_TRUE(slot_add(&slot));
+
+	(void)target_srv_add(DIST_ADDR + 1, false);
+	dfu_cli_inputs_prepare(0);
+	dfu_cli_xfer.xfer.mode = BT_MESH_BLOB_XFER_MODE_PUSH;
+	dfu_cli_xfer.xfer.slot = slot;
+	dfu_cli_xfer.xfer.blob_id = TEST_BLOB_ID;
+
+	err = bt_mesh_dfu_cli_send(&dfu_cli, &dfu_cli_xfer.inputs, &dummy_blob_io,
+				   &dfu_cli_xfer.xfer);
+	if (err) {
+		FAIL("DFU Client send failed (err: %d)", err);
+	}
+
+	if (k_sem_take(&dfu_ended, K_SECONDS(DFU_TIMEOUT))) {
+		FAIL("Firmware transfer failed");
+	}
+
+	ASSERT_EQUAL(BT_MESH_DFU_PHASE_VERIFY_OK, dfu_srv.update.phase);
+
+	err = bt_mesh_dfu_cli_apply(&dfu_cli);
+	if (err) {
+		FAIL("DFU Client apply failed (err: %d)", err);
+	}
+
+	if (k_sem_take(&dfu_cli_applied_sem, K_SECONDS(DFU_TIMEOUT))) {
+		FAIL("Apply step did not complete");
+	}
+
+	expect_fail = true;
+	err = bt_mesh_dfu_cli_cancel(&dfu_cli, NULL);
+	if (err) {
+		FAIL("DFU Client cancel failed (err: %d)", err);
+	}
+
+	if (k_sem_take(&dfu_ended, K_SECONDS(DFU_TIMEOUT))) {
+		FAIL("Cancel did not end");
+	}
+
+	ASSERT_EQUAL(BT_MESH_DFU_PHASE_IDLE, dfu_srv.update.phase);
+
+	PASS();
+}
 
 static void cli_common_fail_on_init(void)
 {
@@ -2016,6 +2246,12 @@ static const struct bst_test_instance test_dfu[] = {
 		  "Distributor self-update applied inside the callback"),
 	TEST_CASE(dist, dfu_self_update_remote_fail,
 		  "Distributor self-update completes while a remote target fails"),
+	TEST_CASE(dist, dfu_self_update_group,
+		  "Distributor self-update with a multicast distribution"),
+	TEST_CASE(dist, dfu_self_update_xfer_fail,
+		  "Distributor self-update fails before the Apply step"),
+	TEST_CASE(dist, dfu_self_update_manual_apply,
+		  "Distributor self-update applied by a later Distribution Apply"),
 	TEST_CASE(dist, dfu_slot_create, "Distributor creates image slots"),
 	TEST_CASE(dist, dfu_slot_create_recover,
 		      "Distributor recovers created image slots from persistent storage"),
@@ -2027,6 +2263,7 @@ static const struct bst_test_instance test_dfu[] = {
 	TEST_CASE(dist, dfu_slot_idempotency,
 		      "Distributor checks that the DFU slot APIs are idempotent"),
 	TEST_CASE(cli, stop, "DFU Client stops at configured point of Firmware Distribution"),
+	TEST_CASE(cli, self_cancel, "DFU Client cancels an update of its own node"),
 	TEST_CASE(cli, fail_on_persistency, "DFU Client doesn't give up DFU Transfer"),
 	TEST_CASE(cli, all_targets_lost_on_metadata,
 		  "All targets fail to check metadata and Client ends DFU Transfer"),
