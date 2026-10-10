@@ -7515,3 +7515,147 @@ if(CMAKE_SCRIPT_MODE_FILE)
     # This silence the error: 'set_target_properties command is not scriptable'
   endfunction()
 endif()
+
+########################################################
+# Relocatable source sets
+########################################################
+#
+# A source set is a named group of sources that a Zephyr library
+# declares instead of adding them directly with
+# zephyr_library_sources(). By default the sources build in the
+# declaring library exactly as if zephyr_library_sources() had been
+# called. An application (or any other target) may claim a set, which
+# moves the sources into the claiming target, where they can be
+# combined with application sources into one translation unit via
+# CMake's UNITY_BUILD, or placed with zephyr_code_relocate(). Only one
+# copy of the sources is ever compiled, so the declaring library's
+# Kconfig stays enabled and every other consumer keeps working
+# through the usual interfaces.
+#
+# Placement is deferred to the end of the top-level configure so that
+# claims made by the application, which is processed after the Zephyr
+# tree, are visible before any sources are added.
+
+# Usage:
+#   zephyr_library_sources_set(gpio FILES gpio_infineon.c)
+#
+# Add the listed FILES to the source set <name>, each owned by the
+# current Zephyr library. Sets are named for the device class or
+# subsystem, not the vendor, so several drivers and layers (for
+# example a vendor HAL) may contribute to the same set from different
+# libraries, and an application claim stays portable across
+# platforms. Relative paths are resolved against the calling
+# directory.
+function(zephyr_library_sources_set name)
+  cmake_parse_arguments(SSET "" "" "FILES" ${ARGN})
+  if(NOT SSET_FILES)
+    message(FATAL_ERROR "zephyr_library_sources_set(${name}) requires FILES")
+  endif()
+  if(NOT ZEPHYR_CURRENT_LIBRARY)
+    message(FATAL_ERROR
+      "zephyr_library_sources_set(${name}) called outside a Zephyr library")
+  endif()
+
+  set(abs_files)
+  foreach(file ${SSET_FILES})
+    if(IS_ABSOLUTE ${file})
+      list(APPEND abs_files ${file})
+    else()
+      list(APPEND abs_files ${CMAKE_CURRENT_SOURCE_DIR}/${file})
+    endif()
+  endforeach()
+
+  # Sources are placed after claims are known, but the library list for
+  # the link is fixed before that, so keep the home library non-empty.
+  target_sources(${ZEPHYR_CURRENT_LIBRARY} PRIVATE ${ZEPHYR_BASE}/misc/empty_file.c)
+
+  get_property(sets GLOBAL PROPERTY ZEPHYR_SOURCE_SETS)
+  if(NOT name IN_LIST sets)
+    set_property(GLOBAL APPEND PROPERTY ZEPHYR_SOURCE_SETS ${name})
+  endif()
+  foreach(file ${abs_files})
+    set_property(GLOBAL APPEND PROPERTY ZEPHYR_SOURCE_SET_${name}_FILES ${file})
+    set_property(GLOBAL APPEND PROPERTY ZEPHYR_SOURCE_SET_${name}_HOMES ${ZEPHYR_CURRENT_LIBRARY})
+  endforeach()
+
+  get_property(scheduled GLOBAL PROPERTY ZEPHYR_SOURCE_SETS_FINALIZE_SCHEDULED)
+  if(NOT scheduled)
+    set_property(GLOBAL PROPERTY ZEPHYR_SOURCE_SETS_FINALIZE_SCHEDULED TRUE)
+    cmake_language(DEFER DIRECTORY ${CMAKE_SOURCE_DIR} CALL zephyr_source_sets_finalize)
+  endif()
+endfunction()
+
+function(zephyr_library_sources_set_ifdef feature_toggle name)
+  if(${${feature_toggle}})
+    zephyr_library_sources_set(${name} ${ARGN})
+  endif()
+endfunction()
+
+# Usage:
+#   zephyr_source_set_claim(gpio_infineon TARGET app UNITY_GROUP fast_gpio)
+#
+# Claim the source set <name> into TARGET (default: app) instead of
+# its declaring library. With UNITY_GROUP, the claimed sources are
+# additionally assigned to that unity group on the claiming target;
+# the claimer is responsible for enabling UNITY_BUILD in GROUP mode
+# and assigning its own sources to the same group.
+function(zephyr_source_set_claim name)
+  cmake_parse_arguments(CLAIM "" "TARGET;UNITY_GROUP" "" ${ARGN})
+  if(NOT CLAIM_TARGET)
+    set(CLAIM_TARGET app)
+  endif()
+  set_property(GLOBAL APPEND PROPERTY ZEPHYR_SOURCE_SET_CLAIMS ${name})
+  set_property(GLOBAL PROPERTY ZEPHYR_SOURCE_SET_${name}_CLAIMED_BY ${CLAIM_TARGET})
+  if(CLAIM_UNITY_GROUP)
+    set_property(GLOBAL PROPERTY ZEPHYR_SOURCE_SET_${name}_UNITY_GROUP ${CLAIM_UNITY_GROUP})
+  endif()
+endfunction()
+
+# Deferred: place every declared source set in its home library or,
+# when claimed, in the claiming target. Not called directly.
+function(zephyr_source_sets_finalize)
+  get_property(sets GLOBAL PROPERTY ZEPHYR_SOURCE_SETS)
+
+  get_property(claims GLOBAL PROPERTY ZEPHYR_SOURCE_SET_CLAIMS)
+  foreach(claim ${claims})
+    if(NOT claim IN_LIST sets)
+      message(FATAL_ERROR
+        "Claimed source set '${claim}' does not exist. It is either "
+        "never declared or disabled by Kconfig.")
+    endif()
+  endforeach()
+
+  foreach(name ${sets})
+    get_property(files GLOBAL PROPERTY ZEPHYR_SOURCE_SET_${name}_FILES)
+    get_property(homes GLOBAL PROPERTY ZEPHYR_SOURCE_SET_${name}_HOMES)
+    get_property(claimer GLOBAL PROPERTY ZEPHYR_SOURCE_SET_${name}_CLAIMED_BY)
+    if(claimer)
+      if(NOT TARGET ${claimer})
+        message(FATAL_ERROR
+          "Source set '${name}' claimed by unknown target '${claimer}'")
+      endif()
+      target_sources(${claimer} PRIVATE ${files})
+      get_property(group GLOBAL PROPERTY ZEPHYR_SOURCE_SET_${name}_UNITY_GROUP)
+      if(group)
+        # Per-source COMPILE_DEFINITIONS/INCLUDE_DIRECTORIES properties
+        # would exclude a file from unity builds, so the home library's
+        # private build settings are applied to the claiming target.
+        set_source_files_properties(${files} TARGET_DIRECTORY ${claimer}
+          PROPERTIES UNITY_GROUP ${group})
+      endif()
+      list(REMOVE_DUPLICATES homes)
+      foreach(home ${homes})
+        foreach(prop COMPILE_DEFINITIONS INCLUDE_DIRECTORIES)
+          get_target_property(values ${home} ${prop})
+          if(values)
+            set_property(TARGET ${claimer} APPEND PROPERTY ${prop} ${values})
+          endif()
+        endforeach()
+      endforeach()
+    else()
+      foreach(file home IN ZIP_LISTS files homes)
+        target_sources(${home} PRIVATE ${file})
+      endforeach()
+    endif()
+  endforeach()
+endfunction()
