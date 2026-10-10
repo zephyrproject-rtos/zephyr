@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2022-2023, Intel Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
+
+int main(void)
+{
+	printk("%s: Starting Command Line Interface...\n", CONFIG_BOARD);
+}
