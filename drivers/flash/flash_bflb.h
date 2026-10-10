@@ -289,6 +289,7 @@ struct flash_bflb_device_registers {
 	uint8_t busy_index;
 	uint8_t busy_bit;
 	uint8_t busy_read_len;
+	uint8_t busy_bit_value;
 };
 
 struct flash_bflb_pad_cfg {

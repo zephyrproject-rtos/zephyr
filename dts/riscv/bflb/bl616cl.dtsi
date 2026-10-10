@@ -378,6 +378,18 @@
 			status = "disabled";
 		};
 
+		aon_scratch0: aon-scratch@2000f93c {
+			compatible = "zephyr,retained-reg";
+			reg = <0x2000f93c 0x4>;
+			alignment = <4>;
+		};
+
+		aon_scratch1: aon-scratch@2000f940 {
+			compatible = "zephyr,retained-reg";
+			reg = <0x2000f940 0x4>;
+			alignment = <4>;
+		};
+
 		memc: memc@20052000 {
 			compatible = "bflb,bl61x-psram";
 			reg = <0x20052000 DT_SIZE_K(4)>;
