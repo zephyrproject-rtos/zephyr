@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: TI BQ25896 battery charger
+
+description: |
+  TI BQ25896 I2C controlled 3 A single cell switching battery charger with
+  power path management and USB OTG boost. The fast charge current range is
+  0 A to 3.008 A.
+
+compatible: "ti,bq25896"
+
+include: ti,bq2589x-common.yaml
+
+examples:
+  - |
+    charger: charger@6b {
+      compatible = "ti,bq25896";
+      reg = <0x6b>;
+      constant-charge-current-max-microamp = <512000>;
+      constant-charge-voltage-max-microvolt = <4208000>;
+    };
