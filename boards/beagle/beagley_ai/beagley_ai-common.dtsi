@@ -1,0 +1,88 @@
+/* Copyright (C) 2026 BeagleBoard.org Foundation
+ * Copyright (C) 2026 Dhruv Menon <dhruvmenon1104@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include "beagley_ai_j722s_r5f0_0-pinctrl.dtsi"
+
+/ {
+	aliases {
+		led0 = &usr_led0;
+		led1 = &usr_led1;
+		/* Standard Zephyr aliases used by samples/tests */
+		i2c-0 = &mcu_i2c0;
+		spi-0 = &mcu_spi0;
+		/* HAT bus name from https://pinout.beagleboard.io/pinout/i2c */
+		i2c1 = &mcu_i2c0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		usr_led0: led_0 {
+			gpios = <&main_gpio0 11 GPIO_ACTIVE_LOW>;
+			label = "USR0";
+		};
+
+		usr_led1: led_1 {
+			gpios = <&main_gpio0 12 GPIO_ACTIVE_HIGH>;
+			label = "USR1";
+		};
+	};
+};
+
+/* Console UART (HAT pins 8/10, GPIO14/15) */
+&uart1 {
+	status = "okay";
+	pinctrl-0 = <&hat_08_uart1_txd &hat_10_uart1_rxd>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+/* Primary GPIO bank: on-board USR LEDs (GPIO0_11/12). Other banks stay off. */
+&main_gpio0_0 {
+	pinctrl-0 = <&led_pins_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&main_gpio0_1 {
+	status = "disabled";
+};
+
+&main_gpio0_2 {
+	status = "disabled";
+};
+
+&main_gpio1_0 {
+	status = "disabled";
+};
+
+&main_gpio1_1 {
+	status = "disabled";
+};
+
+&main_gpio1_2 {
+	status = "disabled";
+};
+
+&mcu_gpio0 {
+	status = "disabled";
+};
+
+/* HAT I2C1 (GPIO2/GPIO3, pins 3/5). SoC: mcu_i2c0; alias i2c1. */
+&mcu_i2c0 {
+	pinctrl-0 = <&hat_05_i2c &hat_03_i2c>;
+	pinctrl-names = "default";
+	clock-frequency = <400000>;
+	status = "okay";
+};
+
+/* HAT MCU SPI0 (GPIO10/9/11/8, pins 19/21/23/24). */
+&mcu_spi0 {
+	pinctrl-0 = <&mcu_spi0_pins_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};

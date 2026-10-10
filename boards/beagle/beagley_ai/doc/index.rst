@@ -38,8 +38,31 @@ IRQ and FIQ.
 
 Supported Features
 ******************
-The board configuration supports a console UART via the HAT header pins. Future
-versions will also support a console over RPmsg.
+One instance of each common peripheral is enabled by default (nRF DK style);
+other instances stay ``disabled`` until needed.
+
+HAT pin names match `pinout.beagleboard.io <https://pinout.beagleboard.io/>`_.
+
+Enabled by default:
+
+* **UART1** console (GPIO14/15, HAT pins 8/10): ``&uart1``
+* **GPIO** for on-board USR LEDs (``led0`` / ``led1``): ``&main_gpio0_0``
+* **I2C1** (GPIO2/GPIO3, HAT pins 3/5): ``&mcu_i2c0`` / aliases ``i2c1``, ``i2c-0``
+* **MCU SPI0** (GPIO10/9/11/8, HAT pins 19/21/23/24): ``&mcu_spi0`` / alias ``spi-0``
+
+Sample overlays:
+
+* ``samples/sensor/tmp112/boards/beagley_ai_j722s_*_r5f0_0.overlay``
+* ``tests/drivers/spi/spi_loopback/boards/beagley_ai_j722s_*_r5f0_0.overlay``
+
+Inactive pinmux lives in ``beagley_ai_j722s_r5f0_0-pinctrl.dtsi`` (same pattern as
+Nordic ``*-pinctrl.dtsi``). Extra GPIO banks and optional I2C4 pin groups
+(``hat_15_i2c`` / ``hat_22_i2c``) are defined there; enable the matching
+controller with ``status = "okay"`` when you need them
+(e.g. ``&main_gpio1_0``, ``&mcu_gpio0``).
+
+Avoid HAT pins 27/28 (GPIO0/GPIO1, I2C0 / WKUP_I2C0); shared with PMIC and
+board EEPROM. Future versions will also support a console over RPmsg.
 
 .. zephyr:board-supported-hw::
 
@@ -102,13 +125,16 @@ To load the image:
 | ``cp build/zephyr/zephyr.elf /lib/firmware/``
 |
 | Ensure the Core is not running.
-| ``echo stop > /dev/remoteproc/am67a-{main,mcu}-r5f0_0/state``
+| ``echo stop > /dev/remoteproc/j7-{main,mcu}-r5f0_0/state``
 |
 | Configuring the image name to the remoteproc module.
-| ``echo zephyr.elf > /dev/remoteproc/am67a-{main,mcu}-r5f0_0/firmware``
+| ``echo zephyr.elf > /dev/remoteproc/j7-{main,mcu}-r5f0_0/firmware``
 |
 | Once the image name is configured, send the start command.
-| ``echo start > /dev/remoteproc/am67a-{main,mcu}-r5f0_0/state``
+| ``echo start > /dev/remoteproc/j7-{main,mcu}-r5f0_0/state``
+|
+| (Older docs used ``am67a-*`` names; current Beagle Debian images expose ``j7-*``.)
+| Also available via ``/sys/class/remoteproc/remoteproc*``.
 
 Console
 -------

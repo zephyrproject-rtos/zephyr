@@ -1,0 +1,15 @@
+/* Copyright (C) 2026 BeagleBoard.org Foundation
+ * Copyright (C) 2026 Dhruv Menon <dhruvmenon1104@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Example TMP112 on HAT I2C1 (SoC mcu_i2c0). Change the address to match
+ * the part on your HAT.
+ */
+
+&mcu_i2c0 {
+	tmp112@48 {
+		compatible = "ti,tmp112";
+		reg = <0x48>;
+	};
+};

@@ -8,14 +8,33 @@
 #include <zephyr/dt-bindings/pinctrl/ti-k3-pinctrl.h>
 
 &pinctrl {
-	uart1_rx_default: uart1_rx_default {
-		/* (C27) MCASP0_AFSR.UART1_RXD */
+	hat_10_uart1_rxd: hat-10-uart1-rxd-pins {
+		/* HAT pin 10, GPIO15, UART RX */
 		pinmux = <K3_PINMUX(0x01ac, PIN_INPUT, MUX_MODE_2)>;
 	};
 
-	uart1_tx_default: uart1_tx_default {
-		/* (F24) MCASP0_ACLKR.UART1_TXD */
+	hat_08_uart1_txd: hat-08-uart1-txd-pins {
+		/* HAT pin 8, GPIO14, UART TX */
 		pinmux = <K3_PINMUX(0x01b0, PIN_OUTPUT, MUX_MODE_2)>;
+	};
+
+	led_pins_default: led-default-pins {
+		pinmux = <
+			  /* (K26) OSPI0_CSn0.GPIO0_11 */
+			  K3_PINMUX(0x002c, PIN_OUTPUT, MUX_MODE_7)
+			  /* (K23) OSPI0_CSn1.GPIO0_12 */
+			  K3_PINMUX(0x0030, PIN_OUTPUT, MUX_MODE_7)>;
+	};
+
+	/* Optional HAT I2C4 (https://pinout.beagleboard.io/pinout/i2c) */
+	hat_15_i2c: hat-15-i2c-pins {
+		/* HAT pin 15, GPIO22, I2C4 clock */
+		pinmux = <K3_PINMUX(0x0a8, PIN_INPUT_PULLUP, MUX_MODE_1)>;
+	};
+
+	hat_22_i2c: hat-22-i2c-pins {
+		/* HAT pin 22, GPIO25, I2C4 data */
+		pinmux = <K3_PINMUX(0x0ac, PIN_INPUT_PULLUP, MUX_MODE_1)>;
 	};
 
 	hat_07_gpio: hat-07-gpio-pins {
@@ -271,5 +290,157 @@
 	hat_40_gpio_pd: hat-40-gpio-pd-pins {
 		/* (B25) MCASP0_AXR1.GPIO1_9 */
 		pinmux = <K3_PINMUX(0x19c, PIN_INPUT_PULLDOWN, MUX_MODE_7)>;
+	};
+};
+
+&mcu_pinctrl {
+	/*
+	 * Primary HAT I2C (pinout name: I2C1, SoC: MCU_I2C0).
+	 * https://pinout.beagleboard.io/pinout/i2c
+	 */
+	hat_05_i2c: hat-05-i2c-pins {
+		/* HAT pin 5, GPIO3, I2C1 clock */
+		pinmux = <K3_PINMUX(0x044, PIN_INPUT_PULLUP, MUX_MODE_0)>;
+	};
+
+	hat_03_i2c: hat-03-i2c-pins {
+		/* HAT pin 3, GPIO2, I2C1 data */
+		pinmux = <K3_PINMUX(0x048, PIN_INPUT_PULLUP, MUX_MODE_0)>;
+	};
+
+	mcu_spi0_pins_default: mcu-spi0-default-pins {
+		pinmux = <
+			  /* HAT pin 24, GPIO8, SPI0 CE0 */
+			  K3_PINMUX(0x000, PIN_OUTPUT, MUX_MODE_0)
+			  /* HAT pin 23, GPIO11, SPI0 SCLK */
+			  K3_PINMUX(0x008, PIN_OUTPUT, MUX_MODE_0)
+			  /* HAT pin 19, GPIO10, SPI0 MOSI */
+			  K3_PINMUX(0x00c, PIN_OUTPUT, MUX_MODE_0)
+			  /* HAT pin 21, GPIO9, SPI0 MISO */
+			  K3_PINMUX(0x010, PIN_INPUT, MUX_MODE_0)>;
+	};
+
+	hat_03_gpio: hat-03-gpio-pins {
+		/* HAT pin 3, GPIO2 */
+		pinmux = <K3_PINMUX(0x048, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	hat_03_gpio_pu: hat-03-gpio-pu-pins {
+		pinmux = <K3_PINMUX(0x048, PIN_INPUT_PULLUP, MUX_MODE_7)>;
+	};
+
+	hat_03_gpio_pd: hat-03-gpio-pd-pins {
+		pinmux = <K3_PINMUX(0x048, PIN_INPUT_PULLDOWN, MUX_MODE_7)>;
+	};
+
+	hat_05_gpio: hat-05-gpio-pins {
+		/* HAT pin 5, GPIO3 */
+		pinmux = <K3_PINMUX(0x044, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	hat_05_gpio_pu: hat-05-gpio-pu-pins {
+		pinmux = <K3_PINMUX(0x044, PIN_INPUT_PULLUP, MUX_MODE_7)>;
+	};
+
+	hat_05_gpio_pd: hat-05-gpio-pd-pins {
+		pinmux = <K3_PINMUX(0x044, PIN_INPUT_PULLDOWN, MUX_MODE_7)>;
+	};
+
+	hat_16_gpio: hat-16-gpio-pins {
+		pinmux = <K3_PINMUX(0x01c, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	hat_16_gpio_pu: hat-16-gpio-pu-pins {
+		pinmux = <K3_PINMUX(0x01c, PIN_INPUT_PULLUP, MUX_MODE_7)>;
+	};
+
+	hat_16_gpio_pd: hat-16-gpio-pd-pins {
+		pinmux = <K3_PINMUX(0x01c, PIN_INPUT_PULLDOWN, MUX_MODE_7)>;
+	};
+
+	hat_18_gpio: hat-18-gpio-pins {
+		pinmux = <K3_PINMUX(0x028, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	hat_18_gpio_pu: hat-18-gpio-pu-pins {
+		pinmux = <K3_PINMUX(0x028, PIN_INPUT_PULLUP, MUX_MODE_7)>;
+	};
+
+	hat_18_gpio_pd: hat-18-gpio-pd-pins {
+		pinmux = <K3_PINMUX(0x028, PIN_INPUT_PULLDOWN, MUX_MODE_7)>;
+	};
+
+	hat_19_gpio: hat-19-gpio-pins {
+		/* HAT pin 19, GPIO10 */
+		pinmux = <K3_PINMUX(0x00c, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	hat_19_gpio_pu: hat-19-gpio-pu-pins {
+		pinmux = <K3_PINMUX(0x00c, PIN_INPUT_PULLUP, MUX_MODE_7)>;
+	};
+
+	hat_19_gpio_pd: hat-19-gpio-pd-pins {
+		pinmux = <K3_PINMUX(0x00c, PIN_INPUT_PULLDOWN, MUX_MODE_7)>;
+	};
+
+	hat_21_gpio: hat-21-gpio-pins {
+		/* HAT pin 21, GPIO9 */
+		pinmux = <K3_PINMUX(0x010, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	hat_21_gpio_pu: hat-21-gpio-pu-pins {
+		pinmux = <K3_PINMUX(0x010, PIN_INPUT_PULLUP, MUX_MODE_7)>;
+	};
+
+	hat_21_gpio_pd: hat-21-gpio-pd-pins {
+		pinmux = <K3_PINMUX(0x010, PIN_INPUT_PULLDOWN, MUX_MODE_7)>;
+	};
+
+	hat_23_gpio: hat-23-gpio-pins {
+		/* HAT pin 23, GPIO11 */
+		pinmux = <K3_PINMUX(0x008, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	hat_23_gpio_pu: hat-23-gpio-pu-pins {
+		pinmux = <K3_PINMUX(0x008, PIN_INPUT_PULLUP, MUX_MODE_7)>;
+	};
+
+	hat_23_gpio_pd: hat-23-gpio-pd-pins {
+		pinmux = <K3_PINMUX(0x008, PIN_INPUT_PULLDOWN, MUX_MODE_7)>;
+	};
+
+	hat_24_gpio: hat-24-gpio-pins {
+		/* HAT pin 24, GPIO8 */
+		pinmux = <K3_PINMUX(0x000, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	hat_24_gpio_pu: hat-24-gpio-pu-pins {
+		pinmux = <K3_PINMUX(0x000, PIN_INPUT_PULLUP, MUX_MODE_7)>;
+	};
+
+	hat_24_gpio_pd: hat-24-gpio-pd-pins {
+		pinmux = <K3_PINMUX(0x000, PIN_INPUT_PULLDOWN, MUX_MODE_7)>;
+	};
+
+	hat_26_gpio: hat-26-gpio-pins {
+		pinmux = <K3_PINMUX(0x024, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	hat_26_gpio_pu: hat-26-gpio-pu-pins {
+		pinmux = <K3_PINMUX(0x024, PIN_INPUT_PULLUP, MUX_MODE_7)>;
+	};
+
+	hat_26_gpio_pd: hat-26-gpio-pd-pins {
+		pinmux = <K3_PINMUX(0x024, PIN_INPUT_PULLDOWN, MUX_MODE_7)>;
+	};
+
+	hat_27_gpio: hat-27-gpio-pins {
+		/* HAT pin 27, GPIO0, I2C0 data (PMIC bus; avoid) */
+		pinmux = <K3_PINMUX(0x050, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	hat_28_gpio: hat-28-gpio-pins {
+		/* HAT pin 28, GPIO1, I2C0 clock (PMIC bus; avoid) */
+		pinmux = <K3_PINMUX(0x04c, PIN_INPUT, MUX_MODE_7)>;
 	};
 };
