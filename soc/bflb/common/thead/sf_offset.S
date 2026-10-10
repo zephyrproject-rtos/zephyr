@@ -65,8 +65,8 @@ SECTION_FUNC(vectors, __bflb_reset)
 	.option norvc
 	/* Enable cache extension (and fences) */
 	csrr a2, THEAD_MXSTATUS
-	li a5,MXSTATUS_OR
-        or a5, a2, a5
+	li a5, MXSTATUS_OR
+	or a2, a2, a5
 	csrw THEAD_MXSTATUS, a2
 	fence
 	fence.i
