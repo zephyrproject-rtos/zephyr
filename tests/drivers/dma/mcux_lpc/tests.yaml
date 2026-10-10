@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Hsiu-Chi Tsai
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - dma
+  filter: dt_compat_enabled("nxp,lpc-dma")
+  integration_platforms:
+    - lpcxpresso55s69/lpc55s69/cpu0
+    - mimxrt595_evk/mimxrt595s/cm33
+tests:
+  drivers.dma.mcux_lpc.stop: {}
+  drivers.dma.mcux_lpc.stop.single_slot:
+    extra_configs:
+      - CONFIG_DMA_MCUX_LPC_NUMBER_OF_CHANNELS_ALLOCATED=1
