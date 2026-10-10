@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Generic OHCI USB host controller
+
+  Example of a memory mapped controller with a bus clock, a reset line and a
+  USB PHY:
+
+    usbh_ohci: usb@5800c000 {
+      compatible = "generic-ohci";
+      reg = <0x5800c000 0x1000>;
+      clocks = <&rcc STM32_CLOCK(AHB6, 24)>;
+      resets = <&rctl STM32_RESET(AHB6, 24)>;
+      interrupts = <GIC_SPI 75 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+      phys = <&usbphyc_port0>;
+      maximum-speed = "full-speed";
+    };
+
+compatible: "generic-ohci"
+
+include: [usb-controller.yaml, pcie-device.yaml, reset-device.yaml]
+
+properties:
+  clocks:
+    description: Bus clock of the controller.
+
+  resets:
+    description: Reset line of the controller.
+
+  phys:
+    type: phandle-array
+    description: USB PHY port the controller is connected to.

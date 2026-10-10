@@ -83,6 +83,20 @@ Default Zephyr Peripheral Mapping:
 - LED_3 : PA14
 - LED_4 : PA13
 
+USB host
+--------
+
+The OHCI controller of the USB host block is connected, through PHY port 0
+and the on-board USB2514B hub, to the four USB Type-A connectors (CN2, CN3,
+CN4, CN5). Only full-speed and low-speed devices are supported by the OHCI
+controller, the EHCI controller is not supported yet. The devices connected to
+the USB Type-A connectors are enumerated through the hub class of the USB host
+stack (``CONFIG_USBH_HUB_CLASS``).
+
+The 3.3 V USB supply (VDD3V3_USBHS, PMIC LDO4) is expected to be enabled by
+the boot firmware. The USBPHYC driver reports an error at boot if it is
+missing.
+
 System Clock
 ------------
 
