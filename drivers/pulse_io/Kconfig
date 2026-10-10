@@ -25,6 +25,7 @@ source "subsys/logging/Kconfig.template.log_config"
 # zephyr-keep-sorted-start
 source "drivers/pulse_io/Kconfig.esp32"
 source "drivers/pulse_io/Kconfig.loopback"
+source "drivers/pulse_io/Kconfig.stm32"
 # zephyr-keep-sorted-stop
 
 endif # PULSE_IO
