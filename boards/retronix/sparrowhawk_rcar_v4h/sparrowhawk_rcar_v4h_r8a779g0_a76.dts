@@ -7,6 +7,7 @@
 
 /dts-v1/;
 #include <mem.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 #include <arm64/renesas/r8a779g0.dtsi>
 #include "sparrowhawk_rcar_v4h_r8a779g0_a76-pinctrl.dtsi"
 
@@ -20,9 +21,24 @@
 		zephyr,shell-uart = &hscif0;
 	};
 
+	aliases {
+		sdhc0 = &mmc0;
+	};
+
 	ram: memory@40000000 {
 		device_type = "memory";
 		reg = <0x0 0x40000000 0x0 DT_SIZE_G(2)>;
+	};
+
+	vcc_sdhi: regulator-vcc-sdhi {
+		compatible = "regulator-gpio";
+		regulator-name = "SD0_VCCQ";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <3300000>;
+		gpios = <&gpio8 13 GPIO_ACTIVE_HIGH>;
+		states = <1800000 0>, <3300000 1>;
+		regulator-boot-on;
+		status = "okay";
 	};
 };
 
@@ -31,4 +47,35 @@
 	pinctrl-0 = <&hscif0_data_tx_default &hscif0_data_rx_default>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&gpio3 {
+	pinctrl-0 = <&sd_cd>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&gpio8 {
+	pinctrl-0 = <&sd_vqmmc>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&mmc0 {
+	pinctrl-0 = <&mmc_clk &mmc_cmd &mmc_data0 &mmc_data1 &mmc_data2 &mmc_data3>;
+	pinctrl-1 = <&mmc_uhs_clk &mmc_uhs_cmd &mmc_uhs_data0 &mmc_uhs_data1
+		     &mmc_uhs_data2 &mmc_uhs_data3>;
+	pinctrl-names = "default", "uhs";
+
+	bus-width = <4>;
+	mmc-sdr104-support;
+	cd-gpios = <&gpio3 11 GPIO_ACTIVE_LOW>;
+	vqmmc-supply = <&vcc_sdhi>;
+	status = "okay";
+
+	disk {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
 };
