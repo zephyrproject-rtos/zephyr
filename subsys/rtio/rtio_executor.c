@@ -10,6 +10,12 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(rtio_executor, CONFIG_RTIO_LOG_LEVEL);
 
+/* Deprecated pre-submit cancellation flag (RTIO_SQE_CANCELED), spelled out so
+ * honoring it does not itself emit the deprecation warning. Remove once the
+ * flag is gone.
+ */
+#define RTIO_SQE_CANCELED_LEGACY BIT(3)
+
 /**
  * @brief Callback which completes an RTIO_AWAIT_OP handled by the executor
  *
@@ -56,7 +62,7 @@ static void rtio_executor_op(struct rtio_iodev_sqe *iodev_sqe, int last_result)
  */
 static inline void rtio_iodev_submit(struct rtio_iodev_sqe *iodev_sqe, int last_result)
 {
-	if (FIELD_GET(RTIO_SQE_CANCELED, iodev_sqe->sqe.flags)) {
+	if (rtio_iodev_sqe_is_canceled(iodev_sqe)) {
 		rtio_iodev_sqe_err(iodev_sqe, -ECANCELED);
 		return;
 	}
@@ -79,15 +85,21 @@ static inline void rtio_iodev_submit(struct rtio_iodev_sqe *iodev_sqe, int last_
  */
 void rtio_executor_submit(struct rtio *r)
 {
-	const uint16_t cancel_no_response = (RTIO_SQE_CANCELED | RTIO_SQE_NO_RESPONSE);
 	struct mpsc_node *node = mpsc_pop(&r->sq);
 
 	while (node != NULL) {
 		struct rtio_iodev_sqe *iodev_sqe = CONTAINER_OF(node, struct rtio_iodev_sqe, q);
 
+		/* Honor the deprecated pre-submit cancellation flag by
+		 * transferring it into the status word.
+		 */
+		if ((iodev_sqe->sqe.flags & RTIO_SQE_CANCELED_LEGACY) != 0) {
+			rtio_iodev_sqe_set_canceled(iodev_sqe);
+		}
+
 		/* If this submission was cancelled before submit, then generate no response */
-		if (iodev_sqe->sqe.flags  & RTIO_SQE_CANCELED) {
-			iodev_sqe->sqe.flags |= cancel_no_response;
+		if (rtio_iodev_sqe_is_canceled(iodev_sqe)) {
+			iodev_sqe->sqe.flags |= RTIO_SQE_NO_RESPONSE;
 		}
 		iodev_sqe->r = r;
 
@@ -112,11 +124,16 @@ void rtio_executor_submit(struct rtio *r)
 
 			next = CONTAINER_OF(node, struct rtio_iodev_sqe, q);
 
+			if ((next->sqe.flags & RTIO_SQE_CANCELED_LEGACY) != 0) {
+				rtio_iodev_sqe_set_canceled(next);
+			}
+
 			/* If the current submission was cancelled before submit,
 			 * then cancel the next one and generate no response
 			 */
-			if (curr->sqe.flags  & RTIO_SQE_CANCELED) {
-				next->sqe.flags |= cancel_no_response;
+			if (rtio_iodev_sqe_is_canceled(curr)) {
+				rtio_iodev_sqe_set_canceled(next);
+				next->sqe.flags |= RTIO_SQE_NO_RESPONSE;
 			}
 			curr->next = next;
 			curr = next;
@@ -147,7 +164,7 @@ static inline void rtio_executor_handle_multishot(struct rtio_iodev_sqe *iodev_s
 						  int result, bool is_ok)
 {
 	struct rtio *r = iodev_sqe->r;
-	const bool is_canceled = FIELD_GET(RTIO_SQE_CANCELED, iodev_sqe->sqe.flags) == 1;
+	const bool is_canceled = rtio_iodev_sqe_is_canceled(iodev_sqe);
 	const bool uses_mempool = FIELD_GET(RTIO_SQE_MEMPOOL_BUFFER, iodev_sqe->sqe.flags) == 1;
 	const bool requires_response = FIELD_GET(RTIO_SQE_NO_RESPONSE, iodev_sqe->sqe.flags) == 0;
 	uint32_t cqe_flags = rtio_cqe_compute_flags(iodev_sqe);
@@ -159,16 +176,16 @@ static inline void rtio_executor_handle_multishot(struct rtio_iodev_sqe *iodev_s
 	 * re-submitting, rebooting or anything else.
 	 */
 	if (is_canceled || !is_ok) {
-		LOG_DBG("Releasing memory @%p size=%u", (void *)iodev_sqe->sqe.rx.buf,
-			iodev_sqe->sqe.rx.buf_len);
-		rtio_release_buffer(r, iodev_sqe->sqe.rx.buf, iodev_sqe->sqe.rx.buf_len);
+		LOG_DBG("Releasing memory @%p size=%u", (void *)iodev_sqe->rt.rx_bind.buf,
+			iodev_sqe->rt.rx_bind.buf_len);
+		rtio_release_buffer(r, iodev_sqe->rt.rx_bind.buf, iodev_sqe->rt.rx_bind.buf_len);
 		rtio_sqe_pool_free(r->sqe_pool, iodev_sqe);
 	} else {
 		/* Request was not canceled, put the SQE back in the queue */
 		if (iodev_sqe->sqe.op == RTIO_OP_RX && uses_mempool) {
 			/* Reset the buffer info so the next request can get a new one */
-			iodev_sqe->sqe.rx.buf = NULL;
-			iodev_sqe->sqe.rx.buf_len = 0;
+			iodev_sqe->rt.rx_bind.buf = NULL;
+			iodev_sqe->rt.rx_bind.buf_len = 0;
 		}
 
 		mpsc_push(&r->sq, &iodev_sqe->q);
@@ -190,7 +207,7 @@ static inline void rtio_executor_handle_multishot(struct rtio_iodev_sqe *iodev_s
 static inline void rtio_executor_handle_oneshot(struct rtio_iodev_sqe *iodev_sqe,
 						int last_result, bool is_ok)
 {
-	const bool is_canceled = FIELD_GET(RTIO_SQE_CANCELED, iodev_sqe->sqe.flags) == 1;
+	const bool is_canceled = rtio_iodev_sqe_is_canceled(iodev_sqe);
 	struct rtio_iodev_sqe *curr = iodev_sqe;
 	struct rtio *r = iodev_sqe->r;
 	uint32_t sqe_flags;
