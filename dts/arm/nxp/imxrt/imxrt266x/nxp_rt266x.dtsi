@@ -805,8 +805,11 @@
 		#size-cells = <0>;
 		reg = <0x42910000 0x4000>;
 		interrupts = <176 0>;
+		clock-names = "gate", "source";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_LPI2C1,
-					   IMX_CCM_ROOT_MAIN_LPI2C1_FCLK)>;
+					   IMX_CCM_ROOT_MAIN_LPI2C1_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPI2C1_FCLK,
+						IMX_CCM_MUX_LPI2C1_PERI3, 5, 1)>;
 		status = "disabled";
 	};
 
@@ -839,9 +842,11 @@
 		compatible = "nxp,lpspi";
 		reg = <0x42160000 0x4000>;
 		interrupts = <179 0>;
-		clock-names = "gate";
+		clock-names = "gate", "source";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_LPSPI0,
-					   IMX_CCM_ROOT_MAIN_LPSPI0_FCLK)>;
+					   IMX_CCM_ROOT_MAIN_LPSPI0_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPSPI0_FCLK,
+						IMX_CCM_MUX_LPSPI0_FRO192M, 2, 1)>;
 		tx-fifo-size = <16>;
 		rx-fifo-size = <16>;
 		#address-cells = <1>;

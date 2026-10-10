@@ -420,6 +420,15 @@ int spi_nxp_init_common(const struct device *dev)
 		return -ENODEV;
 	}
 
+	if (config->clock_cfg != NULL) {
+		err = clock_control_configure(config->clock_dev, config->clock_cfg,
+					      NULL);
+		if (err != 0) {
+			LOG_ERR("Failed to configure clock source: %d", err);
+			return err;
+		}
+	}
+
 	err = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
 	if (err != 0) {
 		/* Check if error is due to lack of support */

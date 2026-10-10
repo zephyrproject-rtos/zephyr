@@ -7,8 +7,7 @@
 /dts-v1/;
 
 /*
- * Non-secure address view: it is what MIMXRT266x_COMMON.h yields for a build
- * without -mcmse, so devicetree and the SDK headers agree. Switch to
+ * Non-secure address view (MIMXRT266x without -mcmse). Switch to
  * nxp_rt2663.dtsi once this port builds as secure firmware.
  */
 #include <nxp/imxrt/imxrt266x/nxp_rt2663_cm85_ns.dtsi>
@@ -66,6 +65,10 @@
 	status = "okay";
 };
 
+&gpio5 {
+	status = "okay";
+};
+
 &cpu0 {
 	/*
 	 * The CPU rate, not the system timer's -- SysTick counts the external
@@ -104,4 +107,22 @@
 
 &psram {
 	status = "okay";
+};
+
+&lpi2c1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c1>;
+	pinctrl-names = "default";
+
+	/* U28, NXP P3T1755DP temperature sensor at 0x48 (A0/A1/A2 strapped low). */
+	p3t1755: p3t1755@48 {
+		compatible = "nxp,p3t1755";
+		reg = <0x48>;
+	};
+};
+
+&lpspi0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpspi0>;
+	pinctrl-names = "default";
 };
