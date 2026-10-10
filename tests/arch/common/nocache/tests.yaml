@@ -1,0 +1,12 @@
+tests:
+  arch.common.nocache:
+    filter: CONFIG_NOCACHE_MEMORY
+    arch_allow:
+      - arm
+    tags:
+      - linker
+      - nocache
+    integration_platforms:
+      - qemu_cortex_r5
+      - mps3/corstone300/an547
+      - mimxrt1170_evk@B/mimxrt1176/cm7
