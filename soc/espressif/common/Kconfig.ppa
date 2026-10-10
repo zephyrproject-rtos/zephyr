@@ -3,6 +3,7 @@
 
 config ESP32_PPA
 	bool "ESP32 pixel processing accelerator"
+	default y
 	depends on DT_HAS_ESPRESSIF_ESP32_PPA_ENABLED
 	depends on SOC_SERIES_ESP32P4
 	help
