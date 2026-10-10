@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Microchip Technology Inc.
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -130,6 +130,72 @@
 				compatible = "microchip,pic32ck-sg-gc-mclkperiph";
 				#clock-cells = <1>;
 			};
+		};
+
+		sercom0: sercom@44810000 {
+			compatible = "microchip,sercom-g1";
+			reg = <0x44810000 0x38>;
+			interrupts = <44 0>, <45 0>, <46 0>, <47 0>, <48 0>, <49 0>;
+			interrupt-names = "error", "dre", "txc", "rxc", "rxs", "ctsic";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_SERCOM0_APB>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM0_CORE>;
+			clock-names = "mclk", "gclk";
+			status = "disabled";
+		};
+
+		sercom1: sercom@44812000 {
+			compatible = "microchip,sercom-g1";
+			reg = <0x44812000 0x38>;
+			interrupts = <50 0>, <51 0>, <52 0>, <53 0>, <54 0>, <55 0>;
+			interrupt-names = "error", "dre", "txc", "rxc", "rxs", "ctsic";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_SERCOM1_APB>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM1_CORE>;
+			clock-names = "mclk", "gclk";
+			status = "disabled";
+		};
+
+		sercom2: sercom@44814000 {
+			compatible = "microchip,sercom-g1";
+			reg = <0x44814000 0x38>;
+			interrupts = <56 0>, <57 0>, <58 0>, <59 0>, <60 0>, <61 0>;
+			interrupt-names = "error", "dre", "txc", "rxc", "rxs", "ctsic";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_SERCOM2_APB>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM2_CORE>;
+			clock-names = "mclk", "gclk";
+			status = "disabled";
+		};
+
+		sercom3: sercom@44816000 {
+			compatible = "microchip,sercom-g1";
+			reg = <0x44816000 0x38>;
+			interrupts = <62 0>, <63 0>, <64 0>, <65 0>, <66 0>, <67 0>;
+			interrupt-names = "error", "dre", "txc", "rxc", "rxs", "ctsic";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_SERCOM3_APB>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM3_CORE>;
+			clock-names = "mclk", "gclk";
+			status = "disabled";
+		};
+
+		sercom4: sercom@45000000 {
+			compatible = "microchip,sercom-g1";
+			reg = <0x45000000 0x38>;
+			interrupts = <96 0>, <97 0>, <98 0>, <99 0>, <100 0>, <101 0>;
+			interrupt-names = "error", "dre", "txc", "rxc", "rxs", "ctsic";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_SERCOM4_APB>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM4_CORE>;
+			clock-names = "mclk", "gclk";
+			status = "disabled";
+		};
+
+		sercom5: sercom@45002000 {
+			compatible = "microchip,sercom-g1";
+			reg = <0x45002000 0x38>;
+			interrupts = <102 0>, <103 0>, <104 0>, <105 0>, <106 0>, <107 0>;
+			interrupt-names = "error", "dre", "txc", "rxc", "rxs", "ctsic";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_SERCOM5_APB>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM5_CORE>;
+			clock-names = "mclk", "gclk";
+			status = "disabled";
 		};
 	};
 };
