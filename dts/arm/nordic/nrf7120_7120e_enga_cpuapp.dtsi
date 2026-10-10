@@ -45,6 +45,7 @@ nvic: &cpuapp_nvic {};
 		status = "disabled";
 		compatible = "nordic,nrf-vbat";
 		io-channels = <&adc 0>;
+		divider-ratio = <11 2>;
 		invert-voltage;
 	};
 };
