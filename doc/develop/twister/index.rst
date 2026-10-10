@@ -1640,6 +1640,47 @@ Would result in calling ``./custom_flash_script.py
 --build-dir <build directory> --board-id <board identification>
 --flag "complex, argument"``.
 
+Runners that print the test output
+----------------------------------
+
+A flash command can run the test itself: flash the device, print its output and
+exit with the test status, as ``probe-rs run`` does with RTT and semihosting. Set
+``runner_console: true`` in the hardware map to use one. Twister then reads the
+command's output instead of a serial port and uses its exit code for the result,
+so the entry needs no ``serial`` or ``serial_pty``.
+
+.. code-block:: yaml
+
+   - connected: true
+     id: "1366:1015:000683930094"
+     platform: nrf52840dk/nrf52840
+     product: nRF52840DK
+     runner: probe-rs
+     runner_console: true
+     flash_timeout: 180
+
+For ``probe-rs run``, use a flash command such as:
+
+.. code-block:: bash
+
+   #!/bin/sh
+   # Called as: run.sh --build-dir <dir> --board-id <probe>
+   exec probe-rs run --chip nRF52840_xxAA --probe "$4" "$2/zephyr/zephyr.elf"
+
+The test image must send its output over RTT without dropping any, and end the run
+itself, for example with :kconfig:option:`CONFIG_ZTEST_SEMIHOST_EXIT`:
+
+.. code-block:: bash
+
+   west twister -p nrf52840dk/nrf52840 --device-testing \
+        --hardware-map map.yaml --flash-command ./run.sh -T tests/... \
+        --extra-args CONFIG_USE_SEGGER_RTT=y \
+        --extra-args CONFIG_RTT_CONSOLE=y \
+        --extra-args CONFIG_UART_CONSOLE=n \
+        --extra-args CONFIG_SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL=y \
+        --extra-args CONFIG_SEMIHOST=y \
+        --extra-args CONFIG_ZTEST_SEMIHOST_EXIT=y
+
 .. _twister_fixtures:
 
 Fixtures

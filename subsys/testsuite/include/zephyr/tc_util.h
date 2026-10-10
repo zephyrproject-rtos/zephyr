@@ -229,6 +229,14 @@ static inline void print_nothing(const char *fmt, ...)
 	LOG_PANIC(); \
 	posix_exit(result); \
 } while (0)
+#elif defined(CONFIG_ZTEST_SEMIHOST_EXIT)
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/arch/common/semihost.h>
+#define TC_END_POST(result) do { \
+	LOG_PANIC(); \
+	(void)semihost_exit(SEMIHOST_EXIT_APPLICATION_EXIT, \
+			    ((result) == TC_PASS) ? 0 : 1); \
+} while (0)
 #else
 #define TC_END_POST(result)
 #endif /* CONFIG_ARCH_POSIX */

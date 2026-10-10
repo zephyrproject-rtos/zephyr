@@ -23,6 +23,8 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_COMMON_SEMIHOST_H_
 #define ZEPHYR_INCLUDE_ARCH_COMMON_SEMIHOST_H_
 
+#include <stdbool.h>
+
 /** @brief Semihosting instructions */
 enum semihost_instr {
 	/*
@@ -79,7 +81,9 @@ enum semihost_instr {
 	SEMIHOST_GET_CMDLINE    = 0x15,
 	SEMIHOST_HEAPINFO       = 0x16,
 	SEMIHOST_ISERROR        = 0x08,
-	SEMIHOST_SYSTEM         = 0x12
+	SEMIHOST_SYSTEM         = 0x12,
+	/** Report an exit reason and status to the host. */
+	SEMIHOST_EXIT_EXTENDED  = 0x20
 };
 
 /**
@@ -101,6 +105,18 @@ enum semihost_open_mode {
 	SEMIHOST_OPEN_AB        = 9,
 	SEMIHOST_OPEN_A_PLUS    = 10,
 	SEMIHOST_OPEN_AB_PLUS   = 11,
+};
+
+/**
+ * @brief Semihosting exit reasons
+ *
+ * Subset of the ADP_Stopped_* reason codes from the semihosting specification.
+ */
+enum semihost_exit_reason {
+	/** An unknown runtime error occurred. */
+	SEMIHOST_EXIT_RUNTIME_ERROR_UNKNOWN = 0x20023,
+	/** The application exited, the status is the exit code. */
+	SEMIHOST_EXIT_APPLICATION_EXIT      = 0x20026,
 };
 
 /**
@@ -193,6 +209,32 @@ long semihost_read(long fd, void *buf, long len);
  * @retval -errno negative error code on failure.
  */
 long semihost_write(long fd, const void *buf, long len);
+
+/**
+ * @brief Check whether a debugger that can service semihosting is attached
+ *
+ * Architectures that can detect a debugger override this. The default reports
+ * one only on emulated targets.
+ *
+ * @retval true a debugger is (or may be) attached.
+ * @retval false no debugger is attached.
+ */
+bool semihost_debugger_attached(void);
+
+/**
+ * @brief Report an exit reason and status to the host
+ *
+ * Uses SYS_EXIT_EXTENDED, which carries a status on all architectures. Skipped
+ * unless @ref semihost_debugger_attached reports a debugger.
+ *
+ * @param reason value from @ref semihost_exit_reason.
+ * @param status exit status, 0 for success with
+ *               @ref SEMIHOST_EXIT_APPLICATION_EXIT.
+ *
+ * @retval -ENODEV no debugger is attached.
+ * @retval -EIO the host did not stop execution.
+ */
+int semihost_exit(enum semihost_exit_reason reason, long status);
 
 /**
  * @}
