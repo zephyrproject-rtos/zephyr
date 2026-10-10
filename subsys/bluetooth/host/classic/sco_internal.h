@@ -7,6 +7,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/bluetooth/classic/sco.h>
+
 /** @brief Life-span states of SCO channel. Used only by internal APIs
  *  dealing with setting channel to proper state depending on operational
  *  context.
@@ -51,6 +53,11 @@ struct bt_sco_chan {
 	struct bt_conn               *sco;
 	/** Channel operations reference */
 	const struct bt_sco_chan_ops *ops;
+
+#if defined(CONFIG_BT_VOICE_OVER_HCI)
+	/** SCO stream */
+	struct bt_sco_stream         *stream;
+#endif /* CONFIG_BT_VOICE_OVER_HCI */
 
 	/** Voice setting for the connection */
 	uint8_t                      voice_setting;
@@ -296,3 +303,28 @@ int bt_sco_hci_cb_unregister(struct bt_sco_hci_cb *cb);
  */
 #define BT_SCO_HCI_CB_DEFINE(_name) \
 	static const STRUCT_SECTION_ITERABLE(bt_sco_hci_cb, _CONCAT(bt_sco_hci_cb_, _name))
+
+/* Allocates RX buffer */
+struct net_buf *bt_sco_get_rx(k_timeout_t timeout);
+
+/* Process incoming SCO data from HCI controller */
+void hci_sco(struct net_buf *buf);
+
+/* Receive and process SCO data on a connection */
+void bt_sco_recv(struct bt_conn *sco, struct net_buf *buf, uint8_t flags);
+
+/* Pull HCI fragments from buffers intended for `conn` */
+struct net_buf *sco_data_pull(struct bt_conn *conn, size_t amount, size_t *length);
+
+/* Get callback and user data from the buffer */
+void sco_get_and_clear_cb(struct bt_conn *conn, struct net_buf *buf, bt_conn_tx_cb_t *cb,
+			  void **ud);
+
+/* Check if there is any data pending for sending. */
+bool sco_has_data(struct bt_conn *conn);
+
+/** A callback used to notify about freed buffer in the iso rx pool. */
+typedef void (*bt_sco_buf_rx_freed_cb_t)(void);
+
+/** Set rx buffer freed callback */
+void bt_sco_buf_rx_freed_cb_set(bt_sco_buf_rx_freed_cb_t cb);

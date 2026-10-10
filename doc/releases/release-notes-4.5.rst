@@ -615,6 +615,44 @@ New APIs and options
     * :kconfig:option:`CONFIG_BT_SMP_DERIVE_LTK`
     * :kconfig:option:`CONFIG_BT_SMP_DERIVE_LK`
     * :c:func:`bt_sdp_unregister_service`
+    * :kconfig:option:`CONFIG_BT_VOICE_OVER_HCI`
+    * :kconfig:option:`CONFIG_BT_HCI_SCO_FLOW_CONTROL`
+    * :kconfig:option:`CONFIG_BT_SCO_RX_BUF_COUNT`
+    * :kconfig:option:`CONFIG_BT_SCO_RX_BUF_SIZE`
+    * :c:macro:`BT_BUF_SCO_SIZE`
+    * :c:macro:`BT_BUF_SCO_RX_SIZE`
+    * :c:macro:`BT_BUF_SCO_RX_COUNT`
+    * :c:macro:`BT_SCO_CHAN_SEND_RESERVE`
+    * :c:macro:`BT_SCO_SDU_SIZE`
+    * :c:struct:`bt_sco_stream_ops`
+    * :c:struct:`bt_sco_stream`
+    * :c:func:`bt_sco_stream_cb_register`
+    * :c:func:`bt_sco_stream_cb_unregister`
+    * :c:func:`bt_sco_stream_connect`
+    * :c:func:`bt_sco_stream_disconnect`
+    * :c:func:`bt_sco_stream_send`
+    * :c:member:`bt_conn_sco_info.mtu`
+    * :c:member:`bt_conn_sco_info.interval`
+    * :c:enumerator:`BT_BUF_SCO_OUT`
+    * :c:enumerator:`BT_BUF_SCO_IN`
+    * :c:macro:`BT_HCI_SCO_CORRECTLY_RECEIVED`
+    * :c:macro:`BT_HCI_SCO_POSSIBLY_INVALID`
+    * :c:macro:`BT_HCI_SCO_NO_DATA_RECEIVED`
+    * :c:macro:`BT_HCI_SCO_DATA_PARTIALLY_LOST`
+    * :c:macro:`bt_sco_handle`
+    * :c:macro:`bt_sco_flag`
+    * :c:macro:`bt_sco_handle_pack`
+    * :c:macro:`BT_HCI_READ_SYNC_FLOW_ENABLE_SUPPORTED`
+    * :c:macro:`BT_HCI_SYNC_FLOW_DISABLE`
+    * :c:macro:`BT_HCI_SYNC_FLOW_ENABLE`
+    * :c:macro:`BT_HCI_OP_READ_SYNC_FLOW_ENABLE`
+    * :c:struct:`bt_hci_rp_read_sync_flow_enable`
+    * :c:macro:`BT_HCI_WRITE_SYNC_FLOW_ENABLE_SUPPORTED`
+    * :c:macro:`BT_HCI_OP_WRITE_SYNC_FLOW_ENABLE`
+    * :c:struct:`bt_hci_cp_write_sync_flow_enable`
+    * :c:macro:`BT_HCI_CTL_TO_HOST_FLOW_ACL_ON_SCO_OFF`
+    * :c:macro:`BT_HCI_CTL_TO_HOST_FLOW_ACL_OFF_SCO_ON`
+    * :c:macro:`BT_HCI_CTL_TO_HOST_FLOW_ACL_ON_SCO_ON`
 
   * HCI Drivers
 

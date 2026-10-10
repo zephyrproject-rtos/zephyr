@@ -27,6 +27,7 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/hci_vs.h>
 #include <zephyr/bluetooth/testing.h>
+#include <zephyr/bluetooth/classic/sco.h>
 #include <zephyr/debug/stack.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
@@ -67,6 +68,11 @@
 #include "scan.h"
 #include "settings.h"
 #include "smp.h"
+
+#if defined(CONFIG_BT_CLASSIC)
+#include "classic/br.h"
+#include "classic/sco_internal.h"
+#endif
 
 #if defined(CONFIG_BT_DF)
 #include "direction_internal.h"
@@ -327,15 +333,15 @@ static bool drv_quirk_no_flow_control(void)
 	return ((BT_HCI_QUIRKS & BT_HCI_QUIRK_NO_FLOW_CONTROL) != 0);
 }
 
-void bt_hci_host_num_completed_packets(struct net_buf *buf)
+void bt_hci_host_num_completed_packets(struct net_buf *buf, enum bt_buf_type type)
 {
 	struct bt_hci_cp_host_num_completed_packets *cp;
-	uint16_t handle = acl(buf)->handle;
 	struct bt_hci_handle_count *hc;
-	struct bt_conn *conn;
+	struct bt_conn *conn = NULL;
+	uint16_t handle = acl(buf)->handle;
 	uint8_t index = acl(buf)->index;
 
-	if (IS_ENABLED(CONFIG_BT_TESTING)) {
+	if (IS_ENABLED(CONFIG_BT_TESTING) && type == BT_BUF_ACL_IN) {
 		bt_testing_trace_event_acl_pool_destroy(buf);
 	}
 
@@ -346,9 +352,20 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 		return;
 	}
 
-	conn = bt_conn_lookup_index(index);
-	if (!conn) {
-		LOG_WRN("Unable to look up conn with index 0x%02x", index);
+	if (type == BT_BUF_ACL_IN) {
+		conn = bt_conn_lookup_index(index);
+	} else if (IS_ENABLED(CONFIG_BT_CLASSIC) && type == BT_BUF_SCO_IN) {
+		conn = bt_conn_lookup_index_sco(index);
+	}
+
+	if (conn == NULL) {
+		LOG_WRN("Unable to look up conn with index 0x%02x type 0x%02x", index, type);
+		return;
+	}
+
+	if (conn->handle != handle) {
+		LOG_WRN("Conn handle mismatch 0x%04x != 0x%04x", conn->handle, handle);
+		bt_conn_unref(conn);
 		return;
 	}
 
@@ -753,6 +770,39 @@ int bt_get_df_cte_type(uint8_t hci_cte_type)
 }
 
 #if defined(CONFIG_BT_CONN_TX)
+void bt_conn_tx_complete(struct bt_conn *conn, uint16_t count)
+{
+	while (count--) {
+		sys_snode_t *node;
+		unsigned int key;
+
+		/* move the next TX context from the `pending` list to the `complete` list. */
+		node = sys_slist_get(&conn->tx_pending);
+
+		if (!node) {
+			LOG_ERR("packets count mismatch");
+			__ASSERT_NO_MSG(0);
+			break;
+		}
+
+		k_sem_give(bt_conn_get_pkts(conn));
+
+		/* The `complete` list is consumed from another context,
+		 * which uses the same lock.
+		 */
+		key = irq_lock();
+		sys_slist_append(&conn->tx_complete, node);
+		irq_unlock(key);
+
+		/* align the `pending` value */
+		__ASSERT_NO_MSG(atomic_get(&conn->in_ll));
+		atomic_dec(&conn->in_ll);
+
+		/* TX context free + callback happens in there */
+		bt_conn_tx_notify(conn, false);
+	}
+}
+
 static void hci_num_completed_packets(struct net_buf *buf)
 {
 	struct bt_hci_evt_num_completed_packets *evt = (void *)buf->data;
@@ -783,37 +833,7 @@ static void hci_num_completed_packets(struct net_buf *buf)
 			continue;
 		}
 
-		while (count--) {
-			sys_snode_t *node;
-			unsigned int key;
-
-			/* move the next TX context from the `pending` list to
-			 * the `complete` list.
-			 */
-			node = sys_slist_get(&conn->tx_pending);
-
-			if (!node) {
-				LOG_ERR("packets count mismatch");
-				__ASSERT_NO_MSG(0);
-				break;
-			}
-
-			k_sem_give(bt_conn_get_pkts(conn));
-
-			/* The `complete` list is consumed from another context,
-			 * which uses the same lock.
-			 */
-			key = irq_lock();
-			sys_slist_append(&conn->tx_complete, node);
-			irq_unlock(key);
-
-			/* align the `pending` value */
-			__ASSERT_NO_MSG(atomic_get(&conn->in_ll));
-			atomic_dec(&conn->in_ll);
-
-			/* TX context free + callback happens in there */
-			bt_conn_tx_notify(conn, false);
-		}
+		bt_conn_tx_complete(conn, count);
 
 		bt_conn_unref(conn);
 	}
@@ -2298,6 +2318,19 @@ static void le_conn_update_complete(struct net_buf *buf)
 }
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
+static int set_controller_to_host_flow_control(uint8_t flow_control)
+{
+	struct net_buf *buf;
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	net_buf_add_u8(buf, flow_control);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_SET_CTL_TO_HOST_FLOW, buf, NULL);
+}
+
 static int set_flow_control(void)
 {
 	struct bt_hci_cp_host_buffer_size *hbs;
@@ -2324,19 +2357,28 @@ static int set_flow_control(void)
 	(void)memset(hbs, 0, sizeof(*hbs));
 	hbs->acl_mtu = sys_cpu_to_le16(CONFIG_BT_BUF_ACL_RX_SIZE);
 	hbs->acl_pkts = sys_cpu_to_le16(BT_BUF_HCI_ACL_RX_COUNT);
+#if defined(CONFIG_BT_VOICE_OVER_HCI)
+	hbs->sco_mtu = CONFIG_BT_SCO_RX_BUF_SIZE;
+	hbs->sco_pkts = sys_cpu_to_le16(CONFIG_BT_SCO_RX_BUF_COUNT);
+#endif /* CONFIG_BT_VOICE_OVER_HCI */
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_HOST_BUFFER_SIZE, buf, NULL);
 	if (err) {
 		return err;
 	}
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
-	if (!buf) {
-		return -ENOBUFS;
+#if defined(CONFIG_BT_HCI_SCO_FLOW_CONTROL)
+	err = set_controller_to_host_flow_control(BT_HCI_CTL_TO_HOST_FLOW_ACL_ON_SCO_ON);
+	if (err == 0) {
+		bt_dev.br.sco_c2h_fc_enabled = true;
+		return 0;
 	}
 
-	net_buf_add_u8(buf, BT_HCI_CTL_TO_HOST_FLOW_ENABLE);
-	return bt_hci_cmd_send_sync(BT_HCI_OP_SET_CTL_TO_HOST_FLOW, buf, NULL);
+	bt_dev.br.sco_c2h_fc_enabled = false;
+	LOG_WRN("Controller to host flow HCI sync data packets control unsupported");
+#endif /* CONFIG_BT_HCI_SCO_FLOW_CONTROL */
+
+	return set_controller_to_host_flow_control(BT_HCI_CTL_TO_HOST_FLOW_ENABLE);
 }
 #endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
 
@@ -4785,6 +4827,11 @@ static int bt_recv_unsafe(struct net_buf *buf)
 		rx_queue_put(buf);
 		return 0;
 #endif /* CONFIG_BT_ISO */
+#if defined(CONFIG_BT_VOICE_OVER_HCI)
+	case BT_HCI_H4_SCO:
+		rx_queue_put(buf);
+		return 0;
+#endif /* CONFIG_BT_VOICE_OVER_HCI */
 	default:
 		LOG_ERR("Invalid buf type %u", type);
 		return -EINVAL;
@@ -4921,6 +4968,11 @@ static void rx_work_handler(struct k_work *work)
 		hci_iso(buf);
 		break;
 #endif /* CONFIG_BT_ISO */
+#if defined(CONFIG_BT_VOICE_OVER_HCI)
+	case BT_HCI_H4_SCO:
+		hci_sco(buf);
+		break;
+#endif /* CONFIG_BT_VOICE_OVER_HCI */
 	case BT_HCI_H4_EVT:
 		hci_event(buf);
 		break;

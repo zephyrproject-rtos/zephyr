@@ -11,6 +11,7 @@
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci_types.h>
@@ -360,8 +361,21 @@ struct bt_dev_le {
 struct bt_dev_br {
 	/* Max controller's acceptable ACL packet length */
 	uint16_t         mtu;
-	struct k_sem  pkts;
+	struct k_sem     pkts;
+
+	/* Max controller's acceptable SCO packet length */
+	uint8_t          sco_mtu;
+	struct k_sem     sco_pkts;
+
 	uint16_t         esco_pkt_type;
+
+	/* The flag if the SCO flow control from host to controller is enabled */
+	bool             sco_h2c_fc_enabled;
+
+#if defined(CONFIG_BT_HCI_SCO_FLOW_CONTROL)
+	/* The flag if the SCO flow control from controller to host is enabled */
+	bool             sco_c2h_fc_enabled;
+#endif /* CONFIG_BT_HCI_SCO_FLOW_CONTROL */
 };
 
 /* The theoretical max for these is 8 and 64, but there's no point
@@ -579,7 +593,7 @@ int bt_setup_public_id_addr(void);
 
 void bt_finalize_init(int err);
 
-void bt_hci_host_num_completed_packets(struct net_buf *buf);
+void bt_hci_host_num_completed_packets(struct net_buf *buf, enum bt_buf_type type);
 
 /* HCI event handlers */
 void bt_hci_pin_code_req(struct net_buf *buf);
