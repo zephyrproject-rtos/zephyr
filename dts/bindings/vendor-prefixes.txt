@@ -149,6 +149,7 @@ chefree	Chefree Technology Corp.
 chipidea	Chipidea, Inc
 chipone	ChipOne
 chipsemi	Chipsemi Corp.
+chipsourcetek	ShenZhen ChipSourceTek Technology Co., Ltd.
 chipspark	ChipSPARK
 chipwealth	Chip Wealth Technology Ltd.
 chrontel	Chrontel, Inc.
