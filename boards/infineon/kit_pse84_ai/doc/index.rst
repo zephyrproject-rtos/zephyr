@@ -377,6 +377,30 @@ file) matching the public key provisioned into the device, and ``<value>`` is th
 counter assigned during provisioning. Without these additional parameters, images built for a
 provisioned device will be rejected by the ROM extended boot.
 
+
+MCUboot
+*******
+
+The board supports the MCUboot bootloader, which is designed to chainload application images from
+external flash. The primary image is verified and launched by MCUboot from the slot0 partition.
+
+Building with MCUboot
+=====================
+
+To build an application with MCUboot via Zephyr's sysbuild, you must provide the slot configuration
+and the custom devicetree overlays to configure the flash partitions correctly:
+
+.. code-block:: console
+
+   west build -b kit_pse84_ai/pse846gps2dbzc4a/m33/ns samples/hello_world --sysbuild -- \
+     -DEXTRA_CONF_FILE="${ZEPHYR_BASE}/boards/infineon/kit_pse84_ai/kit_pse84_ai_slot.conf" \
+     -DSB_CONFIG_MCUBOOT_MODE_SWAP_USING_MOVE=y \
+     -DSB_CONFIG_BOOTLOADER_MCUBOOT=y \
+     -Dmcuboot_BOARD=kit_pse84_ai/pse846gps2dbzc4a/m33
+
+This command builds the MCUboot bootloader for the secure CM33 core and your application (along
+with TF-M) for the non-secure CM33 core.
+
 TF-M Multicore Support
 **********************
 
