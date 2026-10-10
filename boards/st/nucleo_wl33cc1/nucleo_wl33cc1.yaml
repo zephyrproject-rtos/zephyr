@@ -16,4 +16,5 @@ supported:
   - rtc
   - serial
   - spi
+  - watchdog
 vendor: st
