@@ -4,6 +4,9 @@ family:
       - name: agilex
         socs:
           - name: agilex
+      - name: agilex3
+        socs:
+          - name: agilex3
       - name: agilex5
         socs:
           - name: agilex5
