@@ -694,8 +694,9 @@ However, at present, Zephyr includes headers from **both** the CMSIS 6 and legac
 The legacy CMSIS 5 headers remain available primarily for compatibility with vendor HALs, while all
 new architecture-level development should use **CMSIS 6** headers whenever possible.
 
-:kconfig:option:`CONFIG_CPU_CORTEX_M` selects :kconfig:option:`CONFIG_HAS_CMSIS_CORE` to signify that
-CMSIS headers are available for all supported Cortex-M variants.
+:kconfig:option:`CONFIG_CPU_CORTEX_M` selects :kconfig:option:`CONFIG_HAS_CMSIS_CORE_M`, which the
+CMSIS 6 module provides, and with it :kconfig:option:`CONFIG_HAS_CMSIS_CORE`, to signify that CMSIS
+headers are available for all supported Cortex-M variants.
 
 Testing
 *******

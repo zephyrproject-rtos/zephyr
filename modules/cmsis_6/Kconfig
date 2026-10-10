@@ -7,12 +7,12 @@ config ZEPHYR_CMSIS_6_MODULE
 
 config HAS_CMSIS_CORE
 	bool
-	select HAS_CMSIS_CORE_M if CPU_CORTEX_M
-
-if HAS_CMSIS_CORE
 
 config HAS_CMSIS_CORE_M
 	bool
+	select HAS_CMSIS_CORE
+
+if HAS_CMSIS_CORE
 
 config CMSIS_M_CHECK_DEVICE_DEFINES
 	bool "Check device defines"
