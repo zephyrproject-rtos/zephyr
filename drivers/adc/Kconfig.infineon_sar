@@ -21,3 +21,13 @@ config ADC_INFINEON_SAR_SARSEQ_SWITCHING
 	help
 	  Enable SARSEQ (hardware sequencer) control of SAR ADC input switches.
 	  If disabled, the driver relies on firmware-controlled switches only.
+
+config ADC_INFINEON_SAR_V2
+	bool "Infineon Traveo T2G SAR ADC driver"
+	default y
+	depends on DT_HAS_INFINEON_SAR_V2_ENABLED
+	select USE_INFINEON_SAR2_ADC
+	select ADC_CONFIGURABLE_INPUTS
+	help
+	  Enable the SAR2 ADC driver for Infineon Traveo T2G (CAT1C) MCUs,
+	  such as the CYT4DN.

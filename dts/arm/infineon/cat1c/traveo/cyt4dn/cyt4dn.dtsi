@@ -574,6 +574,48 @@
 			status = "disabled";
 		};
 
+		adc0: adc@40900000 {
+			compatible = "infineon,sar-v2";
+			reg = <0x40900000 0x100000>;
+			#io-channel-cells = <1>;
+			interrupt-parent = <&intmux_ch3>;
+			interrupts = <160 0>,
+				     <161 0>,
+				     <162 0>,
+				     <163 0>,
+				     <164 0>,
+				     <165 0>,
+				     <166 0>,
+				     <167 0>,
+				     <168 0>,
+				     <169 0>,
+				     <170 0>,
+				     <171 0>,
+				     <172 0>,
+				     <173 0>,
+				     <174 0>,
+				     <175 0>,
+				     <176 0>,
+				     <177 0>,
+				     <178 0>,
+				     <179 0>,
+				     <180 0>,
+				     <181 0>,
+				     <182 0>,
+				     <183 0>,
+				     <184 0>,
+				     <185 0>,
+				     <186 0>,
+				     <187 0>,
+				     <188 0>,
+				     <189 0>,
+				     <190 0>,
+				     <191 0>;
+			clk-dst = <IFX_PCLK_SAR0>;
+			total-channels = <32>;
+			status = "disabled";
+		};
+
 		m7_0_itcm: itcm@a0000000 {
 			compatible = "zephyr,memory-region", "arm,itcm";
 			reg = <0xa0000000 DT_SIZE_K(64)>;
