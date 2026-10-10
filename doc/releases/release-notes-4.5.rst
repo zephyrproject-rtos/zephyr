@@ -804,6 +804,25 @@ New APIs and options
   * :c:func:`lin_get_transceiver`
   * :kconfig:option:`CONFIG_LIN`
 
+* Logging
+
+  * Flash log backend, which appends log messages to the flash partition the
+    ``zephyr,log-partition`` chosen node points at so that they outlive a reboot, and hands
+    them back on request:
+
+    * :c:struct:`log_backend_flash_info`
+    * :c:func:`log_backend_flash_query`
+    * :c:func:`log_backend_flash_read`
+    * :c:func:`log_backend_flash_erase`
+    * :kconfig:option:`CONFIG_LOG_BACKEND_FLASH`
+    * :kconfig:option:`CONFIG_LOG_BACKEND_FLASH_AUTOSTART`
+    * :kconfig:option:`CONFIG_LOG_BACKEND_FLASH_BUILD_ID`
+    * :kconfig:option:`CONFIG_LOG_BACKEND_FLASH_BUILD_ID_HEADER`
+    * :kconfig:option:`CONFIG_LOG_BACKEND_FLASH_SHELL`
+    * :kconfig:option:`CONFIG_LOG_BACKEND_FLASH_SHELL_RECORD_MAX`
+    * :kconfig:option:`CONFIG_LOG_BACKEND_FLASH_SHELL_TEXT_MAX`
+    * :kconfig:option:`CONFIG_LOG_BACKEND_FLASH_WRITE_BLOCK_MAX`
+
 * LoRa
 
   * :c:func:`lora_recv_duty_cycle`
