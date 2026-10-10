@@ -1,7 +1,23 @@
 /*
- * Copyright (c) 2025 Microchip Technology Inc.
+ * Copyright (c) 2025-2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <microchip/pic32c/pic32cz_ca/common/pic32cz_ca.dtsi>
+
+&adc0 {
+	num-channels = <6>;
+};
+
+&adc1 {
+	num-channels = <5>;
+};
+
+&adc2 {
+	num-channels = <5>;
+};
+
+&adc3 {
+	num-channels = <5>;
+};

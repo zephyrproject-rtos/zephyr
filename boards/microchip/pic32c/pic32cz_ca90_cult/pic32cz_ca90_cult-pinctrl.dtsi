@@ -28,4 +28,18 @@
 				 <PC9D_SERCOM2_PAD1>;   /* SCK  */
 		};
 	};
+
+	adc1_default: adc1_default {
+		group1 {
+			pinmux = <PA17B_ADC1_AIN1>,	/* PA17, ADC1 negative (differential) */
+				 <PA18B_ADC1_AIN0>;	/* PA18, ADC1 positive (differential) */
+		};
+	};
+
+	adc2_default: adc2_default {
+		group1 {
+			pinmux = <PA13B_ADC2_AIN1>,	/* PA13, ADC1 negative (differential) */
+				 <PA14B_ADC2_AIN0>;	/* PA14, ADC1 positive (differential) */
+		};
+	};
 };
