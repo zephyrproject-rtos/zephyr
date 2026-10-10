@@ -17,6 +17,7 @@
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <zephyr/irq.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 
 LOG_MODULE_REGISTER(mcux_ctimer, CONFIG_COUNTER_LOG_LEVEL);
 
@@ -51,6 +52,9 @@ struct mcux_lpc_ctimer_data {
 	struct mcux_lpc_ctimer_channel_data channels[NUM_CHANNELS];
 	counter_top_callback_t top_callback;
 	void *top_user_data;
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	bool power_locked;
+#endif
 };
 
 #ifdef CONFIG_COUNTER_CAPTURE
@@ -78,13 +82,55 @@ struct mcux_lpc_ctimer_config {
 	const struct mcux_lpc_ctimer_mux_entry *mux_entries;
 	uint8_t mux_entries_count;
 #endif /* CONFIG_COUNTER_CAPTURE */
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	bool pm_device_constraints;
+#endif
 };
+
+/*
+ * Block the power states the node declares in zephyr,disabling-power-states for
+ * exactly as long as the counter is running: taken when it is started, released
+ * when it is stopped.
+ *
+ * The flag records whether the lock is held, so a start or a stop called twice
+ * leaves the count balanced.
+ */
+static void mcux_lpc_ctimer_power_lock_get(const struct device *dev)
+{
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	const struct mcux_lpc_ctimer_config *config = dev->config;
+	struct mcux_lpc_ctimer_data *data = dev->data;
+
+	if (config->pm_device_constraints && !data->power_locked) {
+		pm_policy_device_power_lock_get(dev);
+		data->power_locked = true;
+	}
+#else
+	ARG_UNUSED(dev);
+#endif
+}
+
+static void mcux_lpc_ctimer_power_lock_put(const struct device *dev)
+{
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	struct mcux_lpc_ctimer_data *data = dev->data;
+
+	if (data->power_locked) {
+		pm_policy_device_power_lock_put(dev);
+		data->power_locked = false;
+	}
+#else
+	ARG_UNUSED(dev);
+#endif
+}
 
 static int mcux_lpc_ctimer_start(const struct device *dev)
 {
 	const struct mcux_lpc_ctimer_config *config = dev->config;
 
 	CTIMER_StartTimer(config->base);
+
+	mcux_lpc_ctimer_power_lock_get(dev);
 
 	return 0;
 }
@@ -94,6 +140,8 @@ static int mcux_lpc_ctimer_stop(const struct device *dev)
 	const struct mcux_lpc_ctimer_config *config = dev->config;
 
 	CTIMER_StopTimer(config->base);
+
+	mcux_lpc_ctimer_power_lock_put(dev);
 
 	return 0;
 }
@@ -625,6 +673,13 @@ static DEVICE_API(counter, mcux_ctimer_driver_api) = {
 #define COUNTER_LPC_CTIMER_MUX_INIT(id)
 #endif /* CONFIG_COUNTER_CAPTURE */
 
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+#define COUNTER_LPC_CTIMER_PM_DEVICE_CONSTRAINTS_INIT(id)                                          \
+	.pm_device_constraints = DT_INST_NODE_HAS_PROP(id, zephyr_disabling_power_states),
+#else
+#define COUNTER_LPC_CTIMER_PM_DEVICE_CONSTRAINTS_INIT(id)
+#endif
+
 #define COUNTER_LPC_CTIMER_DEVICE(id) \
 	COUNTER_LPC_CTIMER_PINCTRL_DEFINE(id) \
 	COUNTER_LPC_CTIMER_MUX_DEFINE(id) \
@@ -645,6 +700,7 @@ static DEVICE_API(counter, mcux_ctimer_driver_api) = {
 		COUNTER_LPC_CTIMER_PINCTRL_INIT(id) \
 		COUNTER_LPC_CTIMER_MUX_INIT(id) \
 		.irq_config_func = mcux_lpc_ctimer_irq_config_##id,	\
+		COUNTER_LPC_CTIMER_PM_DEVICE_CONSTRAINTS_INIT(id) \
 	};                     \
 	PM_DEVICE_DT_INST_DEFINE(id, mcux_lpc_ctimer_pm_action);                                   \
 	static struct mcux_lpc_ctimer_data mcux_lpc_ctimer_data_##id;                              \
