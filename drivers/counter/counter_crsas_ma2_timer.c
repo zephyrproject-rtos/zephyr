@@ -471,7 +471,7 @@ static int timer_crsas_ma2_cancel_alarm(const struct device *dev, uint8_t chan_i
 	if (data->top_cb) {
 		restore_auto_increment_after_alarm(config, data);
 	} else if (data->free_running) {
-		/* Enable timer but in freee running (interrupt masked) mode */
+		/* Enable timer but in free running (interrupt masked) mode */
 		sys_write32(BIT(CNTP_CTL_ENABLE_BIT) | BIT(CNTP_CTL_IMASK_BIT),
 			    config->base + CNTP_CTL_OFFSET);
 	}

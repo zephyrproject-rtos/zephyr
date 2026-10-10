@@ -707,7 +707,7 @@ static void dma_xec_chan_reprogram(const struct device *dev, uint32_t channel, u
 
 /* Microchip XEC central DMA does not support cyclic transfers.
  * We zero free, write_position, and read_position members.
- * Hardware does not implement a transferred by count accumlator therefore
+ * Hardware does not implement a transferred by count accumulator therefore
  * we can't provide a total_copied value.
  *
  * pending_length is the live MEA-MSA of the currently running block plus

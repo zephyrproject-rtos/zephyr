@@ -611,7 +611,7 @@ static int dma_stm32_configure(const struct device *dev,
 	}
 
 	if (config->dest_data_size != config->source_data_size) {
-		/* This is not a strict error, but migth point to an issue.
+		/* This is not a strict error, but might point to an issue.
 		 * Mismatch can be used by peripherals that require 32-bit access,
 		 * but produce 16-bit value (e.g. ADC, DAC)
 		 */

@@ -106,7 +106,7 @@ static int scmi_shell_reset_summary(const struct shell *sh, size_t argc, char **
 
 	shell_print(sh, RESET_BORDER);
 	shell_print(sh,
-		    "|  ID |       Name       |  Latency   |            Attribures            |");
+		    "|  ID |       Name       |  Latency   |            Attributes            |");
 	shell_print(sh, RESET_BORDER);
 
 	for (i = 0; i < num_domains; i++) {
