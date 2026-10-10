@@ -1,0 +1,32 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SEU_INTEL_SOCFPGA
+	bool
+	default y
+	depends on DT_HAS_INTEL_SOCFPGA_SEU_ENABLED
+	help
+	  To enable Intel SoC FPGA specific SEU driver
+
+if SEU_INTEL_SOCFPGA
+
+config SEU_MAX_CLIENT
+	int "SEU maximum client count"
+	default 5
+	help
+	  To set SEU maximum client count.
+
+config SEU_MAX_TIMEOUT_MSECS
+	int "Maximum timeout in milliseconds"
+	default 1000
+	help
+	  Set maximum SiP SVC client connection timeout in milliseconds.
+
+config HEAP_MEM_POOL_ADD_SIZE_SEU
+	int
+	default 256
+	help
+	  Additional heap size reserved for SEU mailbox command and response
+	  buffers and error reporting allocations.
+
+endif # SEU_INTEL_SOCFPGA
