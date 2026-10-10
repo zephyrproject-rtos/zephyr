@@ -46,6 +46,13 @@ Programming & Debugging
 
 .. zephyr:board-supported-runners::
 
+Using MCUboot
+=============
+If you want to boot a firmware with MCUboot, you need to build and flash MCUboot
+itself for the ``pic32cm_sg00_cpro/pic32cm5112sg00100/mcuboot`` target and the
+build your own firmware for the ``pic32cm_sg00_cpro/pic32cm5112sg00100/mcuboot``
+target.
+
 Flash Using MPLAB IPE
 =====================
 For instructions on flashing using MPLAB IPE see :ref:`microchip-mplab-ipe-flashing`.

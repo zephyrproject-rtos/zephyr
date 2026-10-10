@@ -6511,5 +6511,6 @@
 #include <zephyr/devicetree/partitions.h>
 #include <zephyr/devicetree/sram.h>
 #include <zephyr/devicetree/cpu.h>
+#include <zephyr/devicetree/romstart.h>
 
 #endif /* ZEPHYR_INCLUDE_DEVICETREE_H_ */

@@ -30,10 +30,18 @@
 		};
 	};
 
+	/*
+	 * If the chosen "zephyr,flash" node isn't TCML memory, it is necessary
+	 * to add the chosen node "zephyr,romstart" with a phandle to "tcml".
+	 * This isn't done by default since it enlarges the compiled .bin file
+	 * due to filling missing memory between sections
+	 */
+
 	/* TCML 0x1fff8000 is aliased at 0 */
 	tcml: memory@0 {
-		compatible = "nxp,imx-itcm";
+		compatible = "zephyr,memory-region", "nxp,imx-itcm";
 		reg = <0x00000000 DT_SIZE_K(32)>;
+		zephyr,memory-region = "TCML";
 	};
 
 	tcmu: memory@20000000 {
