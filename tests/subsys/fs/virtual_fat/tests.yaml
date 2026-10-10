@@ -1,0 +1,4 @@
+tests:
+  filesystem.virtual_fat:
+    tags: virtual_fat
+    harness: ztest

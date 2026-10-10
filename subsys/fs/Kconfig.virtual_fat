@@ -1,0 +1,38 @@
+# Copyright (c) 2026 Leica Geosystems AG
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig VIRTUAL_FAT
+	bool "Virtual FAT support"
+	help
+	  Enables Virtual FAT file system support (FAT12/FAT16).
+
+if VIRTUAL_FAT
+
+config FAT_SECTORS_PER_CLUSTER
+	int "Sectors per cluster"
+	default 4
+	range 1 128
+	help
+	  Must be a power of two, and the resulting cluster size must not
+	  exceed 32 KiB.
+
+config VIRTUAL_FAT_DATE_DAY
+	int "Last access day for root directory"
+	default 1
+	range 1 31
+
+config VIRTUAL_FAT_DATE_MONTH
+	int "Last access month for root directory"
+	default 1
+	range 1 12
+
+config VIRTUAL_FAT_DATE_YEAR
+	int "Last access year for root directory"
+	default 2022
+	range 1980 2107
+
+module = VIRTUAL_FAT
+module-str = virtual_fat
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # VIRTUAL_FAT
