@@ -1,0 +1,137 @@
+/*
+ * Copyright (c) 2024 PCB Cupid
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <freq.h>
+#include <raspberrypi/rpi_pico/rp2040.dtsi>
+#include "glyph_mini_2040-pinctrl.dtsi"
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+/ {
+	model = "PCB Cupid Glyph-Mini-2040";
+	compatible = "pcbcupid,glyph-mini-2040";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &ssi;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,code-partition = &code_partition;
+	};
+
+	aliases {
+		led0 = &led0;
+		i2c-0 = &i2c0;
+		watchdog0 = &wdt0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			/* GP16 - internal, not broken out */
+			gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
+			label = "User LED0";
+		};
+	};
+};
+
+&flash0 {
+	/* W25Q64 - 8MB external SPI flash */
+	reg = <0x10000000 DT_SIZE_M(8)>;
+	ranges = <0x0 0x10000000 DT_SIZE_M(8)>;
+
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		second_stage_bootloader: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "second_stage_bootloader";
+			reg = <0x00000000 0x100>;
+			read-only;
+		};
+
+		code_partition: partition@100 {
+			compatible = "zephyr,mapped-partition";
+			label = "code-partition";
+			reg = <0x100 (DT_SIZE_M(8) - 0x100)>;
+			read-only;
+		};
+	};
+};
+
+&uart0 {
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&uart1 {
+	current-speed = <115200>;
+	status = "disabled";
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&i2c0 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+};
+
+&i2c1 {
+	/* GP26/GP27 shared with ADC CH0/CH1 - disabled by default */
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "disabled";
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+};
+
+&spi0 {
+	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+};
+
+&spi1 {
+	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+};
+
+&timer {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&adc {
+	status = "okay";
+	pinctrl-0 = <&adc_default>;
+	pinctrl-names = "default";
+};
+
+zephyr_udc0: &usbd {
+	status = "okay";
+};
+
+&vreg {
+	status = "okay";
+};

@@ -1,0 +1,7 @@
+# glyph mini 2040 board configuration
+
+# Copyright (c) 2024 PCB Cupid
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_GLYPH_MINI_2040
+	select SOC_RP2040
