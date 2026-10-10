@@ -21,7 +21,7 @@ struct mock_log_backend_msg {
 	uint16_t domain_id;
 	uint8_t level;
 	bool check;
-	char str[128];
+	char *str;
 	uint8_t data[32];
 	uint32_t data_len;
 };
@@ -29,7 +29,9 @@ struct mock_log_backend_msg {
 struct mock_log_backend {
 	bool do_check;
 	bool panic;
-	struct mock_log_backend_msg exp_msgs[64];
+	struct mock_log_backend_msg exp_msgs[100];
+	char str_buf[4096];
+	int str_buf_idx;
 	int msg_rec_idx;
 	int msg_proc_idx;
 	int exp_drop_cnt;
