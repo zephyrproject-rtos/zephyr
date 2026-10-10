@@ -66,6 +66,28 @@ config BT_L2CAP_RX_FLUSH_TO
 	  may be overridden on a packet by packet basis by marking individual L2CAP packets
 	  as non-automatically-flushable via the Packet_Boundary_Flag in the HCI ACL Data packet.
 
+config BT_L2CAP_SIG_TX_BUF_COUNT
+	int "Bluetooth L2CAP signalling channel TX buffer count"
+	default BT_L2CAP_TX_BUF_COUNT
+	range 1 $(UINT8_MAX)
+	help
+	  This option sets Bluetooth L2CAP signalling channel TX buffer count. The value is used to
+	  set the number of buffers available of the `br_sig_pool` for L2CAP signalling channel
+	  transmission.
+	  When the `br_sig_pool` is exhausted, the L2CAP attempts to obtain a net buffer from the
+	  default `acl_tx_pool`. If the `acl_tx_pool` is also exhausted, the currently received
+	  L2CAP signaling packet is placed into the `recv_pending` queue. Subsequently, the L2CAP
+	  attempts to process the L2CAP signaling packets in the `recv_pending` queue again, using
+	  two mechanisms: retries with random delays and notifications triggered by the net buffer
+	  destroy of the `br_sig_pool`.
+	  For the `CONFIG_BT_HCI_ACL_FLOW_CONTROL` disable case, the received L2CAP signaling packet
+	  may be discarded if the `br_recv_pending_pool` is exhausted, since the `br_sig_pool` has
+	  been exhausted. To avoid packet loss, the `br_sig_pool` should be configured with a size
+	  large enough to handle the peak number of L2CAP signaling packets that may be received.
+	  It is at least `ACL_CONN * 1 + L2CAP_CHANNEL * 2`. Here, `ACL_CONN` represents the maximum
+	  number of simultaneous ACL connections, and `L2CAP_CHANNEL` represents the maximum number
+	  of L2CAP channels being created or accepted simultaneously.
+
 config BT_L2CAP_CONNLESS
 	bool "Bluetooth L2CAP connectionless data reception [EXPERIMENTAL]"
 	select EXPERIMENTAL
