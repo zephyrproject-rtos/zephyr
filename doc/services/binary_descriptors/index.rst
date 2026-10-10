@@ -52,6 +52,22 @@ in the endianness native to the SoC. ``west bindesc`` assumes little endian by d
 so if the image belongs to a big endian SoC, the appropriate flag should be given to the
 tool.
 
+.. mermaid::
+   :caption: Binary descriptor tag, most significant bit first
+   :alt: 16-bit binary descriptor tag: bits 12 to 15 hold the type and bits 0
+         to 11 the ID.
+
+   ---
+   config:
+     packet:
+       bitOrder: descending
+       bitsPerRow: 16
+       bitWidth: 48
+   ---
+   packet
+     0-11: "ID"
+     12-15: "Type"
+
 The binary descriptor header starts with the magic number ``0xb9863e5a7ea46046``. It's followed
 by the TLVs, and ends with the ``DESCRIPTORS_END`` (``0xffff``) tag. The tags are
 always aligned to 32 bits. If the value of the previous descriptor had a non-aligned
