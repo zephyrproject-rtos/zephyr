@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config ADMT4000
+	bool "ADMT4000 True Power-On Multiturn Sensor"
+	default y
+	depends on DT_HAS_ADI_ADMT4000_ENABLED
+	select SPI
+	select RTIO_WORKQ if SENSOR_ASYNC_API
+	help
+	  Enable SPI-based driver for Analog Devices ADMT4000 True Power-On
+	  Multiturn Sensor.
