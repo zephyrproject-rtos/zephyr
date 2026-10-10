@@ -11,6 +11,7 @@
 #include <zephyr/net/net_mgmt.h>
 
 #include "../../../subsys/net/lib/dhcpv6/dhcpv6.c"
+#include "../../../subsys/net/ip/icmpv6.h"
 
 static struct net_in6_addr test_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					 0, 0, 0, 0, 0, 0, 0, 0x1 } } };
@@ -63,9 +64,36 @@ static void test_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, ctx->mac, sizeof(ctx->mac), NET_LINK_ETHERNET);
 }
 
+static bool is_dhcpv6_client_msg(struct net_pkt *pkt)
+{
+	struct net_pkt_cursor backup;
+	struct net_ipv6_hdr ip_hdr;
+	struct net_udp_hdr udp_hdr;
+	bool ret = false;
+
+	net_pkt_cursor_backup(pkt, &backup);
+	net_pkt_cursor_init(pkt);
+
+	if (net_pkt_read(pkt, &ip_hdr, sizeof(ip_hdr)) == 0 &&
+	    ip_hdr.nexthdr == NET_IPPROTO_UDP &&
+	    net_pkt_read(pkt, &udp_hdr, sizeof(udp_hdr)) == 0 &&
+	    udp_hdr.dst_port == net_htons(DHCPV6_SERVER_PORT)) {
+		ret = true;
+	}
+
+	net_pkt_cursor_restore(pkt, &backup);
+
+	return ret;
+}
+
 static int test_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct test_dhcpv6_context *ctx = dev->data;
+
+	/* Neighbor Discovery traffic is not of interest. */
+	if (!is_dhcpv6_client_msg(pkt)) {
+		return 0;
+	}
 
 	if (ctx->test_fn != NULL) {
 		ctx->test_fn(net_pkt_iface(pkt), pkt);
@@ -1707,6 +1735,189 @@ ZTEST(dhcpv6_tests, test_rebind_exchange_after_t2)
 					   test_prefix_len);
 	zassert_not_null(addr, "Address not configured on the interface");
 	zassert_not_null(prefix, "Prefix not configured on the interface");
+}
+
+static void test_send_ra(struct net_if *iface, uint8_t flags)
+{
+	struct net_icmpv6_ra_hdr ra_hdr = { .flags = flags };
+	struct net_in6_addr *local_addr;
+	struct net_in6_addr peer_addr;
+	struct net_pkt *pkt;
+	int ret;
+
+	local_addr = net_if_ipv6_get_ll(iface, NET_ADDR_ANY_STATE);
+	zassert_not_null(local_addr, "No link-local address");
+
+	memcpy(&peer_addr, local_addr, sizeof(peer_addr));
+	peer_addr.s6_addr[15] = ~peer_addr.s6_addr[15];
+
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(struct net_icmp_hdr) + sizeof(ra_hdr),
+					NET_AF_INET6, NET_IPPROTO_ICMPV6, K_FOREVER);
+	zassert_not_null(pkt, "Failed to allocate pkt");
+
+	net_pkt_set_ipv6_hop_limit(pkt, NET_IPV6_ND_HOP_LIMIT);
+
+	ret = net_ipv6_create(pkt, &peer_addr, local_addr);
+	zassert_ok(ret, "Failed to create IPv6 header");
+	ret = net_icmpv6_create(pkt, NET_ICMPV6_RA, 0);
+	zassert_ok(ret, "Failed to create ICMPv6 header");
+	ret = net_pkt_write(pkt, &ra_hdr, sizeof(ra_hdr));
+	zassert_ok(ret, "Failed to write RA header");
+
+	net_pkt_cursor_init(pkt);
+	net_ipv6_finalize(pkt, NET_IPPROTO_ICMPV6);
+	net_pkt_cursor_init(pkt);
+
+	ret = net_recv_data(iface, pkt);
+	zassert_ok(ret, "Failed to receive RA");
+
+	/* Let the RX path process the RA. */
+	k_msleep(50);
+}
+
+static void test_ra_before(void)
+{
+	test_ctx.reset_dhcpv6 = true;
+	memset(&test_ctx.iface->config.dhcpv6, 0,
+	       sizeof(test_ctx.iface->config.dhcpv6));
+}
+
+/* Verify that Router Advertisement with O flag starts stateless DHCPv6. */
+ZTEST(dhcpv6_tests, test_ra_other_flag_starts_stateless)
+{
+	int ret;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_DHCPV6_START_ON_RA);
+	test_ra_before();
+
+	set_dhcpv6_test_fn(test_info_request_send_reply);
+	test_send_ra(test_ctx.iface, NET_ICMPV6_RA_HDR_FLAG_OTHER);
+
+	ret = k_sem_take(&test_ctx.exchange_complete_sem, K_SECONDS(3));
+	zassert_ok(ret, "Exchange not completed in required time");
+	zassert_true(test_ctx.iface->config.dhcpv6.auto_started,
+		     "Client should be marked as started by RA");
+}
+
+/* Verify that Router Advertisement with M flag starts stateful DHCPv6. */
+ZTEST(dhcpv6_tests, test_ra_managed_flag_starts_stateful)
+{
+	int ret;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_DHCPV6_START_ON_RA);
+	test_ra_before();
+
+	/* Set maximum preference to speed up the process. */
+	test_preference = DHCPV6_MAX_SERVER_PREFERENCE;
+
+	set_dhcpv6_test_fn(expect_solicit_send_advertise);
+	test_send_ra(test_ctx.iface,
+		     NET_ICMPV6_RA_HDR_FLAG_MANAGED | NET_ICMPV6_RA_HDR_FLAG_OTHER);
+
+	ret = k_sem_take(&test_ctx.exchange_complete_sem, K_SECONDS(3));
+	zassert_ok(ret, "Exchange not completed in required time");
+	zassert_equal(test_ctx.iface->config.dhcpv6.state, NET_DHCPV6_BOUND,
+		      "Invalid state");
+	zassert_true(test_ctx.iface->config.dhcpv6.params.request_addr,
+		     "Address should be requested");
+	zassert_false(test_ctx.iface->config.dhcpv6.params.request_prefix,
+		      "Prefix should not be requested");
+	zassert_not_null(net_if_ipv6_addr_lookup_by_iface(test_ctx.iface, &test_addr),
+			 "Address not configured on the interface");
+}
+
+/* Verify that Router Advertisement without M/O flags does not start DHCPv6. */
+ZTEST(dhcpv6_tests, test_ra_no_flags_no_start)
+{
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_DHCPV6_START_ON_RA);
+	test_ra_before();
+
+	test_send_ra(test_ctx.iface, 0);
+
+	zassert_equal(test_ctx.iface->config.dhcpv6.state, NET_DHCPV6_DISABLED,
+		      "DHCPv6 should not be started");
+}
+
+/* Verify that explicit stop disables the automatic start. */
+ZTEST(dhcpv6_tests, test_ra_no_start_after_stop)
+{
+	struct net_dhcpv6_params params = { 0 };
+	int ret;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_DHCPV6_START_ON_RA);
+	test_ra_before();
+
+	net_dhcpv6_stop(test_ctx.iface);
+	test_send_ra(test_ctx.iface, NET_ICMPV6_RA_HDR_FLAG_OTHER);
+
+	zassert_equal(test_ctx.iface->config.dhcpv6.state, NET_DHCPV6_DISABLED,
+		      "DHCPv6 should not be started after explicit stop");
+
+	/* Explicit start enables it again. */
+	set_dhcpv6_test_fn(test_info_request_send_reply);
+	net_dhcpv6_start(test_ctx.iface, &params);
+
+	ret = k_sem_take(&test_ctx.exchange_complete_sem, K_SECONDS(3));
+	zassert_ok(ret, "Exchange not completed in required time");
+	zassert_false(test_ctx.iface->config.dhcpv6.auto_started,
+		      "Client should not be marked as started by RA");
+}
+
+/* Verify that explicit start replaces the client started by RA. */
+ZTEST(dhcpv6_tests, test_ra_explicit_start_replaces_auto)
+{
+	struct net_dhcpv6_params params = {
+		.request_addr = true,
+		.request_prefix = true,
+	};
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_DHCPV6_START_ON_RA);
+	test_ra_before();
+
+	test_send_ra(test_ctx.iface, NET_ICMPV6_RA_HDR_FLAG_OTHER);
+	zassert_not_equal(test_ctx.iface->config.dhcpv6.state, NET_DHCPV6_DISABLED,
+			  "DHCPv6 should be started by RA");
+
+	test_dhcpv6_start_and_enter_bound(&params);
+	zassert_false(test_ctx.iface->config.dhcpv6.auto_started,
+		      "Client should not be marked as started by RA");
+	zassert_not_null(net_if_ipv6_addr_lookup_by_iface(test_ctx.iface, &test_addr),
+			 "Address not configured on the interface");
+}
+
+/* Verify that the client started by RA stops when the interface goes down,
+ * and is started again by the next RA.
+ */
+ZTEST(dhcpv6_tests, test_ra_auto_stops_on_iface_down)
+{
+	int ret;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_DHCPV6_START_ON_RA);
+	test_ra_before();
+
+	test_send_ra(test_ctx.iface, NET_ICMPV6_RA_HDR_FLAG_OTHER);
+	zassert_not_equal(test_ctx.iface->config.dhcpv6.state, NET_DHCPV6_DISABLED,
+			  "DHCPv6 should be started by RA");
+
+	ret = net_if_down(test_ctx.iface);
+	zassert_ok(ret, "Failed to bring iface down");
+	k_msleep(50);
+
+	zassert_equal(test_ctx.iface->config.dhcpv6.state, NET_DHCPV6_DISABLED,
+		      "DHCPv6 should be stopped");
+
+	ret = net_if_up(test_ctx.iface);
+	zassert_ok(ret, "Failed to bring iface up");
+	k_msleep(50);
+
+	zassert_equal(test_ctx.iface->config.dhcpv6.state, NET_DHCPV6_DISABLED,
+		      "DHCPv6 should wait for RA");
+
+	set_dhcpv6_test_fn(test_info_request_send_reply);
+	test_send_ra(test_ctx.iface, NET_ICMPV6_RA_HDR_FLAG_OTHER);
+
+	ret = k_sem_take(&test_ctx.exchange_complete_sem, K_SECONDS(3));
+	zassert_ok(ret, "Exchange not completed in required time");
 }
 
 ZTEST_SUITE(dhcpv6_tests, NULL, dhcpv6_tests_setup, dhcpv6_tests_before,

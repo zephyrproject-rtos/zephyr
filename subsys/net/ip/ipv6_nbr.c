@@ -39,6 +39,7 @@ LOG_MODULE_REGISTER(net_ipv6_nd, CONFIG_NET_IPV6_ND_LOG_LEVEL);
 #include "route_ipv6.h"
 #include "net_stats.h"
 #include "pmtu.h"
+#include "dhcpv6/dhcpv6_internal.h"
 
 /* Timeout value to be used when allocating net buffer during various
  * neighbor discovery procedures.
@@ -3207,6 +3208,7 @@ static enum net_verdict handle_ra_input(struct net_icmp_ctx *ctx,
 	uint16_t router_lifetime;
 	struct net_in6_addr ra_src;
 	struct net_pkt_cursor backup;
+	uint8_t ra_flags;
 	int ret;
 
 	ARG_UNUSED(user_data);
@@ -3252,6 +3254,7 @@ static enum net_verdict handle_ra_input(struct net_icmp_ctx *ctx,
 		goto drop;
 	}
 
+	ra_flags = ra_hdr->flags;
 	router_lifetime = net_ntohs(ra_hdr->router_lifetime);
 	reachable_time = net_ntohl(ra_hdr->reachable_time);
 	retrans_timer = net_ntohl(ra_hdr->retrans_timer);
@@ -3429,6 +3432,10 @@ static enum net_verdict handle_ra_input(struct net_icmp_ctx *ctx,
 
 	/* Cancel the RS timer on iface */
 	net_if_stop_rs(net_pkt_iface(pkt));
+
+	net_dhcpv6_handle_ra(net_pkt_iface(pkt),
+			     (ra_flags & NET_ICMPV6_RA_HDR_FLAG_MANAGED) != 0U,
+			     (ra_flags & NET_ICMPV6_RA_HDR_FLAG_OTHER) != 0U);
 
 	net_pkt_cursor_restore(pkt, &backup);
 	return NET_CONTINUE;

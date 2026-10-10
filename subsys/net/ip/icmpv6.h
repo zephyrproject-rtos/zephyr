@@ -141,6 +141,10 @@ struct net_icmpv6_ptb {
 #define NET_ICMPV6_NA_FLAG_ROUTER     0x80
 #define NET_ICMPV6_NA_FLAG_SOLICITED  0x40
 #define NET_ICMPV6_NA_FLAG_OVERRIDE   0x20
+/* Router Advertisement header flags, RFC 4861 ch. 4.2 */
+#define NET_ICMPV6_RA_HDR_FLAG_MANAGED 0x80
+#define NET_ICMPV6_RA_HDR_FLAG_OTHER   0x40
+
 #define NET_ICMPV6_RA_FLAG_ONLINK     0x80
 #define NET_ICMPV6_RA_FLAG_AUTONOMOUS 0x40
 

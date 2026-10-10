@@ -47,6 +47,23 @@ config NET_DHCPV6_DNS_SERVER_VIA_INTERFACE
 	  server 2001:db8::2:53 when sending DNS query to the Ethernet
 	  interface.
 
+config NET_DHCPV6_START_ON_RA
+	bool "Start DHCPv6 based on Router Advertisement flags"
+	depends on NET_DHCPV6 && NET_IPV6_ND
+	help
+	  Start the DHCPv6 client on a network interface when a Router
+	  Advertisement with the M (Managed address configuration) or O (Other
+	  configuration) flag is received on it, and DHCPv6 is not already
+	  running. With the M flag the client requests an IPv6 address,
+	  otherwise it runs in stateless mode (Information-request only).
+	  The automatically started client is stopped when the interface goes
+	  down, and started again by the next such Router Advertisement.
+	  An explicit net_dhcpv6_start() replaces the automatically started
+	  client, and net_dhcpv6_stop() disables the automatic start on the
+	  interface until DHCPv6 is started again.
+	  Note that any node on the link sending Router Advertisements can
+	  trigger the DHCPv6 client.
+
 if NET_DHCPV6
 
 config NET_DHCPV6_MAX_DOWNSTREAM

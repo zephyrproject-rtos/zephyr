@@ -10,3 +10,7 @@ tests:
   net.dhcpv6.preempt:
     extra_configs:
       - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
+  net.dhcpv6.ra:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_COOPERATIVE=y
+      - CONFIG_NET_IPV6_ND=y
