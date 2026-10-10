@@ -207,7 +207,7 @@ static int ps2_xec_inhibit_interface(const struct device *dev)
 	regs->CTRL = 0x00;
 	regs->STATUS = MCHP_PS2_STATUS_RW1C_MASK;
 	ps2_xec_girq_clr(config->girq_id, config->girq_bit);
-	NVIC_ClearPendingIRQ(config->isr_nvic);
+	k_irq_clear_pending(config->isr_nvic);
 
 	k_sem_give(&data->tx_lock);
 
