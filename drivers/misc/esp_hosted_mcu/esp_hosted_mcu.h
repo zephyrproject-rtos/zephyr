@@ -207,6 +207,12 @@ struct esp_hosted_mcu_transport_api {
 	 * no event source waits out the timeout instead.
 	 */
 	void (*wait_for_rx)(const struct device *dev, k_timeout_t timeout);
+	/*
+	 * Optional: drop receive data the backend holds for the core, such as a
+	 * frame a transmit shifted in. Called by esp_hosted_mcu_reattach(), when
+	 * anything still buffered belongs to the coprocessor's previous run.
+	 */
+	void (*flush_rx)(const struct device *dev);
 };
 
 /* Core per-instance immutable config, filled from devicetree. */
@@ -249,6 +255,29 @@ int esp_hosted_mcu_register_rpc_event(esp_hosted_mcu_event_cb_t cb, void *user_d
  * Consumers may branch on it to adapt to older firmware.
  */
 uint32_t esp_hosted_mcu_fw_version(void);
+
+/*
+ * Re-establish the link after the coprocessor was restarted behind the
+ * driver's back - for example re-flashed through its UART ROM loader and
+ * released from reset by whatever performed the update. The transport
+ * survives such a restart, but the driver still holds the previous run's
+ * firmware version and receive state, and its init never runs again.
+ *
+ * Forgets the learned firmware version, any pending RPC round trip and
+ * receive data buffered from the previous run, then waits for the boot event
+ * or asks for the version until the timeout. The reset line is not touched.
+ * RPC callers block for the duration.
+ *
+ * The timeout bounds only that wait, which is why the caller sets it: how
+ * long the coprocessor takes to come back depends on the image it was given
+ * and on how it was restarted, and the caller is the one that restarted it.
+ * K_NO_WAIT forgets the previous run's state and returns without waiting.
+ *
+ * Returns 0 once the coprocessor reported a non-zero version (read it with
+ * esp_hosted_mcu_fw_version()), -ETIMEDOUT if it did not within the timeout,
+ * -ENODEV if the core never came up.
+ */
+int esp_hosted_mcu_reattach(k_timeout_t timeout);
 
 /*
  * Send an RPC request and block for its matching response. On success resp
