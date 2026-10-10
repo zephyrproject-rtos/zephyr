@@ -15,6 +15,12 @@ description: |
    - GPIO pins that do not support external interrupts.
    - GPIO pins whose EIC line mapping differs from the default mapping.
 
+  The default EIC line of a pin is pin % 16. A pin in a *-special-pins-*
+  group has the group's offset added to that line, except in the groups
+  that subtract it: portc-special-pins-2 on PIC32CM JH, and
+  portb-special-pins-2, portb-special-pins-3, portd-special-pins-1 and
+  portd-special-pins-3 on the other devices.
+
   Group g1 EIC supports following hardware peripherals:
     - module name="EIC" id="U2254" version="3.0.0"
 
@@ -102,6 +108,30 @@ properties:
     description: |
       Number of cells in portb-special-pins-1 property
 
+  portb-special-pins-2:
+    type: array
+    default: [0, 0]
+    description: |
+      Port B pins whose EIC line is pin % 16 minus the offset.
+
+  "#portb-special-pins-2-cells":
+    type: int
+    default: 2
+    description: |
+      Number of cells in portb-special-pins-2 property
+
+  portb-special-pins-3:
+    type: array
+    default: [0, 0]
+    description: |
+      Port B pins whose EIC line is pin % 16 minus the offset.
+
+  "#portb-special-pins-3-cells":
+    type: int
+    default: 2
+    description: |
+      Number of cells in portb-special-pins-3 property
+
   portc-special-pins-1:
     type: array
     default: [0, 0]
@@ -154,7 +184,27 @@ properties:
     description: |
       Number of cells in portd-special-pins-2 property
 
+  portd-special-pins-3:
+    type: array
+    default: [0, 0]
+    description: |
+      Port D pins whose EIC line is pin % 16 minus the offset.
+
+  "#portd-special-pins-3-cells":
+    type: int
+    default: 2
+    description: |
+      Number of cells in portd-special-pins-3 property
+
 portb-special-pins-1-cells:
+  - pins_val
+  - offset
+
+portb-special-pins-2-cells:
+  - pins_val
+  - offset
+
+portb-special-pins-3-cells:
   - pins_val
   - offset
 
@@ -167,6 +217,10 @@ portd-special-pins-1-cells:
   - offset
 
 portd-special-pins-2-cells:
+  - pins_val
+  - offset
+
+portd-special-pins-3-cells:
   - pins_val
   - offset
 
