@@ -1,0 +1,87 @@
+# Bluetooth HID over GATT Profile (HOGP)
+
+# Copyright 2026 Xiaomi Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config BT_HOGP_DEVICE
+	bool "HID over GATT Profile Device (HOGP Device)"
+	default n
+	depends on BT_PERIPHERAL
+	select BT_GATT_DYNAMIC_DB
+	help
+	  Enable HID over GATT Profile Device role (HIDS Server).
+	  Provides a reusable HID Service implementation with configurable
+	  Report Map and report characteristics.
+
+if BT_HOGP_DEVICE
+
+config BT_HOGP_DEVICE_MAX_CONNECTIONS
+	int "Maximum simultaneous HOGP Device connections"
+	default 2
+	range 1 8
+	help
+	  Maximum number of simultaneous Host connections the HOGP Device
+	  can maintain.
+
+config BT_HOGP_DEVICE_MAX_REPORTS
+	int "Maximum HID reports per device"
+	default 8
+	range 1 16
+	help
+	  Maximum number of HID Report characteristics (Input + Output + Feature)
+	  supported by the HOGP Device.
+
+config BT_HOGP_DEVICE_BOOT
+	bool "Support Boot Protocol Mode"
+	default n
+	help
+	  Enable Boot Keyboard and/or Boot Mouse Input/Output Report
+	  characteristics for Boot Protocol Mode support.
+
+endif # BT_HOGP_DEVICE
+
+config BT_HOGP_HOST
+	bool "HID over GATT Host (HOGP Host)"
+	default n
+	depends on BT_CENTRAL && BT_GATT_CLIENT
+	select BT_GATT_DYNAMIC_DB
+	help
+	  Enable HID over GATT Profile Host role (HIDS Client).
+	  Provides automatic service discovery, report subscription,
+	  and report operations for connecting to HID peripherals.
+
+if BT_HOGP_HOST
+
+config BT_HOGP_HOST_MAX_CONNECTIONS
+	int "Maximum simultaneous HOGP Host connections"
+	default 1
+	range 1 8
+	help
+	  Maximum number of simultaneous HID Device connections the
+	  HOGP Host can maintain.
+
+config BT_HOGP_HOST_MAX_REPORTS
+	int "Maximum HID reports per host connection"
+	default 8
+	range 1 32
+	help
+	  Maximum number of HID Report characteristics that can be
+	  discovered per connection (across all service instances).
+
+config BT_HOGP_HOST_MAX_SERVICES
+	int "Maximum HID Service instances per connection"
+	default 3
+	range 1 8
+	help
+	  Maximum number of HID Service instances that can be discovered
+	  on a single remote device.
+
+config BT_HOGP_HOST_DESC_STORAGE_LEN
+	int "Report descriptor storage size per connection (bytes)"
+	default 512
+	range 128 2048
+	help
+	  Buffer size for caching HID Report Map descriptors from all
+	  discovered HID Service instances on a single connection.
+
+endif # BT_HOGP_HOST
