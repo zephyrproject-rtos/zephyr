@@ -73,6 +73,34 @@
 				#gpio-cells = <2>;
 			};
 		};
+
+		canfd0: can@40110000 {
+			compatible = "ti,mspm0-canfd";
+			reg = <0x40110000 0x8000>,
+			      <0x40117000 0x1000>,
+			      <0x40110000 0x400>;
+			reg-names = "ti_canfd",
+				    "m_can",
+				    "message_ram";
+			interrupts = <19 0>;
+			clocks = <&ckm MSPM0_CLOCK_CANCLK>;
+			bosch,mram-cfg = <0x0 20 8 3 3 0 3 3>;
+			status = "disabled";
+		};
+
+		canfd1: can@40118000 {
+			compatible = "ti,mspm0-canfd";
+			reg = <0x40118000 0x8000>,
+			      <0x4011f000 0x1000>,
+			      <0x40118000 0x400>;
+			reg-names = "ti_canfd",
+				    "m_can",
+				    "message_ram";
+			interrupts = <33 0>;
+			clocks = <&ckm MSPM0_CLOCK_CANCLK>;
+			bosch,mram-cfg = <0x0 20 8 3 3 0 3 3>;
+			status = "disabled";
+		};
 	};
 };
 
