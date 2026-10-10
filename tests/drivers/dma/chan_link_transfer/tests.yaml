@@ -23,6 +23,9 @@ tests:
       - lpcxpresso55s36
       - native_sim
       - native_sim/native/64
+      - lp_mspm0g3507
+      - lp_mspm0g3519
+      - lp_mspm0l2228
     integration_platforms:
       - frdm_k64f
       - native_sim
