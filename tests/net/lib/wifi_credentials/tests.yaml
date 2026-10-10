@@ -6,3 +6,14 @@ tests:
       - native_sim
     integration_platforms:
       - native_sim
+  net.wifi_credentials.backend_psa.secure_storage:
+    tags:
+      - net
+      - psa.secure_storage
+    extra_args: EXTRA_CONF_FILE=overlay-backend_psa.conf
+    filter: CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS
+    platform_allow:
+      - native_sim
+      - mps2/an385
+    integration_platforms:
+      - native_sim
