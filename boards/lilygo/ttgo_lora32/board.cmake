@@ -9,4 +9,4 @@ include(${ZEPHYR_BASE}/boards/common/esp32.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)
 
 # the default ESP32 baud rate is not supported
-board_runner_args(esp32 "--esp-baud-rate=1500000")
+board_runner_args(esp32 "--baud-rate=1500000")
