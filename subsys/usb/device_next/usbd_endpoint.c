@@ -6,6 +6,7 @@
 
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/usb/udc.h>
+#include <zephyr/drivers/usb/usb_buf.h>
 #include <zephyr/usb/usbd.h>
 
 #include "usbd_device.h"
@@ -16,6 +17,85 @@
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usbd_ep, CONFIG_USBD_LOG_LEVEL);
+
+static inline void usbd_ep_buf_destroy(struct net_buf *buf);
+
+USB_BUF_POOL_VAR_DEFINE(usbd_ep_pool, CONFIG_USBD_BUF_COUNT, CONFIG_USBD_BUF_POOL_SIZE,
+			sizeof(struct udc_buf_info), usbd_ep_buf_destroy);
+
+static inline void usbd_ep_buf_destroy(struct net_buf *buf)
+{
+	LOG_DBG("destroy %p", buf);
+	net_buf_destroy(buf);
+}
+
+static struct net_buf *usbd_ep_buf_alloc_internal(const struct device *dev, uint8_t ep,
+						   size_t size)
+{
+	struct net_buf *buf;
+
+	if (USB_EP_GET_DIR(ep) == USB_EP_DIR_OUT) {
+		size = udc_out_ep_alloc_size(dev, ep, size);
+	}
+	buf = net_buf_alloc_len(&usbd_ep_pool, size, K_NO_WAIT);
+	if (buf == NULL) {
+		LOG_ERR("Failed to allocate net_buf %zu, ep 0x%02x", size, ep);
+	} else {
+		udc_get_buf_info(buf)->ep = ep;
+		LOG_DBG("Allocate net_buf %p, ep 0x%02x, size %zu", buf, ep, size);
+	}
+	return buf;
+}
+
+struct net_buf *usbd_ep_ctrl_setup_alloc(const struct device *dev)
+{
+	struct net_buf *buf;
+
+	buf = usbd_ep_buf_alloc_internal(dev, USB_CONTROL_EP_OUT,
+					 sizeof(struct usb_setup_packet));
+	if (buf != NULL) {
+		struct udc_buf_info *bi = udc_get_buf_info(buf);
+
+		bi->setup = 1;
+		bi->data = 0;
+		bi->status = 0;
+	}
+
+	return buf;
+}
+
+struct net_buf *usbd_ep_ctrl_data_alloc(const struct device *dev, const uint8_t ep,
+					const size_t size)
+{
+	struct net_buf *buf;
+
+	buf = usbd_ep_buf_alloc_internal(dev, ep, size);
+	if (buf != NULL) {
+		struct udc_buf_info *bi = udc_get_buf_info(buf);
+
+		bi->setup = 0;
+		bi->data = 1;
+		bi->status = 0;
+	}
+
+	return buf;
+}
+
+struct net_buf *usbd_ep_ctrl_status_alloc(const struct device *dev, const uint8_t ep)
+{
+	struct net_buf *buf;
+
+	buf = usbd_ep_buf_alloc_internal(dev, ep, 0);
+	if (buf != NULL) {
+		struct udc_buf_info *bi = udc_get_buf_info(buf);
+
+		bi->setup = 0;
+		bi->data = 0;
+		bi->status = 1;
+	}
+
+	return buf;
+}
 
 int usbd_ep_enable(const struct device *dev,
 		   const struct usb_ep_descriptor *const ed,
@@ -102,7 +182,7 @@ static void usbd_ep_ctrl_set_zlp(struct usbd_context *const uds_ctx,
 struct net_buf *usbd_ep_ctrl_data_in_alloc(const struct usbd_context *const uds_ctx,
 					   const size_t size)
 {
-	return udc_ctrl_data_alloc(uds_ctx->dev, USB_CONTROL_EP_IN, size);
+	return usbd_ep_ctrl_data_alloc(uds_ctx->dev, USB_CONTROL_EP_IN, size);
 }
 
 int usbd_ep_ctrl_enqueue(struct usbd_context *const uds_ctx,
@@ -133,7 +213,7 @@ struct net_buf *usbd_ep_buf_alloc(const struct usbd_class_data *const c_data,
 {
 	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 
-	return udc_ep_buf_alloc(uds_ctx->dev, ep, size);
+	return usbd_ep_buf_alloc_internal(uds_ctx->dev, ep, size);
 }
 
 int usbd_ep_enqueue(const struct usbd_class_data *const c_data,
@@ -155,7 +235,9 @@ int usbd_ep_enqueue(const struct usbd_class_data *const c_data,
 
 int usbd_ep_buf_free(struct usbd_context *const uds_ctx, struct net_buf *buf)
 {
-	return udc_ep_buf_free(uds_ctx->dev, buf);
+	ARG_UNUSED(uds_ctx);
+	net_buf_unref(buf);
+	return 0;
 }
 
 int usbd_ep_dequeue(struct usbd_context *const uds_ctx, const uint8_t ep)
