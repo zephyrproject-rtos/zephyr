@@ -39,6 +39,11 @@ static struct bt_l2cap_server test_inv_server = {
 	.psm		= 0xffff,
 };
 
+static struct bt_l2cap_server test_unreg_server = {
+	.accept		= l2cap_accept,
+	.psm		= 0x0071,
+};
+
 ZTEST_SUITE(test_l2cap, NULL, NULL, NULL, NULL, NULL);
 
 ZTEST(test_l2cap, test_l2cap_register)
@@ -70,4 +75,35 @@ ZTEST(test_l2cap, test_l2cap_register)
 	/* Attempt to re-register server with dynamic PSM */
 	zassert_true(bt_l2cap_server_register(&test_dyn_server),
 		     "Test dynamic PSM server duplicate succeeded");
+}
+
+ZTEST(test_l2cap, test_l2cap_unregister)
+{
+	/* Attempt to unregister a NULL server */
+	zassert_equal(bt_l2cap_server_unregister(NULL), -EINVAL,
+		      "Unregistering NULL did not fail with -EINVAL");
+
+	/* Attempt to unregister a server that was never registered */
+	zassert_equal(bt_l2cap_server_unregister(&test_unreg_server), -ENOENT,
+		      "Unregistering an unknown server did not fail with -ENOENT");
+
+	zassert_ok(bt_l2cap_server_register(&test_unreg_server),
+		   "Test unregister server registration failed");
+
+	/* The PSM is taken while the server is registered */
+	zassert_true(bt_l2cap_server_register(&test_unreg_server),
+		     "Test unregister server duplicate succeeded");
+
+	zassert_ok(bt_l2cap_server_unregister(&test_unreg_server),
+		   "Test unregister server unregistration failed");
+
+	/* Attempt to unregister the same server twice */
+	zassert_equal(bt_l2cap_server_unregister(&test_unreg_server), -ENOENT,
+		      "Double unregistration did not fail with -ENOENT");
+
+	/* The PSM is available again */
+	zassert_ok(bt_l2cap_server_register(&test_unreg_server),
+		   "Test unregister server re-registration failed");
+	zassert_ok(bt_l2cap_server_unregister(&test_unreg_server),
+		   "Test unregister server unregistration failed");
 }
