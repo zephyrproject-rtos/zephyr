@@ -59,8 +59,9 @@ function _compile(){
     local cmake_cmd+=( -DCONF_FILE=${conf_file})
   fi
   orifs="$IFS"; IFS=
-  local cmake_cmd+=( -DOVERLAY_CONFIG="${conf_overlay}" \
-            -DEXTRA_CONF_FILE="${extra_conf_file}" \
+  # Both are passed through the single EXTRA_CONF_FILE variable; the overlay
+  # comes last so that it keeps overriding the extra conf file.
+  local cmake_cmd+=( -DEXTRA_CONF_FILE="${extra_conf_file} ${conf_overlay}" \
             -DSNIPPET="${snippet}" \
             ${modules_arg} \
             "${cmake_args[@]}" ${cc_flags:+-DCMAKE_C_FLAGS=${cc_flags}} "${cmake_extra_args[@]}")
