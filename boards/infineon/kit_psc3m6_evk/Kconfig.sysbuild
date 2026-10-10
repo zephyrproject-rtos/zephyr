@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOOTLOADER_MCUBOOT
+
+choice MCUBOOT_MODE
+	default MCUBOOT_MODE_OVERWRITE_ONLY
+endchoice
+
+endif # BOOTLOADER_MCUBOOT
