@@ -1,0 +1,91 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * NOR flash board variant for kit_psc3m6_evk.
+ *
+ * Enables the external SPI NOR flash (S25FL128) connected to the SCB5 SPI
+ * interface on port 8:
+ *
+ *   P8.0 - SPI_CS_FLASH   (GPIO chip-select, active low)
+ *   P8.1 - SPI_MOSI_FLASH (SCB5 MOSI)
+ *   P8.2 - SPI_MISO_FLASH (SCB5 MISO)
+ *   P8.3 - SPI_CLK_FLASH  (SCB5 CLK)
+ *
+ * This variant requires the resistor rework described in the board
+ * documentation. It reuses the base board devicetree (same secure SoC and
+ * clock configuration) and only adds the SPI NOR flash on SCB5.
+ */
+
+#include <freq.h>
+#include <mem.h>
+#include "kit_psc3m6_evk.dts"
+
+/* NOR flash variant additions */
+
+spi5: &scb5 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	compatible = "infineon,spi";
+	status = "okay";
+
+	pinctrl-0 = <&p8_1_scb5_spi_m_mosi &p8_2_scb5_spi_m_miso &p8_3_scb5_spi_m_clk>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio_prt8 0 GPIO_ACTIVE_LOW>;
+
+	clocks = <&peri0_group6_16_5bit_0>;
+
+	s25fl128: s25fl128@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
+		jedec-id = [01 60 18];
+		size = <0x8000000>;	/* 128 Mbit */
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			storage_partition: partition@0 {
+				label = "storage";
+				reg = <0x0 DT_SIZE_M(16)>;
+			};
+		};
+	};
+};
+
+&p8_1_scb5_spi_m_mosi {
+	drive-strength = "full";
+	drive-push-pull;
+};
+
+&p8_2_scb5_spi_m_miso {
+	input-enable;
+};
+
+&p8_3_scb5_spi_m_clk {
+	drive-strength = "full";
+	drive-push-pull;
+};
+
+&peri0_group6_16_5bit_0 {
+	status = "okay";
+};
+
+/*
+ * clk_hf4 feeds peri0_group6 (SCB5). Sourced via path_mux1/CLKPATH1 (IHO 48 MHz)
+ * so it does not disturb the UART console clock on CLKPATH0.
+ */
+&path_mux1 {
+	status = "okay";
+};
+
+&clk_hf4 {
+	source-path = <IFX_CLK_HF_IN_CLKPATH1>;
+	status = "okay";
+};
