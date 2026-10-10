@@ -10,12 +10,18 @@ LOG_MODULE_REGISTER(conn_mgr, CONFIG_NET_CONNECTION_MANAGER_LOG_LEVEL);
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <errno.h>
+#include <string.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_log.h>
 #include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/socket_offload.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/net/conn_mgr_connectivity.h>
+#include <zephyr/net/conn_mgr_monitor.h>
+#if defined(CONFIG_DNS_RESOLVER)
+#include <zephyr/net/dns_resolve.h>
+#endif
 #include "conn_mgr_private.h"
 
 #if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
@@ -44,6 +50,16 @@ static uint16_t last_ready_count_ipv6;
 static struct net_if *last_blame;
 static struct net_if *last_blame_ipv4;
 static struct net_if *last_blame_ipv6;
+
+/* Last reported DNS readiness */
+static bool last_dns_ready;
+
+#define DNS_FAMILY_IPV4 BIT(0)
+#define DNS_FAMILY_IPV6 BIT(1)
+
+/* Address families of the configured unicast DNS servers: unbound and per interface */
+static uint8_t dns_unbound_families;
+static uint8_t dns_bound_families[CONN_MGR_IFACE_MAX];
 
 /* Used to signal when modifications have been made that need to be responded to */
 K_SEM_DEFINE(conn_mgr_mon_updated, 1, 1);
@@ -106,6 +122,75 @@ static void conn_mgr_mon_set_ready(int idx, bool ready, bool ready_ipv4, bool re
 	}
 }
 
+/**
+ * @brief Refresh dns_unbound_families and dns_bound_families from the default resolver context.
+ */
+static void conn_mgr_mon_dns_snapshot(void)
+{
+	dns_unbound_families = 0;
+	memset(dns_bound_families, 0, sizeof(dns_bound_families));
+
+#if defined(CONFIG_DNS_RESOLVER)
+	struct dns_resolve_context *ctx = dns_resolve_get_default();
+
+	if (ctx->state == DNS_RESOLVE_CONTEXT_UNINITIALIZED) {
+		/* Context lock not initialized yet */
+		return;
+	}
+
+	k_mutex_lock(&ctx->lock, K_FOREVER);
+
+	if (ctx->state != DNS_RESOLVE_CONTEXT_ACTIVE) {
+		goto out;
+	}
+
+	ARRAY_FOR_EACH(ctx->servers, i) {
+		const struct dns_server_info *server = &ctx->servers[i];
+		uint8_t family;
+
+		if (server->sock < 0 || server->is_mdns || server->is_llmnr) {
+			continue;
+		}
+
+		if (server->dns_server_addr.ss_family == NET_AF_INET) {
+			family = DNS_FAMILY_IPV4;
+		} else if (server->dns_server_addr.ss_family == NET_AF_INET6) {
+			family = DNS_FAMILY_IPV6;
+		} else {
+			continue;
+		}
+
+		if (server->if_index <= 0) {
+			dns_unbound_families |= family;
+		} else if (server->if_index <= CONN_MGR_IFACE_MAX) {
+			dns_bound_families[server->if_index - 1] |= family;
+		}
+	}
+
+out:
+	k_mutex_unlock(&ctx->lock);
+#endif /* CONFIG_DNS_RESOLVER */
+}
+
+/**
+ * @brief Check whether an interface provides name resolution.
+ *
+ * @param idx - index (in iface_states) of the iface to check.
+ * @retval true if a DNS server can be reached through the iface.
+ */
+static bool conn_mgr_mon_iface_has_dns(int idx)
+{
+	uint8_t families = dns_unbound_families | dns_bound_families[idx];
+
+	if ((iface_states[idx] & CONN_MGR_IF_READY) && socket_offload_dns_is_enabled()) {
+		/* Name resolution is offloaded and its servers are not visible to us */
+		return true;
+	}
+
+	return ((iface_states[idx] & CONN_MGR_IF_READY_IPV4) && (families & DNS_FAMILY_IPV4)) ||
+	       ((iface_states[idx] & CONN_MGR_IF_READY_IPV6) && (families & DNS_FAMILY_IPV6));
+}
+
 static void conn_mgr_mon_handle_update(void)
 {
 	int idx;
@@ -127,6 +212,9 @@ static void conn_mgr_mon_handle_update(void)
 	struct net_if *blame = NULL;
 	struct net_if *blame_ipv4 = NULL;
 	struct net_if *blame_ipv6 = NULL;
+	bool dns_ready = false;
+
+	conn_mgr_mon_dns_snapshot();
 
 	k_mutex_lock(&conn_mgr_mon_lock, K_FOREVER);
 
@@ -182,6 +270,10 @@ static void conn_mgr_mon_handle_update(void)
 
 		/* Update readiness state flags with the (possibly) new values */
 		conn_mgr_mon_set_ready(idx, is_l4_ready, is_ipv4_ready, is_ipv6_ready);
+
+		if (conn_mgr_mon_iface_has_dns(idx)) {
+			dns_ready = true;
+		}
 	}
 
 	/* If the total number of ready ifaces changed, possibly send an event */
@@ -221,6 +313,13 @@ static void conn_mgr_mon_handle_update(void)
 		}
 		last_ready_count_ipv6 = ready_count_ipv6;
 		last_blame_ipv6 = blame_ipv6;
+	}
+
+	/* Notify DNS availability */
+	if (dns_ready != last_dns_ready) {
+		last_dns_ready = dns_ready;
+		net_mgmt_event_notify(dns_ready ? NET_EVENT_L4_DNS_READY : NET_EVENT_L4_DNS_LOST,
+				      NULL);
 	}
 
 	k_mutex_unlock(&conn_mgr_mon_lock);
@@ -271,7 +370,22 @@ void conn_mgr_mon_resend_status(void)
 		net_mgmt_event_notify(NET_EVENT_L4_IPV4_CONNECTED, last_blame_ipv4);
 	}
 
+	net_mgmt_event_notify(last_dns_ready ? NET_EVENT_L4_DNS_READY : NET_EVENT_L4_DNS_LOST,
+			      NULL);
+
 	k_mutex_unlock(&conn_mgr_mon_lock);
+}
+
+bool conn_mgr_dns_is_ready(void)
+{
+	bool ret;
+
+	k_mutex_lock(&conn_mgr_mon_lock, K_FOREVER);
+	/* Return the last reported value */
+	ret = last_dns_ready;
+	k_mutex_unlock(&conn_mgr_mon_lock);
+
+	return ret;
 }
 
 void conn_mgr_ignore_iface(struct net_if *iface)
