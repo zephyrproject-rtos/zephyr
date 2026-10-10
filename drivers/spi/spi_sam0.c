@@ -51,6 +51,7 @@ struct spi_sam0_data {
 #ifdef CONFIG_SPI_SAM0_DMA
 	const struct device *dev;
 	uint32_t dma_segment_len;
+	bool dma_tx_only;
 #endif
 };
 
@@ -375,6 +376,8 @@ static bool spi_sam0_is_regular(const struct spi_buf_set *tx_bufs,
 #ifdef CONFIG_SPI_SAM0_DMA
 static void spi_sam0_dma_rx_done(const struct device *dma_dev, void *arg,
 				 uint32_t id, int error_code);
+static void spi_sam0_dma_tx_done(const struct device *dma_dev, void *arg,
+				 uint32_t id, int error_code);
 
 static int spi_sam0_dma_rx_load(const struct device *dev, uint8_t *buf,
 				size_t len)
@@ -422,6 +425,7 @@ static int spi_sam0_dma_tx_load(const struct device *dev, const uint8_t *buf,
 				size_t len)
 {
 	const struct spi_sam0_config *cfg = dev->config;
+	struct spi_sam0_data *data = dev->data;
 	SercomSpi *regs = cfg->regs;
 	struct dma_config dma_cfg = { 0 };
 	struct dma_block_config dma_blk = { 0 };
@@ -433,6 +437,11 @@ static int spi_sam0_dma_tx_load(const struct device *dev, const uint8_t *buf,
 	dma_cfg.block_count = 1;
 	dma_cfg.head_block = &dma_blk;
 	dma_cfg.dma_slot = cfg->tx_dma_request;
+
+	if (data->dma_tx_only) {
+		dma_cfg.user_data = data;
+		dma_cfg.dma_callback = spi_sam0_dma_tx_done;
+	}
 
 	dma_blk.block_size = len;
 
@@ -492,16 +501,18 @@ static int spi_sam0_dma_advance_buffers(const struct device *dev)
 		return -EINVAL;
 	}
 
-	/* Load receive first, so it can accept transmit data */
-	if (data->ctx.rx_len) {
-		retval = spi_sam0_dma_rx_load(dev, data->ctx.rx_buf,
-					      data->dma_segment_len);
-	} else {
-		retval = spi_sam0_dma_rx_load(dev, NULL, data->dma_segment_len);
-	}
+	if (!data->dma_tx_only) {
+		/* Load receive first, so it can accept transmit data */
+		if (data->ctx.rx_len != 0) {
+			retval = spi_sam0_dma_rx_load(dev, data->ctx.rx_buf,
+						      data->dma_segment_len);
+		} else {
+			retval = spi_sam0_dma_rx_load(dev, NULL, data->dma_segment_len);
+		}
 
-	if (retval != 0) {
-		return retval;
+		if (retval != 0) {
+			return retval;
+		}
 	}
 
 	/* Now load the transmit, which starts the actual bus clocking */
@@ -549,6 +560,37 @@ static void spi_sam0_dma_rx_done(const struct device *dma_dev, void *arg,
 		return;
 	}
 }
+
+static void spi_sam0_dma_tx_done(const struct device *dma_dev, void *arg,
+				 uint32_t id, int error_code)
+{
+	struct spi_sam0_data *data = arg;
+	const struct device *dev = data->dev;
+	const struct spi_sam0_config *cfg = dev->config;
+	SercomSpi *regs = cfg->regs;
+	int retval = error_code;
+
+	ARG_UNUSED(id);
+
+	spi_context_update_tx(&data->ctx, 1, data->dma_segment_len);
+
+	if ((retval == 0) && spi_sam0_dma_advance_segment(dev)) {
+		retval = spi_sam0_dma_advance_buffers(dev);
+		if (retval == 0) {
+			return;
+		}
+	}
+
+	/* The last byte only reached DATA: wait at most two byte times for the shifter */
+	while ((regs->INTFLAG.reg & SERCOM_SPI_INTFLAG_TXC) == 0) {
+	}
+
+	regs->CTRLB.bit.RXEN = 1;
+	wait_synchronization(regs);
+
+	spi_context_cs_control(&data->ctx, false);
+	spi_context_complete(&data->ctx, dev, retval);
+}
 #endif /* CONFIG_SPI_SAM0_DMA */
 
 static int spi_sam0_transceive(const struct device *dev,
@@ -575,11 +617,20 @@ static int spi_sam0_transceive(const struct device *dev,
 
 #ifdef CONFIG_SPI_SAM0_DMA
 	/*
-	 * Transmit clocks the output and we use receive to determine when
-	 * the transmit is done, so we always need both
+	 * Transmit clocks the output and receive tells when the transmit is
+	 * done. With nothing to receive, run the transmit channel alone with
+	 * the receiver off and use TXC instead: the receive channel would
+	 * double the DMA traffic.
 	 */
 	if (cfg->dma_dev != NULL && cfg->tx_dma_channel != 0xFF && cfg->rx_dma_channel != 0xFF) {
 		spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+
+		data->dma_tx_only = (spi_context_total_rx_len(&data->ctx) == 0);
+		if (data->dma_tx_only) {
+			regs->CTRLB.bit.RXEN = 0;
+			wait_synchronization(regs);
+			regs->INTFLAG.reg = SERCOM_SPI_INTFLAG_TXC;
+		}
 
 		spi_sam0_dma_advance_segment(dev);
 		retval = spi_sam0_dma_advance_buffers(dev);
@@ -587,9 +638,14 @@ static int spi_sam0_transceive(const struct device *dev,
 			dma_stop(cfg->dma_dev, cfg->tx_dma_channel);
 			dma_stop(cfg->dma_dev, cfg->rx_dma_channel);
 
+			if (data->dma_tx_only) {
+				regs->CTRLB.bit.RXEN = 1;
+				wait_synchronization(regs);
+			}
+
 			spi_context_cs_control(&data->ctx, false);
 		} else {
-			/* Wait for DMA completion signaled by spi_sam0_dma_rx_done() */
+			/* Wait for completion, signaled by the DMA callbacks */
 			retval = spi_context_wait_for_completion(&data->ctx);
 		}
 		spi_context_release(&data->ctx, retval);
