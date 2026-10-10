@@ -1,0 +1,23 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config USBH_BILLBOARD_CLASS
+	bool "USB Billboard Class support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  USB Host billboard Class implementation.
+
+if USBH_BILLBOARD_CLASS
+
+# USBH_BILLBOARD_INIT_PRIORITY = USBH_INIT_PRIO + 1
+config USBH_BILLBOARD_INIT_PRIORITY
+	int "Init priority for Billboard class"
+	default 91
+	help
+	  Driver initialization priority.
+
+module = USBH_BILLBOARD
+module-str = usbh billboard
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # USBH_BILLBOARD_CLASS
