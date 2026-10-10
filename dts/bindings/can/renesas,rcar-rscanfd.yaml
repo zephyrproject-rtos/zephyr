@@ -8,9 +8,6 @@ compatible: "renesas,rcar-rscanfd"
 include: [can-controller.yaml, pinctrl-device.yaml]
 
 properties:
-  interrupts:
-    required: true
-
   channel:
     type: int
     required: true
