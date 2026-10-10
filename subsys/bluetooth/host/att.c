@@ -527,6 +527,14 @@ static bool att_chan_matches_chan_opt(struct bt_att_chan *chan, enum bt_att_chan
 	}
 }
 
+/* L2CAP refuses an SDU that exceeds the peer's MTU of an EATT bearer, so such
+ * a PDU is left for a bearer it fits instead of blocking this one.
+ */
+static bool att_chan_can_carry(struct bt_att_chan *chan, struct net_buf *buf)
+{
+	return !bt_att_is_enhanced(chan) || buf->len <= chan->chan.tx.mtu;
+}
+
 static struct net_buf *get_first_buf_matching_chan(struct k_fifo *fifo, struct bt_att_chan *chan)
 {
 	if (IS_ENABLED(CONFIG_BT_EATT)) {
@@ -540,7 +548,8 @@ static struct net_buf *get_first_buf_matching_chan(struct k_fifo *fifo, struct b
 		while ((buf = k_fifo_get(fifo, K_NO_WAIT))) {
 			meta = att_get_tx_meta_data(buf);
 			if (!ret &&
-			    att_chan_matches_chan_opt(chan, meta->chan_opt)) {
+			    att_chan_matches_chan_opt(chan, meta->chan_opt) &&
+			    att_chan_can_carry(chan, buf)) {
 				ret = buf;
 			} else {
 				k_fifo_put(&skipped, buf);
@@ -568,8 +577,15 @@ static struct bt_att_req *get_first_req_matching_chan(sys_slist_t *reqs, struct 
 		struct bt_att_tx_meta_data *meta = NULL;
 
 		SYS_SLIST_FOR_EACH_NODE(reqs, curr) {
-			meta = att_get_tx_meta_data(ATT_REQ(curr)->buf);
-			if (att_chan_matches_chan_opt(chan, meta->chan_opt)) {
+			struct net_buf *buf = ATT_REQ(curr)->buf;
+
+			/* bt_att_chan_req_send() refuses a request that exceeds
+			 * the ATT_MTU of the bearer, so such a request is left
+			 * for a bearer it fits instead of blocking this one.
+			 */
+			meta = att_get_tx_meta_data(buf);
+			if (att_chan_matches_chan_opt(chan, meta->chan_opt) &&
+			    net_buf_frags_len(buf) <= bt_att_mtu(chan)) {
 				break;
 			}
 
@@ -672,16 +688,18 @@ static void bt_att_sent(struct bt_l2cap_chan *ch)
 	 * processed before they may always contain a buffer starving the
 	 * request queue.
 	 */
-	if (!chan->req && !sys_slist_is_empty(&att->reqs)) {
-		sys_snode_t *node = sys_slist_get(&att->reqs);
+	if (!chan->req) {
+		struct bt_att_req *req = get_first_req_matching_chan(&att->reqs, chan);
 
-		err = bt_att_chan_req_send(chan, ATT_REQ(node));
-		if (err == 0) {
-			return;
+		if (req != NULL) {
+			err = bt_att_chan_req_send(chan, req);
+			if (err == 0) {
+				return;
+			}
+
+			/* Prepend back to the list as it could not be sent */
+			sys_slist_prepend(&att->reqs, &req->node);
 		}
-
-		/* Prepend back to the list as it could not be sent */
-		sys_slist_prepend(&att->reqs, node);
 	}
 
 	/* Process channel queue */
@@ -869,10 +887,11 @@ static void att_send_process(struct bt_att *att)
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&att->chans, chan, tmp, node) {
 		if (err == -ENOENT && prev &&
-		    (bt_att_is_enhanced(chan) == bt_att_is_enhanced(prev))) {
+		    (bt_att_is_enhanced(chan) == bt_att_is_enhanced(prev)) &&
+		    (chan->chan.tx.mtu <= prev->chan.tx.mtu)) {
 			/* If there was nothing to send for the previous channel and the current
-			 * channel has the same "enhancedness", there will be nothing to send for
-			 * this channel either.
+			 * channel has the same "enhancedness" and no larger MTU, there will be
+			 * nothing to send for this channel either.
 			 */
 			continue;
 		}
@@ -996,10 +1015,11 @@ static void att_req_send_process(struct bt_att *att)
 			continue;
 		}
 
-		if (!req && prev && (bt_att_is_enhanced(chan) == bt_att_is_enhanced(prev))) {
+		if (!req && prev && (bt_att_is_enhanced(chan) == bt_att_is_enhanced(prev)) &&
+		    (bt_att_mtu(chan) <= bt_att_mtu(prev))) {
 			/* If there was nothing to send for the previous channel and the current
-			 * channel has the same "enhancedness", there will be nothing to send for
-			 * this channel either.
+			 * channel has the same "enhancedness" and no larger ATT_MTU, there will
+			 * be nothing to send for this channel either.
 			 */
 			continue;
 		}
@@ -3398,7 +3418,7 @@ static void bt_att_encrypt_change(struct bt_l2cap_chan *chan,
 static void bt_att_status(struct bt_l2cap_chan *ch, atomic_t *status)
 {
 	struct bt_att_chan *chan = ATT_CHAN(ch);
-	sys_snode_t *node;
+	struct bt_att_req *req;
 
 	LOG_DBG("chan %p status %p", ch, status);
 
@@ -3417,17 +3437,17 @@ static void bt_att_status(struct bt_l2cap_chan *ch, atomic_t *status)
 	}
 
 	/* Pull next request from the list */
-	node = sys_slist_get(&chan->att->reqs);
-	if (!node) {
+	req = get_first_req_matching_chan(&chan->att->reqs, chan);
+	if (req == NULL) {
 		return;
 	}
 
-	if (bt_att_chan_req_send(chan, ATT_REQ(node)) == 0) {
+	if (bt_att_chan_req_send(chan, req) == 0) {
 		return;
 	}
 
 	/* Prepend back to the list as it could not be sent */
-	sys_slist_prepend(&chan->att->reqs, node);
+	sys_slist_prepend(&chan->att->reqs, &req->node);
 }
 
 static void bt_att_released(struct bt_l2cap_chan *ch)
