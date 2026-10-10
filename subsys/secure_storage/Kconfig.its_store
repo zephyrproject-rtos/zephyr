@@ -17,6 +17,7 @@ config SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_ZMS
 		&& ($(dt_node_has_compat,$(dt_node_parent,$(DT_ITS_PARTITION)),fixed-partitions) \
 		|| $(dt_node_has_compat,$(DT_ITS_PARTITION),$(DT_COMPAT_ZEPHYR_MAPPED_PARTITION)))
 	depends on ZMS
+	imply ZMS_ID_64BIT if SECURE_STORAGE_64_BIT_UID
 	help
 	  This implementation of the ITS store module makes direct use of ZMS for storage.
 	  It needs a zephyr,secure-storage-its-partition devicetree chosen property that points

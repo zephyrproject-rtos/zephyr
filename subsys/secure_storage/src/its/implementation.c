@@ -12,9 +12,10 @@
 
 LOG_MODULE_DECLARE(secure_storage, CONFIG_SECURE_STORAGE_LOG_LEVEL);
 
+BUILD_ASSERT(1 << SECURE_STORAGE_ITS_CALLER_ID_BIT_SIZE >= SECURE_STORAGE_ITS_CALLER_COUNT);
+
 #ifndef CONFIG_SECURE_STORAGE_64_BIT_UID
 BUILD_ASSERT(sizeof(secure_storage_its_uid_t) == 4); /* ITS UIDs are 32-bit */
-BUILD_ASSERT(1 << SECURE_STORAGE_ITS_CALLER_ID_BIT_SIZE >= SECURE_STORAGE_ITS_CALLER_COUNT);
 BUILD_ASSERT(SECURE_STORAGE_ITS_CALLER_ID_BIT_SIZE + SECURE_STORAGE_ITS_UID_BIT_SIZE == 32);
 #endif
 
@@ -119,14 +120,15 @@ static bool keep_stored_entry(secure_storage_its_uid_t uid, size_t data_length, 
 	*ret = get_entry(uid, sizeof(existing_data), existing_data, &existing_data_len,
 			 &existing_create_flags);
 	if (*ret != PSA_SUCCESS) {
-		/* Allow overwriting entries that can't be read back to not be stuck with them
-		 * forever, but make it visible as it may be a sign of corruption or tampering.
-		 */
-		if (*ret != PSA_ERROR_DOES_NOT_EXIST) {
-			LOG_WRN("%s entry " UID_FMT " that failed to be read back. (%d)",
-				"Overwriting", UID_ARGS(uid), *ret);
+		if (*ret == PSA_ERROR_DOES_NOT_EXIST) {
+			return false;
 		}
-		return false;
+		if (*ret == PSA_ERROR_INVALID_SIGNATURE || *ret == PSA_ERROR_DATA_CORRUPT) {
+			LOG_WRN("%s entry " UID_FMT " that is corrupt. (%d)",
+				"Overwriting", UID_ARGS(uid), *ret);
+			return false;
+		}
+		return true;
 	}
 	if (existing_create_flags & PSA_STORAGE_FLAG_WRITE_ONCE) {
 		*ret = PSA_ERROR_NOT_PERMITTED;
@@ -268,12 +270,10 @@ static psa_status_t its_remove(secure_storage_its_caller_id_t caller_id, psa_sto
 	}
 	/* Allow overwriting corrupted entries as well to not be stuck with them forever. */
 	if (ret == PSA_SUCCESS ||
-	    ret == PSA_ERROR_STORAGE_FAILURE ||
-	    ret == PSA_ERROR_GENERIC_ERROR ||
 	    ret == PSA_ERROR_INVALID_SIGNATURE ||
 	    ret == PSA_ERROR_DATA_CORRUPT) {
 		if (ret != PSA_SUCCESS) {
-			LOG_WRN("%s entry " UID_FMT " that failed to be read back. (%d)",
+			LOG_WRN("%s entry " UID_FMT " that is corrupt. (%d)",
 				"Removing", UID_ARGS(its_uid), ret);
 		}
 		ret = secure_storage_its_store_remove(its_uid);
