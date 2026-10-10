@@ -972,6 +972,17 @@
 			status = "disabled";
 		};
 
+		lpdma1: dma@46025000 {
+			compatible = "st,stm32u5-dma";
+			#dma-cells = <3>;
+			reg = <0x46025000 0x1000>;
+			clocks = <&rcc STM32_CLOCK(AHB3, 9)>;
+			interrupts = <114 0>, <115 0>, <116 0>, <117 0>;
+			dma-channels = <4>;
+			dma-requests = <16>;
+			status = "disabled";
+		};
+
 		hash: crypto@420c0400 {
 			compatible = "st,stm32-hash";
 			reg = <0x420c0400 0x400>;
