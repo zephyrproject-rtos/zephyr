@@ -69,4 +69,11 @@ config PM_POLICY_DEVICE_CONSTRAINTS
 
 # add additional die specific params
 
+# PSC3 is programmed through the SAHB flash alias, which sits 0x20000000
+# above the CBUS alias that flash0 describes. Rebase the load address so
+# the generated image carries programming-alias addresses.
+config BUILD_OUTPUT_ADJUST_LMA
+	depends on XIP
+	default "0x20000000"
+
 endif # SOC_SERIES_PSC3
