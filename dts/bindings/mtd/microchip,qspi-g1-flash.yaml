@@ -1,0 +1,46 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+title: Microchip MSPI/QSPI child flash (vendor extensions)
+
+description: |
+  Microchip QSPI flash device with vendor-specific timing properties.
+
+  Defines vendor-specific properties for flash devices attached to the
+  Microchip MSPI/QSPI controller. This augments the standard MSPI device
+  binding with hardware-specific timing parameters (DLYBS, DLYCS, DLYBCT)
+  and operating mode selection (serial memory vs SPI mode).
+
+compatible: "microchip,qspi-g1-flash"
+
+include: ["mspi-device.yaml"]
+
+properties:
+  serial-memory-mode:
+    type: boolean
+    description: |
+      When present, use serial memory mode (memory-mapped XIP-style access).
+      When absent, use SPI mode (register-based byte transfers).
+
+  dlybs:
+    type: int
+    description: |
+      Delay Before SCK (BAUD.DLYBS): Number of peripheral clock cycles to delay
+      between CS assertion and first SCK edge. Range: 0-255.
+      Delay = dlybs / f_peripheral_clock
+
+  dlycs:
+    type: int
+    description: |
+      Minimum Inactive CS Delay (CTRLB.DLYCS): Minimum number of peripheral
+      clock cycles CS must remain HIGH between transfers. Range: 0-255.
+      If 0, one CLK_QSPI_AHB period is inserted by default.
+      Delay = dlycs / f_peripheral_clock
+
+  dlybct:
+    type: int
+    description: |
+      Delay Between Consecutive Transfers (CTRLB.DLYBCT): Delay inserted after
+      each transfer and before removing chip select. Range: 0-255.
+      When 0, no delay is inserted and clock keeps its duty cycle.
+      In Serial Memory mode (MODE=1), DLYBCT is ignored by hardware.
+      Delay = (dlybct / f_peripheral_clock) / 32

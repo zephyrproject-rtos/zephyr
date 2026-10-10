@@ -372,6 +372,23 @@
 			status = "disabled";
 		};
 
+		qspi0: qspi@42003400 {
+			compatible = "microchip,qspi-g1-mspi";
+			reg = <0x42003400 0x400>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_QSPI>,
+				 <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_AHB_QSPI>,
+				 <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_AHB_QSPI_2X>;
+			clock-names = "apb", "ahb", "ahb2x";
+			clock-frequency = <120000000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			duplex = "MSPI_HALF_DUPLEX";
+			interrupts = <134 0>;
+			interrupt-names = "irq";
+			op-mode = "MSPI_OP_MODE_CONTROLLER";
+			status = "disabled";
+		};
+
 		sercom4: sercom@43000000 {
 			compatible = "microchip,sercom-g1";
 			status = "disabled";
