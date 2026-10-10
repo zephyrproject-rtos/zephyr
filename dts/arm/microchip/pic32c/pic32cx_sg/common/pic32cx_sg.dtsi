@@ -414,8 +414,9 @@
 			reg = <0x42001400 0x400>;
 			interrupts = <111 0>;
 			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_TC4>,
-				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TC4>;
-			clock-names = "mclk", "gclk";
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TC4>,
+				 <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_TC5>;
+			clock-names = "mclk", "gclk", "client_mclk";
 			max-bit-width = <16>;
 			channels = <2>;
 			status = "disabled";
