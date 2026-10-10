@@ -12,9 +12,11 @@ family:
       - name: m33
       - name: hazard3_0
       - name: m33_0
+      - name: m33_1
     - name: rp2350b
       cpuclusters:
       - name: hazard3
       - name: m33
       - name: hazard3_0
       - name: m33_0
+      - name: m33_1

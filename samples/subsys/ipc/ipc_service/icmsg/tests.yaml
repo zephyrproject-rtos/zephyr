@@ -111,3 +111,39 @@ tests:
       - icmsg_EXTRA_DTC_OVERLAY_FILE="boards/nrf7120dk_nrf7120_cpuapp_icbmsg.overlay"
       - remote_CONFIG_IPC_SERVICE_BACKEND_ICBMSG_NUM_EP=1
       - remote_EXTRA_DTC_OVERLAY_FILE="boards/nrf7120dk_nrf7120_cpuflpr_icbmsg.overlay"
+
+  sample.ipc.icmsg.rp2350:
+    platform_allow:
+      - rpi_pico2/rp2350a/m33_0
+    integration_platforms:
+      - rpi_pico2/rp2350a/m33_0
+    extra_args:
+      - icmsg_SNIPPET=rp2xxx-cpu1
+
+  sample.ipc.icbmsg.rp2350:
+    platform_allow:
+      - rpi_pico2/rp2350a/m33_0
+    integration_platforms:
+      - rpi_pico2/rp2350a/m33_0
+    extra_args:
+      - icmsg_SNIPPET=rp2xxx-cpu1
+      - icmsg_FILE_SUFFIX=icbmsg
+      - remote_FILE_SUFFIX=icbmsg
+
+  sample.ipc.icmsg.rp2350_xip:
+    platform_allow:
+      - rpi_pico2/rp2350a/m33_0
+    integration_platforms:
+      - rpi_pico2/rp2350a/m33_0
+    extra_args:
+      - SNIPPET=rp2xxx-cpu1-xip
+
+  sample.ipc.icbmsg.rp2350_xip:
+    platform_allow:
+      - rpi_pico2/rp2350a/m33_0
+    integration_platforms:
+      - rpi_pico2/rp2350a/m33_0
+    extra_args:
+      - SNIPPET=rp2xxx-cpu1-xip
+      - icmsg_FILE_SUFFIX=icbmsg
+      - remote_FILE_SUFFIX=icbmsg

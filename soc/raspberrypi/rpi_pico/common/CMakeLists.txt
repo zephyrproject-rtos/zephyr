@@ -7,6 +7,8 @@ zephyr_sources(
   soc.c
 )
 
+zephyr_sources_ifdef(CONFIG_SOC_RPI_PICO_CPU1_ENABLE soc_cpu1.c)
+
 zephyr_sources_ifdef(CONFIG_RPI_PICO_ROM_BOOTLOADER rom_bootloader.c)
 
 zephyr_library_sources_ifdef(CONFIG_RPI_PICO_BINARY_INFO
