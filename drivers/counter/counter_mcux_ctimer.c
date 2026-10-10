@@ -52,6 +52,10 @@ struct mcux_lpc_ctimer_data {
 	struct mcux_lpc_ctimer_channel_data channels[NUM_CHANNELS];
 	counter_top_callback_t top_callback;
 	void *top_user_data;
+#ifdef CONFIG_COUNTER_MCUX_CTIMER_RESERVE_CHANNEL_FOR_SETTOP
+	/* Wrap set through set_top_value(), reprogrammed after a power-down. */
+	uint32_t top_ticks;
+#endif /* CONFIG_COUNTER_MCUX_CTIMER_RESERVE_CHANNEL_FOR_SETTOP */
 #if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
 	bool power_locked;
 #endif
@@ -293,6 +297,7 @@ static int mcux_lpc_ctimer_set_top_value(const struct device *dev,
 					       .outPinInitState = false,
 					       .enableInterrupt = true };
 
+	data->top_ticks = cfg->ticks;
 	CTIMER_SetupMatch(config->base, NUM_CHANNELS, &match_config);
 #endif
 
@@ -609,6 +614,20 @@ static int mcux_lpc_ctimer_turn_on(const struct device *dev)
 		data->channels[chan].capture_single_shot = false;
 #endif /* CONFIG_COUNTER_CAPTURE */
 	}
+
+#ifdef CONFIG_COUNTER_MCUX_CTIMER_RESERVE_CHANNEL_FOR_SETTOP
+	/* Zero means set_top_value() was never called. */
+	if (data->top_ticks != 0U) {
+		ctimer_match_config_t match_config = { .matchValue = data->top_ticks,
+						       .enableCounterReset = true,
+						       .enableCounterStop = false,
+						       .outControl = kCTIMER_Output_NoAction,
+						       .outPinInitState = false,
+						       .enableInterrupt = true };
+
+		CTIMER_SetupMatch(config->base, NUM_CHANNELS, &match_config);
+	}
+#endif /* CONFIG_COUNTER_MCUX_CTIMER_RESERVE_CHANNEL_FOR_SETTOP */
 #endif /* CONFIG_PM_DEVICE */
 
 	/* A resume always follows a turn-on and takes the clock. */
