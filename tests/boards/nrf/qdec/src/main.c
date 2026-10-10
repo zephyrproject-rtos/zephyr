@@ -10,6 +10,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/rtio/rtio.h>
 
 /**
  * Structure grouping gpio pins used for QENC emulation connected with a QDEC device
@@ -24,6 +25,9 @@ struct qdec_qenc_loopback {
 };
 
 static K_SEM_DEFINE(sem, 0, 1);
+
+RTIO_DEFINE(ctx, 1, 1);
+SENSOR_DT_READ_IODEV(iodev, DT_ALIAS(qdec0), {SENSOR_CHAN_ROTATION, 0});
 
 #define GET_QDEC_QENC_LOOPBACK(x)								   \
 	{											   \
@@ -552,6 +556,59 @@ ZTEST(qdec_sensor, test_sensor_sample_fetch)
 	for (size_t i = 0; i < TESTED_QDEC_COUNT; i++) {
 		TC_PRINT("Testing QDEC index %d, address: %p\n", i, loopbacks[i].qdec);
 		sensor_sample_fetch_test(loopbacks[i].qdec);
+	}
+}
+
+static void sensor_read_and_decode_test(struct qdec_qenc_loopback *loopback)
+{
+	int rc;
+	int num_frames_decoded;
+	uint8_t buf[128];
+	uint32_t temp_fit = 0;
+	struct sensor_q31_data data = {0};
+	q31_t rot_deg;
+	const struct sensor_decoder_api *decoder;
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_get(loopback->qdec);
+	}
+
+	qenc_emulate_start(loopback, K_MSEC(10), true);
+
+	/* wait for some readings*/
+	k_msleep(100);
+
+	rc = sensor_read(&iodev, &ctx, buf, 128);
+	zassert_true(rc == 0, "Failed to read sample (%d)", rc);
+
+	rc = sensor_get_decoder(loopback->qdec, &decoder);
+	zassert_true(rc == 0, "Failed to get sensor decoder (%d)", rc);
+
+	num_frames_decoded = decoder->decode(
+		buf, (struct sensor_chan_spec){SENSOR_CHAN_ROTATION, 0}, &temp_fit, 1, &data);
+	zassert_true(num_frames_decoded != 0, "Failed sensor decode operation (%d)", rc);
+
+	rot_deg = data.readings[0].value;
+	zassert_true(rot_deg != 0, "No readings from QDEC");
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_put(loopback->qdec);
+	}
+
+	qenc_emulate_stop();
+}
+
+/**
+ * @brief sensor_read and decode test
+ *
+ * Confirm getting readings from QDEC with RTIO read and decode implementation
+ *
+ */
+ZTEST(qdec_sensor, test_sensor_read_and_decode)
+{
+	for (size_t i = 0; i < TESTED_QDEC_COUNT; i++) {
+		TC_PRINT("Testing QDEC index %d, address: %p\n", i, loopbacks[i].qdec);
+		sensor_read_and_decode_test(&loopbacks[i]);
 	}
 }
 
