@@ -15,6 +15,7 @@
 
 		/* Sensor Aliases */
 		accel0 = &bosch_bmi270;
+		die-temp0 = &bosch_bmi270;
 	};
 
 	leds {
