@@ -1,0 +1,37 @@
+# Copyright (c) 2025 Hari Udayakumar <hariudkmr@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_CY8CPROTO_062S3_4343W
+
+if WIFI || BT
+
+# Select AIROC part and module
+choice AIROC_PART
+	default CYW4343W
+endchoice
+
+choice CYW4343W_MODULE
+	default CYW4343W_MURATA_1DX
+endchoice
+
+endif # WIFI || BT
+
+if WIFI
+
+config WIFI_AIROC
+	default y
+
+# Enable L2 Ethernet
+config NET_L2_ETHERNET
+	default y
+
+endif # WIFI
+
+if BT
+
+# BT H4 driver requires UART - dependency is automatic
+# No need to redeclare UART config
+
+endif # BT
+
+endif # BOARD_CY8CPROTO_062S3_4343W
