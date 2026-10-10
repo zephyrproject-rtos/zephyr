@@ -26,15 +26,40 @@ The common C library internally uses the :ref:`kernel memory heap API
 <heap_v2>` to manage the memory heap used by the standard dynamic memory
 management interface functions such as :c:func:`malloc` and :c:func:`free`.
 
-The internal memory heap is normally located in the ``.bss`` section. When
-userspace is enabled, however, it is placed in a dedicated memory partition
-called ``z_malloc_partition``, which can be accessed from the user mode
-threads. The size of the internal memory heap is specified by the
-:kconfig:option:`CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE`.
+Applications can choose between two possible implementations:
 
-The default heap size for applications using the common C library is zero
-(no heap). For other C library users, if there is an MMU present, then the
-default heap is 16kB. Otherwise, the heap uses all available memory.
+* :kconfig:option:`CONFIG_COMMON_LIBC_MALLOC_SINGLE` is the default and
+  provides a single heap shared by all threads. This heap is normally located
+  in the ``.bss`` section. When userspace is enabled, however, it is placed in
+  a dedicated memory partition called ``z_malloc_partition``, which can be
+  accessed from the user mode threads. The size of the internal memory heap is
+  specified by the :kconfig:option:`CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE`.
+
+  The default heap size for applications using the common C library is zero
+  (no heap). For other C library users, if there is an MMU present, then the
+  default heap is 16kB. Otherwise, the heap uses all available memory.
+
+  These functions are implemented in
+  :file:`lib/libc/common/source/stdlib/malloc.c`.
+
+* :kconfig:option:`CONFIG_COMMON_LIBC_MALLOC_TLS` does not create a global
+  heap. Instead, threads can be assigned dedicated memory heaps using
+  :c:func:`k_thread_malloc_heap_assign`. This has to be done before they
+  are started. Later changes will be ignored. The only exception is when a
+  thread uses :c:func:`k_thread_user_mode_enter` in which case the new heap
+  will be used in user mode. In case this is different from the heap this
+  thread used in kernel mode, it may never free memory allocated before.
+
+  :c:func:`k_thread_malloc_heap_assign` does not automatically give a user
+  thread access to the underlying memory of the heap. The application is
+  responsible for adding this into the thread's memory domain.
+
+  When :kconfig:option:`COMMON_LIBC_MALLOC_TLS_FALLBACK` is enabled, kernel
+  threads with no assigned malloc heap will instead use the system heap
+  via :c:func:`k_alloc`.
+
+  These functions are implemented in
+  :file:`lib/libc/common/source/stdlib/malloc_tls.c`.
 
 There are also separate controls to select :c:func:`calloc`
 (:kconfig:option:`COMMON_LIBC_CALLOC`) and :c:func:`reallocarray`
@@ -43,5 +68,4 @@ default as that doesn't impact memory usage in applications not using them.
 
 The standard dynamic memory management interface functions implemented by
 the common C library are thread safe and may be simultaneously called by
-multiple threads. These functions are implemented in
-:file:`lib/libc/common/source/stdlib/malloc.c`.
+multiple threads.
