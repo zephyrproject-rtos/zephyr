@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Maxim MAX98357A PCM input class D mono audio amplifier.
+
+  The amplifier has no control bus. It is a child node of the I2S controller
+  that feeds it and accepts I2S or left justified data of 16, 24 or 32 bits
+  at sample rates from 8 kHz to 96 kHz. No MCLK is needed.
+
+  The SD_MODE pin selects shutdown (below 0.16 V), the (left + right) / 2 mix
+  (0.16 V to 0.77 V), the right channel (0.77 V to 1.4 V) or the left channel
+  (above 1.4 V). When the pin is driven by a GPIO, a logic high therefore
+  plays the left channel only. Leave sdmode-gpios out and set the voltage
+  with a resistor divider to play the mix or the right channel.
+
+  Example:
+
+    &i2s0 {
+        max98357a: max98357a@0 {
+            compatible = "maxim,max98357a";
+            reg = <0>;
+            sdmode-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+        };
+    };
+
+compatible: "maxim,max98357a"
+
+include: i2s-device.yaml
+
+properties:
+  sdmode-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the SD_MODE pin. The active level enables the
+      amplifier and selects the left channel, the inactive level shuts it
+      down. Without this property the output is always enabled and mute
+      is not supported.

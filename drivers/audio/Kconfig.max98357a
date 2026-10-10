@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_CODEC_MAX98357A
+	bool "MAX98357A class D amplifier driver"
+	default y
+	depends on DT_HAS_MAXIM_MAX98357A_ENABLED
+	select I2S
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_MAXIM_MAX98357A),sdmode-gpios)
+	help
+	  Enable the driver for the Maxim MAX98357A PCM input class D mono
+	  amplifier. The amplifier has no control bus; the driver validates the
+	  I2S configuration and drives the SD_MODE pin when it is wired to a
+	  GPIO.

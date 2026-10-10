@@ -1,0 +1,19 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2s-tx = &arduino_i2s;
+	};
+};
+
+&arduino_i2s {
+	status = "okay";
+
+	max98357a_adafruit_max98357a: max98357a@0 {
+		compatible = "maxim,max98357a";
+		reg = <0>;
+	};
+};

@@ -8,6 +8,14 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0xdeadbeef 0x1000>;
+			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
 		test_i2s: i2s@11112222 {
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -18,6 +26,12 @@
 			test_i2s_mpxxdtyy: mpxxdtyy@0 {
 				compatible = "st,mpxxdtyy";
 				reg = <0>;
+			};
+
+			test_i2s_max98357a: max98357a@1 {
+				compatible = "maxim,max98357a";
+				reg = <1>;
+				sdmode-gpios = <&test_gpio 0 0>;
 			};
 		};
 	};
