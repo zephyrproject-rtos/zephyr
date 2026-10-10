@@ -1474,6 +1474,14 @@ if(CONFIG_GEN_ISR_TABLES)
     COMMAND_EXPAND_LISTS
     )
   set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES isr_tables.c)
+
+  if(CONFIG_GEN_SW_ISR_TABLE_SWITCH)
+    # get_isr_entry() holds addresses taken from ${ZEPHYR_LINK_STAGE_EXECUTABLE},
+    # so the final link must not move anything. A jump table would land in
+    # .rodata, ahead of the tail section the table itself is linked into, and
+    # shift every section after it.
+    set_source_files_properties(isr_tables.c PROPERTIES COMPILE_OPTIONS "-fno-jump-tables")
+  endif()
 endif()
 
 if(CONFIG_SYMTAB)

@@ -66,12 +66,14 @@ static void cbSendSystemDesc(void)
 	char isr_desc[SEGGER_SYSVIEW_MAX_STRING_LEN];
 
 	for (int idx = 0; idx < IRQ_TABLE_SIZE; idx++) {
-		const struct _isr_table_entry *entry = &_sw_isr_table[idx];
+		struct _isr_table_entry entry;
 
-		if ((entry->isr == z_irq_spurious) || (entry->isr == NULL)) {
+		z_sw_isr_table_lookup(idx, &entry);
+
+		if ((entry.isr == z_irq_spurious) || (entry.isr == NULL)) {
 			continue;
 		}
-		const char *name = symtab_find_symbol_name((uintptr_t)entry->isr, NULL);
+		const char *name = symtab_find_symbol_name((uintptr_t)entry.isr, NULL);
 
 		snprintf(isr_desc, SEGGER_SYSVIEW_MAX_STRING_LEN, "I#%d=%s", idx + 16, name);
 
