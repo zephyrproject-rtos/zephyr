@@ -1,0 +1,19 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&tc6 {
+	compatible = "microchip,tc-g1-counter";
+	clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBD_TC6>,
+		 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TC6>,
+		 <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBD_TC7>;
+	clock-names = "mclk", "gclk", "client_mclk";
+	max-bit-width = <32>;
+	prescaler = <1>;
+	status = "okay";
+};
+
+&tc7 {
+	status = "disabled";
+};
