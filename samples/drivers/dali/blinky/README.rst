@@ -13,20 +13,19 @@ Building and Running
 
 The interface to the DALI bus is defined in the board's devicetree.
 
-The board's devicetree must have a ``dali0`` node that provides the
-access to the DALI bus. See the predefined overlays in
-:zephyr_file:`samples/drivers/dali/blinky/boards` for examples.
+The devicetree must have a ``dali`` alias that provides the access to the DALI bus. The
+:ref:`mikroe_dali_2_click_shield` defines such a node. See the board overlays in
+:zephyr_file:`boards/shields/mikroe_dali_2_click/boards` for examples.
 
 .. note:: For proper operation a DALI specific physical interface is required.
 
 Building and Running for ST Nucleo F091RC
 =========================================
-The :zephyr_file:`samples/drivers/dali/blinky/boards/nucleo_f091rc.overlay`
-is specifically for the Mikroe-2672 DALI2 click development board
-used as physical interface to the DALI bus. This board uses negative
-logic for signal transmission (Tx Low <-> DALI Bus Idle).
-The sample can be build and executed for the
-:zephyr:board:`nucleo_f091rc` as follows:
+The :ref:`mikroe_dali_2_click_shield` is used as physical interface to the DALI bus. The board
+specific settings are provided by the shield in
+:zephyr_file:`boards/shields/mikroe_dali_2_click/boards/nucleo_f091rc.overlay`. The click board
+uses negative logic for signal transmission (Tx Low <-> DALI Bus Idle).
+The sample can be build and executed for the :zephyr:board:`nucleo_f091rc` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dali/blinky
@@ -36,15 +35,13 @@ The sample can be build and executed for the
    :compact:
 
 Building and Running for Nordic nRF52840
-============================================
-The :zephyr_file:`samples/drivers/dali/blinky/boards/nrf52840dk_nrf52840.overlay`
-is specifically for the Mikroe-2672 DALI2 click development board
-used as physical interface to the DALI bus. The pin assignment
-supports the use of an Arduino UNO click shield.
-The click board uses negative logic for signal transmission
-(Tx Low <-> DALI Bus Idle).
-The sample can be build and executed for the
-:zephyr:board:`nrf52840dk` as follows:
+========================================
+The :ref:`mikroe_dali_2_click_shield` is used as physical interface to the DALI bus. The board
+specific settings are provided by the shield in
+:zephyr_file:`boards/shields/mikroe_dali_2_click/boards/nrf52840dk_nrf52840.overlay`. The pin
+assignment supports the use of an Arduino UNO click shield. The click board uses negative logic
+for signal transmission (Tx Low <-> DALI Bus Idle).
+The sample can be build and executed for the :zephyr:board:`nrf52840dk` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dali/blinky
