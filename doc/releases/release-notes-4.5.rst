@@ -1447,6 +1447,7 @@ New Shields
 * :ref:`NXP MX8 DSI OLED1A Panel <nxp_mx8_dsi_oled1a>`
 * :ref:`NXP MX9 DSI OLED Panel <nxp_mx9_dsi_oled>`
 * :ref:`OD-6010 SLCD Panel Shield <od_6010_shield>`
+* :ref:`RAK13800 WisBlock Ethernet Module <rakwireless_rak13800>`
 * :ref:`RAK19007 WisBlock Base Board 2nd Gen <rakwireless_rak19007>`
 * :ref:`RTKAPPLCDMS02001BE MIPI Display <rtkapplcdms02001be>`
 * :ref:`Seeed Studio COB LED Driver Board for XIAO <seeed_xiao_cob_led>`
