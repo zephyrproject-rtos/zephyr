@@ -1,0 +1,94 @@
+#
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+description: NXP MCUX MIPI DSI Split
+
+compatible: "nxp,mipi-dsi-split"
+
+include: mipi-dsi-host.yaml
+
+properties:
+  interrupts:
+    required: true
+
+  nxp,lcdif:
+    type: phandle
+    description:
+      Instance of the LCDIF/DCIF peripheral. Only required when using the MIPI
+      in video mode
+
+  dpi-color-coding:
+    type: string
+    enum:
+      - "16-bit-config-1"
+      - "16-bit-config-2"
+      - "16-bit-config-3"
+      - "18-bit-config-1"
+      - "18-bit-config-2"
+      - "24-bit"
+    description:
+      Declared, but not read by this driver -- nxp,mipi-dsi-2l's equivalent of
+      dpi-pixel-packet below. Boards/shields shared between the two drivers set
+      both properties; this one only needs to validate for a "24-bit" value
+      that also exists in dpi-pixel-packet's own enum.
+
+  dpi-pixel-packet:
+    type: string
+    enum:
+      - "16-bit"
+      - "18-bit"
+      - "18-bit-loose"
+      - "24-bit"
+    description:
+      MIPI DSI pixel packet type send through DPI interface.
+
+  dpi-video-mode:
+    type: string
+    enum:
+      - "non-burst-sync-pulse"
+      - "non-burst-sync-event"
+      - "burst"
+    description:
+      DPI video mode.
+
+  dpi-bllp-mode:
+    type: string
+    enum:
+      - "blank"
+      - "null"
+      - "vertical-low-power"
+      - "horizontal-low-power"
+      - "low-power"
+    description:
+      Behavior in BLLP (Blanking or Low-Power Interval). "low-power" is both
+      vertical and horizontal low power combined, for compatibility with
+      boards/shields written against nxp,mipi-dsi-2l's enum of the same name.
+
+  autoinsert-eotp:
+    type: boolean
+    description:
+      Automatically insert an EoTp short packet when switching from HS to LP mode.
+
+  esc-rx-clock:
+    type: int
+    default: 200000000
+    description: |
+      Target D-PHY RX escape clock frequency, in Hz (DSI D-PHY spec: 100-300 MHz).
+      The achieved rate is the escape-clock-source frequency divided down to the
+      nearest integer divider; see esc-tx-clock for the second stage.
+
+  esc-tx-clock:
+    type: int
+    default: 20000000
+    description: |
+      Target D-PHY TX escape clock frequency, in Hz (DSI D-PHY spec: 12-20 MHz max).
+      The achieved rate is esc-rx-clock's achieved frequency divided down further to
+      the nearest integer divider.
+
+  continuous-hs-clk:
+    type: boolean
+    description:
+      Enable non-continuous high speed clock. Saves power but introduces latency
+      when transitioning to high speed mode.
