@@ -1,0 +1,39 @@
+# Copyright (c) 2025 Andes Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config TOOLCHAIN_ANDES_SUPPORTS_THREAD_LOCAL_STORAGE
+	def_bool y
+	select TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+	select THREAD_LOCAL_STORAGE if CPP
+
+config TOOLCHAIN_ANDES_SUPPORTS_GNU_EXTENSIONS
+	def_bool y
+	select TOOLCHAIN_SUPPORTS_GNU_EXTENSIONS
+
+choice TOOLCHAIN_ANDES_SUPPORTS_RISCV_FLOAT_ABI
+	prompt "Andes Toolchain Float ABI Support"
+	default TOOLCHAIN_ANDES_SUPPORTS_FLOAT_SOFT
+	help
+	  Select the Float ABI supported by the Andes toolchain to match its
+	  internal libraries (libgcc.a/libc.a) and prevent link-time ABI mismatches.
+
+config TOOLCHAIN_ANDES_SUPPORTS_FLOAT_SOFT
+	bool "Soft Float"
+	help
+	  Software FP emulation. Maps to -mabi=ilp32 or -mabi=lp64.
+
+config TOOLCHAIN_ANDES_SUPPORTS_FLOAT_SINGLE
+	bool "Hard Float Single Precision"
+	select FPU
+	select FLOAT_HARD
+	help
+	  Single-precision hardware FPU. Maps to -mabi=ilp32f or -mabi=lp64f.
+
+config TOOLCHAIN_ANDES_SUPPORTS_FLOAT_DOUBLE
+	bool "Hard Float Double Precision"
+	select FPU
+	select FLOAT_HARD
+	help
+	  Double-precision hardware FPU. Maps to -mabi=ilp32d or -mabi=lp64d.
+
+endchoice

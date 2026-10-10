@@ -137,6 +137,21 @@ toolchain is compatible only with the float point unit usage.
    # From the root of the zephyr repository
    west build -b tlsr9518adk80d samples/hello_world
 
+The AndeStar V5 DSP extension (``CONFIG_RISCV_CUSTOM_CSR_ANDES_HWDSP``) is only
+available with the ``andes`` toolchain variant (see :ref:`toolchain_andes`), which
+passes the required ``-mext-dsp`` compiler flag.
+
+.. code-block:: console
+
+   # Set Zephyr toolchain variant to andes
+   export ZEPHYR_TOOLCHAIN_VARIANT=andes
+   # Specify the toolchain installation directory
+   export ANDES_TOOLCHAIN_PATH=~/toolchains/nds32le-elf-mculib-v5f
+   # From the root of the zephyr repository
+   west build -b tlsr9518adk80d samples/hello_world -- \
+      -DCONFIG_TOOLCHAIN_ANDES_SUPPORTS_FLOAT_SINGLE=y \
+      -DCONFIG_RISCV_CUSTOM_CSR_ANDES_HWDSP=y
+
 `Telink RISC-V Linux Toolchain`_ is available on the `Burning and Debugging Tools for TLSR9 Series in Linux`_ page.
 
 Open a serial terminal with the following settings:
