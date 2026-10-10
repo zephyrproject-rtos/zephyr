@@ -1,0 +1,22 @@
+# Copyright (c) 2026 AIFoundry
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_ERBIUM
+
+configdefault 2ND_LVL_ISR_TBL_OFFSET
+	default 12
+
+configdefault 2ND_LVL_INTR_00_OFFSET
+	default 11
+
+configdefault MAX_IRQ_PER_AGGREGATOR
+	default 32
+
+configdefault NUM_IRQS
+	default 44
+
+# Erbium requires mtvec/stvec to be 4KB aligned.
+configdefault RISCV_TRAP_HANDLER_ALIGNMENT
+	default 4096
+
+endif

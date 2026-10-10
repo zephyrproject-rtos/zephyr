@@ -5287,6 +5287,21 @@ Open AMP:
     - sample.ipc.openamp_rs_table
     - sample.ipc
 
+OpenHW Erbium Platform:
+  status: maintained
+  maintainers:
+    - AFOliveira
+  files:
+    - boards/openhwgroup/erbium/
+    - drivers/serial/Kconfig.shakti_nekko
+    - drivers/serial/uart_shakti_nekko.c
+    - dts/bindings/memory-controllers/openhwgroup,erbium-mram-controller.yaml
+    - dts/bindings/serial/openhwgroup,shakti-uart-v1.yaml
+    - dts/riscv/openhwgroup/erbium.dtsi
+    - soc/openhwgroup/erbium/
+  labels:
+    - "platform: OpenHW"
+
 OpenRISC Arch:
   status: maintained
   maintainers:
