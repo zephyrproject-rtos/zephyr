@@ -1,0 +1,23 @@
+#
+# Copyright (c) 2026 Microchip Technology Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: Microchip XEC tachometer
+  description: Read fan speed from the Microchip XEC TACH block
+tests:
+  sample.sensor.tach_xec:
+    tags: sensors
+    build_only: true
+    platform_allow:
+      - mec15xxevb_assy6853
+      - mec172xevb_assy6906
+      - mec_assy6941/mec1653b_nsz
+      - mec_assy6941/mec1743_qlj
+      - mec_assy6941/mec1743_qsz
+      - mec_assy6941/mec1753_qlj
+      - mec_assy6941/mec1753_qsz
+    integration_platforms:
+      - mec172xevb_assy6906
+      - mec_assy6941/mec1753_qsz
