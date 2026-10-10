@@ -2063,6 +2063,27 @@ static int cmd_write_eir_name(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_set_chan_map(const struct shell *sh, size_t argc, char *argv[])
+{
+	uint8_t chan_map[10] = {};
+	int err;
+
+	if (hex2bin(argv[1], strlen(argv[1]), chan_map, sizeof(chan_map)) == 0) {
+		shell_error(sh, "Invalid channel map");
+		return -ENOEXEC;
+	}
+	sys_mem_swap(chan_map, sizeof(chan_map));
+
+	err = bt_br_set_chan_map(chan_map);
+	if (err != 0) {
+		shell_error(sh, "Failed to set channel map (err %d)", err);
+		return err;
+	}
+
+	shell_print(sh, "Channel map set");
+	return 0;
+}
+
 static int cmd_default_handler(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc == 1) {
@@ -2169,6 +2190,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(br_cmds,
 	SHELL_CMD_ARG(cod-get, NULL, HELP_NONE, cmd_get_class_of_device, 1, 0),
 	SHELL_CMD_ARG(cod-set, NULL, "<cod>", cmd_set_class_of_device, 2, 0),
 	SHELL_CMD_ARG(write-eir-name, NULL, HELP_NONE, cmd_write_eir_name, 1, 0),
+	SHELL_CMD_ARG(channel-map, NULL, "<channel-map: XXXXXXXXXXXXXXXXXXXX> (78-0)",
+		      cmd_set_chan_map, 2, 0),
 	SHELL_SUBCMD_SET_END
 );
 
