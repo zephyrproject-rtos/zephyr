@@ -18,6 +18,10 @@ bool usbh_desc_is_valid(const void *const desc,
 {
 	const struct usb_desc_header *const head = desc;
 
+	if (desc == NULL) {
+		return false;
+	}
+
 	if (size < sizeof(struct usb_desc_header)) {
 		return false;
 	}
