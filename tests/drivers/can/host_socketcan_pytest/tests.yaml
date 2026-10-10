@@ -1,0 +1,13 @@
+common:
+  tags:
+    - drivers
+    - can
+  depends_on: can
+tests:
+  drivers.can.host_socketcan.pytest:
+    harness: pytest
+    sidecar: can
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
