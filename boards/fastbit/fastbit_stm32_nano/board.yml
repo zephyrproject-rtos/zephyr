@@ -1,0 +1,11 @@
+board:
+  name: fastbit_stm32_nano
+  full_name: Fastbit STM32 Nano
+  vendor: fastbit
+  revision:
+    format: major.minor.patch
+    default: "2.1.0"
+    revisions:
+      - name: "2.1.0"
+  socs:
+    - name: stm32f303xc

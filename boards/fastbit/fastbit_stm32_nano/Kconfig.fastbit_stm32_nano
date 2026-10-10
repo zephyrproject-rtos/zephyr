@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Fastbit Embedded Technologies
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_FASTBIT_STM32_NANO
+	select SOC_STM32F303XC

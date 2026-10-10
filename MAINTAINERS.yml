@@ -3346,6 +3346,17 @@ Ezurio platforms:
   labels:
     - "platform: Ezurio"
 
+Fastbit Platforms:
+  status: maintained
+  maintainers:
+    - kiran-fastbit
+    - shreyas-fastbit
+  files:
+    - boards/fastbit/
+    - dts/bindings/gpio/fastbit,nano-header.yaml
+  labels:
+    - "platform: Fastbit"
+
 Filesystems:
   status: maintained
   maintainers:
