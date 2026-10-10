@@ -18,6 +18,11 @@
 #include "rtc_utils.h"
 #include <ti/driverlib/dl_rtc_common.h>
 
+#define RTCCLK_FREQ_HZ (32768)
+/* Writes take ~ 3 RTCCLK cycles (32 kHz) to take effect. Approximate delay of 92us */
+#define RTC_TI_SETTLE_US  DIV_ROUND_UP(3U * USEC_PER_SEC, RTCCLK_FREQ_HZ)
+#define RTC_TI_SETTLE_CYC k_us_to_cyc_ceil32(RTC_TI_SETTLE_US)
+
 #if defined(CONFIG_RTC_ALARM)
 #define RTC_TI_ALARM_1		0
 #define RTC_TI_ALARM_2		1
@@ -46,10 +51,36 @@ struct rtc_ti_mspm0_alarm {
 
 struct rtc_ti_mspm0_data {
 	struct k_spinlock lock;
+	/* Cycle count taken right after last reg write. 0 denotes no need to wait. */
+	uint32_t last_write_cyc;
 #if defined(CONFIG_RTC_ALARM)
 	struct rtc_ti_mspm0_alarm rtc_alarm[RTC_TI_MAX_ALARM];
 #endif
 };
+
+static void rtc_ti_mspm0_mark_write(struct rtc_ti_mspm0_data *data)
+{
+	data->last_write_cyc = k_cycle_get_32();
+	/* 0 is reserved. */
+	if (data->last_write_cyc == 0) {
+		data->last_write_cyc = 1;
+	}
+}
+
+static void rtc_ti_mspm0_wait_settled(struct rtc_ti_mspm0_data *data)
+{
+	uint32_t elapsed;
+
+	if (data->last_write_cyc == 0) {
+		return;
+	}
+
+	elapsed = k_cycle_get_32() - data->last_write_cyc;
+	if (elapsed < RTC_TI_SETTLE_CYC) {
+		k_busy_wait(k_cyc_to_us_ceil32(RTC_TI_SETTLE_CYC - elapsed));
+		data->last_write_cyc = 0;
+	}
+}
 
 static int rtc_ti_mspm0_set_time(const struct device *dev,
 				 const struct rtc_time *timeptr)
@@ -80,6 +111,7 @@ static int rtc_ti_mspm0_set_time(const struct device *dev,
 				    RTC_DAY_DOW_MASK | RTC_DAY_DOMBIN_MASK);
 		DL_RTC_Common_setCalendarMonthBinary(cfg->regs, mon);
 		DL_RTC_Common_setCalendarYearBinary(cfg->regs, year);
+		rtc_ti_mspm0_mark_write(data);
 	}
 
 	return 0;
@@ -96,6 +128,7 @@ static int rtc_ti_mspm0_get_time(const struct device *dev,
 	}
 
 	K_SPINLOCK(&data->lock) {
+		rtc_ti_mspm0_wait_settled(data);
 		timeptr->tm_sec  = DL_RTC_Common_getCalendarSecondsBinary(cfg->regs);
 		timeptr->tm_min  = DL_RTC_Common_getCalendarMinutesBinary(cfg->regs);
 		timeptr->tm_hour = DL_RTC_Common_getCalendarHoursBinary(cfg->regs);
