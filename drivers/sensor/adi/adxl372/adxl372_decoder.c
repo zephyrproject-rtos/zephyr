@@ -5,13 +5,15 @@
  */
 
 #include "adxl372.h"
-
-#ifdef CONFIG_ADXL372_STREAM
+#include <zephyr/kernel.h>
 
 /* (1.0 / 10 (sensor sensitivity)) * (2^31 / 2^11 (sensor shift) ) * SENSOR_G */
 #define SENSOR_QSCALE_FACTOR UINT32_C(1027604)
+#define ADXL372_ACCEL_SHIFT 11
 
 #define ADXL372_COMPLEMENT         0xf000
+
+#ifdef CONFIG_ADXL372_STREAM
 
 static const uint32_t accel_period_ns[] = {
 	[ADXL372_ODR_400HZ] = UINT32_C(1000000000) / 400,
@@ -227,30 +229,47 @@ static int adxl372_decoder_get_frame_count(const uint8_t *buffer, struct sensor_
 	return ret;
 }
 
+/*
+ * adxl372_get_accel_data() packs x/y/z top-aligned, i.e. (true signed 12-bit
+ * value << 4), unlike the FIFO/stream helper's bottom-aligned data_in -- so
+ * shift back down before applying the shared SENSOR_QSCALE_FACTOR.
+ */
+static inline void adxl372_accel_convert_q31_sample(q31_t *out, int16_t value)
+{
+	int16_t data_in = value >> 4;
+
+	*out = data_in * SENSOR_QSCALE_FACTOR;
+}
+
 static int adxl372_decode_sample(const struct adxl372_xyz_accel_data *data,
 				 struct sensor_chan_spec chan_spec, uint32_t *fit,
 				 uint16_t max_count, void *data_out)
 {
-	struct sensor_value *out = (struct sensor_value *)data_out;
+	struct sensor_three_axis_data *out = (struct sensor_three_axis_data *)data_out;
 
 	if (*fit > 0) {
 		return -ENOTSUP;
 	}
 
+	memset(out, 0, sizeof(*out));
+	out->header.base_timestamp_ns = k_ticks_to_ns_floor64(k_uptime_ticks());
+	out->header.reading_count = 1;
+	out->shift = ADXL372_ACCEL_SHIFT;
+
 	switch (chan_spec.chan_type) {
 	case SENSOR_CHAN_ACCEL_X:
-		adxl372_accel_convert(out, data->x);
+		adxl372_accel_convert_q31_sample(&out->readings[0].x, data->x);
 		break;
 	case SENSOR_CHAN_ACCEL_Y:
-		adxl372_accel_convert(out, data->y);
+		adxl372_accel_convert_q31_sample(&out->readings[0].y, data->y);
 		break;
 	case SENSOR_CHAN_ACCEL_Z:
-		adxl372_accel_convert(out, data->z);
+		adxl372_accel_convert_q31_sample(&out->readings[0].z, data->z);
 		break;
 	case SENSOR_CHAN_ACCEL_XYZ:
-		adxl372_accel_convert(out++, data->x);
-		adxl372_accel_convert(out++, data->y);
-		adxl372_accel_convert(out, data->z);
+		adxl372_accel_convert_q31_sample(&out->readings[0].x, data->x);
+		adxl372_accel_convert_q31_sample(&out->readings[0].y, data->y);
+		adxl372_accel_convert_q31_sample(&out->readings[0].z, data->z);
 		break;
 	default:
 		return -ENOTSUP;
@@ -258,7 +277,7 @@ static int adxl372_decode_sample(const struct adxl372_xyz_accel_data *data,
 
 	*fit = 1;
 
-	return 0;
+	return 1;
 }
 
 static int adxl372_decoder_decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
@@ -294,8 +313,25 @@ static bool adxl372_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigg
 	}
 }
 
+static int adxl372_decoder_get_size_info(struct sensor_chan_spec chan_spec, size_t *base_size,
+					 size_t *frame_size)
+{
+	switch (chan_spec.chan_type) {
+	case SENSOR_CHAN_ACCEL_X:
+	case SENSOR_CHAN_ACCEL_Y:
+	case SENSOR_CHAN_ACCEL_Z:
+	case SENSOR_CHAN_ACCEL_XYZ:
+		*base_size = sizeof(struct sensor_three_axis_data);
+		*frame_size = sizeof(struct sensor_three_axis_sample_data);
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+
 SENSOR_DECODER_API_DT_DEFINE() = {
 	.get_frame_count = adxl372_decoder_get_frame_count,
+	.get_size_info = adxl372_decoder_get_size_info,
 	.decode = adxl372_decoder_decode,
 	.has_trigger = adxl372_decoder_has_trigger,
 };
