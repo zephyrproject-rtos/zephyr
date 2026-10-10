@@ -140,6 +140,8 @@ static void stm32_ltdc_global_isr(const struct device *dev)
 
 				LTDC_LAYER(&data->hltdc, LTDC_LAYER_1)->CFBAR =
 					(uint32_t)data->front_buf;
+				/* The HAL programs this address again when it sets up the layer */
+				data->hltdc.LayerCfg[0].FBStartAdress = (uint32_t)data->front_buf;
 
 				__HAL_LTDC_RELOAD_IMMEDIATE_CONFIG(&data->hltdc);
 
@@ -615,7 +617,8 @@ static int stm32_ltdc_display_unregister_event_cb(const struct device *dev, uint
 #define STM32_LTDC_DOMAIN_CLOCK_SUPPORT 0
 #endif
 
-static int stm32_ltdc_init(const struct device *dev)
+/* Program the controller from the driver state, at boot and again on resume */
+static int stm32_ltdc_hw_init(const struct device *dev)
 {
 	int err;
 	const struct display_stm32_ltdc_config *config = dev->config;
@@ -670,14 +673,6 @@ static int stm32_ltdc_init(const struct device *dev)
 	/* reset LTDC peripheral */
 	(void)reset_line_toggle_dt(&config->reset);
 
-	data->current_pixel_format = DISPLAY_INIT_PIXEL_FORMAT;
-	data->current_pixel_size = STM32_LTDC_INIT_PIXEL_SIZE;
-
-	k_sem_init(&data->sem, 0, 1);
-	k_sem_init(&data->cb_sem, 1, 1);
-
-	config->irq_config_func(dev);
-
 #ifdef CONFIG_STM32_LTDC_DISABLE_FMC_BANK1
 	/* Clear MBKEN and MTYP[1:0] bits. */
 #ifdef CONFIG_SOC_SERIES_STM32F7X
@@ -693,26 +688,19 @@ static int stm32_ltdc_init(const struct device *dev)
 		return err;
 	}
 
-#if defined(CONFIG_STM32_LTDC_FB_USE_SHARED_MULTI_HEAP)
-	data->frame_buffer = shared_multi_heap_aligned_alloc(
-			CONFIG_STM32_LTDC_FB_SMH_ATTRIBUTE,
-			CONFIG_STM32_LTDC_FB_SMH_ALIGN,
-			CONFIG_STM32_LTDC_FB_NUM * data->frame_buffer_len);
-
-	if (data->frame_buffer == NULL) {
-		return -ENOMEM;
-	}
-
-	data->pend_buf = data->frame_buffer;
-	data->front_buf = data->frame_buffer;
-	data->hltdc.LayerCfg[0].FBStartAdress = (uint32_t) data->frame_buffer;
-#endif
-
 	/* Configure layer 1 (only one layer is used) */
 	/* LTDC starts fetching pixels and sending them to display after this call */
-	err = HAL_LTDC_ConfigLayer(&data->hltdc, &data->hltdc.LayerCfg[0], LTDC_LAYER_1);
-	if (err != HAL_OK) {
-		return err;
+	if (IS_ENABLED(STM32_LTDC_HAS_YUV) && data->current_pixel_format == PIXEL_FORMAT_YUYV) {
+		/* HAL_LTDC_ConfigLayer() does not support the YUV format kept in LayerCfg[0] */
+		err = stm32_ltdc_set_yuv(dev);
+		if (err < 0) {
+			return err;
+		}
+	} else {
+		err = HAL_LTDC_ConfigLayer(&data->hltdc, &data->hltdc.LayerCfg[0], LTDC_LAYER_1);
+		if (err != HAL_OK) {
+			return err;
+		}
 	}
 
 	/* Disable layer 2, since it not used */
@@ -722,6 +710,36 @@ static int stm32_ltdc_init(const struct device *dev)
 	LTDC->LIPCR = 0U;
 
 	return 0;
+}
+
+static int stm32_ltdc_init(const struct device *dev)
+{
+	const struct display_stm32_ltdc_config *config = dev->config;
+	struct display_stm32_ltdc_data *data = dev->data;
+
+	data->current_pixel_format = DISPLAY_INIT_PIXEL_FORMAT;
+	data->current_pixel_size = STM32_LTDC_INIT_PIXEL_SIZE;
+
+	k_sem_init(&data->sem, 0, 1);
+	k_sem_init(&data->cb_sem, 1, 1);
+
+#if defined(CONFIG_STM32_LTDC_FB_USE_SHARED_MULTI_HEAP)
+	data->frame_buffer = shared_multi_heap_aligned_alloc(
+		CONFIG_STM32_LTDC_FB_SMH_ATTRIBUTE, CONFIG_STM32_LTDC_FB_SMH_ALIGN,
+		CONFIG_STM32_LTDC_FB_NUM * data->frame_buffer_len);
+
+	if (data->frame_buffer == NULL) {
+		return -ENOMEM;
+	}
+
+	data->pend_buf = data->frame_buffer;
+	data->front_buf = data->frame_buffer;
+	data->hltdc.LayerCfg[0].FBStartAdress = (uint32_t)data->frame_buffer;
+#endif
+
+	config->irq_config_func(dev);
+
+	return stm32_ltdc_hw_init(dev);
 }
 
 #ifdef CONFIG_PM_DEVICE
@@ -756,6 +774,25 @@ static int stm32_ltdc_suspend(const struct device *dev)
 	return err;
 }
 
+static int stm32_ltdc_resume(const struct device *dev)
+{
+	struct display_stm32_ltdc_data *data = dev->data;
+	int err;
+
+	/* stm32_ltdc_hw_init() can also return a HAL status, which is positive */
+	err = stm32_ltdc_hw_init(dev);
+	if (err != 0) {
+		return err;
+	}
+
+	/* The suspend reset the line interrupt that a registered callback relies on */
+	if (data->cb.dev != NULL) {
+		HAL_LTDC_ProgramLineEvent(&data->hltdc, data->cb.user_line_number);
+	}
+
+	return 0;
+}
+
 static int stm32_ltdc_pm_action(const struct device *dev,
 				enum pm_device_action action)
 {
@@ -763,7 +800,7 @@ static int stm32_ltdc_pm_action(const struct device *dev,
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		err = stm32_ltdc_init(dev);
+		err = stm32_ltdc_resume(dev);
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		err = stm32_ltdc_suspend(dev);
