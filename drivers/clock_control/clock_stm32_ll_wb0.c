@@ -226,7 +226,7 @@ static int stm32_clock_control_on(const struct device *dev, clock_control_subsys
 	 * until peripheral clock enabling is complete
 	 */
 	temp = sys_read32(reg);
-	UNUSED(temp);
+	(void)temp;
 
 	return 0;
 }
