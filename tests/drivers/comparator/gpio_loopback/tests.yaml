@@ -106,6 +106,7 @@ tests:
     platform_allow:
       - esp32p4x_function_ev_board/esp32p4/hpcore
       - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c61_devkitc/esp32c61
       - esp32h2_devkitm/esp32h2
   drivers.comparator.gpio_loopback.infineon_csg:
     extra_args:
