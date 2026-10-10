@@ -203,7 +203,7 @@ static inline int z_vrfy_espi_flash_erase(const struct device *dev,
 	K_OOPS(K_SYSCALL_DRIVER_ESPI(dev, flash_write));
 	K_OOPS(k_usermode_from_copy(&pckt_copy, pckt,
 				sizeof(struct espi_flash_packet)));
-	K_OOPS(K_SYSCALL_MEMORY_READ(pckt->buf, pckt->len));
+	K_OOPS(K_SYSCALL_MEMORY_READ(pckt_copy.buf, pckt_copy.len));
 
 	ret = z_impl_espi_flash_erase(dev, &pckt_copy);
 
