@@ -664,6 +664,8 @@ New APIs and options
     * :c:enumerator:`BT_LE_SCAN_OPT_EXT_FILTER_POLICY`
     * :kconfig:option:`CONFIG_BT_SCAN_EXT_FILTER_POLICY`
     * :c:member:`bt_le_scan_recv_info.direct_addr`
+    * :kconfig:option:`CONFIG_BT_ATT_PREPARE_COUNT_PER_CONN` to limit how many of the ATT
+      prepare write buffers a single connection may hold.
 
   * Mesh
 

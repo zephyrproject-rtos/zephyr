@@ -30,6 +30,35 @@ config BT_ATT_PREPARE_COUNT
 	  Number of buffers available for ATT prepare write, setting
 	  this to 0 disables GATT long/reliable writes.
 
+	  The buffers are shared by all connections, and each connection
+	  may hold at most BT_ATT_PREPARE_COUNT_PER_CONN of them. One
+	  Prepare Write Request carries up to (ATT_MTU - 5) octets, so a
+	  long write of N octets needs ceil(N / (ATT_MTU - 5)) buffers.
+	  The recommended sizing is that per-client need multiplied by
+	  BT_MAX_CONN, which keeps every connection's capacity independent
+	  of the other connections.
+
+config BT_ATT_PREPARE_COUNT_PER_CONN
+	int "Number of ATT prepare write buffers per connection"
+	depends on BT_ATT_PREPARE_COUNT > 0
+	range 0 BT_ATT_PREPARE_COUNT
+	default 0
+	help
+	  Maximum number of prepare write buffers a single connection may
+	  hold queued. Once a connection holds this many, its further
+	  Prepare Write Requests are rejected with the ATT error Prepare
+	  Queue Full even while the shared pool still has free buffers, so
+	  that a peer which never executes or cancels its queued writes
+	  cannot exhaust the pool for the other connections.
+
+	  0 selects BT_ATT_PREPARE_COUNT / BT_MAX_CONN, at least 1, which
+	  gives every connection an equal share of the pool as long as the
+	  pool holds at least one buffer per connection. A larger value, or
+	  a pool smaller than BT_MAX_CONN, over-subscribes the pool: fewer
+	  buffers in total for the same long write size, at the cost of one
+	  connection being able to hold buffers that the other connections
+	  would need.
+
 config BT_ATT_RETRY_ON_SEC_ERR
 	bool "Automatic security elevation and retry on security errors"
 	default y
