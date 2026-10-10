@@ -10,3 +10,31 @@ include: ["base.yaml", "pinctrl-device.yaml"]
 properties:
   interrupts:
     required: true
+
+  clock-mux:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      Source of the clock root of the 1588 timer. Used by the i.MX RT11xx SoCs only.
+      The default is 4 (SYS_PLL1_DIV2), which gives 100 MHz together with the default
+      divider.
+
+        0: OSC_RC_48M_DIV2
+        1: OSC_24M
+        2: OSC_RC_400M
+        3: OSC_RC_16M
+        4: SYS_PLL1_DIV2
+        5: AUDIO_PLL_CLK
+        6: SYS_PLL1_DIV5
+        7: SYS_PLL2_PFD1
+
+      The source must be running before the Ethernet driver starts the timer, which for
+      AUDIO_PLL_CLK means the driver that sets up that PLL must initialize first. The root
+      frequency must not exceed the maximum of the SoC voltage mode (i.MX RT1170: 100 MHz in
+      under-drive, 200 MHz in nominal and overdrive).
+
+  clock-div:
+    type: int
+    description: |
+      Divider of the clock root of the 1588 timer, from 1 to 256. Used by the i.MX RT11xx
+      SoCs only. The default is 5.
