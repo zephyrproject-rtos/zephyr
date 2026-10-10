@@ -1,0 +1,13 @@
+identifier: dsdtech_shc31a
+name: DSD TECH SH-C31A
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 32
+flash: 64
+supported:
+  - can
+  - gpio
+  - usbd
+vendor: dsdtech
