@@ -51,6 +51,21 @@ extern "C" {
 #define I3C_OD_FIRST_BC_THIGH_MIN_NS  200
 
 /**
+ * @brief Minimum pure-bus tCAS in picoseconds (MIPI Table 49: 38.4 ns).
+ */
+#define I3C_BUS_TCAS_MIN_PS 38400U
+
+/**
+ * @brief Maximum pure-bus tCAS in picoseconds (MIPI Table 49: 1 us).
+ */
+#define I3C_BUS_TCAS_MAX_PS 1000000U
+
+/**
+ * @brief First-broadcast tCAS floor in picoseconds (tHIGH_INIT, 200 ns).
+ */
+#define I3C_BUS_TCAS_FIRST_BC_MIN_PS 200000U
+
+/**
  * @name Bus Characteristic Register (BCR)
  * @anchor I3C_BCR
  *
@@ -504,6 +519,14 @@ struct i3c_config_controller {
 		 */
 		uint32_t high_ns;
 	} scl_pp_min;
+
+	/**
+	 * Requested tCAS in picoseconds (pure I3C bus).
+	 *
+	 * MIPI I3C Basic: 38.4 ns to 1 us (ENTAS0). Must be in
+	 * [@ref I3C_BUS_TCAS_MIN_PS, @ref I3C_BUS_TCAS_MAX_PS].
+	 */
+	uint32_t tcas_ps;
 
 	/**
 	 * Bit mask of supported HDR modes (0 - 7).

@@ -57,6 +57,16 @@ properties:
       The default value is from Section 4.3.11.2 & Table 49 of the I3C
       Basic Specification v1.2 (16-Dec-2024).
 
+  tcas-ps:
+    type: int
+    default: 38400
+    min: 38400
+    max: 1000000
+    description: |
+      Requested tCAS (clock after START) in picoseconds on a pure I3C bus.
+      MIPI I3C Basic allows 38.4 ns to 1 us (ENTAS0). The default is the
+      specification minimum.
+
   pp-thigh-min-ns:
     type: int
     default: 32
