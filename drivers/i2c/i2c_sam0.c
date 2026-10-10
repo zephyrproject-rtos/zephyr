@@ -513,6 +513,15 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 		}
 
 		if (data->msg.status) {
+			/*
+			 * A DMA error is stored as a negative errno, already logged. The
+			 * STATUS register is 16 bits, so a bus status is never negative.
+			 */
+			if ((int32_t)data->msg.status < 0) {
+				ret = -EIO;
+				goto unlock;
+			}
+
 			if (data->msg.status & SERCOM_I2CM_STATUS_ARBLOST) {
 				LOG_DBG("Arbitration lost on %s",
 					dev->name);
