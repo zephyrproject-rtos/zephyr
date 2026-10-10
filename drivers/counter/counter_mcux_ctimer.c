@@ -552,7 +552,6 @@ static void mcux_lpc_ctimer_isr(const struct device *dev)
 static int mcux_lpc_ctimer_configure(const struct device *dev)
 {
 	const struct mcux_lpc_ctimer_config *config = dev->config;
-	struct mcux_lpc_ctimer_data *data = dev->data;
 	ctimer_config_t ctimer_config;
 
 #ifdef CONFIG_COUNTER_CAPTURE
@@ -570,17 +569,6 @@ static int mcux_lpc_ctimer_configure(const struct device *dev)
 		return ret;
 	}
 #endif /* CONFIG_COUNTER_CAPTURE */
-
-	for (uint8_t chan = 0; chan < NUM_CHANNELS; chan++) {
-		data->channels[chan].alarm_callback = NULL;
-		data->channels[chan].alarm_user_data = NULL;
-#ifdef CONFIG_COUNTER_CAPTURE
-		data->channels[chan].capture_callback = NULL;
-		data->channels[chan].capture_user_data = NULL;
-		data->channels[chan].capture_flags = 0U;
-		data->channels[chan].capture_single_shot = false;
-#endif /* CONFIG_COUNTER_CAPTURE */
-	}
 
 	CTIMER_GetDefaultConfig(&ctimer_config);
 
@@ -604,6 +592,24 @@ static int mcux_lpc_ctimer_turn_on(const struct device *dev)
 	if (ret < 0) {
 		return ret;
 	}
+
+#ifdef CONFIG_PM_DEVICE
+	struct mcux_lpc_ctimer_data *data = dev->data;
+
+	/* The match channels came back reset, so bookkeeping that still names a
+	 * match would keep its channel busy for a match that cannot arrive.
+	 */
+	for (uint8_t chan = 0; chan < NUM_CHANNELS; chan++) {
+		data->channels[chan].alarm_callback = NULL;
+		data->channels[chan].alarm_user_data = NULL;
+#ifdef CONFIG_COUNTER_CAPTURE
+		data->channels[chan].capture_callback = NULL;
+		data->channels[chan].capture_user_data = NULL;
+		data->channels[chan].capture_flags = 0U;
+		data->channels[chan].capture_single_shot = false;
+#endif /* CONFIG_COUNTER_CAPTURE */
+	}
+#endif /* CONFIG_PM_DEVICE */
 
 	/* A resume always follows a turn-on and takes the clock. */
 	return clock_control_off(config->clock_dev, config->clock_subsys);
