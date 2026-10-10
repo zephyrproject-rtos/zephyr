@@ -52,7 +52,7 @@ struct pcie_vctc_map {
 	 */
 	uint8_t vc_tc[PCIE_VC_MAX_COUNT];
 	/**
-	 * Number of VCs being addressed
+	 * Total number of VCs being addressed, including the default VC0
 	 */
 	int vc_count;
 };
