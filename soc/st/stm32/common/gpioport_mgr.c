@@ -289,12 +289,17 @@ static int stm32_gpioport_pm_action(const struct device *dev,
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	const struct gpio_stm32_config *cfg = dev->config;
 	clock_control_subsys_t subsys = (void *)&cfg->pclken;
+	int ret;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
 		return clock_control_on(clk, subsys);
 	case PM_DEVICE_ACTION_SUSPEND:
-		return clock_control_off(clk, subsys);
+		ret = clock_control_off(clk, subsys);
+		if (ret == -ENOTSUP) {
+			ret = 0;
+		}
+		return ret;
 	case PM_DEVICE_ACTION_TURN_OFF:
 	case PM_DEVICE_ACTION_TURN_ON:
 		break;
