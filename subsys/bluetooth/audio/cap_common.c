@@ -74,6 +74,9 @@ uint32_t bt_cap_common_get_active_proc_mutex_lock_count(const struct bt_cap_comm
 
 void bt_cap_common_clear_proc(struct bt_cap_common_proc *proc)
 {
+	__ASSERT(active_proc_mutex.lock_count == 1U, "Unexpected active_proc_mutex.lock_count: %u",
+		 active_proc_mutex.lock_count);
+
 	(void)memset(proc, 0, sizeof(*proc));
 
 	bt_cap_common_unlock_proc();
