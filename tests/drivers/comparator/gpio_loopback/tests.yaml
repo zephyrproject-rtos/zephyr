@@ -66,6 +66,12 @@ tests:
   drivers.comparator.gpio_loopback.nxp_lpacmp:
     platform_allow:
       - frdm_mcxl255/mcxl255/cpu0
+  drivers.comparator.gpio_loopback.nxp_aon_lpcmp:
+    extra_args:
+      - FILE_SUFFIX="aon_lpcmp"
+    platform_allow:
+      - frdm_mcxl255/mcxl255/cpu0
+      - frdm_mcxl255/mcxl255/cpu1
   drivers.comparator.gpio_loopback.nxp_lpcmp:
     platform_allow:
       - frdm_mcxa153
