@@ -202,6 +202,13 @@ static int eth_nxp_enet_tx(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	frame_is_timestamped = net_pkt_is_tx_timestamping(pkt);
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET)
+	/*
+	 * Without a running 1588 timer there is no timestamp, and reading the timer when the
+	 * frame is reclaimed would wait forever with interrupts locked
+	 */
+	frame_is_timestamped = frame_is_timestamped && data->ptp.timer_running;
+#endif
 
 	ret = ENET_SendFrame(data->base, &data->enet_handle, data->tx_frame_buf, total_len, RING_ID,
 			     frame_is_timestamped, pkt);
