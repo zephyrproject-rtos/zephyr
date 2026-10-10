@@ -15,14 +15,17 @@ typedef union acp_dma_cntl_0 {
 		unsigned int dmachrst: 1;
 		unsigned int dmachrun: 1;
 		unsigned int dmachiocen: 1;
-		unsigned int: 29;
+		unsigned int circular_dma_en: 1;
+		unsigned int dmachgracefulrsten: 1;
+		unsigned int dmachcurtrcntmode: 1;
+		unsigned int: 26;
 	} bits;
 	unsigned int u32all;
 } acp_dma_cntl_0_t;
 typedef union acp_dma_ch_sts {
 	struct {
-		unsigned int dmachrunsts: 8;
-		unsigned int: 24;
+		unsigned int dmachrunsts: 10;
+		unsigned int: 22;
 	} bits;
 	unsigned int u32all;
 } acp_dma_ch_sts_t;
@@ -108,7 +111,15 @@ typedef union acp_dsp0_intr_stat1 {
 		unsigned int fusion_dsp_watchdog_timeoutstat: 1;
 		unsigned int soundwire_stat: 1;
 		unsigned int audio_buffer_int_stat: 6;
-		unsigned int: 23;
+		unsigned int dsp1_watchdog_timeoutstat: 1;
+		unsigned int acp_dsp_timer7_timeoutstat: 1;
+		unsigned int mailbox_stat: 11;
+		unsigned int dmaiocstat1: 2;
+		unsigned int dsp0_sw0_wake_stat: 1;
+		unsigned int dsp0_sw1_wake_stat: 1;
+		unsigned int dsp0_sw2_wake_stat: 1;
+		unsigned int dsp0_sw3_wake_stat: 1;
+		unsigned int: 4;
 	} bits;
 	unsigned int u32all;
 } acp_dsp0_intr_stat1_t;
