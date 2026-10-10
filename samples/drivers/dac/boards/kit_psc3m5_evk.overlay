@@ -1,0 +1,19 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * The CSG slice DAC has no external output pin: the sawtooth is visible
+ * only on comp0's negative input, or on SAR channel 13 once firmware
+ * closes CSG_CTRL.VDAC_OUT_SEL.  csg0, dac0 and comp0 are already enabled
+ * by the board dtsi.
+ */
+
+/ {
+	zephyr,user {
+		dac = <&dac0>;
+		dac-channel-id = <0>;
+		dac-resolution = <10>;
+	};
+};
