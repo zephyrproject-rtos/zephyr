@@ -528,6 +528,8 @@
 			adc: adc@d5000 {
 				compatible = "nordic,nrf-saadc";
 				reg = <0xd5000 0x1000>;
+				#address-cells = <1>;
+				#size-cells = <0>;
 				interrupts = <213 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
 				#io-channel-cells = <1>;
