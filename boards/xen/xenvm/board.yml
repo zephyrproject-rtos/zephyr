@@ -6,3 +6,4 @@ board:
   - name: xenvm
     variants:
     - name: gicv3
+    - name: gicv3_smp
