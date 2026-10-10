@@ -26,3 +26,16 @@
 		};
 	};
 };
+
+&usdhc0 {
+	pinctrl-0 = <&pinmux_usdhc0>;
+	pinctrl-1 = <&pinmux_usdhc0>;
+	pinctrl-2 = <&pinmux_usdhc0>;
+	pinctrl-names = "default", "slow", "med";
+	/delete-property/ cd-gpios;
+
+	nxp_wifi: nxp_wifi {
+		pwr-gpios = <&gpio1 21 GPIO_ACTIVE_HIGH>;
+		sd-gpios = <&gpio1 22 GPIO_ACTIVE_HIGH>;
+	};
+};
