@@ -1,0 +1,24 @@
+# Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+title: Sensylink CHT8305 Temperature and Humidity Sensor
+
+description: |
+  The Sensylink CHT8305 is a Digital Humidity and Temperature Sensor with
+  ±3.0%RH Accuracy for humidity and ±0.5°C Accuracy for temperature.
+  Its possible addresses are 0x40, 0x41, 0x42 and 0x43.
+
+compatible: "sensylink,cht8305"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  heater:
+    type: boolean
+    description: |
+      Use the heater. Consumption is 7mA when measuring.
+
+  disable-clock-stretching:
+    type: boolean
+    description: |
+      Disable using I2C clock stretching to fetch the conversion, sleep instead.
