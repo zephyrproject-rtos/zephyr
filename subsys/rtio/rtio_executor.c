@@ -159,6 +159,11 @@ static inline void rtio_executor_handle_multishot(struct rtio_iodev_sqe *iodev_s
 	 * re-submitting, rebooting or anything else.
 	 */
 	if (is_canceled || !is_ok) {
+		if (is_canceled) {
+			result = -ECANCELED;
+		}
+		/* The buffer is released here, so the CQE must not expose it. */
+		cqe_flags = 0;
 		LOG_DBG("Releasing memory @%p size=%u", (void *)iodev_sqe->sqe.rx.buf,
 			iodev_sqe->sqe.rx.buf_len);
 		rtio_release_buffer(r, iodev_sqe->sqe.rx.buf, iodev_sqe->sqe.rx.buf_len);
