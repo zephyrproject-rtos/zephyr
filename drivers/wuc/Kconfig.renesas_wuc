@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config WUC_RENESAS_RA_LPM
+	bool "Renesas RA LPM Wakeup controller"
+	default y
+	depends on DT_HAS_RENESAS_RA_LPM_WUC_ENABLED
+	select USE_RA_FSP_LPM
+	help
+	  Enable support for Renesas RA LPM Wakeup controller

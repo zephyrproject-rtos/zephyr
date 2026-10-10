@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Renesas RA Deep Software Standby Wakeup Controller.
+  Manages wakeup sources for Deep Software Standby mode (PM_STATE_SOFT_OFF).
+
+compatible: "renesas,ra-lpm-wuc"
+
+include: [base.yaml, wuc-controller.yaml]
+
+properties:
+  "#wakeup-ctrl-cells":
+    type: int
+    const: 1
+
+wakeup-ctrl-cells:
+  - id
