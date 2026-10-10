@@ -858,7 +858,7 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 	 */
 	struct xtensa_mpu_map *old_map = thread->arch.mpu_map;
 
-	bool is_user = (thread->base.user_options & K_USER) != 0;
+	bool is_user = k_thread_is_user_thread(thread);
 	bool is_migration = (old_map != NULL) && is_user;
 
 	thread->arch.mpu_map = &domain->arch.mpu_map;
@@ -918,7 +918,7 @@ int arch_mem_domain_thread_remove(struct k_thread *thread)
 
 	struct k_mem_domain *domain = thread->mem_domain_info.mem_domain;
 
-	if ((thread->base.user_options & K_USER) == 0) {
+	if (!k_thread_is_user_thread(thread)) {
 		ret = 0;
 		goto out;
 	}

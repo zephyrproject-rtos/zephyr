@@ -129,7 +129,7 @@ void z_riscv_custom_stack_guard_enable(struct k_thread *thread)
 
 #ifdef CONFIG_USERSPACE
 		/* For user threads, set bound to the bottom of the privileged stack */
-		if (thread->base.user_options & K_USER) {
+		if (k_thread_is_user_thread(thread)) {
 			bound = (unsigned long)K_KERNEL_STACK_BUFFER(
 				(k_thread_stack_t *)thread->arch.priv_stack_start);
 		}

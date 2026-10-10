@@ -132,7 +132,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	iframe = Z_STACK_PTR_TO_FRAME(struct __basic_sf, stack_ptr);
 #if defined(CONFIG_USERSPACE)
 	thread->arch.priv_stack_start = 0;
-	if ((thread->base.user_options & K_USER) != 0) {
+	if (k_thread_is_user_thread(thread)) {
 		setup_priv_stack(thread);
 		iframe = Z_STACK_PTR_TO_FRAME(struct __basic_sf, thread->arch.priv_stack_end);
 		iframe->pc = (uint32_t)arch_user_mode_enter;

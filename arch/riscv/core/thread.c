@@ -91,8 +91,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #endif /* CONFIG_USERSPACE */
 
 	/* Assign thread entry point and mstatus.MPRV mode. */
-	if (IS_ENABLED(CONFIG_USERSPACE)
-	    && (thread->base.user_options & K_USER)) {
+	if (IS_ENABLED(CONFIG_USERSPACE) && k_thread_is_user_thread(thread)) {
 		/* User thread */
 		stack_init->mepc = (unsigned long)k_thread_user_mode_enter;
 
@@ -250,7 +249,7 @@ int arch_thread_priv_stack_space_get(const struct k_thread *thread, size_t *stac
 		return -EINVAL;
 	}
 
-	if ((thread->base.user_options & K_USER) != K_USER) {
+	if (!k_thread_is_user_thread(thread)) {
 		return -EINVAL;
 	}
 
