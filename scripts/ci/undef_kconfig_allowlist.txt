@@ -3,6 +3,15 @@
 #
 # Many of these are symbols used as examples. Note that the list is sorted
 # alphabetically, and skips the CONFIG_ prefix.
+#
+# This list must only contain false positive Kconfig symbols. False positive
+# symbols are symbols which is
+# a) Used for documentation purposes, for example: `CONFIG_FOO`
+# b) Defined symbols in the Zephyr repo, but where compliance fails to load them,
+#    for example toolchain or sysbuild specific Kconfigs.
+#
+# This list is not for symbols defined in Zephyr modules or other external repos.
+#
 # zephyr-keep-sorted-start re(^\s+")
 ALSO_MISSING
 APP_LINK_WITH_
