@@ -112,9 +112,9 @@ static inline int z_vrfy_espi_write_request(const struct device *dev,
 	struct  espi_request_packet req_copy;
 
 	K_OOPS(K_SYSCALL_DRIVER_ESPI(dev, write_request));
-	K_OOPS(K_SYSCALL_MEMORY_READ(req->data, req->len));
 	K_OOPS(k_usermode_from_copy(&req_copy, req,
 				sizeof(struct espi_request_packet)));
+	K_OOPS(K_SYSCALL_MEMORY_READ(req_copy.data, req_copy.len));
 
 	ret = z_impl_espi_write_request(dev, &req_copy);
 
