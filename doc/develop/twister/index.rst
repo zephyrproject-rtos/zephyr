@@ -2047,6 +2047,77 @@ In the configuration file you can include complete components using
 regular expressions and you can specify which test level to import from
 the same file, making management of levels easier.
 
+A test configuration can include other test-config YAML files using
+``includes``. Each path is resolved relative to the file containing the
+``includes`` entry. Relative paths, including paths containing ``..``,
+are supported.
+
+Included files are processed in the order listed. Their configurations
+are merged first, followed by the configuration of the including file.
+
+The merge behavior is as follows:
+
+* ``options`` and ``platforms`` entries from later files replace entries
+  with the same key from earlier files. For example, a local
+  ``default_platforms`` list replaces the list from an included file.
+* Levels with different names are preserved.
+* Levels with the same name are combined by appending their ``adds`` and
+  ``inherits`` entries without duplicates.
+* If levels with the same name provide different ``description`` values,
+  the value from the later file is used.
+* ``inherits`` resolution is order-dependent. A level must appear earlier
+  in the ``levels`` list before another level can inherit from it.
+
+Nested includes are supported. Circular includes are rejected.
+``--level`` matches level names from the resulting configuration.
+
+.. code-block:: yaml
+
+   # common.yaml
+   levels:
+     - name: kernel
+       description: Common kernel tests
+       adds:
+         - kernel.semaphore
+         - kernel.mutex
+
+.. code-block:: yaml
+
+   # board.yaml, passed through --test-config
+   includes:
+     - common.yaml
+   levels:
+     - name: kernel
+       description: Kernel tests for this board
+       adds:
+         - kernel.common
+     - name: smoke
+       adds:
+         - drivers.console.uart
+     - name: smoke_and_kernel
+       inherits:
+         - smoke
+         - kernel
+
+The resulting configuration is equivalent to:
+
+.. code-block:: yaml
+
+   levels:
+     - name: kernel
+       description: Kernel tests for this board
+       adds:
+         - kernel.semaphore
+         - kernel.mutex
+         - kernel.common
+     - name: smoke
+       adds:
+         - drivers.console.uart
+     - name: smoke_and_kernel
+       inherits:
+         - smoke
+         - kernel
+
 To help with testing outside of upstream CI infrastructure, additional
 options are available in the configuration file, which can be hosted
 locally. As of now, those options are available:
