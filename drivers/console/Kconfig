@@ -65,15 +65,6 @@ config UART_CONSOLE_MCUMGR
 	  process MCUmgr frames, but it hands them up to a higher level module
 	  (e.g., the shell).  If unset, incoming MCUmgr frames are dropped.
 
-config UART_CONSOLE_MCUMGR_ASYNC_RX_TIMEOUT_US
-	int "Timeout for flushing RX buffers"
-	depends on UART_CONSOLE_MCUMGR
-	default 1599
-	help
-	  Decreasing this value can help increase data throughput when high baudrates are used.
-	  1599us is 23 bytes at 115200 baud. Decreasing this value too much can result in spurious
-	  interrupts. Leaving it too high can reduce data throughput.
-
 config UART_CONSOLE_INPUT_EXPIRED
 	bool "Support for UART console input expired mechanism"
 	default y
@@ -220,20 +211,23 @@ config UART_MCUMGR
 	  contrary to console UART driver) and all aspects of received protocol
 	  data are handled by an application provided callback.
 
+	  The MCUmgr UART transports use it, and other code can define instances on its own
+	  UARTs with UART_MCUMGR_DEFINE().
+
 if UART_MCUMGR
 
 config UART_MCUMGR_RX_BUF_SIZE
 	int "Size of receive buffer for MCUmgr fragments received over UART, in bytes"
 	default 128
 	help
-	  Specifies the size of the MCUmgr UART receive buffer, in bytes. This value must be large
+	  Specifies the size of the MCUmgr UART receive buffers, in bytes. This value must be large
 	  enough to accommodate any line sent by an MCUmgr client.
 
 config UART_MCUMGR_RX_BUF_COUNT
 	int "Number of receive buffers for MCUmgr fragments received over UART"
 	default 2
 	help
-	  Specifies the number of the MCUmgr UART receive buffers. Receive buffers hold received
+	  Specifies the number of receive buffers of each MCUmgr UART. Receive buffers hold received
 	  MCUmgr fragments prior to reassembly. If using SMP over console, each buffer holds one
 	  received line until it has been decoded into the SMP packet buffer, so this value limits
 	  how many fragments can be queued for processing. It does not limit the size of an SMP
@@ -248,6 +242,10 @@ config UART_MCUMGR_RAW_PROTOCOL
 	help
 	  Commands sent to/by the device will be in raw MCUmgr format instead of SMP over console
 	  format - this means without base64 encoding and additional console-specific parts added.
+
+	  This selects the framing on the zephyr,uart-mcumgr chosen UART, and has no effect once a
+	  zephyr,smp-uart or zephyr,smp-uart-raw devicetree node of an enabled MCUmgr UART
+	  transport exists.
 
 endif # UART_MCUMGR
 

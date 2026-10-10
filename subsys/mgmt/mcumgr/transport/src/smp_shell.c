@@ -221,9 +221,11 @@ static uint16_t smp_shell_get_mtu(const struct net_buf *nb)
 	return CONFIG_MCUMGR_TRANSPORT_SHELL_MTU;
 }
 
-static int smp_shell_tx_raw(const void *data, int len)
+static int smp_shell_tx_raw(const void *data, int len, void *ctx)
 {
 	const uint8_t *out = data;
+
+	ARG_UNUSED(ctx);
 
 	while ((out != NULL) && (len != 0)) {
 		uart_poll_out(shell_uart->dev, *out);
@@ -238,7 +240,7 @@ static int smp_shell_tx_pkt(struct net_buf *nb)
 {
 	int rc;
 
-	rc = mcumgr_serial_tx_pkt(nb->data, nb->len, smp_shell_tx_raw);
+	rc = mcumgr_serial_tx_pkt(nb->data, nb->len, smp_shell_tx_raw, NULL);
 	smp_packet_free(nb);
 
 	return rc;

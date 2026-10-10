@@ -586,7 +586,9 @@ device.
    * - zephyr,tracing-uart
      - Sets UART device used by tracing subsystem
    * - zephyr,uart-mcumgr
-     - UART used for :ref:`device_mgmt`
+     - UART used for :ref:`device_mgmt`. The MCUmgr UART transports do not use it when a
+       :dtcompatible:`zephyr,smp-uart` or :dtcompatible:`zephyr,smp-uart-raw` node of an enabled
+       transport exists.
    * - zephyr,uart-pipe
      - Sets UART device used by serial pipe driver
    * - zephyr,videoenc

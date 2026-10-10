@@ -10,20 +10,23 @@ config MCUMGR_TRANSPORT_SERIAL_HAS_SMP_OVER_CONSOLE
 	bool
 	help
 	  Hidden Kconfig selected by transports that implement the SMP over console transport and
-	  need this functionality to be available in the serial_util.c file.
+	  need this functionality to be available in the serial_util.c file and the MCUmgr UART
+	  driver.
 
 config MCUMGR_TRANSPORT_SERIAL_HAS_RAW_BINARY_NON_SMP_OVER_CONSOLE
 	bool
 	help
 	  Hidden Kconfig selected by transports that implement the raw binary non-SMP over console
-	  serial transport and need this functionality to be available in the serial_util.c file.
+	  serial transport and need this functionality to be available in the serial_util.c file
+	  and the MCUmgr UART driver.
 
 if (MCUMGR_TRANSPORT_UART || MCUMGR_TRANSPORT_RAW_UART) && UART_ASYNC_API
 
 menuconfig MCUMGR_TRANSPORT_UART_ASYNC
 	bool "Use async UART API when available"
 	help
-	  The option enables use of UART async API when available for selected MCUmgr UART port.
+	  Use the UART async API on each MCUmgr UART that supports it. The others use the
+	  interrupt-driven API.
 
 if MCUMGR_TRANSPORT_UART_ASYNC
 
@@ -42,6 +45,14 @@ config MCUMGR_TRANSPORT_UART_ASYNC_BUF_SIZE
 	default 64
 	help
 	  The size of single buffer for asynchronous RX.
+
+config MCUMGR_TRANSPORT_UART_ASYNC_RX_TIMEOUT_US
+	int "Timeout for flushing RX buffers"
+	default 1599
+	help
+	  Decreasing this value can help increase data throughput when high baudrates are used.
+	  1599us is 23 bytes at 115200 baud. Decreasing this value too much can result in spurious
+	  interrupts. Leaving it too high can reduce data throughput.
 
 endif # MCUMGR_TRANSPORT_UART_ASYNC
 

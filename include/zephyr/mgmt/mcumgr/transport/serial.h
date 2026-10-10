@@ -69,10 +69,11 @@ struct mcumgr_serial_rx_ctxt {
  *
  * @param data                  The data to transmit.
  * @param len                   The number of bytes to transmit.
+ * @param ctx                   The context passed to mcumgr_serial_tx_pkt().
  *
  * @return                      0 on success; negative error code on failure.
  */
-typedef int (*mcumgr_serial_tx_cb)(const void *data, int len);
+typedef int (*mcumgr_serial_tx_cb)(const void *data, int len, void *ctx);
 
 /**
  * @brief Processes an mcumgr request fragment received over a serial
@@ -103,10 +104,11 @@ struct net_buf *mcumgr_serial_process_frag(
  * @param data                  The mcumgr packet data to send.
  * @param len                   The length of the unencoded mcumgr packet.
  * @param cb                    A callback used to transmit raw bytes.
+ * @param ctx                   Context passed to @p cb.
  *
  * @return                      0 on success; negative error code on failure.
  */
-int mcumgr_serial_tx_pkt(const uint8_t *data, int len, mcumgr_serial_tx_cb cb);
+int mcumgr_serial_tx_pkt(const uint8_t *data, int len, mcumgr_serial_tx_cb cb, void *ctx);
 
 #ifdef __cplusplus
 }

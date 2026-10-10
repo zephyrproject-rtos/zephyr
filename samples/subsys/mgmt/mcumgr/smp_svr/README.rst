@@ -125,6 +125,24 @@ included. The ``smp_svr`` sample comes in different flavours.
          and plan to test it, make sure to connect to the USB port
          on your board that is connected directly to the MCU.
 
+   .. group-tab:: Serial and raw USB CDC_ACM
+
+      To build the sample with SMP over console on the console UART and raw MCUmgr packets on
+      USB CDC_ACM:
+
+      .. zephyr-app-commands::
+         :tool: west
+         :zephyr-app: samples/subsys/mgmt/mcumgr/smp_svr
+         :board: nrf52840dk/nrf52840
+         :goals: build
+         :west-args: --sysbuild
+         :gen-args: -DEXTRA_CONF_FILE="dual-uart.conf" -DEXTRA_DTC_OVERLAY_FILE="dual-uart.overlay"
+         :compact:
+
+      .. note::
+         ``dual-uart.overlay`` selects each UART with a ``zephyr,smp-uart`` or
+         ``zephyr,smp-uart-raw`` node, see :ref:`mcumgr_smp_transport_uart_config`.
+
    .. group-tab:: Shell
 
       To build the shell sample:

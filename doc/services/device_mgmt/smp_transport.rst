@@ -205,8 +205,8 @@ cannot be used on devices which have shell or log output on the same UART or are
 terminals that are displaying ASCII data, as all communication is done using the raw binary
 SMP protocol.
 
-To use this protocol, use :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_RAW_UART`, it requires the
-MCUmgr UART console driver to be enabled in raw mode.
+To use this protocol, use :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_RAW_UART`. See
+:ref:`mcumgr_smp_transport_uart_config` for the UARTs it runs on.
 
 Timeout
 =======
@@ -219,6 +219,57 @@ this option should be enabled on UART ports, for transports like USB CDC whereby
 UART and the data can be verified before being passed, this option is not needed. The option can
 be enabled with :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT`, the timeout for
 this can be set with :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT_TIME_MS`.
+
+.. _mcumgr_smp_transport_uart_config:
+
+UART selection
+**************
+
+:kconfig:option:`CONFIG_MCUMGR_TRANSPORT_UART` (SMP over console) and
+:kconfig:option:`CONFIG_MCUMGR_TRANSPORT_RAW_UART` (raw) run on the UARTs selected in devicetree.
+Both can be enabled at the same time, and each can run on several UARTs.
+
+A UART is selected with a child node, :dtcompatible:`zephyr,smp-uart` for SMP over console or
+:dtcompatible:`zephyr,smp-uart-raw` for raw, which must be the only enabled child of the UART:
+
+.. code-block:: devicetree
+
+   &uart0 {
+       smp-uart {
+           compatible = "zephyr,smp-uart";
+       };
+   };
+
+   &zephyr_udc0 {
+       cdc_acm_uart0: cdc_acm_uart0 {
+           compatible = "zephyr,cdc-acm-uart";
+
+           smp-uart-raw {
+               compatible = "zephyr,smp-uart-raw";
+           };
+       };
+   };
+
+When no such node of an enabled transport exists, the transports run on the
+``zephyr,uart-mcumgr`` chosen UART, with the framing selected by
+:kconfig:option:`CONFIG_UART_MCUMGR_RAW_PROTOCOL`. Many boards set the chosen UART to their
+console UART, so it is not used once a node of an enabled transport exists. Nodes of a disabled
+transport are ignored.
+
+Each UART has its own :kconfig:option:`CONFIG_UART_MCUMGR_RX_BUF_COUNT` receive buffers of
+:kconfig:option:`CONFIG_UART_MCUMGR_RX_BUF_SIZE` bytes. The buffers holding SMP packets are shared
+by all transports, and each UART holds one while it receives a packet, so raise
+:kconfig:option:`CONFIG_MCUMGR_TRANSPORT_NETBUF_COUNT` when using several UARTs.
+
+The SMP client and transport management select a transport by its type, so with
+:kconfig:option:`CONFIG_SMP_CLIENT` or :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT` enabled, one
+node of each compatible can be enabled.
+
+With :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_UART_ASYNC`, UARTs that do not support the
+asynchronous UART API, such as USB CDC ACM, use the interrupt-driven API.
+
+Other code can use the MCUmgr UART driver on its own UARTs, with ``UART_MCUMGR_DEFINE()`` from
+:zephyr_file:`include/zephyr/drivers/console/uart_mcumgr.h`.
 
 API Reference
 *************
