@@ -228,7 +228,7 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_exc_exit)
 #if defined(CONFIG_FPU_SHARING)
 	add sp, sp, #___fpu_t_SIZEOF
 #endif
-	add sp, #32
+	add sp, #36
 
 	/*
 	 * Switch in the next scheduled thread.
@@ -265,9 +265,13 @@ __EXIT_EXC:
 	add sp, sp, #___fpu_t_SIZEOF
 #endif
 	/*
-	 * Restore r0-r3, r12, lr, lr_und and spsr_und from the exception stack
-	 * and return to the current thread.
+	 * Restore r0-r3, r12 and lr into the System bank, then RFE from the
+	 * saved PC/SPSR. r0-r12 are shared with System mode, so loading the
+	 * RFE pair through r0/r1 would replace the values just restored by
+	 * ldmia ^. LR is banked in Abort/Undef and can address that pair.
+	 * The interrupted SP stored after xpsr is discarded.
 	 */
 	ldmia sp, {r0-r3, r12, lr}^
-	add sp, #24
-	rfeia sp!
+	add lr, sp, #24
+	add sp, #36
+	rfeia lr
