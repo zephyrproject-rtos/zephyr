@@ -17,6 +17,7 @@ config CPU_CORTEX_A
 	select CPU_HAS_DCACHE
 	select CPU_HAS_ICACHE
 	select ARCH_HAS_PMU
+	select ARCH_HAS_EXTRA_EXCEPTION_INFO
 	select ARCH_SUPPORTS_COREDUMP_THREADS
 	# On SMP, threads on other CPUs may be actively running with a stale
 	# callee_saved.sp_elx, so THREAD_STACK_TOP cannot rely on the saved SP.
@@ -36,6 +37,7 @@ config CPU_AARCH64_CORTEX_R
 	select CPU_HAS_ICACHE
 	select ARCH_HAS_STACK_PROTECTION
 	select CPU_HAS_FPU
+	select ARCH_HAS_EXTRA_EXCEPTION_INFO
 	imply FPU
 	imply FPU_SHARING
 	help
