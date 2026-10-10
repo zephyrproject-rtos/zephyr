@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nuvoton NPCM System Configuration (SCFG) register block.
+
+  Holds pin multiplexing (DEVALTx), pull-up/down enables, low-voltage selects, reset control,
+  and strap status. Several drivers share it, each through its own phandle.
+
+compatible: "nuvoton,npcm-scfg"
+
+include: syscon.yaml
