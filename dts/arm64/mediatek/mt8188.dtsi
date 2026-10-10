@@ -77,10 +77,85 @@
 		#clock-cells = <1>;
 	};
 
+	eint: eint@1000b000 {
+		compatible = "mediatek,mt8188-eint";
+		reg = <0x1000b000 0x1000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 235 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		num-lines = <225>;
+		status = "okay";
+	};
+
 	pinctrl: pinctrl@10005000 {
 		compatible = "mediatek,mt8188-pinctrl";
 		reg = <0x10005000 0x1000>;
 		status = "okay";
+
+		/*
+		 * The GPIO registers live in this block, one bit per pin in each
+		 * register of a group, so a bank is selected by index rather than
+		 * by address.  Zephyr addresses at most 32 pins per device, hence
+		 * six banks for 177 pins.
+		 */
+		gpio0_31: gpio-bank0 {
+			compatible = "mediatek,mt8188-gpio";
+			mediatek,gpio-bank = <0>;
+			mediatek,eint = <&eint>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <32>;
+			status = "disabled";
+		};
+
+		gpio32_63: gpio-bank1 {
+			compatible = "mediatek,mt8188-gpio";
+			mediatek,gpio-bank = <1>;
+			mediatek,eint = <&eint>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <32>;
+			status = "disabled";
+		};
+
+		gpio64_95: gpio-bank2 {
+			compatible = "mediatek,mt8188-gpio";
+			mediatek,gpio-bank = <2>;
+			mediatek,eint = <&eint>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <32>;
+			status = "disabled";
+		};
+
+		gpio96_127: gpio-bank3 {
+			compatible = "mediatek,mt8188-gpio";
+			mediatek,gpio-bank = <3>;
+			mediatek,eint = <&eint>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <32>;
+			status = "disabled";
+		};
+
+		gpio128_159: gpio-bank4 {
+			compatible = "mediatek,mt8188-gpio";
+			mediatek,gpio-bank = <4>;
+			mediatek,eint = <&eint>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <32>;
+			status = "disabled";
+		};
+
+		gpio160_176: gpio-bank5 {
+			compatible = "mediatek,mt8188-gpio";
+			mediatek,gpio-bank = <5>;
+			mediatek,eint = <&eint>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <17>;
+			status = "disabled";
+		};
 	};
 
 	uart0: uart@11001100 {
