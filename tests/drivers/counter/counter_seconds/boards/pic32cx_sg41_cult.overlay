@@ -1,0 +1,17 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		rtc-0 = &rtc;
+	};
+};
+
+&rtc {
+	compatible = "microchip,rtc-g1-counter";
+	max-bit-width = <32>;
+	prescaler = <1024>;
+	status = "okay";
+};

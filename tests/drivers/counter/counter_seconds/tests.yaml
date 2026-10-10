@@ -20,3 +20,4 @@ tests:
       - counter
     platform_allow:
       - pic32cx_sg61_cult
+      - pic32cx_sg41_cult
