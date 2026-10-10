@@ -1,0 +1,15 @@
+/*
+ * Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,camera = &video_sw_generator;
+		zephyr,videodec = &jpegdec;
+	};
+
+	video_sw_generator: video-sw-generator {
+		compatible = "zephyr,video-sw-generator";
+	};
+};
