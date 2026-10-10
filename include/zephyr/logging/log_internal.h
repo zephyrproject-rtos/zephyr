@@ -15,6 +15,7 @@
 #include <zephyr/types.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log_core.h>
+#include <zephyr/logging/log_link.h>
 #include <zephyr/sys/mpsc_pbuf.h>
 
 #ifdef __cplusplus
@@ -38,13 +39,14 @@ struct log_msg_ptr {
 	union log_msg_generic *msg;
 };
 
-/** @brief Indicate to the log core that one log message has been dropped.
+/** @brief Indicate to the log core that log messages have been dropped.
  *
- * @param buffered True if dropped message was already buffered and it is being
- * dropped to free space for another message. False if message is being dropped
+ * @param buffered True if dropped messages were already buffered and are being
+ * dropped to free space for another message. False if messages are being dropped
  * because allocation failed.
+ * @param cnt Number of dropped messages.
  */
-void z_log_dropped(bool buffered);
+void z_log_dropped(bool buffered, uint32_t cnt);
 
 /** @brief Read and clear current drop indications counter.
  *
@@ -144,7 +146,7 @@ static inline void z_log_notify_drop(const struct mpsc_pbuf_buffer *buffer,
 	ARG_UNUSED(buffer);
 	ARG_UNUSED(item);
 
-	z_log_dropped(true);
+	z_log_dropped(true, 1);
 }
 
 /** @brief Get tag.
@@ -170,6 +172,14 @@ static inline bool z_log_is_local_domain(uint8_t domain_id)
  * @return Timestamp.
  */
 log_timestamp_t z_log_timestamp(void);
+
+/** @brief Return link based on the domain id.
+ *
+ * @param[in]  domain_id Domain ID.
+ *
+ * @return Link to which given domain belongs.
+ */
+const struct log_link *z_log_get_link_domain(uint8_t domain_id);
 
 /** @endcond */
 
