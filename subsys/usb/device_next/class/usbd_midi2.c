@@ -143,6 +143,8 @@ struct usbd_midi_config {
 	struct usbd_midi_descriptors *desc;
 	struct usb_desc_header const *const *fs_descs;
 	struct usb_desc_header const *const *hs_descs;
+	/* Group Terminal Block names, NULL for a block without a label */
+	struct usbd_desc_node *const *grptrm_names;
 };
 
 /* Device driver data */
@@ -334,9 +336,26 @@ static struct net_buf *usbd_midi_class_cth(struct usbd_class_data *const class_d
 
 static int usbd_midi_class_init(struct usbd_class_data *const class_data)
 {
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(class_data);
 	const struct device *dev = usbd_class_get_private(class_data);
+	const struct usbd_midi_config *config = dev->config;
+	struct usbd_midi_descriptors *desc = config->desc;
 
 	LOG_DBG("Init %s device class", dev->name);
+
+	for (size_t i = 0; i < ARRAY_SIZE(desc->grptrm_blocks); i++) {
+		struct usbd_desc_node *name = config->grptrm_names[i];
+
+		if (name == NULL || desc->grptrm_blocks[i].iBlockItem != 0U) {
+			continue;
+		}
+
+		if (usbd_add_descriptor(uds_ctx, name) != 0) {
+			LOG_ERR("Failed to add Group Terminal Block %zu name", i);
+		} else {
+			desc->grptrm_blocks[i].iBlockItem = usbd_str_desc_get_idx(name);
+		}
+	}
 
 	return 0;
 }
@@ -575,6 +594,26 @@ void usbd_midi_set_ops(const struct device *dev, const struct usbd_midi_ops *ops
 		.wMaxOutputBandwidth = sys_cpu_to_le16(DT_PROP(node, serial_31250bps)), \
 	}
 
+/* String descriptor naming a Group Terminal Block, defined if it has a label */
+#define USBD_MIDI2_GRPTRM_NAME(node) _CONCAT(usbd_midi_grptrm_name_, DT_DEP_ORD(node))
+
+#define USBD_MIDI2_DESC_STRING_DEFINE(name, string) \
+	USBD_DESC_STRING_DEFINE(name, string, USBD_DUT_STRING_INTERFACE)
+
+#define USBD_MIDI2_DEFINE_GRPTRM_NAME(node)                                             \
+	IF_ENABLED(DT_NODE_HAS_PROP(node, label),                                       \
+		   (USBD_MIDI2_DESC_STRING_DEFINE(USBD_MIDI2_GRPTRM_NAME(node),         \
+						  DT_PROP(node, label));))
+
+#define USBD_MIDI2_GRPTRM_NAME_OR_NULL(node)                                            \
+	COND_CODE_1(DT_NODE_HAS_PROP(node, label), (&USBD_MIDI2_GRPTRM_NAME(node)), (NULL))
+
+#define USBD_MIDI_DEFINE_GRPTRM_NAMES(n)                                                \
+	DT_INST_FOREACH_CHILD(n, USBD_MIDI2_DEFINE_GRPTRM_NAME)                         \
+	static struct usbd_desc_node *const usbd_midi_grptrm_names_##n[16] = {          \
+		DT_INST_FOREACH_CHILD_SEP(n, USBD_MIDI2_GRPTRM_NAME_OR_NULL, (,))       \
+	}
+
 #define USBD_MIDI2_GRPTRM_TOTAL_LEN(n)                    \
 	sizeof(struct usb_midi_grptrm_header_descriptor)  \
 	+ DT_INST_CHILD_NUM_STATUS_OKAY(n)                \
@@ -780,12 +819,14 @@ void usbd_midi_set_ops(const struct device *dev, const struct usbd_midi_ops *ops
 #define USBD_MIDI_DEFINE_DEVICE(n)                                           \
 	USBD_MIDI_VALIDATE_INSTANCE(n)                                       \
 	USBD_MIDI_DEFINE_DESCRIPTORS(n);                                     \
+	USBD_MIDI_DEFINE_GRPTRM_NAMES(n);                                    \
 	USBD_DEFINE_CLASS(midi_##n, &usbd_midi_class_api,                    \
 			  (void *)DEVICE_DT_GET(DT_DRV_INST(n)), NULL);      \
 	static const struct usbd_midi_config usbd_midi_config_##n = {        \
 		.desc = &usbd_midi_desc_##n,                                 \
 		.fs_descs = usbd_midi_desc_array_fs_##n,                     \
 		.hs_descs = usbd_midi_desc_array_hs_##n,                     \
+		.grptrm_names = usbd_midi_grptrm_names_##n,                  \
 	};                                                                   \
 	static struct usbd_midi_data usbd_midi_data_##n = {                  \
 		.class_data = &midi_##n,                                     \
