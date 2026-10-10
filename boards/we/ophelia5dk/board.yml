@@ -1,0 +1,43 @@
+board:
+  name: ophelia5dk
+  full_name: Ophelia-V DK
+  vendor: we
+  socs:
+  - name: nrf54lm20a
+    variants:
+    - name: ns
+      cpucluster: cpuapp
+runners:
+  run_once:
+    '--recover':
+    - runners:
+      - nrfjprog
+      - nrfutil
+      run: first
+      groups:
+      - boards:
+        - ophelia5dk/nrf54lm20a/cpuapp
+        - ophelia5dk/nrf54lm20a/cpuapp/ns
+        - ophelia5dk/nrf54lm20a/cpuflpr
+    '--erase':
+    - runners:
+      - nrfjprog
+      - jlink
+      - nrfutil
+      run: first
+      groups:
+      - boards:
+        - ophelia5dk/nrf54lm20a/cpuapp
+        - ophelia5dk/nrf54lm20a/cpuapp/ns
+        - ophelia5dk/nrf54lm20a/cpuflpr
+    '--reset':
+    - runners:
+      - nrfjprog
+      - jlink
+      - nrfutil
+      run: last
+      groups:
+      - boards:
+        - ophelia5dk/nrf54lm20a/cpuapp
+        - ophelia5dk/nrf54lm20a/cpuapp/ns
+        - ophelia5dk/nrf54lm20a/cpuflpr
