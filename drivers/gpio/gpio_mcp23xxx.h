@@ -34,14 +34,43 @@
 #define REG_GPIO 0x09
 #define REG_OLAT 0x0A
 
+#define REG_IOCON_BANK   BIT(7)
 #define REG_IOCON_MIRROR BIT(6)
+#define REG_IOCON_SEQOP  BIT(5)
+#define REG_IOCON_DISSLW BIT(4)
+#define REG_IOCON_HAEN   BIT(3)
+#define REG_IOCON_ODR    BIT(2)
+#define REG_IOCON_INTPOL BIT(1)
+/* MCP23x09 and MCP23x18 only: interrupt cleared by reading INTCAP (1) or GPIO (0) */
+#define REG_IOCON_INTCC  BIT(0)
 
 #define MCP23SXX_ADDR 0x40
 #define MCP23SXX_READBIT 0x01
 
-typedef int (*mcp23xxx_read_port_regs)(const struct device *dev, uint8_t reg, uint16_t *buf);
-typedef int (*mcp23xxx_write_port_regs)(const struct device *dev, uint8_t reg, uint16_t value);
+/* Largest register burst the core driver issues, see mcp23xxx_read_regs. */
+#define MCP23XXX_MAX_BURST 6
+
+/**
+ * @brief Read @p len consecutive registers starting at @p reg.
+ *
+ * @p reg is the raw (IOCON.BANK = 0) register address, @p len is at most
+ * MCP23XXX_MAX_BURST.
+ */
+typedef int (*mcp23xxx_read_regs)(const struct device *dev, uint8_t reg, uint8_t *buf, size_t len);
+/**
+ * @brief Write @p len consecutive registers starting at @p reg.
+ *
+ * @p reg is the raw (IOCON.BANK = 0) register address, @p len is at most
+ * MCP23XXX_MAX_BURST.
+ */
+typedef int (*mcp23xxx_write_regs)(const struct device *dev, uint8_t reg, const uint8_t *buf,
+				   size_t len);
 typedef int (*mcp23xxx_bus_is_ready)(const struct device *dev);
+
+/* Optional second int-gpios entry (INTB) of a driver instance */
+#define MCP23XXX_INTB_DT_SPEC_INST_GET(inst)                                                       \
+	GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, int_gpios, 1, {0})
+
 /** Configuration data */
 struct mcp23xxx_config {
 	/* gpio_driver_config needs to be first */
@@ -57,13 +86,17 @@ struct mcp23xxx_config {
 #endif /* CONFIG_GPIO_MCP23SXX */
 	} bus;
 
+	/* INTA, or the single mirrored INT line */
 	struct gpio_dt_spec gpio_int;
+	/* INTB, only set when the two ports use separate lines */
+	struct gpio_dt_spec gpio_intb;
 	struct gpio_dt_spec gpio_reset;
 
 	uint8_t ngpios;
 	bool is_open_drain;
-	mcp23xxx_read_port_regs read_fn;
-	mcp23xxx_write_port_regs write_fn;
+	bool int_open_drain;
+	mcp23xxx_read_regs read_fn;
+	mcp23xxx_write_regs write_fn;
 	mcp23xxx_bus_is_ready bus_fn;
 };
 
@@ -76,10 +109,13 @@ struct mcp23xxx_drv_data {
 	sys_slist_t callbacks;
 	const struct device *dev;
 	struct gpio_callback int_gpio_cb;
+	struct gpio_callback intb_gpio_cb;
 	struct k_work work;
 
 	uint16_t rising_edge_ints;
 	uint16_t falling_edge_ints;
+	/* Interrupts consumed by a port read, still to be delivered by the work handler */
+	uint16_t pending_ints;
 
 	struct {
 		uint16_t iodir;

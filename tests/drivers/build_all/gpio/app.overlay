@@ -177,6 +177,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <16>;
+				int-gpios = <&test_gpio 0 0>, <&test_gpio 1 0>;
 			};
 
 			test_i2c_fxl6408: fxl6408@8 {
@@ -561,6 +562,8 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <16>;
+				int-gpios = <&test_gpio 0 0>;
+				int-open-drain;
 			};
 
 			test_spi_mcp23sxx: mcp23s18@1 {
