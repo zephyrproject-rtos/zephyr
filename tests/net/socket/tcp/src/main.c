@@ -11,6 +11,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/loopback.h>
+#include <zephyr/sys/fdtable.h>
 
 #include "../../socket_helpers.h"
 
@@ -3483,9 +3484,96 @@ ZTEST(net_socket_tcp, test_zsock_send_all_failure)
 	test_close(sock);
 }
 
+static K_THREAD_STACK_DEFINE(close_acceptor_stack, 2048);
+static struct k_thread close_acceptor_thread;
+static bool close_acceptor_created;
+static K_SEM_DEFINE(close_acceptor_started, 0, 1);
+static volatile bool close_acceptor_done;
+static volatile int close_acceptor_ret;
+static volatile int close_acceptor_errno;
+
+static void close_acceptor(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	k_sem_give(&close_acceptor_started);
+	close_acceptor_ret = zsock_accept(POINTER_TO_INT(p1), NULL, NULL);
+	close_acceptor_errno = errno;
+	close_acceptor_done = true;
+}
+
+ZTEST(net_socket_tcp, test_close_during_accept_then_reuse)
+{
+	int prio = k_thread_priority_get(k_current_get());
+	struct net_sockaddr_in addr_a, addr_b, addr_c;
+	int sock_a, sock_b, sock_c, new_sock;
+	void *ctx_a, *ctx_b;
+	char state[32];
+
+	/* The window below is made by priorities, which order threads on one CPU only */
+	if (arch_num_cpus() > 1) {
+		ztest_test_skip();
+	}
+
+	prepare_sock_tcp_v4(MY_IPV4_ADDR, SERVER_PORT, &sock_a, &addr_a);
+	test_bind(sock_a, (struct net_sockaddr *)&addr_a, sizeof(addr_a));
+	test_listen(sock_a);
+	ctx_a = zvfs_get_fd_obj(sock_a, NULL, 0);
+	zassert_not_null(ctx_a, "no context for socket A");
+
+	/* The acceptor outranks us, so we run again only once it blocks in accept() */
+	close_acceptor_done = false;
+	close_acceptor_created = true;
+	k_thread_priority_set(k_current_get(), K_PRIO_PREEMPT(10));
+	k_thread_create(&close_acceptor_thread, close_acceptor_stack,
+			K_THREAD_STACK_SIZEOF(close_acceptor_stack), close_acceptor,
+			INT_TO_POINTER(sock_a), NULL, NULL, K_PRIO_PREEMPT(9), 0, K_NO_WAIT);
+	zassert_ok(k_sem_take(&close_acceptor_started, K_NO_WAIT), "acceptor did not start");
+	zassert_not_null(strstr(k_thread_state_str(&close_acceptor_thread, state, sizeof(state)),
+				"pending"),
+			 "acceptor is not blocked in accept(): %s", state);
+
+	/* Now we outrank it: it cannot run between close() and socket() */
+	k_thread_priority_set(k_current_get(), K_PRIO_PREEMPT(8));
+	test_close(sock_a);
+	prepare_sock_tcp_v4(MY_IPV4_ADDR, CLIENT_PORT, &sock_b, &addr_b);
+	ctx_b = zvfs_get_fd_obj(sock_b, NULL, 0);
+	zassert_false(close_acceptor_done, "acceptor ran between close() and socket()");
+	zassert_not_equal(ctx_b, ctx_a,
+			  "socket B got context %p, which the acceptor still waits on", ctx_b);
+
+	k_thread_priority_set(k_current_get(), prio);
+	zassert_ok(k_thread_join(&close_acceptor_thread, K_SECONDS(1)), "acceptor did not return");
+	close_acceptor_created = false;
+	zassert_equal(close_acceptor_ret, -1, "accept() on a closed socket returned %d",
+		      close_acceptor_ret);
+	zassert_equal(close_acceptor_errno, EINTR, "wrong errno %d", close_acceptor_errno);
+
+	/* B works as a listener, and accepts the connection made to it */
+	test_bind(sock_b, (struct net_sockaddr *)&addr_b, sizeof(addr_b));
+	test_listen(sock_b);
+	prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &sock_c, &addr_c);
+	test_connect(sock_c, (struct net_sockaddr *)&addr_b, sizeof(addr_b));
+	test_accept(sock_b, &new_sock, NULL, NULL);
+
+	test_close(sock_c);
+	test_close(new_sock);
+	test_close(sock_b);
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
 static void after(void *arg)
 {
 	ARG_UNUSED(arg);
+
+	/* A failed test can leave the acceptor blocked, keep it from the next test */
+	if (close_acceptor_created) {
+		k_thread_abort(&close_acceptor_thread);
+		close_acceptor_created = false;
+	}
+	k_sem_reset(&close_acceptor_started);
 
 	restore_packet_loss_ratio();
 
