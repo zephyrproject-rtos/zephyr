@@ -1,13 +1,16 @@
 # Copyright (c) 2026 ITE Corporation. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-description: ITE IT51XXX USB in device mode
+description: ITE IT51XXX usb host controller
 
-compatible: "ite,it51xxx-usb"
+compatible: "ite,it51xxx-uhc"
 
-include: [pinctrl-device.yaml, usb-ep.yaml, "ite,general-config.yaml"]
+include: [usb-controller.yaml, pinctrl-device.yaml, "ite,general-config.yaml"]
 
 properties:
+  phy-handle:
+    type: phandle
+
   reg:
     required: true
 
@@ -19,8 +22,3 @@ properties:
 
   pinctrl-names:
     required: true
-
-  wucctrl:
-    type: phandles
-    description: |
-      UDC node WUC interrupt.

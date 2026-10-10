@@ -141,11 +141,8 @@ struct it51xxx_config {
 	mm_reg_t base;
 
 #if IT51XXX_UDC_EXTEND_CTRL_ENABLED
-	struct {
-		mm_reg_t addr;
-		uint8_t enable_bit;
-		uint8_t disable_bit;
-	} extend_ctrl;
+	struct ite_extend_control *extend_ctrl;
+	size_t extend_ctrl_count;
 #endif /* IT51XXX_UDC_EXTEND_CTRL_ENABLED */
 
 	const struct pinctrl_dev_config *pcfg;
@@ -1395,18 +1392,7 @@ static int it51xxx_udc_preinit(const struct device *dev)
 	}
 
 #if IT51XXX_UDC_EXTEND_CTRL_ENABLED
-	uint8_t reg_val = sys_read8(config->extend_ctrl.addr);
-
-	if (config->extend_ctrl.enable_bit > 7 || config->extend_ctrl.disable_bit > 7) {
-		LOG_ERR("invalid bit setting: enable=%d disable=%d", config->extend_ctrl.enable_bit,
-			config->extend_ctrl.disable_bit);
-		return -EINVAL;
-	}
-
-	reg_val |= BIT(config->extend_ctrl.enable_bit);
-	reg_val &= ~BIT(config->extend_ctrl.disable_bit);
-
-	sys_write8(reg_val, config->extend_ctrl.addr);
+	ite_apply_extend_control(config->extend_ctrl, config->extend_ctrl_count);
 #endif /* IT51XXX_UDC_EXTEND_CTRL_ENABLED */
 
 	for (int i = 0; i < config->num_of_eps; i++) {
@@ -1488,15 +1474,6 @@ BUILD_ASSERT(DT_ALL_INST_HAS_PROP_STATUS_OKAY(ite_extend_ctrl) ||
 		     !DT_ANY_INST_HAS_PROP_STATUS_OKAY(ite_extend_ctrl),
 	     "ite,extend_ctrl must be defined on either all instances or none");
 
-#if IT51XXX_UDC_EXTEND_CTRL_ENABLED
-#define IT51XXX_UDC_EXTEND_CTRL(n)                                                                 \
-	{                                                                                          \
-		.addr = DT_INST_PROP_BY_IDX(n, ite_extend_ctrl, 0),                                \
-		.enable_bit = DT_INST_PROP_BY_IDX(n, ite_extend_ctrl, 1),                          \
-		.disable_bit = DT_INST_PROP_BY_IDX(n, ite_extend_ctrl, 2),                         \
-	}
-#endif /* IT51XXX_UDC_EXTEND_CTRL_ENABLED */
-
 #define IT51XXX_NUM_OF_EPS(n)                                                                      \
 	DT_INST_PROP(n, num_in_endpoints) + DT_INST_PROP(n, num_out_endpoints) -                   \
 		DT_INST_PROP(n, num_bidir_endpoints)
@@ -1516,6 +1493,10 @@ BUILD_ASSERT(DT_ALL_INST_HAS_PROP_STATUS_OKAY(ite_extend_ctrl) ||
 		     "only supported 1 bi-direction endpoint (ctrl ep)");                          \
 	IT51XXX_USB_EP_NUM_ASSERT(n);                                                              \
                                                                                                    \
+	IF_ENABLED(IT51XXX_UDC_EXTEND_CTRL_ENABLED, (                                              \
+		   static struct ite_extend_control extctrl_##n[] =                                \
+		   ITE_DT_EXTEND_CTRL_ITEMS_LIST(n);))                                             \
+                                                                                                   \
 	K_KERNEL_STACK_DEFINE(udc_it51xxx_stack_##n, CONFIG_UDC_IT51XXX_STACK_SIZE);               \
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
@@ -1534,7 +1515,8 @@ BUILD_ASSERT(DT_ALL_INST_HAS_PROP_STATUS_OKAY(ite_extend_ctrl) ||
 	static struct it51xxx_config udc_cfg_##n = {                                               \
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		IF_ENABLED(IT51XXX_UDC_EXTEND_CTRL_ENABLED, (                                      \
-			.extend_ctrl = IT51XXX_UDC_EXTEND_CTRL(n),                                 \
+			.extend_ctrl = extctrl_##n,                                                \
+			.extend_ctrl_count = ARRAY_SIZE(extctrl_##n),                              \
 		))                                                                                 \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.clk_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, clocks)),                              \

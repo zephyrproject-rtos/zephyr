@@ -1,0 +1,50 @@
+# Copyright (c) 2026 ITE Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config UHC_IT51XXX
+	bool "IT51XXX USB host controller driver"
+	default y
+	depends on DT_HAS_ITE_IT51XXX_UHC_ENABLED
+	help
+	  IT51XXX USB host controller driver.
+
+if UHC_IT51XXX
+
+config UHC_IT51XXX_MAX_ERROR_RETRIES
+	int "Maximum error retries for bulk and control transfers"
+	default 3
+	help
+	  Maximum number of times the driver retries control or bulk
+	  transaction after bus error, such as timeout, CRC error,
+	  bit-stuffing error, or RX overflow. Set to zero to disable
+	  retries.
+
+config UHC_IT51XXX_ROOT_RESET_MS
+	int "Root port reset duration (ms)"
+	range 50 100
+	default 50
+	help
+	  Duration, in milliseconds, for which the root hub drives reset
+	  signaling on a downstream-facing port (TDRSTR). USB 2.0 requires
+	  at least 50 ms.
+
+config UHC_IT51XXX_RESET_RECOVERY_MS
+	int "Reset recovery time (ms)"
+	range 10 30
+	default 10
+	help
+	  Reset recovery time in milliseconds. USB 2.0 requires at least 10 ms.
+
+config UHC_IT51XXX_THREAD_PRIORITY
+	int "IT51XXX UHC driver internal thread priority"
+	default 8
+	help
+	  IT51XXX UHC driver internal thread priority.
+
+config UHC_IT51XXX_STACK_SIZE
+	int "IT51XXX UHC driver internal thread stack size"
+	default 1024
+	help
+	  Size of the stack used in the driver for IT51XXX UHC event handling.
+
+endif # UHC_IT51XXX

@@ -1398,7 +1398,8 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			io-channel = <2>;
-			extern-enable = <0xf016de 0>;
+			#extend-ctrl-cells = <3>;
+			ite,extend-ctrl = <&i3c2 0xf016de BIT(0) 0>;
 		};
 
 		i3c3: i3c@f03d80 {
@@ -1410,7 +1411,8 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			io-channel = <3>;
-			extern-enable = <0xf016de 1>;
+			#extend-ctrl-cells = <3>;
+			ite,extend-ctrl = <&i3c3 0xf016de BIT(1) 0>;
 		};
 
 		sha256: crypto@f03b00 {

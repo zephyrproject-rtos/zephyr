@@ -86,4 +86,38 @@
 		inst)                                                   \
 	}
 
+/**
+ * @brief Get the number of extend-ctrl entries.
+ *
+ * @param inst instance number.
+ *
+ * @return Number of entries in the @c ite,extend-ctrl property.
+ */
+#define ITE_DT_INST_EXTEND_CTRL_LEN(inst) DT_INST_PROP_LEN(inst, ite_extend_ctrl)
+
+/**
+ * @brief Generate one extend-ctrl structure.
+ *
+ * This macro extracts the register address, enable and disable bitmaps
+ * from an entry in the @c ite,extend-ctrl phandle-array property.
+ *
+ * @param idx  Entry index.
+ * @param inst instance number.
+ */
+#define ITE_DT_EXTEND_CTRL_ITEMS_FUNC(idx, inst)                                                   \
+	{                                                                                          \
+		.addr = DT_INST_PHA_BY_IDX(inst, ite_extend_ctrl, idx, addr),                      \
+		.enable_bitmap = DT_INST_PHA_BY_IDX(inst, ite_extend_ctrl, idx, enable_bitmap),    \
+		.disable_bitmap = DT_INST_PHA_BY_IDX(inst, ite_extend_ctrl, idx, disable_bitmap),  \
+	}
+
+/**
+ * @brief Generate list of extend-ctrl entries.
+ *
+ * @param inst instance number.
+ */
+#define ITE_DT_EXTEND_CTRL_ITEMS_LIST(inst)                                                        \
+	{LISTIFY(ITE_DT_INST_EXTEND_CTRL_LEN(inst),           \
+		ITE_DT_EXTEND_CTRL_ITEMS_FUNC, (,), inst) }
+
 #endif /* _ITE_IT8XXX2_SOC_DT_H_ */
