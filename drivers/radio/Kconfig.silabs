@@ -1,0 +1,23 @@
+config RADIO_SILABS
+	bool "EFR32 radio driver"
+	default y
+	depends on DT_HAS_SILABS_SERIES2_RADIO_ENABLED
+    select SOC_GECKO_CUSTOM_RADIO_PHY
+	help
+	  Enables EFR32 radio driver.
+
+if RADIO_SILABS
+
+config RADIO_SILABS_TX_BUFFER_SIZE
+    int "EFR32 radio TX FIFO size"
+    default 256
+    help
+        Size of the TX FIFO, must be a power of 2 from 64 to 4096
+
+config RADIO_SILABS_RX_BUFFER_SIZE
+    int "EFR32 radio RX FIFO size"
+    default 256
+    help
+        Size of the RX FIFO, must be a power of 2 from 64 to 4096
+
+endif
