@@ -2375,7 +2375,7 @@ New Samples
 * :zephyr:code-sample:`cpu_freq_thermal_cap`
 * :zephyr:code-sample:`cpu_freq_timing_noise`
 * :zephyr:code-sample:`cs40l26`
-* :zephyr:code-sample:`dali`
+* :zephyr:code-sample:`dali_blinky`
 * :zephyr:code-sample:`dhcpv6-pd`
 * :zephyr:code-sample:`esp32-ppa-srm`
 * :zephyr:code-sample:`esp32-qdec-trigger`

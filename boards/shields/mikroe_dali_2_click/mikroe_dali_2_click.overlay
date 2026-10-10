@@ -17,8 +17,14 @@
 		rx-gpios = <&mikrobus_header 7 GPIO_ACTIVE_HIGH>;
 		tx-flank-shift-us = <(-46)>;
 		rx-flank-shift-us = <(-68)>;
+		tx-rx-propagation-max-us = <2400>;
+		rx-max-latency-us = <80>;
+		rx-grey-area-us = <800>;
 
-		/* override the following based on your board */
+		/*
+		 * Override the following based on your board. tx-prog-delay-us is
+		 * board specific as well, see the overlays in the boards directory.
+		 */
 		counter = <&timer2>;
 		chan-id-rx = <0>;
 		chan-id-tx = <1>;
