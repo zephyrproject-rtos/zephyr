@@ -28,7 +28,8 @@ typedef struct {
 	uint32_t round_threshold_ms;
 } wdt_ignore_bits_data_t;
 
-#if defined(CY_IP_MXS40SRSS) || defined(CY_IP_MXS40SSRSS)
+#if defined(CY_IP_MXS40SRSS) || defined(CY_IP_MXS40SSRSS) ||                                       \
+	defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
 #define ifx_wdt_lock()   Cy_WDT_Lock()
 #define ifx_wdt_unlock() Cy_WDT_Unlock()
 #else
@@ -46,6 +47,8 @@ typedef struct {
 #endif
 #elif defined(COMPONENT_CAT1B) || defined(CY_IP_S8SRSSLT)
 #define IFX_WDT_MATCH_BITS (16)
+#elif defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+#define IFX_WDT_MATCH_BITS (32)
 #else
 #error Unhandled device type
 #endif
@@ -208,6 +211,15 @@ static const wdt_ignore_bits_data_t ifx_wdt_ignore_data[] = {
 	/* 28 bit(s): min period: 1ms, max period: 1ms, round up from 1+ms */
 	{1, 1},
 };
+#elif defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+/*
+ * clk_lf for PSoC4 HVMS/PA is the ILO, running at CY_SYSCLK_ILO_FREQ (40kHz).
+ * Unlike the other device families, this WDT is a free-running 32-bit up-counter
+ * (WDT->CNT) compared against absolute LOWER_LIMIT/WARN_LIMIT/UPPER_LIMIT values -
+ * there is no ignore-bits/match-bits model, so no ifx_wdt_ignore_data table is
+ * needed for this device.
+ */
+#define IFX_WDT_MAX_TIMEOUT_MS (0xFFFFFFFFUL / (CY_SYSCLK_ILO_FREQ / 1000UL))
 #else
 #error "Device not supported"
 #endif
@@ -229,6 +241,7 @@ struct ifx_cat1_wdt_data {
 
 static struct ifx_cat1_wdt_data wdt_data;
 
+#if !defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
 #if !defined(CY_IP_S8SRSSLT)
 #define IFX_DETERMINE_MATCH_BITS(bits)      ((IFX_WDT_MAX_IGNORE_BITS) - (bits))
 #define IFX_GET_COUNT_FROM_MATCH_BITS(bits) (2UL << IFX_DETERMINE_MATCH_BITS(bits))
@@ -275,6 +288,7 @@ __STATIC_INLINE uint32_t ifx_wdt_timeout_to_ignore_bits(uint32_t *timeout_ms)
 	}
 	return IFX_WDT_MAX_IGNORE_BITS; /* Ideally should never reach this */
 }
+#endif /* !CONFIG_SOC_FAMILY_INFINEON_PSOC4 */
 
 #ifdef IFX_WDT_IS_IRQ_EN
 static void ifx_cat1_wdt_isr_handler(const struct device *dev)
@@ -352,6 +366,30 @@ static int ifx_cat1_wdt_setup(const struct device *dev, uint8_t options)
 	Cy_WDT_SetUpperLimit(ifx_wdt_timeout_to_match(dev_data->wdt_initial_timeout_ms,
 						      dev_data->wdt_ignore_bits, dev_data));
 	Cy_WDT_SetUpperAction(CY_WDT_LOW_UPPER_LIMIT_ACTION_RESET);
+#elif defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	uint32_t upper_limit_ticks = dev_data->wdt_initial_timeout_ms * (CY_SYSCLK_ILO_FREQ / 1000U);
+
+	Cy_WDT_SetUpperLimit(upper_limit_ticks);
+	Cy_WDT_SetUpperAction(CY_WDT_LOW_UPPER_LIMIT_ACTION_RESET);
+
+#ifdef IFX_WDT_IS_IRQ_EN
+	if (dev_data->callback) {
+		/* Fire a warning interrupt at 75% of the timeout, ahead of the
+		 * upper-limit reset, so the installed callback can run.
+		 */
+		Cy_WDT_SetWarnLimit((upper_limit_ticks / 4U) * 3U);
+		Cy_WDT_SetWarnAction(CY_WDT_WARN_ACTION_INT);
+	} else
+#endif
+	{
+		Cy_WDT_SetWarnLimit(CY_WDT_DEFAULT_WARN_LIMIT);
+		Cy_WDT_SetWarnAction(CY_WDT_WARN_ACTION_NONE);
+	}
+
+	Cy_WDT_SetDeepSleepPause((options & WDT_OPT_PAUSE_IN_SLEEP) ? CY_WDT_ENABLE
+								      : CY_WDT_DISABLE);
+	Cy_WDT_SetDebugRun((options & WDT_OPT_PAUSE_HALTED_BY_DBG) ? CY_WDT_DISABLE
+								    : CY_WDT_ENABLE);
 #else
 	dev_data->wdt_ignore_bits = ifx_wdt_timeout_to_ignore_bits(&dev_data->timeout);
 	dev_data->wdt_rounded_timeout_ms = dev_data->timeout;
@@ -379,6 +417,17 @@ static int ifx_cat1_wdt_setup(const struct device *dev, uint8_t options)
 
 	ifx_wdt_unlock();
 	Cy_WDT_Enable();
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	/* Enabling the WDT takes up to 3 clk_lf (ILO) cycles to synchronize
+	 * before Cy_WDT_IsEnabled() reflects the new state.
+	 */
+	uint32_t enable_wait_start = k_cycle_get_32();
+	uint32_t enable_wait_timeout_cycles = k_ms_to_cyc_ceil32(1);
+
+	while (!Cy_WDT_IsEnabled() &&
+	       ((k_cycle_get_32() - enable_wait_start) <= enable_wait_timeout_cycles)) {
+	}
+#endif
 	ifx_wdt_lock();
 
 	dev_data->wdt_initialized = true;
@@ -463,8 +512,14 @@ static int ifx_cat1_wdt_feed(const struct device *dev, int channel_id)
 	ifx_wdt_unlock();
 	Cy_WDT_ClearWatchdog(); /* Clear to prevent reset from WDT */
 
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	ARG_UNUSED(data);
+	/* Resets the free-running counter to 0 */
+	Cy_WDT_SetService();
+#else
 	Cy_WDT_SetMatch(ifx_wdt_timeout_to_match(data->wdt_rounded_timeout_ms,
 						 data->wdt_ignore_bits, data));
+#endif
 
 	ifx_wdt_lock();
 
