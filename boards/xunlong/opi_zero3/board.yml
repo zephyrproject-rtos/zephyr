@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Khai Do
+# Copyright (c) 2026 Eugene Cheng
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: opi_zero3
+  full_name: Orange Pi Zero 3
+  vendor: xunlong
+  socs:
+  - name: sun50i_h618
