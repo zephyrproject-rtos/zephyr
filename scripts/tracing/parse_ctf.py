@@ -60,6 +60,15 @@ def main():
 
         ns_from_origin = msg.default_clock_snapshot.ns_from_origin
         event = msg.event
+
+        # Zephyr's sequential CPU id, carried by the context of the packet the
+        # event came in. Guarded so a trace captured with an older metadata
+        # that has no packet context still parses.
+        cpu = None
+        if event.packet is not None and event.packet.context_field is not None:
+            cpu = event.packet.context_field.get("cpu_id", None)
+        cpu_string = "" if cpu is None else f"(cpu: {cpu})"
+
         # Compute the time difference since the last event message.
         diff_s = 0
 
@@ -79,22 +88,16 @@ def main():
                 'thread_abort'
                 ]:
 
-            cpu = event.payload_field.get("cpu", None)
             thread_id = event.payload_field.get("thread_id", None)
             thread_name = event.payload_field.get("name", None)
 
             th = {}
-            if event.name in ['thread_switched_out', 'thread_switched_in'] and cpu is not None:
-                cpu_string = f"(cpu: {cpu})"
-            else:
-                cpu_string = ""
-
             if thread_name:
                 print(f"{dt} (+{diff_s:.6f} s): {event.name}: {thread_name} {cpu_string}")
             elif thread_id:
                 print(f"{dt} (+{diff_s:.6f} s): {event.name}: {thread_id} {cpu_string}")
             else:
-                print(f"{dt} (+{diff_s:.6f} s): {event.name}")
+                print(f"{dt} (+{diff_s:.6f} s): {event.name} {cpu_string}")
 
             if event.name in ['thread_switched_out', 'thread_switched_in']:
                 if thread_name:
@@ -142,7 +145,7 @@ def main():
             arg1 = event.payload_field['arg1']
             print(f"{dt} (+{diff_s:.6f} s): {event.name} (name: {name}, arg0: {arg0} arg1: {arg1})")
         else:
-            print(f"{dt} (+{diff_s:.6f} s): {event.name}")
+            print(f"{dt} (+{diff_s:.6f} s): {event.name} {cpu_string}")
 
         last_event_ns_from_origin = ns_from_origin
 
