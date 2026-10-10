@@ -155,7 +155,7 @@ static void generate_pub_key(struct k_work *work)
 	if (ret != PSA_SUCCESS) {
 		LOG_ERR("Failed to export ECC public key %d", ret);
 		err = BT_HCI_ERR_UNSPECIFIED;
-		goto done;
+		goto destroy;
 	}
 	/* secp256r1 PSA exported public key has an extra 0x04 predefined byte at
 	 * the beginning of the buffer which is not part of the coordinate so
@@ -167,17 +167,18 @@ static void generate_pub_key(struct k_work *work)
 	if (ret != PSA_SUCCESS) {
 		LOG_ERR("Failed to export ECC private key %d", ret);
 		err = BT_HCI_ERR_UNSPECIFIED;
-		goto done;
+		goto destroy;
 	}
 
+	err = 0;
+
+destroy:
+	/* Also when exporting failed: the key would occupy its slot for good */
 	ret = psa_destroy_key(key_id);
 	if (ret != PSA_SUCCESS) {
 		LOG_ERR("Failed to destroy ECC key ID %d", ret);
 		err = BT_HCI_ERR_UNSPECIFIED;
-		goto done;
 	}
-
-	err = 0;
 
 done:
 	/* Publish the key, detach the registered callbacks and clear the
@@ -251,17 +252,18 @@ static void generate_dh_key(struct k_work *work)
 	if (ret != PSA_SUCCESS) {
 		err = -EIO;
 		LOG_ERR("Raw key agreement failed %d", ret);
-		goto exit;
+		goto destroy;
 	}
 
+	err = 0;
+
+destroy:
+	/* Also when the key agreement failed: the key would occupy its slot for good */
 	ret = psa_destroy_key(key_id);
 	if (ret != PSA_SUCCESS) {
 		LOG_ERR("Failed to destroy the key %d", ret);
 		err = -EIO;
-		goto exit;
 	}
-
-	err = 0;
 
 exit:
 	/* Take the callback and the result and clear the pending state under
