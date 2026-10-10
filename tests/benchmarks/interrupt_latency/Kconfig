@@ -1,0 +1,453 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Interrupt Handling Benchmark"
+
+menu "Interrupt benchmark options"
+
+config INT_BENCH_NUM_ITERATIONS
+	int "Number of iterations per scenario"
+	default 1000
+	help
+	  Number of samples collected for each measured scenario. Larger
+	  values give more stable statistics at the cost of runtime.
+
+choice INT_BENCH_TRIGGER
+	prompt "Interrupt trigger backend"
+	default INT_BENCH_TRIGGER_SW_IRQ if CPU_CORTEX_M || GIC || ARC || X86 || \
+		INTC_ESP32 || (RISCV && !SMP && !RISCV_S_MODE)
+	default INT_BENCH_TRIGGER_OFFLOAD
+
+config INT_BENCH_TRIGGER_SW_IRQ
+	bool "Software-triggered hardware interrupt"
+	depends on CPU_CORTEX_M || GIC || ARC || X86 || INTC_ESP32 || \
+		(RISCV && !SMP && !RISCV_S_MODE)
+	help
+	  Raise a real asynchronous interrupt through the platform
+	  interrupt controller (NVIC STIR/ISPR on Cortex-M, a GIC SGI on
+	  Arm GIC platforms, IRQ_HINT on ARC, a local APIC self IPI on
+	  x86, a CLIC pending bit or a CLINT machine software interrupt
+	  on RISC-V, and a software-raised interrupt matrix source on
+	  Espressif SoCs). This exercises the full hardware interrupt
+	  entry path and is required for the entry latency, critical
+	  section and throughput scenarios.
+
+	  Not available in RISC-V supervisor mode: both the CLINT and
+	  mhartid are machine mode only.
+
+config INT_BENCH_TRIGGER_OFFLOAD
+	bool "irq_offload() software trap"
+	depends on IRQ_OFFLOAD
+	help
+	  Run the benchmark ISRs synchronously via irq_offload(). This
+	  works on every architecture but does not go through the
+	  interrupt controller: only the interrupt *exit* paths are
+	  measured. Entry latency numbers are not available with this
+	  backend.
+
+endchoice
+
+config INT_BENCH_IRQ_LINE
+	int "IRQ line used by the benchmark (-1 = auto-select)"
+	depends on INT_BENCH_TRIGGER_SW_IRQ
+	default -1
+	help
+	  IRQ line the benchmark connects its ISR to and then triggers
+	  from software. The default of -1 selects a platform-appropriate
+	  line automatically: an SGI on GIC platforms, the machine
+	  software interrupt on RISC-V platforms without a CLIC, a line
+	  known to be free on selected QEMU boards and on x86, and the
+	  last available line (CONFIG_NUM_IRQS - 1) otherwise. Override
+	  this on SoCs where the automatic choice is not an implemented
+	  or free line.
+
+config INT_BENCH_IRQ_LINE_ALT
+	int "Second IRQ line used by the benchmark (-1 = auto-select)"
+	depends on INT_BENCH_TRIGGER_SW_IRQ
+	default -1
+	help
+	  Scenarios that compare how an interrupt is connected need a
+	  second line, because the connection method is fixed at build
+	  time. Selected the same way as CONFIG_INT_BENCH_IRQ_LINE, one
+	  line below it where that is derived from CONFIG_NUM_IRQS.
+
+config INT_BENCH_IRQ_PRIO
+	int "Priority of the benchmark IRQ"
+	depends on INT_BENCH_TRIGGER_SW_IRQ
+	# On Arm GIC the priority is a raw eight bit value of which only
+	# the upper bits select the preemption group, so a line at
+	# priority 1 cannot be preempted by one at priority 0: they share
+	# a group. Use the platform default, which is both representative
+	# and far enough from the top for the second line to outrank it.
+	default 160 if GIC
+	default 1
+	help
+	  Interrupt priority for the benchmark IRQ line, using the same
+	  convention as the priority argument of IRQ_CONNECT() on the
+	  target architecture.
+
+config INT_BENCH_IRQ_PRIO_ALT
+	int "Priority of the second benchmark IRQ"
+	depends on INT_BENCH_TRIGGER_SW_IRQ
+	# Zero-latency interrupts have to sit within the levels reserved
+	# for them, and the nested scenario needs to outrank the first
+	# line. Everything else wants the two lines at equal priority, so
+	# that comparing them measures only how they are connected.
+	default 0 if INT_BENCH_SCENARIO_ZLI
+	default 0 if INT_BENCH_SCENARIO_NESTED
+	default INT_BENCH_IRQ_PRIO
+	help
+	  Interrupt priority for the second benchmark IRQ line, in the
+	  same convention as CONFIG_INT_BENCH_IRQ_PRIO.
+
+	  The default matches the first line, so that the entry latency
+	  of the two can be compared without the priority differing as
+	  well. The nested and zero-latency scenarios override it because
+	  they are about the second line outranking the first.
+
+config INT_BENCH_LOCK_HOLD_US
+	int "Critical section hold time (microseconds)"
+	depends on INT_BENCH_SCENARIO_LOCKED
+	default 10
+	help
+	  How long the critical section scenario keeps interrupts locked
+	  with the benchmark interrupt pending before unlocking and
+	  measuring the unlock-to-ISR-entry latency.
+
+menuconfig INT_BENCH_LOAD
+	bool "Run the scenarios under background system load"
+	help
+	  Interrupt latency measured on an otherwise idle system is a
+	  best case: caches hold the benchmark's own working set, no
+	  other interrupt is in service and nothing else competes for the
+	  memory system. Enable background load so that the reported
+	  maximum and standard deviation describe something closer to
+	  what an application will see. The individual load sources are
+	  selected below.
+
+if INT_BENCH_LOAD
+
+config INT_BENCH_LOAD_CACHE
+	bool "Evict caches between samples"
+	default y
+	help
+	  Walk a working set larger than the benchmark's own between
+	  samples, outside the measured span, so that each measured
+	  interrupt is served with cold caches and TLBs. Runs in the
+	  benchmark thread and therefore affects every scenario on every
+	  platform.
+
+config INT_BENCH_LOAD_CACHE_KB
+	int "Working set size (KB)"
+	depends on INT_BENCH_LOAD_CACHE
+	default 8
+	help
+	  Size of the buffer walked between samples. To be effective this
+	  should exceed the size of the last level cache; to be usable it
+	  has to fit in RAM alongside the benchmark.
+
+config INT_BENCH_LOAD_TIMER
+	bool "Competing periodic timer interrupts"
+	default y
+	help
+	  Run a periodic timer whose handler executes in the system clock
+	  ISR, so that it competes with the benchmark interrupt for the
+	  interrupt controller and for the interrupt-disabled windows of
+	  the kernel timeout code. Affects every platform.
+
+config INT_BENCH_LOAD_TIMER_PERIOD_US
+	int "Timer load period (microseconds)"
+	depends on INT_BENCH_LOAD_TIMER
+	default 1000
+	help
+	  Period of the competing timer. Values below the tick period of
+	  the system clock are rounded up, so raise
+	  CONFIG_SYS_CLOCK_TICKS_PER_SEC accordingly.
+
+config INT_BENCH_LOAD_KERNEL
+	bool "Kernel activity from interrupt context"
+	depends on INT_BENCH_LOAD_TIMER
+	default y
+	help
+	  Have the load timer handler exercise kernel primitives from
+	  interrupt context, so that the benchmark interrupt competes
+	  with the interrupt-disabled windows the kernel takes around its
+	  own data structures rather than only with an empty handler.
+
+	  Runs in the system clock ISR, so unlike a thread it takes
+	  effect regardless of priorities and on uniprocessors too.
+
+config INT_BENCH_LOAD_SCHED
+	bool "Scheduler churn between samples"
+	default y
+	help
+	  Wake a higher priority thread and let it block again before
+	  each sample, so that every measurement is taken on a system
+	  that has just context switched rather than one that has been
+	  spinning in the same thread.
+
+	  The churn happens between samples rather than during them on
+	  purpose. A thread that could preempt the benchmark while it is
+	  measuring would add its own scheduling delay to the result and
+	  be indistinguishable from interrupt latency.
+
+config INT_BENCH_LOAD_THREADS
+	bool "Background CPU and memory load threads"
+	default y
+	help
+	  Run threads of lower priority than the benchmark that
+	  continuously write to memory. On SMP these run on the other
+	  CPUs and contend for the memory system throughout. On a
+	  uniprocessor they only run while the benchmark blocks, so their
+	  effect is limited to the rescheduling scenario.
+
+config INT_BENCH_LOAD_NUM_THREADS
+	int "Number of background load threads"
+	depends on INT_BENCH_LOAD_THREADS
+	default 2
+	help
+	  On SMP this should be at least the number of CPUs other than
+	  the one running the benchmark.
+
+endif # INT_BENCH_LOAD
+
+config INT_BENCH_ISR_IN_RAM
+	bool "Place the benchmark ISR in RAM"
+	depends on ARCH_HAS_RAMFUNC_SUPPORT
+	depends on XIP
+	help
+	  Relocate the benchmark's interrupt handlers to RAM with
+	  __ramfunc, so that comparing a run against one built without
+	  this option shows what fetching the handler from flash costs.
+
+	  Only the benchmark's own handlers move. The vector table and
+	  the architecture's interrupt entry code stay where the build
+	  put them, so the difference is a lower bound on what fully
+	  relocating the interrupt path would save.
+
+config INT_BENCH_OUTLIER_TRACE
+	bool "Report what coincided with outlying samples"
+	help
+	  Print a line for each sample far above the smallest one seen,
+	  naming what else the system did while it was being taken: how
+	  many clock ticks were announced and how many times the load
+	  timer ran. An outlier that coincides with neither was caused by
+	  something the benchmark cannot see, such as the memory system
+	  or a debug probe.
+
+	  The witnesses are read once per sample, outside the measured
+	  span, so this changes the steady state slightly and is meant
+	  for diagnosis rather than for the numbers to be quoted.
+
+config INT_BENCH_OUTLIER_FACTOR
+	int "How far above the minimum counts as an outlier"
+	depends on INT_BENCH_OUTLIER_TRACE
+	default 4
+	help
+	  A sample is reported when it exceeds this many times the
+	  smallest sample seen so far in the same benchmark.
+
+config INT_BENCH_OUTLIER_LIMIT
+	int "Maximum outliers reported per benchmark"
+	depends on INT_BENCH_OUTLIER_TRACE
+	default 8
+	help
+	  Printing perturbs the samples that follow, so stop after this
+	  many. The count of the rest is still reported.
+
+comment "Scenarios"
+
+config INT_BENCH_SCENARIO_ENTRY
+	bool "Interrupt entry latency"
+	depends on INT_BENCH_TRIGGER_SW_IRQ
+	default y
+	help
+	  Measure the time from the software trigger of a hardware
+	  interrupt to the first instruction of its ISR.
+
+config INT_BENCH_SCENARIO_EXIT
+	bool "Interrupt exit latency"
+	default y
+	help
+	  Measure the time from the end of the ISR body back to the
+	  interrupted thread, and the time from the end of an ISR that
+	  wakes a higher priority thread to that thread running.
+
+config INT_BENCH_SCENARIO_END_TO_END
+	bool "Interrupt to awakened thread latency"
+	depends on INT_BENCH_TRIGGER_SW_IRQ
+	default y
+	help
+	  Measure the whole path an application waits on, from raising
+	  the interrupt to the high priority thread it wakes running.
+
+	  The entry and exit scenarios measure the pieces of this span,
+	  but they cannot be added together: they are measured in
+	  separate runs and neither covers the ISR body or the handoff
+	  between them.
+
+config INT_BENCH_SCENARIO_LOCKED
+	bool "Entry latency after a critical section"
+	depends on INT_BENCH_TRIGGER_SW_IRQ
+	# ARC raises a software interrupt by writing the line number to
+	# the single IRQ_HINT register, and the system timer writes that
+	# same register from sys_clock_cycle_get_32() whenever it finds
+	# the timer already expired. The hold below busy waits on that
+	# function with interrupts locked, so the timer takes the
+	# register over from the benchmark and the two then fight for it
+	# for as long as the timer stays behind.
+	depends on !ARC
+	default y
+	help
+	  Trigger the benchmark interrupt while interrupts are locked,
+	  hold the lock for a configurable window, then measure the time
+	  from irq_unlock() to ISR entry. This approximates the latency
+	  an interrupt experiences when it arrives during a kernel or
+	  application critical section.
+
+	  Not available on ARC, where the benchmark trigger and the
+	  system timer share one hardware register.
+
+config INT_BENCH_SCENARIO_DYNAMIC
+	bool "Dynamic interrupt connect cost"
+	depends on INT_BENCH_TRIGGER_SW_IRQ
+	depends on DYNAMIC_INTERRUPTS
+	depends on !SHARED_INTERRUPTS
+	# On x86, arch_irq_connect_dynamic() is a one shot allocation
+	# rather than a rebindable install: it allocates a new IDT vector
+	# and consumes an entry from a fixed pool of interrupt stubs on
+	# every call, and asserts that the line is not already
+	# configured. Repeatedly connecting the same line to gather
+	# samples exhausts that pool.
+	depends on !X86
+	default y
+	help
+	  Measure the cost of installing an ISR at runtime with
+	  irq_connect_dynamic(), by repeatedly reinstalling the handler
+	  on the benchmark IRQ line. This requires the architecture to
+	  support rebinding a line that is already connected.
+
+config INT_BENCH_SCENARIO_MASKING
+	bool "Delay inflicted on a periodic interrupt"
+	# Two samples are taken per tick, so the tick has to be frequent
+	# enough both to sample the windows of interest and to finish in
+	# reasonable time. The base configuration runs far slower than
+	# that; the load overlay raises it to 1000.
+	depends on SYS_CLOCK_TICKS_PER_SEC >= 1000
+	default y
+	help
+	  Run a periodic timer at the tick rate while exercising kernel
+	  primitives, and measure how much later than its period each
+	  timer interrupt is actually served. This is the delay an
+	  application sees when the kernel or a driver masks interrupts.
+
+	  This is a sampling technique and cannot attribute the delay: a
+	  masked window that does not overlap a tick is never seen, and
+	  the measured delay also contains time spent in interrupts
+	  served earlier. The maximum is a sampled lower bound on the
+	  longest interrupt-disabled window, not proof of one.
+
+config INT_BENCH_MASK_INJECT_US
+	int "Inject a known interrupt-disabled window (microseconds)"
+	depends on INT_BENCH_SCENARIO_MASKING
+	default 0
+	help
+	  Mask interrupts for this long inside the scenario's work loop,
+	  to check on a new platform that the measurement responds to a
+	  known window. Keep the value well below the tick period: a
+	  window comparable to it masks nearly continuously, and the
+	  timer then re-anchors to when it was last serviced, so the
+	  measured delay falls short of the injected one. Zero measures
+	  only the windows the kernel creates by itself.
+
+choice INT_BENCH_ALT_LINE_USE
+	prompt "Use of the second benchmark IRQ line"
+	depends on INT_BENCH_TRIGGER_SW_IRQ
+	default INT_BENCH_SCENARIO_DIRECT if CPU_CORTEX_M || ARC || (X86 && !X86_64)
+	default INT_BENCH_SCENARIO_NESTED if GIC
+	default INT_BENCH_ALT_LINE_NONE
+	help
+	  How an interrupt is connected and what priority it runs at are
+	  both fixed at build time, so the scenarios that need a second
+	  line cannot share one. Pick the one to build.
+
+config INT_BENCH_SCENARIO_DIRECT
+	bool "Direct ISR entry latency"
+	# Needs both a second triggerable line and IRQ_DIRECT_CONNECT().
+	# There is no capability symbol for the latter, so the
+	# architectures that implement ARCH_ISR_DIRECT_DECLARE() are
+	# listed explicitly: Arm64 has no direct interrupts, x86 has them
+	# only on IA32, and RISC-V without a CLIC has only the one
+	# interrupt a hart can raise on itself.
+	depends on CPU_CORTEX_M || ARC || (X86 && !X86_64)
+	help
+	  Measure entry latency for an interrupt connected with
+	  IRQ_DIRECT_CONNECT(), which is dispatched straight from the
+	  vector table instead of through the software ISR table. The
+	  line runs at the same priority as the first one, so comparing
+	  the two measures only the dispatch.
+
+config INT_BENCH_SCENARIO_ZLI
+	bool "Zero-latency interrupt"
+	depends on ZERO_LATENCY_IRQS
+	help
+	  Connect the second line as a zero-latency interrupt and measure
+	  it both with interrupts enabled and from inside a critical
+	  section. A zero-latency interrupt is not masked by irq_lock(),
+	  so it is served during the critical section rather than after
+	  it, which the regular critical section scenario can be compared
+	  against.
+
+	  The priority difference is inherent here: a zero-latency
+	  interrupt is one that runs above the level the kernel masks.
+
+config INT_BENCH_SCENARIO_NESTED
+	bool "Nested interrupt preemption latency"
+	# Same set of platforms whose nesting behaviour
+	# tests/arch/common/interrupt exercises.
+	depends on CPU_CORTEX_M || ARC || GIC
+	help
+	  Raise the second, higher priority interrupt from inside the
+	  first one's ISR and measure how long it takes to preempt it.
+	  This is the latency a high priority interrupt suffers when a
+	  lower priority one is already being serviced, which for an
+	  interrupt-heavy application is often the dominant term.
+
+config INT_BENCH_ALT_LINE_NONE
+	bool "Unused"
+	help
+	  Leave the second line alone. This is the only option on
+	  platforms that have no second line to trigger.
+
+endchoice
+
+config INT_BENCH_SCENARIO_THROUGHPUT
+	bool "Sustained interrupt round-trip cost"
+	depends on INT_BENCH_TRIGGER_SW_IRQ
+	default y
+	help
+	  Re-trigger the benchmark interrupt from within its own ISR so
+	  interrupts are serviced back to back, and report the average
+	  cost of one full entry + ISR + exit round trip. The inverse of
+	  this number is the maximum sustainable interrupt rate.
+
+endmenu
+
+config SYS_CLOCK_TICKS_PER_SEC
+	int "Number of ticks per second"
+	default 20 if SOC_FAMILY_STM32
+	default 100
+	help
+	  A low tick rate keeps timer interrupts out of the measurements,
+	  but it cannot be lowered without limit: a tick has to be
+	  expressible in the timer's counter. A Cortex-M SysTick counter
+	  is 24 bits, so a tick longer than 16777215 cycles cannot be
+	  programmed, and the driver then falls back to its minimum delay
+	  of ten microseconds and interrupts continuously.
+
+	  The default of 100 is representable on any core up to 1.6GHz.
+	  Combined with a tickless kernel it is also quiet: with nothing
+	  scheduled the driver programs as far ahead as the counter
+	  allows, which on a 150MHz part is 110ms.
+
+source "Kconfig.zephyr"
