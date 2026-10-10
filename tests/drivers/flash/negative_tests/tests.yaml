@@ -23,3 +23,4 @@ tests:
       - pic32cz_ca80_cult
       - kit_psc3m5_evk/psc3m5fds2afq1
       - pic32cm_sg00_cpro
+      - kit_psc3m6_evk/psc3m6ges3ahq1
