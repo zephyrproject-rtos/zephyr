@@ -1108,6 +1108,8 @@ static void uart_ra_sci_b_rxi_isr(const struct device *dev)
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN)
 	if (data->user_cb != NULL) {
 		data->user_cb(dev, data->user_cb_data);
+		R_BSP_IrqStatusClear(data->fsp_config.rxi_irq);
+		return;
 	}
 #endif
 
@@ -1125,15 +1127,14 @@ static void uart_ra_sci_b_rxi_isr(const struct device *dev)
 		data->rx_buffer_len++;
 		if (data->rx_buffer_offset + data->rx_buffer_len == data->rx_buffer_cap) {
 			sci_b_uart_rxi_isr();
-		} else {
-			R_ICU->IELSR_b[data->fsp_config.rxi_irq].IR = 0U;
+			return;
 		}
 	} else {
 		sci_b_uart_rxi_isr();
+		return;
 	}
-#else
-	R_ICU->IELSR_b[data->fsp_config.rxi_irq].IR = 0U;
 #endif
+	R_BSP_IrqStatusClear(data->fsp_config.rxi_irq);
 }
 
 static void uart_ra_sci_b_txi_isr(const struct device *dev)
@@ -1143,13 +1144,15 @@ static void uart_ra_sci_b_txi_isr(const struct device *dev)
 
 	if (data->user_cb != NULL) {
 		data->user_cb(dev, data->user_cb_data);
+		R_BSP_IrqStatusClear(data->fsp_config.txi_irq);
+		return;
 	}
 #endif
 
 #if defined(CONFIG_UART_ASYNC_API)
 	sci_b_uart_txi_isr();
 #else
-	R_ICU->IELSR_b[data->fsp_config.txi_irq].IR = 0U;
+	R_BSP_IrqStatusClear(data->fsp_config.txi_irq);
 #endif
 }
 
@@ -1160,6 +1163,8 @@ static void uart_ra_sci_b_tei_isr(const struct device *dev)
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN)
 	if (data->user_cb != NULL) {
 		data->user_cb(dev, data->user_cb_data);
+		R_BSP_IrqStatusClear(data->fsp_config.tei_irq);
+		return;
 	}
 #endif
 
@@ -1170,7 +1175,7 @@ static void uart_ra_sci_b_tei_isr(const struct device *dev)
 	uart_ra_sci_b_tx_pm_policy_state_lock_put(dev);
 #endif
 #else
-	R_ICU->IELSR_b[data->fsp_config.tei_irq].IR = 0U;
+	R_BSP_IrqStatusClear(data->fsp_config.tei_irq);
 #endif
 }
 
@@ -1181,13 +1186,15 @@ static void uart_ra_sci_b_eri_isr(const struct device *dev)
 
 	if (data->user_cb != NULL) {
 		data->user_cb(dev, data->user_cb_data);
+		R_BSP_IrqStatusClear(data->fsp_config.eri_irq);
+		return;
 	}
 #endif
 
 #if defined(CONFIG_UART_ASYNC_API)
 	sci_b_uart_eri_isr();
 #else
-	R_ICU->IELSR_b[data->fsp_config.eri_irq].IR = 0U;
+	R_BSP_IrqStatusClear(data->fsp_config.eri_irq);
 #endif
 }
 
