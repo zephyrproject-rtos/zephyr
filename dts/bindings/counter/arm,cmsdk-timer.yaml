@@ -2,7 +2,7 @@ description: ARM CMSDK timer
 
 compatible: "arm,cmsdk-timer"
 
-include: base.yaml
+include: [base.yaml, wuc-device.yaml]
 
 properties:
   reg:
