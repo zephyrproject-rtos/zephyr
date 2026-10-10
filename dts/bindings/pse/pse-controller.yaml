@@ -1,0 +1,57 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Common fields for Power Sourcing Equipment (PSE) controllers, as defined
+  in IEEE 802.3 Clause 30/33/104/145.
+
+include: base.yaml
+
+properties:
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 0
+
+child-binding:
+  description: PSE Power Interface (PI)
+
+  properties:
+    reg:
+      type: int
+      required: true
+      description: PI index.
+
+    "#pse-cells":
+      const: 0
+      description: Number of cells for the PI phandle specifier.
+
+    pairset-names:
+      type: string-array
+      description: |
+        Names of the pairsets, corresponding to the phandles in
+        'pairsets'. IEEE 802.3-2022 145.2.4.
+      enum:
+        - "alternative-a"
+        - "alternative-b"
+
+    pairsets:
+      type: phandle-array
+      description: |
+        Phandles to the power supply for each pairset named in
+        'pairset-names'. IEEE 802.3-2022 33.2.3 / 145.2.4.
+
+    polarity-supported:
+      type: string-array
+      description: |
+        Polarity configuration(s) supported by this PI's pairsets.
+      enum:
+        - "MDI-X"
+        - "MDI"
+        - "X"
+        - "S"
+
+    vpwr-supply:
+      type: phandle
+      description: Regulator power supply for the PI.
