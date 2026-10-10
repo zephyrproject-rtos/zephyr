@@ -143,7 +143,13 @@ static void uart_sam0_dma_tx_done(const struct device *dma_dev, void *arg,
 
 	SercomUsart * const regs = cfg->regs;
 
-	regs->INTENSET.reg = SERCOM_USART_INTENSET_TXC;
+	/*
+	 * Wait for the last stop bit, unless the transmission was aborted
+	 * meanwhile: TXC with no transmission would never be cleared.
+	 */
+	if (dev_data->tx_len != 0U) {
+		regs->INTENSET.reg = SERCOM_USART_INTENSET_TXC;
+	}
 }
 
 static int uart_sam0_tx_halt(struct uart_sam0_dev_data *dev_data)
@@ -165,6 +171,8 @@ static int uart_sam0_tx_halt(struct uart_sam0_dev_data *dev_data)
 	dev_data->tx_len = 0U;
 
 	dma_stop(cfg->dma_dev, cfg->tx_dma_channel);
+	/* The DMA may have finished and enabled TXC already */
+	cfg->regs->INTENCLR.reg = SERCOM_USART_INTENCLR_TXC;
 
 	irq_unlock(key);
 
@@ -719,7 +727,14 @@ static void uart_sam0_isr(const struct device *dev)
 	const struct uart_sam0_dev_cfg *const cfg = dev->config;
 	SercomUsart * const regs = cfg->regs;
 
-	if (dev_data->tx_len && regs->INTFLAG.bit.TXC) {
+	/*
+	 * TXC is enabled once the DMA has written the last byte. Until then
+	 * the flag can still be set by the previous transmission, and the
+	 * ISR can run for the receiver before the DMA has written the first
+	 * byte.
+	 */
+	if (dev_data->tx_len && regs->INTENSET.bit.TXC &&
+	    regs->INTFLAG.bit.TXC) {
 		regs->INTENCLR.reg = SERCOM_USART_INTENCLR_TXC;
 
 		k_work_cancel_delayable(&dev_data->tx_timeout_work);
