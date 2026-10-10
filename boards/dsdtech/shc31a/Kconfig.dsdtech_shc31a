@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Base Power Company
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_DSDTECH_SHC31A
+	select SOC_STM32G431XX

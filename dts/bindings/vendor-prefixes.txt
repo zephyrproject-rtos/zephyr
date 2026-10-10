@@ -208,6 +208,7 @@ domintech	Domintech Co., Ltd.
 dongwoon	Dongwoon Anatech
 dptechnics	DPTechnics
 dragino	Dragino Technology Co., Limited
+dsdtech	Dongguan Deshide Technology Co., Ltd. (DSD TECH)
 dserve	dServe Technology B.V.
 dynaimage	Dyna-Image
 ea	Embedded Artists AB
