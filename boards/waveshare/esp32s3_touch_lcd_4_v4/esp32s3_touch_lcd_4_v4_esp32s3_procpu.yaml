@@ -1,0 +1,20 @@
+identifier: esp32s3_touch_lcd_4_v4/esp32s3/procpu
+name: ESP32-S3-Touch-LCD-4-V4 PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - spi
+  - watchdog
+  - regulator
+  - uart
+  - pwm
+  - pinmux
+  - nvs
+  - display
+  - backlight
+  - buzzer
+vendor: waveshare
