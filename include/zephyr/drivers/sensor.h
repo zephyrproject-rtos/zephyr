@@ -1402,6 +1402,21 @@ static inline float sensor_value_to_float(const struct sensor_value *val)
 }
 
 /**
+ * @brief Helper function for converting struct sensor_value to q31.
+ *
+ * @param val A pointer to a sensor_value struct.
+ * @param shift The number of bits to right shift the input value.
+ * @return The converted value.
+ */
+static inline q31_t sensor_value_to_q31(const struct sensor_value *val, int8_t shift)
+{
+	int64_t whole = (int64_t)val->val1 << 31;
+	int64_t frac = (((int64_t)val->val2) << 31) / 1000000;
+
+	return (q31_t)CLAMP((whole + frac) >> shift, INT32_MIN, INT32_MAX);
+}
+
+/**
  * @brief Helper function for converting struct sensor_value to fixed-point.
  *
  * @param val A pointer to a fixed-point value in Qm.n format.
