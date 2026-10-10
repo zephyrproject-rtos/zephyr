@@ -57,6 +57,13 @@ The ``--mf`` option defaults to ``west.yml``. Since west v0.10.1, west will use
 the default branch in the manifest repository unless the ``--mr`` option
 is used to override it. (In prior versions, ``--mr`` defaulted to ``master``.)
 
+If the ``blobs.url-mirror`` :ref:`configuration option <west-config>` is set
+to a ``;``-separated list of ``<src-url>=<mirror-url>`` mappings, cloning a
+manifest URL matching one of the ``<src-url>`` prefixes tries the
+corresponding mirror first, falling back to the original URL if the mirror
+is unreachable. Since no workspace exists yet at this point, this option
+must be set using ``west config --system`` or ``west config --global``.
+
 If no ``directory`` is given, the current working directory is used.
 
 **Option 2**: to create a workspace around an existing local manifest
@@ -154,6 +161,12 @@ the ``-r`` (``--rebase``) option.
 If you would like ``west update`` to keep local branches checked out as
 long as they point to commits that are descendants of the new
 ``manifest-rev``, use the ``-k`` (``--keep-descendants``) option.
+
+If the ``blobs.url-mirror`` configuration option is set to a ``;``-separated
+list of ``<src-url>=<mirror-url>`` mappings, fetching (and auto-caching) a
+project URL matching one of the ``<src-url>`` prefixes tries the
+corresponding mirror first, falling back to the original URL if the mirror
+is unreachable.
 
 .. note::
 
