@@ -18,3 +18,13 @@ config EMUL_BQ40Z50
 	help
 	  It provides readings which follow a simple sequence, thus allowing
 	  test code to check that things are working as expected.
+
+config BQ40Z50_SPLIT_READ_DELAY_US
+	int "Forced delay between write and read ops"
+	default 0
+	depends on BQ40Z50
+	help
+	  Non-zero value splits the I2C burst read transaction into a register
+	  address write and data read transactions separated by a minimum delay
+	  interval specified in microseconds.  This feature may be required on
+	  target that implement non-I2C compliant clock stretching.
