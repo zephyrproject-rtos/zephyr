@@ -156,6 +156,11 @@ configuration is:
 - **CLK_HF2:** 300 MHz
 - **CLK_HF4:** 400 MHz
 
+On the ``m33/ns`` target the clock sources, DPLLs and high-frequency clocks
+are configured by TF-M. TF-M takes these settings from the ``m33/ns``
+devicetree (``kit_pse84_ai_m33_ns.dts``), so clock changes are made in that
+file or in an overlay. Invalid combinations fail the build.
+
 Serial Port
 ============
 
