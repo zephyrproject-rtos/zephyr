@@ -183,3 +183,15 @@ bq24298@f {
 
 	ce-gpios = <&test_gpio 0 0>;
 };
+
+max20356@10 {
+	compatible = "adi,max20356";
+	reg = <0x10>;
+	status = "okay";
+
+	charger {
+		compatible = "adi,max20356-charger";
+		constant-charge-current-microamp = <100000>;
+		constant-charge-voltage-microvolt = <4200000>;
+	};
+};
