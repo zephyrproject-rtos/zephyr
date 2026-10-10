@@ -6037,8 +6037,6 @@ Sensor Subsystem:
     - include/zephyr/sensing/
     - doc/services/sensing/
     - subsys/sensing/
-    - samples/subsys/sensing/
-    - tests/subsys/sensing/
   labels:
     - "area: Sensor Subsystem"
   tests:

@@ -490,6 +490,10 @@ Deprecated APIs and options
   * Deprecated :kconfig:option:`CONFIG_NET_L2_PTP`.
     Used :kconfig:option:`CONFIG_NET_L2_PTP_TIMESTAMPING` instead.
 
+* Sensing Subsystem
+
+  * Deprecated :kconfig:option:`CONFIG_SENSING`.
+
 * SPI
 
   * The SPI API now uses inclusive terminology (controller/peripheral, SDO/SDI). The former
