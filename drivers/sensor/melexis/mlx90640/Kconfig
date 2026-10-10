@@ -1,0 +1,19 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config MLX90640
+	bool "MLX90640 32x24 IR array sensor driver"
+	default y
+	depends on DT_HAS_MELEXIS_MLX90640_ENABLED
+	select I2C
+	select REGULATOR if $(dt_compat_any_has_prop,$(DT_COMPAT_MELEXIS_MLX90640),vin-supply)
+	help
+	  Enable the I2C driver for the Melexis MLX90640 far infrared
+	  array. The driver dumps EEPROM calibration data at init, reads
+	  both RAM subpages on fetch, and reports 768 object temperatures
+	  on SENSOR_CHAN_AMBIENT_TEMP plus die/ambient Ta on
+	  SENSOR_CHAN_DIE_TEMP.
+
+	  Uses single-precision floating point and about 9 kB of RAM for
+	  extracted parameters, one raw frame, and the compensated pixel
+	  buffer.
