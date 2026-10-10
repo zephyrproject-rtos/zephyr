@@ -1,5 +1,5 @@
 /*
- * Copyright 2017, 2024 NXP
+ * Copyright 2017, 2024, 2026 NXP
  * Copyright (c) 2020-2021 Vestas Wind Systems A/S
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -9,12 +9,14 @@
 
 #include <zephyr/drivers/clock_control.h>
 #include <errno.h>
+#include <string.h>
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/irq.h>
 #include <soc.h>
 #include <fsl_ftm.h>
 #include <fsl_clock.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/pm/device.h>
 
 #include <zephyr/logging/log.h>
 
@@ -41,6 +43,19 @@ struct mcux_ftm_config {
 	const struct pinctrl_dev_config *pincfg;
 };
 
+#ifdef CONFIG_PM_DEVICE
+/* Channel configuration saved across a low power transition. The FTM register
+ * content is lost whenever the instance is power gated (PM_DEVICE_ACTION_TURN_OFF
+ * followed by PM_DEVICE_ACTION_TURN_ON), so the last requested PWM setup has to
+ * be replayed from RAM instead of read back from the peripheral.
+ */
+struct mcux_ftm_pm_channel {
+	uint32_t pulse_cycles;
+	pwm_flags_t flags;
+	bool configured;
+};
+#endif /* CONFIG_PM_DEVICE */
+
 struct mcux_ftm_capture_data {
 	ftm_dual_edge_capture_param_t param;
 	pwm_capture_callback_handler_t callback;
@@ -55,6 +70,11 @@ struct mcux_ftm_data {
 	uint32_t clock_freq;
 	uint32_t period_cycles;
 	ftm_chnl_pwm_config_param_t channel[MAX_CHANNELS];
+#ifdef CONFIG_PM_DEVICE
+	struct mcux_ftm_pm_channel pm_channel[MAX_CHANNELS];
+	uint32_t pm_period_cycles;
+	bool pm_pwm_active;
+#endif /* CONFIG_PM_DEVICE */
 #ifdef CONFIG_PWM_CAPTURE
 	uint32_t overflows;
 	struct mcux_ftm_capture_data capture[MAX_CAPTURE_PAIRS];
@@ -140,10 +160,36 @@ static int mcux_ftm_set_cycles(const struct device *dev, uint32_t channel,
 	}
 	FTM_SetSoftwareTrigger(config->base, true);
 
+#ifdef CONFIG_PM_DEVICE
+	/* Remember the accepted setup so that it can be replayed after the
+	 * instance has been power gated (PM_DEVICE_ACTION_TURN_ON).
+	 */
+	data->pm_channel[channel].pulse_cycles = pulse_cycles;
+	data->pm_channel[channel].flags = flags;
+	data->pm_channel[channel].configured = true;
+	data->pm_period_cycles = period_cycles;
+	data->pm_pwm_active = true;
+#endif /* CONFIG_PM_DEVICE */
+
 	return 0;
 }
 
 #ifdef CONFIG_PWM_CAPTURE
+/* Report whether any channel pair still has an active capture. */
+static bool mcux_ftm_capture_pending(const struct device *dev)
+{
+	const struct mcux_ftm_config *config = dev->config;
+	uint32_t irqs = FTM_GetEnabledInterrupts(config->base);
+
+	for (uint32_t pair = 0U; pair < MAX_CAPTURE_PAIRS; pair++) {
+		if (irqs & BIT(PAIR_2ND_CH(pair))) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static int mcux_ftm_configure_capture(const struct device *dev,
 				      uint32_t channel, pwm_flags_t flags,
 				      pwm_capture_callback_handler_t cb,
@@ -249,6 +295,12 @@ static int mcux_ftm_enable_capture(const struct device *dev, uint32_t channel)
 	FTM_EnableInterrupts(config->base, BIT(PAIR_1ST_CH(pair)) |
 			     BIT(PAIR_2ND_CH(pair)));
 
+	/* Keep the instance out of low power while a capture is running: the
+	 * counter must not be halted mid-measurement. This only blocks system
+	 * PM when CONFIG_PM_NEED_ALL_DEVICES_IDLE=y; otherwise it is advisory.
+	 */
+	pm_device_busy_set(dev);
+
 	return 0;
 }
 
@@ -274,6 +326,11 @@ static int mcux_ftm_disable_capture(const struct device *dev, uint32_t channel)
 	/* Clear Dual Edge Capture Enable bit */
 	config->base->COMBINE &= ~(1UL << (FTM_COMBINE_DECAP0_SHIFT +
 		(FTM_COMBINE_COMBINE1_SHIFT * pair)));
+
+	/* Release the low power block once no pair is capturing any more. */
+	if (!mcux_ftm_capture_pending(dev)) {
+		pm_device_busy_clear(dev);
+	}
 
 	return 0;
 }
@@ -372,6 +429,13 @@ static void mcux_ftm_capture_second_edge(const struct device *dev, uint32_t chan
 	if (capture->param.mode == kFTM_OneShot) {
 		/* One-shot capture done */
 		FTM_DisableInterrupts(config->base, BIT(PAIR_2ND_CH(pair)));
+
+		/* The pair stopped capturing on its own; drop the low power
+		 * block if it was the last one still active.
+		 */
+		if (!mcux_ftm_capture_pending(dev)) {
+			pm_device_busy_clear(dev);
+		}
 	} else if (capture->pulse_capture) {
 		/* Prepare for first edge of next pulse capture */
 		FTM_EnableInterrupts(config->base, BIT(PAIR_1ST_CH(pair)));
@@ -435,7 +499,7 @@ static int mcux_ftm_get_cycles_per_sec(const struct device *dev,
 	return 0;
 }
 
-static int mcux_ftm_init(const struct device *dev)
+static int mcux_ftm_init_common(const struct device *dev)
 {
 	const struct mcux_ftm_config *config = dev->config;
 	struct mcux_ftm_data *data = dev->data;
@@ -483,6 +547,15 @@ static int mcux_ftm_init(const struct device *dev)
 	FTM_EnableInterrupts(config->base,
 			     kFTM_TimeOverflowInterruptEnable);
 
+	/* Drop any capture state left over from before a power gating cycle;
+	 * the dual edge capture setup is not replayed across a power down, so
+	 * a stale callback must not fire against the freshly reset hardware.
+	 */
+	data->overflows = 0U;
+	for (uint32_t pair = 0U; pair < ARRAY_SIZE(data->capture); pair++) {
+		memset(&data->capture[pair], 0, sizeof(data->capture[pair]));
+	}
+
 	data->period_cycles = 0xFFFFU;
 	FTM_SetTimerPeriod(config->base, data->period_cycles);
 	FTM_SetSoftwareTrigger(config->base, true);
@@ -490,6 +563,100 @@ static int mcux_ftm_init(const struct device *dev)
 #endif /* CONFIG_PWM_CAPTURE */
 
 	return 0;
+}
+
+#ifdef CONFIG_PM_DEVICE
+static void mcux_ftm_restore_chn_config(const struct device *dev)
+{
+	const struct mcux_ftm_config *config = dev->config;
+	struct mcux_ftm_data *data = dev->data;
+	uint8_t channel;
+
+	/* mcux_ftm_init_common() has just reset the shadow state, so force the
+	 * period to be reprogrammed by the first restored channel and keep the
+	 * "changing period cycles" warning out of the resume path.
+	 */
+	data->period_cycles = 0U;
+
+	for (channel = 0U; channel < config->channel_count; channel++) {
+		if (!data->pm_channel[channel].configured) {
+			continue;
+		}
+
+		(void)mcux_ftm_set_cycles(dev, channel, data->pm_period_cycles,
+					  data->pm_channel[channel].pulse_cycles,
+					  data->pm_channel[channel].flags);
+	}
+}
+#endif /* CONFIG_PM_DEVICE */
+
+static int mcux_ftm_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct mcux_ftm_config *config = dev->config;
+	int err;
+#ifdef CONFIG_PM_DEVICE
+	struct mcux_ftm_data *data = dev->data;
+#endif /* CONFIG_PM_DEVICE */
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+		if (err < 0 && err != -ENOENT) {
+			return err;
+		}
+#ifdef CONFIG_PM_DEVICE
+		if (data->pm_pwm_active || IS_ENABLED(CONFIG_PWM_CAPTURE)) {
+			FTM_SetSoftwareTrigger(config->base, true);
+			FTM_StartTimer(config->base, config->ftm_clock_source);
+		}
+
+#endif /* CONFIG_PM_DEVICE */
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+#ifdef CONFIG_PM_DEVICE
+		/* Halting the counter is what stops the waveform; otherwise the chip
+		 * gates the FTM clock on the way into STOP and the pin latches whatever
+		 * level the channel happened to be driving.
+		 *
+		 * The parked level is SoC specific: on MCXE24x the output is tristated
+		 * while the counter is disabled (RM 41.1.9.1). A board that needs a
+		 * defined level while asleep supplies the pinctrl-1 "sleep" state
+		 * applied below, or a bias on the pad.
+		 */
+		FTM_StopTimer(config->base);
+#endif /* CONFIG_PM_DEVICE */
+		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
+		if (err < 0 && err != -ENOENT) {
+			return err;
+		}
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+		err = mcux_ftm_init_common(dev);
+		if (err) {
+			return err;
+		}
+#ifdef CONFIG_PM_DEVICE
+		if (data->pm_pwm_active) {
+			mcux_ftm_restore_chn_config(dev);
+		}
+#endif /* CONFIG_PM_DEVICE */
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+static int mcux_ftm_init(const struct device *dev)
+{
+	/* The rest of the initialisation is done from the PM_DEVICE_ACTION_TURN_ON
+	 * action, which pm_device_driver_init() invokes here and the PM subsystem
+	 * invokes again whenever the instance is powered back up.
+	 */
+	return pm_device_driver_init(dev, mcux_ftm_pm_action);
 }
 
 static DEVICE_API(pwm, mcux_ftm_driver_api) = {
@@ -591,8 +758,9 @@ static const struct mcux_ftm_config mcux_ftm_config_##n = { \
 	PINCTRL_DT_INST_DEFINE(n); \
 	static struct mcux_ftm_data mcux_ftm_data_##n; \
 	static const struct mcux_ftm_config mcux_ftm_config_##n; \
+	PM_DEVICE_DT_INST_DEFINE(n, mcux_ftm_pm_action); \
 	DEVICE_DT_INST_DEFINE(n, &mcux_ftm_init,		       \
-			    NULL, &mcux_ftm_data_##n, \
+			    PM_DEVICE_DT_INST_GET(n), &mcux_ftm_data_##n, \
 			    &mcux_ftm_config_##n, \
 			    POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, \
 			    &mcux_ftm_driver_api); \

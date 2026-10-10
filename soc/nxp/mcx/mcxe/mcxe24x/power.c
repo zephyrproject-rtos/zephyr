@@ -9,7 +9,7 @@
 #include <zephyr/pm/pm.h>
 #include <zephyr/arch/arch_interface.h>
 
-LOG_MODULE_DECLARE(power, CONFIG_PM_LOG_LEVEL);
+LOG_MODULE_REGISTER(power, CONFIG_PM_LOG_LEVEL);
 
 #ifdef CONFIG_XIP
 __ramfunc static void wait_for_flash_prefetch_and_wfi(void)
