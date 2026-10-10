@@ -20,4 +20,7 @@ endif # FLASH_MSPI_NOR
 
 endif # FLASH
 
+config TFA_PLATFORM
+	default "k3low"
+
 endif # BOARD_AM62L_EVM
