@@ -19,6 +19,7 @@
 	aliases {
 		led0 = &led0;
 		led1 = &led1;
+		watchdog0 = &wdt0;
 	};
 
 	chosen {
@@ -70,6 +71,16 @@
 			reg = <0x00024000 0x1c000>;
 		};
 	};
+};
+
+&hfxt {
+	clock-frequency = <DT_FREQ_M(32)>;
+	ti,xtal-startup-delay-us = <500>;
+};
+
+&lfxt {
+	clock-frequency = <32768>;
+	ti,xtal-startup-delay-us = <640000>;
 };
 
 &pinctrl {
