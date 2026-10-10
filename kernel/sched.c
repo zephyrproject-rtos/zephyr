@@ -840,10 +840,6 @@ static inline void unpend_all(_wait_q_t *wait_q)
 	}
 }
 
-#ifdef CONFIG_THREAD_ABORT_HOOK
-extern void thread_abort_hook(struct k_thread *thread);
-#endif /* CONFIG_THREAD_ABORT_HOOK */
-
 /**
  * @brief Dequeues the specified thread
  *
@@ -922,28 +918,7 @@ static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state
 
 		SYS_PORT_TRACING_FUNC(k_thread, sched_abort, thread);
 
-		z_thread_monitor_exit(thread);
-#ifdef CONFIG_THREAD_ABORT_HOOK
-		thread_abort_hook(thread);
-#endif /* CONFIG_THREAD_ABORT_HOOK */
-
-#ifdef CONFIG_OBJ_CORE_THREAD
-#ifdef CONFIG_OBJ_CORE_STATS_THREAD
-		k_obj_core_stats_deregister(K_OBJ_CORE(thread));
-#endif /* CONFIG_OBJ_CORE_STATS_THREAD */
-		k_obj_core_unlink(K_OBJ_CORE(thread));
-#endif /* CONFIG_OBJ_CORE_THREAD */
-
-#ifdef CONFIG_USERSPACE
-		z_mem_domain_exit_thread(thread);
-		k_thread_perms_all_clear(thread);
-		k_object_uninit(thread->stack_obj);
-		k_object_uninit(thread);
-#endif /* CONFIG_USERSPACE */
-
-#ifdef CONFIG_THREAD_ABORT_NEED_CLEANUP
-		k_thread_abort_cleanup(thread);
-#endif /* CONFIG_THREAD_ABORT_NEED_CLEANUP */
+		z_thread_release(thread);
 
 		/* Do this "set _current to dummy" step last so that
 		 * subsystems above can rely on _current being
