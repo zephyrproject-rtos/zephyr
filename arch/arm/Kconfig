@@ -70,8 +70,37 @@ config ROMSTART_RELOCATION_ROM
 
 if ROMSTART_RELOCATION_ROM
 
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_FLASH := zephyr,flash
+
+	config ROMSTART_REGION_AT_FLASH_BASE
+		bool "Locate the rom_start region at the base of the zephyr,flash region"
+		depends on USE_DT_CODE_PARTITION
+		help
+		  Use the base address of the DT chosen zephyr,flash region as the
+		  base address of the rom_start region. This keeps the boot vectors in
+		  flash, at the address the SoC boots from, while the application image
+		  is linked into the DT chosen zephyr,code-partition (as selected by
+		  CONFIG_USE_DT_CODE_PARTITION).
+
+		  The linked image then consists of two disjoint parts: the vector
+		  table at the start of flash, and the application at the code
+		  partition address. The flash between the two is not covered by the
+		  image, so it can host a storage partition (for example for settings,
+		  NVS or ZMS) which will not be erased or overwritten when the
+		  application image is flashed, as flash tools only erase the sectors
+		  covered by the image.
+
+		  This is useful on SoCs which must boot from the start of flash and
+		  whose sector sizes grow with the address, making the first, smaller
+		  sectors a natural home for a storage partition. For example on
+		  STM32F4, where the first four sectors are 16KB in size and can hold
+		  a storage partition, while the application is linked to a 64KB
+		  aligned code partition.
+
 	config ROMSTART_REGION_ADDRESS
 		hex "Base address of the rom_start region"
+		default "$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))" if ROMSTART_REGION_AT_FLASH_BASE
 		default 0x00000000
 		help
 		  Start address of the rom_start region.
