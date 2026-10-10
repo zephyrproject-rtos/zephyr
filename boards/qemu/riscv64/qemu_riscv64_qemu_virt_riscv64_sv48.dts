@@ -16,7 +16,7 @@
 
 &{/cpus} {
 	riscv,privilege-modes = "m", "s", "u";
-	mmu-type = "riscv,sv39";
+	mmu-type = "riscv,sv48";
 };
 
 &uart0 {
