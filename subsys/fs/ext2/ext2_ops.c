@@ -20,6 +20,48 @@ LOG_MODULE_DECLARE(ext2);
 
 K_MEM_SLAB_DEFINE_TYPE(file_struct_slab, struct ext2_file, CONFIG_EXT2_MAX_FILES);
 
+/* Root, "." and ".." are not valid unlink/rename targets. A root lookup
+ * also leaves parent NULL, which the backend must not dereference.
+ */
+static bool ext2_forbidden_path(const char *path)
+{
+	const char *name;
+
+	if (path == NULL) {
+		return true;
+	}
+
+	while (*path == '/') {
+		path++;
+	}
+
+	if (*path == '\0') {
+		return true;
+	}
+
+	name = path;
+	while (*path != '\0') {
+		if (*path == '/') {
+			name = path + 1;
+		}
+		path++;
+	}
+
+	if (name[0] == '\0') {
+		return true;
+	}
+
+	if (name[0] == '.' && name[1] == '\0') {
+		return true;
+	}
+
+	if (name[0] == '.' && name[1] == '.' && name[2] == '\0') {
+		return true;
+	}
+
+	return false;
+}
+
 /* File operations */
 
 static int ext2_open(struct fs_file_t *filp, const char *fs_path, fs_mode_t flags)
@@ -509,6 +551,10 @@ static int ext2_unlink(struct fs_mount_t *mountp, const char *name)
 		.parent = NULL,
 	};
 
+	if (ext2_forbidden_path(path)) {
+		return -EINVAL;
+	}
+
 	args.flags = LOOKUP_ARG_UNLINK;
 
 	rc = ext2_lookup_inode(fs, &args);
@@ -538,6 +584,10 @@ static int ext2_rename(struct fs_mount_t *mountp, const char *from, const char *
 
 	const char *path_from = fs_impl_strip_prefix(from, mountp);
 	const char *path_to = fs_impl_strip_prefix(to, mountp);
+
+	if (ext2_forbidden_path(path_from) || ext2_forbidden_path(path_to)) {
+		return -EINVAL;
+	}
 
 	struct ext2_lookup_args args_from = {
 		.path = path_from,
