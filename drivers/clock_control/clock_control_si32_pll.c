@@ -110,7 +110,7 @@ static int clock_control_si32_pll_set_rate(const struct device *dev, clock_contr
 
 	data->freq = *rate;
 
-	return 0;
+	return clock_control_si32_pll_on(dev, sys);
 }
 
 static DEVICE_API(clock_control, clock_control_si32_pll_api) = {
