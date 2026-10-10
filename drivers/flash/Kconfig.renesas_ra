@@ -25,7 +25,7 @@ config FLASH_RENESAS_RA_HP_BGO
 
 config FLASH_RENESAS_RA_HP_CHECK_BEFORE_READING
 	bool "Verify area before reading it"
-	default $(dt_nodelabel_bool_prop,flash1,erase-value-undefined)
+	default $(dt_nodelabel_bool_prop,data_flash_ctrl,erase-value-undefined)
 	help
 	  Do a blank check flash command before reading an area.
 	  This feature prevents erroneous reading. Values read from an
