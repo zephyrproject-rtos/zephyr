@@ -33,6 +33,11 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 # if Z_MALLOC_PARTITION_EXISTS
 K_APPMEM_PARTITION_DEFINE(z_malloc_partition);
 #  define POOL_SECTION Z_GENERIC_SECTION(K_APP_DMEM_SECTION(z_malloc_partition))
+# elif defined(CONFIG_SOC_FAMILY_ESPRESSIF_ESP32_LIBC_HEAP_IN_PSRAM)
+/* Each SoC's default.ld under soc/espressif maps this section into
+ * ext_ram_seg (PSRAM) instead of the scarce internal DRAM.
+ */
+#  define POOL_SECTION Z_GENERIC_SECTION(.libc_psram_heap)
 # else
 #  define POOL_SECTION __noinit
 # endif /* CONFIG_USERSPACE */
