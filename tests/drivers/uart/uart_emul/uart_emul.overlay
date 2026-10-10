@@ -8,7 +8,11 @@
 	euart0: uart-emul {
 		compatible = "zephyr,uart-emul";
 		status = "okay";
-		current-speed = <0>;
+		current-speed = <115200>;
+		parity = "even";
+		stop-bits = "2";
+		data-bits = <7>;
+		hw-flow-control;
 		rx-fifo-size = <256>;
 		tx-fifo-size = <256>;
 	};
