@@ -457,6 +457,13 @@ struct btp_gap_pawr_configure_cmd {
 	uint8_t num_response_slots;
 } __packed;
 
+#define BTP_GAP_SET_EXTENDED_INQUIRY_RESPONSE	0x35
+struct btp_gap_set_extended_inquiry_response_cmd {
+	uint8_t fec_required;
+	uint8_t eir_data_len;
+	uint8_t eir_data[];
+} __packed;
+
 /* events */
 #define BTP_GAP_EV_NEW_SETTINGS			0x80
 struct btp_gap_new_settings_ev {
