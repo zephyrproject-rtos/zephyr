@@ -890,10 +890,22 @@ class Power(Pytest):
 
 class Gtest(Harness):
     ANSI_ESCAPE = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+    # Google Test prints a test as <suite part>.<test part>. Either part can carry "/"-separated
+    # segments (an index or a name from a generator). The name shapes are:
+    # - TEST, TEST_F:                         Suite.Test
+    # - TYPED_TEST, index as type name:       Suite/0.Test
+    # - TYPED_TEST, custom type name:         Suite/Int.Test
+    # - TYPED_TEST_P, index as type name:     Prefix/Suite/0.Test
+    # - TYPED_TEST_P, custom type name:       Prefix/Suite/Int.Test
+    # - TEST_P, index as parameter name:      Prefix/Suite.Test/0
+    # - TEST_P, custom parameter name:        Prefix/Suite.Test/Name
+    # - TEST_P, empty instantiation prefix:   Suite.Test/0
+    # The internal test name is this token with "/" replaced by ".".
     _NAME_PATTERN = "[a-zA-Z_][a-zA-Z0-9_]*"
+    _SEGMENT_PATTERN = "[a-zA-Z0-9_]+"
     _SUITE_TEST_NAME_PATTERN = (
-            f"(?P<suite_name>{_NAME_PATTERN})(\\.|/)(?P<test_name>"
-            f"{_NAME_PATTERN})(/)?(?P<parametrized_test>[0-9]*\\.[a-zA-Z_]*)?"
+            f"(?P<full_name>(?P<suite_name>{_NAME_PATTERN})(?:/{_SEGMENT_PATTERN})*"
+            f"\\.{_NAME_PATTERN}(?:/{_SEGMENT_PATTERN})*)"
             )
     TEST_START_PATTERN = f".*\\[ RUN      \\] {_SUITE_TEST_NAME_PATTERN}"
     TEST_PASS_PATTERN = f".*\\[       OK \\] {_SUITE_TEST_NAME_PATTERN}"
@@ -925,9 +937,7 @@ class Gtest(Harness):
                 self.detected_suite_names.append(suite_name)
 
             # Generate the internal name of the test
-            name = "{}.{}.{}".format(self.id, suite_name, test_start_match.group("test_name"))
-            if test_start_match.group("parametrized_test"):
-                name += f".{test_start_match.group('parametrized_test')}"
+            name = self._internal_name(test_start_match)
 
             # Assert that we don't already have a running test
             assert (
@@ -990,34 +1000,18 @@ class Gtest(Harness):
         self.testcase_output = ""
         self._match = False
 
+    def _internal_name(self, match):
+        return f"{self.id}.{match.group('full_name').replace('/', '.')}"
+
     def _check_result(self, line):
-        test_pass_match = re.search(self.TEST_PASS_PATTERN, line)
-        if test_pass_match:
-            test_name = "{}.{}.{}".format(
-                        self.id, test_pass_match.group("suite_name"),
-                        test_pass_match.group("test_name")
-                    )
-            if test_pass_match.group("parametrized_test"):
-                test_name += f".{test_pass_match.group('parametrized_test')}"
-            return TwisterStatus.PASS, test_name
-        test_skip_match = re.search(self.TEST_SKIP_PATTERN, line)
-        if test_skip_match:
-            test_name = "{}.{}.{}".format(
-                        self.id, test_skip_match.group("suite_name"),
-                        test_skip_match.group("test_name")
-                    )
-            if test_skip_match.group("parametrized_test"):
-                test_name += f".{test_skip_match.group('parametrized_test')}"
-            return TwisterStatus.SKIP, test_name
-        test_fail_match = re.search(self.TEST_FAIL_PATTERN, line)
-        if test_fail_match:
-            test_name = "{}.{}.{}".format(
-                        self.id, test_fail_match.group("suite_name"),
-                        test_fail_match.group("test_name")
-                    )
-            if test_fail_match.group("parametrized_test"):
-                test_name += f".{test_fail_match.group('parametrized_test')}"
-            return TwisterStatus.FAIL, test_name
+        for pattern, status in (
+            (self.TEST_PASS_PATTERN, TwisterStatus.PASS),
+            (self.TEST_SKIP_PATTERN, TwisterStatus.SKIP),
+            (self.TEST_FAIL_PATTERN, TwisterStatus.FAIL),
+        ):
+            match = re.search(pattern, line)
+            if match:
+                return status, self._internal_name(match)
         return None, None
 
 
