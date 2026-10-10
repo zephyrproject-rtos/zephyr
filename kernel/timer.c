@@ -296,29 +296,26 @@ void z_impl_k_timer_stop(struct k_timer *timer)
 
 	k_spinlock_key_t key = k_spin_lock(&timer_lock);
 
-	if (z_try_abort_timeout(&timer->timeout) != 0) {
-		/* Not removed from the queue: either the timer was not
-		 * active, or its handler is in flight. In the latter case
-		 * z_try_abort_timeout() has flagged it superseded so the
-		 * handler bails; we do not wait for it. Nothing to stop here.
-		 */
-		k_spin_unlock(&timer_lock, key);
-		return;
+	if (z_try_abort_timeout(&timer->timeout) == 0) {
+		z_timer_observer_on_stop(timer);
+
+		if (timer->stop_fn != NULL) {
+			SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_timer, stop_fn_expiry, timer);
+			k_spin_unlock(&timer_lock, key);
+
+			timer->stop_fn(timer);
+
+			key = k_spin_lock(&timer_lock);
+
+			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_timer, stop_fn_expiry, timer);
+		}
 	}
 
-	z_timer_observer_on_stop(timer);
-
-	if (timer->stop_fn != NULL) {
-		SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_timer, stop_fn_expiry, timer);
-		k_spin_unlock(&timer_lock, key);
-
-		timer->stop_fn(timer);
-
-		key = k_spin_lock(&timer_lock);
-
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_timer, stop_fn_expiry, timer);
-	}
-
+	/* Release a k_timer_status_sync() waiter even if the timeout was no
+	 * longer queued. An expiry releases a single waiter, and a handler
+	 * in flight is flagged superseded by the abort above and bails
+	 * without releasing any.
+	 */
 	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
 		k_spin_unlock(&timer_lock, key);
 		return;
