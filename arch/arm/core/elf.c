@@ -481,7 +481,6 @@ int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *r
 {
 	int ret = 0;
 	elf_word reloc_type = ELF32_R_TYPE(rel->r_info);
-	const uintptr_t load_bias = (uintptr_t)ext->mem[LLEXT_MEM_TEXT];
 	const uintptr_t loc = llext_get_reloc_instruction_location(ldr, ext, shdr->sh_info, rel);
 	elf_sym_t sym;
 	uintptr_t sym_base_addr;
@@ -559,9 +558,25 @@ int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *r
 		thm_movs_handler(reloc_type, loc, sym_base_addr, sym_name);
 		break;
 
-	case R_ARM_RELATIVE:
-		*(uint32_t *)loc += load_bias;
+	case R_ARM_RELATIVE: {
+		/* In-place word is a link VMA, not an offset from the text base. */
+		uint32_t vma = *(uint32_t *)loc;
+		const void *addr;
+
+		if (vma == 0U) {
+			break;
+		}
+
+		addr = llext_lookup_vma(ldr, ext, vma);
+		if (addr == NULL) {
+			LOG_ERR("R_ARM_RELATIVE VMA %#x is not in a loaded section", vma);
+			ret = -ENOEXEC;
+			break;
+		}
+
+		*(uint32_t *)loc = (uint32_t)(uintptr_t)addr;
 		break;
+	}
 
 	case R_ARM_GLOB_DAT:
 	case R_ARM_JUMP_SLOT:

@@ -45,6 +45,27 @@ __weak int arch_elf_veneer_init(struct llext_loader *ldr, struct llext *ext)
 	return 0;
 }
 
+const void *llext_lookup_vma(struct llext_loader *ldr, struct llext *ext, uintptr_t vma)
+{
+	for (unsigned int i = 0; i < ext->sect_cnt; i++) {
+		elf_shdr_t *shdr = ext->sect_hdrs + i;
+
+		if (shdr->sh_size == 0 || !(shdr->sh_flags & SHF_ALLOC) ||
+		    ldr->sect_map[i].mem_idx == LLEXT_MEM_COUNT) {
+			continue;
+		}
+
+		if (vma < shdr->sh_addr || vma >= shdr->sh_addr + shdr->sh_size) {
+			continue;
+		}
+
+		return (const uint8_t *)llext_loaded_sect_ptr(ldr, ext, i) +
+		       (vma - shdr->sh_addr);
+	}
+
+	return NULL;
+}
+
 const void *llext_loaded_sect_ptr(struct llext_loader *ldr, struct llext *ext, unsigned int sh_ndx)
 {
 	enum llext_mem mem_idx = ldr->sect_map[sh_ndx].mem_idx;
@@ -59,6 +80,29 @@ const void *llext_loaded_sect_ptr(struct llext_loader *ldr, struct llext *ext, u
 /*
  * Load basic ELF file data
  */
+
+static bool llext_machine_matches(elf32_half machine)
+{
+	if (IS_ENABLED(CONFIG_ARM64)) {
+		return machine == EM_AARCH64;
+	}
+	if (IS_ENABLED(CONFIG_ARM)) {
+		return machine == EM_ARM;
+	}
+	if (IS_ENABLED(CONFIG_RISCV)) {
+		return machine == EM_RISCV;
+	}
+	if (IS_ENABLED(CONFIG_X86)) {
+		return machine == (IS_ENABLED(CONFIG_X86_64) ? EM_X86_64 : EM_386);
+	}
+	if (IS_ENABLED(CONFIG_ARC)) {
+		return machine == EM_ARC_COMPACT2 || machine == EM_ARC_COMPACT ||
+		       machine == EM_ARC_COMPACT3 || machine == EM_ARC_COMPACT3_64;
+	}
+
+	/* Xtensa and other ports keep their existing acceptance rules. */
+	return true;
+}
 
 static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
 {
@@ -81,6 +125,24 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
 	/* check whether this is a valid ELF file */
 	if (memcmp(ldr->hdr.e_ident, ELF_MAGIC, sizeof(ELF_MAGIC)) != 0) {
 		LOG_HEXDUMP_ERR(ldr->hdr.e_ident, 16, "Invalid ELF, magic does not match");
+		return -ENOEXEC;
+	}
+
+	if (ldr->hdr.e_ident[EI_DATA] !=
+	    (IS_ENABLED(CONFIG_BIG_ENDIAN) ? ELFDATA2MSB : ELFDATA2LSB)) {
+		LOG_ERR("ELF endianness %u does not match this build", ldr->hdr.e_ident[EI_DATA]);
+		return -ENOEXEC;
+	}
+
+	if ((IS_ENABLED(CONFIG_64BIT) && ldr->hdr.e_ident[EI_CLASS] != ELFCLASS64) ||
+	    (!IS_ENABLED(CONFIG_64BIT) && ldr->hdr.e_ident[EI_CLASS] != ELFCLASS32)) {
+		LOG_ERR("ELF class %u does not match this build", ldr->hdr.e_ident[EI_CLASS]);
+		return -ENOEXEC;
+	}
+
+	if (!llext_machine_matches(ldr->hdr.e_machine)) {
+		LOG_ERR("ELF e_machine %u is not supported on this architecture",
+			ldr->hdr.e_machine);
 		return -ENOEXEC;
 	}
 
@@ -279,6 +341,13 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 			continue;
 		}
 
+		/* Linker padding, not extension data. */
+		if (strcmp(name, ".relro_padding") == 0 || strcmp(name, ".heap") == 0 ||
+		    strcmp(name, ".stack") == 0) {
+			LOG_DBG("section %d name %s skipped", i, name);
+			continue;
+		}
+
 		/* Identify the section type by its flags */
 		enum llext_mem mem_idx;
 
@@ -438,11 +507,7 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 		}
 
 		if (ldr->hdr.e_type == ET_DYN) {
-			/* In shared objects, sh_addr is the VMA.
-			 * Before merging this section in the region,
-			 * make sure the delta in VMAs matches that of
-			 * file offsets.
-			 */
+			/* VMA gap must match the file gap before these sections merge. */
 			if (shdr->sh_addr - region->sh_addr !=
 			    shdr->sh_offset - region->sh_offset) {
 				LOG_ERR("Incompatible section addresses for %s (region %d)",
@@ -490,6 +555,12 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 		if (region->sh_type == SHT_NULL || region->sh_size == 0) {
 			/* Skip empty regions */
 			continue;
+		}
+
+		if (region->sh_addralign != 0 && !is_power_of_two(region->sh_addralign)) {
+			LOG_ERR("Region %d has invalid alignment %#zx", i,
+				(size_t)region->sh_addralign);
+			return -ENOEXEC;
 		}
 
 		size_t prepad = region->sh_offset & (region->sh_addralign - 1);

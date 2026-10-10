@@ -164,6 +164,13 @@ struct llext {
 	elf_shdr_t *sect_hdrs;
 	bool sect_hdrs_on_heap;
 	bool mmu_permissions_set;
+
+	/* Heap block for one ET_DYN image; program regions sit inside it. */
+	void *dyn_image;
+	uintptr_t dyn_base;
+	/* Link VMA at dyn_base. Load bias is dyn_base - dyn_link. */
+	uintptr_t dyn_link;
+	size_t dyn_span;
 	/** @endcond */
 };
 

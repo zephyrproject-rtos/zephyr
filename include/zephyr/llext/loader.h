@@ -142,6 +142,8 @@ struct llext_loader {
 	elf_ehdr_t hdr;
 	elf_shdr_t sects[LLEXT_MEM_COUNT];
 	struct llext_elf_sect_map *sect_map;
+	/* r_offset is a VMA, not an offset into sh_info. */
+	bool reloc_vma;
 	/** @endcond */
 };
 

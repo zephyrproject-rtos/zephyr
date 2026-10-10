@@ -227,5 +227,14 @@ set(LLEXT_APPEND_FLAGS
   -march=${riscv_march}
   -mcmodel=${riscv_mcmodel}
   -mno-relax
-  -msmall-data-limit=0
   )
+
+# Clang -fPIC ignores -msmall-data-limit and promotes that to an error.
+# COMPILER is already set here; CMAKE_C_COMPILER_ID is not yet.
+if(NOT (CONFIG_LLEXT_BUILD_PIC AND COMPILER STREQUAL "clang"))
+  list(APPEND LLEXT_APPEND_FLAGS -msmall-data-limit=0)
+endif()
+
+if(CONFIG_LLEXT_BUILD_PIC)
+  list(APPEND LLEXT_APPEND_FLAGS -fPIC)
+endif()
