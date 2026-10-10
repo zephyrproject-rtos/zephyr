@@ -1338,6 +1338,7 @@ int bt_bap_stream_enable(struct bt_bap_stream *stream, const uint8_t meta[], siz
 	return 0;
 }
 
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 int bt_bap_stream_stop(struct bt_bap_stream *stream)
 {
 	int err;
@@ -1359,6 +1360,7 @@ int bt_bap_stream_stop(struct bt_bap_stream *stream)
 
 	return 0;
 }
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 
 int bt_bap_stream_reconfig(struct bt_bap_stream *stream, const struct bt_audio_codec_cfg *codec_cfg)
@@ -1453,7 +1455,7 @@ int bt_bap_stream_start(struct bt_bap_stream *stream)
 	}
 
 	role = conn_get_role(conn);
-	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && role == BT_CONN_ROLE_CENTRAL) {
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC) && role == BT_CONN_ROLE_CENTRAL) {
 		err = bt_bap_unicast_client_start(stream);
 	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) && role == BT_CONN_ROLE_PERIPHERAL) {
 		err = bt_bap_unicast_server_start(stream);
