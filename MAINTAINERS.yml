@@ -198,6 +198,23 @@
 # Areas are sorted by name
 
 # zephyr-keep-sorted-start strip(":) nofold
+ABOV Platform:
+  status: maintained
+  maintainers:
+    - abovsemic
+  collaborators:
+    - abov-swlee
+    - Naeun-abov
+  files:
+    - soc/abov/
+    - boards/abov/
+    - dts/arm/abov/
+    - dts/bindings/*/abov,*
+    - drivers/*/*abov32*
+    - include/zephyr/dt-bindings/*/abov32-*
+  labels:
+    - "platform: ABOV"
+
 ACPI:
   status: odd fixes
   files:
@@ -7060,6 +7077,14 @@ West:
     - modules/fatfs/
   labels:
     - "area: Storage"
+
+"West project: hal_abov":
+  status: maintained
+  maintainers:
+    - abovsemic
+  files: []
+  labels:
+    - "platform: ABOV"
 
 "West project: hal_adi":
   status: maintained

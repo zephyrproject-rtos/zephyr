@@ -93,6 +93,7 @@ path = [
     "scripts/spelling.txt",
 ]
 SPDX-License-Identifier = "GPL-2.0"
+SPDX-FileCopyrightText = "Copyright The Linux Kernel Authors"
 SPDX-FileComment = "Used in Continuous Integration (CI) and never linked into the firmware."
 Zephyr-Description = "Continuous Integration Scripts"
 Zephyr-Origin = "https://www.kernel.org/"
