@@ -14,8 +14,8 @@
 #include <zephyr/arch/xtensa/mpu.h>
 #endif
 
-#ifdef CONFIG_XTENSA_LAZY_HIFI_SHARING
-#include <xtensa/config/tie.h>
+#ifdef CONFIG_XTENSA_LAZY_CP_SHARING
+#include <zephyr/arch/xtensa/cp_sharing.h>
 #endif
 
 /* Xtensa doesn't use these structs, but Zephyr core requires they be
@@ -53,9 +53,9 @@ struct _thread_arch {
 	uint32_t return_ps;
 #endif
 
-#ifdef CONFIG_XTENSA_LAZY_HIFI_SHARING
+#ifdef CONFIG_XTENSA_LAZY_CP_SHARING
 	/* A non-BSA region is required for lazy save/restore */
-	uint8_t hifi_regs[XCHAL_CP1_SA_SIZE] __aligned(XCHAL_CP1_SA_ALIGN);
+	uint8_t cp_regs[XTENSA_CP_SA_SIZE] __aligned(XTENSA_CP_SA_ALIGN);
 #endif
 };
 
