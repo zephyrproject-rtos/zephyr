@@ -1,0 +1,6 @@
+shield:
+  name: eval_adis16607_2_pcbz
+  full_name: ADIS16607-2 Evaluation Shield (PCBZ)
+  vendor: adi
+  supported_features:
+    - sensor
