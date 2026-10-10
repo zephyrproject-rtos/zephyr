@@ -86,7 +86,7 @@ struct usbh_class_filter {
 	/** Product ID */
 	uint16_t pid;
 	/** Class Code */
-	uint8_t class;
+	uint8_t class_code;
 	/** Subclass Code */
 	uint8_t sub;
 	/** Protocol Code */
