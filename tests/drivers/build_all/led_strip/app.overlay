@@ -85,4 +85,9 @@
 			};
 		};
 	};
+
+	led_strip_cache {
+		compatible = "zephyr,led-strip-cache";
+		led-strips = <&test_spi_apa102>, <&test_spi_ws2812>;
+	};
 };
