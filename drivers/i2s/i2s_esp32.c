@@ -851,6 +851,13 @@ int IRAM_ATTR i2s_esp32_config_dma(const struct device *dev, enum i2s_dir dir,
 		return -EINVAL;
 	}
 
+	if (DIV_ROUND_UP(mem_block_size, I2S_ESP32_DMA_BUFFER_MAX_SIZE) >
+	    CONFIG_I2S_ESP32_DMA_DESC_NUM_MAX) {
+		stream->data->dma_pending = false;
+		LOG_DBG("Run out of descriptors. Increase CONFIG_I2S_ESP32_DMA_DESC_NUM_MAX");
+		return -EINVAL;
+	}
+
 	for (int i = 0; i < CONFIG_I2S_ESP32_DMA_DESC_NUM_MAX; ++i) {
 		uint32_t buffer_size;
 
@@ -883,12 +890,6 @@ int IRAM_ATTR i2s_esp32_config_dma(const struct device *dev, enum i2s_dir dir,
 			}
 			break;
 		}
-	}
-
-	if (desc_iter->empty)  {
-		stream->data->dma_pending = false;
-		LOG_DBG("Run out of descriptors. Increase CONFIG_I2S_ESP32_DMA_DESC_NUM_MAX");
-		return -EINVAL;
 	}
 #endif /* SOC_GDMA_SUPPORTED */
 
