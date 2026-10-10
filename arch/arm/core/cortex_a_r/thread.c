@@ -38,6 +38,10 @@
  */
 #define DEFAULT_EXC_RETURN 0xFD;
 
+#if !defined(CONFIG_MULTITHREADING)
+K_THREAD_STACK_DECLARE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
+#endif
+
 #ifdef CONFIG_USERSPACE
 static void setup_priv_stack(struct k_thread *thread)
 {
@@ -292,6 +296,53 @@ bool z_arm_thread_is_in_user_mode(void)
 }
 EXPORT_SYMBOL(z_arm_thread_is_in_user_mode);
 #endif
+
+#if !defined(CONFIG_MULTITHREADING)
+FUNC_NORETURN void z_arm_switch_to_main_no_multithreading(k_thread_entry_t main_entry, void *p1,
+							  void *p2, void *p3)
+{
+#ifdef CONFIG_INIT_STACKS
+	(void)memset(K_THREAD_STACK_BUFFER(z_main_stack), 0xaa,
+		     K_THREAD_STACK_SIZEOF(z_main_stack));
+#endif /* CONFIG_INIT_STACKS */
+
+	char *stack_ptr = K_THREAD_STACK_BUFFER(z_main_stack) + K_THREAD_STACK_SIZEOF(z_main_stack);
+
+#if defined(CONFIG_THREAD_LOCAL_STORAGE)
+	size_t tls_size = arch_tls_stack_setup(NULL, stack_ptr);
+
+	stack_ptr -= tls_size;
+	uintptr_t tls_ptr = POINTER_TO_UINT(stack_ptr);
+#endif
+
+	/*
+	 * Keep every value needed after the stack switch in registers. Once SP
+	 * is changed, the compiler-generated frame on the bootstrap SYS stack
+	 * can no longer be referenced.
+	 */
+	__asm__ volatile(
+		"mov sp, %[_stack_ptr]\n"
+#if defined(CONFIG_THREAD_LOCAL_STORAGE)
+		"mcr p15, 0, %[_tls_ptr], c13, c0, 2\n"
+#endif
+		"cpsie i\n"
+		"mov r0, %[_p1]\n"
+		"mov r1, %[_p2]\n"
+		"mov r2, %[_p3]\n"
+		"blx %[_main_entry]\n"
+		"cpsid i\n"
+		"1: b 1b\n"
+		:
+		: [_stack_ptr] "r"(stack_ptr), [_main_entry] "r"(main_entry), [_p1] "r"(p1),
+		  [_p2] "r"(p2), [_p3] "r"(p3)
+#if defined(CONFIG_THREAD_LOCAL_STORAGE)
+		  , [_tls_ptr] "r"(tls_ptr)
+#endif
+		: "r0", "r1", "r2", "r3", "ip", "lr", "memory", "cc");
+
+	CODE_UNREACHABLE;
+}
+#endif /* !CONFIG_MULTITHREADING */
 
 #if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)
 
