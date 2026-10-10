@@ -2,6 +2,7 @@
  * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
  * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,9 +19,9 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu0: cpu: cpu@f8800000 {
+		cpu0: cpu: cpu@0 {
 			compatible = "infineon,tricore", "infineon,tc18";
-			reg = <0xf8800000 0x40000>;
+			reg = <0>;
 		};
 	};
 
