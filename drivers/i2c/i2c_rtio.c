@@ -96,12 +96,17 @@ struct rtio_sqe *i2c_rtio_copy_reg_burst_read(struct rtio *r, struct rtio_iodev 
 void i2c_rtio_init(struct i2c_rtio *ctx, const struct device *dev)
 {
 	k_sem_init(&ctx->lock, 1, 1);
+#ifdef CONFIG_I2C_RTIO_SUBMISSION_QUEUE_PRIORITY
+	mpsc_priority_init(&ctx->io_pq, &ctx->io_queues, CONFIG_I2C_RTIO_PRIORITY_LEVELS);
+#else
 	mpsc_init(&ctx->io_q);
+#endif
 	ctx->txn_curr = NULL;
 	ctx->txn_head = NULL;
 	ctx->dt_spec.bus = dev;
 	ctx->iodev.data = &ctx->dt_spec;
 	ctx->iodev.api = &i2c_iodev_api;
+
 }
 
 /**
@@ -121,7 +126,12 @@ static bool i2c_rtio_next(struct i2c_rtio *ctx, bool completion)
 		return false;
 	}
 
-	struct mpsc_node *next = mpsc_pop(&ctx->io_q);
+	struct mpsc_node *next =
+#ifdef CONFIG_I2C_RTIO_SUBMISSION_QUEUE_PRIORITY
+		mpsc_priority_pop(&ctx->io_pq);
+#else
+		mpsc_pop(&ctx->io_q);
+#endif
 
 	/* Nothing left to do */
 	if (next == NULL) {
@@ -158,7 +168,11 @@ bool i2c_rtio_complete(struct i2c_rtio *ctx, int status)
 }
 bool i2c_rtio_submit(struct i2c_rtio *ctx, struct rtio_iodev_sqe *iodev_sqe)
 {
+#ifdef CONFIG_I2C_RTIO_SUBMISSION_QUEUE_PRIORITY
+	mpsc_priority_push(&ctx->io_pq, &iodev_sqe->q, iodev_sqe->sqe->prio);
+#else
 	mpsc_push(&ctx->io_q, &iodev_sqe->q);
+#endif
 	return i2c_rtio_next(ctx, false);
 }
 
