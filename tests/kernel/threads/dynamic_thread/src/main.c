@@ -214,21 +214,72 @@ ZTEST(thread_dynamic, test_dyn_thread_index_recycle)
 	zassert_true(dynamic_threads[0] != NULL,
 		     "couldn't create thread object\n");
 
-	/* TODO: Implement a test that shows that thread IDs are properly
-	 * recycled when a thread object is garbage collected due to references
-	 * dropping to zero. For example, we ought to be able to exit here
-	 * without calling k_object_free() on any of the threads we created
-	 * here; their references would drop to zero and they would be
-	 * automatically freed. However, it is known that the thread IDs are
-	 * not properly recycled when this happens, see #17023.
-	 */
 	for (i = 0; i < ctr; i++) {
 		k_object_free(dynamic_threads[i]);
 	}
 }
 
 /**
- * @brief Verify that a kernel thread can create a dynamic user thread.
+ * @ingroup kernel_thread_tests
+ * @brief Test that thread indexes are recycled by refcount auto-disposal
+ *
+ * @details A thread object whose last permission is revoked is garbage
+ * collected by unref_check() rather than by k_object_free(). Drain the index
+ * pool, drop the last reference on every object so each one is collected that
+ * way, then drain it again. Both passes must hand out the same number of
+ * indexes.
+ */
+ZTEST(thread_dynamic, test_thread_index_recycled_on_unref)
+{
+	int first = 0;
+	int second = 0;
+
+	while (first < (int)ARRAY_SIZE(dynamic_threads)) {
+		struct k_thread *t = k_object_alloc(K_OBJ_THREAD);
+
+		if (t == NULL) {
+			break;
+		}
+
+		dynamic_threads[first] = t;
+		first++;
+	}
+
+	zassert_true(first != 0, "unable to create any thread objects");
+
+	/* This thread holds the only permission on each object, so releasing it
+	 * drops the reference count to zero and the object is disposed of by
+	 * unref_check() instead of k_object_free().
+	 */
+	for (int i = 0; i < first; i++) {
+		k_object_release(dynamic_threads[i]);
+		dynamic_threads[i] = NULL;
+	}
+
+	while (second < (int)ARRAY_SIZE(dynamic_threads)) {
+		struct k_thread *t = k_object_alloc(K_OBJ_THREAD);
+
+		if (t == NULL) {
+			break;
+		}
+
+		dynamic_threads[second] = t;
+		second++;
+	}
+
+	for (int i = 0; i < second; i++) {
+		k_object_free(dynamic_threads[i]);
+		dynamic_threads[i] = NULL;
+	}
+
+	zassert_equal(first, second,
+		      "thread indexes leaked: %d objects before garbage collection, %d after",
+		      first, second);
+}
+
+/**
+ * @ingroup kernel_thread_tests
+ * @brief Test creation of dynamic user thread under kernel thread
  *
  * @ingroup kernel_thread_tests
  *
