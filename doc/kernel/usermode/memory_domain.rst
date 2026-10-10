@@ -387,6 +387,20 @@ memory domain one by one.
     The maximum number of memory partitions is limited by the maximum
     number of MPU regions or the maximum number of MMU tables.
 
+A memory domain can also take over all the partitions of the memory domain
+that a given thread is a member of. This is the way to give a new memory
+domain everything its creator can access, such as the partitions of the
+default memory domain, before adding more to it.
+
+.. code-block:: c
+
+    k_mem_domain_init(&app0_domain, 0, NULL);
+    k_mem_domain_inherit_thread_partitions(&app0_domain, k_current_get());
+
+The call adds either all the partitions or none: it fails with ``-ENOSPC`` if
+they do not all fit, and with ``-EINVAL`` if one of them overlaps a partition
+the memory domain already has.
+
 Memory Domain Assignment
 ------------------------
 

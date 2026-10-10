@@ -547,6 +547,41 @@ ZTEST(mem_protect_domain, test_mem_part_assert_add_overmax)
 		0, "should fail to add memory partition");
 }
 
+/**
+ * @brief Test that inheriting partitions into a full domain fails cleanly
+ *
+ * @details
+ * - Put a thread into the test domain, whose partition table is full.
+ * - Try to make the test domain inherit that thread's partitions: there is
+ *   no room for them, so k_mem_domain_inherit_thread_partitions() must return
+ *   -ENOSPC and leave the domain as it was.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_mem_domain_inherit_thread_partitions()
+ */
+ZTEST(mem_protect_domain, test_mem_domain_inherit_overmax)
+{
+	uint8_t num_partitions = test_domain.num_partitions;
+
+	zassert_equal(num_partitions, arch_mem_domain_max_partitions_get(),
+		      "domain still have room of partitions(%d).", num_partitions);
+
+	set_fault_valid(false);
+
+	k_thread_create(&child_thread, child_stack, K_THREAD_STACK_SIZEOF(child_stack),
+			rw_part_access, NULL, NULL, NULL, 0, K_USER, K_FOREVER);
+	k_thread_name_set(&child_thread, "child_thread");
+	k_mem_domain_add_thread(&test_domain, &child_thread);
+
+	zassert_equal(k_mem_domain_inherit_thread_partitions(&test_domain, &child_thread), -ENOSPC,
+		      "should fail to inherit partitions into a full domain");
+	zassert_equal(test_domain.num_partitions, num_partitions,
+		      "failed call changed the memory domain");
+
+	k_thread_abort(&child_thread);
+}
+
 
 #if defined(CONFIG_ASSERT)
 static volatile uint8_t __aligned(MEM_REGION_ALLOC) misc_buf[MEM_REGION_ALLOC];

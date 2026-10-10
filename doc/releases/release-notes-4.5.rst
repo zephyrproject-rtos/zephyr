@@ -778,6 +778,7 @@ New APIs and options
   * :kconfig:option:`CONFIG_OBJ_CORE_QUEUE`
   * :c:func:`k_thread_runtime_stats_is_enabled`
   * :c:func:`atomic_test_and_set_bit_to`
+  * :c:func:`k_mem_domain_inherit_thread_partitions`
   * :c:macro:`K_MSGQ_DEFINE_STATIC`
   * :c:macro:`K_MSGQ_DEFINE_TYPE`
   * :c:macro:`K_MSGQ_DEFINE_STATIC_TYPE`

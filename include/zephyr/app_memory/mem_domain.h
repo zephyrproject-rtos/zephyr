@@ -206,6 +206,25 @@ int k_mem_domain_remove_partition(struct k_mem_domain *domain,
 int k_mem_domain_add_thread(struct k_mem_domain *domain,
 				   k_tid_t thread);
 
+/**
+ * @brief Inherit memory partitions from a thread's memory domain.
+ *
+ * Copies a thread's memory domain's partitions to memory domain.
+ *
+ * Similar to calling k_mem_domain_add_partition() on the memory domain for each of the thread's
+ * memory domain's partitions, except that the memory domain is left unchanged if the partitions
+ * do not all fit or one of them overlaps a partition the memory domain already has.
+ *
+ * @param domain The memory domain which shall inherit the thread's memory domain's partitions.
+ * @param thread Thread which memory domain's partitions will be inherited.
+ *
+ * @retval 0 if successful.
+ * @retval -EINVAL if invalid parameters supplied.
+ * @retval -EINVAL if a partition overlaps one the memory domain already has.
+ * @retval -ENOSPC if there are not enough free partition slots available.
+ */
+int k_mem_domain_inherit_thread_partitions(struct k_mem_domain *domain, k_tid_t thread);
+
 #ifdef __cplusplus
 }
 #endif
