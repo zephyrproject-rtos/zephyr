@@ -89,8 +89,9 @@ struct mcux_lpc_ctimer_config {
 
 /*
  * Block the power states the node declares in zephyr,disabling-power-states for
- * exactly as long as the counter is running: taken when it is started, released
- * when it is stopped.
+ * exactly as long as the counter is running and the device is active: taken when
+ * the counter is started, dropped when the device suspends, and taken again when a
+ * resume brings back a counter that was left running.
  *
  * The flag records whether the lock is held, so a start or a stop called twice
  * leaves the count balanced.
@@ -599,13 +600,42 @@ static int mcux_lpc_ctimer_init_common(const struct device *dev)
 	return 0;
 }
 
+static int mcux_lpc_ctimer_resume(const struct device *dev)
+{
+	const struct mcux_lpc_ctimer_config *config = dev->config;
+	int ret;
+
+	ret = clock_control_on(config->clock_dev, config->clock_subsys);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Reading TCR needs the clock on. A counter still enabled is one the
+	 * consumer started and never stopped, so take its protection again.
+	 */
+	if ((config->base->TCR & CTIMER_TCR_CEN_MASK) != 0U) {
+		mcux_lpc_ctimer_power_lock_get(dev);
+	}
+
+	return 0;
+}
+
+static int mcux_lpc_ctimer_suspend(const struct device *dev)
+{
+	const struct mcux_lpc_ctimer_config *config = dev->config;
+
+	mcux_lpc_ctimer_power_lock_put(dev);
+
+	return clock_control_off(config->clock_dev, config->clock_subsys);
+}
+
 static int mcux_lpc_ctimer_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		break;
+		return mcux_lpc_ctimer_resume(dev);
 	case PM_DEVICE_ACTION_SUSPEND:
-		break;
+		return mcux_lpc_ctimer_suspend(dev);
 	case PM_DEVICE_ACTION_TURN_OFF:
 		break;
 	case PM_DEVICE_ACTION_TURN_ON:
