@@ -81,6 +81,9 @@ extern "C" {
 /** Use 10-bit addressing. DEPRECATED - Use I2C_MSG_ADDR_10_BITS instead. */
 #define I2C_ADDR_10_BITS		BIT(0)
 
+/** Maximum 7-bit I2C address */
+#define I2C_ADDR_7BIT_MAX		(0x7FU)
+
 /** Peripheral to act as Controller. */
 #define I2C_MODE_CONTROLLER		BIT(4)
 
@@ -1136,9 +1139,17 @@ static inline int i2c_write_read_cb(const struct device *dev, struct i2c_msg *ms
 	msgs[0].len = num_write;
 	msgs[0].flags = I2C_MSG_WRITE;
 
+	if (addr > I2C_ADDR_7BIT_MAX) {
+		msgs[0].flags |= I2C_MSG_ADDR_10_BITS;
+	}
+
 	msgs[1].buf = (uint8_t *)read_buf;
 	msgs[1].len = num_read;
 	msgs[1].flags = I2C_MSG_RESTART | I2C_MSG_READ | I2C_MSG_STOP;
+
+	if (addr > I2C_ADDR_7BIT_MAX) {
+		msgs[1].flags |= I2C_MSG_ADDR_10_BITS;
+	}
 
 	return i2c_transfer_cb(dev, msgs, num_msgs, addr, cb, userdata);
 }
@@ -1541,6 +1552,10 @@ static inline int i2c_write(const struct device *dev, const uint8_t *buf,
 	msg.len = num_bytes;
 	msg.flags = I2C_MSG_WRITE | I2C_MSG_STOP;
 
+	if (addr > I2C_ADDR_7BIT_MAX) {
+		msg.flags |= I2C_MSG_ADDR_10_BITS;
+	}
+
 	return i2c_transfer(dev, &msg, 1, addr);
 }
 
@@ -1585,6 +1600,10 @@ static inline int i2c_read(const struct device *dev, uint8_t *buf,
 	msg.buf = buf;
 	msg.len = num_bytes;
 	msg.flags = I2C_MSG_READ | I2C_MSG_STOP;
+
+	if (addr > I2C_ADDR_7BIT_MAX) {
+		msg.flags |= I2C_MSG_ADDR_10_BITS;
+	}
 
 	return i2c_transfer(dev, &msg, 1, addr);
 }
@@ -1635,9 +1654,17 @@ static inline int i2c_write_read(const struct device *dev, uint16_t addr,
 	msg[0].len = num_write;
 	msg[0].flags = I2C_MSG_WRITE;
 
+	if (addr > I2C_ADDR_7BIT_MAX) {
+		msg[0].flags |= I2C_MSG_ADDR_10_BITS;
+	}
+
 	msg[1].buf = (uint8_t *)read_buf;
 	msg[1].len = num_read;
 	msg[1].flags = I2C_MSG_RESTART | I2C_MSG_READ | I2C_MSG_STOP;
+
+	if (addr > I2C_ADDR_7BIT_MAX) {
+		msg[1].flags |= I2C_MSG_ADDR_10_BITS;
+	}
 
 	return i2c_transfer(dev, msg, 2, addr);
 }
@@ -1753,9 +1780,17 @@ static inline int i2c_burst_write(const struct device *dev,
 	msg[0].len = 1U;
 	msg[0].flags = I2C_MSG_WRITE;
 
+	if (dev_addr > I2C_ADDR_7BIT_MAX) {
+		msg[0].flags |= I2C_MSG_ADDR_10_BITS;
+	}
+
 	msg[1].buf = (uint8_t *)buf;
 	msg[1].len = num_bytes;
 	msg[1].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
+
+	if (dev_addr > I2C_ADDR_7BIT_MAX) {
+		msg[1].flags |= I2C_MSG_ADDR_10_BITS;
+	}
 
 	return i2c_transfer(dev, msg, 2, dev_addr);
 }
