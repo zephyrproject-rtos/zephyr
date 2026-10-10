@@ -14,7 +14,6 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/irq.h>
-#include <zephyr/kernel.h>
 #include <zephyr/sys/clock.h>
 
 #include <zephyr/logging/log.h>
@@ -25,10 +24,18 @@ LOG_MODULE_REGISTER(ifx_cat1_lp_timer_pdl, CONFIG_KERNEL_LOG_LEVEL);
 #error Only one LPTIMER instance should be enabled
 #endif /* DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 1 */
 
-#define CLK_FREQ         DT_INST_PROP(0, clock_frequency)
-#define LPTIMER_COUNTERS (CY_MCWDT_CTR0 | CY_MCWDT_CTR1 | CY_MCWDT_CTR2)
+/*
+ * Counters 0 and 1 are cascaded into one 32-bit counter with one 32-bit
+ * compare. That needs the cascade to carry on counter0 rollover rather than on
+ * its match, which only CAT1B and CAT1D can select.
+ */
+#if !defined(CY_IP_MXS40SSRSS) && !defined(CY_IP_MXS22SRSS)
+#error The lp-timer needs a C0/C1 cascade carrying on rollover (CAT1B or CAT1D)
+#endif
 
-/* Counter 2 is reported to the kernel as it reads, so the two rates are one. */
+#define CLK_FREQ         DT_INST_PROP(0, clock_frequency)
+#define LPTIMER_COUNTERS (CY_MCWDT_CTR0 | CY_MCWDT_CTR1)
+
 BUILD_ASSERT(CLK_FREQ == CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
 	     "lp-timer clock-frequency must match CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC");
 
@@ -48,63 +55,25 @@ static const cy_stc_mcwdt_config_t lptimer_default_cfg = {.c0Match = 0xFFFF,
 							  .c1c2Cascade = false};
 
 /*
- * Since we do not have a 32bit counter and compare we use counter0/counter1 as a
- * one shot delay that is entirely reset from scratch each time we update our delay.
- *
- * In order to ensure we can sleep longer than a 16bit counter alone would allow for
- * we can use the cascaded counters to only wake up on the cascaded counter1 but
- * sleeps for this will be multiples of 2 seconds (2^16/32768) = 2.
- *
- * There's some significant caveats, it takes some non-negligble number of lf clock
- * cycles to reset, set the match, and then enable the counters. This is almost
- * guaranteed to cost 2-3 low frequency clock cycles of time.
- *
- * That's ok though actually as the only thing kernel timers guarantee is a minimum delay!
+ * MCWDT_CNTLOW is counter1:counter0 and MCWDT_MATCH is their two compares, so
+ * each is read or written as one 32-bit value. The match is on equality, so a
+ * compare set behind the count is missed until the counter wraps.
  */
-static void lptimer_delay(uint32_t cycles)
+#define TIMER_CORE_BACKEND_COMPARE_EXACT
+
+/* A match takes two lf_clk cycles to reach the compare logic. Arming 3 cycles
+ * ahead keeps the count below the compare until then.
+ */
+#define TIMER_CORE_ALARM_LEAD_CYCLES 3
+
+static uint32_t timer_driver_cycle_get(void)
 {
-	bool timeout_status;
+	return MCWDT_CNTLOW(lptimer);
+}
 
-	Cy_MCWDT_Disable(lptimer, CY_MCWDT_CTR0 | CY_MCWDT_CTR1, 0);
-	timeout_status =
-		WAIT_FOR(Cy_MCWDT_GetEnabledStatus(lptimer, CY_MCWDT_CTR0) == 0, 10000, NULL);
-	__ASSERT(timeout_status == true, "Timeout after Cy_MCWDT_Disable function call.");
-
-	Cy_MCWDT_ClearInterrupt(lptimer, LPTIMER_COUNTERS);
-
-	/* Per the PDL documentation we reset both counters with a delay between to
-	 * account for the cascading. The PDL recommends > 100us for cascaded counters.
-	 *
-	 * This actually means we delay 210us here to reset in total.
-	 */
-	Cy_MCWDT_ResetCounters(lptimer, CY_MCWDT_CTR0 | CY_MCWDT_CTR1, 105);
-	WAIT_FOR(MCWDT_CNTLOW(lptimer) == 0, 100, NULL);
-	__ASSERT(MCWDT_CNTLOW(lptimer) == 0, "Issue with Cy_MCWDT_ResetCounters function call.");
-
+static void timer_driver_set_compare(uint32_t cycles)
+{
 	MCWDT_MATCH(lptimer) = cycles;
-
-	Cy_MCWDT_SetInterruptMask(lptimer, CY_MCWDT_CTR0 | CY_MCWDT_CTR1);
-
-	Cy_MCWDT_Enable(lptimer, CY_MCWDT_CTR0 | CY_MCWDT_CTR1, 0);
-}
-
-/*
- * Counter 2 free-runs at the low-frequency clock and is the cycle domain, while
- * counters 0 and 1, cascaded, are armed as a one-shot relative delay: a RELOAD
- * backend whose alarm is a separate timer from the counter. Arming resets that
- * pair before setting the match, so the delay always runs from zero and cannot
- * be programmed into the past.
- */
-#define TIMER_CORE_BACKEND_RELOAD
-
-static inline uint32_t timer_driver_cycle_get(void)
-{
-	return MCWDT_CNTHIGH(lptimer);
-}
-
-static void timer_driver_set_reload(uint32_t cycles)
-{
-	lptimer_delay(cycles);
 }
 
 #include "system_timer_generic.h"
@@ -112,13 +81,6 @@ static void timer_driver_set_reload(uint32_t cycles)
 static void lptimer_isr(void)
 {
 	Cy_MCWDT_ClearInterrupt(lptimer, LPTIMER_COUNTERS);
-
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		/* The alarm is one-shot, so a ticked kernel re-arms it here:
-		 * the core leaves the period of a reload backend to the driver.
-		 */
-		lptimer_delay(TIMER_CORE_CYC_PER_TICK);
-	}
 
 	timer_core_announce();
 }
@@ -133,27 +95,29 @@ static int lptimer_init(void)
 
 	rslt = (cy_rslt_t)Cy_MCWDT_Init(lptimer, &cfg);
 
-	/* Effectively AND the interrupt lines from counter0/counter1 match
-	 * into the interrupt signaling. Meaning we only interrupt when both
-	 * counters match like a 32bit counter and compare.
-	 */
-	Cy_MCWDT_SetCascadeMatchCombined(lptimer, CY_MCWDT_CASCADE_C0C1, true);
-
 	/* Failing to initialize MCWDT indicates a programming error in the initial configuration */
 	if (rslt != CY_RSLT_SUCCESS) {
 		LOG_WRN("Failed to initialize lp_timer");
 		return -EINVAL;
 	}
 
-	Cy_MCWDT_Enable(lptimer, CY_MCWDT_CTR2, 0);
-	WAIT_FOR(MCWDT_CNTHIGH(lptimer) > 0, 10000, NULL);
+	/* Match on the full 32 bits: counter1 signals only when counter0 matches too. */
+	Cy_MCWDT_SetCascadeMatchCombined(lptimer, CY_MCWDT_CASCADE_C0C1, true);
 
-	/* Seed the announce baseline and arm the first tick. */
+	/* Carry on counter0 rollover, not on its match, so counter1 counts
+	 * 65536-cycle periods whatever the compare holds.
+	 */
+	Cy_MCWDT_SetCascadeCarryOutRollOver(lptimer, CY_MCWDT_CASCADE_C0C1, true);
+
+	/* Counter0 matches a whole 16-bit period before the pair does, so leave
+	 * its interrupt masked.
+	 */
+	Cy_MCWDT_SetInterruptMask(lptimer, CY_MCWDT_CTR1);
+
+	/* 93 us is the PDL's wait for the counters to actually start. */
+	Cy_MCWDT_Enable(lptimer, LPTIMER_COUNTERS, 93);
+
 	timer_core_init();
-
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		lptimer_delay(TIMER_CORE_CYC_PER_TICK);
-	}
 
 	return 0;
 }
