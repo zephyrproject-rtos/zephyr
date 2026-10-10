@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2025-2026 Microchip Technology Inc.
- *
+ * SPDX-FileCopyrightText: Copyright (c) 2025-2026 Microchip Technology Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -11,6 +10,7 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/adc/mchp_pic32cm_jh_adc.h>
+#include <zephyr/dt-bindings/input/mchp_pic32cm_jh_ptc.h>
 
 / {
 	model = "PIC32CM JH01 Curiosity Pro";
@@ -30,6 +30,93 @@
 		sw0 = &button0;
 		pwm-led0 = &pwm_led0;
 		rtc = &rtc;
+	};
+
+	ext1_header: xplained-pro-connector1 {
+		compatible = "microchip,xpro-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+
+		/* dts-format off */
+					       /*                  Shared */
+		gpio-map = <0  0 &porta 11 0>, /* ADC0/AIN[11]            */
+			   <1  0 &portb  8 0>, /* ADC0/AIN[2]             */
+			   <2  0 &portb 17 0>, /* GPIO                    */
+			   <3  0 &portb 16 0>, /* GPIO                    */
+			   <4  0 &portb 12 0>, /* TCC0/WO[6]              */
+			   <5  0 &portb 13 0>, /* TCC0/WO[7]              */
+			   <6  0 &porta 21 0>, /* GPIO                    */
+			   <7  0 &portb  7 0>, /* GPIO                    */
+			   <8  0 &porta 22 0>, /* SERCOM3/PAD[0] I2C SDA  */
+			   <9  0 &porta 23 0>, /* SERCOM3/PAD[1] I2C SCL  */
+			   <10 0 &porta 13 0>, /* SERCOM2/PAD[1] UART RX  */
+			   <11 0 &porta 12 0>, /* SERCOM2/PAD[0] UART TX  */
+			   <12 0 &portc 28 0>, /* SERCOM1/PAD[1] SPI SS   */
+			   <13 0 &porta 18 0>, /* SERCOM1/PAD[2] SPI MOSI */
+			   <14 0 &portc 27 0>, /* SERCOM1/PAD[0] SPI MISO */
+			   <15 0 &porta 19 0>; /* SERCOM1/PAD[3] SPI SCK  */
+					       /* GND                     */
+					       /* +3.3V                   */
+		/* dts-format on */
+	};
+
+	ext2_header: xplained-pro-connector2 {
+		compatible = "microchip,xpro-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+
+		/* dts-format off */
+					       /*                  Shared */
+		gpio-map = <0  0 &porta  5 0>, /* ADC0/AIN[5]             */
+			   <1  0 &porta  4 0>, /* ADC0/AIN[4]             */
+			   <2  0 &porta 20 0>, /* GPIO                    */
+			   <3  0 &portc 11 0>, /* GPIO                    */
+			   <4  0 &portb 30 0>, /* TCC1/WO[2]              */
+			   <5  0 &portb 31 0>, /* TCC1/WO[3]              */
+			   <6  0 &portc 24 0>, /* GPIO                    */
+			   <7  0 &portc 25 0>, /* GPIO                    */
+			   <8  0 &porta 16 0>, /* SERCOM1/PAD[0] I2C SDA  */
+			   <9  0 &porta 17 0>, /* SERCOM1/PAD[1] I2C SCL  */
+			   <10 0 &portb 21 0>, /* SERCOM3/PAD[1] UART RX  */
+			   <11 0 &portb 20 0>, /* SERCOM3/PAD[0] UART TX  */
+			   <12 0 &portb  3 0>, /* SERCOM5/PAD[1] SPI SS   */
+			   <13 0 &portb  0 0>, /* SERCOM5/PAD[2] SPI MOSI */
+			   <14 0 &portb  2 0>, /* SERCOM5/PAD[0] SPI MISO */
+			   <15 0 &portb  1 0>; /* SERCOM5/PAD[3] SPI SCK  */
+					       /* GND                     */
+					       /* +3.3V                   */
+		/* dts-format on */
+	};
+
+	ext3_header: xplained-pro-connector3 {
+		compatible = "microchip,xpro-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+
+		/* dts-format off */
+					       /*                  Shared */
+		gpio-map = <0  0 &portb  6 0>, /* ADC1/AIN[8]             */
+			   <1  0 &portb  9 0>, /* ADC1/AIN[5]             */
+			   <2  0 &portc 18 0>, /* GPIO                    */
+			   <3  0 &portc 19 0>, /* GPIO                    */
+			   <4  0 &portb 22 0>, /* TC3/WO[0]               */
+			   <5  0 &portb 23 0>, /* TC3/WO[1]               */
+			   <6  0 &porta 28 0>, /* GPIO                    */
+			   <7  0 &porta 27 0>, /* GPIO                    */
+			   <8  0 &porta 16 0>, /* SERCOM1/PAD[0] I2C SDA  */
+			   <9  0 &porta 17 0>, /* SERCOM1/PAD[1] I2C SCL  */
+			   <10 0 &portc 17 0>, /* SERCOM6/PAD[1] UART RX  */
+			   <11 0 &portc 16 0>, /* SERCOM6/PAD[0] UART TX  */
+			   <12 0 &portc 13 0>, /* SERCOM7/PAD[1] SPI SS   */
+			   <13 0 &portc 14 0>, /* SERCOM7/PAD[2] SPI MOSI */
+			   <14 0 &portc 12 0>, /* SERCOM7/PAD[0] SPI MISO */
+			   <15 0 &portc 15 0>; /* SERCOM7/PAD[3] SPI SCK  */
+					       /* GND                     */
+					       /* +3.3V                   */
+		/* dts-format on */
 	};
 
 	leds {
@@ -289,5 +376,63 @@ i2c0: &sercom3 {
 	cs-gpios = <&portb 3 GPIO_ACTIVE_LOW>;
 	dmas = <&dmac 0x4 0xc>, <&dmac 0x5 0xd>;
 	dma-names = "rx", "tx";
+};
+
+&ptc {
+	interrupts = <30 3>;
+	run-in-standby-en = <0>;
+	def-touch-measurement-period-ms = <20>;
+	def-sensor-type = <0x81>;
+	def-sel-freq-init = "FREQ_SEL_0";
+	def-touch-det-int = <4>;
+	def-anti-tch-det-int = <5>;
+	def-anti-tch-recal-thrshld = "RECAL_100";
+	def-tch-drift-rate = <20>;
+	def-anti-tch-drift-rate = <5>;
+	def-drift-hold-time = <20>;
+	def-reburst-mode = "REBURST_UNRESOLVED";
+	def-max-on-duration = <0>;
+
+	pinctrl-0 = <&ptc_btn1_default>;
+	pinctrl-names = "default";
+
+	/* frequency hop parameters */
+	num-freq-steps = <3>;
+	def-median-filter-frequencies = "FREQ_SEL_0", "FREQ_SEL_1", "FREQ_SEL_2";
+	def-freq-autotune-enable = <1>;
+	freq-autotune-max-variance = <10>;
+	freq-autotune-count-in = <6>;
+
+	/* Data Streamer port */
+	data-streamer-port = <&sercom4>;
+
+	def-num-channels = <1>;
+
+	/* node parameters */
+	node_0_params: touch_node0 {
+		x-mask = <3>;
+		x-names = "DRIVEN_SHIELD";
+		y-mask = <10>;
+		y-names = "BUTTON_0";
+		zephyr,code = <INPUT_KEY_0>;
+		csd = <0>;
+		rselect = "RSEL_VAL_0";
+		prescaler = "PRSC_DIV_SEL_16";
+		digital-gain = "GAIN_1";
+		analog-gain = "GAIN_1";
+		filter-level = "FILTER_LEVEL_16";
+	};
+
+	/* button module parameters */
+	def-num-sensors = <1>;
+
+	key_0_params: touch_key0 {
+		threshold = <25>;
+		hysteresis = "HYST_25";
+		aks-group = "NO_AKS_GROUP";
+	};
+
 	status = "okay";
 };
+
+ext1_qt7_xpro: &ptc {};
