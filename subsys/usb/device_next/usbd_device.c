@@ -45,7 +45,7 @@ get_device_descriptor(struct usbd_context *const uds_ctx,
 	case USBD_SPEED_FS:
 		return uds_ctx->fs_desc;
 	case USBD_SPEED_HS:
-		return uds_ctx->hs_desc;
+		return usbd_get_hs_desc(uds_ctx);
 	default:
 		__ASSERT(false, "Not supported speed");
 		return NULL;
