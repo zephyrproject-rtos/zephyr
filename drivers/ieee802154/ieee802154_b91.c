@@ -381,7 +381,7 @@ static int b91_init(const struct device *dev)
 	/* init IRQs */
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), b91_rf_isr, 0, 0);
 	riscv_plic_irq_enable(DT_INST_IRQN(0));
-	riscv_plic_set_priority(DT_INST_IRQN(0), DT_INST_IRQ(0, priority));
+	riscv_plic_set_priority(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), 0);
 	rf_set_irq_mask(FLD_RF_IRQ_RX | FLD_RF_IRQ_TX);
 
 	/* init data variables */

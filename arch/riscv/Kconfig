@@ -340,7 +340,7 @@ config RISCV_HAS_CLIC
 	bool
 	depends on RISCV_PRIVILEGED
 	select RISCV_ALWAYS_SWITCH_THROUGH_ECALL if MULTITHREADING
-	select CLIC_SUPPORT_INTERRUPT_LEVEL if !NRFX_CLIC
+	select RISCV_SUPPORT_INTERRUPT_PREEMPT if !NRFX_CLIC
 	help
 	  Does the SOC provide support for a Core-Local Interrupt Controller (CLIC).
 
@@ -352,14 +352,23 @@ config RISCV_HAS_AIA
 	  which includes APLIC (Advanced Platform-Level Interrupt Controller) and
 	  IMSIC (Incoming Message-Signaled Interrupt Controller).
 
-config CLIC_SUPPORT_INTERRUPT_LEVEL
+config RISCV_SUPPORT_INTERRUPT_PREEMPT
 	bool
-	depends on RISCV_HAS_CLIC
+	depends on RISCV_HAS_CLIC || ZERO_LATENCY_IRQS
 	help
-	  For CLIC implementations with extended interrupt level, where
-	  higher-numbered interrupt levels can preempt lower-numbered interrupt
-	  levels. This option handles interrupt level in ISR to ensure proper
-	  nested ISR exits.
+	  Enable support for interrupt preemption. When selected, ISR code
+	  will save the current xcause register within context stacking logic.
+	  This will preserve the previous interrupt level.
+
+config RISCV_NESTED_INTERRUPTS
+	bool
+	depends on RISCV_SUPPORT_INTERRUPT_PREEMPT
+	help
+	  Enable support for nested interrupts. When selected, higher priority
+	  interrupts can preempt lower priority ones, allowing for more responsive
+	  interrupt handling. SOCs must implement __soc_enable_isr_nesting and
+	  __soc_disable_isr_nesting functions, which should enable and disable
+	  interrupt preemption, respectively.
 
 config RISCV_SOC_INTERRUPT_INIT
 	bool "SOC-based interrupt initialization"
@@ -414,6 +423,19 @@ config RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET
 	  software ISR table and the IRQ vector table. CONFIG_NUM_IRQS must be
 	  properly sized to take into account this offset. This is a hidden
 	  option which needs to be set per architecture and left alone.
+
+config RISCV_CUSTOM_VECTOR_TABLE_IRQ_LEVEL
+	int
+	depends on GEN_IRQ_VECTOR_TABLE
+	depends on MULTI_LEVEL_INTERRUPTS
+	range 1 3
+	help
+	  Specifies the interrupt controller level used when generating the
+	  hardware vector table.
+	  For example, some RISC-V platforms implement vectored interrupts in a
+	  second-level interrupt controller, such as the Andes NCEPLIC100,
+	  while the first-level CPU interrupt controller handles machine
+	  external, software, and timer interrupts through a common IRQ entry.
 
 config NUM_IRQS
 	int
@@ -754,9 +776,6 @@ config RISCV_TRAP_HANDLER_ALIGNMENT
 	  code. The requirement for a particular alignment arises from
 	  the format of MTVEC register which is RISC-V platform-specific.
 	  The minimum alignment is 4 bytes according to the Spec.
-
-config GEN_IRQ_VECTOR_TABLE
-	select RISCV_VECTORED_MODE if RISCV_PRIVILEGED
 
 config ARCH_HAS_SINGLE_THREAD_SUPPORT
 	default y if !SMP
