@@ -77,6 +77,18 @@
 			fifo-depth = <16>;
 		};
 
+		sdhci0: sdhci@e0100000 {
+			compatible = "xlnx,zynq-8.9a";
+			reg = <0xe0100000 0x1000>;
+			status = "disabled";
+		};
+
+		sdhci1: sdhci@e0101000 {
+			compatible = "xlnx,zynq-8.9a";
+			reg = <0xe0101000 0x1000>;
+			status = "disabled";
+		};
+
 		gem0: ethernet@e000b000 {
 			compatible = "xlnx,gem";
 			status = "disabled";
