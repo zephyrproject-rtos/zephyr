@@ -1,0 +1,25 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&plli2s {
+	div-m = <8>;
+	mul-n = <192>;
+	div-r = <3>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&dma2 {
+	status = "okay";
+};
+
+&arduino_spi {
+	status = "disabled";
+};
+
+&arduino_i2s {
+	pinctrl-0 = <&i2s1_ws_pa4 &i2s1_ck_pa5 &i2s1_sd_pa7>;
+	pinctrl-names = "default";
+};
