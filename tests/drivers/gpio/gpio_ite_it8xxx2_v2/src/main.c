@@ -468,6 +468,29 @@ ZTEST(gpio_ite_it8xxx2_v2, test_disconnected_tristate_unsupported)
 		      registers.gpcr[TEST_PIN]);
 }
 
+ZTEST(gpio_ite_it8xxx2_v2, test_get_direction)
+{
+	gpio_port_pins_t inputs;
+	gpio_port_pins_t outputs;
+	const gpio_pin_t output_pin = TEST_PIN + 1;
+	const gpio_pin_t disconnected_pin = TEST_PIN + 2;
+	gpio_port_pins_t map = BIT(TEST_PIN) | BIT(output_pin) | BIT(disconnected_pin);
+
+	zassert_true(device_is_ready(gpio_dev));
+	zassert_ok(gpio_pin_configure(gpio_dev, TEST_PIN, GPIO_INPUT));
+	zassert_ok(gpio_pin_configure(gpio_dev, output_pin, GPIO_OUTPUT));
+	zassert_ok(gpio_pin_configure(gpio_dev, disconnected_pin, GPIO_DISCONNECTED));
+
+	zassert_ok(gpio_port_get_direction(gpio_dev, map, &inputs, &outputs));
+	zexpect_equal(inputs, BIT(TEST_PIN));
+	zexpect_equal(outputs, BIT(output_pin));
+
+	zassert_ok(gpio_port_get_direction(gpio_dev, BIT(output_pin), &inputs, NULL));
+	zexpect_equal(inputs, 0);
+	zassert_ok(gpio_port_get_direction(gpio_dev, BIT(TEST_PIN), NULL, &outputs));
+	zexpect_equal(outputs, 0);
+}
+
 ZTEST(gpio_ite_it8xxx2_v2, test_input_1P8V)
 {
 	gpio_flags_t flags;
