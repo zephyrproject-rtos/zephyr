@@ -34,6 +34,9 @@ static struct k_fifo no_wait_fifo;
 static struct k_lifo no_wait_lifo;
 static struct k_poll_signal no_wait_signal;
 K_PIPE_DEFINE(no_wait_pipe, 32, 1);
+K_PIPE_DEFINE(closed_empty_pipe, 32, 1);
+K_PIPE_DEFINE(closed_data_pipe, 32, 1);
+K_PIPE_DEFINE(close_wake_pipe, 32, 1);
 static struct k_poll_signal test_signal;
 #ifndef CONFIG_USERSPACE
 static struct k_msgq no_wait_msgq;
@@ -1076,7 +1079,8 @@ void poll_test_grant_access(void)
 			      &no_wait_lifo, &no_wait_signal, &wait_sem, &wait_fifo,
 			      &wait_lifo, &cancel_fifo, &non_cancel_fifo, &wait_signal,
 			      &test_thread, &test_signal, &test_stack, &multi_sem,
-			      &multi_reply, &no_wait_pipe, &wait_pipe);
+			      &multi_reply, &no_wait_pipe, &wait_pipe,
+			      &closed_empty_pipe, &closed_data_pipe, &close_wake_pipe);
 }
 
 
@@ -1239,4 +1243,111 @@ ZTEST(poll_api, test_poll_signal_persist)
 	zassert_equal(k_poll(&event, 1, K_NO_WAIT), -EAGAIN,
 		      "a reset signal should no longer be ready");
 	zassert_equal(event.state, K_POLL_STATE_NOT_READY);
+}
+
+/**
+ * @brief Closed pipes must be poll-ready so k_pipe_read() can return -EPIPE
+ *
+ * @ingroup kernel_poll_tests
+ *
+ * @details k_pipe_read() on a closed empty pipe returns -EPIPE immediately.
+ * k_poll() must do the same rather than wait forever. After leftover data is
+ * drained, a closed pipe stays readable so a poll loop can observe the hangup.
+ *
+ * @see k_poll(), k_pipe_close(), k_pipe_read()
+ */
+ZTEST_USER(poll_api, test_poll_pipe_closed)
+{
+	struct k_poll_event empty_ev = K_POLL_EVENT_INITIALIZER(
+		K_POLL_TYPE_PIPE_DATA_AVAILABLE,
+		K_POLL_MODE_NOTIFY_ONLY,
+		&closed_empty_pipe);
+	struct k_poll_event data_ev = K_POLL_EVENT_INITIALIZER(
+		K_POLL_TYPE_PIPE_DATA_AVAILABLE,
+		K_POLL_MODE_NOTIFY_ONLY,
+		&closed_data_pipe);
+	uint8_t data[] = {0x11, 0x22, 0x33};
+	uint8_t out[sizeof(data)];
+	int rc;
+
+	k_pipe_close(&closed_empty_pipe);
+
+	rc = k_poll(&empty_ev, 1, K_NO_WAIT);
+	zassert_equal(rc, 0, "closed empty pipe should be poll-ready");
+	zassert_equal(empty_ev.state, K_POLL_STATE_PIPE_DATA_AVAILABLE);
+	zassert_equal(k_pipe_read(&closed_empty_pipe, out, 1, K_NO_WAIT), -EPIPE);
+
+	empty_ev.state = K_POLL_STATE_NOT_READY;
+	rc = k_poll(&empty_ev, 1, K_NO_WAIT);
+	zassert_equal(rc, 0, "closed pipe must stay poll-ready after a failed read");
+	zassert_equal(empty_ev.state, K_POLL_STATE_PIPE_DATA_AVAILABLE);
+
+	zassert_equal(k_pipe_write(&closed_data_pipe, data, sizeof(data), K_NO_WAIT),
+		      sizeof(data));
+	k_pipe_close(&closed_data_pipe);
+
+	rc = k_poll(&data_ev, 1, K_NO_WAIT);
+	zassert_equal(rc, 0);
+	zassert_equal(data_ev.state, K_POLL_STATE_PIPE_DATA_AVAILABLE);
+	zassert_equal(k_pipe_read(&closed_data_pipe, out, sizeof(out), K_NO_WAIT),
+		      sizeof(data));
+	zassert_mem_equal(out, data, sizeof(data));
+
+	data_ev.state = K_POLL_STATE_NOT_READY;
+	rc = k_poll(&data_ev, 1, K_NO_WAIT);
+	zassert_equal(rc, 0, "closed pipe should stay readable after drain");
+	zassert_equal(data_ev.state, K_POLL_STATE_PIPE_DATA_AVAILABLE);
+	zassert_equal(k_pipe_read(&closed_data_pipe, out, 1, K_NO_WAIT), -EPIPE);
+}
+
+static void poll_pipe_close_helper(void *p1, void *p2, void *p3)
+{
+	(void)p1;
+	(void)p2;
+	(void)p3;
+
+	k_sleep(K_MSEC(50));
+	k_pipe_close(&close_wake_pipe);
+}
+
+/**
+ * @brief Closing a pipe must wake a thread blocked in k_poll()
+ *
+ * @ingroup kernel_poll_tests
+ *
+ * @details Start k_poll() on an empty pipe, then close it from a higher
+ * priority thread. The poller must wake with PIPE_DATA_AVAILABLE so it can
+ * read and observe -EPIPE, matching k_pipe_read() waiters.
+ *
+ * @see k_poll(), k_pipe_close()
+ */
+ZTEST(poll_api_1cpu, test_poll_pipe_close_wakes)
+{
+	const int main_low_prio = 10;
+	int old_prio = k_thread_priority_get(k_current_get());
+	struct k_poll_event event;
+	uint8_t byte;
+	int rc;
+	k_tid_t tid;
+
+	k_poll_event_init(&event, K_POLL_TYPE_PIPE_DATA_AVAILABLE,
+			  K_POLL_MODE_NOTIFY_ONLY, &close_wake_pipe);
+
+	k_thread_priority_set(k_current_get(), main_low_prio);
+
+	tid = k_thread_create(&test_thread, test_stack,
+			      K_THREAD_STACK_SIZEOF(test_stack),
+			      poll_pipe_close_helper, NULL, NULL, NULL,
+			      main_low_prio - 1, K_USER | K_INHERIT_PERMS,
+			      K_NO_WAIT);
+
+	rc = k_poll(&event, 1, K_SECONDS(1));
+
+	k_thread_priority_set(k_current_get(), old_prio);
+
+	zassert_equal(rc, 0, "close must wake a blocked pipe poller");
+	zassert_equal(event.state, K_POLL_STATE_PIPE_DATA_AVAILABLE);
+	zassert_equal(k_pipe_read(&close_wake_pipe, &byte, 1, K_NO_WAIT), -EPIPE);
+
+	k_thread_abort(tid);
 }
