@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	pb12_uc13_0_pico: pb12_uc13_0_pico {
+		pinmux = <MSP_PINMUX(29, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	pb13_uc13_0_sclk: pb13_uc13_0_sclk {
+		pinmux = <MSP_PINMUX(30, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	pb14_uc13_0_poci: pb14_uc13_0_poci {
+		pinmux = <MSP_PINMUX(31, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+	};
+
+	pa12_uc13_0_cs0: pa12_uc13_0_cs0 {
+		pinmux = <MSP_PINMUX(34, MSPM0_PIN_FUNCTION_7)>;
+	};
+};
+
+&unicomm13_0 {
+	status = "okay";
+};
+
+&unicomm13_0_spi {
+	status = "okay";
+	pinctrl-0 = <&pb13_uc13_0_sclk &pb12_uc13_0_pico &pb14_uc13_0_poci &pa12_uc13_0_cs0>;
+	pinctrl-names = "default";
+
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <8000000>;
+	};
+};
