@@ -27,6 +27,16 @@ LOG_MODULE_REGISTER(sx126x, CONFIG_LORA_LOG_LEVEL);
 #define SX126X_IS_GFSK(data) false
 #endif
 
+#ifdef CONFIG_LORA_SX126X_NATIVE_STANDALONE
+static const char sx126x_version_strings[SX126X_MAX][SX126X_VERSION_STRING_COMPARE_LEN + 1] = {
+	[SX126X_INVALID] = "INVALI",
+	[SX126X_SX1261] = "SX1261",
+	[SX126X_SX1262] = "SX1261",
+	[SX126X_SX1268] = "SX1268",
+	[SX126X_LLCC68] = "LLCC68",
+};
+#endif
+
 static int bandwidth_to_reg(enum lora_signal_bandwidth bw, uint8_t *reg)
 {
 	switch (bw) {
@@ -123,9 +133,37 @@ static bool should_enable_ldro(enum lora_datarate sf, enum lora_signal_bandwidth
 	return symbol_time_us > 16380;
 }
 
-static int sx126x_validate_config(const struct lora_modem_config *config)
+static int sx126x_validate_config(const struct device *dev, const struct lora_modem_config *config)
 {
 	uint8_t bw_reg;
+#ifdef CONFIG_LORA_SX126X_NATIVE_STANDALONE
+	const struct sx126x_hal_config *hal_config = dev->config;
+
+	/* Check modulation parameters for LLCC68 */
+	if (hal_config->variant == SX126X_LLCC68) {
+		if (config->bandwidth == BW_125_KHZ) {
+			if (config->datarate > SF_9) {
+				LOG_ERR("Invalid datarate for LLCC68");
+				return -EINVAL;
+			}
+		} else if (config->bandwidth == BW_250_KHZ) {
+			if (config->datarate > SF_10) {
+				LOG_ERR("Invalid datarate for LLCC68");
+				return -EINVAL;
+			}
+		} else if (config->bandwidth == BW_500_KHZ) {
+			if (config->datarate > SF_11) {
+				LOG_ERR("Invalid datarate for LLCC68");
+				return -EINVAL;
+			}
+		} else {
+			LOG_ERR("Invalid bandwidth for LLCC68");
+			return -EINVAL;
+		}
+	}
+#else
+	ARG_UNUSED(dev);
+#endif
 
 	if (bandwidth_to_reg(config->bandwidth, &bw_reg) < 0) {
 		LOG_ERR("Unsupported bandwidth: %d kHz", config->bandwidth);
@@ -490,6 +528,38 @@ static int sx126x_add_reg_to_retention(const struct device *dev, uint16_t addr)
 	return sx126x_hal_write_regs(dev, SX126X_REG_RETENTION_LIST, buf, sizeof(buf));
 }
 
+#ifdef CONFIG_LORA_SX126X_NATIVE_STANDALONE
+/* Read the version string register to confirm the chip is correct model for information purposes */
+static int sx126x_identify_chip(const struct device *dev)
+{
+	const struct sx126x_hal_config *config = dev->config;
+	int ret;
+	char version[SX126X_REG_VERSION_STRING_LEN];
+
+	ret = sx126x_hal_read_regs(dev, SX126X_REG_VERSION_STRING, version,
+			     SX126X_REG_VERSION_STRING_LEN);
+	if (ret < 0) {
+		return ret;
+	}
+
+	LOG_DBG("Found chip %.15s", version);
+
+	if (strncmp(sx126x_version_strings[config->variant], version,
+		SX126X_VERSION_STRING_COMPARE_LEN) == 0) {
+		return config->variant;
+	}
+
+	for (size_t i = 0; i < SX126X_MAX; i++) {
+		if (strncmp(sx126x_version_strings[i], version,
+			SX126X_VERSION_STRING_COMPARE_LEN) == 0) {
+			return i;
+		}
+	}
+
+	return 0;
+}
+#endif
+
 static int sx126x_chip_init(const struct device *dev)
 {
 	const struct sx126x_hal_config *config = dev->config;
@@ -501,6 +571,19 @@ static int sx126x_chip_init(const struct device *dev)
 		LOG_ERR("Reset failed: %d", ret);
 		return ret;
 	}
+
+#ifdef CONFIG_LORA_SX126X_NATIVE_STANDALONE
+	ret = sx126x_identify_chip(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to get version string: %d", ret);
+		return ret;
+	}
+
+	if (ret != config->variant) {
+		LOG_WRN("Version string does not match selected chip, found %s",
+			 sx126x_version_strings[ret]);
+	}
+#endif
 
 	/* Set standby mode */
 	ret = sx126x_set_standby(dev, SX126X_STANDBY_RC);
@@ -932,7 +1015,7 @@ static int sx126x_lora_config(const struct device *dev, const struct lora_modem_
 	bool ldro;
 	int ret;
 
-	ret = sx126x_validate_config(config);
+	ret = sx126x_validate_config(dev, config);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1683,47 +1766,55 @@ static int sx126x_init(const struct device *dev)
  */
 #ifdef CONFIG_LORA_SX126X_NATIVE_STANDALONE
 
-#define SX126X_INIT(inst, is_1261)						\
-	static struct sx126x_data sx126x_data_##inst;				\
-										\
-	static const struct sx126x_hal_config sx126x_config_##inst = {		\
-		.spi = SPI_DT_SPEC_INST_GET(inst,				\
-					    SPI_WORD_SET(8) | SPI_TRANSFER_MSB), \
-		.reset = GPIO_DT_SPEC_INST_GET(inst, reset_gpios),		\
-		.busy = GPIO_DT_SPEC_INST_GET(inst, busy_gpios),		\
-		.dio1 = GPIO_DT_SPEC_INST_GET(inst, dio1_gpios),		\
-		.is_sx1261 = is_1261,						\
-		.antenna_enable = GPIO_DT_SPEC_INST_GET_OR(inst,		\
-							   antenna_enable_gpios, \
-							   {0}),		\
-		.tx_enable = GPIO_DT_SPEC_INST_GET_OR(inst, tx_enable_gpios,	\
-						      {0}),			\
-		.rx_enable = GPIO_DT_SPEC_INST_GET_OR(inst, rx_enable_gpios,	\
-						      {0}),			\
-		.dio2_tx_enable = DT_INST_PROP(inst, dio2_tx_enable),		\
-		.dio3_tcxo_enable = DT_INST_NODE_HAS_PROP(inst, dio3_tcxo_voltage), \
-		.dio3_tcxo_voltage = DT_INST_PROP_OR(inst, dio3_tcxo_voltage, 0), \
-		.tcxo_startup_delay_ms = DT_INST_PROP_OR(inst,			\
-						tcxo_power_startup_delay_ms, 10), \
-		.rx_boosted = DT_INST_PROP(inst, rx_boosted),			\
-		.regulator_ldo = DT_INST_PROP(inst, regulator_ldo),		\
-		.force_ldro = DT_INST_PROP(inst, force_ldro),			\
-	};									\
-										\
-	PM_DEVICE_DT_INST_DEFINE(inst, sx126x_pm_action);			\
-										\
-	DEVICE_DT_INST_DEFINE(inst, sx126x_init,				\
-			      PM_DEVICE_DT_INST_GET(inst),			\
-			      &sx126x_data_##inst, &sx126x_config_##inst,	\
-			      POST_KERNEL, CONFIG_LORA_INIT_PRIORITY,		\
+#define SX126X_INIT(inst, variant_in)							\
+	static struct sx126x_data sx126x_data_##inst;					\
+											\
+	static const struct sx126x_hal_config sx126x_config_##inst = {			\
+		.spi = SPI_DT_SPEC_INST_GET(inst,					\
+					    SPI_WORD_SET(8) | SPI_TRANSFER_MSB),	\
+		.reset = GPIO_DT_SPEC_INST_GET(inst, reset_gpios),			\
+		.busy = GPIO_DT_SPEC_INST_GET(inst, busy_gpios),			\
+		.dio1 = GPIO_DT_SPEC_INST_GET(inst, dio1_gpios),			\
+		.variant = variant_in,							\
+		.antenna_enable = GPIO_DT_SPEC_INST_GET_OR(inst,			\
+							   antenna_enable_gpios,	\
+							   {0}),			\
+		.tx_enable = GPIO_DT_SPEC_INST_GET_OR(inst, tx_enable_gpios,		\
+						      {0}),				\
+		.rx_enable = GPIO_DT_SPEC_INST_GET_OR(inst, rx_enable_gpios,		\
+						      {0}),				\
+		.dio2_tx_enable = DT_INST_PROP(inst, dio2_tx_enable),			\
+		.dio3_tcxo_enable = DT_INST_NODE_HAS_PROP(inst, dio3_tcxo_voltage),	\
+		.dio3_tcxo_voltage = DT_INST_PROP_OR(inst, dio3_tcxo_voltage, 0),	\
+		.tcxo_startup_delay_ms = DT_INST_PROP_OR(inst,				\
+						tcxo_power_startup_delay_ms, 10),	\
+		.rx_boosted = DT_INST_PROP(inst, rx_boosted),				\
+		.regulator_ldo = DT_INST_PROP(inst, regulator_ldo),			\
+		.force_ldro = DT_INST_PROP(inst, force_ldro),				\
+	};										\
+											\
+	PM_DEVICE_DT_INST_DEFINE(inst, sx126x_pm_action);				\
+											\
+	DEVICE_DT_INST_DEFINE(inst, sx126x_init,					\
+			      PM_DEVICE_DT_INST_GET(inst),				\
+			      &sx126x_data_##inst, &sx126x_config_##inst,		\
+			      POST_KERNEL, CONFIG_LORA_INIT_PRIORITY,			\
 			      &sx126x_lora_api);
 
 #define DT_DRV_COMPAT semtech_sx1262
-DT_INST_FOREACH_STATUS_OKAY_VARGS(SX126X_INIT, false)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(SX126X_INIT, SX126X_SX1262)
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT semtech_sx1261
-DT_INST_FOREACH_STATUS_OKAY_VARGS(SX126X_INIT, true)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(SX126X_INIT, SX126X_SX1261)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT semtech_sx1268
+DT_INST_FOREACH_STATUS_OKAY_VARGS(SX126X_INIT, SX126X_SX1268)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT semtech_llcc68
+DT_INST_FOREACH_STATUS_OKAY_VARGS(SX126X_INIT, SX126X_LLCC68)
 
 #undef DT_DRV_COMPAT
 
@@ -1734,43 +1825,43 @@ DT_INST_FOREACH_STATUS_OKAY_VARGS(SX126X_INIT, true)
  */
 #ifdef CONFIG_LORA_SX126X_NATIVE_STM32WL
 
-#define SX126X_STM32WL_PA_OUTPUT(inst)						\
-	COND_CODE_1(DT_INST_ENUM_IDX(inst, power_amplifier_output),		\
+#define SX126X_STM32WL_PA_OUTPUT(inst)							\
+	COND_CODE_1(DT_INST_ENUM_IDX(inst, power_amplifier_output),			\
 		    (SX126X_PA_OUTPUT_RFO_HP), (SX126X_PA_OUTPUT_RFO_LP))
 
-#define SX126X_STM32WL_INIT(inst)						\
-	static struct sx126x_data sx126x_stm32wl_data_##inst;			\
-										\
-	static const struct sx126x_hal_config sx126x_stm32wl_config_##inst = {	\
-		.spi = SPI_DT_SPEC_INST_GET(inst,				\
-					    SPI_WORD_SET(8) | SPI_TRANSFER_MSB), \
-		.pa_output = SX126X_STM32WL_PA_OUTPUT(inst),			\
-		.rfo_lp_max_power = DT_INST_PROP(inst, rfo_lp_max_power),	\
-		.rfo_hp_max_power = DT_INST_PROP(inst, rfo_hp_max_power),	\
-		.antenna_enable = GPIO_DT_SPEC_INST_GET_OR(inst,		\
-							   antenna_enable_gpios, \
-							   {0}),		\
-		.tx_enable = GPIO_DT_SPEC_INST_GET_OR(inst, tx_enable_gpios,	\
-						      {0}),			\
-		.rx_enable = GPIO_DT_SPEC_INST_GET_OR(inst, rx_enable_gpios,	\
-						      {0}),			\
-		.dio2_tx_enable = DT_INST_PROP(inst, dio2_tx_enable),		\
-		.dio3_tcxo_enable = DT_INST_NODE_HAS_PROP(inst, dio3_tcxo_voltage), \
-		.dio3_tcxo_voltage = DT_INST_PROP_OR(inst, dio3_tcxo_voltage, 0), \
-		.tcxo_startup_delay_ms = DT_INST_PROP_OR(inst,			\
-						tcxo_power_startup_delay_ms, 10), \
-		.rx_boosted = DT_INST_PROP(inst, rx_boosted),			\
-		.regulator_ldo = DT_INST_PROP(inst, regulator_ldo),		\
-		.force_ldro = DT_INST_PROP(inst, force_ldro),			\
-	};									\
-										\
-	PM_DEVICE_DT_INST_DEFINE(inst, sx126x_pm_action);			\
-										\
-	DEVICE_DT_INST_DEFINE(inst, sx126x_init,				\
-			      PM_DEVICE_DT_INST_GET(inst),			\
-			      &sx126x_stm32wl_data_##inst,			\
-			      &sx126x_stm32wl_config_##inst,			\
-			      POST_KERNEL, CONFIG_LORA_INIT_PRIORITY,		\
+#define SX126X_STM32WL_INIT(inst)							\
+	static struct sx126x_data sx126x_stm32wl_data_##inst;				\
+											\
+	static const struct sx126x_hal_config sx126x_stm32wl_config_##inst = {		\
+		.spi = SPI_DT_SPEC_INST_GET(inst,					\
+					    SPI_WORD_SET(8) | SPI_TRANSFER_MSB),	\
+		.pa_output = SX126X_STM32WL_PA_OUTPUT(inst),				\
+		.rfo_lp_max_power = DT_INST_PROP(inst, rfo_lp_max_power),		\
+		.rfo_hp_max_power = DT_INST_PROP(inst, rfo_hp_max_power),		\
+		.antenna_enable = GPIO_DT_SPEC_INST_GET_OR(inst,			\
+							   antenna_enable_gpios,	\
+							   {0}),			\
+		.tx_enable = GPIO_DT_SPEC_INST_GET_OR(inst, tx_enable_gpios,		\
+						      {0}),				\
+		.rx_enable = GPIO_DT_SPEC_INST_GET_OR(inst, rx_enable_gpios,		\
+						      {0}),				\
+		.dio2_tx_enable = DT_INST_PROP(inst, dio2_tx_enable),			\
+		.dio3_tcxo_enable = DT_INST_NODE_HAS_PROP(inst, dio3_tcxo_voltage),	\
+		.dio3_tcxo_voltage = DT_INST_PROP_OR(inst, dio3_tcxo_voltage, 0),	\
+		.tcxo_startup_delay_ms = DT_INST_PROP_OR(inst,				\
+						tcxo_power_startup_delay_ms, 10),	\
+		.rx_boosted = DT_INST_PROP(inst, rx_boosted),				\
+		.regulator_ldo = DT_INST_PROP(inst, regulator_ldo),			\
+		.force_ldro = DT_INST_PROP(inst, force_ldro),				\
+	};										\
+											\
+	PM_DEVICE_DT_INST_DEFINE(inst, sx126x_pm_action);				\
+											\
+	DEVICE_DT_INST_DEFINE(inst, sx126x_init,					\
+			      PM_DEVICE_DT_INST_GET(inst),				\
+			      &sx126x_stm32wl_data_##inst,				\
+			      &sx126x_stm32wl_config_##inst,				\
+			      POST_KERNEL, CONFIG_LORA_INIT_PRIORITY,			\
 			      &sx126x_lora_api);
 
 #define DT_DRV_COMPAT st_stm32wl_subghz_radio

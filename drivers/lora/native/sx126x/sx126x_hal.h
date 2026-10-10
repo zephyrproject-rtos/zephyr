@@ -14,13 +14,22 @@
 #define SX126X_PA_OUTPUT_RFO_LP 0
 #define SX126X_PA_OUTPUT_RFO_HP 1
 
+enum sx126x_variants {
+	SX126X_INVALID = 0,
+	SX126X_SX1261,
+	SX126X_SX1262,
+	SX126X_SX1268,
+	SX126X_LLCC68,
+	SX126X_MAX
+};
+
 struct sx126x_hal_config {
 	struct spi_dt_spec spi;
 #ifdef CONFIG_LORA_SX126X_NATIVE_STANDALONE
 	struct gpio_dt_spec reset;
 	struct gpio_dt_spec busy;
 	struct gpio_dt_spec dio1;
-	bool is_sx1261;
+	enum sx126x_variants variant;
 #elif CONFIG_LORA_SX126X_NATIVE_STM32WL
 	uint8_t pa_output;
 	int8_t rfo_lp_max_power;
