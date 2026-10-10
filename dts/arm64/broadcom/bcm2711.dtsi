@@ -111,6 +111,30 @@
 			status = "disabled";
 		};
 
+		/*
+		 * brcm,dma-channel-mask = 0x0730 keeps channels 4,5,8,9,10.
+		 * Channels 4 and 5 have dedicated lines; 7,8 share SPI 87
+		 * and 9,10 share SPI 88. Channels 11..14 are DMA4 engines
+		 * with a different register layout and are not described.
+		 */
+		dma: dma@fe007000 {
+			compatible = "brcm,bcm2835-dma";
+			reg = <0xfe007000 0xb00>;
+			interrupts = <GIC_SPI 84 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 85 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 87 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 88 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			#dma-cells = <1>;
+			dma-channels = <11>;
+			brcm,dma-channel-mask = <0x0730>;
+			dma-buf-addr-alignment = <64>;
+			status = "disabled";
+		};
+
 		pinctrl: pin-controller@fe200000 {
 			compatible = "brcm,bcm2711-pinctrl";
 			reg = <0xfe200000 0xf4>;
