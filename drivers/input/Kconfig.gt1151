@@ -1,0 +1,34 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig INPUT_GT1151
+	bool "Goodix GT1151 capacitive touch panel driver"
+	default y
+	depends on DT_HAS_GOODIX_GT1151_ENABLED
+	select I2C
+	select INPUT_TOUCH
+	help
+	  Enable driver for Goodix GT1151 capacitive touch controllers.
+
+if INPUT_GT1151
+
+config INPUT_GT1151_PERIOD_MS
+	int "Sample period"
+	depends on !INPUT_GT1151_INTERRUPT
+	default 10
+	help
+	  Sample period in milliseconds when in polling mode.
+
+config INPUT_GT1151_INTERRUPT
+	bool "Interrupt"
+	help
+	  Enable interrupt support (requires GPIO).
+
+config INPUT_GT1151_MAX_TOUCH_POINTS
+	int "Maximum touch points"
+	default 1
+	range 1 10
+	help
+	  Maximum number of touch points to report.
+
+endif

@@ -21,6 +21,7 @@ tests:
     harness: none
     integration_platforms:
       - native_sim/native/64
+      - esp32s3_lcd_ev/esp32s3/procpu
   sample.display.lvgl.rk055hdmipi4m:
     tags: shield
     # This sample is intended to test the RT1170 and RT595, which require
