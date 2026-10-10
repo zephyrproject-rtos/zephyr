@@ -12,8 +12,8 @@
 #include <zephyr/init.h>
 #include <zephyr/fs/fs.h>
 #include <zephyr/fs/fs_sys.h>
+#include <zephyr/logging/log.h>
 
-#define LFS_LOG_REGISTER
 #include <lfs_util.h>
 
 #include <lfs.h>
@@ -27,6 +27,8 @@
 #endif
 
 #include "fs_impl.h"
+
+LOG_MODULE_DECLARE(littlefs, CONFIG_FS_LOG_LEVEL);
 
 /* Used on devices that have no explicit erase */
 #define LITTLEFS_DEFAULT_BLOCK_SIZE     4096
