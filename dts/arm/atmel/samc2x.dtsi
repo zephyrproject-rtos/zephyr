@@ -48,6 +48,28 @@
 			reg = <0>;
 
 			device_type = "cpu";
+			cpu-power-states = <&idle0 &idle2>;
+		};
+
+		power-states {
+			idle0: state0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+				min-residency-us = <20>;
+			};
+
+			idle2: state1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <500>;
+			};
+
+			standby: state2 {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				min-residency-us = <5000>;
+				status = "disabled";
+			};
 		};
 	};
 

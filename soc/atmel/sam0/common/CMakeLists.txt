@@ -5,6 +5,8 @@
 
 zephyr_sources(soc_port.c)
 
+zephyr_sources_ifdef(CONFIG_PM power.c)
+
 zephyr_sources_ifdef(CONFIG_BOOTLOADER_BOSSA bossa.c)
 
 zephyr_sources_ifdef(CONFIG_SOC_SERIES_SAMC20 soc_samc2x.c)
