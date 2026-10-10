@@ -1,0 +1,10 @@
+tests:
+  drivers.fuel_gauge.hy4245:
+    tags:
+      - drivers
+      - fuel_gauge
+    filter: dt_compat_enabled("hycon,hy4245")
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
