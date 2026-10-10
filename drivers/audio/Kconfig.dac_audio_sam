@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Ugo Marchand
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig AUDIO_CODEC_DAC_SAM
+	bool "Atmel SAM DAC audio playback driver"
+	default y
+	depends on DT_HAS_ATMEL_SAM_DAC_AUDIO_ENABLED
+	depends on SOC_SERIES_SAMX7X
+	select CACHE_MANAGEMENT if DCACHE
+	select DAC
+	select DMA
+	help
+	  Enable PCM audio playback on an Atmel SAM DACC channel, paced by a
+	  Timer Counter channel and fed by the DMA.
+
+config AUDIO_CODEC_DAC_SAM_MAX_BLOCK_SIZE
+	int "Maximum PCM block size in bytes"
+	depends on AUDIO_CODEC_DAC_SAM
+	default 512
+	range 2 32766
+	help
+	  Size of the largest block the driver accepts, in bytes. The driver
+	  statically allocates two buffers of this size per instance, so the
+	  cost in RAM is twice this value. Must be even, since one sample is
+	  two bytes.
