@@ -298,7 +298,7 @@ int flash_stm32_ex_op_rdp(const struct device *dev, const uintptr_t in,
 #endif
 	}
 
-	return rc;
+	return rc < 0 ? rc : 0;
 }
 #endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
 
