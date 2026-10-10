@@ -61,7 +61,9 @@ _xtensa_hifi_save:
 xtensa_lazy_hifi_load:
 	entry a1, 32
 	/* Spill registers onto stack */
-	call8 xthal_window_spill
+	mov a4, a0
+	call0 xtensa_spill_reg_windows
+	mov a0, a4
 
 	/* A2 should be address of hifi storage; A3 is scratch */
 	xchal_cp1_load a2 a3 a3 a3 a3
@@ -75,7 +77,9 @@ xtensa_lazy_hifi_load:
 xtensa_lazy_hifi_save:
 	entry a1, 32
 	/* Spill registers onto stack */
-	call8 xthal_window_spill
+	mov a4, a0
+	call0 xtensa_spill_reg_windows
+	mov a0, a4
 
 	/* A2 should be address of hifi storage; A3 is scratch */
 	xchal_cp1_store a2 a3 a3 a3 a3  /* Only A2 and A3 are used by macro */
