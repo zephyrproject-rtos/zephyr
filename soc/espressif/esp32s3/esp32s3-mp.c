@@ -25,6 +25,7 @@
 #ifdef CONFIG_SOC_ENABLE_APPCPU
 
 #include <bootloader_flash_priv.h>
+#include <hal/cpu_utility_ll.h>
 
 #define sys_mmap   bootloader_mmap
 #define sys_munmap bootloader_munmap
@@ -160,9 +161,35 @@ int IRAM_ATTR esp_appcpu_image_load(unsigned int hdr_offset, unsigned int *entry
 	return 0;
 }
 
+enum {
+	APPCPU_STOPPED = 0,
+	APPCPU_RUNNING,
+	APPCPU_PAUSED,
+};
+
+static int appcpu_state;
+
 void esp_appcpu_image_stop(void)
 {
+	appcpu_state = APPCPU_STOPPED;
 	esp_cpu_stall(1);
+}
+
+/* Stall APPCPU while flash ops suspend the shared cache (XIP). */
+void IRAM_ATTR soc_mp_pause_others(void)
+{
+	if (appcpu_state == APPCPU_RUNNING) {
+		cpu_utility_ll_stall_cpu(1);
+		appcpu_state = APPCPU_PAUSED;
+	}
+}
+
+void IRAM_ATTR soc_mp_resume_others(void)
+{
+	if (appcpu_state == APPCPU_PAUSED) {
+		appcpu_state = APPCPU_RUNNING;
+		cpu_utility_ll_unstall_cpu(1);
+	}
 }
 
 void esp_appcpu_image_start(unsigned int hdr_offset)
@@ -179,6 +206,7 @@ void esp_appcpu_image_start(unsigned int hdr_offset)
 	esp_appcpu_image_load(hdr_offset, &entry_addr);
 
 	esp_appcpu_start((void *)entry_addr);
+	appcpu_state = APPCPU_RUNNING;
 }
 
 int esp_appcpu_init(void)
