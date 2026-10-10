@@ -45,6 +45,14 @@ extern "C" {
  */
 
 /**
+ * @brief Emulated GPIO input high-impedance (tristate) value
+ *
+ * Pass to @ref gpio_emul_input_set or @ref gpio_emul_input_set_dt to set an
+ * emulated GPIO input pin to the high-impedance (tristate) state.
+ */
+#define GPIO_EMUL_INPUT_HI_Z 2
+
+/**
  * @brief Modify the values of one or more emulated GPIO input @p pins
  *
  * @param port The emulated GPIO port
@@ -62,16 +70,12 @@ int gpio_emul_input_set_masked(const struct device *port, gpio_port_pins_t pins,
  *
  * @param port The emulated GPIO port
  * @param pin The pin to modify
- * @param value New values to assign to @p pin
+ * @param value New values to assign to @p pin (0, 1, or @ref GPIO_EMUL_INPUT_HI_Z)
  *
  * @return 0 on success
  * @return -EINVAL if an invalid argument is provided
  */
-static inline int gpio_emul_input_set(const struct device *port, gpio_pin_t pin,
-				     int value)
-{
-	return gpio_emul_input_set_masked(port, BIT(pin), value ? BIT(pin) : 0);
-}
+int gpio_emul_input_set(const struct device *port, gpio_pin_t pin, int value);
 
 /**
  * @brief Modify the value of one emulated GPIO input pin from a @p gpio_dt_spec

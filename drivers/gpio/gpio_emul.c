@@ -86,6 +86,8 @@ struct gpio_emul_data {
 	gpio_flags_t *flags;
 	/** Input values for each pin */
 	gpio_port_value_t input_vals;
+	/** Tristate status for each input pin */
+	gpio_port_pins_t input_is_tristate;
 	/** Output values for each pin */
 	gpio_port_value_t output_vals;
 	/** Interrupt status for each pin */
@@ -352,6 +354,9 @@ int gpio_emul_input_set_masked(const struct device *port, gpio_port_pins_t mask,
 	key = k_spin_lock(&drv_data->lock);
 	prev_input_values = drv_data->input_vals;
 	rv = gpio_emul_input_set_masked_int(port, mask, values);
+	if (rv == 0) {
+		drv_data->input_is_tristate &= ~mask;
+	}
 	input_values = drv_data->input_vals;
 	k_spin_unlock(&drv_data->lock, key);
 	if (rv) {
@@ -360,6 +365,48 @@ int gpio_emul_input_set_masked(const struct device *port, gpio_port_pins_t mask,
 
 	gpio_emul_pend_interrupt(port, mask, prev_input_values, input_values);
 	return 0;
+}
+
+/* documented in drivers/gpio/gpio_emul.h */
+int gpio_emul_input_set(const struct device *port, gpio_pin_t pin, int value)
+{
+	struct gpio_emul_data *drv_data = (struct gpio_emul_data *)port->data;
+	const struct gpio_emul_config *config = (const struct gpio_emul_config *)port->config;
+	gpio_port_pins_t prev_input_values;
+	gpio_port_pins_t input_values;
+	k_spinlock_key_t key;
+	int rv;
+
+	if (!gpio_port_pin_is_supported(config->common.port_pin_mask, pin)) {
+		LOG_ERR("Pin not supported port_pin_mask=%x pin=%u", config->common.port_pin_mask,
+			pin);
+		return -EINVAL;
+	}
+
+	switch (value) {
+	case 0:
+	case 1:
+		return gpio_emul_input_set_masked(port, BIT(pin), value ? BIT(pin) : 0);
+	case GPIO_EMUL_INPUT_HI_Z:
+		key = k_spin_lock(&drv_data->lock);
+		prev_input_values = drv_data->input_vals;
+		rv = gpio_emul_input_set_masked_int(
+			port, BIT(pin), (drv_data->flags[pin] & GPIO_PULL_UP) ? BIT(pin) : 0);
+		if (rv == 0) {
+			drv_data->input_is_tristate |= BIT(pin);
+		}
+		input_values = drv_data->input_vals;
+		k_spin_unlock(&drv_data->lock, key);
+		if (rv) {
+			return rv;
+		}
+
+		gpio_emul_pend_interrupt(port, BIT(pin), prev_input_values, input_values);
+		return 0;
+	default:
+		LOG_ERR("Invalid input value=%d", value);
+		return -EINVAL;
+	}
 }
 
 /* documented in drivers/gpio/gpio_emul.h */
@@ -460,13 +507,14 @@ static int gpio_emul_pin_configure(const struct device *port, gpio_pin_t pin,
 			}
 		}
 	} else if (flags & GPIO_INPUT) {
-		if (flags & GPIO_PULL_UP) {
-			rv = gpio_emul_input_set_masked_int(port, BIT(pin), BIT(pin));
-			__ASSERT_NO_MSG(rv == 0);
-		} else if (flags & GPIO_PULL_DOWN) {
-			rv = gpio_emul_input_set_masked_int(
-				port, BIT(pin), 0);
-			__ASSERT_NO_MSG(rv == 0);
+		if (drv_data->input_is_tristate & BIT(pin)) {
+			if (flags & GPIO_PULL_UP) {
+				rv = gpio_emul_input_set_masked_int(port, BIT(pin), BIT(pin));
+				__ASSERT_NO_MSG(rv == 0);
+			} else if (flags & GPIO_PULL_DOWN) {
+				rv = gpio_emul_input_set_masked_int(port, BIT(pin), 0);
+				__ASSERT_NO_MSG(rv == 0);
+			}
 		}
 	}
 
@@ -890,31 +938,25 @@ static int gpio_emul_pm_device_pm_action(const struct device *dev,
 		* GPIO_EMUL_INT_CAP_LEVEL_LOW				\
 	)
 
-#define DEFINE_GPIO_EMUL(_num)						\
-									\
-	static gpio_flags_t						\
-		gpio_emul_flags_##_num[DT_INST_PROP(_num, ngpios)];	\
-									\
-	static const struct gpio_emul_config gpio_emul_config_##_num = {\
-		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(_num),	\
-		.num_pins = DT_INST_PROP(_num, ngpios),			\
-		.interrupt_caps = GPIO_EMUL_INT_CAPS(_num)		\
-	};								\
-	BUILD_ASSERT(							\
-		DT_INST_PROP(_num, ngpios) <= GPIO_MAX_PINS_PER_PORT,	\
-		"Too many ngpios");					\
-									\
-	static struct gpio_emul_data gpio_emul_data_##_num = {		\
-		.flags = gpio_emul_flags_##_num,			\
-	};								\
-									\
-	PM_DEVICE_DT_INST_DEFINE(_num, gpio_emul_pm_device_pm_action);	\
-									\
-	DEVICE_DT_INST_DEFINE(_num, gpio_emul_init,			\
-			    PM_DEVICE_DT_INST_GET(_num),		\
-			    &gpio_emul_data_##_num,			\
-			    &gpio_emul_config_##_num, POST_KERNEL,	\
-			    CONFIG_GPIO_INIT_PRIORITY,			\
-			    &gpio_emul_driver);
+#define DEFINE_GPIO_EMUL(_num)                                                                     \
+                                                                                                   \
+	static gpio_flags_t gpio_emul_flags_##_num[DT_INST_PROP(_num, ngpios)];                    \
+                                                                                                   \
+	static const struct gpio_emul_config gpio_emul_config_##_num = {                           \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(_num),                                   \
+		.num_pins = DT_INST_PROP(_num, ngpios),                                            \
+		.interrupt_caps = GPIO_EMUL_INT_CAPS(_num)};                                       \
+	BUILD_ASSERT(DT_INST_PROP(_num, ngpios) <= GPIO_MAX_PINS_PER_PORT, "Too many ngpios");     \
+                                                                                                   \
+	static struct gpio_emul_data gpio_emul_data_##_num = {                                     \
+		.flags = gpio_emul_flags_##_num,                                                   \
+		.input_is_tristate = GPIO_PORT_PIN_MASK_FROM_DT_INST(_num),                        \
+	};                                                                                         \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(_num, gpio_emul_pm_device_pm_action);                             \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(_num, gpio_emul_init, PM_DEVICE_DT_INST_GET(_num),                   \
+			      &gpio_emul_data_##_num, &gpio_emul_config_##_num, POST_KERNEL,       \
+			      CONFIG_GPIO_INIT_PRIORITY, &gpio_emul_driver);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_GPIO_EMUL)

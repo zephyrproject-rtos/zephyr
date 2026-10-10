@@ -55,15 +55,9 @@ static void gpio_emul_callback_handler(const struct device *port,
 		return;
 	}
 
-	if ((output_flags == GPIO_DISCONNECTED) && (input_flags & GPIO_INPUT)) {
-		if (input_flags & GPIO_PULL_UP) {
-			val = 1;
-		} else {
-			/* either GPIO_PULL_DOWN or no input */
-			val = 0;
-		}
-
-		r = gpio_emul_input_set(port, PIN_IN, val);
+	if ((pins & BIT(PIN_OUT)) && (output_flags == GPIO_DISCONNECTED) &&
+	    (input_flags & GPIO_INPUT)) {
+		r = gpio_emul_input_set(port, PIN_IN, GPIO_EMUL_INPUT_HI_Z);
 		__ASSERT(r == 0, "gpio_emul_input_set() failed: %d", r);
 
 		return;
