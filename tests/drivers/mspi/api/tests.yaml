@@ -38,6 +38,7 @@ tests:
       - stm32h5f5j_dk
       - stm32h7b3i_dk
       - stm32h735g_disco
+      - b_u585i_iot02a
   drivers.mspi.api.xec:
     tags:
       - drivers
