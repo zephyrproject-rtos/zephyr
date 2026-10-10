@@ -12,6 +12,9 @@
 #include <zephyr/precision_timing/precision_clock_ptp.h>
 #include <zephyr/sys/clock.h>
 
+/* Scaled ppm values are passed to the PTP clock as they are. */
+BUILD_ASSERT(PRECISION_CLOCK_SCALED_PPM_SHIFT == PTP_CLOCK_SCALED_PPM_SHIFT);
+
 static const struct ptp_clock_driver_api *ptp_api(const struct precision_clock *precision_clk)
 {
 	const struct precision_clock_ptp_adapter *adapter = precision_clk->data;
@@ -78,12 +81,8 @@ static int precision_clock_ptp_adjust_rate(const struct precision_clock *precisi
 					   int64_t scaled_ppm)
 {
 	const struct precision_clock_ptp_adapter *adapter = precision_clk->data;
-	const struct ptp_clock_driver_api *api = ptp_api(precision_clk);
-	/* The existing PTP clock API expresses the adjustment as a rate ratio. */
-	double rate_ratio =
-		1.0 + (double)scaled_ppm / (1000000.0 * PRECISION_CLOCK_SCALED_PPM_ONE);
 
-	return api->rate_adjust(adapter->dev, rate_ratio);
+	return ptp_clock_adjust_rate(adapter->dev, scaled_ppm);
 }
 
 static const struct precision_clock_api precision_clock_ptp_api = {

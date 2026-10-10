@@ -156,7 +156,13 @@ static int ptp_clock_stm32_adjust(const struct device *dev, int increment)
 	return ret;
 }
 
-static int ptp_clock_stm32_rate_adjust(const struct device *dev, double ratio)
+/* Limits of the rate offset in scaled ppm, 1 % is 10000 ppm */
+#define ETH_STM32_PTP_SCALED_PPM_MIN                                                               \
+	((CONFIG_ETH_STM32_HAL_PTP_CLOCK_ADJ_MIN_PCT - 100) * 10000 * PTP_CLOCK_SCALED_PPM_ONE)
+#define ETH_STM32_PTP_SCALED_PPM_MAX                                                               \
+	((CONFIG_ETH_STM32_HAL_PTP_CLOCK_ADJ_MAX_PCT - 100) * 10000 * PTP_CLOCK_SCALED_PPM_ONE)
+
+static int ptp_clock_stm32_adjust_rate(const struct device *dev, int64_t scaled_ppm)
 {
 	const struct device *eth_dev = dev->config;
 	struct eth_stm32_hal_dev_data *eth_dev_data = eth_dev->data;
@@ -166,15 +172,20 @@ static int ptp_clock_stm32_rate_adjust(const struct device *dev, double ratio)
 
 	key = irq_lock();
 
-	/* Limit possible ratio */
-	if (ratio * 100 < CONFIG_ETH_STM32_HAL_PTP_CLOCK_ADJ_MIN_PCT ||
-			ratio * 100 > CONFIG_ETH_STM32_HAL_PTP_CLOCK_ADJ_MAX_PCT) {
+	/* Limit possible rate offset */
+	if ((scaled_ppm < ETH_STM32_PTP_SCALED_PPM_MIN) ||
+	    (scaled_ppm > ETH_STM32_PTP_SCALED_PPM_MAX)) {
 		ret = -EINVAL;
 		goto error;
 	}
 
 	/* Update addend register */
-	addend_val = UINT32_MAX * (double)eth_dev_data->clk_ratio * ratio;
+	ret = ptp_clock_adjust_by_scaled_ppm(eth_dev_data->ptp_nominal_addend, scaled_ppm,
+					     &addend_val);
+	if (ret != 0) {
+		ret = -EINVAL;
+		goto error;
+	}
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
 	heth->Instance->MACTSAR = addend_val;
@@ -268,7 +279,7 @@ static DEVICE_API(ptp_clock, api) = {
 	.set = ptp_clock_stm32_set,
 	.get = ptp_clock_stm32_get,
 	.adjust = ptp_clock_stm32_adjust,
-	.rate_adjust = ptp_clock_stm32_rate_adjust,
+	.adjust_rate = ptp_clock_stm32_adjust_rate,
 };
 
 BUILD_ASSERT(NSEC_PER_SEC % CONFIG_ETH_STM32_HAL_PTP_CLOCK_SRC_HZ == 0,
@@ -286,7 +297,6 @@ static int ptp_stm32_init(const struct device *dev)
 	int ret;
 	uint32_t ptp_clk_rate;
 	uint32_t ss_incr_ns = NSEC_PER_SEC / CONFIG_ETH_STM32_HAL_PTP_CLOCK_SRC_HZ;
-	uint32_t addend_val;
 
 	eth_dev_data->ptp_clock = dev;
 
@@ -308,20 +318,19 @@ static int ptp_stm32_init(const struct device *dev)
 	heth->Instance->PTPSSIR = ss_incr_ns;
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */
 
-	/* Program timestamp addend register */
-	eth_dev_data->clk_ratio =
-		((double)CONFIG_ETH_STM32_HAL_PTP_CLOCK_SRC_HZ) / ((double)ptp_clk_rate);
 	/*
-	 * clk_ratio is the ratio between the desired PTP clock frequency and the
-	 * MAC timestamp reference clock. Because that reference is derived from a
-	 * physical oscillator, it might drift due to manufacturing tolerances and
-	 * environmental effects (e.g. temperature). It gets adjusted by calling
-	 * ptp_clock_stm32_rate_adjust().
+	 * Program timestamp addend register
+	 *
+	 * The nominal addend is the ratio between the desired PTP clock frequency and the
+	 * MAC timestamp reference clock, scaled by the 2^32 range of the accumulator.
+	 * Because that reference is derived from a physical oscillator, it might drift due
+	 * to manufacturing tolerances and environmental effects (e.g. temperature). The
+	 * addend gets adjusted by calling ptp_clock_stm32_adjust_rate().
 	 */
-	addend_val =
-		UINT32_MAX * eth_dev_data->clk_ratio;
+	eth_dev_data->ptp_nominal_addend = (uint32_t)MIN(
+		(BIT64(32) * CONFIG_ETH_STM32_HAL_PTP_CLOCK_SRC_HZ) / ptp_clk_rate, UINT32_MAX);
 
-	eth_stm32_ptp_set_addend(heth, addend_val);
+	eth_stm32_ptp_set_addend(heth, eth_dev_data->ptp_nominal_addend);
 
 	eth_stm32_ptp_enable_fine_timestamp_update(heth);
 

@@ -446,6 +446,13 @@ Deprecated APIs and options
   * The Nordic SoC headers :file:`<haltium_power.h>` and :file:`<haltium_pm_s2ram.h>`
     have been renamed to :file:`<soc_power.h>` and :file:`<soc_pm_s2ram.h>` respectively.
 
+* PTP Clock
+
+  * :c:func:`ptp_clock_rate_adjust` and the :c:member:`ptp_clock_driver_api.rate_adjust` driver
+    operation are deprecated in favor of :c:func:`ptp_clock_adjust_rate` and
+    :c:member:`ptp_clock_driver_api.adjust_rate`, which take the rate offset as scaled parts per
+    million instead of a floating-point ratio.
+
 * Raspberry Pi
 
   * The RP2350 ``SOC_RP2350A_HAZARD3``, ``SOC_RP2350A_M33``, ``SOC_RP2350B_HAZARD3``, and
@@ -953,6 +960,15 @@ New APIs and options
   * :c:macro:`LOG_INST_DBG_PM_DEVICE_RUNTIME_PUT`
   * :c:macro:`LOG_INST_WRN_PM_DEVICE_RUNTIME_PUT`
   * :c:macro:`LOG_INST_ERR_PM_DEVICE_RUNTIME_PUT`
+
+* PTP Clock
+
+  * :c:func:`ptp_clock_adjust_rate` and the :c:member:`ptp_clock_driver_api.adjust_rate` driver
+    operation (clock rate offset as scaled parts per million instead of a floating-point ratio)
+  * :c:func:`ptp_clock_scaled_ppm_to_ppb`
+  * :c:func:`ptp_clock_adjust_by_scaled_ppm`
+  * :c:macro:`PTP_CLOCK_SCALED_PPM_SHIFT`
+  * :c:macro:`PTP_CLOCK_SCALED_PPM_ONE`
 
 * Pulse IO
 
