@@ -61,6 +61,7 @@ static void airoc_wifi_network_process_ethernet_data(whd_interface_t interface,
 						     whd_buffer_t buffer);
 int airoc_wifi_init_primary(const struct device *dev, whd_interface_t *interface,
 			    whd_netif_funcs_t *netif_funcs, whd_buffer_funcs_t *buffer_if);
+void airoc_wifi_bus_detach(whd_driver_t whd_driver);
 
 /* Allocate network pool */
 NET_BUF_POOL_FIXED_DEFINE(airoc_pool, AIROC_WIFI_PACKET_POOL_COUNT, AIROC_WIFI_PACKET_POOL_SIZE, 0,
@@ -150,6 +151,38 @@ static struct k_thread airoc_wifi_event_thread;
 whd_interface_t airoc_wifi_get_whd_interface(void)
 {
 	return airoc_if;
+}
+
+static int airoc_wifi_reset(const struct device *dev)
+{
+	struct airoc_wifi_data *data = (struct airoc_wifi_data *) dev->data;
+	whd_result_t result;
+	cy_rslt_t whd_ret;
+
+	result = whd_wifi_off(airoc_sta_if);
+	if (result != WHD_SUCCESS) {
+		LOG_ERR("whd_wifi_off failed ret = %d \r\n", result);
+		return -EAGAIN;
+	}
+
+	airoc_wifi_bus_detach(airoc_sta_if->whd_driver);
+
+	result = whd_deinit(airoc_sta_if);
+	if (result != WHD_SUCCESS) {
+		LOG_ERR("whd_deinit failed ret = %d \r\n", result);
+		return -EAGAIN;
+	}
+
+	whd_ret = airoc_wifi_init_primary(dev, &airoc_sta_if, &airoc_wifi_netif_if_default,
+					  &airoc_wifi_buffer_if_default);
+	if (whd_ret != CY_RSLT_SUCCESS) {
+		LOG_ERR("airoc_wifi_init_primary failed ret = %d \r\n", whd_ret);
+		return -EAGAIN;
+	}
+
+	data->is_sta_connected = false;
+
+	return 0;
 }
 
 static void airoc_wifi_scan_cb_search(whd_scan_result_t **result_ptr, void *user_data,
@@ -1007,7 +1040,7 @@ static int airoc_mgmt_disconnect(const struct device *dev, struct net_if *iface)
 	}
 
 	if (whd_wifi_leave(airoc_sta_if) != WHD_SUCCESS) {
-		ret = -EAGAIN;
+		ret = airoc_wifi_reset(dev);
 	} else {
 		data->is_sta_connected = false;
 		net_if_dormant_on(iface);
