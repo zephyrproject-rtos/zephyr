@@ -2557,7 +2557,7 @@ static int adc_stm32_suspend_setup(const struct device *dev)
 
 	/* Stop device clock. Note: fixed clocks are not handled yet. */
 	err = clock_control_off(clk, (clock_control_subsys_t)&clk_cfg->pclken);
-	if (err != 0) {
+	if (err != 0 && err != -ENOTSUP) {
 		LOG_ERR("Could not disable ADC clock");
 		return err;
 	}
