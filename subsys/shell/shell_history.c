@@ -62,7 +62,7 @@ static bool remove_from_tail(struct shell_history *history)
 		return false;
 	}
 
-	node = sys_dlist_peek_tail(&history->list);
+	node = sys_dlist_peek_tail_not_empty(&history->list);
 	sys_dlist_remove(node);
 	k_heap_free(history->heap, CONTAINER_OF(node, struct shell_history_item, dnode));
 	return true;
