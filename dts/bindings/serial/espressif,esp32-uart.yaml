@@ -5,6 +5,9 @@ compatible: "espressif,esp32-uart"
 include: [uart-controller.yaml, uart-controller-pin-inversion.yaml, pinctrl-device.yaml]
 
 properties:
+  framing-error-reporting:
+    default: "ISR_SAVED"
+
   reg:
     required: true
 
