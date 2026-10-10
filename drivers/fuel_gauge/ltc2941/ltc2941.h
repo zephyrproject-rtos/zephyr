@@ -1,0 +1,48 @@
+/*
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_DRIVERS_FUEL_GAUGE_LTC2941_H_
+#define ZEPHYR_DRIVERS_FUEL_GAUGE_LTC2941_H_
+
+#include <zephyr/sys/util.h>
+
+enum ltc2941_regs {
+	LTC2941_REG_STATUS = 0x00,
+	LTC2941_REG_CONTROL = 0x01,
+	LTC2941_REG_ACC_CHARGE_MSB = 0x02,
+	LTC2941_REG_ACC_CHARGE_LSB = 0x03,
+	LTC2941_REG_CHG_THRESH_HIGH_MSB = 0x04,
+	LTC2941_REG_CHG_THRESH_HIGH_LSB = 0x05,
+	LTC2941_REG_CHG_THRESH_LOW_MSB = 0x06,
+	LTC2941_REG_CHG_THRESH_LOW_LSB = 0x07,
+};
+
+/* Status register A (0x00), read-only. Bit A[7] is hard-coded chip ID. */
+#define LTC2941_STATUS_CHIP_ID  BIT(7)
+#define LTC2941_STATUS_AC_OU    BIT(5)
+#define LTC2941_STATUS_CHG_HIGH BIT(3)
+#define LTC2941_STATUS_CHG_LOW  BIT(2)
+#define LTC2941_STATUS_VBAT     BIT(1)
+#define LTC2941_STATUS_UVLO     BIT(0)
+
+/* Control register B (0x01). Power-on default is 0x3C. */
+#define LTC2941_CTRL_SHUTDOWN       BIT(0)
+#define LTC2941_CTRL_ALCC_MASK      GENMASK(2, 1)
+#define LTC2941_CTRL_PRESCALER_MASK GENMASK(5, 3)
+#define LTC2941_CTRL_VBAT_MASK      GENMASK(7, 6)
+
+#define LTC2941_ALCC_DISABLED        0x00
+#define LTC2941_ALCC_CHARGE_COMPLETE BIT(1)
+#define LTC2941_ALCC_ALERT           BIT(2)
+
+/* qLSB = 0.085 mAh * (50 mOhm / Rsense) * (M / 128) */
+#define LTC2941_QLSB_UAH        85u
+#define LTC2941_RSENSE_REF_MOHM 50u
+#define LTC2941_PRESCALER_REF   128u
+#define LTC2941_ACC_CHARGE_POR  0x7FFF
+#define LTC2941_ACC_CHARGE_FULL 0xFFFF
+
+#endif /* ZEPHYR_DRIVERS_FUEL_GAUGE_LTC2941_H_ */
