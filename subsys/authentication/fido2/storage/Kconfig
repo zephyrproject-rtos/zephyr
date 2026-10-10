@@ -1,4 +1,4 @@
-# Copyright (c) 2026 Siratul Islam <email@sirat.me>
+# Copyright (c) 2026 Siratul Islam <siratul.islam@linux.dev>
 # SPDX-License-Identifier: Apache-2.0
 
 menu "Credential Storage"
@@ -13,6 +13,14 @@ config FIDO2_STORAGE_SETTINGS
 	help
 	  Store FIDO2 credentials using the Zephyr settings subsystem.
 
+config FIDO2_STORAGE_PSA_PROTECTED_STORAGE
+	bool "PSA Protected Storage"
+	depends on TFM_PARTITION_PROTECTED_STORAGE || SECURE_STORAGE
+	help
+	  Store FIDO2 credentials using the PSA Protected Storage API.
+	  When using Secure Storage, CONFIG_SECURE_STORAGE_ITS_MAX_DATA_SIZE
+	  must be at least the credential size. 600 bytes recommended.
+
 config FIDO2_STORAGE_NONE
 	bool "No persistent storage"
 	help
@@ -26,5 +34,12 @@ config FIDO2_STORAGE_CUSTOM
 	  must provide its own implementation.
 
 endchoice
+
+if FIDO2_STORAGE_PSA_PROTECTED_STORAGE
+
+configdefault SECURE_STORAGE_ITS_MAX_DATA_SIZE
+	default 600
+
+endif
 
 endmenu
