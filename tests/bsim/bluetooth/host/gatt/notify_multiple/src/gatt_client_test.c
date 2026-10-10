@@ -219,12 +219,46 @@ static void test_subscribed(struct bt_conn *conn,
 }
 
 static volatile size_t num_notifications;
+static uint16_t fallback_notification_lengths[FALLBACK_NOTIFICATION_COUNT];
+
 uint8_t test_notify(struct bt_conn *conn, struct bt_gatt_subscribe_params *params, const void *data,
 		    uint16_t length)
 {
-	printk("Received notification #%u with length %d\n", num_notifications++, length);
+	size_t notification = num_notifications++;
+
+	printk("Received notification #%zu with length %u\n", notification, length);
+
+	if (notification >= NOTIFICATION_COUNT) {
+		size_t fallback_idx = notification - NOTIFICATION_COUNT;
+
+		TEST_ASSERT(fallback_idx < ARRAY_SIZE(fallback_notification_lengths),
+			    "Too many fallback notifications");
+		fallback_notification_lengths[fallback_idx] = length;
+	}
 
 	return BT_GATT_ITER_CONTINUE;
+}
+
+static void verify_fallback_notifications(void)
+{
+	uint16_t mtu = bt_gatt_get_mtu(g_conn);
+	uint16_t remaining[2] = {
+		fallback_notification_lengths[2],
+		fallback_notification_lengths[3],
+	};
+
+	TEST_ASSERT(fallback_notification_lengths[0] == FALLBACK_SHORT_LEN,
+		    "Pending notification has length %u, expected %u",
+		    fallback_notification_lengths[0], FALLBACK_SHORT_LEN);
+	TEST_ASSERT(fallback_notification_lengths[1] == mtu - 3,
+		    "Fallback notification has length %u, expected %u",
+		    fallback_notification_lengths[1], mtu - 3);
+
+	/* EATT bearers may complete the remaining notifications out of order. */
+	TEST_ASSERT((remaining[0] == mtu - 4 && remaining[1] == mtu - 5) ||
+			    (remaining[0] == mtu - 5 && remaining[1] == mtu - 4),
+		    "Boundary notifications have lengths %u and %u, expected %u and %u",
+		    remaining[0], remaining[1], mtu - 4, mtu - 5);
 }
 
 static struct bt_gatt_discover_params disc_params_short;
@@ -348,9 +382,11 @@ static void test_main(void)
 
 	printk("Subscribed\n");
 
-	while (num_notifications < NOTIFICATION_COUNT) {
+	while (num_notifications < NOTIFICATION_COUNT + FALLBACK_NOTIFICATION_COUNT) {
 		k_sleep(K_MSEC(100));
 	}
+
+	verify_fallback_notifications();
 
 	subscribe(&sub_params_short, false);
 	subscribe(&sub_params_long, false);
