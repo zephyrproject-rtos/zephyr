@@ -1,0 +1,27 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+
+/ {
+	soc {
+		sram: sram@14000000 {
+			ranges = <0x4000000 0x14000000 DT_SIZE_K(16)>,
+				 <0x20004000 0x30004000 DT_SIZE_K(112)>;
+		};
+
+		peripheral: peripheral@50000000 {
+			ranges = <0x0 0x50000000 0x10000000>;
+		};
+
+		iap: flash-controller@50034000 {
+			reg = <0x50034000 0x18>;
+			ranges = <0x0 0x10000000 DT_SIZE_K(1016)>;
+		};
+	};
+};
+
+#include "nxp_mcxw23x_common.dtsi"
