@@ -28,8 +28,8 @@
  *   Run 2: B_RUN (2nd time, PROPAGATE), PARENT_AB_RUN (transitions to STATE_C)
  *           -> B_EXIT, PARENT_AB_EXIT, transition(B,C), PARENT_C_ENTRY, C_ENTRY
  *   Run 3: C_RUN (1st time, propagate), PARENT_C_RUN (self-transition to PARENT_C)
- *           -> C_EXIT, PARENT_C_EXIT(self), PARENT_C_ENTRY(self),
- *              transition(C,C), C_ENTRY
+ *           -> C_EXIT, PARENT_C_EXIT(self), transition(C,C),
+ *              PARENT_C_ENTRY(self), C_ENTRY
  *   Run 4: C_RUN (2nd time, transitions to D)
  *           -> C_EXIT, PARENT_C_EXIT, transition(C,D), D_ENTRY
  */
@@ -323,6 +323,12 @@ ZTEST(smf_tests, test_smf_self_transition_instrumented_normal)
 
 	zassert_equal(transition_log[3].source, &test_states[STATE_C]);
 	zassert_equal(transition_log[3].dest, &test_states[STATE_D]);
+
+	/* Each transition comes after its exit actions and before its entry actions */
+	zassert_equal(transition_log[0].action_count, 2);
+	zassert_equal(transition_log[1].action_count, 8);
+	zassert_equal(transition_log[2].action_count, 14, "Self-transition after PARENT_C_ENTRY");
+	zassert_equal(transition_log[3].action_count, 19);
 
 	zassert_equal(smf_get_current_leaf_state(SMF_CTX(&test_obj)), &test_states[STATE_D]);
 
