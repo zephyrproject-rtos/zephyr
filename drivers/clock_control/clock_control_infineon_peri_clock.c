@@ -28,22 +28,25 @@ struct ifx_peri_clock_data {
 	uint8_t div_type;
 };
 
+/* Built only on parts that pack instance/group into the clock destination; the
+ * others compute a destination of 0 and never call this helper.
+ */
+#if defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_HAS_GROUP)
 static inline en_clk_dst_t peri_pclk_build_en_clk_dst(uint8_t output, uint8_t group,
 						      uint8_t instance)
 {
 	en_clk_dst_t clk_dst;
 
 	clk_dst = output;
-#if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) || defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 	/* These devices pack instance, group, and output together in the en_clk_dst_t.  Group and
 	 * Instance are used by the enable_divider and set_divider functions to determine which
 	 * clock is being referenced.
 	 */
 	clk_dst |= ((uint32_t)group << PERI_PCLK_GR_NUM_Pos);
 	clk_dst |= ((uint32_t)instance << PERI_PCLK_INST_NUM_Pos);
-#endif
 	return clk_dst;
 }
+#endif
 
 static int ifx_cat1_peri_clock_init(const struct device *dev)
 {
@@ -57,10 +60,10 @@ static int ifx_cat1_peri_clock_init(const struct device *dev)
 	 * specific peripheral connection is not needed in the underlying pdl enable and
 	 * clock configuration calls.
 	 */
-#if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) || defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+#if defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_HAS_GROUP)
 	clk_dst = peri_pclk_build_en_clk_dst(0, data->clock.group, data->clock.instance);
 #else
-	/* For PSOC4, clk_dst is simply 0 since we don't have instance/group fields */
+	/* Parts without packed group/instance fields use a destination of 0. */
 	clk_dst = 0;
 #endif
 
@@ -97,8 +100,8 @@ static int ifx_cat1_peri_clock_init(const struct device *dev)
 		.instance = DT_INST_PROP_BY_IDX(n, peri_group, 0),                                 \
 		.group = DT_INST_PROP_BY_IDX(n, peri_group, 1),                                    \
 	},
-#elif defined(CY_IP_MXPERI) || defined(CY_IP_M0S8PERI)
-/* PSOC4 devices - struct ifx_cat1_clock only has block and channel fields */
+#elif defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+/* PSOC 4 devices - struct ifx_cat1_clock only has block and channel fields */
 #define PERI_CLOCK_INIT(n)                                                                         \
 	.clock = {                                                                                 \
 		.block = DT_INST_PROP(n, div_type),                                                \
