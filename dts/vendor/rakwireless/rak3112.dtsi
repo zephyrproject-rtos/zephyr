@@ -3,33 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/dts-v1/;
 #include <espressif/esp32s3/esp32s3.dtsi>
-#include "rak3112-pinctrl.dtsi"
-#include <zephyr/dt-bindings/input/input-event-codes.h>
-#include <espressif/partitions_0x0_amp_16M.dtsi>
+#include <zephyr/dt-bindings/pinctrl/esp32s3-pinctrl.h>
 #include <zephyr/dt-bindings/lora/sx126x.h>
-
-/ {
-	model = "RAK3112 PROCPU";
-	compatible = "espressif,esp32s3";
-
-	aliases {
-		i2c-1 = &i2c1;
-		uart-0 = &uart0;
-		watchdog0 = &wdt0;
-		lora0 = &lora;
-	};
-
-	chosen {
-		zephyr,sram = &sram1;
-		zephyr,console = &uart0;
-		zephyr,shell-uart = &uart0;
-		zephyr,flash = &flash0;
-		zephyr,code-partition = &slot0_partition;
-		zephyr,bt-hci = &esp32_bt_hci;
-	};
-};
 
 &flash0 {
 	reg = <0x0 DT_SIZE_M(16)>;
@@ -40,18 +16,31 @@
 	size = <DT_SIZE_M(2)>;
 };
 
-&gpio0 {
-	status = "okay";
-};
+&pinctrl {
+	spim2_default: spim2_default {
+		group1 {
+			pinmux = <SPIM2_MISO_GPIO3>,
+				 <SPIM2_SCLK_GPIO5>,
+				 <SPIM2_CSEL_GPIO7>;
+		};
 
-&gpio1 {
-	status = "okay";
-};
+		group2 {
+			pinmux = <SPIM2_MOSI_GPIO6>;
+			output-low;
+		};
+	};
 
-&i2c0 {
-	clock-frequency = <I2C_BITRATE_STANDARD>;
-	pinctrl-0 = <&i2c0_default>;
-	pinctrl-names = "default";
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_GPIO43>;
+			output-high;
+		};
+
+		group2 {
+			pinmux = <UART0_RX_GPIO44>;
+			bias-pull-up;
+		};
+	};
 };
 
 &spi2 {
@@ -80,36 +69,4 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
-};
-
-&wdt0 {
-	status = "okay";
-};
-
-&trng0 {
-	status = "okay";
-};
-
-&timer0 {
-	status = "okay";
-};
-
-&timer1 {
-	status = "okay";
-};
-
-&timer2 {
-	status = "okay";
-};
-
-&timer3 {
-	status = "okay";
-};
-
-&esp32_bt_hci {
-	status = "okay";
-};
-
-&wifi {
-	status = "okay";
 };
