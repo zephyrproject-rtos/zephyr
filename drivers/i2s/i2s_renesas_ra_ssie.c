@@ -267,11 +267,12 @@ static void i2s_renesas_ra_free_stream(struct i2s_config *cfg,
 	stream->mem_block_len = 0;
 }
 
-static int i2s_renesas_ra_put_stream(struct k_msgq *msgq, struct renesas_ra_ssie_stream *stream)
+static int i2s_renesas_ra_put_stream(struct k_msgq *msgq, struct renesas_ra_ssie_stream *stream,
+				     k_timeout_t timeout)
 {
 	__ASSERT((msgq != NULL && stream != NULL), "Invalid parameter");
 
-	return k_msgq_put(msgq, stream, K_NO_WAIT);
+	return k_msgq_put(msgq, stream, timeout);
 }
 
 static int i2s_renesas_ra_get_stream(struct k_msgq *msgq, struct renesas_ra_ssie_stream *stream,
@@ -498,7 +499,7 @@ static void renesas_ra_ssie_rx_callback(const struct device *dev)
 		return;
 	}
 
-	ret = i2s_renesas_ra_put_stream(&dev_data->rx_queue, &dev_data->rx_stream);
+	ret = i2s_renesas_ra_put_stream(&dev_data->rx_queue, &dev_data->rx_stream, K_NO_WAIT);
 	if (ret < 0) {
 		dev_data->state = I2S_STATE_ERROR;
 		free_stream = true;
@@ -549,7 +550,7 @@ stop:
 		return;
 	}
 
-	ret = i2s_renesas_ra_put_stream(&dev_data->rx_queue, &dev_data->rx_stream);
+	ret = i2s_renesas_ra_put_stream(&dev_data->rx_queue, &dev_data->rx_stream, K_NO_WAIT);
 	if (ret < 0) {
 		dev_data->state = I2S_STATE_ERROR;
 		goto free;
@@ -1019,7 +1020,8 @@ static int i2s_renesas_ra_ssie_write(const struct device *dev, void *mem_block, 
 		return -EIO;
 	}
 
-	ret = i2s_renesas_ra_put_stream(&dev_data->tx_queue, &tx_stream);
+	ret = i2s_renesas_ra_put_stream(&dev_data->tx_queue, &tx_stream,
+					SYS_TIMEOUT_MS(dev_data->tx_cfg.timeout));
 	if (ret < 0) {
 		return ret;
 	}
@@ -1031,8 +1033,9 @@ static int i2s_renesas_ra_ssie_read(const struct device *dev, void **mem_block, 
 {
 	struct renesas_ra_ssie_data *dev_data = dev->data;
 	struct renesas_ra_ssie_stream rx_stream;
-	k_timeout_t timeout =
-		(dev_data->state == I2S_STATE_ERROR) ? K_NO_WAIT : K_MSEC(dev_data->rx_cfg.timeout);
+	k_timeout_t timeout = (dev_data->state == I2S_STATE_ERROR)
+				      ? K_NO_WAIT
+				      : SYS_TIMEOUT_MS(dev_data->rx_cfg.timeout);
 	int ret;
 
 	if (!dev_data->rx_configured) {
