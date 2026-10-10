@@ -74,8 +74,21 @@ static inline uint32_t clock_bflb_get_root_clock(void)
 
 /** @cond INTERNAL_HIDDEN */
 
-/* Avoid overflow when calculating multipliers */
+/* Avoid overflow when calculating multipliers by reducing precision to 100 KHz
+ * Every _value and _base should be a multiple of this to stay exact
+ */
+#define BFLB_MUL_CLK_UNIT	100000U
+
+/* (_value * _top) / _base without 64-bit division. _top is evaluated twice. */
 #define BFLB_MUL_CLK(_value, _top, _base) \
+	((((uint32_t)(_top) / ((uint32_t)(_base) / BFLB_MUL_CLK_UNIT)) * \
+	  ((uint32_t)(_value) / BFLB_MUL_CLK_UNIT)) + \
+	 ((((uint32_t)(_top) % ((uint32_t)(_base) / BFLB_MUL_CLK_UNIT)) * \
+	   ((uint32_t)(_value) / BFLB_MUL_CLK_UNIT)) / \
+	  ((uint32_t)(_base) / BFLB_MUL_CLK_UNIT)))
+
+/* Runnable from XIP (__udivdi3 call from libgcc) */
+#define BFLB_MUL_CLK_XIP(_value, _top, _base) \
 	(((uint64_t)(_value) * (uint64_t)(_top)) / (uint64_t)(_base))
 
 /** @endcond */
