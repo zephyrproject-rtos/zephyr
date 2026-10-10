@@ -72,3 +72,18 @@ properties:
   inversion-on:
     type: boolean
     description: Turn on display color inverting
+
+  pixel-mapping:
+    type: string
+    default: "normal"
+    enum:
+      - "normal"
+      - "2-1-1"
+    description: Specify how display pixels map to memory pixels.
+
+      - "normal" The arrangement described in the datasheet, 6 pixels per 2 cells, one byte per cell
+        in mono, 3 bytes per cell in grayscale.
+      - "2-1-1" Every 2 cells control 4 pixels, 2 pixels in the first byte,
+        then one in both following bytes. Seen on BuyDisplay's 240x160 ST7586S serie.
+
+      The default is the scheme described in the controller's datasheet.
