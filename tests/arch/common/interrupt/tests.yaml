@@ -34,6 +34,11 @@ tests:
     extra_configs:
       - CONFIG_QEMU_ICOUNT=y
       - CONFIG_MINIMAL_LIBC=y
+  arch.interrupt.riscv_nested:
+    arch_allow: riscv
+    filter: CONFIG_RISCV_PRIVILEGED
+    extra_configs:
+      - CONFIG_RISCV_NESTED_INTERRUPTS=y
   arch.shared_interrupt:
     platform_exclude:
       # excluded because of failures during test_prevent_interruption

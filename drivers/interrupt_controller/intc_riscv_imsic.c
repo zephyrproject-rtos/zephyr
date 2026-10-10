@@ -200,6 +200,18 @@ static void imsic_mext_isr(const void *arg)
 	}
 
 	LOG_DBG("MEXT claimed EIID %u", eiid);
+
+#ifdef CONFIG_RISCV_NESTED_INTERRUPTS
+	const unsigned long outer_thresh = micsr_read(ICSR_EITHRESH);
+
+	/*
+	 * The threshold masks this identity and above, so only a lower, more
+	 * urgent identity can preempt.
+	 */
+	micsr_write(ICSR_EITHRESH, eiid);
+	arch_irq_unlock(RV_STATUS_IE);
+#endif /* CONFIG_RISCV_NESTED_INTERRUPTS */
+
 #if defined(CONFIG_RISCV_AIA)
 	riscv_aia_dispatch_eiid(eiid);
 #else
@@ -211,6 +223,12 @@ static void imsic_mext_isr(const void *arg)
 
 	_sw_isr_table[eiid].isr(_sw_isr_table[eiid].arg);
 #endif
+
+#ifdef CONFIG_RISCV_NESTED_INTERRUPTS
+	/* Undo the above in the opposite order */
+	(void)arch_irq_lock();
+	micsr_write(ICSR_EITHRESH, outer_thresh);
+#endif /* CONFIG_RISCV_NESTED_INTERRUPTS */
 }
 
 #ifdef CONFIG_SMP

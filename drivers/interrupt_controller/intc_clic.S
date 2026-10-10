@@ -48,6 +48,16 @@ SECTION_FUNC(exception.other, __soc_handle_irq)
 
 GTEXT(__soc_handle_all_irqs)
 
+/*
+ * Claiming through mnxti also sets or clears mstatus.MIE, so the ISR runs
+ * with interrupts enabled only when nesting is enabled.
+ */
+#ifdef CONFIG_RISCV_NESTED_INTERRUPTS
+#define CLAIM_NEXT_IRQ	csrrsi a0, CSR_MNXTI, MSTATUS_IEN
+#else
+#define CLAIM_NEXT_IRQ	csrrci a0, CSR_MNXTI, MSTATUS_IEN
+#endif
+
 #ifdef CONFIG_TRACING
 /* imports */
 GTEXT(sys_trace_isr_enter)
@@ -61,9 +71,9 @@ SECTION_FUNC(exception.other, __soc_handle_all_irqs)
 	addi sp, sp, -16
 	sr ra, 0(sp)
 
-	/* Read and clear mnxti to get highest current interrupt and enable interrupts. Will return
+	/* Read and clear mnxti to get the highest current interrupt. Will return
 	 * original interrupt if no others appear. */
-	csrrci a0, CSR_MNXTI, MSTATUS_IEN
+	CLAIM_NEXT_IRQ
 	beqz a0, irq_done /* Check if original interrupt vanished. */
 
 irq_loop:
@@ -93,11 +103,15 @@ irq_loop:
 	call sys_trace_isr_exit
 #endif
 
-	/* Read and clear mnxti to get highest current interrupt and enable interrupts. */
-	csrrci a0, CSR_MNXTI, MSTATUS_IEN
+	/* Read and clear mnxti to get the highest current interrupt. */
+	CLAIM_NEXT_IRQ
 	bnez a0, irq_loop
 
 irq_done:
+#ifdef CONFIG_RISCV_NESTED_INTERRUPTS
+	/* The interrupt exit path must not be preempted */
+	csrci mstatus, MSTATUS_IEN
+#endif /* CONFIG_RISCV_NESTED_INTERRUPTS */
 	lr ra, 0(sp)
 	addi sp, sp, 16
 	ret
