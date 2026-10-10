@@ -4,8 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "nrf5340dk_nrf5340_cpunet_common.dtsi"
 #include <zephyr/dt-bindings/ipc_service/static_vrings.h>
+
+/delete-node/ &ipc0;
 
 / {
 	reserved-memory {
