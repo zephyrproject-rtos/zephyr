@@ -1,0 +1,51 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP DCIF (Display Controller Interface)
+
+compatible: "nxp,dcif"
+
+include: [lcd-controller.yaml, pinctrl-device.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  backlight-gpios:
+    type: phandle-array
+    required: true
+    description:
+      LCD backlight control gpio. Driver will initialize this GPIO to active high
+
+  power-gpios:
+    type: phandle-array
+    description:
+      Panel power-enable gpio, driven active high once at init and left on.
+      Left blank for a panel whose power rail is not gpio-controlled.
+
+  data-bus-width:
+    type: string
+    default: "RGB565"
+    enum:
+      - "RGB888" # 24-bit
+      - "RBG888" # 24-bit
+      - "GBR888" # 24-bit
+      - "GRB888" # 24-bit
+      - "BRG888" # 24-bit
+      - "BGR888" # 24-bit
+      - "RGB555" # 15-bit XRRRRRGG_GGGBBBBB
+      - "RGB565" # 16-bit RRRRRGGG_GGGBBBBB
+      - "RGB666" # 18-bit XXXXXXRR_RRRRGGGG_GGBBBBBB
+    description:
+      DPI output data format of the controller sent to the panel. The default is
+      set to the reset value of RGB565. The enumerator order matches the DCIF HAL
+      dcif_dpi_output_format_t enumeration.
+
+  ext-ram:
+    type: phandle
+    description: |
+      Secondary RAM in which the controller's frame buffer(s) will
+      be stored. If not defined, the 'zephyr,ram' chosen memory will be used.

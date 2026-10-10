@@ -1,0 +1,37 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig DISPLAY_NXP_DCIF
+	bool "NXP DCIF driver"
+	default y
+	depends on DT_HAS_NXP_DCIF_ENABLED
+	select PINCTRL
+	help
+	  Enable support for NXP DCIF driver.
+
+
+if DISPLAY_NXP_DCIF
+
+config NXP_DCIF_FB_NUM
+	int "Framebuffers to allocate in driver"
+	default 1
+	range 0 2
+	help
+	  Number of framebuffers to allocate in DCIF driver. Driver allocated
+	  framebuffers are required to support partial display updates.
+	  The driver has been validated to support 0 through 2 framebuffers.
+	  Note that hardware will likely perform best if zero driver
+	  framebuffers are allocated by the driver, and the application
+	  implements double framebuffering by always calling display_write with
+	  a buffer equal in size to the connected panel.
+
+
+config NXP_DCIF_MAINTAIN_CACHE
+	bool "Maintain cache coherency"
+	default y
+	help
+	  Maintain cache coherency for DCIF framebuffer. This is generally
+	  required, unless an external framebuffer is utilized with custom
+	  caching settings, or caching is disabled.
+
+endif # DISPLAY_NXP_DCIF
