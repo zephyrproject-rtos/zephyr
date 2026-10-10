@@ -49,7 +49,12 @@ if version.parse(elftools.__version__) < version.parse('0.24'):
 
 # Job server only works on Linux for now.
 if sys.platform == 'linux':
-    from twisterlib.jobserver import GNUMakeJobClient, GNUMakeJobServer, JobClient
+    from twisterlib.jobserver import (
+        GNUMakeJobClient,
+        GNUMakeJobServer,
+        JobClient,
+        fifo_supported,
+    )
 
 from domains import Domains
 from twisterlib.coverage import run_coverage_instance
@@ -2018,7 +2023,10 @@ class TwisterRunner:
             if os.name == 'posix':
                 self.jobserver = GNUMakeJobClient.from_environ(jobs=self.options.jobs)
                 if not self.jobserver:
-                    self.jobserver = GNUMakeJobServer(self.jobs)
+                    self.jobserver = GNUMakeJobServer(
+                        self.jobs,
+                        fifo=fifo_supported(self.env.generator_cmd, self.options.extra_args),
+                    )
                 elif self.jobserver.jobs:
                     self.jobs = self.jobserver.jobs
             # TODO: Implement this on windows/mac also

@@ -3059,6 +3059,7 @@ def test_twisterrunner_run(
                     mock_client_from_environ), \
          mock.patch('twisterlib.runner.GNUMakeJobServer',
                     gnumakejobserver_mock), \
+         mock.patch('twisterlib.runner.fifo_supported', return_value=True), \
          mock.patch('twisterlib.runner.JobClient', jobclient_mock), \
          mock.patch('multiprocessing.cpu_count', return_value=8), \
          mock.patch('sys.platform', platform), \
@@ -3067,6 +3068,9 @@ def test_twisterrunner_run(
         tr.run()
 
     assert f'JOBS: {expected_jobs}' in caplog.text
+
+    if expected_jobserver == 'GNUMakeJobServer':
+        gnumakejobserver_mock.assert_called_with(expected_jobs, fifo=True)
 
     assert tr.jobserver.name == expected_jobserver
 
