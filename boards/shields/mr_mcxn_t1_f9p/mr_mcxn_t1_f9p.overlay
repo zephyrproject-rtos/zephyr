@@ -1,0 +1,72 @@
+/*
+ * Copyright (c) 2026 CogniPilot Foundation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/sensor/rm3100.h>
+
+/ {
+	aliases {
+		gnss = &gnss1;
+		mag-stream-0 = &rm3100_0;
+	};
+};
+
+/*
+ * u-blox F9P primary UART (receiver UART1) on FlexCOMM7. The board leaves
+ * the FlexCOMM parents and their children disabled; enable the parent and
+ * the UART child here. The reset line comes through the stacking-header GPIO
+ * nexus. Output rate (fix-rate) is left at the driver default so it stays an
+ * application choice.
+ */
+&flexcomm7 {
+	status = "okay";
+};
+
+&mr_mcxn_t1_gnss_uart {
+	status = "okay";
+	current-speed = <115200>;
+
+	gnss1: gnss {
+		compatible = "u-blox,f9p";
+		initial-baudrate = <38400>;
+		reset-gpios = <&mr_mcxn_t1_header 4 GPIO_ACTIVE_LOW>;
+	};
+};
+
+/*
+ * F9P corrections UART (receiver UART2) on FlexCOMM3: RTCM base-station
+ * output / correction input port.
+ */
+&flexcomm3 {
+	status = "okay";
+};
+
+&mr_mcxn_t1_gnss_uart2 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+/*
+ * PNI RM3100 magnetometer on FlexCOMM4 I2C. Address 0x23: the SA0 and SA1
+ * strap pins float high through the chip's internal pull-ups. The data-ready
+ * line comes through the stacking-header GPIO nexus.
+ */
+&flexcomm4 {
+	status = "okay";
+};
+
+&mr_mcxn_t1_gnss_i2c {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	rm3100_0: rm3100@23 {
+		compatible = "pni,rm3100";
+		reg = <0x23>;
+		int-gpios = <&mr_mcxn_t1_header 5 GPIO_ACTIVE_HIGH>;
+		odr = <RM3100_DT_ODR_150>;
+	};
+};

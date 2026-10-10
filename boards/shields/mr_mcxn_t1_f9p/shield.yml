@@ -1,0 +1,10 @@
+# Copyright (c) 2026 CogniPilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+shield:
+  name: mr_mcxn_t1_f9p
+  full_name: MR-MCXN-T1-F9P
+  vendor: nxp
+  supported_features:
+    - gnss
+    - sensor
