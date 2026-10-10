@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
+
 &mikrobus_spi {
 	status = "okay";
-	cs-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>;
+	cs-gpios = <&mikrobus_header MIKROBUS_CS GPIO_ACTIVE_LOW>;
 
 	bme280_mikroe_weather_click: bme280@0 {
 		status = "okay";

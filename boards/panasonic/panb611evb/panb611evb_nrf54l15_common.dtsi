@@ -6,6 +6,7 @@
 
 #include "panb611evb_nrf54l15-pinctrl.dtsi"
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
 
 / {
 	leds {
@@ -79,20 +80,20 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <0 0 &gpio1 6 0>,	/* AN */
+		gpio-map = <MIKROBUS_AN 0 &gpio1 6 0>,
 			   /* Not a GPIO*/		/* RST */
-			   <2 0 &gpio2 10 0>,	/* CS */
-			   <3 0 &gpio2 6 0>,	/* SCK */
-			   <4 0 &gpio2 9 0>,	/* MISO */
-			   <5 0 &gpio2 8 0>,	/* MOSI */
+			   <MIKROBUS_CS 0 &gpio2 10 0>,
+			   <MIKROBUS_SCK 0 &gpio2 6 0>,
+			   <MIKROBUS_MISO 0 &gpio2 9 0>,
+			   <MIKROBUS_MOSI 0 &gpio2 8 0>,
 			   /* +3.3V */
 			   /* GND */
-			   <6 0 &gpio1 15 0>,	/* PWM */
-			   <7 0 &gpio2 7 0>,	/* INT */
-			   <8 0 &gpio1 5 0>,	/* RX */
-			   <9 0 &gpio1 4 0>,	/* TX */
-			   <10 0 &gpio1 8 0>,	/* SCL */
-			   <11 0 &gpio1 9 0>;	/* SDA */
+			   <MIKROBUS_PWM 0 &gpio1 15 0>,
+			   <MIKROBUS_INT 0 &gpio2 7 0>,
+			   <MIKROBUS_RX 0 &gpio1 5 0>,
+			   <MIKROBUS_TX 0 &gpio1 4 0>,
+			   <MIKROBUS_SCL 0 &gpio1 8 0>,
+			   <MIKROBUS_SDA 0 &gpio1 9 0>;
 		/* +5V */
 		/* GND */
 	};

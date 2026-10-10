@@ -8,6 +8,7 @@
 #include <renesas/ra/ra8/r7fa8d1bhecbd.dtsi>
 #include <zephyr/dt-bindings/flash_controller/ospi.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/memory-controller/renesas,ra-sdram.h>
@@ -55,20 +56,20 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <0 0 &ioport0 4 0>,	/* AN  */
-			   <1 0 &ioport5 7 0>,	/* RST */
-			   <2 0 &ioport4 13 0>,	/* CS   */
-			   <3 0 &ioport4 12 0>,	/* SCK  */
-			   <4 0 &ioport4 10 0>,	/* MISO */
-			   <5 0 &ioport4 11 0>,	/* MOSI */
+		gpio-map = <MIKROBUS_AN 0 &ioport0 4 0>,
+			   <MIKROBUS_RST 0 &ioport5 7 0>,
+			   <MIKROBUS_CS 0 &ioport4 13 0>,
+			   <MIKROBUS_SCK 0 &ioport4 12 0>,
+			   <MIKROBUS_MISO 0 &ioport4 10 0>,
+			   <MIKROBUS_MOSI 0 &ioport4 11 0>,
 			   /* +3.3V */
 			   /* GND */
-			   <6 0 &ioport9 7 0>,	/* PWM  */
-			   <7 0 &ioport0 10 0>,	/* INT  */
-			   <8 0 &ioport4 8 0>,	/* RX   */
-			   <9 0 &ioport4 9 0>,	/* TX   */
-			   <10 0 &ioport4 0 0>,	/* SCL  */
-			   <11 0 &ioport4 1 0>;	/* SDA  */
+			   <MIKROBUS_PWM 0 &ioport9 7 0>,
+			   <MIKROBUS_INT 0 &ioport0 10 0>,
+			   <MIKROBUS_RX 0 &ioport4 8 0>,
+			   <MIKROBUS_TX 0 &ioport4 9 0>,
+			   <MIKROBUS_SCL 0 &ioport4 0 0>,
+			   <MIKROBUS_SDA 0 &ioport4 1 0>;
 		/* +5V */
 		/* GND */
 	};

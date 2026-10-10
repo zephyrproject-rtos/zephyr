@@ -6,6 +6,7 @@
  */
 
 #include <dt-bindings/adc/silabs-adc.h>
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
@@ -46,18 +47,18 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0>;
 		gpio-map-pass-thru = <0 GPIO_DT_FLAGS_MASK>;
-		gpio-map = <0 0 &gpiob 0 0>,  /* AN   */
-			   <1 0 &gpioc 6 0>,  /* RST  */
-			   <2 0 &gpioc 3 0>,  /* CS   */
-			   <3 0 &gpioc 2 0>,  /* SCK  */
-			   <4 0 &gpioc 5 0>,  /* MISO */
-			   <5 0 &gpioc 4 0>,  /* MOSI */
-			   <6 0 &gpiob 4 0>,  /* PWM  */
-			   <7 0 &gpiob 3 0>,  /* INT  */
-			   <8 0 &gpiob 2 0>,  /* RX   */
-			   <9 0 &gpiob 1 0>,  /* TX   */
-			   <10 0 &gpiod 2 0>, /* SCL  */
-			   <11 0 &gpiod 3 0>; /* SDA  */
+		gpio-map = <MIKROBUS_AN 0 &gpiob 0 0>,
+			   <MIKROBUS_RST 0 &gpioc 6 0>,
+			   <MIKROBUS_CS 0 &gpioc 3 0>,
+			   <MIKROBUS_SCK 0 &gpioc 2 0>,
+			   <MIKROBUS_MISO 0 &gpioc 5 0>,
+			   <MIKROBUS_MOSI 0 &gpioc 4 0>,
+			   <MIKROBUS_PWM 0 &gpiob 4 0>,
+			   <MIKROBUS_INT 0 &gpiob 3 0>,
+			   <MIKROBUS_RX 0 &gpiob 2 0>,
+			   <MIKROBUS_TX 0 &gpiob 1 0>,
+			   <MIKROBUS_SCL 0 &gpiod 2 0>,
+			   <MIKROBUS_SDA 0 &gpiod 3 0>;
 	};
 
 	pwmleds {

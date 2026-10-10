@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
 #include <freq.h>
 
 / {
@@ -14,21 +15,21 @@
 
 	transceiver0: can-phy0 {
 		compatible = "microchip,mcp2562", "can-transceiver-gpio";
-		standby-gpios = <&mikrobus_header 0 GPIO_ACTIVE_HIGH>;
+		standby-gpios = <&mikrobus_header MIKROBUS_AN GPIO_ACTIVE_HIGH>;
 		max-bitrate = <1000000>;
 		#phy-cells = <0>;
 	};
 };
 
 &mikrobus_spi {
-	cs-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>;
+	cs-gpios = <&mikrobus_header MIKROBUS_CS GPIO_ACTIVE_LOW>;
 
 	mcp25625_mikroe_mcp25625_click: can@0 {
 		compatible = "microchip,mcp2515";
 		reg = <0x0>;
 		spi-max-frequency = <DT_FREQ_M(10)>;
 		osc-freq = <DT_FREQ_M(20)>;
-		int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
+		int-gpios = <&mikrobus_header MIKROBUS_INT GPIO_ACTIVE_LOW>;
 		phys = <&transceiver0>;
 		status = "okay";
 	};

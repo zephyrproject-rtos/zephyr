@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
+
 / {
 	aliases {
 		rtc = &rv3032c_mikroe_rtc_18_click;
@@ -18,6 +20,6 @@
 		reg = <0x51>;
 		backup-switch-mode = "disabled";
 		clkout-frequency = <0>;
-		int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
+		int-gpios = <&mikrobus_header MIKROBUS_INT GPIO_ACTIVE_LOW>;
 	};
 };

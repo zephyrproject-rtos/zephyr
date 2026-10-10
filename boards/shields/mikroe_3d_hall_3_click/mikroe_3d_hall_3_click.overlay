@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
+
 / {
 	aliases {
 		magn0 = &lis2mdl_mikroe_3d_hall_3_click;
@@ -15,6 +17,6 @@
 	lis2mdl_mikroe_3d_hall_3_click: lis2mdl@1e {
 		compatible = "st,lis2mdl";
 		reg = <0x1e>;
-		irq-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&mikrobus_header MIKROBUS_INT GPIO_ACTIVE_LOW>;
 	};
 };

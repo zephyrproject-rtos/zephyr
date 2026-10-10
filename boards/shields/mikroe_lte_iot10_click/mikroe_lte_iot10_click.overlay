@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
+
 / {
 	aliases {
 		modem = &modem;
@@ -13,7 +15,7 @@
 	en_rts {
 		compatible = "regulator-fixed";
 		regulator-name = "enable-rts";
-		enable-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>;
+		enable-gpios = <&mikrobus_header MIKROBUS_CS GPIO_ACTIVE_LOW>;
 		regulator-boot-on;
 	};
 };
@@ -25,7 +27,9 @@
 	modem: modem {
 		status = "okay";
 		compatible = "sqn,gm02s";
-		mdm-wake-gpios = <&mikrobus_header 0 (GPIO_OPEN_SOURCE | GPIO_ACTIVE_HIGH)>;
-		mdm-reset-gpios = <&mikrobus_header 1 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
+		mdm-wake-gpios = <&mikrobus_header MIKROBUS_AN
+				  (GPIO_OPEN_SOURCE | GPIO_ACTIVE_HIGH)>;
+		mdm-reset-gpios = <&mikrobus_header MIKROBUS_RST
+				   (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
 	};
 };

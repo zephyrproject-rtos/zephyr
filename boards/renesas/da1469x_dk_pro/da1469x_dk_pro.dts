@@ -7,6 +7,7 @@
 #include <renesas/smartbond/da14699.dtsi>
 #include "da1469x_dk_pro-pinctrl.dtsi"
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -78,20 +79,20 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <0 0 &gpio1 9 0>,	/* AN  */
-			   <1 0 &gpio0 12 0>,	/* RST */
-			   <2 0 &gpio0 20 0>,	/* CS   */
-			   <3 0 &gpio0 21 0>,	/* SCK  */
-			   <4 0 &gpio0 24 0>,	/* MISO */
-			   <5 0 &gpio0 26 0>,	/* MOSI */
+		gpio-map = <MIKROBUS_AN 0 &gpio1 9 0>,
+			   <MIKROBUS_RST 0 &gpio0 12 0>,
+			   <MIKROBUS_CS 0 &gpio0 20 0>,
+			   <MIKROBUS_SCK 0 &gpio0 21 0>,
+			   <MIKROBUS_MISO 0 &gpio0 24 0>,
+			   <MIKROBUS_MOSI 0 &gpio0 26 0>,
 			   /* +3.3V */
 			   /* GND */
-			   <6 0 &gpio1 1 1>,	/* PWM  */
-			   <7 0 &gpio0 27 0>,	/* INT  */
-			   <8 0 &gpio0 28 0>,	/* RX   */
-			   <9 0 &gpio0 29 0>,	/* TX   */
-			   <10 0 &gpio0 30 0>,	/* SCL  */
-			   <11 0 &gpio0 31 0>;	/* SDA  */
+			   <MIKROBUS_PWM 0 &gpio1 1 1>,
+			   <MIKROBUS_INT 0 &gpio0 27 0>,
+			   <MIKROBUS_RX 0 &gpio0 28 0>,
+			   <MIKROBUS_TX 0 &gpio0 29 0>,
+			   <MIKROBUS_SCL 0 &gpio0 30 0>,
+			   <MIKROBUS_SDA 0 &gpio0 31 0>;
 		/* +5V */
 		/* GND */
 	};
@@ -101,20 +102,20 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <0 0 &gpio0 25 0>,	/* AN  */
-			   <1 0 &gpio0 12 0>,	/* RST */
-			   <2 0 &gpio1 2 0>,	/* CS   */
-			   <3 0 &gpio1 3 0>,	/* SCK  */
-			   <4 0 &gpio1 4 0>,	/* MISO */
-			   <5 0 &gpio1 5 0>,	/* MOSI */
+		gpio-map = <MIKROBUS_AN 0 &gpio0 25 0>,
+			   <MIKROBUS_RST 0 &gpio0 12 0>,
+			   <MIKROBUS_CS 0 &gpio1 2 0>,
+			   <MIKROBUS_SCK 0 &gpio1 3 0>,
+			   <MIKROBUS_MISO 0 &gpio1 4 0>,
+			   <MIKROBUS_MOSI 0 &gpio1 5 0>,
 			   /* +3.3V */
 			   /* GND */
-			   <6 0 &gpio1 6 0>,	/* PWM  */
-			   <7 0 &gpio1 7 0>,	/* INT  */
-			   <8 0 &gpio1 8 0>,	/* RX   */
-			   <9 0 &gpio0 17 0>,	/* TX   */
-			   <10 0 &gpio0 18 0>,	/* SCL  */
-			   <11 0 &gpio0 19 0>;	/* SDA  */
+			   <MIKROBUS_PWM 0 &gpio1 6 0>,
+			   <MIKROBUS_INT 0 &gpio1 7 0>,
+			   <MIKROBUS_RX 0 &gpio1 8 0>,
+			   <MIKROBUS_TX 0 &gpio0 17 0>,
+			   <MIKROBUS_SCL 0 &gpio0 18 0>,
+			   <MIKROBUS_SDA 0 &gpio0 19 0>;
 		/* +5V */
 		/* GND */
 	};

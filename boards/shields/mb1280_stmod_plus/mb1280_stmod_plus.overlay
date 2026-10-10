@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
 #include <zephyr/dt-bindings/gpio/stmod-plus-connector.h>
 
 / {
@@ -44,17 +45,17 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 GPIO_DT_FLAGS_MASK>;
-		gpio-map = <0 0 &stmod_plus_connector STMOD_PLUS_ADC 0>,     /* AN */
-			   <1 0 &stmod_plus_connector STMOD_PLUS_RESET 0>,   /* RST */
-			   <2 0 &stmod_plus_connector STMOD_PLUS_NSS_CTS 0>, /* CS */
-			   <3 0 &stmod_plus_connector STMOD_PLUS_SCK_RTS 0>, /* SCK */
-			   <4 0 &stmod_plus_connector STMOD_PLUS_MISOS 0>,   /* MISO */
-			   <5 0 &stmod_plus_connector STMOD_PLUS_MOSIS 0>,   /* MOSI */
-			   <6 0 &stmod_plus_connector STMOD_PLUS_PWM 0>,     /* PWM */
-			   <7 0 &stmod_plus_connector STMOD_PLUS_INT 0>,     /* INT */
-			   <8 0 &stmod_plus_connector STMOD_PLUS_MISO_RX 0>, /* RX */
-			   <9 0 &stmod_plus_connector STMOD_PLUS_MOSI_TX 0>, /* TX */
-			   <10 0 &stmod_plus_connector STMOD_PLUS_SCL 0>,    /* SCL */
-			   <11 0 &stmod_plus_connector STMOD_PLUS_SDA 0>;    /* SDA */
+		gpio-map = <MIKROBUS_AN 0 &stmod_plus_connector STMOD_PLUS_ADC 0>,
+			   <MIKROBUS_RST 0 &stmod_plus_connector STMOD_PLUS_RESET 0>,
+			   <MIKROBUS_CS 0 &stmod_plus_connector STMOD_PLUS_NSS_CTS 0>,
+			   <MIKROBUS_SCK 0 &stmod_plus_connector STMOD_PLUS_SCK_RTS 0>,
+			   <MIKROBUS_MISO 0 &stmod_plus_connector STMOD_PLUS_MISOS 0>,
+			   <MIKROBUS_MOSI 0 &stmod_plus_connector STMOD_PLUS_MOSIS 0>,
+			   <MIKROBUS_PWM 0 &stmod_plus_connector STMOD_PLUS_PWM 0>,
+			   <MIKROBUS_INT 0 &stmod_plus_connector STMOD_PLUS_INT 0>,
+			   <MIKROBUS_RX 0 &stmod_plus_connector STMOD_PLUS_MISO_RX 0>,
+			   <MIKROBUS_TX 0 &stmod_plus_connector STMOD_PLUS_MOSI_TX 0>,
+			   <MIKROBUS_SCL 0 &stmod_plus_connector STMOD_PLUS_SCL 0>,
+			   <MIKROBUS_SDA 0 &stmod_plus_connector STMOD_PLUS_SDA 0>;
 	};
 };
