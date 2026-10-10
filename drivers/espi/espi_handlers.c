@@ -148,7 +148,7 @@ static inline int z_vrfy_espi_receive_oob(const struct device *dev,
 	K_OOPS(K_SYSCALL_DRIVER_ESPI(dev, receive_oob));
 	K_OOPS(k_usermode_from_copy(&pckt_copy, pckt,
 				sizeof(struct espi_oob_packet)));
-	K_OOPS(K_SYSCALL_MEMORY_WRITE(pckt->buf, pckt->len));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(pckt_copy.buf, pckt_copy.len));
 
 	ret = z_impl_espi_receive_oob(dev, &pckt_copy);
 	K_OOPS(k_usermode_to_copy(pckt, &pckt_copy,
