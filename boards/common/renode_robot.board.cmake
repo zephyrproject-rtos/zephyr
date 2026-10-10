@@ -14,4 +14,9 @@ board_runner_args(renode-robot "--renode-robot-arg=--variable=UART:${RENODE_UART
 board_runner_args(renode-robot "--renode-robot-arg=--variable=KEYWORDS:${ZEPHYR_BASE}/tests/robot/common.robot")
 board_runner_args(renode-robot "--renode-robot-arg=--variable=RESULTS_DIR:${APPLICATION_BINARY_DIR}")
 
+if(SYSBUILD)
+  get_filename_component(SYSBUILD_ROOT_DIR "${CMAKE_BINARY_DIR}" DIRECTORY)
+  board_runner_args(renode-robot "--renode-robot-arg=--variable=SYSBUILD_DIR:${SYSBUILD_ROOT_DIR}")
+endif()
+
 board_finalize_runner_args(renode-robot)
