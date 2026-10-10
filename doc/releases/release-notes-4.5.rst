@@ -831,6 +831,21 @@ New APIs and options
 * Modem
 
   * :c:enumerator:`CELLULAR_MODEM_INFO_SERIAL_NUMBER`
+  * Modem cellular refuses to suspend (``-EBUSY``) while a devicetree child device
+    is still in use, instead of cutting power to it: a child under runtime PM that
+    holds a usage reference, or any other child in
+    :c:enumerator:`PM_DEVICE_STATE_ACTIVE`. Children without PM support or that
+    failed to initialize are ignored. Requires :kconfig:option:`CONFIG_DEVICE_DEPS`.
+  * Added optional ``gnss_power_on`` and ``gnss_shutdown`` chat scripts to
+    :c:struct:`modem_cellular_config_scripts`, for cellular modems with a GNSS
+    receiver controlled over the AT command channel. When ``gnss_shutdown`` is
+    set, it runs before the modem powers off.
+  * Added :c:func:`modem_cellular_gnss_power_on` and
+    :c:func:`modem_cellular_gnss_shutdown` to run the ``gnss_power_on`` and
+    ``gnss_shutdown`` chat scripts on demand, independently of the modem's own
+    suspend/resume cycle. Intended for the driver of the GNSS receiver.
+  * Added :kconfig:option:`CONFIG_MODEM_CELLULAR_U_BLOX_SARA_R4_GNSS` to provide the
+    GNSS scripts for u-blox SARA-R4.
 
 * Multimedia Pipeline
 

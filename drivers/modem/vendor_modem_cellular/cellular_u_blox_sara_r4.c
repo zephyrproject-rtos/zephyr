@@ -24,12 +24,17 @@ MODEM_CHAT_SCRIPT_DEFINE(u_blox_sara_r4_set_baudrate_chat_script,
 			 abort_matches, modem_cellular_chat_callback_handler, 1);
 #endif
 
+/* AT+UGPRF selects the GNSS tunneling output interface (2: muxed virtual port) and must be
+ * set before AT+CMUX is sent below. It is not accepted once CMUX is already running.
+ */
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	u_blox_sara_r4_init_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
 	MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100), MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
 	MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100), MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CSGT=1,\"APP RDY\"", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match)
+	IF_ENABLED(CONFIG_MODEM_CELLULAR_U_BLOX_SARA_R4_GNSS,
+		(, MODEM_CHAT_SCRIPT_CMD_RESP("AT+UGPRF=2", ok_match))),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMEE=1", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG=1", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGREG=1", ok_match),
@@ -47,6 +52,29 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 
 MODEM_CHAT_SCRIPT_DEFINE(u_blox_sara_r4_init_chat_script, u_blox_sara_r4_init_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
+
+#if defined(CONFIG_MODEM_CELLULAR_U_BLOX_SARA_R4_GNSS)
+/* AT+CMEE=1 in the init script makes the modem report errors as "+CME ERROR: <code>" */
+MODEM_CHAT_MATCHES_DEFINE(u_blox_sara_r4_gnss_abort_matches,
+			  MODEM_CHAT_MATCH("ERROR", "", NULL),
+			  MODEM_CHAT_MATCH("+CME ERROR: ", "", NULL));
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(u_blox_sara_r4_gnss_power_on_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+UGPS=1,0,15", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(u_blox_sara_r4_gnss_power_on_chat_script,
+			 u_blox_sara_r4_gnss_power_on_chat_script_cmds,
+			 u_blox_sara_r4_gnss_abort_matches, modem_cellular_chat_callback_handler,
+			 10);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(u_blox_sara_r4_gnss_shutdown_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+UGPS=0", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(u_blox_sara_r4_gnss_shutdown_chat_script,
+			 u_blox_sara_r4_gnss_shutdown_chat_script_cmds,
+			 u_blox_sara_r4_gnss_abort_matches, modem_cellular_chat_callback_handler,
+			 10);
+#endif
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(u_blox_sara_r4_dial_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT(
@@ -76,6 +104,10 @@ static const struct modem_cellular_vendor_config u_blox_sara_r4_vendor = {
 		.set_baudrate = &u_blox_sara_r4_set_baudrate_chat_script,
 #endif
 		.init = &u_blox_sara_r4_init_chat_script,
+#if defined(CONFIG_MODEM_CELLULAR_U_BLOX_SARA_R4_GNSS)
+		.gnss_power_on = &u_blox_sara_r4_gnss_power_on_chat_script,
+		.gnss_shutdown = &u_blox_sara_r4_gnss_shutdown_chat_script,
+#endif
 		.dial = &u_blox_sara_r4_dial_chat_script,
 		.periodic = &u_blox_sara_r4_periodic_chat_script,
 	},

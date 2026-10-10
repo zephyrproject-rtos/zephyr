@@ -1006,6 +1006,8 @@ void modem_chat_release(struct modem_chat *chat)
 	k_work_cancel_sync(&chat->script_abort_work, &sync);
 	k_work_cancel_sync(&chat->receive_work, &sync);
 	k_work_cancel_sync(&chat->script_send_work, &sync);
+	k_work_cancel_delayable_sync(&chat->script_timeout_work, &sync);
+	k_work_cancel_delayable_sync(&chat->script_send_timeout_work, &sync);
 
 	chat->pipe = NULL;
 	chat->receive_buf_len = 0;
