@@ -80,6 +80,8 @@ struct mipi_dsi_timings {
 #define MIPI_DSI_CLOCK_NON_CONTINUOUS	BIT(10)
 /** Transmit data in low power */
 #define MIPI_DSI_MODE_LPM		BIT(11)
+/** Keep the data lanes in high speed through the blanking periods */
+#define MIPI_DSI_MODE_HS_BLANKING	BIT(12)
 
 /** @} */
 
