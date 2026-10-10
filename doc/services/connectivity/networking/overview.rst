@@ -10,177 +10,168 @@ Overview
 Supported Features
 ******************
 
-The networking IP stack is modular and highly configurable via build-time
-configuration options. You can minimize system memory consumption by enabling
-only those network features required by your application. Almost all features
-can be disabled if not needed.
+The networking IP stack is modular and configured at build time. Enable only
+the features your application needs to minimize memory use; almost all of them
+can be disabled.
 
-* **IPv6** (:rfc:`8200`) is supported. Various IPv6 sub-options
-  can be enabled or disabled depending on networking needs.
+* **IPv6** (:rfc:`8200`), with build-time configurable sub-features:
 
-  * Developer can set the number of unicast and multicast IPv6 addresses that
-    are active at the same time.
-  * The IPv6 address for the device can be set either statically or
-    dynamically using SLAAC (Stateless Address Auto Configuration, :rfc:`4862`).
-  * The system also supports multiple IPv6 prefixes and the maximum
-    IPv6 prefix count can be configured at build time.
-  * The IPv6 neighbor cache can be disabled if not needed, and its size can be
-    configured at build time.
-  * The IPv6 neighbor discovery support (:rfc:`4861`) is enabled by default.
-  * Multicast Listener Discovery v2 support (:rfc:`3810`) is enabled by default.
-  * IPv6 header compression (6lo) is available for IPv6 connectivity for
-    IEEE 802.15.4 networks (:rfc:`4944`).
-  * DHCPv6 (Dynamic Host Configuration Protocol for IPv6) (:rfc:`8415`) client
-    functionality is supported.
-  * The IPv6 privacy extension (:rfc:`8981`) is supported.
+  * Number of unicast and multicast addresses active at the same time.
+  * Static addresses or SLAAC (Stateless Address Autoconfiguration,
+    :rfc:`4862`).
+  * Multiple prefixes, up to a configurable maximum.
+  * Optional neighbor cache of configurable size.
+  * Neighbor Discovery (:rfc:`4861`) and Multicast Listener Discovery v2
+    (:rfc:`3810`), enabled by default.
+  * 6LoWPAN header compression for IEEE 802.15.4 networks (:rfc:`4944`).
+  * DHCPv6 (:rfc:`8415`) client and server, including prefix delegation.
+    See :ref:`DHCPv6 <dhcpv6_interface>`.
+  * DNS server addresses from Router Advertisements (RDNSS, :rfc:`8106`).
+  * Privacy extensions (:rfc:`8981`).
+  * Fragmentation and Path MTU Discovery (:rfc:`8201`).
+  * Multicast routing and forwarding.
 
-* **IPv4** (:rfc:`791`) is supported. It cannot be used by IEEE 802.15.4 as
-  this network technology supports only IPv6. IPv4 can be used for example
-  in Ethernet, Wi-Fi and Cellular based networks.
+* **IPv4** (:rfc:`791`), for example on Ethernet, Wi-Fi and cellular networks.
+  IEEE 802.15.4 is IPv6 only.
 
-  * DHCP (Dynamic Host Configuration Protocol) client and server is supported
-    (:rfc:`2131`).
-  * The IPv4 address can also be configured manually. Static IPv4 addresses
-    are supported by default.
-  * IPv4 NAT (Network Address Translation) is supported. Packets can
-    hop between interfaces by performing SNAT and DNAT. Connection tracking
-    and iptable rules are used to filter and forward packets across subnets.
+  * DHCPv4 (:rfc:`2131`) client and server. See :ref:`DHCPv4 <dhcpv4_interface>`.
+  * Static addresses, enabled by default.
+  * Link-local address autoconfiguration (:rfc:`3927`) and address conflict
+    detection (:rfc:`5227`). Sample: :zephyr:code-sample:`ipv4-autoconf`.
+  * IGMPv2 (:rfc:`2236`) and IGMPv3 (:rfc:`3376`).
+  * Fragmentation and Path MTU Discovery (:rfc:`1191`).
+  * NAT (Network Address Translation): SNAT and DNAT between interfaces, with
+    connection tracking and iptables-like rules to filter and forward packets
+    across subnets.
 
-* **Dual stack support.** The networking stack allows a developer to configure
-  the system to use both IPv6 and IPv4 at the same time.
+* **Dual stack.** IPv6 and IPv4 can be used at the same time.
 
-* **UDP** User Datagram Protocol (:rfc:`768`) is supported.
-  The developer can send UDP datagrams (client side support) or create a
-  listener to receive UDP packets destined to certain port (server side
-  support).
+* **UDP** (:rfc:`768`), for sending datagrams and listening on a port, and
+  UDP options (:rfc:`9868`). Datagram Packetization Layer Path MTU Discovery
+  (DPLPMTUD, :rfc:`8899`) for UDP-based protocols, and for plain UDP sockets
+  through UDP options (:rfc:`9869`). See :ref:`DPLPMTUD <net_dplpmtud>`.
 
-* **TCP** Transmission Control Protocol (:rfc:`793`) is supported. Both server
-  and client roles can be used the application. The amount of TCP sockets
-  that are available to applications can be configured at build time.
-  Selective acknowledgment (:rfc:`2018`) is supported for received data
-  (:kconfig:option:`CONFIG_NET_TCP_SACK`).
+* **TCP** (:rfc:`9293`), client and server, with a build-time configurable
+  number of sockets. Selective acknowledgment (:rfc:`2018`) of received data
+  with :kconfig:option:`CONFIG_NET_TCP_SACK`.
 
-* **BSD Sockets API** Support for a subset of a
-  :ref:`BSD sockets compatible API <bsd_sockets_interface>` is
-  implemented. Both blocking and non-blocking datagram (UDP) and stream (TCP)
-  sockets are supported. Packet sockets (``AF_PACKET``) are also supported.
+* **QUIC** (:rfc:`9000`) with integrated TLS 1.3 (:rfc:`9001`).
+  See :ref:`QUIC <quic_transport_interface>`. Samples:
+  :zephyr:code-sample:`quic-client-echo`, :zephyr:code-sample:`quic-service-echo`.
 
-* **Secure Sockets API** Experimental support for TLS/DTLS secure protocols and
-  configuration options for sockets API. Secure functions for the implementation
-  are provided by Mbed TLS library.
+* **BSD Sockets API**, a subset of the :ref:`BSD sockets API <bsd_sockets_interface>`:
+  blocking and non-blocking datagram (UDP) and stream (TCP) sockets, and packet
+  sockets (``AF_PACKET``).
 
-* **MQTT** Message Queue Telemetry Transport (ISO/IEC PRF 20922) versions 3.1.1 and 5.0
-  are supported.
-  A sample :zephyr:code-sample:`mqtt-publisher` client application for MQTT v3.1.1 and v5.0
-  is provided.
+* **Secure Sockets API**, TLS and DTLS for the sockets API, backed by Mbed TLS.
+  See :ref:`secure sockets <secure_sockets_interface>`.
 
-* **MQTT-SN** MQTT for Sensor Networks version 1.2 is supported.
-  A sample :zephyr:code-sample:`mqtt-sn-publisher` client application is provided.
+* **MQTT** (ISO/IEC PRF 20922) versions 3.1.1 and 5.0.
+  Sample: :zephyr:code-sample:`mqtt-publisher`.
 
-* **CoAP** Constrained Application Protocol (:rfc:`7252`) is supported.
-  Both :zephyr:code-sample:`coap-client` and :zephyr:code-sample:`coap-server` sample
-  applications are provided.
+* **MQTT-SN** version 1.2. Sample: :zephyr:code-sample:`mqtt-sn-publisher`.
+
+* **CoAP** (:rfc:`7252`), with block-wise transfers (:rfc:`7959`), resource
+  observation (:rfc:`7641`), OSCORE (:rfc:`8613`), and CoAP over TCP and TLS
+  (:rfc:`8323`) for the client. Samples: :zephyr:code-sample:`coap-client`,
+  :zephyr:code-sample:`coap-server`.
 
 * **LwM2M** OMA Lightweight Machine-to-Machine Protocol
-  (`LwM2M specification 1.0.2`_) is supported via the "Bootstrap", "Client
-  Registration", "Device Management & Service Enablement" and "Information
-  Reporting" interfaces.  The required core LwM2M objects are implemented as
-  well as several IPSO Smart Objects. (`LwM2M specification 1.1.1`_) is
-  supported in similar manner when enabled with a Kconfig option.
-  :zephyr:code-sample:`lwm2m-client` sample implements the library as an example.
+  (`LwM2M specification 1.0.2`_, and `LwM2M specification 1.1.1`_ through a
+  Kconfig option): Bootstrap, Client Registration, Device Management & Service
+  Enablement and Information Reporting interfaces, the required core objects
+  and several IPSO Smart Objects. Sample: :zephyr:code-sample:`lwm2m-client`.
 
-* **HTTP** Hypertext Transfer Protocol client and server are supported.
-  :ref:`http_client_interface` library supports HTTP/1.1 (:rfc:`2616`).
-  :ref:`http_server_interface` library supports HTTP/1.1 (:rfc:`2616`) and
-  HTTP/2 (:rfc:`9113`).
-  :zephyr:code-sample:`sockets-http-client` and
-  :zephyr:code-sample:`sockets-http-server` samples are provided.
+* **HTTP** :ref:`client <http_client_interface>` for HTTP/1.1 (:rfc:`2616`) and
+  :ref:`server <http_server_interface>` for HTTP/1.1, HTTP/2 (:rfc:`9113`) and
+  HTTP/3 (:rfc:`9114`). Samples: :zephyr:code-sample:`sockets-http-client`,
+  :zephyr:code-sample:`sockets-http-server`.
 
-* **Websocket** (:rfc:`6455`) client is supported.
-  :zephyr:code-sample:`sockets-websocket-client` sample is provided.
+* **Websocket** (:rfc:`6455`) client, and Websocket upgrade in the HTTP server.
+  Sample: :zephyr:code-sample:`sockets-websocket-client`.
 
-* **DNS** Domain Name Service (:rfc:`1035`) client functionality is supported.
-  Applications can use the DNS API to query domain name information or IP
-  addresses from the DNS server. Both IPv4 (A) and IPv6 (AAAA) records can
-  be queried.
-  Both multicast DNS (mDNS) (:rfc:`6762`) and link-local multicast name resolution
-  (LLMNR, :rfc:`4795`) are supported.
-  The DNS Service Discovery (:rfc:`6763`) is also supported.
+* **DNS** (:rfc:`1035`) resolver for IPv4 (A) and IPv6 (AAAA) records, multicast
+  DNS (mDNS, :rfc:`6762`), DNS Service Discovery (DNS-SD, :rfc:`6763`) and the
+  deprecated LLMNR (:rfc:`4795`). An mDNS responder answers queries and
+  advertises DNS-SD services. Sample: :zephyr:code-sample:`mdns-responder`.
 
-* **Network Management API.** Applications can use network management API to
-  listen management events generated by core network stack when for example IP address
-  is added to the device, or network interface is coming up etc.
+* **Network Management API** to receive events from the network stack, for
+  example when an IP address is added or an interface comes up.
 
-* **Wi-Fi Management API.** Applications can use Wi-Fi management API to
-  manage the interface, in example to connect to Wi-Fi network and to scan
-  available Wi-Fi networks.
+* **Wi-Fi Management API** to manage Wi-Fi interfaces, for example to scan for
+  and connect to networks.
 
-* **Wi-Fi Network Manager API.** Wi-Fi Network Managers can now register
-  themselves to the Wi-Fi stack. The Network Managers can then implement
-  the Wi-Fi Management API and manage the Wi-Fi interface.
+* **Wi-Fi Network Manager API** for network managers that register with the
+  Wi-Fi stack and implement the Wi-Fi Management API.
 
-* **Multiple Network Technologies.** The Zephyr OS can be configured to
-  support multiple network technologies at the same time simply by enabling
-  them in Kconfig: for example, Ethernet, Wi-Fi and 802.15.4 support. Note
-  that no automatic IP routing functionality is provided between these
-  technologies. Applications can send data according to their needs to desired
-  network interface.
+* **Multiple network technologies**, such as Ethernet, Wi-Fi and IEEE 802.15.4,
+  enabled at the same time in Kconfig. No automatic routing is done between
+  them; applications send data to the interface they choose.
 
-* **Minimal Copy Network Buffer Management.** It is possible to have minimal
-  copy network data path. This means that the system tries to avoid copying
-  application data when it is sent to the network.
+* **Minimal copy buffer management.** The stack avoids copying application data
+  on the transmit path.
 
-* **Virtual LAN support.** Virtual LANs (VLANs) allow partitioning of physical
-  ethernet networks into logical networks.
-  See :ref:`VLAN support <vlan_interface>` for more details.
+* **Virtual LANs** partition physical Ethernet networks into logical networks.
+  See :ref:`VLAN <vlan_interface>`.
 
-* **Network traffic classification.** The sent and received network packets can
-  be prioritized depending on application needs.
-  See :ref:`traffic classification <traffic-class-support>` for more details.
+* **Traffic classification** prioritizes sent and received packets.
+  See :ref:`traffic classification <traffic-class-support>`.
 
-* **Time Sensitive Networking.** Both the gPTP (generalized Precision Time Protocol)
-  and PTP (Precision Time Protocol, IEEE 1588) are supported.
-  See :ref:`gPTP support <gptp_interface>` and :ref:`PTP support <ptp_interface>`
-  for more details.
+* **Time Sensitive Networking** with gPTP (generalized Precision Time Protocol)
+  and PTP (IEEE 1588). See :ref:`gPTP <gptp_interface>` and
+  :ref:`PTP <ptp_interface>`.
 
-* **SNTP** Simple Network Time Protocol (:rfc:`5905`) client is supported.
-  :zephyr:code-sample:`sntp-client` sample is provided.
+* **SNTP** (:rfc:`5905`) client and server. See :ref:`SNTP <sntp_interface>`.
+  Samples: :zephyr:code-sample:`sntp-client`, :zephyr:code-sample:`sntp-server`.
 
-* **SOCKS5** proxy version 5 (:rfc:`1928`) is supported.
+* **SOCKS5** proxy (:rfc:`1928`).
 
-* **TFTP** Trivial File Transfer Protocol (:rfc:`1350`) client is supported.
-  :zephyr:code-sample:`tftp-client` sample is provided.
+* **TFTP** (:rfc:`1350`) client. Sample: :zephyr:code-sample:`tftp-client`.
 
-* **MIDI2** MIDI 2.0 network UDP transport is supported.
-  :zephyr:code-sample:`netmidi2` sample is provided.
+* **FTP** (:rfc:`959`) client. See :ref:`FTP client <ftp_client_interface>`.
+  Sample: :zephyr:code-sample:`ftp-client`.
 
-* **OCPP** Open Charge Point Protocol is supported.
-  :zephyr:code-sample:`ocpp` sample is provided.
+* **SSH** SSH-2 (:rfc:`4251` to :rfc:`4254`) server and client. Session
+  channels carry shell, exec and subsystem requests, and the Zephyr shell is
+  available over SSH. Sample: :zephyr:code-sample:`ssh-server-client`.
 
-* **Prometheus** Metric Server functionality is supported.
-  :zephyr:code-sample:`prometheus` is provided.
+* **WireGuard** VPN (`WireGuard protocol`_).
+  Sample: :zephyr:code-sample:`wireguard-vpn`.
 
-* **Network shell.** The network shell provides helpers for figuring out
-  network status, enabling/disabling features, and issuing commands like ping
-  or DNS resolving. The net-shell is useful when developing network software.
-  See :ref:`network shell <net_shell>` for more details.
+* **RTP** Real-time Transport Protocol (:rfc:`3550`).
+  Sample: :zephyr:code-sample:`net-rtp`.
 
-* **zperf** is an iPerf v2 network performance and bandwidth measurement tool.
-  Both client and server functionality is supported. :zephyr:code-sample:`zperf`
-  sample is provided.
+* **MIDI2** MIDI 2.0 UDP network transport. Sample: :zephyr:code-sample:`netmidi2`.
 
-Additionally these network technologies (link layers) are supported in Zephyr OS:
+* **OCPP** Open Charge Point Protocol. Sample: :zephyr:code-sample:`ocpp`.
+
+* **Prometheus** metrics server. Sample: :zephyr:code-sample:`prometheus`.
+
+* **MCP** Model Context Protocol server, exposing device tools that AI agents
+  discover and invoke over HTTP. See :ref:`MCP server <mcp_server_interface>`.
+  Sample: :zephyr:code-sample:`mcp-server-hello-world`.
+
+* **Packet filtering and capture.** Filter sent and received packets with
+  rules, and capture traffic to a remote host for analysis.
+  See :ref:`packet filtering <net_pkt_filter_interface>` and
+  :ref:`network packet capture <net_capture_interface>`.
+
+* **Network shell** to inspect network status, enable or disable features and
+  run commands such as ping or DNS queries. See :ref:`network shell <net_shell>`.
+
+* **zperf** network performance and bandwidth measurement tool, client and
+  server, compatible with iPerf v2 and iperf3. Sample: :zephyr:code-sample:`zperf`.
+
+Supported network technologies (link layers):
 
 * IEEE 802.15.4
-* Bluetooth
 * Ethernet, IEEE 802.3
 * Wi-Fi, IEEE 802.11
 * Cellular / PPP (:rfc:`1661`)
-* Thread (:zephyr:code-sample-category:`openthread` samples are provided)
+* Thread (samples: :zephyr:code-sample-category:`openthread`)
 * CAN bus for SocketCAN
-* SLIP (IP over serial line). Used for testing with QEMU. It provides
-  ethernet interface to host system (like Linux) and test applications
-  can be run in Linux host and send network data to Zephyr OS device.
+* SLIP (IP over serial line), used to connect QEMU targets to the host as an
+  Ethernet interface so that host applications can exchange data with Zephyr.
 
 Source Tree Layout
 ******************
@@ -220,3 +211,6 @@ The networking stack source code tree is organized as follows:
 
 .. _LwM2M specification 1.1.1:
    https://www.openmobilealliance.org/release/LightweightM2M/V1_1_1-20190617-A/
+
+.. _WireGuard protocol:
+   https://www.wireguard.com/
