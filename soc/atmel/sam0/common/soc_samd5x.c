@@ -78,7 +78,7 @@ static void osc32k_init(void)
 static void dpll_init(uint8_t n, uint32_t f_cpu)
 {
 	/* We source the DPLL from 32kHz GCLK1 */
-	const uint32_t LDR = ((f_cpu << 5) / SOC_ATMEL_SAM0_OSC32K_FREQ_HZ);
+	const uint32_t LDR = (uint32_t)(((uint64_t)f_cpu << 5) / SOC_ATMEL_SAM0_OSC32K_FREQ_HZ);
 
 	/* disable the DPLL before changing the configuration */
 	OSCCTRL->Dpll[n].DPLLCTRLA.bit.ENABLE = 0;
