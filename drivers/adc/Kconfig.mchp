@@ -9,3 +9,11 @@ config ADC_MCHP_G1
 	select ADC_CONFIGURABLE_INPUTS
 	help
 	  Enable support for the Microchip ADC driver on G1 ADC peripherals.
+
+config ADC_MCHP_G2
+	bool "Microchip ADC support for G2 peripherals"
+	depends on DT_HAS_MICROCHIP_ADC_G2_ENABLED
+	default y
+	select PINCTRL
+	help
+	  Enable support for the Microchip ADC driver on G2 ADC peripherals.

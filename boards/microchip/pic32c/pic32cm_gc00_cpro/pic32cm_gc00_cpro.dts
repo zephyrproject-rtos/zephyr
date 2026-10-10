@@ -169,6 +169,12 @@
 		compatible = "microchip,pic32cm-sg-gc-gclkperiph";
 		#clock-cells = <1>;
 
+		adc {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_ADC>;
+			gclkperiph-src = "gclk0";
+			gclkperiph-en = <1>;
+		};
+
 		sercom1 {
 			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_SERCOM1_CORE>;
 			gclkperiph-src = "gclk0";
@@ -188,6 +194,11 @@
 	mclkperiph: mclkperiph {
 		compatible = "microchip,pic32cm-sg-gc-mclkperiph";
 		#clock-cells = <1>;
+
+		adc {
+			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_ADC>;
+			mclk-en = <1>;
+		};
 
 		sercom1 {
 			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_SERCOM1>;
@@ -252,5 +263,13 @@ i2c0: &sercom1 {
 	cs-gpios = <&portc 17 GPIO_ACTIVE_LOW>;
 	dmas = <&dmac 2 8>, <&dmac 3 9>;
 	dma-names = "rx", "tx";
+	status = "okay";
+};
+
+&adc0 {
+	adc-div-ratio = <2>;
+	sample-count = <62>;
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
