@@ -61,6 +61,7 @@ static struct sx12xx_data {
 		struct lora_modem_config_gfsk tx_gfsk_cfg;
 #endif
 	};
+	struct lora_modem_config rx_cfg;
 	atomic_t modem_usage;
 	struct sx12xx_rx_params rx_params;
 } dev_data;
@@ -275,7 +276,9 @@ uint32_t sx12xx_airtime(const struct device *dev, uint32_t data_len)
 			       dev_data.tx_cfg.datarate,
 			       dev_data.tx_cfg.coding_rate,
 			       dev_data.tx_cfg.preamble_len,
-			       0, data_len, !dev_data.tx_cfg.packet_crc_disable);
+			       dev_data.tx_cfg.explicit_header_disable,
+			       data_len,
+			       !dev_data.tx_cfg.packet_crc_disable);
 }
 
 /* Whether the modem in use has been given a transmit configuration */
@@ -345,6 +348,12 @@ int sx12xx_lora_send_async(const struct device *dev, uint8_t *data,
 	}
 #endif /* SX12XX_GFSK */
 
+	if (dev_data.modem == MODEM_LORA &&
+		dev_data.tx_cfg.explicit_header_disable &&
+		dev_data.tx_cfg.implicit_packet_length != data_len) {
+		return -EINVAL;
+	}
+
 	/* Ensure available, freed by sx12xx_ev_tx_done */
 	if (!modem_acquire(&dev_data)) {
 		return -EBUSY;
@@ -369,6 +378,7 @@ int sx12xx_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 		K_POLL_MODE_NOTIFY_ONLY,
 		&done);
 	int ret;
+	uint8_t data_len = 255;
 
 	/* Ensure available, decremented by sx12xx_ev_rx_done or on timeout */
 	if (!modem_acquire(&dev_data)) {
@@ -384,7 +394,11 @@ int sx12xx_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 	dev_data.rx_params.rssi = rssi;
 	dev_data.rx_params.snr = snr;
 
-	Radio.SetMaxPayloadLength(dev_data.modem, 255);
+	if (dev_data.modem == MODEM_LORA && dev_data.rx_cfg.explicit_header_disable) {
+		data_len = dev_data.rx_cfg.implicit_packet_length;
+	}
+
+	Radio.SetMaxPayloadLength(dev_data.modem, data_len);
 	Radio.Rx(0);
 
 	ret = k_poll(&evt, 1, timeout);
@@ -431,8 +445,14 @@ int sx12xx_lora_recv_async(const struct device *dev, lora_recv_cb cb, void *user
 	dev_data.async_rx_cb = cb;
 	dev_data.async_user_data = user_data;
 
+	uint8_t data_len = 255;
+
+	if (dev_data.modem == MODEM_LORA && dev_data.rx_cfg.explicit_header_disable) {
+		data_len = dev_data.rx_cfg.implicit_packet_length;
+	}
+
 	/* Start reception */
-	Radio.SetMaxPayloadLength(dev_data.modem, 255);
+	Radio.SetMaxPayloadLength(dev_data.modem, data_len);
 	Radio.Rx(0);
 
 	return 0;
@@ -442,6 +462,7 @@ int sx12xx_lora_config(const struct device *dev,
 		       const struct lora_modem_config *config)
 {
 	bool crc = !config->packet_crc_disable;
+	bool fix_len = config->explicit_header_disable;
 	uint32_t bw_idx;
 	int ret;
 
@@ -462,6 +483,7 @@ int sx12xx_lora_config(const struct device *dev,
 	 * modem left behind
 	 */
 	memset(&dev_data.tx_cfg, 0, sizeof(dev_data.tx_cfg));
+	memset(&dev_data.rx_cfg, 0, sizeof(dev_data.rx_cfg));
 
 	if (config->tx) {
 		/* Store TX config locally for airtime calculations */
@@ -470,12 +492,14 @@ int sx12xx_lora_config(const struct device *dev,
 		Radio.SetTxConfig(MODEM_LORA, config->tx_power, 0,
 				  bw_idx, config->datarate,
 				  config->coding_rate, config->preamble_len,
-				  false, crc, 0, 0, config->iq_inverted, 4000);
+				  fix_len, crc, 0, 0, config->iq_inverted, 4000);
 	} else {
+		memcpy(&dev_data.rx_cfg, config, sizeof(dev_data.rx_cfg));
 		/* TODO: Get symbol timeout value from config parameters */
 		Radio.SetRxConfig(MODEM_LORA, bw_idx,
 				  config->datarate, config->coding_rate,
-				  0, config->preamble_len, 10, false, 0,
+				  0, config->preamble_len, 10, fix_len,
+				  fix_len ? config->implicit_packet_length : 0,
 				  crc, false, 0, config->iq_inverted, true);
 	}
 
