@@ -4,3 +4,4 @@
 
 rsource "Kconfig.uvc"
 rsource "Kconfig.hub"
+rsource "Kconfig.testusb"
