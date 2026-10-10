@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(clock_control_agilex5, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 struct clock_control_config {
 	DEVICE_MMIO_ROM;
+	const struct device *sysmgr;
 };
 
 struct clock_control_data {
@@ -27,6 +28,12 @@ static int clock_init(const struct device *dev)
 {
 
 	LOG_DBG("Intel Agilex5 clock driver initialized!");
+	const struct clock_control_config *cfg = dev->config;
+
+	if (!device_is_ready(cfg->sysmgr)) {
+		LOG_ERR("Sysmgr not ready");
+		return -ENODEV;
+	}
 
 	return 0;
 }
@@ -34,39 +41,39 @@ static int clock_init(const struct device *dev)
 static int clock_get_rate(const struct device *dev, clock_control_subsys_t sub_system,
 			  uint32_t *rate)
 {
-	ARG_UNUSED(dev);
+	const struct clock_control_config *config = dev->config;
 
 	switch ((intptr_t)sub_system) {
 	case INTEL_SOCFPGA_CLOCK_MPU:
-		*rate = get_mpu_clk();
+		*rate = get_mpu_clk(config->sysmgr);
 		break;
 
 	case INTEL_SOCFPGA_CLOCK_WDT:
-		*rate = get_wdt_clk();
+		*rate = get_wdt_clk(config->sysmgr);
 		break;
 
 	case INTEL_SOCFPGA_CLOCK_UART:
-		*rate = get_uart_clk();
+		*rate = get_uart_clk(config->sysmgr);
 		break;
 
 	case INTEL_SOCFPGA_CLOCK_MMC:
-		*rate = get_sdmmc_clk();
+		*rate = get_sdmmc_clk(config->sysmgr);
 		break;
 
 	case INTEL_SOCFPGA_CLOCK_TIMER:
-		*rate = get_timer_clk();
+		*rate = get_timer_clk(config->sysmgr);
 		break;
 
 	case INTEL_SOCFPGA_CLOCK_QSPI:
-		*rate = get_qspi_clk();
+		*rate = get_qspi_clk(config->sysmgr);
 		break;
 
 	case INTEL_SOCFPGA_CLOCK_I2C:
-		*rate = get_i2c_clk();
+		*rate = get_i2c_clk(config->sysmgr);
 		break;
 
 	case INTEL_SOCFPGA_CLOCK_I3C:
-		*rate = get_i3c_clk();
+		*rate = get_i3c_clk(config->sysmgr);
 		break;
 
 	default:
@@ -87,6 +94,7 @@ static DEVICE_API(clock_control, clock_api) = {
                                                                                                    \
 	static const struct clock_control_config clock_control_config_##_inst = {                  \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(_inst)),                                          \
+		.sysmgr = DEVICE_DT_GET(DT_INST_PHANDLE(_inst, sysmgr)), \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(_inst, clock_init, NULL, &clock_control_data_##_inst,                \
