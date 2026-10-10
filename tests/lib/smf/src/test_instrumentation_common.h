@@ -26,6 +26,8 @@ struct action_record {
 struct transition_record {
 	const struct smf_state *source;
 	const struct smf_state *dest;
+	/* Number of actions logged before the transition */
+	int action_count;
 };
 
 static struct action_record action_log[TEST_MAX_ACTION_RECORDS];
@@ -61,6 +63,7 @@ static void on_transition(struct smf_ctx *ctx, const struct smf_state *source,
 	if (transition_log_count < TEST_MAX_TRANSITION_RECORDS) {
 		transition_log[transition_log_count].source = source;
 		transition_log[transition_log_count].dest = dest;
+		transition_log[transition_log_count].action_count = action_log_count;
 		transition_log_count++;
 	}
 }
