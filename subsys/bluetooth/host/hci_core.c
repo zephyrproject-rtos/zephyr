@@ -2776,7 +2776,18 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *evt_bu
 	 */
 	if (evt_buf != buf) {
 		net_buf_reset(buf);
-		net_buf_add_mem(buf, evt_buf->data, evt_buf->len);
+
+		if (evt_buf->len > net_buf_tailroom(buf)) {
+			/* The command buffer holds a response of the size that
+			 * CONFIG_BT_BUF_EVT_RX_SIZE allows. A longer one cannot
+			 * be handed over, so the command fails.
+			 */
+			LOG_ERR("Response to opcode 0x%04x too long (%u bytes)", opcode,
+				evt_buf->len);
+			status = BT_HCI_ERR_UNSPECIFIED;
+		} else {
+			net_buf_add_mem(buf, evt_buf->data, evt_buf->len);
+		}
 	}
 
 	if (cmd(buf)->state && !status) {

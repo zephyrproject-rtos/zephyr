@@ -134,7 +134,31 @@ static void le_read_supp_states(struct net_buf *buf, struct net_buf **evt, uint8
 	(void)memset(rp->le_states, 0xFF, sizeof(rp->le_states));
 }
 
+/* A vendor command whose response is longer than the Host is configured to
+ * receive, although it fits an HCI event.
+ */
+#define TEST_OP_LONG_RSP BT_OP(BT_OGF_VS, 0x03ff)
+#define LONG_RSP_SIZE    200U
+
+BUILD_ASSERT(LONG_RSP_SIZE > CONFIG_BT_BUF_EVT_RX_SIZE);
+
+static void long_rsp(struct net_buf *buf, struct net_buf **evt, uint8_t len, uint16_t opcode)
+{
+	struct bt_hci_evt_cc_status *rp;
+
+	ARG_UNUSED(buf);
+
+	rp = cmd_complete(evt, len, opcode);
+	(void)memset(rp, 0xAA, len);
+	rp->status = BT_HCI_ERR_SUCCESS;
+}
+
 static const struct cmd_handler cmds[] = {
+	{
+		TEST_OP_LONG_RSP,
+		LONG_RSP_SIZE,
+		long_rsp,
+	},
 	{
 		BT_HCI_OP_READ_LOCAL_FEATURES,
 		sizeof(struct bt_hci_rp_read_local_features),
@@ -272,6 +296,29 @@ static void before(void *fixture)
 }
 
 ZTEST_SUITE(bt_disable, NULL, NULL, before, NULL, NULL);
+
+/* The response to a command is handed to the sender in the command's own
+ * buffer, which is as large as the events that the Host is configured to
+ * receive. A longer response must fail the command instead of being written
+ * past that buffer, and the commands that follow must work.
+ */
+static ZTEST(bt_disable, test_command_response_too_long)
+{
+	struct bt_hci_rp_read_bd_addr *rp;
+	struct net_buf *rsp = NULL;
+	int err;
+
+	err = bt_hci_cmd_send_sync(TEST_OP_LONG_RSP, NULL, &rsp);
+	zassert_equal(err, -EIO, "Unexpected result %d for a response that is too long", err);
+	zassert_is_null(rsp, "A response was handed over");
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_BD_ADDR, NULL, &rsp);
+	zassert_ok(err, "The next command failed (err %d)", err);
+	zassert_equal(rsp->len, sizeof(*rp), "Unexpected response length %u", rsp->len);
+	rp = (void *)rsp->data;
+	zassert_equal(rp->bdaddr.val[0], 0x11, "Unexpected response contents");
+	net_buf_unref(rsp);
+}
 
 /* A driver without a close() op cannot be disabled, and bt_disable() has to
  * find that out before it tears anything down: the controller must not have
