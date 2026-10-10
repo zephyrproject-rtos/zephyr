@@ -695,8 +695,6 @@ struct tisci_msg_resp_get_clock_freq {
 	uint64_t freq_hz;
 } __packed;
 
-#define TISCI_IRQ_SECONDARY_HOST_INVALID 0xff
-
 /**
  * @struct tisci_msg_req_get_resource_range
  * @brief Request to get a host's assigned
