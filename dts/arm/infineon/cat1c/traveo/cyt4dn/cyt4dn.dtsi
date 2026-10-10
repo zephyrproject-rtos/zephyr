@@ -574,6 +574,50 @@
 			status = "disabled";
 		};
 
+		i2s0: tdm@40818000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "infineon,i2s";
+			reg = <0x40818000 0x200>;
+			interrupt-parent = <&intmux_ch3>;
+			interrupts = <753 4>, <752 4>;
+			interrupt-names = "rx", "tx";
+			status = "disabled";
+		};
+
+		i2s1: tdm@40818200 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "infineon,i2s";
+			reg = <0x40818200 0x200>;
+			interrupt-parent = <&intmux_ch3>;
+			interrupts = <755 4>, <754 4>;
+			interrupt-names = "rx", "tx";
+			status = "disabled";
+		};
+
+		i2s2: tdm@40818400 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "infineon,i2s";
+			reg = <0x40818400 0x200>;
+			interrupt-parent = <&intmux_ch3>;
+			interrupts = <757 4>, <756 4>;
+			interrupt-names = "rx", "tx";
+			status = "disabled";
+		};
+
+		i2s3: tdm@40818600 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "infineon,i2s";
+			reg = <0x40818600 0x200>;
+			interrupt-parent = <&intmux_ch3>;
+			interrupts = <759 4>, <758 4>;
+			interrupt-names = "rx", "tx";
+			status = "disabled";
+		};
+
 		m7_0_itcm: itcm@a0000000 {
 			compatible = "zephyr,memory-region", "arm,itcm";
 			reg = <0xa0000000 DT_SIZE_K(64)>;
