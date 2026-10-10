@@ -26,6 +26,7 @@ void img_erase_response(int status);
 void img_upload_init_verify(struct net_buf *nb);
 void img_state_write_verify(struct net_buf *nb);
 void img_gr_stub_data_init(uint8_t *hash_ptr);
+void img_upload_set_accepted_max_size(size_t max_size);
 
 #ifdef __cplusplus
 }

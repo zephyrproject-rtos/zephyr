@@ -106,6 +106,21 @@ ZTEST(mcumgr_client, test_img_upload)
 	zassert_equal(TEST_IMAGE_SIZE, response.image_upload_offset,
 		      "Expected to receive offset %d response %d", TEST_IMAGE_SIZE,
 		      response.image_upload_offset);
+
+	/* Test with partially accepted upload */
+	rc = img_mgmt_client_upload_init(&img_client, TEST_IMAGE_SIZE, TEST_IMAGE_NUM, NULL);
+	zassert_equal(MGMT_ERR_EOK, rc, "Expected to receive %d response %d", MGMT_ERR_EOK, rc);
+
+	smp_stub_set_rx_data_verify(img_upload_init_verify);
+	img_upload_stub_init();
+	img_upload_set_accepted_max_size(336);
+	rc = img_mgmt_client_upload(&img_client, image_dummy, 1024, &response);
+	zassert_equal(MGMT_ERR_EOK, rc, "Expected to receive %d response %d", MGMT_ERR_EOK, rc);
+	zassert_equal(MGMT_ERR_EOK, response.status, "Expected to receive %d response %d",
+		      MGMT_ERR_EOK, response.status);
+	zassert_equal(1024, response.image_upload_offset,
+		      "Expected to receive offset %d response %d", 1024,
+		      response.image_upload_offset);
 }
 
 ZTEST(mcumgr_client, test_img_erase)

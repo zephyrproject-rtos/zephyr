@@ -87,7 +87,7 @@ void os_echo_verify(struct net_buf *nb)
 
 	rc = zcbor_map_decode_bulk(zsd, list_res_decode, ARRAY_SIZE(list_res_decode), &decoded);
 	if (rc || !echo_data.len) {
-		printf("Corrupted data %d or no echo data %d\r\n", rc, echo_data.len);
+		printf("Corrupted data %d or no echo data %zu\r\n", rc, echo_data.len);
 		response_status = MGMT_ERR_EINVAL;
 	} else if (memcmp(echo_data.value, echo_ptr, echo_data.len)) {
 		response_status = MGMT_ERR_EINVAL;

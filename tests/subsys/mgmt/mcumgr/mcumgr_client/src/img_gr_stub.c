@@ -22,6 +22,7 @@
 
 static struct mcumgr_image_data image_dummy_info[2];
 static size_t test_offset;
+static size_t test_accepted_max_size;
 static uint8_t *image_hash_ptr;
 
 #ifdef CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER
@@ -36,6 +37,7 @@ static uint8_t *image_hash_ptr;
 void img_upload_stub_init(void)
 {
 	test_offset = 0;
+	test_accepted_max_size = SIZE_MAX;
 }
 
 void img_upload_response(size_t offset, int status)
@@ -197,7 +199,7 @@ void img_state_write_verify(struct net_buf *nb)
 		return;
 	}
 	if (hash.len) {
-		printf("HASH %d", hash.len);
+		printf("HASH %zu", hash.len);
 		if (hash.len <= sizeof(image_dummy_info[1].hash) &&
 		    hash.len == image_dummy_info[1].hash_len &&
 		    memcmp(hash.value, image_dummy_info[1].hash, hash.len) == 0) {
@@ -249,7 +251,7 @@ void img_upload_init_verify(struct net_buf *nb)
 
 	rc = zcbor_map_decode_bulk(zsd, list_res_decode, ARRAY_SIZE(list_res_decode), &decoded);
 	if (rc || data.len == 0 || offset == SIZE_MAX || image != TEST_IMAGE_NUM) {
-		printf("Corrupted data %d or %d data len\r\n", rc, data.len);
+		printf("Corrupted data %d or %zu data len\r\n", rc, data.len);
 		img_upload_response(0, MGMT_ERR_EINVAL);
 		return;
 	}
@@ -263,7 +265,7 @@ void img_upload_init_verify(struct net_buf *nb)
 	}
 
 	if (offset != test_offset) {
-		printf("Offset not expected %d vs received %d\r\n", test_offset, offset);
+		printf("Offset not expected %zu vs received %zu\r\n", test_offset, offset);
 	}
 
 	if (offset == 0) {
@@ -272,8 +274,8 @@ void img_upload_init_verify(struct net_buf *nb)
 		}
 	}
 
-	test_offset += data.len;
-	printf("Upload offset %d\r\n", test_offset);
+	test_offset += MIN(data.len, test_accepted_max_size);
+	printf("Upload offset %zu\r\n", test_offset);
 	if (test_offset <= TEST_IMAGE_SIZE) {
 		img_upload_response(test_offset, MGMT_ERR_EOK);
 	} else {
@@ -310,4 +312,9 @@ void img_gr_stub_data_init(uint8_t *hash_ptr)
 		}
 		image_dummy_info[i].flags.permanent = false;
 	}
+}
+
+void img_upload_set_accepted_max_size(size_t max_size)
+{
+	test_accepted_max_size = max_size;
 }
