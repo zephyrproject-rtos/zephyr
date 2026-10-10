@@ -251,6 +251,54 @@ into certain power states. This can be used by devices when executing tasks in
 background to prevent the system from going to a specific state where it would
 lose context. See :c:func:`pm_policy_state_lock_get`.
 
+Measuring Exit Latency and Residency
+====================================
+
+The ``exit-latency-us`` and ``min-residency-us`` properties of
+:dtcompatible:`zephyr,power-state` are often estimates. Leaving a state usually means restarting
+oscillators and waiting for PLLs to lock, so the exit latency also depends on the clock
+configuration of the board, and a board can override the value of its SoC in devicetree.
+
+The PM subsystem programs the system timer to expire ``exit-latency-us`` before the next
+scheduled event, converted to system ticks (rounded to the nearest tick by default, see
+:kconfig:option:`CONFIG_PM_PREWAKEUP_CONV_MODE_NEAR`). If the value is smaller than the actual
+exit latency, threads resume after their timeout has expired. If it is larger, the system wakes
+up earlier than needed, and the residency policy skips the state for idle times it could have
+used.
+
+Some SoCs keep clocks running in low-power states while debug features are enabled, which changes
+both the exit latency and the current. Disable them before measuring.
+
+Exit latency
+------------
+
+The exit latency can be measured with GPIOs and an instrument that records them, such as a logic
+analyzer:
+
+#. Register a :c:struct:`pm_notifier` whose ``state_entry`` callback drives a GPIO low and whose
+   ``state_exit`` callback drives it high. The exit callback runs after the SoC has left the
+   state and restored what it turned off.
+#. Drive a second GPIO high when the thread that was sleeping runs again.
+#. Wake the system with an event that the instrument also records, for example an edge on a GPIO
+   interrupt input. A power analyzer that samples digital inputs together with the supply current
+   can use the rise of the current instead, which also works for timer wake-ups.
+
+The exit latency is the longest time, over many wake-ups, from the wake-up event to the second
+GPIO.
+
+The configured value can also be checked without an instrument: sleep until an absolute deadline
+with ``K_TIMEOUT_ABS_TICKS()``, and compare :c:func:`k_cycle_get_64` after the wake-up with the
+deadline. Threads that are consistently late by more than one system tick show that
+``exit-latency-us`` is smaller than the actual exit latency.
+
+Minimum residency
+-----------------
+
+``min-residency-us`` is the break-even time against the next shallower state. With a power
+analyzer, measure the current in the shallower state, the current in this state, and the extra
+charge spent to enter and leave this state. The break-even time is the extra charge divided by
+the difference between the two currents.
+
 Examples
 ========
 
