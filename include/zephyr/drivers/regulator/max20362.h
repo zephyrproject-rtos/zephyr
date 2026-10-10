@@ -98,7 +98,8 @@ extern "C" {
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param mask Interrupt mask value to write (1 = masked/disabled, 0 = enabled).
- * @return 0 on success, negative errno code on failure.
+ * @retval 0 On success.
+ * @retval -errno Negative errno from the I2C transfer on communication failure.
  */
 int regulator_max20362_set_int_mask(const struct device *dev, uint8_t mask);
 
@@ -107,7 +108,8 @@ int regulator_max20362_set_int_mask(const struct device *dev, uint8_t mask);
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param mask Interrupt mask value to write (1 = masked/disabled, 0 = enabled).
- * @return 0 on success, negative errno code on failure.
+ * @retval 0 On success.
+ * @retval -errno Negative errno from the I2C transfer on communication failure.
  */
 int regulator_max20362_set_ingen_int_mask(const struct device *dev, uint8_t mask);
 
@@ -116,9 +118,95 @@ int regulator_max20362_set_ingen_int_mask(const struct device *dev, uint8_t mask
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param mask Interrupt mask value to write (1 = masked/disabled, 0 = enabled).
- * @return 0 on success, negative errno code on failure.
+ * @retval 0 On success.
+ * @retval -errno Negative errno from the I2C transfer on communication failure.
  */
 int regulator_max20362_set_ldo_int_mask(const struct device *dev, uint8_t mask);
+
+/**
+ * @brief Sets the BAT to BBIN voltage drop of the MAX20362 device.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param vdrop Voltage drop, one of the MAX20362_BAT_BBIN_VDROP_* values from
+ *              <zephyr/dt-bindings/regulator/max20362.h>.
+ * @retval 0 On success.
+ * @retval -EINVAL If @p vdrop is not a valid MAX20362_BAT_BBIN_VDROP_* value.
+ * @retval -errno Negative errno from the I2C transfer on communication failure.
+ */
+int regulator_max20362_set_bat_bbin_vdrop(const struct device *dev, uint8_t vdrop);
+
+/**
+ * @brief Sets the LDO input source of the MAX20362 device.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param source LDO input source, one of the MAX20362_LDO_SRC_* values from
+ *               <zephyr/dt-bindings/regulator/max20362.h>.
+ * @retval 0 On success.
+ * @retval -EINVAL If @p source is not a valid MAX20362_LDO_SRC_* value.
+ * @retval -errno Negative errno from the I2C transfer on communication failure.
+ */
+int regulator_max20362_set_ldo_input_source(const struct device *dev, uint8_t source);
+
+/**
+ * @brief Programs the Round-Robin VSET table of the MAX20362 device.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param voltages_uv Array of VSET voltages, in microvolts, in step order.
+ * @param count Number of entries, 1 to 20 (the RRVsetXX register count).
+ * @retval 0 On success.
+ * @retval -EBUSY If Round-Robin is the active DVS source (disable it first).
+ * @retval -EINVAL If @p voltages_uv is NULL, @p count is 0 or above 20, or a
+ *                 voltage is outside the supported buck-boost range.
+ * @retval -errno Negative errno from the I2C transfer on communication failure.
+ */
+int regulator_max20362_set_dvs_rr_table(const struct device *dev, const uint32_t *voltages_uv,
+					uint8_t count);
+
+/**
+ * @brief Sets the Round-Robin wrap mode of the MAX20362 device.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param enable true to wrap to the first step after the last, false to stop.
+ * @retval 0 On success.
+ * @retval -EBUSY If Round-Robin is the active DVS source (disable it first).
+ * @retval -errno Negative errno from the I2C transfer on communication failure.
+ */
+int regulator_max20362_set_rr_wrap(const struct device *dev, bool enable);
+
+/**
+ * @brief Sets the Round-Robin clock polarity of the MAX20362 device.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param rising_edge true to update on the rising edge, false on the falling edge.
+ * @retval 0 On success.
+ * @retval -EBUSY If Round-Robin is the active DVS source (disable it first).
+ * @retval -errno Negative errno from the I2C transfer on communication failure.
+ */
+int regulator_max20362_set_rr_clk_polarity(const struct device *dev, bool rising_edge);
+
+/**
+ * @brief Sets the Round-Robin timeout-reset behavior of the MAX20362 device.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param enable true to reset the step pointer on timeout, false to keep it.
+ * @retval 0 On success.
+ * @retval -EBUSY If Round-Robin is the active DVS source (disable it first).
+ * @retval -errno Negative errno from the I2C transfer on communication failure.
+ */
+int regulator_max20362_set_rr_timeout_reset(const struct device *dev, bool enable);
+
+/**
+ * @brief Sets the Round-Robin timeout duration of the MAX20362 device.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param timeout Timeout duration, one of the MAX20362_RR_TIMEOUT_* values from
+ *                <zephyr/dt-bindings/regulator/max20362.h>.
+ * @retval 0 On success.
+ * @retval -EBUSY If Round-Robin is the active DVS source (disable it first).
+ * @retval -EINVAL If @p timeout is not a valid MAX20362_RR_TIMEOUT_* value.
+ * @retval -errno Negative errno from the I2C transfer on communication failure.
+ */
+int regulator_max20362_set_rr_timeout(const struct device *dev, uint8_t timeout);
 
 /** @} */
 
