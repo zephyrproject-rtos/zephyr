@@ -176,6 +176,15 @@ config ZVFS_MMAP_DIRTY_TRACK
 	  and leaves the rest of the file alone. Without this, the whole range
 	  is written back.
 
+config ZVFS_MLOCK
+	bool "ZVFS memory locking"
+	help
+	  Lock pages into memory with zvfs_mlock() and release them with
+	  zvfs_munlock(): a range of pages, the caller's mappings and the memory
+	  its domain grants, or every mapping it creates from then on. Locking
+	  keeps pages resident under CONFIG_DEMAND_PAGING; without it every page
+	  is resident already and the calls succeed without effect.
+
 endif # ZVFS_MMAP
 
 config ZVFS_SHM

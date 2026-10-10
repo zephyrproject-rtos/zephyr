@@ -40,6 +40,7 @@
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/kernel.h>
 #include <zephyr/kernel/mm.h>
+#include <zephyr/kernel/mm/demand_paging.h>
 #include <zephyr/sys/dlist.h>
 #include <zephyr/sys/elastipool.h>
 #include <zephyr/sys/fdtable.h>
@@ -48,10 +49,9 @@
 #include <zephyr/sys/util.h>
 
 #include <kernel_internal.h>
+#include <mmu.h>
 
-#if defined(CONFIG_ZVFS_MMAP_DIRTY_TRACK) || defined(CONFIG_ARCH_MEM_DOMAIN_APPLY_CURRENT)
 #include <kernel_arch_interface.h>
-#endif
 
 #define MMAP_PAGE       CONFIG_ZVFS_MMAP_PAGE_SIZE
 #define MMAP_PROT_MASK  (ZVFS_PROT_READ | ZVFS_PROT_WRITE | ZVFS_PROT_EXEC)
@@ -893,6 +893,200 @@ static int file_access_mode(int fd)
 	return (flags < 0) ? ZVFS_O_RDWR : (flags & ZVFS_O_ACCMODE);
 }
 
+#ifdef CONFIG_ZVFS_MLOCK
+#define MLOCK_FLAGS_MASK (ZVFS_MLOCK_CURRENT | ZVFS_MLOCK_FUTURE)
+
+static inline bool mlock_future(void)
+{
+	return *z_zvfs_proc_mlock_future();
+}
+
+#ifdef CONFIG_DEMAND_PAGING
+/* a mapping's pages are locked for its lifetime: an unlock passes over them */
+static bool mapped_page(uintptr_t page)
+{
+	struct zvfs_mapping *m;
+
+	SYS_DLIST_FOR_EACH_CONTAINER(&mappings, m, node) {
+		if (IN_RANGE(page, (uintptr_t)m->addr, (uintptr_t)m->addr + m->len - 1)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/* every page of [start, end) is one the pager manages: k_mem_pin() panics on any other */
+static bool pages_paged(uintptr_t start, uintptr_t end)
+{
+	for (uintptr_t page = start; page < end; page += MMAP_PAGE) {
+		uintptr_t phys;
+
+		if ((arch_page_info_get((void *)page, &phys, false) & ARCH_DATA_PAGE_NOT_MAPPED) !=
+		    0) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+static void pages_lock(uintptr_t start, uintptr_t end, bool lock)
+{
+	uintptr_t run = start;
+
+	if (lock) {
+		k_mem_pin((void *)start, end - start);
+		return;
+	}
+	for (uintptr_t page = start; page < end; page += MMAP_PAGE) {
+		if (!mapped_page(page)) {
+			continue;
+		}
+		if (run < page) {
+			k_mem_unpin((void *)run, page - run);
+		}
+		run = page + MMAP_PAGE;
+	}
+	if (run < end) {
+		k_mem_unpin((void *)run, end - run);
+	}
+}
+
+/* pages of memory: the pager cannot pin what lies outside */
+static bool pages_in_memory(uintptr_t start, uintptr_t end)
+{
+	const uintptr_t lo = (uintptr_t)K_MEM_VIRT_RAM_START;
+	const uintptr_t hi = (uintptr_t)K_MEM_VIRT_RAM_END - 1;
+
+	return IN_RANGE(start, lo, hi) && IN_RANGE(end - 1, lo, hi);
+}
+
+static int range_lock(const void *addr, size_t len, bool lock)
+{
+	uintptr_t start = ROUND_DOWN((uintptr_t)addr, MMAP_PAGE);
+	uintptr_t end;
+
+	if (len == 0) {
+		return 0;
+	}
+	if (!range_end(start, (uintptr_t)addr + len - start, &end) ||
+	    !pages_in_memory(start, end) || !pages_paged(start, end)) {
+		errno = ENOMEM;
+		return -1;
+	}
+	pages_lock(start, end, lock);
+
+	return 0;
+}
+
+/* the caller's mappings and, from user mode, the partitions of its domain */
+static void current_lock(bool lock)
+{
+	struct zvfs_mapping *m;
+#ifdef CONFIG_USERSPACE
+	struct k_mem_domain *domain = caller_domain();
+
+	if (domain != NULL) {
+		for (int i = 0; i < CONFIG_MAX_DOMAIN_PARTITIONS; i++) {
+			const struct k_mem_partition *part = &domain->partitions[i];
+			uintptr_t start = ROUND_DOWN(part->start, MMAP_PAGE);
+			uintptr_t end;
+
+			if ((part->size == 0) ||
+			    !range_end(start, part->start + part->size - start, &end) ||
+			    !pages_in_memory(start, end) || !pages_paged(start, end)) {
+				continue;
+			}
+			pages_lock(start, end, lock);
+		}
+	}
+#endif /* CONFIG_USERSPACE */
+	if (!lock) {
+		return;
+	}
+	SYS_DLIST_FOR_EACH_CONTAINER(&mappings, m, node) {
+		if (mapping_mine(m)) {
+			pages_lock((uintptr_t)m->addr, (uintptr_t)m->addr + m->len, true);
+		}
+	}
+}
+#else
+static void pages_lock(uintptr_t start, uintptr_t end, bool lock)
+{
+	ARG_UNUSED(start);
+	ARG_UNUSED(end);
+	ARG_UNUSED(lock);
+}
+
+static int range_lock(const void *addr, size_t len, bool lock)
+{
+	ARG_UNUSED(addr);
+	ARG_UNUSED(len);
+	ARG_UNUSED(lock);
+
+	return 0;
+}
+
+static void current_lock(bool lock)
+{
+	ARG_UNUSED(lock);
+}
+#endif /* CONFIG_DEMAND_PAGING */
+
+static int mlock_op(const void *addr, size_t len, int flags, bool lock)
+{
+	int ret = 0;
+
+	if (((flags & ~MLOCK_FLAGS_MASK) != 0) ||
+	    ((flags != 0) && ((addr != NULL) || (len != 0))) ||
+	    ((flags == 0) && Z_DETECT_POINTER_OVERFLOW(addr, len))) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	(void)k_mutex_lock(&mmap_lock, K_FOREVER);
+	orphans_release();
+
+	if (flags == 0) {
+		ret = range_lock(addr, len, lock);
+	} else {
+		if ((flags & ZVFS_MLOCK_CURRENT) != 0) {
+			current_lock(lock);
+		}
+		if ((flags & ZVFS_MLOCK_FUTURE) != 0) {
+			*z_zvfs_proc_mlock_future() = lock;
+		}
+	}
+
+	k_mutex_unlock(&mmap_lock);
+
+	return ret;
+}
+
+int z_impl_zvfs_mlock(const void *addr, size_t len, int flags)
+{
+	return mlock_op(addr, len, flags, true);
+}
+
+int z_impl_zvfs_munlock(const void *addr, size_t len, int flags)
+{
+	return mlock_op(addr, len, flags, false);
+}
+#else
+static inline bool mlock_future(void)
+{
+	return false;
+}
+
+static void pages_lock(uintptr_t start, uintptr_t end, bool lock)
+{
+	ARG_UNUSED(start);
+	ARG_UNUSED(end);
+	ARG_UNUSED(lock);
+}
+#endif /* CONFIG_ZVFS_MLOCK */
+
 int z_impl_zvfs_mmap(size_t len, int prot, int flags, int fd, size_t off, void **addr)
 {
 	struct zvfs_mapping *m;
@@ -997,6 +1191,9 @@ int z_impl_zvfs_mmap(size_t len, int prot, int flags, int fd, size_t off, void *
 	}
 
 	mapping_link(m);
+	if (mlock_future()) {
+		pages_lock((uintptr_t)m->addr, (uintptr_t)m->addr + m->len, true);
+	}
 	*addr = m->addr;
 	k_mutex_unlock(&mmap_lock);
 
@@ -1341,4 +1538,42 @@ static int z_vrfy_zvfs_mprotect(void *addr, size_t len, int prot)
 	return z_impl_zvfs_mprotect(addr, len, prot);
 }
 #include <zephyr/syscalls/zvfs_mprotect_mrsh.c>
+
+#ifdef CONFIG_ZVFS_MLOCK
+static int z_vrfy_zvfs_mlock(const void *addr, size_t len, int flags)
+{
+	if ((flags == 0) && (len != 0)) {
+		if (Z_DETECT_POINTER_OVERFLOW(addr, len)) {
+			errno = EINVAL;
+			return -1;
+		}
+		/* a range the caller cannot read is not memory it has */
+		if (arch_buffer_validate((void *)addr, len, false) != 0) {
+			errno = ENOMEM;
+			return -1;
+		}
+	}
+
+	return z_impl_zvfs_mlock(addr, len, flags);
+}
+#include <zephyr/syscalls/zvfs_mlock_mrsh.c>
+
+static int z_vrfy_zvfs_munlock(const void *addr, size_t len, int flags)
+{
+	if ((flags == 0) && (len != 0)) {
+		if (Z_DETECT_POINTER_OVERFLOW(addr, len)) {
+			errno = EINVAL;
+			return -1;
+		}
+		/* a range the caller cannot read is not memory it has */
+		if (arch_buffer_validate((void *)addr, len, false) != 0) {
+			errno = ENOMEM;
+			return -1;
+		}
+	}
+
+	return z_impl_zvfs_munlock(addr, len, flags);
+}
+#include <zephyr/syscalls/zvfs_munlock_mrsh.c>
+#endif /* CONFIG_ZVFS_MLOCK */
 #endif /* CONFIG_USERSPACE */

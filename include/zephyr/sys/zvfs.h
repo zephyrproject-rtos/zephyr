@@ -255,6 +255,53 @@ __syscall int zvfs_msync(void *addr, size_t len, int flags);
  */
 __syscall int zvfs_mprotect(void *addr, size_t len, int prot);
 
+/**
+ * @name zvfs_mlock() scopes
+ * @{
+ */
+/** The caller's mappings and, from user mode, the memory its domain grants */
+#define ZVFS_MLOCK_CURRENT BIT(0)
+/** Every mapping the caller creates afterwards */
+#define ZVFS_MLOCK_FUTURE  BIT(1)
+/** @} */
+
+/**
+ * @brief Lock pages into memory.
+ *
+ * Locked pages are resident and exempt from eviction. With @p flags zero the
+ * pages of @p len bytes at @p addr, rounded to the mapping page size, are
+ * locked. Otherwise @p addr is NULL and @p len zero, and the flags select the
+ * scope: ZVFS_MLOCK_CURRENT locks the caller's mappings and, from user mode,
+ * the partitions of its memory domain; ZVFS_MLOCK_FUTURE locks every mapping
+ * the caller creates until zvfs_munlock() clears it.
+ *
+ * Without CONFIG_DEMAND_PAGING every page is resident already: the call
+ * validates its arguments and succeeds without effect. From user mode a
+ * range the caller cannot read is ENOMEM.
+ *
+ * @param addr Base address, or NULL with a scope in @p flags.
+ * @param len Number of bytes, or zero with a scope in @p flags.
+ * @param flags Zero, or a combination of ZVFS_MLOCK_* scopes.
+ *
+ * @return 0 on success, or -1 on error (errno is set).
+ */
+__syscall int zvfs_mlock(const void *addr, size_t len, int flags);
+
+/**
+ * @brief Unlock pages locked with zvfs_mlock().
+ *
+ * The pages a mapping owns stay resident for the life of the mapping and are
+ * left alone. With ZVFS_MLOCK_FUTURE in @p flags, mappings the caller creates
+ * afterwards are no longer locked.
+ *
+ * @param addr Base address, or NULL with a scope in @p flags.
+ * @param len Number of bytes, or zero with a scope in @p flags.
+ * @param flags Zero, or a combination of ZVFS_MLOCK_* scopes.
+ *
+ * @return 0 on success, or -1 on error (errno is set).
+ */
+__syscall int zvfs_munlock(const void *addr, size_t len, int flags);
+
 #ifdef __cplusplus
 }
 #endif

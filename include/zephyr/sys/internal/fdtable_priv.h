@@ -87,6 +87,11 @@ static inline void zvfs_fds_cloexec(void)
 }
 #endif
 
+#ifdef CONFIG_ZVFS_MLOCK
+/* the caller's "lock every new mapping" flag: per process, one for the kernel's own */
+bool *z_zvfs_proc_mlock_future(void);
+#endif
+
 struct k_mem_domain;
 
 #if defined(CONFIG_ZVFS_MMAP) && defined(CONFIG_PROCESS_VM)

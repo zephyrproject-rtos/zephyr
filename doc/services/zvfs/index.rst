@@ -71,6 +71,21 @@ to user mode on a board without an MMU, whose protection region covers it whole:
 a partial ``zvfs_munmap()`` of those fails with ``EINVAL``. ``zvfs_mprotect()``
 operates on whole mappings; a range that covers part of one is rejected.
 
+Memory Locking
+**************
+
+:kconfig:option:`CONFIG_ZVFS_MLOCK` adds ``zvfs_mlock()`` and ``zvfs_munlock()``.
+A locked page is resident and exempt from eviction, a distinction that only
+exists under :kconfig:option:`CONFIG_DEMAND_PAGING`; without it every page is
+resident already and both calls succeed without effect. Called with no scope
+flag they lock or unlock the pages of a range; from user mode a range the
+caller cannot read is ``ENOMEM``.
+``ZVFS_MLOCK_CURRENT`` is the caller's mappings and, from user mode, the
+partitions of its memory domain; ``ZVFS_MLOCK_FUTURE`` records, per process,
+that every mapping created from then on is locked, until an unlock with the
+same flag clears it. The pages of a mapping are pinned for its lifetime, as
+Storage describes, so an unlock passes over them.
+
 Shared Memory Objects
 *********************
 

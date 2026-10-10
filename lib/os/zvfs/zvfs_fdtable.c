@@ -98,6 +98,10 @@ BUILD_ASSERT(CONFIG_ZVFS_PROC_OPEN_MAX <= ZVFS_OPEN_SIZE,
 struct zvfs_proc_fds {
 	sys_dnode_t node;
 	struct fd_slot slots[ZVFS_PROC_OPEN_SIZE];
+#ifdef CONFIG_ZVFS_MLOCK
+	/* zvfs_mlock(ZVFS_MLOCK_FUTURE) is in force: new mappings are locked */
+	bool mlock_future;
+#endif /* CONFIG_ZVFS_MLOCK */
 };
 
 static struct k_spinlock fds_graveyard_lock;
@@ -116,6 +120,22 @@ SYS_ELASTIPOOL_DEFINE_ADVANCED(fds_pool, sizeof(struct zvfs_proc_fds),
 			       fds_pool_storage, static);
 #endif /* CONFIG_SYS_PROCESS */
 #endif /* CONFIG_PROCESS */
+
+#ifdef CONFIG_ZVFS_MLOCK
+static bool boot_mlock_future;
+
+bool *z_zvfs_proc_mlock_future(void)
+{
+#ifdef CONFIG_PROCESS
+	struct k_process *proc = k_current_get()->process;
+
+	if ((proc != NULL) && (proc->fds != NULL)) {
+		return &((struct zvfs_proc_fds *)proc->fds)->mlock_future;
+	}
+#endif /* CONFIG_PROCESS */
+	return &boot_mlock_future;
+}
+#endif /* CONFIG_ZVFS_MLOCK */
 
 /* the calling thread's descriptor table */
 static struct fd_slot *fd_slots_n(int *n)

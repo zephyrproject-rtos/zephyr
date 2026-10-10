@@ -706,6 +706,71 @@ ZTEST_USER(zvfs_mmap, test_zvfs_mmap_fork)
 }
 #endif /* CONFIG_PROCESS_VM */
 
+/* without demand paging every page is resident already: locking succeeds without effect */
+static void expect_mlock(int ret)
+{
+	zassert_ok(ret, "errno %d", errno);
+}
+
+ZTEST_USER(zvfs_mmap, test_zvfs_mlock)
+{
+	uint8_t *p, *q;
+
+	errno = 0;
+	zassert_equal(zvfs_mlock(NULL, 0, BIT(2)), -1);
+	zassert_equal(errno, EINVAL);
+	zassert_equal(zvfs_mlock(&p, 0, ZVFS_MLOCK_CURRENT), -1);
+	zassert_equal(errno, EINVAL);
+	zassert_equal(zvfs_mlock(NULL, 1, ZVFS_MLOCK_FUTURE), -1);
+	zassert_equal(errno, EINVAL);
+	zassert_equal(zvfs_mlock((void *)UINTPTR_MAX, 2, 0), -1);
+	zassert_equal(errno, EINVAL);
+	if (k_is_user_context()) {
+		/* memory the caller cannot read is not its to lock */
+		zassert_equal(zvfs_mlock(&fs_mnt, sizeof(fs_mnt), 0), -1);
+		zassert_equal(errno, ENOMEM);
+	}
+
+	p = map(PAGE, RW, ZVFS_MAP_PRIVATE | ZVFS_MAP_ANONYMOUS, -1, 0);
+	p[0] = 1;
+	expect_mlock(zvfs_mlock(p, 0, 0));
+	expect_mlock(zvfs_mlock(p, PAGE, 0));
+	zassert_equal(p[0], 1);
+
+	/* every mapping from now on is locked at creation */
+	expect_mlock(zvfs_mlock(NULL, 0, ZVFS_MLOCK_CURRENT | ZVFS_MLOCK_FUTURE));
+	q = map(PAGE, RW, ZVFS_MAP_PRIVATE | ZVFS_MAP_ANONYMOUS, -1, 0);
+	q[0] = 2;
+	expect_mlock(zvfs_munlock(NULL, 0, ZVFS_MLOCK_FUTURE));
+	expect_mlock(zvfs_munlock(NULL, 0, ZVFS_MLOCK_CURRENT));
+	zassert_equal(p[0], 1);
+	zassert_equal(q[0], 2);
+
+	zassert_ok(zvfs_munmap(p, PAGE));
+	zassert_ok(zvfs_munmap(q, PAGE));
+}
+
+ZTEST_USER(zvfs_mmap, test_zvfs_munlock)
+{
+	uint8_t *p;
+
+	errno = 0;
+	zassert_equal(zvfs_munlock(NULL, 0, BIT(2)), -1);
+	zassert_equal(errno, EINVAL);
+	zassert_equal(zvfs_munlock(&p, 0, ZVFS_MLOCK_CURRENT), -1);
+	zassert_equal(errno, EINVAL);
+	zassert_equal(zvfs_munlock((void *)UINTPTR_MAX, 2, 0), -1);
+	zassert_equal(errno, EINVAL);
+
+	/* a mapping's pages stay resident: unlocking them is accepted and changes nothing */
+	p = map(PAGE, RW, ZVFS_MAP_PRIVATE | ZVFS_MAP_ANONYMOUS, -1, 0);
+	p[0] = 3;
+	expect_mlock(zvfs_munlock(p, 0, 0));
+	expect_mlock(zvfs_munlock(p, PAGE, 0));
+	zassert_equal(p[0], 3);
+	zassert_ok(zvfs_munmap(p, PAGE));
+}
+
 /* the faulting test cannot unmap: with processes its mapping outlives the aborted thread */
 static ZTEST_BMEM void *fault_leftover;
 
