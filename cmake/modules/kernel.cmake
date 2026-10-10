@@ -161,11 +161,13 @@ add_custom_target(
 # Dummy add to generate files.
 zephyr_linker_sources(SECTIONS)
 
-# For the gen_app_partitions.py to work correctly, we must ensure that
-# all targets exports their compile commands to fetch object files.
+# For the gen_app_partitions.py and gen_relocate_app.py scripts to work
+# correctly, we must ensure that all targets exports their compile commands
+# to fetch object files.
 # We enable it unconditionally, as this is also useful for several IDEs
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE CACHE BOOL
-    "Export CMake compile commands. Used by gen_app_partitions.py script"
+    "Export CMake compile commands. Used by gen_app_partitions.py \
+     and gen_relocate_app.py scripts"
     FORCE
 )
 
