@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: 2026 SMILE (smile.eu)
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_WCH_CH570
+	bool "WCH CH570/CH572 Clock Control driver"
+	default y
+	depends on DT_HAS_WCH_CH570_CLKCTRL_ENABLED
+	help
+	  WCH CH570/CH572 Clock Control driver.
