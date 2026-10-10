@@ -395,11 +395,58 @@ static int settings_zms_load(struct settings_store *cs, const struct settings_lo
 	return ret;
 }
 
+/* Add the linked list node of a setting name at the end of the linked list */
+static int settings_zms_append_ll_node(struct settings_zms *cf, uint32_t name_hash)
+{
+	struct settings_hash_linked_list settings_element;
+	int rc;
+
+	/* write linked list structure element */
+	settings_element.next_hash = 0;
+	/* Verify first that the linked list last element is not broken.
+	 * Settings subsystem uses ID that starts from ZMS_LL_HEAD_HASH_ID.
+	 */
+	if (cf->last_hash_id < ZMS_LL_HEAD_HASH_ID) {
+		LOG_WRN("Linked list for hashes is broken, Trying to recover");
+		rc = settings_zms_get_last_hash_ids(cf);
+		if (rc < 0) {
+			return rc;
+		}
+	}
+	settings_element.previous_hash = cf->last_hash_id;
+	rc = zms_write(&cf->cf_zms, ZMS_LL_NODE_FROM_NAME_ID(name_hash), &settings_element,
+		       sizeof(struct settings_hash_linked_list));
+	if (rc < 0) {
+		return rc;
+	}
+
+	/* Now update the previous linked list element */
+	settings_element.next_hash = ZMS_LL_NODE_FROM_NAME_ID(name_hash);
+	settings_element.previous_hash = cf->second_to_last_hash_id;
+	rc = zms_write(&cf->cf_zms, cf->last_hash_id, &settings_element,
+		       sizeof(struct settings_hash_linked_list));
+	if (rc < 0) {
+		return rc;
+	}
+	cf->second_to_last_hash_id = cf->last_hash_id;
+	cf->last_hash_id = ZMS_LL_NODE_FROM_NAME_ID(name_hash);
+#ifdef CONFIG_SETTINGS_ZMS_LL_CACHE
+	if (cf->ll_cache_next < CONFIG_SETTINGS_ZMS_LL_CACHE_SIZE) {
+		cf->ll_cache[cf->ll_cache_next] = settings_element;
+		cf->ll_cache_next = cf->ll_cache_next + 1;
+	}
+#endif
+
+	return 0;
+}
+
 static int settings_zms_save(struct settings_store *cs, const char *name, const char *value,
 			     size_t val_len)
 {
 	struct settings_zms *cf = CONTAINER_OF(cs, struct settings_zms, cf_store);
+#ifdef CONFIG_SETTINGS_ZMS_NO_LL_DELETE
 	struct settings_hash_linked_list settings_element;
+#endif
 	char rdname[SETTINGS_FULL_NAME_LEN];
 	uint32_t name_hash;
 	uint32_t collision_num = 0;
@@ -510,41 +557,10 @@ no_hash_collision:
 		}
 		/* else the LL node doesn't exist let's update it */
 #endif /* CONFIG_SETTINGS_ZMS_NO_LL_DELETE */
-		/* write linked list structure element */
-		settings_element.next_hash = 0;
-		/* Verify first that the linked list last element is not broken.
-		 * Settings subsystem uses ID that starts from ZMS_LL_HEAD_HASH_ID.
-		 */
-		if (cf->last_hash_id < ZMS_LL_HEAD_HASH_ID) {
-			LOG_WRN("Linked list for hashes is broken, Trying to recover");
-			rc = settings_zms_get_last_hash_ids(cf);
-			if (rc < 0) {
-				return rc;
-			}
-		}
-		settings_element.previous_hash = cf->last_hash_id;
-		rc = zms_write(&cf->cf_zms, ZMS_LL_NODE_FROM_NAME_ID(name_hash), &settings_element,
-			       sizeof(struct settings_hash_linked_list));
+		rc = settings_zms_append_ll_node(cf, name_hash);
 		if (rc < 0) {
 			return rc;
 		}
-
-		/* Now update the previous linked list element */
-		settings_element.next_hash = ZMS_LL_NODE_FROM_NAME_ID(name_hash);
-		settings_element.previous_hash = cf->second_to_last_hash_id;
-		rc = zms_write(&cf->cf_zms, cf->last_hash_id, &settings_element,
-			       sizeof(struct settings_hash_linked_list));
-		if (rc < 0) {
-			return rc;
-		}
-		cf->second_to_last_hash_id = cf->last_hash_id;
-		cf->last_hash_id = ZMS_LL_NODE_FROM_NAME_ID(name_hash);
-#ifdef CONFIG_SETTINGS_ZMS_LL_CACHE
-		if (cf->ll_cache_next < CONFIG_SETTINGS_ZMS_LL_CACHE_SIZE) {
-			cf->ll_cache[cf->ll_cache_next] = settings_element;
-			cf->ll_cache_next = cf->ll_cache_next + 1;
-		}
-#endif
 #ifdef CONFIG_SETTINGS_ZMS_NO_LL_DELETE
 no_ll_update:
 #endif /* CONFIG_SETTINGS_ZMS_NO_LL_DELETE */
@@ -674,6 +690,144 @@ static int settings_zms_get_last_hash_ids(struct settings_zms *cf)
 	return 0;
 }
 
+#ifdef CONFIG_SETTINGS_ZMS_RELINK_NAMES
+/* A setting name has an ID with MSB bits 10 and LL bit 0. The linked list head is no name. */
+static bool settings_zms_is_name_id(zms_id_t id)
+{
+	return (id <= UINT32_MAX) && ((id & (BIT(31) | BIT(30) | BIT(0))) == BIT(31)) &&
+	       (id != ZMS_LL_HEAD_HASH_ID);
+}
+
+/* Count the setting names that the linked list contains, or find a node in the linked list */
+static int settings_zms_walk_ll(struct settings_zms *cf, uint32_t node_to_find, uint32_t *names,
+				bool *found)
+{
+	struct settings_hash_linked_list settings_element;
+	uint32_t ll_hash_id = ZMS_LL_HEAD_HASH_ID;
+	ssize_t rc;
+
+	*names = 0;
+	*found = false;
+
+	while (ll_hash_id) {
+		rc = zms_read(&cf->cf_zms, ll_hash_id, &settings_element, sizeof(settings_element));
+		if (rc < 0) {
+			return rc;
+		}
+
+		if (ll_hash_id != ZMS_LL_HEAD_HASH_ID &&
+		    zms_get_data_length(&cf->cf_zms, ZMS_NAME_ID_FROM_LL_NODE(ll_hash_id)) > 0) {
+			(*names)++;
+		}
+
+		if (ll_hash_id == node_to_find) {
+			*found = true;
+			return 0;
+		}
+
+		ll_hash_id = settings_element.next_hash;
+	}
+
+	return 0;
+}
+
+/* Find a setting name that the linked list does not contain. Return 1 if found. */
+static int settings_zms_find_unlinked_name(struct settings_zms *cf, uint32_t *name_hash)
+{
+	struct zms_iter_config config = ZMS_ITER_CONFIG_DEFAULT;
+	struct zms_iter iter;
+	zms_id_t id;
+	size_t len;
+	uint32_t names;
+	bool found;
+	int rc;
+
+	config.use_predicate = true;
+	config.predicate_func = settings_zms_is_name_id;
+	rc = zms_iter_init_with_config(&cf->cf_zms, &iter, &config);
+	if (rc) {
+		return rc;
+	}
+
+	while ((rc = zms_iter_next(&cf->cf_zms, &iter, &id, &len, NULL, 0)) == 1) {
+		rc = settings_zms_walk_ll(cf, ZMS_LL_NODE_FROM_NAME_ID((uint32_t)id), &names,
+					  &found);
+		if (rc) {
+			return rc;
+		}
+		if (!found) {
+			*name_hash = (uint32_t)id;
+			return 1;
+		}
+	}
+
+	return rc;
+}
+
+/*
+ * A reset at the wrong moment can break the linked list. The settings after the
+ * break are then not loaded, but their names are still in ZMS, so a save of such
+ * a setting does not add it to the linked list again. Find these settings and add
+ * them to the linked list again, or delete them if their value is missing.
+ */
+static int settings_zms_relink_names(struct settings_zms *cf)
+{
+	struct zms_iter_config config = ZMS_ITER_CONFIG_DEFAULT;
+	struct zms_iter iter;
+	zms_id_t id;
+	size_t len;
+	uint32_t names = 0;
+	uint32_t linked_names;
+	uint32_t name_hash = 0;
+	bool found;
+	int rc;
+
+	/* Usually all names are in the linked list: compare the counts first */
+	config.use_predicate = true;
+	config.predicate_func = settings_zms_is_name_id;
+	rc = zms_iter_init_with_config(&cf->cf_zms, &iter, &config);
+	if (rc) {
+		return rc;
+	}
+	while ((rc = zms_iter_next(&cf->cf_zms, &iter, &id, &len, NULL, 0)) == 1) {
+		names++;
+	}
+	if (rc < 0) {
+		return rc;
+	}
+
+	rc = settings_zms_walk_ll(cf, 0, &linked_names, &found);
+	if (rc || names == linked_names) {
+		return rc;
+	}
+
+	LOG_WRN("%u settings are not in the linked list, adding them again", names - linked_names);
+
+	/* A repair writes to ZMS, which can change the ATEs that an iterator reads.
+	 * Thus, start a new search after each repair.
+	 */
+	while ((rc = settings_zms_find_unlinked_name(cf, &name_hash)) == 1) {
+		if (zms_get_data_length(&cf->cf_zms, ZMS_DATA_ID_FROM_NAME(name_hash)) > 0) {
+			rc = settings_zms_append_ll_node(cf, name_hash);
+			if (ZMS_COLLISION_NUM(name_hash) > cf->hash_collision_num) {
+				cf->hash_collision_num = ZMS_COLLISION_NUM(name_hash);
+			}
+		} else {
+			/* No value: delete the name and its node (not in the linked list) */
+			rc = zms_delete(&cf->cf_zms, name_hash);
+			if (rc == 0) {
+				rc = zms_delete(&cf->cf_zms, ZMS_LL_NODE_FROM_NAME_ID(name_hash));
+			}
+		}
+		if (rc < 0) {
+			return rc;
+		}
+	}
+
+	return rc;
+}
+#endif /* CONFIG_SETTINGS_ZMS_RELINK_NAMES */
+
 /* Initialize the zms backend. */
 static int settings_zms_backend_init(struct settings_zms *cf)
 {
@@ -696,6 +850,11 @@ static int settings_zms_backend_init(struct settings_zms *cf)
 	cf->hash_collision_num = 0;
 
 	rc = settings_zms_get_last_hash_ids(cf);
+#ifdef CONFIG_SETTINGS_ZMS_RELINK_NAMES
+	if (rc == 0) {
+		rc = settings_zms_relink_names(cf);
+	}
+#endif
 
 	LOG_DBG("ZMS backend initialized");
 	return rc;

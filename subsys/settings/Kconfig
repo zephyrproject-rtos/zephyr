@@ -97,6 +97,19 @@ config SETTINGS_ZMS_FORCE_MOUNT
 	  Enable forcing of ZMS storage mount, wiping partition if necessary to recover from
 	  corrupted data.
 
+config SETTINGS_ZMS_RELINK_NAMES
+	bool "Add settings that are not in the linked list again"
+	help
+	  A reset at the wrong moment can break the linked list that the ZMS
+	  backend uses to load the settings. The settings after the break are
+	  then not loaded, and a save does not make them loadable again.
+	  With this option, the backend finds these settings at initialization
+	  and adds them to the linked list again. To find them, the backend
+	  reads all ZMS entries one more time at initialization.
+	  Enable this option on devices that possibly have a broken linked
+	  list, for example devices that used a version of ZMS that could lose
+	  entries after a reset.
+
 endif # SETTINGS_ZMS
 
 config SETTINGS_FCB
