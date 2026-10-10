@@ -19,7 +19,7 @@ extern char __bss_nc_end__[];
 /* SCU registers */
 #define JTAG_PINMUX_REG		0x41c
 
-/* ASPEED System reset contrl/status register */
+/* ASPEED System reset control/status register */
 #define SYS_WDT4_SW_RESET	BIT(31)
 #define SYS_WDT4_ARM_RESET	BIT(30)
 #define SYS_WDT4_FULL_RESET	BIT(29)
