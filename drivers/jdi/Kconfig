@@ -1,0 +1,23 @@
+# Copyright (c) 2026, Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig JDI
+	bool "JDI display interface drivers"
+	help
+	  Enable JDI display interface driver.
+
+if JDI
+
+module = JDI
+module-str = jdi
+source "subsys/logging/Kconfig.template.log_config"
+
+config JDI_INIT_PRIORITY
+	int "JDI initialization priority"
+	default 84
+	help
+	  System initialization priority for JDI drivers.
+
+source "drivers/jdi/Kconfig.sf32lb"
+
+endif
