@@ -23,6 +23,12 @@
 		#clock-cells = <0>;
 	};
 
+	ov5647_input_clock: ov5647-input-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <24000000>;
+		#clock-cells = <0>;
+	};
+
 	test {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -183,6 +189,20 @@
 				compatible = "sony,imx219";
 				reg = <0xe>;
 				clocks = <&imx219_input_clock>;
+			};
+
+			test_i2c_ov5647: ov5647@f {
+				compatible = "ovti,ov5647";
+				reg = <0xf>;
+				clocks = <&ov5647_input_clock>;
+				pwdn-gpios = <&test_gpio 1 0>;
+
+				port {
+					test_ov5647_ep: endpoint {
+						remote-endpoint-label = "";
+						data-lanes = <1 2>;
+					};
+				};
 			};
 		};
 
