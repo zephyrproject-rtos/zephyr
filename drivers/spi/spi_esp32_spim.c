@@ -1068,10 +1068,10 @@ static int transceive(const struct device *dev,
 #else
 
 	do {
-		spi_esp32_transfer(dev);
-	} while (spi_esp32_transfer_ongoing(data));
+		ret = spi_esp32_transfer(dev);
+	} while (ret == 0 && spi_esp32_transfer_ongoing(data));
 
-	spi_esp32_complete(dev, data, cfg->spi, 0);
+	spi_esp32_complete(dev, data, cfg->spi, ret);
 
 #endif  /* CONFIG_SPI_ESP32_INTERRUPT */
 
