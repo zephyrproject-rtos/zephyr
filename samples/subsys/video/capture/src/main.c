@@ -47,6 +47,7 @@ int __weak app_transform_frame(const struct device *const transform_dev,
 static inline int app_setup_display(const struct device *const display_dev, const uint32_t pixfmt)
 {
 	struct display_capabilities capabilities;
+	const uint32_t display_fmt = VIDEO_FMT_TO_DISPLAY(pixfmt);
 	int ret = 0;
 
 	LOG_INF("Display device: %s", display_dev->name);
@@ -65,36 +66,21 @@ static inline int app_setup_display(const struct device *const display_dev, cons
 		capabilities.supported_pixel_formats, capabilities.current_pixel_format,
 		capabilities.current_orientation);
 
-	/* Set display pixel format to match the one in use by the camera */
-	switch (pixfmt) {
-	case VIDEO_PIX_FMT_RGB565:
-		if (capabilities.current_pixel_format != PIXEL_FORMAT_RGB_565) {
-			ret = display_set_pixel_format(display_dev, PIXEL_FORMAT_RGB_565);
-		}
-		break;
-	case VIDEO_PIX_FMT_BGRX32:
-		if (capabilities.current_pixel_format != PIXEL_FORMAT_XRGB_8888) {
-			ret = display_set_pixel_format(display_dev, PIXEL_FORMAT_XRGB_8888);
-			if (ret < 0) {
-				/* If failed with PIXEL_FORMAT_XRGB_8888, PIXEL_FORMAT_ARGB_8888 is
-				 * still applicable
-				 */
-				ret = display_set_pixel_format(display_dev, PIXEL_FORMAT_ARGB_8888);
-			}
-		}
-		break;
-	case VIDEO_PIX_FMT_RGBA32:
-		if (capabilities.current_pixel_format != PIXEL_FORMAT_ABGR_8888) {
-			ret = display_set_pixel_format(display_dev, PIXEL_FORMAT_ABGR_8888);
-		}
-		break;
-	default:
+	if (display_fmt == 0) {
 		LOG_ERR("Display pixel format not supported by this sample");
 		return -ENOTSUP;
 	}
-	if (ret < 0) {
-		LOG_ERR("Unable to set display format");
-		return ret;
+
+	/* Set display pixel format to match the one in use by the camera */
+	if (capabilities.current_pixel_format != display_fmt) {
+		ret = display_set_pixel_format(display_dev, display_fmt);
+	}
+
+	if (ret < 0 && display_fmt == PIXEL_FORMAT_XRGB_8888) {
+		/* If failed with PIXEL_FORMAT_XRGB_8888, PIXEL_FORMAT_ARGB_8888 is
+		 * still applicable
+		 */
+		ret = display_set_pixel_format(display_dev, PIXEL_FORMAT_ARGB_8888);
 	}
 
 	/* Turn off blanking if driver supports it */
