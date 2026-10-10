@@ -10,9 +10,11 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <stdio.h>
 #include <zephyr/ztest_assert.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/sem.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/dns_resolve.h>
+#include <zephyr/net/net_if.h>
 #include <zephyr/net/net_log.h>
 #include <zephyr/net_buf.h>
 
@@ -37,6 +39,9 @@ static struct net_sockaddr_in addr_v4;
 static struct net_sockaddr_in6 addr_v6;
 
 static int queries_received;
+static int queries_received_a;
+static int queries_received_aaaa;
+static bool answer_queries;
 static int expected_query_count =
 	CONFIG_NET_SOCKETS_DNS_BACKOFF_INTERVAL >= CONFIG_NET_SOCKETS_DNS_TIMEOUT ?
 	2 :
@@ -46,6 +51,13 @@ static int expected_query_count =
 
 /* The semaphore is there to wait the data to be received. */
 static ZTEST_BMEM struct sys_sem wait_data;
+
+static void reset_query_counters(void)
+{
+	queries_received = 0;
+	queries_received_a = 0;
+	queries_received_aaaa = 0;
+}
 
 NET_BUF_POOL_DEFINE(test_dns_msg_pool, 1, 512, 0, NULL);
 
@@ -94,6 +106,12 @@ static bool check_dns_query(uint8_t *buf, int buf_len)
 		qtype == DNS_RR_TYPE_A ? "A" : "AAAA", "IN",
 		result->data, ret);
 
+	if (qtype == DNS_RR_TYPE_A) {
+		queries_received_a++;
+	} else if (qtype == DNS_RR_TYPE_AAAA) {
+		queries_received_aaaa++;
+	}
+
 	/* In this test we are just checking if the query came to us in correct
 	 * form, we are not creating a DNS server implementation here.
 	 */
@@ -108,6 +126,61 @@ static bool check_dns_query(uint8_t *buf, int buf_len)
 	return true;
 }
 
+static const uint8_t answer_addrs_v4[][4] = {
+	{ 192, 0, 2, 10 },
+	{ 192, 0, 2, 11 },
+};
+
+static const uint8_t answer_addrs_v6[][16] = {
+	{ 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x10 },
+	{ 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x11 },
+};
+
+/* Answer the query in recv_buf with two A or AAAA records */
+static void send_answer(int sock, const struct net_sockaddr *addr,
+			net_socklen_t addr_len, int len)
+{
+	uint8_t buf[MAX_BUF_SIZE];
+	uint16_t qtype;
+	int pos = 12;
+
+	/* Skip the question name */
+	while (pos < len && recv_buf[pos] != 0) {
+		pos += recv_buf[pos] + 1;
+	}
+
+	pos++;
+	if (pos + 4 > len) {
+		return;
+	}
+
+	qtype = sys_get_be16(&recv_buf[pos]);
+	pos += 4;
+
+	memcpy(buf, recv_buf, pos);
+	buf[2] = 0x81; /* Response, recursion desired */
+	buf[3] = 0x80; /* Recursion available */
+	sys_put_be16(2, &buf[6]); /* ANCOUNT */
+	memset(&buf[8], 0, 4); /* NSCOUNT, ARCOUNT */
+
+	for (int i = 0; i < 2; i++) {
+		const uint8_t *rdata = qtype == DNS_RR_TYPE_A ?
+				       answer_addrs_v4[i] : answer_addrs_v6[i];
+		uint16_t rdlen = qtype == DNS_RR_TYPE_A ?
+				 sizeof(answer_addrs_v4[i]) : sizeof(answer_addrs_v6[i]);
+
+		sys_put_be16(0xc00c, &buf[pos]); /* Pointer to the question name */
+		sys_put_be16(qtype, &buf[pos + 2]);
+		sys_put_be16(DNS_CLASS_IN, &buf[pos + 4]);
+		sys_put_be32(60, &buf[pos + 6]); /* TTL */
+		sys_put_be16(rdlen, &buf[pos + 10]);
+		memcpy(&buf[pos + 12], rdata, rdlen);
+		pos += 12 + rdlen;
+	}
+
+	(void)zsock_sendto(sock, buf, pos, 0, addr, addr_len);
+}
+
 static void process_dns(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p1);
@@ -117,7 +190,7 @@ static void process_dns(void *p1, void *p2, void *p3)
 	struct zsock_pollfd pollfds[2];
 	struct net_sockaddr *addr;
 	net_socklen_t addr_len;
-	int ret, idx;
+	int ret, idx, len;
 
 	NET_DBG("Waiting for IPv4 DNS packets on port %d",
 		net_ntohs(addr_v4.sin_port));
@@ -160,9 +233,14 @@ static void process_dns(void *p1, void *p2, void *p3)
 
 				NET_DBG("Received DNS query");
 
+				len = ret;
 				ret = check_dns_query(recv_buf,
 						      sizeof(recv_buf));
 				if (ret) {
+					if (answer_queries) {
+						send_answer(pollfds[idx].fd, addr, addr_len, len);
+					}
+
 					(void)sys_sem_give(&wait_data);
 				}
 			}
@@ -267,6 +345,135 @@ ZTEST(net_socket_getaddrinfo, test_getaddrinfo_cancelled)
 	zassert_equal(ret, DNS_EAI_CANCELED, "Invalid result");
 
 	zsock_freeaddrinfo(res);
+}
+
+static void check_result_order(struct zsock_addrinfo *res, int first)
+{
+	int second = first == NET_AF_INET6 ? NET_AF_INET : NET_AF_INET6;
+	int families[] = { first, first, second, second };
+	struct zsock_addrinfo *ai = res;
+
+	for (int i = 0; i < ARRAY_SIZE(families); i++) {
+		zassert_not_null(ai, "Missing result %d", i);
+		zassert_equal(ai->ai_family, families[i], "Invalid family for result %d", i);
+		zassert_equal_ptr(ai->ai_addr, net_sad(&ai->_ai_addr),
+				  "Invalid address pointer for result %d", i);
+
+		/* Results of a family keep the order of the DNS answer */
+		if (ai->ai_family == NET_AF_INET) {
+			zassert_mem_equal(&net_sin(ai->ai_addr)->sin_addr,
+					  answer_addrs_v4[i % 2], 4, "Invalid address %d", i);
+		} else {
+			zassert_mem_equal(&net_sin6(ai->ai_addr)->sin6_addr,
+					  answer_addrs_v6[i % 2], 16, "Invalid address %d", i);
+		}
+
+		ai = ai->ai_next;
+	}
+
+	zassert_is_null(ai, "Too many results");
+}
+
+ZTEST(net_socket_getaddrinfo, test_getaddrinfo_result_order)
+{
+	struct net_in_addr addr4 = { { { 192, 0, 2, 1 } } };
+	struct net_in6_addr addr6 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+					  0, 0, 0, 0, 0, 0, 0, 0x01 } } };
+	const bool prefer_ipv4 = IS_ENABLED(CONFIG_NET_SOCKETS_DNS_PREFER_IPV4);
+	const int preferred = prefer_ipv4 ? NET_AF_INET : NET_AF_INET6;
+	const int other = prefer_ipv4 ? NET_AF_INET6 : NET_AF_INET;
+	struct zsock_addrinfo *res = NULL;
+	struct net_if *iface = net_if_get_default();
+	int ret;
+
+	answer_queries = true;
+
+	/* No global address: results of the preferred family come first */
+	ret = zsock_getaddrinfo(QUERY_HOST, NULL, NULL, &res);
+	zassert_equal(ret, 0, "Invalid result (%d)", ret);
+	check_result_order(res, preferred);
+	zsock_freeaddrinfo(res);
+
+	/* Only the other family is configured: its results come first */
+	if (prefer_ipv4) {
+		zassert_not_null(net_if_ipv6_addr_add(iface, &addr6, NET_ADDR_MANUAL, 0),
+				 "Cannot add IPv6 address");
+	} else {
+		zassert_not_null(net_if_ipv4_addr_add(iface, &addr4, NET_ADDR_MANUAL, 0),
+				 "Cannot add IPv4 address");
+	}
+
+	ret = zsock_getaddrinfo(QUERY_HOST, NULL, NULL, &res);
+	zassert_equal(ret, 0, "Invalid result (%d)", ret);
+	check_result_order(res, other);
+	zsock_freeaddrinfo(res);
+
+	if (prefer_ipv4) {
+		zassert_true(net_if_ipv6_addr_rm(iface, &addr6), "Cannot remove IPv6 address");
+	} else {
+		zassert_true(net_if_ipv4_addr_rm(iface, &addr4), "Cannot remove IPv4 address");
+	}
+
+	answer_queries = false;
+}
+
+ZTEST(net_socket_getaddrinfo, test_getaddrinfo_addrconfig)
+{
+	struct net_in_addr addr4 = { { { 192, 0, 2, 1 } } };
+	struct net_in6_addr addr6 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+					  0, 0, 0, 0, 0, 0, 0, 0x01 } } };
+	struct zsock_addrinfo hints = {
+		.ai_flags = ZSOCK_AI_ADDRCONFIG,
+	};
+	struct zsock_addrinfo *res = NULL;
+	struct net_if *iface = net_if_get_default();
+	int ret;
+
+	/* Only loopback addresses: nothing is queried */
+	ret = zsock_getaddrinfo(QUERY_HOST, NULL, &hints, &res);
+	zassert_equal(ret, DNS_EAI_ADDRFAMILY, "Invalid result (%d)", ret);
+	zassert_is_null(res, "");
+	zassert_equal(queries_received, 0, "Unexpected queries (%d)", queries_received);
+
+	/* IPv4 address: only A is queried */
+	zassert_not_null(net_if_ipv4_addr_add(iface, &addr4, NET_ADDR_MANUAL, 0),
+			 "Cannot add IPv4 address");
+	reset_query_counters();
+
+	ret = zsock_getaddrinfo(QUERY_HOST, NULL, &hints, &res);
+	zassert_equal(ret, DNS_EAI_CANCELED, "Invalid result (%d)", ret);
+	zassert_equal(queries_received_a, expected_query_count / 2,
+		      "Invalid A query count (%d)", queries_received_a);
+	zassert_equal(queries_received_aaaa, 0,
+		      "Unexpected AAAA queries (%d)", queries_received_aaaa);
+	zsock_freeaddrinfo(res);
+
+	/* IPv4 and IPv6 addresses: both are queried */
+	zassert_not_null(net_if_ipv6_addr_add(iface, &addr6, NET_ADDR_MANUAL, 0),
+			 "Cannot add IPv6 address");
+	reset_query_counters();
+
+	ret = zsock_getaddrinfo(QUERY_HOST, NULL, &hints, &res);
+	zassert_equal(ret, DNS_EAI_CANCELED, "Invalid result (%d)", ret);
+	zassert_equal(queries_received_a, expected_query_count / 2,
+		      "Invalid A query count (%d)", queries_received_a);
+	zassert_equal(queries_received_aaaa, expected_query_count / 2,
+		      "Invalid AAAA query count (%d)", queries_received_aaaa);
+	zsock_freeaddrinfo(res);
+
+	/* IPv6 address only: only AAAA is queried */
+	zassert_true(net_if_ipv4_addr_rm(iface, &addr4), "Cannot remove IPv4 address");
+	reset_query_counters();
+
+	ret = zsock_getaddrinfo(QUERY_HOST, NULL, &hints, &res);
+	zassert_equal(ret, DNS_EAI_CANCELED, "Invalid result (%d)", ret);
+	zassert_equal(queries_received_a, 0,
+		      "Unexpected A queries (%d)", queries_received_a);
+	zassert_equal(queries_received_aaaa, expected_query_count / 2,
+		      "Invalid AAAA query count (%d)", queries_received_aaaa);
+	zsock_freeaddrinfo(res);
+
+	zassert_true(net_if_ipv6_addr_rm(iface, &addr6), "Cannot remove IPv6 address");
 }
 
 ZTEST(net_socket_getaddrinfo, test_getaddrinfo_no_host)
@@ -668,4 +875,12 @@ ZTEST(net_socket_getaddrinfo, test_getaddrinfo_null_host)
 	zsock_freeaddrinfo(res);
 }
 
-ZTEST_SUITE(net_socket_getaddrinfo, NULL, test_getaddrinfo_setup, NULL, NULL, NULL);
+static void test_getaddrinfo_before(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	reset_query_counters();
+}
+
+ZTEST_SUITE(net_socket_getaddrinfo, NULL, test_getaddrinfo_setup, test_getaddrinfo_before,
+	    NULL, NULL);

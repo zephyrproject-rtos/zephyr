@@ -62,10 +62,21 @@ config NET_SOCKETS_DNS_BACKOFF_INTERVAL
 	     If no reply is received, a 3rd query is done after 15 sec (5 + 5 * 2),
 	     and the timeout is set to 2 sec so that the total timeout is 17 seconds.
 
+config NET_SOCKETS_DNS_PREFER_IPV4
+	bool "Prefer IPv4 over IPv6 in getaddrinfo() results"
+	depends on DNS_RESOLVER && NET_IPV4 && NET_IPV6
+	help
+	  For NET_AF_UNSPEC lookups, getaddrinfo() returns IPv4 addresses
+	  first. By default, IPv6 addresses are returned first, as per the
+	  RFC 6724 default policy table. In both cases, the other family is
+	  returned first if only that family has a non-link-local address
+	  configured.
+
 config HEAP_MEM_POOL_ADD_SIZE_GETADDRINFO
 	# Defaults to heap memory needed for a single getaddrinfo() call in
 	# a default configuration on 64-bit platform
 	int
+	default 520 if DNS_RESOLVER && NET_IPV4 && NET_IPV6
 	default 280
 	depends on DNS_RESOLVER || NET_IP
 
