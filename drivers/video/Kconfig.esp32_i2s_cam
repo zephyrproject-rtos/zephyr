@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_ESP32_I2S_CAM
+	bool "ESP32 I2S camera interface driver"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_I2S_CAM_ENABLED
+	select PWM
+	help
+	  Enable the parallel camera interface driver for the ESP32, using the
+	  I2S0 peripheral in camera slave mode.
+
+if VIDEO_ESP32_I2S_CAM
+
+config VIDEO_ESP32_I2S_CAM_INIT_PRIORITY
+	int "Initialization priority"
+	default 55
+	help
+	  The driver starts the sensor clock (XCLK), so it must be initialized
+	  after the PWM driver and before the image sensor, which is
+	  initialized at VIDEO_INIT_PRIORITY.
+
+config VIDEO_ESP32_I2S_CAM_DMA_CHUNKS
+	int "Number of DMA chunks"
+	default 4
+	range 2 16
+	help
+	  Number of 4092 byte DMA chunks allocated in internal RAM. Each chunk
+	  holds 1023 bytes of camera data, which the interrupt handler copies
+	  into the video buffer. More chunks tolerate a longer interrupt
+	  latency.
+
+endif # VIDEO_ESP32_I2S_CAM

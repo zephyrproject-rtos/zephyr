@@ -29,6 +29,29 @@
 		};
 	};
 
+	i2s0_cam_default: i2s0_cam_default {
+		group1 {
+			pinmux = <ESP32_PINMUX(5, ESP_I2S0I_DATA_IN0, ESP_NOSIG)>,
+				 <ESP32_PINMUX(18, ESP_I2S0I_DATA_IN1, ESP_NOSIG)>,
+				 <ESP32_PINMUX(19, ESP_I2S0I_DATA_IN2, ESP_NOSIG)>,
+				 <ESP32_PINMUX(21, ESP_I2S0I_DATA_IN3, ESP_NOSIG)>,
+				 <ESP32_PINMUX(36, ESP_I2S0I_DATA_IN4, ESP_NOSIG)>,
+				 <ESP32_PINMUX(39, ESP_I2S0I_DATA_IN5, ESP_NOSIG)>,
+				 <ESP32_PINMUX(34, ESP_I2S0I_DATA_IN6, ESP_NOSIG)>,
+				 <ESP32_PINMUX(35, ESP_I2S0I_DATA_IN7, ESP_NOSIG)>,
+				 <ESP32_PINMUX(23, ESP_I2S0I_H_ENABLE, ESP_NOSIG)>,
+				 <ESP32_PINMUX(22, ESP_I2S0I_WS_IN, ESP_NOSIG)>;
+			input-enable;
+		};
+	};
+
+	ledc0_default: ledc0_default {
+		group1 {
+			pinmux = <LEDC_CH8_GPIO0>;
+			output-enable;
+		};
+	};
+
 	spim2_default: spim2_default {
 		group1 {
 			pinmux = <SPIM2_MISO_GPIO12>,

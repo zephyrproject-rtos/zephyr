@@ -15,5 +15,6 @@ supported:
   - sdhc
   - spi
   - uart
+  - video
   - watchdog
 vendor: aithinker
