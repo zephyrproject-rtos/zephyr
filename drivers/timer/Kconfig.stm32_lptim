@@ -21,7 +21,7 @@ menuconfig STM32_LPTIM_TIMER
 	depends on $(dt_chosen_has_compat,$(DT_CHOSEN_Z_SYSTEM_TIMER),$(DT_COMPAT_ST_STM32_LPTIM))
 	depends on $(dt_chosen_enabled,$(DT_CHOSEN_Z_SYSTEM_TIMER))
 	depends on DT_HAS_ST_STM32_LPTIM_ENABLED
-	depends on CLOCK_CONTROL && PM
+	depends on CLOCK_CONTROL
 	select RESET
 	select TICKLESS_CAPABLE
 	select EXPERIMENTAL
@@ -72,7 +72,7 @@ config STM32_LPTIM_TICK_FREQ_RATIO_OVERRIDE
 config STM32_LPTIM_STDBY_TIMER
 	bool
 	default $(dt_chosen_enabled,$(DT_CHOSEN_STDBY_TIMER))
-	depends on COUNTER
+	depends on COUNTER && PM
 	depends on TICKLESS_KERNEL
 	select EXPERIMENTAL
 	help
