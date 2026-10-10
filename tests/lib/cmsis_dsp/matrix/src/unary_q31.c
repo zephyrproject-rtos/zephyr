@@ -223,8 +223,8 @@ static void test_op2v(int op, const q31_t *ref, size_t length)
 
 		/* Load matrix data */
 		memcpy(mat_in1.pData, in_com1,
-		       2 * rows * internal * sizeof(q31_t));
-		memcpy(vec, in_vec1, 2 * internal * sizeof(q31_t));
+		       rows * internal * sizeof(q31_t));
+		memcpy(vec, in_vec1, internal * sizeof(q31_t));
 
 		/* Run test function */
 		switch (op) {
