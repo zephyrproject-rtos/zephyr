@@ -62,16 +62,16 @@ static inline void set_out_div(const struct clock_control_nrf_auxpll_config *con
 	uint8_t out_div_dts = config->out_div;
 
 	switch (out_div_dts) {
-	case NRF_AUXPLL_CTRL_OUTSEL_DIV_6:
+	case 6:
 		out_div_nrfx = (nrf_auxpll_ctrl_outsel_t)AUXPLL_AUXPLLCTRL_OUTSEL_OUTSEL_Div6;
 		break;
-	case NRF_AUXPLL_CTRL_OUTSEL_DIV_8:
+	case 8:
 		out_div_nrfx = (nrf_auxpll_ctrl_outsel_t)AUXPLL_AUXPLLCTRL_OUTSEL_OUTSEL_Div8;
 		break;
-	case NRF_AUXPLL_CTRL_OUTSEL_DIV_12:
+	case 12:
 		out_div_nrfx = (nrf_auxpll_ctrl_outsel_t)AUXPLL_AUXPLLCTRL_OUTSEL_OUTSEL_Div12;
 		break;
-	case NRF_AUXPLL_CTRL_OUTSEL_DIV_16:
+	case 16:
 		out_div_nrfx = (nrf_auxpll_ctrl_outsel_t)AUXPLL_AUXPLLCTRL_OUTSEL_OUTSEL_Div16;
 		break;
 	default:
