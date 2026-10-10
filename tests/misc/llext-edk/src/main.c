@@ -12,7 +12,7 @@
 #include <zephyr/app_memory/mem_domain.h>
 
 #ifdef LOAD_AND_RUN_EXTENSION
-static const unsigned char extension_llext[] = {
+static const unsigned char extension_llext[] __aligned(8) = {
 	#include <extension.inc>
 };
 static const size_t extension_llext_len = ARRAY_SIZE(extension_llext);

@@ -293,15 +293,13 @@ int llext_copy_regions(struct llext_loader *ldr, struct llext *ext,
 
 			/* only show sections mapped to program memory */
 			if (mem_idx < LLEXT_MEM_EXPORT) {
+				size_t sect_addr = (size_t)llext_loaded_sect_ptr(ldr, ext, i);
+
 				if (name == NULL) {
 					LOG_WRN("-s (out of bounds section name string table "
-						"index) %#zx",
-						(size_t)ext->mem[mem_idx] +
-							ldr->sect_map[i].offset);
+						"index) %#zx", sect_addr);
 				} else {
-					LOG_DBG("-s %s %#zx", name,
-						(size_t)ext->mem[mem_idx] +
-							ldr->sect_map[i].offset);
+					LOG_DBG("-s %s %#zx", name, sect_addr);
 				}
 			}
 		}
