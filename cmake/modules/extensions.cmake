@@ -482,6 +482,9 @@ endfunction()
 function(zephyr_get_compile_options_for_lang lang i)
   zephyr_get_parse_args(args ${ARGN})
   get_property(flags TARGET zephyr_interface PROPERTY INTERFACE_COMPILE_OPTIONS)
+  # The result is used outside of any target, where the LTO target property can't be read.
+  # Use its default instead, which is to build with LTO.
+  string(REPLACE "$<TARGET_PROPERTY:LTO>" "1" flags "${flags}")
 
   process_flags(${lang} flags output_list)
   string(REPLACE ";" "$<SEMICOLON>" genexp_output_list "${output_list}")
