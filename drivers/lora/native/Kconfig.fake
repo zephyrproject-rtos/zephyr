@@ -1,0 +1,19 @@
+# Copyright Embeint Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config LORA_FAKE
+	bool "Fake LoRa driver"
+	default y
+	depends on LORA_MODULE_BACKEND_NATIVE
+	depends on DT_HAS_ZEPHYR_FAKE_LORA_ENABLED
+	help
+	  Enable support for the FFF-based fake LoRa driver.
+
+config LORA_FAKE_OPTIONAL_API
+	bool "Optional API support in the fake LoRa driver"
+	default y
+	depends on LORA_FAKE
+	help
+	  Compile support for all optional LoRa driver API functions into the
+	  fake driver. Disable this to test application behavior when a LoRa
+	  driver implements only the mandatory API functions.
