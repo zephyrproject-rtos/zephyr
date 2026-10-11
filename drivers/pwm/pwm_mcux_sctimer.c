@@ -574,9 +574,6 @@ static int mcux_sctimer_disable_capture(const struct device *dev, uint32_t chann
 		mcux_sctimer_update_overflow_irq(dev, channel, false);
 	}
 
-	/* Stop timer */
-	SCTIMER_StopTimer(config->base, kSCTIMER_Counter_U);
-
 	return 0;
 }
 
