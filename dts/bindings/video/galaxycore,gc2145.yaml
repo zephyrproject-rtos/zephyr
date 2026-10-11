@@ -18,6 +18,11 @@ properties:
     description: |
       The PWDN pin is asserted to power down the sensor. The sensor
       receives this as an active high signal
+  clocks:
+    description: |
+      Input clock of the sensor (MCLK). It is enabled before the sensor is
+      probed, and the clock-frequency property of the clock node gives the
+      input clock frequency.
 
 child-binding:
   child-binding:
