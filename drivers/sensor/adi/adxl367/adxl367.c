@@ -197,6 +197,45 @@ static int adxl367_set_low_noise(const struct device *dev, bool enable)
 }
 
 /**
+ * @brief Configure wake-up mode.
+ *
+ * @param dev - The device structure.
+ * @param enable - Enable or disable wake-up mode.
+ *
+ * @return 0 in case of success, negative error code otherwise.
+ */
+static int adxl367_set_wakeup_mode(const struct device *dev, bool enable)
+{
+	const struct adxl367_dev_config *cfg = dev->config;
+	struct adxl367_data *data = dev->data;
+	int ret;
+
+	if (enable && cfg->low_noise) {
+		LOG_ERR("Wake-up mode is incompatible with low-noise mode");
+		return -EINVAL;
+	}
+
+	if (enable && (cfg->fifo_config.fifo_mode != ADXL367_FIFO_DISABLED)) {
+		LOG_ERR("Wake-up mode is incompatible with FIFO");
+		return -EINVAL;
+	}
+
+	ret = data->hw_tf->write_reg_mask(dev, ADXL367_POWER_CTL,
+					  ADXL367_POWER_CTL_WAKEUP_MSK,
+					  FIELD_PREP(ADXL367_POWER_CTL_WAKEUP_MSK,
+						     enable));
+
+#ifdef CONFIG_ADXL367_STREAM
+	if (ret == 0) {
+		data->pwr_reg &= ~ADXL367_POWER_CTL_WAKEUP_MSK;
+		data->pwr_reg |= FIELD_PREP(ADXL367_POWER_CTL_WAKEUP_MSK, enable);
+	}
+#endif /* CONFIG_ADXL367_STREAM */
+
+	return ret;
+}
+
+/**
  * @brief Link/Loop Activity Processing.
  *
  * @param dev - The device structure.
@@ -1081,6 +1120,13 @@ if (IS_ENABLED(CONFIG_ADXL367_TRIGGER)) {
 		return ret;
 	}
 
+	if (cfg->wakeup_mode) {
+		ret = adxl367_set_wakeup_mode(dev, true);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
 	return adxl367_set_act_proc_mode(dev, data->act_proc_mode);
 }
 
@@ -1130,6 +1176,7 @@ static int adxl367_init(const struct device *dev)
 
 #define ADXL367_CONFIG(inst, chipid)							\
 		.odr = DT_INST_PROP(inst, odr),						\
+		.wakeup_mode = DT_INST_PROP(inst, wakeup_mode),		\
 		.autosleep = false,							\
 		.low_noise = false,							\
 		.temp_en = true,							\

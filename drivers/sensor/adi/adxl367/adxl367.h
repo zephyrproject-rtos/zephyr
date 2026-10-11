@@ -390,6 +390,7 @@ struct adxl367_dev_config {
 	enum adxl367_odr odr;
 
 	/* Device Settings */
+	bool wakeup_mode;
 	bool autosleep;
 	bool low_noise;
 	bool temp_en;
