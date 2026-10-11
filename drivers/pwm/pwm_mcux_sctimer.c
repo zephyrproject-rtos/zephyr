@@ -885,7 +885,10 @@ static int mcux_sctimer_pwm_pm_action(const struct device *dev, enum pm_device_a
 	case PM_DEVICE_ACTION_TURN_OFF:
 		break;
 	case PM_DEVICE_ACTION_TURN_ON:
-		mcux_sctimer_pwm_init_common(dev);
+		err = mcux_sctimer_pwm_init_common(dev);
+		if (err) {
+			return err;
+		}
 #ifdef CONFIG_PM_DEVICE
 		if (data->pwm_channel_active == true) {
 			mcux_sctimer_restore_chn_config(dev);
