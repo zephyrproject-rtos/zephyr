@@ -849,15 +849,19 @@ static int mcux_sctimer_pwm_pm_action(const struct device *dev, enum pm_device_a
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
+		err = clock_control_on(config->clock_dev, config->clock_subsys);
+		if (err) {
+			return err;
+		}
+		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+		if (err < 0 && err != -ENOENT) {
+			return err;
+		}
 #ifdef CONFIG_PM_DEVICE
 		if (data->pwm_channel_active) {
 			SCTIMER_StartTimer(config->base, kSCTIMER_Counter_U);
 		}
 #endif /* CONFIG_PM_DEVICE */
-		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
-		if (err < 0 && err != -ENOENT) {
-			return err;
-		}
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 #ifdef CONFIG_PM_DEVICE
@@ -876,6 +880,10 @@ static int mcux_sctimer_pwm_pm_action(const struct device *dev, enum pm_device_a
 #endif /* CONFIG_PM_DEVICE */
 		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
 		if (err < 0 && err != -ENOENT) {
+			return err;
+		}
+		err = clock_control_off(config->clock_dev, config->clock_subsys);
+		if (err) {
 			return err;
 		}
 		break;
