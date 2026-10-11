@@ -882,9 +882,7 @@ static int mcux_sctimer_pwm_suspend(const struct device *dev, bool active)
 	int err;
 
 	if (active) {
-#ifdef CONFIG_PM_DEVICE
 		mcux_sctimer_park(dev);
-#endif
 	}
 
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
@@ -920,14 +918,29 @@ static int mcux_sctimer_pwm_resume(const struct device *dev)
 
 static int mcux_sctimer_pwm_turn_on(const struct device *dev)
 {
+	const struct pwm_mcux_sctimer_config *config = dev->config;
+	int cleanup_err;
 	int err;
+
+	err = clock_control_on(config->clock_dev, config->clock_subsys);
+	if (err != 0) {
+		LOG_ERR("%s: turn-on clock enable failed: %d", dev->name, err);
+		return err;
+	}
 
 	err = mcux_sctimer_pwm_init_common(dev);
 	if (err != 0) {
 		return err;
 	}
 
-	return mcux_sctimer_restore_chn_config(dev);
+	err = mcux_sctimer_restore_chn_config(dev);
+	mcux_sctimer_park(dev);
+	cleanup_err = mcux_sctimer_pwm_suspend(dev, false);
+	if (err != 0) {
+		return err;
+	}
+
+	return cleanup_err;
 }
 
 static int mcux_sctimer_pwm_pm_action(const struct device *dev,
