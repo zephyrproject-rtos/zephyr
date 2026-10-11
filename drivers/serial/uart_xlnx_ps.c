@@ -233,6 +233,9 @@ static void set_baudrate(const struct device *dev, uint32_t baud_rate)
 	uint32_t clk_freq = dev_cfg->sys_clk_freq;
 	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 	uint32_t divisor, generator;
+	uint32_t best_divisor = 0U;
+	uint32_t best_generator = 0U;
+	uint32_t best_error = UINT32_MAX;
 
 	/* Calculate divisor and baud rate generator value */
 	if ((baud != 0) && (clk_freq != 0)) {
@@ -242,21 +245,29 @@ static void set_baudrate(const struct device *dev, uint32_t baud_rate)
 		}
 
 		for (divisor = 4; divisor < 255; divisor++) {
-			uint32_t tmpbaud, bauderr;
+			uint32_t low = clk_freq / (baud * (divisor + 1));
+			uint32_t candidate;
 
-			generator = clk_freq / (baud * (divisor + 1));
-			if (generator < 2 || generator > 65535) {
-				continue;
-			}
-			tmpbaud = clk_freq / (generator * (divisor + 1));
+			/*
+			 * The rate lies between the pairs with low and low + 1. Past the
+			 * ends of the CD range the closest pair is the one at the end.
+			 */
+			for (candidate = low; candidate < low + 2U; candidate++) {
+				uint32_t tmpbaud, bauderr;
 
-			if (baud > tmpbaud) {
-				bauderr = baud - tmpbaud;
-			} else {
-				bauderr = tmpbaud - baud;
-			}
-			if (((bauderr * 1000) / baud) < 3) {
-				break;
+				generator = CLAMP(candidate, 2U, 65535U);
+				tmpbaud = clk_freq / (generator * (divisor + 1));
+
+				if (baud > tmpbaud) {
+					bauderr = baud - tmpbaud;
+				} else {
+					bauderr = tmpbaud - baud;
+				}
+				if (bauderr < best_error) {
+					best_error = bauderr;
+					best_divisor = divisor;
+					best_generator = generator;
+				}
 			}
 		}
 
@@ -266,8 +277,8 @@ static void set_baudrate(const struct device *dev, uint32_t baud_rate)
 		 * the receiver/transmitter is disabled, the baud rate can
 		 * be changed safely at this time.
 		 */
-		sys_write32(divisor, reg_base + XUARTPS_BAUDDIV_OFFSET);
-		sys_write32(generator, reg_base + XUARTPS_BAUDGEN_OFFSET);
+		sys_write32(best_divisor, reg_base + XUARTPS_BAUDDIV_OFFSET);
+		sys_write32(best_generator, reg_base + XUARTPS_BAUDGEN_OFFSET);
 	}
 }
 
