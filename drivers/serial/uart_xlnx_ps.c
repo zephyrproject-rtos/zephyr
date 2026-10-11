@@ -225,8 +225,11 @@ static void xlnx_ps_enable_uart(uintptr_t reg_base)
  *
  * @param dev UART device struct
  * @param baud_rate The desired baud rate as a decimal value
+ *
+ * @retval 0 Divider pair programmed
+ * @retval -EINVAL Zero rate or zero reference clock
  */
-static void set_baudrate(const struct device *dev, uint32_t baud_rate)
+static int set_baudrate(const struct device *dev, uint32_t baud_rate)
 {
 	const struct uart_xlnx_ps_dev_config *dev_cfg = dev->config;
 	uint32_t baud = baud_rate;
@@ -237,49 +240,52 @@ static void set_baudrate(const struct device *dev, uint32_t baud_rate)
 	uint32_t best_generator = 0U;
 	uint32_t best_error = UINT32_MAX;
 
-	/* Calculate divisor and baud rate generator value */
-	if ((baud != 0) && (clk_freq != 0)) {
-		/* Covering case where input clock is so slow */
-		if (clk_freq < 1000000U && baud > 4800U) {
-			baud = 4800;
-		}
+	if (baud == 0U || clk_freq == 0U) {
+		return -EINVAL;
+	}
 
-		for (divisor = 4; divisor < 255; divisor++) {
-			uint32_t low = clk_freq / (baud * (divisor + 1));
-			uint32_t candidate;
+	/* Covering case where input clock is so slow */
+	if (clk_freq < 1000000U && baud > 4800U) {
+		baud = 4800;
+	}
 
-			/*
-			 * The rate lies between the pairs with low and low + 1. Past the
-			 * ends of the CD range the closest pair is the one at the end.
-			 */
-			for (candidate = low; candidate < low + 2U; candidate++) {
-				uint32_t tmpbaud, bauderr;
-
-				generator = CLAMP(candidate, 2U, 65535U);
-				tmpbaud = clk_freq / (generator * (divisor + 1));
-
-				if (baud > tmpbaud) {
-					bauderr = baud - tmpbaud;
-				} else {
-					bauderr = tmpbaud - baud;
-				}
-				if (bauderr < best_error) {
-					best_error = bauderr;
-					best_divisor = divisor;
-					best_generator = generator;
-				}
-			}
-		}
+	for (divisor = 4; divisor < 255; divisor++) {
+		uint32_t low = clk_freq / (baud * (divisor + 1));
+		uint32_t candidate;
 
 		/*
-		 * Set baud rate divisor and generator.
-		 * -> This function is always called from a context in which
-		 * the receiver/transmitter is disabled, the baud rate can
-		 * be changed safely at this time.
+		 * The rate lies between the pairs with low and low + 1. Past the
+		 * ends of the CD range the closest pair is the one at the end.
 		 */
-		sys_write32(best_divisor, reg_base + XUARTPS_BAUDDIV_OFFSET);
-		sys_write32(best_generator, reg_base + XUARTPS_BAUDGEN_OFFSET);
+		for (candidate = low; candidate < low + 2U; candidate++) {
+			uint32_t tmpbaud, bauderr;
+
+			generator = CLAMP(candidate, 2U, 65535U);
+			tmpbaud = clk_freq / (generator * (divisor + 1));
+
+			if (baud > tmpbaud) {
+				bauderr = baud - tmpbaud;
+			} else {
+				bauderr = tmpbaud - baud;
+			}
+			if (bauderr < best_error) {
+				best_error = bauderr;
+				best_divisor = divisor;
+				best_generator = generator;
+			}
+		}
 	}
+
+	/*
+	 * Set baud rate divisor and generator.
+	 * -> This function is always called from a context in which
+	 * the receiver/transmitter is disabled, the baud rate can
+	 * be changed safely at this time.
+	 */
+	sys_write32(best_divisor, reg_base + XUARTPS_BAUDDIV_OFFSET);
+	sys_write32(best_generator, reg_base + XUARTPS_BAUDGEN_OFFSET);
+
+	return 0;
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -314,9 +320,7 @@ static int uart_xlnx_ps_init(const struct device *dev)
 {
 	const struct uart_xlnx_ps_dev_config *dev_cfg = dev->config;
 	uint32_t reg_val;
-#ifdef CONFIG_PINCTRL
 	int err;
-#endif
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
@@ -345,8 +349,10 @@ static int uart_xlnx_ps_init(const struct device *dev)
 	/* Disable all interrupts, polling mode is default */
 	sys_write32(XUARTPS_IXR_MASK, reg_base + XUARTPS_IDR_OFFSET);
 
-	/* Set the baud rate */
-	set_baudrate(dev, dev_cfg->baud_rate);
+	err = set_baudrate(dev, dev_cfg->baud_rate);
+	if (err != 0) {
+		return err;
+	}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	struct uart_xlnx_ps_dev_data_t *dev_data = dev->data;
@@ -668,6 +674,7 @@ static int uart_xlnx_ps_configure(const struct device *dev, const struct uart_co
 	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 	uint32_t mode_reg = 0;
 	uint32_t modemcr_reg = 0;
+	int err;
 
 	/* Read the current mode register & modem control register values */
 	mode_reg = sys_read32(reg_base + XUARTPS_MR_OFFSET);
@@ -690,8 +697,11 @@ static int uart_xlnx_ps_configure(const struct device *dev, const struct uart_co
 	/* Disable the controller before modifying any config registers */
 	xlnx_ps_disable_uart(reg_base);
 
-	/* Set the baud rate */
-	set_baudrate(dev, cfg->baudrate);
+	err = set_baudrate(dev, cfg->baudrate);
+	if (err != 0) {
+		xlnx_ps_enable_uart(reg_base);
+		return err;
+	}
 	dev_cfg->baud_rate = cfg->baudrate;
 
 	/* Write the two control registers */
