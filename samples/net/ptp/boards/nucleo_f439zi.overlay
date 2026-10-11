@@ -1,0 +1,10 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&ptp_clock {
+	pinctrl-0 = <&eth_pps_out_pb5>;
+	pinctrl-names = "default";
+};
