@@ -16,6 +16,7 @@ add_custom_target(check_relocation_metadata
     "-DBUILD_DIR=${CMAKE_BINARY_DIR}"
     "-DRELOCATION_DICT=${ZEPHYR_BINARY_DIR}/relocation_dict.txt"
     "-DTEST_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
+    "-DCONFIG_LTO=${CONFIG_LTO}"
     -P "${CMAKE_CURRENT_SOURCE_DIR}/check_relocation.cmake"
   COMMENT "Checking code relocation metadata"
   VERBATIM
@@ -39,19 +40,22 @@ target_include_directories(app PUBLIC ${CMAKE_CURRENT_LIST_DIR}/test_lib)
 # Relocate library code
 zephyr_code_relocate(LIBRARY test_lib LOCATION SRAM2)
 
-# Forward a generator expression through multiple target properties.
-set(reloc_files src/test_file4.c src/test_file5.c)
-set(genex_expr
-  ${CMAKE_CURRENT_LIST_DIR}/$<JOIN:${reloc_files},$<SEMICOLON>${CMAKE_CURRENT_LIST_DIR}/>)
-add_library(relocation_sources INTERFACE)
-target_sources(relocation_sources INTERFACE "${genex_expr}")
-add_library(forwarded_relocation_sources INTERFACE)
-target_sources(forwarded_relocation_sources INTERFACE
-  "$<TARGET_PROPERTY:relocation_sources,INTERFACE_SOURCES>"
-)
-zephyr_code_relocate(
-  FILES "$<TARGET_PROPERTY:forwarded_relocation_sources,INTERFACE_SOURCES>" LOCATION SRAM2
-)
+# Forward a generator expression through multiple target properties. LTO cannot be disabled
+# for files given as a generator expression, so they are not relocated with LTO.
+if(NOT CONFIG_LTO)
+  set(reloc_files src/test_file4.c src/test_file5.c)
+  set(genex_expr
+    ${CMAKE_CURRENT_LIST_DIR}/$<JOIN:${reloc_files},$<SEMICOLON>${CMAKE_CURRENT_LIST_DIR}/>)
+  add_library(relocation_sources INTERFACE)
+  target_sources(relocation_sources INTERFACE "${genex_expr}")
+  add_library(forwarded_relocation_sources INTERFACE)
+  target_sources(forwarded_relocation_sources INTERFACE
+    "$<TARGET_PROPERTY:relocation_sources,INTERFACE_SOURCES>"
+  )
+  zephyr_code_relocate(
+    FILES "$<TARGET_PROPERTY:forwarded_relocation_sources,INTERFACE_SOURCES>" LOCATION SRAM2
+  )
+endif()
 
 zephyr_code_relocate(FILES src/test_file3.c LOCATION SRAM2_LITERAL)
 zephyr_code_relocate(FILES src/test_file3.c LOCATION SRAM2_TEXT)
