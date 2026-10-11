@@ -330,10 +330,32 @@ static int mcux_sctimer_apply_cycles(const struct device *dev,
 	return 0;
 }
 
+/* The SCTimer holds its output until the consumer changes it, so the consumer owns
+ * the power management reference. A call that arrives while the device is not active
+ * cannot reach the peripheral -- its clock is gated -- and is refused.
+ */
+static int mcux_sctimer_check_active(const struct device *dev)
+{
+#ifdef CONFIG_PM_DEVICE
+	enum pm_device_state state;
+
+	if ((pm_device_state_get(dev, &state) == 0) && (state != PM_DEVICE_STATE_ACTIVE)) {
+		LOG_ERR("device is not active");
+		return -EBUSY;
+	}
+#else
+	ARG_UNUSED(dev);
+#endif /* CONFIG_PM_DEVICE */
+
+	return 0;
+}
+
 static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 				       uint32_t channel, uint32_t period_cycles,
 				       uint32_t pulse_cycles, pwm_flags_t flags)
 {
+	int ret;
+
 	if (channel >= CHANNEL_COUNT) {
 		LOG_ERR("Invalid channel");
 		return -EINVAL;
@@ -344,11 +366,22 @@ static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	ret = mcux_sctimer_check_active(dev);
+	if (ret) {
+		return ret;
+	}
+
+	ret = mcux_sctimer_apply_cycles(dev, channel, period_cycles, pulse_cycles, flags);
+	if (ret) {
+		return ret;
+	}
+
 #ifdef CONFIG_PM_DEVICE
 	struct pwm_mcux_sctimer_data *data = dev->data;
 
-	/* Save channel configuration when CONFIG_PM_DEVICE is defined
-	 * to recover it when exiting from PM3
+	/* Record what the peripheral now holds, so a turn-on after a power
+	 * domain cycle can put it back. A call that did not take effect must
+	 * not be replayed, so this runs only once the write has succeeded.
 	 */
 	data->pwm_channel_config[channel].period_cycles = period_cycles;
 	data->pwm_channel_config[channel].duty_cycles = pulse_cycles;
@@ -356,7 +389,7 @@ static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 	data->pwm_channel_active = true;
 #endif /* CONFIG_PM_DEVICE */
 
-	return mcux_sctimer_apply_cycles(dev, channel, period_cycles, pulse_cycles, flags);
+	return 0;
 }
 
 static int mcux_sctimer_pwm_get_cycles_per_sec(const struct device *dev,
@@ -481,6 +514,11 @@ static int mcux_sctimer_configure_capture(const struct device *dev,
 		return -EBUSY;
 	}
 
+	ret = mcux_sctimer_check_active(dev);
+	if (ret) {
+		return ret;
+	}
+
 	mcux_sctimer_get_edge_events(inverted, pulse_capture, &first_edge_event,
 		&second_edge_event);
 
@@ -550,6 +588,7 @@ static int mcux_sctimer_enable_capture(const struct device *dev, uint32_t channe
 	const struct pwm_mcux_sctimer_config *config = dev->config;
 	struct pwm_mcux_sctimer_data *data = dev->data;
 	uint32_t status_flags;
+	int ret;
 
 	if (channel >= CAPTURE_CHANNEL_COUNT) {
 		LOG_ERR("invalid channel %d", channel);
@@ -564,6 +603,11 @@ static int mcux_sctimer_enable_capture(const struct device *dev, uint32_t channe
 	if (data->capture_data[channel].channel_used) {
 		LOG_ERR("pwm capture channel in progress");
 		return -EBUSY;
+	}
+
+	ret = mcux_sctimer_check_active(dev);
+	if (ret) {
+		return ret;
 	}
 
 	/* Reset capture state */
@@ -589,10 +633,16 @@ static int mcux_sctimer_disable_capture(const struct device *dev, uint32_t chann
 {
 	const struct pwm_mcux_sctimer_config *config = dev->config;
 	struct pwm_mcux_sctimer_data *data = dev->data;
+	int ret;
 
 	if (channel >= CAPTURE_CHANNEL_COUNT) {
 		LOG_ERR("invalid channel %d", channel);
 		return -EINVAL;
+	}
+
+	ret = mcux_sctimer_check_active(dev);
+	if (ret) {
+		return ret;
 	}
 
 	/* Disable interrupts */
