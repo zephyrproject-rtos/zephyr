@@ -89,9 +89,11 @@
 		status = "okay";
 	};
 
-	psci {
-		compatible = "arm,psci-0.2", "arm,psci";
-		method = "smc";
+	firmware {
+		psci {
+			compatible = "arm,psci-1.1";
+			method = "smc";
+		};
 	};
 
 	timer {
