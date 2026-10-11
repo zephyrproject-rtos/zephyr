@@ -100,6 +100,29 @@ struct pwm_mcux_sctimer_data {
 	bool pwm_channel_active;
 };
 
+/* Halt and park configured outputs without changing their event masks. */
+static void mcux_sctimer_park(const struct device *dev)
+{
+	const struct pwm_mcux_sctimer_config *config = dev->config;
+
+	SCTIMER_StopTimer(config->base, kSCTIMER_Counter_U);
+
+#ifdef CONFIG_PM_DEVICE
+	const struct pwm_mcux_sctimer_data *data = dev->data;
+	uint8_t channel;
+
+	for (channel = 0; channel < CHANNEL_COUNT; channel++) {
+		if (data->pwm_channel_config[channel].period_cycles != 0) {
+			if (data->channel[channel].level == kSCTIMER_HighTrue) {
+				config->base->OUTPUT &= ~(1U << channel);
+			} else {
+				config->base->OUTPUT |= (1U << channel);
+			}
+		}
+	}
+#endif /* CONFIG_PM_DEVICE */
+}
+
 static void mcux_sctimer_pwm_force_inactive(const struct device *dev,
 					   uint32_t channel);
 
@@ -853,75 +876,76 @@ static int mcux_sctimer_pwm_init_common(const struct device *dev)
 	return 0;
 }
 
-static int mcux_sctimer_pwm_pm_action(const struct device *dev, enum pm_device_action action)
+static int mcux_sctimer_pwm_suspend(const struct device *dev, bool active)
 {
 	const struct pwm_mcux_sctimer_config *config = dev->config;
 	int err;
-#ifdef CONFIG_PM_DEVICE
-	const struct pwm_mcux_sctimer_data *data = dev->data;
-	uint8_t channel;
-#endif /* CONFIG_PM_DEVICE */
 
+	if (active) {
+#ifdef CONFIG_PM_DEVICE
+		mcux_sctimer_park(dev);
+#endif
+	}
+
+	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
+	if (err < 0 && err != -ENOENT) {
+		return err;
+	}
+
+	return clock_control_off(config->clock_dev, config->clock_subsys);
+}
+
+static int mcux_sctimer_pwm_resume(const struct device *dev)
+{
+	const struct pwm_mcux_sctimer_config *config = dev->config;
+	const struct pwm_mcux_sctimer_data *data = dev->data;
+	int err;
+
+	err = clock_control_on(config->clock_dev, config->clock_subsys);
+	if (err != 0) {
+		return err;
+	}
+
+	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err < 0 && err != -ENOENT) {
+		return err;
+	}
+
+	if (data->pwm_channel_active) {
+		SCTIMER_StartTimer(config->base, kSCTIMER_Counter_U);
+	}
+
+	return 0;
+}
+
+static int mcux_sctimer_pwm_turn_on(const struct device *dev)
+{
+	int err;
+
+	err = mcux_sctimer_pwm_init_common(dev);
+	if (err != 0) {
+		return err;
+	}
+
+	return mcux_sctimer_restore_chn_config(dev);
+}
+
+static int mcux_sctimer_pwm_pm_action(const struct device *dev,
+				     enum pm_device_action action)
+{
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		err = clock_control_on(config->clock_dev, config->clock_subsys);
-		if (err) {
-			return err;
-		}
-		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
-		if (err < 0 && err != -ENOENT) {
-			return err;
-		}
-#ifdef CONFIG_PM_DEVICE
-		if (data->pwm_channel_active) {
-			SCTIMER_StartTimer(config->base, kSCTIMER_Counter_U);
-		}
-#endif /* CONFIG_PM_DEVICE */
-		break;
+		return mcux_sctimer_pwm_resume(dev);
 	case PM_DEVICE_ACTION_SUSPEND:
-#ifdef CONFIG_PM_DEVICE
-		/* Halt the timer counters */
-		SCTIMER_StopTimer(config->base, kSCTIMER_Counter_U);
-		/* Force the configured channels to inactive state */
-		for (channel = 0; channel < CHANNEL_COUNT; channel++) {
-			if (data->pwm_channel_config[channel].period_cycles != 0) {
-				if (data->channel[channel].level == kSCTIMER_HighTrue) {
-					config->base->OUTPUT &= ~(1U << channel);
-				} else {
-					config->base->OUTPUT |= (1U << channel);
-				}
-			}
-		}
-#endif /* CONFIG_PM_DEVICE */
-		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
-		if (err < 0 && err != -ENOENT) {
-			return err;
-		}
-		err = clock_control_off(config->clock_dev, config->clock_subsys);
-		if (err) {
-			return err;
-		}
-		break;
-	case PM_DEVICE_ACTION_TURN_OFF:
-		break;
+		return mcux_sctimer_pwm_suspend(dev, true);
 	case PM_DEVICE_ACTION_TURN_ON:
-		err = mcux_sctimer_pwm_init_common(dev);
-		if (err) {
-			return err;
-		}
-#ifdef CONFIG_PM_DEVICE
-		if (data->pwm_channel_active == true) {
-			err = mcux_sctimer_restore_chn_config(dev);
-			if (err != 0) {
-				return err;
-			}
-		}
-#endif /* CONFIG_PM_DEVICE */
-		break;
+		return mcux_sctimer_pwm_turn_on(dev);
+	case PM_DEVICE_ACTION_TURN_OFF:
+		/* Suspend parked the counter and released its resources. */
+		return 0;
 	default:
 		return -ENOTSUP;
 	}
-	return 0;
 }
 
 static int mcux_sctimer_pwm_init(const struct device *dev)
