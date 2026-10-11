@@ -3524,18 +3524,11 @@ void bt_iso_reset(void)
 		struct bt_iso_cig *cig = &cigs[i];
 		struct bt_iso_chan *cis;
 
-		/* Disconnect any connected CIS and call the callback
-		 * We cannot use bt_iso_chan_disconnected directly here, as that
-		 * attempts to also remove the ISO data path, which we shouldn't attempt to
-		 * during the reset, as that sends HCI commands.
-		 */
 		SYS_SLIST_FOR_EACH_CONTAINER(&cig->cis_channels, cis, node) {
 			if (cis->state != BT_ISO_STATE_DISCONNECTED) {
-				bt_iso_chan_set_state(cis, BT_ISO_STATE_DISCONNECTED);
-				bt_iso_cleanup_acl(cis->iso);
-				if (cis->ops != NULL && cis->ops->disconnected != NULL) {
-					cis->ops->disconnected(cis, BT_HCI_ERR_UNSPECIFIED);
-				}
+				cis->iso->err = BT_HCI_ERR_UNSPECIFIED;
+
+				bt_iso_chan_disconnected(cis, BT_HCI_ERR_UNSPECIFIED);
 			}
 		}
 
