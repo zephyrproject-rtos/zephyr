@@ -207,34 +207,14 @@ static void mcux_sctimer_pwm_update_polarity(const struct device *dev, uint32_t 
 	}
 }
 
-static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
-				       uint32_t channel, uint32_t period_cycles,
-				       uint32_t pulse_cycles, pwm_flags_t flags)
+static int mcux_sctimer_apply_cycles(const struct device *dev,
+				     uint32_t channel, uint32_t period_cycles,
+				     uint32_t pulse_cycles, pwm_flags_t flags)
 {
 	const struct pwm_mcux_sctimer_config *config = dev->config;
 	struct pwm_mcux_sctimer_data *data = dev->data;
 	uint8_t duty_cycle;
 	int ret;
-
-	if (channel >= CHANNEL_COUNT) {
-		LOG_ERR("Invalid channel");
-		return -EINVAL;
-	}
-
-	if (period_cycles == 0) {
-		LOG_ERR("Channel can not be set to inactive level");
-		return -ENOTSUP;
-	}
-
-	#ifdef CONFIG_PM_DEVICE
-	/* Save channel configuration when CONFIG_PM_DEVICE is defined
-	 * to recover it when exiting from PM3
-	 */
-	data->pwm_channel_config[channel].period_cycles = period_cycles;
-	data->pwm_channel_config[channel].duty_cycles = pulse_cycles;
-	data->pwm_channel_config[channel].flags = flags;
-	data->pwm_channel_active = true;
-	#endif /* CONFIG_PM_DEVICE */
 
 	if ((flags & PWM_POLARITY_INVERTED) == 0) {
 		data->channel[channel].level = kSCTIMER_HighTrue;
@@ -326,6 +306,35 @@ static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 	}
 
 	return 0;
+}
+
+static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
+				       uint32_t channel, uint32_t period_cycles,
+				       uint32_t pulse_cycles, pwm_flags_t flags)
+{
+	if (channel >= CHANNEL_COUNT) {
+		LOG_ERR("Invalid channel");
+		return -EINVAL;
+	}
+
+	if (period_cycles == 0) {
+		LOG_ERR("Channel can not be set to inactive level");
+		return -ENOTSUP;
+	}
+
+#ifdef CONFIG_PM_DEVICE
+	struct pwm_mcux_sctimer_data *data = dev->data;
+
+	/* Save channel configuration when CONFIG_PM_DEVICE is defined
+	 * to recover it when exiting from PM3
+	 */
+	data->pwm_channel_config[channel].period_cycles = period_cycles;
+	data->pwm_channel_config[channel].duty_cycles = pulse_cycles;
+	data->pwm_channel_config[channel].flags = flags;
+	data->pwm_channel_active = true;
+#endif /* CONFIG_PM_DEVICE */
+
+	return mcux_sctimer_apply_cycles(dev, channel, period_cycles, pulse_cycles, flags);
 }
 
 static int mcux_sctimer_pwm_get_cycles_per_sec(const struct device *dev,
@@ -766,7 +775,7 @@ static void mcux_sctimer_restore_chn_config(const struct device *dev)
 		 * before entering into a low power mode
 		 */
 		if (data->pwm_channel_config[channel].period_cycles != 0) {
-			mcux_sctimer_pwm_set_cycles(dev, channel,
+			mcux_sctimer_apply_cycles(dev, channel,
 			data->pwm_channel_config[channel].period_cycles,
 			data->pwm_channel_config[channel].duty_cycles,
 			data->pwm_channel_config[channel].flags);
