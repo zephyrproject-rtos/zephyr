@@ -9,6 +9,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/video.h>
@@ -756,6 +757,10 @@ struct gc2145_config {
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	struct gpio_dt_spec reset_gpio;
 #endif
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks)
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
+#endif
 	int bus_type;
 };
 
@@ -771,6 +776,7 @@ struct gc2145_data {
 	struct video_rect crop;
 	uint16_t format_width;
 	uint16_t format_height;
+	uint32_t mclk_freq;
 	uint8_t ratio;
 };
 
@@ -1346,13 +1352,35 @@ static int gc2145_init(const struct device *dev)
 	};
 	int ret;
 	const struct gc2145_config *cfg = dev->config;
+	struct gc2145_data *drv_data = dev->data;
 	(void) cfg;
+	(void) drv_data;
 
 	if (!i2c_is_ready_dt(&cfg->i2c)) {
 		LOG_ERR("Bus device is not ready");
 		return -ENODEV;
 	}
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks)
+	if (cfg->clock_dev != NULL) {
+		if (!device_is_ready(cfg->clock_dev)) {
+			LOG_ERR("%s: device %s is not ready", dev->name, cfg->clock_dev->name);
+			return -ENODEV;
+		}
+
+		ret = clock_control_on(cfg->clock_dev, cfg->clock_subsys);
+		if (ret < 0) {
+			LOG_ERR("Failed to enable the input clock (%d)", ret);
+			return ret;
+		}
+
+		ret = clock_control_get_rate(cfg->clock_dev, cfg->clock_subsys,
+					     &drv_data->mclk_freq);
+		if (ret < 0) {
+			drv_data->mclk_freq = 0U;
+		}
+	}
+#endif
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(pwdn_gpios)
 	if (cfg->pwdn_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&cfg->pwdn_gpio)) {
@@ -1420,6 +1448,14 @@ static int gc2145_init(const struct device *dev)
 #define GC2145_GET_PWDN_GPIO(n)
 #endif
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks)
+#define GC2145_GET_CLOCK(n)									\
+	.clock_dev = DEVICE_DT_GET_OR_NULL(DT_INST_CLOCKS_CTLR(n)),				\
+	.clock_subsys = (clock_control_subsys_t)DT_INST_PHA_OR(n, clocks, id, 0),
+#else
+#define GC2145_GET_CLOCK(n)
+#endif
+
 #define GC2145_INIT(n)										\
 	static struct gc2145_data gc2145_data_##n;						\
 	static const struct gc2145_config gc2145_cfg_##n = {					\
@@ -1428,6 +1464,7 @@ static int gc2145_init(const struct device *dev)
 		GC2145_GET_RESET_GPIO(n)							\
 		.bus_type = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(n, 0, 0), bus_type,		\
 				       VIDEO_BUS_TYPE_PARALLEL),				\
+		GC2145_GET_CLOCK(n)								\
 	};											\
 												\
 	DEVICE_DT_INST_DEFINE(n, &gc2145_init, NULL, &gc2145_data_##n, &gc2145_cfg_##n,		\
