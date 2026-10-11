@@ -11,4 +11,5 @@ supported:
   - rtc
   - pinctrl
   - uart
+  - gpio
 vendor: ti
