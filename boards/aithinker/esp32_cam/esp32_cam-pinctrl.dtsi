@@ -29,6 +29,29 @@
 		};
 	};
 
+	i2s0_cam_default: i2s0_cam_default {
+		group1 {
+			pinmux = <I2S0_CAM_DATA_IN0_GPIO5>,
+				 <I2S0_CAM_DATA_IN1_GPIO18>,
+				 <I2S0_CAM_DATA_IN2_GPIO19>,
+				 <I2S0_CAM_DATA_IN3_GPIO21>,
+				 <I2S0_CAM_DATA_IN4_GPIO36>,
+				 <I2S0_CAM_DATA_IN5_GPIO39>,
+				 <I2S0_CAM_DATA_IN6_GPIO34>,
+				 <I2S0_CAM_DATA_IN7_GPIO35>,
+				 <I2S0_CAM_H_ENABLE_GPIO23>,
+				 <I2S0_CAM_PCLK_GPIO22>;
+			input-enable;
+		};
+	};
+
+	ledc0_default: ledc0_default {
+		group1 {
+			pinmux = <LEDC_CH8_GPIO0>;
+			output-enable;
+		};
+	};
+
 	spim2_default: spim2_default {
 		group1 {
 			pinmux = <SPIM2_MISO_GPIO12>,
