@@ -264,12 +264,18 @@ class Json_report:
                 }
                 for i_fun in covered_file['functions']:
                     if i_fun['execution_count'] != 0:
-                        json_covered_funciton = {"Name": i_fun['name']}
-                        json_file['Covered_Functions'].append(json_covered_funciton)
+                        if 'name' in i_fun:
+                            json_covered_function = {"Name": i_fun['name']}
+                            json_file['Covered_Functions'].append(json_covered_function)
+                        else:
+                            print(f"Skipping covered function without name in {file_path}")
                 for i_fun in covered_file['functions']:
                     if i_fun['execution_count'] == 0:
-                        json_uncovered_funciton = {"Name": i_fun['name']}
-                        json_file['Uncovered_Functions'].append(json_uncovered_funciton)
+                        if 'name' in i_fun:
+                            json_uncovered_function = {"Name": i_fun['name']}
+                            json_file['Uncovered_Functions'].append(json_uncovered_function)
+                        else:
+                            print(f"Skipping uncovered function without name in {file_path}")
                 comp_exists = [x for x in json_files if x['Path'] == json_file['Path']]
                 if not comp_exists:
                     json_files.append(json_file)
