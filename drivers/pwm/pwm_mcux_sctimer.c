@@ -882,6 +882,17 @@ static int mcux_sctimer_pwm_suspend(const struct device *dev, bool active)
 	int err;
 
 	if (active) {
+#ifdef CONFIG_PWM_CAPTURE
+		const struct pwm_mcux_sctimer_data *data = dev->data;
+
+		for (uint32_t channel = 0; channel < CAPTURE_CHANNEL_COUNT; channel++) {
+			if (data->capture_data[channel].channel_used) {
+				LOG_DBG("%s: capture channel %u is armed, refusing suspend",
+					dev->name, channel);
+				return -EBUSY;
+			}
+		}
+#endif
 		mcux_sctimer_park(dev);
 	}
 
