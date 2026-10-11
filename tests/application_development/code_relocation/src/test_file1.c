@@ -74,6 +74,12 @@ ZTEST(code_relocation, test_function_in_sram2)
 		"function_in_sram is not in ram region");
 	function_in_sram(var_sram2_data);
 
+	/* kernel/sem.c is relocated by this application but built in another directory */
+	printk("Address of z_impl_k_sem_give %p\n", &z_impl_k_sem_give);
+	zassert_between_inclusive((uintptr_t)&z_impl_k_sem_give, (uintptr_t)&__ram_text_reloc_start,
+				  (uintptr_t)&__ram_text_reloc_end,
+				  "z_impl_k_sem_give is not in ram region");
+
 	/* Print values from non-relocated function */
 	printk("Address of function_not_relocated %p\n", &function_not_relocated);
 	zassert_between_inclusive((uintptr_t)&function_not_relocated,

@@ -13,6 +13,9 @@ __in_section(bss, sram2, var) uint32_t var_file5_sram2_bss;
 
 ZTEST(code_relocation, test_function_genex_relocate_2)
 {
+	/* Files given as a generator expression are not relocated with LTO */
+	Z_TEST_SKIP_IFDEF(CONFIG_LTO);
+
 	extern uintptr_t __sram2_data_reloc_start;
 	extern uintptr_t __sram2_data_reloc_end;
 	extern uintptr_t __sram2_bss_reloc_start;
