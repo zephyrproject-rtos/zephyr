@@ -23,4 +23,13 @@ config BT_ZEPHYR_NUS_AUTO_START_BLUETOOTH
 	  UUID. Useful to run applications that inherently do not deal with
 	  Bluetooth (e.g: Non-Bluetooth samples using UART over Bluetooth LE).
 
+config BT_ZEPHYR_NUS_ENCRYPT
+	bool "Require encryption for NUS notifications and writes"
+	depends on BT_SMP
+	help
+	  Require an encrypted link to enable notifications on the NUS TX
+	  characteristic and to write to the NUS RX characteristic. A peer on an
+	  unencrypted link is answered with an insufficient encryption error,
+	  which makes a central start pairing.
+
 endif # BT_ZEPHYR_NUS

@@ -27,6 +27,12 @@ struct bt_nus_inst {
 #define BT_UUID_NUS_TX_CHAR BT_UUID_DECLARE_128(BT_UUID_NUS_TX_CHAR_VAL)
 #define BT_UUID_NUS_RX_CHAR BT_UUID_DECLARE_128(BT_UUID_NUS_RX_CHAR_VAL)
 
+#if defined(CONFIG_BT_ZEPHYR_NUS_ENCRYPT)
+#define Z_BT_NUS_PERM_WRITE BT_GATT_PERM_WRITE_ENCRYPT
+#else
+#define Z_BT_NUS_PERM_WRITE BT_GATT_PERM_WRITE
+#endif
+
 /** Required as the service may be instantiated outside of the module */
 ssize_t nus_bt_chr_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	const void *buf, uint16_t len, uint16_t offset, uint8_t flags);
@@ -41,11 +47,11 @@ BT_GATT_SERVICE_DEFINE(_name##_svc,								   \
 		BT_GATT_PERM_NONE,								   \
 		NULL, NULL, NULL),								   \
 	BT_GATT_CCC(nus_ccc_cfg_changed,							   \
-		BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),					   \
+		BT_GATT_PERM_READ | Z_BT_NUS_PERM_WRITE),					   \
 	BT_GATT_CHARACTERISTIC(BT_UUID_NUS_RX_CHAR,						   \
 		BT_GATT_CHRC_WRITE |								   \
 		BT_GATT_CHRC_WRITE_WITHOUT_RESP,						   \
-		BT_GATT_PERM_WRITE,								   \
+		Z_BT_NUS_PERM_WRITE,								   \
 		NULL, nus_bt_chr_write, NULL),							   \
 );												   \
 												   \
