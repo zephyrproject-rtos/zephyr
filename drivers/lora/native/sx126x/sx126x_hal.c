@@ -203,7 +203,7 @@ int sx126x_hal_configure_tx_params(const struct device *dev, int8_t power,
 	int8_t tx_power;
 	int ret;
 
-	if (config->is_sx1261) {
+	if (config->variant == SX126X_SX1261) {
 		/*
 		 * SX1261: Low power PA, up to +15 dBm
 		 * For +15 dBm at >400 MHz, use higher paDutyCycle.
@@ -220,7 +220,7 @@ int sx126x_hal_configure_tx_params(const struct device *dev, int8_t power,
 		}
 		tx_power = CLAMP(power, SX1261_MIN_POWER, SX1261_MAX_POWER_TX_PARAM);
 	} else {
-		/* SX1262: High power PA, up to +22 dBm */
+		/* SX1262, SX1268, LLCC68: High power PA, up to +22 dBm */
 		ret = sx126x_hal_set_pa_config(dev, SX1262_PA_DUTY_CYCLE,
 					       SX1262_HP_MAX,
 					       SX126X_DEVICE_SEL_SX1262,
