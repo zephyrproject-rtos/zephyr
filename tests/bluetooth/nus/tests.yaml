@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  extra_args:
+    - EXTRA_DTC_OVERLAY_FILE="test.overlay"
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+  tags:
+    - bluetooth
+    - gatt
+tests:
+  bluetooth.nus.default_perm: {}
+  bluetooth.nus.encrypt:
+    extra_configs:
+      - CONFIG_BT_ZEPHYR_NUS_SECURITY_ENCRYPT=y
+  bluetooth.nus.authen:
+    extra_configs:
+      - CONFIG_BT_ZEPHYR_NUS_SECURITY_AUTHEN=y

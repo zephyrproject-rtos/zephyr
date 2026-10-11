@@ -27,6 +27,24 @@ struct bt_nus_inst {
 #define BT_UUID_NUS_TX_CHAR BT_UUID_DECLARE_128(BT_UUID_NUS_TX_CHAR_VAL)
 #define BT_UUID_NUS_RX_CHAR BT_UUID_DECLARE_128(BT_UUID_NUS_RX_CHAR_VAL)
 
+/** Permission for writes to the NUS RX characteristic and CCC; requires encryption if
+ *  @kconfig{CONFIG_BT_ZEPHYR_NUS_SECURITY_ENCRYPT} is enabled, and encryption and
+ *  authentication if @kconfig{CONFIG_BT_ZEPHYR_NUS_SECURITY_AUTHEN} is enabled.
+ */
+#define BT_NUS_PERM_WRITE                                                                          \
+	COND_CODE_1(IS_ENABLED(CONFIG_BT_ZEPHYR_NUS_SECURITY_AUTHEN), (BT_GATT_PERM_WRITE_AUTHEN), \
+		    (COND_CODE_1(IS_ENABLED(CONFIG_BT_ZEPHYR_NUS_SECURITY_ENCRYPT),                \
+				 (BT_GATT_PERM_WRITE_ENCRYPT), (BT_GATT_PERM_WRITE))))
+
+/** Permission for NUS TX notifications; requires encryption if
+ *  @kconfig{CONFIG_BT_ZEPHYR_NUS_SECURITY_ENCRYPT} is enabled, and encryption and
+ *  authentication if @kconfig{CONFIG_BT_ZEPHYR_NUS_SECURITY_AUTHEN} is enabled.
+ */
+#define BT_NUS_PERM_NOTIFY                                                                         \
+	COND_CODE_1(IS_ENABLED(CONFIG_BT_ZEPHYR_NUS_SECURITY_AUTHEN), (BT_GATT_PERM_READ_AUTHEN),  \
+		    (COND_CODE_1(IS_ENABLED(CONFIG_BT_ZEPHYR_NUS_SECURITY_ENCRYPT),                \
+				 (BT_GATT_PERM_READ_ENCRYPT), (BT_GATT_PERM_NONE))))
+
 /** Required as the service may be instantiated outside of the module */
 ssize_t nus_bt_chr_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	const void *buf, uint16_t len, uint16_t offset, uint8_t flags);
@@ -38,14 +56,15 @@ BT_GATT_SERVICE_DEFINE(_name##_svc,								   \
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_NUS_SERVICE),						   \
 	BT_GATT_CHARACTERISTIC(BT_UUID_NUS_TX_CHAR,						   \
 		BT_GATT_CHRC_NOTIFY,								   \
-		BT_GATT_PERM_NONE,								   \
+		BT_NUS_PERM_NOTIFY,								   \
 		NULL, NULL, NULL),								   \
 	BT_GATT_CCC(nus_ccc_cfg_changed,							   \
-		BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),					   \
+		BT_GATT_PERM_READ | BT_NUS_PERM_NOTIFY |					   \
+		BT_NUS_PERM_WRITE),								   \
 	BT_GATT_CHARACTERISTIC(BT_UUID_NUS_RX_CHAR,						   \
 		BT_GATT_CHRC_WRITE |								   \
 		BT_GATT_CHRC_WRITE_WITHOUT_RESP,						   \
-		BT_GATT_PERM_WRITE,								   \
+		BT_NUS_PERM_WRITE,								   \
 		NULL, nus_bt_chr_write, NULL),							   \
 );												   \
 												   \
