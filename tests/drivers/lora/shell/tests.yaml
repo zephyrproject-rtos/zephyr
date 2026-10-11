@@ -1,0 +1,16 @@
+# Copyright (c) 2026 Embeint Inc
+# SPDX-License-Identifier: Apache-2.0
+common:
+  platform_allow:
+    - native_sim
+  integration_platforms:
+    - native_sim
+  tags:
+    - drivers
+    - lora
+    - shell
+tests:
+  drivers.lora.shell: {}
+  drivers.lora.shell.optional_api_disabled:
+    extra_configs:
+      - CONFIG_LORA_FAKE_OPTIONAL_API=n
