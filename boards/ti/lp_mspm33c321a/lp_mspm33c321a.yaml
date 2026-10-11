@@ -9,4 +9,6 @@ flash: 1024
 supported:
   - dma
   - rtc
+  - pinctrl
+  - uart
 vendor: ti
