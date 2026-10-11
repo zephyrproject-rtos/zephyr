@@ -15,6 +15,7 @@
 #include <zephyr/drivers/video.h>
 #include <zephyr/dt-bindings/video/video-interfaces.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/video/video.h>
 
 #include "video_common.h"
@@ -40,6 +41,8 @@ LOG_MODULE_REGISTER(video_gc2145, CONFIG_VIDEO_LOG_LEVEL);
 #define GC2145_REG_BYPASS_MODE          0x89
 #define GC2145_REG_BYPASS_MODE_SWITCH   BIT(5)
 #define GC2145_REG_CHIP_ID		GC2145_REG16_BE(0xF0)
+#define GC2145_REG_CLK_DIV_MODE		GC2145_REG8(0xFA)
+#define GC2145_REG_CLK_DIV_MODE_DIV	GENMASK(7, 4)
 #define GC2145_REG_RESET                0xFE
 #define GC2145_REG_SW_RESET             0x80
 #define GC2145_REG_RESET_P0_REGS        0x00
@@ -59,6 +62,21 @@ LOG_MODULE_REGISTER(video_gc2145, CONFIG_VIDEO_LOG_LEVEL);
 #define GC2145_REG_SUBSAMPLE		GC2145_REG8(0x99)
 #define GC2145_REG_SUBSAMPLE_MODE       GC2145_REG8(0x9A)
 #define GC2145_SUBSAMPLE_MODE_SMOOTH    0x0E
+
+/*
+ * Sensor clock set by default_regs: PLL_mode2 (0xf8) multiplies the input clock
+ * by 6 and PLL_mode1 (0xf7) divides the result by 2. clk_div_mode (0xfa) divides
+ * the sensor clock further, which scales the pixel clock and the frame interval
+ * by the same factor.
+ */
+#define GC2145_PLL_MULT			6
+#define GC2145_PLL_DIV			2
+#define GC2145_CLK_DIV_MAX		16
+
+/* Horizontal blanking, vertical blanking and Sh_delay set by default_regs */
+#define GC2145_HBLANK			0x011C
+#define GC2145_VBLANK			0x0032
+#define GC2145_SH_DELAY			0x001D
 
 /* MIPI-CSI registers - on page 3 */
 #define GC2145_REG_DPHY_MODE1		0x01
@@ -777,7 +795,10 @@ struct gc2145_data {
 	uint16_t format_width;
 	uint16_t format_height;
 	uint32_t mclk_freq;
+	int64_t link_freqs[GC2145_CLK_DIV_MAX];
 	uint8_t ratio;
+	uint8_t clk_div;
+	uint8_t clk_div_min;
 };
 
 #define GC2145_VIDEO_FORMAT_CAP_HL(width_l, width_h, height_l, height_h, format, step_w, step_h) \
@@ -1197,6 +1218,125 @@ static int gc2145_get_fmt(const struct device *dev, struct video_format *fmt)
 	return 0;
 }
 
+static int gc2145_set_clk_div(const struct device *dev, uint8_t clk_div)
+{
+	const struct gc2145_config *cfg = dev->config;
+	struct gc2145_data *drv_data = dev->data;
+	int ret;
+
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_CLK_DIV_MODE,
+				  FIELD_PREP(GC2145_REG_CLK_DIV_MODE_DIV, clk_div - 1U));
+	if (ret < 0) {
+		return ret;
+	}
+
+	drv_data->clk_div = clk_div;
+
+	return 0;
+}
+
+/*
+ * On the parallel bus the link frequency is the pixel clock. The one the
+ * receiver selects is the fastest in use: it bounds the frame intervals.
+ */
+static int gc2145_set_link_freq(const struct device *dev, uint8_t clk_div)
+{
+	struct gc2145_data *drv_data = dev->data;
+
+	drv_data->clk_div_min = clk_div;
+
+	return gc2145_set_clk_div(dev, MAX(clk_div, drv_data->clk_div));
+}
+
+/*
+ * Frame time in pixel clock cycles for the readout window programmed by
+ * gc2145_set_resolution(): VB + win_height rows of Hb + Sh_delay + win_width
+ * + 4 pixels (datasheet section 7.1.1), each pixel taking two cycles on the
+ * 8-bit bus.
+ */
+static uint32_t gc2145_frame_cycles(uint32_t width, uint32_t height)
+{
+	uint32_t ratio = CLAMP(MIN(RESOLUTION_UXGA_W / width, RESOLUTION_UXGA_H / height), 1, 3);
+	uint32_t win_width = width * ratio + 16;
+	uint32_t win_height = height * ratio + 8;
+
+	return 2 * (GC2145_HBLANK + GC2145_SH_DELAY + win_width + 4) *
+	       (win_height + GC2145_VBLANK);
+}
+
+static void gc2145_frmival_of(const struct gc2145_data *drv_data, uint32_t width, uint32_t height,
+			      uint8_t clk_div, struct video_frmival *frmival)
+{
+	frmival->numerator = clk_div * gc2145_frame_cycles(width, height);
+	frmival->denominator = drv_data->mclk_freq * GC2145_PLL_MULT / GC2145_PLL_DIV;
+}
+
+static int gc2145_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
+{
+	struct gc2145_data *drv_data = dev->data;
+	uint32_t clk_div = (uint32_t)drv_data->clk_div_min + fie->index;
+	size_t idx;
+
+	if (drv_data->mclk_freq == 0U) {
+		return -ENOTSUP;
+	}
+
+	if (fie->format == NULL || video_format_caps_index(fmts, fie->format, &idx) < 0 ||
+	    clk_div > GC2145_CLK_DIV_MAX) {
+		return -EINVAL;
+	}
+
+	fie->type = VIDEO_FRMIVAL_TYPE_DISCRETE;
+	gc2145_frmival_of(drv_data, fie->format->width, fie->format->height, clk_div,
+			  &fie->discrete);
+
+	return 0;
+}
+
+/* Cropping keeps the readout window of the format, so that one sets the timing */
+static int gc2145_get_frmival(const struct device *dev, struct video_frmival *frmival)
+{
+	struct gc2145_data *drv_data = dev->data;
+
+	if (drv_data->mclk_freq == 0U) {
+		return -ENOTSUP;
+	}
+
+	gc2145_frmival_of(drv_data, drv_data->format_width, drv_data->format_height,
+			  drv_data->clk_div, frmival);
+
+	return 0;
+}
+
+static int gc2145_set_frmival(const struct device *dev, struct video_frmival *frmival)
+{
+	struct gc2145_data *drv_data = dev->data;
+	struct video_frmival unit;
+	uint64_t clk_div;
+	int ret;
+
+	if (drv_data->mclk_freq == 0U) {
+		return -ENOTSUP;
+	}
+
+	if (frmival->denominator == 0U) {
+		return -EINVAL;
+	}
+
+	/* The interval is a multiple of the one at clk_div 1: take the closest */
+	gc2145_frmival_of(drv_data, drv_data->format_width, drv_data->format_height, 1U, &unit);
+	clk_div = DIV_ROUND_CLOSEST((uint64_t)frmival->numerator * unit.denominator,
+				    (uint64_t)frmival->denominator * unit.numerator);
+	clk_div = CLAMP(clk_div, drv_data->clk_div_min, GC2145_CLK_DIV_MAX);
+
+	ret = gc2145_set_clk_div(dev, (uint8_t)clk_div);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return gc2145_get_frmival(dev, frmival);
+}
+
 static int gc2145_set_stream_dvp(const struct device *dev, bool enable)
 {
 	const struct gc2145_config *cfg = dev->config;
@@ -1258,6 +1398,9 @@ static int gc2145_set_ctrl(const struct device *dev, uint32_t id)
 		return video_modify_cci_reg(&cfg->i2c, GC2145_REG_AMODE1, GC2145_REG_AMODE1_UPDOWN,
 					    drv_data->ctrls.vflip.val ?
 					    GC2145_REG_AMODE1_UPDOWN : 0);
+	case VIDEO_CID_LINK_FREQ:
+		/* The menu holds the pixel clock of each clock divider */
+		return gc2145_set_link_freq(dev, (uint8_t)(drv_data->ctrls.linkfreq.val + 1));
 	default:
 		return -ENOTSUP;
 	}
@@ -1310,11 +1453,15 @@ static DEVICE_API(video, gc2145_driver_api) = {
 	.set_ctrl = gc2145_set_ctrl,
 	.set_selection = gc2145_set_selection,
 	.get_selection = gc2145_get_selection,
+	.set_frmival = gc2145_set_frmival,
+	.get_frmival = gc2145_get_frmival,
+	.enum_frmival = gc2145_enum_frmival,
 };
 
 static int gc2145_init_controls(const struct device *dev)
 {
 	int ret;
+	const struct gc2145_config *cfg = dev->config;
 	struct gc2145_data *drv_data = dev->data;
 	struct gc2145_ctrls *ctrls = &drv_data->ctrls;
 
@@ -1328,6 +1475,18 @@ static int gc2145_init_controls(const struct device *dev)
 			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
 	if (ret < 0) {
 		return ret;
+	}
+
+	if (cfg->bus_type == VIDEO_BUS_TYPE_PARALLEL && drv_data->mclk_freq > 0U) {
+		uint32_t pclk = drv_data->mclk_freq * GC2145_PLL_MULT / GC2145_PLL_DIV;
+
+		/* The pixel clock of each clock divider, for the receiver to select */
+		for (uint32_t i = 0; i < GC2145_CLK_DIV_MAX; i++) {
+			drv_data->link_freqs[i] = DIV_ROUND_UP(pclk, i + 1U);
+		}
+
+		return video_init_int_menu_ctrl(&ctrls->linkfreq, dev, VIDEO_CID_LINK_FREQ, 0,
+						drv_data->link_freqs, GC2145_CLK_DIV_MAX);
 	}
 
 	ret = video_init_int_menu_ctrl(&ctrls->linkfreq, dev, VIDEO_CID_LINK_FREQ,
@@ -1423,6 +1582,11 @@ static int gc2145_init(const struct device *dev)
 	}
 
 	ret = video_write_cci_multiregs8(&cfg->i2c, default_regs, ARRAY_SIZE(default_regs));
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = gc2145_set_link_freq(dev, 1U);
 	if (ret < 0) {
 		return ret;
 	}

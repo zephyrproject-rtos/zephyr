@@ -1,7 +1,14 @@
 # Copyright (c) 2024 Felipe Neves
 # SPDX-License-Identifier: Apache-2.0
 
-description: Galaxy Core GC2145 CMOS video sensor
+description: |
+  Galaxy Core GC2145 CMOS video sensor
+
+  The frame interval is set by dividing the sensor clock, which divides the
+  pixel clock by the same factor. On the parallel bus the receiver selects
+  the fastest pixel clock it can sample as the link frequency. Both need the
+  rate of the input clock, which is read from the clock controller referenced
+  by clocks.
 
 compatible: "galaxycore,gc2145"
 
@@ -21,7 +28,8 @@ properties:
   clocks:
     description: |
       Input clock of the sensor (MCLK). It is enabled before the sensor is
-      probed, and its rate is read from the clock controller.
+      probed, and its rate is read from the clock controller to compute the
+      frame intervals.
 
 child-binding:
   child-binding:
