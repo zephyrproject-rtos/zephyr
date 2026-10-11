@@ -16,5 +16,7 @@ config SOC_SERIES_BL808
 	imply CODE_DATA_RELOCATION
 	imply FLASH
 	imply FPU
+	imply REBOOT
 	imply REGULATOR
+	imply RETAINED_MEM
 	imply XIP
