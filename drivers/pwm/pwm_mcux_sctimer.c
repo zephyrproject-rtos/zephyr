@@ -879,8 +879,14 @@ static int mcux_sctimer_pwm_init_common(const struct device *dev)
 static int mcux_sctimer_pwm_suspend(const struct device *dev, bool active)
 {
 	const struct pwm_mcux_sctimer_config *config = dev->config;
+	bool was_running = false;
+	uint32_t output = 0U;
+	int pin_err;
+	int clock_err;
+	int rollback_err;
 	int err;
 
+	/* Only a failed active-device suspend restores the running state. */
 	if (active) {
 #ifdef CONFIG_PWM_CAPTURE
 		const struct pwm_mcux_sctimer_data *data = dev->data;
@@ -892,31 +898,76 @@ static int mcux_sctimer_pwm_suspend(const struct device *dev, bool active)
 				return -EBUSY;
 			}
 		}
-#endif
+#endif /* CONFIG_PWM_CAPTURE */
+
+		was_running = (config->base->CTRL & SCT_CTRL_HALT_L_MASK) == 0U;
+		output = config->base->OUTPUT;
 		mcux_sctimer_park(dev);
 	}
 
-	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
-	if (err < 0 && err != -ENOENT) {
+	pin_err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
+	clock_err = clock_control_off(config->clock_dev, config->clock_subsys);
+	if (pin_err < 0 && pin_err != -ENOENT) {
+		LOG_ERR("%s: sleep pin state failed: %d", dev->name, pin_err);
+		if (clock_err != 0) {
+			LOG_ERR("Clock cleanup failed: %d", clock_err);
+		}
+		err = pin_err;
+	} else {
+		if (clock_err != 0) {
+			LOG_ERR("%s: clock disable failed: %d", dev->name, clock_err);
+		}
+		err = clock_err;
+	}
+
+	if (err == 0) {
+		return 0;
+	}
+
+	if (!active) {
 		return err;
 	}
 
-	return clock_control_off(config->clock_dev, config->clock_subsys);
+	rollback_err = clock_control_on(config->clock_dev,
+					 config->clock_subsys);
+	if (rollback_err != 0) {
+		LOG_ERR("Clock rollback failed: %d", rollback_err);
+		return err;
+	}
+
+	rollback_err = pinctrl_apply_state(config->pincfg,
+					  PINCTRL_STATE_DEFAULT);
+	if (rollback_err < 0 && rollback_err != -ENOENT) {
+		LOG_ERR("Pin rollback failed: %d", rollback_err);
+	}
+	config->base->OUTPUT = output;
+	if (was_running) {
+		SCTIMER_StartTimer(config->base, kSCTIMER_Counter_U);
+	}
+
+	return err;
 }
 
 static int mcux_sctimer_pwm_resume(const struct device *dev)
 {
 	const struct pwm_mcux_sctimer_config *config = dev->config;
 	const struct pwm_mcux_sctimer_data *data = dev->data;
+	int cleanup_err;
 	int err;
 
 	err = clock_control_on(config->clock_dev, config->clock_subsys);
 	if (err != 0) {
+		LOG_ERR("%s: resume clock enable failed: %d", dev->name, err);
 		return err;
 	}
 
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0 && err != -ENOENT) {
+		LOG_ERR("%s: default pin state failed: %d", dev->name, err);
+		cleanup_err = mcux_sctimer_pwm_suspend(dev, false);
+		if (cleanup_err != 0) {
+			LOG_ERR("Suspend cleanup failed: %d", cleanup_err);
+		}
 		return err;
 	}
 
@@ -941,6 +992,10 @@ static int mcux_sctimer_pwm_turn_on(const struct device *dev)
 
 	err = mcux_sctimer_pwm_init_common(dev);
 	if (err != 0) {
+		cleanup_err = mcux_sctimer_pwm_suspend(dev, false);
+		if (cleanup_err != 0) {
+			LOG_ERR("Init cleanup failed: %d", cleanup_err);
+		}
 		return err;
 	}
 
@@ -948,6 +1003,9 @@ static int mcux_sctimer_pwm_turn_on(const struct device *dev)
 	mcux_sctimer_park(dev);
 	cleanup_err = mcux_sctimer_pwm_suspend(dev, false);
 	if (err != 0) {
+		if (cleanup_err != 0) {
+			LOG_ERR("Replay cleanup failed: %d", cleanup_err);
+		}
 		return err;
 	}
 
