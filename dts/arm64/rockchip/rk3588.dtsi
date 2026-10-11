@@ -82,6 +82,27 @@
 			compatible = "arm,psci-1.1";
 			method = "smc";
 		};
+
+		scmi: scmi {
+			compatible = "arm,scmi-smc";
+			shmem = <&scmi_shmem>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+			arm,smc-id = <0x82000010>;
+
+			scmi_clk: protocol@14 {
+				compatible = "arm,scmi-clock";
+				reg = <0x14>;
+				#clock-cells = <1>;
+			};
+
+			scmi_reset: protocol@16 {
+				compatible = "arm,scmi-reset";
+				reg = <0x16>;
+				#reset-cells = <1>;
+			};
+		};
 	};
 
 	timer {
@@ -91,6 +112,19 @@
 			     <GIC_PPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 			     <GIC_PPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
+	};
+
+	sram@10f000 {
+		compatible = "mmio-sram";
+		reg = <0x0010f000 0x100>;
+		ranges = <0x0 0x0010f000 0x100>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		scmi_shmem: sram@0 {
+			compatible = "arm,scmi-shmem";
+			reg = <0x0 0x100>;
+		};
 	};
 
 	sys_grf: syscon@fd58c000 {
