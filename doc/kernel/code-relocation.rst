@@ -98,7 +98,9 @@ This section shows additional configuration options that can be set in
   zero-initialized and uninitialized inside ``SRAM2``.
 
 * Multiple files can be passed to the ``FILES`` argument, or CMake generator
-  expressions can be used to relocate a comma-separated list of files.
+  expressions can be used to relocate a comma-separated list of files. Generator
+  expressions cannot be used with :kconfig:option:`CONFIG_LTO`, see
+  `Link Time Optimization`_.
 
   .. code-block:: cmake
 
@@ -167,6 +169,18 @@ snippet will relocate serial drivers to SRAM2:
   .. code-block:: cmake
 
     zephyr_code_relocate(LIBRARY drivers__serial LOCATION SRAM2)
+
+Link Time Optimization
+======================
+
+With :kconfig:option:`CONFIG_LTO`, the files and libraries passed to
+``zephyr_code_relocate()`` are built without LTO: the generated linker script
+selects sections by object file name, and an LTO object file contains no code
+until link time. The rest of the image is still built with LTO.
+
+A file list given as a generator expression cannot be excluded from LTO, so it is
+rejected when :kconfig:option:`CONFIG_LTO` is enabled. Pass the files as plain
+paths, or relocate the whole library with ``LIBRARY``.
 
 Tips
 ====
