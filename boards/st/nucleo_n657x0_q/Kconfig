@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Lubor Witkowski
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_N657X0_Q
+	select BOARD_EARLY_INIT_HOOK
