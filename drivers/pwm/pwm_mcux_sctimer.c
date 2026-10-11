@@ -782,12 +782,9 @@ static int mcux_sctimer_pwm_init_common(const struct device *dev)
 	sctimer_config_t pwm_config;
 	status_t status;
 	int i;
+#ifdef CONFIG_PWM_CAPTURE
 	int err;
-
-	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
-	if (err) {
-		return err;
-	}
+#endif /* CONFIG_PWM_CAPTURE */
 
 	SCTIMER_GetDefaultConfig(&pwm_config);
 
