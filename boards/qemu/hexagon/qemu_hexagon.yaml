@@ -6,8 +6,9 @@ simulation:
     exec: qemu-system-hexagon
 arch: hexagon
 toolchain:
-  - host
   - hexagon
+env:
+  - HEXAGON_TOOLCHAIN_PATH
 preferred_toolchain: hexagon
 ram: 16384
 testing:
