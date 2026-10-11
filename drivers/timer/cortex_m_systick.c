@@ -51,6 +51,18 @@ extern unsigned int z_clock_hw_cycles_per_sec;
 
 static struct k_spinlock lock;
 
+/* Validate the configured SysTick timer priority:
+ * Accepted values [0..IRQ_PRIO_LOWEST]
+ * IRQ_PRIO_LOWEST encodes the kernel reserved level offset (_IRQ_PRIO_OFFSET), so that
+ * the final NVIC priority calculated below is valid.
+ */
+BUILD_ASSERT(CONFIG_CORTEX_M_SYSTICK_INTERRUPT_PRIORITY >= 0 &&
+	     CONFIG_CORTEX_M_SYSTICK_INTERRUPT_PRIORITY <= IRQ_PRIO_LOWEST,
+	     "CONFIG_CORTEX_M_SYSTICK_INTERRUPT_PRIORITY out of range");
+
+/* Apply the kernel reserved level offset to deduce the NVIC priority. */
+#define SYSTICK_IRQ_PRIO (CONFIG_CORTEX_M_SYSTICK_INTERRUPT_PRIORITY + _IRQ_PRIO_OFFSET)
+
 static uint32_t last_load;
 
 #ifdef CONFIG_CORTEX_M_SYSTICK_64BIT_CYCLE_COUNTER
@@ -641,6 +653,7 @@ void sys_clock_idle_exit(void)
 				SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk;
 			} else {
 				NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);
+				NVIC_SetPriority(SysTick_IRQn, SYSTICK_IRQ_PRIO);
 				SysTick->CTRL |= (SysTick_CTRL_ENABLE_Msk |
 						  SysTick_CTRL_TICKINT_Msk |
 						  SYSTICK_CTRL_CLKSOURCE_MSK_GET());
@@ -657,7 +670,7 @@ void sys_clock_disable(void)
 static int sys_clock_driver_init(void)
 {
 
-	NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);
+	NVIC_SetPriority(SysTick_IRQn, SYSTICK_IRQ_PRIO);
 	last_load = CYC_PER_TICK;
 	overflow_cyc = 0U;
 	SysTick->LOAD = last_load - 1;
