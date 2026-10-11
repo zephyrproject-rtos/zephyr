@@ -29,6 +29,10 @@ zephyr_sources(
   checks.c
 )
 
+zephyr_sources_ifdef(CONFIG_REBOOT
+  reboot.c
+)
+
 # Relocate drivers that need to be entirely relocated
 # Cache management defaults to XIP, this is fine but we need to use it in the flash driver
 # Efuses do clock operations, almost all its function would need to be moved, so take the easy way
