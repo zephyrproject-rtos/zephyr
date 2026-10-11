@@ -100,10 +100,6 @@ struct pwm_mcux_sctimer_data {
 	bool pwm_channel_active;
 };
 
-#ifdef CONFIG_PM_DEVICE
-static void mcux_sctimer_restore_chn_config(const struct device *dev);
-#endif /* CONFIG_PM_DEVICE */
-
 static void mcux_sctimer_pwm_force_inactive(const struct device *dev,
 					   uint32_t channel);
 
@@ -767,25 +763,32 @@ static void mcux_sctimer_isr(const struct device *dev)
 }
 #endif /* CONFIG_PWM_CAPTURE */
 
-#ifdef CONFIG_PM_DEVICE
-static void mcux_sctimer_restore_chn_config(const struct device *dev)
+static int mcux_sctimer_restore_chn_config(const struct device *dev)
 {
+#ifdef CONFIG_PM_DEVICE
 	const struct pwm_mcux_sctimer_data *data = dev->data;
 	uint8_t channel;
+	int err;
 
 	for (channel = 0; channel < CHANNEL_COUNT; channel++) {
 		/* Only restore the channels configured
 		 * before entering into a low power mode
 		 */
 		if (data->pwm_channel_config[channel].period_cycles != 0) {
-			mcux_sctimer_apply_cycles(dev, channel,
-			data->pwm_channel_config[channel].period_cycles,
-			data->pwm_channel_config[channel].duty_cycles,
-			data->pwm_channel_config[channel].flags);
+			err = mcux_sctimer_new_channel(dev, channel,
+				data->pwm_channel_config[channel].period_cycles,
+				data->pwm_channel_config[channel].duty_cycles,
+				data->pwm_channel_config[channel].flags);
+			if (err != 0) {
+				return err;
+			}
 		}
 	}
-}
+#else
+	ARG_UNUSED(dev);
 #endif /* CONFIG_PM_DEVICE */
+	return 0;
+}
 
 static int mcux_sctimer_pwm_init_common(const struct device *dev)
 {
@@ -908,7 +911,10 @@ static int mcux_sctimer_pwm_pm_action(const struct device *dev, enum pm_device_a
 		}
 #ifdef CONFIG_PM_DEVICE
 		if (data->pwm_channel_active == true) {
-			mcux_sctimer_restore_chn_config(dev);
+			err = mcux_sctimer_restore_chn_config(dev);
+			if (err != 0) {
+				return err;
+			}
 		}
 #endif /* CONFIG_PM_DEVICE */
 		break;
