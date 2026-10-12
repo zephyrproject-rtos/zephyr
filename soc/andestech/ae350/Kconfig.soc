@@ -13,8 +13,134 @@ config SOC_AE350
 	help
 	  Andes AE350 SoC implementation"
 
+config SOC_AE350_N22
+	bool
+	select SOC_SERIES_AE350
+	help
+	  Andes AE350 SoC with 32-bit AndesCore N22 core
+
+config SOC_AE350_N225
+	bool
+	select SOC_SERIES_AE350
+	help
+	  Andes AE350 SoC with 32-bit AndesCore N225 core
+
+config SOC_AE350_D23
+	bool
+	select SOC_SERIES_AE350
+	help
+	  Andes AE350 SoC with 32-bit AndesCore D23 core
+
+config SOC_AE350_N25F
+	bool
+	select SOC_SERIES_AE350
+	help
+	  Andes AE350 SoC with 32-bit AndesCore N25F core
+
+config SOC_AE350_D25F
+	bool
+	select SOC_SERIES_AE350
+	help
+	  Andes AE350 SoC with 32-bit AndesCore D25F core
+
+config SOC_AE350_A25
+	bool
+	select SOC_SERIES_AE350
+	help
+	  Andes AE350 SoC with 32-bit AndesCore A25 core
+
+config SOC_AE350_NX25F
+	bool
+	select SOC_SERIES_AE350
+	help
+	  Andes AE350 SoC with 64-bit AndesCore NX25F core
+
+config SOC_AE350_AX25
+	bool
+	select SOC_SERIES_AE350
+	help
+	  Andes AE350 SoC with 64-bit AndesCore AX25 core
+
+config SOC_AE350_A27
+	bool
+	select SOC_SERIES_AE350
+	help
+	  Andes AE350 SoC with 32-bit AndesCore A27 core
+
+config SOC_AE350_AX27
+	bool
+	select SOC_SERIES_AE350
+	help
+	  Andes AE350 SoC with 64-bit AndesCore AX27 core
+
+config SOC_AE350_N45
+	bool
+	select SOC_SERIES_AE350
+	help
+	  Andes AE350 SoC with 32-bit AndesCore N45 core
+
+config SOC_AE350_D45
+	bool
+	select SOC_SERIES_AE350
+	help
+	  Andes AE350 SoC with 32-bit AndesCore D45 core
+
+config SOC_AE350_A45
+	bool
+	select SOC_SERIES_AE350
+	help
+	  Andes AE350 SoC with 32-bit AndesCore A45 core
+
+config SOC_AE350_NX45
+	bool
+	select SOC_SERIES_AE350
+	help
+	  Andes AE350 SoC with 64-bit AndesCore NX45 core
+
+config SOC_AE350_AX45
+	bool
+	select SOC_SERIES_AE350
+	help
+	  Andes AE350 SoC with 64-bit AndesCore AX45 core
+
+config SOC_AE350_A46
+	bool
+	select SOC_SERIES_AE350
+	help
+	  Andes AE350 SoC with 32-bit AndesCore A46 core
+
+config SOC_AE350_AX46
+	bool
+	select SOC_SERIES_AE350
+	help
+	  Andes AE350 SoC with 64-bit AndesCore AX46 core
+
+config SOC_AE350_AX65
+	bool
+	select SOC_SERIES_AE350
+	help
+	  Andes AE350 SoC with 64-bit AndesCore AX65 core
+
 config SOC_SERIES
 	default "ae350" if SOC_SERIES_AE350
 
 config SOC
 	default "ae350" if SOC_AE350
+	default "ae350_n22" if SOC_AE350_N22
+	default "ae350_n225" if SOC_AE350_N225
+	default "ae350_d23" if SOC_AE350_D23
+	default "ae350_n25f" if SOC_AE350_N25F
+	default "ae350_d25f" if SOC_AE350_D25F
+	default "ae350_a25" if SOC_AE350_A25
+	default "ae350_nx25f" if SOC_AE350_NX25F
+	default "ae350_ax25" if SOC_AE350_AX25
+	default "ae350_a27" if SOC_AE350_A27
+	default "ae350_ax27" if SOC_AE350_AX27
+	default "ae350_n45" if SOC_AE350_N45
+	default "ae350_d45" if SOC_AE350_D45
+	default "ae350_a45" if SOC_AE350_A45
+	default "ae350_nx45" if SOC_AE350_NX45
+	default "ae350_ax45" if SOC_AE350_AX45
+	default "ae350_a46" if SOC_AE350_A46
+	default "ae350_ax46" if SOC_AE350_AX46
+	default "ae350_ax65" if SOC_AE350_AX65
