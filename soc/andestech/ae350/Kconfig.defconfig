@@ -65,10 +65,16 @@ config ARCH_IRQ_VECTOR_TABLE_ALIGN
 	default 512 if RISCV_ISA_RV64I
 	default 256
 
+configdefault CLIC_PARAMETER_INTCTLBITS
+	default 2 if CPU_ANDES_N225
+
 endif # RISCV_HAS_CLIC
 
 choice CACHE_TYPE
 	default EXTERNAL_CACHE
 endchoice
+
+configdefault L2C_INCLUSIVE_POLICY
+	default y if CPU_ANDES_A45 || CPU_ANDES_AX45 || CPU_ANDES_AX65
 
 endif # SOC_SERIES_AE350
