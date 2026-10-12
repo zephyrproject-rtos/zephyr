@@ -17,6 +17,12 @@
 #include "icm20689_reg.h"
 #include "icm20689_spi.h"
 #include "icm20689_trigger.h"
+#ifdef CONFIG_ICM20689_DECODER
+#include "icm20689_decoder.h"
+#endif
+#ifdef CONFIG_ICM20689_DECODER
+#include "icm20689_rtio.h"
+#endif
 
 #include <zephyr/logging/log.h>
 
@@ -65,14 +71,14 @@ static const struct icm20689_reg_val icm20689_gyro_fs_map[] = {
 
 /* ICM20689_DT_ACCEL_DLPF_* values; see datasheet section 11.13, register 29. */
 static const struct icm20689_reg_val icm20689_accel_dlpf_map[] = {
-	{.val = 0x00, .reg = ICM20689_ACCEL_CONFIG2_A_DLPF_CFG_218_1_0HZ},
-	{.val = 0x01, .reg = ICM20689_ACCEL_CONFIG2_A_DLPF_CFG_218_1_1HZ},
-	{.val = 0x02, .reg = ICM20689_ACCEL_CONFIG2_A_DLPF_CFG_99HZ},
-	{.val = 0x03, .reg = ICM20689_ACCEL_CONFIG2_A_DLPF_CFG_44HZ},
+	{.val = 0x00, .reg = ICM20689_ACCEL_CONFIG2_A_DLPF_CFG_218_1HZ_SEL_0},
+	{.val = 0x01, .reg = ICM20689_ACCEL_CONFIG2_A_DLPF_CFG_218_1HZ_SEL_1},
+	{.val = 0x02, .reg = ICM20689_ACCEL_CONFIG2_A_DLPF_CFG_99_0HZ},
+	{.val = 0x03, .reg = ICM20689_ACCEL_CONFIG2_A_DLPF_CFG_44_8HZ},
 	{.val = 0x04, .reg = ICM20689_ACCEL_CONFIG2_A_DLPF_CFG_21_2HZ},
 	{.val = 0x05, .reg = ICM20689_ACCEL_CONFIG2_A_DLPF_CFG_10_2HZ},
 	{.val = 0x06, .reg = ICM20689_ACCEL_CONFIG2_A_DLPF_CFG_5_1HZ},
-	{.val = 0x07, .reg = ICM20689_ACCEL_CONFIG2_A_DLPF_CFG_420HZ},
+	{.val = 0x07, .reg = ICM20689_ACCEL_CONFIG2_A_DLPF_CFG_420_0HZ},
 	{.val = 0x08, .reg = ICM20689_ACCEL_CONFIG2_BIT_ACCEL_FCHOICE_B},
 };
 
@@ -631,7 +637,7 @@ static int icm20689_get_sample_rate_mode(const struct icm20689_data *data,
 					 struct icm20689_sample_rate_mode *mode)
 {
 	if (sensor == ICM20689_SENSOR_ACCEL) {
-		if (data->active.accel_dlpf <= ICM20689_DT_ACCEL_DLPF_420HZ) {
+		if (data->active.accel_dlpf <= ICM20689_DT_ACCEL_DLPF_420_0HZ) {
 			mode->divider_enabled = true;
 			mode->fixed_micro_hz = 0;
 			return 0;
@@ -937,8 +943,14 @@ static DEVICE_API(sensor, icm20689_driver_api) = {
 	.channel_get = icm20689_channel_get,
 	.attr_set = icm20689_attr_set,
 	.attr_get = icm20689_attr_get,
+#ifdef CONFIG_ICM20689_DECODER
+	.get_decoder = icm20689_get_decoder,
+#endif
 #ifdef CONFIG_ICM20689_TRIGGER
 	.trigger_set = icm20689_trigger_set,
+#endif
+#ifdef CONFIG_ICM20689_DECODER
+	.submit = icm20689_submit,
 #endif
 };
 

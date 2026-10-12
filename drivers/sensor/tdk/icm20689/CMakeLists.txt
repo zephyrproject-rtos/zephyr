@@ -9,3 +9,5 @@ zephyr_library_sources_ifdef(CONFIG_ICM20689
 )
 
 zephyr_library_sources_ifdef(CONFIG_ICM20689_TRIGGER icm20689_trigger.c)
+zephyr_library_sources_ifdef(CONFIG_ICM20689_DECODER icm20689_rtio.c)
+zephyr_library_sources_ifdef(CONFIG_ICM20689_DECODER icm20689_decoder.c)
