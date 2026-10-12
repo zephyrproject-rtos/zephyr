@@ -13,6 +13,7 @@ supported:
   - gpio
   - pinctrl
   - uart
+  - pwm
   - counter
   - vref
   - dma
