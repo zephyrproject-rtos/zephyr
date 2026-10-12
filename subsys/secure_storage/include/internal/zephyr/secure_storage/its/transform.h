@@ -10,6 +10,10 @@
  * They are meant to be called only by the ITS implementation.
  * This header may be included when providing a custom implementation of the
  * ITS transform module (@kconfig{CONFIG_SECURE_STORAGE_ITS_TRANSFORM_IMPLEMENTATION_CUSTOM}).
+ *
+ * The functions declared here must not themselves call PSA Crypto functions that take key IDs
+ * because the PSA Crypto implementation calls into the ITS to store persistent keys, so doing
+ * an operation on a key while another one is ongoing corrupts the PSA Crypto key store.
  */
 #include <zephyr/secure_storage/its/common.h>
 
