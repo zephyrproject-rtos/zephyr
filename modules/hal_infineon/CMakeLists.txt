@@ -28,12 +28,12 @@ if(CONFIG_SOC_FAMILY_INFINEON_CAT1
   ## Add core-lib sources for CAT1 devices
   add_subdirectory(core-lib)
 
-  if(NOT CONFIG_SOC_FAMILY_INFINEON_EDGE AND NOT CONFIG_SOC_DIE_PSC3M6)
+  if(NOT CONFIG_SOC_FAMILY_INFINEON_EDGE AND NOT CONFIG_SOC_DIE_PSC3M6 AND NOT CONFIG_SOC_DIE_PSC3M8)
     ## Add mtb-pdl-cat1 sources for CAT1 devices
     add_subdirectory(mtb-pdl-cat1)
   endif()
 
-  if(NOT CONFIG_SOC_DIE_PSC3M6)
+  if(NOT CONFIG_SOC_DIE_PSC3M6 AND NOT CONFIG_SOC_DIE_PSC3M8)
     ## Add mtb-templates-cat1 sources for CAT1 devices
     add_subdirectory(mtb-template-cat1)
   endif()
@@ -47,7 +47,8 @@ endif()
 if(CONFIG_SOC_FAMILY_INFINEON_CAT1
   AND NOT CONFIG_SOC_FAMILY_PSOC6_LEGACY
   AND NOT CONFIG_SOC_FAMILY_INFINEON_EDGE
-  AND NOT CONFIG_SOC_DIE_PSC3M6)
+  AND NOT CONFIG_SOC_DIE_PSC3M6
+  AND NOT CONFIG_SOC_DIE_PSC3M8)
 
   ## Add catcm0p sleep images for CM0 Devices
   if(CONFIG_SOC_PSOC6_CM0P_IMAGE_SLEEP)
@@ -111,7 +112,7 @@ if(CONFIG_SOC_SERIES_PSC3)
   zephyr_library_compile_definitions(CY_PDL_FLASH_BOOT)
   zephyr_library_compile_definitions(NORMAL_PROVISIONED_LCS)
 
-  if(CONFIG_SOC_DIE_PSC3M6)
+  if(CONFIG_SOC_DIE_PSC3M6 OR CONFIG_SOC_DIE_PSC3M8)
     dt_nodelabel(ifx_flash_node NODELABEL "flash0")
     dt_nodelabel(ifx_sram_node NODELABEL "sram0")
     dt_reg_size(ifx_flash_size PATH ${ifx_flash_node})
@@ -130,6 +131,11 @@ endif()
 if(CONFIG_SOC_DIE_PSC3M6)
   add_subdirectory(mtb-dsl-psc3m6)
   add_subdirectory(mtb-template-psc3m6)
+endif()
+
+if(CONFIG_SOC_DIE_PSC3M8)
+  add_subdirectory(mtb-dsl-psc3m8)
+  add_subdirectory(mtb-template-psc3m8)
 endif()
 
 ## Add Wi-Fi assets for AIROC devices
