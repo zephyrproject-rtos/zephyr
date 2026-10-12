@@ -244,11 +244,6 @@ static int set_baudrate(const struct device *dev, uint32_t baud_rate)
 		return -EINVAL;
 	}
 
-	/* Covering case where input clock is so slow */
-	if (clk_freq < 1000000U && baud > 4800U) {
-		baud = 4800;
-	}
-
 	for (divisor = 4; divisor < 255; divisor++) {
 		uint32_t low = clk_freq / (baud * (divisor + 1));
 		uint32_t candidate;
