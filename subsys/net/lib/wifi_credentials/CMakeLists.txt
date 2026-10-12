@@ -7,7 +7,8 @@
 zephyr_library_named(wifi_credentials)
 zephyr_library_sources(wifi_credentials.c)
 
-if(CONFIG_WIFI_CREDENTIALS_BACKEND_PSA)
+if(CONFIG_WIFI_CREDENTIALS_BACKEND_PSA OR
+   (CONFIG_WIFI_CREDENTIALS_BACKEND_PSA_PS AND CONFIG_BUILD_WITH_TFM))
 zephyr_library_include_directories(
   $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/api_ns/interface/include
 )
@@ -21,6 +22,11 @@ zephyr_library_sources_ifdef(
 zephyr_library_sources_ifdef(
   CONFIG_WIFI_CREDENTIALS_BACKEND_PSA
   wifi_credentials_backend_psa.c
+)
+
+zephyr_library_sources_ifdef(
+  CONFIG_WIFI_CREDENTIALS_BACKEND_PSA_PS
+  wifi_credentials_backend_psa_ps.c
 )
 
 zephyr_library_sources_ifdef(

@@ -17,6 +17,7 @@ source "subsys/logging/Kconfig.template.log_config"
 
 choice WIFI_CREDENTIALS_BACKEND
 	prompt "WiFi credentials backend"
+	default WIFI_CREDENTIALS_BACKEND_PSA_PS if BUILD_WITH_TFM || SECURE_STORAGE
 	default WIFI_CREDENTIALS_BACKEND_PSA if BUILD_WITH_TFM
 	default WIFI_CREDENTIALS_BACKEND_SETTINGS
 	default WIFI_CREDENTIALS_BACKEND_NONE if WIFI_CREDENTIALS_STATIC
@@ -30,14 +31,28 @@ config WIFI_CREDENTIALS_BACKEND_SETTINGS
 	depends on !SETTINGS_NONE
 
 config WIFI_CREDENTIALS_BACKEND_PSA
-	bool "PSA Protected Storage"
+	bool "PSA Crypto persistent keys"
 	depends on BUILD_WITH_TFM
+
+config WIFI_CREDENTIALS_BACKEND_PSA_PS
+	bool "PSA Protected Storage API"
+	depends on (BUILD_WITH_TFM && TFM_PARTITION_PROTECTED_STORAGE) || SECURE_STORAGE
+	help
+	  Store credentials using the PSA Protected Storage API, which is
+	  implemented by TF-M or, in builds without TF-M, by the secure
+	  storage subsystem.
 
 config WIFI_CREDENTIALS_BACKEND_NONE
 	bool "No credentials storage"
 	depends on WIFI_CREDENTIALS_STATIC
 
 endchoice
+
+# The secure storage subsystem stores each entry in a single ITS entry.
+# With the default settings, an entry is 224 bytes on 32-bit targets and
+# 240 bytes on 64-bit targets. Round it up to the next power of two.
+configdefault SECURE_STORAGE_ITS_MAX_DATA_SIZE
+	default 256 if WIFI_CREDENTIALS_BACKEND_PSA_PS
 
 config WIFI_CREDENTIALS_MAX_ENTRIES
 	int "Number of supported WiFi credentials"

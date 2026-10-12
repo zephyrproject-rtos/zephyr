@@ -55,6 +55,14 @@ Bluetooth
 Networking
 **********
 
+* The default Wi-Fi credentials backend is now
+  :kconfig:option:`CONFIG_WIFI_CREDENTIALS_BACKEND_PSA_PS` for non-secure targets with the TF-M
+  Protected Storage partition and for targets that enable :kconfig:option:`CONFIG_SECURE_STORAGE`.
+  Previously, these targets used :kconfig:option:`CONFIG_WIFI_CREDENTIALS_BACKEND_PSA` and
+  :kconfig:option:`CONFIG_WIFI_CREDENTIALS_BACKEND_SETTINGS`, respectively. The new backend does
+  not read credentials stored by these backends. To keep using credentials stored before the
+  update, enable the previously used backend explicitly.
+
 Other subsystems
 ****************
 
