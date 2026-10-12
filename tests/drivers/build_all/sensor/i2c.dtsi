@@ -1765,3 +1765,9 @@ test_i2c_ictx53xx: ictx53xx@e5 {
 	compatible = "invensense,ictx53xx";
 	reg = <0xe5>;
 };
+
+test_i2c_sths34pf80: sths34pf80@e6 {
+	compatible = "st,sths34pf80";
+	reg = <0xe6>;
+	int-gpios = <&test_gpio 0 0>;
+};
