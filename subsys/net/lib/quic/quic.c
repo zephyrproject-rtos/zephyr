@@ -8710,6 +8710,25 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 		struct quic_endpoint *new_ep;
 		bool token_validated = false;
 
+		/* Only an Initial packet starts a connection, and the address
+		 * validation and the datagram size check below are applied to
+		 * Initial packets only. Any other long header packet that
+		 * matches no connection is dropped (RFC 9000 ch. 5.2.2):
+		 * creating an endpoint for it would let anyone fill the
+		 * endpoint table with packets that pass none of those checks.
+		 * 0-RTT packets that arrive ahead of their Initial packet are
+		 * not buffered, the client sends that data again.
+		 */
+		if (ptype != QUIC_PACKET_TYPE_INITIAL) {
+			NET_DBG("[EP:%p/%d] Dropping long header packet type %d "
+				"for an unknown connection",
+				ep, quic_get_by_ep(ep), ptype);
+			QUIC_EP_STAT_INC(ep, peer_not_found);
+			QUIC_EP_STAT_INC(ep, drop_rx);
+			ret = 1;
+			goto out;
+		}
+
 		/* Make sure that the initial packet's UDP datagram is at least
 		 * 1200 bytes long (RFC 9000 Section 14.1) to prevent
 		 * amplification attacks.
