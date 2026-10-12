@@ -20,4 +20,5 @@ supported:
   - counter
   - watchdog
   - rtc
+  - pwm
 vendor: ti
