@@ -61,3 +61,27 @@ family:
     - name: psc3m6fds2afq1
     - name: psc3m6ges3acq1
     - name: psc3m6fds2acq1
+    - name: psc3m8gfs3pahq1
+      cpuclusters:
+      - name: main
+    - name: psc3m8gfs3pafq1
+      cpuclusters:
+      - name: main
+    - name: psc3m8gfs3pacq1
+      cpuclusters:
+      - name: main
+    - name: psc3m8gfs3plhq1
+      cpuclusters:
+      - name: main
+    - name: psc3m8fes2plhq1
+      cpuclusters:
+      - name: main
+    - name: psc3m8gfs3pabq1
+      cpuclusters:
+      - name: main
+    - name: psc3m8gfs3plgq1
+      cpuclusters:
+      - name: main
+    - name: psc3m8fes2plgq1
+      cpuclusters:
+      - name: main
