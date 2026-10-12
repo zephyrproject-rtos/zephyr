@@ -11,7 +11,7 @@
 #include <soc.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/espi.h>
-#include <zephyr/drivers/espi_saf.h>
+#include <zephyr/drivers/espi_taf.h>
 #include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
 #include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
 #include <zephyr/sys/sys_io.h>
@@ -20,7 +20,7 @@
 
 #include "mec_espi_taf_regs.h"
 #include "espi_utils.h"
-LOG_MODULE_REGISTER(espi_saf, CONFIG_ESPI_LOG_LEVEL);
+LOG_MODULE_REGISTER(espi_taf, CONFIG_ESPI_LOG_LEVEL);
 
 /* common clock control device node for all Microchip XEC chips */
 #define MCHP_XEC_CLOCK_CONTROL_NODE DT_NODELABEL(pcr)
@@ -121,7 +121,7 @@ static void clear_ecp_mem(const struct device *dev)
 	}
 }
 
-static size_t pkt_to_ecp_mem(const struct device *dev, struct espi_saf_packet *pkt)
+static size_t pkt_to_ecp_mem(const struct device *dev, struct espi_taf_packet *pkt)
 {
 	const struct espi_taf_xec_config *xcfg = dev->config;
 	volatile uint8_t *ecp_mem = xcfg->ecp_mem;
@@ -143,7 +143,7 @@ static size_t pkt_to_ecp_mem(const struct device *dev, struct espi_saf_packet *p
 	return n;
 }
 
-static size_t ecp_mem_to_pkt(const struct device *dev, struct espi_saf_packet *pkt)
+static size_t ecp_mem_to_pkt(const struct device *dev, struct espi_taf_packet *pkt)
 {
 	const struct espi_taf_xec_config *xcfg = dev->config;
 	volatile uint8_t *ecp_mem = xcfg->ecp_mem;
@@ -357,11 +357,11 @@ static int qspi_load_descrs(mm_reg_t qbase, uint8_t start_descr_idx, uint8_t num
  * Future enhancement should implement QSPI TAF configuration using custom SPI/MSPI driver
  * APIs. The SPI/MSPI driver can then reconfigure its controller and pins.
  */
-static int taf_qmspi_init(const struct espi_taf_xec_config *xcfg, const struct espi_saf_cfg *cfg)
+static int taf_qmspi_init(const struct espi_taf_xec_config *xcfg, const struct espi_taf_cfg *cfg)
 {
 	mm_reg_t taf_base = xcfg->taf_base;
 	mm_reg_t qbase = xcfg->qspi_base;
-	const struct espi_saf_hw_cfg *hwcfg = &cfg->hwcfg;
+	const struct espi_taf_hw_cfg *hwcfg = &cfg->hwcfg;
 	uint32_t qmode = 0, qfdiv = 0, rval = 0;
 
 	qmode = sys_read32(qbase + XEC_QSPI_MODE_OFS);
@@ -493,11 +493,11 @@ static void taf_dnx_bypass_init(mm_reg_t taf_base)
  * Only report 32KB and 64KB to Host if supported by both
  * flash devices.
  */
-static int taf_init_erase_block_size(const struct device *dev, const struct espi_saf_cfg *cfg)
+static int taf_init_erase_block_size(const struct device *dev, const struct espi_taf_cfg *cfg)
 {
 	const struct espi_taf_xec_config *xcfg = dev->config;
 	mm_reg_t iocb = xcfg->espi_ioc_base;
-	struct espi_saf_flash_cfg *fcfg = cfg->flash_cfgs;
+	struct espi_taf_flash_cfg *fcfg = cfg->flash_cfgs;
 	uint32_t opb = fcfg->opb;
 	uint8_t erase_bitmap = BIT(XEC_ESPI_IOC_TAF_ERBSZ_4KB_POS);
 
@@ -535,7 +535,7 @@ static int taf_init_erase_block_size(const struct device *dev, const struct espi
  * SAF Flash Misc Config @ 0x38
  */
 static void taf_flash_misc_cfg(const struct device *dev, uint8_t cs,
-			       const struct espi_saf_flash_cfg *fcfg)
+			       const struct espi_taf_flash_cfg *fcfg)
 {
 	const struct espi_taf_xec_config *xcfg = dev->config;
 	mm_reg_t tb = xcfg->taf_base;
@@ -573,7 +573,7 @@ static void taf_flash_misc_cfg(const struct device *dev, uint8_t cs,
 }
 
 static void taf_flash_pd_cfg(const struct device *dev, uint8_t cs,
-			     const struct espi_saf_flash_cfg *fcfg)
+			     const struct espi_taf_flash_cfg *fcfg)
 {
 	const struct espi_taf_xec_config *xcfg = dev->config;
 	mm_reg_t tb = xcfg->taf_base;
@@ -611,7 +611,7 @@ static void taf_flash_pd_cfg(const struct device *dev, uint8_t cs,
  *   b[31:16] = QMSPI clock divider for all other SPI commands
  */
 static int taf_flash_freq_cfg(const struct device *dev, uint8_t cs,
-			      const struct espi_saf_flash_cfg *fcfg)
+			      const struct espi_taf_flash_cfg *fcfg)
 {
 	const struct espi_taf_xec_config *xcfg = dev->config;
 	mm_reg_t tb = xcfg->taf_base;
@@ -680,7 +680,7 @@ const uint16_t taf_opcode_ofs[XEC_TAFS_MAX_CHIP_SELECTS][4] = {
 	 XEC_TAFS_CFG_CS1_OPCODE_C_OFS, XEC_TAFS_CFG_CS1_DESCR_OFS},
 };
 
-static int taf_flash_cfg(const struct device *dev, const struct espi_saf_flash_cfg *fcfg,
+static int taf_flash_cfg(const struct device *dev, const struct espi_taf_flash_cfg *fcfg,
 			 uint8_t cs)
 {
 	const struct espi_taf_xec_config *xcfg = dev->config;
@@ -723,9 +723,9 @@ static int taf_flash_cfg(const struct device *dev, const struct espi_saf_flash_c
 static const uint32_t tag_map_dflt[MCHP_ESPI_TAF_TAGMAP_MAX] = {
 	MCHP_TAF_TAG_MAP0_DFLT, MCHP_TAF_TAG_MAP1_DFLT, MCHP_TAF_TAG_MAP2_DFLT};
 
-static void taf_tagmap_init(mm_reg_t taf_base, const struct espi_saf_cfg *cfg)
+static void taf_tagmap_init(mm_reg_t taf_base, const struct espi_taf_cfg *cfg)
 {
-	const struct espi_saf_hw_cfg *hwcfg = &cfg->hwcfg;
+	const struct espi_taf_hw_cfg *hwcfg = &cfg->hwcfg;
 	uint32_t tagm_ofs = XEC_TAFS_TAG_MAP0_OFS;
 	uint32_t tagm_val = 0;
 
@@ -807,13 +807,13 @@ static bool espi_taf_xec_v2_channel_ready(const struct device *dev)
  * activated only when eSPI master sends Flash Channel enable
  * message with MAF/SAF select flag.
  */
-static int espi_taf_xec_v2_config(const struct device *dev, const struct espi_saf_cfg *cfg)
+static int espi_taf_xec_v2_config(const struct device *dev, const struct espi_taf_cfg *cfg)
 {
 	const struct espi_taf_xec_config *xcfg = dev->config;
 	mm_reg_t tb = xcfg->taf_base;
 	mm_reg_t tcommb = xcfg->taf_comm_base;
-	const struct espi_saf_hw_cfg *hwcfg = NULL;
-	const struct espi_saf_flash_cfg *fcfg = NULL;
+	const struct espi_taf_hw_cfg *hwcfg = NULL;
+	const struct espi_taf_flash_cfg *fcfg = NULL;
 	uint32_t totalsz = 0;
 	uint32_t u = 0;
 	int ret = 0;
@@ -923,11 +923,11 @@ static int espi_taf_xec_v2_config(const struct device *dev, const struct espi_sa
 }
 
 /* API */
-static int espi_taf_xec_v2_set_pr(const struct device *dev, const struct espi_saf_protection *pr)
+static int espi_taf_xec_v2_set_pr(const struct device *dev, const struct espi_taf_protection *pr)
 {
 	const struct espi_taf_xec_config *xcfg = dev->config;
 	mm_reg_t tb = xcfg->taf_base;
-	const struct espi_saf_pr *preg = NULL;
+	const struct espi_taf_pr *preg = NULL;
 	uint32_t start_addr = 0, lim_addr = 0, wrmap = 0, rdmap = 0;
 	size_t nr = 0;
 
@@ -1028,7 +1028,7 @@ static int check_ecp_access_size(uint32_t reqlen)
 	return 0;
 }
 
-static int ecp_rw(const struct device *dev, struct espi_saf_packet *pkt, uint8_t cmd)
+static int ecp_rw(const struct device *dev, struct espi_taf_packet *pkt, uint8_t cmd)
 {
 	struct espi_taf_xec_data *const xdat = dev->data;
 	const struct espi_taf_xec_config *xcfg = dev->config;
@@ -1058,7 +1058,7 @@ static int ecp_rw(const struct device *dev, struct espi_saf_packet *pkt, uint8_t
 	return 0;
 }
 
-static int ecp_erase(const struct device *dev, struct espi_saf_packet *pkt)
+static int ecp_erase(const struct device *dev, struct espi_taf_packet *pkt)
 {
 	struct espi_taf_xec_data *const xdat = dev->data;
 	const struct espi_taf_xec_config *xcfg = dev->config;
@@ -1087,7 +1087,7 @@ static int ecp_erase(const struct device *dev, struct espi_saf_packet *pkt)
  * NOTE: If the Host eSPI controller has an on-going flash access the EC Portal hardware
  * will stall waiting for the Host access to finish.
  */
-static int taf_v2_ecp_access(const struct device *dev, struct espi_saf_packet *pkt, uint8_t cmd)
+static int taf_v2_ecp_access(const struct device *dev, struct espi_taf_packet *pkt, uint8_t cmd)
 {
 	struct espi_taf_xec_data *const xdat = dev->data;
 	const struct espi_taf_xec_config *xcfg = dev->config;
@@ -1169,19 +1169,19 @@ ecp_acc_exit:
 }
 
 /* Flash read using SAF EC Portal */
-static int taf_xec_v2_flash_read(const struct device *dev, struct espi_saf_packet *pckt)
+static int taf_xec_v2_flash_read(const struct device *dev, struct espi_taf_packet *pckt)
 {
 	return taf_v2_ecp_access(dev, pckt, XEC_TAFS_ECP_CTYPE_READ);
 }
 
 /* Flash write using SAF EC Portal */
-static int taf_xec_v2_flash_write(const struct device *dev, struct espi_saf_packet *pckt)
+static int taf_xec_v2_flash_write(const struct device *dev, struct espi_taf_packet *pckt)
 {
 	return taf_v2_ecp_access(dev, pckt, XEC_TAFS_ECP_CTYPE_WRITE);
 }
 
 /* Flash erase using SAF EC Portal */
-static int taf_xec_v2_flash_erase(const struct device *dev, struct espi_saf_packet *pckt)
+static int taf_xec_v2_flash_erase(const struct device *dev, struct espi_taf_packet *pckt)
 {
 	return taf_v2_ecp_access(dev, pckt, XEC_TAFS_ECP_CTYPE_ERASE);
 }
@@ -1266,7 +1266,7 @@ static void espi_taf_xec_v2_busmon_isr(const struct device *dev)
 	espi_send_callbacks(&data->callbacks, dev, evt);
 }
 
-static DEVICE_API(espi_saf, espi_taf_xec_v2_driver_api) = {
+static DEVICE_API(espi_taf, espi_taf_xec_v2_driver_api) = {
 	.config = espi_taf_xec_v2_config,
 	.set_protection_regions = espi_taf_xec_v2_set_pr,
 	.activate = espi_taf_xec_v2_activate,

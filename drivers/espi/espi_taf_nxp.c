@@ -14,7 +14,7 @@
 
 #include <fsl_espi.h>
 #include "espi_taf_nxp.h"
-#include <zephyr/drivers/espi_saf.h>
+#include <zephyr/drivers/espi_taf.h>
 #include "espi_utils.h"
 
 LOG_MODULE_REGISTER(espi_taf_nxp, CONFIG_ESPI_LOG_LEVEL);
@@ -296,7 +296,7 @@ static void espi_taf_nxp_event_handler(const struct device *parent,
 }
 
 static int espi_taf_nxp_configure(const struct device *dev,
-				   const struct espi_saf_cfg *cfg)
+				   const struct espi_taf_cfg *cfg)
 {
 	ARG_UNUSED(dev);
 
@@ -308,7 +308,7 @@ static int espi_taf_nxp_configure(const struct device *dev,
 }
 
 static int espi_taf_nxp_set_pr(const struct device *dev,
-				const struct espi_saf_protection *pr)
+				const struct espi_taf_protection *pr)
 {
 	ARG_UNUSED(dev);
 
@@ -363,7 +363,7 @@ static int espi_taf_nxp_init(const struct device *dev)
 	return 0;
 }
 
-static DEVICE_API(espi_saf, espi_taf_nxp_driver_api) = {
+static DEVICE_API(espi_taf, espi_taf_nxp_driver_api) = {
 	.config = espi_taf_nxp_configure,
 	.set_protection_regions = espi_taf_nxp_set_pr,
 	.activate = espi_taf_nxp_activate,

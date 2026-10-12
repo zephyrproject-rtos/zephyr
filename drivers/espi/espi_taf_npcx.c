@@ -8,7 +8,7 @@
 
 #include <soc.h>
 #include <zephyr/drivers/espi.h>
-#include <zephyr/drivers/espi_saf.h>
+#include <zephyr/drivers/espi_taf.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/dt-bindings/flash_controller/npcx_fiu_qspi.h>
 #ifdef CONFIG_ESPI_TAF_NPCX_RPMC_SUPPORT
@@ -193,7 +193,7 @@ static bool espi_taf_check_write_protect(const struct device *dev, uint32_t addr
 	return false;
 }
 
-static int espi_taf_npcx_configure(const struct device *dev, const struct espi_saf_cfg *cfg)
+static int espi_taf_npcx_configure(const struct device *dev, const struct espi_taf_cfg *cfg)
 {
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
 
@@ -210,10 +210,10 @@ static int espi_taf_npcx_configure(const struct device *dev, const struct espi_s
 	return 0;
 }
 
-static int espi_taf_npcx_set_pr(const struct device *dev, const struct espi_saf_protection *pr)
+static int espi_taf_npcx_set_pr(const struct device *dev, const struct espi_taf_protection *pr)
 {
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
-	const struct espi_saf_pr *preg;
+	const struct espi_taf_pr *preg;
 	size_t n;
 	uint8_t regnum;
 	uint16_t offset;
@@ -813,7 +813,7 @@ static int espi_taf_npcx_init(const struct device *dev)
 	return 0;
 }
 
-static DEVICE_API(espi_saf, espi_taf_npcx_driver_api) = {
+static DEVICE_API(espi_taf, espi_taf_npcx_driver_api) = {
 	.config = espi_taf_npcx_configure,
 	.set_protection_regions = espi_taf_npcx_set_pr,
 	.activate = espi_taf_npcx_activate,

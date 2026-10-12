@@ -13,16 +13,16 @@
 extern "C" {
 #endif
 
-struct espi_saf_hw_cfg {
+struct espi_taf_hw_cfg {
 	uint8_t _unused;
 };
 
-struct espi_saf_flash_cfg {
+struct espi_taf_flash_cfg {
 	uint32_t flashsz;
 	uint8_t flags;
 };
 
-struct espi_saf_pr {
+struct espi_taf_pr {
 	uint32_t start;
 	uint32_t size;
 	uint8_t master_bm_we;
@@ -31,9 +31,9 @@ struct espi_saf_pr {
 	uint8_t flags;
 };
 
-struct espi_saf_protection {
+struct espi_taf_protection {
 	size_t nregions;
-	const struct espi_saf_pr *pregions;
+	const struct espi_taf_pr *pregions;
 };
 
 struct espi_nxp_taf_req {
