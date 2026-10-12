@@ -694,6 +694,7 @@ static int zms_wipe_partition(struct zms_fs *fs)
  */
 static int zms_recover_last_ate(struct zms_fs *fs, uint64_t *addr, uint64_t *data_wra)
 {
+	uint64_t data_end_offset;
 	uint64_t data_end_addr;
 	uint64_t ate_end_addr;
 	struct zms_ate end_ate;
@@ -724,9 +725,22 @@ static int zms_recover_last_ate(struct zms_fs *fs, uint64_t *addr, uint64_t *dat
 		if (end_ate.len <= ZMS_DATA_IN_ATE_SIZE) {
 			goto continue_ate_scan;
 		}
+
+		/* External data is allocated upwards while ATEs are allocated
+		 * downwards. Reject an otherwise valid-looking ATE if its data
+		 * allocation violates either of those boundaries.
+		 */
+		data_end_offset = (uint64_t)end_ate.offset + zms_al_size(fs, end_ate.len);
+		if ((end_ate.offset < SECTOR_OFFSET(data_end_addr)) ||
+		    (data_end_offset > (SECTOR_OFFSET(ate_end_addr) - fs->ate_size))) {
+			LOG_WRN("Ignoring ATE with invalid data range: offset %u, len %u",
+				end_ate.offset, end_ate.len);
+			goto continue_ate_scan;
+		}
+
 		/* Only update data end address for entry with data. */
 		data_end_addr &= ADDR_SECT_MASK;
-		data_end_addr += end_ate.offset + zms_al_size(fs, end_ate.len);
+		data_end_addr += data_end_offset;
 		*data_wra = data_end_addr;
 continue_ate_scan:
 		ate_end_addr -= fs->ate_size;
