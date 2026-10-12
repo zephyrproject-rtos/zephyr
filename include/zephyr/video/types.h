@@ -313,10 +313,8 @@ enum video_frmival_type {
  * Used to describe a video frame interval.
  */
 struct video_frmival {
-	/** numerator of the frame interval */
-	uint32_t numerator;
-	/** denominator of the frame interval */
-	uint32_t denominator;
+	/** frame interval in microseconds */
+	uint32_t usec;
 };
 
 /**
@@ -325,12 +323,12 @@ struct video_frmival {
  * Used to describe the video frame interval stepwise type.
  */
 struct video_frmival_stepwise {
-	/** minimum frame interval in seconds */
-	struct video_frmival min;
-	/** maximum frame interval in seconds */
-	struct video_frmival max;
-	/** frame interval step size in seconds */
-	struct video_frmival step;
+	/** minimum frame interval in microseconds */
+	uint32_t min;
+	/** maximum frame interval in microseconds */
+	uint32_t max;
+	/** frame interval step size in microseconds */
+	uint32_t step;
 };
 
 /**

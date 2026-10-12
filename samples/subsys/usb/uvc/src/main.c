@@ -393,9 +393,9 @@ int main(void)
 		return ret;
 	}
 
-	LOG_INF("The host selected format '%s' %ux%u at frame interval %u/%u",
+	LOG_INF("The host selected format '%s' %ux%u at frame interval %u us",
 		VIDEO_FOURCC_TO_STR(fmt.pixelformat), fmt.width, fmt.height,
-		frmival.numerator, frmival.denominator);
+		frmival.usec);
 
 	if (app_has_videoenc()) {
 		/*

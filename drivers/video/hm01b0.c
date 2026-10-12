@@ -405,7 +405,7 @@ static int hm01b0_set_frmival(const struct device *dev, struct video_frmival *fr
 	 *  we use for the osc_div field of OSC_CLOCK_DIV
 	 */
 	osc_div = fie.index;
-	LOG_DBG("%u %u %u", fie.index, fie.discrete.numerator, fie.discrete.denominator);
+	LOG_DBG("%u %u us", fie.index, fie.discrete.usec);
 
 	/* We also set the VT_REG_DIV bits[3:2] to 10 (0x2) or /1 */
 	osc_div |= HM01B0_CCI_OSC_CLOCK_DIV_VT_REG_DIV_1;
@@ -423,8 +423,7 @@ static int hm01b0_set_frmival(const struct device *dev, struct video_frmival *fr
 		return ret;
 	}
 
-	LOG_DBG("FrameRate selected: %d %d = %d", fie.discrete.numerator, fie.discrete.denominator,
-		fie.discrete.denominator / fie.discrete.numerator);
+	LOG_DBG("FrameRate selected: %u us", fie.discrete.usec);
 	LOG_DBG("OSC DIV: %d", osc_div);
 
 	return 0;
@@ -434,6 +433,8 @@ static int hm01b0_get_frmival(const struct device *dev, struct video_frmival *fr
 {
 	const struct hm01b0_config *config = dev->config;
 	struct hm01b0_data *drv_data = dev->data;
+	uint32_t base_fps;
+	uint32_t num;
 	uint32_t reg;
 	int ret;
 
@@ -444,11 +445,13 @@ static int hm01b0_get_frmival(const struct device *dev, struct video_frmival *fr
 		return ret;
 	}
 
-	frmival->denominator = ((drv_data->fmt.width >= 320)
+	base_fps = ((drv_data->fmt.width >= 320)
 		&& (drv_data->fmt.height >= 320)) ? 45 : 60;
 
 	/* 0=>8 1->4 2->2 3->1 */
-	frmival->numerator = 8 >> (reg & 0x3);
+	num = 8 >> (reg & 0x3);
+
+	frmival->usec = num * USEC_PER_SEC / base_fps;
 
 	return 0;
 }
@@ -456,33 +459,34 @@ static int hm01b0_get_frmival(const struct device *dev, struct video_frmival *fr
 int hm01b0_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
 	struct hm01b0_data *drv_data = dev->data;
-
-	fie->discrete.denominator = ((drv_data->fmt.width >= 320)
+	uint32_t base_fps = ((drv_data->fmt.width >= 320)
 		&& (drv_data->fmt.height >= 320)) ? 45 : 60;
+	uint32_t num;
 
 	switch (fie->index) {
 	case HM01B0_5_OR_8_FPS:
-		fie->discrete.numerator = 8;
+		num = 8;
 		break;
 	case HM01B0_11_OR_15_FPS:
-		fie->discrete.numerator = 4;
+		num = 4;
 		break;
 	case HM01B0_22_OR_30_FPS:
-		fie->discrete.numerator = 2;
+		num = 2;
 		break;
 	case HM01B0_45_OR_60_FPS:
 		/* if we are doing 4 bit mode don't allow highest speed */
 		if (fie->format && (fie->format->pixelformat == VIDEO_PIX_FMT_Y8P16)) {
 			return -EINVAL;
 		}
-		fie->discrete.numerator = 1;
+		num = 1;
 		break;
 	default:
 		return -EINVAL;
 	}
 
 	fie->type = VIDEO_FRMIVAL_TYPE_DISCRETE;
-	LOG_DBG("i:%u %u %u", fie->index, fie->discrete.numerator, fie->discrete.denominator);
+	fie->discrete.usec = num * USEC_PER_SEC / base_fps;
+	LOG_DBG("i:%u %u us", fie->index, fie->discrete.usec);
 
 	return 0;
 }

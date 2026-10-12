@@ -5,6 +5,7 @@
  */
 
 #include <errno.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -61,12 +62,10 @@ static void log_video_info(const struct device *uvc_dev,
 
 	while (video_enum_frmival(uvc_dev, &fie) == 0) {
 		if (fie.type == VIDEO_FRMIVAL_TYPE_DISCRETE) {
-			LOG_INF("   %u/%u", fie.discrete.numerator, fie.discrete.denominator);
+			LOG_INF("   %u us", fie.discrete.usec);
 		} else {
-			LOG_INF("   [min = %u/%u; max = %u/%u; step = %u/%u]",
-				fie.stepwise.min.numerator, fie.stepwise.min.denominator,
-				fie.stepwise.max.numerator, fie.stepwise.max.denominator,
-				fie.stepwise.step.numerator, fie.stepwise.step.denominator);
+			LOG_INF("   [min = %u us; max = %u us; step = %u us]", fie.stepwise.min,
+				fie.stepwise.max, fie.stepwise.step);
 		}
 
 		fie.index++;
@@ -107,16 +106,15 @@ static int configure_video_format_and_rate(const struct device *uvc_dev,
 	ret = video_get_frmival(uvc_dev, &frmival);
 	if (ret == 0) {
 		LOG_INF("- Default frame rate : %f fps",
-			1.0 * frmival.denominator / frmival.numerator);
+			1.0 * USEC_PER_SEC / frmival.usec);
 	}
 
 	if (CONFIG_APP_VIDEO_TARGET_FPS > 0) {
-		frmival.denominator = CONFIG_APP_VIDEO_TARGET_FPS;
-		frmival.numerator = 1;
+		frmival.usec = USEC_PER_SEC / CONFIG_APP_VIDEO_TARGET_FPS;
 		if (video_set_frmival(uvc_dev, &frmival) == 0 &&
 			video_get_frmival(uvc_dev, &frmival) == 0) {
 			LOG_INF("- Target frame rate set to: %f fps",
-				1.0 * frmival.denominator / frmival.numerator);
+				1.0 * USEC_PER_SEC / frmival.usec);
 		} else {
 			LOG_WRN("- Unable to set target frame rate to %u fps",
 				CONFIG_APP_VIDEO_TARGET_FPS);
