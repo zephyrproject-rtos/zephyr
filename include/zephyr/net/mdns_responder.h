@@ -32,7 +32,8 @@ extern "C" {
  * @param records A pointer to an array of mDNS records. It is stored internally
  *                without copying the content so it must be kept valid. Pass
  *                NULL together with a zero @p count to unregister the records,
- *                e.g. before freeing the memory block.
+ *                e.g. before freeing the memory block. The call waits for a
+ *                response in progress to stop using the records.
  * @param count The number of elements, zero only when @p records is NULL.
  * @return 0 for OK; -EINVAL if @p records is NULL and @p count is not zero,
  *         or if @p records is not NULL and @p count is zero.
