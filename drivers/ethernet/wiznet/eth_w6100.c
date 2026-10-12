@@ -193,6 +193,7 @@ static const struct wiznet_regs w6100_regs = {
 	.s0_cr = W6100_S0_CR,
 	.s0_ir = W6100_S0_IR,
 	.s0_irclr = W6100_S0_IRCLR,
+	.s0_imr = W6100_S0_IMR,
 	.s0_tx_wr = W6100_S0_TX_WR,
 	.s0_rx_rsr = W6100_S0_RX_RSR,
 	.s0_rx_rd = W6100_S0_RX_RD,

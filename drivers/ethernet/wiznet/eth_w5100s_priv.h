@@ -42,6 +42,7 @@
 #define W5100S_S0_CR            (W5100S_S0_REGS + 0x0001) /* Sn Command Register */
 #define W5100S_S0_IR            (W5100S_S0_REGS + 0x0002) /* Sn Interrupt Register */
 #define W5100S_SOCKET_COUNT     4
+#define W5100S_S0_IMR           (W5100S_S0_REGS + 0x002C) /* Sn Interrupt Mask */
 #define W5100S_Sn_RXBUF_SIZE(n) (W5100S_S0_REGS + (n) * 0x0100 + 0x001E)
 #define W5100S_Sn_TXBUF_SIZE(n) (W5100S_S0_REGS + (n) * 0x0100 + 0x001F)
 #define W5100S_S0_TX_WR         (W5100S_S0_REGS + 0x0024) /* Sn TX write pointer */

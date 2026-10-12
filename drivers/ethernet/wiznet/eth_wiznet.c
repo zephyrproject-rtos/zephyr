@@ -99,6 +99,32 @@ int wiznet_writebuf(const struct device *dev, uint16_t offset, uint8_t *buf, siz
 	return wiznet_write(dev, mem_start, buf + len, remain);
 }
 
+static int wiznet_wait_sendok(const struct device *dev)
+{
+	const struct wiznet_config *cfg = dev->config;
+	k_timepoint_t end = sys_timepoint_calc(K_MSEC(WIZNET_TX_TIMEOUT_MS));
+	uint8_t ir;
+	int ret;
+
+	while (true) {
+		ret = wiznet_read(dev, cfg->regs->s0_ir, &ir, 1);
+		if (ret < 0) {
+			return ret;
+		}
+		if ((ir & WIZNET_S0_IR_SENDOK) != 0U) {
+			break;
+		}
+		if (sys_timepoint_expired(end)) {
+			return -EIO;
+		}
+		k_busy_wait(WIZNET_CMD_POLL_DELAY_US);
+	}
+
+	ir = WIZNET_S0_IR_SENDOK;
+
+	return wiznet_write(dev, cfg->regs->s0_irclr, &ir, 1);
+}
+
 int wiznet_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	const struct wiznet_config *cfg = dev->config;
@@ -127,11 +153,11 @@ int wiznet_tx(const struct device *dev, struct net_pkt *pkt)
 	wiznet_write(dev, cfg->regs->s0_tx_wr, off, 2);
 
 	wiznet_command(dev, WIZNET_S0_CR_SEND);
-	if (k_sem_take(&ctx->tx_sem, K_MSEC(WIZNET_TX_TIMEOUT_MS))) {
-		return -EIO;
-	}
 
-	return 0;
+	/* Wait here, not for the interrupt. The interrupt thread sends too,
+	 * for example a TCP ACK, and cannot handle SENDOK while it waits.
+	 */
+	return wiznet_wait_sendok(dev);
 }
 
 bool wiznet_rx(const struct device *dev)
@@ -224,7 +250,6 @@ bool wiznet_rx(const struct device *dev)
 static uint8_t wiznet_check_for_ir(const struct device *dev)
 {
 	const struct wiznet_config *cfg = dev->config;
-	struct wiznet_runtime *ctx = dev->data;
 	uint8_t ir;
 
 	if (cfg->ops->clear_pending != NULL) {
@@ -235,14 +260,11 @@ static uint8_t wiznet_check_for_ir(const struct device *dev)
 		return 0U;
 	}
 
+	/* SENDOK belongs to wiznet_tx() */
+	ir &= ~WIZNET_S0_IR_SENDOK;
 	if (ir != 0U) {
 		wiznet_write(dev, cfg->regs->s0_irclr, &ir, 1);
 		LOG_DBG("IR received");
-
-		if ((ir & WIZNET_S0_IR_SENDOK) != 0U) {
-			k_sem_give(&ctx->tx_sem);
-			LOG_DBG("TX Done");
-		}
 
 		/* RECV is raised once for all frames that arrived until it is
 		 * cleared, read every frame or the rest waits for the next one
@@ -415,8 +437,11 @@ int wiznet_hw_start(const struct device *dev, struct net_if *iface __unused)
 {
 	const struct wiznet_config *cfg = dev->config;
 	uint8_t mask = WIZNET_IR_S0;
+	uint8_t s0_mask = WIZNET_S0_IR_RECV;
 
 	wiznet_command(dev, WIZNET_S0_CR_OPEN);
+	/* Only RECV raises the interrupt, wiznet_tx() polls for SENDOK */
+	wiznet_write(dev, cfg->regs->s0_imr, &s0_mask, 1);
 	wiznet_write(dev, cfg->regs->imr, &mask, 1);
 
 	return 0;
