@@ -280,3 +280,14 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&wkup_vtm0 {
+	ti,max-reset-mc = <120000>;
+	ti,max-recovery-mc = <105000>;
+	status = "okay";
+
+	sensor0: sensor@0 {
+		reg = <0>;
+		ti,voltage-domain = <0>;
+	};
+};
