@@ -10,3 +10,12 @@ config SEN0466
 	  Enable driver for the DFRobot SEN0466 electrochemical carbon
 	  monoxide sensor, reporting CO concentration in ppm and the
 	  temperature of an on-board NTC over I2C.
+
+config EMUL_SEN0466
+	bool "Emulator for the DFRobot SEN0466"
+	default y
+	depends on SEN0466
+	depends on EMUL
+	help
+	  Enable the emulator for the DFRobot SEN0466, so the driver can be
+	  exercised without hardware.
