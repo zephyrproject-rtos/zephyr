@@ -144,38 +144,10 @@ static int mcux_opamp_set_gain(const struct device *dev, enum opamp_gain gain)
 	return 0;
 }
 
-int mcux_opamp_init(const struct device *dev)
+static int mcux_opamp_configure(const struct device *dev)
 {
 	const struct mcux_opamp_config *config = dev->config;
 	OPAMP_Type *base = config->base;
-	int ret;
-
-	/* Enable OPAMP clock. */
-	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("Clock device is not ready");
-		return -ENODEV;
-	}
-
-	ret = clock_control_on(config->clock_dev, config->clock_subsys);
-
-	if (ret) {
-		LOG_ERR("Device clock turn on failed");
-		return ret;
-	}
-
-	/* Only LPC implemented RESET driver */
-#if defined(CONFIG_SOC_FAMILY_LPC)
-	if (!device_is_ready(config->reset.dev)) {
-		LOG_ERR("Reset device is not ready");
-		return -ENODEV;
-	}
-
-	ret = reset_line_assert(config->reset.dev, config->reset.id);
-	if (ret) {
-		LOG_ERR("Device clock turn on failed");
-		return ret;
-	}
-#endif
 
 	base->OPAMP_CTR = ((config->base->OPAMP_CTR & ~OPAMP_OPAMP_CTR_MODE_MASK) |
 			   OPAMP_OPAMP_CTR_MODE(config->operation_mode));
@@ -237,6 +209,46 @@ int mcux_opamp_init(const struct device *dev)
 	default:
 		LOG_ERR("Unsupported functional mode %d", config->functional_mode);
 		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+int mcux_opamp_init(const struct device *dev)
+{
+	const struct mcux_opamp_config *config = dev->config;
+	int ret;
+
+	/* Enable OPAMP clock. */
+	if (!device_is_ready(config->clock_dev)) {
+		LOG_ERR("Clock device is not ready");
+		return -ENODEV;
+	}
+
+	ret = clock_control_on(config->clock_dev, config->clock_subsys);
+
+	if (ret) {
+		LOG_ERR("Device clock turn on failed");
+		return ret;
+	}
+
+	/* Only LPC implemented RESET driver */
+#if defined(CONFIG_SOC_FAMILY_LPC)
+	if (!device_is_ready(config->reset.dev)) {
+		LOG_ERR("Reset device is not ready");
+		return -ENODEV;
+	}
+
+	ret = reset_line_assert(config->reset.dev, config->reset.id);
+	if (ret) {
+		LOG_ERR("Device clock turn on failed");
+		return ret;
+	}
+#endif
+
+	ret = mcux_opamp_configure(dev);
+	if (ret) {
+		return ret;
 	}
 
 	return pm_device_driver_init(dev, mcux_opamp_pm_callback);
