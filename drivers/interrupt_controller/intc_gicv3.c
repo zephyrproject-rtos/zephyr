@@ -297,6 +297,11 @@ bool arm_gic_irq_is_enabled(unsigned int intid)
 
 bool arm_gic_irq_is_pending(unsigned int intid)
 {
+	if (intid >= GIC_LPI_INT_BASE) {
+		__ASSERT(false, "LPI pending state is not supported");
+		return false;
+	}
+
 	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
 	uint32_t idx = GIC_IS_ESPI(intid) ? ((intid - GIC_ESPI_START) / GIC_NUM_INTR_PER_REG)
 					  : (intid / GIC_NUM_INTR_PER_REG);
@@ -310,6 +315,11 @@ bool arm_gic_irq_is_pending(unsigned int intid)
 
 void arm_gic_irq_set_pending(unsigned int intid)
 {
+	if (intid >= GIC_LPI_INT_BASE) {
+		__ASSERT(false, "LPI pending state is not supported");
+		return;
+	}
+
 	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
 	uint32_t idx = GIC_IS_ESPI(intid) ? ((intid - GIC_ESPI_START) / GIC_NUM_INTR_PER_REG)
 					  : (intid / GIC_NUM_INTR_PER_REG);
@@ -323,6 +333,11 @@ void arm_gic_irq_set_pending(unsigned int intid)
 
 void arm_gic_irq_clear_pending(unsigned int intid)
 {
+	if (intid >= GIC_LPI_INT_BASE) {
+		__ASSERT(false, "LPI pending state is not supported");
+		return;
+	}
+
 	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
 	uint32_t idx = GIC_IS_ESPI(intid) ? ((intid - GIC_ESPI_START) / GIC_NUM_INTR_PER_REG)
 					  : (intid / GIC_NUM_INTR_PER_REG);
