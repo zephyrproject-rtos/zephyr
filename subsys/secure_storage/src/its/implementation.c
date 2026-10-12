@@ -116,6 +116,7 @@ static bool keep_stored_entry(secure_storage_its_uid_t uid, size_t data_length, 
 	psa_storage_create_flags_t existing_create_flags;
 	uint8_t existing_data[CONFIG_SECURE_STORAGE_ITS_MAX_DATA_SIZE];
 	size_t existing_data_len;
+	bool keep = false;
 
 	*ret = get_entry(uid, sizeof(existing_data), existing_data, &existing_data_len,
 			 &existing_create_flags);
@@ -132,17 +133,16 @@ static bool keep_stored_entry(secure_storage_its_uid_t uid, size_t data_length, 
 	}
 	if (existing_create_flags & PSA_STORAGE_FLAG_WRITE_ONCE) {
 		*ret = PSA_ERROR_NOT_PERMITTED;
-		return true;
-	}
-	if (existing_data_len == data_length &&
-	    existing_create_flags == create_flags &&
-	    !memcmp(existing_data, p_data, data_length)) {
+		keep = true;
+	} else if (existing_data_len == data_length && existing_create_flags == create_flags
+		 && !memcmp(existing_data, p_data, data_length)) {
 		LOG_DBG("Not writing entry " UID_FMT " to storage because its stored data"
 			" (of length %zu) is identical.", UID_ARGS(uid), data_length);
 		*ret = PSA_SUCCESS;
-		return true;
+		keep = true;
 	}
-	return false;
+	secure_storage_zeroize(existing_data, existing_data_len);
+	return keep;
 }
 
 static psa_status_t store_entry(secure_storage_its_uid_t uid, size_t data_length,
@@ -226,10 +226,12 @@ psa_status_t secure_storage_its_get(secure_storage_its_caller_id_t caller_id, ps
 		if (data_offset > data_len) {
 			LOG_DBG("Passed data offset (%zu) exceeds existing data length (%zu).",
 				data_offset, data_len);
-			return PSA_ERROR_INVALID_ARGUMENT;
+			ret = PSA_ERROR_INVALID_ARGUMENT;
+		} else {
+			*p_data_length = MIN(data_size, data_len - data_offset);
+			memcpy(p_data, data + data_offset, *p_data_length);
 		}
-		*p_data_length = MIN(data_size, data_len - data_offset);
-		memcpy(p_data, data + data_offset, *p_data_length);
+		secure_storage_zeroize(data, data_len);
 	}
 	return ret;
 }
@@ -247,6 +249,7 @@ psa_status_t secure_storage_its_get_info(secure_storage_its_caller_id_t caller_i
 
 	ret = get_entry(its_uid, sizeof(data), data, &p_info->size, &p_info->flags);
 	if (ret == PSA_SUCCESS) {
+		secure_storage_zeroize(data, p_info->size);
 		p_info->capacity = p_info->size;
 	}
 	return ret;
@@ -265,6 +268,9 @@ static psa_status_t its_remove(secure_storage_its_caller_id_t caller_id, psa_sto
 	}
 
 	ret = get_entry(its_uid, sizeof(data), data, &data_len, &create_flags);
+	if (ret == PSA_SUCCESS) {
+		secure_storage_zeroize(data, data_len);
+	}
 	if (ret == PSA_SUCCESS && (create_flags & PSA_STORAGE_FLAG_WRITE_ONCE)) {
 		return PSA_ERROR_NOT_PERMITTED;
 	}
