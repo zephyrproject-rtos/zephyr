@@ -6871,6 +6871,82 @@ ZTEST(net_socket_quic, test_499_recovery_state_goes_with_the_keys)
 	k_work_cancel_delayable(&ep->recovery.pto_work);
 }
 
+/* Put a bare stream on the stream list of a context, as a stream that a
+ * peer opened on the given endpoint.
+ */
+static void link_test_stream(struct quic_stream *stream, struct quic_context *ctx,
+			     struct quic_endpoint *ep, uint64_t stream_id)
+{
+	memset(stream, 0, sizeof(*stream));
+
+	stream->id = stream_id;
+	stream->ep = ep;
+	stream->conn = ctx;
+
+	k_mutex_init(&stream->cond.data_available);
+	k_condvar_init(&stream->cond.recv);
+	k_poll_signal_init(&stream->recv.signal);
+
+	sys_slist_append(&ctx->streams, &stream->node);
+}
+
+static void unlink_test_stream(struct quic_stream *stream, struct quic_context *ctx)
+{
+	(void)sys_slist_find_and_remove(&ctx->streams, &stream->node);
+}
+
+/* Open a listening QUIC socket to get a context to hang test streams on */
+static struct quic_context *open_test_listener(int *sock, const char *addr_str)
+{
+	struct net_sockaddr_storage addr;
+	struct quic_context *ctx;
+	int ret;
+
+	ret = net_ipaddr_parse(addr_str, strlen(addr_str), (struct net_sockaddr *)&addr);
+	zassert_true(ret, "Failed to parse address %s", addr_str);
+
+	prepare_quic_socket(sock, NULL, (const struct net_sockaddr *)&addr);
+
+	ctx = quic_get_context(*sock);
+	zassert_not_null(ctx, "Could not get QUIC context");
+
+	return ctx;
+}
+
+ZTEST(net_socket_quic, test_491_stream_lookup_keeps_connections_apart)
+{
+	static struct quic_stream stream_a;
+	static struct quic_stream stream_b;
+	struct quic_endpoint *ep_a = reset_test_ep(&test_ep_a);
+	struct quic_endpoint *ep_b = reset_test_ep(&test_ep_b);
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54350");
+
+	/* Two peers whose connections are not accepted yet both opened
+	 * stream 0, so both streams sit in the listening context.
+	 */
+	link_test_stream(&stream_a, ctx, ep_a, 0);
+	link_test_stream(&stream_b, ctx, ep_b, 0);
+
+	zassert_equal_ptr(quic_find_stream(ctx, ep_a, 0), &stream_a,
+			  "Wrong stream for the first peer");
+	zassert_equal_ptr(quic_find_stream(ctx, ep_b, 0), &stream_b,
+			  "Wrong stream for the second peer");
+
+	/* A peer that has no such stream must not find someone else's */
+	unlink_test_stream(&stream_b, ctx);
+	zassert_is_null(quic_find_stream(ctx, ep_b, 0),
+			"Found the stream of another peer");
+
+	unlink_test_stream(&stream_a, ctx);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
 ZTEST(net_socket_quic, test_488_token_replay_entry_survives_the_expiry_second)
 {
 	uint8_t nonce[8] = {
