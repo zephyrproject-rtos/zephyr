@@ -15,6 +15,7 @@
 #include <fsl_ftm.h>
 #include <fsl_clock.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/pm/device.h>
 
 #include <zephyr/logging/log.h>
 
@@ -149,6 +150,21 @@ static int mcux_ftm_set_cycles(const struct device *dev, uint32_t channel,
 }
 
 #ifdef CONFIG_PWM_CAPTURE
+/* Report whether any channel pair still has an active capture. */
+static bool mcux_ftm_capture_pending(const struct device *dev)
+{
+	const struct mcux_ftm_config *config = dev->config;
+	uint32_t irqs = FTM_GetEnabledInterrupts(config->base);
+
+	for (uint32_t pair = 0U; pair < MAX_CAPTURE_PAIRS; pair++) {
+		if (irqs & BIT(PAIR_2ND_CH(pair))) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static int mcux_ftm_configure_capture(const struct device *dev,
 				      uint32_t channel, pwm_flags_t flags,
 				      pwm_capture_callback_handler_t cb,
@@ -254,6 +270,12 @@ static int mcux_ftm_enable_capture(const struct device *dev, uint32_t channel)
 	FTM_EnableInterrupts(config->base, BIT(PAIR_1ST_CH(pair)) |
 			     BIT(PAIR_2ND_CH(pair)));
 
+	/* Keep the instance out of low power while a capture is running: the
+	 * counter must not be halted mid-measurement. This only blocks system
+	 * PM when CONFIG_PM_NEED_ALL_DEVICES_IDLE=y; otherwise it is advisory.
+	 */
+	pm_device_busy_set(dev);
+
 	return 0;
 }
 
@@ -279,6 +301,11 @@ static int mcux_ftm_disable_capture(const struct device *dev, uint32_t channel)
 	/* Clear Dual Edge Capture Enable bit */
 	config->base->COMBINE &= ~(1UL << (FTM_COMBINE_DECAP0_SHIFT +
 		(FTM_COMBINE_COMBINE1_SHIFT * pair)));
+
+	/* Release the low power block once no pair is capturing any more. */
+	if (!mcux_ftm_capture_pending(dev)) {
+		pm_device_busy_clear(dev);
+	}
 
 	return 0;
 }
@@ -377,6 +404,13 @@ static void mcux_ftm_capture_second_edge(const struct device *dev, uint32_t chan
 	if (capture->param.mode == kFTM_OneShot) {
 		/* One-shot capture done */
 		FTM_DisableInterrupts(config->base, BIT(PAIR_2ND_CH(pair)));
+
+		/* The pair stopped capturing on its own; drop the low power
+		 * block if it was the last one still active.
+		 */
+		if (!mcux_ftm_capture_pending(dev)) {
+			pm_device_busy_clear(dev);
+		}
 	} else if (capture->pulse_capture) {
 		/* Prepare for first edge of next pulse capture */
 		FTM_EnableInterrupts(config->base, BIT(PAIR_1ST_CH(pair)));
