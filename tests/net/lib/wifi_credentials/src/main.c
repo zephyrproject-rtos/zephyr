@@ -71,6 +71,9 @@ int custom_wifi_credentials_load_entry(size_t idx, void *buf, size_t buf_len)
 #define CHANNEL5      5
 #define PSK5_UNWANTED "unwanted secret"
 
+/* Makes the fake backend fail to read slot 0 in test_unreadable_slot. */
+static bool slot0_unreadable;
+
 static void wifi_credentials_setup(void *unused)
 {
 	RESET_FAKE(wifi_credentials_store_entry);
@@ -82,7 +85,9 @@ static void wifi_credentials_setup(void *unused)
 
 static void wifi_credentials_teardown(void *unused)
 {
-	/* Delete the entries even if the test made deleting fail. */
+	/* Delete the entries even if the test made loading or deleting fail. */
+	slot0_unreadable = false;
+	RESET_FAKE(wifi_credentials_backend_init);
 	RESET_FAKE(wifi_credentials_delete_entry);
 	wifi_credentials_delete_by_ssid(SSID1, ARRAY_SIZE(SSID1));
 	wifi_credentials_delete_by_ssid(SSID2, ARRAY_SIZE(SSID2));
@@ -511,6 +516,84 @@ ZTEST(wifi_credentials, test_unusable_slot)
 					    sizeof(PSK1), FLAGS1, CHANNEL1, 0);
 	zassert_equal(err, EXIT_SUCCESS, "Expected EXIT_SUCCESS, got %d", err);
 	zassert_equal(wifi_credentials_store_entry_fake.arg0_val, 0, "Slot not reused");
+}
+
+/* Loads the entries in fake_settings_buf, failing to read slot 0 while slot0_unreadable is set. */
+static int custom_wifi_credentials_backend_init_slot0(void)
+{
+	for (size_t i = 0; i < CONFIG_WIFI_CREDENTIALS_MAX_ENTRIES; ++i) {
+		const struct wifi_credentials_header *header = (const void *)fake_settings_buf[i];
+
+		if (i == 0 && slot0_unreadable) {
+			wifi_credentials_mark_unreadable(0);
+		} else if (header->ssid_len != 0) {
+			wifi_credentials_cache_ssid(i, header);
+		}
+	}
+
+	return 0;
+}
+
+/* Verify that loading is retried while a slot cannot be read, that new entries are stored in
+ * the other slots meanwhile, and that no entry is retrieved or deleted for an SSID that is not
+ * cached, as the slot may hold it.
+ */
+ZTEST(wifi_credentials, test_unreadable_slot)
+{
+	struct wifi_credentials_personal creds = {
+		.header = {
+			.type = SECURITY1,
+			.ssid = SSID1,
+			.ssid_len = sizeof(SSID1),
+		},
+		.password = PSK1,
+		.password_len = sizeof(PSK1),
+	};
+	unsigned int init_count;
+	int err;
+
+	/* Load the entries before marking the slot, as the backend does when loading them. */
+	zassert_true(wifi_credentials_is_empty());
+	init_count = wifi_credentials_backend_init_fake.call_count;
+	memset(fake_settings_buf, 0, sizeof(fake_settings_buf));
+	custom_wifi_credentials_store_entry(0, &creds, sizeof(creds));
+	slot0_unreadable = true;
+	wifi_credentials_backend_init_fake.custom_fake = custom_wifi_credentials_backend_init_slot0;
+	wifi_credentials_mark_unreadable(0);
+
+	zassert_false(wifi_credentials_is_empty());
+	zassert_equal(wifi_credentials_backend_init_fake.call_count, init_count + 1,
+		      "Loading not retried");
+
+	err = wifi_credentials_set_personal(SSID2, sizeof(SSID2), SECURITY2, NULL, 6, NULL, 0,
+					    FLAGS2, CHANNEL2, 0);
+	zassert_equal(err, EXIT_SUCCESS, "Expected EXIT_SUCCESS, got %d", err);
+	zassert_equal(wifi_credentials_store_entry_fake.arg0_val, 1, "Stored in unreadable slot");
+
+	memset(&creds, 0, sizeof(creds));
+	err = wifi_credentials_get_by_ssid_personal_struct(SSID1, sizeof(SSID1), &creds);
+	zassert_equal(err, -EACCES, "Expected -EACCES, got %d", err);
+	err = wifi_credentials_delete_by_ssid(SSID1, sizeof(SSID1));
+	zassert_equal(err, -EACCES, "Expected -EACCES, got %d", err);
+	zassert_equal(wifi_credentials_delete_entry_fake.call_count, 0, "Entry deleted");
+
+	/* A cached SSID is still retrieved. */
+	err = wifi_credentials_get_by_ssid_personal_struct(SSID2, sizeof(SSID2), &creds);
+	zassert_equal(err, EXIT_SUCCESS, "Expected EXIT_SUCCESS, got %d", err);
+	zassert_equal(wifi_credentials_load_entry_fake.arg0_val, 1, "Index mismatch");
+
+	/* Once the slot can be read, its entry is used. */
+	slot0_unreadable = false;
+	err = wifi_credentials_get_by_ssid_personal_struct(SSID1, sizeof(SSID1), &creds);
+	zassert_equal(err, EXIT_SUCCESS, "Expected EXIT_SUCCESS, got %d", err);
+	zassert_equal(wifi_credentials_load_entry_fake.arg0_val, 0, "Index mismatch");
+	zassert_mem_equal(creds.password, PSK1, sizeof(PSK1), "Password mismatch");
+
+	/* No more loading once all slots could be read. */
+	err = wifi_credentials_get_by_ssid_personal_struct(SSID2, sizeof(SSID2), &creds);
+	zassert_equal(err, EXIT_SUCCESS, "Expected EXIT_SUCCESS, got %d", err);
+	zassert_equal(wifi_credentials_backend_init_fake.call_count, init_count + 6,
+		      "Loading not stopped");
 }
 
 ZTEST_SUITE(wifi_credentials, NULL, NULL, wifi_credentials_setup, wifi_credentials_teardown, NULL);
