@@ -162,9 +162,15 @@ static inline int bt_spi_transceive(void *tx, uint32_t tx_len,
 	return spi_transceive_dt(&bus, &spi_tx, &spi_rx);
 }
 
-static inline uint16_t bt_spi_get_cmd(uint8_t *msg)
+static inline uint16_t bt_spi_get_cmd(const uint8_t *msg)
 {
 	return (msg[CMD_OCF] << 8) | msg[CMD_OGF];
+}
+
+static inline bool bt_spi_is_reset(const uint8_t *pkt)
+{
+	return pkt[PACKET_TYPE] == BT_HCI_H4_CMD &&
+	       bt_spi_get_cmd(pkt) == BT_HCI_OP_RESET;
 }
 
 static inline uint16_t bt_spi_get_evt(uint8_t *msg)
@@ -617,6 +623,13 @@ static int bt_spi_send_raw(const struct device *dev, const uint8_t *pkt, size_t 
 		data_ptr += size;
 	} while (remaining_bytes > 0 && !ret);
 
+	/* An EVT_BLUE_INITIALIZED from before this reset must not end the wait
+	 * for it. The one that follows cannot be read while the bus is held.
+	 */
+	if (DT_INST_PROP_OR(0, reset_event, false) && bt_spi_is_reset(pkt)) {
+		k_sem_reset(&sem_initialised);
+	}
+
 	release_cs(size > 0);
 
 	k_sem_give(&sem_busy);
@@ -647,8 +660,7 @@ static int bt_spi_send_raw(const struct device *dev, const uint8_t *pkt, size_t 
 	 * RESET has actually taken place.  Instead, we use the vendor command
 	 * EVT_BLUE_INITIALIZED as an indication that it is safe to proceed.
 	 */
-	if (pkt[PACKET_TYPE] == BT_HCI_H4_CMD &&
-	    bt_spi_get_cmd((uint8_t *)pkt) == BT_HCI_OP_RESET) {
+	if (DT_INST_PROP_OR(0, reset_event, false) && bt_spi_is_reset(pkt)) {
 		if (k_sem_take(&sem_initialised, K_SECONDS(CONFIG_BT_SPI_BOOT_TIMEOUT_SEC)) < 0) {
 			/* The reset has been sent, so this is no failure to
 			 * send it. A controller that has not come up leaves
@@ -732,6 +744,9 @@ static int bt_spi_open(const struct device *dev)
 	if (err) {
 		return err;
 	}
+
+	/* An EVT_BLUE_INITIALIZED from before this reset must not end the wait for it */
+	k_sem_reset(&sem_initialised);
 
 	/* Take BLE out of reset */
 	k_sleep(K_MSEC(DT_INST_PROP_OR(0, reset_assert_duration_ms, 0)));
