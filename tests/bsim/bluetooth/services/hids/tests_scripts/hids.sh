@@ -5,8 +5,8 @@
 # HID Service test: a HID Host (GATT client) connects to the HID Service
 # server, discovers the service, checks the Report Map, the HID Information and
 # the Report Reference descriptors, subscribes to the Input Report, and
-# exercises GET_REPORT, SET_REPORT and the HID Control Point, including a
-# reconnection and unregistering the service.
+# exercises GET_REPORT, SET_REPORT, the Protocol Mode and the HID Control
+# Point, including a reconnection and unregistering the service.
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 

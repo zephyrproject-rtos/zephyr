@@ -37,6 +37,7 @@
 DEFINE_FLAG_STATIC(flag_connected);
 DEFINE_FLAG_STATIC(flag_disconnected);
 DEFINE_FLAG_STATIC(flag_set_report);
+DEFINE_FLAG_STATIC(flag_protocol_mode_changed);
 DEFINE_FLAG_STATIC(flag_ctrl_point);
 
 static struct bt_conn *server_conn;
@@ -66,6 +67,7 @@ static void set_long_report(void)
 	TEST_ASSERT(err == 0, "Failed to set the long Feature Report: %d", err);
 }
 
+static enum bt_hids_protocol_mode last_protocol_mode;
 static enum bt_hids_ctrl_point last_ctrl_point;
 
 /* The HID Device informs the Host of its security requirements with the
@@ -136,6 +138,14 @@ static void set_report(struct bt_conn *conn, enum bt_hids_report_type report_typ
 	SET_FLAG(flag_set_report);
 }
 
+static void protocol_mode_changed(struct bt_conn *conn, enum bt_hids_protocol_mode protocol)
+{
+	ARG_UNUSED(conn);
+
+	last_protocol_mode = protocol;
+	SET_FLAG(flag_protocol_mode_changed);
+}
+
 static void ctrl_point(struct bt_conn *conn, enum bt_hids_ctrl_point cmd)
 {
 	ARG_UNUSED(conn);
@@ -144,8 +154,19 @@ static void ctrl_point(struct bt_conn *conn, enum bt_hids_ctrl_point cmd)
 	SET_FLAG(flag_ctrl_point);
 }
 
+static void verify_suspend_state(bool expected)
+{
+	bool suspended;
+	int err;
+
+	err = bt_hids_suspend_state_get(server_conn, &suspended);
+	TEST_ASSERT(err == 0, "Failed to get the Suspend state: %d", err);
+	TEST_ASSERT(suspended == expected, "Suspend state is %d", suspended);
+}
+
 static const struct bt_hids_cb hids_cb = {
 	.set_report = set_report,
+	.protocol_mode_changed = protocol_mode_changed,
 	.ctrl_point = ctrl_point,
 };
 
@@ -306,8 +327,57 @@ static void test_register_validation(void)
 	TEST_ASSERT(err == -EINVAL, "Duplicate Feature Report ID accepted: %d", err);
 }
 
+/* The Protocol Mode and the Suspend state are per connection and reset to
+ * their default values every time a Host connects.
+ */
+static void verify_per_connection_defaults(void)
+{
+	enum bt_hids_protocol_mode mode;
+	int err;
+
+	err = bt_hids_protocol_mode_get(server_conn, &mode);
+	TEST_ASSERT(err == 0, "Failed to get the Protocol Mode: %d", err);
+	TEST_ASSERT(mode == BT_HIDS_PROTOCOL_REPORT, "Protocol Mode is %u", mode);
+
+	verify_suspend_state(false);
+}
+
+/* Both getters fail the same way when the service has no state for the Host */
+static void verify_conn_state_error(int expected)
+{
+	enum bt_hids_protocol_mode mode;
+	bool suspended;
+	int err;
+
+	err = bt_hids_protocol_mode_get(server_conn, &mode);
+	TEST_ASSERT(err == expected, "Got the Protocol Mode: %d, expected %d", err, expected);
+
+	err = bt_hids_suspend_state_get(server_conn, &suspended);
+	TEST_ASSERT(err == expected, "Got the Suspend state: %d, expected %d", err, expected);
+}
+
+static void test_conn_state_validation(void)
+{
+	enum bt_hids_protocol_mode mode;
+	bool suspended;
+	int err;
+
+	err = bt_hids_protocol_mode_get(NULL, &mode);
+	TEST_ASSERT(err == -EINVAL, "Got the Protocol Mode of no connection: %d", err);
+
+	err = bt_hids_protocol_mode_get(server_conn, NULL);
+	TEST_ASSERT(err == -EINVAL, "Got the Protocol Mode into NULL: %d", err);
+
+	err = bt_hids_suspend_state_get(NULL, &suspended);
+	TEST_ASSERT(err == -EINVAL, "Got the Suspend state of no connection: %d", err);
+
+	err = bt_hids_suspend_state_get(server_conn, NULL);
+	TEST_ASSERT(err == -EINVAL, "Got the Suspend state into NULL: %d", err);
+}
+
 static void test_hids_server(void)
 {
+	enum bt_hids_protocol_mode mode;
 	int err;
 
 	TEST_START("HID Service server test");
@@ -352,6 +422,8 @@ static void test_hids_server(void)
 	/* The client has subscribed to the Input Report */
 	WAIT_FOR_FLAG(flag_connected);
 	bk_sync_wait();
+	verify_per_connection_defaults();
+	test_conn_state_validation();
 	test_send_report_validation();
 
 	/* The client waits for this Input Report notification */
@@ -383,6 +455,7 @@ static void test_hids_server(void)
 	WAIT_FOR_FLAG(flag_ctrl_point);
 	TEST_ASSERT(last_ctrl_point == BT_HIDS_CTRL_SUSPEND, "HID Control Point command %u",
 		    last_ctrl_point);
+	verify_suspend_state(true);
 	UNSET_FLAG(flag_ctrl_point);
 	bk_sync_send();
 
@@ -391,7 +464,27 @@ static void test_hids_server(void)
 	WAIT_FOR_FLAG(flag_ctrl_point);
 	TEST_ASSERT(last_ctrl_point == BT_HIDS_CTRL_EXIT_SUSPEND, "HID Control Point command %u",
 		    last_ctrl_point);
+	verify_suspend_state(false);
 	UNSET_FLAG(flag_ctrl_point);
+	bk_sync_send();
+
+	/* Switch to Boot Protocol Mode */
+	bk_sync_wait();
+	WAIT_FOR_FLAG(flag_protocol_mode_changed);
+	TEST_ASSERT(last_protocol_mode == BT_HIDS_PROTOCOL_BOOT, "Protocol Mode is %u",
+		    last_protocol_mode);
+	err = bt_hids_protocol_mode_get(server_conn, &mode);
+	TEST_ASSERT(err == 0, "Failed to get the Protocol Mode: %d", err);
+	TEST_ASSERT(mode == BT_HIDS_PROTOCOL_BOOT, "Protocol Mode is %u", mode);
+	UNSET_FLAG(flag_protocol_mode_changed);
+	bk_sync_send();
+
+	/* Back to Report Protocol Mode */
+	bk_sync_wait();
+	WAIT_FOR_FLAG(flag_protocol_mode_changed);
+	TEST_ASSERT(last_protocol_mode == BT_HIDS_PROTOCOL_REPORT, "Protocol Mode is %u",
+		    last_protocol_mode);
+	UNSET_FLAG(flag_protocol_mode_changed);
 	bk_sync_send();
 
 	/* GET_REPORT of the Input Report. The service answers a read from the
@@ -426,6 +519,7 @@ static void test_hids_server(void)
 	/* The client has subscribed to the Input Report again */
 	WAIT_FOR_FLAG(flag_connected);
 	bk_sync_wait();
+	verify_per_connection_defaults();
 
 	bk_sync_send();
 	send_input_report();
@@ -447,6 +541,7 @@ static void test_hids_server(void)
 	err = bt_hids_send_report(server_conn, TEST_REPORT_ID_INPUT, test_input_data,
 				  TEST_INPUT_REPORT_LEN, NULL, NULL);
 	TEST_ASSERT(err == -ESRCH, "Notified after unregistering: %d", err);
+	verify_conn_state_error(-ESRCH);
 
 	err = bt_hids_unregister();
 	TEST_ASSERT(err == -EALREADY, "Unregistered the HID Service twice: %d", err);
@@ -454,14 +549,20 @@ static void test_hids_server(void)
 	/* Signal the client that unregistering is done and we are still connected. */
 	bk_sync_send();
 
-	/* Registering again while a Host is connected serves that Host the
-	 * same service, which the client reads.
+	/* The connected and security_changed callbacks have already run for
+	 * the Host, so registering again does not track it yet.
 	 */
 	err = bt_hids_register(&hids_param);
 	TEST_ASSERT(err == 0, "Failed to register the HID Service again: %d", err);
+	verify_conn_state_error(-ENOTCONN);
 
+	/* The client reads the Protocol Mode, which starts tracking the Host
+	 * with its state at the default values.
+	 */
 	bk_sync_send();
 	bk_sync_wait();
+
+	verify_per_connection_defaults();
 
 	/* The client closes the connection */
 	bk_sync_send();
