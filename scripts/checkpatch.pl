@@ -62,7 +62,7 @@ my $spelling_file = "$D/spelling.txt";
 my $codespell = 0;
 my $codespellfile = "/usr/share/codespell/dictionary.txt";
 my $conststructsfile = "$D/const_structs.checkpatch";
-my $typedefsfile;
+my $typedefsfile = "$D/checkpatch/typedefsfile";
 my $color = "auto";
 my $allow_c99_comments = 0;
 # git output parsing needs US English output, so first set backtick child process LANGUAGE
