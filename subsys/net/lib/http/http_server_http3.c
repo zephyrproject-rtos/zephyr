@@ -2260,8 +2260,13 @@ int h3_handle_control_stream(struct http_client_ctx *client, int fd)
 			break;
 
 		case H3_FRAME_GOAWAY:
+			/* A GOAWAY from a client only limits the server
+			 * pushes it still accepts (RFC 9114 ch. 5.2). There
+			 * are none, and the requests in progress must be
+			 * allowed to finish, so there is nothing to do.
+			 */
 			LOG_DBG("[%p] H3: Control stream GOAWAY", client);
-			return -H3_NO_ERROR; /* Graceful shutdown */
+			break;
 
 		case H3_FRAME_MAX_PUSH_ID:
 			LOG_DBG("[%p] H3: Control stream MAX_PUSH_ID (ignored)", client);
