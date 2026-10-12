@@ -30,7 +30,7 @@ jobs:
     name: Twister Black Box Tests
     strategy:
       matrix:
-        python-version: ['3.12', '3.13']
+        python-version: ['3.12', '3.13', '3.14']
       fail-fast: false
     runs-on: ubuntu-24.04
     timeout-minutes: 120
