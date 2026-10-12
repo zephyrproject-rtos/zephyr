@@ -44,12 +44,50 @@ enum {
 /* OPAMP_CTR[PREF] encoding used when no non-inverting reference is configured. */
 #define OPAMP_CTR_PREF_VREFH4 3U
 
+static int mcux_opamp_configure(const struct device *dev);
+
 static int mcux_opamp_pm_callback(const struct device *dev, enum pm_device_action action)
 {
 	const struct mcux_opamp_config *config = dev->config;
 	int err;
 
-	if (action == PM_DEVICE_ACTION_RESUME) {
+	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+		/*
+		 * A state that power gates the block leaves OPAMP_CTR and the
+		 * clock gate at their reset values, and driver init does not
+		 * re-run on the way back. Ungate the clock, rebuild the
+		 * devicetree configuration, then gate it again: the core
+		 * records the device as suspended once this returns, and a
+		 * suspended device holds no clock.
+		 */
+		err = clock_control_on(config->clock_dev, config->clock_subsys);
+		if (err) {
+			return err;
+		}
+
+		/* Only LPC implemented RESET driver */
+#if defined(CONFIG_SOC_FAMILY_LPC)
+		err = reset_line_assert(config->reset.dev, config->reset.id);
+		if (err) {
+			LOG_ERR("Failed to assert reset line");
+			return err;
+		}
+#endif
+
+		err = mcux_opamp_configure(dev);
+		if (err) {
+			return err;
+		}
+
+		return clock_control_off(config->clock_dev, config->clock_subsys);
+
+	case PM_DEVICE_ACTION_RESUME:
+		err = clock_control_on(config->clock_dev, config->clock_subsys);
+		if (err) {
+			return err;
+		}
+
 		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 		if (err < 0 && err != -ENOENT) {
 			return err;
@@ -57,9 +95,8 @@ static int mcux_opamp_pm_callback(const struct device *dev, enum pm_device_actio
 
 		config->base->OPAMP_CTR |= OPAMP_OPAMP_CTR_EN_MASK;
 		return 0;
-	}
 
-	if (action == PM_DEVICE_ACTION_SUSPEND) {
+	case PM_DEVICE_ACTION_SUSPEND:
 		config->base->OPAMP_CTR &= ~OPAMP_OPAMP_CTR_EN_MASK;
 
 		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
@@ -67,10 +104,19 @@ static int mcux_opamp_pm_callback(const struct device *dev, enum pm_device_actio
 			return err;
 		}
 
-		return 0;
-	}
+		/*
+		 * The amplifier is off from here until the next resume, and a
+		 * gated clock leaves OPAMP_CTR unreachable in the meantime.
+		 */
+		return clock_control_off(config->clock_dev, config->clock_subsys);
 
-	return -ENOTSUP;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		/* The core runs this only on a suspended device, whose clock is gated. */
+		return 0;
+
+	default:
+		return -ENOTSUP;
+	}
 }
 
 static int mcux_opamp_set_gain(const struct device *dev, enum opamp_gain gain)
@@ -203,19 +249,10 @@ static int mcux_opamp_configure(const struct device *dev)
 int mcux_opamp_init(const struct device *dev)
 {
 	const struct mcux_opamp_config *config = dev->config;
-	int ret;
 
-	/* Enable OPAMP clock. */
 	if (!device_is_ready(config->clock_dev)) {
 		LOG_ERR("Clock device is not ready");
 		return -ENODEV;
-	}
-
-	ret = clock_control_on(config->clock_dev, config->clock_subsys);
-
-	if (ret) {
-		LOG_ERR("Device clock turn on failed");
-		return ret;
 	}
 
 	/* Only LPC implemented RESET driver */
@@ -224,19 +261,13 @@ int mcux_opamp_init(const struct device *dev)
 		LOG_ERR("Reset device is not ready");
 		return -ENODEV;
 	}
-
-	ret = reset_line_assert(config->reset.dev, config->reset.id);
-	if (ret) {
-		LOG_ERR("Device clock turn on failed");
-		return ret;
-	}
 #endif
 
-	ret = mcux_opamp_configure(dev);
-	if (ret) {
-		return ret;
-	}
-
+	/*
+	 * TURN_ON brings up the clock gate, the reset line and OPAMP_CTR.
+	 * pm_device_driver_init() runs it here, and the core runs it again
+	 * every time the block comes back from a power cycle.
+	 */
 	return pm_device_driver_init(dev, mcux_opamp_pm_callback);
 }
 
