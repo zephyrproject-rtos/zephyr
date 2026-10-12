@@ -715,9 +715,9 @@
 			#mbox-cells = <1>;
 		};
 
-		mu7: mailbox@42440000 {
+		mu7: mailbox@42060000 {
 			compatible = "nxp,mbox-imx-mu";
-			reg = <0x42440000 DT_SIZE_K(4)>;
+			reg = <0x42060000 DT_SIZE_K(4)>;
 			interrupts = <207 0>;
 			#mbox-cells = <1>;
 			status = "disabled";
