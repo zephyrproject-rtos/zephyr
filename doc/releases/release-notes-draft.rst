@@ -74,6 +74,12 @@ New APIs and options
     * :c:func:`bt_hids_report_get`
     * :c:func:`bt_hids_send_report`
 
+* Management
+
+  * MCUmgr
+
+    * :c:func:`transport_mgmt_connect_bridge`
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
