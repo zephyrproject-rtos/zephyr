@@ -69,6 +69,30 @@ struct hids_report_ctx {
 	const struct bt_gatt_attr *attr;
 };
 
+/* Longest Boot Protocol Mode Report. The Boot Reports have a fixed format and
+ * length, defined by the USB HID Specification, so they are not described in
+ * the Report Map and have no Report Reference descriptor.
+ */
+#define HIDS_BOOT_REPORT_MAX_LEN sizeof(struct bt_hids_boot_kb_in_report)
+
+/* Per Boot Report characteristic state, protected by hids_mutex in hids.c.
+ * Each Boot Report characteristic refers to its own context through the
+ * attribute user data.
+ */
+struct hids_boot_report_ctx {
+	/* Value a Host reads from this Boot Report. It is all zeroes until the
+	 * application sets it, which is the idle state of both a boot keyboard
+	 * and a boot mouse.
+	 */
+	uint8_t value[HIDS_BOOT_REPORT_MAX_LEN];
+
+	/* Fixed length of this Boot Report */
+	uint8_t len;
+
+	/* Report value attribute, resolved when the service is registered */
+	const struct bt_gatt_attr *attr;
+};
+
 /* Per-connection HID state, protected by hids_mutex in hids.c. The Protocol
  * Mode and the Suspend state are tracked per Host, and reset to their default
  * values when the slot is claimed, so they start at defaults on each new

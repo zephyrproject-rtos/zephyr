@@ -55,12 +55,20 @@ BUILD_ASSERT(HIDS_REPORT_COUNT > 0, "The HID Service needs at least one Report c
 #define HIDS_MAX_INSTS MIN(CONFIG_BT_MAX_CONN, CONFIG_BT_MAX_PAIRED)
 #endif
 
+BUILD_ASSERT(sizeof(struct bt_hids_boot_kb_in_report) == 8U,
+	     "Boot Keyboard Input Report layout must match the USB HID Specification");
+BUILD_ASSERT(sizeof(struct bt_hids_boot_kb_out_report) == 1U,
+	     "Boot Keyboard Output Report layout must match the USB HID Specification");
+BUILD_ASSERT(sizeof(struct bt_hids_boot_mouse_in_report) == 3U,
+	     "Boot Mouse Input Report layout must match the USB HID Specification");
+
 /* Module context.
  *
  * The GATT handlers run on the thread the Bluetooth stack processes ATT
  * requests on, and the API on application threads. hids_mutex protects every
  * field below: the registration state, the callbacks, the Report Map, the HID
- * Information, the Report contexts and the per-connection slots. The slots are
+ * Information, the Report and Boot Report contexts and the per-connection
+ * slots. The slots are
  * claimed and released on the Bluetooth thread, and read from application
  * threads. It is never held while an application
  * callback runs or while a notification is sent, so that a callback can call
@@ -77,6 +85,23 @@ static struct hids_conn connections[HIDS_MAX_INSTS];
  * BUILD_ASSERT above guarantees the array is not empty.
  */
 static struct hids_report_ctx reports[HIDS_REPORT_COUNT];
+
+#if defined(CONFIG_BT_HIDS_BOOT_KEYBOARD) || defined(CONFIG_BT_HIDS_BOOT_MOUSE)
+/* Boot Report characteristic contexts, indexed by enum bt_hids_boot_report. All
+ * three slots exist whenever any Boot Report does, so that the index of a
+ * context does not depend on the configuration. Only the slots of the
+ * characteristics that are part of the service are reachable.
+ */
+static struct hids_boot_report_ctx boot_reports[] = {
+	[BT_HIDS_BOOT_REPORT_KEYBOARD_INPUT] = {.len = sizeof(struct bt_hids_boot_kb_in_report)},
+	[BT_HIDS_BOOT_REPORT_KEYBOARD_OUTPUT] = {.len = sizeof(struct bt_hids_boot_kb_out_report)},
+	[BT_HIDS_BOOT_REPORT_MOUSE_INPUT] = {.len = sizeof(struct bt_hids_boot_mouse_in_report)},
+};
+
+BUILD_ASSERT(sizeof(struct bt_hids_boot_kb_out_report) <= HIDS_BOOT_REPORT_MAX_LEN &&
+		     sizeof(struct bt_hids_boot_mouse_in_report) <= HIDS_BOOT_REPORT_MAX_LEN,
+	     "A Boot Report is longer than the Boot Report buffer");
+#endif /* CONFIG_BT_HIDS_BOOT_KEYBOARD || CONFIG_BT_HIDS_BOOT_MOUSE */
 
 static void hids_lock(void)
 {
@@ -109,6 +134,45 @@ static void hids_reset(void)
 
 	/* The GATT service is gone, so the per-Host HID state goes with it */
 	(void)memset(connections, 0, sizeof(connections));
+
+#if defined(CONFIG_BT_HIDS_BOOT_KEYBOARD) || defined(CONFIG_BT_HIDS_BOOT_MOUSE)
+	/* The length is fixed and the attribute does not move, so only the
+	 * value goes
+	 */
+	for (size_t i = 0U; i < ARRAY_SIZE(boot_reports); i++) {
+		(void)memset(boot_reports[i].value, 0, sizeof(boot_reports[i].value));
+	}
+#endif
+}
+
+/* Resolve a Boot Report of the registered service. A Boot Report the
+ * configuration leaves out has no attribute bound to its context.
+ */
+static int boot_report_resolve(enum bt_hids_boot_report report, struct hids_boot_report_ctx **ctx)
+{
+	HIDS_LOCK_ASSERT();
+
+	if (report != BT_HIDS_BOOT_REPORT_KEYBOARD_INPUT &&
+	    report != BT_HIDS_BOOT_REPORT_KEYBOARD_OUTPUT &&
+	    report != BT_HIDS_BOOT_REPORT_MOUSE_INPUT) {
+		return -EINVAL;
+	}
+
+	if (!hids.registered) {
+		return -ESRCH;
+	}
+
+#if defined(CONFIG_BT_HIDS_BOOT_KEYBOARD) || defined(CONFIG_BT_HIDS_BOOT_MOUSE)
+	*ctx = &boot_reports[report];
+
+	if ((*ctx)->attr != NULL) {
+		return 0;
+	}
+#else
+	ARG_UNUSED(ctx);
+#endif
+
+	return -ENOTSUP;
 }
 
 /* Only Input Reports are looked up by Report ID, to notify them. Reads and
@@ -486,6 +550,74 @@ static ssize_t write_report(struct bt_conn *conn, const struct bt_gatt_attr *att
 }
 #endif
 
+#if defined(CONFIG_BT_HIDS_BOOT_KEYBOARD) || defined(CONFIG_BT_HIDS_BOOT_MOUSE)
+static ssize_t read_boot_report(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
+				uint16_t len, uint16_t offset)
+{
+	const struct hids_boot_report_ctx *ctx = attr->user_data;
+	ssize_t ret;
+
+	hids_lock();
+
+	if (!hids.registered) {
+		hids_unlock();
+		return HIDS_ERR_UNREGISTERED;
+	}
+
+	ret = bt_gatt_attr_read(conn, attr, buf, len, offset, ctx->value, ctx->len);
+
+	hids_unlock();
+
+	return ret;
+}
+#endif /* CONFIG_BT_HIDS_BOOT_KEYBOARD || CONFIG_BT_HIDS_BOOT_MOUSE */
+
+#if defined(CONFIG_BT_HIDS_BOOT_KEYBOARD)
+/* The Boot Keyboard Output Report is the only writable Boot Report */
+static ssize_t write_boot_report(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+				 const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
+{
+	void (*set_boot_report_cb)(struct bt_conn *conn, enum bt_hids_boot_report report,
+				   const uint8_t *data, uint16_t len) = NULL;
+	struct hids_boot_report_ctx *ctx = attr->user_data;
+
+	ARG_UNUSED(flags);
+
+	if (offset != 0) {
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+	}
+
+	/* A Boot Report has a fixed length, which never changes */
+	if (len != ctx->len) {
+		LOG_DBG("SET_REPORT of %u octets for the Boot Keyboard Output Report, %u expected",
+			len, ctx->len);
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	}
+
+	hids_lock();
+
+	if (!hids.registered) {
+		hids_unlock();
+		return HIDS_ERR_UNREGISTERED;
+	}
+
+	/* A Host write replaces the value a read returns */
+	(void)memcpy(ctx->value, buf, len);
+
+	if (callbacks != NULL) {
+		set_boot_report_cb = callbacks->set_boot_report;
+	}
+
+	hids_unlock();
+
+	if (set_boot_report_cb != NULL) {
+		set_boot_report_cb(conn, BT_HIDS_BOOT_REPORT_KEYBOARD_OUTPUT, buf, len);
+	}
+
+	return len;
+}
+#endif /* CONFIG_BT_HIDS_BOOT_KEYBOARD */
+
 /* Service definition
  *
  * The number of Report characteristics of each type is a build time
@@ -526,6 +658,38 @@ static ssize_t write_report(struct bt_conn *conn, const struct bt_gatt_attr *att
 		BT_GATT_DESCRIPTOR(BT_UUID_HIDS_REPORT_REF, HIDS_PERM_READ, read_report_ref, NULL, \
 				   &reports[HIDS_FEATURE_BASE + (_n)].ref),
 
+/* The Boot Reports have no Report Reference descriptor: their format and length
+ * are fixed, so they are not described in the Report Map. A Client
+ * Characteristic Configuration descriptor is required for each Boot Input
+ * Report. Write is optional for a Boot Input Report and is not supported.
+ */
+#if defined(CONFIG_BT_HIDS_BOOT_KEYBOARD)
+#define HIDS_BOOT_KEYBOARD_ATTRS                                                                   \
+	BT_GATT_CHARACTERISTIC(BT_UUID_HIDS_BOOT_KB_IN_REPORT,                                     \
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, HIDS_PERM_READ,            \
+			       read_boot_report, NULL,                                             \
+			       &boot_reports[BT_HIDS_BOOT_REPORT_KEYBOARD_INPUT]),                 \
+		BT_GATT_CCC(NULL, HIDS_PERM_RW),                                                   \
+		BT_GATT_CHARACTERISTIC(BT_UUID_HIDS_BOOT_KB_OUT_REPORT,                            \
+				       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE |                    \
+					       BT_GATT_CHRC_WRITE_WITHOUT_RESP,                    \
+				       HIDS_PERM_RW, read_boot_report, write_boot_report,          \
+				       &boot_reports[BT_HIDS_BOOT_REPORT_KEYBOARD_OUTPUT]),
+#else
+#define HIDS_BOOT_KEYBOARD_ATTRS
+#endif
+
+#if defined(CONFIG_BT_HIDS_BOOT_MOUSE)
+#define HIDS_BOOT_MOUSE_ATTRS                                                                      \
+	BT_GATT_CHARACTERISTIC(BT_UUID_HIDS_BOOT_MOUSE_IN_REPORT,                                  \
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, HIDS_PERM_READ,            \
+			       read_boot_report, NULL,                                             \
+			       &boot_reports[BT_HIDS_BOOT_REPORT_MOUSE_INPUT]),                    \
+		BT_GATT_CCC(NULL, HIDS_PERM_RW),
+#else
+#define HIDS_BOOT_MOUSE_ATTRS
+#endif
+
 /* clang-format off */
 #define BT_HIDS_SERVICE_DEFINITION() \
 { \
@@ -536,6 +700,8 @@ static ssize_t write_report(struct bt_conn *conn, const struct bt_gatt_attr *att
 	LISTIFY(CONFIG_BT_HIDS_INPUT_REPORT_COUNT, HIDS_INPUT_REPORT_ATTRS, ()) \
 	LISTIFY(CONFIG_BT_HIDS_OUTPUT_REPORT_COUNT, HIDS_OUTPUT_REPORT_ATTRS, ()) \
 	LISTIFY(CONFIG_BT_HIDS_FEATURE_REPORT_COUNT, HIDS_FEATURE_REPORT_ATTRS, ()) \
+	HIDS_BOOT_KEYBOARD_ATTRS \
+	HIDS_BOOT_MOUSE_ATTRS \
 	BT_GATT_CHARACTERISTIC(BT_UUID_HIDS_INFO, BT_GATT_CHRC_READ, \
 			       HIDS_PERM_READ, read_hid_info, NULL, NULL), \
 	BT_GATT_CHARACTERISTIC(BT_UUID_HIDS_CTRL_POINT, \
@@ -699,6 +865,12 @@ static void reports_assign(const struct bt_hids_register_param *param)
 		if (hids_attrs[i].read == read_report) {
 			((struct hids_report_ctx *)hids_attrs[i].user_data)->attr = &hids_attrs[i];
 		}
+#if defined(CONFIG_BT_HIDS_BOOT_KEYBOARD) || defined(CONFIG_BT_HIDS_BOOT_MOUSE)
+		else if (hids_attrs[i].read == read_boot_report) {
+			((struct hids_boot_report_ctx *)hids_attrs[i].user_data)->attr =
+				&hids_attrs[i];
+		}
+#endif
 	}
 }
 
@@ -915,6 +1087,107 @@ int bt_hids_send_report(struct bt_conn *conn, uint8_t report_id, const uint8_t *
 	 * The attribute is static, and once the service is unregistered it has
 	 * no handle, so the notification fails with -ENOENT.
 	 */
+	struct bt_gatt_notify_params params = {
+		.attr = attr,
+		.data = data,
+		.len = len,
+		.func = func,
+		.user_data = user_data,
+	};
+
+	return bt_gatt_notify_cb(conn, &params);
+}
+
+int bt_hids_boot_report_set(enum bt_hids_boot_report report, const uint8_t *data, uint16_t len)
+{
+	struct hids_boot_report_ctx *ctx;
+	int err;
+
+	if (data == NULL) {
+		return -EINVAL;
+	}
+
+	hids_lock();
+
+	err = boot_report_resolve(report, &ctx);
+	if (err != 0) {
+		hids_unlock();
+		return err;
+	}
+
+	if (len != ctx->len) {
+		hids_unlock();
+		return -EINVAL;
+	}
+
+	(void)memcpy(ctx->value, data, len);
+
+	hids_unlock();
+
+	return 0;
+}
+
+int bt_hids_boot_report_get(enum bt_hids_boot_report report, uint8_t *data, uint16_t *len)
+{
+	struct hids_boot_report_ctx *ctx;
+	int err;
+
+	if (data == NULL || len == NULL) {
+		return -EINVAL;
+	}
+
+	hids_lock();
+
+	err = boot_report_resolve(report, &ctx);
+	if (err != 0) {
+		hids_unlock();
+		return err;
+	}
+
+	if (*len < ctx->len) {
+		hids_unlock();
+		return -ENOMEM;
+	}
+
+	(void)memcpy(data, ctx->value, ctx->len);
+	*len = ctx->len;
+
+	hids_unlock();
+
+	return 0;
+}
+
+int bt_hids_boot_report_send(struct bt_conn *conn, enum bt_hids_boot_report report,
+			     const uint8_t *data, uint16_t len, bt_gatt_complete_func_t func,
+			     void *user_data)
+{
+	const struct bt_gatt_attr *attr;
+	struct hids_boot_report_ctx *ctx;
+	int err;
+
+	/* Only the Boot Input Reports are notifiable */
+	if (data == NULL || report == BT_HIDS_BOOT_REPORT_KEYBOARD_OUTPUT) {
+		return -EINVAL;
+	}
+
+	hids_lock();
+
+	err = boot_report_resolve(report, &ctx);
+	if (err != 0) {
+		hids_unlock();
+		return err;
+	}
+
+	if (len != ctx->len) {
+		hids_unlock();
+		return -EINVAL;
+	}
+
+	attr = ctx->attr;
+
+	hids_unlock();
+
+	/* Sent without hids_mutex, see bt_hids_send_report() */
 	struct bt_gatt_notify_params params = {
 		.attr = attr,
 		.data = data,
