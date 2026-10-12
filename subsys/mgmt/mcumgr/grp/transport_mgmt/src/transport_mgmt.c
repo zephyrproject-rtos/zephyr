@@ -176,6 +176,7 @@ int transport_mgmt_disconnect_bridge(struct smp_transport_bridge *bridge)
 	transport_mgmt_lock();
 
 	if (!bridge_active || bridge->status == 0) {
+		transport_mgmt_unlock();
 		return -ENOTCONN;
 	}
 
