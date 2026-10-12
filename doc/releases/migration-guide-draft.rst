@@ -607,6 +607,18 @@ Networking
   ``DEVICE_API(wifi_offload, name)`` otherwise. ``struct net_wifi_mgmt_offload`` remains available
   to refer to the selected type. (:github:`124334`)
 
+* The default Wi-Fi credentials backend has changed for some targets:
+
+  * Non-secure targets with the TF-M Protected Storage partition now use
+    :kconfig:option:`CONFIG_WIFI_CREDENTIALS_BACKEND_PSA_PS` instead of
+    :kconfig:option:`CONFIG_WIFI_CREDENTIALS_BACKEND_PSA`.
+  * Targets that enable :kconfig:option:`CONFIG_SECURE_STORAGE` now use
+    :kconfig:option:`CONFIG_WIFI_CREDENTIALS_BACKEND_PSA_PS` instead of
+    :kconfig:option:`CONFIG_WIFI_CREDENTIALS_BACKEND_SETTINGS`.
+
+  The new default backend can't read credentials that the previous backends stored. To keep
+  those credentials after updating, enable the previous backend explicitly.
+
 * The extra config files of the samples in :zephyr_file:`samples/net`,
   :zephyr_file:`samples/subsys/mgmt/hawkbit`, :zephyr_file:`samples/subsys/mgmt/updatehub` and
   :zephyr_file:`samples/drivers/modem/hello_hl78xx`, and of the network tests, no longer start with

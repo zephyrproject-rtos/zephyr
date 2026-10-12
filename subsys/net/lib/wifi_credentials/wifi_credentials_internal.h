@@ -35,6 +35,16 @@ void wifi_credentials_uncache_ssid(size_t idx);
 void wifi_credentials_mark_unusable(size_t idx);
 
 /**
+ * @brief Mark a slot as unreadable.
+ *
+ * Called by the backend from wifi_credentials_backend_init() for a slot holding an entry that
+ * cannot be read, possibly only temporarily. Loading the entries is retried on next use.
+ *
+ * @param idx credential index
+ */
+void wifi_credentials_mark_unreadable(size_t idx);
+
+/**
  * @brief Stores settings entry in flash.
  *
  * @param idx credential index
