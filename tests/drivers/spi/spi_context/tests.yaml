@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.spi.spi_context:
+    tags:
+      - drivers
+      - spi
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - qemu_cortex_m3
+      - qemu_riscv32
+    integration_platforms:
+      - native_sim
