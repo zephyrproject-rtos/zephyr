@@ -81,16 +81,17 @@ choice SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER
 	default SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_ENTRY_UID_HASH if !HWINFO_HAS_DRIVER
 
 config SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_DEVICE_ID_HASH
-	bool "Hash of the device ID returned by the HW info API (not necessarily secure)"
+	bool "Hash of the device ID returned by the HW info API (not secure)"
 	depends on HWINFO_HAS_DRIVER
+	select NOT_SECURE
 	select PSA_WANT_ALG_SHA_256
 	help
 	  This key provider generates keys by hashing the following:
 	  - the device EUI64 as returned by hwinfo_get_device_eui64() as first choice;
-	  - the device ID as returned by hwinfo_get_device_uuid() as second choice.
+	  - the device ID as returned by hwinfo_get_device_id() as second choice.
 	  In addition to the device ID, it adds the UID of the ITS entry
 	  for which it is generating a key to the data hashed as a salt.
-	  This is not necessarily secure as the device ID may be easily readable
+	  This is not secure as the device ID may be easily obtainable
 	  by an attacker, not unique, and/or guessable, depending on the device.
 
 config SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_ENTRY_UID_HASH

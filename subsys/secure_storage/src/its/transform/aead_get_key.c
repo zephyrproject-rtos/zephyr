@@ -40,8 +40,6 @@ static psa_status_t hash_data_into_key(
 
 #ifdef CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_DEVICE_ID_HASH
 
-#define WARNING "Using a potentially insecure PSA ITS encryption key provider."
-
 psa_status_t secure_storage_its_transform_aead_get_key(
 		secure_storage_its_uid_t uid,
 		uint8_t key[static CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_SIZE])
@@ -73,8 +71,6 @@ psa_status_t secure_storage_its_transform_aead_get_key(
 
 #elif defined(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_ENTRY_UID_HASH)
 
-#define WARNING "Using an insecure PSA ITS encryption key provider."
-
 psa_status_t secure_storage_its_transform_aead_get_key(
 		secure_storage_its_uid_t uid,
 		uint8_t key[static CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_SIZE])
@@ -88,8 +84,10 @@ psa_status_t secure_storage_its_transform_aead_get_key(
 
 static int warn_insecure_key(void)
 {
-	printk("WARNING: %s\n", WARNING);
-	LOG_WRN("%s", WARNING);
+	const char *warning = "Using an insecure PSA ITS encryption key provider.";
+
+	printk("WARNING: %s\n", warning);
+	LOG_WRN("%s", warning);
 	return 0;
 }
 SYS_INIT(warn_insecure_key, APPLICATION, CONFIG_SECURE_STORAGE_INIT_PRIORITY);
