@@ -1,0 +1,37 @@
+# Copyright (c) 2026 Dotcom IoT LLP
+# SPDX-License-Identifier: Apache-2.0
+
+description: ST STHS34PF80 infrared presence and motion detection sensor
+
+include: sensor-device.yaml
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the INT pin of the sensor. When set, the data-ready
+      (DRDY) event is routed to this pin and the driver supports the
+      SENSOR_TRIG_DATA_READY trigger. The INT pin of the sensor is active
+      high, so use GPIO_ACTIVE_HIGH. When not set, the sensor can only be
+      polled.
+
+  odr:
+    type: int
+    default: 3
+    description: |
+      Output data rate selection. Valid values are:
+      0 = power-down, 1 = 0.25 Hz, 2 = 0.5 Hz, 3 = 1 Hz,
+      4 = 2 Hz, 5 = 4 Hz, 6 = 8 Hz, 7 = 15 Hz, 8 = 30 Hz.
+      Default is 3 (1 Hz), a safe power-up rate.
+      Please note that the values are defined in
+      include/zephyr/dt-bindings/sensor/sths34pf80.h
+    enum:
+      - 0 # STHS34PF80_DT_ODR_POWER_DOWN
+      - 1 # STHS34PF80_DT_ODR_0HZ25
+      - 2 # STHS34PF80_DT_ODR_0HZ50
+      - 3 # STHS34PF80_DT_ODR_1HZ
+      - 4 # STHS34PF80_DT_ODR_2HZ
+      - 5 # STHS34PF80_DT_ODR_4HZ
+      - 6 # STHS34PF80_DT_ODR_8HZ
+      - 7 # STHS34PF80_DT_ODR_15HZ
+      - 8 # STHS34PF80_DT_ODR_30HZ
