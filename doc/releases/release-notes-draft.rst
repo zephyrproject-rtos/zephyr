@@ -73,6 +73,9 @@ New APIs and options
     * :c:func:`bt_hids_report_set`
     * :c:func:`bt_hids_report_get`
     * :c:func:`bt_hids_send_report`
+    * :c:func:`bt_hids_boot_report_set`
+    * :c:func:`bt_hids_boot_report_get`
+    * :c:func:`bt_hids_boot_report_send`
     * :c:func:`bt_hids_protocol_mode_get`
     * :c:func:`bt_hids_suspend_state_get`
 
