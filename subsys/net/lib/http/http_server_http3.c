@@ -2760,8 +2760,18 @@ static int h3_process_frames(struct http_client_ctx *client, bool stream_fin)
 			break;
 
 		case H3_FRAME_GOAWAY:
-			LOG_DBG("[%p] H3: GOAWAY frame, len=%llu", client, frame_len);
-			return enter_http_done_state(client);
+			/*
+			 * GOAWAY is always sent on the control stream (RFC 9114
+			 * ch. 7.2.6) and is not permitted on a request stream
+			 * (ch. 7.2, Table 1), so treat it as a connection error
+			 * of type H3_FRAME_UNEXPECTED (ch. 8.1). Return the
+			 * error so handle_h3_bidi_stream() restores the
+			 * connection fd and tears the connection down, instead
+			 * of closing it while client->fd still points at the
+			 * request stream.
+			 */
+			LOG_DBG("[%p] H3: GOAWAY on request stream", client);
+			return -H3_FRAME_UNEXPECTED;
 
 		default:
 			/* Unknown frame types MUST be ignored per RFC 9114 */
