@@ -14,6 +14,7 @@ supported:
   - gpio
   - can
   - dac
+  - pwm
   - vref
   - dma
   - trng
