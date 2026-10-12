@@ -90,9 +90,10 @@ The current order is:
      - :class:`SnippetStrategy`
      - Yes
      - Snippet changes select test roots that use the snippet through
-       ``required_snippets`` or an application ``SNIPPET`` extra argument.
-       Consuming prevents downstream strategies from treating a snippet YAML
-       as an unknown configuration file.
+       ``required_snippets`` or ``SNIPPET`` extra arguments, including sysbuild
+       image-specific ``<image>_SNIPPET`` assignments. Consuming prevents
+       downstream strategies from treating a snippet YAML as an unknown
+       configuration file.
    * - 4
      - :class:`BoardStrategy`
      - Yes

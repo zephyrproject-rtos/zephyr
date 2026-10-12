@@ -794,8 +794,9 @@ class SnippetStrategy(SelectionStrategy):
 
     3. Search ``tests/`` and ``samples/`` for ``tests.yaml`` files that contain
        the snippet name string, then parse each found manifest to confirm that
-       a test entry declares the snippet through ``required_snippets:`` or an
-       application ``SNIPPET`` extra argument.
+       a test entry declares the snippet through ``required_snippets:`` or a
+       ``SNIPPET`` extra argument, including sysbuild image-specific
+       ``<image>_SNIPPET`` assignments.
 
     4. Walk up from the confirmed YAML file to the test root (the directory
        that contains the ``tests.yaml``) and emit a
@@ -920,10 +921,15 @@ class SnippetStrategy(SelectionStrategy):
             else:
                 continue
 
-            if not assignment.startswith("SNIPPET="):
+            key, sep, value = assignment.partition("=")
+
+            if not sep:
                 continue
 
-            value = assignment[len("SNIPPET=") :].strip()
+            if key != "SNIPPET" and not (key.endswith("_SNIPPET") and len(key) > len("_SNIPPET")):
+                continue
+
+            value = value.strip()
 
             if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
                 value = value[1:-1]
@@ -954,9 +960,10 @@ class SnippetStrategy(SelectionStrategy):
         """Return the set of test-root directories that use *snippet_name*.
 
         Each ``tests.yaml`` manifest containing the snippet name is parsed to
-        confirm that the snippet is declared through ``required_snippets`` or an
-        application ``SNIPPET`` extra argument. The confirmed YAML's directory is
-        the ``-T`` root.
+        confirm that the snippet is declared through ``required_snippets`` or a
+        ``SNIPPET`` extra argument, including sysbuild image-specific
+        ``<image>_SNIPPET`` assignments. The confirmed YAML's directory is the
+        ``-T`` root.
         """
         test_roots: set = set()
         search_roots = [
