@@ -191,6 +191,12 @@ struct bt_pacs_cb {
 	 * Called when a client wrote a location different from the current one. Not called for
 	 * locations set with bt_pacs_set_location().
 	 *
+	 * Called from the Bluetooth RX context with the callback list locked. The callback may
+	 * unregister itself with bt_pacs_unregister_cb() or register a callback with
+	 * bt_pacs_register_cb(), which may or may not be called for this change. It must not
+	 * unregister other callbacks and must not wait for a thread that is calling
+	 * bt_pacs_register_cb() or bt_pacs_unregister_cb().
+	 *
 	 * Requires @kconfig{CONFIG_BT_PAC_SNK_LOC_WRITEABLE} or
 	 * @kconfig{CONFIG_BT_PAC_SRC_LOC_WRITEABLE}.
 	 *
@@ -220,6 +226,10 @@ int bt_pacs_register_cb(struct bt_pacs_cb *cb);
 
 /**
  * @brief Unregisters callbacks for PACS
+ *
+ * @note Waits for a callback that is running on another thread. When this returns, @p cb is not
+ *       being called and will not be called, so it can be freed. Do not call this while holding
+ *       a lock that a registered callback takes.
  *
  * @param cb Pointer to the callback structure.
  *
