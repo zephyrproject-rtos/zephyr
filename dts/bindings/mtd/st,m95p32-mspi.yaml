@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright 2026 EXALT Technologies
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: ST M95P32 page EEPROM on a MSPI bus
+
+description: |
+  The M95P32 is a 32-Mbit page EEPROM with a 512-byte page size. In
+  addition to the main memory array, it provides a factory identification
+  page and a customer-programmable identification page. It also provides an
+  internal page buffer that can be loaded before programming the main memory
+  array.
+
+compatible: "st,m95p32"
+
+include: jedec,nor-mspi.yaml
