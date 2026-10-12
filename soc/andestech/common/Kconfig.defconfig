@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Andes Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+configdefault PMP_GRANULARITY
+	default 4096 if CPU_ANDES_AX65
+	default 4 if CPU_ANDES_N22
+	default 8
+
+configdefault PMP_NO_TOR
+	default y if CPU_ANDES_N22
+
+configdefault NULL_POINTER_EXCEPTION_REGION_SIZE
+	default 0x1000 if CPU_ANDES_AX65
