@@ -25,6 +25,7 @@
 
 #include "stream_rx.h"
 #include "lc3.h"
+#include "mpipe_audio.h"
 
 struct stream_rx rx_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 uint64_t total_rx_iso_packet_count; /* This value is exposed to test code */
@@ -105,11 +106,24 @@ void stream_rx_recv(struct bt_bap_stream *bap_stream, const struct bt_iso_recv_i
 
 	total_rx_iso_packet_count++;
 
-	if (IS_ENABLED(CONFIG_LIBLC3)) {
-		/* Invalid SDUs will trigger PLC */
-		lc3_enqueue_for_decoding(stream, info, buf);
+#if defined(CONFIG_BAP_SINK_AUDIO_PATH_MPIPE)
+	{
+		uint8_t ch = stream->mpipe_channel;
+
+		if ((info->flags & BT_ISO_FLAGS_VALID) != 0 && buf->len > 0U) {
+			mpipe_audio_push(ch, buf->data, buf->len, info->ts,
+					 (info->flags & BT_ISO_FLAGS_TS) != 0);
+		} else {
+			mpipe_audio_push_lost(ch);
+		}
 	}
+#elif defined(CONFIG_LIBLC3)
+	/* Invalid SDUs will trigger PLC */
+	lc3_enqueue_for_decoding(stream, info, buf);
+#endif
+
 }
+
 
 int stream_rx_started(struct bt_bap_stream *bap_stream)
 {
@@ -123,7 +137,53 @@ int stream_rx_started(struct bt_bap_stream *bap_stream)
 	memset(&stream->reporting_info, 0, sizeof((stream->reporting_info)));
 #endif /* CONFIG_INFO_REPORTING_INTERVAL > 0 */
 
-	if (IS_ENABLED(CONFIG_LIBLC3) && bap_stream->codec_cfg != NULL &&
+#if defined(CONFIG_BAP_SINK_AUDIO_PATH_MPIPE)
+	if (bap_stream->codec_cfg != NULL &&
+	    bap_stream->codec_cfg->id == BT_HCI_CODING_FORMAT_LC3) {
+		uint32_t lc3_frame_dur_us = 0U;
+		uint32_t lc3_freq_hz = 0U;
+		int ret;
+
+		ret = bt_audio_codec_cfg_get_freq(bap_stream->codec_cfg);
+		if (ret >= 0) {
+			ret = bt_audio_codec_cfg_freq_to_freq_hz(ret);
+			if (ret > 0) {
+				lc3_freq_hz = (uint32_t)ret;
+			}
+		}
+
+		if (lc3_freq_hz == 0U) {
+			LOG_ERR("Could not resolve LC3 sample rate for mpipe");
+			return -EINVAL;
+		}
+
+		ret = bt_audio_codec_cfg_get_frame_dur(bap_stream->codec_cfg);
+		if (ret >= 0) {
+			ret = bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret);
+			if (ret > 0) {
+				lc3_frame_dur_us = (uint32_t)ret;
+			}
+		}
+
+		if (lc3_frame_dur_us == 0U) {
+			LOG_ERR("Could not resolve LC3 frame duration for mpipe");
+			return -EINVAL;
+		}
+
+		stream->mpipe_channel = (uint8_t)(stream - rx_streams);
+
+		LOG_INF("Stream %p mapped to mpipe channel %u",
+			bap_stream, stream->mpipe_channel);
+
+		if (bap_stream->qos != NULL) {
+			mpipe_audio_set_presentation_delay(bap_stream->qos->pd);
+		}
+
+		mpipe_audio_request_start(lc3_freq_hz, lc3_frame_dur_us);
+		return 0;
+	}
+#elif defined(CONFIG_LIBLC3)
+	if (bap_stream->codec_cfg != NULL &&
 	    bap_stream->codec_cfg->id == BT_HCI_CODING_FORMAT_LC3) {
 		int err;
 
@@ -133,20 +193,29 @@ int stream_rx_started(struct bt_bap_stream *bap_stream)
 			return err;
 		}
 	}
+#endif
 
 	return 0;
 }
 
+
 int stream_rx_stopped(struct bt_bap_stream *bap_stream)
 {
-	struct stream_rx *stream = CONTAINER_OF(bap_stream, struct stream_rx, stream);
-
 	if (bap_stream == NULL) {
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_LIBLC3) && bap_stream->codec_cfg != NULL &&
+#if defined(CONFIG_BAP_SINK_AUDIO_PATH_MPIPE)
+	if (bap_stream->codec_cfg != NULL &&
 	    bap_stream->codec_cfg->id == BT_HCI_CODING_FORMAT_LC3) {
+		/* Decrement the refcount; teardown happens when the last stream stops. */
+		mpipe_audio_stream_stopped();
+	}
+#elif defined(CONFIG_LIBLC3)
+	if (bap_stream->codec_cfg != NULL &&
+	    bap_stream->codec_cfg->id == BT_HCI_CODING_FORMAT_LC3) {
+		struct stream_rx *stream =
+			CONTAINER_OF(bap_stream, struct stream_rx, stream);
 		int err;
 
 		err = lc3_disable(stream);
@@ -155,6 +224,9 @@ int stream_rx_stopped(struct bt_bap_stream *bap_stream)
 			return err;
 		}
 	}
+#endif
+
+
 
 	return 0;
 }
