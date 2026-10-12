@@ -35,6 +35,7 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include <esp_wpa.h>
 #if defined(CONFIG_ESP32_WIFI_ENTERPRISE)
 #include <esp_eap_client.h>
+#include <mbedtls/platform_util.h>
 #endif
 #if defined(CONFIG_ESP32_WIFI_RRM_SUPPORT)
 #include <esp_rrm.h>
@@ -969,17 +970,21 @@ static int esp32_wifi_enterprise_err(const char *what, esp_err_t err)
 	return -EIO;
 }
 
+static void esp32_wifi_free_cred(uint8_t *cred, uint32_t cred_len)
+{
+	if (cred != NULL) {
+		mbedtls_platform_zeroize(cred, cred_len);
+		k_free(cred);
+	}
+}
+
 static void esp32_wifi_clear_enterprise_creds(struct esp32_wifi_runtime *data)
 {
-	uint8_t *certs[] = {
-		data->enterprise_creds.ca_cert,
-		data->enterprise_creds.client_cert,
-		data->enterprise_creds.client_key,
-	};
+	struct wifi_enterprise_creds_params *certs = &data->enterprise_creds;
 
-	for (size_t i = 0; i < ARRAY_SIZE(certs); i++) {
-		k_free(certs[i]);
-	}
+	esp32_wifi_free_cred(certs->ca_cert, certs->ca_cert_len);
+	esp32_wifi_free_cred(certs->client_cert, certs->client_cert_len);
+	esp32_wifi_free_cred(certs->client_key, certs->client_key_len);
 
 	memset(&data->enterprise_creds, 0, sizeof(data->enterprise_creds));
 }
