@@ -11,7 +11,7 @@ properties:
   reg:
     required: true
 
-  xip-config:
+  memmap-config:
     default: [0, 0, 0, 0]
 
   scramble-config:

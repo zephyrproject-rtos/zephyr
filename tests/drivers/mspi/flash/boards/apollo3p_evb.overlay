@@ -41,7 +41,7 @@
 		address-length = "ADDR_4_BYTE";
 		rx-dummy = <8>;
 		tx-dummy = <0>;
-		xip-config = <1 0 0 0>;
+		memmap-config = <1 0 0 0>;
 		ce-break-config = <0 0>;
 		ambiq,timing-config-mask = <3>;
 		ambiq,timing-config = <0 8 0 0 0 0 0 0>;
