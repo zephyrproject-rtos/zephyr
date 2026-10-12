@@ -320,7 +320,7 @@ struct optee_msg_arg {
  * [in] param[0].u.tmem.size		size (of first fragment)
  * [in] param[0].u.tmem.shm_ref		holds shared memory reference
  *
- * OPTEE_MSG_CMD_UNREGISTER_SHM unregisteres a previously registered shared
+ * OPTEE_MSG_CMD_UNREGISTER_SHM unregisters a previously registered shared
  * memory reference. The information is passed as:
  * [in] param[0].attr			OPTEE_MSG_ATTR_TYPE_RMEM_INPUT
  * [in] param[0].u.rmem.shm_ref		holds shared memory reference

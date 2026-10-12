@@ -795,7 +795,7 @@ static int it82xx2_xfer_in_data(const struct device *dev, uint8_t ep, struct net
 		irq_unlock(key);
 	}
 
-	LOG_DBG("Writed %d packets to endpoint%d tx fifo", buf->len, ep_idx);
+	LOG_DBG("Wrote %d packets to endpoint%d tx fifo", buf->len, ep_idx);
 
 	return 0;
 }

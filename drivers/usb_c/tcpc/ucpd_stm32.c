@@ -723,7 +723,7 @@ static void ucpd_manage_tx(struct alert_info *info)
 		 * transmit is not complete until a GoodCRC message
 		 * matching the msgID just sent is received. But, a tx
 		 * message can fail due to collision or underrun,
-		 * etc. If that failure occurs, dont' wait for GoodCrc
+		 * etc. If that failure occurs, don't wait for GoodCrc
 		 * and just go to failure path.
 		 */
 		if (atomic_test_and_clear_bit(&info->evt, UCPD_EVT_TX_MSG_SUCCESS)) {

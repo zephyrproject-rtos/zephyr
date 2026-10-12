@@ -161,7 +161,7 @@ static inline int numicro_uart_set_buadrate(const struct device *dev, uint32_t b
 	return 0;
 }
 
-/* Apply config without chainging anything. use in numicro_uart_configure and numicro_uart_init */
+/* Apply config without changing anything. use in numicro_uart_configure and numicro_uart_init */
 static int numicro_uart_set_config(const struct device *dev, const struct uart_config *cfg)
 {
 	const struct numicro_uart_config *config = dev->config;

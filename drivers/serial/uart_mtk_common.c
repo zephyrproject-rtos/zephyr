@@ -114,7 +114,7 @@ static bool is_tx_avail(mem_addr_t base)
 	return (sys_read32(base + UART_OFFSET_LSR) & UART_LSR_TX_EMPTY) != 0;
 }
 
-/* The following function must only be called with the lock grabed. */
+/* The following function must only be called with the lock grabbed. */
 static void set_dl(const struct device *dev, uint32_t divisor)
 {
 	uint8_t lcr = (uint8_t)sys_read32(DEVICE_MMIO_GET(dev) + UART_OFFSET_LCR);
@@ -129,7 +129,7 @@ static void set_dl(const struct device *dev, uint32_t divisor)
 	sys_write32((uint32_t)lcr, (DEVICE_MMIO_GET(dev) + UART_OFFSET_LCR));
 }
 
-/* The following function must only be called with the lock grabed. */
+/* The following function must only be called with the lock grabbed. */
 static int set_baudrate(const struct device *dev, const struct uart_config *cfg)
 {
 	size_t idx = 0;
@@ -188,7 +188,7 @@ static int set_baudrate(const struct device *dev, const struct uart_config *cfg)
 	return 0;
 }
 
-/* The following function must only be called with the lock grabed. */
+/* The following function must only be called with the lock grabbed. */
 static int set_parity(const struct device *dev, const struct uart_config *cfg)
 {
 	uint8_t lcr = (uint8_t)sys_read32(DEVICE_MMIO_GET(dev) + UART_OFFSET_LCR);
@@ -228,7 +228,7 @@ static int set_parity(const struct device *dev, const struct uart_config *cfg)
 	return 0;
 }
 
-/* The following function must only be called with the lock grabed. */
+/* The following function must only be called with the lock grabbed. */
 static int set_stop_bits(const struct device *dev, const struct uart_config *cfg)
 {
 	uint8_t lcr = (uint8_t)sys_read32(DEVICE_MMIO_GET(dev) + UART_OFFSET_LCR);
@@ -256,7 +256,7 @@ static int set_stop_bits(const struct device *dev, const struct uart_config *cfg
 	return 0;
 }
 
-/* The following function must only be called with the lock grabed. */
+/* The following function must only be called with the lock grabbed. */
 static int set_data_bits(const struct device *dev, const struct uart_config *cfg)
 {
 	uint8_t lcr = (uint8_t)sys_read32(DEVICE_MMIO_GET(dev) + UART_OFFSET_LCR);
@@ -292,7 +292,7 @@ static int set_data_bits(const struct device *dev, const struct uart_config *cfg
 	return 0;
 }
 
-/* The following function must only be called with the lock grabed. */
+/* The following function must only be called with the lock grabbed. */
 static int set_flow_ctrl(const struct device *dev, const struct uart_config *cfg)
 {
 	uart_mtk_data_t *uart_data = dev->data;

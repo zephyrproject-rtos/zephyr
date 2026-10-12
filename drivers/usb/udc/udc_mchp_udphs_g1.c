@@ -993,7 +993,7 @@ static void sam_isr_handler(const struct device *dev)
 			udphs->UDPHS_IEN |= UDPHS_IEN_INT_SOF_Msk;
 		}
 
-		/* Reset and clear all endpionts */
+		/* Reset and clear all endpoints */
 		udphs_reset_ep_all(udphs);
 
 		if (status & UDPHS_INTSTA_SPEED_Msk) {
