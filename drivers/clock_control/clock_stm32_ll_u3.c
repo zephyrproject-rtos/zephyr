@@ -43,6 +43,7 @@ static uint32_t get_msis_frequency(void)
 	}
 }
 
+#if defined(STM32_MSIK_ENABLED)
 static uint32_t get_msik_frequency(void)
 {
 	uint32_t frequency = MSIRC1_VALUE;
@@ -63,6 +64,7 @@ static uint32_t get_msik_frequency(void)
 		return 0;
 	}
 }
+#endif /* STM32_MSIK_ENABLED */
 
 static uint32_t get_startup_frequency(void)
 {
