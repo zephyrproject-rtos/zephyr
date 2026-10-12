@@ -2143,6 +2143,9 @@ int supplicant_reg_domain(const struct device *dev,
 {
 	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_mgmt_api(dev);
 	struct wpa_supplicant *wpa_s;
+	char cmd[sizeof("SET country XX")];
+	/* Must hold the longest reply to "SET country": "OK", "FAIL" or "UNKNOWN COMMAND" */
+	char resp[32] = {0};
 	int ret = -1;
 
 	if (!wifi_mgmt_api || !wifi_mgmt_api->reg_domain) {
@@ -2171,7 +2174,17 @@ int supplicant_reg_domain(const struct device *dev,
 			goto out;
 		}
 
-		if (!wpa_cli_cmd_v("set country %s", reg_domain->country_code)) {
+		if (wpa_s->ctrl_conn == NULL) {
+			wpa_printf(MSG_ERROR, "Control interface not ready, dropping command: %s",
+				   "SET country");
+			goto out;
+		}
+
+		snprintf(cmd, sizeof(cmd), "SET country %c%c",
+			 reg_domain->country_code[0], reg_domain->country_code[1]);
+		if (zephyr_wpa_cli_cmd_resp_noprint(wpa_s->ctrl_conn, cmd, resp) ||
+		    strncmp(resp, "OK", 2) != 0) {
+			ret = -EINVAL;
 			goto out;
 		}
 
