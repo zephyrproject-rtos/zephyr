@@ -14,6 +14,16 @@ config GPIO_ITE_IT8300
 
 if GPIO_ITE_IT8300
 
+config GPIO_ITE_IT8300_EMUL
+	bool "ITE IT8300 GPIO expander emulator"
+	depends on EMUL
+	depends on GPIO_EMUL
+	depends on I2C_EMUL
+	help
+	  Enable the ITE IT8300 GPIO expander emulator. The emulator models
+	  register access, GPIO input changes, and the active-low ALERT signal
+	  for driver tests running on emulated I2C and GPIO controllers.
+
 config IT8300_INIT_PRIORITY
 	int "IT8300 init priority"
 	default I2C_INIT_PRIORITY
