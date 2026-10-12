@@ -883,6 +883,7 @@ menu "RISC-V MMU Options"
 
 RISCV_MMU_TYPE_PROP := mmu-type
 RISCV_MMU_TYPE_NONE := riscv,none
+RISCV_MMU_TYPE_SV32 := riscv,sv32
 RISCV_MMU_TYPE_SV39 := riscv,sv39
 RISCV_MMU_TYPE_SV48 := riscv,sv48
 
@@ -890,7 +891,6 @@ config RISCV_MMU
 	bool "RISC-V MMU Support"
 	depends on RISCV_PRIVILEGED
 	depends on RISCV_S_MODE
-	depends on 64BIT
 	# All enabled harts must declare an mmu-type ...
 	depends on $(dt_compat_all_has_prop,riscv,$(RISCV_MMU_TYPE_PROP))
 	# ... that is not "riscv,none".
@@ -910,15 +910,23 @@ config RISCV_MMU
 	  demand paging and advanced memory protection features.
 
 	  Only enable this if your RISC-V processor supports Supervisor
-	  mode and has an MMU (supports Sv39, Sv48, or Sv57).
+	  mode and has an MMU (Sv32 on RV32, Sv39/Sv48 on RV64).
 
 if RISCV_MMU
 
 choice RISCV_MMU_MODE
 	prompt "RISC-V MMU Address Translation Mode"
 
+config RISCV_MMU_SV32
+	bool "Sv32 - 32-bit Virtual Address"
+	depends on $(dt_compat_all_has_prop,riscv,$(RISCV_MMU_TYPE_PROP),$(RISCV_MMU_TYPE_SV32))
+	help
+	  Use Sv32 mode with 32-bit virtual addresses and two-level page
+	  tables with 1024 entries per table.
+
 config RISCV_MMU_SV39
 	bool "Sv39 - 39-bit Virtual Address"
+	depends on 64BIT
 	depends on $(dt_compat_all_has_prop,riscv,$(RISCV_MMU_TYPE_PROP),$(RISCV_MMU_TYPE_SV39))
 	help
 	  Use Sv39 mode with 39-bit virtual addresses and 3-level page tables.
@@ -927,6 +935,7 @@ config RISCV_MMU_SV39
 
 config RISCV_MMU_SV48
 	bool "Sv48 - 48-bit Virtual Address"
+	depends on 64BIT
 	depends on $(dt_compat_all_has_prop,riscv,$(RISCV_MMU_TYPE_PROP),$(RISCV_MMU_TYPE_SV48))
 	help
 	  Use Sv48 mode with 48-bit virtual addresses and 4-level page tables.
@@ -949,12 +958,14 @@ config MAX_XLAT_TABLES
 
 config RISCV_MMU_ASID_BITS
 	int "Number of implemented ASID bits"
+	default 9 if 32BIT
 	default 16
-	range 1 16
+	range 1 9 if 32BIT
+	range 1 16 if 64BIT
 	help
 	  Number of ASID bits implemented by the SoC's MMU (ASIDLEN in the
-	  RISC-V privileged spec). The architecture reserves 16 bits for the
-	  ASID field in satp, but an implementation may support fewer;
+	  RISC-V privileged spec). The ASID field in satp is 9 bits on RV32
+	  and 16 bits on RV64, but an implementation may support fewer;
 	  unimplemented bits are read-only zero in hardware. Override this
 	  for your SoC if it implements fewer than 16 ASID bits, otherwise
 	  software may hand out ASID values that alias onto the same

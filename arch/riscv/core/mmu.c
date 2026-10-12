@@ -27,8 +27,10 @@
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
+BUILD_ASSERT(sizeof(pte_t) * RISCV_PGTABLE_ENTRIES == PAGE_SIZE);
+
 /* Page table storage and management */
-static uint64_t xlat_tables[CONFIG_MAX_XLAT_TABLES * RISCV_PGTABLE_ENTRIES] __aligned(PAGE_SIZE);
+static pte_t xlat_tables[CONFIG_MAX_XLAT_TABLES * RISCV_PGTABLE_ENTRIES] __aligned(PAGE_SIZE);
 static int32_t xlat_use_count[CONFIG_MAX_XLAT_TABLES];
 static struct k_spinlock xlat_lock;
 
@@ -37,7 +39,7 @@ static struct k_spinlock xlat_lock;
  * arch_mem_init() and kept here so that mapping functions can access it
  * before the MMU is enabled (i.e. before SATP is written).
  */
-static uint64_t *kernel_root_table;
+static pte_t *kernel_root_table;
 
 #ifdef CONFIG_USERSPACE
 /*
@@ -72,7 +74,7 @@ static atomic_t next_asid = ASID_FIRST_USER;
 static sys_slist_t domain_list;
 
 /* Forward declarations */
-static int domain_privatize_kernel_text(uint64_t *domain_root);
+static int domain_privatize_kernel_text(pte_t *domain_root);
 static void sync_domains(void);
 
 /*
@@ -111,9 +113,9 @@ static uint16_t alloc_asid(void)
  * the caller must call inc_table_ref() (or rely on set_pte() to do so) before
  * installing the table into a parent PTE.  Must be called with xlat_lock held.
  */
-static uint64_t *new_table(void)
+static pte_t *new_table(void)
 {
-	uint64_t *table;
+	pte_t *table;
 	unsigned int i;
 
 	/* Look for a free table. */
@@ -149,7 +151,7 @@ static uint64_t *new_table(void)
 /*
  * Return the index of a page table in the xlat_tables pool.
  */
-static inline unsigned int table_index(uint64_t *pte)
+static inline unsigned int table_index(pte_t *pte)
 {
 	unsigned int i = (pte - xlat_tables) / RISCV_PGTABLE_ENTRIES;
 
@@ -166,7 +168,7 @@ static inline unsigned int table_index(uint64_t *pte)
  * A plain ±1 adjustment modifies the PTE count field.
  * Must be called with xlat_lock held.
  */
-static int32_t adjust_table_usage(uint64_t *table, int32_t adjustment)
+static int32_t adjust_table_usage(pte_t *table, int32_t adjustment)
 {
 	unsigned int i = table_index(table);
 	int32_t prev_count = xlat_use_count[i];
@@ -185,25 +187,25 @@ static int32_t adjust_table_usage(uint64_t *table, int32_t adjustment)
 }
 
 /* Increment the reference count of a table (one more parent PTE points to it). */
-static inline void inc_table_ref(uint64_t *table)
+static inline void inc_table_ref(pte_t *table)
 {
 	adjust_table_usage(table, XLAT_REF_COUNT_UNIT);
 }
 
 /* Decrement the reference count of a table (one parent PTE removed). */
-static inline void dec_table_ref(uint64_t *table)
+static inline void dec_table_ref(pte_t *table)
 {
 	adjust_table_usage(table, -XLAT_REF_COUNT_UNIT);
 }
 
 /* Increment the count of valid PTEs within a table. */
-static inline void inc_pte_count(uint64_t *table)
+static inline void inc_pte_count(pte_t *table)
 {
 	adjust_table_usage(table, 1);
 }
 
 /* Decrement the count of valid PTEs within a table. */
-static inline void dec_pte_count(uint64_t *table)
+static inline void dec_pte_count(pte_t *table)
 {
 	adjust_table_usage(table, -1);
 }
@@ -214,7 +216,7 @@ static inline void dec_pte_count(uint64_t *table)
  * count; removing one decrements it.  A PTE value of 0 clears the entry.
  * Must be called with xlat_lock held.
  */
-static void set_pte(uint64_t *table, unsigned int index, pte_t pte)
+static void set_pte(pte_t *table, unsigned int index, pte_t pte)
 {
 	__ASSERT(index < RISCV_PGTABLE_ENTRIES, "PTE index %u out of range", index);
 
@@ -228,7 +230,7 @@ static void set_pte(uint64_t *table, unsigned int index, pte_t pte)
 		inc_pte_count(table);
 		if (pte_is_table(pte)) {
 			/* new PTE points to another table - increment its reference */
-			uint64_t *child_table = (uint64_t *)pte_to_phys(pte);
+			pte_t *child_table = (pte_t *)pte_to_phys(pte);
 
 			inc_table_ref(child_table);
 		}
@@ -236,7 +238,7 @@ static void set_pte(uint64_t *table, unsigned int index, pte_t pte)
 		/* Removing PTE */
 		if (pte_is_table(old_pte)) {
 			/* Old PTE pointed to another table - decrement its reference */
-			uint64_t *child_table = (uint64_t *)pte_to_phys(old_pte);
+			pte_t *child_table = (pte_t *)pte_to_phys(old_pte);
 
 			dec_table_ref(child_table);
 		}
@@ -245,8 +247,8 @@ static void set_pte(uint64_t *table, unsigned int index, pte_t pte)
 		/* Updating existing PTE */
 		if (pte_is_table(old_pte) && pte_is_table(pte)) {
 			/* Both are table PTEs - update references */
-			uint64_t *old_table = (uint64_t *)pte_to_phys(old_pte);
-			uint64_t *new_table = (uint64_t *)pte_to_phys(pte);
+			pte_t *old_table = (pte_t *)pte_to_phys(old_pte);
+			pte_t *new_table = (pte_t *)pte_to_phys(pte);
 
 			if (old_table != new_table) {
 				dec_table_ref(old_table);
@@ -256,7 +258,8 @@ static void set_pte(uint64_t *table, unsigned int index, pte_t pte)
 		/* Note: Leaf PTE updates don't affect reference counts */
 	}
 
-	LOG_DBG("%s: table[%u] = %#llx (was %#llx)", __func__, index, pte, old_pte);
+	LOG_DBG("%s: table[%u] = %#llx (was %#llx)", __func__, index,
+		(unsigned long long)pte, (unsigned long long)old_pte);
 }
 
 /*
@@ -286,7 +289,7 @@ static pte_t flags_to_pte(uint32_t flags)
 /*
  * Return a pointer to the kernel root page table.
  */
-static inline uint64_t *get_root_page_table(void)
+static inline pte_t *get_root_page_table(void)
 {
 	return kernel_root_table;
 }
@@ -306,8 +309,8 @@ uintptr_t z_riscv_kernel_satp(void)
  */
 static void cleanup_unused_tables(uintptr_t va)
 {
-	uint64_t *table = get_root_page_table();
-	uint64_t *tables[PGTABLE_LEVELS];
+	pte_t *table = get_root_page_table();
+	pte_t *tables[PGTABLE_LEVELS];
 	unsigned int indices[PGTABLE_LEVELS];
 	int level;
 
@@ -322,12 +325,12 @@ static void cleanup_unused_tables(uintptr_t va)
 			return;
 		}
 
-		table = (uint64_t *)pte_to_phys(pte);
+		table = (pte_t *)pte_to_phys(pte);
 	}
 
 	for (level = PGTABLE_LEVELS - 2; level >= 0; level--) {
 		unsigned int index = indices[level];
-		uint64_t *current_table = (uint64_t *)pte_to_phys(tables[level][index]);
+		pte_t *current_table = (pte_t *)pte_to_phys(tables[level][index]);
 		unsigned int table_idx = table_index(current_table);
 
 		if ((xlat_use_count[table_idx] & XLAT_PTE_COUNT_MASK) == 0) {
@@ -347,13 +350,13 @@ static void cleanup_unused_tables(uintptr_t va)
  * @size and addresses must be PAGE_SIZE-aligned.
  * Must be called with xlat_lock held.
  */
-static void map_pages_into(uint64_t *root, uintptr_t va, uintptr_t phys, size_t size,
+static void map_pages_into(pte_t *root, uintptr_t va, uintptr_t phys, size_t size,
 			   pte_t pte_flags)
 {
 	size_t mapped = 0;
 
 	while (mapped < size) {
-		uint64_t *table = root;
+		pte_t *table = root;
 		int level;
 
 		for (level = 0; level < PGTABLE_LEVELS - 1; level++) {
@@ -361,14 +364,14 @@ static void map_pages_into(uint64_t *root, uintptr_t va, uintptr_t phys, size_t 
 			pte_t pte = table[index];
 
 			if (!pte_is_valid(pte)) {
-				uint64_t *new_child_table = new_table();
+				pte_t *new_child_table = new_table();
 
 				pte = pte_create((uintptr_t)new_child_table, PTE_TYPE_TABLE);
 				set_pte(table, index, pte);
 			}
 
 			__ASSERT(pte_is_table(pte), "Expected table PTE at level %d", level);
-			table = (uint64_t *)pte_to_phys(pte);
+			table = (pte_t *)pte_to_phys(pte);
 		}
 
 		unsigned int leaf_index = VPN(va, PGTABLE_LEVELS - 1);
@@ -390,12 +393,12 @@ static void map_pages_into(uint64_t *root, uintptr_t va, uintptr_t phys, size_t 
  * cleanup_unused_tables().  @size and @va must be PAGE_SIZE-aligned.
  * Must be called with xlat_lock held.
  */
-static void unmap_pages_from(uint64_t *root, uintptr_t va, size_t size)
+static void unmap_pages_from(pte_t *root, uintptr_t va, size_t size)
 {
 	size_t unmapped = 0;
 
 	while (unmapped < size) {
-		uint64_t *table = root;
+		pte_t *table = root;
 		int level;
 
 		for (level = 0; level < PGTABLE_LEVELS - 1; level++) {
@@ -412,7 +415,7 @@ static void unmap_pages_from(uint64_t *root, uintptr_t va, size_t size)
 				goto next_page;
 			}
 
-			table = (uint64_t *)pte_to_phys(pte);
+			table = (pte_t *)pte_to_phys(pte);
 		}
 
 		{
@@ -529,7 +532,7 @@ int arch_mem_unmap(void *addr, size_t size)
 int arch_page_phys_get(void *virt, uintptr_t *phys)
 {
 	uintptr_t va = (uintptr_t)virt;
-	uint64_t *table;
+	pte_t *table;
 	k_spinlock_key_t key;
 	uintptr_t result;
 	int level;
@@ -576,7 +579,7 @@ int arch_page_phys_get(void *virt, uintptr_t *phys)
 		}
 
 		/* Continue to next level */
-		table = (uint64_t *)pte_to_phys(pte);
+		table = (pte_t *)pte_to_phys(pte);
 	}
 
 	/* Should never reach here if page table levels are correct */
@@ -599,17 +602,13 @@ unlock_and_return:
  */
 __weak int create_platform_mappings(void)
 {
-#if DT_HAS_CHOSEN(zephyr_console)
-	/*
-	 * Map the console UART so that printk works after the MMU is
-	 * enabled.  Platforms that need additional device mappings should
-	 * override this weak function.
-	 */
-	uintptr_t uart_base = DT_REG_ADDR(DT_CHOSEN(zephyr_console));
-	size_t uart_size = ROUND_UP(DT_REG_SIZE(DT_CHOSEN(zephyr_console)), PAGE_SIZE);
+#if DT_HAS_COMPAT_STATUS_OKAY(sifive_plic_1_0_0)
+#define PLIC_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(sifive_plic_1_0_0)
+	uintptr_t plic_base = DT_REG_ADDR(PLIC_NODE);
+	size_t plic_size = ROUND_UP(DT_REG_SIZE(PLIC_NODE), PAGE_SIZE);
 
-	LOG_DBG("Mapping console UART: %p size:%zu", (void *)uart_base, uart_size);
-	arch_mem_map((void *)uart_base, uart_base, uart_size, K_MEM_PERM_RW);
+	arch_mem_map((void *)plic_base, plic_base, plic_size, K_MEM_PERM_RW);
+#undef PLIC_NODE
 #endif
 	return 0;
 }
@@ -687,9 +686,9 @@ static int create_kernel_mappings(void)
  */
 static int arch_mem_init(void)
 {
-	uint64_t satp_val;
-	uint64_t mode;
-	uint64_t new_satp;
+	uintptr_t satp_val;
+	uintptr_t mode;
+	uintptr_t new_satp;
 	int ret;
 
 	LOG_DBG("Initializing RISC-V MMU");
@@ -715,11 +714,11 @@ static int arch_mem_init(void)
 	 * current SATP value and leave the existing mappings in place.
 	 */
 	satp_val = csr_read(satp);
-	mode = (satp_val >> SATP_MODE_SHIFT) & 0xF;
+	mode = (satp_val >> SATP_MODE_SHIFT) & (IS_ENABLED(CONFIG_64BIT) ? 0xF : 0x1);
 
 	if (mode != SATP_MODE_OFF) {
-		kernel_root_table = (uint64_t *)((satp_val & SATP_PPN_MASK) << PAGE_SIZE_SHIFT);
-		LOG_DBG("MMU already enabled (mode=%llu), root table at %p", mode,
+		kernel_root_table = (pte_t *)((satp_val & SATP_PPN_MASK) << PAGE_SIZE_SHIFT);
+		LOG_DBG("MMU already enabled (mode=%lu), root table at %p", (unsigned long)mode,
 			  kernel_root_table);
 #ifdef CONFIG_USERSPACE
 		z_riscv_kernel_satp_val = satp_val;
@@ -750,11 +749,9 @@ static int arch_mem_init(void)
 	 * Enable the MMU.  PPN = physical address of root table / PAGE_SIZE,
 	 * stored in SATP bits 43:0 (Sv39/Sv48) or 21:0 (Sv32).
 	 */
-	new_satp = ((uint64_t)SATP_MODE << SATP_MODE_SHIFT) |
-		   ((uint64_t)KERNEL_ASID << SATP_ASID_SHIFT) |
-		   ((uintptr_t)kernel_root_table >> PAGE_SIZE_SHIFT);
+	new_satp = z_riscv_kernel_satp();
 
-	LOG_DBG("Enabling MMU: SATP=0x%llx, root_table=%p, ASID=%d", new_satp,
+	LOG_DBG("Enabling MMU: SATP=0x%lx, root_table=%p, ASID=%d", (unsigned long)new_satp,
 		  kernel_root_table, KERNEL_ASID);
 
 	csr_write(satp, new_satp);
@@ -840,9 +837,57 @@ static pte_t partition_attr_to_pte(k_mem_partition_attr_t attr)
 	return pte;
 }
 
-/* Each L1 table entry maps 2^RISCV_PGLEVEL_SHIFT(1) bytes */
-#define L1_MAP_SIZE BIT(RISCV_PGLEVEL_SHIFT(1))
+#if PGTABLE_LEVELS == 2
+/*
+ * Sv32 has one root entry per 4 MB and the next level contains leaf PTEs.
+ * Kernel text can span root entries, so make a private leaf table for each
+ * part of the ROM region before granting user access to its text pages.
+ */
+static int domain_privatize_kernel_text(pte_t *domain_root)
+{
+	extern char __rom_region_start[];
+	extern char __text_region_start[];
+	extern char __rom_region_end[];
 
+	const uintptr_t rom_start = ROUND_DOWN((uintptr_t)__rom_region_start, PAGE_SIZE);
+	const uintptr_t text_start = (uintptr_t)__text_region_start;
+	const uintptr_t rom_end = ROUND_UP((uintptr_t)__rom_region_end, PAGE_SIZE);
+	const uintptr_t root_size = BIT(RISCV_PGLEVEL_SHIFT(0));
+	uintptr_t chunk;
+
+	for (chunk = ROUND_DOWN(rom_start, root_size); chunk < rom_end;
+	     chunk += root_size) {
+		unsigned int root_idx = VPN(chunk, 0);
+		pte_t root_pte = domain_root[root_idx];
+		pte_t *private_l1;
+
+		if (!pte_is_table(root_pte)) {
+			continue;
+		}
+
+		private_l1 = new_table();
+		inc_table_ref(private_l1);
+		memcpy(private_l1, (void *)pte_to_phys(root_pte), PAGE_SIZE);
+		domain_root[root_idx] = pte_create((uintptr_t)private_l1, PTE_TYPE_TABLE);
+
+		for (unsigned int i = 0; i < RISCV_PGTABLE_ENTRIES; i++) {
+			uintptr_t page_va = chunk + ((uintptr_t)i << PAGE_SIZE_SHIFT);
+			pte_t pte = private_l1[i];
+
+			if (!pte_is_valid(pte)) {
+				continue;
+			}
+
+			adjust_table_usage(private_l1, 1);
+			if (pte_is_leaf(pte) && page_va >= text_start && page_va < rom_end) {
+				private_l1[i] = pte | PTE_USER;
+			}
+		}
+	}
+
+	return 0;
+}
+#else
 /*
  * Privatize the L1/L2 page tables that cover the kernel .text/.rodata
  * region for a domain page table, then add PTE_USER to pages in
@@ -854,7 +899,7 @@ static pte_t partition_attr_to_pte(k_mem_partition_attr_t attr)
  * domain SATP is active - this is required during SATP switch at trap
  * exit / arch_user_mode_enter just before SRET.
  */
-static int domain_privatize_kernel_text(uint64_t *domain_root)
+static int domain_privatize_kernel_text(pte_t *domain_root)
 {
 	extern char __rom_region_start[];
 	extern char __text_region_start[];
@@ -864,7 +909,7 @@ static int domain_privatize_kernel_text(uint64_t *domain_root)
 	const uintptr_t text_start = (uintptr_t)__text_region_start;
 	const uintptr_t rom_end = ROUND_UP((uintptr_t)__rom_region_end, PAGE_SIZE);
 	const unsigned int l0_idx = VPN(rom_start, 0);
-	uint64_t *private_l1;
+	pte_t *private_l1;
 	pte_t l0_pte;
 	uintptr_t l1_base = 0;
 
@@ -899,7 +944,7 @@ static int domain_privatize_kernel_text(uint64_t *domain_root)
 	 */
 	for (unsigned int l1_idx = 0; l1_idx < RISCV_PGTABLE_ENTRIES; l1_idx++) {
 		pte_t l1_pte = private_l1[l1_idx];
-		uint64_t *private_l2;
+		pte_t *private_l2;
 		unsigned int i;
 
 		if (!pte_is_valid(l1_pte) || pte_is_leaf(l1_pte)) {
@@ -936,7 +981,7 @@ static int domain_privatize_kernel_text(uint64_t *domain_root)
 		 */
 		for (i = 0; i < RISCV_PGTABLE_ENTRIES; i++) {
 			pte_t l2_pte = private_l2[i];
-			uint64_t *private_l3;
+			pte_t *private_l3;
 			unsigned int j;
 			uintptr_t l2_base;
 
@@ -991,6 +1036,7 @@ static int domain_privatize_kernel_text(uint64_t *domain_root)
 
 	return 0;
 }
+#endif /* PGTABLE_LEVELS == 2 */
 
 #if PGTABLE_LEVELS == 4
 /*
@@ -999,14 +1045,14 @@ static int domain_privatize_kernel_text(uint64_t *domain_root)
  * private (diverged) L1 tables; the L1-level sync in sync_domains() cannot
  * reach inside an already-present L1 entry, so we descend one extra level.
  */
-static void sync_l2_from_kernel(uint64_t *k_l1, uint64_t *d_l1)
+static void sync_l2_from_kernel(pte_t *k_l1, pte_t *d_l1)
 {
 	unsigned int j;
 
 	for (j = 0; j < RISCV_PGTABLE_ENTRIES; j++) {
 		pte_t k_l1j = k_l1[j];
 		pte_t d_l1j = d_l1[j];
-		uint64_t *k_l2, *d_l2;
+		pte_t *k_l2, *d_l2;
 		unsigned int k;
 
 		if (!pte_is_valid(k_l1j) || !pte_is_table(k_l1j) ||
@@ -1014,8 +1060,8 @@ static void sync_l2_from_kernel(uint64_t *k_l1, uint64_t *d_l1)
 			continue;
 		}
 
-		k_l2 = (uint64_t *)pte_to_phys(k_l1j);
-		d_l2 = (uint64_t *)pte_to_phys(d_l1j);
+		k_l2 = (pte_t *)pte_to_phys(k_l1j);
+		d_l2 = (pte_t *)pte_to_phys(d_l1j);
 
 		if (k_l2 == d_l2) {
 			continue;
@@ -1049,7 +1095,7 @@ static void sync_domains(void)
 	SYS_SLIST_FOR_EACH_NODE(&domain_list, node) {
 		struct arch_mem_domain *arch_domain =
 			CONTAINER_OF(node, struct arch_mem_domain, node);
-		uint64_t *domain_root = arch_domain->ptables;
+		pte_t *domain_root = arch_domain->ptables;
 		unsigned int i;
 
 		for (i = 0; i < RISCV_PGTABLE_ENTRIES; i++) {
@@ -1072,8 +1118,8 @@ static void sync_domains(void)
 			}
 
 			{
-				uint64_t *k_l1 = (uint64_t *)pte_to_phys(k_pte);
-				uint64_t *d_l1 = (uint64_t *)pte_to_phys(d_pte);
+				pte_t *k_l1 = (pte_t *)pte_to_phys(k_pte);
+				pte_t *d_l1 = (pte_t *)pte_to_phys(d_pte);
 				unsigned int j;
 
 				if (k_l1 == d_l1) {
@@ -1157,8 +1203,8 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 }
 
 /*
- * For each leaf-adjacent-level slot (always 2MB, regardless of
- * PGTABLE_LEVELS) covering [va, va+size), walk every intermediate table
+ * For each leaf-adjacent-level slot (4MB on Sv32, 2MB on Sv39/Sv48)
+ * covering [va, va+size), walk every intermediate table
  * level from the root down to (but not including) the leaf level and
  * ensure each one is a private copy (not shared with the kernel).  Shared
  * tables would cause partition map/unmap operations to silently modify
@@ -1166,43 +1212,42 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
  *
  * Must be called with xlat_lock held.
  */
-static int ensure_private_tables(uint64_t *domain_root, uintptr_t va, size_t size)
+static int ensure_private_tables(pte_t *domain_root, uintptr_t va, size_t size)
 {
-	/* The table one level above the leaf always covers 2MB: the shift is
-	 * PAGE_SIZE_SHIFT + RISCV_PGLEVEL_BITS * 1, independent of how many
-	 * levels exist above it.
+	/* The table one level above the leaf covers one page table's worth
+	 * of base pages, independent of how many levels exist above it.
 	 */
 	const uintptr_t step_size = BIT(RISCV_PGLEVEL_SHIFT(PGTABLE_LEVELS - 2));
 	uintptr_t cur = ROUND_DOWN(va, step_size);
 	uintptr_t end = va + size;
 
 	for (; cur < end; cur += step_size) {
-		uint64_t *d_tbl = domain_root;
-		uint64_t *k_tbl = kernel_root_table;
+		pte_t *d_tbl = domain_root;
+		pte_t *k_tbl = kernel_root_table;
 		int lv;
 
 		for (lv = 0; lv < PGTABLE_LEVELS - 1; lv++) {
 			unsigned int idx = VPN(cur, lv);
 			pte_t d_pte = d_tbl[idx];
-			uint64_t *d_next, *k_next = NULL;
+			pte_t *d_next, *k_next = NULL;
 			unsigned int i;
 
 			if (!pte_is_valid(d_pte) || !pte_is_table(d_pte)) {
 				break;
 			}
-			d_next = (uint64_t *)pte_to_phys(d_pte);
+			d_next = (pte_t *)pte_to_phys(d_pte);
 
 			if (k_tbl != NULL) {
 				pte_t k_pte = k_tbl[idx];
 
 				if (pte_is_valid(k_pte) && pte_is_table(k_pte)) {
-					k_next = (uint64_t *)pte_to_phys(k_pte);
+					k_next = (pte_t *)pte_to_phys(k_pte);
 				}
 			}
 
 			/* If domain shares this table with the kernel, privatize it. */
 			if (k_next != NULL && d_next == k_next) {
-				uint64_t *priv = new_table();
+				pte_t *priv = new_table();
 
 				if (!priv) {
 					return -ENOMEM;
@@ -1268,13 +1313,13 @@ int arch_mem_domain_partition_add(struct k_mem_domain *domain, uint32_t partitio
  *
  * Must be called with xlat_lock held.
  */
-static void restore_kernel_ptes(uint64_t *domain_root, uintptr_t va, size_t size)
+static void restore_kernel_ptes(pte_t *domain_root, uintptr_t va, size_t size)
 {
 	uintptr_t end = va + size;
 
 	for (; va < end; va += PAGE_SIZE) {
-		uint64_t *k_tbl = kernel_root_table;
-		uint64_t *d_tbl = domain_root;
+		pte_t *k_tbl = kernel_root_table;
+		pte_t *d_tbl = domain_root;
 		int lv;
 
 		for (lv = 0; lv < PGTABLE_LEVELS - 1; lv++) {
@@ -1288,8 +1333,8 @@ static void restore_kernel_ptes(uint64_t *domain_root, uintptr_t va, size_t size
 			if (!pte_is_valid(dp) || !pte_is_table(dp)) {
 				goto next_page;
 			}
-			k_tbl = (uint64_t *)pte_to_phys(kp);
-			d_tbl = (uint64_t *)pte_to_phys(dp);
+			k_tbl = (pte_t *)pte_to_phys(kp);
+			d_tbl = (pte_t *)pte_to_phys(dp);
 		}
 
 		{
@@ -1360,7 +1405,7 @@ int arch_mem_domain_thread_remove(struct k_thread *thread)
 int arch_mem_domain_destroy(struct k_mem_domain *domain)
 {
 	k_spinlock_key_t key;
-	uint64_t *ptables = domain->arch.ptables;
+	pte_t *ptables = domain->arch.ptables;
 	int i;
 
 	if (!ptables) {
@@ -1384,7 +1429,7 @@ int arch_mem_domain_destroy(struct k_mem_domain *domain)
 		pte_t pte = ptables[i];
 
 		if (pte_is_valid(pte) && pte_is_table(pte)) {
-			uint64_t *child = (uint64_t *)pte_to_phys(pte);
+			pte_t *child = (pte_t *)pte_to_phys(pte);
 			unsigned int idx = table_index(child);
 
 			if (xlat_use_count[idx] == XLAT_REF_COUNT_UNIT) {

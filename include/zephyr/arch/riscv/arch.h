@@ -313,7 +313,7 @@ typedef struct {
 
 struct arch_mem_domain {
 #ifdef CONFIG_RISCV_MMU
-	uint64_t *ptables; /* root page table for this domain */
+	uintptr_t *ptables; /* root page table for this domain */
 	uint16_t asid; /* ASID assigned to this domain */
 	sys_snode_t node; /* domain list linkage for kernel mapping sync */
 #else

@@ -15,6 +15,10 @@
 /*
  * RISC-V Virtual Memory Layout (assumes 4KB page size)
  *
+ * Sv32 (32-bit virtual address):
+ * | VA [31:22] | VA [21:12] | VA [11:0] |
+ * |    L0      |    L1      | page off  |
+ *
  * Sv39 (39-bit virtual address):
  * +------------+------------+------------+-----------+
  * | VA [38:30] | VA [29:21] | VA [20:12] | VA [11:0] |
@@ -54,7 +58,7 @@
  */
 
 /*
- * PTE (Page Table Entry) Layout - RISC-V 64-bit
+ * PTE (Page Table Entry) Layout - Sv39/Sv48 (64-bit)
  *
  * +----------+---------------------+-----+---+---+---+---+---+---+---+---+
  * | 63:54    |       53:10         | 9:8 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
@@ -72,6 +76,7 @@
  * RSW: Reserved for Software Use (bits 8-9)
  * PPN: Physical Page Number (44-bit, supports up to 56-bit physical addresses)
  * RESERVED: Reserved for future RISC-V extensions
+ * Sv32 uses a 32-bit PTE with PPN in bits [31:10].
  *
  * PTE Types:
  * - Leaf PTE (page): V=1, and at least one of R/W/X is 1
@@ -85,8 +90,12 @@
 #define PAGE_MASK       (PAGE_SIZE - 1)
 
 /* RISC-V page table constants */
-#define RISCV_PGLEVEL_BITS    9U
-#define RISCV_PGTABLE_ENTRIES BIT(RISCV_PGLEVEL_BITS) /* 512 entries */
+#if defined(CONFIG_RISCV_MMU_SV32)
+#define RISCV_PGLEVEL_BITS 10U
+#else
+#define RISCV_PGLEVEL_BITS 9U
+#endif
+#define RISCV_PGTABLE_ENTRIES BIT(RISCV_PGLEVEL_BITS)
 
 /* SATP register definitions */
 #if defined(CONFIG_64BIT)
@@ -108,7 +117,11 @@
 #endif /* CONFIG_64BIT */
 
 /* Current SATP mode based on configuration */
-#if defined(CONFIG_RISCV_MMU_SV39)
+#if defined(CONFIG_RISCV_MMU_SV32)
+#define SATP_MODE      SATP_MODE_SV32
+#define VA_BITS        32
+#define PGTABLE_LEVELS 2
+#elif defined(CONFIG_RISCV_MMU_SV39)
 #define SATP_MODE      SATP_MODE_SV39
 #define VA_BITS        39
 #define PGTABLE_LEVELS 3
@@ -117,10 +130,7 @@
 #define VA_BITS        48
 #define PGTABLE_LEVELS 4
 #else
-/* Default to SV39 if MMU is enabled but mode not specified */
-#define SATP_MODE      SATP_MODE_SV39
-#define VA_BITS        39
-#define PGTABLE_LEVELS 3
+#error "Select an RISC-V MMU mode"
 #endif
 
 /* Calculate level shift based on page level */
@@ -160,7 +170,11 @@
 
 /* Extract/create PPN (Physical Page Number) */
 /* PTE_PPN_SHIFT (10) is defined in csr.h */
+#if defined(CONFIG_RISCV_MMU_SV32)
+#define PTE_PPN_MASK      GENMASK(31, 10)
+#else
 #define PTE_PPN_MASK      GENMASK64(53, 10)
+#endif
 #define PTE_TO_PPN(pte)   (((pte) & PTE_PPN_MASK) >> PTE_PPN_SHIFT)
 #define PPN_TO_PTE(ppn)   (((ppn) << PTE_PPN_SHIFT) & PTE_PPN_MASK)
 #define PTE_TO_PHYS(pte)  (PTE_TO_PPN(pte) << PAGE_SIZE_SHIFT)
@@ -182,8 +196,8 @@
 #define READ_SATP()     csr_read(satp)
 #define WRITE_SATP(val) csr_write(satp, val)
 
-/* Page table entry type - 64-bit on both RV32 and RV64 for Sv32+ modes */
-typedef uint64_t pte_t;
+/* Sv32 has 32-bit PTEs; Sv39 and Sv48 have 64-bit PTEs. */
+typedef uintptr_t pte_t;
 
 #ifndef _ASMLANGUAGE
 
@@ -201,7 +215,7 @@ static inline pte_t phys_to_pte(uintptr_t phys)
 	return PHYS_TO_PTE(phys);
 }
 
-static inline pte_t pte_create(uintptr_t phys, uint64_t flags)
+static inline pte_t pte_create(uintptr_t phys, pte_t flags)
 {
 	return phys_to_pte(phys) | flags;
 }
