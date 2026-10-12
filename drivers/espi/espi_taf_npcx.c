@@ -96,7 +96,7 @@ static struct espi_callback espi_taf_cb;
 		    (DT_PROP(node, quad_enable_requirements)),		\
 		    (("NONE")))
 
-#define RPMC_OP2_MAX_RETRY		3U
+#define RPMC_OP2_MAX_RETRY		100U
 #define RPMC_OP2_BUSY_MASK		0x1U
 
 static void espi_taf_get_pckt(const struct device *dev, struct espi_taf_npcx_data *data,
