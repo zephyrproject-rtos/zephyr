@@ -2,4 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_TANG_MEGA_138K_PRO_DOCK
-	select SOC_AE350
+	select SOC_AE350_A25

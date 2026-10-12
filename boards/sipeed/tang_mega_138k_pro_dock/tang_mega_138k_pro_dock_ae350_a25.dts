@@ -3,22 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <riscv/andes/andes_v5_ae350.dtsi>
+#include <riscv/andes/andes_v5_ae350_a25.dtsi>
 #include <freq.h>
 
 /delete-node/ &spi0;
 
 / {
-	cpus {
-		/delete-node/ cpu@1;
-		/delete-node/ cpu@2;
-		/delete-node/ cpu@3;
-		/delete-node/ cpu@4;
-		/delete-node/ cpu@5;
-		/delete-node/ cpu@6;
-		/delete-node/ cpu@7;
-	};
-
 	aliases {
 		gpio-0 = &gpio0;
 		counter-0 = &pit0;
@@ -72,16 +62,4 @@
 
 &clk_sys {
 	clock-frequency = <DT_FREQ_M(50)>;
-};
-
-&plic0 {
-	interrupts-extended = <&cpu0_intc 11>;
-};
-
-&plic_sw {
-	interrupts-extended = <&cpu0_intc 3>;
-};
-
-&mtimer {
-	interrupts-extended = <&cpu0_intc 7>;
 };
