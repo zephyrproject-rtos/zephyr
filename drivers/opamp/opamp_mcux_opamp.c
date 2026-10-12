@@ -10,6 +10,7 @@
 #include <zephyr/drivers/reset.h>
 #endif
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(nxp_opamp, CONFIG_OPAMP_LOG_LEVEL);
@@ -25,6 +26,7 @@ struct mcux_opamp_config {
 	bool enable_measure_output;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
+	const struct pinctrl_dev_config *pincfg;
 #if defined(CONFIG_SOC_FAMILY_LPC)
 	const struct reset_dt_spec reset;
 #endif
@@ -42,17 +44,43 @@ enum {
 /* OPAMP_CTR[PREF] encoding used when no non-inverting reference is configured. */
 #define OPAMP_CTR_PREF_VREFH4 3U
 
-static int mcux_opamp_pm_callback(const struct device *dev, enum pm_device_action action)
+/*
+ * The core keeps a device whose suspend failed in PM_DEVICE_STATE_ACTIVE, and
+ * device runtime PM restores the usage count it had before the suspend, so a
+ * suspend that cannot finish leaves the output driven as it found it.
+ */
+static void mcux_opamp_suspend_rollback(const struct device *dev)
 {
 	const struct mcux_opamp_config *config = dev->config;
 
+	(void)pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	config->base->OPAMP_CTR |= OPAMP_OPAMP_CTR_EN_MASK;
+}
+
+static int mcux_opamp_pm_callback(const struct device *dev, enum pm_device_action action)
+{
+	const struct mcux_opamp_config *config = dev->config;
+	int err;
+
 	if (action == PM_DEVICE_ACTION_RESUME) {
+		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+		if (err < 0 && err != -ENOENT) {
+			return err;
+		}
+
 		config->base->OPAMP_CTR |= OPAMP_OPAMP_CTR_EN_MASK;
 		return 0;
 	}
 
 	if (action == PM_DEVICE_ACTION_SUSPEND) {
 		config->base->OPAMP_CTR &= ~OPAMP_OPAMP_CTR_EN_MASK;
+
+		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
+		if (err < 0 && err != -ENOENT) {
+			mcux_opamp_suspend_rollback(dev);
+			return err;
+		}
+
 		return 0;
 	}
 
@@ -225,6 +253,8 @@ static DEVICE_API(opamp, api) = {
 #endif
 
 #define OPAMP_MCUX_OPAMP_DEFINE(inst)								\
+	PINCTRL_DT_INST_DEFINE(inst);								\
+												\
 	static const struct mcux_opamp_config _CONCAT(config, inst) = {				\
 		.base = (OPAMP_Type *)DT_INST_REG_ADDR(inst),					\
 		.positive_reference = COND_CODE_1(						\
@@ -237,6 +267,7 @@ static DEVICE_API(opamp, api) = {
 		.enable_measure_output = DT_INST_PROP(inst, enable_measure_output),		\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),				\
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, name),	\
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),					\
 		GET_RESET_INFO(inst)								\
 	};											\
 												\
