@@ -1921,26 +1921,6 @@ static int submit_xfer(const struct device *const dev, struct uhc_transfer *cons
 		xfer->udev->addr, xfer->ep, xfer->mps, xfer->interval,
 		xfer->start_frame, xfer->stage, xfer->no_status);
 
-	switch (xfer->type) {
-	case USB_EP_TYPE_CONTROL:
-		ret = validate_control_xfer(xfer);
-		break;
-	case USB_EP_TYPE_BULK:
-		ret = validate_bulk_xfer(xfer);
-		break;
-	case USB_EP_TYPE_INTERRUPT:
-		ret = validate_interrupt_xfer(xfer);
-		break;
-	default:
-		LOG_ERR("Submit xfer with type=%u isn't supported yet", xfer->type);
-		return -EINVAL;
-	}
-
-	if (ret != 0) {
-		LOG_ERR("Invalid xfer for transfer: type=%u, err=%d", xfer->type, ret);
-		return ret;
-	}
-
 	ret = ch_claim(dev, xfer, &ch);
 	if (ret != 0) {
 		if (ret != -EBUSY) {
@@ -2405,6 +2385,34 @@ static int uhc_dwc2_bus_resume(const struct device *const dev)
 
 static int uhc_dwc2_enqueue(const struct device *const dev, struct uhc_transfer *const xfer)
 {
+	int ret;
+
+	/*
+	 * We are going to submit transfer of the xfer and according the type of
+	 * the transfer, xfer object should be correcly configured, to handle
+	 * IN or OUT transfers.
+	 * Verify the configuration before adding the xfer to the ctrl_xfers dlist.
+	 */
+	switch (xfer->type) {
+	case USB_EP_TYPE_CONTROL:
+		ret = validate_control_xfer(xfer);
+		break;
+	case USB_EP_TYPE_BULK:
+		ret = validate_bulk_xfer(xfer);
+		break;
+	case USB_EP_TYPE_INTERRUPT:
+		ret = validate_interrupt_xfer(xfer);
+		break;
+	default:
+		LOG_ERR("Submit xfer with type=%u isn't supported yet", xfer->type);
+		return -EINVAL;
+	}
+
+	if (ret != 0) {
+		LOG_ERR("Invalid xfer for transfer: type=%u, err=%d", xfer->type, ret);
+		return ret;
+	}
+
 	(void)uhc_xfer_append(dev, xfer);
 
 	/*
