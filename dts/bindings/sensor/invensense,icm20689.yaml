@@ -27,7 +27,7 @@ examples:
             accel-fs = <ICM20689_DT_ACCEL_FS_2G>;
             gyro-fs = <ICM20689_DT_GYRO_FS_250DPS>;
 
-            accel-dlpf = <ICM20689_DT_ACCEL_DLPF_99HZ>;
+            accel-dlpf = <ICM20689_DT_ACCEL_DLPF_99_0HZ>;
             gyro-dlpf = <ICM20689_DT_GYRO_DLPF_41HZ>;
 
             smplrt-div = <9>;
@@ -103,12 +103,12 @@ properties:
     enum:
       - 0 # ICM20689_DT_ACCEL_DLPF_218_1HZ_CFG0
       - 1 # ICM20689_DT_ACCEL_DLPF_218_1HZ_CFG1
-      - 2 # ICM20689_DT_ACCEL_DLPF_99HZ
+      - 2 # ICM20689_DT_ACCEL_DLPF_99_0HZ
       - 3 # ICM20689_DT_ACCEL_DLPF_44_8HZ
       - 4 # ICM20689_DT_ACCEL_DLPF_21_2HZ
       - 5 # ICM20689_DT_ACCEL_DLPF_10_2HZ
       - 6 # ICM20689_DT_ACCEL_DLPF_5_1HZ
-      - 7 # ICM20689_DT_ACCEL_DLPF_420HZ
+      - 7 # ICM20689_DT_ACCEL_DLPF_420_0HZ
       - 8 # ICM20689_DT_ACCEL_BYPASS_1046HZ
 
   gyro-dlpf:
