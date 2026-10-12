@@ -10,6 +10,7 @@
  */
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -95,6 +96,23 @@
 			label = "JOY_SW5";
 			zephyr,code = <INPUT_KEY_ENTER>;
 		};
+	};
+
+	mikrobus_header: mikrobus-connector {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <MIKROBUS_AN 0 &gpio0 6 0>,
+			   <MIKROBUS_RST 0 &gpio8 3 0>,
+			   <MIKROBUS_CS 0 &gpio12 7 0>,
+			   <MIKROBUS_SCK 0 &gpio12 6 0>,
+			   <MIKROBUS_MISO 0 &gpio12 4 0>,
+			   <MIKROBUS_MOSI 0 &gpio12 5 0>,
+			   <MIKROBUS_PWM 0 &gpio5 6 0>,
+			   <MIKROBUS_INT 0 &gpio8 1 0>,
+			   <MIKROBUS_RX 0 &gpio1 5 0>,
+			   <MIKROBUS_TX 0 &gpio1 4 0>;
 	};
 };
 

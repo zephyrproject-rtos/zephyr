@@ -96,6 +96,14 @@
 		};
 	};
 
+	gpio8_default: gpio8_default {
+		group0 {
+			/* mikroBUS INT on P8_1 */
+			pinmux = <PIN_P8_1__GPIO>;
+			input-enable;
+		};
+	};
+
 	gpio12_default: gpio12_default {
 		group0 {
 			/* Multicolor LED0: blue on P12_0, red on P12_3 */
