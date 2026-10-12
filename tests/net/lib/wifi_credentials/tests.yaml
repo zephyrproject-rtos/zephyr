@@ -6,3 +6,39 @@ tests:
       - native_sim
     integration_platforms:
       - native_sim
+  net.wifi_credentials.backend_psa_ps.secure_storage.store.settings:
+    tags:
+      - net
+      - psa.secure_storage
+    extra_args: EXTRA_CONF_FILE=overlay-backend_psa_ps.conf;overlay-store_settings.conf
+    filter: CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - mps2/an385
+    integration_platforms:
+      - native_sim
+  net.wifi_credentials.backend_psa_ps.secure_storage.store.zms:
+    tags:
+      - net
+      - psa.secure_storage
+    # Platforms with a storage_partition must be manually added here.
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=zms.overlay
+      - EXTRA_CONF_FILE=overlay-backend_psa_ps.conf;overlay-store_zms.conf
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - mps2/an385
+    integration_platforms:
+      - native_sim
+  net.wifi_credentials.backend_psa_ps.tfm:
+    tags:
+      - net
+      - trusted-firmware-m
+    extra_args: EXTRA_CONF_FILE=overlay-backend_psa_ps_tfm.conf
+    filter: CONFIG_BUILD_WITH_TFM
+    platform_allow:
+      - mps2/an521/cpu0/ns
+    integration_platforms:
+      - mps2/an521/cpu0/ns
