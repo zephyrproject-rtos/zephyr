@@ -2581,7 +2581,8 @@ static int mdns_responder_init(void)
 
 int mdns_responder_set_ext_records(const struct dns_sd_rec *records, size_t count)
 {
-	if (records == NULL || count == 0) {
+	/* NULL with a zero count unregisters the records */
+	if ((records == NULL && count > 0) || (records != NULL && count == 0)) {
 		return -EINVAL;
 	}
 
