@@ -183,7 +183,10 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
 	zfp->mp = mp;
 	rc = mp->fs->open(zfp, file_name, flags);
 	if (rc < 0) {
-		LOG_ERR("file open error (%d)", rc);
+		/* A file that doesn't exist is a valid open response, as for fs_stat() */
+		if (rc != -ENOENT) {
+			LOG_ERR("file open error (%d)", rc);
+		}
 		zfp->mp = NULL;
 		return rc;
 	}
