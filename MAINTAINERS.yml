@@ -4119,6 +4119,7 @@ MIPS arch:
     - boards/qemu/malta/
   labels:
     - "area: MIPS"
+  tests:
     - arch
     - kernel
 
