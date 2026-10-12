@@ -2749,28 +2749,24 @@ static int h3_process_frames(struct http_client_ctx *client, bool stream_fin)
 
 			break;
 
+		case H3_FRAME_CANCEL_PUSH:
 		case H3_FRAME_SETTINGS:
-			LOG_DBG("[%p] H3: SETTINGS frame, len=%llu", client, frame_len);
-			ret = h3_parse_settings(client, payload,
-						(size_t)frame_len);
-			if (ret < 0) {
-				LOG_DBG("[%p] H3: SETTINGS parse error (%d)", client, ret);
-				return ret;
-			}
-			break;
-
+		case H3_FRAME_PUSH_PROMISE:
 		case H3_FRAME_GOAWAY:
+		case H3_FRAME_MAX_PUSH_ID:
 			/*
-			 * GOAWAY is always sent on the control stream (RFC 9114
-			 * ch. 7.2.6) and is not permitted on a request stream
-			 * (ch. 7.2, Table 1), so treat it as a connection error
-			 * of type H3_FRAME_UNEXPECTED (ch. 8.1). Return the
-			 * error so handle_h3_bidi_stream() restores the
-			 * connection fd and tears the connection down, instead
-			 * of closing it while client->fd still points at the
-			 * request stream.
+			 * CANCEL_PUSH, SETTINGS, GOAWAY and MAX_PUSH_ID are
+			 * only sent on the control stream, and a client must
+			 * not send PUSH_PROMISE at all. Receiving any of them
+			 * on a request stream is a connection error of type
+			 * H3_FRAME_UNEXPECTED (RFC 9114 ch. 7.2.3 - 7.2.7 and
+			 * ch. 7.2, Table 1). Return the error so
+			 * handle_h3_bidi_stream() restores the connection fd
+			 * and tears the connection down, instead of closing it
+			 * while client->fd still points at the request stream.
 			 */
-			LOG_DBG("[%p] H3: GOAWAY on request stream", client);
+			LOG_DBG("[%p] H3: frame type=0x%llx not allowed on request stream",
+				client, frame_type);
 			return -H3_FRAME_UNEXPECTED;
 
 		default:
