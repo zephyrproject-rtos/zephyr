@@ -786,6 +786,7 @@ static int coap_server_sendto(int sock_fd, const struct net_sockaddr_storage *lo
 		cmsg->cmsg_type = ZSOCK_IPV6_PKTINFO;
 		cmsg->cmsg_len = NET_CMSG_LEN(sizeof(info));
 		memcpy(NET_CMSG_DATA(cmsg), &info, sizeof(info));
+		msg.msg_controllen = NET_CMSG_SPACE(sizeof(info));
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) && local_addr->ss_family == NET_AF_INET) {
 		struct net_in_pktinfo info = {
 			.ipi_spec_dst = ((const struct net_sockaddr_in *)local_addr)->sin_addr,
@@ -795,6 +796,7 @@ static int coap_server_sendto(int sock_fd, const struct net_sockaddr_storage *lo
 		cmsg->cmsg_type = ZSOCK_IP_PKTINFO;
 		cmsg->cmsg_len = NET_CMSG_LEN(sizeof(info));
 		memcpy(NET_CMSG_DATA(cmsg), &info, sizeof(info));
+		msg.msg_controllen = NET_CMSG_SPACE(sizeof(info));
 	}
 
 	return zsock_sendmsg(sock_fd, &msg, 0);
