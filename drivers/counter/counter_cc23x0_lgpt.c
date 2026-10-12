@@ -27,6 +27,10 @@ LOG_MODULE_REGISTER(counter_cc23x0_lgpt, CONFIG_COUNTER_LOG_LEVEL);
 
 #define LGPT_CLK_PRESCALE(pres) (((pres) + 1) << 8)
 
+#define LGPT_NUM_CHANNELS 3
+
+#define LGPT_CCFG_COMPARE_MODE (LGPT_C0CFG_CCACT_SET_ON_CMP | LGPT_C0CFG_EDGE_RISE)
+
 static void counter_cc23x0_lgpt_isr(const struct device *dev);
 
 struct counter_cc23x0_lgpt_config {
@@ -37,7 +41,7 @@ struct counter_cc23x0_lgpt_config {
 };
 
 struct counter_cc23x0_lgpt_data {
-	struct counter_alarm_cfg alarm_cfg[3];
+	struct counter_alarm_cfg alarm_cfg[LGPT_NUM_CHANNELS];
 	struct counter_top_cfg target_cfg;
 };
 
@@ -145,17 +149,17 @@ static int counter_cc23x0_lgpt_set_alarm(const struct device *dev, uint8_t chan_
 	}
 
 	if (chan_id == 0) {
-		HWREG(config->base + LGPT_O_IMASK) |= 0x100;
+		HWREG(config->base + LGPT_O_IMASK) |= LGPT_IMASK_C0CC;
 		HWREG(config->base + LGPT_O_C0CC) = alarm_cfg->ticks;
-		HWREG(config->base + LGPT_O_C0CFG) = 0x9D;
+		HWREG(config->base + LGPT_O_C0CFG) = LGPT_CCFG_COMPARE_MODE;
 	} else if (chan_id == 1) {
-		HWREG(config->base + LGPT_O_IMASK) |= 0x200;
+		HWREG(config->base + LGPT_O_IMASK) |= LGPT_IMASK_C1CC;
 		HWREG(config->base + LGPT_O_C1CC) = alarm_cfg->ticks;
-		HWREG(config->base + LGPT_O_C1CFG) = 0x9D;
+		HWREG(config->base + LGPT_O_C1CFG) = LGPT_CCFG_COMPARE_MODE;
 	} else if (chan_id == 2) {
-		HWREG(config->base + LGPT_O_IMASK) |= 0x400;
+		HWREG(config->base + LGPT_O_IMASK) |= LGPT_IMASK_C2CC;
 		HWREG(config->base + LGPT_O_C2CC) = alarm_cfg->ticks;
-		HWREG(config->base + LGPT_O_C2CFG) = 0x9D;
+		HWREG(config->base + LGPT_O_C2CFG) = LGPT_CCFG_COMPARE_MODE;
 	} else {
 		LOG_ERR("Invalid chan ID\n");
 		return -ENOTSUP;
@@ -175,15 +179,15 @@ static int counter_cc23x0_lgpt_cancel_alarm(const struct device *dev, uint8_t ch
 	struct counter_cc23x0_lgpt_data *data = dev->data;
 
 	if (chan_id == 0) {
-		HWREG(config->base + LGPT_O_IMCLR) |= 0x100;
+		HWREG(config->base + LGPT_O_IMCLR) |= LGPT_IMASK_C0CC;
 		HWREG(config->base + LGPT_O_C0CC) = 0x0;
 		HWREG(config->base + LGPT_O_C0CFG) = 0x0;
 	} else if (chan_id == 1) {
-		HWREG(config->base + LGPT_O_IMCLR) |= 0x200;
+		HWREG(config->base + LGPT_O_IMCLR) |= LGPT_IMASK_C1CC;
 		HWREG(config->base + LGPT_O_C1CC) = 0;
 		HWREG(config->base + LGPT_O_C1CFG) = 0;
 	} else if (chan_id == 2) {
-		HWREG(config->base + LGPT_O_IMCLR) |= 0x400;
+		HWREG(config->base + LGPT_O_IMCLR) |= LGPT_IMASK_C2CC;
 		HWREG(config->base + LGPT_O_C2CC) = 0;
 		HWREG(config->base + LGPT_O_C2CFG) = 0;
 	} else {
@@ -217,7 +221,7 @@ static int counter_cc23x0_lgpt_set_top_value(const struct device *dev,
 	if (HWREG(config->base + LGPT_O_STARTCFG) == 0) {
 		HWREG(config->base + LGPT_O_TGT) = config->counter_info.max_top_value;
 
-		HWREG(config->base + LGPT_O_IMASK) |= 0x001;
+		HWREG(config->base + LGPT_O_IMASK) |= LGPT_IMASK_TGT;
 		HWREG(config->base + LGPT_O_TGT) = cfg->ticks;
 
 		data->target_cfg.flags = 0;
@@ -249,7 +253,7 @@ static int counter_cc23x0_lgpt_start(const struct device *dev)
 	HWREG(config->base + LGPT_O_CTL) = LGPT_CTL_MODE_UP_PER;
 
 	/* Set to 1 to start timer */
-	HWREG(config->base + LGPT_O_STARTCFG) = 0x1;
+	HWREG(config->base + LGPT_O_STARTCFG) = (1U << LGPT_STARTCFG_LGPT_S);
 
 	return 0;
 }
