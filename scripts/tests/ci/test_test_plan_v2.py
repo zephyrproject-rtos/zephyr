@@ -829,7 +829,7 @@ class TestSnippetStrategy:
         s._check_manifest(manifest, "my-snippet", acc)
         assert len(acc) == 1
 
-    def test_check_manifest_child_image_snippet_not_matched(self, tmp_path):
+    def test_check_manifest_image_snippet(self, tmp_path):
         manifest = tmp_path / "testcase.yaml"
         manifest.write_text(
             textwrap.dedent("""\
@@ -842,7 +842,22 @@ class TestSnippetStrategy:
         s = self._strategy(tmp_path)
         acc: set = set()
         s._check_manifest(manifest, "my-snippet", acc)
-        assert len(acc) == 0
+        assert len(acc) == 1
+
+    def test_check_manifest_conditional_image_snippet(self, tmp_path):
+        manifest = tmp_path / "testcase.yaml"
+        manifest.write_text(
+            textwrap.dedent("""\
+            tests:
+              my.test:
+                extra_args:
+                  - platform:nrf54l:child_SNIPPET=my-snippet
+        """)
+        )
+        s = self._strategy(tmp_path)
+        acc: set = set()
+        s._check_manifest(manifest, "my-snippet", acc)
+        assert len(acc) == 1
 
     def test_check_manifest_extra_args_snippet_exact_match(self, tmp_path):
         manifest = tmp_path / "testcase.yaml"
