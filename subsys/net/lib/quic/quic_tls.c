@@ -2231,14 +2231,19 @@ static int derive_handshake_secrets(struct quic_tls_context *ctx)
 		return ret;
 	}
 
-	/* Notify QUIC layer of new secrets */
+	/* Notify QUIC layer of new secrets. Without the keys the handshake
+	 * cannot continue, so a failure here must end it.
+	 */
 	if (ctx->secret_cb != NULL) {
-		ctx->secret_cb(ctx->user_data, QUIC_SECRET_LEVEL_HANDSHAKE,
-			       ctx->ep->is_server ? ctx->ks.client_hs_traffic_secret :
-						    ctx->ks.server_hs_traffic_secret,
-			       ctx->ep->is_server ? ctx->ks.server_hs_traffic_secret :
-						    ctx->ks.client_hs_traffic_secret,
-			       ctx->ks.hash_len);
+		ret = ctx->secret_cb(ctx->user_data, QUIC_SECRET_LEVEL_HANDSHAKE,
+				     ctx->ep->is_server ? ctx->ks.client_hs_traffic_secret :
+							  ctx->ks.server_hs_traffic_secret,
+				     ctx->ep->is_server ? ctx->ks.server_hs_traffic_secret :
+							  ctx->ks.client_hs_traffic_secret,
+				     ctx->ks.hash_len);
+		if (ret != 0) {
+			return ret;
+		}
 	}
 
 	return 0;
