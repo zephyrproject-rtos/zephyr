@@ -89,6 +89,13 @@
 			   <14 0 &gpioq 1 0>,
 			   <15 0 &gpioq 2 0>;
 	};
+
+	wm8904_fll_ref: sai1a-mclk {
+		compatible = "fixed-clock";
+		/* 1.536 GHz / 136 */
+		clock-frequency = <11294117>;
+		#clock-cells = <0>;
+	};
 };
 
 &gpioc {
@@ -133,6 +140,10 @@
 
 		wolfson,mic-bias-voltage = "avdd-9-10";
 		input-pga-select = <1>;
+
+		clocks = <&wm8904_fll_ref>;
+		clock-source = "FLL";
+		clock-names = "mclk";
 	};
 };
 
