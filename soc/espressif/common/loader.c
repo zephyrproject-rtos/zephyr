@@ -230,6 +230,13 @@ void map_rom_segments(int core, struct rom_segments *map)
 	 */
 	cache_hal_disable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 #else
+#if defined(CONFIG_SOC_SERIES_ESP32S3) && defined(CONFIG_SOC_ENABLE_APPCPU)
+	/* Disabling the DCache invalidates it without a writeback. When the PROCPU
+	 * maps the APPCPU image at runtime, flush dirty PSRAM lines first or they
+	 * are lost.
+	 */
+	Cache_WriteBack_All();
+#endif
 	cache_hal_disable(1, CACHE_TYPE_ALL);
 #endif /* CONFIG_SOC_SERIES_ESP32 */
 
