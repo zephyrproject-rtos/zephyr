@@ -22,6 +22,7 @@ endchoice
 
 config NUM_IRQS
 	default 167 if SOC_DIE_PSC3M6
+	default 143 if SOC_DIE_PSC3M8
 	default 140
 
 # MPU-based null-pointer dereferencing detection cannot be applied on PSC3M6 as
