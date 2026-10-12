@@ -6612,18 +6612,24 @@ static int derive_application_secrets(struct quic_tls_context *ctx)
 				"Server app traffic secret:");
 	}
 
-	/* Notify QUIC layer of new secrets */
+	/* Notify QUIC layer of new secrets. Without the keys the connection
+	 * cannot be used, so a failure here must end the handshake.
+	 */
 	if (ctx->secret_cb != NULL) {
 		if (ctx->ep->is_server) {
-			ctx->secret_cb(ctx->user_data, QUIC_SECRET_LEVEL_APPLICATION,
-				       ctx->ks.client_ap_traffic_secret,
-				       ctx->ks.server_ap_traffic_secret,
-				       ctx->ks.hash_len);
+			ret = ctx->secret_cb(ctx->user_data, QUIC_SECRET_LEVEL_APPLICATION,
+					     ctx->ks.client_ap_traffic_secret,
+					     ctx->ks.server_ap_traffic_secret,
+					     ctx->ks.hash_len);
 		} else {
-			ctx->secret_cb(ctx->user_data, QUIC_SECRET_LEVEL_APPLICATION,
-				       ctx->ks.server_ap_traffic_secret,
-				       ctx->ks.client_ap_traffic_secret,
-				       ctx->ks.hash_len);
+			ret = ctx->secret_cb(ctx->user_data, QUIC_SECRET_LEVEL_APPLICATION,
+					     ctx->ks.server_ap_traffic_secret,
+					     ctx->ks.client_ap_traffic_secret,
+					     ctx->ks.hash_len);
+		}
+
+		if (ret != 0) {
+			return ret;
 		}
 	}
 
