@@ -59,3 +59,11 @@
 	pinctrl-0 = <&analog_pa23>;
 	pinctrl-names = "default";
 };
+
+&timg8_0 {
+	status = "okay";
+
+	counterg8_0: counterg8_0 {
+		status = "okay";
+	};
+};
