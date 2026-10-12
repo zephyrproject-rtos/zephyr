@@ -3802,6 +3802,100 @@ ZTEST(net_socket_quic, test_320_quic_initial_too_short)
 	zassert_ok(ret, "Cannot close server socket %d (%d)", server_sock, -errno);
 }
 
+/* Long header packets of a valid version for a connection nobody knows.
+ * Both are far below the 1200 bytes an Initial datagram needs and carry
+ * no address validation token.
+ */
+#define UNKNOWN_CONN_LONG_HEADER(first_byte)				\
+	{								\
+		first_byte,                   /* Long header, type */	\
+		0x00, 0x00, 0x00, 0x01,       /* QUIC version 1 */	\
+		0x08, 0xa1, 0xa2, 0xa3, 0xa4, /* DCID len=8, DCID */	\
+		0xa5, 0xa6, 0xa7, 0xa8,					\
+		0x08, 0xb1, 0xb2, 0xb3, 0xb4, /* SCID len=8, SCID */	\
+		0xb5, 0xb6, 0xb7, 0xb8,					\
+		0x18,                         /* Length = 24 */		\
+		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,		\
+		0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,		\
+		0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,		\
+	}
+
+static const uint8_t unknown_conn_handshake_msg[] = UNKNOWN_CONN_LONG_HEADER(0xe0);
+static const uint8_t unknown_conn_0rtt_msg[] = UNKNOWN_CONN_LONG_HEADER(0xd0);
+
+ZTEST(net_socket_quic, test_325_quic_only_initial_starts_a_connection)
+{
+	static const struct {
+		const uint8_t *msg;
+		size_t len;
+		const char *name;
+	} packets[] = {
+		{ unknown_conn_handshake_msg, sizeof(unknown_conn_handshake_msg), "Handshake" },
+		{ unknown_conn_0rtt_msg, sizeof(unknown_conn_0rtt_msg), "0-RTT" },
+	};
+	struct net_sockaddr_storage server_addr;
+	struct net_sockaddr_storage client_addr;
+	struct quic_context *server_ctx;
+	int server_sock;
+	int client_sock;
+	int ret;
+
+	ret = net_ipaddr_parse("127.0.0.1:54360", strlen("127.0.0.1:54360"),
+			       (struct net_sockaddr *)&server_addr);
+	zassert_true(ret, "Failed to parse server IP address");
+
+	ret = net_ipaddr_parse("127.0.0.1:19960", strlen("127.0.0.1:19960"),
+			       (struct net_sockaddr *)&client_addr);
+	zassert_true(ret, "Failed to parse client IP address");
+
+	prepare_quic_socket(&server_sock, NULL, (const struct net_sockaddr *)&server_addr);
+
+	client_sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(client_sock >= 0, "Could not create client socket (%d)", -errno);
+
+	ret = zsock_bind(client_sock, (const struct net_sockaddr *)&client_addr,
+			 sizeof(client_addr));
+	zassert_ok(ret, "Could not bind client socket (%d)", -errno);
+
+	server_ctx = quic_get_context(server_sock);
+	zassert_not_null(server_ctx, "Could not get server QUIC context");
+	assert_quic_stats_zero(&server_ctx->stats, "listener");
+
+	ARRAY_FOR_EACH(packets, i) {
+		uint32_t expected = i + 1;
+
+		ret = zsock_sendto(client_sock, packets[i].msg, packets[i].len, 0,
+				   (const struct net_sockaddr *)&server_addr,
+				   sizeof(server_addr));
+		zassert_equal(ret, packets[i].len, "Failed to send the %s packet (%d)",
+			      packets[i].name, -errno);
+
+		/* Let the socket service forward the packet to the QUIC server */
+		for (int j = 0; j < 10 && server_ctx->stats.drop_rx < expected; j++) {
+			k_msleep(10);
+		}
+
+		/* The listener itself turns the packet away. Nothing is set up
+		 * for a connection that did not start with an Initial packet.
+		 */
+		zassert_equal(server_ctx->stats.peer_not_found, expected,
+			      "%s packet for an unknown connection was not turned away (%u)",
+			      packets[i].name, server_ctx->stats.peer_not_found);
+		zassert_equal(server_ctx->stats.drop_rx, expected,
+			      "%s packet for an unknown connection was not dropped (%u)",
+			      packets[i].name, server_ctx->stats.drop_rx);
+	}
+
+	zassert_equal(server_ctx->stats.handshake_init_rx, 0,
+		      "No handshake may be counted as started");
+
+	ret = zsock_close(client_sock);
+	zassert_ok(ret, "Cannot close client socket %d (%d)", client_sock, -errno);
+
+	ret = quic_connection_close(server_sock);
+	zassert_ok(ret, "Cannot close server socket %d (%d)", server_sock, -errno);
+}
+
 ZTEST(net_socket_quic, test_330_quic_initial_dcid_too_short)
 {
 	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
