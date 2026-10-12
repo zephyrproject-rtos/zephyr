@@ -101,7 +101,7 @@ static int emul_sbs_gauge_reg_write(const struct emul *target, int reg, int val)
 {
 	struct sbs_gauge_emul_data *data = target->data;
 
-	LOG_INF("write %x = %x", reg, val);
+	LOG_DBG("write %x = %x", reg, val);
 	switch (reg) {
 	case SBS_GAUGE_CMD_MANUFACTURER_ACCESS:
 		data->mfr_acc = val;
@@ -183,7 +183,7 @@ static int emul_sbs_gauge_reg_read(const struct emul *target, int reg, int *val)
 		LOG_ERR("Unknown register 0x%x read", reg);
 		return -EIO;
 	}
-	LOG_INF("read 0x%x = 0x%x", reg, *val);
+	LOG_DBG("read 0x%x = 0x%x", reg, *val);
 
 	return 0;
 }
