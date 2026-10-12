@@ -38,6 +38,7 @@ tests:
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - nrf54lm20dk/nrf54lm20b/cpuapp
       - nrf7120dk/nrf7120/cpuapp
+      - nrf7120dk/nrf7120e/cpuapp
       - nrf7120dk/nrf7120/cpuapp/ns
       - ophelia4ev/nrf54l15/cpuapp
   drivers.comparator.gpio_loopback.nrf_lpcomp:
@@ -51,6 +52,7 @@ tests:
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - nrf54lm20dk/nrf54lm20b/cpuapp
       - nrf7120dk/nrf7120/cpuapp
+      - nrf7120dk/nrf7120e/cpuapp
       - nrf7120dk/nrf7120/cpuapp/ns
       - ophelia4ev/nrf54l15/cpuapp
   drivers.comparator.gpio_loopback.stm32_comp:
