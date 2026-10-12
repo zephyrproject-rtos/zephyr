@@ -300,11 +300,18 @@ struct cmsghdr {
 #if !defined(CMSG_NXTHDR)
 /**
  * Returns the next valid cmsghdr after the passed cmsghdr. It returns NULL
- * when there isn't enough space left in the buffer.
+ * when there isn't enough space left in the buffer, or when the length of
+ * the passed cmsghdr is not valid: too small to hold a header, as is the
+ * case in the unused, zeroed part of a buffer, or larger than what is left
+ * of the buffer.
  */
 #define CMSG_NXTHDR(msghdr, cmsg)					 \
 	(((cmsg) == NULL) ? CMSG_FIRSTHDR(msghdr) :			 \
-	 (((uint8_t *)(cmsg) + ALIGN_H((cmsg)->cmsg_len) +		 \
+	 (((cmsg)->cmsg_len < sizeof(struct cmsghdr) ||			 \
+	   (cmsg)->cmsg_len > (size_t)((uint8_t *)((msghdr)->msg_control) + \
+				       (msghdr)->msg_controllen -	 \
+				       (uint8_t *)(cmsg)) ||		 \
+	   (uint8_t *)(cmsg) + ALIGN_H((cmsg)->cmsg_len) +		 \
 	   ALIGN_D(sizeof(struct cmsghdr)) >				 \
 	   (uint8_t *)((msghdr)->msg_control) + (msghdr)->msg_controllen) ? \
 	  NULL :							 \
