@@ -114,6 +114,9 @@ static size_t dynamic_bytes_received;
 static bool dynamic_more_seen;
 static bool dynamic_final_seen;
 static bool dynamic_complete;
+/* Lets a test keep the server thread busy inside the dynamic callback */
+static int dynamic_cb_stall_ms;
+static volatile bool dynamic_cb_stalling;
 
 static int dynamic_cb(struct http_client_ctx *client,
 		      enum http_transaction_status status,
@@ -131,6 +134,12 @@ static int dynamic_cb(struct http_client_ctx *client,
 	if (status == HTTP_SERVER_TRANSACTION_COMPLETE) {
 		dynamic_complete = true;
 		return 0;
+	}
+
+	if (dynamic_cb_stall_ms > 0 && status == HTTP_SERVER_REQUEST_DATA_MORE) {
+		dynamic_cb_stalling = true;
+		k_msleep(dynamic_cb_stall_ms);
+		dynamic_cb_stalling = false;
 	}
 
 	if (request_ctx->data_len > 0) {
@@ -1071,6 +1080,8 @@ static void http_server_h3_before(void *fixture)
 	dynamic_more_seen = false;
 	dynamic_final_seen = false;
 	dynamic_complete = false;
+	dynamic_cb_stall_ms = 0;
+	dynamic_cb_stalling = false;
 	memset(&request_headers_clone, 0, sizeof(request_headers_clone));
 	header_capture_calls = 0;
 	tracked_stream_count = 0;
@@ -1340,6 +1351,133 @@ ZTEST(server_h3_tests, test_h3_interleaved_streams_keep_request_state_separate)
 
 ZTEST(server_h3_tests, test_h3_reuses_connection_for_multiple_get_streams)
 {
+	start_h3_session(false);
+
+	for (int i = 0; i < 3; i++) {
+		send_get_and_expect_static(false);
+	}
+}
+
+/* More rounds than the server has QUIC contexts, streams or clients, so
+ * that anything left behind by a round stops a later one.
+ */
+#define REJECTED_UNI_STREAM_ROUNDS 8
+#define SERVER_STALL_MS 200
+
+/* Open a unidirectional stream and send its first bytes (or just end it
+ * when there are none) while the server thread is kept busy in the dynamic
+ * resource callback. The server then finds the stream and its data waiting
+ * together, and has to judge the stream at the time it accepts it.
+ * Returns the fd of the unidirectional stream.
+ */
+static int send_uni_stream_to_busy_server(const uint8_t *buf, size_t len)
+{
+	static const uint8_t payload[] = "x";
+	uint8_t headers[32];
+	uint8_t data_frame[16];
+	size_t headers_len;
+	size_t data_len;
+	int post_fd;
+	int uni_fd;
+	int ret;
+
+	dynamic_cb_stall_ms = SERVER_STALL_MS;
+
+	post_fd = open_client_stream(QUIC_STREAM_BIDIRECTIONAL);
+	headers_len = build_headers_frame(headers, HTTP_POST, "/dynamic");
+	send_all(post_fd, headers, headers_len);
+	data_len = build_data_frame(data_frame, payload, sizeof(payload) - 1);
+	send_all(post_fd, data_frame, data_len);
+
+	zassert_true(WAIT_FOR(dynamic_cb_stalling, RECV_TIMEOUT_S * USEC_PER_SEC, k_msleep(1)),
+		     "Server did not enter the dynamic callback");
+
+	uni_fd = open_client_stream(QUIC_STREAM_UNIDIRECTIONAL);
+	if (len > 0) {
+		send_all(uni_fd, buf, len);
+	} else {
+		ret = zsock_shutdown(uni_fd, ZSOCK_SHUT_WR);
+		zassert_ok(ret, "Failed to end the unidirectional stream (%d)", errno);
+	}
+
+	zassert_true(dynamic_cb_stalling, "Server was not busy while the stream was sent");
+	dynamic_cb_stall_ms = 0;
+
+	return uni_fd;
+}
+
+ZTEST(server_h3_tests, test_h3_duplicate_control_stream_releases_everything)
+{
+	uint8_t control_buf[8];
+	size_t control_len;
+
+	control_len = build_control_settings_stream(control_buf);
+
+	for (int i = 0; i < REJECTED_UNI_STREAM_ROUNDS; i++) {
+		struct zsock_pollfd pfd;
+		int ret;
+
+		if (i > 0) {
+			connect_h3_client(NULL);
+		}
+
+		start_h3_session(false);
+
+		/* A second control stream is a connection error */
+		(void)send_uni_stream_to_busy_server(control_buf, control_len);
+
+		pfd.fd = client_conn_fd;
+		pfd.events = ZSOCK_POLLIN;
+		pfd.revents = 0;
+		ret = zsock_poll(&pfd, 1, RECV_TIMEOUT_S * MSEC_PER_SEC);
+		zassert_true(ret > 0 && (pfd.revents & ZSOCK_POLLHUP) != 0,
+			     "Round %d: connection not closed on duplicate control stream (0x%x)",
+			     i, pfd.revents);
+
+		close_h3_client();
+	}
+
+	/* Nothing was left behind: a new connection gets the full service */
+	connect_h3_client(NULL);
+	start_h3_session(false);
+
+	for (int i = 0; i < 3; i++) {
+		send_get_and_expect_static(false);
+	}
+}
+
+ZTEST(server_h3_tests, test_h3_uni_stream_closed_before_type_is_tolerated)
+{
+	for (int i = 0; i < REJECTED_UNI_STREAM_ROUNDS; i++) {
+		int uni_fd;
+		int ret;
+
+		if (i > 0) {
+			connect_h3_client(NULL);
+		}
+
+		start_h3_session(false);
+
+		/* A unidirectional stream that ends before its stream type was
+		 * sent must be tolerated: the connection keeps working.
+		 */
+		uni_fd = send_uni_stream_to_busy_server(NULL, 0);
+		k_msleep(2 * SERVER_STALL_MS);
+
+		/* Both ends run in this process and share one fd table, so
+		 * give the fd back before the next request needs two more.
+		 */
+		ret = zsock_close(uni_fd);
+		zassert_ok(ret, "Round %d: failed to close the stream (%d)", i, errno);
+		untrack_stream_fd(uni_fd);
+
+		send_get_and_expect_static(false);
+
+		close_h3_client();
+	}
+
+	/* Nothing was left behind: a new connection gets the full service */
+	connect_h3_client(NULL);
 	start_h3_session(false);
 
 	for (int i = 0; i < 3; i++) {
