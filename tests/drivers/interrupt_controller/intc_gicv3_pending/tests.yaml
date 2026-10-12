@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  platform_allow: qemu_cortex_a53/qemu_cortex_a53/smp
+  tags:
+    - drivers
+    - interrupt
+    - gic
+tests:
+  drivers.interrupt_controller.gicv3.pending: {}
+  drivers.interrupt_controller.gicv3.pending.no_assert:
+    extra_configs:
+      - CONFIG_ASSERT=n
