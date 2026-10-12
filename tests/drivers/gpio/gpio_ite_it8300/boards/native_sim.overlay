@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2026 ITE Corporation. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+&i2c0 {
+	status = "okay";
+
+	it8300: gpio-expander@20 {
+		compatible = "ite,it8300";
+		reg = <0x20>;
+		alert-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		it8300_gpe: gpio@5 {
+			compatible = "ite,it8300-gpio";
+			reg = <0x05 1 0x2f 1 0x32 7 0x2d 1 0x3d 1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <7>;
+			gpio-reserved-ranges = <1 1>;
+		};
+	};
+};
+
+/ {
+	aliases {
+		it8300 = &it8300;
+		it8300-gpe = &it8300_gpe;
+	};
+};
