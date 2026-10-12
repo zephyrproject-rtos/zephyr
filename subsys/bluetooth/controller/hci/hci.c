@@ -7076,7 +7076,7 @@ static void ext_adv_info_fill(uint8_t evt_type, uint8_t phy, uint8_t sec_phy,
 		adv_info->addr.type = adv_addr_type;
 		(void)memcpy(adv_info->addr.a.val, adv_addr, sizeof(bt_addr_t));
 	} else {
-		adv_info->addr.type = 0U;
+		adv_info->addr.type = BT_ADDR_LE_ANONYMOUS;
 		(void)memset(adv_info->addr.a.val, 0, sizeof(bt_addr_t));
 	}
 
