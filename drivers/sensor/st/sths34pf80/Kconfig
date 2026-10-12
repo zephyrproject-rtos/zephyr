@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Dotcom IoT LLP
+# SPDX-License-Identifier: Apache-2.0
+
+config STHS34PF80
+	bool "ST STHS34PF80 infrared presence sensor"
+	default y
+	depends on DT_HAS_ST_STHS34PF80_ENABLED
+	select I2C
+	help
+	  Enable the ST STHS34PF80 infrared presence and motion
+	  detection sensor driver.

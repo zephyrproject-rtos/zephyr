@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Dotcom IoT LLP
+# SPDX-License-Identifier: Apache-2.0
+
+description: STMicroelectronics STHS34PF80 human presence and motion sensor
+
+compatible: "st,sths34pf80"
+
+include: [sensor-device.yaml, i2c-device.yaml]
