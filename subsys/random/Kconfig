@@ -7,6 +7,7 @@ menu "Random Number Generators"
 
 config TEST_RANDOM_GENERATOR
 	bool "Allow non-random number generator"
+	select NOT_SECURE
 	help
 	  This option signifies that a non-random number generator is allowed to
 	  be used and the kernel's random number APIs are permitted to return
@@ -34,7 +35,6 @@ config TIMER_RANDOM_INITIAL_STATE
 	help
 	  Initial state value used by TIMER_RANDOM_GENERATOR and
 	  early random number genenator.
-
 
 choice RNG_GENERATOR_CHOICE
 	prompt "Random generator"
