@@ -173,6 +173,15 @@ TESTDATA_2 = [
         None,
         None,
     ),
+    (
+        ['m0', 'm6'],
+        None,
+        None,
+        {
+            'p1e1/s1', 'p1e2/s1', 'p2/s1', 'p3@A/s2/c1', 'p3@B/s2/c1',
+            'p1e2/s1/v2',
+        },
+    ),
 ]
 
 @pytest.mark.parametrize(
@@ -185,6 +194,7 @@ TESTDATA_2 = [
         '1 extra board root, duplicate platform',
         '2 extra board roots, duplicate platform',
         '1 extra board root, malformed yaml',
+        '1 extra board root, legacy variant of a twister.yaml-based board',
     ]
 )
 def test_generate_platforms(
@@ -356,6 +366,22 @@ vendor: vendor2
 board:
   extend: p2
 """,
+        # Reproduces the real nucleo_n657x0_q + Generac-extension bug: p1e2's
+        # *base* directory (m0/boards/zephyr/p1) already has its own
+        # twister.yaml, and this extension supplies a brand new variant
+        # (p1e2/s1/v2) that twister.yaml never declares, via the older
+        # per-target legacy format (just an 'identifier:', no 'variants:'
+        # map at all). That must not be treated as a duplicate of p1e2/s1.
+        'm6/boards/zephyr/p1e2/board.yml': """\
+board:
+  extend: p1e2
+  variants:
+    - name: v2
+      qualifier: s1
+""",
+        'm6/boards/zephyr/p1e2/p1e2_s1_v2.yaml': """\
+identifier: p1e2/s1/v2
+""",
     }
 
     for filename, content in tmp_files.items():
@@ -484,6 +510,14 @@ board:
             'type': 'qemu',
             'simulators': [Simulator({'name': 'qemu'})],
             'simulation': 'qemu',
+        },
+        'p1e2/s1/v2': {
+            'aliases': ['p1e2/s1/v2'],
+            # m0/boards/zephyr/p1/board.yml
+            'vendor': 'zephyr',
+            # m6/boards/zephyr/p1e2/p1e2_s1_v2.yaml -- the regression case:
+            # a legacy-format variant of a board whose base dir (m0) already
+            # has a twister.yaml, for a variant twister.yaml never declares.
         },
     }
 
