@@ -138,23 +138,34 @@ static int counter_cc23x0_lgpt_set_alarm(const struct device *dev, uint8_t chan_
 {
 	const struct counter_cc23x0_lgpt_config *config = dev->config;
 	struct counter_cc23x0_lgpt_data *data = dev->data;
+	uint32_t compare_val;
+	uint32_t top_val;
+
+	top_val = HWREG(config->base + LGPT_O_TGT);
 
 	if (alarm_cfg->ticks > config->counter_info.max_top_value) {
 		LOG_ERR("Ticks out of range\n");
 		return -EINVAL;
 	}
 
+	if (alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) {
+		compare_val = alarm_cfg->ticks;
+	} else {
+		uint32_t current = HWREG(config->base + LGPT_O_CNTR);
+		compare_val = (current + alarm_cfg->ticks) % (top_val + 1);
+	}
+
 	if (chan_id == 0) {
 		HWREG(config->base + LGPT_O_IMASK) |= 0x100;
-		HWREG(config->base + LGPT_O_C0CC) = alarm_cfg->ticks;
+		HWREG(config->base + LGPT_O_C0CC) = compare_val;
 		HWREG(config->base + LGPT_O_C0CFG) = 0x9D;
 	} else if (chan_id == 1) {
 		HWREG(config->base + LGPT_O_IMASK) |= 0x200;
-		HWREG(config->base + LGPT_O_C1CC) = alarm_cfg->ticks;
+		HWREG(config->base + LGPT_O_C1CC) = compare_val;
 		HWREG(config->base + LGPT_O_C1CFG) = 0x9D;
 	} else if (chan_id == 2) {
 		HWREG(config->base + LGPT_O_IMASK) |= 0x400;
-		HWREG(config->base + LGPT_O_C2CC) = alarm_cfg->ticks;
+		HWREG(config->base + LGPT_O_C2CC) = compare_val;
 		HWREG(config->base + LGPT_O_C2CFG) = 0x9D;
 	} else {
 		LOG_ERR("Invalid chan ID\n");
