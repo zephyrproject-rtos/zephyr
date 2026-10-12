@@ -48,13 +48,37 @@ config BT_HIDS_PROTOCOL_MODE
 	  Include the Protocol Mode characteristic in the HID Service.
 
 	  The characteristic is mandatory for a Device that supports Boot
-	  Protocol Mode, and optional for a Device that supports Report
-	  Protocol Mode only.
+	  Protocol Mode, so the Boot Report options below select it, and
+	  optional for a Device that supports Report Protocol Mode only.
 
 	  A Host can write Boot Protocol Mode even when the service has no
 	  Boot Report characteristic. The service then only stores the mode
 	  and calls the protocol_mode_changed callback; what the Device sends
 	  in that mode is up to the application.
+
+config BT_HIDS_BOOT_KEYBOARD
+	bool "Boot Keyboard Input and Output Report characteristics"
+	select BT_HIDS_PROTOCOL_MODE
+	help
+	  Include the Boot Keyboard Input Report and Boot Keyboard Output Report
+	  characteristics, which carry the fixed format Reports a Host uses in
+	  Boot Protocol Mode. Their format and length are defined by the USB HID
+	  Specification, so they are not described in the Report Map.
+
+	  Mandatory for a Device operating as a keyboard, and not permitted for
+	  a Device that does not.
+
+config BT_HIDS_BOOT_MOUSE
+	bool "Boot Mouse Input Report characteristic"
+	select BT_HIDS_PROTOCOL_MODE
+	help
+	  Include the Boot Mouse Input Report characteristic, which carries the
+	  fixed format Report a Host uses in Boot Protocol Mode. Its format and
+	  length are defined by the USB HID Specification, so it is not
+	  described in the Report Map.
+
+	  Mandatory for a Device operating as a mouse, and not permitted for a
+	  Device that does not.
 
 config BT_HIDS_INPUT_REPORT_COUNT
 	int "Number of Input Report characteristics"
@@ -89,6 +113,7 @@ config BT_HIDS_MAX_REPORT_LEN
 	  directions. It is the upper bound the service enforces on a Host write
 	  before calling set_report, and on the value the application sets with
 	  bt_hids_report_set(). One buffer of this size is held per Report
-	  characteristic.
+	  characteristic. The Boot Reports have a fixed length of their own and
+	  are not covered by this option.
 
 endif # BT_HIDS
