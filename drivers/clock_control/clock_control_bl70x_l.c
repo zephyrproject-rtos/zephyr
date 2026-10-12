@@ -694,6 +694,13 @@ static int clock_control_bl70x_l_update_f32k(const struct device *dev)
 	if (data->f32k.xtal_enabled) {
 		tmp = sys_read32(HBN_BASE + HBN_XTAL32K_OFFSET);
 		tmpold = tmp;
+
+#if defined(CONFIG_SOC_SERIES_BL70XL)
+		tmp &= ~HBN_XTAL32K_HIZ_EN_MSK;
+		tmp &= ~HBN_XTAL32K_AC_CAP_SHORT_MSK;
+		tmp &= ~HBN_XTAL32K_INV_STRE_MSK;
+		tmp |= 3 << HBN_XTAL32K_INV_STRE_POS;
+#endif
 		tmp |= HBN_PU_XTAL32K_MSK;
 		tmp |= HBN_PU_XTAL32K_BUF_MSK;
 		if (tmpold != tmp) {
