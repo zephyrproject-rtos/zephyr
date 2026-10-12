@@ -3,7 +3,23 @@
 
 if SOC_SERIES_AE350
 
-rsource "Kconfig.defconfig.ae*"
+configdefault SYS_CLOCK_TICKS_PER_SEC
+	default 100 if (!ICACHE || XIP)
+
+configdefault MAIN_STACK_SIZE
+	default 2048
+
+configdefault IDLE_STACK_SIZE
+	default 1536
+
+configdefault PRIVILEGED_STACK_SIZE
+	default 2048 if 64BIT
+
+configdefault TEST_EXTRA_STACK_SIZE
+	default 2048 if 64BIT
+
+config MP_MAX_NUM_CPUS
+	range 1 8
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/clocks/clk_sys,clock-frequency)
