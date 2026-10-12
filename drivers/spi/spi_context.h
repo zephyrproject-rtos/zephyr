@@ -225,7 +225,8 @@ static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 		if (IS_ENABLED(CONFIG_SPI_PERIPHERAL) && spi_context_is_peripheral(ctx)) {
 			timeout = K_FOREVER;
 		} else {
-			timeout_ms = ctx->max_count * 8 * 1000 / ctx->config->frequency;
+			timeout_ms = (uint32_t)((uint64_t)ctx->max_count * 8U * 1000U /
+						ctx->config->frequency);
 			timeout_ms += CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE;
 			timeout = K_MSEC(timeout_ms);
 		}
