@@ -1,0 +1,12 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config OTP_NXP_RW6XX
+	bool "NXP RW6xx OCOTP driver"
+	default y
+	depends on DT_HAS_NXP_RW6XX_OCOTP_ENABLED
+	help
+	  Enable the NXP RW6xx OCOTP (On-Chip OTP) driver for RW610/RW612 SoCs.
+	  Uses the NXP MCUXpresso SDK OCOTP HAL for read operations and the ROM
+	  API (fsl_romapi_otp) for program operations when CONFIG_OTP_PROGRAM is
+	  enabled.
