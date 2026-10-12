@@ -31,6 +31,7 @@
 #define H3_FRAME_DATA 0x00
 #define H3_FRAME_HEADERS 0x01
 #define H3_FRAME_SETTINGS 0x04
+#define H3_FRAME_GOAWAY 0x07
 
 #define H3_UNI_STREAM_CONTROL 0x00
 #define H3_UNI_STREAM_PUSH 0x01
@@ -1628,6 +1629,54 @@ ZTEST(server_h3_tests, test_http1_alt_svc_is_service_scoped)
 	expect_http1_alt_svc_response(SERVER_PORT, true, SERVER_PORT,
 				      ALT_SVC_DISABLED_PORT);
 	expect_http1_alt_svc_response(ALT_SVC_DISABLED_PORT, false, 0U, 0U);
+}
+
+ZTEST(server_h3_tests, test_h3_goaway_on_request_stream_is_connection_error)
+{
+	static const uint8_t goaway[] = { H3_FRAME_GOAWAY, 0x01, 0x00 };
+	struct zsock_pollfd pfd;
+	uint8_t buf[8];
+	int stream_fd;
+	int ret;
+
+	start_h3_session(false);
+
+	stream_fd = open_client_stream(QUIC_STREAM_BIDIRECTIONAL);
+	send_all(stream_fd, goaway, sizeof(goaway));
+
+	/* The connection error closes the stream: the fd becomes readable
+	 * and recv() reports end of stream rather than response data.
+	 */
+	pfd.fd = stream_fd;
+	pfd.events = ZSOCK_POLLIN | ZSOCK_POLLHUP;
+	pfd.revents = 0;
+	ret = zsock_poll(&pfd, 1, RECV_TIMEOUT_S * MSEC_PER_SEC);
+	zassert_true(ret > 0, "Stream not closed after GOAWAY on request stream");
+
+	ret = zsock_recv(stream_fd, buf, sizeof(buf), 0);
+	zassert_true(ret <= 0, "Unexpected response data after GOAWAY (%d)", ret);
+
+	/* The whole connection must be closed, not only the request stream:
+	 * the connection socket reports that the peer hung up.
+	 */
+	pfd.fd = client_conn_fd;
+	pfd.events = ZSOCK_POLLIN;
+	pfd.revents = 0;
+	ret = zsock_poll(&pfd, 1, RECV_TIMEOUT_S * MSEC_PER_SEC);
+	zassert_true(ret > 0, "Connection not closed after GOAWAY on request stream");
+	zassert_true((pfd.revents & ZSOCK_POLLHUP) != 0,
+		     "Connection still open after GOAWAY on request stream (0x%x)",
+		     pfd.revents);
+
+	/* Tear down this connection and confirm the server survived by
+	 * serving a fresh connection.
+	 */
+	close_h3_client();
+	k_msleep(100);
+
+	connect_h3_client(NULL);
+	start_h3_session(false);
+	send_get_and_expect_static(false);
 }
 
 ZTEST_SUITE(server_h3_function_tests, NULL, NULL, NULL, NULL, NULL);
