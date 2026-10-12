@@ -121,3 +121,9 @@
 	ti,pwm-mode = "EDGE_ALIGN";
 	ti,period = <3906>; /* ~100 ms at 39,062 Hz */
 };
+
+&i2c0 {
+	pinctrl-0 = <&i2c0_scl_pa1 &i2c0_sda_pa0>;
+	pinctrl-names = "default";
+	status = "disabled";
+};

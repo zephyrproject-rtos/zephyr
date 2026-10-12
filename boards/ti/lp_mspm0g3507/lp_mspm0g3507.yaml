@@ -14,6 +14,8 @@ supported:
   - gpio
   - can
   - dac
+  - i2c
+  - spi
   - vref
   - dma
   - trng
