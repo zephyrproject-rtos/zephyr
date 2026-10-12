@@ -1167,6 +1167,125 @@ static ZTEST(cmd_op, test_sender_on_system_workqueue)
 	}
 }
 
+/* A function that sends an operation from its stack and waits for it, as a
+ * synchronous sender of the same command would be written.
+ */
+static int send_sync(void)
+{
+	struct bt_hci_cmd_op_fut local = {0};
+	int err;
+
+	err = bt_hci_cmd_send_async(&local, &param_cmd);
+	if (err != 0) {
+		return err;
+	}
+
+	return bt_hci_cmd_op_wait(&local.op);
+}
+
+/* The wait returns what bt_hci_cmd_send_sync() returns for the same response
+ * of the controller, and for a command that the driver did not take.
+ */
+static ZTEST(cmd_op, test_wait_returns_errno)
+{
+	static const struct {
+		uint8_t status;
+		int err;
+	} responses[] = {
+		{BT_HCI_ERR_SUCCESS, 0},
+		{BT_HCI_ERR_CONN_LIMIT_EXCEEDED, -ECONNREFUSED},
+		{BT_HCI_ERR_INSUFFICIENT_RESOURCES, -ENOMEM},
+		{BT_HCI_ERR_INVALID_PARAM, -EINVAL},
+		{BT_HCI_ERR_CMD_DISALLOWED, -EACCES},
+		{BT_HCI_ERR_UNKNOWN_CONN_ID, -EIO},
+	};
+	int err;
+
+	ARRAY_FOR_EACH_PTR(responses, rsp) {
+		test_cmd.status = rsp->status;
+
+		err = send_sync();
+		zassert_equal(err, rsp->err, "Status 0x%02x gave %d", rsp->status, err);
+
+		err = bt_hci_cmd_send_sync(TEST_OPCODE, NULL, NULL);
+		zassert_equal(err, rsp->err, "The synchronous command gave %d", err);
+	}
+
+	test_cmd.status = BT_HCI_ERR_SUCCESS;
+	test_cmd.send_err = -ENODEV;
+
+	err = send_sync();
+	zassert_equal(err, -EIO, "A failed send gave %d", err);
+
+	err = bt_hci_cmd_send_sync(TEST_OPCODE, NULL, NULL);
+	zassert_equal(err, -EIO, "The synchronous command gave %d", err);
+}
+
+/* A command that its encoder refuses is not sent, which the waiter is told */
+static ZTEST(cmd_op, test_wait_refused_by_encoder)
+{
+	int err;
+
+	encode_refusal = -ENOTCONN;
+
+	err = send_sync();
+	zassert_equal(err, -ECANCELED, "The refused command gave %d", err);
+	zassert_equal(test_cmd.count, 0U, "The controller got the command");
+}
+
+/* Only an operation with a future can be waited for */
+static ZTEST(cmd_op, test_wait_needs_future)
+{
+	zassert_ok(bt_hci_cmd_send_cb(&req.op, &param_cmd), "Sending the operation failed");
+	zassert_equal(bt_hci_cmd_op_wait(&req.op), -EINVAL, "A callback was waited for");
+	zassert_ok(k_sem_take(&cb_sem, K_SECONDS(1)), "The callback did not run");
+}
+
+static K_SEM_DEFINE(waiter_done, 0, 1);
+static int waiter_err;
+
+static void waiter_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	waiter_err = send_sync();
+	k_sem_give(&waiter_done);
+}
+
+static K_WORK_DEFINE(waiter_work, waiter_handler);
+
+/* The wait works on the system workqueue too, where the TX processor runs in
+ * one scenario of this suite: the waiter then gives the operation its buffer
+ * and sends the command by itself. Nothing is free for it at first: the
+ * controller has a command, and the pool has no buffer.
+ */
+static ZTEST(cmd_op, test_wait_on_system_workqueue)
+{
+	test_cmd.delay = K_FOREVER;
+	zassert_ok(bt_hci_cmd_send_async(&req, &plain_cmd), "Sending the operation failed");
+	k_sleep(K_MSEC(10));
+	zassert_equal(test_cmd.count, 1U, "The controller got %u commands", test_cmd.count);
+
+	(void)hold_buffers();
+	k_sem_reset(&waiter_done);
+	zassert_true(k_work_submit(&waiter_work) >= 0, "Starting the waiter failed");
+	k_sleep(K_MSEC(20));
+	zassert_equal(k_sem_count_get(&waiter_done), 0U, "The waiter returned early");
+	zassert_equal(test_cmd.count, 1U, "The controller got %u commands", test_cmd.count);
+
+	/* The waiter gets the buffer of the command that got the response */
+	test_cmd.delay = K_NO_WAIT;
+	test_cmd_respond(&test_cmd);
+
+	zassert_ok(k_sem_take(&waiter_done, K_SECONDS(1)), "The waiter did not return");
+	zassert_ok(waiter_err, "The waiter got %d", waiter_err);
+	zassert_ok(bt_future_wait(&req.fut, K_NO_WAIT), "The first operation did not complete");
+	zassert_equal(test_cmd.count, 2U, "The controller got %u commands", test_cmd.count);
+	zassert_equal(test_cmd_plen[1], 1U, "The command of the waiter had %u parameter bytes",
+		      test_cmd_plen[1]);
+	zassert_false(encode_unlocked, "The encoder ran without the host lock");
+}
+
 /* When the controller stops responding, every operation is handed back once,
  * whatever state it is in: with the controller, encoded, queued, or waiting
  * for its callback to run.
