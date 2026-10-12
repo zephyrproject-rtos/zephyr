@@ -59,7 +59,8 @@ config SOC_SERIES_NRF71_SKIP_PREV_IMAGE_INIT
 
 config SOC_NRF7120_APPROTECT_BOOT_WORKAROUND
 	bool
-	default y if (SOC_NRF7120_CPUAPP || SOC_NRF7120E_CPUAPP)
+	default y if (SOC_NRF7120_CPUAPP || SOC_NRF7120E_CPUAPP) && \
+		!SOC_SERIES_NRF71_SKIP_PREV_IMAGE_INIT
 	help
 	  Enable the APPROTECT boot workaround when using
 	  either nRF7120 or nRF7120E application core.
@@ -67,7 +68,7 @@ config SOC_NRF7120_APPROTECT_BOOT_WORKAROUND
 
 config SOC_NRF7120_WICR_SETUP
 	bool
-	default y if DT_HAS_NORDIC_NRF_WICR_ENABLED
+	default y if DT_HAS_NORDIC_NRF_WICR_ENABLED && !MCUBOOT
 	select NRFX_MRAMC if !BUILD_WITH_TFM
 	help
 	  Program the Wi-Fi Information Configuration Registers (WICR) at boot.
