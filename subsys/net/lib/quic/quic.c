@@ -971,6 +971,21 @@ static int pollfd_try_add(net_sa_family_t family, int sock)
 }
 
 /*
+ * Report a failed key import. Running out of PSA key slots is a
+ * configuration problem that is otherwise hard to tell from the log, so
+ * name it.
+ */
+static void quic_log_key_import_failure(const char *what, psa_status_t status)
+{
+	if (status == PSA_ERROR_INSUFFICIENT_MEMORY) {
+		NET_ERR("Failed to import %s key: no free PSA key slot, "
+			"see CONFIG_MBEDTLS_PSA_KEY_SLOT_COUNT", what);
+	} else {
+		NET_ERR("Failed to import %s key: %d", what, status);
+	}
+}
+
+/*
  * Cleanup helper to call when destroying context or switching keys.
  * Destroys all PSA keys and clears sensitive data.
  */
@@ -1602,8 +1617,7 @@ static int quic_hkdf_expand_label_ex(psa_algorithm_t hash_alg,
 
 	status = psa_import_key(&attributes, secret, secret_len, &key_id);
 	if (status != PSA_SUCCESS) {
-		NET_DBG("psa_import_key failed: status=%d, hash_alg=0x%x, secret_len=%zu",
-			status, hash_alg, secret_len);
+		quic_log_key_import_failure("HKDF", status);
 		return -EIO;
 	}
 
@@ -1773,6 +1787,7 @@ static bool quic_hp_setup(struct quic_hp_cipher *hp_cipher, int hash_algo,
 	crypto_zero(hp_key, sizeof(hp_key));
 
 	if (status != PSA_SUCCESS) {
+		quic_log_key_import_failure("HP", status);
 		return false;
 	}
 
@@ -1859,6 +1874,7 @@ static bool quic_pp_setup(struct quic_pp_cipher *pp_cipher, int hash_algo,
 	crypto_zero(pp_key, sizeof(pp_key));
 
 	if (status != PSA_SUCCESS) {
+		quic_log_key_import_failure("PP", status);
 		memset(pp_cipher->iv, 0, sizeof(pp_cipher->iv));
 		return false;
 	}
@@ -1970,7 +1986,7 @@ static bool quic_hp_setup_ex(struct quic_hp_cipher *hp_cipher,
 	crypto_zero(hp_key, sizeof(hp_key));
 
 	if (status != PSA_SUCCESS) {
-		NET_ERR("Failed to import HP key:  %d", status);
+		quic_log_key_import_failure("HP", status);
 		return false;
 	}
 
@@ -2062,7 +2078,7 @@ static bool quic_pp_setup_ex(struct quic_pp_cipher *pp_cipher,
 	crypto_zero(pp_key, sizeof(pp_key));
 
 	if (status != PSA_SUCCESS) {
-		NET_ERR("Failed to import PP key:  %d", status);
+		quic_log_key_import_failure("PP", status);
 		memset(pp_cipher->iv, 0, sizeof(pp_cipher->iv));
 		return false;
 	}
