@@ -30,8 +30,11 @@
 
 #define H3_FRAME_DATA 0x00
 #define H3_FRAME_HEADERS 0x01
+#define H3_FRAME_CANCEL_PUSH 0x03
 #define H3_FRAME_SETTINGS 0x04
+#define H3_FRAME_PUSH_PROMISE 0x05
 #define H3_FRAME_GOAWAY 0x07
+#define H3_FRAME_MAX_PUSH_ID 0x0d
 
 #define H3_UNI_STREAM_CONTROL 0x00
 #define H3_UNI_STREAM_PUSH 0x01
@@ -1631,9 +1634,12 @@ ZTEST(server_h3_tests, test_http1_alt_svc_is_service_scoped)
 	expect_http1_alt_svc_response(ALT_SVC_DISABLED_PORT, false, 0U, 0U);
 }
 
-ZTEST(server_h3_tests, test_h3_goaway_on_request_stream_is_connection_error)
+/* Send a frame that is not allowed on a request stream and check that the
+ * server answers with a connection error and keeps running.
+ */
+static void expect_request_stream_frame_closes_connection(const uint8_t *frame,
+							  size_t frame_len)
 {
-	static const uint8_t goaway[] = { H3_FRAME_GOAWAY, 0x01, 0x00 };
 	struct zsock_pollfd pfd;
 	uint8_t buf[8];
 	int stream_fd;
@@ -1642,7 +1648,7 @@ ZTEST(server_h3_tests, test_h3_goaway_on_request_stream_is_connection_error)
 	start_h3_session(false);
 
 	stream_fd = open_client_stream(QUIC_STREAM_BIDIRECTIONAL);
-	send_all(stream_fd, goaway, sizeof(goaway));
+	send_all(stream_fd, frame, frame_len);
 
 	/* The connection error closes the stream: the fd becomes readable
 	 * and recv() reports end of stream rather than response data.
@@ -1651,10 +1657,10 @@ ZTEST(server_h3_tests, test_h3_goaway_on_request_stream_is_connection_error)
 	pfd.events = ZSOCK_POLLIN | ZSOCK_POLLHUP;
 	pfd.revents = 0;
 	ret = zsock_poll(&pfd, 1, RECV_TIMEOUT_S * MSEC_PER_SEC);
-	zassert_true(ret > 0, "Stream not closed after GOAWAY on request stream");
+	zassert_true(ret > 0, "Stream not closed after frame 0x%02x on request stream", frame[0]);
 
 	ret = zsock_recv(stream_fd, buf, sizeof(buf), 0);
-	zassert_true(ret <= 0, "Unexpected response data after GOAWAY (%d)", ret);
+	zassert_true(ret <= 0, "Unexpected response data after frame 0x%02x (%d)", frame[0], ret);
 
 	/* The whole connection must be closed, not only the request stream:
 	 * the connection socket reports that the peer hung up.
@@ -1663,10 +1669,11 @@ ZTEST(server_h3_tests, test_h3_goaway_on_request_stream_is_connection_error)
 	pfd.events = ZSOCK_POLLIN;
 	pfd.revents = 0;
 	ret = zsock_poll(&pfd, 1, RECV_TIMEOUT_S * MSEC_PER_SEC);
-	zassert_true(ret > 0, "Connection not closed after GOAWAY on request stream");
+	zassert_true(ret > 0, "Connection not closed after frame 0x%02x on request stream",
+		     frame[0]);
 	zassert_true((pfd.revents & ZSOCK_POLLHUP) != 0,
-		     "Connection still open after GOAWAY on request stream (0x%x)",
-		     pfd.revents);
+		     "Connection still open after frame 0x%02x on request stream (0x%x)",
+		     frame[0], pfd.revents);
 
 	/* Tear down this connection and confirm the server survived by
 	 * serving a fresh connection.
@@ -1677,6 +1684,41 @@ ZTEST(server_h3_tests, test_h3_goaway_on_request_stream_is_connection_error)
 	connect_h3_client(NULL);
 	start_h3_session(false);
 	send_get_and_expect_static(false);
+}
+
+ZTEST(server_h3_tests, test_h3_goaway_on_request_stream_is_connection_error)
+{
+	static const uint8_t frame[] = { H3_FRAME_GOAWAY, 0x01, 0x00 };
+
+	expect_request_stream_frame_closes_connection(frame, sizeof(frame));
+}
+
+ZTEST(server_h3_tests, test_h3_settings_on_request_stream_is_connection_error)
+{
+	static const uint8_t frame[] = { H3_FRAME_SETTINGS, 0x00 };
+
+	expect_request_stream_frame_closes_connection(frame, sizeof(frame));
+}
+
+ZTEST(server_h3_tests, test_h3_cancel_push_on_request_stream_is_connection_error)
+{
+	static const uint8_t frame[] = { H3_FRAME_CANCEL_PUSH, 0x01, 0x00 };
+
+	expect_request_stream_frame_closes_connection(frame, sizeof(frame));
+}
+
+ZTEST(server_h3_tests, test_h3_max_push_id_on_request_stream_is_connection_error)
+{
+	static const uint8_t frame[] = { H3_FRAME_MAX_PUSH_ID, 0x01, 0x00 };
+
+	expect_request_stream_frame_closes_connection(frame, sizeof(frame));
+}
+
+ZTEST(server_h3_tests, test_h3_push_promise_on_request_stream_is_connection_error)
+{
+	static const uint8_t frame[] = { H3_FRAME_PUSH_PROMISE, 0x01, 0x00 };
+
+	expect_request_stream_frame_closes_connection(frame, sizeof(frame));
 }
 
 ZTEST_SUITE(server_h3_function_tests, NULL, NULL, NULL, NULL, NULL);
