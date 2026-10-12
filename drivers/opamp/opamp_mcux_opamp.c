@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <fsl_opamp.h>
 #include <zephyr/drivers/opamp.h>
 #include <zephyr/pm/device.h>
 #if defined(CONFIG_SOC_FAMILY_LPC)
@@ -30,6 +29,18 @@ struct mcux_opamp_config {
 	const struct reset_dt_spec reset;
 #endif
 };
+
+/*
+ * OPAMP_CTR[NGAIN]/[PGAIN] encodings used by the follower default, from the
+ * same field tables as the gain index switch in mcux_opamp_set_gain().
+ */
+enum {
+	OPAMP_CTR_NGAIN_BUFFER_MODE = 0,
+	OPAMP_CTR_PGAIN_NON_INVERT_1X = 1,
+};
+
+/* OPAMP_CTR[PREF] encoding used when no non-inverting reference is configured. */
+#define OPAMP_CTR_PREF_VREFH4 3U
 
 static int mcux_opamp_pm_callback(const struct device *dev, enum pm_device_action action)
 {
@@ -88,12 +99,16 @@ static int mcux_opamp_set_gain(const struct device *dev, enum opamp_gain gain)
 		 * set Ngain to select different gains, and set Pgain
 		 * to be the same as Ngain.
 		 */
-		OPAMP_DoNegGainConfig(config->base, gain_index);
-		OPAMP_DoPosGainConfig(config->base, gain_index);
+		config->base->OPAMP_CTR = ((config->base->OPAMP_CTR & ~OPAMP_OPAMP_CTR_NGAIN_MASK) |
+					   OPAMP_OPAMP_CTR_NGAIN(gain_index));
+		config->base->OPAMP_CTR = ((config->base->OPAMP_CTR & ~OPAMP_OPAMP_CTR_PGAIN_MASK) |
+					   OPAMP_OPAMP_CTR_PGAIN(gain_index));
 		break;
 	case OPAMP_FUNCTIONAL_MODE_FOLLOWER:
-		OPAMP_DoNegGainConfig(config->base, kOPAMP_NegGainBufferMode);
-		OPAMP_DoPosGainConfig(config->base, kOPAMP_PosGainNonInvert1X);
+		config->base->OPAMP_CTR = ((config->base->OPAMP_CTR & ~OPAMP_OPAMP_CTR_NGAIN_MASK) |
+					   OPAMP_OPAMP_CTR_NGAIN(OPAMP_CTR_NGAIN_BUFFER_MODE));
+		config->base->OPAMP_CTR = ((config->base->OPAMP_CTR & ~OPAMP_OPAMP_CTR_PGAIN_MASK) |
+					   OPAMP_OPAMP_CTR_PGAIN(OPAMP_CTR_PGAIN_NON_INVERT_1X));
 	default:
 		break;
 	}
@@ -170,7 +185,7 @@ int mcux_opamp_init(const struct device *dev)
 		base->OPAMP_CTR &= ~OPAMP_OPAMP_CTR_BUFEN_MASK;
 #else
 		base->OPAMP_CTR = ((base->OPAMP_CTR & ~OPAMP_OPAMP_CTR_PREF_MASK) |
-						OPAMP_OPAMP_CTR_PREF(kOPAMP_PosRefVoltVrefh4));
+						OPAMP_OPAMP_CTR_PREF(OPAMP_CTR_PREF_VREFH4));
 #endif
 	}
 
@@ -188,7 +203,7 @@ int mcux_opamp_init(const struct device *dev)
 		base->OPAMP_CTR &= ~OPAMP_OPAMP_CTR_BUFEN_MASK;
 #else
 		base->OPAMP_CTR = ((base->OPAMP_CTR & ~OPAMP_OPAMP_CTR_PREF_MASK) |
-				   OPAMP_OPAMP_CTR_PREF(kOPAMP_PosRefVoltVrefh4));
+				   OPAMP_OPAMP_CTR_PREF(OPAMP_CTR_PREF_VREFH4));
 #endif
 		break;
 	default:
