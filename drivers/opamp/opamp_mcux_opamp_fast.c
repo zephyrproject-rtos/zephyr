@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <fsl_opamp.h>
 #include <zephyr/drivers/opamp.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/drivers/clock_control.h>
@@ -16,7 +15,7 @@ LOG_MODULE_REGISTER(nxp_opamp_fast, CONFIG_OPAMP_LOG_LEVEL);
 
 struct mcux_opamp_fast_config {
 	OPAMP_Type *base;
-	opamp_bias_current_t bias_current;
+	uint8_t bias_current;
 	uint8_t functional_mode;
 	uint8_t compensation_capcitor;
 	bool is_reference_source;
@@ -29,12 +28,12 @@ static int mcux_opamp_fast_pm_callback(const struct device *dev, enum pm_device_
 	const struct mcux_opamp_fast_config *config = dev->config;
 
 	if (action == PM_DEVICE_ACTION_RESUME) {
-		OPAMP_Enable(config->base, true);
+		config->base->OPAMP_CTRL |= OPAMP_OPAMP_CTRL_OPA_EN_MASK;
 		return 0;
 	}
 
 	if (action == PM_DEVICE_ACTION_SUSPEND) {
-		OPAMP_Enable(config->base, false);
+		config->base->OPAMP_CTRL &= ~OPAMP_OPAMP_CTRL_OPA_EN_MASK;
 		return 0;
 	}
 
@@ -71,11 +70,13 @@ int mcux_opamp_fast_init(const struct device *dev)
 		return ret;
 	}
 
-	OPAMP_SetBiasCurrent(base, config->bias_current);
-	OPAMP_SetCompensationCapcitor(base, config->compensation_capcitor);
+	base->OPAMP_CTRL = ((base->OPAMP_CTRL & ~OPAMP_OPAMP_CTRL_OPA_BC_SEL_MASK) |
+			    OPAMP_OPAMP_CTRL_OPA_BC_SEL(config->bias_current));
+	base->OPAMP_CTRL = ((base->OPAMP_CTRL & ~OPAMP_OPAMP_CTRL_OPA_CC_SEL_MASK) |
+			    OPAMP_OPAMP_CTRL_OPA_CC_SEL(config->compensation_capcitor));
 
 	if (config->is_reference_source) {
-		OPAMP_Enable(base, true);
+		base->OPAMP_CTRL |= OPAMP_OPAMP_CTRL_OPA_EN_MASK;
 	}
 
 	return pm_device_driver_init(dev, mcux_opamp_fast_pm_callback);
