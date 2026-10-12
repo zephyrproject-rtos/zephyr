@@ -1,5 +1,5 @@
 /*
- * Copyright 2017, 2024 NXP
+ * Copyright 2017, 2024, 2026 NXP
  * Copyright (c) 2020-2021 Vestas Wind Systems A/S
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -126,7 +126,12 @@ static int mcux_ftm_set_cycles(const struct device *dev, uint32_t channel,
 		data->period_cycles = period_cycles;
 
 		FTM_StopTimer(config->base);
-		FTM_SetTimerPeriod(config->base, period_cycles);
+		/* CNTIN is zero, so a period lasts MOD + 1 ticks. MOD has to be one
+		 * short of the tick count, or the period runs a tick long and 100%
+		 * duty is unreachable: the output stays active for a whole period
+		 * only once CnV > MOD.
+		 */
+		FTM_SetTimerPeriod(config->base, period_cycles - 1U);
 
 		FTM_SetSoftwareTrigger(config->base, true);
 		FTM_StartTimer(config->base, config->ftm_clock_source);
@@ -484,7 +489,7 @@ static int mcux_ftm_init(const struct device *dev)
 			     kFTM_TimeOverflowInterruptEnable);
 
 	data->period_cycles = 0xFFFFU;
-	FTM_SetTimerPeriod(config->base, data->period_cycles);
+	FTM_SetTimerPeriod(config->base, data->period_cycles - 1U);
 	FTM_SetSoftwareTrigger(config->base, true);
 	FTM_StartTimer(config->base, config->ftm_clock_source);
 #endif /* CONFIG_PWM_CAPTURE */
