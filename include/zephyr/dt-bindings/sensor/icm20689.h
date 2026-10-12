@@ -55,12 +55,12 @@
  */
 #define ICM20689_DT_ACCEL_DLPF_218_1HZ_CFG0 0x00 /**< 218.1 Hz, CFG 0 */
 #define ICM20689_DT_ACCEL_DLPF_218_1HZ_CFG1 0x01 /**< 218.1 Hz, CFG 1 */
-#define ICM20689_DT_ACCEL_DLPF_99HZ         0x02 /**< 99 Hz */
+#define ICM20689_DT_ACCEL_DLPF_99_0HZ       0x02 /**< 99.0 Hz */
 #define ICM20689_DT_ACCEL_DLPF_44_8HZ       0x03 /**< 44.8 Hz */
 #define ICM20689_DT_ACCEL_DLPF_21_2HZ       0x04 /**< 21.2 Hz */
 #define ICM20689_DT_ACCEL_DLPF_10_2HZ       0x05 /**< 10.2 Hz */
 #define ICM20689_DT_ACCEL_DLPF_5_1HZ        0x06 /**< 5.1 Hz */
-#define ICM20689_DT_ACCEL_DLPF_420HZ        0x07 /**< 420 Hz */
+#define ICM20689_DT_ACCEL_DLPF_420_0HZ      0x07 /**< 420.0 Hz */
 #define ICM20689_DT_ACCEL_BYPASS_1046HZ     0x08 /**< 1046 Hz, DLPF bypass */
 /** @} */
 
