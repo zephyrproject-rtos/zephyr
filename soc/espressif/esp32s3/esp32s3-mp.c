@@ -14,6 +14,7 @@
 #include <esp_log.h>
 #include <esp_cpu.h>
 #include <esp_rom_serial_output.h>
+#include <rom/cache.h>
 
 #include <esp_mcuboot_image.h>
 #include <esp_memory_utils.h>
@@ -149,7 +150,17 @@ int IRAM_ATTR esp_appcpu_image_load(unsigned int hdr_offset, unsigned int *entry
 		image_header.irom_size,
 	};
 
+	/* map_rom_segments() disables the caches, which drops dirty DCache lines
+	 * instead of writing them back to PSRAM. Write them back first, and keep
+	 * interrupts masked so that nothing dirties PSRAM or runs from flash until
+	 * the caches are enabled again.
+	 */
+	unsigned int key = irq_lock();
+
+	Cache_WriteBack_All();
 	map_rom_segments(1, &rom);
+
+	irq_unlock(key);
 
 	ESP_EARLY_LOGI(TAG, "Application start=%xh\n\n", image_header.entry_addr);
 	esp_rom_output_tx_wait_idle(0);
