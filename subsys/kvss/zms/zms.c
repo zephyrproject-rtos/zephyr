@@ -714,18 +714,21 @@ static int zms_recover_last_ate(struct zms_fs *fs, uint64_t *addr, uint64_t *dat
 		if (rc) {
 			return rc;
 		}
-		if (zms_ate_valid(fs, &end_ate)) {
-			/* Found a valid ATE.
-			 * Unconditionally update ATE write address.
-			 * Only update data end address for entry with data.
-			 */
-			if (end_ate.len > ZMS_DATA_IN_ATE_SIZE) {
-				data_end_addr &= ADDR_SECT_MASK;
-				data_end_addr += end_ate.offset + zms_al_size(fs, end_ate.len);
-				*data_wra = data_end_addr;
-			}
-			*addr = ate_end_addr;
+		if (!zms_ate_valid(fs, &end_ate)) {
+			goto continue_ate_scan;
 		}
+		/* Found a valid ATE.
+		 * Unconditionally update ATE write address.
+		 */
+		*addr = ate_end_addr;
+		if (end_ate.len <= ZMS_DATA_IN_ATE_SIZE) {
+			goto continue_ate_scan;
+		}
+		/* Only update data end address for entry with data. */
+		data_end_addr &= ADDR_SECT_MASK;
+		data_end_addr += end_ate.offset + zms_al_size(fs, end_ate.len);
+		*data_wra = data_end_addr;
+continue_ate_scan:
 		ate_end_addr -= fs->ate_size;
 	}
 
