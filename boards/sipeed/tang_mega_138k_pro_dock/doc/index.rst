@@ -91,7 +91,7 @@ firmware area reserved by the board runner; it does not program the FPGA image.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: tang_mega_138k_pro_dock/ae350/demo
+   :board: tang_mega_138k_pro_dock/ae350_25/demo
    :goals: build flash
 
 
@@ -125,7 +125,7 @@ mapping is read-only to the debugger:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: tang_mega_138k_pro_dock/ae350/demo
+   :board: tang_mega_138k_pro_dock/ae350_25/demo
    :maybe-skip-config:
    :goals: attach
 
@@ -135,7 +135,7 @@ the ELF directly into RAM:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: tang_mega_138k_pro_dock/ae350/demo
+   :board: tang_mega_138k_pro_dock/ae350_25/demo
    :maybe-skip-config:
    :goals: build debug
 

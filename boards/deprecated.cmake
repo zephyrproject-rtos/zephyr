@@ -121,3 +121,9 @@ set(w6300_evb_pico2/rp2350a/m33_DEPRECATED
 set(stm32mp157c_dk2_DEPRECATED
     stm32mp157x_dk2/stm32mp157cxx
 )
+set(tang_mega_138k_pro_dock/ae350_DEPRECATED
+    tang_mega_138k_pro_dock/ae350_25
+)
+set(tang_mega_138k_pro_dock/ae350/demo_DEPRECATED
+    tang_mega_138k_pro_dock/ae350_25/demo
+)
