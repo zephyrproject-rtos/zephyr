@@ -727,6 +727,8 @@
 			status = "disabled";
 			clocks = <&syscon MCUX_OPAMP0_CLK>;
 			functional-mode = "follower";
+			power-domains = <&core_domain>;
+			zephyr,disabling-power-states = <&powerdown &deeppowerdown>;
 		};
 
 		opamp1: opamp@400b8000 {
@@ -735,6 +737,8 @@
 			status = "disabled";
 			clocks = <&syscon MCUX_OPAMP1_CLK>;
 			functional-mode = "follower";
+			power-domains = <&core_domain>;
+			zephyr,disabling-power-states = <&powerdown &deeppowerdown>;
 		};
 
 		opamp2: opamp@400b9000 {
@@ -743,6 +747,8 @@
 			status = "disabled";
 			clocks = <&syscon MCUX_OPAMP2_CLK>;
 			functional-mode = "follower";
+			power-domains = <&core_domain>;
+			zephyr,disabling-power-states = <&powerdown &deeppowerdown>;
 		};
 	};
 };
