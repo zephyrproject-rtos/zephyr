@@ -176,3 +176,7 @@
 	pinctrl-names = "default";
 	status = "disabled";
 };
+
+&adc0 {
+	dmas = <&dma 6 23>;
+};
