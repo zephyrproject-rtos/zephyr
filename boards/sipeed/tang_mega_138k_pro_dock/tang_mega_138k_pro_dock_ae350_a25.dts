@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <riscv/andes/andes_v5_ae350.dtsi>
+#include <riscv/andes/andes_v5_ae350_a25.dtsi>
 #include <freq.h>
 
 /delete-node/ &spi0;
