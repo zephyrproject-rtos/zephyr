@@ -38,6 +38,9 @@ tests:
       - rpi_pico
       - sltb010a@0
       - mr_canhubk3
+      - lp_mspm0g3519
+      - lp_mspm0g3507
+      - lp_mspm0l2228
     integration_platforms:
       - nucleo_f091rc
     extra_configs:
