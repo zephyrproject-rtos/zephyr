@@ -2943,11 +2943,30 @@ static int handle_accepted_stream(struct http_client_ctx *client,
 		}
 
 		ret = h3_identify_uni_stream(client, stream_sock);
-		if (ret != 0) {
-			if (ret == -EAGAIN) {
-				return 0;
-			}
+		if (ret == -EAGAIN) {
+			return 0;
+		}
 
+		if (ret == -ECONNRESET) {
+			/* The stream was closed or reset before its type
+			 * arrived, which must be tolerated (RFC 9114 ch. 6.2).
+			 * Drop the stream and keep the connection.
+			 */
+			zsock_close(stream_sock);
+			return H3_STREAM_IGNORED;
+		}
+
+		if (ret < 0) {
+			/* The stream was rejected and nothing tracks its fd,
+			 * so the caller, which only sees the error, cannot
+			 * close it. Close it here: an open stream keeps its
+			 * QUIC stream and connection context allocated.
+			 */
+			zsock_close(stream_sock);
+			return ret;
+		}
+
+		if (ret != 0) {
 			return ret;
 		}
 
