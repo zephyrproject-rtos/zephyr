@@ -33,6 +33,7 @@ config SOC_AE350_INTERRUPT_TYPE_PLIC
 
 config SOC_AE350_INTERRUPT_TYPE_CLIC
 	bool "CLIC"
+	depends on CPU_ANDES_N22 || CPU_ANDES_N225 || CPU_ANDES_D23
 	select RISCV_HAS_CLIC
 	select CLIC_SMCLICSHV_EXT if RISCV_VECTORED_MODE
 	select CLIC_SMCLICCONFIG_EXT
@@ -43,6 +44,8 @@ endchoice
 config SOC_ANDES_V5_IOCP
 	bool "Andes V5 I/O Coherence Port (IOCP)"
 	depends on DCACHE
+	depends on CPU_ANDES_A25 || CPU_ANDES_AX25 || CPU_ANDES_A45 || CPU_ANDES_AX45 || \
+		CPU_ANDES_A46 || CPU_ANDES_AX46 || CPU_ANDES_AX65
 	help
 	  Support Andes V5 I/O Coherence Port to handle cache coherency between cache and external
 	  non-caching master, such as DMA controller.
