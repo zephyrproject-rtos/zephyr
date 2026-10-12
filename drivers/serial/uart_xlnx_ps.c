@@ -858,12 +858,35 @@ static inline enum uart_config_flow_control uart_xlnx_ps_ll2cfg_hwctrl(uint32_t 
 }
 
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+/*
+ * The rate the divider pair produces, or the rate asked for while the pair is
+ * within 3% of it: the sample point drifts by 9.5 times the error over a frame
+ * and stays inside the stop bit, so the port works at the rate asked for.
+ */
+static uint32_t get_baudrate(const struct device *dev)
+{
+	const struct uart_xlnx_ps_dev_config *dev_cfg = dev->config;
+	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
+	uint32_t generator = sys_read32(reg_base + XUARTPS_BAUDGEN_OFFSET);
+	uint32_t divisor = sys_read32(reg_base + XUARTPS_BAUDDIV_OFFSET);
+	uint32_t asked = dev_cfg->baud_rate;
+	uint32_t actual, error;
+
+	if (generator == 0U) {
+		return 0U;
+	}
+	actual = dev_cfg->sys_clk_freq / (generator * (divisor + 1U));
+	error = (actual > asked) ? actual - asked : asked - actual;
+
+	return (error > asked * 3U / 100U) ? actual : asked;
+}
+
 /**
  * @brief Returns the current configuration of the UART at run-time.
  *
  * Returns the current configuration of the UART at run-time by obtaining
- * the current configuration from the UART's Mode and Modem Control Registers
- * (exception: baud rate).
+ * the current configuration from the UART's Mode, Modem Control and baud
+ * rate registers.
  *
  * @param dev UART device struct
  * @param cfg Pointer to the data structure to which the current configuration
@@ -873,7 +896,6 @@ static inline enum uart_config_flow_control uart_xlnx_ps_ll2cfg_hwctrl(uint32_t 
  */
 static int uart_xlnx_ps_config_get(const struct device *dev, struct uart_config *cfg)
 {
-	const struct uart_xlnx_ps_dev_config *dev_cfg = dev->config;
 	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 
 	/*
@@ -885,7 +907,7 @@ static int uart_xlnx_ps_config_get(const struct device *dev, struct uart_config 
 	uint32_t mode_reg = sys_read32(reg_base + XUARTPS_MR_OFFSET);
 	uint32_t modemcr_reg = sys_read32(reg_base + XUARTPS_MODEMCR_OFFSET);
 
-	cfg->baudrate = dev_cfg->baud_rate;
+	cfg->baudrate = get_baudrate(dev);
 	cfg->parity = uart_xlnx_ps_ll2cfg_parity(mode_reg);
 	cfg->stop_bits = uart_xlnx_ps_ll2cfg_stopbits(mode_reg);
 	cfg->data_bits = uart_xlnx_ps_ll2cfg_databits(mode_reg);
