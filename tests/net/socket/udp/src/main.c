@@ -480,6 +480,87 @@ ZTEST_USER(net_socket_udp, test_12_v4_sendmsg_recvfrom)
 	zassert_equal(rv, 0, "close failed");
 }
 
+/* A control message header with a length that cannot be valid ends the walk
+ * over the control buffer: one that is shorter than a header, and one that
+ * is longer than the rest of the buffer, where the largest value makes the
+ * aligned length wrap around to zero on 32-bit targets. A length of zero is
+ * what the stack finds when the buffer is larger than the control messages
+ * placed in it and the rest is zeroed.
+ */
+ZTEST_USER(net_socket_udp, test_12_v4_sendmsg_invalid_control_length)
+{
+	static const socklen_t lengths[] = {
+		0,
+		sizeof(struct cmsghdr) - 1,
+		CMSG_SPACE(sizeof(int)) + 1,
+		UINT32_MAX,
+	};
+	int rv;
+	int client_sock;
+	int server_sock;
+	struct sockaddr_in client_addr;
+	struct sockaddr_in server_addr;
+	struct msghdr msg;
+	struct cmsghdr *cmsg;
+	struct iovec io_vector[1];
+	union {
+		struct cmsghdr hdr;
+		unsigned char  buf[2 * CMSG_SPACE(sizeof(int))];
+	} cmsgbuf;
+
+	prepare_sock_udp_v4(MY_IPV4_ADDR, ANY_PORT, &client_sock, &client_addr);
+	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock, &server_addr);
+
+	rv = zsock_bind(server_sock,
+			(struct sockaddr *)&server_addr,
+			sizeof(server_addr));
+	zassert_equal(rv, 0, "server bind failed");
+
+	rv = zsock_bind(client_sock,
+			(struct sockaddr *)&client_addr,
+			sizeof(client_addr));
+	zassert_equal(rv, 0, "client bind failed");
+
+	io_vector[0].iov_base = TEST_STR_SMALL;
+	io_vector[0].iov_len = strlen(TEST_STR_SMALL);
+
+	ARRAY_FOR_EACH(lengths, i) {
+		memset(&cmsgbuf, 0, sizeof(cmsgbuf));
+		memset(&msg, 0, sizeof(msg));
+		msg.msg_control = &cmsgbuf.buf;
+		msg.msg_controllen = sizeof(cmsgbuf.buf);
+		msg.msg_iov = io_vector;
+		msg.msg_iovlen = 1;
+		msg.msg_name = &server_addr;
+		msg.msg_namelen = sizeof(server_addr);
+
+		cmsg = CMSG_FIRSTHDR(&msg);
+		cmsg->cmsg_len = CMSG_LEN(sizeof(int));
+		cmsg->cmsg_level = SOL_SOCKET;
+		cmsg->cmsg_type = 1122;
+		*(int *)CMSG_DATA(cmsg) = 42;
+
+		cmsg = CMSG_NXTHDR(&msg, cmsg);
+		zassert_not_null(cmsg, "no room for a second header");
+		cmsg->cmsg_len = lengths[i];
+		zassert_is_null(CMSG_NXTHDR(&msg, cmsg),
+				"walk does not stop at a header of length %u", lengths[i]);
+
+		comm_sendmsg_recvfrom(client_sock,
+				      (struct sockaddr *)&client_addr,
+				      sizeof(client_addr),
+				      &msg,
+				      server_sock,
+				      (struct sockaddr *)&server_addr,
+				      sizeof(server_addr));
+	}
+
+	rv = zsock_close(client_sock);
+	zassert_equal(rv, 0, "close failed");
+	rv = zsock_close(server_sock);
+	zassert_equal(rv, 0, "close failed");
+}
+
 ZTEST_USER(net_socket_udp, test_13_v4_sendmsg_recvfrom_no_aux_data)
 {
 	int rv;
