@@ -87,6 +87,8 @@
 		operation-mode = "low_noise";
 		functional-mode = "follower";
 		clocks = <&syscon MCUX_OPAMP0_CLK>;
+		power-domains = <&core_domain>;
+		zephyr,disabling-power-states = <&powerdown &deeppowerdown>;
 		status = "disabled";
 	};
 
@@ -107,6 +109,8 @@
 		operation-mode = "low_noise";
 		functional-mode = "follower";
 		clocks = <&syscon MCUX_OPAMP1_CLK>;
+		power-domains = <&core_domain>;
+		zephyr,disabling-power-states = <&powerdown &deeppowerdown>;
 		status = "disabled";
 	};
 
@@ -125,6 +129,8 @@
 		operation-mode = "low_noise";
 		functional-mode = "follower";
 		clocks = <&syscon MCUX_OPAMP2_CLK>;
+		power-domains = <&core_domain>;
+		zephyr,disabling-power-states = <&powerdown &deeppowerdown>;
 		status = "disabled";
 	};
 };
