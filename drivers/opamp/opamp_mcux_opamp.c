@@ -17,6 +17,14 @@ LOG_MODULE_REGISTER(nxp_opamp, CONFIG_OPAMP_LOG_LEVEL);
 
 #define DT_DRV_COMPAT nxp_opamp
 
+/*
+ * With CONFIG_PM_DEVICE_RUNTIME the consumer owns the amplifier's lifetime. An
+ * amplifier output has no completion event the driver could hang a
+ * pm_device_runtime_put() on, so the driver takes no runtime reference of its
+ * own: call pm_device_runtime_get() before opamp_set_gain() and keep the
+ * reference for as long as the output is needed.
+ */
+
 struct mcux_opamp_config {
 	OPAMP_Type *base;
 	uint8_t positive_reference;
@@ -62,6 +70,21 @@ static void mcux_opamp_suspend_rollback(const struct device *dev)
 
 	(void)pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	config->base->OPAMP_CTR |= OPAMP_OPAMP_CTR_EN_MASK;
+}
+
+/*
+ * Only an active device holds its clock. A suspended device has OPAMP_CTR[EN]
+ * cleared and its clock gated, and one the core has turned off has lost the
+ * contents of its register block. Without CONFIG_PM_DEVICE
+ * pm_device_state_get() reports the device as active and this check passes.
+ */
+static bool mcux_opamp_is_active(const struct device *dev)
+{
+	enum pm_device_state state;
+
+	(void)pm_device_state_get(dev, &state);
+
+	return state == PM_DEVICE_STATE_ACTIVE;
 }
 
 static void mcux_opamp_apply_gain(const struct device *dev, uint8_t gain_index)
@@ -212,6 +235,11 @@ static int mcux_opamp_set_gain(const struct device *dev, enum opamp_gain gain)
 	default:
 		LOG_ERR("Invalid gain value: %d", gain);
 		return -EINVAL;
+	}
+
+	if (!mcux_opamp_is_active(dev)) {
+		LOG_ERR("device is not active");
+		return -EBUSY;
 	}
 
 	data->gain_index = gain_index;
