@@ -1460,6 +1460,54 @@ static bool close_silent_transport(void)
 	return true;
 }
 
+/* The command deadline has given up on the Controller, with the command of a
+ * synchronous sender outstanding or still queued: the policy is an assert,
+ * except for a Controller that has sent nothing during bt_enable(), which may
+ * be missing rather than broken and makes bt_enable() fail instead.
+ *
+ * Return true if the sender is to fail with -ETIMEDOUT.
+ */
+static bool cmd_sync_gave_up(uint16_t opcode, int err)
+{
+	/* The flag rather than the error alone: the handler of the return
+	 * parameters of an operation may fail it with any error
+	 */
+	if ((err != -ETIMEDOUT && err != -EHOSTDOWN) ||
+	    !atomic_test_bit(bt_dev.flags, BT_DEV_CMD_FAILED)) {
+		return false;
+	}
+
+	if (close_silent_transport()) {
+		LOG_ERR("No response from the Controller, command opcode 0x%04x timeout", opcode);
+		return true;
+	}
+
+	BT_ASSERT_MSG(false, "Controller unresponsive, command opcode 0x%04x timeout", opcode);
+
+	return false;
+}
+
+/* What a synchronous sender returns for the status that the controller
+ * responded to its command with.
+ */
+static int cmd_status_to_errno(uint8_t status)
+{
+	switch (status) {
+	case BT_HCI_ERR_SUCCESS:
+		return 0;
+	case BT_HCI_ERR_CONN_LIMIT_EXCEEDED:
+		return -ECONNREFUSED;
+	case BT_HCI_ERR_INSUFFICIENT_RESOURCES:
+		return -ENOMEM;
+	case BT_HCI_ERR_INVALID_PARAM:
+		return -EINVAL;
+	case BT_HCI_ERR_CMD_DISALLOWED:
+		return -EACCES;
+	default:
+		return -EIO;
+	}
+}
+
 int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 			 struct net_buf **rsp)
 {
@@ -1539,22 +1587,9 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 
 	err = -(int)cmd(buf)->err;
 
-	/* The command deadline has given up on the Controller, with this
-	 * command outstanding or still queued: the policy is an assert, except
-	 * for a Controller that has sent nothing during bt_enable(), which may
-	 * be missing rather than broken and makes bt_enable() fail instead.
-	 */
-	if (err == -ETIMEDOUT ||
-	    (err == -EHOSTDOWN && atomic_test_bit(bt_dev.flags, BT_DEV_CMD_FAILED))) {
-		if (close_silent_transport()) {
-			LOG_ERR("No response from the Controller, command opcode 0x%04x timeout",
-				opcode);
-			net_buf_unref(buf);
-			return -ETIMEDOUT;
-		}
-
-		BT_ASSERT_MSG(false, "Controller unresponsive, command opcode 0x%04x timeout",
-			      opcode);
+	if (cmd_sync_gave_up(opcode, err)) {
+		net_buf_unref(buf);
+		return -ETIMEDOUT;
 	}
 
 	if (err != 0) {
@@ -1570,18 +1605,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 			status, bt_hci_err_to_str(status));
 		net_buf_unref(buf);
 
-		switch (status) {
-		case BT_HCI_ERR_CONN_LIMIT_EXCEEDED:
-			return -ECONNREFUSED;
-		case BT_HCI_ERR_INSUFFICIENT_RESOURCES:
-			return -ENOMEM;
-		case BT_HCI_ERR_INVALID_PARAM:
-			return -EINVAL;
-		case BT_HCI_ERR_CMD_DISALLOWED:
-			return -EACCES;
-		default:
-			return -EIO;
-		}
+		return cmd_status_to_errno(status);
 	}
 
 	LOG_DBG("rsp %p opcode 0x%04x len %u", buf, opcode, buf->len);
@@ -1594,6 +1618,65 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 
 	return 0;
 }
+
+#if defined(CONFIG_BT_CONN)
+int bt_hci_cmd_op_result(struct bt_hci_cmd_op *op, int result)
+{
+	uint16_t opcode = op->desc->opcode;
+
+	if (cmd_sync_gave_up(opcode, result)) {
+		return -ETIMEDOUT;
+	}
+
+	if (result < 0) {
+		LOG_WRN("opcode 0x%04x not completed (err %d)", opcode, result);
+		return result;
+	}
+
+	if (result > 0) {
+		LOG_WRN("opcode 0x%04x status 0x%02x %s", opcode, result,
+			bt_hci_err_to_str((uint8_t)result));
+	}
+
+	return cmd_status_to_errno((uint8_t)result);
+}
+
+int bt_hci_cmd_op_wait(struct bt_hci_cmd_op *op)
+{
+	struct bt_future *fut = cmd_op_fut(op);
+
+	if (op->kind != CMD_OP_KIND_FUTURE) {
+		__ASSERT_NO_MSG(false);
+		return -EINVAL;
+	}
+
+	if (!IS_ENABLED(CONFIG_BT_TX_PROCESSOR_THREAD) &&
+	    k_current_get() == k_sys_work_q.thread_id) {
+		/* The TX processor shares this thread: its part for the
+		 * commands is done from here until the operation has been
+		 * handed back. Nothing wakes this thread up for a freed
+		 * command buffer or a command credit, hence the short waits.
+		 */
+		while (bt_future_wait(fut, K_NO_WAIT) != 0) {
+			bool sent;
+
+			bt_dev_lock();
+			cmd_ops_dispatch();
+			sent = process_pending_cmd(K_NO_WAIT);
+			bt_dev_unlock();
+
+			if (!sent) {
+				(void)bt_future_wait(fut, K_MSEC(1));
+			}
+		}
+	}
+
+	(void)bt_future_wait(fut, K_FOREVER);
+
+	/* The operation is the caller's again */
+	return bt_hci_cmd_op_result(op, fut->result);
+}
+#endif /* CONFIG_BT_CONN */
 
 int bt_hci_le_rand(void *buffer, size_t len)
 {
@@ -6593,9 +6676,10 @@ static void tx_processor(struct k_work *item)
 	 */
 	bt_dev_lock();
 
-	/* The operations get their buffers here and nowhere else: their
-	 * encoders rely on the host lock, which a synchronous sender that
-	 * drains the command queue from the system workqueue does not hold.
+	/* The operations get their buffers with the host lock held, which
+	 * their encoders rely on: here and in bt_hci_cmd_op_wait(), but not
+	 * from a synchronous sender that drains the command queue from the
+	 * system workqueue, which does not hold it.
 	 */
 	cmd_ops_dispatch();
 

@@ -210,9 +210,10 @@ int bt_hci_cmd_send_cb(struct bt_hci_cmd_op *op, const struct bt_hci_cmd_desc *d
  *  resolved.
  *
  *  A function that has @p req on its stack must not return while the operation
- *  is pending. Every operation is handed back, so the function waits for the
- *  future with K_FOREVER. After a shorter wait that timed out it cancels the
- *  operation and then waits with K_FOREVER, whatever the cancel returned:
+ *  is pending. Every operation is handed back, so the function waits for it
+ *  without a timeout, with bt_hci_cmd_op_wait() if it is to return what a
+ *  synchronous command would. After a shorter wait that timed out it cancels
+ *  the operation and then waits with K_FOREVER, whatever the cancel returned:
  *
  *  @code{.c}
  *  if (bt_future_wait(&req.fut, timeout) != 0) {
@@ -227,6 +228,49 @@ int bt_hci_cmd_send_cb(struct bt_hci_cmd_op *op, const struct bt_hci_cmd_desc *d
  *  @return As bt_hci_cmd_send_cb().
  */
 int bt_hci_cmd_send_async(struct bt_hci_cmd_op_fut *req, const struct bt_hci_cmd_desc *desc);
+
+/** @brief Wait for an operation and get what a synchronous command returns.
+ *
+ *  For a function that sends an operation from its stack and returns the
+ *  outcome, in place of bt_hci_cmd_send_sync(): it blocks until the operation
+ *  has been handed back and can be called wherever bt_hci_cmd_send_sync() can.
+ *  That includes the system workqueue of a build without
+ *  @kconfig{CONFIG_BT_TX_PROCESSOR_THREAD}, where a wait for the future alone
+ *  blocks the thread that sends the command.
+ *
+ *  A controller that has stopped responding is met with the policy of
+ *  bt_hci_cmd_send_sync(), an assert. bt_hci_cmd_op_status() still gives the
+ *  status that the controller responded with.
+ *
+ *  @param op Operation that bt_hci_cmd_send_async() has accepted.
+ *
+ *  @retval 0 The controller responded with success.
+ *  @retval -ECONNREFUSED The controller responded with Connection Limit
+ *                        Exceeded.
+ *  @retval -ENOMEM The controller responded with Connection Rejected due to
+ *                  Limited Resources.
+ *  @retval -EINVAL The controller responded with Invalid HCI Command
+ *                  Parameters.
+ *  @retval -EACCES The controller responded with Command Disallowed.
+ *  @retval -EIO The controller responded with another error, or the HCI
+ *               driver failed to send the command.
+ *  @retval -errno Another negative result of bt_hci_cmd_send_cb().
+ */
+int bt_hci_cmd_op_wait(struct bt_hci_cmd_op *op);
+
+/** @brief Get what a synchronous command returns for a completion.
+ *
+ *  For a callback that is to treat its completion as bt_hci_cmd_op_wait()
+ *  does: a controller that has stopped responding is met with the policy of
+ *  bt_hci_cmd_send_sync(), and a status that the controller responded with
+ *  becomes an error number.
+ *
+ *  @param op     Operation that has been handed back.
+ *  @param result Result that it has been handed back with.
+ *
+ *  @return As bt_hci_cmd_op_wait().
+ */
+int bt_hci_cmd_op_result(struct bt_hci_cmd_op *op, int result);
 
 /** @brief Check whether an asynchronous HCI command operation is pending.
  *
