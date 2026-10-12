@@ -147,6 +147,10 @@ Complete lists: `doc/contribute/style/code.rst`, `doc/contribute/coding_guidelin
   constants; no octal constants.
 - No commented-out code; check every return value that carries an error; include guards in
   every header.
+- Minimize object scope (coding guideline rule 50, MISRA C:2012 Rule 8.9, CERT DCL19-C). If
+  only one function references an object, define it there, as a `static` local when it must
+  persist; if only one branch references it, define it in that branch. This holds in tests and
+  samples too, where file-scope state is the common idiom.
 - Dynamic allocation: the coding guidelines list MISRA Dir 4.12 (no dynamic allocation) and
   Rule 21.3 (no `<stdlib.h>` allocators) as required, while Rule A.4 allows the libc allocators
   in the kernel and subsystems use `k_malloc()`, `k_heap`, slabs and `net_buf` pools. Follow the
