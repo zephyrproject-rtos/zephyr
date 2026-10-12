@@ -10,20 +10,26 @@
  * security on every connection.
  *
  * Every step is acknowledged over the sync channel before the client moves on,
- * so that a Host operation cannot land while its flag is being cleared.
+ * so that a Host operation cannot land while its flag is being cleared. A second
+ * Host connects once, while the first one has Boot Protocol Mode and Suspend
+ * set, to show that the state is kept per connection. The sync channel only
+ * links devices 0 and 1, so the second Host is driven through its connection.
  */
 
 #include <errno.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/services/hids.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
 #include <zephyr/settings/settings.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 
@@ -37,9 +43,12 @@
 DEFINE_FLAG_STATIC(flag_connected);
 DEFINE_FLAG_STATIC(flag_disconnected);
 DEFINE_FLAG_STATIC(flag_set_report);
+DEFINE_FLAG_STATIC(flag_protocol_mode_changed);
 DEFINE_FLAG_STATIC(flag_ctrl_point);
+DEFINE_FLAG_STATIC(flag_second_disconnected);
 
 static struct bt_conn *server_conn;
+static struct bt_conn *second_conn;
 
 /* Last SET_REPORT, and the Feature Report value returned on GET_REPORT */
 static enum bt_hids_report_type set_report_type;
@@ -66,7 +75,28 @@ static void set_long_report(void)
 	TEST_ASSERT(err == 0, "Failed to set the long Feature Report: %d", err);
 }
 
+static enum bt_hids_protocol_mode last_protocol_mode;
+static atomic_t protocol_mode_changed_cnt;
+static struct bt_conn *last_ctrl_point_conn;
 static enum bt_hids_ctrl_point last_ctrl_point;
+
+static void verify_conn_state(struct bt_conn *conn, enum bt_hids_protocol_mode expected_mode,
+			      bool expected_suspended)
+{
+	enum bt_hids_protocol_mode mode;
+	bool suspended;
+	int err;
+
+	err = bt_hids_protocol_mode_get(conn, &mode);
+	TEST_ASSERT(err == 0, "Failed to get the Protocol Mode: %d", err);
+	TEST_ASSERT(mode == expected_mode, "Protocol Mode is %u, expected %u", mode,
+		    expected_mode);
+
+	err = bt_hids_suspend_state_get(conn, &suspended);
+	TEST_ASSERT(err == 0, "Failed to get the Suspend state: %d", err);
+	TEST_ASSERT(suspended == expected_suspended, "Suspend state is %d, expected %d",
+		    suspended, expected_suspended);
+}
 
 /* The HID Device informs the Host of its security requirements with the
  * Peripheral Security Request procedure, instead of
@@ -88,10 +118,22 @@ static void request_security(struct bt_conn *conn)
 
 static void server_connected(struct bt_conn *conn, uint8_t err)
 {
+	enum bt_hids_protocol_mode mode;
+	int get_err;
+
 	TEST_ASSERT(err == 0U, "Failed to connect (err 0x%02x)", err);
 
-	server_conn = bt_conn_ref(conn);
-	SET_FLAG(flag_connected);
+	/* The link does not have the security level of the characteristics yet */
+	get_err = bt_hids_protocol_mode_get(conn, &mode);
+	TEST_ASSERT(get_err == -ENOTCONN, "Got the Protocol Mode before security: %d", get_err);
+
+	if (server_conn == NULL) {
+		server_conn = bt_conn_ref(conn);
+		SET_FLAG(flag_connected);
+	} else {
+		TEST_ASSERT(second_conn == NULL, "A third Host connected");
+		second_conn = bt_conn_ref(conn);
+	}
 
 	if (IS_ENABLED(CONFIG_TEST_HIDS_SECURITY_REQUEST)) {
 		request_security(conn);
@@ -101,6 +143,13 @@ static void server_connected(struct bt_conn *conn, uint8_t err)
 static void server_disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	ARG_UNUSED(reason);
+
+	if (conn == second_conn) {
+		bt_conn_unref(second_conn);
+		second_conn = NULL;
+		SET_FLAG(flag_second_disconnected);
+		return;
+	}
 
 	if (conn != server_conn) {
 		return;
@@ -112,9 +161,24 @@ static void server_disconnected(struct bt_conn *conn, uint8_t reason)
 	SET_FLAG(flag_disconnected);
 }
 
+/* The application connection callbacks registered at run time are called before
+ * the ones of the service, so the service is not tracking the Host yet the
+ * first time its link reaches the security level. The getters return the
+ * default state anyway.
+ */
+static void server_security_changed(struct bt_conn *conn, bt_security_t level,
+				    enum bt_security_err err)
+{
+	TEST_ASSERT(err == BT_SECURITY_ERR_SUCCESS, "Security failed (err %d)", err);
+	TEST_ASSERT(level >= BT_SECURITY_L2, "Security level is %u", level);
+
+	verify_conn_state(conn, BT_HIDS_PROTOCOL_REPORT, false);
+}
+
 static struct bt_conn_cb server_conn_cb = {
 	.connected = server_connected,
 	.disconnected = server_disconnected,
+	.security_changed = server_security_changed,
 };
 
 static void set_report(struct bt_conn *conn, enum bt_hids_report_type report_type,
@@ -136,16 +200,35 @@ static void set_report(struct bt_conn *conn, enum bt_hids_report_type report_typ
 	SET_FLAG(flag_set_report);
 }
 
-static void ctrl_point(struct bt_conn *conn, enum bt_hids_ctrl_point cmd)
+static void protocol_mode_changed(struct bt_conn *conn, enum bt_hids_protocol_mode protocol)
 {
 	ARG_UNUSED(conn);
 
+	last_protocol_mode = protocol;
+	atomic_inc(&protocol_mode_changed_cnt);
+	SET_FLAG(flag_protocol_mode_changed);
+}
+
+static void ctrl_point(struct bt_conn *conn, enum bt_hids_ctrl_point cmd)
+{
+	last_ctrl_point_conn = conn;
 	last_ctrl_point = cmd;
 	SET_FLAG(flag_ctrl_point);
 }
 
+static void verify_suspend_state(bool expected)
+{
+	bool suspended;
+	int err;
+
+	err = bt_hids_suspend_state_get(server_conn, &suspended);
+	TEST_ASSERT(err == 0, "Failed to get the Suspend state: %d", err);
+	TEST_ASSERT(suspended == expected, "Suspend state is %d", suspended);
+}
+
 static const struct bt_hids_cb hids_cb = {
 	.set_report = set_report,
+	.protocol_mode_changed = protocol_mode_changed,
 	.ctrl_point = ctrl_point,
 };
 
@@ -168,12 +251,24 @@ static const struct bt_data ad[] = {
 	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
 };
 
-static void start_adv(void)
+static const struct bt_data second_host_ad[] = {
+	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+	BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_HIDS_VAL)),
+	BT_DATA(BT_DATA_NAME_COMPLETE, TEST_SECOND_HOST_ADV_NAME,
+		sizeof(TEST_SECOND_HOST_ADV_NAME) - 1),
+};
+
+static void start_adv_data(const struct bt_data *data, size_t len)
 {
 	int err;
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, data, len, NULL, 0);
 	TEST_ASSERT(err == 0, "Failed to start advertising: %d", err);
+}
+
+static void start_adv(void)
+{
+	start_adv_data(ad, ARRAY_SIZE(ad));
 }
 
 static void send_input_report(void)
@@ -306,8 +401,89 @@ static void test_register_validation(void)
 	TEST_ASSERT(err == -EINVAL, "Duplicate Feature Report ID accepted: %d", err);
 }
 
+/* The Protocol Mode and the Suspend state are per connection and reset to
+ * their default values every time a Host connects.
+ */
+static void verify_per_connection_defaults(void)
+{
+	verify_conn_state(server_conn, BT_HIDS_PROTOCOL_REPORT, false);
+}
+
+/* The second Host reads Report Protocol Mode and writes Exit Suspend while the
+ * first Host has Boot Protocol Mode and Suspend set, and neither Host sees the
+ * state of the other.
+ */
+static void test_second_host(void)
+{
+	int err;
+
+	UNSET_FLAG(flag_second_disconnected);
+	start_adv_data(second_host_ad, ARRAY_SIZE(second_host_ad));
+
+	/* The connection of the second Host fails to be established when its
+	 * first connection events collide with those of the first Host. The
+	 * second Host then connects again.
+	 */
+	while (!IS_FLAG_SET(flag_ctrl_point)) {
+		if (IS_FLAG_SET(flag_second_disconnected)) {
+			UNSET_FLAG(flag_second_disconnected);
+			start_adv_data(second_host_ad, ARRAY_SIZE(second_host_ad));
+		}
+
+		k_sleep(K_MSEC(10));
+	}
+
+	TEST_ASSERT(last_ctrl_point_conn == second_conn, "HID Control Point written by %p",
+		    (void *)last_ctrl_point_conn);
+	TEST_ASSERT(last_ctrl_point == BT_HIDS_CTRL_EXIT_SUSPEND, "HID Control Point command %u",
+		    last_ctrl_point);
+	UNSET_FLAG(flag_ctrl_point);
+
+	verify_conn_state(second_conn, BT_HIDS_PROTOCOL_REPORT, false);
+	verify_conn_state(server_conn, BT_HIDS_PROTOCOL_BOOT, true);
+
+	err = bt_conn_disconnect(second_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	TEST_ASSERT(err == 0, "Failed to disconnect the second Host: %d", err);
+	WAIT_FOR_FLAG(flag_second_disconnected);
+}
+
+/* Both getters fail the same way when the service has no state for the Host */
+static void verify_conn_state_error(int expected)
+{
+	enum bt_hids_protocol_mode mode;
+	bool suspended;
+	int err;
+
+	err = bt_hids_protocol_mode_get(server_conn, &mode);
+	TEST_ASSERT(err == expected, "Got the Protocol Mode: %d, expected %d", err, expected);
+
+	err = bt_hids_suspend_state_get(server_conn, &suspended);
+	TEST_ASSERT(err == expected, "Got the Suspend state: %d, expected %d", err, expected);
+}
+
+static void test_conn_state_validation(void)
+{
+	enum bt_hids_protocol_mode mode;
+	bool suspended;
+	int err;
+
+	err = bt_hids_protocol_mode_get(NULL, &mode);
+	TEST_ASSERT(err == -EINVAL, "Got the Protocol Mode of no connection: %d", err);
+
+	err = bt_hids_protocol_mode_get(server_conn, NULL);
+	TEST_ASSERT(err == -EINVAL, "Got the Protocol Mode into NULL: %d", err);
+
+	err = bt_hids_suspend_state_get(NULL, &suspended);
+	TEST_ASSERT(err == -EINVAL, "Got the Suspend state of no connection: %d", err);
+
+	err = bt_hids_suspend_state_get(server_conn, NULL);
+	TEST_ASSERT(err == -EINVAL, "Got the Suspend state into NULL: %d", err);
+}
+
 static void test_hids_server(void)
 {
+	enum bt_hids_protocol_mode mode;
+	atomic_val_t cnt;
 	int err;
 
 	TEST_START("HID Service server test");
@@ -352,6 +528,8 @@ static void test_hids_server(void)
 	/* The client has subscribed to the Input Report */
 	WAIT_FOR_FLAG(flag_connected);
 	bk_sync_wait();
+	verify_per_connection_defaults();
+	test_conn_state_validation();
 	test_send_report_validation();
 
 	/* The client waits for this Input Report notification */
@@ -383,6 +561,7 @@ static void test_hids_server(void)
 	WAIT_FOR_FLAG(flag_ctrl_point);
 	TEST_ASSERT(last_ctrl_point == BT_HIDS_CTRL_SUSPEND, "HID Control Point command %u",
 		    last_ctrl_point);
+	verify_suspend_state(true);
 	UNSET_FLAG(flag_ctrl_point);
 	bk_sync_send();
 
@@ -391,7 +570,31 @@ static void test_hids_server(void)
 	WAIT_FOR_FLAG(flag_ctrl_point);
 	TEST_ASSERT(last_ctrl_point == BT_HIDS_CTRL_EXIT_SUSPEND, "HID Control Point command %u",
 		    last_ctrl_point);
+	verify_suspend_state(false);
 	UNSET_FLAG(flag_ctrl_point);
+	bk_sync_send();
+
+	/* The client writes Report Protocol Mode, which is already selected and
+	 * does not call the application, then switches to Boot Protocol Mode.
+	 */
+	bk_sync_wait();
+	WAIT_FOR_FLAG(flag_protocol_mode_changed);
+	TEST_ASSERT(last_protocol_mode == BT_HIDS_PROTOCOL_BOOT, "Protocol Mode is %u",
+		    last_protocol_mode);
+	cnt = atomic_clear(&protocol_mode_changed_cnt);
+	TEST_ASSERT(cnt == 1, "Protocol Mode callback called %ld times", cnt);
+	err = bt_hids_protocol_mode_get(server_conn, &mode);
+	TEST_ASSERT(err == 0, "Failed to get the Protocol Mode: %d", err);
+	TEST_ASSERT(mode == BT_HIDS_PROTOCOL_BOOT, "Protocol Mode is %u", mode);
+	UNSET_FLAG(flag_protocol_mode_changed);
+	bk_sync_send();
+
+	/* Back to Report Protocol Mode */
+	bk_sync_wait();
+	WAIT_FOR_FLAG(flag_protocol_mode_changed);
+	TEST_ASSERT(last_protocol_mode == BT_HIDS_PROTOCOL_REPORT, "Protocol Mode is %u",
+		    last_protocol_mode);
+	UNSET_FLAG(flag_protocol_mode_changed);
 	bk_sync_send();
 
 	/* GET_REPORT of the Input Report. The service answers a read from the
@@ -416,6 +619,16 @@ static void test_hids_server(void)
 	bk_sync_wait();
 	bk_sync_send();
 
+	/* The client selects Boot Protocol Mode and suspends the Device before
+	 * it disconnects, so that the reconnection shows the state was reset.
+	 */
+	bk_sync_wait();
+	verify_conn_state(server_conn, BT_HIDS_PROTOCOL_BOOT, true);
+	UNSET_FLAG(flag_protocol_mode_changed);
+	UNSET_FLAG(flag_ctrl_point);
+	test_second_host();
+	bk_sync_send();
+
 	/* The client disconnects and reconnects */
 	WAIT_FOR_FLAG(flag_disconnected);
 	UNSET_FLAG(flag_connected);
@@ -426,14 +639,22 @@ static void test_hids_server(void)
 	/* The client has subscribed to the Input Report again */
 	WAIT_FOR_FLAG(flag_connected);
 	bk_sync_wait();
+	verify_per_connection_defaults();
 
 	bk_sync_send();
 	send_input_report();
 
 	/* Unregistering only removes the GATT service: like every other LE
-	 * service in the tree, it does not disconnect the Host.
+	 * service in the tree, it does not disconnect the Host. The client
+	 * has selected Boot Protocol Mode and suspended the Device first, so
+	 * that registering again shows the state was reset.
 	 */
 	bk_sync_wait();
+
+	err = bt_hids_protocol_mode_get(server_conn, &mode);
+	TEST_ASSERT(err == 0, "Failed to get the Protocol Mode: %d", err);
+	TEST_ASSERT(mode == BT_HIDS_PROTOCOL_BOOT, "Protocol Mode is %u", mode);
+	verify_suspend_state(true);
 
 	err = bt_hids_unregister();
 	TEST_ASSERT(err == 0, "Failed to unregister the HID Service: %d", err);
@@ -447,6 +668,7 @@ static void test_hids_server(void)
 	err = bt_hids_send_report(server_conn, TEST_REPORT_ID_INPUT, test_input_data,
 				  TEST_INPUT_REPORT_LEN, NULL, NULL);
 	TEST_ASSERT(err == -ESRCH, "Notified after unregistering: %d", err);
+	verify_conn_state_error(-ESRCH);
 
 	err = bt_hids_unregister();
 	TEST_ASSERT(err == -EALREADY, "Unregistered the HID Service twice: %d", err);
@@ -454,12 +676,14 @@ static void test_hids_server(void)
 	/* Signal the client that unregistering is done and we are still connected. */
 	bk_sync_send();
 
-	/* Registering again while a Host is connected serves that Host the
-	 * same service, which the client reads.
+	/* The Host stayed tracked while the service was unregistered, with its
+	 * state back at the default values.
 	 */
 	err = bt_hids_register(&hids_param);
 	TEST_ASSERT(err == 0, "Failed to register the HID Service again: %d", err);
+	verify_per_connection_defaults();
 
+	/* The client reads the Protocol Mode of the new registration */
 	bk_sync_send();
 	bk_sync_wait();
 
@@ -473,7 +697,7 @@ static void test_hids_server(void)
 static struct bst_test_instance test_hids_server_defs[] = {
 	{
 		.test_id = "hids_server",
-		.test_descr = "HID Service server side of the two device test",
+		.test_descr = "HID Service server side of the three device test",
 		.test_main_f = test_hids_server,
 	},
 	BSTEST_END_MARKER,
