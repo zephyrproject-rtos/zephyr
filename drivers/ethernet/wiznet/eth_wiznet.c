@@ -283,16 +283,15 @@ static void wiznet_thread_interrupt(const struct device *dev)
 
 	res = k_sem_take(&ctx->int_sem, K_MSEC(CONFIG_ETH_WIZNET_MONITOR_PERIOD));
 
-	if (res == 0) {
-		if (!ctx->state.is_up) {
-			cfg->ops->update_link_status(dev);
-		}
-
-		while (gpio_pin_get_dt(&cfg->interrupt)) {
-			wiznet_check_for_ir(dev);
-		}
-	} else if (res == -EAGAIN) {
+	if (res == -EAGAIN || !ctx->state.is_up) {
 		cfg->ops->update_link_status(dev);
+	}
+
+	/* The interrupt is edge triggered, check the level also after a
+	 * timeout so a missed edge does not stop reception for good
+	 */
+	while (gpio_pin_get_dt(&cfg->interrupt)) {
+		wiznet_check_for_ir(dev);
 	}
 }
 
