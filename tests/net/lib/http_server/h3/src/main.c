@@ -1356,6 +1356,138 @@ ZTEST(server_h3_tests, test_h3_multiple_data_callbacks_send_headers_once)
 	untrack_stream_fd(stream_fd);
 }
 
+/* Open the client control stream and send the given bytes after the stream
+ * type. Returns the control stream.
+ */
+static int send_control_stream_data(const uint8_t *data, size_t len)
+{
+	static const uint8_t stream_type[] = { H3_UNI_STREAM_CONTROL };
+	int control_fd;
+
+	control_fd = open_client_stream(QUIC_STREAM_UNIDIRECTIONAL);
+	send_all(control_fd, stream_type, sizeof(stream_type));
+	send_all(control_fd, data, len);
+
+	return control_fd;
+}
+
+/* As above, and accept the streams the server opens */
+static int start_h3_session_with_control_data(const uint8_t *data, size_t len)
+{
+	bool seen[3];
+	int control_fd;
+
+	control_fd = send_control_stream_data(data, len);
+	accept_server_uni_streams(&seen[0], &seen[1], &seen[2]);
+
+	return control_fd;
+}
+
+/* The server gave up on the connection and still serves a new one */
+static void expect_connection_closed_and_server_alive(void)
+{
+	int64_t end = k_uptime_get() + RECV_TIMEOUT_S * MSEC_PER_SEC;
+	struct zsock_pollfd pfd = {
+		.fd = client_conn_fd,
+		.events = ZSOCK_POLLIN,
+	};
+
+	/* Streams the server opened earlier may still be waiting to be
+	 * accepted and make the socket readable, so keep looking until the
+	 * hang-up shows.
+	 */
+	do {
+		pfd.revents = 0;
+		(void)zsock_poll(&pfd, 1, 50);
+		if ((pfd.revents & ZSOCK_POLLHUP) != 0) {
+			break;
+		}
+
+		k_msleep(10);
+	} while (k_uptime_get() < end);
+
+	zassert_true((pfd.revents & ZSOCK_POLLHUP) != 0,
+		     "Connection was not closed (0x%x)", pfd.revents);
+
+	close_h3_client();
+
+	connect_h3_client(NULL);
+	start_h3_session(false);
+	send_get_and_expect_static(false);
+}
+
+/* End the sending side of a client stream, the peer sees the stream FIN */
+static void end_client_stream(int fd)
+{
+	int ret;
+
+	ret = zsock_shutdown(fd, ZSOCK_SHUT_WR);
+	zassert_ok(ret, "Failed to end stream %d (%d)", fd, errno);
+}
+
+ZTEST(server_h3_tests, test_h3_closed_control_stream_closes_connection)
+{
+	static const uint8_t settings[] = { H3_FRAME_SETTINGS, 0x00 };
+	int control_fd;
+
+	control_fd = start_h3_session_with_control_data(settings, sizeof(settings));
+	send_get_and_expect_static(false);
+
+	end_client_stream(control_fd);
+
+	expect_connection_closed_and_server_alive();
+}
+
+ZTEST(server_h3_tests, test_h3_closed_qpack_stream_closes_connection)
+{
+	static const uint8_t stream_type[] = { H3_UNI_STREAM_QPACK_ENCODER };
+	int qpack_fd;
+
+	start_h3_session(false);
+
+	qpack_fd = open_client_stream(QUIC_STREAM_UNIDIRECTIONAL);
+	send_all(qpack_fd, stream_type, sizeof(stream_type));
+	send_get_and_expect_static(false);
+
+	end_client_stream(qpack_fd);
+
+	expect_connection_closed_and_server_alive();
+}
+
+ZTEST(server_h3_tests, test_h3_malformed_settings_closes_connection)
+{
+	/* A setting identifier without its value */
+	static const uint8_t settings[] = { H3_FRAME_SETTINGS, 0x01, 0x01 };
+
+	(void)send_control_stream_data(settings, sizeof(settings));
+
+	expect_connection_closed_and_server_alive();
+}
+
+ZTEST(server_h3_tests, test_h3_client_goaway_keeps_connection)
+{
+	static const uint8_t settings_and_goaway[] = {
+		H3_FRAME_SETTINGS, 0x00,
+		H3_FRAME_GOAWAY, 0x01, 0x00,
+	};
+	int control_fd;
+
+	control_fd = start_h3_session_with_control_data(settings_and_goaway,
+							sizeof(settings_and_goaway));
+
+	/* Requests are still served */
+	for (int i = 0; i < 2; i++) {
+		send_get_and_expect_static(false);
+	}
+
+	/* The server still follows the control stream: it notices when the
+	 * stream ends, which is a connection error.
+	 */
+	end_client_stream(control_fd);
+
+	expect_connection_closed_and_server_alive();
+}
+
 ZTEST(server_h3_tests, test_h3_get_captures_request_headers)
 {
 	uint8_t headers[128];
