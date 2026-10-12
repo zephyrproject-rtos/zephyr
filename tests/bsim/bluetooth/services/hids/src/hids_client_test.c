@@ -45,14 +45,15 @@
 /* One Report characteristic of each type */
 #define MAX_REPORTS 4U
 /* Every characteristic of the service: the Reports above, Protocol Mode, Report
- * Map, HID Information and HID Control Point.
+ * Map, HID Information, HID Control Point and the three Boot Reports.
  */
-#define MAX_CHRCS (MAX_REPORTS + 4U)
+#define MAX_CHRCS (MAX_REPORTS + 7U)
 
 DEFINE_FLAG_STATIC(flag_security_updated);
 DEFINE_FLAG_STATIC(flag_discover_complete);
 DEFINE_FLAG_STATIC(flag_subscribed);
 DEFINE_FLAG_STATIC(flag_notified);
+DEFINE_FLAG_STATIC(flag_boot_notified);
 
 struct report_chrc {
 	uint16_t value_handle;
@@ -60,6 +61,16 @@ struct report_chrc {
 	uint16_t ref_handle;
 	uint8_t id;
 	uint8_t type;
+};
+
+/* The three Boot Report characteristics. Only the two Boot Input Reports have a
+ * CCC descriptor, and none of them has a Report Reference descriptor: their
+ * format is defined by the USB HID Specification rather than by the Report Map.
+ */
+struct boot_chrc {
+	uint16_t value_handle;
+	uint16_t ccc_handle;
+	uint8_t properties;
 };
 
 /* Every discovered characteristic, in handle order, so that a descriptor can be
@@ -81,6 +92,9 @@ static uint16_t hid_info_handle;
 static uint16_t ctrl_point_handle;
 static struct report_chrc reports[MAX_REPORTS];
 static uint8_t reports_cnt;
+static struct boot_chrc boot_kb_in;
+static struct boot_chrc boot_kb_out;
+static struct boot_chrc boot_mouse_in;
 static struct chrc_entry chrcs[MAX_CHRCS];
 static uint8_t chrcs_cnt;
 
@@ -88,6 +102,8 @@ static uint8_t chrcs_cnt;
 NET_BUF_SIMPLE_DEFINE_STATIC(read_buf, MAX(sizeof(test_report_map), TEST_LONG_REPORT_LEN));
 static uint8_t notified_data[TEST_INPUT_REPORT_LEN];
 static uint16_t notified_len;
+static uint8_t boot_notified_data[TEST_BOOT_KB_IN_LEN];
+static uint16_t boot_notified_len;
 
 static const struct report_chrc *report_by_id(uint8_t id)
 {
@@ -218,6 +234,29 @@ static struct report_chrc *report_owning(uint16_t handle)
 	return NULL;
 }
 
+/* The Boot Report characteristic a descriptor belongs to, NULL when the
+ * descriptor belongs to a characteristic that is not a Boot Report.
+ */
+static struct boot_chrc *boot_owning(uint16_t handle)
+{
+	const struct chrc_entry *owner = chrc_before(handle);
+
+	if (owner == NULL) {
+		return NULL;
+	}
+
+	switch (owner->uuid_val) {
+	case BT_UUID_HIDS_BOOT_KB_IN_REPORT_VAL:
+		return &boot_kb_in;
+	case BT_UUID_HIDS_BOOT_KB_OUT_REPORT_VAL:
+		return &boot_kb_out;
+	case BT_UUID_HIDS_BOOT_MOUSE_IN_REPORT_VAL:
+		return &boot_mouse_in;
+	default:
+		return NULL;
+	}
+}
+
 static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			     struct bt_gatt_discover_params *params)
 {
@@ -279,12 +318,22 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 			ctrl_point_handle = chrc->value_handle;
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_HIDS_REPORT) == 0) {
 			store_report_chrc(chrc->value_handle);
+		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_HIDS_BOOT_KB_IN_REPORT) == 0) {
+			boot_kb_in.value_handle = chrc->value_handle;
+			boot_kb_in.properties = chrc->properties;
+		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_HIDS_BOOT_KB_OUT_REPORT) == 0) {
+			boot_kb_out.value_handle = chrc->value_handle;
+			boot_kb_out.properties = chrc->properties;
+		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_HIDS_BOOT_MOUSE_IN_REPORT) == 0) {
+			boot_mouse_in.value_handle = chrc->value_handle;
+			boot_mouse_in.properties = chrc->properties;
 		}
 
 		return BT_GATT_ITER_CONTINUE;
 	}
 	case BT_GATT_DISCOVER_DESCRIPTOR: {
 		struct report_chrc *report = report_owning(attr->handle);
+		struct boot_chrc *boot;
 
 		if (report != NULL) {
 			if (bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CCC) == 0) {
@@ -292,6 +341,13 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 			} else if (bt_uuid_cmp(attr->uuid, BT_UUID_HIDS_REPORT_REF) == 0) {
 				report->ref_handle = attr->handle;
 			}
+
+			return BT_GATT_ITER_CONTINUE;
+		}
+
+		boot = boot_owning(attr->handle);
+		if (boot != NULL && bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CCC) == 0) {
+			boot->ccc_handle = attr->handle;
 		}
 
 		return BT_GATT_ITER_CONTINUE;
@@ -313,6 +369,9 @@ static void discover_hids(void)
 	hid_info_handle = 0U;
 	ctrl_point_handle = 0U;
 	(void)memset(reports, 0, sizeof(reports));
+	(void)memset(&boot_kb_in, 0, sizeof(boot_kb_in));
+	(void)memset(&boot_kb_out, 0, sizeof(boot_kb_out));
+	(void)memset(&boot_mouse_in, 0, sizeof(boot_mouse_in));
 
 	params.uuid = BT_UUID_HIDS;
 	params.func = discover_func;
@@ -521,6 +580,110 @@ static void wait_for_input_report(void)
 		    "Input Report payload mismatch");
 }
 
+/* A Boot Report is longer than an Input Report of this test, so it gets a
+ * buffer and a callback of its own.
+ */
+static uint8_t boot_notify_cb(struct bt_conn *conn, struct bt_gatt_subscribe_params *params,
+			      const void *data, uint16_t length)
+{
+	ARG_UNUSED(conn);
+	ARG_UNUSED(params);
+
+	if (data == NULL) {
+		return BT_GATT_ITER_STOP;
+	}
+
+	TEST_ASSERT(length <= sizeof(boot_notified_data), "Boot Report notification of %u bytes",
+		    length);
+
+	(void)memcpy(boot_notified_data, data, length);
+	boot_notified_len = length;
+
+	SET_FLAG(flag_boot_notified);
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+static struct bt_gatt_subscribe_params boot_sub_params;
+
+static void subscribe_boot_kb_in(void)
+{
+	int err;
+
+	boot_sub_params.value_handle = boot_kb_in.value_handle;
+	boot_sub_params.ccc_handle = boot_kb_in.ccc_handle;
+	boot_sub_params.value = BT_GATT_CCC_NOTIFY;
+	boot_sub_params.notify = boot_notify_cb;
+	boot_sub_params.subscribe = subscribe_cb;
+
+	UNSET_FLAG(flag_subscribed);
+	UNSET_FLAG(flag_boot_notified);
+
+	err = bt_gatt_subscribe(client_conn, &boot_sub_params);
+	TEST_ASSERT(err == 0, "Failed to subscribe to the Boot Keyboard Input Report: %d", err);
+
+	WAIT_FOR_FLAG(flag_subscribed);
+}
+
+static void wait_for_boot_kb_in_report(void)
+{
+	WAIT_FOR_FLAG(flag_boot_notified);
+	UNSET_FLAG(flag_boot_notified);
+
+	TEST_ASSERT(boot_notified_len == TEST_BOOT_KB_IN_LEN,
+		    "Boot Keyboard Input Report of %u octets, expected %u", boot_notified_len,
+		    TEST_BOOT_KB_IN_LEN);
+	TEST_ASSERT(memcmp(boot_notified_data, test_boot_kb_in_data, TEST_BOOT_KB_IN_LEN) == 0,
+		    "Notified Boot Keyboard Input Report payload mismatch");
+}
+
+/* The three Boot Report characteristics have the properties the HID Service
+ * defines for them, only the two Boot Input Reports have a CCC descriptor, and
+ * the length of each is fixed by the USB HID Specification.
+ */
+static void verify_boot_reports(void)
+{
+	TEST_ASSERT(boot_kb_in.value_handle != 0U, "The Boot Keyboard Input Report is missing");
+	TEST_ASSERT(boot_kb_out.value_handle != 0U, "The Boot Keyboard Output Report is missing");
+	TEST_ASSERT(boot_mouse_in.value_handle != 0U, "The Boot Mouse Input Report is missing");
+
+	TEST_ASSERT(boot_kb_in.properties == (BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY),
+		    "Boot Keyboard Input Report properties 0x%02x", boot_kb_in.properties);
+	TEST_ASSERT(boot_kb_out.properties == (BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE |
+					       BT_GATT_CHRC_WRITE_WITHOUT_RESP),
+		    "Boot Keyboard Output Report properties 0x%02x", boot_kb_out.properties);
+	TEST_ASSERT(boot_mouse_in.properties == (BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY),
+		    "Boot Mouse Input Report properties 0x%02x", boot_mouse_in.properties);
+
+	TEST_ASSERT(boot_kb_in.ccc_handle != 0U,
+		    "The Boot Keyboard Input Report has no CCC descriptor");
+	TEST_ASSERT(boot_mouse_in.ccc_handle != 0U,
+		    "The Boot Mouse Input Report has no CCC descriptor");
+	TEST_ASSERT(boot_kb_out.ccc_handle == 0U,
+		    "The Boot Keyboard Output Report has a CCC descriptor");
+
+	/* A read returns the value the server holds, which it set with
+	 * bt_hids_boot_report_set(). The three lengths differ, so these reads
+	 * also tell the three Boot Report contexts apart.
+	 */
+	gatt_read(boot_kb_in.value_handle);
+	TEST_ASSERT(read_buf.len == TEST_BOOT_KB_IN_LEN,
+		    "Boot Keyboard Input Report of %u octets, expected %u", read_buf.len,
+		    TEST_BOOT_KB_IN_LEN);
+	TEST_ASSERT(memcmp(read_buf.data, test_boot_kb_in_stored, TEST_BOOT_KB_IN_LEN) == 0,
+		    "Boot Keyboard Input Report payload mismatch");
+
+	gatt_read(boot_kb_out.value_handle);
+	TEST_ASSERT(read_buf.len == TEST_BOOT_KB_OUT_LEN,
+		    "Boot Keyboard Output Report of %u octets, expected %u", read_buf.len,
+		    TEST_BOOT_KB_OUT_LEN);
+
+	gatt_read(boot_mouse_in.value_handle);
+	TEST_ASSERT(read_buf.len == TEST_BOOT_MOUSE_IN_LEN,
+		    "Boot Mouse Input Report of %u octets, expected %u", read_buf.len,
+		    TEST_BOOT_MOUSE_IN_LEN);
+}
+
 /* Every Report characteristic has a Report Reference descriptor, and only an
  * Input Report has a Client Characteristic Configuration descriptor.
  */
@@ -659,6 +822,10 @@ static void verify_protocol_mode(uint8_t expected)
 
 static void test_hids_client(void)
 {
+	/* One octet more than the fixed length of the Boot Keyboard Output
+	 * Report
+	 */
+	static const uint8_t boot_kb_out_too_long[TEST_BOOT_KB_OUT_LEN + 1] = {0x03U, 0x00U};
 	const struct report_chrc *input;
 	const struct report_chrc *output;
 	const struct report_chrc *feature;
@@ -728,6 +895,25 @@ static void test_hids_client(void)
 	bk_sync_wait();
 	verify_protocol_mode(BT_HIDS_PROTOCOL_REPORT);
 
+	/* The Boot Report characteristics, and a Boot Keyboard Input Report
+	 * notification once we have subscribed
+	 */
+	verify_boot_reports();
+	subscribe_boot_kb_in();
+	bk_sync_send();
+	bk_sync_wait();
+	wait_for_boot_kb_in_report();
+
+	/* A Boot Report has a fixed length, so a write of any other length is
+	 * refused and does not reach the application, while one of the fixed
+	 * length does.
+	 */
+	gatt_write_expect_err(boot_kb_out.value_handle, boot_kb_out_too_long,
+			      sizeof(boot_kb_out_too_long), BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	gatt_write(boot_kb_out.value_handle, test_boot_kb_out_data, TEST_BOOT_KB_OUT_LEN);
+	bk_sync_send();
+	bk_sync_wait();
+
 	/* GET_REPORT of the Input Report */
 	gatt_read(input->value_handle);
 	TEST_ASSERT(read_buf.len == TEST_INPUT_REPORT_LEN,
@@ -755,6 +941,9 @@ static void test_hids_client(void)
 	/* Reconnect: the server serves the same HID Service again, with the
 	 * per connection state back at its default values.
 	 */
+	err = bt_gatt_unsubscribe(client_conn, &boot_sub_params);
+	TEST_ASSERT(err == 0, "Failed to unsubscribe from the Boot Report: %d", err);
+
 	err = bt_gatt_unsubscribe(client_conn, &sub_params);
 	TEST_ASSERT(err == 0, "Failed to unsubscribe: %d", err);
 
