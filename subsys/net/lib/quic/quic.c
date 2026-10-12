@@ -329,9 +329,9 @@ enum quic_stream_states {
 
 ZTESTABLE_STATIC int quic_put_varint(uint8_t *buf, size_t buf_len, uint64_t val);
 static struct quic_context *quic_find_context(struct quic_endpoint *ep);
-static struct quic_stream *quic_find_stream(struct quic_context *ctx,
-					    struct quic_endpoint *ep,
-					    uint64_t stream_id);
+ZTESTABLE_STATIC struct quic_stream *quic_find_stream(struct quic_context *ctx,
+						      struct quic_endpoint *ep,
+						      uint64_t stream_id);
 static struct quic_stream *quic_create_stream_from_peer(struct quic_context *ctx,
 							struct quic_endpoint *ep,
 							uint64_t stream_id);
@@ -7689,9 +7689,9 @@ ooo_flow_control_error:
 /*
  * Find an existing stream by ID
  */
-static struct quic_stream *quic_find_stream(struct quic_context *ctx,
-					    struct quic_endpoint *ep,
-					    uint64_t stream_id)
+ZTESTABLE_STATIC struct quic_stream *quic_find_stream(struct quic_context *ctx,
+						      struct quic_endpoint *ep,
+						      uint64_t stream_id)
 {
 	struct quic_stream *stream, *tmp, *found = NULL;
 
@@ -7699,8 +7699,14 @@ static struct quic_stream *quic_find_stream(struct quic_context *ctx,
 	k_mutex_lock(&contexts_lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ctx->streams, stream, tmp, node) {
-		/* Stream found, verify it belongs to this connection */
-		if (stream->id == stream_id && stream->conn == ctx) {
+		/* A stream ID is only unique within one connection. The
+		 * streams of all connections that are not accepted yet are
+		 * kept in the listening context, so the endpoint has to
+		 * match too, or data would be delivered to a stream of
+		 * another peer that happens to use the same ID.
+		 */
+		if (stream->id == stream_id && stream->conn == ctx &&
+		    stream->ep == ep) {
 			found = stream;
 			break;
 		}
