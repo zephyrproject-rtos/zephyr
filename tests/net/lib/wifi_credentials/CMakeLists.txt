@@ -9,8 +9,17 @@ cmake_minimum_required(VERSION 3.28.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(wifi_credentials_test)
 
-FILE(GLOB app_sources src/*.c)
-target_sources(app PRIVATE ${app_sources})
+if(CONFIG_WIFI_CREDENTIALS)
+  # The library is built with the backend selected in Kconfig.
+  target_sources(app PRIVATE src/backend_psa_ps.c)
+  if(CONFIG_SECURE_STORAGE)
+    # To store a corrupt entry with the internal ITS store API.
+    target_include_directories(app PRIVATE ${ZEPHYR_BASE}/subsys/secure_storage/include/internal)
+  endif()
+  return()
+endif()
+
+target_sources(app PRIVATE src/main.c)
 
 target_sources(app
   PRIVATE
