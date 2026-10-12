@@ -160,6 +160,12 @@ static void entropy_mspm0_trng_isr(const struct device *dev)
 			config->regs->imask = (config->regs->imask &
 					       ~TRNG_MSPM0_IIDX_CMD_DONE_MASK) |
 					       TRNG_MSPM0_IIDX_CAPTURED_RDY_MASK;
+			/*
+			 * NORM_FUNC command must be re-sent to the TRNG for
+			 * the new decimation rate to take effect.
+			 */
+			config->regs->ctl = (config->regs->ctl & ~TRNG_MSPM0_CTL_CMD_MASK) |
+					     TRNG_MSPM0_CTL_CMD_NORM_FUNC;
 			return;
 		}
 	}
