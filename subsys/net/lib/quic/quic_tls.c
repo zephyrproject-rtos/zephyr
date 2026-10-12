@@ -1009,6 +1009,13 @@ static int compute_shared_secret(struct quic_tls_context *ctx)
 		return -EIO;
 	}
 
+	/* The ephemeral private key has no use after the key agreement.
+	 * Release it now instead of holding its key slot for the lifetime
+	 * of the connection.
+	 */
+	(void)psa_destroy_key(ctx->ecdh_key_id);
+	ctx->ecdh_key_id = 0;
+
 	if (IS_ENABLED(CONFIG_QUIC_TXRX_DEBUG)) {
 		NET_HEXDUMP_DBG(ctx->shared_secret, secret_len, "ECDH shared secret:");
 	}
