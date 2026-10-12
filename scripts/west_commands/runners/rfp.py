@@ -50,6 +50,7 @@ class RfpBinaryRunner(ZephyrBinaryRunner):
         rpd_file=None,
         speed=None,
         tool_opt=None,
+        dry_run=False,
     ):
         super().__init__(cfg)
 
@@ -62,6 +63,7 @@ class RfpBinaryRunner(ZephyrBinaryRunner):
         self.device = device
         self.rpd_file = rpd_file
         self.speed = speed
+        self.dry_run = dry_run
 
         self.tool_opt = []
         if tool_opt is not None:
@@ -74,7 +76,7 @@ class RfpBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash'}, erase=True, tool_opt=True)
+        return RunnerCaps(commands={'flash'}, erase=True, tool_opt=True, dry_run=True)
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -123,6 +125,7 @@ class RfpBinaryRunner(ZephyrBinaryRunner):
             speed=args.speed,
             verify=args.verify,
             tool_opt=args.tool_opt,
+            dry_run=args.dry_run,
         )
 
     @staticmethod
@@ -153,7 +156,9 @@ class RfpBinaryRunner(ZephyrBinaryRunner):
             self.logger.error("Unsuppported command")
 
     def do_flash(self, **kwargs):
-        self.require(self.rfp_cmd[0])
+        if not self.dry_run:
+            self.require(self.rfp_cmd[0])
+
         self.ensure_output('hex')
 
         hex_name = self.cfg.hex_file
@@ -189,7 +194,8 @@ class RfpBinaryRunner(ZephyrBinaryRunner):
         self.check_call(cmd)
 
     def do_partition(self):
-        self.require(self.rfp_cmd[0])
+        if not self.dry_run:
+            self.require(self.rfp_cmd[0])
 
         rpd_path = self.rpd_file
 
