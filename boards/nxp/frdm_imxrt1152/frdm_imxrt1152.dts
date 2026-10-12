@@ -9,6 +9,7 @@
 #include <nxp/imxrt/imxrt11xx/nxp_rt1152.dtsi>
 #include "frdm_imxrt1152-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	compatible = "nxp,mimxrt1152";
@@ -19,6 +20,9 @@
 		led1 = &red_led;
 		led2 = &blue_led;
 		sw0 = &user_button;
+		i2s-codec-tx = &sai1;
+		i2s-tx = &sai1;
+		i2s-node0 = &sai1;
 	};
 
 	chosen {
@@ -85,6 +89,42 @@
 };
 
 &green_led {
+	status = "okay";
+};
+
+/*
+ * WM8962 audio codec: control interface on LPI2C4 at 7-bit address 0x1A,
+ * audio data on SAI1. SAI1 drives MCLK for the codec, and the receive
+ * side is clocked from the transmit bit and frame clocks, so only
+ * SAI1_RX_DATA00 is routed to a pad.
+ */
+&lpi2c4 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c4>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	audio_codec: wm8962@1a {
+		compatible = "wolfson,wm8962";
+		reg = <0x1a>;
+		clock-source = "MCLK";
+		clocks = <&ccm IMX_CCM_SAI1_CLK 0x2004 4>;
+		clock-names = "mclk";
+	};
+};
+
+i2s_rx: &sai1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_sai1>;
+	pinctrl-names = "default";
+	mclk-output;
+	nxp,rx-sync-mode;
+	podf = <32>;
+};
+
+i2s_tx: &sai1 {};
+
+&edma0 {
 	status = "okay";
 };
 
@@ -186,6 +226,7 @@
 };
 
 &gpio13 {
+	label = "WAKEUP_SW6";
 	gpio-reserved-ranges = <3 10>;
 	pinmux = <&iomuxc_snvs_wakeup_dig_gpio13_io00>,
 		 <&iomuxc_snvs_pmic_on_req_dig_gpio13_io01>,
