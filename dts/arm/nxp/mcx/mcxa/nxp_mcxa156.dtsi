@@ -677,6 +677,8 @@
 			operation-mode = "low_noise";
 			functional-mode = "follower";
 			clocks = <&syscon MCUX_OPAMP0_CLK>;
+			power-domains = <&core_domain>;
+			zephyr,disabling-power-states = <&powerdown &deeppowerdown>;
 			status = "disabled";
 		};
 
