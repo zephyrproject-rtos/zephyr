@@ -273,12 +273,8 @@
 				pinmux = <MAX32_PINMUX(2, 6, AF1)>;
 			};
 
-			/omit-if-no-ref/ lpuartb_r_p2_6: lpuartb_r_p2_6 {
+			/omit-if-no-ref/ lpuartb_rx_p2_6: lpuartb_rx_p2_6 {
 				pinmux = <MAX32_PINMUX(2, 6, AF2)>;
-			};
-
-			/omit-if-no-ref/ x_p2_6: x_p2_6 {
-				pinmux = <MAX32_PINMUX(2, 6, AF3)>;
 			};
 
 			/omit-if-no-ref/ lptmr1_clk_p2_7: lptmr1_clk_p2_7 {
@@ -628,13 +624,8 @@
 		low-power-enable;
 	};
 
-	/omit-if-no-ref/ lpuartb_r_p2_6_sleep: lpuartb_r_p2_6_sleep {
+	/omit-if-no-ref/ lpuartb_rx_p2_6_sleep: lpuartb_rx_p2_6_sleep {
 		pinmux = <MAX32_PINMUX(2, 6, AF2)>;
-		low-power-enable;
-	};
-
-	/omit-if-no-ref/ x_p2_6_sleep: x_p2_6_sleep {
-		pinmux = <MAX32_PINMUX(2, 6, AF3)>;
 		low-power-enable;
 	};
 
