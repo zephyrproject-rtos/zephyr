@@ -44,6 +44,11 @@ enum {
 /* OPAMP_CTR[PREF] encoding used when no non-inverting reference is configured. */
 #define OPAMP_CTR_PREF_VREFH4 3U
 
+struct mcux_opamp_data {
+	/* Zero until opamp_set_gain() selects a gain; the encoding starts at 1. */
+	uint8_t gain_index;
+};
+
 static int mcux_opamp_configure(const struct device *dev);
 
 /*
@@ -59,9 +64,37 @@ static void mcux_opamp_suspend_rollback(const struct device *dev)
 	config->base->OPAMP_CTR |= OPAMP_OPAMP_CTR_EN_MASK;
 }
 
+static void mcux_opamp_apply_gain(const struct device *dev, uint8_t gain_index)
+{
+	const struct mcux_opamp_config *config = dev->config;
+
+	switch (config->functional_mode) {
+	case OPAMP_FUNCTIONAL_MODE_DIFFERENTIAL:
+	case OPAMP_FUNCTIONAL_MODE_INVERTING:
+	case OPAMP_FUNCTIONAL_MODE_NON_INVERTING:
+		/* For differential, inverting and non-inverting mode,
+		 * set Ngain to select different gains, and set Pgain
+		 * to be the same as Ngain.
+		 */
+		config->base->OPAMP_CTR = ((config->base->OPAMP_CTR & ~OPAMP_OPAMP_CTR_NGAIN_MASK) |
+					   OPAMP_OPAMP_CTR_NGAIN(gain_index));
+		config->base->OPAMP_CTR = ((config->base->OPAMP_CTR & ~OPAMP_OPAMP_CTR_PGAIN_MASK) |
+					   OPAMP_OPAMP_CTR_PGAIN(gain_index));
+		break;
+	case OPAMP_FUNCTIONAL_MODE_FOLLOWER:
+		config->base->OPAMP_CTR = ((config->base->OPAMP_CTR & ~OPAMP_OPAMP_CTR_NGAIN_MASK) |
+					   OPAMP_OPAMP_CTR_NGAIN(OPAMP_CTR_NGAIN_BUFFER_MODE));
+		config->base->OPAMP_CTR = ((config->base->OPAMP_CTR & ~OPAMP_OPAMP_CTR_PGAIN_MASK) |
+					   OPAMP_OPAMP_CTR_PGAIN(OPAMP_CTR_PGAIN_NON_INVERT_1X));
+	default:
+		break;
+	}
+}
+
 static int mcux_opamp_pm_callback(const struct device *dev, enum pm_device_action action)
 {
 	const struct mcux_opamp_config *config = dev->config;
+	struct mcux_opamp_data *data = dev->data;
 	int err;
 
 	switch (action) {
@@ -95,6 +128,11 @@ static int mcux_opamp_pm_callback(const struct device *dev, enum pm_device_actio
 		if (err) {
 			(void)clock_control_off(config->clock_dev, config->clock_subsys);
 			return err;
+		}
+
+		/* mcux_opamp_configure() leaves the gain fields alone. */
+		if (data->gain_index != 0) {
+			mcux_opamp_apply_gain(dev, data->gain_index);
 		}
 
 		return clock_control_off(config->clock_dev, config->clock_subsys);
@@ -146,7 +184,7 @@ static int mcux_opamp_pm_callback(const struct device *dev, enum pm_device_actio
 
 static int mcux_opamp_set_gain(const struct device *dev, enum opamp_gain gain)
 {
-	const struct mcux_opamp_config *config = dev->config;
+	struct mcux_opamp_data *data = dev->data;
 	uint8_t gain_index;
 
 	switch (gain) {
@@ -176,27 +214,9 @@ static int mcux_opamp_set_gain(const struct device *dev, enum opamp_gain gain)
 		return -EINVAL;
 	}
 
-	switch (config->functional_mode) {
-	case OPAMP_FUNCTIONAL_MODE_DIFFERENTIAL:
-	case OPAMP_FUNCTIONAL_MODE_INVERTING:
-	case OPAMP_FUNCTIONAL_MODE_NON_INVERTING:
-		/* For differential, inverting and non-inverting mode,
-		 * set Ngain to select different gains, and set Pgain
-		 * to be the same as Ngain.
-		 */
-		config->base->OPAMP_CTR = ((config->base->OPAMP_CTR & ~OPAMP_OPAMP_CTR_NGAIN_MASK) |
-					   OPAMP_OPAMP_CTR_NGAIN(gain_index));
-		config->base->OPAMP_CTR = ((config->base->OPAMP_CTR & ~OPAMP_OPAMP_CTR_PGAIN_MASK) |
-					   OPAMP_OPAMP_CTR_PGAIN(gain_index));
-		break;
-	case OPAMP_FUNCTIONAL_MODE_FOLLOWER:
-		config->base->OPAMP_CTR = ((config->base->OPAMP_CTR & ~OPAMP_OPAMP_CTR_NGAIN_MASK) |
-					   OPAMP_OPAMP_CTR_NGAIN(OPAMP_CTR_NGAIN_BUFFER_MODE));
-		config->base->OPAMP_CTR = ((config->base->OPAMP_CTR & ~OPAMP_OPAMP_CTR_PGAIN_MASK) |
-					   OPAMP_OPAMP_CTR_PGAIN(OPAMP_CTR_PGAIN_NON_INVERT_1X));
-	default:
-		break;
-	}
+	data->gain_index = gain_index;
+
+	mcux_opamp_apply_gain(dev, gain_index);
 
 	return 0;
 }
@@ -325,10 +345,12 @@ static DEVICE_API(opamp, api) = {
 		GET_RESET_INFO(inst)								\
 	};											\
 												\
+	static struct mcux_opamp_data _CONCAT(data, inst);					\
+												\
 	PM_DEVICE_DT_INST_DEFINE(inst, mcux_opamp_pm_callback);					\
 												\
 	DEVICE_DT_INST_DEFINE(inst, mcux_opamp_init,						\
-			PM_DEVICE_DT_INST_GET(inst), NULL,					\
+			PM_DEVICE_DT_INST_GET(inst), &_CONCAT(data, inst),			\
 			&_CONCAT(config, inst), POST_KERNEL,					\
 			CONFIG_OPAMP_INIT_PRIORITY, &api);
 
