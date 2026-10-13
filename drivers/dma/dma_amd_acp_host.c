@@ -36,8 +36,15 @@
 static uint32_t *host_read_ptr;
 static uint32_t *host_wr_ptr;
 
-/* Static storage for DMA status of each channel */
+/*
+ * Static storage for DMA status of each channel.
+ * ACP 7.x has 10 host DMA channels. ACP 7.0 keeps the 8-entry table.
+ */
+#ifdef CONFIG_SOC_ACP_7_X
+static struct dma_status channel_status[CONFIG_DMA_AMD_ACP_HOST_CHANNEL_COUNT];
+#else
 static struct dma_status channel_status[8];
+#endif
 
 LOG_MODULE_REGISTER(host_dma_acp, CONFIG_DMA_LOG_LEVEL);
 
@@ -203,7 +210,7 @@ static int acp_host_dma_start(const struct device *dev, uint32_t channel)
 	acp_dma_ch_sts_t dma_sts;
 
 	/* validate channel */
-	if (channel >= 10) {
+	if (channel >= dev_data->dma_ctx.dma_channels) {
 		ret = -EINVAL;
 		goto out;
 	}
