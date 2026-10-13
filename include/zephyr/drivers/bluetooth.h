@@ -78,12 +78,12 @@ enum {
 
 #define BT_DT_HCI_QUIRK_OR(node_id, prop, idx) \
 	UTIL_CAT(BT_HCI_QUIRK_, DT_STRING_UPPER_TOKEN_BY_IDX(node_id, prop, idx))
-#define BT_DT_HCI_QUIRKS_GET(node_id) COND_CODE_1(DT_NODE_HAS_PROP(node_id, bt_hci_quirks), \
-						  (DT_FOREACH_PROP_ELEM_SEP(node_id, \
-									    bt_hci_quirks, \
-									    BT_DT_HCI_QUIRK_OR, \
-									    (|))), \
-						  (0))
+#define BT_DT_HCI_QUIRKS_GET(node_id) (COND_CODE_1(DT_NODE_HAS_PROP(node_id, bt_hci_quirks), \
+						   (DT_FOREACH_PROP_ELEM_SEP(node_id, \
+									     bt_hci_quirks, \
+									     BT_DT_HCI_QUIRK_OR, \
+									     (|))), \
+						   (0)))
 #define BT_DT_HCI_QUIRKS_INST_GET(inst) BT_DT_HCI_QUIRKS_GET(DT_DRV_INST(inst))
 
 #define BT_DT_HCI_NAME_GET(node_id) DT_PROP_OR(node_id, bt_hci_name, "HCI")
