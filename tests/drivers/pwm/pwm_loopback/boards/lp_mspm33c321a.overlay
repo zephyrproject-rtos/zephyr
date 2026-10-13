@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Connect PA8 (PWM output, pwma0_0 CH0, TIMA0_0 CCP0) to PB6 (capture input,
+ * pwma0_1 CH0, TIMA0_1 CCP0) with a wire before running this test.
+ */
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		pwms = <&pwma0_0 0 0 PWM_POLARITY_NORMAL>,
+		       <&pwma0_1 0 0 PWM_POLARITY_NORMAL>;
+	};
+};
+
+&pinctrl {
+	tima0_1_ccp0_pb6 {
+		input-enable;
+		bias-pull-down;
+	};
+};
+
+&tima0_1 {
+	ti,clk-div = <8>;
+	status = "okay";
+
+	pwma0_1: pwma0_1 {
+		compatible = "ti,mspm0-timer-pwm";
+		#pwm-cells = <3>;
+		pinctrl-0 = <&tima0_1_ccp0_pb6>;
+		pinctrl-names = "default";
+		ti,cc-index = <0>;
+		ti,cc-mode = "PULSE_WIDTH";
+		ti,period = <0xffff>;
+		status = "okay";
+	};
+};
