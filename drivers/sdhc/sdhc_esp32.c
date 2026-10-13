@@ -49,6 +49,7 @@
 #include <soc/io_mux_reg.h>
 #include <soc/sdmmc_reg.h>
 #include <esp_memory_utils.h>
+#include <esp_sleep.h>
 
 #include "sdhc_esp32.h"
 
@@ -1807,6 +1808,18 @@ static int sdhc_esp32_controller_init(const struct device *dev)
 
 	/* Enable DMA */
 	sdmmc_ll_init_dma(sdio_hw);
+
+#if defined(CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP) && defined(SOC_PM_SUPPORT_CNNT_PD)
+	/*
+	 * The host has no sleep retention and sits in the CNNT domain, which
+	 * powers down together with TOP. Keep CNNT on so TOP can still power
+	 * down in light sleep.
+	 */
+	if (esp_sleep_pd_config(ESP_PD_DOMAIN_CNNT, ESP_PD_OPTION_ON) != ESP_OK) {
+		LOG_ERR("Failed to keep the CNNT power domain on in light sleep");
+		return -EIO;
+	}
+#endif
 
 	sdhc_esp32_ctrl.initialized = true;
 
