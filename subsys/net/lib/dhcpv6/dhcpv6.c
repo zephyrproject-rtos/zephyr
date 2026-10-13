@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(net_dhcpv6, CONFIG_NET_DHCPV6_LOG_LEVEL);
 #define PKT_WAIT_TIME K_MSEC(100)
 
 /* Maximum number of options client can request. */
-#define DHCPV6_MAX_OPTION_REQUEST 2
+#define DHCPV6_MAX_OPTION_REQUEST 3
 
 #if defined(CONFIG_NET_DHCPV6_OPTION_DNS_ADDRESS)
 #define MAX_DNS_SERVERS CONFIG_DNS_RESOLVER_MAX_SERVERS
@@ -681,6 +681,7 @@ static int dhcpv6_send_info_request(struct net_if *iface)
 		.elapsed_time = true,
 		.oro = {
 			DHCPV6_OPTION_CODE_INF_MAX_RT,
+			DHCPV6_OPTION_CODE_INFORMATION_REFRESH_TIME,
 #if defined(CONFIG_NET_DHCPV6_OPTION_DNS_ADDRESS)
 			DHCPV6_OPTION_CODE_OPTION_DNS_SERVERS,
 #endif
