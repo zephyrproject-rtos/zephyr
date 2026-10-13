@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nrf7120dk_nrf7120e_cpuapp.overlay"
+
+&grtc {
+	interrupts = <227 2>;
+};
