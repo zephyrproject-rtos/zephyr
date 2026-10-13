@@ -21,8 +21,8 @@ properties:
     enum: [7, 14, 16]
     description: |
       Number of segments per character position.
-      - 7:  Standard 7-segment display (segments A to G, support digits 0 to 9)
-      - 14: 14-segment display (not supported yet)
+      - 7:  Standard 7-segment display (segments A to G, digits 0 to 9)
+      - 14: 14-segment display (digits 0 to 9 and letters A to Z)
       - 16: 16-segment display (not supported yet)
 
   rotated:
