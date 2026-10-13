@@ -1506,6 +1506,9 @@ static int mcux_lpuart_configure(const struct device *dev,
 		return -EBUSY;
 	}
 
+	/* LPUART_Init() resets the LPUART, which disables its interrupts */
+	uint32_t int_mask = LPUART_GetEnabledInterrupts(get_base(dev));
+
 	/* Disable Transmitter and Receiver */
 	get_base(dev)->CTRL &= ~(LPUART_CTRL_TE_MASK | LPUART_CTRL_RE_MASK);
 
@@ -1513,6 +1516,8 @@ static int mcux_lpuart_configure(const struct device *dev,
 	if (ret) {
 		return ret;
 	}
+
+	LPUART_EnableInterrupts(get_base(dev), int_mask);
 
 	/* wait for hardware init */
 	k_sleep(K_MSEC(1));
