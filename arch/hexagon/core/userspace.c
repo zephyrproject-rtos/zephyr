@@ -107,8 +107,11 @@ int arch_buffer_validate(const void *addr, size_t size, int write)
 				continue;
 			}
 
-			/* For a write access, the partition must be writable */
-			if (write && !K_MEM_PARTITION_IS_WRITABLE(part->attr)) {
+			/* Match software validation with the HVM user permissions. */
+			if ((write != 0) && !K_MEM_PARTITION_IS_WRITABLE(part->attr)) {
+				continue;
+			}
+			if ((write == 0) && !K_MEM_PARTITION_IS_READABLE(part->attr)) {
 				continue;
 			}
 
