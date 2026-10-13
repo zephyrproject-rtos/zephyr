@@ -626,10 +626,6 @@ static void eth_dwc_xgmac_rx_irq_work(const struct device *dev, uint32_t dma_chn
 	arch_dcache_invd_range(rx_desc, sizeof(rx_desc));
 	rx_desc_data = *(rx_desc);
 	while (!(rx_desc_data.rdes3 & XGMAC_RDES3_OWN)) {
-		get_and_refill_desc_buffs(rx_desc, rx_desc_meta->next_to_read, rx_buffs, &buff1,
-					  &buff2);
-		arch_dcache_flush_range(rx_desc, sizeof(rx_desc));
-
 		if (rx_desc_data.rdes3 & XGMAC_RDES3_FD) {
 			LOG_DBG("%s: received FD buffer. descriptor indx = %d", dev->name,
 				rx_desc_meta->next_to_read);
@@ -645,7 +641,9 @@ static void eth_dwc_xgmac_rx_irq_work(const struct device *dev, uint32_t dma_chn
 				return;
 			}
 		}
-
+		get_and_refill_desc_buffs(rx_desc, rx_desc_meta->next_to_read, rx_buffs, &buff1,
+					  &buff2);
+		arch_dcache_flush_range(rx_desc, sizeof(rx_desc));
 		if (rx_desc_meta->rx_pkt != NULL) {
 			if (rx_desc_data.rdes3 & XGMAC_RDES3_LD) {
 				LOG_DBG("%s: received LD buffer. descriptor indx = %d", dev->name,
