@@ -190,7 +190,7 @@ int main(void)
 		lv_img_set_src(screen, &video_img);
 		lv_obj_align(screen, LV_ALIGN_BOTTOM_LEFT, 0, 0);
 
-		lv_task_handler();
+		lv_timer_handler();
 
 		err = video_enqueue(video_dev, vbuf);
 		if (err) {
