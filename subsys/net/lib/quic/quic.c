@@ -4178,6 +4178,26 @@ bool quic_recovery_tx_slot_available(struct quic_endpoint *ep,
 	return free_slots > QUIC_SENT_PKT_HISTORY_RESERVE;
 }
 
+/*
+ * The idle timer also restarts when an ack-eliciting packet is sent, but
+ * only for the first such packet after one was received from the peer
+ * (RFC 9000 ch. 10.1). A connection is then not closed right after new
+ * activity was started on it, and an endpoint that keeps sending into the
+ * void still times out.
+ */
+static void quic_endpoint_note_ack_eliciting_tx(struct quic_endpoint *ep)
+{
+	if (ep->idle.ack_eliciting_sent) {
+		return;
+	}
+
+	ep->idle.ack_eliciting_sent = true;
+
+	if (!ep->idle.idle_timeout_disabled) {
+		ep->idle.last_rx_time = k_uptime_get();
+	}
+}
+
 ZTESTABLE_STATIC void quic_recovery_on_packet_sent(struct quic_endpoint *ep,
 						   enum quic_secret_level level,
 						   uint64_t pkt_num,
@@ -4189,6 +4209,10 @@ ZTESTABLE_STATIC void quic_recovery_on_packet_sent(struct quic_endpoint *ep,
 	int pn_space = level_to_pn_space(level);
 	uint16_t idx;
 	struct quic_sent_pkt_info *info;
+
+	if (ack_eliciting) {
+		quic_endpoint_note_ack_eliciting_tx(ep);
+	}
 
 	k_mutex_lock(&ep->recovery.lock, K_FOREVER);
 
@@ -8064,11 +8088,13 @@ static void process_pkt(struct quic_pkt *pkt)
  * to decrypt, or anyone who knows the addresses and the connection ID could
  * keep the connection from ever timing out.
  */
-static void quic_endpoint_restart_idle_timer(struct quic_endpoint *ep)
+ZTESTABLE_STATIC void quic_endpoint_restart_idle_timer(struct quic_endpoint *ep)
 {
 	if (!ep->idle.idle_timeout_disabled) {
 		ep->idle.last_rx_time = k_uptime_get();
 	}
+
+	ep->idle.ack_eliciting_sent = false;
 }
 
 static bool process_long_header_msg(struct quic_pkt *pkt)
