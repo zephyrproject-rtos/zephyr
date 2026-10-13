@@ -16,3 +16,7 @@ CONFIG_UART_CONSOLE=y
 
 # Enable OpenAMP resource table needed for remoteproc booting
 CONFIG_OPENAMP_RSC_TABLE=y
+
+# TISCI / K3 interrupt router
+CONFIG_MBOX=y
+CONFIG_TISCI=y
