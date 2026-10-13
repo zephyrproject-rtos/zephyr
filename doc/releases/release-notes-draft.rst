@@ -85,6 +85,9 @@ Libraries / Subsystems
     (:kconfig:option:`CONFIG_LORAWAN_REGION_KR920`,
     :kconfig:option:`CONFIG_LORAWAN_REGION_AS923`,
     :kconfig:option:`CONFIG_LORAWAN_REGION_US915`).
+  * The LoRaWAN services restore the device class that was in use before a
+    multicast class C session started, instead of always reverting to class A.
+    The current class can be read with :c:func:`lorawan_get_class`.
 
 * Mbed TLS
 
