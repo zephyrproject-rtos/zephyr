@@ -633,7 +633,7 @@ static void eth_dwc_xgmac_rx_irq_work(const struct device *dev, uint32_t dma_chn
 				net_pkt_frag_unref(rx_desc_meta->rx_pkt->frags);
 				net_pkt_unref(rx_desc_meta->rx_pkt);
 			}
-			rx_desc_meta->rx_pkt = net_pkt_rx_alloc_on_iface(data->iface, K_NO_WAIT);
+			rx_desc_meta->rx_pkt = net_pkt_rx_alloc_on_iface(data->iface, K_MSEC(1000));
 			if (!rx_desc_meta->rx_pkt) {
 				LOG_ERR("%s: Failed allocate a network packet for receive data",
 					dev->name);
@@ -1413,7 +1413,7 @@ static int eth_dwc_xgmac_send(const struct device *dev, struct net_pkt *pkt)
 	tdes3_fd_flg = XGMAC_TDES3_FD;
 	NET_PKT_FRAG_FOR_EACH(pkt, frag) {
 		eth_dwc_xgmac_free_tx_desc(dev, context.q_id);
-		ret = k_sem_take(&context.descmeta->free_tx_descs_sem, K_MSEC(1));
+		ret = k_sem_take(&context.descmeta->free_tx_descs_sem, K_MSEC(1000));
 		if (ret != 0) {
 			LOG_DBG("%s: enough free tx descriptors are not available", dev->name);
 			goto abort_tx;
