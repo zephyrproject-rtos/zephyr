@@ -236,6 +236,18 @@ int lorawan_set_class(enum lorawan_class dev_class)
 	return 0;
 }
 
+int lorawan_get_class(enum lorawan_class *dev_class)
+{
+	if (dev_class == NULL) {
+		return -EINVAL;
+	}
+
+	/* Only class A is supported by this backend */
+	*dev_class = LORAWAN_CLASS_A;
+
+	return 0;
+}
+
 void lorawan_enable_adr(bool enable)
 {
 	struct lwan_enable_adr_req adr_req = {

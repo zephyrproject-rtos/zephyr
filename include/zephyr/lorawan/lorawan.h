@@ -12,7 +12,7 @@
  * @brief Public LoRaWAN APIs
  * @defgroup lorawan_api LoRaWAN APIs
  * @since 2.5
- * @version 0.2.0
+ * @version 0.3.0
  * @ingroup connectivity
  * @{
  */
@@ -334,6 +334,16 @@ int lorawan_send(uint8_t port, uint8_t *data, uint8_t len, enum lorawan_message_
  * @return 0 if successful, negative errno code if failure
  */
 int lorawan_set_class(enum lorawan_class dev_class);
+
+/**
+ * @brief Get the current device class
+ *
+ * @param dev_class Pointer to store the device class currently in use
+ *
+ * @retval 0 Success
+ * @retval -EINVAL dev_class is NULL or the stack reports an unknown class
+ */
+int lorawan_get_class(enum lorawan_class *dev_class);
 
 /**
  * @brief Set the number of tries used for transmissions

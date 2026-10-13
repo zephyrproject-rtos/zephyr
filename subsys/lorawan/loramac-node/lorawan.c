@@ -572,6 +572,39 @@ int lorawan_set_class(enum lorawan_class dev_class)
 	return 0;
 }
 
+int lorawan_get_class(enum lorawan_class *dev_class)
+{
+	MibRequestConfirm_t mib_req;
+	LoRaMacStatus_t status;
+
+	if (dev_class == NULL) {
+		return -EINVAL;
+	}
+
+	mib_req.Type = MIB_DEVICE_CLASS;
+	status = LoRaMacMibGetRequestConfirm(&mib_req);
+	if (status != LORAMAC_STATUS_OK) {
+		LOG_ERR("Failed to get device class: %s", lorawan_status2str(status));
+		return lorawan_status2errno(status);
+	}
+
+	switch (mib_req.Param.Class) {
+	case CLASS_A:
+		*dev_class = LORAWAN_CLASS_A;
+		break;
+	case CLASS_B:
+		*dev_class = LORAWAN_CLASS_B;
+		break;
+	case CLASS_C:
+		*dev_class = LORAWAN_CLASS_C;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 int lorawan_set_channels_mask(uint16_t *channels_mask, size_t channels_mask_size)
 {
 	MibRequestConfirm_t mib_req;
