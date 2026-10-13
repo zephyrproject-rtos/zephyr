@@ -344,6 +344,8 @@ static void h3_init_conn_ctx(struct h3_conn_ctx *ctx)
 	ctx->peer_settings.received = false;
 
 	ctx->settings_sent = false;
+	ctx->peer_goaway_received = false;
+	ctx->peer_goaway_id = 0U;
 	ctx->initialized = true;
 }
 
@@ -2296,14 +2298,40 @@ int h3_handle_control_stream(struct http_client_ctx *client, int fd)
 			}
 			break;
 
-		case H3_FRAME_GOAWAY:
+		case H3_FRAME_GOAWAY: {
+			uint64_t goaway_id;
+
+			/* The payload is exactly one identifier (RFC 9114
+			 * ch. 7.1 and ch. 7.2.6).
+			 */
+			ret = h3_parse_varint(rx_ctx->buffer + pos + hdr_bytes,
+					      (size_t)frame_len, &goaway_id);
+			if (ret < 0 || (uint64_t)ret != frame_len) {
+				LOG_DBG("[%p] H3: Malformed GOAWAY", client);
+				return -H3_FRAME_ERROR;
+			}
+
 			/* A GOAWAY from a client only limits the server
 			 * pushes it still accepts (RFC 9114 ch. 5.2). There
 			 * are none, and the requests in progress must be
-			 * allowed to finish, so there is nothing to do.
+			 * allowed to finish, so the frame needs no action.
+			 * The identifier must not grow from one GOAWAY to
+			 * the next though, that is a connection error of
+			 * type H3_ID_ERROR.
 			 */
-			LOG_DBG("[%p] H3: Control stream GOAWAY", client);
+			if (h3_ctx->peer_goaway_received &&
+			    goaway_id > h3_ctx->peer_goaway_id) {
+				LOG_DBG("[%p] H3: GOAWAY identifier grew from %llu to %llu",
+					client, h3_ctx->peer_goaway_id, goaway_id);
+				return -H3_ID_ERROR;
+			}
+
+			h3_ctx->peer_goaway_received = true;
+			h3_ctx->peer_goaway_id = goaway_id;
+
+			LOG_DBG("[%p] H3: Control stream GOAWAY, id=%llu", client, goaway_id);
 			break;
+		}
 
 		case H3_FRAME_MAX_PUSH_ID:
 			LOG_DBG("[%p] H3: Control stream MAX_PUSH_ID (ignored)", client);

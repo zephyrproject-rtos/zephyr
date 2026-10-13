@@ -79,8 +79,12 @@ struct h3_conn_ctx {
 	/* Peer settings */
 	struct h3_peer_settings peer_settings;
 
+	/* Identifier carried by the last GOAWAY frame of the peer */
+	uint64_t peer_goaway_id;
+
 	/* State flags */
 	bool settings_sent;
+	bool peer_goaway_received;
 	bool initialized;
 };
 
