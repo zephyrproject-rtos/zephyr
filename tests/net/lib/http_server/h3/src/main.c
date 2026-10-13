@@ -86,7 +86,7 @@ static const struct http_service_config alt_svc_disabled_service_cfg = {
 };
 
 HTTPS_SERVICE_DEFINE(test_http_service, SERVER_IPV4_ADDR,
-		     &test_http_service_port, 1, 1, NULL, NULL,
+		     &test_http_service_port, 2, 1, NULL, NULL,
 		     &test_http_service_cfg,
 		     server_sec_tags, sizeof(server_sec_tags));
 
@@ -408,6 +408,30 @@ static enum http_status h3_decode_response_status(const uint8_t *buf, size_t len
 	pos += qpack_decode_prefixed_int(buf + pos, len - pos, 7, &ignored);
 
 	zassert_true(pos < len, "Missing response status field");
+
+	if ((buf[pos] & 0xf0U) == 0x50U) {
+		/* Literal field line with a static name reference, used for
+		 * the status codes that have no static table entry.
+		 */
+		uint64_t value_len;
+		unsigned int status = 0U;
+
+		pos += qpack_decode_prefixed_int(buf + pos, len - pos, 4, &ignored);
+		zassert_true(pos < len, "Missing response status value");
+		zassert_equal(buf[pos] & 0x80U, 0U, "Unexpected Huffman coded status");
+		pos += qpack_decode_prefixed_int(buf + pos, len - pos, 7, &value_len);
+		zassert_true(value_len == 3U && pos + value_len <= len,
+			     "Unexpected status value length %" PRIu64, value_len);
+
+		for (size_t i = 0; i < value_len; i++) {
+			zassert_true(buf[pos + i] >= '0' && buf[pos + i] <= '9',
+				     "Unexpected status character 0x%02x", buf[pos + i]);
+			status = status * 10U + (buf[pos + i] - '0');
+		}
+
+		return (enum http_status)status;
+	}
+
 	zassert_true((buf[pos] & 0xc0U) == 0xc0U,
 		     "Expected indexed static status field, got 0x%02x", buf[pos]);
 	pos += qpack_decode_prefixed_int(buf + pos, len - pos, 6, &status_index);
@@ -1632,6 +1656,72 @@ ZTEST(server_h3_tests, test_h3_resumed_early_post_is_rejected_with_425)
 	ret = zsock_close(stream_fd);
 	zassert_ok(ret, "Failed to close rejected early POST stream (%d)", errno);
 	untrack_stream_fd(stream_fd);
+}
+
+ZTEST(server_h3_tests, test_h3_409_closes_stream_not_connection)
+{
+	static const char http1_request[] =
+		"POST /dynamic HTTP/1.1\r\n"
+		"Host: localhost\r\n"
+		"Content-Length: 8\r\n"
+		"\r\n"
+		"half";
+	static const char http1_rest[] = "rest";
+	static const uint8_t refused_body[] = "refused!";
+	uint8_t request[96];
+	size_t request_len;
+	int https_fd;
+	int stream_fd;
+	int ret;
+
+	start_h3_session(false);
+
+	/* An HTTP/1.1 client holds the dynamic resource for as long as its
+	 * request body is incomplete.
+	 */
+	https_fd = connect_https_client(SERVER_PORT);
+	send_all(https_fd, (const uint8_t *)http1_request, sizeof(http1_request) - 1);
+	zassert_true(WAIT_FOR(dynamic_more_seen, RECV_TIMEOUT_S * USEC_PER_SEC, k_msleep(10)),
+		     "HTTP/1.1 client did not take the dynamic resource");
+
+	/* The HTTP/3 request for the held resource is refused with 409. Its
+	 * headers and its body arrive together, as for any small POST.
+	 */
+	stream_fd = open_client_stream(QUIC_STREAM_BIDIRECTIONAL);
+	request_len = build_headers_frame(request, HTTP_POST, "/dynamic");
+	request_len += build_data_frame(request + request_len, refused_body,
+					sizeof(refused_body) - 1);
+	send_all(stream_fd, request, request_len);
+	expect_headers_only_status_response(stream_fd, HTTP_409_CONFLICT);
+
+	/* Neither the body of the refused request nor the end of its stream
+	 * may reach the callback, which is serving the holder.
+	 */
+	shutdown_stream_send(stream_fd);
+	k_msleep(100);
+	zassert_equal(dynamic_bytes_received, 4U,
+		      "Body of the refused request was passed to the callback (%zu bytes)",
+		      dynamic_bytes_received);
+	zassert_false(dynamic_final_seen, "Refused request ended the holder's request");
+
+	ret = zsock_close(stream_fd);
+	zassert_ok(ret, "Failed to close refused POST stream (%d)", errno);
+	untrack_stream_fd(stream_fd);
+
+	/* Only that request stream is finished: the HTTP/3 connection keeps
+	 * serving requests.
+	 */
+	send_get_and_expect_static(false);
+
+	/* The holder was not disturbed and can finish its request. */
+	zassert_false(dynamic_complete, "Holder transaction ended by the refused request");
+	send_all(https_fd, (const uint8_t *)http1_rest, sizeof(http1_rest) - 1);
+	zassert_true(WAIT_FOR(dynamic_complete, RECV_TIMEOUT_S * USEC_PER_SEC, k_msleep(10)),
+		     "HTTP/1.1 client could not finish its request");
+	zassert_equal(dynamic_bytes_received, 8U, "Unexpected dynamic payload length");
+
+	ret = zsock_close(https_fd);
+	zassert_ok(ret, "Failed to close HTTPS client socket (%d)", errno);
 }
 
 ZTEST(server_h3_function_tests, test_qpack_encode_int)
