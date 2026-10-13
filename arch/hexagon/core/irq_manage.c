@@ -134,6 +134,7 @@ void z_hexagon_event_exit_user_sync(void)
 
 /* Handle general exceptions */
 #define GSR_CAUSE_MASK 0xFF
+#define HEXAGON_CAUSE_STACK_LIMIT 0x27U
 
 static void z_hexagon_exception_handler(unsigned int event_num,
 					struct event_context *ctx)
@@ -151,8 +152,10 @@ static void z_hexagon_exception_handler(unsigned int event_num,
 	}
 #endif
 
-	/* Fatal error for now */
-	z_hexagon_fatal_error_ctx(K_ERR_CPU_EXCEPTION, event_num, ctx);
+	unsigned int reason = (cause == HEXAGON_CAUSE_STACK_LIMIT) ?
+		K_ERR_STACK_CHK_FAIL : K_ERR_CPU_EXCEPTION;
+
+	z_hexagon_fatal_error_ctx(reason, event_num, ctx);
 }
 
 /* Handle trap0 (syscall) events.

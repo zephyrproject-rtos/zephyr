@@ -18,11 +18,22 @@
 extern "C" {
 #endif
 
+/* Stack protection functions */
+#ifdef CONFIG_HW_STACK_PROTECTION
+extern void z_arch_stack_protection_setup(struct k_thread *thread);
+extern void z_arch_stack_protection_switch(struct k_thread *old_thread,
+					   struct k_thread *new_thread);
+#endif
+
 /* Thread context switching */
 extern void z_hexagon_arch_switch(void *switch_to, void **switched_from);
 static ALWAYS_INLINE void arch_switch(void *switch_to, void **switched_from)
 {
 	z_hexagon_arch_switch(switch_to, switched_from);
+#ifdef CONFIG_HW_STACK_PROTECTION
+	/* Back on the resumed thread: load its FRAMELIMIT. */
+	z_arch_stack_protection_switch(NULL, _current);
+#endif
 }
 
 /* Thread creation */

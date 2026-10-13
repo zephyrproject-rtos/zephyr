@@ -25,8 +25,8 @@ void z_arch_stack_protection_setup(struct k_thread *thread)
 
 	uintptr_t stack_limit = thread->stack_info.start;
 
+	/* FRAMELIMIT is loaded when the thread is switched in. */
 	thread->arch.framelimit = stack_limit;
-	hexagon_set_framelimit(stack_limit);
 	thread->arch.flags |= HEXAGON_THREAD_FLAG_STACK_PROT;
 }
 
