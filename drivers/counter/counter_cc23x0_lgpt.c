@@ -239,6 +239,10 @@ static int counter_cc23x0_lgpt_set_top_value(const struct device *dev,
 		HWREG(config->base + LGPT_O_IMASK) |= LGPT_IMASK_TGT;
 		HWREG(config->base + LGPT_O_TGT) = cfg->ticks;
 
+		if (!(cfg->flags & COUNTER_TOP_CFG_DONT_RESET)) {
+			HWREG(config->base + LGPT_O_CNTR) = 0x0;
+		}
+
 		data->target_cfg.flags = 0;
 		data->target_cfg.ticks = cfg->ticks;
 		data->target_cfg.callback = cfg->callback;
