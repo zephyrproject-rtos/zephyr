@@ -418,6 +418,7 @@ struct xgmac_dma_tx_desc_meta {
 	struct k_mutex ring_lock;
 	/* Index of the next BD to be used for TX */
 	volatile uint16_t next_to_use;
+	volatile uint16_t next_to_free;
 	/* Address of the first descriptor in the TX descriptor ring. This field will be
 	 * updated in TX descriptor initialization and consumed by channel initialization.
 	 */

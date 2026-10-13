@@ -280,6 +280,7 @@ static void dwxgmac_dma_chnl_init(const struct device *dev,
 
 		/* Initialize channel metadata */
 		tx_desc_meta->next_to_use = 0u;
+		tx_desc_meta->next_to_free = 0u;
 		rx_desc_meta->next_to_read = 0u;
 		rx_desc_meta->rx_pkt = (struct net_pkt *)NULL;
 		LOG_DBG("%s: DMA channel %d initialization completed", dev->name, dma_chnl);
@@ -703,7 +704,7 @@ static inline mem_addr_t *tx_pkt_location_in_array(mem_addr_t *array_base, uint3
 	return (array_base + ((dma_chnl * tdrl) + desc_idx));
 }
 
-static void eth_dwc_xgmac_tx_irq_work(const struct device *dev, uint32_t dma_chnl)
+static int eth_dwc_xgmac_free_tx_desc(const struct device *dev, uint32_t dma_chnl)
 {
 	struct eth_dwc_xgmac_dev_data *const data = (struct eth_dwc_xgmac_dev_data *)dev->data;
 	const struct eth_dwc_xgmac_config *const config =
@@ -718,34 +719,42 @@ static void eth_dwc_xgmac_tx_irq_work(const struct device *dev, uint32_t dma_chn
 	uint16_t desc_idx;
 	struct net_pkt *pkt;
 
-	desc_idx =
-		((tx_desc_meta->next_to_use + k_sem_count_get(&tx_desc_meta->free_tx_descs_sem)) %
-		 dma_chnl_cfg->tdrl);
-	for (; desc_idx != tx_desc_meta->next_to_use;
-	     desc_idx = ((desc_idx + 1) % dma_chnl_cfg->tdrl)) {
-		tx_desc = (struct xgmac_dma_tx_desc *)(fisrt_tx_desc + desc_idx);
-		if (!(tx_desc->tdes3 & XGMAC_TDES3_OWN)) {
-			/* If LD bit of this descriptor set then unreferance the TX packet */
-			if (tx_desc->tdes3 & XGMAC_TDES3_LD) {
-				pkt = (struct net_pkt *)(*tx_pkt_location_in_array(
-					data->tx_pkts, dma_chnl, dma_chnl_cfg->tdrl, desc_idx));
-
-				LOG_DBG("%s: %p packet unreferenced for after tx", dev->name, pkt);
-				net_pkt_unref(pkt);
-				*(tx_pkt_location_in_array(data->tx_pkts, dma_chnl,
-							   dma_chnl_cfg->tdrl, desc_idx)) =
-					(mem_addr_t)NULL;
-			}
-			/* reset the descriptor content */
-			tx_desc->tdes0 = 0u;
-			tx_desc->tdes1 = 0u;
-			tx_desc->tdes2 = 0u;
-			tx_desc->tdes3 = 0u;
-			k_sem_give(&tx_desc_meta->free_tx_descs_sem);
-		} else {
-			break;
+	desc_idx = tx_desc_meta->next_to_free;
+	tx_desc = (struct xgmac_dma_tx_desc *)(fisrt_tx_desc + desc_idx);
+	if ((desc_idx != tx_desc_meta->next_to_use ||
+	     k_sem_count_get(&tx_desc_meta->free_tx_descs_sem) == 0) &&
+	    !(tx_desc->tdes3 & XGMAC_TDES3_OWN)) {
+		/* If LD bit of this descriptor set then unreferance the TX packet */
+		if (tx_desc->tdes3 & XGMAC_TDES3_LD) {
+			pkt = (struct net_pkt *)(*tx_pkt_location_in_array(data->tx_pkts, dma_chnl,
+									  dma_chnl_cfg->tdrl,
+									  desc_idx));
+			LOG_DBG("%s: %p packet unreferenced for after tx", dev->name, pkt);
+			net_pkt_unref(pkt);
+			*(tx_pkt_location_in_array(data->tx_pkts, dma_chnl, dma_chnl_cfg->tdrl,
+						   desc_idx)) = (mem_addr_t)NULL;
 		}
+		/* reset the descriptor content */
+		tx_desc->tdes0 = 0u;
+		tx_desc->tdes1 = 0u;
+		tx_desc->tdes2 = 0u;
+		tx_desc->tdes3 = 0u;
+		k_sem_give(&tx_desc_meta->free_tx_descs_sem);
+		tx_desc_meta->next_to_free = ((desc_idx + 1) % dma_chnl_cfg->tdrl);
+		return 0;
 	}
+	return -1;
+}
+
+static void eth_dwc_xgmac_tx_irq_work(const struct device *dev, uint32_t dma_chnl)
+{
+	struct eth_dwc_xgmac_dev_data *const data = (struct eth_dwc_xgmac_dev_data *)dev->data;
+	struct xgmac_dma_tx_desc_meta *tx_desc_meta =
+		(struct xgmac_dma_tx_desc_meta *)&data->tx_desc_meta[dma_chnl];
+	(void)k_mutex_lock(&tx_desc_meta->ring_lock, K_FOREVER);
+	while (eth_dwc_xgmac_free_tx_desc(dev, dma_chnl) == 0) {
+	}
+	(void)k_mutex_unlock(&tx_desc_meta->ring_lock);
 }
 
 static void eth_dwc_xgmac_dmach_isr(const struct device *dev, uint32_t dmach_interrupt_sts,
@@ -1381,6 +1390,7 @@ static int eth_dwc_xgmac_send(const struct device *dev, struct net_pkt *pkt)
 	LOG_DBG("%s: %p packet referenced for tx", dev->name, pkt);
 	tdes3_fd_flg = XGMAC_TDES3_FD;
 	NET_PKT_FRAG_FOR_EACH(pkt, frag) {
+		eth_dwc_xgmac_free_tx_desc(dev, context.q_id);
 		ret = k_sem_take(&context.descmeta->free_tx_descs_sem, K_MSEC(1));
 		if (ret != 0) {
 			LOG_DBG("%s: enough free tx descriptors are not available", dev->name);
