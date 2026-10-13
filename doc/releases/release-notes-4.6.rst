@@ -63,6 +63,10 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
+* LoRaWAN
+
+  * :c:func:`lorawan_get_class`
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
@@ -100,6 +104,11 @@ New Samples
 
 Libraries / Subsystems
 **********************
+
+* LoRa / LoRaWAN
+
+  * The LoRaWAN services now restore the device class that was in use before a
+    multicast class C session started, instead of always reverting to class A.
 
 Other notable changes
 *********************
