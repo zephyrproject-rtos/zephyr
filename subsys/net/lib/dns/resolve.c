@@ -3050,6 +3050,53 @@ bool dns_resolve_is_active(struct dns_resolve_context *ctx)
 	return active;
 }
 
+uint32_t dns_resolve_get_server_families(struct dns_resolve_context *ctx, int if_index)
+{
+	uint32_t families = 0U;
+
+	if (ctx == NULL) {
+		return 0U;
+	}
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+	if (ctx->state == DNS_RESOLVE_CONTEXT_UNINITIALIZED) {
+		goto unlock;
+	}
+
+	k_mutex_lock(&ctx->lock, K_FOREVER);
+
+	if (ctx->state != DNS_RESOLVE_CONTEXT_ACTIVE) {
+		goto unlock_ctx;
+	}
+
+	for (int i = 0; i < SERVER_COUNT; i++) {
+		const struct dns_server_info *server = &ctx->servers[i];
+		net_sa_family_t family = server->dns_server_addr.ss_family;
+
+		/* Ignore inactive and multicast */
+		if (server->sock < 0 || server->is_mdns || server->is_llmnr) {
+			continue;
+		}
+
+		/* Filter by interface */
+		if (MAX(server->if_index, 0) != if_index) {
+			continue;
+		}
+
+		if (family == NET_AF_INET || family == NET_AF_INET6) {
+			families |= BIT(family);
+		}
+	}
+
+unlock_ctx:
+	k_mutex_unlock(&ctx->lock);
+unlock:
+	k_mutex_unlock(&lock);
+
+	return families;
+}
+
 static bool dns_server_exists(struct dns_resolve_context *ctx,
 			      const struct net_sockaddr *addr)
 {
