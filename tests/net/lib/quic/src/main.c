@@ -7107,6 +7107,115 @@ ZTEST(net_socket_quic, test_492_stop_sending_replies_are_capped)
 	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
 }
 
+/* Hand a payload with one STOP_SENDING frame to the frame parser, with the
+ * endpoint attached to a listening context so that the parser can find the
+ * connection the stream would belong to.
+ */
+static int stop_sending_for_stream(struct quic_endpoint *ep, struct quic_context *ctx,
+				   uint8_t stream_id)
+{
+	const uint8_t payload[] = {
+		QUIC_FRAME_TYPE_STOP_SENDING,
+		stream_id,
+		0x00, /* Error code */
+	};
+	bool ack_only = false;
+	int ret;
+
+	/* The parser drops a reference when it gives up on the connection */
+	atomic_set(&ep->refcount, 2);
+	sys_slist_append(&ctx->endpoints, &ep->node);
+
+	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_APPLICATION,
+					 payload, sizeof(payload), sizeof(payload),
+					 &ack_only);
+
+	(void)sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+
+	return ret;
+}
+
+ZTEST(net_socket_quic, test_493_stop_sending_for_receive_only_stream)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54352");
+
+	/* As a server, stream 2 is a unidirectional stream of the client:
+	 * we only receive on it, so we cannot be asked to stop sending.
+	 */
+	ep->is_server = true;
+	ret = stop_sending_for_stream(ep, ctx, 2);
+	zassert_equal(ret, -EPROTO,
+		      "STOP_SENDING for a receive-only stream must close the connection (%d)",
+		      ret);
+
+	/* The same for a client and a unidirectional stream of the server */
+	ep = reset_test_ep(&test_ep_a);
+	ep->is_server = false;
+	ret = stop_sending_for_stream(ep, ctx, 3);
+	zassert_equal(ret, -EPROTO,
+		      "STOP_SENDING for a receive-only stream must close the connection (%d)",
+		      ret);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+ZTEST(net_socket_quic, test_494_stop_sending_for_stream_never_opened)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54353");
+
+	/* As a server, streams 1 and 3 would be the first ones of our own.
+	 * None has been opened on this connection.
+	 */
+	ep->is_server = true;
+	zassert_equal(ctx->stream_id_counter, 0, "Unexpected streams on a new context");
+
+	ret = stop_sending_for_stream(ep, ctx, 1);
+	zassert_equal(ret, -EPROTO,
+		      "STOP_SENDING for a bidirectional stream that was never opened "
+		      "must close the connection (%d)", ret);
+
+	ep = reset_test_ep(&test_ep_a);
+	ep->is_server = true;
+	ret = stop_sending_for_stream(ep, ctx, 3);
+	zassert_equal(ret, -EPROTO,
+		      "STOP_SENDING for a unidirectional stream that was never opened "
+		      "must close the connection (%d)", ret);
+
+	/* Once a stream was opened, a frame for it is not an error even when
+	 * the stream is gone again: it can be late for a stream that is
+	 * closed already.
+	 */
+	ep = reset_test_ep(&test_ep_a);
+	ep->is_server = true;
+	ctx->stream_id_counter = 1;
+	ret = stop_sending_for_stream(ep, ctx, 1);
+	zassert_true(ret >= 0, "STOP_SENDING for a closed stream must be ignored (%d)", ret);
+	ctx->stream_id_counter = 0;
+
+	/* A stream of the peer that we do not know is not ours to judge
+	 * here either.
+	 */
+	ep = reset_test_ep(&test_ep_a);
+	ep->is_server = true;
+	ret = stop_sending_for_stream(ep, ctx, 0);
+	zassert_true(ret >= 0, "STOP_SENDING for an unknown peer stream must be ignored (%d)",
+		     ret);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
 ZTEST(net_socket_quic, test_488_token_replay_entry_survives_the_expiry_second)
 {
 	uint8_t nonce[8] = {
