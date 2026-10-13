@@ -460,7 +460,7 @@ static int acp_host_dma_reload(const struct device *dev, uint32_t channel, uint3
 		} else {
 			pb_free = ptr_data->size;
 		}
-		bytes = (size_t)ALIGN_DOWN(pb_free, 64);
+		bytes = (size_t)ALIGN_DOWN(pb_free, 128);
 		bytes = MIN(bytes, ptr_data->size >> 1);
 		head = bytes;
 		/* Update the read and write pointers */
@@ -526,7 +526,7 @@ static int acp_host_dma_reload(const struct device *dev, uint32_t channel, uint3
 		} else {
 			cap_avail = ptr_data->size;
 		}
-		bytes = (size_t)ALIGN_DOWN(cap_avail, 64);
+		bytes = (size_t)ALIGN_DOWN(cap_avail, 128);
 		bytes = MIN(bytes, ptr_data->size >> 1);
 		head = bytes;
 		ptr_data->wr_ptr = ACP_SYST_MEM_WINDOW + ptr_data->phy_off + ptr_data->wr_size;

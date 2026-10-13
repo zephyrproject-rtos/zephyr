@@ -20,7 +20,7 @@ config DMA_AMD_ACP_TDM_CHANNEL_COUNT
 
 config DMA_AMD_ACP_TDM_BUFFER_ALIGN
 	int "Buffer alignment"
-	default 64
+	default 128
 	help
 	  Required alignment for ACP TDM audio buffers.
 

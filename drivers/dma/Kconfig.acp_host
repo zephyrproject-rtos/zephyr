@@ -22,14 +22,14 @@ config DMA_AMD_ACP_HOST_CHANNEL_COUNT
 
 config DMA_AMD_ACP_BUFFER_ALIGN
 	int "Buffer alignment in bytes"
-	default 64
+	default 128
 	help
 	  Alignment in bytes for memory regions passed to this driver,
 	  used to adjust a memory region's size and base address.
 
 config DMA_AMD_ACP_BUFFER_ADDRESS_ALIGN
 	int "Buffer address alignment in bytes"
-	default 64
+	default 128
 	help
 	  Alignment in bytes for buffer addresses passed to this driver,
 	  used to adjust a memory region's buffer address.
