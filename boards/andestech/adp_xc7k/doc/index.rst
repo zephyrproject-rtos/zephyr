@@ -196,7 +196,7 @@ the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: adp_xc7k/ae350
+   :board: adp_xc7k/ae350_a25
    :goals: build
 
 Flashing
