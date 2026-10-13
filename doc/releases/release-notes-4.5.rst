@@ -1237,7 +1237,7 @@ New Boards
   * :zephyr:board:`cy8cproto_040t` (``cy8cproto_040t``)
   * :zephyr:board:`cy8cproto_040t_auto` (``cy8cproto_040t_auto``)
   * :zephyr:board:`kit_psc3m5_cc2` (``kit_psc3m5_cc2``)
-  * :zephyr:board:`kit_psc3m6_evk` (``kit_psc3m6_evk``)
+  * :zephyr:board:`kit_psc3m6_eval` (``kit_psc3m6_eval``)
   * :zephyr:board:`kit_t2g_c2d6m_lite` (``kit_t2g_c2d6m_lite``)
 
 * Intel Corporation

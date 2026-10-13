@@ -249,6 +249,11 @@ Boards
   ``-b stm32mp157c_dk2`` is deprecated and now maps to
   ``stm32mp157x_dk2/stm32mp157cxx``.
 
+* The Infineon ``kit_psc3m6_evk`` board has been renamed to
+  ``kit_psc3m6_eval``. The previous ``-b kit_psc3m6_evk`` and
+  ``-b kit_psc3m6_evk/psc3m6ges3ahq1`` are deprecated and now map to
+  ``kit_psc3m6_eval`` and ``kit_psc3m6_eval/psc3m6ges3ahq1``.
+
 * The Nordic sysbuild Kconfig option ``SB_CONFIG_NRF_HALTIUM_GENERATE_UICR``
   has been renamed to :kconfig:option:`SB_CONFIG_NRF_GENERATE_UICR`.
   Update sysbuild configurations to use the new name.
