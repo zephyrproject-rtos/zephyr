@@ -72,9 +72,6 @@ extern "C" {
  */
 #define BT_ID_DEFAULT 0
 
-/** Size of an Identity Resolving Key in octets. */
-#define BT_IRK_SIZE 16U
-
 /**
  * @brief Number of octets for local supported features
  *
@@ -2633,7 +2630,8 @@ struct bt_le_scan_recv_info {
 	 * Controller resolved while scanning with the legacy scanning commands.
 	 *
 	 * The address type is @ref BT_ADDR_LE_UNRESOLVED if the Controller was unable to
-	 * resolve it.
+	 * resolve it. Use bt_addr_matches_irk() to check such an address against an IRK the
+	 * application holds.
 	 */
 	const bt_addr_le_t *direct_addr;
 };

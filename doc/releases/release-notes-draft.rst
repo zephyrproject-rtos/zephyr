@@ -65,6 +65,10 @@ New APIs and options
 
 * Bluetooth
 
+  * Host
+
+    * :c:func:`bt_addr_matches_irk`
+
   * Services
 
     * :kconfig:option:`CONFIG_BT_HIDS`
