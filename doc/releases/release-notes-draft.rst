@@ -74,6 +74,13 @@ New APIs and options
     * :c:func:`bt_hids_report_get`
     * :c:func:`bt_hids_send_report`
 
+* Management
+
+  * MCUmgr
+
+    * :dtcompatible:`zephyr,smp-uart` and :dtcompatible:`zephyr,smp-uart-raw` select the UARTs of
+      the MCUmgr UART transports, see :ref:`mcumgr_smp_transport_uart_config`.
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
@@ -116,6 +123,19 @@ Libraries / Subsystems
 
   * Added a HID Service server (:kconfig:option:`CONFIG_BT_HIDS`), the service
     the HID Device role of the HID over GATT Profile is built on.
+
+* Management
+
+  * MCUmgr
+
+    * The UART transports can run on several UARTs at once, each selected with a
+      :dtcompatible:`zephyr,smp-uart` or :dtcompatible:`zephyr,smp-uart-raw` node, and
+      :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_UART` and
+      :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_RAW_UART` can be enabled together. Without a node of
+      an enabled transport, they use the ``zephyr,uart-mcumgr`` chosen UART as before.
+
+    * With :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_UART_ASYNC`, UARTs without the asynchronous UART
+      API, such as USB CDC ACM, use the interrupt-driven API instead of not receiving.
 
 Other notable changes
 *********************
