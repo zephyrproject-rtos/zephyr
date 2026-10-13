@@ -15,6 +15,16 @@
 #error "Unsupported CPU."
 #endif
 
+#if defined(CONFIG_RISCV)
+/* Controller IRQ priority Kconfig options use 0 as the most urgent priority,
+ * whereas in VPR CLIC a higher priority level preempts a lower one.
+ */
+#define HAL_IRQ_PRIO_MAX 3U
+#define HAL_IRQ_PRIO(prio) (HAL_IRQ_PRIO_MAX - (prio))
+#else
+#define HAL_IRQ_PRIO(prio) (prio)
+#endif
+
 static inline void cpu_sleep(void)
 {
 	k_cpu_atomic_idle(irq_lock());
