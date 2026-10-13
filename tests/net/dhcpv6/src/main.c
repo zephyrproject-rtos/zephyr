@@ -521,6 +521,12 @@ static void verify_dhcpv6_oro_inf_max_rt(struct net_if *iface,
 	verify_dhcpv6_oro_option(iface, pkt, DHCPV6_OPTION_CODE_INF_MAX_RT);
 }
 
+static void verify_dhcpv6_oro_info_refresh_time(struct net_if *iface,
+						struct net_pkt *pkt)
+{
+	verify_dhcpv6_oro_option(iface, pkt, DHCPV6_OPTION_CODE_INFORMATION_REFRESH_TIME);
+}
+
 static void verify_solicit_message(struct net_if *iface, struct net_pkt *pkt)
 {
 	/* Verify header */
@@ -559,6 +565,7 @@ static void verify_info_request_message(struct net_if *iface, struct net_pkt *pk
 	verify_dhcpv6_no_serverid(iface, pkt);
 	verify_dhcpv6_elapsed_time(iface, pkt, 0, 10);
 	verify_dhcpv6_oro_inf_max_rt(iface, pkt);
+	verify_dhcpv6_oro_info_refresh_time(iface, pkt);
 }
 
 ZTEST(dhcpv6_tests, test_info_request_message_format)
