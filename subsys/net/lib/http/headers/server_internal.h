@@ -94,6 +94,7 @@ int handle_http3_request(struct http_client_ctx *client);
 int handle_http3_stream_fin(struct http_client_ctx *client);
 int h3_open_uni_streams(struct http_client_ctx *client, int quic_sock);
 int h3_identify_uni_stream(struct http_client_ctx *client, int fd);
+bool h3_is_connection_error(int err);
 int h3_handle_control_stream(struct http_client_ctx *client, int fd);
 int h3_handle_qpack_encoder_stream(struct http_client_ctx *client, int fd);
 int h3_handle_qpack_decoder_stream(struct http_client_ctx *client, int fd);

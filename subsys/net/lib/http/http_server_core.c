@@ -1371,6 +1371,20 @@ static void handle_h3_uni_stream(struct http_server_ctx *ctx, int i,
 
 			zsock_close(stream_fd);
 			invalidate_poll_fd(&ctx->fds[i]);
+
+			if (h3_is_connection_error(ret)) {
+				/* For example a second control or QPACK
+				 * stream, which is a connection error of
+				 * type H3_STREAM_CREATION_ERROR (RFC 9114
+				 * ch. 6.2.1, RFC 9204 ch. 4.2). Giving up
+				 * the stream alone is not enough.
+				 */
+				LOG_DBG("[%p] H3: stream fd %d rejected (%d), "
+					"closing connection", client, stream_fd, ret);
+				close_h3_or_plain_client(client, ctx->fds,
+							 ARRAY_SIZE(ctx->fds));
+			}
+
 			return;
 		}
 	}

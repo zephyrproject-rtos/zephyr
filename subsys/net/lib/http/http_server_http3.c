@@ -2596,6 +2596,20 @@ int h3_open_uni_streams(struct http_client_ctx *client, int quic_sock)
 }
 
 /**
+ * Tell whether an error returned by the HTTP/3 code is an HTTP/3 error code,
+ * which the stream handling returns for conditions that end the connection,
+ * as opposed to an errno value.
+ *
+ * @param err Negative error value.
+ *
+ * @return true if the error is a negated HTTP/3 error code.
+ */
+bool h3_is_connection_error(int err)
+{
+	return err <= -H3_NO_ERROR && err >= -H3_VERSION_FALLBACK;
+}
+
+/**
  * Identify and register an incoming unidirectional stream.
  *
  * @param client  Client context.
