@@ -266,6 +266,7 @@ static int counter_cc23x0_lgpt_start(const struct device *dev)
 {
 	const struct counter_cc23x0_lgpt_config *config = dev->config;
 	struct counter_cc23x0_lgpt_data *data = dev->data;
+	uint32_t reg_val;
 
 	if (data->is_running) {
 		return 0;
@@ -277,10 +278,10 @@ static int counter_cc23x0_lgpt_start(const struct device *dev)
 
 	LOG_DBG("[START] LGPT base[%x]\n", config->base);
 
-	HWREG(config->base + LGPT_O_CTL) = LGPT_CTL_MODE_UP_PER;
-
-	/* Set to 1 to start timer */
-	HWREG(config->base + LGPT_O_STARTCFG) = (1U << LGPT_STARTCFG_LGPT_S);
+	reg_val = HWREG(config->base + LGPT_O_CTL);
+	reg_val &= ~(LGPT_CTL_MODE_M | LGPT_CTL_C2RST | LGPT_CTL_C1RST | LGPT_CTL_C0RST);
+	reg_val |= LGPT_CTL_MODE_UP_PER;
+	HWREG(config->base + LGPT_O_CTL) = reg_val;
 
 	return 0;
 }
@@ -289,6 +290,7 @@ static int counter_cc23x0_lgpt_stop(const struct device *dev)
 {
 	const struct counter_cc23x0_lgpt_config *config = dev->config;
 	struct counter_cc23x0_lgpt_data *data = dev->data;
+	uint32_t reg_val;
 
 	if (!data->is_running) {
 		return 0;
@@ -296,8 +298,10 @@ static int counter_cc23x0_lgpt_stop(const struct device *dev)
 
 	LOG_DBG("[STOP] LGPT base[%x]\n", config->base);
 
-	/* Set to 0 to stop timer */
-	HWREG(config->base + LGPT_O_STARTCFG) = 0x0;
+	reg_val = HWREG(config->base + LGPT_O_CTL);
+	reg_val &= ~LGPT_CTL_MODE_M;
+	reg_val |= LGPT_CTL_MODE_DIS;
+	HWREG(config->base + LGPT_O_CTL) = reg_val;
 
 	data->is_running = false;
 
