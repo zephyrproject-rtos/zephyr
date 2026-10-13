@@ -8001,6 +8001,21 @@ static void process_pkt(struct quic_pkt *pkt)
 /* This is called by Quic handler thread and it will decrypt the header and process
  * the packet further.
  */
+/*
+ * Restart the idle timer of an endpoint for a packet that was received and
+ * authenticated (RFC 9000 ch. 10.1). It must be the endpoint the packet is
+ * for, not the one that owns the UDP socket, which a server shares between
+ * all of its connections. And it must not be done for a packet that failed
+ * to decrypt, or anyone who knows the addresses and the connection ID could
+ * keep the connection from ever timing out.
+ */
+static void quic_endpoint_restart_idle_timer(struct quic_endpoint *ep)
+{
+	if (!ep->idle.idle_timeout_disabled) {
+		ep->idle.last_rx_time = k_uptime_get();
+	}
+}
+
 static bool process_long_header_msg(struct quic_pkt *pkt)
 {
 	enum quic_packet_type ptype = pkt->ptype;
@@ -8136,6 +8151,8 @@ static bool process_long_header_msg(struct quic_pkt *pkt)
 		goto free_ep;
 	}
 
+	quic_endpoint_restart_idle_timer(ep);
+
 	pkt->pkt_num = decrypted.packet_number;
 
 	if (ptype == QUIC_PACKET_TYPE_HANDSHAKE) {
@@ -8246,6 +8263,8 @@ static bool process_short_header_msg(struct quic_pkt *pkt)
 		NET_ERR("Failed to decrypt short header packet: %d", ret);
 		return false;
 	}
+
+	quic_endpoint_restart_idle_timer(ep);
 
 	NET_DBG("[EP:%p/%d] Decrypted short header packet %" PRIu64 ", payload %zu bytes",
 		ep, quic_get_by_ep(ep), decrypted.packet_number, decrypted.payload_len);
@@ -8807,11 +8826,6 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 		goto out;
 	}
 
-	/* Update idle timer on ANY received packet */
-	if (!existing_ep->idle.idle_timeout_disabled) {
-		existing_ep->idle.last_rx_time = k_uptime_get();
-	}
-
 	/*
 	 * Queue packet for processing
 	 */
@@ -8951,11 +8965,6 @@ static int process_short_header(struct quic_endpoint *ep,
 
 	quic_endpoint_note_unvalidated_rx(target_ep, len);
 
-	/* Update idle timer on ANY received packet */
-	if (!ep->idle.idle_timeout_disabled) {
-		ep->idle.last_rx_time = k_uptime_get();
-	}
-
 	pn_offset = 1 + target_ep->my_cid_len;
 
 	/* Get crypto context for APPLICATION level (1-RTT) */
@@ -9027,6 +9036,8 @@ static int process_short_header(struct quic_endpoint *ep,
 			target_ep, quic_get_by_ep(target_ep), ret);
 		goto out;
 	}
+
+	quic_endpoint_restart_idle_timer(target_ep);
 
 	NET_DBG("[EP:%p/%d] Short header packet %" PRIu64 ", payload %zu bytes",
 		target_ep, quic_get_by_ep(target_ep), decrypted.packet_number,
