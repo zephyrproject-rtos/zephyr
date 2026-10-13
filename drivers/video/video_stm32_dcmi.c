@@ -593,6 +593,9 @@ static int video_stm32_dcmi_init(const struct device *dev)
 		return -EIO;
 	}
 
+	/* Avoid unused interrupts reasons */
+	__HAL_DCMI_DISABLE_IT(&data->hdcmi, DCMI_IT_LINE | DCMI_IT_VSYNC);
+
 	k_sleep(K_MSEC(100));
 
 	LOG_DBG("%s inited", dev->name);
