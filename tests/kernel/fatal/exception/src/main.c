@@ -139,6 +139,17 @@ void entry_cpu_exception_extend(void *p1, void *p2, void *p3)
 	 * Misaligned word store triggers ALN trap (Class 2 TIN 4).
 	 */
 	*(volatile int *)1 = 0;
+#elif defined(CONFIG_HEXAGON)
+	/* Hexagon has no divide instruction: integer division is done by
+	 * the compiler-rt __hexagon_divsi3 helper, which returns rather
+	 * than trapping on a zero divisor. Branch to a misaligned PC
+	 * instead, which raises a PC-not-aligned general exception.
+	 */
+	{
+		volatile uintptr_t target = (uintptr_t)entry_cpu_exception_extend + 2;
+
+		((void (*)(void))target)();
+	}
 #else
 	/* used to create a divide by zero error on X86 and MIPS */
 	volatile int error;

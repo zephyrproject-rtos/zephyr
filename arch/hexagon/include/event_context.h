@@ -35,7 +35,18 @@
  *   0x68  usr
  *   0x6c  r28
  *   0x70  scratch
- *   -- total size 0x78 (EVENT_CTX_SIZE) --
+ *   -- 0x78 (EVENT_CTX_SIZE without debug consumers) --
+ *
+ * With CONFIG_DEBUG_COREDUMP or CONFIG_GDBSTUB, EVENT_ENTRY also saves:
+ *   0x78  r16_r17
+ *   0x80  r18_r19
+ *   0x88  r20_r21
+ *   0x90  r22_r23
+ *   0x98  r24_r25
+ *   0xa0  r26_r27
+ *   0xa8  gp
+ *   0xac  ugp
+ *   -- total size 0xb0 --
  */
 
 #ifndef ZEPHYR_ARCH_HEXAGON_INCLUDE_EVENT_CONTEXT_H_
@@ -68,6 +79,17 @@ struct event_context {
 	uint32_t usr;              /**< user status register USR */
 	uint32_t r28;              /**< R28 (caller-saved, not in r0-r15 pairs) */
 	uint32_t scratch;          /**< temporary slot used during EVENT_EXIT */
+	uint32_t padding;          /**< align extended fields to the assembly offset */
+#if defined(CONFIG_GDBSTUB) || defined(CONFIG_DEBUG_COREDUMP)
+	uint32_t r16_r17[2];       /**< r16, r17 */
+	uint32_t r18_r19[2];       /**< r18, r19 */
+	uint32_t r20_r21[2];       /**< r20, r21 */
+	uint32_t r22_r23[2];       /**< r22, r23 */
+	uint32_t r24_r25[2];       /**< r24, r25 */
+	uint32_t r26_r27[2];       /**< r26, r27 */
+	uint32_t gp;               /**< global pointer */
+	uint32_t ugp;              /**< user global pointer */
+#endif
 };
 
 /** @brief Size of struct event_context in bytes (must equal EVENT_CTX_SIZE). */
@@ -78,7 +100,11 @@ struct event_context {
  * gdbstub.c to locate the pre-exception SP/FP above the saved context
  * frame. If struct event_context grows, update both definitions.
  */
+#if defined(CONFIG_GDBSTUB) || defined(CONFIG_DEBUG_COREDUMP)
+#define EVENT_CTX_SIZE 0xb0
+#else
 #define EVENT_CTX_SIZE 0x78
+#endif
 
 /*
  * Overhead appended by allocframe above EVENT_CTX_SIZE: old FP/LR stored
@@ -87,8 +113,8 @@ struct event_context {
  */
 #define EVENT_ENTRY_ALLOCFRAME_OVERHEAD 8
 
-BUILD_ASSERT(EVENT_CTX_SIZE_C <= EVENT_CTX_SIZE,
-	     "struct event_context exceeds EVENT_CTX_SIZE; "
+BUILD_ASSERT(EVENT_CTX_SIZE_C == EVENT_CTX_SIZE,
+	     "struct event_context size differs from EVENT_CTX_SIZE; "
 	     "update both event_context.h and event_handlers.S");
 
 #endif /* _ASMLANGUAGE */

@@ -28,6 +28,7 @@ GTEXT(__start)
 GTEXT(__reset_handler)
 GTEXT(_machine_check_handler)
 GTEXT(_general_exception_handler)
+GTEXT(_debug_handler)
 GTEXT(_trap0_handler)
 GTEXT(_interrupt_handler)
 
@@ -57,7 +58,7 @@ SECTION_FUNC(reset, __start)
 	/* 2: General exception */
 	jump #_general_exception_handler
 	/* 3: Debug */
-	jump #_unhandled_event
+	jump #_debug_handler
 	/* 4: Reserved */
 	jump #_unhandled_event
 	/* 5: Trap0 (syscall) */
@@ -136,8 +137,10 @@ SECTION_FUNC(TEXT, _unhandled_event)
 	jump ##z_hexagon_fatal_error
 
 SECTION_FUNC(TEXT, _machine_check_handler)
-	r0 = #1
-	jump ##z_hexagon_fatal_error
+	jump ##z_hexagon_enhanced_machine_check
+
+SECTION_FUNC(TEXT, _debug_handler)
+	jump ##z_hexagon_enhanced_exception
 
 /*
  * General exception handler.

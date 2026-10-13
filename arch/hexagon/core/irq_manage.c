@@ -12,8 +12,12 @@
 #include <zephyr/arch/hexagon/exception.h>
 #include <hexagon_vm.h>
 #include <hexagon_intc.h>
+#include <hexagon_fatal.h>
 #include <irq.h>
 #include <event_context.h>
+#if defined(CONFIG_GDBSTUB)
+#include <zephyr/arch/hexagon/gdbstub.h>
+#endif
 #ifdef CONFIG_USERSPACE
 extern void z_hexagon_syscall_handler(struct arch_esf *esf);
 extern void z_hexagon_user_mode_sync(void);
@@ -25,7 +29,8 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 uint32_t z_hexagon_isr_nesting;
 
 /* Forward declarations for handlers defined below */
-static void z_hexagon_exception_handler(struct event_context *ctx);
+static void z_hexagon_exception_handler(unsigned int event_num,
+					struct event_context *ctx);
 static void z_hexagon_trap0_handler(struct event_context *ctx);
 static void z_hexagon_interrupt_handler(struct event_context *ctx);
 
@@ -44,7 +49,16 @@ void z_hexagon_event_handler(unsigned int event_num, struct event_context *ctx)
 	 * saves all volatile state.
 	 */
 	if (event_num == HEXAGON_EVENT_TRAP0) {
+#ifdef CONFIG_GDBSTUB
+		uint32_t trap_pc = ctx->gelr - 4U;
+		bool is_gdb_breakpoint = z_hexagon_is_gdb_breakpoint(trap_pc);
+
+		if (!is_gdb_breakpoint) {
+			hexagon_vm_setie(VM_INT_ENABLE);
+		}
+#else
 		hexagon_vm_setie(VM_INT_ENABLE);
+#endif
 #ifdef CONFIG_USERSPACE
 		/*
 		 * Mark this thread's trap0 handling in flight, so a nested
@@ -58,12 +72,21 @@ void z_hexagon_event_handler(unsigned int event_num, struct event_context *ctx)
 
 	switch (event_num) {
 	case HEXAGON_EVENT_MACHINE_CHECK:
-		z_hexagon_fatal_error(K_ERR_CPU_EXCEPTION);
+		z_hexagon_fatal_error_ctx(K_ERR_CPU_EXCEPTION, event_num, ctx);
 		break;
 
 	case HEXAGON_EVENT_GENERAL_EXCEPTION:
-		z_hexagon_exception_handler(ctx);
+		z_hexagon_exception_handler(event_num, ctx);
 		break;
+
+	case HEXAGON_EVENT_DEBUG:
+#ifdef CONFIG_GDBSTUB
+		z_hexagon_gdb_entry(ctx);
+		break;
+#else
+		z_hexagon_fatal_error_ctx(K_ERR_CPU_EXCEPTION, event_num, ctx);
+		break;
+#endif
 
 	case HEXAGON_EVENT_TRAP0:
 		z_hexagon_trap0_handler(ctx);
@@ -74,7 +97,7 @@ void z_hexagon_event_handler(unsigned int event_num, struct event_context *ctx)
 		break;
 
 	default:
-		z_hexagon_fatal_error(K_ERR_SPURIOUS_IRQ);
+		z_hexagon_fatal_error_ctx(K_ERR_SPURIOUS_IRQ, event_num, ctx);
 		break;
 	}
 
@@ -112,15 +135,24 @@ void z_hexagon_event_exit_user_sync(void)
 /* Handle general exceptions */
 #define GSR_CAUSE_MASK 0xFF
 
-static void z_hexagon_exception_handler(struct event_context *ctx)
+static void z_hexagon_exception_handler(unsigned int event_num,
+					struct event_context *ctx)
 {
 	uint32_t cause = ctx->gsr & GSR_CAUSE_MASK;
 	uint32_t pc = ctx->gelr;
 
 	LOG_ERR("exception: cause=0x%x pc=0x%x", cause, pc);
 
+#ifdef CONFIG_GDBSTUB
+	/* A software breakpoint may be reported as a general exception. */
+	if (z_hexagon_is_gdb_breakpoint(pc)) {
+		z_hexagon_gdb_entry(ctx);
+		return;
+	}
+#endif
+
 	/* Fatal error for now */
-	z_hexagon_fatal_error(K_ERR_CPU_EXCEPTION);
+	z_hexagon_fatal_error_ctx(K_ERR_CPU_EXCEPTION, event_num, ctx);
 }
 
 /* Handle trap0 (syscall) events.
@@ -133,6 +165,18 @@ static void z_hexagon_exception_handler(struct event_context *ctx)
  */
 static void z_hexagon_trap0_handler(struct event_context *ctx)
 {
+#ifdef CONFIG_GDBSTUB
+	/* GELR points past trap0, so inspect the preceding instruction. */
+	uint32_t trap_pc = ctx->gelr - 4U;
+
+	if (z_hexagon_is_gdb_breakpoint(trap_pc)) {
+		/* Resume at the breakpoint address after GDB restores the instruction. */
+		ctx->gelr = trap_pc;
+		z_hexagon_gdb_entry(ctx);
+		return;
+	}
+#endif
+
 #ifdef CONFIG_USERSPACE
 	{
 		/* Minimal arch_esf: only args and syscall number matter. */
