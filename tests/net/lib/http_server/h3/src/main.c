@@ -2318,6 +2318,51 @@ ZTEST(server_h3_tests, test_h3_duplicate_critical_stream_closes_connection)
 	}
 }
 
+static bool buffer_contains(const uint8_t *buf, size_t len, const char *str)
+{
+	size_t str_len = strlen(str);
+
+	for (size_t i = 0; i + str_len <= len; i++) {
+		if (memcmp(buf + i, str, str_len) == 0) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+ZTEST(server_h3_tests, test_h3_405_carries_allow_header)
+{
+	uint8_t response[MAX_RESPONSE_SIZE];
+	uint8_t headers[64];
+	size_t response_len;
+	size_t headers_len;
+	int stream_fd;
+
+	start_h3_session(false);
+
+	/* The dynamic resource only takes POST */
+	stream_fd = open_client_stream(QUIC_STREAM_BIDIRECTIONAL);
+	headers_len = build_headers_frame(headers, HTTP_GET, "/dynamic");
+	send_all(stream_fd, headers, headers_len);
+
+	response_len = read_stream_to_eof(stream_fd, response, sizeof(response));
+	zassert_true(response_len > 0, "Empty H3 response");
+	zassert_equal(response[0], H3_FRAME_HEADERS, "Expected a HEADERS frame");
+
+	/* The server sends the status code and this field as literals, so
+	 * they can be found in the field section as they are.
+	 */
+	zassert_true(buffer_contains(response, response_len, "405"),
+		     "Response is not a 405");
+	zassert_true(buffer_contains(response, response_len, "allow"),
+		     "405 response has no Allow header");
+	zassert_true(buffer_contains(response, response_len, "POST"),
+		     "Allow header does not name the supported method");
+	zassert_false(buffer_contains(response, response_len, "GET"),
+		      "Allow header names a method that is not supported");
+}
+
 ZTEST_SUITE(server_h3_function_tests, NULL, NULL, NULL, NULL, NULL);
 ZTEST_SUITE(server_h3_tests, NULL, http_server_h3_setup,
 	    http_server_h3_before, http_server_h3_after, http_server_h3_teardown);
