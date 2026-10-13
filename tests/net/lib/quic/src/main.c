@@ -6787,6 +6787,90 @@ ZTEST(net_socket_quic, test_486_replies_per_payload_are_capped)
 		     "Test payload must carry more frames than the budget allows");
 }
 
+ZTEST(net_socket_quic, test_498_nothing_is_sent_at_a_discarded_level)
+{
+	static const uint8_t ping[] = { QUIC_FRAME_TYPE_PING };
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	int ret;
+
+	/* Without keys a send fails, in the way the callers rely on: the
+	 * Initial level reports an error, the Handshake level asks to be
+	 * tried again once its keys are there.
+	 */
+	ret = quic_send_packet(ep, QUIC_SECRET_LEVEL_INITIAL, ping, sizeof(ping));
+	zassert_equal(ret, -EINVAL, "Unexpected result without Initial keys (%d)", ret);
+
+	ret = quic_send_packet(ep, QUIC_SECRET_LEVEL_HANDSHAKE, ping, sizeof(ping));
+	zassert_equal(ret, -EAGAIN, "Unexpected result without Handshake keys (%d)", ret);
+
+	/* Once the keys of a level are discarded there is nothing to wait
+	 * for and nothing wrong either: the send is dropped quietly.
+	 */
+	quic_endpoint_discard_keys(ep, QUIC_SECRET_LEVEL_INITIAL);
+	ret = quic_send_packet(ep, QUIC_SECRET_LEVEL_INITIAL, ping, sizeof(ping));
+	zassert_ok(ret, "Send at the discarded Initial level was not ignored (%d)", ret);
+
+	quic_endpoint_discard_keys(ep, QUIC_SECRET_LEVEL_HANDSHAKE);
+	ret = quic_send_packet(ep, QUIC_SECRET_LEVEL_HANDSHAKE, ping, sizeof(ping));
+	zassert_ok(ret, "Send at the discarded Handshake level was not ignored (%d)", ret);
+
+	k_work_cancel_delayable(&ep->recovery.pto_work);
+}
+
+static int packets_in_flight(struct quic_endpoint *ep)
+{
+	int count = 0;
+
+	ARRAY_FOR_EACH(ep->recovery.sent_pkts, space) {
+		for (int i = 0; i < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE; i++) {
+			if (ep->recovery.sent_pkts[space][i].in_flight) {
+				count++;
+			}
+		}
+	}
+
+	return count;
+}
+
+ZTEST(net_socket_quic, test_499_recovery_state_goes_with_the_keys)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+
+	/* Two Initial packets, one Handshake packet and one 1-RTT packet
+	 * are in flight.
+	 */
+	quic_recovery_on_packet_sent(ep, QUIC_SECRET_LEVEL_INITIAL, 0, 1200, true, false, 0);
+	quic_recovery_on_packet_sent(ep, QUIC_SECRET_LEVEL_INITIAL, 1, 1200, true, false, 0);
+	quic_recovery_on_packet_sent(ep, QUIC_SECRET_LEVEL_HANDSHAKE, 0, 300, true, false, 0);
+	quic_recovery_on_packet_sent(ep, QUIC_SECRET_LEVEL_APPLICATION, 0, 100, true, false, 0);
+
+	zassert_equal(ep->recovery.bytes_in_flight, 2800, "Unexpected bytes in flight %" PRIu64,
+		      ep->recovery.bytes_in_flight);
+	zassert_equal(packets_in_flight(ep), 4, "Unexpected packets in flight");
+
+	/* Packets sent with discarded keys can never be acknowledged, so
+	 * they must not be counted or tracked any longer.
+	 */
+	quic_endpoint_discard_keys(ep, QUIC_SECRET_LEVEL_INITIAL);
+
+	zassert_true(ep->crypto.initial.discarded, "Initial keys were not discarded");
+	zassert_false(ep->crypto.handshake.discarded, "Handshake keys were discarded too");
+	zassert_equal(ep->recovery.bytes_in_flight, 400,
+		      "Initial packets still count as in flight (%" PRIu64 ")",
+		      ep->recovery.bytes_in_flight);
+	zassert_equal(packets_in_flight(ep), 2, "Initial packets are still tracked");
+
+	quic_endpoint_discard_keys(ep, QUIC_SECRET_LEVEL_HANDSHAKE);
+
+	zassert_true(ep->crypto.handshake.discarded, "Handshake keys were not discarded");
+	zassert_equal(ep->recovery.bytes_in_flight, 100,
+		      "Handshake packets still count as in flight (%" PRIu64 ")",
+		      ep->recovery.bytes_in_flight);
+	zassert_equal(packets_in_flight(ep), 1, "Handshake packets are still tracked");
+
+	k_work_cancel_delayable(&ep->recovery.pto_work);
+}
+
 ZTEST(net_socket_quic, test_488_token_replay_entry_survives_the_expiry_second)
 {
 	uint8_t nonce[8] = {
