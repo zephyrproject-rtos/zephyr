@@ -523,6 +523,8 @@ static int handle_stop_sending_frame(struct quic_endpoint *ep,
 {
 	uint64_t stream_id, error_code;
 	struct quic_stream *stream;
+	bool local_init;
+	bool is_uni;
 	int pos = 1;
 	int ret;
 
@@ -543,6 +545,25 @@ static int handle_stop_sending_frame(struct quic_endpoint *ep,
 	NET_DBG("[EP:%p/%d] STOP_SENDING: stream=%" PRIu64 ", error=0x%" PRIx64,
 		ep, quic_get_by_ep(ep), stream_id, error_code);
 
+	/* Stream ID encoding (RFC 9000 ch. 2.1): bit 0 is the initiator,
+	 * 0 for the client and 1 for the server, bit 1 is set for a
+	 * unidirectional stream.
+	 */
+	local_init = ((stream_id & 1U) != 0U) == ep->is_server;
+	is_uni = (stream_id & 2U) != 0U;
+
+	/* RFC 9000 ch. 19.5: a unidirectional stream opened by the peer is
+	 * receive-only for us, there is nothing we could stop sending on it.
+	 * The frame is a connection error of type STREAM_STATE_ERROR.
+	 */
+	if (is_uni && !local_init) {
+		NET_DBG("[EP:%p/%d] STOP_SENDING for receive-only stream %" PRIu64,
+			ep, quic_get_by_ep(ep), stream_id);
+		quic_endpoint_send_connection_close(ep, QUIC_ERROR_STREAM_STATE_ERROR,
+						    "STOP_SENDING for a receive-only stream");
+		return -EPROTO;
+	}
+
 	/*
 	 * RFC 9000 ch. 3.5: a sender that receives STOP_SENDING MUST respond
 	 * with either RESET_STREAM or a stream FIN. Send RESET_STREAM to
@@ -561,6 +582,26 @@ static int handle_stop_sending_frame(struct quic_endpoint *ep,
 	 * the payload.
 	 */
 	stream = quic_find_stream_by_id(ep, stream_id);
+	if (stream == NULL && local_init) {
+		struct quic_context *conn = quic_find_context(ep);
+
+		/* RFC 9000 ch. 19.5: a STOP_SENDING for a stream of ours that
+		 * was never created is a connection error of type
+		 * STREAM_STATE_ERROR. A stream that is not found can also be
+		 * one that is closed already, which is fine, so only an ID
+		 * past everything opened so far is taken as never created.
+		 */
+		if (conn != NULL && (stream_id >> 2) >= conn->stream_id_counter) {
+			NET_DBG("[EP:%p/%d] STOP_SENDING for stream %" PRIu64
+				" that was never opened",
+				ep, quic_get_by_ep(ep), stream_id);
+			quic_endpoint_send_connection_close(
+				ep, QUIC_ERROR_STREAM_STATE_ERROR,
+				"STOP_SENDING for a stream that was never opened");
+			return -EPROTO;
+		}
+	}
+
 	if (stream != NULL && stream->tx_reset) {
 		if (quic_reply_budget_take(budget)) {
 			quic_send_reset_stream(ep, stream_id, error_code);
