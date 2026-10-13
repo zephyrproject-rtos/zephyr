@@ -37,6 +37,8 @@ static struct k_work_delayable uplink_work;
 
 /* Number of active class C sessions and mutex to protect access to session info */
 static uint8_t active_class_c_sessions;
+/* device class in use before the first class C session started */
+static enum lorawan_class class_before_sessions;
 static struct k_mutex session_mutex;
 
 /* single-linked list (with pointers) and array for implementation of priority queue */
@@ -171,6 +173,17 @@ int lorawan_services_class_c_start(void)
 	k_mutex_lock(&session_mutex, K_FOREVER);
 
 	if (active_class_c_sessions == 0) {
+		/*
+		 * Remember the class the application had selected, so that it can be
+		 * restored when the last session ends. A device already operating in
+		 * class C must not be left in class A afterwards.
+		 */
+		ret = lorawan_get_class(&class_before_sessions);
+		if (ret < 0) {
+			LOG_WRN("Failed to get device class: %d, assuming class A", ret);
+			class_before_sessions = LORAWAN_CLASS_A;
+		}
+
 		ret = lorawan_set_class(LORAWAN_CLASS_C);
 		if (ret == 0) {
 			LOG_DBG("Switched to class C");
@@ -194,9 +207,10 @@ int lorawan_services_class_c_stop(void)
 	k_mutex_lock(&session_mutex, K_FOREVER);
 
 	if (active_class_c_sessions == 1) {
-		ret = lorawan_set_class(LORAWAN_CLASS_A);
+		ret = lorawan_set_class(class_before_sessions);
 		if (ret == 0) {
-			LOG_DBG("Reverted to class A");
+			LOG_DBG("Reverted to class %c",
+				class_before_sessions == LORAWAN_CLASS_C ? 'C' : 'A');
 			active_class_c_sessions--;
 		}
 	} else if (active_class_c_sessions > 1) {
