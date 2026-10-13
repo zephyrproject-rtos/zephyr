@@ -9,3 +9,9 @@ tests:
     integration_platforms:
       - native_sim
     build_only: true
+  sample.drivers.auxdisplay_digits.frdm_mcxa366:
+    tags: auxdisplay
+    platform_allow:
+      - frdm_mcxa366/mcxa366
+    extra_args:
+      - SHIELD=od_6010
