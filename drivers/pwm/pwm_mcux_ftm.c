@@ -143,6 +143,34 @@ static void mcux_ftm_pm_lock_sync(const struct device *dev)
 	k_spin_unlock(&data->lock, key);
 }
 
+static int mcux_ftm_release_channel(const struct device *dev, uint32_t channel)
+{
+	const struct mcux_ftm_config *config = dev->config;
+	struct mcux_ftm_data *data = dev->data;
+	status_t status;
+
+	data->channel[channel].level = kFTM_NoPwmSignal;
+	data->channel[channel].dutyValue = 0U;
+
+	status = FTM_SetupPwmMode(config->base, data->channel, config->channel_count,
+				  config->mode);
+	if (status != kStatus_Success) {
+		LOG_ERR("Could not release channel %u", channel);
+		return -EIO;
+	}
+
+	FTM_SetSoftwareTrigger(config->base, true);
+
+#ifdef CONFIG_PM_DEVICE
+	/* Nothing left here for a resume to replay. */
+	data->pm_channel[channel].configured = false;
+#endif /* CONFIG_PM_DEVICE */
+
+	mcux_ftm_pm_lock_sync(dev);
+
+	return 0;
+}
+
 static int mcux_ftm_set_cycles(const struct device *dev, uint32_t channel,
 			       uint32_t period_cycles, uint32_t pulse_cycles,
 			       pwm_flags_t flags)
@@ -155,9 +183,9 @@ static int mcux_ftm_set_cycles(const struct device *dev, uint32_t channel,
 	uint32_t irqs;
 #endif /* CONFIG_PWM_CAPTURE */
 
-	if (period_cycles == 0U) {
-		LOG_ERR("Channel can not be set to inactive level");
-		return -ENOTSUP;
+	if ((period_cycles == 0U) && (pulse_cycles != 0U)) {
+		LOG_ERR("A pulse of %u does not fit a zero period", pulse_cycles);
+		return -EINVAL;
 	}
 
 	if (period_cycles > UINT16_MAX) {
@@ -177,6 +205,10 @@ static int mcux_ftm_set_cycles(const struct device *dev, uint32_t channel,
 		return -EBUSY;
 	}
 #endif /* CONFIG_PWM_CAPTURE */
+
+	if (period_cycles == 0U) {
+		return mcux_ftm_release_channel(dev, channel);
+	}
 
 	data->channel[channel].dutyValue = pulse_cycles;
 
