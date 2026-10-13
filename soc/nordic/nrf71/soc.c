@@ -167,12 +167,12 @@ static void ipct_configuration(void)
 #if defined(CONFIG_SOC_NRF71_WIFI_BOOT)
 #if (defined(NRF_APPLICATION) && !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)) || \
 	!defined(__ZEPHYR__)
-#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf71_wifi_antsw)
-#define WIFI_ANTSW_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(nordic_nrf71_wifi_antsw)
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf71_antsw)
+#define ANTSW_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(nordic_nrf71_antsw)
 
 /* Steering an unpowered switch is meaningless: require pwr_antswc to power it. */
 BUILD_ASSERT(DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_pwr_antswc),
-	     "wifi-antsw steering requires pwr_antswc to power the antenna switch");
+	     "antsw steering requires pwr_antswc to power the antenna switch");
 
 /*
  * Steer the antenna switch (ANTSW) towards WLAN before the Wi-Fi core is
@@ -183,7 +183,7 @@ BUILD_ASSERT(DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_pwr_antswc),
  */
 static void antsw_setup(void)
 {
-	uint32_t wlan_psel = NRF_DT_GPIOS_TO_PSEL(WIFI_ANTSW_NODE, wlan_gpios);
+	uint32_t wlan_psel = NRF_DT_GPIOS_TO_PSEL(ANTSW_NODE, wlan_gpios);
 
 	/* Drive the pin low (WLAN) before enabling the output, then configure it
 	 * as a plain output. No pull is needed on a driven output.
@@ -191,7 +191,7 @@ static void antsw_setup(void)
 	nrf_gpio_pin_clear(wlan_psel);
 	nrf_gpio_cfg_output(wlan_psel);
 }
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf71_wifi_antsw) */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf71_antsw) */
 
 static void wifi_setup(void)
 {
@@ -247,7 +247,7 @@ int nordicsemi_nrf71_init(void)
 #endif
 
 #if defined(CONFIG_SOC_NRF71_WIFI_BOOT)
-#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf71_wifi_antsw)
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf71_antsw)
 	/* Steer the (now powered) antenna switch towards WLAN before Wi-Fi boot. */
 	antsw_setup();
 #endif
