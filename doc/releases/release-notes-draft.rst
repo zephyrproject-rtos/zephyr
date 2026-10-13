@@ -74,6 +74,9 @@ Libraries / Subsystems
 
   * The native backend now supports the AS923 region
     (:kconfig:option:`CONFIG_LORAWAN_REGION_AS923`).
+  * The LoRaWAN services restore the device class that was in use before a
+    multicast class C session started, instead of always reverting to class A.
+    The current class can be read with :c:func:`lorawan_get_class`.
 
 * Networking
 
