@@ -96,12 +96,16 @@ int video_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz);
  *
  * @param ctrls Pointer to the first video control
  * @param sz Number of video controls to cluster together
+ * @param manual_val Value of the first control that selects manual mode, for example 0 for
+ *                   a boolean auto control or @ref VIDEO_EXPOSURE_MANUAL for
+ *                   @ref VIDEO_CID_EXPOSURE_AUTO
  * @param set_volatile Mark this cluster as volatile controls
  *
  * @retval 0 on success
  * @return Negative error code on failure
  */
-int video_auto_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz, bool set_volatile);
+int video_auto_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz, int32_t manual_val,
+			    bool set_volatile);
 
 /**
  * @}
