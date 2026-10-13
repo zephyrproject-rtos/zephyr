@@ -5984,6 +5984,18 @@ static int quic_send_packet_from_txbuf_ex(struct quic_endpoint *ep,
 		}
 	}
 
+	/* Nothing is sent at a level whose keys were discarded (RFC 9001
+	 * ch. 4.9), and nothing sent there could still matter to the peer.
+	 * This has to be checked on the context itself: the lookup below
+	 * does not return a context without keys.
+	 */
+	if ((level == QUIC_SECRET_LEVEL_INITIAL && ep->crypto.initial.discarded) ||
+	    (level == QUIC_SECRET_LEVEL_HANDSHAKE && ep->crypto.handshake.discarded)) {
+		NET_DBG("[EP:%p/%d] Not sending at discarded level %d",
+			ep, quic_get_by_ep(ep), level);
+		return 0;
+	}
+
 	/* Get crypto context */
 	crypto_ctx = quic_get_crypto_context_by_level(ep, level);
 	if (crypto_ctx == NULL || !crypto_ctx->initialized) {
@@ -6199,6 +6211,14 @@ static int quic_send_packet_from_txbuf_ex(struct quic_endpoint *ep,
 
 	NET_DBG("[EP:%p/%d] Sent %zd bytes at level %d, pn=%" PRIu64 ", ack-eliciting=%d",
 		ep, quic_get_by_ep(ep), sent, level, packet_number, ack_eliciting);
+
+	if (level == QUIC_SECRET_LEVEL_HANDSHAKE && !ep->is_server &&
+	    !ep->crypto.initial.discarded) {
+		/* RFC 9001 ch. 4.9.1: a client discards the Initial keys when
+		 * it first sends a Handshake packet.
+		 */
+		quic_endpoint_discard_keys(ep, QUIC_SECRET_LEVEL_INITIAL);
+	}
 
 	ret = 0;
 
