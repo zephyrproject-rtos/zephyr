@@ -42,6 +42,14 @@ static const bt_addr_le_t peers[NUM_PEERS] = {
 	},
 };
 
+/* Third peer: the pool holds CONFIG_BT_MAX_PAIRED (2) entries, so a third
+ * address is needed for the full-pool test cases.
+ */
+static const bt_addr_le_t peer_extra = {
+	.type = BT_ADDR_LE_PUBLIC,
+	.a.val = {0xaa, 0xab, 0xac, 0xad, 0xae, 0xaf},
+};
+
 static uint8_t rl_adds[NUM_PEERS];
 static uint8_t rl_rejects[NUM_PEERS];
 
@@ -388,4 +396,100 @@ ZTEST(bt_keys_commit, test_settings_reload_does_not_add_irk_twice)
 	zassert_equal(rl_rejects[1], 0U, "%u adds of the second peer rejected", rl_rejects[1]);
 	zassert_equal(bt_dev.le.rl_entries, 2U, "rl_entries %u after the second load",
 		      bt_dev.le.rl_entries);
+}
+
+/* The bt_keys_commit suite runs first, so Bluetooth is already enabled.
+ * ZTest does not guarantee test execution order within a suite, so reset
+ * the key pool before every test to keep them independent.
+ */
+static void pool_before(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	bt_keys_reset();
+}
+
+ZTEST_SUITE(bt_keys_pool, NULL, NULL, pool_before, NULL, NULL);
+
+/* bt_keys_get_addr(): allocate a slot and find it again. */
+ZTEST(bt_keys_pool, test_get_addr_allocates_slot)
+{
+	struct bt_keys *keys = bt_keys_get_addr(BT_ID_DEFAULT, &peers[0]);
+
+	zassert_not_null(keys, "No slot for the first peer");
+	zassert_equal_ptr(keys, bt_keys_find_addr(BT_ID_DEFAULT, &peers[0]),
+			  "Allocated slot not findable");
+	zassert_equal(keys->keys, 0U, "New slot must have no key types");
+}
+
+/* bt_keys_get_addr(): a full pool rejects new addresses, but an existing
+ * entry must still be returned — the find-first path must not be confused
+ * with allocation.
+ */
+ZTEST(bt_keys_pool, test_get_addr_returns_existing_when_full)
+{
+	struct bt_keys *keys;
+
+	zassert_not_null(bt_keys_get_addr(BT_ID_DEFAULT, &peers[0]));
+	zassert_not_null(bt_keys_get_addr(BT_ID_DEFAULT, &peers[1]));
+
+	keys = bt_keys_get_addr(BT_ID_DEFAULT, &peer_extra);
+	zassert_is_null(keys, "Pool full, but a slot was still handed out");
+
+	zassert_equal_ptr(bt_keys_get_addr(BT_ID_DEFAULT, &peers[0]),
+			  bt_keys_find_addr(BT_ID_DEFAULT, &peers[0]),
+			  "Existing entry lost when the pool filled up");
+}
+
+/* bt_keys_get_type(): same ref on repeated calls, key type bit set, and no
+ * slot handed out from a full pool.
+ */
+ZTEST(bt_keys_pool, test_get_type_existing_and_full)
+{
+	struct bt_keys *keys;
+
+	zassert_not_null(bt_keys_get_addr(BT_ID_DEFAULT, &peers[0]));
+	zassert_not_null(bt_keys_get_addr(BT_ID_DEFAULT, &peers[1]));
+
+	keys = bt_keys_get_type(BT_KEYS_IRK, BT_ID_DEFAULT, &peers[0]);
+	zassert_not_null(keys, "Existing key type not found");
+	zassert_equal_ptr(keys, bt_keys_get_type(BT_KEYS_IRK, BT_ID_DEFAULT, &peers[0]),
+			  "Repeated get_type returned a different ref");
+	zassert_true((keys->keys & BT_KEYS_IRK) != 0U, "IRK bit not set");
+
+	zassert_is_null(bt_keys_get_type(BT_KEYS_IRK, BT_ID_DEFAULT, &peer_extra),
+			"Full pool must not hand out more slots");
+}
+
+static void bond_count_cb(const struct bt_bond_info *info, void *user_data)
+{
+	size_t *count = user_data;
+
+	ARG_UNUSED(info);
+	(*count)++;
+}
+
+/* bt_keys_find()/find_addr(): miss on empty pool, miss for a type that is
+ * not set, hit, and the public bond enumeration agrees.
+ */
+ZTEST(bt_keys_pool, test_find_and_foreach)
+{
+	struct bt_keys *keys;
+	size_t count = 0;
+
+	zassert_is_null(bt_keys_find(BT_KEYS_IRK, BT_ID_DEFAULT, &peers[0]),
+			"Find must miss on an empty pool");
+
+	keys = bt_keys_get_type(BT_KEYS_IRK, BT_ID_DEFAULT, &peers[0]);
+	zassert_not_null(keys);
+
+	zassert_equal_ptr(bt_keys_find(BT_KEYS_IRK, BT_ID_DEFAULT, &peers[0]), keys,
+			  "IRK key not findable");
+	zassert_is_null(bt_keys_find(BT_KEYS_LTK, BT_ID_DEFAULT, &peers[0]),
+			"Find must miss for a type that is not set");
+	zassert_equal_ptr(bt_keys_find_addr(BT_ID_DEFAULT, &peers[0]), keys,
+			  "find_addr must locate the slot");
+
+	bt_foreach_bond(BT_ID_DEFAULT, bond_count_cb, &count);
+	zassert_equal(count, 1U, "bt_foreach_bond counted %zu bonds", count);
 }
