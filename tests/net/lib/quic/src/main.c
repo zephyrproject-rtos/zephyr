@@ -431,11 +431,16 @@ static void before(void *arg)
 #define MAX_WAIT_COUNT 3
 #define WAIT_DELAY_MS 100
 
+static void multi_server_cleanup(void);
+
 static void after(void *arg)
 {
 	struct test_config *cfg = arg;
 	int loop = MAX_WAIT_COUNT;
 	bool fail;
+
+	/* A test that failed half way did not get to stop its server */
+	multi_server_cleanup();
 
 	/* Wait a few iterations to allow any pending cleanup to complete */
 	while (loop-- > 0) {
@@ -3355,6 +3360,362 @@ static const uint8_t too_short_initial_msg[] =
 "\x9c\x10\x2f\xaa\x76\x3b\xd9\xab\x57\x53\x14\x81\xd4\x55\x1b\xd2"
 "\xc8\x52\xd0\x4e\x5c\x37\xb8\xd8\x89\xfe\xae\x70\xe4\x52\x54\x53"
 "\x5e\x6f\x97\x98\x9f\x0d\xa0\xf0\xf6\x6a\xb0\x68\x78\x11\xa4\xc2";
+
+#define MULTI_CONN_COUNT 2
+#define MULTI_SERVER_ADDR_STR "127.0.0.1:54330"
+#define MULTI_CLIENT_ADDR_FMT "127.0.0.1:%d"
+#define MULTI_CLIENT_BASE_PORT 19930
+
+/* A lost handshake packet is only recovered after one probe timeout, which
+ * is about one second. A handshake over loopback must stay well below that.
+ * This is only checked where the test runs at the speed of the host: on an
+ * emulated target the handshake computations alone can take longer.
+ */
+#define MULTI_HANDSHAKE_MAX_MS 500
+
+struct multi_server {
+	int sock;
+	int conn[MULTI_CONN_COUNT];
+	int stream[MULTI_CONN_COUNT];
+	int conn_count;
+	int error;
+	struct k_sem started;
+	volatile bool done;
+};
+
+static void multi_server_echo(struct multi_server *srv, int stream)
+{
+	static uint8_t buf[SMALL_BUF_SIZE];
+
+	while (true) {
+		ssize_t len = zsock_recv(stream, buf, sizeof(buf), ZSOCK_MSG_DONTWAIT);
+
+		if (len <= 0) {
+			if (len < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
+				srv->error = -errno;
+			}
+
+			return;
+		}
+
+		len = quic_test_send_all(stream, buf, len);
+		if (len < 0) {
+			srv->error = len;
+			return;
+		}
+	}
+}
+
+/* Accept connections and one stream on each, and echo what the streams
+ * receive, until told to stop.
+ */
+static void multi_server_thread(void *p1, void *p2, void *p3)
+{
+	struct multi_server *srv = p1;
+	struct zsock_pollfd fds[1 + 2 * MULTI_CONN_COUNT];
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	k_sem_give(&srv->started);
+
+	while (!srv->done && srv->error == 0) {
+		int ret;
+
+		fds[0].fd = srv->sock;
+
+		for (int i = 0; i < MULTI_CONN_COUNT; i++) {
+			/* A connection is only polled until its stream arrives */
+			fds[1 + i].fd = srv->stream[i] < 0 ? srv->conn[i] : -1;
+			fds[1 + MULTI_CONN_COUNT + i].fd = srv->stream[i];
+		}
+
+		for (int i = 0; i < ARRAY_SIZE(fds); i++) {
+			fds[i].events = ZSOCK_POLLIN;
+			fds[i].revents = 0;
+		}
+
+		ret = zsock_poll(fds, ARRAY_SIZE(fds), HELPER_POLL_TIMEOUT_MS);
+		if (ret < 0) {
+			srv->error = -errno;
+			break;
+		}
+
+		if ((fds[0].revents & ZSOCK_POLLIN) != 0 && srv->conn_count < MULTI_CONN_COUNT) {
+			ret = zsock_accept(srv->sock, NULL, NULL);
+			if (ret < 0) {
+				srv->error = -errno;
+				break;
+			}
+
+			srv->conn[srv->conn_count++] = ret;
+		}
+
+		for (int i = 0; i < MULTI_CONN_COUNT; i++) {
+			if ((fds[1 + i].revents & ZSOCK_POLLIN) != 0) {
+				ret = zsock_accept(srv->conn[i], NULL, NULL);
+				if (ret < 0) {
+					srv->error = -errno;
+					break;
+				}
+
+				srv->stream[i] = ret;
+			}
+
+			if (srv->stream[i] >= 0) {
+				multi_server_echo(srv, srv->stream[i]);
+			}
+		}
+	}
+}
+
+static void multi_client_echo(int stream, uint8_t value)
+{
+	struct zsock_pollfd pfd = {
+		.fd = stream,
+		.events = ZSOCK_POLLIN,
+	};
+	uint8_t reply = 0;
+	int ret;
+
+	ret = quic_test_send_all(stream, &value, sizeof(value));
+	zassert_ok(ret, "Failed to send on stream %d (%d)", stream, ret);
+
+	ret = zsock_poll(&pfd, 1, 5 * POLL_TIMEOUT_MS);
+	zassert_true(ret > 0, "No echo on stream %d (%d)", stream, ret);
+
+	ret = zsock_recv(stream, &reply, sizeof(reply), 0);
+	zassert_equal(ret, sizeof(reply), "Failed to recv on stream %d (%d)", stream, -errno);
+	zassert_equal(reply, value, "Wrong echo on stream %d", stream);
+}
+
+static K_THREAD_STACK_DEFINE(multi_server_stack, 2048);
+static struct k_thread multi_server_thread_data;
+static struct multi_server multi_srv;
+static bool multi_server_active;
+static bool multi_server_thread_started;
+static struct net_sockaddr_storage multi_server_addr;
+static int multi_client_sock[MULTI_CONN_COUNT];
+static int multi_client_stream[MULTI_CONN_COUNT];
+
+static const char * const multi_alpn_list[] = {
+	"test-quic",
+	NULL
+};
+
+static void multi_server_start(void)
+{
+	sec_tag_t server_sec_tags[] = {
+		SERVER_CERTIFICATE_TAG,
+	};
+	int ret;
+
+	ret = loopback_set_packet_drop_ratio(0.0);
+	zassert_ok(ret, "Failed to set loopback packet drop ratio (%d)", ret);
+
+	ret = net_ipaddr_parse(MULTI_SERVER_ADDR_STR, strlen(MULTI_SERVER_ADDR_STR),
+			       (struct net_sockaddr *)&multi_server_addr);
+	zassert_true(ret, "Failed to parse server IP address");
+
+	memset(&multi_srv, 0, sizeof(multi_srv));
+	k_sem_init(&multi_srv.started, 0, 1);
+
+	multi_srv.sock = -1;
+
+	for (int i = 0; i < MULTI_CONN_COUNT; i++) {
+		multi_srv.conn[i] = -1;
+		multi_srv.stream[i] = -1;
+		multi_client_sock[i] = -1;
+		multi_client_stream[i] = -1;
+	}
+
+	/* From here on the after hook cleans up whatever a failing test
+	 * leaves behind.
+	 */
+	multi_server_active = true;
+
+	prepare_quic_socket(&multi_srv.sock, NULL,
+			    (const struct net_sockaddr *)&multi_server_addr);
+	setup_quic_certs(multi_srv.sock, server_sec_tags, ARRAY_SIZE(server_sec_tags));
+	setup_alpn(multi_srv.sock, multi_alpn_list, ARRAY_SIZE(multi_alpn_list));
+
+	(void)k_thread_create(&multi_server_thread_data, multi_server_stack,
+			      K_THREAD_STACK_SIZEOF(multi_server_stack),
+			      multi_server_thread, &multi_srv, NULL, NULL,
+			      K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
+	multi_server_thread_started = true;
+
+	ret = k_sem_take(&multi_srv.started, K_FOREVER);
+	zassert_ok(ret, "Failed to take semaphore (%d)", ret);
+}
+
+/* Open client connection idx with one stream and check that data flows */
+static void multi_client_connect(int idx)
+{
+	sec_tag_t client_sec_tags[] = {
+		CA_CERTIFICATE_TAG,
+	};
+	struct net_sockaddr_storage client_addr;
+	char client_str[sizeof("127.0.0.1:65535")];
+	int ret;
+
+	snprintk(client_str, sizeof(client_str), MULTI_CLIENT_ADDR_FMT,
+		 MULTI_CLIENT_BASE_PORT + idx);
+	ret = net_ipaddr_parse(client_str, strlen(client_str),
+			       (struct net_sockaddr *)&client_addr);
+	zassert_true(ret, "Failed to parse client IP address %s", client_str);
+
+	prepare_quic_socket(&multi_client_sock[idx],
+			    (const struct net_sockaddr *)&multi_server_addr,
+			    (const struct net_sockaddr *)&client_addr);
+	setup_quic_certs(multi_client_sock[idx], client_sec_tags, ARRAY_SIZE(client_sec_tags));
+	setup_alpn(multi_client_sock[idx], multi_alpn_list, ARRAY_SIZE(multi_alpn_list));
+
+	multi_client_stream[idx] = quic_stream_open(multi_client_sock[idx], QUIC_STREAM_CLIENT,
+						    QUIC_STREAM_BIDIRECTIONAL, 0);
+	zassert_true(multi_client_stream[idx] >= 0,
+		     "Failed to open stream on connection %d (%d)",
+		     idx, multi_client_stream[idx]);
+
+	multi_client_echo(multi_client_stream[idx], 0xa0 + idx);
+}
+
+static void multi_close_fd(int *fd)
+{
+	if (*fd >= 0) {
+		(void)zsock_close(*fd);
+		*fd = -1;
+	}
+}
+
+/* Stop the server thread and close every socket that is still open. This
+ * does not assert, so that it can also run after a test has failed.
+ */
+static void multi_server_cleanup(void)
+{
+	if (!multi_server_active) {
+		return;
+	}
+
+	if (multi_server_thread_started) {
+		multi_srv.done = true;
+		(void)k_thread_join(&multi_server_thread_data, K_MSEC(500));
+		multi_server_thread_started = false;
+	}
+
+	for (int i = 0; i < MULTI_CONN_COUNT; i++) {
+		multi_close_fd(&multi_client_stream[i]);
+		multi_close_fd(&multi_srv.stream[i]);
+		multi_close_fd(&multi_srv.conn[i]);
+		multi_close_fd(&multi_client_sock[i]);
+	}
+
+	multi_close_fd(&multi_srv.sock);
+
+	multi_server_active = false;
+}
+
+static void multi_server_stop(int expected_conn_count)
+{
+	int ret;
+
+	multi_srv.done = true;
+	ret = k_thread_join(&multi_server_thread_data, K_MSEC(500));
+	multi_server_thread_started = false;
+	zassert_ok(ret, "Cannot join thread (%d)", ret);
+	zassert_ok(multi_srv.error, "Server thread reported error (%d)", multi_srv.error);
+	zassert_equal(multi_srv.conn_count, expected_conn_count,
+		      "Server accepted %d connections", multi_srv.conn_count);
+
+	for (int i = 0; i < expected_conn_count; i++) {
+		ret = quic_stream_close(multi_client_stream[i]);
+		multi_client_stream[i] = -1;
+		zassert_ok(ret, "Failed to close client stream %d (%d)", i, ret);
+
+		ret = quic_stream_close(multi_srv.stream[i]);
+		multi_srv.stream[i] = -1;
+		zassert_ok(ret, "Failed to close server stream %d (%d)", i, ret);
+
+		ret = quic_connection_close(multi_srv.conn[i]);
+		multi_srv.conn[i] = -1;
+		zassert_ok(ret, "Failed to close server connection %d (%d)", i, ret);
+
+		ret = quic_connection_close(multi_client_sock[i]);
+		multi_client_sock[i] = -1;
+		zassert_ok(ret, "Failed to close client connection %d (%d)", i, ret);
+	}
+
+	ret = quic_connection_close(multi_srv.sock);
+	multi_srv.sock = -1;
+	zassert_ok(ret, "Failed to close server socket (%d)", ret);
+
+	multi_server_active = false;
+}
+
+ZTEST(net_socket_quic, test_316_quic_ipv4_concurrent_connections)
+{
+	multi_server_start();
+
+	/* Open the connections one after the other and keep them all open,
+	 * so every handshake but the first runs next to a live connection.
+	 */
+	for (int i = 0; i < MULTI_CONN_COUNT; i++) {
+		int64_t start = k_uptime_get();
+		int64_t took;
+
+		multi_client_connect(i);
+
+		took = k_uptime_delta(&start);
+		if (IS_ENABLED(CONFIG_ARCH_POSIX)) {
+			zassert_true(took < MULTI_HANDSHAKE_MAX_MS,
+				     "Connection %d took %lld ms to become usable", i, took);
+		}
+	}
+
+	/* Every connection is still usable after the later ones were set up */
+	for (int i = 0; i < MULTI_CONN_COUNT; i++) {
+		multi_client_echo(multi_client_stream[i], 0xb0 + i);
+	}
+
+	multi_server_stop(MULTI_CONN_COUNT);
+}
+
+/* The longest idle timeout this test is willing to sit through */
+#define IDLE_TEST_MAX_TIMEOUT_MS 2000
+
+ZTEST(net_socket_quic, test_317_quic_ipv4_traffic_keeps_connection_alive)
+{
+	int64_t end;
+
+	if (CONFIG_QUIC_MAX_IDLE_TIMEOUT == 0 ||
+	    CONFIG_QUIC_MAX_IDLE_TIMEOUT > IDLE_TEST_MAX_TIMEOUT_MS) {
+		ztest_test_skip();
+	}
+
+	multi_server_start();
+
+	/* Use more than one connection: the server side endpoints share one
+	 * UDP socket, and each of them must track its own traffic.
+	 */
+	for (int i = 0; i < MULTI_CONN_COUNT; i++) {
+		multi_client_connect(i);
+	}
+
+	/* Keep both directions busy for well over the idle timeout. Neither
+	 * end may consider a connection idle.
+	 */
+	end = k_uptime_get() + 2 * CONFIG_QUIC_MAX_IDLE_TIMEOUT;
+
+	while (k_uptime_get() < end) {
+		k_msleep(CONFIG_QUIC_MAX_IDLE_TIMEOUT / 5);
+
+		for (int i = 0; i < MULTI_CONN_COUNT; i++) {
+			multi_client_echo(multi_client_stream[i], 0xc0 + i);
+		}
+	}
+
+	multi_server_stop(MULTI_CONN_COUNT);
+}
 
 ZTEST(net_socket_quic, test_320_quic_initial_too_short)
 {
