@@ -36,6 +36,7 @@ tests:
       - nrf54l15tag/nrf54l15/cpuapp/ns
       - nrf54l15tag/nrf54l15/cpuflpr
       - nrf54l15tag/nrf54l15/cpuflpr/xip
+      - nrf54lv10dk/nrf54lv10a/cpuapp/ns
       - nrf7120dk/nrf7120/cpuapp/ns
       - bl54l15_dvk/nrf54l10/cpuapp/ns
       - bl54l15_dvk/nrf54l15/cpuapp/ns
