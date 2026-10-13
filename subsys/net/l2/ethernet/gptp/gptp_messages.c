@@ -136,6 +136,12 @@ static void gptp_pdelay_response_timestamp_callback(struct net_pkt *pkt)
 	}
 }
 
+static bool gptp_itv_request_check_valid(int8_t log_itv)
+{
+	return log_itv == GPTP_ITV_SET_TO_INIT ||
+	       (log_itv >= GPTP_ITV_LOG_MIN && log_itv <= GPTP_ITV_LOG_MAX);
+}
+
 #if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC)
 static struct net_pkt *setup_gptp_frame_debug(struct net_if *iface,
 					      size_t extra_header,
@@ -791,13 +797,19 @@ void gptp_handle_signaling(int port, struct net_pkt *pkt)
 	}
 
 	/* pDelay interval. */
-	gptp_update_pdelay_req_interval(port, sig->tlv.link_delay_itv);
+	if (gptp_itv_request_check_valid(sig->tlv.link_delay_itv)) {
+		gptp_update_pdelay_req_interval(port, sig->tlv.link_delay_itv);
+	}
 
 	/* Sync interval. */
-	gptp_update_sync_interval(port, sig->tlv.time_sync_itv);
+	if (gptp_itv_request_check_valid(sig->tlv.time_sync_itv)) {
+		gptp_update_sync_interval(port, sig->tlv.time_sync_itv);
+	}
 
 	/* Announce interval. */
-	gptp_update_announce_interval(port, sig->tlv.announce_itv);
+	if (gptp_itv_request_check_valid(sig->tlv.announce_itv)) {
+		gptp_update_announce_interval(port, sig->tlv.announce_itv);
+	}
 
 	port_ds->compute_neighbor_rate_ratio =
 		sig->tlv.compute_neighbor_rate_ratio;

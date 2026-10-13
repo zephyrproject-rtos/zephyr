@@ -104,6 +104,8 @@ extern const struct net_eth_addr gptp_multicast_eth_addr;
 #define GPTP_ITV_KEEP               -128
 #define GPTP_ITV_SET_TO_INIT        126
 #define GPTP_ITV_STOP               127
+#define GPTP_ITV_LOG_MIN            -24
+#define GPTP_ITV_LOG_MAX            24
 
 /* Control. Only set for header compatibility with v1. */
 #define GPTP_SYNC_CONTROL_VALUE     0x0
