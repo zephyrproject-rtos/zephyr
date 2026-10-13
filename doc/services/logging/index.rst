@@ -946,6 +946,21 @@ with ``cpu<domain_id>.`` (e.g. ``cpu1.app``).
     <app build dir>/log_dictionary.json <remote build dir>/log_dictionary.json \\
     <log data file>
 
+Messages from a remote domain may go through IPC, which introduces a delay, so
+they may appear in the log stream out of order. To get the messages sorted by
+timestamp, use ``--latency <ms>`` together with ``--ts_freq <Hz>`` (frequency of the log
+timestamp). The parser then caches parsed messages and prints a message once a message
+newer by more than the given latency has been received. When no new data arrives for the
+latency time (or the end of the data is reached), all cached messages are printed. Sorting
+is disabled by default and is supported only for version 3 databases. The same arguments
+are accepted by the live parser (:file:`live_log_parser.py`).
+
+.. code-block:: console
+
+  ./scripts/logging/dictionary/log_parser.py --latency 20 --ts_freq 32768 \\
+    <app build dir>/log_dictionary.json <remote build dir>/log_dictionary.json \\
+    <log data file>
+
 Live Parsing
 ^^^^^^^^^^^^
 
