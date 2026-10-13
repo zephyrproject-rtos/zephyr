@@ -112,6 +112,8 @@ struct esp32_wifi_runtime {
 #if defined(CONFIG_ESP32_WIFI_ENTERPRISE)
 	struct wifi_enterprise_creds_params enterprise_creds;
 	bool enterprise_enabled;
+	uint8_t *key_passwd;
+	uint8_t key_passwd_len;
 #endif
 #if defined(CONFIG_ESP32_WIFI_RRM_SUPPORT)
 	/* Only takes effect on the next connect; kept so cfg_11k can read back. */
@@ -991,6 +993,10 @@ static int esp32_wifi_disable_enterprise(struct esp32_wifi_runtime *data)
 
 	data->enterprise_enabled = false;
 
+	esp32_wifi_free_cred(data->key_passwd, data->key_passwd_len);
+	data->key_passwd = NULL;
+	data->key_passwd_len = 0;
+
 	return 0;
 }
 
@@ -1049,12 +1055,21 @@ static int esp32_wifi_configure_enterprise_certs(struct esp32_wifi_runtime *data
 	if ((method == ESP_EAP_TYPE_TLS ||
 	     params->security == WIFI_SECURITY_TYPE_EAP_PEAP_TLS) &&
 	    data->enterprise_creds.client_cert && data->enterprise_creds.client_key) {
-		err = esp_eap_client_set_certificate_and_key(data->enterprise_creds.client_cert,
-					data->enterprise_creds.client_cert_len,
-					data->enterprise_creds.client_key,
-					data->enterprise_creds.client_key_len,
-					params->key_passwd,
-					params->key_passwd_length);
+		if (params->key_passwd != NULL && params->key_passwd_length > 0) {
+			data->key_passwd = k_malloc(params->key_passwd_length + 1U);
+			if (data->key_passwd == NULL) {
+				return -ENOMEM;
+			}
+
+			memcpy(data->key_passwd, params->key_passwd, params->key_passwd_length);
+			data->key_passwd[params->key_passwd_length] = '\0';
+			data->key_passwd_len = params->key_passwd_length;
+		}
+
+		err = esp_eap_client_set_certificate_and_key(
+			data->enterprise_creds.client_cert, data->enterprise_creds.client_cert_len,
+			data->enterprise_creds.client_key, data->enterprise_creds.client_key_len,
+			data->key_passwd, data->key_passwd_len);
 		if (err != ESP_OK) {
 			return esp32_wifi_enterprise_err("Set Enterprise client certificate", err);
 		}
