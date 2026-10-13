@@ -1926,6 +1926,14 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 	async_rx->next_buf_len = 0;
 	async_rx->stoprx_deferred = false;
 
+	/* Errors latched while RX was disabled (e.g. the peer transmitting across a
+	 * reset) do not belong to this reception. Left pending, the ERROR interrupt
+	 * fires right after STARTRX and its STOPRX can be lost before RX has started,
+	 * leaving RX running with the driver considering it stopped.
+	 */
+	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ERROR);
+	(void)nrf_uarte_errorsrc_get_and_clear(uarte);
+
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
 		pm_device_runtime_get(dev);
 	} else if (LOW_POWER_ENABLED(cfg)) {
