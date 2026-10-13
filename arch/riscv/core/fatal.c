@@ -8,8 +8,13 @@
 #include <kernel_internal.h>
 #include <inttypes.h>
 #include <zephyr/arch/common/exc_handle.h>
+#include <zephyr/arch/riscv/csr.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
+
+#ifdef CONFIG_DEMAND_PAGING
+bool z_riscv_do_demand_paging(struct arch_esf *esf, uintptr_t cause, uintptr_t va);
+#endif
 
 #ifdef CONFIG_USERSPACE
 Z_EXC_DECLARE(z_riscv_user_string_nlen);
@@ -228,12 +233,11 @@ void z_riscv_fault(struct arch_esf *esf)
 		if (mcause == RISCV_EXC_INST_PAGE_FAULT ||
 		    mcause == RISCV_EXC_LOAD_PAGE_FAULT ||
 		    mcause == RISCV_EXC_STORE_PAGE_FAULT) {
-			/*
-			 * TODO: demand paging - pass the faulting address (stval)
-			 * to z_page_fault() to allow the kernel to resolve the
-			 * fault on-demand. For now fall through to fatal error
-			 * handling.
-			 */
+#ifdef CONFIG_DEMAND_PAGING
+			if (z_riscv_do_demand_paging(esf, mcause, csr_read(stval))) {
+				return;
+			}
+#endif
 		}
 	}
 #endif /* CONFIG_RISCV_MMU */

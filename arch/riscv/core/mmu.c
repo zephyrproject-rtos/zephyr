@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2026 Alexios Lyrakis <alexios.lyrakis@gmail.com>
+ * Copyright (c) 2026 Synaptics Incorporated
+ * Author: Jisheng Zhang <jszhang@kernel.org>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +9,7 @@
 #include <string.h>
 
 #include <zephyr/arch/riscv/csr.h>
+#include <zephyr/arch/riscv/irq.h>
 #include <zephyr/cache.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
@@ -40,6 +43,10 @@ static struct k_spinlock xlat_lock;
  * before the MMU is enabled (i.e. before SATP is written).
  */
 static pte_t *kernel_root_table;
+
+#ifdef CONFIG_DEMAND_PAGING
+static pte_t *page_pte(pte_t *root, uintptr_t va);
+#endif
 
 #ifdef CONFIG_USERSPACE
 /*
@@ -193,9 +200,22 @@ static inline void inc_table_ref(pte_t *table)
 }
 
 /* Decrement the reference count of a table (one parent PTE removed). */
-static inline void dec_table_ref(pte_t *table)
+static void dec_table_ref(pte_t *table)
 {
-	adjust_table_usage(table, -XLAT_REF_COUNT_UNIT);
+	unsigned int idx = table_index(table);
+
+	if (xlat_use_count[idx] >= 2 * XLAT_REF_COUNT_UNIT) {
+		adjust_table_usage(table, -XLAT_REF_COUNT_UNIT);
+		return;
+	}
+	/* The final owner is gone. Drop references held by its child entries. */
+	__ASSERT(xlat_use_count[idx] >= XLAT_REF_COUNT_UNIT, "unreferenced table");
+	for (unsigned int i = 0; i < RISCV_PGTABLE_ENTRIES; i++) {
+		if (pte_is_table(table[i])) {
+			dec_table_ref((pte_t *)pte_to_phys(table[i]));
+		}
+	}
+	xlat_use_count[idx] = 0;
 }
 
 /* Increment the count of valid PTEs within a table. */
@@ -208,6 +228,12 @@ static inline void inc_pte_count(pte_t *table)
 static inline void dec_pte_count(pte_t *table)
 {
 	adjust_table_usage(table, -1);
+}
+
+/* An evicted page still owns its leaf slot and must keep the table alive. */
+static inline bool pte_is_occupied(pte_t pte)
+{
+	return pte_is_valid(pte) || (pte & PTE_SW_PAGED_OUT) != 0;
 }
 
 /*
@@ -225,18 +251,18 @@ static void set_pte(pte_t *table, unsigned int index, pte_t pte)
 	table[index] = pte;
 
 	/* Update reference counts */
-	if (!pte_is_valid(old_pte) && pte_is_valid(pte)) {
+	if (!pte_is_occupied(old_pte) && pte_is_occupied(pte)) {
 		/* Adding new PTE */
 		inc_pte_count(table);
-		if (pte_is_table(pte)) {
+		if (pte_is_valid(pte) && pte_is_table(pte)) {
 			/* new PTE points to another table - increment its reference */
 			pte_t *child_table = (pte_t *)pte_to_phys(pte);
 
 			inc_table_ref(child_table);
 		}
-	} else if (pte_is_valid(old_pte) && !pte_is_valid(pte)) {
+	} else if (pte_is_occupied(old_pte) && !pte_is_occupied(pte)) {
 		/* Removing PTE */
-		if (pte_is_table(old_pte)) {
+		if (pte_is_valid(old_pte) && pte_is_table(old_pte)) {
 			/* Old PTE pointed to another table - decrement its reference */
 			pte_t *child_table = (pte_t *)pte_to_phys(old_pte);
 
@@ -254,6 +280,10 @@ static void set_pte(pte_t *table, unsigned int index, pte_t pte)
 				dec_table_ref(old_table);
 				inc_table_ref(new_table);
 			}
+		} else if (pte_is_table(old_pte)) {
+			dec_table_ref((pte_t *)pte_to_phys(old_pte));
+		} else if (pte_is_table(pte)) {
+			inc_table_ref((pte_t *)pte_to_phys(pte));
 		}
 		/* Note: Leaf PTE updates don't affect reference counts */
 	}
@@ -261,6 +291,17 @@ static void set_pte(pte_t *table, unsigned int index, pte_t pte)
 	LOG_DBG("%s: table[%u] = %#llx (was %#llx)", __func__, index,
 		(unsigned long long)pte, (unsigned long long)old_pte);
 }
+
+#ifdef CONFIG_ARCH_MEM_DOMAIN_DATA
+static void copy_table(pte_t *dst, const pte_t *src)
+{
+	for (unsigned int i = 0; i < RISCV_PGTABLE_ENTRIES; i++) {
+		if (pte_is_occupied(src[i])) {
+			set_pte(dst, i, src[i]);
+		}
+	}
+}
+#endif
 
 /*
  * Convert Zephyr generic memory permission flags (K_MEM_PERM_*) to the
@@ -273,6 +314,9 @@ static pte_t flags_to_pte(uint32_t flags)
 	/* Permission flags */
 	if (flags & K_MEM_PERM_RW) {
 		pte_flags |= PTE_WRITE | PTE_DIRTY;
+#ifdef CONFIG_DEMAND_PAGING
+		pte_flags |= PTE_SW_WRITABLE;
+#endif
 	}
 
 	if (flags & K_MEM_PERM_EXEC) {
@@ -282,6 +326,14 @@ static pte_t flags_to_pte(uint32_t flags)
 	if (flags & K_MEM_PERM_USER) {
 		pte_flags |= PTE_USER;
 	}
+
+#ifdef CONFIG_DEMAND_MAPPING
+	if (flags & K_MEM_MAP_UNPAGED) {
+		/* The PPN holds an anonymous-page tag instead of a physical page. */
+		pte_flags = (pte_flags & ~(PTE_VALID | PTE_ACCESSED | PTE_DIRTY |
+					 PTE_WRITE)) | PTE_SW_PAGED_OUT;
+	}
+#endif
 
 	return pte_flags;
 }
@@ -307,9 +359,9 @@ uintptr_t z_riscv_kernel_satp(void)
  * Operates bottom-up: checks the deepest table first, then its parent.
  * Must be called with xlat_lock held.
  */
-static void cleanup_unused_tables(uintptr_t va)
+static void cleanup_unused_tables(pte_t *root, uintptr_t va)
 {
-	pte_t *table = get_root_page_table();
+	pte_t *table = root;
 	pte_t *tables[PGTABLE_LEVELS];
 	unsigned int indices[PGTABLE_LEVELS];
 	int level;
@@ -422,12 +474,12 @@ static void unmap_pages_from(pte_t *root, uintptr_t va, size_t size)
 			unsigned int leaf_index = VPN(va, PGTABLE_LEVELS - 1);
 			pte_t leaf_pte = table[leaf_index];
 
-			if (pte_is_valid(leaf_pte)) {
+			if (pte_is_occupied(leaf_pte)) {
 				set_pte(table, leaf_index, 0);
 				LOG_DBG("unmapped VA:%p -> PA:%p", (void *)va,
 					  (void *)pte_to_phys(leaf_pte));
 				SFENCE_VMA_ADDR((void *)va);
-				cleanup_unused_tables(va);
+				cleanup_unused_tables(root, va);
 			}
 		}
 
@@ -465,6 +517,26 @@ int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 	 * page tables that carry a private copy of the relevant L1.
 	 */
 	sync_domains();
+#ifdef CONFIG_DEMAND_PAGING
+	/* sync_domains() only fills intermediate tables, not private leaf slots. */
+	sys_snode_t *node;
+
+	SYS_SLIST_FOR_EACH_NODE(&domain_list, node) {
+		struct arch_mem_domain *domain = CONTAINER_OF(node, struct arch_mem_domain, node);
+
+		for (uintptr_t va = (uintptr_t)virt; va < (uintptr_t)virt + size;
+		     va += PAGE_SIZE) {
+			pte_t *kernel_pte = page_pte(kernel_root_table, va);
+			pte_t *domain_pte = page_pte(domain->ptables, va);
+
+			if (kernel_pte != NULL && domain_pte != NULL &&
+			    domain_pte != kernel_pte && !pte_is_occupied(*domain_pte)) {
+				set_pte(domain_pte - VPN(va, PGTABLE_LEVELS - 1),
+					VPN(va, PGTABLE_LEVELS - 1), *kernel_pte);
+			}
+		}
+	}
+#endif
 #endif
 
 	k_spin_unlock(&xlat_lock, key);
@@ -496,6 +568,28 @@ int arch_mem_unmap(void *addr, size_t size)
 	LOG_DBG("unmapping VA:%p size:%zu", addr, size);
 
 	unmap_pages_from(kernel_root_table, (uintptr_t)addr, size);
+
+#if defined(CONFIG_DEMAND_PAGING) && defined(CONFIG_USERSPACE)
+	/* Revoked anonymous mappings must not survive in private domain tables. */
+	sys_snode_t *node;
+
+	SYS_SLIST_FOR_EACH_NODE(&domain_list, node) {
+		struct arch_mem_domain *domain = CONTAINER_OF(node, struct arch_mem_domain, node);
+
+		for (uintptr_t va = (uintptr_t)addr; va < (uintptr_t)addr + size;
+		     va += PAGE_SIZE) {
+			pte_t *domain_pte = page_pte(domain->ptables, va);
+			pte_t *kernel_pte = page_pte(kernel_root_table, va);
+
+			if (domain_pte != NULL && domain_pte != kernel_pte &&
+			    pte_is_occupied(*domain_pte)) {
+				set_pte(domain_pte - VPN(va, PGTABLE_LEVELS - 1),
+					VPN(va, PGTABLE_LEVELS - 1), 0);
+			}
+		}
+	}
+	SFENCE_VMA_ALL();
+#endif
 
 	k_spin_unlock(&xlat_lock, key);
 
@@ -591,6 +685,275 @@ unlock_and_return:
 	return result;
 }
 
+#ifdef CONFIG_DEMAND_PAGING
+/* Return a base-page PTE; an invalid leaf may still contain a paging token. */
+static pte_t *page_pte(pte_t *root, uintptr_t va)
+{
+	pte_t *table = root;
+
+	if (table == NULL) {
+		return NULL;
+	}
+
+	for (unsigned int level = 0; level < PGTABLE_LEVELS - 1; level++) {
+		pte_t entry = table[VPN(va, level)];
+
+		if (!pte_is_table(entry)) {
+			return NULL;
+		}
+		table = (pte_t *)pte_to_phys(entry);
+	}
+
+	return &table[VPN(va, PGTABLE_LEVELS - 1)];
+}
+
+/* The kernel and domain leaf tables may differ in user permissions. */
+static void update_paging_pte(uintptr_t va, uintptr_t address, bool page_in)
+{
+	pte_t *kernel_pte = page_pte(kernel_root_table, va);
+	pte_t old, updated;
+
+	__ASSERT(kernel_pte != NULL &&
+		 (page_in ? (*kernel_pte & PTE_SW_PAGED_OUT) : pte_is_valid(*kernel_pte)),
+		 "missing page at %p", (void *)va);
+	__ASSERT(IS_ALIGNED(address, PAGE_SIZE) &&
+		 (address & ~(uintptr_t)(PTE_PPN_MASK >> PTE_PPN_SHIFT << PAGE_SIZE_SHIFT)) == 0,
+		 "unrepresentable page address %#lx", (unsigned long)address);
+
+	old = *kernel_pte;
+	updated = (old & ~PTE_PPN_MASK) | phys_to_pte(address);
+	if (page_in) {
+		updated = (updated | PTE_VALID) & ~(PTE_SW_PAGED_OUT | PTE_ACCESSED |
+						       PTE_DIRTY | PTE_WRITE);
+	} else {
+		updated = (updated | PTE_SW_PAGED_OUT) & ~PTE_VALID;
+	}
+	*kernel_pte = updated;
+
+#ifdef CONFIG_USERSPACE
+	sys_snode_t *node;
+
+	SYS_SLIST_FOR_EACH_NODE(&domain_list, node) {
+		struct arch_mem_domain *domain = CONTAINER_OF(node, struct arch_mem_domain, node);
+		pte_t *domain_pte = page_pte(domain->ptables, va);
+		pte_t private_pte;
+
+		if (domain_pte == NULL || domain_pte == kernel_pte ||
+		    !pte_is_occupied(*domain_pte)) {
+			continue;
+		}
+
+		/* Retain this domain's U/R/W/X permissions and software W bit. */
+		private_pte = (*domain_pte & ~PTE_PPN_MASK) | phys_to_pte(address);
+		if (page_in) {
+			private_pte = (private_pte | PTE_VALID) &
+					~(PTE_SW_PAGED_OUT | PTE_ACCESSED | PTE_DIRTY | PTE_WRITE);
+		} else {
+			private_pte = (private_pte | PTE_SW_PAGED_OUT) & ~PTE_VALID;
+		}
+		*domain_pte = private_pte;
+	}
+#endif
+
+	/* Domain ASIDs may cache this VA independently of the kernel ASID. */
+	SFENCE_VMA_ALL();
+}
+
+void arch_mem_page_out(void *addr, uintptr_t location)
+{
+	k_spinlock_key_t key = k_spin_lock(&xlat_lock);
+
+	update_paging_pte((uintptr_t)addr, location, false);
+	k_spin_unlock(&xlat_lock, key);
+}
+
+void arch_mem_page_in(void *addr, uintptr_t phys)
+{
+	k_spinlock_key_t key = k_spin_lock(&xlat_lock);
+
+	update_paging_pte((uintptr_t)addr, phys, true);
+	if (*page_pte(kernel_root_table, (uintptr_t)addr) & PTE_EXEC) {
+		/* Synchronize instruction fetch with writes through the scratch mapping. */
+		__asm__ volatile("fence.i" ::: "memory");
+	}
+	k_spin_unlock(&xlat_lock, key);
+}
+
+enum arch_page_location arch_page_location_get(void *addr, uintptr_t *location)
+{
+	k_spinlock_key_t key = k_spin_lock(&xlat_lock);
+	pte_t *pte = page_pte(kernel_root_table, (uintptr_t)addr);
+	enum arch_page_location state;
+
+	if (pte == NULL || !pte_is_occupied(*pte)) {
+		state = ARCH_PAGE_LOCATION_BAD;
+	} else {
+		state = pte_is_valid(*pte) ? ARCH_PAGE_LOCATION_PAGED_IN :
+					    ARCH_PAGE_LOCATION_PAGED_OUT;
+		if (location != NULL) {
+			*location = pte_to_phys(*pte);
+		}
+	}
+	k_spin_unlock(&xlat_lock, key);
+	return state;
+}
+
+uintptr_t arch_page_info_get(void *addr, uintptr_t *phys, bool clear_accessed)
+{
+	uintptr_t va = (uintptr_t)addr;
+	k_spinlock_key_t key = k_spin_lock(&xlat_lock);
+	pte_t *pte = page_pte(kernel_root_table, va);
+	uintptr_t info = 0;
+
+	if (pte == NULL || !pte_is_occupied(*pte)) {
+		info = ARCH_DATA_PAGE_NOT_MAPPED;
+		goto out;
+	}
+	if (phys != NULL) {
+		*phys = pte_to_phys(*pte);
+	}
+	if (!pte_is_valid(*pte)) {
+		goto out;
+	}
+	info = ARCH_DATA_PAGE_LOADED;
+	if (*pte & PTE_ACCESSED) {
+		info |= ARCH_DATA_PAGE_ACCESSED;
+	}
+	if (*pte & PTE_DIRTY) {
+		info |= ARCH_DATA_PAGE_DIRTY;
+	}
+	if (clear_accessed) {
+		*pte &= ~PTE_ACCESSED;
+	}
+
+#ifdef CONFIG_USERSPACE
+	sys_snode_t *node;
+
+	SYS_SLIST_FOR_EACH_NODE(&domain_list, node) {
+		struct arch_mem_domain *domain = CONTAINER_OF(node, struct arch_mem_domain, node);
+		pte_t *domain_pte = page_pte(domain->ptables, va);
+
+		if (domain_pte == NULL || domain_pte == pte || !pte_is_valid(*domain_pte)) {
+			continue;
+		}
+		if (*domain_pte & PTE_ACCESSED) {
+			info |= ARCH_DATA_PAGE_ACCESSED;
+		}
+		if (*domain_pte & PTE_DIRTY) {
+			info |= ARCH_DATA_PAGE_DIRTY;
+		}
+		if (clear_accessed) {
+			*domain_pte &= ~PTE_ACCESSED;
+		}
+	}
+#endif
+	if (clear_accessed) {
+		SFENCE_VMA_ADDR(addr);
+	}
+out:
+	k_spin_unlock(&xlat_lock, key);
+	return info;
+}
+
+void arch_mem_scratch(uintptr_t phys)
+{
+	/* The temporary mapping is used in the address space active on this hart. */
+	uintptr_t satp = READ_SATP();
+	pte_t *root = (pte_t *)((satp & SATP_PPN_MASK) << PAGE_SIZE_SHIFT);
+	k_spinlock_key_t key = k_spin_lock(&xlat_lock);
+
+	__ASSERT(IS_ALIGNED(phys, PAGE_SIZE), "scratch frame is not aligned");
+	map_pages_into(root, (uintptr_t)K_MEM_SCRATCH_PAGE, phys, PAGE_SIZE,
+		       flags_to_pte(K_MEM_PERM_RW));
+	k_spin_unlock(&xlat_lock, key);
+}
+
+bool z_riscv_do_demand_paging(struct arch_esf *esf, uintptr_t cause, uintptr_t va)
+{
+	pte_t *pte;
+	pte_t entry;
+	k_spinlock_key_t key;
+	bool write = cause == RISCV_EXC_STORE_PAGE_FAULT;
+	bool user = (esf->mstatus & RV_STATUS_PP) == RV_STATUS_PP_U;
+
+	if (va < (uintptr_t)K_MEM_VIRT_RAM_START ||
+	    va >= (uintptr_t)K_MEM_VIRT_RAM_END) {
+		return false;
+	}
+	va = ROUND_DOWN(va, PAGE_SIZE);
+	key = k_spin_lock(&xlat_lock);
+	pte = page_pte(kernel_root_table, va);
+	if (pte != NULL && pte_is_valid(*pte)) {
+		entry = *pte;
+#ifdef CONFIG_USERSPACE
+		if (user && _current->mem_domain_info.mem_domain != NULL) {
+			pte = page_pte(_current->mem_domain_info.mem_domain->arch.ptables, va);
+			if (pte == NULL || !pte_is_valid(*pte) || !(*pte & PTE_USER)) {
+				k_spin_unlock(&xlat_lock, key);
+				return false;
+			}
+			entry = *pte;
+		}
+#endif
+		if ((write && (entry & PTE_SW_WRITABLE) && !(entry & PTE_WRITE)) ||
+		    (!(entry & PTE_ACCESSED) &&
+		     (write ? (entry & (PTE_WRITE | PTE_SW_WRITABLE)) :
+		      cause == RISCV_EXC_INST_PAGE_FAULT ? (entry & PTE_EXEC) :
+							(entry & PTE_READ))) ||
+		    (write && (entry & PTE_WRITE) && !(entry & PTE_DIRTY))) {
+			pte_t *kernel_pte = page_pte(kernel_root_table, va);
+
+			*kernel_pte |= PTE_ACCESSED;
+			if (write) {
+				*kernel_pte |= PTE_DIRTY | PTE_WRITE;
+			}
+			if (pte != kernel_pte) {
+				*pte |= PTE_ACCESSED;
+				if (write) {
+					*pte |= PTE_DIRTY | PTE_WRITE;
+				}
+			}
+			SFENCE_VMA_ALL();
+			k_spin_unlock(&xlat_lock, key);
+			k_mem_paging_eviction_accessed(pte_to_phys(entry));
+			return true;
+		}
+		k_spin_unlock(&xlat_lock, key);
+		return false;
+	}
+	if (user) {
+#ifdef CONFIG_USERSPACE
+		pte_t *domain_pte = page_pte(_current->mem_domain_info.mem_domain->arch.ptables,
+					       va);
+
+		if (domain_pte == NULL || !(*domain_pte & PTE_USER) ||
+		    !(pte_is_valid(*domain_pte) || (*domain_pte & PTE_SW_PAGED_OUT))) {
+			k_spin_unlock(&xlat_lock, key);
+			return false;
+		}
+#else
+		k_spin_unlock(&xlat_lock, key);
+		return false;
+#endif
+	}
+	k_spin_unlock(&xlat_lock, key);
+
+	/* The core keeps z_mm_lock held when interruptible paging is disabled. */
+#ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
+	/* Restore saved SIE only when Zephyr allows IRQs during page-in. */
+	if (esf->mstatus & RV_STATUS_PIE) {
+		csr_set(sstatus, SSTATUS_SIE);
+	}
+#endif
+	bool handled = k_mem_page_fault((void *)va);
+
+#ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
+	csr_clear(sstatus, SSTATUS_SIE);
+#endif
+	return handled;
+}
+#endif /* CONFIG_DEMAND_PAGING */
+
 /**
  * Create platform-specific memory mappings
  *
@@ -684,7 +1047,7 @@ static int create_kernel_mappings(void)
  *
  * @return 0 on success, negative error code on failure
  */
-static int arch_mem_init(void)
+int z_riscv_mmu_init(void)
 {
 	uintptr_t satp_val;
 	uintptr_t mode;
@@ -782,7 +1145,7 @@ static int arch_mem_init(void)
 	extern struct k_mem_domain k_mem_domain_default;
 
 	if (k_mem_domain_default.arch.ptables != NULL) {
-		memcpy(k_mem_domain_default.arch.ptables, kernel_root_table, PAGE_SIZE);
+		copy_table(k_mem_domain_default.arch.ptables, kernel_root_table);
 		domain_privatize_kernel_text(k_mem_domain_default.arch.ptables);
 	}
 #endif
@@ -829,6 +1192,9 @@ static pte_t partition_attr_to_pte(k_mem_partition_attr_t attr)
 	}
 	if (attr.pmp_attr & PMP_W) {
 		pte |= PTE_WRITE | PTE_DIRTY;
+#ifdef CONFIG_DEMAND_PAGING
+		pte |= PTE_SW_WRITABLE;
+#endif
 	}
 	if (attr.pmp_attr & PMP_X) {
 		pte |= PTE_EXEC;
@@ -866,19 +1232,18 @@ static int domain_privatize_kernel_text(pte_t *domain_root)
 		}
 
 		private_l1 = new_table();
-		inc_table_ref(private_l1);
-		memcpy(private_l1, (void *)pte_to_phys(root_pte), PAGE_SIZE);
-		domain_root[root_idx] = pte_create((uintptr_t)private_l1, PTE_TYPE_TABLE);
+		set_pte(domain_root, root_idx,
+			pte_create((uintptr_t)private_l1, PTE_TYPE_TABLE));
+		copy_table(private_l1, (pte_t *)pte_to_phys(root_pte));
 
 		for (unsigned int i = 0; i < RISCV_PGTABLE_ENTRIES; i++) {
 			uintptr_t page_va = chunk + ((uintptr_t)i << PAGE_SIZE_SHIFT);
 			pte_t pte = private_l1[i];
 
-			if (!pte_is_valid(pte)) {
+			if (!pte_is_occupied(pte)) {
 				continue;
 			}
 
-			adjust_table_usage(private_l1, 1);
 			if (pte_is_leaf(pte) && page_va >= text_start && page_va < rom_end) {
 				private_l1[i] = pte | PTE_USER;
 			}
@@ -928,9 +1293,8 @@ static int domain_privatize_kernel_text(pte_t *domain_root)
 	if (!private_l1) {
 		return -ENOMEM;
 	}
-	inc_table_ref(private_l1);
-	memcpy(private_l1, (void *)pte_to_phys(l0_pte), PAGE_SIZE);
-	domain_root[l0_idx] = pte_create((uintptr_t)private_l1, PTE_TYPE_TABLE);
+	set_pte(domain_root, l0_idx, pte_create((uintptr_t)private_l1, PTE_TYPE_TABLE));
+	copy_table(private_l1, (pte_t *)pte_to_phys(l0_pte));
 
 	/*
 	 * Walk ALL valid intermediate L1 entries and privatize their L2
@@ -955,20 +1319,14 @@ static int domain_privatize_kernel_text(pte_t *domain_root)
 		if (!private_l2) {
 			return -ENOMEM;
 		}
-		inc_table_ref(private_l2);
-		memcpy(private_l2, (void *)pte_to_phys(l1_pte), PAGE_SIZE);
-		private_l1[l1_idx] = pte_create((uintptr_t)private_l2, PTE_TYPE_TABLE);
+		set_pte(private_l1, l1_idx, pte_create((uintptr_t)private_l2, PTE_TYPE_TABLE));
+		copy_table(private_l2, (pte_t *)pte_to_phys(l1_pte));
 
 		/*
 		 * Initialize the PTE count to match the entries we copied
 		 * so that dec_pte_count() stays balanced when partitions
 		 * are unmapped later.
 		 */
-		for (i = 0; i < RISCV_PGTABLE_ENTRIES; i++) {
-			if (pte_is_valid(private_l2[i])) {
-				adjust_table_usage(private_l2, 1);
-			}
-		}
 
 		l1_base = ((uintptr_t)l0_idx << RISCV_PGLEVEL_SHIFT(0)) |
 			  ((uintptr_t)l1_idx << RISCV_PGLEVEL_SHIFT(1));
@@ -993,15 +1351,9 @@ static int domain_privatize_kernel_text(pte_t *domain_root)
 			if (!private_l3) {
 				return -ENOMEM;
 			}
-			inc_table_ref(private_l3);
-			memcpy(private_l3, (void *)pte_to_phys(l2_pte), PAGE_SIZE);
-			private_l2[i] = pte_create((uintptr_t)private_l3, PTE_TYPE_TABLE);
-
-			for (j = 0; j < RISCV_PGTABLE_ENTRIES; j++) {
-				if (pte_is_valid(private_l3[j])) {
-					adjust_table_usage(private_l3, 1);
-				}
-			}
+			set_pte(private_l2, i,
+				pte_create((uintptr_t)private_l3, PTE_TYPE_TABLE));
+			copy_table(private_l3, (pte_t *)pte_to_phys(l2_pte));
 
 			l2_base = l1_base | ((uintptr_t)i << RISCV_PGLEVEL_SHIFT(2));
 
@@ -1069,7 +1421,7 @@ static void sync_l2_from_kernel(pte_t *k_l1, pte_t *d_l1)
 
 		for (k = 0; k < RISCV_PGTABLE_ENTRIES; k++) {
 			if (pte_is_valid(k_l2[k]) && !pte_is_valid(d_l2[k])) {
-				d_l2[k] = k_l2[k];
+				set_pte(d_l2, k, k_l2[k]);
 			}
 		}
 	}
@@ -1108,7 +1460,7 @@ static void sync_domains(void)
 
 			if (!pte_is_valid(d_pte)) {
 				/* Domain missing this L0 entry entirely. */
-				domain_root[i] = k_pte;
+				set_pte(domain_root, i, k_pte);
 				continue;
 			}
 
@@ -1135,7 +1487,7 @@ static void sync_domains(void)
 				for (j = 0; j < RISCV_PGTABLE_ENTRIES; j++) {
 					if (pte_is_valid(k_l1[j]) &&
 					    !pte_is_valid(d_l1[j])) {
-						d_l1[j] = k_l1[j];
+						set_pte(d_l1, j, k_l1[j]);
 					}
 				}
 
@@ -1177,7 +1529,7 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 	if (kernel_root_table != NULL) {
 		int ret;
 
-		memcpy(domain->arch.ptables, kernel_root_table, PAGE_SIZE);
+		copy_table(domain->arch.ptables, kernel_root_table);
 
 		/*
 		 * Create private copies of the L1/L2 tables for the kernel
@@ -1230,7 +1582,6 @@ static int ensure_private_tables(pte_t *domain_root, uintptr_t va, size_t size)
 			unsigned int idx = VPN(cur, lv);
 			pte_t d_pte = d_tbl[idx];
 			pte_t *d_next, *k_next = NULL;
-			unsigned int i;
 
 			if (!pte_is_valid(d_pte) || !pte_is_table(d_pte)) {
 				break;
@@ -1252,17 +1603,8 @@ static int ensure_private_tables(pte_t *domain_root, uintptr_t va, size_t size)
 				if (!priv) {
 					return -ENOMEM;
 				}
-				inc_table_ref(priv);
-				memcpy(priv, k_next, PAGE_SIZE);
-				for (i = 0; i < RISCV_PGTABLE_ENTRIES; i++) {
-					if (pte_is_valid(priv[i])) {
-						adjust_table_usage(priv, 1);
-					}
-				}
-				/* Raw write: intermediate domain tables are
-				 * not set_pte()-tracked.
-				 */
-				d_tbl[idx] = pte_create((uintptr_t)priv, PTE_TYPE_TABLE);
+				set_pte(d_tbl, idx, pte_create((uintptr_t)priv, PTE_TYPE_TABLE));
+				copy_table(priv, k_next);
 				d_next = priv;
 			}
 
@@ -1295,7 +1637,27 @@ int arch_mem_domain_partition_add(struct k_mem_domain *domain, uint32_t partitio
 		return ret;
 	}
 
+#ifdef CONFIG_DEMAND_PAGING
+	/* Anonymous pages need not have physical addresses equal to their VAs. */
+	for (uintptr_t va = part->start; va < part->start + part->size; va += PAGE_SIZE) {
+		pte_t *source = page_pte(kernel_root_table, va);
+		pte_t *target = page_pte(domain->arch.ptables, va);
+		pte_t flags;
+
+		if (source == NULL || target == NULL || !pte_is_occupied(*source)) {
+			k_spin_unlock(&xlat_lock, key);
+			return -EFAULT;
+		}
+		flags = pte_flags;
+		if (*source & PTE_SW_PAGED_OUT) {
+			flags = (flags | PTE_SW_PAGED_OUT) & ~PTE_VALID;
+		}
+		set_pte(target - VPN(va, PGTABLE_LEVELS - 1), VPN(va, PGTABLE_LEVELS - 1),
+			pte_create(pte_to_phys(*source), flags));
+	}
+#else
 	map_pages_into(domain->arch.ptables, part->start, part->start, part->size, pte_flags);
+#endif
 
 	SFENCE_VMA_ASID(domain->arch.asid);
 
@@ -1305,11 +1667,8 @@ int arch_mem_domain_partition_add(struct k_mem_domain *domain, uint32_t partitio
 }
 
 /*
- * After arch_mem_domain_partition_remove() zeros domain leaf PTEs via
- * unmap_pages_from(), the kernel (running S-mode with the domain SATP and
- * SUM=1) can no longer access the revoked partition's backing memory.
- * Restore the kernel's original PTEs into the domain's page tables so that
- * S-mode access is preserved while U-mode access is removed.
+ * Restore the kernel's original PTEs into the domain's private tables so
+ * S-mode access survives revocation, including for paged-out pages.
  *
  * Must be called with xlat_lock held.
  */
@@ -1341,9 +1700,7 @@ static void restore_kernel_ptes(pte_t *domain_root, uintptr_t va, size_t size)
 			unsigned int li = VPN(va, PGTABLE_LEVELS - 1);
 			pte_t kp = k_tbl[li];
 
-			if (pte_is_valid(kp) && !pte_is_valid(d_tbl[li])) {
-				set_pte(d_tbl, li, kp);
-			}
+			set_pte(d_tbl, li, kp);
 		}
 next_page:;
 	}
@@ -1356,13 +1713,6 @@ int arch_mem_domain_partition_remove(struct k_mem_domain *domain, uint32_t parti
 
 	key = k_spin_lock(&xlat_lock);
 
-	unmap_pages_from(domain->arch.ptables, part->start, part->size);
-
-	/*
-	 * Restore kernel RW mappings into the domain's page tables for the
-	 * revoked range.  unmap_pages_from() zeroed all PTEs, including the
-	 * kernel entries that S-mode needs when running with the domain SATP.
-	 */
 	restore_kernel_ptes(domain->arch.ptables, part->start, part->size);
 
 	SFENCE_VMA_ASID(domain->arch.asid);
@@ -1406,7 +1756,6 @@ int arch_mem_domain_destroy(struct k_mem_domain *domain)
 {
 	k_spinlock_key_t key;
 	pte_t *ptables = domain->arch.ptables;
-	int i;
 
 	if (!ptables) {
 		return 0;
@@ -1416,30 +1765,7 @@ int arch_mem_domain_destroy(struct k_mem_domain *domain)
 
 	sys_slist_find_and_remove(&domain_list, &domain->arch.node);
 
-	/*
-	 * Release intermediate tables that are exclusively owned by this
-	 * domain (ref_count == XLAT_REF_COUNT_UNIT means only the domain
-	 * root points to them).  Tables shared with the kernel page table
-	 * have a higher ref count and must not be freed.
-	 *
-	 * TODO: recurse into deeper levels for partitions that required
-	 * multi-level exclusive sub-tables.
-	 */
-	for (i = 0; i < RISCV_PGTABLE_ENTRIES; i++) {
-		pte_t pte = ptables[i];
-
-		if (pte_is_valid(pte) && pte_is_table(pte)) {
-			pte_t *child = (pte_t *)pte_to_phys(pte);
-			unsigned int idx = table_index(child);
-
-			if (xlat_use_count[idx] == XLAT_REF_COUNT_UNIT) {
-				xlat_use_count[idx] = 0;
-			}
-		}
-	}
-
-	/* Free the domain root table */
-	xlat_use_count[table_index(ptables)] = 0;
+	dec_table_ref(ptables);
 	domain->arch.ptables = NULL;
 
 	k_spin_unlock(&xlat_lock, key);
@@ -1593,5 +1919,3 @@ void arch_reserved_pages_update(void)
 	 * need to be marked reserved on this platform.
 	 */
 }
-
-SYS_INIT(arch_mem_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

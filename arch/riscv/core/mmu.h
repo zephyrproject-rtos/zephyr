@@ -153,7 +153,7 @@
 
 /* Software-defined PTE bits (bits 8-9 are reserved for software use) */
 #define PTE_SW_WRITABLE BIT(8) /* Actually writable (for demand paging) */
-#define PTE_SW_RESERVED BIT(9) /* Reserved for future use */
+#define PTE_SW_PAGED_OUT BIT(9) /* V=0, PPN holds a backing-store token */
 
 /* PTE permission combinations */
 #define PTE_TYPE_TABLE (PTE_VALID) /* flags for a non-leaf (table) PTE */

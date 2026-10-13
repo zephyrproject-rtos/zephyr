@@ -110,6 +110,7 @@ void z_riscv_fatal_error(unsigned int reason,
 				       const struct arch_esf *esf);
 
 #ifdef CONFIG_RISCV_MMU
+int z_riscv_mmu_init(void);
 uintptr_t z_riscv_kernel_satp(void);
 #ifdef CONFIG_RISCV_MMU_STACK_GUARD
 void z_riscv_mmu_map_guard_page(const struct k_thread *thread);
