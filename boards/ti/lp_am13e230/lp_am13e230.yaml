@@ -11,4 +11,5 @@ supported:
   - pinctrl
   - uart
   - i2c
+  - spi
 vendor: ti
