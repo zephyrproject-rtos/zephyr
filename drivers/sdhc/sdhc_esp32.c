@@ -11,6 +11,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/cache.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/policy.h>
 #include <soc.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
@@ -678,6 +679,8 @@ static int sdmmc_host_do_transaction(const struct device *dev, int slot,
 		return ESP_ERR_NO_MEM;
 	}
 
+	pm_policy_state_all_lock_get();
+
 	/*
 	 * The host clock divider is a controller register shared by both slots,
 	 * so a slot taking the bus from the other one has to restore its own
@@ -802,6 +805,7 @@ out:
 	 * programmed, so the next transaction knows whether it has to restore
 	 * its own. The ISR uses it the same way while a transaction runs.
 	 */
+	pm_policy_state_all_lock_put();
 	k_mutex_unlock(&sdhc_esp32_ctrl.bus_mutex);
 
 	return ret;
@@ -1187,7 +1191,7 @@ static void sdhc_esp32_restore_after_reset(const struct device *dev)
  * the bus, and it clears the shared divider, interrupt mask and timeouts,
  * which are restored here.
  */
-static int sdhc_esp32_reset(const struct device *dev)
+static int sdhc_esp32_do_reset(const struct device *dev)
 {
 	const struct sdhc_esp32_config *cfg = dev->config;
 	sdmmc_dev_t *sdio_hw = (sdmmc_dev_t *)cfg->sdio_hw;
@@ -1225,10 +1229,21 @@ static int sdhc_esp32_reset(const struct device *dev)
 	return 0;
 }
 
+static int sdhc_esp32_reset(const struct device *dev)
+{
+	int ret;
+
+	pm_policy_state_all_lock_get();
+	ret = sdhc_esp32_do_reset(dev);
+	pm_policy_state_all_lock_put();
+
+	return ret;
+}
+
 /*
  * Set SDHC io properties
  */
-static int sdhc_esp32_set_io(const struct device *dev, struct sdhc_io *ios)
+static int sdhc_esp32_apply_io(const struct device *dev, struct sdhc_io *ios)
 {
 	const struct sdhc_esp32_config *cfg = dev->config;
 	sdmmc_dev_t *sdio_hw = (sdmmc_dev_t *)cfg->sdio_hw;
@@ -1398,6 +1413,17 @@ static int sdhc_esp32_set_io(const struct device *dev, struct sdhc_io *ios)
 			data->timing = ios->timing;
 		}
 	}
+
+	return ret;
+}
+
+static int sdhc_esp32_set_io(const struct device *dev, struct sdhc_io *ios)
+{
+	int ret;
+
+	pm_policy_state_all_lock_get();
+	ret = sdhc_esp32_apply_io(dev, ios);
+	pm_policy_state_all_lock_put();
 
 	return ret;
 }
