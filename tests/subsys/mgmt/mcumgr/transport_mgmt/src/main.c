@@ -672,6 +672,8 @@ ZTEST(transport_mgmt, test_connection)
 	struct zcbor_string echo_receive_data = { 0 };
 	struct group_error_t group_error;
 	uint32_t rc = 0;
+	struct smp_transport *dummy = smp_client_transport_get(SMP_SERIAL_TRANSPORT);
+	struct smp_transport *raw_dummy = smp_client_transport_get(SMP_RAW_SERIAL_TRANSPORT);
 
 	struct zcbor_map_decode_key_val output_decode[] = {
 		ZCBOR_MAP_DECODE_KEY_DECODER("d", zcbor_tstr_decode, &echo_send_data),
@@ -835,6 +837,13 @@ ZTEST(transport_mgmt, test_connection)
 	rc = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
 	zassert_equal(rc, 1, "Expected decode to be successful");
 	zassert_equal(decoded, 0, "Expected to receive 0 decoded zcbor elements");
+
+	/* Check each transport of the bridge gets the other one */
+	zassert_equal(transport_mgmt_get_other_transport(dummy, TRANSPORT_MGMT_DIRECTION_INCOMING),
+		      raw_dummy, "Expected the raw dummy transport as the other transport");
+	zassert_equal(
+		transport_mgmt_get_other_transport(raw_dummy, TRANSPORT_MGMT_DIRECTION_OUTGOING),
+		dummy, "Expected the dummy transport as the other transport");
 
 	/* Clean up test */
 	memset(buffer, 0, sizeof(buffer));
