@@ -296,7 +296,7 @@ static whd_security_t convert_zephyr_security_to_whd(int security)
 		break;
 
 	case WIFI_SECURITY_TYPE_PSK_SHA256:
-		whd_security = WIFI_SECURITY_TYPE_PSK_SHA256;
+		whd_security = WHD_SECURITY_WPA2_AES_PSK_SHA256;
 		break;
 
 	case WIFI_SECURITY_TYPE_SAE:
