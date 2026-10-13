@@ -180,7 +180,7 @@ static int counter_cc23x0_lgpt_set_alarm(const struct device *dev, uint8_t chan_
 		return -ENOTSUP;
 	}
 
-	data->alarm_cfg[chan_id].flags = 0;
+	data->alarm_cfg[chan_id].flags = alarm_cfg->flags;
 	data->alarm_cfg[chan_id].ticks = alarm_cfg->ticks;
 	data->alarm_cfg[chan_id].callback = alarm_cfg->callback;
 	data->alarm_cfg[chan_id].user_data = alarm_cfg->user_data;
