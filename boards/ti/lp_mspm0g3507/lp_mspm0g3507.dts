@@ -122,13 +122,19 @@
 		slot0_partition: partition@8000 {
 			compatible = "zephyr,mapped-partition";
 			label = "image-0";
-			reg = <0x00008000 0xc000>;
+			reg = <0x00008000 0xa000>;
 		};
 
-		slot1_partition: partition@14000 {
+		slot1_partition: partition@12000 {
 			compatible = "zephyr,mapped-partition";
 			label = "image-1";
-			reg = <0x00014000 0xc000>;
+			reg = <0x00012000 0xa000>;
+		};
+
+		storage_partition: partition@1c000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x0001c000 0x4000>;
 		};
 	};
 };
