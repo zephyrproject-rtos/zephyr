@@ -913,21 +913,20 @@ static void test_route_ipv4_onlink_null_iface_searches_all(void)
 		      "Off-link address must not match with NULL iface pointer");
 }
 
-static void test_route_ipv4_input_onlink_routes_via_matching_iface(void)
+static const struct net_eth_addr *my_iface_lladdr(void)
 {
+	return (const struct net_eth_addr *)net_if_get_link_addr(my_iface)->addr;
+}
+
+/* Inject a frame as if received on my_iface. */
+static void recv_ipv4_frame(const struct net_eth_addr *eth_dst,
+			    const struct net_in_addr *dst,
+			    uint8_t proto, uint8_t ttl)
+{
+	struct net_eth_addr src_lladdr = { { 0x02, 0x00, 0x5e, 0x00, 0x53, 0x61 } };
 	struct net_ipv4_hdr *hdr;
 	struct net_eth_hdr *eth;
 	struct net_pkt *pkt;
-	struct net_eth_addr src_lladdr = { { 0x02, 0x00, 0x5e, 0x00, 0x53, 0x61 } };
-
-	/* A packet received on my_iface but destined to an address that is not
-	 * ours and has no routing table entry, yet is on-link on my_iface_alt,
-	 * must be routed out my_iface_alt. This exercises the on-link branch of
-	 * ipv4_route_packet(), which only works once net_if_ipv4_addr_onlink()
-	 * honors the NULL "search all interfaces" contract.
-	 */
-	net_arp_clear_cache(my_iface_alt);
-	net_arp_update(my_iface_alt, &onlink_input_dest, &onlink_input_lladdr, true);
 
 	reset_send_state();
 	drain_wait_data();
@@ -936,11 +935,11 @@ static void test_route_ipv4_input_onlink_routes_via_matching_iface(void)
 					sizeof(struct net_eth_hdr) +
 					sizeof(struct net_ipv4_hdr),
 					NET_AF_UNSPEC, 0, K_NO_WAIT);
-	zassert_not_null(pkt, "On-link input packet alloc failed");
+	zassert_not_null(pkt, "Input packet alloc failed");
 
 	eth = (struct net_eth_hdr *)net_buf_add(pkt->buffer, sizeof(struct net_eth_hdr));
 	zassert_not_null(eth, "Cannot reserve Ethernet header");
-	memcpy(eth->dst.addr, net_if_get_link_addr(my_iface)->addr, sizeof(eth->dst.addr));
+	memcpy(eth->dst.addr, eth_dst->addr, sizeof(eth->dst.addr));
 	memcpy(eth->src.addr, src_lladdr.addr, sizeof(eth->src.addr));
 	eth->type = net_htons(NET_ETH_PTYPE_IP);
 
@@ -949,33 +948,59 @@ static void test_route_ipv4_input_onlink_routes_via_matching_iface(void)
 
 	memset(hdr, 0, sizeof(*hdr));
 	hdr->vhl = 0x45;
-	hdr->ttl = 2U;
-	hdr->proto = NET_IPPROTO_UDP;
+	hdr->ttl = ttl;
+	hdr->proto = proto;
 	hdr->len = net_htons(sizeof(struct net_ipv4_hdr));
 	net_ipv4_addr_copy_raw(hdr->src, forward_src_addr.s4_addr);
-	net_ipv4_addr_copy_raw(hdr->dst, onlink_input_dest.s4_addr);
+	net_ipv4_addr_copy_raw(hdr->dst, dst->s4_addr);
 	hdr->chksum = ipv4_header_checksum(hdr);
 
-	zassert_ok(net_recv_data(my_iface, pkt), "On-link input receive failed");
+	zassert_ok(net_recv_data(my_iface, pkt), "Input receive failed");
+}
 
-	/* Skip any ARP frames and wait for the routed IPv4 packet. */
+/* Wait for a routed IPv4 packet to leave, skipping ARP frames. */
+static bool routed_pkt_sent(void)
+{
 	for (int i = 0; i < 5; i++) {
-		zassert_ok(k_sem_take(&wait_data, WAIT_TIME),
-			   "On-link routed packet was not sent");
-		if (sent_ll_proto_type != NET_ETH_PTYPE_ARP) {
-			break;
+		if (k_sem_take(&wait_data, WAIT_TIME) != 0) {
+			return false;
+		}
+
+		if (sent_ll_proto_type == NET_ETH_PTYPE_IP) {
+			return true;
 		}
 	}
 
-	zassert_true(sent_pkt_seen, "On-link routed packet not observed");
-	zassert_not_equal(sent_ll_proto_type, NET_ETH_PTYPE_ARP,
-			  "On-link routing should not stop at ARP");
-	zassert_equal(sent_ll_proto_type, NET_ETH_PTYPE_IP,
-		      "Expected the routed IPv4 packet to be sent");
-	zassert_equal_ptr(sent_iface, my_iface_alt,
-			  "On-link packet routed via wrong egress interface");
-	zassert_equal_ptr(sent_orig_iface, my_iface,
-			  "On-link routed packet missing ingress interface");
+	return false;
+}
+
+static void test_route_ipv4_input_onlink_routes_via_matching_iface(void)
+{
+	bool sent;
+
+	/* A packet received on my_iface for an address that is not ours, has
+	 * no routing table entry and is on-link on my_iface_alt. A forwarder
+	 * sends it out my_iface_alt, a host drops it.
+	 */
+	net_arp_clear_cache(my_iface_alt);
+	net_arp_update(my_iface_alt, &onlink_input_dest, &onlink_input_lladdr, true);
+
+	recv_ipv4_frame(my_iface_lladdr(), &onlink_input_dest, NET_IPPROTO_UDP, 2U);
+	sent = routed_pkt_sent();
+
+	if (!IS_ENABLED(CONFIG_NET_IPV4_FORWARDING)) {
+		zassert_false(sent, "Host must not route a packet that is not for it");
+	} else {
+		zassert_true(sent, "On-link routed packet was not sent");
+		zassert_equal_ptr(sent_iface, my_iface_alt,
+				  "On-link packet routed via wrong egress interface");
+		zassert_equal_ptr(sent_orig_iface, my_iface,
+				  "On-link routed packet missing ingress interface");
+		zassert_true(sent_forwarding,
+			     "On-link routed packet should be marked forwarded");
+		zassert_equal(sent_ipv4_ttl, 1U,
+			      "On-link routed packet should decrement TTL");
+	}
 
 	net_arp_clear_cache(my_iface_alt);
 }

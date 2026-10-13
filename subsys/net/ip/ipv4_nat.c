@@ -337,11 +337,6 @@ static void do_snat(struct net_pkt *pkt,
 	struct net_conn_tuple *tuple = &entry->tuple[NET_NAT_DIR_REPLY];
 	uint32_t sum;
 
-	if (iphdr->ttl <= 1) {
-		NET_ERR("SNAT pkt hop limit drop");
-		return;
-	}
-
 	/* update L4 header */
 	if (iphdr->proto == NET_IPPROTO_TCP) {
 		struct net_tcp_hdr *tcphdr = (struct net_tcp_hdr *)l4hdr;
@@ -363,13 +358,11 @@ static void do_snat(struct net_pkt *pkt,
 		udphdr->chksum = update_chksum(udphdr->chksum, sum);
 	}
 
-	/* update IP header */
-	sum = sum_update(iphdr->ttl, iphdr->ttl - 1);
-	sum += sum_update(IP_LWORD(iphdr->src), IP_LWORD(tuple->dst));
+	/* update IP header, the forwarding path decrements the TTL */
+	sum = sum_update(IP_LWORD(iphdr->src), IP_LWORD(tuple->dst));
 	sum += sum_update(IP_HWORD(iphdr->src), IP_HWORD(tuple->dst));
 	iphdr->chksum = update_chksum(iphdr->chksum, sum);
 
-	iphdr->ttl--;
 	net_ipv4_addr_copy_raw(iphdr->src, tuple->dst);
 
 	/* update target iface */
@@ -384,11 +377,6 @@ static void do_dnat(struct net_pkt *pkt,
 {
 	struct net_conn_tuple *tuple = &entry->tuple[NET_NAT_DIR_ORIGIN];
 	uint32_t sum;
-
-	if (iphdr->ttl <= 1) {
-		NET_ERR("DNAT pkt hop limit drop");
-		return;
-	}
 
 	/* update L4 header */
 	if (iphdr->proto == NET_IPPROTO_TCP) {
@@ -411,13 +399,11 @@ static void do_dnat(struct net_pkt *pkt,
 		udphdr->chksum = update_chksum(udphdr->chksum, sum);
 	}
 
-	/* update IP header */
-	sum = sum_update(iphdr->ttl, iphdr->ttl - 1);
-	sum += sum_update(IP_LWORD(iphdr->dst), IP_LWORD(tuple->src));
+	/* update IP header, the forwarding path decrements the TTL */
+	sum = sum_update(IP_LWORD(iphdr->dst), IP_LWORD(tuple->src));
 	sum += sum_update(IP_HWORD(iphdr->dst), IP_HWORD(tuple->src));
 	iphdr->chksum = update_chksum(iphdr->chksum, sum);
 
-	iphdr->ttl--;
 	net_ipv4_addr_copy_raw(iphdr->dst, tuple->src);
 
 	/* update target iface */
