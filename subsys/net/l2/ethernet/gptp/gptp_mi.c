@@ -951,10 +951,24 @@ static void gptp_mi_clk_master_sync_offset_state_machine(void)
 static inline void gptp_mi_setup_sync_send_time(uint64_t current_time)
 {
 	struct gptp_clk_master_sync_snd_state *state;
+	struct gptp_global_ds *global_ds;
+	int8_t min_itv = INT8_MAX;
+	int8_t sync_itv;
+	int port;
 
 	state = &GPTP_STATE()->clk_master_sync_send;
+	global_ds = GPTP_GLOBAL_DS();
 
-	state->sync_send_time.low = current_time + GPTP_GLOBAL_DS()->clk_master_sync_itv;
+	for (port = GPTP_PORT_START; port <= GPTP_PORT_END; port++) {
+		sync_itv = GPTP_PORT_DS(port)->cur_log_half_sync_itv + 1;
+		if (sync_itv < min_itv) {
+			min_itv = sync_itv;
+		}
+	}
+
+	global_ds->clk_master_sync_itv = NSEC_PER_SEC * GPTP_POW2(min_itv);
+
+	state->sync_send_time.low = current_time + global_ds->clk_master_sync_itv;
 }
 
 static void gptp_mi_set_ps_sync_cmss(void)
