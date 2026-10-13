@@ -80,8 +80,7 @@ static void counter_cc23x0_lgpt_isr(const struct device *dev)
 	uint32_t reg_mis = HWREG(config->base + LGPT_O_MIS);
 	uint32_t isr = reg_ris & reg_mis;
 
-	HWREG(config->base + LGPT_O_ICLR) |= reg_mis;
-	HWREG(config->base + LGPT_O_IMCLR) |= reg_mis;
+	HWREG(config->base + LGPT_O_ICLR) = reg_mis;
 
 	LOG_DBG("\nISR -> LGPT[%x] RIS[%x] MIS[%x] ISR[%x]\n", config->base, reg_ris, reg_mis, isr);
 
@@ -111,6 +110,7 @@ static void counter_cc23x0_lgpt_isr(const struct device *dev)
 	}
 	if (isr & LGPT_RIS_C0CC) {
 		LOG_DBG("LGPT_RIS_C0CC\n");
+		HWREG(config->base + LGPT_O_IMCLR) = LGPT_IMCLR_C0CC;
 		if (data->alarm_cfg[0].callback) {
 			data->alarm_cfg[0].callback(dev, 0, HWREG(config->base + LGPT_O_CNTR),
 						    data->alarm_cfg[0].user_data);
@@ -118,6 +118,7 @@ static void counter_cc23x0_lgpt_isr(const struct device *dev)
 	}
 	if (isr & LGPT_RIS_C1CC) {
 		LOG_DBG("LGPT_RIS_C1CC\n");
+		HWREG(config->base + LGPT_O_IMCLR) = LGPT_IMCLR_C1CC;
 		if (data->alarm_cfg[1].callback) {
 			data->alarm_cfg[1].callback(dev, 1, HWREG(config->base + LGPT_O_CNTR),
 						    data->alarm_cfg[1].user_data);
@@ -125,6 +126,7 @@ static void counter_cc23x0_lgpt_isr(const struct device *dev)
 	}
 	if (isr & LGPT_RIS_C2CC) {
 		LOG_DBG("LGPT_RIS_C2CC\n");
+		HWREG(config->base + LGPT_O_IMCLR) = LGPT_IMCLR_C2CC;
 		if (data->alarm_cfg[2].callback) {
 			data->alarm_cfg[2].callback(dev, 2, HWREG(config->base + LGPT_O_CNTR),
 						    data->alarm_cfg[2].user_data);
