@@ -1,5 +1,5 @@
 #
-# Copyright 2024-2025 NXP
+# Copyright 2024-2026 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -37,6 +37,10 @@ if(CONFIG_NXP_IMXRT_BOOT_HEADER)
     zephyr_library_compile_definitions(XIP_EXTERNAL_FLASH=1)
     zephyr_library_sources(xip/evkmimxrt1180_flexspi_nor_config.c)
     zephyr_library_include_directories(xip)
+  endif()
+  if(CONFIG_EXTERNAL_MEM_CONFIG_DATA AND CONFIG_NXP_IMX_EXTERNAL_SDRAM)
+    zephyr_library_compile_definitions(USE_SDRAM)
+    zephyr_library_sources(xip/evkmimxrt1180_flexspi_nor_config.c)
   endif()
   if(CONFIG_EXTERNAL_MEM_CONFIG_DATA AND CONFIG_NXP_IMX_EXTERNAL_HYPERRAM)
     zephyr_library_compile_definitions(USE_HYPERRAM)

@@ -1,6 +1,6 @@
 # MIMXRT1180-EVK board
 
-# Copyright 2024-2025 NXP
+# Copyright 2024-2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_MIMXRT1180_EVK
@@ -10,7 +10,11 @@ config EXTERNAL_MEM_CONFIG_DATA
 	default y if CPU_CORTEX_M33
 
 config NXP_IMX_EXTERNAL_HYPERRAM
+	default n if NXP_IMX_EXTERNAL_SDRAM
 	default y if CPU_CORTEX_M33
+
+config NXP_IMX_EXTERNAL_SDRAM
+	default y if "$(BOARD_REVISION)" = "sdram"
 
 # The cm7 MPU region table fully covers all memory the firmware uses,
 # so enable the catch-all unmapped region (Cortex-M7 erratum 1013783).
