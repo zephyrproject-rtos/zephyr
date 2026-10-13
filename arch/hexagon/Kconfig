@@ -14,6 +14,9 @@ config GEN_IRQ_VECTOR_TABLE
 config ARCH_HAS_STACKWALK
 	default y
 
+config ARCH_HAS_GDBSTUB
+	default y
+
 config ARCH_SUPPORTS_COREDUMP
 	default y
 
