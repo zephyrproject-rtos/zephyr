@@ -6,6 +6,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/sem.h>
 #include <wait_q.h>
+#include <ksem.h>
 
 int sys_sem_init(struct sys_sem *sem, unsigned int initial_count,
 		 unsigned int limit)
@@ -17,7 +18,9 @@ int sys_sem_init(struct sys_sem *sem, unsigned int initial_count,
 
 int sys_sem_give(struct sys_sem *sem)
 {
-	k_sem_give(&sem->kernel_sem);
+	if (z_sem_give_checked(&sem->kernel_sem) < 0) {
+		return -EAGAIN;
+	}
 
 	return 0;
 }

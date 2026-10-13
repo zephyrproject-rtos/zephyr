@@ -224,6 +224,13 @@ ZTEST(sys_sem, test_sys_sem_simple_from_isr)
 			     (i + 1), signal_count);
 	}
 
+	/* a give at the limit is reported and leaves the count unchanged */
+	sys_sem_init(&simple_sem, SEM_MAX_VAL, SEM_MAX_VAL);
+	zassert_equal(sys_sem_give(&simple_sem), -EAGAIN);
+	zassert_equal(sys_sem_count_get(&simple_sem), SEM_MAX_VAL);
+	zassert_ok(sys_sem_take(&simple_sem, K_NO_WAIT));
+	zassert_ok(sys_sem_give(&simple_sem));
+	zassert_equal(sys_sem_count_get(&simple_sem), SEM_MAX_VAL);
 }
 
 /**
@@ -258,6 +265,14 @@ ZTEST_USER(sys_sem, test_sys_sem_simple_from_task)
 			     "signal count mismatch Expected %d, got %d",
 			     (i + 1), signal_count);
 	}
+
+	/* a give at the limit is reported and leaves the count unchanged */
+	sys_sem_init(&simple_sem, SEM_MAX_VAL, SEM_MAX_VAL);
+	zassert_equal(sys_sem_give(&simple_sem), -EAGAIN);
+	zassert_equal(sys_sem_count_get(&simple_sem), SEM_MAX_VAL);
+	zassert_ok(sys_sem_take(&simple_sem, K_NO_WAIT));
+	zassert_ok(sys_sem_give(&simple_sem));
+	zassert_equal(sys_sem_count_get(&simple_sem), SEM_MAX_VAL);
 }
 
 /**
