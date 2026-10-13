@@ -193,8 +193,8 @@
 	pinctrl-names = "default";
 };
 
-&lpadc2 {
-	pinctrl-0 = <&pinmux_lpadc2>;
+&lpadc1 {
+	pinctrl-0 = <&pinmux_lpadc1>;
 	pinctrl-names = "default";
 };
 
