@@ -317,6 +317,10 @@
 
 #define CORE_MAC_PACKET_FILTER_PM_SET(value) (((value) << 4) & 0x00000010)
 
+#define CORE_MAC_MMC_IPC_RX_INTERRUPT_MASK_OFST 0xa5c
+
+#define CORE_MAC_MMC_IPC_RX_INTERRUPT_MASK_ENABLE 0x3fff3fff
+
 /* 0th index mac address is not used for L2 filtering */
 #define XGMAC_MAX_MAC_ADDR_COUNT (32u)
 #define MAC_ADDR_BYTE_5          (5)

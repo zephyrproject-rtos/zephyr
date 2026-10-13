@@ -507,6 +507,10 @@ static void dwxgmac_mac_init(const struct device *dev,
 
 	sys_write32(reg_val, ioaddr + CORE_MAC_RX_CONFIGURATION_OFST);
 
+	/* Enable CORE_MAC_MMC_IPC_RX_INTERRUPT Masking */
+	sys_write32(CORE_MAC_MMC_IPC_RX_INTERRUPT_MASK_ENABLE,
+		    ioaddr + XGMAC_CORE_BASE_ADDR_OFFSET + CORE_MAC_MMC_IPC_RX_INTERRUPT_MASK_OFST);
+
 	/* Configure MAC link speed */
 	eth_dwc_xgmac_update_link_speed(dev, data->link_speed);
 }
