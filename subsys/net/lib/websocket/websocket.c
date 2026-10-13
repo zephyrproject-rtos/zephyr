@@ -1128,10 +1128,10 @@ int websocket_recv_msg(int ws_sock, uint8_t *buf, size_t buf_len,
 		}
 	}
 
-	if (ctx->message_type == WEBSOCKET_FLAG_CLOSE) {
-		return websocket_internal_disconnect(ctx);
-	}
-
+	/* A CLOSE frame, final or not, is reported to the application like any
+	 * other message. The application answers it by closing the websocket,
+	 * which sends our CLOSE and releases the context.
+	 */
 	return payload.count;
 }
 
