@@ -46,25 +46,11 @@ struct ti_unicomm_data {
 };
 
 /*
- * Busy-wait loop safe to call at PRE_KERNEL_1 (before SysTick is started).
- * Calibrated to the same cycle accounting as DL_Common_delayCycles.
+ * Per TRM Section 2.2.7 / SDK DL_SPI_enablePower: after writing PWREN, poll
+ * until the enable bit reads back before accessing any other peripheral
+ * registers (including IPMODE). A fixed cycle delay is insufficient at high
+ * CPU frequencies.
  */
-#ifndef CONFIG_HAS_MSPM0_SDK
-static inline void unicomm_delay_cycles(uint32_t cycles)
-{
-	uint32_t scratch;
-
-	__asm volatile(".syntax unified\n\t"
-		       "SUBS %0, %[c], #2\n\t"
-		       "1:\n\t"
-		       "SUBS %0, %0, #4\n\t"
-		       "NOP\n\t"
-		       "BHS  1b\n\t"
-		       : "=&r"(scratch)
-		       : [c] "r"(cycles));
-}
-#endif /* !CONFIG_HAS_MSPM0_SDK */
-
 static int ti_unicomm_init(const struct device *dev)
 {
 	const struct ti_unicomm_config *cfg = dev->config;
@@ -97,9 +83,13 @@ static int ti_unicomm_init(const struct device *dev)
 #define TI_UNICOMM_CHILD_IPMODE_I2C(node_id)                                                       \
 	COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, ti_unicomm_i2c), (IPMODE_I2CC), ())
 
+#define TI_UNICOMM_CHILD_IPMODE_SPI(node_id)                                                       \
+	COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, ti_unicomm_spi), (IPMODE_SPI), ())
+
 #define TI_UNICOMM_CHILD_IPMODE(node_id)                                                           \
 	TI_UNICOMM_CHILD_IPMODE_UART(node_id)                                                      \
-	TI_UNICOMM_CHILD_IPMODE_I2C(node_id)
+	TI_UNICOMM_CHILD_IPMODE_I2C(node_id)							   \
+	TI_UNICOMM_CHILD_IPMODE_SPI(node_id)
 
 #define TI_UNICOMM_INIT(idx)                                                                       \
 	BUILD_ASSERT(DT_INST_CHILD_NUM_STATUS_OKAY(idx) == 1,                                      \
