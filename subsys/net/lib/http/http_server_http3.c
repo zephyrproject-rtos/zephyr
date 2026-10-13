@@ -1223,6 +1223,11 @@ static int h3_send_405(struct http_client_ctx *client)
 {
 	int ret;
 
+	/* The request is refused: a body that follows must not be passed to
+	 * the resource it was addressed to.
+	 */
+	h3_forget_refused_request(client);
+
 	ret = h3_send_headers_frame(client, HTTP_405_METHOD_NOT_ALLOWED,
 				    NULL, NULL, 0);
 	if (ret < 0) {
