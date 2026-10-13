@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 		sdhc0 = &usdhc1;
 		i2s-codec-tx = &sai1;
 		i2s-tx = &sai1;
+		memc0 = &sdram0;
 	};
 
 	leds {
@@ -347,5 +348,34 @@ p3t1755dp_ard_i2c_interface: &lpi2c2 {};
 		clock-source = "MCLK";
 		clocks = <&ccm IMX_CCM_SAI1_CLK 0x2004 4>;
 		clock-names = "mclk";
+	};
+};
+
+&semc {
+	status = "disabled";
+	nxp,dqs-pad-loopback;
+
+	sdram0: sdram@80000000 {
+		/* Winbond W9825G6KH. */
+		compatible = "nxp,semc-sdram";
+		device_type = "memory";
+		reg = <0x80000000 DT_SIZE_M(64)>;
+		cs = <0>;
+		clk-frequency = <166000000>;
+		port-size = <16>;
+		burst-length = <8>;
+		column-bits = <9>;
+		cas-latency = <3>;
+		t-precharge-to-act-ns = <15>;
+		t-act-to-readwrite-ns = <15>;
+		t-refresh-recovery-ns = <70>;
+		t-write-recovery-ns = <2>;
+		t-cke-off-ns = <42>;
+		t-act-to-precharge-ns = <40>;
+		t-self-ref-recovery-ns = <70>;
+		t-refresh-to-refresh-ns = <60>;
+		t-act-to-act-ns = <2>;
+		refresh-period-ns-per-row = <7812>;
+		delay-chain = <2>;
 	};
 };
