@@ -111,3 +111,11 @@
 };
 
 zephyr_mipi_dsi: &mipi_dsi {};
+
+&edma0 {
+	status = "okay";
+};
+
+&edma1 {
+	status = "okay";
+};
