@@ -4,3 +4,10 @@ board:
   vendor: nxp
   socs:
     - name: mimxrt1189
+  revision:
+    format: custom
+    revisions:
+      - name: sdram
+        description: >
+          SDRAM variant: HyperRAM removed, SEMC SDRAM (W9825G6KH x2, 64MB)
+          installed. Zephyr SRAM uses on-chip DTCM.
