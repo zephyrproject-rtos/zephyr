@@ -26,6 +26,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
  * switch.S, and from event_handlers.S.
  */
 void z_hexagon_mem_domain_switch(void);
+static void hexagon_mem_domain_enter(struct k_thread *thread);
 
 int arch_buffer_validate(const void *addr, size_t size, int write)
 {
@@ -142,44 +143,21 @@ size_t arch_user_string_nlen(const char *s, size_t maxsize, int *err_arg)
 }
 
 /*
- * __naked comes from picolibc's sys/cdefs.h, so it silently disappears on
- * any other libc (e.g. CONFIG_MINIMAL_LIBC). Define it locally instead.
- */
-#ifndef __naked
-#define __naked __attribute__((naked))
-#endif
-
-/*
  * Guest register usage for vmrte:
  *   G0 = GELR (entry point)
  *   G1 = GSR (bit 31 = user mode, bit 30 = IE)
  *   G2 = GOSP (user stack pointer)
  *   G3 = GBADVA (0 for normal entry)
  */
-static void __used __naked hexagon_user_thread_exit(void)
+static void __used hexagon_user_thread_exit(void)
 {
 	/*
-	 * User function returned -- call k_thread_abort(self) via explicit
-	 * trap0 syscalls; a C wrapper's user-mode check could be optimized
-	 * away. Syscall convention: r0 = arg/return value, r6 = syscall number.
-	 *
-	 * This runs in user mode, so ask the kernel for the current thread
-	 * rather than reading _kernel directly.
+	 * User function returned: abort self. Runs in user mode, so the
+	 * current thread comes from TLS, never from kernel-only _kernel;
+	 * explicit trap0 so no kernel-side shortcut is taken.
 	 */
-	__asm__ volatile(
-		/* syscall: r0 = k_sched_current_thread_query() */
-		"r6 = #%[query_id]\n\t"
-		"trap0(#0x1)\n\t"
-		/* syscall: k_thread_abort(r0) */
-		"r6 = #%[abort_id]\n\t"
-		"trap0(#0x1)\n\t"
-		/* should not return -- loop as backstop */
-		"1: jump 1b\n\t"
-		:
-		: [query_id] "i"(K_SYSCALL_K_SCHED_CURRENT_THREAD_QUERY),
-		  [abort_id] "i"(K_SYSCALL_K_THREAD_ABORT)
-		:
-	);
+	arch_syscall_invoke1((uintptr_t)k_current_get(), K_SYSCALL_K_THREAD_ABORT);
+	CODE_UNREACHABLE;
 }
 
 void arch_user_mode_enter(k_thread_entry_t user_entry, void *p1, void *p2, void *p3)
@@ -254,6 +232,7 @@ void arch_user_mode_enter(k_thread_entry_t user_entry, void *p1, void *p2, void 
 	 * exit, even one unrelated to this thread.
 	 */
 	thread->arch.priv_level = 1;
+	hexagon_mem_domain_enter(thread);
 
 	/*
 	 * Install this thread's hardware memory-domain map before the
@@ -334,10 +313,27 @@ FUNC_NORETURN void arch_syscall_oops(void *ssf)
 	CODE_UNREACHABLE;
 }
 
+void z_impl_hexagon_user_fault(unsigned int reason)
+{
+	if (reason != K_ERR_STACK_CHK_FAIL) {
+		reason = K_ERR_KERNEL_OOPS;
+	}
+	z_fatal_error(reason, NULL);
+	CODE_UNREACHABLE;
+}
+
+static void z_vrfy_hexagon_user_fault(unsigned int reason)
+{
+	z_impl_hexagon_user_fault(reason);
+}
+#include <zephyr/syscalls/hexagon_user_fault_mrsh.c>
+
 int arch_mem_domain_max_partitions_get(void)
 {
 	return CONFIG_MAX_DOMAIN_PARTITIONS;
 }
+
+#endif /* CONFIG_USERSPACE */
 
 struct hexagon_size_class {
 	uint32_t size_class; /* one of __HVM_LINEAR_SIZE_* */
@@ -430,36 +426,42 @@ static uint32_t hexagon_decompose_region(struct hexagon_linear_entry *entries,
 	return n;
 }
 
-extern char __start[];
-extern char _hexagon_page_table[];
-
 /* Matches _setup_page_table's own RAM granule (hvm_event_vectors.S). */
 #define HEXAGON_RAM_CHUNK_SIZE 0x400000U
 
-#define HEXAGON_FIXED_TAIL_MAX_RAM_ENTRIES 8
-
 /*
- * Budgets for the page-granular carve-outs decomposed via
- * hexagon_decompose_region(), same rationale as
- * HEXAGON_MEM_DOMAIN_STACK_ENTRIES/HEXAGON_MEM_DOMAIN_PARTITION_ENTRIES
- * (thread.h): a well-aligned region needs exactly one entry, this
- * budget just covers oddly-aligned/sized ones too.
+ * Image RAM is mapped one 4KB page per entry, see hexagon_fixed_tail_init().
+ * ponytail: 4MB of image RAM max, and a user thread's TLB miss on RAM
+ * outside its domain walks linearly through these; switch to a
+ * page-table (VM_TRANS_TYPE_TABLE) map per domain if images outgrow it
+ * or that latency matters.
  */
-#define HEXAGON_FIXED_TAIL_TEXT_ENTRIES   6
-#define HEXAGON_FIXED_TAIL_RODATA_ENTRIES 5
+#define HEXAGON_FIXED_TAIL_MAX_RAM_PAGES 1024
+
+/* Budget for the RAM between image end and the next 4MB boundary. */
+#define HEXAGON_FIXED_TAIL_POST_IMAGE_ENTRIES 16
 
 /*
- * Text/rodata carve-out entries + RAM entries (up to
- * HEXAGON_FIXED_TAIL_MAX_RAM_ENTRIES) + UART + two H2-kernel entries +
+ * Text and rodata must be fully covered: an uncovered page faults in
+ * kernel mode too. Greedy decomposition uses at most 3 entries per size
+ * class on each side of the largest aligned chunk, so 2 * 3 * 6 classes
+ * (4KB..4MB) plus one 16MB chunk covers any region below 32MB.
+ */
+#define HEXAGON_FIXED_TAIL_TEXT_ENTRIES   37
+#define HEXAGON_FIXED_TAIL_RODATA_ENTRIES 37
+
+/*
+ * Text/rodata carve-out entries + image RAM pages + post-image RAM
+ * entries + UART + two H2-kernel entries +
  * one all-zero terminator.
  */
 #define HEXAGON_FIXED_TAIL_ENTRIES                                                               \
 	(HEXAGON_FIXED_TAIL_TEXT_ENTRIES + HEXAGON_FIXED_TAIL_RODATA_ENTRIES +                    \
-	 HEXAGON_FIXED_TAIL_MAX_RAM_ENTRIES + 4)
+	 HEXAGON_FIXED_TAIL_MAX_RAM_PAGES + HEXAGON_FIXED_TAIL_POST_IMAGE_ENTRIES + 4)
 
 /*
- * Shared tail chained onto every per-thread linear list (own-stack and
- * partition entries first, see hexagon_mem_domain_rebuild()): kernel
+ * Shared tail chained onto every domain's linear list (see
+ * hexagon_mem_domain_rebuild()) and onto hexagon_kernel_map: kernel
  * text, kernel rodata, RAM, UART, and the H2 kernel image, at the same
  * addresses/cache attributes the boot Table map already grants
  * everywhere -- except U is cleared for the RAM/H2-kernel entries,
@@ -496,11 +498,20 @@ extern char _hexagon_page_table[];
  */
 static struct hexagon_linear_entry hexagon_fixed_tail[HEXAGON_FIXED_TAIL_ENTRIES];
 
+/*
+ * Map installed while no domain is: image RAM in the largest aligned
+ * entries, then a chain to hexagon_fixed_tail for everything else.
+ * Nothing earlier in this list can overlap RAM, so the livelock that
+ * forces the tail's 4KB pages (see hexagon_fixed_tail_init()) cannot
+ * happen here, and a kernel thread's RAM miss walks ~20 entries, not
+ * ~1100. Same 37-entry bound as the text/rodata budgets.
+ */
+#define HEXAGON_KERNEL_MAP_RAM_ENTRIES 37
+
+static struct hexagon_linear_entry hexagon_kernel_map[HEXAGON_KERNEL_MAP_RAM_ENTRIES + 1];
+
 static int hexagon_fixed_tail_init(void)
 {
-	uintptr_t aligned_start = ROUND_DOWN((uintptr_t)__start, HEXAGON_RAM_CHUNK_SIZE);
-	size_t len = (uintptr_t)_image_ram_end - aligned_start;
-	uint32_t ram_chunks = (uint32_t)DIV_ROUND_UP(len, HEXAGON_RAM_CHUNK_SIZE);
 	uint32_t idx = 0;
 	uintptr_t region_addr;
 	size_t region_size;
@@ -508,8 +519,10 @@ static int hexagon_fixed_tail_init(void)
 	uintptr_t text_end = (uintptr_t)__text_region_end;
 	uintptr_t rodata_start = (uintptr_t)__rodata_region_start;
 	uintptr_t rodata_end = (uintptr_t)__rodata_region_end;
+	uintptr_t ram_start = ROUND_UP(MAX(text_end, rodata_end), 0x1000U);
+	uintptr_t ram_end = ROUND_UP((uintptr_t)_image_ram_end, 0x1000U);
 
-	if (ram_chunks > HEXAGON_FIXED_TAIL_MAX_RAM_ENTRIES) {
+	if ((ram_end - ram_start) / 0x1000U > HEXAGON_FIXED_TAIL_MAX_RAM_PAGES) {
 		k_panic();
 	}
 
@@ -534,15 +547,29 @@ static int hexagon_fixed_tail_init(void)
 						 __HEXAGON_C_WB_L2);
 	}
 
-	for (uint32_t i = 0; i < ram_chunks; i++) {
-		uintptr_t pa = aligned_start + (uintptr_t)i * HEXAGON_RAM_CHUNK_SIZE;
-
+	/*
+	 * H2 loads a matched linear entry into the TLB at the entry's full
+	 * size, and ctlbw refuses (without evicting) any entry overlapping
+	 * one already present for the same ASID. A large RAM entry around
+	 * a smaller, earlier-matching one (text, rodata, a thread's stack or
+	 * partition page) therefore livelocks on TLB miss as soon as both
+	 * are touched. 4KB pages can never partially overlap an earlier
+	 * entry: either the earlier entry contains the page and wins the
+	 * walk, or the two are disjoint.
+	 */
+	for (uintptr_t pa = ram_start; pa < ram_end; pa += 0x1000U) {
 		hexagon_linear_entry_set(&hexagon_fixed_tail[idx], pa, pa,
-					  __HVM_LINEAR_SIZE_4MB,
-					  __HVM_LINEAR_R | __HVM_LINEAR_W | __HVM_LINEAR_X,
+					  __HVM_LINEAR_SIZE_4KB, __HVM_LINEAR_R | __HVM_LINEAR_W,
 					  __HEXAGON_C_WB_L2, 0);
 		idx++;
 	}
+
+	/* Rest of the boot table's last RAM chunk: no per-thread entries here. */
+	idx += hexagon_decompose_region(&hexagon_fixed_tail[idx],
+					 HEXAGON_FIXED_TAIL_POST_IMAGE_ENTRIES, ram_end,
+					 ROUND_UP(ram_end, HEXAGON_RAM_CHUNK_SIZE) - ram_end,
+					 __HVM_LINEAR_R | __HVM_LINEAR_W,
+					 __HEXAGON_C_WB_L2);
 
 	hexagon_linear_entry_set(&hexagon_fixed_tail[idx], 0x10000000U, 0x10000000U,
 				  __HVM_LINEAR_SIZE_4MB,
@@ -564,10 +591,24 @@ static int hexagon_fixed_tail_init(void)
 
 	/* hexagon_fixed_tail[idx] stays all-zero: list terminator. */
 
+	idx = hexagon_decompose_region(hexagon_kernel_map, HEXAGON_KERNEL_MAP_RAM_ENTRIES,
+				       ram_start,
+				       ROUND_UP(ram_end, HEXAGON_RAM_CHUNK_SIZE) - ram_start,
+				       __HVM_LINEAR_R | __HVM_LINEAR_W, __HEXAGON_C_WB_L2);
+	hexagon_linear_entry_set_chain(&hexagon_kernel_map[idx], hexagon_fixed_tail);
+
+	/* Replace the boot Table map: it is RWX everywhere. */
+	if (hexagon_vm_newmap(hexagon_kernel_map, VM_TRANS_TYPE_LINEAR,
+			      VM_TLB_INVALIDATE_TRUE) != 0) {
+		k_panic();
+	}
+
 	return 0;
 }
 
-SYS_INIT(hexagon_fixed_tail_init, POST_KERNEL, 0);
+SYS_INIT(hexagon_fixed_tail_init, PRE_KERNEL_1, 0);
+
+#ifdef CONFIG_USERSPACE
 
 /*
  * Only the *user*-visible bits of K_MEM_PARTITION_P_* map onto the
@@ -602,44 +643,73 @@ static uint32_t hexagon_partition_attr_to_xwru(k_mem_partition_attr_t attr)
 	return xwru;
 }
 
+/* NULL means "hexagon_kernel_map is currently installed". */
+static struct k_mem_domain *hexagon_mem_domain_active;
+
 /*
- * Rebuild thread->arch.mem_domain_list from scratch: own-stack entries
- * first (narrowest, so they win the first-match-wins walk over a
- * partition that happens to overlap), then one dense run of entries
- * per non-empty partition in domain, then a chain link to the shared
- * fixed tail (RAM/UART/H2-kernel fallback + terminator).
- *
- * Entries are packed densely (idx += actual entries used, never a
- * fixed per-partition stride): a zero-valued gap entry in the middle
- * of the list would look like the all-zero terminator to the HVM
- * walker and silently truncate everything after it. Stale content
- * *after* the chain entry, left over from a previous, longer rebuild,
- * is harmless -- the walker jumps via the chain entry's target rather
- * than continuing to scan past it.
+ * Fall back to the kernel map so the active list may be rewritten. It
+ * never changes after boot, so its TLB entries stay.
  */
-static void hexagon_mem_domain_rebuild(struct k_thread *thread, struct k_mem_domain *domain)
+static void hexagon_mem_domain_uninstall(void)
 {
-	struct hexagon_linear_entry *list = thread->arch.mem_domain_list;
-	uint32_t idx;
-	k_spinlock_key_t key;
-	uintptr_t stack_addr = thread->stack_info.start;
-	size_t stack_size = thread->stack_info.size;
+	if (hexagon_mem_domain_active == NULL) {
+		return;
+	}
 
-	hexagon_align_region_to_page(&stack_addr, &stack_size);
+	if (hexagon_vm_newmap(hexagon_kernel_map, VM_TRANS_TYPE_LINEAR,
+			      VM_TLB_INVALIDATE_FALSE) != 0) {
+		k_panic();
+	}
+	hexagon_mem_domain_active = NULL;
+}
 
-	idx = hexagon_decompose_region(&list[0], HEXAGON_MEM_DOMAIN_STACK_ENTRIES,
-					stack_addr, stack_size,
-					__HVM_LINEAR_R | __HVM_LINEAR_W | __HVM_LINEAR_U,
-					__HEXAGON_C_WB_L2);
-
-	/*
-	 * Guards partitions[]/num_partitions against a concurrent
-	 * k_mem_domain_add/remove_partition() on another CPU/thread, same
-	 * as arch_buffer_validate()'s own scan above.
-	 */
-	key = k_spin_lock(&z_mem_domain_lock);
-
+/*
+ * Rebuild domain->arch.list: the stack of every member thread that has
+ * dropped to user mode (first, so it wins the first-match-wins walk over
+ * an overlapping partition), one dense run of entries per non-empty
+ * partition, then a chain link to the shared fixed tail. Every member
+ * thread installs this same list, so H2 (which keys ASIDs on the list
+ * address, H2K_asid_table_inc()) gives the whole domain one ASID.
+ * Same-domain threads may see each other's stacks: Hexagon does not
+ * select ARCH_MEM_DOMAIN_SUPPORTS_ISOLATED_STACKS.
+ *
+ * Entries are packed densely: a zero-valued gap entry would look like
+ * the all-zero terminator to the HVM walker and truncate the list.
+ *
+ * H2 walks the installed list on every TLB miss, kernel-mode ones
+ * included, so never rewrite it in place while installed. The next
+ * install sees stale and invalidates this list's ASID.
+ *
+ * Called with z_mem_domain_lock held.
+ */
+static void hexagon_mem_domain_rebuild(struct k_mem_domain *domain, int skip_id)
+{
+	struct hexagon_linear_entry *list = domain->arch.list;
+	uint32_t idx = 0;
 	int remaining_partitions = domain->num_partitions;
+	struct k_thread *thread;
+
+	if (hexagon_mem_domain_active == domain) {
+		hexagon_mem_domain_uninstall();
+	}
+
+	SYS_DLIST_FOR_EACH_CONTAINER(&domain->thread_mem_domain_list, thread,
+				     mem_domain_info.thread_mem_domain_node) {
+		if (thread->arch.priv_level == 0) {
+			continue;
+		}
+
+		uintptr_t stack_addr = thread->stack_info.start;
+		size_t stack_size = thread->stack_info.size;
+
+		hexagon_align_region_to_page(&stack_addr, &stack_size);
+
+		idx += hexagon_decompose_region(&list[idx],
+						 CONFIG_HEXAGON_MEM_DOMAIN_STACK_ENTRIES - idx,
+						 stack_addr, stack_size,
+						 __HVM_LINEAR_R | __HVM_LINEAR_W | __HVM_LINEAR_U,
+						 __HEXAGON_C_WB_L2);
+	}
 
 	for (int i = 0; remaining_partitions > 0 && i < CONFIG_MAX_DOMAIN_PARTITIONS; i++) {
 		const struct k_mem_partition *part = &domain->partitions[i];
@@ -648,6 +718,9 @@ static void hexagon_mem_domain_rebuild(struct k_thread *thread, struct k_mem_dom
 			continue;
 		}
 		remaining_partitions--;
+		if (i == skip_id) {
+			continue;
+		}
 
 		uintptr_t part_addr = part->start;
 		size_t part_size = part->size;
@@ -660,20 +733,13 @@ static void hexagon_mem_domain_rebuild(struct k_thread *thread, struct k_mem_dom
 						 __HEXAGON_C_WB_L2);
 	}
 
-	k_spin_unlock(&z_mem_domain_lock, key);
-
 	hexagon_linear_entry_set_chain(&list[idx], hexagon_fixed_tail);
+	domain->arch.stale = 1;
 }
 
 int arch_mem_domain_init(struct k_mem_domain *domain)
 {
-	/*
-	 * Start above the sentinel value _thread_arch.mem_domain_generation
-	 * is zero-initialized to, so a thread's very first switch-in under
-	 * this domain always forces a resync instead of coincidentally
-	 * matching before arch_mem_domain_thread_add() has ever run for it.
-	 */
-	domain->arch.generation = 1;
+	hexagon_mem_domain_rebuild(domain, -1);
 	return 0;
 }
 
@@ -681,60 +747,46 @@ int arch_mem_domain_partition_add(struct k_mem_domain *domain, uint32_t partitio
 {
 	ARG_UNUSED(partition_id);
 
-	domain->arch.generation++;
+	hexagon_mem_domain_rebuild(domain, -1);
 	return 0;
 }
 
 int arch_mem_domain_partition_remove(struct k_mem_domain *domain, uint32_t partition_id)
 {
-	ARG_UNUSED(partition_id);
-
-	domain->arch.generation++;
+	/* Called before the core clears partitions[partition_id]. */
+	hexagon_mem_domain_rebuild(domain, partition_id);
 	return 0;
 }
 
-void arch_mem_domain_thread_add(struct k_thread *thread)
-{
-	/*
-	 * Force a resync before this thread's next switch-in. Without
-	 * this, a thread migrating from domain A to domain B could keep a
-	 * generation value that coincidentally matches B's *current*
-	 * counter, skipping the resync and running under A's stale map
-	 * while believing it is under B. Domain generations only ever
-	 * count up from 1 (arch_mem_domain_init()), so 0 can never
-	 * coincidentally match a real domain's generation.
-	 */
-	thread->arch.mem_domain_generation = 0;
-}
-
-void arch_mem_domain_thread_remove(struct k_thread *thread)
-{
-	/*
-	 * No action needed: thread->mem_domain_info.mem_domain already
-	 * becomes NULL (by kernel core, outside arch code) before this
-	 * thread can switch in again, and z_hexagon_mem_domain_switch()'s
-	 * domain == NULL branch already falls back to the boot table map
-	 * in that case.
-	 */
-	ARG_UNUSED(thread);
-}
-
-/* NULL means "the boot Table map is currently installed". */
-static struct k_thread *hexagon_mem_domain_active_thread;
-
 /*
- * Reinstall the flat, permissive boot Table map -- current behavior
- * for any thread with no mem domain, or that has never dropped to user
- * mode. Matches _setup_page_table's own install call at boot.
+ * Only threads already in user mode are listed; a thread still in
+ * supervisor mode gets its stack added by hexagon_mem_domain_enter()
+ * when it drops to user mode.
  */
-static void hexagon_mem_domain_install_boot_table(void)
+int arch_mem_domain_thread_add(struct k_thread *thread)
 {
-	int ret = hexagon_vm_newmap(_hexagon_page_table, VM_TRANS_TYPE_TABLE,
-				     VM_TLB_INVALIDATE_TRUE);
-
-	if (ret != 0) {
-		k_panic();
+	if (thread->arch.priv_level != 0) {
+		hexagon_mem_domain_rebuild(thread->mem_domain_info.mem_domain, -1);
 	}
+	return 0;
+}
+
+/* The core has already unlinked thread; mem_domain is still the old one. */
+int arch_mem_domain_thread_remove(struct k_thread *thread)
+{
+	if (thread->arch.priv_level != 0) {
+		hexagon_mem_domain_rebuild(thread->mem_domain_info.mem_domain, -1);
+	}
+	return 0;
+}
+
+/* List thread's stack in its domain, called once priv_level is set. */
+static void hexagon_mem_domain_enter(struct k_thread *thread)
+{
+	k_spinlock_key_t key = k_spin_lock(&z_mem_domain_lock);
+
+	hexagon_mem_domain_rebuild(thread->mem_domain_info.mem_domain, -1);
+	k_spin_unlock(&z_mem_domain_lock, key);
 }
 
 /*
@@ -743,10 +795,8 @@ static void hexagon_mem_domain_install_boot_table(void)
  * on switch-in (z_hexagon_thread_start, EVENT_EXIT) and once more from
  * arch_user_mode_enter() for the very first drop to user mode.
  *
- * hexagon_mem_domain_active_thread avoids a redundant vmnewmap() -- a
- * real hypercall, same cost class as an ARM64 TTBR or x86 CR3 reload
- * -- when the same thread/table is already installed and nothing about
- * its domain has changed since.
+ * A switch between threads of the same domain is a no-op. A rebuild
+ * always uninstalls first, so the active domain is never stale.
  */
 void z_hexagon_mem_domain_switch(void)
 {
@@ -755,29 +805,22 @@ void z_hexagon_mem_domain_switch(void)
 		thread->arch.priv_level != 0 ? thread->mem_domain_info.mem_domain : NULL;
 
 	if (domain == NULL) {
-		if (hexagon_mem_domain_active_thread != NULL) {
-			hexagon_mem_domain_install_boot_table();
-			hexagon_mem_domain_active_thread = NULL;
-		}
+		hexagon_mem_domain_uninstall();
 		return;
 	}
 
-	if (hexagon_mem_domain_active_thread == thread &&
-	    thread->arch.mem_domain_generation == domain->arch.generation) {
+	if (domain == hexagon_mem_domain_active) {
 		return;
 	}
 
-	hexagon_mem_domain_rebuild(thread, domain);
-
-	int ret = hexagon_vm_newmap(thread->arch.mem_domain_list, VM_TRANS_TYPE_LINEAR,
-				     VM_TLB_INVALIDATE_TRUE);
-
-	if (ret != 0) {
+	if (hexagon_vm_newmap(domain->arch.list, VM_TRANS_TYPE_LINEAR,
+			      domain->arch.stale ? VM_TLB_INVALIDATE_TRUE
+						 : VM_TLB_INVALIDATE_FALSE) != 0) {
 		k_panic();
 	}
 
-	thread->arch.mem_domain_generation = domain->arch.generation;
-	hexagon_mem_domain_active_thread = thread;
+	domain->arch.stale = 0;
+	hexagon_mem_domain_active = domain;
 }
 
 #endif /* CONFIG_USERSPACE */

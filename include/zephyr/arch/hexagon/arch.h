@@ -127,14 +127,18 @@ typedef uint32_t k_mem_partition_attr_t;
 /**
  * @brief Architecture-specific memory domain data.
  *
- * Bumped by arch_mem_domain_partition_add/remove() whenever a
- * partition changes; compared against each thread's own
- * _thread_arch.mem_domain_generation to decide whether that thread's
- * per-thread VM_TRANS_TYPE_LINEAR buffer needs to be rebuilt before
- * its next switch-in. Bookkeeping only -- installs nothing by itself.
+ * list holds the member threads' stacks, then one dense run of
+ * VM_TRANS_TYPE_LINEAR entries per partition, then a chain entry to the
+ * shared fixed tail. Every member thread installs it, so the domain has
+ * one H2 ASID. stale is set on each rebuild so the next install
+ * invalidates that ASID's TLB entries.
  */
 struct arch_mem_domain {
-	uint32_t generation;
+	uint8_t stale;
+	struct hexagon_linear_entry
+		list[CONFIG_HEXAGON_MEM_DOMAIN_STACK_ENTRIES +
+		     (CONFIG_MAX_DOMAIN_PARTITIONS * HEXAGON_MEM_DOMAIN_PARTITION_ENTRIES) + 1]
+		__aligned(8);
 };
 
 typedef struct arch_mem_domain arch_mem_domain_t;

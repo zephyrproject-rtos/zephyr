@@ -3,6 +3,8 @@
 
 add_subdirectory(core)
 
+zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/arch/hexagon/error.h)
+
 # Add hexagon-specific include directory
 zephyr_include_directories(include)
 

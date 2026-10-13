@@ -14,6 +14,15 @@ config PRIVILEGED_STACK_SIZE
 	# everything hit so far but is an empirical, not proven, bound.
 	default 2048
 
+config HEXAGON_MEM_DOMAIN_STACK_ENTRIES
+	int "Linear-map entries per memory domain for member thread stacks"
+	depends on USERSPACE
+	default 16
+	help
+	  Each memory domain's linear list maps the stacks of all its user
+	  mode threads. A page-aligned stack takes one entry, an unaligned
+	  one up to a few. A user stack that does not fit faults on access.
+
 if CPU_HAS_MMU
 
 config HEXAGON_MMU

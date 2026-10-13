@@ -53,7 +53,8 @@ SECTIONS
     }
 
     GROUP_START(ROMABLE_REGION)
-    __rom_region_start = .;
+    /* GROUP_START() does not move ".", which is still 0 here. */
+    __rom_region_start = DT_REG_ADDR(DT_CHOSEN(zephyr_sram));
 
     /* Reset vector must be at the beginning */
     SECTION_PROLOGUE(.reset.__start,,)

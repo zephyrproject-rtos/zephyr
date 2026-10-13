@@ -27,7 +27,7 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_SMP),
 	     "Hexagon user mode state uses a global flag: SMP is not supported");
 
 /* Nonzero when the current thread is executing in user mode */
-volatile uint32_t _hexagon_user_mode_active;
+Z_THREAD_LOCAL volatile uint32_t _hexagon_user_mode_active;
 
 /**
  * @brief Synchronise the global flag with the current thread's priv_level.

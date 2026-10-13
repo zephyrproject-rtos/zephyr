@@ -5,5 +5,3 @@ tests:
       - kernel
       - security
     ignore_faults: true
-    platform_exclude:
-      - qemu_hexagon/qemu_hexagon_virt
