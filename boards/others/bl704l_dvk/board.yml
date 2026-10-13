@@ -4,3 +4,5 @@ board:
   vendor: others
   socs:
     - name: bl704l20q2iw
+      variants:
+        - name: "mram"
