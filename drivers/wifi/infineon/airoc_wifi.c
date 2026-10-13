@@ -276,7 +276,7 @@ static int convert_whd_security_to_zephyr(whd_security_t security)
 
 static whd_security_t convert_zephyr_security_to_whd(int security)
 {
-	whd_security_t whd_security = WIFI_SECURITY_TYPE_UNKNOWN;
+	whd_security_t whd_security = WHD_SECURITY_UNKNOWN;
 
 	switch (security) {
 	case WIFI_SECURITY_TYPE_NONE:
