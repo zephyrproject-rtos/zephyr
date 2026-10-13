@@ -23,7 +23,6 @@
 #include <zephyr/ztest.h>
 
 #if defined(CONFIG_BT_PRIVACY)
-#include <common/rpa.h>
 #include <host/hci_core.h>
 #include <host/id.h>
 #include <host/keys.h>
@@ -666,7 +665,7 @@ static ZTEST(bt_id_public_api, test_reset_irk_updates_key)
 	zassert_ok(bt_id_reset_irk(BT_ID_DEFAULT, old_irk), "Failed to set the old IRK");
 	zassert_ok(bt_le_oob_get_local(BT_ID_DEFAULT, &old_oob), "Failed to get the old RPA");
 	zassert_true(bt_addr_le_is_rpa(&old_oob.addr), "The old address is not an RPA");
-	zassert_true(bt_rpa_irk_matches(old_irk, &old_oob.addr.a),
+	zassert_true(bt_addr_matches_irk(&old_oob.addr.a, old_irk),
 		     "The old RPA does not match the old IRK");
 
 	zassert_ok(bt_id_reset_irk(BT_ID_DEFAULT, supplied_irk), "Failed to set the supplied IRK");
@@ -680,9 +679,9 @@ static ZTEST(bt_id_public_api, test_reset_irk_updates_key)
 
 	zassert_ok(bt_le_oob_get_local(BT_ID_DEFAULT, &new_oob), "Failed to get the new RPA");
 	zassert_true(bt_addr_le_is_rpa(&new_oob.addr), "The new address is not an RPA");
-	zassert_true(bt_rpa_irk_matches(supplied_irk, &new_oob.addr.a),
+	zassert_true(bt_addr_matches_irk(&new_oob.addr.a, supplied_irk),
 		     "The new RPA does not match the supplied IRK");
-	zassert_false(bt_rpa_irk_matches(old_irk, &new_oob.addr.a),
+	zassert_false(bt_addr_matches_irk(&new_oob.addr.a, old_irk),
 		      "The new RPA still matches the old IRK");
 	zassert_false(bt_addr_le_eq(&old_oob.addr, &new_oob.addr),
 		      "The RPA did not change after the IRK reset");
@@ -709,7 +708,7 @@ static ZTEST(bt_id_public_api, test_reset_irk_invalidates_cached_rpa)
 	err = bt_le_ext_adv_get_info(adv, &info);
 	zassert_ok(err, "Failed to get the old advertising set info");
 	bt_addr_le_copy(&old_rpa, info.addr);
-	zassert_true(bt_rpa_irk_matches(old_irk, &old_rpa.a),
+	zassert_true(bt_addr_matches_irk(&old_rpa.a, old_irk),
 		     "The cached RPA does not match the old IRK");
 	zassert_ok(bt_le_ext_adv_delete(adv), "Failed to delete the old advertising set");
 
@@ -719,9 +718,9 @@ static ZTEST(bt_id_public_api, test_reset_irk_invalidates_cached_rpa)
 	err = bt_le_ext_adv_get_info(adv, &info);
 	zassert_ok(err, "Failed to get the new advertising set info");
 	bt_addr_le_copy(&new_rpa, info.addr);
-	zassert_true(bt_rpa_irk_matches(new_irk, &new_rpa.a),
+	zassert_true(bt_addr_matches_irk(&new_rpa.a, new_irk),
 		     "The refreshed cached RPA does not match the new IRK");
-	zassert_false(bt_rpa_irk_matches(old_irk, &new_rpa.a),
+	zassert_false(bt_addr_matches_irk(&new_rpa.a, old_irk),
 		      "The refreshed cached RPA still matches the old IRK");
 	zassert_false(bt_addr_le_eq(&old_rpa, &new_rpa),
 		      "The cached RPA did not change after the IRK reset");
