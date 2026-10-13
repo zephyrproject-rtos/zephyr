@@ -43,13 +43,20 @@ BUILD_ASSERT(CONFIG_HTTP_SERVER_VERSION > 0,
 
 #define INACTIVITY_TIMEOUT K_SECONDS(CONFIG_HTTP_SERVER_CLIENT_INACTIVITY_TIMEOUT)
 
+#if (defined(CONFIG_HTTP_SERVER_VERSION_1) || defined(CONFIG_HTTP_SERVER_VERSION_2)) &&            \
+	defined(CONFIG_HTTP_SERVER_VERSION_3)
+#define HTTP_SERVER_SOCKETS_PER_SERVICE 2
+#else
+#define HTTP_SERVER_SOCKETS_PER_SERVICE 1
+#endif
 #define HTTP_SERVER_MAX_SERVICES CONFIG_HTTP_SERVER_NUM_SERVICES
 #define HTTP_SERVER_MAX_CLIENTS  CONFIG_HTTP_SERVER_MAX_CLIENTS
-#define HTTP_SERVER_SOCK_COUNT (1 + HTTP_SERVER_MAX_SERVICES + \
-				HTTP_SERVER_MAX_CLIENTS  + HTTP3_SERVER_MAX_STREAMS)
+#define HTTP_SERVER_SOCK_COUNT                                                                     \
+	(1 + HTTP_SERVER_SOCKETS_PER_SERVICE * HTTP_SERVER_MAX_SERVICES +                          \
+	 HTTP_SERVER_MAX_CLIENTS + HTTP3_SERVER_MAX_STREAMS)
 struct http_server_ctx {
-	int listen_fds; /* max value of 1 + MAX_SERVICES */
-	int client_fds; /* max value of 1 + MAX_CLIENTS */
+	int listen_fds; /* max value of 1 + SOCKETS_PER_SERVICE * MAX_SERVICES */
+	int client_fds; /* max value of listen_fds + MAX_CLIENTS */
 
 	/* First pollfd is eventfd that can be used to stop the server,
 	 * then we have the server listen sockets,
@@ -84,6 +91,7 @@ static int get_h3_stream_slot(const struct http_client_ctx *client, int stream_f
 static void reset_h3_stream_slot(struct http_client_ctx *client, int slot);
 static void restore_h3_stream_state(struct http_client_ctx *client, int slot);
 static void store_h3_stream_state(struct http_client_ctx *client, int slot);
+static void close_all_sockets(struct http_server_ctx *ctx);
 
 HTTP_SERVER_CONTENT_TYPE(html, "text/html")
 HTTP_SERVER_CONTENT_TYPE(css, "text/css")
@@ -290,10 +298,10 @@ out:
 
 int http_server_init(struct http_server_ctx *ctx)
 {
-	int failed = 0, count = 0;
+	int count = 0;
 	int svc_count;
 	net_socklen_t len;
-	int fd, af, i;
+	int fd, af, i, required_fds;
 	bool h3 = false, h2 = false, h1 = false;
 	struct net_sockaddr_storage addr_storage;
 	const union {
@@ -369,7 +377,6 @@ int http_server_init(struct http_server_ctx *ctx)
 			addr.addr4->sin_port = net_htons(*svc->port);
 		} else {
 			LOG_ERR("Neither IPv4 nor IPv6 is enabled");
-			failed++;
 			break;
 		}
 
@@ -417,9 +424,7 @@ int http_server_init(struct http_server_ctx *ctx)
 
 		if (h1 || h2) {
 			fd = setup_h1_h2_socket(svc, af, addr.addr, len);
-			if (fd < 0) {
-				failed++;
-			} else {
+			if (fd >= 0) {
 				if (IS_ENABLED(CONFIG_NET_HTTP_SERVER_LOG_LEVEL_DBG)) {
 					char ver_str[sizeof("/1.1/2")] = {0};
 
@@ -446,9 +451,7 @@ int http_server_init(struct http_server_ctx *ctx)
 
 		if (h3 && IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_3)) {
 			fd = setup_h3_socket(svc, af, addr.addr, len);
-			if (fd < 0) {
-				failed++;
-			} else {
+			if (fd >= 0) {
 				LOG_DBG("Initialized HTTP%s Service %s:%u", "/3",
 					svc->host ? svc->host : "<any>", *svc->port);
 
@@ -460,8 +463,8 @@ int http_server_init(struct http_server_ctx *ctx)
 		}
 	}
 
-	if (failed >= svc_count) {
-		LOG_ERR("All services failed (%d)", failed);
+	if (count == 1) {
+		LOG_ERR("All services failed");
 		/* Close eventfd socket */
 		zsock_close(ctx->fds[0].fd);
 		return -ESRCH;
@@ -470,10 +473,13 @@ int http_server_init(struct http_server_ctx *ctx)
 	ctx->listen_fds = count;
 	ctx->client_fds = ctx->listen_fds + HTTP_SERVER_MAX_CLIENTS;
 
-	if (!IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_3) &&
-	    ctx->client_fds > ARRAY_SIZE(ctx->fds)) {
+	required_fds = ctx->client_fds + HTTP3_SERVER_MAX_STREAMS;
+	if (required_fds > ARRAY_SIZE(ctx->fds)) {
 		LOG_ERR("HTTP server fd table size mismatch: %d slots required, %zu allocated",
-			ctx->client_fds, ARRAY_SIZE(ctx->fds));
+			required_fds, ARRAY_SIZE(ctx->fds));
+		/* Close sockets */
+		close_all_sockets(ctx);
+		return -ENOMEM;
 	}
 
 	return 0;
