@@ -232,6 +232,143 @@ ZTEST(posix_timers, test_TIMER_ABSTIME_large_timeout)
 	zassert_equal(exp_count, 1, "TIMER_ABSTIME fired %d times, expected 1", exp_count);
 }
 
+static atomic_t in_handler;
+static atomic_t handler_calls;
+static atomic_t helper_done;
+static atomic_t helper_quit;
+static K_SEM_DEFINE(helper_sem, 0, 1);
+static struct k_thread helper_thread;
+static K_THREAD_STACK_DEFINE(helper_stack, 1024 + CONFIG_TEST_EXTRA_STACK_SIZE);
+
+static void busy_handler(union sigval val)
+{
+	ARG_UNUSED(val);
+
+	atomic_set(&in_handler, 1);
+	atomic_inc(&handler_calls);
+	k_busy_wait(USEC_PER_MSEC);
+	atomic_set(&in_handler, 0);
+}
+
+struct helper_args {
+	const struct itimerspec *value;
+	int create_ret;
+	int settime_ret;
+};
+
+/* Create and arm a timer when asked, so that it usually expires on this thread's CPU. */
+static void timer_start_helper(void *p1, void *p2, void *p3)
+{
+	struct helper_args *args = p1;
+	struct sigevent sig = {
+		.sigev_notify = SIGEV_SIGNAL,
+		.sigev_notify_function = busy_handler,
+	};
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	for (;;) {
+		k_sem_take(&helper_sem, K_FOREVER);
+		if (atomic_get(&helper_quit) != 0) {
+			break;
+		}
+
+		args->create_ret = timer_create(CLOCK_MONOTONIC, &sig, &timerid);
+		args->settime_ret = -1;
+		if (args->create_ret == 0) {
+			args->settime_ret = timer_settime(timerid, 0, args->value, NULL);
+		}
+		atomic_set(&helper_done, 1);
+	}
+}
+
+ZTEST(posix_timers, test_timer_delete_waits_for_handler)
+{
+	static const struct itimerspec periodic = {
+		.it_value.tv_nsec = NSEC_PER_MSEC,
+		.it_interval.tv_nsec = NSEC_PER_MSEC,
+	};
+	static const struct itimerspec oneshot = {
+		.it_value.tv_nsec = NSEC_PER_MSEC,
+	};
+	struct helper_args args;
+	bool still_running = false;
+	int seen_periodic = 0;
+	int seen_oneshot = 0;
+	atomic_val_t calls;
+	bool is_periodic;
+	int64_t end;
+	int ret = 0;
+
+	if (!IS_ENABLED(CONFIG_SMP) || (arch_num_cpus() < 2)) {
+		ztest_test_skip();
+	}
+
+	atomic_clear(&helper_quit);
+	k_thread_create(&helper_thread, helper_stack, K_THREAD_STACK_SIZEOF(helper_stack),
+			timer_start_helper, &args, NULL, NULL, K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
+
+	for (int i = 0; i < 20; i++) {
+		is_periodic = (i % 2) == 0;
+		args.value = is_periodic ? &periodic : &oneshot;
+		atomic_clear(&helper_done);
+		k_sem_give(&helper_sem);
+
+		/* Delete the timer while its expiry function runs on another CPU. */
+		end = k_uptime_get() + 100;
+		while ((atomic_get(&helper_done) == 0) && (k_uptime_get() < end)) {
+		}
+		while ((atomic_get(&in_handler) == 0) && (k_uptime_get() < end)) {
+		}
+
+		if (atomic_get(&in_handler) != 0) {
+			if (is_periodic) {
+				seen_periodic++;
+			} else {
+				seen_oneshot++;
+			}
+		}
+
+		/* The helper thread has not run yet; let it arm the timer. */
+		while (atomic_get(&helper_done) == 0) {
+			k_msleep(1);
+		}
+		if ((args.create_ret != 0) || (args.settime_ret != 0)) {
+			break;
+		}
+
+		ret = timer_delete(timerid);
+		if (ret == 0) {
+			timerid = -1;
+		}
+		still_running = atomic_get(&in_handler) != 0;
+		if ((ret != 0) || still_running) {
+			break;
+		}
+	}
+
+	atomic_set(&helper_quit, 1);
+	k_sem_give(&helper_sem);
+	k_thread_join(&helper_thread, K_FOREVER);
+
+	zassert_ok(args.create_ret);
+	zassert_ok(args.settime_ret);
+	zassert_ok(ret);
+	zassert_false(still_running, "expiry function still running after timer_delete()");
+
+	calls = atomic_get(&handler_calls);
+	k_msleep(20);
+	zassert_equal(atomic_get(&handler_calls), calls,
+		      "expiry function called after timer_delete()");
+
+	TC_PRINT("handler seen: periodic %d/10, one-shot %d/10\n", seen_periodic, seen_oneshot);
+
+	if ((seen_periodic + seen_oneshot) == 0) {
+		ztest_test_skip();
+	}
+}
+
 static void after(void *arg)
 {
 	ARG_UNUSED(arg);
