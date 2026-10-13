@@ -314,6 +314,7 @@ static void counter_cc23x0_lgpt_init_common(const struct device *dev)
 {
 	const struct counter_cc23x0_lgpt_config *config = dev->config;
 
+	HWREG(config->base + LGPT_O_CNTR) = 0x0;
 	HWREG(config->base + LGPT_O_TGT) = config->counter_info.max_top_value;
 	HWREG(config->base + LGPT_O_PRECFG) = LGPT_CLK_PRESCALE(config->prescale);
 	HWREG(EVTSVT_BASE + EVTSVT_O_LGPTSYNCSEL) = EVTSVT_LGPTSYNCSEL_PUBID_SYSTIM0;
