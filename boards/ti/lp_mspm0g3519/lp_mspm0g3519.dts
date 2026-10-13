@@ -1,4 +1,9 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Copyright (c) 2026 Texas Instruments
+ * Copyright (c) 2026 Linumiz GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /dts-v1/;
 
