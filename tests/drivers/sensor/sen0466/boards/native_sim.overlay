@@ -1,0 +1,10 @@
+/* Copyright (c) 2026, Iomico
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	sen0466: sen0466@74 {
+		compatible = "dfrobot,sen0466";
+		reg = <0x74>;
+	};
+};
