@@ -12,9 +12,6 @@ config VIDEO_STM32_DCMI
 	select PINCTRL
 	select RESET
 	select USE_STM32_HAL_DCMI
-	select USE_STM32_HAL_MDMA if SOC_SERIES_STM32H7X
 	select DMA if $(DT_STM32_DCMI_HAS_DMA)
-	select USE_STM32_HAL_DMA if $(DT_STM32_DCMI_HAS_DMA)
-	select USE_STM32_HAL_DMA_EX if $(DT_STM32_DCMI_HAS_DMA)
 	help
 	  Enable driver for STM32 Digital camera interface periheral.
