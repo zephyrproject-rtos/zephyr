@@ -3975,7 +3975,10 @@ static void quic_check_idle_timeouts(struct k_work *work)
 
 	for (int i = 0; i < CONFIG_QUIC_MAX_ENDPOINTS; i++) {
 		struct quic_endpoint *ep = endpoints[i];
-		int64_t idle_time, remaining;
+		int64_t idle_time, idle_start, remaining;
+		uint64_t negotiated_ms;
+		k_spinlock_key_t key;
+		bool idle_disabled;
 
 		if (ep == NULL || !quic_endpoint_is_used(ep)) {
 			continue;
@@ -4028,19 +4031,26 @@ static void quic_check_idle_timeouts(struct k_work *work)
 			}
 		}
 
-		if (ep->idle.idle_timeout_disabled) {
+		/* The sending and receiving threads update the idle state
+		 * under its lock, so read it in one go.
+		 */
+		key = k_spin_lock(&ep->idle.lock);
+		idle_disabled = ep->idle.idle_timeout_disabled;
+		negotiated_ms = ep->idle.negotiated_timeout_ms;
+		idle_start = ep->idle.last_rx_time;
+		k_spin_unlock(&ep->idle.lock, key);
+
+		if (idle_disabled) {
 			continue; /* Idle timeout disabled for this endpoint */
 		}
 
-		if (ep->idle.negotiated_timeout_ms == 0 ||
-		    ep->idle.last_rx_time == 0) {
+		if (negotiated_ms == 0 || idle_start == 0) {
 			continue; /* Idle timeout not negotiated yet */
 		}
 
+		idle_time = now - idle_start;
 
-		idle_time = now - ep->idle.last_rx_time;
-
-		if (idle_time >= (int64_t)ep->idle.negotiated_timeout_ms) {
+		if (idle_time >= (int64_t)negotiated_ms) {
 			NET_INFO("[EP:%p/%d] Idle timeout (%" PRId64 " ms), closing",
 				 ep, quic_get_by_ep(ep), idle_time);
 
@@ -4051,7 +4061,7 @@ static void quic_check_idle_timeouts(struct k_work *work)
 		}
 
 		/* Figure out how much time until this endpoint hits idle timeout */
-		remaining = (int64_t)ep->idle.negotiated_timeout_ms - idle_time;
+		remaining = (int64_t)negotiated_ms - idle_time;
 		if (shortest > remaining || shortest == 0) {
 			shortest = remaining;
 		}
@@ -4081,6 +4091,17 @@ static void quic_start_idle_timeout_checker(void)
 	k_work_reschedule(&idle_timeout_work, K_NO_WAIT);
 }
 
+static void quic_endpoint_set_idle_timeout(struct quic_endpoint *ep,
+					   uint64_t timeout_ms, bool disabled)
+{
+	k_spinlock_key_t key = k_spin_lock(&ep->idle.lock);
+
+	ep->idle.negotiated_timeout_ms = timeout_ms;
+	ep->idle.idle_timeout_disabled = disabled;
+
+	k_spin_unlock(&ep->idle.lock, key);
+}
+
 static void quic_endpoint_negotiate_idle_timeout(struct quic_endpoint *ep)
 {
 	uint64_t peer_timeout_ms = ep->peer_params.max_idle_timeout;
@@ -4088,8 +4109,7 @@ static void quic_endpoint_negotiate_idle_timeout(struct quic_endpoint *ep)
 
 	if (peer_timeout_ms == 0 && local_timeout_ms == 0) {
 		/* Both side disabled idle timeout */
-		ep->idle.negotiated_timeout_ms = 0;
-		ep->idle.idle_timeout_disabled = true;
+		quic_endpoint_set_idle_timeout(ep, 0, true);
 		NET_INFO("Idle timeout disabled for endpoint");
 		return;
 	}
@@ -4102,8 +4122,7 @@ static void quic_endpoint_negotiate_idle_timeout(struct quic_endpoint *ep)
 		peer_timeout_ms = UINT64_MAX;
 	}
 
-	ep->idle.negotiated_timeout_ms = MIN(peer_timeout_ms, local_timeout_ms);
-	ep->idle.idle_timeout_disabled = false;
+	quic_endpoint_set_idle_timeout(ep, MIN(peer_timeout_ms, local_timeout_ms), false);
 
 	NET_DBG("[EP:%p/%d] Negotiated idle timeout: %" PRIu64 " ms",
 		ep, quic_get_by_ep(ep), ep->idle.negotiated_timeout_ms);
@@ -4313,6 +4332,29 @@ bool quic_recovery_tx_slot_available(struct quic_endpoint *ep,
 	return free_slots > QUIC_SENT_PKT_HISTORY_RESERVE;
 }
 
+/*
+ * The idle timer also restarts when an ack-eliciting packet is sent, but
+ * only for the first such packet after one was received from the peer
+ * (RFC 9000 ch. 10.1). A connection is then not closed right after new
+ * activity was started on it, and an endpoint that keeps sending into the
+ * void still times out.
+ */
+static void quic_endpoint_note_ack_eliciting_tx(struct quic_endpoint *ep)
+{
+	int64_t now = k_uptime_get();
+	k_spinlock_key_t key = k_spin_lock(&ep->idle.lock);
+
+	if (!ep->idle.ack_eliciting_sent) {
+		ep->idle.ack_eliciting_sent = true;
+
+		if (!ep->idle.idle_timeout_disabled) {
+			ep->idle.last_rx_time = now;
+		}
+	}
+
+	k_spin_unlock(&ep->idle.lock, key);
+}
+
 ZTESTABLE_STATIC void quic_recovery_on_packet_sent(struct quic_endpoint *ep,
 						   enum quic_secret_level level,
 						   uint64_t pkt_num,
@@ -4324,6 +4366,10 @@ ZTESTABLE_STATIC void quic_recovery_on_packet_sent(struct quic_endpoint *ep,
 	int pn_space = level_to_pn_space(level);
 	uint16_t idx;
 	struct quic_sent_pkt_info *info;
+
+	if (ack_eliciting) {
+		quic_endpoint_note_ack_eliciting_tx(ep);
+	}
 
 	k_mutex_lock(&ep->recovery.lock, K_FOREVER);
 
@@ -5409,10 +5455,15 @@ static void quic_pto_work_handler(struct k_work *work)
 static void quic_endpoint_init_idle_timeout(struct quic_endpoint *ep,
 					    uint64_t local_timeout_ms)
 {
-	ep->idle.last_rx_time = k_uptime_get();
+	int64_t now = k_uptime_get();
+	k_spinlock_key_t key = k_spin_lock(&ep->idle.lock);
+
+	ep->idle.last_rx_time = now;
 	ep->idle.local_max_idle_timeout_ms = local_timeout_ms;
 	ep->idle.negotiated_timeout_ms = 0; /* Will be set after handshake */
 	ep->idle.idle_timeout_disabled = (local_timeout_ms == 0);
+
+	k_spin_unlock(&ep->idle.lock, key);
 }
 
 static void quic_endpoint_init_handshake_timeout(struct quic_endpoint *ep,
@@ -8407,11 +8458,18 @@ static void process_pkt(struct quic_pkt *pkt)
  * to decrypt, or anyone who knows the addresses and the connection ID could
  * keep the connection from ever timing out.
  */
-static void quic_endpoint_restart_idle_timer(struct quic_endpoint *ep)
+ZTESTABLE_STATIC void quic_endpoint_restart_idle_timer(struct quic_endpoint *ep)
 {
+	int64_t now = k_uptime_get();
+	k_spinlock_key_t key = k_spin_lock(&ep->idle.lock);
+
 	if (!ep->idle.idle_timeout_disabled) {
-		ep->idle.last_rx_time = k_uptime_get();
+		ep->idle.last_rx_time = now;
 	}
+
+	ep->idle.ack_eliciting_sent = false;
+
+	k_spin_unlock(&ep->idle.lock, key);
 }
 
 static bool process_long_header_msg(struct quic_pkt *pkt)

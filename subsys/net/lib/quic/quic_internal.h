@@ -942,7 +942,18 @@ struct quic_endpoint {
 
 	/** Idle timeout tracking */
 	struct {
-		/** Last time we received ANY packet from peer (in milliseconds) */
+		/** Protects last_rx_time, negotiated_timeout_ms,
+		 * idle_timeout_disabled and ack_eliciting_sent. The sending
+		 * and receiving threads write them and the idle timeout check
+		 * reads them. Nothing else is locked while it is held.
+		 */
+		struct k_spinlock lock;
+
+		/** Start of the current idle period (in milliseconds): the
+		 * last time a packet from the peer was received and
+		 * authenticated, or the time the first ack-eliciting packet
+		 * after that was sent.
+		 */
 		int64_t last_rx_time;
 
 		/** Negotiated idle timeout (milliseconds)
@@ -955,6 +966,11 @@ struct quic_endpoint {
 
 		/** Flag to disable idle timeout (when negotiated to 0) */
 		bool idle_timeout_disabled;
+
+		/** An ack-eliciting packet was sent since the last packet
+		 * from the peer was received and authenticated.
+		 */
+		bool ack_eliciting_sent;
 	} idle;
 
 	/** Handshake timeout tracking */
@@ -1563,6 +1579,7 @@ bool quic_recovery_tx_slot_available(struct quic_endpoint *ep,
 void quic_crypto_context_destroy(struct quic_crypto_context *ctx);
 void quic_endpoint_discard_keys(struct quic_endpoint *ep,
 				enum quic_secret_level level);
+void quic_endpoint_restart_idle_timer(struct quic_endpoint *ep);
 int quic_send_packet(struct quic_endpoint *ep, enum quic_secret_level level,
 		     const uint8_t *payload, size_t payload_len);
 void quic_key_update_destroy(struct quic_key_update *ku);
