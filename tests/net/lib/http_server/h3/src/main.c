@@ -2234,6 +2234,53 @@ ZTEST(server_h3_tests, test_h3_unknown_frame_inside_request_body_is_ignored)
 	untrack_stream_fd(stream_fd);
 }
 
+ZTEST(server_h3_tests, test_h3_client_goaway_identifier_must_not_grow)
+{
+	static const uint8_t shrinking[] = {
+		H3_FRAME_SETTINGS, 0x00,
+		H3_FRAME_GOAWAY, 0x01, 0x05,
+		H3_FRAME_GOAWAY, 0x01, 0x05,
+		H3_FRAME_GOAWAY, 0x01, 0x02,
+	};
+	static const uint8_t growing[] = {
+		H3_FRAME_SETTINGS, 0x00,
+		H3_FRAME_GOAWAY, 0x01, 0x02,
+		H3_FRAME_GOAWAY, 0x01, 0x05,
+	};
+
+	/* The same or a smaller identifier is fine, requests are served */
+	(void)start_h3_session_with_control_data(shrinking, sizeof(shrinking));
+	send_get_and_expect_static(false);
+
+	close_h3_client();
+	connect_h3_client(NULL);
+
+	/* A larger one is a connection error */
+	(void)send_control_stream_data(growing, sizeof(growing));
+	expect_connection_closed_and_server_alive();
+}
+
+ZTEST(server_h3_tests, test_h3_malformed_client_goaway_closes_connection)
+{
+	static const uint8_t empty[] = {
+		H3_FRAME_SETTINGS, 0x00,
+		H3_FRAME_GOAWAY, 0x00,
+	};
+	static const uint8_t trailing_byte[] = {
+		H3_FRAME_SETTINGS, 0x00,
+		H3_FRAME_GOAWAY, 0x02, 0x01, 0x00,
+	};
+
+	(void)send_control_stream_data(empty, sizeof(empty));
+	expect_connection_closed_and_server_alive();
+
+	close_h3_client();
+	connect_h3_client(NULL);
+
+	(void)send_control_stream_data(trailing_byte, sizeof(trailing_byte));
+	expect_connection_closed_and_server_alive();
+}
+
 ZTEST_SUITE(server_h3_function_tests, NULL, NULL, NULL, NULL, NULL);
 ZTEST_SUITE(server_h3_tests, NULL, http_server_h3_setup,
 	    http_server_h3_before, http_server_h3_after, http_server_h3_teardown);
