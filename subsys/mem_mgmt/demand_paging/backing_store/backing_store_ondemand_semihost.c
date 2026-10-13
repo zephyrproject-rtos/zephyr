@@ -57,8 +57,14 @@ void k_mem_paging_backing_store_page_finalize(struct k_mem_page_frame *pf,
 int k_mem_paging_backing_store_location_query(void *addr, uintptr_t *location)
 {
 	uintptr_t offset = (uintptr_t)addr - (uintptr_t)lnkr_ondemand_start;
+	/* RISC-V includes reset and exception sections before .text in the binary. */
+#ifdef CONFIG_RISCV
+	uintptr_t image_start = (uintptr_t)__rom_region_start;
+#else
+	uintptr_t image_start = (uintptr_t)__text_region_start;
+#endif
 	uintptr_t file_offset = (uintptr_t)lnkr_ondemand_load_start
-				- (uintptr_t)__text_region_start + offset;
+				- image_start + offset;
 
 	__ASSERT(file_offset % CONFIG_MMU_PAGE_SIZE == 0, "file_offset = %#lx", file_offset);
 	*location = file_offset;

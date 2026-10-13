@@ -450,9 +450,42 @@ GROUP_END(DTCM)
  */
 #include <snippets-sections.ld>
 
+#ifdef CONFIG_MMU
+#define LAST_RAM_ALIGN . = ALIGN(CONFIG_MMU_PAGE_SIZE);
+#else
 #define LAST_RAM_ALIGN MPU_MIN_SIZE_ALIGN
+#endif
 
 #include <zephyr/linker/ram-end.ld>
+
+#ifdef CONFIG_LINKER_USE_ONDEMAND_SECTION
+    /*
+     * Keep these sections outside z_mapped_start..z_mapped_end so their
+     * pages are not pinned as part of the resident kernel image. The
+     * backing store must preserve their load-image contents independently
+     * of the RAM frames that may initially contain them.
+     */
+    SECTION_PROLOGUE(.ondemand_text,,ALIGN(CONFIG_MMU_PAGE_SIZE))
+    {
+	lnkr_ondemand_start = .;
+	lnkr_ondemand_text_start = .;
+	KEEP(*(.ondemand_text .ondemand_text.*))
+	. = ALIGN(CONFIG_MMU_PAGE_SIZE);
+	lnkr_ondemand_text_end = .;
+    } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+    lnkr_ondemand_text_size = ABSOLUTE(SIZEOF(.ondemand_text));
+    lnkr_ondemand_load_start = LOADADDR(.ondemand_text);
+
+    SECTION_PROLOGUE(.ondemand_rodata,,ALIGN(CONFIG_MMU_PAGE_SIZE))
+    {
+	lnkr_ondemand_rodata_start = .;
+	KEEP(*(.ondemand_rodata .ondemand_rodata.*))
+	. = ALIGN(CONFIG_MMU_PAGE_SIZE);
+	lnkr_ondemand_rodata_end = .;
+	lnkr_ondemand_end = .;
+    } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+    lnkr_ondemand_rodata_size = ABSOLUTE(SIZEOF(.ondemand_rodata));
+#endif
 
     GROUP_END(RAMABLE_REGION)
 
