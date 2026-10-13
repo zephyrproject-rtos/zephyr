@@ -490,13 +490,17 @@ static void gptp_mi_pss_send_md_sync_send(int port)
 	struct gptp_pss_send_state *state;
 	struct gptp_mi_port_sync_sync *pss_ptr;
 	struct gptp_sync_send_state *sync_send;
+	struct gptp_port_ds *port_ds;
 
 	state = &GPTP_PORT_STATE(port)->pss_send;
 	pss_ptr = state->pss_sync_ptr;
 	sync_send = &GPTP_PORT_STATE(port)->sync_send;
+	port_ds = GPTP_PORT_DS(port);
 
 	memcpy(&state->sync_send, &pss_ptr->sync_info,
 	       sizeof(struct gptp_md_sync_info));
+
+	state->sync_send.log_msg_interval = port_ds->cur_log_half_sync_itv + 1;
 
 	sync_send->sync_send_ptr = &state->sync_send;
 	sync_send->rcvd_md_sync = true;
