@@ -2119,6 +2119,56 @@ ZTEST(server_h3_tests, test_h3_push_promise_on_request_stream_is_connection_erro
 	expect_request_stream_frame_closes_connection(frame, sizeof(frame));
 }
 
+/* Frame types of HTTP/2 that are reserved in HTTP/3 */
+static const uint8_t reserved_h2_frame_types[] = { 0x02, 0x06, 0x08, 0x09 };
+
+ZTEST(server_h3_tests, test_h3_reserved_frame_on_request_stream_is_connection_error)
+{
+	ARRAY_FOR_EACH(reserved_h2_frame_types, i) {
+		const uint8_t frame[] = { reserved_h2_frame_types[i], 0x00 };
+
+		if (i > 0) {
+			close_h3_client();
+			connect_h3_client(NULL);
+		}
+
+		expect_request_stream_frame_closes_connection(frame, sizeof(frame));
+	}
+}
+
+ZTEST(server_h3_tests, test_h3_reserved_frame_on_control_stream_is_connection_error)
+{
+	ARRAY_FOR_EACH(reserved_h2_frame_types, i) {
+		const uint8_t frames[] = {
+			H3_FRAME_SETTINGS, 0x00,
+			reserved_h2_frame_types[i], 0x00,
+		};
+
+		if (i > 0) {
+			close_h3_client();
+			connect_h3_client(NULL);
+		}
+
+		(void)send_control_stream_data(frames, sizeof(frames));
+
+		expect_connection_closed_and_server_alive();
+	}
+}
+
+ZTEST(server_h3_tests, test_h3_unknown_control_frame_type_is_ignored)
+{
+	/* 0x21 is one of the frame types reserved for exercising the
+	 * requirement that unknown types are ignored.
+	 */
+	static const uint8_t control_frames[] = {
+		H3_FRAME_SETTINGS, 0x00,
+		0x21, 0x01, 0xaa,
+	};
+
+	(void)start_h3_session_with_control_data(control_frames, sizeof(control_frames));
+	send_get_and_expect_static(false);
+}
+
 ZTEST_SUITE(server_h3_function_tests, NULL, NULL, NULL, NULL, NULL);
 ZTEST_SUITE(server_h3_tests, NULL, http_server_h3_setup,
 	    http_server_h3_before, http_server_h3_after, http_server_h3_teardown);
