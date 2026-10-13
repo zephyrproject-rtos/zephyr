@@ -1607,6 +1607,12 @@ static void dw_i3c_handle_tir(const struct device *dev, uint32_t ibi_status, boo
 	addr = IBI_QUEUE_IBI_ADDR(ibi_status);
 	len = has_ibi_data ? IBI_QUEUE_STATUS_DATA_LEN(ibi_status) : 0U;
 
+	if (IBI_QUEUE_STATUS_NACKED(ibi_status)) {
+		dw_i3c_ibi_discard_payload(dev, len);
+		data->ibi_data_len = 0;
+		return;
+	}
+
 	pos = get_i3c_addr_pos(dev, addr, false);
 	if (pos < 0) {
 		LOG_ERR("%s: Invalid Slave address", dev->name);
