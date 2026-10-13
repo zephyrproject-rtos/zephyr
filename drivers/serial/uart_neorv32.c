@@ -358,7 +358,7 @@ static int neorv32_uart_irq_is_pending(const struct device *dev)
 		neorv32_uart_irq_rx_ready(dev));
 }
 
-static int neorv32_uart_irq_update(const struct device *dev)
+static void neorv32_uart_irq_update(const struct device *dev)
 {
 	struct neorv32_uart_data *data = dev->data;
 
@@ -368,8 +368,6 @@ static int neorv32_uart_irq_update(const struct device *dev)
 	 * - neorv32_uart_irq_rx_ready()
 	 */
 	data->last_ctrl = neorv32_uart_read_ctrl(dev);
-
-	return 1;
 }
 
 static void neorv32_uart_irq_callback_set(const struct device *dev,

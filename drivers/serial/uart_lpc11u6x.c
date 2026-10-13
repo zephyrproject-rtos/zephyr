@@ -307,13 +307,12 @@ static int lpc11u6x_uart0_irq_is_pending(const struct device *dev)
 	return !(data->cached_iir & LPC11U6X_UART0_IIR_STATUS);
 }
 
-static int lpc11u6x_uart0_irq_update(const struct device *dev)
+static void lpc11u6x_uart0_irq_update(const struct device *dev)
 {
 	const struct lpc11u6x_uart0_config *cfg = dev->config;
 	struct lpc11u6x_uart0_data *data = dev->data;
 
 	data->cached_iir = cfg->uart0->iir;
-	return 1;
 }
 
 static void lpc11u6x_uart0_irq_callback_set(const struct device *dev,
@@ -736,11 +735,6 @@ static int lpc11u6x_uartx_irq_is_pending(const struct device *dev)
 	return 0;
 }
 
-static int lpc11u6x_uartx_irq_update(const struct device *dev)
-{
-	return 1;
-}
-
 static void lpc11u6x_uartx_irq_callback_set(const struct device *dev,
 					    uart_irq_callback_user_data_t cb,
 					    void *user_data)
@@ -848,7 +842,6 @@ static DEVICE_API(uart, uartx_api) = {
 	.irq_err_enable = lpc11u6x_uartx_irq_err_enable,
 	.irq_err_disable = lpc11u6x_uartx_irq_err_disable,
 	.irq_is_pending = lpc11u6x_uartx_irq_is_pending,
-	.irq_update = lpc11u6x_uartx_irq_update,
 	.irq_callback_set = lpc11u6x_uartx_irq_callback_set,
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };

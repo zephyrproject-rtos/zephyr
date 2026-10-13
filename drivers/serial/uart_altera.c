@@ -119,15 +119,6 @@ struct uart_altera_device_config {
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-/**
- * function prototypes
- */
-static int uart_altera_irq_update(const struct device *dev);
-static int uart_altera_irq_tx_ready(const struct device *dev);
-static int uart_altera_irq_rx_ready(const struct device *dev);
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
-
 /**
  * @brief Poll the device for input.
  *
@@ -669,7 +660,7 @@ static int uart_altera_irq_rx_ready(const struct device *dev)
  *
  * @return 1 for success.
  */
-static int uart_altera_irq_update(const struct device *dev)
+static void uart_altera_irq_update(const struct device *dev)
 {
 	struct uart_altera_device_data *data = dev->data;
 	const struct uart_altera_device_config *config = dev->config;
@@ -679,8 +670,6 @@ static int uart_altera_irq_update(const struct device *dev)
 	data->status_act = sys_read32(config->base + ALTERA_AVALON_UART_STATUS_REG_OFFSET);
 
 	k_spin_unlock(&data->lock, key);
-
-	return 1;
 }
 
 /**

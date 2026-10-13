@@ -423,7 +423,7 @@ static int api_irq_is_pending(const struct device *dev)
 	return api_irq_rx_ready(dev) || api_irq_tx_ready(dev);
 }
 
-static int api_irq_update(const struct device *dev)
+static void api_irq_update(const struct device *dev)
 {
 	struct max32_uart_data *const data = dev->data;
 	const struct max32_uart_config *const cfg = dev->config;
@@ -440,8 +440,6 @@ static int api_irq_update(const struct device *dev)
 #endif
 		MXC_UART_DisableInt(cfg->regs, ADI_MAX32_UART_INT_TX | ADI_MAX32_UART_INT_TX_OEM);
 	}
-
-	return 1;
 }
 
 static void api_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
