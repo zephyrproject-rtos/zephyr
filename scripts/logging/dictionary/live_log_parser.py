@@ -245,7 +245,10 @@ def parse_args():
         help="Interval for polling input source, if it does not support 'select'",
     )
 
+    parserlib.add_sorting_arguments(parser)
+
     args, remainder = parser.parse_known_args()
+    parserlib.check_sorting_arguments(parser, args)
 
     if not remainder:
         parser.error(
@@ -297,7 +300,9 @@ def main():
     def load_log_parser():
         """Read the database files and create the log parser. Returns None on failure."""
         try:
-            return parserlib.get_log_parser(args.dbfile, logger)
+            return parserlib.get_log_parser(
+                args.dbfile, logger, latency_ms=args.latency, ts_freq=args.ts_freq
+            )
         except Exception as e:  # noqa: BLE001
             logger.error("ERROR: Failed to load the log database: %s", e)
             return None
@@ -340,10 +345,16 @@ def main():
             if rescan:
                 rescan = False
             else:
+                # When messages are cached for sorting, do not wait for new data longer than
+                # it is needed to print them.
+                idle_timeout = log_parser.idle_timeout() if log_parser is not None else None
                 if hasattr(reader, 'fileno') and sys.platform != "win32":
-                    _, _, _ = select.select([reader], [], [])
+                    _, _, _ = select.select([reader], [], [], idle_timeout)
                 else:
-                    time.sleep(args.polling_interval)
+                    if idle_timeout is None:
+                        time.sleep(args.polling_interval)
+                    else:
+                        time.sleep(min(args.polling_interval, idle_timeout))
                 data += reader.read_non_blocking()
 
             if not synced:
@@ -383,6 +394,9 @@ def main():
                 continue
 
             data = data[parsed_data_offset:]
+
+            # If no new messages arrived for the latency time, print what is still cached.
+            log_parser.flush_if_idle()
 
 
 if __name__ == "__main__":
