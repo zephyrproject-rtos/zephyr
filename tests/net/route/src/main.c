@@ -59,6 +59,14 @@ static struct net_in6_addr peer_addr_alt = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0
 static struct net_in6_addr dest_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					 0, 0, 0, 0, 0xd, 0xe, 0x5, 0x7 } } };
 
+/* Addresses for packets injected as if received on my_iface */
+static struct net_in6_addr input_src_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+						 0, 0, 0, 0, 0xaa, 0xbb, 0, 0x1 } } };
+static struct net_in6_addr input_dest_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+						  0, 0, 0, 0, 0xd, 0xe, 0x5, 0xa } } };
+static struct net_in6_addr input_offlink_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+						     0, 0, 0, 0, 0xde, 0xad, 0, 0x1 } } };
+
 /* Extra address is assigned to ll_addr */
 static struct net_in6_addr ll_addr = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
 				       0, 0, 0, 0xf2, 0xaa, 0x29, 0x02,
@@ -545,6 +553,82 @@ static void test_route_preference(void)
 }
 
 
+/* Inject a packet as if received on my_iface. */
+static void recv_ipv6_packet(const struct net_in6_addr *dst, uint8_t hop_limit)
+{
+	struct net_ipv6_hdr *hdr;
+	struct net_pkt *pkt;
+
+	k_sem_reset(&wait_data);
+
+	pkt = net_pkt_alloc_with_buffer(my_iface, sizeof(struct net_ipv6_hdr),
+					NET_AF_INET6, NET_IPV6_NEXTHDR_NONE,
+					K_NO_WAIT);
+	zassert_not_null(pkt, "Input packet alloc failed");
+
+	hdr = (struct net_ipv6_hdr *)net_buf_add(pkt->buffer,
+						 sizeof(struct net_ipv6_hdr));
+	zassert_not_null(hdr, "Cannot reserve IPv6 header");
+
+	memset(hdr, 0, sizeof(*hdr));
+	hdr->vtc = 0x60;
+	hdr->len = 0U;
+	hdr->nexthdr = NET_IPV6_NEXTHDR_NONE;
+	hdr->hop_limit = hop_limit;
+	net_ipv6_addr_copy_raw(hdr->src, input_src_addr.s6_addr);
+	net_ipv6_addr_copy_raw(hdr->dst, dst->s6_addr);
+
+	zassert_ok(net_recv_data(my_iface, pkt), "Input receive failed");
+}
+
+static void test_route_input_route_same_iface(void)
+{
+	struct net_route_entry *route;
+	struct net_nbr *nbr;
+	bool sent;
+
+	/* The next hop is on the ingress interface. A host drops the
+	 * packet instead of sending it back out my_iface.
+	 */
+	nbr = net_ipv6_nbr_add(my_iface, &peer_addr, &net_route_data_peer.ll_addr,
+			       false, NET_IPV6_NBR_STATE_REACHABLE);
+	zassert_not_null(nbr, "Input nexthop add failed");
+
+	route = net_route_add(my_iface, &input_dest_addr, 128, &peer_addr,
+			      NET_IPV6_ND_INFINITE_LIFETIME,
+			      NET_ROUTE_PREFERENCE_HIGH);
+	zassert_not_null(route, "Input route add failed");
+
+	recv_ipv6_packet(&input_dest_addr, 2U);
+	sent = k_sem_take(&wait_data, WAIT_TIME) == 0;
+
+	zassert_false(sent, "Host must not relay a packet for another host");
+
+	zassert_ok(net_route_del(route), "Input route del failed");
+}
+
+static void test_route_input_default_router(void)
+{
+	struct net_if_router *router;
+	struct net_nbr *nbr;
+	bool sent;
+
+	/* Off-link destination with a default router on the ingress link. */
+	nbr = net_ipv6_nbr_add(my_iface, &peer_addr, &net_route_data_peer.ll_addr,
+			       false, NET_IPV6_NBR_STATE_REACHABLE);
+	zassert_not_null(nbr, "Default router neighbor add failed");
+
+	router = net_if_ipv6_router_add(my_iface, &peer_addr, true, 0);
+	zassert_not_null(router, "Default router add failed");
+
+	recv_ipv6_packet(&input_offlink_addr, 2U);
+	sent = k_sem_take(&wait_data, WAIT_TIME) == 0;
+
+	zassert_false(sent, "Host must not relay a packet to its default router");
+
+	zassert_true(net_if_ipv6_router_rm(router), "Default router remove failed");
+}
+
 /*test case main entry*/
 ZTEST(route_test_suite, test_route)
 {
@@ -564,6 +648,8 @@ ZTEST(route_test_suite, test_route)
 	test_populate_nbr_cache();
 	test_route_add_many();
 	test_route_del_many();
+	test_route_input_route_same_iface();
+	test_route_input_default_router();
 	test_route_lifetime();
 	test_route_preference();
 }
