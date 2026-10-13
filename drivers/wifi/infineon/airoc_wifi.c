@@ -833,6 +833,10 @@ static void airoc_mgmt_init(struct net_if *iface)
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT
 	wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("wifi_supplicant"), WIFI_TYPE_STA,
 					iface);
+#if defined(CONFIG_IFX_WIFI_SOFTAP_SUPPORT)
+	wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("wifi_supplicant"), WIFI_TYPE_SAP,
+					iface);
+#endif
 #endif
 	/* Read WLAN MAC Address */
 	if (whd_wifi_get_mac_address(airoc_sta_if, &airoc_sta_if->mac_addr) != WHD_SUCCESS) {
@@ -1173,7 +1177,7 @@ static int airoc_mgmt_wifi_stats(const struct device *dev,
 				 struct net_if *iface __unused,
 				 struct net_stats_wifi *stats)
 {
-	struct airoc_wifi_data *data = dev->data;
+	const struct airoc_wifi_data *data = dev->data;
 
 	stats->bytes.received = data->stats.bytes.received;
 	stats->bytes.sent = data->stats.bytes.sent;
