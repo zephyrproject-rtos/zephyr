@@ -13,3 +13,29 @@ tests:
     min_ram: 32
     integration_platforms:
       - mimxrt1064_evk
+  sd.sdmmc.pm:
+    harness: ztest
+    harness_config:
+      fixture: fixture_sdhc
+    filter: dt_compat_enabled("zephyr,sdmmc-disk")
+    tags: sdhc
+    extra_args:
+      - platform:esp32p4_function_ev_board/esp32p4/hpcore:SNIPPET="espressif-pm"
+      - platform:esp32s3_eye/esp32s3/procpu:SNIPPET="espressif-pm"
+      - platform:esp_wrover_kit/esp32/procpu:SNIPPET="espressif-pm"
+    platform_allow:
+      - esp32p4_function_ev_board/esp32p4/hpcore
+      - esp32s3_eye/esp32s3/procpu
+      - esp_wrover_kit/esp32/procpu
+  sd.sdmmc.pm.esp.periph_pd:
+    harness: ztest
+    harness_config:
+      fixture: fixture_sdhc
+    filter: dt_compat_enabled("zephyr,sdmmc-disk")
+    tags: sdhc
+    extra_args:
+      - SNIPPET=espressif-pm
+    extra_configs:
+      - CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y
+    platform_allow:
+      - esp32p4_function_ev_board/esp32p4/hpcore
