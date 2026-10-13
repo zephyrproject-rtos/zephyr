@@ -12,6 +12,7 @@
 #include <zephyr/arch/hexagon/exception.h>
 #include <hexagon_vm.h>
 #include <hexagon_intc.h>
+#include <hexagon_fatal.h>
 #include <irq.h>
 #include <event_context.h>
 #ifdef CONFIG_USERSPACE
@@ -25,7 +26,8 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 uint32_t z_hexagon_isr_nesting;
 
 /* Forward declarations for handlers defined below */
-static void z_hexagon_exception_handler(struct event_context *ctx);
+static void z_hexagon_exception_handler(unsigned int event_num,
+					struct event_context *ctx);
 static void z_hexagon_trap0_handler(struct event_context *ctx);
 static void z_hexagon_interrupt_handler(struct event_context *ctx);
 
@@ -58,11 +60,15 @@ void z_hexagon_event_handler(unsigned int event_num, struct event_context *ctx)
 
 	switch (event_num) {
 	case HEXAGON_EVENT_MACHINE_CHECK:
-		z_hexagon_fatal_error(K_ERR_CPU_EXCEPTION);
+		z_hexagon_fatal_error_ctx(K_ERR_CPU_EXCEPTION, event_num, ctx);
 		break;
 
 	case HEXAGON_EVENT_GENERAL_EXCEPTION:
-		z_hexagon_exception_handler(ctx);
+		z_hexagon_exception_handler(event_num, ctx);
+		break;
+
+	case HEXAGON_EVENT_DEBUG:
+		z_hexagon_fatal_error_ctx(K_ERR_CPU_EXCEPTION, event_num, ctx);
 		break;
 
 	case HEXAGON_EVENT_TRAP0:
@@ -74,7 +80,7 @@ void z_hexagon_event_handler(unsigned int event_num, struct event_context *ctx)
 		break;
 
 	default:
-		z_hexagon_fatal_error(K_ERR_SPURIOUS_IRQ);
+		z_hexagon_fatal_error_ctx(K_ERR_SPURIOUS_IRQ, event_num, ctx);
 		break;
 	}
 
@@ -113,18 +119,19 @@ void z_hexagon_event_exit_user_sync(void)
 #define GSR_CAUSE_MASK 0xFF
 #define HEXAGON_CAUSE_STACK_LIMIT 0x27U
 
-static void z_hexagon_exception_handler(struct event_context *ctx)
+static void z_hexagon_exception_handler(unsigned int event_num,
+					struct event_context *ctx)
 {
 	uint32_t cause = ctx->gsr & GSR_CAUSE_MASK;
-	uint32_t pc = ctx->gelr;
 
-	LOG_ERR("exception: cause=0x%x pc=0x%x", cause, pc);
+	LOG_ERR("exception: cause=0x%x pc=0x%x", cause, ctx->gelr);
 
 	if (cause == HEXAGON_CAUSE_STACK_LIMIT) {
-		z_hexagon_fatal_error(K_ERR_STACK_CHK_FAIL);
+		z_hexagon_fatal_error_ctx(K_ERR_STACK_CHK_FAIL, event_num, ctx);
 	}
 
-	z_hexagon_fatal_error(K_ERR_CPU_EXCEPTION);
+
+	z_hexagon_fatal_error_ctx(K_ERR_CPU_EXCEPTION, event_num, ctx);
 }
 
 /* Handle trap0 (syscall) events.

@@ -30,11 +30,10 @@
  *   +----------------------+             +----------------------+
  *   stack buffer base                   priv_stack
  *
- * Headroom fits one unchecked EVENT_ENTRY frame. allocframe checks normal
- * growth, including trap0 nesting, before it crosses FRAMELIMIT.
+ * Headroom (HEXAGON_STACK_LIMIT_HEADROOM) fits one unchecked EVENT_ENTRY
+ * frame. allocframe checks normal growth, including trap0 nesting, before
+ * it crosses FRAMELIMIT.
  */
-#define HEXAGON_STACK_LIMIT_HEADROOM (sizeof(struct event_context) + 8U)
-
 BUILD_ASSERT(K_KERNEL_STACK_RESERVED >= HEXAGON_STACK_LIMIT_HEADROOM &&
 	     K_THREAD_STACK_RESERVED >= HEXAGON_STACK_LIMIT_HEADROOM,
 	     "stack objects must reserve room for the stack-limit event frame");
