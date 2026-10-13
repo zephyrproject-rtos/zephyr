@@ -24,6 +24,8 @@
 
 #include <host/hci_core.h>
 #include <host/keys.h>
+#include <host/settings.h>
+#include <zephyr/sys/byteorder.h>
 
 #define DT_DRV_COMPAT zephyr_bt_hci_test
 
@@ -398,23 +400,22 @@ ZTEST(bt_keys_commit, test_settings_reload_does_not_add_irk_twice)
 		      bt_dev.le.rl_entries);
 }
 
-/* The bt_keys_commit suite runs first, so Bluetooth is already enabled.
- * ZTest does not guarantee test execution order within a suite, so reset
+/* ZTest does not guarantee test execution order within a suite, so reset
  * the key pool before every test to keep them independent.
  */
-static void pool_before(void *fixture)
+static void reset_key_pool(void *fixture)
 {
 	ARG_UNUSED(fixture);
 
 	bt_keys_reset();
 }
 
-ZTEST_SUITE(bt_keys_pool, NULL, NULL, pool_before, NULL, NULL);
+ZTEST_SUITE(bt_keys_pool, NULL, NULL, reset_key_pool, NULL, NULL);
 
 /* bt_keys_get_addr(): allocate a slot and find it again. */
-ZTEST(bt_keys_pool, test_get_addr_allocates_slot)
+static ZTEST(bt_keys_pool, test_get_addr_allocates_slot)
 {
-	struct bt_keys *keys = bt_keys_get_addr(BT_ID_DEFAULT, &peers[0]);
+	const struct bt_keys *keys = bt_keys_get_addr(BT_ID_DEFAULT, &peers[0]);
 
 	zassert_not_null(keys, "No slot for the first peer");
 	zassert_equal_ptr(keys, bt_keys_find_addr(BT_ID_DEFAULT, &peers[0]),
@@ -426,9 +427,9 @@ ZTEST(bt_keys_pool, test_get_addr_allocates_slot)
  * entry must still be returned — the find-first path must not be confused
  * with allocation.
  */
-ZTEST(bt_keys_pool, test_get_addr_returns_existing_when_full)
+static ZTEST(bt_keys_pool, test_get_addr_returns_existing_when_full)
 {
-	struct bt_keys *keys;
+	const struct bt_keys *keys;
 
 	zassert_not_null(bt_keys_get_addr(BT_ID_DEFAULT, &peers[0]));
 	zassert_not_null(bt_keys_get_addr(BT_ID_DEFAULT, &peers[1]));
@@ -444,9 +445,9 @@ ZTEST(bt_keys_pool, test_get_addr_returns_existing_when_full)
 /* bt_keys_get_type(): same ref on repeated calls, key type bit set, and no
  * slot handed out from a full pool.
  */
-ZTEST(bt_keys_pool, test_get_type_existing_and_full)
+static ZTEST(bt_keys_pool, test_get_type_existing_and_full)
 {
-	struct bt_keys *keys;
+	const struct bt_keys *keys;
 
 	zassert_not_null(bt_keys_get_addr(BT_ID_DEFAULT, &peers[0]));
 	zassert_not_null(bt_keys_get_addr(BT_ID_DEFAULT, &peers[1]));
@@ -472,9 +473,9 @@ static void bond_count_cb(const struct bt_bond_info *info, void *user_data)
 /* bt_keys_find()/find_addr(): miss on empty pool, miss for a type that is
  * not set, hit, and the public bond enumeration agrees.
  */
-ZTEST(bt_keys_pool, test_find_and_foreach)
+static ZTEST(bt_keys_pool, test_find_and_foreach)
 {
-	struct bt_keys *keys;
+	const struct bt_keys *keys;
 	size_t count = 0;
 
 	zassert_is_null(bt_keys_find(BT_KEYS_IRK, BT_ID_DEFAULT, &peers[0]),
@@ -492,4 +493,244 @@ ZTEST(bt_keys_pool, test_find_and_foreach)
 
 	bt_foreach_bond(BT_ID_DEFAULT, bond_count_cb, &count);
 	zassert_equal(count, 1U, "bt_foreach_bond counted %zu bonds", count);
+}
+
+/* ------------------------------------------------------------------------
+ * Settings migration / edge-case coverage (keys_set branches)
+ *
+ * Each test writes a crafted entry directly to the settings backend and
+ * reloads only that entry with settings_load_subtree(), so every keys_set
+ * branch is reached through the real persistence path without interference
+ * from other stored bonds.
+ * ---------------------------------------------------------------------
+ */
+
+static const bt_addr_le_t migration_peers[] = {
+	{.type = BT_ADDR_LE_PUBLIC, .a.val = {0x20, 0x21, 0x22, 0x23, 0x24, 0x25}},
+	{.type = BT_ADDR_LE_PUBLIC, .a.val = {0x30, 0x31, 0x32, 0x33, 0x34, 0x35}},
+	{.type = BT_ADDR_LE_PUBLIC, .a.val = {0x40, 0x41, 0x42, 0x43, 0x44, 0x45}},
+	{.type = BT_ADDR_LE_PUBLIC, .a.val = {0x50, 0x51, 0x52, 0x53, 0x54, 0x55}},
+	{.type = BT_ADDR_LE_PUBLIC, .a.val = {0x60, 0x61, 0x62, 0x63, 0x64, 0x65}},
+	{.type = BT_ADDR_LE_PUBLIC, .a.val = {0x70, 0x71, 0x72, 0x73, 0x74, 0x75}},
+	{.type = BT_ADDR_LE_PUBLIC, .a.val = {0x80, 0x81, 0x82, 0x83, 0x84, 0x85}},
+};
+
+/* Must match the host's STORAGE_CFG_VERSION. If the host bumps it, this
+ * test fails loudly - update this constant.
+ */
+#define STORAGE_CFG_VERSION_CURRENT 17U
+
+static void migration_blob_init(struct bt_keys *keys, const bt_addr_le_t *addr, uint16_t types,
+				uint8_t flags)
+{
+	uint32_t cfg_flags = 0;
+
+	/* cfg_flags must match the host's STORAGE_CFG_FLAGS, which is derived
+	 * from the same Kconfig options.
+	 */
+	if (IS_ENABLED(CONFIG_BT_SIGNING)) {
+		cfg_flags |= BT_KEYS_CFG_SIGNING;
+	}
+	if (IS_ENABLED(CONFIG_BT_SMP_SC_PAIR_ONLY)) {
+		cfg_flags |= BT_KEYS_CFG_SC_PAIR_ONLY;
+	}
+	if (IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)) {
+		cfg_flags |= BT_KEYS_CFG_OVERWRITE_OLDEST;
+	}
+
+	(void)memset(keys, 0, sizeof(*keys));
+	keys->id = BT_ID_DEFAULT;
+	bt_addr_le_copy(&keys->addr, addr);
+	keys->cfg_version = STORAGE_CFG_VERSION_CURRENT;
+	sys_put_le24(cfg_flags, keys->cfg_flags);
+	keys->enc_size = 16;
+	keys->keys = types;
+	keys->flags = flags;
+}
+
+/* The suite must also pass when run without the other suites, so it
+ * initializes the settings subsystem itself.
+ */
+static void *settings_suite_setup(void)
+{
+	int err;
+
+	err = settings_subsys_init();
+	zassert_true(err == 0 || err == -EALREADY, "settings_subsys_init() failed (%d)", err);
+
+	return NULL;
+}
+
+static void settings_suite_teardown(void *fixture)
+{
+	char name[BT_SETTINGS_KEY_MAX];
+	int err;
+
+	ARG_UNUSED(fixture);
+
+	bt_keys_reset();
+	for (size_t i = 0; i < ARRAY_SIZE(migration_peers); i++) {
+		zassert_ok(bt_settings_encode_key(name, sizeof(name), "keys", &migration_peers[i],
+						  NULL));
+		err = settings_save_one(name, NULL, 0);
+		zassert_true(err == 0 || err == -ENOENT, "settings_save_one() failed (%d)", err);
+	}
+}
+
+ZTEST_SUITE(bt_keys_settings, NULL, settings_suite_setup, reset_key_pool, NULL,
+	    settings_suite_teardown);
+
+/* Well-formed stored bond restores through the real load path. */
+static ZTEST(bt_keys_settings, test_load_stored_bond)
+{
+	struct bt_keys stored;
+	const struct bt_keys *keys;
+	char name[BT_SETTINGS_KEY_MAX];
+
+	migration_blob_init(&stored, &migration_peers[0], BT_KEYS_IRK, 0);
+	for (int i = 0; i < 16; i++) {
+		stored.irk.val[i] = 0xa0 + i;
+	}
+
+	zassert_ok(bt_settings_encode_key(name, sizeof(name), "keys", &migration_peers[0], NULL));
+	zassert_ok(settings_save_one(name, stored.storage_start, BT_KEYS_STORAGE_LEN));
+	zassert_ok(settings_load_subtree(name));
+
+	keys = bt_keys_find(BT_KEYS_IRK, BT_ID_DEFAULT, &migration_peers[0]);
+	zassert_not_null(keys, "Stored bond not restored");
+	zassert_mem_equal(keys->irk.val, stored.irk.val, 16, "IRK mismatch after load");
+}
+
+/* A zero-length entry is settings' delete representation: it removes an
+ * existing bond (covers the keys_set delete branch).
+ */
+static ZTEST(bt_keys_settings, test_load_delete_marker_removes_bond)
+{
+	struct bt_keys stored;
+	const struct bt_keys *keys;
+	char name[BT_SETTINGS_KEY_MAX];
+
+	migration_blob_init(&stored, &migration_peers[1], BT_KEYS_IRK, 0);
+
+	zassert_ok(bt_settings_encode_key(name, sizeof(name), "keys", &migration_peers[1], NULL));
+	zassert_ok(settings_save_one(name, stored.storage_start, BT_KEYS_STORAGE_LEN));
+	zassert_ok(settings_load_subtree(name));
+
+	keys = bt_keys_find(BT_KEYS_IRK, BT_ID_DEFAULT, &migration_peers[1]);
+	zassert_not_null(keys, "Stored bond not restored");
+
+	/* Drop the NVS copy and deliver a zero-length entry through the
+	 * runtime backend to reach the keys_set delete branch.
+	 */
+	zassert_ok(settings_save_one(name, NULL, 0));
+	zassert_ok(settings_runtime_set(name, stored.storage_start, 0));
+	zassert_ok(settings_load_subtree(name));
+
+	zassert_is_null(bt_keys_find_addr(BT_ID_DEFAULT, &migration_peers[1]),
+			"Delete marker did not remove the bond");
+}
+
+/* Old storage format: no cfg_version/cfg_flags, blob starts at enc_size. */
+static ZTEST(bt_keys_settings, test_load_old_format_bond)
+{
+	struct bt_keys stored;
+	const struct bt_keys *keys;
+	char name[BT_SETTINGS_KEY_MAX];
+	const size_t old_len = sizeof(struct bt_keys) - offsetof(struct bt_keys, enc_size);
+
+	migration_blob_init(&stored, &migration_peers[2], BT_KEYS_IRK, 0);
+	for (int i = 0; i < 16; i++) {
+		stored.irk.val[i] = 0xb0 + i;
+	}
+
+	zassert_ok(bt_settings_encode_key(name, sizeof(name), "keys", &migration_peers[2], NULL));
+	zassert_ok(settings_save_one(name, &stored.enc_size, old_len));
+	zassert_ok(settings_load_subtree(name));
+
+	keys = bt_keys_find(BT_KEYS_IRK, BT_ID_DEFAULT, &migration_peers[2]);
+	zassert_not_null(keys, "Old-format bond not restored");
+	zassert_mem_equal(keys->irk.val, stored.irk.val, 16, "IRK mismatch after old-format load");
+}
+
+/* Neither the current nor the compatible length: rejected. */
+static ZTEST(bt_keys_settings, test_load_rejects_invalid_length)
+{
+	struct bt_keys stored;
+	char name[BT_SETTINGS_KEY_MAX];
+
+	migration_blob_init(&stored, &migration_peers[3], BT_KEYS_IRK, 0);
+
+	zassert_ok(bt_settings_encode_key(name, sizeof(name), "keys", &migration_peers[3], NULL));
+	zassert_ok(settings_save_one(name, stored.storage_start, BT_KEYS_STORAGE_LEN - 1));
+	zassert_ok(settings_load_subtree(name));
+
+	zassert_is_null(bt_keys_find_addr(BT_ID_DEFAULT, &migration_peers[3]),
+			"Invalid-length entry must be rejected");
+}
+
+/* cfg_flags that do not match the current build: rejected. The toggle
+ * mismatches regardless of which flags the build enables.
+ */
+static ZTEST(bt_keys_settings, test_load_rejects_cfg_flags_mismatch)
+{
+	struct bt_keys stored;
+	char name[BT_SETTINGS_KEY_MAX];
+
+	migration_blob_init(&stored, &migration_peers[4], BT_KEYS_IRK, 0);
+	stored.cfg_flags[0] ^= BT_KEYS_CFG_SIGNING;
+
+	zassert_ok(bt_settings_encode_key(name, sizeof(name), "keys", &migration_peers[4], NULL));
+	zassert_ok(settings_save_one(name, stored.storage_start, BT_KEYS_STORAGE_LEN));
+	zassert_ok(settings_load_subtree(name));
+
+	zassert_is_null(bt_keys_find_addr(BT_ID_DEFAULT, &migration_peers[4]),
+			"cfg flags mismatch must be rejected");
+}
+
+/* A cfg_version other than the current one: rejected. */
+static ZTEST(bt_keys_settings, test_load_rejects_cfg_version_mismatch)
+{
+	struct bt_keys stored;
+	char name[BT_SETTINGS_KEY_MAX];
+
+	migration_blob_init(&stored, &migration_peers[6], BT_KEYS_IRK, 0);
+	stored.cfg_version = STORAGE_CFG_VERSION_CURRENT + 1;
+
+	zassert_ok(bt_settings_encode_key(name, sizeof(name), "keys", &migration_peers[6], NULL));
+	zassert_ok(settings_save_one(name, stored.storage_start, BT_KEYS_STORAGE_LEN));
+	zassert_ok(settings_load_subtree(name));
+
+	zassert_is_null(bt_keys_find_addr(BT_ID_DEFAULT, &migration_peers[6]),
+			"cfg version mismatch must be rejected");
+}
+
+/* Legacy authenticated flag without SC or OOB pairing: downgraded to
+ * unauthenticated on load. With SC set, it is retained.
+ */
+static ZTEST(bt_keys_settings, test_load_downgrades_unprovable_authentication)
+{
+	struct bt_keys stored;
+	const struct bt_keys *keys;
+	char name[BT_SETTINGS_KEY_MAX];
+
+	zassert_ok(bt_settings_encode_key(name, sizeof(name), "keys", &migration_peers[5], NULL));
+
+	migration_blob_init(&stored, &migration_peers[5], BT_KEYS_LTK, BT_KEYS_AUTHENTICATED);
+	zassert_ok(settings_save_one(name, stored.storage_start, BT_KEYS_STORAGE_LEN));
+	zassert_ok(settings_load_subtree(name));
+
+	keys = bt_keys_find(BT_KEYS_LTK, BT_ID_DEFAULT, &migration_peers[5]);
+	zassert_not_null(keys, "LTK bond not restored");
+	zassert_equal(keys->flags & BT_KEYS_AUTHENTICATED, 0U,
+		      "AUTHENTICATED without SC/OOB must be downgraded");
+
+	migration_blob_init(&stored, &migration_peers[5], BT_KEYS_LTK,
+			    BT_KEYS_AUTHENTICATED | BT_KEYS_SC);
+	zassert_ok(settings_save_one(name, stored.storage_start, BT_KEYS_STORAGE_LEN));
+	zassert_ok(settings_load_subtree(name));
+
+	keys = bt_keys_find(BT_KEYS_LTK, BT_ID_DEFAULT, &migration_peers[5]);
+	zassert_not_null(keys);
+	zassert_not_equal(keys->flags & BT_KEYS_AUTHENTICATED, 0U,
+			  "AUTHENTICATED with SC must be retained");
 }
