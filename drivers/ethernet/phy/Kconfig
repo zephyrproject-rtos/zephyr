@@ -76,6 +76,14 @@ config PHY_ADIN2111
 	help
 	  Enable ADIN2111 PHY driver.
 
+config PHY_MARVELL_88E151X
+	bool "Marvell 88E151x PHY Driver"
+	default y
+	depends on DT_HAS_MARVELL_88E151X_ENABLED
+	select MDIO
+	help
+	  Enable Marvell 88E151x Ethernet PHY Driver
+
 config PHY_MICROCHIP_KSZ8081
 	bool "Microchip KSZ8081 PHY Driver"
 	default y

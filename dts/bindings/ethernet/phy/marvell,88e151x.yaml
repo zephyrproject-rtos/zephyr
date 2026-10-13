@@ -1,0 +1,25 @@
+# Copyright (c) 2025 Altera Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Marvell 88E151x Ethernet PHY device
+
+compatible: "marvell,88e151x"
+
+include: ethernet-phy-common.yaml
+
+properties:
+  no-reset:
+    type: boolean
+    description: Do not reset the PHY during initialization
+  default-speeds:
+    default: ["10BASE Half-Duplex", "10BASE Full-Duplex", "100BASE Half-Duplex",
+              "100BASE Full-Duplex", "1000BASE Half-Duplex", "1000BASE Full-Duplex"]
+  phy-connection-type:
+    type: string
+    description: RGMII Tx/RX clock internally delayed
+    default: "rgmii"
+    enum:
+      - "rgmii"
+      - "rgmii-txid"
+      - "rgmii-rxid"
+      - "rgmii-id"

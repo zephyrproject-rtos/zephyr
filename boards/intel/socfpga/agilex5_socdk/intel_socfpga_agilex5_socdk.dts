@@ -74,7 +74,8 @@
 	csr-clock-indx = <4>;
 
 	phy0: phy@0 {
-		compatible = "ethernet-phy";
+		compatible = "marvell,88e151x";
 		reg = <0>;
+		phy-connection-type = "rgmii";
 	};
 };
