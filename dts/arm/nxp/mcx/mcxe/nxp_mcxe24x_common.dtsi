@@ -163,6 +163,7 @@
 			interrupt-names = "0-1", "2-3", "4-5", "6-7", "overflow";
 			clocks = <&pcc 0x98 KINETIS_PCC_SRC_FIRC_ASYNC>;
 			prescaler = <1>;
+			zephyr,disabling-power-states = <&stop &pstop1 &pstop2>;
 			status = "disabled";
 		};
 
@@ -277,6 +278,7 @@
 			clocks = <&pcc 0xe0 KINETIS_PCC_SRC_FIRC_ASYNC>;
 			clock-source = "external";
 			prescaler = <32>;
+			zephyr,disabling-power-states = <&stop &pstop1 &pstop2>;
 			status = "disabled";
 		};
 
@@ -287,6 +289,7 @@
 			interrupt-names = "0-1", "2-3", "4-5", "6-7", "overflow";
 			clocks = <&pcc 0xe4 KINETIS_PCC_SRC_FIRC_ASYNC>;
 			prescaler = <1>;
+			zephyr,disabling-power-states = <&stop &pstop1 &pstop2>;
 			status = "disabled";
 		};
 
@@ -297,6 +300,7 @@
 			interrupt-names = "0-1", "2-3", "4-5", "6-7", "overflow";
 			clocks = <&pcc 0xe8 KINETIS_PCC_SRC_FIRC_ASYNC>;
 			prescaler = <1>;
+			zephyr,disabling-power-states = <&stop &pstop1 &pstop2>;
 			status = "disabled";
 		};
 
@@ -623,6 +627,7 @@
 			interrupt-names = "0-1", "2-3", "4-5", "6-7", "overflow";
 			clocks = <&pcc 0x1b8 KINETIS_PCC_SRC_FIRC_ASYNC>;
 			prescaler = <1>;
+			zephyr,disabling-power-states = <&stop &pstop1 &pstop2>;
 			status = "disabled";
 		};
 
@@ -633,6 +638,7 @@
 			interrupt-names = "0-1", "2-3", "4-5", "6-7", "overflow";
 			clocks = <&pcc 0x1bc KINETIS_PCC_SRC_FIRC_ASYNC>;
 			prescaler = <1>;
+			zephyr,disabling-power-states = <&stop &pstop1 &pstop2>;
 			status = "disabled";
 		};
 
@@ -643,6 +649,7 @@
 			interrupt-names = "0-1", "2-3", "4-5", "6-7", "overflow";
 			clocks = <&pcc 0x1c0 KINETIS_PCC_SRC_FIRC_ASYNC>;
 			prescaler = <1>;
+			zephyr,disabling-power-states = <&stop &pstop1 &pstop2>;
 			status = "disabled";
 		};
 
@@ -653,6 +660,7 @@
 			interrupt-names = "0-1", "2-3", "4-5", "6-7", "overflow";
 			clocks = <&pcc 0x1c4 KINETIS_PCC_SRC_FIRC_ASYNC>;
 			prescaler = <1>;
+			zephyr,disabling-power-states = <&stop &pstop1 &pstop2>;
 			status = "disabled";
 		};
 

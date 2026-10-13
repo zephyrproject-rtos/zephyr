@@ -208,6 +208,7 @@
 			interrupts = <17 0>;
 			clocks = <&pcc 0xe0 KINETIS_PCC_SRC_FIRC_ASYNC>;
 			prescaler = <16>;
+			zephyr,disabling-power-states = <&stop &pstop1 &pstop2>;
 			status = "disabled";
 		};
 
@@ -217,6 +218,7 @@
 			interrupts = <18 0>;
 			clocks = <&pcc 0xe4 KINETIS_PCC_SRC_FIRC_ASYNC>;
 			prescaler = <16>;
+			zephyr,disabling-power-states = <&stop &pstop1 &pstop2>;
 			status = "disabled";
 		};
 
@@ -226,6 +228,7 @@
 			interrupts = <19 0>;
 			clocks = <&pcc 0xe8 KINETIS_PCC_SRC_FIRC_ASYNC>;
 			prescaler = <16>;
+			zephyr,disabling-power-states = <&stop &pstop1 &pstop2>;
 			status = "disabled";
 		};
 
