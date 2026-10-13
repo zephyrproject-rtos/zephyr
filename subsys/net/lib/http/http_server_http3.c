@@ -1229,8 +1229,14 @@ static int h3_send_425(struct http_client_ctx *client)
 /**
  * Send HTTP/3 405 Method Not Allowed response.
  */
-static int h3_send_405(struct http_client_ctx *client)
+static int h3_send_405(struct http_client_ctx *client, uint32_t allowed_methods)
 {
+	/* Only the server thread gets here, so the buffer can be static */
+	static char allow[HTTP_SERVER_ALLOW_VALUE_SIZE];
+	const struct http_header allow_header = {
+		.name = "allow",
+		.value = allow,
+	};
 	int ret;
 
 	/* The request is refused: a body that follows must not be passed to
@@ -1238,8 +1244,16 @@ static int h3_send_405(struct http_client_ctx *client)
 	 */
 	h3_forget_refused_request(client);
 
+	/* A 405 response has to say which methods the resource does support
+	 * (RFC 9110 ch. 15.5.6).
+	 */
+	ret = http_server_format_allow(allowed_methods, allow, sizeof(allow));
+	if (ret < 0) {
+		return ret;
+	}
+
 	ret = h3_send_headers_frame(client, HTTP_405_METHOD_NOT_ALLOWED,
-				    NULL, NULL, 0);
+				    NULL, &allow_header, 1);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1257,7 +1271,7 @@ static int h3_handle_static_resource(
 	int ret;
 
 	if (client->method != HTTP_GET) {
-		return h3_send_405(client);
+		return h3_send_405(client, BIT(HTTP_GET));
 	}
 
 	ret = h3_send_headers_frame(client, HTTP_200_OK,
@@ -1302,7 +1316,7 @@ static int h3_handle_static_fs_resource(
 	char tmp[64];
 
 	if (client->method != HTTP_GET) {
-		return h3_send_405(client);
+		return h3_send_405(client, BIT(HTTP_GET));
 	}
 
 	/* Get filename and content-type from URL */
@@ -1569,7 +1583,7 @@ static int h3_handle_dynamic_resource(
 	user_method = dynamic_detail->common.bitmask_of_supported_http_methods;
 
 	if (!(BIT(client->method) & user_method)) {
-		return h3_send_405(client);
+		return h3_send_405(client, user_method);
 	}
 
 	if (dynamic_detail->holder != NULL &&

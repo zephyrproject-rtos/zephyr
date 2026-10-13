@@ -1873,6 +1873,46 @@ void http_server_get_content_type_from_extension(char *url, char *content_type,
 	}
 }
 
+/**
+ * Write the value of an Allow header field (RFC 9110 ch. 10.2.1) for a set of
+ * methods, for example "GET, POST". A 405 response has to carry this field
+ * with the methods the target resource supports (RFC 9110 ch. 15.5.6).
+ *
+ * @param methods Bitmask of the supported methods, BIT(HTTP_GET) and so on.
+ * @param buf     Buffer for the NUL terminated value.
+ * @param len     Size of the buffer.
+ *
+ * @return Length of the value, or -ENOBUFS if it does not fit.
+ */
+int http_server_format_allow(uint32_t methods, char *buf, size_t len)
+{
+	size_t pos = 0;
+
+	if (len == 0) {
+		return -ENOBUFS;
+	}
+
+	buf[0] = '\0';
+
+	for (uint32_t method = 0; method < 32U; method++) {
+		int ret;
+
+		if ((methods & BIT(method)) == 0U) {
+			continue;
+		}
+
+		ret = snprintk(buf + pos, len - pos, "%s%s", pos > 0 ? ", " : "",
+			       http_method_str((enum http_method)method));
+		if (ret < 0 || (size_t)ret >= len - pos) {
+			return -ENOBUFS;
+		}
+
+		pos += ret;
+	}
+
+	return (int)pos;
+}
+
 int http_server_sendall(struct http_client_ctx *client, const void *buf, size_t len)
 {
 	while (len) {

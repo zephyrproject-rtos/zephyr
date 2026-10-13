@@ -341,13 +341,27 @@ static int send_http2_404(struct http_client_ctx *client,
 }
 
 static int send_http2_405(struct http_client_ctx *client,
-			  struct http2_frame *frame)
+			  struct http2_frame *frame, uint32_t allowed_methods)
 {
+	/* Only the server thread gets here, so the buffer can be static */
+	static char allow[HTTP_SERVER_ALLOW_VALUE_SIZE];
+	const struct http_header allow_header = {
+		.name = "allow",
+		.value = allow,
+	};
 	int ret;
+
+	/* A 405 response has to say which methods the resource does support
+	 * (RFC 9110 ch. 15.5.6).
+	 */
+	ret = http_server_format_allow(allowed_methods, allow, sizeof(allow));
+	if (ret < 0) {
+		return ret;
+	}
 
 	ret = send_headers_frame(client, HTTP_405_METHOD_NOT_ALLOWED,
 				 frame->stream_identifier, NULL,
-				 HTTP2_FLAG_END_STREAM, NULL, 0);
+				 HTTP2_FLAG_END_STREAM, &allow_header, 1);
 	if (ret < 0) {
 		LOG_DBG("Cannot write to socket (%d)", ret);
 		return ret;
@@ -419,7 +433,7 @@ static int handle_http2_static_resource(
 	int ret;
 
 	if (client->method != HTTP_GET) {
-		return send_http2_405(client, frame);
+		return send_http2_405(client, frame, BIT(HTTP_GET));
 	}
 
 	if (client->current_stream == NULL) {
@@ -473,7 +487,7 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 	char tmp[64];
 
 	if (client->method != HTTP_GET) {
-		return send_http2_405(client, frame);
+		return send_http2_405(client, frame, BIT(HTTP_GET));
 	}
 
 	if (client->current_stream == NULL) {
@@ -808,7 +822,7 @@ static int handle_http2_dynamic_resource(
 	user_method = dynamic_detail->common.bitmask_of_supported_http_methods;
 
 	if (!(BIT(client->method) & user_method)) {
-		return send_http2_405(client, frame);
+		return send_http2_405(client, frame, user_method);
 	}
 
 	if (dynamic_detail->holder != NULL && dynamic_detail->holder != client) {
