@@ -30,9 +30,12 @@ LOG_MODULE_REGISTER(ti_ecap);
 #define TI_ECAP_SYSCTL_PWREN_KEY (0x26U << 24)
 #endif
 struct ti_ecap_regs {
-	uint8_t RESERVED_1[0x10];        /**< Reserved, offset: 0x00 - 0x10 */
-	volatile uint32_t CAP3;          /**< Capture-3 Register, offset: 0x10 */
-	volatile uint32_t CAP4;          /**< Capture-4 Register, offset: 0x14 */
+	volatile uint32_t TSCTR;         /**< Time-Stamp Counter, offset: 0x00 */
+	volatile uint32_t CTRPHS;        /**< Counter Phase Offset, offset: 0x04 */
+	volatile uint32_t CAP1;          /**< Capture-1 / APWM period, offset: 0x08 */
+	volatile uint32_t CAP2;          /**< Capture-2 / APWM compare, offset: 0x0C */
+	volatile uint32_t CAP3;          /**< Capture-3 / APWM shadow period, offset: 0x10 */
+	volatile uint32_t CAP4;          /**< Capture-4 / APWM shadow compare, offset: 0x14 */
 	uint8_t RESERVED_2[0xC];         /**< Reserved, offset: 0x18 - 0x24 */
 	volatile uint32_t ECCTL0;        /**< Input mux select, AM13E-only, offset: 0x24 */
 	volatile uint32_t ECCTL;         /**< ECAP Control Register, offset: 0x28 */
@@ -127,8 +130,9 @@ static int ti_ecap_set_cycles(const struct device *dev, uint32_t channel, uint32
 
 	ecctl = regs->ECCTL;
 
-	/* enable apwm and counter */
-	ecctl |= (TI_ECAP_ECCTL_TSCNTSTP | TI_ECAP_ECCTL_CAP_APWM);
+	/* Stop the counter while reconfiguring APWM (matches TI driverlib). */
+	ecctl &= ~TI_ECAP_ECCTL_TSCNTSTP;
+	ecctl |= TI_ECAP_ECCTL_CAP_APWM;
 
 	/* polarity */
 	if ((flags & PWM_POLARITY_MASK) == PWM_POLARITY_NORMAL) {
@@ -137,12 +141,21 @@ static int ti_ecap_set_cycles(const struct device *dev, uint32_t channel, uint32
 		ecctl |= TI_ECAP_ECCTL_APWMPOL;
 	}
 
-	/* update shadow period and shadow cmp registers in apwm mode */
+	regs->ECCTL = ecctl;
+
+	/*
+	 * APWM uses CAP1/CAP2 as the active period/compare registers. CAP3/CAP4
+	 * are shadows that load on period match — writing only the shadows (as
+	 * this driver previously did) leaves CAP1 at reset 0, so no waveform is
+	 * generated. Program both active and shadow like DL_ECAP_setAPWM*.
+	 */
+	regs->CAP1 = period_cycles;
+	regs->CAP2 = pulse_cycles;
 	regs->CAP3 = period_cycles;
 	regs->CAP4 = pulse_cycles;
 
-	/* update ecctl */
-	regs->ECCTL = ecctl;
+	regs->TSCTR = 0;
+	regs->ECCTL |= TI_ECAP_ECCTL_TSCNTSTP;
 
 	return 0;
 }
