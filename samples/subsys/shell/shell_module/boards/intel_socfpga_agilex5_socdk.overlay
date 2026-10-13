@@ -35,3 +35,16 @@
 &sdmmc {
 	status = "okay";
 };
+
+&xgmac2 {
+	local-mac-address = [06 00 00 00 00 02];
+	status = "okay";
+};
+
+&mdio2 {
+	status = "okay";
+
+	phy0: phy@0 {
+		status = "okay";
+	};
+};

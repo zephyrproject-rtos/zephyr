@@ -9,3 +9,9 @@ config MAX_THREAD_BYTES
 
 config NOCACHE_MEMORY
 	default y
+
+configdefault ETH_DRIVER
+	default y
+
+configdefault MDIO_INIT_PRIORITY
+	default 50
