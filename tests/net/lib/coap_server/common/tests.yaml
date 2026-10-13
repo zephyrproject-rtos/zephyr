@@ -9,6 +9,7 @@ common:
     - tls
   integration_platforms:
     - native_sim
+    - native_sim/native/64
 
 tests:
   net.coap.server.secure: {}
