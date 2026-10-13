@@ -126,6 +126,7 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 	((IBI_QUEUE_IBI_ADDR(x) == I3C_HOT_JOIN_ADDR) && !IBI_QUEUE_IBI_RNW(x))
 #define IBI_TYPE_SIRQ(x) \
 	((IBI_QUEUE_IBI_ADDR(x) != I3C_HOT_JOIN_ADDR) && IBI_QUEUE_IBI_RNW(x))
+#define IBI_QUEUE_STATUS_NACKED(x) ((IBI_QUEUE_STATUS_IBI_STS(x) & BIT(3)) != 0U)
 
 #define QUEUE_THLD_CTRL               0x1c
 #define QUEUE_THLD_CTRL_IBI_STS_MASK  GENMASK(31, 24)
@@ -1644,7 +1645,7 @@ static void dw_i3c_handle_tir(const struct device *dev, uint32_t ibi_status, boo
 
 static void dw_i3c_handle_hj(const struct device *dev, uint32_t ibi_status)
 {
-	if (IBI_QUEUE_STATUS_IBI_STS(ibi_status) & BIT(3)) {
+	if (IBI_QUEUE_STATUS_NACKED(ibi_status)) {
 		LOG_DBG("%s: NAK for HJ", dev->name);
 		return;
 	}
@@ -1658,7 +1659,7 @@ static void dw_i3c_handle_mr(const struct device *dev, uint32_t ibi_status)
 {
 	uint8_t addr = IBI_QUEUE_IBI_ADDR(ibi_status);
 
-	if (IBI_QUEUE_STATUS_IBI_STS(ibi_status) & BIT(3)) {
+	if (IBI_QUEUE_STATUS_NACKED(ibi_status)) {
 		LOG_DBG("%s: NAK for MR from 0x%02x", dev->name, addr);
 		return;
 	}
