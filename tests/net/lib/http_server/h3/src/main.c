@@ -2169,6 +2169,71 @@ ZTEST(server_h3_tests, test_h3_unknown_control_frame_type_is_ignored)
 	send_get_and_expect_static(false);
 }
 
+/* A frame of a type reserved for exercising the rule that unknown frame
+ * types are ignored, with one byte of payload.
+ */
+static const uint8_t unknown_h3_frame[] = { 0x21, 0x01, 0xaa };
+
+ZTEST(server_h3_tests, test_h3_unknown_frame_before_request_is_ignored)
+{
+	uint8_t headers[64];
+	size_t headers_len;
+	int stream_fd;
+
+	start_h3_session(false);
+
+	/* The unknown frame reaches the server on its own, the request
+	 * follows later on the same stream and must still be answered.
+	 */
+	stream_fd = open_client_stream(QUIC_STREAM_BIDIRECTIONAL);
+	send_all(stream_fd, unknown_h3_frame, sizeof(unknown_h3_frame));
+	k_msleep(50);
+
+	headers_len = build_headers_frame(headers, HTTP_GET, "/");
+	send_all(stream_fd, headers, headers_len);
+	expect_static_get_response(stream_fd);
+}
+
+ZTEST(server_h3_tests, test_h3_unknown_frame_inside_request_body_is_ignored)
+{
+	static const uint8_t payload[] = TEST_DYNAMIC_POST_PAYLOAD;
+	uint8_t headers[32];
+	uint8_t data_frame[64];
+	size_t headers_len;
+	size_t data_len;
+	int stream_fd;
+	int ret;
+
+	start_h3_session(false);
+
+	stream_fd = open_client_stream(QUIC_STREAM_BIDIRECTIONAL);
+	headers_len = build_headers_frame(headers, HTTP_POST, "/dynamic");
+	send_all(stream_fd, headers, headers_len);
+	k_msleep(50);
+
+	/* An unknown frame on its own between the headers and the body
+	 * must not end the request.
+	 */
+	send_all(stream_fd, unknown_h3_frame, sizeof(unknown_h3_frame));
+	k_msleep(50);
+
+	data_len = build_data_frame(data_frame, payload, sizeof(payload) - 1);
+	send_all(stream_fd, data_frame, data_len);
+
+	shutdown_stream_send(stream_fd);
+	expect_headers_only_response(stream_fd);
+
+	zassert_true(dynamic_complete, "Dynamic callback did not observe completion");
+	zassert_equal(dynamic_bytes_received, sizeof(payload) - 1,
+		      "Dynamic callback received wrong byte count");
+	zassert_mem_equal(dynamic_payload, payload, sizeof(payload) - 1,
+			  "Dynamic callback received wrong payload");
+
+	ret = zsock_close(stream_fd);
+	zassert_ok(ret, "Failed to close POST stream (%d)", errno);
+	untrack_stream_fd(stream_fd);
+}
+
 ZTEST_SUITE(server_h3_function_tests, NULL, NULL, NULL, NULL, NULL);
 ZTEST_SUITE(server_h3_tests, NULL, http_server_h3_setup,
 	    http_server_h3_before, http_server_h3_after, http_server_h3_teardown);
