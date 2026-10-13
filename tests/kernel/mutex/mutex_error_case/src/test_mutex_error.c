@@ -30,6 +30,7 @@ enum {
 	MUTEX_LOCK_INVALID_OBJ,
 	MUTEX_UNLOCK_NULL,
 	MUTEX_UNLOCK_INVALID_OBJ,
+	MUTEX_REINIT_LOCKED,
 	NOT_DEFINE
 } neg_case;
 
@@ -81,6 +82,14 @@ static void tThread_entry_negative(void *p1, void *p2, void *p3)
 	case MUTEX_UNLOCK_INVALID_OBJ:
 		ztest_set_fault_valid(true);
 		k_mutex_unlock((struct k_mutex *)&queue);
+		break;
+	case MUTEX_REINIT_LOCKED:
+		zassert_equal(k_mutex_init(&mutex), 0);
+		/* Re-initializing an unlocked mutex is allowed */
+		zassert_equal(k_mutex_init(&mutex), 0);
+		zassert_equal(k_mutex_lock(&mutex, K_NO_WAIT), 0);
+		ztest_set_fault_valid(true);
+		k_mutex_init(&mutex);
 		break;
 	default:
 		TC_PRINT("should not be here!\n");
@@ -206,6 +215,26 @@ ZTEST_USER(mutex_api_error, test_mutex_unlock_null)
 ZTEST_USER(mutex_api_error, test_mutex_unlock_invalid_obj)
 {
 	create_negative_test_thread(MUTEX_UNLOCK_INVALID_OBJ);
+}
+
+/**
+ * @brief Test re-initializing a locked mutex from user mode
+ *
+ * @details Initialize a mutex twice from user mode while it is unlocked,
+ * which succeeds, then lock it and initialize it again, which must raise
+ * a kernel oops instead of resetting the owned mutex.
+ *
+ * @ingroup kernel_mutex_tests
+ *
+ * @see k_mutex_init()
+ */
+ZTEST_USER(mutex_api_error, test_mutex_reinit_locked)
+{
+	if (!k_is_user_context()) {
+		ztest_test_skip();
+	}
+
+	create_negative_test_thread(MUTEX_REINIT_LOCKED);
 }
 
 static void *mutex_api_tests_setup(void)
