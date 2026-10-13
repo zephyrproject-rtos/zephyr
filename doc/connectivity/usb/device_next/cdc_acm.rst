@@ -131,7 +131,13 @@ Simplified, application interrupt handler should look something like:
 
 	static void interrupt_handler(const struct device *dev, void *user_data)
 	{
-		while (uart_irq_update(dev) && uart_irq_is_pending(dev)) {
+		while (true) {
+			uart_irq_update(dev);
+
+			if (uart_irq_is_pending(dev) <= 0) {
+				break;
+			}
+
 			if (uart_irq_rx_ready(dev)) {
 				int len;
 				int n;

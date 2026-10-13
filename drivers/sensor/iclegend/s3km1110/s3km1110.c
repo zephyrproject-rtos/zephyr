@@ -82,11 +82,9 @@ static void s3km1110_uart_isr(const struct device *uart_dev, void *user_data)
 	struct s3km1110_data *data = user_data;
 	uint8_t byte;
 
-	if (!uart_irq_update(uart_dev)) {
-		return;
-	}
+	uart_irq_update(uart_dev);
 
-	if (!uart_irq_rx_ready(uart_dev)) {
+	if (uart_irq_rx_ready(uart_dev) <= 0) {
 		return;
 	}
 

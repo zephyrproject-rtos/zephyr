@@ -45,11 +45,9 @@ void serial_cb(const struct device *dev, void *user_data)
 {
 	uint8_t c;
 
-	if (!uart_irq_update(default_uart)) {
-		return;
-	}
+	uart_irq_update(default_uart);
 
-	if (!uart_irq_rx_ready(default_uart)) {
+	if (uart_irq_rx_ready(default_uart) <= 0) {
 		return;
 	}
 

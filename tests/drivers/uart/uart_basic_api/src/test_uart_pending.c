@@ -63,7 +63,13 @@ static void uart_pending_callback(const struct device *dev, void *user_data)
 	 * so, in that case, the test fails after MAX_NUM_TRIES attempts.
 	 */
 	status = PASSED;
-	while (uart_irq_update(dev) && uart_irq_is_pending(dev)) {
+	while (true) {
+		uart_irq_update(dev);
+
+		if (uart_irq_is_pending(dev) <= 0) {
+			break;
+		}
+
 		if (uart_irq_rx_ready(dev) == NOT_READY) {
 			if (num_tries < MAX_NUM_TRIES) {
 				num_tries++;
@@ -74,7 +80,6 @@ static void uart_pending_callback(const struct device *dev, void *user_data)
 				 * always returned 1 in spite of having no more
 				 * RX data to be read from FIFO and no more TX
 				 * data in FIFO to be sent via serial line.
-				 * N.B. uart_irq_update() always returns 1, thus
 				 * uart_irq_is_pending() got stuck without any
 				 * real pending interrupt, i.e. no more RX and
 				 * TX data to be popped or pushed from/to FIFO.

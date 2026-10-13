@@ -242,12 +242,14 @@ static void sbus_uart_isr(const struct device *uart_dev, void *user_data)
 		return;
 	}
 
-	if (!uart_irq_update(uart_dev)) {
-		LOG_DBG("Unable to start processing interrupts");
-		return;
-	}
+	while (data->xfer_bytes < SBUS_FRAME_LEN) {
 
-	while (uart_irq_rx_ready(uart_dev) && data->xfer_bytes < SBUS_FRAME_LEN) {
+		uart_irq_update(uart_dev);
+
+		if (uart_irq_rx_ready(uart_dev) <= 0) {
+			break;
+		}
+
 		if (data->in_sync) {
 			if (data->xfer_bytes == 0) {
 				data->last_rx_time = k_uptime_get_32();

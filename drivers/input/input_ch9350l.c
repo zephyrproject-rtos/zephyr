@@ -279,7 +279,7 @@ static void ch9350l_input_callback(const struct device *dev_uart, void *user_dat
 	uint8_t frame_size;
 
 	uart_irq_update(dev_uart);
-	if (!uart_irq_rx_ready(dev_uart)) {
+	if (uart_irq_rx_ready(dev_uart) <= 0) {
 		return;
 	}
 
