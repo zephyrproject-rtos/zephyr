@@ -1,5 +1,5 @@
-identifier: adp_xc7k/ae350/clic
-name: Andes ADP-XC7K AE350 CLIC
+identifier: adp_xc7k/ae350_23/clic
+name: Andes ADP-XC7K AE350 (23 series) CLIC
 type: mcu
 arch: riscv
 toolchain:

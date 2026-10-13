@@ -133,3 +133,9 @@ set(tang_mega_138k_pro_dock/ae350_DEPRECATED
 set(tang_mega_138k_pro_dock/ae350/demo_DEPRECATED
     tang_mega_138k_pro_dock/ae350_25/demo
 )
+set(adp_xc7k/ae350_DEPRECATED
+    adp_xc7k/ae350_25
+)
+set(adp_xc7k/ae350/clic_DEPRECATED
+    adp_xc7k/ae350_23/clic
+)

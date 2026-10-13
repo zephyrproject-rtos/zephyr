@@ -1,5 +1,5 @@
-identifier: adp_xc7k/ae350
-name: Andes ADP-XC7K AE350
+identifier: adp_xc7k/ae350_25
+name: Andes ADP-XC7K AE350 (25 series)
 type: mcu
 arch: riscv
 toolchain:
