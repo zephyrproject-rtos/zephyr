@@ -39,7 +39,6 @@
 
 #include "conn_internal.h"
 #include "common/bt_str.h"
-#include "common/rpa.h"
 #include "crypto/bt_crypto.h"
 #include "ecc.h"
 #include "hci_core.h"
@@ -1535,7 +1534,7 @@ static void convert_to_id_on_irk_match(struct bt_conn *conn, void *data)
 		return;
 	}
 
-	if (bt_rpa_irk_matches(keys->irk.val, &conn->le.dst.a)) {
+	if (bt_addr_matches_irk(&conn->le.dst.a, keys->irk.val)) {
 		if (conn->le.keys != NULL && conn->le.keys != keys) {
 			bt_keys_clear(conn->le.keys);
 		}
