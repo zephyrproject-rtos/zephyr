@@ -518,7 +518,8 @@ static int quic_send_stop_sending(struct quic_endpoint *ep,
 }
 
 static int handle_stop_sending_frame(struct quic_endpoint *ep,
-				     const uint8_t *buf, size_t len)
+				     const uint8_t *buf, size_t len,
+				     struct quic_reply_budget *budget)
 {
 	uint64_t stream_id, error_code;
 	struct quic_stream *stream;
@@ -550,9 +551,21 @@ static int handle_stop_sending_frame(struct quic_endpoint *ep,
 	 *
 	 * Re-use the peer's error code so the HTTP layer (and any logging)
 	 * can see why the stream was reset.
+	 *
+	 * Every stream is answered, but one payload can carry a great many
+	 * STOP_SENDING frames and the RESET_STREAM is a packet of its own.
+	 * The first frame for a stream is always answered, which is bounded
+	 * by the number of streams. A frame for a stream that was reset
+	 * already is a repeat, sent by a peer that did not get our
+	 * RESET_STREAM: it is answered again, but out of the reply budget of
+	 * the payload.
 	 */
 	stream = quic_find_stream_by_id(ep, stream_id);
-	if (stream != NULL) {
+	if (stream != NULL && stream->tx_reset) {
+		if (quic_reply_budget_take(budget)) {
+			quic_send_reset_stream(ep, stream_id, error_code);
+		}
+	} else if (stream != NULL) {
 		/* Send RESET_STREAM, our TX side is being abandoned */
 		quic_send_reset_stream(ep, stream_id, error_code);
 
@@ -1977,7 +1990,8 @@ static int handle_1rtt_packet(struct quic_pkt *pkt)
 			break;
 
 		case QUIC_FRAME_TYPE_STOP_SENDING:
-			ret = handle_stop_sending_frame(ep, &buf[pos], len - pos);
+			ret = handle_stop_sending_frame(ep, &buf[pos], len - pos,
+							&budget);
 			if (ret < 0) {
 				ret = quic_handle_frame_error(ep, frame_type, ret);
 				if (ret == -EPROTO) {
@@ -2548,7 +2562,8 @@ ZTESTABLE_STATIC int handle_crypto_level_packet(struct quic_endpoint *ep,
 
 			case QUIC_FRAME_TYPE_STOP_SENDING:
 				ret = handle_stop_sending_frame(ep, &payload[pos],
-								payload_len - pos);
+								payload_len - pos,
+								&budget);
 				if (ret < 0) {
 					ret = quic_handle_frame_error(ep, frame_type, ret);
 					return ret;
