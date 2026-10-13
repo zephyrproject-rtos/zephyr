@@ -623,7 +623,6 @@ static void eth_dwc_xgmac_rx_irq_work(const struct device *dev, uint32_t dma_chn
 								RX_FRAGS_PER_DESC));
 
 	rx_desc = (struct xgmac_dma_rx_desc *)(fisrt_rx_desc + rx_desc_meta->next_to_read);
-	arch_dcache_invd_range(rx_desc, sizeof(rx_desc));
 	rx_desc_data = *(rx_desc);
 	while (!(rx_desc_data.rdes3 & XGMAC_RDES3_OWN)) {
 		if (rx_desc_data.rdes3 & XGMAC_RDES3_FD) {
@@ -643,7 +642,6 @@ static void eth_dwc_xgmac_rx_irq_work(const struct device *dev, uint32_t dma_chn
 		}
 		get_and_refill_desc_buffs(rx_desc, rx_desc_meta->next_to_read, rx_buffs, &buff1,
 					  &buff2);
-		arch_dcache_flush_range(rx_desc, sizeof(rx_desc));
 		if (rx_desc_meta->rx_pkt != NULL) {
 			if (rx_desc_data.rdes3 & XGMAC_RDES3_LD) {
 				LOG_DBG("%s: received LD buffer. descriptor indx = %d", dev->name,
@@ -695,7 +693,6 @@ static void eth_dwc_xgmac_rx_irq_work(const struct device *dev, uint32_t dma_chn
 		rx_desc_meta->next_to_read =
 			((rx_desc_meta->next_to_read + 1) % dma_chnl_cfg->rdrl);
 		rx_desc = (struct xgmac_dma_rx_desc *)(fisrt_rx_desc + rx_desc_meta->next_to_read);
-		arch_dcache_invd_range(rx_desc, sizeof(rx_desc));
 		rx_desc_data = *(rx_desc);
 	}
 }
@@ -727,7 +724,6 @@ static void eth_dwc_xgmac_tx_irq_work(const struct device *dev, uint32_t dma_chn
 	for (; desc_idx != tx_desc_meta->next_to_use;
 	     desc_idx = ((desc_idx + 1) % dma_chnl_cfg->tdrl)) {
 		tx_desc = (struct xgmac_dma_tx_desc *)(fisrt_tx_desc + desc_idx);
-		arch_dcache_invd_range(tx_desc, sizeof(tx_desc));
 		if (!(tx_desc->tdes3 & XGMAC_TDES3_OWN)) {
 			/* If LD bit of this descriptor set then unreferance the TX packet */
 			if (tx_desc->tdes3 & XGMAC_TDES3_LD) {
@@ -745,7 +741,6 @@ static void eth_dwc_xgmac_tx_irq_work(const struct device *dev, uint32_t dma_chn
 			tx_desc->tdes1 = 0u;
 			tx_desc->tdes2 = 0u;
 			tx_desc->tdes3 = 0u;
-			arch_dcache_flush_range(tx_desc, sizeof(tx_desc));
 			k_sem_give(&tx_desc_meta->free_tx_descs_sem);
 		} else {
 			break;
@@ -1087,7 +1082,6 @@ void eth_dwc_xgmac_prefill_rx_desc(const struct device *dev)
 					dev->name, desc_id);
 				break;
 			}
-			arch_dcache_invd_range(rx_desc, sizeof(rx_desc));
 			rx_desc->rdes0 =
 				POINTER_TO_UINT(((struct net_buf *)rx_buffs[RX_FRAG_ONE])->data);
 			rx_desc->rdes1 =
@@ -1109,7 +1103,6 @@ void eth_dwc_xgmac_prefill_rx_desc(const struct device *dev)
 				XGMAC_RDES3_OWN | XGMAC_RDES3_IOC |
 				(POINTER_TO_UINT(((struct net_buf *)rx_buffs[RX_FRAG_TWO])->data) >>
 				 32u);
-			arch_dcache_flush_range(rx_desc, sizeof(rx_desc));
 			rx_desc_meta->desc_tail_addr = (mem_addr_t)(rx_desc + 1);
 		}
 		reg_addr = (ioaddr + XGMAC_DMA_CHNLX_BASE_ADDR_OFFSET(dma_chnl) +
@@ -1396,7 +1389,6 @@ static int eth_dwc_xgmac_send(const struct device *dev, struct net_pkt *pkt)
 		context.tx_desc = (struct xgmac_dma_tx_desc *)(dev_data->dma_tx_desc +
 							       (context.q_id * dma_ch_cfg->tdrl) +
 							       context.pkt_desc_id);
-		arch_dcache_invd_range(context.tx_desc, sizeof(context.tx_desc));
 		arch_dcache_flush_range(frag->data, frag->len);
 		context.tx_desc->tdes0 = (uint32_t)POINTER_TO_UINT(frag->data);
 		context.tx_desc->tdes1 = (uint32_t)(POINTER_TO_UINT(frag->data) >> 32u);
@@ -1420,7 +1412,6 @@ static int eth_dwc_xgmac_send(const struct device *dev, struct net_pkt *pkt)
 
 		context.tx_desc->tdes2 = tdes2_flgs;
 		context.tx_desc->tdes3 = tdes3_flgs;
-		arch_dcache_flush_range(context.tx_desc, sizeof(context.tx_desc));
 		context.pkt_desc_id = ((context.pkt_desc_id + 1) % dma_ch_cfg->tdrl);
 	}
 	context.descmeta->next_to_use = context.pkt_desc_id;
@@ -1654,10 +1645,12 @@ static DEVICE_API(ethernet, eth_dwc_xgmac_apis) = {
 	mem_addr_t eth_dwc_xgmac##port##_tx_pkts[CHLCNT(port)][MAX_TX_RING(port)];                 \
 	mem_addr_t eth_dwc_xgmac##port##_rx_buffs[CHLCNT(port)][MAX_RX_RING(port)]                 \
 						 [RX_FRAGS_PER_DESC];                              \
-	static struct xgmac_dma_rx_desc                                                            \
-		eth_dwc_xgmac##port##_rx_desc[CHLCNT(port)][MAX_RX_RING(port)] __aligned(32);      \
-	static struct xgmac_dma_tx_desc                                                            \
-		eth_dwc_xgmac##port##_tx_desc[CHLCNT(port)][MAX_TX_RING(port)] __aligned(32);      \
+	static struct xgmac_dma_rx_desc eth_dwc_xgmac##port##_rx_desc[CHLCNT(port)]                \
+								     [MAX_RX_RING(port)]           \
+		__aligned(32) __nocache;                                                           \
+	static struct xgmac_dma_tx_desc eth_dwc_xgmac##port##_tx_desc[CHLCNT(port)]                \
+								     [MAX_TX_RING(port)]           \
+		__aligned(32) __nocache;                                                           \
 	static struct xgmac_dma_rx_desc_meta eth_dwc_xgmac##port##_rx_desc_meta[CHLCNT(port)];     \
 	static struct xgmac_dma_tx_desc_meta eth_dwc_xgmac##port##_tx_desc_meta[CHLCNT(port)];
 

@@ -6,3 +6,6 @@ config HAS_COVERAGE_SUPPORT
 
 config MAX_THREAD_BYTES
 	default 5
+
+config NOCACHE_MEMORY
+	default y
