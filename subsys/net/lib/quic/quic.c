@@ -1009,6 +1009,17 @@ ZTESTABLE_STATIC void quic_crypto_context_destroy(struct quic_crypto_context *ct
 }
 
 /*
+ * Discard the keys of one encryption level for the rest of the connection
+ * (RFC 9001 ch. 4.9). Unlike a plain destroy this is remembered, so the
+ * level is not set up again and late packets for it are dropped.
+ */
+static void quic_crypto_context_discard(struct quic_crypto_context *ctx)
+{
+	quic_crypto_context_destroy(ctx);
+	ctx->discarded = true;
+}
+
+/*
  * Destroy the key update state: the previous- and next-generation RX keys
  * and the current traffic secrets, which could otherwise be used to derive
  * every future generation.
@@ -4038,6 +4049,24 @@ static void quic_recovery_discard_pn_space(struct quic_endpoint *ep, int pn_spac
 	 */
 	quic_reset_pto_timer_locked(ep);
 	k_mutex_unlock(&ep->recovery.lock);
+}
+
+/*
+ * Discard the keys of the Initial or the Handshake level for the rest of
+ * the connection (RFC 9001 ch. 4.9), together with the loss recovery state
+ * of the packets sent with them. Those packets can no longer be
+ * acknowledged, so they must not stay counted as in flight or keep the probe
+ * timer armed (RFC 9002 ch. 6.4).
+ */
+ZTESTABLE_STATIC void quic_endpoint_discard_keys(struct quic_endpoint *ep,
+						 enum quic_secret_level level)
+{
+	__ASSERT_NO_MSG(level == QUIC_SECRET_LEVEL_INITIAL ||
+			level == QUIC_SECRET_LEVEL_HANDSHAKE);
+
+	quic_crypto_context_discard(level == QUIC_SECRET_LEVEL_INITIAL ?
+				    &ep->crypto.initial : &ep->crypto.handshake);
+	quic_recovery_discard_pn_space(ep, level_to_pn_space(level));
 }
 
 ZTESTABLE_STATIC void quic_recovery_init(struct quic_endpoint *ep)
@@ -7151,6 +7180,14 @@ static int quic_handshake_complete(struct quic_endpoint *ep)
 	quic_recovery_discard_pn_space(ep, level_to_pn_space(QUIC_SECRET_LEVEL_INITIAL));
 	quic_recovery_discard_pn_space(ep, level_to_pn_space(QUIC_SECRET_LEVEL_HANDSHAKE));
 
+	if (ep->handshake_confirmed) {
+		/* RFC 9001 ch. 4.9.2: the server has confirmed the handshake
+		 * and has no further use for the Handshake keys. The client
+		 * does the same when it receives HANDSHAKE_DONE.
+		 */
+		quic_endpoint_discard_keys(ep, QUIC_SECRET_LEVEL_HANDSHAKE);
+	}
+
 	quic_endpoint_handshake_complete(ep);
 
 	if (IS_ENABLED(CONFIG_QUIC_0RTT) && !ep->is_server &&
@@ -7987,6 +8024,18 @@ static bool process_long_header_msg(struct quic_pkt *pkt)
 		NET_HEXDUMP_DBG(buf, pkt->total_len, "Msg:");
 	}
 
+	if ((ptype == QUIC_PACKET_TYPE_INITIAL && ep->crypto.initial.discarded) ||
+	    (ptype == QUIC_PACKET_TYPE_HANDSHAKE && ep->crypto.handshake.discarded)) {
+		/* The keys of this level are gone (RFC 9001 ch. 4.9). A late
+		 * or retransmitted packet cannot be read any more and is of
+		 * no use, drop it and leave the connection alone.
+		 */
+		NET_DBG("[EP:%p/%d] Dropping packet for a discarded key level",
+			ep, quic_get_by_ep(ep));
+		QUIC_EP_STAT_INC(ep, drop_rx);
+		goto fail;
+	}
+
 	if (ptype == QUIC_PACKET_TYPE_INITIAL) {
 		if (ep->crypto.initial.rx.hp.key_id == 0) {
 			if (!quic_conn_init_setup(ep,
@@ -8075,6 +8124,15 @@ static bool process_long_header_msg(struct quic_pkt *pkt)
 	if (ret != 0) {
 		NET_DBG("[EP:%p/%d] Packet decryption failed (%d)", ep,
 			quic_get_by_ep(ep), ret);
+
+		if ((ptype == QUIC_PACKET_TYPE_INITIAL && ep->crypto.initial.discarded) ||
+		    (ptype == QUIC_PACKET_TYPE_HANDSHAKE && ep->crypto.handshake.discarded)) {
+			/* The keys were discarded while this packet was being
+			 * handled, which is not an error of the connection.
+			 */
+			goto fail;
+		}
+
 		goto free_ep;
 	}
 

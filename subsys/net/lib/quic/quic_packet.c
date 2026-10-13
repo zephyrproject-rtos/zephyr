@@ -2184,6 +2184,9 @@ static int handle_1rtt_packet(struct quic_pkt *pkt)
 			if (!ep->is_server) {
 				ep->crypto.tls.state = QUIC_TLS_STATE_CONNECTED;
 				ep->handshake_confirmed = true;
+
+				/* RFC 9001 ch. 4.9.2 */
+				quic_endpoint_discard_keys(ep, QUIC_SECRET_LEVEL_HANDSHAKE);
 			}
 
 			break;
@@ -2443,6 +2446,10 @@ ZTESTABLE_STATIC int handle_crypto_level_packet(struct quic_endpoint *ep,
 						level_to_pn_space(QUIC_SECRET_LEVEL_INITIAL));
 					quic_recovery_discard_pn_space(ep,
 						level_to_pn_space(QUIC_SECRET_LEVEL_HANDSHAKE));
+
+					/* RFC 9001 ch. 4.9.2 */
+					quic_endpoint_discard_keys(
+						ep, QUIC_SECRET_LEVEL_HANDSHAKE);
 				}
 				continue;
 
