@@ -230,28 +230,29 @@ static int counter_cc23x0_lgpt_set_top_value(const struct device *dev,
 {
 	const struct counter_cc23x0_lgpt_config *config = dev->config;
 	struct counter_cc23x0_lgpt_data *data = dev->data;
-	int ret = 0;
 
-	/* If not running set new top value */
-	if (HWREG(config->base + LGPT_O_STARTCFG) == 0) {
-		HWREG(config->base + LGPT_O_TGT) = config->counter_info.max_top_value;
-
-		HWREG(config->base + LGPT_O_IMASK) |= LGPT_IMASK_TGT;
-		HWREG(config->base + LGPT_O_TGT) = cfg->ticks;
-
-		if (!(cfg->flags & COUNTER_TOP_CFG_DONT_RESET)) {
-			HWREG(config->base + LGPT_O_CNTR) = 0x0;
-		}
-
-		data->target_cfg.flags = 0;
-		data->target_cfg.ticks = cfg->ticks;
-		data->target_cfg.callback = cfg->callback;
-		data->target_cfg.user_data = cfg->user_data;
-	} else {
-		ret = -EBUSY;
+	if ((cfg->ticks == 0) || (cfg->ticks > config->counter_info.max_top_value)) {
+		return -EINVAL;
 	}
 
-	return ret;
+	HWREG(config->base + LGPT_O_TGT) = cfg->ticks;
+
+	if (cfg->callback) {
+		HWREG(config->base + LGPT_O_IMSET) = LGPT_RIS_TGT;
+	} else {
+		HWREG(config->base + LGPT_O_IMCLR) = LGPT_RIS_TGT;
+	}
+
+	if (!(cfg->flags & COUNTER_TOP_CFG_DONT_RESET)) {
+		HWREG(config->base + LGPT_O_CNTR) = 0x0;
+	}
+
+	data->target_cfg.flags = cfg->flags;
+	data->target_cfg.ticks = cfg->ticks;
+	data->target_cfg.callback = cfg->callback;
+	data->target_cfg.user_data = cfg->user_data;
+
+	return 0;
 }
 
 static uint32_t counter_cc23x0_lgpt_get_pending_int(const struct device *dev)
