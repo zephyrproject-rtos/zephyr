@@ -361,7 +361,7 @@ static int spi_ti_unicomm_configure(const struct device *dev, const struct spi_c
 	}
 
 	/* Set controller mode */
-	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_CONTROLLER) {
+	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
 		ctl1 |= UNICOMMSPI_CTL1_CP_MASK;
 	}
 
@@ -624,7 +624,7 @@ static int spi_ti_unicomm_transceive_call(const struct device *dev, const struct
 		return ret;
 	}
 
-	is_controller = SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_CONTROLLER;
+	is_controller = SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER;
 
 	data->isr_error = 0;
 	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, 1);
