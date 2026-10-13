@@ -20,6 +20,8 @@ common:
     - nrf54lv10dk/nrf54lv10a/cpuapp
     - nrf54lv10dk/nrf54lv10a/cpuapp/ns
     - nrf7120dk/nrf7120/cpuapp
+    - nrf7120dk/nrf7120e/cpuapp
+    - nrf7120dk/nrf7120/cpuapp/ns
     - ophelia4ev/nrf54l15/cpuapp
 
 tests:
@@ -156,6 +158,8 @@ tests:
       - nrf54lv10dk/nrf54lv10a/cpuapp
       - nrf54lv10dk/nrf54lv10a/cpuapp/ns
       - nrf7120dk/nrf7120/cpuapp
+      - nrf7120dk/nrf7120e/cpuapp
+      - nrf7120dk/nrf7120/cpuapp/ns
       - ophelia4ev/nrf54l15/cpuapp
 
   drivers.spi.spi_fast:
@@ -173,6 +177,8 @@ tests:
       - nrf54lv10dk/nrf54lv10a/cpuapp
       - nrf54lv10dk/nrf54lv10a/cpuapp/ns
       - nrf7120dk/nrf7120/cpuapp
+      - nrf7120dk/nrf7120e/cpuapp
+      - nrf7120dk/nrf7120/cpuapp/ns
       - ophelia4ev/nrf54l15/cpuapp
 
   drivers.spi.spis_fast:
@@ -193,6 +199,8 @@ tests:
       - nrf54lv10dk/nrf54lv10a/cpuapp
       - nrf54lv10dk/nrf54lv10a/cpuapp/ns
       - nrf7120dk/nrf7120/cpuapp
+      - nrf7120dk/nrf7120e/cpuapp
+      - nrf7120dk/nrf7120/cpuapp/ns
       - ophelia4ev/nrf54l15/cpuapp
 
   drivers.spi.pm_runtime:
@@ -221,6 +229,8 @@ tests:
       - nrf54lv10dk/nrf54lv10a/cpuapp/ns
       - ophelia4ev/nrf54l15/cpuapp
       - nrf7120dk/nrf7120/cpuapp
+      - nrf7120dk/nrf7120e/cpuapp
+      - nrf7120dk/nrf7120/cpuapp/ns
 
   drivers.spi.direct_xfer:
     extra_configs:
