@@ -9,6 +9,8 @@
 #include <ti/mspm33/c/mspm33c321a-pinctrl.dtsi>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/pinctrl/mspm0-pinctrl.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "TI LP_MSPM33C321A/MSPM33C321A";
@@ -16,6 +18,11 @@
 
 	aliases {
 		watchdog0 = &wdt0;
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		sw0 = &btn0;
+		sw1 = &btn1;
 	};
 
 	chosen {
@@ -25,6 +32,41 @@
 		zephyr,canbus = &canfd0;
 		zephyr,console = &unicomm12_uart;
 		zephyr,shell-uart = &unicomm12_uart;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpioc 26 GPIO_ACTIVE_HIGH>;
+			label = "Red LED";
+		};
+
+		led1: led_1 {
+			gpios = <&gpioc 27 GPIO_ACTIVE_HIGH>;
+			label = "Green LED";
+		};
+
+		led2: led_2 {
+			gpios = <&gpioa 2 GPIO_ACTIVE_HIGH>;
+			label = "Blue LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		btn0: btn_0 {
+			gpios = <&gpioa 18 GPIO_ACTIVE_HIGH>;
+			label = "S1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		btn1: btn_1 {
+			gpios = <&gpioc 17 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			label = "S2";
+			zephyr,code = <INPUT_KEY_1>;
+		};
 	};
 };
 
@@ -115,4 +157,16 @@
 
 	pinctrl-0 = <&uc12_tx_pa10 &uc12_rx_pa11>;
 	pinctrl-names = "default";
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
 };
