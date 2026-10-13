@@ -259,7 +259,11 @@ config BT_WAIT_NOP
 
 config BT_RPA
 	bool
+	default y
 	depends on BT_HOST_CRYPTO || BT_CTLR_CRYPTO
+	help
+	  Resolvable Private Address helpers, such as bt_addr_matches_irk().
+	  Built whenever the Host or the Controller provides AES.
 
 config BT_PRIVATE_SHELL
 	bool
