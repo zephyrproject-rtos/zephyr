@@ -69,7 +69,7 @@ static void multicast_session_stop(struct k_work *work)
 
 	ret = lorawan_services_class_c_stop();
 	if (ret < 0) {
-		LOG_WRN("Failed to revert to class A: %d. Retrying in 1s.", ret);
+		LOG_WRN("Failed to revert device class: %d. Retrying in 1s.", ret);
 		lorawan_services_reschedule_work(k_work_delayable_from_work(work), K_SECONDS(1));
 	}
 }

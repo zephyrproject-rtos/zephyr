@@ -61,18 +61,21 @@ int lorawan_services_reschedule_work(struct k_work_delayable *dwork, k_timeout_t
 /**
  * @brief Start a class C session
  *
- * If there is already an ongoing class C session, only the internal counter of
- * active sessions is incremented.
+ * The first session records the device class in use, so that it can be
+ * restored when the last session stops. If there is already an ongoing class C
+ * session, only the internal counter of active sessions is incremented.
  *
  * @returns Number of active sessions if successful or negative errno otherwise.
  */
 int lorawan_services_class_c_start(void);
 
 /**
- * @brief Stop class C session and revert to class A
+ * @brief Stop class C session and restore the previous device class
  *
- * If there is more than one class C session ongoing, only the internal counter
- * of active sessions is decremented.
+ * When the last class C session stops, the device class in use before the
+ * first session started is restored. If there is more than one class C
+ * session ongoing, only the internal counter of active sessions is
+ * decremented.
  *
  * @returns Number of active sessions if successful or negative errno otherwise.
  */
