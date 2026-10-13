@@ -835,11 +835,10 @@ static void eth_dwc_xgmac_irq_work(struct k_work *item)
 	uint32_t dma_chnl_interrupt_sts = 0u;
 
 	for (uint32_t x = 0; x < config->num_dma_chnl; x++) {
-		if (cntxt_data->dma_interrupt_sts & BIT(x)) {
-			dma_chnl_interrupt_sts = cntxt_data->dma_chnl_interrupt_sts[x];
+		dma_chnl_interrupt_sts = cntxt_data->dma_chnl_interrupt_sts[x];
+		if (dma_chnl_interrupt_sts) {
 			cntxt_data->dma_chnl_interrupt_sts[x] ^= dma_chnl_interrupt_sts;
 			eth_dwc_xgmac_dmach_isr(dev, dma_chnl_interrupt_sts, x);
-			WRITE_BIT(cntxt_data->dma_interrupt_sts, x, 0);
 		}
 	}
 }
@@ -867,6 +866,10 @@ static void eth_dwc_xgmac_isr(const struct device *dev)
 
 	if (!data->dev_started || data->link_speed == LINK_DOWN ||
 	    (!net_if_flag_is_set(data->iface, NET_IF_UP))) {
+		/* Clear sticky MAC interrupt status (RC) so the line can deassert. */
+		(void)sys_read32(ioaddr + XGMAC_CORE_BASE_ADDR_OFFSET +
+				 CORE_MAC_INTERRUPT_STATUS_OFST);
+
 		dma_int_status =
 			sys_read32(ioaddr + XGMAC_DMA_BASE_ADDR_OFFSET + DMA_INTERRUPT_STATUS_OFST);
 		for (uint32_t x = 0; x < config->num_dma_chnl; x++) {
