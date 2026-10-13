@@ -294,7 +294,6 @@ SECTIONS
     /* Final section for deterministic sizing */
     SECTION_PROLOGUE(.last_section,,)
     {
-        _end = .;
         _image_end = .;
     } GROUP_LINK_IN(RAMABLE_REGION)
 }
