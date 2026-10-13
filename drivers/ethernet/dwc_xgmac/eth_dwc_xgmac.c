@@ -200,82 +200,82 @@ static void dwxgmac_dma_chnl_init(const struct device *dev,
 		 * Configure Header-Payload Split feature, 8xPBL mode (burst length) and
 		 * Maximum Segment Size in DMA channel x control register.
 		 */
-		reg_addr = (ioaddr + XGMAC_DMA_CHNLx_BASE_ADDR_OFFSET(dma_chnl) +
-			    DMA_CHx_CONTROL_OFST);
-		reg_val = DMA_CHx_CONTROL_SPH_SET(dma_chnl_cfg->sph) |
-			  DMA_CHx_CONTROL_PBLX8_SET(dma_chnl_cfg->pblx8) |
-			  DMA_CHx_CONTROL_MSS_SET(dma_chnl_cfg->mss);
+		reg_addr = (ioaddr + XGMAC_DMA_CHNLX_BASE_ADDR_OFFSET(dma_chnl) +
+			    DMA_CHX_CONTROL_OFST);
+		reg_val = DMA_CHX_CONTROL_SPH_SET(dma_chnl_cfg->sph) |
+			  DMA_CHX_CONTROL_PBLX8_SET(dma_chnl_cfg->pblx8) |
+			  DMA_CHX_CONTROL_MSS_SET(dma_chnl_cfg->mss);
 		sys_write32(reg_val, reg_addr);
 
 		/**
 		 * Configure transmit path AXI programmable burst length, TCP segmentation and
 		 * Operate on Second Packet in DMA channel TX control register.
 		 */
-		reg_addr = (ioaddr + XGMAC_DMA_CHNLx_BASE_ADDR_OFFSET(dma_chnl) +
-			    DMA_CHx_TX_CONTROL_OFST);
-		reg_val = DMA_CHx_TX_CONTROL_TXPBL_SET(dma_chnl_cfg->txpbl) |
-			  DMA_CHx_TX_CONTROL_TSE_SET(dma_chnl_cfg->tse) |
-			  DMA_CHx_TX_CONTROL_RESERVED_OSP_SET(dma_chnl_cfg->osp);
+		reg_addr = (ioaddr + XGMAC_DMA_CHNLX_BASE_ADDR_OFFSET(dma_chnl) +
+			    DMA_CHX_TX_CONTROL_OFST);
+		reg_val = DMA_CHX_TX_CONTROL_TXPBL_SET(dma_chnl_cfg->txpbl) |
+			  DMA_CHX_TX_CONTROL_TSE_SET(dma_chnl_cfg->tse) |
+			  DMA_CHX_TX_CONTROL_RESERVED_OSP_SET(dma_chnl_cfg->osp);
 		sys_write32(reg_val, reg_addr);
 
 		/**
 		 * Enable Rx DMA Packet Flush and Configure receive path AXI programmable burst
 		 * length and receive buffer size in DMA channel RX control register.
 		 */
-		reg_addr = (ioaddr + XGMAC_DMA_CHNLx_BASE_ADDR_OFFSET(dma_chnl) +
-			    DMA_CHx_RX_CONTROL_OFST);
-		reg_val = DMA_CHx_RX_CONTROL_RPF_SET(1u) |
-			  DMA_CHx_RX_CONTROL_RXPBL_SET(dma_chnl_cfg->rxpbl) |
-			  DMA_CHx_RX_CONTROL_RBSZ_SET(CONFIG_NET_BUF_DATA_SIZE);
+		reg_addr = (ioaddr + XGMAC_DMA_CHNLX_BASE_ADDR_OFFSET(dma_chnl) +
+			    DMA_CHX_RX_CONTROL_OFST);
+		reg_val = DMA_CHX_RX_CONTROL_RPF_SET(1u) |
+			  DMA_CHX_RX_CONTROL_RXPBL_SET(dma_chnl_cfg->rxpbl) |
+			  DMA_CHX_RX_CONTROL_RBSZ_SET(CONFIG_NET_BUF_DATA_SIZE);
 		sys_write32(reg_val, reg_addr);
 
 		/* Initialize the DMA channel TX descriptors ring header address high register */
-		reg_addr = (ioaddr + XGMAC_DMA_CHNLx_BASE_ADDR_OFFSET(dma_chnl) +
-			    DMA_CHx_TXDESC_LIST_HADDRESS_OFST);
-		reg_val = DMA_CHx_TXDESC_LIST_HADDRESS_TDESHA_SET(tx_desc_meta->desc_list_addr >>
+		reg_addr = (ioaddr + XGMAC_DMA_CHNLX_BASE_ADDR_OFFSET(dma_chnl) +
+			    DMA_CHX_TXDESC_LIST_HADDRESS_OFST);
+		reg_val = DMA_CHX_TXDESC_LIST_HADDRESS_TDESHA_SET(tx_desc_meta->desc_list_addr >>
 								  32u);
 		sys_write32(reg_val, reg_addr);
 
 		/* Initialize the DMA channel TX descriptors ring header address low register */
-		reg_addr = (ioaddr + XGMAC_DMA_CHNLx_BASE_ADDR_OFFSET(dma_chnl) +
-			    DMA_CHx_TXDESC_LIST_LADDRESS_OFST);
+		reg_addr = (ioaddr + XGMAC_DMA_CHNLX_BASE_ADDR_OFFSET(dma_chnl) +
+			    DMA_CHX_TXDESC_LIST_LADDRESS_OFST);
 		reg_val = tx_desc_meta->desc_list_addr;
 		sys_write32(reg_val, reg_addr);
 
 		/* Initialize the DMA channel RX descriptors ring header address high register */
-		reg_addr = (ioaddr + XGMAC_DMA_CHNLx_BASE_ADDR_OFFSET(dma_chnl) +
-			    DMA_CHx_RXDESC_LIST_HADDRESS_OFST);
+		reg_addr = (ioaddr + XGMAC_DMA_CHNLX_BASE_ADDR_OFFSET(dma_chnl) +
+			    DMA_CHX_RXDESC_LIST_HADDRESS_OFST);
 		reg_val = rx_desc_meta->desc_list_addr >> 32u;
 		sys_write32(reg_val, reg_addr);
 
 		/* Initialize the DMA channel RX descriptors ring header address low register */
-		reg_addr = (ioaddr + XGMAC_DMA_CHNLx_BASE_ADDR_OFFSET(dma_chnl) +
-			    DMA_CHx_RXDESC_LIST_LADDRESS_OFST);
+		reg_addr = (ioaddr + XGMAC_DMA_CHNLX_BASE_ADDR_OFFSET(dma_chnl) +
+			    DMA_CHX_RXDESC_LIST_LADDRESS_OFST);
 		reg_val = rx_desc_meta->desc_list_addr;
 		sys_write32(reg_val, reg_addr);
 
 		/* Initialize the DMA channel TX descriptors ring tail address high register */
-		reg_addr = (ioaddr + XGMAC_DMA_CHNLx_BASE_ADDR_OFFSET(dma_chnl) +
-			    DMA_CHx_TXDESC_TAIL_LPOINTER_OFST);
-		reg_val = DMA_CHx_TXDESC_TAIL_LPOINTER_TDT_SET(tx_desc_meta->desc_tail_addr);
+		reg_addr = (ioaddr + XGMAC_DMA_CHNLX_BASE_ADDR_OFFSET(dma_chnl) +
+			    DMA_CHX_TXDESC_TAIL_LPOINTER_OFST);
+		reg_val = DMA_CHX_TXDESC_TAIL_LPOINTER_TDT_SET(tx_desc_meta->desc_tail_addr);
 		sys_write32(reg_val, reg_addr);
 
 		/* Initialize the DMA channel TX descriptors ring tail address low register */
-		reg_addr = (ioaddr + XGMAC_DMA_CHNLx_BASE_ADDR_OFFSET(dma_chnl) +
-			    DMA_CHx_RXDESC_TAIL_LPOINTER_OFST);
-		reg_val = DMA_CHx_RXDESC_TAIL_LPOINTER_RDT_SET(rx_desc_meta->desc_tail_addr);
+		reg_addr = (ioaddr + XGMAC_DMA_CHNLX_BASE_ADDR_OFFSET(dma_chnl) +
+			    DMA_CHX_RXDESC_TAIL_LPOINTER_OFST);
+		reg_val = DMA_CHX_RXDESC_TAIL_LPOINTER_RDT_SET(rx_desc_meta->desc_tail_addr);
 		sys_write32(reg_val, reg_addr);
 
 		/* Initialize the DMA channel RX descriptors ring tail address high register */
-		reg_addr = (ioaddr + XGMAC_DMA_CHNLx_BASE_ADDR_OFFSET(dma_chnl) +
-			    DMA_CHx_TX_CONTROL2_OFST);
-		reg_val = DMA_CHx_TX_CONTROL2_TDRL_SET((dma_chnl_cfg->tdrl - 1u));
+		reg_addr = (ioaddr + XGMAC_DMA_CHNLX_BASE_ADDR_OFFSET(dma_chnl) +
+			    DMA_CHX_TX_CONTROL2_OFST);
+		reg_val = DMA_CHX_TX_CONTROL2_TDRL_SET((dma_chnl_cfg->tdrl - 1u));
 		sys_write32(reg_val, reg_addr);
 
 		/* Initialize the DMA channel RX descriptors ring tail address low register */
-		reg_addr = (ioaddr + XGMAC_DMA_CHNLx_BASE_ADDR_OFFSET(dma_chnl) +
-			    DMA_CHx_RX_CONTROL2_OFST);
-		reg_val = DMA_CHx_RX_CONTROL2_RDRL_SET((dma_chnl_cfg->rdrl - 1u));
+		reg_addr = (ioaddr + XGMAC_DMA_CHNLX_BASE_ADDR_OFFSET(dma_chnl) +
+			    DMA_CHX_RX_CONTROL2_OFST);
+		reg_val = DMA_CHX_RX_CONTROL2_RDRL_SET((dma_chnl_cfg->rdrl - 1u));
 		sys_write32(reg_val, reg_addr);
 
 		/* Initialize channel metadata */
@@ -549,8 +549,8 @@ static void get_and_refill_desc_buffs(struct xgmac_dma_rx_desc *rx_desc, uint16_
 {
 	struct net_buf *new_buff;
 
-	*buff1 = (struct net_buf *)((mem_addr_t)*(rx_buffs + (desc_id * RX_FRAGS_PER_DESC)));
-	*buff2 = (struct net_buf *)((mem_addr_t)*(rx_buffs + (desc_id * RX_FRAGS_PER_DESC) + 1u));
+	*buff1 = (struct net_buf *)((mem_addr_t)(*(rx_buffs + (desc_id * RX_FRAGS_PER_DESC))));
+	*buff2 = (struct net_buf *)((mem_addr_t)(*(rx_buffs + (desc_id * RX_FRAGS_PER_DESC) + 1u)));
 	/* Reserve a free buffer in network RX buffers pool */
 	new_buff = net_pkt_get_reserve_rx_data(CONFIG_NET_BUF_DATA_SIZE, K_FOREVER);
 	if (!new_buff) {
@@ -758,45 +758,45 @@ static void eth_dwc_xgmac_tx_irq_work(const struct device *dev, uint32_t dma_chn
 static void eth_dwc_xgmac_dmach_isr(const struct device *dev, uint32_t dmach_interrupt_sts,
 				    uint32_t dma_chnl)
 {
-	if (dmach_interrupt_sts & DMA_CHx_STATUS_TI_SET_MSK) {
+	if (dmach_interrupt_sts & DMA_CHX_STATUS_TI_SET_MSK) {
 		/* Transmit interrupt */
 		eth_dwc_xgmac_tx_irq_work(dev, dma_chnl);
 	}
-	if (dmach_interrupt_sts & DMA_CHx_STATUS_RI_SET_MSK) {
+	if (dmach_interrupt_sts & DMA_CHX_STATUS_RI_SET_MSK) {
 		/* Receive interrupt */
 		eth_dwc_xgmac_rx_irq_work(dev, dma_chnl);
 		/* Transmit buffer unavailable interrupt*/
 		LOG_DBG("%s: DMA channel %d Rx interrupt", dev->name, dma_chnl);
 	}
-	if (dmach_interrupt_sts & DMA_CHx_STATUS_TPS_SET_MSK) {
+	if (dmach_interrupt_sts & DMA_CHX_STATUS_TPS_SET_MSK) {
 		/* Transmit process stopped interrupt*/
 		LOG_ERR("%s: DMA channel %d Transmit process stopped", dev->name, dma_chnl);
 	}
-	if (dmach_interrupt_sts & DMA_CHx_STATUS_TBU_SET_MSK) {
+	if (dmach_interrupt_sts & DMA_CHX_STATUS_TBU_SET_MSK) {
 		/* Transmit buffer unavailable interrupt*/
 		LOG_DBG("%s: DMA channel %d Transmit buffer unavailable", dev->name, dma_chnl);
 	}
-	if (dmach_interrupt_sts & DMA_CHx_STATUS_RBU_SET_MSK) {
+	if (dmach_interrupt_sts & DMA_CHX_STATUS_RBU_SET_MSK) {
 		/* Receive buffer unavailable interrupt*/
 		LOG_ERR("%s: DMA channel %d Receive buffer unavailable", dev->name, dma_chnl);
 	}
-	if (dmach_interrupt_sts & DMA_CHx_STATUS_RPS_SET_MSK) {
+	if (dmach_interrupt_sts & DMA_CHX_STATUS_RPS_SET_MSK) {
 		/* Receive process stopped interrupt*/
 		LOG_ERR("%s: DMA channel %d Receive process stopped", dev->name, dma_chnl);
 	}
-	if (dmach_interrupt_sts & DMA_CHx_STATUS_DDE_SET_MSK) {
+	if (dmach_interrupt_sts & DMA_CHX_STATUS_DDE_SET_MSK) {
 		/* Descriptor definition error interrupt*/
 		LOG_ERR("%s: DMA channel %d  Descriptor definition error", dev->name, dma_chnl);
 	}
-	if (dmach_interrupt_sts & DMA_CHx_STATUS_FBE_SET_MSK) {
+	if (dmach_interrupt_sts & DMA_CHX_STATUS_FBE_SET_MSK) {
 		/* Fatal bus error interrupt*/
 		LOG_ERR("%s: DMA channel %d Fatal bus error", dev->name, dma_chnl);
 	}
-	if (dmach_interrupt_sts & DMA_CHx_STATUS_CDE_SET_MSK) {
+	if (dmach_interrupt_sts & DMA_CHX_STATUS_CDE_SET_MSK) {
 		/* Context descriptor error interrupt*/
 		LOG_ERR("%s: DMA channel %d Context descriptor error", dev->name, dma_chnl);
 	}
-	if (dmach_interrupt_sts & DMA_CHx_STATUS_AIS_SET_MSK) {
+	if (dmach_interrupt_sts & DMA_CHX_STATUS_AIS_SET_MSK) {
 		/* Abnormal interrupt status interrupt*/
 		LOG_ERR("%s: DMA channel %d Abnormal error", dev->name, dma_chnl);
 	}
@@ -872,16 +872,16 @@ static void eth_dwc_xgmac_isr(const struct device *dev)
 		for (uint32_t x = 0; x < config->num_dma_chnl; x++) {
 			if (dma_int_status & BIT(x)) {
 				LOG_ERR("%s ignoring dma ch %d interrupt: %x ", dev->name, x,
-					sys_read32(ioaddr + XGMAC_DMA_CHNLx_BASE_ADDR_OFFSET(x) +
-						   DMA_CHx_STATUS_OFST));
-				reg_val = DMA_CHx_STATUS_NIS_SET_MSK | DMA_CHx_STATUS_AIS_SET_MSK |
-					  DMA_CHx_STATUS_CDE_SET_MSK | DMA_CHx_STATUS_FBE_SET_MSK |
-					  DMA_CHx_STATUS_DDE_SET_MSK | DMA_CHx_STATUS_RPS_SET_MSK |
-					  DMA_CHx_STATUS_RBU_SET_MSK | DMA_CHx_STATUS_TBU_SET_MSK |
-					  DMA_CHx_STATUS_TPS_SET_MSK | DMA_CHx_STATUS_RI_SET_MSK |
-					  DMA_CHx_STATUS_TI_SET_MSK;
-				sys_write32(reg_val, (ioaddr + XGMAC_DMA_CHNLx_BASE_ADDR_OFFSET(x) +
-						      DMA_CHx_STATUS_OFST));
+					sys_read32(ioaddr + XGMAC_DMA_CHNLX_BASE_ADDR_OFFSET(x) +
+						   DMA_CHX_STATUS_OFST));
+				reg_val = DMA_CHX_STATUS_NIS_SET_MSK | DMA_CHX_STATUS_AIS_SET_MSK |
+					  DMA_CHX_STATUS_CDE_SET_MSK | DMA_CHX_STATUS_FBE_SET_MSK |
+					  DMA_CHX_STATUS_DDE_SET_MSK | DMA_CHX_STATUS_RPS_SET_MSK |
+					  DMA_CHX_STATUS_RBU_SET_MSK | DMA_CHX_STATUS_TBU_SET_MSK |
+					  DMA_CHX_STATUS_TPS_SET_MSK | DMA_CHX_STATUS_RI_SET_MSK |
+					  DMA_CHX_STATUS_TI_SET_MSK;
+				sys_write32(reg_val, (ioaddr + XGMAC_DMA_CHNLX_BASE_ADDR_OFFSET(x) +
+						      DMA_CHX_STATUS_OFST));
 			}
 		}
 
@@ -902,8 +902,8 @@ static void eth_dwc_xgmac_isr(const struct device *dev)
 	cntxt_data->dma_interrupt_sts |= sys_read32(reg_addr);
 	for (uint32_t x = 0; x < config->num_dma_chnl; x++) {
 		if (cntxt_data->dma_interrupt_sts & BIT(x)) {
-			reg_addr = (ioaddr + XGMAC_DMA_CHNLx_BASE_ADDR_OFFSET(x) +
-				    DMA_CHx_STATUS_OFST);
+			reg_addr = (ioaddr + XGMAC_DMA_CHNLX_BASE_ADDR_OFFSET(x) +
+				    DMA_CHX_STATUS_OFST);
 			dmach_interrupt_sts = sys_read32(reg_addr);
 			sys_write32(dmach_interrupt_sts, reg_addr);
 #ifdef CONFIG_ETH_DWC_XGMAC_BOTTOM_HALF_WORK_QUEUE
@@ -1111,9 +1111,9 @@ void eth_dwc_xgmac_prefill_rx_desc(const struct device *dev)
 			arch_dcache_flush_range(rx_desc, sizeof(rx_desc));
 			rx_desc_meta->desc_tail_addr = (mem_addr_t)(rx_desc + 1);
 		}
-		reg_addr = (ioaddr + XGMAC_DMA_CHNLx_BASE_ADDR_OFFSET(dma_chnl) +
-			    DMA_CHx_RXDESC_TAIL_LPOINTER_OFST);
-		reg_val = DMA_CHx_RXDESC_TAIL_LPOINTER_RDT_SET(rx_desc_meta->desc_tail_addr);
+		reg_addr = (ioaddr + XGMAC_DMA_CHNLX_BASE_ADDR_OFFSET(dma_chnl) +
+			    DMA_CHX_RXDESC_TAIL_LPOINTER_OFST);
+		reg_val = DMA_CHX_RXDESC_TAIL_LPOINTER_RDT_SET(rx_desc_meta->desc_tail_addr);
 		sys_write32(reg_val, reg_addr);
 		LOG_DBG("%s: DMA channel %d Rx descriptors initialization completed", dev->name,
 			dma_chnl);
@@ -1187,29 +1187,29 @@ static int eth_dwc_xgmac_start_device(const struct device *dev, struct net_if *i
 
 	for (uint32_t dma_chnl = 0u; dma_chnl < dev_conf->num_dma_chnl; dma_chnl++) {
 		/* Start the transmit DMA channel */
-		reg_addr = (ioaddr + XGMAC_DMA_CHNLx_BASE_ADDR_OFFSET(dma_chnl) +
-			    DMA_CHx_TX_CONTROL_OFST);
-		reg_val = sys_read32(reg_addr) | DMA_CHx_TX_CONTROL_ST_SET_MSK;
+		reg_addr = (ioaddr + XGMAC_DMA_CHNLX_BASE_ADDR_OFFSET(dma_chnl) +
+			    DMA_CHX_TX_CONTROL_OFST);
+		reg_val = sys_read32(reg_addr) | DMA_CHX_TX_CONTROL_ST_SET_MSK;
 		sys_write32(reg_val, reg_addr);
 		/* Start the receive DMA channel */
-		reg_addr = (ioaddr + XGMAC_DMA_CHNLx_BASE_ADDR_OFFSET(dma_chnl) +
-			    DMA_CHx_RX_CONTROL_OFST);
-		reg_val = sys_read32(reg_addr) | DMA_CHx_RX_CONTROL_SR_SET_MSK;
+		reg_addr = (ioaddr + XGMAC_DMA_CHNLX_BASE_ADDR_OFFSET(dma_chnl) +
+			    DMA_CHX_RX_CONTROL_OFST);
+		reg_val = sys_read32(reg_addr) | DMA_CHX_RX_CONTROL_SR_SET_MSK;
 		sys_write32(reg_val, reg_addr);
 		/* Enable the dma channel interrupts */
-		reg_addr = (ioaddr + XGMAC_DMA_CHNLx_BASE_ADDR_OFFSET(dma_chnl) +
-			    DMA_CHx_INTERRUPT_ENABLE_OFST);
-		reg_val = DMA_CHx_INTERRUPT_ENABLE_NIE_SET(1u) |
-			  DMA_CHx_INTERRUPT_ENABLE_AIE_SET(1u) |
-			  DMA_CHx_INTERRUPT_ENABLE_CDEE_SET(1u) |
-			  DMA_CHx_INTERRUPT_ENABLE_FBEE_SET(1u) |
-			  DMA_CHx_INTERRUPT_ENABLE_DDEE_SET(1u) |
-			  DMA_CHx_INTERRUPT_ENABLE_RSE_SET(1u) |
-			  DMA_CHx_INTERRUPT_ENABLE_RBUE_SET(1u) |
-			  DMA_CHx_INTERRUPT_ENABLE_RIE_SET(1u) |
-			  DMA_CHx_INTERRUPT_ENABLE_TBUE_SET(1u) |
-			  DMA_CHx_INTERRUPT_ENABLE_TXSE_SET(1u) |
-			  DMA_CHx_INTERRUPT_ENABLE_TIE_SET(1u);
+		reg_addr = (ioaddr + XGMAC_DMA_CHNLX_BASE_ADDR_OFFSET(dma_chnl) +
+			    DMA_CHX_INTERRUPT_ENABLE_OFST);
+		reg_val = DMA_CHX_INTERRUPT_ENABLE_NIE_SET(1u) |
+			  DMA_CHX_INTERRUPT_ENABLE_AIE_SET(1u) |
+			  DMA_CHX_INTERRUPT_ENABLE_CDEE_SET(1u) |
+			  DMA_CHX_INTERRUPT_ENABLE_FBEE_SET(1u) |
+			  DMA_CHX_INTERRUPT_ENABLE_DDEE_SET(1u) |
+			  DMA_CHX_INTERRUPT_ENABLE_RSE_SET(1u) |
+			  DMA_CHX_INTERRUPT_ENABLE_RBUE_SET(1u) |
+			  DMA_CHX_INTERRUPT_ENABLE_RIE_SET(1u) |
+			  DMA_CHX_INTERRUPT_ENABLE_TBUE_SET(1u) |
+			  DMA_CHX_INTERRUPT_ENABLE_TXSE_SET(1u) |
+			  DMA_CHX_INTERRUPT_ENABLE_TIE_SET(1u);
 		sys_write32(reg_val, reg_addr);
 		LOG_DBG("%s: Interrupts enabled for DMA Channel %d", dev->name, dma_chnl);
 	}
@@ -1266,18 +1266,18 @@ static int eth_dwc_xgmac_stop_device(const struct device *dev, struct net_if *if
 
 	for (uint32_t dma_chnl = 0; dma_chnl < dev_conf->num_dma_chnl; dma_chnl++) {
 		/* Stop the transmit DMA channel */
-		reg_addr = (ioaddr + XGMAC_DMA_CHNLx_BASE_ADDR_OFFSET(dma_chnl) +
-			    DMA_CHx_TX_CONTROL_OFST);
-		reg_val = sys_read32(reg_addr) & DMA_CHx_TX_CONTROL_ST_CLR_MSK;
+		reg_addr = (ioaddr + XGMAC_DMA_CHNLX_BASE_ADDR_OFFSET(dma_chnl) +
+			    DMA_CHX_TX_CONTROL_OFST);
+		reg_val = sys_read32(reg_addr) & DMA_CHX_TX_CONTROL_ST_CLR_MSK;
 		sys_write32(reg_val, reg_addr);
 		/* Stop the receive DMA channel */
-		reg_addr = (ioaddr + XGMAC_DMA_CHNLx_BASE_ADDR_OFFSET(dma_chnl) +
-			    DMA_CHx_RX_CONTROL_OFST);
-		reg_val = sys_read32(reg_addr) & DMA_CHx_RX_CONTROL_SR_CLR_MSK;
+		reg_addr = (ioaddr + XGMAC_DMA_CHNLX_BASE_ADDR_OFFSET(dma_chnl) +
+			    DMA_CHX_RX_CONTROL_OFST);
+		reg_val = sys_read32(reg_addr) & DMA_CHX_RX_CONTROL_SR_CLR_MSK;
 		sys_write32(reg_val, reg_addr);
 		/* Disable the dma channel interrupts */
-		reg_addr = (ioaddr + XGMAC_DMA_CHNLx_BASE_ADDR_OFFSET(dma_chnl) +
-			    DMA_CHx_INTERRUPT_ENABLE_OFST);
+		reg_addr = (ioaddr + XGMAC_DMA_CHNLX_BASE_ADDR_OFFSET(dma_chnl) +
+			    DMA_CHX_INTERRUPT_ENABLE_OFST);
 		reg_val = 0u;
 		sys_write32(reg_val, reg_addr);
 		LOG_DBG("%s: Interrupts disabled for DMA Channel %d", dev->name, dma_chnl);
@@ -1312,9 +1312,9 @@ static inline void update_desc_tail_ptr(const struct device *dev, uint8_t dma_ch
 	mem_addr_t reg_addr, ioaddr = get_reg_base_addr(dev);
 	uint32_t reg_val;
 
-	reg_addr = (ioaddr + XGMAC_DMA_CHNLx_BASE_ADDR_OFFSET(dma_chnl) +
-		    DMA_CHx_TXDESC_TAIL_LPOINTER_OFST);
-	reg_val = DMA_CHx_TXDESC_TAIL_LPOINTER_TDT_SET(desc_tail_addr);
+	reg_addr = (ioaddr + XGMAC_DMA_CHNLX_BASE_ADDR_OFFSET(dma_chnl) +
+		    DMA_CHX_TXDESC_TAIL_LPOINTER_OFST);
+	reg_val = DMA_CHX_TXDESC_TAIL_LPOINTER_TDT_SET(desc_tail_addr);
 	sys_write32(reg_val, reg_addr);
 }
 /**

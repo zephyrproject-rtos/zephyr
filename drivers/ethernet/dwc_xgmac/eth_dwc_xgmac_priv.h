@@ -27,8 +27,8 @@
 #define XGMAC_MTL_TCQ_BASE_ADDR_OFFSET      (0x1100u)
 #define XGMAC_DMA_BASE_ADDR_OFFSET          (0x3000u)
 #define XGMAC_DMA_CHNL_BASE_ADDR_OFFSET     (0x3100u)
-#define XGMAC_DMA_CHNLx_BASE_ADDR_OFFSET(x) (XGMAC_DMA_CHNL_BASE_ADDR_OFFSET + (x * 0x80u))
-#define XGMAC_MTL_TCQx_BASE_ADDR_OFFSET(x)  (XGMAC_MTL_TCQ_BASE_ADDR_OFFSET + (x * 0x80u))
+#define XGMAC_DMA_CHNLX_BASE_ADDR_OFFSET(x) (XGMAC_DMA_CHNL_BASE_ADDR_OFFSET + ((x) * 0x80u))
+#define XGMAC_MTL_TCQx_BASE_ADDR_OFFSET(x)  (XGMAC_MTL_TCQ_BASE_ADDR_OFFSET + ((x) * 0x80u))
 #define XGMAC_CORE_ADDRx_HIGH(x)            (CORE_MAC_ADDRESS0_HIGH_OFST + (x) * 0x8)
 #define XGMAC_CORE_ADDRx_LOW(x)             (CORE_MAC_ADDRESS0_LOW_OFST + (x) * 0x8)
 
@@ -91,111 +91,111 @@
 
 #define DMA_INTERRUPT_STATUS_OFST (0x8)
 
-#define DMA_CHx_STATUS_OFST (0x60)
+#define DMA_CHX_STATUS_OFST (0x60)
 
-#define DMA_CHx_STATUS_TI_SET_MSK (0x00000001)
+#define DMA_CHX_STATUS_TI_SET_MSK (0x00000001)
 
-#define DMA_CHx_STATUS_RI_SET_MSK (0x00000040)
+#define DMA_CHX_STATUS_RI_SET_MSK (0x00000040)
 
-#define DMA_CHx_STATUS_TPS_SET_MSK (0x00000002)
+#define DMA_CHX_STATUS_TPS_SET_MSK (0x00000002)
 
-#define DMA_CHx_STATUS_TBU_SET_MSK (0x00000004)
+#define DMA_CHX_STATUS_TBU_SET_MSK (0x00000004)
 
-#define DMA_CHx_STATUS_RBU_SET_MSK (0x00000080)
+#define DMA_CHX_STATUS_RBU_SET_MSK (0x00000080)
 
-#define DMA_CHx_STATUS_RPS_SET_MSK (0x00000100)
+#define DMA_CHX_STATUS_RPS_SET_MSK (0x00000100)
 
-#define DMA_CHx_STATUS_DDE_SET_MSK (0x00000200)
+#define DMA_CHX_STATUS_DDE_SET_MSK (0x00000200)
 
-#define DMA_CHx_STATUS_FBE_SET_MSK (0x00001000)
+#define DMA_CHX_STATUS_FBE_SET_MSK (0x00001000)
 
-#define DMA_CHx_STATUS_CDE_SET_MSK (0x00002000)
+#define DMA_CHX_STATUS_CDE_SET_MSK (0x00002000)
 
-#define DMA_CHx_STATUS_AIS_SET_MSK (0x00004000)
+#define DMA_CHX_STATUS_AIS_SET_MSK (0x00004000)
 
-#define DMA_CHx_STATUS_NIS_SET_MSK (0x00008000)
+#define DMA_CHX_STATUS_NIS_SET_MSK (0x00008000)
 
-#define DMA_CHx_CONTROL_OFST (0x0)
+#define DMA_CHX_CONTROL_OFST (0x0)
 
-#define DMA_CHx_CONTROL_SPH_SET(value) (((value) << 24) & 0x01000000)
+#define DMA_CHX_CONTROL_SPH_SET(value) (((value) << 24) & 0x01000000)
 
-#define DMA_CHx_CONTROL_PBLX8_SET(value) (((value) << 16) & 0x00010000)
+#define DMA_CHX_CONTROL_PBLX8_SET(value) (((value) << 16) & 0x00010000)
 
-#define DMA_CHx_CONTROL_MSS_SET(value) ((value) & 0x00003fff)
+#define DMA_CHX_CONTROL_MSS_SET(value) ((value) & 0x00003fff)
 
-#define DMA_CHx_TX_CONTROL_OFST (0x4)
+#define DMA_CHX_TX_CONTROL_OFST (0x4)
 
-#define DMA_CHx_TX_CONTROL_TXPBL_SET(value) (((value) << 16) & 0x003f0000)
+#define DMA_CHX_TX_CONTROL_TXPBL_SET(value) (((value) << 16) & 0x003f0000)
 
-#define DMA_CHx_TX_CONTROL_TSE_SET(value) (((value) << 12) & 0x00001000)
+#define DMA_CHX_TX_CONTROL_TSE_SET(value) (((value) << 12) & 0x00001000)
 
-#define DMA_CHx_TX_CONTROL_RESERVED_OSP_SET(value) (((value) << 4) & 0x00000010)
+#define DMA_CHX_TX_CONTROL_RESERVED_OSP_SET(value) (((value) << 4) & 0x00000010)
 
-#define DMA_CHx_TX_CONTROL_ST_CLR_MSK (0xfffffffe)
+#define DMA_CHX_TX_CONTROL_ST_CLR_MSK (0xfffffffe)
 
-#define DMA_CHx_RX_CONTROL_OFST (0x8)
+#define DMA_CHX_RX_CONTROL_OFST (0x8)
 
-#define DMA_CHx_RX_CONTROL_RPF_SET(value) (((value) << 31) & 0x80000000)
+#define DMA_CHX_RX_CONTROL_RPF_SET(value) (((value) << 31) & 0x80000000)
 
-#define DMA_CHx_RX_CONTROL_RXPBL_SET(value) (((value) << 16) & 0x003f0000)
+#define DMA_CHX_RX_CONTROL_RXPBL_SET(value) (((value) << 16) & 0x003f0000)
 
-#define DMA_CHx_RX_CONTROL_RBSZ_SET(value) ((value << 1) & 0x00007ff0)
+#define DMA_CHX_RX_CONTROL_RBSZ_SET(value) (((value) << 1) & 0x00007ff0)
 
-#define DMA_CHx_RX_CONTROL_SR_CLR_MSK (0xfffffffe)
+#define DMA_CHX_RX_CONTROL_SR_CLR_MSK (0xfffffffe)
 
-#define DMA_CHx_TXDESC_LIST_HADDRESS_OFST (0x10)
+#define DMA_CHX_TXDESC_LIST_HADDRESS_OFST (0x10)
 
-#define DMA_CHx_TXDESC_LIST_HADDRESS_TDESHA_SET(value) ((value) & 0x000000ff)
+#define DMA_CHX_TXDESC_LIST_HADDRESS_TDESHA_SET(value) ((value) & 0x000000ff)
 
-#define DMA_CHx_TXDESC_LIST_LADDRESS_OFST (0x14)
+#define DMA_CHX_TXDESC_LIST_LADDRESS_OFST (0x14)
 
-#define DMA_CHx_RXDESC_LIST_HADDRESS_OFST (0x18)
+#define DMA_CHX_RXDESC_LIST_HADDRESS_OFST (0x18)
 
-#define DMA_CHx_RXDESC_LIST_LADDRESS_OFST (0x1c)
+#define DMA_CHX_RXDESC_LIST_LADDRESS_OFST (0x1c)
 
-#define DMA_CHx_TXDESC_TAIL_LPOINTER_OFST (0x24)
+#define DMA_CHX_TXDESC_TAIL_LPOINTER_OFST (0x24)
 
-#define DMA_CHx_TXDESC_TAIL_LPOINTER_TDT_SET(value) ((value) & 0xfffffff8)
+#define DMA_CHX_TXDESC_TAIL_LPOINTER_TDT_SET(value) ((value) & 0xfffffff8)
 
-#define DMA_CHx_RXDESC_TAIL_LPOINTER_OFST (0x2c)
+#define DMA_CHX_RXDESC_TAIL_LPOINTER_OFST (0x2c)
 
-#define DMA_CHx_RXDESC_TAIL_LPOINTER_RDT_SET(value) ((value) & 0xfffffff8)
+#define DMA_CHX_RXDESC_TAIL_LPOINTER_RDT_SET(value) ((value) & 0xfffffff8)
 
-#define DMA_CHx_TX_CONTROL2_OFST (0x30)
+#define DMA_CHX_TX_CONTROL2_OFST (0x30)
 
-#define DMA_CHx_TX_CONTROL2_TDRL_SET(value) (((value) << 0) & 0x0000ffff)
+#define DMA_CHX_TX_CONTROL2_TDRL_SET(value) (((value) << 0) & 0x0000ffff)
 
-#define DMA_CHx_RX_CONTROL2_OFST (0x34)
+#define DMA_CHX_RX_CONTROL2_OFST (0x34)
 
-#define DMA_CHx_RX_CONTROL2_RDRL_SET(value) (((value) << 0) & 0x0000ffff)
+#define DMA_CHX_RX_CONTROL2_RDRL_SET(value) (((value) << 0) & 0x0000ffff)
 
-#define DMA_CHx_TX_CONTROL_ST_SET_MSK (0x00000001)
+#define DMA_CHX_TX_CONTROL_ST_SET_MSK (0x00000001)
 
-#define DMA_CHx_RX_CONTROL_SR_SET_MSK (0x00000001)
+#define DMA_CHX_RX_CONTROL_SR_SET_MSK (0x00000001)
 
-#define DMA_CHx_INTERRUPT_ENABLE_OFST (0x38)
+#define DMA_CHX_INTERRUPT_ENABLE_OFST (0x38)
 
-#define DMA_CHx_INTERRUPT_ENABLE_NIE_SET(value) (((value) << 15) & 0x00008000)
+#define DMA_CHX_INTERRUPT_ENABLE_NIE_SET(value) (((value) << 15) & 0x00008000)
 
-#define DMA_CHx_INTERRUPT_ENABLE_AIE_SET(value) (((value) << 14) & 0x00004000)
+#define DMA_CHX_INTERRUPT_ENABLE_AIE_SET(value) (((value) << 14) & 0x00004000)
 
-#define DMA_CHx_INTERRUPT_ENABLE_CDEE_SET(value) (((value) << 13) & 0x00002000)
+#define DMA_CHX_INTERRUPT_ENABLE_CDEE_SET(value) (((value) << 13) & 0x00002000)
 
-#define DMA_CHx_INTERRUPT_ENABLE_FBEE_SET(value) (((value) << 12) & 0x00001000)
+#define DMA_CHX_INTERRUPT_ENABLE_FBEE_SET(value) (((value) << 12) & 0x00001000)
 
-#define DMA_CHx_INTERRUPT_ENABLE_DDEE_SET(value) (((value) << 9) & 0x00000200)
+#define DMA_CHX_INTERRUPT_ENABLE_DDEE_SET(value) (((value) << 9) & 0x00000200)
 
-#define DMA_CHx_INTERRUPT_ENABLE_RSE_SET(value) (((value) << 8) & 0x00000100)
+#define DMA_CHX_INTERRUPT_ENABLE_RSE_SET(value) (((value) << 8) & 0x00000100)
 
-#define DMA_CHx_INTERRUPT_ENABLE_RBUE_SET(value) (((value) << 7) & 0x00000080)
+#define DMA_CHX_INTERRUPT_ENABLE_RBUE_SET(value) (((value) << 7) & 0x00000080)
 
-#define DMA_CHx_INTERRUPT_ENABLE_RIE_SET(value) (((value) << 6) & 0x00000040)
+#define DMA_CHX_INTERRUPT_ENABLE_RIE_SET(value) (((value) << 6) & 0x00000040)
 
-#define DMA_CHx_INTERRUPT_ENABLE_TBUE_SET(value) (((value) << 2) & 0x00000004)
+#define DMA_CHX_INTERRUPT_ENABLE_TBUE_SET(value) (((value) << 2) & 0x00000004)
 
-#define DMA_CHx_INTERRUPT_ENABLE_TXSE_SET(value) (((value) << 1) & 0x00000002)
+#define DMA_CHX_INTERRUPT_ENABLE_TXSE_SET(value) (((value) << 1) & 0x00000002)
 
-#define DMA_CHx_INTERRUPT_ENABLE_TIE_SET(value) (((value) << 0) & 0x00000001)
+#define DMA_CHX_INTERRUPT_ENABLE_TIE_SET(value) (((value) << 0) & 0x00000001)
 
 #define MTL_OPERATION_MODE_OFST (0x0)
 
