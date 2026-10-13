@@ -317,6 +317,7 @@ int timer_getoverrun(timer_t timerid)
  */
 int timer_delete(timer_t timerid)
 {
+	int ret;
 	struct timer_obj *timer = (struct timer_obj *) timerid;
 
 	if (timer == NULL) {
@@ -324,10 +325,15 @@ int timer_delete(timer_t timerid)
 		return -1;
 	}
 
-	if (timer->status == ACTIVE) {
-		timer->status = NOT_ACTIVE;
-		k_timer_stop(&timer->ztimer);
-	}
+	/*
+	 * Cancel the timer even if status says it is not active, and wait for an
+	 * expiry function that may be running on another CPU before the object is
+	 * freed. No thread pends on the timer's wait queue, so this cannot fail.
+	 */
+	timer->status = NOT_ACTIVE;
+	ret = k_timer_cleanup(&timer->ztimer);
+	__ASSERT(ret == 0, "k_timer_cleanup() failed: %d", ret);
+	ARG_UNUSED(ret);
 
 	if (timer->evp.sigev_notify == SIGEV_THREAD) {
 		(void)pthread_cancel(timer->thread);
