@@ -8,12 +8,12 @@
  * board.
  */
 
-&xgmac0 {
+&xgmac2 {
 	local-mac-address = [06 00 00 00 00 01];
 	status = "okay";
 };
 
-&mdio0 {
+&mdio2 {
 	status = "okay";
 
 	phy0: phy@0 {
