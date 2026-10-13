@@ -1,6 +1,6 @@
 common:
   platform_allow:
-    - adp_xc7k/ae350
+    - adp_xc7k/ae350_a25
   filter: CONFIG_CUSTOM_STACK_GUARD
   ignore_faults: true
   tags:

@@ -1,5 +1,5 @@
-identifier: adp_xc7k/ae350/clic
-name: Andes ADP-XC7K AE350 CLIC
+identifier: adp_xc7k/ae350_a25
+name: Andes ADP-XC7K AE350 (A25 series)
 type: mcu
 arch: riscv
 toolchain:
@@ -13,6 +13,7 @@ supported:
   - spi
   - eeprom
   - watchdog
+  - mbox
   - flash
   - dma
   - led
