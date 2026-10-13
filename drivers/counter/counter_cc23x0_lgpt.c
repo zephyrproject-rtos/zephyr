@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 BayLibre, SAS
+ * Copyright (c) 2026 Texas Instruments Incorporated
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,7 +26,7 @@
 
 LOG_MODULE_REGISTER(counter_cc23x0_lgpt, CONFIG_COUNTER_LOG_LEVEL);
 
-#define LGPT_CLK_PRESCALE(pres) (((pres) + 1) << 8)
+#define LGPT_CLK_PRESCALE(pres) ((pres) << 8)
 
 static void counter_cc23x0_lgpt_isr(const struct device *dev);
 
@@ -130,7 +131,7 @@ static uint32_t counter_cc23x0_lgpt_get_freq(const struct device *dev)
 {
 	const struct counter_cc23x0_lgpt_config *config = dev->config;
 
-	return (DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency) / config->prescale);
+	return (DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency) / (config->prescale + 1));
 }
 
 static int counter_cc23x0_lgpt_set_alarm(const struct device *dev, uint8_t chan_id,
