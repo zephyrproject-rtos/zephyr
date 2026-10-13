@@ -62,13 +62,52 @@ def normalize_dbfiles(dbfile):
     return dbfiles
 
 
-def get_log_parser(dbfile, logger):
+def add_sorting_arguments(argparser):
+    """Add arguments controlling sorting of the log messages to an argument parser."""
+    argparser.add_argument(
+        "--latency",
+        type=float,
+        default=0,
+        metavar="MS",
+        help=(
+            "Time in milliseconds for which parsed messages are cached and sorted by timestamp. "
+            "Messages from a remote domain may be delayed (e.g. by IPC) so they can appear in "
+            "the stream out of order. A message is printed when a message newer by more than "
+            "this time was received. If no new data arrives for this time, all cached messages "
+            "are printed. Requires --ts_freq. Disabled (messages are printed immediately) "
+            "by default."
+        ),
+    )
+    argparser.add_argument(
+        "--ts_freq",
+        type=float,
+        default=None,
+        metavar="HZ",
+        help="Frequency of the log timestamp in Hz. Required when --latency is used.",
+    )
+
+
+def check_sorting_arguments(argparser, args):
+    """Validate sorting arguments, report error using the argument parser."""
+    if args.latency < 0:
+        argparser.error("--latency must not be negative")
+    if args.ts_freq is not None and args.ts_freq <= 0:
+        argparser.error("--ts_freq must be greater than 0")
+    if args.latency > 0 and args.ts_freq is None:
+        argparser.error("--ts_freq is required when --latency is used")
+
+
+def get_log_parser(dbfile, logger, latency_ms=0, ts_freq=None):
     """Get the log parser for the given database(s).
 
     ``dbfile`` is one path, a sequence of paths, or paths separated with ``;`` in one string.
     The first database is the primary one (domain 0). If more than one database is given, then
     for messages from other domains a database is selected by looking for the message string
     in each of them and source names are prefixed with ``cpu<domain_id>.``.
+
+    If ``latency_ms`` is greater than 0, parsed messages are cached for that time and printed
+    sorted by timestamp (``ts_freq``, in Hz, is the timestamp frequency). Call ``flush()`` on
+    the returned parser when there is no more data.
 
     In addition to creating the parser, the function prints general information about the parser.
     """
@@ -100,6 +139,11 @@ def get_log_parser(dbfile, logger):
     else:
         logger.error("ERROR: Cannot find a suitable parser matching database version!")
         raise ValueError("Cannot create parser.")
+
+    if latency_ms and latency_ms > 0:
+        if not ts_freq:
+            raise ValueError("Timestamp frequency is required to sort messages.")
+        log_parser.enable_sorting(latency_ms, ts_freq)
 
     return log_parser
 
