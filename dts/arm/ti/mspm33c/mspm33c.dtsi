@@ -167,27 +167,27 @@
 			compatible = "ti,mspm0-gpio";
 			reg = <0x400f0000 0x2000>;
 			interrupts = <6 0>;
-			status = "disabled";
 			gpio-controller;
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpiob: gpio@400f2000 {
 			compatible = "ti,mspm0-gpio";
 			reg = <0x400f2000 0x2000>;
 			interrupts = <7 0>;
-			status = "disabled";
 			gpio-controller;
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpioc: gpio@400f4000 {
 			compatible = "ti,mspm0-gpio";
 			reg = <0x400f4000 0x2000>;
 			interrupts = <8 0>;
-			status = "disabled";
 			gpio-controller;
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		comp0: comp@400e0000 {
