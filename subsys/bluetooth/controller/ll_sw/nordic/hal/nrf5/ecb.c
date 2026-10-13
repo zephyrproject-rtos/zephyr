@@ -317,9 +317,10 @@ int ecb_ut(void)
 	}
 
 #if defined(CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS)
-	irq_connect_dynamic(ECB_IRQn, CONFIG_BT_CTLR_ULL_LOW_PRIO, isr_ecb, NULL, 0);
+	irq_connect_dynamic(ECB_IRQn, HAL_IRQ_PRIO(CONFIG_BT_CTLR_ULL_LOW_PRIO), isr_ecb, NULL,
+			    0);
 #else /* !CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS */
-	IRQ_CONNECT(ECB_IRQn, CONFIG_BT_CTLR_ULL_LOW_PRIO, isr_ecb, NULL, 0);
+	IRQ_CONNECT(ECB_IRQn, HAL_IRQ_PRIO(CONFIG_BT_CTLR_ULL_LOW_PRIO), isr_ecb, NULL, 0);
 #endif /* !CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS */
 
 	uint8_t ecb_mem[sizeof(struct ecb) + 32U];
