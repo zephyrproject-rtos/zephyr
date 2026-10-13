@@ -757,6 +757,27 @@ static void eth_dwc_xgmac_tx_irq_work(const struct device *dev, uint32_t dma_chn
 	(void)k_mutex_unlock(&tx_desc_meta->ring_lock);
 }
 
+static void eth_dwc_xgmac_resume_rx(const struct device *dev, uint32_t dma_chnl)
+{
+	mem_addr_t ioaddr = get_reg_base_addr(dev);
+	mem_addr_t reg_addr = (ioaddr + XGMAC_DMA_CHNLX_BASE_ADDR_OFFSET(dma_chnl) +
+			       DMA_CHX_RXDESC_TAIL_LPOINTER_OFST);
+	uint32_t reg_val = sys_read32(reg_addr);
+
+	/* Touch RX tail pointer */
+	sys_write32(reg_val, reg_addr);
+
+	/* Stop RX Processing */
+	reg_addr = (ioaddr + XGMAC_DMA_CHNLX_BASE_ADDR_OFFSET(dma_chnl) + DMA_CHX_RX_CONTROL_OFST);
+	reg_val = sys_read32(reg_addr) & DMA_CHX_RX_CONTROL_SR_CLR_MSK;
+	sys_write32(reg_val, reg_addr);
+	k_sleep(K_MSEC(1));
+
+	/* Start RX Processing */
+	reg_val = sys_read32(reg_addr) | DMA_CHX_RX_CONTROL_SR_SET_MSK;
+	sys_write32(reg_val, reg_addr);
+}
+
 static void eth_dwc_xgmac_dmach_isr(const struct device *dev, uint32_t dmach_interrupt_sts,
 				    uint32_t dma_chnl)
 {
@@ -780,6 +801,7 @@ static void eth_dwc_xgmac_dmach_isr(const struct device *dev, uint32_t dmach_int
 	}
 	if (dmach_interrupt_sts & DMA_CHX_STATUS_RBU_SET_MSK) {
 		/* Receive buffer unavailable interrupt*/
+		eth_dwc_xgmac_resume_rx(dev, dma_chnl);
 		LOG_ERR("%s: DMA channel %d Receive buffer unavailable", dev->name, dma_chnl);
 	}
 	if (dmach_interrupt_sts & DMA_CHX_STATUS_RPS_SET_MSK) {
