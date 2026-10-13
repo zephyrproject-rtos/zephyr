@@ -58,6 +58,26 @@ Networking
 Other subsystems
 ****************
 
+MCUmgr
+======
+
+* ``mcumgr_serial_tx_cb`` takes a new ``ctx`` argument, which ``mcumgr_serial_tx_pkt()`` passes
+  through from its new last argument. Out-of-tree serial transports must add the argument, and pass
+  a context or ``NULL``.
+
+* The MCUmgr UART driver (``include/zephyr/drivers/console/uart_mcumgr.h``) works on instances
+  defined with ``UART_MCUMGR_DEFINE()`` instead of the ``zephyr,uart-mcumgr`` chosen UART.
+  ``uart_mcumgr_register()``, ``uart_mcumgr_send()`` and ``uart_mcumgr_free_rx_buf()`` take the
+  instance first, and ``uart_mcumgr_register()`` takes a pointer passed to the receive callback and
+  returns an error code. Code that uses the driver directly must define an instance for its UART.
+
+* :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_UART` and
+  :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_RAW_UART` no longer depend on
+  :kconfig:option:`CONFIG_UART_MCUMGR_RAW_PROTOCOL`, which now only selects the framing of the
+  ``zephyr,uart-mcumgr`` chosen UART. A configuration enabling the transport that does not match it,
+  which Kconfig used to disable, now fails to build with a message. Remove that transport, or give
+  it a :dtcompatible:`zephyr,smp-uart` or :dtcompatible:`zephyr,smp-uart-raw` node.
+
 Modules
 *******
 
