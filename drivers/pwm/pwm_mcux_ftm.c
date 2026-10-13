@@ -17,6 +17,7 @@
 #include <fsl_clock.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 
 #include <zephyr/logging/log.h>
 
@@ -66,6 +67,8 @@ struct mcux_ftm_data {
 	uint32_t clock_freq;
 	uint32_t period_cycles;
 	ftm_chnl_pwm_config_param_t channel[MAX_CHANNELS];
+	/* Whether the policy lock is currently held. */
+	bool pm_lock_held;
 #ifdef CONFIG_PM_DEVICE
 	struct mcux_ftm_pm_channel pm_channel[MAX_CHANNELS];
 	uint32_t pm_period_cycles;
@@ -75,6 +78,45 @@ struct mcux_ftm_data {
 	struct mcux_ftm_capture_data capture[MAX_CAPTURE_PAIRS];
 #endif /* CONFIG_PWM_CAPTURE */
 };
+
+static bool mcux_ftm_pwm_active(const struct device *dev)
+{
+	const struct mcux_ftm_config *config = dev->config;
+	struct mcux_ftm_data *data = dev->data;
+
+	for (uint8_t channel = 0U; channel < config->channel_count; channel++) {
+		if (data->channel[channel].level != kFTM_NoPwmSignal) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/*
+ * Hold the policy lock for exactly as long as a channel is driving an output: a
+ * waveform has no completion event that could bound a shorter window. An armed
+ * capture is covered by pm_device_busy_set() instead.
+ *
+ * Idempotent, so any path that changes what a channel drives can just call it.
+ */
+static void mcux_ftm_pm_lock_sync(const struct device *dev)
+{
+	struct mcux_ftm_data *data = dev->data;
+	bool active = mcux_ftm_pwm_active(dev);
+
+	if (active == data->pm_lock_held) {
+		return;
+	}
+
+	if (active) {
+		pm_policy_device_power_lock_get(dev);
+	} else {
+		pm_policy_device_power_lock_put(dev);
+	}
+
+	data->pm_lock_held = active;
+}
 
 static int mcux_ftm_set_cycles(const struct device *dev, uint32_t channel,
 			       uint32_t period_cycles, uint32_t pulse_cycles,
@@ -159,6 +201,8 @@ static int mcux_ftm_set_cycles(const struct device *dev, uint32_t channel,
 		return -ENOTSUP;
 	}
 	FTM_SetSoftwareTrigger(config->base, true);
+
+	mcux_ftm_pm_lock_sync(dev);
 
 #ifdef CONFIG_PM_DEVICE
 	/* Remember the accepted setup so that the resume can replay it. */
@@ -593,6 +637,7 @@ static int mcux_ftm_restore_channels(const struct device *dev)
 static int mcux_ftm_suspend(const struct device *dev)
 {
 	const struct mcux_ftm_config *config = dev->config;
+	struct mcux_ftm_data *data = dev->data;
 	int err;
 
 #ifdef CONFIG_PWM_CAPTURE
@@ -611,6 +656,15 @@ static int mcux_ftm_suspend(const struct device *dev)
 	 * peripheral clock.
 	 */
 	FTM_Deinit(config->base);
+
+	/* Released here rather than by mcux_ftm_pm_lock_sync(): that reads
+	 * data->channel[], which still holds the setup the resume replays, so it
+	 * would not release the lock.
+	 */
+	if (data->pm_lock_held) {
+		pm_policy_device_power_lock_put(dev);
+		data->pm_lock_held = false;
+	}
 
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
 	if (err < 0 && err != -ENOENT) {
@@ -648,6 +702,8 @@ static int mcux_ftm_resume(const struct device *dev)
 #else
 	err = 0;
 #endif /* CONFIG_PM_DEVICE */
+
+	mcux_ftm_pm_lock_sync(dev);
 
 	return err;
 }
