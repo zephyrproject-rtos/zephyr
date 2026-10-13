@@ -19,6 +19,13 @@ config SOC_SERIES_CC27XX
 	help
 	  Enable support for TI SimpleLink CC27XX series SOCs.
 
+config SOC_CC2755R7
+	bool
+	select SOC_SERIES_CC27XX
+	select HAS_CC27XXX10_SDK
+	help
+	  CC2755R7
+
 config SOC_CC2745R10_Q1
 	bool
 	select SOC_SERIES_CC27XX
@@ -51,6 +58,7 @@ config SOC_SERIES
 	default "cc27xx" if SOC_SERIES_CC27XX
 
 config SOC
+	default "cc2755r7" if SOC_CC2755R7
 	default "cc2745r10_q1" if SOC_CC2745R10_Q1
 	default "cc2755r10" if SOC_CC2755R10
 	default "cc2755p10" if SOC_CC2755P10
