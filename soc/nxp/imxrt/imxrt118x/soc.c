@@ -731,6 +731,13 @@ __weak void clock_init(void)
 #endif
 #endif /* CONFIG_COUNTER_MCUX_LPIT */
 
+#if defined(CONFIG_NXP_IMX_EXTERNAL_SDRAM)
+	/* Configure SEMC using SYS_PLL1_CLK */
+	rootCfg.mux = kCLOCK_SEMC_ClockRoot_MuxSysPll1Out;
+	rootCfg.div = 5;
+	CLOCK_SetRootClock(kCLOCK_Root_Semc, &rootCfg);
+#endif
+
 	/* Keep core clock ungated during WFI */
 	CCM->LPCG[1].LPM0 = 0x33333333;
 	CCM->LPCG[1].LPM1 = 0x33333333;
