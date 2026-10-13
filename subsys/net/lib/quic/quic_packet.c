@@ -1721,7 +1721,7 @@ ZTESTABLE_STATIC int handle_crypto_frame(struct quic_endpoint *ep,
 	*consumed = pos + crypto_len;
 
 	/* Initialize crypto context if needed (first CRYPTO frame) */
-	if (!ep->crypto.initial.initialized) {
+	if (!ep->crypto.initial.initialized && !ep->crypto.initial.discarded) {
 		if (!quic_conn_init_setup(ep, ep->my_cid, ep->my_cid_len)) {
 			NET_DBG("[EP:%p/%d] Failed to setup Initial crypto context",
 				ep, quic_get_by_ep(ep));

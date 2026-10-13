@@ -8140,6 +8140,14 @@ static bool process_long_header_msg(struct quic_pkt *pkt)
 
 	if (ptype == QUIC_PACKET_TYPE_HANDSHAKE) {
 		quic_endpoint_validate_address(ep);
+
+		if (ep->is_server && !ep->crypto.initial.discarded) {
+			/* RFC 9001 ch. 4.9.1: a server discards the Initial
+			 * keys when it first successfully processes a
+			 * Handshake packet.
+			 */
+			quic_endpoint_discard_keys(ep, QUIC_SECRET_LEVEL_INITIAL);
+		}
 	}
 
 	NET_DBG("[EP:%p/%d] Decrypted packet %" PRIu64 ", payload %zu bytes", ep,
@@ -8150,7 +8158,7 @@ static bool process_long_header_msg(struct quic_pkt *pkt)
 				"Decrypted payload:");
 	}
 
-	if (!ep->crypto.initial.initialized) {
+	if (!ep->crypto.initial.initialized && !ep->crypto.initial.discarded) {
 		if (!quic_conn_init_setup(ep, ep->peer_orig_dcid,
 					  ep->peer_orig_dcid_len)) {
 			NET_ERR("[EP:%p/%d] Failed to setup Initial crypto for new endpoint",
