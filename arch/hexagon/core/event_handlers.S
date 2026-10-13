@@ -412,3 +412,20 @@ SECTION_FUNC(TEXT, z_hexagon_enhanced_trap0)
 SECTION_FUNC(TEXT, z_hexagon_enhanced_interrupt)
 	EVENT_ENTRY 7
 	EVENT_EXIT 7
+
+#if defined(CONFIG_ARCH_STACKWALK) && defined(CONFIG_MULTITHREADING)
+/*
+ * Return addresses of the EVENT_EXIT context switch call, zero-terminated.
+ * A switch frame whose LR is one of these was saved by a thread preempted
+ * by an event; arch_stack_walk() unwinds it through the event frame.
+ */
+GDATA(z_hexagon_event_switch_ret)
+SECTION_VAR(RODATA, z_hexagon_event_switch_ret)
+	.balign 4
+	.word _event_no_switch_1
+	.word _event_no_switch_2
+	.word _event_no_switch_3
+	.word _event_no_switch_5
+	.word _event_no_switch_7
+	.word 0
+#endif
