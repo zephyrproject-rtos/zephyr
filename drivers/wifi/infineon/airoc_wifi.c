@@ -1131,10 +1131,12 @@ static int airoc_mgmt_ap_enable(const struct device *dev,
 		security = WHD_SECURITY_WPA3_SAE;
 		break;
 	default:
+		ret = -ENOTSUP;
+		LOG_ERR("Unsupported AP security type: %d", params->security);
 		goto error;
 	}
 
-	if (whd_wifi_init_ap(airoc_ap_if, &ssid, security, (const uint8_t *)params->psk,
+	if (whd_wifi_init_ap(airoc_ap_if, &ssid, security, params->psk,
 			     params->psk_length, chanspec) != 0) {
 		LOG_ERR("Failed to init whd ap interface");
 		ret = -EAGAIN;
