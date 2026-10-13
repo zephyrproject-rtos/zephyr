@@ -10,7 +10,12 @@ target_sources(app PRIVATE
   src/test_empty.c
   src/test_connect1.c
   src/test_connect2.c
+  src/test_scan_window.c
 )
+
+# This contains babblesim-specific helpers, e.g. the pass and fail macros.
+add_subdirectory(${ZEPHYR_BASE}/tests/bsim/babblekit babblekit)
+target_link_libraries(app PRIVATE babblekit)
 
 zephyr_include_directories(
   ${BSIM_COMPONENTS_PATH}/libUtilv1/src/

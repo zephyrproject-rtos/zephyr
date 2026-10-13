@@ -17,6 +17,7 @@ tests:
         - tests_scripts/basic_conn_split.sh
         - tests_scripts/basic_conn20_split.sh
         - tests_scripts/basic_conn_encrypted_split.sh
+        - tests_scripts/conn_scan_window_split.sh
 
   bluetooth.controller.conn.split_1ms:
     platform_allow:
