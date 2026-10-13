@@ -7438,6 +7438,48 @@ ZTEST(net_socket_quic, test_502_late_frame_does_not_reopen_a_closed_stream)
 	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
 }
 
+ZTEST(net_socket_quic, test_501_idle_timer_restarts_on_first_send_after_receive)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	int64_t stale = k_uptime_get() - 5000;
+	uint64_t pn = 0;
+
+	/* A packet from the peer was processed a while ago */
+	quic_endpoint_restart_idle_timer(ep);
+	ep->idle.last_rx_time = stale;
+
+	/* A packet that does not ask for an acknowledgment is no activity */
+	quic_recovery_on_packet_sent(ep, QUIC_SECRET_LEVEL_APPLICATION, pn++, 50, false,
+				     false, 0);
+	zexpect_equal(ep->idle.last_rx_time, stale,
+		      "Idle timer restarted by a packet that is not ack-eliciting");
+
+	/* The first ack-eliciting packet after the receive restarts it */
+	quic_recovery_on_packet_sent(ep, QUIC_SECRET_LEVEL_APPLICATION, pn++, 100, true,
+				     false, 0);
+	zexpect_true(ep->idle.last_rx_time > stale,
+		     "Idle timer not restarted by the first ack-eliciting packet");
+
+	/* Further ones do not, or sending alone would keep the connection
+	 * from ever timing out.
+	 */
+	ep->idle.last_rx_time = stale;
+	quic_recovery_on_packet_sent(ep, QUIC_SECRET_LEVEL_APPLICATION, pn++, 100, true,
+				     false, 0);
+	zexpect_equal(ep->idle.last_rx_time, stale,
+		      "Idle timer restarted again without a packet from the peer");
+
+	/* After the next packet from the peer the same applies anew */
+	quic_endpoint_restart_idle_timer(ep);
+	ep->idle.last_rx_time = stale;
+	quic_recovery_on_packet_sent(ep, QUIC_SECRET_LEVEL_APPLICATION, pn++, 100, true,
+				     false, 0);
+	zexpect_true(ep->idle.last_rx_time > stale,
+		     "Idle timer not restarted by the first send after a receive");
+
+	k_work_cancel_delayable(&ep->recovery.pto_work);
+}
+
 ZTEST(net_socket_quic, test_488_token_replay_entry_survives_the_expiry_second)
 {
 	uint8_t nonce[8] = {
