@@ -1,5 +1,5 @@
-description: TI VTM temperature sensor sample
-name: ti_vtm
+sample:
+  name: ti_vtm
 tests:
   sample.sensor.ti_vtm:
     tags:
