@@ -242,6 +242,77 @@ static void main_ext_conn_adv_advertiser_x5(void)
 	TEST_PASS("Extended advertiser passed");
 }
 
+DEFINE_FLAG_STATIC(flag_adv_sent);
+DEFINE_FLAG_STATIC(flag_adv_connected);
+static uint8_t adv_num_sent;
+
+static void adv_sent(struct bt_le_ext_adv *adv, struct bt_le_ext_adv_sent_info *info)
+{
+	printk("Advertising set %p sent %u events\n", adv, info->num_sent);
+
+	adv_num_sent = info->num_sent;
+	SET_FLAG(flag_adv_sent);
+}
+
+static void adv_connected(struct bt_le_ext_adv *adv, struct bt_le_ext_adv_connected_info *info)
+{
+	printk("Advertising set %p connected to %s\n", adv, bt_conn_dst_str(info->conn));
+
+	SET_FLAG(flag_adv_connected);
+}
+
+static struct bt_le_ext_adv *start_limited_adv_set(const struct bt_le_adv_param *param,
+						   uint16_t timeout, uint8_t num_events)
+{
+	static const struct bt_le_ext_adv_cb adv_cb = {
+		.sent = adv_sent,
+		.connected = adv_connected,
+	};
+	struct bt_le_ext_adv *adv;
+	int err;
+
+	err = bt_le_ext_adv_create(param, &adv_cb, &adv);
+	TEST_ASSERT(err == 0, "Failed to create advertising set: %d", err);
+
+	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_PARAM(timeout, num_events));
+	TEST_ASSERT(err == 0, "Failed to start extended advertising: %d", err);
+
+	return adv;
+}
+
+static void main_ext_adv_limited_advertiser(void)
+{
+	struct bt_le_ext_adv *ext_adv;
+
+	common_init();
+
+	bt_conn_cb_register(&conn_cbs);
+
+	printk("Advertising until the event limit...\n");
+	ext_adv = start_limited_adv_set(BT_LE_EXT_ADV_NCONN, 0, 3);
+	WAIT_FOR_FLAG(flag_adv_sent);
+	TEST_ASSERT(adv_num_sent == 3, "Unexpected number of sent events: %u", adv_num_sent);
+	UNSET_FLAG(flag_adv_sent);
+	delete_adv_set(ext_adv);
+
+	printk("Advertising with a timeout until connected...\n");
+	ext_adv = start_limited_adv_set(BT_LE_EXT_ADV_CONN, 500, 0);
+	WAIT_FOR_FLAG(flag_adv_connected);
+	WAIT_FOR_FLAG(flag_connected);
+	disconnect_from_target();
+	WAIT_FOR_FLAG_UNSET(flag_connected);
+	WAIT_FOR_FLAG(flag_conn_recycled);
+	TEST_ASSERT(!IS_FLAG_SET(flag_adv_sent), "Sent callback without reaching a limit");
+	delete_adv_set(ext_adv);
+
+	printk("Advertising until the timeout...\n");
+	ext_adv = start_limited_adv_set(BT_LE_EXT_ADV_NCONN, 200, 0);
+	WAIT_FOR_FLAG(flag_adv_sent);
+	delete_adv_set(ext_adv);
+
+	TEST_PASS("Extended advertiser passed");
+}
+
 static const struct bst_test_instance ext_adv_advertiser[] = {
 	{
 		.test_id = "ext_adv_advertiser",
@@ -261,6 +332,12 @@ static const struct bst_test_instance ext_adv_advertiser[] = {
 			      "Starts extended advertising, and restarts it after disconnecting, "
 			      "repeated over 5 times",
 		.test_main_f = main_ext_conn_adv_advertiser_x5
+	},
+	{
+		.test_id = "ext_adv_limited_advertiser",
+		.test_descr = "Limited extended advertising test. "
+			      "The sent callback reports a reached limit, not a connection",
+		.test_main_f = main_ext_adv_limited_advertiser
 	},
 	BSTEST_END_MARKER
 };
