@@ -99,7 +99,7 @@ int mqtt_client_websocket_write(struct mqtt_client *client, const uint8_t *data,
 					 WEBSOCKET_OPCODE_DATA_BINARY,
 					 true, true, SYS_FOREVER_MS);
 		if (ret < 0) {
-			return -errno;
+			return ret;
 		}
 
 		offset += ret;
