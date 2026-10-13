@@ -1185,16 +1185,27 @@ static int h3_send_404(struct http_client_ctx *client)
 	return h3_end_response(client);
 }
 
-static int h3_send_425(struct http_client_ctx *client)
+/*
+ * Forget the resource of a request that is being refused. Whatever the peer
+ * still sends on the stream, a request body or the end of the stream, must
+ * not be handled as part of a request for that resource.
+ */
+static void h3_forget_refused_request(struct http_client_ctx *client)
 {
 	struct http3_stream_ctx *stream = h3_stream_ctx(client);
-	int ret;
 
 	client->current_detail = NULL;
 	if (stream != NULL) {
 		stream->current_detail = NULL;
 		stream->request_headers_pending = false;
 	}
+}
+
+static int h3_send_425(struct http_client_ctx *client)
+{
+	int ret;
+
+	h3_forget_refused_request(client);
 
 	ret = h3_send_headers_frame(client, HTTP_425_TOO_EARLY,
 				    NULL, NULL, 0);
@@ -1556,7 +1567,20 @@ static int h3_handle_dynamic_resource(
 			return ret;
 		}
 
-		return enter_http_done_state(client);
+		/*
+		 * 409 is a per-request status: finish this stream only and
+		 * leave the connection running. enter_http_done_state() must
+		 * not be used here, it closes the whole connection while
+		 * client->fd still points at the request stream.
+		 *
+		 * The resource belongs to its holder. Forget it for this
+		 * request, or the body that follows would be passed to the
+		 * callback and the end of the stream would end the holder's
+		 * transaction.
+		 */
+		h3_forget_refused_request(client);
+
+		return h3_end_response(client);
 	}
 
 	dynamic_detail->holder = client;
