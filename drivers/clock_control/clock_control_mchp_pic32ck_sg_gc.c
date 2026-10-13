@@ -927,9 +927,10 @@ static int clock_mchp_on(const struct device *dev, clock_control_subsys_t sys)
 	}
 
 	/* Check if the clock on operation is successful. */
-	if (clock_on(dev, subsys) != 0) {
-		LOG_ERR("%s: Clock ON operation failed", __func__);
-		return -ENOTSUP;
+	ret_val = clock_on(dev, subsys);
+	if (ret_val != 0) {
+		LOG_ERR("%s: Clock ON operation failed (%d)", __func__, ret_val);
+		return ret_val;
 	}
 
 	/*
