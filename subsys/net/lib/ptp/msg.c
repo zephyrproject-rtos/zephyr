@@ -214,7 +214,7 @@ static void msg_tlv_pre_send(struct ptp_msg *msg)
 struct ptp_msg *ptp_msg_alloc(void)
 {
 	struct ptp_msg *msg = NULL;
-	int ret = k_mem_slab_alloc(&msg_slab, (void **)&msg, K_FOREVER);
+	int ret = k_mem_slab_alloc(&msg_slab, (void **)&msg, K_NO_WAIT);
 
 	if (ret) {
 		LOG_ERR("Couldn't allocate memory for the message");
