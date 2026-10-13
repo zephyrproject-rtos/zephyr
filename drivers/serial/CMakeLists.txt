@@ -134,3 +134,7 @@ if(CONFIG_UART_NATIVE_TTY)
   zephyr_library_sources(uart_native_tty.c)
   target_sources(native_simulator INTERFACE uart_native_tty_bottom.c)
 endif()
+
+if(CONFIG_UARTE_USE_BAUDRATE_FORMULA AND NOT CONFIG_HAS_UARTE_BAUDRATE_FORMULA)
+  message(WARNING "CONFIG_UARTE_USE_BAUDRATE_FORMULA is set, but CONFIG_HAS_UARTE_BAUDRATE_FORMULA is not")
+endif()
