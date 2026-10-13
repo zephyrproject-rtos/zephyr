@@ -267,13 +267,7 @@ static int mcp251xfd_reg_check_value_wtimeout(const struct device *dev, uint16_t
 
 	for (;;) {
 		reg = mcp251xfd_read_crc(dev, addr, MCP251XFD_REG_SIZE);
-		if (!reg) {
-			return -EINVAL;
-		}
-
-		*reg = sys_le32_to_cpu(*reg);
-
-		if ((*reg & mask) == value) {
+		if ((reg != NULL) && ((sys_le32_to_cpu(*reg) & mask) == value)) {
 			return 0;
 		}
 
@@ -1363,9 +1357,15 @@ static inline int mcp251xfd_init_osc_reg(const struct device *dev)
 		return ret;
 	}
 
-	return mcp251xfd_reg_check_value_wtimeout(dev, MCP251XFD_REG_OSC, reg_value, reg_value,
-						  MCP251XFD_PLLRDY_TIMEOUT_USEC,
-						  MCP251XFD_PLLRDY_RETRIES, false);
+	ret = mcp251xfd_reg_check_value_wtimeout(dev, MCP251XFD_REG_OSC, reg_value, reg_value,
+						 MCP251XFD_PLLRDY_TIMEOUT_USEC,
+						 MCP251XFD_PLLRDY_RETRIES, false);
+	if ((ret == 0) && dev_cfg->pll_enable) {
+		/* SYSCLK is not yet stable when PLLRDY is set */
+		k_busy_wait(MCP251XFD_PLLRDY_SETTLE_USEC);
+	}
+
+	return ret;
 }
 
 static inline int mcp251xfd_init_iocon_reg(const struct device *dev)
@@ -1502,7 +1502,16 @@ static int mcp251xfd_reset(const struct device *dev)
 	ret = spi_write(dev_cfg->bus.bus, dev_data->spi_cfg, &tx);
 	/* Adding delay after init to fix occasional init issue. Delay time found experimentally. */
 	k_sleep(K_USEC(MCP251XFD_RESET_DELAY_USEC));
-	return ret;
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* the oscillator restart may take longer than the delay */
+	return mcp251xfd_reg_check_value_wtimeout(
+		dev, MCP251XFD_REG_CON,
+		FIELD_PREP(MCP251XFD_REG_CON_OPMOD_MASK, MCP251XFD_REG_CON_MODE_CONFIG),
+		MCP251XFD_REG_CON_OPMOD_MASK, MCP251XFD_RESET_TIMEOUT_USEC, MCP251XFD_RESET_RETRIES,
+		true);
 }
 
 static int mcp251xfd_init(const struct device *dev)
