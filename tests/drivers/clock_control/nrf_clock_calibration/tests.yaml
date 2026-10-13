@@ -38,6 +38,7 @@ tests:
       - CONFIG_CLOCK_CONTROL_NRF_USES_TEMP_SENSOR=n
     platform_allow:
       - nrf7120dk/nrf7120/cpuapp
+      - nrf7120dk/nrf7120e/cpuapp
       - nrf7120dk/nrf7120/cpuapp/ns
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE="boards/lfrc.overlay"
