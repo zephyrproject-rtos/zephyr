@@ -13,4 +13,4 @@ properties:
   bt-hci-bus:
     default: "virtual"
   bt-hci-quirks:
-    default: ["no-reset"]
+    default: ["no-reset", "no-adv-term-on-dir-timeout"]
