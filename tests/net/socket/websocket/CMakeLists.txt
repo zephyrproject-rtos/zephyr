@@ -5,6 +5,8 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(websocket)
 
 target_include_directories(app PRIVATE
-			   ${ZEPHYR_BASE}/subsys/net/lib/websocket)
-FILE(GLOB app_sources src/*.c)
-target_sources(app PRIVATE ${app_sources})
+  ${ZEPHYR_BASE}/subsys/net/lib/websocket
+)
+target_sources(app PRIVATE src/handshake.c)
+target_sources_ifdef(CONFIG_NET_TEST app PRIVATE src/main.c)
+target_sources_ifndef(CONFIG_NET_TEST app PRIVATE src/loopback.c)
