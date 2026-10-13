@@ -2242,7 +2242,7 @@ int airoc_wifi_wpa_supp_send_ext_auth_sts(void *if_priv, struct external_auth *p
 }
 #endif
 
-#if defined(CONFIG_IFX_WIFI_SOFTAP_SUPPORT)
+#if defined(CONFIG_IFX_WIFI_SOFTAP_SUPPORT) && defined(CONFIG_WIFI_NM_WPA_SUPPLICANT)
 int airoc_wifi_wpa_supp_init_ap(void *if_priv, struct wpa_driver_associate_params *params)
 {
 	struct airoc_wifi_data *data = NULL;
