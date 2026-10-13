@@ -388,10 +388,10 @@ static int quic_send_packet_with_pn(struct quic_endpoint *ep,
 				    const uint8_t *payload,
 				    size_t payload_len,
 				    uint64_t *sent_pn_out);
-static int quic_send_packet(struct quic_endpoint *ep,
-			    enum quic_secret_level level,
-			    const uint8_t *payload,
-			    size_t payload_len);
+ZTESTABLE_STATIC int quic_send_packet(struct quic_endpoint *ep,
+				      enum quic_secret_level level,
+				      const uint8_t *payload,
+				      size_t payload_len);
 static int quic_send_stop_sending(struct quic_endpoint *ep,
 				  uint64_t stream_id,
 				  uint64_t error_code);

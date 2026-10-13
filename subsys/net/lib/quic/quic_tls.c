@@ -5787,10 +5787,10 @@ static int quic_apply_header_protection_split(uint8_t *header, size_t header_len
 	return 0;
 }
 
-static int quic_send_packet(struct quic_endpoint *ep,
-			    enum quic_secret_level level,
-			    const uint8_t *payload,
-			    size_t payload_len);
+ZTESTABLE_STATIC int quic_send_packet(struct quic_endpoint *ep,
+				      enum quic_secret_level level,
+				      const uint8_t *payload,
+				      size_t payload_len);
 static int quic_send_packet_with_pn(struct quic_endpoint *ep,
 				    enum quic_secret_level level,
 				    const uint8_t *payload,
@@ -6244,10 +6244,10 @@ static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
 					      dplpmtud_probe, NULL);
 }
 
-static int quic_send_packet(struct quic_endpoint *ep,
-			    enum quic_secret_level level,
-			    const uint8_t *payload,
-			    size_t payload_len)
+ZTESTABLE_STATIC int quic_send_packet(struct quic_endpoint *ep,
+				      enum quic_secret_level level,
+				      const uint8_t *payload,
+				      size_t payload_len)
 {
 	return quic_send_packet_with_pn(ep, level, payload, payload_len, NULL);
 }
