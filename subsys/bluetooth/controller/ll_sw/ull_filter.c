@@ -985,9 +985,8 @@ bool ull_filter_lll_rl_addr_resolve(uint8_t id_addr_type,
 		return false;
 	}
 
-	if ((id_addr_type != 0U) && ((id_addr[5] & 0xc0) == 0x40)) {
-		return bt_rpa_irk_matches(rl[rl_idx].local_irk,
-					  (bt_addr_t *)id_addr);
+	if (id_addr_type != 0U) {
+		return bt_addr_matches_irk((const bt_addr_t *)id_addr, rl[rl_idx].local_irk);
 	}
 
 	return false;
@@ -1529,7 +1528,7 @@ static void target_resolve(struct k_work *work)
 		if (i != FILTER_IDX_NONE) {
 			/* Found a known unknown - do nothing */
 			j = FILTER_IDX_NONE;
-		} else if (bt_rpa_irk_matches(rl[idx].local_irk, search_rpa)) {
+		} else if (bt_addr_matches_irk(search_rpa, rl[idx].local_irk)) {
 			/* Could resolve, store RPA */
 			(void)memcpy(rl[idx].target_rpa.val, search_rpa->val,
 				     sizeof(bt_addr_t));
@@ -1567,7 +1566,7 @@ static uint8_t prpa_cache_try_resolve(bt_addr_t *rpa)
 		if (rl[i].taken && rl[i].pirk) {
 			pi = rl[i].pirk_idx;
 			sys_memcpy_swap(lpirk, peer_irks[pi], IRK_SIZE);
-			if (bt_rpa_irk_matches(lpirk, rpa)) {
+			if (bt_addr_matches_irk(rpa, lpirk)) {
 				return i;
 			}
 		}
