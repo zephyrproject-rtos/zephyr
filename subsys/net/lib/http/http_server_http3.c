@@ -40,6 +40,14 @@ int http_hpack_huffman_decode(const uint8_t *encoded_buf, size_t encoded_len,
 #define H3_FRAME_GOAWAY         0x07
 #define H3_FRAME_MAX_PUSH_ID    0x0d
 
+/* Frame types of HTTP/2 that have no HTTP/3 equivalent. They are reserved
+ * and must not be sent (RFC 9114 ch. 7.2.8 and ch. 11.2.1).
+ */
+#define H3_FRAME_H2_PRIORITY      0x02
+#define H3_FRAME_H2_PING          0x06
+#define H3_FRAME_H2_WINDOW_UPDATE 0x08
+#define H3_FRAME_H2_CONTINUATION  0x09
+
 /* HTTP/3 Settings identifiers (RFC 9114 Section 7.2.4.1) */
 #define H3_SETTINGS_QPACK_MAX_TABLE_CAPACITY  0x01
 #define H3_SETTINGS_MAX_FIELD_SECTION_SIZE    0x06
@@ -2305,6 +2313,18 @@ int h3_handle_control_stream(struct http_client_ctx *client, int fd)
 			LOG_DBG("[%p] H3: Control stream CANCEL_PUSH (ignored)", client);
 			break;
 
+		case H3_FRAME_H2_PRIORITY:
+		case H3_FRAME_H2_PING:
+		case H3_FRAME_H2_WINDOW_UPDATE:
+		case H3_FRAME_H2_CONTINUATION:
+			/* Unlike an unknown frame type, a reserved HTTP/2
+			 * frame type is a connection error of type
+			 * H3_FRAME_UNEXPECTED (RFC 9114 ch. 7.2.8).
+			 */
+			LOG_DBG("[%p] H3: reserved frame type=0x%llx on control stream",
+				client, frame_type);
+			return -H3_FRAME_UNEXPECTED;
+
 		default:
 			/* Unknown frame types on control stream are ignored */
 			LOG_DBG("[%p] H3: Control stream unknown frame 0x%llx",
@@ -2800,6 +2820,18 @@ static int h3_process_frames(struct http_client_ctx *client, bool stream_fin)
 			 * while client->fd still points at the request stream.
 			 */
 			LOG_DBG("[%p] H3: frame type=0x%llx not allowed on request stream",
+				client, frame_type);
+			return -H3_FRAME_UNEXPECTED;
+
+		case H3_FRAME_H2_PRIORITY:
+		case H3_FRAME_H2_PING:
+		case H3_FRAME_H2_WINDOW_UPDATE:
+		case H3_FRAME_H2_CONTINUATION:
+			/* Unlike an unknown frame type, a reserved HTTP/2
+			 * frame type is a connection error of type
+			 * H3_FRAME_UNEXPECTED (RFC 9114 ch. 7.2.8).
+			 */
+			LOG_DBG("[%p] H3: reserved frame type=0x%llx on request stream",
 				client, frame_type);
 			return -H3_FRAME_UNEXPECTED;
 
