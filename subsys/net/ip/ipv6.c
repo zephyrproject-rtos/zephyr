@@ -291,7 +291,7 @@ static inline int ipv6_handle_ext_hdr_options(struct net_pkt *pkt,
 	return exthdr_len;
 }
 
-#if defined(CONFIG_NET_ROUTE)
+#if defined(CONFIG_NET_ROUTING)
 static struct net_route_entry *add_route(struct net_if *iface,
 					 struct in6_addr *addr,
 					 uint8_t prefix_len)
@@ -312,7 +312,7 @@ static struct net_route_entry *add_route(struct net_if *iface,
 
 	return route;
 }
-#endif /* CONFIG_NET_ROUTE */
+#endif /* CONFIG_NET_ROUTING */
 
 static void ipv6_no_route_info(struct net_pkt *pkt,
 			       struct in6_addr *src,
@@ -323,7 +323,7 @@ static void ipv6_no_route_info(struct net_pkt *pkt,
 		net_sprint_ipv6_addr(dst));
 }
 
-#if defined(CONFIG_NET_ROUTE)
+#if defined(CONFIG_NET_ROUTING)
 static enum net_verdict ipv6_route_packet(struct net_pkt *pkt,
 					  struct net_ipv6_hdr *hdr)
 {
@@ -331,22 +331,19 @@ static enum net_verdict ipv6_route_packet(struct net_pkt *pkt,
 	struct in6_addr *nexthop;
 	bool found;
 
-	/* Check if the packet can be routed */
-	if (IS_ENABLED(CONFIG_NET_ROUTING)) {
-		found = net_route_get_info(NULL, (struct in6_addr *)hdr->dst,
-					   &route, &nexthop);
-	} else {
-		found = net_route_get_info(net_pkt_iface(pkt),
-					   (struct in6_addr *)hdr->dst,
-					   &route, &nexthop);
+	if (net_ipv6_is_addr_unspecified((struct in6_addr *)hdr->dst)) {
+		goto drop;
 	}
+
+	/* Check if the packet can be routed */
+	found = net_route_get_info(NULL, (struct in6_addr *)hdr->dst,
+				   &route, &nexthop);
 
 	if (found) {
 		int ret;
 
-		if (IS_ENABLED(CONFIG_NET_ROUTING) &&
-		    (net_ipv6_is_ll_addr((struct in6_addr *)hdr->src) ||
-		     net_ipv6_is_ll_addr((struct in6_addr *)hdr->dst))) {
+		if (net_ipv6_is_ll_addr((struct in6_addr *)hdr->src) ||
+		    net_ipv6_is_ll_addr((struct in6_addr *)hdr->dst)) {
 			/* RFC 4291 ch 2.5.6 */
 			ipv6_no_route_info(pkt, (struct in6_addr *)hdr->src,
 					   (struct in6_addr *)hdr->dst);
@@ -362,8 +359,7 @@ static enum net_verdict ipv6_route_packet(struct net_pkt *pkt,
 			net_pkt_set_iface(pkt, route->iface);
 		}
 
-		if (IS_ENABLED(CONFIG_NET_ROUTING) &&
-		    net_pkt_orig_iface(pkt) != net_pkt_iface(pkt)) {
+		if (net_pkt_orig_iface(pkt) != net_pkt_iface(pkt)) {
 			/* If the route interface to destination is
 			 * different than the original route, then add
 			 * route to original source.
@@ -376,12 +372,11 @@ static enum net_verdict ipv6_route_packet(struct net_pkt *pkt,
 				  (struct in6_addr *)hdr->src, 128);
 		}
 
-		if (IS_ENABLED(CONFIG_NET_ROUTING) &&
-		    net_pkt_orig_iface(pkt) != net_pkt_iface(pkt)) {
-			net_pkt_set_forwarding(pkt, true);
-		} else {
-			net_pkt_set_forwarding(pkt, false);
-		}
+		/* Re-sending a packet received for another host is forwarding
+		 * even when it leaves through the interface it arrived on. The
+		 * flag makes the send path decrement the hop limit.
+		 */
+		net_pkt_set_forwarding(pkt, true);
 
 		ret = net_route_packet(pkt, nexthop);
 		if (ret < 0) {
@@ -426,7 +421,7 @@ static inline enum net_verdict ipv6_route_packet(struct net_pkt *pkt,
 	return NET_DROP;
 }
 
-#endif /* CONFIG_NET_ROUTE */
+#endif /* CONFIG_NET_ROUTING */
 
 
 static enum net_verdict ipv6_forward_mcast_packet(struct net_pkt *pkt,
