@@ -41,7 +41,10 @@ static struct net_in_addr forward_src_addr = { .s4_addr = { 198, 51, 100, 200 } 
 static struct net_in_addr onlink_dest_addr_alt = { .s4_addr = { 192, 0, 3, 50 } };
 static struct net_in_addr onlink_input_dest = { .s4_addr = { 192, 0, 3, 60 } };
 static struct net_in_addr offlink_dest_addr = { .s4_addr = { 203, 0, 113, 200 } };
+static struct net_in_addr onlink_same_iface_dest = { .s4_addr = { 192, 0, 2, 50 } };
+static struct net_in_addr my_subnet_bcast = { .s4_addr = { 192, 0, 2, 255 } };
 static struct net_eth_addr onlink_input_lladdr = { { 0x02, 0x00, 0x5e, 0x00, 0x53, 0x60 } };
+static struct net_eth_addr onlink_same_iface_lladdr = { { 0x02, 0x00, 0x5e, 0x00, 0x53, 0x50 } };
 static struct net_eth_addr gateway_lladdr = { { 0x02, 0x00, 0x5e, 0x00, 0x53, 0x10 } };
 static struct net_eth_addr gateway_lladdr_alt = { { 0x02, 0x00, 0x5e, 0x00, 0x53, 0x11 } };
 
@@ -1005,6 +1008,74 @@ static void test_route_ipv4_input_onlink_routes_via_matching_iface(void)
 	net_arp_clear_cache(my_iface_alt);
 }
 
+static void test_route_ipv4_input_onlink_same_iface(void)
+{
+	bool sent;
+
+	/* The destination is another host on the ingress link. A forwarder
+	 * sends it back out my_iface with the TTL decremented, a host drops it.
+	 */
+	net_arp_clear_cache(my_iface);
+	net_arp_update(my_iface, &onlink_same_iface_dest, &onlink_same_iface_lladdr, true);
+
+	recv_ipv4_frame(my_iface_lladdr(), &onlink_same_iface_dest, NET_IPPROTO_UDP, 2U);
+	sent = routed_pkt_sent();
+
+	if (!IS_ENABLED(CONFIG_NET_IPV4_FORWARDING)) {
+		zassert_false(sent, "Host must not relay a packet for another host");
+	} else {
+		zassert_true(sent, "Routed packet was not sent");
+		zassert_equal_ptr(sent_iface, my_iface,
+				  "Routed packet used wrong egress interface");
+		zassert_true(sent_forwarding, "Routed packet should be marked forwarded");
+		zassert_equal(sent_ipv4_ttl, 1U, "Routed packet should decrement TTL");
+	}
+
+	net_arp_clear_cache(my_iface);
+}
+
+static void test_route_ipv4_input_default_router(void)
+{
+	struct net_if_router *router;
+	bool sent;
+
+	/* Off-link destination with a default router on the ingress link. */
+	router = net_if_ipv4_router_add(my_iface, &gateway_addr, true, 0);
+	zassert_not_null(router, "Default router add failed");
+
+	net_arp_clear_cache(my_iface);
+	net_arp_update(my_iface, &gateway_addr, &gateway_lladdr, true);
+
+	recv_ipv4_frame(my_iface_lladdr(), &offlink_dest_addr, NET_IPPROTO_UDP, 2U);
+	sent = routed_pkt_sent();
+
+	if (!IS_ENABLED(CONFIG_NET_IPV4_FORWARDING)) {
+		zassert_false(sent, "Host must not relay a packet to its default router");
+	} else {
+		zassert_true(sent, "Routed packet was not sent");
+		zassert_equal_ptr(sent_iface, my_iface,
+				  "Routed packet used wrong egress interface");
+		zassert_true(sent_ll_resolve_addr_set,
+			     "Routed packet missing L2 resolve address");
+		zassert_true(net_ipv4_addr_cmp(&sent_ll_resolve_addr, &gateway_addr),
+			     "Routed packet should go to the default router");
+		zassert_true(sent_forwarding, "Routed packet should be marked forwarded");
+		zassert_equal(sent_ipv4_ttl, 1U, "Routed packet should decrement TTL");
+	}
+
+	net_arp_clear_cache(my_iface);
+	zassert_true(net_if_ipv4_router_rm(router), "Default router remove failed");
+}
+
+static void test_route_ipv4_input_bcast_not_routed(void)
+{
+	/* TCP to the subnet broadcast is not for us and must not be re-sent on
+	 * the link, with or without forwarding.
+	 */
+	recv_ipv4_frame(net_eth_broadcast_addr(), &my_subnet_bcast, NET_IPPROTO_TCP, 2U);
+	zassert_false(routed_pkt_sent(), "Broadcast packet must not be re-sent");
+}
+
 ZTEST(route_test_suite, test_route)
 {
 	test_init();
@@ -1025,6 +1096,9 @@ ZTEST(route_test_suite, test_route)
 	test_route_ipv4_onlink_subnet();
 	test_route_ipv4_onlink_null_iface_searches_all();
 	test_route_ipv4_input_onlink_routes_via_matching_iface();
+	test_route_ipv4_input_onlink_same_iface();
+	test_route_ipv4_input_default_router();
+	test_route_ipv4_input_bcast_not_routed();
 	test_route_ipv4_default_route();
 	test_route_ipv4_packet_arp_handoff();
 	test_route_ipv4_packet_without_iface();
