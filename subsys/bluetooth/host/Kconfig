@@ -166,6 +166,7 @@ config BT_HOST_CRYPTO
 	select PSA_CRYPTO
 	select PSA_WANT_KEY_TYPE_AES
 	select PSA_WANT_ALG_ECB_NO_PADDING
+	imply MBEDTLS_AES_ROM_TABLES if PSA_CRYPTO_PROVIDER_MBEDTLS
 	help
 	  The option adds the AES encryption support using PSA Crypto API
 	  library if this is not provided by the controller implementation.
