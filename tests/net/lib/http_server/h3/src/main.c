@@ -1724,6 +1724,44 @@ ZTEST(server_h3_tests, test_h3_409_closes_stream_not_connection)
 	zassert_ok(ret, "Failed to close HTTPS client socket (%d)", errno);
 }
 
+ZTEST(server_h3_tests, test_h3_405_does_not_pass_the_body_on)
+{
+	static const uint8_t refused_body[] = "refused!";
+	uint8_t request[96];
+	size_t request_len;
+	int stream_fd;
+	int ret;
+
+	start_h3_session(false);
+
+	/* The dynamic resource only takes POST. A GET with a body, sent in
+	 * one go, is refused, and its body must not reach the callback.
+	 */
+	stream_fd = open_client_stream(QUIC_STREAM_BIDIRECTIONAL);
+	request_len = build_headers_frame(request, HTTP_GET, "/dynamic");
+	request_len += build_data_frame(request + request_len, refused_body,
+					sizeof(refused_body) - 1);
+	send_all(stream_fd, request, request_len);
+	expect_headers_only_status_response(stream_fd, HTTP_405_METHOD_NOT_ALLOWED);
+
+	shutdown_stream_send(stream_fd);
+	k_msleep(100);
+
+	zassert_equal(dynamic_bytes_received, 0U,
+		      "Body of the refused request was passed to the callback (%zu bytes)",
+		      dynamic_bytes_received);
+	zassert_false(dynamic_more_seen, "Callback was called for the refused request");
+	zassert_false(dynamic_final_seen, "Callback was called for the refused request");
+	zassert_false(dynamic_complete, "Callback was called for the refused request");
+
+	ret = zsock_close(stream_fd);
+	zassert_ok(ret, "Failed to close refused stream (%d)", errno);
+	untrack_stream_fd(stream_fd);
+
+	/* The connection is not affected */
+	send_get_and_expect_static(false);
+}
+
 ZTEST(server_h3_function_tests, test_qpack_encode_int)
 {
 	uint8_t buf[4];
