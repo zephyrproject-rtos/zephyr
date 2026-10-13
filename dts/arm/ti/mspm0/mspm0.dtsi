@@ -183,6 +183,8 @@
 		flashctl: flash-controller@400cd000 {
 			compatible = "ti,mspm0-flash-controller";
 			reg = <0x400cd000 0x2000>;
+			interrupts = <0 0>;
+
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges;
