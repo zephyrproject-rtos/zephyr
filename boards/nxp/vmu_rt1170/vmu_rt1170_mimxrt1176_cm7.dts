@@ -346,7 +346,7 @@
 	};
 
 	ncp5623c: ncp5623c@39 {
-		compatible = "onnn,ncp5623c";
+		compatible = "onnn,ncp5623";
 		reg = <0x39>;
 
 		led_0 {
