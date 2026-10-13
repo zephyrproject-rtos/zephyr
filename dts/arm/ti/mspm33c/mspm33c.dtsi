@@ -454,6 +454,27 @@
 			status = "disabled";
 		};
 
+		unicomm2: unicomm2@40680000 {
+			compatible = "ti,unicomm";
+			reg = <0x40680000 DT_SIZE_K(8)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			interrupts = <27 0>;
+			unicomm-fixed-mode;
+			status = "disabled";
+
+			unicomm2_spi: unicomm2_spi@40660000 {
+				compatible = "ti,unicomm-spi";
+				reg = <0x40660000 DT_SIZE_K(8)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				interrupts = <27 0>;
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+				fifo-depth = <4>;
+				status = "disabled";
+			};
+		};
+
 		unicomm1_0: unicomm1_0@40582000 {
 			reg = <0x40582000 DT_SIZE_K(8)>;
 			compatible = "ti,unicomm";
@@ -566,6 +587,17 @@
 				#size-cells = <0>;
 				status = "disabled";
 			};
+
+			unicomm13_0_spi: unicomm13_0_spi@4066a000 {
+				compatible = "ti,unicomm-spi";
+				reg = <0x4066a000 DT_SIZE_K(8)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				interrupts = <31 0>;
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+				fifo-depth = <4>;
+				status = "disabled";
+			};
 		};
 
 		unicomm13_1: unicomm13_1@40780000 {
@@ -598,6 +630,17 @@
 				#size-cells = <0>;
 				status = "disabled";
 			};
+
+			unicomm13_1_spi: unicomm13_1_spi@40760000 {
+				compatible = "ti,unicomm-spi";
+				reg = <0x40760000 DT_SIZE_K(8)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				interrupts = <50 0>;
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+				fifo-depth = <4>;
+				status = "disabled";
+			};
 		};
 
 		unicomm13_2: unicomm13_2@40782000 {
@@ -628,6 +671,17 @@
 				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			unicomm13_2_spi: unicomm13_2_spi@40762000 {
+				compatible = "ti,unicomm-spi";
+				reg = <0x40762000 DT_SIZE_K(8)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				interrupts = <51 0>;
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+				fifo-depth = <4>;
 				status = "disabled";
 			};
 		};
@@ -721,6 +775,17 @@
 				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			unicomm13_3_spi: unicomm13_3_spi@40764000 {
+				compatible = "ti,unicomm-spi";
+				reg = <0x40764000 DT_SIZE_K(8)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				interrupts = <52 0>;
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+				fifo-depth = <4>;
 				status = "disabled";
 			};
 		};
