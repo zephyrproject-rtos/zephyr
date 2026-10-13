@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 #include <zephyr/sys/__assert.h>
@@ -16,6 +17,27 @@
 #define SEQUENCE_LEN_3_BYTE 0xE0
 #define SEQUENCE_LEN_4_BYTE 0xF0
 #define MSB_SET 0x80
+
+/* Bits of a lead byte that tell the length of its sequence */
+#define LEAD_MASK_2_BYTE       0xE0U
+#define LEAD_MASK_3_BYTE       0xF0U
+#define LEAD_MASK_4_BYTE       0xF8U
+/* Bits of a lead byte that belong to the code point */
+#define LEAD_DATA_2_BYTE       0x1FU
+#define LEAD_DATA_3_BYTE       0x0FU
+#define LEAD_DATA_4_BYTE       0x07U
+/* Bits of a continuation byte that belong to the code point */
+#define CONTINUATION_DATA_MASK 0x3FU
+#define CONTINUATION_DATA_BITS 6U
+/* Smallest code point that needs a sequence of that length */
+#define CODE_POINT_MIN_2_BYTE  0x80U
+#define CODE_POINT_MIN_3_BYTE  0x800U
+#define CODE_POINT_MIN_4_BYTE  0x10000U
+/* Code points reserved for the UTF-16 surrogates */
+#define SURROGATE_FIRST        0xD800U
+#define SURROGATE_LAST         0xDFFFU
+/* Last code point of Unicode */
+#define CODE_POINT_MAX         0x10FFFFU
 
 char *utf8_trunc(char *utf8_str)
 {
@@ -123,4 +145,73 @@ int utf8_count_chars(const char *s)
 	}
 
 	return count;
+}
+
+bool utf8_is_valid(const char *s, size_t len)
+{
+	const uint8_t *bytes = (const uint8_t *)s;
+	size_t pos = 0U;
+
+	while (pos < len) {
+		uint8_t lead = bytes[pos];
+		uint32_t code_point = 0U;
+		uint32_t code_point_min = 0U;
+		size_t seq_len = 0U;
+
+		if ((lead & MSB_SET) == 0U) {
+			/* 1-byte character: 0xxxxxxx */
+			seq_len = 1U;
+			code_point = lead;
+			code_point_min = 0U;
+		} else if ((lead & LEAD_MASK_2_BYTE) == SEQUENCE_LEN_2_BYTE) {
+			/* 2-byte character: 110xxxxx */
+			seq_len = 2U;
+			code_point = lead & LEAD_DATA_2_BYTE;
+			code_point_min = CODE_POINT_MIN_2_BYTE;
+		} else if ((lead & LEAD_MASK_3_BYTE) == SEQUENCE_LEN_3_BYTE) {
+			/* 3-byte character: 1110xxxx */
+			seq_len = 3U;
+			code_point = lead & LEAD_DATA_3_BYTE;
+			code_point_min = CODE_POINT_MIN_3_BYTE;
+		} else if ((lead & LEAD_MASK_4_BYTE) == SEQUENCE_LEN_4_BYTE) {
+			/* 4-byte character: 11110xxx */
+			seq_len = 4U;
+			code_point = lead & LEAD_DATA_4_BYTE;
+			code_point_min = CODE_POINT_MIN_4_BYTE;
+		} else {
+			/* A continuation byte, or 0xF8 to 0xFF: neither starts a sequence */
+			return false;
+		}
+
+		if (len - pos < seq_len) {
+			/* The sequence does not end within the string */
+			return false;
+		}
+
+		for (size_t i = 1U; i < seq_len; i++) {
+			uint8_t byte = bytes[pos + i];
+
+			if ((byte & SEQUENCE_FIRST_MASK) != MSB_SET) {
+				/* invalid continuation */
+				return false;
+			}
+			code_point = (code_point << CONTINUATION_DATA_BITS) |
+				     (byte & CONTINUATION_DATA_MASK);
+		}
+
+		if (code_point < code_point_min) {
+			/* Overlong: the code point fits in a shorter sequence */
+			return false;
+		}
+		if (code_point >= SURROGATE_FIRST && code_point <= SURROGATE_LAST) {
+			return false;
+		}
+		if (code_point > CODE_POINT_MAX) {
+			return false;
+		}
+
+		pos += seq_len;
+	}
+
+	return true;
 }
