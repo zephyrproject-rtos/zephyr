@@ -110,6 +110,10 @@ New APIs and options
     Advertisements, in stateful mode with the M flag and in stateless mode
     (Information-request only) with the O flag.
 
+  * DNS
+
+    * :c:func:`dns_resolve_get_server_families`
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
