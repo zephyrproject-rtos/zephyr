@@ -2720,6 +2720,7 @@ static bool h3_request_body_pending(const struct http_client_ctx *client)
 static int h3_process_frames(struct http_client_ctx *client, bool stream_fin)
 {
 	bool need_more_data = false;
+	bool request_frame_seen = false;
 	size_t pos = 0;
 
 	while (pos < client->data_len) {
@@ -2747,6 +2748,7 @@ static int h3_process_frames(struct http_client_ctx *client, bool stream_fin)
 		switch (frame_type) {
 		case H3_FRAME_HEADERS:
 			LOG_DBG("[%p] H3: HEADERS frame, len=%llu", client, frame_len);
+			request_frame_seen = true;
 
 			ret = h3_parse_qpack_headers(client, payload,
 						     (size_t)frame_len);
@@ -2790,6 +2792,7 @@ static int h3_process_frames(struct http_client_ctx *client, bool stream_fin)
 
 		case H3_FRAME_DATA:
 			LOG_DBG("[%p] H3: DATA frame, len=%llu", client, frame_len);
+			request_frame_seen = true;
 
 			ret = h3_process_data_frame(client, payload,
 						    (size_t)frame_len, false);
@@ -2875,6 +2878,16 @@ static int h3_process_frames(struct http_client_ctx *client, bool stream_fin)
 		client->current_detail = NULL;
 
 		return 0;
+	}
+
+	/* Frames of unknown types are skipped (RFC 9114 ch. 9) and can be
+	 * sent on a request stream at any point (ch. 7.2.8). When nothing
+	 * but such frames was read, the request has made no progress: it is
+	 * neither answered nor complete, so keep the stream and wait for the
+	 * frames that follow.
+	 */
+	if (!request_frame_seen) {
+		return -EAGAIN;
 	}
 
 	return (need_more_data || client->data_len > 0) ? -EAGAIN : 0;
