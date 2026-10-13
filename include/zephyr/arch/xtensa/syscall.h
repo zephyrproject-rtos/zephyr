@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Intel Corporation.
+ * Copyright (c) 2022, 2026 Intel Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,6 +49,22 @@ extern "C" {
 #else
 #define XTENSA_SYSCALL_ASM		"syscall"
 #endif
+
+#if __XTENSA_CALL0_ABI__
+#define SYSCALL_REG_ARG1 "%a8"
+#define SYSCALL_REG_ARG2 "%a3"
+#define SYSCALL_REG_ARG3 "%a4"
+#define SYSCALL_REG_ARG4 "%a5"
+#define SYSCALL_REG_ARG5 "%a6"
+#define SYSCALL_REG_ARG6 "%a7"
+#else
+#define SYSCALL_REG_ARG1 "%a6"
+#define SYSCALL_REG_ARG2 "%a3"
+#define SYSCALL_REG_ARG3 "%a4"
+#define SYSCALL_REG_ARG4 "%a5"
+#define SYSCALL_REG_ARG5 "%a8"
+#define SYSCALL_REG_ARG6 "%a9"
+#endif /* __XTENSA_CALL0_ABI__ */
 
 #ifdef CONFIG_XTENSA_SYSCALL_USE_HELPER
 uintptr_t xtensa_syscall_helper_args_6(uintptr_t arg1, uintptr_t arg2,
@@ -100,17 +116,17 @@ static SYSINL uintptr_t arch_syscall_invoke6(uintptr_t arg1, uintptr_t arg2,
 	return xtensa_syscall_helper_args_6(arg1, arg2, arg3, arg4, arg5, arg6, call_id);
 #else
 	register uintptr_t a2 __asm__("%a2") = call_id;
-	register uintptr_t a6 __asm__("%a6") = arg1;
-	register uintptr_t a3 __asm__("%a3") = arg2;
-	register uintptr_t a4 __asm__("%a4") = arg3;
-	register uintptr_t a5 __asm__("%a5") = arg4;
-	register uintptr_t a8 __asm__("%a8") = arg5;
-	register uintptr_t a9 __asm__("%a9") = arg6;
+	register uintptr_t p1 __asm__(SYSCALL_REG_ARG1) = arg1;
+	register uintptr_t p2 __asm__(SYSCALL_REG_ARG2) = arg2;
+	register uintptr_t p3 __asm__(SYSCALL_REG_ARG3) = arg3;
+	register uintptr_t p4 __asm__(SYSCALL_REG_ARG4) = arg4;
+	register uintptr_t p5 __asm__(SYSCALL_REG_ARG5) = arg5;
+	register uintptr_t p6 __asm__(SYSCALL_REG_ARG6) = arg6;
 
 	__asm__ volatile(XTENSA_SYSCALL_ASM
 			 : "=r" (a2)
-			 : "r" (a2), "r" (a6), "r" (a3), "r" (a4),
-			   "r" (a5), "r" (a8), "r" (a9)
+			 : "r" (a2), "r" (p1), "r" (p2), "r" (p3),
+			   "r" (p4), "r" (p5), "r" (p6)
 			 : "memory");
 
 	return a2;
@@ -125,16 +141,16 @@ static SYSINL uintptr_t arch_syscall_invoke5(uintptr_t arg1, uintptr_t arg2,
 	return xtensa_syscall_helper_args_5(arg1, arg2, arg3, arg4, arg5, call_id);
 #else
 	register uintptr_t a2 __asm__("%a2") = call_id;
-	register uintptr_t a6 __asm__("%a6") = arg1;
-	register uintptr_t a3 __asm__("%a3") = arg2;
-	register uintptr_t a4 __asm__("%a4") = arg3;
-	register uintptr_t a5 __asm__("%a5") = arg4;
-	register uintptr_t a8 __asm__("%a8") = arg5;
+	register uintptr_t p1 __asm__(SYSCALL_REG_ARG1) = arg1;
+	register uintptr_t p2 __asm__(SYSCALL_REG_ARG2) = arg2;
+	register uintptr_t p3 __asm__(SYSCALL_REG_ARG3) = arg3;
+	register uintptr_t p4 __asm__(SYSCALL_REG_ARG4) = arg4;
+	register uintptr_t p5 __asm__(SYSCALL_REG_ARG5) = arg5;
 
 	__asm__ volatile(XTENSA_SYSCALL_ASM
 			 : "=r" (a2)
-			 : "r" (a2), "r" (a6), "r" (a3), "r" (a4),
-			   "r" (a5), "r" (a8)
+			 : "r" (a2), "r" (p1), "r" (p2), "r" (p3),
+			   "r" (p4), "r" (p5)
 			 : "memory");
 
 	return a2;
@@ -149,15 +165,15 @@ static SYSINL uintptr_t arch_syscall_invoke4(uintptr_t arg1, uintptr_t arg2,
 	return xtensa_syscall_helper_args_4(arg1, arg2, arg3, arg4, call_id);
 #else
 	register uintptr_t a2 __asm__("%a2") = call_id;
-	register uintptr_t a6 __asm__("%a6") = arg1;
-	register uintptr_t a3 __asm__("%a3") = arg2;
-	register uintptr_t a4 __asm__("%a4") = arg3;
-	register uintptr_t a5 __asm__("%a5") = arg4;
+	register uintptr_t p1 __asm__(SYSCALL_REG_ARG1) = arg1;
+	register uintptr_t p2 __asm__(SYSCALL_REG_ARG2) = arg2;
+	register uintptr_t p3 __asm__(SYSCALL_REG_ARG3) = arg3;
+	register uintptr_t p4 __asm__(SYSCALL_REG_ARG4) = arg4;
 
 	__asm__ volatile(XTENSA_SYSCALL_ASM
 			 : "=r" (a2)
-			 : "r" (a2), "r" (a6), "r" (a3), "r" (a4),
-			   "r" (a5)
+			 : "r" (a2), "r" (p1), "r" (p2), "r" (p3),
+			   "r" (p4)
 			 : "memory");
 
 	return a2;
@@ -171,13 +187,13 @@ static inline uintptr_t arch_syscall_invoke3(uintptr_t arg1, uintptr_t arg2,
 	return xtensa_syscall_helper_args_3(arg1, arg2, arg3, call_id);
 #else
 	register uintptr_t a2 __asm__("%a2") = call_id;
-	register uintptr_t a6 __asm__("%a6") = arg1;
-	register uintptr_t a3 __asm__("%a3") = arg2;
-	register uintptr_t a4 __asm__("%a4") = arg3;
+	register uintptr_t p1 __asm__(SYSCALL_REG_ARG1) = arg1;
+	register uintptr_t p2 __asm__(SYSCALL_REG_ARG2) = arg2;
+	register uintptr_t p3 __asm__(SYSCALL_REG_ARG3) = arg3;
 
 	__asm__ volatile(XTENSA_SYSCALL_ASM
 			 : "=r" (a2)
-			 : "r" (a2), "r" (a6), "r" (a3), "r" (a4)
+			 : "r" (a2), "r" (p1), "r" (p2), "r" (p3)
 			 : "memory");
 
 	return a2;
@@ -191,12 +207,12 @@ static inline uintptr_t arch_syscall_invoke2(uintptr_t arg1, uintptr_t arg2,
 	return xtensa_syscall_helper_args_2(arg1, arg2, call_id);
 #else
 	register uintptr_t a2 __asm__("%a2") = call_id;
-	register uintptr_t a6 __asm__("%a6") = arg1;
-	register uintptr_t a3 __asm__("%a3") = arg2;
+	register uintptr_t p1 __asm__(SYSCALL_REG_ARG1) = arg1;
+	register uintptr_t p2 __asm__(SYSCALL_REG_ARG2) = arg2;
 
 	__asm__ volatile(XTENSA_SYSCALL_ASM
 			 : "=r" (a2)
-			 : "r" (a2), "r" (a6), "r" (a3)
+			 : "r" (a2), "r" (p1), "r" (p2)
 			 : "memory");
 
 	return a2;
@@ -209,11 +225,11 @@ static inline uintptr_t arch_syscall_invoke1(uintptr_t arg1, uintptr_t call_id)
 	return xtensa_syscall_helper_args_1(arg1, call_id);
 #else
 	register uintptr_t a2 __asm__("%a2") = call_id;
-	register uintptr_t a6 __asm__("%a6") = arg1;
+	register uintptr_t p1 __asm__(SYSCALL_REG_ARG1) = arg1;
 
 	__asm__ volatile(XTENSA_SYSCALL_ASM
 			 : "=r" (a2)
-			 : "r" (a2), "r" (a6)
+			 : "r" (a2), "r" (p1)
 			 : "memory");
 
 	return a2;

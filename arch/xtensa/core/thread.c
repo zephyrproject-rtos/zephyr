@@ -74,7 +74,11 @@ static void *init_stack(struct k_thread *thread, int *stack_top,
 	/* _restore_context uses this instead of frame->bsa.ps to
 	 * restore PS value.
 	 */
-	thread->arch.return_ps = PS_WOE | PS_UM | PS_CALLINC(1);
+	if (IS_ENABLED(__XTENSA_CALL0_ABI__)) {
+		thread->arch.return_ps = PS_UM;
+	} else {
+		thread->arch.return_ps = PS_WOE | PS_UM | PS_CALLINC(1);
+	}
 
 	if ((thread->base.user_options & K_USER) == K_USER) {
 		frame->bsa.pc = (uintptr_t)arch_user_mode_enter;
