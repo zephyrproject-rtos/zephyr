@@ -7041,6 +7041,72 @@ ZTEST(net_socket_quic, test_491_stream_lookup_keeps_connections_apart)
 	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
 }
 
+/* More streams than one payload may be answered for. Their IDs stay below
+ * 64 so that each fits a one byte varint.
+ */
+#define STOP_SENDING_TEST_STREAMS (CONFIG_QUIC_MAX_REPLIES_PER_PAYLOAD + 4)
+BUILD_ASSERT(STOP_SENDING_TEST_STREAMS <= 16, "Stream IDs need more than one byte");
+
+ZTEST(net_socket_quic, test_492_stop_sending_replies_are_capped)
+{
+	static struct quic_stream test_streams[STOP_SENDING_TEST_STREAMS];
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	uint8_t payload[3 * STOP_SENDING_TEST_STREAMS];
+	struct quic_context *ctx;
+	bool ack_only = false;
+	size_t pos = 0;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54351");
+
+	/* One STOP_SENDING frame for each of the streams */
+	ARRAY_FOR_EACH(test_streams, i) {
+		link_test_stream(&test_streams[i], ctx, ep, 4 * i);
+
+		payload[pos++] = QUIC_FRAME_TYPE_STOP_SENDING;
+		payload[pos++] = (uint8_t)(4 * i); /* Stream ID */
+		payload[pos++] = 0x00;             /* Error code */
+	}
+
+	quic_test_reply_budget_spent = 0;
+
+	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_APPLICATION,
+					 payload, pos, pos, &ack_only);
+	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
+
+	/* Each of the streams has to be reset by the one payload that asked
+	 * for it. The peer does not repeat a frame that was acknowledged,
+	 * so none may be left for later. These first replies are bounded by
+	 * the number of streams and do not use the reply budget.
+	 */
+	ARRAY_FOR_EACH(test_streams, i) {
+		zassert_true(test_streams[i].tx_reset, "Stream %zu was not reset", i);
+	}
+
+	zassert_equal(quic_test_reply_budget_spent, 0,
+		      "First replies must not use the reply budget, used %u",
+		      quic_test_reply_budget_spent);
+
+	/* A peer that repeats the frames for streams that are reset already
+	 * is answered again, but only as far as the reply budget goes.
+	 */
+	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_APPLICATION,
+					 payload, pos, pos, &ack_only);
+	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
+
+	zassert_equal(quic_test_reply_budget_spent, CONFIG_QUIC_MAX_REPLIES_PER_PAYLOAD,
+		      "Expected repeated replies to stop at %d, got %u",
+		      CONFIG_QUIC_MAX_REPLIES_PER_PAYLOAD, quic_test_reply_budget_spent);
+
+	ARRAY_FOR_EACH(test_streams, i) {
+		unlink_test_stream(&test_streams[i], ctx);
+	}
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
 ZTEST(net_socket_quic, test_488_token_replay_entry_survives_the_expiry_second)
 {
 	uint8_t nonce[8] = {
