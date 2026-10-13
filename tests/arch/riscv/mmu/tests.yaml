@@ -5,3 +5,15 @@ tests:
     tags:
       - riscv
       - mmu
+  arch.riscv.mmu.sv39:
+    platform_allow:
+      - qemu_riscv64/qemu_virt_riscv64/smode
+    tags:
+      - riscv
+      - mmu
+  arch.riscv.mmu.sv48:
+    platform_allow:
+      - qemu_riscv64/qemu_virt_riscv64/sv48
+    tags:
+      - riscv
+      - mmu
