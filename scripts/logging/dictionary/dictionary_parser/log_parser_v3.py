@@ -232,8 +232,9 @@ class LogParserV3(LogParser):
         return tbl
 
     @staticmethod
-    def print_hexdump(hex_data, prefix_len, color):
-        """Print hex dump"""
+    def format_hexdump(hex_data, prefix_len, color):
+        """Format hex dump, returns text with each line terminated with newline"""
+        lines = ""
         hex_vals = ""
         chr_vals = ""
         chr_done = 0
@@ -248,17 +249,25 @@ class LogParserV3(LogParser):
                 chr_vals += " "
 
             elif chr_done == HEX_BYTES_IN_LINE:
-                print(f"{color}%s%s|%s{Fore.RESET}" % ((" " * prefix_len), hex_vals, chr_vals))
+                lines += f"{color}%s%s|%s{Fore.RESET}\n" % (
+                    (" " * prefix_len),
+                    hex_vals,
+                    chr_vals,
+                )
                 hex_vals = ""
                 chr_vals = ""
                 chr_done = 0
 
         if len(chr_vals) > 0:
             hex_padding = "   " * (HEX_BYTES_IN_LINE - chr_done)
-            print(
-                f"{color}%s%s%s|%s{Fore.RESET}"
-                % ((" " * prefix_len), hex_vals, hex_padding, chr_vals)
+            lines += f"{color}%s%s%s|%s{Fore.RESET}\n" % (
+                (" " * prefix_len),
+                hex_vals,
+                hex_padding,
+                chr_vals,
             )
+
+        return lines
 
     def get_full_msg_hdr_size(self):
         """Get the size of the full message header"""
@@ -395,15 +404,17 @@ class LogParserV3(LogParser):
         log_msg = fmt_str % args
 
         if level == 0:
-            print(f"{log_msg}", end='')
+            text = f"{log_msg}"
             log_prefix = ""
         else:
             log_prefix = f"[{timestamp:>10}] <{level_str}> {source_id_str}: "
-            print(f"{color}%s%s{Fore.RESET}" % (log_prefix, log_msg))
+            text = f"{color}%s%s{Fore.RESET}\n" % (log_prefix, log_msg)
 
         if data_len > 0:
             # Has hexdump data
-            self.print_hexdump(extra_data, len(log_prefix), color)
+            text += self.format_hexdump(extra_data, len(log_prefix), color)
+
+        self.emit(timestamp, text)
 
         # Point to next message
         return next_msg_offset
@@ -424,7 +435,8 @@ class LogParserV3(LogParser):
             num_dropped = struct.unpack_from(self.fmt_dropped_cnt, logdata, offset)[0]
             offset += struct.calcsize(self.fmt_dropped_cnt)
 
-            print(f"--- {num_dropped} messages dropped ---")
+            # Dropped message has no timestamp, keep it in the position of the newest message.
+            self.emit(None, f"--- {num_dropped} messages dropped ---\n")
 
         elif msg_type == MSG_TYPE_NORMAL:
             if (offset + self.get_full_msg_hdr_size() > len(logdata)) or (

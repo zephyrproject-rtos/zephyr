@@ -42,8 +42,10 @@ def parse_args():
         "--rawhex", action="store_true", help="Log file only contains hexadecimal log data"
     )
     argparser.add_argument("--debug", action="store_true", help="Print extra debugging information")
+    parserlib.add_sorting_arguments(argparser)
 
     args, remainder = argparser.parse_known_args()
+    parserlib.check_sorting_arguments(argparser, args)
     if len(remainder) < 2:
         argparser.error(
             "at least one dbfile and logfile are required "
@@ -138,7 +140,9 @@ def main():
     else:
         logger.setLevel(logging.INFO)
 
-    log_parser = parserlib.get_log_parser(args.dbfile, logger)
+    log_parser = parserlib.get_log_parser(
+        args.dbfile, logger, latency_ms=args.latency, ts_freq=args.ts_freq
+    )
 
     logdata = read_log_file(args)
     if logdata is None:
@@ -146,6 +150,10 @@ def main():
         sys.exit(1)
 
     parsed_data_offset = parserlib.parser(logdata, log_parser, logger)
+
+    # All data was read, print messages which are still cached for sorting.
+    log_parser.flush()
+
     if parsed_data_offset != len(logdata):
         logger.error(
             'ERROR: Not all data was parsed, %d bytes left unparsed',
