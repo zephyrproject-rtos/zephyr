@@ -53,13 +53,6 @@ int usb_add_frame_to_usb(enum bt_audio_location chan_allocation, const int16_t *
 			 size_t frame_size, uint32_t ts);
 
 /**
- * @brief Clear last sent SDU
- *
- * If only part of the SDU could be decoded, this should be called
- */
-void usb_clear_frames_to_usb(void);
-
-/**
  * @brief Initialize the USB module
  *
  * This will start the USB thread if not already initialized

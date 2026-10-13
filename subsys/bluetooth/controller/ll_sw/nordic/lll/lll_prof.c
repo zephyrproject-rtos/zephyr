@@ -5,6 +5,7 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <errno.h>
 
@@ -22,6 +23,8 @@
 #include "pdu_vendor.h"
 #include "pdu.h"
 
+#include "lll/lll_prof_internal.h"
+
 #include "lll.h"
 
 #include "hal/debug.h"
@@ -32,16 +35,21 @@
  * 3 extended advertising sets, scanning on 2M PHY, scanning on Coded PHY, and
  * 2 auxiliary scan set.
  */
-#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
-#define LLL_PROF_RADIO_MAX_US    103 /* Max. Radio Rx/Tx ISR, O(1)*/
-#define LLL_PROF_LLL_MAX_US      105 /* Max. LLL prepare, O(1) */
-#define LLL_PROF_ULL_HIGH_MAX_US 260 /* Max. Radio + LLL + ULL High, O(1) */
-#define LLL_PROF_ULL_LOW_MAX_US  306 /* Max. ULL Low, O(n) n is ticker nodes */
+#if defined(CONFIG_SOC_SERIES_NRF54H)
+#define LLL_PROF_RADIO_MAX_US    92   /* Max. Radio Rx/Tx ISR, O(1)*/
+#define LLL_PROF_LLL_MAX_US      245  /* Max. LLL prepare, O(1) */
+#define LLL_PROF_ULL_HIGH_MAX_US 640  /* Max. Radio + LLL + ULL High, O(1) */
+#define LLL_PROF_ULL_LOW_MAX_US  855  /* Max. ULL Low, O(n) n is ticker nodes */
+#elif defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#define LLL_PROF_RADIO_MAX_US    92   /* Max. Radio Rx/Tx ISR, O(1)*/
+#define LLL_PROF_LLL_MAX_US      92   /* Max. LLL prepare, O(1) */
+#define LLL_PROF_ULL_HIGH_MAX_US 336  /* Max. Radio + LLL + ULL High, O(1) */
+#define LLL_PROF_ULL_LOW_MAX_US  763  /* Max. ULL Low, O(n) n is ticker nodes */
 #else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
-#define LLL_PROF_RADIO_MAX_US    184 /* Max. Radio Rx/Tx ISR, O(1)*/
-#define LLL_PROF_LLL_MAX_US      245 /* Max. LLL prepare, O(1) */
-#define LLL_PROF_ULL_HIGH_MAX_US 458 /* Max. Radio + LLL + ULL High, O(1) */
-#define LLL_PROF_ULL_LOW_MAX_US  733 /* Max. ULL Low, O(n) n is ticker nodes */
+#define LLL_PROF_RADIO_MAX_US    123  /* Max. Radio Rx/Tx ISR, O(1)*/
+#define LLL_PROF_LLL_MAX_US      123  /* Max. LLL prepare, O(1) */
+#define LLL_PROF_ULL_HIGH_MAX_US 733  /* Max. Radio + LLL + ULL High, O(1) */
+#define LLL_PROF_ULL_LOW_MAX_US  1730 /* Max. ULL Low, O(n) n is ticker nodes */
 #endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
 
 #define LLL_PROF_ASSERT(_val, _max) \
@@ -80,15 +88,18 @@ static uint16_t cputime_min = UINT16_MAX;
 static uint16_t cputime_max;
 static uint16_t cputime_prev;
 static uint32_t timestamp_latency;
+static bool latency_valid;
 
 static uint32_t timestamp_ticks_radio;
 static uint32_t timestamp_ticks_lll;
 static uint32_t timestamp_ticks_ull_high;
 static uint32_t timestamp_ticks_ull_low;
-static uint16_t  cputime_ticks_radio;
-static uint16_t  cputime_ticks_lll;
-static uint16_t  cputime_ticks_ull_high;
-static uint16_t  cputime_ticks_ull_low;
+static uint16_t cputime_ticks_radio;
+static uint16_t cputime_ticks_lll;
+static uint16_t cputime_ticks_ull_high;
+static uint16_t cputime_ticks_ull_low;
+static uint16_t cputime_ticks_overhead;
+static uint16_t cputime_ticks_overhead_max;
 
 void lll_prof_enter_radio(void)
 {
@@ -162,6 +173,14 @@ uint16_t lll_prof_ull_low_get(void)
 	return HAL_TICKER_TICKS_TO_US(cputime_ticks_ull_low);
 }
 
+void lll_prof_overhead(uint16_t overhead_ticks)
+{
+	cputime_ticks_overhead = overhead_ticks;
+	if (overhead_ticks > cputime_ticks_overhead_max) {
+		cputime_ticks_overhead_max = overhead_ticks;
+	}
+}
+
 void lll_prof_latency_capture(void)
 {
 	/* sample the packet timer, use it to calculate ISR latency
@@ -173,6 +192,19 @@ void lll_prof_latency_capture(void)
 	 * set, we can set it.
 	 */
 	timestamp_latency = UINT16_MAX;
+
+	/* Latency is valid unless invalidated, i.e. on-air packet END
+	 * timestamp has been captured.
+	 */
+	latency_valid = true;
+}
+
+void lll_prof_latency_invalidate(void)
+{
+	/* No on-air packet END timestamp captured, the ISR entry sample is
+	 * used only to measure the ISR CPU time.
+	 */
+	latency_valid = false;
 }
 
 uint16_t lll_prof_latency_get(void)
@@ -196,14 +228,12 @@ uint16_t lll_prof_latency_get(void)
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 static uint32_t timestamp_radio_end;
 
-uint32_t lll_prof_radio_end_backup(void)
+void lll_prof_radio_end_backup(void)
 {
 	/* PA enable is overwriting packet end used in ISR profiling, hence
 	 * back it up for later use.
 	 */
 	timestamp_radio_end = radio_tmr_end_get();
-
-	return timestamp_radio_end;
 }
 #endif /* !HAL_RADIO_GPIO_HAVE_PA_PIN */
 
@@ -233,7 +263,10 @@ uint16_t lll_prof_cputime_get(void)
 
 void lll_prof_send(void)
 {
-	(void)send(NULL);
+	struct node_rx_pdu *rx;
+
+	rx = lll_prof_reserve();
+	lll_prof_reserve_send(rx);
 }
 
 struct node_rx_pdu *lll_prof_reserve(void)
@@ -241,11 +274,9 @@ struct node_rx_pdu *lll_prof_reserve(void)
 	struct node_rx_pdu *rx;
 
 	rx = ull_pdu_rx_alloc_peek(3);
-	if (!rx) {
-		return NULL;
+	if (rx != NULL) {
+		(void)ull_pdu_rx_alloc();
 	}
-
-	ull_pdu_rx_alloc();
 
 	return rx;
 }
@@ -256,7 +287,7 @@ void lll_prof_reserve_send(struct node_rx_pdu *rx)
 
 	err = send(rx);
 	if ((err != 0) && (rx != NULL)) {
-		rx->hdr.type = NODE_RX_TYPE_PROFILE;
+		rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		ull_rx_put_sched(rx->hdr.link, rx);
 	}
@@ -269,26 +300,31 @@ static int send(struct node_rx_pdu *rx)
 	struct profile *p;
 	uint8_t chg = 0U;
 
-	/* Get the elapsed time in us since on-air radio packet end to ISR
-	 * entry.
-	 */
-	latency = latency_get();
+	if (latency_valid) {
+		/* Get the elapsed time in us since on-air radio packet end to
+		 * ISR entry.
+		 */
+		latency = latency_get();
 
-	/* check changes in min, avg and max of latency */
-	if (latency > latency_max) {
-		latency_max = latency;
-		chg = 1U;
-	}
-	if (latency < latency_min) {
-		latency_min = latency;
-		chg = 1U;
-	}
+		/* check changes in min, avg and max of latency */
+		if (latency > latency_max) {
+			latency_max = latency;
+			chg = 1U;
+		}
+		if (latency < latency_min) {
+			latency_min = latency;
+			chg = 1U;
+		}
 
-	/* check for +/- 1us change */
-	prev = ((uint16_t)latency_prev + latency) >> 1;
-	if (prev != latency_prev) {
-		latency_prev = latency;
-		chg = 1U;
+		/* check for +/- 1us change */
+		prev = ((uint16_t)latency_prev + latency) >> 1;
+		if (prev != latency_prev) {
+			latency_prev = latency;
+			chg = 1U;
+		}
+	} else {
+		/* Latency not measured, no on-air packet END timestamp */
+		latency = 0U;
 	}
 
 	/* calculate the elapsed time in us since ISR entry */
@@ -317,14 +353,9 @@ static int send(struct node_rx_pdu *rx)
 		return -ENODATA;
 	}
 
-	/* Allocate if not already allocated */
-	if (!rx) {
-		rx = ull_pdu_rx_alloc_peek(3U);
-		if (!rx) {
-			return -ENOMEM;
-		}
-
-		(void)ull_pdu_rx_alloc();
+	/* Do not encode profile if no node rx allocated */
+	if (rx == NULL) {
+		return -ENOMEM;
 	}
 
 	/* Generate event with the allocated node rx */
@@ -343,6 +374,8 @@ static int send(struct node_rx_pdu *rx)
 	p->lll = cputime_lll;
 	p->ull_high = cputime_ull_high;
 	p->ull_low = cputime_ull_low;
+	p->overhead = HAL_TICKER_TICKS_TO_US(cputime_ticks_overhead);
+	p->overhead_max = HAL_TICKER_TICKS_TO_US(cputime_ticks_overhead_max);
 	p->radio_ticks = cputime_ticks_radio;
 	p->lll_ticks = cputime_ticks_lll;
 	p->ull_high_ticks = cputime_ticks_ull_high;

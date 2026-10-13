@@ -558,7 +558,7 @@ static void scan_and_connect(void)
 
 	UNSET_FLAG(flag_connected);
 
-	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE_CONTINUOUS, NULL);
 	if (err != 0) {
 		FAIL("Scanning failed to start (err %d)\n", err);
 		return;

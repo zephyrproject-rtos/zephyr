@@ -787,6 +787,11 @@ uint32_t radio_rx_ready_delay_get(uint8_t phy, uint8_t flags)
 	return rx_wu;
 }
 
+uint32_t radio_rx_address_delay_get(uint8_t phy, uint8_t flags)
+{
+	return radio_rx_chain_delay_get(phy, flags);
+}
+
 uint32_t radio_rx_chain_delay_get(uint8_t phy, uint8_t flags)
 {
 	/* RX_WTMRK = AA + PDU header, but AA time is already accounted for */
