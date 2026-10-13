@@ -9,7 +9,7 @@
  * @brief Hexagon event context saved by the assembly EVENT_ENTRY macro.
  *
  * Must match the register save layout in event_handlers.S exactly; shared
- * by the C event handler (irq_manage.c) and the GDB stub (gdbstub.c).
+ * by the C event handler (irq_manage.c).
  *
  * Offsets below correspond to the EVENT_CTX_* constants in
  * event_handlers.S:
@@ -34,8 +34,9 @@
  *   0x64  m1
  *   0x68  usr
  *   0x6c  r28
- *   0x70  scratch
- *   -- total size 0x78 (EVENT_CTX_SIZE) --
+ *   0x70  gosp (G2; reused as EVENT_EXIT scratch)
+ *   0x74  badva (G3)
+ *   -- total size 0x78 --
  */
 
 #ifndef ZEPHYR_ARCH_HEXAGON_INCLUDE_EVENT_CONTEXT_H_
@@ -67,17 +68,14 @@ struct event_context {
 	uint32_t m1;               /**< modifier register M1 */
 	uint32_t usr;              /**< user status register USR */
 	uint32_t r28;              /**< R28 (caller-saved, not in r0-r15 pairs) */
-	uint32_t scratch;          /**< temporary slot used during EVENT_EXIT */
+	uint32_t gosp;             /**< GOSP (G2), reused as EVENT_EXIT scratch */
+	uint32_t badva;            /**< GBADVA (G3), raw event-time value */
 };
 
 /** @brief Size of struct event_context in bytes (must equal EVENT_CTX_SIZE). */
 #define EVENT_CTX_SIZE_C sizeof(struct event_context)
 
-/*
- * EVENT_CTX_SIZE as a numeric constant matching event_handlers.S, used by
- * gdbstub.c to locate the pre-exception SP/FP above the saved context
- * frame. If struct event_context grows, update both definitions.
- */
+/* EVENT_CTX_SIZE must match the save layout in event_handlers.S. */
 #define EVENT_CTX_SIZE 0x78
 
 /*
@@ -87,8 +85,11 @@ struct event_context {
  */
 #define EVENT_ENTRY_ALLOCFRAME_OVERHEAD 8
 
-BUILD_ASSERT(EVENT_CTX_SIZE_C <= EVENT_CTX_SIZE,
-	     "struct event_context exceeds EVENT_CTX_SIZE; "
+/* Room below FRAMELIMIT for the unchecked EVENT_ENTRY frame. */
+#define HEXAGON_STACK_LIMIT_HEADROOM (EVENT_CTX_SIZE + EVENT_ENTRY_ALLOCFRAME_OVERHEAD)
+
+BUILD_ASSERT(EVENT_CTX_SIZE_C == EVENT_CTX_SIZE,
+	     "struct event_context size differs from EVENT_CTX_SIZE; "
 	     "update both event_context.h and event_handlers.S");
 
 #endif /* _ASMLANGUAGE */
