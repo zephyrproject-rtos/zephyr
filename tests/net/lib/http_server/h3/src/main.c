@@ -2281,6 +2281,43 @@ ZTEST(server_h3_tests, test_h3_malformed_client_goaway_closes_connection)
 	expect_connection_closed_and_server_alive();
 }
 
+ZTEST(server_h3_tests, test_h3_duplicate_critical_stream_closes_connection)
+{
+	static const uint8_t stream_types[] = {
+		H3_UNI_STREAM_CONTROL,
+		H3_UNI_STREAM_QPACK_ENCODER,
+		H3_UNI_STREAM_QPACK_DECODER,
+	};
+
+	ARRAY_FOR_EACH(stream_types, i) {
+		int first_fd;
+		int second_fd;
+
+		if (i > 0) {
+			close_h3_client();
+			connect_h3_client(NULL);
+		}
+
+		start_h3_session(false);
+
+		/* The control stream is open already, the QPACK streams are
+		 * opened here. A request shows the first one was taken in.
+		 */
+		if (stream_types[i] != H3_UNI_STREAM_CONTROL) {
+			first_fd = open_client_stream(QUIC_STREAM_UNIDIRECTIONAL);
+			send_all(first_fd, &stream_types[i], 1);
+		}
+
+		send_get_and_expect_static(false);
+
+		/* A second stream of the same type is a connection error */
+		second_fd = open_client_stream(QUIC_STREAM_UNIDIRECTIONAL);
+		send_all(second_fd, &stream_types[i], 1);
+
+		expect_connection_closed_and_server_alive();
+	}
+}
+
 ZTEST_SUITE(server_h3_function_tests, NULL, NULL, NULL, NULL, NULL);
 ZTEST_SUITE(server_h3_tests, NULL, http_server_h3_setup,
 	    http_server_h3_before, http_server_h3_after, http_server_h3_teardown);
