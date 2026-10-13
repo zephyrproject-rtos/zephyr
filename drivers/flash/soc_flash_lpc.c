@@ -64,6 +64,11 @@ static int flash_lpc_erase(const struct device *dev, off_t offset, size_t len)
 	uint32_t stop;
 	uint32_t page_size;
 
+	if (!IS_ALIGNED(offset, FSL_FEATURE_SYSCON_FLASH_PAGE_SIZE_BYTES) ||
+	    !IS_ALIGNED(len, FSL_FEATURE_SYSCON_FLASH_PAGE_SIZE_BYTES)) {
+		return -EINVAL;
+	}
+
 	if (k_sem_take(&priv->write_lock, K_FOREVER)) {
 		return -EACCES;
 	}
