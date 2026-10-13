@@ -295,6 +295,22 @@
 					};
 				};
 			};
+
+			ktd2052@21 {
+				compatible = "kinetic,ktd2052";
+				reg = <0x21>;
+
+				led_0 {
+					label = "RGB LED 0";
+					index = <0>;
+					color-mapping = <1>, <2>, <3>;
+				};
+			};
+
+			ktd2052@22 {
+				compatible = "kinetic,ktd2052";
+				reg = <0x22>;
+			};
 		};
 
 		test_pwm: pwm@12341234 {
