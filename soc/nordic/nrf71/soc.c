@@ -164,7 +164,6 @@ static void ipct_configuration(void)
 }
 #endif /* CONFIG_TRUSTED_EXECUTION_NONSECURE */
 
-#if defined(CONFIG_SOC_NRF71_WIFI_BOOT)
 #if (defined(NRF_APPLICATION) && !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)) || \
 	!defined(__ZEPHYR__)
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf71_antsw)
@@ -175,11 +174,11 @@ BUILD_ASSERT(DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_pwr_antswc),
 	     "antsw steering requires pwr_antswc to power the antenna switch");
 
 /*
- * Steer the antenna switch (ANTSW) towards WLAN before the Wi-Fi core is
- * started. This runs before the GPIO driver is up, so the pin (described in
- * devicetree) is configured directly through the nrf_gpio HAL, which keeps the
- * access on the P0 alias that matches the build's security state. Powering the
- * switch is handled separately by pwr_antswc.
+ * Steer the antenna switch (ANTSW) towards WLAN before either radio that
+ * shares it starts using it. This runs before the GPIO driver is up, so the
+ * pin (described in devicetree) is configured directly through the nrf_gpio
+ * HAL, which keeps the access on the P0 alias that matches the build's
+ * security state. Powering the switch is handled separately by pwr_antswc.
  */
 static void antsw_setup(void)
 {
@@ -193,6 +192,7 @@ static void antsw_setup(void)
 }
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf71_antsw) */
 
+#if defined(CONFIG_SOC_NRF71_WIFI_BOOT)
 static void wifi_setup(void)
 {
 	/* Kickstart the LMAC processor */
@@ -242,15 +242,16 @@ int nordicsemi_nrf71_init(void)
 #endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_pwr_antswc)
-	/* Power on the antenna switch before starting the Wi-Fi core. */
+	/* Power on the antenna switch before steering it or starting the Wi-Fi core. */
 	*(volatile uint32_t *)PWR_ANTSWC_REG |= PWR_ANTSWC_ENABLE;
 #endif
 
-#if defined(CONFIG_SOC_NRF71_WIFI_BOOT)
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf71_antsw)
-	/* Steer the (now powered) antenna switch towards WLAN before Wi-Fi boot. */
+	/* Steer the (now powered) antenna switch towards WLAN. */
 	antsw_setup();
 #endif
+
+#if defined(CONFIG_SOC_NRF71_WIFI_BOOT)
 	wifi_setup();
 #endif
 
