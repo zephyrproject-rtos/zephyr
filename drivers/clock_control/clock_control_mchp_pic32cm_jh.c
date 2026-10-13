@@ -998,6 +998,8 @@ static int clock_mchp_on(const struct device *dev, clock_control_subsys_t sys)
 				is_wait = true;
 			}
 		}
+	} else {
+		ret_val = -EINVAL;
 	}
 
 	/* Wait until the clock state becomes ON. */
@@ -1054,7 +1056,7 @@ static int clock_mchp_off(const struct device *dev, clock_control_subsys_t sys)
 	if (CLOCK_SUCCESS == clock_check_subsys(subsys)) {
 		return clock_off(config, subsys);
 	} else {
-		return -ENOTSUP;
+		return -EINVAL;
 	}
 }
 

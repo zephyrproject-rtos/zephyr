@@ -916,7 +916,7 @@ static int clock_mchp_on(const struct device *dev, clock_control_subsys_t sys)
 	/* Validate subsystem. */
 	if (0 != clock_check_subsys(subsys)) {
 		LOG_ERR("%s: Invalid subsystem", __func__);
-		return -ENOTSUP;
+		return -EINVAL;
 	}
 
 	status = clock_mchp_get_status(dev, sys);
@@ -1003,7 +1003,7 @@ static int clock_mchp_off(const struct device *dev, clock_control_subsys_t sys)
 	/* Validate subsystem. */
 	if (0 != clock_check_subsys(subsys)) {
 		LOG_ERR("%s: Invalid subsystem", __func__);
-		return -ENOTSUP;
+		return -EINVAL;
 	}
 
 	switch (subsys.bits.type) {
