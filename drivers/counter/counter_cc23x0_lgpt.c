@@ -44,6 +44,7 @@ struct counter_cc23x0_lgpt_config {
 struct counter_cc23x0_lgpt_data {
 	struct counter_alarm_cfg alarm_cfg[LGPT_NUM_CHANNELS];
 	struct counter_top_cfg target_cfg;
+	bool is_running;
 };
 
 static inline void lgpt_cc23x0_pm_policy_state_lock_get(void)
@@ -246,8 +247,15 @@ static uint32_t counter_cc23x0_lgpt_get_pending_int(const struct device *dev)
 static int counter_cc23x0_lgpt_start(const struct device *dev)
 {
 	const struct counter_cc23x0_lgpt_config *config = dev->config;
+	struct counter_cc23x0_lgpt_data *data = dev->data;
+
+	if (data->is_running) {
+		return 0;
+	}
 
 	lgpt_cc23x0_pm_policy_state_lock_get();
+
+	data->is_running = true;
 
 	LOG_DBG("[START] LGPT base[%x]\n", config->base);
 
@@ -262,11 +270,18 @@ static int counter_cc23x0_lgpt_start(const struct device *dev)
 static int counter_cc23x0_lgpt_stop(const struct device *dev)
 {
 	const struct counter_cc23x0_lgpt_config *config = dev->config;
+	struct counter_cc23x0_lgpt_data *data = dev->data;
+
+	if (!data->is_running) {
+		return 0;
+	}
 
 	LOG_DBG("[STOP] LGPT base[%x]\n", config->base);
 
 	/* Set to 0 to stop timer */
 	HWREG(config->base + LGPT_O_STARTCFG) = 0x0;
+
+	data->is_running = false;
 
 	lgpt_cc23x0_pm_policy_state_lock_put();
 
