@@ -18,6 +18,7 @@ static const struct gain_desc gains[] = {
 	[ADC_GAIN_2_7] = {.mul = 7, .div = 2},
 	[ADC_GAIN_1_3] = {.mul = 3, .div = 1},
 	[ADC_GAIN_2_5] = {.mul = 5, .div = 2},
+	[ADC_GAIN_15_32] = {.mul = 32, .div = 15},
 	[ADC_GAIN_1_2] = {.mul = 2, .div = 1},
 	[ADC_GAIN_2_3] = {.mul = 3, .div = 2},
 	[ADC_GAIN_4_5] = {.mul = 5, .div = 4},
