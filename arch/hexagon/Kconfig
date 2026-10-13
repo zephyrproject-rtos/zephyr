@@ -11,6 +11,18 @@ config ARCH
 config GEN_IRQ_VECTOR_TABLE
 	default n
 
+config ARCH_SUPPORTS_COREDUMP
+	default y
+
+config ARCH_SUPPORTS_COREDUMP_THREADS
+	default y
+
+config ARCH_SUPPORTS_COREDUMP_PRIV_STACKS
+	default y
+
+config ARCH_SUPPORTS_COREDUMP_STACK_PTR
+	default y
+
 source "arch/hexagon/core/Kconfig"
 
 endmenu
