@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# This suite compiles msg.c and tlv.c directly, without enabling CONFIG_PTP,
+# so the PTP Kconfig entries they use are redeclared here with defaults.
+
+config PTP_LOG_LEVEL
+	default 3
+
+config PTP_MSG_POLL_SIZE
+	default 4
+
+source "Kconfig.zephyr"
