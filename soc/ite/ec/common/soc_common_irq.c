@@ -10,8 +10,21 @@
 	  privileged architecture specification
  */
 #include <zephyr/irq.h>
+#include <zephyr/logging/log.h>
 
 #include <soc_common.h>
+
+LOG_MODULE_REGISTER(soc_ite_irq, CONFIG_LOG_DEFAULT_LEVEL);
+
+void z_riscv_log_saved_info(unsigned long cause)
+{
+	ARG_UNUSED(cause);
+
+	if (IS_ENABLED(CONFIG_HAS_ITE_INTC)) {
+		LOG_ERR("ITE interrupt line causing the IRQ: %u",
+			(unsigned int)ite_intc_get_irq_num());
+	}
+}
 
 void arch_irq_enable(unsigned int irq)
 {
