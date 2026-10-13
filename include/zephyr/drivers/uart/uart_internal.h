@@ -427,7 +427,7 @@ static inline void z_impl_uart_irq_err_disable(const struct device *dev)
 #endif
 }
 
-static inline int z_impl_uart_irq_is_pending(const struct device *dev)
+static inline int uart_irq_is_pending(const struct device *dev)
 {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	const struct uart_driver_api *api = (const struct uart_driver_api *)dev->api;
@@ -442,7 +442,7 @@ static inline int z_impl_uart_irq_is_pending(const struct device *dev)
 #endif
 }
 
-static inline int z_impl_uart_irq_update(const struct device *dev)
+static inline int uart_irq_update(const struct device *dev)
 {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	const struct uart_driver_api *api = (const struct uart_driver_api *)dev->api;
