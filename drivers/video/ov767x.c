@@ -502,49 +502,34 @@ static int ov767x_get_caps(const struct device *dev, struct video_caps *caps)
 }
 
 #if DT_HAS_COMPAT_STATUS_OKAY(ovti_ov7670)
-static int ov7670_set_fmt(const struct device *dev, struct video_format *fmt)
+static int ov7670_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	const struct ov767x_config *config = dev->config;
-	int ret = -ENOTSUP;
-	uint8_t i = 0U;
+	int ret;
 
-	/* Set output resolution */
-	while (config->fmts[i].pixelformat) {
-		if (config->fmts[i].width_min == fmt->width &&
-		    config->fmts[i].height_min == fmt->height &&
-		    config->fmts[i].pixelformat == fmt->pixelformat) {
-			/* Set output format */
-			switch (config->fmts[i].width_min) {
-			case 176: /* QCIF */
-				ret = video_write_cci_multiregs8(&config->bus, ov7670_regs_qcif,
-								 ARRAY_SIZE(ov7670_regs_qcif));
-				break;
-			case 352: /* CIF */
-				ret = video_write_cci_multiregs8(&config->bus, ov7670_regs_cif,
-								 ARRAY_SIZE(ov7670_regs_cif));
-				break;
-			case 320: /* QVGA */
-				ret = video_write_cci_multiregs8(&config->bus, ov7670_regs_qvga,
-								 ARRAY_SIZE(ov7670_regs_qvga));
-				break;
-			case 640: /* VGA */
-				ret = video_write_cci_multiregs8(&config->bus, ov7670_regs_vga,
-								 ARRAY_SIZE(ov7670_regs_vga));
-				break;
-			default: /* QVGA */
-				ret = video_write_cci_multiregs8(&config->bus, ov7670_regs_qvga,
-								 ARRAY_SIZE(ov7670_regs_qvga));
-				break;
-			}
-			if (ret < 0) {
-				LOG_ERR("Resolution not set!");
-				return ret;
-			}
-		}
-		i++;
+	switch (fmt->width) {
+	case 176: /* QCIF */
+		ret = video_write_cci_multiregs8(&config->bus, ov7670_regs_qcif,
+						 ARRAY_SIZE(ov7670_regs_qcif));
+		break;
+	case 352: /* CIF */
+		ret = video_write_cci_multiregs8(&config->bus, ov7670_regs_cif,
+						 ARRAY_SIZE(ov7670_regs_cif));
+		break;
+	case 320: /* QVGA */
+		ret = video_write_cci_multiregs8(&config->bus, ov7670_regs_qvga,
+						 ARRAY_SIZE(ov7670_regs_qvga));
+		break;
+	case 640: /* VGA */
+		ret = video_write_cci_multiregs8(&config->bus, ov7670_regs_vga,
+						 ARRAY_SIZE(ov7670_regs_vga));
+		break;
+	default:
+		__ASSERT(false);
+		ret = -ENOTSUP;
 	}
 	if (ret < 0) {
-		LOG_ERR("Resolution not supported!");
+		LOG_ERR("Resolution not set!");
 		return ret;
 	}
 
@@ -553,44 +538,29 @@ static int ov7670_set_fmt(const struct device *dev, struct video_format *fmt)
 #endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(ovti_ov7675)
-static int ov7675_set_fmt(const struct device *dev, struct video_format *fmt)
+static int ov7675_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	const struct ov767x_config *config = dev->config;
-	int ret = -ENOTSUP;
-	uint8_t i = 0U;
+	int ret;
 
-	while (config->fmts[i].pixelformat) {
-		if (config->fmts[i].width_min == fmt->width &&
-		    config->fmts[i].height_min == fmt->height &&
-		    config->fmts[i].pixelformat == fmt->pixelformat) {
-			/* Set output format */
-			switch (config->fmts[i].width_min) {
-			case 160: /* QQVGA */
-				ret = video_write_cci_multiregs8(&config->bus, ov7675_regs_qqvga,
-								 ARRAY_SIZE(ov7675_regs_qqvga));
-				break;
-			case 320: /* QVGA */
-				ret = video_write_cci_multiregs8(&config->bus, ov7675_regs_qvga,
-								 ARRAY_SIZE(ov7675_regs_qvga));
-				break;
-			case 640: /* VGA */
-				ret = video_write_cci_multiregs8(&config->bus, ov7675_regs_vga,
-								 ARRAY_SIZE(ov7675_regs_vga));
-				break;
-			default: /* QVGA */
-				ret = video_write_cci_multiregs8(&config->bus, ov7675_regs_qvga,
-								 ARRAY_SIZE(ov7675_regs_qvga));
-				break;
-			}
-			if (ret < 0) {
-				LOG_ERR("Resolution not set!");
-				return ret;
-			}
-		}
-		i++;
+	switch (fmt->width) {
+	case 160: /* QQVGA */
+		ret = video_write_cci_multiregs8(&config->bus, ov7675_regs_qqvga,
+						 ARRAY_SIZE(ov7675_regs_qqvga));
+		break;
+	case 320: /* QVGA */
+		ret = video_write_cci_multiregs8(&config->bus, ov7675_regs_qvga,
+						 ARRAY_SIZE(ov7675_regs_qvga));
+		break;
+	case 640: /* VGA */
+		ret = video_write_cci_multiregs8(&config->bus, ov7675_regs_vga,
+						 ARRAY_SIZE(ov7675_regs_vga));
+		break;
+	default:
+		__ASSERT(false);
 	}
 	if (ret < 0) {
-		LOG_ERR("Resolution not supported!");
+		LOG_ERR("Resolution not set!");
 		return ret;
 	}
 
@@ -598,7 +568,7 @@ static int ov7675_set_fmt(const struct device *dev, struct video_format *fmt)
 }
 #endif
 
-static int ov767x_set_fmt(const struct device *dev, struct video_format *fmt)
+static int ov767x_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	const struct ov767x_config __maybe_unused *config = dev->config;
 	struct ov767x_data *data = dev->data;
@@ -635,7 +605,7 @@ static int ov767x_set_fmt(const struct device *dev, struct video_format *fmt)
 
 #if DT_HAS_COMPAT_STATUS_OKAY(ovti_ov7670)
 	if (config->camera_model == OV767X_MODEL_OV7670) {
-		ret = ov7670_set_fmt(dev, fmt);
+		ret = ov7670_set_fmt(dev, fmt, idx);
 		if (ret < 0) {
 			return ret;
 		}
@@ -643,7 +613,7 @@ static int ov767x_set_fmt(const struct device *dev, struct video_format *fmt)
 #endif
 #if DT_HAS_COMPAT_STATUS_OKAY(ovti_ov7675)
 	if (config->camera_model == OV767X_MODEL_OV7675) {
-		ret = ov7675_set_fmt(dev, fmt);
+		ret = ov7675_set_fmt(dev, fmt, idx);
 		if (ret < 0) {
 			return ret;
 		}
@@ -683,6 +653,7 @@ static int ov767x_init(const struct device *dev)
 	int ret;
 	uint8_t pid;
 	struct video_format fmt = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
 		.pixelformat = VIDEO_PIX_FMT_RGB565,
 		.width = 320,
 		.height = 240,
@@ -787,7 +758,7 @@ static int ov767x_init(const struct device *dev)
 	}
 
 	/* Set video format after initialization */
-	ret = ov767x_set_fmt(dev, &fmt);
+	ret = ov767x_set_fmt(dev, &fmt, 0);
 	if (ret < 0) {
 		return ret;
 	}

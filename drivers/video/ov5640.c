@@ -749,7 +749,7 @@ static int ov5640_set_frmival(const struct device *dev, struct video_frmival *fr
 	return 0;
 }
 
-static int ov5640_set_fmt(const struct device *dev, struct video_format *fmt)
+static int ov5640_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	struct ov5640_data *drv_data = dev->data;
 	const struct ov5640_config *cfg = dev->config;
@@ -770,19 +770,6 @@ static int ov5640_set_fmt(const struct device *dev, struct video_format *fmt)
 		modes = csi2_modes;
 		num_fmts = ARRAY_SIZE(csi2_fmts);
 		array_size_modes = ARRAY_SIZE(csi2_modes);
-	}
-
-	for (i = 0; i < num_fmts; ++i) {
-		if (fmt->pixelformat == fmts[i].pixelformat && fmt->width >= fmts[i].width_min &&
-		    fmt->width <= fmts[i].width_max && fmt->height >= fmts[i].height_min &&
-		    fmt->height <= fmts[i].height_max) {
-			break;
-		}
-	}
-
-	if (i == num_fmts) {
-		LOG_ERR("Unsupported pixel format or resolution");
-		return -ENOTSUP;
 	}
 
 	if (!memcmp(&drv_data->fmt, fmt, sizeof(drv_data->fmt))) {
@@ -1291,7 +1278,10 @@ static int ov5640_init_controls(const struct device *dev)
 static int ov5640_init(const struct device *dev)
 {
 	const struct ov5640_config *cfg = dev->config;
-	struct video_format fmt = {0};
+	struct video_format fmt = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
+		.pixelformat = VIDEO_PIX_FMT_RGB565,
+	};
 	uint32_t chip_id;
 	int ret;
 
@@ -1443,7 +1433,6 @@ static int ov5640_init(const struct device *dev)
 	}
 
 	/* Set default format */
-	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
 	if (ov5640_is_dvp(dev)) {
 		/* Set default resolution to QQVGA (160x120) */
 		fmt.width = 160;
@@ -1453,7 +1442,7 @@ static int ov5640_init(const struct device *dev)
 		fmt.width = 1280;
 		fmt.height = 720;
 	}
-	ret = ov5640_set_fmt(dev, &fmt);
+	ret = video_set_format(dev, &fmt);
 	if (ret) {
 		LOG_ERR("Unable to configure default format");
 		return -EIO;

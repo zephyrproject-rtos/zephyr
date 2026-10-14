@@ -573,7 +573,7 @@ static inline void stm32_dcmipp_compute_fmt_pitch(uint32_t pipe_id, struct video
 	fmt->size = fmt->pitch * fmt->height;
 }
 
-static int stm32_dcmipp_set_fmt(const struct device *dev, struct video_format *fmt)
+static int stm32_dcmipp_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	struct stm32_dcmipp_pipe_data *pipe = dev->data;
 	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
@@ -1995,6 +1995,7 @@ static void stm32_dcmipp_csi_isr(const struct device *dev)
 						CONFIG_VIDEO_STM32_DCMIPP_SENSOR_PIXEL_FORMAT),	\
 			.width = CONFIG_VIDEO_STM32_DCMIPP_SENSOR_WIDTH,			\
 			.height = CONFIG_VIDEO_STM32_DCMIPP_SENSOR_HEIGHT,			\
+			.type = VIDEO_BUF_TYPE_OUTPUT,						\
 		},										\
 	};											\
 												\

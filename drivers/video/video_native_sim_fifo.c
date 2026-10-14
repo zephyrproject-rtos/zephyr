@@ -273,23 +273,13 @@ static void video_nsi_fifo_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static int video_nsi_fifo_set_fmt(const struct device *dev, struct video_format *fmt)
+static int video_nsi_fifo_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	struct video_nsi_fifo_data *data = dev->data;
-	size_t idx;
 	int ret;
 
 	if (fmt->type != VIDEO_BUF_TYPE_OUTPUT) {
 		return -EINVAL;
-	}
-
-	/* Scaling and pixel format conversion are up to the host writer (e.g. ffmpeg) */
-	ret = video_format_caps_index(video_nsi_fifo_fmts, fmt, &idx);
-	/* video_format_caps_index() ignores the steps, and YUYV needs an even width */
-	if ((ret < 0) || ((fmt->width % video_nsi_fifo_fmts[idx].width_step) != 0)) {
-		LOG_ERR("Unsupported format %s %ux%u", VIDEO_FOURCC_TO_STR(fmt->pixelformat),
-			fmt->width, fmt->height);
-		return -ENOTSUP;
 	}
 
 	ret = video_estimate_fmt_size(fmt);

@@ -137,7 +137,7 @@ static int cmd_video_tree(const struct shell *sh, size_t argc, char **argv)
 
 		shell_print(sh, "%*s +- %s", level * 2, "", dev->name);
 
-		dev = vdev->src_dev;
+		dev = vdev->source_dev;
 	}
 
 	return 0;

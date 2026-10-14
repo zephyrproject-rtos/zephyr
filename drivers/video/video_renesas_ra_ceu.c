@@ -79,7 +79,7 @@ static void video_renesas_ra_ceu_callback(capture_callback_args_t *p_args)
 	if (p_args->event & CEU_EVENT_FRAME_END) {
 		curr_vbuf = atomic_ptr_get(&data->vbuf);
 		if (curr_vbuf && atomic_ptr_cas(&data->vbuf, curr_vbuf, NULL)) {
-			curr_vbuf->timestamp = k_uptime_get_32();
+			curr_buf->timestamp = k_uptime_get_32();
 			k_fifo_put(&data->fifo_out, curr_vbuf);
 		}
 
@@ -121,12 +121,15 @@ static int video_renesas_ra_ceu_get_format(const struct device *dev, struct vide
 	return video_estimate_fmt_size(fmt);
 }
 
-static int video_renesas_ra_ceu_set_format(const struct device *dev, struct video_format *fmt)
+static int video_renesas_ra_ceu_set_format(const struct device *dev, struct video_format *fmt,
+					   size_t idx)
 {
 	const struct video_renesas_ra_ceu_config *config = dev->config;
 	struct video_renesas_ra_ceu_data *data = dev->data;
 	fsp_err_t err;
 	int ret;
+
+	/* TODO: modify the table of format capabilities to apply these rules */
 
 	if (fmt->width > VIDEO_RA_CEU_WIDTH_MAX || fmt->width < VIDEO_RA_CEU_WIDTH_MIN) {
 		LOG_DBG("Width %d out of supported range %d-%d", fmt->width, VIDEO_RA_CEU_WIDTH_MIN,
