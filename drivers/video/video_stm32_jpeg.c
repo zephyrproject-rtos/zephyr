@@ -26,7 +26,6 @@ typedef void (*irq_config_func_t)(const struct device *dev);
 struct video_common_header {
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
-	bool is_streaming;
 };
 
 struct video_m2m_common {
@@ -377,22 +376,7 @@ void HAL_JPEG_GetDataCallback(JPEG_HandleTypeDef *hjpeg, uint32_t nb_encoded_dat
 
 static int stm32_jpeg_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
-	struct stm32_jpeg_data *data = dev->data;
-	struct video_common_header *common =
-		fmt->type == VIDEO_BUF_TYPE_INPUT ? &data->m2m.in : &data->m2m.out;
-	int ret = 0;
-
-	k_mutex_lock(&data->lock, K_FOREVER);
-
-	if (common->is_streaming) {
-		ret = -EBUSY;
-		goto out;
-	}
-
-out:
-	k_mutex_unlock(&data->lock);
-
-	return ret;
+	return 0;
 }
 
 static int stm32_jpeg_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
@@ -410,13 +394,6 @@ static int stm32_jpeg_set_stream(const struct device *dev, bool enable, enum vid
 		LOG_ERR("Input & output resolution should match");
 		return -EINVAL;
 	}
-
-	if (enable == common->is_streaming) {
-		ret = -EALREADY;
-		goto out;
-	}
-
-	common->is_streaming = enable;
 
 	if (enable) {
 		ret = stm32_jpeg_start_codec(dev);

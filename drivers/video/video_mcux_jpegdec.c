@@ -34,7 +34,6 @@ struct mcux_jpegdec_data {
 	struct k_mutex lock;
 	struct k_sem decode_done;
 	jpegdec_descpt_t decoder_despt;
-	bool is_streaming; /* Application has set the in/out stream on. */
 	bool running;      /* Decoder is actively decoding. */
 	bool first_frame_rcv; /* First incoming frame has been fed. */
 	uint8_t format_idx;
@@ -136,7 +135,8 @@ static void mcux_jpegdec_decode_one_frame(const struct device *dev)
 	struct video_buffer *current_in = NULL;
 	struct video_buffer *current_out = NULL;
 
-	if (!data->is_streaming || k_fifo_is_empty(in_fifo_in) || k_fifo_is_empty(out_fifo_in)) {
+	if (!video_stream_busy(dev) ||
+	    k_fifo_is_empty(in_fifo_in) || k_fifo_is_empty(out_fifo_in)) {
 		/*
 		 * Streaming was stopped, or nothing can be done if either input
 		 * or output queue is empty.
@@ -205,27 +205,20 @@ static int mcux_jpegdec_set_stream(const struct device *dev, bool enable, enum v
 {
 	struct mcux_jpegdec_data *data = dev->data;
 	bool do_decode = false;
-	bool was_streaming;
 
 	ARG_UNUSED(type);
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
-	was_streaming = data->is_streaming;
-
-	if (enable != data->is_streaming) {
-		data->is_streaming = enable;
-
-		if (enable) {
-			do_decode = true;
-		} else {
-			/*
-			 * Re-parse the header of the first frame fed after the
-			 * stream is restarted, instead of assuming it still
-			 * matches the format of the previous stream.
-			 */
-			data->first_frame_rcv = false;
-		}
+	if (enable) {
+		do_decode = true;
+	} else {
+		/*
+		 * Re-parse the header of the first frame fed after the
+		 * stream is restarted, instead of assuming it still
+		 * matches the format of the previous stream.
+		 */
+		data->first_frame_rcv = false;
 	}
 
 	k_mutex_unlock(&data->lock);
@@ -238,9 +231,9 @@ static int mcux_jpegdec_set_stream(const struct device *dev, bool enable, enum v
 	 * Let a frame that is already being decoded by the hardware finish
 	 * before stopping, instead of tearing down the stream underneath it.
 	 * mcux_jpegdec_decode_one_frame() will not start another frame once
-	 * is_streaming is false.
+	 * video_stream_busy() is false.
 	 */
-	if (!enable && was_streaming) {
+	if (!enable) {
 		while (data->running) {
 			k_sem_take(&data->decode_done, K_FOREVER);
 		}
@@ -366,7 +359,7 @@ static int mcux_jpegdec_enqueue(const struct device *dev, struct video_buffer *v
 	 * If the streaming is on but the decoder is not running due to
 	 * lack of in/out buffer, start to decode new frame.
 	 */
-	if (!data->running && data->is_streaming) {
+	if (!data->running && video_stream_busy(&data->vdev)) {
 		do_decode = true;
 	}
 

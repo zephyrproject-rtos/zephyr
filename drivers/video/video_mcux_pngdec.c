@@ -33,7 +33,6 @@ struct mcux_pngdec_data {
 	struct k_work decode_work;
 	struct k_sem decode_done;    /* Signaled when the decoder goes idle. */
 	const struct device *dev;
-	bool is_streaming;    /* Application has set the in/out stream on. */
 	bool running;         /* Decoder is actively decoding. */
 	bool first_frame_rcv; /* First incoming frame has been fed. */
 	pngdec_image_t image_info;
@@ -80,7 +79,8 @@ static void mcux_pngdec_decode_one_frame(const struct device *dev)
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
-	if (!data->is_streaming || k_fifo_is_empty(in_fifo_in) || k_fifo_is_empty(out_fifo_in)) {
+	if (!video_stream_busy(&data->vdev) ||
+	    k_fifo_is_empty(in_fifo_in) || k_fifo_is_empty(out_fifo_in)) {
 		/* Nothing can be done if streaming is off or either queue is empty */
 		data->running = false;
 		k_mutex_unlock(&data->lock);
@@ -156,27 +156,20 @@ static int mcux_pngdec_set_fmt(const struct device *dev, struct video_format *fm
 static int mcux_pngdec_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
 	struct mcux_pngdec_data *data = dev->data;
-	bool do_decode = false;
 	bool wait_for_decode = false;
 
 	ARG_UNUSED(type);
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
-	if (enable != data->is_streaming) {
-		data->is_streaming = enable;
-
-		if (enable) {
-			do_decode = true;
-		} else {
-			data->first_frame_rcv = false;
-			wait_for_decode = data->running;
-		}
+	if (!enable) {
+		data->first_frame_rcv = false;
+		wait_for_decode = data->running;
 	}
 
 	k_mutex_unlock(&data->lock);
 
-	if (do_decode) {
+	if (enable) {
 		mcux_pngdec_decode_one_frame(dev);
 	}
 
@@ -260,7 +253,7 @@ static int mcux_pngdec_enqueue(const struct device *dev, struct video_buffer *vb
 	 * If the streaming is on but the decoder is not running due to lack of
 	 * in/out buffer, start to decode new frame.
 	 */
-	if (!data->running && data->is_streaming) {
+	if (!data->running && video_stream_busy(dev)) {
 		do_decode = true;
 	}
 

@@ -95,7 +95,6 @@ struct video_nsi_fifo_data {
 	/** Number of bytes of the frame currently being read */
 	size_t frame_offset;
 	int fd;
-	bool streaming;
 	/** The frame being read was cancelled by a flush, drop it once complete */
 	bool discard;
 	/** The driver created the FIFO, so it removes it on exit */
@@ -196,7 +195,8 @@ static void video_nsi_fifo_thread(void *p1, void *p2, void *p3)
 
 		/* The buffer stays queued until it is filled, so stop and flush never lose it */
 		vbuf = k_fifo_peek_head(&data->fifo_in);
-		if (!data->streaming || (vbuf == NULL)) {
+		if ((data->vdev.is_streaming & BIT(VIDEO_BUF_TYPE_OUTPUT) == 0) ||
+		    (vbuf == NULL)) {
 			k_mutex_unlock(&data->lock);
 			k_sem_take(&data->wake_sem, K_FOREVER);
 			continue;
@@ -312,12 +312,7 @@ static int video_nsi_fifo_set_stream(const struct device *dev, bool enable,
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
-	if (enable == data->streaming) {
-		goto unlock;
-	}
-
 	if (!enable) {
-		data->streaming = false;
 		video_nsi_fifo_close(data);
 		LOG_INF("Stream stopped");
 		goto unlock;
@@ -330,7 +325,6 @@ static int video_nsi_fifo_set_stream(const struct device *dev, bool enable,
 
 	LOG_INF("Reading frames from the host FIFO %s", data->path);
 
-	data->streaming = true;
 	k_sem_give(&data->wake_sem);
 
 unlock:

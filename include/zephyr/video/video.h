@@ -251,6 +251,20 @@ int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t l
  */
 
 /**
+ * @brief Test the streaming state of a video device.
+ *
+ * Test if a video device is currently streaming. The streaming state is @c false before
+ * @ref video_start_stream() is called and after @ref video_stop_stream(), to ensure that
+ * the video device may be reconfigured.
+ *
+ * It tests both @rev VIDEO_BUF_TYPE_INPUT and @ref VIDEO_BUF_TYPE_OUTPUT.
+ *
+ * @retval true if streaming is busy stream ongoing
+ * @retval false if streaming is guaranteed to not ongoing
+ */
+bool video_streaming_busy(const struct device *dev);
+
+/**
  * @brief Start the video device function.
  *
  * video_stream_start is called to enter ‘streaming’ state (capture, output...).

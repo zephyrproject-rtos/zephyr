@@ -56,6 +56,11 @@ int video_set_format(const struct device *dev, struct video_format *fmt)
 		return 0;
 	}
 
+	if (vdev->is_streaming & BIT(fmt->type)) {
+		LOG_DBG("%s device is currently streaming");
+		return -EBUSY;
+	}
+
 	vdev = dev->data;
 
 	ret = video_get_caps(dev, &caps);

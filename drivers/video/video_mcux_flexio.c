@@ -71,7 +71,6 @@ struct nxp_flexio_camera_data {
 	struct k_fifo fifo_out;
 	/* Semaphore given when stream runs out of buffers */
 	struct k_sem stream_empty;
-	bool streaming;
 	/* Current line index within the active buffer (0..fmt.height-1) */
 	uint32_t current_line;
 	/* Pre-built DMA config — dest_address and block_size are updated per line */
@@ -191,7 +190,8 @@ static void nxp_flexio_camera_dma_callback(const struct device *dma_dev,
 		return;
 	}
 
-	if (!data->streaming) {
+	if (data->vdev.is_streaming &
+	    (BIT(VIDEO_BUF_TYPE_INPUT) | BIT(VIDEO_BUF_TYPE_OUTPUT)) == 0) {
 		return;
 	}
 

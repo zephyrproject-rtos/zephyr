@@ -62,7 +62,6 @@ struct video_esp32_data {
 	cam_hal_context_t hal;
 	const struct video_esp32_config *config;
 	struct video_buffer *active_vbuf;
-	bool is_streaming;
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
 	struct dma_block_config dma_blocks[CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM];
@@ -149,7 +148,6 @@ static int video_esp32_set_stream(const struct device *dev, bool enable, enum vi
 			return -EIO;
 		}
 
-		data->is_streaming = false;
 		error = dma_stop(cfg->dma_dev, cfg->rx_dma_channel);
 		if (error) {
 			LOG_ERR("Unable to stop DMA (%d)", error);
@@ -159,10 +157,6 @@ static int video_esp32_set_stream(const struct device *dev, bool enable, enum vi
 		cam_hal_stop_streaming(&data->hal);
 
 		return 0;
-	}
-
-	if (data->is_streaming) {
-		return -EBUSY;
 	}
 
 	LOG_DBG("Start streaming");
@@ -232,7 +226,6 @@ static int video_esp32_set_stream(const struct device *dev, bool enable, enum vi
 	if (video_stream_start(cfg->source_dev, type)) {
 		return -EIO;
 	}
-	data->is_streaming = true;
 
 	return 0;
 }
