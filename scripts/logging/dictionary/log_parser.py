@@ -62,12 +62,10 @@ def read_log_file(args):
                 for line in hexfile.readlines():
                     hexdata += line.strip()
 
-            if LOG_HEX_SEP not in hexdata:
+            found, hexdata = parserlib.skip_to_sync(hexdata, LOG_HEX_SEP)
+            if not found:
                 logger.error("ERROR: Cannot find start of log data, exiting...")
                 sys.exit(1)
-
-            idx = hexdata.index(LOG_HEX_SEP) + len(LOG_HEX_SEP)
-            hexdata = hexdata[idx:]
 
             if len(hexdata) % 2 != 0:
                 # Make sure there are even number of characters
@@ -106,6 +104,13 @@ def read_log_file(args):
                 # Keep only the data after this newline
                 logdata = logdata[newline_idx + 1 :]
                 logger.debug("Found 'Process:' in the RTT header, trimmed data")
+
+        # Binary log data must contain the synchronization sequence (the equivalent of
+        # the hexadecimal separator in the hex mode). Data before it is discarded.
+        found, logdata = parserlib.skip_to_sync(logdata)
+        if not found:
+            logger.error("ERROR: Cannot find synchronization sequence, exiting...")
+            sys.exit(1)
 
     return logdata
 
