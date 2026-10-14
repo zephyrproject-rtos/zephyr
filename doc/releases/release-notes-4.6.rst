@@ -110,6 +110,7 @@ New Drivers
   * :dtcompatible:`cdns,macb-ptp-clock`
   * :dtcompatible:`infineon,cat1c-gem`
   * :dtcompatible:`microchip,mpfs-gem`
+  * :dtcompatible:`sifive,fu540-c000-gem`
   * :dtcompatible:`xlnx,zynq-gem`
   * :dtcompatible:`xlnx,zynqmp-gem`
 
