@@ -99,6 +99,7 @@ New Drivers
 
 * Clock control
 
+  * :dtcompatible:`sifive,fu540-c000-prci`
   * :dtcompatible:`xlnx,ps7-clkc`
   * :dtcompatible:`xlnx,zynqmp-clk`
 

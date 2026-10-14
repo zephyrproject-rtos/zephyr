@@ -1,0 +1,13 @@
+# SiFive clock control drivers
+
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_SIFIVE_PRCI
+	bool "SiFive FU540 PRCI clock controller driver"
+	default y
+	depends on DT_HAS_SIFIVE_FU540_C000_PRCI_ENABLED
+	select CLOCK_CONTROL_FIXED_RATE_CLOCK if DT_HAS_FIXED_CLOCK_ENABLED
+	help
+	  Enable the driver for the clocks of the SiFive FU540 Power Reset
+	  Clock Interrupt block (PRCI).

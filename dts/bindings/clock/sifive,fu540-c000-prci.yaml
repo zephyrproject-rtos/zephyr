@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  SiFive FU540 Power Reset Clock Interrupt block (PRCI), the clock
+  controller of the SoC.
+
+  The node follows the Linux binding, and the clock IDs are those of the
+  Linux binding, named in include/zephyr/dt-bindings/clock/sifive-fu540-prci.h.
+  The hfclk and rtcclk inputs are the crystals of the board:
+
+    prci: clock-controller@10000000 {
+      compatible = "sifive,fu540-c000-prci";
+      reg = <0x10000000 0x1000>;
+      clocks = <&hfclk>, <&rtcclk>;
+      clock-names = "hfclk", "rtcclk";
+      #clock-cells = <1>;
+    };
+
+    eth0: ethernet@10090000 {
+      clocks = <&prci FU540_PRCI_CLK_GEMGXLPLL>, <&prci FU540_PRCI_CLK_GEMGXLPLL>;
+      clock-names = "pclk", "hclk";
+    };
+
+  The driver derives the rates of the core, DDR and GEMGXL PLLs and of the
+  TileLink clock from the registers as the boot firmware left them, and
+  gates the outputs of the PLLs. The rates cannot be set.
+
+compatible: "sifive,fu540-c000-prci"
+
+include: [base.yaml, clock-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+    description: |
+      Names of the input clocks: "hfclk", the crystal the PLLs run from,
+      required, and "rtcclk", the real-time clock crystal.
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - id
