@@ -867,11 +867,13 @@ void llcp_lp_cc_flush(struct ll_conn *conn, struct proc_ctx *ctx)
 	}
 
 	/* FIXME - we currently have no way to recover if we cannot allocate a node here */
-	ctx->node_ref.rx = llcp_ntf_alloc();
-	LL_ASSERT_ERR(ctx->node_ref.rx);
+	if (ctx->node_ref.rx == NULL) {
+		ctx->node_ref.rx = llcp_ntf_alloc();
+		LL_ASSERT_ERR(ctx->node_ref.rx);
 
-	/* Mark node as RETAIN to trigger put/sched */
-	ctx->node_ref.rx->hdr.type = NODE_RX_TYPE_RETAIN;
+		/* Mark node as RETAIN to trigger put/sched */
+		ctx->node_ref.rx->hdr.type = NODE_RX_TYPE_RETAIN;
+	}
 
 	cc_ntf_established(conn, ctx);
 }

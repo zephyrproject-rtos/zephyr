@@ -537,6 +537,9 @@ uint8_t ll_sync_create_cancel(void **rx)
 	 */
 	node_rx->rx_ftr.param = sync;
 
+	/* hdr.next aliases hdr.link; terminate the single-node list */
+	node_rx->hdr.next = NULL;
+
 	*rx = node_rx;
 
 	return 0;

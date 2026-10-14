@@ -1284,7 +1284,12 @@ static void cis_disabled_cb(void *param)
 	num_cis = cig->lll.num_cis;
 	for (cis_idx = 0; cis_idx < num_cis; cis_idx++) {
 		cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
-		LL_ASSERT_DBG(cis);
+		if (cis == NULL) {
+			/* A release callback of a previous CIS in this loop already released the
+			 * remaining CISes and the group
+			 */
+			break;
+		}
 
 		if (!cis->lll.active && (cis->lll.flush != LLL_CIS_FLUSH_COMPLETE)) {
 			/* CIS is not active and did not just complete LLL flush - skip it */

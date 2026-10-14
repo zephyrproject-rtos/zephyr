@@ -288,6 +288,9 @@ uint8_t ll_big_sync_terminate(uint8_t big_handle, void **rx)
 		se = (void *)node_rx->pdu;
 		se->status = BT_HCI_ERR_OP_CANCELLED_BY_HOST;
 
+		/* hdr.next aliases hdr.link; terminate the single-node list */
+		node_rx->hdr.next = NULL;
+
 		*rx = node_rx;
 
 		return BT_HCI_ERR_SUCCESS;

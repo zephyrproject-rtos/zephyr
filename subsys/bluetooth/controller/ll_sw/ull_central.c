@@ -539,6 +539,9 @@ uint8_t ll_connect_disable(void **rx)
 		 */
 		node_rx->rx_ftr.param = scan_lll;
 
+		/* hdr.next aliases hdr.link; terminate the single-node list */
+		node_rx->hdr.next = NULL;
+
 		*rx = node_rx;
 	}
 
