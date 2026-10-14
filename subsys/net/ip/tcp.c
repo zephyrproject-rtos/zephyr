@@ -1928,12 +1928,15 @@ static void tcp_cleanup_recv_queue(struct k_work *work)
 
 	k_mutex_lock(&conn->lock, K_FOREVER);
 
-	NET_DBG("[%p] cleanup recv queue len %zd seq %u", conn,
-		net_buf_frags_len(conn->queue_recv_data),
-		tcp_get_seq(conn->queue_recv_data));
+	/* The queue may have been dropped after this work was scheduled. */
+	if (conn->queue_recv_data != NULL) {
+		NET_DBG("[%p] cleanup recv queue len %zd seq %u", conn,
+			net_buf_frags_len(conn->queue_recv_data),
+			tcp_get_seq(conn->queue_recv_data));
 
-	net_buf_unref(conn->queue_recv_data);
-	conn->queue_recv_data = NULL;
+		net_buf_unref(conn->queue_recv_data);
+		conn->queue_recv_data = NULL;
+	}
 
 	k_mutex_unlock(&conn->lock);
 }
@@ -2777,9 +2780,12 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 				inserted = true;
 			} else {
 				if (end_offset < len) {
-					if (end_offset) {
-						net_buf_remove_mem(conn->queue_recv_data,
-								   end_offset);
+					/* The new packet starts inside the last
+					 * queued fragment, so trim the overlap off
+					 * the end of that fragment.
+					 */
+					if (end_offset > 0) {
+						net_buf_remove_mem(last, end_offset);
 					}
 
 					/* Put new data after pending data */
@@ -2801,6 +2807,7 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 				/* error in sequence list, drop it */
 				net_buf_unref(conn->queue_recv_data);
 				conn->queue_recv_data = NULL;
+				k_work_cancel_delayable(&conn->recv_queue_timer);
 			}
 		} else {
 			NET_DBG("[%p] Cannot add new data to queue", conn);
@@ -2811,10 +2818,11 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 	}
 
 	if (inserted) {
-		/* We need to keep the received data but free the pkt */
+		/* The buffer is owned by the queue now, or was freed with it */
 		pkt->buffer = NULL;
 
-		if (!k_work_delayable_is_pending(&conn->recv_queue_timer)) {
+		if (conn->queue_recv_data != NULL &&
+		    !k_work_delayable_is_pending(&conn->recv_queue_timer)) {
 			k_work_reschedule_for_queue(
 				&tcp_work_q, &conn->recv_queue_timer,
 				K_MSEC(CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT));
