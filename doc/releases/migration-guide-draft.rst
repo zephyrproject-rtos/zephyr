@@ -68,6 +68,31 @@ Bluetooth Classic
   :c:func:`bt_l2cap_br_echo_rsp`. The stack answers a received ECHO request with an ECHO response
   without data, unless a registered ``req`` callback handles it.
 
+Haptics
+*******
+
+* Vendor prefixes have been added to hardware-specific devicetree properties. Applications using the
+  following devicetree properties must update accordingly:
+
+  * :dtcompatible:`cirrus,cs40l26`, :dtcompatible:`cirrus,cs40l27`, :dtcompatible:`cirrus,cs40l50`,
+    :dtcompatible:`cirrus,cs40l51`, :dtcompatible:`cirrus,cs40l52`, :dtcompatible:`cirrus,cs40l53`
+
+    * ``trigger-mapping`` changed to ``cirrus,trigger-mapping``
+    * ``flash-storage`` changed to ``cirrus,flash-storage``
+    * ``flash-offset`` changed to ``cirrus,flash-offset``
+
+  * :dtcompatible:`ti,drv2605`
+
+    * ``actuator-mode`` changed to ``ti,actuator-mode``
+    * ``feedback-brake-factor`` changed to ``ti,feedback-brake-factor``
+    * ``loop-gain`` changed to ``ti,loop-gain``
+    * ``vib-rated-mv`` changed to ``ti,vib-rated-mv``
+    * ``vib-overdrive-mv`` changed to ``ti,vib-overdrive-mv``
+
+  * :dtcompatible:`titanmec,tm6605`
+
+    * ``default-effect`` changed to ``titanmec,default-effect``
+
 Networking
 **********
 
