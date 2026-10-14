@@ -255,6 +255,13 @@
 		reg = <0xf8000000 0x1000>;
 		ranges;
 
+		clkc: clkc@100 {
+			#clock-cells = <1>;
+			compatible = "xlnx,ps7-clkc";
+			reg = <0x100 0x100>;
+			syscon = <&slcr>;
+		};
+
 		pinctrl0: pinctrl@700 {
 			compatible = "xlnx,pinctrl-zynq";
 			reg = <0x700 0x200>;
