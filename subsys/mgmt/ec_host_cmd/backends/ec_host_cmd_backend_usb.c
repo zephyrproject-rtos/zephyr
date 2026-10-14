@@ -23,8 +23,6 @@ BUILD_ASSERT((CONFIG_EC_HOST_CMD_HANDLER_BUFFER_ALIGN % UDC_BUF_ALIGN) == 0, "Bu
 /* Supported version of host commands protocol. */
 #define EC_HOST_REQUEST_VERSION 3
 
-#define EC_HOST_CMD_SEND_TIMEOUT_MS 100
-
 #define EP_BULK_SIZE     64U
 #define EP_INT_SIZE_SIZE 4U
 
