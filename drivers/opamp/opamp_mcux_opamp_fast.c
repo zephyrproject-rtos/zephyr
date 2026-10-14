@@ -79,10 +79,20 @@ static DEVICE_API(opamp, api) = {
 	.set_gain = mcux_opamp_fast_set_gain,
 };
 
-int mcux_opamp_fast_init(const struct device *dev)
+static void mcux_opamp_fast_configure(const struct device *dev)
 {
 	const struct mcux_opamp_fast_config *config = dev->config;
 	OPAMP_Type *base = config->base;
+
+	base->OPAMP_CTRL = ((base->OPAMP_CTRL & ~OPAMP_OPAMP_CTRL_OPA_BC_SEL_MASK) |
+			    OPAMP_OPAMP_CTRL_OPA_BC_SEL(config->bias_current));
+	base->OPAMP_CTRL = ((base->OPAMP_CTRL & ~OPAMP_OPAMP_CTRL_OPA_CC_SEL_MASK) |
+			    OPAMP_OPAMP_CTRL_OPA_CC_SEL(config->compensation_capcitor));
+}
+
+int mcux_opamp_fast_init(const struct device *dev)
+{
+	const struct mcux_opamp_fast_config *config = dev->config;
 	int ret;
 
 	/* Enable OPAMP clock. */
@@ -97,10 +107,7 @@ int mcux_opamp_fast_init(const struct device *dev)
 		return ret;
 	}
 
-	base->OPAMP_CTRL = ((base->OPAMP_CTRL & ~OPAMP_OPAMP_CTRL_OPA_BC_SEL_MASK) |
-			    OPAMP_OPAMP_CTRL_OPA_BC_SEL(config->bias_current));
-	base->OPAMP_CTRL = ((base->OPAMP_CTRL & ~OPAMP_OPAMP_CTRL_OPA_CC_SEL_MASK) |
-			    OPAMP_OPAMP_CTRL_OPA_CC_SEL(config->compensation_capcitor));
+	mcux_opamp_fast_configure(dev);
 
 	return pm_device_driver_init(dev, mcux_opamp_fast_pm_callback);
 }
