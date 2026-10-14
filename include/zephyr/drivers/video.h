@@ -156,10 +156,17 @@ typedef int (*video_api_set_format_t)(const struct device *dev, struct video_for
 typedef int (*video_api_get_format_t)(const struct device *dev, struct video_format *fmt);
 
 /**
- * @brief Callback API to set or get video frame interval.
- * See @a video_driver_set_frmival() and @a video_driver_get_frmival() for argument description.
+ * @brief Callback API to set video frame interval.
+ * See @a video_driver_set_frmival() for argument description.
  */
-typedef int (*video_api_frmival_t)(const struct device *dev, struct video_frmival *frmival);
+typedef int (*video_api_set_frmival_t)(const struct device *dev, struct video_frmival *frmival,
+				       size_t idx);
+
+/**
+ * @brief Callback API to get video frame interval.
+ * See @a video_driver_get_frmival() for argument description.
+ */
+typedef int (*video_api_get_frmival_t)(const struct device *dev, struct video_frmival *frmival);
 
 /**
  * @brief Callback API to enumerate supported frame intervals for a format.
@@ -271,13 +278,13 @@ __subsystem struct video_driver_api {
 	 */
 	video_api_set_signal_t set_signal;
 	/**
-	 * @driver_ops_optional @copybrief video_driver_set_frmival
-	 */
-	video_api_frmival_t set_frmival;
-	/**
 	 * @driver_ops_optional @copybrief video_driver_get_frmival
 	 */
-	video_api_frmival_t get_frmival;
+	video_api_get_frmival_t get_frmival;
+	/**
+	 * @driver_ops_optional @copybrief video_driver_set_frmival
+	 */
+	video_api_set_frmival_t set_frmival;
 	/**
 	 * @driver_ops_optional @copybrief video_driver_enum_frmival
 	 */
@@ -355,11 +362,13 @@ static inline int video_driver_get_format(const struct device *dev, struct video
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param frmival Pointer to a video frame interval struct.
+ * @param idx Index of the frame interval in the list of enumerated frame intervals.
  *
  * @retval 0 on success.
  * @retval -ENOSYS API is not implemented.
  */
-static inline int video_driver_set_frmival(const struct device *dev, struct video_frmival *frmival)
+static inline int video_driver_set_frmival(const struct device *dev, struct video_frmival *frmival,
+					   size_t idx)
 {
 	const struct video_driver_api *api = DEVICE_API_GET(video, dev);
 
@@ -367,7 +376,7 @@ static inline int video_driver_set_frmival(const struct device *dev, struct vide
 		return -ENOSYS;
 	}
 
-	return api->set_frmival(dev, frmival);
+	return api->set_frmival(dev, frmival, idx);
 }
 
 /**

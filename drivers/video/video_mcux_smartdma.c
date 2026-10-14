@@ -320,7 +320,8 @@ static DEVICE_API(video, nxp_video_sdma_api) = {
 		.pclk_pin = DT_INST_PROP(inst, pclk_pin),                                          \
 	};                                                                                         \
 	struct nxp_video_sdma_data sdma_data_##inst = {                                            \
-		.vdev = VIDEO_DEVICE_INIT(sdma_data_##inst, DT_DRV_INST(inst), NULL),                  \
+		.fmt = {.type = VIDEO_BUF_TYPE_OUTPUT},                                            \
+		.vdev = VIDEO_DEVICE_INIT(sdma_data_##inst, DT_DRV_INST(inst), NULL),              \
 		.config = &sdma_config_##inst,                                                     \
 	};                                                                                         \
                                                                                                    \
