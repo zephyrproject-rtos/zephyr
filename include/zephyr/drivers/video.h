@@ -56,6 +56,8 @@ struct video_device {
 	struct video_format in_fmt;
 	/** Current output format configured, if supported by this device */
 	struct video_format out_fmt;
+	/** Bitmask mapping each @ref video_buf_type to a streaming state */
+	atomic_t is_streaming;
 };
 
 /**

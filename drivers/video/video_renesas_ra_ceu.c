@@ -61,7 +61,6 @@ struct video_renesas_ra_ceu_data {
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
 	atomic_ptr_t vbuf;
-	atomic_t streaming;
 #ifdef CONFIG_POLL
 	struct k_poll_signal *signal;
 #endif
@@ -187,13 +186,8 @@ static int video_renesas_ra_ceu_set_stream(const struct device *dev, bool enable
 		}
 
 		video_renesas_ra_ceu_capture_stop();
-		atomic_clear(&data->streaming);
 
 		return 0;
-	}
-
-	if (atomic_get(&data->streaming)) {
-		return -EBUSY;
 	}
 
 	next_vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
@@ -223,8 +217,6 @@ static int video_renesas_ra_ceu_set_stream(const struct device *dev, bool enable
 		return -EIO;
 	}
 
-	atomic_set(&data->streaming, 1);
-
 	return 0;
 }
 
@@ -245,7 +237,7 @@ static int video_renesas_ra_ceu_enqueue(const struct device *dev, struct video_b
 
 	k_fifo_put(&data->fifo_in, vbuf);
 
-	if (!atomic_get(&data->streaming)) {
+	if (!video_stream_busy(dev)) {
 		return 0;
 	}
 
