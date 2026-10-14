@@ -104,6 +104,11 @@ static int flash_cc27xx_write(const struct device *dev, off_t offs, const void *
 		return -EINVAL;
 	}
 
+	/* Offset and length should be multiple of write block size */
+	if (((offs % FLASH_WRITE_SIZE) != 0) || ((size % FLASH_WRITE_SIZE) != 0)) {
+		return -EINVAL;
+	}
+
 	/*
 	 * From TI's HAL 'driverlib/flash.h':
 	 *
