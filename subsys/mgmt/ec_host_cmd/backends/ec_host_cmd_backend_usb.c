@@ -217,9 +217,11 @@ static int handle_out_transfer(struct usbd_class_data *const c_data)
 	size_t expected_len =
 		expected_request_len((struct ec_host_cmd_request_header *)ctx->rx_ctx->buf);
 
-	/* Notify about a new command or response with a proper error code. */
-	if ((ctx->rx_ctx->len >= expected_len) || (expected_len == 0) ||
-	    (expected_len > ctx->rx_ctx->len_max)) {
+	/*
+	 * Notify about a new command or response with a proper error code. An invalid header
+	 * gives expected_len == 0, which the first check covers.
+	 */
+	if ((ctx->rx_ctx->len >= expected_len) || (expected_len > ctx->rx_ctx->len_max)) {
 		k_work_cancel_delayable(&ctx->reset_work);
 		if (ctx->rx_ctx->len > expected_len) {
 			LOG_ERR("Received incorrect number of bytes, got: %d, expected: %d",
