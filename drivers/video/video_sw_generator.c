@@ -82,7 +82,6 @@ struct video_sw_generator_data {
 	struct k_work_delayable work;
 	int pattern;
 	struct k_poll_signal *sig;
-	uint32_t frame_rate;
 #ifdef CONFIG_VIDEO_SW_GENERATOR_H264
 	size_t h264_offset;
 #endif
@@ -296,7 +295,7 @@ static int video_sw_generator_set_stream(const struct device *dev, bool enable,
 	struct k_work_sync work_sync = {0};
 
 	if (enable) {
-		k_work_schedule(&data->work, K_MSEC(1000 / data->frame_rate));
+		k_work_schedule(&data->work, K_NSEC(video_frmival_nsec(&data->vdev.frmival)));
 	} else {
 		k_work_cancel_delayable_sync(&data->work, &work_sync);
 	}
@@ -625,7 +624,7 @@ static void video_sw_generator_worker(struct k_work *work)
 
 	data = CONTAINER_OF(dwork, struct video_sw_generator_data, work);
 
-	k_work_reschedule(&data->work, K_MSEC(1000 / data->frame_rate));
+	k_work_reschedule(&data->work, K_NSEC(video_frmival_nsec(&data->vdev.frmival))));
 
 	vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
 	if (vbuf == NULL) {
@@ -717,22 +716,7 @@ static int video_sw_generator_set_signal(const struct device *dev, struct k_poll
 static int video_sw_generator_set_frmival(const struct device *dev, struct video_frmival *frmival,
 					  size_t idx)
 {
-	struct video_sw_generator_data *data = dev->data;
-
-	data->frame_rate = DIV_ROUND_CLOSEST(frmival->denominator, frmival->numerator);
-	frmival->numerator = 1;
-	frmival->denominator = data->frame_rate;
-
-	return 0;
-}
-
-static int video_sw_generator_get_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	struct video_sw_generator_data *data = dev->data;
-
-	frmival->numerator = 1;
-	frmival->denominator = data->frame_rate;
-
+	/* The subsystem will update dev->data->vdev.frmival */
 	return 0;
 }
 
@@ -803,6 +787,9 @@ static int video_sw_generator_init(const struct device *dev)
 	k_fifo_init(&data->fifo_out);
 	k_work_init_delayable(&data->work, video_sw_generator_worker);
 
+	data->vdev.frmival.numerator = 1;
+	data->vdev.frmival.denominator = DEFAULT_FRAME_RATE;
+
 	return video_sw_generator_init_controls(dev);
 }
 
@@ -815,7 +802,6 @@ static int video_sw_generator_init(const struct device *dev)
 		.fmt.pitch = DEFAULT_FRAME_WIDTH * 2,                                              \
 		.fmt.pixelformat = VIDEO_PIX_FMT_RGB565,                                           \
 		.fmt.size = DEFAULT_FRAME_WIDTH * 2 * DEFAULT_FRAME_HEIGHT,                        \
-		.frame_rate = DEFAULT_FRAME_RATE,                                                  \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &video_sw_generator_init, NULL, &video_sw_generator_data_##n,     \

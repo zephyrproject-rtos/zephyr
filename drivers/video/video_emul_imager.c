@@ -236,15 +236,6 @@ static int emul_imager_set_frmival(const struct device *dev, struct video_frmiva
 	return emul_imager_set_mode(dev, &emul_imager_modes[data->fmt_id][idx]);
 }
 
-static int emul_imager_get_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	struct emul_imager_data *data = dev->data;
-
-	frmival->numerator = 1;
-	frmival->denominator = data->mode->fps;
-	return 0;
-}
-
 static int emul_imager_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
 	const struct emul_imager_mode *mode;

@@ -50,6 +50,8 @@ struct video_device {
 	const struct device *src_dev;
 	/** List of video controls supported by this device */
 	sys_dlist_t ctrls;
+	/** Current frame interval value */
+	struct video_frmival frmival;
 };
 
 /**

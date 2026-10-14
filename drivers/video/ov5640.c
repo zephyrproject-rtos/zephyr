@@ -192,7 +192,6 @@ struct ov5640_data {
 	struct video_device vdev; /* keep first */
 	struct ov5640_ctrls ctrls;
 	struct video_format fmt;
-	uint16_t cur_frmrate;
 	const struct ov5640_mode_config *cur_mode;
 };
 
@@ -705,47 +704,44 @@ static int ov5640_set_frmival(const struct device *dev, struct video_frmival *fr
 	const struct ov5640_config *cfg = dev->config;
 	struct ov5640_data *drv_data = dev->data;
 	int ret;
-	uint8_t i, ind = 0;
-	uint32_t desired_frmrate, best_match = ov5640_frame_rates[ind];
-
-	desired_frmrate = DIV_ROUND_CLOSEST(frmival->denominator, frmival->numerator);
-
-	/* Find the supported frame rate closest to the desired one */
-	for (i = 0; i < ARRAY_SIZE(ov5640_frame_rates); i++) {
-		if (ov5640_frame_rates[i] <= drv_data->cur_mode->max_frmrate &&
-		    ABS(desired_frmrate, ov5640_frame_rates[i]) <
-			    ABS(desired_frmrate, best_match)) {
-			best_match = ov5640_frame_rates[i];
-			ind = i;
-		}
-	}
 
 	struct video_reg16 frmrate_params[] = {
-		{SC_PLL_CTRL1_REG, drv_data->cur_mode->frmrate_config[ind].pllCtrl1},
-		{SC_PLL_CTRL2_REG, drv_data->cur_mode->frmrate_config[ind].pllCtrl2},
-		{PCLK_PERIOD_REG, 0x0a}};
+		{SC_PLL_CTRL1_REG, drv_data->cur_mode->frmrate_config[idx].pllCtrl1},
+		{SC_PLL_CTRL2_REG, drv_data->cur_mode->frmrate_config[idx].pllCtrl2},
+		{PCLK_PERIOD_REG, 0x0a},
+	};
 
 	ret = video_write_cci_multiregs16(&cfg->i2c, frmrate_params, ARRAY_SIZE(frmrate_params));
-	ret |= video_modify_cci_reg(&cfg->i2c, OV5640_REG8(SC_PLL_CTRL0_REG), 0x0f, MIPI_BIT_MODE);
-	ret |= video_modify_cci_reg(&cfg->i2c, OV5640_REG8(SC_PLL_CTRL3_REG), 0x1f,
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = video_modify_cci_reg(&cfg->i2c, OV5640_REG8(SC_PLL_CTRL0_REG), 0x0f, MIPI_BIT_MODE);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = video_modify_cci_reg(&cfg->i2c, OV5640_REG8(SC_PLL_CTRL3_REG), 0x1f,
 				    (LOG2CEIL(PLL_ROOT_DIV) << 4) | (PLL_PRE_DIV & 0x07));
-	ret |= video_modify_cci_reg(&cfg->i2c, OV5640_REG8(SYS_ROOT_DIV_REG), 0x3f,
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = video_modify_cci_reg(&cfg->i2c, OV5640_REG8(SYS_ROOT_DIV_REG), 0x3f,
 				    (LOG2CEIL(PCLK_ROOT_DIV) & 0x03 << 4) |
 					    (LOG2CEIL(SCLK2X_DIV) & 0x03 << 2) |
 					    (LOG2CEIL(SCLK_DIV) & 0x03));
+	if (ret < 0) {
+		return ret;
+	}
 
 	if (ret) {
 		LOG_ERR("Unable to set frame interval");
 		return ret;
 	}
 
-	drv_data->cur_frmrate = best_match;
-
 	/* Update pixerate control */
-	drv_data->ctrls.pixel_rate.val64 = drv_data->cur_mode->frmrate_config[ind].pixelrate;
-
-	frmival->numerator = 1;
-	frmival->denominator = best_match;
+	drv_data->ctrls.pixel_rate.val64 = drv_data->cur_mode->frmrate_config[idx].pixelrate;
 
 	return 0;
 }
@@ -1132,16 +1128,6 @@ static int ov5640_get_volatile_ctrl(const struct device *dev, uint32_t id)
 		ctrls->gain.val = val;
 		break;
 	}
-
-	return 0;
-}
-
-static int ov5640_get_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	struct ov5640_data *drv_data = dev->data;
-
-	frmival->numerator = 1;
-	frmival->denominator = drv_data->cur_frmrate;
 
 	return 0;
 }

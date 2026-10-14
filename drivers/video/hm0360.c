@@ -35,7 +35,6 @@ struct hm0360_data {
 	struct video_device vdev; /* keep first */
 	struct hm0360_ctrls ctrls;
 	struct video_format fmt;
-	uint16_t cur_frmrate;
 };
 
 struct video_frmival default_frmival = {
@@ -675,23 +674,8 @@ static int hm0360_set_frmival(const struct device *dev, struct video_frmival *fr
 		return ret;
 	}
 
-	LOG_DBG("FrameRate selected: %d", frmival->denominator);
-
-	drv_data->cur_frmrate = frmival->denominator;
-
-	LOG_DBG("FrameRate rounded to: %d", frmival->denominator);
 	LOG_DBG("HIRES Selected: %d", highres);
 	LOG_DBG("OSC DIV: 0x%x", osc_div);
-
-	return 0;
-}
-
-static int hm0360_get_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	struct hm0360_data *drv_data = dev->data;
-
-	frmival->denominator = drv_data->cur_frmrate;
-	frmival->numerator = 1;
 
 	return 0;
 }
@@ -865,7 +849,6 @@ static DEVICE_API(video, hm0360_api) = {
 	.set_stream = hm0360_set_stream,
 	.set_ctrl = hm0360_set_ctrl,
 	.set_frmival = hm0360_set_frmival,
-	.get_frmival = hm0360_get_frmival,
 	.enum_frmival = hm0360_enum_frmival,
 };
 

@@ -89,7 +89,6 @@ struct imx219_data {
 	struct video_device vdev; /* keep first */
 	struct imx219_ctrls ctrls;
 	struct video_format fmt;
-	int fps;
 };
 
 struct imx219_config {
@@ -320,19 +319,6 @@ static int imx219_set_frmival(const struct device *dev, struct video_frmival *fr
 	if (ret < 0) {
 		return ret;
 	}
-
-	frmival->numerator = 1;
-	frmival->denominator = drv_data->fps = imx219_framerates[fie.index];
-
-	return 0;
-}
-
-static int imx219_get_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	struct imx219_data *drv_data = dev->data;
-
-	frmival->numerator = 1;
-	frmival->denominator = drv_data->fps;
 
 	return 0;
 }

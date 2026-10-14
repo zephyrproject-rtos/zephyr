@@ -20,17 +20,24 @@ int video_set_frmival(const struct device *dev, struct video_frmival *frmival)
 
 	while (true) {
 		ret = video_driver_set_frmival(vdev->dev, frmival);
-		if (ret == 0 || ret != -ENOSYS) {
+		if (ret == 0) {
+			break;
+		}
+		if (ret != -ENOSYS) {
 			return ret;
 		}
 
 		if (vdev->source_dev == NULL) {
-			break;
+			return -ENOSYS;
 		}
 		vdev = vdev->source_dev->data;
 	}
 
-	return -ENOSYS;
+	/* Cache the frame interval, now that it was accepted */
+	vdev = dev->data;
+	vdev->frmival = *frmival;
+
+	return 0;
 }
 
 int video_get_frmival(const struct device *dev, struct video_frmival *frmival)
@@ -54,7 +61,11 @@ int video_get_frmival(const struct device *dev, struct video_frmival *frmival)
 		vdev = vdev->source_dev->data;
 	}
 
-	return -ENOSYS;
+	/* No driver implements dynamic framerate or frame dropping, use the cached value */
+	vdev = dev->data;
+	*frmival = vdev->frmival;
+
+	return 0;
 }
 
 int video_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)

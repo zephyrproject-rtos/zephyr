@@ -397,14 +397,6 @@ static int ov9655_set_frmival(const struct device *dev, struct video_frmival *fr
 	return 0;
 }
 
-static int ov9655_get_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	frmival->numerator = 1;
-	frmival->denominator = 30;
-
-	return 0;
-}
-
 static int ov9655_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
 	if (fie->index > 0) {
@@ -424,7 +416,6 @@ static DEVICE_API(video, ov9655_api) = {
 	.get_caps = ov9655_get_caps,
 	.set_stream = ov9655_set_stream,
 	.set_frmival = ov9655_set_frmival,
-	.get_frmival = ov9655_get_frmival,
 	.enum_frmival = ov9655_enum_frmival,
 };
 

@@ -414,29 +414,6 @@ static int hm01b0_set_frmival(const struct device *dev, struct video_frmival *fr
 	return 0;
 }
 
-static int hm01b0_get_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	const struct hm01b0_config *config = dev->config;
-	struct hm01b0_data *drv_data = dev->data;
-	uint32_t reg;
-	int ret;
-
-	/* lets compute the frmival from the HM01B0_CCI_OSC_CLOCK_DIV registervalue */
-	ret = video_read_cci_reg(&config->i2c, HM01B0_CCI_OSC_CLOCK_DIV, &reg);
-	if (ret < 0) {
-		LOG_ERR("Failed to write OSC_CLK_DIV reg (%d)", ret);
-		return ret;
-	}
-
-	frmival->denominator = ((drv_data->fmt.width >= 320)
-		&& (drv_data->fmt.height >= 320)) ? 45 : 60;
-
-	/* 0=>8 1->4 2->2 3->1 */
-	frmival->numerator = 8 >> (reg & 0x3);
-
-	return 0;
-}
-
 int hm01b0_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
 	struct hm01b0_data *drv_data = dev->data;
