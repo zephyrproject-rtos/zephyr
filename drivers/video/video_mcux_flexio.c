@@ -64,8 +64,6 @@ struct nxp_flexio_camera_data {
 	const struct device *dev;
 	/* SDK camera handle — shifterStartIdx/timerIdx filled after child_attach */
 	FLEXIO_CAMERA_Type flexio_cam;
-	/* Current pixel format */
-	struct video_format fmt;
 	/* Buffer queues. Head of fifo_in is the buffer currently being filled
 	 * by DMA; it is removed and pushed to fifo_out once the last line completes.
 	 */
@@ -157,7 +155,7 @@ static void nxp_flexio_camera_start_line_dma(struct nxp_flexio_camera_data *data
 	}
 
 	data->dma_block.dest_address = (uint32_t)vbuf->buffer +
-					data->current_line * data->fmt.pitch;
+					data->current_line * data->vdev.out_fmt.pitch;
 
 	if (dma_config(config->dma_dev, config->dma_channel, &data->dma_cfg) != 0) {
 		LOG_ERR("DMA reconfigure failed");
@@ -199,7 +197,7 @@ static void nxp_flexio_camera_dma_callback(const struct device *dma_dev,
 
 	data->current_line++;
 
-	if (data->current_line < data->fmt.height) {
+	if (data->current_line < data->vdev.out_fmt.height) {
 		nxp_flexio_camera_start_line_dma(data);
 		return;
 	}
@@ -210,7 +208,7 @@ static void nxp_flexio_camera_dma_callback(const struct device *dma_dev,
 		return;
 	}
 	vbuf->timestamp   = k_uptime_get_32();
-	vbuf->bytesused   = data->fmt.size;
+	vbuf->bytesused   = data->vdev.out_fmt.size;
 	vbuf->line_offset = 0U;
 
 	k_fifo_put(&data->fifo_out, vbuf);
@@ -239,7 +237,7 @@ static void nxp_flexio_camera_vsync_isr(const struct device *port,
 	}
 
 	data->current_line = 0U;
-	data->dma_block.block_size = data->fmt.pitch;
+	data->dma_block.block_size = data->vdev.out_fmt.pitch;
 
 	nxp_flexio_camera_start_line_dma(data);
 }
@@ -281,8 +279,6 @@ static int nxp_flexio_camera_set_format(const struct device *dev, struct video_f
 	FLEXIO_CAMERA_Init(&data->flexio_cam, &cam_cfg);
 	nxp_flexio_unlock(config->flexio_dev);
 
-	data->fmt  = *fmt;
-
 	/* Pre-build DMA config. dest_address and block_size are updated per line
 	 * in nxp_flexio_camera_start_line_dma().
 	 */
@@ -304,16 +300,6 @@ static int nxp_flexio_camera_set_format(const struct device *dev, struct video_f
 	data->dma_block.source_addr_adj   = DMA_ADDR_ADJ_NO_CHANGE;
 	data->dma_block.dest_addr_adj     = DMA_ADDR_ADJ_INCREMENT;
 	/* dest_address and block_size filled per-frame in VSYNC ISR */
-
-	return 0;
-}
-
-static int nxp_flexio_camera_get_format(const struct device *dev,
-					struct video_format *fmt)
-{
-	struct nxp_flexio_camera_data *data = dev->data;
-
-	*fmt = data->fmt;
 
 	return 0;
 }
@@ -386,7 +372,7 @@ static int nxp_flexio_camera_enqueue(const struct device *dev,
 {
 	struct nxp_flexio_camera_data *data = dev->data;
 
-	if (vbuf->size < data->fmt.size) {
+	if (vbuf->size < data->vdev.out_fmt.size) {
 		return -EINVAL;
 	}
 
@@ -516,7 +502,6 @@ static int nxp_flexio_camera_init(const struct device *dev)
 
 static DEVICE_API(video, nxp_flexio_camera_api) = {
 	.set_format = nxp_flexio_camera_set_format,
-	.get_format = nxp_flexio_camera_get_format,
 	.get_caps   = nxp_flexio_camera_get_caps,
 	.set_stream = nxp_flexio_camera_set_stream,
 	.enqueue    = nxp_flexio_camera_enqueue,

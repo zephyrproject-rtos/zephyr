@@ -553,7 +553,6 @@ struct ov2640_ctrls {
 struct ov2640_data {
 	struct video_device vdev; /* keep first */
 	struct ov2640_ctrls ctrls;
-	struct video_format fmt;
 };
 
 #define OV2640_VIDEO_FORMAT_CAP(width, height, format)                                             \
@@ -949,12 +948,10 @@ static int ov2640_set_fmt(const struct device *dev, struct video_format *fmt, si
 	int ret = 0;
 	int i = 0;
 
-	if (!memcmp(&drv_data->fmt, fmt, sizeof(drv_data->fmt))) {
+	if (!memcmp(&drv_data->vdev.out_fmt, fmt, sizeof(drv_data->vdev.out_fmt))) {
 		/* nothing to do */
 		return 0;
 	}
-
-	drv_data->fmt = *fmt;
 
 	/* Set output format */
 	ret |= ov2640_set_output_format(dev, fmt->pixelformat);
@@ -973,15 +970,6 @@ static int ov2640_set_fmt(const struct device *dev, struct video_format *fmt, si
 	/* Camera is not capable of handling given format */
 	LOG_ERR("Image format not supported\n");
 	return -ENOTSUP;
-}
-
-static int ov2640_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct ov2640_data *drv_data = dev->data;
-
-	*fmt = drv_data->fmt;
-
-	return 0;
 }
 
 static int ov2640_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
@@ -1031,7 +1019,6 @@ static int ov2640_set_ctrl(const struct device *dev, uint32_t id)
 
 static DEVICE_API(video, ov2640_driver_api) = {
 	.set_format = ov2640_set_fmt,
-	.get_format = ov2640_get_fmt,
 	.get_caps = ov2640_get_caps,
 	.set_stream = ov2640_set_stream,
 	.set_ctrl = ov2640_set_ctrl,

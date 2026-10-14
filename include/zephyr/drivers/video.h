@@ -52,6 +52,10 @@ struct video_device {
 	sys_dlist_t ctrls;
 	/** Current frame interval value */
 	struct video_frmival frmival;
+	/** Current input format configured, if supported by this device */
+	struct video_format in_fmt;
+	/** Current output format configured, if supported by this device */
+	struct video_format out_fmt;
 };
 
 /**
@@ -146,7 +150,7 @@ struct video_ctrl {
 
 /**
  * @brief Callback API to set or get video format.
- * See @a video_driver_set_format() and @a video_driver_get_format() for argument description.
+ * See @a video_driver_set_format() and for argument description.
  */
 typedef int (*video_api_format_t)(const struct device *dev, struct video_format *fmt);
 
@@ -229,10 +233,6 @@ __subsystem struct video_driver_api {
 	 * @driver_ops_mandatory @copybrief video_driver_set_format
 	 */
 	video_api_format_t set_format;
-	/**
-	 * @driver_ops_mandatory @copybrief video_driver_get_format
-	 */
-	video_api_format_t get_format;
 	/**
 	 * @driver_ops_mandatory @copybrief video_driver_set_stream
 	 */
@@ -318,28 +318,6 @@ static inline int video_driver_set_format(const struct device *dev, struct video
 	}
 
 	return api->set_format(dev, fmt, idx);
-}
-
-/**
- * @brief Get video format of a driver.
- *
- * Get video device current video format.
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param fmt Pointer to video format struct.
- *
- * @retval 0 on success.
- * @retval -ENOSYS API is not implemented.
- */
-static inline int video_driver_get_format(const struct device *dev, struct video_format *fmt)
-{
-	const struct video_driver_api *api = DEVICE_API_GET(video, dev);
-
-	if (api->get_format == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->get_format(dev, fmt);
 }
 
 /**

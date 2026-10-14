@@ -73,7 +73,6 @@ struct mt9m114_ctrls {
 struct mt9m114_data {
 	struct video_device vdev; /* keep first */
 	struct mt9m114_ctrls ctrls;
-	struct video_format fmt;
 };
 
 struct mt9m114_reg {
@@ -404,7 +403,7 @@ static int mt9m114_set_fmt(const struct device *dev, struct video_format *fmt)
 	struct mt9m114_data *drv_data = dev->data;
 	int ret;
 
-	if (!memcmp(&drv_data->fmt, fmt, sizeof(drv_data->fmt))) {
+	if (!memcmp(&drv_data->vdev.out_fmt, fmt, sizeof(drv_data->vdev.out_fmt))) {
 		/* nothing to do */
 		return 0;
 	}
@@ -436,17 +435,6 @@ static int mt9m114_set_fmt(const struct device *dev, struct video_format *fmt)
 		LOG_ERR("Failed to apply %s state", dev->name);
 		return ret;
 	}
-
-	drv_data->fmt = *fmt;
-
-	return 0;
-}
-
-static int mt9m114_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct mt9m114_data *drv_data = dev->data;
-
-	*fmt = drv_data->fmt;
 
 	return 0;
 }
@@ -495,7 +483,6 @@ static int mt9m114_set_ctrl(const struct device *dev, uint32_t id)
 
 static DEVICE_API(video, mt9m114_driver_api) = {
 	.set_format = mt9m114_set_fmt,
-	.get_format = mt9m114_get_fmt,
 	.get_caps = mt9m114_get_caps,
 	.set_stream = mt9m114_set_stream,
 	.set_ctrl = mt9m114_set_ctrl,

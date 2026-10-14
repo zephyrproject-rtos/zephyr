@@ -28,7 +28,6 @@ struct ov9655_config {
 
 struct ov9655_data {
 	struct video_device vdev; /* keep first */
-	struct video_format fmt;
 };
 
 #define OV9655_REG8(addr)  ((uint32_t)(addr) | VIDEO_REG_ADDR8_DATA8)
@@ -267,12 +266,10 @@ static int ov9655_set_fmt(const struct device *dev, struct video_format *fmt, si
 	struct ov9655_data *data = dev->data;
 	int ret;
 
-	if (!memcmp(&data->fmt, fmt, sizeof(data->fmt))) {
+	if (!memcmp(&data->out_fmt, fmt, sizeof(data->out_fmt))) {
 		/* nothing to do */
 		return 0;
 	}
-
-	memcpy(&data->fmt, fmt, sizeof(data->fmt));
 
 	/* Reset the sensor registers */
 	ret = video_write_cci_reg(&config->i2c, OV9655_REG8(OV9655_COMMON_CTRL7), 0x80);
@@ -306,15 +303,6 @@ static int ov9655_set_fmt(const struct device *dev, struct video_format *fmt, si
 	if (ret < 0) {
 		return ret;
 	}
-
-	return 0;
-}
-
-static int ov9655_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct ov9655_data *data = dev->data;
-
-	memcpy(fmt, &data->fmt, sizeof(data->fmt));
 
 	return 0;
 }
@@ -412,7 +400,6 @@ static int ov9655_enum_frmival(const struct device *dev, struct video_frmival_en
 
 static DEVICE_API(video, ov9655_api) = {
 	.set_format = ov9655_set_fmt,
-	.get_format = ov9655_get_fmt,
 	.get_caps = ov9655_get_caps,
 	.set_stream = ov9655_set_stream,
 	.set_frmival = ov9655_set_frmival,

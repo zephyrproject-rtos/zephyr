@@ -158,7 +158,6 @@ struct ov5642_ctrls {
 struct ov5642_data {
 	struct video_device vdev; /* keep first */
 	struct ov5642_ctrls ctrls;
-	struct video_format fmt;
 };
 
 static const struct video_reg16 init_params_common[] = {
@@ -544,7 +543,7 @@ static int ov5642_set_fmt(const struct device *dev, struct video_format *fmt, si
 	const struct ov5642_mode_config *modes = dvp_modes;
 	int ret = 0;
 
-	if (memcmp(&drv_data->fmt, fmt, sizeof(drv_data->fmt)) == 0) {
+	if (memcmp(&drv_data->vdev.out_fmt, fmt, sizeof(drv_data->vdev.out_fmt)) == 0) {
 		return 0;
 	}
 
@@ -554,8 +553,6 @@ static int ov5642_set_fmt(const struct device *dev, struct video_format *fmt, si
 		LOG_ERR("Unable to set resolution parameters");
 		return ret;
 	}
-
-	drv_data->fmt = *fmt;
 
 	return 0;
 }
@@ -574,15 +571,6 @@ static int ov5642_set_stream(const struct device *dev, bool enable,
 	}
 
 	LOG_DBG("Streaming %s", enable ? "started" : "stopped");
-
-	return 0;
-}
-
-static int ov5642_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct ov5642_data *drv_data = dev->data;
-
-	*fmt = drv_data->fmt;
 
 	return 0;
 }
@@ -744,7 +732,6 @@ static int ov5642_set_ctrl(const struct device *dev, uint32_t id)
 
 static DEVICE_API(video, ov5642_driver_api) = {
 	.set_format = ov5642_set_fmt,
-	.get_format = ov5642_get_fmt,
 	.get_caps = ov5642_get_caps,
 	.set_stream = ov5642_set_stream,
 	.set_ctrl = ov5642_set_ctrl,

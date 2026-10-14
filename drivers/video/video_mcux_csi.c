@@ -32,7 +32,6 @@ struct video_mcux_csi_data {
 	const struct device *dev;
 	csi_config_t csi_config;
 	csi_handle_t csi_handle;
-	struct video_format fmt;
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
 	struct k_poll_signal *sig;
@@ -167,17 +166,6 @@ static int video_mcux_csi_set_fmt(const struct device *dev, struct video_format 
 	if (config->source_dev && video_set_format(config->source_dev, &format)) {
 		return -EIO;
 	}
-
-	data->fmt = *fmt;
-
-	return 0;
-}
-
-static int video_mcux_csi_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct video_mcux_csi_data *data = dev->data;
-
-	*fmt = data->fmt;
 
 	return 0;
 }
@@ -392,7 +380,6 @@ static int video_mcux_csi_enum_frmival(const struct device *dev, struct video_fr
 
 static DEVICE_API(video, video_mcux_csi_driver_api) = {
 	.set_format = video_mcux_csi_set_fmt,
-	.get_format = video_mcux_csi_get_fmt,
 	.set_stream = video_mcux_csi_set_stream,
 	.flush = video_mcux_csi_flush,
 	.enqueue = video_mcux_csi_enqueue,

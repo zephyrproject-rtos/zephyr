@@ -17,7 +17,6 @@
 LOG_MODULE_REGISTER(mcux_pngdec, CONFIG_VIDEO_LOG_LEVEL);
 
 struct video_common_stream {
-	struct video_format fmt;
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
 };
@@ -123,15 +122,6 @@ static void mcux_pngdec_decode_one_frame(const struct device *dev)
 	k_mutex_unlock(&data->lock);
 }
 
-static int mcux_pngdec_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct mcux_pngdec_data *data = dev->data;
-
-	*fmt = fmt->type == VIDEO_BUF_TYPE_INPUT ? data->m2m.in.fmt : data->m2m.out.fmt;
-
-	return 0;
-}
-
 static int mcux_pngdec_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	struct mcux_pngdec_data *data = dev->data;
@@ -146,8 +136,8 @@ static int mcux_pngdec_set_fmt(const struct device *dev, struct video_format *fm
 	fmt->size = 0;
 	if (data->first_frame_rcv) {
 		struct video_format *current_format =
-			(fmt->type == VIDEO_BUF_TYPE_INPUT) ? &(data->m2m.in.fmt) :
-			&(data->m2m.out.fmt);
+			(fmt->type == VIDEO_BUF_TYPE_INPUT) ? &(data->vdev.in_fmt) :
+			&(data->vdev.out_fmt);
 
 		if ((fmt->pixelformat != current_format->pixelformat) ||
 			(fmt->width != current_format->width) ||
@@ -236,19 +226,19 @@ static int mcux_pngdec_enqueue(const struct device *dev, struct video_buffer *vb
 			 * Set output pixel format, width and height
 			 * based on parsed PNG header.
 			 */
-			data->m2m.out.fmt.width = data->image_info.width;
-			data->m2m.out.fmt.height = data->image_info.height;
+			data->vdev.out_fmt.width = data->image_info.width;
+			data->vdev.out_fmt.height = data->image_info.height;
 
 			/* Calculate the default pitch and buffer size. */
-			video_estimate_fmt_size(&data->m2m.out.fmt);
+			video_estimate_fmt_size(&data->vdev.out_fmt);
 
 			/*
 			 * The input width/height is the same as output. PNG files do
 			 * not have pitch and the size can be different for each file
 			 * due to compression ratio, so will not set them.
 			 */
-			data->m2m.in.fmt.width = data->m2m.out.fmt.width;
-			data->m2m.in.fmt.height = data->m2m.out.fmt.height;
+			data->vdev.in_fmt.width = data->vdev.out_fmt.width;
+			data->vdev.in_fmt.height = data->vdev.out_fmt.height;
 
 			data->first_frame_rcv = true;
 		}
@@ -257,7 +247,7 @@ static int mcux_pngdec_enqueue(const struct device *dev, struct video_buffer *vb
 		 * Verify the output buffer size only if the first input frame
 		 * has been received.
 		 */
-		if ((data->first_frame_rcv) && (vbuf->size < data->m2m.out.fmt.size)) {
+		if ((data->first_frame_rcv) && (vbuf->size < data->vdev.out_fmt.size)) {
 			LOG_ERR("Output buffer size is insufficient");
 			ret = -EINVAL;
 			goto unlock;
@@ -332,9 +322,9 @@ static int mcux_pngdec_transform_cap(const struct device *const dev,
 
 	*res_cap = *cap;
 	if (direction == VIDEO_BUF_TYPE_OUTPUT) {
-		res_cap->pixelformat = data->m2m.in.fmt.pixelformat;
+		res_cap->pixelformat = data->vdev.in_fmt.pixelformat;
 	} else {
-		res_cap->pixelformat = data->m2m.out.fmt.pixelformat;
+		res_cap->pixelformat = data->vdev.out_fmt.pixelformat;
 	}
 
 	return 0;
@@ -342,7 +332,6 @@ static int mcux_pngdec_transform_cap(const struct device *const dev,
 
 static DEVICE_API(video, mcux_pngdec_driver_api) = {
 	.set_format = mcux_pngdec_set_fmt,
-	.get_format = mcux_pngdec_get_fmt,
 	.set_stream = mcux_pngdec_set_stream,
 	.get_caps = mcux_pngdec_get_caps,
 	.transform_cap = mcux_pngdec_transform_cap,
@@ -377,7 +366,7 @@ static void mcux_pngdec_isr(const struct device *dev)
 	/* Clear status flags. */
 	PNGDEC_ClearStatusFlags(config->base, status_flags);
 
-	current_out->size = data->m2m.out.fmt.size;
+	current_out->size = data->vdev.out_fmt.size;
 
 	k_fifo_put(&data->m2m.in.fifo_out, current_in);
 	k_fifo_put(&data->m2m.out.fifo_out, current_out);
@@ -405,17 +394,17 @@ static int mcux_pngdec_init(const struct device *dev)
 	k_fifo_init(&data->m2m.out.fifo_out);
 
 	/* Initialise default input / output formats */
-	data->m2m.in.fmt.type = VIDEO_BUF_TYPE_INPUT;
-	data->m2m.in.fmt.pixelformat = VIDEO_PIX_FMT_PNG;
-	data->m2m.in.fmt.width = MCUX_PNGDEC_WIDTH_MIN;
-	data->m2m.in.fmt.height = MCUX_PNGDEC_HEIGHT_MIN;
+	data->vdev.in_fmt.type = VIDEO_BUF_TYPE_INPUT;
+	data->vdev.in_fmt.pixelformat = VIDEO_PIX_FMT_PNG;
+	data->vdev.in_fmt.width = MCUX_PNGDEC_WIDTH_MIN;
+	data->vdev.in_fmt.height = MCUX_PNGDEC_HEIGHT_MIN;
 
-	data->m2m.out.fmt.type = VIDEO_BUF_TYPE_OUTPUT;
-	data->m2m.out.fmt.pixelformat = VIDEO_PIX_FMT_RGBA32;
-	data->m2m.out.fmt.width = MCUX_PNGDEC_WIDTH_MIN;
-	data->m2m.out.fmt.height = MCUX_PNGDEC_HEIGHT_MIN;
-	data->m2m.out.fmt.pitch = MCUX_PNGDEC_WIDTH_MIN * 4U; /* 4 bytes per pixel for RGBA8888 */
-	data->m2m.out.fmt.size = MCUX_PNGDEC_WIDTH_MIN * MCUX_PNGDEC_HEIGHT_MIN * 4U;
+	data->vdev.out_fmt.type = VIDEO_BUF_TYPE_OUTPUT;
+	data->vdev.out_fmt.pixelformat = VIDEO_PIX_FMT_RGBA32;
+	data->vdev.out_fmt.width = MCUX_PNGDEC_WIDTH_MIN;
+	data->vdev.out_fmt.height = MCUX_PNGDEC_HEIGHT_MIN;
+	data->vdev.out_fmt.pitch = MCUX_PNGDEC_WIDTH_MIN * 4U; /* 4 bytes per pixel for RGBA8888 */
+	data->vdev.out_fmt.size = MCUX_PNGDEC_WIDTH_MIN * MCUX_PNGDEC_HEIGHT_MIN * 4U;
 
 	/* Init PNG decoder module. */
 	PNGDEC_GetDefaultConfig(&init_config);

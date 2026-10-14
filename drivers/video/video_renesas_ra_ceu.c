@@ -57,7 +57,6 @@ struct video_renesas_ra_ceu_data {
 	struct st_ceu_instance_ctrl *fsp_ctrl;
 	struct st_capture_cfg *fsp_cfg;
 	struct st_ceu_extended_cfg *fsp_extend_cfg;
-	struct video_format fmt;
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
 	atomic_ptr_t vbuf;
@@ -106,15 +105,6 @@ static void video_renesas_ra_ceu_callback(capture_callback_args_t *p_args)
 static void video_renesas_ra_ceu_capture_stop(void)
 {
 	R_CEU->CAPSR = R_CEU_CAPSR_CPKIL_Msk;
-}
-
-static int video_renesas_ra_ceu_get_format(const struct device *dev, struct video_format *fmt)
-{
-	struct video_renesas_ra_ceu_data *data = dev->data;
-
-	*fmt = data->fmt;
-
-	return 0;
 }
 
 static int video_renesas_ra_ceu_set_format(const struct device *dev, struct video_format *fmt,
@@ -166,8 +156,6 @@ static int video_renesas_ra_ceu_set_format(const struct device *dev, struct vide
 		LOG_DBG("Failed to open CEU");
 		return -EIO;
 	}
-
-	*fmt = data->fmt;
 
 	return 0;
 }
@@ -243,7 +231,7 @@ static int video_renesas_ra_ceu_enqueue(const struct device *dev, struct video_b
 {
 	struct video_renesas_ra_ceu_data *data = dev->data;
 	struct video_buffer *next_vbuf;
-	const uint32_t buffer_size = data->fmt.pitch * data->fmt.height;
+	const uint32_t buffer_size = data->vdev.out_fmt.pitch * data->vdev.fmt.height;
 	fsp_err_t err;
 
 	if (buffer_size > vbuf->size) {
@@ -385,7 +373,6 @@ static int video_renesas_ra_ceu_init(const struct device *dev)
 }
 
 static DEVICE_API(video, video_renesas_ra_ceu_driver_api) = {
-	.get_format = video_renesas_ra_ceu_get_format,
 	.set_format = video_renesas_ra_ceu_set_format,
 	.get_caps = video_renesas_ra_ceu_get_caps,
 	.set_stream = video_renesas_ra_ceu_set_stream,

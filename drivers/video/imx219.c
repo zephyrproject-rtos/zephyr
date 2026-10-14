@@ -88,7 +88,6 @@ struct imx219_ctrls {
 struct imx219_data {
 	struct video_device vdev; /* keep first */
 	struct imx219_ctrls ctrls;
-	struct video_format fmt;
 };
 
 struct imx219_config {
@@ -242,17 +241,6 @@ static int imx219_set_fmt(const struct device *dev, struct video_format *fmt, si
 		return ret;
 	}
 
-	drv_data->fmt = *fmt;
-
-	return 0;
-}
-
-static int imx219_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct imx219_data *drv_data = dev->data;
-
-	*fmt = drv_data->fmt;
-
 	return 0;
 }
 
@@ -369,7 +357,6 @@ static DEVICE_API(video, imx219_driver_api) = {
 	.set_stream = imx219_set_stream,
 	.set_ctrl = imx219_set_ctrl,
 	.set_format = imx219_set_fmt,
-	.get_format = imx219_get_fmt,
 	.get_caps = imx219_get_caps,
 	.set_frmival = imx219_set_frmival,
 	.get_frmival = imx219_get_frmival,

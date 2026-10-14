@@ -92,8 +92,6 @@ struct video_nsi_fifo_data {
 	const char *fifo_path_arg;
 	/** FIFO path in use, resolved at init */
 	const char *path;
-	/** Format of the frames the host writer is expected to provide */
-	struct video_format fmt;
 	/** Number of bytes of the frame currently being read */
 	size_t frame_offset;
 	int fd;
@@ -132,7 +130,7 @@ static void video_nsi_fifo_cleanup(struct video_nsi_fifo_data *data)
 /* A frame larger than the host pipe can take several polls to be read */
 static void video_nsi_fifo_grow_pipe(struct video_nsi_fifo_data *data)
 {
-	uint32_t size = VIDEO_NSI_FIFO_PIPE_FRAMES * data->fmt.size;
+	uint32_t size = VIDEO_NSI_FIFO_PIPE_FRAMES * data->vdev.out_fmt.size;
 	int ret = video_nsi_fifo_grow_pipe_bottom(data->fd, size);
 
 	if (ret < 0) {
@@ -170,7 +168,7 @@ static void video_nsi_fifo_deliver(struct video_nsi_fifo_data *data, struct vide
 	__ASSERT_NO_MSG(popped == vbuf);
 	ARG_UNUSED(popped);
 
-	vbuf->bytesused = data->fmt.size;
+	vbuf->bytesused = data->vdev.out_fmt.size;
 	vbuf->timestamp = k_uptime_get_32();
 	vbuf->line_offset = 0;
 
@@ -205,9 +203,9 @@ static void video_nsi_fifo_thread(void *p1, void *p2, void *p3)
 		}
 
 		/* A larger format may have been set since the buffer was queued */
-		if (vbuf->size < data->fmt.size) {
+		if (vbuf->size < data->vdev.out_fmt.size) {
 			LOG_ERR("Buffer too small: %u bytes provided, %u needed", vbuf->size,
-				data->fmt.size);
+				data->vdev.out_fmt.size);
 			(void)k_fifo_get(&data->fifo_in, K_NO_WAIT);
 			vbuf->bytesused = 0;
 			/* As for a cancelled buffer, skip the rest of the frame it was receiving */
@@ -230,7 +228,7 @@ static void video_nsi_fifo_thread(void *p1, void *p2, void *p3)
 			LOG_DBG("Reopened the host FIFO %s", data->path);
 		}
 
-		ret = video_nsi_fifo_read_bottom(data->fd, vbuf->buffer, data->fmt.size,
+		ret = video_nsi_fifo_read_bottom(data->fd, vbuf->buffer, data->vdev.out_fmt.size,
 						 &data->frame_offset);
 		if (ret == 0) {
 			data->frame_offset = 0;
@@ -257,8 +255,8 @@ static void video_nsi_fifo_thread(void *p1, void *p2, void *p3)
 			if (data->frame_offset > 0) {
 				LOG_WRN("Incomplete frame discarded, is the host writing %ux%u %s "
 					"frames?",
-					data->fmt.width, data->fmt.height,
-					VIDEO_FOURCC_TO_STR(data->fmt.pixelformat));
+					data->vdev.out_fmt.width, data->vdev.out_fmt.height,
+					VIDEO_FOURCC_TO_STR(data->vdev.out_fmt.pixelformat));
 			}
 			data->frame_offset = 0;
 			data->discard = false;
@@ -283,27 +281,9 @@ static int video_nsi_fifo_set_fmt(const struct device *dev, struct video_format 
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&data->lock, K_FOREVER);
-	data->fmt = *fmt;
 	if (data->fd >= 0) {
 		video_nsi_fifo_grow_pipe(data);
 	}
-	k_mutex_unlock(&data->lock);
-
-	return 0;
-}
-
-static int video_nsi_fifo_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct video_nsi_fifo_data *data = dev->data;
-
-	if (fmt->type != VIDEO_BUF_TYPE_OUTPUT) {
-		return -EINVAL;
-	}
-
-	k_mutex_lock(&data->lock, K_FOREVER);
-	*fmt = data->fmt;
-	k_mutex_unlock(&data->lock);
 
 	return 0;
 }
@@ -370,9 +350,9 @@ static int video_nsi_fifo_enqueue(const struct device *dev, struct video_buffer 
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
-	if (vbuf->size < data->fmt.size) {
+	if (vbuf->size < data->vdev.out_fmt.size) {
 		LOG_ERR("Buffer too small: %u bytes provided, %u needed", vbuf->size,
-			data->fmt.size);
+			data->vdev.out_fmt.size);
 		ret = -EINVAL;
 	} else {
 		vbuf->bytesused = 0;
@@ -444,7 +424,6 @@ static int video_nsi_fifo_set_signal(const struct device *dev, struct k_poll_sig
 
 static DEVICE_API(video, video_nsi_fifo_driver_api) = {
 	.set_format = video_nsi_fifo_set_fmt,
-	.get_format = video_nsi_fifo_get_fmt,
 	.get_caps = video_nsi_fifo_get_caps,
 	.set_stream = video_nsi_fifo_set_stream,
 	.enqueue = video_nsi_fifo_enqueue,
@@ -461,8 +440,8 @@ static int video_nsi_fifo_init(const struct device *dev)
 	struct video_nsi_fifo_data *data = dev->data;
 	int ret;
 
-	data->fmt = video_nsi_fifo_default_fmt;
-	ret = video_estimate_fmt_size(&data->fmt);
+	data->vdev.out_fmt = video_nsi_fifo_default_fmt;
+	ret = video_estimate_fmt_size(&data->vdev.out_fmt);
 	if (ret < 0) {
 		return ret;
 	}

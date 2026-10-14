@@ -185,7 +185,6 @@ struct ov7725_config {
 
 struct ov7725_data {
 	struct video_device vdev; /* keep first */
-	struct video_format fmt;
 };
 
 struct ov7725_clock {
@@ -427,7 +426,7 @@ static int ov7725_set_fmt(const struct device *dev, struct video_format *fmt, si
 	uint16_t hstart, vstart, hsize;
 	int ret;
 
-	if (!memcmp(&drv_data->fmt, fmt, sizeof(drv_data->fmt))) {
+	if (!memcmp(&drv_data->vdev.out_fmt, fmt, sizeof(drv_data->vdev.out_fmt))) {
 		/* nothing to do */
 		return 0;
 	}
@@ -498,17 +497,6 @@ static int ov7725_set_fmt(const struct device *dev, struct video_format *fmt, si
 		return ret;
 	}
 
-	drv_data->fmt = *fmt;
-
-	return 0;
-}
-
-static int ov7725_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct ov7725_data *drv_data = dev->data;
-
-	*fmt = drv_data->fmt;
-
 	return 0;
 }
 
@@ -538,7 +526,6 @@ static int ov7725_get_caps(const struct device *dev, struct video_caps *caps)
 
 static DEVICE_API(video, ov7725_driver_api) = {
 	.set_format = ov7725_set_fmt,
-	.get_format = ov7725_get_fmt,
 	.get_caps = ov7725_get_caps,
 	.set_stream = ov7725_set_stream,
 };

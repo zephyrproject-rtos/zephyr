@@ -98,8 +98,6 @@ static struct stm32_venc_ewl ewl_instance;
 struct stm32_venc_data {
 	struct video_device vdev; /* keep first */
 	struct k_mutex lock;
-	struct video_format in_fmt;
-	struct video_format out_fmt;
 	struct k_fifo in_fifo_in;
 	struct k_fifo in_fifo_out;
 	struct k_fifo out_fifo_in;
@@ -411,21 +409,6 @@ static int stm32_venc_set_fmt(const struct device *dev, struct video_format *fmt
 	if (fmt->type == VIDEO_BUF_TYPE_OUTPUT) {
 		fmt->size = ROUND_UP(fmt->width * fmt->height / VENC_ESTIMATED_COMPRESSION_RATIO,
 				     ALIGNMENT_INCR);
-
-		data->out_fmt = *fmt;
-	}
-
-	return 0;
-}
-
-static int stm32_venc_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct stm32_venc_data *data = dev->data;
-
-	if (fmt->type == VIDEO_BUF_TYPE_INPUT) {
-		*fmt = data->in_fmt;
-	} else {
-		*fmt = data->out_fmt;
 	}
 
 	return 0;
@@ -450,8 +433,8 @@ static int encoder_prepare(struct stm32_venc_data *data)
 	cfg.frameRateDenom = 1;
 	cfg.frameRateNum = VENC_DEFAULT_FRAMERATE;
 	/* image resolution */
-	cfg.width = data->out_fmt.width;
-	cfg.height = data->out_fmt.height;
+	cfg.width = data->vdev.out_fmt.width;
+	cfg.height = data->vdev.out_fmt.height;
 	/* stream type */
 	cfg.streamType = H264ENC_BYTE_STREAM;
 
@@ -472,7 +455,7 @@ static int encoder_prepare(struct stm32_venc_data *data)
 		LOG_ERR("H264EncGetPreProcessing error=%d", h264ret);
 		return -EIO;
 	}
-	preproc_cfg.inputType = to_h264pixfmt(data->in_fmt.pixelformat);
+	preproc_cfg.inputType = to_h264pixfmt(data->vdev.in_fmt.pixelformat);
 	h264ret = H264EncSetPreProcessing(data->encoder, &preproc_cfg);
 	if (h264ret != H264ENC_OK) {
 		LOG_ERR("H264EncSetPreProcessing error=%d", h264ret);
@@ -610,7 +593,7 @@ static int encode_frame(struct stm32_venc_data *data)
 
 	/* set input buffers to structures */
 	enc_in.busLuma = (ptr_t)input->buffer;
-	enc_in.busChromaU = (ptr_t)enc_in.busLuma + data->in_fmt.width * data->in_fmt.height;
+	enc_in.busChromaU = (ptr_t)enc_in.busLuma + data->vdev.in_fmt.width * data->vdev.in_fmt.height;
 
 	enc_in.pOutBuf = (uint32_t *)output->buffer;
 	enc_in.busOutBuf = (uint32_t)enc_in.pOutBuf;
@@ -799,7 +782,6 @@ static int stm32_venc_get_caps(const struct device *dev, struct video_caps *caps
 
 static DEVICE_API(video, stm32_venc_driver_api) = {
 	.set_format = stm32_venc_set_fmt,
-	.get_format = stm32_venc_get_fmt,
 	.set_stream = stm32_venc_set_stream,
 	.enqueue = stm32_venc_enqueue,
 	.dequeue = stm32_venc_dequeue,
@@ -863,15 +845,15 @@ static int stm32_venc_init(const struct device *dev)
 	LOG_DBG("pclk5 frequency  : %d", HAL_RCC_GetPCLK5Freq() / 1000000);
 
 	/* default input */
-	data->in_fmt.width = VENC_DEFAULT_WIDTH;
-	data->in_fmt.height = VENC_DEFAULT_HEIGHT;
-	data->in_fmt.pixelformat = VENC_DEFAULT_IN_FMT;
-	data->in_fmt.pitch = data->in_fmt.width;
+	data->vdev.in_fmt.width = VENC_DEFAULT_WIDTH;
+	data->vdev.in_fmt.height = VENC_DEFAULT_HEIGHT;
+	data->vdev.in_fmt.pixelformat = VENC_DEFAULT_IN_FMT;
+	data->vdev.in_fmt.pitch = data->vdev.in_fmt.width;
 
 	/* default output */
-	data->out_fmt.width = VENC_DEFAULT_WIDTH;
-	data->out_fmt.height = VENC_DEFAULT_HEIGHT;
-	data->out_fmt.pixelformat = VENC_DEFAULT_OUT_FMT;
+	data->vdev.out_fmt.width = VENC_DEFAULT_WIDTH;
+	data->vdev.out_fmt.height = VENC_DEFAULT_HEIGHT;
+	data->vdev.out_fmt.pixelformat = VENC_DEFAULT_OUT_FMT;
 
 	/* store config for register accesses */
 	ewl_instance.config = config;

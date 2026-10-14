@@ -33,7 +33,6 @@ struct mipid02_config {
 
 struct mipid02_data {
 	struct video_device vdev; /* keep first */
-	struct video_format fmt;
 	const struct mipid02_format_desc *desc;
 	struct video_format_cap *caps;
 };
@@ -169,39 +168,7 @@ static int mipid02_set_fmt(const struct device *dev, struct video_format *fmt, s
 		return ret;
 	}
 
-	drv_data->fmt = *fmt;
 	drv_data->desc = desc;
-
-	return 0;
-}
-
-static int mipid02_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	const struct mipid02_config *cfg = dev->config;
-	struct mipid02_data *drv_data = dev->data;
-	const struct mipid02_format_desc *desc;
-	int ret;
-
-	if (!drv_data->desc) {
-		ret = video_get_format(cfg->source_dev, fmt);
-		if (ret < 0) {
-			return ret;
-		}
-
-		desc = mipid02_get_format_desc(fmt->pixelformat);
-		if (desc == NULL) {
-			LOG_ERR("Sensor format not supported by the ST-MIPID02");
-			return -EIO;
-		}
-
-		/* Override the pixelformat */
-		fmt->pixelformat = desc->pixelformat;
-
-		drv_data->fmt = *fmt;
-		drv_data->desc = desc;
-	}
-
-	*fmt = drv_data->fmt;
 
 	return 0;
 }
@@ -291,9 +258,9 @@ static int mipid02_set_stream(const struct device *dev, bool enable, enum video_
 		return 0;
 	}
 
-	desc = mipid02_get_format_desc(drv_data->fmt.pixelformat);
+	desc = mipid02_get_format_desc(drv_data->vdev.out_fmt.pixelformat);
 	if (!desc) {
-		LOG_ERR("No valid format desc available, should get/set_fmt prior to set_stream");
+		LOG_ERR("No valid format desc available, should set_fmt prior to set_stream");
 		return -EIO;
 	}
 
@@ -333,7 +300,6 @@ static int mipid02_set_stream(const struct device *dev, bool enable, enum video_
 
 static DEVICE_API(video, mipid02_driver_api) = {
 	.set_format = mipid02_set_fmt,
-	.get_format = mipid02_get_fmt,
 	.get_caps = mipid02_get_caps,
 	.set_stream = mipid02_set_stream,
 };

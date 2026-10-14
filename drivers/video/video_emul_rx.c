@@ -27,7 +27,6 @@ struct emul_rx_config {
 struct emul_rx_data {
 	struct video_device vdev; /* keep first */
 	const struct device *dev;
-	struct video_format fmt;
 	struct k_work work;
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
@@ -47,16 +46,6 @@ static int emul_rx_set_fmt(const struct device *const dev, struct video_format *
 		return -EINVAL;
 	}
 
-	data->fmt = *fmt;
-
-	return 0;
-}
-
-static int emul_rx_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct emul_rx_data *data = dev->data;
-
-	*fmt = data->fmt;
 	return 0;
 }
 
@@ -81,7 +70,7 @@ static void emul_rx_worker(struct k_work *work)
 	struct emul_rx_data *data = CONTAINER_OF(work, struct emul_rx_data, work);
 	const struct device *dev = data->dev;
 	const struct emul_rx_config *cfg = dev->config;
-	struct video_format *fmt = &data->fmt;
+	struct video_format *fmt = &data->vdev.out_fmt;
 	struct video_buffer *vbuf = vbuf;
 
 	LOG_DBG("Queueing a frame of %u bytes in format %x %ux%u", fmt->pitch * fmt->height,
@@ -109,7 +98,7 @@ static void emul_rx_worker(struct k_work *work)
 static int emul_rx_enqueue(const struct device *dev, struct video_buffer *vbuf)
 {
 	struct emul_rx_data *data = dev->data;
-	struct video_format *fmt = &data->fmt;
+	struct video_format *fmt = &data->vdev.out_fmt;
 
 	if (vbuf->size < fmt->pitch * fmt->height) {
 		LOG_ERR("Buffer too small for a full frame");
@@ -168,7 +157,6 @@ static int emul_rx_flush(const struct device *dev, bool cancel)
 
 static DEVICE_API(video, emul_rx_driver_api) = {
 	.set_format = emul_rx_set_fmt,
-	.get_format = emul_rx_get_fmt,
 	.get_caps = emul_rx_get_caps,
 	.set_stream = emul_rx_set_stream,
 	.enqueue = emul_rx_enqueue,
@@ -189,12 +177,12 @@ int emul_rx_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = video_get_format(cfg->source_dev, &data->fmt);
+	ret = video_get_format(cfg->source_dev, &data->vdev.out_fmt);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = video_estimate_fmt_size(&data->fmt);
+	ret = video_estimate_fmt_size(&data->vdev.out_fmt);
 	if (ret < 0) {
 		return ret;
 	}

@@ -191,7 +191,6 @@ struct ov5640_ctrls {
 struct ov5640_data {
 	struct video_device vdev; /* keep first */
 	struct ov5640_ctrls ctrls;
-	struct video_format fmt;
 	const struct ov5640_mode_config *cur_mode;
 };
 
@@ -769,11 +768,9 @@ static int ov5640_set_fmt(const struct device *dev, struct video_format *fmt, si
 		array_size_modes = ARRAY_SIZE(csi2_modes);
 	}
 
-	if (!memcmp(&drv_data->fmt, fmt, sizeof(drv_data->fmt))) {
+	if (!memcmp(&drv_data->vdev.out_fmt, fmt, sizeof(drv_data->vdev.out_fmt))) {
 		return 0;
 	}
-
-	drv_data->fmt = *fmt;
 
 	/* Set resolution */
 	for (i = 0; i < array_size_modes; i++) {
@@ -845,15 +842,6 @@ static int ov5640_set_fmt(const struct device *dev, struct video_format *fmt, si
 	def_frmival.numerator = 1;
 
 	return video_set_frmival(dev, &def_frmival);
-}
-
-static int ov5640_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct ov5640_data *drv_data = dev->data;
-
-	*fmt = drv_data->fmt;
-
-	return 0;
 }
 
 static int ov5640_get_caps(const struct device *dev, struct video_caps *caps)
@@ -1167,7 +1155,6 @@ static int ov5640_enum_frmival(const struct device *dev, struct video_frmival_en
 
 static DEVICE_API(video, ov5640_driver_api) = {
 	.set_format = ov5640_set_fmt,
-	.get_format = ov5640_get_fmt,
 	.get_caps = ov5640_get_caps,
 	.set_stream = ov5640_set_stream,
 	.set_ctrl = ov5640_set_ctrl,

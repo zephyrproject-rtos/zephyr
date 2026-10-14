@@ -228,7 +228,6 @@ struct hm01b0_ctrls {
 struct hm01b0_data {
 	struct video_device vdev; /* keep first */
 	struct hm01b0_ctrls ctrls;
-	struct video_format fmt;
 };
 
 struct hm01b0_config {
@@ -315,7 +314,7 @@ static int hm01b0_set_fmt(const struct device *dev, struct video_format *fmt, si
 	LOG_DBG("HM01B0 set_fmt: %d x %d, fmt: %s", fmt->width, fmt->height,
 		VIDEO_FOURCC_TO_STR(fmt->pixelformat));
 
-	if (!memcmp(&data->fmt, fmt, sizeof(data->fmt))) {
+	if (!memcmp(&data->vdev.fmt, fmt, sizeof(data->vdev.fmt))) {
 		return 0;
 	}
 
@@ -326,18 +325,8 @@ static int hm01b0_set_fmt(const struct device *dev, struct video_format *fmt, si
 		LOG_ERR("Image resolution not supported");
 		return ret;
 	}
-	data->fmt = *fmt;
 
 	return ret;
-}
-
-static int hm01b0_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct hm01b0_data *data = dev->data;
-
-	*fmt = data->fmt;
-
-	return 0;
 }
 
 static int hm01b0_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
@@ -418,8 +407,8 @@ int hm01b0_enum_frmival(const struct device *dev, struct video_frmival_enum *fie
 {
 	struct hm01b0_data *drv_data = dev->data;
 
-	fie->discrete.denominator = ((drv_data->fmt.width >= 320)
-		&& (drv_data->fmt.height >= 320)) ? 45 : 60;
+	fie->discrete.denominator = ((drv_data->vdev.fmt.width >= 320)
+		&& (drv_data->vdev.fmt.height >= 320)) ? 45 : 60;
 
 	switch (fie->index) {
 	case HM01B0_5_OR_8_FPS:
@@ -500,7 +489,6 @@ static int hm01b0_set_ctrl(const struct device *dev, uint32_t id)
 
 static DEVICE_API(video, hm01b0_driver_api) = {
 	.set_format = hm01b0_set_fmt,
-	.get_format = hm01b0_get_fmt,
 	.set_ctrl = hm01b0_set_ctrl,
 	.set_stream = hm01b0_set_stream,
 	.get_caps = hm01b0_get_caps,

@@ -76,7 +76,6 @@ struct video_sw_generator_data {
 	struct video_device vdev; /* keep first */
 	const struct device *dev;
 	struct sw_ctrls ctrls;
-	struct video_format fmt;
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
 	struct k_work_delayable work;
@@ -274,16 +273,6 @@ static int video_sw_generator_set_fmt(const struct device *dev, struct video_for
 		data->h264_offset = 0;
 	}
 #endif
-
-	data->fmt = *fmt;
-	return 0;
-}
-
-static int video_sw_generator_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct video_sw_generator_data *data = dev->data;
-
-	*fmt = data->fmt;
 
 	return 0;
 }
@@ -527,21 +516,21 @@ static uint16_t video_sw_generator_fill_grey(uint8_t *buffer, uint16_t width, bo
 static int video_sw_generator_fill(const struct device *const dev, struct video_buffer *vbuf)
 {
 	struct video_sw_generator_data *data = dev->data;
-	struct video_format *fmt = &data->fmt;
+	struct video_format *fmt = &data->vdev.out_fmt;
 	size_t pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
 	bool hflip = data->ctrls.hflip.val;
 	uint16_t lines = 0;
 
 #ifdef CONFIG_VIDEO_SW_GENERATOR_H264
-	if (data->fmt.pixelformat == VIDEO_PIX_FMT_H264) {
+	if (data->vdev.out_fmt.pixelformat == VIDEO_PIX_FMT_H264) {
 		return video_sw_generator_fill_h264(data, vbuf);
 	}
 #endif
 
 	/* Handle JPEG and PNG formats specially */
-	if ((data->fmt.pixelformat == VIDEO_PIX_FMT_JPEG) ||
-	    (data->fmt.pixelformat == VIDEO_PIX_FMT_PNG)) {
-		return video_sw_generator_fill_compressed(vbuf, hflip, data->fmt.pixelformat);
+	if ((data->vdev.out_fmt.pixelformat == VIDEO_PIX_FMT_JPEG) ||
+	    (data->vdev.out_fmt.pixelformat == VIDEO_PIX_FMT_PNG)) {
+		return video_sw_generator_fill_compressed(vbuf, hflip, data->vdev.out_fmt.pixelformat);
 	}
 
 	if (vbuf->size < pitch * 2) {
@@ -550,7 +539,7 @@ static int video_sw_generator_fill(const struct device *const dev, struct video_
 	}
 
 	/* Fill the first row of the emulated framebuffer */
-	switch (data->fmt.pixelformat) {
+	switch (data->vdev.out_fmt.pixelformat) {
 	case VIDEO_PIX_FMT_YUYV:
 		lines = video_sw_generator_fill_yuyv(vbuf->buffer, fmt->width, hflip);
 		break;
@@ -598,10 +587,10 @@ static int video_sw_generator_fill(const struct device *const dev, struct video_
 	}
 
 	/* How much was filled in so far */
-	vbuf->bytesused = data->fmt.pitch * lines;
+	vbuf->bytesused = data->vdev.out_fmt.pitch * lines;
 
 	/* Duplicate the first line(s) all over the buffer */
-	for (int h = lines; h < data->fmt.height; h += lines) {
+	for (int h = lines; h < data->vdev.out_fmt.height; h += lines) {
 		if (vbuf->size < vbuf->bytesused + pitch * lines) {
 			LOG_WRN("Generation stopped early: buffer too small");
 			break;
@@ -749,7 +738,6 @@ static int video_sw_generator_enum_frmival(const struct device *dev, struct vide
 
 static DEVICE_API(video, video_sw_generator_driver_api) = {
 	.set_format = video_sw_generator_set_fmt,
-	.get_format = video_sw_generator_get_fmt,
 	.set_stream = video_sw_generator_set_stream,
 	.flush = video_sw_generator_flush,
 	.enqueue = video_sw_generator_enqueue,

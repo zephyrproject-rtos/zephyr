@@ -75,8 +75,6 @@ struct emul_imager_data {
 	uint8_t framebuffer[320 * sizeof(uint16_t)];
 	/* Other fields are shared with real hardware drivers */
 	const struct emul_imager_mode *mode;
-	enum emul_imager_fmt_id fmt_id;
-	struct video_format fmt;
 	struct emul_imager_ctrls ctrls;
 };
 
@@ -231,9 +229,16 @@ static int emul_imager_set_frmival(const struct device *dev, struct video_frmiva
 				   size_t idx)
 {
 	struct emul_imager_data *data = dev->data;
+	size_t fmt_id;
+	int ret;
+
+	ret = video_format_caps_index(fmts, fie->format, &fmt_id);
+	if (ret < 0) {
+		return ret;
+	}
 
 	LOG_DBG("Applying frame interval number %u", idx);
-	return emul_imager_set_mode(dev, &emul_imager_modes[data->fmt_id][idx]);
+	return emul_imager_set_mode(dev, &emul_imager_modes[fmt_id][idx]);
 }
 
 static int emul_imager_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
@@ -262,11 +267,11 @@ static int emul_imager_set_fmt(const struct device *const dev, struct video_form
 	struct emul_imager_data *data = dev->data;
 	int ret;
 
-	if (memcmp(&data->fmt, fmt, sizeof(data->fmt)) == 0) {
+	if (memcmp(&data->vdev.out_fmt, fmt, sizeof(data->vdev.out_fmt)) == 0) {
 		return 0;
 	}
 
-	ret = emul_imager_set_mode(dev, &emul_imager_modes[fmt_id][0]);
+	ret = emul_imager_set_mode(dev, &emul_imager_modes[idx][0]);
 	if (ret < 0) {
 		return ret;
 	}
@@ -282,16 +287,6 @@ static int emul_imager_set_fmt(const struct device *const dev, struct video_form
 		memset(data->framebuffer, 0x7f, fmt->pitch);
 	}
 
-	data->fmt_id = fmt_id;
-	data->fmt = *fmt;
-	return 0;
-}
-
-static int emul_imager_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct emul_imager_data *data = dev->data;
-
-	*fmt = data->fmt;
 	return 0;
 }
 
@@ -312,7 +307,6 @@ static DEVICE_API(video, emul_imager_driver_api) = {
 	.get_frmival = emul_imager_get_frmival,
 	.enum_frmival = emul_imager_enum_frmival,
 	.set_format = emul_imager_set_fmt,
-	.get_format = emul_imager_get_fmt,
 	.get_caps = emul_imager_get_caps,
 	.set_stream = emul_imager_set_stream,
 };

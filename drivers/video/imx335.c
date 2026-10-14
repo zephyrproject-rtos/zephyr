@@ -57,7 +57,6 @@ struct imx335_ctrls {
 struct imx335_data {
 	struct video_device vdev; /* keep first */
 	struct imx335_ctrls ctrls;
-	struct video_format fmt;
 	bool enabled;
 };
 
@@ -368,15 +367,6 @@ static const uint32_t imx335_framerates[] = {
 	[IMX335_60_FPS] = 60,
 };
 
-static int imx335_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct imx335_data *drv_data = dev->data;
-
-	*fmt = drv_data->fmt;
-
-	return 0;
-}
-
 static int imx335_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	caps->format_caps = imx335_fmts;
@@ -495,8 +485,8 @@ static int imx335_set_frmival(const struct device *dev, struct video_frmival *fr
 
 	switch (idx) {
 	case IMX335_25_FPS:
-		hmax = (drv_data->fmt.width == IMX335_BIN_2X2_WIDTH
-				&& drv_data->fmt.height == IMX335_BIN_2X2_HEIGHT) ? 0x0280 : 0x0294;
+		hmax = (drv_data->vdev.out_fmt.width == IMX335_BIN_2X2_WIDTH
+				&& drv_data->vdev.out_fmt.height == IMX335_BIN_2X2_HEIGHT) ? 0x0280 : 0x0294;
 		break;
 	case IMX335_30_FPS:
 		hmax = 0x0226;
@@ -577,8 +567,8 @@ static int imx335_set_fmt(const struct device *dev, struct video_format *fmt, si
 		}
 	}
 
-	drv_data->fmt.width = fmt->width;
-	drv_data->fmt.height = fmt->height;
+	drv_data->vdev.out_fmt.width = fmt->width;
+	drv_data->vdev.out_fmt.height = fmt->height;
 	/* update framerate, since the timing and allowed framerates may have changed */
 
 	return video_set_frmival(dev, &data->vdev.frmival);
@@ -608,7 +598,6 @@ static int imx335_enum_frmival(const struct device *dev, struct video_frmival_en
 
 static DEVICE_API(video, imx335_driver_api) = {
 	.set_format = imx335_set_fmt,
-	.get_format = imx335_get_fmt,
 	.get_caps = imx335_get_caps,
 	.set_stream = imx335_set_stream,
 	.set_ctrl = imx335_set_ctrl,
@@ -760,7 +749,7 @@ static int imx335_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = imx335_set_fmt(dev, &drv_data->fmt);
+	ret = imx335_set_fmt(dev, &drv_data->vdev.out_fmt);
 	if (ret < 0) {
 		LOG_ERR("Unable to apply format");
 		return ret;

@@ -29,12 +29,28 @@ int video_get_selection(const struct device *dev, struct video_selection *sel)
 
 int video_set_format(const struct device *dev, struct video_format *fmt)
 {
+	struct video_device *vdev;
 	struct video_caps caps = {.type = fmt->type};
+	struct video_format *vdev_fmt;
 	size_t idx;
 
 	if (dev == NULL || fmt == NULL) {
 		return -EINVAL;
 	}
+
+	switch (fmt->type) {
+	case VIDEO_BUF_TYPE_INPUT:
+		vdev_fmt = &vdev->in_fmt;
+		break;
+	case VIDEO_BUF_TYPE_OUTPUT:
+		vdev_fmt = &vdev->out_fmt;
+		break;
+	default:
+		LOG_ERR("Invlid buffer type %u requested", fmt->type);
+		return -EINVAL;
+	}
+
+	vdev = dev->data;
 
 	ret = video_get_caps(dev, &caps);
 	if (ret < 0) {
@@ -61,16 +77,43 @@ int video_set_format(const struct device *dev, struct video_format *fmt)
 		}
 	}
 
-	return video_driver_set_format(dev, fmt, idx);
+	ret = video_driver_set_format(dev, fmt, idx);
+	if (ret < 0) {
+		LOG_ERR("Failed to apply format %s %ux%u to %s: %u",
+			VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height, dev->name,
+			ret);
+		return ret;
+	}
+
+	/* Store the format applied */
+	*vdev_fmt = *fmt;
+
+	return 0;
 }
 
 int video_get_format(const struct device *dev, struct video_format *fmt)
 {
+	struct video_device *vdev;
+
 	if (dev == NULL || fmt == NULL) {
 		return -EINVAL;
 	}
 
-	return video_driver_get_format(dev, fmt);
+	vdev = dev->data;
+
+	switch (fmt->type) {
+	case VIDEO_BUF_TYPE_INPUT:
+		*fmt = vdev->in_fmt;
+		break;
+	case VIDEO_BUF_TYPE_OUTPUT:
+		*fmt = vdev->out_fmt;
+		break;
+	default:
+		LOG_ERR("Invlid buffer type %u requested", fmt->type);
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 int video_estimate_fmt_size(struct video_format *fmt)

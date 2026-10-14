@@ -43,7 +43,6 @@ struct video_stm32_dcmi_data {
 	struct video_device vdev; /* keep first */
 	const struct device *dev;
 	DCMI_HandleTypeDef hdcmi;
-	struct video_format fmt;
 	struct video_stm32_dcmi_ctrls ctrls;
 	int capture_rate;
 	struct k_fifo fifo_in;
@@ -228,25 +227,6 @@ static int video_stm32_dcmi_set_fmt(const struct device *dev, struct video_forma
 		return ret;
 	}
 
-	data->fmt = *fmt;
-
-	return 0;
-}
-
-static int video_stm32_dcmi_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct video_stm32_dcmi_data *data = dev->data;
-	const struct video_stm32_dcmi_config *config = dev->config;
-	int ret;
-
-	/* Align DCMI format with the one provided by the sensor */
-	ret = video_get_format(config->sensor_dev, fmt);
-	if (ret < 0) {
-		return ret;
-	}
-
-	data->fmt = *fmt;
-
 	return 0;
 }
 
@@ -315,11 +295,11 @@ static int video_stm32_dcmi_enqueue(const struct device *dev, struct video_buffe
 {
 	struct video_stm32_dcmi_data *data = dev->data;
 
-	if (data->fmt.size > vbuf->size) {
+	if (data->vdev.out_fmt.size > vbuf->size) {
 		return -EINVAL;
 	}
 
-	vbuf->bytesused = data->fmt.size;
+	vbuf->bytesused = data->vdev.out_fmt.size;
 	vbuf->line_offset = 0;
 
 	k_fifo_put(&data->fifo_in, vbuf);
@@ -468,7 +448,7 @@ static int video_stm32_dcmi_set_frmival(const struct device *dev, struct video_f
 	const struct video_stm32_dcmi_config *config = dev->config;
 	struct video_stm32_dcmi_data *data = dev->data;
 	struct video_frmival_enum fie = {
-		.format = &data->fmt,
+		.format = &data->vdev.out_fmt,
 	};
 	struct video_frmival best_sensor_frmival;
 	uint32_t best_diff_us = INT32_MAX;
@@ -551,7 +531,6 @@ static int video_stm32_dcmi_get_selection(const struct device *dev, struct video
 
 static DEVICE_API(video, video_stm32_dcmi_driver_api) = {
 	.set_format = video_stm32_dcmi_set_fmt,
-	.get_format = video_stm32_dcmi_get_fmt,
 	.set_stream = video_stm32_dcmi_set_stream,
 	.enqueue = video_stm32_dcmi_enqueue,
 	.dequeue = video_stm32_dcmi_dequeue,

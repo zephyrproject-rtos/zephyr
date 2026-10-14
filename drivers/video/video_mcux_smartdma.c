@@ -49,7 +49,6 @@ struct nxp_video_sdma_data {
 	bool buf_reload_flag;
 	struct video_buffer *active_buf;
 	struct video_buffer *queued_buf;
-	struct video_format fmt;
 	const struct nxp_video_sdma_config *config;
 	uint32_t frame_idx;
 };
@@ -234,16 +233,6 @@ static int nxp_video_sdma_set_format(const struct device *dev, struct video_form
 	}
 
 	fmt->size = fmt->pitch * SDMA_LINE_COUNT;
-	data->fmt = *fmt;
-
-	return 0;
-}
-
-static int nxp_video_sdma_get_format(const struct device *dev, struct video_format *fmt)
-{
-	const struct nxp_video_sdma_config *config = dev->config;
-
-	data->fmt = *fmt;
 
 	return 0;
 }
@@ -295,7 +284,6 @@ static int nxp_video_sdma_init(const struct device *dev)
 }
 
 static DEVICE_API(video, nxp_video_sdma_api) = {
-	.get_format = nxp_video_sdma_get_format,
 	.set_format = nxp_video_sdma_set_format,
 	.get_caps = nxp_video_sdma_get_caps,
 	.set_stream = nxp_video_sdma_set_stream,

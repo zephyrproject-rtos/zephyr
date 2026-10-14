@@ -34,7 +34,6 @@ struct hm0360_ctrls {
 struct hm0360_data {
 	struct video_device vdev; /* keep first */
 	struct hm0360_ctrls ctrls;
-	struct video_format fmt;
 };
 
 struct video_frmival default_frmival = {
@@ -571,7 +570,7 @@ static int hm0360_set_fmt(const struct device *dev, struct video_format *fmt, si
 	LOG_DBG("HM01B0 set_fmt: %d x %d, fmt: %s", fmt->width, fmt->height,
 		VIDEO_FOURCC_TO_STR(fmt->pixelformat));
 
-	if (!memcmp(&data->fmt, fmt, sizeof(data->fmt))) {
+	if (!memcmp(&data->vdev.out_fmt, fmt, sizeof(data->vdev.out_fmt))) {
 		/* nothing to do */
 		return 0;
 	}
@@ -596,17 +595,6 @@ static int hm0360_set_fmt(const struct device *dev, struct video_format *fmt, si
 	if (ret < 0) {
 		return ret;
 	}
-
-	data->fmt = *fmt;
-
-	return 0;
-}
-
-static int hm0360_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct hm0360_data *data = dev->data;
-
-	*fmt = data->fmt;
 
 	return 0;
 }
@@ -645,7 +633,7 @@ static int hm0360_set_frmival(const struct device *dev, struct video_frmival *fr
 	uint32_t osc_div = 0;
 	bool highres = false;
 
-	if (drv_data->fmt.width == 640 && drv_data->fmt.height == 480) {
+	if (drv_data->vdev.out_fmt.width == 640 && drv_data->vdev.out_fmt.height == 480) {
 		highres = true;
 	}
 
@@ -844,7 +832,6 @@ static int hm0360_set_ctrl(const struct device *dev, uint32_t id)
 
 static DEVICE_API(video, hm0360_api) = {
 	.set_format = hm0360_set_fmt,
-	.get_format = hm0360_get_fmt,
 	.get_caps = hm0360_get_caps,
 	.set_stream = hm0360_set_stream,
 	.set_ctrl = hm0360_set_ctrl,

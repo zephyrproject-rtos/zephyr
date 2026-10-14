@@ -24,7 +24,6 @@ LOG_MODULE_REGISTER(stm32_jpeg, CONFIG_VIDEO_LOG_LEVEL);
 typedef void (*irq_config_func_t)(const struct device *dev);
 
 struct video_common_header {
-	struct video_format fmt;
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
 	bool is_streaming;
@@ -209,21 +208,21 @@ static const struct stm32_jpeg_fmt_conf *stm32_jpeg_get_conf(uint32_t pixelforma
 
 static void stm32_jpeg_convert_next_mcu(struct stm32_jpeg_data *data)
 {
-	if (data->m2m.in.fmt.pixelformat == VIDEO_PIX_FMT_NV12) {
+	if (data->vdev.in_fmt.pixelformat == VIDEO_PIX_FMT_NV12) {
 		stm32_jpeg_nv12_to_ycbcr_mcu(
 			data->current_x_mcu++, data->current_y_mcu, data->current_in->buffer,
-			data->current_in->buffer + data->m2m.in.fmt.width * data->m2m.in.fmt.height,
-			data->mcu_ycbcr, data->m2m.in.fmt.width);
-		if (data->current_x_mcu >= data->m2m.in.fmt.width / MCU_WIDTH) {
+			data->current_in->buffer + data->vdev.in_fmt.width * data->vdev.in_fmt.height,
+			data->mcu_ycbcr, data->vdev.in_fmt.width);
+		if (data->current_x_mcu >= data->vdev.in_fmt.width / MCU_WIDTH) {
 			data->current_x_mcu = 0;
 			data->current_y_mcu++;
 		}
-	} else if (data->m2m.in.fmt.pixelformat == VIDEO_PIX_FMT_GREY) {
+	} else if (data->vdev.in_fmt.pixelformat == VIDEO_PIX_FMT_GREY) {
 		stm32_jpeg_grey_to_y_mcu(
 			data->current_x_mcu++, data->current_y_mcu, data->current_in->buffer,
-			data->current_in->buffer + data->m2m.in.fmt.width * data->m2m.in.fmt.height,
-			data->mcu_ycbcr, data->m2m.in.fmt.width);
-		if (data->current_x_mcu >= data->m2m.in.fmt.width / MCU_WIDTH_GRAYSCALE) {
+			data->current_in->buffer + data->vdev.in_fmt.width * data->vdev.in_fmt.height,
+			data->mcu_ycbcr, data->vdev.in_fmt.width);
+		if (data->current_x_mcu >= data->vdev.in_fmt.width / MCU_WIDTH_GRAYSCALE) {
 			data->current_x_mcu = 0;
 			data->current_y_mcu++;
 		}
@@ -246,9 +245,9 @@ static int stm32_jpeg_start_codec(const struct device *dev)
 	data->current_in = k_fifo_get(in_fifo_in, K_NO_WAIT);
 	data->current_out = k_fifo_get(out_fifo_in, K_NO_WAIT);
 
-	if (data->m2m.in.fmt.pixelformat != VIDEO_PIX_FMT_JPEG) {
+	if (data->vdev.in_fmt.pixelformat != VIDEO_PIX_FMT_JPEG) {
 		const struct stm32_jpeg_fmt_conf *conf =
-			stm32_jpeg_get_conf(data->m2m.in.fmt.pixelformat);
+			stm32_jpeg_get_conf(data->vdev.in_fmt.pixelformat);
 		JPEG_ConfTypeDef jpeg_conf = {0};
 		HAL_StatusTypeDef hret;
 
@@ -259,14 +258,14 @@ static int stm32_jpeg_start_codec(const struct device *dev)
 		data->current_y_mcu = 0;
 
 		/* JPEG Encoding */
-		if (data->m2m.in.fmt.pixelformat == VIDEO_PIX_FMT_GREY) {
+		if (data->vdev.in_fmt.pixelformat == VIDEO_PIX_FMT_GREY) {
 			jpeg_conf.ColorSpace = JPEG_GRAYSCALE_COLORSPACE;
 		} else {
 			jpeg_conf.ColorSpace = JPEG_YCBCR_COLORSPACE;
 		}
 		jpeg_conf.ChromaSubsampling = conf->subsampling;
-		jpeg_conf.ImageWidth = data->m2m.in.fmt.width;
-		jpeg_conf.ImageHeight = data->m2m.in.fmt.height;
+		jpeg_conf.ImageWidth = data->vdev.in_fmt.width;
+		jpeg_conf.ImageHeight = data->vdev.in_fmt.height;
 		jpeg_conf.ImageQuality = data->jpeg_quality.val;
 
 		hret = HAL_JPEG_ConfigEncoding(&data->hjpeg, &jpeg_conf);
@@ -280,7 +279,7 @@ static int stm32_jpeg_start_codec(const struct device *dev)
 
 		/* Convert the first MCU (and store it into mcu_ycbcr) */
 		stm32_jpeg_convert_next_mcu(data);
-		if (data->m2m.in.fmt.pixelformat == VIDEO_PIX_FMT_GREY) {
+		if (data->vdev.in_fmt.pixelformat == VIDEO_PIX_FMT_GREY) {
 			hret = HAL_JPEG_Encode_IT(
 				&data->hjpeg, data->mcu_ycbcr, GRAYSCALE_MCU_BLOCK_SIZE,
 				data->current_out->buffer, data->current_out->size);
@@ -369,20 +368,11 @@ void HAL_JPEG_GetDataCallback(JPEG_HandleTypeDef *hjpeg, uint32_t nb_encoded_dat
 	/* Convert the next MCU */
 	stm32_jpeg_convert_next_mcu(data);
 
-	if (data->m2m.in.fmt.pixelformat == VIDEO_PIX_FMT_GREY) {
+	if (data->vdev.in_fmt.pixelformat == VIDEO_PIX_FMT_GREY) {
 		HAL_JPEG_ConfigInputBuffer(hjpeg, data->mcu_ycbcr, GRAYSCALE_MCU_BLOCK_SIZE);
 	} else {
 		HAL_JPEG_ConfigInputBuffer(hjpeg, data->mcu_ycbcr, YCBCR_420_MCU_BLOCK_SIZE);
 	}
-}
-
-static int stm32_jpeg_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct stm32_jpeg_data *data = dev->data;
-
-	*fmt = fmt->type == VIDEO_BUF_TYPE_INPUT ? data->m2m.in.fmt : data->m2m.out.fmt;
-
-	return 0;
 }
 
 static int stm32_jpeg_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
@@ -398,8 +388,6 @@ static int stm32_jpeg_set_fmt(const struct device *dev, struct video_format *fmt
 		ret = -EBUSY;
 		goto out;
 	}
-
-	common->fmt = *fmt;
 
 out:
 	k_mutex_unlock(&data->lock);
@@ -417,8 +405,8 @@ static int stm32_jpeg_set_stream(const struct device *dev, bool enable, enum vid
 	k_mutex_lock(&data->lock, K_FOREVER);
 
 	/* Input & Output resolutions are always same so ensure this here */
-	if (data->m2m.in.fmt.width != data->m2m.out.fmt.width ||
-	    data->m2m.in.fmt.height != data->m2m.out.fmt.height) {
+	if (data->vdev.in_fmt.width != data->vdev.out_fmt.width ||
+	    data->vdev.in_fmt.height != data->vdev.out_fmt.height) {
 		LOG_ERR("Input & output resolution should match");
 		return -EINVAL;
 	}
@@ -500,7 +488,6 @@ static int stm32_jpeg_get_caps(const struct device *dev, struct video_caps *caps
 
 static DEVICE_API(video, stm32_jpeg_driver_api) = {
 	.set_format = stm32_jpeg_set_fmt,
-	.get_format = stm32_jpeg_get_fmt,
 	.set_stream = stm32_jpeg_set_stream,
 	.enqueue = stm32_jpeg_enqueue,
 	.dequeue = stm32_jpeg_dequeue,
@@ -552,14 +539,14 @@ static int stm32_jpeg_init(const struct device *dev)
 	k_fifo_init(&data->m2m.out.fifo_out);
 
 	/* Initialize default formats */
-	data->m2m.in.fmt.type = VIDEO_BUF_TYPE_INPUT;
-	data->m2m.in.fmt.width = stm32_jpeg_in_fmts[0].width_min;
-	data->m2m.in.fmt.height = stm32_jpeg_in_fmts[0].height_min;
-	data->m2m.in.fmt.pixelformat = stm32_jpeg_in_fmts[0].pixelformat;
-	data->m2m.out.fmt.type = VIDEO_BUF_TYPE_OUTPUT;
-	data->m2m.out.fmt.width = stm32_jpeg_out_fmts[0].width_min;
-	data->m2m.out.fmt.height = stm32_jpeg_out_fmts[0].height_min;
-	data->m2m.out.fmt.pixelformat = stm32_jpeg_out_fmts[0].pixelformat;
+	data->vdev.in_fmt.type = VIDEO_BUF_TYPE_INPUT;
+	data->vdev.in_fmt.width = stm32_jpeg_in_fmts[0].width_min;
+	data->vdev.in_fmt.height = stm32_jpeg_in_fmts[0].height_min;
+	data->vdev.in_fmt.pixelformat = stm32_jpeg_in_fmts[0].pixelformat;
+	data->vdev.out_fmt.type = VIDEO_BUF_TYPE_OUTPUT;
+	data->vdev.out_fmt.width = stm32_jpeg_out_fmts[0].width_min;
+	data->vdev.out_fmt.height = stm32_jpeg_out_fmts[0].height_min;
+	data->vdev.out_fmt.pixelformat = stm32_jpeg_out_fmts[0].pixelformat;
 
 	ret = video_init_ctrl(
 		&data->jpeg_quality, dev, VIDEO_CID_JPEG_COMPRESSION_QUALITY,

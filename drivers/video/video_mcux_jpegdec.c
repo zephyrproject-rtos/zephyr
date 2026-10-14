@@ -19,7 +19,6 @@ LOG_MODULE_REGISTER(mcux_jpegdec, CONFIG_VIDEO_LOG_LEVEL);
 #define MCUX_JPEGDEC_BUF_ALIGN 1024U
 
 struct video_common_header {
-	struct video_format fmt;
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
 };
@@ -153,31 +152,22 @@ static void mcux_jpegdec_decode_one_frame(const struct device *dev)
 	data->decoder_despt.config.jpegBufAddr = (uint32_t)current_in->buffer;
 	data->decoder_despt.config.jpegBufSize = ROUND_UP(current_in->size, MCUX_JPEGDEC_BUF_ALIGN);
 	data->decoder_despt.config.outBufAddr0 = (uint32_t)current_out->buffer;
-	data->decoder_despt.config.outBufPitch = data->m2m.out.fmt.pitch;
+	data->decoder_despt.config.outBufPitch = data->vdev.out_fmt.pitch;
 
 	/*
 	 * For VIDEO_PIX_FMT_NV12, we need a second output buffer for the UV plane.
 	 * Its address shall be strictly next to the end of Y plane.
 	 */
-	if (data->m2m.out.fmt.pixelformat == VIDEO_PIX_FMT_NV12) {
+	if (data->vdev.out_fmt.pixelformat == VIDEO_PIX_FMT_NV12) {
 		data->decoder_despt.config.outBufAddr1 =
 			data->decoder_despt.config.outBufAddr0 +
-			data->m2m.out.fmt.pitch * data->m2m.out.fmt.height;
+			data->vdev.out_fmt.pitch * data->vdev.out_fmt.height;
 	}
 
 	/* Start the decoding of next frame. */
 	JPEGDEC_EnableSlotNextDescpt((JPEG_DECODER_Type *)&config->base, 0);
 
 	data->running = true;
-}
-
-static int mcux_jpegdec_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct mcux_jpegdec_data *data = dev->data;
-
-	*fmt = fmt->type == VIDEO_BUF_TYPE_INPUT ? data->m2m.in.fmt : data->m2m.out.fmt;
-
-	return 0;
 }
 
 static int mcux_jpegdec_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
@@ -194,8 +184,8 @@ static int mcux_jpegdec_set_fmt(const struct device *dev, struct video_format *f
 	fmt->pitch = 0;
 	if (data->first_frame_rcv) {
 		struct video_format *current_format =
-			(fmt->type == VIDEO_BUF_TYPE_INPUT) ? &(data->m2m.in.fmt) :
-			&(data->m2m.out.fmt);
+			(fmt->type == VIDEO_BUF_TYPE_INPUT) ? &(data->vdev.in_fmt) :
+			&(data->vdev.out_fmt);
 
 		if ((fmt->pixelformat != current_format->pixelformat) ||
 			(fmt->width != current_format->width) ||
@@ -305,24 +295,24 @@ static int mcux_jpegdec_enqueue(const struct device *dev, struct video_buffer *v
 			/* Set output pixel format based on parsed JPEG header */
 			data->format_idx = mcux_jpegdec_get_conf(
 				data->decoder_despt.config.pixelFormat, true);
-			data->m2m.out.fmt.pixelformat =
+			data->vdev.out_fmt.pixelformat =
 				pixel_map_confs[data->format_idx].vid_pixel_format;
-			data->m2m.out.fmt.width = data->decoder_despt.config.width;
-			data->m2m.out.fmt.height = data->decoder_despt.config.height;
+			data->vdev.out_fmt.width = data->decoder_despt.config.width;
+			data->vdev.out_fmt.height = data->decoder_despt.config.height;
 
 			/* Calculate the default pitch and buffer size. */
-			if (data->m2m.out.fmt.pixelformat == VIDEO_PIX_FMT_NV12) {
+			if (data->vdev.out_fmt.pixelformat == VIDEO_PIX_FMT_NV12) {
 				/*
 				 * NV12 is a 2-plane format. The Y plane pitch is
 				 * 1 byte per pixel. video_bits_per_pixel() returns
 				 * 12 bpp (sum of both planes) which cannot be used
 				 * here for pitch calculation.
 				 */
-				data->m2m.out.fmt.pitch = 1U * data->m2m.out.fmt.width;
+				data->vdev.out_fmt.pitch = 1U * data->vdev.out_fmt.width;
 			} else {
-				data->m2m.out.fmt.pitch =
-					video_bits_per_pixel(data->m2m.out.fmt.pixelformat)
-					/ 8U * data->m2m.out.fmt.width;
+				data->vdev.out_fmt.pitch =
+					video_bits_per_pixel(data->vdev.out_fmt.pixelformat)
+					/ 8U * data->vdev.out_fmt.width;
 			}
 			/*
 			 * For NV12 2-plane format, the Y plane pitch is 1 byte per
@@ -334,27 +324,27 @@ static int mcux_jpegdec_enqueue(const struct device *dev, struct video_buffer *v
 			 * contains valid UV data). video_bits_per_pixel(NV12) = 12
 			 * bpp gives a smaller 1.5x factor and cannot be used here.
 			 */
-			if (data->m2m.out.fmt.pixelformat == VIDEO_PIX_FMT_NV12) {
-				data->m2m.out.fmt.size = data->m2m.out.fmt.pitch *
-					data->m2m.out.fmt.height * 2U;
+			if (data->vdev.out_fmt.pixelformat == VIDEO_PIX_FMT_NV12) {
+				data->vdev.out_fmt.size = data->vdev.out_fmt.pitch *
+					data->vdev.out_fmt.height * 2U;
 			} else {
-				data->m2m.out.fmt.size =
-					data->m2m.out.fmt.pitch * data->m2m.out.fmt.height;
+				data->vdev.out_fmt.size =
+					data->vdev.out_fmt.pitch * data->vdev.out_fmt.height;
 			}
 			/* outBufPitch is the pitch of the Y (Luma) plane. For NV12, the UV
 			 * plane uses the same pitch value; the hardware places the UV data
 			 * immediately after the Y plane at outBufAddr0 +
 			 * outBufPitch * height.
 			 */
-			data->decoder_despt.config.outBufPitch = data->m2m.out.fmt.pitch;
+			data->decoder_despt.config.outBufPitch = data->vdev.out_fmt.pitch;
 
 			/*
 			 * The input width/height is the same as output. JPEG files
 			 * do not have pitch and the size can be different for each
 			 * file due to compression ratio, so will not set them.
 			 */
-			data->m2m.in.fmt.width = data->m2m.out.fmt.width;
-			data->m2m.in.fmt.height = data->m2m.out.fmt.height;
+			data->vdev.in_fmt.width = data->vdev.out_fmt.width;
+			data->vdev.in_fmt.height = data->vdev.out_fmt.height;
 
 			data->first_frame_rcv = true;
 		}
@@ -363,7 +353,7 @@ static int mcux_jpegdec_enqueue(const struct device *dev, struct video_buffer *v
 		 * Verify the output buffer size only if the first input frame
 		 * has been received.
 		 */
-		if ((data->first_frame_rcv) && (vbuf->size < data->m2m.out.fmt.size)) {
+		if ((data->first_frame_rcv) && (vbuf->size < data->vdev.out_fmt.size)) {
 			LOG_ERR("Output buffer size is insufficient");
 			ret = -EINVAL;
 			goto unlock;
@@ -444,9 +434,9 @@ static int mcux_jpegdec_transform_cap(const struct device *const dev,
 	*res_cap = *cap;
 
 	if (direction == VIDEO_BUF_TYPE_OUTPUT) {
-		res_cap->pixelformat = data->m2m.in.fmt.pixelformat;
+		res_cap->pixelformat = data->vdev.in_fmt.pixelformat;
 	} else {
-		res_cap->pixelformat = data->m2m.out.fmt.pixelformat;
+		res_cap->pixelformat = data->vdev.out_fmt.pixelformat;
 	}
 
 	return 0;
@@ -454,7 +444,6 @@ static int mcux_jpegdec_transform_cap(const struct device *const dev,
 
 static DEVICE_API(video, mcux_jpegdec_driver_api) = {
 	.set_format = mcux_jpegdec_set_fmt,
-	.get_format = mcux_jpegdec_get_fmt,
 	.set_stream = mcux_jpegdec_set_stream,
 	.get_caps = mcux_jpegdec_get_caps,
 	.transform_cap = mcux_jpegdec_transform_cap,
@@ -477,20 +466,20 @@ static int mcux_jpegdec_init(const struct device *dev)
 	k_fifo_init(&data->m2m.out.fifo_out);
 
 	/* Initialise default input / output formats */
-	data->m2m.in.fmt.type = VIDEO_BUF_TYPE_INPUT;
-	data->m2m.in.fmt.pixelformat = VIDEO_PIX_FMT_JPEG; /* Can only be JPEG format for input */
-	data->m2m.in.fmt.width = MCUX_JPEGDEC_WIDTH_HEIGHT_MIN;
-	data->m2m.in.fmt.height = MCUX_JPEGDEC_WIDTH_HEIGHT_MIN;
+	data->vdev.in_fmt.type = VIDEO_BUF_TYPE_INPUT;
+	data->vdev.in_fmt.pixelformat = VIDEO_PIX_FMT_JPEG; /* Can only be JPEG format for input */
+	data->vdev.in_fmt.width = MCUX_JPEGDEC_WIDTH_HEIGHT_MIN;
+	data->vdev.in_fmt.height = MCUX_JPEGDEC_WIDTH_HEIGHT_MIN;
 
 	/*
 	 * The output format and size are determined by the JPEG header parsing,
 	 * so just set a default value here.
 	 */
-	data->m2m.out.fmt.type = VIDEO_BUF_TYPE_OUTPUT;
-	data->m2m.out.fmt.pixelformat = VIDEO_PIX_FMT_NV12;
-	data->m2m.out.fmt.width = MCUX_JPEGDEC_WIDTH_HEIGHT_MIN;
-	data->m2m.out.fmt.height = MCUX_JPEGDEC_WIDTH_HEIGHT_MIN;
-	data->m2m.out.fmt.size = MCUX_JPEGDEC_WIDTH_HEIGHT_MIN * MCUX_JPEGDEC_WIDTH_HEIGHT_MIN * 2U;
+	data->vdev.out_fmt.type = VIDEO_BUF_TYPE_OUTPUT;
+	data->vdev.out_fmt.pixelformat = VIDEO_PIX_FMT_NV12;
+	data->vdev.out_fmt.width = MCUX_JPEGDEC_WIDTH_HEIGHT_MIN;
+	data->vdev.out_fmt.height = MCUX_JPEGDEC_WIDTH_HEIGHT_MIN;
+	data->vdev.out_fmt.size = MCUX_JPEGDEC_WIDTH_HEIGHT_MIN * MCUX_JPEGDEC_WIDTH_HEIGHT_MIN * 2U;
 
 	/* Init JPEG decoder module. */
 	JPEGDEC_GetDefaultConfig(&init_config);
@@ -524,7 +513,7 @@ static void mcux_jpegdec_isr(const struct device *dev)
 
 	/* Decode complete. */
 	if ((flag & kJPEGDEC_DecodeCompleteFlag) != 0U) {
-		current_out->bytesused = data->m2m.out.fmt.size;
+		current_out->bytesused = data->vdev.out_fmt.size;
 	}
 
 	/* Error occur, this output buffer is broken, no valid data can be used. */
@@ -546,7 +535,7 @@ static void mcux_jpegdec_isr(const struct device *dev)
 
 	JPEGDEC_ClearStatusFlags((JPEG_DECODER_Type *)&config->base, 0, flag);
 
-	current_out->size = data->m2m.out.fmt.size;
+	current_out->size = data->vdev.out_fmt.size;
 
 	k_fifo_put(&data->m2m.in.fifo_out, current_in);
 	k_fifo_put(&data->m2m.out.fifo_out, current_out);

@@ -40,7 +40,6 @@ struct ov767x_ctrls {
 struct ov767x_data {
 	struct video_device vdev; /* keep first */
 	struct ov767x_ctrls ctrls;
-	struct video_format fmt;
 };
 
 #define OV767X_REG8(addr)         ((addr) | VIDEO_REG_ADDR8_DATA8)
@@ -574,12 +573,10 @@ static int ov767x_set_fmt(const struct device *dev, struct video_format *fmt)
 		return -ENOTSUP;
 	}
 
-	if (!memcmp(&data->fmt, fmt, sizeof(data->fmt))) {
+	if (!memcmp(&data->vdev.out_fmt, fmt, sizeof(data->vdev.out_fmt))) {
 		/* nothing to do */
 		return 0;
 	}
-
-	memcpy(&data->fmt, fmt, sizeof(data->fmt));
 
 	/* Set RGB Format */
 	if (fmt->pixelformat == VIDEO_PIX_FMT_RGB565) {
@@ -614,14 +611,6 @@ static int ov767x_set_fmt(const struct device *dev, struct video_format *fmt)
 	}
 #endif
 
-	return 0;
-}
-
-static int ov767x_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct ov767x_data *data = dev->data;
-
-	memcpy(fmt, &data->fmt, sizeof(data->fmt));
 	return 0;
 }
 
@@ -775,7 +764,6 @@ static int ov767x_set_ctrl(const struct device *dev, uint32_t id)
 
 static DEVICE_API(video, ov767x_api) = {
 	.set_format = ov767x_set_fmt,
-	.get_format = ov767x_get_fmt,
 	.get_caps = ov767x_get_caps,
 	.set_stream = ov767x_set_stream,
 	.set_ctrl = ov767x_set_ctrl,

@@ -61,7 +61,6 @@ struct video_esp32_data {
 	struct video_device vdev; /* keep first */
 	cam_hal_context_t hal;
 	const struct video_esp32_config *config;
-	struct video_format video_format;
 	struct video_buffer *active_vbuf;
 	bool is_streaming;
 	struct k_fifo fifo_in;
@@ -249,15 +248,6 @@ static int video_esp32_get_caps(const struct device *dev, struct video_caps *cap
 	return video_get_caps(config->source_dev, caps);
 }
 
-static int video_esp32_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct video_esp32_data *data = dev->data;
-
-	*fmt = data->video_format;
-
-	return 0;
-}
-
 static int video_esp32_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	const struct video_esp32_config *cfg = dev->config;
@@ -269,8 +259,6 @@ static int video_esp32_set_fmt(const struct device *dev, struct video_format *fm
 		return ret;
 	}
 
-	data->video_format = *fmt;
-
 	return 0;
 }
 
@@ -278,7 +266,7 @@ static int video_esp32_enqueue(const struct device *dev, struct video_buffer *vb
 {
 	struct video_esp32_data *data = dev->data;
 
-	vbuf->bytesused = data->video_format.pitch * data->video_format.height;
+	vbuf->bytesused = data->vdev->out_fmt.pitch * data->vdev->out_fmt.height;
 	vbuf->line_offset = 0;
 
 	k_fifo_put(&data->fifo_in, vbuf);
@@ -390,7 +378,7 @@ int video_esp32_set_selection(const struct device *dev, struct video_selection *
 		return ret;
 	}
 
-	ret = video_get_format(cfg->source_dev, &data->video_format);
+	ret = video_get_format(cfg->source_dev, &data->vdev->out_fmt);
 	if (ret < 0) {
 		LOG_ERR("Failed to get format from source device");
 		return ret;
@@ -409,7 +397,6 @@ int video_esp32_get_selection(const struct device *dev, struct video_selection *
 static DEVICE_API(video, esp32_driver_api) = {
 	/* mandatory callbacks */
 	.set_format = video_esp32_set_fmt,
-	.get_format = video_esp32_get_fmt,
 	.set_stream = video_esp32_set_stream,
 	.get_caps = video_esp32_get_caps,
 	/* optional callbacks */

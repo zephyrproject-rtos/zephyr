@@ -56,7 +56,6 @@ static int mipi_csi2rx_update_settings(const struct device *dev)
 	uint8_t bpp;
 	uint32_t root_clk_rate, ui_clk_rate, sensor_byte_clk, best_match;
 	int ret, ind = 0;
-	struct video_format fmt;
 	struct video_control sensor_rate = {.id = VIDEO_CID_PIXEL_RATE, .val64 = -1};
 
 	ret = video_get_format(config->sensor_dev, &fmt);
@@ -125,17 +124,6 @@ static int mipi_csi2rx_set_fmt(const struct device *dev, struct video_format *fm
 	}
 
 	return mipi_csi2rx_update_settings(dev);
-}
-
-static int mipi_csi2rx_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	const struct mipi_csi2rx_config *config = dev->config;
-
-	if (video_get_format(config->sensor_dev, fmt)) {
-		return -EIO;
-	}
-
-	return 0;
 }
 
 static int mipi_csi2rx_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
@@ -270,7 +258,6 @@ static int mipi_csi2rx_enum_frmival(const struct device *dev, struct video_frmiv
 
 static DEVICE_API(video, mipi_csi2rx_driver_api) = {
 	.get_caps = mipi_csi2rx_get_caps,
-	.get_format = mipi_csi2rx_get_fmt,
 	.set_format = mipi_csi2rx_set_fmt,
 	.set_stream = mipi_csi2rx_set_stream,
 	.set_frmival = mipi_csi2rx_set_frmival,
