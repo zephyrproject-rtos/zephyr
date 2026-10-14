@@ -32,6 +32,11 @@ Kernel
 Boards
 ******
 
+* ``qemu_cortex_a9`` no longer has the ``zephyr,uart-pipe`` chosen node, so SLIP networking
+  (:kconfig:option:`CONFIG_NET_QEMU_SLIP`) is no longer available on it. The board now
+  defaults to Ethernet networking (:kconfig:option:`CONFIG_NET_QEMU_ETHERNET`) through the
+  emulated GEM. (:github:`120871`)
+
 Device Drivers and Devicetree
 *****************************
 
