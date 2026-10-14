@@ -143,6 +143,10 @@ static int mcux_gpt_set_alarm(const struct device *dev, uint8_t chan_id,
 	data->alarm_callback = alarm_cfg->callback;
 	data->alarm_user_data = alarm_cfg->user_data;
 
+	/* Drop a compare event of a cancelled alarm, which would fire this one at once */
+	GPT_SetOutputCompareValue(base, kGPT_OutputCompare_Channel1, current - 1U);
+	GPT_ClearStatusFlags(base, kGPT_OutputCompare1Flag);
+
 	GPT_SetOutputCompareValue(base, kGPT_OutputCompare_Channel1,
 				  ticks);
 	GPT_EnableInterrupts(base, kGPT_OutputCompare1InterruptEnable);
