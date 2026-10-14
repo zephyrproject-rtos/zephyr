@@ -13,6 +13,7 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <termios.h>
+#include <sys/ioctl.h>
 #include <unistd.h>
 
 #include <nsi_errno.h>
@@ -367,6 +368,17 @@ int native_tty_read_bottom_cfg(int fd, struct native_tty_bottom_cfg *cfg)
 	native_tty_data_bits_get(&ter, &cfg->data_bits);
 	native_tty_stop_bits_get(&ter, &cfg->stop_bits);
 	cfg->flow_ctrl = NTB_FLOW_CTRL_NONE;
+
+	return 0;
+}
+
+int native_tty_set_modem_lines_bottom(int fd, int dtr, int rts, int set)
+{
+	int lines = (dtr ? TIOCM_DTR : 0) | (rts ? TIOCM_RTS : 0);
+
+	if (ioctl(fd, set ? TIOCMBIS : TIOCMBIC, &lines)) {
+		return -nsi_errno_to_mid(errno);
+	}
 
 	return 0;
 }

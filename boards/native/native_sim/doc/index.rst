@@ -859,7 +859,9 @@ driver.
 
 This driver only supports poll mode and interrupt mode. Async mode is not
 supported.
-It has runtime configuration support, but no line control support.
+It has runtime configuration support. With
+:kconfig:option:`CONFIG_UART_LINE_CTRL`, :c:func:`uart_line_ctrl_set` drives the
+port's DTR and RTS lines.
 
 .. _native_sim_backends:
 
