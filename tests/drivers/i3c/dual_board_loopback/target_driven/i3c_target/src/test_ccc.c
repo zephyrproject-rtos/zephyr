@@ -520,4 +520,3 @@ ZTEST(dual_board_loopback_target, test_getmxds_reports_limits)
 	zassert_true(got_rd <= MXDS_SPEED_CODE_MAX, "maxRd code %u is not a defined speed",
 		     got_rd);
 }
-
