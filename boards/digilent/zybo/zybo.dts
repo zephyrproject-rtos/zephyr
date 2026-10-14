@@ -79,6 +79,11 @@
 	};
 };
 
+/* PS_CLK oscillator */
+&clkc {
+	ps-clk-frequency = <33333333>;
+};
+
 &uart1 {
 	current-speed = <115200>;
 	clock-frequency = <100000000>;
