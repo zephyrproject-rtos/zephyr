@@ -208,6 +208,8 @@ def main():
     log_parser = parserlib.get_log_parser(args.dbfile, logger)
 
     data = b''
+    # Input data is skipped until the synchronization sequence is found.
+    synced = False
 
     if args.mode == "serial":
         reader = SerialReader(args.port, args.baudrate)
@@ -227,6 +229,25 @@ def main():
             else:
                 time.sleep(args.polling_interval)
             data += reader.read_non_blocking()
+
+            if not synced:
+                # Stdin in file mode is fed with binary log data converted from a
+                # hexadecimal UART stream (after the ##ZLOGV1## marker). That stream
+                # does not include the binary synchronization sequence.
+                if args.mode == "file" and args.filepath is None:
+                    synced = True
+                else:
+                    synced, remaining = parserlib.skip_to_sync(data)
+                    if synced:
+                        logger.debug("Synchronization sequence found")
+                    elif len(remaining) != len(data):
+                        logger.debug(
+                            "Skipped %d bytes while waiting for sync", len(data) - len(remaining)
+                        )
+                    data = remaining
+                if not synced:
+                    continue
+
             parsed_data_offset = parserlib.parser(data, log_parser, logger)
             data = data[parsed_data_offset:]
 
