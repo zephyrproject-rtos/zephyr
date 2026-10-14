@@ -501,7 +501,7 @@ error:
 
 static void telnet_server_cb(struct net_socket_service_event *evt)
 {
-	int sock_error;
+	int sock_error = 0;
 	int ret;
 	net_socklen_t optlen = sizeof(int);
 
@@ -511,8 +511,11 @@ static void telnet_server_cb(struct net_socket_service_event *evt)
 
 	if ((evt->event.revents & ZSOCK_POLLERR) ||
 	    (evt->event.revents & ZSOCK_POLLNVAL)) {
-		(void)zsock_getsockopt(evt->event.fd, ZSOCK_SOL_SOCKET,
+		ret = zsock_getsockopt(evt->event.fd, ZSOCK_SOL_SOCKET,
 				       ZSOCK_SO_ERROR, &sock_error, &optlen);
+		if (ret < 0) {
+			sock_error = errno;
+		}
 
 		ret = -sock_error;
 
