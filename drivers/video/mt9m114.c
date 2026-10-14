@@ -8,6 +8,7 @@
 #define DT_DRV_COMPAT aptina_mt9m114
 
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/kernel.h>
@@ -71,6 +72,7 @@ struct mt9m114_ctrls {
 };
 
 struct mt9m114_data {
+	struct video_device vdev; /* keep first */
 	struct mt9m114_ctrls ctrls;
 	struct video_format fmt;
 };
@@ -564,15 +566,15 @@ static int mt9m114_init(const struct device *dev)
 }
 
 #define MT9M114_INIT(n)                                                                            \
-	static struct mt9m114_data mt9m114_data_##n;                                               \
+	static struct mt9m114_data mt9m114_data_##n = {                                            \
+		.vdev = VIDEO_DEVICE_INIT(mt9m114_data_##n, DT_DRV_INST(n), NULL),                     \
+	};                                                                                         \
                                                                                                    \
 	static const struct mt9m114_config mt9m114_cfg_##n = {                                     \
 		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &mt9m114_init, NULL, &mt9m114_data_##n, &mt9m114_cfg_##n,         \
-			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &mt9m114_driver_api);       \
-                                                                                                   \
-	VIDEO_DEVICE_DEFINE(mt9m114_##n, DEVICE_DT_INST_GET(n), NULL);
+			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &mt9m114_driver_api);\
 
 DT_INST_FOREACH_STATUS_OKAY(MT9M114_INIT)

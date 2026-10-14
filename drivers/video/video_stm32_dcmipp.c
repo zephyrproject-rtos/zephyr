@@ -7,6 +7,7 @@
 #include <errno.h>
 
 #include <stm32_bitops.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -80,6 +81,7 @@ enum stm32_dcmipp_state {
 #define STM32_DCMIPP_LINE_BUFFER_WIDTH	2688U
 
 struct stm32_dcmipp_pipe_data {
+	struct video_device vdev; /* keep first */
 	const struct device *dev;
 	uint32_t id;
 	struct stm32_dcmipp_data *dcmipp;
@@ -1083,7 +1085,7 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 
 	/* Configure the source if nothing is already running */
 	if (dcmipp->enabled_pipe == 0) {
-		ret = video_set_format(config->source_dev, &dcmipp->source_fmt);
+		ret = video_set_format(pipe->vdev.source_dev, &dcmipp->source_fmt);
 		if (ret < 0) {
 			goto out;
 		}
@@ -1266,7 +1268,7 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 
 	/* It is necessary to start the source as well if nothing else is running */
 	if (dcmipp->enabled_pipe == 0) {
-		ret = video_stream_start(config->source_dev, VIDEO_BUF_TYPE_OUTPUT);
+		ret = video_stream_start(pipe->vdev.source_dev, VIDEO_BUF_TYPE_OUTPUT);
 		if (ret < 0) {
 			LOG_ERR("Failed to start the source");
 			if (config->bus_type == VIDEO_BUS_TYPE_PARALLEL) {
@@ -1360,7 +1362,7 @@ static int stm32_dcmipp_stream_disable(const struct device *dev)
 
 	/* Turn off the source nobody else is using the DCMIPP */
 	if (dcmipp->enabled_pipe == 1) {
-		ret = video_stream_stop(config->source_dev, VIDEO_BUF_TYPE_OUTPUT);
+		ret = video_stream_stop(pipe->vdev.source_dev, VIDEO_BUF_TYPE_OUTPUT);
 		if (ret < 0) {
 			LOG_ERR("Failed to stop the source");
 			ret = -EIO;
@@ -1546,23 +1548,23 @@ static int stm32_dcmipp_get_caps(const struct device *dev, struct video_caps *ca
 
 static int stm32_dcmipp_get_frmival(const struct device *dev, struct video_frmival *frmival)
 {
-	const struct stm32_dcmipp_config *config = dev->config;
+	struct stm32_dcmipp_pipe_data *pipe = dev->data;
 
-	return video_get_frmival(config->source_dev, frmival);
+	return video_get_frmival(pipe->vdev.source_dev, frmival);
 }
 
 static int stm32_dcmipp_set_frmival(const struct device *dev, struct video_frmival *frmival)
 {
-	const struct stm32_dcmipp_config *config = dev->config;
+	struct stm32_dcmipp_pipe_data *pipe = dev->data;
 
-	return video_set_frmival(config->source_dev, frmival);
+	return video_set_frmival(pipe->vdev.source_dev, frmival);
 }
 
 static int stm32_dcmipp_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
-	const struct stm32_dcmipp_config *config = dev->config;
+	struct stm32_dcmipp_pipe_data *pipe = dev->data;
 
-	return video_enum_frmival(config->source_dev, fie);
+	return video_enum_frmival(pipe->vdev.source_dev, fie);
 }
 
 static inline int stm32_dcmipp_pipe0_pixel_align(uint32_t pixelformat)
@@ -1924,6 +1926,8 @@ static void stm32_dcmipp_csi_isr(const struct device *dev)
 
 #define DCMIPP_PIPE_INIT_DEFINE(node_id, inst)						\
 	static struct stm32_dcmipp_pipe_data stm32_dcmipp_pipe_##node_id = {		\
+		.vdev = VIDEO_DEVICE_INIT(stm32_dcmipp_pipe_##node_id,			\
+					  node_id, SOURCE_DEV(inst)),			\
 		.id = DT_NODE_CHILD_IDX(node_id),					\
 		.dcmipp = &stm32_dcmipp_data_##inst,					\
 	};										\
@@ -1931,10 +1935,9 @@ static void stm32_dcmipp_csi_isr(const struct device *dev)
 	DEVICE_DT_DEFINE(node_id, &stm32_dcmipp_pipe_init, NULL,			\
 			 &stm32_dcmipp_pipe_##node_id,					\
 			 &stm32_dcmipp_config_##inst,					\
-			 POST_KERNEL, CONFIG_VIDEO_STM32_DCMIPP_INIT_PRIORITY,			\
+			 POST_KERNEL, CONFIG_VIDEO_STM32_DCMIPP_INIT_PRIORITY,		\
 			 &stm32_dcmipp_driver_api);					\
 											\
-	VIDEO_DEVICE_DEFINE(dcmipp_##inst_pipe_##node_id, DEVICE_DT_GET(node_id), SOURCE_DEV(inst));
 
 #if defined(STM32_DCMIPP_HAS_CSI)
 #define STM32_DCMIPP_CSI_DT_PARAMS(inst)							\
