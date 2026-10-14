@@ -52,6 +52,22 @@ struct log_dict_output_dropped_msg_t {
 	uint16_t num_dropped_messages; /**< Number of dropped messages. */
 } __packed;
 
+/** @brief Synchronization sequence for dictionary-based logging.
+ *
+ * Synchronization sequence is sent at the beginning of the stream by the target.
+ * Host parser can skip the data until the sequence is found.
+ */
+#define LOG_DICT_BIN_SEP {0x44, 0x9C, 0x64, 0xCF, 0x84, 0x1C, 0xFB, 0x40, 0x73, 0x2F}
+
+/** @brief Hexadecimal separator for dictionary-based logging.
+ *
+ * Hexadecimal separator is sent at the beginning of the hexadecimal data.
+ */
+#define LOG_DICT_HEX_SEP "##ZLOGV1##"
+
+/** @brief Length of the synchronization sequence. */
+#define LOG_DICT_SEP_LEN 10
+
 /** @brief Process log messages v2 for dictionary-based logging.
  *
  * Function is using provided context with the buffer and output function to
