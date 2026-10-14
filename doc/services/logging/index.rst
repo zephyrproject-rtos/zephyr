@@ -932,6 +932,20 @@ hexadecimal characters
 (e.g. when ``CONFIG_LOG_BACKEND_UART_OUTPUT_DICTIONARY_HEX=y``). This tells
 the parser to convert the hexadecimal characters to binary before parsing.
 
+In multi-domain setups, where logs from several cores are output through a single
+dictionary backend, pass multiple database files as separate arguments (domain 0
+first). The first database is used for the messages from domain 0. For messages
+from other domains, the parser looks for the message string in each database and
+uses the database which contains it for decoding the message and getting the
+source name. If more than one database is provided, the source name is prefixed
+with ``cpu<domain_id>.`` (e.g. ``cpu1.app``).
+
+.. code-block:: console
+
+  ./scripts/logging/dictionary/log_parser.py \\
+    <app build dir>/log_dictionary.json <remote build dir>/log_dictionary.json \\
+    <log data file>
+
 Live Parsing
 ^^^^^^^^^^^^
 
