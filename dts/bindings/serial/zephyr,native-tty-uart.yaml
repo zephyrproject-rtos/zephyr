@@ -11,6 +11,14 @@ properties:
     description: |
       Full path to the serial port device, such as "/dev/ttyUSB0" or
       "/dev/ttyACM0".
+  usb-ids:
+    type: array
+    description: |
+      Vendor and product ID pairs of USB serial adapters, following the
+      pattern <vendor-id product-id>, repeated for each adapter and tried in
+      order when neither serial-port nor the command line names the port.
+      The first host tty whose USB device matches is opened; the application
+      exits if none does.
   low-latency:
     type: boolean
     description: |
