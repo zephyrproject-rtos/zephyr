@@ -398,11 +398,6 @@ static int stm32_jpeg_set_fmt(const struct device *dev, struct video_format *fmt
 		goto out;
 	}
 
-	ret = video_estimate_fmt_size(fmt);
-	if (ret < 0) {
-		goto out;
-	}
-
 	common->fmt = *fmt;
 
 out:

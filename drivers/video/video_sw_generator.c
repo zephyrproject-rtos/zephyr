@@ -257,11 +257,6 @@ static int video_sw_generator_set_fmt(const struct device *dev, struct video_for
 	struct video_sw_generator_data *data = dev->data;
 	int ret;
 
-	ret = video_estimate_fmt_size(fmt);
-	if (ret < 0) {
-		return ret;
-	}
-
 	/* Special handling for JPEG and PNG file size */
 	if (fmt->pixelformat == VIDEO_PIX_FMT_JPEG) {
 		fmt->size = MAX(sizeof(jpeg_frame_buffer), sizeof(jpeg_frame_buffer_hflip));

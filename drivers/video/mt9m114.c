@@ -408,8 +408,6 @@ static int mt9m114_set_fmt(const struct device *dev, struct video_format *fmt)
 		return 0;
 	}
 
-	drv_data->fmt = *fmt;
-
 	/* Set output pixel format */
 	ret = mt9m114_set_output_format(dev, fmt->pixelformat);
 	if (ret) {
@@ -432,7 +430,15 @@ static int mt9m114_set_fmt(const struct device *dev, struct video_format *fmt)
 	}
 
 	/* Apply Config */
-	return mt9m114_set_state(dev, MT9M114_SYS_STATE_ENTER_CONFIG_CHANGE);
+	ret = mt9m114_set_state(dev, MT9M114_SYS_STATE_ENTER_CONFIG_CHANGE);
+	if (ret < 0) {
+		LOG_ERR("Failed to apply %s state", dev->name);
+		return ret;
+	}
+
+	drv_data->fmt = *fmt;
+
+	return 0;
 }
 
 static int mt9m114_get_fmt(const struct device *dev, struct video_format *fmt)

@@ -51,6 +51,16 @@ int video_set_format(const struct device *dev, struct video_format *fmt)
 		return ret;
 	}
 
+	/* Capable of exchanging buffers: set a default format size which the driver may modify. */
+	if (caps.min_vbuf_count > 0) {
+		ret = video_estimate_fmt_size(fmt);
+		if (ret < 0) {
+			LOG_ERR("Failed to estimate the video %s %ux%u default size for %s",
+				VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height, dev->name);
+			return ret;
+		}
+	}
+
 	return video_driver_set_format(dev, fmt, idx);
 }
 

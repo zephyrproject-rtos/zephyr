@@ -31,6 +31,7 @@ struct video_mcux_csi_data {
 	const struct device *dev;
 	csi_config_t csi_config;
 	csi_handle_t csi_handle;
+	struct video_format fmt;
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
 	struct k_poll_signal *sig;
@@ -136,7 +137,7 @@ static int video_mcux_csi_set_fmt(const struct device *dev, struct video_format 
 	struct video_format format = *fmt;
 
 	data->csi_config.bytesPerPixel = video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
-	data->csi_config.linePitch_Bytes = fmt->width * data->csi_config.bytesPerPixel;
+	data->csi_config.linePitch_Bytes = fmt->pitch;
 #if defined(CONFIG_VIDEO_MCUX_MIPI_CSI2RX)
 	if (fmt->pixelformat != VIDEO_PIX_FMT_BGRX32 && fmt->pixelformat != VIDEO_PIX_FMT_XYUV32) {
 		return -ENOTSUP;
@@ -166,25 +167,18 @@ static int video_mcux_csi_set_fmt(const struct device *dev, struct video_format 
 		return -EIO;
 	}
 
-	fmt->pitch = data->csi_config.linePitch_Bytes;
-	fmt->size = fmt->pitch * fmt->height;
+	data->fmt = *fmt;
 
 	return 0;
 }
 
 static int video_mcux_csi_get_fmt(const struct device *dev, struct video_format *fmt)
 {
-	const struct video_mcux_csi_config *config = dev->config;
+	struct video_mcux_csi_data *data = dev->data;
 
-	if (config->source_dev && !video_get_format(config->source_dev, fmt)) {
-#if defined(CONFIG_VIDEO_MCUX_MIPI_CSI2RX)
-		video_pix_fmt_convert(fmt, true);
-#endif
+	*fmt = data->fmt;
 
-		return video_estimate_fmt_size(fmt);
-	}
-
-	return -EIO;
+	return 0;
 }
 
 static int video_mcux_csi_set_stream(const struct device *dev, bool enable,
