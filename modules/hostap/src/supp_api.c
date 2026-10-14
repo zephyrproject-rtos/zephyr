@@ -519,6 +519,34 @@ static int wpas_config_process_blob(struct wpa_config *config, char *name, uint8
 
 #if defined CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE || \
 	defined CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
+static void supplicant_clear_enterprise_creds(void)
+{
+	bin_clear_free(enterprise_creds.ca_cert, enterprise_creds.ca_cert_len);
+	bin_clear_free(enterprise_creds.client_cert, enterprise_creds.client_cert_len);
+	bin_clear_free(enterprise_creds.client_key, enterprise_creds.client_key_len);
+	bin_clear_free(enterprise_creds.ca_cert2, enterprise_creds.ca_cert2_len);
+	bin_clear_free(enterprise_creds.client_cert2, enterprise_creds.client_cert2_len);
+	bin_clear_free(enterprise_creds.client_key2, enterprise_creds.client_key2_len);
+	os_memset(&enterprise_creds, 0, sizeof(enterprise_creds));
+}
+
+static int supplicant_copy_enterprise_cred(uint8_t **dst, uint32_t *dst_len, const uint8_t *src,
+					   uint32_t src_len)
+{
+	if (src == NULL || src_len == 0) {
+		return 0;
+	}
+
+	*dst = os_memdup(src, src_len);
+	if (*dst == NULL) {
+		return -ENOMEM;
+	}
+
+	*dst_len = src_len;
+
+	return 0;
+}
+
 int supplicant_add_enterprise_creds(const struct device *dev __unused,
 				    struct net_if *iface __unused,
 				    struct wifi_enterprise_creds_params *creds)
@@ -531,8 +559,45 @@ int supplicant_add_enterprise_creds(const struct device *dev __unused,
 		goto out;
 	}
 
-	memcpy((void *)&enterprise_creds, (void *)creds,
-			sizeof(struct wifi_enterprise_creds_params));
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+
+	supplicant_clear_enterprise_creds();
+
+	ret = supplicant_copy_enterprise_cred(&enterprise_creds.ca_cert,
+					      &enterprise_creds.ca_cert_len, creds->ca_cert,
+					      creds->ca_cert_len);
+	if (ret == 0) {
+		ret = supplicant_copy_enterprise_cred(&enterprise_creds.client_cert,
+						      &enterprise_creds.client_cert_len,
+						      creds->client_cert, creds->client_cert_len);
+	}
+	if (ret == 0) {
+		ret = supplicant_copy_enterprise_cred(&enterprise_creds.client_key,
+						      &enterprise_creds.client_key_len,
+						      creds->client_key, creds->client_key_len);
+	}
+	if (ret == 0) {
+		ret = supplicant_copy_enterprise_cred(&enterprise_creds.ca_cert2,
+						      &enterprise_creds.ca_cert2_len,
+						      creds->ca_cert2, creds->ca_cert2_len);
+	}
+	if (ret == 0) {
+		ret = supplicant_copy_enterprise_cred(&enterprise_creds.client_cert2,
+						      &enterprise_creds.client_cert2_len,
+						      creds->client_cert2, creds->client_cert2_len);
+	}
+	if (ret == 0) {
+		ret = supplicant_copy_enterprise_cred(&enterprise_creds.client_key2,
+						      &enterprise_creds.client_key2_len,
+						      creds->client_key2, creds->client_key2_len);
+	}
+
+	if (ret != 0) {
+		wpa_printf(MSG_ERROR, "failed to copy enterprise creds");
+		supplicant_clear_enterprise_creds();
+	}
+
+	k_mutex_unlock(&wpa_supplicant_mutex);
 
 out:
 	return ret;
