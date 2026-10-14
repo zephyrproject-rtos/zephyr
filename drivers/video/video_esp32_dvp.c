@@ -244,20 +244,6 @@ static int video_esp32_get_caps(const struct device *dev, struct video_caps *cap
 	return video_get_caps(data->vdev.source_dev, caps);
 }
 
-static int video_esp32_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
-{
-	const struct video_esp32_config *cfg = dev->config;
-	int ret;
-
-	ret = video_set_format(data->vdev.source_dev, fmt);
-	if (ret < 0) {
-		LOG_ERR("Failed to apply format to the source %s", data->vdev.source_dev->name);
-		return ret;
-	}
-
-	return 0;
-}
-
 static int video_esp32_enqueue(const struct device *dev, struct video_buffer *vbuf)
 {
 	struct video_esp32_data *data = dev->data;
@@ -391,11 +377,8 @@ int video_esp32_get_selection(const struct device *dev, struct video_selection *
 }
 
 static DEVICE_API(video, esp32_driver_api) = {
-	/* mandatory callbacks */
-	.set_format = video_esp32_set_fmt,
 	.set_stream = video_esp32_set_stream,
 	.get_caps = video_esp32_get_caps,
-	/* optional callbacks */
 	.enqueue = video_esp32_enqueue,
 	.dequeue = video_esp32_dequeue,
 	.flush = video_esp32_flush,
