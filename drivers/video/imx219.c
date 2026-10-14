@@ -300,7 +300,6 @@ static int imx219_enum_frmival(const struct device *dev, struct video_frmival_en
 static int imx219_set_frmival(const struct device *dev, struct video_frmival *frmival, size_t idx)
 {
 	const struct imx219_config *cfg = dev->config;
-	struct imx219_data *drv_data = dev->data;
 	int ret;
 
 	switch (idx) {

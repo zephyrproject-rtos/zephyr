@@ -489,7 +489,6 @@ static int imx335_set_ctrl(const struct device *dev, unsigned int cid)
 static int imx335_set_frmival(const struct device *dev, struct video_frmival *frmival, size_t idx)
 {
 	const struct imx335_config *cfg = dev->config;
-	struct imx335_data *drv_data = dev->data;
 	int ret;
 
 	uint16_t hmax;
@@ -581,7 +580,7 @@ static int imx335_set_fmt(const struct device *dev, struct video_format *fmt, si
 	drv_data->fmt.height = fmt->height;
 	/* update framerate, since the timing and allowed framerates may have changed */
 
-	return video_set_frmival(dev, &data->vdev.frmival);
+	return video_set_frmival(dev, &drv_data->vdev.frmival);
 }
 
 static int imx335_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
@@ -779,9 +778,9 @@ static int imx335_init(const struct device *dev)
 		return ret;
 	}
 
-	data->vdev.frmival.numerator = 1;
-	data->vdev.frmival.denumerator = 30;
-	ret = video_set_frmival(dev, &data->vdev.frmival);
+	drv_data->vdev.frmival.numerator = 1;
+	drv_data->vdev.frmival.denominator = 30;
+	ret = video_set_frmival(dev, &drv_data->vdev.frmival);
 	if (ret < 0) {
 		LOG_ERR("Failed to set %s default frame interval", dev->name);
 		return ret;
