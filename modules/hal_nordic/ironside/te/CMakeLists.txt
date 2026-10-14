@@ -11,3 +11,23 @@ zephyr_library_sources(
   client_lock.c
   layout_check.c
 )
+
+if(CONFIG_PSA_CRYPTO_PROVIDER_IRONSIDE_TE)
+  zephyr_library_sources(
+    ${ZEPHYR_IRONSIDE_INTEGRATION_KIT_MODULE_DIR}/client/src/psa_crypto.c
+    psa_crypto_abi_check.c
+  )
+
+  if(NOT CONFIG_TF_PSA_CRYPTO)
+    zephyr_include_directories(
+      ${CONFIG_TF_PSA_CRYPTO_MODULE_DIR}/include
+      ${CONFIG_TF_PSA_CRYPTO_MODULE_DIR}/drivers/builtin/include
+      ${CONFIG_TF_PSA_CRYPTO_DISPATCH_DIR}/include
+      ${ZEPHYR_BASE}/modules/mbedtls/configs
+    )
+
+    zephyr_compile_definitions(
+      TF_PSA_CRYPTO_CONFIG_FILE="${CONFIG_TF_PSA_CRYPTO_CONFIG_FILE}"
+    )
+  endif()
+endif()
