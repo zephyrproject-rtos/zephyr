@@ -1,0 +1,48 @@
+# Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Silicon Labs network co-processor (NCP) connected over UART.
+
+  The NCP runs the Silicon Labs CPC (Co-Processor Communication) protocol in
+  the secondary role. This node is the CPC primary. Every radio protocol
+  offered by the co-processor (Bluetooth LE, Bluetooth Classic, Wi-Fi,
+  802.15.4, ...) is exposed by a child node bound to a CPC endpoint.
+
+  The node is a child of the UART controller the co-processor is wired to.
+  The speed and the flow control of the link are the ones of the controller
+  (current-speed, hw-flow-control) and must match the co-processor firmware.
+  The driver uses the asynchronous UART API: the controller must support it,
+  which usually requires DMA channels (dmas, dma-names).
+
+  Example:
+
+    &usart2 {
+        current-speed = <115200>;
+        hw-flow-control;
+        dmas = <&dmamux1 2 44 STM32_DMA_PERIPH_TX>,
+               <&dmamux1 3 43 STM32_DMA_PERIPH_RX>;
+        dma-names = "tx", "rx";
+
+        ncp: ncp {
+            compatible = "silabs,ncp";
+            reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+        };
+    };
+
+compatible: "silabs,ncp"
+
+include: uart-device.yaml
+
+properties:
+  wake-gpios:
+    type: phandle-array
+    description: |
+      Optional wake line driven by the host to wake the co-processor from
+      sleep before a transaction.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Optional reset line of the co-processor. It is pulsed during
+      initialization.
