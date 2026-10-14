@@ -264,6 +264,65 @@ static int adxl345_attr_set_odr(const struct device *dev,
 	return ret;
 }
 
+static int adxl345_get_odr(const struct device *dev, enum adxl345_odr *odr)
+{
+	int ret;
+	uint8_t rate;
+
+	ret = adxl345_reg_read_byte(dev, ADXL345_RATE_REG, &rate);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	*odr = ADXL345_ODR_MSK & rate;
+
+	return 0;
+}
+
+static int adxl345_attr_get_odr(const struct device *dev,
+				enum sensor_channel chan,
+				enum sensor_attribute attr,
+				struct sensor_value *val)
+{
+	enum adxl345_odr odr;
+	int ret;
+
+	ret = adxl345_get_odr(dev, &odr);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	val->val2 = 0;
+
+	switch (odr) {
+	case ADXL345_ODR_12_5HZ:
+		val->val1 = 12;
+		val->val2 = 500000;
+		break;
+	case ADXL345_ODR_25HZ:
+		val->val1 = 25;
+		break;
+	case ADXL345_ODR_50HZ:
+		val->val1 = 50;
+		break;
+	case ADXL345_ODR_100HZ:
+		val->val1 = 100;
+		break;
+	case ADXL345_ODR_200HZ:
+		val->val1 = 200;
+		break;
+	case ADXL345_ODR_400HZ:
+		val->val1 = 400;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int adxl345_set_range(const struct device *dev, uint8_t range)
 {
 	int rc;
@@ -305,6 +364,19 @@ static int adxl345_range_to_reg_val(uint8_t range)
 	return -EINVAL;
 }
 
+static int adxl345_reg_val_to_range(uint8_t reg_val)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(adxl345_acc_range_map); i++) {
+		if (reg_val == adxl345_acc_range_map[i].reg_val) {
+			return adxl345_acc_range_map[i].range;
+		}
+	}
+
+	return -EINVAL;
+}
+
 static int adxl345_attr_set_range(const struct device *dev, int32_t range)
 {
 	int range_reg;
@@ -319,6 +391,41 @@ static int adxl345_attr_set_range(const struct device *dev, int32_t range)
 
 	return adxl345_set_range(dev, range_reg);
 }
+
+static int adxl345_get_range(const struct device *dev, uint32_t *range)
+{
+	int rc;
+	uint8_t reg_val;
+
+	rc = adxl345_reg_read(dev, ADXL345_DATA_FORMAT_REG, &reg_val, 1);
+	if (rc < 0) {
+		LOG_ERR("Failed to get range.");
+		return -EIO;
+	}
+
+	*range = adxl345_reg_val_to_range(reg_val);
+	if (range < 0) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int adxl345_attr_get_range(const struct device *dev, struct sensor_value *val)
+{
+	int ret;
+	uint32_t range;
+
+	ret = adxl345_get_range(dev, &range);
+	if (ret < 0) {
+		LOG_ERR("Unable to fetch range reg (%d)", ret);
+		return ret;
+	}
+
+	sensor_g_to_ms2(range, val);
+	return 0;
+}
+
 #endif /* CONFIG_ADXL345_ACCEL_RANGE_RUNTIME */
 
 static int adxl345_attr_set(const struct device *dev,
@@ -335,6 +442,35 @@ static int adxl345_attr_set(const struct device *dev,
 #endif /* CONFIG_ADXL345_ACCEL_RANGE_RUNTIME */
 	case SENSOR_ATTR_UPPER_THRESH:
 		return adxl345_reg_write_byte(dev, ADXL345_THRESH_ACT_REG, val->val1);
+	default:
+		return -ENOTSUP;
+	}
+}
+
+static int adxl345_attr_get(const struct device *dev,
+			    enum sensor_channel chan,
+			    enum sensor_attribute attr,
+			    struct sensor_value *val)
+{
+	uint8_t thresh;
+	int ret;
+
+	switch (attr) {
+	case SENSOR_ATTR_SAMPLING_FREQUENCY:
+		return adxl345_attr_get_odr(dev, chan, attr, val);
+#if defined(CONFIG_ADXL345_ACCEL_RANGE_RUNTIME)
+	case SENSOR_ATTR_FULL_SCALE:
+		return adxl345_attr_get_range(dev, val);
+#endif /* CONFIG_ADXL345_ACCEL_RANGE_RUNTIME */
+	case SENSOR_ATTR_UPPER_THRESH:
+		ret = adxl345_reg_read_byte(dev, ADXL345_THRESH_ACT_REG, &thresh);
+		if (ret < 0) {
+			return ret;
+		}
+
+		val->val1 = thresh;
+
+		return 0;
 	default:
 		return -ENOTSUP;
 	}
@@ -452,6 +588,7 @@ static int adxl345_channel_get(const struct device *dev,
 
 static DEVICE_API(sensor, adxl345_api_funcs) = {
 	.attr_set = adxl345_attr_set,
+	.attr_get = adxl345_attr_get,
 	.sample_fetch = adxl345_sample_fetch,
 	.channel_get = adxl345_channel_get,
 #ifdef CONFIG_ADXL345_TRIGGER
