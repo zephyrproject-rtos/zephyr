@@ -825,11 +825,6 @@ static int arducam_mega_set_fmt(const struct device *dev, struct video_format *f
 		return 0;
 	}
 
-	ret = video_estimate_fmt_size(fmt);
-	if (ret < 0) {
-		return ret;
-	}
-
 	drv_data->fmt = *fmt;
 
 	ret = arducam_mega_set_output_format(dev, fmt->pixelformat);

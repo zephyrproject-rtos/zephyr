@@ -282,11 +282,6 @@ static int video_nsi_fifo_set_fmt(const struct device *dev, struct video_format 
 		return -EINVAL;
 	}
 
-	ret = video_estimate_fmt_size(fmt);
-	if (ret < 0) {
-		return ret;
-	}
-
 	k_mutex_lock(&data->lock, K_FOREVER);
 	data->fmt = *fmt;
 	if (data->fd >= 0) {

@@ -253,23 +253,9 @@ static int video_esp32_get_caps(const struct device *dev, struct video_caps *cap
 
 static int video_esp32_get_fmt(const struct device *dev, struct video_format *fmt)
 {
-	const struct video_esp32_config *cfg = dev->config;
-	int ret = 0;
+	struct video_esp32_data *data = dev->data;
 
-	LOG_DBG("Get format");
-
-	ret = video_get_format(data->vdev.source_dev, fmt);
-	if (ret < 0) {
-		LOG_ERR("Failed to get format from source");
-		return ret;
-	}
-
-	ret = video_estimate_fmt_size(fmt);
-	if (ret < 0) {
-		LOG_ERR("Failed to estimate the format size for %s",
-			VIDEO_FOURCC_TO_STR(fmt->pixelformat));
-		return ret;
-	}
+	*fmt = data->video_format;
 
 	return 0;
 }
@@ -283,12 +269,6 @@ static int video_esp32_set_fmt(const struct device *dev, struct video_format *fm
 	ret = video_set_format(data->vdev.source_dev, fmt);
 	if (ret < 0) {
 		LOG_ERR("Failed to apply format to the source %s", data->vdev.source_dev->name);
-		return ret;
-	}
-
-	ret = video_estimate_fmt_size(fmt);
-	if (ret < 0) {
-		LOG_ERR("Failed to estimate the format size");
 		return ret;
 	}
 
