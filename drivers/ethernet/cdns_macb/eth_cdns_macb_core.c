@@ -1362,6 +1362,17 @@ int cdns_macb_probe(const struct device *dev)
 		return ret;
 	}
 
+#if defined(CONFIG_ETH_CDNS_MACB_RESET)
+	/* Start from a MAC in its reset state, the boot loader may have used it */
+	if (cfg->reset.dev != NULL) {
+		ret = reset_line_toggle_dt(&cfg->reset);
+		if (ret < 0) {
+			LOG_ERR("unable to reset the MAC (%d)", ret);
+			return ret;
+		}
+	}
+#endif
+
 #if defined(CONFIG_ETH_CDNS_MACB_PINCTRL)
 	if (cfg->pcfg != NULL) {
 		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);

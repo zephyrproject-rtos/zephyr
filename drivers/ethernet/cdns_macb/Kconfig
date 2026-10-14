@@ -67,6 +67,14 @@ config ETH_CDNS_MACB_PINCTRL
 	  The pins of the MAC are configured through pin control when the
 	  devicetree node has a pinctrl-0 property.
 
+config ETH_CDNS_MACB_RESET
+	bool
+	default y if $(dt_compat_any_has_prop,$(DT_COMPAT_CDNS_GEM),resets)
+	select RESET
+	help
+	  The MAC is reset through its reset line when the devicetree node has
+	  a resets property.
+
 configdefault NET_BUF_ALIGNMENT
 	default DCACHE_LINE_SIZE if DCACHE
 	default 8 if PTP_CLOCK_CDNS_MACB

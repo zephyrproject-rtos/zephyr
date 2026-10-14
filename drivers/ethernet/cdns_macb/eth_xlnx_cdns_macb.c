@@ -89,6 +89,7 @@ int cdns_macb_platform_init(const struct device *dev)
 				   (.ptp_clock = DEVICE_DT_GET_OR_NULL(                            \
 						   DT_INST_CHILD(n, ptp_clock)),))                 \
 			CDNS_MACB_DT_INST_PINCTRL_INIT(n)                                          \
+			CDNS_MACB_DT_INST_RESET_INIT(n)                                            \
 			.rings = &prefix##n##_rings,                                               \
 			.clks = {                                                                  \
 				[CDNS_MACB_CLK_PCLK] = ETH_XLNX_CLOCK(n, pclk),                    \

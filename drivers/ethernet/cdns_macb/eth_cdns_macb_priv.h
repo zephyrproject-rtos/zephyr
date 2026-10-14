@@ -24,6 +24,9 @@
 #if defined(CONFIG_ETH_CDNS_MACB_PINCTRL)
 #include <zephyr/drivers/pinctrl.h>
 #endif
+#if defined(CONFIG_ETH_CDNS_MACB_RESET)
+#include <zephyr/drivers/reset.h>
+#endif
 
 /*
  * Common checks
@@ -194,6 +197,17 @@ struct cdns_macb_clock {
 #endif
 
 /*
+ * The reset line of an instance, put into its config by the glue with this.
+ * Nothing without the resets property.
+ */
+#if defined(CONFIG_ETH_CDNS_MACB_RESET)
+#define CDNS_MACB_DT_INST_RESET_INIT(n)                                                            \
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, resets), (.reset = RESET_DT_SPEC_INST_GET(n),))
+#else
+#define CDNS_MACB_DT_INST_RESET_INIT(n)
+#endif
+
+/*
  * Common structure definitions
  */
 
@@ -240,6 +254,10 @@ struct cdns_macb_config {
 #if defined(CONFIG_ETH_CDNS_MACB_PINCTRL)
 	/* NULL when the instance has no pins to configure */
 	const struct pinctrl_dev_config *pcfg;
+#endif
+#if defined(CONFIG_ETH_CDNS_MACB_RESET)
+	/* The dev member is NULL when the instance has no reset line */
+	struct reset_dt_spec reset;
 #endif
 	uint32_t caps;
 	/* GEM_DMACFG.FBLDO: 1, 4, 8 or 16 */
