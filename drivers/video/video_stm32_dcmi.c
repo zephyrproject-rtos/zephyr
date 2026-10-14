@@ -227,11 +227,6 @@ static int video_stm32_dcmi_set_fmt(const struct device *dev, struct video_forma
 		return ret;
 	}
 
-	ret = video_estimate_fmt_size(fmt);
-	if (ret < 0) {
-		return ret;
-	}
-
 	data->fmt = *fmt;
 
 	return 0;
@@ -245,11 +240,6 @@ static int video_stm32_dcmi_get_fmt(const struct device *dev, struct video_forma
 
 	/* Align DCMI format with the one provided by the sensor */
 	ret = video_get_format(config->sensor_dev, fmt);
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_estimate_fmt_size(fmt);
 	if (ret < 0) {
 		return ret;
 	}
@@ -323,13 +313,12 @@ static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable,
 static int video_stm32_dcmi_enqueue(const struct device *dev, struct video_buffer *vbuf)
 {
 	struct video_stm32_dcmi_data *data = dev->data;
-	const uint32_t buffer_size = data->fmt.pitch * data->fmt.height;
 
-	if (buffer_size > vbuf->size) {
+	if (data->fmt.size > vbuf->size) {
 		return -EINVAL;
 	}
 
-	vbuf->bytesused = buffer_size;
+	vbuf->bytesused = data->fmt.size;
 	vbuf->line_offset = 0;
 
 	k_fifo_put(&data->fifo_in, vbuf);

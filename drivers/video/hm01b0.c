@@ -335,8 +335,6 @@ static int hm01b0_get_fmt(const struct device *dev, struct video_format *fmt)
 	struct hm01b0_data *data = dev->data;
 
 	*fmt = data->fmt;
-	LOG_DBG("HM01B0 get_fmt: %d x %d, fmt: %s", fmt->width, fmt->height,
-		VIDEO_FOURCC_TO_STR(fmt->pixelformat));
 
 	return 0;
 }

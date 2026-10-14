@@ -67,12 +67,6 @@ static int emul_rx_set_fmt(const struct device *const dev, struct video_format *
 		return -EINVAL;
 	}
 
-	/* Cache the format selected locally to use it for getting the size of the buffer  */
-	ret = video_estimate_fmt_size(fmt);
-	if (ret < 0) {
-		return ret;
-	}
-
 	data->fmt = *fmt;
 
 	return 0;

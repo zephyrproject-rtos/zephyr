@@ -535,16 +535,13 @@ static const struct stm32_dcmipp_mapping *stm32_dcmipp_get_mapping(uint32_t pixe
 
 static inline void stm32_dcmipp_compute_fmt_pitch(uint32_t pipe_id, struct video_format *fmt)
 {
-	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 	if (pipe_id == DCMIPP_PIPE1 || pipe_id == DCMIPP_PIPE2) {
 		/* On Pipe1 and Pipe2, the pitch must be multiple of 16 bytes */
 		fmt->pitch = ROUND_UP(fmt->pitch, 16);
+		fmt->size = fmt->pitch * fmt->height;
 	}
 #endif
-
-	/* Update the corresponding fmt->size */
-	fmt->size = fmt->pitch * fmt->height;
 }
 
 static int stm32_dcmipp_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
