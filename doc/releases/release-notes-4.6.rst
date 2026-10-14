@@ -94,6 +94,7 @@ New Drivers
 * Clock control
 
   * :dtcompatible:`xlnx,ps7-clkc`
+  * :dtcompatible:`xlnx,zynqmp-clk`
 
 New Samples
 ***********
