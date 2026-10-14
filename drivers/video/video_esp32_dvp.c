@@ -9,6 +9,7 @@
 
 #include <hal/gdma_channel.h>
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/clock_control/esp32_clock_control.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_esp32.h>
@@ -58,6 +59,7 @@ struct video_esp32_config {
 };
 
 struct video_esp32_data {
+	struct video_device vdev; /* keep first */
 	cam_hal_context_t hal;
 	const struct video_esp32_config *config;
 	struct video_format video_format;
@@ -466,9 +468,9 @@ static const struct video_esp32_config esp32_config = {
 	.cam_clk = DT_INST_PROP_OR(0, cam_clk, 0),
 };
 
-static struct video_esp32_data esp32_data = {0};
+static struct video_esp32_data esp32_data = {
+	.vdev = VIDEO_DEVICE_INIT(esp32_data, DT_DRV_INST(0), SOURCE_DEV(0)),
+};
 
 DEVICE_DT_INST_DEFINE(0, video_esp32_init, NULL, &esp32_data, &esp32_config, POST_KERNEL,
 		      CONFIG_VIDEO_INIT_PRIORITY, &esp32_driver_api);
-
-VIDEO_DEVICE_DEFINE(esp32, DEVICE_DT_INST_GET(0), SOURCE_DEV(0));

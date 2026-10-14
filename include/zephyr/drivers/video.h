@@ -53,15 +53,6 @@ struct video_device {
 };
 
 /**
- * @brief Find the @ref video_device associated with a video @ref device.
- *
- * @param dev Device that will be looked up in the global list of video devices.
- * @return Pointer to the @ref video_device if found.
- * @retval NULL if not found.
- */
-struct video_device *video_find_vdev(const struct device *dev);
-
-/**
  * @brief Types used to access drivers video controls
  * @defgroup video_interface_ctrls Video Controls
  * @ingroup video_interface

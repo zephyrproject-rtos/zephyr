@@ -74,7 +74,7 @@ int video_auto_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz, int32_t manual
 
 static int video_find_ctrl(const struct device *dev, uint32_t id, struct video_ctrl **ctrl)
 {
-	struct video_device *vdev = video_find_vdev(dev);
+	struct video_device *vdev = dev->data;
 
 	while (vdev) {
 		SYS_DLIST_FOR_EACH_CONTAINER(&vdev->ctrls, *ctrl, node) {
@@ -83,7 +83,10 @@ static int video_find_ctrl(const struct device *dev, uint32_t id, struct video_c
 			}
 		}
 
-		vdev = video_find_vdev(vdev->source_dev);
+		if (vdev->source_dev == NULL) {
+			break;
+		}
+		vdev = vdev->source_dev->data;
 	}
 
 	return -ENOTSUP;
@@ -366,8 +369,8 @@ int video_query_ctrl(struct video_ctrl_query *cq)
 
 	if (cq->id & VIDEO_CTRL_FLAG_NEXT_CTRL) {
 		cq->id &= ~VIDEO_CTRL_FLAG_NEXT_CTRL;
-		vdev = video_find_vdev(cq->dev);
-		while (vdev != NULL) {
+		while (cq->dev != NULL) {
+			vdev = cq->dev->data;
 			SYS_DLIST_FOR_EACH_CONTAINER(&vdev->ctrls, ctrl, node) {
 				if (ctrl->id > cq->id) {
 					goto fill_query;
@@ -375,7 +378,6 @@ int video_query_ctrl(struct video_ctrl_query *cq)
 			}
 			cq->id = 0;
 			cq->dev = vdev->source_dev;
-			vdev = video_find_vdev(cq->dev);
 		}
 		return -ENOTSUP;
 	}
