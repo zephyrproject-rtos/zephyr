@@ -1,0 +1,58 @@
+# Kernel feature scope
+
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+choice KERNEL_SCOPE
+	prompt "Kernel feature scope"
+	default KERNEL_SCOPE_FULL
+	help
+	  Restricts the kernel features a build may enable. Features outside
+	  the selected scope cannot be turned on: their Kconfig symbols depend
+	  on the scope, their sources are not compiled and kernel/scope.c
+	  rejects a build in which a select bypasses those dependencies.
+
+config KERNEL_SCOPE_FULL
+	bool "All kernel features"
+
+config KERNEL_SCOPE_UP
+	bool "Uniprocessor, supervisor mode only"
+	help
+	  One CPU with every thread in supervisor mode: no SMP, no user mode
+	  threads and no MMU-based virtual memory. MPU stack guards and other
+	  memory protection that does not create user mode threads remain
+	  available.
+
+config KERNEL_SCOPE_UP_USERSPACE
+	bool "Uniprocessor with user mode threads"
+	help
+	  One CPU with user mode threads isolated by MPU or PMP regions: no
+	  SMP, no MMU-based virtual memory and no kernel objects allocated at
+	  run time.
+
+endchoice
+
+config KERNEL_SCOPE_SMP
+	bool
+	default y if KERNEL_SCOPE_FULL
+	help
+	  Symmetric multiprocessing is within the selected kernel scope.
+
+config KERNEL_SCOPE_USERSPACE
+	bool
+	default y if KERNEL_SCOPE_FULL || KERNEL_SCOPE_UP_USERSPACE
+	help
+	  User mode threads are within the selected kernel scope.
+
+config KERNEL_SCOPE_MMU
+	bool
+	default y if KERNEL_SCOPE_FULL
+	help
+	  MMU-based virtual memory is within the selected kernel scope.
+
+config KERNEL_SCOPE_DYNAMIC_OBJECTS
+	bool
+	default y if KERNEL_SCOPE_FULL
+	help
+	  Kernel objects allocated at run time are within the selected kernel
+	  scope.

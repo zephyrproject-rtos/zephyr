@@ -62,6 +62,7 @@ else()
     mem_slab.c
     float.c
     version.c
+    scope.c
     )
 
   # Toolchain workaround: on ARM Thumb, when frame pointers are enabled,

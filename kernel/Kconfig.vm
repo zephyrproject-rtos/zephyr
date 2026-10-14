@@ -103,6 +103,7 @@ menu "MMU Features"
 config MMU
 	bool
 	depends on CPU_HAS_MMU
+	depends on KERNEL_SCOPE_MMU
 	select KERNEL_VM_SUPPORT
 	help
 	  This option is enabled when the CPU's memory management unit is active
