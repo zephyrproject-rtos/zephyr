@@ -19,7 +19,14 @@ int video_set_frmival(const struct device *dev, struct video_frmival *frmival)
 	}
 
 	while (true) {
-		struct video_frmival_enum fie = {.discrete = *frmival};
+		/* TODO: arbitrary choice of picking output format for validattion purpose */
+		struct video_format fmt = {.type = VIDEO_BUF_TYPE_OUTPUT};
+		struct video_frmival_enum fie = {.discrete = *frmival, .format = &fmt};
+
+		ret = video_get_format(dev, &fmt);
+		if (ret != 0) {
+			return ret;
+		}
 
 		ret = video_closest_frmival(vdev->dev, &fie);
 		if (ret != 0 && ret != -ENOSYS) {
@@ -27,17 +34,24 @@ int video_set_frmival(const struct device *dev, struct video_frmival *frmival)
 		}
 
 		ret = video_driver_set_frmival(vdev->dev, &fie.discrete, fie.index);
-		if (ret == 0 || ret != -ENOSYS) {
+		if (ret == 0) {
+			break;
+		}
+		if (ret != -ENOSYS) {
 			return ret;
 		}
 
 		if (vdev->source_dev == NULL) {
-			break;
+			return -ENOSYS;
 		}
 		vdev = vdev->source_dev->data;
 	}
 
-	return -ENOSYS;
+	/* Cache the frame interval, now that it was accepted */
+	vdev = dev->data;
+	vdev->frmival = *frmival;
+
+	return 0;
 }
 
 int video_get_frmival(const struct device *dev, struct video_frmival *frmival)
@@ -61,7 +75,11 @@ int video_get_frmival(const struct device *dev, struct video_frmival *frmival)
 		vdev = vdev->source_dev->data;
 	}
 
-	return -ENOSYS;
+	/* No driver implements dynamic framerate or frame dropping, use the cached value */
+	vdev = dev->data;
+	*frmival = vdev->frmival;
+
+	return 0;
 }
 
 int video_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
