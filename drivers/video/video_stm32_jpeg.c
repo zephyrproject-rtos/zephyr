@@ -39,6 +39,7 @@ struct video_m2m_common {
 #define GRAYSCALE_MCU_BLOCK_SIZE 64  /* 1 byte per pixel (8x8) */
 
 struct stm32_jpeg_data {
+	struct video_device vdev; /* keep first */
 	const struct device *dev;
 	struct video_m2m_common m2m;
 	JPEG_HandleTypeDef hjpeg;
@@ -595,6 +596,7 @@ static void stm32_jpeg_isr(const struct device *dev)
 	}                                                                                          \
                                                                                                    \
 	static struct stm32_jpeg_data stm32_jpeg_data_##n = {                                      \
+		.vdev = VIDEO_DEVICE_INIT(stm32_jpeg_data_##n, DEVICE_DT_INST_GET(n), NULL),       \
 		.hjpeg = {.Instance = (JPEG_TypeDef *)DT_INST_REG_ADDR(n)},                        \
 	};                                                                                         \
                                                                                                    \
@@ -606,8 +608,6 @@ static void stm32_jpeg_isr(const struct device *dev)
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &stm32_jpeg_init, NULL, &stm32_jpeg_data_##n,                     \
 			      &stm32_jpeg_config_##n, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,     \
-			      &stm32_jpeg_driver_api);                                             \
-                                                                                                   \
-	VIDEO_DEVICE_DEFINE(jpeg_##n, DEVICE_DT_INST_GET(n), NULL);
+			      &stm32_jpeg_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_JPEG_INIT)

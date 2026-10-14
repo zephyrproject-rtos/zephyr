@@ -184,6 +184,7 @@ struct ov7725_config {
 };
 
 struct ov7725_data {
+	struct video_device vdev; /* keep first */
 	struct video_format fmt;
 };
 
@@ -604,7 +605,9 @@ static const struct ov7725_config ov7725_cfg_0 = {
 	.reset_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
 #endif
 };
-static struct ov7725_data ov7725_data_0;
+static struct ov7725_data ov7725_data_0 = {
+	.vdev = VIDEO_DEVICE_INIT(ov7725_data_0, DEVICE_DT_GET(0), NULL),
+};
 
 static int ov7725_init_0(const struct device *dev)
 {
@@ -630,5 +633,3 @@ DEVICE_DT_INST_DEFINE(0, &ov7725_init_0, NULL,
 		    &ov7725_data_0, &ov7725_cfg_0,
 		    POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,
 		    &ov7725_driver_api);
-
-VIDEO_DEVICE_DEFINE(ov7725, DEVICE_DT_INST_GET(0), NULL);

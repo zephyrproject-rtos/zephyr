@@ -226,6 +226,7 @@ struct hm01b0_ctrls {
 };
 
 struct hm01b0_data {
+	struct video_device vdev; /* keep first */
 	struct hm01b0_ctrls ctrls;
 	struct video_format fmt;
 };
@@ -601,10 +602,13 @@ static int hm01b0_init(const struct device *dev)
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                                              \
 		.ctrl_val = HM01B0_CTRL_VAL(DT_INST_PROP(inst, data_bits))                      \
 	};                                                                                      \
-	struct hm01b0_data hm01b0_data_##inst;                                                  \
+	                                                                                        \
+	struct hm01b0_data hm01b0_data_##inst = {                                               \
+		.vdev = VIDEO_DEVICE_INIT(hm01b0_data_##inst, DEVICE_DT_GET(inst), NULL),       \
+	};                                                                                      \
+	                                                                                        \
 	DEVICE_DT_INST_DEFINE(inst, &hm01b0_init, NULL, &hm01b0_data_##inst,                    \
 			      &hm01b0_config_##inst, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,   \
-			      &hm01b0_driver_api);                                              \
-	VIDEO_DEVICE_DEFINE(hm01b0_##inst, DEVICE_DT_INST_GET(inst), NULL);
+			      &hm01b0_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(HM01B0_INIT)

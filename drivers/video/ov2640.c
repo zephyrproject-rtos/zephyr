@@ -551,6 +551,7 @@ struct ov2640_ctrls {
 };
 
 struct ov2640_data {
+	struct video_device vdev; /* keep first */
 	struct ov2640_ctrls ctrls;
 	struct video_format fmt;
 };
@@ -1175,7 +1176,9 @@ static const struct ov2640_config ov2640_cfg_0 = {
 #endif
 	.clock_rate_control = DT_INST_PROP(0, clock_rate_control),
 };
-static struct ov2640_data ov2640_data_0;
+static struct ov2640_data ov2640_data_0 = {
+	.vdev = VIDEO_DEVICE_INIT(ov2640_data_0, DEVICE_DT_GET(0), NULL),
+};
 
 static int ov2640_init_0(const struct device *dev)
 {
@@ -1211,5 +1214,3 @@ static int ov2640_init_0(const struct device *dev)
 
 DEVICE_DT_INST_DEFINE(0, &ov2640_init_0, NULL, &ov2640_data_0, &ov2640_cfg_0, POST_KERNEL,
 		      CONFIG_VIDEO_INIT_PRIORITY, &ov2640_driver_api);
-
-VIDEO_DEVICE_DEFINE(ov2640, DEVICE_DT_INST_GET(0), NULL);

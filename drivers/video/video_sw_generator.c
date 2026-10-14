@@ -73,6 +73,7 @@ static const uint8_t h264_start_code_4[] = {0x00, 0x00, 0x00, 0x01};
 #endif
 
 struct video_sw_generator_data {
+	struct video_device vdev; /* keep first */
 	const struct device *dev;
 	struct sw_ctrls ctrls;
 	struct video_format fmt;
@@ -807,6 +808,8 @@ static int video_sw_generator_init(const struct device *dev)
 
 #define VIDEO_SW_GENERATOR_DEFINE(n)                                                               \
 	static struct video_sw_generator_data video_sw_generator_data_##n = {                      \
+		.vdev = VIDEO_DEVICE_INIT(video_sw_generator_data_##n,                             \
+					  DEVICE_DT_INST_GET(n), NULL),                            \
 		.fmt.width = DEFAULT_FRAME_WIDTH,                                                  \
 		.fmt.height = DEFAULT_FRAME_HEIGHT,                                                \
 		.fmt.pitch = DEFAULT_FRAME_WIDTH * 2,                                              \
@@ -817,8 +820,6 @@ static int video_sw_generator_init(const struct device *dev)
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &video_sw_generator_init, NULL, &video_sw_generator_data_##n,     \
 			      NULL, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,                       \
-			      &video_sw_generator_driver_api);                                     \
-                                                                                                   \
-	VIDEO_DEVICE_DEFINE(video_sw_generator_##n, DEVICE_DT_INST_GET(n), NULL);
+			      &video_sw_generator_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VIDEO_SW_GENERATOR_DEFINE)

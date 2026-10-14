@@ -96,5 +96,3 @@ endif()
 if(CONFIG_VIDEO_NATIVE_SIM_FIFO)
   target_sources(native_simulator INTERFACE video_native_sim_fifo_bottom.c)
 endif()
-
-zephyr_linker_sources(DATA_SECTIONS video.ld)

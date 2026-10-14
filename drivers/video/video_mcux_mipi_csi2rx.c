@@ -29,6 +29,7 @@ struct mipi_csi2rx_config {
 };
 
 struct mipi_csi2rx_data {
+	struct video_device vdev; /* keep first */
 	csi2rx_config_t csi2rxConfig;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_root;
@@ -313,6 +314,7 @@ static int mipi_csi2rx_init(const struct device *dev)
 
 #define MIPI_CSI2RX_INIT(n)                                                                        \
 	static struct mipi_csi2rx_data mipi_csi2rx_data_##n = {                                    \
+		.vdev = VIDEO_DEVICE_INIT(mipi_csi2rx_data_##n, DEVICE_DT_INST_GET(n), NULL),      \
 		.csi2rxConfig.laneNum = DT_PROP_LEN(DT_INST_ENDPOINT_BY_ID(n, 1, 0), data_lanes),  \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
 		.clock_root = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_IDX(n, 0, name),      \
@@ -328,8 +330,6 @@ static int mipi_csi2rx_init(const struct device *dev)
 	DEVICE_DT_INST_DEFINE(n, &mipi_csi2rx_init, NULL, &mipi_csi2rx_data_##n,                   \
 			      &mipi_csi2rx_config_##n, POST_KERNEL,                                \
 			      CONFIG_VIDEO_MCUX_MIPI_CSI2RX_INIT_PRIORITY,                         \
-			      &mipi_csi2rx_driver_api);                                            \
-                                                                                                   \
-	VIDEO_DEVICE_DEFINE(mipi_csi2rx_##n, DEVICE_DT_INST_GET(n), SOURCE_DEV(n));
+			      &mipi_csi2rx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MIPI_CSI2RX_INIT)

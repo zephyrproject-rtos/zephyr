@@ -96,6 +96,7 @@ struct stm32_venc_ewl {
 static struct stm32_venc_ewl ewl_instance;
 
 struct stm32_venc_data {
+	struct video_device vdev; /* keep first */
 	const struct device *dev;
 	struct k_mutex lock;
 	struct video_format in_fmt;
@@ -812,7 +813,9 @@ static void stm32_venc_irq_config_func(const struct device *dev)
 	irq_enable(DT_INST_IRQN(0));
 }
 
-static struct stm32_venc_data stm32_venc_data_0 = {};
+static struct stm32_venc_data stm32_venc_data_0 = {
+	.vdev = VIDEO_DEVICE_INIT(stm32_venc_data_0, DEVICE_DT_INST_GET(n), NULL),
+};
 
 static const struct stm32_venc_config stm32_venc_config_0 = {
 	.reg = DT_INST_REG_ADDR(0),

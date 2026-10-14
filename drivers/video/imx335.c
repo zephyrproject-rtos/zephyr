@@ -55,6 +55,7 @@ struct imx335_ctrls {
 };
 
 struct imx335_data {
+	struct video_device vdev; /* keep first */
 	struct imx335_ctrls ctrls;
 	struct video_format fmt;
 	uint32_t frame_rate;
@@ -819,6 +820,7 @@ static int imx335_init(const struct device *dev)
 
 #define IMX335_INIT(n)										\
 	static struct imx335_data imx335_data_##n = {						\
+		.vdev = VIDEO_DEVICE_INIT(imx335_data_##n, DEVICE_DT_GET(n), NULL),		\
 		.fmt = {									\
 			.pixelformat = VIDEO_PIX_FMT_SRGGB10P,					\
 			.width = IMX335_NATIVE_WIDTH,						\
@@ -834,8 +836,6 @@ static int imx335_init(const struct device *dev)
 	};											\
 												\
 	DEVICE_DT_INST_DEFINE(n, &imx335_init, NULL, &imx335_data_##n, &imx335_cfg_##n,		\
-			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &imx335_driver_api);	\
-												\
-	VIDEO_DEVICE_DEFINE(imx335_##n, DEVICE_DT_INST_GET(n), NULL);
+			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &imx335_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IMX335_INIT)

@@ -40,6 +40,7 @@ struct video_stm32_dcmi_ctrls {
 };
 
 struct video_stm32_dcmi_data {
+	struct video_device vdev; /* keep first */
 	const struct device *dev;
 	DCMI_HandleTypeDef hdcmi;
 	struct video_format fmt;
@@ -619,28 +620,29 @@ PINCTRL_DT_INST_DEFINE(0);
 	},
 
 static struct video_stm32_dcmi_data video_stm32_dcmi_data_0 = {
+	.vdev = VIDEO_DEVICE_INIT(video_stm32_dcmi_data_0, DEVICE_DT_INST_GET(0), NULL),
 	.hdcmi = {
 		.Instance = (DCMI_TypeDef *) DT_INST_REG_ADDR(0),
 		.Init = {
-				.SynchroMode = DCMI_SYNCHRO_HARDWARE,
-				.PCKPolarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(0, 0, 0),
-							  pclk_sample, 0) ?
-							  DCMI_PCKPOLARITY_RISING :
-							  DCMI_PCKPOLARITY_FALLING,
-				.HSPolarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(0, 0, 0),
-							 hsync_active, 0) ?
-							 DCMI_HSPOLARITY_HIGH : DCMI_HSPOLARITY_LOW,
-				.VSPolarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(0, 0, 0),
-							 vsync_active, 0) ?
-							 DCMI_VSPOLARITY_HIGH : DCMI_VSPOLARITY_LOW,
-				.ExtendedDataMode = STM32_DCMI_GET_BUS_WIDTH(
-							DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(0, 0, 0),
-								   bus_width, 8)),
-				.JPEGMode = DCMI_JPEG_DISABLE,
-				.ByteSelectMode = DCMI_BSM_ALL,
-				.ByteSelectStart = DCMI_OEBS_ODD,
-				.LineSelectMode = DCMI_LSM_ALL,
-				.LineSelectStart = DCMI_OELS_ODD,
+			.SynchroMode = DCMI_SYNCHRO_HARDWARE,
+			.PCKPolarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(0, 0, 0),
+						  pclk_sample, 0) ?
+						  DCMI_PCKPOLARITY_RISING :
+						  DCMI_PCKPOLARITY_FALLING,
+			.HSPolarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(0, 0, 0),
+						 hsync_active, 0) ?
+						 DCMI_HSPOLARITY_HIGH : DCMI_HSPOLARITY_LOW,
+			.VSPolarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(0, 0, 0),
+						 vsync_active, 0) ?
+						 DCMI_VSPOLARITY_HIGH : DCMI_VSPOLARITY_LOW,
+			.ExtendedDataMode = STM32_DCMI_GET_BUS_WIDTH(
+						DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(0, 0, 0),
+							   bus_width, 8)),
+			.JPEGMode = DCMI_JPEG_DISABLE,
+			.ByteSelectMode = DCMI_BSM_ALL,
+			.ByteSelectStart = DCMI_OEBS_ODD,
+			.LineSelectMode = DCMI_LSM_ALL,
+			.LineSelectStart = DCMI_OELS_ODD,
 		},
 	},
 	DCMI_DMA_CHANNEL(0, PERIPHERAL, MEMORY)
@@ -716,5 +718,3 @@ DEVICE_DT_INST_DEFINE(0, &video_stm32_dcmi_init,
 		    &video_stm32_dcmi_config_0,
 		    POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,
 		    &video_stm32_dcmi_driver_api);
-
-VIDEO_DEVICE_DEFINE(dcmi, DEVICE_DT_INST_GET(0), SOURCE_DEV(0));

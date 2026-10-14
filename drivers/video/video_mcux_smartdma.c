@@ -36,6 +36,7 @@ struct nxp_video_sdma_config {
 #define SDMA_VBUF_WIDTH 320
 
 struct nxp_video_sdma_data {
+	struct video_device vdev; /* keep first */
 	/* Must be aligned on 4 byte boundary, as lower 2 bits of ARM2SDMA register
 	 * are used to enable interrupts
 	 */
@@ -316,13 +317,12 @@ static DEVICE_API(video, nxp_video_sdma_api) = {
 		.pclk_pin = DT_INST_PROP(inst, pclk_pin),                                          \
 	};                                                                                         \
 	struct nxp_video_sdma_data sdma_data_##inst = {                                            \
+		.vdev = VIDEO_DEVICE_INIT(video_sdma_data_##inst, DEVICE_DT_INST_GET(n), NULL),    \
 		.config = &sdma_config_##inst,                                                     \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, nxp_video_sdma_init, NULL, &sdma_data_##inst,                  \
 			      &sdma_config_##inst, POST_KERNEL,                                    \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &nxp_video_sdma_api);            \
-                                                                                                   \
-	VIDEO_DEVICE_DEFINE(sdma_##inst, DEVICE_DT_INST_GET(inst), SOURCE_DEV(inst));
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &nxp_video_sdma_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NXP_VIDEO_SDMA_INIT)

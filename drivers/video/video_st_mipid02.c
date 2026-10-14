@@ -32,6 +32,7 @@ struct mipid02_config {
 };
 
 struct mipid02_data {
+	struct video_device vdev; /* keep first */
 	struct video_format fmt;
 	const struct mipid02_format_desc *desc;
 	struct video_format_cap *caps;
@@ -423,14 +424,16 @@ static int mipid02_init(const struct device *dev)
 #define SOURCE_DEV(n) DEVICE_DT_GET(DT_NODE_REMOTE_DEVICE(DT_INST_ENDPOINT_BY_ID(n, 0, 0)))
 
 #define MIPID02_INIT(n)										\
-	static struct mipid02_data mipid02_data_##n;						\
+	static struct mipid02_data mipid02_data_##n = {						\
+		.vdev = VIDEO_DEVICE_INIT(mipid02_data_##n, DEVICE_DT_GET(n), SOURCE_DEV(n));	\
+	};											\
 												\
 	static const struct mipid02_config mipid02_cfg_##n = {					\
 		.i2c = I2C_DT_SPEC_INST_GET(n),							\
 		.source_dev = SOURCE_DEV(n),							\
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),			\
 		.csi.nb_lanes = DT_PROP_LEN(DT_INST_ENDPOINT_BY_ID(n, 0, 0), data_lanes),	\
-		.csi.lanes[0] = DT_PROP_BY_IDX(DT_INST_ENDPOINT_BY_ID(n, 0, 0),		\
+		.csi.lanes[0] = DT_PROP_BY_IDX(DT_INST_ENDPOINT_BY_ID(n, 0, 0),			\
 					       data_lanes, 0),					\
 		.csi.lanes[1] = COND_CODE_1(DT_PROP_LEN(DT_INST_ENDPOINT_BY_ID(n, 0, 0),	\
 							data_lanes),				\
@@ -446,8 +449,6 @@ static int mipid02_init(const struct device *dev)
 	};											\
 												\
 	DEVICE_DT_INST_DEFINE(n, &mipid02_init, NULL, &mipid02_data_##n, &mipid02_cfg_##n,	\
-			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &mipid02_driver_api);	\
-												\
-	VIDEO_DEVICE_DEFINE(mipid02_##n, DEVICE_DT_INST_GET(n), NULL);
+			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &mipid02_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MIPID02_INIT)

@@ -76,6 +76,7 @@ enum stm32_dcmipp_state {
 #define STM32_DCMIPP_MAX_PIPE_SCALE_FACTOR (STM32_DCMIPP_MAX_PIPE_DEC_FACTOR * \
 					    STM32_DCMIPP_MAX_PIPE_DSIZE_FACTOR)
 struct stm32_dcmipp_pipe_data {
+	struct video_device vdev; /* keep first */
 	const struct device *dev;
 	uint32_t id;
 	struct stm32_dcmipp_data *dcmipp;
@@ -1804,6 +1805,8 @@ static void stm32_dcmipp_csi_isr(const struct device *dev)
 
 #define DCMIPP_PIPE_INIT_DEFINE(node_id, inst)						\
 	static struct stm32_dcmipp_pipe_data stm32_dcmipp_pipe_##node_id = {		\
+		.vdev = VIDEO_DEVICE_INIT(stm32_dcmipp_pipe_##node_id,			\
+					  DEVICE_DT_GET(node_id), SOURCE_DEV(inst));	\
 		.id = DT_NODE_CHILD_IDX(node_id),					\
 		.dcmipp = &stm32_dcmipp_data_##inst,					\
 	};										\
@@ -1811,10 +1814,9 @@ static void stm32_dcmipp_csi_isr(const struct device *dev)
 	DEVICE_DT_DEFINE(node_id, &stm32_dcmipp_pipe_init, NULL,			\
 			 &stm32_dcmipp_pipe_##node_id,					\
 			 &stm32_dcmipp_config_##inst,					\
-			 POST_KERNEL, CONFIG_VIDEO_STM32_DCMIPP_INIT_PRIORITY,			\
+			 POST_KERNEL, CONFIG_VIDEO_STM32_DCMIPP_INIT_PRIORITY,		\
 			 &stm32_dcmipp_driver_api);					\
 											\
-	VIDEO_DEVICE_DEFINE(dcmipp_##inst_pipe_##node_id, DEVICE_DT_GET(node_id), SOURCE_DEV(inst));
 
 #if defined(STM32_DCMIPP_HAS_CSI)
 #define STM32_DCMIPP_CSI_DT_PARAMS(inst)							\

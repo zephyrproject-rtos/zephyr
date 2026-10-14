@@ -234,6 +234,7 @@ struct arducam_mega_ctrls {
 };
 
 struct arducam_mega_data {
+	struct video_device vdev; /* keep first */
 	struct arducam_mega_ctrls ctrls;
 	struct video_format fmt;
 
@@ -1343,12 +1344,12 @@ static int arducam_mega_init(const struct device *dev)
 			SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8) | SPI_LINES_SINGLE | SPI_LOCK_ON),\
 	};                                                                                         \
                                                                                                    \
-	static struct arducam_mega_data arducam_mega_data_##inst;                                  \
+	static struct arducam_mega_data arducam_mega_data_##inst = {                               \
+		.vdev = VIDEO_DEVICE_INIT(arducam_mega_data_##inst, DEVICE_DT_GET(inst), NULL),    \
+	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, &arducam_mega_init, NULL, &arducam_mega_data_##inst,           \
 			      &arducam_mega_cfg_##inst, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,   \
-			      &arducam_mega_driver_api);                                           \
-                                                                                                   \
-	VIDEO_DEVICE_DEFINE(arducam_mega_##inst, DEVICE_DT_INST_GET(inst), NULL);
+			      &arducam_mega_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ARDUCAM_MEGA_INIT)

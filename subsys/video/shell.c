@@ -126,7 +126,7 @@ static int cmd_video_tree(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	for (int level = 0; dev != NULL; level++) {
-		vdev = video_find_vdev(dev);
+		vdev = dev->data;
 		if (vdev == NULL) {
 			shell_error(sh, "%s is not a valid video device", dev->name);
 			return -EINVAL;

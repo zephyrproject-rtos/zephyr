@@ -156,6 +156,7 @@ struct ov5642_ctrls {
 };
 
 struct ov5642_data {
+	struct video_device vdev; /* keep first */
 	struct ov5642_ctrls ctrls;
 	struct video_format fmt;
 };
@@ -930,7 +931,10 @@ static int ov5642_init(const struct device *dev)
 #endif
 
 #define OV5642_INIT(n)								\
-	static struct ov5642_data ov5642_data_##n;				\
+	static struct ov5642_data ov5642_data_##n = {				\
+		.vdev = VIDEO_DEVICE_INIT(ov5642_data_##n,			\
+					  DEVICE_DT_GET(n), NULL),		\
+	};									\
 										\
 	static const struct ov5642_config ov5642_cfg_##n = {			\
 		.i2c = I2C_DT_SPEC_INST_GET(n),					\
@@ -942,8 +946,6 @@ static int ov5642_init(const struct device *dev)
 	DEVICE_DT_INST_DEFINE(n, &ov5642_init, NULL, &ov5642_data_##n,		\
 			&ov5642_cfg_##n,					\
 			POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,		\
-			&ov5642_driver_api);					\
-										\
-			VIDEO_DEVICE_DEFINE(ov5642_##n, DEVICE_DT_INST_GET(n), NULL);
+			&ov5642_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(OV5642_INIT)

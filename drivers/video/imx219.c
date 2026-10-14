@@ -86,6 +86,7 @@ struct imx219_ctrls {
 };
 
 struct imx219_data {
+	struct video_device vdev; /* keep first */
 	struct imx219_ctrls ctrls;
 	struct video_format fmt;
 	int fps;
@@ -548,7 +549,9 @@ static int imx219_init(const struct device *dev)
 }
 
 #define IMX219_INIT(n)                                                                             \
-	static struct imx219_data imx219_data_##n;                                                 \
+	static struct imx219_data imx219_data_##n = {                                              \
+		.vdev = VIDEO_DEVICE_INIT(imx219_data_##n, DEVICE_DT_GET(n), NULL),                \
+	};                                                                                         \
                                                                                                    \
 	static const struct imx219_config imx219_cfg_##n = {                                       \
 		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
@@ -556,8 +559,6 @@ static int imx219_init(const struct device *dev)
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &imx219_init, NULL, &imx219_data_##n, &imx219_cfg_##n,            \
-			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &imx219_driver_api);        \
-                                                                                                   \
-	VIDEO_DEVICE_DEFINE(imx219_##n, DEVICE_DT_INST_GET(n), NULL);
+			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &imx219_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IMX219_INIT)

@@ -38,6 +38,7 @@ struct ov767x_ctrls {
 };
 
 struct ov767x_data {
+	struct video_device vdev; /* keep first */
 	struct ov767x_ctrls ctrls;
 	struct video_format fmt;
 };
@@ -800,13 +801,13 @@ static DEVICE_API(video, ov767x_api) = {
 		.pclk_hb_disable = DT_INST_PROP(inst, pclk_hb_disable),                            \
 		OV767X_RESET_GPIO(inst)	OV767X_PWDN_GPIO(inst)};                                   \
                                                                                                    \
-	static struct ov767x_data ov##id##_data##inst;                                             \
+	static struct ov767x_data ov##id##_data##inst = {                                          \
+		.vdev = VIDEO_DEVICE_INIT(ov##id##_data##inst, DEVICE_DT_GET(inst), NULL),         \
+	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, ov767x_init, NULL, &ov##id##_data##inst,                       \
 			      &ov##id##_config##inst, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,     \
-			      &ov767x_api);                                                        \
-                                                                                                   \
-	VIDEO_DEVICE_DEFINE(ov##id##inst, DEVICE_DT_INST_GET(inst), NULL);
+			      &ov767x_api);
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ovti_ov7670

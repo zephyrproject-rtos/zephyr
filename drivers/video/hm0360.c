@@ -32,6 +32,7 @@ struct hm0360_ctrls {
 };
 
 struct hm0360_data {
+	struct video_device vdev; /* keep first */
 	struct hm0360_ctrls ctrls;
 	struct video_format fmt;
 	uint16_t cur_frmrate;
@@ -887,14 +888,17 @@ static DEVICE_API(video, hm0360_api) = {
 #endif
 
 #define HM0360_INIT(inst)                                                                          \
-	const struct hm0360_config hm0360_config_##inst = {.bus = I2C_DT_SPEC_INST_GET(inst),      \
-							   HM0360_RESET_GPIO(inst)                 \
-								   HM0360_PWDN_GPIO(inst)};        \
-	struct hm0360_data hm0360_data_##inst;                                                     \
+	const struct hm0360_config hm0360_config_##inst = {                                        \
+		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
+		HM0360_RESET_GPIO(inst)                                                            \
+		HM0360_PWDN_GPIO(inst)                                                             \
+	};                                                                                         \
+                                                                                                   \
+	struct hm0360_data hm0360_data_##inst = {                                                  \
+		.vdev = VIDEO_DEVICE_INIT(hm0360_data_##inst, DEVICE_DT_GET(inst), NULL),          \
+	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, hm0360_init, NULL, &hm0360_data_##inst, &hm0360_config_##inst, \
-			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &hm0360_api);               \
-                                                                                                   \
-	VIDEO_DEVICE_DEFINE(hm0360_##inst, DEVICE_DT_INST_GET(inst), NULL);
+			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &hm0360_api);
 
 DT_INST_FOREACH_STATUS_OKAY(HM0360_INIT)

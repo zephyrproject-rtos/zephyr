@@ -79,6 +79,7 @@ struct video_nsi_fifo_config {
 };
 
 struct video_nsi_fifo_data {
+	struct video_device vdev; /* keep first */
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
 	struct k_thread thread;
@@ -515,13 +516,14 @@ static int video_nsi_fifo_init(const struct device *dev)
 		.poll_interval_ms = DT_INST_PROP(inst, poll_interval_ms),                          \
 	};                                                                                         \
                                                                                                    \
-	static struct video_nsi_fifo_data video_nsi_fifo_data_##inst;                              \
+	static struct video_nsi_fifo_data video_nsi_fifo_data_##inst = {                           \
+		.vdev = VIDEO_DEVICE_INIT(video_nsi_fifo_data_##inst,                              \
+					  DEVICE_DT_INST_GET(n), NULL),                            \
+	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, video_nsi_fifo_init, NULL, &video_nsi_fifo_data_##inst,        \
 			      &video_nsi_fifo_config_##inst, POST_KERNEL,                          \
 			      CONFIG_VIDEO_INIT_PRIORITY, &video_nsi_fifo_driver_api);             \
-                                                                                                   \
-	VIDEO_DEVICE_DEFINE(video_nsi_fifo_##inst, DEVICE_DT_INST_GET(inst), NULL);                \
                                                                                                    \
 	static void video_nsi_fifo_cleanup_##inst(void)                                            \
 	{                                                                                          \

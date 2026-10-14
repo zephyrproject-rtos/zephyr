@@ -25,6 +25,7 @@ struct emul_rx_config {
 };
 
 struct emul_rx_data {
+	struct video_device vdev; /* keep first */
 	const struct device *dev;
 	struct video_format fmt;
 	struct k_work work;
@@ -237,12 +238,11 @@ int emul_rx_init(const struct device *dev)
 	};                                                                                         \
                                                                                                    \
 	static struct emul_rx_data emul_rx_data_##n = {                                            \
+		.vdev = VIDEO_DEVICE_INIT(emul_rx_data_##n, DEVICE_DT_GET(n), SOURCE_DEV(n)),      \
 		.dev = DEVICE_DT_INST_GET(n),                                                      \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &emul_rx_init, NULL, &emul_rx_data_##n, &emul_rx_cfg_##n,         \
-			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &emul_rx_driver_api);       \
-                                                                                                   \
-	VIDEO_DEVICE_DEFINE(emul_rx_##n, DEVICE_DT_INST_GET(n), SOURCE_DEV(n));
+			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &emul_rx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(EMUL_RX_DEFINE)

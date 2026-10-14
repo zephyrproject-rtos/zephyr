@@ -53,6 +53,7 @@ struct video_renesas_ra_ceu_config {
 };
 
 struct video_renesas_ra_ceu_data {
+	struct video_device vdev; /* keep first */
 	struct st_ceu_instance_ctrl *fsp_ctrl;
 	struct st_capture_cfg *fsp_cfg;
 	struct st_ceu_extended_cfg *fsp_extend_cfg;
@@ -515,6 +516,8 @@ static DEVICE_API(video, video_renesas_ra_ceu_driver_api) = {
 	};                                                                                         \
                                                                                                    \
 	static struct video_renesas_ra_ceu_data video_renesas_ra_ceu_data##inst = {                \
+		.vdev = VIDEO_DEVICE_INIT(video_renesas_ra_ceu_data##inst,                         \
+					  DEVICE_DT_INST_GET(n), NULL),                            \
 		.fsp_ctrl = &video_renesas_ra_ceu_fsp_ctrl##inst,                                  \
 		.fsp_cfg = &video_renesas_ra_ceu_fsp_cfg##inst,                                    \
 		.fsp_extend_cfg = &video_renesas_ra_ceu_fsp_extend_cfg##inst,                      \
@@ -524,8 +527,6 @@ static DEVICE_API(video, video_renesas_ra_ceu_driver_api) = {
 			      &video_renesas_ra_ceu_data##inst,                                    \
 			      &video_renesas_ra_ceu_config##inst, POST_KERNEL,                     \
 			      CONFIG_VIDEO_INIT_PRIORITY, &video_renesas_ra_ceu_driver_api);       \
-                                                                                                   \
-	VIDEO_DEVICE_DEFINE(renesas_ra_ceu##inst, DEVICE_DT_INST_GET(inst), SOURCE_DEV(inst));     \
                                                                                                    \
 	SYS_INIT(video_renesas_ra_ceu_cam_clock_init##inst, POST_KERNEL,                           \
 		 CONFIG_CLOCK_CONTROL_PWM_INIT_PRIORITY);

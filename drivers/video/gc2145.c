@@ -766,6 +766,7 @@ struct gc2145_ctrls {
 };
 
 struct gc2145_data {
+	struct video_device vdev; /* keep first */
 	struct gc2145_ctrls ctrls;
 	struct video_format fmt;
 	struct video_rect crop;
@@ -1413,7 +1414,10 @@ static int gc2145_init(const struct device *dev)
 #endif
 
 #define GC2145_INIT(n)										\
-	static struct gc2145_data gc2145_data_##n;						\
+	static struct gc2145_data gc2145_data_##n = {						\
+		.vdev = VIDEO_DEVICE_INIT(gc2145_data_##n, DEVICE_DT_GET(n), NULL),             \
+	};											\
+												\
 	static const struct gc2145_config gc2145_cfg_##n = {					\
 		.i2c = I2C_DT_SPEC_INST_GET(n),							\
 		GC2145_GET_PWDN_GPIO(n)								\
@@ -1423,8 +1427,6 @@ static int gc2145_init(const struct device *dev)
 	};											\
 												\
 	DEVICE_DT_INST_DEFINE(n, &gc2145_init, NULL, &gc2145_data_##n, &gc2145_cfg_##n,		\
-			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &gc2145_driver_api);	\
-												\
-	VIDEO_DEVICE_DEFINE(gc2145_##n, DEVICE_DT_INST_GET(n), NULL);
+			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &gc2145_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GC2145_INIT)
