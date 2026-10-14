@@ -313,12 +313,17 @@ config XTENSA_SYSCALL_USE_HELPER_ALL
 
 config XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE
 	bool "Emulate unsupported unsigned loads / stores"
-	depends on COMPILER_CODEGEN_VLIW_DISABLED
 	help
 	  When an unsigned load / store instruction triggers an unsupported
 	  load / store exception, the exception handler will perform the
 	  operation itself with supported word sized and aligned loads /
-	  stores. Does not currently support VLIW.
+	  stores.
+
+	  Note that compilers may pack multiple instructions into a single
+	  Very Long Instruction Word (VLIW). Exceptions caused by unsigned
+	  load/store operations in these VLIW instructions are not supported
+	  by this exception handler, so COMPILER_CODEGEN_VLIW_DISABLED must
+	  be set to prevent VLIW instruction generation.
 
 config XTENSA_INSECURE_USERSPACE
 	bool
