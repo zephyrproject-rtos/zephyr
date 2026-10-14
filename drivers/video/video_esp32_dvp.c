@@ -119,7 +119,7 @@ void video_esp32_dma_rx_done(const struct device *dev, void *user_data, uint32_t
 		return;
 	}
 
-	data->active_vbuf->timestamp = k_uptime_get_32();
+	data->active_buf->timestamp = k_uptime_get_32();
 	k_fifo_put(&data->fifo_out, data->active_vbuf);
 	VIDEO_ESP32_RAISE_OUT_SIG_IF_ENABLED(VIDEO_BUF_DONE)
 	data->active_vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
@@ -145,8 +145,8 @@ static int video_esp32_set_stream(const struct device *dev, bool enable, enum vi
 	if (!enable) {
 		LOG_DBG("Stop streaming");
 
-		if (video_stream_stop(cfg->source_dev, type)) {
-			LOG_ERR("Failed to start source device %s", cfg->source_dev->name);
+		if (video_stream_stop(data->vdev.source_dev, type)) {
+			LOG_ERR("Failed to start source device %s", data->vdev.source_dev->name);
 			return -EIO;
 		}
 
@@ -230,9 +230,9 @@ static int video_esp32_set_stream(const struct device *dev, bool enable, enum vi
 
 	cam_hal_start_streaming(&data->hal);
 
-	error = video_stream_start(cfg->source_dev, type);
+	error = video_stream_start(data->vdev.source_dev, type);
 	if (error) {
-		LOG_ERR("Failed to start source device %s", cfg->source_dev->name);
+		LOG_ERR("Failed to start source device %s", data->vdev.source_dev->name);
 		return error;
 	}
 	data->is_streaming = true;
@@ -258,7 +258,7 @@ static int video_esp32_get_fmt(const struct device *dev, struct video_format *fm
 
 	LOG_DBG("Get format");
 
-	ret = video_get_format(cfg->source_dev, fmt);
+	ret = video_get_format(data->vdev.source_dev, fmt);
 	if (ret < 0) {
 		LOG_ERR("Failed to get format from source");
 		return ret;
@@ -280,9 +280,9 @@ static int video_esp32_set_fmt(const struct device *dev, struct video_format *fm
 	struct video_esp32_data *data = dev->data;
 	int ret;
 
-	ret = video_set_format(cfg->source_dev, fmt);
+	ret = video_set_format(data->vdev.source_dev, fmt);
 	if (ret < 0) {
-		LOG_ERR("Failed to apply format to the source %s", cfg->source_dev->name);
+		LOG_ERR("Failed to apply format to the source %s", data->vdev.source_dev->name);
 		return ret;
 	}
 
@@ -383,21 +383,21 @@ static int video_esp32_set_frmival(const struct device *dev, struct video_frmiva
 {
 	const struct video_esp32_config *cfg = dev->config;
 
-	return video_set_frmival(cfg->source_dev, frmival);
+	return video_set_frmival(data->vdev.source_dev, frmival);
 }
 
 static int video_esp32_get_frmival(const struct device *dev, struct video_frmival *frmival)
 {
 	const struct video_esp32_config *cfg = dev->config;
 
-	return video_get_frmival(cfg->source_dev, frmival);
+	return video_get_frmival(data->vdev.source_dev, frmival);
 }
 
 static int video_esp32_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
 	const struct video_esp32_config *cfg = dev->config;
 
-	return video_enum_frmival(cfg->source_dev, fie);
+	return video_enum_frmival(data->vdev.source_dev, fie);
 }
 
 static int video_esp32_init(const struct device *dev)
@@ -429,12 +429,12 @@ int video_esp32_set_selection(const struct device *dev, struct video_selection *
 	const struct video_esp32_config *cfg = dev->config;
 	int ret;
 
-	ret = video_set_selection(cfg->source_dev, sel);
+	ret = video_set_selection(data->vdev.source_dev, sel);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = video_get_format(cfg->source_dev, &data->video_format);
+	ret = video_get_format(data->vdev.source_dev, &data->video_format);
 	if (ret < 0) {
 		LOG_ERR("Failed to get format from source device");
 		return ret;
@@ -447,7 +447,7 @@ int video_esp32_get_selection(const struct device *dev, struct video_selection *
 {
 	const struct video_esp32_config *cfg = dev->config;
 
-	return video_get_selection(cfg->source_dev, sel);
+	return video_get_selection(data->vdev.source_dev, sel);
 }
 
 static DEVICE_API(video, esp32_driver_api) = {
