@@ -11,6 +11,12 @@ zephyr_library_sources(
   client_lock.c
   layout_check.c
 )
+zephyr_library_sources_ifdef(CONFIG_IRONSIDE_TE_LOG_LEVEL
+  log.c
+)
+zephyr_library_sources_ifdef(CONFIG_IRONSIDE_TE_FAULT_LOGGING
+  boot_fault_log.c
+)
 
 if(CONFIG_PSA_CRYPTO_PROVIDER_IRONSIDE_TE)
   zephyr_library_sources(

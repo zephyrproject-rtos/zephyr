@@ -11,6 +11,26 @@ menuconfig IRONSIDE_TE_CLIENT
 	  Attestation, device management, the boot report and the platform
 	  services.
 
+if IRONSIDE_TE_CLIENT
+
+config IRONSIDE_TE_FAULT_LOGGING
+	bool "Log NS faults on reset"
+	depends on LOG
+	default y
+	help
+	  Read the boot report on boot and log the fault IronSide TE recorded, if any.
+	  When a fault is caught, IronSide TE takes it and resets the device.
+
+if IRONSIDE_TE_FAULT_LOGGING
+
+module = IRONSIDE_TE
+module-str = IronSide TE
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # IRONSIDE_TE_FAULT_LOGGING
+
+endif # IRONSIDE_TE_CLIENT
+
 choice PSA_CRYPTO_PROVIDER
 	default PSA_CRYPTO_PROVIDER_IRONSIDE_TE
 
