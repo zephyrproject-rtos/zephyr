@@ -10,12 +10,12 @@ zephyr_library_sources_ifdef(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_IMPLEMENTATION_
 zephyr_library_sources_ifdef(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_NONCE_PROVIDER_DEFAULT
   transform/aead_get_nonce.c
 )
-if(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_IMPLEMENTATION_AEAD AND
-   NOT CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_CRYPT_CUSTOM)
-  zephyr_library_sources(
-    transform/aead_crypt.c
-  )
-endif()
+zephyr_library_sources_ifdef(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_CRYPT_DRIVER_WRAPPER
+  transform/aead_crypt_driver_wrapper.c
+)
+zephyr_library_sources_ifdef(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_CRYPT_DERIVED_KEY
+  transform/aead_crypt_derived_key.c
+)
 if(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_SCHEME_AES_GCM OR
    CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_SCHEME_CHACHA20_POLY1305)
   zephyr_library_sources(
@@ -25,7 +25,7 @@ endif()
 if(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_DEVICE_ID_HASH OR
    CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_ENTRY_UID_HASH)
   zephyr_library_sources(
-    transform/aead_get_key.c
+    transform/aead_get_key_material.c
   )
 endif()
 if(NOT CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_NO_INSECURE_KEY_WARNING)

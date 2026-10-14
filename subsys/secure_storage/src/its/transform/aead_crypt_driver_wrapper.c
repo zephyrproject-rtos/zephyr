@@ -6,6 +6,12 @@
 
 BUILD_ASSERT(SECURE_STORAGE_ITS_TRANSFORM_AEAD_TAG_SIZE == 16);
 
+typedef psa_status_t aead_crypt_fn_t(const psa_key_attributes_t *attributes, const uint8_t *key,
+				     size_t key_size, psa_algorithm_t alg, const uint8_t *nonce,
+				     size_t nonce_length, const uint8_t *add_data,
+				     size_t add_data_len, const uint8_t *input, size_t input_len,
+				     uint8_t *output, size_t output_size, size_t *output_len);
+
 psa_status_t secure_storage_its_transform_aead_crypt(
 		psa_key_usage_t operation, secure_storage_its_uid_t uid,
 		const uint8_t nonce[static CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_NONCE_SIZE],
@@ -17,11 +23,7 @@ psa_status_t secure_storage_its_transform_aead_crypt(
 	uint8_t key[CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_SIZE];
 	psa_key_type_t key_type;
 	psa_algorithm_t alg;
-	psa_status_t (*aead_crypt)(const psa_key_attributes_t *attributes, const uint8_t *key,
-				   size_t key_size, psa_algorithm_t alg, const uint8_t *nonce,
-				   size_t nonce_length, const uint8_t *add_data,
-				   size_t add_data_len, const uint8_t *input, size_t input_len,
-				   uint8_t *output, size_t output_size, size_t *output_len);
+	aead_crypt_fn_t *aead_crypt;
 
 	secure_storage_its_transform_aead_get_scheme(&key_type, &alg);
 
@@ -39,7 +41,7 @@ psa_status_t secure_storage_its_transform_aead_crypt(
 	aead_crypt = (operation == PSA_KEY_USAGE_ENCRYPT) ?
 		      psa_driver_wrapper_aead_encrypt : psa_driver_wrapper_aead_decrypt;
 
-	ret = secure_storage_its_transform_aead_get_key(uid, key);
+	ret = secure_storage_its_transform_aead_get_key_material(uid, key);
 	if (ret != PSA_SUCCESS) {
 		goto exit;
 	}

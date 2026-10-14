@@ -31,12 +31,38 @@ config SECURE_STORAGE_ITS_TRANSFORM_OUTPUT_OVERHEAD
 
 if SECURE_STORAGE_ITS_TRANSFORM_IMPLEMENTATION_AEAD
 
+choice SECURE_STORAGE_ITS_TRANSFORM_AEAD_CRYPT
+	prompt "AEAD ITS transform module en/decrypt implementation"
+	default SECURE_STORAGE_ITS_TRANSFORM_AEAD_CRYPT_DRIVER_WRAPPER
+
+config SECURE_STORAGE_ITS_TRANSFORM_AEAD_CRYPT_DRIVER_WRAPPER
+	bool "PSA Crypto driver wrappers with the key provider's key material"
+	help
+	  Calls the PSA Crypto driver wrappers directly with the key material
+	  returned by the key provider, which keeps the keys out of the PSA Crypto
+	  key store. This is required when PSA Crypto stores its own persistent
+	  keys through this ITS.
+
+config SECURE_STORAGE_ITS_TRANSFORM_AEAD_CRYPT_DERIVED_KEY
+	bool "PSA Crypto API with a key derived from a key the integration provides"
+	depends on !MBEDTLS_PSA_CRYPTO_STORAGE_C
+	help
+	  Derives the encryption key once, through the PSA Crypto API, from a key
+	  that the integration names by implementing
+	  secure_storage_its_transform_aead_get_derivation_key(), declared in
+	  <zephyr/secure_storage/its/transform/aead.h>. The key material never
+	  leaves PSA Crypto, so this is only usable when PSA Crypto does not store
+	  its own persistent keys through this ITS, such as with an external
+	  provider.
+
 config SECURE_STORAGE_ITS_TRANSFORM_AEAD_CRYPT_CUSTOM
 	bool "Custom AEAD en/decrypt function"
 	help
 	  Implement the secure_storage_its_transform_aead_crypt() function
 	  declared in <zephyr/secure_storage/its/transform/aead.h>.
 	  The header is made available when this Kconfig option is enabled.
+
+endchoice # SECURE_STORAGE_ITS_TRANSFORM_AEAD_CRYPT
 
 config SECURE_STORAGE_ITS_TRANSFORM_AEAD_SCHEME_IS_CONFIGURABLE
 	bool
@@ -76,7 +102,7 @@ endchoice # SECURE_STORAGE_ITS_TRANSFORM_AEAD_SCHEME
 
 choice SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER
 	prompt "AEAD ITS transform module encryption key provider"
-	depends on !SECURE_STORAGE_ITS_TRANSFORM_AEAD_CRYPT_CUSTOM
+	depends on SECURE_STORAGE_ITS_TRANSFORM_AEAD_CRYPT_DRIVER_WRAPPER
 	default SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_DEVICE_ID_HASH if HWINFO_HAS_DRIVER
 	default SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_ENTRY_UID_HASH if !HWINFO_HAS_DRIVER
 
@@ -107,7 +133,7 @@ config SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_ENTRY_UID_HASH
 config SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_CUSTOM
 	bool "Custom key provider"
 	help
-	  Implement the secure_storage_its_transform_aead_get_key() function
+	  Implement the secure_storage_its_transform_aead_get_key_material() function
 	  declared in <zephyr/secure_storage/its/transform/aead.h>.
 	  The header is made available when this Kconfig option is enabled.
 

@@ -10,7 +10,8 @@
  * of the AEAD implementation of the ITS transform module.
  * They are not meant to be called directly other than by the AEAD ITS transform module.
  * This header file may and must be included when providing a custom implementation of one
- * or more of these functions (@kconfig_regex{CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_.*_CUSTOM}).
+ * or more of these functions (@kconfig_regex{CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_.*_CUSTOM}),
+ * or the key that @kconfig{CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_CRYPT_DERIVED_KEY} derives from.
  *
  * The functions declared here must not themselves call PSA Crypto functions that take key IDs
  * because the PSA Crypto implementation calls into the ITS to store persistent keys, so doing
@@ -60,20 +61,33 @@ void secure_storage_its_transform_aead_get_scheme(psa_key_type_t *key_type, psa_
 
 #endif /* CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_SCHEME_IS_CONFIGURABLE */
 
-#if !defined(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_CRYPT_CUSTOM) || defined(__DOXYGEN__)
+#if defined(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_CRYPT_DRIVER_WRAPPER) || defined(__DOXYGEN__)
 
-/** @brief Returns the encryption key to use for an ITS entry's AEAD operations.
+/** @brief Returns the encryption key material to use for an ITS entry's AEAD operations.
  *
  * @param[in]  uid The UID of the ITS entry for which the key is used.
  * @param[out] key The encryption key.
  *
  * @return `PSA_SUCCESS` on success, anything else on failure.
  */
-psa_status_t secure_storage_its_transform_aead_get_key(
+psa_status_t secure_storage_its_transform_aead_get_key_material(
 		secure_storage_its_uid_t uid,
 		uint8_t key[static CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_SIZE]);
 
-#endif /* SECURE_STORAGE_ITS_TRANSFORM_AEAD_CRYPT_CUSTOM */
+#endif /* CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_CRYPT_DRIVER_WRAPPER */
+
+#if defined(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_CRYPT_DERIVED_KEY) || defined(__DOXYGEN__)
+
+/** @brief Returns the key that the ITS entries' encryption key is derived from.
+ *
+ * @param[out] key_id The ID of the key, passed to `psa_key_derivation_input_key()`.
+ * @param[out] alg    The key derivation algorithm that the key permits, passed to
+ *                    `psa_key_derivation_setup()`. The HKDF and SP 800-108 algorithms are supported.
+ */
+void secure_storage_its_transform_aead_get_derivation_key(psa_key_id_t *key_id,
+							  psa_algorithm_t *alg);
+
+#endif /* CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_CRYPT_DERIVED_KEY */
 
 /** @brief Generates a nonce for an AEAD operation.
  *
