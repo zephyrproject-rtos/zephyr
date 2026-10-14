@@ -141,6 +141,8 @@ static int mcux_pngdec_set_fmt(const struct device *dev, struct video_format *fm
 	 * Note: It is assumed that all the following PNG frames in the stream have the
 	 * same sizes as the first one.
 	 */
+	fmt->pitch = 0;
+	fmt->size = 0;
 	if (data->first_frame_rcv) {
 		struct video_format *current_format =
 			(fmt->type == VIDEO_BUF_TYPE_INPUT) ? &(data->m2m.in.fmt) :

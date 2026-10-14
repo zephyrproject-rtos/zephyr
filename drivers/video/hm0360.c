@@ -576,8 +576,6 @@ static int hm0360_set_fmt(const struct device *dev, struct video_format *fmt, si
 		return 0;
 	}
 
-	memcpy(&data->fmt, fmt, sizeof(data->fmt));
-
 	switch (fmts[idx].width_min) {
 	case 160: /* QQVGA */
 		ret = video_write_cci_multiregs(&config->bus, hm0360_qqvga_regs,
@@ -595,8 +593,13 @@ static int hm0360_set_fmt(const struct device *dev, struct video_format *fmt, si
 		__ASSERT(false);
 		CODE_UNREACHABLE;
 	}
+	if (ret < 0) {
+		return ret;
+	}
 
-	return ret;
+	data->fmt = *fmt;
+
+	return 0;
 }
 
 static int hm0360_get_fmt(const struct device *dev, struct video_format *fmt)

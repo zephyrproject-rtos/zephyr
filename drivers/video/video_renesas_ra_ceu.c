@@ -109,16 +109,11 @@ static void video_renesas_ra_ceu_capture_stop(void)
 
 static int video_renesas_ra_ceu_get_format(const struct device *dev, struct video_format *fmt)
 {
-	const struct video_renesas_ra_ceu_config *config = dev->config;
-	int ret;
+	struct video_renesas_ra_ceu_data *data = dev->data;
 
-	ret = video_get_format(config->source_dev, fmt);
-	if (ret < 0) {
-		LOG_DBG("Failed to get video format from source device");
-		return ret;
-	}
+	*fmt = data->fmt;
 
-	return video_estimate_fmt_size(fmt);
+	return 0;
 }
 
 static int video_renesas_ra_ceu_set_format(const struct device *dev, struct video_format *fmt,
@@ -171,12 +166,7 @@ static int video_renesas_ra_ceu_set_format(const struct device *dev, struct vide
 		return -EIO;
 	}
 
-	ret = video_estimate_fmt_size(fmt);
-	if (ret < 0) {
-		return ret;
-	}
-
-	memcpy(&data->fmt, fmt, sizeof(struct video_format));
+	*fmt = data->fmt;
 
 	return 0;
 }

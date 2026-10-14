@@ -280,9 +280,6 @@ static int nxp_flexio_camera_set_format(const struct device *dev, struct video_f
 	FLEXIO_CAMERA_Init(&data->flexio_cam, &cam_cfg);
 	nxp_flexio_unlock(config->flexio_dev);
 
-	/* Compute pitch and full-frame size */
-	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
-	fmt->size  = fmt->pitch * fmt->height;
 	data->fmt  = *fmt;
 
 	/* Pre-build DMA config. dest_address and block_size are updated per line
@@ -313,23 +310,9 @@ static int nxp_flexio_camera_set_format(const struct device *dev, struct video_f
 static int nxp_flexio_camera_get_format(const struct device *dev,
 					struct video_format *fmt)
 {
-	const struct nxp_flexio_camera_config *config = dev->config;
 	struct nxp_flexio_camera_data *data = dev->data;
 
-	if (!device_is_ready(config->source_dev)) {
-		LOG_ERR("Source device not ready");
-		return -ENODEV;
-	}
-
-	int ret = video_get_format(config->source_dev, fmt);
-
-	if (ret < 0) {
-		return ret;
-	}
-
-	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
-	fmt->size  = fmt->pitch * fmt->height;
-	data->fmt  = *fmt;
+	*fmt = data->fmt;
 
 	return 0;
 }

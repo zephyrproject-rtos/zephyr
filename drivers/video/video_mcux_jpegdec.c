@@ -207,8 +207,12 @@ static int mcux_jpegdec_set_fmt(const struct device *dev, struct video_format *f
 	 * Note: It is assumed that all the following JPEG frames in the stream have the
 	 * same format as the first one.
 	 */
-	if (!data->first_frame_rcv) {
-		int ret;
+	fmt->size = 0;
+	fmt->pitch = 0;
+	if (data->first_frame_rcv) {
+		struct video_format *current_format =
+			(fmt->type == VIDEO_BUF_TYPE_INPUT) ? &(data->m2m.in.fmt) :
+			&(data->m2m.out.fmt);
 
 		if (fmt->type == VIDEO_BUF_TYPE_INPUT) {
 			if (fmt->pixelformat != VIDEO_PIX_FMT_JPEG) {
