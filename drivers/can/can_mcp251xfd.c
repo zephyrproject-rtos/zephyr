@@ -501,7 +501,12 @@ static int mcp251xfd_send(const struct device *dev, const struct can_frame *msg,
 	}
 
 	if ((msg->flags & CAN_FRAME_FDF) == 0 && msg->dlc > CAN_MAX_DLC) {
-		LOG_ERR("DLC of %d without fd flag set.", msg->dlc);
+		LOG_ERR("DLC of %d without FD flag set.", msg->dlc);
+		return -EINVAL;
+	}
+
+	if ((msg->flags & CAN_FRAME_FDF) != 0 && msg->dlc > CANFD_MAX_DLC) {
+		LOG_ERR("DLC of %d with FD flag set.", msg->dlc);
 		return -EINVAL;
 	}
 
