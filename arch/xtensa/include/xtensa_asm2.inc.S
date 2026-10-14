@@ -183,6 +183,10 @@
 	rsr.scompare1 \SCRATCH_REG
 	s32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_scompare1_OFFSET
 #endif
+#if XCHAL_HAVE_BOOLEANS
+	rsr.br \SCRATCH_REG
+	s32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_br_OFFSET
+#endif
 #if XCHAL_HAVE_THREADPTR && \
 	(defined(CONFIG_USERSPACE) || defined(CONFIG_THREAD_LOCAL_STORAGE))
 	rur.THREADPTR \SCRATCH_REG
@@ -217,6 +221,10 @@
 #if XCHAL_HAVE_S32C1I
 	l32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_scompare1_OFFSET
 	wsr.scompare1 \SCRATCH_REG
+#endif
+#if XCHAL_HAVE_BOOLEANS
+	l32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_br_OFFSET
+	wsr.br \SCRATCH_REG
 #endif
 #if XCHAL_HAVE_THREADPTR && \
 	(defined(CONFIG_USERSPACE) || defined(CONFIG_THREAD_LOCAL_STORAGE))
