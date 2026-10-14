@@ -27,6 +27,7 @@
 
 /* used for driver binding */
 #define DT_DRV_COMPAT amd_acp_sdw_dma
+extern bool acp_pdm_streams_stopped(void);
 
 LOG_MODULE_REGISTER(sw_dma_acp, CONFIG_DMA_LOG_LEVEL);
 
@@ -836,7 +837,6 @@ static int acp_sdw_dma_start(const struct device *dev, uint32_t channel)
 	struct acp_dma_chan_data *chan = &dev_data->chan_data[channel];
 	uint32_t acp_sdw0_audio_tx_en = 0;
 	uint32_t acp_sdw0_audio_rx_en = 0;
-	uint32_t acp_pdm_en;
 	uint32_t index = ACP_SDW_INVALID, instance = ACP_SDW_INVALID;
 
 #ifdef CONFIG_SOC_ACP_7_0
@@ -855,7 +855,6 @@ static int acp_sdw_dma_start(const struct device *dev, uint32_t channel)
 #endif
 
 #ifdef CONFIG_SOC_ACP_7_X
-	uint32_t clock_freq = ACP_ACLK_FREQ_HZ;
 	uint32_t rx_offset = 8; /* ACP 7.x uses index + 8 for receive */
 
 	/* Find matching pin data for ACP 7.x */
@@ -888,15 +887,17 @@ static int acp_sdw_dma_start(const struct device *dev, uint32_t channel)
 	acp_sdw_check_active_channels(&acp_sdw0_audio_tx_en, &acp_sdw0_audio_rx_en,
 				      rx_offset);
 
-	acp_pdm_en = (uint32_t)io_reg_read(PU_REGISTER_BASE + ACP_PDM_ENABLE);
-
-	if (!acp_sdw0_audio_tx_en && !acp_sdw0_audio_rx_en && !acp_pdm_en) {
-		acp_change_clock_notify(clock_freq);
+	/*
+	 * ACP 7.X firmware sets up the audio clocks once at boot in platform_init. Speaker and
+	 * DMIC can both see no active stream before either DMA enable sticks,
+	 * and reprogramming the clocks here stops the period interrupts.
+	 */
 #ifdef CONFIG_SOC_ACP_7_0
+	if (!acp_sdw0_audio_tx_en && !acp_sdw0_audio_rx_en && acp_pdm_streams_stopped()) {
+		acp_change_clock_notify(clock_freq);
 		io_reg_write(PU_REGISTER_BASE + ACP_CLKMUX_SEL, ACP_ACLK_CLK_SEL);
-#endif
 	}
-
+#endif
 	/* Start DMA based on direction */
 	switch (chan->direction) {
 	case MEMORY_TO_PERIPHERAL:
@@ -968,7 +969,6 @@ static int acp_sdw_dma_stop(const struct device *dev, uint32_t channel)
 	struct acp_dma_chan_data *chan = &dev_data->chan_data[channel];
 	uint32_t acp_sdw0_audio_tx_en = 0;
 	uint32_t acp_sdw0_audio_rx_en = 0;
-	uint32_t acp_pdm_en;
 	uint32_t index = ACP_SDW_INVALID, instance = ACP_SDW_INVALID;
 
 	switch (chan->state) {
@@ -1060,15 +1060,14 @@ static int acp_sdw_dma_stop(const struct device *dev, uint32_t channel)
 	acp_sdw_check_active_channels(&acp_sdw0_audio_tx_en, &acp_sdw0_audio_rx_en,
 				      rx_offset);
 
-	acp_pdm_en = io_reg_read(PU_REGISTER_BASE + ACP_PDM_ENABLE);
-
-	/* Request SMU to scale down aclk to minimum clk when no audio activity */
-	if (!acp_sdw0_audio_tx_en && !acp_sdw0_audio_rx_en && !acp_pdm_en) {
+		/* ACP 7.X keeps the boot clock setup across the last stop as well. */
+		/* Request SMU to scale down aclk to minimum clk when no audio activity */
 #ifdef CONFIG_SOC_ACP_7_0
+	if (!acp_sdw0_audio_tx_en && !acp_sdw0_audio_rx_en && acp_pdm_streams_stopped()) {
 		io_reg_write(PU_REGISTER_BASE + ACP_CLKMUX_SEL, ACP_INTERNAL_CLK_SEL);
-#endif
 		acp_change_clock_notify(0);
 	}
+#endif
 
 	/* Clear pin data for the stopped channel */
 #ifdef CONFIG_SOC_ACP_7_0
