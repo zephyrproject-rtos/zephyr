@@ -104,7 +104,6 @@ struct imx219_data {
 	struct video_device vdev; /* keep first */
 	struct imx219_ctrls ctrls;
 	struct video_format fmt;
-	uint32_t fps;
 };
 
 struct imx219_config {
@@ -200,7 +199,7 @@ static const struct video_reg imx219_pll_regs[] = {
  */
 static uint16_t imx219_frm_length(uint32_t height, uint32_t fps)
 {
-	uint32_t lines = IMX219_PIXEL_RATE_HZ / (IMX219_LINE_LENGTH * fps);
+	uint32_t lines = IMX219_PIXEL_RATE_HZ / IMX219_LINE_LENGTH / fps;
 
 	/* FRM_LENGTH_A is a 16-bit register */
 	return MIN(MAX(lines, height + IMX219_VBLANK_MIN), UINT16_MAX);
@@ -236,6 +235,7 @@ static int imx219_set_fmt(const struct device *dev, struct video_format *fmt, si
 {
 	const struct imx219_config *cfg = dev->config;
 	struct imx219_data *drv_data = dev->data;
+	uint32_t fps = NSEC_PER_SEC / video_frmival_nsec(&drv_data->vdev.frmival);
 	struct video_reg crop_regs[] = {
 		/* Image crop size */
 		{IMX219_CCI_X_ADD_STA_A, (IMX219_FULL_WIDTH - fmt->width) / 2},
@@ -248,7 +248,7 @@ static int imx219_set_fmt(const struct device *dev, struct video_format *fmt, si
 		{IMX219_CCI_Y_OUTPUT_SIZE, fmt->height},
 
 		/* Frame length for the frame rate in use, at least the new output size */
-		{IMX219_CCI_FRM_LENGTH_A, imx219_frm_length(fmt->height, drv_data->fps)},
+		{IMX219_CCI_FRM_LENGTH_A, imx219_frm_length(fmt->height, fps)},
 
 		/* Test pattern size */
 		{IMX219_CCI_TP_WINDOW_WIDTH, fmt->width},
@@ -306,20 +306,7 @@ static int imx219_get_caps(const struct device *dev, struct video_caps *caps)
 	return 0;
 }
 
-enum {
-	IMX219_30FPS_IDX,
-	IMX219_15FPS_IDX,
-};
-
-enum {
-	IMX219_30FPS = 30,
-	IMX219_15FPS = 15,
-};
-
-static const uint32_t imx219_framerates[] = {
-	[IMX219_30FPS_IDX] = IMX219_30FPS,
-	[IMX219_15FPS_IDX] = IMX219_15FPS,
-};
+static const uint32_t imx219_framerates[] = { 30, 15 };
 
 static int imx219_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
@@ -341,25 +328,13 @@ static int imx219_set_frmival(const struct device *dev, struct video_frmival *fr
 	int ret;
 
 	ret = video_write_cci_reg(&cfg->i2c, IMX219_CCI_FRM_LENGTH_A,
-				  imx219_frm_length(drv_data->fmt.height, drv_data->fps));
+				  imx219_frm_length(drv_data->fmt.height, imx219_framerates[idx]));
 	if (ret < 0) {
 		return ret;
 	}
 
-	drv_data->fps = imx219_framerates[idx];
-
 	frmival->numerator = 1;
-	frmival->denominator = imx219_frame_rate(drv_data->fmt.height, drv_data->fps);
-
-	return 0;
-}
-
-static int imx219_get_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	struct imx219_data *drv_data = dev->data;
-
-	frmival->numerator = 1;
-	frmival->denominator = imx219_frame_rate(drv_data->fmt.height, drv_data->fps);
+	frmival->denominator = imx219_frame_rate(drv_data->fmt.height, imx219_framerates[idx]);
 
 	return 0;
 }
@@ -413,7 +388,6 @@ static DEVICE_API(video, imx219_driver_api) = {
 	.get_format = imx219_get_fmt,
 	.get_caps = imx219_get_caps,
 	.set_frmival = imx219_set_frmival,
-	.get_frmival = imx219_get_frmival,
 	.enum_frmival = imx219_enum_frmival,
 };
 
@@ -507,7 +481,7 @@ static int imx219_init(const struct device *dev)
 	};
 	struct video_frmival frmival = {
 		.numerator = 1,
-		.denominator = IMX219_30FPS,
+		.denominator = 30,
 	};
 	uint32_t reg;
 	int ret;
@@ -605,7 +579,6 @@ static int imx219_init(const struct device *dev)
 
 #define IMX219_INIT(n)                                                                             \
 	static struct imx219_data imx219_data_##n = {                                              \
-		.fps = IMX219_30FPS,                                                               \
 		.vdev = VIDEO_DEVICE_INIT(imx219_data_##n, DT_DRV_INST(n), NULL),                  \
 	};                                                                                         \
                                                                                                    \
