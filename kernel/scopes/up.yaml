@@ -1,0 +1,67 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Kernel feature scope: uniprocessor, supervisor mode only
+# (CONFIG_KERNEL_SCOPE_UP). Read by scripts/build/check_kernel_scope.py after
+# the final link and by the KernelScope compliance check.
+
+name: up
+kconfig: KERNEL_SCOPE_UP
+description: One CPU, every thread in supervisor mode, no virtual memory.
+
+# Kconfig symbols that must be disabled.
+excluded_kconfig:
+  - SMP
+  - SCHED_CPU_MASK
+  - SCHED_IPI_SUPPORTED
+  - USERSPACE
+  - DYNAMIC_OBJECTS
+  - MMU
+  - DEMAND_PAGING
+
+# Sources (files or directories, relative to the Zephyr base) that must not
+# be compiled. Files below them are also exempt from the compliance ratchet.
+excluded_sources:
+  - kernel/smp/
+  - kernel/userspace/
+  - kernel/mmu.c
+  - kernel/paging/
+
+# Sources holding the hooks through which the common code reaches the
+# excluded features, each with a variant that compiles to nothing outside
+# the scope. They name the excluded Kconfig symbols by design and are exempt
+# from the compliance ratchet.
+hook_sources:
+  - kernel/include/ipi.h
+  - kernel/include/ksmp.h
+
+# Regular expressions that no symbol defined in the final ELF may match.
+excluded_symbols:
+  # SMP, IPIs and CPU affinity
+  - ^z_smp_
+  - ^k_smp_cpu_
+  - ^z_sched_ipi$
+  - ^flag_ipi$
+  - ^signal_pending_ipi$
+  - ^ipi_mask_create$
+  - ^k_ipi_work_
+  - ^k_thread_cpu_mask_
+  - ^k_thread_cpu_pin$
+  - ^arch_sched_(broadcast|directed)_ipi$
+  - ^arch_smp_init$
+  # user mode threads, system calls, kernel objects and memory domains
+  - ^z_vrfy_
+  - ^z_mrsh_
+  - ^k_object_
+  - ^z_object_
+  - ^k_thread_perms_
+  - ^k_usermode_
+  - ^k_mem_domain_
+  - ^z_mem_domain_
+  - ^arch_mem_domain_
+  - ^arch_user_mode_enter$
+  - ^arch_syscall_oops$
+  # MMU-based virtual memory and demand paging
+  - ^z_mem_manage_
+  - ^k_mem_(map|unmap|page_|paging_)
+  - ^arch_mem_(map|unmap|page_)
