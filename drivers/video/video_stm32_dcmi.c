@@ -459,7 +459,8 @@ static int video_stm32_dcmi_enum_frmival(const struct device *dev, struct video_
 	return 0;
 }
 
-static int video_stm32_dcmi_set_frmival(const struct device *dev, struct video_frmival *frmival)
+static int video_stm32_dcmi_set_frmival(const struct device *dev, struct video_frmival *frmival,
+					size_t idx)
 {
 	struct video_stm32_dcmi_data *data = dev->data;
 	struct video_frmival_enum fie = {
