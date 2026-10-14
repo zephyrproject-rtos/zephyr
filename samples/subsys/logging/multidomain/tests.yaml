@@ -67,3 +67,55 @@ tests:
       - remote_CONFIG_LOG_FRONTEND_ONLY=y
       - remote_CONFIG_LOG_FRONTEND_IPC=y
       - remote_CONFIG_MULTITHREADING=n
+  sample.logging.multidomain.frontend.uart_frontend_dict:
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - "pytest/test_multidomain_dictionary.py"
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
+    extra_args:
+      - multidomain_CONFIG_LOG_PRINTK=y
+      - multidomain_CONFIG_LOG_BACKEND_UART=n
+      - multidomain_CONFIG_LOG_FRONTEND=y
+      - multidomain_CONFIG_LOG_FRONTEND_ONLY=y
+      - multidomain_CONFIG_LOG_FRONTEND_DICT_UART=y
+      - remote_CONFIG_LOG_BACKEND_IPC=n
+      - remote_CONFIG_LOG_FRONTEND=y
+      - remote_CONFIG_LOG_FRONTEND_ONLY=y
+      - remote_CONFIG_LOG_FRONTEND_IPC=y
+      - remote_CONFIG_LOG_FRONTEND_IPC_DICT=y
+      - remote_CONFIG_MULTITHREADING=n
+  sample.logging.multidomain.frontend.uart_frontend_dict.interrupt:
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - "pytest/test_multidomain_dictionary.py"
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
+    extra_args:
+      - multidomain_CONFIG_LOG_PRINTK=y
+      - multidomain_CONFIG_LOG_BACKEND_UART=n
+      - multidomain_CONFIG_UART_INTERRUPT_DRIVEN=y
+      - multidomain_CONFIG_UART_ASYNC_API=n
+      - multidomain_CONFIG_LOG_FRONTEND=y
+      - multidomain_CONFIG_LOG_FRONTEND_ONLY=y
+      - multidomain_CONFIG_LOG_FRONTEND_DICT_UART=y
+      - remote_CONFIG_LOG_BACKEND_IPC=n
+      - remote_CONFIG_LOG_FRONTEND=y
+      - remote_CONFIG_LOG_FRONTEND_ONLY=y
+      - remote_CONFIG_LOG_FRONTEND_IPC=y
+      - remote_CONFIG_LOG_FRONTEND_IPC_DICT=y
+      - remote_CONFIG_MULTITHREADING=n
