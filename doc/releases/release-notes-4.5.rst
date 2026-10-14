@@ -2899,3 +2899,14 @@ Trusted Firmware-A
 * ``CONFIG_TFA_BUILD_FIP`` is introduced to configure FIP (Firmware Image Package) generation.
   FIP generation is by default disabled, but can be enabled by setting ``CONFIG_TFA_BUILD_FIP=y``
   in ``prj.conf`` or for custom boards, in the board's ``<board>_defconfig`` file.
+
+Appendix: change inventory
+**************************
+
+The inventory of interfaces and configuration added, removed or changed since
+Zephyr 4.4.0 can be found in
+
+.. toctree::
+   :maxdepth: 1
+
+   change-inventory-4.5/index
