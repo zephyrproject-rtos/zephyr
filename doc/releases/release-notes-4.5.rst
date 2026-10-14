@@ -2832,6 +2832,10 @@ Other notable changes
     :c:struct:`wifi_p2p_params`, along with the new
     :c:macro:`WIFI_P2P_STATUS_BUF_SIZE` buffer-size macro.
 
+  * ``NET_REQUEST_WIFI_CONN_PARAMS`` no longer returns the caller's buffers of the
+    last connect request. The ``psk``, ``sae_password`` and EAP fields are now NULL,
+    and the SSID stays valid until the next connect request.
+
 * MCUboot
 
   * :kconfig:option:`SB_CONFIG_BOOT_SIGNATURE_KEY_FILE` now accepts a comma-separated list of
