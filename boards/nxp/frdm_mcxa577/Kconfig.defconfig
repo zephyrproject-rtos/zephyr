@@ -1,0 +1,9 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_FRDM_MCXA577
+
+configdefault ETH_DRIVER
+	default y if DT_HAS_NXP_ENET_QOS_ENABLED
+
+endif
