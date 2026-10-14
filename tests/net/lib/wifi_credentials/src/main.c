@@ -82,6 +82,8 @@ static void wifi_credentials_setup(void *unused)
 
 static void wifi_credentials_teardown(void *unused)
 {
+	/* Delete the entries even if the test made deleting fail. */
+	RESET_FAKE(wifi_credentials_delete_entry);
 	wifi_credentials_delete_by_ssid(SSID1, ARRAY_SIZE(SSID1));
 	wifi_credentials_delete_by_ssid(SSID2, ARRAY_SIZE(SSID2));
 	wifi_credentials_delete_by_ssid(SSID3, ARRAY_SIZE(SSID3));
@@ -426,6 +428,89 @@ ZTEST(wifi_credentials, test_delete_all_entries)
 
 	/* Verify that the storage is empty */
 	zassert_true(wifi_credentials_is_empty(), "Storage is not empty");
+}
+
+static int custom_wifi_credentials_delete_entry_enoent(size_t idx)
+{
+	ARG_UNUSED(idx);
+
+	return -ENOENT;
+}
+
+/* Verify that every slot is deleted, also the ones that are not cached, and that an empty
+ * slot is not an error.
+ */
+ZTEST(wifi_credentials, test_delete_all_uncached_entries)
+{
+	wifi_credentials_delete_entry_fake.custom_fake =
+		custom_wifi_credentials_delete_entry_enoent;
+
+	zassert_ok(wifi_credentials_delete_all());
+	zassert_equal(wifi_credentials_delete_entry_fake.call_count,
+		      CONFIG_WIFI_CREDENTIALS_MAX_ENTRIES);
+}
+
+static int custom_wifi_credentials_delete_entry_first_fails(size_t idx)
+{
+	return idx == 0 ? -EIO : 0;
+}
+
+/* Verify that a failure to delete a slot does not prevent deleting the other slots. */
+ZTEST(wifi_credentials, test_delete_all_failure)
+{
+	int err = wifi_credentials_set_personal(SSID2, sizeof(SSID2), SECURITY2, NULL, 6, NULL, 0,
+						FLAGS2, CHANNEL2, 0);
+	zassert_equal(err, EXIT_SUCCESS, "Expected EXIT_SUCCESS, got %d", err);
+
+	wifi_credentials_delete_entry_fake.custom_fake =
+		custom_wifi_credentials_delete_entry_first_fails;
+
+	zassert_equal(wifi_credentials_delete_all(), -EIO);
+	zassert_equal(wifi_credentials_delete_entry_fake.call_count,
+		      CONFIG_WIFI_CREDENTIALS_MAX_ENTRIES);
+	/* The entry in the slot that failed to be deleted is still cached. */
+	zassert_false(wifi_credentials_is_empty());
+}
+
+/* Verify that no entry is stored in an unusable slot, and that a failure to delete it is not
+ * an error.
+ */
+ZTEST(wifi_credentials, test_unusable_slot)
+{
+	int err;
+
+	/* Load the entries before marking the slot, as the backend does when loading them. */
+	zassert_true(wifi_credentials_is_empty());
+	wifi_credentials_mark_unusable(0);
+
+	err = wifi_credentials_set_personal(SSID1, sizeof(SSID1), SECURITY1, BSSID1, 6, PSK1,
+					    sizeof(PSK1), FLAGS1, CHANNEL1, 0);
+	zassert_equal(err, EXIT_SUCCESS, "Expected EXIT_SUCCESS, got %d", err);
+	zassert_equal(wifi_credentials_store_entry_fake.arg0_val, 1, "Stored in unusable slot");
+
+	err = wifi_credentials_set_personal(SSID2, sizeof(SSID2), SECURITY2, NULL, 6, NULL, 0,
+					    FLAGS2, CHANNEL2, 0);
+	zassert_equal(err, -ENOBUFS, "Expected -ENOBUFS, got %d", err);
+
+	/* The unusable slot cannot be deleted, which is not an error. It stays unusable. */
+	wifi_credentials_delete_entry_fake.custom_fake =
+		custom_wifi_credentials_delete_entry_first_fails;
+	zassert_ok(wifi_credentials_delete_all());
+	zassert_true(wifi_credentials_is_empty());
+
+	err = wifi_credentials_set_personal(SSID2, sizeof(SSID2), SECURITY2, NULL, 6, NULL, 0,
+					    FLAGS2, CHANNEL2, 0);
+	zassert_equal(err, EXIT_SUCCESS, "Expected EXIT_SUCCESS, got %d", err);
+	zassert_equal(wifi_credentials_store_entry_fake.arg0_val, 1, "Stored in unusable slot");
+
+	/* Once deleted, the slot can be used again. */
+	RESET_FAKE(wifi_credentials_delete_entry);
+	zassert_ok(wifi_credentials_delete_all());
+
+	err = wifi_credentials_set_personal(SSID1, sizeof(SSID1), SECURITY1, BSSID1, 6, PSK1,
+					    sizeof(PSK1), FLAGS1, CHANNEL1, 0);
+	zassert_equal(err, EXIT_SUCCESS, "Expected EXIT_SUCCESS, got %d", err);
+	zassert_equal(wifi_credentials_store_entry_fake.arg0_val, 0, "Slot not reused");
 }
 
 ZTEST_SUITE(wifi_credentials, NULL, NULL, wifi_credentials_setup, wifi_credentials_teardown, NULL);
