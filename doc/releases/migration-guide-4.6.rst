@@ -52,6 +52,12 @@ Device Drivers and Devicetree
 
 .. zephyr-keep-sorted-start re(^\w) ignorecase
 
+Ethernet
+========
+
+* The Xilinx GEM Ethernet driver is no longer disabled on QEMU targets without
+  :kconfig:option:`CONFIG_NET_QEMU_ETHERNET`. (:github:`120871`)
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
