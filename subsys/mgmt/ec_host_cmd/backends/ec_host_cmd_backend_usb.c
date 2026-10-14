@@ -200,7 +200,7 @@ static int ec_host_cmd_signal_event(struct usbd_class_data *const c_data)
 	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
 		LOG_ERR("Failed to enqueue EP IN INT: %d", ret);
-		usbd_ep_buf_free(uds_ctx, buf);
+		(void)usbd_ep_buf_free(uds_ctx, buf);
 		return ret;
 	}
 	ctx->pending_event = false;
@@ -273,7 +273,7 @@ static int ec_host_cmd_request(struct usbd_class_data *const c_data, struct net_
 
 		if ((bi->ep == ec_host_cmd_get_in_int_ep(c_data)) ||
 		    (bi->ep == ec_host_cmd_get_out_ep(c_data))) {
-			usbd_ep_buf_free(uds_ctx, buf);
+			(void)usbd_ep_buf_free(uds_ctx, buf);
 		}
 
 		return 0;
@@ -282,13 +282,7 @@ static int ec_host_cmd_request(struct usbd_class_data *const c_data, struct net_
 	if (bi->ep == ec_host_cmd_get_out_ep(c_data)) {
 		uint16_t buf_len = buf->len;
 
-		ret = usbd_ep_buf_free(uds_ctx, buf);
-		if (ret) {
-			LOG_ERR("Failed to free buf OUT");
-			/* Schedule the reset work even if it hasn't been queued */
-			k_work_reschedule(&ctx->reset_work, K_NO_WAIT);
-			return ret;
-		}
+		(void)usbd_ep_buf_free(uds_ctx, buf);
 
 		if (ctx->state == USB_EC_HOST_CMD_STATE_READY_TO_RX) {
 			if (buf_len < sizeof(struct ec_host_cmd_request_header)) {
@@ -333,7 +327,7 @@ static int ec_host_cmd_request(struct usbd_class_data *const c_data, struct net_
 	}
 
 	if (bi->ep == ec_host_cmd_get_in_int_ep(c_data)) {
-		usbd_ep_buf_free(uds_ctx, buf);
+		(void)usbd_ep_buf_free(uds_ctx, buf);
 	}
 
 	return 0;
