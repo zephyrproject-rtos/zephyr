@@ -1452,5 +1452,27 @@
 			mmio-peri-hf-src = <1>;
 			mmio-peri-div = <3>;
 		};
+
+		ethernet0: ethernet@52c11000 {
+			compatible = "infineon,pse84-gem", "cdns,gem";
+			reg = <0x52c11000 0x800>, <0x52c10000 0x4>;
+			reg-names = "mac", "ctl";
+			interrupts = <171 4>;
+			clocks = <&clk_hf0>, <&peri0_group4_8bit_0>;
+			clock-names = "pclk", "tsu_clk";
+			status = "disabled";
+
+			mdio0: mdio {
+				compatible = "cdns,macb-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			ethernet0_ptp: ptp-clock {
+				compatible = "cdns,macb-ptp-clock";
+				status = "disabled";
+			};
+		};
 	};
 };
