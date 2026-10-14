@@ -1,0 +1,4 @@
+name: nxp-wifi-hostap-debug
+description: NXP Wi-Fi wpa_supplicant/hostap debug configuration.
+append:
+  EXTRA_CONF_FILE: nxp-wifi-hostap-debug.conf
