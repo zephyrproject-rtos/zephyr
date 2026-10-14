@@ -98,6 +98,12 @@
 	pinctrl-names = "default";
 };
 
+&dac0 {
+	status = "okay";
+	pinctrl-0 = <&dac0_ch0_gpj0_default>;
+	pinctrl-names = "default";
+};
+
 /*
  * test pwm:
  * If we need pwm output in ITE chip power saving mode,
