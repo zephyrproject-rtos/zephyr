@@ -56,10 +56,6 @@ config 2ND_LVL_INTR_07_OFFSET
 config NUM_IRQS
 	default 6368
 
-choice GEN_SW_ISR_TABLE_TYPE
-	default GEN_SW_ISR_TABLE_SWITCH
-endchoice
-
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if SOC_CYT4DNJBZS_M0P
 	default $(dt_node_int_prop_int,/cpus/cpu@1,clock-frequency) if SOC_CYT4DNJBZS_M7_0
