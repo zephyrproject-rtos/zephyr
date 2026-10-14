@@ -6,3 +6,4 @@
  */
 
 #include "../pse8x/pse8x.wlb-154.dtsi"
+#include "../pse8x/pse8x.socmem-2m.dtsi"

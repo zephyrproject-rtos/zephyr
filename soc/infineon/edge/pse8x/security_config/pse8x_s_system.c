@@ -7,6 +7,8 @@
 
 #include "pse8x_s_system.h"
 
+#include <zephyr/devicetree.h>
+
 #define CY_CFG_PWR_ENABLED            1
 #define CY_CFG_PWR_INIT               1
 #define CY_CFG_PWR_USING_PMIC         0
@@ -92,7 +94,7 @@ const mtb_srf_protection_range_s_t socmem_0_mpc_0_srf_range[SOCMEM_0_MPC_0_REGIO
 	},
 	{
 		.start = (void *)0x26040000,
-		.length = 0x4C0000U,
+		.length = DT_REG_SIZE(DT_NODELABEL(socmem)) - 0x40000U,
 		.is_secure = false,
 	},
 };

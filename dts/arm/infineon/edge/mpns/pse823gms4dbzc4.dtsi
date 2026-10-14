@@ -6,3 +6,5 @@
  */
 
 #include "../pse8x/pse8x.bga-220.dtsi"
+#include "../pse8x/pse8x.no-npu.dtsi"
+#include "../pse8x/pse8x.socmem-2m.dtsi"

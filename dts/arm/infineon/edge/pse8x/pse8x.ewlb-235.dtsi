@@ -2074,3 +2074,6 @@
 		};
 	};
 };
+
+/* eWLB-235 has no CAN FD. */
+/delete-node/ &canfd0;
