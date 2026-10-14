@@ -1,0 +1,125 @@
+# SPDX-FileCopyrightText: 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    The RA wireless pin controller is a singleton node responsible for controlling
+    pin function selection and pin properties, such as routing a UART RX to pin
+    P1.8 and enabling the pullup resistor on that pin.
+
+    The node has the 'pinctrl' node label set in your SoC's devicetree,
+    so you can modify it like this:
+
+      &pinctrl {
+              /* your modifications go here */
+      };
+
+    All device pin configurations should be placed in child nodes of the
+    'pinctrl' node, as shown in this example:
+
+      /* You can put this in places like a board-pinctrl.dtsi file in
+       * your board directory, or a devicetree overlay in your application.
+       */
+
+     /* include definitions and utility macros for the SoC used by the board */
+     #include <dt-bindings/pinctrl/ra6b1-pinctrl.h>
+
+      &pinctrl {
+        /* configuration for uart device, default state */
+        uart_default: uart_default {
+          /* group 1 */
+          group1 {
+            /* route UART TX to P0.9 */
+            pinmux = <RAFW_PINMUX(UART_TX, 0, 9)>;
+          };
+          /* group 2 */
+          group2 {
+            /* route UART RX to P0.8 and enable pull-up */
+            pinmux = <RAFW_PINMUX(UART_RX, 0, 8)>;
+            bias-pull-up;
+          };
+        };
+      };
+
+    The 'uart0_default' child node encodes the pin configurations for a
+    particular state of a device; in this case, the default (that is, active)
+    state.
+
+    As shown, pin configurations are organized in groups within each child node.
+    Each group can specify a list of pin function selections in the 'pinmux'
+    property. Note that 'pinmux' property is an array so you can configure multiple
+    pins at once there. The RAFW_PINMUX macro is used to create pinmux value.
+
+    A group can also specify shared pin properties common to all the specified
+    pins, such as the 'bias-pull-up' property in group 2. Here is a list of
+    supported standard pin properties:
+
+    - bias-pull-up: Enable pull-up resistor.
+    - bias-pull-down: Enable pull-down resistor.
+
+    Note that bias options are mutually exclusive.
+
+    To link this pin configuration with a device, use a pinctrl-N property
+    for some number N, like this example you could place in your board's DTS
+    file:
+
+       #include "board-pinctrl.dtsi"
+
+       &uart {
+             pinctrl-0 = <&uart_default>;
+             pinctrl-names = "default";
+       };
+
+      Note1: The low-power-enable property is valid only for pins on port P1.
+             Pins of a group that is marked with that property should operate
+             at a lower voltage (e.g. 1.8V instead of 3.3V). Following is a
+             code excerpt showing how to enable low-power mode for pins P1.0 and P1.1:
+
+              &pinctrl {
+                      group1 {
+                              pinmux = <RAFW_PINMUX(GPIO, 1, 0)>,
+                                       <RAFW_PINMUX(GPIO, 1, 1)>;
+                              low-power-enable;
+                      };
+              };
+
+      Note2: The sleep-hardware-state property can be used to specify that a group
+             of pins should be locked in their active state during sleep,
+             instead of being put in input pull-down state. This is useful for peripherals
+             that need to maintain their pin state during sleep, such as a UART that needs
+             to keep its TX pin high. Following is a code excerpt showing how to use this
+             property:
+
+              &pinctrl {
+                      group1 {
+                              pinmux = <RAFW_PINMUX(UART_TX, 0, 9)>;
+                              sleep-hardware-state;
+                      };
+              };
+
+compatible: "renesas,rafw-pinctrl"
+
+include: base.yaml
+
+child-binding:
+  description: |
+    Definitions for a pinctrl state.
+  child-binding:
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-pull-down
+          - bias-pull-up
+          - output-enable
+          - input-enable
+          - sleep-hardware-state
+          - low-power-enable
+
+    properties:
+      pinmux:
+        required: true
+        type: array
+        description: |
+          An array of pins sharing the same group properties. The pins should
+          be defined using the RAFW_PINMUX utility macro that encodes the port,
+          pin and function.

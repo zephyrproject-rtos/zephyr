@@ -1,0 +1,74 @@
+# SPDX-FileCopyrightText: 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA6B1 UART
+
+compatible: "renesas,ra6b1-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+
+  channel:
+    type: int
+    enum: [0, 1, 2, 3]
+    required: true
+
+  periph-clock-config:
+    type: int
+    description: Peripheral clock register configuration
+    required: true
+
+  current-speed:
+    description: |
+      Initial baud rate setting for UART. Only a fixed set of baud
+      rates are selectable on these devices.
+    enum:
+      - 4800
+      - 9600
+      - 14400
+      - 19200
+      - 28800
+      - 38400
+      - 57600
+      - 115200
+      - 230400
+      - 500000
+      - 921600
+      - 1000000
+      - 2000000
+
+  stop-bits:
+    description: |
+      Sets the number of stop bits. Defaults to standard of 1 if not specified.
+    default: "1"
+
+  data-bits:
+    description: |
+      Sets the number of data bits. Defaults to standard of 8 if not specified.
+    default: 8
+
+  rx-wakeup-gpios:
+    type: phandle-array
+    description: |
+      RX pin configured as wakeup source. When the platform has entered the
+      sleep state (UART is turned off) the very first symbol received
+      should be used to wakeup the device. That means that the very first
+      character should not be captured into the RX buffer.
+
+  rx-wakeup-timeout:
+    type: int
+    description: |
+      Time in milliseconds to prevent UART from entering sleep after receiving
+      data. If timeout is not defined, then it's assumed that a UART block can
+      be suspended at the earliest possible. In addition, that timeout is
+      overwritten if a block instance is chosen for console operations.
+      In that case, UART_CONSOLE_INPUT_EXPIRED_TIMEOUT is used instead.
