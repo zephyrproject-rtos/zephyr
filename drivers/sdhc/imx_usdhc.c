@@ -64,6 +64,7 @@ struct usdhc_config {
 
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
+	clock_control_subsys_t clock_cfg;
 	uint8_t nusdhc;
 	const struct gpio_dt_spec pwr_gpio;
 	const struct gpio_dt_spec detect_gpio;
@@ -1136,6 +1137,20 @@ static int imx_usdhc_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	if (cfg->clock_cfg != NULL) {
+		ret = clock_control_configure(cfg->clock_dev, cfg->clock_cfg, NULL);
+		if (ret != 0) {
+			LOG_ERR("Failed to configure clock source: %d", ret);
+			return ret;
+		}
+	}
+
+	ret = clock_control_on(cfg->clock_dev, cfg->clock_subsys);
+	if (ret != 0) {
+		LOG_ERR("Failed to enable clock: %d", ret);
+		return ret;
+	}
+
 	if (cfg->reset.dev != NULL) {
 		if (!device_is_ready(cfg->reset.dev)) {
 			LOG_ERR("reset controller not ready");
@@ -1252,7 +1267,12 @@ static DEVICE_API(sdhc, usdhc_api) = {
 	static const struct usdhc_config usdhc_##n##_config = {                                    \
 		DEVICE_MMIO_NAMED_ROM_INIT(usdhc_mmio, DT_DRV_INST(n)),                            \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
+		.clock_subsys = (clock_control_subsys_t)COND_CODE_1(               \
+			DT_PHA_HAS_CELL(DT_DRV_INST(n), clocks, name),             \
+			(DT_INST_CLOCKS_CELL(n, name)), (0U)),                      \
+		.clock_cfg = (clock_control_subsys_t)COND_CODE_1(                  \
+			DT_INST_CLOCKS_HAS_NAME(n, source),                         \
+			(DT_INST_CLOCKS_CELL_BY_NAME(n, source, name)), (0U)),      \
 		.nusdhc = n,                                                                       \
 		.pwr_gpio = GPIO_DT_SPEC_INST_GET_OR(n, pwr_gpios, {0}),                           \
 		.detect_gpio = GPIO_DT_SPEC_INST_GET_OR(n, cd_gpios, {0}),                         \
