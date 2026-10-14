@@ -4,12 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <assert.h>
-#include <stdarg.h>
-#include <string.h>
-
-#include <zephyr/device.h>
-#include <zephyr/devicetree.h>
 #include <zephyr/drivers/usb/udc.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
