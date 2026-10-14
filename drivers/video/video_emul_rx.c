@@ -90,6 +90,8 @@ static int emul_rx_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	const struct emul_rx_config *cfg = dev->config;
 
+	caps->min_vbuf_count = 1;
+
 	return video_get_caps(cfg->source_dev, caps);
 }
 
