@@ -37,6 +37,7 @@ DEFINE_FFF_GLOBALS;
 K_MUTEX_DEFINE(wifi_credentials_mutex);
 
 FAKE_VOID_FUNC(wifi_credentials_cache_ssid, size_t, const struct wifi_credentials_header *);
+FAKE_VOID_FUNC(wifi_credentials_mark_unusable, size_t);
 FAKE_VALUE_FUNC(psa_status_t, psa_export_key, mbedtls_svc_key_id_t, uint8_t *, size_t, size_t *);
 FAKE_VALUE_FUNC(psa_status_t, psa_import_key, psa_key_attributes_t *, uint8_t *, size_t,
 		mbedtls_svc_key_id_t *);
@@ -79,6 +80,30 @@ psa_status_t custom_psa_export_key(mbedtls_svc_key_id_t key, uint8_t *data, size
 	return PSA_SUCCESS;
 }
 
+/* The first key is larger and the second one smaller than an entry. */
+static psa_status_t custom_psa_export_key_wrong_size(mbedtls_svc_key_id_t key, uint8_t *data,
+						     size_t data_size, size_t *data_length)
+{
+	if (key == ZEPHYR_PSA_WIFI_CREDENTIALS_KEY_ID_RANGE_BEGIN) {
+		return PSA_ERROR_BUFFER_TOO_SMALL;
+	}
+
+	*data_length = data_size - 1;
+	return PSA_SUCCESS;
+}
+
+/* The keys fail authentication or cannot be parsed. */
+static psa_status_t custom_psa_export_key_corrupt(mbedtls_svc_key_id_t key, uint8_t *data,
+						  size_t data_size, size_t *data_length)
+{
+	ARG_UNUSED(data);
+	ARG_UNUSED(data_size);
+	ARG_UNUSED(data_length);
+
+	return key == ZEPHYR_PSA_WIFI_CREDENTIALS_KEY_ID_RANGE_BEGIN ? PSA_ERROR_DATA_CORRUPT
+								      : PSA_ERROR_DATA_INVALID;
+}
+
 static void custom_psa_set_key_id(psa_key_attributes_t *attributes, mbedtls_svc_key_id_t key)
 {
 	zassert_equal(idx + ZEPHYR_PSA_WIFI_CREDENTIALS_KEY_ID_RANGE_BEGIN, key, "Key ID mismatch");
@@ -112,6 +137,7 @@ void custom_psa_set_key_usage_flags(psa_key_attributes_t *attributes, psa_key_us
 static void wifi_credentials_backend_psa_setup(void *_unused)
 {
 	RESET_FAKE(wifi_credentials_cache_ssid);
+	RESET_FAKE(wifi_credentials_mark_unusable);
 	RESET_FAKE(psa_export_key);
 	RESET_FAKE(psa_import_key);
 	RESET_FAKE(psa_destroy_key);
@@ -136,6 +162,49 @@ ZTEST(wifi_credentials_backend_psa, test_init)
 		      "Export key call count mismatch");
 	zassert_equal(wifi_credentials_cache_ssid_fake.call_count,
 		      CONFIG_WIFI_CREDENTIALS_MAX_ENTRIES, "Cache SSID call count mismatch");
+}
+
+/* Keys whose size does not match an entry must be skipped without failing the initialization.
+ * Their slots can be reused, as the keys can be destroyed.
+ */
+ZTEST(wifi_credentials_backend_psa, test_init_wrong_size)
+{
+	psa_export_key_fake.custom_fake = custom_psa_export_key_wrong_size;
+
+	zassert_equal(0, wifi_credentials_backend_init(), "Initialization failed");
+	zassert_equal(psa_export_key_fake.call_count, CONFIG_WIFI_CREDENTIALS_MAX_ENTRIES,
+		      "Export key call count mismatch");
+	zassert_equal(wifi_credentials_cache_ssid_fake.call_count, 0,
+		      "Cache SSID call count mismatch");
+	zassert_equal(wifi_credentials_mark_unusable_fake.call_count, 0,
+		      "Mark unusable call count mismatch");
+}
+
+/* Corrupt keys must be skipped without failing the initialization. Their slots must be marked
+ * as unusable, as the keys cannot be destroyed.
+ */
+ZTEST(wifi_credentials_backend_psa, test_init_corrupt)
+{
+	psa_export_key_fake.custom_fake = custom_psa_export_key_corrupt;
+
+	zassert_equal(0, wifi_credentials_backend_init(), "Initialization failed");
+	zassert_equal(psa_export_key_fake.call_count, CONFIG_WIFI_CREDENTIALS_MAX_ENTRIES,
+		      "Export key call count mismatch");
+	zassert_equal(wifi_credentials_cache_ssid_fake.call_count, 0,
+		      "Cache SSID call count mismatch");
+	zassert_equal(wifi_credentials_mark_unusable_fake.call_count,
+		      CONFIG_WIFI_CREDENTIALS_MAX_ENTRIES, "Mark unusable call count mismatch");
+	zassert_equal(wifi_credentials_mark_unusable_fake.arg0_history[0], 0, "Index mismatch");
+	zassert_equal(wifi_credentials_mark_unusable_fake.arg0_history[1], 1, "Index mismatch");
+}
+
+/* Other errors must still fail the initialization. */
+ZTEST(wifi_credentials_backend_psa, test_init_failure)
+{
+	psa_export_key_fake.custom_fake = NULL;
+	psa_export_key_fake.return_val = PSA_ERROR_STORAGE_FAILURE;
+
+	zassert_equal(-EFAULT, wifi_credentials_backend_init(), "Initialization did not fail");
 }
 
 ZTEST(wifi_credentials_backend_psa, test_add)
@@ -216,6 +285,14 @@ ZTEST(wifi_credentials_backend_psa, test_delete)
 		      "Destroy key arg0 mismatch");
 
 	zassert_equal(psa_destroy_key_fake.call_count, 2, "Destroy key call count mismatch");
+}
+
+/* Deleting a key that does not exist must be reported as such. */
+ZTEST(wifi_credentials_backend_psa, test_delete_non_existing)
+{
+	psa_destroy_key_fake.return_val = PSA_ERROR_INVALID_HANDLE;
+
+	zassert_equal(-ENOENT, wifi_credentials_delete_entry(0), "Delete entry did not fail");
 }
 
 ZTEST_SUITE(wifi_credentials_backend_psa, NULL, NULL, wifi_credentials_backend_psa_setup, NULL,
