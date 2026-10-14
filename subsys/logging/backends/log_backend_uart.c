@@ -38,11 +38,6 @@ struct lbu_cb_ctx {
 	COND_CODE_1(DT_HAS_CHOSEN(zephyr_log_uart), (ctx->uart_dev),                               \
 		    (DEVICE_DT_GET(DT_CHOSEN(zephyr_console))))
 
-/* Fixed size to avoid auto-added trailing '\0'.
- * Used if CONFIG_LOG_BACKEND_UART_OUTPUT_DICTIONARY_HEX.
- */
-static const char LOG_HEX_SEP[10] = "##ZLOGV1##";
-
 static void uart_callback(const struct device *dev,
 			  struct uart_event *evt,
 			  void *user_data)
@@ -154,17 +149,21 @@ static void log_backend_uart_init(struct log_backend const *const backend)
 
 	log_output_ctx_set(ctx->output, (void *)ctx);
 
+	/* Print a separator so the output can be fed into log parser directly. This is useful when
+	 * capturing from UART directly where there might be other output (e.g. bootloader).
+	 */
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_UART_OUTPUT_DICTIONARY_HEX)) {
-		/* Print a separator so the output can be fed into
-		 * log parser directly. This is useful when capturing
-		 * from UART directly where there might be other output
-		 * (e.g. bootloader).
-		 */
-		for (int i = 0; i < sizeof(LOG_HEX_SEP); i++) {
-			uart_poll_out(uart_dev, LOG_HEX_SEP[i]);
-		}
+		static const char hex_sep[LOG_DICT_SEP_LEN] = LOG_DICT_HEX_SEP;
 
-		return;
+		for (int i = 0; i < sizeof(hex_sep); i++) {
+			uart_poll_out(uart_dev, hex_sep[i]);
+		}
+	} else if (IS_ENABLED(CONFIG_LOG_BACKEND_UART_OUTPUT_DICTIONARY_BIN)) {
+		static const uint8_t init_msg[] = LOG_DICT_BIN_SEP;
+
+		for (int i = 0; i < sizeof(init_msg); i++) {
+			uart_poll_out(uart_dev, init_msg[i]);
+		}
 	}
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_UART_ASYNC)) {
