@@ -80,6 +80,18 @@
 		};
 	};
 
+	spi3_default: spi3_default {
+		group0 {
+			pinmux = <PIN_P12_4__SPI3_MISO_A>;
+			input-enable;
+		};
+
+		group1 {
+			pinmux = <PIN_P12_5__SPI3_MOSI_A>,
+				 <PIN_P12_6__SPI3_SCLK_A>;
+		};
+	};
+
 	gpio6_default: gpio6_default {
 		group0 {
 			/* Multicolor LED1: red on P6_2, green on P6_4, blue on P6_6 */
@@ -106,9 +118,13 @@
 
 	gpio12_default: gpio12_default {
 		group0 {
-			/* Multicolor LED0: blue on P12_0, red on P12_3 */
+			/*
+			 * Multicolor LED0: blue on P12_0, red on P12_3.
+			 * P12_7 is the mikroBUS chip select.
+			 */
 			pinmux = <PIN_P12_0__GPIO>,
-				 <PIN_P12_3__GPIO>;
+				 <PIN_P12_3__GPIO>,
+				 <PIN_P12_7__GPIO>;
 		};
 	};
 

@@ -8,4 +8,7 @@ if BOARD_ENSEMBLE_E8_DK
 configdefault I2C_DW_CLOCK_SPEED
 	default 100
 
+config GPIO
+	default y if SPI
+
 endif # BOARD_ENSEMBLE_E8_DK
