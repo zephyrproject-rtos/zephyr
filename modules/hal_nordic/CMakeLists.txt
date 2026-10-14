@@ -6,6 +6,7 @@ if(CONFIG_NRF_802154_RADIO_DRIVER OR CONFIG_NRF_802154_SERIALIZATION)
 endif(CONFIG_NRF_802154_RADIO_DRIVER OR CONFIG_NRF_802154_SERIALIZATION)
 
 add_subdirectory_ifdef(CONFIG_HAS_IRONSIDE_SE ironside/se)
+add_subdirectory_ifdef(CONFIG_IRONSIDE_TE_CLIENT ironside/te)
 add_subdirectory_ifdef(CONFIG_HAS_NRFX nrfx)
 add_subdirectory_ifdef(CONFIG_HAS_NRFS nrfs)
 

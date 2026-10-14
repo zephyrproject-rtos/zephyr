@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IRONSIDE_TE_CLIENT
+	bool "IronSide TE client"
+	depends on ZEPHYR_IRONSIDE_INTEGRATION_KIT_MODULE
+	depends on TRUSTED_EXECUTION_NONSECURE
+	select ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
+	help
+	  Client for the IronSide TE secure services: PSA Crypto, PSA Initial
+	  Attestation, device management, the boot report and the platform
+	  services.
