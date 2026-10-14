@@ -35,13 +35,46 @@ config MFD_SILABS_NCP_SDIO_POLL_INTERVAL_MS
 	depends on MFD_SILABS_NCP_BUS_SDIO
 	default 10
 
+config MFD_SILABS_NCP_BUS_UART
+	bool "Silicon Labs NCP over UART"
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_SILABS_NCP),uart)
+	depends on SERIAL
+	depends on GPIO
+	depends on UART_ASYNC_API
+	select CRC
+
+config MFD_SILABS_NCP_UART_RX_BUF_SIZE
+	int "Size of each of the two UART reception buffers"
+	depends on MFD_SILABS_NCP_BUS_UART
+	default 256
+	help
+	  The UART DMA fills these two buffers alternately, and the UART driver
+	  hands over what it received at the latest when a buffer is full.
+	  This is the largest chunk the UART callback copies at once.
+
+config MFD_SILABS_NCP_UART_RX_RING_BUF_SIZE
+	int "Size of the UART reception ring buffer"
+	depends on MFD_SILABS_NCP_BUS_UART
+	default 2048
+	help
+	  The UART callback copies the received bytes into this ring buffer,
+	  the transport parses the frames from it on its work queue. It must
+	  hold what the co-processor can send before the transport runs and
+	  acknowledges, which the CPC flow control bounds: for every endpoint,
+	  its receive window (the number of receive buffers of the child
+	  driver) times its largest frame, plus a few 11-byte control frames.
+	  With the HCI driver alone, 4 buffers of about 270 bytes need less
+	  than 1.5 KiB. It must also hold at least one UART reception buffer.
+	  An overrun is logged and the frame is recovered by retransmission.
+
 config MFD_SILABS_NCP_INIT_PRIORITY
 	int "Initialization priority"
 	default 86
 	help
 	  Priority of the silabs,ncp devices. Must be greater than the
 	  priority of the bus they sit on (SPI_INIT_PRIORITY,
-	  SDHC_INIT_PRIORITY) and lower than the priority of the child
+	  SDHC_INIT_PRIORITY, SERIAL_INIT_PRIORITY) and lower than the priority of the child
 	  drivers that open CPC endpoints.
 
 config MFD_SILABS_NCP_WQ_STACK_SIZE
