@@ -47,7 +47,7 @@ struct video_device {
 	/** Device held by this video device */
 	const struct device *dev;
 	/** Source device up in the chain, and providing the data */
-	const struct device *src_dev;
+	const struct device *source_dev;
 	/** List of video controls supported by this device */
 	sys_dlist_t ctrls;
 };
@@ -153,9 +153,16 @@ struct video_ctrl {
 
 /**
  * @brief Callback API to set or get video format.
- * See @a video_driver_set_format() and @a video_driver_get_format() for argument description.
+ * See @a video_driver_set_format() for argument description.
  */
-typedef int (*video_api_format_t)(const struct device *dev, struct video_format *fmt);
+typedef int (*video_api_set_format_t)(const struct device *dev, struct video_format *fmt,
+				      size_t idx);
+
+/**
+ * @brief Callback API to set or get video format.
+ * See @a video_driver_get_format() for argument description.
+ */
+typedef int (*video_api_get_format_t)(const struct device *dev, struct video_format *fmt);
 
 /**
  * @brief Callback API to set or get video frame interval.
@@ -235,11 +242,11 @@ __subsystem struct video_driver_api {
 	/**
 	 * @driver_ops_mandatory @copybrief video_driver_set_format
 	 */
-	video_api_format_t set_format;
+	video_api_set_format_t set_format;
 	/**
 	 * @driver_ops_mandatory @copybrief video_driver_get_format
 	 */
-	video_api_format_t get_format;
+	video_api_get_format_t get_format;
 	/**
 	 * @driver_ops_mandatory @copybrief video_driver_set_stream
 	 */
@@ -309,12 +316,14 @@ __subsystem struct video_driver_api {
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param fmt Pointer to a video format struct.
+ * @param idx Index withing this driver's format capability list.
  *
  * @retval 0 on success.
  * @retval -ENOTSUP Format is not supported.
  * @retval -ENOSYS API is not implemented.
  */
-static inline int video_driver_set_format(const struct device *dev, struct video_format *fmt)
+static inline int video_driver_set_format(const struct device *dev, struct video_format *fmt,
+					  size_t idx)
 {
 	const struct video_driver_api *api = DEVICE_API_GET(video, dev);
 
@@ -322,7 +331,7 @@ static inline int video_driver_set_format(const struct device *dev, struct video
 		return -ENOSYS;
 	}
 
-	return api->set_format(dev, fmt);
+	return api->set_format(dev, fmt, idx);
 }
 
 /**

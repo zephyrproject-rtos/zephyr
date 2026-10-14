@@ -127,7 +127,7 @@ static const struct mipid02_format_desc *mipid02_get_format_desc(uint32_t pixelf
 	return NULL;
 }
 
-static int mipid02_set_fmt(const struct device *dev, struct video_format *fmt)
+static int mipid02_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	struct mipid02_data *drv_data = dev->data;
 	const struct mipid02_config *cfg = dev->config;
@@ -163,7 +163,7 @@ static int mipid02_set_fmt(const struct device *dev, struct video_format *fmt)
 	/* Call video_set_format to the sensor */
 	sensor_fmt.pixelformat = desc->csi_pixelformat;
 
-	ret = video_set_format(cfg->source_dev, &sensor_fmt);
+	ret = video_set_format(data->vdev.source_dev, &sensor_fmt);
 	if (ret < 0) {
 		return ret;
 	}
@@ -182,7 +182,7 @@ static int mipid02_get_fmt(const struct device *dev, struct video_format *fmt)
 	int ret;
 
 	if (!drv_data->desc) {
-		ret = video_get_format(cfg->source_dev, fmt);
+		ret = video_get_format(data->vdev.source_dev, fmt);
 		if (ret < 0) {
 			return ret;
 		}
@@ -212,7 +212,7 @@ static int mipid02_get_caps(const struct device *dev, struct video_caps *caps)
 	int ind = 0, caps_nb = 0;
 	int ret;
 
-	ret = video_get_caps(cfg->source_dev, caps);
+	ret = video_get_caps(data->vdev.source_dev, caps);
 	if (ret < 0) {
 		return ret;
 	}
@@ -264,7 +264,7 @@ static int mipid02_set_stream(const struct device *dev, bool enable, enum video_
 	int ret;
 
 	if (!enable) {
-		ret = video_stream_stop(cfg->source_dev, type);
+		ret = video_stream_stop(data->vdev.source_dev, type);
 		if (ret < 0) {
 			return ret;
 		}
@@ -297,7 +297,7 @@ static int mipid02_set_stream(const struct device *dev, bool enable, enum video_
 	}
 
 	/* Get link-frequency information from source */
-	link_freq = video_get_csi_link_freq(cfg->source_dev,
+	link_freq = video_get_csi_link_freq(data->vdev.source_dev,
 					    video_bits_per_pixel(desc->csi_pixelformat),
 					    cfg->csi.nb_lanes);
 	if (link_freq < 0) {
@@ -327,28 +327,28 @@ static int mipid02_set_stream(const struct device *dev, bool enable, enum video_
 		}
 	}
 
-	return video_stream_start(cfg->source_dev, type);
+	return video_stream_start(data->vdev.source_dev, type);
 }
 
 static int mipid02_set_frmival(const struct device *dev, struct video_frmival *frmival)
 {
 	const struct mipid02_config *cfg = dev->config;
 
-	return video_set_frmival(cfg->source_dev, frmival);
+	return video_set_frmival(data->vdev.source_dev, frmival);
 }
 
 static int mipid02_get_frmival(const struct device *dev, struct video_frmival *frmival)
 {
 	const struct mipid02_config *cfg = dev->config;
 
-	return video_get_frmival(cfg->source_dev, frmival);
+	return video_get_frmival(data->vdev.source_dev, frmival);
 }
 
 static int mipid02_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
 	const struct mipid02_config *cfg = dev->config;
 
-	return video_enum_frmival(cfg->source_dev, fie);
+	return video_enum_frmival(data->vdev.source_dev, fie);
 }
 
 static DEVICE_API(video, mipid02_driver_api) = {

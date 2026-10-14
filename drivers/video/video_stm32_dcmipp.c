@@ -547,7 +547,7 @@ static inline void stm32_dcmipp_compute_fmt_pitch(uint32_t pipe_id, struct video
 	fmt->size = fmt->pitch * fmt->height;
 }
 
-static int stm32_dcmipp_set_fmt(const struct device *dev, struct video_format *fmt)
+static int stm32_dcmipp_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	struct stm32_dcmipp_pipe_data *pipe = dev->data;
 	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
@@ -1731,7 +1731,7 @@ static int stm32_dcmipp_init(const struct device *dev)
 
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 	/* Check if source device is ready */
-	if (!device_is_ready(cfg->source_dev)) {
+	if (!device_is_ready(data->vdev.source_dev)) {
 		LOG_ERR("Source device not ready");
 		return -ENODEV;
 	}
@@ -1747,7 +1747,7 @@ static int stm32_dcmipp_init(const struct device *dev)
 		return err;
 	}
 
-	err = stm32_dcmipp_isp_init(&dcmipp->hdcmipp, cfg->source_dev);
+	err = stm32_dcmipp_isp_init(&dcmipp->hdcmipp, data->vdev.source_dev);
 	if (err < 0) {
 		LOG_ERR("Failed to initialize the ISP");
 		return err;

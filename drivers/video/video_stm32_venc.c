@@ -404,25 +404,11 @@ static int stm32_venc_enable_clock(const struct device *dev)
 	return 0;
 }
 
-static int stm32_venc_set_fmt(const struct device *dev, struct video_format *fmt)
+static int stm32_venc_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	struct stm32_venc_data *data = dev->data;
 
-	if (fmt->type == VIDEO_BUF_TYPE_INPUT) {
-		if ((fmt->pixelformat != VIDEO_PIX_FMT_NV12) &&
-		    (fmt->pixelformat != VIDEO_PIX_FMT_RGB565)) {
-			LOG_ERR("invalid input pixel format");
-			return -EINVAL;
-		}
-
-		fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
-		data->in_fmt = *fmt;
-	} else {
-		if (fmt->pixelformat != VIDEO_PIX_FMT_H264) {
-			LOG_ERR("invalid output pixel format");
-			return -EINVAL;
-		}
-
+	if (fmt->type == VIDEO_BUF_TYPE_OUTPUT) {
 		fmt->size = ROUND_UP(fmt->width * fmt->height / VENC_ESTIMATED_COMPRESSION_RATIO,
 				     ALIGNMENT_INCR);
 
@@ -805,6 +791,8 @@ static int stm32_venc_get_caps(const struct device *dev, struct video_caps *caps
 
 	/* VENC produces full frames */
 	caps->min_vbuf_count = 1;
+
+	caps->buf_align = ALIGNMENT_INCR;
 
 	return 0;
 }

@@ -814,7 +814,7 @@ static int arducam_mega_check_connection(const struct device *dev)
 	return ret;
 }
 
-static int arducam_mega_set_fmt(const struct device *dev, struct video_format *fmt)
+static int arducam_mega_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	struct arducam_mega_data *drv_data = dev->data;
 	int ret = 0;
@@ -832,12 +832,6 @@ static int arducam_mega_set_fmt(const struct device *dev, struct video_format *f
 
 	drv_data->fmt = *fmt;
 
-	ret = video_format_caps_index(fmts, fmt, &i);
-	if (ret < 0) {
-		LOG_ERR("Unsupported pixel format or resolution %s %ux%u",
-			VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height);
-		return ret;
-	}
 	ret = arducam_mega_set_output_format(dev, fmt->pixelformat);
 	if (ret < 0) {
 		return ret;

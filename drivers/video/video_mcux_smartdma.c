@@ -216,7 +216,7 @@ static const struct video_format_cap fmts[] = {
 	{ 0 },
 };
 
-static int nxp_video_sdma_set_format(const struct device *dev, struct video_format *fmt)
+static int nxp_video_sdma_set_format(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	const struct nxp_video_sdma_config *config = dev->config;
 	int ret;
@@ -224,13 +224,6 @@ static int nxp_video_sdma_set_format(const struct device *dev, struct video_form
 	if (!device_is_ready(config->sensor_dev)) {
 		LOG_ERR("Sensor device not ready");
 		return -ENODEV;
-	}
-
-	if ((fmt->pixelformat != fmts[0].pixelformat) ||
-	    (fmt->width != fmts[0].width_min) ||
-	    (fmt->height != fmts[0].height_min)) {
-		LOG_ERR("Unsupported format");
-		return -ENOTSUP;
 	}
 
 	/* Forward format to sensor device */

@@ -115,7 +115,7 @@ static int mipi_csi2rx_update_settings(const struct device *dev)
 	return ret;
 }
 
-static int mipi_csi2rx_set_fmt(const struct device *dev, struct video_format *fmt)
+static int mipi_csi2rx_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	const struct mipi_csi2rx_config *config = dev->config;
 
