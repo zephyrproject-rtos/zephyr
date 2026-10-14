@@ -1,0 +1,59 @@
+/*
+ * Copyright (c) 2026 Silicon Laboratories Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Silicon Labs NCP on USART2, on the ST Zio connectors:
+ *   PD5 TX, PD6 RX, PD4 RTS, PD3 CTS (CN9 pins 6, 4, 8, 10), PG10 reset (CN8
+ *   pin 14).
+ */
+
+/ {
+	chosen {
+		zephyr,bt-hci = &ncp_hci;
+	};
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pd6 &usart2_rts_pd4 &usart2_cts_pd3>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	hw-flow-control;
+	dmas = <&dmamux1 2 44 STM32_DMA_PERIPH_TX>,
+	       <&dmamux1 3 43 STM32_DMA_PERIPH_RX>;
+	dma-names = "tx", "rx";
+	status = "okay";
+
+	ncp: ncp {
+		compatible = "silabs,ncp";
+		reset-gpios = <&gpiog 10 GPIO_ACTIVE_LOW>;
+
+		ncp_hci: bt-hci {
+			compatible = "silabs,ncp-hci";
+		};
+
+		ncp_wifi: wifi {
+			compatible = "silabs,ncp-wifi";
+		};
+	};
+};
+
+/* Keep RX idle high when nothing is connected */
+&usart2_rx_pd6 {
+	bias-pull-up;
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};
+
+/* Allow transmission when the co-processor does not drive RTS (the SoC
+ * pinctrl pulls CTS up).
+ */
+&usart2_cts_pd3 {
+	/delete-property/ bias-pull-up;
+	bias-pull-down;
+};
