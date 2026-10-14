@@ -237,7 +237,6 @@ struct arducam_mega_ctrls {
 struct arducam_mega_data {
 	struct video_device vdev; /* keep first */
 	struct arducam_mega_ctrls ctrls;
-	struct video_format fmt;
 
 	const struct device *dev;
 	struct k_fifo fifo_in;
@@ -583,7 +582,7 @@ static int arducam_mega_set_jpeg_quality(const struct device *dev, enum mega_ima
 
 	LOG_DBG("JPEG quality level: %d", qc);
 
-	if (drv_data->fmt.pixelformat != VIDEO_PIX_FMT_JPEG) {
+	if (drv_data->vdev.out_fmt.pixelformat != VIDEO_PIX_FMT_JPEG) {
 		LOG_ERR("Image format does not support setting JPEG quality");
 		return -ENOTSUP;
 	}
@@ -822,12 +821,10 @@ static int arducam_mega_set_fmt(const struct device *dev, struct video_format *f
 	int ret = 0;
 	int i = 0;
 
-	if (!memcmp(&drv_data->fmt, fmt, sizeof(drv_data->fmt))) {
+	if (!memcmp(&drv_data->vdev.out_fmt, fmt, sizeof(drv_data->vdev.out_fmt))) {
 		/* nothing to do */
 		return 0;
 	}
-
-	drv_data->fmt = *fmt;
 
 	ret = arducam_mega_set_output_format(dev, fmt->pixelformat);
 	if (ret < 0) {
@@ -838,15 +835,6 @@ static int arducam_mega_set_fmt(const struct device *dev, struct video_format *f
 	if (ret < 0) {
 		return ret;
 	}
-
-	return 0;
-}
-
-static int arducam_mega_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct arducam_mega_data *drv_data = dev->data;
-
-	*fmt = drv_data->fmt;
 
 	return 0;
 }
@@ -1119,7 +1107,6 @@ static int arducam_mega_set_ctrl(const struct device *dev, uint32_t id)
 
 static DEVICE_API(video, arducam_mega_driver_api) = {
 	.set_format = arducam_mega_set_fmt,
-	.get_format = arducam_mega_get_fmt,
 	.set_ctrl = arducam_mega_set_ctrl,
 	.get_caps = arducam_mega_get_caps,
 	.set_stream = arducam_mega_stream_start,
@@ -1251,8 +1238,8 @@ static int arducam_mega_init_controls(const struct device *dev)
 static int arducam_mega_init(const struct device *dev)
 {
 	const struct arducam_mega_config *cfg = dev->config;
-	struct arducam_mega_data *drv_data = dev->data;
 	struct video_format fmt;
+	struct arducam_mega_data *drv_data = dev->data;
 	int ret = 0;
 	uint32_t reg_data;
 
