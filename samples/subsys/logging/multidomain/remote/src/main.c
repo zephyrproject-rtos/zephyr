@@ -8,6 +8,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/ipc/ipc_service.h>
+#include <zephyr/sys/cpu_load.h>
 LOG_MODULE_REGISTER(app);
 
 static volatile uint8_t sample_received_data;
@@ -20,9 +21,10 @@ static void timeout(struct k_timer *timer)
 
 	LOG_INF("loop: %d", cnt++);
 	if (cnt < 10) {
-		k_timer_start(timer, K_MSEC(500), K_NO_WAIT);
+		k_timer_start(timer, K_MSEC(30), K_NO_WAIT);
 	}
 }
+
 K_TIMER_DEFINE(timeout_timer, timeout, NULL);
 
 static void ready_notify(volatile bool *ready)
@@ -68,7 +70,7 @@ static void ipc_run(void)
 	struct ipc_ept ept;
 	int ret;
 
-	printk("IPC-service REMOTE [INST 1] demo started\n");
+	LOG_INF("IPC-service REMOTE [INST 1] demo started");
 
 	ipc_instance = DEVICE_DT_GET(DT_NODELABEL(ipc0));
 
@@ -89,7 +91,7 @@ static void ipc_run(void)
 	ready_wait(&ipc_bound);
 	LOG_INF("bounded");
 
-	while (message < 19) {
+	while (message < 9) {
 		ready_wait(&ipc_ready);
 		message = sample_received_data;
 
@@ -106,14 +108,25 @@ static void ipc_run(void)
 		k_msleep(10);
 	}
 
-	printk("IPC-service REMOTE [INST 1] demo ended.\n");
+	LOG_INF("IPC-service REMOTE [INST 1] demo ended.");
+	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+		int load = cpu_load_get(true);
+
+		LOG_INF("CPU load: %d.%d%%", load / 10, load % 10);
+	}
 }
 
 int main(void)
 {
-	k_timer_start(&timeout_timer, K_MSEC(500), K_NO_WAIT);
+	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+		(void)cpu_load_get(true);
+	}
+
+	k_timer_start(&timeout_timer, K_MSEC(30), K_NO_WAIT);
 
 	ipc_run();
+
+	k_sleep(K_FOREVER);
 
 	return 0;
 }
