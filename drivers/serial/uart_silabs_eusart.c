@@ -80,6 +80,9 @@ struct eusart_data {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t callback;
 	void *cb_data;
+	struct k_spinlock tx_lock;
+	bool tx_active;
+	bool tx_draining;
 #endif
 #ifdef CONFIG_UART_SILABS_EUSART_ASYNC
 	const struct device *uart_dev;
@@ -199,13 +202,54 @@ static int eusart_err_check(const struct device *dev)
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static bool eusart_irq_tx_busy(const struct device *dev)
+{
+	const struct eusart_config *config = dev->config;
+	struct eusart_data *data = dev->data;
+
+	return data->tx_active && !(sl_hal_eusart_get_status(config->eusart) & EUSART_STATUS_TXC);
+}
+
+static void eusart_irq_tx_idle(const struct device *dev)
+{
+	const struct eusart_config *config = dev->config;
+	struct eusart_data *data = dev->data;
+
+	if (data->tx_draining) {
+		sl_hal_eusart_disable_interrupts(config->eusart, EUSART_IEN_TXC);
+		sl_hal_eusart_clear_interrupts(config->eusart, EUSART_IF_TXC);
+		data->tx_draining = false;
+	}
+
+	data->tx_active = false;
+	eusart_pm_lock_put(dev, EUSART_PM_LOCK_TX);
+}
+
+static void eusart_irq_tx_abort_drain(const struct device *dev)
+{
+	struct eusart_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->tx_lock);
+
+	if (data->tx_draining) {
+		eusart_irq_tx_idle(dev);
+	}
+	data->tx_active = false;
+
+	k_spin_unlock(&data->tx_lock, key);
+}
+
 static int eusart_fifo_fill(const struct device *dev, const uint8_t *tx_data, int len)
 {
 	const struct eusart_config *config = dev->config;
+	struct eusart_data *data = dev->data;
 	int i = 0;
 
 	while ((i < len) && (sl_hal_eusart_get_status(config->eusart) & EUSART_STATUS_TXFL)) {
 		config->eusart->TXDATA = (uint32_t)tx_data[i++];
+	}
+
+	if (i > 0) {
+		data->tx_active = true;
 	}
 
 	if (!(sl_hal_eusart_get_status(config->eusart) & EUSART_STATUS_TXFL)) {
@@ -234,32 +278,48 @@ static int eusart_fifo_read(const struct device *dev, uint8_t *rx_data, const in
 static void eusart_irq_tx_enable(const struct device *dev)
 {
 	const struct eusart_config *config = dev->config;
+	struct eusart_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->tx_lock);
+
+	if (data->tx_draining) {
+		sl_hal_eusart_disable_interrupts(config->eusart, EUSART_IEN_TXC);
+		data->tx_draining = false;
+	}
 
 	eusart_pm_lock_get(dev, EUSART_PM_LOCK_TX);
-	sl_hal_eusart_clear_interrupts(config->eusart, EUSART_IEN_TXFL | EUSART_IEN_TXC);
-	sl_hal_eusart_enable_interrupts(config->eusart, EUSART_IEN_TXFL | EUSART_IEN_TXC);
+	sl_hal_eusart_clear_interrupts(config->eusart, EUSART_IF_TXFL);
+	sl_hal_eusart_enable_interrupts(config->eusart, EUSART_IEN_TXFL);
+
+	k_spin_unlock(&data->tx_lock, key);
 }
 
 static void eusart_irq_tx_disable(const struct device *dev)
 {
 	const struct eusart_config *config = dev->config;
+	struct eusart_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->tx_lock);
 
-	sl_hal_eusart_disable_interrupts(config->eusart, EUSART_IEN_TXFL | EUSART_IEN_TXC);
-	sl_hal_eusart_clear_interrupts(config->eusart, EUSART_IEN_TXFL | EUSART_IEN_TXC);
-	eusart_pm_lock_put(dev, EUSART_PM_LOCK_TX);
+	sl_hal_eusart_disable_interrupts(config->eusart, EUSART_IEN_TXFL);
+	sl_hal_eusart_clear_interrupts(config->eusart, EUSART_IF_TXFL);
+
+	if (data->tx_active && !data->tx_draining) {
+		sl_hal_eusart_clear_interrupts(config->eusart, EUSART_IF_TXC);
+		if (eusart_irq_tx_busy(dev)) {
+			data->tx_draining = true;
+			sl_hal_eusart_enable_interrupts(config->eusart, EUSART_IEN_TXC);
+		}
+	}
+
+	if (!data->tx_draining) {
+		eusart_irq_tx_idle(dev);
+	}
+
+	k_spin_unlock(&data->tx_lock, key);
 }
 
 static int eusart_irq_tx_complete(const struct device *dev)
 {
-	const struct eusart_config *config = dev->config;
-	uint32_t flags = sl_hal_eusart_get_pending_interrupts(config->eusart);
-
-	if (flags & EUSART_IF_TXC) {
-		sl_hal_eusart_clear_interrupts(config->eusart, EUSART_IF_TXC);
-		return 1;
-	}
-
-	return 0;
+	return eusart_irq_tx_busy(dev) ? 0 : 1;
 }
 
 static int eusart_irq_tx_ready(const struct device *dev)
@@ -326,6 +386,31 @@ static void eusart_irq_callback_set(const struct device *dev, uart_irq_callback_
 
 	data->callback = cb;
 	data->cb_data = cb_data;
+}
+
+static void eusart_irq_isr(const struct device *dev, uint32_t flags)
+{
+	const struct eusart_config *config = dev->config;
+	struct eusart_data *data = dev->data;
+
+	if (flags & EUSART_IF_TXC) {
+		/* TXC is only enabled by the interrupt-driven API to end a TX drain */
+		k_spinlock_key_t key = k_spin_lock(&data->tx_lock);
+
+		sl_hal_eusart_clear_interrupts(config->eusart, EUSART_IF_TXC);
+		if (!data->tx_draining) {
+			sl_hal_eusart_disable_interrupts(config->eusart, EUSART_IEN_TXC);
+		} else if (!eusart_irq_tx_busy(dev)) {
+			eusart_irq_tx_idle(dev);
+		}
+
+		k_spin_unlock(&data->tx_lock, key);
+	}
+
+	if (data->callback && (flags & (EUSART_IF_TXFL | EUSART_IF_RXFL | EUSART_IF_RXOF |
+					EUSART_IF_PERR | EUSART_IF_FERR))) {
+		data->callback(dev, data->cb_data);
+	}
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
@@ -891,7 +976,6 @@ static uint32_t eusart_async_isr(const struct device *dev, uint32_t flags)
 static void eusart_isr(const struct device *dev)
 {
 	const struct eusart_config *config = dev->config;
-	__maybe_unused struct eusart_data *data = dev->data;
 	__maybe_unused uint32_t flags;
 
 	flags = sl_hal_eusart_get_enabled_pending_interrupts(config->eusart);
@@ -900,9 +984,7 @@ static void eusart_isr(const struct device *dev)
 	flags = eusart_async_isr(dev, flags);
 #endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	if (data->callback) {
-		data->callback(dev, data->cb_data);
-	}
+	eusart_irq_isr(dev, flags);
 #endif
 }
 
@@ -1038,6 +1120,10 @@ static int eusart_configure(const struct device *dev, const struct uart_config *
 
 	*uart_cfg = *cfg;
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	eusart_irq_tx_abort_drain(dev);
+#endif
+
 	err = eusart_configure_peripheral(dev, true);
 	if (err < 0) {
 		return err;
@@ -1112,6 +1198,9 @@ static int eusart_pm_action(const struct device *dev, enum pm_device_action acti
 		/* Entering suspend requires there to be no active asynchronous calls. */
 		__ASSERT_NO_MSG(!data->dma_rx.enabled);
 		__ASSERT_NO_MSG(!data->dma_tx.enabled);
+#endif
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+		eusart_irq_tx_abort_drain(dev);
 #endif
 		sl_hal_eusart_disable_tx(config->eusart);
 		sl_hal_eusart_disable_rx(config->eusart);
