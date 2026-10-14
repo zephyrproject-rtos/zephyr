@@ -2428,7 +2428,6 @@ static void att_prep_queue_clear(struct bt_att *att)
 static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 {
 	struct net_buf *buf;
-	uint8_t err = 0U;
 
 	if (flags != BT_ATT_FLAG_EXEC) {
 		/* Core v6.3 Vol 3 Part F 3.4.6.3: the prepared values are
@@ -2446,6 +2445,7 @@ static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 	while (!sys_slist_is_empty(&chan->att->prep_queue)) {
 		struct bt_attr_data *data;
 		uint16_t handle;
+		uint8_t err;
 
 		NET_BUF_SIMPLE_DEFINE_STATIC(reassembled_data,
 					     MIN(BT_ATT_MAX_ATTRIBUTE_LEN,
@@ -2472,22 +2472,17 @@ static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 			return 0;
 		}
 
-		/* Just discard the data if an error was set */
-		if (!err && flags == BT_ATT_FLAG_EXEC) {
-			err = perform_write(chan, BT_ATT_OP_EXEC_WRITE_REQ, handle, data->offset,
-					    reassembled_data.data, reassembled_data.len);
-			if (err) {
-				/* Respond here since handle is set */
-				send_err_rsp(chan, BT_ATT_OP_EXEC_WRITE_REQ,
-					     data->handle, err);
-			}
-		}
-
+		err = perform_write(chan, BT_ATT_OP_EXEC_WRITE_REQ, handle, data->offset,
+				    reassembled_data.data, reassembled_data.len);
 		net_buf_unref(buf);
-	}
-
-	if (err) {
-		return 0;
+		if (err != BT_ATT_ERR_SUCCESS) {
+			/* Core v6.3 Vol 3 Part F 3.4.6.3: the queue is cleared
+			 * and only an Error Response is sent.
+			 */
+			att_prep_queue_clear(chan->att);
+			send_err_rsp(chan, BT_ATT_OP_EXEC_WRITE_REQ, handle, err);
+			return 0;
+		}
 	}
 
 rsp:
