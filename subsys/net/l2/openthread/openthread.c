@@ -156,7 +156,8 @@ static void ot_receive_handler(otMessage *message, void *context)
 	pkt = net_pkt_rx_alloc_with_buffer(ot_context->iface, otMessageGetLength(message),
 					   NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
-		NET_ERR("Failed to reserve net pkt");
+		NET_ERR("Failed to reserve net pkt (requested len=%u) - RX pkt pool exhausted",
+			otMessageGetLength(message));
 		goto out;
 	}
 
@@ -204,14 +205,17 @@ static void ot_receive_handler(otMessage *message, void *context)
 		}
 
 		if (net_recv_data(ot_context->iface, pkt) < 0) {
-			NET_ERR("net_recv_data failed");
+			NET_ERR("net_recv_data failed (len=%zu) - dropping IPv6 pkt from OT",
+				net_pkt_get_len(pkt));
 			pkt_list_remove_first(ot_context);
 			goto out;
 		}
 
+		NET_DBG("IPv6 pkt (len=%zu) injected to Zephyr net stack OK",
+			net_pkt_get_len(pkt));
 		pkt = NULL;
 	} else {
-		NET_INFO("Packet list is full");
+		NET_ERR("Packet list is FULL - dropping IPv6 pkt from OT (RX backpressure)");
 	}
 out:
 	if (pkt) {
@@ -286,7 +290,8 @@ static enum net_verdict openthread_recv(struct net_if *iface, struct net_pkt *pk
 	}
 
 	if (notify_new_rx_frame(pkt) != 0) {
-		NET_ERR("Failed to queue RX packet for OpenThread");
+		NET_ERR("Failed to queue RX 802.15.4 frame for OpenThread (len=%zu)",
+			net_pkt_get_len(pkt));
 		return NET_DROP;
 	}
 
@@ -311,6 +316,7 @@ int openthread_send(struct net_if *iface, struct net_pkt *pkt)
 #endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER */
 
 	if (notify_new_tx_frame(pkt) != 0) {
+		NET_ERR("Failed to queue TX frame for OpenThread (len=%d)", len);
 		net_pkt_unref(pkt);
 	}
 
