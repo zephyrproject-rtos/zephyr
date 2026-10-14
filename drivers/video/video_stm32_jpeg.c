@@ -373,11 +373,6 @@ void HAL_JPEG_GetDataCallback(JPEG_HandleTypeDef *hjpeg, uint32_t nb_encoded_dat
 	}
 }
 
-static int stm32_jpeg_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
-{
-	return 0;
-}
-
 static int stm32_jpeg_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
 	struct stm32_jpeg_data *data = dev->data;
@@ -463,7 +458,6 @@ static int stm32_jpeg_get_caps(const struct device *dev, struct video_caps *caps
 }
 
 static DEVICE_API(video, stm32_jpeg_driver_api) = {
-	.set_format = stm32_jpeg_set_fmt,
 	.set_stream = stm32_jpeg_set_stream,
 	.enqueue = stm32_jpeg_enqueue,
 	.dequeue = stm32_jpeg_dequeue,

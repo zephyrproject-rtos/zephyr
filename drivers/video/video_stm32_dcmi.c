@@ -215,20 +215,6 @@ static int stm32_dcmi_enable_clock(const struct device *dev)
 	return clock_control_on(dcmi_clock, (clock_control_subsys_t)&config->pclken);
 }
 
-static int video_stm32_dcmi_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
-{
-	const struct video_stm32_dcmi_config *config = dev->config;
-	struct video_stm32_dcmi_data *data = dev->data;
-	int ret;
-
-	ret = video_set_format(config->sensor_dev, fmt);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return 0;
-}
-
 #define STM32_DCMI_GET_CAPTURE_RATE(capture_rate)					\
 	((capture_rate) == 1 ? DCMI_CR_ALL_FRAME :					\
 	(capture_rate) == 2 ? DCMI_CR_ALTERNATE_2_FRAME :				\
@@ -529,7 +515,6 @@ static int video_stm32_dcmi_get_selection(const struct device *dev, struct video
 }
 
 static DEVICE_API(video, video_stm32_dcmi_driver_api) = {
-	.set_format = video_stm32_dcmi_set_fmt,
 	.set_stream = video_stm32_dcmi_set_stream,
 	.enqueue = video_stm32_dcmi_enqueue,
 	.dequeue = video_stm32_dcmi_dequeue,

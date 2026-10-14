@@ -27,22 +27,6 @@ struct emul_rx_data {
 	struct k_fifo fifo_out;
 };
 
-static int emul_rx_set_fmt(const struct device *const dev, struct video_format *fmt, size_t idx)
-{
-	struct emul_rx_data *data = dev->data;
-	int ret;
-
-	/* Propagate the format selection to the source */
-	ret = video_set_format(data->vdev.source_dev, fmt);
-	if (ret < 0) {
-		LOG_DBG("Failed to set %s format to %x %ux%u", data->vdev.source_dev->name,
-			fmt->pixelformat, fmt->width, fmt->height);
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
 static int emul_rx_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	struct emul_rx_data *data = dev->data;
@@ -149,7 +133,6 @@ static int emul_rx_flush(const struct device *dev, bool cancel)
 }
 
 static DEVICE_API(video, emul_rx_driver_api) = {
-	.set_format = emul_rx_set_fmt,
 	.get_caps = emul_rx_get_caps,
 	.set_stream = emul_rx_set_stream,
 	.enqueue = emul_rx_enqueue,
