@@ -233,6 +233,17 @@
 
 #endif /* CONFIG_RISCV_ISA_EXT_SMCSRIND */
 
+/* Privilege-level abstraction for status and cause CSRs */
+#ifdef CONFIG_RISCV_S_MODE
+#define RV_STATUS_CSR sstatus
+#define RV_STATUS_IE  SSTATUS_SIE
+#define RV_STATUS_PIE SSTATUS_SPIE
+#else
+#define RV_STATUS_CSR mstatus
+#define RV_STATUS_IE  MSTATUS_IEN
+#define RV_STATUS_PIE MSTATUS_MPIE_EN
+#endif
+
 #ifndef _ASMLANGUAGE
 
 #define csr_read(csr)						\

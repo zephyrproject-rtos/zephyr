@@ -282,23 +282,6 @@ struct arch_mem_domain {
 
 extern void z_irq_spurious(const void *unused);
 
-/* Privilege-level abstraction for IRQ enable/disable CSR and bit */
-#ifdef CONFIG_RISCV_S_MODE
-/** @brief Name of the interrupt-status CSR as a string literal (S-mode) */
-#define RV_STATUS_CSR "sstatus"
-/** @brief Interrupt-enable bit in the status CSR (S-mode: SIE) */
-#define RV_STATUS_IE  SSTATUS_SIE
-/** @brief Previous interrupt-enable bit in the status CSR (S-mode: SPIE) */
-#define RV_STATUS_PIE SSTATUS_SPIE
-#else
-/** @brief Name of the interrupt-status CSR as a string literal (M-mode) */
-#define RV_STATUS_CSR "mstatus"
-/** @brief Interrupt-enable bit in the status CSR (M-mode: MIE) */
-#define RV_STATUS_IE  MSTATUS_IEN
-/** @brief Previous interrupt-enable bit in the status CSR (M-mode: MPIE) */
-#define RV_STATUS_PIE MSTATUS_MPIE_EN
-#endif
-
 /**
  * @brief Read the privilege-level status register (mstatus or sstatus).
  *
@@ -306,10 +289,7 @@ extern void z_irq_spurious(const void *unused);
  */
 static ALWAYS_INLINE unsigned long z_riscv_status_read(void)
 {
-	unsigned long __rv;
-
-	__asm__ volatile ("csrr %0, " RV_STATUS_CSR : "=r" (__rv));
-	return __rv;
+	return csr_read(RV_STATUS_CSR);
 }
 
 /**
@@ -317,7 +297,7 @@ static ALWAYS_INLINE unsigned long z_riscv_status_read(void)
  */
 static ALWAYS_INLINE void z_riscv_status_set(unsigned long val)
 {
-	__asm__ volatile ("csrs " RV_STATUS_CSR ", %0" : : "rK" (val) : "memory");
+	csr_set(RV_STATUS_CSR, val);
 }
 
 /**
@@ -325,7 +305,7 @@ static ALWAYS_INLINE void z_riscv_status_set(unsigned long val)
  */
 static ALWAYS_INLINE void z_riscv_status_clear(unsigned long val)
 {
-	__asm__ volatile ("csrc " RV_STATUS_CSR ", %0" : : "rK" (val) : "memory");
+	csr_clear(RV_STATUS_CSR, val);
 }
 
 /*
@@ -337,14 +317,7 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 #ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_IRQ_LOCK_OPS
 	return z_soc_irq_lock();
 #else
-	unsigned int key;
-
-	__asm__ volatile ("csrrc %0, " RV_STATUS_CSR ", %1"
-			  : "=r" (key)
-			  : "rK" (RV_STATUS_IE)
-			  : "memory");
-
-	return key;
+	return csr_read_clear(RV_STATUS_CSR, RV_STATUS_IE);
 #endif
 }
 
@@ -357,10 +330,7 @@ static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 #ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_IRQ_LOCK_OPS
 	z_soc_irq_unlock(key);
 #else
-	__asm__ volatile ("csrs " RV_STATUS_CSR ", %0"
-			  :
-			  : "r" (key & RV_STATUS_IE)
-			  : "memory");
+	csr_set(RV_STATUS_CSR, key & RV_STATUS_IE);
 #endif
 }
 
