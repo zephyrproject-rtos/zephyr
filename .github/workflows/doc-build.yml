@@ -62,11 +62,12 @@ jobs:
 
   doc-build-html:
     name: "Documentation Build (HTML)"
-    needs: [doc-file-check]
+    needs: [doc-file-check]   
     if: >
+      github.repository == 'zephyrproject-rtos/zephyr' && (
       needs.doc-file-check.outputs.sphinx_check == 'true' ||
       needs.doc-file-check.outputs.doxygen_check == 'true' ||
-      github.event_name != 'pull_request'
+      github.event_name != 'pull_request')
     runs-on:
       group: zephyr-runner-v2-linux-x64-4xlarge
     container:
@@ -319,6 +320,7 @@ jobs:
     name: "Documentation Build (PDF)"
     needs: [doc-file-check]
     if: |
+      github.repository == 'zephyrproject-rtos/zephyr' &&
       github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 120
