@@ -33,6 +33,8 @@
 		.dev = DEVICE_DT_GET(node_id),                                                     \
 		.source_dev = source,                                                              \
 		.ctrls = SYS_DLIST_STATIC_INIT(&name.vdev.ctrls),                                  \
+		.in_fmt = {.type = VIDEO_BUF_TYPE_INPUT},                                          \
+		.out_fmt = {.type = VIDEO_BUF_TYPE_OUTPUT},                                        \
 	}
 
 /**
