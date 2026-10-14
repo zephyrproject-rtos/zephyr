@@ -85,9 +85,9 @@ tests:
         - ".*: CBC mode DECRYPT - Match"
         - ".*: CTR mode ENCRYPT - Match"
         - ".*: CTR mode DECRYPT - Match"
-  sample.drivers.crypto.cc23x0_dma:
+  sample.drivers.crypto.cc23xx_cc27xx_dma:
     tags: crypto
-    filter: dt_compat_enabled("ti,cc23x0-aes") and dt_compat_enabled("ti,cc23x0-dma")
+    filter: dt_compat_enabled("ti,cc23xx-cc27xx-aes") and dt_compat_enabled("ti,lpf3-dma")
     integration_platforms:
       - lp_em_cc2340r5
     harness: console
@@ -99,7 +99,7 @@ tests:
         - ".*: CTR mode ENCRYPT - Match"
         - ".*: CTR mode DECRYPT - Match"
     extra_configs:
-      - CONFIG_CRYPTO_CC23X0_DMA=y
+      - CONFIG_CRYPTO_CC23XX_CC27XX_DMA=y
   sample.drivers.crypto.esp32:
     tags: crypto
     filter: dt_compat_enabled("espressif,esp32-aes")
