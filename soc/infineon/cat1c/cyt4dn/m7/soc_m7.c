@@ -73,6 +73,10 @@ void soc_prep_hook(void)
 	(void)Cy_SysClk_PeriGroupSetSlaveCtl(6, CY_SYSCLK_PERI_GROUP_SL_CTL, 0xFFFFU);
 	(void)Cy_SysClk_PeriGroupSetSlaveCtl(8, CY_SYSCLK_PERI_GROUP_SL_CTL, 0xFFFFU);
 	(void)Cy_SysClk_PeriGroupSetSlaveCtl(9, CY_SYSCLK_PERI_GROUP_SL_CTL, 0xFFFFU);
+
+	Cy_WDT_Unlock();
+	Cy_WDT_Disable();
+	SystemCoreClockUpdate();
 }
 
 void soc_early_init_hook(void)
