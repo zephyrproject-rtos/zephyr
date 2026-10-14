@@ -1,0 +1,66 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Xilinx Zynq-7000 clock controller, the clock part of the System Level
+  Control Registers (SLCR).
+
+  The node follows the Linux binding: it is a child of the SLCR node with
+  the offset of the clock control registers, and the clock IDs are the
+  output numbers of the Linux binding, named in
+  include/zephyr/dt-bindings/clock/xlnx-zynq-clkc.h. The SLCR is accessed
+  through its syscon node, the PS_CLK oscillator rate is a property of the
+  board:
+
+    slcr: slcr@f8000000 {
+      compatible = "xlnx,zynq-slcr", "syscon";
+      reg = <0xf8000000 0x1000>;
+      ranges;
+
+      clkc: clkc@100 {
+        #clock-cells = <1>;
+        compatible = "xlnx,ps7-clkc";
+        reg = <0x100 0x100>;
+        syscon = <&slcr>;
+        ps-clk-frequency = <33333333>;
+      };
+    };
+
+    gem0: ethernet@e000b000 {
+      clocks = <&clkc ZYNQ_CLK_GEM0_APER>, <&clkc ZYNQ_CLK_GEM0_APER>,
+               <&clkc ZYNQ_CLK_GEM0>;
+      clock-names = "pclk", "hclk", "tx_clk";
+    };
+
+  The driver derives the rates from the registers as the boot firmware left
+  them. It supports the PLLs (ZYNQ_CLK_ARMPLL, ZYNQ_CLK_DDRPLL,
+  ZYNQ_CLK_IOPLL), the CPU clocks (ZYNQ_CLK_CPU_6OR4X to ZYNQ_CLK_CPU_1X),
+  the GEM clocks (ZYNQ_CLK_GEM0 and ZYNQ_CLK_GEM1, gated, their rate set
+  through the two dividers from the selected PLL) and the GEM AMBA clocks
+  (ZYNQ_CLK_GEM0_APER and ZYNQ_CLK_GEM1_APER, gated). The other clocks and
+  the EMIO clock sources are not supported.
+
+compatible: "xlnx,ps7-clkc"
+
+include: [base.yaml, clock-controller.yaml]
+
+properties:
+  reg:
+    required: true
+    description: Offset and size of the clock control registers in the SLCR.
+
+  syscon:
+    type: phandle
+    required: true
+    description: The SLCR syscon node through which the registers are accessed.
+
+  ps-clk-frequency:
+    type: int
+    required: true
+    description: Rate of the PS_CLK oscillator feeding the PLLs, in Hz.
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - id
