@@ -7,7 +7,6 @@
 #include "openthread/instance.h"
 #include "openthread/ip6.h"
 #include "openthread/trel.h"
-#include "openthread/logging.h"
 #include "openthread_border_router.h"
 #include <common/code_utils.hpp>
 #include <zephyr/net/socket.h>
@@ -16,6 +15,9 @@
 #include <zephyr/net/net_ip.h>
 #include "sockets_internal.h"
 #include <platform-zephyr.h>
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(trel_dbg, LOG_LEVEL_INF);
 
 #define MAX_SERVICES CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_TREL_SERVICES
 
@@ -40,11 +42,11 @@ void otPlatTrelEnable(otInstance *aInstance, uint16_t *aUdpPort)
 
 	trel_sock = zsock_socket(NET_AF_INET6, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 	if (trel_sock < 0) {
-		otLogWarnPlat("[TREL] Enable: socket() failed, errno=%d", errno);
+		LOG_WRN("[TREL] Enable: socket() failed, errno=%d", errno);
 	}
 	VerifyOrExit(trel_sock >= 0);
 	if (zsock_bind(trel_sock, (struct net_sockaddr *)&addr, sizeof(addr)) != 0) {
-		otLogWarnPlat("[TREL] Enable: bind() failed, errno=%d", errno);
+		LOG_WRN("[TREL] Enable: bind() failed, errno=%d", errno);
 		ExitNow();
 	}
 
@@ -52,17 +54,17 @@ void otPlatTrelEnable(otInstance *aInstance, uint16_t *aUdpPort)
 
 	*aUdpPort = net_ntohs(addr.sin6_port);
 
-	otLogNotePlat("[TREL] Enable: sock=%d, udpPort=%u", trel_sock, *aUdpPort);
+	LOG_INF("[TREL] Enable: sock=%d, udpPort=%u", trel_sock, *aUdpPort);
 
 	otPlatTrelResetCounters(aInstance);
 
 	trel_is_enabled = true;
 
 	if (ail_iface_ptr != NULL && net_if_is_up(ail_iface_ptr)) {
-		otLogNotePlat("[TREL] Enable: AIL iface up, calling trel_plat_init()");
+		LOG_INF("[TREL] Enable: AIL iface up, calling trel_plat_init()");
 		(void)trel_plat_init(ot_instance_ptr, ail_iface_ptr);
 	} else {
-		otLogWarnPlat("[TREL] Enable: AIL iface NULL or down (ptr=%p, up=%d) - "
+		LOG_WRN("[TREL] Enable: AIL iface NULL or down (ptr=%p, up=%d) - "
 			      "socket NOT registered for RX yet",
 			      (void *)ail_iface_ptr,
 			      ail_iface_ptr ? net_if_is_up(ail_iface_ptr) : 0);
@@ -79,7 +81,7 @@ void otPlatTrelDisable(otInstance *aInstance)
 	OT_UNUSED_VARIABLE(aInstance);
 	VerifyOrExit(trel_is_enabled);
 
-	otLogNotePlat("[TREL] Disable: closing sock=%d", trel_sock);
+	LOG_INF("[TREL] Disable: closing sock=%d", trel_sock);
 
 	VerifyOrExit(trel_sock != -1);
 	VerifyOrExit(zsock_close(trel_sock) == 0);
@@ -102,7 +104,7 @@ void otPlatTrelSend(otInstance *aInstance, const uint8_t *aUdpPayload, uint16_t 
 	ssize_t sent;
 
 	if (!trel_is_enabled) {
-		otLogWarnPlat("[TREL] Send: DROPPED - TREL not enabled (len=%u)", aUdpPayloadLen);
+		LOG_WRN("[TREL] Send: DROPPED - TREL not enabled (len=%u)", aUdpPayloadLen);
 	}
 	VerifyOrExit(trel_is_enabled);
 
@@ -117,7 +119,7 @@ void otPlatTrelSend(otInstance *aInstance, const uint8_t *aUdpPayload, uint16_t 
 		char addrstr[OT_IP6_ADDRESS_STRING_SIZE];
 
 		otIp6AddressToString(&aDestSockAddr->mAddress, addrstr, sizeof(addrstr));
-		otLogNotePlat("[TREL] Send: dst=[%s]:%u len=%u sock=%d",
+		LOG_INF("[TREL] Send: dst=[%s]:%u len=%u sock=%d",
 			      addrstr, aDestSockAddr->mPort, aUdpPayloadLen, trel_sock);
 	}
 
@@ -128,10 +130,10 @@ void otPlatTrelSend(otInstance *aInstance, const uint8_t *aUdpPayload, uint16_t 
 	if (sent == aUdpPayloadLen) {
 		trel_counters.mTxBytes += aUdpPayloadLen;
 		trel_counters.mTxPackets++;
-		otLogNotePlat("[TREL] Send: OK (txPackets=%llu)", trel_counters.mTxPackets);
+		LOG_INF("[TREL] Send: OK (txPackets=%llu)", trel_counters.mTxPackets);
 	} else {
 		trel_counters.mTxFailure++;
-		otLogWarnPlat("[TREL] Send: FAILED sent=%d expected=%u errno=%d (txFailure=%llu)",
+		LOG_WRN("[TREL] Send: FAILED sent=%d expected=%u errno=%d (txFailure=%llu)",
 			      (int)sent, aUdpPayloadLen, errno, trel_counters.mTxFailure);
 	}
 
@@ -161,20 +163,20 @@ static void trel_receive_handler(struct net_socket_service_event *evt)
 	trel_counters.mRxPackets++;
 
 	if (!(evt->event.revents & ZSOCK_POLLIN)) {
-		otLogWarnPlat("[TREL] Recv: woke up but no POLLIN (revents=0x%x)",
+		LOG_WRN("[TREL] Recv: woke up but no POLLIN (revents=0x%x)",
 			      evt->event.revents);
 	}
 	VerifyOrExit(evt->event.revents & ZSOCK_POLLIN);
 
 	if (openthread_border_router_allocate_message((void **)&req) != OT_ERROR_NONE) {
-		otLogWarnPlat("[TREL] Recv: DROPPED - allocate_message() failed (no free msg ctx)");
+		LOG_WRN("[TREL] Recv: DROPPED - allocate_message() failed (no free msg ctx)");
 		ExitNow();
 	}
 
 	len = zsock_recvfrom(trel_sock, req->buffer, sizeof(req->buffer), 0,
 			     (struct net_sockaddr *)&addr, &addrlen);
 	if (len <= 0) {
-		otLogWarnPlat("[TREL] Recv: recvfrom() returned %d, errno=%d", (int)len, errno);
+		LOG_WRN("[TREL] Recv: recvfrom() returned %d, errno=%d", (int)len, errno);
 	}
 	VerifyOrExit(len > 0);
 
@@ -189,7 +191,7 @@ static void trel_receive_handler(struct net_socket_service_event *evt)
 		char addrstr[OT_IP6_ADDRESS_STRING_SIZE];
 
 		otIp6AddressToString(&req->sock_addr.mAddress, addrstr, sizeof(addrstr));
-		otLogNotePlat("[TREL] Recv: src=[%s]:%u len=%u (rxPackets=%llu)",
+		LOG_INF("[TREL] Recv: src=[%s]:%u len=%u (rxPackets=%llu)",
 			      addrstr, req->sock_addr.mPort, req->length,
 			      trel_counters.mRxPackets);
 	}
@@ -202,7 +204,7 @@ exit:
 
 static void process_trel_message(struct otbr_msg_ctx *msg_ctx_ptr)
 {
-	otLogNotePlat("[TREL] Process: handing %u bytes to OT stack", msg_ctx_ptr->length);
+	LOG_INF("[TREL] Process: handing %u bytes to OT stack", msg_ctx_ptr->length);
 	otPlatTrelHandleReceived(ot_instance_ptr, msg_ctx_ptr->buffer, msg_ctx_ptr->length,
 				 &msg_ctx_ptr->sock_addr);
 }
@@ -220,7 +222,7 @@ otError trel_plat_init(otInstance *instance, struct net_if *ail_iface)
 				     CONFIG_NET_INTERFACE_NAME_LEN) > 0,
 		     error = OT_ERROR_FAILED);
 
-	otLogNotePlat("[TREL] plat_init: binding sock=%d to AIL iface '%s'", trel_sock, name);
+	LOG_INF("[TREL] plat_init: binding sock=%d to AIL iface '%s'", trel_sock, name);
 
 	memcpy(if_req.ifr_name, name, MIN(sizeof(name) - 1, sizeof(if_req.ifr_name) - 1));
 	VerifyOrExit(zsock_setsockopt(trel_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_BINDTODEVICE, &if_req,
@@ -234,11 +236,11 @@ otError trel_plat_init(otInstance *instance, struct net_if *ail_iface)
 						 ARRAY_SIZE(sockfd_udp), NULL) == 0,
 		     error = OT_ERROR_FAILED);
 
-	otLogNotePlat("[TREL] plat_init: socket service registered, RX active on sock=%d",
+	LOG_INF("[TREL] plat_init: socket service registered, RX active on sock=%d",
 		      trel_sock);
 exit:
 	if (error != OT_ERROR_NONE) {
-		otLogWarnPlat("[TREL] plat_init: FAILED (error=%d)", error);
+		LOG_WRN("[TREL] plat_init: FAILED (error=%d)", error);
 	}
 	return error;
 }
