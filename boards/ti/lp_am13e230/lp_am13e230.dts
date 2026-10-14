@@ -22,6 +22,7 @@
 	chosen {
 		zephyr,sram = &sram0_1_2;
 		zephyr,flash = &flash0;
+		zephyr,crc = &crc;
 		zephyr,canbus = &mcan0;
 		zephyr,console = &unicomm4_uart;
 		zephyr,shell-uart = &unicomm4_uart;

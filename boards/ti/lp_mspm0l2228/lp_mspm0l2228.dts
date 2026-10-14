@@ -33,6 +33,7 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,entropy = &trng;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -216,4 +217,8 @@ auxdisplay_0: &lcd0 {
 		/* '.' COL4 degree symbol at gap4 only */
 		upper-dot-indicators = <0xff 0xff 0xff 0xff 7>;
 	};
+};
+
+&crc {
+	status = "okay";
 };

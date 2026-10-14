@@ -37,6 +37,7 @@
 		zephyr,entropy = &trng;
 		zephyr,flash-controller = &flashctl;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -214,4 +215,9 @@
 			reg = <0x00038000 DT_SIZE_K(32)>;
 		};
 	};
+};
+
+&crc {
+	compatible = "ti,mspm0-crcp";
+	status = "okay";
 };
