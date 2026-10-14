@@ -26,7 +26,6 @@ LOG_MODULE_REGISTER(video_mipi_csi2rx, CONFIG_VIDEO_LOG_LEVEL);
 
 struct mipi_csi2rx_config {
 	const MIPI_CSI2RX_Type *base;
-	const struct device *sensor_dev;
 };
 
 struct mipi_csi2rx_data {
@@ -52,7 +51,6 @@ const struct mipi_csi2rx_tHsSettleEscClk_config tHsSettleEscClk_configs[] = {
 
 static int mipi_csi2rx_update_settings(const struct device *dev)
 {
-	const struct mipi_csi2rx_config *config = dev->config;
 	struct mipi_csi2rx_data *drv_data = dev->data;
 	uint8_t bpp;
 	uint32_t root_clk_rate, ui_clk_rate, sensor_byte_clk, best_match;
@@ -60,13 +58,13 @@ static int mipi_csi2rx_update_settings(const struct device *dev)
 	struct video_control sensor_rate = {.id = VIDEO_CID_PIXEL_RATE, .val64 = -1};
 	struct video_format fmt = {.type = VIDEO_BUF_TYPE_OUTPUT};
 
-	ret = video_get_format(config->sensor_dev, &fmt);
+	ret = video_get_format(drv_data->vdev.source_dev, &fmt);
 	if (ret) {
-		LOG_ERR("Cannot get sensor_dev pixel format");
+		LOG_ERR("Cannot get source dev pixel format");
 		return ret;
 	}
 
-	video_get_ctrl(config->sensor_dev, &sensor_rate);
+	video_get_ctrl(drv_data->vdev.source_dev, &sensor_rate);
 	if (!IN_RANGE(sensor_rate.val64, 0, MAX_SUPPORTED_PIXEL_RATE)) {
 		LOG_ERR("Sensor pixel rate is not supported %lld", sensor_rate.val64);
 		return -ENOTSUP;
@@ -119,9 +117,9 @@ static int mipi_csi2rx_update_settings(const struct device *dev)
 
 static int mipi_csi2rx_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
-	const struct mipi_csi2rx_config *config = dev->config;
+	struct mipi_csi2rx_data *drv_data = dev->data;
 
-	if (video_set_format(config->sensor_dev, fmt)) {
+	if (video_set_format(drv_data->vdev.source_dev, fmt)) {
 		return -EIO;
 	}
 
@@ -131,16 +129,15 @@ static int mipi_csi2rx_set_fmt(const struct device *dev, struct video_format *fm
 static int mipi_csi2rx_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
 	const struct mipi_csi2rx_config *config = dev->config;
+	struct mipi_csi2rx_data *data = dev->data;
 
 	if (enable) {
-		struct mipi_csi2rx_data *drv_data = dev->data;
-
-		CSI2RX_Init((MIPI_CSI2RX_Type *)config->base, &drv_data->csi2rxConfig);
-		if (video_stream_start(config->sensor_dev, type)) {
+		CSI2RX_Init((MIPI_CSI2RX_Type *)config->base, &data->csi2rxConfig);
+		if (video_stream_start(data->vdev.source_dev, type)) {
 			return -EIO;
 		}
 	} else {
-		if (video_stream_stop(config->sensor_dev, type)) {
+		if (video_stream_stop(data->vdev.source_dev, type)) {
 			return -EIO;
 		}
 		CSI2RX_Deinit((MIPI_CSI2RX_Type *)config->base);
@@ -151,21 +148,21 @@ static int mipi_csi2rx_set_stream(const struct device *dev, bool enable, enum vi
 
 static int mipi_csi2rx_get_caps(const struct device *dev, struct video_caps *caps)
 {
-	const struct mipi_csi2rx_config *config = dev->config;
+	struct mipi_csi2rx_data *data = dev->data;
 
 	/* Just forward to sensor dev for now */
-	return video_get_caps(config->sensor_dev, caps);
+	return video_get_caps(data->vdev.source_dev, caps);
 }
 
 static int mipi_csi2rx_set_frmival(const struct device *dev, struct video_frmival *frmival,
 				   size_t idx)
 {
-	const struct mipi_csi2rx_config *config = dev->config;
+	struct mipi_csi2rx_data *data = dev->data;
 	int ret;
 
-	ret = video_set_frmival(config->sensor_dev, frmival);
+	ret = video_set_frmival(data->vdev.source_dev, frmival);
 	if (ret) {
-		LOG_ERR("Cannot set sensor_dev frmival");
+		LOG_ERR("Cannot set source dev frmival");
 		return ret;
 	}
 
@@ -194,7 +191,6 @@ static uint32_t mipi_csi2rx_estimate_pixel_rate(const struct video_frmival *cur_
 
 static int mipi_csi2rx_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
-	const struct mipi_csi2rx_config *config = dev->config;
 	struct mipi_csi2rx_data *drv_data = dev->data;
 	int ret;
 	uint32_t est_pixel_rate;
@@ -202,24 +198,24 @@ static int mipi_csi2rx_enum_frmival(const struct device *dev, struct video_frmiv
 	struct video_format cur_fmt;
 	struct video_control sensor_rate = {.id = VIDEO_CID_PIXEL_RATE, .val64 = -1};
 
-	ret = video_enum_frmival(config->sensor_dev, fie);
+	ret = video_enum_frmival(drv_data->vdev.source_dev, fie);
 	if (ret) {
 		return ret;
 	}
 
-	ret = video_get_frmival(config->sensor_dev, &cur_frmival);
+	ret = video_get_frmival(drv_data->vdev.source_dev, &cur_frmival);
 	if (ret) {
-		LOG_ERR("Cannot get sensor_dev frame rate");
+		LOG_ERR("Cannot get source dev frame rate");
 		return ret;
 	}
 
-	ret = video_get_format(config->sensor_dev, &cur_fmt);
+	ret = video_get_format(drv_data->vdev.source_dev, &cur_fmt);
 	if (ret) {
-		LOG_ERR("Cannot get sensor_dev format");
+		LOG_ERR("Cannot get source dev format");
 		return ret;
 	}
 
-	ret = video_get_ctrl(config->sensor_dev, &sensor_rate);
+	ret = video_get_ctrl(drv_data->vdev.source_dev, &sensor_rate);
 	if (ret) {
 		return ret;
 	}
@@ -268,12 +264,11 @@ static DEVICE_API(video, mipi_csi2rx_driver_api) = {
 
 static int mipi_csi2rx_init(const struct device *dev)
 {
-	const struct mipi_csi2rx_config *config = dev->config;
 	struct mipi_csi2rx_data *drv_data = dev->data;
 	int ret;
 
 	/* Check if there is any sensor device */
-	if (!device_is_ready(config->sensor_dev)) {
+	if (!device_is_ready(drv_data->vdev.source_dev)) {
 		return -ENODEV;
 	}
 
@@ -294,7 +289,7 @@ static int mipi_csi2rx_init(const struct device *dev)
 
 #define MIPI_CSI2RX_INIT(n)                                                                        \
 	static struct mipi_csi2rx_data mipi_csi2rx_data_##n = {                                    \
-		.vdev = VIDEO_DEVICE_INIT(mipi_csi2rx_data_##n, DT_DRV_INST(n), NULL),                 \
+		.vdev = VIDEO_DEVICE_INIT(mipi_csi2rx_data_##n, DT_DRV_INST(n), SOURCE_DEV(n)),    \
 		.csi2rxConfig.laneNum = DT_PROP_LEN(DT_INST_ENDPOINT_BY_ID(n, 1, 0), data_lanes),  \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
 		.clock_root = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_IDX(n, 0, name),      \
@@ -304,7 +299,6 @@ static int mipi_csi2rx_init(const struct device *dev)
                                                                                                    \
 	static const struct mipi_csi2rx_config mipi_csi2rx_config_##n = {                          \
 		.base = (MIPI_CSI2RX_Type *)DT_INST_REG_ADDR(n),                                   \
-		.sensor_dev = SOURCE_DEV(n),                                                       \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &mipi_csi2rx_init, NULL, &mipi_csi2rx_data_##n,                   \
