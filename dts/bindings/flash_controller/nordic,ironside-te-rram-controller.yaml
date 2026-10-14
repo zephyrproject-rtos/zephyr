@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  RRAM of a device booted by IronSide TE.
+
+  Bound in place of "nordic,rram-controller" on IronSide TE board targets:
+  reads stay memory-mapped and writes go through the IronSide TE NVM service.
+
+compatible: "nordic,ironside-te-rram-controller"
+
+include: flash-controller.yaml

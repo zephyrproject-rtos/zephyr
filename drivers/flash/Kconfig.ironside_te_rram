@@ -1,0 +1,43 @@
+#
+# Copyright (c) 2026 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig FLASH_IRONSIDE_TE_RRAM
+	bool "IronSide TE RRAM"
+	default y
+	depends on DT_HAS_NORDIC_IRONSIDE_TE_RRAM_CONTROLLER_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_DRIVER_FILL
+	select FLASH_HAS_NO_EXPLICIT_ERASE
+	select FLASH_HAS_PAGE_LAYOUT
+	help
+	  Flash driver for the RRAM of a device booted by IronSide TE: reads are
+	  memory-mapped, writes go through the IronSide TE NVM service.
+
+if FLASH_IRONSIDE_TE_RRAM
+
+config FLASH_IRONSIDE_TE_RRAM_FILL_CHUNK_SIZE
+	int "Fill chunk size"
+	default 32
+	range 16 64
+	help
+	  Erase and fill send the fill value through the NVM service like any other
+	  write, staged in a buffer on the caller's stack and sent one chunk at a
+	  time. This is that chunk size, in bytes: it trades stack for secure calls,
+	  at one call per chunk, or one radio-synchronized operation per chunk.
+	  Must be a whole number of write blocks.
+
+config FLASH_IRONSIDE_TE_RRAM_SYNC_WRITE_LINES
+	int "Write lines per radio sync window"
+	depends on !SOC_FLASH_NRF_RADIO_SYNC_NONE
+	range 1 32
+	default 1
+	help
+	  Number of write lines sent to the NVM service, in one call, per execution
+	  window granted by the radio synchronization backend. The window is sized
+	  for the worst-case write time of that many lines, so more lines per window
+	  mean fewer secure calls and higher throughput, but longer radio blackouts.
+
+endif # FLASH_IRONSIDE_TE_RRAM

@@ -7,7 +7,7 @@
 # Shared by the Nordic flash drivers that can run their writes
 # in the execution windows of a sync backend, see soc_flash_nrf.h.
 
-if SOC_FLASH_NRF_RRAM
+if SOC_FLASH_NRF_RRAM || FLASH_IRONSIDE_TE_RRAM
 
 choice SOC_FLASH_NRF_RADIO_SYNC_CHOICE
 	prompt "Nordic nRFx flash driver synchronization"
@@ -40,4 +40,4 @@ config SOC_FLASH_NRF_TIMEOUT_MULTIPLIER
 	  the multiplication would allow erasing all nRF flash pages in
 	  blocking mode.
 
-endif # SOC_FLASH_NRF_RRAM
+endif # SOC_FLASH_NRF_RRAM || FLASH_IRONSIDE_TE_RRAM
