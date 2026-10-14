@@ -242,7 +242,8 @@ static void adv_rpa_expired(struct bt_le_ext_adv *adv, void *data)
 		}
 		bool *rpa_invalid_set_ptr = data;
 
-		if (!rpa_invalid) {
+		/* NULL when limited advertising ends, which rotates no shared RPA */
+		if (!rpa_invalid && rpa_invalid_set_ptr != NULL) {
 			rpa_invalid_set_ptr[adv->id] = false;
 		}
 	} else {
