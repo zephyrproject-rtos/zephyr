@@ -77,14 +77,6 @@ static int emul_rx_enqueue(const struct device *dev, struct video_buffer *vbuf)
 	struct emul_rx_data *data = dev->data;
 	struct video_format *fmt = &data->vdev.out_fmt;
 
-	if (vbuf->size < fmt->pitch * fmt->height) {
-		LOG_ERR("Buffer too small for a full frame");
-		return -ENOMEM;
-	}
-
-	/* The buffer has not been filled yet: flag as empty */
-	vbuf->bytesused = 0;
-
 	/* Submit the buffer for processing in the worker, where everything happens */
 	k_fifo_put(&data->fifo_in, vbuf);
 	k_work_submit(&data->work);

@@ -222,13 +222,7 @@ static int video_renesas_ra_ceu_enqueue(const struct device *dev, struct video_b
 {
 	struct video_renesas_ra_ceu_data *data = dev->data;
 	struct video_buffer *next_vbuf;
-	const uint32_t buffer_size = data->vdev.out_fmt.pitch * data->vdev.fmt.height;
 	fsp_err_t err;
-
-	if (buffer_size > vbuf->size) {
-		LOG_DBG("Enqueue buffer too small");
-		return -EINVAL;
-	}
 
 	vbuf->bytesused = buffer_size;
 	vbuf->line_offset = 0;

@@ -280,12 +280,7 @@ static int video_stm32_dcmi_enqueue(const struct device *dev, struct video_buffe
 {
 	struct video_stm32_dcmi_data *data = dev->data;
 
-	if (data->vdev.out_fmt.size > vbuf->size) {
-		return -EINVAL;
-	}
-
 	vbuf->bytesused = data->vdev.out_fmt.size;
-	vbuf->line_offset = 0;
 
 	k_fifo_put(&data->fifo_in, vbuf);
 

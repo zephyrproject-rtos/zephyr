@@ -202,22 +202,6 @@ static void video_nsi_fifo_thread(void *p1, void *p2, void *p3)
 			continue;
 		}
 
-		/* A larger format may have been set since the buffer was queued */
-		if (vbuf->size < data->vdev.out_fmt.size) {
-			LOG_ERR("Buffer too small: %u bytes provided, %u needed", vbuf->size,
-				data->vdev.out_fmt.size);
-			(void)k_fifo_get(&data->fifo_in, K_NO_WAIT);
-			vbuf->bytesused = 0;
-			/* As for a cancelled buffer, skip the rest of the frame it was receiving */
-			data->discard = (data->frame_offset > 0);
-			k_fifo_put(&data->fifo_out, vbuf);
-			if (IS_ENABLED(CONFIG_POLL) && (data->sig != NULL)) {
-				k_poll_signal_raise(data->sig, VIDEO_BUF_ERROR);
-			}
-			k_mutex_unlock(&data->lock);
-			continue;
-		}
-
 		if (data->fd < 0) {
 			ret = video_nsi_fifo_open(data);
 			if (ret < 0) {
@@ -344,15 +328,8 @@ static int video_nsi_fifo_enqueue(const struct device *dev, struct video_buffer 
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
-	if (vbuf->size < data->vdev.out_fmt.size) {
-		LOG_ERR("Buffer too small: %u bytes provided, %u needed", vbuf->size,
-			data->vdev.out_fmt.size);
-		ret = -EINVAL;
-	} else {
-		vbuf->bytesused = 0;
-		k_fifo_put(&data->fifo_in, vbuf);
-		k_sem_give(&data->wake_sem);
-	}
+	k_fifo_put(&data->fifo_in, vbuf);
+	k_sem_give(&data->wake_sem);
 
 	k_mutex_unlock(&data->lock);
 

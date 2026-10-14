@@ -155,9 +155,6 @@ static int nxp_video_sdma_enqueue(const struct device *dev, struct video_buffer 
 
 	/* SmartDMA will read 30 lines of RGB565 video data into framebuffer */
 	vbuf->bytesused = SDMA_VBUF_WIDTH * SDMA_LINE_COUNT * sizeof(uint16_t);
-	if (vbuf->size < vbuf->bytesused) {
-		return -EINVAL;
-	}
 
 	/* Put buffer into FIFO */
 	k_fifo_put(&data->fifo_in, vbuf);

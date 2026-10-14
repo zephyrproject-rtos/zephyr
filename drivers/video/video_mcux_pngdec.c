@@ -234,16 +234,6 @@ static int mcux_pngdec_enqueue(const struct device *dev, struct video_buffer *vb
 
 			data->first_frame_rcv = true;
 		}
-	} else {
-		/*
-		 * Verify the output buffer size only if the first input frame
-		 * has been received.
-		 */
-		if ((data->first_frame_rcv) && (vbuf->size < data->vdev.out_fmt.size)) {
-			LOG_ERR("Output buffer size is insufficient");
-			ret = -EINVAL;
-			goto unlock;
-		}
 	}
 
 	k_fifo_put(&common->fifo_in, vbuf);

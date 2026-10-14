@@ -370,10 +370,6 @@ static int nxp_flexio_camera_enqueue(const struct device *dev,
 {
 	struct nxp_flexio_camera_data *data = dev->data;
 
-	if (vbuf->size < data->vdev.out_fmt.size) {
-		return -EINVAL;
-	}
-
 	/* Clear any stale "stream drained" signal so a subsequent flush(cancel=false)
 	 * properly waits for this new buffer to be filled instead of returning
 	 * immediately on the leftover give() from a previous starvation.

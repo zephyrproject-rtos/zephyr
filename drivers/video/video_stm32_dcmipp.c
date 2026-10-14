@@ -1271,10 +1271,6 @@ static int stm32_dcmipp_enqueue(const struct device *dev, struct video_buffer *v
 
 	k_mutex_lock(&pipe->lock, K_FOREVER);
 
-	if (pipe->vdev.out_fmt.pitch * pipe->vdev.out_fmt.height > vbuf->size) {
-		return -EINVAL;
-	}
-
 	if (pipe->state == STM32_DCMIPP_WAIT_FOR_BUFFER) {
 		LOG_DBG("Restart CPTREQ after wait for buffer");
 		pipe->next = vbuf;
