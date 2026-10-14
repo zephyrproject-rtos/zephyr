@@ -596,10 +596,10 @@ config WIFI_FIXED_MAC_ADDRESS_ENABLED
 
 config WIFI_RANDOM_MAC_ADDRESS
 	bool "Random MAC address generation at runtime"
-	depends on ENTROPY_GENERATOR
+	depends on HAS_RANDOM_GENERATOR
 	help
 	  This option enables random MAC address generation at runtime.
-	  The random MAC address is generated using the entropy device random generator.
+	  The random MAC address is generated using sys_rand_get.
 
 endchoice
 
