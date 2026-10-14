@@ -36,6 +36,11 @@ config TIMER_RANDOM_INITIAL_STATE
 	  Initial state value used by TIMER_RANDOM_GENERATOR and
 	  early random number genenator.
 
+config HAS_RANDOM_GENERATOR
+	bool
+	help
+	  Support for random number generation through `sys_rand*_get` functions.
+
 choice RNG_GENERATOR_CHOICE
 	prompt "Random generator"
 	default ARM64_RANDOM_GENERATOR if ARM64_RNG
@@ -53,6 +58,7 @@ choice RNG_GENERATOR_CHOICE
 config TIMER_RANDOM_GENERATOR
 	bool "System timer clock based number generator"
 	depends on TEST_RANDOM_GENERATOR
+	select HAS_RANDOM_GENERATOR
 	help
 	  This options enables number generator based on system timer
 	  clock. This number generator is not random and used for
@@ -61,6 +67,7 @@ config TIMER_RANDOM_GENERATOR
 config ENTROPY_DEVICE_RANDOM_GENERATOR
 	bool "Use entropy driver to generate random numbers"
 	depends on ENTROPY_HAS_DRIVER
+	select HAS_RANDOM_GENERATOR
 	help
 	  Enables a random number generator that uses the enabled hardware
 	  entropy gathering driver to generate random numbers. Should only be
@@ -70,6 +77,7 @@ config ENTROPY_DEVICE_RANDOM_GENERATOR
 config XOSHIRO_RANDOM_GENERATOR
 	bool "Use Xoshiro128++ as PRNG"
 	depends on ENTROPY_HAS_DRIVER
+	select HAS_RANDOM_GENERATOR
 	help
 	  Enables the Xoshiro128++ pseudo-random number generator, that uses
 	  the entropy driver as a seed source. This is a fast general-purpose
@@ -78,6 +86,7 @@ config XOSHIRO_RANDOM_GENERATOR
 config ARM64_RANDOM_GENERATOR
 	bool "Use ARM64 PRNG"
 	depends on ARM64_RNG
+	select HAS_RANDOM_GENERATOR
 	help
 	  Enables the pseudo-random number generator based on the RNDR instruction
 	  from the ARM extension FEAT_RNG.
