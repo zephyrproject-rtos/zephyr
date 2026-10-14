@@ -58,10 +58,15 @@ def formalize_fmt_string(fmt_str):
 class LogParser(abc.ABC):
     """Abstract class of log parser"""
 
-    def __init__(self, database):
+    def __init__(self, database, additional_databases=None):
+        # Primary database. It is used for decoding the message headers and for all messages
+        # coming from domain 0.
         self.database = database
-
         self.data_types = DataTypes(self.database)
+
+        # All databases (primary first) together with their data types descriptors.
+        self.databases = [database, *(additional_databases or [])]
+        self.databases_data_types = [self.data_types] + [DataTypes(db) for db in self.databases[1:]]
 
     @abc.abstractmethod
     def parse_log_data(self, logdata, debug=False):

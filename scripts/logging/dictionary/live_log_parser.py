@@ -148,35 +148,24 @@ class JLinkRTTReader:
         return bytes(self.jlink.rtt_read(self.channel, 1024))
 
 
-def parse_args():
-    """Parse command line arguments"""
-    parser = argparse.ArgumentParser(allow_abbrev=False)
+INPUT_MODES = ("serial", "file", "jlink-rtt")
 
-    parser.add_argument("dbfile", help="Dictionary Logging Database file")
-    parser.add_argument("--debug", action="store_true", help="Print extra debugging information")
-    parser.add_argument(
-        "--polling-interval",
-        type=float,
-        default=0.1,
-        help="Interval for polling input source, if it does not support 'select'",
-    )
 
-    # Create subparsers for different input modes
-    subparsers = parser.add_subparsers(dest="mode", required=True, help="Input source mode")
+def _mode_argument_parser():
+    """Parser for arguments following the input mode subcommand."""
+    parser = argparse.ArgumentParser(add_help=False)
+    subparsers = parser.add_subparsers(dest="mode", required=True)
 
-    # Serial subparser
-    serial_parser = subparsers.add_parser("serial", help="Read from serial port")
+    serial_parser = subparsers.add_parser("serial")
     serial_parser.add_argument("port", help="Serial port")
     serial_parser.add_argument("baudrate", type=int, help="Baudrate")
 
-    # File subparser
-    file_parser = subparsers.add_parser("file", help="Read from file")
+    file_parser = subparsers.add_parser("file")
     file_parser.add_argument(
         "filepath", nargs="?", default=None, help="Input file path, leave empty for stdin"
     )
 
-    # RTT subparser
-    jlink_rtt_parser = subparsers.add_parser("jlink-rtt", help="Read from RTT")
+    jlink_rtt_parser = subparsers.add_parser("jlink-rtt")
     jlink_rtt_parser.add_argument(
         "target_device", help="Device Name (see https://www.segger.com/supported-devices/jlink/)"
     )
@@ -187,16 +176,68 @@ def parse_args():
     jlink_rtt_parser.add_argument("--speed", type=int, help="Reading speed", default="0")
     jlink_rtt_parser.add_argument("--lib-path", help="Path to libjlinkarm.so library")
 
-    return parser.parse_args()
+    return parser
+
+
+def parse_args():
+    """Parse command line arguments"""
+    parser = argparse.ArgumentParser(
+        allow_abbrev=False,
+        description=(
+            "Decode dictionary logs from serial, file, or J-Link RTT. "
+            "Pass one or more database JSON files, then the input mode "
+            "(e.g. serial PORT BAUDRATE)."
+        ),
+    )
+    parser.add_argument("--debug", action="store_true", help="Print extra debugging information")
+    parser.add_argument(
+        "--polling-interval",
+        type=float,
+        default=0.1,
+        help="Interval for polling input source, if it does not support 'select'",
+    )
+
+    args, remainder = parser.parse_known_args()
+
+    if not remainder:
+        parser.error(
+            "at least one dbfile and input mode are required "
+            "(e.g. app/log_dictionary.json remote/log_dictionary.json serial /dev/ttyACM0 115200)"
+        )
+
+    try:
+        mode_idx = next(i for i, tok in enumerate(remainder) if tok in INPUT_MODES)
+    except StopIteration:
+        parser.error("the following arguments are required: mode")
+
+    args.dbfile = parserlib.normalize_dbfiles(remainder[:mode_idx])
+    if not args.dbfile:
+        parser.error("at least one dbfile is required")
+
+    mode_argv = remainder[mode_idx:]
+    mode_ns = _mode_argument_parser().parse_args(mode_argv)
+
+    args.mode = mode_ns.mode
+    args.port = getattr(mode_ns, "port", None)
+    args.baudrate = getattr(mode_ns, "baudrate", None)
+    args.filepath = getattr(mode_ns, "filepath", None)
+    args.target_device = getattr(mode_ns, "target_device", None)
+    args.block_address = getattr(mode_ns, "block_address", None)
+    args.channel = getattr(mode_ns, "channel", 0)
+    args.speed = getattr(mode_ns, "speed", 0)
+    args.lib_path = getattr(mode_ns, "lib_path", None)
+
+    return args
 
 
 def main():
     """function of serial parser"""
     args = parse_args()
 
-    if args.dbfile is None or '.json' not in args.dbfile:
-        logger.error("ERROR: invalid log database path: %s, exiting...", args.dbfile)
-        sys.exit(1)
+    for one_db in args.dbfile:
+        if ".json" not in one_db:
+            logger.error("ERROR: invalid log database path: %s, exiting...", one_db)
+            sys.exit(1)
 
     logging.basicConfig(format=LOGGER_FORMAT)
 
