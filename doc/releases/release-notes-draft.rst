@@ -1,28 +1,19 @@
 :orphan:
 
 ..
-  What goes here: removed/deprecated apis, new boards, new drivers, notable
-  features. If you feel like something new can be useful to a user, put it
-  under "Other Enhancements" in the first paragraph, if you feel like something
-  is worth mentioning in the project media (release blog post, release
-  livestream) put it under "Major enhancement".
+  What goes here: new capabilities, major improvements and changes that
+  materially affect users, with what changed and why it matters. See
+  https://docs.zephyrproject.org/latest/releases/index.html#release-documentation
+..
+  Not here: lists of new, deprecated or removed APIs, Kconfig options,
+  bindings, boards, drivers or samples. They are generated into the change
+  inventory at release time. Not here either: bug fixes and minor changes,
+  they are in the git log; and anything that requires the user to change their
+  application, that goes in the migration guide.
 ..
   If you are describing a feature or functionality, consider adding it to the
   actual project documentation rather than the release notes, so that the
-  information does not get lost in time.
-..
-  No list of bugfixes, minor changes, those are already in the git log, this is
-  not a changelog.
-..
-  Does the entry have a link that contains the details? Just add the link, if
-  you think it needs more details, put them in the content that shows up on the
-  link.
-..
-  Are you thinking about generating this? Don't put anything at all.
-..
-  Does the thing require the user to change their application? Put it on the
-  migration guide instead. (TODO: move the removed APIs section in the
-  migration guide)
+  information does not get lost in time, and link to it from here.
 
 .. _zephyr_4.6:
 
@@ -36,135 +27,16 @@ Major enhancements with this release include:
 An overview of the changes required or recommended when migrating your application from Zephyr
 v4.5.0 to Zephyr v4.6.0 can be found in the separate :ref:`migration guide<migration_4.6>`.
 
-The following sections provide detailed lists of changes by component.
+The following sections describe the notable changes by component.
 
 Security Vulnerability Related
 ******************************
 
-API Changes
-***********
-
 ..
-  Only removed, deprecated and new APIs. Changes go in migration guide.
-
-Removed APIs and options
-========================
-
-* Bluetooth
-
-  * Audio
-
-    * All ``media_proxy_`` functions and definitions for Bluetooth have been removed.
-
-Deprecated APIs and options
-===========================
-
-New APIs and options
-====================
-..
-  Link to new APIs here, in a group if you think it's necessary, no need to get
-  fancy just list the link, that should contain the documentation. If you feel
-  like you need to add more details, add them in the API documentation code
-  instead.
-
-.. zephyr-keep-sorted-start re(^\* \w) ignorecase
-
-* Bluetooth
-
-  * Audio
-
-    * ``bt_mcp_media_control_server_*`` API for controlling the local media player has been added.
-    * :c:func:`bt_pacs_get_location`
-    * :c:struct:`bt_pacs_cb`
-    * :c:func:`bt_pacs_register_cb`
-    * :c:func:`bt_pacs_unregister_cb`
-
-  * Host
-
-    * :c:func:`bt_addr_matches_irk`
-    * :c:func:`bt_l2cap_server_unregister`
-
-  * Services
-
-    * :kconfig:option:`CONFIG_BT_HIDS`
-    * :c:func:`bt_hids_register`
-    * :c:func:`bt_hids_unregister`
-    * :c:func:`bt_hids_report_set`
-    * :c:func:`bt_hids_report_get`
-    * :c:func:`bt_hids_send_report`
-
-* Devicetree
-
-  * New ``var-uint64`` binding property type for variable-length unsigned
-    integers of up to 64 bits. It accepts a value encoded as 1 cell (32-bit
-    unsigned) or 2 cells (64-bit unsigned, high word first) and produces a
-    scalar ``DT_PROP`` integer macro
-
-* Display
-
-  * :c:func:`display_set_timing`
-  * :c:func:`display_get_timing`
-
-* FIDO2
-
-  * Added PSA Protected Storage backend, enable with
-    :kconfig:option:`CONFIG_FIDO2_STORAGE_PSA_PROTECTED_STORAGE`
-
-* Networking
-
-  * Add :kconfig:option:`CONFIG_NET_DHCPV6_START_ON_RA` to start the DHCPv6
-    client automatically based on the M and O flags of received Router
-    Advertisements, in stateful mode with the M flag and in stateless mode
-    (Information-request only) with the O flag.
-
-  * Connection manager
-
-    * Add name resolution readiness tracking, see :ref:`conn_mgr_monitoring_dns`:
-      :c:macro:`NET_EVENT_L4_DNS_READY`, :c:macro:`NET_EVENT_L4_DNS_LOST` and
-      :c:func:`conn_mgr_dns_is_ready`.
-
-  * DNS
-
-    * :c:func:`dns_resolve_get_server_families`
-
-.. zephyr-keep-sorted-stop
-
-.. _boards_added_in_zephyr_4_6:
-
-New Boards
-**********
-
-..
-  You may update this list as you contribute a new board during the release cycle, in order to make
-  it visible to people who might be looking at the working draft of the release notes. However, note
-  that this list will be recomputed at the time of the release, so you don't *have* to update it.
-  In any case, just link the board, further details go in the board description.
-
-.. _shields_added_in_zephyr_4_6:
-
-New Shields
-***********
-
-..
-  Same as above, this will also be recomputed at the time of the release.
-
-New Drivers
-***********
-
-..
-  Same as above, this will also be recomputed at the time of the release.
-  Just link the driver, further details go in the binding description
-
-* :abbr:`RTC (Real Time Clock)`
-
-  * :dtcompatible:`microchip,mcp7940n` (:github:`119309`)
-
-New Samples
-***********
-
-..
-  Same as above, this will also be recomputed at the time of the release.
-  Just link the sample, further details go in the sample documentation itself.
+  API changes with a user impact: describe the capability here and the
+  required adaptation in the migration guide. The lists of new, deprecated and
+  removed APIs and options, boards, shields, drivers and samples are generated
+  into the change inventory at release time.
 
 Libraries / Subsystems
 **********************
@@ -173,17 +45,48 @@ Libraries / Subsystems
 
   * Added a HID Service server (:kconfig:option:`CONFIG_BT_HIDS`), the service
     the HID Device role of the HID over GATT Profile is built on.
+  * :c:func:`bt_addr_matches_irk` is now public, so a scanner can check whether a
+    resolvable private address was generated from an IRK it holds.
+  * PACS exposes the audio locations through :c:func:`bt_pacs_get_location` and
+    reports changes to a registered :c:struct:`bt_pacs_cb`.
+  * :c:func:`bt_l2cap_server_unregister` removes a registered L2CAP server.
+  * The ``bt_mcp_media_control_server_`` API controls the local media player and
+    replaces the removed ``media_proxy_`` API, see the :ref:`migration guide
+    <migration_4.6>`.
+
+* Display
+
+  * Display timings can be read and set at runtime with
+    :c:func:`display_get_timing` and :c:func:`display_set_timing`.
+
+* FIDO2
+
+  * Added a PSA Protected Storage backend, enabled with
+    :kconfig:option:`CONFIG_FIDO2_STORAGE_PSA_PROTECTED_STORAGE`.
 
 * Networking
 
+  * :kconfig:option:`CONFIG_NET_DHCPV6_START_ON_RA` starts the DHCPv6 client
+    automatically from the M and O flags of received Router Advertisements, in
+    stateful mode with the M flag and in stateless mode (Information-request
+    only) with the O flag.
   * HTTP server: accepted connections now have ``TCP_NODELAY`` set, so a response
     sent in several pieces (every TLS response, every websocket frame) is no
     longer held back by the client's delayed acknowledgements. Applications that
     prefer Nagle's algorithm can disable
     :kconfig:option:`CONFIG_HTTP_SERVER_TCP_NODELAY`.
+  * The connection manager tracks name resolution readiness, see
+    :ref:`conn_mgr_monitoring_dns`: :c:macro:`NET_EVENT_L4_DNS_READY`,
+    :c:macro:`NET_EVENT_L4_DNS_LOST` and :c:func:`conn_mgr_dns_is_ready`.
+  * :c:func:`dns_resolve_get_server_families` reports the address families of the
+    available unicast DNS servers.
 
 Devicetree
 **********
+
+* New ``var-uint64`` binding property type for variable-length unsigned integers of up to 64
+  bits, encoded as one cell (32-bit) or two cells (64-bit, high word first) and read with a scalar
+  ``DT_PROP`` macro.
 
 * :dtcompatible:`gnss-nmea-generic` supports optional enable and reset GPIOs, with configurable
   reset pulse and wake-up delays.
@@ -201,4 +104,4 @@ Other notable changes
 
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
-  a paragraph or is it enough to link to the api/driver/Kconfig/board page above?
+  a paragraph or is it enough to link to the documentation of the change?
