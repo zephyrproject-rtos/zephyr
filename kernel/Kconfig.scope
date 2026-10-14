@@ -32,6 +32,14 @@ config KERNEL_SCOPE_UP_USERSPACE
 
 endchoice
 
+config KERNEL_SCOPE_DEFINITION
+	string
+	default "kernel/scopes/up.yaml" if KERNEL_SCOPE_UP
+	default "kernel/scopes/up_userspace.yaml" if KERNEL_SCOPE_UP_USERSPACE
+	help
+	  Scope description, relative to the Zephyr base, that
+	  scripts/build/check_kernel_scope.py audits the final link against.
+
 config KERNEL_SCOPE_SMP
 	bool
 	default y if KERNEL_SCOPE_FULL
