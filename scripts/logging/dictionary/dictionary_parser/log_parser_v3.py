@@ -64,10 +64,13 @@ logger = logging.getLogger("parser")
 
 
 class LogParserV3(LogParser):
-    """Log Parser V1"""
+    """Log Parser V3"""
 
-    def __init__(self, database):
-        super().__init__(database=database)
+    def __init__(self, database, additional_databases=None):
+        super().__init__(database=database, additional_databases=additional_databases)
+
+        # Message headers are produced by the core which outputs the logs (described by the
+        # primary database), so all databases are expected to share the header layout.
 
         if self.database.is_tgt_little_endian():
             endian = "<"
@@ -274,6 +277,39 @@ class LogParserV3(LogParser):
         )
         return self.get_full_msg_hdr_size() + pkg_len + data_len
 
+    def select_database(self, domain_id, logdata, offset, pkg_len):
+        """Select the database (and its data types) which describes the message.
+
+        Messages from domain 0 are always described by the primary database. For other domains
+        (when more than one database is provided) the format string of the message is looked up
+        in each database and the first database containing it is selected. If the string cannot
+        be found in any database, the primary database is used.
+
+        :param domain_id: Domain ID of the message.
+        :param logdata: Binary log data.
+        :param offset: Offset of the packaged message (cbprintf package) in logdata.
+        :param pkg_len: Length of the packaged message.
+        :return: Tuple of (database index, database, data types).
+        """
+        if domain_id != 0 and len(self.databases) > 1:
+            for idx, (database, data_types) in enumerate(
+                zip(self.databases, self.databases_data_types, strict=True)
+            ):
+                ptr_size = data_types.get_sizeof(DataTypes.PTR)
+                if pkg_len < 2 * ptr_size or offset + 2 * ptr_size > len(logdata):
+                    continue
+
+                # Format string pointer is located just after the package header.
+                fmt_str_ptr = struct.unpack_from(
+                    data_types.get_formatter(DataTypes.PTR), logdata, offset + ptr_size
+                )[0]
+                if database.find_string(fmt_str_ptr) is not None:
+                    return idx, database, data_types
+
+            logger.debug("Format string of domain %d message not found in any database", domain_id)
+
+        return 0, self.databases[0], self.databases_data_types[0]
+
     def parse_one_normal_msg(self, logdata, offset):
         """Parse one normal log message and print the encoded message"""
         # Parse log message header
@@ -294,7 +330,14 @@ class LogParserV3(LogParser):
             level = (domain_lvl >> 4) & 0x0F
 
         level_str, color = get_log_level_str_color(level)
+
+        # Find the database which describes this message and use it for decoding it.
+        _, self.database, self.data_types = self.select_database(
+            domain_id, logdata, offset, pkg_len
+        )
         source_id_str = self.database.get_log_source_string(domain_id, source_id)
+        if len(self.databases) > 1:
+            source_id_str = f"cpu{domain_id}.{source_id_str}"
 
         # Skip over data to point to next message (save as return value)
         next_msg_offset = offset + pkg_len + data_len
