@@ -53,6 +53,12 @@ int video_set_format(const struct device *dev, struct video_format *fmt)
 		return -EINVAL;
 	}
 
+	if (memcmp(vdev_fmt, fmt, sizeof(*vdev_fmt)) == 0) {
+		LOG_DBG("Format %s %ux%u already applied to %s",
+			VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height, dev->name);
+		return 0;
+	}
+
 	ret = video_get_caps(dev, &caps);
 	if (ret < 0) {
 		LOG_ERR("Failed to query %s supported formats (type %u): %d",

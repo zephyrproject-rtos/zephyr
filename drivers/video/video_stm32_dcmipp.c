@@ -1839,31 +1839,41 @@ static int stm32_dcmipp_pipe_init(const struct device *dev)
 {
 	struct stm32_dcmipp_pipe_data *pipe = dev->data;
 	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
+	struct video_format fmt = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
+		.width = dcmipp->source_fmt.width,
+		.height = dcmipp->source_fmt.height,
+		.pixelformat = dcmipp->source_fmt.pixelformat,
+	};
+	int ret;
 
 	k_mutex_init(&pipe->lock);
 	k_fifo_init(&pipe->fifo_in);
 	k_fifo_init(&pipe->fifo_out);
 
-	/* Initialize format/crop/compose */
-	pipe->vdev.out_fmt.type = VIDEO_BUF_TYPE_OUTPUT;
-	pipe->vdev.out_fmt.width = dcmipp->source_fmt.width;
-	pipe->vdev.out_fmt.height = dcmipp->source_fmt.height;
-	pipe->vdev.out_fmt.pixelformat = dcmipp->source_fmt.pixelformat;
-#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
-	/* The pixel pipes receive the frame after the ISP decimation */
-	if (pipe->id == DCMIPP_PIPE1 || pipe->id == DCMIPP_PIPE2) {
-		pipe->vdev.out_fmt.width /= dcmipp->isp_dec_hratio;
-		pipe->vdev.out_fmt.height /= dcmipp->isp_dec_vratio;
-	}
-#endif
-	pipe->crop.top = 0;
-	pipe->crop.left = 0;
-	pipe->crop.width = pipe->vdev.out_fmt.width;
-	pipe->crop.height = pipe->vdev.out_fmt.height;
-	pipe->compose = pipe->crop;
-
 	/* Store the pipe data pointer into dcmipp data structure */
 	dcmipp->pipe[pipe->id] = pipe;
+
+	/* Initialize format/crop/compose */
+
+#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
+	if (pipe->id == DCMIPP_PIPE1) {
+		fmt.pixelformat = stm32_dcmipp_main_fmts[0].pixelformat;
+	}
+	if (pipe->id == DCMIPP_PIPE2) {
+		fmt.pixelformat = stm32_dcmipp_aux_fmts[0].pixelformat;
+	}
+	/* The pixel pipes receive the frame after the ISP decimation */
+	if (pipe->id == DCMIPP_PIPE1 || pipe->id == DCMIPP_PIPE2) {
+		fmt.width /= dcmipp->isp_dec_hratio;
+		fmt.height /= dcmipp->isp_dec_vratio;
+	}
+#endif
+	ret = video_set_format(dev, &fmt);
+	if (ret < 0) {
+		LOG_ERR("Failed to set default video format");
+		return ret;
+	}
 
 	return 0;
 }

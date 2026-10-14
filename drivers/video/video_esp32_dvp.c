@@ -255,7 +255,6 @@ static int video_esp32_get_caps(const struct device *dev, struct video_caps *cap
 static int video_esp32_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	const struct video_esp32_config *cfg = dev->config;
-	struct video_esp32_data *data = dev->data;
 	int ret;
 
 	ret = video_set_format(data->vdev.source_dev, fmt);
