@@ -11,3 +11,12 @@ config CLOCK_CONTROL_XLNX_ZYNQ
 	help
 	  Enable the driver for the clock controller of the Xilinx Zynq-7000
 	  processing system, the clock part of the SLCR.
+
+config CLOCK_CONTROL_XLNX_ZYNQMP
+	bool "Xilinx ZynqMP clock controller driver"
+	default y
+	depends on DT_HAS_XLNX_ZYNQMP_CLK_ENABLED
+	select CLOCK_CONTROL_FIXED_RATE_CLOCK if DT_HAS_FIXED_CLOCK_ENABLED
+	help
+	  Enable the driver for the clock controller of the Xilinx ZynqMP,
+	  accessing the CRL_APB and CRF_APB registers directly.
