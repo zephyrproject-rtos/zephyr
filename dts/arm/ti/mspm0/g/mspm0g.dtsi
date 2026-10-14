@@ -272,6 +272,12 @@
 			interrupts = <25 0>;
 			status = "disabled";
 		};
+
+		crc: crc@40440000 {
+			compatible = "ti,mspm0-crc";
+			reg = <0x40440000 0x2000>;
+			status = "disabled";
+		};
 	};
 };
 
