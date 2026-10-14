@@ -19,7 +19,6 @@ struct mcux_opamp_fast_config {
 	uint8_t bias_current;
 	uint8_t functional_mode;
 	uint8_t compensation_capcitor;
-	bool is_reference_source;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	const struct pinctrl_dev_config *pincfg;
@@ -103,10 +102,6 @@ int mcux_opamp_fast_init(const struct device *dev)
 	base->OPAMP_CTRL = ((base->OPAMP_CTRL & ~OPAMP_OPAMP_CTRL_OPA_CC_SEL_MASK) |
 			    OPAMP_OPAMP_CTRL_OPA_CC_SEL(config->compensation_capcitor));
 
-	if (config->is_reference_source) {
-		base->OPAMP_CTRL |= OPAMP_OPAMP_CTRL_OPA_EN_MASK;
-	}
-
 	return pm_device_driver_init(dev, mcux_opamp_fast_pm_callback);
 }
 
@@ -119,7 +114,6 @@ int mcux_opamp_fast_init(const struct device *dev)
 		.compensation_capcitor = DT_INST_ENUM_IDX(inst,				\
 				compensation_capcitor),					\
 		.functional_mode = DT_INST_ENUM_IDX(inst, functional_mode),		\
-		.is_reference_source = DT_INST_PROP(inst, is_reference_source),		\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),			\
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, name),\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),				\
