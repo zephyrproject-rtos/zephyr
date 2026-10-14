@@ -63,6 +63,22 @@ config HEAP_MEM_POOL_ADD_SIZE_HOSTAP
 	def_int 41808 if WIFI_NM_WPA_SUPPLICANT_AP
 	# 30K is mandatory, but might need more for long duration use cases
 	def_int 30000
+
+config HEAP_MEM_POOL_ADD_SIZE_HOSTAP_STA_ENTERPRISE_CREDS
+	int "Heap size for the station enterprise credential copies"
+	default 12000 if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+	default 0
+	help
+	  Heap reserved for the copies of the enterprise certificates and keys
+	  that the station glue keeps until the credentials are replaced.
+
+config HEAP_MEM_POOL_ADD_SIZE_HOSTAP_AP_ENTERPRISE_CREDS
+	int "Heap size for the access point enterprise credential copies"
+	default 6000 if WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
+	default 0
+	help
+	  Heap reserved for the copies of the enterprise certificates and keys
+	  that the access point glue keeps until the credentials are replaced.
 endif # WIFI_NM_WPA_SUPPLICANT_GLOBAL_HEAP
 
 
