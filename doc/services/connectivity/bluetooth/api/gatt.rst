@@ -63,6 +63,37 @@ respective operations.
   Attribute ``read`` and ``write`` callbacks are called directly from RX Thread
   thus it is not recommended to block for long periods of time in them.
 
+With :kconfig:option:`CONFIG_BT_GATT_ASYNC_ATTR` an attribute can instead
+serve remote reads and writes asynchronously, through the ``read`` and
+``write`` methods of :c:struct:`bt_gatt_attr_async` that
+:c:macro:`BT_GATT_ATTRIBUTE_ASYNC` and :c:macro:`BT_GATT_CHARACTERISTIC_ASYNC`
+declare. They receive a :c:struct:`bt_gatt_req` for the request being served and
+may answer it after returning, with :c:func:`bt_gatt_rsp_read`,
+:c:func:`bt_gatt_rsp_write` or :c:func:`bt_gatt_rsp_error`. This is for values
+the application cannot produce right away, for example because they live behind
+another link. A kept copy of the request holds its connection without a
+reference, so take one with :c:func:`bt_conn_ref` while it is kept.
+
+Read and write requests can be deferred, Read Multiple Request and Read
+Multiple Variable Length Request included. Write Command and Signed Write
+Command have no response and cannot be deferred, and neither can Execute Write,
+so a write longer than one ATT PDU (ATT_MTU - 3, 20 octets with the default
+MTU) has to complete before the callback returns.
+
+The response has to be sent within the ATT transaction timeout (30 seconds), or
+the remote drops the connection. A client that sends another request before that
+one is answered gets the connection dropped too, which takes down the ACL link,
+so every bearer on it, not only the one the request arrived on.
+
+For a Read Multiple [Variable Length] Request the callback for the next value
+may run inside :c:func:`bt_gatt_rsp_read`, so the asynchronous ``read`` method
+of one attribute can run while another is answering. An error for any of the
+handles fails the whole request.
+
+Attributes the host reads itself, the declaration attributes of a service
+among them, keep their synchronous ``read``: there is no connection behind
+them, so no asynchronous method is called.
+
 Attribute value changes can be notified using :c:func:`bt_gatt_notify` API,
 alternatively there is :c:func:`bt_gatt_notify_cb` where it is possible to
 pass a callback to be called when it is necessary to know the exact instant when
