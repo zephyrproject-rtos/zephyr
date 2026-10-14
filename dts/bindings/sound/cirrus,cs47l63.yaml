@@ -18,6 +18,7 @@ properties:
 
   reset-gpios:
     type: phandle-array
+    required: true
     description:
       Digital reset input.
 
