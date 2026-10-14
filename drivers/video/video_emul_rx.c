@@ -21,13 +21,8 @@
 
 LOG_MODULE_REGISTER(video_emul_rx, CONFIG_VIDEO_LOG_LEVEL);
 
-struct emul_rx_config {
-	const struct device *source_dev;
-};
-
 struct emul_rx_data {
 	struct video_device vdev; /* keep first */
-	const struct device *dev;
 	struct k_work work;
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
@@ -35,7 +30,7 @@ struct emul_rx_data {
 
 static int emul_rx_set_fmt(const struct device *const dev, struct video_format *fmt, size_t idx)
 {
-	const struct emul_rx_config *cfg = dev->config;
+	struct emul_rx_data *data = dev->data;
 	int ret;
 
 	/* Propagate the format selection to the source */
@@ -51,14 +46,14 @@ static int emul_rx_set_fmt(const struct device *const dev, struct video_format *
 
 static int emul_rx_get_caps(const struct device *dev, struct video_caps *caps)
 {
-	const struct emul_rx_config *cfg = dev->config;
+	struct emul_rx_data *data = dev->data;
 
 	return video_get_caps(data->vdev.source_dev, caps);
 }
 
 static int emul_rx_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
-	const struct emul_rx_config *cfg = dev->config;
+	struct emul_rx_data *data = dev->data;
 
 	/* A real hardware driver would first start / stop its own peripheral */
 	return enable ? video_stream_start(data->vdev.source_dev, type)
@@ -68,8 +63,6 @@ static int emul_rx_set_stream(const struct device *dev, bool enable, enum video_
 static void emul_rx_worker(struct k_work *work)
 {
 	struct emul_rx_data *data = CONTAINER_OF(work, struct emul_rx_data, work);
-	const struct device *dev = data->dev;
-	const struct emul_rx_config *cfg = dev->config;
 	struct video_format *fmt = &data->vdev.out_fmt;
 	struct video_buffer *vbuf = vbuf;
 
@@ -167,10 +160,7 @@ static DEVICE_API(video, emul_rx_driver_api) = {
 int emul_rx_init(const struct device *dev)
 {
 	struct emul_rx_data *data = dev->data;
-	const struct emul_rx_config *cfg = dev->config;
 	int ret;
-
-	data->dev = dev;
 
 	if (!device_is_ready(data->vdev.source_dev)) {
 		LOG_ERR("Source device %s is not ready", data->vdev.source_dev->name);
@@ -197,16 +187,11 @@ int emul_rx_init(const struct device *dev)
 #define SOURCE_DEV(n) DEVICE_DT_GET(DT_NODE_REMOTE_DEVICE(DT_INST_ENDPOINT_BY_ID(n, 0, 0)))
 
 #define EMUL_RX_DEFINE(n)                                                                          \
-	static const struct emul_rx_config emul_rx_cfg_##n = {                                     \
-		.source_dev = SOURCE_DEV(n),                                                       \
-	};                                                                                         \
-                                                                                                   \
 	static struct emul_rx_data emul_rx_data_##n = {                                            \
-		.vdev = VIDEO_DEVICE_INIT(emul_rx_data_##n, DT_DRV_INST(n), SOURCE_DEV(n)),            \
-		.dev = DEVICE_DT_INST_GET(n),                                                      \
+		.vdev = VIDEO_DEVICE_INIT(emul_rx_data_##n, DT_DRV_INST(n), SOURCE_DEV(n)),        \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &emul_rx_init, NULL, &emul_rx_data_##n, &emul_rx_cfg_##n,         \
+	DEVICE_DT_INST_DEFINE(n, &emul_rx_init, NULL, &emul_rx_data_##n, NULL,                     \
 			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &emul_rx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(EMUL_RX_DEFINE)

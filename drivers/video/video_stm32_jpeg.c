@@ -39,7 +39,6 @@ struct video_m2m_common {
 
 struct stm32_jpeg_data {
 	struct video_device vdev; /* keep first */
-	const struct device *dev;
 	struct video_m2m_common m2m;
 	JPEG_HandleTypeDef hjpeg;
 	struct k_mutex lock;
@@ -338,7 +337,7 @@ void HAL_JPEG_EncodeCpltCallback(JPEG_HandleTypeDef *hjpeg)
 	k_fifo_put(&data->m2m.out.fifo_out, data->current_out);
 
 	/* Try to restart the next processing if needed */
-	ret = stm32_jpeg_start_codec(data->dev);
+	ret = stm32_jpeg_start_codec(data->vdev.dev);
 	if (ret) {
 		LOG_ERR("Failed to start codec, err: %d", ret);
 		goto out;
@@ -488,7 +487,6 @@ static int stm32_jpeg_init(const struct device *dev)
 	HAL_StatusTypeDef hret;
 	int ret;
 
-	data->dev = dev;
 
 	ret = stm32_jpeg_enable_clock(dev);
 	if (ret < 0) {
