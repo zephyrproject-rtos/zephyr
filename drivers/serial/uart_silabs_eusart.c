@@ -480,6 +480,11 @@ static void eusart_irq_callback_set(const struct device *dev, uart_irq_callback_
 
 	data->callback = cb;
 	data->cb_data = cb_data;
+
+#if defined(CONFIG_UART_SILABS_EUSART_ASYNC) && defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
+	data->async_cb = NULL;
+	data->async_user_data = NULL;
+#endif
 }
 
 static void eusart_irq_isr(const struct device *dev, uint32_t flags)
@@ -606,6 +611,11 @@ static int eusart_async_callback_set(const struct device *dev, uart_callback_t c
 
 	data->async_cb = callback;
 	data->async_user_data = user_data;
+
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) && defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
+	data->callback = NULL;
+	data->cb_data = NULL;
+#endif
 
 	return 0;
 }
