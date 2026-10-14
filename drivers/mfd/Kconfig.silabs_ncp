@@ -35,13 +35,39 @@ config MFD_SILABS_NCP_SDIO_POLL_INTERVAL_MS
 	depends on MFD_SILABS_NCP_BUS_SDIO
 	default 10
 
+config MFD_SILABS_NCP_BUS_UART
+	bool "Silicon Labs NCP over UART"
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_SILABS_NCP),uart)
+	depends on SERIAL
+	depends on GPIO
+	depends on UART_ASYNC_API
+	select CRC
+
+config MFD_SILABS_NCP_UART_RX_BUF_SIZE
+	int "Size of each of the two UART reception buffers"
+	depends on MFD_SILABS_NCP_BUS_UART
+	default 256
+	help
+	  The UART driver fills these buffers alternately. They must be usable
+	  by the UART DMA.
+
+config MFD_SILABS_NCP_UART_RX_RING_BUF_SIZE
+	int "Size of the UART reception ring buffer"
+	depends on MFD_SILABS_NCP_BUS_UART
+	default 2048
+	help
+	  Received bytes wait in this ring buffer until the transport parses
+	  them. It must hold what the co-processor can send while the
+	  transport is not running.
+
 config MFD_SILABS_NCP_INIT_PRIORITY
 	int "Initialization priority"
 	default 86
 	help
 	  Priority of the silabs,ncp devices. Must be greater than the
 	  priority of the bus they sit on (SPI_INIT_PRIORITY,
-	  SDHC_INIT_PRIORITY) and lower than the priority of the child
+	  SDHC_INIT_PRIORITY, SERIAL_INIT_PRIORITY) and lower than the priority of the child
 	  drivers that open CPC endpoints.
 
 config MFD_SILABS_NCP_RX_FRAME_POOL_COUNT
