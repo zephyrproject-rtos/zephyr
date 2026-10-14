@@ -29,7 +29,9 @@ int video_format_caps_index(const struct video_format_cap *fmts, const struct vi
 	for (int i = 0; fmts[i].pixelformat != 0; i++) {
 		if (fmts[i].pixelformat == fmt->pixelformat &&
 		    IN_RANGE(fmt->width, fmts[i].width_min, fmts[i].width_max) &&
-		    IN_RANGE(fmt->height, fmts[i].height_min, fmts[i].height_max)) {
+		    IN_RANGE(fmt->height, fmts[i].height_min, fmts[i].height_max) &&
+		    fmt->width % fmts[i].width_step == 0 &&
+		    fmt->height % fmts[i].width_step == 0) {
 			*idx = i;
 			return 0;
 		}
