@@ -1325,7 +1325,7 @@ static int arducam_mega_init(const struct device *dev)
 	fmt.width = 320;
 	fmt.height = 240;
 
-	ret = arducam_mega_set_fmt(dev, &fmt);
+	ret = video_set_format(dev, &fmt);
 	if (ret < 0) {
 		LOG_ERR("Unable to configure default format");
 		return ret;
