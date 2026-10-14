@@ -163,3 +163,10 @@
 };
 
 mikrobus_i2c: &i2c0 {};
+
+mikrobus_spi: &spi3 {
+	pinctrl-0 = <&spi3_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&mikrobus_header MIKROBUS_CS GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
