@@ -1,0 +1,19 @@
+identifier: esp32s3_touch_lcd_2_8b/esp32s3/procpu
+name: ESP32-S3-Touch-LCD-2.8B PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - gpio
+  - i2c
+  - input
+  - pwm
+  - rtc
+  - sdhc
+  - sensor
+  - spi
+  - uart
+  - watchdog
+vendor: waveshare
