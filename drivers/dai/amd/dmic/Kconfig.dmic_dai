@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 AMD
+# SPDX-License-Identifier: Apache-2.0
+
+config DAI_AMD_DMIC
+	bool "AMD DMIC DAI driver"
+	default y
+	depends on DT_HAS_AMD_DMIC_DAI_ENABLED
+	help
+	  Enable the AMD ACP DMIC (PDM) DAI driver.
+	  Handles DMIC0 (WOV PDM) and DMIC1 (PDM2) capture instances.

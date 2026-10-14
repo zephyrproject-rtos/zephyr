@@ -82,7 +82,7 @@ static bool acp_tdm_all_streams_stopped(void)
 
 static bool acp_pdm_streams_stopped(void)
 {
-	uint32_t acp_pdm_en = (uint32_t)io_reg_read(PU_REGISTER_BASE + ACP_WOV_PDM_ENABLE);
+	uint32_t acp_pdm_en = (uint32_t)io_reg_read(PU_REGISTER_BASE + ACP_PDM_ENABLE);
 
 	if (acp_pdm_en != 0U) {
 		return false;
