@@ -836,45 +836,39 @@ static int eusart_async_init(const struct device *dev)
 
 	return 0;
 }
-#endif /* CONFIG_UART_SILABS_EUSART_ASYNC */
 
-static void eusart_isr(const struct device *dev)
+static uint32_t eusart_async_isr(const struct device *dev, uint32_t flags)
 {
-	__maybe_unused struct eusart_data *data = dev->data;
-#ifdef CONFIG_UART_SILABS_EUSART_ASYNC
 	const struct eusart_config *config = dev->config;
 	EUSART_TypeDef *eusart = config->eusart;
-	uint32_t flags = sl_hal_eusart_get_enabled_pending_interrupts(eusart);
+	struct eusart_data *data = dev->data;
 	struct dma_status stat;
-#endif
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	if (data->callback) {
-		data->callback(dev, data->cb_data);
-	}
-#endif
-#ifdef CONFIG_UART_SILABS_EUSART_ASYNC
-	if (!data->dma_tx.dma_dev) {
-		return;
-	}
-	if (flags & EUSART_IF_RXTO) {
-		if (data->dma_rx.timeout == 0) {
-			eusart_dma_rx_flush(data);
-		} else {
-			eusart_async_timer_start(&data->dma_rx.timeout_work, data->dma_rx.timeout);
+
+	if (data->dma_rx.enabled) {
+		if (IS_ENABLED(EUSART_RXTO) && (flags & EUSART_IF_RXTO)) {
+			flags &= ~EUSART_IF_RXTO;
+			if (data->dma_rx.timeout == 0) {
+				eusart_dma_rx_flush(data);
+			} else {
+				eusart_async_timer_start(&data->dma_rx.timeout_work,
+							 data->dma_rx.timeout);
+			}
+
+			sl_hal_eusart_clear_interrupts(eusart, EUSART_IF_RXTO);
 		}
 
-		sl_hal_eusart_clear_interrupts(eusart, EUSART_IF_RXTO);
+		if (flags & EUSART_IF_RXOF) {
+			flags &= ~EUSART_IF_RXOF;
+			eusart_async_evt_rx_err(data, UART_ERROR_OVERRUN);
+
+			eusart_async_rx_disable(dev);
+
+			sl_hal_eusart_clear_interrupts(eusart, EUSART_IF_RXOF);
+		}
 	}
 
-	if (flags & EUSART_IF_RXOF) {
-		eusart_async_evt_rx_err(data, UART_ERROR_OVERRUN);
-
-		eusart_async_rx_disable(dev);
-
-		sl_hal_eusart_clear_interrupts(eusart, EUSART_IF_RXOF);
-	}
-
-	if (flags & EUSART_IF_TXC) {
+	if (data->dma_tx.buffer_length && (flags & EUSART_IF_TXC)) {
+		flags &= ~EUSART_IF_TXC;
 		k_work_cancel_delayable(&data->dma_tx.timeout_work);
 
 		if (!dma_get_status(data->dma_tx.dma_dev, data->dma_tx.dma_channel, &stat)) {
@@ -889,7 +883,27 @@ static void eusart_isr(const struct device *dev)
 
 		eusart_async_evt_tx_done(data);
 	}
+
+	return flags;
+}
 #endif /* CONFIG_UART_SILABS_EUSART_ASYNC */
+
+static void eusart_isr(const struct device *dev)
+{
+	const struct eusart_config *config = dev->config;
+	__maybe_unused struct eusart_data *data = dev->data;
+	__maybe_unused uint32_t flags;
+
+	flags = sl_hal_eusart_get_enabled_pending_interrupts(config->eusart);
+
+#ifdef CONFIG_UART_SILABS_EUSART_ASYNC
+	flags = eusart_async_isr(dev, flags);
+#endif
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	if (data->callback) {
+		data->callback(dev, data->cb_data);
+	}
+#endif
 }
 
 static sl_hal_eusart_parity_t eusart_cfg2ll_parity(enum uart_config_parity parity)
