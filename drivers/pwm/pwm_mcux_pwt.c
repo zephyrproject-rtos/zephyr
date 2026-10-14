@@ -44,6 +44,7 @@ struct mcux_pwt_data {
 	bool continuous : 1;
 	bool inverted : 1;
 	bool overflowed : 1;
+	bool first_sample : 1;
 };
 
 static inline bool mcux_pwt_is_active(const struct device *dev)
@@ -140,6 +141,7 @@ static int mcux_pwt_enable_capture(const struct device *dev, uint32_t channel)
 	data->overflowed = false;
 	data->high_overflows = 0;
 	data->low_overflows = 0;
+	data->first_sample = true;
 	PWT_StartTimer(config->base);
 
 	return 0;
@@ -240,6 +242,27 @@ static void mcux_pwt_isr(const struct device *dev)
 		ppw = PWT_ReadPositivePulseWidth(config->base);
 		npw = PWT_ReadNegativePulseWidth(config->base);
 
+		/*
+		 * The first pulse-width-ready event after the timer starts can
+		 * report a partial measurement: capture may have been enabled
+		 * mid-pulse, so one of the two pulse-width registers only timed
+		 * a fraction of its phase (or none of it). Which register is
+		 * short depends on the phase alignment at enable time, which is
+		 * why single-shot captures failed intermittently and period
+		 * capture (which needs both widths) failed outright. Discard
+		 * this first event and report the next one, which always spans
+		 * a complete positive and negative phase.
+		 */
+		if (data->first_sample) {
+			data->first_sample = false;
+			data->overflowed = false;
+			data->high_overflows = 0;
+			data->low_overflows = 0;
+			PWT_ClearStatusFlags(config->base,
+					     kPWT_PulseWidthValidFlag);
+			return;
+		}
+
 		if (!data->continuous) {
 			PWT_StopTimer(config->base);
 		}
@@ -312,7 +335,15 @@ static int mcux_pwt_init(const struct device *dev)
 	PWT_GetDefaultConfig(pwt_config);
 	pwt_config->clockSource = config->pwt_clock_source;
 	pwt_config->prescale = config->prescale;
-	pwt_config->enableFirstCounterLoad = true;
+	/*
+	 * Keep first-counter-load disabled (the HAL default). With it enabled
+	 * the PWT loads the first, incomplete pulse-width measurement: the
+	 * PWTRDY interrupt fires after the first positive pulse, before a full
+	 * negative pulse has been timed, so the negative pulse width reads ~0.
+	 * That corrupts every single-shot capture that relies on the negative
+	 * pulse width (inverted-polarity pulse capture and period capture).
+	 */
+	pwt_config->enableFirstCounterLoad = false;
 	PWT_Init(config->base, pwt_config);
 
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
