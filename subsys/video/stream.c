@@ -24,6 +24,21 @@ int video_stream_start(const struct device *dev, enum video_buf_type type)
 
 	vdev = dev->data;
 
+	while (true) {
+		if (!device_is_ready(vdev->dev) {
+			LOG_ERR("%s is not ready", vdev->dev->name);
+			return -ENODEV;
+		}
+
+		if (vdev->source_dev == NULL) {
+			break;
+		}
+
+		vdev = vdev->soruce_dev->data;
+	}
+
+	vdev = dev->data;
+
 	if (vdev->is_streaming & BIT(type) != 0) {
 		LOG_DBG("%s already started", dev->name);
 		return 0;
