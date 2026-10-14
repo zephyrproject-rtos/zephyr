@@ -27,19 +27,18 @@ int video_get_selection(const struct device *dev, struct video_selection *sel)
 	return video_driver_get_selection(dev, sel);
 }
 
-int video_set_format(const struct device *dev, struct video_format *fmt)
+static int video_apply_format(const struct device *dev, struct video_format *fmt)
 {
-	struct video_device *vdev;
 	struct video_caps caps = {.type = fmt->type};
+	struct video_device *vdev = dev->data;
 	struct video_format *vdev_fmt;
+	struct video_format prev_fmt;
 	size_t idx;
 	int ret;
 
-	if (dev == NULL || fmt == NULL) {
-		return -EINVAL;
+	if (vdev->is_streaming & BIT(fmt->type)) {
+		return -EBUSY;
 	}
-
-	vdev = dev->data;
 
 	switch (fmt->type) {
 	case VIDEO_BUF_TYPE_INPUT:
@@ -49,19 +48,14 @@ int video_set_format(const struct device *dev, struct video_format *fmt)
 		vdev_fmt = &vdev->out_fmt;
 		break;
 	default:
-		LOG_ERR("Invlid buffer type %u requested", fmt->type);
+		LOG_ERR("Invalid format type %d", fmt->type);
 		return -EINVAL;
 	}
 
 	if (memcmp(vdev_fmt, fmt, sizeof(*vdev_fmt)) == 0) {
 		LOG_DBG("Format %s %ux%u already applied to %s",
 			VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height, dev->name);
-		return 0;
-	}
-
-	if (vdev->is_streaming & BIT(fmt->type)) {
-		LOG_DBG("%s device is currently streaming", dev->name);
-		return -EBUSY;
+		return -EALREADY;
 	}
 
 	ret = video_get_caps(dev, &caps);
@@ -84,21 +78,71 @@ int video_set_format(const struct device *dev, struct video_format *fmt)
 		ret = video_estimate_fmt_size(fmt);
 		if (ret < 0) {
 			LOG_ERR("Failed to estimate the video %s %ux%u default size for %s",
-				VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height, dev->name);
+				VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height,
+				dev->name);
 			return ret;
 		}
 	}
 
+	prev_fmt = *vdev_fmt;
+	*vdev_fmt = *fmt;
+
 	ret = video_driver_set_format(dev, fmt, idx);
-	if (ret < 0) {
-		LOG_ERR("Failed to apply format %s %ux%u to %s: %u",
-			VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height, dev->name,
-			ret);
+	if (ret < 0 && ret != -ENOSYS) {
+		LOG_ERR("Failed to set %s format to %s %ux%u",
+			dev->name, VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height);
+		*vdev_fmt = prev_fmt;
 		return ret;
 	}
 
-	/* Store the format applied */
-	*vdev_fmt = *fmt;
+	/* May be -ENOSYS */
+	return ret;
+}
+
+int video_set_format(const struct device *dev, struct video_format *fmt)
+{
+	struct video_device *vdev;
+	int ret;
+
+	if (dev == NULL || fmt == NULL) {
+		return -EINVAL;
+	}
+
+	vdev = dev->data;
+
+	/* Fallback implementation: set the format of the source device */
+	while (true) {
+		ret = video_apply_format(vdev->dev, fmt);
+		if (ret == 0) {
+			break;
+		}
+		if (ret != -ENOSYS) {
+			LOG_ERR("Failed to apply format %s %ux%u to %s: %u",
+				VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height,
+				vdev->dev->name, ret);
+			return ret;
+		}
+
+		if (vdev->source_dev == NULL) {
+			LOG_ERR("No device support setting the format");
+			return -ENOSYS;
+		}
+
+		vdev = vdev->source_dev->data;
+	}
+
+	/* Store the format for all the video devices from the chain skipped through above */
+	for (struct video_device *tmp = dev->data; tmp != NULL; tmp = tmp->source_dev->data) {
+		if (fmt->type == VIDEO_BUF_TYPE_INPUT) {
+			tmp->in_fmt = *fmt;
+		} else {
+			tmp->out_fmt = *fmt;
+		}
+
+		if (tmp == vdev) {
+			break;
+		}
+	}
 
 	return 0;
 }
