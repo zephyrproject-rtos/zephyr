@@ -136,7 +136,8 @@ static void gptp_pdelay_response_timestamp_callback(struct net_pkt *pkt)
 	}
 }
 
-static bool gptp_itv_request_check_valid(int8_t log_itv)
+IF_DISABLED(CONFIG_ZTEST, (static))
+bool gptp_itv_request_check_valid(int8_t log_itv)
 {
 	return log_itv == GPTP_ITV_SET_TO_INIT ||
 	       (log_itv >= GPTP_ITV_LOG_MIN && log_itv <= GPTP_ITV_LOG_MAX);
