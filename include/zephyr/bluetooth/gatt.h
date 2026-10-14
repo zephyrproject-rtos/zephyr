@@ -290,6 +290,10 @@ struct bt_gatt_req {
  *  Until it is answered, the response buffer allocated when the request
  *  arrived is held.
  *
+ *  A Read Multiple [Variable Length] Response holds several values, so this
+ *  callback may run from the context that answers the previous value of the
+ *  same request, before @ref bt_gatt_rsp_read has returned.
+ *
  *  @note This callback runs from a thread context chosen by the stack, never
  *  from an ISR, and must not block.
  *
@@ -387,6 +391,10 @@ struct bt_gatt_attr_async {
 #if defined(CONFIG_BT_GATT_ASYNC_ATTR) || defined(__DOXYGEN__)
 /** @brief Respond to a deferred read
  *
+ *  For a Read Multiple [Variable Length] Request this adds one value to a
+ *  response that is still being assembled, and may ask the next attribute of
+ *  that request for its value before returning.
+ *
  *  @param req  The request to respond to.
  *  @param data Value of the attribute from the offset the callback was given.
  *              Truncated to what the response can carry.
@@ -421,6 +429,9 @@ int bt_gatt_rsp_read(const struct bt_gatt_req *req, const void *data, uint16_t l
 int bt_gatt_rsp_write(const struct bt_gatt_req *req);
 
 /** @brief Respond to a deferred read or write with an error
+ *
+ *  For a Read Multiple [Variable Length] Request this fails the whole request,
+ *  the values collected before it are dropped.
  *
  *  @param req     The request to respond to.
  *  @param att_err ATT error code, a ``BT_ATT_ERR_*`` value.
