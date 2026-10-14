@@ -1,0 +1,64 @@
+#
+# SPDX-FileCopyrightText: Copyright Panoramix Labs
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: BouffaloLab Camera Front-end DVP receiver
+
+description: |
+  The BouffaloLab camera front-end handles DVP signal and handles conversion between YUV and RGB
+  if needed, then feeds the output in one or both of the DVP2AXI sinks. It handles some of the
+  link-level configurations.
+
+compatible: "bflb,camfront"
+
+include: [base.yaml, pinctrl-device.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clock-divider:
+    type: int
+    description: The selected camera clock source is further divided by this value.
+    default: 3
+    min: 1
+    max: 4
+
+child-binding:
+  child-binding:
+    include: video-interfaces.yaml
+
+    properties:
+      reg:
+        type: array
+        required: true
+
+examples:
+  - |
+    camfront@20050000 {
+      compatible = "bflb,camfront";
+      reg = <0x20050000>;
+
+      port {
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        dvp_ep_in: endpoint@0 {
+          reg = <0>;
+          remote-endpoint-label = "ov2640_ep_out";
+          hsync-active = <1>;
+          vsync-active = <1>;
+        };
+
+        dvp_ep_out0: endpoint@1 {
+          reg = <1>;
+          remote-endpoint-label = "dvp2axi0_ep_in";
+        };
+
+        dvp_ep_out1: endpoint@2 {
+          reg = <2>;
+          remote-endpoint-label = "dvp2axi1_ep_in";
+        };
+      };
+    };

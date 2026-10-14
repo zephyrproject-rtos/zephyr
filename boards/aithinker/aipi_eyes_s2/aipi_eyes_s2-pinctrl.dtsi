@@ -20,6 +20,33 @@
 		group1 {
 			pinmux = <GPIO15_SPI_MOSI>,
 				 <GPIO17_SPI_SCLK>;
+				 bias-pull-up;
+				 input-schmitt-enable;
+		};
+	};
+
+	/* "DVP CAM" connector at the bottom */
+	camfront_default: camfront_default {
+		group1 {
+			pinmux = <GPIO24_CAM0_DAT0>,
+				 <GPIO25_CAM0_DAT1>,
+				 <GPIO26_CAM0_DAT2>,
+				 <GPIO27_CAM0_DAT3>,
+				 <GPIO31_CAM0_DAT4>,
+				 <GPIO32_CAM0_DAT5>,
+				 <GPIO33_CAM0_DAT6>,
+				 <GPIO34_CAM0_DAT7>,
+				 <GPIO28_CAM0_HSYNC>,
+				 <GPIO29_CAM0_VSYNC>,
+				 <GPIO30_CAM0_CLK>;
+			input-schmitt-enable;
+		};
+	};
+
+	/* "DVP CAM" connector at the bottom */
+	clocks_default: clocks_default {
+		group1 {
+			pinmux = <GPIO23_CLOCK_OUT3_CAM_REF>;
 			bias-pull-up;
 			input-schmitt-enable;
 		};

@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright Panoramix Labs
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_BFLB_DVP2AXI
+	bool "BouffaloLab DVP to AXI (DVP2AXI) video stream output"
+	default y
+	depends on DT_HAS_BFLB_DVP2AXI_ENABLED
+	help
+	  Enable Bouffalo Lab DVP2AXI parallel camera (DVP2AXI) video stream conversion
+	  and DMA engine.
+
+if VIDEO_BFLB_DVP2AXI
+
+config VIDEO_BFLB_DVP2AXI_INIT_PRIORITY
+	int "Bouffalo Lab DVP2AXI initialization priority"
+	default 61
+	help
+	  System initialization priority for the BouffaloLab CAMFRONT drivers.
+	  This priority needs to be higher (later) than VIDEO_BFLB_DVP2AXI_INIT_PRIORITY (59) so
+	  that CANFRONT is initiialized before.
+
+config VIDEO_BFLB_DVP2AXI_MAX_FORMATS
+	int "Maximum number of formats listed"
+	default 32
+	help
+	  Configure the maximum number of formats in the format capabilities table.
+
+endif

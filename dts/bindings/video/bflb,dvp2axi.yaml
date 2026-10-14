@@ -1,0 +1,62 @@
+#
+# SPDX-FileCopyrightText: Copyright Panoramix Labs
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: BouffaloLab DVP (Digital Video Port)
+
+description: |
+  The BouffaloLab DVP2AXI engines selectively receivves the video stream from CAMFRONT and sends
+  the data to memory over AXI. It is responsible for some of the link properties as well as well
+  as extra transformation such as cropping or subsampling.
+
+compatible: "bflb,dvp2axi"
+
+include: [base.yaml, pinctrl-device.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  axi-data-width:
+    type: int
+    required: true
+    enum:
+      - 32
+      - 64
+    description: |
+      Size of the AXI bus in bits for this SoC (aka word size) for the video data path.
+
+  axi-burst-length:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+    description: |
+      AXI burst length counted in words (32-bit or 64-bit depending on the SoC).
+      The longer the better throughput, but also occupying the bus for longer.
+
+child-binding:
+  child-binding:
+    include: video-interfaces.yaml
+
+examples:
+  - |
+    dvp0: dvp2axi@20057000 {
+      compatible = "bflb,dvp2axi";
+      reg = <0x20057000 DT_SIZE_K(4)>;
+
+      port {
+        dvp2axi_ep_in: endpoint {
+          remote-endpoint-label = "camfront_ep_out";
+        };
+      };
+    };

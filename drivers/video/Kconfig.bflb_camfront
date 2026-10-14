@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright Panoramix Labs
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_BFLB_CAMFRONT
+	bool "BouffaloLab Camrea Front-end (CAMFRONT) receiver for DVP (parallel) cameras"
+	default y
+	depends on DT_HAS_BFLB_CAMFRONT_ENABLED
+	select PINCTRL
+	help
+	  Enable driver for Bouffalo Lab CAMFRONT parallel camera (CAMFRONT) video receiver.
+
+if VIDEO_BFLB_CAMFRONT
+
+config VIDEO_BFLB_CAMFRONT_INIT_PRIORITY
+	int "Bouffalo Lab CAMFRONT initialization priority"
+	default 59
+	help
+	  System initialization priority for the BouffaloLab DVP2AXI drivers.
+	  This priority needs to be lower (earlier) than VIDEO_INIT_PRIORITY (60) so that image
+	  sensors can have their MCLK/XCLK clock signal configured.
+
+config VIDEO_BFLB_CAMFRONT_MAX_FORMATS
+	int "Maximum number of formats listed"
+	default 32
+	help
+	  Configure the maximum number of formats in the format capabilities table.
+
+endif

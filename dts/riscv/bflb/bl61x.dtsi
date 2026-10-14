@@ -514,6 +514,67 @@
 			tcap-capcode = <28 29 30 31 32 33 34 35 36 37 38>;
 		};
 
+		dvp2axi0: dvp2axi@20057000 {
+			compatible = "bflb,dvp2axi";
+			reg = <0x20057000 DT_SIZE_K(4)>;
+			status = "disabled";
+
+			interrupts = <32 1>;
+			interrupt-parent = <&clic>;
+			axi-data-width = <64>;
+			axi-burst-length = <16>;
+
+			port {
+				dvp2axi0_ep_in: endpoint {
+					remote-endpoint-label = "camfront_ep_out0";
+				};
+			};
+		};
+
+		dvp2axi1: dvp2axi@20058000 {
+			compatible = "bflb,dvp2axi";
+			reg = <0x20058000 DT_SIZE_K(4)>;
+			status = "disabled";
+
+			interrupts = <34 1>;
+			interrupt-parent = <&clic>;
+			axi-data-width = <64>;
+			axi-burst-length = <16>;
+
+			port {
+				dvp2axi1_ep_in: endpoint {
+					remote-endpoint-label = "camfront_ep_out1";
+				};
+			};
+		};
+
+		camfront: camfront@20050000 {
+			compatible = "bflb,camfront";
+			reg = <0x20050000 DT_SIZE_K(4)>;
+			status = "disabled";
+			clock-divider = <4>;
+
+			port {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				camfront_ep_in: endpoint@0 {
+					reg = <0>;
+					remote-endpoint-label = "placeholder";
+				};
+
+				camfront_ep_out0: endpoint@1 {
+					reg = <1>;
+					remote-endpoint-label = "dvp2axi0_ep_in";
+				};
+
+				camfront_ep_out1: endpoint@2 {
+					reg = <2>;
+					remote-endpoint-label = "dvp2axi1_ep_in";
+				};
+			};
+		};
+
 		/* All contiguous fast RAM
 		 * It is kept tightly coupled by the CPU's internal cache
 		 */

@@ -47,8 +47,11 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			BFLB_PINMUX_GET_SIGNAL(pins[i]) + 4 * BFLB_PINMUX_GET_INST(pins[i]));
 		}
 #if !defined(CONFIG_SOC_SERIES_BL60X)
-		if ((BFLB_PINMUX_GET_FUN(pins[i]) & BFLB_PINMUX_FUN_MASK)
-		    == BFLB_PINMUX_FUN_INST_clock_out0) {
+		switch (BFLB_PINMUX_GET_FUN(pins[i]) & BFLB_PINMUX_FUN_MASK) {
+		case BFLB_PINMUX_FUN_INST_clock_out0:
+		case BFLB_PINMUX_FUN_INST_clock_out1:
+		case BFLB_PINMUX_FUN_INST_clock_out2:
+		case BFLB_PINMUX_FUN_INST_clock_out3:
 			pinctrl_bflb_configure_clk_out(pins[i]);
 		}
 #endif
