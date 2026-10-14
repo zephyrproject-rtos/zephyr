@@ -36,33 +36,33 @@ static int emul_rx_set_frmival(const struct device *dev, struct video_frmival *f
 {
 	const struct emul_rx_config *cfg = dev->config;
 
-	return video_set_frmival(cfg->source_dev, frmival);
+	return video_set_frmival(data->vdev.source_dev, frmival);
 }
 
 static int emul_rx_get_frmival(const struct device *dev, struct video_frmival *frmival)
 {
 	const struct emul_rx_config *cfg = dev->config;
 
-	return video_get_frmival(cfg->source_dev, frmival);
+	return video_get_frmival(data->vdev.source_dev, frmival);
 }
 
 static int emul_rx_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
 	const struct emul_rx_config *cfg = dev->config;
 
-	return video_enum_frmival(cfg->source_dev, fie);
+	return video_enum_frmival(data->vdev.source_dev, fie);
 }
 
-static int emul_rx_set_fmt(const struct device *const dev, struct video_format *fmt)
+static int emul_rx_set_fmt(const struct device *const dev, struct video_format *fmt, size_t idx)
 {
 	const struct emul_rx_config *cfg = dev->config;
 	struct emul_rx_data *data = dev->data;
 	int ret;
 
 	/* Propagate the format selection to the source */
-	ret = video_set_format(cfg->source_dev, fmt);
+	ret = video_set_format(data->vdev.source_dev, fmt);
 	if (ret < 0) {
-		LOG_DBG("Failed to set %s format to %x %ux%u", cfg->source_dev->name,
+		LOG_DBG("Failed to set %s format to %x %ux%u", data->vdev.source_dev->name,
 			fmt->pixelformat, fmt->width, fmt->height);
 		return -EINVAL;
 	}
@@ -90,7 +90,7 @@ static int emul_rx_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	const struct emul_rx_config *cfg = dev->config;
 
-	return video_get_caps(cfg->source_dev, caps);
+	return video_get_caps(data->vdev.source_dev, caps);
 }
 
 static int emul_rx_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
@@ -98,8 +98,8 @@ static int emul_rx_set_stream(const struct device *dev, bool enable, enum video_
 	const struct emul_rx_config *cfg = dev->config;
 
 	/* A real hardware driver would first start / stop its own peripheral */
-	return enable ? video_stream_start(cfg->source_dev, type)
-		      : video_stream_stop(cfg->source_dev, type);
+	return enable ? video_stream_start(data->vdev.source_dev, type)
+		      : video_stream_stop(data->vdev.source_dev, type);
 }
 
 static void emul_rx_worker(struct k_work *work)
@@ -124,7 +124,7 @@ static void emul_rx_worker(struct k_work *work)
 		 * the whole frame. vbuf->size is already checked in emul_rx_enqueue().
 		 */
 		for (size_t i = 0; i + fmt->pitch <= vbuf->bytesused; i += fmt->pitch) {
-			memcpy(vbuf->buffer + i, cfg->source_dev->data, fmt->pitch);
+			memcpy(vbuf->buffer + i, data->vdev.source_dev->data, fmt->pitch);
 		}
 
 		/* Once the buffer is completed, submit it to the video buffer */
@@ -213,12 +213,12 @@ int emul_rx_init(const struct device *dev)
 
 	data->dev = dev;
 
-	if (!device_is_ready(cfg->source_dev)) {
-		LOG_ERR("Source device %s is not ready", cfg->source_dev->name);
+	if (!device_is_ready(data->vdev.source_dev)) {
+		LOG_ERR("Source device %s is not ready", data->vdev.source_dev->name);
 		return -ENODEV;
 	}
 
-	ret = video_get_format(cfg->source_dev, &data->fmt);
+	ret = video_get_format(data->vdev.source_dev, &data->fmt);
 	if (ret < 0) {
 		return ret;
 	}

@@ -941,21 +941,11 @@ uint8_t ov2640_check_connection(const struct device *dev)
 	return ret;
 }
 
-static int ov2640_set_fmt(const struct device *dev, struct video_format *fmt)
+static int ov2640_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	struct ov2640_data *drv_data = dev->data;
-	uint16_t width, height;
 	int ret = 0;
 	int i = 0;
-
-	/* We only support RGB565 and JPEG pixel formats */
-	if (fmt->pixelformat != VIDEO_PIX_FMT_RGB565 && fmt->pixelformat != VIDEO_PIX_FMT_JPEG) {
-		LOG_ERR("ov2640 camera supports only RGB565 and JPG pixelformats!");
-		return -ENOTSUP;
-	}
-
-	width = fmt->width;
-	height = fmt->height;
 
 	if (!memcmp(&drv_data->fmt, fmt, sizeof(drv_data->fmt))) {
 		/* nothing to do */
@@ -969,7 +959,8 @@ static int ov2640_set_fmt(const struct device *dev, struct video_format *fmt)
 
 	/* Check if camera is capable of handling given format */
 	while (fmts[i].pixelformat) {
-		if (fmts[i].width_min == width && fmts[i].height_min == height &&
+		if (fmts[i].width_min == fmt->width &&
+		    fmts[i].height_min == fmt->height &&
 		    fmts[i].pixelformat == fmt->pixelformat) {
 			/* Set window size */
 			ret |= ov2640_set_resolution(dev, fmt->width, fmt->height);
@@ -1120,6 +1111,7 @@ static int ov2640_init(const struct device *dev)
 	int ret = 0;
 	/* set default/init format SVGA RGB565 */
 	struct video_format fmt = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
 		.pixelformat = VIDEO_PIX_FMT_RGB565,
 		.width = SVGA_WIDTH,
 		.height = SVGA_HEIGHT,
@@ -1156,7 +1148,7 @@ static int ov2640_init(const struct device *dev)
 
 	ov2640_write_all(dev, default_regs, ARRAY_SIZE(default_regs));
 
-	ret = ov2640_set_fmt(dev, &fmt);
+	ret = video_set_format(dev, &fmt);
 	if (ret) {
 		LOG_ERR("Unable to configure default format");
 		return -EIO;

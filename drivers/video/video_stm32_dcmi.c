@@ -216,7 +216,7 @@ static int stm32_dcmi_enable_clock(const struct device *dev)
 	return clock_control_on(dcmi_clock, (clock_control_subsys_t)&config->pclken);
 }
 
-static int video_stm32_dcmi_set_fmt(const struct device *dev, struct video_format *fmt)
+static int video_stm32_dcmi_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	const struct video_stm32_dcmi_config *config = dev->config;
 	struct video_stm32_dcmi_data *data = dev->data;
@@ -590,7 +590,7 @@ static void video_stm32_dcmi_irq_config_func(const struct device *dev)
 	irq_enable(DT_INST_IRQN(0));
 }
 
-#define DCMI_DMA_CHANNEL_INIT(index, src_dev, dest_dev)					\
+#define DCMI_DMA_CHANNEL_INIT(index, source_dev, dest_dev)				\
 	.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_IDX(index, 0)),			\
 	.channel = DT_INST_DMAS_CELL_BY_IDX(index, 0, channel),				\
 	.reg = (DMA_TypeDef *)DT_REG_ADDR(						\
@@ -599,12 +599,12 @@ static void video_stm32_dcmi_irq_config_func(const struct device *dev)
 		.dma_slot = STM32_DT_INST_DMA_SLOT_BY_IDX(index, 0),			\
 		.channel_direction = STM32_DMA_CONFIG_DIRECTION(			\
 			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
-		.source_data_size = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(		\
+		.source_data_size = STM32_DMA_CONFIG_##source_dev##_DATA_SIZE(		\
 			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
 		.dest_data_size = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(		\
 			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
 		/* single transfers on the DCMI side, 4 beat bursts to memory */	\
-		.source_burst_length = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(		\
+		.source_burst_length = STM32_DMA_CONFIG_##source_dev##_DATA_SIZE(	\
 			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
 		.dest_burst_length = 4 * STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(	\
 			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\

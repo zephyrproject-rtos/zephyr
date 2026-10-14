@@ -561,21 +561,15 @@ static int hm0360_get_caps(const struct device *dev, struct video_caps *caps)
 	return 0;
 }
 
-static int hm0360_set_fmt(const struct device *dev, struct video_format *fmt)
+static int hm0360_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	const struct hm0360_config *config = dev->config;
 	struct hm0360_data *data = dev->data;
 	int ret;
-	size_t idx;
 
 	/* Note: hm0360 only supports grayscale */
 	LOG_DBG("HM01B0 set_fmt: %d x %d, fmt: %s", fmt->width, fmt->height,
 		VIDEO_FOURCC_TO_STR(fmt->pixelformat));
-
-	ret = video_format_caps_index(fmts, fmt, &idx);
-	if (ret < 0) {
-		return ret;
-	}
 
 	if (!memcmp(&data->fmt, fmt, sizeof(data->fmt))) {
 		/* nothing to do */
@@ -598,6 +592,7 @@ static int hm0360_set_fmt(const struct device *dev, struct video_format *fmt)
 						ARRAY_SIZE(hm0360_vga_regs));
 		break;
 	default:
+		__ASSERT(false);
 		CODE_UNREACHABLE;
 	}
 
@@ -725,6 +720,7 @@ static int hm0360_init(const struct device *dev)
 	int ret;
 
 	struct video_format fmt = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
 		.pixelformat = fmts[0].pixelformat,
 		.width = fmts[0].width_min,
 		.height = fmts[0].height_min,
@@ -801,13 +797,13 @@ static int hm0360_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = hm0360_set_fmt(dev, &fmt);
+	ret = video_set_format(dev, &fmt);
 	if (ret < 0) {
 		LOG_ERR("ERROR: Unable to set format");
 		return ret;
 	}
 
-	ret = hm0360_set_frmival(dev, &default_frmival);
+	ret = video_set_frmival(dev, &default_frmival);
 	if (ret < 0) {
 		LOG_ERR("ERROR: Unable to set frame rate");
 		return ret;

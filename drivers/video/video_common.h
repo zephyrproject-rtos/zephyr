@@ -31,7 +31,7 @@
 #define VIDEO_DEVICE_DEFINE(name, device, source)                                                  \
 	static STRUCT_SECTION_ITERABLE(video_device, name) = {                                     \
 		.dev = device,                                                                     \
-		.src_dev = source,                                                                 \
+		.source_dev = source,                                                              \
 		.ctrls = SYS_DLIST_STATIC_INIT(&name.ctrls),                                       \
 	}
 

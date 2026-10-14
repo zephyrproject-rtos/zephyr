@@ -384,31 +384,12 @@ static int stm32_jpeg_get_fmt(const struct device *dev, struct video_format *fmt
 	return 0;
 }
 
-static int stm32_jpeg_set_fmt(const struct device *dev, struct video_format *fmt)
+static int stm32_jpeg_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	struct stm32_jpeg_data *data = dev->data;
 	struct video_common_header *common =
 		fmt->type == VIDEO_BUF_TYPE_INPUT ? &data->m2m.in : &data->m2m.out;
 	int ret = 0;
-	size_t fmt_idx;
-
-	/*
-	 * For the time being only encode is supported, aka NV12/GREY as input and JPEG as output.
-	 * Once decode will also be supported this test can be removed.
-	 */
-	if (fmt->type == VIDEO_BUF_TYPE_INPUT) {
-		ret = video_format_caps_index(stm32_jpeg_in_fmts, fmt, &fmt_idx);
-		if (ret < 0) {
-			LOG_ERR("Unsupported pixel format or resolution");
-			return ret;
-		}
-	} else if (fmt->type == VIDEO_BUF_TYPE_OUTPUT) {
-		ret = video_format_caps_index(stm32_jpeg_out_fmts, fmt, &fmt_idx);
-		if (ret < 0) {
-			LOG_ERR("Unsupported pixel format or resolution");
-			return ret;
-		}
-	}
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 

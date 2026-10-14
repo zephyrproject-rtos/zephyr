@@ -243,8 +243,8 @@ static void nxp_flexio_camera_vsync_isr(const struct device *port,
 	nxp_flexio_camera_start_line_dma(data);
 }
 
-static int nxp_flexio_camera_set_format(const struct device *dev,
-					struct video_format *fmt)
+static int nxp_flexio_camera_set_format(const struct device *dev, struct video_format *fmt,
+					size_t idx)
 {
 	const struct nxp_flexio_camera_config *config = dev->config;
 	struct nxp_flexio_camera_data *data = dev->data;

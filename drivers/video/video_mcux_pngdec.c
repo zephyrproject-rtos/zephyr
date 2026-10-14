@@ -131,7 +131,7 @@ static int mcux_pngdec_get_fmt(const struct device *dev, struct video_format *fm
 	return 0;
 }
 
-static int mcux_pngdec_set_fmt(const struct device *dev, struct video_format *fmt)
+static int mcux_pngdec_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	struct mcux_pngdec_data *data = dev->data;
 

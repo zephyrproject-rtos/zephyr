@@ -80,7 +80,7 @@ static int video_find_ctrl(const struct device *dev, uint32_t id, struct video_c
 			}
 		}
 
-		vdev = video_find_vdev(vdev->src_dev);
+		vdev = video_find_vdev(vdev->source_dev);
 	}
 
 	return -ENOTSUP;
@@ -371,7 +371,7 @@ int video_query_ctrl(struct video_ctrl_query *cq)
 				}
 			}
 			cq->id = 0;
-			cq->dev = vdev->src_dev;
+			cq->dev = vdev->source_dev;
 			vdev = video_find_vdev(cq->dev);
 		}
 		return -ENOTSUP;

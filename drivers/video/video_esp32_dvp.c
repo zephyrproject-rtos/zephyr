@@ -266,13 +266,15 @@ static int video_esp32_get_fmt(const struct device *dev, struct video_format *fm
 
 	ret = video_estimate_fmt_size(fmt);
 	if (ret < 0) {
+		LOG_ERR("Failed to estimate the format size for %s",
+			VIDEO_FOURCC_TO_STR(fmt->pixelformat));
 		return ret;
 	}
 
 	return 0;
 }
 
-static int video_esp32_set_fmt(const struct device *dev, struct video_format *fmt)
+static int video_esp32_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	const struct video_esp32_config *cfg = dev->config;
 	struct video_esp32_data *data = dev->data;

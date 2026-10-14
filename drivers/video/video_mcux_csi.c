@@ -128,7 +128,7 @@ static inline void video_pix_fmt_convert(struct video_format *fmt, bool isGetFmt
 }
 #endif
 
-static int video_mcux_csi_set_fmt(const struct device *dev, struct video_format *fmt)
+static int video_mcux_csi_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	const struct video_mcux_csi_config *config = dev->config;
 	struct video_mcux_csi_data *data = dev->data;
