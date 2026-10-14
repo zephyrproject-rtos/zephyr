@@ -87,6 +87,7 @@ static int scmi_base_xfer_no_tx(uint8_t msg_id, void *rx_buf, size_t rx_len)
 {
 	struct scmi_message msg, reply;
 	struct scmi_protocol *proto;
+	int32_t status;
 	int ret;
 
 	proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_BASE);
@@ -109,7 +110,10 @@ static int scmi_base_xfer_no_tx(uint8_t msg_id, void *rx_buf, size_t rx_len)
 		return ret;
 	}
 
-	return 0;
+	/* every reply starts with the status */
+	memcpy(&status, rx_buf, sizeof(status));
+
+	return scmi_status_to_errno(status);
 }
 
 static int scmi_base_vendor_id_get(struct scmi_msg_base_vendor_id_reply *id)
