@@ -232,6 +232,14 @@
 			riscv,ndev = <52>;
 		};
 
+		prci: clock-controller@10000000 {
+			compatible = "sifive,fu540-c000-prci";
+			reg = <0x10000000 0x1000>;
+			clocks = <&hfclk>, <&rtcclk>;
+			clock-names = "hfclk", "rtcclk";
+			#clock-cells = <1>;
+		};
+
 		uart0: serial@10010000 {
 			compatible = "sifive,uart0";
 			interrupt-parent = <&plic>;

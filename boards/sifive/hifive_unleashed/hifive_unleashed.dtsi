@@ -25,6 +25,19 @@
 		reg-names = "mem";
 	};
 
+	/* Crystals of the board */
+	hfclk: hfclk {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <33333333>;
+	};
+
+	rtcclk: rtcclk {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <DT_FREQ_M(1)>;
+	};
+
 	lscon_96b: connector {
 		compatible = "linaro,96b-lscon-1v8";
 		#gpio-cells = <2>;
