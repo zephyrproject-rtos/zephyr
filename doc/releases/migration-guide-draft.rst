@@ -47,6 +47,13 @@ Device Drivers and Devicetree
 
 .. zephyr-keep-sorted-start re(^\w) ignorecase
 
+Ethernet
+========
+
+* :kconfig:option:`CONFIG_ETH_PHY_DRIVER` is no longer enabled by default. It is now selected by
+  the Ethernet drivers that need a PHY driver. Out-of-tree Ethernet drivers that use a PHY driver
+  must select it as well. (:github:`120871`)
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
