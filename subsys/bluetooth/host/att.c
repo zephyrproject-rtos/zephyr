@@ -2414,10 +2414,29 @@ static uint8_t exec_write_reassemble(uint16_t handle, uint16_t offset,
 	return BT_ATT_ERR_SUCCESS;
 }
 
+static void att_prep_queue_clear(struct bt_att *att)
+{
+	struct net_buf *buf;
+
+	buf = net_buf_slist_get(&att->prep_queue);
+	while (buf != NULL) {
+		net_buf_unref(buf);
+		buf = net_buf_slist_get(&att->prep_queue);
+	}
+}
+
 static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 {
 	struct net_buf *buf;
 	uint8_t err = 0U;
+
+	if (flags != BT_ATT_FLAG_EXEC) {
+		/* Core v6.3 Vol 3 Part F 3.4.6.3: the prepared values are
+		 * discarded, the queue is cleared and the response is sent.
+		 */
+		att_prep_queue_clear(chan->att);
+		goto rsp;
+	}
 
 	/* The following code will iterate on all prepare writes in the
 	 * prep_queue, and reassemble those that share the same handle.
@@ -2446,10 +2465,8 @@ static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 					    &reassembled_data);
 		if (err != BT_ATT_ERR_SUCCESS) {
 			/* Discard queued buffers */
-			do {
-				net_buf_unref(buf);
-				buf = net_buf_slist_get(&chan->att->prep_queue);
-			} while (buf != NULL);
+			net_buf_unref(buf);
+			att_prep_queue_clear(chan->att);
 			send_err_rsp(chan, BT_ATT_OP_EXEC_WRITE_REQ,
 				     handle, err);
 			return 0;
@@ -2473,6 +2490,7 @@ static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 		return 0;
 	}
 
+rsp:
 	/* Generate response */
 	buf = att_create_rsp_pdu(chan, BT_ATT_OP_EXEC_WRITE_RSP);
 	if (!buf) {
@@ -3157,9 +3175,7 @@ static void att_reset(struct bt_att *att)
 
 #if CONFIG_BT_ATT_PREPARE_COUNT > 0
 	/* Discard queued buffers */
-	while ((buf = net_buf_slist_get(&att->prep_queue))) {
-		net_buf_unref(buf);
-	}
+	att_prep_queue_clear(att);
 #endif /* CONFIG_BT_ATT_PREPARE_COUNT > 0 */
 
 #if defined(CONFIG_BT_EATT)
