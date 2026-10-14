@@ -111,11 +111,16 @@ trip. Fix the cause, never work around a check.
   when the change addresses an issue.
   It is rendered as Markdown: unwrap paragraphs instead of pasting hard-wrapped commit text.
   Keep title and description in sync with the commits after every force-push.
-- Breaking changes to stable APIs are described in the migration guide; new, deprecated and
-  removed APIs are listed in the release notes. Both go in the same PR as the
-  change: `doc/releases/migration-guide-X.Y.rst` and `doc/releases/release-notes-X.Y.rst`, where
-  `X.Y` is the next release (`VERSION` shows `X.(Y-1).99` during development). Stable APIs
-  follow `doc/develop/api/api_lifecycle.rst`.
+- Release documentation goes in the same PR as the change, in the working drafts for the next
+  release: `doc/releases/migration-guide-draft.rst` and `doc/releases/release-notes-draft.rst`
+  (`doc/releases/index.rst`, "Release documentation"). The migration guide describes what users
+  must change and why: breaking changes, deprecations with their replacement, changed defaults.
+  The release notes describe a new capability and its impact in a few sentences, grouped with
+  related changes and linked to the documentation. Never add lists of new, deprecated or removed
+  APIs, Kconfig options, bindings, boards, drivers or samples: that inventory is generated from
+  the tree at release time (`scripts/release/gen_change_inventory.py`). A change that adds no
+  capability and needs no user action gets no entry. Stable APIs follow
+  `doc/develop/api/api_lifecycle.rst`.
 - Backports to `v*-branch` are opened by a bot when a maintainer adds `backport vX.Y-branch`
   labels after merge. Do not open manual backport PRs unless the bot failed. Every backport PR
   body must contain a `Fixes #N` line resolving to a real issue
