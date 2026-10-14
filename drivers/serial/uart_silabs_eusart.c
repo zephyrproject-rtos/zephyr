@@ -431,6 +431,17 @@ static int eusart_async_callback_set(const struct device *dev, uart_callback_t c
 	return 0;
 }
 
+static void eusart_async_rx_irq_disable(EUSART_TypeDef *eusart)
+{
+	sl_hal_eusart_disable_interrupts(eusart, EUSART_IF_RXOF);
+	sl_hal_eusart_clear_interrupts(eusart, EUSART_IF_RXOF);
+
+	if (IS_ENABLED(EUSART_RXTO)) {
+		sl_hal_eusart_disable_interrupts(eusart, EUSART_IF_RXTO);
+		sl_hal_eusart_clear_interrupts(eusart, EUSART_IF_RXTO);
+	}
+}
+
 static void eusart_dma_replace_buffer(const struct device *dev)
 {
 	struct eusart_data *data = dev->data;
@@ -463,6 +474,7 @@ __maybe_unused static void eusart_dma_rx_cb(const struct device *dma_dev, void *
 					    uint32_t channel, int status)
 {
 	const struct device *uart_dev = user_data;
+	const struct eusart_config *config = uart_dev->config;
 	struct eusart_data *data = uart_dev->data;
 	struct uart_event disabled_event = {
 		.type = UART_RX_DISABLED
@@ -489,6 +501,7 @@ __maybe_unused static void eusart_dma_rx_cb(const struct device *dma_dev, void *
 
 	} else {
 		dma_stop(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
+		eusart_async_rx_irq_disable(config->eusart);
 		data->dma_rx.enabled = false;
 		eusart_async_evt_rx_buf_release(data);
 		eusart_pm_lock_put(uart_dev, EUSART_PM_LOCK_RX);
@@ -661,15 +674,9 @@ static int eusart_async_rx_disable(const struct device *dev)
 
 	dma_stop(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
 
-	sl_hal_eusart_disable_interrupts(eusart, EUSART_IF_RXOF);
-	sl_hal_eusart_clear_interrupts(eusart, EUSART_IF_RXOF);
+	eusart_async_rx_irq_disable(eusart);
 
 	k_work_cancel_delayable(&data->dma_rx.timeout_work);
-
-	if (IS_ENABLED(EUSART_RXTO)) {
-		sl_hal_eusart_disable_interrupts(eusart, EUSART_IF_RXTO);
-		sl_hal_eusart_clear_interrupts(eusart, EUSART_IF_RXTO);
-	}
 
 	eusart_pm_lock_put(dev, EUSART_PM_LOCK_RX);
 
