@@ -1,0 +1,70 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Xilinx ZynqMP clock controller.
+
+  The node follows the Linux xlnx,zynqmp-clk binding: the same input
+  clocks, and the clock IDs of the Linux binding, named in
+  include/zephyr/dt-bindings/clock/xlnx-zynqmp-clk.h. Linux reaches the
+  clocks through the platform firmware; Zephyr accesses the CRL_APB and
+  CRF_APB registers directly, so the node also carries their register
+  ranges:
+
+    zynqmp_clk: clock-controller@ff5e0000 {
+      compatible = "xlnx,zynqmp-clk";
+      reg = <0xff5e0000 0x1000>, <0xfd1a0000 0x1000>;
+      reg-names = "crl_apb", "crf_apb";
+      clocks = <&pss_ref_clk>;
+      clock-names = "pss_ref_clk";
+      #clock-cells = <1>;
+    };
+
+    gem0: ethernet@ff0b0000 {
+      clocks = <&zynqmp_clk LPD_LSBUS>, <&zynqmp_clk GEM0_REF>,
+               <&zynqmp_clk GEM0_TX>, <&zynqmp_clk GEM0_RX>,
+               <&zynqmp_clk GEM_TSU>;
+      clock-names = "pclk", "hclk", "tx_clk", "rx_clk", "tsu_clk";
+    };
+
+  The driver derives the rates from the registers as the boot firmware
+  left them. It supports the PLLs of the low power domain and the DPLL
+  (IOPLL, RPLL, DPLL, DPLL_TO_LPD), the low power domain bus clock
+  (LPD_LSBUS, gated), the GEM reference clocks (GEM0_REF to GEM3_REF,
+  their rate set through the two dividers from the selected PLL), the
+  GEM transmit and receive clock gates (GEM0_TX to GEM3_TX, GEM0_RX to
+  GEM3_RX) and the clock of the 1588 time stamp unit (GEM_TSU_REF, gated,
+  and GEM_TSU). The other clocks and the MIO and EMIO clock sources are not
+  supported. Writes lift the CRL_APB write protection, which needs the
+  registers at their physical address.
+
+compatible: "xlnx,zynqmp-clk"
+
+include: [base.yaml, clock-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  reg-names:
+    required: true
+    description: |
+      Names of the register ranges: "crl_apb" for the low power domain
+      clock and reset registers and "crf_apb" for those of the full power
+      domain.
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+    description: |
+      Names of the input clocks, as in the Linux binding. "pss_ref_clk" is
+      required, "video_clk", "pss_alt_ref_clk", "aux_ref_clk" and
+      "gt_crx_ref_clk" are only needed when a PLL is sourced from them.
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - id
