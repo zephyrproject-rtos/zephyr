@@ -126,6 +126,7 @@
 			linked-terminal = <&hs_out_terminal>;
 			subslot-size = <3>;
 			bit-resolution = <24>;
+			feedback-polling-period-us = <1000>;
 		};
 	};
 };

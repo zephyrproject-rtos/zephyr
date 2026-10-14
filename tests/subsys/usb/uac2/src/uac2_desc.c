@@ -636,7 +636,7 @@ ZTEST(uac2_desc, test_hs_only_headset)
 	zassert_equal(ep->Attributes.synch, 0 /* No Synchronization */);
 	zassert_equal(ep->Attributes.usage, 1 /* Explicit Feedback-Endpoint */);
 	zassert_equal(sys_le16_to_cpu(ep->wMaxPacketSize), 4);
-	zassert_equal(ep->bInterval, 1);
+	zassert_equal(ep->bInterval, 4); /* 2^(4-1) microframes = 1 ms */
 	ptr++;
 
 	/* Confirm there is no trailing data */
