@@ -102,7 +102,6 @@ struct ec_host_cmd_usb_ctx {
 	const struct usb_desc_header *const *const fs_desc;
 	struct ec_host_cmd_rx_ctx *rx_ctx;
 	struct ec_host_cmd_tx_buf *tx_buf;
-	struct net_buf *usb_rx_buf;
 	struct net_buf *usb_tx_buf;
 	enum ec_host_cmd_usb_state state;
 	atomic_t flags;
@@ -214,6 +213,7 @@ static int handle_out_transfer(struct usbd_class_data *const c_data)
 {
 	int ret;
 	struct ec_host_cmd_usb_ctx *ctx = usbd_class_get_private(c_data);
+	struct net_buf *usb_rx_buf;
 	size_t expected_len =
 		expected_request_len((struct ec_host_cmd_request_header *)ctx->rx_ctx->buf);
 
@@ -238,17 +238,17 @@ static int handle_out_transfer(struct usbd_class_data *const c_data)
 			k_work_reschedule(&ctx->reset_work, K_NO_WAIT);
 			return 0;
 		}
-		ctx->usb_rx_buf = ec_host_cmd_buf_alloc(ec_host_cmd_get_out_ep(c_data),
-							expected_len - ctx->rx_ctx->len,
-							ctx->rx_ctx->buf + ctx->rx_ctx->len);
-		if (ctx->usb_rx_buf == NULL) {
+		usb_rx_buf = ec_host_cmd_buf_alloc(ec_host_cmd_get_out_ep(c_data),
+						   expected_len - ctx->rx_ctx->len,
+						   ctx->rx_ctx->buf + ctx->rx_ctx->len);
+		if (usb_rx_buf == NULL) {
 			LOG_ERR("Failed to allocate buf OUT");
 			k_work_reschedule(&ctx->reset_work, K_NO_WAIT);
 			return 0;
 		}
-		ret = usbd_ep_enqueue(c_data, ctx->usb_rx_buf);
+		ret = usbd_ep_enqueue(c_data, usb_rx_buf);
 		if (ret) {
-			net_buf_drop(&ctx->usb_rx_buf);
+			net_buf_unref(usb_rx_buf);
 			k_work_reschedule(&ctx->reset_work, K_NO_WAIT);
 			LOG_ERR("Failed to enqueue EP OUT: %d", ret);
 			return 0;
@@ -308,19 +308,21 @@ static int ec_host_cmd_request(struct usbd_class_data *const c_data, struct net_
 	}
 
 	if (bi->ep == ec_host_cmd_get_in_bulk_ep(c_data)) {
+		struct net_buf *usb_rx_buf;
+
 		k_work_cancel_delayable(&ctx->reset_work);
-		ctx->usb_rx_buf = ec_host_cmd_buf_alloc(ec_host_cmd_get_out_ep(c_data),
-							EP_BULK_SIZE, ctx->rx_ctx->buf);
-		if (ctx->usb_rx_buf == NULL) {
+		usb_rx_buf = ec_host_cmd_buf_alloc(ec_host_cmd_get_out_ep(c_data), EP_BULK_SIZE,
+						   ctx->rx_ctx->buf);
+		if (usb_rx_buf == NULL) {
 			LOG_ERR("Failed to allocate buf OUT");
 			k_work_schedule(&ctx->reset_work, K_NO_WAIT);
 			return 0;
 		}
 
-		ret = usbd_ep_enqueue(c_data, ctx->usb_rx_buf);
+		ret = usbd_ep_enqueue(c_data, usb_rx_buf);
 		if (ret) {
 			LOG_ERR("Failed to enqueue EP OUT: %d", ret);
-			net_buf_drop(&ctx->usb_rx_buf);
+			net_buf_unref(usb_rx_buf);
 			k_work_schedule(&ctx->reset_work, K_NO_WAIT);
 			return 0;
 		}
@@ -352,7 +354,7 @@ static void ec_host_cmd_enable(struct usbd_class_data *const c_data)
 	int ret;
 	struct ec_host_cmd_usb_ctx *ctx = usbd_class_get_private(c_data);
 	struct udc_buf_info *bi;
-	struct net_buf *buf;
+	struct net_buf *usb_rx_buf;
 
 	atomic_set_bit(&ctx->flags, EC_HOST_CMD_CLASS_ENABLED);
 	if (!ctx->usb_tx_buf) {
@@ -364,20 +366,20 @@ static void ec_host_cmd_enable(struct usbd_class_data *const c_data)
 	bi = udc_get_buf_info(ctx->usb_tx_buf);
 	bi->ep = ec_host_cmd_get_in_bulk_ep(c_data);
 
-	buf = ec_host_cmd_buf_alloc(ec_host_cmd_get_out_ep(c_data), EP_BULK_SIZE, ctx->rx_ctx->buf);
-	if (buf == NULL) {
+	usb_rx_buf = ec_host_cmd_buf_alloc(ec_host_cmd_get_out_ep(c_data), EP_BULK_SIZE,
+					   ctx->rx_ctx->buf);
+	if (usb_rx_buf == NULL) {
 		ctx->state = USB_EC_HOST_CMD_STATE_DISABLED;
 		LOG_ERR("Failed to allocate buf OUT");
 		return;
 	}
-	ctx->usb_rx_buf = buf;
 
 	/* Enqueue OUT transfer to receive a host command request. */
-	ret = usbd_ep_enqueue(c_data, ctx->usb_rx_buf);
+	ret = usbd_ep_enqueue(c_data, usb_rx_buf);
 	if (ret) {
 		ctx->state = USB_EC_HOST_CMD_STATE_DISABLED;
 		LOG_ERR("Failed to enqueue EP OUT: %d", ret);
-		net_buf_drop(&ctx->usb_rx_buf);
+		net_buf_unref(usb_rx_buf);
 		return;
 	}
 	ctx->state = USB_EC_HOST_CMD_STATE_READY_TO_RX;
