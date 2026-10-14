@@ -1,0 +1,23 @@
+# Copyright (c) 2026 Beken Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  description: Board bring-up self test for the Beken BK7258 EVB
+  name: bk7258_evb_bringup
+tests:
+  sample.boards.beken.bk7258_evb:
+    # No west runner exists for this board, so twister cannot program it and CI
+    # only ever builds this case. It is left runnable rather than marked
+    # build_only so that the expected output is written down: with a board
+    # attached, the banner and the SysTick interval are what a bring-up is
+    # judged on.
+    platform_allow:
+      - bk7258_evb
+    tags:
+      - boards
+      - introduction
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Hello World! bk7258"

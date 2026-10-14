@@ -1,0 +1,132 @@
+/*
+ * Copyright (c) 2026 Beken Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Board-level devicetree for the BK7258 EVB.
+ *
+ * A board file only has three jobs:
+ *   1. declare which SoC it is
+ *   2. fill in /chosen (console / sram / flash)
+ *   3. enable the SoC peripherals that are actually wired up, which are
+ *      status = "disabled" by default
+ *
+ * Wiring: UART0 is brought out to a CH340 USB bridge, TX on GPIO11 and RX on
+ * GPIO10. The port is driven by the firmware the device ships with; this image
+ * only borrows it to print, see CONFIG_UART_BK7258_NO_HW_INIT.
+ */
+
+/dts-v1/;
+
+#include <beken/bk7258.dtsi>
+
+/ {
+	model = "Beken BK7258 EVB";
+	compatible = "beken,bk7258-evb";
+
+	chosen {
+		zephyr,console = &uart0;
+		/*
+		 * The shell does not sit on uart0: that port is the peer's console,
+		 * and the peer's CLI is the only thing reading it. What this core gets
+		 * is the mailbox console transport -- output that the peer prints for
+		 * us, input that the peer forwards from a line typed as
+		 * `ap_cmd <text>`. Building a shell on uart0 would mean two readers on
+		 * one port.
+		 */
+		zephyr,shell-uart = &mbox_uart;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		/*
+		 * flash_ap, not flash0: this is the device that can really read, write
+		 * and erase, whereas flash0 is only the XIP code window. The flash
+		 * area API and MCUboot's generic path both use this node as the device
+		 * behind a flash_area.
+		 */
+		zephyr,flash-controller = &flash_ap;
+		/*
+		 * No zephyr,code-partition: the application slot is one whole code region
+		 * and there is no sub-partition concept here.
+		 */
+	};
+
+	/*
+	 * Console transport over the inter-core mailbox. No reg, no interrupt:
+	 * the other end is the peer. See
+	 * dts/bindings/serial/beken,bk7258-mbox-uart.yaml.
+	 */
+	mbox_uart: mbox-uart {
+		compatible = "beken,bk7258-mbox-uart";
+		status = "okay";
+	};
+};
+
+/* UART0 is the console port */
+&uart0 {
+	status = "okay";
+};
+
+/*
+ * GPIO
+ *
+ * Once enabled, Zephyr's gpio0 device covers GPIO0..GPIO31. GPIO10/11 (UART0)
+ * are already protected by gpio-reserved-ranges in the SoC dtsi, so
+ * applications cannot obtain them -- deliberate, to keep the peer's console
+ * alive.
+ */
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+/*
+ * The flash device as seen by this core.
+ *
+ * This deliberately does not touch zephyr,flash in /chosen: that is the code
+ * window used for linking (flash0 in the SoC dtsi, soc-nv-flash, XIP
+ * addresses). flash_ap is the device that can really read, write and erase,
+ * addressed physically. Do not mix the two.
+ *
+ * Partitions. Every executable slot has to start on a 34-byte group boundary
+ * -- the XIP translation assumes the CRC-interleaved stream begins at
+ * offset 0 -- and the practical granularity is 68 KB, which is one 64 KB
+ * group of images once the CRC bytes are in (38 * 68K = 0x286000). Offsets
+ * are physical, so:
+ *
+ * boot_partition    0x165000  the slot the bootloader starts, and therefore
+ *                             where MCUboot itself is packaged
+ * slot0_partition   0x286000  the ota partition of the stock layout
+ * slot1_partition   0x3fc000  first free 68 KB boundary after usr_config
+ * scratch_partition 0x561000  only needed by a swap-using-scratch upgrade
+ *
+ * Nothing past 0x6c6000 is touched: easyflash (0x7fa000) and sys_rf (0x7fe000,
+ * the per-board radio calibration) stay where they are.
+ */
+&flash_ap {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@165000 {
+			reg = <0x00165000 0x00121000>;
+		};
+
+		slot0_partition: partition@286000 {
+			reg = <0x00286000 0x00165000>;
+		};
+
+		slot1_partition: partition@3fc000 {
+			reg = <0x003fc000 0x00165000>;
+		};
+
+		scratch_partition: partition@561000 {
+			reg = <0x00561000 0x00165000>;
+		};
+	};
+};

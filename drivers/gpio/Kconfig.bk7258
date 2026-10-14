@@ -1,0 +1,31 @@
+# Copyright (c) 2026 Beken Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_BK7258
+	bool "Beken BK7258 GPIO driver"
+	default y
+	depends on DT_HAS_BEKEN_BK7258_GPIO_ENABLED
+	select GPIO
+	help
+	  GPIO driver for the Beken BK7258.
+
+	  Two BK7258 specifics set this apart from other SoCs' GPIO drivers; both
+	  are documented in the driver source with their references:
+
+	    1) Interrupts are two-level: besides the NVIC (IRQ 55) the driver must
+	       set bit 23 of cpu1_int_32_63_en in the SYSTEM domain, or the
+	       interrupt never reaches the CPU and nothing is reported. (This is
+	       the vendor sys_drv_int_group2_enable(GPIO_INTERRUPT_CTRL_BIT).)
+
+	    2) The interrupt type is only 2 bits (low level / high level / rising
+	       edge / falling edge) with no both-edges mode, so
+	       GPIO_INT_TRIG_BOTH returns -ENOTSUP.
+
+	  Resource boundary: GPIO lives in the AON domain and the register file is
+	  shared with the peer, with no arbitration between the two (the vendor
+	  SDK calls amp_res_init(AMP_RES_ID_GPIO) for that). The driver therefore
+	  only writes pins that were explicitly operated on, and the devicetree
+	  additionally protects UART0's GPIO10/11 with gpio-reserved-ranges.
+
+	  The NVIC priority comes from devicetree (the second cell of interrupts),
+	  as in other Zephyr GPIO drivers; no extra Kconfig option is added.

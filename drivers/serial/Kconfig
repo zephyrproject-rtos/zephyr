@@ -264,3 +264,5 @@ rsource "Kconfig.xmc4xxx"
 # zephyr-keep-sorted-stop
 
 endif # SERIAL
+
+source "drivers/serial/Kconfig.bk7258"
