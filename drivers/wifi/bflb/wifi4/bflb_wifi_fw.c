@@ -17,6 +17,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
 #include <bl60x_fw_api.h>
 #include <lmac_mac.h>
@@ -485,6 +486,33 @@ static int bflb_send_status_cmd(struct bflb_wifi_dev *d, const char *name, uint1
 	}
 	LOG_DBG("%s -> status=%u", name, (unsigned int)*cfm_status);
 	return 0;
+}
+
+/* Rate word: format [13:11], index [6:0]. Non-HT rates are decoded. */
+#define RATE_INFO_FMT_MASK GENMASK(13, 11)
+#define RATE_INFO_IDX_MASK 0x7fU
+#define RATE_FMT_NON_HT    0U
+
+const uint16_t bflb_wifi_legacy_rates_100kbps[] = {
+	10, 20, 55, 110, 60, 90, 120, 180, 240, 360, 480, 540,
+};
+
+int bflb_wifi_phy_rate_kbps(uint8_t sta_idx)
+{
+	uint32_t info;
+	uint32_t idx;
+
+	if (bflb_wifi_sta_rate_info(sta_idx, &info) != 0) {
+		return 0;
+	}
+
+	idx = info & RATE_INFO_IDX_MASK;
+	if ((FIELD_GET(RATE_INFO_FMT_MASK, info) != RATE_FMT_NON_HT) ||
+	    (idx >= ARRAY_SIZE(bflb_wifi_legacy_rates_100kbps))) {
+		return 0;
+	}
+
+	return (int)bflb_wifi_legacy_rates_100kbps[idx] * 100;
 }
 
 static void bflb_init_me_config(struct me_config_req *m)
