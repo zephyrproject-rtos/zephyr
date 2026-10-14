@@ -208,11 +208,14 @@ static int init_stack_obj_core_list(void)
 	z_obj_type_init(&obj_type_stack, K_OBJ_TYPE_STACK_ID,
 			offsetof(struct k_stack, obj_core));
 
-	/* Initialize and link statically defined stacks */
+	/* Initialize statically defined stacks */
 
 	STRUCT_SECTION_FOREACH(k_stack, stack) {
-		k_obj_core_init_and_link(K_OBJ_CORE(stack), &obj_type_stack);
+		k_obj_core_init(K_OBJ_CORE(stack), &obj_type_stack);
 	}
+
+	k_obj_type_init_range(&obj_type_stack, STRUCT_SECTION_START(k_stack),
+			      STRUCT_SECTION_END(k_stack), sizeof(struct k_stack), false);
 
 	return 0;
 }
