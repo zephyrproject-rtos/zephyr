@@ -24,7 +24,6 @@ LOG_MODULE_REGISTER(video_st_mipid02, CONFIG_VIDEO_LOG_LEVEL);
 struct mipid02_config {
 	struct i2c_dt_spec i2c;
 	struct gpio_dt_spec reset_gpio;
-	const struct device *source_dev;
 	struct {
 		uint32_t nb_lanes;
 		uint8_t lanes[MIPID02_MAX_DATA_LANE_NB];
@@ -164,7 +163,7 @@ static int mipid02_set_fmt(const struct device *dev, struct video_format *fmt, s
 	/* Call video_set_format to the sensor */
 	sensor_fmt.pixelformat = desc->csi_pixelformat;
 
-	ret = video_set_format(data->vdev.source_dev, &sensor_fmt);
+	ret = video_set_format(drv_data->vdev.source_dev, &sensor_fmt);
 	if (ret < 0) {
 		return ret;
 	}
@@ -176,12 +175,11 @@ static int mipid02_set_fmt(const struct device *dev, struct video_format *fmt, s
 
 static int mipid02_get_caps(const struct device *dev, struct video_caps *caps)
 {
-	const struct mipid02_config *cfg = dev->config;
 	struct mipid02_data *drv_data = dev->data;
 	int ind = 0, caps_nb = 0;
 	int ret;
 
-	ret = video_get_caps(data->vdev.source_dev, caps);
+	ret = video_get_caps(drv_data->vdev.source_dev, caps);
 	if (ret < 0) {
 		return ret;
 	}
@@ -233,7 +231,7 @@ static int mipid02_set_stream(const struct device *dev, bool enable, enum video_
 	int ret;
 
 	if (!enable) {
-		ret = video_stream_stop(data->vdev.source_dev, type);
+		ret = video_stream_stop(drv_data->vdev.source_dev, type);
 		if (ret < 0) {
 			return ret;
 		}
@@ -266,7 +264,7 @@ static int mipid02_set_stream(const struct device *dev, bool enable, enum video_
 	}
 
 	/* Get link-frequency information from source */
-	link_freq = video_get_csi_link_freq(data->vdev.source_dev,
+	link_freq = video_get_csi_link_freq(drv_data->vdev.source_dev,
 					    video_bits_per_pixel(desc->csi_pixelformat),
 					    cfg->csi.nb_lanes);
 	if (link_freq < 0) {
@@ -296,7 +294,7 @@ static int mipid02_set_stream(const struct device *dev, bool enable, enum video_
 		}
 	}
 
-	return video_stream_start(data->vdev.source_dev, type);
+	return video_stream_start(drv_data->vdev.source_dev, type);
 }
 
 static DEVICE_API(video, mipid02_driver_api) = {
@@ -373,7 +371,6 @@ static int mipid02_init(const struct device *dev)
 												\
 	static const struct mipid02_config mipid02_cfg_##n = {					\
 		.i2c = I2C_DT_SPEC_INST_GET(n),							\
-		.source_dev = SOURCE_DEV(n),							\
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),			\
 		.csi.nb_lanes = DT_PROP_LEN(DT_INST_ENDPOINT_BY_ID(n, 0, 0), data_lanes),	\
 		.csi.lanes[0] = DT_PROP_BY_IDX(DT_INST_ENDPOINT_BY_ID(n, 0, 0),			\
