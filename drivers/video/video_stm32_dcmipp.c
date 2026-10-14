@@ -88,7 +88,6 @@ struct stm32_dcmipp_pipe_data {
 	struct video_buffer *next;
 	struct video_buffer *active;
 	enum stm32_dcmipp_state state;
-	bool is_streaming;
 };
 
 struct stm32_dcmipp_data {
@@ -585,7 +584,7 @@ static int stm32_dcmipp_set_fmt(const struct device *dev, struct video_format *f
 
 	k_mutex_lock(&pipe->lock, K_FOREVER);
 
-	if (pipe->is_streaming) {
+	if (video_stream_busy(pipe)) {
 		ret = -EBUSY;
 		goto out;
 	}
@@ -968,11 +967,6 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 
 	k_mutex_lock(&pipe->lock, K_FOREVER);
 
-	if (pipe->is_streaming) {
-		ret = -EALREADY;
-		goto out;
-	}
-
 	input_fmt = stm32_dcmipp_get_input_info(dcmipp->source_fmt.pixelformat);
 	if (input_fmt == NULL) {
 		LOG_ERR("Unsupported input format");
@@ -1183,7 +1177,6 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 #endif
 
 	pipe->state = STM32_DCMIPP_RUNNING;
-	pipe->is_streaming = true;
 	dcmipp->enabled_pipe++;
 
 out:
@@ -1201,11 +1194,6 @@ static int stm32_dcmipp_stream_disable(const struct device *dev)
 	int ret;
 
 	k_mutex_lock(&pipe->lock, K_FOREVER);
-
-	if (!pipe->is_streaming) {
-		ret = -EINVAL;
-		goto out;
-	}
 
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 	/* Stop the external ISP handling */
@@ -1265,7 +1253,6 @@ static int stm32_dcmipp_stream_disable(const struct device *dev)
 	}
 
 	pipe->state = STM32_DCMIPP_STOPPED;
-	pipe->is_streaming = false;
 	dcmipp->enabled_pipe--;
 
 out:
