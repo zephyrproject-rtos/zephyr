@@ -3349,6 +3349,35 @@ uint8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr
 	return 0;
 }
 
+#if defined(CONFIG_BT_GATT_ASYNC_ATTR)
+int bt_gatt_rsp_read(const struct bt_gatt_req *req, const void *data, uint16_t len)
+{
+	if ((req == NULL) || (req->conn == NULL) || ((data == NULL) && (len != 0U))) {
+		return -EINVAL;
+	}
+
+	return bt_att_rsp_read(req->conn, req->id, data, len);
+}
+
+int bt_gatt_rsp_write(const struct bt_gatt_req *req)
+{
+	if ((req == NULL) || (req->conn == NULL)) {
+		return -EINVAL;
+	}
+
+	return bt_att_rsp_write(req->conn, req->id);
+}
+
+int bt_gatt_rsp_error(const struct bt_gatt_req *req, uint8_t att_err)
+{
+	if ((req == NULL) || (req->conn == NULL)) {
+		return -EINVAL;
+	}
+
+	return bt_att_rsp_error(req->conn, req->id, att_err);
+}
+#endif /* CONFIG_BT_GATT_ASYNC_ATTR */
+
 static void sc_restore_rsp(struct bt_conn *conn,
 			   struct bt_gatt_indicate_params *params, uint8_t err)
 {
