@@ -2283,6 +2283,11 @@ struct wifi_mgmt_ops {
 			   struct wifi_version *params);
 	/** Get Wi-Fi connection parameters recently used
 	 *
+	 * Only the SSID is returned among the buffer members, and it is valid
+	 * until the next connect request. The pointers to secrets and to other
+	 * caller-owned buffers are set to NULL, since those buffers are not
+	 * valid once the connect request has returned.
+	 *
 	 * @param dev Pointer to the device structure for the driver instance
 	 * @param iface Network interface to use for the get connection parameters operation
 	 * @param params the Wi-Fi connection parameters recently used
