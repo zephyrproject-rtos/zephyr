@@ -98,7 +98,6 @@ struct ec_host_cmd_usb_ctx {
 	const struct usb_desc_header *const *const fs_desc;
 	struct ec_host_cmd_rx_ctx *rx_ctx;
 	struct ec_host_cmd_tx_buf *tx_buf;
-	uint8_t *bulk_out_buf;
 	struct net_buf *usb_rx_buf;
 	struct net_buf *usb_tx_buf;
 	enum ec_host_cmd_usb_state state;
@@ -620,12 +619,10 @@ static struct ec_host_cmd_usb_ctx ec_host_cmd_ctx;
 
 USBD_DEFINE_CLASS(ec_host_cmd_class, &ec_host_cmd_api, (void *)&ec_host_cmd_ctx, NULL);
 
-static uint8_t bulk_out_buf[EP_BULK_SIZE] __aligned(UDC_BUF_ALIGN);
 static struct ec_host_cmd_usb_ctx ec_host_cmd_ctx = {
 	.desc = &ec_host_cmd_desc,
 	.fs_desc = ec_host_cmd_fs_desc,
 	.c_data = &ec_host_cmd_class,
-	.bulk_out_buf = bulk_out_buf,
 };
 
 static struct ec_host_cmd_backend usb_ec_host_cmd_backend = {
