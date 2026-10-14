@@ -199,8 +199,6 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                             {DEFAULT_JLINK_EXE}''')
         parser.add_argument('--reset-after-load', action=argparse.BooleanOptionalAction,
                             dest='reset', help='obsolete synonym for --reset/--no-reset')
-        parser.add_argument('--rtt-client', default='JLinkRTTClient',
-                            help='RTT client, default is JLinkRTTClient')
         parser.add_argument('--rtt-port', default=DEFAULT_JLINK_RTT_PORT,
                             help=f'jlink rtt port, defaults to {DEFAULT_JLINK_RTT_PORT}')
         parser.add_argument('--rtt-channel', type=int, default=None,
