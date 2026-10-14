@@ -20,6 +20,9 @@ zephyr_library_sources_ifdef(CONFIG_IRONSIDE_TE_FAULT_LOGGING
 zephyr_library_sources_ifdef(CONFIG_IRONSIDE_TE_BOOT_LAYOUT_CHECK
   boot_layout_check.c
 )
+zephyr_library_sources_ifdef(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_CRYPT_DERIVED_KEY
+  secure_storage.c
+)
 
 if(CONFIG_PSA_CRYPTO_PROVIDER_IRONSIDE_TE)
   zephyr_library_sources(
