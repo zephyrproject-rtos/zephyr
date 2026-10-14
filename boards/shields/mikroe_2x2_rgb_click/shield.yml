@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright (c) 2026 sevenlab engineering GmbH
+
+shield:
+  name: mikroe_2x2_rgb_click
+  full_name: 2x2 RGB Click
+  vendor: mikroe
+  supported_features:
+    - led
