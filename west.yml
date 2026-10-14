@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: aurora
+      url-base: https://projecttools.nordicsemi.no/bitbucket/scm/afwp
 
   group-filter: [-babblesim, -optional, -testing]
 
@@ -30,6 +32,10 @@ manifest:
   # Please add items below based on alphabetical order
   # zephyr-keep-sorted-start re(^\s+\- name:)
   projects:
+    - name: ironsdk
+      remote: aurora
+      repo-path: ironside-integration-kit
+      revision: 0422193eb529b0e3da147f6e2d1ca3fec9959bd4
     - name: acpica
       revision: 8d24867bc9c9d81c81eeac59391cda59333affd4
       path: modules/lib/acpica
