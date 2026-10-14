@@ -1138,14 +1138,8 @@ static int gc2145_config_csi(const struct device *dev, uint32_t pixelformat,
 
 static int gc2145_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
-	struct gc2145_data *drv_data = dev->data;
 	const struct gc2145_config *cfg = dev->config;
 	int ret;
-
-	if (memcmp(&drv_data->vdev.out_fmt, fmt, sizeof(drv_data->vdev.out_fmt)) == 0) {
-		/* nothing to do */
-		return 0;
-	}
 
 	/* Set output format */
 	ret = gc2145_set_output_format(dev, fmt->pixelformat);

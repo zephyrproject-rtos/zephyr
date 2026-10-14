@@ -572,18 +572,12 @@ static int ov7675_set_fmt(const struct device *dev, struct video_format *fmt, si
 static int ov767x_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	const struct ov767x_config __maybe_unused *config = dev->config;
-	struct ov767x_data *data = dev->data;
 
 	int ret __maybe_unused;
 
 	if (fmt->pixelformat != VIDEO_PIX_FMT_RGB565 && fmt->pixelformat != VIDEO_PIX_FMT_YUYV) {
 		LOG_ERR("Only RGB565 and YUYV supported!");
 		return -ENOTSUP;
-	}
-
-	if (!memcmp(&data->vdev.out_fmt, fmt, sizeof(data->vdev.out_fmt))) {
-		/* nothing to do */
-		return 0;
 	}
 
 	/* Set RGB Format */

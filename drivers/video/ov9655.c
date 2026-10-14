@@ -264,13 +264,7 @@ static int ov9655_set_output_resolution(const struct device *dev, uint32_t width
 static int ov9655_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	const struct ov9655_config *config = dev->config;
-	struct ov9655_data *data = dev->data;
 	int ret;
-
-	if (!memcmp(&data->vdev.out_fmt, fmt, sizeof(data->vdev.out_fmt))) {
-		/* nothing to do */
-		return 0;
-	}
 
 	/* Reset the sensor registers */
 	ret = video_write_cci_reg(&config->i2c, OV9655_REG8(OV9655_COMMON_CTRL7), 0x80);
