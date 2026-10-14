@@ -952,7 +952,8 @@ static void gptp_mi_clk_master_sync_offset_state_machine(void)
 
 #if defined(CONFIG_NET_GPTP_GM_CAPABLE) && \
 	!defined(CONFIG_NET_GPTP_STATIC_TIME_RECEIVER)
-static inline void gptp_mi_setup_sync_send_time(uint64_t current_time)
+IF_DISABLED(CONFIG_ZTEST, (static inline))
+void gptp_mi_setup_sync_send_time(uint64_t current_time)
 {
 	struct gptp_clk_master_sync_snd_state *state;
 	struct gptp_global_ds *global_ds;
