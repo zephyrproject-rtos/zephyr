@@ -8,11 +8,24 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/ipc/ipc_service.h>
+#include <zephyr/sys/cpu_load.h>
 LOG_MODULE_REGISTER(app);
 
 static volatile uint8_t sample_received_data;
 static volatile bool ipc_ready;
 static volatile bool ipc_bound;
+
+static void timeout(struct k_timer *timer)
+{
+	static int cnt;
+
+	LOG_INF("loop: %d", cnt++);
+	if (cnt < 10) {
+		k_timer_start(timer, K_MSEC(40), K_NO_WAIT);
+	}
+}
+
+K_TIMER_DEFINE(timeout_timer, timeout, NULL);
 
 static void ready_notify(volatile bool *ready)
 {
@@ -77,7 +90,7 @@ static void ipc_run(void)
 
 	ready_wait(&ipc_bound);
 
-	while (message < 20) {
+	while (message < 10) {
 		ret = ipc_service_send(&ept, &message, sizeof(message));
 		if (ret < 0) {
 			LOG_ERR("send_message(%d) failed with ret %d", message, ret);
@@ -94,11 +107,23 @@ static void ipc_run(void)
 	}
 
 	LOG_INF("Multidomain logging HOST demo ended.");
+
+	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+		int load = cpu_load_get(true);
+
+		LOG_INF("CPU load: %d.%d%%", load / 10, load % 10);
+	}
 }
 
 int main(void)
 {
+	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+		(void)cpu_load_get(true);
+	}
+
 	printk("Hello World! %s\n", CONFIG_BOARD);
+
+	k_timer_start(&timeout_timer, K_MSEC(40), K_NO_WAIT);
 
 	ipc_run();
 
