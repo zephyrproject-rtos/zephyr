@@ -43,6 +43,7 @@ def test_runner_imports():
         'jlink',
         'linkserver',
         'lldbac',
+        'mchp_hss',
         'mdb-hw',
         'mdb-nsim',
         'minichlink',
