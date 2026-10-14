@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_IFX_CLOCK_SOURCE_BOARDS_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_IFX_CLOCK_SOURCE_BOARDS_H_
 
-#if defined(CONFIG_SOC_SERIES_PSE84)
+#if defined(CONFIG_SOC_SERIES_PSE8X)
 #include "ifx_clock_source_pse8xx.h"
 #elif defined(CONFIG_SOC_SERIES_PSC3)
 #include "ifx_clock_source_psc3xx.h"

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company) or
- * an affiliate of Cypress Semiconductor Corporation
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,10 +28,10 @@
  * path.
  *
  * Slots IFX_SMIF{0,1}_PORT{0,1,2} in gpio_ports[] hold the SMIF port
- * bases on PSE84 and are absent on other SoCs (slots are unreferenced
+ * bases on PSE8x and are absent on other SoCs (slots are unreferenced
  * there).
  */
-#if defined(CONFIG_SOC_SERIES_PSE84)
+#if defined(CONFIG_SOC_SERIES_PSE8X)
 #include <zephyr/dt-bindings/pinctrl/ifx_cat1-pinctrl.h>
 
 #define IFX_PINCTRL_SMIF_PORT_ENTRIES                                                          \

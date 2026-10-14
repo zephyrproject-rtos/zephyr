@@ -7,8 +7,8 @@
 
 /dts-v1/;
 #include <infineon/edge/mpns/pse846gps2dbzc4a.dtsi>
-#include <infineon/edge/pse84/pse84.cm55.dtsi>
-#include <infineon/edge/pse84/system_clocks.dtsi>
+#include <infineon/edge/pse8x/pse8x.cm55.dtsi>
+#include <infineon/edge/pse8x/system_clocks.dtsi>
 
 #include "kit_pse84_eval_common.dtsi"
 #include "kit_pse84_eval_memory_map.dtsi"
@@ -26,8 +26,8 @@
 	chosen {
 		/* m55_xip + flash0_sahb is used by cm33 or cm33/ns for m55 core startup
 		 * If a different region is assigned here, it also needs to be updated at:
-		 * soc/infineon/edge/pse84/security_config/pse84_boot.c or
-		 * soc/infineon/edge/pse84/soc_pse84_m33_ns.c
+		 * soc/infineon/edge/pse8x/security_config/pse8x_boot.c or
+		 * soc/infineon/edge/pse8x/soc_pse8x_m33_ns.c
 		 */
 		zephyr,flash = &flash0_sahb;
 		zephyr,code-partition = &m55_xip;

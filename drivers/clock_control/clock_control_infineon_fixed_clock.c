@@ -57,7 +57,7 @@ static void clock_startup_error(uint32_t error)
 #if defined(CONFIG_SOC_SERIES_PSC3)
 #define DPLL_LP0 SRSS_PLL_250M_0_PATH_NUM
 #define DPLL_LP1 SRSS_PLL_250M_1_PATH_NUM
-#elif defined(CONFIG_SOC_SERIES_PSE84)
+#elif defined(CONFIG_SOC_SERIES_PSE8X)
 #define DPLL_LP0 SRSS_DPLL_LP_0_PATH_NUM
 #define DPLL_LP1 SRSS_DPLL_LP_1_PATH_NUM
 #endif
@@ -312,7 +312,7 @@ static int fixed_rate_clk_init(const struct device *dev)
 		.kiAccSscg = 0x16U,                                                                \
 		.kpAccSscg = 0x14U,                                                                \
 	},
-#elif defined(CONFIG_SOC_SERIES_PSE84)
+#elif defined(CONFIG_SOC_SERIES_PSE8X)
 #define DPLL_LP_INIT(n)                                                                            \
 	.dpll_lp_config = {                                                                        \
 		.feedbackDiv = DT_INST_PROP_OR(n, feedback_div, 0),                                \

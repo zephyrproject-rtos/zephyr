@@ -56,14 +56,14 @@ static cy_stc_smif_mem_context_t smif_mem_context;
 static cy_stc_smif_mem_info_t smif_mem_info;
 
 #ifdef CONFIG_PM
-#ifdef CONFIG_SOC_SERIES_PSE84
+#ifdef CONFIG_SOC_SERIES_PSE8X
 static uint32_t smif0_crypto_input1;
 static uint32_t smif0_crypto_input2;
 static uint32_t smif0_crypto_input3;
 static uint32_t smif1_crypto_input1;
 static uint32_t smif1_crypto_input2;
 static uint32_t smif1_crypto_input3;
-#endif /* CONFIG_SOC_SERIES_PSE84 */
+#endif /* CONFIG_SOC_SERIES_PSE8X */
 #endif /* CONFIG_PM */
 
 const mtb_hal_hf_clock_t flash_clock_ref = {
@@ -221,18 +221,18 @@ ifx_serial_memory_flash_pm_callback(cy_stc_syspm_callback_params_t *callbackPara
 				    cy_en_syspm_callback_mode_t mode)
 {
 	if (mode == CY_SYSPM_CHECK_READY) {
-#ifdef CONFIG_SOC_SERIES_PSE84
+#ifdef CONFIG_SOC_SERIES_PSE8X
 		smif0_crypto_input1 = SMIF_CRYPTO_INPUT1(SMIF0_CORE);
 		smif0_crypto_input2 = SMIF_CRYPTO_INPUT2(SMIF0_CORE);
 		smif0_crypto_input3 = SMIF_CRYPTO_INPUT3(SMIF0_CORE);
 		smif1_crypto_input1 = SMIF_CRYPTO_INPUT1(SMIF1_CORE);
 		smif1_crypto_input2 = SMIF_CRYPTO_INPUT2(SMIF1_CORE);
 		smif1_crypto_input3 = SMIF_CRYPTO_INPUT3(SMIF1_CORE);
-#endif /* CONFIG_SOC_SERIES_PSE84 */
+#endif /* CONFIG_SOC_SERIES_PSE8X */
 	}
 
 	if (mode == CY_SYSPM_AFTER_TRANSITION) {
-#ifdef CONFIG_SOC_SERIES_PSE84
+#ifdef CONFIG_SOC_SERIES_PSE8X
 		SMIF_CRYPTO_INPUT1(SMIF0_CORE) = smif0_crypto_input1;
 		SMIF_CRYPTO_INPUT2(SMIF0_CORE) = smif0_crypto_input2;
 		SMIF_CRYPTO_INPUT3(SMIF0_CORE) = smif0_crypto_input3;
@@ -246,7 +246,7 @@ ifx_serial_memory_flash_pm_callback(cy_stc_syspm_callback_params_t *callbackPara
 		smif1_crypto_input1 = 0;
 		smif1_crypto_input2 = 0;
 		smif1_crypto_input3 = 0;
-#endif /* CONFIG_SOC_SERIES_PSE84 */
+#endif /* CONFIG_SOC_SERIES_PSE8X */
 	}
 
 	return 0;
