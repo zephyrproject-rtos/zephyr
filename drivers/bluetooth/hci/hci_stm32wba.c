@@ -454,6 +454,10 @@ static int bt_hci_stm32wba_close(const struct device *dev)
 	__HAL_RCC_RADIO_CLK_DISABLE();
 
 	__HAL_RCC_RADIO_CLK_SLEEP_DISABLE();
+
+	if (IS_ENABLED(CONFIG_FLASH)) {
+		FD_SetStatus(FD_FLASHACCESS_RFTS_BYPASS, LL_FLASH_ENABLE);
+	}
 #endif
 
 	return 0;
