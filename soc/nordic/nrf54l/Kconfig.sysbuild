@@ -8,3 +8,14 @@ config HAS_NORDIC_VPR_LAUNCHER_IMAGE
 	default y
 
 endif
+
+config IRONSIDE_TE
+	bool
+	help
+	  IronSide TE provides the roots of trust and a set of secure services.
+	  It replaces MCUboot: the application is a non-secure image signed with
+	  the IronSide Integration Kit tooling and booted by the IronSide TE UROT.
+
+# IronSide TE is the bootloader, so MCUboot must not be built alongside it.
+configdefault SUPPORT_BOOTLOADER_MCUBOOT_ZEPHYR
+	default n if IRONSIDE_TE

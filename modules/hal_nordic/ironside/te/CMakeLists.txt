@@ -40,3 +40,9 @@ if(CONFIG_PSA_CRYPTO_PROVIDER_IRONSIDE_TE)
     )
   endif()
 endif()
+
+# IronSide TE only boots a signed application. Sysbuild may still point the
+# image at another script through SIGNING_SCRIPT, which takes precedence.
+set_target_properties(zephyr_property_target PROPERTIES
+  SIGNING_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/signing.cmake
+)

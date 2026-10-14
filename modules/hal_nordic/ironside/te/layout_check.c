@@ -8,6 +8,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/toolchain.h>
 
+#include <ironside_client/image.h>
 #include <ironside_client/layout.h>
 
 #define ASSERT_PARTITION(label, addr, size)                                                 \
@@ -27,3 +28,7 @@ ASSERT_PARTITION(dfuimage_partition, IRONSIDE_NVM_DFUIMAGE_ADDR, IRONSIDE_NVM_DF
 BUILD_ASSERT(DT_REG_ADDR(DT_NODELABEL(sram_ns)) + DT_REG_SIZE(DT_NODELABEL(sram_ns)) ==
 		     IRONSIDE_RAM_NS_DATA_END,
 	     "sram_ns must end where the APP-XRAM window starts");
+
+/* sign.py takes the header gap to be IRONSIDE_IMAGE_ENTRY_OFFSET, whatever the image links. */
+BUILD_ASSERT(CONFIG_ROM_START_OFFSET == IRONSIDE_IMAGE_ENTRY_OFFSET,
+	     "IronSide TE boots the vector table IRONSIDE_IMAGE_ENTRY_OFFSET into the slot");
