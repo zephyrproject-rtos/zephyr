@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT nxp_flexio_camera
 
 #include <zephyr/kernel.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -59,6 +60,7 @@ struct nxp_flexio_camera_config {
 };
 
 struct nxp_flexio_camera_data {
+	struct video_device vdev; /* keep first */
 	/* Back-pointer needed in callbacks */
 	const struct device *dev;
 	/* SDK camera handle — shifterStartIdx/timerIdx filled after child_attach */
@@ -528,10 +530,12 @@ static DEVICE_API(video, nxp_flexio_camera_api) = {
 
 #define MCUX_FLEXIO_CAMERA_INIT(inst)								\
 	PINCTRL_DT_INST_DEFINE(inst);								\
+												\
 	static const struct nxp_flexio_child flexio_cam_child_##inst = {			\
 		.isr	= NULL,									\
 		.user_data = (void *)DEVICE_DT_INST_GET(inst),					\
 	};											\
+												\
 	static const struct nxp_flexio_camera_config flexio_cam_config_##inst = {		\
 		.flexio_dev     = DEVICE_DT_GET(DT_INST_PARENT(inst)),				\
 		.flexio_base    = (FLEXIO_Type *)DT_REG_ADDR(DT_INST_PARENT(inst)),		\
@@ -552,17 +556,19 @@ static DEVICE_API(video, nxp_flexio_camera_api) = {
 		.xclk_timer	= DT_INST_PROP(inst, xclk_timer),				\
 		.pclk_timer	= DT_INST_PROP(inst, pclk_timer),				\
 	};											\
-	static struct nxp_flexio_camera_data flexio_cam_data_##inst;				\
+												\
+	static struct nxp_flexio_camera_data flexio_cam_data_##inst = {				\
+		.vdev = VIDEO_DEVICE_INIT(flexio_cam_data_##inst,				\
+					  DT_DRV_INST(inst), SOURCE_DEV(inst)),			\
+	};											\
+												\
 	DEVICE_DT_INST_DEFINE(inst,								\
 			      nxp_flexio_camera_init,						\
 			      NULL,								\
 			      &flexio_cam_data_##inst,						\
 			      &flexio_cam_config_##inst,					\
 			      POST_KERNEL,							\
-			      CONFIG_VIDEO_MCUX_FLEXIO_INIT_PRIORITY,			\
-			      &nxp_flexio_camera_api);						\
-	VIDEO_DEVICE_DEFINE(flexio_cam_##inst,							\
-			    DEVICE_DT_INST_GET(inst),						\
-			    SOURCE_DEV(inst));
+			      CONFIG_VIDEO_MCUX_FLEXIO_INIT_PRIORITY,				\
+			      &nxp_flexio_camera_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_FLEXIO_CAMERA_INIT)

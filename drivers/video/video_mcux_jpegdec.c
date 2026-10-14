@@ -5,12 +5,16 @@
  */
 
 #include <errno.h>
+
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+
 #include <fsl_jpegdec.h>
+
 #include "video_common.h"
 
 #define DT_DRV_COMPAT nxp_jpegdec
@@ -31,6 +35,7 @@ struct video_m2m_common {
 };
 
 struct mcux_jpegdec_data {
+	struct video_device vdev; /* keep first */
 	struct video_m2m_common m2m;
 	struct k_mutex lock;
 	struct k_sem decode_done;
@@ -609,13 +614,15 @@ static void mcux_jpegdec_isr(const struct device *dev)
 			DEVICE_DT_INST_GET(n), 0);						\
 		irq_enable(DT_INST_IRQN(n));							\
 	}											\
+												\
 	static struct mcux_jpegdec_data mcux_jpegdec_data_##n = {				\
+		.vdev = VIDEO_DEVICE_INIT(mcux_jpegdec_data_##n, DT_DRV_INST(n), NULL),		\
 		.decoder_despt.config.clearStreamBuf = true,					\
 		.decoder_despt.config.autoStart = true,						\
 	};											\
+												\
 	static const struct mcux_jpegdec_config mcux_jpegdec_config_##n = {			\
-		.base =										\
-		{										\
+		.base =	{									\
 			.wrapper = (JPGDECWRP_Type *)DT_INST_REG_ADDR_BY_IDX(n, 0),		\
 			.core = (JPEGDEC_Type *)DT_INST_REG_ADDR_BY_IDX(n, 1),			\
 		},										\
@@ -627,9 +634,9 @@ static void mcux_jpegdec_isr(const struct device *dev)
 			((clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name)),			\
 			((clock_control_subsys_t)0U)),						\
 	};											\
+												\
 	DEVICE_DT_INST_DEFINE(n, &mcux_jpegdec_init, NULL, &mcux_jpegdec_data_##n,		\
 		&mcux_jpegdec_config_##n, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,		\
-		&mcux_jpegdec_driver_api);							\
-	VIDEO_DEVICE_DEFINE(jpegdec_##n, DEVICE_DT_INST_GET(n), NULL);
+		&mcux_jpegdec_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_JPEGDEC_INIT)

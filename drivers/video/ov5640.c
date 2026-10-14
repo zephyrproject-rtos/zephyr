@@ -11,6 +11,7 @@
 #include <stdlib.h>
 
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/video.h>
@@ -189,6 +190,7 @@ struct ov5640_ctrls {
 };
 
 struct ov5640_data {
+	struct video_device vdev; /* keep first */
 	struct ov5640_ctrls ctrls;
 	struct video_format fmt;
 	uint16_t cur_frmrate;
@@ -1470,7 +1472,9 @@ static int ov5640_init(const struct device *dev)
 	DT_PROP_OR(DT_CHILD(DT_INST_CHILD(n, port), endpoint), prop, default)
 
 #define OV5640_INIT(n)                                                                             \
-	static struct ov5640_data ov5640_data_##n;                                                 \
+	static struct ov5640_data ov5640_data_##n = {                                              \
+		.vdev = VIDEO_DEVICE_INIT(ov5640_data_##n, DT_DRV_INST(n), NULL),                      \
+	};                                                                                         \
                                                                                                    \
 	static const struct ov5640_config ov5640_cfg_##n = {                                       \
 		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
@@ -1485,8 +1489,6 @@ static int ov5640_init(const struct device *dev)
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &ov5640_init, NULL, &ov5640_data_##n, &ov5640_cfg_##n,            \
-			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &ov5640_driver_api);        \
-                                                                                                   \
-	VIDEO_DEVICE_DEFINE(ov5640_##n, DEVICE_DT_INST_GET(n), NULL);
+			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &ov5640_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(OV5640_INIT)

@@ -5,11 +5,15 @@
  */
 
 #include <errno.h>
+
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+
 #include <fsl_pngdec.h>
+
 #include "video_common.h"
 
 #define DT_DRV_COMPAT nxp_pngdec
@@ -28,6 +32,7 @@ struct video_m2m_common {
 };
 
 struct mcux_pngdec_data {
+	struct video_device vdev; /* keep first */
 	struct video_m2m_common m2m;
 	struct k_mutex lock;
 	struct k_work decode_work;
@@ -434,14 +439,18 @@ static int mcux_pngdec_init(const struct device *dev)
 			    DEVICE_DT_INST_GET(n), 0);						\
 		irq_enable(DT_INST_IRQN(n));							\
 	}											\
+												\
 	static const struct mcux_pngdec_config mcux_pngdec_config_##n = {			\
 		.base = (PNGDEC_Type *)DT_INST_REG_ADDR(n),					\
 		.irq_config_func = mcux_pngdec_irq_config_##n,					\
 	};											\
-	static struct mcux_pngdec_data mcux_pngdec_data_##n = {0};				\
+												\
+	static struct mcux_pngdec_data mcux_pngdec_data_##n = {					\
+		.vdev = VIDEO_DEVICE_INIT(mcux_pngdec_data_##n, DT_DRV_INST(n), NULL),		\
+	};											\
+												\
 	DEVICE_DT_INST_DEFINE(n, mcux_pngdec_init, NULL, &mcux_pngdec_data_##n,			\
 			      &mcux_pngdec_config_##n, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,	\
-			      &mcux_pngdec_driver_api);						\
-	VIDEO_DEVICE_DEFINE(mcux_pngdec##n, DEVICE_DT_INST_GET(n), NULL);
+			      &mcux_pngdec_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_PNGDEC_INIT)

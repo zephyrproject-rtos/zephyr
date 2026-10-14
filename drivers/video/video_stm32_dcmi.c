@@ -8,6 +8,7 @@
 
 #include <errno.h>
 
+#include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
@@ -40,6 +41,7 @@ struct video_stm32_dcmi_ctrls {
 };
 
 struct video_stm32_dcmi_data {
+	struct video_device vdev; /* keep first */
 	const struct device *dev;
 	DCMI_HandleTypeDef hdcmi;
 	struct video_format fmt;
@@ -56,7 +58,6 @@ struct video_stm32_dcmi_config {
 	struct stm32_pclken pclken;
 	irq_config_func_t irq_config;
 	const struct pinctrl_dev_config *pctrl;
-	const struct device *sensor_dev;
 	bool snapshot_mode;
 	int snapshot_timeout;
 };
@@ -218,11 +219,10 @@ static int stm32_dcmi_enable_clock(const struct device *dev)
 
 static int video_stm32_dcmi_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
-	const struct video_stm32_dcmi_config *config = dev->config;
 	struct video_stm32_dcmi_data *data = dev->data;
 	int ret;
 
-	ret = video_set_format(config->sensor_dev, fmt);
+	ret = video_set_format(data->vdev.source_dev, fmt);
 	if (ret < 0) {
 		return ret;
 	}
@@ -235,11 +235,10 @@ static int video_stm32_dcmi_set_fmt(const struct device *dev, struct video_forma
 static int video_stm32_dcmi_get_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct video_stm32_dcmi_data *data = dev->data;
-	const struct video_stm32_dcmi_config *config = dev->config;
 	int ret;
 
 	/* Align DCMI format with the one provided by the sensor */
-	ret = video_get_format(config->sensor_dev, fmt);
+	ret = video_get_format(data->vdev.source_dev, fmt);
 	if (ret < 0) {
 		return ret;
 	}
@@ -259,7 +258,6 @@ static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable,
 				       enum video_buf_type type)
 {
 	struct video_stm32_dcmi_data *data = dev->data;
-	const struct video_stm32_dcmi_config *config = dev->config;
 	HAL_StatusTypeDef hal_ret;
 	int err;
 
@@ -269,7 +267,7 @@ static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable,
 			LOG_DBG("Failed to stop DCMI");
 		}
 
-		err = video_stream_stop(config->sensor_dev, type);
+		err = video_stream_stop(data->vdev.source_dev, type);
 		if (err < 0) {
 			return err;
 		}
@@ -307,7 +305,7 @@ static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable,
 		}
 	}
 
-	return video_stream_start(config->sensor_dev, type);
+	return video_stream_start(data->vdev.source_dev, type);
 }
 
 static int video_stm32_dcmi_enqueue(const struct device *dev, struct video_buffer *vbuf)
@@ -414,13 +412,13 @@ static int video_stm32_dcmi_dequeue(const struct device *dev, struct video_buffe
 
 static int video_stm32_dcmi_get_caps(const struct device *dev, struct video_caps *caps)
 {
-	const struct video_stm32_dcmi_config *config = dev->config;
+	struct video_stm32_dcmi_data *data = dev->data;
 
 	/* 2 buffers are needed for DCMI_MODE_CONTINUOUS, one 1 for DCMI_MODE_SNAPSHOT */
 	caps->min_vbuf_count = 1;
 
 	/* Forward the message to the sensor device */
-	return video_get_caps(config->sensor_dev, caps);
+	return video_get_caps(data->vdev.source_dev, caps);
 }
 
 #define STM32_DCMI_MAX_FRAME_DROP    4
@@ -429,7 +427,7 @@ static int video_stm32_dcmi_get_caps(const struct device *dev, struct video_caps
 
 static int video_stm32_dcmi_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
-	const struct video_stm32_dcmi_config *config = dev->config;
+	struct video_stm32_dcmi_data *data = dev->data;
 	uint32_t capture_rate = BIT(fie->index % STM32_DCMI_NUM_CAPTURE_RATES);
 	struct video_frmival_enum sensor_fie = {
 		.index = fie->index / STM32_DCMI_NUM_CAPTURE_RATES,
@@ -442,7 +440,7 @@ static int video_stm32_dcmi_enum_frmival(const struct device *dev, struct video_
 	 * frame multiplies the interval and its step, which one stepwise range with the
 	 * sensor step cannot express.
 	 */
-	ret = video_enum_frmival(config->sensor_dev, &sensor_fie);
+	ret = video_enum_frmival(data->vdev.source_dev, &sensor_fie);
 	if (ret < 0) {
 		return ret;
 	}
@@ -463,7 +461,6 @@ static int video_stm32_dcmi_enum_frmival(const struct device *dev, struct video_
 
 static int video_stm32_dcmi_set_frmival(const struct device *dev, struct video_frmival *frmival)
 {
-	const struct video_stm32_dcmi_config *config = dev->config;
 	struct video_stm32_dcmi_data *data = dev->data;
 	struct video_frmival_enum fie = {
 		.format = &data->fmt,
@@ -489,7 +486,7 @@ static int video_stm32_dcmi_set_frmival(const struct device *dev, struct video_f
 		fie.discrete.numerator = frmival->numerator;
 		fie.discrete.denominator = frmival->denominator * capture_rate;
 
-		ret = video_closest_frmival(config->sensor_dev, &fie);
+		ret = video_closest_frmival(data->vdev.source_dev, &fie);
 		if (ret < 0) {
 			return ret;
 		}
@@ -514,16 +511,15 @@ static int video_stm32_dcmi_set_frmival(const struct device *dev, struct video_f
 
 	data->capture_rate = best_capture_rate;
 
-	return video_set_frmival(config->sensor_dev, &best_sensor_frmival);
+	return video_set_frmival(data->vdev.source_dev, &best_sensor_frmival);
 }
 
 static int video_stm32_dcmi_get_frmival(const struct device *dev, struct video_frmival *frmival)
 {
-	const struct video_stm32_dcmi_config *config = dev->config;
 	struct video_stm32_dcmi_data *data = dev->data;
 	int ret;
 
-	ret = video_get_frmival(config->sensor_dev, frmival);
+	ret = video_get_frmival(data->vdev.source_dev, frmival);
 	if (ret < 0) {
 		return ret;
 	}
@@ -535,16 +531,16 @@ static int video_stm32_dcmi_get_frmival(const struct device *dev, struct video_f
 
 static int video_stm32_dcmi_set_selection(const struct device *dev, struct video_selection *sel)
 {
-	const struct video_stm32_dcmi_config *config = dev->config;
+	struct video_stm32_dcmi_data *data = dev->data;
 
-	return video_set_selection(config->sensor_dev, sel);
+	return video_set_selection(data->vdev.source_dev, sel);
 }
 
 static int video_stm32_dcmi_get_selection(const struct device *dev, struct video_selection *sel)
 {
-	const struct video_stm32_dcmi_config *config = dev->config;
+	struct video_stm32_dcmi_data *data = dev->data;
 
-	return video_get_selection(config->sensor_dev, sel);
+	return video_get_selection(data->vdev.source_dev, sel);
 }
 
 static DEVICE_API(video, video_stm32_dcmi_driver_api) = {
@@ -618,41 +614,41 @@ PINCTRL_DT_INST_DEFINE(0);
 			(NULL))								\
 	},
 
+#define SOURCE_DEV(n) DEVICE_DT_GET(DT_NODE_REMOTE_DEVICE(DT_INST_ENDPOINT_BY_ID(n, 0, 0)))
+
 static struct video_stm32_dcmi_data video_stm32_dcmi_data_0 = {
+	.vdev = VIDEO_DEVICE_INIT(video_stm32_dcmi_data_0, DT_DRV_INST(0), SOURCE_DEV(0)),
 	.hdcmi = {
 		.Instance = (DCMI_TypeDef *) DT_INST_REG_ADDR(0),
 		.Init = {
-				.SynchroMode = DCMI_SYNCHRO_HARDWARE,
-				.PCKPolarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(0, 0, 0),
-							  pclk_sample, 0) ?
-							  DCMI_PCKPOLARITY_RISING :
-							  DCMI_PCKPOLARITY_FALLING,
-				.HSPolarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(0, 0, 0),
-							 hsync_active, 0) ?
-							 DCMI_HSPOLARITY_HIGH : DCMI_HSPOLARITY_LOW,
-				.VSPolarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(0, 0, 0),
-							 vsync_active, 0) ?
-							 DCMI_VSPOLARITY_HIGH : DCMI_VSPOLARITY_LOW,
-				.ExtendedDataMode = STM32_DCMI_GET_BUS_WIDTH(
-							DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(0, 0, 0),
-								   bus_width, 8)),
-				.JPEGMode = DCMI_JPEG_DISABLE,
-				.ByteSelectMode = DCMI_BSM_ALL,
-				.ByteSelectStart = DCMI_OEBS_ODD,
-				.LineSelectMode = DCMI_LSM_ALL,
-				.LineSelectStart = DCMI_OELS_ODD,
+			.SynchroMode = DCMI_SYNCHRO_HARDWARE,
+			.PCKPolarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(0, 0, 0),
+						  pclk_sample, 0) ?
+						  DCMI_PCKPOLARITY_RISING :
+						  DCMI_PCKPOLARITY_FALLING,
+			.HSPolarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(0, 0, 0),
+						 hsync_active, 0) ?
+						 DCMI_HSPOLARITY_HIGH : DCMI_HSPOLARITY_LOW,
+			.VSPolarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(0, 0, 0),
+						 vsync_active, 0) ?
+						 DCMI_VSPOLARITY_HIGH : DCMI_VSPOLARITY_LOW,
+			.ExtendedDataMode = STM32_DCMI_GET_BUS_WIDTH(
+						DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(0, 0, 0),
+							   bus_width, 8)),
+			.JPEGMode = DCMI_JPEG_DISABLE,
+			.ByteSelectMode = DCMI_BSM_ALL,
+			.ByteSelectStart = DCMI_OEBS_ODD,
+			.LineSelectMode = DCMI_LSM_ALL,
+			.LineSelectStart = DCMI_OELS_ODD,
 		},
 	},
 	DCMI_DMA_CHANNEL(0, PERIPHERAL, MEMORY)
 };
 
-#define SOURCE_DEV(n) DEVICE_DT_GET(DT_NODE_REMOTE_DEVICE(DT_INST_ENDPOINT_BY_ID(n, 0, 0)))
-
 static const struct video_stm32_dcmi_config video_stm32_dcmi_config_0 = {
 	.pclken = STM32_DT_INST_CLOCK_INFO(0),
 	.irq_config = video_stm32_dcmi_irq_config_func,
 	.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
-	.sensor_dev = SOURCE_DEV(0),
 	.snapshot_mode = DT_INST_PROP(0, snapshot_mode),
 	.snapshot_timeout = DT_INST_PROP(0, snapshot_timeout)
 };
@@ -716,5 +712,3 @@ DEVICE_DT_INST_DEFINE(0, &video_stm32_dcmi_init,
 		    &video_stm32_dcmi_config_0,
 		    POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,
 		    &video_stm32_dcmi_driver_api);
-
-VIDEO_DEVICE_DEFINE(dcmi, DEVICE_DT_INST_GET(0), SOURCE_DEV(0));
