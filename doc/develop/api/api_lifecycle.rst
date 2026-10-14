@@ -182,8 +182,8 @@ The Pull Request must include the following:
 - The changes required to adapt in-tree users of the API to the change.
   Depending on the scope of this task this might require additional help from
   the corresponding maintainers
-- An entry in the "API Changes" section of the release notes for the next
-  upcoming release
+- An entry in the migration guide for the next release describing the change
+  and how to adapt to it, see :ref:`migration_guide_guidelines`
 - The labels ``API``, ``Breaking API Change`` and ``Release Notes``, as well as
   any others that are applicable
 - The label ``Architecture Review`` if the RFC was not yet discussed and agreed upon in `Zephyr
@@ -212,8 +212,9 @@ Deprecated
 .. note::
 
    Unstable APIs can be removed without deprecation at any time.
-   Deprecation and removal of APIs will be announced in the "API Changes"
-   section of the release notes.
+   Deprecated and removed APIs are listed in the change inventory of the
+   release notes, and the deprecations that require users to adapt their code
+   are described in the migration guide, see :ref:`release_documentation`.
 
 The following are the requirements for deprecating an existing API:
 
@@ -230,9 +231,11 @@ The following are the requirements for deprecating an existing API:
     macro definitions), or by introducing a Kconfig option (typically one that
     contains the ``DEPRECATED`` word in it) that, when enabled, reverts the APIs
     back to their previous form
-  - Document the deprecation
-  - Include the deprecation in the "API Changes" of the release notes for the
-    next upcoming release
+  - Document the deprecation, naming the replacement in the API documentation
+    (``@deprecated``), the Kconfig help text or the binding description, so that
+    the change inventory can pick it up
+  - Describe the deprecation and the required adaptation in the migration guide
+    for the next release
   - Code using the deprecated API needs to be modified to remove usage of said
     API
   - The change needs to be atomic and bisectable
