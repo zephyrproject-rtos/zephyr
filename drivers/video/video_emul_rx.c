@@ -33,27 +33,6 @@ struct emul_rx_data {
 	struct k_fifo fifo_out;
 };
 
-static int emul_rx_set_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	const struct emul_rx_config *cfg = dev->config;
-
-	return video_set_frmival(cfg->source_dev, frmival);
-}
-
-static int emul_rx_get_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	const struct emul_rx_config *cfg = dev->config;
-
-	return video_get_frmival(cfg->source_dev, frmival);
-}
-
-static int emul_rx_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
-{
-	const struct emul_rx_config *cfg = dev->config;
-
-	return video_enum_frmival(cfg->source_dev, fie);
-}
-
 static int emul_rx_set_fmt(const struct device *const dev, struct video_format *fmt, size_t idx)
 {
 	const struct emul_rx_config *cfg = dev->config;
@@ -188,9 +167,6 @@ static int emul_rx_flush(const struct device *dev, bool cancel)
 }
 
 static DEVICE_API(video, emul_rx_driver_api) = {
-	.set_frmival = emul_rx_set_frmival,
-	.get_frmival = emul_rx_get_frmival,
-	.enum_frmival = emul_rx_enum_frmival,
 	.set_format = emul_rx_set_fmt,
 	.get_format = emul_rx_get_fmt,
 	.get_caps = emul_rx_get_caps,

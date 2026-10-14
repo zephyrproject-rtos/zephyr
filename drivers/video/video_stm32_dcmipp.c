@@ -77,7 +77,6 @@ enum stm32_dcmipp_state {
 					    STM32_DCMIPP_MAX_PIPE_DSIZE_FACTOR)
 struct stm32_dcmipp_pipe_data {
 	struct video_device vdev; /* keep first */
-	const struct device *dev;
 	uint32_t id;
 	struct stm32_dcmipp_data *dcmipp;
 	struct k_mutex lock;
@@ -1438,27 +1437,6 @@ static int stm32_dcmipp_get_caps(const struct device *dev, struct video_caps *ca
 	return 0;
 }
 
-static int stm32_dcmipp_get_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	const struct stm32_dcmipp_config *config = dev->config;
-
-	return video_get_frmival(config->source_dev, frmival);
-}
-
-static int stm32_dcmipp_set_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	const struct stm32_dcmipp_config *config = dev->config;
-
-	return video_set_frmival(config->source_dev, frmival);
-}
-
-static int stm32_dcmipp_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
-{
-	const struct stm32_dcmipp_config *config = dev->config;
-
-	return video_enum_frmival(config->source_dev, fie);
-}
-
 static inline int stm32_dcmipp_pipe0_pixel_align(uint32_t pixelformat)
 {
 	unsigned int bpp = video_bits_per_pixel(pixelformat);
@@ -1633,9 +1611,6 @@ static DEVICE_API(video, stm32_dcmipp_driver_api) = {
 	.enqueue = stm32_dcmipp_enqueue,
 	.dequeue = stm32_dcmipp_dequeue,
 	.get_caps = stm32_dcmipp_get_caps,
-	.get_frmival = stm32_dcmipp_get_frmival,
-	.set_frmival = stm32_dcmipp_set_frmival,
-	.enum_frmival = stm32_dcmipp_enum_frmival,
 	.set_selection = stm32_dcmipp_set_selection,
 	.get_selection = stm32_dcmipp_get_selection,
 };

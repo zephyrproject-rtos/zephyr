@@ -371,20 +371,6 @@ static int video_mcux_csi_set_signal(const struct device *dev, struct k_poll_sig
 }
 #endif
 
-static int video_mcux_csi_set_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	const struct video_mcux_csi_config *config = dev->config;
-
-	return video_set_frmival(config->source_dev, frmival);
-}
-
-static int video_mcux_csi_get_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	const struct video_mcux_csi_config *config = dev->config;
-
-	return video_get_frmival(config->source_dev, frmival);
-}
-
 static int video_mcux_csi_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
 	const struct video_mcux_csi_config *config = dev->config;
@@ -412,8 +398,6 @@ static DEVICE_API(video, video_mcux_csi_driver_api) = {
 	.enqueue = video_mcux_csi_enqueue,
 	.dequeue = video_mcux_csi_dequeue,
 	.get_caps = video_mcux_csi_get_caps,
-	.set_frmival = video_mcux_csi_set_frmival,
-	.get_frmival = video_mcux_csi_get_frmival,
 	.enum_frmival = video_mcux_csi_enum_frmival,
 #ifdef CONFIG_POLL
 	.set_signal = video_mcux_csi_set_signal,

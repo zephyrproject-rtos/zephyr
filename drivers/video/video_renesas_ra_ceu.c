@@ -300,28 +300,6 @@ static int video_renesas_ra_ceu_dequeue(const struct device *dev, struct video_b
 	return 0;
 }
 
-static int video_renesas_ra_ceu_get_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	const struct video_renesas_ra_ceu_config *config = dev->config;
-
-	return video_get_frmival(config->source_dev, frmival);
-}
-
-static int video_renesas_ra_ceu_set_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	const struct video_renesas_ra_ceu_config *config = dev->config;
-
-	return video_set_frmival(config->source_dev, frmival);
-}
-
-static int video_renesas_ra_ceu_enum_frmival(const struct device *dev,
-					     struct video_frmival_enum *fie)
-{
-	const struct video_renesas_ra_ceu_config *config = dev->config;
-
-	return video_enum_frmival(config->source_dev, fie);
-}
-
 static int video_renesas_ra_ceu_flush(const struct device *dev, bool cancel)
 {
 	struct video_renesas_ra_ceu_data *data = dev->data;
@@ -413,9 +391,6 @@ static DEVICE_API(video, video_renesas_ra_ceu_driver_api) = {
 	.set_stream = video_renesas_ra_ceu_set_stream,
 	.enqueue = video_renesas_ra_ceu_enqueue,
 	.dequeue = video_renesas_ra_ceu_dequeue,
-	.enum_frmival = video_renesas_ra_ceu_enum_frmival,
-	.set_frmival = video_renesas_ra_ceu_set_frmival,
-	.get_frmival = video_renesas_ra_ceu_get_frmival,
 	.flush = video_renesas_ra_ceu_flush,
 #ifdef CONFIG_POLL
 	.set_signal = video_renesas_ra_ceu_set_signal,

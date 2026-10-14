@@ -11,29 +11,74 @@ LOG_MODULE_REGISTER(video_frmival, CONFIG_VIDEO_LOG_LEVEL);
 
 int video_set_frmival(const struct device *dev, struct video_frmival *frmival)
 {
+	struct video_device *vdev = dev->data;
+	int ret;
+
 	if (dev == NULL || frmival == NULL) {
 		return -EINVAL;
 	}
 
-	return video_driver_set_frmival(dev, frmival);
+	while (true) {
+		ret = video_driver_set_frmival(vdev->dev, frmival);
+		if (ret == 0 || ret != -ENOSYS) {
+			return ret;
+		}
+
+		if (vdev->source_dev == NULL) {
+			break;
+		}
+		vdev = vdev->source_dev->data;
+	}
+
+	return -ENOSYS;
 }
 
 int video_get_frmival(const struct device *dev, struct video_frmival *frmival)
 {
+	struct video_device *vdev = dev->data;
+	int ret;
+
 	if (dev == NULL || frmival == NULL) {
 		return -EINVAL;
 	}
 
-	return video_driver_get_frmival(dev, frmival);
+	while (true) {
+		ret = video_driver_get_frmival(vdev->dev, frmival);
+		if (ret == 0 || ret != -ENOSYS) {
+			return ret;
+		}
+
+		if (vdev->source_dev == NULL) {
+			break;
+		}
+		vdev = vdev->source_dev->data;
+	}
+
+	return -ENOSYS;
 }
 
 int video_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
+	struct video_device *vdev = dev->data;
+	int ret;
+
 	if (dev == NULL || fie == NULL) {
 		return -EINVAL;
 	}
 
-	return video_driver_enum_frmival(dev, fie);
+	while (true) {
+		ret = video_driver_enum_frmival(vdev->dev, fie);
+		if (ret == 0 || ret != -ENOSYS) {
+			return ret;
+		}
+
+		if (vdev->source_dev == NULL) {
+			break;
+		}
+		vdev = vdev->source_dev->data;
+	}
+
+	return -ENOSYS;
 }
 
 int video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwise,

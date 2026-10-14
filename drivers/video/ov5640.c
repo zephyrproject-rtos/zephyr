@@ -700,7 +700,7 @@ static int ov5640_set_fmt_dvp(const struct ov5640_config *cfg)
 	return 0;
 }
 
-static int ov5640_set_frmival(const struct device *dev, struct video_frmival *frmival)
+static int ov5640_set_frmival(const struct device *dev, struct video_frmival *frmival, size_t idx)
 {
 	const struct ov5640_config *cfg = dev->config;
 	struct ov5640_data *drv_data = dev->data;
@@ -848,7 +848,7 @@ static int ov5640_set_fmt(const struct device *dev, struct video_format *fmt, si
 	def_frmival.denominator = drv_data->cur_mode->def_frmrate;
 	def_frmival.numerator = 1;
 
-	return ov5640_set_frmival(dev, &def_frmival);
+	return video_set_frmival(dev, &def_frmival);
 }
 
 static int ov5640_get_fmt(const struct device *dev, struct video_format *fmt)

@@ -97,7 +97,6 @@ static struct stm32_venc_ewl ewl_instance;
 
 struct stm32_venc_data {
 	struct video_device vdev; /* keep first */
-	const struct device *dev;
 	struct k_mutex lock;
 	struct video_format in_fmt;
 	struct video_format out_fmt;
@@ -850,7 +849,6 @@ static int stm32_venc_init(const struct device *dev)
 	}
 	reset_line_toggle_dt(&config->reset);
 
-	data->dev = dev;
 	k_mutex_init(&data->lock);
 	k_fifo_init(&data->in_fifo_in);
 	k_fifo_init(&data->in_fifo_out);

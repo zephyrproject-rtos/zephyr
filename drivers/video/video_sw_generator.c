@@ -714,12 +714,12 @@ static int video_sw_generator_set_signal(const struct device *dev, struct k_poll
 }
 #endif
 
-static int video_sw_generator_set_frmival(const struct device *dev, struct video_frmival *frmival)
+static int video_sw_generator_set_frmival(const struct device *dev, struct video_frmival *frmival,
+					  size_t idx)
 {
 	struct video_sw_generator_data *data = dev->data;
 
-	data->frame_rate = CLAMP(DIV_ROUND_CLOSEST(frmival->denominator, frmival->numerator),
-				 MIN_FRAME_RATE, MAX_FRAME_RATE);
+	data->frame_rate = DIV_ROUND_CLOSEST(frmival->denominator, frmival->numerator);
 	frmival->numerator = 1;
 	frmival->denominator = data->frame_rate;
 

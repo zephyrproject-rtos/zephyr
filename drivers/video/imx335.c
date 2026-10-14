@@ -486,25 +486,15 @@ static int imx335_set_ctrl(const struct device *dev, unsigned int cid)
 	}
 }
 
-static int imx335_set_frmival(const struct device *dev, struct video_frmival *frmival)
+static int imx335_set_frmival(const struct device *dev, struct video_frmival *frmival, size_t idx)
 {
 	const struct imx335_config *cfg = dev->config;
 	struct imx335_data *drv_data = dev->data;
 	int ret;
 
-	struct video_frmival_enum match = {
-		.format = &drv_data->fmt,
-		.type = VIDEO_FRMIVAL_TYPE_DISCRETE,
-		.discrete = *frmival,
-	};
-	ret = video_closest_frmival(dev, &match);
-	if (ret < 0) {
-		return ret;
-	}
-
 	uint16_t hmax;
 
-	switch (match.index) {
+	switch (idx) {
 	case IMX335_25_FPS:
 		hmax = (drv_data->fmt.width == IMX335_BIN_2X2_WIDTH
 				&& drv_data->fmt.height == IMX335_BIN_2X2_HEIGHT) ? 0x0280 : 0x0294;
@@ -539,8 +529,8 @@ static int imx335_set_frmival(const struct device *dev, struct video_frmival *fr
 	}
 
 	frmival->numerator = 1;
-	frmival->denominator = imx335_framerates[match.index];
-	drv_data->frame_rate = imx335_framerates[match.index];
+	frmival->denominator = imx335_framerates[idx];
+	drv_data->frame_rate = imx335_framerates[idx];
 
 	return 0;
 }
@@ -600,7 +590,7 @@ static int imx335_set_fmt(const struct device *dev, struct video_format *fmt, si
 		.denominator = drv_data->frame_rate,
 	};
 
-	return imx335_set_frmival(dev, &frmival);
+	return video_set_frmival(dev, &frmival);
 }
 
 static int imx335_get_frmival(const struct device *dev, struct video_frmival *frmival)

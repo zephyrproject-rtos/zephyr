@@ -167,7 +167,8 @@ static int mipi_csi2rx_get_caps(const struct device *dev, struct video_caps *cap
 	return video_get_caps(config->sensor_dev, caps);
 }
 
-static int mipi_csi2rx_set_frmival(const struct device *dev, struct video_frmival *frmival)
+static int mipi_csi2rx_set_frmival(const struct device *dev, struct video_frmival *frmival,
+				   size_t idx)
 {
 	const struct mipi_csi2rx_config *config = dev->config;
 	int ret;
@@ -178,16 +179,7 @@ static int mipi_csi2rx_set_frmival(const struct device *dev, struct video_frmiva
 		return ret;
 	}
 
-	ret = mipi_csi2rx_update_settings(dev);
-
-	return ret;
-}
-
-static int mipi_csi2rx_get_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	const struct mipi_csi2rx_config *config = dev->config;
-
-	return video_get_frmival(config->sensor_dev, frmival);
+	return mipi_csi2rx_update_settings(dev);
 }
 
 static uint32_t mipi_csi2rx_cal_frame_size(const struct video_format *fmt)

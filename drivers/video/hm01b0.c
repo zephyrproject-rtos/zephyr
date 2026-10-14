@@ -374,21 +374,12 @@ static int hm01b0_soft_reset(const struct device *dev)
 	return ret;
 }
 
-static int hm01b0_set_frmival(const struct device *dev, struct video_frmival *frmival)
+static int hm01b0_set_frmival(const struct device *dev, struct video_frmival *frmival, size_t idx)
 {
 	const struct hm01b0_config *config = dev->config;
 	struct hm01b0_data *drv_data = dev->data;
 	int ret;
 	uint32_t osc_div = 0;
-	struct video_frmival_enum fie;
-
-	fie.format = &drv_data->fmt;
-	fie.discrete = *frmival;
-	fie.type = VIDEO_FRMIVAL_TYPE_DISCRETE;
-	ret = video_closest_frmival(dev, &fie);
-	if (ret < 0) {
-		return ret;
-	}
 
 	/*
 	 * Note: in highres mode max FPS is 45 else 60
@@ -396,8 +387,8 @@ static int hm01b0_set_frmival(const struct device *dev, struct video_frmival *fr
 	 *  The return index will be the same value that
 	 *  we use for the osc_div field of OSC_CLOCK_DIV
 	 */
-	osc_div = fie.index;
-	LOG_DBG("%u %u %u", fie.index, fie.discrete.numerator, fie.discrete.denominator);
+	osc_div = idx;
+	LOG_DBG("%u %u %u", idx, frmival->numerator, frmival->denominator);
 
 	/* We also set the VT_REG_DIV bits[3:2] to 10 (0x2) or /1 */
 	osc_div |= HM01B0_CCI_OSC_CLOCK_DIV_VT_REG_DIV_1;
@@ -415,8 +406,9 @@ static int hm01b0_set_frmival(const struct device *dev, struct video_frmival *fr
 		return ret;
 	}
 
-	LOG_DBG("FrameRate selected: %d %d = %d", fie.discrete.numerator, fie.discrete.denominator,
-		fie.discrete.denominator / fie.discrete.numerator);
+	LOG_DBG("FrameRate selected: %d %d = %d",
+		frmival->numerator, frmival->denominator,
+		frmival->denominator / frmival->numerator);
 	LOG_DBG("OSC DIV: %d", osc_div);
 
 	return 0;

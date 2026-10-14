@@ -638,11 +638,10 @@ int hm0360_enum_frmival(const struct device *dev, struct video_frmival_enum *fie
 }
 
 
-static int hm0360_set_frmival(const struct device *dev, struct video_frmival *frmival)
+static int hm0360_set_frmival(const struct device *dev, struct video_frmival *frmival, size_t idx)
 {
 	const struct hm0360_config *config = dev->config;
 	struct hm0360_data *drv_data = dev->data;
-	struct video_frmival_enum fie = {.format = &drv_data->fmt, .discrete = *frmival};
 	int ret;
 	uint32_t osc_div = 0;
 	bool highres = false;
@@ -651,13 +650,9 @@ static int hm0360_set_frmival(const struct device *dev, struct video_frmival *fr
 		highres = true;
 	}
 
-	ret = video_closest_frmival(dev, &fie);
-	if (ret < 0) {
-		return ret;
-	}
-	LOG_DBG("Applying frame interval number %u", fie.index);
+	LOG_DBG("Applying frame interval number %u", idx);
 
-	switch (fie.index) {
+	switch (idx) {
 	case HM0360_60_FPS:
 		osc_div = highres ? 0x00 : 0x01;
 		break;
@@ -682,10 +677,9 @@ static int hm0360_set_frmival(const struct device *dev, struct video_frmival *fr
 
 	LOG_DBG("FrameRate selected: %d", frmival->denominator);
 
-	frmival->denominator = fie.discrete.denominator;
-	drv_data->cur_frmrate = fie.discrete.denominator;
+	drv_data->cur_frmrate = frmival->denominator;
 
-	LOG_DBG("FrameRate rounded to: %d", fie.discrete.denominator);
+	LOG_DBG("FrameRate rounded to: %d", frmival->denominator);
 	LOG_DBG("HIRES Selected: %d", highres);
 	LOG_DBG("OSC DIV: 0x%x", osc_div);
 
@@ -806,7 +800,7 @@ static int hm0360_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = hm0360_set_frmival(dev, &default_frmival);
+	ret = video_set_frmival(dev, &default_frmival);
 	if (ret < 0) {
 		LOG_ERR("ERROR: Unable to set frame rate");
 		return ret;

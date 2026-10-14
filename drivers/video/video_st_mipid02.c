@@ -331,35 +331,11 @@ static int mipid02_set_stream(const struct device *dev, bool enable, enum video_
 	return video_stream_start(cfg->source_dev, type);
 }
 
-static int mipid02_set_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	const struct mipid02_config *cfg = dev->config;
-
-	return video_set_frmival(cfg->source_dev, frmival);
-}
-
-static int mipid02_get_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	const struct mipid02_config *cfg = dev->config;
-
-	return video_get_frmival(cfg->source_dev, frmival);
-}
-
-static int mipid02_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
-{
-	const struct mipid02_config *cfg = dev->config;
-
-	return video_enum_frmival(cfg->source_dev, fie);
-}
-
 static DEVICE_API(video, mipid02_driver_api) = {
 	.set_format = mipid02_set_fmt,
 	.get_format = mipid02_get_fmt,
 	.get_caps = mipid02_get_caps,
 	.set_stream = mipid02_set_stream,
-	.set_frmival = mipid02_set_frmival,
-	.get_frmival = mipid02_get_frmival,
-	.enum_frmival = mipid02_enum_frmival,
 };
 
 static int mipid02_init(const struct device *dev)
