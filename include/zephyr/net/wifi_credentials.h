@@ -165,6 +165,7 @@ struct wifi_credentials_enterprise {
  * @return -ENOENT	No network with this SSID was found.
  * @return -EINVAL	A required buffer was NULL or invalid SSID length.
  * @return -EPROTO	The network with this SSID is not a personal network.
+ * @return -EACCES	The stored credentials could not be loaded.
  */
 int wifi_credentials_get_by_ssid_personal(const char *ssid, size_t ssid_len,
 					  enum wifi_security_type *type, uint8_t *bssid_buf,
@@ -193,6 +194,7 @@ int wifi_credentials_get_by_ssid_personal(const char *ssid, size_t ssid_len,
  * @return -EINVAL		A required buffer was NULL or security type is not supported.
  * @return -ENOTSUP		Security type is not supported.
  * @return -ENOBUFS		All slots are already taken.
+ * @return -EACCES		The stored credentials could not be loaded.
  */
 int wifi_credentials_set_personal(const char *ssid, size_t ssid_len, enum wifi_security_type type,
 				  const uint8_t *bssid, size_t bssid_len, const char *password,
@@ -210,6 +212,7 @@ int wifi_credentials_set_personal(const char *ssid, size_t ssid_len, enum wifi_s
  * @return -ENOENT		No network with this SSID was found.
  * @return -EINVAL		A required buffer was NULL or too small.
  * @return -EPROTO		The network with this SSID is not a personal network.
+ * @return -EACCES		The stored credentials could not be loaded.
  */
 int wifi_credentials_get_by_ssid_personal_struct(const char *ssid, size_t ssid_len,
 						 struct wifi_credentials_personal *buf);
@@ -226,6 +229,7 @@ int wifi_credentials_get_by_ssid_personal_struct(const char *ssid, size_t ssid_l
  * @return -ENOENT		No network with this SSID was found.
  * @return -EINVAL		A required buffer was NULL or incorrect size.
  * @return -ENOBUFS		All slots are already taken.
+ * @return -EACCES		The stored credentials could not be loaded.
  */
 int wifi_credentials_set_personal_struct(const struct wifi_credentials_personal *creds);
 
@@ -236,12 +240,15 @@ int wifi_credentials_set_personal_struct(const struct wifi_credentials_personal 
  * @param[in] ssid_len		length of SSID
  *
  * @return			-ENOENT if No network with this SSID was found.
+ * @return			-EACCES if the stored credentials could not be loaded.
  * @return			0 on success, otherwise a negative error code
  */
 int wifi_credentials_delete_by_ssid(const char *ssid, size_t ssid_len);
 
 /**
  * @brief Check if credentials storage is empty.
+ *
+ * If the stored credentials could not be loaded, the storage is reported as empty.
  *
  * @return			true if credential storage is empty, otherwise false
  */
@@ -253,6 +260,7 @@ bool wifi_credentials_is_empty(void);
  * This function deletes all Wi-Fi credentials that have been stored in the system.
  * It is typically used when you want to clear all saved networks.
  *
+ * @return			-EACCES if the stored credentials could not be loaded.
  * @return			0 on successful, otherwise a negative error code
  */
 int wifi_credentials_delete_all(void);
@@ -269,6 +277,8 @@ typedef void (*wifi_credentials_ssid_cb)(void *cb_arg, const char *ssid, size_t 
 
 /**
  * @brief Call callback for each registered SSID.
+ *
+ * If the stored credentials could not be loaded, the callback is not called.
  *
  * @param cb		callback
  * @param cb_arg	argument for callback function
