@@ -14,6 +14,17 @@ LOG_MODULE_REGISTER(nxp_opamp_fast, CONFIG_OPAMP_LOG_LEVEL);
 
 #define DT_DRV_COMPAT nxp_opamp_fast
 
+/*
+ * With CONFIG_PM_DEVICE_RUNTIME the consumer owns the amplifier's lifetime. An
+ * amplifier output has no completion event the driver could hang a
+ * pm_device_runtime_put() on, so the driver takes no runtime reference of its
+ * own: call pm_device_runtime_get() and keep the reference for as long as the
+ * output is needed. The driver does not read is-reference-source: an instance
+ * that only provides the reference input of other amplifiers needs its own
+ * pm_device_runtime_get() from whoever uses those amplifiers, because no
+ * consumer node names the provider.
+ */
+
 struct mcux_opamp_fast_config {
 	OPAMP_Type *base;
 	uint8_t bias_current;
@@ -23,6 +34,8 @@ struct mcux_opamp_fast_config {
 	clock_control_subsys_t clock_subsys;
 	const struct pinctrl_dev_config *pincfg;
 };
+
+static void mcux_opamp_fast_configure(const struct device *dev);
 
 /*
  * The core keeps a device whose suspend failed in PM_DEVICE_STATE_ACTIVE, and
@@ -42,17 +55,41 @@ static int mcux_opamp_fast_pm_callback(const struct device *dev, enum pm_device_
 	const struct mcux_opamp_fast_config *config = dev->config;
 	int err;
 
-	if (action == PM_DEVICE_ACTION_RESUME) {
+	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+		/*
+		 * A state that power gates the block leaves OPAMP_CTRL and the
+		 * clock gate at their reset values, and driver init does not
+		 * re-run on the way back. Ungate the clock, rebuild the
+		 * devicetree configuration, then gate it again: the core
+		 * records the device as suspended once this returns, and a
+		 * suspended device holds no clock.
+		 */
+		err = clock_control_on(config->clock_dev, config->clock_subsys);
+		if (err) {
+			return err;
+		}
+
+		mcux_opamp_fast_configure(dev);
+
+		return clock_control_off(config->clock_dev, config->clock_subsys);
+
+	case PM_DEVICE_ACTION_RESUME:
+		err = clock_control_on(config->clock_dev, config->clock_subsys);
+		if (err) {
+			return err;
+		}
+
 		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 		if (err < 0 && err != -ENOENT) {
+			(void)clock_control_off(config->clock_dev, config->clock_subsys);
 			return err;
 		}
 
 		config->base->OPAMP_CTRL |= OPAMP_OPAMP_CTRL_OPA_EN_MASK;
 		return 0;
-	}
 
-	if (action == PM_DEVICE_ACTION_SUSPEND) {
+	case PM_DEVICE_ACTION_SUSPEND:
 		config->base->OPAMP_CTRL &= ~OPAMP_OPAMP_CTRL_OPA_EN_MASK;
 
 		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
@@ -61,10 +98,25 @@ static int mcux_opamp_fast_pm_callback(const struct device *dev, enum pm_device_
 			return err;
 		}
 
-		return 0;
-	}
+		/*
+		 * The amplifier is off from here until the next resume, and a
+		 * gated clock leaves OPAMP_CTRL unreachable in the meantime.
+		 */
+		err = clock_control_off(config->clock_dev, config->clock_subsys);
+		if (err) {
+			mcux_opamp_fast_suspend_rollback(dev);
+			return err;
+		}
 
-	return -ENOTSUP;
+		return 0;
+
+	case PM_DEVICE_ACTION_TURN_OFF:
+		/* The core runs this only on a suspended device, whose clock is gated. */
+		return 0;
+
+	default:
+		return -ENOTSUP;
+	}
 }
 
 static int mcux_opamp_fast_set_gain(const struct device *dev, enum opamp_gain gain)
@@ -93,22 +145,17 @@ static void mcux_opamp_fast_configure(const struct device *dev)
 int mcux_opamp_fast_init(const struct device *dev)
 {
 	const struct mcux_opamp_fast_config *config = dev->config;
-	int ret;
 
-	/* Enable OPAMP clock. */
 	if (!device_is_ready(config->clock_dev)) {
 		LOG_ERR("Clock device is not ready");
 		return -ENODEV;
 	}
 
-	ret = clock_control_on(config->clock_dev, config->clock_subsys);
-	if (ret) {
-		LOG_ERR("Device clock turn on failed");
-		return ret;
-	}
-
-	mcux_opamp_fast_configure(dev);
-
+	/*
+	 * TURN_ON brings up the clock gate and the register block.
+	 * pm_device_driver_init() runs it here, and the core runs it again
+	 * every time the block comes back from a power cycle.
+	 */
 	return pm_device_driver_init(dev, mcux_opamp_fast_pm_callback);
 }
 
