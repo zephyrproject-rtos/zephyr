@@ -309,15 +309,10 @@ static int hm01b0_get_caps(const struct device *dev, struct video_caps *caps)
 
 static int hm01b0_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
-	struct hm01b0_data *data = dev->data;
 	int ret;
 
 	LOG_DBG("HM01B0 set_fmt: %d x %d, fmt: %s", fmt->width, fmt->height,
 		VIDEO_FOURCC_TO_STR(fmt->pixelformat));
-
-	if (!memcmp(&data->vdev.out_fmt, fmt, sizeof(data->vdev.out_fmt))) {
-		return 0;
-	}
 
 	/* Check if camera is capable of handling given format */
 	ret = hm01b0_apply_configuration(dev, (enum hm01b0_resolution)idx);
@@ -407,8 +402,9 @@ int hm01b0_enum_frmival(const struct device *dev, struct video_frmival_enum *fie
 {
 	struct hm01b0_data *drv_data = dev->data;
 
-	fie->discrete.denominator = ((drv_data->vdev.out_fmt.width >= 320)
-		&& (drv_data->vdev.out_fmt.height >= 320)) ? 45 : 60;
+	fie->discrete.denominator =
+		((drv_data->vdev.out_fmt.width >= 320) &&
+		 (drv_data->vdev.out_fmt.height >= 320)) ? 45 : 60;
 
 	switch (fie->index) {
 	case HM01B0_5_OR_8_FPS:

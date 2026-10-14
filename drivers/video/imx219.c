@@ -312,16 +312,19 @@ static int imx219_enum_frmival(const struct device *dev, struct video_frmival_en
 static int imx219_set_frmival(const struct device *dev, struct video_frmival *frmival, size_t idx)
 {
 	const struct imx219_config *cfg = dev->config;
+	struct imx219_data *drv_data = dev->data;
 	int ret;
 
 	ret = video_write_cci_reg(&cfg->i2c, IMX219_CCI_FRM_LENGTH_A,
-				  imx219_frm_length(drv_data->fmt.height, imx219_framerates[idx]));
+				  imx219_frm_length(drv_data->vdev.out_fmt.height,
+				  		    imx219_framerates[idx]));
 	if (ret < 0) {
 		return ret;
 	}
 
 	frmival->numerator = 1;
-	frmival->denominator = imx219_frame_rate(drv_data->fmt.height, imx219_framerates[idx]);
+	frmival->denominator = imx219_frame_rate(drv_data->vdev.out_fmt.height,
+						 imx219_framerates[idx]);
 
 	return 0;
 }

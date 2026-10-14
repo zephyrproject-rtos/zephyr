@@ -538,14 +538,9 @@ static const struct video_format_cap dvp_fmts[] = {
 
 static int ov5642_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
-	struct ov5642_data *drv_data = dev->data;
 	const struct ov5642_config *cfg = dev->config;
 	const struct ov5642_mode_config *modes = dvp_modes;
 	int ret = 0;
-
-	if (memcmp(&drv_data->vdev.out_fmt, fmt, sizeof(drv_data->vdev.out_fmt)) == 0) {
-		return 0;
-	}
 
 	ret = video_write_cci_multiregs16(&cfg->i2c, modes[idx].res_params,
 					  modes[idx].array_size_res_params);

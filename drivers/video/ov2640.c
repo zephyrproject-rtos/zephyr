@@ -944,14 +944,8 @@ uint8_t ov2640_check_connection(const struct device *dev)
 
 static int ov2640_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
-	struct ov2640_data *drv_data = dev->data;
 	int ret = 0;
 	int i = 0;
-
-	if (!memcmp(&drv_data->vdev.out_fmt, fmt, sizeof(drv_data->vdev.out_fmt))) {
-		/* nothing to do */
-		return 0;
-	}
 
 	/* Set output format */
 	ret |= ov2640_set_output_format(dev, fmt->pixelformat);
