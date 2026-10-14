@@ -218,7 +218,7 @@ static int ec_host_cmd_signal_event(struct usbd_class_data *const c_data)
 	return 0;
 }
 
-static int handle_out_transfer(struct usbd_class_data *const c_data)
+static void handle_out_transfer(struct usbd_class_data *const c_data)
 {
 	int ret;
 	struct ec_host_cmd_usb_ctx *ctx = usbd_class_get_private(c_data);
@@ -242,7 +242,7 @@ static int handle_out_transfer(struct usbd_class_data *const c_data)
 		if (!IS_UDC_ALIGNED(ctx->rx_ctx->len)) {
 			LOG_ERR("Received unaligned OUT transfer: %d", ctx->rx_ctx->len);
 			k_work_reschedule(&ctx->reset_work, K_NO_WAIT);
-			return 0;
+			return;
 		}
 		ctx->usb_rx_buf = ec_host_cmd_buf_alloc(ec_host_cmd_get_out_ep(c_data),
 							expected_len - ctx->rx_ctx->len,
@@ -250,18 +250,15 @@ static int handle_out_transfer(struct usbd_class_data *const c_data)
 		if (ctx->usb_rx_buf == NULL) {
 			LOG_ERR("Failed to allocate buf OUT");
 			k_work_reschedule(&ctx->reset_work, K_NO_WAIT);
-			return 0;
+			return;
 		}
 		ret = usbd_ep_enqueue(c_data, ctx->usb_rx_buf);
 		if (ret) {
 			net_buf_drop(&ctx->usb_rx_buf);
 			k_work_reschedule(&ctx->reset_work, K_NO_WAIT);
 			LOG_ERR("Failed to enqueue EP OUT: %d", ret);
-			return 0;
 		}
 	}
-
-	return 0;
 }
 
 static int ec_host_cmd_request(struct usbd_class_data *const c_data, struct net_buf *const buf,
@@ -318,7 +315,8 @@ static int ec_host_cmd_request(struct usbd_class_data *const c_data, struct net_
 
 		ctx->rx_ctx->len = ctx->rx_ctx->len + buf_len;
 
-		return handle_out_transfer(c_data);
+		handle_out_transfer(c_data);
+		return 0;
 	}
 
 	if (bi->ep == ec_host_cmd_get_in_bulk_ep(c_data)) {
