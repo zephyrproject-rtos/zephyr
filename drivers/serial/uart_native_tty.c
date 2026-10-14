@@ -40,6 +40,8 @@ struct native_tty_data {
 	int cmd_baudrate;
 	/* Serial port set from the command line. If NULL, it was not set. */
 	char *cmd_serial_port;
+	/* Low latency was off before init, so it is turned off again on exit. */
+	bool restore_low_latency;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	/* Emulated tx irq is enabled. */
 	bool tx_irq_enabled;
@@ -58,6 +60,7 @@ struct native_tty_data {
 
 struct native_tty_config {
 	struct uart_config uart_config;
+	bool low_latency;
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -403,7 +406,8 @@ static void native_tty_irq_init(const struct device *dev)
 static int native_tty_serial_init(const struct device *dev)
 {
 	struct native_tty_data *data = dev->data;
-	struct uart_config uart_config = ((struct native_tty_config *)dev->config)->uart_config;
+	const struct native_tty_config *config = dev->config;
+	struct uart_config uart_config = config->uart_config;
 
 	/* Default value for cmd_serial_port is NULL, this is due to the set 's' type in
 	 * command line opts. If it is anything else then it was configured via command
@@ -436,6 +440,15 @@ static int native_tty_serial_init(const struct device *dev)
 
 	if (native_tty_configure(dev, &uart_config)) {
 		ERROR("%s: could not configure serial port %s\n", dev->name, data->serial_port);
+	}
+
+	if (config->low_latency) {
+		int was_enabled = native_tty_set_low_latency_bottom(data->fd, 1);
+
+		if (was_enabled < 0) {
+			WARN("%s: could not set low latency on %s\n", dev->name, data->serial_port);
+		}
+		data->restore_low_latency = was_enabled == 0;
 	}
 
 	posix_print_trace("%s connected to the serial port: %s\n", dev->name, data->serial_port);
@@ -479,6 +492,7 @@ static DEVICE_API(uart, native_tty_uart_driver_api) = {
 				.stop_bits = UART_CFG_STOP_BITS_1,                                 \
 				.baudrate = DT_INST_PROP(inst, current_speed),                     \
 			},                                                                         \
+		.low_latency = DT_INST_PROP(inst, low_latency),                                    \
 	};                                                                                         \
                                                                                                    \
 	static struct native_tty_data native_tty_##inst##_data = {                                 \
@@ -526,6 +540,9 @@ static void native_tty_add_serial_options(void)
 
 #define NATIVE_TTY_CLEANUP(inst)                                                                   \
 	if (native_tty_##inst##_data.fd != 0) {                                                    \
+		if (native_tty_##inst##_data.restore_low_latency) {                                \
+			native_tty_set_low_latency_bottom(native_tty_##inst##_data.fd, 0);         \
+		}                                                                                  \
 		nsi_host_close(native_tty_##inst##_data.fd);                                       \
 	}
 

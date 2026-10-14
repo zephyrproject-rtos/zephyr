@@ -8,12 +8,14 @@
 #include "uart_native_tty_bottom.h"
 
 #include <errno.h>
-#include <stdio.h>
-#include <string.h>
 #include <fcntl.h>
 #include <poll.h>
+#include <stdio.h>
+#include <string.h>
 #include <termios.h>
 #include <unistd.h>
+#include <sys/ioctl.h>
+#include <linux/serial.h>
 
 #include <nsi_errno.h>
 #include <nsi_tracing.h>
@@ -369,4 +371,27 @@ int native_tty_read_bottom_cfg(int fd, struct native_tty_bottom_cfg *cfg)
 	cfg->flow_ctrl = NTB_FLOW_CTRL_NONE;
 
 	return 0;
+}
+
+int native_tty_set_low_latency_bottom(int fd, int enable)
+{
+	struct serial_struct serial;
+	int was_enabled;
+
+	if (ioctl(fd, TIOCGSERIAL, &serial)) {
+		return -nsi_errno_to_mid(errno);
+	}
+
+	was_enabled = (serial.flags & ASYNC_LOW_LATENCY) != 0;
+	if (enable) {
+		serial.flags |= ASYNC_LOW_LATENCY;
+	} else {
+		serial.flags &= ~ASYNC_LOW_LATENCY;
+	}
+
+	if (ioctl(fd, TIOCSSERIAL, &serial)) {
+		return -nsi_errno_to_mid(errno);
+	}
+
+	return was_enabled;
 }

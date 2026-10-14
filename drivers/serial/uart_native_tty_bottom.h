@@ -89,6 +89,21 @@ int native_tty_open_tty_bottom(const char *pathname);
 int native_tty_configure_bottom(int fd, struct native_tty_bottom_cfg *cfg);
 
 /**
+ * @brief Turn the tty driver's low latency mode on or off.
+ *
+ * In low latency mode, the driver delivers received data at once. USB serial
+ * adapters otherwise hold a partial packet until a latency timer expires.
+ *
+ * @param fd		File descriptor of the tty port.
+ * @param enable	Turn low latency on when non-zero, off otherwise.
+ *
+ * @retval 0	if low latency was off before the call,
+ * @retval 1	if low latency was on before the call,
+ * @retval <0	the host's errno of the failed ioctl, negated, as an NSI_ERRNO_MID_* value.
+ */
+int native_tty_set_low_latency_bottom(int fd, int enable);
+
+/**
  * @brief Read bottom tty configuration
  *
  * @param fd
