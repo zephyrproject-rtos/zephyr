@@ -253,6 +253,7 @@ static int dwmac_ptp_init(const struct device *dev)
 
 	sys_write32(ctrl, base + DWMAC_PTP_CTRL_REG);
 
+#ifdef CONFIG_ETH_DWC_ETHER_1000_CORE
 	/*
 	 * In DWC ether_1000 v3.70, PPSCTRL selects bit (30 - PPSCTRL) of the
 	 * sub-second field as the PPSoutput. In digital rollover that field
@@ -266,6 +267,7 @@ static int dwmac_ptp_init(const struct device *dev)
 		sys_write32(FIELD_PREP(DWMAC_PTP_PPSCR_PPSCTRL, 1),
 			base + DWMAC_PTP_PPSCR_REG);
 	}
+#endif
 
 	return 0;
 }
