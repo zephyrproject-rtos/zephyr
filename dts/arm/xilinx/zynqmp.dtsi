@@ -8,8 +8,15 @@
 #include <arm/armv7-r.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/dt-bindings/ethernet/xlnx_gem.h>
+#include <zephyr/dt-bindings/clock/xlnx-zynqmp-clk.h>
 
 / {
+	pss_ref_clk: pss-ref-clk {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <33333000>;
+	};
+
 	soc {
 		flash0: flash@c0000000 {
 			compatible = "soc-nv-flash";
@@ -342,6 +349,15 @@
 		pinctrl: pinctrl@ff180000 {
 			compatible = "xlnx,pinctrl-zynqmp";
 			reg = <0xff180000 0xc80>;
+		};
+
+		zynqmp_clk: clock-controller@ff5e0000 {
+			compatible = "xlnx,zynqmp-clk";
+			reg = <0xff5e0000 0x1000>, <0xfd1a0000 0x1000>;
+			reg-names = "crl_apb", "crf_apb";
+			clocks = <&pss_ref_clk>;
+			clock-names = "pss_ref_clk";
+			#clock-cells = <1>;
 		};
 
 		rtc: rtc@ffa60000 {
