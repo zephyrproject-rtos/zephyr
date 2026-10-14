@@ -1872,11 +1872,35 @@ static inline void disable(uint16_t handle)
 }
 
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || defined(CONFIG_BT_CTLR_CENTRAL_ISO)
-static void conn_cleanup_iso_cis_released_cb(struct ll_conn *conn)
+/* Get the next CIS of the ACL that needs a coordinated teardown. Established CISes, as well as
+ * peripheral CISes that have been started but not yet established, are included; the latter
+ * are scheduled by a running CIG ticker and must be stopped through it.
+ */
+static struct ll_conn_iso_stream *conn_cleanup_iso_cis_get(struct ll_conn *conn)
 {
 	struct ll_conn_iso_stream *cis;
 
 	cis = ll_conn_iso_stream_get_by_acl(conn, NULL);
+	if (cis != NULL) {
+		return cis;
+	}
+
+	for (uint16_t handle = LL_CIS_HANDLE_BASE; handle <= LL_CIS_HANDLE_LAST; handle++) {
+		cis = ll_conn_iso_stream_get(handle);
+		if (cis->group != NULL && IS_PERIPHERAL(cis->group) && cis->lll.active &&
+		    cis->lll.acl_handle == conn->lll.handle) {
+			return cis;
+		}
+	}
+
+	return NULL;
+}
+
+static void conn_cleanup_iso_cis_released_cb(struct ll_conn *conn)
+{
+	struct ll_conn_iso_stream *cis;
+
+	cis = conn_cleanup_iso_cis_get(conn);
 	if (cis) {
 		struct node_rx_pdu *rx;
 		uint8_t reason;
@@ -1933,8 +1957,10 @@ static void conn_cleanup_finalize(struct ll_conn *conn)
 				ll_conn_iso_stream_release(cis);
 				cig->lll.num_cis--;
 
-				if (cig->lll.num_cis == 0U) {
-					/* No more streams in the group - release group */
+				if (cig->lll.num_cis == 0U && cig->state != CIG_STATE_ACTIVE) {
+					/* No more streams in the group - release group. An active
+					 * group is released once its ticker has been stopped.
+					 */
 					ll_conn_iso_group_release(cig);
 				}
 			} else if (IS_CENTRAL(cig) && cig->state == CIG_STATE_INITIATING &&
@@ -1997,7 +2023,7 @@ static void conn_cleanup(struct ll_conn *conn, uint8_t reason)
 	*((uint8_t *)rx->pdu) = reason;
 
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || defined(CONFIG_BT_CTLR_CENTRAL_ISO)
-	cis = ll_conn_iso_stream_get_by_acl(conn, NULL);
+	cis = conn_cleanup_iso_cis_get(conn);
 	if (cis) {
 		/* Stop CIS and defer cleanup to after teardown. */
 		ull_conn_iso_cis_stop(cis, conn_cleanup_iso_cis_released_cb,

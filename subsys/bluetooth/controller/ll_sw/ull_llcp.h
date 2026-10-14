@@ -247,6 +247,11 @@ bool ull_lp_cc_is_active(struct ll_conn *conn);
 bool ull_lp_cc_is_enqueued(struct ll_conn *conn, const struct ll_conn_iso_stream *cis);
 
 /**
+ * @brief Check for a local CIS Create, including a cancelled queued procedure.
+ */
+bool ull_lp_cc_is_pending(struct ll_conn *conn, const struct ll_conn_iso_stream *cis);
+
+/**
  * @brief Initiate a Channel Map Update Procedure.
  */
 uint8_t ull_cp_chan_map_update(struct ll_conn *conn, const uint8_t chm[5]);
