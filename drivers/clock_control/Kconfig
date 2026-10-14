@@ -91,6 +91,7 @@ source "drivers/clock_control/Kconfig.tisci"
 source "drivers/clock_control/Kconfig.wch_rcc"
 source "drivers/clock_control/Kconfig.xclk_wiz"
 source "drivers/clock_control/Kconfig.xec"
+source "drivers/clock_control/Kconfig.xlnx_zynq"
 # zephyr-keep-sorted-stop
 
 source "drivers/clock_control/Kconfig.rts5817"
