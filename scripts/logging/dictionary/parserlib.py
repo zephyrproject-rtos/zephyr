@@ -81,5 +81,6 @@ def parser(logdata, log_parser, logger):
         logger.error("ERROR: cannot read log from file:  exiting...")
         raise ValueError("Cannot read log data.")
 
+    logger.debug("parser: logdata: %d", len(logdata))
     ret = log_parser.parse_log_data(logdata)
     return ret

@@ -184,7 +184,7 @@ def parse_args():
         "--block-address", help="RTT block address in hex", type=lambda x: int(x, 16)
     )
     jlink_rtt_parser.add_argument("--channel", type=int, help="RTT channel number", default=0)
-    jlink_rtt_parser.add_argument("--speed", type=int, help="Reading speed", default='0')
+    jlink_rtt_parser.add_argument("--speed", type=int, help="Reading speed", default="0")
     jlink_rtt_parser.add_argument("--lib-path", help="Path to libjlinkarm.so library")
 
     return parser.parse_args()
