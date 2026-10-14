@@ -316,7 +316,7 @@ static int app_setup_video_buffers(const struct device *const camera_dev,
 		vbuf = video_buffer_aligned_alloc(fmt->size, CONFIG_VIDEO_BUFFER_POOL_ALIGN,
 						  K_NO_WAIT);
 		if (vbuf == NULL) {
-			LOG_ERR("Unable to alloc video buffer");
+			LOG_ERR("Unable to alloc video buffer of size %u", fmt->size);
 			return -ENOMEM;
 		}
 

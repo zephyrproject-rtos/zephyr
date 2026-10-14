@@ -405,8 +405,6 @@ static int stm32_venc_enable_clock(const struct device *dev)
 
 static int stm32_venc_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
-	struct stm32_venc_data *data = dev->data;
-
 	if (fmt->type == VIDEO_BUF_TYPE_OUTPUT) {
 		fmt->size = ROUND_UP(fmt->width * fmt->height / VENC_ESTIMATED_COMPRESSION_RATIO,
 				     ALIGNMENT_INCR);

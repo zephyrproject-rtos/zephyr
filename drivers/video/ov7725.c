@@ -421,16 +421,10 @@ static int ov7725_set_clock(const struct device *dev,
 
 static int ov7725_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
-	struct ov7725_data *drv_data = dev->data;
 	const struct ov7725_config *cfg = dev->config;
 	uint8_t com10 = 0;
 	uint16_t hstart, vstart, hsize;
 	int ret;
-
-	if (!memcmp(&drv_data->vdev.out_fmt, fmt, sizeof(drv_data->vdev.out_fmt))) {
-		/* nothing to do */
-		return 0;
-	}
 
 	/* Configure Sensor */
 	ret = ov7725_write_all(dev, ov7725_init_reg_tb,

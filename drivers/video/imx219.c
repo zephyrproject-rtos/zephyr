@@ -197,7 +197,6 @@ static const struct video_format_cap imx219_fmts[] = {
 static int imx219_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	const struct imx219_config *cfg = dev->config;
-	struct imx219_data *drv_data = dev->data;
 	struct video_reg crop_regs[] = {
 		/* Image crop size */
 		{IMX219_CCI_X_ADD_STA_A, (IMX219_FULL_WIDTH - fmt->width) / 2},

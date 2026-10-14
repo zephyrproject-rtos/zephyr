@@ -1725,24 +1725,33 @@ static int stm32_dcmipp_pipe_init(const struct device *dev)
 {
 	struct stm32_dcmipp_pipe_data *pipe = dev->data;
 	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
+	struct video_format fmt = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
+		.width = dcmipp->source_fmt.width,
+		.height = dcmipp->source_fmt.height,
+		.pixelformat = dcmipp->source_fmt.pixelformat,
+	};
+	int ret;
 
 	k_mutex_init(&pipe->lock);
 	k_fifo_init(&pipe->fifo_in);
 	k_fifo_init(&pipe->fifo_out);
 
 	/* Initialize format/crop/compose */
-	pipe->vdev.out_fmt.type = VIDEO_BUF_TYPE_OUTPUT;
-	pipe->vdev.out_fmt.width = dcmipp->source_fmt.width;
-	pipe->vdev.out_fmt.height = dcmipp->source_fmt.height;
-	pipe->vdev.out_fmt.pixelformat = dcmipp->source_fmt.pixelformat;
 	pipe->crop.top = 0;
 	pipe->crop.left = 0;
-	pipe->crop.width = pipe->vdev.out_fmt.width;
-	pipe->crop.height = pipe->vdev.out_fmt.height;
+	pipe->crop.width = fmt.width;
+	pipe->crop.height = fmt.height;
 	pipe->compose = pipe->crop;
 
 	/* Store the pipe data pointer into dcmipp data structure */
 	dcmipp->pipe[pipe->id] = pipe;
+
+	ret = video_set_format(dev, &fmt);
+	if (ret < 0) {
+		LOG_ERR("Failed to set default video format");
+		return ret;
+	}
 
 	return 0;
 }

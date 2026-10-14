@@ -254,8 +254,6 @@ static const char *const test_pattern_menu[] = {
 static int video_sw_generator_set_fmt(const struct device *dev, struct video_format *fmt,
 				      size_t idx)
 {
-	struct video_sw_generator_data *data = dev->data;
-
 	/* Special handling for JPEG and PNG file size */
 	if (fmt->pixelformat == VIDEO_PIX_FMT_JPEG) {
 		fmt->size = MAX(sizeof(jpeg_frame_buffer), sizeof(jpeg_frame_buffer_hflip));
