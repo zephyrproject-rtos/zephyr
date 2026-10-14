@@ -562,6 +562,21 @@ static void IRAM_ATTR dma_esp32_isr_handle(const struct device *dev, uint8_t rx_
 }
 #endif
 
+/*
+ * The GDMA accesses PSRAM in blocks of up to 64 bytes, so a descriptor into it
+ * must cover a whole number of blocks.
+ */
+static uint32_t dma_esp32_desc_max_size(uint32_t addr)
+{
+#if defined(CONFIG_ESP_SPIRAM)
+	if (esp_ptr_external_ram((void *)addr)) {
+		return ROUND_DOWN(DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED, 64);
+	}
+#endif
+
+	return DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
+}
+
 static int dma_esp32_config_descriptor(struct dma_esp32_channel *dma_channel,
 				       struct dma_block_config *block)
 {
@@ -618,13 +633,7 @@ static int dma_esp32_config_descriptor(struct dma_esp32_channel *dma_channel,
 			}
 		}
 
-		uint32_t buffer_size;
-
-		if (block_size > DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED) {
-			buffer_size = DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
-		} else {
-			buffer_size = block_size;
-		}
+		uint32_t buffer_size = MIN(block_size, dma_esp32_desc_max_size(target_address));
 
 		memset(desc_iter, 0, sizeof(esp_dma_desc_t));
 		desc_iter->buffer = (void *)target_address;
@@ -1067,6 +1076,7 @@ static int dma_esp32_reload(const struct device *dev, uint32_t channel, uint32_t
 	struct dma_esp32_data *data = (struct dma_esp32_data *const)(dev)->data;
 	struct dma_esp32_channel *dma_channel;
 	esp_dma_desc_t *desc_iter;
+	uint32_t max_size;
 	uint32_t buf;
 
 	if (channel >= config->dma_channel_max) {
@@ -1082,27 +1092,32 @@ static int dma_esp32_reload(const struct device *dev, uint32_t channel, uint32_t
 		return -EINVAL;
 	}
 
-	if (size > ARRAY_SIZE(dma_channel->desc_list) *
-		   DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED) {
+	if (dma_channel->dir == DMA_RX) {
+		buf = dst;
+	} else {
+		buf = src;
+	}
+
+	max_size = dma_esp32_desc_max_size(buf);
+
+	if (size > ARRAY_SIZE(dma_channel->desc_list) * max_size) {
 		LOG_ERR("Not enough DMA descriptors. Increase CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM");
 		return -EINVAL;
 	}
 
 	if (dma_channel->dir == DMA_RX) {
 		dma_esp32_channel_reset(data, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX);
-		buf = dst;
 	} else if (dma_channel->dir == DMA_TX) {
 		dma_esp32_channel_reset(data, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX);
-		buf = src;
 	} else {
 		return -EINVAL;
 	}
 
 	for (int i = 0; i < ARRAY_SIZE(dma_channel->desc_list); ++i) {
 		memset(desc_iter, 0, sizeof(esp_dma_desc_t));
-		desc_iter->buffer = (void *)(buf + DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED * i);
+		desc_iter->buffer = (void *)(buf + max_size * i);
 		desc_iter->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
-		if (size <= DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED) {
+		if (size <= max_size) {
 			desc_iter->dw0.size = size;
 			if (dma_channel->dir == DMA_TX) {
 				desc_iter->dw0.length = size;
@@ -1111,11 +1126,11 @@ static int dma_esp32_reload(const struct device *dev, uint32_t channel, uint32_t
 			desc_iter->next = NULL;
 			break;
 		}
-		desc_iter->dw0.size = DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
+		desc_iter->dw0.size = max_size;
 		if (dma_channel->dir == DMA_TX) {
-			desc_iter->dw0.length = DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
+			desc_iter->dw0.length = max_size;
 		}
-		size -= DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
+		size -= max_size;
 		desc_iter->next = desc_iter + 1;
 		desc_iter += 1;
 	}
