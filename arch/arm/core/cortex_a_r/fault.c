@@ -228,15 +228,15 @@ bool z_arm_fault_undef_instruction_fp(void)
 		_current_cpu->fp_ctx = NULL;
 
 		/*
-		 * If the nested count is 2 and the current thread has used the
-		 * VFP (whether or not it was actually using the VFP before the
-		 * current exception) OR if the nested count is greater than 2
-		 * and the VFP was enabled on the irq/svc entrance for the
-		 * saved exception stack frame, then save the floating point
-		 * context because it is about to be overwritten.
+		 * At the first nesting level, save the interrupted FP context if
+		 * its thread has used the VFP. Without multithreading there is no
+		 * current thread to track FP use, so always preserve the registers.
+		 * At deeper nesting levels, the saved FPEXC state tells us whether
+		 * the interrupted handler was using the VFP.
 		 */
 		if (((_current_cpu->nested == 2)
-				&& (_current->base.user_options & K_FP_REGS))
+				&& ((_current == NULL) ||
+				    (_current->base.user_options & K_FP_REGS)))
 			|| ((_current_cpu->nested > 2)
 				&& (spill_esf->undefined & FPEXC_EN))) {
 			/*
@@ -247,12 +247,11 @@ bool z_arm_fault_undef_instruction_fp(void)
 			spill_esf->fpscr = __get_FPSCR();
 			z_arm_fpu_caller_save(spill_esf);
 		}
-	} else {
+	} else if (_current != NULL) {
 		/*
-		 * If the nested count is one, a thread was the faulting
-		 * context.  Just flag that this thread uses the VFP.  This
-		 * means that a thread that uses the VFP does not have to,
-		 * but should, set K_FP_REGS on thread creation.
+		 * If the nested count is one and a thread exists, flag that
+		 * it uses the VFP. Without multithreading there is no thread
+		 * state to update.
 		 */
 		_current->base.user_options |= K_FP_REGS;
 	}
