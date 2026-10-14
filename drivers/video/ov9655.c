@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT ovti_ov9655
 
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/video.h>
@@ -27,6 +28,7 @@ struct ov9655_config {
 };
 
 struct ov9655_data {
+	struct video_device vdev; /* keep first */
 	struct video_format fmt;
 };
 
@@ -436,11 +438,12 @@ static DEVICE_API(video, ov9655_api) = {
 	const struct ov9655_config ov9655_config_##inst = {.i2c = I2C_DT_SPEC_INST_GET(inst),      \
 							   OV9655_RESET_GPIO(inst)                 \
 							   OV9655_PWDN_GPIO(inst)};		   \
-	struct ov9655_data ov9655_data_##inst;                                                     \
+                                                                                                   \
+	struct ov9655_data ov9655_data_##inst = {                                                  \
+		.vdev = VIDEO_DEVICE_INIT(ov9655_data_##inst, DT_DRV_INST(inst), NULL),                \
+	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, ov9655_init, NULL, &ov9655_data_##inst, &ov9655_config_##inst, \
-			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &ov9655_api);		   \
-												   \
-	VIDEO_DEVICE_DEFINE(ov9655_##n, DEVICE_DT_INST_GET(inst), NULL);
+			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &ov9655_api);
 
 DT_INST_FOREACH_STATUS_OKAY(OV9655_INIT)

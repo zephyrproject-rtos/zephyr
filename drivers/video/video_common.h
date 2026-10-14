@@ -28,11 +28,11 @@
  * @param device Pointer to the @ref device struct to initialize
  * @param source Pointer to the @ref device struct of the source device if any or @c NULL
  */
-#define VIDEO_DEVICE_DEFINE(name, device, source)                                                  \
-	static STRUCT_SECTION_ITERABLE(video_device, name) = {                                     \
-		.dev = device,                                                                     \
+#define VIDEO_DEVICE_INIT(name, node_id, source)                                                   \
+	{                                                                                          \
+		.dev = DEVICE_DT_GET(node_id),                                                     \
 		.source_dev = source,                                                              \
-		.ctrls = SYS_DLIST_STATIC_INIT(&name.ctrls),                                       \
+		.ctrls = SYS_DLIST_STATIC_INIT(&name.vdev.ctrls),                                  \
 	}
 
 /**

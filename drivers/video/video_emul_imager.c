@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/kernel.h>
@@ -70,6 +71,7 @@ struct emul_imager_ctrls {
 };
 
 struct emul_imager_data {
+	struct video_device vdev; /* keep first */
 	/* First field is a line buffer for I/O emulation purpose */
 	uint8_t framebuffer[320 * sizeof(uint16_t)];
 	/* Other fields are shared with real hardware drivers */
@@ -378,7 +380,9 @@ int emul_imager_init(const struct device *dev)
 }
 
 #define EMUL_IMAGER_DEFINE(inst)                                                                   \
-	static struct emul_imager_data emul_imager_data_##inst;                                    \
+	static struct emul_imager_data emul_imager_data_##inst = {                                 \
+		.vdev = VIDEO_DEVICE_INIT(emul_imager_data_##inst, DT_DRV_INST(inst), NULL),       \
+	};                                                                                         \
                                                                                                    \
 	static const struct emul_imager_config emul_imager_cfg_##inst = {                          \
 		.i2c = /* I2C_DT_SPEC_INST_GET(inst) */ {0},                                       \
@@ -386,8 +390,6 @@ int emul_imager_init(const struct device *dev)
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, &emul_imager_init, NULL, &emul_imager_data_##inst,             \
 			      &emul_imager_cfg_##inst, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,    \
-			      &emul_imager_driver_api);                                            \
-                                                                                                   \
-	VIDEO_DEVICE_DEFINE(emul_imager_##inst, DEVICE_DT_INST_GET(inst), NULL);
+			      &emul_imager_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(EMUL_IMAGER_DEFINE)

@@ -20,21 +20,6 @@
 
 LOG_MODULE_REGISTER(video_common, CONFIG_VIDEO_LOG_LEVEL);
 
-struct video_device *video_find_vdev(const struct device *dev)
-{
-	if (!dev) {
-		return NULL;
-	}
-
-	STRUCT_SECTION_FOREACH(video_device, vdev) {
-		if (vdev->dev == dev) {
-			return vdev;
-		}
-	}
-
-	return NULL;
-}
-
 const char *const *video_get_std_menu_ctrl(uint32_t id)
 {
 	static char const *const power_line_frequency[] = {
@@ -144,24 +129,14 @@ int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t 
 	uint32_t flags;
 	enum video_ctrl_type type;
 	struct video_ctrl *vc;
-	struct video_device *vdev;
+	struct video_device *vdev = dev->data;
 
 	if (ctrl == NULL) {
 		return -EINVAL;
 	}
 
-	vdev = video_find_vdev(dev);
-	if (!vdev) {
-		return -EINVAL;
-	}
-
 	/* Sanity checks */
 	if (id < VIDEO_CID_BASE) {
-		return -EINVAL;
-	}
-
-	vdev = video_find_vdev(dev);
-	if (!vdev) {
 		return -EINVAL;
 	}
 
