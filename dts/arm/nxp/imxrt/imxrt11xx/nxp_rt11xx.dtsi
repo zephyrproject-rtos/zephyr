@@ -122,7 +122,7 @@
 			gptfreq = <DT_FREQ_M(24)>;
 			low-freq = <DT_FREQ_K(32)>;
 			osc-freq = <DT_FREQ_M(16)>;
-			clocks = <&ccm IMX_CCM_GPT_CLK 0x41 0>;
+			clocks = <&ccm IMX_CCM_GPT2_CLK 0x41 0>;
 			run-mode = "free-run";
 		};
 
@@ -133,7 +133,7 @@
 			gptfreq = <DT_FREQ_M(24)>;
 			low-freq = <DT_FREQ_K(32)>;
 			osc-freq = <DT_FREQ_M(16)>;
-			clocks = <&ccm IMX_CCM_GPT_CLK 0x42 0>;
+			clocks = <&ccm IMX_CCM_GPT3_CLK 0x42 0>;
 			run-mode = "free-run";
 		};
 
@@ -144,7 +144,7 @@
 			gptfreq = <DT_FREQ_M(24)>;
 			low-freq = <DT_FREQ_K(32)>;
 			osc-freq = <DT_FREQ_M(16)>;
-			clocks = <&ccm IMX_CCM_GPT_CLK 0x43 0>;
+			clocks = <&ccm IMX_CCM_GPT4_CLK 0x43 0>;
 			run-mode = "free-run";
 		};
 
@@ -155,7 +155,7 @@
 			gptfreq = <DT_FREQ_M(24)>;
 			low-freq = <DT_FREQ_K(32)>;
 			osc-freq = <DT_FREQ_M(16)>;
-			clocks = <&ccm IMX_CCM_GPT_CLK 0x44 0>;
+			clocks = <&ccm IMX_CCM_GPT5_CLK 0x44 0>;
 			run-mode = "free-run";
 		};
 
@@ -166,7 +166,7 @@
 			gptfreq = <DT_FREQ_M(24)>;
 			low-freq = <DT_FREQ_K(32)>;
 			osc-freq = <DT_FREQ_M(16)>;
-			clocks = <&ccm IMX_CCM_GPT_CLK 0x45 0>;
+			clocks = <&ccm IMX_CCM_GPT6_CLK 0x45 0>;
 			run-mode = "free-run";
 		};
 
