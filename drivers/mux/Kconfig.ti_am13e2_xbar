@@ -7,3 +7,10 @@ config MUX_TI_AM13E2_XBAR_IN
 	depends on DT_HAS_TI_AM13E2_XBAR_IN_ENABLED
 	help
 	  Enable the TI AM13E2 Input XBAR (crossbar) multiplexer driver.
+
+config MUX_TI_AM13E2_XBAR_OUT
+	bool "TI AM13E2 Output XBAR driver"
+	default y
+	depends on DT_HAS_TI_AM13E2_XBAR_OUT_ENABLED
+	help
+	  Enable the TI AM13E2 Output XBAR (crossbar) multiplexer driver.
