@@ -36,6 +36,7 @@ extern struct wpa_global *global;
 
 /* save the last wifi connection parameters */
 static struct wifi_connect_req_params last_wifi_conn_params;
+static uint8_t last_wifi_conn_ssid[WIFI_SSID_MAX_LEN];
 
 enum requested_ops {
 	CONNECT = 0,
@@ -1467,8 +1468,26 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 		goto out;
 	}
 
-	memset(&last_wifi_conn_params, 0, sizeof(struct wifi_connect_req_params));
-	memcpy((void *)&last_wifi_conn_params, params, sizeof(struct wifi_connect_req_params));
+	memset(&last_wifi_conn_params, 0, sizeof(last_wifi_conn_params));
+	last_wifi_conn_params.ssid_length = MIN(params->ssid_length, sizeof(last_wifi_conn_ssid));
+	memcpy(last_wifi_conn_ssid, params->ssid, last_wifi_conn_params.ssid_length);
+	last_wifi_conn_params.ssid = last_wifi_conn_ssid;
+	last_wifi_conn_params.psk_is_pbkdf2 = params->psk_is_pbkdf2;
+	last_wifi_conn_params.band = params->band;
+	last_wifi_conn_params.channel = params->channel;
+	last_wifi_conn_params.security = params->security;
+	last_wifi_conn_params.mfp = params->mfp;
+	memcpy(last_wifi_conn_params.bssid, params->bssid, sizeof(last_wifi_conn_params.bssid));
+	last_wifi_conn_params.timeout = params->timeout;
+	last_wifi_conn_params.wpa3_ent_mode = params->wpa3_ent_mode;
+	last_wifi_conn_params.TLS_cipher = params->TLS_cipher;
+	last_wifi_conn_params.eap_ver = params->eap_ver;
+	last_wifi_conn_params.verify_peer_cert = params->verify_peer_cert;
+	last_wifi_conn_params.ft_used = params->ft_used;
+	last_wifi_conn_params.ignore_broadcast_ssid = params->ignore_broadcast_ssid;
+	last_wifi_conn_params.bandwidth = params->bandwidth;
+	last_wifi_conn_params.ssid_protection = params->ssid_protection;
+	last_wifi_conn_params.transition_disable = params->transition_disable;
 	return 0;
 
 rem_net:
