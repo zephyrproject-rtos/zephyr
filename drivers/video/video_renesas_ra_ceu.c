@@ -47,7 +47,6 @@ struct video_renesas_ra_ceu_config {
 	void (*irq_config_func)(const struct device *dev);
 	const struct device *clock_dev;
 	const struct device *cam_xclk_dev;
-	const struct device *source_dev;
 	const struct pinctrl_dev_config *pincfg;
 	const struct clock_control_ra_subsys_cfg clock_subsys;
 };
@@ -136,7 +135,7 @@ static int video_renesas_ra_ceu_set_format(const struct device *dev, struct vide
 		return -ENOTSUP;
 	}
 
-	ret = video_set_format(config->source_dev, fmt);
+	ret = video_set_format(data->vdev.source_dev, fmt);
 	if (ret < 0) {
 		LOG_DBG("Failed to set format on source device");
 		return ret;
@@ -165,7 +164,7 @@ static int video_renesas_ra_ceu_get_caps(const struct device *dev, struct video_
 
 	caps->min_vbuf_count = 1;
 
-	return video_get_caps(config->source_dev, caps);
+	return video_get_caps(data->vdev.source_dev, caps);
 }
 
 static int video_renesas_ra_ceu_set_stream(const struct device *dev, bool enable,
@@ -178,7 +177,7 @@ static int video_renesas_ra_ceu_set_stream(const struct device *dev, bool enable
 	int ret;
 
 	if (!enable) {
-		ret = video_stream_stop(config->source_dev, type);
+		ret = video_stream_stop(data->vdev.source_dev, type);
 		if (ret < 0) {
 			LOG_DBG("Failed to stop source device stream");
 			return -EIO;
@@ -208,7 +207,7 @@ static int video_renesas_ra_ceu_set_stream(const struct device *dev, bool enable
 		return -EIO;
 	}
 
-	ret = video_stream_start(config->source_dev, type);
+	ret = video_stream_start(data->vdev.source_dev, type);
 	if (ret < 0) {
 		LOG_DBG("Failed to start source device stream");
 		atomic_ptr_clear(&data->vbuf);

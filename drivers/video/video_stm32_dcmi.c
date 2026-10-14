@@ -41,7 +41,6 @@ struct video_stm32_dcmi_ctrls {
 
 struct video_stm32_dcmi_data {
 	struct video_device vdev; /* keep first */
-	const struct device *dev;
 	DCMI_HandleTypeDef hdcmi;
 	struct video_stm32_dcmi_ctrls ctrls;
 	int capture_rate;
@@ -666,7 +665,6 @@ static int video_stm32_dcmi_init(const struct device *dev)
 		return err;
 	}
 
-	data->dev = dev;
 	k_fifo_init(&data->fifo_in);
 	k_fifo_init(&data->fifo_out);
 	data->capture_rate = 1;

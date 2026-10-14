@@ -30,8 +30,6 @@ struct nxp_flexio_camera_config {
 	const struct device *flexio_dev;
 	/* FlexIO peripheral register block — DT_REG_ADDR(parent) */
 	FLEXIO_Type *flexio_base;
-	/* Connected sensor device via video-interfaces endpoint */
-	const struct device *source_dev;
 	/* FlexIO child resource descriptor */
 	const struct nxp_flexio_child *child;
 	/* Pinctrl configuration */
@@ -146,7 +144,7 @@ static int nxp_flexio_camera_configure_xclk(const struct device *dev)
  */
 static void nxp_flexio_camera_start_line_dma(struct nxp_flexio_camera_data *data)
 {
-	const struct nxp_flexio_camera_config *config = data->dev->config;
+	const struct nxp_flexio_camera_config *config = data->vdev.dev->config;
 	struct video_buffer *vbuf = k_fifo_peek_head(&data->fifo_in);
 
 	if (vbuf == NULL) {
@@ -250,13 +248,13 @@ static int nxp_flexio_camera_set_format(const struct device *dev, struct video_f
 	flexio_camera_config_t cam_cfg;
 	int ret;
 
-	if (!device_is_ready(config->source_dev)) {
+	if (!device_is_ready(data->vdev.source_dev)) {
 		LOG_ERR("Source device not ready");
 		return -ENODEV;
 	}
 
 	/* Propagate format to sensor */
-	ret = video_set_format(config->source_dev, fmt);
+	ret = video_set_format(data->vdev.source_dev, fmt);
 	if (ret < 0) {
 		return ret;
 	}
@@ -312,11 +310,11 @@ static int nxp_flexio_camera_get_caps(const struct device *dev,
 	/* Need at least two buffers: one active in DMA, one queued for next frame */
 	caps->min_vbuf_count = 2U;
 
-	if (!device_is_ready(config->source_dev)) {
+	if (!device_is_ready(data->vdev.source_dev)) {
 		return -ENODEV;
 	}
 
-	return video_get_caps(config->source_dev, caps);
+	return video_get_caps(data->vdev.source_dev, caps);
 }
 
 static int nxp_flexio_camera_set_stream(const struct device *dev, bool enable,
@@ -340,7 +338,7 @@ static int nxp_flexio_camera_set_stream(const struct device *dev, bool enable,
 		FLEXIO_CAMERA_Enable(&data->flexio_cam, true);
 
 		/* Start the sensor last */
-		ret = video_stream_start(config->source_dev, type);
+		ret = video_stream_start(data->vdev.source_dev, type);
 		if (ret < 0) {
 			FLEXIO_CAMERA_Enable(&data->flexio_cam, false);
 			gpio_pin_interrupt_configure_dt(&config->vsync_gpio,
@@ -354,7 +352,7 @@ static int nxp_flexio_camera_set_stream(const struct device *dev, bool enable,
 		data->streaming = false;
 
 		/* Stop sensor first so no new frames arrive */
-		video_stream_stop(config->source_dev, type);
+		video_stream_stop(data->vdev.source_dev, type);
 
 		gpio_pin_interrupt_configure_dt(&config->vsync_gpio, GPIO_INT_DISABLE);
 
@@ -426,8 +424,6 @@ static int nxp_flexio_camera_init(const struct device *dev)
 	const struct nxp_flexio_camera_config *config = dev->config;
 	struct nxp_flexio_camera_data *data = dev->data;
 	int ret;
-
-	data->dev = dev;
 
 	/* Validate shifter range: start index = end_index + 1 - count must not underflow.
 	 * With enum: [1,2,4,8] on shifter-count and enum: [3,7] on shifter-end-index,

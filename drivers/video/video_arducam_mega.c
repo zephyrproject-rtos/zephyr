@@ -236,8 +236,6 @@ struct arducam_mega_ctrls {
 struct arducam_mega_data {
 	struct video_device vdev; /* keep first */
 	struct arducam_mega_ctrls ctrls;
-
-	const struct device *dev;
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
 	struct k_work buf_work;
@@ -998,11 +996,11 @@ static void arducam_mega_buffer_work(struct k_work *work)
 	}
 
 	if (drv_data->fifo_length == 0) {
-		arducam_mega_capture(drv_data->dev, &f_length);
+		arducam_mega_capture(drv_data->vdev.dev, &f_length);
 		f_timestamp = k_uptime_get_32();
 	}
 
-	ret = arducam_mega_fifo_read(drv_data->dev, vbuf);
+	ret = arducam_mega_fifo_read(drv_data->vdev.dev, vbuf);
 	if (ret < 0) {
 		LOG_ERR("failed to read a buffer (%d)", ret);
 		return;
@@ -1241,7 +1239,6 @@ static int arducam_mega_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	drv_data->dev = dev;
 	k_fifo_init(&drv_data->fifo_in);
 	k_fifo_init(&drv_data->fifo_out);
 	k_work_queue_init(&ac_work_q);

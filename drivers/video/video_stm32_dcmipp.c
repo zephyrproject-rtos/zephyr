@@ -112,7 +112,6 @@ struct stm32_dcmipp_config {
 	const bool has_dcmipp_ker;
 	irq_config_func_t irq_config;
 	const struct pinctrl_dev_config *pctrl;
-	const struct device *source_dev;
 	const struct reset_dt_spec reset_dcmipp;
 	int bus_type;
 #if defined(STM32_DCMIPP_HAS_CSI)
@@ -408,7 +407,7 @@ static int stm32_dcmipp_conf_csi(const struct device *dev, uint32_t dcmipp_csi_b
 							      DCMIPP_CSI_INVERTED_DATA_LANES;
 
 	/* Get link-frequency information from source */
-	phy_bitrate = video_get_csi_link_freq(config->source_dev,
+	phy_bitrate = video_get_csi_link_freq(data->vdev.source_dev,
 					      video_bits_per_pixel(dcmipp->source_fmt.pixelformat),
 					      config->csi.nb_lanes);
 	if (phy_bitrate < 0) {
@@ -975,7 +974,7 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 
 	/* Configure the source if nothing is already running */
 	if (dcmipp->enabled_pipe == 0) {
-		ret = video_set_format(config->source_dev, &dcmipp->source_fmt);
+		ret = video_set_format(data->vdev.source_dev, &dcmipp->source_fmt);
 		if (ret < 0) {
 			goto out;
 		}
@@ -1141,7 +1140,7 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 
 	/* It is necessary to start the source as well if nothing else is running */
 	if (dcmipp->enabled_pipe == 0) {
-		ret = video_stream_start(config->source_dev, VIDEO_BUF_TYPE_OUTPUT);
+		ret = video_stream_start(data->vdev.source_dev, VIDEO_BUF_TYPE_OUTPUT);
 		if (ret < 0) {
 			LOG_ERR("Failed to start the source");
 			if (config->bus_type == VIDEO_BUS_TYPE_PARALLEL) {
@@ -1229,7 +1228,7 @@ static int stm32_dcmipp_stream_disable(const struct device *dev)
 
 	/* Turn off the source nobody else is using the DCMIPP */
 	if (dcmipp->enabled_pipe == 1) {
-		ret = video_stream_stop(config->source_dev, VIDEO_BUF_TYPE_OUTPUT);
+		ret = video_stream_stop(data->vdev.source_dev, VIDEO_BUF_TYPE_OUTPUT);
 		if (ret < 0) {
 			LOG_ERR("Failed to stop the source");
 			ret = -EIO;

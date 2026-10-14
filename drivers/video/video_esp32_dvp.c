@@ -45,7 +45,6 @@ enum video_esp32_cam_clk_sel_values {
 
 struct video_esp32_config {
 	const struct device *dma_dev;
-	const struct device *source_dev;
 	uint32_t cam_clk;
 	uint8_t rx_dma_channel;
 	uint8_t data_width;
@@ -144,7 +143,7 @@ static int video_esp32_set_stream(const struct device *dev, bool enable, enum vi
 	if (!enable) {
 		LOG_DBG("Stop streaming");
 
-		if (video_stream_stop(cfg->source_dev, type)) {
+		if (video_stream_stop(data->vdev.source_dev, type)) {
 			return -EIO;
 		}
 
@@ -223,7 +222,7 @@ static int video_esp32_set_stream(const struct device *dev, bool enable, enum vi
 
 	cam_hal_start_streaming(&data->hal);
 
-	if (video_stream_start(cfg->source_dev, type)) {
+	if (video_stream_start(data->vdev.source_dev, type)) {
 		return -EIO;
 	}
 
@@ -238,7 +237,7 @@ static int video_esp32_get_caps(const struct device *dev, struct video_caps *cap
 	caps->min_vbuf_count = 2;
 
 	/* Forward the message to the source device */
-	return video_get_caps(config->source_dev, caps);
+	return video_get_caps(data->vdev.source_dev, caps);
 }
 
 static int video_esp32_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
@@ -247,7 +246,7 @@ static int video_esp32_set_fmt(const struct device *dev, struct video_format *fm
 	struct video_esp32_data *data = dev->data;
 	int ret;
 
-	ret = video_set_format(cfg->source_dev, fmt);
+	ret = video_set_format(data->vdev.source_dev, fmt);
 	if (ret < 0) {
 		return ret;
 	}
@@ -366,12 +365,12 @@ int video_esp32_set_selection(const struct device *dev, struct video_selection *
 	const struct video_esp32_config *cfg = dev->config;
 	int ret;
 
-	ret = video_set_selection(cfg->source_dev, sel);
+	ret = video_set_selection(data->vdev.source_dev, sel);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = video_get_format(cfg->source_dev, &data->vdev->out_fmt);
+	ret = video_get_format(data->vdev.source_dev, &data->vdev->out_fmt);
 	if (ret < 0) {
 		LOG_ERR("Failed to get format from source device");
 		return ret;
@@ -384,7 +383,7 @@ int video_esp32_get_selection(const struct device *dev, struct video_selection *
 {
 	const struct video_esp32_config *cfg = dev->config;
 
-	return video_get_selection(cfg->source_dev, sel);
+	return video_get_selection(data->vdev.source_dev, sel);
 }
 
 static DEVICE_API(video, esp32_driver_api) = {
@@ -406,7 +405,6 @@ static DEVICE_API(video, esp32_driver_api) = {
 #define SOURCE_DEV(n) DEVICE_DT_GET(DT_INST_PHANDLE(n, source))
 
 static const struct video_esp32_config esp32_config = {
-	.source_dev = SOURCE_DEV(0),
 	.dma_dev = DEVICE_DT_GET_OR_NULL(DT_DMAS_CTLR_BY_NAME(DT_INST_PARENT(0), rx)),
 	.rx_dma_channel = DT_DMAS_CELL_BY_NAME(DT_INST_PARENT(0), rx, channel),
 	.data_width = DT_INST_PROP_OR(0, data_width, 8),

@@ -74,7 +74,6 @@ static const uint8_t h264_start_code_4[] = {0x00, 0x00, 0x00, 0x01};
 
 struct video_sw_generator_data {
 	struct video_device vdev; /* keep first */
-	const struct device *dev;
 	struct sw_ctrls ctrls;
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
@@ -622,7 +621,7 @@ static void video_sw_generator_worker(struct k_work *work)
 
 	switch (data->pattern) {
 	case VIDEO_PATTERN_COLOR_BAR:
-		video_sw_generator_fill(data->dev, vbuf);
+		video_sw_generator_fill(data->vdev.dev, vbuf);
 		break;
 	}
 
@@ -770,7 +769,6 @@ static int video_sw_generator_init(const struct device *dev)
 {
 	struct video_sw_generator_data *data = dev->data;
 
-	data->dev = dev;
 	k_fifo_init(&data->fifo_in);
 	k_fifo_init(&data->fifo_out);
 	k_work_init_delayable(&data->work, video_sw_generator_worker);

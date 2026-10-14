@@ -22,7 +22,6 @@ LOG_MODULE_REGISTER(nxp_video_sdma);
 
 struct nxp_video_sdma_config {
 	const struct device *dma_dev;
-	const struct device *sensor_dev;
 	const struct pinctrl_dev_config *pincfg;
 	uint8_t vsync_pin;
 	uint8_t hsync_pin;
@@ -218,16 +217,16 @@ static const struct video_format_cap fmts[] = {
 
 static int nxp_video_sdma_set_format(const struct device *dev, struct video_format *fmt)
 {
-	const struct nxp_video_sdma_config *config = dev->config;
+	struct nxp_video_sdma_data *data = dev->data;
 	int ret;
 
-	if (!device_is_ready(config->sensor_dev)) {
+	if (!device_is_ready(data->vdev.source_dev)) {
 		LOG_ERR("Sensor device not ready");
 		return -ENODEV;
 	}
 
 	/* Forward format to sensor device */
-	ret = video_set_format(config->sensor_dev, fmt);
+	ret = video_set_format(data->vdev.source_dev, fmt);
 	if (ret < 0) {
 		return ret;
 	}
@@ -298,14 +297,14 @@ static DEVICE_API(video, nxp_video_sdma_api) = {
 	PINCTRL_DT_INST_DEFINE(inst);                                                              \
 	const struct nxp_video_sdma_config sdma_config_##inst = {                                  \
 		.dma_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                    \
-		.sensor_dev = SOURCE_DEV(inst),                                                    \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                    \
 		.vsync_pin = DT_INST_PROP(inst, vsync_pin),                                        \
 		.hsync_pin = DT_INST_PROP(inst, hsync_pin),                                        \
 		.pclk_pin = DT_INST_PROP(inst, pclk_pin),                                          \
 	};                                                                                         \
 	struct nxp_video_sdma_data sdma_data_##inst = {                                            \
-		.vdev = VIDEO_DEVICE_INIT(video_sdma_data_##inst, DEVICE_DT_INST_GET(n), NULL),    \
+		.vdev = VIDEO_DEVICE_INIT(video_sdma_data_##inst,                                  \
+					  DEVICE_DT_INST_GET(n), SOURCE_DEV(inst)),                \
 		.config = &sdma_config_##inst,                                                     \
 	};                                                                                         \
                                                                                                    \

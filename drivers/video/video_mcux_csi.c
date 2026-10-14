@@ -23,13 +23,11 @@
 
 struct video_mcux_csi_config {
 	CSI_Type *base;
-	const struct device *source_dev;
 	const struct pinctrl_dev_config *pincfg;
 };
 
 struct video_mcux_csi_data {
 	struct video_device vdev; /* keep first */
-	const struct device *dev;
 	csi_config_t csi_config;
 	csi_handle_t csi_handle;
 	struct k_fifo fifo_in;
@@ -40,7 +38,7 @@ struct video_mcux_csi_data {
 static void __frame_done_cb(CSI_Type *base, csi_handle_t *handle, status_t status, void *user_data)
 {
 	struct video_mcux_csi_data *data = user_data;
-	const struct device *dev = data->dev;
+	const struct device *dev = data->vdev.dev;
 	const struct video_mcux_csi_config *config = dev->config;
 	enum video_signal_result result = VIDEO_BUF_DONE;
 	struct video_buffer *vbuf, *vbuf_first = NULL;
@@ -163,7 +161,7 @@ static int video_mcux_csi_set_fmt(const struct device *dev, struct video_format 
 		return -EIO;
 	}
 
-	if (config->source_dev && video_set_format(config->source_dev, &format)) {
+	if (data->vdev.source_dev && video_set_format(data->vdev.source_dev, &format)) {
 		return -EIO;
 	}
 
@@ -183,11 +181,11 @@ static int video_mcux_csi_set_stream(const struct device *dev, bool enable,
 			return -EIO;
 		}
 
-		if (config->source_dev && video_stream_start(config->source_dev, type)) {
+		if (data->vdev.source_dev && video_stream_start(data->vdev.source_dev, type)) {
 			return -EIO;
 		}
 	} else {
-		if (config->source_dev && video_stream_stop(config->source_dev, type)) {
+		if (data->vdev.source_dev && video_stream_stop(data->vdev.source_dev, type)) {
 			return -EIO;
 		}
 
@@ -272,8 +270,8 @@ static int video_mcux_csi_get_caps(const struct device *dev, struct video_caps *
 	int err = -ENODEV;
 
 	/* Just forward to source dev for now */
-	if (config->source_dev) {
-		err = video_get_caps(config->source_dev, caps);
+	if (data->vdev.source_dev) {
+		err = video_get_caps(data->vdev.source_dev, caps);
 #if defined(CONFIG_VIDEO_MCUX_MIPI_CSI2RX)
 		/*
 		 * On i.MX RT11xx SoCs which have MIPI CSI-2 Rx, image data from the camera sensor
@@ -332,7 +330,7 @@ static int video_mcux_csi_init(const struct device *dev)
 	/* check if there is any source device (video ctrl device)
 	 * the device is not yet initialized so we only check if it exists
 	 */
-	if (config->source_dev == NULL) {
+	if (data->vdev.source_dev == NULL) {
 		return -ENODEV;
 	}
 
@@ -372,7 +370,7 @@ static int video_mcux_csi_enum_frmival(const struct device *dev, struct video_fr
 	fie->format = &converted_fmt;
 #endif
 
-	ret = video_enum_frmival(config->source_dev, fie);
+	ret = video_enum_frmival(data->vdev.source_dev, fie);
 	fie->format = fie_fmt;
 
 	return ret;
@@ -397,7 +395,6 @@ PINCTRL_DT_INST_DEFINE(0);
 
 static const struct video_mcux_csi_config video_mcux_csi_config_0 = {
 	.base = (CSI_Type *)DT_INST_REG_ADDR(0),
-	.source_dev = SOURCE_DEV(0),
 	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
@@ -412,8 +409,6 @@ static int video_mcux_csi_init_0(const struct device *dev)
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), video_mcux_csi_isr, NULL, 0);
 
 	irq_enable(DT_INST_IRQN(0));
-
-	data->dev = dev;
 
 	return video_mcux_csi_init(dev);
 }

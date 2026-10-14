@@ -32,7 +32,6 @@ struct mcux_pngdec_data {
 	struct k_mutex lock;
 	struct k_work decode_work;
 	struct k_sem decode_done;    /* Signaled when the decoder goes idle. */
-	const struct device *dev;
 	bool running;         /* Decoder is actively decoding. */
 	bool first_frame_rcv; /* First incoming frame has been fed. */
 	pngdec_image_t image_info;
@@ -336,7 +335,7 @@ static void mcux_pngdec_decode_work_handler(struct k_work *work)
 {
 	struct mcux_pngdec_data *data = CONTAINER_OF(work, struct mcux_pngdec_data, decode_work);
 
-	mcux_pngdec_decode_one_frame(data->dev);
+	mcux_pngdec_decode_one_frame(data->vdev.dev);
 }
 
 static void mcux_pngdec_isr(const struct device *dev)
@@ -376,7 +375,6 @@ static int mcux_pngdec_init(const struct device *dev)
 	struct mcux_pngdec_data *data = dev->data;
 	pngdec_config_t init_config;
 
-	data->dev = dev;
 	k_mutex_init(&data->lock);
 	k_work_init(&data->decode_work, mcux_pngdec_decode_work_handler);
 	k_sem_init(&data->decode_done, 0, 1);
