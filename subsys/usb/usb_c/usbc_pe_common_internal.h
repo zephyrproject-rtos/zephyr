@@ -606,6 +606,14 @@ enum tc_data_role pe_get_data_role(const struct device *dev);
 void pe_set_data_role(const struct device *dev, enum tc_data_role dr);
 
 /**
+ * @brief Sets the power role and updates the TCPC
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ * @param pr Power role to be set
+ */
+void pe_set_power_role(const struct device *dev, enum tc_power_role pr);
+
+/**
  * @brief Get the current power role
  *
  * @param dev Pointer to the device structure for the driver instance

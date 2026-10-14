@@ -23,6 +23,9 @@ void pe_snk_init(const struct device *dev)
 	struct usbc_port_data *data = dev->data;
 	struct policy_engine *pe = data->pe;
 
+	/* Initialize power role */
+	pe_set_power_role(dev, TC_ROLE_SINK);
+
 	/* Initial role of sink is UFP */
 	pe_set_data_role(dev, TC_ROLE_UFP);
 
@@ -74,12 +77,6 @@ void pe_snk_startup_entry(void *obj)
 
 	/* Reset the protocol layer */
 	prl_reset(dev);
-
-	/* Set power role to Sink */
-	pe->power_role = TC_ROLE_SINK;
-
-	/* Notify DPM of power role */
-	policy_notify(dev, POWER_ROLE_IS_SINK);
 
 	/* Invalidate explicit contract */
 	atomic_clear_bit(pe->flags, PE_FLAGS_EXPLICIT_CONTRACT);
