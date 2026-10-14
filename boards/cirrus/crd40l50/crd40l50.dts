@@ -122,14 +122,13 @@
 
 		reset-gpios = <&gpiob 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		int-gpios = <&gpioh 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-
-		trigger-mapping = <11 12 13>;
 		trigger-gpios = <&gpioa 8 GPIO_PULL_UP>,
 				<&gpioa 9 GPIO_PULL_UP>,
 				<&gpiob 10 GPIO_PULL_UP>;
 
-		flash-storage = <&flash_1>;
-		flash-offset = <0x0>;
+		cirrus,trigger-mapping = <11 12 13>;
+		cirrus,flash-storage = <&flash_1>;
+		cirrus,flash-offset = <0x0>;
 
 		status = "okay";
 	};
