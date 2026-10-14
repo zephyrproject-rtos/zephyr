@@ -127,7 +127,7 @@ static const struct mipid02_format_desc *mipid02_get_format_desc(uint32_t pixelf
 	return NULL;
 }
 
-static int mipid02_set_fmt(const struct device *dev, struct video_format *fmt)
+static int mipid02_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	struct mipid02_data *drv_data = dev->data;
 	const struct mipid02_config *cfg = dev->config;

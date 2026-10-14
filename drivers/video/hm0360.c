@@ -561,21 +561,15 @@ static int hm0360_get_caps(const struct device *dev, struct video_caps *caps)
 	return 0;
 }
 
-static int hm0360_set_fmt(const struct device *dev, struct video_format *fmt)
+static int hm0360_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	const struct hm0360_config *config = dev->config;
 	struct hm0360_data *data = dev->data;
 	int ret;
-	size_t idx;
 
 	/* Note: hm0360 only supports grayscale */
 	LOG_DBG("HM01B0 set_fmt: %d x %d, fmt: %s", fmt->width, fmt->height,
 		VIDEO_FOURCC_TO_STR(fmt->pixelformat));
-
-	ret = video_format_caps_index(fmts, fmt, &idx);
-	if (ret < 0) {
-		return ret;
-	}
 
 	if (!memcmp(&data->fmt, fmt, sizeof(data->fmt))) {
 		/* nothing to do */
@@ -598,6 +592,7 @@ static int hm0360_set_fmt(const struct device *dev, struct video_format *fmt)
 						ARRAY_SIZE(hm0360_vga_regs));
 		break;
 	default:
+		__ASSERT(false);
 		CODE_UNREACHABLE;
 	}
 

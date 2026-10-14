@@ -749,7 +749,7 @@ static int ov5640_set_frmival(const struct device *dev, struct video_frmival *fr
 	return 0;
 }
 
-static int ov5640_set_fmt(const struct device *dev, struct video_format *fmt)
+static int ov5640_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	struct ov5640_data *drv_data = dev->data;
 	const struct ov5640_config *cfg = dev->config;
@@ -770,19 +770,6 @@ static int ov5640_set_fmt(const struct device *dev, struct video_format *fmt)
 		modes = csi2_modes;
 		num_fmts = ARRAY_SIZE(csi2_fmts);
 		array_size_modes = ARRAY_SIZE(csi2_modes);
-	}
-
-	for (i = 0; i < num_fmts; ++i) {
-		if (fmt->pixelformat == fmts[i].pixelformat && fmt->width >= fmts[i].width_min &&
-		    fmt->width <= fmts[i].width_max && fmt->height >= fmts[i].height_min &&
-		    fmt->height <= fmts[i].height_max) {
-			break;
-		}
-	}
-
-	if (i == num_fmts) {
-		LOG_ERR("Unsupported pixel format or resolution");
-		return -ENOTSUP;
 	}
 
 	if (!memcmp(&drv_data->fmt, fmt, sizeof(drv_data->fmt))) {

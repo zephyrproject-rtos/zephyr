@@ -216,7 +216,7 @@ static int stm32_dcmi_enable_clock(const struct device *dev)
 	return clock_control_on(dcmi_clock, (clock_control_subsys_t)&config->pclken);
 }
 
-static int video_stm32_dcmi_set_fmt(const struct device *dev, struct video_format *fmt)
+static int video_stm32_dcmi_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	const struct video_stm32_dcmi_config *config = dev->config;
 	struct video_stm32_dcmi_data *data = dev->data;

@@ -260,16 +260,11 @@ static int ov9655_set_output_resolution(const struct device *dev, uint32_t width
 	return ret;
 }
 
-static int ov9655_set_fmt(const struct device *dev, struct video_format *fmt)
+static int ov9655_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	const struct ov9655_config *config = dev->config;
 	struct ov9655_data *data = dev->data;
 	int ret;
-
-	if (fmt->pixelformat != VIDEO_PIX_FMT_RGB565 && fmt->pixelformat != VIDEO_PIX_FMT_YUYV) {
-		LOG_ERR("Only RGB565 and YUYV supported!");
-		return -ENOTSUP;
-	}
 
 	if (!memcmp(&data->fmt, fmt, sizeof(data->fmt))) {
 		/* nothing to do */
@@ -385,7 +380,7 @@ static int ov9655_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	return ov9655_set_fmt(dev, &fmt);
+	return video_set_format(dev, &fmt);
 }
 
 static int ov9655_set_stream(const struct device *dev, bool enable, enum video_buf_type type)

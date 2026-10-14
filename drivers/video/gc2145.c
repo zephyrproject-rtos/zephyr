@@ -1135,23 +1135,15 @@ static int gc2145_config_csi(const struct device *dev, uint32_t pixelformat,
 				   GC2145_REG_RESET_P0_REGS);
 }
 
-static int gc2145_set_fmt(const struct device *dev, struct video_format *fmt)
+static int gc2145_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	struct gc2145_data *drv_data = dev->data;
 	const struct gc2145_config *cfg = dev->config;
-	size_t idx;
 	int ret;
 
 	if (memcmp(&drv_data->fmt, fmt, sizeof(drv_data->fmt)) == 0) {
 		/* nothing to do */
 		return 0;
-	}
-
-	/* Check if camera is capable of handling given format */
-	ret = video_format_caps_index(fmts, fmt, &idx);
-	if (ret < 0) {
-		LOG_ERR("Image format not supported");
-		return ret;
 	}
 
 	/* Set output format */

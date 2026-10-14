@@ -29,11 +29,29 @@ int video_get_selection(const struct device *dev, struct video_selection *sel)
 
 int video_set_format(const struct device *dev, struct video_format *fmt)
 {
+	struct video_caps caps = {.type = fmt->type};
+	size_t idx;
+
 	if (dev == NULL || fmt == NULL) {
 		return -EINVAL;
 	}
 
-	return video_driver_set_format(dev, fmt);
+	ret = video_get_caps(dev, &caps);
+	if (ret < 0) {
+		LOG_ERR("Failed to query %s supported formats (type %u): %u",
+			dev->name, fmt->type, ret);
+		return ret;
+	}
+
+	ret = video_format_caps_index(fmt, &caps->format_caps, &idx);
+	if (ret < 0) {
+		LOG_ERR("Format %s %ux%u not supported by %s (type %u): %u",
+			VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height,
+			dev->name, fmt->type, ret);
+		return ret;
+	}
+
+	return video_driver_set_format(dev, fmt, idx);
 }
 
 int video_get_format(const struct device *dev, struct video_format *fmt)

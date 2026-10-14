@@ -418,30 +418,18 @@ static int ov7725_set_clock(const struct device *dev,
 	return -1;
 }
 
-static int ov7725_set_fmt(const struct device *dev, struct video_format *fmt)
+static int ov7725_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	struct ov7725_data *drv_data = dev->data;
 	const struct ov7725_config *cfg = dev->config;
 	uint8_t com10 = 0;
-	uint16_t width, height;
 	uint16_t hstart, vstart, hsize;
 	int ret;
-
-	/* we only support one format for now (VGA RGB565) */
-	if (fmt->pixelformat != VIDEO_PIX_FMT_RGB565 || fmt->height != 480 ||
-	    fmt->width != 640) {
-		return -ENOTSUP;
-	}
-
-	width = fmt->width;
-	height = fmt->height;
 
 	if (!memcmp(&drv_data->fmt, fmt, sizeof(drv_data->fmt))) {
 		/* nothing to do */
 		return 0;
 	}
-
-	drv_data->fmt = *fmt;
 
 	/* Configure Sensor */
 	ret = ov7725_write_all(dev, ov7725_init_reg_tb,
@@ -488,23 +476,30 @@ static int ov7725_set_fmt(const struct device *dev, struct video_format *fmt)
 	/* Resolution and timing. */
 	hstart = 0x22U << 2U;
 	vstart = 0x07U << 1U;
-	hsize = width + 16U;
+	hsize = fmt->width + 16U;
 
 	/* Set the window size. */
 	ov7725_write_reg(&cfg->i2c, OV7725_HSTART, hstart >> 2U);
 	ov7725_write_reg(&cfg->i2c, OV7725_HSIZE, hsize >> 2U);
 	ov7725_write_reg(&cfg->i2c, OV7725_VSTART, vstart >> 1U);
-	ov7725_write_reg(&cfg->i2c, OV7725_VSIZE, height >> 1U);
-	ov7725_write_reg(&cfg->i2c, OV7725_HOUTSIZE, width >> 2U);
-	ov7725_write_reg(&cfg->i2c, OV7725_VOUTSIZE, height >> 1U);
+	ov7725_write_reg(&cfg->i2c, OV7725_VSIZE, fmt->height >> 1U);
+	ov7725_write_reg(&cfg->i2c, OV7725_HOUTSIZE, fmt->width >> 2U);
+	ov7725_write_reg(&cfg->i2c, OV7725_VOUTSIZE, fmt->height >> 1U);
 	ov7725_write_reg(&cfg->i2c, OV7725_HREF,
 			 ((vstart & 1U) << 6U) |
 			 ((hstart & 3U) << 4U) |
-			 ((height & 1U) << 2U) |
+			 ((fmt->height & 1U) << 2U) |
 			 ((hsize & 3U) << 0U));
-	return ov7725_write_reg(&cfg->i2c, OV7725_EXHCH,
-					((height & 1U) << 2U) |
-					((width & 3U) << 0U));
+
+	ret = ov7725_write_reg(&cfg->i2c, OV7725_EXHCH,
+			       ((fmt->height & 1U) << 2U) | ((fmt->width & 3U) << 0U));
+	if (ret < 0) {
+		return ret;
+	}
+
+	drv_data->fmt = *fmt;
+
+	return 0;
 }
 
 static int ov7725_get_fmt(const struct device *dev, struct video_format *fmt)

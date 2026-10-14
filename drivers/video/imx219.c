@@ -194,7 +194,7 @@ static const struct video_format_cap imx219_fmts[] = {
 	{0},
 };
 
-static int imx219_set_fmt(const struct device *dev, struct video_format *fmt)
+static int imx219_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	const struct imx219_config *cfg = dev->config;
 	struct imx219_data *drv_data = dev->data;
@@ -216,27 +216,7 @@ static int imx219_set_fmt(const struct device *dev, struct video_format *fmt)
 		{IMX219_CCI_TP_WINDOW_WIDTH, fmt->width},
 		{IMX219_CCI_TP_WINDOW_HEIGHT, fmt->height}
 	};
-	size_t idx;
 	int ret;
-
-	ret = video_format_caps_index(imx219_fmts, fmt, &idx);
-	if (ret < 0) {
-		LOG_ERR("Format requested '%s' %ux%u not supported",
-			VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height);
-		return -ENOTSUP;
-	}
-
-	if (fmt->width != imx219_fmts[idx].width_min &&
-	    (fmt->width - imx219_fmts[idx].width_min) % imx219_fmts[idx].width_step != 0) {
-		LOG_ERR("Unsupported width %u requested", fmt->width);
-		return -EINVAL;
-	}
-
-	if (fmt->height != imx219_fmts[idx].height_min &&
-	    (fmt->height - imx219_fmts[idx].height_min) % imx219_fmts[idx].height_step != 0) {
-		LOG_ERR("Unsupported height %u requested", fmt->height);
-		return -EINVAL;
-	}
 
 	/* Select the base resolution and imaging mode */
 	switch (idx) {

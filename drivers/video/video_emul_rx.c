@@ -53,7 +53,7 @@ static int emul_rx_enum_frmival(const struct device *dev, struct video_frmival_e
 	return video_enum_frmival(cfg->source_dev, fie);
 }
 
-static int emul_rx_set_fmt(const struct device *const dev, struct video_format *fmt)
+static int emul_rx_set_fmt(const struct device *const dev, struct video_format *fmt, size_t idx)
 {
 	const struct emul_rx_config *cfg = dev->config;
 	struct emul_rx_data *data = dev->data;

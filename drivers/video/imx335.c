@@ -544,26 +544,19 @@ static int imx335_set_frmival(const struct device *dev, struct video_frmival *fr
 	return 0;
 }
 
-static int imx335_set_fmt(const struct device *dev, struct video_format *fmt)
+static int imx335_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	struct imx335_data *drv_data = dev->data;
 	const struct imx335_config *cfg = dev->config;
 	struct imx335_ctrls *ctrls = &drv_data->ctrls;
 	int ret;
-	size_t fmt_idx;
 
 	if (drv_data->enabled) {
 		LOG_ERR("Cannot set format while the stream is running");
 		return -EBUSY;
 	}
 
-	ret = video_format_caps_index(imx335_fmts, fmt, &fmt_idx);
-	if (ret < 0) {
-		LOG_ERR("Unsupported pixel format or resolution");
-		return ret;
-	}
-
-	if (fmt_idx == IMX335_RES_2592x1944) {
+	if (idx == IMX335_RES_2592x1944) {
 		/* Full resolution */
 
 		ret = video_write_cci_multiregs(&cfg->i2c, imx335_bin_none,
@@ -575,7 +568,7 @@ static int imx335_set_fmt(const struct device *dev, struct video_format *fmt)
 
 		ctrls->exposure.range.max = IMX335_VMAX_DEFAULT - IMX335_SHR0_MIN;
 		ctrls->exposure.range.def = IMX335_VMAX_DEFAULT - IMX335_SHR0_MIN;
-	} else if (fmt_idx == IMX335_RES_1296x972) {
+	} else if (idx == IMX335_RES_1296x972) {
 		/* 2x2 binning mode */
 
 		LOG_DBG("2x2 binning mode active");

@@ -251,17 +251,11 @@ static const char *const test_pattern_menu[] = {
 	NULL,
 };
 
-static int video_sw_generator_set_fmt(const struct device *dev, struct video_format *fmt)
+static int video_sw_generator_set_fmt(const struct device *dev, struct video_format *fmt,
+				      size_t idx)
 {
 	struct video_sw_generator_data *data = dev->data;
-	size_t idx;
 	int ret;
-
-	ret = video_format_caps_index(fmts, fmt, &idx);
-	if (ret < 0) {
-		LOG_ERR("Unsupported pixel format or resolution");
-		return ret;
-	}
 
 	ret = video_estimate_fmt_size(fmt);
 	if (ret < 0) {

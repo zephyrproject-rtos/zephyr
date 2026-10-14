@@ -941,21 +941,12 @@ uint8_t ov2640_check_connection(const struct device *dev)
 	return ret;
 }
 
-static int ov2640_set_fmt(const struct device *dev, struct video_format *fmt)
+static int ov2640_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	struct ov2640_data *drv_data = dev->data;
 	uint16_t width, height;
 	int ret = 0;
 	int i = 0;
-
-	/* We only support RGB565 and JPEG pixel formats */
-	if (fmt->pixelformat != VIDEO_PIX_FMT_RGB565 && fmt->pixelformat != VIDEO_PIX_FMT_JPEG) {
-		LOG_ERR("ov2640 camera supports only RGB565 and JPG pixelformats!");
-		return -ENOTSUP;
-	}
-
-	width = fmt->width;
-	height = fmt->height;
 
 	if (!memcmp(&drv_data->fmt, fmt, sizeof(drv_data->fmt))) {
 		/* nothing to do */

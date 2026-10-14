@@ -402,21 +402,6 @@ static int mt9m114_set_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct mt9m114_data *drv_data = dev->data;
 	int ret;
-	int i = 0;
-
-	while (fmts[i].pixelformat) {
-		if (fmt->pixelformat == fmts[i].pixelformat && fmt->width >= fmts[i].width_min &&
-		    fmt->width <= fmts[i].width_max && fmt->height >= fmts[i].height_min &&
-		    fmt->height <= fmts[i].height_max) {
-			break;
-		}
-		i++;
-	}
-
-	if (i == (ARRAY_SIZE(fmts) - 1)) {
-		LOG_ERR("Unsupported pixel format or resolution");
-		return -ENOTSUP;
-	}
 
 	if (!memcmp(&drv_data->fmt, fmt, sizeof(drv_data->fmt))) {
 		/* nothing to do */
@@ -433,7 +418,7 @@ static int mt9m114_set_fmt(const struct device *dev, struct video_format *fmt)
 	}
 
 	/* Set output resolution */
-	for (i = 0; i < ARRAY_SIZE(resolution_configs); i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(resolution_configs); i++) {
 		if (fmt->width == resolution_configs[i].width &&
 		    fmt->height == resolution_configs[i].height) {
 			ret = mt9m114_write_all(dev, resolution_configs[i].params);

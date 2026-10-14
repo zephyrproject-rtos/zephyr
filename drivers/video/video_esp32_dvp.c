@@ -269,7 +269,7 @@ static int video_esp32_get_fmt(const struct device *dev, struct video_format *fm
 	return 0;
 }
 
-static int video_esp32_set_fmt(const struct device *dev, struct video_format *fmt)
+static int video_esp32_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	const struct video_esp32_config *cfg = dev->config;
 	struct video_esp32_data *data = dev->data;

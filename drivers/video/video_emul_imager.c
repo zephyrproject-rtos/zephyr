@@ -270,20 +270,14 @@ static int emul_imager_enum_frmival(const struct device *dev, struct video_frmiv
 	return mode->fps == 0;
 }
 
-static int emul_imager_set_fmt(const struct device *const dev, struct video_format *fmt)
+static int emul_imager_set_fmt(const struct device *const dev, struct video_format *fmt,
+			       size_t idx)
 {
 	struct emul_imager_data *data = dev->data;
-	size_t fmt_id;
 	int ret;
 
 	if (memcmp(&data->fmt, fmt, sizeof(data->fmt)) == 0) {
 		return 0;
-	}
-
-	ret = video_format_caps_index(fmts, fmt, &fmt_id);
-	if (ret < 0) {
-		LOG_ERR("Format %x %ux%u not found", fmt->pixelformat, fmt->width, fmt->height);
-		return ret;
 	}
 
 	ret = emul_imager_set_mode(dev, &emul_imager_modes[fmt_id][0]);

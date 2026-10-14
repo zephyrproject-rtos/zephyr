@@ -225,13 +225,6 @@ static int nxp_video_sdma_set_format(const struct device *dev, struct video_form
 		return -ENODEV;
 	}
 
-	if ((fmt->pixelformat != fmts[0].pixelformat) ||
-	    (fmt->width != fmts[0].width_min) ||
-	    (fmt->height != fmts[0].height_min)) {
-		LOG_ERR("Unsupported format");
-		return -ENOTSUP;
-	}
-
 	/* Forward format to sensor device */
 	ret = video_set_format(config->sensor_dev, fmt);
 	if (ret < 0) {

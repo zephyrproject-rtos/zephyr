@@ -535,27 +535,20 @@ static const struct video_format_cap dvp_fmts[] = {
 	[OV5642_RES_1280x960] = OV5642_VIDEO_FORMAT_CAP(1280, 960, VIDEO_PIX_FMT_GREY),
 	{0}};
 
-static int ov5642_set_fmt(const struct device *dev, struct video_format *fmt)
+static int ov5642_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	struct ov5642_data *drv_data = dev->data;
 	const struct ov5642_config *cfg = dev->config;
 	const struct video_format_cap *fmts = dvp_fmts;
 	const struct ov5642_mode_config *modes = dvp_modes;
 	int ret = 0;
-	size_t i;
-
-	ret = video_format_caps_index(fmts, fmt, &i);
-	if (ret < 0) {
-		LOG_ERR("Unsupported pixel format or resolution");
-		return ret;
-	}
 
 	if (memcmp(&drv_data->fmt, fmt, sizeof(drv_data->fmt)) == 0) {
 		return 0;
 	}
 
-	ret = video_write_cci_multiregs16(&cfg->i2c, modes[i].res_params,
-					  modes[i].array_size_res_params);
+	ret = video_write_cci_multiregs16(&cfg->i2c, modes[idx].res_params,
+					  modes[idx].array_size_res_params);
 	if (ret < 0) {
 		LOG_ERR("Unable to set resolution parameters");
 		return ret;

@@ -547,7 +547,7 @@ static inline void stm32_dcmipp_compute_fmt_pitch(uint32_t pipe_id, struct video
 	fmt->size = fmt->pitch * fmt->height;
 }
 
-static int stm32_dcmipp_set_fmt(const struct device *dev, struct video_format *fmt)
+static int stm32_dcmipp_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	struct stm32_dcmipp_pipe_data *pipe = dev->data;
 	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;

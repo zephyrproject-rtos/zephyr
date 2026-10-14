@@ -306,20 +306,13 @@ static int hm01b0_get_caps(const struct device *dev, struct video_caps *caps)
 	return 0;
 }
 
-static int hm01b0_set_fmt(const struct device *dev, struct video_format *fmt)
+static int hm01b0_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	struct hm01b0_data *data = dev->data;
-	size_t idx;
 	int ret;
 
 	LOG_DBG("HM01B0 set_fmt: %d x %d, fmt: %s", fmt->width, fmt->height,
 		VIDEO_FOURCC_TO_STR(fmt->pixelformat));
-
-	ret = video_format_caps_index(hm01b0_fmts, fmt, &idx);
-	if (ret != 0) {
-		LOG_ERR("Image resolution not supported\n");
-		return ret;
-	}
 
 	if (!memcmp(&data->fmt, fmt, sizeof(data->fmt))) {
 		return 0;

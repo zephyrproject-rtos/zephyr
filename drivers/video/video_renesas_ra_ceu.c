@@ -121,12 +121,15 @@ static int video_renesas_ra_ceu_get_format(const struct device *dev, struct vide
 	return video_estimate_fmt_size(fmt);
 }
 
-static int video_renesas_ra_ceu_set_format(const struct device *dev, struct video_format *fmt)
+static int video_renesas_ra_ceu_set_format(const struct device *dev, struct video_format *fmt,
+					   size_t idx)
 {
 	const struct video_renesas_ra_ceu_config *config = dev->config;
 	struct video_renesas_ra_ceu_data *data = dev->data;
 	fsp_err_t err;
 	int ret;
+
+	/* TODO: modify the table of format capabilities to apply these rules */
 
 	if (fmt->width > VIDEO_RA_CEU_WIDTH_MAX || fmt->width < VIDEO_RA_CEU_WIDTH_MIN) {
 		LOG_DBG("Width %d out of supported range %d-%d", fmt->width, VIDEO_RA_CEU_WIDTH_MIN,

@@ -309,12 +309,14 @@ __subsystem struct video_driver_api {
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param fmt Pointer to a video format struct.
+ * @param idx Index withing this driver's format capability list.
  *
  * @retval 0 on success.
  * @retval -ENOTSUP Format is not supported.
  * @retval -ENOSYS API is not implemented.
  */
-static inline int video_driver_set_format(const struct device *dev, struct video_format *fmt)
+static inline int video_driver_set_format(const struct device *dev, struct video_format *fmt,
+					  size_t idx)
 {
 	const struct video_driver_api *api = DEVICE_API_GET(video, dev);
 
@@ -322,7 +324,7 @@ static inline int video_driver_set_format(const struct device *dev, struct video
 		return -ENOSYS;
 	}
 
-	return api->set_format(dev, fmt);
+	return api->set_format(dev, fmt, idx);
 }
 
 /**

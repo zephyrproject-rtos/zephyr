@@ -179,7 +179,7 @@ static int mcux_jpegdec_get_fmt(const struct device *dev, struct video_format *f
 	return 0;
 }
 
-static int mcux_jpegdec_set_fmt(const struct device *dev, struct video_format *fmt)
+static int mcux_jpegdec_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	struct mcux_jpegdec_data *data = dev->data;
 
