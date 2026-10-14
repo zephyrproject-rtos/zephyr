@@ -4,6 +4,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&wdt31 {
-	status = "okay";
-};
+#include "nrf7120dk_nrf7120_common.dtsi"
