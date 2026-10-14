@@ -42,6 +42,8 @@ struct native_tty_data {
 	char *cmd_serial_port;
 	/* Low latency was off before init, so it is turned off again on exit. */
 	bool restore_low_latency;
+	/* Serial port found by its USB vendor and product IDs. */
+	char usb_serial_port[70]; /* Linux's tty devices are up to 64 characters + /dev/ + \0 */
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	/* Emulated tx irq is enabled. */
 	bool tx_irq_enabled;
@@ -61,6 +63,9 @@ struct native_tty_data {
 struct native_tty_config {
 	struct uart_config uart_config;
 	bool low_latency;
+	/* Vendor and product ID pairs to look for when no serial port is set. */
+	const uint32_t *usb_ids;
+	int usb_id_pairs;
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -408,6 +413,7 @@ static int native_tty_serial_init(const struct device *dev)
 	struct native_tty_data *data = dev->data;
 	const struct native_tty_config *config = dev->config;
 	struct uart_config uart_config = config->uart_config;
+	int rc;
 
 	/* Default value for cmd_serial_port is NULL, this is due to the set 's' type in
 	 * command line opts. If it is anything else then it was configured via command
@@ -423,6 +429,20 @@ static int native_tty_serial_init(const struct device *dev)
 	 */
 	if (data->cmd_baudrate != UINT32_MAX) {
 		uart_config.baudrate = data->cmd_baudrate;
+	}
+
+	if (!data->serial_port && config->usb_id_pairs > 0) {
+		rc = native_tty_find_usb_bottom("/sys/class/tty", config->usb_ids,
+						config->usb_id_pairs, data->usb_serial_port,
+						sizeof(data->usb_serial_port));
+		if (rc == -NSI_ERRNO_MID_ENODEV) {
+			ERROR("%s: no USB serial adapter with the listed IDs is attached.\n",
+			      dev->name);
+		} else if (rc) {
+			ERROR("%s: could not look up the USB serial adapter, errno %d\n", dev->name,
+			      nsi_errno_from_mid(-rc));
+		}
+		data->serial_port = data->usb_serial_port;
 	}
 
 	/* Serial port needs to be set either in the devicetree or provided via command line
@@ -483,6 +503,11 @@ static DEVICE_API(uart, native_tty_uart_driver_api) = {
 };
 
 #define NATIVE_TTY_INSTANCE(inst)                                                                  \
+	BUILD_ASSERT(DT_INST_PROP_LEN_OR(inst, usb_ids, 0) % 2 == 0,                               \
+		     "usb-ids must hold <vendor-id product-id> pairs");                            \
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, usb_ids),                                           \
+		   (static const uint32_t native_tty_##inst##_usb_ids[] =                          \
+			    DT_INST_PROP(inst, usb_ids);))                                         \
 	static const struct native_tty_config native_tty_##inst##_cfg = {                          \
 		.uart_config =                                                                     \
 			{                                                                          \
@@ -493,6 +518,9 @@ static DEVICE_API(uart, native_tty_uart_driver_api) = {
 				.baudrate = DT_INST_PROP(inst, current_speed),                     \
 			},                                                                         \
 		.low_latency = DT_INST_PROP(inst, low_latency),                                    \
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, usb_ids),                                   \
+			   (.usb_ids = native_tty_##inst##_usb_ids,                                \
+			    .usb_id_pairs = DT_INST_PROP_LEN(inst, usb_ids) / 2,))                 \
 	};                                                                                         \
                                                                                                    \
 	static struct native_tty_data native_tty_##inst##_data = {                                 \

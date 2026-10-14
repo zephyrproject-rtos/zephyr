@@ -847,6 +847,10 @@ Interaction with serial ports can be configured in several different ways:
 * Serial port and baud rate can also be set via command line options ``X_port``
   and ``X_baud`` respectively, where ``X`` is a name of a node. Command line
   options override values from the devicetree.
+* When neither ``serial-port`` nor ``X_port`` names the port, the driver can
+  find a USB serial adapter by vendor and product ID: the ``usb-ids`` property
+  lists ``<vendor-id product-id>`` pairs, tried in order, and the first host tty
+  whose USB device matches is opened. The application exits if none matches.
 * The ``low-latency`` property asks the host tty driver to deliver received
   data at once instead of after a latency timer, which USB serial adapters such
   as FTDI ones otherwise wait for.

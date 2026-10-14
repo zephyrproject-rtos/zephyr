@@ -104,6 +104,28 @@ int native_tty_configure_bottom(int fd, struct native_tty_bottom_cfg *cfg);
 int native_tty_set_low_latency_bottom(int fd, int enable);
 
 /**
+ * @brief Find the tty of a USB serial adapter by vendor and product ID.
+ *
+ * Tries the pairs in order and returns the first tty under @p tty_class whose
+ * USB device matches one; among ttys of the same pair, the lowest name wins,
+ * numbers compared by value, so ttyUSB2 comes before ttyUSB10.
+ *
+ * @param tty_class	Directory listing the ttys, normally "/sys/class/tty".
+ * @param ids		Vendor and product ID pairs.
+ * @param pairs		Number of pairs in @p ids.
+ * @param path		Receives "/dev/" and the tty name.
+ * @param size		Size of @p path.
+ *
+ * @retval 0				if a tty was found,
+ * @retval -NSI_ERRNO_MID_ENODEV	if no tty matches any pair,
+ * @retval -NSI_ERRNO_MID_ENAMETOOLONG	if @p path is too small for the tty path,
+ * @retval <0				the host's errno of failing to read @p tty_class, negated,
+ *					as an NSI_ERRNO_MID_* value.
+ */
+int native_tty_find_usb_bottom(const char *tty_class, const uint32_t *ids, int pairs, char *path,
+			       long size);
+
+/**
  * @brief Read bottom tty configuration
  *
  * @param fd
