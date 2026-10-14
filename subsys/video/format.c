@@ -89,16 +89,39 @@ int video_set_format(const struct device *dev, struct video_format *fmt)
 		}
 	}
 
-	ret = video_driver_set_format(dev, fmt, idx);
-	if (ret < 0) {
-		LOG_ERR("Failed to apply format %s %ux%u to %s: %u",
-			VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height, dev->name,
-			ret);
-		return ret;
+	/* Fallback implementation: set the format of the source device */
+	while (true) {
+		ret = video_driver_set_format(dev, fmt, idx);
+		if (ret == 0) {
+			break;
+		}
+		if (ret != -ENOSYS) {
+			LOG_ERR("Failed to apply format %s %ux%u to %s: %u",
+				VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height, dev->name,
+				ret);
+			return ret;
+		}
+
+		if (vdev->source_dev == NULL) {
+			return -ENOSYS;
+		}
+
+		vdev = vdev->source_dev->data;
 	}
 
-	/* Store the format applied */
-	*vdev_fmt = *fmt;
+	/* Store the format for all the video devices from the chain skipped through above */
+	for (struct video_device *tmp = dev->data;; vdev = vdev->source_dev->data) {
+		if (fmt->type == VIDEO_BUF_TYPE_INPUT) {
+			vdev->in_fmt = *fmt;
+		} else {
+			vdev->out_fmt = *fmt;
+		}
+
+		if (tmp == vdev || tmp->source_dev == NULL) {
+			break;
+		}
+		tmp = tmp->source_dev->data;
+	}
 
 	return 0;
 }
