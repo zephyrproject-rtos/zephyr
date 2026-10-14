@@ -1447,3 +1447,14 @@
 &gpio_prt21 {
 	ngpios = <5>;
 };
+
+/* WLB-154 bonds out 9 of the 12 SCBs. */
+/delete-node/ &scb3;
+/delete-node/ &scb4;
+/delete-node/ &scb6;
+
+/* WLB-154 has no CAN FD or LPComp, and one CTB and one DAC. */
+/delete-node/ &canfd0;
+/delete-node/ &lpcomp0;
+/delete-node/ &ctb1;
+/delete-node/ &dac1;

@@ -6,3 +6,4 @@
  */
 
 #include "../pse8x/pse8x.bga-220_s.dtsi"
+#include "../pse8x/pse8x.socmem-4m_s.dtsi"
