@@ -476,7 +476,7 @@ pkt_unref:
 }
 #endif
 
-static void scan_done_handler(void)
+static void scan_done_handler(const wifi_event_sta_scan_done_t *evt)
 {
 	esp_err_t ret;
 	wifi_ap_record_t ap_record;
@@ -570,7 +570,7 @@ static void scan_done_handler(void)
 	esp_wifi_clear_ap_list();
 
 	/* Report end of scan; the internal-scan case already returned above. */
-	esp32_data.scan_cb(esp32_data.scan_iface, 0, NULL);
+	esp32_data.scan_cb(esp32_data.scan_iface, evt->status != 0 ? -EIO : 0, NULL);
 	esp32_data.scan_cb = NULL;
 }
 
@@ -1301,7 +1301,7 @@ void esp_wifi_event_handler(const char *event_base, int32_t event_id, void *even
 		break;
 #endif
 	case WIFI_EVENT_SCAN_DONE:
-		scan_done_handler();
+		scan_done_handler(event_data);
 		break;
 	case WIFI_EVENT_AP_START:
 		ap_data->state = ESP32_AP_STARTED;
