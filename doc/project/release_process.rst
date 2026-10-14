@@ -281,7 +281,8 @@ Below is the high level criteria to be met for each release:
   architecture/architecture variant/Hardware features)
 - All applicable samples/tests shall build on Tiers 0, 1 and 2
 - All high and critical static analysis and security issues addressed
-- Release Notes are up-to-date.
+- Release notes, migration guide and change inventory are complete, see
+  :ref:`release_documentation`.
 
 Blocker Bugs
 ============
@@ -354,8 +355,8 @@ This table documents milestones associated with each release.
      - Hard Freeze (RC3)
      - Only blocker bug fixes after RC3, documentation improvements and changes
        to release notes are allowed.
-       Release notes need to be complete by this checkpoint. Release Criteria is
-       met.
+       Release notes and migration guide need to be complete by this checkpoint
+       and the change inventory regenerated. Release Criteria is met.
      - Release Manager
    * - T-0W
      - Release
@@ -603,6 +604,16 @@ Release Checklist
 Each release has a GitHub issue associated with it that contains the full
 checklist. After a release is complete, a checklist for the next release is
 created.
+
+Release Documentation
+=====================
+
+The working drafts ``doc/releases/release-notes-draft.rst`` and
+``doc/releases/migration-guide-draft.rst`` are renamed to the release version
+when the stabilization phase starts, and new drafts for the following release
+are created from the templates. The change inventory is regenerated for each
+release candidate and for the release, as described in
+:ref:`change_inventory_guidelines`.
 
 Tagging
 =======
