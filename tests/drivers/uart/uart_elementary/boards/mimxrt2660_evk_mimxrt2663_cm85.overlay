@@ -19,9 +19,9 @@
 };
 
 dut: &lpuart2 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart2_loopback>;
 	pinctrl-names = "default";
 	nxp,loopback;
+	status = "okay";
 };
