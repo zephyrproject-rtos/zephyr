@@ -66,6 +66,11 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 	 : (ARM_PLL_POST_DIV == 4) ? kCLOCK_PllPostDiv4                                            \
 				   : kCLOCK_PllPostDiv8)
 
+/* Every GPT clock root has the same mux values */
+#define GPT_CLOCK_ROOT(node)                                                                       \
+	((clock_root_t)(kCLOCK_Root_Gpt1 + (DT_CLOCKS_CELL(node, name) & IMX_CCM_INSTANCE_MASK)))
+#define GPT_SET_CLOCK_ROOT(node) CLOCK_SetRootClock(GPT_CLOCK_ROOT(node), &rootCfg);
+
 #if DUAL_CORE_MU_ENABLED
 /* Dual core mode is enabled, and messaging unit is present */
 #include <fsl_mu.h>
@@ -620,6 +625,10 @@ __weak void clock_init(void)
 	rootCfg.mux = kCLOCK_GPT1_ClockRoot_MuxOscRc48MDiv2;
 	rootCfg.div = 1;
 	CLOCK_SetRootClock(kCLOCK_Root_Gpt1, &rootCfg);
+
+	/* Count from the 24 MHz crystal oscillator rather than an RC oscillator */
+	rootCfg.mux = kCLOCK_GPT2_ClockRoot_MuxOsc24MOut;
+	DT_FOREACH_STATUS_OKAY(nxp_imx_gpt, GPT_SET_CLOCK_ROOT)
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb1)) && (CONFIG_USB_DC_NXP_EHCI || CONFIG_UDC_NXP_EHCI)
