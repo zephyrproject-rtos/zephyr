@@ -46,6 +46,18 @@ config ETH_INFINEON_CAT1C_CDNS_MACB
 	  T2G) MCUs. The data cache of the Cortex-M7 is maintained for the
 	  packet buffers, the descriptor rings live in the nocache region.
 
+config ETH_MICROCHIP_CDNS_MACB
+	bool "Driver for the Cadence GEM on Microchip PolarFire SoC and PIC64GX"
+	depends on DT_HAS_MICROCHIP_MPFS_GEM_ENABLED
+	select ETH_CDNS_MACB_CORE
+	select CLOCK_CONTROL
+	select CLOCK_CONTROL_FIXED_RATE_CLOCK if DT_HAS_FIXED_CLOCK_ENABLED
+	default y
+	help
+	  This enables the Cadence GEM driver on the Microchip PolarFire SoC
+	  and PIC64GX. The GEM DMA is coherent with the caches of the cores,
+	  so the descriptor rings live in ordinary memory.
+
 config ETH_NIC_MODEL
 	string
 	default "cadence_gem"
