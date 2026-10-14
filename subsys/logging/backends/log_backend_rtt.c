@@ -33,10 +33,6 @@
 #define CONFIG_LOG_BACKEND_RTT_RETRY_CNT 10
 #endif
 
-#if defined(CONFIG_LOG_BACKEND_RTT_OUTPUT_DICTIONARY_HEX)
-static const uint8_t LOG_HEX_SEP[10] = "##ZLOGV1##";
-#endif
-
 #define DROP_MAX 99
 
 #define DROP_MSG "messages dropped:    \r\n"
@@ -319,9 +315,11 @@ static void log_backend_rtt_init(struct log_backend const *const backend)
 		log_backend_rtt_cfg();
 	}
 
-#if defined(CONFIG_LOG_BACKEND_RTT_OUTPUT_DICTIONARY_HEX)
-	logging_func((uint8_t *)LOG_HEX_SEP, sizeof(LOG_HEX_SEP), NULL);
-#endif
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_RTT_OUTPUT_DICTIONARY_HEX)) {
+		static const char hex_sep[LOG_DICT_SEP_LEN] = LOG_DICT_HEX_SEP;
+
+		logging_func((uint8_t *)hex_sep, sizeof(hex_sep), NULL);
+	}
 
 	host_present = true;
 	line_pos = line_buf;

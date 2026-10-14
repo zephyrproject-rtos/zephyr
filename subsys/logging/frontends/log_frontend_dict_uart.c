@@ -365,14 +365,18 @@ static int log_frontend_uart_init(void)
 	__ASSERT(device_is_ready(uart_dev), "UART device not ready");
 
 	if (IS_ENABLED(CONFIG_UART_ASYNC_API)) {
+		atomic_set(&uart_state, UART_STATE_ACTIVE);
 		err = uart_callback_set(uart_dev, uart_callback, NULL);
 		if (err < 0) {
 			return err;
 		}
-	} else if (IS_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN)) {
-		uart_irq_callback_user_data_set(uart_dev, uart_isr_callback, NULL);
+		return uart_tx(uart_dev, init_msg, sizeof(init_msg), SYS_FOREVER_US);
 	}
 
+	uart_irq_callback_user_data_set(uart_dev, uart_isr_callback, NULL);
+	for (int i = 0; i < sizeof(init_msg); i++) {
+		uart_poll_out(uart_dev, init_msg[i]);
+	}
 	atomic_set(&uart_state, UART_STATE_IDLE);
 
 	return 0;
