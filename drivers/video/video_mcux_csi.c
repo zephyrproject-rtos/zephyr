@@ -173,22 +173,6 @@ static int video_mcux_csi_set_fmt(const struct device *dev, struct video_format 
 	return 0;
 }
 
-static int video_mcux_csi_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	const struct video_mcux_csi_config *config = dev->config;
-	int ret;
-
-	ret = video_get_format(config->source_dev, fmt);
-	if (ret < 0) {
-		LOG_ERR("Failed to get %s format", config->source_dev->name);
-		return ret;
-	}
-
-	video_pix_fmt_convert(&fmt->pixelformat, true);
-
-	return 0;
-}
-
 static int video_mcux_csi_set_stream(const struct device *dev, bool enable,
 				     enum video_buf_type type)
 {
@@ -391,7 +375,6 @@ static int video_mcux_csi_enum_frmival(const struct device *dev, struct video_fr
 
 static DEVICE_API(video, video_mcux_csi_driver_api) = {
 	.set_format = video_mcux_csi_set_fmt,
-	.get_format = video_mcux_csi_get_fmt,
 	.set_stream = video_mcux_csi_set_stream,
 	.flush = video_mcux_csi_flush,
 	.enqueue = video_mcux_csi_enqueue,
