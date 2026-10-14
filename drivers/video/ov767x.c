@@ -573,11 +573,6 @@ static int ov767x_set_fmt(const struct device *dev, struct video_format *fmt)
 		return -ENOTSUP;
 	}
 
-	if (!memcmp(&data->vdev.out_fmt, fmt, sizeof(data->vdev.out_fmt))) {
-		/* nothing to do */
-		return 0;
-	}
-
 	/* Set RGB Format */
 	if (fmt->pixelformat == VIDEO_PIX_FMT_RGB565) {
 		ret = video_write_cci_multiregs8(&config->bus, ov767x_rgb565_regs,

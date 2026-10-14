@@ -768,10 +768,6 @@ static int ov5640_set_fmt(const struct device *dev, struct video_format *fmt, si
 		array_size_modes = ARRAY_SIZE(csi2_modes);
 	}
 
-	if (!memcmp(&drv_data->vdev.out_fmt, fmt, sizeof(drv_data->vdev.out_fmt))) {
-		return 0;
-	}
-
 	/* Set resolution */
 	for (i = 0; i < array_size_modes; i++) {
 		if (fmt->width != modes[i].width || fmt->height != modes[i].height) {

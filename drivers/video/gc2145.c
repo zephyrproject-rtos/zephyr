@@ -1141,11 +1141,6 @@ static int gc2145_set_fmt(const struct device *dev, struct video_format *fmt, si
 	const struct gc2145_config *cfg = dev->config;
 	int ret;
 
-	if (memcmp(&drv_data->vdev.out_fmt, fmt, sizeof(drv_data->vdev.out_fmt)) == 0) {
-		/* nothing to do */
-		return 0;
-	}
-
 	/* Set output format */
 	ret = gc2145_set_output_format(dev, fmt->pixelformat);
 	if (ret < 0) {

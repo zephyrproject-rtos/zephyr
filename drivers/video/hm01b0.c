@@ -314,10 +314,6 @@ static int hm01b0_set_fmt(const struct device *dev, struct video_format *fmt, si
 	LOG_DBG("HM01B0 set_fmt: %d x %d, fmt: %s", fmt->width, fmt->height,
 		VIDEO_FOURCC_TO_STR(fmt->pixelformat));
 
-	if (!memcmp(&data->vdev.fmt, fmt, sizeof(data->vdev.fmt))) {
-		return 0;
-	}
-
 	/* Check if camera is capable of handling given format */
 	ret = hm01b0_apply_configuration(dev, (enum hm01b0_resolution)idx);
 	if (ret != 0) {

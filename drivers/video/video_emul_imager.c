@@ -267,10 +267,6 @@ static int emul_imager_set_fmt(const struct device *const dev, struct video_form
 	struct emul_imager_data *data = dev->data;
 	int ret;
 
-	if (memcmp(&data->vdev.out_fmt, fmt, sizeof(data->vdev.out_fmt)) == 0) {
-		return 0;
-	}
-
 	ret = emul_imager_set_mode(dev, &emul_imager_modes[idx][0]);
 	if (ret < 0) {
 		return ret;

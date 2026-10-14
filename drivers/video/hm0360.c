@@ -570,11 +570,6 @@ static int hm0360_set_fmt(const struct device *dev, struct video_format *fmt, si
 	LOG_DBG("HM01B0 set_fmt: %d x %d, fmt: %s", fmt->width, fmt->height,
 		VIDEO_FOURCC_TO_STR(fmt->pixelformat));
 
-	if (!memcmp(&data->vdev.out_fmt, fmt, sizeof(data->vdev.out_fmt))) {
-		/* nothing to do */
-		return 0;
-	}
-
 	switch (fmts[idx].width_min) {
 	case 160: /* QQVGA */
 		ret = video_write_cci_multiregs(&config->bus, hm0360_qqvga_regs,

@@ -403,11 +403,6 @@ static int mt9m114_set_fmt(const struct device *dev, struct video_format *fmt)
 	struct mt9m114_data *drv_data = dev->data;
 	int ret;
 
-	if (!memcmp(&drv_data->vdev.out_fmt, fmt, sizeof(drv_data->vdev.out_fmt))) {
-		/* nothing to do */
-		return 0;
-	}
-
 	/* Set output pixel format */
 	ret = mt9m114_set_output_format(dev, fmt->pixelformat);
 	if (ret) {

@@ -426,11 +426,6 @@ static int ov7725_set_fmt(const struct device *dev, struct video_format *fmt, si
 	uint16_t hstart, vstart, hsize;
 	int ret;
 
-	if (!memcmp(&drv_data->vdev.out_fmt, fmt, sizeof(drv_data->vdev.out_fmt))) {
-		/* nothing to do */
-		return 0;
-	}
-
 	/* Configure Sensor */
 	ret = ov7725_write_all(dev, ov7725_init_reg_tb,
 				ARRAY_SIZE(ov7725_init_reg_tb));

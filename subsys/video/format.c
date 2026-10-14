@@ -50,6 +50,12 @@ int video_set_format(const struct device *dev, struct video_format *fmt)
 		return -EINVAL;
 	}
 
+	if (memcmp(vdev_fmt, fmt, sizeof(*vdev_fmt)) == 0) {
+		LOG_DBG("Format %s %ux%u already applied to %s",
+			VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height, dev->name);
+		return 0;
+	}
+
 	vdev = dev->data;
 
 	ret = video_get_caps(dev, &caps);
