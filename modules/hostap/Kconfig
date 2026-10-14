@@ -563,6 +563,16 @@ config WIFI_NM_WPA_SUPPLICANT_NAN
 	bool "NAN (Neighbor Awareness Networking) support"
 	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
 
+config WIFI_NM_WPA_SUPPLICANT_NAN_MGMT_IFACE
+	bool "Dedicated NAN management interface"
+	depends on WIFI_NM_WPA_SUPPLICANT_NAN
+	help
+	  Add a driver-provided, dedicated net_if for NAN management to
+	  wpa_supplicant with nan_mgmt=true (hostap's wpa_interface::nan_mgmt),
+	  instead of running the NAN Discovery Engine on the station
+	  interface. Requires a driver that exposes a separate net_if for NAN
+	  and registers it as WIFI_TYPE_NAN. If unsure, say N.
+
 config WIFI_NAN_MAX_SSI_LEN
 	int "Maximum length of NAN service specific info"
 	depends on WIFI_NM_WPA_SUPPLICANT_NAN
