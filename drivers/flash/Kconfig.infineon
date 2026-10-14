@@ -57,7 +57,7 @@ config INFINEON_CAT1_QSPI_FLASH
 config FLASH_INFINEON_SMIF_HW_INIT
 	bool "Initialize SMIF hardware in the flash driver"
 	depends on INFINEON_CAT1_QSPI_FLASH
-	depends on SOC_SERIES_PSE84
+	depends on SOC_SERIES_PSE8X
 	help
 	  Enable full SMIF hardware initialization (pins, clocks, peripheral
 	  groups, and SMIF peripheral) in the flash driver init function.

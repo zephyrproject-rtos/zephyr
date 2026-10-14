@@ -280,8 +280,8 @@ provisioned for secure boot, so the extended boot only checks the image format a
 cryptographic signature verification is performed against a provisioned key.
 
 The MCUboot image format is produced automatically by the
-:file:`soc/infineon/edge/pse84/pse84_metadata.cmake` helper
-``pse84_add_extboot_metadata()``, which invokes ``imgtool sign`` with the header address,
+:file:`soc/infineon/edge/pse8x/pse8x_metadata.cmake` helper
+``pse8x_add_extboot_metadata()``, which invokes ``imgtool sign`` with the header address,
 header size and slot size derived from the devicetree memory map. By default this helper does not
 pass a signing key, which is sufficient for a non-provisioned device.
 
@@ -297,8 +297,8 @@ Follow sections **2.2.1**, **2.2.2** and **2.2.3** of the
 #. Program the desired security counter / anti-rollback value.
 
 After the device has been reprovisioned, the
-``pse84_add_extboot_metadata()`` function in
-:file:`soc/infineon/edge/pse84/pse84_metadata.cmake` must be updated so that ``imgtool sign``
+``pse8x_add_extboot_metadata()`` function in
+:file:`soc/infineon/edge/pse8x/pse8x_metadata.cmake` must be updated so that ``imgtool sign``
 also receives the signing key and a security counter. The relevant additions are:
 
 .. code-block:: none

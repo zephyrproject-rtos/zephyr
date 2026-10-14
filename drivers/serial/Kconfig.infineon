@@ -1,8 +1,9 @@
-# Infineon CAT1 UART configuration options
-
-# Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company) or
-# an affiliate of Cypress Semiconductor Corporation
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
 # SPDX-License-Identifier: Apache-2.0
+
+# Infineon CAT1 UART configuration options
 
 config UART_INFINEON_CAT1_HAL
 	bool "Infineon CAT1 UART driver"
@@ -35,7 +36,7 @@ config UART_INFINEON_CAT1_PDL
 
 config UART_INFINEON_PDL_MP_FIELD_QUIRK
 	bool
-	default y if SOC_DIE_PSC3M6 || SOC_SERIES_PSE84
+	default y if SOC_DIE_PSC3M6 || SOC_SERIES_PSE8X
 	help
 	  Enabled for SoCs whose PDL fixed the SCB UART config field name
 	  "enableMultiProcessorMode". Older PDL revisions misspell it as

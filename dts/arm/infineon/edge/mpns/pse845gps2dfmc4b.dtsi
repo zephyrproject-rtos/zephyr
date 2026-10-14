@@ -5,4 +5,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "../pse84/pse84.ewlb-235.dtsi"
+#include "../pse8x/pse8x.ewlb-235.dtsi"

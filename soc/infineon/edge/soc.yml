@@ -6,7 +6,7 @@
 family:
 - name: edge
   series:
-  - name: pse84
+  - name: pse8x
     socs:
     - name: pse846gps4dbzc4b
       cpuclusters:
