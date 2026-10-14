@@ -62,6 +62,8 @@ void bflb_wifi_ipc_mac_init_done(struct bflb_wifi_dev *d);
 /* tx (per-SoC implementation) */
 int bflb_wifi_tx_eth(const uint8_t *frame, uint16_t len, uint8_t vif_idx, uint8_t sta_idx);
 
+/* Rate word of the first entry of a station's TX retry chain. */
+int bflb_wifi_sta_rate_info(uint8_t sta_idx, uint32_t *info);
 /* Rate the firmware currently transmits to a station at, in kb/s, or 0
  * when it is not known.
  */
