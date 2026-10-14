@@ -651,9 +651,13 @@ ZTEST(llext, test_detached)
 	struct llext_buf_loader buf_loader =
 		LLEXT_BUF_LOADER(test_detached_ext, sizeof(test_detached_ext));
 	struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
+	enum llext_mem sect_region = LLEXT_MEM_COUNT;
+	size_t sect_offset = 0;
+	int sect_shndx;
 	int res;
 
 	ldr_parm.section_detached = test_section_detached;
+	ldr_parm.keep_section_info = true;
 	detached_loader = &buf_loader.loader;
 
 	res = llext_load(detached_loader, "test_detached", &detached_llext, &ldr_parm);
@@ -684,6 +688,15 @@ ZTEST(llext, test_detached)
 				  "detached_entry is not in the ELF buffer");
 	test_entry_fn();
 
+	sect_shndx = llext_section_shndx(detached_loader, detached_llext, ".detach");
+	zassert_true(sect_shndx > 0, "section .detach should be found");
+	res = llext_get_section_info(detached_loader, detached_llext, sect_shndx,
+				     NULL, &sect_region, &sect_offset);
+	zassert_ok(res, "get_section_info() should succeed");
+	zassert_equal(sect_region, LLEXT_MEM_TEXT, "detached section should report .text");
+	zassert_equal(sect_offset, (size_t)-1, "detached section should have no region offset");
+
+	llext_free_inspection_data(detached_loader, detached_llext);
 	llext_unload(&detached_llext);
 }
 #endif /* !CONFIG_ARCH_HAS_WORD_GRANULAR_ACCESS_INSTR_MEM */
