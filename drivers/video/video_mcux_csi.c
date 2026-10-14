@@ -269,7 +269,6 @@ static int video_mcux_csi_dequeue(const struct device *dev, struct video_buffer 
 
 static int video_mcux_csi_get_caps(const struct device *dev, struct video_caps *caps)
 {
-	const struct video_mcux_csi_config *config = dev->config;
 	struct video_mcux_csi_data *data = dev->data;
 	int err = -ENODEV;
 
@@ -355,7 +354,6 @@ static int video_mcux_csi_set_signal(const struct device *dev, struct k_poll_sig
 
 static int video_mcux_csi_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
-	const struct video_mcux_csi_config *config = dev->config;
 	const struct video_format *fie_fmt = fie->format;
 	struct video_mcux_csi_data *data = dev->data;
 	int ret;
@@ -401,8 +399,6 @@ static struct video_mcux_csi_data video_mcux_csi_data_0 = {
 
 static int video_mcux_csi_init_0(const struct device *dev)
 {
-	struct video_mcux_csi_data *data = dev->data;
-
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), video_mcux_csi_isr, NULL, 0);
 
 	irq_enable(DT_INST_IRQN(0));

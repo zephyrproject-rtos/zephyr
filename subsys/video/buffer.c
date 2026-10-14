@@ -79,6 +79,7 @@ struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align, k_tim
 	vbuf->memory = VIDEO_MEMORY_INTERNAL;
 	vbuf->size = size;
 	vbuf->bytesused = 0;
+	vbuf->line_offset = 0;
 
 	return vbuf;
 }
@@ -147,12 +148,34 @@ struct video_buffer *video_import_buffer(uint8_t *mem, size_t sz)
 
 int video_enqueue(const struct device *dev, struct video_buffer *buf)
 {
+	struct video_device *vdev;
+
 	if (dev == NULL || buf == NULL || buf->index >= CONFIG_VIDEO_BUFFER_POOL_NUM_MAX ||
 	    (buf->type != VIDEO_BUF_TYPE_INPUT && buf->type != VIDEO_BUF_TYPE_OUTPUT)) {
 		return -EINVAL;
 	}
 
+	vdev = dev->data;
+
 	video_buf[buf->index].type = buf->type;
+
+	buf->bytesused = 0;
+
+	if (buf->type == VIDEO_BUF_TYPE_OUTPUT && vdev->out_fmt.size > 0) {
+		if (buf->size < vdev->out_fmt.size) {
+			LOG_ERR("Buffer size %u too small for output format size %u",
+				buf->size, vdev->out_fmt.size);
+			return -ENOBUFS;
+		}
+	}
+
+	if (buf->type == VIDEO_BUF_TYPE_INPUT && vdev->in_fmt.size > 0) {
+		if (buf->size < vdev->in_fmt.size) {
+			LOG_ERR("Buffer size %u too small for input format size %u",
+				buf->size, vdev->in_fmt.size);
+			return -ENOBUFS;
+		}
+	}
 
 	return video_driver_enqueue(dev, &video_buf[buf->index]);
 }
