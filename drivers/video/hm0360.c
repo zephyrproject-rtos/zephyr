@@ -564,7 +564,6 @@ static int hm0360_get_caps(const struct device *dev, struct video_caps *caps)
 static int hm0360_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	const struct hm0360_config *config = dev->config;
-	struct hm0360_data *data = dev->data;
 	int ret;
 
 	/* Note: hm0360 only supports grayscale */
