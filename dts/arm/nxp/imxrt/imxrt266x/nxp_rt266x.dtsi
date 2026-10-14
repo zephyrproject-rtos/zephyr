@@ -1769,8 +1769,12 @@
 		compatible = "nxp,imx-usdhc";
 		reg = <0x4a080000 0x10000>;
 		interrupts = <307 0>;
+		clock-names = "gate", "source";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_COMM_USDHC0,
-					   IMX_CCM_ROOT_COMM_USDHC0_FCLK)>;
+					   IMX_CCM_ROOT_COMM_USDHC0_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_COMM_USDHC0_FCLK,
+						IMX_CCM_MUX_USDHC0_COMM_PERI1_DIV2,
+						2, 1)>;
 		max-current-330 = <1020>;
 		max-current-180 = <1020>;
 		max-bus-freq = <DT_FREQ_M(208)>;
@@ -1782,8 +1786,12 @@
 		compatible = "nxp,imx-usdhc";
 		reg = <0x4a090000 0x10000>;
 		interrupts = <308 0>;
+		clock-names = "gate", "source";
 		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_COMM_USDHC1,
-					   IMX_CCM_ROOT_COMM_USDHC1_FCLK)>;
+					   IMX_CCM_ROOT_COMM_USDHC1_FCLK)>,
+			 <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_COMM_USDHC1_FCLK,
+						IMX_CCM_MUX_USDHC1_COMM_PERI2_DIV2,
+						2, 1)>;
 		max-current-330 = <1020>;
 		max-current-180 = <1020>;
 		max-bus-freq = <DT_FREQ_M(208)>;
