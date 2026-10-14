@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 AMD
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig DMA_AMD_ACP_DMIC
+	bool "AMD ACP DMIC DMA driver"
+	default y
+	depends on DT_HAS_AMD_ACP_DMIC_DMA_ENABLED
+	help
+	  Enable the AMD ACP DMIC (PDM) DMA driver.
+	  Covers DMIC0 (PDM) and DMIC1 (PDM1) capture instances.
+
+if DMA_AMD_ACP_DMIC
+
+config DMA_ACP_CHANNEL_COUNT
+	int "DMIC DMA channel count"
+	default 8
+	help
+	  Maximum number of ACP DMIC DMA channels.
+
+config ACP_DMA_BUFFER_ALIGN
+	int "DMIC DMA buffer size alignment"
+	default DCACHE_LINE_SIZE
+	help
+	  Required size alignment for ACP DMIC DMA buffers. This must cover
+	  a complete data-cache line so invalidation cannot discard data
+	  belonging to an adjacent allocation.
+
+config ACP_DMA_BUFFER_ADDRESS_ALIGN
+	int "DMIC DMA buffer address alignment"
+	default DCACHE_LINE_SIZE
+	help
+	  Required address alignment for ACP DMIC DMA buffers. Aligning both
+	  the address and size to the architecture data-cache line keeps
+	  cache invalidation within the DMIC DMA allocation.
+
+endif # DMA_AMD_ACP_DMIC
