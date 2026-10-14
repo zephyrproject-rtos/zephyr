@@ -30,6 +30,7 @@
 #define ACP_SYSHUB_DMA_URGENCY_TIMER             0x1240838
 #define ACP_OCD_HALT_ON_RST                      0x124100C
 #define ACP_CLKMUX_SEL                           0x124102C
+#define ACP_AUDIO_CLK_SEL                        0x1241038
 #define ACP_I2S_196MHZ_CLK_SEL                   0x124103C
 #define ACP_PDM_CORE_CLK_SEL                     0x124103C
 #define ACP_SW_INTR_TRIG                         0x1241890
@@ -107,16 +108,16 @@
 #define ACP_TDM1_OFFSET                          0X0000300
 #define ACP_TDM2_OFFSET                          0X0000500
 /* Registers from ACP_WOV block */
-#define ACP_WOV_PDM_ENABLE                       0x1242C04
-#define ACP_WOV_PDM_DMA_ENABLE                   0x1242C08
-#define ACP_WOV_RX_RINGBUFADDR                   0x1242C0C
-#define ACP_WOV_RX_RINGBUFSIZE                   0x1242C10
-#define ACP_WOV_RX_INTR_WATERMARK_SIZE           0x1242C20
-#define ACP_WOV_PDM_FIFO_FLUSH                   0x1242C24
-#define ACP_WOV_PDM_NO_OF_CHANNELS               0x1242C28
-#define ACP_WOV_PDM_DECIMATION_FACTOR            0x1242C2C
-#define ACP_WOV_MISC_CTRL                        0x1242C5C
-#define ACP_WOV_CLK_CTRL                         0x1242C60
+#define ACP_PDM_ENABLE                           0x1242C04
+#define ACP_PDM_DMA_ENABLE                       0x1242C08
+#define ACP_PDM_RX_RINGBUFADDR                   0x1242C0C
+#define ACP_PDM_RX_RINGBUFSIZE                   0x1242C10
+#define ACP_PDM_RX_INTR_WATERMARK_SIZE           0x1242C20
+#define ACP_PDM_FIFO_FLUSH                       0x1242C24
+#define ACP_PDM_NO_OF_CHANNELS                   0x1242C28
+#define ACP_PDM_DECIMATION_FACTOR                0x1242C2C
+#define ACP_PDM_MISC_CTRL                        0x1242C5C
+#define ACP_PDM_CLK_CTRL                         0x1242C60
 #define ACP_PDM_CLKDIV                           0x1242C6C
 #define ACP_PDM_RX_LINKPOSITIONCNTR              0x1242C14
 #define ACP_PDM_RX_LINEARPOSITIONCNTR_HIGH       0x1242C18

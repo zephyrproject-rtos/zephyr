@@ -888,7 +888,7 @@ static int acp_sdw_dma_start(const struct device *dev, uint32_t channel)
 	acp_sdw_check_active_channels(&acp_sdw0_audio_tx_en, &acp_sdw0_audio_rx_en,
 				      rx_offset);
 
-	acp_pdm_en = (uint32_t)io_reg_read(PU_REGISTER_BASE + ACP_WOV_PDM_ENABLE);
+	acp_pdm_en = (uint32_t)io_reg_read(PU_REGISTER_BASE + ACP_PDM_ENABLE);
 
 	if (!acp_sdw0_audio_tx_en && !acp_sdw0_audio_rx_en && !acp_pdm_en) {
 		acp_change_clock_notify(clock_freq);
@@ -1060,7 +1060,7 @@ static int acp_sdw_dma_stop(const struct device *dev, uint32_t channel)
 	acp_sdw_check_active_channels(&acp_sdw0_audio_tx_en, &acp_sdw0_audio_rx_en,
 				      rx_offset);
 
-	acp_pdm_en = io_reg_read(PU_REGISTER_BASE + ACP_WOV_PDM_ENABLE);
+	acp_pdm_en = io_reg_read(PU_REGISTER_BASE + ACP_PDM_ENABLE);
 
 	/* Request SMU to scale down aclk to minimum clk when no audio activity */
 	if (!acp_sdw0_audio_tx_en && !acp_sdw0_audio_rx_en && !acp_pdm_en) {
