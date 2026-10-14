@@ -62,7 +62,7 @@ static const uint32_t tdm_offsets[ACP_TDM_INSTANCES] = {
  *
  * @return true if all TDM streams are stopped, false if any stream is active
  */
-static bool acp_tdm_all_streams_stopped(void)
+bool acp_tdm_all_streams_stopped(void)
 {
 	acp_tdm_iter_t tdm_iter = { .u32all = 0 };
 	acp_tdm_irer_t tdm_irer = { .u32all = 0 };
@@ -80,7 +80,7 @@ static bool acp_tdm_all_streams_stopped(void)
 	return true;
 }
 
-static bool acp_pdm_streams_stopped(void)
+bool acp_pdm_streams_stopped(void)
 {
 	uint32_t acp_pdm_en = (uint32_t)io_reg_read(PU_REGISTER_BASE + ACP_PDM_ENABLE);
 
@@ -312,15 +312,14 @@ static int acp_tdm_dma_start(const struct device *dev, uint32_t channel)
 	}
 	LOG_DBG("start: tdm_offset=0x%x", tdm_offset);
 
+/* ACP 7.X firmware sets up the audio clocks once at boot in platform_init. */
 #if defined(CONFIG_SOC_ACP_7_0)
 	if (acp_tdm_all_streams_stopped() && acp_sdw_all_streams_stopped() &&
 	    acp_pdm_streams_stopped()) {
 		io_reg_write(PU_REGISTER_BASE + ACP_CLKMUX_SEL, ACP_ACLK_CLK_SEL);
-#else
-	if (acp_tdm_all_streams_stopped() && acp_pdm_streams_stopped()) {
-#endif
 		acp_change_clock_notify(600000000);
 	}
+#endif
 	if (chan->direction == MEMORY_TO_PERIPHERAL) {
 		LOG_DBG("start: TX (MEM->PERIPH)");
 		chan->state = ACP_DMA_ACTIVE;
@@ -462,15 +461,14 @@ static int acp_tdm_dma_stop(const struct device *dev, uint32_t channel)
 		LOG_DBG("stop: TX/RX disabled, disabling IRQ");
 		io_reg_write((PU_REGISTER_BASE + ACP_TDM_IER + tdm_offset), TDM_IER_DISABLE);
 	}
+	/* ACP 7.X keeps the boot clock setup across the last stop as well. */
 #if defined(CONFIG_SOC_ACP_7_0)
 	if (acp_tdm_all_streams_stopped() && acp_sdw_all_streams_stopped() &&
 	    acp_pdm_streams_stopped()) {
 		io_reg_write(PU_REGISTER_BASE + ACP_CLKMUX_SEL, ACP_INTERNAL_CLK_SEL);
-#else
-	if (acp_tdm_all_streams_stopped() && acp_pdm_streams_stopped()) {
-#endif
 		acp_change_clock_notify(0);
 	}
+#endif
 	dir = chan->direction - 1;
 	for (int inst = 0; inst < ACP_TDM_INSTANCES; inst++) {
 		if (acp_tdm_ctx[inst][dir].dma_channel == channel &&
