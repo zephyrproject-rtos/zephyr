@@ -232,17 +232,30 @@ static void bt_sdp_disconnected(struct bt_l2cap_chan *chan)
 	LOG_DBG("chan %p cid 0x%04x", ch, ch->tx.cid);
 }
 
-/* @brief Creates an SDP PDU
+/* @brief Allocates a net buffer for SDP service
  *
- *  Creates an empty SDP PDU and returns the buffer
+ *  Allocates a net buffer without waiting for SDP service and returns the buffer
  *
  *  @param None
  *
  *  @return Pointer to the net_buf buffer
  */
-static struct net_buf *bt_sdp_create_pdu(void)
+static struct net_buf *sdp_svc_create_pdu(void)
 {
-	return bt_l2cap_create_pdu(&sdp_pool, sizeof(struct bt_sdp_hdr));
+	return bt_l2cap_create_pdu_timeout(&sdp_pool, sizeof(struct bt_sdp_hdr), K_NO_WAIT);
+}
+
+/* @brief Allocates a net buffer for SDP Client
+ *
+ *  Allocates a net buffer without waiting for SDP Client and returns the buffer
+ *
+ *  @param None
+ *
+ *  @return Pointer to the net_buf buffer
+ */
+static struct net_buf *sdp_client_create_pdu(void)
+{
+	return bt_l2cap_create_pdu_timeout(&sdp_pool, sizeof(struct bt_sdp_hdr), K_NO_WAIT);
 }
 
 /* @brief Sends out an SDP PDU
@@ -293,7 +306,11 @@ static void send_err_rsp(struct bt_l2cap_chan *chan, uint16_t err,
 
 	LOG_DBG("tid %u, error %u", tid, err);
 
-	buf = bt_sdp_create_pdu();
+	buf = sdp_svc_create_pdu();
+	if (buf == NULL) {
+		LOG_WRN("No net buffers available");
+		return;
+	}
 
 	net_buf_add_be16(buf, err);
 
@@ -684,7 +701,12 @@ static uint16_t sdp_svc_search_req(struct bt_sdp *sdp, struct net_buf *buf, uint
 
 	LOG_DBG("max_rec_count %u, cont_recs %u", max_rec_count, cont_recs);
 
-	resp_buf = bt_sdp_create_pdu();
+	resp_buf = sdp_svc_create_pdu();
+	if (resp_buf == NULL) {
+		LOG_WRN("No net buffers available");
+		/* Drop the request instead of waiting for a buffer */
+		return 0;
+	}
 	rsp = net_buf_add(resp_buf, sizeof(*rsp));
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sdp_db, record, next, node) {
@@ -1350,7 +1372,12 @@ static uint16_t sdp_svc_att_req(struct bt_sdp *sdp, struct net_buf *buf, uint16_
 		state.current_svc = record->index;
 	}
 
-	rsp_buf = bt_sdp_create_pdu();
+	rsp_buf = sdp_svc_create_pdu();
+	if (rsp_buf == NULL) {
+		LOG_WRN("No net buffers available");
+		/* Drop the request instead of waiting for a buffer */
+		return 0;
+	}
 	rsp = net_buf_add(rsp_buf, sizeof(*rsp));
 
 	/* cont_state_size should include 1 byte header */
@@ -1479,7 +1506,12 @@ static uint16_t sdp_svc_search_att_req(struct bt_sdp *sdp, struct net_buf *buf, 
 	LOG_DBG("max_att_len 0x%04x, cont_state %u %u %u", max_att_len, next_svc,
 		state.last_att, state.last_att_index);
 
-	rsp_buf = bt_sdp_create_pdu();
+	rsp_buf = sdp_svc_create_pdu();
+	if (rsp_buf == NULL) {
+		LOG_WRN("No net buffers available");
+		/* Drop the request instead of waiting for a buffer */
+		return 0;
+	}
 
 	rsp = net_buf_add(rsp_buf, sizeof(*rsp));
 
@@ -2027,7 +2059,11 @@ static int sdp_client_ss_search(struct bt_sdp_client *session,
 	/* Update context param directly. */
 	session->param = param;
 
-	buf = bt_sdp_create_pdu();
+	buf = sdp_client_create_pdu();
+	if (buf == NULL) {
+		LOG_WRN("No net buffers available");
+		return -ENOBUFS;
+	}
 
 	/* BT_SDP_SEQ8 means length of sequence is on additional next byte */
 	net_buf_add_u8(buf, BT_SDP_SEQ8);
@@ -2176,7 +2212,11 @@ static int sdp_client_sa_search(struct bt_sdp_client *session,
 		return -ENOMEM;
 	}
 
-	buf = bt_sdp_create_pdu();
+	buf = sdp_client_create_pdu();
+	if (buf == NULL) {
+		LOG_WRN("No net buffers available");
+		return -ENOBUFS;
+	}
 
 	/* Add service record handle  */
 	net_buf_add_be32(buf, param->handle);
@@ -2249,7 +2289,11 @@ static int sdp_client_ssa_search(struct bt_sdp_client *session,
 		}
 	}
 
-	buf = bt_sdp_create_pdu();
+	buf = sdp_client_create_pdu();
+	if (buf == NULL) {
+		LOG_WRN("No net buffers available");
+		return -ENOBUFS;
+	}
 
 	/* BT_SDP_SEQ8 means length of sequence is on additional next byte */
 	net_buf_add_u8(buf, BT_SDP_SEQ8);
