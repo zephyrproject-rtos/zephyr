@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Cadence GEM in the Infineon PSOC Edge E84 (PSE84) MCUs.
+
+  The GEM sits behind a wrapper whose control register, the second register
+  range, selects the PHY interface (MII or RMII) and enables the MAC. The
+  driver provides the clocks of the MAC itself.
+
+  The clocks are:
+
+  - "pclk": the clk_hf root clock of the PERI group of the MAC, the bus
+    clock is derived from it by the divider of the group.
+  - "ref_clk": optional, the peripheral clock divider of REF_CLK_INT, which
+    must be a PERI0 group 3 divider ([00 03]), the internal source of the
+    RMII reference clock. Without it, the reference clock comes from the
+    REF_CLK pin. Not used for MII.
+  - "tsu_clk": optional, the peripheral clock divider of CLK_TSU, which must
+    be a PERI0 group 4 divider ([00 04]), the clock of the 1588 time stamp
+    unit. An enabled tsu_clk divider is required when PTP is enabled.
+
+  A clock divider is only used when its node is enabled.
+
+  Example:
+
+    ethernet0: ethernet@42c11000 {
+      compatible = "infineon,pse84-gem", "cdns,gem";
+      reg = <0x42c11000 0x800>, <0x42c10000 0x4>;
+      reg-names = "mac", "ctl";
+      interrupts = <171 4>;
+      clocks = <&clk_hf0>, <&peri0_group4_8bit_0>;
+      clock-names = "pclk", "tsu_clk";
+      phy-handle = <&eth_phy>;
+      phy-connection-type = "mii";
+    };
+
+compatible: "infineon,pse84-gem"
+
+include: "cdns,gem.yaml"
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  reg-names:
+    required: true
+    description: |
+      Names of the register ranges: "mac" for the GEM itself and "ctl" for
+      the control register of the wrapper.
