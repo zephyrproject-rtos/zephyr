@@ -20,6 +20,7 @@ LOG_MODULE_DECLARE(bflb_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include <wl_api.h>
 #include "timeout.h"
 #include "macsw_config.h"
+#include "macsw_config_shim.h"
 #include "macsw_plat.h"
 #include "mac_types.h"
 #include "mac_frame.h"
