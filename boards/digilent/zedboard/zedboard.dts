@@ -109,7 +109,7 @@
 
 &gem0 {
 	phy-handle = <&gem0_phy>;
-	clock-frequency = <1000000000>;
+	phy-connection-type = "rgmii";
 	local-mac-address = [00 00 00 01 02 03];
 	status = "okay";
 };
