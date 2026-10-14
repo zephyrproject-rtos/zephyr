@@ -1,28 +1,19 @@
 :orphan:
 
 ..
-  What goes here: removed/deprecated apis, new boards, new drivers, notable
-  features. If you feel like something new can be useful to a user, put it
-  under "Other Enhancements" in the first paragraph, if you feel like something
-  is worth mentioning in the project media (release blog post, release
-  livestream) put it under "Major enhancement".
+  What goes here: new capabilities, major improvements and changes that
+  materially affect users, with what changed and why it matters. See
+  https://docs.zephyrproject.org/latest/releases/index.html#release-documentation
+..
+  Not here: lists of new, deprecated or removed APIs, Kconfig options,
+  bindings, boards, drivers or samples. They are generated into the change
+  inventory at release time. Not here either: bug fixes and minor changes,
+  they are in the git log; and anything that requires the user to change their
+  application, that goes in the migration guide.
 ..
   If you are describing a feature or functionality, consider adding it to the
   actual project documentation rather than the release notes, so that the
-  information does not get lost in time.
-..
-  No list of bugfixes, minor changes, those are already in the git log, this is
-  not a changelog.
-..
-  Does the entry have a link that contains the details? Just add the link, if
-  you think it needs more details, put them in the content that shows up on the
-  link.
-..
-  Are you thinking about generating this? Don't put anything at all.
-..
-  Does the thing require the user to change their application? Put it on the
-  migration guide instead. (TODO: move the removed APIs section in the
-  migration guide)
+  information does not get lost in time, and link to it from here.
 
 .. _zephyr_4.6:
 
@@ -36,67 +27,16 @@ Major enhancements with this release include:
 An overview of the changes required or recommended when migrating your application from Zephyr
 v4.5.0 to Zephyr v4.6.0 can be found in the separate :ref:`migration guide<migration_4.6>`.
 
-The following sections provide detailed lists of changes by component.
+The following sections describe the notable changes by component.
 
 Security Vulnerability Related
 ******************************
 
-API Changes
-***********
-
 ..
-  Only removed, deprecated and new APIs. Changes go in migration guide.
-
-Removed APIs and options
-========================
-
-Deprecated APIs and options
-===========================
-
-New APIs and options
-====================
-..
-  Link to new APIs here, in a group if you think it's necessary, no need to get
-  fancy just list the link, that should contain the documentation. If you feel
-  like you need to add more details, add them in the API documentation code
-  instead.
-
-.. zephyr-keep-sorted-start re(^\* \w) ignorecase
-
-.. zephyr-keep-sorted-stop
-
-.. _boards_added_in_zephyr_4_6:
-
-New Boards
-**********
-
-..
-  You may update this list as you contribute a new board during the release cycle, in order to make
-  it visible to people who might be looking at the working draft of the release notes. However, note
-  that this list will be recomputed at the time of the release, so you don't *have* to update it.
-  In any case, just link the board, further details go in the board description.
-
-.. _shields_added_in_zephyr_4_6:
-
-New Shields
-***********
-
-..
-  Same as above, this will also be recomputed at the time of the release.
-
-New Drivers
-***********
-
-..
-  Same as above, this will also be recomputed at the time of the release.
-  Just link the driver, further details go in the binding description
-
-New Samples
-***********
-
-..
-  Same as above, this will also be recomputed at the time of the release.
-  Just link the sample, further details go in the sample documentation itself.
+  API changes with a user impact: describe the capability here and the
+  required adaptation in the migration guide. The lists of new, deprecated and
+  removed APIs and options, boards, shields, drivers and samples are generated
+  into the change inventory at release time.
 
 Libraries / Subsystems
 **********************
@@ -106,4 +46,4 @@ Other notable changes
 
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
-  a paragraph or is it enough to link to the api/driver/Kconfig/board page above?
+  a paragraph or is it enough to link to the documentation of the change?
