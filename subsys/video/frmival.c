@@ -14,7 +14,8 @@ int video_set_frmival(const struct device *dev, struct video_frmival *frmival)
 	struct video_device *vdev = dev->data;
 	int ret;
 
-	if (dev == NULL || frmival == NULL) {
+	if (dev == NULL || frmival == NULL ||
+	    frmival->numerator == 0 || frmival->denominator == 0) {
 		return -EINVAL;
 	}
 
@@ -51,7 +52,14 @@ int video_get_frmival(const struct device *dev, struct video_frmival *frmival)
 
 	while (true) {
 		ret = video_driver_get_frmival(vdev->dev, frmival);
-		if (ret == 0 || ret != -ENOSYS) {
+		if (ret == 0) {
+			if (frmival->numerator == 0 || frmival->denominator == 0) {
+				LOG_ERR("Invalid frame interval returned by %s", dev->name);
+				return -ERANGE;
+			}
+			return 0;
+		}
+		if (ret != -ENOSYS) {
 			return ret;
 		}
 
@@ -79,17 +87,43 @@ int video_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 
 	while (true) {
 		ret = video_driver_enum_frmival(vdev->dev, fie);
-		if (ret == 0 || ret != -ENOSYS) {
+		if (ret == 0) {
+			break;
+		}
+		if (ret != -ENOSYS) {
 			return ret;
 		}
 
 		if (vdev->source_dev == NULL) {
-			break;
+			return -ENOSYS;
 		}
 		vdev = vdev->source_dev->data;
 	}
 
-	return -ENOSYS;
+	switch (fie->type) {
+	case VIDEO_FRMIVAL_TYPE_STEPWISE:
+		if (fie.min.denominator == 0 || fie.min.numerator == 0 ||
+		    fie.max.denominator == 0 || fie.max.numerator == 0 ||
+		    fie.step.denominator == 0 || fie.step.numerator == 0) {
+			LOG_ERR("Invalid stepwise frame interval returned by %s at index %u",
+				dev->name, fie->index);
+			return -ERANGE;
+		}
+		break;
+	case VIDEO_FRMIVAL_TYPE_DISCRETE:
+		if (fie.denominator == 0 || fie.numerator == 0) {
+			LOG_ERR("Invalid discrete frame interval returned by %s",
+				dev->name, fie->index);
+			return -ERANGE;
+		}
+		break;
+	default:
+		LOG_ERR("Invalid frame interval type %u returned by %s at index %u",
+			fie->type, dev->name, fie->index);
+		return -INVAL;
+	}
+
+	return 0;
 }
 
 int video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwise,
