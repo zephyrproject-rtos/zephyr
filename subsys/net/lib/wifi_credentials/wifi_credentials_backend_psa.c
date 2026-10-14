@@ -28,6 +28,19 @@ int wifi_credentials_backend_init(void)
 		ret = psa_export_key(key_id, buf, ARRAY_SIZE(buf), &length_read);
 		if (ret == PSA_SUCCESS && length_read == ENTRY_MAX_LEN) {
 			wifi_credentials_cache_ssid(i, (struct wifi_credentials_header *)buf);
+		} else if (ret == PSA_SUCCESS || ret == PSA_ERROR_BUFFER_TOO_SMALL) {
+			/* An entry stored with a different configuration cannot be used. Skip it
+			 * so that the other entries can still be used and its key can be replaced.
+			 */
+			LOG_WRN("Skipping entry %zu, its size does not match %zu", i,
+				ENTRY_MAX_LEN);
+		} else if (ret == PSA_ERROR_INVALID_SIGNATURE || ret == PSA_ERROR_DATA_CORRUPT ||
+			   ret == PSA_ERROR_DATA_INVALID) {
+			/* A corrupt key is skipped so that the other entries can still be used.
+			 * It cannot be destroyed, so its slot cannot be reused.
+			 */
+			LOG_WRN("Skipping entry %zu, it is corrupt, err: %d", i, ret);
+			wifi_credentials_mark_unusable(i);
 		} else if (ret != PSA_ERROR_INVALID_HANDLE) {
 			LOG_ERR("psa_export_key failed, err: %d", ret);
 			return -EFAULT;
@@ -72,7 +85,9 @@ int wifi_credentials_delete_entry(size_t idx)
 {
 	psa_status_t ret = psa_destroy_key(idx + ZEPHYR_PSA_WIFI_CREDENTIALS_KEY_ID_RANGE_BEGIN);
 
-	if (ret != PSA_SUCCESS) {
+	if (ret == PSA_ERROR_INVALID_HANDLE) {
+		return -ENOENT;
+	} else if (ret != PSA_SUCCESS) {
 		LOG_ERR("psa_destroy_key failed, err: %d", ret);
 		return -EFAULT;
 	}
