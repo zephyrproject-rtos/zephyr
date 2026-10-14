@@ -7,7 +7,6 @@
 #include <mem.h>
 #include <arm/armv7-r.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
-#include <zephyr/dt-bindings/ethernet/xlnx_gem.h>
 #include <zephyr/dt-bindings/clock/xlnx-zynqmp-clk.h>
 
 / {
@@ -165,29 +164,21 @@
 		};
 
 		gem0: ethernet@ff0b0000 {
-			compatible = "xlnx,gem";
-			reg = <0xff0b0000 0x1000>,
-			      <0xff5e0050 0x4>;
-			reg-names = "mac", "clkc";
+			compatible = "xlnx,zynqmp-gem", "cdns,gem";
+			reg = <0xff0b0000 0x1000>;
+			clocks = <&zynqmp_clk LPD_LSBUS>, <&zynqmp_clk GEM0_REF>,
+				 <&zynqmp_clk GEM0_TX>, <&zynqmp_clk GEM0_RX>,
+				 <&zynqmp_clk GEM_TSU>;
+			clock-names = "pclk", "hclk", "tx_clk", "rx_clk", "tsu_clk";
 			interrupts = <GIC_SPI 57 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 58 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1";
-			amba-ahb-burst-length = <XLNX_GEM_AMBA_AHB_BURST_INCR16>;
-			hw-rx-buffer-size = <XLNX_GEM_HW_RX_BUFFER_SIZE_8KB>;
-			hw-rx-buffer-offset = <0>;
-			hw-tx-buffer-size-full;
-			rx-buffer-descriptors = <32>;
-			tx-buffer-descriptors = <32>;
-			rx-buffer-size = <1536>;
-			tx-buffer-size = <1536>;
-			discard-rx-fcs;
-			unicast-hash;
 			status = "disabled";
 
 			gem0_mdio: mdio {
-				compatible = "xlnx,gem-mdio";
+				compatible = "cdns,macb-mdio";
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
@@ -195,29 +186,21 @@
 		};
 
 		gem1: ethernet@ff0c0000 {
-			compatible = "xlnx,gem";
-			reg = <0xff0c0000 0x1000>,
-			      <0xff5e0054 0x4>;
-			reg-names = "mac", "clkc";
+			compatible = "xlnx,zynqmp-gem", "cdns,gem";
+			reg = <0xff0c0000 0x1000>;
+			clocks = <&zynqmp_clk LPD_LSBUS>, <&zynqmp_clk GEM1_REF>,
+				 <&zynqmp_clk GEM1_TX>, <&zynqmp_clk GEM1_RX>,
+				 <&zynqmp_clk GEM_TSU>;
+			clock-names = "pclk", "hclk", "tx_clk", "rx_clk", "tsu_clk";
 			interrupts = <GIC_SPI 59 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 60 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1";
-			amba-ahb-burst-length = <XLNX_GEM_AMBA_AHB_BURST_INCR16>;
-			hw-rx-buffer-size = <XLNX_GEM_HW_RX_BUFFER_SIZE_8KB>;
-			hw-rx-buffer-offset = <0>;
-			hw-tx-buffer-size-full;
-			rx-buffer-descriptors = <32>;
-			tx-buffer-descriptors = <32>;
-			rx-buffer-size = <1536>;
-			tx-buffer-size = <1536>;
-			discard-rx-fcs;
-			unicast-hash;
 			status = "disabled";
 
 			gem1_mdio: mdio {
-				compatible = "xlnx,gem-mdio";
+				compatible = "cdns,macb-mdio";
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
@@ -225,29 +208,21 @@
 		};
 
 		gem2: ethernet@ff0d0000 {
-			compatible = "xlnx,gem";
-			reg = <0xff0d0000 0x1000>,
-			      <0xff5e0058 0x4>;
-			reg-names = "mac", "clkc";
+			compatible = "xlnx,zynqmp-gem", "cdns,gem";
+			reg = <0xff0d0000 0x1000>;
+			clocks = <&zynqmp_clk LPD_LSBUS>, <&zynqmp_clk GEM2_REF>,
+				 <&zynqmp_clk GEM2_TX>, <&zynqmp_clk GEM2_RX>,
+				 <&zynqmp_clk GEM_TSU>;
+			clock-names = "pclk", "hclk", "tx_clk", "rx_clk", "tsu_clk";
 			interrupts = <GIC_SPI 61 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 62 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1";
-			amba-ahb-burst-length = <XLNX_GEM_AMBA_AHB_BURST_INCR16>;
-			hw-rx-buffer-size = <XLNX_GEM_HW_RX_BUFFER_SIZE_8KB>;
-			hw-rx-buffer-offset = <0>;
-			hw-tx-buffer-size-full;
-			rx-buffer-descriptors = <32>;
-			tx-buffer-descriptors = <32>;
-			rx-buffer-size = <1536>;
-			tx-buffer-size = <1536>;
-			discard-rx-fcs;
-			unicast-hash;
 			status = "disabled";
 
 			gem2_mdio: mdio {
-				compatible = "xlnx,gem-mdio";
+				compatible = "cdns,macb-mdio";
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
@@ -255,29 +230,21 @@
 		};
 
 		gem3: ethernet@ff0e0000 {
-			compatible = "xlnx,gem";
-			reg = <0xff0e0000 0x1000>,
-			      <0xff5e005c 0x4>;
-			reg-names = "mac", "clkc";
+			compatible = "xlnx,zynqmp-gem", "cdns,gem";
+			reg = <0xff0e0000 0x1000>;
+			clocks = <&zynqmp_clk LPD_LSBUS>, <&zynqmp_clk GEM3_REF>,
+				 <&zynqmp_clk GEM3_TX>, <&zynqmp_clk GEM3_RX>,
+				 <&zynqmp_clk GEM_TSU>;
+			clock-names = "pclk", "hclk", "tx_clk", "rx_clk", "tsu_clk";
 			interrupts = <GIC_SPI 63 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 64 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1";
-			amba-ahb-burst-length = <XLNX_GEM_AMBA_AHB_BURST_INCR16>;
-			hw-rx-buffer-size = <XLNX_GEM_HW_RX_BUFFER_SIZE_8KB>;
-			hw-rx-buffer-offset = <0>;
-			hw-tx-buffer-size-full;
-			rx-buffer-descriptors = <32>;
-			tx-buffer-descriptors = <32>;
-			rx-buffer-size = <1536>;
-			tx-buffer-size = <1536>;
-			discard-rx-fcs;
-			unicast-hash;
 			status = "disabled";
 
 			gem3_mdio: mdio {
-				compatible = "xlnx,gem-mdio";
+				compatible = "cdns,macb-mdio";
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
