@@ -90,7 +90,7 @@ static struct mpl_track track_2_5;
 
 /* Tracks */
 static struct mpl_track track_1_1 = {
-	.title	     = "Track 1.1",
+	.title	     = "Track 1.1 with a very long name",
 	.duration    = 30000,
 	.segment     = &seg_1,
 	.prev	     = NULL,
@@ -98,7 +98,7 @@ static struct mpl_track track_1_1 = {
 };
 
 static struct mpl_track track_1_2 = {
-	.title	     = "Track 1.2",
+	.title	     = "Track 1.2 with a very long name",
 	.duration    = 30000,
 	.segment     = &seg_1,
 	.prev	     = &track_1_1,
@@ -106,7 +106,7 @@ static struct mpl_track track_1_2 = {
 };
 
 static struct mpl_track track_1_3 = {
-	.title	     = "Track 1.3",
+	.title	     = "Track 1.3 with a very long name",
 	.duration    = 30000,
 	.segment     = &seg_1,
 	.prev	     = &track_1_2,
