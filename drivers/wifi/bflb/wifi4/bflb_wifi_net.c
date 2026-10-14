@@ -43,12 +43,6 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 #define EAPOL_KI_MIC       BIT(8)
 #define EAPOL_KI_SECURE    BIT(9)
 
-/* RX ring: tcpip_stack_input runs in firmware context; frames are staged
- * here and drained into net_pkts from the system work queue.
- */
-#define BFLB_RX_RING_CNT ((uint8_t)CONFIG_WIFI_BFLB_WIFI4_RX_RING_CNT)
-#define BFLB_RX_RING_SZ  1600U
-
 #define BFLB_RX_STAT_FORWARD BIT(0)
 #define BFLB_RX_FRAG_MAX     4
 
@@ -57,12 +51,6 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 struct bflb_wifi_event {
 	int code;
 	int value;
-};
-
-struct bflb_rx_slot {
-	uint8_t data[BFLB_RX_RING_SZ];
-	uint16_t len;
-	bool used;
 };
 
 /* RX path.
@@ -83,16 +71,12 @@ struct bflb_wifi_dev bflb_wifi;
 static struct k_work event_work;
 K_MSGQ_DEFINE(wifi_event_msgq, sizeof(struct bflb_wifi_event), BFLB_WIFI_EVENT_QUEUE_DEPTH, 4);
 static K_SEM_DEFINE(eapol_msg4_sem, 0, 1);
-static struct bflb_rx_slot bflb_rx_ring[BFLB_RX_RING_CNT];
-static uint8_t bflb_rx_wr;
-static struct k_work bflb_rx_work;
 static uint8_t bflb_tx_stage[BFLB_TX_BUF_MAX];
 
 static void handle_associated_event(struct bflb_wifi_dev *d);
 static void handle_connected_event(struct bflb_wifi_dev *d, int status);
 static void handle_disconnected_event(struct bflb_wifi_dev *d, int reason);
 static void event_work_handler(struct k_work *work);
-static void bflb_rx_work_handler(struct k_work *work);
 static int bflb_wifi_eapol_msg_num(const uint8_t *buf, size_t len);
 static int bflb_wifi_send(const struct device *dev, struct net_pkt *pkt);
 static void bflb_wifi_iface_init(struct net_if *iface);
@@ -174,47 +158,6 @@ static void event_work_handler(struct k_work *work)
 		default:
 			LOG_DBG("Unhandled event %d", evt.code);
 			break;
-		}
-	}
-}
-
-static void bflb_rx_work_handler(struct k_work *work)
-{
-	ARG_UNUSED(work);
-
-	for (uint8_t n = 0; n < BFLB_RX_RING_CNT; n++) {
-		uint8_t idx = (uint8_t)((bflb_rx_wr + n) % BFLB_RX_RING_CNT);
-		struct bflb_rx_slot *s = &bflb_rx_ring[idx];
-		struct net_pkt *pkt;
-
-		if (!s->used) {
-			continue;
-		}
-		if (bflb_wifi.iface == NULL) {
-			s->used = false;
-			continue;
-		}
-
-		pkt = net_pkt_rx_alloc_with_buffer(bflb_wifi.iface, s->len, AF_UNSPEC, 0,
-						   K_NO_WAIT);
-		if (pkt == NULL) {
-			LOG_WRN("rx: alloc failed len=%u", s->len);
-			s->used = false;
-			continue;
-		}
-
-		/* Copy the slot out before releasing it: the firmware RX path
-		 * reuses a freed slot, and net_recv_data() below can yield.
-		 */
-		if (net_pkt_write(pkt, s->data, s->len) != 0) {
-			net_pkt_unref(pkt);
-			s->used = false;
-			continue;
-		}
-		s->used = false;
-
-		if (net_recv_data(bflb_wifi.iface, pkt) < 0) {
-			net_pkt_unref(pkt);
 		}
 	}
 }
@@ -338,7 +281,6 @@ static int bflb_wifi_init(const struct device *dev)
 	k_mutex_init(&d->lock);
 	k_mutex_init(&d->cmd_mutex);
 	k_work_init(&event_work, event_work_handler);
-	k_work_init(&bflb_rx_work, bflb_rx_work_handler);
 
 	ret = bflb_wifi_hw_init();
 	if (ret != 0) {
@@ -382,8 +324,8 @@ int tcpip_stack_input(void *swdesc, uint8_t status, void *hwhdr, unsigned int ms
 		      void *pkt_v, uint8_t extra_status)
 {
 	struct bflb_wifi_pkt *pkt = pkt_v;
-	struct bflb_rx_slot *s;
-	size_t total, off;
+	struct net_pkt *npkt;
+	size_t total;
 	uint8_t i;
 
 	ARG_UNUSED(swdesc);
@@ -405,27 +347,35 @@ int tcpip_stack_input(void *swdesc, uint8_t status, void *hwhdr, unsigned int ms
 		total += pkt->len[i];
 	}
 
-	s = &bflb_rx_ring[bflb_rx_wr];
-	if (s->used || (total > BFLB_RX_RING_SZ)) {
-		LOG_WRN("rx-drop: slot=%u used=%d total=%u", (unsigned int)bflb_rx_wr, s->used,
-			(unsigned int)total);
+	if (bflb_wifi.iface == NULL) {
 		return -EINVAL;
 	}
 
-	off = pkt->len[0] - msdu_offset;
-	memcpy(s->data, (const uint8_t *)(uintptr_t)pkt->pkt[0] + msdu_offset, off);
+	/* The firmware recycles its RX buffer on return, so copy out now */
+	npkt = net_pkt_rx_alloc_with_buffer(bflb_wifi.iface, total, AF_UNSPEC, 0, K_NO_WAIT);
+	if (npkt == NULL) {
+		LOG_DBG("rx: alloc failed len=%zu", total);
+		return -EINVAL;
+	}
+
+	if (net_pkt_write(npkt, (const uint8_t *)(uintptr_t)pkt->pkt[0] + msdu_offset,
+			  pkt->len[0] - msdu_offset) != 0) {
+		net_pkt_unref(npkt);
+		return -EINVAL;
+	}
 	for (i = 1; i < BFLB_RX_FRAG_MAX; i++) {
 		if (pkt->len[i] == 0U) {
 			break;
 		}
-		memcpy(s->data + off, (const void *)(uintptr_t)pkt->pkt[i], pkt->len[i]);
-		off += pkt->len[i];
+		if (net_pkt_write(npkt, (const void *)(uintptr_t)pkt->pkt[i], pkt->len[i]) != 0) {
+			net_pkt_unref(npkt);
+			return -EINVAL;
+		}
 	}
-	s->len = (uint16_t)total;
-	s->used = true;
-	bflb_rx_wr = (bflb_rx_wr + 1U) % BFLB_RX_RING_CNT;
 
-	k_work_submit(&bflb_rx_work);
+	if (net_recv_data(bflb_wifi.iface, npkt) < 0) {
+		net_pkt_unref(npkt);
+	}
 	return -EINVAL;
 }
 
