@@ -31,6 +31,12 @@ properties:
   "#mux-state-cells":
     const: 2
 
+  ti,pwren:
+    type: phandle-array
+    specifier-space: pwren
+    description: |
+      Power-enable this peripheral via SYSCTL.PWREN_*.
+      Format: <&sysctl offset bit>.
 
 mux-control-cells:
   - channel
