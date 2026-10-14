@@ -58,6 +58,10 @@ Ethernet
 * The Xilinx GEM Ethernet driver is no longer disabled on QEMU targets without
   :kconfig:option:`CONFIG_NET_QEMU_ETHERNET`. (:github:`120871`)
 
+* :kconfig:option:`CONFIG_ETH_PHY_DRIVER` is no longer enabled by default. It is now selected by
+  the Ethernet drivers that need a PHY driver. Out-of-tree Ethernet drivers that use a PHY driver
+  must select it as well. (:github:`120871`)
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
