@@ -1598,6 +1598,110 @@ static uint8_t err_to_att(int err)
 	return BT_ATT_ERR_UNLIKELY;
 }
 
+#if defined(CONFIG_BT_GATT_ASYNC_ATTR)
+/* Starts serving a request whose response is deferred. Returns an ATT error,
+ * or 0 when the request was taken up.
+ */
+static uint8_t att_defer_begin(struct bt_att_chan *chan, uint8_t op, uint16_t handle,
+			       uint16_t offset, struct bt_gatt_req *req)
+{
+	static uint32_t last_id;
+	struct net_buf *rsp;
+
+	/* Allocate before the state is updated: allocating may block. */
+	rsp = chan->defer.rsp;
+	if (rsp == NULL) {
+		rsp = att_create_rsp_pdu(chan, att_defer_rsp_op(op));
+		if (rsp == NULL) {
+			return BT_ATT_ERR_INSUFFICIENT_RESOURCES;
+		}
+	}
+
+	bt_dev_lock();
+
+	if (last_id == UINT32_MAX) {
+		/* id 0 is never handed out. Refuse rather than reuse one. */
+		if (chan->defer.rsp == NULL) {
+			net_buf_unref(rsp);
+		}
+
+		bt_dev_unlock();
+
+		return BT_ATT_ERR_UNLIKELY;
+	}
+
+	last_id++;
+
+	chan->defer.rsp = rsp;
+	chan->defer.id = last_id;
+	chan->defer.op = op;
+	chan->defer.handle = handle;
+	chan->defer.offset = offset;
+	chan->defer.failed = false;
+	chan->defer.answered = false;
+
+	req->conn = chan->att->conn;
+	req->id = chan->defer.id;
+
+	bt_dev_unlock();
+
+	return 0U;
+}
+
+static uint8_t att_read_async(struct bt_att_chan *chan, uint8_t op, uint16_t handle,
+			      const struct bt_gatt_attr *attr, uint16_t offset)
+{
+	bt_gatt_attr_read_async_func_t read = bt_gatt_attr_async_read(attr);
+	struct bt_gatt_req req;
+	uint8_t att_err;
+	bool answered;
+	int err;
+
+	att_err = att_defer_begin(chan, op, handle, offset, &req);
+	if (att_err != 0U) {
+		return att_err;
+	}
+
+	err = read(&req, attr, offset, att_defer_max_len(chan, op));
+
+	bt_dev_lock();
+	answered = chan->defer.answered;
+	bt_dev_unlock();
+
+	if (answered) {
+		/* Answered during the call: the response is on its way. */
+		return 0;
+	}
+
+	if (err == 0) {
+		/* Deferred */
+		return 0;
+	}
+
+	/* Not deferred after all, respond here */
+	bt_dev_lock();
+	chan->defer.id = 0U;
+	net_buf_unref(chan->defer.rsp);
+	chan->defer.rsp = NULL;
+	chan->defer.answered = false;
+	bt_dev_unlock();
+
+	return err_to_att(err);
+}
+#else /* !CONFIG_BT_GATT_ASYNC_ATTR */
+static uint8_t att_read_async(struct bt_att_chan *chan, uint8_t op, uint16_t handle,
+			      const struct bt_gatt_attr *attr, uint16_t offset)
+{
+	ARG_UNUSED(chan);
+	ARG_UNUSED(op);
+	ARG_UNUSED(handle);
+	ARG_UNUSED(attr);
+	ARG_UNUSED(offset);
+
+	return BT_ATT_ERR_UNLIKELY;
+}
+#endif /* CONFIG_BT_GATT_ASYNC_ATTR */
+
 struct read_type_data {
 	struct bt_att_chan *chan;
 	struct bt_uuid *uuid;
@@ -1605,6 +1709,8 @@ struct read_type_data {
 	struct bt_att_read_type_rsp *rsp;
 	struct bt_att_data *item;
 	uint8_t err;
+	const struct bt_gatt_attr *async_attr;
+	uint16_t async_handle;
 };
 
 typedef bool (*attr_read_cb)(struct net_buf *buf, ssize_t read,
@@ -1731,6 +1837,19 @@ static uint8_t read_type_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	 */
 	data->err = 0x00;
 
+	if (bt_gatt_attr_async_read(attr) != NULL) {
+		if (data->rsp->len == 0U) {
+			/* The whole response is deferred */
+			data->async_attr = attr;
+			data->async_handle = handle;
+		}
+
+		/* Otherwise the attributes found so far are returned and the
+		 * client reads this one with a new request.
+		 */
+		return BT_GATT_ITER_STOP;
+	}
+
 	/* Fast forward to next item position */
 	data->item = net_buf_add(net_buf_frag_last(data->buf),
 				 sizeof(*data->item));
@@ -1772,6 +1891,13 @@ static uint8_t att_read_type_rsp(struct bt_att_chan *chan, struct bt_uuid *uuid,
 	data.err = BT_ATT_ERR_ATTRIBUTE_NOT_FOUND;
 
 	bt_gatt_foreach_attr(start_handle, end_handle, read_type_cb, &data);
+
+	if (data.async_attr != NULL) {
+		net_buf_unref(data.buf);
+
+		return att_read_async(chan, BT_ATT_OP_READ_TYPE_REQ, data.async_handle,
+				      data.async_attr, 0);
+	}
 
 	if (data.err) {
 		net_buf_unref(data.buf);
@@ -1851,6 +1977,7 @@ struct read_data {
 	uint16_t offset;
 	struct net_buf *buf;
 	uint8_t err;
+	const struct bt_gatt_attr *async_attr;
 };
 
 static uint8_t read_cb(const struct bt_gatt_attr *attr, uint16_t handle,
@@ -1878,6 +2005,11 @@ static uint8_t read_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	/* Check the attribute authorization logic */
 	if (!bt_gatt_attr_read_authorize(conn, attr)) {
 		data->err = BT_ATT_ERR_AUTHORIZATION;
+		return BT_GATT_ITER_STOP;
+	}
+
+	if (bt_gatt_attr_async_read(attr) != NULL) {
+		data->async_attr = attr;
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -1922,6 +2054,12 @@ static uint8_t att_read_rsp(struct bt_att_chan *chan, uint8_t op, uint8_t rsp,
 	data.err = BT_ATT_ERR_INVALID_HANDLE;
 
 	bt_gatt_foreach_attr(handle, handle, read_cb, &data);
+
+	if (data.async_attr != NULL) {
+		net_buf_unref(data.buf);
+
+		return att_read_async(chan, op, handle, data.async_attr, offset);
+	}
 
 	/* In case of error discard data and respond with an error */
 	if (data.err) {
@@ -2006,6 +2144,13 @@ static uint8_t att_read_mult_req(struct bt_att_chan *chan, struct net_buf *buf)
 
 		bt_gatt_foreach_attr(handle, handle, read_cb, &data);
 
+#if defined(CONFIG_BT_GATT_ASYNC_ATTR)
+		if (data.async_attr != NULL) {
+			/* Not supported: the response holds several values */
+			data.err = BT_ATT_ERR_UNLIKELY;
+		}
+#endif /* CONFIG_BT_GATT_ASYNC_ATTR */
+
 		/* Stop reading in case of error */
 		if (data.err) {
 			net_buf_unref(data.buf);
@@ -2049,6 +2194,12 @@ static uint8_t read_vl_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	/* Check the attribute authorization logic */
 	if (!bt_gatt_attr_read_authorize(conn, attr)) {
 		data->err = BT_ATT_ERR_AUTHORIZATION;
+		return BT_GATT_ITER_STOP;
+	}
+
+	if (bt_gatt_attr_async_read(attr) != NULL) {
+		/* Not supported: the response holds several values */
+		data->err = BT_ATT_ERR_UNLIKELY;
 		return BT_GATT_ITER_STOP;
 	}
 
