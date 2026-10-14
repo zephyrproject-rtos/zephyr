@@ -33,6 +33,10 @@
 	clock-frequency = <DT_FREQ_M(64)>;
 };
 
+&clk_hsi48 {
+	status = "okay";
+};
+
 &rcc {
 	clocks = <&clk_hsi>;
 	clock-frequency = <DT_FREQ_M(64)>;
@@ -46,6 +50,12 @@
 
 &pwr {
 	power-supply = "ldo";
+};
+
+&rng {
+	status = "okay";
+	clocks = <&rcc STM32_CLOCK(AHB2, 6)>,
+		 <&rcc STM32_SRC_HSI48 RNG_SEL(0)>;
 };
 
 /* USART1: Servo UART (console) */
