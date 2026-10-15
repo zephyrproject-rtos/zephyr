@@ -149,8 +149,7 @@ class SPDX2Serializer:
 
     def _write_document_header(self, f, doc: SBOMDocument):
         """Write SPDX document header."""
-        # Use document's namespace if set, otherwise generate from prefix
-        namespace = doc.namespace or f"{self.sbom_graph.namespace_prefix}/{doc.name}"
+        namespace = self.sbom_graph.document_namespace(doc)
         normalized_name = normalize_spdx_name(doc.title or doc.name)
         created = self.sbom_graph.created.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -208,9 +207,7 @@ DocumentNamespace: {namespace}
         if ext_refs:
             ext_refs.sort(key=lambda x: x[1])  # Sort by DocumentRef ID
             for ext_doc, doc_ref_id, doc_hash in ext_refs:
-                namespace = (
-                    ext_doc.namespace or f"{self.sbom_graph.namespace_prefix}/{ext_doc.name}"
-                )
+                namespace = self.sbom_graph.document_namespace(ext_doc)
                 f.write(f"ExternalDocumentRef: {doc_ref_id} {namespace} SHA1: {doc_hash}\n")
 
     def _write_document_relationships(self, f, doc: SBOMDocument):
