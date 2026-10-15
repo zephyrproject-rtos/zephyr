@@ -56,17 +56,11 @@
 /* definitions */
 
 #include <zephyr/logging/log.h>
-/* Prevent endless recursive logging loop and warn user about it */
-#if defined(CONFIG_USB_CDC_ACM_LOG_LEVEL) && CONFIG_USB_CDC_ACM_LOG_LEVEL != LOG_LEVEL_NONE
-#define CHOSEN_CONSOLE DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart)
-#define CHOSEN_SHELL   DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_shell_uart), zephyr_cdc_acm_uart)
-#if (CHOSEN_CONSOLE && defined(CONFIG_LOG_BACKEND_UART)) || \
-	(CHOSEN_SHELL && defined(CONFIG_SHELL_LOG_BACKEND))
-#warning "USB_CDC_ACM_LOG_LEVEL forced to LOG_LEVEL_NONE"
-#undef CONFIG_USB_CDC_ACM_LOG_LEVEL
-#define CONFIG_USB_CDC_ACM_LOG_LEVEL LOG_LEVEL_NONE
-#endif
-#endif
+/*
+ * Messages on the transfer paths are logged at debug level, so that a CDC
+ * ACM UART carrying log or shell output does not feed its own messages back
+ * into itself at the default log level.
+ */
 LOG_MODULE_REGISTER(usb_cdc_acm, CONFIG_USB_CDC_ACM_LOG_LEVEL);
 
 /* 115200bps, no parity, 1 stop bit, 8bit char */
