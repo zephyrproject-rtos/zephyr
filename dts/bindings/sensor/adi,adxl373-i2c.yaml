@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Jhonata Poma-Hansen
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ADXL373 3-axis high-g accelerometer, accessed through I2C bus.
+
+compatible: "adi,adxl373"
+
+include: ["i2c-device.yaml", "adi,adxl372-common.yaml"]
