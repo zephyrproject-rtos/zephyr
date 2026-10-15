@@ -149,7 +149,7 @@ static inline uint8_t ec_host_cmd_get_in_int_ep(struct usbd_class_data *const c_
 
 static struct net_buf *ec_host_cmd_buf_alloc(const uint8_t ep, const size_t size, void *const data)
 {
-	struct net_buf *buf = NULL;
+	struct net_buf *buf;
 	struct udc_buf_info *bi;
 
 	__ASSERT(IS_UDC_ALIGNED(data), "Application provided unaligned buffer");
@@ -171,7 +171,7 @@ static struct net_buf *ec_host_cmd_buf_alloc(const uint8_t ep, const size_t size
 
 static struct net_buf *ec_host_cmd_buf_alloc_int(const uint8_t ep)
 {
-	struct net_buf *buf = NULL;
+	struct net_buf *buf;
 	struct udc_buf_info *bi;
 
 	buf = net_buf_alloc(&int_ep_pool, K_NO_WAIT);
@@ -263,10 +263,8 @@ static int ec_host_cmd_request(struct usbd_class_data *const c_data, struct net_
 {
 	struct ec_host_cmd_usb_ctx *ctx = usbd_class_get_private(c_data);
 	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
-	struct udc_buf_info *bi = NULL;
+	struct udc_buf_info *bi = udc_get_buf_info(buf);
 	int ret;
-
-	bi = udc_get_buf_info(buf);
 
 	if (err) {
 		if (err == -ECONNABORTED) {
@@ -514,7 +512,7 @@ static int ec_host_cmd_backend_send(const struct ec_host_cmd_backend *backend)
 {
 	struct ec_host_cmd_usb_ctx *ctx = backend->ctx;
 	struct usbd_class_data *const c_data = ctx->c_data;
-	struct net_buf *buf = NULL;
+	struct net_buf *buf;
 	int ret;
 
 	if (!atomic_test_bit(&ctx->class_state, EC_HOST_CMD_CLASS_ENABLED)) {
