@@ -1,0 +1,11 @@
+# STM32F769I EVAL board configuration
+
+# SPDX-FileCopyrightText: Copyright 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STM32F769I_EVAL
+
+configdefault MEMC
+	default y if STM32_LTDC
+
+endif # BOARD_STM32F769I_EVAL
