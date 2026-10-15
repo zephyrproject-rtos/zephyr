@@ -295,8 +295,17 @@ void z_impl_k_timer_stop(struct k_timer *timer)
 	SYS_PORT_TRACING_OBJ_FUNC(k_timer, stop, timer);
 
 	k_spinlock_key_t key = k_spin_lock(&timer_lock);
+	/* Whether an expiry is pending. The abort return can't tell: a
+	 * periodic timer is re-queued while its handler may still be in
+	 * flight. Under timer_lock only the announcer can clear this, by
+	 * popping the timeout, and its handler then bails on the
+	 * superseded mark set by the abort below.
+	 */
+	bool armed = !z_is_inactive_timeout(&timer->timeout);
 
-	if (z_try_abort_timeout(&timer->timeout) != 0) {
+	(void)z_try_abort_timeout(&timer->timeout);
+
+	if (!armed) {
 		/* Not removed from the queue: either the timer was not
 		 * active, or its handler is in flight. In the latter case
 		 * z_try_abort_timeout() has flagged it superseded so the
