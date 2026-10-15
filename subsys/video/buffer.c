@@ -150,6 +150,7 @@ struct video_buffer *video_import_buffer(uint8_t *mem, size_t sz)
 int video_enqueue(const struct device *dev, struct video_buffer *buf)
 {
 	struct video_device *vdev;
+	int ret;
 
 	if (dev == NULL || buf == NULL || buf->index >= CONFIG_VIDEO_BUFFER_POOL_NUM_MAX ||
 	    (buf->type != VIDEO_BUF_TYPE_INPUT && buf->type != VIDEO_BUF_TYPE_OUTPUT)) {
@@ -164,23 +165,46 @@ int video_enqueue(const struct device *dev, struct video_buffer *buf)
 	buf->timestamp = 0;
 	buf->line_offset = 0;
 
-	if (buf->type == VIDEO_BUF_TYPE_OUTPUT && vdev->out_fmt.size > 0) {
+	vdev = dev->data;
+
+	switch (buf->type) {
+	case VIDEO_BUF_TYPE_OUTPUT:
+		if (vdev->out_fmt.size == 0) {
+			LOG_ERR("%s output format size is 0", dev->name);
+			return -EINVAL;
+		}
 		if (buf->size < vdev->out_fmt.size) {
 			LOG_ERR("Buffer size %u too small for output format size %u",
 				buf->size, vdev->out_fmt.size);
 			return -ENOBUFS;
 		}
-	}
 
-	if (buf->type == VIDEO_BUF_TYPE_INPUT && vdev->in_fmt.size > 0) {
+		k_fifo_put(&vdev->out_buf_submitted, &video_buf[buf->index]);
+		break;
+	case VIDEO_BUF_TYPE_INPUT:
+		if (vdev->in_fmt.size == 0) {
+			LOG_ERR("%s input format size is 0", dev->name);
+			return -EINVAL;
+		}
 		if (buf->size < vdev->in_fmt.size) {
 			LOG_ERR("Buffer size %u too small for input format size %u",
 				buf->size, vdev->in_fmt.size);
 			return -ENOBUFS;
 		}
+
+		k_fifo_put(&vdev->in_buf_submitted, &video_buf[buf->index]);
+		break;
+	default:
+		LOG_ERR("Invalid buffer type %u", buf->type);
+		__ASSERT_NO_MSG(false);
+		return -EINVAL;
 	}
 
-	return video_driver_enqueue(dev, &video_buf[buf->index]);
+	k_mutex_lock(&vdev->lock, K_FOREVER);
+	ret = video_driver_trigger(dev, video_buf[buf->index].type);
+	k_mutex_unlock(&vdev->lock);
+
+	return (ret == -ENOSYS) ? 0 : ret;
 }
 
 int video_dequeue(const struct device *dev, struct video_buffer **vbuf,

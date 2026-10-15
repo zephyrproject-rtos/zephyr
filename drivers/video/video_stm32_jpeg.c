@@ -389,7 +389,7 @@ out:
 	return ret;
 }
 
-static int stm32_jpeg_enqueue(const struct device *dev, struct video_buffer *vbuf)
+static int stm32_jpeg_trigger(const struct device *dev, enum video_buf_type type)
 {
 	struct stm32_jpeg_data *data = dev->data;
 	struct video_common_header *common =
@@ -399,8 +399,6 @@ static int stm32_jpeg_enqueue(const struct device *dev, struct video_buffer *vbu
 	/* TODO - need to check for buffer size here */
 
 	k_mutex_lock(&data->vdev.lock, K_FOREVER);
-
-	k_fifo_put(&common->out_buf_submitted, vbuf);
 
 	/* Try to start codec if necessary */
 	if (!data->codec_is_running) {
@@ -434,7 +432,7 @@ static int stm32_jpeg_get_caps(const struct device *dev, struct video_caps *caps
 
 static DEVICE_API(video, stm32_jpeg_driver_api) = {
 	.set_stream = stm32_jpeg_set_stream,
-	.enqueue = stm32_jpeg_enqueue,
+	.trigger = stm32_jpeg_trigger,
 	.get_caps = stm32_jpeg_get_caps,
 };
 
