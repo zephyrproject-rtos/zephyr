@@ -8,6 +8,7 @@
 #include <zephyr/init.h>
 #include <zephyr/arch/arm/mmu/arm_mmu.h>
 #include <zephyr/kernel.h>
+#include <delay.h>
 
 #define MMU_REGION_FLEXCOM_DEFN(idx, n)								\
 		COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flx##n)),			\
@@ -19,6 +20,17 @@
 		IF_ENABLED(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(mcan##n)),			\
 			   (MMU_REGION_FLAT_ENTRY("mcan"#n, MCAN##n##_BASE_ADDRESS, 0x4000,	\
 						  MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),))
+
+#define MMU_REGION_PIT64B_DEFN(idx, n)								\
+		COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pit64b##n)),			\
+			(MMU_REGION_FLAT_ENTRY("pit64b"#n, PIT64B##n##_BASE_ADDRESS, 0x4000,	\
+					       MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),),	\
+			())
+
+#define CONFIGURE_GCLK(idx, div, src)								\
+		PMC_REGS->PMC_PCR = PMC_PCR_CMD(1) | PMC_PCR_GCLKEN(1) | PMC_PCR_EN(1) |	\
+				    PMC_PCR_GCLKDIV((div) - 1) | (src) |			\
+				    PMC_PCR_PID(idx);
 
 static const struct arm_mmu_region mmu_regions[] = {
 	MMU_REGION_FLAT_ENTRY("vectors", CONFIG_KERNEL_VM_BASE, 0x1000,
@@ -43,11 +55,13 @@ static const struct arm_mmu_region mmu_regions[] = {
 
 	FOR_EACH_IDX(MMU_REGION_MCAN_DEFN, (), 0, 1, 2, 3, 4)
 
+	MMU_REGION_FLAT_ENTRY("otpc", OTPC_BASE_ADDRESS, 0x1000,
+			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
+
 	MMU_REGION_FLAT_ENTRY("pioa", PIO_BASE_ADDRESS, 0x4000,
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
 
-	MMU_REGION_FLAT_ENTRY("pit64b0", PIT64B0_BASE_ADDRESS, 0x4000,
-			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
+	FOR_EACH_IDX(MMU_REGION_PIT64B_DEFN, (), 0, 1, 2, 3, 4, 5)
 
 	MMU_REGION_FLAT_ENTRY("pmc", PMC_BASE_ADDRESS, 0x200,
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
@@ -62,6 +76,26 @@ static const struct arm_mmu_region mmu_regions[] = {
 	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(microchip_trng_g2_entropy),
 		   (MMU_REGION_FLAT_ENTRY("trng", TRNG_BASE_ADDRESS, 0x100,
 					  MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),))
+
+	IF_ENABLED(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(udphsa)),
+		(MMU_REGION_FLAT_ENTRY("udphsa",
+				       DT_REG_ADDR_BY_IDX(DT_NODELABEL(udphsa), 1),
+				       DT_REG_SIZE_BY_IDX(DT_NODELABEL(udphsa), 1),
+				       MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
+		 MMU_REGION_FLAT_ENTRY("udphsa_ram",
+				       DT_REG_ADDR_BY_IDX(DT_NODELABEL(udphsa), 0),
+				       DT_REG_SIZE_BY_IDX(DT_NODELABEL(udphsa), 0),
+				       MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),))
+
+	IF_ENABLED(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(udphsb)),
+		(MMU_REGION_FLAT_ENTRY("udphsb",
+				       DT_REG_ADDR_BY_IDX(DT_NODELABEL(udphsb), 1),
+				       DT_REG_SIZE_BY_IDX(DT_NODELABEL(udphsb), 1),
+				       MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
+		 MMU_REGION_FLAT_ENTRY("udphsb_ram",
+				       DT_REG_ADDR_BY_IDX(DT_NODELABEL(udphsb), 0),
+				       DT_REG_SIZE_BY_IDX(DT_NODELABEL(udphsb), 0),
+				       MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),))
 };
 
 const struct arm_mmu_config mmu_config = {
@@ -89,6 +123,13 @@ void soc_early_init_hook(void)
 			    PMC_PCR_GCLKDIV(20 - 1) | PMC_PCR_GCLKCSS_MCK1 |
 			    PMC_PCR_PID(ID_PIT64B0);
 
+	/* Enable Generic clock for PIT64B 1~5, frequency is 33.333MHz */
+	CONFIGURE_GCLK(ID_PIT64B1, 6, PMC_PCR_GCLKCSS_BAUDPLL);
+	CONFIGURE_GCLK(ID_PIT64B2, 6, PMC_PCR_GCLKCSS_BAUDPLL);
+	CONFIGURE_GCLK(ID_PIT64B3, 6, PMC_PCR_GCLKCSS_BAUDPLL);
+	CONFIGURE_GCLK(ID_PIT64B4, 6, PMC_PCR_GCLKCSS_BAUDPLL);
+	CONFIGURE_GCLK(ID_PIT64B5, 6, PMC_PCR_GCLKCSS_BAUDPLL);
+
 	/* Enable generic clock for MCANx, frequency MCK1 / (4 + 1) = 40MHz */
 	FOR_EACH_IDX(MCAN_CLK_INIT_DEFN, (), 0, 1, 2, 3, 4)
 
@@ -112,5 +153,26 @@ void soc_early_init_hook(void)
 		PMC_REGS->PMC_PCR = PMC_PCR_CMD_Msk | PMC_PCR_GCLKEN_Msk | PMC_PCR_EN_Msk |
 				    PMC_PCR_GCLKDIV(4) |
 				    PMC_PCR_GCLKCSS_ETHPLL | PMC_PCR_PID(ID_GMAC0);
+	}
+
+	/* Enable clock for USB subsystem */
+	if (DT_HAS_COMPAT_STATUS_OKAY(microchip_udphs_g1_udc)) {
+		PMC_REGS->PMC_XTALF = PMC_XTALF_XTALF_F24M;
+
+		/* Enable USBPLL, frequency = 480MHz */
+		PMC_REGS->PMC_PLL_UPDT = PMC_PLL_UPDT_ID(PLL_ID_USBPLL);
+		PMC_REGS->PMC_PLL_ACR = PMC_PLL_ACR_LOOP_FILTER(0x12) |
+					PMC_PLL_ACR_LOCK_THR(2) |
+					PMC_PLL_ACR_CONTROL(0x10);
+		PMC_REGS->PMC_PLL_CTRL1 = PMC_PLL_CTRL1_MUL(0x27);
+		PMC_REGS->PMC_PLL_ACR |= PMC_PLL_ACR_UTMIBG_Msk;
+		UDELAY(10);
+		PMC_REGS->PMC_PLL_ACR |= PMC_PLL_ACR_UTMIVR_Msk;
+		UDELAY(10);
+		PMC_REGS->PMC_PLL_UPDT = PMC_PLL_UPDT_UPDATE_Msk | PMC_PLL_UPDT_ID(8);
+		PMC_REGS->PMC_PLL_CTRL0 = PMC_PLL_CTRL0_ENPLL_Msk;
+		PMC_REGS->PMC_PLL_UPDT = PMC_PLL_UPDT_UPDATE_Msk | PMC_PLL_UPDT_ID(8);
+		while ((PMC_REGS->PMC_PLL_ISR0 & BIT(PLL_ID_USBPLL)) == 0) {
+		}
 	}
 }

@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_PR2
+	select SOC_SF32LB52JUD6

@@ -42,7 +42,9 @@ firmware.  It performs the initial M-mode to S-mode transition at boot and
 handles S-mode requests via the RISC-V Supervisor Binary Interface (SBI):
 
 - **Boot sequence**: M-mode configures PMP, ``medeleg``, ``mideleg``,
-  ``mcounteren`` and ``mtvec``, then drops to S-mode via ``mret``.
+  ``mcounteren`` and ``mtvec``, grants S-mode access to the ``seed`` CSR
+  through ``mseccfg`` when the Zkr extension is present, then drops to
+  S-mode via ``mret``.
 - **Timer**: Machine timer interrupts (MTIP) are forwarded to S-mode as
   supervisor timer interrupts (STIP).  S-mode programs the next timer
   deadline through the SBI ``TIME`` extension (``sbi_set_timer``).

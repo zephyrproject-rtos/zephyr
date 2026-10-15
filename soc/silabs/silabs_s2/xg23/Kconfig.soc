@@ -2,7 +2,7 @@
 # Copyright (c) 2025 Christoph Jans
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SILABS_XG23
+config SOC_FAMILY_SILABS_S2_XG23
 	bool
 	select SOC_FAMILY_SILABS_S2
 	help
@@ -10,13 +10,13 @@ config SOC_SILABS_XG23
 
 config SOC_SERIES_EFR32ZG23
 	bool
-	select SOC_SILABS_XG23
+	select SOC_FAMILY_SILABS_S2_XG23
 	help
 	  Silicon Labs EFR32ZG23 Series MCU
 
 config SOC_SERIES_EFM32PG23
 	bool
-	select SOC_SILABS_XG23
+	select SOC_FAMILY_SILABS_S2_XG23
 	help
 	  Silicon Labs EFM32PG23 Series MCU
 

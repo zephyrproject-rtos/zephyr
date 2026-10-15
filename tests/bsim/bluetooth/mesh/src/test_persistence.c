@@ -767,6 +767,9 @@ static void node_configuration_check(const struct access_cfg (*cfg)[2])
 			ASSERT_EQUAL((*cfg)[m].appkeys[i], appkeys[i]);
 		}
 
+		/* Sleep here to avoid packet collision. */
+		k_sleep(K_MSEC(100));
+
 		if (!vnd) {
 			err = bt_mesh_cfg_cli_mod_sub_get(test_netkey_idx, TEST_ADDR, TEST_ADDR,
 						      TEST_MOD_ID, &status, subs, &subs_count);
@@ -784,6 +787,9 @@ static void node_configuration_check(const struct access_cfg (*cfg)[2])
 			ASSERT_EQUAL((*cfg)[m].subs[i], subs[i]);
 		}
 
+		/* Sleep here to avoid packet collision. */
+		k_sleep(K_MSEC(100));
+
 		struct bt_mesh_cfg_cli_mod_pub pub_params = {};
 
 		if (!vnd) {
@@ -799,6 +805,9 @@ static void node_configuration_check(const struct access_cfg (*cfg)[2])
 		}
 
 		check_mod_pub_params(&(*cfg)[m].pub_params, &pub_params);
+
+		/* Sleep here to avoid packet collision. */
+		k_sleep(K_MSEC(100));
 	}
 }
 

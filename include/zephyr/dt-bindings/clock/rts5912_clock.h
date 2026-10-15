@@ -5,8 +5,8 @@
  * Author: Lin Yu-Cheng <lin_yu_cheng@realtek.com>
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_RTS5912_CLOCK_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_RTS5912_CLOCK_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_RTS5912_CLOCK_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_RTS5912_CLOCK_H_
 
 /* ====================================================================================== */
 /* =====================================  I2CCLK  ======================================= */
@@ -340,4 +340,4 @@
 #define PERIPH_GRP2_WDT_CLKPWR       (PERICLKPWR2_WDTCLKPWR_Pos)
 #define PERIPH_GRP2_WDTPWRBTN_CLKPWR (PERICLKPWR2_PWRBTNCLKPWR_Pos)
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_RTS5912_CLOCK_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_RTS5912_CLOCK_H_ */

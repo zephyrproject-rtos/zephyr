@@ -1,8 +1,9 @@
 /*
- * Copyright (c) 2017 Linaro Limited
- * Copyright (c) 2019 Intel Corporation
- * Copyright (c) 2024 Embeint Inc
- *
+ * SPDX-FileCopyrightText: Copyright (c) 2017 Linaro Limited
+ * SPDX-FileCopyrightText: Copyright (c) 2019 Intel Corporation
+ * SPDX-FileCopyrightText: Copyright (c) 2024 Embeint Inc
+ * SPDX-FileCopyrightText: Copyright (c) 2025 Lothar Felten
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -12,17 +13,11 @@ LOG_MODULE_REGISTER(net_sntp, CONFIG_SNTP_LOG_LEVEL);
 #include <zephyr/net/sntp.h>
 #include <zephyr/net/net_log.h>
 #include <zephyr/sys/clock.h>
+#include <zephyr/sys/util.h>
 #include "sntp_pkt.h"
 #include <limits.h>
 
-#define SNTP_LI_MAX 3
-#define SNTP_VERSION_NUMBER 3
-#define SNTP_MODE_CLIENT 3
-#define SNTP_MODE_SERVER 4
-#define SNTP_STRATUM_KOD 0 /* kiss-o'-death */
-#define OFFSET_1970_JAN_1 2208988800
-
-static void sntp_pkt_dump(struct sntp_pkt *pkt)
+void sntp_pkt_dump(struct sntp_pkt *pkt)
 {
 	if (!pkt) {
 		return;
@@ -52,6 +47,17 @@ static int64_t q32_32_s_to_ll_us(uint32_t t_s, uint32_t t_f)
 	return (uint64_t)t_s * USEC_PER_SEC + (((uint64_t)t_f * (uint64_t)USEC_PER_SEC) >> 32);
 }
 
+/* The delay and the uncertainty are computed from timestamps the server
+ * chose, so the result can land outside the range of the unsigned field it
+ * is reported in. A negative one means the server's timestamps disagree
+ * with what the client measured, which a coarse system clock produces for
+ * an honest server too, so clamp rather than reject the response.
+ */
+static uint32_t clamp_us_to_u32(int64_t us)
+{
+	return (uint32_t)CLAMP(us, 0, UINT32_MAX);
+}
+
 #if defined(CONFIG_SNTP_UNCERTAINTY)
 static int64_t q16_16_s_to_ll_us(uint32_t t)
 {
@@ -69,7 +75,7 @@ static int32_t parse_response(uint8_t *data, uint16_t len, struct sntp_time *exp
 	int64_t client_rx_us;
 	int64_t server_rx_us;
 	int64_t server_tx_us;
-	int32_t rtt_us;
+	int64_t rtt_us;
 	uint32_t ts;
 	int ret;
 
@@ -117,7 +123,7 @@ static int32_t parse_response(uint8_t *data, uint16_t len, struct sntp_time *exp
 	server_tx_us = q32_32_s_to_ll_us(net_ntohl(pkt->tx_tm_s), net_ntohl(pkt->tx_tm_f));
 
 	/* Compute single sided path delay (assumes symmetrical packet delay) */
-	res->rsp_delay_us = (rtt_us - (server_tx_us - server_rx_us)) / 2;
+	res->rsp_delay_us = clamp_us_to_u32((rtt_us - (server_tx_us - server_rx_us)) / 2);
 
 #if defined(CONFIG_SNTP_UNCERTAINTY)
 
@@ -149,7 +155,8 @@ static int32_t parse_response(uint8_t *data, uint16_t len, struct sntp_time *exp
 	res->uptime_us = client_rx_us;
 	res->seconds = (res->uptime_us + clk_offset_us) / USEC_PER_SEC;
 	res->fraction = (res->uptime_us + clk_offset_us) % USEC_PER_SEC;
-	res->uncertainty_us = (d_us + root_delay_us + precision_us) / 2 + root_dispersion_us;
+	res->uncertainty_us =
+		clamp_us_to_u32((d_us + root_delay_us + precision_us) / 2 + root_dispersion_us);
 #else
 	res->fraction = net_ntohl(pkt->tx_tm_f);
 	res->seconds = net_ntohl(pkt->tx_tm_s);

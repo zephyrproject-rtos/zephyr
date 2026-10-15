@@ -921,9 +921,11 @@ static inline int z_impl_pwm_disable_capture(const struct device *dev,
  *                    width (in clock cycles). HW specific.
  * @param[out] pulse Pointer to the memory to store the captured PWM pulse width
  *                   (in clock cycles). HW specific.
- * @param timeout Waiting period for the capture to complete.
+ * @param timeout Waiting period for the capture to complete. K_NO_WAIT is not
+ *                supported.
  *
  * @retval 0 on success.
+ * @retval -EINVAL A K_NO_WAIT timeout was given.
  * @retval -EBUSY PWM capture already in progress.
  * @retval -EAGAIN Waiting period timed out.
  * @retval -EIO IO error while capturing.
@@ -951,9 +953,11 @@ __syscall int pwm_capture_cycles(const struct device *dev, uint32_t channel,
  *                    width (in usec).
  * @param[out] pulse Pointer to the memory to store the captured PWM pulse width
  *                   (in usec).
- * @param timeout Waiting period for the capture to complete.
+ * @param timeout Waiting period for the capture to complete. K_NO_WAIT is not
+ *                supported.
  *
  * @return 0 on success, negative errno value on failure.
+ * @retval -EINVAL A K_NO_WAIT timeout was given.
  * @retval -EBUSY PWM capture already in progress.
  * @retval -EAGAIN Waiting period timed out.
  * @retval -EIO IO error while capturing.
@@ -1004,9 +1008,11 @@ static inline int pwm_capture_usec(const struct device *dev, uint32_t channel,
  *                    width (in nsec).
  * @param[out] pulse Pointer to the memory to store the captured PWM pulse width
  *                   (in nsec).
- * @param timeout Waiting period for the capture to complete.
+ * @param timeout Waiting period for the capture to complete. K_NO_WAIT is not
+ *                supported.
  *
  * @return 0 on success, negative errno value on failure.
+ * @retval -EINVAL A K_NO_WAIT timeout was given.
  * @retval -EBUSY PWM capture already in progress.
  * @retval -EAGAIN Waiting period timed out.
  * @retval -EIO IO error while capturing.

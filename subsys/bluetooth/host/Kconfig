@@ -10,6 +10,7 @@ config BT_HCI_HOST
 	default y
 	depends on !BT_HCI_RAW
 	select UUID
+	select BT_SYSTEM_WORKQUEUE_COOP
 
 config BT_HCI_TX_STACK_SIZE
 	# NOTE: This value is derived from other symbols and should only be
@@ -43,7 +44,7 @@ config BT_HCI_TX_PRIO
 	default 7
 
 config BT_RX_STACK_SIZE
-	int "Size of the receiving thread stack"
+	int "Size of the Bluetooth workqueue stack"
 	default 768 if BT_HCI_RAW
 	default 3092 if BT_MESH_GATT_CLIENT
 	default 2800 if BT_MESH_PB_GATT
@@ -51,12 +52,13 @@ config BT_RX_STACK_SIZE
 	default 2048 if BT_AUDIO
 	default 1200
 	help
-	  Size of the receiving thread stack. This is the context from
-	  which all event callbacks to the application occur. The
-	  default value is sufficient for basic operation, but if the
-	  application needs to do advanced things in its callbacks that
-	  require extra stack space, this value can be increased to
-	  accommodate for that.
+	  Size of the stack of the Bluetooth workqueue, the thread in
+	  which the Host processes received data and runs its deferred
+	  work. Most of the callbacks that the application gets from a
+	  context internal to the stack run in this thread. The default
+	  value is sufficient for basic operation, but if the application
+	  needs extra stack space in its callbacks, this value can be
+	  increased to accommodate for that.
 
 config BT_RX_PRIO
 	# Hidden option for Co-Operative Rx thread priority
@@ -882,6 +884,23 @@ config BT_EXT_SCAN_BUF_SIZE
 	  Maximum size of an advertisement report in octets. If the advertisement
 	  provided by the controller is larger than this buffer size,
 	  the remaining data will be discarded.
+
+config BT_SCAN_EXT_FILTER_POLICY
+	bool "Extended scanner filter policies"
+	depends on !HAS_BT_CTLR || BT_CTLR_EXT_SCAN_FP
+	help
+	  Enable support for the BT_LE_SCAN_OPT_EXT_FILTER_POLICY scanning option.
+
+	  The extended scanner filter policies let the Controller report directed
+	  advertisements whose target address is a resolvable private address that
+	  the Controller was unable to resolve, instead of discarding them. This
+	  allows an application to detect a peer that is directing advertisements
+	  at an identity the local device cannot resolve.
+
+	  This enables the LE Directed Advertising Report event, which is used to
+	  report these advertisements while scanning with the legacy scanning
+	  commands. It requires a Controller that supports the Extended Scanner
+	  Filter Policies.
 
 endif # BT_OBSERVER
 

@@ -137,9 +137,10 @@ int bt_id_set_adv_random_addr(struct bt_le_ext_adv *adv, const bt_addr_t *rpa)
 	return 0;
 }
 
-int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv)
+int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv, uint32_t options)
 {
 	ARG_UNUSED(adv);
+	ARG_UNUSED(options);
 
 	return 0;
 }

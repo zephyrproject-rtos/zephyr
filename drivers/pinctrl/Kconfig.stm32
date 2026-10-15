@@ -6,6 +6,7 @@ menuconfig PINCTRL_STM32
 	default y
 	depends on DT_HAS_ST_STM32_PINCTRL_ENABLED || DT_HAS_ST_STM32F1_PINCTRL_ENABLED
 	depends on DT_HAS_ST_STM32_GPIO_ENABLED || DT_HAS_ST_STM32MP2_GPIO_ENABLED
+	select STM32_GPIOPORT_MGR
 	help
 	  Enable pin controller driver for STM32 MCUs
 

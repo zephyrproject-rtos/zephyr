@@ -19,8 +19,9 @@
 
 LOG_MODULE_REGISTER(ICM42605, CONFIG_SENSOR_LOG_LEVEL);
 
+/* Indexed by GYRO_FS_* selector, i.e. 0 = 2000 dps ... 7 = 15.625 dps */
 static const uint16_t icm42605_gyro_sensitivity_x10[] = {
-	1310, 655, 328, 164
+	164, 328, 655, 1310, 2620, 5243, 10486, 20972
 };
 
 /* see "Accelerometer Measurements" section from register map description */
@@ -206,7 +207,7 @@ static int icm42605_sample_fetch(const struct device *dev,
 			}
 			if (!(drv_data->fifo_data[0] & BIT_FIFO_HEAD_GYRO)) {
 				drv_data->temp =
-					(int16_t)(drv_data->fifo_data[7]);
+					(int16_t)(int8_t)drv_data->fifo_data[7];
 			} else {
 				if (!(drv_data->fifo_data[7] ==
 				      FIFO_GYRO0_RESET_VALUE &&
@@ -223,7 +224,7 @@ static int icm42605_sample_fetch(const struct device *dev,
 						+ (drv_data->fifo_data[12]);
 				}
 				drv_data->temp =
-					(int16_t)(drv_data->fifo_data[13]);
+					(int16_t)(int8_t)drv_data->fifo_data[13];
 			}
 		} else {
 			if (drv_data->fifo_data[0] & BIT_FIFO_HEAD_GYRO) {
@@ -242,7 +243,7 @@ static int icm42605_sample_fetch(const struct device *dev,
 						+ (drv_data->fifo_data[6]);
 				}
 				drv_data->temp =
-					(int16_t)(drv_data->fifo_data[7]);
+					(int16_t)(int8_t)drv_data->fifo_data[7];
 			}
 		}
 	}
@@ -278,6 +279,7 @@ static int icm42605_attr_set(const struct device *dev,
 				return -EINVAL;
 			} else {
 				drv_data->accel_sf = val->val1;
+				drv_data->accel_sensitivity_shift = 11 + val->val1;
 			}
 		} else {
 			LOG_ERR("Not supported ATTR");
@@ -303,6 +305,8 @@ static int icm42605_attr_set(const struct device *dev,
 				return -EINVAL;
 			} else {
 				drv_data->gyro_sf = val->val1;
+				drv_data->gyro_sensitivity_x10 =
+					icm42605_gyro_sensitivity_x10[val->val1];
 			}
 		} else {
 			LOG_ERR("Not supported ATTR");
@@ -400,8 +404,8 @@ static int icm42605_init(const struct device *dev)
 	icm42605_data_init(drv_data, cfg);
 	icm42605_sensor_init(dev);
 
-	drv_data->accel_sensitivity_shift = 14 - 3;
-	drv_data->gyro_sensitivity_x10 = icm42605_gyro_sensitivity_x10[3];
+	drv_data->accel_sensitivity_shift = 11 + cfg->accel_fs;
+	drv_data->gyro_sensitivity_x10 = icm42605_gyro_sensitivity_x10[cfg->gyro_fs];
 
 #ifdef CONFIG_ICM42605_TRIGGER
 	if (icm42605_init_interrupt(dev) < 0) {

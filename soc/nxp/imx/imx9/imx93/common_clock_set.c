@@ -56,6 +56,20 @@ uint32_t common_clock_set_freq(uint32_t clock_name, uint32_t rate)
 		CLOCK_SetRootClockMux(kCLOCK_Root_CamPix,
 				      kCLOCK_MEDIALDB_ClockRoot_MuxVideoPll1Out);
 		break;
+	case IMX_CCM_USB_CLK:
+		/* 400MHz SysPll1Pfd1Div2 source, /3 -> 133.33MHz (closest match to 134MHz) */
+		clk_root = kCLOCK_Root_Hsio;
+		clk_gate = kCLOCK_Usb_Controller;
+		CLOCK_SetRootClockMux(kCLOCK_Root_Hsio,
+				      kCLOCK_HSIO_ClockRoot_MuxSysPll1Pfd1Div2);
+		break;
+	case IMX_CCM_USB_PHY_CLK:
+		/* 400MHz SysPll1Pfd1Div2 source, /8 -> exactly 50MHz, no dedicated LPCG gate */
+		clk_root = kCLOCK_Root_UsbPhyBurunin;
+		clk_gate = kCLOCK_IpInvalid;
+		CLOCK_SetRootClockMux(kCLOCK_Root_UsbPhyBurunin,
+				      kCLOCK_USBPHYBURUNIN_ClockRoot_MuxSysPll1Pfd1Div2);
+		break;
 	default:
 		return -ENOTSUP;
 	}

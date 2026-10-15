@@ -104,10 +104,6 @@ config MCUX_CORE_SUFFIX
 	default "_cm7" if CPU_CORTEX_M7
 	default "_cm33" if CPU_CORTEX_M33 && !SOC_MIMXRT1182 && !SOC_MIMXRT1181
 
-config TRDC_MCUX_TRDC
-	default y
-	bool "Use TRDC MCUX Driver"
-
 config S3MU_MCUX_S3MU
 	default y
 	bool "Use S3MU MCUX Driver"

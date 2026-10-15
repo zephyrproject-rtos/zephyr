@@ -8,6 +8,8 @@ compatible: "cdns,i3c"
 
 include: [i3c-controller.yaml]
 
+class: [i3c, i2c]
+
 properties:
   reg:
     required: true

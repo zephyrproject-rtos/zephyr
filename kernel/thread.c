@@ -39,8 +39,6 @@
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #ifdef CONFIG_OBJ_CORE_THREAD
-static struct k_obj_type  obj_type_thread;
-
 #ifdef CONFIG_OBJ_CORE_STATS_THREAD
 static struct k_obj_core_stats_desc  thread_stats_desc = {
 	.raw_size = sizeof(struct k_cycle_stats),
@@ -873,6 +871,30 @@ static inline void init_thread_usage(struct k_thread *thread)
 #endif /* CONFIG_SCHED_THREAD_USAGE */
 }
 
+/* Assert the thread wasn't already linked into the monitor list. */
+static inline void assert_thread_not_reused(struct k_thread *new_thread)
+{
+#ifdef CONFIG_THREAD_MONITOR
+#ifdef CONFIG_ASSERT
+	k_spinlock_key_t key = k_spin_lock(&z_thread_monitor_lock);
+	bool reused = false;
+
+	/* Check if the thread is already in the list */
+	for (struct k_thread *t = _kernel.threads; t; t = t->next_thread) {
+		if (t == new_thread) {
+			reused = true;
+			break;
+		}
+	}
+
+	k_spin_unlock(&z_thread_monitor_lock, key);
+
+	__ASSERT(!reused, "thread %p is already in the running list", new_thread);
+#endif /* CONFIG_ASSERT */
+#endif /* CONFIG_THREAD_MONITOR */
+	ARG_UNUSED(new_thread);
+}
+
 /*
  * The provided stack_size value is presumed to be either the result of
  * K_THREAD_STACK_SIZEOF(stack), or the size value passed to the instance
@@ -887,6 +909,8 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	char *stack_ptr;
 
 	Z_ASSERT_VALID_PRIO(prio, entry);
+
+	assert_thread_not_reused(new_thread);
 
 	thread_abort_cleanup_check_reuse(new_thread);
 	init_thread_obj_core(new_thread);
@@ -1304,10 +1328,7 @@ int z_vrfy_k_thread_stack_space_get(const struct k_thread *thread,
 	size_t unused;
 	int ret;
 
-	ret = K_SYSCALL_OBJ(thread, K_OBJ_THREAD);
-	CHECKIF(ret != 0) {
-		return ret;
-	}
+	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 
 	ret = z_impl_k_thread_stack_space_get(thread, &unused);
 	CHECKIF(ret != 0) {
@@ -1666,7 +1687,8 @@ void z_impl_k_thread_suspend(k_tid_t thread)
 	/* Special case "suspend the current thread" as it doesn't
 	 * need the async complexity below.
 	 */
-	if (!IS_ENABLED(CONFIG_SMP) && (thread == _current) && !arch_is_in_isr()) {
+	if (!IS_ENABLED(CONFIG_SMP) &&
+	    likely((thread == _current) && !arch_is_in_isr())) {
 		z_thread_suspend_current(thread);
 		return;
 	}

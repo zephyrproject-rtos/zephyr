@@ -58,6 +58,19 @@ void memc_xspi_wait_bus_idle(const struct device *dev)
 	}
 }
 
+void memc_xspi_reset(const struct device *dev)
+{
+	struct memc_mcux_xspi_data *data = dev->data;
+
+	/*
+	 * Reset the target-group queue plus the flash-memory and AHB domains.
+	 * This invalidates the AHB read/prefetch buffer so a read issued after
+	 * a program/erase observes the new flash contents instead of stale
+	 * prefetched data.
+	 */
+	XSPI_SoftwareReset(data->base);
+}
+
 int memc_xspi_set_device_config(const struct device *dev, const xspi_device_config_t *device_config,
 				const uint32_t *lut_array, uint8_t lut_count)
 {

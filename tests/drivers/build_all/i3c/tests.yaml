@@ -70,3 +70,12 @@ tests:
   drivers.i3c.build.stm32:
     platform_allow:
       - nucleo_c5a3zg
+  drivers.i3c.build.shell_without_driver:
+    # The DesignWare node stays enabled while its driver is not built: the
+    # shell must still link, since class enumeration lists candidates.
+    platform_allow:
+      - qemu_cortex_m3
+    tags:
+      - i3c_cdns
+    extra_configs:
+      - CONFIG_I3C_DW=n

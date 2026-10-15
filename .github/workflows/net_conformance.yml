@@ -1,0 +1,100 @@
+# Runs the TTCN-3 protocol conformance suites against native_sim.
+#
+# These are not part of the ordinary Twister run. They need a Titan
+# installation, a network interface facing the device, and a checkout of the
+# TTCN-3 suites, none of which a normal build has. They are also slow, and the
+# suites cannot run at the same time as each other, so this runs nightly rather
+# than per pull request, except for a pull request that changes the tests, the
+# script that runs them or this workflow.
+#
+# It runs on a GitHub-hosted virtual machine rather than in a container on the
+# project's own runners. The suites talk to the device over tap interfaces, and
+# creating one needs CAP_NET_ADMIN, which the containers on those runners do not
+# get: they are started through a Kubernetes hook that takes no notice of docker
+# options such as --cap-add. On the virtual machine sudo is enough, and the job
+# builds only native_sim, so it needs nothing from the project's images.
+
+name: Network protocol conformance
+
+on:
+  schedule:
+    # 03:00 UTC nightly
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/net_conformance.yml'
+      - 'scripts/net/run-conformance-tests.sh'
+      - 'tests/net/conformance/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  conformance:
+    if: github.repository_owner == 'zephyrproject-rtos'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      ZEPHYR_TOOLCHAIN_VARIANT: zephyr
+      # A suite skips itself when something it needs is missing. This job
+      # exists to run them all, so here that is a failure.
+      NET_CONFORMANCE_REQUIRED: 1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: zephyr
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: zephyr/scripts/requirements-actions.txt
+
+      - name: Set up the Zephyr workspace
+        uses: zephyrproject-rtos/action-zephyr-setup@be8136a8bba01580485d98b7ad2d32477c36a49a # v1.0.15
+        with:
+          app-path: zephyr
+          # native_sim builds with the host compiler; the SDK is installed for
+          # its host tools, and this is the smallest toolchain to ask for.
+          toolchains: 'x86_64-zephyr-elf'
+          enable-ccache: false
+          # The suites live in net-tools, and native_sim needs no other
+          # module.
+          west-project-filter: '-.*,+net-tools'
+
+      - name: Install Titan
+        run: |
+          sudo apt-get update
+          # expect is needed by suites that run through the main controller.
+          sudo apt-get install -y --no-install-recommends eclipse-titan expect
+
+      - name: Run the conformance suites
+        working-directory: zephyr
+        run: |
+          export ZEPHYR_SDK_INSTALL_DIR=${{ github.workspace }}/zephyr-sdk
+          # The script fetches the third party TTCN-3 modules, creates the
+          # two interfaces, re-runs itself under sudo because some suites bind
+          # a privileged port or open a packet socket, runs Twister once over
+          # the whole directory and removes the interfaces again.
+          ./scripts/net/run-conformance-tests.sh \
+            --net-tools-dir ${{ github.workspace }}/tools/net-tools \
+            --titan-dir /usr --outdir twister-out
+
+      - name: Upload the results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: net-conformance-results
+          path: |
+            zephyr/twister-out/twister.xml
+            zephyr/twister-out/**/twister_harness.log
+          if-no-files-found: ignore

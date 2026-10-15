@@ -34,7 +34,7 @@ struct fota_ctx {
 	size_t image_size;
 	int http_status;
 
-	/* http_client requires a temporary buffers for the http responces (headers + body) */
+	/* http_client requires a temporary buffer for the http responses (headers + body) */
 	uint8_t http_buffer[1024];
 	/* Larger buffers require fewer HTTP requests, so downloading the payload is faster. */
 	uint8_t flash_buffer[8 * 1024];

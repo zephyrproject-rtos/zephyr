@@ -25,6 +25,7 @@ def test_runner_imports():
         # zephyr-keep-sorted-start
         'amebaflash',
         'arc-nsim',
+        'bflb_flash_command',
         'bflb_mcu_tool',
         'blackmagicprobe',
         'bossac',
@@ -52,6 +53,7 @@ def test_runner_imports():
         'nrfjprog',
         'nrfutil',
         'nxp_s32dbg',
+        'openfpgaloader',
         'openocd',
         'probe-rs',
         'pyocd',
@@ -72,6 +74,7 @@ def test_runner_imports():
         'teensy',
         'trace32',
         'uf2',
+        'vegadude',
         'wchisp',
         'wlink',
         'xsdb',

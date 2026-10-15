@@ -41,6 +41,9 @@
 #define STM32_CLOCK_PERIPH_GPIOK	0x554
 #define STM32_CLOCK_PERIPH_GPIOZ	0x558
 
+/* Timer Peripheral */
+#define STM32_CLOCK_PERIPH_TIM12	0x728
+
 /* SPI Peripheral */
 #define STM32_CLOCK_PERIPH_SPI1		0x758
 #define STM32_CLOCK_PERIPH_SPI2		0x75C
@@ -78,6 +81,10 @@
 /* Watchdog Peripheral */
 #define STM32_CLOCK_PERIPH_IWDG4	0x894
 #define STM32_CLOCK_PERIPH_WWDG1	0x89C
+
+/* Camera peripherals */
+#define STM32_CLOCK_PERIPH_CSI2		0x858
+#define STM32_CLOCK_PERIPH_DCMIPP	0x85C
 
 /* CRC peripheral */
 #define STM32_CLOCK_PERIPH_CRC		0x8B4

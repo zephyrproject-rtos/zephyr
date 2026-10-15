@@ -143,7 +143,12 @@ def _resolve_build_dir(fmt, guess, cwd, **kwargs):
     source_dir = kwargs.get('source_dir')
     if source_dir:
         if escapes_directory(cwd, source_dir):
-            kwargs['source_dir'] = os.path.relpath(source_dir, cwd)
+            try:
+                kwargs['source_dir'] = os.path.relpath(source_dir, cwd)
+            except ValueError:
+                # Two paths with no common root have no relative path between
+                # them at all: on Windows, ones on different drives.
+                kwargs['source_dir'] = ''
         else:
             # no meaningful relative path possible
             kwargs['source_dir'] = ''

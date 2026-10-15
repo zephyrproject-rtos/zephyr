@@ -279,7 +279,7 @@ p3t1755dp_ard_i2c_interface: &lpi2c3 {};
 
 /* Internal port */
 &enetc_psi1 {
-	local-mac-address = [00 00 00 01 03 00];
+	zephyr,random-mac-address;
 	status = "okay";
 };
 
@@ -292,7 +292,7 @@ p3t1755dp_ard_i2c_interface: &lpi2c3 {};
 };
 
 &switch_port0 {
-	local-mac-address = [00 00 00 01 05 00];
+	zephyr,random-mac-address;
 	pinctrl-0 = <&eth0_default>;
 	pinctrl-names = "default";
 	phy-handle = <&phy0>;
@@ -301,7 +301,7 @@ p3t1755dp_ard_i2c_interface: &lpi2c3 {};
 };
 
 &switch_port2 {
-	local-mac-address = [00 00 00 01 07 00];
+	zephyr,random-mac-address;
 	pinctrl-0 = <&eth2_default>;
 	pinctrl-names = "default";
 	phy-handle = <&phy2>;
@@ -311,7 +311,7 @@ p3t1755dp_ard_i2c_interface: &lpi2c3 {};
 
 /* Internal port connecting switch to CPU */
 &switch_port4 {
-	local-mac-address = [00 00 00 01 08 00];
+	zephyr,random-mac-address;
 	status = "okay";
 };
 

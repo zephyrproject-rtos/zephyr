@@ -9,5 +9,23 @@
 / {
 	soc {
 		compatible = "st,stm32n657", "st,stm32n6", "simple-bus";
+
+		cryp: crypto@54020800 {
+			compatible = "st,stm32-cryp";
+			reg = <0x54020800 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB3, 2)>;
+			resets = <&rctl STM32_RESET(AHB3, 2)>;
+			interrupts = <37 0>;
+			status = "disabled";
+		};
+
+		hash: crypto@54020400 {
+			compatible = "st,stm32-hash";
+			reg = <0x54020400 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB3, 1)>;
+			resets = <&rctl STM32_RESET(AHB3, 1)>;
+			interrupts = <39 0>;
+			status = "disabled";
+		};
 	};
 };

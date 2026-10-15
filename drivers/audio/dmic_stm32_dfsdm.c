@@ -999,6 +999,7 @@ static int dmic_stm32_dfsdm_pm_action(const struct device *dev, enum pm_device_a
  */
 #define DMIC_DFSDM_HW_CHANNEL(flt) DT_FOREACH_CHILD_STATUS_OKAY_SEP(flt, DMIC_DFSDM_CHAN_IDX, ())
 
+/* The injected trigger is never external, so the HAL ignores ExtTrigger. */
 #define DMIC_DFSDM_FILTER_HFILTER(flt)                                                             \
 	{                                                                                          \
 		.Instance = DMIC_DFSDM_FLT_REG_ADDR(flt),                                          \
@@ -1007,7 +1008,7 @@ static int dmic_stm32_dfsdm_pm_action(const struct device *dev, enum pm_device_a
 				.InjectedParam =                                                   \
 					{                                                          \
 						.DmaMode = DISABLE,                                \
-						.ExtTrigger = DFSDM_FILTER_EXT_TRIG_TIM8_TRGO,     \
+						.ExtTrigger = DFSDM_FILTER_EXT_TRIG_TIM1_TRGO,     \
 						.ExtTriggerEdge =                                  \
 							DFSDM_FILTER_EXT_TRIG_BOTH_EDGES,          \
 						.ScanMode = DISABLE,                               \

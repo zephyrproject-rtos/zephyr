@@ -104,7 +104,7 @@ int validate_hw_compatibility(const struct device *dev)
 	flags = crypto_query_hwcaps(dev);
 	if ((flags & CAP_RAW_KEY) == 0U) {
 		LOG_INF("Please provision the key separately "
-			"as the module doesnt support a raw key");
+			"as the module doesn't support a raw key");
 		return -1;
 	}
 

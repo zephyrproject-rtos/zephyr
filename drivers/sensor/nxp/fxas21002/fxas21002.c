@@ -13,6 +13,9 @@
 
 LOG_MODULE_REGISTER(FXAS21002, CONFIG_SENSOR_LOG_LEVEL);
 
+/* Datasheet: I2C/SPI is accessible 50 ms after VDD/VDDIO power-up or reset. */
+#define FXAS21002_BOOT_TIME_MS 50
+
 /* Sample period in microseconds, indexed by output data rate encoding (DR) */
 static const uint32_t sample_period[] = {
 	1250, 2500, 5000, 10000, 20000, 40000, 80000, 80000
@@ -381,6 +384,9 @@ static int fxas21002_init(const struct device *dev)
 		 */
 		config->ops->byte_write(dev, FXAS21002_REG_CTRLREG1,
 					FXAS21002_CTRLREG1_RST_MASK);
+
+		/* Chip NACKs until the same 50 ms boot time as POR. */
+		k_msleep(FXAS21002_BOOT_TIME_MS);
 
 		/* Wait for the reset sequence to complete */
 		do {

@@ -303,7 +303,8 @@ static int ac057tc1_write(const struct device *dev, const uint16_t x, const uint
 	buf_len = DIV_ROUND_UP(desc->width, 2U) * desc->height;
 
 	if (buf == NULL || desc->buf_size < buf_len) {
-		LOG_ERR("Invalid buffer: buf=%p size=%u expected=%u", buf, desc->buf_size, buf_len);
+		LOG_ERR("Invalid buffer: buf=%p size=%u expected=%zu", buf, desc->buf_size,
+			buf_len);
 		return -EINVAL;
 	}
 
@@ -398,7 +399,6 @@ static void ac057tc1_get_capabilities(const struct device *dev, struct display_c
 	const struct ac057tc1_config *config = dev->config;
 	struct ac057tc1_data *data = dev->data;
 
-	memset(caps, 0, sizeof(struct display_capabilities));
 	memcpy(caps->color_palette, config->color_palette, sizeof(config->color_palette));
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;

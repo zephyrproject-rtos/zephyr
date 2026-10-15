@@ -19,6 +19,7 @@ class HardwareData:
     product: str | None = None
     serial_pty: str | None = None
     connected: bool = False
+    base_params: str | None = None
     runner_params: str | None = None
     pre_script: str | None = None
     post_script: str | None = None
@@ -29,6 +30,7 @@ class HardwareData:
     flash_with_test: bool = False
     flash_before: bool = False
     fixtures: list[str] = field(default_factory=list)
+    run_with_fixture_only: bool = False
     probe_id: str | None = None
     notes: str | None = None
     match: bool = False

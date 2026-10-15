@@ -1500,4 +1500,40 @@ ZTEST(net_pkt_test_suite, test_net_pkt_alloc_buffer_nowait_exhausted)
 	release_pool_hog(NULL);
 }
 
+ZTEST(net_pkt_test_suite, test_net_pkt_frag_double_free)
+{
+	struct net_buf_pool *tx_data;
+	struct net_buf *frag;
+	atomic_val_t avail;
+	uint8_t pool_id;
+	uint8_t user_data_size;
+
+	if (IS_ENABLED(CONFIG_ASSERT)) {
+		/* An assertion catches the double free before it returns */
+		ztest_test_skip();
+	}
+
+	net_pkt_get_info(NULL, NULL, NULL, &tx_data);
+
+	frag = net_pkt_get_reserve_tx_data(16, K_NO_WAIT);
+	zassert_not_null(frag, "Failed to get fragment");
+
+	pool_id = frag->pool_id;
+	user_data_size = frag->user_data_size;
+
+	net_pkt_frag_unref(frag);
+	zassert_equal(frag->ref, 0U, "Freed fragment has a reference");
+	avail = atomic_get(&tx_data->avail_count);
+
+	/* A second unref has to leave the freed fragment as it is */
+	net_pkt_frag_unref(frag);
+	zexpect_equal(atomic_get(&tx_data->avail_count), avail, "Fragment freed twice");
+	zexpect_equal(frag->ref, 0U, "Reference count changed to %u", frag->ref);
+	zexpect_equal(frag->flags, 0U, "Flags changed to 0x%02x", frag->flags);
+	zexpect_equal(frag->pool_id, pool_id, "Pool id changed from %u to %u", pool_id,
+		      frag->pool_id);
+	zexpect_equal(frag->user_data_size, user_data_size, "User data size changed from %u to %u",
+		      user_data_size, frag->user_data_size);
+}
+
 ZTEST_SUITE(net_pkt_test_suite, NULL, NULL, NULL, NULL, NULL);

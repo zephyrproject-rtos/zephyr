@@ -12,7 +12,6 @@ source "subsys/logging/Kconfig.template.log_config"
 config MULTITHREADING
 	bool "Multi-threading" if ARCH_HAS_SINGLE_THREAD_SUPPORT
 	default y
-	select RING_BUFFER
 	help
 	  If disabled, only the main thread is available, so a main() function
 	  must be provided. Interrupts are available. Kernel objects will most
@@ -141,7 +140,7 @@ config SCHED_DEADLINE
 config MAIN_STACK_SIZE
 	int "Size of stack for initialization and main thread"
 	default 2048 if COVERAGE_GCOV
-	default 512 if ZTEST && !(RISCV || X86 || ARM || ARC || OPENRISC)
+	default 512 if ZTEST && !(RISCV || X86 || ARM || ARC || OPENRISC || HEXAGON)
 	default 1024
 	help
 	  When the initialization is complete, the thread executing it then
@@ -757,6 +756,8 @@ config SYS_CLOCK_TICKS_PER_SEC
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int "System clock's h/w timer frequency"
 	default 0 if TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+	default $(dt_node_int_prop_int,/cpus/cpu@0,timebase-frequency) \
+		if $(dt_node_has_prop,/cpus/cpu@0,timebase-frequency)
 	depends on SYS_CLOCK_EXISTS
 	help
 	  This option specifies the frequency of the hardware timer used for the

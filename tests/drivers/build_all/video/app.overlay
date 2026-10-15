@@ -205,5 +205,9 @@
 				};
 			};
 		};
+
+		test_video_native_sim_fifo: video_native_sim_fifo {
+			compatible = "zephyr,native-sim-video-fifo";
+		};
 	};
 };

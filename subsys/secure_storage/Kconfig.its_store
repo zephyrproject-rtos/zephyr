@@ -4,7 +4,8 @@
 choice SECURE_STORAGE_ITS_STORE_IMPLEMENTATION
 	prompt "ITS store module implementation"
 
-DT_ITS_PARTITION := $(dt_chosen_path,secure_storage_its_partition)
+DT_CHOSEN_Z_SECURE_STORAGE_ITS_PARTITION := zephyr,secure-storage-its-partition
+DT_ITS_PARTITION := $(dt_chosen_path,$(DT_CHOSEN_Z_SECURE_STORAGE_ITS_PARTITION))
 DT_CHOSEN_Z_SETTINGS_PARTITION := zephyr,settings-partition
 DT_SETTINGS_PARTITIION := $(dt_chosen_path,$(DT_CHOSEN_Z_SETTINGS_PARTITION))
 DT_STORAGE_PARTITION := $(dt_nodelabel_path,storage_partition)
@@ -18,7 +19,7 @@ config SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_ZMS
 	depends on ZMS
 	help
 	  This implementation of the ITS store module makes direct use of ZMS for storage.
-	  It needs a secure_storage_its_partition devicetree chosen property that points
+	  It needs a zephyr,secure-storage-its-partition devicetree chosen property that points
 	  to a fixed storage partition that will be dedicated to the ITS. It has lower
 	  overhead compared to the settings-based implementation, both in terms of runtime
 	  execution and storage space, and also ROM footprint if the settings subsystem is disabled.

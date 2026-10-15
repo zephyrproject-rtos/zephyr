@@ -233,7 +233,7 @@ def test_sample_STM_decoded(dut: DeviceAdapter):
     autoconf_file = f"{BUILD_DIR}/_sysbuild/autoconf.h"
 
     # nrf54h20 prints immediately after it is flashed.
-    # Wait a bit to skipp logs from previous test.
+    # Wait a bit to skip logs from previous test.
     sleep(5)
 
     # Get output from serial port
@@ -326,7 +326,7 @@ def test_STM_decoded(dut: DeviceAdapter):
     )
 
     # nrf54h20 prints immediately after it is flashed.
-    # Wait a bit to skipp logs from previous test.
+    # Wait a bit to skip logs from previous test.
     sleep(5)
 
     # Get output from serial port

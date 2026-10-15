@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/pm/pm.h>
@@ -129,7 +130,7 @@ void z_sys_clock_lpm_enter(uint64_t max_lpm_time_us)
 	 * does not need Cy_WDT_Enable() to start.
 	 */
 
-	NVIC_ClearPendingIRQ(WDT_IRQ_NUM);
+	k_irq_clear_pending(WDT_IRQ_NUM);
 	irq_enable(WDT_IRQ_NUM);
 }
 
@@ -151,7 +152,7 @@ static bool wdt_lpm_continue(void)
 	}
 
 	Cy_WDT_ClearInterrupt();
-	NVIC_ClearPendingIRQ(WDT_IRQ_NUM);
+	k_irq_clear_pending(WDT_IRQ_NUM);
 	wdt_lpm_arm_window(now_value, wdt_target_cycles - wdt_elapsed_cycles);
 
 	return true;
@@ -168,7 +169,7 @@ uint64_t z_sys_clock_lpm_exit(void)
 	Cy_WDT_ClearInterrupt();
 
 	irq_disable(WDT_IRQ_NUM);
-	NVIC_ClearPendingIRQ(WDT_IRQ_NUM);
+	k_irq_clear_pending(WDT_IRQ_NUM);
 
 	total_cycles = wdt_elapsed_cycles + ((end_count - wdt_start_count) & UINT16_MAX);
 

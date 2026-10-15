@@ -13,7 +13,7 @@ menuconfig GPIO_MFXSTM32L152
 
 config GPIO_MFXSTM32L152_INIT_PRIORITY
 	int "Init priority"
-	default 70
+	default I2C_INIT_PRIORITY
 	depends on GPIO_MFXSTM32L152
 	help
 	  Device driver initialization priority.

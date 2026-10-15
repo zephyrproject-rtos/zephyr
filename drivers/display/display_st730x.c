@@ -535,7 +535,7 @@ static int st730x_write(const struct device *dev, const uint16_t x, const uint16
 		return -EINVAL;
 	}
 
-	LOG_DBG("x %u, y %u, pitch %u, width %u, height %u, buf_len %u", x, y, desc->pitch,
+	LOG_DBG("x %u, y %u, pitch %u, width %u, height %u, buf_len %zu", x, y, desc->pitch,
 		desc->width, desc->height, buf_len);
 
 	err = mipi_dbi_command_write(config->mipi_dev, &config->dbi_config, ST730X_SET_COLUMN_ADDR,
@@ -589,7 +589,6 @@ static void st730x_get_capabilities(const struct device *dev, struct display_cap
 	const struct st730x_config *config = dev->config;
 	struct st730x_data *data = dev->data;
 
-	memset(caps, 0, sizeof(struct display_capabilities));
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
 	if (config->bppx > 1 || config->bppy > 1) {

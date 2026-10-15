@@ -16,7 +16,7 @@
  * @brief Network Interface abstraction layer
  * @defgroup net_if Network Interface abstraction layer
  * @since 1.5
- * @version 1.0.0
+ * @version 1.1.0
  * @ingroup networking
  * @{
  */
@@ -47,6 +47,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/** @rfc{7527,section-4} Enhanced DAD nonce payload length in bytes. */
+#define NET_IF_IPV6_DAD_NONCE_LEN 6U
 
 /**
  * @brief Network Interface unicast IP addresses
@@ -105,6 +108,16 @@ struct net_if_addr {
 
 			/** How many times we have done DAD */
 			uint8_t dad_count;
+
+			/** How many times the solicitation for the current
+			 *  round has failed to go out. Non-zero means nothing
+			 *  has been asked yet, so the address has not been
+			 *  checked and must not be used.
+			 */
+			uint8_t dad_tx_failures;
+
+			/** @rfc{7527,section-4} Enhanced DAD nonce payload (6 bytes). */
+			uint8_t dad_nonce[NET_IF_IPV6_DAD_NONCE_LEN];
 		};
 #endif /* CONFIG_NET_IPV6_DAD */
 #if defined(CONFIG_NET_IPV4_ACD)
@@ -169,6 +182,40 @@ struct net_if_mcast_addr {
 
 	/** Rejoining multicast groups list node */
 	sys_snode_t rejoin_node;
+
+#if defined(CONFIG_NET_IPV4_IGMP)
+	/** Deadline of the pending response to an IGMP Membership Query for
+	 *  this IPv4 group, never expiring when no response is pending.
+	 */
+	k_timepoint_t igmp_resp_timeout;
+
+	/** Deadline of the next retransmission of the unsolicited IGMP report
+	 *  of a join of this IPv4 group, never expiring when none is pending.
+	 */
+	k_timepoint_t igmp_retx_timeout;
+
+	/** Retransmissions of the unsolicited IGMP report of this IPv4 group
+	 *  left.
+	 */
+	uint8_t igmp_retx_left;
+#endif
+
+#if defined(CONFIG_NET_IPV6_MLD)
+	/** Deadline of the pending response to a Multicast Listener Query for
+	 *  this IPv6 group, never expiring when no response is pending.
+	 */
+	k_timepoint_t mld_resp_timeout;
+
+	/** Deadline of the next retransmission of the unsolicited MLD report
+	 *  of a join of this IPv6 group, never expiring when none is pending.
+	 */
+	k_timepoint_t mld_retx_timeout;
+
+	/** Retransmissions of the unsolicited MLD report of this IPv6 group
+	 *  left.
+	 */
+	uint8_t mld_retx_left;
+#endif
 
 #if defined(CONFIG_NET_IPV4_IGMPV3)
 	/** Sources to filter on */
@@ -374,6 +421,23 @@ struct net_if_ipv6 {
 	uint32_t desync_factor;
 #endif /* CONFIG_NET_IPV6_PE */
 
+#if defined(CONFIG_NET_IPV6_MLD)
+	/** Deadline of the pending response to an MLDv2 General Query, never
+	 *  expiring when no response is pending.
+	 */
+	k_timepoint_t mld_general_timeout;
+
+	/** MLDv1 Older Version Querier Present timer (@rfc{3810,section-8.2.1}),
+	 *  expired when no MLDv1 querier is present.
+	 */
+	k_timepoint_t mld_v1_querier_timeout;
+
+	/** MLD version the host last operated in on this interface (1 or 2).
+	 *  0 until the first query or timer run and stands for MLDv2.
+	 */
+	uint8_t mld_version;
+#endif
+
 #if defined(CONFIG_NET_IPV6_ND) && defined(CONFIG_NET_NATIVE_IPV6)
 	/** Router solicitation timer node */
 	sys_snode_t rs_node;
@@ -523,6 +587,29 @@ struct net_if_ipv4 {
 	/** IPv4 time-to-live for multicast packets */
 	uint8_t mcast_ttl;
 
+#if defined(CONFIG_NET_IPV4_IGMP)
+	/** Deadline of the pending response to an IGMPv3 General Query, never
+	 *  expiring when no response is pending.
+	 */
+	k_timepoint_t igmp_general_timeout;
+
+	/** IGMPv1 Querier Present timer (@rfc{3376,section-7.2.1}), expired
+	 *  when no IGMPv1 querier is present.
+	 */
+	k_timepoint_t igmp_v1_querier_timeout;
+
+	/** IGMPv2 Querier Present timer (@rfc{3376,section-7.2.1}), expired
+	 *  when no IGMPv2 querier is present.
+	 */
+	k_timepoint_t igmp_v2_querier_timeout;
+
+	/** IGMP version the host last operated in on this interface (1, 2 or
+	 *  3). 0 until the first query or timer run and stands for the newest
+	 *  version built in.
+	 */
+	uint8_t igmp_version;
+#endif
+
 #if defined(CONFIG_NET_IPV4_ACD)
 	/** IPv4 conflict count.  */
 	uint8_t conflict_cnt;
@@ -568,6 +655,12 @@ struct net_if_dhcpv4 {
 
 	/** Number of attempts made for REQUEST and RENEWAL messages */
 	uint8_t attempts;
+
+	/** Gateway the client installed, unspecified if it installed none */
+	struct net_in_addr gw;
+
+	/** Gateway the interface carried before the client installed its own */
+	struct net_in_addr gw_before;
 
 	/** The address of the server the request is sent to */
 	struct net_in_addr request_server_addr;
@@ -1380,6 +1473,50 @@ static inline void net_if_nbr_reachability_hint(struct net_if *iface,
 {
 	ARG_UNUSED(iface);
 	ARG_UNUSED(ipv6_addr);
+}
+#endif
+
+/**
+ * @brief Flush the IPv6 neighbor cache of a network interface.
+ *
+ * Remove every dynamically learned neighbor so that the link layer address
+ * of each of those peers is resolved again when it is next needed. Entries
+ * that were added statically are kept; use net_if_ipv6_nbr_rm() to remove
+ * one of those.
+ *
+ * @param iface Network interface, or NULL to flush every interface.
+ */
+#if defined(CONFIG_NET_IPV6)
+void net_if_ipv6_nbr_flush(struct net_if *iface);
+#else
+static inline void net_if_ipv6_nbr_flush(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+}
+#endif
+
+/**
+ * @brief Remove one neighbor from the IPv6 neighbor cache.
+ *
+ * Unlike net_if_ipv6_nbr_flush() this also removes a neighbor that was added
+ * statically, so it is the way to take one of those back. Any packets waiting
+ * for the address to be resolved are dropped.
+ *
+ * @param iface Network interface, or NULL to match any interface.
+ * @param addr IPv6 address of the neighbor.
+ *
+ * @return True if a neighbor was removed, false if there was none.
+ */
+#if defined(CONFIG_NET_IPV6)
+bool net_if_ipv6_nbr_rm(struct net_if *iface, const struct net_in6_addr *addr);
+#else
+static inline bool net_if_ipv6_nbr_rm(struct net_if *iface,
+				      const struct net_in6_addr *addr)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(addr);
+
+	return false;
 }
 #endif
 
@@ -2757,6 +2894,51 @@ static inline bool net_if_ipv4_maddr_is_joined(struct net_if_mcast_addr *addr)
  */
 void net_if_ipv4_maddr_leave(struct net_if *iface,
 			     struct net_if_mcast_addr *addr);
+
+/**
+ * @brief Flush the IPv4 neighbor cache of a network interface.
+ *
+ * Remove every dynamically learned neighbor so that the link layer address
+ * of each of those peers is resolved again when it is next needed. Entries
+ * that were added statically are kept; use net_if_ipv4_nbr_rm() to remove
+ * one of those. On Ethernet links this cache is the ARP cache; a link layer
+ * that does not resolve IPv4 addresses has nothing to flush.
+ *
+ * @param iface Network interface, or NULL to flush every interface.
+ */
+#if defined(CONFIG_NET_IPV4)
+void net_if_ipv4_nbr_flush(struct net_if *iface);
+#else
+static inline void net_if_ipv4_nbr_flush(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+}
+#endif
+
+/**
+ * @brief Remove one neighbor from the IPv4 neighbor cache.
+ *
+ * Unlike net_if_ipv4_nbr_flush() this also removes a neighbor that was added
+ * statically, so it is the way to take one of those back. Any packets waiting
+ * for the address to be resolved are dropped.
+ *
+ * @param iface Network interface, or NULL to match any interface.
+ * @param addr IPv4 address of the neighbor.
+ *
+ * @return True if a neighbor was removed, false if there was none.
+ */
+#if defined(CONFIG_NET_IPV4)
+bool net_if_ipv4_nbr_rm(struct net_if *iface, const struct net_in_addr *addr);
+#else
+static inline bool net_if_ipv4_nbr_rm(struct net_if *iface,
+				      const struct net_in_addr *addr)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(addr);
+
+	return false;
+}
+#endif
 
 /**
  * @brief Get the IPv4 address of the given router

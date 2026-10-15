@@ -341,6 +341,11 @@ static int ifx_cat1_uart_fifo_fill(const struct device *dev, const uint8_t *tx_d
 	struct ifx_cat1_uart_data *const data = dev->data;
 	size_t _size = (size_t)size;
 
+	/* The PDL asserts on a zero-length buffer, which the Zephyr API allows. */
+	if (size <= 0) {
+		return 0;
+	}
+
 	(void)cyhal_uart_write(&data->obj, (uint8_t *)tx_data, &_size);
 	return (int)_size;
 }
@@ -350,6 +355,11 @@ static int ifx_cat1_uart_fifo_read(const struct device *dev, uint8_t *rx_data, c
 {
 	struct ifx_cat1_uart_data *const data = dev->data;
 	size_t _size = (size_t)size;
+
+	/* The PDL asserts on a zero-length buffer, which the Zephyr API allows. */
+	if (size <= 0) {
+		return 0;
+	}
 
 	(void)cyhal_uart_read(&data->obj, rx_data, &_size);
 	return (int)_size;
@@ -379,9 +389,12 @@ static void ifx_cat1_uart_irq_tx_disable(const struct device *dev)
 static int ifx_cat1_uart_irq_tx_ready(const struct device *dev)
 {
 	struct ifx_cat1_uart_data *const data = dev->data;
-	uint32_t mask = Cy_SCB_GetTxInterruptStatusMasked(data->obj.base);
 
-	return (((mask & (CY_SCB_UART_TX_NOT_FULL | SCB_INTR_TX_EMPTY_Msk)) != 0u) ? 1 : 0);
+	if ((Cy_SCB_GetTxInterruptMask(data->obj.base) & CY_SCB_UART_TX_EMPTY) == 0u) {
+		return 0;
+	}
+
+	return (cyhal_uart_writable(&data->obj) != 0u) ? 1 : 0;
 }
 
 /* Check if UART TX block finished transmission */
@@ -446,9 +459,14 @@ static void ifx_cat1_uart_irq_err_disable(const struct device *dev)
 static int ifx_cat1_uart_irq_is_pending(const struct device *dev)
 {
 	struct ifx_cat1_uart_data *const data = dev->data;
-	uint32_t intcause = Cy_SCB_GetInterruptCause(data->obj.base);
+	int rx_pending = 0;
 
-	return (int)(intcause & (CY_SCB_TX_INTR | CY_SCB_RX_INTR));
+	/* The PDL clears the latched cause only after the callback; use FIFO state. */
+	if ((Cy_SCB_GetRxInterruptMask(data->obj.base) & CY_SCB_UART_RX_NOT_EMPTY) != 0u) {
+		rx_pending = ifx_cat1_uart_irq_rx_ready(dev);
+	}
+
+	return ((rx_pending != 0) || (ifx_cat1_uart_irq_tx_ready(dev) != 0)) ? 1 : 0;
 }
 
 /* Start processing interrupts in ISR.
@@ -1154,7 +1172,7 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 		UART_DMA_CHANNEL(n, tx, MEMORY_TO_PERIPHERAL, 1, 1)                                \
 			UART_DMA_CHANNEL(n, rx, PERIPHERAL_TO_MEMORY, 1, 1)};                      \
                                                                                                    \
-	static struct ifx_cat1_uart_config ifx_cat1_uart##n##_cfg = {                              \
+	static const struct ifx_cat1_uart_config ifx_cat1_uart##n##_cfg = {                        \
 		.dt_cfg.baudrate = DT_INST_PROP(n, current_speed),                                 \
 		.dt_cfg.parity = DT_INST_ENUM_IDX(n, parity),                                      \
 		.dt_cfg.stop_bits = DT_INST_ENUM_IDX(n, stop_bits),                                \
@@ -1164,7 +1182,7 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 		.reg_addr = (CySCB_Type *)DT_INST_REG_ADDR(n),                                     \
 		IRQ_INFO(n)                                                                        \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &ifx_cat1_uart_init, NULL, &ifx_cat1_uart##n##_data,              \
+	DEVICE_DT_INST_DEFINE(n, ifx_cat1_uart_init, NULL, &ifx_cat1_uart##n##_data,               \
 			      &ifx_cat1_uart##n##_cfg, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,  \
 			      &ifx_cat1_uart_driver_api);
 

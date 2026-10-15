@@ -3,6 +3,13 @@ common:
     - drivers
     - flash
 tests:
+  drivers.flash.common.semihost:
+    platform_allow:
+      - qemu_riscv64
+    extra_args:
+      - FILE_SUFFIX=semihost
+    integration_platforms:
+      - qemu_riscv64
   drivers.flash.common.nrf_qspi_nor:
     platform_allow: nrf52840dk/nrf52840
     extra_args: EXTRA_CONF_FILE=boards/nrf52840dk_nrf52840_qspi_nor.conf
@@ -74,6 +81,7 @@ tests:
       - kit_pse84_ai/pse846gps2dbzc4a/m33
       - kit_pse84_ai/pse846gps2dbzc4a/m33/ns
       - kit_pse84_ai/pse846gps2dbzc4a/m55
+      - stm32h7s78_dk/stm32h7s7xx/ext_flash_app
     integration_platforms:
       - qemu_x86
       - mimxrt1060_evk/mimxrt1062/qspi
@@ -82,6 +90,10 @@ tests:
     platform_allow: qemu_x86
     integration_platforms:
       - qemu_x86
+  drivers.flash.common.pic32cm_sg_gc:
+    filter: CONFIG_FLASH_HAS_DRIVER_ENABLED
+    platform_allow:
+      - pic32cm_sg00_cpro
   drivers.flash.common.no_explicit_erase:
     platform_allow:
       - nrf54l15dk/nrf54l05/cpuapp
@@ -196,6 +208,18 @@ tests:
       - nucleo_g474re
     platform_exclude:
       - nucleo_wb55rg
+      - stm32h7s78_dk/stm32h7s7xx/ext_flash_app
+  drivers.flash.common.stm32.mx25:
+    filter: ((CONFIG_FLASH_HAS_DRIVER_ENABLED and not CONFIG_TRUSTED_EXECUTION_NONSECURE)
+      and CONFIG_SOC_FAMILY_STM32 and (dt_compat_enabled("mxicy_mx25u")))
+    integration_platforms:
+      - stm32h573i_dk
+    platform_allow:
+      - stm32h573i_dk
+      - stm32l562e_dk
+    extra_args:
+      - CONFIG_TEST_FORCE_STORAGE_PARTITION=n
+      - CONFIG_TEST_DRIVER_FLASH_SIZE=67108864
   drivers.flash.common.non_quad_mode:
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE=boards/mx25r64_non_quad.overlay
@@ -220,6 +244,7 @@ tests:
       - kit_pse84_ai/pse846gps2dbzc4a/m33
       - kit_pse84_ai/pse846gps2dbzc4a/m33/ns
       - kit_pse84_ai/pse846gps2dbzc4a/m55
+      - stm32h7s78_dk/stm32h7s7xx/ext_flash_app
     extra_args:
       - CONFIG_TEST_FORCE_STORAGE_PARTITION=y
   drivers.flash.common.test_storage_partition.nrf54lm20:
@@ -230,13 +255,18 @@ tests:
       fixture: external_flash
     extra_args:
       - CONFIG_TEST_FORCE_STORAGE_PARTITION=y
-  drivers.flash.common.ra_ospi_b_nor:
+  drivers.flash.common.ra8_ospi_b_nor:
     platform_allow:
       - ek_ra8m1
       - ek_ra8d1
+      - ek_ra8p1/r7ka8p1kflcac/cm85
+      - ek_ra8d2/r7ka8d2kflcac/cm85
+      - ek_ra8m2/r7ka8m2jflcac/cm85
+      - ek_ra8t2/r7ka8t2lflcac/cm85
     extra_args:
-      - DTC_OVERLAY_FILE="./boards/${BOARD}_ospi_b_nor.overlay"
-      - CONF_FILE="./prj.conf ./boards/${BOARD}_ospi_b_nor.conf"
+      - DTC_OVERLAY_FILE="./socs/ra8_ospi_b_nor.overlay"
+    extra_conf_files:
+      - ${ZEPHYR_BASE}/tests/drivers/flash/common/socs/ra8_ospi_b_nor.conf
   drivers.flash.common.mspi_single_io:
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
@@ -330,8 +360,10 @@ tests:
       - CONFIG_TEST_DRIVER_FLASH_SIZE=524288
     platform_allow:
       - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
+      - kit_pse84_ai/pse846gps2dbzc4a/m33/ns
     integration_platforms:
       - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
+      - kit_pse84_ai/pse846gps2dbzc4a/m33/ns
   drivers.flash.common.infineon_ext_flash:
     filter: CONFIG_FLASH_HAS_DRIVER_ENABLED
       and dt_label_compat_enabled("storage_partition", "zephyr,mapped-partition")
@@ -347,3 +379,10 @@ tests:
       - CONFIG_TEST_DRIVER_FLASH_SIZE=-1
     integration_platforms:
       - kit_pse84_eval/pse846gps2dbzc4a/m33
+  drivers.flash.common.stm32.xspi_driver_relocation:
+    filter: CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION
+    sysbuild: true
+    platform_allow:
+      - stm32h7s78_dk/stm32h7s7xx/ext_flash_app
+    integration_platforms:
+      - stm32h7s78_dk/stm32h7s7xx/ext_flash_app

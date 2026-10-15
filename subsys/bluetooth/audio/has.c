@@ -364,6 +364,10 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 	struct bt_conn_info info;
 	int ret;
 
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		return;
+	}
+
 	LOG_DBG("conn %p level %d err %d", (void *)conn, level, err);
 
 	if (err != BT_SECURITY_ERR_SUCCESS) {
@@ -399,6 +403,10 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	struct has_client *client;
 
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		return;
+	}
+
 	LOG_DBG("conn %p reason %d", (void *)conn, reason);
 
 	client = client_find_by_conn(conn);
@@ -411,6 +419,10 @@ static void identity_resolved(struct bt_conn *conn, const bt_addr_le_t *rpa,
 			      const bt_addr_le_t *identity)
 {
 	struct has_client *client;
+
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		return;
+	}
 
 	LOG_DBG("conn %p %s -> %s", (void *)conn, bt_addr_le_str(rpa), bt_addr_le_str(identity));
 
@@ -771,7 +783,13 @@ static void control_point_ind_complete(struct bt_conn *conn,
 
 static int control_point_send(struct has_client *client, struct net_buf_simple *buf)
 {
-	const uint16_t max_ntf_size = bt_audio_get_max_ntf_size(client->conn);
+	const int max_ntf_size = bt_att_get_max_notify_size(client->conn, BT_ATT_CHAN_OPT_NONE);
+
+	if (max_ntf_size < 0) {
+		__ASSERT(max_ntf_size != -EINVAL, "Unexpected -EINVAL");
+		LOG_DBG("Failed to get max notification size: %d", max_ntf_size);
+		return max_ntf_size; /* contains errno value */
+	}
 
 	if (max_ntf_size < buf->len) {
 		LOG_WRN("Sending truncated control point PDU %u < %u", max_ntf_size, buf->len);

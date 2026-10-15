@@ -1236,9 +1236,9 @@ void z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return, _callee_saved_
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
 	uint32_t psplim, psp2;
 
-	__asm__ volatile("mrs %0, psplim" : "=r"(psplim));
+	psplim = __get_PSPLIM();
 	psp2 = MAX(psplim + arm_m_switch_stack_buffer, psp);
-	__asm__ volatile("msr psp, %0" ::"r"(psp2));
+	__set_PSP(psp2);
 #endif
 
 	/* Prepare interrupt exit for context switch, but only if this

@@ -75,6 +75,10 @@
 	};
 };
 
+&{/cpus} {
+	timebase-frequency = <DT_FREQ_M(12)>;
+};
+
 &gint0 {
 	status = "okay";
 };

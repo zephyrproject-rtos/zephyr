@@ -85,7 +85,8 @@ static void prepare_rpl_and_start_reset(void)
 	/* Simulate IVI Update. This should only flip flags. The actual storing will happen
 	 * when bt_mesh_rpl_pending_store() is called.
 	 */
-	ztest_expect_value(bt_mesh_settings_store_schedule, flag, BT_MESH_SETTINGS_RPL_PENDING);
+	ztest_expect_value(bt_mesh_settings_store_schedule, flag,
+			   BT_MESH_SETTINGS_RPL_RESET_PENDING);
 	bt_mesh_rpl_reset();
 }
 
@@ -198,7 +199,8 @@ static void setup(void *f)
 
 	/* Clear RPL before every test. */
 	skip_delete = true;
-	ztest_expect_value(bt_mesh_settings_store_schedule, flag, BT_MESH_SETTINGS_RPL_PENDING);
+	ztest_expect_value(bt_mesh_settings_store_schedule, flag,
+			   BT_MESH_SETTINGS_RPL_RESET_PENDING);
 	bt_mesh_rpl_clear();
 	bt_mesh_rpl_pending_store(BT_MESH_ADDR_ALL_NODES);
 	skip_delete = false;

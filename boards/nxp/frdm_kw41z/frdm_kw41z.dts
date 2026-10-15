@@ -124,6 +124,10 @@
 	};
 };
 
+&{/cpus} {
+	timebase-frequency = <DT_FREQ_M(40)>;
+};
+
 &sim {
 	pllfll-select = <KINETIS_SIM_PLLFLLSEL_MCGPLLCLK>;
 	er32k-select = <KINETIS_SIM_ER32KSEL_OSC32KCLK>;
@@ -190,16 +194,18 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		slot0_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x00000000 0x00070000>;
 		};
 
 		storage_partition: partition@70000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x00070000 0x00010000>;
 		};

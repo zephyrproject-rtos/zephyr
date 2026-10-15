@@ -32,4 +32,15 @@ config CLOCK_CONTROL_NPCX_SUPP_FIU1
 	help
 	  Selected if NPCX series supports FIU1 bus.
 
+config CLOCK_CONTROL_NPCX_ESPI_FMCLK_IN_SLEEP
+	bool "Keep the fast clock to the eSPI_SIF module in sleep states"
+	default y
+	depends on $(dt_nodelabel_bool_prop,pcc,fast-clk-to-espi-sleep-support)
+	depends on ESPI_PERIPHERAL_UART && PM
+	help
+	  When this option is enabled, the fast clock (FMCLK) to the eSPI_SIF
+	  module remains enabled while the chip is in the Sleep or Deep Sleep
+	  power state. It is required by the eSPI virtual UART channel, which
+	  cannot receive host traffic without FMCLK.
+
 endif # CLOCK_CONTROL_NPCX

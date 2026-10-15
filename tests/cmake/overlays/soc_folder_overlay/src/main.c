@@ -87,7 +87,7 @@ ZTEST(soc_folder_overlay, test_app)
 	zassert_false(INCLUDED_BOARD_QUALIFIERS,
 		      "Did not expect board qualifier overlay to be present");
 	zassert_false(INCLUDED_SOC, "Did not expect soc overlay to be present");
-	zassert_false(INCLUDED_SOC_SUFFIX, "Did not epect soc suffix overlay to be present");
+	zassert_false(INCLUDED_SOC_SUFFIX, "Did not expect soc suffix overlay to be present");
 }
 #else
 #error "Invalid test type"

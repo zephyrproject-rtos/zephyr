@@ -5,7 +5,7 @@
  */
 
 /**
- * @brief File containing timer specific definitons for the
+ * @brief File containing timer specific definitions for the
  * Zephyr OS layer of the Wi-Fi driver.
  */
 

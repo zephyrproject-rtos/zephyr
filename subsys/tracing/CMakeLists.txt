@@ -47,6 +47,13 @@ if(CONFIG_TRACING_CORE)
     tracing_backend_adsp_memory_window.c
     )
 
+  if(CONFIG_TRACING_BACKEND_ITM)
+    zephyr_sources(tracing_backend_itm.c)
+    # The descriptor is only read from the ELF by a host tool; keep the
+    # symbol against gc-sections.
+    zephyr_link_libraries(-Wl,-u,itm_trace_descriptor)
+  endif()
+
   zephyr_sources_ifdef(
     CONFIG_TRACING_SHELL
     tracing_shell.c
@@ -55,11 +62,6 @@ endif()
 
 zephyr_sources(
   tracing_none.c
-  )
-
-zephyr_sources_ifdef(
-  CONFIG_TRACING_OBJECT_TRACKING
-  tracing_tracking.c
   )
 
 zephyr_include_directories_ifdef(

@@ -311,27 +311,6 @@ static void handle_wifi_scan_result(struct net_mgmt_event_callback *cb)
 	   wifi_mfp_txt(entry->mfp));
 }
 
-static int wifi_freq_to_channel(int frequency)
-{
-	int channel;
-
-	if (frequency == 2484) { /* channel 14 */
-		channel = 14;
-	} else if ((frequency <= 2472) && (frequency >= 2412)) {
-		channel = ((frequency - 2412) / 5) + 1;
-	} else if ((frequency <= 5320) && (frequency >= 5180)) {
-		channel = ((frequency - 5180) / 5) + 36;
-	} else if ((frequency <= 5720) && (frequency >= 5500)) {
-		channel = ((frequency - 5500) / 5) + 100;
-	} else if ((frequency <= 5895) && (frequency >= 5745)) {
-		channel = ((frequency - 5745) / 5) + 149;
-	} else {
-		channel = frequency;
-	}
-
-	return channel;
-}
-
 #ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS
 static enum wifi_frequency_bands wifi_freq_to_band(int frequency)
 {
@@ -366,7 +345,7 @@ static void handle_wifi_raw_scan_result(struct net_mgmt_event_callback *cb)
 	}
 
 	rssi = raw->rssi;
-	channel = wifi_freq_to_channel(raw->frequency);
+	channel = wifi_utils_freq_to_chan(raw->frequency);
 	band = wifi_freq_to_band(raw->frequency);
 
 	PR("%-4d | %-4u (%-6s) | %-4d | %s |      %-4d        ",
@@ -2777,7 +2756,7 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 		   "<max power(dBm)>\t<passive transmission only(y/n)>\t<DFS supported(y/n)>\n");
 		for (chan_idx = 0; chan_idx < regd.num_channels; chan_idx++) {
 			PR("  %d\t\t\t%d\t\t\t%s\t\t\t%d\t\t\t%s\t\t\t\t%s\n",
-			   wifi_freq_to_channel(chan_info[chan_idx].center_frequency),
+			   wifi_utils_freq_to_chan(chan_info[chan_idx].center_frequency),
 			   chan_info[chan_idx].center_frequency,
 			   chan_info[chan_idx].supported ? "y" : "n",
 			   chan_info[chan_idx].max_power,
@@ -4084,6 +4063,61 @@ static int cmd_wifi_p2p_peer(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_wifi_p2p_set_dev_name(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_p2p_params params = {0};
+
+	context.sh = sh;
+
+	params.oper = WIFI_P2P_SET_DEV_NAME;
+
+	if (argc > 1) {
+		int opt;
+		int opt_index = 0;
+		struct sys_getopt_state *state;
+		static const struct sys_getopt_option long_options[] = {
+			{"name", sys_getopt_required_argument, 0, 'n'},
+			{"iface", sys_getopt_required_argument, 0, 'i'},
+			{"help", sys_getopt_no_argument, 0, 'h'},
+			{0, 0, 0, 0}
+		};
+
+		while ((opt = sys_getopt_long(argc, argv, "n:i:h",
+					      long_options, &opt_index)) != -1) {
+			state = sys_getopt_state_get();
+			switch (opt) {
+			case 'n':
+				/* Store the P2P device name */
+				if (strlen(state->optarg) > WIFI_P2P_DEVICE_NAME_MAX_LEN) {
+					PR_ERROR("Invalid name: Length > %d\n",
+						 WIFI_P2P_DEVICE_NAME_MAX_LEN);
+					return -EINVAL;
+				}
+				strncpy(params.device_name, state->optarg,
+					WIFI_P2P_DEVICE_NAME_MAX_LEN);
+				params.device_name[WIFI_P2P_DEVICE_NAME_MAX_LEN] = '\0';
+				break;
+			case 'i':
+				/* Already consumed by get_iface(); accepted here so
+				 * getopt doesn't reject it as an unknown option.
+				 */
+				break;
+			case 'h':
+				shell_help(sh);
+				return -ENOEXEC;
+			default:
+				PR_ERROR("Invalid option %c\n", state->optopt);
+				return -EINVAL;
+			}
+		}
+	}
+	if (net_mgmt(NET_REQUEST_WIFI_P2P_OPER, iface, &params, sizeof(params))) {
+		PR_WARNING("P2P set dev name request failed\n");
+		return -ENOEXEC;
+	}
+	return 0;
+}
 
 static int cmd_wifi_p2p_find(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -4672,6 +4706,45 @@ static int cmd_wifi_p2p_persistent_remove(const struct shell *sh, size_t argc, c
 	}
 	return 0;
 }
+
+static int cmd_wifi_p2p_status(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_p2p_params params = { 0 };
+	char *buf;
+
+	context.sh = sh;
+
+	/* Dynamically allocate response buffer to avoid large stack usage */
+	buf = k_malloc(WIFI_P2P_STATUS_BUF_SIZE);
+	if (buf == NULL) {
+		PR_ERROR("Failed to allocate buffer for P2P status\n");
+		return -ENOMEM;
+	}
+	memset(buf, 0, WIFI_P2P_STATUS_BUF_SIZE);
+
+	params.oper = WIFI_P2P_STATUS;
+	params.status.buf = buf;
+	params.status.buf_size = WIFI_P2P_STATUS_BUF_SIZE;
+
+	if (net_mgmt(NET_REQUEST_WIFI_P2P_OPER, iface, &params,
+		     sizeof(struct wifi_p2p_params))) {
+		PR_WARNING("Status request failed\n");
+		k_free(buf);
+		return -ENOEXEC;
+	}
+
+	if (buf[0] == '\0') {
+		PR("P2P Status not present\n");
+	} else {
+		PR("P2P Status:\n");
+		PR("%s\n", buf);
+	}
+
+	k_free(buf);
+	return 0;
+}
+
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
@@ -5154,6 +5227,87 @@ static int cmd_wifi_nan_transmit(const struct shell *sh, size_t argc, char *argv
 				 "parse NAN transmit args fail",
 				 "Failed to send NAN transmit",
 				 "NAN transmit command sent", false);
+}
+
+static int parse_nan_args_set(const struct shell *sh, size_t argc, char *argv[],
+			      struct wifi_nan_params *params)
+{
+	ARG_UNUSED(sh);
+
+	if (argc != 3 || strlen(argv[1]) >= sizeof(params->set.param) ||
+	    strlen(argv[2]) >= sizeof(params->set.value)) {
+		return -EINVAL;
+	}
+
+	strncpy(params->set.param, argv[1], sizeof(params->set.param) - 1);
+	strncpy(params->set.value, argv[2], sizeof(params->set.value) - 1);
+	return 0;
+}
+
+static int parse_nan_args_none(const struct shell *sh, size_t argc, char *argv[],
+			       struct wifi_nan_params *params)
+{
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argv);
+	ARG_UNUSED(params);
+
+	return argc == 1 ? 0 : -EINVAL;
+}
+
+static int cmd_wifi_nan_start(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct wifi_nan_params params = {
+		.op = WIFI_NAN_OP_START,
+	};
+
+	return cmd_wifi_nan_exec(sh, argc, argv, &params, parse_nan_args_none,
+				 "invalid NAN start arguments", "Failed to start NAN operation",
+				 "NAN start command sent", false);
+}
+
+static int cmd_wifi_nan_stop(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct wifi_nan_params params = {
+		.op = WIFI_NAN_OP_STOP,
+	};
+
+	return cmd_wifi_nan_exec(sh, argc, argv, &params, parse_nan_args_none,
+				 "invalid NAN stop arguments", "Failed to stop NAN operation",
+				 "NAN stop command sent", false);
+}
+
+static int cmd_wifi_nan_set(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct wifi_nan_params params = {
+		.op = WIFI_NAN_OP_SET,
+	};
+
+	return cmd_wifi_nan_exec(sh, argc, argv, &params, parse_nan_args_set,
+				 "parse NAN set args fail", "Failed to set NAN parameter",
+				 "NAN parameter set", false);
+}
+
+static int cmd_wifi_nan_status(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct wifi_nan_params params = {
+		.op = WIFI_NAN_OP_STATUS,
+	};
+
+	return cmd_wifi_nan_exec(sh, argc, argv, &params, parse_nan_args_none,
+				 "invalid NAN status arguments", "Failed to query NAN status",
+				 "NAN status:\n", true);
+}
+
+static int cmd_wifi_nan_update_conf(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct wifi_nan_params params = {
+		.op = WIFI_NAN_OP_UPDATE_CONF,
+	};
+
+	return cmd_wifi_nan_exec(sh, argc, argv, &params, parse_nan_args_none,
+				 "invalid NAN update configuration arguments",
+				 "Failed to update NAN configuration", "NAN configuration updated",
+				 false);
 }
 
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
@@ -5689,14 +5843,32 @@ SHELL_SUBCMD_ADD((wifi), dpp, &wifi_cmd_dpp,
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	wifi_cmd_nan,
+	SHELL_CMD_ARG(start, NULL, SHELL_HELP("Start NAN operation", NULL), cmd_wifi_nan_start, 1,
+		      1),
+	SHELL_CMD_ARG(stop, NULL, SHELL_HELP("Stop NAN operation", NULL), cmd_wifi_nan_stop, 1, 1),
+	SHELL_CMD_ARG(set, NULL,
+		      SHELL_HELP("Set a NAN configuration parameter",
+				 "master_pref <1-254> | dual_band <0|1> |\n"
+				 "cluster_id <50:6f:9a:01:xx:xx> |\n"
+				 "scan_period <0-65535> | scan_dwell_time <10-150> |\n"
+				 "discovery_beacon_interval <50-200> | max_bw <MHz> |\n"
+				 "low_band_cfg <close,middle,awake,disable_scan> |\n"
+				 "high_band_cfg <close,middle,awake,disable_scan> |\n"
+				 "disallowed_freqs <range-list>"),
+		      cmd_wifi_nan_set, 3, 3),
+	SHELL_CMD_ARG(status, NULL, SHELL_HELP("Show NAN status", NULL), cmd_wifi_nan_status, 1, 1),
+	SHELL_CMD_ARG(update_conf, NULL, SHELL_HELP("Apply NAN configuration", NULL),
+		      cmd_wifi_nan_update_conf, 1, 1),
 	SHELL_CMD_ARG(publish, NULL,
 		      SHELL_HELP(" Start NAN publisher",
 				 "-s --service_name <name>: Service name (required)\n"
-				 "[-p --srv_proto_type <1/2/3>]: Protocol type (1:Bonjour, 2:Generic, 3:Matter)\n"
+				 "[-p --srv_proto_type <1/2/3>]: Protocol type (1:Bonjour, "
+				 "2:Generic, 3:Matter)\n"
 				 "[-t, --ttl=<time-to-live-in-sec>] : time-to-live-in-sec\n"
 				 "[-f, --freq=<freq in MHz>] : freq in MHz\n"
 				 "[-l, --freq_list=<comma separate list of MHz>] : freq list\n"
-				 "[-d, --ssi=<service specific information (hexdump)>] : service specific information\n"
+				 "[-d, --ssi=<service specific information (hexdump)>] : service "
+				 "specific information\n"
 				 "[-u --unsolicited <0/1>]: Unsolicited transmission (default 1)\n"
 				 "[-o --solicited <0/1>]: Solicited transmission (default 1)\n"
 				 "[-g --fsd <0/1>]: Further service discovery (default 1)"),
@@ -5713,7 +5885,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(subscribe, NULL,
 		      SHELL_HELP("Start NAN subscriber",
 				 "-s, --service_name=<service_name> : Service name\n"
-				 "[-p --srv_proto_type <1/2/3>]: Protocol type (1:Bonjour, 2:Generic, 3:Matter)\n"
+				 "[-p --srv_proto_type <1/2/3>]: Protocol type (1:Bonjour, "
+				 "2:Generic, 3:Matter)\n"
 				 "[-a, --active=<0/1>] : Active subscriber\n"
 				 "[-t, --ttl=<time-to-live-in-sec>] : Time to live\n"
 				 "[-f, --freq=<freq in MHz>] : freq in MHz\n"
@@ -5731,8 +5904,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 				 "-a --address <MAC>: Peer MAC address\n"
 				 "-d --ssi <hex_string>: Service specific info"),
 		      cmd_wifi_nan_transmit, 9, 0),
-	SHELL_SUBCMD_SET_END
-);
+	SHELL_SUBCMD_SET_END);
 
 SHELL_SUBCMD_ADD((wifi), nan, &wifi_cmd_nan,
 		 "NAN operations.",
@@ -5762,6 +5934,11 @@ SHELL_SUBCMD_ADD((wifi), mode, NULL,
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	wifi_cmd_p2p,
+	SHELL_CMD_ARG(set_dev_name, NULL,
+		      SHELL_HELP("Set P2P device name",
+				 "[-n, --name=<dev name>]\n"
+				 "[-i, --iface=<interface index>]"),
+		      cmd_wifi_p2p_set_dev_name, 1, 4),
 	SHELL_CMD_ARG(find, NULL,
 		      SHELL_HELP("Start P2P device discovery",
 				 "[-i, --iface=<interface index>]\n"
@@ -5856,6 +6033,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 				 "  wifi p2p persistent_remove 0\n"
 				 "  wifi p2p persistent_remove all"),
 		      cmd_wifi_p2p_persistent_remove, 2, 3),
+	SHELL_CMD_ARG(status, NULL,
+		      SHELL_HELP("Show P2P status",
+				 "[-i, --iface=<interface index>]"),
+		      cmd_wifi_p2p_status, 1, 2),
 	SHELL_SUBCMD_SET_END
 );
 

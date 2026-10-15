@@ -1353,6 +1353,16 @@ static void handle_h3_uni_stream(struct http_server_ctx *ctx, int i,
 		}
 
 		if (ret < 0) {
+			if (h3_ctx != NULL &&
+			    (stream_fd == h3_ctx->peer_control_stream ||
+			     stream_fd == h3_ctx->peer_qpack_encoder_stream ||
+			     stream_fd == h3_ctx->peer_qpack_decoder_stream)) {
+				/* The stream was taken into use before it
+				 * failed, handle it like a failure later on.
+				 */
+				goto critical_stream_failed;
+			}
+
 			zsock_close(stream_fd);
 			invalidate_poll_fd(&ctx->fds[i]);
 			return;
@@ -1362,10 +1372,23 @@ static void handle_h3_uni_stream(struct http_server_ctx *ctx, int i,
 	/* Identified: pass to the appropriate stream data handler */
 	ret = h3_handle_uni_stream_data(client, stream_fd);
 	if (ret < 0) {
-		/* Stream ended or errored */
-		zsock_close(stream_fd);
-		invalidate_poll_fd(&ctx->fds[i]);
+		goto critical_stream_failed;
 	}
+
+	return;
+
+critical_stream_failed:
+	/*
+	 * The control stream and the QPACK streams are critical: when one of
+	 * them is closed or carries invalid data, the connection cannot go on
+	 * (RFC 9114 ch. 6.2.1 and ch. 7.2.4, RFC 9204 ch. 4.2). Close the
+	 * whole connection. Closing only the stream here would leave its fd
+	 * number recorded in the connection context, and the connection
+	 * teardown would later close whatever socket has that number by then.
+	 */
+	LOG_DBG("[%p] H3: critical stream fd %d failed (%d), closing connection",
+		client, stream_fd, ret);
+	close_h3_or_plain_client(client, ctx->fds, ARRAY_SIZE(ctx->fds));
 }
 
 /*
@@ -1841,6 +1864,72 @@ int http_server_sendall(struct http_client_ctx *client, const void *buf, size_t 
 
 		buf = (const char *)buf + out_len;
 		len -= out_len;
+
+		http_client_timer_restart(client);
+	}
+
+	return 0;
+}
+
+/* Send the buffers in iov as one stream of bytes, passing them to the socket in
+ * a single sendmsg() call rather than one send() call per buffer. Whether they
+ * then leave in fewer segments or records depends on the socket, some
+ * implementations of sendmsg() still write each buffer separately. Sockets
+ * without sendmsg() support get one send() call per buffer.
+ *
+ * The iovec array is modified as data is sent, so the caller must not reuse it
+ * afterwards.
+ */
+int http_server_sendall_iov(struct http_client_ctx *client, struct net_iovec *iov, size_t iovlen)
+{
+	struct net_msghdr msg = {
+		.msg_iov = iov,
+		.msg_iovlen = 0,
+	};
+
+	/* Drop empty buffers, which some socket implementations reject */
+	for (size_t i = 0; i < iovlen; i++) {
+		if (iov[i].iov_len > 0) {
+			iov[msg.msg_iovlen++] = iov[i];
+		}
+	}
+
+	while (msg.msg_iovlen > 0) {
+		ssize_t out_len = zsock_sendmsg(client->fd, &msg, 0);
+
+		if (out_len < 0) {
+			if (errno != EOPNOTSUPP && errno != ENOTSUP) {
+				return -errno;
+			}
+
+			/* The socket does not support sendmsg(), send the remaining
+			 * buffers one by one instead.
+			 */
+			for (size_t i = 0; i < msg.msg_iovlen; i++) {
+				int ret = http_server_sendall(client, msg.msg_iov[i].iov_base,
+							      msg.msg_iov[i].iov_len);
+
+				if (ret < 0) {
+					return ret;
+				}
+			}
+
+			return 0;
+		}
+
+		/* Skip what was sent, which may end in the middle of a buffer. */
+		while (out_len > 0 && msg.msg_iovlen > 0) {
+			size_t len = MIN((size_t)out_len, msg.msg_iov->iov_len);
+
+			msg.msg_iov->iov_base = (uint8_t *)msg.msg_iov->iov_base + len;
+			msg.msg_iov->iov_len -= len;
+			out_len -= len;
+
+			if (msg.msg_iov->iov_len == 0) {
+				msg.msg_iov++;
+				msg.msg_iovlen--;
+			}
+		}
 
 		http_client_timer_restart(client);
 	}

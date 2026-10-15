@@ -71,8 +71,18 @@ void soc_early_init_hook(void)
 	}
 #endif /* CONFIG_STM32_BACKUP_SRAM */
 
-	/* Power Configuration */
+	/* Switch to selected power supply (LDO or SMPS) */
 	LL_PWR_SetRegulatorSupply(SELECTED_POWER_SUPPLY);
+
+	if (SELECTED_POWER_SUPPLY == LL_PWR_SMPS_SUPPLY) {
+		while (!LL_PWR_IsActiveFlag_REGULATOR()) {
+			/* Wait until regulator supply switches to SMPS */
+		}
+	} else {
+		while (LL_PWR_IsActiveFlag_REGULATOR()) {
+			/* Wait until regulator supply switches to LDO */
+		}
+	}
 
 #if CONFIG_PM
 	stm32_power_init();

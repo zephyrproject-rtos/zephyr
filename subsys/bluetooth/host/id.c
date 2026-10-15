@@ -415,7 +415,7 @@ static int adv_rpa_get(struct bt_le_ext_adv *adv, bt_addr_t *rpa)
 }
 #endif /* defined(CONFIG_BT_RPA_SHARING) */
 
-int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv)
+int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv, uint32_t options)
 {
 	bt_addr_t rpa;
 	int err;
@@ -425,7 +425,7 @@ int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
-	    (adv->options & BT_LE_ADV_OPT_USE_NRPA)) {
+	    (options & BT_LE_ADV_OPT_USE_NRPA)) {
 		bt_addr_le_t addr;
 
 		err = bt_addr_le_create_nrpa(&addr);
@@ -526,10 +526,12 @@ int bt_id_set_private_addr(uint8_t id)
 	return 0;
 }
 
-int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv)
+int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv, uint32_t options)
 {
 	bt_addr_t nrpa;
 	int err;
+
+	ARG_UNUSED(options);
 
 	if (adv == NULL) {
 		return -EINVAL;
@@ -598,7 +600,7 @@ static void adv_enable_rpa(struct bt_le_ext_adv *adv, void *data)
 	if (atomic_test_and_clear_bit(adv->flags, BT_ADV_RPA_UPDATE)) {
 		int err;
 
-		err = bt_id_set_adv_private_addr(adv);
+		err = bt_id_set_adv_private_addr(adv, adv->options);
 		if (err) {
 			LOG_WRN("Failed to update advertiser RPA address (%d)", err);
 		}
@@ -933,18 +935,31 @@ static int hci_id_add(uint8_t id, const bt_addr_le_t *addr, uint8_t peer_irk[16]
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_ADD_DEV_TO_RL, buf, NULL);
 }
 
+/* Peer identities whose resolving list removal was deferred */
+static bt_addr_le_t pending_id_del_addrs[CONFIG_BT_MAX_PAIRED];
+static size_t pending_id_del_count;
+
+static bool id_del(const bt_addr_le_t *addr, struct bt_keys *keys);
+
 static void pending_id_update(struct bt_keys *keys, void *data)
 {
 	if (keys->state & BT_KEYS_ID_PENDING_ADD) {
 		keys->state &= ~BT_KEYS_ID_PENDING_ADD;
 		bt_id_add(keys);
-		return;
 	}
+}
 
-	if (keys->state & BT_KEYS_ID_PENDING_DEL) {
-		keys->state &= ~BT_KEYS_ID_PENDING_DEL;
-		bt_id_del(keys);
-		return;
+static void pending_id_del_update(void)
+{
+	bt_addr_le_t addr;
+
+	while (pending_id_del_count > 0U) {
+		pending_id_del_count--;
+		bt_addr_le_copy(&addr, &pending_id_del_addrs[pending_id_del_count]);
+
+		if (!id_del(&addr, NULL)) {
+			break;
+		}
 	}
 }
 
@@ -957,6 +972,8 @@ void bt_id_pending_keys_update_set(struct bt_keys *keys, uint8_t flag)
 void bt_id_pending_keys_update(void)
 {
 	if (atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_ID_PENDING)) {
+		pending_id_del_update();
+
 		if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 		    IS_ENABLED(CONFIG_BT_PRIVACY)) {
 			bt_keys_foreach_type(BT_KEYS_ALL, pending_id_update, NULL);
@@ -1077,6 +1094,8 @@ void bt_id_add(struct bt_keys *keys)
 	}
 #endif
 
+	pending_id_del_update();
+
 	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
 		bt_le_ext_adv_foreach(adv_pause_enabled, NULL);
 	}
@@ -1187,16 +1206,30 @@ static int hci_id_del(const bt_addr_le_t *addr)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_REM_DEV_FROM_RL, buf, NULL);
 }
 
-void bt_id_del(struct bt_keys *keys)
+static void pending_id_del_set(const bt_addr_le_t *addr, struct bt_keys *keys)
+{
+	__ASSERT_NO_MSG(pending_id_del_count < ARRAY_SIZE(pending_id_del_addrs));
+
+	if (pending_id_del_count < ARRAY_SIZE(pending_id_del_addrs)) {
+		bt_addr_le_copy(&pending_id_del_addrs[pending_id_del_count], addr);
+		pending_id_del_count++;
+	} else {
+		LOG_ERR("Unable to defer resolving list removal of %s", bt_addr_le_str(addr));
+	}
+
+	if (keys != NULL) {
+		keys->state &= ~BT_KEYS_ID_ADDED;
+	}
+
+	atomic_set_bit(bt_dev.flags, BT_DEV_ID_PENDING);
+}
+
+static bool id_del(const bt_addr_le_t *addr, struct bt_keys *keys)
 {
 	struct bt_conn *conn;
 	int err;
 
-	if (keys == NULL) {
-		return;
-	}
-
-	LOG_DBG("addr %s", bt_addr_le_str(&keys->addr));
+	LOG_DBG("addr %s", bt_addr_le_str(addr));
 
 	if (!bt_dev.le.rl_size ||
 	    bt_dev.le.rl_entries > bt_dev.le.rl_size + 1) {
@@ -1204,15 +1237,17 @@ void bt_id_del(struct bt_keys *keys)
 		if (bt_dev.le.rl_entries > 0) {
 			bt_dev.le.rl_entries--;
 		}
-		keys->state &= ~BT_KEYS_ID_ADDED;
-		return;
+		if (keys != NULL) {
+			keys->state &= ~BT_KEYS_ID_ADDED;
+		}
+		return true;
 	}
 
 	conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL, BT_CONN_INITIATING);
 	if (conn) {
-		bt_id_pending_keys_update_set(keys, BT_KEYS_ID_PENDING_DEL);
+		pending_id_del_set(addr, keys);
 		bt_conn_unref(conn);
-		return;
+		return false;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_BROADCASTER) &&
@@ -1221,18 +1256,13 @@ void bt_id_del(struct bt_keys *keys)
 
 		bt_le_ext_adv_foreach(adv_is_limited_enabled, &adv_enabled);
 		if (adv_enabled) {
-			bt_id_pending_keys_update_set(keys, BT_KEYS_ID_PENDING_DEL);
-			return;
+			pending_id_del_set(addr, keys);
+			return false;
 		}
 	}
 
 #if defined(CONFIG_BT_OBSERVER)
 	bool scan_enabled = atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING);
-
-	if (IS_ENABLED(CONFIG_BT_EXT_ADV) && scan_enabled &&
-	    atomic_test_bit(bt_dev.flags, BT_DEV_SCAN_LIMITED)) {
-		bt_id_pending_keys_update_set(keys, BT_KEYS_ID_PENDING_DEL);
-	}
 #endif /* CONFIG_BT_OBSERVER */
 
 	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
@@ -1254,7 +1284,12 @@ void bt_id_del(struct bt_keys *keys)
 	/* We checked size + 1 earlier, so here we know we can fit again */
 	if (bt_dev.le.rl_entries > bt_dev.le.rl_size) {
 		bt_dev.le.rl_entries--;
-		keys->state &= ~BT_KEYS_ID_ADDED;
+		if (keys != NULL) {
+			keys->state &= ~BT_KEYS_ID_ADDED;
+		}
+		/* The rebuilt list holds none of the queued removals */
+		bt_dev.le.rl_entries -= (uint8_t)pending_id_del_count;
+		pending_id_del_count = 0U;
 		if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 		    IS_ENABLED(CONFIG_BT_PRIVACY)) {
 			bt_keys_foreach_type(BT_KEYS_ALL, keys_add_id, NULL);
@@ -1264,14 +1299,16 @@ void bt_id_del(struct bt_keys *keys)
 		goto done;
 	}
 
-	err = hci_id_del(&keys->addr);
+	err = hci_id_del(addr);
 	if (err) {
 		LOG_ERR("Failed to remove IRK from controller");
 		goto done;
 	}
 
 	bt_dev.le.rl_entries--;
-	keys->state &= ~BT_KEYS_ID_ADDED;
+	if (keys != NULL) {
+		keys->state &= ~BT_KEYS_ID_ADDED;
+	}
 
 done:
 	/* Only re-enable if there are entries to do resolving with */
@@ -1288,6 +1325,17 @@ done:
 	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
 		bt_le_ext_adv_foreach(adv_unpause_enabled, NULL);
 	}
+
+	return true;
+}
+
+void bt_id_del(struct bt_keys *keys)
+{
+	if (keys == NULL) {
+		return;
+	}
+
+	(void)id_del(&keys->addr, keys);
 }
 #endif /* defined(CONFIG_BT_SMP) */
 
@@ -1535,6 +1583,93 @@ int bt_id_delete(uint8_t id)
 }
 
 #if defined(CONFIG_BT_PRIVACY)
+static void adv_is_enabled_cb(struct bt_le_ext_adv *adv, void *data)
+{
+	if (atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
+		bool *adv_enabled = data;
+
+		*adv_enabled = true;
+	}
+}
+
+int bt_id_reset_irk(uint8_t id, uint8_t *irk)
+{
+	uint8_t new_irk[sizeof(bt_dev.irk[id])];
+	uint8_t zero_irk[sizeof(new_irk)] = { 0 };
+	bool generate_irk = true;
+	int err;
+
+	if (id >= bt_dev.id_count) {
+		return -EINVAL;
+	}
+
+	if (bt_addr_le_eq(&bt_dev.id_addr[id], BT_ADDR_LE_ANY)) {
+		return -EALREADY;
+	}
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
+		struct bt_adv_id_check_data check_data = {
+			.id = id,
+			.adv_enabled = false,
+		};
+
+		bt_le_ext_adv_foreach(adv_id_check_func, &check_data);
+		if (check_data.adv_enabled) {
+			return -EBUSY;
+		}
+
+		bool adv_enabled = false;
+
+		bt_le_ext_adv_foreach(adv_is_enabled_cb, &adv_enabled);
+		if (adv_enabled) {
+			return -EBUSY;
+		}
+	}
+
+	if ((id == BT_ID_DEFAULT) && (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING) ||
+				      atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING))) {
+		return -EBUSY;
+	}
+
+	if (bt_keys_has_bond(id)) {
+		return -ENOTEMPTY;
+	}
+
+	if (irk != NULL) {
+		generate_irk = util_memeq(irk, zero_irk, sizeof(new_irk));
+	}
+
+	if (!generate_irk) {
+		(void)memcpy(new_irk, irk, sizeof(new_irk));
+	} else {
+		err = bt_rand(new_irk, sizeof(new_irk));
+		if (err != 0) {
+			return err == -ENOTSUP ? -ENOTSUP : -EIO;
+		}
+	}
+
+	(void)memcpy(bt_dev.irk[id], new_irk, sizeof(new_irk));
+	if (irk != NULL) {
+		(void)memcpy(irk, new_irk, sizeof(new_irk));
+	}
+
+	atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+
+#if defined(CONFIG_BT_RPA_SHARING)
+	bt_addr_copy(&bt_dev.rpa[id], BT_ADDR_NONE);
+#endif
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		(void)bt_settings_store_irk();
+	}
+
+	return 0;
+}
+
 static void bt_read_identity_root(uint8_t *ir)
 {
 	/* Invalid IR */
@@ -1950,7 +2085,7 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 			return -EINVAL;
 		}
 
-		err = bt_id_set_adv_private_addr(adv);
+		err = bt_id_set_adv_private_addr(adv, options);
 		if (err) {
 			return err;
 		}
@@ -1967,7 +2102,7 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 
 		if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
 		    !(options & BT_LE_ADV_OPT_USE_IDENTITY)) {
-			err = bt_id_set_adv_private_addr(adv);
+			err = bt_id_set_adv_private_addr(adv, options);
 			if (err) {
 				return err;
 			}
@@ -2039,7 +2174,7 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 			 */
 			if (!IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY) ||
 			    !dev_scanning) {
-				err = bt_id_set_adv_private_addr(adv);
+				err = bt_id_set_adv_private_addr(adv, options);
 				*own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
 			} else {
 				if (id_addr->type == BT_ADDR_LE_RANDOM) {
@@ -2053,11 +2188,11 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 				bt_le_scan_set_enable(BT_HCI_LE_SCAN_ENABLE);
 			}
 #else
-			err = bt_id_set_adv_private_addr(adv);
+			err = bt_id_set_adv_private_addr(adv, options);
 			*own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
 #endif /* defined(CONFIG_BT_OBSERVER) */
 		} else {
-			err = bt_id_set_adv_private_addr(adv);
+			err = bt_id_set_adv_private_addr(adv, options);
 			*own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
 		}
 
@@ -2134,7 +2269,7 @@ int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob)
 		return -EAGAIN;
 	}
 
-	if (id >= CONFIG_BT_ID_MAX) {
+	if (id >= bt_dev.id_count || bt_addr_le_eq(&bt_dev.id_addr[id], BT_ADDR_LE_ANY)) {
 		return -EINVAL;
 	}
 
@@ -2314,6 +2449,10 @@ int bt_le_oob_get_sc_data(struct bt_conn *conn,
 int bt_id_init(void)
 {
 	int err;
+
+#if defined(CONFIG_BT_SMP)
+	pending_id_del_count = 0U;
+#endif
 
 #if defined(CONFIG_BT_PRIVACY)
 	k_work_init_delayable(&bt_dev.rpa_update, rpa_timeout);

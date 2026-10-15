@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Renesas Electronics Corporation
+# Copyright (c) 2024-2026 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 config CLOCK_CONTROL_RENESAS_RX_CGC
@@ -12,20 +12,31 @@ if CLOCK_CONTROL_RENESAS_RX_CGC
 
 config CLOCK_CONTROL_RENESAS_RX_ROOT
 	bool "Renesas RX root clock source"
+	depends on DT_HAS_RENESAS_RX_CGC_ROOT_CLOCK_ENABLED
 	default y
 	help
 	  Enable Renesas RX root clock
 
 config CLOCK_CONTROL_RENESAS_RX_PLL
-	bool "Renesas RX root clock source"
+	bool "Renesas RX PLL clock source"
+	depends on DT_HAS_RENESAS_RX_CGC_PLL_ENABLED
 	default y
 	help
-	  Enable Renesas RX PLL
+	  Enable Renesas RX PLL, only apply to RX MCUs
+	  that have only one PLL circuit.
+
+config CLOCK_CONTROL_RENESAS_RX_PLLCCR_TYPE
+	bool "Renesas RX PLL clock source using FSP"
+	depends on DT_HAS_RENESAS_RX_CGC_PLLCCR_TYPE_ENABLED
+	default y
+	help
+	  Enable PLL support for RX MCUs whose PLL multiplier
+	  settings are represented as PLLCCR indexed values.
 
 config CLOCK_CONTROL_RENESAS_RX_PCLK
 	bool "Renesas RX root clock source"
 	default y
 	help
-	  Enable Renesas RX PCLK
+	  Enable Renesas RX PCLK clock source
 
 endif

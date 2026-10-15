@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """
-This file implements the Symbol Link Identifer (SLID)
+This file implements the Symbol Link Identifier (SLID)
 generation code, for use by the LLEXT subsystem.
 SLID-based linking is enabled by the Kconfig
 option 'CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID'.

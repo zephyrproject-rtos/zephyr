@@ -225,6 +225,9 @@ enum coap_response_code {
 #define COAP_TOKEN_MAX_LEN 8UL
 #define COAP_FIXED_HEADER_SIZE 4UL
 
+/** Maximum length of the ETag option value (@rfc{7252,section-5.10.6}) */
+#define COAP_ETAG_MAX_LEN 8UL
+
 /* CoAP TCP header constants (RFC 8323) */
 /* Len/TKL + Code */
 #define COAP_TCP_BASIC_HEADER_SIZE        (2)
@@ -1049,6 +1052,23 @@ size_t coap_next_block(const struct coap_packet *cpkt,
 		       struct coap_block_context *ctx);
 
 /**
+ * @brief Compare Observe option values for freshness.
+ *
+ * Uses the serial number arithmetic of @rfc{7641,section-3.4}, without the
+ * 128-second timestamp clause, to decide whether the notification carrying
+ * Observe option value @p v2 was sent more recently than the one carrying
+ * @p v1.
+ *
+ * @param v1 Observe option value of the freshest notification so far,
+ *           0 to 2^24 - 1
+ * @param v2 Observe option value of the received notification, 0 to 2^24 - 1
+ *
+ * @retval true @p v2 is newer than @p v1
+ * @retval false @p v2 is not newer than @p v1
+ */
+bool coap_age_is_newer(uint32_t v1, uint32_t v2);
+
+/**
  * @brief Indicates that the remote device referenced by @a addr, with
  * @a request, wants to observe a resource.
  *
@@ -1106,11 +1126,14 @@ bool coap_remove_observer(struct coap_resource *resource,
  * @brief Returns the observer that matches address @a addr
  * and has token @a token.
  *
+ * An empty token is a valid token: the endpoint and an empty token
+ * together name one observer, as any other endpoint and token pair do.
+ *
  * @param observers Pointer to the array of observers
  * @param len Size of the array of observers
  * @param addr Address of the endpoint observing a resource
  * @param token Pointer to the token
- * @param token_len Length of valid bytes in the token
+ * @param token_len Length of valid bytes in the token, which may be zero
  *
  * @return A pointer to a observer if a match is found, NULL
  * otherwise.

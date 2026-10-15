@@ -795,7 +795,7 @@ static int it82xx2_xfer_in_data(const struct device *dev, uint8_t ep, struct net
 		irq_unlock(key);
 	}
 
-	LOG_DBG("Writed %d packets to endpoint%d tx fifo", buf->len, ep_idx);
+	LOG_DBG("Wrote %d packets to endpoint%d tx fifo", buf->len, ep_idx);
 
 	return 0;
 }
@@ -1602,8 +1602,8 @@ static int it82xx2_usb_driver_preinit(const struct device *dev)
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
                                                                                                    \
-	static struct udc_ep_config ep_cfg_out[MAX_NUM_ENDPOINTS];                                 \
-	static struct udc_ep_config ep_cfg_in[MAX_NUM_ENDPOINTS];                                  \
+	static struct udc_ep_config ep_cfg_out_##n[MAX_NUM_ENDPOINTS];                             \
+	static struct udc_ep_config ep_cfg_in_##n[MAX_NUM_ENDPOINTS];                              \
                                                                                                    \
 	static struct usb_it82xx2_config udc_cfg_##n = {                                           \
 		.base = (struct usb_it82xx2_regs *)DT_INST_REG_ADDR(n),                            \
@@ -1611,8 +1611,8 @@ static int it82xx2_usb_driver_preinit(const struct device *dev)
 		.wuc = {.dev = IT8XXX2_DEV_WUC(0, n), .mask = IT8XXX2_DEV_WUC_MASK(0, n)},         \
 		.usb_irq = DT_INST_IRQ_BY_IDX(n, 0, irq),                                          \
 		.wu_irq = DT_INST_IRQ_BY_IDX(n, 1, irq),                                           \
-		.ep_cfg_in = ep_cfg_out,                                                           \
-		.ep_cfg_out = ep_cfg_in,                                                           \
+		.ep_cfg_in = ep_cfg_out_##n,                                                       \
+		.ep_cfg_out = ep_cfg_in_##n,                                                       \
 		.make_thread = udc_it82xx2_make_thread_##n,                                        \
 	};                                                                                         \
                                                                                                    \

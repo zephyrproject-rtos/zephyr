@@ -1952,12 +1952,15 @@ static uint32_t ticker_update_rand(struct ll_adv_set *adv, uint32_t ticks_delay_
 				   uint32_t ticks_adjust_minus,
 				   ticker_op_func fp_op_func)
 {
-	uint32_t random_delay;
+	uint32_t random_delay = 0U;
 	uint32_t ret;
 
 	/* Get pseudo-random number in the range [0..ticks_delay_window].
 	 * Please note that using modulo of 2^32 sample space has an uneven
 	 * distribution, slightly favoring smaller values.
+	 *
+	 * The pool that is read in interrupt context can have fewer bytes
+	 * than are asked for, which leaves the rest of the value as it was.
 	 */
 	lll_rand_isr_get(&random_delay, sizeof(random_delay));
 	random_delay %= ticks_delay_window;

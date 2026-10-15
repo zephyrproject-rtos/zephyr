@@ -56,6 +56,7 @@ struct net_eth_addr {
 
 #define NET_ETH_HDR(pkt) ((struct net_eth_hdr *)net_pkt_data(pkt))
 
+/* clang-format off */
 /* zephyr-keep-sorted-start */
 #define NET_ETH_PTYPE_ALL		0x0003 /* from linux/if_ether.h */
 #define NET_ETH_PTYPE_ARP		0x0806
@@ -68,10 +69,12 @@ struct net_eth_addr {
 #define NET_ETH_PTYPE_IP		0x0800
 #define NET_ETH_PTYPE_IPV6		0x86dd
 #define NET_ETH_PTYPE_LLDP		0x88cc
+#define NET_ETH_PTYPE_OAM		0x8902
 #define NET_ETH_PTYPE_PTP		0x88f7
 #define NET_ETH_PTYPE_TSN		0x22f0 /* TSN (IEEE 1722) packet */
 #define NET_ETH_PTYPE_VLAN		0x8100
 /* zephyr-keep-sorted-stop */
+/* clang-format on */
 
 /* zephyr-keep-sorted-start re(^#define) */
 #if !defined(ETH_P_8021Q)
@@ -433,15 +436,6 @@ struct ethernet_filter {
 
 /** @cond INTERNAL_HIDDEN */
 
-/* The L2 multicast addresses are tracked only if something joins the groups,
- * either the IP level or a packet socket.
- */
-#if defined(CONFIG_NET_L2_ETHERNET) && !defined(CONFIG_NET_RAW_MODE) &&	\
-	(defined(CONFIG_NET_NATIVE_IP) ||				\
-	 defined(CONFIG_NET_SOCKETS_PACKET_MCAST_MEMBERSHIP))
-#define NET_ETH_MCAST_FILTER_SUPPORTED 1
-#endif
-
 /* How many L2 multicast addresses one interface can track. The build system
  * sums up what the subsystems asked for and gives the result here, the
  * Kconfig value is only the floor and is used if the header is compiled
@@ -449,6 +443,14 @@ struct ethernet_filter {
  */
 #ifndef NET_ETH_MCAST_FILTER_COUNT
 #define NET_ETH_MCAST_FILTER_COUNT CONFIG_NET_L2_ETHERNET_MCAST_FILTER_COUNT
+#endif
+
+/* The L2 multicast addresses are tracked only if something joins the groups,
+ * either the IP level, a packet socket, or other parts of the system.
+ */
+#if defined(CONFIG_NET_L2_ETHERNET) && !defined(CONFIG_NET_RAW_MODE) &&	\
+	(NET_ETH_MCAST_FILTER_COUNT > 0)
+#define NET_ETH_MCAST_FILTER_SUPPORTED 1
 #endif
 
 /** @endcond */
@@ -991,6 +993,25 @@ void net_eth_mcast_addr_foreach(struct net_if *iface,
 				net_eth_mcast_addr_cb_t cb,
 				void *user_data);
 
+/** @cond INTERNAL_HIDDEN */
+
+/**
+ * @brief Join or leave the L2 multicast group of an IP multicast address.
+ *
+ * @details Converts the IP address to its Ethernet multicast address and
+ * calls net_eth_mcast_addr_add() or net_eth_mcast_addr_rm() with it.
+ *
+ * @param iface Network interface
+ * @param addr IPv4 or IPv6 multicast address
+ * @param add True to join the group, false to leave it
+ *
+ * @return -EINVAL if the address family is not supported, otherwise the
+ * return value of net_eth_mcast_addr_add() or net_eth_mcast_addr_rm()
+ */
+int net_eth_mcast_ip_addr_update(struct net_if *iface, const struct net_addr *addr, bool add);
+
+/** @endcond */
+
 #else /* NET_ETH_MCAST_FILTER_SUPPORTED */
 
 static inline int net_eth_mcast_addr_add(struct net_if *iface,
@@ -1018,6 +1039,13 @@ static inline void net_eth_mcast_addr_foreach(struct net_if *iface,
 	ARG_UNUSED(iface);
 	ARG_UNUSED(cb);
 	ARG_UNUSED(user_data);
+}
+
+static inline int net_eth_mcast_ip_addr_update(struct net_if *iface __unused,
+					       const struct net_addr *addr __unused,
+					       bool add __unused)
+{
+	return -ENOTSUP;
 }
 
 #endif /* NET_ETH_MCAST_FILTER_SUPPORTED */

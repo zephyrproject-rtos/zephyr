@@ -178,6 +178,16 @@
 	};
 
 	soc {
+		emu: emu@50004000 {
+			compatible = "silabs,emu";
+			reg = <0x50004000 0x4000>;
+
+			temp: temp {
+				compatible = "silabs,emu-temp";
+				status = "disabled";
+			};
+		};
+
 		cmu: clock@50008000 {
 			compatible = "silabs,series-clock";
 			reg = <0x50008000 0x4000>;

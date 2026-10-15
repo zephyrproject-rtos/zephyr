@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config EEPROM_MB85RCXX
-	bool "FUJITSU mb85rcxx i2c FRAM"
+	bool "MB85RCXX EEPROM driver"
 	default y
 	depends on DT_HAS_FUJITSU_MB85RCXX_ENABLED
 	select I2C

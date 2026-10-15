@@ -11,6 +11,10 @@
 / {
 	model = "Nuvoton NPCM400 evaluation board";
 
+	cpus {
+		timebase-frequency = <DT_FREQ_M(96)>;
+	};
+
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;

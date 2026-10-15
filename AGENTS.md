@@ -16,10 +16,12 @@ do not rely on this digest or on training data alone.
 
 ## Rules for agents
 
-- Never add a `Signed-off-by:` line: only the human submitter may sign off (DCO). Never add
-  `Co-authored-by:`. Do not put "Generated with ...", session links or any other mention of AI
-  tools in commit messages, PR bodies, issues or comments. The `Assisted-by:` trailer below is
-  the only place AI involvement is recorded.
+- Every commit must carry a `Signed-off-by:` line from the human responsible for the work; it
+  is required, not optional. Never add, edit or copy one yourself: only a human can certify the
+  DCO, and the submitter adds their own (`git commit -s`). Never add `Co-authored-by:`. Do not
+  put "Generated with ...", session links or any other mention of AI tools in commit messages,
+  PR bodies, issues or comments. The `Assisted-by:` trailer below is the only place AI
+  involvement is recorded.
 - Add exactly one `Assisted-by: <Agent>:<model-version> [tool ...]` trailer, for example
   `Assisted-by: Claude:claude-opus-4.6 coccinelle`, naming the tool actually used. Replace it
   rather than stacking when a different model amends the commit. `checkpatch.pl` validates the

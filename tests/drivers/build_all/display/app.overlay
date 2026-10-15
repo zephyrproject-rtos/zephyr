@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026 RASNA
  * Copyright (c) 2022, Kumar Gala <galak@kernel.org>
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -12,6 +13,7 @@
 
 #include <zephyr/dt-bindings/led/led.h>
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+#include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 #include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
@@ -518,6 +520,35 @@
 
 				status = "okay";
 			};
+
+			test_uc8253_gdey037t03_gray: uc8253@29 {
+				compatible = "ultrachip,uc8253";
+				reg = <0x29>;
+				mipi-max-frequency = <10000000>;
+				width = <240>;
+				height = <416>;
+				busy-gpios = <&test_gpio 0 0>;
+				grayscale;
+				gray-level-planes = <0 2 1 3>;
+
+				gray {
+					cdi = <0x97>;
+					ccset = <0x02>;
+					tsset = <0x5a>;
+				};
+
+				status = "okay";
+			};
+
+			test_mipi_dbi_pcd8544: pcd8544@2a {
+				compatible = "philips,pcd8544";
+				reg = <0x2a>;
+				mipi-max-frequency = <4000000>;
+				width = <84>;
+				height = <48>;
+				bias = <3>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			};
 		};
 
 		test_mipi_dbi_xfr_16bit_write_only {
@@ -553,7 +584,7 @@
 			};
 		};
 
-		test_mipi_dsi {
+		test_mipi_dsi: test_mipi_dsi {
 			compatible = "vnd,mipi-dsi";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -729,6 +760,14 @@
 					pixelclk-active = <0>;
 				};
 			};
+
+			test_adv7535_dsi: adv7535@b {
+				status = "okay";
+				compatible = "adi,adv7535-dsi";
+				reg = <0xb>;
+				data-lanes = <4>;
+				pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
+			};
 		};
 
 		test_spi: spi@33334444 {
@@ -739,8 +778,9 @@
 			status = "okay";
 			clock-frequency = <2000000>;
 
-			/* one entry for every device. Note that this must
-			 * include MIPI DBI devices as well.
+			/* Chip select GPIOs for reg 0 through 9. Children at
+			 * higher reg values, including MIPI DBI ones, take
+			 * the controller's native chip select instead.
 			 */
 			cs-gpios = <&test_gpio 0 0 &test_gpio 0 1 &test_gpio 0 2
 				    &test_gpio 0 3 &test_gpio 0 4 &test_gpio 0 5
@@ -830,6 +870,26 @@
 			};
 		};
 
+		test_mspi: mspi@44445555 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "zephyr,mspi-emul-controller";
+			reg = <0x44445555 0x1000>;
+			status = "okay";
+			clock-frequency = <2000000>;
+			ce-gpios = <&test_gpio 0 0>;
+
+			test_chipone_co5300: co5300@0 {
+				compatible = "chipone,co5300";
+				status = "okay";
+				reg = <0>;
+				mspi-max-frequency = <30000000>;
+				pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+				width = <466>;
+				height = <466>;
+			};
+		};
+
 		test_led_strip_matrix {
 			compatible = "led-strip-matrix";
 			status = "okay";
@@ -851,6 +911,14 @@
 			reg = <0x60013000 0x1000>;
 			status = "okay";
 			clock-frequency = <100000>;
+
+			test_adv7535: hdmi-bridge@3d {
+				compatible = "adi,adv7535";
+				reg = <0x3d>;
+				adi,addr-cec = <0x3b>;
+				dsi-device = <&test_adv7535_dsi>;
+				display-timing = <&test_adv7535_timing>;
+			};
 
 			test_ist3931: ist3931@0 {
 				reg = <0x0>;
@@ -966,6 +1034,26 @@
 				multiplex-ratio = <0x3f>;
 				phase-length = <0x22>;
 				vcomh-voltage = <0x2>;
+			};
+		};
+
+		test_adv7535_timing_source {
+			compatible = "zephyr,dummy-dc";
+			width = <1920>;
+			height = <1080>;
+
+			test_adv7535_timing: display-timings {
+				compatible = "zephyr,panel-timing";
+				hsync-active = <0>;
+				vsync-active = <0>;
+				de-active = <0>;
+				pixelclk-active = <0>;
+				hsync-len = <44>;
+				hfront-porch = <88>;
+				hback-porch = <148>;
+				vsync-len = <5>;
+				vfront-porch = <4>;
+				vback-porch = <36>;
 			};
 		};
 	};

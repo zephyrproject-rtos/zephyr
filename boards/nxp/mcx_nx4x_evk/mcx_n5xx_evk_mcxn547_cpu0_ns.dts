@@ -1,0 +1,110 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/mcx/mcxn/nxp_mcxn547_ns.dtsi>
+#include "mcx_n5xx_evk.dtsi"
+#include "mcx_nx4x_evk_cpu0.dtsi"
+
+/ {
+	model = "NXP MCX-N5XX-EVK board";
+
+	cpus {
+		/delete-node/ cpu@1;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash;
+		zephyr,code-partition = &slot0_ns_partition;
+		zephyr,flash-controller = &fmu;
+		zephyr,uart-mcumgr = &flexcomm4_lpuart4;
+		zephyr,console = &flexcomm4_lpuart4;
+		zephyr,shell-uart = &flexcomm4_lpuart4;
+		zephyr,canbus = &flexcan0;
+		zephyr,entropy = &trng;
+	};
+};
+
+/*
+ * mcx_nx4x_evk_cpu0.dtsi allocates the first 320K of sram0 to cpu0. Of that,
+ * the first 192K are owned by the secure image; only the remaining 128K are
+ * available to this non-secure image.
+ */
+&sram0 {
+	reg = <0x20030000 DT_SIZE_K(128)>;
+};
+
+&flash {
+	/delete-node/ partitions;
+
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/*
+		 * All partition sizes must be aligned to the flash memory sector size (8 KB).
+		 *
+		 * This layout is compatible with the requirements given in TF-M
+		 * configuration, but does not currently build with TF-M. It might
+		 * require adjustment depending on evolutions on TF-M.
+		 *
+		 * BL2 / MCUBoot
+		 */
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;  /* 64 KB */
+		};
+
+		/* Secure image - primary */
+		slot0_partition: partition@10000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x00010000 DT_SIZE_K(288)>;  /* 288 KB */
+		};
+
+		/* Non-secure image - primary */
+		slot0_ns_partition: partition@58000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0-nonsecure";
+			reg = <0x00058000 DT_SIZE_K(256)>;  /* 256 KB */
+		};
+
+		/* Secure image - secondary */
+		slot1_partition: partition@98000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1-secondary";
+			reg = <0x00098000 DT_SIZE_K(288)>;  /* 288 KB */
+		};
+
+		/* Non-secure image - secondary */
+		slot1_ns_partition: partition@e0000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1-non-secure";
+			reg = <0x000e0000 DT_SIZE_K(256)>;  /* 256 KB */
+		};
+	};
+};
+
+&inputmux0 {
+	status = "okay";
+};
+
+&freqme0 {
+	status = "okay";
+};
+
+&fmu {
+	status = "okay";
+};
+
+&trng {
+	/* Disable TRNG in NS to avoid auto-enabling csprng_available option */
+	status = "disabled";
+};

@@ -31,8 +31,6 @@ LOG_MODULE_REGISTER(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 
 #include "ieee802154_settings.h"
 
-extern int net_init_clock_via_sntp(void);
-
 static K_SEM_DEFINE(waiter, 0, 1);
 static K_SEM_DEFINE(counter, 0, UINT_MAX);
 static atomic_t services_flags;
@@ -540,7 +538,7 @@ int net_config_init_app(const struct device *dev, const char *app_info)
 
 	if (IS_ENABLED(CONFIG_NET_CONFIG_CLOCK_SNTP_INIT) &&
 	    !IS_ENABLED(CONFIG_NET_CONFIG_SNTP_INIT_USE_CONNECTION_MANAGER)) {
-		net_init_clock_via_sntp();
+		net_config_init_clock_via_sntp();
 	}
 
 	/* This is activated late as it requires the network stack to be up

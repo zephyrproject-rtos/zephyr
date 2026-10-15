@@ -65,6 +65,7 @@ struct renesas_ra_ctsu_group_data {
 	struct k_timer sampling_timer;
 	/* Touch driver sample result */
 	uint64_t *p_button_status;
+	uint64_t prev_button_status;
 	uint16_t *p_slider_position;
 	uint16_t *p_wheel_position;
 	/* Touch device callback data */
@@ -155,22 +156,26 @@ static void renesas_ra_ctsu_group_buttons_read(const struct device *dev)
 #else
 	const struct renesas_ra_ctsu_group_cfg *cfg = dev->config;
 	struct renesas_ra_ctsu_group_data *data = dev->data;
+	uint64_t status;
+	uint64_t changed;
 
 	if (cfg->num_button == 0) {
 		return;
 	}
 
-	if (*data->p_button_status != 0) {
-		uint64_t tmp_status = *data->p_button_status;
+	status = *data->p_button_status;
+	changed = status ^ data->prev_button_status;
 
-		while (tmp_status != 0) {
-			int num = u64_count_trailing_zeros(tmp_status);
-			struct renesas_ra_ctsu_device_cb *p_button_cb = &data->p_button_cb[num];
+	while (changed != 0) {
+		int num = u64_count_trailing_zeros(changed);
+		struct renesas_ra_ctsu_device_cb *p_button_cb = &data->p_button_cb[num];
+		bool pressed = (status & BIT64(num)) != 0;
 
-			p_button_cb->device_cb(p_button_cb->dev, NULL);
-			WRITE_BIT(tmp_status, num, 0);
-		}
+		p_button_cb->device_cb(p_button_cb->dev, &pressed);
+		WRITE_BIT(changed, num, 0);
 	}
+
+	data->prev_button_status = status;
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(renesas_ra_ctsu_button) */
 }
 
@@ -265,6 +270,8 @@ static int input_renesas_ra_ctsu_group_configure(const struct device *dev,
 	data->touch_instance = *p_instance;
 #endif /* CONFIG_INPUT_RENESAS_RA_QE_TOUCH_CFG */
 
+	data->prev_button_status = 0;
+
 	k_work_init(&data->reading_work, renesas_ra_ctsu_group_reading_handler);
 	k_timer_init(&data->sampling_timer, renesas_ra_ctsu_group_sampling_handler, NULL);
 	k_timer_user_data_set(&data->sampling_timer, (void *)config->ctsu_dev);
@@ -326,20 +333,16 @@ static void renesas_ra_ctsu_end_isr(void *arg)
 
 __maybe_unused static void ctsu_renesas_ra_button_cb(const struct device *dev, void *data)
 {
-	ARG_UNUSED(data);
 	const struct ctsu_device_cfg *cfg = dev->config;
+	const bool *p_pressed = data;
 
-	input_report_key(dev, cfg->event_code, 1, false, K_NO_WAIT);
+	input_report_key(dev, cfg->event_code, *p_pressed, false, K_NO_WAIT);
 }
 
 __maybe_unused static void ctsu_renesas_ra_slider_cb(const struct device *dev, void *data)
 {
 	const struct ctsu_device_cfg *cfg = dev->config;
 	uint16_t *p_data = data;
-
-	if (p_data == NULL) {
-		return;
-	}
 
 	input_report_abs(dev, cfg->event_code, *p_data, false, K_NO_WAIT);
 }

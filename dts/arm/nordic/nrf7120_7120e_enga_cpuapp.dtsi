@@ -40,6 +40,13 @@ nvic: &cpuapp_nvic {};
 		compatible = "zephyr,psa-crypto-rng";
 		status = "disabled";
 	};
+
+	vbat_monitor: vbat_monitor {
+		status = "disabled";
+		compatible = "nordic,nrf-vbat";
+		io-channels = <&adc 0>;
+		invert-voltage;
+	};
 };
 
 &cpuflpr_vpr {
@@ -66,6 +73,21 @@ nvic: &cpuapp_nvic {};
 &cpuapp_ppb {
 	compatible = "simple-bus";
 	ranges;
+};
+
+&adc {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1_2";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_SAADC_AVSS>;
+		zephyr,input-negative = <NRF_SAADC_VBAT>;
+		zephyr,resolution = <10>;
+	};
 };
 
 &grtc {

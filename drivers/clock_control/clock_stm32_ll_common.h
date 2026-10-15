@@ -11,6 +11,7 @@
 #include <stdint.h>
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h> /* for STM32_*_ENABLED */
 #include <zephyr/sys/util.h>
 
 #include <stm32_ll_utils.h>

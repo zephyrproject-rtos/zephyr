@@ -73,7 +73,10 @@ struct pmc_reg {
 	volatile uint8_t PMCSR;
 	volatile uint8_t reserved1[2];
 	/* 0x003: Enable in Sleep Control */
-	volatile uint8_t ENIDL_CTL;
+	union {
+		volatile uint8_t ENSLP_CTL;
+		volatile uint8_t ENIDL_CTL; /* Deprecated name of ENSLP_CTL */
+	};
 	/* 0x004: Disable in Idle Control */
 	volatile uint8_t DISIDL_CTL;
 	/* 0x005: Disable in Idle Control 1 */
@@ -98,10 +101,10 @@ struct pmc_reg {
 #define NPCX_PMCSR_OHFC                       6
 #define NPCX_PMCSR_OLFC                       7
 #define NPCX_DISIDL_CTL_RAM_DID               5
-#define NPCX_ENIDL_CTL_ADC_ACC_DIS            1
-#define NPCX_ENIDL_CTL_PECI_ENI               2
-#define NPCX_ENIDL_CTL_LP_WK_CTL              6
-#define NPCX_ENIDL_CTL_ADC_LFSL               7
+#define NPCX_ENSLP_CTL_ADC_ACC_DIS            1
+#define NPCX_ENSLP_CTL_PECI_ENI               2
+#define NPCX_ENSLP_CTL_LP_WK_CTL              6
+#define NPCX_ENSLP_CTL_ADC_LFSL               7
 
 /* Macro functions for Development and Debugger Interface (DDI) registers */
 #define NPCX_DBGCTRL(base)   (*(volatile uint8_t *)(base + 0x004))
@@ -237,7 +240,7 @@ struct glue_reg {
 	/* 0x02d: Voltage Detection Control and Status */
 	volatile uint8_t VD_CTS;
 	volatile uint8_t reserved7[2];
-	/* 0x030: Exteral Power-Up Reset Control */
+	/* 0x030: External Power-Up Reset Control */
 	volatile uint8_t EPURST_CTL;
 	volatile uint8_t reserved8[7];
 	/* 0x038: PSL Control and Status 3 */
@@ -1571,7 +1574,7 @@ struct fiu_reg {
 	volatile uint8_t reserved9[3];
 	/* 0x041: Master Inactive Counter Threshold */
 	volatile uint8_t MI_CNT_THRSH;
-	/* 0x042: FIU Matser Status */
+	/* 0x042: FIU Master Status */
 	volatile uint8_t FIU_MSR_STS;
 	/* 0x043: FIU Master Interrupt Enable and Configuration */
 	volatile uint8_t FIU_MSR_IE_CFG;
@@ -1960,5 +1963,11 @@ struct gdma_reg {
 /* BBRM register fields */
 #define NPCX_BKUPSTS_VCC1_STS BIT(5)
 #define NPCX_BKUPSTS_IBBR     BIT(7)
+
+/* Deprecated ENIDL_CTL names of the ENSLP_CTL register fields */
+#define NPCX_ENIDL_CTL_ADC_ACC_DIS NPCX_ENSLP_CTL_ADC_ACC_DIS
+#define NPCX_ENIDL_CTL_PECI_ENI    NPCX_ENSLP_CTL_PECI_ENI
+#define NPCX_ENIDL_CTL_LP_WK_CTL   NPCX_ENSLP_CTL_LP_WK_CTL
+#define NPCX_ENIDL_CTL_ADC_LFSL    NPCX_ENSLP_CTL_ADC_LFSL
 
 #endif /* _NUVOTON_NPCX_REG_DEF_H */

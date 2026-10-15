@@ -13,4 +13,6 @@ flash: 2048
 supported:
   - gpio
   - can
+  - netif:eth
+  - ptp_clock
 vendor: nuvoton

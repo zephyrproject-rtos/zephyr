@@ -17,7 +17,6 @@ menuconfig NET_PPP
 	depends on NET_L2_PPP
 	depends on NET_NATIVE
 	depends on NET_TEST || $(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_PPP_UART))
-	select RING_BUFFER
 	select CRC
 
 if NET_PPP
@@ -221,6 +220,8 @@ endif
 #
 menuconfig NET_CANBUS
 	bool "Controller Area Network (CAN) bus network driver"
+	depends on CAN
+	select NET_L2_CANBUS_RAW
 	help
 	  Enable the CAN bus network driver. This driver provides a network interface on top of the
 	  CAN controller driver API.
@@ -242,7 +243,7 @@ config NET_CANBUS_INIT_PRIORITY
 	  The priority needs to be lower than the network stack and higher than the CAN controller
 	  driver.
 
-endif # NET_CAN
+endif # NET_CANBUS
 
 #
 # Native simulator offloaded sockets
@@ -272,6 +273,17 @@ config NET_NATIVE_OFFLOADED_SOCKETS_EPOLL_WAIT_INTERVAL
 
 	  Decrease that value when lower network traffic latency is expected, at the expense of more
 	  CPU processing overhead.
+
+config NET_NATIVE_OFFLOADED_SOCKETS_HOST_IF_NAME
+	string "Represented host interface for the offloaded interface"
+	default ""
+	help
+	  Name of the Linux host network interface that the offloaded interface
+	  represents: its addresses are mirrored onto the Zephyr net_if and its
+	  host ifindex pins multicast joins, egress and IPv6 scope. The Zephyr
+	  interface name does not exist on the host, so it cannot be used
+	  directly. When left empty, the interface used for the default route
+	  (default gateway) is used.
 
 config NET_NATIVE_OFFLOADED_SOCKETS_CONNECTIVITY_SIM
 	bool "Support for the network connectivity API"

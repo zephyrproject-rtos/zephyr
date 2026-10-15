@@ -52,6 +52,18 @@ K_MEM_SLAB_DEFINE_STATIC_TYPE(foreign_tts_slab, struct ptp_foreign_tt_clock,
 			      CONFIG_PTP_FOREIGN_TIME_TRANSMITTER_RECORD_SIZE);
 #endif
 
+/* Announce messages kept in the foreign timeTransmitter records come from the
+ * same pool as every other message. They may take half of it, so that senders
+ * of Announce messages cannot use up the messages needed to receive and send.
+ */
+#define FOREIGN_MSGS_MAX (CONFIG_PTP_MSG_POLL_SIZE / 2)
+
+BUILD_ASSERT(FOREIGN_MSGS_MAX >= FOREIGN_TIME_TRANSMITTER_THRESHOLD,
+	     "PTP_MSG_POLL_SIZE is too small to qualify a foreign timeTransmitter!");
+
+/* Number of messages kept in the foreign timeTransmitter records of all ports. */
+static int foreign_msgs_count;
+
 char str_port_id[] = "FF:FF:FF:FF:FF:FF:FF:FF-FFFF";
 
 static void port_pdelay_clear_exchange(struct ptp_port *port);
@@ -885,15 +897,64 @@ static void port_timer_to_handler(struct k_timer *timer)
 	ptp_clock_signal_timeout();
 }
 
+/* Release the oldest message of a foreign timeTransmitter record. */
+static void foreign_clock_msg_drop(struct ptp_foreign_tt_clock *foreign)
+{
+	struct ptp_msg *msg = (struct ptp_msg *)k_fifo_get(&foreign->messages, K_NO_WAIT);
+
+	ptp_msg_unref(msg);
+	foreign->messages_count--;
+	foreign_msgs_count--;
+}
+
+/* Keep a message in a foreign timeTransmitter record as its newest one. */
+static void foreign_clock_msg_add(struct ptp_foreign_tt_clock *foreign, struct ptp_msg *msg)
+{
+	ptp_msg_ref(msg);
+	foreign->messages_count++;
+	foreign_msgs_count++;
+	k_fifo_put(&foreign->messages, (void *)msg);
+}
+
+/* Make sure that one more message can be kept in a foreign timeTransmitter
+ * record. When the limit is reached, the oldest message of the record makes
+ * room for the new one. The record of the current timeTransmitter may also
+ * take the place of a message of another record of the same port.
+ */
+static bool foreign_clock_msg_reserve(struct ptp_foreign_tt_clock *foreign, bool current_tt)
+{
+	struct ptp_foreign_tt_clock *other;
+
+	if (foreign_msgs_count < FOREIGN_MSGS_MAX) {
+		return true;
+	}
+
+	if (foreign->messages_count > 0) {
+		foreign_clock_msg_drop(foreign);
+		return true;
+	}
+
+	if (!current_tt) {
+		return false;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&foreign->port->foreign_list, other, node) {
+		if (other != foreign && other->messages_count > 0) {
+			foreign_clock_msg_drop(other);
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static void foreign_clock_cleanup(struct ptp_foreign_tt_clock *foreign)
 {
 	struct ptp_msg *msg;
 	int64_t age, timeout, current = k_uptime_get();
 
 	while (foreign->messages_count > FOREIGN_TIME_TRANSMITTER_THRESHOLD) {
-		msg = (struct ptp_msg *)k_fifo_get(&foreign->messages, K_NO_WAIT);
-		ptp_msg_unref(msg);
-		foreign->messages_count--;
+		foreign_clock_msg_drop(foreign);
 	}
 
 	/* Remove messages that don't arrived at
@@ -921,20 +982,14 @@ static void foreign_clock_cleanup(struct ptp_foreign_tt_clock *foreign)
 			break;
 		}
 
-		msg = (struct ptp_msg *)k_fifo_get(&foreign->messages, K_NO_WAIT);
-		ptp_msg_unref(msg);
-		foreign->messages_count--;
+		foreign_clock_msg_drop(foreign);
 	}
 }
 
 static void port_clear_foreign_clock_records(struct ptp_foreign_tt_clock *foreign)
 {
-	struct ptp_msg *msg;
-
 	while (!k_fifo_is_empty(&foreign->messages)) {
-		msg = (struct ptp_msg *)k_fifo_get(&foreign->messages, K_NO_WAIT);
-		ptp_msg_unref(msg);
-		foreign->messages_count--;
+		foreign_clock_msg_drop(foreign);
 	}
 }
 
@@ -1860,16 +1915,25 @@ enum ptp_port_event ptp_port_event_gen(struct ptp_port *port, int idx)
 	}
 
 	cnt = ptp_transport_recv(port, msg, idx);
-	if (cnt <= 0) {
+	if (cnt < 0) {
 		LOG_ERR("Error during message reception");
 		ptp_msg_unref(msg);
 		return PTP_EVT_FAULT_DETECTED;
 	}
 
-	ret = ptp_msg_post_recv(port, msg, cnt);
-	if (ret) {
+	if (cnt == 0) {
+		/* Nothing to process, e.g. an empty datagram */
 		ptp_msg_unref(msg);
-		return PTP_EVT_FAULT_DETECTED;
+		return PTP_EVT_NONE;
+	}
+
+	/* Anyone on the multicast group can send an unsupported or malformed
+	 * message, so it is discarded and does not fault the port.
+	 */
+	ret = ptp_msg_post_recv(port, msg, cnt);
+	if (ret != 0) {
+		ptp_msg_unref(msg);
+		return PTP_EVT_NONE;
 	}
 
 	if (ptp_port_id_eq(&msg->header.src_port_id, &port->port_ds.id)) {
@@ -2212,9 +2276,13 @@ int ptp_port_add_foreign_tt(struct ptp_port *port, struct ptp_msg *msg)
 		diff = ptp_msg_announce_cmp(&msg->announce, &last->announce);
 	}
 
-	ptp_msg_ref(msg);
-	foreign->messages_count++;
-	k_fifo_put(&foreign->messages, (void *)msg);
+	if (!foreign_clock_msg_reserve(foreign, false)) {
+		LOG_DBG("Port %d keeps no more messages of foreign timeTransmitters",
+			port->port_ds.id.port_number);
+		return 0;
+	}
+
+	foreign_clock_msg_add(foreign, msg);
 
 	return (foreign->messages_count == FOREIGN_TIME_TRANSMITTER_THRESHOLD ? 1 : 0) || diff;
 }
@@ -2237,6 +2305,7 @@ int ptp_port_update_current_time_transmitter(struct ptp_port *port, struct ptp_m
 {
 	struct ptp_foreign_tt_clock *foreign = port->best;
 	struct ptp_msg *last = NULL;
+	int diff = 0;
 
 	if (!foreign ||
 	    !ptp_port_id_eq(&msg->header.src_port_id, &foreign->dataset.sender)) {
@@ -2252,23 +2321,21 @@ int ptp_port_update_current_time_transmitter(struct ptp_port *port, struct ptp_m
 	foreign_clock_cleanup(foreign);
 
 	if (foreign->messages_count > 0) {
+		/* Compared before the limit can release this message. */
 		last = (struct ptp_msg *)k_fifo_peek_tail(&foreign->messages);
+		diff = ptp_msg_announce_cmp(&msg->announce, &last->announce);
 	}
 
-	ptp_msg_ref(msg);
-	foreign->messages_count++;
-	k_fifo_put(&foreign->messages, (void *)msg);
+	if (foreign_clock_msg_reserve(foreign, true)) {
+		foreign_clock_msg_add(foreign, msg);
+	}
 
 	port_timer_set_timeout_random(&port->timers.announce,
 				      port->port_ds.announce_receipt_timeout,
 				      1,
 				      port->port_ds.log_announce_interval);
 
-	if (last) {
-		return ptp_msg_announce_cmp(&msg->announce, &last->announce);
-	}
-
-	return 0;
+	return diff;
 }
 
 int ptp_port_management_msg_process(struct ptp_port *port,

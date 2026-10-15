@@ -182,7 +182,7 @@ int mfd_rv3032_update_cfg(const struct device *dev, uint8_t addr, uint8_t mask, 
 /**
  * @brief Lock eeprom mutex and disable EEPROM autorefresh
  *
- * Call this before preforming any eeprom operation.
+ * Call this before performing any eeprom operation.
  * EEPROM operations will call mfd_rv3032_exit_eerd internally.
  *
  * @param dev RV3032 MFD

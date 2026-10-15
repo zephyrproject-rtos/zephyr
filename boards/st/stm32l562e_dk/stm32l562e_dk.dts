@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include "stm32l562e_dk_common.dtsi"
+#include "stm32l562e_dk-common.dtsi"
 
 / {
 	model = "STMicroelectronics STM32L562E-DK Discovery board";
@@ -41,6 +41,10 @@
 	status = "okay";
 };
 
+&hash {
+	status = "okay";
+};
+
 &flash0 {
 	partitions {
 		#address-cells = <1>;
@@ -73,7 +77,7 @@
 	};
 };
 
-&mx25lm51245 {
+&ext_flash {
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;

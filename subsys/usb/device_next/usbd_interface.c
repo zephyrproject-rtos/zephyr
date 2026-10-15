@@ -115,23 +115,14 @@ int usbd_interface_shutdown(struct usbd_context *const uds_ctx,
 	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, c_nd, node) {
 		uint32_t *ep_bm = &c_nd->ep_active;
 
-		for (int idx = 1; idx < 16 && *ep_bm; idx++) {
-			uint8_t ep_in = USB_EP_DIR_IN | idx;
-			uint8_t ep_out = idx;
+		while (*ep_bm) {
+			const uint8_t ep = usbd_ep_bm_get_first(*ep_bm);
 			int ret;
 
-			if (usbd_ep_bm_is_set(ep_bm, ep_in)) {
-				ret = usbd_ep_disable(uds_ctx->dev, ep_in, ep_bm);
-				if (ret) {
-					return ret;
-				}
-			}
-
-			if (usbd_ep_bm_is_set(ep_bm, ep_out)) {
-				ret = usbd_ep_disable(uds_ctx->dev, ep_out, ep_bm);
-				if (ret) {
-					return ret;
-				}
+			/* usbd_ep_disable() clears the bit whenever it returns success */
+			ret = usbd_ep_disable(uds_ctx->dev, ep, ep_bm);
+			if (ret) {
+				return ret;
 			}
 		}
 	}

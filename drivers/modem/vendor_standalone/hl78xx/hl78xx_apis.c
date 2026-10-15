@@ -1132,7 +1132,40 @@ int hl78xx_api_func_get_prl(const struct device *dev, struct kselacq_syntax *kse
 
 	return 0;
 }
+
+int hl78xx_api_func_set_autorat_inhibit(const struct device *dev, bool inhibit)
+{
+	struct hl78xx_data *data;
+
+	if (dev == NULL || dev->data == NULL) {
+		return -EINVAL;
+	}
+
+	data = (struct hl78xx_data *)dev->data;
+
+	k_mutex_lock(&data->api_lock, K_FOREVER);
+	data->autorat_inhibit = inhibit;
+	k_mutex_unlock(&data->api_lock);
+
+	LOG_DBG("Auto-RAT PRL restore %s", inhibit ? "inhibited" : "allowed");
+
+	return 0;
+}
 #endif /* CONFIG_MODEM_HL78XX_AUTORAT */
+
+bool hl78xx_api_func_at_is_busy(const struct device *dev)
+{
+	struct hl78xx_data *data;
+
+	if (dev == NULL || dev->data == NULL) {
+		/* Unknown means busy: never let a caller send blind. */
+		return true;
+	}
+
+	data = (struct hl78xx_data *)dev->data;
+
+	return modem_chat_is_running(&data->chat);
+}
 
 int hl78xx_set_runtime_band_provider(const struct device *dev,
 				     hl78xx_runtime_band_provider_t provider, void *user_data)
@@ -1166,6 +1199,7 @@ int hl78xx_api_func_set_phone_functionality(const struct device *dev,
 
 #ifdef CONFIG_HL78XX_GNSS
 	if (!reset && functionality == HL78XX_FULLY_FUNCTIONAL &&
+	    data->status.phone_functionality.valid &&
 	    data->status.phone_functionality.functionality == HL78XX_AIRPLANE &&
 	    data->status.state != MODEM_HL78XX_STATE_RUN_ENABLE_GPRS_SCRIPT &&
 	    data->status.boot.init_sequence_completed == false) {
@@ -1177,15 +1211,27 @@ int hl78xx_api_func_set_phone_functionality(const struct device *dev,
 #endif /* CONFIG_HL78XX_GNSS */
 	LOG_DBG("Setting phone functionality to %d with reset %d", functionality, reset);
 
+	/* Mark the transition in flight BEFORE the command goes out, not on its
+	 * OK: a CFUN=0/4 can take many seconds to detach, and URCs flushed from
+	 * the old state (a late +CREG in particular) arrive in the same instant
+	 * as the OK — hl78xx_on_cxreg() must be able to see the transition for
+	 * the whole window. Reverted if the send fails.
+	 */
+	struct hl78xx_phone_functionality_work prev = data->status.phone_functionality;
+
+	data->status.phone_functionality.in_progress = true;
+	data->status.phone_functionality.functionality = functionality;
+
 	/* configure modem functionality with/without restart  */
 	snprintf(cmd_string, sizeof(cmd_string), "AT+CFUN=%d,%d", functionality, reset);
 	ret = hl78xx_send_cmd(data, cmd_string, NULL, hl78xx_get_ok_match(),
 			      hl78xx_get_ok_match_size());
 	if (ret == 0) {
-		data->status.phone_functionality.in_progress = true;
-		data->status.phone_functionality.functionality = functionality;
+		data->status.phone_functionality.valid = true;
 		event.content.value = functionality;
 		event_dispatcher_dispatch(&event);
+	} else {
+		data->status.phone_functionality = prev;
 	}
 
 	return ret;
@@ -1548,6 +1594,14 @@ int hl78xx_exit_gnss_mode(const struct device *dev)
 		return -EINVAL;
 	}
 
+	/* An explicit exit always revokes a queued-but-unserved entry request:
+	 * the caller no longer wants GNSS, so a latched request must not fire
+	 * autonomously later (e.g. when the modem reaches CARRIER_ON).
+	 */
+	if (hl78xx_gnss_check_and_clear_pending(data_modem)) {
+		LOG_INF("Revoked queued GNSS mode entry request");
+	}
+
 	/* Check if not in GNSS mode */
 	if (!hl78xx_is_in_gnss_mode(data_modem)) {
 		LOG_DBG("Not in GNSS mode, nothing to exit");
@@ -1590,6 +1644,33 @@ int hl78xx_gnss_set_nmea_output(const struct device *dev, enum nmea_output_port 
 	}
 
 	data_gnss->output_port = port;
+	return 0;
+}
+
+int hl78xx_gnss_get_search_timeout_remaining(const struct device *dev, uint32_t *timeout_ms)
+{
+	struct hl78xx_gnss_data *data_gnss = NULL;
+	struct hl78xx_data *data_modem = NULL;
+	enum hl78xx_gnss_search_state search_state;
+
+	if (hl78xx_get_gnss_context(dev, &data_gnss, &data_modem) < 0) {
+		return -EINVAL;
+	}
+
+	if (data_modem == NULL) {
+		return -EINVAL;
+	}
+
+	search_state = hl78xx_gnss_get_search_state(data_gnss);
+
+	if ((search_state != HL78XX_GNSS_SEARCH_STATE_SEARCHING) &&
+	    (search_state != HL78XX_GNSS_SEARCH_STATE_STARTING)) {
+		/* Not searching, no need to reschedule timer */
+		return 0;
+	}
+
+	*timeout_ms = hl78xx_get_timer_remaining(data_modem);
+
 	return 0;
 }
 

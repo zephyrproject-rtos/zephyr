@@ -101,19 +101,34 @@ config NET_IF_MAX_IPV6_COUNT
 
 config NET_IF_UNICAST_IPV6_ADDR_COUNT
 	int "Max number of unicast IPv6 addresses per network interface"
+	default 4 if NET_NATIVE_OFFLOADED_SOCKETS
 	default 6 if NET_L2_OPENTHREAD
 	default 3 if NET_LOOPBACK
+	default 3 if NET_DHCPV6 && NET_IPV6_ND
 	default 2
+	help
+	  This tells how many unicast IPv6 addresses can be assigned to a
+	  network interface at the same time. When both a DHCPv6 client
+	  and SLAAC are active, the interface will typically hold at least
+	  3 unicast addresses: the link-local address, the SLAAC-derived
+	  global address, and the DHCPv6-assigned global address.
 
 config NET_IF_MCAST_IPV6_ADDR_COUNT
 	int "Max number of multicast IPv6 addresses per network interface"
 	default 8 if NET_L2_OPENTHREAD
 	default 4 if PTP_DELAY_MECHANISM_P2P && PTP_UDP_IPV6_PROTOCOL
+	default 4 if NET_DHCPV6
 	default 3
+	help
+	  This tells how many multicast IPv6 addresses can be joined by a
+	  network interface at the same time. Each unicast address requires
+	  joining its solicited-node multicast group, on top of the all-nodes
+	  multicast address and any additional groups needed by e.g. mDNS.
 
 config NET_L2_ETHERNET_MCAST_FILTER_ADD_COUNT_IPV6
 	int
 	depends on NET_L2_ETHERNET
+	depends on NET_NATIVE_IPV6
 	default NET_IF_MCAST_IPV6_ADDR_COUNT
 	help
 	  Every joined IPv6 multicast address needs a link layer multicast
@@ -335,8 +350,32 @@ config NET_IPV6_MLD
 	default y
 	help
 	  The value depends on your network needs. MLD should normally
-	  be active. Currently we support only MLDv2. See RFC 3810 for
-	  details.
+	  be active. The node speaks MLDv2 and falls back to MLDv1 when an
+	  MLDv1 querier is present. See RFC 3810 for details.
+
+config NET_IPV6_MLD_V1_COMPAT
+	bool "MLDv1 compatibility mode"
+	depends on NET_IPV6_MLD
+	default y
+	help
+	  Operate as an MLDv1 listener while an MLDv1 querier is present on
+	  the link, as RFC 3810 ch 8.2.1 requires. When disabled, MLDv1
+	  Queries and Reports are ignored (RFC 3810 ch 10.1), so that a forged
+	  MLDv1 Query cannot switch the node to MLDv1. Only disable this on
+	  links without MLDv1 routers.
+
+config NET_IPV6_MLD_ROBUSTNESS
+	int "MLD Robustness Variable"
+	depends on NET_IPV6_MLD
+	range 1 7
+	default 2
+	help
+	  The Robustness Variable of RFC 3810 ch 9.1 allows tuning for the
+	  expected packet loss on a link, it should not be set to one. The
+	  unsolicited report of a join is sent Robustness Variable times in
+	  total, and an MLDv1 querier is remembered for Robustness Variable
+	  times the Query Interval plus one Query Response Interval after its
+	  last query.
 
 config NET_IPV6_NBR_CACHE
 	bool "Neighbor cache"

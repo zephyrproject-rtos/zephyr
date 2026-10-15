@@ -48,7 +48,7 @@ or uses hardware serial port control, or other means of framing.
 Frame fragmenting
 =================
 
-SMP protocol over serial is fragmented into MTU size frames; each
+SMP protocol over serial is fragmented into frames of up to 127 bytes; each
 frame consists of two byte start marker, body and terminating newline
 character.
 

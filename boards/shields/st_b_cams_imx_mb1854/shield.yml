@@ -3,4 +3,5 @@ shield:
   full_name: ST B-CAMS-IMX-MB1854
   vendor: st
   supported_features:
+    - sensor
     - video

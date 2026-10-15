@@ -14,6 +14,7 @@ tests:
     timeout: 600
     platform_allow:
       - pic32cm_jh01_cpro
+      - pic32cm_sg00_cpro
   drivers.flash.interface_test.build_only:
     harness: ztest
     build_only: true

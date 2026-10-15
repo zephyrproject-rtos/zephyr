@@ -1,0 +1,19 @@
+#
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: mimxrt2660_evk/mimxrt2663/cm85
+name: NXP MIMXRT2660-EVK (CM85)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+# Execute in place from the 64 MB XSPI0 NOR flash, data in the 32 MB XSPI1 PSRAM.
+ram: 32768
+flash: 65536
+supported:
+  - gpio
+  - uart
+vendor: nxp

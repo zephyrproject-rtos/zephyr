@@ -3,6 +3,6 @@
 
 # Common properties for HW supported tachometers
 
-include: base.yaml
+include: sensor-device.yaml
 
 bus: tach

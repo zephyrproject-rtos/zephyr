@@ -14,6 +14,7 @@ config TEST_IRQ_NUM
 	default 29 if SOC_K32L2B31A
 	default 28 if (SOC_SERIES_NRF54L || SOC_SERIES_RTL8752H)
 	default 52 if SOC_SERIES_EFR32BG22
+	default 11 if (SOC_MAX32650 || SOC_MAX32655 || SOC_MAX32660)
 	default 0
 	help
 	  IRQ number to use for testing purposes. This should be an
@@ -28,6 +29,8 @@ config TEST_IRQ_NUM
 	  - K32L2B31A: 29 (available test IRQ)
 	  - EFR32BG22: 52 (available test IRQ (SW0 - SGI), (NUM_IRQS - 1) equates to EUART0 TX)
 	  - RTL8752H: 28 (available test IRQ, (NUM_IRQS - 1) equates to UART2))
+	  - MAX32650, MAX32655, MAX32660: 11 (NUM_IRQS is derived from devicetree
+	    here, so (NUM_IRQS - 1) is always an enabled node's own IRQ)
 	  - Other platforms: 0 (magic config value to select the last IRQ: NUM_IRQS - 1)
 
 config TEST_IRQ_PRIO

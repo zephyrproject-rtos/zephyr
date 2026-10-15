@@ -124,11 +124,11 @@ The board configuration is:
  - J4: 9-10 (DIL_SDx = SENS_SDA)
  - J5: 9-10 (DIL_SDx = SENS_SDA)
 
-Mode 5: LSM6DSO16IS as Qvar controller
+Mode 5: LSM6DSV16X as Qvar controller
 ======================================
 
 In this configuration, it is possible to use the equipped Qvar swipe electrode
-(by plugging it on JP6 and JP7 connectors) through the LSM6DSO16IS.
+(by plugging it on JP6 and JP7 connectors) through the LSM6DSV16X.
 
 The board configuration is:
 

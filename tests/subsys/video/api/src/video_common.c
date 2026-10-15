@@ -148,6 +148,29 @@ ZTEST(video_common, test_video_closest_frmival_stepwise)
 	ret = video_closest_frmival_stepwise(&stepwise, &desired, &match);
 	zassert_ok(ret, "expecting video_closest_frmival_stepwise to work");
 	zassert_equal(video_frmival_nsec(&match), video_frmival_nsec(&stepwise.max), "100 / 1");
+
+	/* The product of all denominators does not fit in 32 bits */
+	stepwise.min.numerator = 1;
+	stepwise.min.denominator = 60;
+	stepwise.max.numerator = UINT32_MAX;
+	stepwise.max.denominator = 1;
+	stepwise.step.numerator = 1;
+	stepwise.step.denominator = 1000;
+
+	desired.numerator = 16667;
+	desired.denominator = USEC_PER_SEC;
+	ret = video_closest_frmival_stepwise(&stepwise, &desired, &match);
+	zassert_ok(ret, "expecting video_closest_frmival_stepwise to work");
+	zassert_equal(video_frmival_nsec(&match), video_frmival_nsec(&stepwise.min),
+		      "16667 / 1000000");
+
+	desired.numerator = 33333;
+	desired.denominator = USEC_PER_SEC;
+	expected.numerator = 101;
+	expected.denominator = 3000;
+	ret = video_closest_frmival_stepwise(&stepwise, &desired, &match);
+	zassert_ok(ret, "expecting video_closest_frmival_stepwise to work");
+	zassert_equal(video_frmival_nsec(&match), video_frmival_nsec(&expected), "33333 / 1000000");
 }
 
 ZTEST(video_common, test_video_buffer_release_null)

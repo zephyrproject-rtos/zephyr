@@ -22,6 +22,7 @@
 		zephyr,flash-controller = &nvmctrl;
 		zephyr,console = &sercom4;
 		zephyr,shell-uart = &sercom4;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	aliases {
@@ -230,10 +231,6 @@ i2c0: &sercom3 {
 	prescaler = <2>;
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
-	status = "okay";
-};
-
-&dmac {
 	status = "okay";
 };
 

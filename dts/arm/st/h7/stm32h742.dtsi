@@ -23,6 +23,10 @@
 			};
 		};
 
+		rcc@58024400 {
+			st,vcoh-frequency-range = <DT_FREQ_M(192) DT_FREQ_M(960)>;
+		};
+
 		dmamux1: dmamux@40020800 {
 			dma-requests = <107>;
 		};

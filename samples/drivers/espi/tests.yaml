@@ -3,11 +3,19 @@ sample:
     master
   name: eSPI driver sample
 tests:
+  sample.drivers.espi.nxp:
+    tags:
+      - drivers
+      - espi
+    platform_allow:
+      - frdm_mcxa577
+    depends_on: espi
+    build_only: true
   sample.drivers.espi:
     tags:
       - drivers
       - espi
-    filter: dt_compat_enabled("intel-rvp,board-power")
+    filter: dt_compat_enabled("intel,rvp-board-power")
     depends_on: espi
     harness: console
     harness_config:

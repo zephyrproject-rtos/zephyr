@@ -251,7 +251,9 @@ static int smp_raw_dummy_init(void)
 	k_sem_init(&smp_data_ready_sem, 0, 1);
 
 	smp_raw_dummy_transport.functions.output = smp_raw_dummy_tx_pkt_int;
+	TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS);
 	smp_raw_dummy_transport.functions.get_mtu = smp_raw_dummy_get_mtu;
+	TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS);
 
 #ifdef CONFIG_MCUMGR_GRP_TRANSPORT
 	smp_raw_dummy_transport.functions.bridge_connect = smp_raw_dummy_bridge_connect;

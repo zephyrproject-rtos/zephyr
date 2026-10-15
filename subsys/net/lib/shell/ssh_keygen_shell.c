@@ -97,6 +97,11 @@ static int cmd_key_save(const struct shell *sh, size_t argc, char **argv)
 
 	ARG_UNUSED(argc);
 
+	if (!IS_ENABLED(CONFIG_SETTINGS)) {
+		shell_error(sh, "Set CONFIG_SETTINGS to enable key storage");
+		return -ENOTSUP;
+	}
+
 	if (snprintf(setting_name, sizeof(setting_name), "ssh/keys/%s",
 		     key_name) >= sizeof(setting_name)) {
 		return -EINVAL;
@@ -144,6 +149,11 @@ static int cmd_key_load(const struct shell *sh, size_t argc, char **argv)
 	};
 
 	ARG_UNUSED(argc);
+
+	if (!IS_ENABLED(CONFIG_SETTINGS)) {
+		shell_error(sh, "Set CONFIG_SETTINGS to enable key storage");
+		return -ENOTSUP;
+	}
 
 	if (snprintf(setting_name, sizeof(setting_name), "ssh/keys/%s",
 		     key_name) >= sizeof(setting_name)) {

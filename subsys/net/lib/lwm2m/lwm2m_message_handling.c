@@ -1401,7 +1401,7 @@ static int lwm2m_read_cached_data(struct lwm2m_message *msg,
 		read_info = &msg->cache_info->read_info[msg->cache_info->entry_size];
 		/* Store original timeseries ring buffer get states for failure handling */
 		read_info->cache_data = cached_data;
-		read_info->original_rb_get = cached_data->fifo.rb.get;
+		read_info->cached_rb_read_idx = cached_data->fifo.rb.read_idx;
 		msg->cache_info->entry_size++;
 		if (msg->cache_info->entry_limit) {
 			length = MIN(length, msg->cache_info->entry_limit);
@@ -2194,6 +2194,29 @@ static int parse_write_op(struct lwm2m_message *msg, uint16_t format)
 	return r;
 }
 
+int lwm2m_check_path_access(struct lwm2m_message *msg)
+{
+#if defined(CONFIG_LWM2M_ACCESS_CONTROL_ENABLE)
+	int r;
+
+	r = access_control_check_access(msg->path.obj_id, msg->path.obj_inst_id,
+					msg->ctx->srv_obj_inst, msg->operation,
+					msg->ctx->bootstrap_mode);
+	if (r < 0) {
+		LOG_ERR("Access denied - Server obj %u does not have proper access to "
+			"resource",
+			msg->ctx->srv_obj_inst);
+		return r;
+	}
+#endif
+	if (msg->path.level > LWM2M_PATH_LEVEL_NONE &&
+	    msg->path.obj_id == LWM2M_OBJECT_SECURITY_ID && !msg->ctx->bootstrap_mode) {
+		return -EACCES;
+	}
+
+	return 0;
+}
+
 static int do_composite_write_op(struct lwm2m_message *msg, uint16_t format)
 {
 	uint16_t payload_len = 0U;
@@ -2504,20 +2527,8 @@ static int handle_request(struct coap_packet *request, struct lwm2m_message *msg
 		goto error;
 	}
 
-#if defined(CONFIG_LWM2M_ACCESS_CONTROL_ENABLE)
-	r = access_control_check_access(msg->path.obj_id, msg->path.obj_inst_id,
-					msg->ctx->srv_obj_inst, msg->operation,
-					msg->ctx->bootstrap_mode);
+	r = lwm2m_check_path_access(msg);
 	if (r < 0) {
-		LOG_ERR("Access denied - Server obj %u does not have proper access to "
-			"resource",
-			msg->ctx->srv_obj_inst);
-		goto error;
-	}
-#endif
-	if (msg->path.level > LWM2M_PATH_LEVEL_NONE &&
-	    msg->path.obj_id == LWM2M_OBJECT_SECURITY_ID && !msg->ctx->bootstrap_mode) {
-		r = -EACCES;
 		goto error;
 	}
 
@@ -3094,8 +3105,8 @@ static bool lwm2m_timeseries_data_rebuild(struct lwm2m_message *msg, int error_c
 
 	/* Put Ring buffer back to original */
 	for (int i = 0; i < cache_temp->entry_size; i++) {
-		cache_temp->read_info[i].cache_data->fifo.rb.get =
-			cache_temp->read_info[i].original_rb_get;
+		cache_temp->read_info[i].cache_data->fifo.rb.read_idx =
+			cache_temp->read_info[i].cached_rb_read_idx;
 	}
 
 	if (cache_temp->entry_limit) {

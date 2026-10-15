@@ -29,7 +29,7 @@ extern "C" {
  * @brief DNS resolving library
  * @defgroup dns_resolve DNS Resolve Library
  * @since 1.8
- * @version 0.8.0
+ * @version 0.9.0
  * @ingroup networking
  * @{
  */
@@ -294,6 +294,10 @@ struct dns_socket_dispatcher {
 	 * context if sharing the socket between resolver / responder.
 	 */
 	struct dns_socket_dispatcher *pair;
+	/** Registered as the pair of another context, which delegates to
+	 * this one and whose socket service delivers the traffic.
+	 */
+	bool paired;
 	/** Mutex lock protecting access to this dispatcher context */
 	struct k_mutex lock;
 	/** Buffer allocation timeout */
@@ -534,6 +538,9 @@ struct dns_resolve_context {
 /** @cond INTERNAL_HIDDEN */
 		/** Dispatch DNS data between resolver and responder */
 		struct dns_socket_dispatcher dispatcher;
+
+		/** A reply from this server is being dispatched */
+		bool in_dispatch;
 /** @endcond */
 	} servers[DNS_RESOLVER_MAX_POLL]; /**< List of configured DNS servers */
 
@@ -598,6 +605,12 @@ struct dns_resolve_context {
 		 * cannot be used to find correct pending query.
 		 */
 		uint16_t query_hash;
+
+		/** Hash of the original DNS name + query type as requested by
+		 * the caller. Unlike @ref query_hash, this remains constant
+		 * even as the query follows CNAME aliases.
+		 */
+		uint16_t orig_query_hash;
 
 		/* Number of additional queries sent to resolve CNAME record
 		 * name aliases.
@@ -714,6 +727,20 @@ int dns_resolve_init_default(struct dns_resolve_context *ctx);
  * @return 0 if ok, <0 if error.
  */
 int dns_resolve_close(struct dns_resolve_context *ctx);
+
+/**
+ * @brief Check if DNS resolving context is active.
+ *
+ * @details A context becomes active when it is initialized with at least one
+ * DNS server, and inactive when it is closed. The state says nothing about
+ * the servers themselves, for example whether they can be reached.
+ *
+ * @param ctx DNS context that dns_resolve_init() has been called on, or NULL.
+ *
+ * @retval true The context is active.
+ * @retval false The context is not active, or ctx is NULL.
+ */
+bool dns_resolve_is_active(struct dns_resolve_context *ctx);
 
 /**
  * @brief Reconfigure DNS resolving context.

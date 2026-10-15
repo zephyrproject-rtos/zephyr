@@ -368,6 +368,8 @@ static inline uint64_t video_frmival_nsec(const struct video_frmival *frmival)
  * @param match The resulting frame interval closest to @p desired
  *
  * @retval 0 If successful.
+ * @retval -EINVAL If parameters are invalid.
+ * @retval -ERANGE If the step is zero or the result does not fit in 32-bit values.
  */
 int video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwise,
 				   const struct video_frmival *desired,

@@ -1,0 +1,156 @@
+# Copyright 2025-2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP MCX A series eSPI target controller.
+
+  The peripheral has up to 5 configurable I/O ports.
+  Each port is described by a child node whose reg property gives
+  the hardware port index (0-4).
+
+compatible: "nxp,espi"
+
+include: [espi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  ram-base-addr:
+    type: int
+    required: true
+    description: |
+      SRAM base address used by the eSPI hardware for mailbox and
+      OOB DMA buffers. Must be naturally aligned and accessible
+      by the eSPI bus-master engine.
+
+  map-base0-addr:
+    type: int
+    default: 0
+    description: |
+      Upper 16-bit base address for ports that select BASE0
+      addressing via the PnADDR register. Combined with the
+      port's io-addr to form the full host-side address.
+
+  map-base1-addr:
+    type: int
+    default: 0
+    description: |
+      Upper 16-bit base address for ports that select BASE1
+      addressing via the PnADDR register. Combined with the
+      port's io-addr to form the full host-side address.
+
+  max-oob-payload-size:
+    type: int
+    default: 64
+    enum: [64, 128, 256]
+    description: |
+      Maximum OOB channel payload size in bytes advertised to the host
+      through the ESPICAP.OOBMX capability field. This is a capability
+      ceiling: the host can only negotiate a value less than or equal to
+      this. The default matches the hardware/HAL reset capability.
+
+  max-flash-payload-size:
+    type: int
+    default: 64
+    enum: [64, 128, 256, 512]
+    description: |
+      Maximum flash channel payload size in bytes advertised to the host
+      through the ESPICAP.FLASHMX capability field. This is a capability
+      ceiling: the host can only negotiate a value less than or equal to
+      this. The default matches the hardware/HAL reset capability.
+
+  max-peripheral-payload-size:
+    type: int
+    default: 64
+    enum: [64, 128, 256]
+    description: |
+      Maximum peripheral channel payload size in bytes advertised to the host
+      through the ESPICAP.MEMMX capability field. This is a capability
+      ceiling: the host can only negotiate a value less than or equal to
+      this. The default matches the hardware/HAL reset capability.
+
+  max-taf-read-req-size:
+    type: int
+    default: 64
+    enum: [64, 128, 256, 512, 1024, 2048, 4096]
+    description: |
+      Maximum target read request size in bytes advertised to the host
+      through the ESPICAP.TRGT_REQ_SIZE_SUPP capability field. This is a
+      capability ceiling: the host can only negotiate a value less than or
+      equal to this. The default matches the hardware/HAL reset capability.
+
+  taf-erase-size:
+    type: int
+    default: 2
+    enum: [2, 4, 8, 16]
+    description: |
+      Target-Attached-Flash minimum erase sector size in kilobytes advertised
+      to the host through the ESPICAP.SAFERA capability field. The default
+      matches the hardware/HAL reset capability.
+
+child-binding:
+  description: eSPI port configuration.
+
+  properties:
+    reg:
+      type: int
+      required: true
+      description: |
+        Hardware port index. The driver maps each child node to the hardware
+        port at that index in declaration order, so child nodes must cover
+        every index from 0 up to the highest used port without gaps.
+        Use port-type = <0x0> as a placeholder for any index in that range
+        that requires no active function.
+
+    port-type:
+      type: int
+      required: true
+      enum: [0x0, 0x1, 0x2, 0x4, 0x5, 0x8, 0x9, 0xA, 0xB, 0xC]
+      description: |
+        Port function type. The hardware port slot number equals the position
+        of this child node in the sorted child list, so all indices from 0 to
+        the highest active port must be present.
+          0x0 = Unconfigured
+          0x1 = ACPI Endpoint
+          0x2 = ACPI Index-Data
+          0x4 = Bus Master Memory
+          0x5 = Bus Master Flash
+          0x8 = Mailbox Shared
+          0x9 = Mailbox Single
+          0xA = Mailbox Split
+          0xB = Mailbox OOB Split
+          0xC = Mailbox OEM
+
+    io-addr:
+      type: int
+      default: 0
+      description: Host-side I/O address offset for this port.
+
+    ram-offset:
+      type: int
+      default: 0
+      description: Byte offset from ram-base-addr for this port's DMA buffer.
+
+    ram-size:
+      type: int
+      default: 4
+      enum: [4, 8, 16, 32, 64, 128, 256, 512]
+      description: RAM buffer size in bytes for this port's DMA buffer.
+
+    idx-offset:
+      type: int
+      default: 0
+      description: Index register offset for ACPI Index-Data ports.

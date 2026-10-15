@@ -32,14 +32,14 @@ int siwx91x_nwp_mode_switch(const struct device *dev, uint8_t oper_mode, bool hi
  * @brief Apply the power profile for the NWP.
  *
  * Pushes both the Wi-Fi and BT halves of the NWP coex performance profile.
- * The BT half is re-seeded from the NWP device's stored mode on every call
- * because WiseConnect zeros it on each Wi-Fi disconnect.
+ * The BT half is re-seeded with ASSOCIATED_POWER_SAVE on every call because
+ * WiseConnect zeros it on each Wi-Fi disconnect.
  *
  * @param[in] dev           NWP device.
- * @param[in] wifi_profile  Optional Wi-Fi performance profile to apply.
- *                          If NULL, a default profile is built from the
- *                          NWP device's stored mode (used by BT-only and
- *                          init call sites).
+ * @param[in] wifi_profile  Optional Wi-Fi performance profile to apply. If
+ *                          NULL, it defaults to HIGH_PERFORMANCE. It is
+ *                          ignored (and DEEP_SLEEP_WITH_RAM_RETENTION is used
+ *                          instead) when the Wi-Fi driver is not enabled.
  *
  * @return 0 on success, negative error code on failure.
  */

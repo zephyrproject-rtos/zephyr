@@ -1,5 +1,6 @@
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
 # Copyright (c) 2016 Intel Corporation
+# Copyright 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 menu "Power Management"
@@ -65,6 +66,29 @@ config PM_STATE_SET_IRQ_UNLOCKED
 
 	  This guarantee covers only interrupts that arch_irq_lock() can mask. See
 	  the zero-latency interrupt documentation for IRQ_ZERO_LATENCY behavior.
+
+config PM_EARLY_SYSTEM_TIMER_RESUME
+	bool "Resume the system timer before devices [EXPERIMENTAL]"
+	depends on PM
+	default n
+	select EXPERIMENTAL
+	help
+	  Use the experimental system resume sequence: SoC exit post-ops,
+	  system timer idle-exit, system-managed device resume, then PM exit
+	  notifications. This lets a device resume callback use a timer-based
+	  busy-wait when the low-power state stopped the system timer.
+
+	  Enable only after validating the platform's resume dependencies.
+	  SoC post-ops must not depend on devices having been resumed, and
+	  timer idle-exit must not require a still-suspended device. Timer
+	  idle-exit may invoke timeout callbacks before devices are resumed.
+
+	  When disabled, preserve the legacy sequence: system-managed device
+	  resume, SoC exit post-ops, PM exit notifications, then system timer
+	  idle-exit. Timer-based busy-waits in device resume callbacks may
+	  not work with this sequence.
+
+	  If unsure, say N.
 
 rsource "policy/Kconfig"
 

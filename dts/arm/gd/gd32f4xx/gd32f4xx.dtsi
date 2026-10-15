@@ -61,7 +61,7 @@
 		};
 
 		backup_sram: sram@40024000 {
-			compatible = "zephyr,memory-region", "gd,gd32-backup-sram";
+			compatible = "gd,gd32-backup-sram", "zephyr,memory-region";
 			reg = <0x40024000 0x1000>;
 			clocks = <&cctl GD32_CLOCK_BKPSRAM>;
 			zephyr,memory-region = "BKPSRAM";

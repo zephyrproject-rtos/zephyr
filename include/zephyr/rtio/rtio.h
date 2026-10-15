@@ -57,6 +57,18 @@ extern "C" {
  * @{
  */
 
+struct rtio;
+
+/**
+ * @brief RTIO completion queue event callback
+ *
+ * Called every time a new completion queue event is submitted to RTIO context, if set.
+ *
+ * @param r The RTIO context to which the completion queue event was submitted
+ * @param user_data User data specified with @ref rtio_set_cqe_callback
+ */
+typedef void (*rtio_cqe_callback_t)(struct rtio *r, void *user_data);
+
 /**
  * @brief An RTIO context containing what can be viewed as a pair of queues.
  *
@@ -108,6 +120,14 @@ struct rtio {
 
 	/** Completion queue */
 	struct mpsc cq;
+
+#ifdef CONFIG_RTIO_CQE_CALLBACK
+	/* Completion queue event callback */
+	rtio_cqe_callback_t cqe_cb;
+
+	/* Completion queue event callback user data */
+	void *cqe_cb_user_data;
+#endif
 };
 
 /* @cond ignore */
@@ -127,6 +147,7 @@ struct rtio {
 		IF_ENABLED(CONFIG_RTIO_SYS_MEM_BLOCKS, (.block_pool = _block_pool,))               \
 		.sq = MPSC_INIT((name.sq)),                                                        \
 		.cq = MPSC_INIT((name.cq)),                                                        \
+		IF_ENABLED(CONFIG_RTIO_CQE_CALLBACK, (.cqe_cb = NULL, .cqe_cb_user_data = NULL,))  \
 	}
 /* @endcond */
 
@@ -436,6 +457,40 @@ static inline struct rtio_cqe *rtio_cqe_acquire(struct rtio *r)
 }
 
 /**
+ * @brief Set the completion queue event callback
+ *
+ * The callback will be called every time a new completion queue event is produced
+ *
+ * @warning The callback can only be set safely while no SQE is being executed
+ *
+ * @note Set the callback to NULL to disable the it
+ *
+ * @param r RTIO context
+ * @param callback The callback to set
+ * @param user_data User data passed to callback
+ *
+ * @retval 0 Callback set successfully
+ * @retval -ENOTSUP CQE callback is not supported
+ */
+static inline int rtio_set_cqe_callback(struct rtio *r,
+					rtio_cqe_callback_t callback,
+					void *user_data)
+{
+#ifdef CONFIG_RTIO_CQE_CALLBACK
+	r->cqe_cb = callback;
+	r->cqe_cb_user_data = user_data;
+
+	return 0;
+#else
+	ARG_UNUSED(r);
+	ARG_UNUSED(callback);
+	ARG_UNUSED(user_data);
+
+	return -ENOTSUP;
+#endif
+}
+
+/**
  * @brief Produce a complete queue event if available
  */
 static inline void rtio_cqe_produce(struct rtio *r, struct rtio_cqe *cqe)
@@ -707,6 +762,11 @@ static inline void rtio_cqe_submit(struct rtio *r, int result, void *userdata, u
 		rtio_cqe_produce(r, cqe);
 #ifdef CONFIG_RTIO_CONSUME_SEM
 		k_sem_give(r->consume_sem);
+#endif
+#ifdef CONFIG_RTIO_CQE_CALLBACK
+		if (r->cqe_cb != NULL) {
+			r->cqe_cb(r, r->cqe_cb_user_data);
+		}
 #endif
 	}
 

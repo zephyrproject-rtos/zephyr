@@ -6,3 +6,15 @@ description: Raspberry Pi Pico PIO
 compatible: "raspberrypi,pico-pio"
 
 include: [base.yaml, reset-device.yaml]
+
+properties:
+  gpio-base:
+    type: int
+    default: 0
+    enum: [0, 16]
+    description: |
+      Lowest GPIO number this PIO instance can address.
+
+      RP2350 PIO addresses a 32-pin window selected by the GPIOBASE register.
+      With 0 the instance sees GP0-GP31; with 16 it sees GP16-GP47. Set this
+      to 16 to access pins GP32-GP47 on the RP2350B and RP2354B.

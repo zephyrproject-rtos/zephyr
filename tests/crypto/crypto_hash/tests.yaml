@@ -3,7 +3,7 @@ tests:
     platform_allow:
       - native_sim
       - nucleo_u575zi_q
-      - rpi_pico2/rp2350a/m33
+      - rpi_pico2/rp2350a/m33_0
     integration_platforms:
       - native_sim
       - nucleo_u575zi_q
@@ -23,6 +23,7 @@ tests:
       - nucleo_h753zi
       - sf32lb52_devkit_lcd
       - stm32h573i_dk
+      - stm32mp135f_dk
       - kit_psc3m5_evk
       - cyw920829m2evk_02/cyw20829b1340
       - cyw920829m2evk_02/cyw20829b1010
@@ -33,4 +34,5 @@ tests:
       - kit_pse84_eval/pse846gps2dbzc4a/m55
       - kit_pse84_ai/pse846gps2dbzc4a/m33
       - kit_pse84_ai/pse846gps2dbzc4a/m55
+      - it51xxx_evb/it51526aw
     tags: crypto

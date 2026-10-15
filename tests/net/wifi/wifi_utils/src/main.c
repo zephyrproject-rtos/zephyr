@@ -75,4 +75,156 @@ ZTEST(net_wifi_utils, test_chan_to_band_agrees_with_validators)
 	}
 }
 
+struct chan_to_freq_test {
+	enum wifi_frequency_bands band;
+	uint16_t chan;
+	uint16_t freq;
+};
+
+static const struct chan_to_freq_test chan_to_freq_tests[] = {
+	/* 2.4 GHz, including channel 14 which breaks the 5 MHz spacing. */
+	{WIFI_FREQ_BAND_2_4_GHZ, 1, 2412},
+	{WIFI_FREQ_BAND_2_4_GHZ, 13, 2472},
+	{WIFI_FREQ_BAND_2_4_GHZ, 14, 2484},
+
+	/* 5 GHz, spanning the low and high parts of the band. */
+	{WIFI_FREQ_BAND_5_GHZ, 36, 5180},
+	{WIFI_FREQ_BAND_5_GHZ, 108, 5540},
+	{WIFI_FREQ_BAND_5_GHZ, 165, 5825},
+
+	/* 6 GHz, where channel 2 is the odd one out and 233 is the top. */
+	{WIFI_FREQ_BAND_6_GHZ, 1, 5955},
+	{WIFI_FREQ_BAND_6_GHZ, 2, 5935},
+	{WIFI_FREQ_BAND_6_GHZ, 233, 7115},
+
+	/* Channels that are not valid in the band asked for. */
+	{WIFI_FREQ_BAND_2_4_GHZ, 0, 0},
+	{WIFI_FREQ_BAND_2_4_GHZ, 15, 0},
+	{WIFI_FREQ_BAND_5_GHZ, 14, 0},
+	{WIFI_FREQ_BAND_5_GHZ, 37, 0},
+	{WIFI_FREQ_BAND_6_GHZ, 234, 0},
+	{WIFI_FREQ_BAND_UNKNOWN, 1, 0},
+	{WIFI_FREQ_BAND_SUB_1_GHZ, 1, 0},
+};
+
+ZTEST(net_wifi_utils, test_chan_to_freq)
+{
+	for (int i = 0; i < ARRAY_SIZE(chan_to_freq_tests); i++) {
+		const struct chan_to_freq_test *t = &chan_to_freq_tests[i];
+
+		zexpect_equal(wifi_utils_chan_to_freq(t->band, t->chan), t->freq,
+			      "Channel %u in band %d is not %u MHz", t->chan, t->band, t->freq);
+	}
+}
+
+ZTEST(net_wifi_utils, test_chan_to_freq_agrees_with_validators)
+{
+	/* A channel that is valid in a band must produce a frequency, and one
+	 * that is not must produce none.
+	 */
+	static const enum wifi_frequency_bands bands[] = {
+		WIFI_FREQ_BAND_2_4_GHZ,
+		WIFI_FREQ_BAND_5_GHZ,
+		WIFI_FREQ_BAND_6_GHZ,
+	};
+
+	for (int i = 0; i < ARRAY_SIZE(bands); i++) {
+		for (uint16_t chan = 0; chan <= 300; chan++) {
+			uint16_t freq = wifi_utils_chan_to_freq(bands[i], chan);
+
+			if (wifi_utils_validate_chan(bands[i], chan)) {
+				zexpect_not_equal(freq, 0, "Channel %u in band %d has no frequency",
+						  chan, bands[i]);
+			} else {
+				zexpect_equal(freq, 0, "Channel %u in band %d has a frequency",
+					      chan, bands[i]);
+			}
+		}
+	}
+}
+
+ZTEST(net_wifi_utils, test_freq_to_chan)
+{
+	/* Channel 14 and 6 GHz channel 2 are the two frequencies that do
+	 * not follow the spacing of their band.
+	 */
+	zexpect_equal(wifi_utils_freq_to_chan(2484), 14);
+	zexpect_equal(wifi_utils_freq_to_chan(5935), 2);
+
+	zexpect_equal(wifi_utils_freq_to_chan(2412), 1);
+	zexpect_equal(wifi_utils_freq_to_chan(2472), 13);
+	zexpect_equal(wifi_utils_freq_to_chan(5180), 36);
+	zexpect_equal(wifi_utils_freq_to_chan(5955), 1);
+	zexpect_equal(wifi_utils_freq_to_chan(7115), 233);
+
+	/* Frequencies that are not a channel center, including ones that
+	 * fall between two centers of the same band.
+	 */
+	zexpect_equal(wifi_utils_freq_to_chan(0), 0);
+	zexpect_equal(wifi_utils_freq_to_chan(2413), 0);
+	zexpect_equal(wifi_utils_freq_to_chan(2477), 0);
+	zexpect_equal(wifi_utils_freq_to_chan(2500), 0);
+	zexpect_equal(wifi_utils_freq_to_chan(5182), 0);
+	zexpect_equal(wifi_utils_freq_to_chan(5185), 0);
+	zexpect_equal(wifi_utils_freq_to_chan(5900), 0);
+	zexpect_equal(wifi_utils_freq_to_chan(5957), 0);
+}
+
+ZTEST(net_wifi_utils, test_freq_to_chan_rejects_non_centers)
+{
+	/* Only a center frequency may produce a channel, so every
+	 * frequency that no channel maps to has to return 0.
+	 */
+	static const enum wifi_frequency_bands bands[] = {
+		WIFI_FREQ_BAND_2_4_GHZ,
+		WIFI_FREQ_BAND_5_GHZ,
+		WIFI_FREQ_BAND_6_GHZ,
+	};
+
+	for (uint16_t freq = 2400; freq <= 7200; freq++) {
+		uint16_t chan = wifi_utils_freq_to_chan(freq);
+		bool is_center = false;
+
+		if (chan == 0) {
+			continue;
+		}
+
+		for (int i = 0; i < ARRAY_SIZE(bands); i++) {
+			if (wifi_utils_chan_to_freq(bands[i], chan) == freq) {
+				is_center = true;
+				break;
+			}
+		}
+
+		zexpect_true(is_center, "%u MHz is not a center frequency but maps to channel %u",
+			     freq, chan);
+	}
+}
+
+ZTEST(net_wifi_utils, test_chan_to_freq_round_trip)
+{
+	/* Every channel that has a frequency must come back unchanged, so
+	 * the two directions cannot drift apart.
+	 */
+	static const enum wifi_frequency_bands bands[] = {
+		WIFI_FREQ_BAND_2_4_GHZ,
+		WIFI_FREQ_BAND_5_GHZ,
+		WIFI_FREQ_BAND_6_GHZ,
+	};
+
+	for (int i = 0; i < ARRAY_SIZE(bands); i++) {
+		for (uint16_t chan = 0; chan <= 300; chan++) {
+			uint16_t freq = wifi_utils_chan_to_freq(bands[i], chan);
+
+			if (freq == 0) {
+				continue;
+			}
+
+			zexpect_equal(wifi_utils_freq_to_chan(freq), chan,
+				      "Channel %u in band %d is %u MHz, which maps back to %u",
+				      chan, bands[i], freq, wifi_utils_freq_to_chan(freq));
+		}
+	}
+}
+
 ZTEST_SUITE(net_wifi_utils, NULL, NULL, NULL, NULL, NULL);

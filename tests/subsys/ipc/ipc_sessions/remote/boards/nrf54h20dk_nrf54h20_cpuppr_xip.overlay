@@ -5,6 +5,9 @@
 
 ipc0: &cpuapp_cpuppr_ipc {
 	status = "okay";
+	compatible = "zephyr,ipc-icmsg";
+	/delete-property/ tx-blocks;
+	/delete-property/ rx-blocks;
 	unbound = "detect";
 };
 

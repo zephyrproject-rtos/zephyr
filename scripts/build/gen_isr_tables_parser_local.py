@@ -57,7 +57,7 @@ BUILD_ASSERT(offsetof(struct _isr_table_entry, isr)
 
         The function prepares parser to work.
         Parameters:
-        - intlist_data: The binnary data from intlist section
+        - intlist_data: The binary data from intlist section
         - config: The configuration object
         - log: The logging object, has to have error and debug methods
         """
@@ -294,6 +294,8 @@ BUILD_ASSERT(offsetof(struct _isr_table_entry, isr)
 
     def __write_shared_handlers(self, fp):
         array_name = self.__config.shared_array_name
+        if not self.__config.check_sym("CONFIG_DYNAMIC_INTERRUPTS"):
+            fp.write("const ")
         fp.write(f"extern struct z_shared_isr_table_entry {array_name}[{self.__nv}];\n")
 
         shared_cnt = self.__config.get_sym('CONFIG_SHARED_IRQ_MAX_NUM_CLIENTS')

@@ -97,6 +97,31 @@
 		};
 	};
 
+	ospi0_default: ospi0_default {
+		group1 {
+			/* sclk dqs sio0-7 */
+			psels = <RA_PSEL(RA_PSEL_OSPI, 8, 8)>,
+				<RA_PSEL(RA_PSEL_OSPI, 8, 1)>,
+				<RA_PSEL(RA_PSEL_OSPI, 1, 0)>,
+				<RA_PSEL(RA_PSEL_OSPI, 8, 3)>,
+				<RA_PSEL(RA_PSEL_OSPI, 1, 3)>,
+				<RA_PSEL(RA_PSEL_OSPI, 1, 1)>,
+				<RA_PSEL(RA_PSEL_OSPI, 1, 2)>,
+				<RA_PSEL(RA_PSEL_OSPI, 8, 0)>,
+				<RA_PSEL(RA_PSEL_OSPI, 8, 2)>,
+				<RA_PSEL(RA_PSEL_OSPI, 8, 4)>;
+			drive-strength = "highspeed-high";
+		};
+
+		group2 {
+			/* cs1 rst ecsint1 */
+			psels = <RA_PSEL(RA_PSEL_OSPI, 1, 4)>,
+				<RA_PSEL(RA_PSEL_OSPI, 1, 6)>,
+				<RA_PSEL(RA_PSEL_OSPI, 1, 5)>;
+			drive-strength = "high";
+		};
+	};
+
 	mdio0_default: mdio0_default {
 		group1 {
 			psels = <RA_PSEL(RA_PSEL_ETH_MII, 12, 11)>, /* MDC */
@@ -120,6 +145,42 @@
 				<RA_PSEL(RA_PSEL_ETH_RGMII, 4, 5)>, /* RGMII_RX_CTL */
 				<RA_PSEL(RA_PSEL_ETH_RGMII, 7, 3)>; /* RGMII_RX_CLK */
 			drive-strength = "high";
+		};
+	};
+
+	sdhc0_default: sdhc0_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_SDHI, 3, 6)>, /* SDCD */
+				<RA_PSEL(RA_PSEL_SDHI, 3, 7)>, /* SDCMD */
+				<RA_PSEL(RA_PSEL_SDHI, 3, 4)>, /* SDDATA0 */
+				<RA_PSEL(RA_PSEL_SDHI, 3, 2)>, /* SDDATA1 */
+				<RA_PSEL(RA_PSEL_SDHI, 3, 1)>, /* SDDATA2 */
+				<RA_PSEL(RA_PSEL_SDHI, 3, 0)>, /* SDDATA3 */
+				<RA_PSEL(RA_PSEL_SDHI, 3, 5)>; /* SDWP */
+			drive-strength = "high";
+		};
+
+		group2 {
+			psels = <RA_PSEL(RA_PSEL_SDHI, 3, 8)>; /* SDCLK */
+			drive-strength = "highspeed-high";
+		};
+	};
+
+	sdhc1_default: sdhc1_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_SDHI, 2, 5)>, /* SDCD */
+				<RA_PSEL(RA_PSEL_SDHI, 2, 2)>, /* SDCMD */
+				<RA_PSEL(RA_PSEL_SDHI, 3, 13)>, /* SDDATA0 */
+				<RA_PSEL(RA_PSEL_SDHI, 3, 14)>, /* SDDATA1 */
+				<RA_PSEL(RA_PSEL_SDHI, 4, 4)>, /* SDDATA2 */
+				<RA_PSEL(RA_PSEL_SDHI, 8, 11)>, /* SDDATA3 */
+				<RA_PSEL(RA_PSEL_SDHI, 2, 4)>; /* SDWP */
+			drive-strength = "high";
+		};
+
+		group2 {
+			psels = <RA_PSEL(RA_PSEL_SDHI, 2, 3)>; /* SDCLK */
+			drive-strength = "highspeed-high";
 		};
 	};
 };

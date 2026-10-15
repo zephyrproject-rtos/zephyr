@@ -20,6 +20,9 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
+
+#include <string.h>
+
 LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
 
 #define DT_DRV_COMPAT st_stm32u5_dma
@@ -68,6 +71,30 @@ LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
 
 #define STM32_DMA_GET_CHANNEL(dmax, idx) (dmax), dma_stm32_id_to_stream(idx)
 #endif /* CONFIG_STM32_HAL2 */
+
+#if defined(CONFIG_SOC_STM32WBA23XX) || defined(CONFIG_SOC_STM32WBA25XX)
+/*
+ * TODO: remove this as soon as possible!!!
+ *
+ * Workaround for defect in STM32CubeWBA v1.10.0: LL_DMA_SetDestIncMode()
+ * function is wrongly gated behind #ifdef GPDMA1, which prevents its use
+ * on STM32WBA2x SoCs. Implement the function in baremetal here instead.
+ *
+ * ST Internal Reference: HAL1-28329
+ */
+#include <stm32_bitops.h>
+
+static inline void ll_dma_set_dest_inc_mode(DMA_TypeDef *DMAx, uint32_t Channel, uint32_t DestInc)
+{
+	uintptr_t dmac_base = (uintptr_t)DMAx;
+	DMA_Channel_TypeDef *dma_ch = (void *)(dmac_base + LL_DMA_CH_OFFSET_TAB[Channel]);
+
+	stm32_reg_modify_bits(&dma_ch->CTR1, DMA_CTR1_DINC, DestInc);
+}
+#else
+/* NOTE: must use a passthrough macro because signature isn't stable across series */
+#define ll_dma_set_dest_inc_mode LL_DMA_SetDestIncMode
+#endif /* CONFIG_SOC_STM32WBA23XX || CONFIG_SOC_STM32WBA25XX */
 
 static const uint32_t table_src_size[] = {
 	STM32_DMA_SRC_DATA_WIDTH_BYTE,
@@ -366,6 +393,158 @@ static int dma_stm32_get_direction(enum dma_channel_direction direction,
 	return 0;
 }
 
+#ifndef CONFIG_STM32_HAL2
+static int dma_stm32_hal_map_data_size(uint32_t z_size, uint32_t *hal_size, uint32_t hal_byte,
+				       uint32_t hal_halfword, uint32_t hal_word)
+{
+	switch (z_size) {
+	case 1:
+		*hal_size = hal_byte;
+		return 0;
+	case 2:
+		*hal_size = hal_halfword;
+		return 0;
+	case 4:
+		*hal_size = hal_word;
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+
+static int dma_stm32_hal_map_mode(const struct dma_config *cfg, uint32_t *hal_mode)
+{
+	if (cfg->cyclic) {
+#ifdef DMA_CIRCULAR
+		*hal_mode = DMA_CIRCULAR;
+#else
+		return -ENOTSUP;
+#endif
+	} else {
+		*hal_mode = DMA_NORMAL;
+	}
+
+	return 0;
+}
+
+static int dma_stm32_hal_map_addr_adj(enum dma_addr_adj z_adj, uint32_t *hal_inc,
+				      uint32_t hal_inc_val, uint32_t hal_noinc_val)
+{
+	switch (z_adj) {
+	case DMA_ADDR_ADJ_INCREMENT:
+		*hal_inc = hal_inc_val;
+		return 0;
+	case DMA_ADDR_ADJ_NO_CHANGE:
+		*hal_inc = hal_noinc_val;
+		return 0;
+	case DMA_ADDR_ADJ_DECREMENT:
+		return -ENOTSUP;
+	default:
+		return -EINVAL;
+	}
+}
+
+static int dma_stm32_hal_config_widths(const struct dma_config *cfg, DMA_InitTypeDef *hal_config)
+{
+	int ret;
+
+	ret = dma_stm32_hal_map_data_size(cfg->source_data_size, &hal_config->SrcDataWidth,
+					  DMA_SRC_DATAWIDTH_BYTE, DMA_SRC_DATAWIDTH_HALFWORD,
+					  DMA_SRC_DATAWIDTH_WORD);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return dma_stm32_hal_map_data_size(cfg->dest_data_size, &hal_config->DestDataWidth,
+					   DMA_DEST_DATAWIDTH_BYTE, DMA_DEST_DATAWIDTH_HALFWORD,
+					   DMA_DEST_DATAWIDTH_WORD);
+}
+
+static int dma_stm32_hal_config_increments(uint16_t source_addr_adj, uint16_t dest_addr_adj,
+					   DMA_InitTypeDef *hal_config)
+{
+	int ret;
+
+	ret = dma_stm32_hal_map_addr_adj(source_addr_adj, &hal_config->SrcInc,
+					 DMA_SINC_INCREMENTED, DMA_SINC_FIXED);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return dma_stm32_hal_map_addr_adj(dest_addr_adj, &hal_config->DestInc,
+					  DMA_DINC_INCREMENTED, DMA_DINC_FIXED);
+}
+
+/*
+ * Default DMA driver configuration relies on these values,
+ * in case the fields have not been initialized in the @p zephyr_config.
+ *
+ * hal_config->Request			= GPDMA1_REQUEST_ADC1;
+ * hal_config->BlkHWRequest		= DMA_BREQ_SINGLE_BURST;
+ * hal_config->Direction		= DMA_PERIPH_TO_MEMORY;
+ * hal_config->SrcInc			= DMA_SINC_FIXED;
+ * hal_config->DestInc			= DMA_DINC_FIXED;
+ * hal_config->SrcDataWidth		= DMA_SRC_DATAWIDTH_BYTE;
+ * hal_config->DestDataWidth		= DMA_DEST_DATAWIDTH_BYTE;
+ * hal_config->Priority			= DMA_LOW_PRIORITY_LOW_WEIGHT;
+ * hal_config->SrcBurstLength		= 0;
+ * hal_config->DestBurstLength		= 0;
+ * hal_config->TransferAllocatedPort	= DMA_SRC_ALLOCATED_PORT0;
+ * hal_config->TransferEventMode	= DMA_TCEM_BLOCK_TRANSFER;
+ * hal_config->Mode			= DMA_NORMAL;
+ */
+int dma_stm32_zcfg_to_halcfg(const struct device *dma, const struct dma_config *zephyr_config,
+			     DMA_InitTypeDef *hal_config, uint16_t source_addr_adj,
+			     uint16_t dest_addr_adj)
+{
+	int ret;
+
+	__ASSERT_NO_MSG(dma != NULL && zephyr_config != NULL && hal_config != NULL);
+
+	memset(hal_config, 0, sizeof(*hal_config));
+
+	ret = dma_stm32_get_direction(zephyr_config->channel_direction, &hal_config->Direction);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = dma_stm32_get_priority(zephyr_config->channel_priority, &hal_config->Priority);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = dma_stm32_hal_config_widths(zephyr_config, hal_config);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = dma_stm32_hal_map_mode(zephyr_config, &hal_config->Mode);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = dma_stm32_hal_config_increments(source_addr_adj, dest_addr_adj, hal_config);
+	if (ret < 0) {
+		return ret;
+	}
+
+	hal_config->SrcBurstLength = zephyr_config->source_burst_length;
+	hal_config->DestBurstLength = zephyr_config->dest_burst_length;
+
+	hal_config->Request = zephyr_config->dma_slot;
+
+#ifdef DMA_BREQ_SINGLE_BURST
+	hal_config->BlkHWRequest = DMA_BREQ_SINGLE_BURST;
+#endif
+
+#ifdef DMA_TCEM_BLOCK_TRANSFER
+	hal_config->TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
+#endif
+
+	return 0;
+}
+#endif /* CONFIG_STM32_HAL2 */
+
 static int dma_stm32_disable_stream(DMA_TypeDef *dma, uint32_t id)
 {
 	int count = 0;
@@ -431,21 +610,34 @@ static int dma_stm32_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	/* Support only the same data width for source and dest */
 	if (config->dest_data_size != config->source_data_size) {
-		LOG_ERR("source and dest data size differ.");
+		/* This is not a strict error, but might point to an issue.
+		 * Mismatch can be used by peripherals that require 32-bit access,
+		 * but produce 16-bit value (e.g. ADC, DAC)
+		 */
+		LOG_INF("source and dest data size differ.");
+	}
+
+	if (config->dest_data_size != 4U &&
+	    config->dest_data_size != 2U &&
+	    config->dest_data_size != 1U) {
+		LOG_ERR("dest unit size error, %d", config->dest_data_size);
 		return -EINVAL;
 	}
 
 	if (config->source_data_size != 4U &&
 	    config->source_data_size != 2U &&
 	    config->source_data_size != 1U) {
-		LOG_ERR("source and dest unit size error, %d",
-			config->source_data_size);
+		LOG_ERR("source unit size error, %d", config->source_data_size);
 		return -EINVAL;
 	}
 
-#if !defined(CONFIG_SOC_SERIES_STM32C5X)
+/*
+ * TODO: handle SoCs that embed only LPDMA in a proper manner.
+ */
+#if !defined(CONFIG_SOC_SERIES_STM32C5X) \
+	&& !defined(CONFIG_SOC_STM32WBA23XX) \
+	&& !defined(CONFIG_SOC_STM32WBA25XX)
 	if ((config->source_burst_length % config->source_data_size) != 0) {
 		LOG_ERR("Source burst length %d is not aligned to source data size %d",
 			config->source_burst_length, config->source_data_size);
@@ -540,11 +732,11 @@ static int dma_stm32_configure(const struct device *dev,
 	/* This part is for dest */
 	switch (config->head_block->dest_addr_adj) {
 	case DMA_ADDR_ADJ_INCREMENT:
-		LL_DMA_SetDestIncMode(STM32_DMA_GET_CHANNEL(dma, id),
+		ll_dma_set_dest_inc_mode(STM32_DMA_GET_CHANNEL(dma, id),
 				      STM32_DMA_DEST_ADDR_INCREMENTED);
 		break;
 	case DMA_ADDR_ADJ_NO_CHANGE:
-		LL_DMA_SetDestIncMode(STM32_DMA_GET_CHANNEL(dma, id), STM32_DMA_DEST_ADDR_FIXED);
+		ll_dma_set_dest_inc_mode(STM32_DMA_GET_CHANNEL(dma, id), STM32_DMA_DEST_ADDR_FIXED);
 		break;
 	case DMA_ADDR_ADJ_DECREMENT:
 		return -ENOTSUP;

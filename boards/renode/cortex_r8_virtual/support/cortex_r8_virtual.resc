@@ -9,7 +9,7 @@ machine LoadPlatformDescription $ORIGIN/cortex_r8_virtual.repl
 
 
 showAnalyzer uart0
-cpu PerformanceInMips 5
+cpu PerformanceInMips 50
 
 macro reset
 """

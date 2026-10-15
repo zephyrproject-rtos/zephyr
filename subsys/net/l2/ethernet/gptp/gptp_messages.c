@@ -22,7 +22,7 @@ static struct net_if_timestamp_cb pdelay_response_timestamp_cb[CONFIG_NET_GPTP_N
 static bool sync_cb_registered[CONFIG_NET_GPTP_NUM_PORTS];
 static bool ts_cb_registered[CONFIG_NET_GPTP_NUM_PORTS];
 
-static const struct net_eth_addr gptp_multicast_eth_addr = {
+const struct net_eth_addr gptp_multicast_eth_addr = {
 	{ 0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e } };
 static uint8_t ieee8021_oui[3] = { OUI_IEEE_802_1_COMMITTEE };
 

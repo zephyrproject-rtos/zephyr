@@ -410,7 +410,7 @@ static const struct xlnx_uartlite_config xlnx_uartlite_##n##_config = {	\
 	static const struct xlnx_uartlite_config xlnx_uartlite_##n##_config;\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
-			    &xlnx_uartlite_init,			\
+			    xlnx_uartlite_init,				\
 			    NULL,					\
 			    &xlnx_uartlite_##n##_data,			\
 			    &xlnx_uartlite_##n##_config,		\

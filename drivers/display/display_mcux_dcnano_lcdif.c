@@ -70,10 +70,9 @@ static int mcux_dcnano_lcdif_write(const struct device *dev, const uint16_t x,
 
 	LOG_DBG("W=%d, H=%d @%d,%d", desc->width, desc->height, x, y);
 
-	if ((x == 0) && (y == 0) &&
-		(desc->width == config->dpi_config.panelWidth) &&
-		(desc->height == config->dpi_config.panelHeight) &&
-		(desc->pitch == desc->width)) {
+	if ((x == 0) && (y == 0) && (desc->width == config->dpi_config.panelWidth) &&
+	    (desc->height == config->dpi_config.panelHeight) && (desc->pitch == desc->width) &&
+	    ((data->pixel_bytes * desc->pitch) == data->pitch_bytes)) {
 		/* We can use the display buffer directly, without copying */
 		LOG_DBG("Setting FB from %p->%p",
 			(void *)data->active_fb, (void *)buf);
@@ -141,8 +140,6 @@ static void mcux_dcnano_lcdif_get_capabilities(const struct device *dev,
 {
 	const struct mcux_dcnano_lcdif_config *config = dev->config;
 	struct mcux_dcnano_lcdif_data *data = dev->data;
-
-	memset(capabilities, 0, sizeof(struct display_capabilities));
 
 	capabilities->y_resolution = config->dpi_config.panelHeight;
 	capabilities->x_resolution = config->dpi_config.panelWidth;

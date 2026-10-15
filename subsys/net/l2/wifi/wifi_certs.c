@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(net_wifi_certs, CONFIG_NET_L2_WIFI_MGMT_LOG_LEVEL);
 static struct wifi_enterprise_creds_params enterprise_creds_params = { 0 };
 
 #ifdef CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES
+#include <mbedtls/platform_util.h>
 #include <zephyr/net/tls_credentials.h>
 enum wifi_enterprise_cert_sec_tags {
 	WIFI_CERT_CA_SEC_TAG = 0x1020001,
@@ -83,6 +84,10 @@ static void clear_cert_data(struct wifi_cert_data *certs, size_t cert_count)
 {
 	for (size_t i = 0; i < cert_count; i++) {
 		if (certs[i].data != NULL && *certs[i].data != NULL) {
+			if (certs[i].len != NULL) {
+				mbedtls_platform_zeroize(*certs[i].data, *certs[i].len);
+			}
+
 			k_free(*certs[i].data);
 			*certs[i].data = NULL;
 		}

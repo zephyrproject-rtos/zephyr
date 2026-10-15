@@ -67,8 +67,7 @@ properties:
     required: true
 
   "#dma-cells":
-    const: 2
+    const: 1
 
 dma-cells:
   - channel
-  - config

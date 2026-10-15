@@ -10,7 +10,7 @@
 #include <zephyr/drivers/reset.h>
 #include <zephyr/arch/common/sys_bitops.h>
 
-#define CH32_RESET_REG_OFFEST(id) (((id) >> 5U) & 0xFFU)
+#define CH32_RESET_REG_OFFSET(id) (((id) >> 5U) & 0xFFU)
 #define CH32_RESET_REG_BIT(id)    ((id) & 0x1FU)
 
 struct reset_ch32_config {
@@ -21,7 +21,7 @@ static int reset_ch32_status(const struct device *dev, uint32_t id, uint8_t *sta
 {
 	const struct reset_ch32_config *const config = dev->config;
 
-	*status = !!sys_test_bit(config->base + CH32_RESET_REG_OFFEST(id), CH32_RESET_REG_BIT(id));
+	*status = !!sys_test_bit(config->base + CH32_RESET_REG_OFFSET(id), CH32_RESET_REG_BIT(id));
 
 	return 0;
 }
@@ -30,7 +30,7 @@ static int reset_ch32_line_assert(const struct device *dev, uint32_t id)
 {
 	const struct reset_ch32_config *const config = dev->config;
 
-	sys_set_bit(config->base + CH32_RESET_REG_OFFEST(id), CH32_RESET_REG_BIT(id));
+	sys_set_bit(config->base + CH32_RESET_REG_OFFSET(id), CH32_RESET_REG_BIT(id));
 
 	return 0;
 }
@@ -39,7 +39,7 @@ static int reset_ch32_line_deassert(const struct device *dev, uint32_t id)
 {
 	const struct reset_ch32_config *const config = dev->config;
 
-	sys_clear_bit(config->base + CH32_RESET_REG_OFFEST(id), CH32_RESET_REG_BIT(id));
+	sys_clear_bit(config->base + CH32_RESET_REG_OFFSET(id), CH32_RESET_REG_BIT(id));
 
 	return 0;
 }

@@ -37,17 +37,6 @@ static inline uint32_t vexriscv_litex_irq_pending(void)
 	return pending;
 }
 
-static inline void vexriscv_litex_irq_setie(uint32_t ie)
-{
-	if (ie) {
-		__asm__ volatile ("csrrs x0, mstatus, %0"
-				:: "r"(MSTATUS_IEN));
-	} else {
-		__asm__ volatile ("csrrc x0, mstatus, %0"
-				:: "r"(MSTATUS_IEN));
-	}
-}
-
 #define LITEX_IRQ_ADD_HELPER(n)                                                                    \
 	if (irqs & (1 << DT_IRQN(n))) {                                                            \
 		ite = &_sw_isr_table[DT_IRQN(n)];                                                  \
@@ -85,9 +74,10 @@ int arch_irq_is_enabled(unsigned int irq)
 
 static int vexriscv_litex_irq_init(const struct device *dev)
 {
+	/* Mask out all interrupts */
+	vexriscv_litex_irq_setmask(0);
 	__asm__ volatile ("csrrs x0, mie, %0"
 			:: "r"(1 << RISCV_IRQ_MEXT));
-	vexriscv_litex_irq_setie(1);
 	IRQ_CONNECT(RISCV_IRQ_MEXT, 0, vexriscv_litex_irq_handler,
 			NULL, 0);
 

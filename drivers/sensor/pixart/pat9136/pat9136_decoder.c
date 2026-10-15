@@ -98,7 +98,7 @@ static void pat9136_convert_raw_to_q31(struct pat9136_encoded_data *edata,
 		intermediate = (((int64_t)reading * INT64_C(1000000) * 25.4));
 		intermediate /= resolution;
 
-		intermediate *= ((int64_t)INT32_MAX + 1) / ((1 << shift) * INT64_C(1000000));
+		intermediate = (intermediate * (INT64_C(1) << (31 - shift))) / INT64_C(1000000);
 
 		*out = CLAMP(intermediate, INT32_MIN, INT32_MAX);
 

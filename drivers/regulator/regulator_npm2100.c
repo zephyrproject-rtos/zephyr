@@ -680,6 +680,8 @@ static int regulator_npm2100_init(const struct device *dev)
 	const struct regulator_npm2100_config *config = dev->config;
 	int ret;
 
+	regulator_common_data_init(dev);
+
 	if (!i2c_is_ready_dt(&config->i2c)) {
 		return -ENODEV;
 	}

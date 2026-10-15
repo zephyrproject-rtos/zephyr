@@ -6,6 +6,10 @@
 
 #include <nxp/imx/nxp_imx8m_m4.dtsi>
 
+&{/cpus} {
+	timebase-frequency = <DT_FREQ_M(400)>;
+};
+
 &pinctrl {
 	status = "okay";
 	compatible = "nxp,imx8mp-pinctrl";

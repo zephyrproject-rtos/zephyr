@@ -171,7 +171,7 @@ static void on_cesq(struct modem_chat *chat, char **argv, uint16_t argc, void *u
 	 * Note from specs:
 	 * <relev>,  <ber>, <rscp> and <ecno>  are not applicable to NB-IoT network and should
 	 * be set to "not known or not detectable" (99) for the module.
-	 * Temporarly ignored.
+	 * Temporarily ignored.
 	 */
 
 	int raw_rsrq = atoi(argv[5]);
@@ -1267,7 +1267,7 @@ static void bc66x_enter_deep_sleep_work_handler(struct k_work *work)
 	atomic_set(&data->modem_state, BC66X_SLEEPING_STATE);
 	LOG_DBG("Deep sleep mode enabled");
 
-	/* is_in_deep_sleep is set when receiveing the URC */
+	/* is_in_deep_sleep is set when receiving the URC */
 }
 
 /* "device drivers must not perform any blocking operations during suspend" */

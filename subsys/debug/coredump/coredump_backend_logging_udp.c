@@ -155,11 +155,10 @@ static int coredump_udp_parse_peer(void)
 static int coredump_udp_bind_ephemeral(int sock)
 {
 	int ret;
-	struct net_sockaddr_storage bind_storage;
+	struct net_sockaddr_storage bind_storage = {0};
 	struct net_sockaddr *bind_sa = net_sad(&bind_storage);
 	size_t addr_len;
 
-	memset(&bind_storage, 0, sizeof(bind_storage));
 	bind_sa->sa_family = udp_sock_af;
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && udp_sock_af == NET_AF_INET) {

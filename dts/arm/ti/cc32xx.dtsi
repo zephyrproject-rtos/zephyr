@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+#include <freq.h>
 #include <arm/armv7-m.dtsi>
 
 #include <zephyr/dt-bindings/adc/adc.h>
@@ -34,6 +35,7 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+		timebase-frequency = <DT_FREQ_M(80)>;
 
 		cpu@0 {
 			device_type = "cpu";

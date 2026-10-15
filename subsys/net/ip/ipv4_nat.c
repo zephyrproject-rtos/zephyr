@@ -298,6 +298,8 @@ static struct net_nat4_entry *conn_track_create(struct net_pkt *pkt,
 		}
 	}
 
+	LOG_ERR("Failed to add nat4 entry");
+
 	return NULL;
 
 new_entry:
@@ -335,11 +337,6 @@ static void do_snat(struct net_pkt *pkt,
 	struct net_conn_tuple *tuple = &entry->tuple[NET_NAT_DIR_REPLY];
 	uint32_t sum;
 
-	if (iphdr->ttl <= 1) {
-		NET_ERR("SNAT pkt hop limit drop");
-		return;
-	}
-
 	/* update L4 header */
 	if (iphdr->proto == NET_IPPROTO_TCP) {
 		struct net_tcp_hdr *tcphdr = (struct net_tcp_hdr *)l4hdr;
@@ -361,13 +358,11 @@ static void do_snat(struct net_pkt *pkt,
 		udphdr->chksum = update_chksum(udphdr->chksum, sum);
 	}
 
-	/* update IP header */
-	sum = sum_update(iphdr->ttl, iphdr->ttl - 1);
-	sum += sum_update(IP_LWORD(iphdr->src), IP_LWORD(tuple->dst));
+	/* update IP header, the forwarding path decrements the TTL */
+	sum = sum_update(IP_LWORD(iphdr->src), IP_LWORD(tuple->dst));
 	sum += sum_update(IP_HWORD(iphdr->src), IP_HWORD(tuple->dst));
 	iphdr->chksum = update_chksum(iphdr->chksum, sum);
 
-	iphdr->ttl--;
 	net_ipv4_addr_copy_raw(iphdr->src, tuple->dst);
 
 	/* update target iface */
@@ -382,11 +377,6 @@ static void do_dnat(struct net_pkt *pkt,
 {
 	struct net_conn_tuple *tuple = &entry->tuple[NET_NAT_DIR_ORIGIN];
 	uint32_t sum;
-
-	if (iphdr->ttl <= 1) {
-		NET_ERR("DNAT pkt hop limit drop");
-		return;
-	}
 
 	/* update L4 header */
 	if (iphdr->proto == NET_IPPROTO_TCP) {
@@ -409,13 +399,11 @@ static void do_dnat(struct net_pkt *pkt,
 		udphdr->chksum = update_chksum(udphdr->chksum, sum);
 	}
 
-	/* update IP header */
-	sum = sum_update(iphdr->ttl, iphdr->ttl - 1);
-	sum += sum_update(IP_LWORD(iphdr->dst), IP_LWORD(tuple->src));
+	/* update IP header, the forwarding path decrements the TTL */
+	sum = sum_update(IP_LWORD(iphdr->dst), IP_LWORD(tuple->src));
 	sum += sum_update(IP_HWORD(iphdr->dst), IP_HWORD(tuple->src));
 	iphdr->chksum = update_chksum(iphdr->chksum, sum);
 
-	iphdr->ttl--;
 	net_ipv4_addr_copy_raw(iphdr->dst, tuple->src);
 
 	/* update target iface */
@@ -549,7 +537,7 @@ int net_ipv4_table_rule_add(struct net_iptable_rule_params *param)
 	rule->reply_timeout = param->reply_timeout;
 
 	iptable_rule_list_insert(rule);
-	return 0;
+	return rule->idx;
 }
 
 void net_ipv4_table_rule_del(int idx)
@@ -657,6 +645,11 @@ static bool ipv4_nat_process(struct npf_test *test, struct net_pkt *pkt)
 	} else if (dir == NET_NAT_DIR_REPLY) {
 		do_dnat(pkt, iphdr, l4hdr, entry);
 		goto match;
+	}
+
+	/* Traffic to this host is delivered locally, never translated */
+	if (net_ipv4_is_my_addr_raw(iphdr->dst)) {
+		goto no_match;
 	}
 
 	rule = iptable_rule_match(pkt, iphdr);

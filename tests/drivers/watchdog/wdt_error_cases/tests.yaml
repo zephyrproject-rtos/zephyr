@@ -22,6 +22,7 @@ tests:
       - xg24_rb4187c
       - xg27_dk2602a
       - kg100s_rb4332a
+      - sixg301_rb4407a
       - raytac_an54lq_db_15/nrf54l15/cpuapp
       - sam_e54_xpro
       - pic32cx_sg41_cult
@@ -42,5 +43,6 @@ tests:
       - xg24_rb4187c
       - xg27_dk2602a
       - kg100s_rb4332a
+      - sixg301_rb4407a
     extra_configs:
       - CONFIG_PM=y

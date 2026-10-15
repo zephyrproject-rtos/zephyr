@@ -59,13 +59,6 @@ config ESPRESSIF_QEMU_TARGET
 	  CONFIG_ESPRESSIF_QEMU. Board files use this symbol to opt into
 	  the espressif_qemu emu platform (SUPPORTED_EMU_PLATFORMS).
 
-config NET_DRIVERS
-	bool
-	default y if QEMU_TARGET && NETWORKING
-	help
-	  When building for a qemu target then NET_DRIVERS will be default
-	  enabled to allow for easy use of SLIP or PPP
-
 rsource "Kconfig.v2"
 
 # Parse shields references

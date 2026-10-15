@@ -100,25 +100,32 @@ static void fill_multi_heap(void)
 	}
 }
 
-ZTEST(shared_multi_heap, test_shared_multi_heap)
+static void *shared_multi_heap_setup(void)
 {
-	struct region_map *reg_map;
-	void *block;
 	int ret;
 
 	ret = shared_multi_heap_pool_init();
 	zassert_equal(0, ret, "failed initialization");
 
 	/*
+	 * Fill the buffer pool with the memory heaps coming from DT
+	 */
+	fill_multi_heap();
+
+	return NULL;
+}
+
+ZTEST(shared_multi_heap, test_shared_multi_heap)
+{
+	struct region_map *reg_map;
+	void *block;
+	int ret;
+
+	/*
 	 * Return -EALREADY if already inited
 	 */
 	ret = shared_multi_heap_pool_init();
 	zassert_equal(-EALREADY, ret, "second init should fail");
-
-	/*
-	 * Fill the buffer pool with the memory heaps coming from DT
-	 */
-	fill_multi_heap();
 
 	/*
 	 * Request a small cacheable chunk. It should be allocated in the
@@ -183,4 +190,133 @@ ZTEST(shared_multi_heap, test_shared_multi_heap)
 	zassert_is_null(block, "wrong attribute accepted as valid");
 }
 
-ZTEST_SUITE(shared_multi_heap, NULL, NULL, NULL, NULL, NULL);
+#define STRESS_THREADS    4
+#define STRESS_STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
+#define STRESS_SLOTS      4
+#define STRESS_MAX_SIZE   256U
+#define STRESS_ITERATIONS 20000
+
+static K_THREAD_STACK_ARRAY_DEFINE(stress_stacks, STRESS_THREADS, STRESS_STACK_SIZE);
+static struct k_thread stress_threads[STRESS_THREADS];
+static atomic_t stress_errors;
+
+static uint32_t stress_rand(uint32_t *state)
+{
+	*state = (*state * 1103515245U) + 12345U;
+
+	return *state >> 16;
+}
+
+static bool stress_check(const uint8_t *block, uint8_t pattern, size_t size)
+{
+	for (size_t i = 0; i < size; i++) {
+		if (block[i] != pattern) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+static size_t largest_cacheable_block(void)
+{
+	void *block;
+
+	for (size_t size = 0x4000; size > 0; size -= 0x40) {
+		block = shared_multi_heap_alloc(SMH_REG_ATTR_CACHEABLE, size);
+		if (block != NULL) {
+			shared_multi_heap_free(block);
+			return size;
+		}
+	}
+
+	return 0;
+}
+
+static void stress_entry(void *p1, void *p2, void *p3)
+{
+	uint8_t pattern = (uint8_t)(uintptr_t)p1;
+	uint32_t seed = pattern;
+	uint8_t *blocks[STRESS_SLOTS] = {NULL};
+	size_t sizes[STRESS_SLOTS] = {0};
+	uint8_t *block;
+	uint32_t slot;
+	size_t size;
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	for (int i = 0; i < STRESS_ITERATIONS; i++) {
+		slot = stress_rand(&seed) % STRESS_SLOTS;
+		size = 1U + (stress_rand(&seed) % STRESS_MAX_SIZE);
+
+		if (blocks[slot] != NULL) {
+			if (!stress_check(blocks[slot], pattern, sizes[slot])) {
+				atomic_inc(&stress_errors);
+			}
+
+			if ((stress_rand(&seed) % 4U) == 0U) {
+				block = shared_multi_heap_realloc(SMH_REG_ATTR_CACHEABLE,
+								  blocks[slot], size);
+				if (block != NULL) {
+					blocks[slot] = block;
+					sizes[slot] = size;
+					memset(block, pattern, size);
+				}
+				continue;
+			}
+
+			shared_multi_heap_free(blocks[slot]);
+			blocks[slot] = NULL;
+			continue;
+		}
+
+		block = shared_multi_heap_aligned_alloc(SMH_REG_ATTR_CACHEABLE, 16, size);
+		if (block != NULL) {
+			memset(block, pattern, size);
+			blocks[slot] = block;
+			sizes[slot] = size;
+		}
+	}
+
+	for (slot = 0; slot < STRESS_SLOTS; slot++) {
+		if (blocks[slot] != NULL) {
+			if (!stress_check(blocks[slot], pattern, sizes[slot])) {
+				atomic_inc(&stress_errors);
+			}
+			shared_multi_heap_free(blocks[slot]);
+		}
+	}
+}
+
+ZTEST(shared_multi_heap, test_shared_multi_heap_concurrent)
+{
+	size_t largest;
+
+	largest = largest_cacheable_block();
+	zassert_not_equal(largest, 0, "no cacheable memory available");
+
+	atomic_set(&stress_errors, 0);
+	k_sched_time_slice_set(1, K_PRIO_PREEMPT(1));
+
+	for (int i = 0; i < STRESS_THREADS; i++) {
+		k_thread_create(&stress_threads[i], stress_stacks[i],
+				K_THREAD_STACK_SIZEOF(stress_stacks[i]), stress_entry,
+				(void *)(uintptr_t)(i + 1), NULL, NULL, K_PRIO_PREEMPT(1), 0,
+				K_NO_WAIT);
+	}
+
+	for (int i = 0; i < STRESS_THREADS; i++) {
+		k_thread_join(&stress_threads[i], K_FOREVER);
+	}
+
+	k_sched_time_slice_set(CONFIG_TIMESLICE_SIZE, CONFIG_TIMESLICE_PRIORITY);
+
+	zassert_equal(atomic_get(&stress_errors), 0, "block content corrupted");
+
+	/* All blocks are freed, so the cacheable pool must be as it was before */
+	zassert_equal(largest_cacheable_block(), largest,
+		      "cacheable pool damaged after concurrent use");
+}
+
+ZTEST_SUITE(shared_multi_heap, NULL, shared_multi_heap_setup, NULL, NULL, NULL);

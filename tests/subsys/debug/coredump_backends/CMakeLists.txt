@@ -11,3 +11,8 @@ zephyr_library_sources_ifdef(
   CONFIG_DEBUG_COREDUMP_BACKEND_OTHER
   src/coredump_backend_empty.c
   )
+
+target_sources_ifdef(
+  CONFIG_DEBUG_COREDUMP_BACKEND_LOGGING_UDP
+  app PRIVATE src/coredump_udp_receiver.c
+  )

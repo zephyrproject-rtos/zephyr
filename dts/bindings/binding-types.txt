@@ -75,6 +75,7 @@ ipc	IPC (Inter-Processor Communication)
 ipm	IPM (Inter-Processor Mailbox)
 led	LED (Light Emitting Diode)
 led_strip	LED (Light Emitting Diode) strip
+lin	LIN (Local Interconnect Network)
 lora	LoRa
 mbox	Mailbox
 mcumgr	MCUmgr

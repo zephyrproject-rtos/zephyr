@@ -599,8 +599,7 @@ static int uart_async_sf32lb_rx_disable(const struct device *dev)
 
 	sf32lb_dma_get_status_dt(&config->rx_dma, &dma_stat);
 	if (dma_stat.busy) {
-		err = -EBUSY;
-		goto unlock;
+		return -EBUSY;
 	}
 
 	key = irq_lock();
@@ -716,8 +715,7 @@ static int uart_async_sf32lb_tx_abort(const struct device *dev)
 
 	sf32lb_dma_get_status_dt(&config->tx_dma, &dma_stat);
 	if (dma_stat.busy) {
-		err = -EBUSY;
-		goto unlock;
+		return -EBUSY;
 	}
 
 	k_work_cancel_delayable(&data->async.tx.timeout_work);

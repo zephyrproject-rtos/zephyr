@@ -4,4 +4,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_WEACT_ESP32C3_MINI
-	select SOC_ESP32C3_FH4
+	select SOC_ESP32C3

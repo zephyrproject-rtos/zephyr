@@ -120,6 +120,7 @@
 		sw1 = &button1;
 		watchdog0 = &wdt;
 		pwm-0 = &pwm0;
+		i2c-0 = &iic1;
 	};
 };
 
@@ -299,6 +300,11 @@
 	pinctrl-0 = <&usbfs_default>;
 	pinctrl-names = "default";
 	maximum-speed = "full-speed";
+	status = "okay";
+
+	zephyr_uhc0: uhc {
+		status = "okay";
+	};
 };
 
 mikrobus_serial: &uart7 {};

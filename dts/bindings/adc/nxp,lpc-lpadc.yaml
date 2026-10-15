@@ -73,6 +73,22 @@ properties:
     required: true
     description: Offset value B to use if CONFIG_LPADC_DO_OFFSET_CALIBRATION is false
 
+  stop-in-low-power-mode:
+    type: boolean
+    description: |
+      Set register field CTRL[DOZEN] so the converter stops for the duration of
+      any low-power mode. The converter first waits for the current averaging
+      iteration or FIFO store to complete before acknowledging the low-power
+      entry request, then stays inactive until the system leaves the low-power
+      mode; pending triggers are dropped.
+
+      When absent (the default, matching the reset value), CTRL[DOZEN] is 0
+      and the converter keeps running in low-power modes where it remains
+      functional, so hardware trigger detection, active conversions and the
+      compare-based wakeup stay operational. That requires the converter's
+      functional clock (ADCK) to keep running in the low-power mode, which the
+      clock configuration must arrange; the bus clock may be gated.
+
   nxp,references:
     type: phandle-array
     description: References to required regulators which must be enabled for LPADC to function

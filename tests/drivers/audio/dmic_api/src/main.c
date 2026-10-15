@@ -148,6 +148,10 @@ ZTEST(dmic, test_single_channel)
 /* Verify that the DMIC can transfer from a L/R channel pair */
 ZTEST(dmic, test_stereo_channel)
 {
+	if (PDM_CHANNELS < 2) {
+		ztest_test_skip();
+	}
+
 	dmic_cfg.channel.req_num_chan = 2;
 	dmic_cfg.channel.req_chan_map_lo =
 		dmic_build_channel_map(0, PDM_CTL_IDX, PDM_CHAN_LEFT) |

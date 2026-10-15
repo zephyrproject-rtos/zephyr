@@ -17,7 +17,7 @@
  *          information, see @ref bt_gatt_client and @ref bt_gatt_server.
  * @defgroup bt_gatt Generic Attribute Profile (GATT)
  * @since 1.0
- * @version 1.0.0
+ * @version 1.0.1
  * @ingroup bluetooth
  * @{
  */
@@ -1116,7 +1116,7 @@ struct bt_gatt_ccc_managed_user_data {
 	/** Configuration for each connection */
 	struct bt_gatt_ccc_cfg cfg[BT_GATT_CCC_MAX];
 
-	/** Highest value of all connected peer's subscriptions */
+	/** Highest value of all connected peer's subscriptions, Reserved bits excluded */
 	uint16_t value;
 
 	/** @brief CCC attribute changed callback
@@ -1530,6 +1530,10 @@ int bt_gatt_notify_multiple(struct bt_conn *conn,
  *  automatically created after the Characteristic Declaration when using
  *  BT_GATT_CHARACTERISTIC.
  *
+ *  The value is limited to the maximum notification value size reported by
+ *  @ref bt_att_get_max_notify_size and has to be truncated by the caller if it is
+ *  larger than that.
+ *
  *  @param conn Connection object.
  *  @param attr Characteristic or Characteristic Value attribute.
  *  @param data Pointer to Attribute data.
@@ -1668,6 +1672,10 @@ struct bt_gatt_indicate_params {
  *  Alternatively it is possible to indicate by UUID by setting it on the
  *  parameters, when using this method the attribute if provided is used as the
  *  start range when looking up for possible matches.
+ *
+ *  The value is limited to the maximum indication value size reported by
+ *  @ref bt_att_get_max_indicate_size and has to be truncated by the caller if it is
+ *  larger than that.
  *
  *  @note This procedure is asynchronous therefore the parameters need to
  *        remains valid while it is active. The procedure is active until

@@ -5,5 +5,6 @@
  */
 
 #include <mem.h>
+#include <microchip/pic32c/pic32ck_sg_gc/common/pic32ck_gc.dtsi>
 #include <microchip/pic32c/pic32ck_sg_gc/common/pic32ck_sg_gc_144.dtsi>
 #include <microchip/pic32c/pic32ck_sg_gc/common/pic32ck_2051_sg_gc.dtsi>

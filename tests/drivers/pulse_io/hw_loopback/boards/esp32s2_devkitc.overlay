@@ -5,6 +5,9 @@
  *
  * Routes one transmit channel and one receive channel to the same
  * pad, so the frame loops back internally without external wiring.
+ * On this SoC every channel can do either, and the same index is used
+ * for both, so the receiver has to be a different channel from the
+ * transmitter.
  */
 
 &pinctrl {
@@ -14,7 +17,7 @@
 		};
 
 		group2 {
-			pinmux = <RMT_IN0_GPIO13>;
+			pinmux = <RMT_IN1_GPIO13>;
 			input-enable;
 		};
 	};

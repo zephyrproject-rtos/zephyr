@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,8 @@
 #define NXP_PLL_MUX_0_DC_6_DIV DT_PROP(DT_NODELABEL(mc_cgm), mux_0_dc_6_div)
 #define NXP_PLL_MUX_1_DC_0_DIV DT_PROP(DT_NODELABEL(mc_cgm), mux_1_dc_0_div)
 #define NXP_PLL_MUX_2_DC_0_DIV DT_PROP(DT_NODELABEL(mc_cgm), mux_2_dc_0_div)
+/** @brief MUX_10_DC_0 divider */
+#define NXP_PLL_MUX_10_DC_0_DIV DT_PROP(DT_NODELABEL(mc_cgm), mux_10_dc_0_div)
 
 /* Note- clock identifiers in this file must be unique,
  * as the driver uses them in a switch case
@@ -59,7 +61,14 @@
 #define MCUX_CMP1_CLK MCUX_MC_CGM_CLK_ID(0x22, 0x01)
 #define MCUX_CMP2_CLK MCUX_MC_CGM_CLK_ID(0x22, 0x02)
 
-#define MCUX_EMIOS_CLK MCUX_MC_CGM_CLK_ID(0x23, 0x00)
+
+/** EMIOS0 module clock: get the IP clock frequency */
+#define MCUX_EMIOS0_CLK MCUX_MC_CGM_CLK_ID(0x23, 0x00)
+/** EMIOS1 module clock: get the IP clock frequency */
+#define MCUX_EMIOS1_CLK MCUX_MC_CGM_CLK_ID(0x23, 0x01)
+/** EMIOS2 module clock: get the IP clock frequency */
+#define MCUX_EMIOS2_CLK MCUX_MC_CGM_CLK_ID(0x23, 0x02)
+
 
 #define MCUX_FLEXCAN0_CLK MCUX_MC_CGM_CLK_ID(0x24, 0x00)
 #define MCUX_FLEXCAN1_CLK MCUX_MC_CGM_CLK_ID(0x24, 0x01)

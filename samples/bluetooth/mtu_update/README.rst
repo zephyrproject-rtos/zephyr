@@ -131,8 +131,8 @@ Central:
   *** Booting Zephyr OS build zephyr-v3.2.0-2251-g95d8943c69ce ***
   Bluetooth initialized
   Scanning successfully started
-  Device found: EB:BF:36:26:42:09 (random) (RSSI -34)
-  Connected: EB:BF:36:26:42:09 (random)
+  Device found: R:EB:BF:36:26:42:09 (RSSI -34)
+  Connected: R:EB:BF:36:26:42:09
   mtu_exchange: Current MTU = 23
   mtu_exchange: Exchange MTU...
   mtu_exchange_cb: MTU exchange successful (247)

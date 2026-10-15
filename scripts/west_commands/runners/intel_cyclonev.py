@@ -88,7 +88,7 @@ class IntelCycloneVBinaryRunner(ZephyrBinaryRunner):
         self.targets_arg = [] if no_targets else ['-c targets']
         self.serial = ['-c set _ZEPHYR_BOARD_SERIAL ' + serial] if serial else []
         self.use_elf = use_elf
-        self.gdb_init = gdb_init
+        self.gdb_init = gdb_init or []
         self.load_arg = ['-ex', 'load'] if load else []
 
     @classmethod
@@ -98,7 +98,8 @@ class IntelCycloneVBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def capabilities(cls):
         return RunnerCaps(commands={'flash', 'debug', 'attach'},
-                          dev_id=False, flash_addr=False, erase=False, skip_load=True)
+                          dev_id=False, flash_addr=False, erase=False, skip_load=True,
+                          gdb_init=True)
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -143,8 +144,6 @@ class IntelCycloneVBinaryRunner(ZephyrBinaryRunner):
                             help='openocd telnet port, defaults to 4444')
         parser.add_argument('--gdb-port', default=DEFAULT_OPENOCD_GDB_PORT,
                             help='openocd gdb port, defaults to 3333')
-        parser.add_argument('--gdb-init', action='append',
-                            help='if given, add GDB init commands')
         parser.add_argument('--no-halt', action='store_true',
                             help='if given, no halt issued in gdb server cmd')
         parser.add_argument('--no-init', action='store_true',
@@ -245,12 +244,9 @@ class IntelCycloneVBinaryRunner(ZephyrBinaryRunner):
         gdb_cmd2 = (self.gdb_cmd + self.tui_arg +
                    ['-ex', f'target extended-remote localhost:{self.gdb_port}' , '-batch'])
         echo = ['echo']
-        if self.gdb_init is not None:
-            for i in self.gdb_init:
-                gdb_cmd.append("-ex")
-                gdb_cmd.append(i)
-                gdb_cmd2.append("-ex")
-                gdb_cmd2.append(i)
+        gdb_init_args = self.gdb_ex_args(self.gdb_init)
+        gdb_cmd += gdb_init_args
+        gdb_cmd2 += gdb_init_args
 
         if self.gdb_cmds is not None:
             for i in self.gdb_cmds:
@@ -309,12 +305,9 @@ class IntelCycloneVBinaryRunner(ZephyrBinaryRunner):
                    ['-ex', f'target extended-remote :{self.gdb_port}' , '-batch'])
 
 
-        if self.gdb_init is not None:
-            for i in self.gdb_init:
-                gdb_cmd.append("-ex")
-                gdb_cmd.append(i)
-                gdb_cmd2.append("-ex")
-                gdb_cmd2.append(i)
+        gdb_init_args = self.gdb_ex_args(self.gdb_init)
+        gdb_cmd += gdb_init_args
+        gdb_cmd2 += gdb_init_args
 
         if self.gdb_cmds is not None:
             for i in self.gdb_cmds:

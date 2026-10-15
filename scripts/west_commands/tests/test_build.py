@@ -64,7 +64,7 @@ def test_parse_remainder(test_case):
 
 
 TEST_CASES_CMAKE_ARGS = [
-    # check that given args (a) lead to expected cmake arguments (e) in correct oder
+    # check that given args (a) lead to expected cmake arguments (e) in correct order
     # cmake_opts
     {'a': ['--cmake-opt=-Da=1', '--cmake-opt=-Db=2'],
      'e': ['-Da=1', '-Db=2']},

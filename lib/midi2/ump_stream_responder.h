@@ -19,6 +19,10 @@
 #include <zephyr/kernel.h>
 #include <zephyr/audio/midi.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief      UMP Function Block specification
  * @see ump112: 6: Function Blocks
@@ -135,5 +139,9 @@ int ump_stream_respond(const struct ump_stream_responder_cfg *cfg,
 const char *ump_product_instance_id(void);
 
 /** @} */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

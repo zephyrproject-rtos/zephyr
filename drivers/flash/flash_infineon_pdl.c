@@ -110,21 +110,14 @@ static int flash_ifx_write(const struct device *dev, off_t offset, const void *d
 	k_mutex_lock(&dev_data->lock, K_FOREVER);
 
 	while (remaining_len > 0) {
-		const uint32_t *row_src;
-
-		if ((((uintptr_t)src_ptr) & (sizeof(uint32_t) - 1)) == 0) {
-			row_src = (const uint32_t *)src_ptr;
-		} else {
-			memcpy(row_buf, src_ptr, row_len);
-			row_src = row_buf;
-		}
+		memcpy(row_buf, src_ptr, row_len);
 
 #if IFX_FLASH_EXPLICIT_ERASE
 		/* Advertises explicit erase */
-		status = Cy_Flash_ProgramRow(write_offset, row_src);
+		status = Cy_Flash_ProgramRow(write_offset, row_buf);
 #else
 		/* Auto-erases the row as part of the write. */
-		status = Cy_Flash_WriteRow(write_offset, row_src);
+		status = Cy_Flash_WriteRow(write_offset, row_buf);
 #endif
 		if (status != CY_FLASH_DRV_SUCCESS) {
 			ret = -EIO;

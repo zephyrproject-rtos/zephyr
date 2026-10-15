@@ -111,4 +111,12 @@
 	pinctrl-names = "default";
 };
 
+&lptimer0 {
+	status = "okay";
+};
+
+&lptimer1 {
+	status = "okay";
+};
+
 mikrobus_i2c: &i2c1 {};

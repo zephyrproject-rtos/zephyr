@@ -11,7 +11,7 @@ description: |
 
 compatible: "gd,gd32-backup-sram"
 
-include: base.yaml
+include: ["base.yaml", "zephyr,memory-region.yaml"]
 
 properties:
   reg:

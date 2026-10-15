@@ -49,9 +49,6 @@ config GEN_ISR_TABLES
 config RISCV_MCAUSE_EXCEPTION_MASK
 	default 0x1F
 
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 32768
-
 config SYS_CLOCK_TICKS_PER_SEC
 	default 993
 

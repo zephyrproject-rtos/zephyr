@@ -17,7 +17,14 @@
 #define ZTEST(suite, fn) static void _##suite##_##fn##_wrapper(void)
 
 /* Attributes */
+#define __noinit YACFE_ATTRIBUTE
+#define __syscall YACFE_ATTRIBUTE
+#define FUNC_NORETURN YACFE_ATTRIBUTE
+#define __weak YACFE_ATTRIBUTE
+#define ALWAYS_INLINE YACFE_ATTRIBUTE
 
 /* Confirmed problematic */
-#define __noinit
-#define __syscall
+#define CHECKIF(expr) YACFE_ITERATOR
+#define K_SPINLOCK(lck) YACFE_ITERATOR
+#define LOCK_SCHED_SPINLOCK
+#define Z_SCHED_SPINLOCK

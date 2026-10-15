@@ -92,6 +92,10 @@ struct flash_flexspi_nor_data {
 	flexspi_port_t port;
 	bool legacy_poll;
 	uint64_t size;
+	/* Bytes erased by one ERASE_BLOCK sequence; the SFDP path overrides
+	 * the classic 64 KiB default with the size the chip declares.
+	 */
+	uint32_t erase_block_size;
 	/* Expected jedec-id property from devicetree */
 	uint8_t jedec_id[JESD216_READ_ID_LEN];
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
@@ -585,8 +589,10 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 		 */
 		size_t remaining_size = size;
 		off_t current_offset = offset;
+		size_t block_size = data->erase_block_size;
+
 		/* Step 1: Handle unaligned start - erase sectors until block aligned */
-		while (remaining_size > 0 && (current_offset % SPI_NOR_BLOCK_SIZE) != 0) {
+		while (remaining_size > 0 && (current_offset % block_size) != 0) {
 			flash_flexspi_nor_write_enable(data);
 			flash_flexspi_nor_erase_sector(data, current_offset);
 			flash_flexspi_nor_wait_bus_busy(data);
@@ -596,13 +602,13 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 		}
 
 		/* Step 2: Erase whole blocks */
-		while (remaining_size >= SPI_NOR_BLOCK_SIZE) {
+		while (remaining_size >= block_size) {
 			flash_flexspi_nor_write_enable(data);
 			flash_flexspi_nor_erase_block(data, current_offset);
 			flash_flexspi_nor_wait_bus_busy(data);
 			memc_flexspi_reset(&data->controller);
-			current_offset += SPI_NOR_BLOCK_SIZE;
-			remaining_size -= SPI_NOR_BLOCK_SIZE;
+			current_offset += block_size;
+			remaining_size -= block_size;
 		}
 
 		/* Step 3: Erase remaining sectors */
@@ -1076,6 +1082,9 @@ static int flash_flexspi_nor_config_flash(struct flash_flexspi_nor_data *data,
 	uint8_t addr_width;
 	uint8_t mode_cmd;
 	uint8_t octal_enable_req = JESD216_DW19_OER_VAL_NONE;
+	uint8_t erase_sector_cmd = SPI_NOR_CMD_SE;
+	uint8_t erase_block_cmd = SPI_NOR_CMD_BE;
+	uint32_t block_size = 0;
 	int ret;
 
 	/* Read DW14 to determine the polling method we should use while programming */
@@ -1105,6 +1114,55 @@ static int flash_flexspi_nor_config_flash(struct flash_flexspi_nor_data *data,
 		octal_enable_req = dw19.octal_enable_req;
 	}
 
+	/* Select the erase opcodes from the BFP erase types (DW8-DW9): the
+	 * driver's sector size for ERASE_SECTOR, the largest declared type
+	 * for ERASE_BLOCK.
+	 */
+	for (uint8_t et = 1; et <= JESD216_NUM_ERASE_TYPES; et++) {
+		struct jesd216_erase_type etype;
+
+		/* Types 1-2 live in DW8, 3-4 in DW9; both DWs are optional and
+		 * jesd216_bfp_erase() cannot know the table length, so gate on
+		 * it before reading (a short table leaves param_buf words
+		 * uninitialized).
+		 */
+		if (header->phdr[0].len_dw < 8U + ((et - 1U) / 2U)) {
+			continue;
+		}
+
+		if (jesd216_bfp_erase(bfp, et, &etype) < 0) {
+			continue;
+		}
+
+		/* Guard BIT() against a nonsensical declared size */
+		if (etype.exp >= 32U) {
+			continue;
+		}
+
+		if (BIT(etype.exp) == SPI_NOR_SECTOR_SIZE) {
+			erase_sector_cmd = etype.cmd;
+		}
+		if (BIT(etype.exp) > block_size) {
+			block_size = BIT(etype.exp);
+			erase_block_cmd = etype.cmd;
+		}
+	}
+	if (block_size == 0) {
+		/* No type larger than a sector: block erase degrades to it. */
+		erase_block_cmd = erase_sector_cmd;
+		block_size = SPI_NOR_SECTOR_SIZE;
+	}
+	data->erase_block_size = block_size;
+	LOG_DBG("SFDP erase types: sector 0x%02x (4 KiB), block 0x%02x (%u KiB)",
+		erase_sector_cmd, erase_block_cmd, block_size / 1024);
+
+	flexspi_lut[ERASE_SECTOR][0] = FLEXSPI_LUT_SEQ(
+			kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, erase_sector_cmd,
+			kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, addr_width);
+	flexspi_lut[ERASE_BLOCK][0] = FLEXSPI_LUT_SEQ(
+			kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, erase_block_cmd,
+			kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, addr_width);
+
 	/* Check to see if we can enable 4 byte addressing */
 	ret = jesd216_bfp_decode_dw16(&header->phdr[0], bfp, &dw16);
 	if (ret == 0) {
@@ -1117,11 +1175,11 @@ static int flash_flexspi_nor_config_flash(struct flash_flexspi_nor_data *data,
 			/* Update LUT for ERASE_SECTOR and ERASE_BLOCK to use 32 bit addr */
 			flexspi_lut[ERASE_SECTOR][0] = FLEXSPI_LUT_SEQ(
 					kFLEXSPI_Command_SDR, kFLEXSPI_1PAD,
-					SPI_NOR_CMD_SE, kFLEXSPI_Command_RADDR_SDR,
+					erase_sector_cmd, kFLEXSPI_Command_RADDR_SDR,
 					kFLEXSPI_1PAD, addr_width);
 			flexspi_lut[ERASE_BLOCK][0] = FLEXSPI_LUT_SEQ(
 					kFLEXSPI_Command_SDR, kFLEXSPI_1PAD,
-					SPI_NOR_CMD_BE, kFLEXSPI_Command_RADDR_SDR,
+					erase_block_cmd, kFLEXSPI_Command_RADDR_SDR,
 					kFLEXSPI_1PAD, addr_width);
 			/* Update LUT for page program to use 32 bit addr and 4byte page program
 			 * command.
@@ -1955,6 +2013,8 @@ static int flash_flexspi_nor_init(const struct device *dev)
 {
 	const struct flash_flexspi_nor_config *config = dev->config;
 	struct flash_flexspi_nor_data *data = dev->data;
+
+	data->erase_block_size = SPI_NOR_BLOCK_SIZE;
 
 #if defined(CONFIG_FLASH_MCUX_FLEXSPI_NOR_MUTEX)
 	k_mutex_init(&data->lock);

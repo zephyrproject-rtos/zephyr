@@ -7,6 +7,8 @@ compatible: "lltc,ltc2451"
 
 include: i2c-device.yaml
 
+class: adc
+
 properties:
   conversion-speed:
     type: int

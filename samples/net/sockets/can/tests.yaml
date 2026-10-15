@@ -31,3 +31,12 @@ tests:
         - "(.*)f0 f1 f2 f3 f4 f5 f6 f7"
         - "(.*)\\[1|4\\] CAN frame: IDE 0x0 RTR 0x0 ID 0x1 DLC 0x8"
         - "(.*)f0 f1 f2 f3 f4 f5 f6 f7"
+  sample.net.sockets.can.controller_without_driver:
+    build_only: true
+    harness: none
+    platform_allow:
+      - frdm_k64f
+    extra_args:
+      - SHIELD=dfrobot_can_bus_v2_0
+    extra_configs:
+      - CONFIG_CAN_MCUX_FLEXCAN=n

@@ -8,6 +8,7 @@
  * common device tree elements of all (currently supported) RX MCUs
  */
 
+#include <freq.h>
 #include <mem.h>
 #include <zephyr/dt-bindings/clock/rx_clock.h>
 #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rx.h>
@@ -19,6 +20,8 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+		/* PCLKB / 8: the CMT system timer divides PCLKB by 8 */
+		timebase-frequency = <DT_FREQ_K(7500)>;
 
 		cpu0: cpu@0 {
 			compatible = "renesas,rxv3";

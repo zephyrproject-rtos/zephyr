@@ -341,8 +341,6 @@ static void *test_setup(void)
 		records[i].port = &services[i].port;
 	}
 
-	mdns_responder_set_ext_records(records, EXT_RECORDS_NUM);
-
 	/* The semaphore is there to wait the data to be received. */
 	k_sem_init(&wait_data, 0, UINT_MAX);
 
@@ -403,6 +401,10 @@ static void free_ext_record(struct dns_sd_rec *rec)
 static void before(void *d)
 {
 	ARG_UNUSED(d);
+
+	/* Re-register every time: a test may unregister the records */
+	zassert_ok(mdns_responder_set_ext_records(records, EXT_RECORDS_NUM),
+		   "Failed to register the external records");
 
 	responses_count = 0;
 	test_started = true;
@@ -591,6 +593,53 @@ ZTEST(test_mdns_responder, test_external_records)
 				     sizeof(payload_foo_tcp_local));
 	check_service_type_enum_resp(response_pkts[6], payload_custom_tcp_local,
 				     sizeof(payload_custom_tcp_local));
+}
+
+/* NULL with a zero count unregisters the external records, so only the
+ * statically registered services are enumerated afterwards.
+ */
+ZTEST(test_mdns_responder, test_external_records_clear)
+{
+	int res;
+
+	zassert_not_null(alloc_ext_record("bar", "_foo", "_tcp", "local", NULL, 0, 5353),
+			 "Failed to alloc the record");
+
+	zassert_equal(mdns_responder_set_ext_records(NULL, 1), -EINVAL,
+		      "NULL records with a non-zero count must be rejected");
+	zassert_equal(mdns_responder_set_ext_records(records, 0), -EINVAL,
+		      "Zero count with non-NULL records must be rejected");
+
+	zassert_ok(mdns_responder_set_ext_records(NULL, 0),
+		   "Failed to unregister the external records");
+
+	send_msg(dns_sd_service_enumeration_query, sizeof(dns_sd_service_enumeration_query));
+
+	/* Expect the static service only */
+	res = k_sem_take(&wait_data, RESPONSE_TIMEOUT);
+	zassert_ok(res, "Did not receive a response");
+
+	check_service_type_enum_resp(response_pkts[0], payload_foo_udp_local,
+				     sizeof(payload_foo_udp_local));
+
+	res = k_sem_take(&wait_data, RESPONSE_TIMEOUT);
+	zassert_equal(res, -EAGAIN, "Unexpected response after unregistering the records");
+
+	/* Registering again brings the external record back */
+	zassert_ok(mdns_responder_set_ext_records(records, EXT_RECORDS_NUM),
+		   "Failed to register the external records");
+
+	send_msg(dns_sd_service_enumeration_query, sizeof(dns_sd_service_enumeration_query));
+
+	for (int i = 0; i < 2; ++i) {
+		res = k_sem_take(&wait_data, RESPONSE_TIMEOUT);
+		zassert_ok(res, "Did not receive a response number %d", i + 1);
+	}
+
+	check_service_type_enum_resp(response_pkts[1], payload_foo_udp_local,
+				     sizeof(payload_foo_udp_local));
+	check_service_type_enum_resp(response_pkts[2], payload_foo_tcp_local,
+				     sizeof(payload_foo_tcp_local));
 }
 
 static void skip_labels(struct net_pkt *pkt)
@@ -841,6 +890,93 @@ ZTEST(test_mdns_responder, test_basic_dns_sd_query)
 	zassert_ok(res, "Did not receive a response");
 
 	check_basic_dns_sd_query_resp(response_pkts[0]);
+}
+
+static void check_direct_dns_sd_query_resp(struct net_pkt *pkt, enum dns_rr_type qtype,
+					   uint16_t additional_count)
+{
+	struct dns_header resp_header;
+	struct dns_rr resp_record;
+
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, true);
+
+	zassert_ok(net_pkt_skip(pkt, NET_IPV6UDPH_LEN), "net_pkt skip failed");
+	zassert_ok(net_pkt_read(pkt, &resp_header, sizeof(resp_header)), "net_pkt read failed");
+	zassert_equal(net_ntohs(resp_header.ancount), 1, "Invalid answer count");
+	zassert_equal(net_ntohs(resp_header.arcount), additional_count,
+		      "Invalid additional record count");
+
+	validate_label(pkt, "zephyr", false);
+	validate_label(pkt, "_foo", false);
+	validate_label(pkt, "_udp", false);
+	validate_label(pkt, "local", true);
+
+	zassert_ok(net_pkt_read(pkt, &resp_record, sizeof(resp_record)), "net_pkt read failed");
+	zassert_equal(net_ntohs(resp_record.type), qtype, "Invalid record type");
+}
+
+ZTEST(test_mdns_responder, test_direct_dns_sd_srv_query)
+{
+	static const uint8_t query[] = {
+		/* Header */
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		/* zephyr._foo._udp.local */
+		0x06, 0x7a, 0x65, 0x70, 0x68, 0x79, 0x72,
+		0x04, 0x5f, 0x66, 0x6f, 0x6f,
+		0x04, 0x5f, 0x75, 0x64, 0x70,
+		0x05, 0x6c, 0x6f, 0x63, 0x61, 0x6c, 0x00,
+		/* SRV record */
+		0x00, 0x21, 0x00, 0x01,
+	};
+
+	send_msg(query, sizeof(query));
+
+	zassert_ok(k_sem_take(&wait_data, RESPONSE_TIMEOUT), "Did not receive an SRV response");
+	check_direct_dns_sd_query_resp(response_pkts[0], DNS_RR_TYPE_SRV, 2U);
+}
+
+ZTEST(test_mdns_responder, test_direct_dns_sd_txt_query)
+{
+	static const uint8_t query[] = {
+		/* Header */
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		/* zephyr._foo._udp.local */
+		0x06, 0x7a, 0x65, 0x70, 0x68, 0x79, 0x72,
+		0x04, 0x5f, 0x66, 0x6f, 0x6f,
+		0x04, 0x5f, 0x75, 0x64, 0x70,
+		0x05, 0x6c, 0x6f, 0x63, 0x61, 0x6c, 0x00,
+		/* TXT record */
+		0x00, 0x10, 0x00, 0x01,
+	};
+
+	send_msg(query, sizeof(query));
+
+	zassert_ok(k_sem_take(&wait_data, RESPONSE_TIMEOUT), "Did not receive a TXT response");
+	check_direct_dns_sd_query_resp(response_pkts[0], DNS_RR_TYPE_TXT, 0U);
+}
+
+ZTEST(test_mdns_responder, test_service_type_srv_txt_queries_have_no_response)
+{
+	uint8_t query[] = {
+		/* Header */
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		/* _foo._udp.local */
+		0x04, 0x5f, 0x66, 0x6f, 0x6f,
+		0x04, 0x5f, 0x75, 0x64, 0x70,
+		0x05, 0x6c, 0x6f, 0x63, 0x61, 0x6c, 0x00,
+		/* SRV record, IN class */
+		0x00, 0x21, 0x00, 0x01,
+	};
+
+	send_msg(query, sizeof(query));
+	zassert_equal(k_sem_take(&wait_data, RESPONSE_TIMEOUT), -EAGAIN,
+		      "Unexpected SRV response for a service type");
+
+	query[sizeof(query) - 3] = 0x10;
+	send_msg(query, sizeof(query));
+	zassert_equal(k_sem_take(&wait_data, RESPONSE_TIMEOUT), -EAGAIN,
+		      "Unexpected TXT response for a service type");
 }
 
 /* Verify a PTR answer's name is exactly service.proto.domain (three labels,

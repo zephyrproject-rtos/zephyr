@@ -11,6 +11,7 @@
 #include <zephyr/usb_c/usbc.h>
 #include <zephyr/usb_c/tcpci.h>
 #include <zephyr/shell/shell.h>
+#include <zephyr/sys/byteorder.h>
 #include "ps8xxx_priv.h"
 
 #define DT_DRV_COMPAT parade_ps8xxx
@@ -222,6 +223,7 @@ int ps8xxx_tcpc_get_rx_pending_msg(const struct device *dev, struct pd_msg *msg)
 	struct i2c_msg buf[5];
 	uint8_t msg_len = 0;
 	uint8_t unused;
+	uint8_t header_le[2] = {0};
 	int buf_count;
 	int reg = TCPC_REG_RX_BUFFER;
 	int ret;
@@ -257,9 +259,8 @@ int ps8xxx_tcpc_get_rx_pending_msg(const struct device *dev, struct pd_msg *msg)
 	buf[2].len = 1;
 	buf[2].flags = I2C_MSG_RESTART | I2C_MSG_READ;
 
-	msg->header.raw_value = 0;
-	buf[3].buf = (uint8_t *)&msg->header.raw_value;
-	buf[3].len = 2;
+	buf[3].buf = header_le;
+	buf[3].len = sizeof(header_le);
 	buf[3].flags = I2C_MSG_RESTART | I2C_MSG_READ;
 
 	if (msg_len > 3) {
@@ -279,6 +280,7 @@ int ps8xxx_tcpc_get_rx_pending_msg(const struct device *dev, struct pd_msg *msg)
 	if (ret != 0) {
 		LOG_ERR("I2C transfer error: %d", ret);
 	} else {
+		msg->header.raw_value = sys_get_le16(header_le);
 		msg->len = (msg_len > 3) ? msg_len - 3 : 0;
 		ret = sizeof(msg->header.raw_value) + msg->len;
 	}
@@ -580,11 +582,24 @@ void ps8xxx_init_work_cb(struct k_work *work)
 		chip_info.device_id);
 
 	/* Initialize alert interrupt */
-	gpio_pin_configure_dt(&cfg->alert_gpio, GPIO_INPUT);
+	ret = gpio_pin_configure_dt(&cfg->alert_gpio, GPIO_INPUT);
+	if (ret != 0) {
+		LOG_ERR("Failed to configure alert GPIO: %d", ret);
+		return;
+	}
 
 	gpio_init_callback(&data->alert_cb, ps8xxx_alert_cb, BIT(cfg->alert_gpio.pin));
-	gpio_add_callback(cfg->alert_gpio.port, &data->alert_cb);
-	gpio_pin_interrupt_configure_dt(&cfg->alert_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_add_callback(cfg->alert_gpio.port, &data->alert_cb);
+	if (ret != 0) {
+		LOG_ERR("Failed to add alert callback: %d", ret);
+		return;
+	}
+
+	ret = gpio_pin_interrupt_configure_dt(&cfg->alert_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+	if (ret != 0) {
+		LOG_ERR("Failed to configure alert interrupt: %d", ret);
+		return;
+	}
 
 	tcpci_init_alert_mask(data->dev);
 	data->initialized = true;

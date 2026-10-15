@@ -190,7 +190,7 @@ static void bcm2711_i2c_transaction(const struct device *dev, bool repeated_star
 		ctrl |= BCM2711_I2C_CR_INTD;
 	}
 
-	/* Set slave address and message length */
+	/* Set target address and message length */
 	bcm2711_i2c_write_reg(dev, BCM2711_I2C_ADDR, data->i2c_addr);
 	bcm2711_i2c_write_reg(dev, BCM2711_I2C_DLEN, segment_len);
 

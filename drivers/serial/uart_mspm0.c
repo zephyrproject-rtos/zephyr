@@ -554,7 +554,7 @@ static DEVICE_API(uart, uart_mspm0_driver_api) = {
 				},								\
 		};										\
 												\
-	DEVICE_DT_INST_DEFINE(index, &uart_mspm0_init, NULL, &uart_mspm0_data_##index,		\
+	DEVICE_DT_INST_DEFINE(index, uart_mspm0_init, NULL, &uart_mspm0_data_##index,		\
 			      &uart_mspm0_cfg_##index, PRE_KERNEL_1,				\
 			      CONFIG_SERIAL_INIT_PRIORITY, &uart_mspm0_driver_api);
 

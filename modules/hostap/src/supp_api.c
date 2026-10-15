@@ -1631,7 +1631,7 @@ int supplicant_status(const struct device *dev __unused, struct net_if *iface,
 	if (wpa_s->wpa_state >= WPA_ASSOCIATED) {
 		struct wpa_ssid *ssid = wpa_s->current_ssid;
 		u8 channel = 0;
-		struct signal_poll_resp signal_poll;
+		struct signal_poll_resp signal_poll = { 0 };
 		u8 *_ssid;
 		size_t ssid_len;
 		struct status_resp cli_status;
@@ -3002,6 +3002,22 @@ static void nan_transmit_to_cmd(struct wifi_nan_params *params, char **pos, char
 	append_nan_ssi(pos, end, params->transmit.ssi, params->transmit.ssi_len);
 }
 
+static int nan_set_to_cmd(struct wifi_nan_params *params, char *cmd, size_t max_len)
+{
+	int ret;
+
+	if (params->set.param[0] == '\0' || params->set.value[0] == '\0') {
+		return -EINVAL;
+	}
+
+	ret = snprintf(cmd, max_len, "NAN_SET %s %s", params->set.param, params->set.value);
+	if (ret < 0 || (size_t)ret >= max_len) {
+		return -ENOBUFS;
+	}
+
+	return 0;
+}
+
 static int nan_params_to_cmd(struct wifi_nan_params *params, char *cmd, size_t max_len)
 {
 	char *pos = cmd;
@@ -3013,6 +3029,25 @@ static int nan_params_to_cmd(struct wifi_nan_params *params, char *cmd, size_t m
 	}
 
 	switch (params->op) {
+	case WIFI_NAN_OP_START:
+		strncpy(pos, "NAN_START", end - pos);
+		break;
+
+	case WIFI_NAN_OP_STOP:
+		strncpy(pos, "NAN_STOP", end - pos);
+		break;
+
+	case WIFI_NAN_OP_SET:
+		return nan_set_to_cmd(params, pos, end - pos);
+
+	case WIFI_NAN_OP_UPDATE_CONF:
+		strncpy(pos, "NAN_UPDATE_CONF", end - pos);
+		break;
+
+	case WIFI_NAN_OP_STATUS:
+		strncpy(pos, "NAN_STATUS", end - pos);
+		break;
+
 	case WIFI_NAN_OP_PUBLISH:
 		nan_publish_to_cmd(params, &pos, end);
 		break;
@@ -3069,6 +3104,7 @@ int supplicant_nan_cfg(const struct device *dev __unused, struct net_if *iface,
 		goto out;
 	}
 
+	memset(params->resp, 0, sizeof(params->resp));
 	if (zephyr_wpa_cli_cmd_resp_noprint(wpa_s->ctrl_conn, cmd, params->resp)) {
 		ret = -ENOEXEC;
 		goto out;
@@ -3112,6 +3148,10 @@ out:
 }
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+BUILD_ASSERT(sizeof(CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P_DEVICE_NAME) - 1 <=
+			WIFI_P2P_DEVICE_NAME_MAX_LEN,
+			"CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P_DEVICE_NAME too long");
+
 static inline void extract_value(const char *src, char *dest, size_t dest_size)
 {
 	size_t i = 0;
@@ -3719,6 +3759,44 @@ int supplicant_p2p_oper(const struct device *dev __unused, struct net_if *iface,
 				   "P2P persistent_remove: invalid id %d",
 				   params->persistent_remove.id);
 			return -EINVAL;
+		}
+		ret = 0;
+		break;
+	}
+	case WIFI_P2P_SET_DEV_NAME: {
+		const char *device_name = WIFI_P2P_DEVICE_NAME;
+
+		if (!wpa_s->global->p2p) {
+			wpa_printf(MSG_ERROR, "P2P_SET_DEV_NAME command failed");
+			return -EIO;
+		}
+		if (strlen(params->device_name) > 0) {
+			device_name = params->device_name;
+		}
+		os_free(wpa_s->conf->device_name);
+		wpa_s->conf->device_name = os_strdup(device_name);
+		if (wpa_s->conf->device_name == NULL) {
+			return -ENOMEM;
+		}
+		wpa_s->conf->changed_parameters |= CFG_CHANGED_DEVICE_NAME;
+		wpa_supplicant_update_config(wpa_s);
+		ret = 0;
+		break;
+	}
+	case WIFI_P2P_STATUS: {
+		snprintk(cmd_buf, sizeof(cmd_buf), "P2P_STATUS");
+		if (params->status.buf == NULL ||
+		    params->status.buf_size < WIFI_P2P_STATUS_BUF_SIZE) {
+			wpa_printf(MSG_ERROR,
+				   "P2P_STATUS: buffer missing or too small (%zu < %d)",
+				   params->status.buf_size, WIFI_P2P_STATUS_BUF_SIZE);
+			return -EINVAL;
+		}
+		ret = zephyr_wpa_cli_cmd_resp_noprint(wpa_s->ctrl_conn,
+						      cmd_buf, params->status.buf);
+		if (ret < 0) {
+			wpa_printf(MSG_ERROR, "P2P_STATUS command failed: %d", ret);
+			return -EIO;
 		}
 		ret = 0;
 		break;

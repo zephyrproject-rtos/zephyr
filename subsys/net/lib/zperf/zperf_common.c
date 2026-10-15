@@ -169,7 +169,7 @@ int zperf_get_ipv4_addr(char *host, struct net_in_addr *addr)
 }
 
 int zperf_prepare_upload_sock(const struct net_sockaddr *peer_addr, uint8_t tos,
-			      int priority, int tcp_nodelay, int proto)
+			      int priority, int tcp_nodelay, int proto, const char *if_name)
 {
 	net_socklen_t addrlen = peer_addr->sa_family == NET_AF_INET6 ?
 			    sizeof(struct net_sockaddr_in6) :
@@ -259,6 +259,18 @@ int zperf_prepare_upload_sock(const struct net_sockaddr *peer_addr, uint8_t tos,
 		goto error;
 	}
 
+	if (if_name != NULL && if_name[0] != '\0') {
+		struct net_ifreq req = { 0 };
+
+		/* Before connecting, which is when a TCP socket picks its route */
+		strncpy(req.ifr_name, if_name, sizeof(req.ifr_name) - 1);
+
+		if (zsock_setsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_BINDTODEVICE, &req,
+				     sizeof(req)) != 0) {
+			NET_WARN("setsockopt SO_BINDTODEVICE error (%d)", -errno);
+		}
+	}
+
 	ret = zsock_connect(sock, peer_addr, addrlen);
 	if (ret < 0) {
 		NET_ERR("Connect failed (%d)", errno);
@@ -275,8 +287,13 @@ error:
 
 uint32_t zperf_packet_duration(uint32_t packet_size, uint32_t rate_in_kbps)
 {
+	/* A rate of 0 means send as fast as possible, matching iperf -b 0. */
+	if (rate_in_kbps == 0U) {
+		return 0U;
+	}
+
 	return (uint32_t)(((uint64_t)packet_size * 8U * USEC_PER_SEC) /
-			  (rate_in_kbps * 1024U));
+			  ((uint64_t)rate_in_kbps * 1024U));
 }
 
 void zperf_async_work_submit(enum session_proto proto, int session_id, struct k_work *work)
@@ -344,8 +361,10 @@ static int zperf_init(void)
 		zperf_raw_uploader_init();
 	}
 
-	if (IS_ENABLED(CONFIG_NET_ZPERF_SERVER) ||
-	    IS_ENABLED(CONFIG_ZPERF_SESSION_PER_THREAD)) {
+	/* The session table belongs to the iperf2 receivers and uploaders */
+	if (IS_ENABLED(CONFIG_NET_ZPERF_IPERF2) &&
+	    (IS_ENABLED(CONFIG_NET_ZPERF_SERVER) ||
+	     IS_ENABLED(CONFIG_ZPERF_SESSION_PER_THREAD))) {
 		zperf_session_init();
 	}
 

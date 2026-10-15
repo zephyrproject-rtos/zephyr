@@ -230,7 +230,8 @@
 		power-up-delay = <100>;
 		num-auto-refresh = <1>;
 		mode-register = <0>;
-		refresh-rate = <1386>;
+		/* 64 ms / 4096 rows x 56 MHz SDCLK (HCLK / 3) - 20 */
+		refresh-rate = <855>;
 
 		bank@1 {
 			reg = <1>;
@@ -248,11 +249,14 @@
 	};
 };
 
+&adc123_common {
+	st,adc-prescaler = <2>;
+	status = "okay";
+};
+
 &adc2 {
-	compatible = "st,stm32f4-adc", "st,stm32-adc";
 	pinctrl-0 = <&adc2_in6_pa6>;
 	pinctrl-names = "default";
-	st,adc-prescaler = <2>;
 	status = "okay";
 
 	#address-cells = <1>;

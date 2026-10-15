@@ -78,11 +78,25 @@ The following diagram describes system power management:
 The idle thread locks interrupts before calling :c:func:`pm_system_suspend`
 and keeps ownership of the original architecture interrupt key. If the PM
 subsystem enters a low-power state, PM resume bookkeeping runs with interrupts
-still locked after any system-managed devices have been resumed, including
-:c:func:`pm_state_exit_post_ops`, PM exit notifications, and system clock
-idle-exit accounting. After that bookkeeping is complete and
+still locked. By default, system-managed devices are resumed first, followed
+by :c:func:`pm_state_exit_post_ops`, PM exit notifications, and system clock
+idle-exit accounting. A device resume callback cannot rely on a timer-based
+:c:func:`k_busy_wait` if the low-power state stopped that timer.
+After that bookkeeping is complete and
 :c:func:`pm_system_suspend` returns, the idle thread restores the original
 interrupt key.
+
+.. note::
+
+   The default-off experimental option
+   :kconfig:option:`CONFIG_PM_EARLY_SYSTEM_TIMER_RESUME` changes the sequence to
+   :c:func:`pm_state_exit_post_ops`, system clock idle-exit accounting, device
+   resume, then PM exit notifications. This can make a timer-based
+   :c:func:`k_busy_wait` usable in device resume callbacks, but requires
+   platform-specific validation. SoC post-ops must not depend on resumed
+   devices, and timer idle-exit must not depend on still-suspended devices.
+   Timer idle-exit may also invoke :c:struct:`k_timer` expiry functions before
+   devices are resumed.
 
 Architectures and SoCs that do not select ``CONFIG_PM_STATE_SET_IRQ_UNLOCKED``
 use the architecture hooks immediately around the low-power instruction so that

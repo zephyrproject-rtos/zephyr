@@ -117,7 +117,7 @@ static void mipi_dbi_pio_dma_irq_handler(const struct device *dev, void *user_da
 
 	for (int i = 0; i < config->split_count; ++i) {
 		if (config->splits[i].dma.channel == channel) {
-			k_msgq_put(config->msq, &channel, K_NO_WAIT);
+			k_msgq_put(config->msq, &status, K_NO_WAIT);
 		}
 	}
 }
@@ -466,8 +466,11 @@ static int mipi_dbi_pico_pio_reset(const struct device *dev, k_timeout_t delay)
 static int mipi_dbi_pico_pio_init(const struct device *dev)
 {
 	const struct mipi_dbi_pico_pio_config *config = dev->config;
+	struct mipi_dbi_pico_pio_data *data = dev->data;
 	const char *failed_pin = NULL;
 	int ret = 0;
+
+	k_mutex_init(&data->lock);
 
 	if (!gpio_is_ready_dt(&config->cmd_data) || !gpio_is_ready_dt(&config->cs) ||
 	    !gpio_is_ready_dt(&config->reset) || !gpio_is_ready_dt(&config->wr)) {

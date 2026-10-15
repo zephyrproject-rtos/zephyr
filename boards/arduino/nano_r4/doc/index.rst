@@ -34,7 +34,7 @@ You need to prepare debug adapter separately.
 A 5V-compatible CMSIS-DAP adapter adapts to this board.
 
 Alternatively you can use [Renesas Flash Programming Tool](https://www.renesas.com/en/software-tool/renesas-flash-programmer-programming-gui#overview).
-Although it is a propriatory software and requiers creating a
+Although it is a proprietary software and requires creating a
 user account to download it. This tool however, lets you flash
 over USB Type-C.
 

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_CLOCK_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_CLOCK_H_
 
 /* Note- clock identifiers in this file must be unique,
  * as the driver uses them in a switch case
@@ -243,6 +243,12 @@
 /** PowerQuad DSP coprocessor clock identifier. */
 #define MCUX_POWERQUAD_CLK MCUX_LPC_CLK_ID(0x39, 0x00)
 
+/** AON LPADC peripheral clock identifier. */
+#define MCUX_AON_LPADC_CLK MCUX_LPC_CLK_ID(0x3A, 0x00)
+
+/** LPACMP (Low-Power Analog Comparator) peripheral clock identifier. */
+#define MCUX_LPACMP_CLK MCUX_LPC_CLK_ID(0x3B, 0x00)
+
 /** FRO high-frequency clock (FRO_HF) rate identifier. */
 #define MCUX_FRO_HF_CLK MCUX_LPC_CLK_ID(0x40, 0x00)
 
@@ -261,4 +267,7 @@
 /** External (system oscillator / CLK_IN) clock rate identifier. */
 #define MCUX_EXT_CLK MCUX_LPC_CLK_ID(0x45, 0x00)
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_H_ */
+/** eSPI peripheral clock identifier. */
+#define MCUX_ESPI0_CLK MCUX_LPC_CLK_ID(0x46, 0x00)
+
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_CLOCK_H_ */

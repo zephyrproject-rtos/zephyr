@@ -78,7 +78,7 @@ General Purpose Drivers
 - :dtcompatible:`zephyr,input-longpress`: listens for key events, emits events
   for short and long press.
 - :dtcompatible:`zephyr,input-double-tap`: listens for key events, emits events
-  for input double taps
+  for input double taps and, optionally, single taps
 - :dtcompatible:`zephyr,lvgl-button-input`
   :dtcompatible:`zephyr,lvgl-encoder-input`
   :dtcompatible:`zephyr,lvgl-keypad-input`

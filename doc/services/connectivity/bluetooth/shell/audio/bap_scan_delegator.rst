@@ -57,7 +57,7 @@ Adding a source
 
 .. code-block:: console
 
-   uart:~$ bap_scan_delegator add_src 11:22:33:44:55:66 public 0 1234 0
+   uart:~$ bap_scan_delegator add_src P:11:22:33:44:55:66 0 1234 0
    Receive state with ID 0 updated
 
 Adding a source from a PA sync
@@ -66,9 +66,9 @@ Adding a source from a PA sync
 .. code-block:: console
 
    uart:~$ bt scan on
-   Found broadcaster with ID 0x681A22 and addr 2C:44:05:82:EB:82 (random) and sid 0x00 (looking for 0x1000000)
+   Found broadcaster with ID 0x681A22 and addr R:2C:44:05:82:EB:82 and sid 0x00 (looking for 0x1000000)
    uart:~$ bt scan off
-   uart:~$ bt per-adv-sync-create 2C:44:05:82:EB:82 (random) 0
+   uart:~$ bt per-adv-sync-create R:2C:44:05:82:EB:82 0
    PA 0x2003e9b0 synced
    uart:~$ bap_scan_delegator add_src_by_pa_sync 0x681A22 0
    Receive state with ID 0 updated

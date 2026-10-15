@@ -16,12 +16,15 @@
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_system.h>
+#include <stm32_bitops.h>
 #include <string.h>
 #include <zephyr/irq.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/bitarray.h>
 
 #include "udc_common.h"
 #include <stm32_usb_common.h>
@@ -29,52 +32,75 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
 
-
+/*
+ * Note the #ifdef USB_OTG_HS (HAL2) / #ifdef PCD_SPEED_HIGH (HAL1) check.
+ * This is necessary because the High-Speed definitions are not provided
+ * if the hardware is not HS-capable but we need values for them anyways.
+ * Define them as one-plus/two-plus the full-speed value, to ensure they
+ * are never equal to the FS value which must remain unique in all cases.
+ *
+ * For HAL1, we can check for PCD_SPEED_HIGH directly because it's a macro.
+ * For HAL2, use "OTG_HS exists" check instead of #ifdef checks because
+ * the HAL_PCD_SPEED_* definitions are now enum values instead of macros.
+ * This is not the case of HAL_PCD_SNG_BUF which is still a macro in HAL2,
+ * so we still check for that one using #ifdef.
+ */
 #ifdef CONFIG_STM32_HAL2
 typedef hal_pcd_handle_t		stm32_pcd_handle_t;
 
-#define STM32_PCD_DRD_FS		HAL_PCD_DRD_FS
 #define STM32_PCD_EP_TYPE_CTRL		HAL_PCD_EP_TYPE_CTRL
 #define STM32_PCD_EP_TYPE_ISOC		HAL_PCD_EP_TYPE_ISOC
 #define STM32_PCD_EP_TYPE_BULK		HAL_PCD_EP_TYPE_BULK
 #define STM32_PCD_EP_TYPE_INTR		HAL_PCD_EP_TYPE_INTR
+
+#ifdef HAL_PCD_SNG_BUF
 #define STM32_PCD_SNG_BUF		HAL_PCD_SNG_BUF
 #define STM32_PCD_DBL_BUF		HAL_PCD_DBL_BUF
+#endif /* HAL_PCD_SNG_BUF */
+
 #define STM32_PCD_SPEED_FS		HAL_PCD_SPEED_FS
-#define STM32_PCD_PHY_EXTERNAL_ULPI	HAL_PCD_PHY_EXTERNAL_ULPI
+#ifdef USB_OTG_HS
+#define STM32_PCD_SPEED_HS_IN_FS	HAL_PCD_SPEED_HS_IN_FS
+#define STM32_PCD_SPEED_HS		HAL_PCD_SPEED_HS
+#else
+#define STM32_PCD_SPEED_HS_IN_FS	((int)HAL_PCD_SPEED_FS + 1)
+#define STM32_PCD_SPEED_HS		((int)HAL_PCD_SPEED_FS + 2)
+#endif /* USB_OTG_HS */
+
 #define STM32_PCD_PHY_EMBEDDED_FS	HAL_PCD_PHY_EMBEDDED_FS
+#ifdef USB_OTG_HS
+#define STM32_PCD_PHY_EXTERNAL_ULPI	HAL_PCD_PHY_EXTERNAL_ULPI
 #define STM32_PCD_PHY_EMBEDDED_HS	HAL_PCD_PHY_EMBEDDED_HS
+#else /* USB_OTG_HS */
+#define STM32_PCD_PHY_EXTERNAL_ULPI	((int)HAL_PCD_PHY_EMBEDDED_FS + 1)
+#define STM32_PCD_PHY_EMBEDDED_HS	((int)HAL_PCD_PHY_EMBEDDED_FS + 2)
+#endif /* USB_OTG_HS */
 #else /* CONFIG_STM32_HAL2 */
 typedef PCD_HandleTypeDef		stm32_pcd_handle_t;
 
-#ifdef USB_DRD_FS
-#define STM32_PCD_DRD_FS		USB_DRD_FS
-#endif /* USB_DRD_FS */
 #define STM32_PCD_EP_TYPE_CTRL		EP_TYPE_CTRL
 #define STM32_PCD_EP_TYPE_ISOC		EP_TYPE_ISOC
 #define STM32_PCD_EP_TYPE_BULK		EP_TYPE_BULK
 #define STM32_PCD_EP_TYPE_INTR		EP_TYPE_INTR
+
 #ifdef PCD_SNG_BUF
 #define STM32_PCD_SNG_BUF		PCD_SNG_BUF
 #define STM32_PCD_DBL_BUF		PCD_DBL_BUF
 #endif /* PCD_SNG_BUF */
+
 #define STM32_PCD_SPEED_FS		PCD_SPEED_FULL
+#ifdef PCD_SPEED_HIGH
+#define STM32_PCD_SPEED_HS_IN_FS	PCD_SPEED_HIGH_IN_FULL
+#define STM32_PCD_SPEED_HS		PCD_SPEED_HIGH
+#else /* PCD_SPEED_HIGH */
+#define STM32_PCD_SPEED_HS_IN_FS	(PCD_SPEED_FULL + 1)
+#define STM32_PCD_SPEED_HS		(PCD_SPEED_FULL + 2)
+#endif /* PCD_SPEED_HIGH */
+
 #define STM32_PCD_PHY_EXTERNAL_ULPI	PCD_PHY_ULPI
 #define STM32_PCD_PHY_EMBEDDED_FS	PCD_PHY_EMBEDDED
 #define STM32_PCD_PHY_EMBEDDED_HS	PCD_PHY_UTMI
 #endif /* CONFIG_STM32_HAL2 */
-
-/*
- * The STM32 HAL does not provide PCD_SPEED_HIGH and PCD_SPEED_HIGH_IN_FULL
- * on series which lack HS-capable hardware. Provide dummy definitions for
- * these series to remove checks elsewhere in the driver. The exact value
- * of the dummy definitions in insignificant, as long as they are not equal
- * to PCD_SPEED_FULL (which is always provided).
- */
-#if !defined(PCD_SPEED_HIGH)
-#define PCD_SPEED_HIGH		(STM32_PCD_SPEED_FS + 1)
-#define PCD_SPEED_HIGH_IN_FULL	(PCD_SPEED_HIGH + 1)
-#endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
 #define DT_DRV_COMPAT st_stm32_otghs
@@ -120,9 +146,9 @@ typedef PCD_HandleTypeDef		stm32_pcd_handle_t;
  * Evaluates to 1 if 'usb_node' uses an embedded FS PHY or has
  * the 'maximum-speed' property set to 'full-speed', 0 otherwise.
  */
-#define UDC_STM32_NODE_LIMITED_TO_FS(usb_node)					\
-	UTIL_OR(IS_EQ(UDC_STM32_NODE_PHY_ITFACE(usb_node), PHY_PCD_EMBEDDED),	\
-		UTIL_AND(DT_NODE_HAS_PROP(usb_node, maximum_speed),		\
+#define UDC_STM32_NODE_LIMITED_TO_FS(usb_node)						\
+	UTIL_OR(IS_EQ(UDC_STM32_NODE_PHY_ITFACE(usb_node), STM32_PCD_PHY_EMBEDDED_FS),	\
+		UTIL_AND(DT_NODE_HAS_PROP(usb_node, maximum_speed),			\
 			DT_ENUM_HAS_VALUE(usb_node, maximum_speed, full_speed)))
 
 /*
@@ -137,8 +163,8 @@ typedef PCD_HandleTypeDef		stm32_pcd_handle_t;
 	COND_CODE_0(USB_STM32_NODE_IS_HS_CAPABLE(usb_node),		\
 		(STM32_PCD_SPEED_FS),					\
 	(COND_CODE_1(UDC_STM32_NODE_LIMITED_TO_FS(usb_node),		\
-		(PCD_SPEED_HIGH_IN_FULL),				\
-		(PCD_SPEED_HIGH))))
+		(STM32_PCD_SPEED_HS_IN_FS),				\
+		(STM32_PCD_SPEED_HS))))
 
 /*
  * Returns max packet size allowed for endpoints of 'usb_node'
@@ -148,7 +174,7 @@ typedef PCD_HandleTypeDef		stm32_pcd_handle_t;
  * 1024 bytes in High-Speed, 1023 bytes in Full-Speed
  */
 #define UDC_STM32_NODE_EP_MPS(node_id)					\
-	((UDC_STM32_NODE_SPEED(node_id) == PCD_SPEED_HIGH) ? 1024U : 1023U)
+	((UDC_STM32_NODE_SPEED(node_id) == STM32_PCD_SPEED_HS) ? 1024U : 1023U)
 
 
 /*
@@ -188,6 +214,8 @@ struct udc_stm32_config {
 	uint32_t num_endpoints;
 	/* USB SRAM size (in bytes) */
 	uint32_t dram_size;
+	/* Bitmap tracking which USB SRAM words are allocated */
+	sys_bitarray_t *sram_bitmap;
 	/* IRQ_CONNECT() per-instance wrapper */
 	void (*irq_connect)(void);
 	/* Global USB interrupt IRQn */
@@ -266,7 +294,7 @@ static stm32_status_t hal_udc_set_endpoint_receive(stm32_pcd_handle_t *hpcd, uin
 #endif /* CONFIG_STM32_HAL2 */
 }
 
-#if defined(USB) || defined(STM32_PCD_DRD_FS)
+#if defined(USB) || defined(USB_DRD_FS)
 static stm32_status_t hal_udc_pma_config(stm32_pcd_handle_t *hpcd, uint16_t ep_addr,
 					 uint16_t ep_kind, uint32_t pma_address)
 {
@@ -276,7 +304,7 @@ static stm32_status_t hal_udc_pma_config(stm32_pcd_handle_t *hpcd, uint16_t ep_a
 	return HAL_PCDEx_PMAConfig(hpcd, ep_addr, ep_kind, pma_address);
 #endif /* CONFIG_STM32_HAL2 */
 }
-#endif /* USB || STM32_PCD_DRD_FS */
+#endif /* USB || USB_DRD_FS */
 
 static stm32_status_t hal_udc_set_device_address(stm32_pcd_handle_t *hpcd, uint8_t address)
 {
@@ -330,6 +358,16 @@ static stm32_status_t hal_udc_flush_endpoint(stm32_pcd_handle_t *hpcd, uint8_t e
 #else /* CONFIG_STM32_HAL2 */
 	return HAL_PCD_EP_Flush(hpcd, ep_addr);
 #endif /* CONFIG_STM32_HAL2 */
+}
+
+static stm32_status_t hal_udc_abort_endpoint_transfer(stm32_pcd_handle_t *hpcd,
+					      uint8_t ep_addr)
+{
+#ifdef CONFIG_STM32_HAL2
+	return HAL_PCD_AbortEndpointTransfer(hpcd, ep_addr);
+#else
+	return HAL_PCD_EP_Abort(hpcd, ep_addr);
+#endif
 }
 
 /*
@@ -810,6 +848,13 @@ static void udc_stm32_thread_handler(void *arg1, void *arg2, void *arg3)
 
 	while (true) {
 		k_msgq_get(&priv->msgq_data, &msg, K_FOREVER);
+
+		/*
+		 * Ensure we hold the device lock during processing
+		 * to avoid race conditions with API entrypoints.
+		 */
+		udc_lock_internal(dev, K_FOREVER);
+
 		switch (msg.type) {
 		case UDC_STM32_MSG_SETUP:
 			/* HAL copies SETUP packet contents to pcd.Setup */
@@ -828,6 +873,8 @@ static void udc_stm32_thread_handler(void *arg1, void *arg2, void *arg3)
 			handle_msg_data_out(priv, msg.ep, msg.rx_count);
 			break;
 		}
+
+		udc_unlock_internal(dev);
 	}
 }
 
@@ -910,14 +957,59 @@ static int udc_stm32_ep_mem_config(const struct device *dev,
 	return 0;
 }
 #else
+/*
+ * Replacement for HAL_PCDEx_SetTxFiFo() which allows configuring
+ * each endpoint's TxFIFO at an arbitrary location in USB SRAM.
+ * (the HAL function allocates them consecutively)
+ */
+static inline void otg_set_ep_txfifo_cfg(stm32_pcd_handle_t *hpcd, uint8_t ep, uint16_t addr,
+					 uint16_t size)
+{
+	__ASSERT(ep != 0, "Control endpoint not supported");
+
+	const uint32_t dieptxf =
+		_VAL2FLD(USB_OTG_DIEPTXF_INEPTXSA, addr) | _VAL2FLD(USB_OTG_DIEPTXF_INEPTXFD, size);
+
+#ifdef CONFIG_STM32_HAL2
+#error HAL2 OTG support not implemented yet
+#else /* CONFIG_STM32_HAL2 */
+	stm32_reg_write(&hpcd->Instance->DIEPTXF[ep - 1U], dieptxf);
+#endif /* CONFIG_STM32_HAL2 */
+}
+
+/* Read back IN endpoint ep's TxFIFO start address and depth. See above. */
+static inline void otg_get_ep_txfifo_cfg(stm32_pcd_handle_t *hpcd, uint8_t ep, uint16_t *addr,
+					 uint16_t *size)
+{
+	__ASSERT(ep != 0, "Control endpoint not supported");
+
+#ifdef CONFIG_STM32_HAL2
+#error HAL2 OTG support not implemented yet
+#else /* CONFIG_STM32_HAL2 */
+	const uint32_t dieptxf = stm32_reg_read(&hpcd->Instance->DIEPTXF[ep - 1U]);
+
+	*addr = _FLD2VAL(USB_OTG_DIEPTXF_INEPTXSA, dieptxf);
+	*size = _FLD2VAL(USB_OTG_DIEPTXF_INEPTXFD, dieptxf);
+#endif /* CONFIG_STM32_HAL2 */
+}
+
 static void udc_stm32_mem_init(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	const struct udc_stm32_config *cfg = dev->config;
 	uint32_t rxfifo_size; /* in words */
+	uint32_t ep0_words;
 	stm32_status_t __maybe_unused status;
 
 	LOG_DBG("DRAM size: %uB", cfg->dram_size);
+
+	/*
+	 * Start from a clean allocator: the controller can be re-enabled during
+	 * its lifetime, so nothing must survive from a previous init. The RxFIFO
+	 * and EP0 TxFIFO are then reserved where they are actually allocated
+	 * below, so the per-IN-endpoint TxFIFOs are only ever placed above them.
+	 */
+	(void)sys_bitarray_clear_region(cfg->sram_bitmap, cfg->sram_bitmap->num_bits, 0);
 
 	/*
 	 * In addition to the user-provided baseline, RxFIFO should fit:
@@ -937,19 +1029,20 @@ static void udc_stm32_mem_init(const struct device *dev)
 	status = HAL_PCDEx_SetRxFiFo(&priv->pcd, rxfifo_size);
 	__ASSERT_NO_MSG(status == HAL_OK);
 
-	priv->occupied_mem = rxfifo_size * 4U;
+	/* The RxFIFO is at the start of the USB SRAM */
+	(void)sys_bitarray_set_region(cfg->sram_bitmap, rxfifo_size, 0);
 
-	/* For EP0 TX, reserve only one MPS */
-	status = HAL_PCDEx_SetTxFiFo(&priv->pcd, 0,
-				     DIV_ROUND_UP(UDC_STM32_EP0_MAX_PACKET_SIZE, 4U));
+	/* For EP0 TX, reserve only one MPS right after the RxFIFO. */
+	ep0_words = DIV_ROUND_UP(UDC_STM32_EP0_MAX_PACKET_SIZE, 4U);
+	status = HAL_PCDEx_SetTxFiFo(&priv->pcd, 0, ep0_words);
 	__ASSERT_NO_MSG(status == HAL_OK);
 
-	priv->occupied_mem += UDC_STM32_EP0_MAX_PACKET_SIZE;
+	/* The EP0 TxFIFO sits immediately above the RxFIFO. */
+	(void)sys_bitarray_set_region(cfg->sram_bitmap, ep0_words, rxfifo_size);
 
-	/* Reset TX allocs */
+	/* Release every IN-endpoint TxFIFO. */
 	for (unsigned int i = 1U; i < cfg->num_endpoints; i++) {
-		status = HAL_PCDEx_SetTxFiFo(&priv->pcd, i, 0);
-		__ASSERT_NO_MSG(status == HAL_OK);
+		otg_set_ep_txfifo_cfg(&priv->pcd, i, 0U, 0U);
 	}
 }
 
@@ -959,35 +1052,38 @@ static int udc_stm32_ep_mem_config(const struct device *dev,
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	const struct udc_stm32_config *cfg = dev->config;
+	const uint8_t idx = USB_EP_GET_IDX(ep_cfg->addr);
+	uint16_t cur_addr, cur_size;
 	unsigned int words;
+	size_t offset;
+	int ret;
 
-	if (!USB_EP_DIR_IS_IN(ep_cfg->addr) || USB_EP_GET_IDX(ep_cfg->addr) == 0U) {
+	if (!USB_EP_DIR_IS_IN(ep_cfg->addr) || idx == 0U) {
+		return 0;
+	}
+
+	/* Release the current reservation, if any, before (re-)allocating. */
+	otg_get_ep_txfifo_cfg(&priv->pcd, idx, &cur_addr, &cur_size);
+	if (cur_size != 0U) {
+		(void)sys_bitarray_free(cfg->sram_bitmap, cur_size, cur_addr);
+		otg_set_ep_txfifo_cfg(&priv->pcd, idx, 0U, 0U);
+	}
+
+	if (!enable) {
 		return 0;
 	}
 
 	words = DIV_ROUND_UP(MIN(udc_mps_ep_size(ep_cfg), cfg->ep_mps), 4U);
 	words = (words <= 64) ? words * 2 : words;
 
-	if (!enable) {
-		if (priv->occupied_mem >= (words * 4)) {
-			priv->occupied_mem -= (words * 4);
-		}
-		if (HAL_PCDEx_SetTxFiFo(&priv->pcd, USB_EP_GET_IDX(ep_cfg->addr), 0) != HAL_OK) {
-			return -EIO;
-		}
-		return 0;
-	}
-
-	if (cfg->dram_size - priv->occupied_mem < words * 4) {
-		LOG_ERR("Unable to allocate FIFO for 0x%02x", ep_cfg->addr);
+	ret = sys_bitarray_alloc(cfg->sram_bitmap, words, &offset);
+	if (ret != 0) {
+		__ASSERT(ret == -ENOSPC, "Unexpected bitarray error %d", ret);
+		LOG_ERR("Unable to allocate FIFO for 0x%02x: %d", ep_cfg->addr, ret);
 		return -ENOMEM;
 	}
 
-	if (HAL_PCDEx_SetTxFiFo(&priv->pcd, USB_EP_GET_IDX(ep_cfg->addr), words) != HAL_OK) {
-		return -EIO;
-	}
-
-	priv->occupied_mem += words * 4;
+	otg_set_ep_txfifo_cfg(&priv->pcd, idx, (uint16_t)offset, (uint16_t)words);
 
 	return 0;
 }
@@ -1112,6 +1208,26 @@ int udc_stm32_init(const struct device *dev)
 	return 0;
 }
 
+/*
+ * Stop and Standby stop the controller's clocks, so keep the SoC out of
+ * them while the controller is enabled.
+ */
+static void udc_stm32_pm_policy_state_lock_get(void)
+{
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	if (IS_ENABLED(CONFIG_PM_S2RAM)) {
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+	}
+}
+
+static void udc_stm32_pm_policy_state_lock_put(void)
+{
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	if (IS_ENABLED(CONFIG_PM_S2RAM)) {
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+	}
+}
+
 static int udc_stm32_enable(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
@@ -1147,6 +1263,8 @@ static int udc_stm32_enable(const struct device *dev)
 
 	irq_enable(cfg->irqn);
 
+	udc_stm32_pm_policy_state_lock_get();
+
 	return 0;
 }
 
@@ -1155,26 +1273,33 @@ static int udc_stm32_disable(const struct device *dev)
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	const struct udc_stm32_config *cfg = dev->config;
 	stm32_status_t status;
+	int ret = 0;
 
 	irq_disable(cfg->irqn);
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT) != 0) {
 		LOG_ERR("Failed to disable control endpoint");
-		return -EIO;
+		ret = -EIO;
+		goto out;
 	}
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_IN) != 0) {
 		LOG_ERR("Failed to disable control endpoint");
-		return -EIO;
+		ret = -EIO;
+		goto out;
 	}
 
 	status = HAL_PCD_Stop(&priv->pcd);
 	if (status != HAL_OK) {
 		LOG_ERR("PCD_Stop failed, %d", (int)status);
-		return -EIO;
+		ret = -EIO;
 	}
 
-	return 0;
+out:
+	/* udc_disable() marks the controller disabled even when this fails */
+	udc_stm32_pm_policy_state_lock_put();
+
+	return ret;
 }
 
 static int udc_stm32_shutdown(const struct device *dev)
@@ -1411,10 +1536,31 @@ static int udc_stm32_ep_dequeue(const struct device *dev,
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	__maybe_unused stm32_status_t status;
 
-	LOG_DBG("Flush ep 0x%02x", ep_cfg->addr);
+	LOG_DBG("Dequeue ep 0x%02x", ep_cfg->addr);
 
-	status = hal_udc_flush_endpoint(&priv->pcd, ep_cfg->addr);
-	__ASSERT_NO_MSG(status == HAL_OK);
+	/* TODO: abort OUT endpoints on OTG IP (needs HAL fix?) */
+	if (DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb) ||
+	    USB_EP_DIR_IS_IN(ep_cfg->addr)) {
+		status = hal_udc_abort_endpoint_transfer(&priv->pcd, ep_cfg->addr);
+		if (status != HAL_OK) {
+			LOG_ERR("Failed to abort endpoint 0x%02x", ep_cfg->addr);
+		}
+	}
+
+	if (DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb) ||
+	    USB_EP_DIR_IS_IN(ep_cfg->addr)) {
+		/*
+		 * On ST USB IP, there is no restriction on flush.
+		 * On ST OTG_FS/OTG_HS, the TxFIFOs are per-endpoint
+		 * and can be flushed safely, but the RxFIFO is shared
+		 * by all endpoints and should not be flushed to avoid
+		 * data loss. Once hal_udc_abort_endpoint_transfer()
+		 * returns, all data in the RxFIFO that would have been
+		 * delivered to that endpoint should already be flushed.
+		 */
+		status = hal_udc_flush_endpoint(&priv->pcd, ep_cfg->addr);
+		__ASSERT_NO_MSG(status == HAL_OK);
+	}
 
 	udc_ep_cancel_queued(dev, ep_cfg);
 
@@ -1428,11 +1574,24 @@ static enum udc_bus_speed udc_stm32_device_speed(const struct device *dev)
 	struct udc_stm32_data *priv = udc_get_private(dev);
 
 #ifdef CONFIG_STM32_HAL2
+	/*
+	 * Note use of hal_pcd_device_spped_t here with values
+	 * named HAL_PCD_DEVICE_SPEED_xxx, differing from the
+	 * hal_pcd_speed_t part of the configuration consumed
+	 * by HAL_PCD_SetConfig() and which has values named
+	 * HAL_PCD_SPEED_xxx (no device!).
+	 *
+	 * For simplicity, use the raw HAL_PCD_DEVICE_SPEED_xxx
+	 * with a gate here instead of definition compatibility
+	 * aliases that would be useless on HAL1.
+	 */
 	hal_pcd_device_speed_t speed = HAL_PCD_GetDeviceSpeed(&priv->pcd);
 
+#ifdef USB_OTG_HS
 	if (speed == HAL_PCD_DEVICE_SPEED_HS) {
 		return UDC_BUS_SPEED_HS;
 	}
+#endif /* USB_OTG_HS */
 
 	if (speed == HAL_PCD_DEVICE_SPEED_FS) {
 		return UDC_BUS_SPEED_FS;
@@ -1442,13 +1601,19 @@ static enum udc_bus_speed udc_stm32_device_speed(const struct device *dev)
 	 * N.B.: pcd.Init.speed is used here on purpose instead
 	 * of udc_stm32_config::selected_speed because HAL updates
 	 * this field after USB enumeration to reflect actual bus speed.
+	 *
+	 * N.B. 2: we use the STM32_PCD_SPEED_xxx aliases here because
+	 * they smooth out the inconsistent presence of the underlying
+	 * PCD_SPEED_xxx macros across series. On HAL1, the same macros
+	 * are used for values that ought to be hal_pcd_device_t and
+	 * hal_pcd_device_speed_t in HAL2.
 	 */
 
-	if (priv->pcd.Init.speed == PCD_SPEED_HIGH) {
+	if (priv->pcd.Init.speed == STM32_PCD_SPEED_HS) {
 		return UDC_BUS_SPEED_HS;
 	}
 
-	if (priv->pcd.Init.speed == PCD_SPEED_HIGH_IN_FULL ||
+	if (priv->pcd.Init.speed == STM32_PCD_SPEED_HS_IN_FS ||
 	    priv->pcd.Init.speed == STM32_PCD_SPEED_FS) {
 		return UDC_BUS_SPEED_FS;
 	}
@@ -1516,7 +1681,7 @@ static int udc_stm32_driver_preinit(const struct device *dev)
 	data->caps.rwup = true;
 	data->caps.addr_before_status = true;
 	data->caps.mps0 = UDC_MPS0_64;
-	if (cfg->selected_speed == PCD_SPEED_HIGH) {
+	if (cfg->selected_speed == STM32_PCD_SPEED_HS) {
 		data->caps.hs = true;
 	}
 
@@ -1593,6 +1758,9 @@ static int udc_stm32_driver_preinit(const struct device *dev)
 												\
 	static struct udc_stm32_data CONCAT(udc, ord, _priv);					\
 												\
+	SYS_BITARRAY_DEFINE_STATIC(CONCAT(udc, ord, _sram_ba),					\
+				   DT_PROP(node_id, ram_size) / 4U);				\
+												\
 	static struct udc_data CONCAT(udc, ord, _data) = {					\
 		.mutex = Z_MUTEX_INITIALIZER(CONCAT(udc, ord, _data).mutex),			\
 		.priv = &CONCAT(udc, ord, _priv),						\
@@ -1614,6 +1782,7 @@ static int udc_stm32_driver_preinit(const struct device *dev)
 		.base = (void *)DT_REG_ADDR(node_id),						\
 		.num_endpoints = DT_PROP(node_id, num_bidir_endpoints),				\
 		.dram_size = DT_PROP(node_id, ram_size),					\
+		.sram_bitmap = &CONCAT(udc, ord, _sram_ba),					\
 		.irq_connect = &CONCAT(udc, ord, _irq_connect),					\
 		.irqn = DT_IRQ_BY_NAME(node_id, _irq_name, irq),				\
 		.pclken = (struct stm32_pclken *)&CONCAT(udc, ord, _pclken),			\

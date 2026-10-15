@@ -189,6 +189,7 @@
 /* Group 20 */
 #define IT51XXX_IRQ_SMB_E      160
 #define IT51XXX_IRQ_SMB_F      161
+#define IT51XXX_IRQ_CRYPTO     162
 #define IT51XXX_IRQ_WU40       163
 #define IT51XXX_IRQ_WU45       166
 /* Group 21 */
@@ -207,6 +208,8 @@
 #define IT51XXX_IRQ_I3C_M1     181
 #define IT51XXX_IRQ_I3C_S0     182
 #define IT51XXX_IRQ_I3C_S1     183
+/** Group 23 */
+#define IT51XXX_IRQ_USB        184
 /* Group 25 */
 #define IT51XXX_IRQ_SMB_SC     203
 #define IT51XXX_IRQ_SMB_SB     204

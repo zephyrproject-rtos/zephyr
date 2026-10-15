@@ -6,6 +6,9 @@
 config CPU_CORTEX_A
 	bool
 	select CPU_CORTEX
+	# With PM, CPU resume must restore TPIDR_EL1 from _current_cpu->current
+	# before the register-backed current-thread lookup can be used.
+	select ARCH_HAS_CUSTOM_CURRENT_IMPL if SMP && !PM
 	select HAS_FLASH_LOAD_OFFSET
 	select KERNEL_DIRECT_MAP if MMU
 	select SCHED_IPI_SUPPORTED if SMP
@@ -181,7 +184,7 @@ config WAIT_AT_RESET_VECTOR
 	  execution
 
 config ARM64_SAFE_EXCEPTION_STACK
-	bool "To enable the safe exception stack"
+	bool
 	help
 	  The safe exception stack is used for checking whether the kernel stack
 	  overflows during the exception happens from EL1. This stack is not

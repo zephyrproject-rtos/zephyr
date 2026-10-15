@@ -269,6 +269,26 @@ static inline void trigger_irq(int irq)
 		_sw_isr_table[irq - CONFIG_GEN_IRQ_START_VECTOR].arg);
 }
 
+#elif defined(CONFIG_HEXAGON)
+
+/* Posts the interrupt through the Hexagon VM, the same hypercall the arch's
+ * irq_offload() uses.
+ */
+extern int hexagon_irq_trigger(unsigned int irq);
+
+static inline void trigger_irq(int irq)
+{
+	hexagon_irq_trigger((unsigned int)irq);
+}
+
+#elif defined(CONFIG_TRICORE)
+#include <zephyr/drivers/interrupt_controller/intc_infineon_aurix.h>
+
+static inline void trigger_irq(int irq)
+{
+	intc_aurix_ir_irq_raise(irq);
+}
+
 #else
 #define NO_TRIGGER_FROM_SW
 #endif

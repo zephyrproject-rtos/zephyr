@@ -4,6 +4,12 @@
 config SDHC_STM32_SDMMC
 	bool "STM32 SDMMC driver (SD/SDIO)"
 	depends on DT_HAS_ST_STM32_SDMMC_ENABLED
+	# STM32F1/F2/F4/F7/L1 series use a different IP not supported by this driver
+	depends on !SOC_SERIES_STM32F1X && !SOC_SERIES_STM32F2X && !SOC_SERIES_STM32F4X \
+		&& !SOC_SERIES_STM32F7X && !SOC_SERIES_STM32L1X
+	# While the base STM32L4 series uses the same IP as F1/F2/etc,
+	# the STM32L4+ series/line does not and is supported by this driver.
+	depends on !SOC_SERIES_STM32L4X || SOC_LINE_STM32L4PLUS
 	# Legacy SDMMC and SDHC STM32 drivers share the same DT binding.
 	# Keep them mutually exclusive so only one is built.
 	depends on !SDMMC_STM32
@@ -17,6 +23,13 @@ config SDHC_STM32_SDMMC
 	  Enables support for SD/SDIO devices using SDMMC peripheral on STM32.
 
 if SDHC_STM32_SDMMC
+
+config HEAP_MEM_POOL_ADD_SIZE_SDHC_STM32_SDMMC
+	int
+	default 2048
+	help
+	  Minimum system heap size required by the STM32 SDHC/SDMMC driver
+	  for aligned DMA buffer allocations.
 
 config SDHC_BUFFER_ALIGNMENT
 	default 32

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -127,15 +127,17 @@
 
 &flash {
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		code_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x0 DT_SIZE_K(2024)>;
 		};
 
 		storage_partition: partition@1fa000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x1fa000 DT_SIZE_K(24)>;
 		};
 	};
@@ -209,5 +211,9 @@
 };
 
 &crc {
+	status = "okay";
+};
+
+&sema42 {
 	status = "okay";
 };

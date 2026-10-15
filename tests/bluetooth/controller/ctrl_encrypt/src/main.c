@@ -2132,7 +2132,7 @@ ZTEST(encryption_start, test_encryption_start_periph_rem_no_ltk)
 	ut_rx_q_is_empty();
 
 	/* All contexts should be released until now. This is a side-effect of a call to
-	 * ull_cp_tx_ntf that internall calls rr_check_done and lr_check_done.
+	 * ull_cp_tx_ntf that internally calls rr_check_done and lr_check_done.
 	 */
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", llcp_ctx_buffers_free());

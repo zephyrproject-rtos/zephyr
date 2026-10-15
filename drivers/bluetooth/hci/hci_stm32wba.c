@@ -40,19 +40,12 @@ LOG_MODULE_REGISTER(hci_wba);
  */
 static K_MUTEX_DEFINE(hci_lock);
 
-#if defined(CONFIG_BT_HCI_SETUP)
 /* Bluetooth LE public STM32WBA default device address (if udn not available) */
 static bt_addr_t bd_addr_dflt = {{0x65, 0x43, 0x21, 0x1E, 0x08, 0x00}};
 
 #define ACI_HAL_WRITE_CONFIG_DATA	   BT_OP(BT_OGF_VS, 0xFC0C)
 #define HCI_CONFIG_DATA_PUBADDR_OFFSET	   0
 static bt_addr_t bd_addr_udn;
-struct aci_set_ble_addr {
-	uint8_t config_offset;
-	uint8_t length;
-	uint8_t value[6];
-} __packed;
-#endif /* CONFIG_BT_HCI_SETUP */
 
 /* ACI Reset command */
 #define ACI_RESET                             0xFF00
@@ -96,16 +89,21 @@ static bool is_hci_event_discardable(const uint8_t *evt_data)
 	}
 }
 
-static struct net_buf *treat_evt(const uint8_t *data, size_t len)
+/* Returns 0 on success.
+ * *buf_out is NULL if a discardable event was dropped.
+ */
+static int treat_evt(const uint8_t *data, size_t len, struct net_buf **buf_out)
 {
 	bool discardable;
 	struct bt_hci_evt_hdr hdr;
 	struct net_buf *buf;
 	size_t buf_tailroom;
 
+	*buf_out = NULL;
+
 	if (len < sizeof(hdr)) {
 		LOG_ERR("Not enough data for event header");
-		return NULL;
+		return -EBADMSG;
 	}
 
 	discardable = is_hci_event_discardable(data);
@@ -117,7 +115,7 @@ static struct net_buf *treat_evt(const uint8_t *data, size_t len)
 	if (len != hdr.len) {
 		LOG_ERR("Event payload length is not correct.\n");
 		LOG_ERR("len: %d, hdr.len: %d\n", len, hdr.len);
-		return NULL;
+		return -EBADMSG;
 	}
 	LOG_DBG("len %u", hdr.len);
 
@@ -125,12 +123,12 @@ static struct net_buf *treat_evt(const uint8_t *data, size_t len)
 	if (!buf) {
 		if (discardable) {
 			LOG_DBG("Discardable buffer pool full, ignoring event");
+			/* Message discarded: no error reported */
+			return 0;
 		} else {
 			LOG_ERR("No available event buffers!");
-
+			return -ENOMEM;
 		}
-		__ASSERT_NO_MSG(buf);
-		return buf;
 	}
 
 	net_buf_add_mem(buf, &hdr, sizeof(hdr));
@@ -139,24 +137,27 @@ static struct net_buf *treat_evt(const uint8_t *data, size_t len)
 	if (buf_tailroom < len) {
 		LOG_ERR("Not enough space in buffer %zu/%zu", len, buf_tailroom);
 		net_buf_unref(buf);
-		return NULL;
+		return -EMSGSIZE;
 	}
 
 	net_buf_add_mem(buf, data, len);
 
-	return buf;
+	*buf_out = buf;
+	return 0;
 }
 
-static struct net_buf *treat_acl(const uint8_t *data, size_t len,
-				 const uint8_t *ext_data, size_t ext_len)
+static int treat_acl(const uint8_t *data, size_t len, const uint8_t *ext_data,
+		     size_t ext_len, struct net_buf **buf_out)
 {
 	struct bt_hci_acl_hdr hdr;
 	struct net_buf *buf;
 	size_t buf_tailroom;
 
+	*buf_out = NULL;
+
 	if (len < sizeof(hdr)) {
 		LOG_ERR("Not enough data for ACL header");
-		return NULL;
+		return -EBADMSG;
 	}
 
 	buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_NO_WAIT);
@@ -166,13 +167,13 @@ static struct net_buf *treat_acl(const uint8_t *data, size_t len,
 		len -= sizeof(hdr);
 	} else {
 		LOG_ERR("No available ACL buffers!");
-		return NULL;
+		return -ENOMEM;
 	}
 
 	if (ext_len != sys_le16_to_cpu(hdr.len)) {
 		LOG_ERR("ACL payload length is not correct");
 		net_buf_unref(buf);
-		return NULL;
+		return -EBADMSG;
 	}
 
 	net_buf_add_mem(buf, &hdr, sizeof(hdr));
@@ -180,25 +181,28 @@ static struct net_buf *treat_acl(const uint8_t *data, size_t len,
 	if (buf_tailroom < len) {
 		LOG_ERR("Not enough space in buffer %zu/%zu", len, buf_tailroom);
 		net_buf_unref(buf);
-		return NULL;
+		return -EMSGSIZE;
 	}
 
 	LOG_DBG("ext_len %u", ext_len);
 	net_buf_add_mem(buf, ext_data, ext_len);
 
-	return buf;
+	*buf_out = buf;
+	return 0;
 }
 
-static struct net_buf *treat_iso(const uint8_t *data, size_t len,
-				 const uint8_t *ext_data, size_t ext_len)
+static int treat_iso(const uint8_t *data, size_t len, const uint8_t *ext_data,
+		     size_t ext_len, struct net_buf **buf_out)
 {
 	struct bt_hci_iso_hdr hdr;
 	struct net_buf *buf;
 	size_t buf_tailroom;
 
+	*buf_out = NULL;
+
 	if (len < sizeof(hdr)) {
 		LOG_ERR("Not enough data for ISO header");
-		return NULL;
+		return -EBADMSG;
 	}
 
 	buf = bt_buf_get_rx(BT_BUF_ISO_IN, K_NO_WAIT);
@@ -208,13 +212,13 @@ static struct net_buf *treat_iso(const uint8_t *data, size_t len,
 		len -= sizeof(hdr);
 	} else {
 		LOG_ERR("No available ISO buffers!");
-		return NULL;
+		return -ENOMEM;
 	}
 
 	if (ext_len != bt_iso_hdr_len(sys_le16_to_cpu(hdr.len))) {
 		LOG_ERR("ISO payload length is not correct");
 		net_buf_unref(buf);
-		return NULL;
+		return -EBADMSG;
 	}
 
 	net_buf_add_mem(buf, &hdr, sizeof(hdr));
@@ -222,20 +226,21 @@ static struct net_buf *treat_iso(const uint8_t *data, size_t len,
 	if (buf_tailroom < len) {
 		LOG_ERR("Not enough space in buffer %zu/%zu", len, buf_tailroom);
 		net_buf_unref(buf);
-		return NULL;
+		return -EMSGSIZE;
 	}
 
 	LOG_DBG("ext_len %zu", ext_len);
 	net_buf_add_mem(buf, ext_data, ext_len);
 
-	return buf;
+	*buf_out = buf;
+	return 0;
 }
 
 static int receive_data(const struct device *dev, const uint8_t *data, size_t len,
 			const uint8_t *ext_data, size_t ext_len)
 {
 	uint8_t pkt_indicator;
-	struct net_buf *buf;
+	struct net_buf *buf = NULL;
 	int err = 0;
 
 	LOG_HEXDUMP_DBG(data, len, "host packet data:");
@@ -246,36 +251,37 @@ static int receive_data(const struct device *dev, const uint8_t *data, size_t le
 
 	switch (pkt_indicator) {
 	case BT_HCI_H4_EVT:
-		buf = treat_evt(data, len);
+		err = treat_evt(data, len, &buf);
 		break;
 	case BT_HCI_H4_ACL:
-		buf = treat_acl(data, len + 1, ext_data, ext_len);
+		err = treat_acl(data, len + 1, ext_data, ext_len, &buf);
 		break;
 	case BT_HCI_H4_ISO:
 	case BT_HCI_H4_SCO:
-		buf = treat_iso(data, len + 1, ext_data, ext_len);
+		err = treat_iso(data, len + 1, ext_data, ext_len, &buf);
 		break;
 	default:
-		buf = NULL;
+		err = -EINVAL;
 		LOG_ERR("Unknown HCI type %u", pkt_indicator);
 	}
 
-	if (buf) {
+	if (buf != NULL) {
 		bt_hci_recv(dev, buf);
-	} else {
-		err = -ENOMEM;
-		ll_state_busy = 1;
 	}
 
 	return err;
 }
 
+/* This callback returns 1 when an event cannot be processed due to
+ * a lack of memory buffers, and 0 otherwise.
+ * When 1 is returned, the controller holds the event for later
+ * indication.
+ */
 uint8_t BLECB_Indication(const uint8_t *data, uint16_t length,
 			 const uint8_t *ext_data, uint16_t ext_length)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
 	__maybe_unused int unlock_err;
-	int ret = 0;
 	int err;
 
 	LOG_DBG("length: %d", length);
@@ -292,22 +298,24 @@ uint8_t BLECB_Indication(const uint8_t *data, uint16_t length,
 	err = receive_data(dev, data, (size_t)length,
 			   ext_data, (size_t)ext_length);
 
+	if (err == -ENOMEM) {
+		ll_state_busy = 1;
+	}
+
 	unlock_err = k_mutex_unlock(&hci_lock);
 	__ASSERT_NO_MSG(unlock_err == 0);
 
 	HostStack_Process();
 
-	if (err) {
-		ret = 1;
-	}
-
-	return ret;
+	return (err == -ENOMEM);
 }
 
 static int bt_hci_stm32wba_send(const struct device *dev, struct net_buf *buf)
 {
+	/* This buffer is used to store command and response, since BleStack_Request does
+	 * not know the length of the buffer, we need to set it to the maximum length
+	 */
 	uint8_t hci_cmd_buf[MAX(BT_BUF_CMD_TX_SIZE, BT_BUF_EVT_SIZE(255U))];
-	struct net_buf *evt_buf = NULL;
 	uint16_t event_length;
 	uint8_t *data;
 	__maybe_unused int unlock_err;
@@ -320,22 +328,9 @@ static int bt_hci_stm32wba_send(const struct device *dev, struct net_buf *buf)
 	}
 
 	if (buf->data[0] == BT_HCI_H4_CMD) {
-		/*
-		 * Get Event Buffer which will be used to store Tx buffer and store
-		 * the response event which is a Command Complete Event or a
-		 * Command Status Event.
-		 */
-		evt_buf = bt_buf_get_evt(BT_HCI_EVT_CMD_COMPLETE, false, K_FOREVER);
-		if (!evt_buf) {
-			LOG_ERR("No available event buffers!");
-			__ASSERT_NO_MSG(evt_buf);
-			err = -ENOMEM;
-			goto done;
-		}
 		if (buf->len > sizeof(hci_cmd_buf)) {
 			LOG_ERR("HCI command length %zu exceeds buffer size %zu",
 				buf->len, sizeof(hci_cmd_buf));
-			net_buf_unref(evt_buf);
 			err = -EMSGSIZE;
 			goto done;
 		}
@@ -348,28 +343,19 @@ static int bt_hci_stm32wba_send(const struct device *dev, struct net_buf *buf)
 	event_length = BleStack_Request(data);
 	LOG_DBG("event_length: %u", event_length);
 
-	if (evt_buf) {
-		if (event_length) {
-			if (event_length > net_buf_tailroom(evt_buf)) {
-				LOG_ERR("HCI event too large for sync event buffer (%u > %zu)",
-					event_length, net_buf_tailroom(evt_buf));
-				net_buf_unref(evt_buf);
-				err = -EMSGSIZE;
-			} else {
-				net_buf_reset(evt_buf);
-				net_buf_add_mem(evt_buf, hci_cmd_buf, event_length);
-				bt_hci_recv(dev, evt_buf);
-			}
-		} else {
-			net_buf_unref(evt_buf);
-		}
+	if ((event_length != 0) && (buf->data[0] == BT_HCI_H4_CMD)) {
+		err = receive_data(dev, data, (size_t)event_length, NULL, 0);
 	}
-
 done:
 	unlock_err = k_mutex_unlock(&hci_lock);
 	__ASSERT_NO_MSG(unlock_err == 0);
 
-	net_buf_unref(buf);
+	/* Free buffer only if no errors, the caller remains
+	 * responsible for it.
+	 */
+	if (err == 0) {
+		net_buf_unref(buf);
+	}
 
 	return err;
 }
@@ -425,41 +411,10 @@ static int bt_ble_ctlr_init(void)
 	return 0;
 }
 
-static int bt_hci_stm32wba_open(const struct device *dev)
-{
-	int ret = 0;
-	/* Initialization of the thread dedicated to BLE Host Controller IP */
-	stm32wba_ble_ctlr_thread_init();
-
-	/* Initialization of the thread dedicated to Link Layer Controller IP */
-	stm32wba_ll_ctlr_thread_init();
-
-	if (bt_hci_state == BT_HCI_STATE_CLOSED) {
-#if !defined(CONFIG_IEEE802154_STM32WBA)
-		LINKLAYER_PLAT_ClockInit();
-#endif
-	}
-
-	link_layer_register_isr();
-
-	ret = bt_ble_ctlr_init();
-
-	/* TODO. Enable Flash manager once available */
-	if (IS_ENABLED(CONFIG_FLASH)) {
-		FD_SetStatus(FD_FLASHACCESS_RFTS_BYPASS, LL_FLASH_DISABLE);
-	}
-
-	if (ret == 0) {
-		bt_hci_state = BT_HCI_STATE_OPENED;
-	}
-
-	return ret;
-}
-
 static int bt_hci_stm32wba_close(const struct device *dev)
 {
-	int err = 0;
 	uint8_t aci_reset_cmd[9];
+	int err;
 
 	ARG_UNUSED(dev);
 
@@ -473,7 +428,16 @@ static int bt_hci_stm32wba_close(const struct device *dev)
 	aci_reset_cmd[7] = (uint8_t)(CFG_BLE_OPTIONS >> 16);
 	aci_reset_cmd[8] = (uint8_t)(CFG_BLE_OPTIONS >> 24);
 
+	err = k_mutex_lock(&hci_lock, K_FOREVER);
+	if (err != 0) {
+		LOG_ERR("Failed to lock the controller (%d)", err);
+		return err;
+	}
+
 	BleStack_Request(aci_reset_cmd);
+
+	err = k_mutex_unlock(&hci_lock);
+	__ASSERT_NO_MSG(err == 0);
 
 	bt_hci_state = BT_HCI_STATE_CLOSED;
 
@@ -492,10 +456,8 @@ static int bt_hci_stm32wba_close(const struct device *dev)
 	__HAL_RCC_RADIO_CLK_SLEEP_DISABLE();
 #endif
 
-	return err;
+	return 0;
 }
-
-#if defined(CONFIG_BT_HCI_SETUP)
 
 bt_addr_t *bt_get_ble_addr(void)
 {
@@ -538,18 +500,23 @@ bt_addr_t *bt_get_ble_addr(void)
 	return bd_addr;
 }
 
-static int bt_hci_stm32wba_setup(const struct device *dev,
-				 const struct bt_hci_setup_params *params)
+static int bt_hci_stm32wba_set_public_addr(const struct device *dev)
 {
-	bt_addr_t *uid_addr;
+	const bt_addr_t *addr = BT_ADDR_ANY;
 	uint8_t aci_set_ble_addr_cmd[12];
 	uint16_t event_length;
+	int err;
 
-	ARG_UNUSED(dev);
+	if (IS_ENABLED(CONFIG_BT_HCI_SET_PUBLIC_ADDR)) {
+		addr = bt_hci_get_public_addr(dev);
+	}
 
-	uid_addr = bt_get_ble_addr();
-	if (!uid_addr) {
-		return -ENOMSG;
+	/* Without a public address to set, use the one derived from the UID */
+	if (bt_addr_eq(addr, BT_ADDR_ANY)) {
+		addr = bt_get_ble_addr();
+		if (addr == NULL) {
+			return -ENOMSG;
+		}
 	}
 
 	aci_set_ble_addr_cmd[0] = BT_HCI_H4_CMD;
@@ -559,13 +526,19 @@ static int bt_hci_stm32wba_setup(const struct device *dev,
 	aci_set_ble_addr_cmd[4] = HCI_CONFIG_DATA_PUBADDR_OFFSET;
 	aci_set_ble_addr_cmd[5] = 6;
 
-	if (bt_addr_eq(&params->public_addr, BT_ADDR_ANY)) {
-		memcpy(&aci_set_ble_addr_cmd[6], uid_addr, 6);
-	} else {
-		memcpy(&aci_set_ble_addr_cmd[6], &(params->public_addr), 6);
+	(void)memcpy(&aci_set_ble_addr_cmd[6], addr->val, sizeof(addr->val));
+
+	err = k_mutex_lock(&hci_lock, K_FOREVER);
+	if (err != 0) {
+		LOG_ERR("Failed to lock the controller (%d)", err);
+		return err;
 	}
 
 	event_length = BleStack_Request(aci_set_ble_addr_cmd);
+
+	err = k_mutex_unlock(&hci_lock);
+	__ASSERT_NO_MSG(err == 0);
+
 	if (event_length) {
 		/* Get the return status from the event */
 		uint8_t evt_status;
@@ -582,7 +555,45 @@ static int bt_hci_stm32wba_setup(const struct device *dev,
 
 	return 0;
 }
-#endif /* CONFIG_BT_HCI_SETUP */
+
+static int bt_hci_stm32wba_open(const struct device *dev)
+{
+	int ret = 0;
+	/* Initialization of the thread dedicated to BLE Host Controller IP */
+	stm32wba_ble_ctlr_thread_init();
+
+	/* Initialization of the thread dedicated to Link Layer Controller IP */
+	stm32wba_ll_ctlr_thread_init();
+
+	if (bt_hci_state == BT_HCI_STATE_CLOSED) {
+#if !defined(CONFIG_IEEE802154_STM32WBA)
+		LINKLAYER_PLAT_ClockInit();
+#endif
+	}
+
+	link_layer_register_isr();
+
+	ret = bt_ble_ctlr_init();
+
+	/* TODO. Enable Flash manager once available */
+	if (IS_ENABLED(CONFIG_FLASH)) {
+		FD_SetStatus(FD_FLASHACCESS_RFTS_BYPASS, LL_FLASH_DISABLE);
+	}
+
+	if (ret != 0) {
+		return ret;
+	}
+
+	bt_hci_state = BT_HCI_STATE_OPENED;
+
+	ret = bt_hci_stm32wba_set_public_addr(dev);
+	if (ret != 0) {
+		/* A failed open() is not followed by close() */
+		(void)bt_hci_stm32wba_close(dev);
+	}
+
+	return ret;
+}
 
 #ifdef CONFIG_PM_DEVICE
 static int radio_pm_action(const struct device *dev, enum pm_device_action action)
@@ -628,9 +639,6 @@ static int radio_pm_action(const struct device *dev, enum pm_device_action actio
 #endif /* CONFIG_PM_DEVICE */
 
 static DEVICE_API(bt_hci, drv) = {
-#if defined(CONFIG_BT_HCI_SETUP)
-	.setup          = bt_hci_stm32wba_setup,
-#endif /* CONFIG_BT_HCI_SETUP */
 	.open           = bt_hci_stm32wba_open,
 	.send           = bt_hci_stm32wba_send,
 	.close          = bt_hci_stm32wba_close,

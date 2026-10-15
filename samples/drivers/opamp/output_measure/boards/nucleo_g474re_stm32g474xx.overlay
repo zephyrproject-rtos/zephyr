@@ -17,8 +17,6 @@
 };
 
 &adc2 {
-	st,adc-clock-source = "SYNC";
-	st,adc-prescaler = <4>;
 	status = "okay";
 
 	#address-cells = <1>;

@@ -12,7 +12,10 @@ add_subdirectory(.. common)
 
 cmake_path(SET NRF71_SOC_DIR ${ZEPHYR_BASE}/soc/nordic/nrf71)
 target_include_directories(platform_s PRIVATE ${NRF71_SOC_DIR})
-target_sources(platform_s PRIVATE ${NRF71_SOC_DIR}/wicr_setup.c)
+target_sources(platform_s PRIVATE
+  ${NRF71_SOC_DIR}/approtect_setup.c
+  ${NRF71_SOC_DIR}/wicr_setup.c
+)
 
 install(FILES       ${CMAKE_CURRENT_LIST_DIR}/ns/cpuarch_ns.cmake
         DESTINATION ${INSTALL_PLATFORM_NS_DIR}

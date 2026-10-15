@@ -483,6 +483,31 @@ static bool valid_adv_param(const struct bt_le_adv_param *param)
 	return valid_adv_ext_param(param);
 }
 
+/* A directed advertisement with an RPA target can only be received by a peer
+ * that supports address resolution, so when the peer's Central Address
+ * Resolution characteristic value is known (see
+ * CONFIG_BT_GATT_AUTO_READ_CENTRAL_ADDR_RES), advertising that the peer would
+ * be unable to receive is refused. An unknown value does not refuse, as
+ * recommended by Core 6.3, Vol 3, Part C, 12.4.
+ */
+static bool adv_peer_addr_res_ok(const struct bt_le_adv_param *param)
+{
+	if (!IS_ENABLED(CONFIG_BT_GATT_AUTO_READ_CENTRAL_ADDR_RES)) {
+		/* The answer is never known without the option, and this
+		 * avoids depending on the key storage when there is none.
+		 */
+		return true;
+	}
+
+	if (param->peer == NULL ||
+	    (param->options & BT_LE_ADV_OPT_DIR_ADDR_RPA) == 0) {
+		return true;
+	}
+
+	return bt_le_bond_addr_res_support(param->id, param->peer) !=
+	       BT_LE_ADDR_RES_SUPPORT_NO;
+}
+
 static int set_data_add_complete(uint8_t *set_data, uint8_t set_data_len_max,
 			const struct bt_ad *ad, size_t ad_len, uint8_t *data_len)
 {
@@ -931,6 +956,10 @@ static int adv_start_legacy(struct bt_le_ext_adv *adv,
 		return -EINVAL;
 	}
 
+	if (!adv_peer_addr_res_ok(param)) {
+		return -ENOTSUP;
+	}
+
 	if (!bt_id_adv_random_addr_check(param)) {
 		return -EINVAL;
 	}
@@ -1264,6 +1293,10 @@ static int adv_start_ext(struct bt_le_ext_adv *adv,
 		return -EINVAL;
 	}
 
+	if (!adv_peer_addr_res_ok(param)) {
+		return -ENOTSUP;
+	}
+
 	if (atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
 		return -EALREADY;
 	}
@@ -1489,6 +1522,10 @@ int bt_le_ext_adv_create(const struct bt_le_adv_param *param,
 		return -EINVAL;
 	}
 
+	if (!adv_peer_addr_res_ok(param)) {
+		return -ENOTSUP;
+	}
+
 	adv = adv_new();
 	if (!adv) {
 		return -ENOMEM;
@@ -1518,6 +1555,10 @@ int bt_le_ext_adv_update_param(struct bt_le_ext_adv *adv,
 
 	if (!valid_adv_ext_param(param)) {
 		return -EINVAL;
+	}
+
+	if (!adv_peer_addr_res_ok(param)) {
+		return -ENOTSUP;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PER_ADV) &&
@@ -1581,7 +1622,7 @@ int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 		    (!atomic_test_and_clear_bit(adv->flags, BT_ADV_RANDOM_ADDR_UPDATED) ||
 		     atomic_test_bit(adv->flags, BT_PER_ADV_ENABLED) ||
 		     !atomic_test_bit(adv->flags, BT_ADV_RPA_VALID))) {
-			bt_id_set_adv_private_addr(adv);
+			bt_id_set_adv_private_addr(adv, adv->options);
 		}
 	} else {
 		if (!atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY) &&
@@ -1589,7 +1630,7 @@ int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 		     atomic_test_bit(adv->flags, BT_PER_ADV_ENABLED) ||
 		     (IS_ENABLED(CONFIG_BT_PRIVACY) &&
 		      !atomic_test_bit(adv->flags, BT_ADV_RPA_VALID)))) {
-			bt_id_set_adv_private_addr(adv);
+			bt_id_set_adv_private_addr(adv, adv->options);
 		}
 	}
 
@@ -2366,7 +2407,8 @@ void bt_hci_le_scan_req_received(struct net_buf *buf)
 	evt = (void *)buf->data;
 	adv = bt_hci_adv_lookup_handle(evt->handle);
 
-	LOG_DBG("handle %u peer %s", evt->handle, bt_addr_le_str(&evt->addr));
+	LOG_DBG("handle %u peer %s%s", evt->handle, bt_addr_le_str(&evt->addr),
+		bt_addr_le_is_resolved(&evt->addr) ? " (resolved)" : "");
 
 	if (!adv) {
 		LOG_ERR("No valid adv");

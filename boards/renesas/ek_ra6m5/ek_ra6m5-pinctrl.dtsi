@@ -51,7 +51,8 @@
 
 	usbhs_default: usbhs_default {
 		group1 {
-			psels = <RA_PSEL(RA_PSEL_USBHS, 11, 1)>; /* USBHS-VBUS */
+			psels = <RA_PSEL(RA_PSEL_USBHS, 11, 1)>, /* VBUS */
+				<RA_PSEL(RA_PSEL_USBHS, 11, 0)>; /* VBUSEN */
 			drive-strength = "high";
 		};
 	};
@@ -82,8 +83,8 @@
 
 	usbfs_default: usbfs_default {
 		group1 {
-			/* USB_VBUS */
-			psels = <RA_PSEL(RA_PSEL_USBFS, 11, 1)>;
+			psels = <RA_PSEL(RA_PSEL_USBFS, 4, 7)>,  /* VBUS */
+				<RA_PSEL(RA_PSEL_USBFS, 5, 0)>;  /* VBUSEN */
 			drive-strength = "high";
 		};
 	};

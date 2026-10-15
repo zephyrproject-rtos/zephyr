@@ -1,0 +1,14 @@
+common:
+  depends_on: netif
+  tags:
+    - net
+    - sntp
+  platform_allow:
+    - native_sim
+  integration_platforms:
+    - native_sim
+tests:
+  net.lib.sntp_server: {}
+  net.lib.sntp_server.with_client:
+    extra_configs:
+      - CONFIG_SNTP=y

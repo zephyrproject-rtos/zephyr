@@ -43,11 +43,6 @@ static bt_dh_key_cb_t dh_key_cb;
  */
 static uint32_t pub_key_disruptions;
 
-static void generate_pub_key(struct k_work *work);
-static void generate_dh_key(struct k_work *work);
-K_WORK_DEFINE(pub_key_work, generate_pub_key);
-K_WORK_DEFINE(dh_key_work, generate_dh_key);
-
 enum {
 	PENDING_PUB_KEY,
 	PENDING_DHKEY,
@@ -160,7 +155,7 @@ static void generate_pub_key(struct k_work *work)
 	if (ret != PSA_SUCCESS) {
 		LOG_ERR("Failed to export ECC public key %d", ret);
 		err = BT_HCI_ERR_UNSPECIFIED;
-		goto done;
+		goto destroy;
 	}
 	/* secp256r1 PSA exported public key has an extra 0x04 predefined byte at
 	 * the beginning of the buffer which is not part of the coordinate so
@@ -172,17 +167,18 @@ static void generate_pub_key(struct k_work *work)
 	if (ret != PSA_SUCCESS) {
 		LOG_ERR("Failed to export ECC private key %d", ret);
 		err = BT_HCI_ERR_UNSPECIFIED;
-		goto done;
+		goto destroy;
 	}
 
+	err = 0;
+
+destroy:
+	/* Also when exporting failed: the key would occupy its slot for good */
 	ret = psa_destroy_key(key_id);
 	if (ret != PSA_SUCCESS) {
 		LOG_ERR("Failed to destroy ECC key ID %d", ret);
 		err = BT_HCI_ERR_UNSPECIFIED;
-		goto done;
 	}
-
-	err = 0;
 
 done:
 	/* Publish the key, detach the registered callbacks and clear the
@@ -221,6 +217,8 @@ done:
 	}
 }
 
+K_WORK_DEFINE(pub_key_work, generate_pub_key);
+
 static void generate_dh_key(struct k_work *work)
 {
 	uint8_t dhkey[BT_DH_KEY_LEN];
@@ -254,17 +252,18 @@ static void generate_dh_key(struct k_work *work)
 	if (ret != PSA_SUCCESS) {
 		err = -EIO;
 		LOG_ERR("Raw key agreement failed %d", ret);
-		goto exit;
+		goto destroy;
 	}
 
+	err = 0;
+
+destroy:
+	/* Also when the key agreement failed: the key would occupy its slot for good */
 	ret = psa_destroy_key(key_id);
 	if (ret != PSA_SUCCESS) {
 		LOG_ERR("Failed to destroy the key %d", ret);
 		err = -EIO;
-		goto exit;
 	}
-
-	err = 0;
 
 exit:
 	/* Take the callback and the result and clear the pending state under
@@ -283,6 +282,8 @@ exit:
 		cb(err ? NULL : dhkey);
 	}
 }
+
+K_WORK_DEFINE(dh_key_work, generate_dh_key);
 
 int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
 {

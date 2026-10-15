@@ -10,6 +10,7 @@
 LOG_MODULE_DECLARE(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 
 #include <errno.h>
+#include <string.h>
 #include <time.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_mgmt.h>
@@ -20,15 +21,82 @@ static void sntp_resync_handler(struct k_work *work);
 static K_WORK_DELAYABLE_DEFINE(sntp_resync_work_handle, sntp_resync_handler);
 #define RESYNC_FAILED_INTERVAL K_SECONDS(CONFIG_NET_CONFIG_SNTP_INIT_RESYNC_ON_FAILURE_INTERVAL)
 #define RESYNC_INTERVAL K_SECONDS(CONFIG_NET_CONFIG_SNTP_INIT_RESYNC_INTERVAL)
+#define RESYNC_PENDING_INTERVAL K_SECONDS(1)
+
+static K_MUTEX_DEFINE(sntp_resync_lock);
+static bool sntp_resync_enabled = !IS_ENABLED(CONFIG_NET_CONFIG_SNTP_INIT_USE_CONNECTION_MANAGER);
+/* This flag is set only by sntp_resync_handler when a new async resync is started, and reset only
+ * when the async call chain has terminated or timed out. This ensures that there are never two
+ * resyncs in flight at the same time, which would cause undefined behaviour as they would overwrite
+ * each others state.
+ */
+static bool sntp_resync_in_progress;
+static void sntp_resync_reschedule_earlier(k_timeout_t interval);
+#endif
+
+#ifdef CONFIG_NET_CONFIG_SNTP_INIT_SERVER_RUNTIME
+static K_MUTEX_DEFINE(sntp_server_lock);
+
+/* Server set by the application. Written from any thread, under the lock. */
+static char sntp_server_cfg[CONFIG_NET_CONFIG_SNTP_INIT_SERVER_MAX_LEN + 1];
 #endif
 
 BUILD_ASSERT(
 	IS_ENABLED(CONFIG_NET_CONFIG_SNTP_INIT_SERVER_USE_DHCPV4_OPTION) ||
+	IS_ENABLED(CONFIG_NET_CONFIG_SNTP_INIT_SERVER_RUNTIME) ||
 	(sizeof(CONFIG_NET_CONFIG_SNTP_INIT_SERVER) != 1),
-	"SNTP server has to be configured, unless DHCPv4 is used to set it");
+	"SNTP server has to be configured, unless DHCPv4 or net_config_sntp_set_server is used to set it");
+
+#ifdef CONFIG_NET_CONFIG_SNTP_INIT_SERVER_RUNTIME
+int net_config_sntp_set_server(const char *server)
+{
+	if (server != NULL && strlen(server) > CONFIG_NET_CONFIG_SNTP_INIT_SERVER_MAX_LEN) {
+		return -ENAMETOOLONG;
+	}
+
+	k_mutex_lock(&sntp_server_lock, K_FOREVER);
+	if (server != NULL) {
+		strncpy(sntp_server_cfg, server, CONFIG_NET_CONFIG_SNTP_INIT_SERVER_MAX_LEN);
+		sntp_server_cfg[CONFIG_NET_CONFIG_SNTP_INIT_SERVER_MAX_LEN] = '\0';
+	} else {
+		sntp_server_cfg[0] = '\0';
+	}
+	k_mutex_unlock(&sntp_server_lock);
+
+#ifdef CONFIG_NET_CONFIG_SNTP_INIT_RESYNC
+	k_mutex_lock(&sntp_resync_lock, K_FOREVER);
+	if (sntp_resync_enabled) {
+		/* Use the new server right away. */
+		sntp_resync_reschedule_earlier(K_NO_WAIT);
+	}
+	k_mutex_unlock(&sntp_resync_lock);
+#endif
+
+	return 0;
+}
+
+static const char *
+sntp_runtime_server(char user_buf[static CONFIG_NET_CONFIG_SNTP_INIT_SERVER_MAX_LEN + 1])
+{
+	k_mutex_lock(&sntp_server_lock, K_FOREVER);
+	strncpy(user_buf, sntp_server_cfg, CONFIG_NET_CONFIG_SNTP_INIT_SERVER_MAX_LEN);
+	k_mutex_unlock(&sntp_server_lock);
+	user_buf[CONFIG_NET_CONFIG_SNTP_INIT_SERVER_MAX_LEN] = '\0';
+
+	return user_buf[0] != '\0' ? user_buf : NULL;
+}
+#endif
 
 static int sntp_init_helper(struct sntp_time *tm)
 {
+#ifdef CONFIG_NET_CONFIG_SNTP_INIT_SERVER_RUNTIME
+	char server_buf[CONFIG_NET_CONFIG_SNTP_INIT_SERVER_MAX_LEN + 1];
+	const char *server = sntp_runtime_server(server_buf);
+
+	if (server != NULL) {
+		return sntp_simple(server, CONFIG_NET_CONFIG_SNTP_INIT_TIMEOUT, tm);
+	}
+#endif /* CONFIG_NET_CONFIG_SNTP_INIT_SERVER_RUNTIME */
 #ifdef CONFIG_NET_CONFIG_SNTP_INIT_SERVER_USE_DHCPV4_OPTION
 	struct net_if *iface = net_if_get_default();
 
@@ -40,17 +108,22 @@ static int sntp_init_helper(struct sntp_time *tm)
 		return sntp_simple_addr((struct net_sockaddr *)&sntp_addr, sizeof(sntp_addr),
 					CONFIG_NET_CONFIG_SNTP_INIT_TIMEOUT, tm);
 	}
+#endif /* NET_CONFIG_SNTP_INIT_SERVER_USE_DHCPV4_OPTION */
 	if (sizeof(CONFIG_NET_CONFIG_SNTP_INIT_SERVER) == 1) {
 		/* Empty address, skip using SNTP via Kconfig defaults */
 		return -EINVAL;
 	}
-	LOG_INF("SNTP address not set by DHCPv4, using Kconfig defaults");
-#endif /* NET_CONFIG_SNTP_INIT_SERVER_USE_DHCPV4_OPTION */
+#if IS_ENABLED(CONFIG_NET_CONFIG_SNTP_INIT_SERVER_USE_DHCPV4_OPTION) ||                            \
+	IS_ENABLED(CONFIG_NET_CONFIG_SNTP_INIT_SERVER_RUNTIME)
+	LOG_INF("SNTP address not set by DHCPv4 or net_config_sntp_set_server, using Kconfig "
+		"defaults");
+#endif
 	return sntp_simple(CONFIG_NET_CONFIG_SNTP_INIT_SERVER,
 			   CONFIG_NET_CONFIG_SNTP_INIT_TIMEOUT, tm);
 }
 
-__maybe_unused static int timespec_to_rtc_time(const struct timespec *in, struct rtc_time *out)
+#ifdef CONFIG_NET_CONFIG_CLOCK_SNTP_SET_RTC
+static int timespec_to_rtc_time(const struct timespec *in, struct rtc_time *out)
 {
 	if (gmtime_r(&in->tv_sec, rtc_time_to_tm(out)) == NULL) {
 		return -EINVAL;
@@ -61,9 +134,8 @@ __maybe_unused static int timespec_to_rtc_time(const struct timespec *in, struct
 	return 0;
 }
 
-static void sntp_set_rtc(__maybe_unused const struct timespec *tspec)
+static void sntp_set_rtc(const struct timespec *tspec)
 {
-#ifdef CONFIG_NET_CONFIG_CLOCK_SNTP_SET_RTC
 	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_rtc));
 	struct rtc_time rtctime;
 	int res;
@@ -81,8 +153,13 @@ static void sntp_set_rtc(__maybe_unused const struct timespec *tspec)
 	if (res != 0) {
 		LOG_ERR("Set RTC failed: %d", res);
 	}
-#endif
 }
+#else
+static void sntp_set_rtc(const struct timespec *tspec)
+{
+	ARG_UNUSED(tspec);
+}
+#endif
 
 static int sntp_set_clocks(struct sntp_time *ts)
 {
@@ -103,7 +180,7 @@ static int sntp_set_clocks(struct sntp_time *ts)
 	return ret;
 }
 
-int net_init_clock_via_sntp(void)
+int net_config_init_clock_via_sntp(void)
 {
 	struct sntp_time ts;
 	int res = sntp_init_helper(&ts);
@@ -117,8 +194,12 @@ int net_init_clock_via_sntp(void)
 
 end:
 #ifdef CONFIG_NET_CONFIG_SNTP_INIT_RESYNC
-	k_work_reschedule(&sntp_resync_work_handle,
-			  (res < 0) ? RESYNC_FAILED_INTERVAL : RESYNC_INTERVAL);
+	k_mutex_lock(&sntp_resync_lock, K_FOREVER);
+	if (sntp_resync_enabled) {
+		sntp_resync_reschedule_earlier((res < 0) ? RESYNC_FAILED_INTERVAL
+							 : RESYNC_INTERVAL);
+	}
+	k_mutex_unlock(&sntp_resync_lock);
 #endif
 	return res;
 }
@@ -136,6 +217,38 @@ static struct sntp_ctx sntp_async_ctx;
 static struct net_sockaddr_storage sntp_addr;
 static net_socklen_t sntp_addrlen;
 
+#ifdef CONFIG_NET_CONFIG_SNTP_INIT_SERVER_RUNTIME
+/* Copy of sntp_server_cfg owned by resync work */
+static char sntp_server_active[CONFIG_NET_CONFIG_SNTP_INIT_SERVER_MAX_LEN + 1];
+#endif
+
+/* Helper to reschedule the sntp_resync_work_handle after the given interval. If it is already
+ * scheduled, reschedule it only if the new interval would expire earlier than the current scheduled
+ * expiration.
+ *
+ * Interval must be a relative timeout or K_NO_WAIT.
+ * Caller must hold sntp_resync_lock.
+ */
+static void sntp_resync_reschedule_earlier(k_timeout_t interval)
+{
+	const k_ticks_t remaining = k_work_delayable_remaining_get(&sntp_resync_work_handle);
+
+	__ASSERT(interval.ticks >= 0, "interval must be relative or K_NO_WAIT");
+	if (remaining == 0 || remaining > interval.ticks) {
+		k_work_reschedule(&sntp_resync_work_handle, interval);
+	}
+}
+
+static void sntp_resync_done(bool reschedule)
+{
+	k_mutex_lock(&sntp_resync_lock, K_FOREVER);
+	sntp_resync_in_progress = false;
+	if (sntp_resync_enabled && reschedule) {
+		sntp_resync_reschedule_earlier(RESYNC_FAILED_INTERVAL);
+	}
+	k_mutex_unlock(&sntp_resync_lock);
+}
+
 static void sntp_async_timeout(struct k_work *work)
 {
 	ARG_UNUSED(work);
@@ -144,8 +257,7 @@ static void sntp_async_timeout(struct k_work *work)
 
 	sntp_close_async(&sntp_service_async);
 
-	/* No response, reschedule */
-	k_work_reschedule(&sntp_resync_work_handle, RESYNC_FAILED_INTERVAL);
+	sntp_resync_done(true);
 }
 
 static void sntp_async_service_handler(struct net_socket_service_event *pev)
@@ -167,9 +279,7 @@ out:
 
 	k_work_cancel_delayable(&sntp_async_timeout_work);
 
-	if (ret < 0) {
-		k_work_reschedule(&sntp_resync_work_handle, RESYNC_FAILED_INTERVAL);
-	}
+	sntp_resync_done(ret < 0);
 }
 
 static int sntp_query_async(struct net_sockaddr *addr, net_socklen_t addrlen)
@@ -196,44 +306,16 @@ end:
 	return ret;
 }
 
-static void dns_result_cb(enum dns_resolve_status status,
-			  struct dns_addrinfo *info,
+static void dns_result_cb(enum dns_resolve_status status, struct dns_addrinfo *info,
 			  void *user_data)
 {
 	int ret;
+	const char *server = user_data;
 
-	if (status == DNS_EAI_CANCELED || status == DNS_EAI_FAIL) {
-		/* If IPv4 query failed, try IPv6. Otherwise, just schedule next retry. */
-		if (sntp_addr.ss_family == NET_AF_INET && IS_ENABLED(CONFIG_NET_IPV6)) {
-			sntp_addr.ss_family = NET_AF_INET6;
-			sntp_addrlen = 0;
-
-			ret = dns_get_addr_info(CONFIG_NET_CONFIG_SNTP_INIT_SERVER,
-						DNS_QUERY_TYPE_AAAA, NULL, dns_result_cb,
-						NULL, CONFIG_NET_CONFIG_SNTP_INIT_TIMEOUT);
-			if (ret == 0) {
-				return;
-			}
+	if (status == DNS_EAI_INPROGRESS) {
+		if (info == NULL) {
+			return;
 		}
-
-		LOG_WRN("DNS query timed out");
-
-		k_work_reschedule(&sntp_resync_work_handle, RESYNC_FAILED_INTERVAL);
-
-		return;
-	}
-
-	if (status == DNS_EAI_ALLDONE) {
-		/* If address was found, schedule SNTP query, if that fails schedule next retry. */
-		ret = sntp_query_async(net_sad(&sntp_addr), sntp_addrlen);
-		if (ret < 0) {
-			k_work_reschedule(&sntp_resync_work_handle, RESYNC_FAILED_INTERVAL);
-		}
-
-		return;
-	}
-
-	if (status == DNS_EAI_INPROGRESS && info != NULL) {
 		if (sntp_addrlen > 0) {
 			/* Already got address, skip others. */
 			return;
@@ -259,10 +341,53 @@ static void dns_result_cb(enum dns_resolve_status status,
 		}
 
 		(void)net_port_set_default(net_sad(&sntp_addr), SNTP_SERVER_PORT);
+		return;
 	}
+
+	/* Don't start any new operations if resync was disabled */
+	k_mutex_lock(&sntp_resync_lock, K_FOREVER);
+	if (!sntp_resync_enabled) {
+		sntp_resync_in_progress = false;
+		k_mutex_unlock(&sntp_resync_lock);
+		return;
+	}
+	k_mutex_unlock(&sntp_resync_lock);
+
+	if (status == DNS_EAI_CANCELED || status == DNS_EAI_FAIL) {
+		/* If IPv4 query failed, try IPv6. Otherwise, just schedule next retry. */
+		if (sntp_addr.ss_family == NET_AF_INET && IS_ENABLED(CONFIG_NET_IPV6)) {
+			sntp_addr.ss_family = NET_AF_INET6;
+			sntp_addrlen = 0;
+
+			ret = dns_get_addr_info(server, DNS_QUERY_TYPE_AAAA, NULL, dns_result_cb,
+						(void *)server,
+						CONFIG_NET_CONFIG_SNTP_INIT_TIMEOUT);
+			if (ret == 0) {
+				return;
+			}
+		}
+
+		LOG_WRN("DNS query timed out");
+
+		sntp_resync_done(true);
+		return;
+	}
+
+	if (status == DNS_EAI_ALLDONE) {
+		/* If address was found, schedule SNTP query, if that fails schedule next retry. */
+		ret = sntp_query_async(net_sad(&sntp_addr), sntp_addrlen);
+		if (ret < 0) {
+			sntp_resync_done(true);
+		}
+
+		return;
+	}
+
+	/* Fallback - unknown other DNS response */
+	sntp_resync_done(true);
 }
 
-static int dns_query_async(void)
+static int dns_query_async(const char *server)
 {
 	enum dns_query_type type;
 	int ret;
@@ -279,9 +404,8 @@ static int dns_query_async(void)
 			type = DNS_QUERY_TYPE_AAAA;
 		}
 
-		ret = dns_get_addr_info(CONFIG_NET_CONFIG_SNTP_INIT_SERVER,
-					type, NULL, dns_result_cb,
-					NULL, CONFIG_NET_CONFIG_SNTP_INIT_TIMEOUT);
+		ret = dns_get_addr_info(server, type, NULL, dns_result_cb, (void *)server,
+					CONFIG_NET_CONFIG_SNTP_INIT_TIMEOUT);
 		if (ret < 0) {
 			LOG_ERR("Failed to initiate DNS query for SNTP server (%d)", ret);
 		}
@@ -290,8 +414,8 @@ static int dns_query_async(void)
 	}
 
 	/* Fallback for IP address string. */
-	if (net_ipaddr_parse(CONFIG_NET_CONFIG_SNTP_INIT_SERVER,
-			     sizeof(CONFIG_NET_CONFIG_SNTP_INIT_SERVER) - 1,
+	if (net_ipaddr_parse(server,
+			     strlen(server),
 			     net_sad(&sntp_addr))) {
 		if (IS_ENABLED(CONFIG_NET_IPV4) && sntp_addr.ss_family == NET_AF_INET) {
 			sntp_addrlen = sizeof(struct net_sockaddr_in);
@@ -322,6 +446,27 @@ static void sntp_resync_handler(struct k_work *work)
 
 	ARG_UNUSED(work);
 
+	k_mutex_lock(&sntp_resync_lock, K_FOREVER);
+	if (!sntp_resync_enabled) {
+		k_mutex_unlock(&sntp_resync_lock);
+		return;
+	}
+	if (sntp_resync_in_progress) {
+		sntp_resync_reschedule_earlier(RESYNC_PENDING_INTERVAL);
+		k_mutex_unlock(&sntp_resync_lock);
+		return;
+	}
+	sntp_resync_in_progress = true;
+	k_mutex_unlock(&sntp_resync_lock);
+
+#ifdef CONFIG_NET_CONFIG_SNTP_INIT_SERVER_RUNTIME
+	const char *server = sntp_runtime_server(sntp_server_active);
+
+	if (server != NULL) {
+		ret = dns_query_async(server);
+		goto out;
+	}
+#endif /* CONFIG_NET_CONFIG_SNTP_INIT_SERVER_RUNTIME */
 #ifdef CONFIG_NET_CONFIG_SNTP_INIT_SERVER_USE_DHCPV4_OPTION
 	struct net_if *iface = net_if_get_default();
 
@@ -340,20 +485,25 @@ static void sntp_resync_handler(struct k_work *work)
 		goto out;
 	}
 
+#endif
 	if (sizeof(CONFIG_NET_CONFIG_SNTP_INIT_SERVER) == 1) {
 		/* Empty address, skip using SNTP via Kconfig defaults */
 		ret = -EINVAL;
 		goto out;
 	}
-#endif
 
-	ret = dns_query_async();
+	ret = dns_query_async(CONFIG_NET_CONFIG_SNTP_INIT_SERVER);
 
-#ifdef CONFIG_NET_CONFIG_SNTP_INIT_SERVER_USE_DHCPV4_OPTION
 out:
-#endif
-	k_work_reschedule(&sntp_resync_work_handle,
-			  (ret < 0) ? RESYNC_FAILED_INTERVAL : RESYNC_INTERVAL);
+	k_mutex_lock(&sntp_resync_lock, K_FOREVER);
+	if (sntp_resync_enabled) {
+		sntp_resync_reschedule_earlier((ret < 0) ? RESYNC_FAILED_INTERVAL
+							 : RESYNC_INTERVAL);
+	}
+	if (ret < 0) {
+		sntp_resync_in_progress = false;
+	}
+	k_mutex_unlock(&sntp_resync_lock);
 }
 #endif /* CONFIG_NET_CONFIG_SNTP_INIT_RESYNC */
 
@@ -366,11 +516,15 @@ static void l4_event_handler(uint64_t mgmt_event, struct net_if *iface, void *in
 	ARG_UNUSED(info_length);
 	ARG_UNUSED(user_data);
 
+	k_mutex_lock(&sntp_resync_lock, K_FOREVER);
 	if (mgmt_event == NET_EVENT_L4_CONNECTED) {
-		k_work_reschedule(&sntp_resync_work_handle, K_NO_WAIT);
+		sntp_resync_enabled = true;
+		sntp_resync_reschedule_earlier(K_NO_WAIT);
 	} else if (mgmt_event == NET_EVENT_L4_DISCONNECTED) {
+		sntp_resync_enabled = false;
 		k_work_cancel_delayable(&sntp_resync_work_handle);
 	}
+	k_mutex_unlock(&sntp_resync_lock);
 }
 
 NET_MGMT_REGISTER_EVENT_HANDLER(sntp_init_event_handler,

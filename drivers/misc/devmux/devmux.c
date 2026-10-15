@@ -163,7 +163,7 @@ static int devmux_init(const struct device *dev)
 
 /**
  * That is needed in order to have a kernel object tracked for these devices.
- * An alternatie would be create a specific kernel object type, but that would
+ * An alternative would be create a specific kernel object type, but that would
  * just make things more complex.
  */
 static DEVICE_API(devmux, devmux_api) = {

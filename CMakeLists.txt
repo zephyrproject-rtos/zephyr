@@ -292,12 +292,6 @@ if(CONFIG_STD_C23)
   set(CSTD c2x)
 elseif(CONFIG_STD_C17)
   set(CSTD c17)
-elseif(CONFIG_STD_C11)
-  set(CSTD c11)
-elseif(CONFIG_STD_C99)
-  set(CSTD c99)
-elseif(CONFIG_STD_C90)
-  set(CSTD c90)
 else()
   message(FATAL_ERROR "Unreachable code. Expected C standard to have been chosen.")
 endif()
@@ -693,6 +687,11 @@ elseif(NOT ZEPHYR_GIT_INDEX)
   endif()
 endif()
 
+zephyr_get(APP_BUILD_VERSION SYSBUILD LOCAL)
+if(DEFINED APP_BUILD_VERSION)
+  set(app_build_version_argument "-DAPP_BUILD_VERSION=${APP_BUILD_VERSION}")
+endif()
+
 if(ZEPHYR_GIT_INDEX)
   set(git_dependency ${ZEPHYR_GIT_INDEX})
 endif()
@@ -725,7 +724,7 @@ if(EXISTS ${APPLICATION_SOURCE_DIR}/VERSION)
       -DVERSION_TYPE=APP
       -DVERSION_FILE=${APPLICATION_SOURCE_DIR}/VERSION
       -DAPP_VERSION_CUSTOMIZATION="$<TARGET_PROPERTY:app_version_h,APP_VERSION_CUSTOMIZATION>"
-      ${build_version_argument}
+      ${app_build_version_argument}
       -P ${ZEPHYR_BASE}/cmake/gen_version_h.cmake
     DEPENDS ${APPLICATION_SOURCE_DIR}/VERSION ${git_dependency}
       $<TARGET_PROPERTY:app_version_h,APP_VERSION_DEPENDS>
@@ -2276,7 +2275,7 @@ if(LOG_DICT_DB_NAME_ARG)
       ${LOG_DICT_DB_NAME}
     )
   else()
-    # Seprate build target for generating logging dictionary database.
+    # Separate build target for generating logging dictionary database.
     # This needs to be explicitly called/used to generate the database.
     add_custom_command(
       OUTPUT ${LOG_DICT_DB_NAME}
@@ -2386,9 +2385,9 @@ if((CMAKE_BUILD_TYPE IN_LIST build_types) AND (NOT NO_BUILD_TYPE_WARNING))
   # optimization flag is present in that string.
   # To avoid false-positive matches, the flag must either be matched first
   # or last in string, or come after / followed by minimum a space.
-  if(NOT (CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE_uppercase} MATCHES "(^| )${OPTIMIZATION_FLAG}($| )"))
+  if(NOT (CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE_uppercase} MATCHES "(^| )${COMPILER_OPTIMIZATION_FLAG}($| )"))
     message(WARNING "
-      The CMake build type was set to '${CMAKE_BUILD_TYPE}', but the optimization flag was set to '${OPTIMIZATION_FLAG}'.
+      The CMake build type was set to '${CMAKE_BUILD_TYPE}', but the optimization flag was set to '${COMPILER_OPTIMIZATION_FLAG}'.
       This may be intentional and the warning can be turned off by setting the CMake variable 'NO_BUILD_TYPE_WARNING'"
       )
   endif()

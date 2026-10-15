@@ -19,6 +19,7 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+		timebase-frequency = <DT_FREQ_M(24)>;
 
 		cpu@0 {
 			device_type = "cpu";
@@ -36,6 +37,32 @@
 			reg = <0x100>;
 			i-cache-line-size = <64>;
 			d-cache-line-size = <64>;
+		};
+	};
+
+	/*
+	 * Cortex-A55 performance states, ordered by decreasing performance as
+	 * required by the CPU frequency scaling subsystem. Only the core clock
+	 * is changed, so all frequencies must be usable at the VDD_SOC level
+	 * set by the boot loader.
+	 */
+	performance-states {
+		pstate_0: pstate-0 {
+			compatible = "nxp,imx9-pstate";
+			load-threshold = <60>;
+			clock-frequency = <DT_FREQ_M(1692)>;
+		};
+
+		pstate_1: pstate-1 {
+			compatible = "nxp,imx9-pstate";
+			load-threshold = <30>;
+			clock-frequency = <DT_FREQ_M(1400)>;
+		};
+
+		pstate_2: pstate-2 {
+			compatible = "nxp,imx9-pstate";
+			load-threshold = <0>;
+			clock-frequency = <DT_FREQ_M(900)>;
 		};
 	};
 
@@ -89,6 +116,37 @@
 	ana_pll: ana_pll@44480000 {
 		compatible = "nxp,imx-ana";
 		reg = <0x44480000 DT_SIZE_K(64)>;
+	};
+
+	arm_pll: arm-pll@44481000 {
+		compatible = "nxp,imx9-pll";
+		reg = <0x44481000 0x100>;
+		#clock-cells = <0>;
+		pll-mode = "integer";
+
+		/* 24 MHz / 1 * 141 / 2 */
+		opp-0 {
+			clock-frequency = <DT_FREQ_M(1692)>;
+			rdiv = <1>;
+			mfi = <141>;
+			odiv = <2>;
+		};
+
+		/* 24 MHz / 1 * 175 / 3 */
+		opp-1 {
+			clock-frequency = <DT_FREQ_M(1400)>;
+			rdiv = <1>;
+			mfi = <175>;
+			odiv = <3>;
+		};
+
+		/* 24 MHz / 1 * 150 / 4 */
+		opp-2 {
+			clock-frequency = <DT_FREQ_M(900)>;
+			rdiv = <1>;
+			mfi = <150>;
+			odiv = <4>;
+		};
 	};
 
 	ccm: ccm@44450000 {
@@ -367,6 +425,8 @@
 		interrupt-parent = <&gic>;
 		status = "disabled";
 		clocks = <&ccm IMX_CCM_LPSPI1_CLK 0x6c 0>;
+		tx-fifo-size = <8>;
+		rx-fifo-size = <8>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 	};
@@ -378,6 +438,8 @@
 		interrupt-parent = <&gic>;
 		status = "disabled";
 		clocks = <&ccm IMX_CCM_LPSPI2_CLK 0x6c 2>;
+		tx-fifo-size = <8>;
+		rx-fifo-size = <8>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 	};
@@ -389,6 +451,8 @@
 		interrupt-parent = <&gic>;
 		status = "disabled";
 		clocks = <&ccm IMX_CCM_LPSPI3_CLK 0x6c 4>;
+		tx-fifo-size = <8>;
+		rx-fifo-size = <8>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 	};
@@ -400,6 +464,8 @@
 		interrupt-parent = <&gic>;
 		status = "disabled";
 		clocks = <&ccm IMX_CCM_LPSPI4_CLK 0x6c 6>;
+		tx-fifo-size = <8>;
+		rx-fifo-size = <8>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 	};
@@ -411,6 +477,8 @@
 		interrupt-parent = <&gic>;
 		status = "disabled";
 		clocks = <&ccm IMX_CCM_LPSPI5_CLK 0x6c 6>;
+		tx-fifo-size = <8>;
+		rx-fifo-size = <8>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 	};
@@ -422,6 +490,8 @@
 		interrupt-parent = <&gic>;
 		status = "disabled";
 		clocks = <&ccm IMX_CCM_LPSPI6_CLK 0x6c 6>;
+		tx-fifo-size = <8>;
+		rx-fifo-size = <8>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 	};
@@ -433,6 +503,8 @@
 		interrupt-parent = <&gic>;
 		status = "disabled";
 		clocks = <&ccm IMX_CCM_LPSPI7_CLK 0x6c 0>;
+		tx-fifo-size = <8>;
+		rx-fifo-size = <8>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 	};
@@ -444,6 +516,8 @@
 		interrupt-parent = <&gic>;
 		status = "disabled";
 		clocks = <&ccm IMX_CCM_LPSPI8_CLK 0x6c 2>;
+		tx-fifo-size = <8>;
+		rx-fifo-size = <8>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 	};
@@ -496,9 +570,8 @@
 		dma-channels = <4>;
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 128 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-			     <GIC_SPI 128 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-			     <GIC_SPI 129 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 			     <GIC_SPI 129 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		channels-shared-irq-mask = <0x00000003>, <0x0000000c>;
 		#dma-cells = <2>;
 		status = "disabled";
 	};

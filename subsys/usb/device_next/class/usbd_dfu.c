@@ -316,7 +316,7 @@ static int dfu_dnload_sync_next(struct usbd_class_data *const c_data,
 
 	switch (setup->bRequest) {
 	case USB_DFU_REQ_GETSTATUS:
-		/* Chack if image backend can change DFU_DNLOAD_SYNC -> DFU_DNLOAD_IDLE */
+		/* Check if image backend can change DFU_DNLOAD_SYNC -> DFU_DNLOAD_IDLE */
 		if (usbd_dfu_image_next(c_data, DFU_DNLOAD_IDLE)) {
 			data->next = DFU_DNLOAD_IDLE;
 		} else {

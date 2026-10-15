@@ -6,9 +6,8 @@ tests:
   sample.bluetooth.peripheral_identity:
     harness: bluetooth
     platform_allow:
-      - qemu_cortex_m3
       - qemu_x86
       - nrf52840dk/nrf52840
     tags: bluetooth
     integration_platforms:
-      - qemu_cortex_m3
+      - qemu_x86

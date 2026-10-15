@@ -9,7 +9,7 @@
 #include <stdio.h>
 
 
-/* COMMON DEFFINITIONS */
+/* COMMON DEFINITIONS */
 #define STACK_SIZE	1024
 #define LIST_LEN 8
 

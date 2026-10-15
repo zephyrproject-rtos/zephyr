@@ -199,12 +199,12 @@ TEST_DATA_RECORDING = [
         "match 1 field",
         "match 2 fields",
         "2 or-ed groups one miss",
-        "one line, two patters, match 2 fields -> 2 records",
-        "two lines, two patters -> 2 records",
-        "two lines, two patters same field -> 2 same records",
-        "two lines, two patters same field merge -> 1 records 2 values",
-        "one line, two patters, match 2 fields, merge -> 1 record",
-        "one line, two patters, match 1 field, merge -> 1 record list",
+        "one line, two patterns, match 2 fields -> 2 records",
+        "two lines, two patterns -> 2 records",
+        "two lines, two patterns same field -> 2 same records",
+        "two lines, two patterns same field merge -> 1 records 2 values",
+        "one line, two patterns, match 2 fields, merge -> 1 record",
+        "one line, two patterns, match 1 field, merge -> 1 record list",
         "match 2 records",
         "as_json empty",
         "as_json no such field",
@@ -1886,6 +1886,104 @@ def test_gtest_did_not_finish(gtest):
         gtest.instance.get_case_by_name("id.suite_name.test_name").status
         == TwisterStatus.STARTED
     )
+
+
+# (name as printed by GoogleTest, internal test name without the instance id prefix)
+GTEST_NAME_LAYOUTS = [
+    pytest.param("Suite.Test", "Suite.Test", id="plain"),
+    pytest.param("Suite/0.Test", "Suite.0.Test", id="typed"),
+    pytest.param("Suite/MyType.Test", "Suite.MyType.Test", id="typed-custom-type-name"),
+    pytest.param("Prefix/Suite/0.Test", "Prefix.Suite.0.Test", id="typed-with-prefix"),
+    pytest.param("Prefix/Suite/MyType.Test", "Prefix.Suite.MyType.Test", id="typed-with-prefix-custom-type-name"),
+    pytest.param("Prefix/Suite.Test/0", "Prefix.Suite.Test.0", id="value-parameterized"),
+    pytest.param("Prefix/Suite.Test/MyParam", "Prefix.Suite.Test.MyParam", id="value-parameterized-custom-name"),
+    pytest.param("Suite.Test/0", "Suite.Test.0", id="value-parameterized-no-prefix"),
+]
+
+
+@pytest.mark.parametrize("printed_name, internal_name", GTEST_NAME_LAYOUTS)
+def test_gtest_name_layouts(gtest, printed_name, internal_name):
+    process_logs(
+        gtest,
+        [
+            SAMPLE_GTEST_START,
+            f"[ RUN      ] {printed_name}",
+            f"[       OK ] {printed_name} (0 ms)",
+            SAMPLE_GTEST_END,
+        ],
+    )
+    assert gtest.status == TwisterStatus.PASS
+    assert gtest.detected_suite_names == [printed_name.replace(".", "/").split("/")[0]]
+    assert gtest.instance.get_case_by_name(f"id.{internal_name}").status == TwisterStatus.PASS
+
+
+@pytest.mark.parametrize("printed_name, internal_name", GTEST_NAME_LAYOUTS)
+def test_gtest_name_layouts_fail_with_param(gtest, printed_name, internal_name):
+    process_logs(
+        gtest,
+        [
+            SAMPLE_GTEST_START,
+            f"[ RUN      ] {printed_name}",
+            f"[  FAILED  ] {printed_name}, where TypeParam = int and GetParam() = 4 (0 ms)",
+            SAMPLE_GTEST_END,
+        ],
+    )
+    assert gtest.status == TwisterStatus.FAIL
+    assert gtest.instance.get_case_by_name(f"id.{internal_name}").status == TwisterStatus.FAIL
+
+
+def test_gtest_value_parameterized_instances_are_distinct(gtest):
+    printed_names = [f"Instance/ParamSuite.Test/{index}" for index in range(3)]
+    logs = [SAMPLE_GTEST_START]
+    for printed_name in printed_names:
+        logs += [f"[ RUN      ] {printed_name}", f"[       OK ] {printed_name} (0 ms)"]
+    logs.append(SAMPLE_GTEST_END)
+
+    process_logs(gtest, logs)
+
+    assert gtest.status == TwisterStatus.PASS
+    for index in range(3):
+        assert (
+            gtest.instance.get_case_by_name(f"id.Instance.ParamSuite.Test.{index}").status
+            == TwisterStatus.PASS
+        )
+
+
+def test_gtest_value_parameterized_failure_is_attributed_to_instance(gtest):
+    process_logs(
+        gtest,
+        [
+            SAMPLE_GTEST_START,
+            "[ RUN      ] Instance/ParamSuite.Test/0",
+            "[       OK ] Instance/ParamSuite.Test/0 (0 ms)",
+            "[ RUN      ] Instance/ParamSuite.Test/1",
+            "[  FAILED  ] Instance/ParamSuite.Test/1, where GetParam() = 4 (0 ms)",
+            "[ RUN      ] Instance/ParamSuite.Test/2",
+            "[       OK ] Instance/ParamSuite.Test/2 (0 ms)",
+            SAMPLE_GTEST_END,
+        ],
+    )
+    assert gtest.status == TwisterStatus.FAIL
+    assert gtest.instance.get_case_by_name("id.Instance.ParamSuite.Test.0").status == TwisterStatus.PASS
+    assert gtest.instance.get_case_by_name("id.Instance.ParamSuite.Test.1").status == TwisterStatus.FAIL
+    assert gtest.instance.get_case_by_name("id.Instance.ParamSuite.Test.2").status == TwisterStatus.PASS
+
+
+def test_gtest_typed_tests_with_custom_type_names_are_distinct(gtest):
+    process_logs(
+        gtest,
+        [
+            SAMPLE_GTEST_START,
+            "[ RUN      ] Prefix/TypedSuite/MyInt.TestA",
+            "[       OK ] Prefix/TypedSuite/MyInt.TestA (0 ms)",
+            "[ RUN      ] Prefix/TypedSuite/MyInt.TestB",
+            "[       OK ] Prefix/TypedSuite/MyInt.TestB (0 ms)",
+            SAMPLE_GTEST_END,
+        ],
+    )
+    assert gtest.status == TwisterStatus.PASS
+    assert gtest.instance.get_case_by_name("id.Prefix.TypedSuite.MyInt.TestA").status == TwisterStatus.PASS
+    assert gtest.instance.get_case_by_name("id.Prefix.TypedSuite.MyInt.TestB").status == TwisterStatus.PASS
 
 
 def test_bsim_build(monkeypatch, tmp_path):

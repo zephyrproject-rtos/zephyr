@@ -33,6 +33,9 @@ BUILD_ASSERT((NRF_SAADC_AIN0 == NRFX_ANALOG_EXTERNAL_AIN0) &&
 #if NRF_SAADC_HAS_INPUT_VDD
 	     (NRF_SAADC_VDD == NRFX_ANALOG_INTERNAL_VDD) &&
 #endif
+#if NRF_SAADC_HAS_INPUT_AVSS
+		 (NRF_SAADC_AVSS == NRFX_ANALOG_TEST_AVSS) &&
+#endif
 	     1,
 	     "Definitions from nrf-saadc.h do not match those from nrfx_analog_common.h");
 

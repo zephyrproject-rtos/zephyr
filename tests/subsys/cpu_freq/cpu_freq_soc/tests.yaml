@@ -8,6 +8,8 @@ tests:
       - native_sim
       - native_sim/native/64
       - frdm_mcxn236
+      - frdm_imx93/mimx9352/a55/smp
+      - frdm_imx91/mimx9131
     integration_platforms:
       - native_sim
       - native_sim/native/64

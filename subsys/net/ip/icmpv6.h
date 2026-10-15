@@ -128,6 +128,7 @@ struct net_icmpv6_ptb {
 #define NET_ICMPV6_ND_OPT_TLLAO       2
 #define NET_ICMPV6_ND_OPT_PREFIX_INFO 3
 #define NET_ICMPV6_ND_OPT_MTU         5
+#define NET_ICMPV6_ND_OPT_NONCE       14
 #define NET_ICMPV6_ND_OPT_ROUTE       24
 #define NET_ICMPV6_ND_OPT_RDNSS       25
 #define NET_ICMPV6_ND_OPT_DNSSL       31
@@ -148,6 +149,8 @@ struct net_icmpv6_ptb {
 #define NET_ICMPV6_TIME_EXCEEDED  3	/* Time exceeded */
 #define NET_ICMPV6_PARAM_PROBLEM  4	/* IPv6 header is bad */
 #define NET_ICMPV6_MLD_QUERY    130	/* Multicast Listener Query */
+#define NET_ICMPV6_MLDv1_REPORT 131	/* Multicast Listener Report v1 */
+#define NET_ICMPV6_MLDv1_DONE   132	/* Multicast Listener Done v1 */
 #define NET_ICMPV6_RS           133	/* Router Solicitation */
 #define NET_ICMPV6_RA           134	/* Router Advertisement */
 #define NET_ICMPV6_NS           135	/* Neighbor Solicitation */

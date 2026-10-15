@@ -11,7 +11,8 @@ config NUM_IRQS
 			SOC_MIMXRT1024
 	default 157 if SOC_MIMXRT1041 ||	\
 			SOC_MIMXRT1042
-	default 160 if SOC_MIMXRT1052 ||	\
+	default 160 if SOC_MIMXRT1051 ||	\
+			SOC_MIMXRT1052 ||	\
 			SOC_MIMXRT1062 ||	\
 			SOC_MIMXRT1064
 

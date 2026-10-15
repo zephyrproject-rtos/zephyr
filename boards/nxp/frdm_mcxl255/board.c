@@ -66,6 +66,11 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kFIRC_to_MAIN_CLK);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_gpio0))
+	CLOCK_EnableClock(kCLOCK_GateAonPORT);
+	CLOCK_EnableClock(kCLOCK_GateAonGPIO);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 	RESET_ReleasePeripheralReset(kGPIO1_RST_SHIFT_RSTn);
 	CLOCK_EnableClock(kCLOCK_GateGPIO1);
@@ -83,6 +88,10 @@ void board_early_init_hook(void)
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(porta))
 	CLOCK_EnableClock(kCLOCK_GateAonPORT);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_lpadc0))
+	RESET_ReleasePeripheralReset(kAonLPADC_RST_SHIFT_RSTn);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(portb))
@@ -149,6 +158,19 @@ void board_early_init_hook(void)
 	CLOCK_EnableClock(kCLOCK_GateAonUART);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_kpp0))
+	CLOCK_AttachClk(kFRO16K_to_AON_KPP);
+	CLOCK_EnableClock(kCLOCK_GateAonKPP);
+	RESET_ReleasePeripheralReset(kAonKPP_RST_SHIFT_RSTn);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpadc0))
+	CLOCK_AttachClk(kFRO12M_to_ADC0);
+	CLOCK_SetClockDiv(kCLOCK_DivADC0, 1U);
+	RESET_ReleasePeripheralReset(kADC0_RST_SHIFT_RSTn);
+	CLOCK_EnableClock(kCLOCK_GateADC0);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_qtmr0)) || \
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_qtmr1))
 	CLOCK_AttachClk(kFROdiv4_to_AON_TMR);
@@ -200,6 +222,37 @@ void board_early_init_hook(void)
 		rosc_init_config.detectionTimeoutSwitchedMode = 50U;
 		(void)CLOCK_InitRosc(&rosc_init_config);
 	}
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_lptmr0))
+	CLOCK_AttachClk(kFRO16K_to_AON_LPTMR);
+	RESET_ReleasePeripheralReset(kAonLPTMR_RST_SHIFT_RSTn);
+	CLOCK_EnableClock(kCLOCK_GateAonLPTMR);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer0))
+	CLOCK_SetClockDiv(kCLOCK_DivCTIMER0, 1u);
+	CLOCK_AttachClk(kFRO_HF_DIV_to_CTIMERg0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer1)) || \
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer2))
+	/*
+	 * CTIMER1 and CTIMER2 share clock group 1: a single selector
+	 * (kCLOCK_SelCTIMERg1) and a single divider (kCLOCK_DivCTIMER1) feed
+	 * both instances, so there is no separate CTIMER2 selector or divider.
+	 */
+	CLOCK_SetClockDiv(kCLOCK_DivCTIMER1, 1u);
+	CLOCK_AttachClk(kFRO_HF_DIV_to_CTIMERg1);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer2))
+	/*
+	 * CTIMER2 registers are only accessible while the CTIMER1 gate is
+	 * enabled and CTIMER1 is held out of reset.
+	 */
+	CLOCK_EnableClock(kCLOCK_GateCTIMER1);
+	RESET_ReleasePeripheralReset(kCTIMER1_RST_SHIFT_RSTn);
 #endif
 
 	/* Set SystemCoreClock variable. */

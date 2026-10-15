@@ -9,7 +9,7 @@
 #include <mem.h>
 #include <freq.h>
 
-#include <espressif/esp32/esp32_d0wd_v3.dtsi>
+#include <espressif/esp32/esp32.dtsi>
 #include <espressif/partitions_0x1000_amp_8M.dtsi>
 
 #include "can485dbv1-pinctrl.dtsi"
@@ -163,6 +163,7 @@ zephyr_adc: &adc0 {
 };
 
 &gpio0 {
+	gpio-reserved-ranges = <20 1>, <24 1>, <28 4>;
 	status = "okay";
 };
 

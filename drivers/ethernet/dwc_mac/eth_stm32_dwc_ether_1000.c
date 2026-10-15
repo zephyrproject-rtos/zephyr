@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(dwmac_plat, CONFIG_ETHERNET_LOG_LEVEL);
 #include "eth_dwmac_priv.h"
 #include "eth_stm32_dwc.h"
 
-/* The DMA bus master interface is 32-bit on this IP */
+/* The DMA bus master interface is a 32-bit AHB interface on this IP */
 #define DATA_BUS_WIDTH 32
 
 DWMAC_ASSERT_BUFFER_ALIGNMENT(DATA_BUS_WIDTH);
@@ -34,6 +34,17 @@ DWMAC_ASSERT_BUFFER_ALIGNMENT(DATA_BUS_WIDTH);
 BUILD_ASSERT(DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, mii) ||
 		     DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii),
 	     "Unsupported PHY connection type");
+
+/* MMC counters present in the controller */
+#define ETH_STM32_MMC_COUNTERS(X)                                                                  \
+	X(TX_SINGLE_COLLISION_GOOD_PACKETS)                                                        \
+	X(TX_MULTIPLE_COLLISION_GOOD_PACKETS)                                                      \
+	X(TX_PACKET_COUNT_GOOD)                                                                    \
+	X(RX_CRC_ERROR_PACKETS)                                                                    \
+	X(RX_ALIGNMENT_ERROR_PACKETS)                                                              \
+	X(RX_UNICAST_PACKETS_GOOD)
+
+DWMAC_MMC_COUNTERS_DEFINE(eth_stm32_mmc, ETH_STM32_MMC_COUNTERS);
 
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 #define STM32_CONFIGURE_ETH_PHY_MODE()                                                             \
@@ -85,13 +96,7 @@ int dwmac_bus_init(const struct device *dev)
 	STM32_CONFIGURE_ETH_PHY_MODE();
 
 	for (size_t n = 0; n < ARRAY_SIZE(pclken); n++) {
-		if (IN_RANGE(pclken[n].bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX)) {
-			ret = clock_control_on(cfg->clock, (clock_control_subsys_t)&pclken[n]);
-		} else {
-			ret = clock_control_configure(cfg->clock,
-						      (clock_control_subsys_t)&pclken[n], NULL);
-		}
-
+		ret = clock_control_on(cfg->clock, (clock_control_subsys_t)&pclken[n]);
 		if (ret != 0) {
 			LOG_ERR("Failed to setup ethernet clock #%zu", n);
 			return -EIO;
@@ -124,6 +129,8 @@ int dwmac_platform_init(const struct device *dev)
 	const struct net_eth_mac_config mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(0);
 	struct dwmac_priv *p = dev->data;
 
+	DWMAC_REG_WRITE(DWMAC_DMABMR, DWMAC_DMABMR_AAL | DWMAC_DMABMR_FB);
+
 	p->tx_descs = dwmac_tx_descs;
 	p->rx_descs = dwmac_rx_descs;
 
@@ -137,11 +144,12 @@ static const struct dwmac_config dwmac_config = {
 	DEVICE_MMIO_ROM_INIT(DT_DRV_INST(0)),
 	.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle)),
 	.clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-	.mac_clk = (clock_control_subsys_t)&pclken[0],
+	.mac_clk = (clock_control_subsys_t)&pclken[ETH_STM32_MAC_CLK_IDX(0)],
 #if defined(CONFIG_PTP_CLOCK_DWC_MAC)
 	.ptp_clock = DEVICE_DT_GET(DT_INST_CHILD(0, ptp_clock)),
 	.ptp_clk = (clock_control_subsys_t)&pclken[ETH_STM32_PTP_CLK_IDX(0)],
 #endif
+	DWMAC_MMC_CONFIG_INIT(eth_stm32_mmc)
 };
 
 static struct dwmac_priv dwmac_instance;

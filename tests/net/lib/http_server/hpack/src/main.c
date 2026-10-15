@@ -87,7 +87,7 @@ static void test_huffman_code_prepare(uint32_t *buf, int index)
 	uint8_t pad_len = 32 - test_huffman_codes[index].bitlen;
 
 	*buf = test_huffman_codes[index].code;
-	/* Prepare buffer - align to MSB, add padding and covert to
+	/* Prepare buffer - align to MSB, add padding and convert to
 	 * network byte order.
 	 */
 	*buf <<= pad_len;

@@ -55,6 +55,7 @@ zephyr_library_sources_ifdef(CONFIG_FLASH_RENESAS_RZ_QSPI_SPIBSC flash_renesas_r
 zephyr_library_sources_ifdef(CONFIG_FLASH_RENESAS_RZ_QSPI_XSPI flash_renesas_rz_qspi.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_RPI_PICO flash_rpi_pico.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_S3AXX04 flash_s3axx04.c)
+zephyr_library_sources_ifdef(CONFIG_FLASH_SEMIHOST flash_semihost.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_SF32LB_MPI_QSPI_NOR flash_sf32lb_mpi_qspi_nor.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_SOC_CH32V flash_ch32v.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_SOC_LPC84X_IAP soc_flash_lpc84x_iap.c)
@@ -90,6 +91,7 @@ zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_SAM flash_sam.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_SAM0 flash_sam0.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_SI32 flash_si32.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_SILABS_S2 soc_flash_silabs_series2.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_SILABS_S3_EXTMEM soc_flash_silabs_series3_extmem.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_SILABS_SIWX91X soc_flash_silabs_siwx91x.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_SMARTBOND flash_smartbond.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_TELINK_B91 soc_flash_b91.c)
@@ -169,6 +171,20 @@ if(CONFIG_SOC_FLASH_STM32)
   endif()
 endif()
 
+if(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION)
+  zephyr_code_relocate(FILES flash_stm32_xspi.c LOCATION RAM_TEXT_RODATA NOKEEP)
+  zephyr_code_relocate(FILES ${ZEPHYR_BASE}/soc/st/stm32/common/stm32_xspi_hal_timer.c LOCATION RAM_TEXT_RODATA NOKEEP)
+
+  # Relocate HAL XSPI and HAL timebase code to RAM for STM32N6 and STM32H7S series.
+  if(CONFIG_SOC_SERIES_STM32N6X)
+    zephyr_code_relocate(FILES ${ZEPHYR_HAL_STM32_MODULE_DIR}/stm32cube/stm32n6xx/drivers/src/stm32n6xx_hal_xspi.c LOCATION RAM_TEXT_RODATA NOKEEP)
+    zephyr_code_relocate(FILES ${ZEPHYR_HAL_STM32_MODULE_DIR}/stm32cube/stm32n6xx/drivers/src/stm32n6xx_hal.c LOCATION RAM_TEXT_RODATA NOKEEP)
+  elseif(CONFIG_SOC_SERIES_STM32H7RSX)
+    zephyr_code_relocate(FILES ${ZEPHYR_HAL_STM32_MODULE_DIR}/stm32cube/stm32h7rsxx/drivers/src/stm32h7rsxx_hal_xspi.c LOCATION RAM_TEXT_RODATA NOKEEP)
+    zephyr_code_relocate(FILES ${ZEPHYR_HAL_STM32_MODULE_DIR}/stm32cube/stm32h7rsxx/drivers/src/stm32h7rsxx_hal.c LOCATION RAM_TEXT_RODATA NOKEEP)
+  endif()
+endif()
+
 if(CONFIG_SOC_FLASH_GD32)
   zephyr_library_sources(flash_gd32.c)
 
@@ -181,6 +197,11 @@ endif()
 
 zephyr_library_include_directories_ifdef(
   CONFIG_FLASH_MCUX_FLEXSPI_NOR
+  ${ZEPHYR_BASE}/drivers/memc
+)
+
+zephyr_library_include_directories_ifdef(
+  CONFIG_FLASH_MCUX_FLEXSPI_NAND
   ${ZEPHYR_BASE}/drivers/memc
 )
 

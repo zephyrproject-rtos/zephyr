@@ -4,19 +4,20 @@ arch: arm
 toolchain:
   - zephyr
 supported:
-  - gpio
-  - ptp_clock
-  - uart
-  - watchdog
-  - dma
-  - entropy
   - adc
-  - octospi
   - can
   - canfd
+  - crypto
+  - dma
+  - entropy
+  - gpio
   - netif:eth
+  - octospi
+  - ptp_clock
   - rtc
+  - uart
   - usbd
+  - watchdog
 vendor: st
 variants:
   nucleo_h7s3l8/stm32h7s3xx:

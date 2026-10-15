@@ -24,6 +24,7 @@ LOG_MODULE_REGISTER(renesas_rz_riic);
 #define RZ_RIIC_CONTROLLER_DIV_TIME_NS (1000000000.0)
 
 struct i2c_rz_riic_config {
+	DEVICE_MMIO_ROM; /* Must be first */
 	const struct pinctrl_dev_config *pin_config;
 	const i2c_master_api_t *fsp_api;
 	double rise_time_s;
@@ -33,6 +34,7 @@ struct i2c_rz_riic_config {
 };
 
 struct i2c_rz_riic_data {
+	DEVICE_MMIO_RAM; /* Must be first */
 	i2c_master_ctrl_t *fsp_ctrl;
 	i2c_master_cfg_t *fsp_cfg;
 	riic_master_extended_cfg_t *riic_controller_ext_cfg;
@@ -387,6 +389,8 @@ static int i2c_rz_riic_init(const struct device *dev)
 	k_mutex_init(&data->bus_mutex);
 	k_sem_init(&data->complete_sem, 0, 1);
 
+	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+
 	switch (data->fsp_cfg->rate) {
 	case I2C_MASTER_RATE_STANDARD:
 	case I2C_MASTER_RATE_FAST:
@@ -632,7 +636,9 @@ static DEVICE_API(i2c, i2c_rz_riic_driver_api) = {
 	I2C_RZ_IRQ_CONNECT(index, tei, iic_master_tei_isr);
 
 #define I2C_RZ_EXTENDED_CFG(index)                                                                 \
-	static riic_master_extended_cfg_t g_i2c_controller##index##_extend = {};
+	static riic_master_extended_cfg_t g_i2c_controller##index##_extend = {                     \
+		.p_reg = (void *)DT_INST_REG_ADDR(index),                                          \
+	};
 #endif /* CONFIG_I2C_RENESAS_RZ_IIC */
 
 #define I2C_RZ_RIIC_INIT(index)                                                                    \
@@ -647,7 +653,7 @@ static DEVICE_API(i2c, i2c_rz_riic_driver_api) = {
 		.p_transfer_tx = NULL,                                                             \
 		.p_transfer_rx = NULL,                                                             \
 		.p_callback = i2c_rz_riic_callback,                                                \
-		.p_context = DEVICE_DT_GET(DT_DRV_INST(index)),                                    \
+		.p_context = (void *)DEVICE_DT_GET(DT_DRV_INST(index)),                            \
 		.rxi_irq = DT_INST_IRQ_BY_NAME(index, rxi, irq),                                   \
 		.txi_irq = DT_INST_IRQ_BY_NAME(index, txi, irq),                                   \
 		.tei_irq = DT_INST_IRQ_BY_NAME(index, tei, irq),                                   \
@@ -659,6 +665,7 @@ static DEVICE_API(i2c, i2c_rz_riic_driver_api) = {
 	PINCTRL_DT_INST_DEFINE(index);                                                             \
                                                                                                    \
 	static const struct i2c_rz_riic_config i2c_rz_riic_config_##index = {                      \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(index)),                                          \
 		.pin_config = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                               \
 		.fsp_api = &g_i2c_master_on_iic,                                                   \
 		.rise_time_s = DT_INST_PROP(index, rise_time_ns) / RZ_RIIC_CONTROLLER_DIV_TIME_NS, \

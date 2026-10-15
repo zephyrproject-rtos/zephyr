@@ -13,6 +13,10 @@
 	model = "Arduino Portenta H7 board";
 	compatible = "arduino,portenta-h7";
 
+	aliases {
+		rtc = &rtc;
+	};
+
 	/* HW resources are split between CM7 and CM4 */
 	chosen {
 		zephyr,sram = &sram0;
@@ -43,6 +47,14 @@
 		reg = <0xc0000000 DT_SIZE_M(8)>;
 		zephyr,memory-region = "SDRAM1";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
+	};
+
+	ext_memory: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_M(16)>; /* max addressable area */
+		zephyr,memory-region = "EXTMEM";
+		/* The ATTR_MPU_EXTMEM attribute causing a MPU FAULT */
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
 	};
 };
 
@@ -132,7 +144,7 @@
 			compatible = "nxp,pf1550-charger";
 			constant-charge-current-max-microamp = <100000>;
 			constant-charge-voltage-max-microvolt = <4200000>;
-			pf1550,int-gpios = <&gpiok 0 0>;
+			pf1550,int-gpios = <&gpiok 0 GPIO_ACTIVE_LOW>;
 			pf1550,led-behaviour = "manual-off";
 			pf1550,system-voltage-min-threshold-microvolt = <3500000>;
 			pf1550,thermistor-monitoring-mode = "thermistor";

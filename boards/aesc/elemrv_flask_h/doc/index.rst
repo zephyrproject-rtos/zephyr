@@ -17,6 +17,29 @@ System Clock
 
 The system clock for the RISC-V core is set to 50 MHz. This value is specified in the ``cpu0`` devicetree node using the ``clock-frequency`` property.
 
+Clock Controller
+================
+
+The clock controller manages the clock domains of the Hydrogen platform. Each domain
+exposes a control register holding its enable bit and a ratio register holding a
+multiplier and a divider. The rate of a domain is derived from the reference clock
+published by the system controller:
+
+.. code-block:: none
+
+   rate = reference * multiplier / divider
+
+Peripherals reference a domain through their ``clocks`` property instead of hard-coding a
+frequency, for example ``clocks = <&clkctrl HYDROGEN_CLK_SYSTEM>``. Domain indices are
+defined in :zephyr_file:`include/zephyr/dt-bindings/clock/aesc-clock-controller.h`.
+
+System Controller
+=================
+
+The system controller is a read-only register block exposing the platform identity, the
+silicon revision, the build date, the reference clock frequency and a feature bitmap. The
+clock controller reads the reference clock from it, so it is initialized first.
+
 CPU
 ===
 

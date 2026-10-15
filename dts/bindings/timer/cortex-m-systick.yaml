@@ -25,15 +25,13 @@ properties:
       with the clock frequency (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC).
 
       When specified, the minimum timing granularity is
-      (<value> cycles / CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) seconds.
-      Otherwise, the default is MAX(1024, CYC_PER_TICK / 16) cycles, where
-      CYC_PER_TICK = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC /
-      CONFIG_SYS_CLOCK_TICKS_PER_SEC.
+      (<value> cycles / CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) seconds, subject to
+      a hardware floor of two cycles (a LOAD of zero stops the counter).
 
-      For example, if CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=32768 and
-      CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000, CYC_PER_TICK equals 32 cycles.
-      In this case, the default MIN_DELAY is MAX(1024, 32/16) = 1024 cycles,
-      which corresponds to ~31.25 ms. This might be too coarse for many use
-      cases. Setting this property to 32 (zephyr,min-timeout-cycles = <32>;)
-      results in a minimum timing granularity of (32 / 32768) seconds (~1 ms)
-      instead.
+      Otherwise, the default is derived from a fixed wall-clock budget
+      (SYSTICK_MIN_DELAY_US, 10 us) converted to cycles at the actual clock
+      frequency and floored at two cycles.
+
+      Set this property only when the default budget is unsuitable, for example
+      to enlarge the floor when the SysTick interrupt can be masked for longer
+      than 10 us (see CONFIG_CORTEX_M_SYSTICK_INTERRUPT_PRIORITY).

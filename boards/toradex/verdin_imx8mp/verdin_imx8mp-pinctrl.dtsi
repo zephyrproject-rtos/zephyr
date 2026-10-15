@@ -25,4 +25,22 @@
 			slew-rate = "slow";
 		};
 	};
+
+	pwm1_default: pwm1_default {
+		group0 {
+			bias-pull-up;
+			drive-strength = "x1";
+			pinmux = <&iomuxc_spdif_ext_clk_pwm_out_pwm1_out>;
+			slew-rate = "slow";
+		};
+	};
+
+	pwm2_default: pwm2_default {
+		group0 {
+			bias-pull-up;
+			drive-strength = "x1";
+			pinmux = <&iomuxc_gpio1_io11_pwm_out_pwm2_out>;
+			slew-rate = "slow";
+		};
+	};
 };

@@ -54,7 +54,7 @@ Below is an example of building and flashing the :zephyr:code-sample:`blinky` ap
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: pico2_spe/rp2350a/m33
+   :board: pico2_spe/rp2350a/m33_0
    :goals: build flash
    :flash-args: --openocd /usr/local/bin/openocd
 

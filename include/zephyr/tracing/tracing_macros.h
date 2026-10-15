@@ -26,8 +26,6 @@
 #define SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(obj_type, func, obj, ...) do { } while (false)
 #define SYS_PORT_TRACING_OBJ_FUNC_EXIT(obj_type, func, obj, ...) do { } while (false)
 
-#define SYS_PORT_TRACING_TRACKING_FIELD(type)
-
 #else
 
 /**
@@ -66,15 +64,6 @@
 	sys_port_trace_ ## name ## _ ## func ## _blocking
 #define _SYS_PORT_TRACING_OBJ_FUNC_EXIT(name, func) \
 	sys_port_trace_ ## name ## _ ## func ## _exit
-
-/*
- * Helper macros for the object tracking system
- */
-
-#define _SYS_PORT_TRACKING_OBJ_INIT(name) \
-	sys_port_track_ ## name ## _init
-#define _SYS_PORT_TRACKING_OBJ_FUNC(name, func) \
-	sys_port_track_ ## name ## _ ## func
 
 /*
  * Object trace macros part of the system for checking if certain
@@ -293,8 +282,6 @@
 	do { \
 		SYS_PORT_TRACING_TYPE_MASK(obj_type, \
 			_SYS_PORT_TRACING_OBJ_INIT(obj_type)(obj, ##__VA_ARGS__)); \
-		SYS_PORT_TRACING_TYPE_MASK(obj_type, \
-			_SYS_PORT_TRACKING_OBJ_INIT(obj_type)(obj, ##__VA_ARGS__)); \
 	} while (false)
 
 /**
@@ -311,8 +298,6 @@
 	do { \
 		SYS_PORT_TRACING_TYPE_MASK(obj_type, \
 			_SYS_PORT_TRACING_OBJ_FUNC(obj_type, func)(obj, ##__VA_ARGS__)); \
-		SYS_PORT_TRACING_TYPE_MASK(obj_type, \
-			_SYS_PORT_TRACKING_OBJ_FUNC(obj_type, func)(obj, ##__VA_ARGS__)); \
 	} while (false)
 
 /**
@@ -366,14 +351,6 @@
 		SYS_PORT_TRACING_TYPE_MASK(obj_type, \
 			_SYS_PORT_TRACING_OBJ_FUNC_EXIT(obj_type, func)(obj, ##__VA_ARGS__)); \
 	} while (false)
-
-/**
- * @brief Field added to kernel objects so they are tracked.
- *
- * @param type Type of object being tracked (k_thread, k_sem, etc.)
- */
-#define SYS_PORT_TRACING_TRACKING_FIELD(type) \
-	SYS_PORT_TRACING_TYPE_MASK(type, struct type *_obj_track_next;)
 
 /** @} */ /* end of subsys_tracing_macros */
 

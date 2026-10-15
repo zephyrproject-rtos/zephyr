@@ -151,9 +151,13 @@
 	};
 };
 
-&adc1 {
+&adc123_common {
 	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
+&adc1 {
 	status = "okay";
 };
 

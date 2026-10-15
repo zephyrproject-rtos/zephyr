@@ -451,7 +451,6 @@ SECTION_PROLOGUE(.x86shadowstack.arr,,)
 
 #include <zephyr/linker/debug-sections.ld>
 
-	/DISCARD/ : { *(.note.GNU-stack) }
 
 /*
  * The sections below are still treated as warnings

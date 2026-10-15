@@ -361,10 +361,13 @@ SECTIONS
     . = ALIGN(4);
 
     _init_end = ABSOLUTE(.);
+    MPU_MIN_SIZE_ALIGN
     _iram_text_start = ABSOLUTE(.);
 
     *(.iram1 .iram1.*)
     *(.iram0.literal .iram.literal .iram.text.literal .iram0.text .iram.text)
+    /* Input sections named with zephyr_linker_sources(RAMFUNC_SECTION ...) */
+    #include <snippets-ramfunc-section.ld>
     *(.tcm.text .tcm.text.*)
     *(.spm.text .spm.text.*)
     *libzephyr.a:panic.*(.literal .text .literal.* .text.*)
@@ -564,6 +567,7 @@ SECTIONS
   .iram0.text_end (NOLOAD) :
   {
     . = ALIGN(16);
+    MPU_MIN_SIZE_ALIGN
     _iram_text_end = ABSOLUTE(.);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
@@ -913,12 +917,12 @@ SECTIONS
 
     /* Enforce flash segment size alignment */
     . = ALIGN(0x10);
+    /* Align for PMP granularity requirements */
+    MPU_MIN_SIZE_ALIGN
 
     _instruction_reserved_end = ABSOLUTE(.);
     _text_end = ABSOLUTE(.);
     __text_region_end = ABSOLUTE(.);
-    /* Align for PMP granularity requirements */
-    MPU_MIN_SIZE_ALIGN
     __rom_region_end = ABSOLUTE(.);
     __rom_region_size = ABSOLUTE(__rom_region_end - __rom_region_start);
     _etext = .;
@@ -997,7 +1001,6 @@ SECTIONS
     *(.rodata_wlog*)
 #include <zephyr/linker/kobject-rom.ld>
     . = ALIGN(4);
-    __rodata_region_end = .;
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
   #include <zephyr/linker/cplusplus-rom.ld>
@@ -1018,8 +1021,15 @@ SECTIONS
   {
     /* Enforce flash segment size alignment */
     LONG(0);
+    /* Align for PMP granularity requirements */
+    MPU_MIN_SIZE_ALIGN
     _rodata_reserved_end = ABSOLUTE(.);
     _image_rodata_end = ABSOLUTE(.);
+    /* The read-only region must span the linker-collected rom sections too:
+     * device API structures live there, and a pointer into one reaches a
+     * syscall as an argument, where it is checked against this region.
+     */
+    __rodata_region_end = .;
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
   /* --- END OF .rodata --- */
@@ -1069,7 +1079,6 @@ SECTIONS
 #endif
 
   #include <zephyr/linker/debug-sections.ld>
-  /DISCARD/ : { *(.note.GNU-stack) }
 
   SECTION_PROLOGUE(.riscv.attributes, 0,)
     {

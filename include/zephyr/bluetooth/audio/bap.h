@@ -561,6 +561,8 @@ struct bt_bap_scan_delegator_cb {
 	 * accordance to the @p bis_sync_req within reasonable time. The
 	 * Broadcast Assistant may also request fewer, or none, indexes to
 	 * be synchronized.
+	 * This callback is always called when any of the @p bis_sync_req values are @ref
+	 * BT_BAP_BIS_SYNC_NO_PREF.
 	 *
 	 * @param[in]  conn          Pointer to the connection of the
 	 *                           Broadcast Assistant requesting the sync.

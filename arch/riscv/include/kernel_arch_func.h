@@ -17,6 +17,7 @@
 
 #include <kernel_arch_data.h>
 #include <pmp.h>
+#include <counters.h>
 
 #include <zephyr/platform/hooks.h>
 
@@ -55,7 +56,14 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 #endif
 #endif
 #ifdef CONFIG_SMP
+#ifdef CONFIG_RISCV_S_MODE_EXTERNAL_SBI
+	/* mhartid is an M-mode CSR and traps from S-mode; use the boot hart id
+	 * kconfig variable.
+	 */
+	_kernel.cpus[0].arch.hartid = CONFIG_RV_BOOT_HART;
+#else
 	_kernel.cpus[0].arch.hartid = csr_read(mhartid);
+#endif /* CONFIG_RISCV_S_MODE_EXTERNAL_SBI */
 	_kernel.cpus[0].arch.online = true;
 #endif
 #if ((CONFIG_MP_MAX_NUM_CPUS) > 1)
@@ -74,6 +82,9 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 #endif
 #if defined(CONFIG_RISCV_PMP) && !defined(CONFIG_RISCV_S_MODE)
 	z_riscv_pmp_init();
+#endif
+#ifdef CONFIG_RISCV_USER_COUNTER_ACCESS
+	z_riscv_counteren_init();
 #endif
 #ifdef CONFIG_CUSTOM_STACK_GUARD
 	z_riscv_custom_stack_guard_init();

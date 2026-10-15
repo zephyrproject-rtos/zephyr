@@ -14,6 +14,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/wifi_mgmt.h>
+#include <zephyr/net/wifi_utils.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 
@@ -89,9 +90,6 @@ LOG_MODULE_DECLARE(bflb_wifi, CONFIG_WIFI_LOG_LEVEL);
 /* HT Capabilities Info: HT20 + Short GI for 20MHz (IEEE 802.11n Table 9-152) */
 #define BFLB_HT_CAP_HT20_SGI20 0x012CU
 
-#define BFLB_24GHZ_BASE_FREQ       2407U
-#define BFLB_24GHZ_CH14_FREQ       2484U
-#define BFLB_24GHZ_CH_SPACING      5U
 #define BFLB_DEFAULT_MAX_DBM       20
 #define BFLB_DEFAULT_BEACON_TU     100
 #define BFLB_DEFAULT_AP_CHANNEL    6
@@ -874,7 +872,7 @@ static int bflb_wpa_supp_associate(void *if_priv, struct wpa_driver_associate_pa
 					LOG_HEXDUMP_DBG(ctx->mdie, ctx->mdie_len, "MDIE");
 				}
 			} else {
-				/* skip unhandled IE */
+				LOG_DBG("Unhandled IE type 0x%02x, skipping", eid);
 			}
 			ie += ie_total;
 			remaining -= ie_total;
@@ -955,6 +953,12 @@ static int bflb_wpa_supp_set_key(void *if_priv, const unsigned char *ifname, enu
 	ARG_UNUSED(ifname);
 	ARG_UNUSED(seq);
 	ARG_UNUSED(seq_len);
+
+	if ((key_flag & KEY_FLAG_NEXT) != 0) {
+		LOG_DBG("Waiting the 4-way handshake to be complete before setting up the key");
+		/* the handshake needs to continue unencrypted */
+		return -ENOTSUP;
+	}
 
 	if (ctx == NULL) {
 		return -EINVAL;
@@ -1273,9 +1277,7 @@ static int bflb_wpa_supp_get_wiphy(void *if_priv)
 			    band.wpa_supp_n_channels < WPA_SUPP_SBAND_MAX_CHANNELS;
 		     i++) {
 			uint8_t ch = country->channel24G_chan[i];
-			uint16_t freq =
-				(ch == 14) ? BFLB_24GHZ_CH14_FREQ
-					   : (BFLB_24GHZ_BASE_FREQ + ch * BFLB_24GHZ_CH_SPACING);
+			uint16_t freq = wifi_utils_chan_to_freq(WIFI_FREQ_BAND_2_4_GHZ, ch);
 
 			band.channels[band.wpa_supp_n_channels].center_frequency = freq;
 			band.channels[band.wpa_supp_n_channels].wpa_supp_max_power =
@@ -1287,7 +1289,7 @@ static int bflb_wpa_supp_get_wiphy(void *if_priv)
 		/* Default: channels 1-11 */
 		for (i = 1; i <= 11; i++) {
 			band.channels[band.wpa_supp_n_channels].center_frequency =
-				BFLB_24GHZ_BASE_FREQ + i * BFLB_24GHZ_CH_SPACING;
+				wifi_utils_chan_to_freq(WIFI_FREQ_BAND_2_4_GHZ, i);
 			band.channels[band.wpa_supp_n_channels].wpa_supp_max_power =
 				BFLB_DEFAULT_MAX_DBM;
 			band.channels[band.wpa_supp_n_channels].ch_valid = 1;
@@ -1563,6 +1565,9 @@ int _external_auth_ind(ke_msg_id_t const msgid, void *param, ke_task_id_t const 
 	struct bflb_supp_ctx *ctx = &g_supp_ctx;
 	struct zep_drv_if_ctx *drv_if_ctx;
 	union wpa_event_data event;
+	uint8_t *bssid_copy;
+	uint8_t *ssid_copy;
+	size_t ssid_len;
 
 	ARG_UNUSED(msgid);
 	ARG_UNUSED(dest_id);
@@ -1577,16 +1582,27 @@ int _external_auth_ind(ke_msg_id_t const msgid, void *param, ke_task_id_t const 
 		return 0;
 	}
 
-	memcpy(ctx->ext_auth_bssid, ind->bssid.array, ETH_ALEN);
-	memcpy(ctx->ext_auth_ssid, ind->ssid.array, MIN(ind->ssid.length, MAC_SSID_LEN));
+	ssid_copy = os_zalloc(MAC_SSID_LEN);
+	bssid_copy = os_zalloc(ETH_ALEN);
+	if (ssid_copy == NULL || bssid_copy == NULL) {
+		LOG_ERR("Failed to allocate SSID/BSSID");
+		os_free(ssid_copy);
+		os_free(bssid_copy);
+		return -ENOMEM;
+	}
+
+	/* The event handler calls os_free() */
+	ssid_len = MIN(ind->ssid.length, MAC_SSID_LEN);
+	memcpy(ssid_copy, ind->ssid.array, ssid_len);
+	memcpy(bssid_copy, ind->bssid.array, ETH_ALEN);
 
 	wl80211_glb.authenticating = 1;
 
 	memset(&event, 0, sizeof(event));
 	event.external_auth.action = EXT_AUTH_START;
-	event.external_auth.bssid = ctx->ext_auth_bssid;
-	event.external_auth.ssid = ctx->ext_auth_ssid;
-	event.external_auth.ssid_len = ind->ssid.length;
+	event.external_auth.bssid = bssid_copy;
+	event.external_auth.ssid = ssid_copy;
+	event.external_auth.ssid_len = ssid_len;
 	event.external_auth.key_mgmt_suite = ind->akm;
 
 	drv_if_ctx = ctx->supp_drv_if_ctx;

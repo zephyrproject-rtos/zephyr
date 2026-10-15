@@ -51,7 +51,7 @@
 
 		user_button: button {
 			label = "User";
-			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
@@ -153,7 +153,8 @@
 	pinctrl-names = "default";
 	scl-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
-	status = "okay";
+	/* Disabled by default: PB8 and PB9 are LCD lines (LTDC B6/B7) */
+	status = "disabled";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
@@ -162,7 +163,8 @@
 	pinctrl-names = "default";
 	scl-gpios = <&gpiob 10 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpiob 11 GPIO_ACTIVE_HIGH>;
-	status = "okay";
+	/* Disabled by default: PB10 and PB11 are LCD lines (LTDC G4/G5) */
+	status = "disabled";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
@@ -223,7 +225,8 @@
 		power-up-delay = <100>;
 		num-auto-refresh = <1>;
 		mode-register = <0>;
-		refresh-rate = <1386>;
+		/* 64 ms / 4096 rows x 56 MHz SDCLK (HCLK / 3) - 20 */
+		refresh-rate = <855>;
 
 		bank@1 {
 			reg = <1>;
@@ -279,5 +282,9 @@
 zephyr_udc0: &usbotg_hs {
 	pinctrl-0 = <&usb_otg_hs_dm_pb14 &usb_otg_hs_dp_pb15 &usb_otg_hs_id_pb12>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&dma2d {
 	status = "okay";
 };

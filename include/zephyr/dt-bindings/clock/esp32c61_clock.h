@@ -9,8 +9,8 @@
  * @brief ESP32-C61 clock definitions for device tree bindings
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ESP32C61_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ESP32C61_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ESP32C61_CLOCK_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ESP32C61_CLOCK_H_
 
 /* Supported CPU clock Sources */
 #define ESP32_CPU_CLK_SRC_XTAL 0U /**< CPU clock source: XTAL */
@@ -81,4 +81,4 @@
 #define ESP32_SDIO_SLAVE_MODULE   120 /**< SDIO slave module */
 #define ESP32_ASSIST_DEBUG_MODULE 121 /**< Assist debug module */
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ESP32C61_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ESP32C61_CLOCK_H_ */

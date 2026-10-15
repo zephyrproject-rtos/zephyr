@@ -547,7 +547,7 @@ static DEVICE_API(uart, apbuart_driver_api) = {
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(index,					\
-			    &apbuart_init,				\
+			    apbuart_init,				\
 			    NULL,					\
 			    &apbuart##index##_data,			\
 			    &apbuart##index##_config,			\

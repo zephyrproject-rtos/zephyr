@@ -11,6 +11,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/mgmt/ec_host_cmd/backend.h>
 #include <zephyr/mgmt/ec_host_cmd/ec_host_cmd.h>
+#include <zephyr/sys/atomic.h>
 
 LOG_MODULE_REGISTER(host_cmd_espi, CONFIG_EC_HC_LOG_LEVEL);
 
@@ -39,7 +40,7 @@ struct ec_host_cmd_espi_ctx {
 	/* eSPI callback */
 	struct espi_callback espi_cb;
 	/* eSPI Host Command state */
-	enum ec_host_cmd_espi_state state;
+	atomic_t state;
 };
 
 #define EC_HOST_CMD_ESPI_DEFINE(_name)                                                             \
@@ -58,18 +59,20 @@ static void espi_handler(const struct device *dev, struct espi_callback *cb,
 	/* tx stores the shared memory buf pointer and size, so use it */
 	const struct ec_host_cmd_request_header *rx_header = hc_espi->tx->buf;
 	const size_t shared_size = hc_espi->tx->len_max;
-	const uint16_t rx_valid_data_size = rx_header->data_len + RX_HEADER_SIZE;
+	const size_t rx_valid_data_size = rx_header->data_len + RX_HEADER_SIZE;
 
 	if (event_type != ESPI_PERIPHERAL_EC_HOST_CMD) {
 		return;
 	}
+
+	atomic_val_t state = atomic_get(&hc_espi->state);
 
 	/* Make sure we've received a Host Command in a good state not to override buffers for
 	 * a Host Command that is currently being processed. There is a moment between sending
 	 * a response and setting state to ESPI_STATE_READY_TO_RECV when we can receive a new
 	 * host command, so accept the sending state as well.
 	 */
-	if (hc_espi->state != ESPI_STATE_READY_TO_RECV && hc_espi->state != ESPI_STATE_SENDING) {
+	if (state != ESPI_STATE_READY_TO_RECV && state != ESPI_STATE_SENDING) {
 		LOG_ERR("Received HC in bad state");
 		return;
 	}
@@ -88,7 +91,7 @@ static void espi_handler(const struct device *dev, struct espi_callback *cb,
 	}
 
 	/* Even in case of errors, let the general handler send response */
-	hc_espi->state = ESPI_STATE_PROCESSING;
+	atomic_set(&hc_espi->state, ESPI_STATE_PROCESSING);
 	ec_host_cmd_rx_notify();
 }
 
@@ -97,7 +100,7 @@ static int ec_host_cmd_espi_init(const struct ec_host_cmd_backend *backend,
 {
 	struct ec_host_cmd_espi_ctx *hc_espi = (struct ec_host_cmd_espi_ctx *)backend->ctx;
 
-	hc_espi->state = ESPI_STATE_DISABLED;
+	atomic_set(&hc_espi->state, ESPI_STATE_DISABLED);
 
 	if (!device_is_ready(hc_espi->espi_dev)) {
 		return -ENODEV;
@@ -118,7 +121,7 @@ static int ec_host_cmd_espi_init(const struct ec_host_cmd_backend *backend,
 	hc_espi->rx_ctx->len_max =
 		MIN(CONFIG_EC_HOST_CMD_HANDLER_RX_BUFFER_SIZE, hc_espi->tx->len_max);
 
-	hc_espi->state = ESPI_STATE_READY_TO_RECV;
+	atomic_set(&hc_espi->state, ESPI_STATE_READY_TO_RECV);
 
 	return 0;
 }
@@ -135,11 +138,16 @@ static int ec_host_cmd_espi_send(const struct ec_host_cmd_backend *backend)
 		return 0;
 	}
 
-	hc_espi->state = ESPI_STATE_SENDING;
+	atomic_set(&hc_espi->state, ESPI_STATE_SENDING);
 
 	/* Data to transfer are already in the tx buffer (shared memory) */
 	ret = espi_write_lpc_request(hc_espi->espi_dev, ECUSTOM_HOST_CMD_SEND_RESULT, &result);
-	hc_espi->state = ESPI_STATE_READY_TO_RECV;
+	/*
+	 * The IBF IRQ can preempt between espi_write_lpc_request() returning and
+	 * this store, advancing state to ESPI_STATE_PROCESSING. Only transition
+	 * to READY_TO_RECV if no new request was accepted in that window.
+	 */
+	(void)atomic_cas(&hc_espi->state, ESPI_STATE_SENDING, ESPI_STATE_READY_TO_RECV);
 
 	return ret;
 }

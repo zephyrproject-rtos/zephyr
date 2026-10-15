@@ -10,6 +10,8 @@ include:
   - base.yaml
   - pinctrl-device.yaml
 
+class: sensor
+
 properties:
   reg:
     required: true

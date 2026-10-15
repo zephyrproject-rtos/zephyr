@@ -706,6 +706,8 @@ int regulator_npm13xx_init(const struct device *dev)
 	bool enabled;
 	int ret = 0;
 
+	regulator_common_data_init(dev);
+
 	if (!device_is_ready(config->mfd)) {
 		return -ENODEV;
 	}

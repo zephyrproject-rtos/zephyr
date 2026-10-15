@@ -48,7 +48,7 @@ Below is an example of building and flashing the :zephyr:code-sample:`blinky` ap
 
 .. zephyr-app-commands::
     :zephyr-app: samples/basic/blinky
-    :board: rp2350b_core/rp2350b/m33
+    :board: rp2350b_core/rp2350b/m33_0
     :goals: build flash
     :flash-args: -r uf2
 

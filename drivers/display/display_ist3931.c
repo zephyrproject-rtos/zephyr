@@ -209,7 +209,6 @@ static void ist3931_get_capabilities(const struct device *dev, struct display_ca
 {
 	const struct ist3931_config *config = dev->config;
 
-	memset(caps, 0, sizeof(struct display_capabilities));
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
 	caps->supported_pixel_formats = PIXEL_FORMAT_MONO10 | PIXEL_FORMAT_MONO01;

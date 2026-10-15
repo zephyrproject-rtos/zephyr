@@ -27,12 +27,15 @@ static volatile uint32_t *mstp_regs[] = {};
 /* If a CPU clock exists in the system, it will be the source for the CPU */
 #if BSP_FEATURE_CGC_HAS_CPUCLK
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(cpu0))
+/* Single-core parts have one CPU clock node, multi-core parts one per core. */
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(cpuclk))
+#define sys_clk DT_NODELABEL(cpuclk)
+#elif DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(cpu0))
 #define sys_clk DT_NODELABEL(cpuclk0)
 #elif DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(cpu1))
 #define sys_clk DT_NODELABEL(cpuclk1)
 #else
-#define sys_clk DT_NODELABEL(cpuclk)
+#error "No CPU clock node in devicetree"
 #endif
 
 #else

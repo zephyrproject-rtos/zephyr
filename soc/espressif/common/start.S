@@ -6,7 +6,7 @@
 
 /* Boot entry point. The ROM enters here on a stack of its own choosing, which
  * on some layouts overlaps .bss, so this must run before any compiler-generated
- * prologue can spill to it. The stack set up here is scratch, used only until
+ * prologue can spill to it. Early boot runs on the CPU 0 interrupt stack until
  * z_cstart() installs the kernel stack.
  */
 
@@ -15,15 +15,12 @@
 #include <zephyr/offsets.h>
 #include <zephyr/arch/riscv/csr.h>
 #include <soc/soc_caps.h>
-#include <memory.h>
 
 #define CSR_MTVT 0x307
 
 GTEXT(start_riscv)
 GTEXT(_vector_table)
-#ifdef CONFIG_INIT_STACKS
 GDATA(z_interrupt_stacks)
-#endif
 #if SOC_INT_CLIC_SUPPORTED
 GTEXT(_mtvt_table)
 #endif
@@ -44,7 +41,9 @@ __start:
 	.option pop
 #endif
 
-	li sp, DRAM_STACK_START
+	la sp, z_interrupt_stacks
+	li t0, __z_interrupt_stack_SIZEOF
+	add sp, sp, t0
 
 	csrci mstatus, MSTATUS_MIE
 
@@ -70,6 +69,21 @@ aa_loop:
 	la t0, _mtvt_table
 	csrw CSR_MTVT, t0
 #endif
+
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+	/* Reserve a zeroed boot TLS area on the stack and point tp at it. */
+	call z_tls_data_size_asm
+	sub sp, sp, a0
+	mv tp, sp
+	mv t0, sp
+	add t1, sp, a0
+1:
+	bgeu t0, t1, 2f
+	sw zero, 0(t0)
+	addi t0, t0, 4
+	j 1b
+2:
+#endif /* CONFIG_THREAD_LOCAL_STORAGE */
 
 	tail start_riscv
 

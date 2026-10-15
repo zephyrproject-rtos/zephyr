@@ -12,6 +12,7 @@ import os
 import signal
 import subprocess
 import sys
+import threading
 from contextlib import nullcontext
 from importlib import reload
 from subprocess import CalledProcessError, TimeoutExpired
@@ -821,7 +822,8 @@ TESTDATA_13 = [
         'product',
         None,
         ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
-         '--runner', 'runner', 'param1', 'param2']
+         '--runner', 'runner', '--base-param1', '--base-param2',
+         '--', '--runner-param1', '--runner-param2']
     ),
 
     (
@@ -830,7 +832,8 @@ TESTDATA_13 = [
         'product',
         None,
         ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
-         '--runner', 'pyocd', 'param1', 'param2', '--', '--dev-id', 12345]
+         '--runner', 'pyocd', '--base-param1', '--base-param2',
+         '--', '--dev-id', 12345, '--runner-param1', '--runner-param2']
     ),
     (
         None,
@@ -838,7 +841,8 @@ TESTDATA_13 = [
         'product',
         None,
         ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
-         '--runner', 'nrfjprog', 'param1', 'param2', '--', '--dev-id', 12345]
+         '--runner', 'nrfjprog', '--base-param1', '--base-param2',
+         '--', '--dev-id', 12345, '--runner-param1', '--runner-param2']
     ),
     (
         None,
@@ -846,8 +850,8 @@ TESTDATA_13 = [
         'STM32 STLink',
         None,
         ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
-         '--runner', 'openocd', 'param1', 'param2',
-         '--', '--cmd-pre-init', 'hla_serial 12345']
+         '--runner', 'openocd', '--base-param1', '--base-param2',
+         '--', '--cmd-pre-init', 'hla_serial 12345', '--runner-param1', '--runner-param2']
     ),
     (
         None,
@@ -855,8 +859,8 @@ TESTDATA_13 = [
         'STLINK-V3',
         None,
         ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
-         '--runner', 'openocd', 'param1', 'param2',
-         '--', '--cmd-pre-init', 'hla_serial 12345']
+         '--runner', 'openocd', '--base-param1', '--base-param2',
+         '--', '--cmd-pre-init', 'hla_serial 12345', '--runner-param1', '--runner-param2']
     ),
     (
         None,
@@ -864,8 +868,17 @@ TESTDATA_13 = [
         'EDBG CMSIS-DAP',
         None,
         ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
-         '--runner', 'openocd', 'param1', 'param2',
-         '--', '--cmd-pre-init', 'adapter serial 12345']
+         '--runner', 'openocd', '--base-param1', '--base-param2',
+         '--', '--cmd-pre-init', 'adapter serial 12345', '--runner-param1', '--runner-param2']
+    ),
+    (
+        None,
+        'openocd',
+        'Raspberry Pi Debug Probe (CMSIS-DAP)',
+        None,
+        ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
+         '--runner', 'openocd', '--base-param1', '--base-param2',
+         '--', '--cmd-pre-init', 'cmsis_dap_serial 12345', '--runner-param1', '--runner-param2']
     ),
     (
         None,
@@ -874,7 +887,8 @@ TESTDATA_13 = [
         None,
         ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
          '--runner', 'jlink', '--dev-id', 12345,
-         'param1', 'param2']
+         '--base-param1', '--base-param2',
+         '--', '--runner-param1', '--runner-param2']
     ),
     (
         None,
@@ -883,7 +897,8 @@ TESTDATA_13 = [
         None,
         ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
          '--runner', 'stm32cubeprogrammer', '--dev-id', 12345,
-         'param1', 'param2']
+         '--base-param1', '--base-param2',
+         '--', '--runner-param1', '--runner-param2']
     ),
     (
         None,
@@ -911,8 +926,8 @@ TESTDATA_13_2 = [(True), (False)]
     ids=['default', '--west-flash', 'one west flash value',
          'multiple west flash values', 'generic runner', 'pyocd',
          'nrfjprog', 'openocd, STM32 STLink', 'openocd, STLINK-v3',
-         'openocd, EDBG CMSIS-DAP', 'jlink', 'stm32cubeprogrammer',
-         'flash_command', 'flash_command with args']
+         'openocd, EDBG CMSIS-DAP', 'openocd, Raspberry Pi Debug Probe (CMSIS-DAP)',
+         'jlink', 'stm32cubeprogrammer', 'flash_command', 'flash_command with args']
 )
 @pytest.mark.parametrize('hardware_probe', TESTDATA_13_2, ids=['probe', 'id'])
 def test_devicehandler_create_command(
@@ -937,7 +952,8 @@ def test_devicehandler_create_command(
         product=hardware_product_name,
         probe_id=12345 if hardware_probe else None,
         id=12345 if not hardware_probe else None,
-        runner_params=['param1', 'param2'],
+        base_params=['--base-param1', '--base-param2'],
+        runner_params=['--runner-param1', '--runner-param2'],
         west_flash_cmd=None
     )
 
@@ -1739,17 +1755,28 @@ def test_qemuhandler_thread(
 
 
 TESTDATA_26 = [
-    (True, False, TwisterStatus.NONE, True,
+    (True, False, TwisterStatus.NONE, True, True, 'stale',
      ['No timeout, return code from QEMU (1): 1',
       'return code from QEMU (1): 1']),
-    (False, True, TwisterStatus.PASS, True, ['return code from QEMU (1): 0']),
-    (False, True, TwisterStatus.FAIL, False, ['return code from QEMU (None): 1']),
+    (False, True, TwisterStatus.PASS, True, False, 'stale',
+     ['return code from QEMU (1): 0']),
+    (False, True, TwisterStatus.FAIL, False, False, 'harness reason',
+     ['return code from QEMU (None): 1']),
+    # The run command exited without QEMU ever writing its pid file: the
+    # monitor thread is released and the exit code, not the stale reason,
+    # names the failure.
+    (False, False, TwisterStatus.NONE, False, True, 'Exited with 1',
+     ['No timeout, return code from QEMU (None): 1',
+      'QEMU exited with 1 without connecting: releasing the monitor thread',
+      'return code from QEMU (None): 1']),
 ]
 
 @pytest.mark.parametrize(
-    'isatty, do_timeout, harness_status, exists_pid_fn, expected_logs',
+    'isatty, do_timeout, harness_status, exists_pid_fn,'
+    ' expect_release, expected_reason, expected_logs',
     TESTDATA_26,
-    ids=['no timeout, isatty', 'timeout passed', 'timeout, no pid_fn']
+    ids=['no timeout, isatty', 'timeout passed', 'timeout, no pid_fn',
+         'exited before start']
 )
 def test_qemuhandler_handle(
     mocked_instance,
@@ -1759,6 +1786,8 @@ def test_qemuhandler_handle(
     do_timeout,
     harness_status,
     exists_pid_fn,
+    expect_release,
+    expected_reason,
     expected_logs
 ):
     def mock_wait(*args, **kwargs):
@@ -1791,7 +1820,7 @@ def test_qemuhandler_handle(
         handler.pid_fn = os.path.join(sysbuild_build_dir, 'qemu.pid')
         handler.log_fn = os.path.join('dummy', 'log')
 
-    harness = mock.Mock(status=harness_status, fault=False)
+    harness = mock.Mock(status=harness_status, fault=False, reason='harness reason')
     handler_options_west_flash = []
 
     domain_build_dir = os.path.join('sysbuild', 'dummydir')
@@ -1810,6 +1839,9 @@ def test_qemuhandler_handle(
     handler._set_qemu_filenames = mock.Mock(side_effect=mock_filenames)
     handler.get_default_domain_build_dir = mock.Mock(return_value=domain_build_dir)
     handler.terminate = mock.Mock()
+    handler._release_thread = mock.Mock(return_value=True)
+    # A reason left over from a previous iteration or a loaded test plan.
+    handler.instance.reason = 'stale'
 
     unlink_mock = mock.Mock()
 
@@ -1822,6 +1854,50 @@ def test_qemuhandler_handle(
         handler.handle(harness)
 
     assert all([expected_log in caplog.text for expected_log in expected_logs])
+    assert handler._release_thread.called == expect_release
+    assert handler.instance.reason == expected_reason
+
+
+def test_qemuhandler_release_thread(mocked_instance, tmp_path):
+    """The monitor thread blocks opening the fifos until QEMU connects.
+
+    When QEMU never does, _release_thread() connects in its place and the
+    thread finishes with the EOF it then reads, instead of sitting in
+    open() until the test timeout.
+    """
+    handler = QEMUHandler(mocked_instance, 'build', mock.Mock(timeout_multiplier=1))
+    handler.fifo_fn = str(tmp_path / 'qemu-fifo')
+    handler.pid_fn = str(tmp_path / 'qemu.pid')
+    handler.log_fn = str(tmp_path / 'handler.log')
+    harness = mock.Mock(status=TwisterStatus.NONE, fault=False)
+
+    handler.thread = threading.Thread(
+        target=QEMUHandler._thread,
+        args=(handler, 60, str(tmp_path), handler.log_fn, handler.fifo_fn,
+              handler.pid_fn, harness, False),
+        daemon=True,
+    )
+    handler.thread.start()
+
+    with mock.patch(
+        'twisterlib.handlers.QEMUHandler._thread_update_instance_info'
+    ) as update_mock:
+        assert handler._release_thread(timeout=5) is True
+        handler.thread.join(5)
+
+    assert not handler.thread.is_alive()
+    update_mock.assert_called_once_with(handler, TwisterStatus.FAIL, 'unexpected eof')
+    assert not os.path.exists(handler.fifo_fn + '.in')
+    assert not os.path.exists(handler.fifo_fn + '.out')
+
+
+def test_qemuhandler_release_thread_gone(mocked_instance, tmp_path):
+    """Nothing to release once the thread has finished and removed the fifos."""
+    handler = QEMUHandler(mocked_instance, 'build', mock.Mock(timeout_multiplier=1))
+    handler.fifo_fn = str(tmp_path / 'qemu-fifo')
+    handler.thread = mock.Mock(is_alive=mock.Mock(return_value=False))
+
+    assert handler._release_thread(timeout=5) is False
 
 
 def test_qemuhandler_get_fifo(mocked_instance):

@@ -27,15 +27,19 @@
 		zephyr,flash-controller = &flash;
 	};
 
-	cpus {
+	cpus: cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+
+		/* Both HP cores implement the same ISA, so the base and the
+		 * extension list are described once for all of them here.
+		 */
+		riscv,isa-base = "rv32i";
+		riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei";
 
 		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "espressif,riscv", "riscv";
-			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei";
 			reg = <0>;
 			cpu-power-states = <&light_sleep &deep_sleep>;
 			clock-source = <ESP32_CPU_CLK_SRC_PLL>;
@@ -47,8 +51,6 @@
 		cpu1: cpu@1 {
 			device_type = "cpu";
 			compatible = "espressif,riscv", "riscv";
-			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei";
 			reg = <1>;
 			cpu-power-states = <&light_sleep &deep_sleep>;
 			clock-source = <ESP32_CPU_CLK_SRC_PLL>;
@@ -390,6 +392,9 @@
 			ghwcfg1 = <0x00000000>;
 			ghwcfg2 = <0x7e5ffaf0>;
 			ghwcfg4 = <0xdff09041>;
+			g-rx-fifo-size = <256>;
+			g-np-tx-fifo-size = <32>;
+			g-tx-fifo-size = <128 64 64 64 64 64 64>;
 		};
 
 		usb_otg_fs: usb_otg@50040000 {
@@ -404,6 +409,9 @@
 			ghwcfg1 = <0x00000000>;
 			ghwcfg2 = <0x224dd930>;
 			ghwcfg4 = <0xd3f0a030>;
+			g-rx-fifo-size = <64>;
+			g-np-tx-fifo-size = <32>;
+			g-tx-fifo-size = <32 16 16 16>;
 			phy-dp-pin = <27>;
 			phy-dm-pin = <26>;
 		};
@@ -596,6 +604,16 @@
 			clocks = <&clock ESP32_GDMA_MODULE>;
 			dma-channels = <6>;
 			dma-buf-addr-alignment = <64>;
+			status = "disabled";
+		};
+
+		ppa: ppa@50087000 {
+			compatible = "espressif,esp32-ppa";
+			reg = <0x50087000 DT_SIZE_K(4)>,
+			      <0x50088000 DT_SIZE_K(4)>;
+			reg-names = "ppa", "dma2d";
+			interrupts = <DMA2D_IN_CH0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
 			status = "disabled";
 		};
 

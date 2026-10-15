@@ -316,3 +316,19 @@ st_cam_dvp: &dcmi {
 zephyr_jpegenc: &jpeg {
 	status = "okay";
 };
+
+&dma1 {
+	status = "okay";
+};
+
+&dma2 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};
+
+&dmamux2 {
+	status = "okay";
+};

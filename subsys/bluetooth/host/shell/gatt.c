@@ -614,6 +614,11 @@ static uint8_t notify_func(struct bt_conn *conn,
 		       params->value_handle, length);
 	bt_shell_hexdump(data, length);
 
+	if (length > 0U && (int)length == bt_att_get_max_notify_size(conn, BT_ATT_CHAN_OPT_NONE)) {
+		bt_shell_print("Value fills a notification, it may have been truncated. Read the "
+			       "characteristic to get the complete value.");
+	}
+
 	return BT_GATT_ITER_CONTINUE;
 }
 
@@ -674,19 +679,19 @@ static int cmd_resubscribe(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	err = bt_addr_le_from_str(argv[1], argv[2], &addr);
+	err = bt_addr_le_from_str(argv[1], &addr);
 	if (err) {
 		shell_error(sh, "Invalid peer address (err %d)", err);
 		return -ENOEXEC;
 	}
 
-	subscribe_params.ccc_handle = strtoul(argv[3], NULL, 16);
-	subscribe_params.value_handle = strtoul(argv[4], NULL, 16);
+	subscribe_params.ccc_handle = strtoul(argv[2], NULL, 16);
+	subscribe_params.value_handle = strtoul(argv[3], NULL, 16);
 	subscribe_params.value = BT_GATT_CCC_NOTIFY;
 	subscribe_params.notify = notify_func;
 	SET_CHAN_OPT_ANY(subscribe_params);
 
-	if (argc > 5 && !strcmp(argv[5], "ind")) {
+	if (argc > 4 && !strcmp(argv[4], "ind")) {
 		subscribe_params.value = BT_GATT_CCC_INDICATE;
 	}
 
@@ -829,20 +834,34 @@ static const struct bt_uuid_128 vnd1_uuid = BT_UUID_INIT_128(
 static const struct bt_uuid_128 vnd1_echo_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0x12345678, 0x1234, 0x5678, 0x12340, 0x56789abcdef5));
 
-static uint8_t echo_enabled;
-
-static void vnd1_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
-{
-	echo_enabled = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
-}
-
 static ssize_t write_vnd1(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			  const void *buf, uint16_t len, uint16_t offset,
 			  uint8_t flags)
 {
-	if (echo_enabled) {
+	const int max_ntf_size = bt_att_get_max_notify_size(conn, BT_ATT_CHAN_OPT_NONE);
+	uint16_t ntf_len;
+	int err;
+
+	if (max_ntf_size < 0) {
+		/* Not connected */
+		return len;
+	}
+
+	ntf_len = MIN(len, max_ntf_size);
+
+	if (!bt_gatt_is_subscribed(conn, attr, BT_GATT_CCC_NOTIFY)) {
+		return len;
+	}
+
+	if (ntf_len < len) {
+		bt_shell_print("Echo attr len %u truncated to %u", len, ntf_len);
+	} else {
 		bt_shell_print("Echo attr len %u", len);
-		bt_gatt_notify(conn, attr, buf, len);
+	}
+
+	err = bt_gatt_notify(conn, attr, buf, ntf_len);
+	if (err != 0) {
+		bt_shell_error("Failed to notify echo: %d", err);
 	}
 
 	return len;
@@ -939,8 +958,7 @@ static struct bt_gatt_attr vnd1_attrs[] = {
 			       BT_GATT_CHRC_WRITE_WITHOUT_RESP |
 			       BT_GATT_CHRC_NOTIFY,
 			       BT_GATT_PERM_WRITE, NULL, write_vnd1, NULL),
-	BT_GATT_CCC(vnd1_ccc_cfg_changed,
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
+	BT_GATT_CCC(NULL, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
 };
 
 static struct bt_gatt_service vnd1_svc = BT_GATT_SERVICE(vnd1_attrs);
@@ -1014,9 +1032,46 @@ static const struct bt_gatt_attr *find_attr(uint16_t handle)
 	return attr;
 }
 
+struct notify_conn_data {
+	const struct shell *sh;
+	const struct bt_gatt_attr *attr;
+	const char *data;
+	uint16_t data_len;
+};
+
+static void notify_conn_cb(struct bt_conn *conn, void *user_data)
+{
+	const int max_ntf_size = bt_att_get_max_notify_size(conn, BT_ATT_CHAN_OPT_NONE);
+	struct notify_conn_data *notify_data = user_data;
+	uint16_t data_len = notify_data->data_len;
+	int err;
+
+	if (max_ntf_size < 0) {
+		/* Not connected */
+		return;
+	}
+
+	if (!bt_gatt_is_subscribed(conn, notify_data->attr, BT_GATT_CCC_NOTIFY)) {
+		return;
+	}
+
+	if (data_len > max_ntf_size) {
+		shell_print(notify_data->sh,
+			    "Truncating notification to conn %p from %u to %d octets.", conn,
+			    data_len, max_ntf_size);
+		data_len = max_ntf_size;
+	}
+
+	err = bt_gatt_notify(conn, notify_data->attr, notify_data->data, data_len);
+	if (err != 0) {
+		shell_error(notify_data->sh, "bt_gatt_notify to conn %p failed: %d", conn, -err);
+	}
+}
+
 static int cmd_notify(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct bt_gatt_attr *attr;
+	struct notify_conn_data notify_data;
 	int err;
 	size_t data_len;
 	unsigned long handle;
@@ -1049,18 +1104,29 @@ static int cmd_notify(const struct shell *sh, size_t argc, char *argv[])
 		return -EINVAL;
 	}
 
+	if (data_len > BT_ATT_MAX_ATTRIBUTE_LEN) {
+		shell_error(sh, "Invalid data_len: %zu", data_len);
+		return -EINVAL;
+	}
+
 	attr = find_attr(handle);
 	if (!attr) {
 		shell_error(sh, "Handle 0x%lx: Local attribute not found.", handle);
 		return -EINVAL;
 	}
 
-	err = bt_gatt_notify(NULL, attr, data, data_len);
-	if (err) {
-		shell_error(sh, "bt_gatt_notify errno %d (%s)", -err, strerror(-err));
-	}
+	/* The notification goes to every subscriber, which may have negotiated different ATT
+	 * MTUs, so notify each connection individually to be able to truncate the value to what
+	 * that connection can carry.
+	 */
+	notify_data.sh = sh;
+	notify_data.attr = attr;
+	notify_data.data = data;
+	notify_data.data_len = data_len;
 
-	return err;
+	bt_conn_foreach(BT_CONN_TYPE_LE, notify_conn_cb, &notify_data);
+
+	return 0;
 }
 
 #if defined(CONFIG_BT_GATT_NOTIFY_MULTIPLE)
@@ -1086,9 +1152,8 @@ static int cmd_notify_mult(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (!echo_enabled) {
+	if (!bt_gatt_is_subscribed(default_conn, vnd1_attrs, BT_GATT_CCC_NOTIFY)) {
 		shell_error(sh, "No clients have enabled notifications for the vnd1_echo CCC.");
-
 		return -ENOEXEC;
 	}
 
@@ -1332,7 +1397,7 @@ int cmd_att_mtu(const struct shell *sh, size_t argc, char *argv[])
 }
 
 #define HELP_NONE "[none]"
-#define HELP_ADDR_LE "<address: XX:XX:XX:XX:XX:XX> <type: (public|random)>"
+#define HELP_ADDR_LE "<address: P:XX:XX:XX:XX:XX:XX or R:XX:XX:XX:XX:XX:XX>"
 
 SHELL_STATIC_SUBCMD_SET_CREATE(gatt_cmds,
 #if defined(CONFIG_BT_GATT_CLIENT)
@@ -1359,7 +1424,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(gatt_cmds,
 	SHELL_CMD_ARG(subscribe, NULL, "<CCC handle> <value handle> [ind]",
 		      cmd_subscribe, 3, 1),
 	SHELL_CMD_ARG(resubscribe, NULL, HELP_ADDR_LE" <CCC handle> "
-		      "<value handle> [ind]", cmd_resubscribe, 5, 1),
+		      "<value handle> [ind]", cmd_resubscribe, 4, 1),
 	SHELL_CMD_ARG(write, NULL, "<handle> <offset> <data>", cmd_write, 4, 0),
 	SHELL_CMD_ARG(write-without-response, NULL,
 		      "<handle> <data> [length] [repeat]",

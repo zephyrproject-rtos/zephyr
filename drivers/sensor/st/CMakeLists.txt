@@ -45,4 +45,5 @@ add_subdirectory_ifdef(CONFIG_STTS22H stts22h)
 add_subdirectory_ifdef(CONFIG_STTS751 stts751)
 add_subdirectory_ifdef(CONFIG_VL53L0X vl53l0x)
 add_subdirectory_ifdef(CONFIG_VL53L1X vl53l1x)
+add_subdirectory_ifdef(CONFIG_VL53L5CX vl53l5cx)
 # zephyr-keep-sorted-stop

@@ -13,6 +13,10 @@
 	model = "SAMA5D27-SOM1-EK1 board";
 	compatible = "microchip,sama5d27_som1_ek1", "microchip,sama5d2", "microchip,sama5";
 
+	aliases {
+		rtc = &rtc;
+	};
+
 	chosen {
 		zephyr,console = &uart1;
 		zephyr,sram = &ddram;
@@ -23,6 +27,10 @@
 
 &pit {
 	clock-frequency = <DT_FREQ_K(5125)>;
+	status = "okay";
+};
+
+&rtc {
 	status = "okay";
 };
 

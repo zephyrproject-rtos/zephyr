@@ -48,20 +48,20 @@ config BT_DEVICE_NAME_GATT_WRITABLE_AUTHEN
 endchoice  #BT_DEVICE_NAME_GATT_WRITABLE_SECURITY
 
 config DEVICE_NAME_GATT_WRITABLE_NONE
-	select DEPRECATED
 	bool "No requirements [DEPRECATED]"
+	select DEPRECATED
 	help
 	  This option is deprecated. Select BT_DEVICE_NAME_GATT_WRITABLE_NONE instead.
 
 config DEVICE_NAME_GATT_WRITABLE_ENCRYPT
-	select DEPRECATED
 	bool "Encryption required [DEPRECATED]"
+	select DEPRECATED
 	help
 	  This option is deprecated. Select BT_DEVICE_NAME_GATT_WRITABLE_ENCRYPT instead.
 
 config DEVICE_NAME_GATT_WRITABLE_AUTHEN
-	select DEPRECATED
 	bool "Encryption and authentication required [DEPRECATED]"
+	select DEPRECATED
 	help
 	  This option is deprecated. Select BT_DEVICE_NAME_GATT_WRITABLE_AUTHEN instead.
 
@@ -96,8 +96,8 @@ config BT_DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN
 endchoice  #BT_DEVICE_APPEARANCE_GATT_WRITABLE_SECURITY
 
 config DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN
-	select DEPRECATED
 	bool "Encryption and authentication required [DEPRECATED]"
+	select DEPRECATED
 	help
 	  This option is deprecated. Select BT_DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN instead.
 

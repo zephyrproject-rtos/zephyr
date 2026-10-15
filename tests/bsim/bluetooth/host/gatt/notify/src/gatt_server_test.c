@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Xiaomi Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +24,9 @@ extern enum bst_result_t bst_result;
 DEFINE_FLAG_STATIC(flag_is_connected);
 DEFINE_FLAG_STATIC(flag_short_subscribe);
 DEFINE_FLAG_STATIC(flag_long_subscribe);
+DEFINE_FLAG_STATIC(flag_both_subscribe);
+DEFINE_FLAG_STATIC(flag_both_indicated);
+DEFINE_FLAG_STATIC(flag_both_notified);
 
 static struct bt_conn *g_conn;
 
@@ -99,6 +103,29 @@ static void long_subscribe(const struct bt_gatt_attr *attr, uint16_t value)
 	printk("Long notifications %s\n", notif_enabled ? "enabled" : "disabled");
 }
 
+static void both_subscribe(const struct bt_gatt_attr *attr, uint16_t value)
+{
+	if (value == (BT_GATT_CCC_NOTIFY | BT_GATT_CCC_INDICATE)) {
+		SET_FLAG(flag_both_subscribe);
+	}
+}
+
+static uint8_t write_chrc_data[CHRC_SIZE];
+
+static ssize_t write_test_chrc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			       const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
+{
+	printk("Write chrc\n");
+
+	if (offset + len > sizeof(write_chrc_data)) {
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+	}
+
+	(void)memcpy(write_chrc_data + offset, buf, len);
+
+	return len;
+}
+
 BT_GATT_SERVICE_DEFINE(test_svc, BT_GATT_PRIMARY_SERVICE(TEST_SERVICE_UUID),
 		       BT_GATT_CHARACTERISTIC(TEST_CHRC_UUID,
 					      BT_GATT_CHRC_NOTIFY | BT_GATT_CHRC_READ,
@@ -108,7 +135,15 @@ BT_GATT_SERVICE_DEFINE(test_svc, BT_GATT_PRIMARY_SERVICE(TEST_SERVICE_UUID),
 		       BT_GATT_CHARACTERISTIC(TEST_LONG_CHRC_UUID,
 					      BT_GATT_CHRC_NOTIFY | BT_GATT_CHRC_READ,
 					      BT_GATT_PERM_READ, read_long_test_chrc, NULL, NULL),
-		       BT_GATT_CCC(long_subscribe, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE));
+		       BT_GATT_CCC(long_subscribe, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
+		       BT_GATT_CHARACTERISTIC(TEST_WRITE_CHRC_UUID,
+					      BT_GATT_CHRC_WRITE | BT_GATT_CHRC_WRITE_WITHOUT_RESP,
+					      BT_GATT_PERM_WRITE, NULL, write_test_chrc, NULL),
+		       BT_GATT_CHARACTERISTIC(TEST_BOTH_CHRC_UUID,
+					      BT_GATT_CHRC_NOTIFY | BT_GATT_CHRC_INDICATE |
+						      BT_GATT_CHRC_READ,
+					      BT_GATT_PERM_READ, read_test_chrc, NULL, NULL),
+		       BT_GATT_CCC(both_subscribe, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE));
 
 static volatile size_t num_notifications_sent;
 
@@ -171,7 +206,7 @@ static void long_notify(enum bt_att_chan_opt opt)
 	} while (err);
 }
 
-static void setup(void)
+static void advertise_and_wait_connected(void)
 {
 	int err;
 	const struct bt_data ad[] = {
@@ -195,6 +230,11 @@ static void setup(void)
 	printk("Advertising successfully started\n");
 
 	WAIT_FOR_FLAG(flag_is_connected);
+}
+
+static void setup(void)
+{
+	advertise_and_wait_connected();
 
 	while (bt_eatt_count(g_conn) < CONFIG_BT_EATT_MAX) {
 		k_sleep(K_MSEC(100));
@@ -269,6 +309,75 @@ static void test_main_mixed(void)
 	TEST_PASS("GATT server passed");
 }
 
+static void both_indicated(struct bt_conn *conn, struct bt_gatt_indicate_params *params,
+			   uint8_t err)
+{
+	TEST_ASSERT(err == 0U, "Indication failed (err 0x%02x)", err);
+
+	SET_FLAG(flag_both_indicated);
+}
+
+static void both_notified(struct bt_conn *conn, void *user_data)
+{
+	SET_FLAG(flag_both_notified);
+}
+
+/* A client may enable notifications and indications at the same time, and is
+ * then subscribed to both, so a broadcast of either kind has to reach it.
+ */
+static void test_main_broadcast(void)
+{
+	static struct bt_gatt_indicate_params ind_params = {
+		.data = chrc_data,
+		.len = CHRC_SIZE,
+		.func = both_indicated,
+	};
+	static struct bt_gatt_notify_params ntf_params = {
+		.data = chrc_data,
+		.len = CHRC_SIZE,
+		.func = both_notified,
+	};
+	const struct bt_gatt_attr *attr;
+	int err;
+
+	advertise_and_wait_connected();
+	WAIT_FOR_FLAG(flag_both_subscribe);
+
+	attr = bt_gatt_find_by_uuid(attr_test_svc, ARRAY_SIZE(attr_test_svc), TEST_BOTH_CHRC_UUID);
+	TEST_ASSERT(attr != NULL, "Characteristic value not found");
+
+	ind_params.attr = attr;
+	err = bt_gatt_indicate(NULL, &ind_params);
+	TEST_ASSERT(err == 0, "Indication broadcast failed (err %d)", err);
+	WAIT_FOR_FLAG(flag_both_indicated);
+
+	ntf_params.attr = attr;
+	err = bt_gatt_notify_cb(NULL, &ntf_params);
+	TEST_ASSERT(err == 0, "Notification broadcast failed (err %d)", err);
+	WAIT_FOR_FLAG(flag_both_notified);
+
+	/* The client ends the simulation once it has received both values */
+	TEST_PASS("GATT server passed");
+}
+
+/* A client that sets a Reserved bit next to the notify bit is subscribed:
+ * short_subscribe(), which compares the value with BT_GATT_CCC_NOTIFY, has to
+ * see it that way, and a notification sent to all peers has to reach it.
+ */
+static void test_main_reserved_bit(void)
+{
+	int err;
+
+	advertise_and_wait_connected();
+	WAIT_FOR_FLAG(flag_short_subscribe);
+
+	err = bt_gatt_notify(NULL, &attr_test_svc[1], chrc_data, CHRC_SIZE);
+	TEST_ASSERT(err == 0, "Notification broadcast failed (err %d)", err);
+
+	/* The client ends the simulation once it has received the value */
+	TEST_PASS("GATT server passed");
+}
+
 static const struct bst_test_instance test_gatt_server[] = {
 	{
 		.test_id = "gatt_server_none",
@@ -285,6 +394,14 @@ static const struct bst_test_instance test_gatt_server[] = {
 	{
 		.test_id = "gatt_server_mixed",
 		.test_main_f = test_main_mixed,
+	},
+	{
+		.test_id = "gatt_server_broadcast",
+		.test_main_f = test_main_broadcast,
+	},
+	{
+		.test_id = "gatt_server_reserved_bit",
+		.test_main_f = test_main_reserved_bit,
 	},
 	BSTEST_END_MARKER,
 };

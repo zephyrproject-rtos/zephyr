@@ -12,9 +12,12 @@
 
 #include <zephyr/device.h>
 #include <zephyr/init.h>
+#include <zephyr/logging/log.h>
 
 #include <cmsis_core.h>
 #include <stm32_ll_system.h>
+
+LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 extern void stm32_power_init(void);
 

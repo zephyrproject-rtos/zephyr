@@ -13,6 +13,7 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/linker/linker-defs.h>
+#include <zephyr/logging/log.h>
 #include <string.h>
 
 #include <cmsis_core.h>
@@ -20,6 +21,8 @@
 #if defined(SYSCFG_CFGR1_UCPD1_STROBE) || defined(SYSCFG_CFGR1_UCPD2_STROBE)
 #include <stm32_ll_bus.h>
 #endif /* SYSCFG_CFGR1_UCPD1_STROBE || SYSCFG_CFGR1_UCPD2_STROBE */
+
+LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 /**
  * @brief Disable the internal Pull-Up in Dead Battery pins of UCPD peripherals

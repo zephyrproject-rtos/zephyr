@@ -132,6 +132,8 @@ FALLBACK_EVENTS = {
     0x1E: ("idle", []),
     0x7F: ("thread_sleep_enter", [("timeout", "uint32_t")]),
     0x80: ("thread_sleep_exit", [("timeout", "uint32_t"), ("ret", "int32_t")]),
+    0x184: ("thread_sleep_ticks_enter", [("timeout", "uint32_t")]),
+    0x185: ("thread_sleep_ticks_exit", [("timeout", "uint32_t"), ("ret", "int32_t")]),
 }
 
 
@@ -529,6 +531,7 @@ _SLEEP_ENTERS = {
     "thread_sleep_enter",
     "thread_msleep_enter",
     "thread_usleep_enter",
+    "thread_sleep_ticks_enter",
 }
 _READY_EVENTS = {
     "thread_sched_ready",

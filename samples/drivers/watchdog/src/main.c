@@ -52,6 +52,10 @@
 #elif DT_HAS_COMPAT_STATUS_OKAY(sifli_sf32lb_wdt)
 #define WDT_ALLOW_CALLBACK 0
 #define WDT_OPT            0
+#elif DT_HAS_COMPAT_STATUS_OKAY(xen_watchdog)
+#define WDT_ALLOW_CALLBACK 0
+#define WDT_MAX_WINDOW     2000U
+#define WDT_OPT            0
 #elif DT_HAS_COMPAT_STATUS_OKAY(andestech_atcwdt200)
 #define WDT_MAX_WINDOW 500U
 #endif

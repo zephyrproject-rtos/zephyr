@@ -30,6 +30,9 @@ node-macro =/ %s"DT_N" path-id %s"_EXISTS"
 ; The additional dt-name suffix is added to match that node's bus type;
 ; the dt-name in this case is something like "spi" or "i2c".
 node-macro =/ %s"DT_N" path-id %s"_BUS" ["_" dt-name]
+; Device class macros: declares that the node's binding declares
+; membership of a device class; the dt-name is something like "adc".
+node-macro =/ %s"DT_N" path-id %s"_CLASS_" dt-name
 ; The reg property is special and has its own macros.
 node-macro =/ %s"DT_N" path-id %s"_REG_NUM"
 node-macro =/ %s"DT_N" path-id %s"_REG_IDX_" DIGIT "_EXISTS"
@@ -437,6 +440,18 @@ other-macro =/ %s"DT_COMPAT_" dt-name %s"_BUS_" dt-name
 ;
 ;   #define DT_COMPAT_HAS_OKAY_vnd_dev 1
 other-macro =/ %s"DT_COMPAT_HAS_OKAY_" dt-name
+; Declares that a device class has at least one status "okay" node,
+; and the count of such nodes.
+; Example:
+;
+;   #define DT_CLASS_HAS_OKAY_adc 1
+;   #define DT_N_CLASS_adc_NUM_OKAY 2
+other-macro =/ %s"DT_CLASS_HAS_OKAY_" dt-name
+other-macro =/ %s"DT_N_CLASS_" dt-name %s"_NUM_OKAY"
+; These are used internally by DT_FOREACH_CLASS_STATUS_OKAY,
+; which iterates over each enabled node of a device class.
+other-macro =/ %s"DT_FOREACH_OKAY_CLASS_" dt-name
+other-macro =/ %s"DT_FOREACH_OKAY_VARGS_CLASS_" dt-name
 ; Currently used to allow mapping a lowercase-and-underscores "label"
 ; property to a fixed-partitions node. See the flash map API docs
 ; for an example.

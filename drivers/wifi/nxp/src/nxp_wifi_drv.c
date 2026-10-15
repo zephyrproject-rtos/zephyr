@@ -1060,10 +1060,27 @@ static int nxp_wifi_scan(const struct device *dev,
 
 	wlan_scan_params_v2.num_channels = i;
 
+	/* Propagate scan type for full-band scans where no explicit
+	 * channel list is provided and the loop above is skipped.
+	 */
+	if (i == 0U) {
+		if (params->scan_type == WIFI_SCAN_TYPE_PASSIVE) {
+			wlan_scan_params_v2.chan_list[0].scan_type =
+				MLAN_SCAN_TYPE_PASSIVE;
+			wlan_scan_params_v2.chan_list[0].scan_time =
+				params->dwell_time_passive;
+		} else {
+			wlan_scan_params_v2.chan_list[0].scan_type =
+				MLAN_SCAN_TYPE_ACTIVE;
+			wlan_scan_params_v2.chan_list[0].scan_time =
+				params->dwell_time_active;
+		}
+	}
+
 	if (params->bands & (1 << WIFI_FREQ_BAND_2_4_GHZ)) {
 		wlan_scan_params_v2.chan_list[0].radio_type = 0 | BAND_SPECIFIED;
 	}
-#ifdef CONFIG_5GHz_SUPPORT
+#ifdef CONFIG_NXP_WIFI_5GHz_SUPPORT
 	if (params->bands & (1 << WIFI_FREQ_BAND_5_GHZ)) {
 		if (wlan_scan_params_v2.chan_list[0].radio_type & BAND_SPECIFIED) {
 			wlan_scan_params_v2.chan_list[0].radio_type = 0;
@@ -2131,10 +2148,7 @@ static void nxp_wifi_sta_init(struct net_if *iface)
 	net_eth_set_if_type_wifi(iface);
 	intf->netif = iface;
 #ifdef CONFIG_WIFI_NM
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT
-	wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("wifi_supplicant"),
-			WIFI_TYPE_STA, iface);
-#else
+#ifndef CONFIG_WIFI_NM_WPA_SUPPLICANT
 	wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("wifi_sta"),
 			WIFI_TYPE_STA, iface);
 #endif
@@ -2172,10 +2186,7 @@ static void nxp_wifi_uap_init(struct net_if *iface)
 	intf->netif = iface;
 
 #ifdef CONFIG_WIFI_NM
-#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
-	wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("hostapd"),
-			WIFI_TYPE_SAP, iface);
-#else
+#ifndef CONFIG_WIFI_NM_HOSTAPD_AP
 	wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("wifi_sap"),
 			WIFI_TYPE_SAP, iface);
 #endif

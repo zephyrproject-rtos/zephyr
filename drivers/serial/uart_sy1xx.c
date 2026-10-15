@@ -304,7 +304,7 @@ static DEVICE_API(uart, sy1xx_uart_driver_api) = {
                                                                                                    \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &sy1xx_uart_init, NULL, &sy1xx_uart_##n##_data,                   \
+	DEVICE_DT_INST_DEFINE(n, sy1xx_uart_init, NULL, &sy1xx_uart_##n##_data,                    \
 			      &sy1xx_uart_##n##_cfg, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,    \
 			      &sy1xx_uart_driver_api);
 

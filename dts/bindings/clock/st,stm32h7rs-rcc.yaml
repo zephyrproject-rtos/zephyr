@@ -145,6 +145,17 @@ properties:
           frequencies are set to four times to the frequency of the APB domain to which the timers
           are connected: TIMxCLK = 4xPCLKx.
 
+  st,vcoh-frequency-range:
+    type: array
+    required: true
+    min-len: 2
+    max-len: 2
+    description: |
+      Two elements defining the VCOH frequency range: <min_vco_ck max_vco_ck>
+
+      where min_vco_ck is the minimum frequency and max_vco_ck is the maximum frequency
+      for VCO output when operating in high-range mode (VCOH). Both values are in Hz.
+
 clock-cells:
   - bus
   - bits

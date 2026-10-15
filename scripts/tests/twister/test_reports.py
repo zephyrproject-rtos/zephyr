@@ -11,6 +11,7 @@ from unittest import mock
 
 import pytest
 from twisterlib.reports import JsonReport, ReportingJSONEncoder, ReportStatus
+from twisterlib.statuses import TwisterStatus
 
 
 def test_report_status_is_its_value():
@@ -209,3 +210,39 @@ TESTDATA_DETAILED_REASON = [
 def test_get_detailed_reason(reason, lines, expected):
     report = JsonReport(mock.Mock(), {})
     assert report.get_detailed_reason(reason, '\n'.join(lines)) == expected
+
+
+def test_json_report_gives_no_reason_for_a_suite_not_run(tmp_path):
+    """A suite with no status yet, as in a saved test plan, gets no reason.
+
+    A reason there would be loaded back with the plan and shown for the
+    run instead of what actually happened.
+    """
+    env = mock.Mock(toolchain='zephyr', commit_date='today', run_date='today')
+    env.options.report_all_options = False
+    env.non_default_options = mock.Mock(return_value={})
+    instance = mock.Mock(
+        status=TwisterStatus.NONE,
+        reason=None,
+        run_id=None,
+        run=True,
+        metrics={},
+        retries=0,
+        toolchain='zephyr',
+        hardware_id=None,
+        build_dir=str(tmp_path),
+        build_time=0,
+        testcases=[],
+        recording=None,
+    )
+    instance.testsuite.name = 'suite'
+    instance.testsuite.source_dir_rel = 'tests/suite'
+    instance.platform.name = 'plat'
+    instance.platform.arch = 'arch'
+    report = tmp_path / 'testplan.json'
+
+    JsonReport(env, {'plat/suite': instance}).create(report)
+
+    suite = json.loads(report.read_text())['testsuites'][0]
+    assert suite['status'] == TwisterStatus.NONE
+    assert 'reason' not in suite

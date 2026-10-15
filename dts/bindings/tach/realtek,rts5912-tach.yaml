@@ -7,7 +7,7 @@ description: Realtek rts5912 tachometer controller
 
 compatible: "realtek,rts5912-tach"
 
-include: [tach.yaml, pinctrl-device.yaml, sensor-device.yaml]
+include: [tach.yaml, pinctrl-device.yaml]
 
 properties:
   reg:

@@ -197,6 +197,8 @@ void smp_shell_process(struct smp_shell_data *data)
 	struct net_buf *buf;
 	struct net_buf *nb;
 
+	shell_uart = data->uart;
+
 	while (true) {
 		buf = k_fifo_get(&data->buf_ready, K_NO_WAIT);
 		if (!buf) {
@@ -236,7 +238,6 @@ static int smp_shell_tx_pkt(struct net_buf *nb)
 {
 	int rc;
 
-	shell_uart = (struct shell_uart_common *)shell_backend_uart_get_ptr()->iface->ctx;
 	rc = mcumgr_serial_tx_pkt(nb->data, nb->len, smp_shell_tx_raw);
 	smp_packet_free(nb);
 
@@ -327,7 +328,9 @@ int smp_shell_init(void)
 	int rc;
 
 	smp_shell_transport.functions.output = smp_shell_tx_pkt;
+	TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS);
 	smp_shell_transport.functions.get_mtu = smp_shell_get_mtu;
+	TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS);
 
 #ifdef CONFIG_MCUMGR_GRP_TRANSPORT
 	smp_shell_transport.functions.bridge_connect = smp_shell_bridge_connect;

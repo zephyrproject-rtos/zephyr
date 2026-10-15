@@ -44,28 +44,18 @@ Supported Features
 Flashing and Debugging
 ======================
 
-OpenOCD support patches have been submitted to the OpenOCD Gerrit: https://review.openocd.org/c/openocd/+/9525 (see "Relation chain" for all commits).
+Support for AM13E230x has been merged in upstream OpenOCD but not yet picked up by Zephyr's **sdk-ng**. Until the Zephyr SDK is updated to use a commit of OpenOCD that includes support for this SoC, the user has to clone and build upstream OpenOCD separately and point ``west flash`` to that directory.
 
-Building a patched OpenOCD
+Building OpenOCD
 --------------------------
-
-OpenOCD can be built with AM13E230x support by following these steps:
 
 1. Clone ``https://github.com/openocd-org/openocd``
 
-2. Apply patches::
+2. Initialize submodules: ``git submodule update --init``
 
-    git pull https://review.openocd.org/openocd refs/changes/25/9525/1
-    git pull https://review.openocd.org/openocd refs/changes/26/9526/1
-    git pull https://review.openocd.org/openocd refs/changes/27/9527/2
+3. ``./bootstrap && ./configure --enable-internal-jimtcl --enable-xds110``
 
-3. Initialize submodules: ``git submodule update --init``
-
-4. ``./bootstrap && ./configure --enable-internal-jimtcl``
-
-5. Build: ``make -j$(nproc)``
-
-6. Launch OpenOCD: ``src/openocd -s tcl -f tcl/board/ti/am13e230x-launchpad.cfg``
+4. Build: ``make -j$(nproc)``
 
 Flashing and debugging using West
 ---------------------------------

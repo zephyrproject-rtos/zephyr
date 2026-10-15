@@ -1,4 +1,4 @@
-/* dw_i2c.c - I2C file for Design Ware */
+/* i2c_dw.c - I2C file for Design Ware */
 
 /*
  * Copyright (c) 2015 Intel Corporation
@@ -514,7 +514,7 @@ static inline void i2c_dw_transfer_complete(const struct device *dev)
 }
 
 #ifdef CONFIG_I2C_TARGET
-static inline uint8_t i2c_dw_read_byte_non_blocking(const struct device *dev);
+static inline int i2c_dw_read_byte_non_blocking(const struct device *dev, uint8_t *data);
 static inline void i2c_dw_write_byte_non_blocking(const struct device *dev, uint8_t data);
 static void i2c_dw_target_read_clear_intr_bits(const struct device *dev,
 					       union ic_interrupt_register intr_stat);
@@ -528,8 +528,8 @@ static void i2c_dw_isr(const struct device *port)
 	int ret = 0;
 	mm_reg_t reg_base = DEVICE_MMIO_GET(port);
 
-	/* Cache ic_intr_stat for processing, so there is no need to read
-	 * the register multiple times.
+	/* Cache I2C Interrupt Status Register(ic_intr_stat) for processing,
+	 * so there is no need to read the register multiple times.
 	 */
 	intr_stat.raw = read_intr_stat(reg_base);
 
@@ -631,7 +631,10 @@ static void i2c_dw_isr(const struct device *port)
 			}
 			/* FIFO needs to be drained here so we don't miss the next interrupt */
 			do {
-				data = i2c_dw_read_byte_non_blocking(port);
+				if (i2c_dw_read_byte_non_blocking(port, &data) != 0) {
+					break;
+				}
+
 				if (target_cb->write_received) {
 					target_cb->write_received(dw->target_cfg, data);
 				}
@@ -1041,11 +1044,9 @@ static int i2c_dw_configure(const struct device *dev, uint32_t config)
 	uint32_t rc = 0U;
 	mm_reg_t reg_base = DEVICE_MMIO_GET(dev);
 
-	dw->app_config = config;
-
 	/* Make sure we have a supported speed for the DesignWare model */
 	/* and have setup the clock frequency and speed mode */
-	switch (I2C_SPEED_GET(dw->app_config)) {
+	switch (I2C_SPEED_GET(config)) {
 	case I2C_SPEED_STANDARD:
 		lcnt_val = I2C_STD_LCNT + rom->lcnt_offset;
 		hcnt_val = I2C_STD_HCNT + rom->hcnt_offset;
@@ -1071,7 +1072,7 @@ static int i2c_dw_configure(const struct device *dev, uint32_t config)
 		rc = -EINVAL;
 	}
 
-	if (I2C_SPEED_GET(dw->app_config) == I2C_SPEED_HIGH) {
+	if (I2C_SPEED_GET(config) == I2C_SPEED_HIGH) {
 		/* Ensure minimum HCNT and LCNT register values for High Speed */
 		lcnt_val = I2C_ENSURE_MIN_SCL_LCNT(lcnt_val, rom->hs_spk_len);
 		hcnt_val = I2C_ENSURE_MIN_SCL_HCNT(hcnt_val, rom->hs_spk_len);
@@ -1084,6 +1085,10 @@ static int i2c_dw_configure(const struct device *dev, uint32_t config)
 	}
 	dw->lcnt = lcnt_val;
 	dw->hcnt = hcnt_val;
+
+	if (rc == 0) {
+		dw->app_config = config;
+	}
 
 	/*
 	 * Clear any interrupts currently waiting in the controller
@@ -1118,15 +1123,18 @@ static int i2c_dw_runtime_configure(const struct device *dev, uint32_t config)
 }
 
 #ifdef CONFIG_I2C_TARGET
-static inline uint8_t i2c_dw_read_byte_non_blocking(const struct device *dev)
+static inline int i2c_dw_read_byte_non_blocking(const struct device *dev, uint8_t *data)
 {
 	mm_reg_t reg_base = DEVICE_MMIO_GET(dev);
 
 	if (!test_bit_status_rfne(reg_base)) { /* Rx FIFO must not be empty */
+		LOG_ERR("Rx FIFO is empty");
 		return -EIO;
 	}
 
-	return (uint8_t)read_cmd_data(reg_base);
+	*data = (uint8_t)read_cmd_data(reg_base);
+
+	return 0;
 }
 
 static inline void i2c_dw_write_byte_non_blocking(const struct device *dev, uint8_t data)
@@ -1134,6 +1142,7 @@ static inline void i2c_dw_write_byte_non_blocking(const struct device *dev, uint
 	mm_reg_t reg_base = DEVICE_MMIO_GET(dev);
 
 	if (!test_bit_status_tfnt(reg_base)) { /* Tx FIFO must not be full */
+		LOG_ERR("Tx FIFO is full");
 		return;
 	}
 
@@ -1159,6 +1168,8 @@ static int i2c_dw_set_controller_mode(const struct device *dev)
 
 	write_tx_tl(ic_comp_param_1.bits.tx_buffer_depth + 1, reg_base);
 	write_rx_tl(ic_comp_param_1.bits.rx_buffer_depth + 1, reg_base);
+
+	LOG_DBG("I2C: Host registered as Master Device");
 
 	return 0;
 }

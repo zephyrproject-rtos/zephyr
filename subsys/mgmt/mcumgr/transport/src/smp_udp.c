@@ -292,6 +292,14 @@ static void smp_udp_receive_thread(void *p1, void *p2, void *p3)
 				/* No free space, drop SMP frame */
 				continue;
 			}
+
+			if (net_buf_tailroom(nb) < (size_t)len) {
+				LOG_ERR("SMP frame (%d) exceeds mcumgr buffer (%zu)", len,
+					net_buf_tailroom(nb));
+				smp_packet_free(nb);
+				continue;
+			}
+
 			net_buf_add_mem(nb, conf->recv_buffer, len);
 			ud = net_buf_user_data(nb);
 			memcpy(ud, &addr, sizeof(addr));
@@ -446,7 +454,9 @@ static void smp_udp_start(void)
 
 	k_sem_init(&smp_udp_configs.ipv4.network_ready_sem, 0, 1);
 	smp_udp_configs.ipv4.smp_transport.functions.output = smp_udp4_tx;
+	TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS);
 	smp_udp_configs.ipv4.smp_transport.functions.get_mtu = smp_udp_get_mtu;
+	TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS);
 	smp_udp_configs.ipv4.smp_transport.functions.ud_copy = smp_udp_ud_copy;
 	smp_udp_configs.ipv4.smp_transport.functions.ud_init = smp_udp_ud_init;
 
@@ -469,7 +479,9 @@ static void smp_udp_start(void)
 
 	k_sem_init(&smp_udp_configs.ipv6.network_ready_sem, 0, 1);
 	smp_udp_configs.ipv6.smp_transport.functions.output = smp_udp6_tx;
+	TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS);
 	smp_udp_configs.ipv6.smp_transport.functions.get_mtu = smp_udp_get_mtu;
+	TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS);
 	smp_udp_configs.ipv6.smp_transport.functions.ud_copy = smp_udp_ud_copy;
 	smp_udp_configs.ipv6.smp_transport.functions.ud_init = smp_udp_ud_init;
 

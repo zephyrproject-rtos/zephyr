@@ -20,3 +20,8 @@ void instr_buffer_init(void)
 	ring_buf_init(&instr_ring_buf,
 		      sizeof(instr_buffer), instr_buffer);
 }
+
+void instr_buffer_reset(void)
+{
+	ring_buf_reset(&instr_ring_buf);
+}

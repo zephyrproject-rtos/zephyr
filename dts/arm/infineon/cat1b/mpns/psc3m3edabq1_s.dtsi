@@ -9,8 +9,10 @@
 #include "../psc3/psc3.e-lqfp-48_s.dtsi"
 
 / {
-	cpu@0 {
-		clock-frequency = <100000000>;
+	cpus {
+		cpu@0 {
+			clock-frequency = <100000000>;
+		};
 	};
 
 	flash-controller@52150000 {

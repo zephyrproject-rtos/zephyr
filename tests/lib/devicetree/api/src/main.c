@@ -5057,4 +5057,51 @@ ZTEST(devicetree_api, test_map)
 				       INTERRUPT_NEXUS_CHECK_VARGS, (), 9999);
 }
 
+#define TEST_CLASSDEV_A DT_NODELABEL(test_classdev_a)
+#define TEST_CLASSDEV_OFF DT_NODELABEL(test_classdev_off)
+
+ZTEST(devicetree_api, test_device_class)
+{
+	unsigned int count = 0;
+
+	/* Classes declared directly in the node's binding */
+	zassert_equal(DT_NODE_HAS_CLASS(TEST_CLASSDEV_A, vnd_class_a), 1);
+	zassert_equal(DT_NODE_HAS_CLASS(TEST_CLASSDEV_A, vnd_class_b), 1);
+	/* Class inherited from an included binding */
+	zassert_equal(DT_NODE_HAS_CLASS(TEST_CLASSDEV_A, vnd_service), 1);
+	zassert_equal(DT_NODE_HAS_CLASS(TEST_CLASSDEV_A, vnd_no_such_class), 0);
+	/* Class membership is independent of the node's status */
+	zassert_equal(DT_NODE_HAS_CLASS(TEST_CLASSDEV_OFF, vnd_class_a), 1);
+
+	zassert_equal(DT_HAS_CLASS_STATUS_OKAY(vnd_class_a), 1);
+	zassert_equal(DT_HAS_CLASS_STATUS_OKAY(vnd_no_such_class), 0);
+
+	/* The disabled node is not counted */
+	zassert_equal(DT_NUM_CLASS_STATUS_OKAY(vnd_class_a), 2);
+	zassert_equal(DT_NUM_CLASS_STATUS_OKAY(vnd_service), 2);
+	zassert_equal(DT_NUM_CLASS_STATUS_OKAY(vnd_no_such_class), 0);
+
+#define COUNT_CLASS_OKAY(node_id) count++;
+	DT_FOREACH_CLASS_STATUS_OKAY(vnd_class_a, COUNT_CLASS_OKAY)
+	zassert_equal(count, 2);
+
+	count = 0;
+	DT_FOREACH_CLASS_STATUS_OKAY(vnd_no_such_class, COUNT_CLASS_OKAY)
+	zassert_equal(count, 0);
+#undef COUNT_CLASS_OKAY
+
+#define ADD_ARG_CLASS_OKAY(node_id, arg) count += (arg);
+	count = 0;
+	DT_FOREACH_CLASS_STATUS_OKAY_VARGS(vnd_class_b, ADD_ARG_CLASS_OKAY, 2)
+	zassert_equal(count, 4);
+#undef ADD_ARG_CLASS_OKAY
+}
+
+ZTEST(devicetree_api, test_device_class_kconfig)
+{
+	/* $(dt_class_enabled,...) sees classes declared in bindings */
+	zassert_true(IS_ENABLED(CONFIG_TEST_DT_CLASS_ENABLED));
+	zassert_false(IS_ENABLED(CONFIG_TEST_DT_CLASS_ENABLED_MISSING));
+}
+
 ZTEST_SUITE(devicetree_api, NULL, NULL, NULL, NULL, NULL);

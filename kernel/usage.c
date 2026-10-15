@@ -98,9 +98,14 @@ void z_sched_usage_start(struct k_thread *thread)
 
 void z_sched_usage_stop(void)
 {
-	k_spinlock_key_t k   = k_spin_lock(&usage_lock);
+	struct _cpu *cpu = _current_cpu;
 
-	struct _cpu     *cpu = _current_cpu;
+	/* Only this CPU writes usage0, and callers keep local IRQs masked. */
+	if (cpu->usage0 == 0U) {
+		return;
+	}
+
+	k_spinlock_key_t k = k_spin_lock(&usage_lock);
 
 	uint32_t u0 = cpu->usage0;
 

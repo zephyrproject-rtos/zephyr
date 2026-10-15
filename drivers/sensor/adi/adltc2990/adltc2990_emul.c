@@ -26,9 +26,6 @@ struct adltc2990_emul_data {
 	uint8_t reg[ADLTC2990_NUM_REGS];
 };
 
-struct adltc2990_emul_cfg {
-};
-
 void adltc2990_emul_set_reg(const struct emul *target, uint8_t reg_addr, const uint8_t *val)
 {
 	struct adltc2990_emul_data *data = target->data;
@@ -129,9 +126,8 @@ static const struct i2c_emul_api adltc2990_emul_api_i2c = {
 };
 
 #define ADLTC2990_EMUL(n)                                                                          \
-	const struct adltc2990_emul_cfg adltc2990_emul_cfg_##n;                                    \
 	struct adltc2990_emul_data adltc2990_emul_data_##n;                                        \
-	EMUL_DT_INST_DEFINE(n, adltc2990_emul_init, &adltc2990_emul_data_##n,                      \
-			    &adltc2990_emul_cfg_##n, &adltc2990_emul_api_i2c, NULL)
+	EMUL_DT_INST_DEFINE(n, adltc2990_emul_init, &adltc2990_emul_data_##n, NULL,                \
+			    &adltc2990_emul_api_i2c, NULL)
 
 DT_INST_FOREACH_STATUS_OKAY(ADLTC2990_EMUL)

@@ -21,11 +21,6 @@
 #ifdef CONFIG_UART_ASYNC_API
 #include <zephyr/drivers/dma/dma_bee.h>
 #include <zephyr/drivers/dma.h>
-#if defined(CONFIG_SOC_SERIES_RTL87X2G)
-#include <rtl_gdma.h>
-#elif defined(CONFIG_SOC_SERIES_RTL8752H)
-#include <rtl876x_gdma.h>
-#endif
 #endif
 
 #if defined(CONFIG_SOC_SERIES_RTL87X2G)
@@ -1276,7 +1271,7 @@ static DEVICE_API(uart, uart_bee_driver_api) = {
 			},                                                                         \
 		UART_DMA_CHANNEL(index, rx) UART_DMA_CHANNEL(index, tx)};                          \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(index, &uart_bee_init, NULL, &uart_bee_data_##index,                 \
+	DEVICE_DT_INST_DEFINE(index, uart_bee_init, NULL, &uart_bee_data_##index,                  \
 			      &uart_bee_cfg_##index, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,    \
 			      &uart_bee_driver_api);                                               \
                                                                                                    \

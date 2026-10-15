@@ -385,7 +385,7 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 	lll->is_adv_ind = 0U;
 	lll->is_aux_sched = 0U;
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
-	radio_phy_set(0, 0);
+	radio_phy_set(PHY_LEGACY, PHY_FLAGS_UNUSED);
 	radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, PDU_AC_LEG_PAYLOAD_SIZE_MAX,
 			    RADIO_PKT_CONF_PHY(RADIO_PKT_CONF_PHY_LEGACY));
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
@@ -413,7 +413,8 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 		   0) {
 #endif /* !CONFIG_BT_CENTRAL */
 		radio_tmr_tifs_set(EVENT_IFS_US);
-		radio_switch_complete_and_tx(0, 0, 0, 0);
+		radio_switch_complete_and_tx(PHY_LEGACY, PHY_FLAGS_UNUSED,
+					     PHY_LEGACY, PHY_FLAGS_UNUSED);
 	} else {
 		radio_switch_complete_and_disable();
 	}
@@ -468,7 +469,7 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 #if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 	radio_gpio_lna_setup();
 	radio_gpio_pa_lna_enable(remainder_us +
-				 radio_rx_ready_delay_get(0, 0) -
+				 radio_rx_ready_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED) -
 				 HAL_RADIO_GPIO_LNA_OFFSET);
 #else /* !HAL_RADIO_GPIO_HAVE_LNA_PIN */
 	ARG_UNUSED(remainder_us);
@@ -825,9 +826,9 @@ static void isr_tx(void *param)
 	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US +
 	       (EVENT_CLOCK_JITTER_US << 1) + RANGE_DELAY_US +
 	       HAL_RADIO_TMR_START_DELAY_US;
-	hcto += radio_rx_chain_delay_get(0, 0);
+	hcto += radio_rx_chain_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED);
 	hcto += addr_us_get(0);
-	hcto -= radio_tx_chain_delay_get(0, 0);
+	hcto -= radio_tx_chain_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED);
 
 	radio_tmr_hcto_configure(hcto);
 
@@ -836,7 +837,7 @@ static void isr_tx(void *param)
 #if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 	radio_gpio_lna_setup();
 	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + EVENT_IFS_US - 4 -
-				 radio_tx_chain_delay_get(0, 0) -
+				 radio_tx_chain_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED) -
 				 HAL_RADIO_GPIO_LNA_OFFSET);
 #endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
 
@@ -874,7 +875,8 @@ static void isr_common_done(void *param)
 		   0) {
 #endif /* !CONFIG_BT_CENTRAL */
 		radio_tmr_tifs_set(EVENT_IFS_US);
-		radio_switch_complete_and_tx(0, 0, 0, 0);
+		radio_switch_complete_and_tx(PHY_LEGACY, PHY_FLAGS_UNUSED,
+					     PHY_LEGACY, PHY_FLAGS_UNUSED);
 	} else {
 		radio_switch_complete_and_disable();
 	}
@@ -910,7 +912,7 @@ static void isr_done(void *param)
 
 	radio_gpio_lna_setup();
 	radio_gpio_pa_lna_enable(start_us +
-				 radio_rx_ready_delay_get(0, 0) -
+				 radio_rx_ready_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED) -
 				 HAL_RADIO_GPIO_LNA_OFFSET);
 #else /* !HAL_RADIO_GPIO_HAVE_LNA_PIN */
 	radio_rx_enable();
@@ -976,7 +978,7 @@ static void isr_window(void *param)
 #if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 	radio_gpio_lna_setup();
 	radio_gpio_pa_lna_enable(remainder_us +
-				 radio_rx_ready_delay_get(0, 0) -
+				 radio_rx_ready_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED) -
 				 HAL_RADIO_GPIO_LNA_OFFSET);
 #else /* !HAL_RADIO_GPIO_HAVE_LNA_PIN */
 	ARG_UNUSED(remainder_us);
@@ -1169,6 +1171,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 		struct node_rx_pdu *rx;
 		struct pdu_adv *pdu_tx;
 		uint32_t conn_space_us;
+		uint32_t conn_ind_us;
 		struct ull_hdr *ull;
 		uint32_t pdu_end_us;
 		uint8_t init_tx_addr;
@@ -1195,10 +1198,32 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 			scan_interval_us = lll->interval * SCAN_INT_UNIT_US;
 			pdu_end_us %= scan_interval_us;
 		}
+
+		/* What follows the received PDU: the inter frame space and the
+		 * CONNECT_IND, with a margin for the resolution of the ticker.
+		 */
+		conn_ind_us = EVENT_IFS_US +
+			      PDU_AC_MAX_US(sizeof(struct pdu_adv_connect_ind), PHY_1M) +
+			      EVENT_TICKER_RES_MARGIN_US;
+
 		ull = HDR_LLL2ULL(lll);
 		if (pdu_end_us > (HAL_TICKER_TICKS_TO_US(ull->ticks_slot) -
-				  EVENT_IFS_US - 352 - EVENT_OVERHEAD_START_US -
-				  EVENT_TICKER_RES_MARGIN_US)) {
+				  EVENT_OVERHEAD_START_US - conn_ind_us)) {
+			return -ETIME;
+		}
+
+		/* A finite scan window is closed by the stop ticker, see
+		 * common_prepare_cb(), and the radio is disabled there: the
+		 * CONNECT_IND has to be over by then. The ticker counts from
+		 * the start of the event, which is EVENT_OVERHEAD_START_US
+		 * before the radio timer was started. In an event that has
+		 * been resumed the timer was started later, which makes this
+		 * a loose bound there. The shortest valid scan window is
+		 * longer than what is subtracted here.
+		 */
+		if (lll->ticks_window != 0U &&
+		    (pdu_end_us > (HAL_TICKER_TICKS_TO_US(lll->ticks_window) -
+				   EVENT_OVERHEAD_START_US - conn_ind_us))) {
 			return -ETIME;
 		}
 
@@ -1255,7 +1280,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 		radio_gpio_pa_setup();
 		radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
 					 EVENT_IFS_US -
-					 radio_rx_chain_delay_get(0, 0) -
+					 radio_rx_chain_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED) -
 					 HAL_RADIO_GPIO_PA_OFFSET);
 #endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
 
@@ -1399,7 +1424,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 		radio_gpio_pa_setup();
 		radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
 					 EVENT_IFS_US -
-					 radio_rx_chain_delay_get(0, 0) -
+					 radio_rx_chain_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED) -
 					 HAL_RADIO_GPIO_PA_OFFSET);
 #endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
 

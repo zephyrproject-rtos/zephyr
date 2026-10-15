@@ -5,7 +5,7 @@ description: ADIS1647x 6-DoF MEMS IMU with SPI connection
 
 compatible: "adi,adis1647x"
 
-include: spi-device.yaml
+include: [spi-device.yaml, sensor-device.yaml]
 
 properties:
   drdy-gpios:

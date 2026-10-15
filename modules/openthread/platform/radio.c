@@ -1292,30 +1292,51 @@ void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode, uint8_t aKe
 			  const otMacKeyMaterial *aNextKey, otRadioKeyType aKeyType)
 {
 	ARG_UNUSED(aInstance);
+	ARG_UNUSED(aKeyIdMode);
 	__ASSERT_NO_MSG(aPrevKey != NULL && aCurrKey != NULL && aNextKey != NULL);
 
 #if defined(CONFIG_OPENTHREAD_PLATFORM_KEYS_EXPORTABLE_ENABLE)
+	/* Export PSA key references into local buffers. Do NOT write into the
+	 * aPrevKey/aCurrKey/aNextKey const pointers: mKey and mKeyRef share a
+	 * union, so writing the exported bytes there would corrupt the PSA
+	 * handle and break subsequent SW RX decryption by the OT stack.
+	 */
 	__ASSERT_NO_MSG(aKeyType == OT_KEY_TYPE_KEY_REF);
+	uint8_t prev_key_bytes[OT_MAC_KEY_SIZE];
+	uint8_t curr_key_bytes[OT_MAC_KEY_SIZE];
+	uint8_t next_key_bytes[OT_MAC_KEY_SIZE];
 	size_t keyLen;
 	otError error;
 
 	error = otPlatCryptoExportKey(aPrevKey->mKeyMaterial.mKeyRef,
-				      (uint8_t *)aPrevKey->mKeyMaterial.mKey.m8, OT_MAC_KEY_SIZE,
-				      &keyLen);
+				      prev_key_bytes, OT_MAC_KEY_SIZE, &keyLen);
 	__ASSERT_NO_MSG(error == OT_ERROR_NONE);
+
 	error = otPlatCryptoExportKey(aCurrKey->mKeyMaterial.mKeyRef,
-				      (uint8_t *)aCurrKey->mKeyMaterial.mKey.m8, OT_MAC_KEY_SIZE,
-				      &keyLen);
+				      curr_key_bytes, OT_MAC_KEY_SIZE, &keyLen);
 	__ASSERT_NO_MSG(error == OT_ERROR_NONE);
+
 	error = otPlatCryptoExportKey(aNextKey->mKeyMaterial.mKeyRef,
-				      (uint8_t *)aNextKey->mKeyMaterial.mKey.m8, OT_MAC_KEY_SIZE,
-				      &keyLen);
+				      next_key_bytes, OT_MAC_KEY_SIZE, &keyLen);
 	__ASSERT_NO_MSG(error == OT_ERROR_NONE);
+
+	/* Use local pointers so the key_value assignments below are uniform */
+	const uint8_t *prev_key_data = prev_key_bytes;
+	const uint8_t *curr_key_data = curr_key_bytes;
+	const uint8_t *next_key_data = next_key_bytes;
 #else
 	__ASSERT_NO_MSG(aKeyType == OT_KEY_TYPE_LITERAL_KEY);
+	const uint8_t *prev_key_data = aPrevKey->mKeyMaterial.mKey.m8;
+	const uint8_t *curr_key_data = aCurrKey->mKeyMaterial.mKey.m8;
+	const uint8_t *next_key_data = aNextKey->mKeyMaterial.mKey.m8;
 #endif
 
-	uint8_t key_id_mode = aKeyIdMode >> 3;
+	/* The OpenThread platform API requires aKeyIdMode to be ignored: keys set
+	 * through otPlatRadioSetMacKey() are always Key ID Mode 1 (see the
+	 * function documentation in openthread/platform/radio.h). The driver is
+	 * given the IEEE 802.15.4 mode number. aKeyId == 0 clears the keys.
+	 */
+	const uint8_t key_id_mode = 1;
 	uint8_t prev_key_id = 0;
 	uint8_t next_key_id = 0;
 
@@ -1343,22 +1364,19 @@ void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode, uint8_t aKe
 		},
 	};
 
-	if (key_id_mode == 1) {
+	if (aKeyId != 0) {
 		/* aKeyId in range: (1, 0x80) means valid keys */
 		prev_key_id = aKeyId == 1 ? 0x80 : aKeyId - 1;
 		next_key_id = aKeyId == 0x80 ? 1 : aKeyId + 1;
 
 		keys[0].key_id = &prev_key_id;
-		keys[0].key_value = (uint8_t *)aPrevKey->mKeyMaterial.mKey.m8;
+		keys[0].key_value = (uint8_t *)prev_key_data;
 
 		keys[1].key_id = &aKeyId;
-		keys[1].key_value = (uint8_t *)aCurrKey->mKeyMaterial.mKey.m8;
+		keys[1].key_value = (uint8_t *)curr_key_data;
 
 		keys[2].key_id = &next_key_id;
-		keys[2].key_value = (uint8_t *)aNextKey->mKeyMaterial.mKey.m8;
-	} else {
-		/* aKeyId == 0 is used only to clear keys for stack reset in RCP */
-		__ASSERT_NO_MSG((key_id_mode == 0) && (aKeyId == 0));
+		keys[2].key_value = (uint8_t *)next_key_data;
 	}
 
 	struct ieee802154_config config = {

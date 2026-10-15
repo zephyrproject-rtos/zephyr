@@ -9,6 +9,7 @@
  * @brief Infineon XMC7200 SOC.
  */
 
+#include <zephyr/irq.h>
 #include <zephyr/cache.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
@@ -55,7 +56,7 @@ __attribute__((section(".itcm"))) void sys_int_handler(uint32_t intrNum)
 		(entry->isr)(entry->arg);
 	}
 #endif
-	NVIC_ClearPendingIRQ((IRQn_Type)intrNum);
+	k_irq_clear_pending(intrNum);
 }
 
 void system_irq_init(void)

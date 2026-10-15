@@ -357,7 +357,7 @@ int pthread_attr_setstack(pthread_attr_t *_attr, void *stackaddr, size_t stacksi
 		return EINVAL;
 	}
 
-	if (attr->stack != NULL) {
+	if (attr->stack != NULL && attr->stack != stackaddr) {
 		ret = k_thread_stack_free(attr->stack);
 		if (ret == 0) {
 			LOG_DBG("Freed attr %p thread stack %zu@%p", _attr,
@@ -1004,6 +1004,14 @@ int pthread_once(pthread_once_t *once, void (*init_func)(void))
 
 	if (init_func == NULL) {
 		return EINVAL;
+	}
+
+	/* Nothing to do once the flag is set: it is never cleared, and since it is
+	 * set before init_func() is called, taking the lock would not make this
+	 * caller wait for initialization to finish anyway.
+	 */
+	if (_once->flag) {
+		return 0;
 	}
 
 	SYS_SEM_LOCK(&pthread_pool_lock) {

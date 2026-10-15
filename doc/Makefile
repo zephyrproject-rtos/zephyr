@@ -30,7 +30,7 @@ SKIP_TAGS = \
 # ------------------------------------------------------------------------------
 # Documentation targets
 
-.PHONY: configure clean html html-fast html-minimal html-live html-live-fast latex pdf doxygen doxygen-xml doxygen-coverage doxygen-coverage-json
+.PHONY: configure clean html html-fast html-minimal html-live html-live-fast html-live-minimal latex pdf doxygen doxygen-xml doxygen-coverage doxygen-coverage-json
 
 html-fast:
 	${MAKE} html DT_TURBO_MODE=1 HW_FEATURES_TURBO_MODE=1
@@ -44,6 +44,10 @@ html-minimal:
 
 html-live-fast:
 	${MAKE} html-live DT_TURBO_MODE=1 HW_FEATURES_TURBO_MODE=1
+
+html-live-minimal:
+	${MAKE} html-live-fast \
+		SKIP_DOXYGEN=1 SKIP_KCONFIG=1 SKIP_EXTERNAL_CONTENT=1
 
 doxygen-coverage doxygen-coverage-json:
 	${MAKE} configure DOXYGEN_FORCE_SINGLE_THREAD=1

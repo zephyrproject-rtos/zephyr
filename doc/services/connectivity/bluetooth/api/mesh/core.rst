@@ -80,20 +80,20 @@ is defined by the :kconfig:option:`CONFIG_BT_MESH_STORE_TIMEOUT` option. Once
 storing of data is scheduled, it can not be rescheduled until the work item is
 processed. Exceptions are made in certain cases as described below.
 
-When IV index, Sequence Number or CDB configuration have to be stored, the work
-item is submitted to the workqueue without the delay. If the work item was
-previously scheduled, it will be rescheduled without the delay.
+When IV index, Sequence Number, CDB configuration or a Replay Protection List
+reset have to be stored, the work item is submitted to the workqueue without
+the delay. If the work item was previously scheduled, it will be rescheduled
+without the delay.
 
-The Replay Protection List uses the same work item to store RPL entries. If
-storing of RPL entries is requested and no other configuration is pending to be
-stored, the delay is set to :kconfig:option:`CONFIG_BT_MESH_RPL_STORE_TIMEOUT`.
-If other stack configuration has to be stored, the delay defined by
-the :kconfig:option:`CONFIG_BT_MESH_STORE_TIMEOUT` option is less than
-:kconfig:option:`CONFIG_BT_MESH_RPL_STORE_TIMEOUT`, and the work item was
-scheduled by the Replay Protection List, the work item will be rescheduled.
+The Replay Protection List and the Solicitation Replay Protection List are
+stored by a separate work item, scheduled with the delay defined by
+:kconfig:option:`CONFIG_BT_MESH_RPL_STORE_TIMEOUT`. Pending stores of other
+kinds do not shorten this delay. If the option is set to ``-1``, the replay
+protection lists are stored together with the rest of the stack
+configuration.
 
-When the work item is running, the stack will store all pending configuration,
-including the RPL entries.
+When a work item is running, the stack will store all pending configuration
+that the work item is responsible for.
 
 Work item execution context
 ===========================

@@ -118,13 +118,14 @@ config FLASH_CODE_PARTITION_USING_FIXED_PARTITIONS
 		$(dt_chosen_has_compat,$(dt_node_parent,$(dt_chosen_path,$(DT_CHOSEN_Z_CODE_PARTITION))),fixed-partitions) || \
 		$(dt_chosen_has_compat,$(dt_node_parent,$(dt_chosen_path,$(DT_CHOSEN_Z_CODE_PARTITION))),fixed-subpartitions)
 	depends on USE_DT_CODE_PARTITION
+	select DEPRECATED
 	help
 	  If this item is selected then it is because your device is using ``fixed-partitions`` or
 	  ``fixed-subpartitions`` for partition layout, this has been replaced with
 	  ``zephyr,mapped-partitions``.
 
-	  Support for this will be deprecated and requires that your files be updated correctly for
-	  a future release, check the Zephyr 4.4 migration notes.
+	  Support for this will be removed, and your DTS files are required to be updated
+	  correctly, check the Zephyr 4.4 migration notes.
 
 if !FLASH_USES_MAPPED_PARTITION
 
@@ -161,6 +162,9 @@ endif # HAS_FLASH_LOAD_OFFSET || $(DT_HAS_MAPPED_PARTITION)
 config ROM_START_OFFSET
 	hex
 	prompt "ROM start offset" if !BOOTLOADER_MCUBOOT
+	default 0x1000 if BOOTLOADER_MCUBOOT && CPU_CORTEX_M && NUM_IRQS > 496
+	default 0x800 if BOOTLOADER_MCUBOOT && CPU_CORTEX_M && NUM_IRQS > 240
+	default 0x400 if BOOTLOADER_MCUBOOT && CPU_CORTEX_M && NUM_IRQS > 112
 	default 0x200 if BOOTLOADER_MCUBOOT
 	default 0
 	help
@@ -169,9 +173,12 @@ config ROM_START_OFFSET
 	  space between the beginning of the image and the start of the first
 	  section to store an image header or any other metadata.
 	  In the particular case of the MCUboot bootloader this reserves enough
-	  space to store the image header, which should also meet vector table
-	  alignment requirements on most ARM targets, although some targets
-	  may require smaller or larger values.
+	  space to store the image header, and also satisfies the vector table
+	  alignment requirements of Cortex-M targets. The VTOR offset must be
+	  aligned to 4 * (16 + NUM_IRQS) bytes rounded up to a power of two,
+	  so the default grows with the number of interrupts.
+	  Targets with requirements beyond this (e.g. additional metadata
+	  before the image) must still override this value.
 
 config ROM_END_OFFSET
 	hex "ROM end offset"
@@ -360,19 +367,6 @@ endmenu
 
 menu "Compiler Options"
 
-config REQUIRES_STD_C99
-	bool
-	select DEPRECATED
-	help
-	  Hidden option to select compiler support C99 standard or higher.
-
-config REQUIRES_STD_C11
-	bool
-	select DEPRECATED
-	select REQUIRES_STD_C99
-	help
-	  Hidden option to select compiler support C11 standard or higher.
-
 config REQUIRES_STD_C17
 	bool
 	help
@@ -390,28 +384,6 @@ choice STD_C
 	default STD_C17
 	help
 	  C Standards.
-
-config STD_C90
-	bool "C90 [DEPRECATED]"
-	select DEPRECATED
-	depends on !REQUIRES_STD_C99
-	help
-	  1989 C standard as completed in 1989 and ratified by ISO/IEC
-	  as ISO/IEC 9899:1990. This version is known as "ANSI C".
-
-config STD_C99
-	bool "C99 [DEPRECATED]"
-	select DEPRECATED
-	depends on !REQUIRES_STD_C11
-	help
-	  1999 C standard.
-
-config STD_C11
-	bool "C11 [DEPRECATED]"
-	select DEPRECATED
-	depends on !REQUIRES_STD_C17
-	help
-	  2011 C standard.
 
 config STD_C17
 	bool "C17"
@@ -547,7 +519,13 @@ config LTO_SINGLE_THREADED
 config COMPILER_WARNINGS_AS_ERRORS
 	bool "Treat warnings as errors"
 	help
-	  Turn on "warning as error" toolchain flags
+	  Turn on "warning as error" toolchain flags.
+
+config DEPRECATED_KCONFIGS_AS_ERRORS
+	bool "Treat deprecated Kconfigs as errors"
+	depends on WARN_DEPRECATED
+	help
+	  Will cause build system to throw failures if deprecated Kconfigs are enabled in a build.
 
 config DEPRECATION_TEST
 	bool "Indicate test for deprecated feature [DEPRECATED]"

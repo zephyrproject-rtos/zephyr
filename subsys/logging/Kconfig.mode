@@ -75,6 +75,7 @@ config LOG_DEFAULT_MINIMAL
 config LOG_MULTIDOMAIN
 	bool "Multi-domain logger"
 	select LOG_TIMESTAMP_64BIT
+	imply LOG_DOMAIN_NAME_PREFIX
 
 if LOG_MODE_DEFERRED
 

@@ -221,7 +221,7 @@ The following steps describe it:
 #. The sender fills the remaining part of the blocks with his data.
    Unused space is ignored.
 #. The sender writes the message to the producer queue and sends the mailbox signal.
-#. The receiver excutes mailbox callback in the mailbox interrupt context and reads the producer queue.
+#. The receiver executes mailbox callback in the mailbox interrupt context and reads the producer queue.
 #. The receiver reads the block index and locates the message within his ``rx-region``.
 #. The receiver reads the endpoint and message length and processes the message.
 #. The receiver consumes the message by writing its block index to the consumer queue.

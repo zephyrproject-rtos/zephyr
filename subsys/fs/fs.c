@@ -692,6 +692,70 @@ int fs_statvfs(const char *abs_path, struct fs_statvfs *stat)
 	return rc;
 }
 
+int fs_normalize_path(const char *path, char *buf, size_t len)
+{
+	size_t dst_len = 0;
+	size_t src = 0;
+
+	if ((path == NULL) || (path[0] != '/') || (buf == NULL) || (len == 0)) {
+		LOG_ERR("invalid path or output buffer!!");
+		return -EINVAL;
+	}
+
+	while (path[src] != '\0') {
+		size_t seg_start;
+		size_t seg_len;
+		size_t i;
+
+		/* Skipping sequence of /, like /// */
+		if (path[src] == '/') {
+			++src;
+			continue;
+		}
+
+		seg_start = src;
+		while ((path[src] != '\0') && (path[src] != '/')) {
+			src++;
+		}
+		seg_len = src - seg_start;
+
+		if ((seg_len == 1) && (path[seg_start] == '.')) {
+			continue;
+		}
+
+		if ((seg_len == 2) && (path[seg_start] == '.') && (path[seg_start + 1] == '.')) {
+			while ((dst_len > 0) && (buf[dst_len - 1] != '/')) {
+				dst_len--;
+			}
+			if (dst_len > 0) {
+				dst_len--;
+			}
+			continue;
+		}
+
+		if ((dst_len + 1 + seg_len + 1) > len) {
+			return -ENAMETOOLONG;
+		}
+
+		buf[dst_len] = '/';
+		for (i = 0; i < seg_len; i++) {
+			buf[dst_len + 1 + i] = path[seg_start + i];
+		}
+		dst_len += 1 + seg_len;
+	}
+
+	if (dst_len == 0) {
+		if (len < 2) {
+			return -ENAMETOOLONG;
+		}
+		buf[dst_len] = '/';
+		dst_len++;
+	}
+	buf[dst_len] = '\0';
+
+	return 0;
+}
+
 #if defined(CONFIG_FILE_SYSTEM_GC)
 
 int fs_gc(struct fs_mount_t *mp)

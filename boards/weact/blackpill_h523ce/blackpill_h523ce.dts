@@ -94,14 +94,16 @@ zephyr_udc0: &usb {
 &adc1 {
 	pinctrl-0 = <&adc1_inp1_pa1>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "ASYNC";
+	status = "okay";
+};
+
+&adc12_common {
 	st,adc-prescaler = <8>;
+	st,adc-clock-source = "ASYNC";
 	status = "okay";
 };
 
 &adc2 {
-	st,adc-clock-source = "ASYNC";
-	st,adc-prescaler = <8>;
 	status = "okay";
 };
 

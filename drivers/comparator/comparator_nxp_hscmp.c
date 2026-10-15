@@ -149,7 +149,6 @@ static void nxp_hscmp_irq_handler(const struct device *dev)
 	config->base->CSR |= (HSCMP_CSR_CFF_MASK | HSCMP_CSR_CFR_MASK);
 
 	if (data->callback == NULL) {
-		LOG_WRN("No callback can be executed.");
 		return;
 	}
 

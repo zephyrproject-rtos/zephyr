@@ -19,7 +19,7 @@ properties:
       not mandatory to define all of them in device tree if there is no need to
       communicate with all of them. Each MAC PHY has its own PHY address, which
       together with Register address creates the absolute address of the
-      concrete register in conrete MAC PHY acoring to Clause 22 MDIO
+      concrete register in concrete MAC PHY acoring to Clause 22 MDIO
       communication standard. Below example shows how the PHY address and
       Register address are glued together in Internal PHY Registers group:
 
@@ -38,7 +38,7 @@ properties:
       but it is not mandatory to define all of them in device tree if there is
       no need to communicate with all of them. Each MAC PHY has its own PHY
       address, which together with Register address creates the absolute address
-      of the concrete register in conrete MAC PHY acoring to Clause 22 MDIO
+      of the concrete register in concrete MAC PHY acoring to Clause 22 MDIO
       communication standard. Below example shows how the PHY address and
       Register address are glued together in Switch Per-Port Registers group:
 

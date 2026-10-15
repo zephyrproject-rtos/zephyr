@@ -35,6 +35,7 @@ adaptrum	Adaptrum, Inc.
 adh	AD Holdings Plc.
 adh-tech	ADH Technology Co. Ltd.
 adi	Analog Devices, Inc.
+adsemi	AD Semiconductor Co., Ltd.
 advantech	Advantech Corporation
 aeroflexgaisler	Aeroflex Gaisler AB
 aesc	Aesc Silicon
@@ -137,10 +138,12 @@ capella	Capella Microsystems, Inc
 cascoda	Cascoda, Ltd.
 catalyst	Catalyst Semiconductor, Inc.
 cavium	Cavium, Inc.
+cdac	Centre for Development of Advanced Computing (C-DAC)
 cdns	Cadence Design Systems Inc.
 cdtech	CDTech(H.K.) Electronics Limited
 cellwise	CellWise Microelectronics Co., Ltd
 ceva	Ceva, Inc.
+cfsensor	CFSensor Co., Ltd
 checkpoint	Check Point Software Technologies Ltd.
 chefree	Chefree Technology Corp.
 chipidea	Chipidea, Inc
@@ -559,6 +562,7 @@ peregrine	Peregrine Consultoria e Servicos
 pericom	Pericom Technology Inc.
 pervasive	Pervasive Displays, Inc.
 phicomm	PHICOMM Co., Ltd.
+philips	Koninklijke Philips N.V.
 phosense	Beijing Phosense Electronic Technology Co., Ltd.
 phytec	PHYTEC
 picochip	Picochip Ltd
@@ -718,6 +722,7 @@ swir	Sierra Wireless
 syna	Synaptics Inc.
 synochip	Hangzhou Synochip Data Security Technology Co., Ltd.
 synology	Synology, Inc.
+t3gemstone	T3 Gemstone
 tbs	TBS Technologies
 tbs-biometrics	Touchless Biometric Systems AG
 tcg	Trusted Computing Group
@@ -796,6 +801,7 @@ vocore	VoCore Studio
 voipac	Voipac Technologies s.r.o.
 vot	Vision Optical Technology Co., Ltd.
 vxt	VXT Ltd
+waiken-smart	Dongguan Waiken-Smart Technology Co., Ltd.
 wand	Wandbord (Technexion)
 waveshare	Waveshare Electronics
 wch	WinChipHead

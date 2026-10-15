@@ -1,11 +1,12 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
 
+#include <nxp/mcx/mcxn/nxp_mcxn547.dtsi>
 #include "mcx_n5xx_evk.dtsi"
 #include "mcx_nx4x_evk_cpu0.dtsi"
 
@@ -18,5 +19,10 @@
 };
 
 &freqme0 {
+	status = "okay";
+};
+
+&sema42 {
+	domain-id = <1>;
 	status = "okay";
 };

@@ -20,7 +20,7 @@ extern "C" {
  * @defgroup mfd_interface_npm10xx MFD NPM10XX Interface
  * @ingroup mfd_interfaces
  * @since 4.4
- * @version 0.2.0
+ * @version 0.3.0
  * @{
  */
 
@@ -357,6 +357,30 @@ int mfd_npm10xx_timer_stop(const struct device *dev);
  * @return 0 on success, negative errno otherwise
  */
 int mfd_npm10xx_timer_status_get(const struct device *dev, bool *busy);
+
+/**
+ * @brief Read the SCRATCH register
+ *
+ * Its content is preserved between resets. Cleared only on power-on/brown-out reset and Ship mode.
+ *
+ * @param dev nPM10xx MFD device
+ * @param val read SCRATCH value
+ *
+ * @return 0 on success, negative errno otherwise
+ */
+int mfd_npm10xx_scratch_read(const struct device *dev, uint8_t *val);
+
+/**
+ * @brief Write the SCRATCH register
+ *
+ * Its content is preserved between resets. Cleared only on power-on/brown-out reset and Ship mode.
+ *
+ * @param dev nPM10xx MFD device
+ * @param val SCRATCH value to be written
+ *
+ * @return 0 on success, negative errno otherwise
+ */
+int mfd_npm10xx_scratch_write(const struct device *dev, uint8_t val);
 
 /** @} */
 

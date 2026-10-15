@@ -15,6 +15,7 @@ if(CONFIG_SOC_FAMILY_MICROCHIP_SAMA5 OR CONFIG_SOC_FAMILY_MICROCHIP_SAMA7)
     clk-sam9x60-pll.c
     clk-system.c
     pmc.c
+    delay.c
   )
 
   zephyr_sources(

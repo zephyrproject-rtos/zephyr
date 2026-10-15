@@ -4,4 +4,6 @@ description: Synopsys DesignWare MAC PTP (Precision Time Protocol) Clock
 
 compatible: "snps,dwmac-ptp-clock"
 
-include: ["base.yaml"]
+include:
+  - name: base.yaml
+  - name: pinctrl-device.yaml

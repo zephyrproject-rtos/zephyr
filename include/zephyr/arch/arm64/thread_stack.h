@@ -7,6 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM64_THREAD_STACK_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM64_THREAD_STACK_H_
 
+#include <zephyr/arch/arm64/cpu.h>
 #include <zephyr/arch/arm64/mm.h>
 
 #define ARCH_STACK_PTR_ALIGN			16
@@ -24,7 +25,12 @@
 #define Z_ARM64_K_STACK_BASE_ALIGN		MEM_DOMAIN_ALIGN_AND_SIZE
 #else
 #define Z_ARM64_STACK_GUARD_SIZE		0
+#if defined(CONFIG_SMP)
+/* secondary cores invalidate their boot stack, which must own whole lines */
+#define Z_ARM64_K_STACK_BASE_ALIGN		L1_CACHE_BYTES
+#else
 #define Z_ARM64_K_STACK_BASE_ALIGN		ARCH_STACK_PTR_ALIGN
+#endif
 #endif
 
 /*

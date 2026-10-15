@@ -3,7 +3,7 @@ name: nRF52840-DK-NRF52840
 type: mcu
 arch: arm
 ram: 256
-flash: 1024
+flash: 472
 toolchain:
   - zephyr
   - gnuarmemb

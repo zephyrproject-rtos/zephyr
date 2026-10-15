@@ -12,8 +12,8 @@
  * @ingroup clock_control_adsp
  */
 
-#ifndef CLOCK_CONTROL_ADSP_H_
-#define CLOCK_CONTROL_ADSP_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_CLOCK_CONTROL_ADSP_H_
+#define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_CLOCK_CONTROL_ADSP_H_
 
 /**
  * @defgroup clock_control_adsp Intel ADSP
@@ -25,4 +25,4 @@
 
 /** @} */
 
-#endif /* CLOCK_CONTROL_ADSP_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_CLOCK_CONTROL_ADSP_H_ */

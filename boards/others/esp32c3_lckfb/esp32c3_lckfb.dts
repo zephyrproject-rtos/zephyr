@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <espressif/esp32c3/esp32c3_common.dtsi>
+#include <espressif/esp32c3/esp32c3.dtsi>
 #include "esp32c3_lckfb-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <espressif/partitions_0x0_default_8M.dtsi>

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_GD32_COMMON_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_GD32_COMMON_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_GD32_CLOCKS_COMMON_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_GD32_CLOCKS_COMMON_H_
 
 /**
  * Encode RCU register offset and configuration bit.
@@ -20,4 +20,4 @@
 #define GD32_CLOCK_CONFIG(reg, bit) \
 	(((GD32_ ## reg ## _OFFSET) << 6U) | (bit))
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_GD32_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_GD32_CLOCKS_COMMON_H_ */

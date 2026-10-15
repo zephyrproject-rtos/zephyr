@@ -6,6 +6,7 @@
 #include <zephyr/offsets.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/arch/riscv/irq.h>
+#include <riscv/csr_clic.h>
 
 /* Exports */
 GTEXT(__soc_handle_irq)
@@ -20,36 +21,65 @@ SECTION_FUNC(exception.other, __soc_handle_irq)
 /*
  * ESP32-C5 CLIC context save/restore.
  *
- * On CLIC, mret restores mintstatus.mil from mcause.mpil ONLY when
- * mcause.interrupt (bit 31) is set. With RISCV_ALWAYS_SWITCH_THROUGH_ECALL,
- * context switches use ecall which saves mcause with bit 31 clear. When
- * this mcause is restored before mret, the hardware skips mil restore,
- * leaving it stuck at the ISR level and blocking same-level interrupts.
+ * On CLIC the previous interrupt level lives in mcause.mpil and the preemption
+ * threshold in mintthresh; mret reloads mintstatus.mil from mcause.mpil only
+ * when mcause.interrupt (bit 31) is set. A context switch returns through the
+ * exception epilogue to a different thread, so the per-thread mcause and
+ * mintthresh are saved on entry and restored on exit.
  *
- * Save: clear mpil for exceptions so mret restores mil to 0.
- * Restore: force bit 31 so mret always restores mil from mpil.
- *
- * Same workaround as Nuclei ECLIC (soc/gd/gd32/gd32vf103/soc_irq.S).
+ * The saved mcause cannot be written back verbatim: mcause.interrupt must
+ * describe the trap being returned from, not the one the incoming thread was
+ * suspended in. When a thread interrupted in user mode is resumed from an
+ * ecall-entered trap (or the reverse), a mismatched mret leaves the core in a
+ * state where the next trap taken from user mode is a double trap and the
+ * chip resets with CPU_LOCKUP. Hence mcause.interrupt is forced to match the
+ * live entry type: cleared on exception entry at MIL 0, set on interrupt
+ * entry, with MPIL cleared for exception-saved frames so they resume at MIL
+ * 0. An exception taken at a non-zero MIL returns at that MIL with
+ * mcause.interrupt set, so the enclosing interrupt handler exits through the
+ * interrupt path.
  */
 
 SECTION_FUNC(exception.other, __soc_save_context)
 
 	csrr t0, mcause
-	bltz t0, 1f
-	li t1, 0xFF00FFFF
-	and t0, t0, t1
-1:
 	sw t0, __soc_esf_t_mcause_OFFSET(a0)
-	csrr t0, 0x347
+	csrr t0, MINTTHRESH_CSR
 	sw t0, __soc_esf_t_mintthresh_OFFSET(a0)
 	ret
 
 SECTION_FUNC(exception.other, __soc_restore_context)
 
 	lw t0, __soc_esf_t_mintthresh_OFFSET(a0)
-	csrw 0x347, t0
+	csrw MINTTHRESH_CSR, t0
 	lw t0, __soc_esf_t_mcause_OFFSET(a0)
-	li t1, 1 << RISCV_MCAUSE_IRQ_POS
+	/* live mcause = entry type of this trap */
+	csrr t2, mcause
+	bltz t2, 1f
+	/* Exception taken inside an interrupt handler: return at the current
+	 * MIL and leave mcause interrupt-typed for the handler's own exit.
+	 */
+	csrr t1, MINTSTATUS_CSR
+	srli t1, t1, 24
+	beqz t1, 3f
+	li t2, 0xFF00FFFF
+	and t0, t0, t2
+	slli t1, t1, 16
 	or t0, t0, t1
-	csrw mcause, t0
+	li t1, RISCV_MCAUSE_IRQ_BIT
+	or t0, t0, t1
+	j 2f
+3:	/* Exception-entered: keep mcause.interrupt clear; MIL stays 0. */
+	li t1, ~RISCV_MCAUSE_IRQ_BIT
+	and t0, t0, t1
+	j 2f
+1:	/* Interrupt-entered: set mcause.interrupt so mret reloads mil from
+	 * mpil; exception-saved frames resume at mil 0.
+	 */
+	bltz t0, 2f
+	li t1, 0xFF00FFFF
+	and t0, t0, t1
+	li t1, RISCV_MCAUSE_IRQ_BIT
+	or t0, t0, t1
+2:	csrw mcause, t0
 	ret

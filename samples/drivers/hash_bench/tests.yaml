@@ -1,0 +1,30 @@
+sample:
+  description: Benchmark hash API throughput and CPU load
+  name: Hash HW benchmark
+common:
+  tags: crypto
+tests:
+  sample.drivers.hash_bench:
+    platform_allow:
+      - stm32mp135f_dk
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "Hash HW benchmark"
+        - "BENCH SHA256 .*"
+        - "BENCH SHA3-512 .*"
+  sample.drivers.hash_bench.cpu:
+    extra_args: EXTRA_CONF_FILE=prj_mtls_shim.conf
+    platform_allow:
+      - native_sim
+      - stm32mp135f_dk
+    integration_platforms:
+      - native_sim
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "Hash SW benchmark"
+        - "BENCH SHA256 .*"
+        - "BENCH SHA3-512 .*"

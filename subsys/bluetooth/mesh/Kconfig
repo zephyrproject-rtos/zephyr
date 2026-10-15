@@ -798,7 +798,6 @@ config BT_MESH_ACCESS_LAYER_MSG
 
 config BT_MESH_MODEL_VND_MSG_CID_FORCE
 	bool "Force vendor model to use opcodes with matching CID [DEPRECATED]"
-	default n
 	select DEPRECATED
 	help
 	  This option forces vendor models to only use opcodes with a CID field
@@ -1077,6 +1076,26 @@ config BT_MESH_BLOB_IO_FLASH_WRITE_BLOCK_SIZE_MAX
 	help
 	  The BLOB IO Flash module will support flash devices with explicit erase
 	  when this value is set to a multiple of the device write block size.
+
+config BT_MESH_BLOB_IO_FLASH_BLOCK_CACHE
+	bool "Cache each BLOB block in RAM and flush write-block-aligned once"
+	help
+	  Buffer a whole BLOB block in RAM and program each flash write-block
+	  exactly once per erase, when the block's last chunk arrives, instead of
+	  programming on every received chunk.
+
+	  This is required for explicit-erase flash whose write block is an
+	  ECC-protected phrase that may be programmed only once per erase (for
+	  example the internal flash on some NXP MCXW SoCs). Without it, a BLOB
+	  chunk whose size is not a multiple of the flash write block makes two
+	  adjacent chunks each program the write block they share, and the second
+	  program corrupts the ECC syndrome, which faults on the next read.
+
+	  Enabling this costs one block-sized RAM buffer
+	  (CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MAX) per BLOB flash stream. Leave it
+	  disabled on flash that allows a write block to be programmed more than
+	  once between erases (for example plain NOR or RRAM), where the default
+	  per-chunk write path is already correct and uses no extra RAM.
 
 endif # BT_MESH_BLOB_IO_FLASH
 
@@ -1836,8 +1855,16 @@ config BT_MESH_LABEL_COUNT
 
 endmenu # Capabilities
 
+config BT_MESH_PENDING_STORE
+	bool
+	default y if BT_SETTINGS
+	help
+	  Scheduler for deferred storing of pending mesh data. Enabled with the
+	  settings subsystem, and selected by storage backends that schedule
+	  their stores through it without the settings subsystem.
+
 menu "Persistent storage"
-	visible if BT_SETTINGS
+	visible if BT_MESH_PENDING_STORE
 
 config BT_MESH_STORE_TIMEOUT
 	int "Delay (in seconds) before storing anything persistently"
@@ -1851,8 +1878,8 @@ config BT_MESH_STORE_TIMEOUT
 config BT_MESH_SEQ_STORE_RATE
 	int "How often the sequence number gets updated in storage"
 	range 0 1000000
+	default 1 if !BT_SETTINGS
 	default 128
-	default 1 if !BT_SETTINGS # To keep compiling the code
 	help
 	  This value defines how often the local sequence number gets
 	  updated in persistent storage (i.e. flash). E.g. a value of 100
@@ -1865,32 +1892,31 @@ config BT_MESH_SEQ_STORE_RATE
 	  off with a value that's guaranteed to be larger than the last
 	  one used before power off.
 
-if BT_MESH_RPL_STORAGE_MODE_SETTINGS && BT_SETTINGS
-
 config BT_MESH_RPL_STORE_TIMEOUT
-	int "Minimum interval after which unsaved RPL and SRPL entries are updated in the settings subsystem"
+	int "Minimum interval after which unsaved RPL and SRPL entries are stored"
+	depends on BT_MESH_PENDING_STORE
 	range -1 1000000
 	default 5
 	help
 	  This value defines time in seconds until unsaved RPL and SRPL entries
-	  are written to the persistent storage. Setting this value
+	  are written to the persistent storage. The SRPL is always stored
+	  through the settings subsystem, whereas the RPL is only affected if
+	  its storage mode schedules stores with this timeout. Setting this value
 	  to a large number may lead to security vulnerabilities if a node
 	  gets powered off before the timer is fired. When flash is used
 	  as the persistent storage setting this value to a low number
 	  may wear out flash sooner or later. However, if the RPL gets
 	  updated infrequently a value as low as 0 (write immediately)
 	  may make sense. Setting this value to -1 will disable this timer.
-	  In this case, a user is responsible to store pending RPL entries
-	  using @ref bt_mesh_rpl_pending_store. In the mean time, when
-	  IV Index is updated, the outdated RPL entries will still be
-	  stored by @ref BT_MESH_STORE_TIMEOUT. Finding the right balance
+	  With the settings storage mode, a user is then responsible to store
+	  pending RPL entries using @ref bt_mesh_rpl_pending_store. In the
+	  mean time, the replay list invalidated by an IV Index update or
+	  recovery is still stored immediately. Finding the right balance
 	  between this timeout and calling @ref bt_mesh_rpl_pending_store
 	  may reduce a risk of security vulnerability and flash wear out.
 	  Failure to store the RPL and becoming vulnerable after reboot
 	  will cause the device to not perform the replay protection
 	  required by the spec.
-
-endif # BT_MESH_RPL_STORAGE_MODE_SETTINGS && BT_SETTINGS
 
 config BT_MESH_SETTINGS_WORKQ
 	bool "Store the Bluetooth Mesh settings in a separate work queue"

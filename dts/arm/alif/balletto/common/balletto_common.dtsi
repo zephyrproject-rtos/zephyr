@@ -60,6 +60,52 @@
 			clock-frequency = <DT_FREQ_M(40)>;
 			#clock-cells = <0>;
 		};
+
+		/*
+		 * Low frequency oscillators in the always-on power domain
+		 * (PD-0). The LFXO needs a 32.768 kHz crystal fitted on the
+		 * board. The LFRC is internal, nominally 32.7 kHz and accurate
+		 * to +/-4%.
+		 */
+		clk_lfrc: clk-lfrc {
+			compatible = "fixed-clock";
+			clock-frequency = <32700>;
+			#clock-cells = <0>;
+		};
+
+		clk_lfxo: clk-lfxo {
+			compatible = "fixed-clock";
+			clock-frequency = <32768>;
+			#clock-cells = <0>;
+		};
+
+		/*
+		 * S32K_CLK, the output of the ANA MISC_CTRL[SEL_32K] mux. The
+		 * bit resets to the LFRC and is configured outside Zephyr, so a
+		 * board or application whose Secure Enclave selects the LFXO
+		 * has to record that here:
+		 *
+		 *     &clk_s32k {
+		 *             clocks = <&clk_lfxo>;
+		 *     };
+		 */
+		clk_s32k: clk-s32k {
+			compatible = "alif,clock-mux";
+			clocks = <&clk_lfrc>;
+		};
+
+		/*
+		 * 128K_CLK is the LFRC output multiplied by four rather than
+		 * an independent 128 kHz oscillator, so its rate follows the
+		 * LFRC and carries the same RC tolerance.
+		 */
+		clk_128k: clk-128k {
+			compatible = "fixed-factor-clock";
+			clocks = <&clk_lfrc>;
+			clock-mult = <4>;
+			clock-div = <1>;
+			#clock-cells = <0>;
+		};
 	};
 
 	soc: soc {
@@ -353,6 +399,31 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			interrupts = <171 0>, <172 0>;
+			status = "disabled";
+		};
+
+		/*
+		 * LPTIMER channels. Both channels share one 4 KB register block
+		 * at 0x42001000, each occupying a 0x14 byte slice of it.
+		 * The LPTIMER interrupts reach the NVIC twice: directly on
+		 * inputs 60 and 61, and through the IRQRTR on inputs 346 and
+		 * 347. The direct inputs are used here as they are the ones
+		 * wired to the EWIC, so they can wake the core from a
+		 * low-power state.
+		 */
+		lptimer0: timer@42001000 {
+			compatible = "snps,dw-timers";
+			reg = <0x42001000 0x14>;
+			clocks = <&clockctrl ALIF_LPTIMER0_S32K_CLK>;
+			interrupts = <60 0>;
+			status = "disabled";
+		};
+
+		lptimer1: timer@42001014 {
+			compatible = "snps,dw-timers";
+			reg = <0x42001014 0x14>;
+			clocks = <&clockctrl ALIF_LPTIMER1_S32K_CLK>;
+			interrupts = <61 0>;
 			status = "disabled";
 		};
 	};

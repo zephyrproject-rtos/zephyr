@@ -89,3 +89,13 @@ config CLOCK_CONTROL_NXP_MCXW7X
 		depends on DT_HAS_NXP_MCXW7X_CLOCK_ENABLED
 		help
 			Enable support for NXP MCXW7X clock control driver.
+
+config CLOCK_CONTROL_MCUX_CCM_REV3
+	bool "MCUX CCM rev3 driver"
+	default y
+	depends on DT_HAS_NXP_IMX_CCM_REV3_ENABLED
+	help
+	  Enable support for the NXP i.MX CCM rev3 clock control driver. The
+	  peripheral clock specifier packs a gate and a clock-root identifier,
+	  and configurable clock roots are described as devicetree child nodes
+	  of the controller.

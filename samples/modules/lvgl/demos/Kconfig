@@ -73,7 +73,7 @@ config LV_Z_DEMO_RENDER_DYNAMIC_SCENE_TIMEOUT
 endif
 
 configdefault CPU_LOAD
-	default y if LV_USE_PERF_MONITOR
+	default y if LV_USE_SYSMON
 
 configdefault LV_Z_POINTER_FROM_CHOSEN_TOUCH
 	default n if LV_Z_DEMO_KEYPAD_AND_ENCODER

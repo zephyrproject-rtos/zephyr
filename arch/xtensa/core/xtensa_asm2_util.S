@@ -12,6 +12,18 @@
 #endif
 
 /*
+ * xtensa_triple_fault_breadcrumb - record triple fault state for host diagnosis.
+ *
+ * Weak default is a no-op. SoC families that support it link in a strong
+ * override, so the shared vector code stays free of per-SoC #ifdefs.
+ * Called via CALL0; may clobber a2/a3/a4.
+ */
+.weak xtensa_triple_fault_breadcrumb
+.align 4
+xtensa_triple_fault_breadcrumb:
+	ret
+
+/*
  * xtensa_spill_reg_windows
  *
  * Spill all register windows.  Not a C function, enter this via CALL0
@@ -466,7 +478,7 @@ _Level1RealVectorExtended:
  * caller function of the code that took the exception, and that can't
  * be done in C).  A prototype exists which mucks with the stack frame
  * from the C handler instead, but that would add a LARGE overhead to
- * some alloca() calls (those whent he caller has been spilled) just
+ * some alloca() calls (those when the caller has been spilled) just
  * to save these five cycles during other exceptions and L1
  * interrupts.  Maybe revisit at some point, with better benchmarking.
  * Note that _xt_alloca_exc is Xtensa-authored code which expects A0
@@ -632,6 +644,7 @@ _TripleFault:
 	movi a2, SYS_exit
 	simcall
 #endif
+	call0 xtensa_triple_fault_breadcrumb
 1:
 	j	1b
 

@@ -75,4 +75,12 @@
 			input-enable;
 		};
 	};
+
+	pwm3_default: pwm3_default {
+		group0 {
+			pinmux = <&iomuxc_spdif_tx_pwm_out_pwm3_out>;
+			slew-rate = "fast";
+			drive-strength = "x6";
+		};
+	};
 };

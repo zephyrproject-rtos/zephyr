@@ -27,3 +27,7 @@ tests:
     platform_allow:
       - native_sim
       - native_sim/native/64
+
+  drivers.audio.build.dmic:
+    platform_allow:
+      - stm32u5g9j_dk2/stm32u5g9xx

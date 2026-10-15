@@ -116,18 +116,20 @@ LOG_MODULE_REGISTER(npm10xx_charger, CONFIG_CHARGER_LOG_LEVEL);
 #define CHRG_COMPSTAT_ITERM_Msk     (BIT_MASK(1U) << 7)
 
 /* STATUS (0x50) */
-#define CHRG_STATUS_STATE_Msk         (BIT_MASK(3U) << 0)
+#define CHRG_STATUS_STATE_Msk         (BIT_MASK(4U) << 0)
 #define CHRG_STATUS_STATE_IDLE        0U
 #define CHRG_STATUS_STATE_TRICKLE     1U
-#define CHRG_STATUS_STATE_FAST        2U
-#define CHRG_STATUS_STATE_THROTTLE    3U
-#define CHRG_STATUS_STATE_COMPLETED   4U
-#define CHRG_STATUS_STATE_LOWVTERM    5U
-#define CHRG_STATUS_STATE_DISCHARGING 6U
-#define CHRG_STATUS_STATE_ERROR       7U
-#define CHRG_STATUS_DIETEMP_Msk       (BIT_MASK(1U) << 3)
-#define CHRG_STATUS_SUPPLEMENT_Msk    (BIT_MASK(1U) << 4)
-#define CHRG_STATUS_DROPOUT_Msk       (BIT_MASK(1U) << 5)
+#define CHRG_STATUS_STATE_CC          2U
+#define CHRG_STATUS_STATE_CV_THROTTLE 3U
+#define CHRG_STATUS_STATE_CC_THROTTLE 4U
+#define CHRG_STATUS_STATE_CV          5U
+#define CHRG_STATUS_STATE_COMPLETED   6U
+#define CHRG_STATUS_STATE_CMPLTD_NTC  7U
+#define CHRG_STATUS_STATE_DISCHARGING 8U
+#define CHRG_STATUS_STATE_ERROR       9U
+#define CHRG_STATUS_DIETEMP_Msk       (BIT_MASK(1U) << 4)
+#define CHRG_STATUS_SUPPLEMENT_Msk    (BIT_MASK(1U) << 5)
+#define CHRG_STATUS_DROPOUT_Msk       (BIT_MASK(1U) << 6)
 #define CHRG_STATUS_ILIMDISCHARGE_Msk (BIT_MASK(1U) << 7)
 
 /* ERRORREASON (0x53) */
@@ -253,7 +255,7 @@ static int npm10xx_charger_get_prop(const struct device *dev, const charger_prop
 			break;
 		case CHRG_STATUS_STATE_COMPLETED:
 			/* fall through */
-		case CHRG_STATUS_STATE_LOWVTERM:
+		case CHRG_STATUS_STATE_CMPLTD_NTC:
 			val->status = CHARGER_STATUS_FULL;
 			break;
 		case CHRG_STATUS_STATE_DISCHARGING:
@@ -275,10 +277,15 @@ static int npm10xx_charger_get_prop(const struct device *dev, const charger_prop
 		case CHRG_STATUS_STATE_TRICKLE:
 			val->charge_type = CHARGER_CHARGE_TYPE_TRICKLE;
 			break;
-		case CHRG_STATUS_STATE_FAST:
+		case CHRG_STATUS_STATE_CC:
 			val->charge_type = CHARGER_CHARGE_TYPE_FAST;
 			break;
-		case CHRG_STATUS_STATE_THROTTLE:
+		case CHRG_STATUS_STATE_CV:
+			/* fall-through */
+		case CHRG_STATUS_STATE_CV_THROTTLE:
+			val->charge_type = CHARGER_CHARGE_TYPE_STANDARD;
+			break;
+		case CHRG_STATUS_STATE_CC_THROTTLE:
 			val->charge_type = CHARGER_CHARGE_TYPE_LONGLIFE;
 			break;
 		default:
@@ -302,7 +309,7 @@ static int npm10xx_charger_get_prop(const struct device *dev, const charger_prop
 			if (FIELD_GET(CHRG_ERRORREASON_VBATOV_Msk, reg)) {
 				val->health = CHARGER_HEALTH_OVERVOLTAGE;
 			} else if (FIELD_GET(CHRG_ERRORREASON_CHARGETIMEOUT_Msk |
-						     CHRG_TIMEOUT_TRICKLE_Msk,
+						     CHRG_ERRORREASON_TRICKLETIMEOUT_Msk,
 					     reg)) {
 				val->health = CHARGER_HEALTH_SAFETY_TIMER_EXPIRE;
 			} else {
@@ -431,6 +438,7 @@ static int npm10xx_charger_set_prop(const struct device *dev, const charger_prop
 {
 	int ret;
 	uint8_t addr = 0;
+	uint8_t enable;
 	uint16_t idx, reg;
 
 	const struct npm10xx_charger_config *config = dev->config;
@@ -446,17 +454,15 @@ static int npm10xx_charger_set_prop(const struct device *dev, const charger_prop
 		/* fall-through */
 	case CHARGER_PROP_CONSTANT_CHARGE_CURRENT_UA:
 		addr += NPM10_CHRG_ISET;
-		idx = val->const_charge_current_ua >
-		      linear_range_get_max_value(&chrg_current_range1);
-		ret = linear_range_get_index(idx ? &chrg_current_range2 : &chrg_current_range1,
-					     val->const_charge_current_ua, &reg);
+		ret = i2c_reg_read_byte_dt(&config->i2c, NPM10_CHRG_ENABLE, &enable);
 		if (ret < 0) {
 			return ret;
 		}
 
-		ret = i2c_reg_update_byte_dt(&config->i2c, NPM10_CHRG_ENABLE,
-					     CHRG_ENABLE_ISETDOUBLE_Msk,
-					     FIELD_PREP(CHRG_ENABLE_ISETDOUBLE_Msk, idx));
+		ret = linear_range_get_index((enable & CHRG_ENABLE_ISETDOUBLE_Msk)
+						     ? &chrg_current_range2
+						     : &chrg_current_range1,
+					     val->const_charge_current_ua, &reg);
 		if (ret < 0) {
 			return ret;
 		}
@@ -878,7 +884,7 @@ static DEVICE_API(charger, npm10xx_charger_driver_api) = {
 		.enable_advanced = DT_INST_PROP(inst, enable_advanced_profile),                    \
 		.enable_throttle = DT_INST_PROP(inst, enable_throttle_charging),                   \
 		.disable_lowbatt = DT_INST_PROP(inst, disable_lowbatt_charging),                   \
-		.vbatlow_threshold = DT_INST_ENUM_IDX_OR(inst, vbatlow_microvolt, UINT8_MAX),      \
+		.vbatlow_threshold = DT_INST_ENUM_IDX_OR(inst, vbat_low_microvolt, UINT8_MAX),     \
 		.vbusilim = DT_INST_ENUM_IDX_OR(inst, vbus_limit_microamp, UINT8_MAX),             \
 		.vbusdpm = DT_INST_ENUM_IDX_OR(inst, vbusdpm_microvolt, UINT8_MAX),                \
 		.term_current = DT_INST_ENUM_IDX_OR(inst, term_current_percent, UINT8_MAX),        \

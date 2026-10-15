@@ -564,8 +564,8 @@ static int h3_parse_frame_header(const uint8_t *buf, size_t buflen,
  *
  * @return Number of bytes consumed, or <0 on error.
  */
-static int qpack_decode_int(const uint8_t *buf, size_t buflen,
-			    int prefix_n, uint64_t *value)
+ZTESTABLE_STATIC int qpack_decode_int(const uint8_t *buf, size_t buflen,
+				      int prefix_n, uint64_t *value)
 {
 	uint8_t max_first;
 	int consumed;
@@ -590,6 +590,14 @@ static int qpack_decode_int(const uint8_t *buf, size_t buflen,
 	do {
 		if (consumed >= (int)buflen) {
 			return -EINVAL;
+		}
+
+		/* Nine continuation bytes carry 63 bits, which cannot overflow the
+		 * accumulator. Anything longer is too large to be a valid length or
+		 * index, so reject it rather than let the value wrap.
+		 */
+		if (shift > 56U) {
+			return -EBADMSG;
 		}
 
 		b = buf[consumed];
@@ -1177,16 +1185,27 @@ static int h3_send_404(struct http_client_ctx *client)
 	return h3_end_response(client);
 }
 
-static int h3_send_425(struct http_client_ctx *client)
+/*
+ * Forget the resource of a request that is being refused. Whatever the peer
+ * still sends on the stream, a request body or the end of the stream, must
+ * not be handled as part of a request for that resource.
+ */
+static void h3_forget_refused_request(struct http_client_ctx *client)
 {
 	struct http3_stream_ctx *stream = h3_stream_ctx(client);
-	int ret;
 
 	client->current_detail = NULL;
 	if (stream != NULL) {
 		stream->current_detail = NULL;
 		stream->request_headers_pending = false;
 	}
+}
+
+static int h3_send_425(struct http_client_ctx *client)
+{
+	int ret;
+
+	h3_forget_refused_request(client);
 
 	ret = h3_send_headers_frame(client, HTTP_425_TOO_EARLY,
 				    NULL, NULL, 0);
@@ -1203,6 +1222,11 @@ static int h3_send_425(struct http_client_ctx *client)
 static int h3_send_405(struct http_client_ctx *client)
 {
 	int ret;
+
+	/* The request is refused: a body that follows must not be passed to
+	 * the resource it was addressed to.
+	 */
+	h3_forget_refused_request(client);
 
 	ret = h3_send_headers_frame(client, HTTP_405_METHOD_NOT_ALLOWED,
 				    NULL, NULL, 0);
@@ -1548,7 +1572,20 @@ static int h3_handle_dynamic_resource(
 			return ret;
 		}
 
-		return enter_http_done_state(client);
+		/*
+		 * 409 is a per-request status: finish this stream only and
+		 * leave the connection running. enter_http_done_state() must
+		 * not be used here, it closes the whole connection while
+		 * client->fd still points at the request stream.
+		 *
+		 * The resource belongs to its holder. Forget it for this
+		 * request, or the body that follows would be passed to the
+		 * callback and the end of the stream would end the holder's
+		 * transaction.
+		 */
+		h3_forget_refused_request(client);
+
+		return h3_end_response(client);
 	}
 
 	dynamic_detail->holder = client;
@@ -1758,8 +1795,8 @@ static int h3_process_data_frame(struct http_client_ctx *client,
  *
  * @return 0 on success, <0 on error.
  */
-static int h3_parse_qpack_headers(struct http_client_ctx *client,
-				  const uint8_t *buf, size_t buflen)
+ZTESTABLE_STATIC int h3_parse_qpack_headers(struct http_client_ctx *client,
+					    const uint8_t *buf, size_t buflen)
 {
 	uint8_t name_buf[H3_HUFFMAN_DECODE_BUF_SIZE];
 	uint8_t value_buf[H3_HUFFMAN_DECODE_BUF_SIZE];
@@ -1864,6 +1901,10 @@ static int h3_parse_qpack_headers(struct http_client_ctx *client,
 			}
 
 			/* Read the value */
+			if (pos >= buflen) {
+				return -EINVAL;
+			}
+
 			huffman = (buf[pos] & 0x80) != 0;
 
 			ret = qpack_decode_int(buf + pos, buflen - pos, 7, &val_len);
@@ -1873,7 +1914,7 @@ static int h3_parse_qpack_headers(struct http_client_ctx *client,
 
 			pos += ret;
 
-			if (pos + val_len > buflen) {
+			if (val_len > buflen - pos) {
 				return -EINVAL;
 			}
 
@@ -1915,7 +1956,7 @@ static int h3_parse_qpack_headers(struct http_client_ctx *client,
 
 			pos += ret;
 
-			if (pos + name_len > buflen) {
+			if (name_len > buflen - pos) {
 				return -EINVAL;
 			}
 
@@ -1958,7 +1999,7 @@ static int h3_parse_qpack_headers(struct http_client_ctx *client,
 
 			pos += ret;
 
-			if (pos + val_len > buflen) {
+			if (val_len > buflen - pos) {
 				return -EINVAL;
 			}
 
@@ -2248,8 +2289,13 @@ int h3_handle_control_stream(struct http_client_ctx *client, int fd)
 			break;
 
 		case H3_FRAME_GOAWAY:
+			/* A GOAWAY from a client only limits the server
+			 * pushes it still accepts (RFC 9114 ch. 5.2). There
+			 * are none, and the requests in progress must be
+			 * allowed to finish, so there is nothing to do.
+			 */
 			LOG_DBG("[%p] H3: Control stream GOAWAY", client);
-			return -H3_NO_ERROR; /* Graceful shutdown */
+			break;
 
 		case H3_FRAME_MAX_PUSH_ID:
 			LOG_DBG("[%p] H3: Control stream MAX_PUSH_ID (ignored)", client);
@@ -2737,19 +2783,25 @@ static int h3_process_frames(struct http_client_ctx *client, bool stream_fin)
 
 			break;
 
+		case H3_FRAME_CANCEL_PUSH:
 		case H3_FRAME_SETTINGS:
-			LOG_DBG("[%p] H3: SETTINGS frame, len=%llu", client, frame_len);
-			ret = h3_parse_settings(client, payload,
-						(size_t)frame_len);
-			if (ret < 0) {
-				LOG_DBG("[%p] H3: SETTINGS parse error (%d)", client, ret);
-				return ret;
-			}
-			break;
-
+		case H3_FRAME_PUSH_PROMISE:
 		case H3_FRAME_GOAWAY:
-			LOG_DBG("[%p] H3: GOAWAY frame, len=%llu", client, frame_len);
-			return enter_http_done_state(client);
+		case H3_FRAME_MAX_PUSH_ID:
+			/*
+			 * CANCEL_PUSH, SETTINGS, GOAWAY and MAX_PUSH_ID are
+			 * only sent on the control stream, and a client must
+			 * not send PUSH_PROMISE at all. Receiving any of them
+			 * on a request stream is a connection error of type
+			 * H3_FRAME_UNEXPECTED (RFC 9114 ch. 7.2.3 - 7.2.7 and
+			 * ch. 7.2, Table 1). Return the error so
+			 * handle_h3_bidi_stream() restores the connection fd
+			 * and tears the connection down, instead of closing it
+			 * while client->fd still points at the request stream.
+			 */
+			LOG_DBG("[%p] H3: frame type=0x%llx not allowed on request stream",
+				client, frame_type);
+			return -H3_FRAME_UNEXPECTED;
 
 		default:
 			/* Unknown frame types MUST be ignored per RFC 9114 */
@@ -2891,11 +2943,30 @@ static int handle_accepted_stream(struct http_client_ctx *client,
 		}
 
 		ret = h3_identify_uni_stream(client, stream_sock);
-		if (ret != 0) {
-			if (ret == -EAGAIN) {
-				return 0;
-			}
+		if (ret == -EAGAIN) {
+			return 0;
+		}
 
+		if (ret == -ECONNRESET) {
+			/* The stream was closed or reset before its type
+			 * arrived, which must be tolerated (RFC 9114 ch. 6.2).
+			 * Drop the stream and keep the connection.
+			 */
+			zsock_close(stream_sock);
+			return H3_STREAM_IGNORED;
+		}
+
+		if (ret < 0) {
+			/* The stream was rejected and nothing tracks its fd,
+			 * so the caller, which only sees the error, cannot
+			 * close it. Close it here: an open stream keeps its
+			 * QUIC stream and connection context allocated.
+			 */
+			zsock_close(stream_sock);
+			return ret;
+		}
+
+		if (ret != 0) {
 			return ret;
 		}
 

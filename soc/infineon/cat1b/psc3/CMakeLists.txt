@@ -4,20 +4,11 @@
 zephyr_sources(soc.c)
 zephyr_include_directories(.)
 zephyr_linker_sources(NOINIT noinit.ld)
+zephyr_linker_sources(RAMFUNC_SECTION ram_func.ld)
+zephyr_linker_sources(RAM_SECTIONS SORT_KEY 0000_bootrom_reserve bootrom_reserve.ld)
 
 zephyr_sources_ifdef(CONFIG_PM power.c)
-
-# CAT1B family defines
-zephyr_compile_definitions_ifdef(CONFIG_SOC_FAMILY_INFINEON_CAT1 CY_USING_HAL)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_FAMILY_INFINEON_CAT1B COMPONENT_CAT1B)
-zephyr_compile_definitions(COMPONENT_CM33)
-zephyr_compile_definitions(CORE_NAME_CM33_0)
-zephyr_compile_definitions_ifdef(CONFIG_TRUSTED_EXECUTION_SECURE COMPONENT_SECURE_DEVICE)
-
-zephyr_compile_definitions(FLASH_BOOT)
-zephyr_compile_definitions(CY_PDL_FLASH_BOOT)
-zephyr_compile_definitions(NORMAL_PROVISIONED_LCS)
-zephyr_compile_definitions(USER_FLASH_S_SIZE=0x10000)
-zephyr_compile_definitions(USER_SRAM_S_SIZE=0x4000)
+zephyr_sources_ifdef(CONFIG_POWEROFF poweroff.c)
+zephyr_sources_ifdef(CONFIG_SOC_PSC3_LPM_TIMER ${ZEPHYR_BASE}/soc/infineon/common/lpm_timer.c)
 
 set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")

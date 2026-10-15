@@ -169,6 +169,18 @@ config HAS_MCUX_SYSCON_LPCAC
 	help
 	  Set if the SYSCON LPCAC module is present on the SoC.
 
+config HAS_MCUX_SGI_PKC
+	bool
+	help
+	  Set if the SGI PKC (Secure Gateway Interface - Public Key
+	  Cryptography) accelerator is present on the SoC.
+
+config HAS_MCUX_ELS_PKC
+	bool
+	help
+	  Set if the ELS PKC (EdgeLock Secure Subsystem - Public Key
+	  Cryptography) accelerator is present on the SoC.
+
 config HAS_MCUX_SYSINIT_DISABLE_WDOG
 	bool
 	help
@@ -259,6 +271,22 @@ config TFLM_NXP_NEUTRON
 	  Enable TensorFlow Lite Micro integration with NEUTRON NPU.
 	  This allows TFLM models to use the NEUTRON accelerator
 	  for inference operations.
+
+config NXP_TRDC
+	bool "Use NXP TRDC Driver"
+	default y if SOC_MCXW727C || SOC_SERIES_IMXRT118X
+	help
+	  Enable the NXP TRDC (Trusted Resource Domain Controller) driver,
+	  pulling in the driver.trdc HAL component. Used by SoCs that route
+	  peripheral accesses through a primary TRDC instance.
+
+config NXP_TRDC_1
+	bool "Use NXP TRDC_1 Driver"
+	default y if SOC_MIMX9352_M33
+	help
+	  Enable the NXP TRDC_1 driver, pulling in the driver.trdc_1 HAL
+	  component. Used by SoCs whose secondary TRDC instance is exposed
+	  as the TRDC_1 variant.
 
 endif # HAS_MCUX
 

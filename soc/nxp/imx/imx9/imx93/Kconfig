@@ -8,6 +8,9 @@ config SOC_MIMX9352_A55
 	select HAS_MCUX if CLOCK_CONTROL
 	select HAS_MCUX_CACHE
 	select HAS_PM
+	# The P-state driver reprograms the whole A55 cluster, which requires the
+	# CPU frequency subsystem to drive every core of it.
+	select HAS_CPU_FREQ if SMP
 
 config SOC_MIMX9352_M33
 	select ARM
@@ -26,10 +29,3 @@ config SOC_MIMX9352_M33
 config MCUX_CORE_SUFFIX
 	default "_ca55" if SOC_MIMX9352_A55
 	default "_cm33" if SOC_MIMX9352_M33
-
-if SOC_MIMX9352_M33
-
-config TRDC_MCUX_TRDC_1
-	default y
-	bool "Use TRDC_1 MCUX Driver"
-endif # SOC_MIMX9352_M33

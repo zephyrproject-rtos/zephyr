@@ -52,6 +52,7 @@
 		led0 = &led1;
 		led1 = &led3;
 		watchdog0 = &iwdt;
+		i2c-0 = &i2c0;
 	};
 };
 

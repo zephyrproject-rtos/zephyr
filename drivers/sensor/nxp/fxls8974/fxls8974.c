@@ -145,7 +145,9 @@ static int fxls8974_set_odr(const struct device *dev,
 				const struct sensor_value *val, enum fxls8974_wake mode)
 {
 		const struct fxls8974_config *cfg = dev->config;
+		int ret;
 		uint8_t odr;
+		uint8_t was_active = FXLS8974_ACTIVE_OFF;
 		/* val int32 */
 		switch (val->val1) {
 		case 3200:
@@ -205,16 +207,36 @@ static int fxls8974_set_odr(const struct device *dev,
 
 		LOG_DBG("Set %s ODR to 0x%02x", (mode == FXLS8974_WAKE) ? "wake" : "sleep", odr);
 
-		/* Change the attribute and restore active mode. */
+		if (fxls8974_get_active(dev, &was_active)) {
+			LOG_ERR("Could not read active state before ODR change");
+			return -EIO;
+		}
+
+		if (was_active != FXLS8974_ACTIVE_OFF) {
+			if (fxls8974_set_active(dev, FXLS8974_ACTIVE_OFF)) {
+				LOG_ERR("Could not enter standby to change ODR");
+				return -EIO;
+			}
+		}
+
 		if (mode == FXLS8974_WAKE) {
-			return cfg->ops->reg_field_update(dev, FXLS8974_REG_CTRLREG3,
+			ret = cfg->ops->reg_field_update(dev, FXLS8974_REG_CTRLREG3,
 				FXLS8974_CTRLREG3_WAKE_ODR_MASK,
 				odr<<4);
 		} else {
-			return cfg->ops->reg_field_update(dev, FXLS8974_REG_CTRLREG3,
+			ret = cfg->ops->reg_field_update(dev, FXLS8974_REG_CTRLREG3,
 				FXLS8974_CTRLREG3_SLEEP_ODR_MASK,
 				odr);
 		}
+
+		if (was_active != FXLS8974_ACTIVE_OFF) {
+			if (fxls8974_set_active(dev, FXLS8974_ACTIVE_ON)) {
+				LOG_ERR("Could not restore active mode after ODR change");
+				return -EIO;
+			}
+		}
+
+		return ret;
 }
 
 static int fxls8974_attr_set(const struct device *dev,
@@ -272,7 +294,7 @@ static int fxls8974_sample_fetch(const struct device *dev, enum sensor_channel c
 			*raw++ = (buf[i+1] << 8) | (buf[i]);
 		}
 
-		*raw = *(buf+FXLS8974_MAX_ACCEL_BYTES);
+		*raw = (int8_t)*(buf+FXLS8974_MAX_ACCEL_BYTES);
 
 exit:
 		k_sem_give(&data->sem);
@@ -303,12 +325,14 @@ static int fxls8974_get_accel_data(const struct device *dev,
 		struct fxls8974_data *data = dev->data;
 		int16_t *raw;
 		uint8_t fsr;
+		int ret = 0;
 
 		k_sem_take(&data->sem, K_FOREVER);
 
 		if (cfg->ops->byte_read(dev, FXLS8974_REG_CTRLREG1, &fsr)) {
 			LOG_ERR("Could not read scale settings");
-			return -EIO;
+			ret = -EIO;
+			goto exit;
 		}
 
 		fsr = (fsr & FXLS8974_CTRLREG1_FSR_MASK) >> 1;
@@ -344,13 +368,16 @@ static int fxls8974_get_accel_data(const struct device *dev,
 				raw = &data->raw[FXLS8974_CHANNEL_ACCEL_Z];
 				break;
 			default:
-				return -ENOTSUP;
+				ret = -ENOTSUP;
+				goto exit;
 			}
 			fxls8974_accel_convert(val, *raw, fsr);
 		}
+
+exit:
 		k_sem_give(&data->sem);
 
-		return 0;
+		return ret;
 }
 
 static int fxls8974_get_temp_data(const struct device *dev, struct sensor_value *val)
@@ -361,6 +388,7 @@ static int fxls8974_get_temp_data(const struct device *dev, struct sensor_value 
 		k_sem_take(&data->sem, K_FOREVER);
 		raw = &data->raw[FXLS8974_CHANNEL_TEMP];
 		val->val1 = *raw+FXLS8974_ZERO_TEMP;
+		val->val2 = 0;
 		k_sem_give(&data->sem);
 
 		return 0;
@@ -442,6 +470,7 @@ static int fxls8974_init(const struct device *dev)
 		struct fxls8974_data *data = dev->data;
 		struct sensor_value odr = {.val1 = 6, .val2 = 250000};
 		uint8_t regVal;
+		uint8_t fsr;
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 		const struct i2c_dt_spec i2c_spec = cfg->bus_cfg.i2c;
@@ -527,9 +556,26 @@ static int fxls8974_init(const struct device *dev)
 			return -EIO;
 		}
 
-		/* Set the +-2G mode */
-		if (cfg->ops->byte_write(dev, FXLS8974_REG_CTRLREG1,
-			FXLS8974_CTRLREG1_FSR_2G)) {
+		switch (cfg->range) {
+		case 2:
+			fsr = FXLS8974_CTRLREG1_FSR_2G;
+			break;
+		case 4:
+			fsr = FXLS8974_CTRLREG1_FSR_4G;
+			break;
+		case 8:
+			fsr = FXLS8974_CTRLREG1_FSR_8G;
+			break;
+		case 16:
+			fsr = FXLS8974_CTRLREG1_FSR_16G;
+			break;
+		default:
+			LOG_ERR("Invalid range %d g", cfg->range);
+			return -EINVAL;
+		}
+
+		if (cfg->ops->reg_field_update(dev, FXLS8974_REG_CTRLREG1,
+			FXLS8974_CTRLREG1_FSR_MASK, fsr)) {
 			LOG_ERR("Could not set range");
 			return -EIO;
 		}
@@ -540,7 +586,7 @@ static int fxls8974_init(const struct device *dev)
 			return -EIO;
 		}
 
-		if ((regVal & FXLS8974_CTRLREG1_FSR_MASK) != FXLS8974_CTRLREG1_FSR_2G) {
+		if ((regVal & FXLS8974_CTRLREG1_FSR_MASK) != fsr) {
 			LOG_ERR("Wrong range selected!");
 			return -EIO;
 		}

@@ -12,6 +12,7 @@ the TI AM62L platform. The board configuration provides support for:
    - ARM Generic Timer (arch_timer)
    - On-chip SRAM (oc_sram)
    - UART interfaces (uart0 to uart6)
+   - I/O expander (via ti-io-exp snippet)
 
 The board configuration also enables support for the semihosting debugging console.
 
@@ -36,6 +37,35 @@ Supported Features
 ==================
 
 .. zephyr:board-supported-hw::
+
+I/O Expander Support
+=====================
+
+The AM62L EVM board includes an I/O expander (J2). By default, these signals are routed to the
+HDMI interface. Signal routing for the expansion header can be enabled by either configuring
+``SoC_VOUT0_FET_SEL0`` (GPIO0_89) or shorting J29.
+
+Enabling I/O Expander Support
+-----------------------------
+
+To enable I/O expander functionality, use the ``ti-io-exp`` snippet when building your application:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: am62l_evm/am62l3/a53
+   :goals: build
+   :gen-args: -S ti-io-exp
+   :compact:
+
+The snippet automatically:
+- Enables GPIO via ``CONFIG_GPIO=y``
+- Enables GPIO hog support via ``CONFIG_GPIO_HOGS=y``
+
+Ball E13 is used for ``GPIO0_89`` configuration (MUX MODE 7) and hence, we cannot use this padconfig
+offset for other conflicting signals:
+- SPI0_CLK (MUX MODE 0)
+- CP_GEMAC_CPTS0_TS_SYN (MUX MODE 1)
+- EHRPWM1_A (MUX MODE 2)
 
 Devices
 ========

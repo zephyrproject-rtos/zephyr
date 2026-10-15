@@ -12,6 +12,8 @@
 
 /dts-v1/;
 
+#include <freq.h>
+
 / {
 	#address-cells = <0x01>;
 	#size-cells = <0x01>;
@@ -38,6 +40,7 @@
 	cpus {
 		#address-cells = <0x01>;
 		#size-cells = <0x00>;
+		timebase-frequency = <DT_FREQ_M(10)>;
 
 		cpu@0 {
 			device_type = "cpu";

@@ -37,6 +37,10 @@ typedef enum {
 	 */
 	RENESAS_RX_REG_PROTECT_LVD,
 
+	RENESAS_RX_REG_PROTECT_SEC,
+
+	RENESAS_RX_REG_PROTECT_RESET,
+
 	/*
 	 * MPC.PWPR
 	 * Enables writing to MPC's PFS registers.

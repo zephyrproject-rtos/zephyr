@@ -72,6 +72,10 @@ int gptp_set_port_number(struct net_if *iface, uint16_t port)
 
 	ctx->gptp_port = port;
 
+#if defined(CONFIG_NET_GPTP_USE_DEFAULT_CLOCK_UPDATE)
+	precision_clock_ptp_init(&gptp_clock.clocks[GPTP_PORT_INDEX(port)], clk);
+#endif
+
 	return 0;
 }
 
@@ -626,15 +630,28 @@ static void gptp_thread(void *p1, void *p2, void *p3)
 static void gptp_add_port(struct net_if *iface, void *user_data)
 {
 	uint16_t *num_ports = user_data;
+	int ret;
 
 	if (*num_ports >= CONFIG_NET_GPTP_NUM_PORTS) {
 		return;
 	}
 
-	if (gptp_set_port_number(iface, GPTP_PORT_START + *num_ports) == 0) {
-		gptp_domain.iface[*num_ports] = iface;
-		(*num_ports)++;
+	if (gptp_set_port_number(iface, GPTP_PORT_START + *num_ports) != 0) {
+		return;
 	}
+
+	/* A device that filters multicast frames in hardware drops the
+	 * gPTP messages unless it is told to listen to the group address.
+	 * The port is never removed, so the group is never left either.
+	 */
+	ret = net_eth_mcast_addr_add(iface, &gptp_multicast_eth_addr);
+	if (ret < 0) {
+		NET_WARN("Cannot join gPTP multicast group on iface %d (%d)",
+			 net_if_get_by_iface(iface), ret);
+	}
+
+	gptp_domain.iface[*num_ports] = iface;
+	(*num_ports)++;
 }
 
 void gptp_set_time_itv(struct gptp_uscaled_ns *interval,
@@ -946,18 +963,6 @@ int gptp_get_port_data(struct gptp_domain *domain,
 	return 0;
 }
 
-double gptp_servo_pi(int64_t nanosecond_diff)
-{
-	double kp = 0.7;
-	double ki = 0.3;
-	double ppb;
-
-	gptp_clock.pi_drift += ki * nanosecond_diff;
-	ppb = kp * nanosecond_diff + gptp_clock.pi_drift;
-
-	return ppb;
-}
-
 static void init_ports(void)
 {
 	net_if_foreach(gptp_add_port, &gptp_domain.default_ds.nb_ports);
@@ -977,7 +982,10 @@ void net_gptp_init(void)
 	gptp_domain.default_ds.nb_ports = 0U;
 
 	gptp_clock.domain = &gptp_domain;
-	gptp_clock.pi_drift = 0.0;
+#if defined(CONFIG_NET_GPTP_USE_DEFAULT_CLOCK_UPDATE)
+	precision_pi_init(&gptp_clock.pi, (double)CONFIG_PRECISION_TIMING_PI_KP / 1000.0,
+			  (double)CONFIG_PRECISION_TIMING_PI_KI / 1000.0);
+#endif
 
 	init_ports();
 }

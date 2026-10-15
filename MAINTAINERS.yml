@@ -406,8 +406,11 @@ Alif Semiconductor Platforms:
     Alif Semiconductor SoCs, device tree files, and related drivers.
 
 Allwinner Platforms:
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - khaidox
   files:
+    - boards/xunlong/opi_zero2w/
     - dts/arm/allwinner/
     - dts/arm64/allwinner/
     - soc/allwinner/
@@ -634,7 +637,7 @@ Bluetooth Audio:
     - tests/bsim/bluetooth/audio/
     - tests/bsim/bluetooth/audio_samples/
     - tests/bsim/bluetooth/tester/src/audio/
-    - tests/bluetooth/shell/audio.conf
+    - tests/bluetooth/shell/extra-audio.conf
     - tests/bluetooth/shell/usb_audio.overlay
     - tests/bluetooth/tester/overlay-le-audio.conf
     - tests/bluetooth/tester/overlay-bt_ll_sw_split.conf
@@ -720,7 +723,6 @@ Bluetooth HCI:
   maintainers:
     - jhedberg
   collaborators:
-    - alwa-nordic
     - hermabe
     - Thalley
     - sjanc
@@ -747,7 +749,6 @@ Bluetooth Host:
   maintainers:
     - jhedberg
   collaborators:
-    - alwa-nordic
     - hermabe
     - sjanc
     - Thalley
@@ -801,7 +802,7 @@ Bluetooth Host:
     - tests/bluetooth/controller/
     - tests/bluetooth/mesh*/
     - tests/bluetooth/qualification/
-    - tests/bluetooth/shell/audio.conf
+    - tests/bluetooth/shell/extra-audio.conf
     - tests/bluetooth/shell/mesh.conf
     - tests/bluetooth/shell/usb_audio.overlay
     - tests/bluetooth/tester/
@@ -1039,10 +1040,10 @@ C library:
   status: maintained
   maintainers:
     - stephanosio
+    - keith-packard
   collaborators:
     - aescolar
     - nashif
-    - keith-packard
     - cfriedt
   files:
     - lib/libc/
@@ -1289,6 +1290,21 @@ DSP subsystem:
   tests:
     - zdsp
 
+DT Doctor:
+  status: maintained
+  maintainers:
+    - kartben
+  files:
+    - cmake/sca/dtdoctor/
+    - doc/develop/sca/dtdoctor.rst
+    - scripts/dts/dtdoctor_analyzer.py
+    - scripts/dts/dtdoctor_sca_wrapper.py
+    - tests/misc/dtdoctor/
+  labels:
+    - "area: Devicetree"
+  tests:
+    - sca.dtdoctor
+
 Debug:
   status: maintained
   maintainers:
@@ -1441,7 +1457,7 @@ Disk:
     - drivers.disk
     - sd
 
-Display drivers:
+Display controllers:
   status: maintained
   maintainers:
     - JarmouniA
@@ -1531,11 +1547,12 @@ Documentation Infrastructure:
     - "area: Documentation Infrastructure"
 
 "Drivers: ADC":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - jsbatch
   collaborators:
     - anangl
     - ZhaoxiangJin
-    - jsbatch
   files:
     - drivers/adc/
     - include/zephyr/drivers/adc.h
@@ -1717,6 +1734,8 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - nordic-krch
+  collaborators:
+    - danieldegrasse
   files:
     - drivers/clock_control/
     - dts/bindings/clock/
@@ -1994,13 +2013,22 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - ceolin
-  collaborators:
-    - tomi-font
   files:
     - drivers/entropy/
     - include/zephyr/drivers/entropy.h
     - tests/drivers/entropy/
     - doc/hardware/peripherals/entropy.rst
+  file-groups:
+    - name: PSA Crypto entropy driver
+      collaborators:
+        - tomi-font
+        - etienne-lms
+      files:
+        - drivers/entropy/entropy_psa_crypto.c
+        - drivers/entropy/Kconfig.psa_crypto
+        - include/zephyr/drivers/entropy.h
+        - tests/drivers/entropy/
+        - doc/hardware/peripherals/entropy.rst
   labels:
     - "area: Crypto / RNG"
   tests:
@@ -2035,6 +2063,7 @@ Documentation Infrastructure:
     - net.ethernet
     - sample.drivers.ethernet
     - net.ethernet.build
+    - sample.net.ptp
 
 "Drivers: FPGA":
   status: maintained
@@ -2376,6 +2405,28 @@ Documentation Infrastructure:
     - drivers.led_strip
     - sample.drivers.led_strip
 
+"Drivers: LIN":
+  status: maintained
+  maintainers:
+    - thenguyenyf
+  collaborators:
+    - henrikbrixandersen
+  files:
+    - boards/shields/mikroe_lin_click/
+    - doc/hardware/peripherals/lin.rst
+    - drivers/lin/
+    - dts/bindings/lin/
+    - dts/bindings/phy/lin-transceiver*
+    - include/zephyr/drivers/lin.h
+    - include/zephyr/drivers/lin/
+    - samples/drivers/lin/
+    - tests/drivers/lin/
+  labels:
+    - "area: LIN"
+  tests:
+    - drivers.lin
+    - sample.drivers.lin
+
 "Drivers: MEMC":
   status: odd fixes
   files:
@@ -2408,7 +2459,7 @@ Documentation Infrastructure:
   tests:
     - drivers.mfd
 
-"Drivers: MIPI DBI":
+"Drivers: MIPI-DBI":
   status: maintained
   maintainers:
     - danieldegrasse
@@ -2423,7 +2474,7 @@ Documentation Infrastructure:
     - include/zephyr/dt-bindings/mipi_dbi/
     - tests/drivers/mipi_dbi/
   labels:
-    - "area: Display Controller"
+    - "area: MIPI-DBI"
   tests:
     - drivers.mipi_dbi
 
@@ -2527,6 +2578,7 @@ Documentation Infrastructure:
     - SeppoTakalo
     - zafersn
     - wkhadgar
+    - JordanYates
   files:
     - drivers/modem/
     - tests/drivers/build_all/modem/
@@ -2645,12 +2697,13 @@ Documentation Infrastructure:
     - "area: Clocks"
 
 "Drivers: PWM":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - jsbatch
   collaborators:
     - anangl
     - henrikbrixandersen
     - FelixWang47831
-    - jsbatch
   files:
     - drivers/pwm/
     - dts/bindings/pwm/
@@ -3256,7 +3309,8 @@ Espressif Platforms:
     - wmrsouza
     - tmedicci
   files:
-    - drivers/*/*esp32*.c
+    - drivers/*/*esp32*
+    - drivers/*/*/*esp32*
     - boards/espressif/
     - cmake/emu/espressif_qemu.cmake
     - cmake/emu/espressif_qemu/
@@ -3445,6 +3499,26 @@ Heimann Platforms:
   labels:
     - "platform: heimann"
 
+Hexagon arch:
+  status: maintained
+  maintainers:
+    - androm3da
+  collaborators:
+    - dkalowsk
+  files:
+    - dts/bindings/*/qcom*hexagon*
+    - dts/bindings/interrupt-controller/qcom,hvm-pic.yaml
+    - dts/bindings/timer/qcom,hvm-timer.yaml
+    - arch/hexagon/
+    - cmake/compiler/clang/target_hexagon.cmake
+    - cmake/toolchain/hexagon/
+    - doc/develop/toolchains/hexagon_llvm.rst
+    - drivers/*/hexagon_*.c
+    - drivers/*/hexagon_*.h
+    - soc/qemu/hexagon/
+    - include/zephyr/arch/hexagon/
+    - boards/qemu/hexagon/
+
 IPC:
   status: maintained
   maintainers:
@@ -3492,6 +3566,27 @@ ITE Platforms:
   labels:
     - "platform: ITE"
 
+Infineon AURIX Platforms:
+  status: maintained
+  maintainers:
+    - go2sh
+    - parthitce
+    - ssekar15
+  files:
+    - soc/qemu/tricore/
+    - boards/qemu/tricore/
+    - drivers/*/*aurix*
+    - include/zephyr/drivers/*/*aurix*
+    - dts/bindings/*/infineon,asclin*
+    - dts/bindings/*/infineon,aurix*
+    - dts/bindings/*/infineon,tc*
+    - dts/tricore/
+  labels:
+    - "platform: Infineon AURIX"
+  description: >-
+    Infineon AURIX TriCore SoC family (TC3x, TC4x), boards, devicetree
+    and related drivers.
+
 Infineon Platforms:
   status: maintained
   maintainers:
@@ -3512,7 +3607,9 @@ Infineon Platforms:
     - boards/cypress/
     - boards/infineon/
     - drivers/*/*infineon*
+    - drivers/*/*/*infineon*
     - drivers/*/*xmc*
+    - drivers/*/*/*xmc*
     - drivers/sensor/infineon/
     - drivers/wifi/infineon/
     - dts/arm/infineon/
@@ -4023,8 +4120,32 @@ MIPS arch:
     - boards/qemu/malta/
   labels:
     - "area: MIPS"
+  tests:
     - arch
     - kernel
+
+MediaTek Platforms:
+  status: maintained
+  maintainers:
+    - aary-p
+  collaborators:
+    - andrew-mtk
+    - ffreimann-mtk
+  files:
+    - boards/mediatek/
+    - soc/mediatek/
+    - drivers/*/*mt8*
+    - drivers/*/*mtk*
+    - dts/arm64/mediatek/
+    - dts/bindings/*/mediatek,*
+    - include/zephyr/dt-bindings/*/mt8*
+    - include/zephyr/dt-bindings/*/mtk*
+  labels:
+    - "platform: MediaTek"
+  description: >-
+    MediaTek MT8xxx SoCs and boards, covering both the Xtensa audio DSPs
+    found in Chromebook-class parts and the Arm application processors on
+    Genio development boards, together with MediaTek-specific drivers.
 
 Memory Management:
   status: maintained
@@ -4127,7 +4248,7 @@ Microchip RISC-V Platforms:
   labels:
     - "platform: Microchip RISC-V"
 
-Microchip SAM Platforms:
+Microchip SAM MCU Platforms:
   status: maintained
   maintainers:
     - nandojve
@@ -4140,17 +4261,33 @@ Microchip SAM Platforms:
     - stephanosio
   files:
     - boards/atmel/
-    - boards/microchip/sam/
+    - boards/microchip/sam/sam_*/
     - dts/arm/atmel/
-    - dts/arm/microchip/sam/
+    - dts/arm/microchip/sam/sam_*/
     - soc/atmel/
-    - soc/microchip/sam/sama*/
+    - soc/microchip/sam/sam_*/
     - drivers/*/*sam*
     - dts/bindings/*/atmel,*
     - include/zephyr/*/*/*sam*
     - include/zephyr/*/*/*atmel*
   labels:
-    - "platform: Microchip SAM"
+    - "platform: Microchip SAM MCU"
+
+Microchip SAM MPU Platforms:
+  status: maintained
+  maintainers:
+    - TonyHan11
+  collaborators:
+    - MCHP-MPU-Solutions-SHA
+    - nandojve
+  files:
+    - boards/microchip/sam/sama*/
+    - dts/arm/microchip/sam/sam9/
+    - dts/arm/microchip/sam/sama*/
+    - soc/microchip/sam/common/
+    - soc/microchip/sam/sama*/
+  labels:
+    - "platform: Microchip SAM MPU"
 
 Microchip SmartFusion2 platform:
   status: maintained
@@ -4227,6 +4364,22 @@ Modem:
   tests:
     - modem
     - sample.net.cellular_modem
+
+Multimedia Pipeline:
+  status: maintained
+  maintainers:
+    - ngphibang
+  collaborators:
+    - josuah
+  files:
+    - doc/services/mpipe/
+    - include/zephyr/mpipe/
+    - subsys/mpipe/
+    - tests/subsys/mpipe/
+  labels:
+    - "area: Multimedia Pipeline"
+  tests:
+    - mpipe
 
 NEORV32 platform:
   status: maintained
@@ -4622,6 +4775,7 @@ Networking:
   collaborators:
     - pdgendt
   files:
+    - .github/workflows/net-perf*
     - scripts/net/
     - drivers/net/
     - include/zephyr/net/
@@ -4630,6 +4784,7 @@ Networking:
     - doc/services/connectivity/networking/
     - tests/net/
     - tests/unit/net_timeout/
+    - .github/workflows/net_conformance.yml
   files-exclude:
     - doc/services/connectivity/networking/api/gptp.rst
     - doc/services/connectivity/networking/api/ieee802154.rst
@@ -5022,9 +5177,11 @@ Networking:
     - include/zephyr/net/gptp.h
     - samples/net/ethernet/gptp/
     - subsys/net/l2/ethernet/gptp/
+    - tests/net/gptp/
   labels:
     - "area: Networking"
   tests:
+    - net.gptp
     - sample.net.gptp
 
 Nuvoton NPCM Platforms:
@@ -5074,8 +5231,9 @@ Nuvoton Numicro Numaker Platforms:
     - dts/arm/nuvoton/m*
     - dts/bindings/*/*numicro*
     - dts/bindings/*/*numaker*
-    - drivers/*/*_numicro*
-    - drivers/*/*_numaker*
+    - drivers/*/*numicro*
+    - drivers/*/*numaker*
+    - drivers/*/*/*numaker*
   labels:
     - "platform: Nuvoton Numicro Numaker"
 
@@ -5271,6 +5429,26 @@ Power management:
     - pm
     - drivers.power_domain.build
     - sample.power
+
+Precision Timing:
+  status: maintained
+  maintainers:
+    - DBS06
+    - yangbolu1991
+  collaborators:
+    - awojasinski
+    - jukkar
+  files:
+    - include/zephyr/precision_timing/
+    - samples/subsys/precision_timing/
+    - subsys/precision_timing/
+    - tests/subsys/precision_timing/
+    - doc/kernel/precision_timing.rst
+  labels:
+    - "area: Precision Timing"
+  tests:
+    - sample.subsys.precision_timing
+    - subsys.precision_timing
 
 QNX Hypervisor Platforms:
   status: maintained
@@ -5664,6 +5842,11 @@ Rockchip Platforms:
     - dts/arm/rockchip/
     - dts/arm64/rockchip/
     - soc/rockchip/
+    - drivers/*/*rk35*
+    - drivers/*/*rockchip*
+    - drivers/*/*/*rockchip*
+    - dts/bindings/*/rockchip,*
+    - include/zephyr/dt-bindings/*/*rk35*
   labels:
     - "platform: Rockchip"
 
@@ -5841,6 +6024,11 @@ Security:
     - valeriosetti
   files:
     - doc/security/
+    - scripts/kconfig/hardenconfig.py
+    - scripts/kconfig/hardening.yaml
+    - scripts/kconfig/hardeninglib.py
+    - scripts/schemas/hardening-schema.yaml
+    - scripts/tests/hardenconfig/
   labels:
     - "area: Security"
 
@@ -6158,6 +6346,7 @@ TI AM13 Platforms:
     - glneo
   collaborators:
     - s-m33r
+    - Aman-Lachhiramka-ti
   files:
     - boards/ti/*am13*/
     - dts/arm/ti/am13*/
@@ -6447,6 +6636,20 @@ Trenz Electronic Platforms:
   description: >-
     Trenz Electronic development boards.
 
+TriCore arch:
+  status: maintained
+  maintainers:
+    - go2sh
+    - parthitce
+    - ssekar15
+  files:
+    - arch/tricore/
+    - cmake/compiler/*/target_tricore.cmake
+    - cmake/toolchain/tricore/
+    - include/zephyr/arch/tricore/
+  labels:
+    - "area: TriCore"
+
 Twister:
   status: maintained
   maintainers:
@@ -6486,6 +6689,7 @@ USB:
     - josuah
     - MarkWangChinese
     - roma-jam
+    - AidenHu
   files:
     - drivers/usb/
     - dts/bindings/usb/
@@ -6798,18 +7002,6 @@ West:
   labels:
     - "platform: nRF BSIM"
 
-"West project: chre":
-  status: maintained
-  maintainers:
-    - yperess
-  files:
-    - samples/modules/chre/
-    - modules/Kconfig.chre
-  labels:
-    - "area: CHRE"
-
-  tests:
-    - sample.modules.chre
 "West project: cmsis":
   status: maintained
   maintainers:
@@ -7599,6 +7791,20 @@ West:
   labels:
     - "area: TF-PSA-Crypto"
 
+"West project: tf-psa-crypto-drivers":
+  status: maintained
+  maintainers:
+    - npitre
+    - tomi-font
+  collaborators:
+    - Vge0rge
+    - valeriosetti
+    - JordanYates
+    - tpambor
+  files: []
+  labels:
+    - "area: TF-PSA-Crypto"
+
 "West project: tflite-micro":
   status: maintained
   maintainers:
@@ -7682,6 +7888,10 @@ West:
   status: maintained
   maintainers:
     - d3zd3z
+  collaborators:
+    - felipebalbi
+    - kurtjd
+    - jerrysxie
   files: []
   labels:
     - "area: Rust"
@@ -7797,6 +8007,25 @@ hawkBit:
     - "area: hawkBit"
   tests:
     - sample.net.hawkbit
+
+"mgmt: fota_http":
+  status: maintained
+  maintainers:
+    - sylvioalves
+  files:
+    - subsys/mgmt/fota_http/
+    - include/zephyr/mgmt/fota_http.h
+    - samples/subsys/mgmt/fota_http/
+    - tests/subsys/mgmt/fota_http/
+    - doc/services/device_mgmt/fota_http.rst
+  labels:
+    - "area: FOTA HTTP"
+  description: >-
+    Firmware Over-the-Air over HTTP or HTTPS into the MCUboot
+    secondary slot
+  tests:
+    - sample.mgmt.fota_http
+    - mgmt.fota_http
 
 "mgmt: updatehub":
   status: maintained

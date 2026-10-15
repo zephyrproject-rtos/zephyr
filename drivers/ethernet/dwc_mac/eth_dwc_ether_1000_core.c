@@ -215,10 +215,10 @@ static void dwmac_tx_release(const struct device *dev)
 				if ((des0 & TDES0_TTSS) != 0U) {
 #if defined(CONFIG_ETH_DWC_ETHER_1000_CORE_EDFE)
 					pkt->timestamp.second = d->des7;
-					pkt->timestamp.nanosecond = d->des6;
+					pkt->timestamp.nanosecond = DWMAC_PTP_SUBSEC_TO_NS(d->des6);
 #else /* CONFIG_ETH_DWC_ETHER_1000_CORE_EDFE */
 					pkt->timestamp.second = d->des3;
-					pkt->timestamp.nanosecond = d->des2;
+					pkt->timestamp.nanosecond = DWMAC_PTP_SUBSEC_TO_NS(d->des2);
 #endif /* CONFIG_ETH_DWC_ETHER_1000_CORE_EDFE */
 					net_if_add_tx_timestamp(pkt);
 				}
@@ -247,14 +247,14 @@ static void dwmac_receive_timestamp(struct net_pkt *pkt, struct dwmac_dma_desc *
 		return;
 	}
 	pkt->timestamp.second = d->des7;
-	pkt->timestamp.nanosecond = d->des6;
+	pkt->timestamp.nanosecond = DWMAC_PTP_SUBSEC_TO_NS(d->des6);
 #else
 	if (d->des2 == UINT32_MAX && d->des3 == UINT32_MAX) {
 		return;
 	}
 
 	pkt->timestamp.second = d->des3;
-	pkt->timestamp.nanosecond = d->des2;
+	pkt->timestamp.nanosecond = DWMAC_PTP_SUBSEC_TO_NS(d->des2);
 #endif /* CONFIG_ETH_DWC_ETHER_1000_CORE_EDFE */
 	net_pkt_set_rx_timestamping(pkt, true);
 }
@@ -562,6 +562,60 @@ static void dwmac_iface_init(struct net_if *iface)
 			DWMAC_MACCR_RE);
 }
 
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+#if defined(CONFIG_NET_STATISTICS_ETHERNET_VENDOR)
+static void dwmac_stats_init(const struct device *dev)
+{
+	const struct dwmac_config *cfg = dev->config;
+	struct dwmac_priv *p = dev->data;
+
+	if (cfg->mmc_vendor == NULL) {
+		return;
+	}
+
+	/*
+	 * The counters are read as they are: they roll over like the 32-bit
+	 * values they are reported in, so neither reset on read nor the
+	 * counter interrupts are needed.
+	 */
+	DWMAC_REG_WRITE(DWMAC_MMC_CONTROL, DWMAC_MMC_CONTROL_CNTRST);
+
+	p->stats.vendor = cfg->mmc_vendor;
+}
+
+static void dwmac_stats_update(const struct device *dev)
+{
+	const struct dwmac_config *cfg = dev->config;
+
+	if (cfg->mmc_vendor == NULL) {
+		return;
+	}
+
+	for (size_t i = 0; cfg->mmc_vendor[i].key != NULL; i++) {
+		cfg->mmc_vendor[i].value = DWMAC_REG_READ(cfg->mmc_regs[i]);
+	}
+}
+#endif /* CONFIG_NET_STATISTICS_ETHERNET_VENDOR */
+
+static struct net_stats_eth *dwmac_stats(const struct device *dev, struct net_if *iface,
+					 uint32_t type)
+{
+	struct dwmac_priv *p = dev->data;
+
+	ARG_UNUSED(iface);
+
+#if defined(CONFIG_NET_STATISTICS_ETHERNET_VENDOR)
+	if ((type & ETHERNET_STATS_TYPE_VENDOR) != 0U) {
+		dwmac_stats_update(dev);
+	}
+#else
+	ARG_UNUSED(type);
+#endif
+
+	return &p->stats;
+}
+#endif /* CONFIG_NET_STATISTICS_ETHERNET */
+
 int dwmac_probe(const struct device *dev)
 {
 	struct dwmac_priv *p = dev->data;
@@ -625,6 +679,15 @@ int dwmac_probe(const struct device *dev)
 			(p->feature0 & DWMAC_HWFR_ALTDESC) ? "yes" : "no");
 	}
 
+	/*
+	 * The MMC counters run from reset with their interrupts unmasked. A
+	 * counter reaching half or full scale raises the MAC interrupt until
+	 * that counter is read, which the interrupt handler never does.
+	 */
+	DWMAC_REG_WRITE(DWMAC_MMC_RX_INTERRUPT_MASK, UINT32_MAX);
+	DWMAC_REG_WRITE(DWMAC_MMC_TX_INTERRUPT_MASK, UINT32_MAX);
+	DWMAC_REG_WRITE(DWMAC_MMC_IPC_RX_INTERRUPT_MASK, UINT32_MAX);
+
 	DWMAC_REG_WRITE(DWMAC_DMAOMR, DWMAC_DMAOMR_TSF | DWMAC_DMAOMR_RSF);
 
 	ret = dwmac_platform_init(dev);
@@ -635,9 +698,14 @@ int dwmac_probe(const struct device *dev)
 	memset(p->tx_descs, 0, NB_TX_DESCS * sizeof(struct dwmac_dma_desc));
 	memset(p->rx_descs, 0, NB_RX_DESCS * sizeof(struct dwmac_dma_desc));
 
+	reg_val = DWMAC_REG_READ(DWMAC_DMABMR) & ~DWMAC_DMABMR_PBL;
+	reg_val |= FIELD_PREP(DWMAC_DMABMR_PBL, 32);
+
 	if (IS_ENABLED(CONFIG_ETH_DWC_ETHER_1000_CORE_EDFE)) {
-		DWMAC_REG_WRITE(DWMAC_DMABMR, DWMAC_REG_READ(DWMAC_DMABMR) | DWMAC_DMABMR_EDFE);
+		reg_val |= DWMAC_DMABMR_EDFE;
 	}
+
+	DWMAC_REG_WRITE(DWMAC_DMABMR, reg_val);
 
 	DWMAC_REG_WRITE(DWMAC_DMATDLAR, TXDESC_PHYS_L(0));
 	DWMAC_REG_WRITE(DWMAC_DMARDLAR, RXDESC_PHYS_L(0));
@@ -646,17 +714,12 @@ int dwmac_probe(const struct device *dev)
 		DWMAC_REG_WRITE(DWMAC_MACCR, DWMAC_REG_READ(DWMAC_MACCR) | DWMAC_MACCR_IPCO);
 	}
 
+#if defined(CONFIG_NET_STATISTICS_ETHERNET_VENDOR)
+	dwmac_stats_init(dev);
+#endif
+
 	return 0;
 }
-
-#if defined(CONFIG_NET_STATISTICS_ETHERNET)
-static struct net_stats_eth *dwmac_stats(const struct device *dev, struct net_if *iface __unused)
-{
-	struct dwmac_priv *p = dev->data;
-
-	return &p->stats;
-}
-#endif
 
 const struct ethernet_api dwmac_api = {
 	.iface_api.init = dwmac_iface_init,
@@ -668,6 +731,6 @@ const struct ethernet_api dwmac_api = {
 	.get_ptp_clock = dwmac_get_ptp_clock,
 #endif
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-	.get_stats = dwmac_stats,
+	.get_stats_type = dwmac_stats,
 #endif
 };

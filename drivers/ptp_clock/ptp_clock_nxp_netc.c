@@ -14,7 +14,7 @@
 
 #include <fsl_netc_timer.h>
 
-#if defined(CONFIG_SOC_MIMXRT1189)
+#if defined(CONFIG_SOC_SERIES_IMXRT118X)
 #define PTP_CLOCK_NXP_NETC_CLK_DIV 1
 #else
 /*

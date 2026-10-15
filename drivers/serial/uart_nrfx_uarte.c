@@ -8,7 +8,6 @@
  * @brief Driver for Nordic Semiconductor nRF UARTE
  */
 
-#include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/pm/device.h>
@@ -25,6 +24,10 @@
 #include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
+
+#ifdef CONFIG_UART_NRFX_UARTE_HFXO_ON_ACTIVE
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
+#endif
 
 LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 
@@ -689,6 +692,8 @@ static int uarte_nrfx_configure(const struct device *dev,
 
 #ifdef UARTE_HAS_FRAME_TIMEOUT
 	uarte_cfg.frame_timeout = NRF_UARTE_FRAME_TIMEOUT_EN;
+#elif NRF_UARTE_HAS_FRAME_TIMEOUT
+	uarte_cfg.frame_timeout = NRF_UARTE_FRAME_TIMEOUT_DIS;
 #endif
 
 #if NRF_UARTE_HAS_FRAME_SIZE

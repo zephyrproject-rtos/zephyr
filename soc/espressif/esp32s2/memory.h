@@ -40,7 +40,6 @@
 #define IRAM_DRAM_OFFSET         0x70000
 #define DRAM_SHARED_BUFFERS_START       0x3ffea400
 #define DRAM_SHARED_BUFFERS_END         0x3fffc410
-#define DRAM_STACK_START 0x3fffc410
 #define DRAM_ROM_BSS_DATA_START  0x3fffe710
 
 /* Safety margin between MCUboot segments and ROM stack */

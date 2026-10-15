@@ -5,6 +5,7 @@
  * Device tree for Arm Corstone-1000-A320 FVP
  */
 
+#include <freq.h>
 #include <mem.h>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 
@@ -23,6 +24,7 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+		timebase-frequency = <DT_FREQ_M(100)>;
 
 		cpu0: cpu@0 {
 			device_type = "cpu";

@@ -386,7 +386,7 @@ static void kb106x_uart_irq_init(void)
 		.ser = (struct serial_regs *)DT_INST_REG_ADDR(n),                                  \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, &kb106x_uart_init, NULL, &kb106x_uart_data_##n,                   \
+	DEVICE_DT_INST_DEFINE(n, kb106x_uart_init, NULL, &kb106x_uart_data_##n,                    \
 			      &kb106x_uart_config_##n, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,  \
 			      &kb106x_uart_api);
 

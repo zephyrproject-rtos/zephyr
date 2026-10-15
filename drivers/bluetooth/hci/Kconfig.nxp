@@ -21,6 +21,7 @@ config BT_NXP_CTRL_WAKE_ON_BT_LED_BLINK
 	bool "Config LED0 to blink upon observing activity on BT wakeup IO"
 	depends on BT_NXP_CTRL_WAKE_ON_BT
 	depends on $(dt_alias_enabled,led0)
+	select BT_SYSTEM_WORKQUEUE_COOP
 	help
 	  Enable LED blinking to indicate Bluetooth activity when wake-on-BT
 	  is triggered. Requires led0 alias to be defined in device tree.

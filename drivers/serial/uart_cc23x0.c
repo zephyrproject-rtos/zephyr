@@ -1001,7 +1001,7 @@ static int uart_cc23x0_pm_action(const struct device *dev, enum pm_device_action
 	PM_DEVICE_DT_INST_DEFINE(n, uart_cc23x0_pm_action);                                        \
 	UART_CC23X0_INIT_FUNC(n);                                                                  \
                                                                                                    \
-	static struct uart_cc23x0_config uart_cc23x0_config_##n = {                                \
+	static const struct uart_cc23x0_config uart_cc23x0_config_##n = {                          \
 		.reg = DT_INST_REG_ADDR(n),                                                        \
 		.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency),               \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \

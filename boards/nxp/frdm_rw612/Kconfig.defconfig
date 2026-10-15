@@ -8,6 +8,11 @@ if BOARD_FRDM_RW612
 configdefault ETH_DRIVER
 	default y if DT_HAS_NXP_ENET_MAC_ENABLED
 
+# The external flash is bound to a power domain, so restore its
+# FlexSPI configuration when that domain is turned back on.
+configdefault FLASH_MCUX_FLEXSPI_NOR_PM_RESTORE
+	default y if PM_DEVICE
+
 if LVGL
 
 # Enable DMA for LCDIC

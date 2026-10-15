@@ -1,5 +1,6 @@
 common:
   tags: coredump
+  filter: CONFIG_ARCH_SUPPORTS_COREDUMP
   ignore_faults: true
   ignore_qemu_crash: true
   arch_exclude:
@@ -8,12 +9,8 @@ common:
     - qemu_x86
 tests:
   debug.coredump.backends.logging:
-    filter: CONFIG_ARCH_SUPPORTS_COREDUMP
     platform_exclude: acrn_ehl_crb
-    extra_configs:
-      - CONFIG_TEST_STORED_COREDUMP=n
   debug.coredump.backends.flash:
-    filter: CONFIG_ARCH_SUPPORTS_COREDUMP
     extra_args: CONF_FILE=prj_flash_partition.conf
     extra_configs:
       - CONFIG_TEST_STORED_COREDUMP=y
@@ -24,13 +21,44 @@ tests:
       - esp32s3_devkitc/esp32s3/procpu
       - esp32c3_devkitc
   debug.coredump.backends.in_memory:
-    filter: CONFIG_ARCH_SUPPORTS_COREDUMP
     extra_args: CONF_FILE=prj_in_memory.conf
     extra_configs:
       - CONFIG_TEST_STORED_COREDUMP=y
   debug.coredump.backends.other:
-    filter: CONFIG_ARCH_SUPPORTS_COREDUMP
     extra_args: CONF_FILE=prj_backend_other.conf
     extra_configs:
       - CONFIG_TEST_STORED_COREDUMP=y
     platform_exclude: acrn_ehl_crb
+  debug.coredump.backends.logging_udp:
+    extra_args: CONF_FILE=prj_logging_udp.conf
+    platform_allow:
+      - qemu_x86
+    tags:
+      - net
+  debug.coredump.backends.logging_udp.mirror:
+    extra_args: CONF_FILE=prj_logging_udp.conf
+    extra_configs:
+      - CONFIG_DEBUG_COREDUMP_LOGGING_UDP_MIRROR_TO_LOG=y
+    platform_allow:
+      - qemu_x86
+    tags:
+      - net
+  debug.coredump.backends.logging_udp.ipv6:
+    extra_args: CONF_FILE=prj_logging_udp.conf
+    extra_configs:
+      - CONFIG_NET_IPV4=n
+      - CONFIG_NET_IPV6=y
+      - CONFIG_DEBUG_COREDUMP_LOGGING_UDP_HOST="[::1]"
+    platform_allow:
+      - qemu_x86
+    tags:
+      - net
+  debug.coredump.backends.logging_udp.no_peer:
+    extra_args: CONF_FILE=prj_logging_udp.conf
+    extra_configs:
+      - CONFIG_TEST_BACKEND_ERROR=y
+      - CONFIG_DEBUG_COREDUMP_LOGGING_UDP_HOST=""
+    platform_allow:
+      - qemu_x86
+    tags:
+      - net

@@ -17,9 +17,22 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 
+#ifdef CONFIG_PINCTRL
+#include <zephyr/drivers/pinctrl.h>
+#endif
+
 #include "eth_dwmac_priv.h"
 
 LOG_MODULE_REGISTER(dwmac_ptp_clock, CONFIG_ETHERNET_LOG_LEVEL);
+
+#define DWMAC_PTP_PINCTRL_ENABLED DT_ANY_INST_HAS_PROP_STATUS_OKAY(pinctrl_0)
+
+struct dwmac_ptp_config {
+	const struct device *eth_dev;
+#if DWMAC_PTP_PINCTRL_ENABLED
+	const struct pinctrl_dev_config *pincfg;
+#endif
+};
 
 struct dwmac_ptp_data {
 	uint32_t default_addend;
@@ -34,13 +47,15 @@ static void dwmac_ptp_wait_for_clear(mm_reg_t base, uint32_t reg, uint32_t mask)
 
 static int dwmac_ptp_set(const struct device *dev, struct net_ptp_time *tm)
 {
-	const struct device *eth_dev = dev->config;
+	const struct dwmac_ptp_config *cfg = dev->config;
+	const struct device *eth_dev = cfg->eth_dev;
 	struct dwmac_priv *p = eth_dev->data;
 	mm_reg_t base = DEVICE_MMIO_GET(eth_dev);
 
 	K_SPINLOCK(&p->spinlock) {
 		sys_write32(tm->second, base + DWMAC_PTP_SEC_UPDATE_REG);
-		sys_write32(tm->nanosecond, base + DWMAC_PTP_NSEC_UPDATE_REG);
+		sys_write32(DWMAC_PTP_NS_TO_SUBSEC(tm->nanosecond),
+			    base + DWMAC_PTP_NSEC_UPDATE_REG);
 		sys_write32(sys_read32(base + DWMAC_PTP_CTRL_REG) | DWMAC_PTP_CTRL_TIME_INIT,
 			    base + DWMAC_PTP_CTRL_REG);
 		while (sys_read32(base + DWMAC_PTP_CTRL_REG) & DWMAC_PTP_CTRL_TIME_INIT) {
@@ -53,14 +68,15 @@ static int dwmac_ptp_set(const struct device *dev, struct net_ptp_time *tm)
 
 static int dwmac_ptp_get(const struct device *dev, struct net_ptp_time *tm)
 {
-	const struct device *eth_dev = dev->config;
+	const struct dwmac_ptp_config *cfg = dev->config;
+	const struct device *eth_dev = cfg->eth_dev;
 	struct dwmac_priv *p = eth_dev->data;
 	mm_reg_t base = DEVICE_MMIO_GET(eth_dev);
 	uint32_t second_2;
 
 	K_SPINLOCK(&p->spinlock) {
 		tm->second = sys_read32(base + DWMAC_PTP_SEC_REG);
-		tm->nanosecond = sys_read32(base + DWMAC_PTP_NSEC_REG);
+		tm->nanosecond = DWMAC_PTP_SUBSEC_TO_NS(sys_read32(base + DWMAC_PTP_NSEC_REG));
 		second_2 = sys_read32(base + DWMAC_PTP_SEC_REG);
 	}
 
@@ -74,9 +90,11 @@ static int dwmac_ptp_get(const struct device *dev, struct net_ptp_time *tm)
 
 static int dwmac_ptp_adjust(const struct device *dev, int increment)
 {
-	const struct device *eth_dev = dev->config;
+	const struct dwmac_ptp_config *cfg = dev->config;
+	const struct device *eth_dev = cfg->eth_dev;
 	struct dwmac_priv *p = eth_dev->data;
 	mm_reg_t base = DEVICE_MMIO_GET(eth_dev);
+	uint32_t subsec;
 
 	if ((increment <= (int32_t)(-NSEC_PER_SEC)) || (increment >= (int32_t)NSEC_PER_SEC)) {
 		return -EINVAL;
@@ -85,15 +103,16 @@ static int dwmac_ptp_adjust(const struct device *dev, int increment)
 	K_SPINLOCK(&p->spinlock) {
 		sys_write32(0, base + DWMAC_PTP_SEC_UPDATE_REG);
 		if (increment >= 0) {
-			sys_write32((uint32_t)increment, base + DWMAC_PTP_NSEC_UPDATE_REG);
+			subsec = DWMAC_PTP_NS_TO_SUBSEC((uint32_t)increment);
+			sys_write32(subsec, base + DWMAC_PTP_NSEC_UPDATE_REG);
 		} else {
+			subsec = DWMAC_PTP_NS_TO_SUBSEC((uint32_t)-increment);
 #if defined(CONFIG_ETH_DWC_ETHER_QOS_CORE)
-			sys_write32(DWMAC_PTP_NSEC_UPDATE_ADDSUB | (NSEC_PER_SEC + increment),
-				    base + DWMAC_PTP_NSEC_UPDATE_REG);
-#else
-			sys_write32(DWMAC_PTP_NSEC_UPDATE_ADDSUB | (-increment),
-				    base + DWMAC_PTP_NSEC_UPDATE_REG);
+			/* the QoS core takes the subtrahend in complement form */
+			subsec = DWMAC_PTP_SUBSEC_PER_SEC - subsec;
 #endif
+			sys_write32(DWMAC_PTP_NSEC_UPDATE_ADDSUB | subsec,
+				    base + DWMAC_PTP_NSEC_UPDATE_REG);
 		}
 		sys_write32(sys_read32(base + DWMAC_PTP_CTRL_REG) | DWMAC_PTP_CTRL_TIME_UPDATE,
 			    base + DWMAC_PTP_CTRL_REG);
@@ -107,7 +126,8 @@ static int dwmac_ptp_adjust(const struct device *dev, int increment)
 
 static int dwmac_ptp_rate_adjust(const struct device *dev, double ratio)
 {
-	const struct device *eth_dev = dev->config;
+	const struct dwmac_ptp_config *cfg = dev->config;
+	const struct device *eth_dev = cfg->eth_dev;
 	struct dwmac_priv *p = eth_dev->data;
 	const struct dwmac_ptp_data *data = dev->data;
 	mm_reg_t base = DEVICE_MMIO_GET(eth_dev);
@@ -133,29 +153,49 @@ static int dwmac_ptp_rate_adjust(const struct device *dev, double ratio)
 
 static int dwmac_ptp_init(const struct device *dev)
 {
-	const struct device *eth_dev = dev->config;
+	const struct dwmac_ptp_config *cfg = dev->config;
+	const struct device *eth_dev = cfg->eth_dev;
 	const struct dwmac_config *eth_cfg = eth_dev->config;
 	struct dwmac_ptp_data *data = dev->data;
 	mm_reg_t base = DEVICE_MMIO_GET(eth_dev);
 	uint32_t ptp_clk_rate;
-	uint32_t ss_incr_ns;
+	uint32_t ss_incr;
 	uint32_t addend_val;
 	uint64_t temp;
 	int ret;
+
+#if DWMAC_PTP_PINCTRL_ENABLED
+	if (cfg->pincfg != NULL) {
+		ret = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+#endif /* DWMAC_PTP_PINCTRL_ENABLED */
 
 	ret = clock_control_get_rate(eth_cfg->clock, eth_cfg->ptp_clk, &ptp_clk_rate);
 	if (ret < 0) {
 		return -EIO;
 	}
 
-	ss_incr_ns = 2000000000ULL / ptp_clk_rate;
+	/*
+	 * Increment the sub-second counter by more than two reference clock
+	 * periods per accumulator overflow, so that the default addend stays below
+	 * half scale and any rate ratio up to 2.0 fits the addend register.
+	 */
+	ss_incr = (2ULL * DWMAC_PTP_SUBSEC_PER_SEC) / ptp_clk_rate + 1U;
+	if (ss_incr > UINT8_MAX) {
+		LOG_ERR("PTP reference clock of %u Hz is too slow", ptp_clk_rate);
+		return -EINVAL;
+	}
 
-	sys_write32(ss_incr_ns << DWMAC_PTP_SSINC_SHIFT, base + DWMAC_PTP_SSINC_REG);
+	sys_write32(ss_incr << DWMAC_PTP_SSINC_SHIFT, base + DWMAC_PTP_SSINC_REG);
 
 	sys_write32(sys_read32(base + DWMAC_PTP_CTRL_REG) | DWMAC_PTP_CTRL_ENABLE,
 		    base + DWMAC_PTP_CTRL_REG);
 
-	temp = 1000000000ULL / ss_incr_ns;
+	/* accumulator overflows per second, then the addend producing that rate */
+	temp = DWMAC_PTP_SUBSEC_PER_SEC / ss_incr;
 
 	temp = (uint64_t)(temp << 32);
 
@@ -170,8 +210,10 @@ static int dwmac_ptp_init(const struct device *dev)
 
 	sys_write32(sys_read32(base + DWMAC_PTP_CTRL_REG) | DWMAC_PTP_CTRL_FINE_UPDATE,
 		    base + DWMAC_PTP_CTRL_REG);
-	sys_write32(sys_read32(base + DWMAC_PTP_CTRL_REG) | DWMAC_PTP_CTRL_ROLLOVER,
-		    base + DWMAC_PTP_CTRL_REG);
+	if (IS_ENABLED(CONFIG_PTP_CLOCK_DWC_MAC_DIGITAL_ROLLOVER)) {
+		sys_write32(sys_read32(base + DWMAC_PTP_CTRL_REG) | DWMAC_PTP_CTRL_ROLLOVER,
+			    base + DWMAC_PTP_CTRL_REG);
+	}
 
 	sys_write32(0, base + DWMAC_PTP_SEC_UPDATE_REG);
 	sys_write32(0, base + DWMAC_PTP_NSEC_UPDATE_REG);
@@ -181,27 +223,50 @@ static int dwmac_ptp_init(const struct device *dev)
 
 	uint32_t ctrl = sys_read32(base + DWMAC_PTP_CTRL_REG);
 
-	if (IS_ENABLED(CONFIG_PTP)) {
-		/* Use PTPv2 */
-		ctrl |= BIT(10);
-		/* enable timestamping for L2 PTP packets */
-		if (IS_ENABLED(CONFIG_PTP_IEEE_802_3_PROTOCOL)) {
-			ctrl |= BIT(11);
-		}
-		/* enable timestamping for IPv4 PTP packets */
-		if (IS_ENABLED(CONFIG_PTP_UDP_IPV4_PROTOCOL)) {
-			ctrl |= BIT(13);
-		}
-		/* enable timestamping for IPv6 PTP packets */
-		if (IS_ENABLED(CONFIG_PTP_UDP_IPV6_PROTOCOL)) {
-			ctrl |= BIT(12);
-		}
-	} else {
-		/* Enable timestamping for all received packets */
+	if (IS_ENABLED(CONFIG_PTP_CLOCK_DWC_MAC_RX_TIMESTAMP_ALL)) {
 		ctrl |= DWMAC_PTP_CTRL_ALL_RX;
+	} else {
+		/* all event messages, for both E2E and P2P delay mechanisms */
+		uint32_t snaptypsel = DWMAC_PTP_CTRL_SNAPTYPSEL_EVENT;
+
+#ifdef CONFIG_ETH_DWC_ETHER_1000_CORE
+		/* older cores select a clock node type here instead */
+		if (FIELD_GET(DWMAC_MACVERR_SNPSVER, sys_read32(base + DWMAC_MACVERR)) <
+		    DWMAC_CORE_3_70) {
+			snaptypsel = DWMAC_PTP_CTRL_SNAPTYPSEL_P2P_TC;
+		}
+#endif
+		ctrl |= FIELD_PREP(DWMAC_PTP_CTRL_SNAPTYPSEL, snaptypsel);
+	}
+	if (IS_ENABLED(CONFIG_PTP_CLOCK_DWC_MAC_RX_TIMESTAMP_PTPV2)) {
+		ctrl |= DWMAC_PTP_CTRL_PTPV2;
+	}
+	if (IS_ENABLED(CONFIG_PTP_CLOCK_DWC_MAC_RX_TIMESTAMP_L2)) {
+		ctrl |= DWMAC_PTP_CTRL_L2;
+	}
+	if (IS_ENABLED(CONFIG_PTP_CLOCK_DWC_MAC_RX_TIMESTAMP_IPV4)) {
+		ctrl |= DWMAC_PTP_CTRL_IPV4;
+	}
+	if (IS_ENABLED(CONFIG_PTP_CLOCK_DWC_MAC_RX_TIMESTAMP_IPV6)) {
+		ctrl |= DWMAC_PTP_CTRL_IPV6;
 	}
 
 	sys_write32(ctrl, base + DWMAC_PTP_CTRL_REG);
+
+	/*
+	 * From DWC ether_1000 v3.70 on, and in the QoS core, PPSCTRL selects
+	 * bit (30 - PPSCTRL) of the sub-second field as the PPS output. In
+	 * digital rollover that field wraps at 10^9 - 1, so bit 30 never
+	 * toggles and the reset value of 0 leaves the output stuck low.
+	 * Select bit 29 instead, which gives one pulse per second.
+	 */
+	if (IS_ENABLED(CONFIG_PTP_CLOCK_DWC_MAC_DIGITAL_ROLLOVER) &&
+	    (IS_ENABLED(CONFIG_ETH_DWC_ETHER_QOS_CORE) ||
+	     FIELD_GET(DWMAC_VERSION_SNPSVER, sys_read32(base + DWMAC_VERSION_REG)) >=
+		     DWMAC_CORE_3_70)) {
+		sys_write32(FIELD_PREP(DWMAC_PTP_PPSCR_PPSCTRL, 1),
+			base + DWMAC_PTP_PPSCR_REG);
+	}
 
 	return 0;
 }
@@ -220,10 +285,30 @@ const struct device *dwmac_get_ptp_clock(const struct device *dev, struct net_if
 	return config->ptp_clock;
 }
 
+#if DWMAC_PTP_PINCTRL_ENABLED
+#define DWMAC_PTP_PINCTRL_DEFINE(n)                                                                \
+	IF_ENABLED(DT_INST_PINCTRL_HAS_NAME(n, default), (PINCTRL_DT_INST_DEFINE(n);))
+
+#define DWMAC_PTP_PINCTRL_CONFIG(n)                                                                \
+	IF_ENABLED(DT_INST_PINCTRL_HAS_NAME(n, default),                                           \
+		   (.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),))
+#else
+#define DWMAC_PTP_PINCTRL_DEFINE(n)
+#define DWMAC_PTP_PINCTRL_CONFIG(n)
+#endif
+
 #define PTP_CLOCK_DWMAC_INIT(n)                                                                    \
+	DWMAC_PTP_PINCTRL_DEFINE(n)                                                                \
+                                                                                                   \
+	static const struct dwmac_ptp_config dwmac_ptp_config_##n = {                              \
+		.eth_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                       \
+		DWMAC_PTP_PINCTRL_CONFIG(n)                                                        \
+	};                                                                                         \
+                                                                                                   \
 	static struct dwmac_ptp_data dwmac_ptp_data_##n;                                           \
+                                                                                                   \
 	DEVICE_DT_INST_DEFINE(n, dwmac_ptp_init, NULL, &dwmac_ptp_data_##n,                        \
-			      DEVICE_DT_GET(DT_INST_PARENT(n)), POST_KERNEL,                       \
+			      &dwmac_ptp_config_##n, POST_KERNEL,                                  \
 			      CONFIG_PTP_CLOCK_INIT_PRIORITY, &dwmac_ptp_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PTP_CLOCK_DWMAC_INIT)

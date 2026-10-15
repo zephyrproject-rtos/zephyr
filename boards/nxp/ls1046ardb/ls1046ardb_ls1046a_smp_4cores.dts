@@ -6,6 +6,7 @@
 
 /dts-v1/;
 
+#include <freq.h>
 #include <nxp/nxp_ls1046a.dtsi>
 
 / {
@@ -17,6 +18,10 @@
 		zephyr,shell-uart = &uart1;
 		zephyr,sram = &sram0;
 	};
+};
+
+&{/cpus} {
+	timebase-frequency = <DT_FREQ_M(25)>;
 };
 
 &uart1 {

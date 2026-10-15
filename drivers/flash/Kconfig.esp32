@@ -62,4 +62,39 @@ config ESP_FLASH_HOST
 	bool "Host functionality flash driver"
 	default y if !ESP_FLASH_REMOTE
 
+config ESP_FLASH_YIELD_DURING_ERASE
+	bool "Yield to other threads during erase and write"
+	default y
+	help
+	  Erase and write operations run with the flash cache disabled and,
+	  on multi-core SoCs, with the other core parked. Split long
+	  operations into windows and, once the cache has been disabled for
+	  ESP_FLASH_ERASE_YIELD_DURATION_MS in total, sleep for
+	  ESP_FLASH_ERASE_YIELD_MS with the cache enabled so other threads,
+	  interrupt handlers and the other core get to run.
+
+config ESP_FLASH_ERASE_YIELD_DURATION_MS
+	int "Cache-off time before a yield, in milliseconds"
+	depends on ESP_FLASH_YIELD_DURING_ERASE
+	default 20
+	help
+	  Cumulative time the cache may stay disabled for erase and write
+	  windows before the driver yields.
+
+config ESP_FLASH_ERASE_YIELD_MS
+	int "Yield duration, in milliseconds"
+	depends on ESP_FLASH_YIELD_DURING_ERASE
+	default 10
+	help
+	  How long the driver sleeps, with the cache enabled, each time it
+	  yields.
+
+config ESP_FLASH_WRITE_CHUNK_SIZE
+	int "Write window size in bytes"
+	range 256 8192
+	default 8192
+	help
+	  A write is issued in windows of at most this size. The cache is
+	  re-enabled between windows and the yield check runs before each.
+
 endif # SOC_FLASH_ESP32

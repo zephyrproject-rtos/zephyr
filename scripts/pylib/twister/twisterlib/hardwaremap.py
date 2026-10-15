@@ -267,12 +267,15 @@ class HardwareMap:
             else:
                 raise ValueError(f"Invalid platform value: {platform}")
             id = dut.get('id')
+            probe_id = dut.get('probe_id')
             runner = dut.get('runner')
+            base_params = dut.get('base_params')
             runner_params = dut.get('runner_params')
             serial = dut.get('serial')
             serial_baud = dut.get('serial_baud', None) or dut.get('baud', None)
             product = dut.get('product')
             fixtures = dut.get('fixtures', [])
+            run_with_fixture_only = dut.get('run_with_fixture_only', False)
             connected = dut.get('connected') and ((serial or serial_pty) is not None)
             west_flash_cmd = dut.get('west_flash_cmd', "")
             if not connected:
@@ -281,8 +284,10 @@ class HardwareMap:
                 new_dut = DUT(platform=plat,
                               product=product,
                               runner=runner,
+                              base_params=base_params,
                               runner_params=runner_params,
                               id=id,
+                              probe_id=probe_id,
                               serial_pty=serial_pty,
                               serial=serial,
                               serial_baud=serial_baud,
@@ -294,6 +299,7 @@ class HardwareMap:
                               script_param=script_param,
                               flash_timeout=flash_timeout,
                               flash_with_test=flash_with_test,
+                              run_with_fixture_only=run_with_fixture_only,
                               west_flash_cmd=west_flash_cmd)
                 new_dut.fixtures = fixtures
                 new_dut.counter = 0

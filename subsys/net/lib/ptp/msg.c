@@ -76,20 +76,13 @@ static void msg_port_id_pre_send(struct ptp_port_id *port_id)
 	port_id->port_number = net_htons(port_id->port_number);
 }
 
-static int msg_header_post_recv(struct ptp_header *header)
+static void msg_header_post_recv(struct ptp_header *header)
 {
-	if ((header->version & 0xF) != PTP_MAJOR_VERSION) {
-		/* Incompatible protocol version */
-		return -1;
-	}
-
 	header->msg_length = net_ntohs(header->msg_length);
 	header->correction = net_ntohll(header->correction);
 	header->sequence_id = net_ntohs(header->sequence_id);
 
 	msg_port_id_post_recv(&header->src_port_id);
-
-	return 0;
 }
 
 static void msg_header_pre_send(struct ptp_header *header)
@@ -183,7 +176,7 @@ static int msg_tlv_post_recv(struct ptp_msg *msg, int length)
 		suffix += tlv_container->tlv->length;
 		suffix_len += tlv_container->tlv->length;
 
-		ret = ptp_tlv_post_recv(tlv_container->tlv);
+		ret = ptp_tlv_post_recv(&tlv_container->tlv);
 		if (ret) {
 			ptp_tlv_free(tlv_container);
 			return ret;
@@ -211,7 +204,7 @@ static void msg_tlv_pre_send(struct ptp_msg *msg)
 	struct ptp_tlv_container *tlv_container;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&msg->tlvs, tlv_container, node) {
-		ptp_tlv_pre_send(tlv_container->tlv);
+		ptp_tlv_pre_send(&tlv_container->tlv);
 	}
 
 	/* No need to track TLVs attached to the message. */
@@ -221,7 +214,7 @@ static void msg_tlv_pre_send(struct ptp_msg *msg)
 struct ptp_msg *ptp_msg_alloc(void)
 {
 	struct ptp_msg *msg = NULL;
-	int ret = k_mem_slab_alloc(&msg_slab, (void **)&msg, K_FOREVER);
+	int ret = k_mem_slab_alloc(&msg_slab, (void **)&msg, K_NO_WAIT);
 
 	if (ret) {
 		LOG_ERR("Couldn't allocate memory for the message");
@@ -459,6 +452,20 @@ int ptp_msg_post_recv(struct ptp_port *port, struct ptp_msg *msg, int cnt)
 	int64_t current;
 	int tlv_len;
 
+	if (cnt < (int)sizeof(struct ptp_header)) {
+		LOG_ERR("Received message shorter than the header");
+		return -EBADMSG;
+	}
+
+	/* The version comes before the type and the length, since the meaning
+	 * of those fields depends on it.
+	 */
+	if ((msg->header.version & 0xF) != PTP_MAJOR_VERSION) {
+		/* Not an error: other PTP versions may share the multicast group */
+		LOG_DBG("Received message with unsupported PTP version");
+		return -EPROTONOSUPPORT;
+	}
+
 	/* type is a 4-bit field (0-15) taken straight off the wire, but
 	 * msg_size[] only has entries up to PTP_MSG_MANAGEMENT. Reject
 	 * undefined types before indexing to avoid an out-of-bounds read.
@@ -473,10 +480,7 @@ int ptp_msg_post_recv(struct ptp_port *port, struct ptp_msg *msg, int cnt)
 		return -EBADMSG;
 	}
 
-	if (msg_header_post_recv(&msg->header)) {
-		LOG_ERR("Received message incomplient with supported PTP version");
-		return -EBADMSG;
-	}
+	msg_header_post_recv(&msg->header);
 
 	/* Record local uptime for aging calculations */
 	msg->local_uptime_ms = k_uptime_get();

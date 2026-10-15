@@ -117,6 +117,10 @@ arduino_serial: &uart3 {
 	pinctrl-names = "default";
 };
 
+&{/cpus} {
+	timebase-frequency = <DT_FREQ_M(120)>;
+};
+
 &cpu0 {
 	clock-frequency = <DT_FREQ_M(120)>;
 };

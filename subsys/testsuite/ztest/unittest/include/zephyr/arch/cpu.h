@@ -15,7 +15,9 @@ extern "C" {
 /* Architecture thread structure */
 struct _callee_saved {
 #ifdef CONFIG_CPP
-	/* C++ does not allow empty structs, add an extra 1 byte */
+	/* An empty struct is not valid C, and compilers that accept it give
+	 * it size 0 while C++ gives 1. Keep a byte so both languages agree.
+	 */
 	uint8_t c;
 #endif
 };
@@ -24,7 +26,9 @@ typedef struct _callee_saved _callee_saved_t;
 
 struct _thread_arch {
 #ifdef CONFIG_CPP
-	/* C++ does not allow empty structs, add an extra 1 byte */
+	/* An empty struct is not valid C, and compilers that accept it give
+	 * it size 0 while C++ gives 1. Keep a byte so both languages agree.
+	 */
 	uint8_t c;
 #endif
 };

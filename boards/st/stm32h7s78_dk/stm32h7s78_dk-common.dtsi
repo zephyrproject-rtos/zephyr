@@ -8,6 +8,7 @@
 #include <st/h7rs/stm32h7s7X8.dtsi>
 #include <st/h7/stm32h7s7l8hxh-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include "stmod_connector.dtsi"
 #include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
@@ -152,8 +153,8 @@
 
 &pll3 {
 	div-m = <12>;
-	mul-n = <25>;
-	div-r = <2>;
+	mul-n = <200>;
+	div-r = <16>;
 	clocks = <&clk_hse>;
 	status = "okay";
 };
@@ -234,16 +235,18 @@
 &adc1 {
 	pinctrl-0 = <&adc1_inp6_pf12>; /* Arduino A3 */
 	pinctrl-names = "default";
-	st,adc-clock-source = "SYNC";
+	status = "okay";
+};
+
+&adc12_common {
 	st,adc-prescaler = <4>;
+	st,adc-clock-source = "SYNC";
 	status = "okay";
 };
 
 &adc2 {
 	pinctrl-0 = <&adc2_inp2_pf13>; /* Arduino A4 */
 	pinctrl-names = "default";
-	st,adc-clock-source = "SYNC";
-	st,adc-prescaler = <4>;
 	status = "okay";
 };
 
@@ -508,5 +511,17 @@ zephyr_jpegenc: &jpeg {
 };
 
 &gpu2d {
+	status = "okay";
+};
+
+&cryp {
+	status = "okay";
+};
+
+&hash {
+	status = "okay";
+};
+
+&dma2d {
 	status = "okay";
 };

@@ -138,6 +138,20 @@
 			status = "disabled";
 		};
 
+		rtc: rtc@44072000 {
+			compatible = "microchip,rtc-g1";
+			reg = <0x44072000 0x70>;
+			interrupts = <15 0>, <16 0>, <17 0>, <18 0>;
+			interrupt-names = "tamper", "ovf", "perx", "cmpx";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_RTC>,
+				 <&rtcclock CLOCK_MCHP_RTC_ID>;
+			clock-names = "mclk", "rtcclk";
+			prescaler = <1>;
+			alarms-count = <2>;
+			cal-constant = <1048576>;
+			status = "disabled";
+		};
+
 		pinctrl: pinctrl@44840000 {
 			compatible = "microchip,port-g1-pinctrl";
 			#address-cells = <1>;

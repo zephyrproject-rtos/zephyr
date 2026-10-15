@@ -3,7 +3,8 @@
 IDE for Zephyr (VS Code extension)
 ##################################
 
-`IDE for Zephyr`_ is a Visual Studio Code (VS Code) extension for Zephyr RTOS development.
+`IDE for Zephyr`_ is a Visual Studio Code (VS Code) extension by Mylonics for Zephyr RTOS
+development.
 It supports **host tool management**, **west workspace setup**, **SDK management**, **project
 creation**, **build/flash**, and **debugging**.
 

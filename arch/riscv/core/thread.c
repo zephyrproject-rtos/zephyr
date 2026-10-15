@@ -165,9 +165,9 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 					      CONFIG_PRIVILEGED_STACK_SIZE);
 
 #ifdef CONFIG_INIT_STACKS
-	/* Initialize the privileged stack */
-	(void)memset((void *)_current->arch.priv_stack_start, 0xaa,
-		     Z_STACK_PTR_ALIGN(K_KERNEL_STACK_RESERVED + CONFIG_PRIVILEGED_STACK_SIZE));
+	/* Initialize the privileged stack, leaving its guard area untouched */
+	(void)memset((void *)(_current->arch.priv_stack_start + K_KERNEL_STACK_RESERVED), 0xaa,
+		     top_of_priv_stack - _current->arch.priv_stack_start - K_KERNEL_STACK_RESERVED);
 #endif /* CONFIG_INIT_STACKS */
 
 	top_of_user_stack = Z_STACK_PTR_ALIGN(
@@ -241,6 +241,8 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 int arch_thread_priv_stack_space_get(const struct k_thread *thread, size_t *stack_size,
 				     size_t *unused_ptr)
 {
+	uintptr_t priv_stack_bottom;
+
 	if (!IS_ENABLED(CONFIG_INIT_STACKS) || !IS_ENABLED(CONFIG_THREAD_STACK_INFO)) {
 		/*
 		 * This is needed to ensure that the call to z_stack_space_get() below is properly
@@ -254,9 +256,15 @@ int arch_thread_priv_stack_space_get(const struct k_thread *thread, size_t *stac
 		return -EINVAL;
 	}
 
-	*stack_size = Z_STACK_PTR_ALIGN(K_KERNEL_STACK_RESERVED + CONFIG_PRIVILEGED_STACK_SIZE);
+	if (thread->arch.priv_stack_start == 0) {
+		return -EINVAL;
+	}
 
-	return z_stack_space_get((void *)thread->arch.priv_stack_start, *stack_size, unused_ptr);
+	priv_stack_bottom = thread->arch.priv_stack_start + K_KERNEL_STACK_RESERVED;
+	*stack_size = Z_STACK_PTR_ALIGN(priv_stack_bottom + CONFIG_PRIVILEGED_STACK_SIZE) -
+		      priv_stack_bottom;
+
+	return z_stack_space_get((void *)priv_stack_bottom, *stack_size, unused_ptr);
 }
 
 #endif /* CONFIG_USERSPACE */
@@ -285,8 +293,6 @@ FUNC_NORETURN void z_riscv_switch_to_main_no_multithreading(k_thread_entry_t mai
 #ifdef CONFIG_CUSTOM_STACK_GUARD
 	z_riscv_custom_stack_guard_disable();
 
-	irq_unlock(RV_STATUS_IE);
-
 	/*
 	 * No thread object exists in no-multithreading mode, so pass NULL:
 	 * the callee's contract allows a NULL thread and expects the
@@ -298,30 +304,34 @@ FUNC_NORETURN void z_riscv_switch_to_main_no_multithreading(k_thread_entry_t mai
 	 * Bind main_entry to a callee-saved register: the call below
 	 * clobbers the caller-saved registers, and jalr consumes %1 only
 	 * after the call returns. %0 is safe anywhere because mv sp
-	 * consumes it before the call.
+	 * consumes it before the call. RV_STATUS_IE is passed with constraint
+	 * "K" (5-bit unsigned immediate) so the assembler emits csrsi without
+	 * allocating a caller-saved register that could be clobbered by the call.
 	 */
 	register k_thread_entry_t s1 __asm__("s1") = main_entry;
 
 	__asm__ volatile (
 	"mv sp, %0\n"
 	"call z_riscv_custom_stack_guard_enable\n"
+	"csrs " RV_STATUS_CSR ", %2\n"
 	"jalr ra, %1, 0\n"
 	:
-	: "r" (main_stack), "r" (s1), "r" (a0)
+	: "r" (main_stack), "r" (s1), "K" (RV_STATUS_IE), "r" (a0)
 	: "memory");
 #else
-	irq_unlock(RV_STATUS_IE);
-
 	__asm__ volatile (
-	"mv sp, %0; jalr ra, %1, 0"
+	"mv sp, %0\n"
+	"csrs " RV_STATUS_CSR ", %2\n"
+	"jalr ra, %1, 0\n"
 	:
-	: "r" (main_stack), "r" (main_entry)
+	: "r" (main_stack), "r" (main_entry), "K" (RV_STATUS_IE)
 	: "memory");
 #endif /* CONFIG_CUSTOM_STACK_GUARD */
 
 	/* infinite loop */
 	irq_lock();
 	while (true) {
+		k_cpu_idle();
 	}
 
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */

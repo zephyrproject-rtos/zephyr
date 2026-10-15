@@ -476,10 +476,6 @@ static DEVICE_API(i2s, i2s_stm32_driver_api) = {
 	.trigger = i2s_stm32_trigger,
 };
 
-#define STM32_DMA_NUM_CHANNELS		8
-static const struct device *active_dma_rx_channel[STM32_DMA_NUM_CHANNELS];
-static const struct device *active_dma_tx_channel[STM32_DMA_NUM_CHANNELS];
-
 static int reload_dma(const struct device *dev_dma, uint32_t channel,
 		      struct dma_config *dcfg, void *src, void *dst,
 		      uint32_t blk_size)
@@ -533,8 +529,6 @@ static int start_dma(const struct device *dev_dma, uint32_t channel,
 	return ret;
 }
 
-static const struct device *get_dev_from_rx_dma_channel(uint32_t dma_channel);
-static const struct device *get_dev_from_tx_dma_channel(uint32_t dma_channel);
 static void rx_stream_disable(struct stream *stream, const struct device *dev);
 static void tx_stream_disable(struct stream *stream, const struct device *dev);
 
@@ -542,7 +536,8 @@ static void tx_stream_disable(struct stream *stream, const struct device *dev);
 static void dma_rx_callback(const struct device *dma_dev, void *arg,
 			    uint32_t channel, int status)
 {
-	const struct device *dev = get_dev_from_rx_dma_channel(channel);
+	ARG_UNUSED(channel);
+	const struct device *dev = arg;
 	const struct i2s_stm32_cfg *cfg = dev->config;
 	struct i2s_stm32_data *const dev_data = dev->data;
 	struct stream *stream = &dev_data->rx;
@@ -614,7 +609,8 @@ rx_disable:
 static void dma_tx_callback(const struct device *dma_dev, void *arg,
 			    uint32_t channel, int status)
 {
-	const struct device *dev = get_dev_from_tx_dma_channel(channel);
+	ARG_UNUSED(channel);
+	const struct device *dev = arg;
 	const struct i2s_stm32_cfg *cfg = dev->config;
 	struct i2s_stm32_data *const dev_data = dev->data;
 	struct stream *stream = &dev_data->tx;
@@ -734,7 +730,7 @@ static int i2s_stm32_initialize(const struct device *dev)
 	const struct i2s_stm32_cfg *cfg = dev->config;
 	struct i2s_stm32_data *const dev_data = dev->data;
 	struct stream *stream = &dev_data->tx;
-	int ret, i;
+	int ret;
 
 	/* Initialize the variable used to handle the TX */
 	stream->tx_stop_for_drain = false;
@@ -765,11 +761,6 @@ static int i2s_stm32_initialize(const struct device *dev)
 
 	cfg->irq_config(dev);
 
-	for (i = 0; i < STM32_DMA_NUM_CHANNELS; i++) {
-		active_dma_rx_channel[i] = NULL;
-		active_dma_tx_channel[i] = NULL;
-	}
-
 	/* Get the binding to the DMA device */
 	if (!device_is_ready(dev_data->tx.dev_dma)) {
 		LOG_ERR("%s device not ready", dev_data->tx.dev_dma->name);
@@ -779,6 +770,9 @@ static int i2s_stm32_initialize(const struct device *dev)
 		LOG_ERR("%s device not ready", dev_data->rx.dev_dma->name);
 		return -ENODEV;
 	}
+
+	dev_data->rx.dma_cfg.user_data = (void *)dev;
+	dev_data->tx.dma_cfg.user_data = (void *)dev;
 
 	LOG_INF("%s inited", dev->name);
 
@@ -801,9 +795,6 @@ static int rx_stream_start(struct stream *stream, const struct device *dev)
 	} else {
 		LL_I2S_SetTransferMode(cfg->i2s, LL_I2S_MODE_SLAVE_RX);
 	}
-
-	/* remember active RX DMA channel (used in callback) */
-	active_dma_rx_channel[stream->dma_channel] = dev;
 
 	ret = start_dma(stream->dev_dma, stream->dma_channel,
 			&stream->dma_cfg,
@@ -860,9 +851,6 @@ static int tx_stream_start(struct stream *stream, const struct device *dev)
 		LL_I2S_SetTransferMode(cfg->i2s, LL_I2S_MODE_SLAVE_TX);
 	}
 
-	/* remember active TX DMA channel (used in callback) */
-	active_dma_tx_channel[stream->dma_channel] = dev;
-
 	ret = start_dma(stream->dev_dma, stream->dma_channel,
 			&stream->dma_cfg,
 			stream->mem_block, stream->src_addr_increment,
@@ -915,8 +903,6 @@ static void rx_stream_disable(struct stream *stream, const struct device *dev)
 		k_mem_slab_free(stream->cfg.mem_slab, stream->mem_block);
 		stream->mem_block = NULL;
 	}
-
-	active_dma_rx_channel[stream->dma_channel] = NULL;
 }
 
 static void tx_stream_disable(struct stream *stream, const struct device *dev)
@@ -941,28 +927,16 @@ static void tx_stream_disable(struct stream *stream, const struct device *dev)
 		k_mem_slab_free(stream->cfg.mem_slab, stream->mem_block);
 		stream->mem_block = NULL;
 	}
-
-	active_dma_tx_channel[stream->dma_channel] = NULL;
-}
-
-static const struct device *get_dev_from_rx_dma_channel(uint32_t dma_channel)
-{
-	return active_dma_rx_channel[dma_channel];
-}
-
-static const struct device *get_dev_from_tx_dma_channel(uint32_t dma_channel)
-{
-	return active_dma_tx_channel[dma_channel];
 }
 
 /* src_dev and dest_dev should be 'MEMORY' or 'PERIPHERAL'. */
 #define I2S_DMA_CHANNEL_INIT(index, dir, dir_cap, src_dev, dest_dev)		\
 	.dir = {								\
-		.dev_dma = DEVICE_DT_GET(STM32_DMA_CTLR(index, dir)),		\
+		.dev_dma = DEVICE_DT_GET(STM32_DT_INST_DMA_CTLR(index, dir)),	\
 		.dma_channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),	\
 		.dma_cfg = {							\
 			.block_count = 2,					\
-			.dma_slot = STM32_DMA_SLOT(index, dir, slot),		\
+			.dma_slot = STM32_DT_INST_DMA_SLOT(index, dir),		\
 			.channel_direction = src_dev##_TO_##dest_dev,		\
 			.source_data_size = 2,  /* 16bit default */		\
 			.dest_data_size = 2,    /* 16bit default */		\
@@ -970,15 +944,15 @@ static const struct device *get_dev_from_tx_dma_channel(uint32_t dma_channel)
 			.source_burst_length = 2,				\
 			.dest_burst_length = 2,					\
 			.channel_priority = STM32_DMA_CONFIG_PRIORITY(		\
-				STM32_DMA_CHANNEL_CONFIG(index, dir)),		\
+				STM32_DT_INST_DMA_CHANNEL_CONFIG(index, dir)),	\
 			.dma_callback = dma_##dir##_callback,			\
 		},								\
 		.src_addr_increment = STM32_DMA_CONFIG_##src_dev##_ADDR_INC(	\
-					STM32_DMA_CHANNEL_CONFIG(index, dir)),	\
+			STM32_DT_INST_DMA_CHANNEL_CONFIG(index, dir)),		\
 		.dst_addr_increment = STM32_DMA_CONFIG_##dest_dev##_ADDR_INC(	\
-					STM32_DMA_CHANNEL_CONFIG(index, dir)),	\
+			STM32_DT_INST_DMA_CHANNEL_CONFIG(index, dir)),		\
 		.fifo_threshold = STM32_DMA_FEATURES_FIFO_THRESHOLD(		\
-					STM32_DMA_FEATURES(index, dir)),	\
+			STM32_DT_INST_DMA_FEATURES(index, dir)),		\
 		.stream_start = dir##_stream_start,				\
 		.stream_disable = dir##_stream_disable,				\
 		.msgq = &dir##_##index##_queue,					\

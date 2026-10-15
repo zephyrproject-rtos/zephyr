@@ -24,7 +24,7 @@ extern "C" {
  * @brief Dynamic CPU Frequency Scaling
  * @defgroup subsys_cpu_freq CPU Frequency (CPUFreq)
  * @since 4.3
- * @version 0.1.0
+ * @version 0.8.0
  * @ingroup os_services
  * @{
  */

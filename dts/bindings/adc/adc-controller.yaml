@@ -6,6 +6,8 @@
 
 include: base.yaml
 
+class: adc
+
 properties:
   "#io-channel-cells":
     type: int

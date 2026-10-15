@@ -216,7 +216,6 @@ static void mcux_lcdifv2_get_capabilities(const struct device *dev,
 {
 	const struct mcux_lcdifv2_config *config = dev->config;
 
-	memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = config->display_config.panelWidth;
 	capabilities->y_resolution = config->display_config.panelHeight;
 	capabilities->supported_pixel_formats = mcux_lcdifv2_supported_fmts;

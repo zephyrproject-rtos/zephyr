@@ -70,10 +70,7 @@
 			compatible = "nordic,nrf71-hfxo";
 			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(64)>;
-			/* TODO: Estimated based on fixed delays in IP, will update once we can
-			 * measure with the real SOC
-			 */
-			startup-time-us = <1210>;
+			startup-time-us = <1000>;
 		};
 
 		hfpll: hfpll {
@@ -81,6 +78,11 @@
 			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(256)>;
 		};
+	};
+
+	usbhs_phy: usbhs_phy {
+		compatible = "nordic,nrf-usbhs-phy-type1";
+		status = "reserved";
 	};
 
 	reserved-memory {
@@ -135,6 +137,17 @@
 		 * P0.09 is available and not used by other enabled peripherals.
 		 */
 		pwr-gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+		status = "disabled";
+	};
+
+	wifi_antsw: wifi_antsw {
+		compatible = "nordic,nrf71-wifi-antsw";
+		/*
+		 * Steers the antenna switch towards WLAN, driven from
+		 * soc_early_init_hook() before the Wi-Fi core is started. Hardwired to
+		 * P0.05 in nRF7120. Powering the switch is handled by pwr_antswc.
+		 */
+		wlan-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
 		status = "disabled";
 	};
 
@@ -320,6 +333,7 @@
 				status = "disabled";
 				enable-secure;
 				enable-dma-secure;
+				hibernation-ram-block = <32>;
 
 				cpuflpr_clic: interrupt-controller@f0000000 {
 					compatible = "nordic,nrf-clic";
@@ -363,6 +377,7 @@
 				#gpio-cells = <2>;
 				port = <2>;
 				ngpios = <12>;
+				hspadctrl-supported;
 				status = "disabled";
 			};
 
@@ -391,6 +406,40 @@
 				status = "disabled";
 			};
 
+			usbhs_wrapper: usbhs_wrapper@5a000 {
+				compatible = "nordic,nrf-usbhs-wrapper";
+				reg = <0x5a000 0x1000>;
+				ranges = <0x20000 0x20000 0x1a000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				regulator = <&vregusb>;
+				phy = <&usbhs_phy>;
+				status = "disabled";
+
+				usbhs: usbhs@20000 {
+					compatible = "nordic,nrf-usbhs-nrf54l", "snps,dwc2";
+					reg = <0x20000 0x1a000>;
+					interrupts = <90 NRF_DEFAULT_IRQ_PRIORITY>;
+					num-in-eps = <16>;
+					num-out-eps = <16>;
+					ghwcfg1 = <0x0>;
+					ghwcfg2 = <0x22affc52>;
+					ghwcfg4 = <0xfe10aa60>;
+					/* 2944 locations with full flexibility */
+					g-rx-fifo-size = <592>;
+					g-np-tx-fifo-size = <32>;
+					g-tx-fifo-size = <512 256 256 256 256 256 256
+							  128 32 32 16 16 16 16 16>;
+					status = "disabled";
+				};
+
+				usbhs_bc12: usbhs_bc12 {
+					compatible = "nordic,nrf-usbhs-bc12";
+					charging-mode = "BC12_TYPE_NONE";
+					status = "disabled";
+				};
+			};
+
 			mspi00: mspi@5b000 {
 				compatible = "nordic,nrf-mspi", "snps,designware-ssi";
 				interrupts = <91 NRF_DEFAULT_IRQ_PRIORITY>;
@@ -404,6 +453,14 @@
 				dma-transmit-data-level = <8>;
 				dma-receive-data-level = <8>;
 				concurrent-memmap-support;
+				nordic,hspadctrl = <&gpio2>;
+				nordic,hspadctrl-index = <0>;
+				/* This EB/rx-delay configuration is always recommended unless
+				 * CPOL=1 and your delay is less than half SCK period. This
+				 * currently isn't supported.
+				 */
+				nordic,eb-rx-delay = <7>;
+				rx-sample-delay-initial = <11>;
 				status = "disabled";
 			};
 
@@ -419,6 +476,14 @@
 				packet-data-limit = <65536>;
 				dma-transmit-data-level = <8>;
 				dma-receive-data-level = <8>;
+				nordic,hspadctrl = <&gpio2>;
+				nordic,hspadctrl-index = <1>;
+				/* This EB/rx-delay configuration is always recommended unless
+				 * CPOL=1 and your delay is less than half SCK period. This
+				 * currently isn't supported.
+				 */
+				nordic,eb-rx-delay = <7>;
+				rx-sample-delay-initial = <11>;
 				status = "disabled";
 			};
 
@@ -787,12 +852,13 @@
 			};
 
 			gpio4: gpio@d8800 {
-				compatible = "nordic,nrf-gpio";
+				compatible = "nordic,nrf71-p4-gpio", "nordic,nrf-gpio";
 				reg = <0xd8800 0x200>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				port = <4>;
 				ngpios = <12>;
+				gpiote-instance = <&gpiote20>;
 				status = "disabled";
 			};
 
@@ -1043,17 +1109,30 @@
 				};
 			};
 
+			vregusb: regulator@121000 {
+				compatible = "nordic,vregusb-regulator";
+				reg = <0x121000 0x1000>;
+				status = "disabled";
+				regulator-name = "VREGUSB";
+				interrupts = <289 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			lfrc: clock-controller@123000 {
+				compatible = "nordic,nrf-lfrc";
+				reg = <0x123000 0x1000>;
+				interrupts = <291 NRF_DEFAULT_IRQ_PRIORITY>;
+				status = "disabled";
+				#clock-cells = <0>;
+				clock-frequency = <32768>;
+				accuracy-ppm = <250>;
+			};
+
 			audio_auxpll: auxpll@130000 {
 				compatible = "nordic,nrf-auxpll";
 				reg = <0x130000 0x1000>;
 				interrupts = <304 NRF_DEFAULT_IRQ_PRIORITY>;
 				clocks = <&pclk32m>;
 				#clock-cells = <0>;
-				/*
-				 * Temporarily reading FICR addr 0 as FICR offsets
-				 * not defined yet
-				 */
-				nordic,ficrs = <&ficr 0>;
 				nordic,out-div = <12>;
 				nordic,out-drive = <0>;
 				nordic,current-tune = <9>;

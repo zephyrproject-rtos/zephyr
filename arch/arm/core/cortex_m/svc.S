@@ -181,7 +181,7 @@ SECTION_FUNC(TEXT, z_arm_svc)
      * the original PC value so that we can return back to the caller of
      * the SVC.
      *
-     * On SVC exeption, the stack looks like the following:
+     * On SVC exception, the stack looks like the following:
      * r0 - r1 - r2 - r3 - r12 - LR - PC - PSR
      *
      * Registers look like:

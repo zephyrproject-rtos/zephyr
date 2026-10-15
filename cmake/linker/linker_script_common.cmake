@@ -417,7 +417,7 @@ function(get_objects)
 
   if(${GET_TYPE} STREQUAL SECTION)
     # If we are retrieving sections, then we need to get _SECTIONS_FIXED,
-    # sections from sub-groups, and immediate setion children
+    # sections from sub-groups, and immediate section children
     get_property(sections GLOBAL PROPERTY ${GET_OBJECT}_SECTIONS_FIXED)
     list(APPEND out ${sections})
 

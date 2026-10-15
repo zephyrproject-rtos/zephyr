@@ -17,13 +17,13 @@ properties:
 
   rtc-src:
     type: int
-    default: 0
+    default: 1
     description: |
       RTC source clock selection
-      0: ulp1k
-      1: ulp32k
-      4: xosc1k
-      5: xosc32k
+      0: ulp32k
+      1: ulp1k
+      2: xosc32k
+      3: xosc1k
 
 clock-cells:
   - subsystem

@@ -7,7 +7,7 @@
 /dts-v1/;
 
 #include <bflb/bl604.dtsi>
-#include <bflb/bl60x_em_8kb.dtsi>
+#include <bflb/bl60x_em_8kb_wifi.dtsi>
 #include "bl604e_iot_dvk-pinctrl.dtsi"
 
 / {
@@ -67,14 +67,14 @@
 			slot0_partition: partition@2000 {
 				compatible = "zephyr,mapped-partition";
 				label = "image-0";
-				reg = <0x00002000 (0x00100000 - 0x2000)>;
+				reg = <0x00002000 (0x00200000 - 0x2000)>;
 				read-only;
 			};
 
-			storage_partition: partition@100000 {
+			storage_partition: partition@200000 {
 				compatible = "zephyr,mapped-partition";
 				label = "storage";
-				reg = <0x00100000 0xf00000>;
+				reg = <0x00200000 0xe00000>;
 			};
 		};
 	};
@@ -94,5 +94,9 @@
 };
 
 &bt_hci_bflb {
+	status = "okay";
+};
+
+&wifi0 {
 	status = "okay";
 };

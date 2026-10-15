@@ -26,7 +26,8 @@ if SOC_SERIES_S32K3
 config IVT_HEADER_OFFSET
 	hex
 	depends on XIP
-	default $(dt_node_reg_addr_hex,$(dt_nodelabel_path,ivt_header))
+	default $(sub_hex,$(dt_node_reg_addr_int,$(dt_nodelabel_path,ivt_header)), \
+		$(dt_chosen_reg_addr_int,$(DT_CHOSEN_Z_FLASH)))
 	help
 	  The offset address from flash base address for ivt header
 

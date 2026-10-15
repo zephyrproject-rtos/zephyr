@@ -97,9 +97,8 @@ static ALWAYS_INLINE void sys_cache_instr_disable(void)
  *
  * Flush the whole data cache.
  *
- * @retval 0 If succeeded.
+ * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
  */
 static ALWAYS_INLINE int sys_cache_data_flush_all(void)
 {
@@ -114,9 +113,8 @@ static ALWAYS_INLINE int sys_cache_data_flush_all(void)
  *
  * Flush the whole instruction cache.
  *
- * @retval 0 If succeeded.
+ * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
  */
 static ALWAYS_INLINE int sys_cache_instr_flush_all(void)
 {
@@ -131,9 +129,8 @@ static ALWAYS_INLINE int sys_cache_instr_flush_all(void)
  *
  * Invalidate the whole data cache.
  *
- * @retval 0 If succeeded.
+ * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
  */
 static ALWAYS_INLINE int sys_cache_data_invd_all(void)
 {
@@ -148,9 +145,8 @@ static ALWAYS_INLINE int sys_cache_data_invd_all(void)
  *
  * Invalidate the whole instruction cache.
  *
- * @retval 0 If succeeded.
+ * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
  */
 static ALWAYS_INLINE int sys_cache_instr_invd_all(void)
 {
@@ -165,9 +161,8 @@ static ALWAYS_INLINE int sys_cache_instr_invd_all(void)
  *
  * Flush and Invalidate the whole data cache.
  *
- * @retval 0 If succeeded.
+ * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
  */
 static ALWAYS_INLINE int sys_cache_data_flush_and_invd_all(void)
 {
@@ -182,9 +177,8 @@ static ALWAYS_INLINE int sys_cache_data_flush_and_invd_all(void)
  *
  * Flush and Invalidate the whole instruction cache.
  *
- * @retval 0 If succeeded.
+ * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
  */
 static ALWAYS_INLINE int sys_cache_instr_flush_and_invd_all(void)
 {
@@ -209,9 +203,8 @@ static ALWAYS_INLINE int sys_cache_instr_flush_and_invd_all(void)
  * @param addr Starting address to flush.
  * @param size Range size.
  *
- * @retval 0 If succeeded.
+ * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
  */
 __syscall_always_inline int sys_cache_data_flush_range(void *addr, size_t size);
 
@@ -241,9 +234,8 @@ static ALWAYS_INLINE int z_impl_sys_cache_data_flush_range(void *addr, size_t si
  * @param addr Starting address to flush.
  * @param size Range size.
  *
- * @retval 0 If succeeded.
+ * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
  */
 static ALWAYS_INLINE int sys_cache_instr_flush_range(void *addr, size_t size)
 {
@@ -272,9 +264,8 @@ static ALWAYS_INLINE int sys_cache_instr_flush_range(void *addr, size_t size)
  * @param addr Starting address to invalidate.
  * @param size Range size.
  *
- * @retval 0 If succeeded.
+ * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
  */
 __syscall_always_inline int sys_cache_data_invd_range(void *addr, size_t size);
 
@@ -305,9 +296,8 @@ static ALWAYS_INLINE int z_impl_sys_cache_data_invd_range(void *addr, size_t siz
  * @param addr Starting address to invalidate.
  * @param size Range size.
  *
- * @retval 0 If succeeded.
+ * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
  */
 static ALWAYS_INLINE int sys_cache_instr_invd_range(void *addr, size_t size)
 {
@@ -336,9 +326,8 @@ static ALWAYS_INLINE int sys_cache_instr_invd_range(void *addr, size_t size)
  * @param addr Starting address to flush and invalidate.
  * @param size Range size.
  *
- * @retval 0 If succeeded.
+ * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
  */
 __syscall_always_inline int sys_cache_data_flush_and_invd_range(void *addr, size_t size);
 
@@ -369,9 +358,8 @@ static ALWAYS_INLINE int z_impl_sys_cache_data_flush_and_invd_range(void *addr, 
  * @param addr Starting address to flush and invalidate.
  * @param size Range size.
  *
- * @retval 0 If succeeded.
+ * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP If not supported.
- * @retval -errno Negative errno for other failures.
  */
 static ALWAYS_INLINE int sys_cache_instr_flush_and_invd_range(void *addr, size_t size)
 {

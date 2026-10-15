@@ -39,6 +39,7 @@ enum {
 	BT_DEV_ENABLING,    /* Host stack is being enabled */
 	BT_DEV_DISABLING,   /* Host stack is being disabled */
 	BT_DEV_OPEN,        /* HCI transport is open */
+	BT_DEV_CTLR_RX,     /* Controller has sent a packet during bt_enable() */
 	BT_DEV_READY,       /* Host stack has completed init */
 	BT_DEV_PRESET_ID,
 	BT_DEV_HAS_PUB_KEY,
@@ -91,6 +92,7 @@ enum {
 #define BT_DEV_PERSISTENT_FLAGS (BIT(BT_DEV_ENABLING) | \
 				 BIT(BT_DEV_DISABLING) | \
 				 BIT(BT_DEV_OPEN) | \
+				 BIT(BT_DEV_CTLR_RX) | \
 				 BIT(BT_DEV_PRESET_ID))
 
 #if defined(CONFIG_BT_EXT_ADV_LEGACY_SUPPORT)
@@ -452,7 +454,7 @@ struct bt_dev {
 
 #if defined(CONFIG_BT_PRIVACY)
 	/* Local Identity Resolving Key */
-	uint8_t			irk[CONFIG_BT_ID_MAX][16];
+	uint8_t			irk[CONFIG_BT_ID_MAX][BT_IRK_SIZE];
 
 #if defined(CONFIG_BT_RPA_SHARING)
 	/* Only 1 RPA per identity */
@@ -597,6 +599,7 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt,
 
 /* Scan HCI event handlers */
 void bt_hci_le_adv_report(struct net_buf *buf);
+void bt_hci_le_direct_adv_report(struct net_buf *buf);
 void bt_hci_le_scan_timeout(struct net_buf *buf);
 void bt_hci_le_adv_ext_report(struct net_buf *buf);
 void bt_hci_le_per_adv_sync_established(struct net_buf *buf);

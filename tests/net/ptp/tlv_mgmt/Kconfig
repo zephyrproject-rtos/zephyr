@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Powersoft S.p.A.
+# SPDX-License-Identifier: Apache-2.0
+
+rsource "../Kconfig.unit"
+
+# See ../Kconfig.unit for why selected PTP Kconfig entries are redeclared here.
+
+config PTP_MSG_POLL_SIZE
+	default 4
+
+source "Kconfig.zephyr"

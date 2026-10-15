@@ -13,6 +13,10 @@
 	model = "Silicon Labs EFM32WG STK3800 board";
 	compatible = "silabs,efm32wg_stk3800", "silabs,efm32wg";
 
+	cpus {
+		timebase-frequency = <DT_FREQ_M(48)>;
+	};
+
 	chosen {
 		zephyr,console = &uart0;
 		zephyr,flash = &flash0;

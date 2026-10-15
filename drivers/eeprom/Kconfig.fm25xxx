@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config EEPROM_FM25XXX
-	bool "Infineon FM25XXX SPI FRAM"
+	bool "FM25XXX EEPROM driver"
 	default y
 	depends on DT_HAS_INFINEON_FM25XXX_ENABLED
 	select SPI

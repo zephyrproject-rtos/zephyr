@@ -11,7 +11,13 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dwmac_plat, CONFIG_ETHERNET_LOG_LEVEL);
 
+#include <zephyr/devicetree.h>
+
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_s32_gmac)
+#define DT_DRV_COMPAT nxp_s32_gmac
+#else
 #define DT_DRV_COMPAT nxp_enet_qos
+#endif
 
 #include <sys/types.h>
 #include <zephyr/kernel.h>
@@ -19,13 +25,19 @@ LOG_MODULE_REGISTER(dwmac_plat, CONFIG_ETHERNET_LOG_LEVEL);
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/hwinfo.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/sys/crc.h>
 #include <zephyr/irq.h>
+
+#if defined(CONFIG_SOC_SERIES_S32K3)
+#include <soc.h>
+#else
 #include <fsl_device_registers.h>
+#endif
 
 #include "eth_dwmac_priv.h"
 
-/* The DMA bus master interface is 32-bit on this IP */
+/* The DMA bus master interface is a 32-bit AHB interface on this IP */
 #define DATA_BUS_WIDTH 32
 
 DWMAC_ASSERT_BUFFER_ALIGNMENT(DATA_BUS_WIDTH);
@@ -34,13 +46,82 @@ DWMAC_ASSERT_BUFFER_ALIGNMENT(DATA_BUS_WIDTH);
 #define PHY_MODE 0U
 #define PHY_INTERNAL 0U
 #elif DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii)
+#if defined(CONFIG_SOC_SERIES_S32K3)
+#define PHY_MODE 2U
+#else
 #define PHY_MODE 1U
+#endif
 #define PHY_INTERNAL 0U
 #elif DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, internal) && defined(CONFIG_SOC_FAMILY_MCXA)
 #define PHY_MODE 0U
 #define PHY_INTERNAL 1U
 #else
 #error "Unsupported PHY connection type"
+#endif
+
+#if defined(CONFIG_SOC_SERIES_MCXE31X) || defined(CONFIG_SOC_SERIES_S32K3)
+/* MMC counters present in the controller */
+#define NXP_ETH_MMC_COUNTERS(X)                                                                    \
+	X(TX_OCTET_COUNT_GOOD_BAD)                                                                 \
+	X(TX_PACKET_COUNT_GOOD_BAD)                                                                \
+	X(TX_BROADCAST_PACKETS_GOOD)                                                               \
+	X(TX_MULTICAST_PACKETS_GOOD)                                                               \
+	X(TX_64OCTETS_PACKETS_GOOD_BAD)                                                            \
+	X(TX_65TO127OCTETS_PACKETS_GOOD_BAD)                                                       \
+	X(TX_128TO255OCTETS_PACKETS_GOOD_BAD)                                                      \
+	X(TX_256TO511OCTETS_PACKETS_GOOD_BAD)                                                      \
+	X(TX_512TO1023OCTETS_PACKETS_GOOD_BAD)                                                     \
+	X(TX_1024TOMAXOCTETS_PACKETS_GOOD_BAD)                                                     \
+	X(TX_UNICAST_PACKETS_GOOD_BAD)                                                             \
+	X(TX_MULTICAST_PACKETS_GOOD_BAD)                                                           \
+	X(TX_BROADCAST_PACKETS_GOOD_BAD)                                                           \
+	X(TX_UNDERFLOW_ERROR_PACKETS)                                                              \
+	X(TX_SINGLE_COLLISION_GOOD_PACKETS)                                                        \
+	X(TX_MULTIPLE_COLLISION_GOOD_PACKETS)                                                      \
+	X(TX_DEFERRED_PACKETS)                                                                     \
+	X(TX_LATE_COLLISION_PACKETS)                                                               \
+	X(TX_EXCESSIVE_COLLISION_PACKETS)                                                          \
+	X(TX_CARRIER_ERROR_PACKETS)                                                                \
+	X(TX_OCTET_COUNT_GOOD)                                                                     \
+	X(TX_PACKET_COUNT_GOOD)                                                                    \
+	X(TX_EXCESSIVE_DEFERRAL_ERROR)                                                             \
+	X(TX_PAUSE_PACKETS)                                                                        \
+	X(TX_VLAN_PACKETS_GOOD)                                                                    \
+	X(TX_OSIZE_PACKETS_GOOD)                                                                   \
+	X(RX_PACKETS_COUNT_GOOD_BAD)                                                               \
+	X(RX_OCTET_COUNT_GOOD_BAD)                                                                 \
+	X(RX_OCTET_COUNT_GOOD)                                                                     \
+	X(RX_BROADCAST_PACKETS_GOOD)                                                               \
+	X(RX_MULTICAST_PACKETS_GOOD)                                                               \
+	X(RX_CRC_ERROR_PACKETS)                                                                    \
+	X(RX_ALIGNMENT_ERROR_PACKETS)                                                              \
+	X(RX_RUNT_ERROR_PACKETS)                                                                   \
+	X(RX_JABBER_ERROR_PACKETS)                                                                 \
+	X(RX_UNDERSIZE_PACKETS_GOOD)                                                               \
+	X(RX_OVERSIZE_PACKETS_GOOD)                                                                \
+	X(RX_64OCTETS_PACKETS_GOOD_BAD)                                                            \
+	X(RX_65TO127OCTETS_PACKETS_GOOD_BAD)                                                       \
+	X(RX_128TO255OCTETS_PACKETS_GOOD_BAD)                                                      \
+	X(RX_256TO511OCTETS_PACKETS_GOOD_BAD)                                                      \
+	X(RX_512TO1023OCTETS_PACKETS_GOOD_BAD)                                                     \
+	X(RX_1024TOMAXOCTETS_PACKETS_GOOD_BAD)                                                     \
+	X(RX_UNICAST_PACKETS_GOOD)                                                                 \
+	X(RX_LENGTH_ERROR_PACKETS)                                                                 \
+	X(RX_OUT_OF_RANGE_TYPE_PACKETS)                                                            \
+	X(RX_PAUSE_PACKETS)                                                                        \
+	X(RX_FIFO_OVERFLOW_PACKETS)                                                                \
+	X(RX_VLAN_PACKETS_GOOD_BAD)                                                                \
+	X(RX_WATCHDOG_ERROR_PACKETS)                                                               \
+	X(RX_RECEIVE_ERROR_PACKETS)                                                                \
+	X(RX_CONTROL_PACKETS_GOOD)                                                                 \
+	X(TX_FPE_FRAGMENT_CNTR)                                                                    \
+	X(TX_HOLD_REQ_CNTR)                                                                        \
+	X(RX_PACKET_ASSEMBLY_ERR_CNTR)                                                             \
+	X(RX_PACKET_SMD_ERR_CNTR)                                                                  \
+	X(RX_PACKET_ASSEMBLY_OK_CNTR)                                                              \
+	X(RX_FPE_FRAGMENT_CNTR)
+
+DWMAC_MMC_COUNTERS_DEFINE(nxp_eth_mmc, NXP_ETH_MMC_COUNTERS);
 #endif
 
 /*
@@ -59,12 +140,23 @@ DWMAC_ASSERT_BUFFER_ALIGNMENT(DATA_BUS_WIDTH);
 PINCTRL_DT_INST_DEFINE(0);
 static const struct pinctrl_dev_config *eth0_pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0);
 
-/* The mc_cgm clock cell is itself named "name", hence the repetition. */
+/*
+ * The PHY interface selection is sampled when the MAC leaves reset, so the MAC
+ * has to be held there while dwmac_bus_init() sets it. MCXE31x and S32K3 have
+ * no reset line, gating the MAC clocks takes that role there instead.
+ */
+BUILD_ASSERT(DT_INST_NODE_HAS_PROP(0, resets) || IS_ENABLED(CONFIG_SOC_SERIES_MCXE31X) ||
+		     IS_ENABLED(CONFIG_SOC_SERIES_S32K3),
+	     "Ethernet node is missing the resets property");
+
+static const struct reset_dt_spec eth_reset = RESET_DT_SPEC_INST_GET_OR(0, {0});
+
+/* The clock controller cell is itself named "name", hence the repetition. */
 #define NXP_ETH_CLOCK_SUBSYS(clk)                                                                 \
 	(clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(0, clk, name)
 
 static const clock_control_subsys_t eth0_clocks[] = {
-#if defined(CONFIG_SOC_SERIES_MCXE31X)
+#if defined(CONFIG_SOC_SERIES_MCXE31X) || defined(CONFIG_SOC_SERIES_S32K3)
 	NXP_ETH_CLOCK_SUBSYS(tx),
 	NXP_ETH_CLOCK_SUBSYS(rx),
 #endif
@@ -77,6 +169,36 @@ int dwmac_bus_init(const struct device *dev)
 	const struct dwmac_config *cfg = dev->config;
 	int ret;
 
+	/*
+	 * Hold the MAC in reset while the pads, the PHY interface and the
+	 * clocks are set up: the interface selection is sampled by the MAC
+	 * when it leaves reset.
+	 */
+	if (eth_reset.dev != NULL) {
+		ret = reset_line_assert_dt(&eth_reset);
+		if (ret != 0) {
+			LOG_ERR("Could not assert ethernet reset (%d)", ret);
+			return ret;
+		}
+	}
+
+#if !DT_INST_NODE_HAS_PROP(0, resets)
+	/*
+	 * MCXE31x and S32K3 have no reset line for the MAC: its MC_ME block
+	 * clock is the only gate, and the MAC leaves reset when that clock is
+	 * turned on. Gate the clocks off here in case they were left on, so
+	 * that the interface selection below is in place before the loop turns
+	 * them on again.
+	 */
+	for (size_t n = 0; n < ARRAY_SIZE(eth0_clocks); n++) {
+		ret = clock_control_off(cfg->clock, eth0_clocks[n]);
+		if (ret != 0) {
+			LOG_ERR("Failed to disable ethernet clock #%zu (%d)", n, ret);
+			return ret;
+		}
+	}
+#endif
+
 	/* Mux the pads first: the clocks below are derived from what they carry. */
 	ret = pinctrl_apply_state(eth0_pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
@@ -88,6 +210,9 @@ int dwmac_bus_init(const struct device *dev)
 #if defined(CONFIG_SOC_SERIES_MCXE31X)
 	DCM_GPR->DCMRWF1 = (DCM_GPR->DCMRWF1 & ~DCM_GPR_DCMRWF1_RMII_MII_SEL_MASK) |
 			   DCM_GPR_DCMRWF1_RMII_MII_SEL(PHY_MODE);
+#elif defined(CONFIG_SOC_SERIES_S32K3)
+	IP_DCM_GPR->DCMRWF1 = (IP_DCM_GPR->DCMRWF1 & ~DCM_GPR_DCMRWF1_EMAC_CONF_SEL_MASK) |
+			      DCM_GPR_DCMRWF1_EMAC_CONF_SEL(PHY_MODE);
 #elif defined(CONFIG_SOC_FAMILY_MCXN)
 	SYSCON->ENET_PHY_INTF_SEL =
 		(SYSCON->ENET_PHY_INTF_SEL & ~SYSCON_ENET_PHY_INTF_SEL_PHY_SEL_MASK) |
@@ -107,6 +232,14 @@ int dwmac_bus_init(const struct device *dev)
 		ret = clock_control_on(cfg->clock, eth0_clocks[n]);
 		if (ret != 0) {
 			LOG_ERR("Failed to enable ethernet clock #%zu (%d)", n, ret);
+			return ret;
+		}
+	}
+
+	if (eth_reset.dev != NULL) {
+		ret = reset_line_deassert_dt(&eth_reset);
+		if (ret != 0) {
+			LOG_ERR("Could not deassert ethernet reset (%d)", ret);
 			return ret;
 		}
 	}
@@ -200,7 +333,7 @@ int dwmac_platform_init(const struct device *dev)
 			DMA_SYSBUS_MODE_FB);
 
 	/* Set up IRQs (still masked for now) */
-#if defined(CONFIG_SOC_SERIES_MCXE31X)
+#if defined(CONFIG_SOC_SERIES_MCXE31X) || defined(CONFIG_SOC_SERIES_S32K3)
 	/*
 	 * The MAC raises DMA transfer completion on the dedicated tx/rx
 	 * lines and everything else on the common line, so all three share
@@ -225,6 +358,9 @@ static const struct dwmac_config dwmac_config = {
 #if defined(CONFIG_PTP_CLOCK_DWC_MAC)
 	.ptp_clock = DEVICE_DT_GET(DT_INST_CHILD(0, ptp_clock)),
 	.ptp_clk = NXP_ETH_CLOCK_SUBSYS(ptp),
+#endif
+#if defined(CONFIG_SOC_SERIES_MCXE31X) || defined(CONFIG_SOC_SERIES_S32K3)
+	DWMAC_MMC_CONFIG_INIT(nxp_eth_mmc)
 #endif
 };
 

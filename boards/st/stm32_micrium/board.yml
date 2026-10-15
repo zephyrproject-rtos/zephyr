@@ -1,0 +1,6 @@
+board:
+  name: stm32_micrium
+  full_name: STM32-MICRIUM
+  vendor: st
+  socs:
+    - name: stm32f107xc

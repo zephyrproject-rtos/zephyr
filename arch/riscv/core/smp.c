@@ -7,6 +7,7 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
+#include <counters.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/arch/riscv/irq.h>
@@ -64,7 +65,11 @@ void arch_secondary_cpu_init(int hartid)
 		}
 	}
 
+#ifdef CONFIG_RISCV_S_MODE_EXTERNAL_SBI
+	csr_write(sscratch, &_kernel.cpus[cpu_num]);
+#else
 	csr_write(mscratch, &_kernel.cpus[cpu_num]);
+#endif
 
 	/*
 	 * The no-match check must sit after the mscratch write:
@@ -89,20 +94,34 @@ void arch_secondary_cpu_init(int hartid)
 #ifdef CONFIG_RISCV_PMP
 	z_riscv_pmp_init();
 #endif
+#ifdef CONFIG_RISCV_USER_COUNTER_ACCESS
+	z_riscv_counteren_init();
+#endif
 #ifdef CONFIG_CUSTOM_STACK_GUARD
 	z_riscv_custom_stack_guard_init();
 #endif /* CONFIG_CUSTOM_STACK_GUARD */
 #ifdef CONFIG_SMP
+#ifdef CONFIG_RISCV_S_MODE_EXTERNAL_SBI
+	irq_enable(RISCV_IRQ_SSOFT);
+#else
 	irq_enable(RISCV_IRQ_MSOFT);
+#endif
 #endif /* CONFIG_SMP */
 #if defined(CONFIG_PLIC_IRQ_AFFINITY) || defined(CONFIG_RISCV_APLIC_DIRECT_IRQ_AFFINITY)
 	/* Enable on secondary cores so that they can respond to PLIC */
+#ifdef CONFIG_RISCV_S_MODE_EXTERNAL_SBI
+	irq_enable(RISCV_IRQ_SEXT);
+#else
 	irq_enable(RISCV_IRQ_MEXT);
+#endif
 #endif /* CONFIG_PLIC_IRQ_AFFINITY || CONFIG_RISCV_APLIC_DIRECT_IRQ_AFFINITY */
 #if defined(CONFIG_RISCV_IMSIC) && defined(CONFIG_SMP)
 	/* Initialize IMSIC on secondary CPU */
 	z_riscv_imsic_secondary_init();
 #endif /* CONFIG_RISCV_IMSIC && CONFIG_SMP */
+#ifdef CONFIG_RISCV_SMRNMI_ENABLE_NMI_DELIVERY
+	(void)csr_read_set(CSR_MNSTATUS, MNSTATUS_NMIE);
+#endif
 	soc_per_core_init_hook();
 	riscv_cpu_init[cpu_num].fn(riscv_cpu_init[cpu_num].arg);
 }

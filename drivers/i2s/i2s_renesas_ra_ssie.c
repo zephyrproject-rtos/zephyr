@@ -453,6 +453,8 @@ static void renesas_ra_ssie_idle_tx_handle(const struct device *dev)
 	}
 
 	if (dev_data->state == I2S_STATE_RUNNING) {
+		/* An underflow stopped the transfer before its block was done */
+		i2s_renesas_ra_free_stream(&dev_data->tx_cfg, &dev_data->tx_stream);
 		renesas_ra_ssie_tx_start_transfer(dev);
 	}
 }
@@ -629,6 +631,7 @@ static void renesas_ra_ssie_idle_callback(const struct device *dev)
 	struct renesas_ra_ssie_data *dev_data = dev->data;
 
 	if (dev_data->trigger_drop) {
+		i2s_renesas_ra_free_stream(&dev_data->tx_cfg, &dev_data->tx_stream);
 		dev_data->state = I2S_STATE_READY;
 		return;
 	}

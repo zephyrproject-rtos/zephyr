@@ -8,6 +8,7 @@ ram: 32
 flash: 128
 supported:
   - arduino_gpio
+  - arduino_i3c
   - arduino_serial
   - backup_sram
   - gpio

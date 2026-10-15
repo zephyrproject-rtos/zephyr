@@ -21,8 +21,6 @@
 #include <wait_q.h>
 
 #ifdef CONFIG_OBJ_CORE_MEM_SLAB
-static struct k_obj_type obj_type_mem_slab;
-
 #ifdef CONFIG_OBJ_CORE_STATS_MEM_SLAB
 
 static int k_mem_slab_stats_raw(struct k_obj_core *obj_core, void *stats)
@@ -273,6 +271,10 @@ void k_mem_slab_free(struct k_mem_slab *slab, void *mem)
 		k_panic();
 		return;
 	}
+
+#ifdef CONFIG_OBJ_CORE_EVICT_ON_FREE
+	k_obj_core_evict_range(mem, slab->info.block_size);
+#endif /* CONFIG_OBJ_CORE_EVICT_ON_FREE */
 
 	k_spinlock_key_t key = k_spin_lock(&slab->lock);
 

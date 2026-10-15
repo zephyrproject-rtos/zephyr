@@ -36,7 +36,17 @@ static int cache_data_manage_range(void *addr, size_t size, uint32_t command)
 	uint32_t start = (uint32_t)addr;
 	uint32_t end;
 
-	if (u32_add_overflow(start, size, &end)) {
+	if (size == 0U) {
+		return 0;
+	}
+
+	/*
+	 * CMDREADDRR holds the last address of the range, inclusive, not the first address
+	 * after it (the STM32 HAL writes addr + size - 1). Writing addr + size made every
+	 * range command also cover the next cache line whenever the range ends on a line
+	 * boundary, and an invalidate then discarded pending CPU writes to that line.
+	 */
+	if (u32_add_overflow(start, size - 1U, &end)) {
 		return -EOVERFLOW;
 	}
 

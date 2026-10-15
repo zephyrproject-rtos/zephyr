@@ -52,6 +52,32 @@
 			reg = <0x00100000 DT_SIZE_K(128)>;
 		};
 
+		udphsa: usbd@200000 {
+			compatible = "microchip,udphs-g1-udc";
+			reg = <0x00200000 0x100000
+			       0xe0814000 0x400>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 99 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 99>, <&pmc PMC_TYPE_CORE PMC_UTMI>;
+			clock-names = "pclk", "hclk";
+			maximum-speed = "high-speed";
+			num-bidir-endpoints = <16>;
+			status = "disabled";
+		};
+
+		udphsb: usbd@300000 {
+			compatible = "microchip,udphs-g1-udc";
+			reg = <0x00300000 0x100000
+			       0xe0818000 0x400>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 100 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 100>, <&pmc PMC_TYPE_CORE PMC_UTMI>;
+			clock-names = "pclk", "hclk";
+			maximum-speed = "high-speed";
+			num-bidir-endpoints = <16>;
+			status = "disabled";
+		};
+
 		pinctrl: pinctrl@e0014000 {
 			compatible = "microchip,sama7g5-pinctrl";
 			reg = <0xe0014000 0x800>;
@@ -228,7 +254,8 @@
 		ethernet@e1618000 {
 			compatible = "microchip,sam-ethernet-controller";
 			reg = <0xe1618000 0x4000>;
-			clocks = <&pmc PMC_TYPE_GCK 46>;
+			clocks = <&pmc PMC_TYPE_GCK 46>, <&pmc PMC_TYPE_CORE PMC_MCK>;
+			clock-names = "gmac_clk", "mck";
 
 			gmac0: ethernet {
 				compatible = "atmel,sam-gmac";
@@ -268,6 +295,26 @@
 			clock-names = "pclk", "gclk";
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SPI 66 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		};
+
+		pit64b1: timer@e1804000 {
+			compatible = "microchip,sam-pit64b-counter";
+			reg = <0xe1804000 0x4000>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 67>, <&pmc PMC_TYPE_GCK 67>;
+			clock-names = "pclk", "gclk";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 67 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		pit64b2: timer@e1808000 {
+			compatible = "microchip,sam-pit64b-counter";
+			reg = <0xe1808000 0x4000>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 68>, <&pmc PMC_TYPE_GCK 68>;
+			clock-names = "pclk", "gclk";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 68 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
 		};
 
 		pwm: pwm@e1818000 {
@@ -398,6 +445,36 @@
 				interrupts = <GIC_SPI 37 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 				status = "disabled";
 			};
+		};
+
+		pit64b3: timer@e2004000 {
+			compatible = "microchip,sam-pit64b-counter";
+			reg = <0xe2004000 0x4000>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 69>, <&pmc PMC_TYPE_GCK 69>;
+			clock-names = "pclk", "gclk";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 69 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		pit64b4: timer@e2008000 {
+			compatible = "microchip,sam-pit64b-counter";
+			reg = <0xe2008000 0x4000>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 70>, <&pmc PMC_TYPE_GCK 70>;
+			clock-names = "pclk", "gclk";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 70 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		pit64b5: timer@e200c000 {
+			compatible = "microchip,sam-pit64b-counter";
+			reg = <0xe200c000 0x4000>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 71>, <&pmc PMC_TYPE_GCK 71>;
+			clock-names = "pclk", "gclk";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 71 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
 		};
 
 		flx4: flexcom@e2018000 {
@@ -608,6 +685,21 @@
 				interrupts = <GIC_SPI 44 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 				status = "disabled";
 			};
+		};
+
+		otpc: efuse@e8c00000 {
+			compatible = "microchip,sama7g5-otpc";
+			reg = <0xe8c00000 0x100>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		hwinfo: device_id@e8c00060 {
+			compatible = "microchip,hwinfo-g1";
+			reg = <0xe8c00060 0x4>,
+			      <0xe8c00064 0x4>,
+			      <0xe8c00068 0x4>,
+			      <0xe8c0006c 0x4>;
 		};
 
 		gic: interrupt-controller@e8c11000 {

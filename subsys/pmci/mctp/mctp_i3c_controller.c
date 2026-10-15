@@ -39,11 +39,15 @@ static inline void mctp_i3c_recv_msg(struct mctp_binding_i3c_controller *binding
 		.flags = I3C_MSG_READ | I3C_MSG_STOP,
 	};
 
+#ifdef CONFIG_MCTP_I3C_CONTROLLER_POLLING_MODE
+	msg.flags |= I3C_MSG_NOACK_EXPECTED;
+#endif /* CONFIG_MCTP_I3C_CONTROLLER_POLLING_MODE */
+
 	rc = i3c_transfer(dev, &msg, 1);
 	if (rc != 0) {
-#ifdef CONFIG_MCTP_I3C_CONTROLLER_IBI_MODE
-		LOG_ERR("Error requesting read from endpoint %d: %d", endpoint_idx, rc);
-#endif /*CONFIG_MCTP_I3C_CONTROLLER_IBI_MODE*/
+		if (rc != -ENODATA) {
+			LOG_ERR("Error requesting read from endpoint %d: %d", endpoint_idx, rc);
+		}
 		return;
 	}
 

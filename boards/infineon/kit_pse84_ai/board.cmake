@@ -30,12 +30,3 @@ board_runner_args(probe-rs "--chip=PSE846GPS4DBZC4A")
 
 include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/probe-rs.board.cmake)
-
-if(CONFIG_CPU_CORTEX_M33 AND CONFIG_TRUSTED_EXECUTION_SECURE)
-  set_property(TARGET runners_yaml_props_target
-    PROPERTY hex_file ${KERNEL_NAME}.signed.hex)
-endif()
-
-if(CONFIG_CPU_CORTEX_M33 AND CONFIG_TRUSTED_EXECUTION_NONSECURE)
-  set_property(TARGET runners_yaml_props_target PROPERTY hex_file tfm_merged.hex)
-endif()

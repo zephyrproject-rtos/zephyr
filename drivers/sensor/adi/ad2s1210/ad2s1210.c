@@ -422,9 +422,9 @@ static int ad2s1210_channel_get(const struct device *dev, enum sensor_channel ch
 	case SENSOR_CHAN_RPM: {
 		/* Get max range from lookup table */
 		int32_t range = table_velocity_range_rpm[data->resolution][data->clock];
-		/* Convert raw velocity to RPM */
-		int rpm = ((int32_t)data->velocity * range) /
-			  ((1 << (AD2S1210_MAX_RESOLUTION_BITS - 1)) - 1);
+		/* The product overflows 32 bits in the fastest ranges */
+		int rpm = (int)(((int64_t)data->velocity * range) /
+				((1 << (AD2S1210_MAX_RESOLUTION_BITS - 1)) - 1));
 
 		val->val1 = rpm;
 		val->val2 = 0;
@@ -865,6 +865,14 @@ static int ad2s1210_init(const struct device *dev) /* cppcheck-suppress unusedFu
 
 /** Macro used to initialize one ad2s1210 driver instance */
 #define AD2S1210_INIT(i)                                                                           \
+	BUILD_ASSERT(DT_INST_PROP_LEN_OR(i, resolution_gpios, AD2S1210_RES_PIN_MAX_VAL) ==         \
+			     AD2S1210_RES_PIN_MAX_VAL,                                             \
+		     "ad2s1210: resolution-gpios must be exactly RES0 and RES1");                  \
+	BUILD_ASSERT(!DT_INST_NODE_HAS_PROP(i, resolution_gpios) ||                                \
+			     (DT_INST_PROP_HAS_IDX(i, resolution_gpios, 0) &&                      \
+			      DT_INST_PROP_HAS_IDX(i, resolution_gpios, 1)),                       \
+		     "ad2s1210: resolution-gpios needs a GPIO for RES0 and RES1");                 \
+                                                                                                   \
 	static struct ad2s1210_data ad2s1210_data_##i;                                             \
                                                                                                    \
 	static const struct ad2s1210_config ad2s1210_config_##i = {                                \

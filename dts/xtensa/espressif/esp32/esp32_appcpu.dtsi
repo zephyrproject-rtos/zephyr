@@ -10,8 +10,3 @@
 &gpio0 {
 	gpio-reserved-ranges = <20 1>, <24 1>, <28 4>; // NC
 };
-
-&flash0 {
-	reg = <0x0 DT_SIZE_M(4)>;
-	ranges = <0x0 0x0 DT_SIZE_M(4)>;
-};

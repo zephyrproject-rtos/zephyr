@@ -20,7 +20,7 @@
 	};
 };
 
-/* Node label sram0 initialy cover SRAM1 (192kB), SRAM2 (64kB), SRAM3 (320kB) and SRAM4 (64kB).
+/* Node label sram0 initially cover SRAM1 (192kB), SRAM2 (64kB), SRAM3 (320kB) and SRAM4 (64kB).
  * In current implementation of TF-M (v2.3.0) for U3C5x devices:
  * - SRAM1 last 64 kbytes are secure;
  * - SRAM2, SRAM3 and SRAM4 are fully secure.

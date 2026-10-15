@@ -62,8 +62,8 @@ static int spi_nxp_kinetis_l_configure(const struct device *dev, const struct sp
 		return -EINVAL;
 	}
 
-	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Slave mode not supported");
+	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_PERIPHERAL) {
+		LOG_ERR("Peripheral mode not supported");
 		return -ENOTSUP;
 	}
 
@@ -71,6 +71,35 @@ static int spi_nxp_kinetis_l_configure(const struct device *dev, const struct sp
 		LOG_ERR("word size %d not supported, only 8-bit",
 			SPI_WORD_SIZE_GET(config->operation));
 		return -ENOTSUP;
+	}
+
+	uint32_t best_diff = UINT32_MAX;
+	uint8_t best_sppr = 0, best_spr = 0;
+	bool found = false;
+
+	for (int spr = 0; spr <= 8; spr++) {
+		for (int sppr = 0; sppr <= 7; sppr++) {
+			/* baud_rate_divisor = (SPPR + 1) * 2^(SPR + 1) */
+			uint32_t divisor = (sppr + 1) * (1U << (spr + 1));
+			uint32_t calc_frequency = clock_frequency / divisor;
+
+			if (calc_frequency <= config->frequency) {
+				uint32_t diff = config->frequency - calc_frequency;
+
+				if (diff < best_diff) {
+					best_diff = diff;
+					best_sppr = sppr;
+					best_spr = spr;
+					found = true;
+				}
+			}
+		}
+	}
+
+	if (!found) {
+		LOG_ERR("Frequency %u Hz is too low, the slowest supported is %u Hz",
+			config->frequency, clock_frequency / (8U * 512U));
+		return -EINVAL;
 	}
 
 	base->C1 &= ~SPI_C1_SPE_MASK;
@@ -87,27 +116,6 @@ static int spi_nxp_kinetis_l_configure(const struct device *dev, const struct sp
 
 	if (config->operation & SPI_MODE_CPHA) {
 		base->C1 |= SPI_C1_CPHA_MASK;
-	}
-
-	uint32_t best_diff = UINT32_MAX;
-	uint8_t best_sppr = 0, best_spr = 0;
-
-	for (int spr = 0; spr <= 8; spr++) {
-		for (int sppr = 0; sppr <= 7; sppr++) {
-			/* baud_rate_divisor = (SPPR + 1) * 2^(SPR + 1) */
-			uint32_t divisor = (sppr + 1) * (1U << (spr + 1));
-			uint32_t calc_frequency = clock_frequency / divisor;
-
-			if (calc_frequency <= config->frequency) {
-				uint32_t diff = config->frequency - calc_frequency;
-
-				if (diff < best_diff) {
-					best_diff = diff;
-					best_sppr = sppr;
-					best_spr = spr;
-				}
-			}
-		}
 	}
 
 	base->BR = SPI_BR_SPPR(best_sppr) | SPI_BR_SPR(best_spr);

@@ -43,6 +43,8 @@ include:
   - pinctrl-device.yaml
   - reset-device.yaml
 
+class: sensor
+
 properties:
   clocks:
     type: phandle-array

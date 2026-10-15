@@ -17,6 +17,7 @@
 	aliases {
 		led0 = &led5;
 		led1 = &led6;
+		i2c-0 = &i2c2;
 	};
 
 	chosen {
@@ -67,4 +68,5 @@
 	pinctrl-0 = <&i2c2_pins>;
 	pinctrl-names = "default";
 	status = "okay";
+	duty-cycle-percent = <20>;
 };

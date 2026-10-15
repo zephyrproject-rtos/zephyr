@@ -18,22 +18,35 @@ elseif(CONFIG_NET_QEMU_ETHERNET)
   if(CONFIG_ETH_QEMU_EXTRA_ARGS)
     set(NET_QEMU_ETH_EXTRA_ARGS ",${CONFIG_ETH_QEMU_EXTRA_ARGS}")
   endif()
-  qemu_append_extra_flags(
-    -netdev tap,id=n1,script=no,downscript=no,ifname=${CONFIG_ETH_QEMU_IFACE_NAME}${NET_QEMU_ETH_EXTRA_ARGS}
+  set(NET_QEMU_NETDEV
+    tap,id=n1,script=no,downscript=no,ifname=${CONFIG_ETH_QEMU_IFACE_NAME}${NET_QEMU_ETH_EXTRA_ARGS}
   )
 elseif(CONFIG_NET_QEMU_USER)
-  qemu_append_extra_flags(
-    -netdev user,id=n1,${CONFIG_NET_QEMU_USER_EXTRA_ARGS}
-  )
+  if(CONFIG_NET_QEMU_USER_EXTRA_ARGS)
+    set(NET_QEMU_USER_EXTRA_ARGS ",${CONFIG_NET_QEMU_USER_EXTRA_ARGS}")
+  endif()
+  set(NET_QEMU_NETDEV user,id=n1${NET_QEMU_USER_EXTRA_ARGS})
 else()
   qemu_append_extra_flags(
     -net none
   )
 endif()
 if(CONFIG_NET_QEMU_ETHERNET OR CONFIG_NET_QEMU_USER)
-  qemu_append_extra_flags(
-    -device ${CONFIG_ETH_NIC_MODEL},netdev=n1,${CONFIG_NET_QEMU_DEVICE_EXTRA_ARGS}
-  )
+  if(CONFIG_NET_QEMU_DEVICE_EXTRA_ARGS)
+    set(NET_QEMU_DEVICE_EXTRA_ARGS ",${CONFIG_NET_QEMU_DEVICE_EXTRA_ARGS}")
+  endif()
+  if(CONFIG_ETH_NIC_MODEL_ONBOARD)
+    # A NIC built into the emulated machine cannot be created with -device,
+    # so configure it together with its backend using -nic instead.
+    qemu_append_extra_flags(
+      -nic ${NET_QEMU_NETDEV},model=${CONFIG_ETH_NIC_MODEL}${NET_QEMU_DEVICE_EXTRA_ARGS}
+    )
+  else()
+    qemu_append_extra_flags(
+      -netdev ${NET_QEMU_NETDEV}
+      -device ${CONFIG_ETH_NIC_MODEL},netdev=n1${NET_QEMU_DEVICE_EXTRA_ARGS}
+    )
+  endif()
 
   # Capture the traffic on the host side of the NIC. QEMU writes the pcap
   # itself, so unlike the PCAP support for the serial transports this needs

@@ -28,6 +28,8 @@
 		led0 = &led1;
 		sw0 = &button0;
 		watchdog0 = &wdt0;
+		sdhc0 = &sdhc0;
+		i2c-0 = &iic1;
 	};
 };
 
@@ -75,6 +77,7 @@
 	pinctrl-names = "default";
 	interrupts = <12 1>, <13 1>, <14 1>, <15 1>;
 	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
 };
 
 &canfd_global {
@@ -136,14 +139,35 @@
 	status = "okay";
 };
 
+&usbfs {
+	status = "okay";
+	interrupts = <95 1>, <94 1>;
+	interrupt-names = "usbfs-i", "usbfs-r";
+
+	zephyr_udc0: udc {
+		status = "okay";
+	};
+};
+
 &usbhs {
 	pinctrl-0 = <&usbhs_default>;
 	interrupts = <28 1>;
 	interrupt-names = "usbhs-ir";
 	status = "okay";
 
-	zephyr_udc0: udc {
+	zephyr_uhc0: uhc {
 		status = "okay";
+	};
+};
+
+&ioportd {
+	status = "okay";
+
+	/* Set PD07 to high to enable host mode on USBHS port */
+	usbhs-hog {
+		gpio-hog;
+		gpios = <7 GPIO_ACTIVE_HIGH>;
+		output-high;
 	};
 };
 
@@ -215,4 +239,13 @@ mikrobus_spi: &spi1 {};
 		reset-gpios = <&ioport5 14 GPIO_ACTIVE_LOW>;
 		status = "okay";
 	};
+};
+
+&sdhc0 {
+	pinctrl-0 = <&sdhc0_default>;
+	pinctrl-names = "default";
+	interrupt-names = "accs", "card", "dma-req", "sdio-int";
+	interrupts = <30 12>, <31 12>, <32 12>, <33 12>;
+	/delete-property/ card-detect;
+	status = "okay";
 };

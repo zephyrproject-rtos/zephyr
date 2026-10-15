@@ -389,7 +389,7 @@ static int mcxw_set_pan_id(const struct device *dev, uint16_t aPanId)
 
 static int mcxw_set_extended_address(const struct device *dev, const uint8_t *ieee_addr)
 {
-	struct mcxw_context *mcxw_radio = dev->data;
+	ARG_UNUSED(dev);
 
 	macToPlmeMessage_t msg;
 
@@ -397,7 +397,14 @@ static int mcxw_set_extended_address(const struct device *dev, const uint8_t *ie
 	msg.msgData.setReq.PibAttribute = gPhyPibLongAddress_c;
 	msg.msgData.setReq.PibAttributeValue = *(uint64_t *)ieee_addr;
 
-	memcpy(mcxw_radio->mac, ieee_addr, 8);
+	/*
+	 * Do NOT update mcxw_radio->mac here.  That buffer holds the
+	 * factory-assigned IEEE EUI-64 (read at boot) and is referenced
+	 * by the net_if link address.  Overwriting it would cause
+	 * otPlatRadioGetIeeeEui64() to return the operational extended
+	 * address instead of the factory EUI-64, breaking the Joiner ID
+	 * derivation during Thread commissioning.
+	 */
 
 	(void)MAC_PLME_SapHandler(&msg, ot_phy_ctx);
 
@@ -579,11 +586,24 @@ static int mcxw_src_clear_entry(bool extended, uint8_t *address)
 static int handle_ack(struct mcxw_context *mcxw_radio)
 {
 	uint8_t len;
+	uint8_t alloc_len;
 	struct net_pkt *pkt;
 	int err = 0;
 
 	len = mcxw_radio->rx_ack_frame.length;
-	pkt = net_pkt_rx_alloc_with_buffer(mcxw_radio->iface, len, NET_AF_UNSPEC, 0, K_NO_WAIT);
+
+	/* NBU firmware strips FCS on Imm-ACKs after hardware verification,
+	 * but Enh-ACKs are delivered with FCS included.
+	 * OpenThread expects the PSDU to always include FCS.
+	 * Append 2 dummy FCS bytes for Imm-ACKs only.
+	 */
+	alloc_len = len;
+	if (len > 0 && len < IEEE802154_IMM_ACK_LENGTH) {
+		alloc_len = len + IEEE802154_FCS_LENGTH;
+	}
+
+	pkt = net_pkt_rx_alloc_with_buffer(mcxw_radio->iface, alloc_len,
+					   NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("No free packet available.");
 		err = -ENOMEM;
@@ -594,6 +614,16 @@ static int handle_ack(struct mcxw_context *mcxw_radio)
 		LOG_ERR("Failed to write to a packet.");
 		err = -ENOMEM;
 		goto free_ack;
+	}
+
+	if (len > 0 && len < IEEE802154_IMM_ACK_LENGTH) {
+		static const uint8_t dummy_fcs[IEEE802154_FCS_LENGTH] = {0};
+
+		if (net_pkt_write(pkt, dummy_fcs, IEEE802154_FCS_LENGTH) < 0) {
+			LOG_ERR("Failed to append dummy FCS.");
+			err = -ENOMEM;
+			goto free_ack;
+		}
 	}
 
 	net_pkt_set_ieee802154_lqi(pkt, mcxw_radio->rx_ack_frame.lqi);
@@ -788,6 +818,21 @@ static int mcxw_tx(const struct device *dev, enum ieee802154_tx_mode mode, struc
 	}
 
 	k_sem_take(&mcxw_radio->tx_wait, K_FOREVER);
+
+	/* Propagate the security flags back to the net_pkt so that the
+	 * OT platform layer (radio.c) can report the correct values to
+	 * OpenThread via otPlatRadioTxDone(). This mirrors what the
+	 * Nordic driver does in its TX Done path (ieee802154_nrf5.c).
+	 *
+	 * Without this, the net_pkt retains the pre-TX flag values and
+	 * OT never learns that the NBU has encrypted the frame and
+	 * updated the header (Frame Counter). On MAC-layer retries OT
+	 * then re-submits the frame with the original (stale) flags,
+	 * and the driver skips gPhyUpdHDr — the NBU reuses the old
+	 * Frame Counter, causing the receiver to reject the frame.
+	 */
+	net_pkt_set_ieee802154_frame_secured(pkt, mcxw_radio->tx_frame.sec_processed);
+	net_pkt_set_ieee802154_mac_hdr_rdy(pkt, mcxw_radio->tx_frame.hdr_updated);
 
 	switch (mcxw_radio->tx_status) {
 	case 0:

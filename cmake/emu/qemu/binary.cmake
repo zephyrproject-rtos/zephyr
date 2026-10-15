@@ -7,6 +7,11 @@
 # A board that runs on a qemu-system-* whose name is not its ARCH sets
 # QEMU_BINARY_SUFFIX; otherwise ARCH is used, with a few well known exceptions.
 #
+# The QEMU_BIN_PATH environment variable overrides the search entirely. Without
+# it, a board whose QEMU ships outside PATH, typically bundled with its
+# toolchain, lists the directories to try first in QEMU_BINARY_HINTS; PATH is
+# searched after them.
+#
 # Sets: QEMU_BINARY_SUFFIX, QEMU, qemu_alternate_path
 
 if(DEFINED QEMU_ARCH)
@@ -46,6 +51,7 @@ else()
   find_program(
     QEMU
     qemu-system-${QEMU_BINARY_SUFFIX}
+    HINTS ${QEMU_BINARY_HINTS}
   )
 endif()
 

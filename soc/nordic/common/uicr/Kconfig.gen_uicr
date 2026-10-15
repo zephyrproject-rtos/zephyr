@@ -445,4 +445,9 @@ rsource "Kconfig.template.gen_uicr_snapshot_region"
 
 endif # GEN_UICR_SNAPSHOT_REGIONS
 
+config GEN_UICR_IRONSIDE_SE_PERIPHCONF_REGISTERS_FILE
+	string "Ironside SE PERIPHCONF registers file"
+	default "${IRONSIDE_SUPPORT_DIR}/se/resources/periphconf_registers-nrf54h20_xxaa-v23.4.0+27.json" \
+		if SOC_NRF54H20
+
 endmenu

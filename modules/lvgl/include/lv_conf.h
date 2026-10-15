@@ -8,6 +8,7 @@
 #ifndef ZEPHYR_MODULES_LVGL_LV_CONF_H_
 #define ZEPHYR_MODULES_LVGL_LV_CONF_H_
 
+#include <zephyr/sys/__assert.h>
 #include <zephyr/toolchain.h>
 #include <string.h>
 #include <stdint.h>
@@ -30,20 +31,10 @@
 #define lv_free_core      lvgl_free
 #endif
 
-#define LV_ASSERT_HANDLER         __ASSERT_NO_MSG(false);
-#define LV_ASSERT_HANDLER_INCLUDE "zephyr/sys/__assert.h"
+#define LV_ASSERT_HANDLER __ASSERT_NO_MSG(false);
 
-/* Provide definition to align LVGL buffers */
-#define LV_ATTRIBUTE_MEM_ALIGN __aligned(CONFIG_LV_ATTRIBUTE_MEM_ALIGN_SIZE)
-
-#ifdef CONFIG_LV_COLOR_16_SWAP
-#define LV_COLOR_16_SWAP 1
-#endif /* CONFIG_LV_COLOR_16_SWAP */
-
-#ifdef CONFIG_LV_Z_USE_OSAL
-#define LV_USE_OS            LV_OS_CUSTOM
-#define LV_OS_CUSTOM_INCLUDE "lvgl_zephyr_osal.h"
-#endif /* CONFIG_LV_Z_USE_OSAL */
+/* Kconfig based settings */
+#include "lvgl_zephyr_kconfig.h"
 
 /*
  * Needed because of a workaround for a GCC bug,

@@ -103,12 +103,17 @@ enum modem_cellular_event {
 	MODEM_CELLULAR_EVENT_PERIODIC_KICK,
 	MODEM_CELLULAR_EVENT_DIAL,
 	MODEM_CELLULAR_EVENT_HANGUP,
-};
+} __packed;
 
 struct modem_cellular_event_cb {
 	cellular_event_mask_t mask;
 	cellular_event_cb_t fn;
 	void *user_data;
+};
+
+struct modem_cellular_event_pkg {
+	uint8_t event;
+	const void *ptr;
 };
 
 /** @endcond */
@@ -156,6 +161,7 @@ struct modem_cellular_data {
 	enum cellular_registration_status registration_status_gsm;
 	enum cellular_registration_status registration_status_gprs;
 	enum cellular_registration_status registration_status_lte;
+	enum cellular_registration_status registration_status_5g;
 	enum cellular_access_technology access_tech;
 	uint8_t rssi;
 	uint8_t rsrp;
@@ -191,8 +197,9 @@ struct modem_cellular_data {
 
 	/* Event dispatcher */
 	struct k_work event_dispatch_work;
-	uint8_t event_buf[8];
-	struct k_pipe event_pipe;
+	struct k_msgq event_queue;
+	struct modem_cellular_event_pkg event_buf[8];
+	const void *event_ptr;
 
 	struct k_mutex api_lock;
 	struct modem_cellular_event_cb cb;
@@ -391,10 +398,13 @@ void modem_cellular_chat_on_modem_ready(struct modem_chat *chat, char **argv, ui
  *
  * @param chat Chat instance that completed the script. Must not be NULL.
  * @param result Script completion result.
+ * @param info Extra script completion information. Must not be NULL.
  * @param user_data Pointer to the associated @ref modem_cellular_data object. Must not be NULL.
  */
 void modem_cellular_chat_callback_handler(struct modem_chat *chat,
-					  enum modem_chat_script_result result, void *user_data);
+					  enum modem_chat_script_result result,
+					  const struct modem_chat_script_completion_info *info,
+					  void *user_data);
 
 /**
  * @defgroup modem_driver_macros Cellular modem driver definition macros

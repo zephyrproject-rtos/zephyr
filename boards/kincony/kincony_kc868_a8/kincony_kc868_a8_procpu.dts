@@ -5,7 +5,7 @@
  */
 /dts-v1/;
 
-#include <espressif/esp32/esp32_wroom_32ue_n4.dtsi>
+#include <espressif/esp32/esp32.dtsi>
 #include "kincony_kc868_a8-pinctrl.dtsi"
 #include <espressif/partitions_0x1000_amp.dtsi>
 
@@ -28,11 +28,22 @@
 	};
 };
 
+&flash0 {
+	reg = <0x0 DT_SIZE_M(4)>;
+	ranges = <0x0 0x0 DT_SIZE_M(4)>;
+};
+
+&psram0 {
+	status = "disabled";
+};
+
 &gpio0 {
+	gpio-reserved-ranges = <6 6>, <20 1>, <24 1>, <28 4>;
 	status = "okay";
 };
 
 &gpio1 {
+	gpio-reserved-ranges = <5 2>;
 	status = "okay";
 };
 
@@ -81,10 +92,6 @@
 	status = "okay";
 	phy-handle = <&phy>;
 	ref-clk-output-gpios = <&gpio0 17 0>;
-};
-
-&psram0 {
-	status = "disabled";
 };
 
 &timer0 {

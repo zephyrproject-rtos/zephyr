@@ -19,14 +19,17 @@
 #include <mem.h>
 #include <arm/infineon/cat1b/mpns/psc3m5fds2afq1_s.dtsi>
 #include <arm/infineon/cat1b/psc3/system_clocks.dtsi>
-#include <arm/infineon/cat1b/psc3/psc3_partition.dtsi>
 #include "kit_psc3m5_evk-common.dtsi"
 #include "kit_psc3m5_evk-pinctrl.dtsi"
+#include "kit_psc3m5_evk-partitions.dtsi"
+
+/delete-node/ &storage_partition;
 
 / {
 	chosen {
 		zephyr,sram = &sram0;
-		zephyr,flash = &slot0_partition;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &uart3;
 		zephyr,shell-uart = &uart3;
 		zephyr,canbus = &can1;
@@ -65,6 +68,10 @@ spi5: &scb5 {
 			};
 		};
 	};
+};
+
+&flash_controller {
+	status = "okay";
 };
 
 &p8_1_scb5_spi_m_mosi {

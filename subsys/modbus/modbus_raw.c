@@ -13,12 +13,11 @@ LOG_MODULE_REGISTER(modbus_raw, CONFIG_MODBUS_LOG_LEVEL);
 
 #define MODBUS_ADU_LENGTH_DEVIATION	2
 #define MODBUS_RAW_MIN_MSG_SIZE		(MODBUS_RTU_MIN_MSG_SIZE - 2)
-#define MODBUS_RAW_BUFFER_SIZE		(CONFIG_MODBUS_BUFFER_SIZE - 2)
 
 int modbus_raw_rx_adu(struct modbus_context *ctx)
 {
 	if (ctx->rx_adu.length < MODBUS_RAW_MIN_MSG_SIZE ||
-	    ctx->rx_adu.length > MODBUS_RAW_BUFFER_SIZE) {
+	    ctx->rx_adu.length > sizeof(ctx->rx_adu.data)) {
 		LOG_WRN("Frame length error");
 		return -EMSGSIZE;
 	}
@@ -91,7 +90,8 @@ void modbus_raw_get_header(struct modbus_adu *adu, const uint8_t *header)
 {
 	adu->trans_id = sys_get_be16(&header[0]);
 	adu->proto_id = sys_get_be16(&header[2]);
-	adu->length = MIN(sys_get_be16(&header[4]), CONFIG_MODBUS_BUFFER_SIZE);
+	adu->length = MIN(sys_get_be16(&header[4]),
+			  sizeof(adu->data) + MODBUS_ADU_LENGTH_DEVIATION);
 	adu->unit_id = header[6];
 	adu->fc = header[7];
 

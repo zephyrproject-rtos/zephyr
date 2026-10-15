@@ -702,7 +702,7 @@ static int cmd_sshd_start(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	memset(&bind_addr, 0, sizeof(bind_addr));
-	net_sin(net_sad(&bind_addr))->sin_port = htons(CONFIG_SSH_PORT);
+	net_sin(net_sad(&bind_addr))->sin_port = net_htons(CONFIG_SSH_PORT);
 
 	if (params.address[0] == '\0') {
 		if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6)) {
@@ -923,7 +923,7 @@ static int cmd_ssh_start(const struct shell *sh, size_t argc, char **argv)
 	hostkey_idx = params.hostkey_idx;
 
 	memset(&dest_addr, 0, sizeof(dest_addr));
-	net_sin(net_sad(&dest_addr))->sin_port = htons(CONFIG_SSH_PORT);
+	net_sin(net_sad(&dest_addr))->sin_port = net_htons(CONFIG_SSH_PORT);
 
 	if (params.address[0] == '\0') {
 		PR_ERROR("Destination address is required\n");

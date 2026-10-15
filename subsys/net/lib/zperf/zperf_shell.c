@@ -858,7 +858,9 @@ static int execute_upload(const struct shell *sh,
 		print_number(sh, param->rate_kbps, KBPS, KBPS_UNIT);
 		shell_fprintf(sh, SHELL_NORMAL, "\n");
 
-		if (packet_duration > 1000U) {
+		if (param->rate_kbps == 0U) {
+			shell_fprintf(sh, SHELL_NORMAL, "Packet duration unlimited\n");
+		} else if (packet_duration > 1000U) {
 			shell_fprintf(sh, SHELL_NORMAL, "Packet duration %u ms\n",
 				      (unsigned int)(packet_duration / 1000U));
 		} else {
@@ -1582,8 +1584,8 @@ static int cmd_tcp_download(const struct shell *sh, size_t argc,
 
 static int cmd_version(const struct shell *sh, size_t argc, char *argv[])
 {
-	shell_fprintf(sh, SHELL_NORMAL, "Version: %s\nConfig: %s\n",
-		      ZPERF_VERSION, CONFIG);
+	shell_fprintf(sh, SHELL_NORMAL, "Version: %s\nProtocol: %s\nConfig: %s\n",
+		      ZPERF_VERSION, ZPERF_PROTOCOL, CONFIG);
 
 	return 0;
 }
@@ -1973,7 +1975,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_tcp,
 	SHELL_CMD(download, &zperf_cmd_tcp_download,
 		  "[<port>]:  Server port to listen on/connect to\n"
 		  "[<host>]:  Bind to <host>, an interface address\n"
-		  "Example: tcp download 5001 192.168.0.1\n",
+		  "Example: tcp download " DEF_PORT_STR " 192.168.0.1\n",
 		  cmd_tcp_download),
 #endif
 	SHELL_SUBCMD_SET_END
@@ -1998,7 +2000,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_udp,
 		  "<packet size> in byte or kilobyte "
 							"(with suffix K) "
 							"(default " DEF_PACKET_SIZE_STR ")\n"
-		  "<baud rate>   in kilobyte or megabyte "
+		  "<baud rate>   in kilobyte or megabyte, 0 = unlimited "
 							"(default " DEF_RATE_KBPS_STR "K)\n"
 		  "Available options:\n"
 		  "-S tos: Specify IPv4/6 type of service\n"
@@ -2023,7 +2025,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_udp,
 		  "<packet size> in byte or kilobyte "
 							"(with suffix K) "
 							"(default " DEF_PACKET_SIZE_STR ")\n"
-		  "<baud rate>   in kilobyte or megabyte "
+		  "<baud rate>   in kilobyte or megabyte, 0 = unlimited "
 							"(default " DEF_RATE_KBPS_STR "K)\n"
 		  "Available options:\n"
 		  "-S tos: Specify IPv4/6 type of service\n"
@@ -2055,7 +2057,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_udp,
 		  "[<host>]:  Bind to <host>, an interface address\n"
 		  "Available options:\n"
 		  "-I <interface name>: Specify host interface name\n"
-		  "Example: udp download 5001 192.168.0.1\n",
+		  "Example: udp download " DEF_PORT_STR " 192.168.0.1\n",
 		  cmd_udp_download),
 #endif
 	SHELL_SUBCMD_SET_END
@@ -2201,7 +2203,7 @@ static int cmd_raw_upload(const struct shell *sh, size_t argc, char *argv[])
 			      "  <header_hex>   Header as hex (vendor metadata + frame header)\n"
 			      "  <duration_sec> Test duration in seconds (default: 1)\n"
 			      "  <packet_size>  Total packet size in bytes (default: 256)\n"
-			      "  <rate_kbps>    Target rate in Kbps (default: 10)\n");
+			      "  <rate_kbps>    Target rate in Kbps, 0 = unlimited (default: 10)\n");
 		shell_fprintf(sh, SHELL_WARNING,
 			      "Options:\n"
 			      "  -a  Asynchronous mode (shell will not block)\n");
@@ -2295,7 +2297,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_raw,
 		  "<header_hex>   Header as hex bytes (vendor metadata + 802.11/Eth header)\n"
 		  "<duration_sec> Duration in seconds (default: 1)\n"
 		  "<packet_size>  Total packet size in bytes (default: 256)\n"
-		  "<rate_kbps>    Target rate in Kbps (default: 10)\n"
+		  "<rate_kbps>    Target rate in Kbps, 0 = unlimited (default: 10)\n"
 		  "Options:\n"
 		  "  -a: Asynchronous mode\n"
 		  "Example: raw upload 1 12345678000400030000000000<frame_hdr> 5 256 1000\n",

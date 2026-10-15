@@ -14,4 +14,8 @@ config NUM_IRQS
 config ASSERT
 	default n
 
+# This check takes more than 650 bytes.
+config CBPRINTF_CONVERT_CHECK_PTR
+	default n if !XIP
+
 endif # SOC_NRF7120_ENGA_CPUFLPR || SOC_NRF7120E_ENGA_CPUFLPR

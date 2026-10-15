@@ -6,6 +6,7 @@
 
 /dts-v1/;
 
+#include <freq.h>
 #include <nuvoton/m46x.dtsi>
 #include "numaker_pfm_m467-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -13,6 +14,10 @@
 / {
 	model = "Nuvoton PFM M467 board";
 	compatible = "nuvoton,pfm-m467", "nuvoton,m467";
+
+	cpus {
+		timebase-frequency = <DT_FREQ_M(200)>;
+	};
 
 	aliases {
 		led0 = &green_led;
@@ -124,6 +129,24 @@
 
 &emac {
 	pinctrl-0 = <&emac_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy>;
+	status = "okay";
+};
+
+&mdio {
+	pinctrl-0 = <&emac_mdio_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy: ethernet-phy@1 {
+		compatible = "ethernet-phy";
+		reg = <1>;
+	};
+};
+
+&ptp_clock {
+	pinctrl-0 = <&emac_ptp_default>;
 	pinctrl-names = "default";
 	status = "okay";
 };

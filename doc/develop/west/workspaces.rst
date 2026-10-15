@@ -41,6 +41,65 @@ West also reserves all Git refs that begin with ``refs/west/`` (such as
 an implementation detail; users should not rely on these refs' existence or
 behavior.
 
+.. _west-developing-in-a-git-repository:
+
+Developing in a git repository
+******************************
+
+``west`` "projects" in a workspace are ordinary git repositories. Left to
+itself, west only creates and updates the ``manifest-rev`` branch and the refs
+under ``refs/west/``; the branches you create are yours, and west only rebases
+them when you ask it to with ``west update --rebase``.
+
+That is also why a plain :ref:`west update <west-update>` leaves you on a
+detached ``HEAD``: it checks out the new ``manifest-rev`` and leaves your
+branches exactly where they are. See :ref:`west-update-detached-heads` for the
+rationale.
+
+.. note::
+
+   Zephyr *modules* and west projects are not the same thing, even though west
+   projects are often also modules; see :ref:`modules-vs-projects`. The git
+   workflow below applies to all west projects whether they are Zephyr modules
+   or not.
+
+A workflow which works well when you have local changes is:
+
+#. Create a branch in the repository and commit to it as usual:
+
+   .. code-block:: console
+
+      git -C <repository-path> switch --create <your-branch>
+
+#. Update your workspace with ``west update --rebase``, then look at what
+   changed:
+
+   .. code-block:: console
+
+      west update --rebase
+      west compare
+
+   Your branch stays checked out and is rebased onto the new ``manifest-rev``.
+   This is the only time west touches your own branch. If it conflicts, the
+   command fails and you resolve it with git as usual.
+
+#. If you would rather not have west rebase your branch, a plain
+   ``west update`` will switch away from it instead (unless this causes git
+   conflicts). ``west update --keep-descendants`` is a third option which
+   never fails. See the ``checked out branch behavior`` option group in
+   ``west update --help``, and :ref:`west-update` for all the details.
+
+Committing on a detached ``HEAD``
+=================================
+
+Do not commit on a detached ``HEAD`` left behind by ``west update``: git warns
+you that those commits are not reachable from any branch and they may be
+garbage-collected later. Create a branch for your work instead; or use an
+alternative git client purposely designed for "branchless" work, like for
+instance `JJ`_.
+
+.. _JJ: https://www.jj-vcs.dev/
+
 Private repositories
 ********************
 

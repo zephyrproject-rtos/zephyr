@@ -132,7 +132,7 @@ DT_CHOSEN_ZEPHYR_PPP_UART := zephyr,ppp-uart
 
 choice NET_QEMU_NETWORKING
 	prompt "Qemu networking"
-	default NET_QEMU_PPP if NET_PPP
+	default NET_QEMU_PPP if NET_L2_PPP
 	default NET_QEMU_SLIP
 	depends on QEMU_TARGET
 	help
@@ -143,12 +143,14 @@ choice NET_QEMU_NETWORKING
 config NET_QEMU_SLIP
 	bool "SLIP"
 	depends on $(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_UART_PIPE))
+	imply NET_DRIVERS
 	help
 	  Connect to host or to another Qemu via SLIP.
 
 config NET_QEMU_PPP
 	bool "PPP"
 	depends on NET_TEST || $(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_PPP_UART))
+	imply NET_DRIVERS
 	help
 	  Connect to host via PPP.
 
@@ -162,6 +164,7 @@ config NET_QEMU_ETHERNET
 
 config NET_QEMU_USER
 	bool "SLIRP"
+	imply ETH_DRIVER
 	imply NET_L2_ETHERNET
 	help
 	  Connect to host system via Qemu's built-in User Networking support. This
@@ -185,7 +188,8 @@ config NET_QEMU_DEVICE_EXTRA_ARGS
 	default ""
 	help
 	  Extra arguments passed to the QEMU networking device.
-	  This string is appended to the QEMU "-device" option.
+	  This string is appended to the QEMU "-device" option, or to the
+	  "-nic" option for a NIC built into the emulated machine.
 	  Typically this is used to set the network MAC address of
 	  Zephyr instance. This option can contain multiple QEMU option
 	  arguments. Each QEMU argument must be separated by comma "," and no
@@ -446,11 +450,6 @@ config NET_MAX_ROUTERS
 	  The value depends on your network needs.
 
 source "subsys/net/ip/Kconfig.tcp"
-
-config NET_TEST_PROTOCOL
-	bool "JSON based test protocol (UDP)"
-	help
-	  Enable JSON based test protocol (UDP).
 
 config NET_UDP
 	bool "UDP"
@@ -716,6 +715,7 @@ config NET_SLIP_TAP
 	select UART_INTERRUPT_DRIVEN
 	select SLIP_TAP
 	select NET_L2_ETHERNET
+	imply ETH_DRIVER
 	default y if (QEMU_TARGET && !NET_TEST)
 	help
 	  SLIP TAP support is necessary when testing with QEMU. The host
@@ -957,6 +957,7 @@ config NET_PKT_TIMESTAMP_THREAD
 
 config NET_PKT_TIMESTAMP_STACK_SIZE
 	int "Timestamp thread stack size"
+	default 2048 if 64BIT
 	default 1024
 	depends on NET_PKT_TIMESTAMP_THREAD
 	help

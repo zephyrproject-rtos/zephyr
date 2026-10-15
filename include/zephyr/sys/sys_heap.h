@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Intel Corporation
+ * Copyright (c) 2026 Qualcomm Technologies, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -101,6 +102,19 @@ int sys_heap_runtime_stats_get(struct sys_heap *heap,
  * @return -EINVAL if null pointer was passed, otherwise 0
  */
 int sys_heap_runtime_stats_reset_max(struct sys_heap *heap);
+
+/** @brief Get the size of the largest free block in a sys_heap
+ *
+ * Writes to @a bytes the number of usable bytes available in the single
+ * largest contiguous free block currently in the heap: the largest value
+ * that could currently be passed to sys_heap_alloc() and still succeed,
+ * absent further fragmentation from intervening allocations or frees.
+ *
+ * @param heap Pointer to specified sys_heap
+ * @param bytes Pointer to size_t to store the result in
+ * @return -EINVAL if null pointers, otherwise 0
+ */
+int sys_heap_get_largest_free_block(struct sys_heap *heap, size_t *bytes);
 
 /** @brief Initialize sys_heap
  *
@@ -314,6 +328,43 @@ int sys_heap_array_save(struct sys_heap *heap);
  */
 int sys_heap_array_get(struct sys_heap ***heap);
 
+/** @brief Log per-thread heap allocation statistics
+ *
+ * Prints per-thread allocation statistics for the given heap using the
+ * kernel logging subsystem at INFO level.
+ *
+ * Available only when CONFIG_SYS_HEAP_THREAD_STATS is set.
+ *
+ * Concurrency: the caller must ensure no concurrent allocation or free
+ * on the same heap; the same serialisation contract as sys_heap itself.
+ *
+ * @param heap Heap whose per-thread statistics are to be logged
+ */
+#ifdef CONFIG_SYS_HEAP_THREAD_STATS
+void sys_heap_stats_log(struct sys_heap *heap);
+#endif
+
+/** @brief Return the call-site address recorded for an allocation
+ *
+ * Returns the return address captured by __builtin_return_address() at
+ * the moment @a mem was allocated.  The depth at which the address is
+ * captured is controlled by CONFIG_SYS_HEAP_CALLER_LEVEL.  For blocks
+ * that have been resized in-place by sys_heap_realloc() or
+ * sys_heap_aligned_realloc(), the original allocation call site is
+ * returned, not the realloc site.
+ *
+ * @param heap Heap that owns the allocation
+ * @param mem  Pointer previously returned by sys_heap_alloc() or
+ *             sys_heap_aligned_alloc()
+ * @return     Captured return address, or NULL if:
+ *               - @a heap or @a mem is NULL,
+ *               - @a mem is outside the heap's address span,
+ *               - the chunk at @a mem is not currently allocated.
+ */
+#ifdef CONFIG_SYS_HEAP_CALLER_POINTER
+void *sys_heap_get_caller(struct sys_heap *heap, void *mem);
+#endif
+
 /**
  * @}
  */
@@ -321,5 +372,23 @@ int sys_heap_array_get(struct sys_heap ***heap);
 #ifdef __cplusplus
 }
 #endif
+
+/** @cond INTERNAL_HIDDEN */
+
+/**
+ * @brief Heap memory release hook
+ *
+ * Provided by the consumer that selects CONFIG_SYS_HEAP_RELEASE_HOOK. Called
+ * with the memory still valid, from sys_heap_free() with the released block
+ * and from an in-place shrink with the released tail. The caller may hold a
+ * heap lock, so the hook must not allocate from or free to a heap. With
+ * CONFIG_USERSPACE the common libc free() may enter it from user mode.
+ *
+ * @param mem Start of the released memory
+ * @param bytes Size of the released memory
+ */
+void sys_heap_release_hook(void *mem, size_t bytes);
+
+/** @endcond */
 
 #endif /* ZEPHYR_INCLUDE_SYS_SYS_HEAP_H_ */

@@ -230,6 +230,9 @@ struct bt_hci_cmd_hdr {
 						  BT_LE_FEAT_BIT_PHY_CODED)
 #define BT_FEAT_LE_PRIVACY(feat)                  BT_LE_FEAT_TEST(feat, \
 						  BT_LE_FEAT_BIT_PRIVACY)
+/** Test if the Extended Scanner Filter Policies feature is supported */
+#define BT_FEAT_LE_EXT_SCAN(feat)                 BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_EXT_SCAN)
 #define BT_FEAT_LE_EXT_ADV(feat)                  BT_LE_FEAT_TEST(feat, \
 						  BT_LE_FEAT_BIT_EXT_ADV)
 #define BT_FEAT_LE_EXT_PER_ADV(feat)              BT_LE_FEAT_TEST(feat, \
@@ -4679,6 +4682,7 @@ struct bt_hci_evt_le_conn_rate_change {
 #define BT_HCI_ERR_LINK_KEY_CANNOT_BE_CHANGED   0x26
 #define BT_HCI_ERR_REQUESTED_QOS_NOT_SUPPORTED  0x27
 #define BT_HCI_ERR_INSTANT_PASSED               0x28
+/** Pairing with Unit Key Not Supported. This error is only valid for BR/EDR. */
 #define BT_HCI_ERR_PAIRING_NOT_SUPPORTED        0x29
 #define BT_HCI_ERR_DIFF_TRANS_COLLISION         0x2a
 #define BT_HCI_ERR_QOS_UNACCEPTABLE_PARAM       0x2c

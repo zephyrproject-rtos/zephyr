@@ -1,0 +1,70 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&cpuapp_rram {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/* nRF54LV10A has 1012 kB of non-volatile memory (RRAM), and with the FLPR
+		 * partitions in use the top 64 kB is reserved for the FLPR MCU.
+		 */
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "mcuboot";
+			/* 72 kB, as an MCUboot with encryption support enabled does not
+			 * fit into 64 kB. Slot sizes are kept a multiple of the 4 kB
+			 * erase block, which makes 72 kB the next usable size up.
+			 */
+			reg = <0x0 DT_SIZE_K(72)>;
+		};
+
+#ifdef WITH_FLPR_PARTITIONS
+		slot0_partition: partition@12000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x12000 DT_SIZE_K(420)>;
+		};
+
+		slot1_partition: partition@7b000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
+			reg = <0x7b000 DT_SIZE_K(420)>;
+		};
+
+		storage_partition: partition@e4000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0xe4000 DT_SIZE_K(36)>;
+		};
+#else
+		slot0_partition: partition@12000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x12000 DT_SIZE_K(452)>;
+		};
+
+		slot1_partition: partition@83000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
+			reg = <0x83000 DT_SIZE_K(452)>;
+		};
+
+		storage_partition: partition@f4000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0xf4000 DT_SIZE_K(36)>;
+		};
+#endif
+	};
+};
+
+&uicr {
+	bl_storage: uicr@500 {
+		reg = <0x500 0x460>;
+	};
+};

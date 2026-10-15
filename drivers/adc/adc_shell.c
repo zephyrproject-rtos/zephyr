@@ -71,104 +71,7 @@ static struct adc_hdl {
 	struct adc_channel_cfg channel_config;
 	uint8_t resolution;
 } adc_list[] = {
-	/* zephyr-keep-sorted-start */
-	DT_FOREACH_STATUS_OKAY(adi_ad4114_adc, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(adi_ad559x_adc, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(adi_ad7124_adc, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(atmel_sam0_adc, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(atmel_sam_adc, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(atmel_sam_afec, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(espressif_esp32_adc, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(gd_gd32_adc, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(infineon_cat1_adc, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(infineon_xmc4xxx_adc, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ite_it51xxx_adc, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ite_it8xxx2_adc, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(lltc_ltc2451, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(m5stack_m5pm1_adc, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(maxim_max11102, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(maxim_max11103, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(maxim_max11105, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(maxim_max11106, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(maxim_max11110, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(maxim_max11111, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(maxim_max11115, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(maxim_max11116, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(maxim_max11117, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(maxim_max11253, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(maxim_max11254, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(maxim_max2253x, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(microchip_mcp3204, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(microchip_mcp3208, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(microchip_mcp3221, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(microchip_xec_adc, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(nordic_nrf_adc, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(nordic_nrf_saadc, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(nuvoton_npcx_adc, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(nuvoton_numaker_adc, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(nxp_adc12, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(nxp_gau_adc, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(nxp_kinetis_adc16, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(nxp_lpc_lpadc, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(nxp_mcux_12b1msps_sar, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(nxp_s32_adc_sar, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(nxp_vf610_adc, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(raspberrypi_pico_adc, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(renesas_smartbond_adc, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(renesas_smartbond_sdadc, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(silabs_gecko_adc, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(silabs_gecko_iadc, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(st_stm32_adc, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(st_stm32f1_adc, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(st_stm32f4_adc, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(telink_b91_adc, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_adc081c021, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_adc081c027, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_adc101c021, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_adc101c027, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_adc121c021, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_adc121c027, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_ads1013, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_ads1014, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_ads1015, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_ads1112, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_ads1113, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_ads1114, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_ads1115, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_ads1119, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_ads114s08, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_ads1220, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_ads7052, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_ads7828, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_ads7830, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_ads7950, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_ads7951, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_ads7952, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_ads7953, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_ads7954, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_ads7955, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_ads7956, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_ads7957, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_ads7958, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_ads7959, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_ads7960, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_ads7961, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_cc13xx_cc26xx_adc, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_cc32xx_adc, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_lmp90077, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_lmp90078, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_lmp90079, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_lmp90080, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_lmp90097, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_lmp90098, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_lmp90099, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_lmp90100, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_mspm0_adc12, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_tla2021, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_tla2022, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ti_tla2024, ADC_HDL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(zephyr_adc_emul, ADC_HDL_LIST_ENTRY)
-	/* zephyr-keep-sorted-stop */
+	DT_FOREACH_CLASS_STATUS_OKAY(adc, ADC_HDL_LIST_ENTRY)
 };
 
 static struct adc_hdl *get_adc(const char *device_label)
@@ -395,14 +298,60 @@ static int cmd_adc_ref(const struct shell *sh, size_t argc, char **argv,
 	return retval;
 }
 
+/* Periodic read state; samples are taken from a dedicated thread so that the
+ * shell thread stays free to deliver the key press that stops the read. The
+ * system workqueue is not used because some drivers complete reads through it.
+ */
+static struct {
+	struct k_thread thread;
+	const struct shell *sh;
+	const struct device *dev;
+	struct adc_sequence sequence;
+	int16_t sample;
+	k_timeout_t period;
+	bool thread_started; /* thread object has been created; needs a join before reuse */
+	atomic_t running;
+} adc_periodic;
+
+static K_THREAD_STACK_DEFINE(adc_periodic_stack, CONFIG_ADC_SHELL_PERIODIC_READ_STACK_SIZE);
+static K_SEM_DEFINE(adc_periodic_stop, 0, 1);
+
+static void adc_periodic_read_thread(void *p1, void *p2, void *p3)
+{
+	int retval;
+
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	/* Wait one period between samples; a key press ends the wait and the read. */
+	while (k_sem_take(&adc_periodic_stop, adc_periodic.period) != 0) {
+		retval = adc_read(adc_periodic.dev, &adc_periodic.sequence);
+		if (retval < 0) {
+			/* Clear the bypass first so that the shell redraws the prompt. */
+			shell_set_bypass(adc_periodic.sh, NULL, NULL);
+			shell_error(adc_periodic.sh, "read failed: %d", retval);
+			break;
+		}
+
+		shell_print(adc_periodic.sh, "read: %i", adc_periodic.sample);
+	}
+
+	atomic_clear(&adc_periodic.running);
+}
+
+/* Any byte received while the periodic read runs stops it. Runs on the shell
+ * thread, which redraws the prompt once the bypass is cleared.
+ */
 static void adc_shell_read_bypass_cb(const struct shell *sh, uint8_t *data, size_t len,
 				     void *user_data)
 {
-	ARG_UNUSED(sh);
 	ARG_UNUSED(data);
 	ARG_UNUSED(len);
+	ARG_UNUSED(user_data);
 
-	*(bool *)user_data = true;
+	shell_set_bypass(sh, NULL, NULL);
+	k_sem_give(&adc_periodic_stop);
 }
 
 #define BUFFER_SIZE 1
@@ -444,30 +393,41 @@ static int cmd_adc_read(const struct shell *sh, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	bool stop = false;
-	bool msg_one_shot = true;
-
-	shell_set_bypass(sh, adc_shell_read_bypass_cb, &stop);
-
-	while (!stop) {
-		retval = adc_read(adc->dev, &sequence);
-		if (retval >= 0) {
-			shell_print(sh, "read: %i", m_sample_buffer[0]);
-		} else {
-			break;
-		}
-
-		if (msg_one_shot) {
-			msg_one_shot = false;
-			shell_print(sh, "Hit any key to exit");
-		}
-
-		k_msleep(period_ms);
+	if (retval < 0) {
+		return retval;
 	}
 
-	shell_set_bypass(sh, NULL, NULL);
+	if (!atomic_cas(&adc_periodic.running, 0, 1)) {
+		shell_error(sh, "Periodic read is already running");
+		return -EBUSY;
+	}
 
-	return stop ? 0 : retval;
+	/* Winning the CAS means a previous read thread is at most unwinding; join it
+	 * before reusing its thread object and stack.
+	 */
+	if (adc_periodic.thread_started) {
+		(void)k_thread_join(&adc_periodic.thread, K_FOREVER);
+	}
+
+	adc_periodic.sh = sh;
+	adc_periodic.dev = adc->dev;
+	adc_periodic.sequence = sequence;
+	adc_periodic.sequence.buffer = &adc_periodic.sample;
+	adc_periodic.sequence.buffer_size = sizeof(adc_periodic.sample);
+	adc_periodic.period = K_MSEC(period_ms);
+	k_sem_reset(&adc_periodic_stop);
+
+	shell_print(sh, "Hit any key to exit");
+
+	/* The shell thread only invokes the bypass callback once this command returns. */
+	shell_set_bypass(sh, adc_shell_read_bypass_cb, NULL);
+	k_thread_create(&adc_periodic.thread, adc_periodic_stack,
+			K_THREAD_STACK_SIZEOF(adc_periodic_stack), adc_periodic_read_thread, NULL,
+			NULL, NULL, K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
+	(void)k_thread_name_set(&adc_periodic.thread, "adc_shell_read");
+	adc_periodic.thread_started = true;
+
+	return 0;
 }
 
 static void adc_shell_print_acq_time(const struct shell *sh, uint16_t acq_time)

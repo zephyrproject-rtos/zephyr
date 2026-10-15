@@ -372,11 +372,22 @@
 			reg = <0x40208000 0x2000>;
 			interrupts = <63 0>;
 			resets = <&rst NUMAKER_SYS_EMAC0RST>;
-			phy-addr = <0>;
 			clocks = <&pcc NUMAKER_EMAC0_MODULE 0 0>;
-			snps,multicast-filter-bins = <64>;
-			snps,perfect-filter-entries = <16>;
+			snps,perfect-filter-entries = <9>;
+			phy-connection-type = "rmii";
 			status = "disabled";
+
+			mdio: mdio {
+				compatible = "snps,dwmac-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			ptp_clock: ptp-clock {
+				compatible = "snps,dwmac-ptp-clock";
+				status = "disabled";
+			};
 		};
 
 		i2c0: i2c@40248000 {

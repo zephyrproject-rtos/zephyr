@@ -5,6 +5,7 @@ toolchain:
 testing:
   only_tags:
     - kernel
+    - integration
   ignore_tags:
     - benchmark
 variants:

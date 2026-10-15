@@ -21,19 +21,20 @@ tests:
     extra_configs:
       - CONFIG_TIMESLICING=y
       - CONFIG_TIMESLICE_PER_THREAD=y
+      - CONFIG_ZTEST_STACK_SIZE=2048
   kernel.scheduler.multiq:
-    extra_args: CONF_FILE=prj_multiq.conf
+    extra_args: FILE_SUFFIX=multiq
     extra_configs:
       - CONFIG_TIMESLICING=y
   kernel.scheduler.multiq_no_timeslicing:
-    extra_args: CONF_FILE=prj_multiq.conf
+    extra_args: FILE_SUFFIX=multiq
     extra_configs:
       - CONFIG_TIMESLICING=n
   kernel.scheduler.simple_timeslicing:
-    extra_args: CONF_FILE=prj_simple.conf
+    extra_args: FILE_SUFFIX=simple
     extra_configs:
       - CONFIG_TIMESLICING=y
   kernel.scheduler.simple_no_timeslicing:
-    extra_args: CONF_FILE=prj_simple.conf
+    extra_args: FILE_SUFFIX=simple
     extra_configs:
       - CONFIG_TIMESLICING=n

@@ -12,12 +12,15 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/linker/linker-defs.h>
+#include <zephyr/logging/log.h>
 #include <string.h>
 
 #include <stm32_ll_bus.h>
 #include <stm32_ll_system.h>
 
 #include <cmsis_core.h>
+
+LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 /**
  * @brief Perform basic hardware initialization at boot.

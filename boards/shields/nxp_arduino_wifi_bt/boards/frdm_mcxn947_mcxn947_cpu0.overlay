@@ -22,7 +22,7 @@
 		m2_bt_module: m2_bt_module {
 			compatible = "nxp,bt-hci-uart";
 			sdio-reset-gpios = <&gpio1 22 GPIO_ACTIVE_HIGH>;
-			w-disable-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>;
+			w-disable-gpios = <&gpio1 21 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };

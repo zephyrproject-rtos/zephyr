@@ -1,0 +1,48 @@
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP i.MX9 performance state (P-state) for the Cortex-A application cores.
+
+  This binding is shared by the i.MX9 family (i.MX91, i.MX93, i.MX95, i.MX943
+  and derivatives). Each P-state selects a core clock frequency that the SoC
+  P-state driver applies when the state is entered. The set of usable
+  frequencies is SoC specific: only the frequencies the SoC driver implements
+  may be requested, and any other value is rejected at build time.
+
+  A SoC driver may change the core clock alone and leave the supply voltage at
+  the level set by the boot loader. Where that is the case, all frequencies
+  listed in devicetree must be usable at that voltage. Where the cores of a
+  cluster share the clock source, a P-state applies to the whole cluster and the
+  SoC driver requires an SMP build.
+
+  Example configuration:
+
+  performance-states {
+          pstate_0: pstate-0 {
+                  compatible = "nxp,imx9-pstate";
+                  load-threshold = <60>;
+                  clock-frequency = <DT_FREQ_M(1692)>;
+          };
+          pstate_1: pstate-1 {
+                  compatible = "nxp,imx9-pstate";
+                  load-threshold = <0>;
+                  clock-frequency = <DT_FREQ_M(900)>;
+          };
+  };
+
+compatible: "nxp,imx9-pstate"
+
+include: "zephyr,pstate.yaml"
+
+properties:
+  load-threshold:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      Core clock frequency, in Hz, applied when this performance state is
+      selected. The accepted values are defined by the SoC P-state driver.

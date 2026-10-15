@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
+import json
 import os
 import re
 import shutil
@@ -30,6 +31,8 @@ class Blobs(WestCommand):
             description='Work with binary blobs',
             accepts_unknown_args=False,
         )
+        # Sentinel: not yet loaded from config, as opposed to loaded-but-empty.
+        self._mirrors = None
 
     def do_add_parser(self, parser_adder):
         parser = parser_adder.add_parser(
@@ -118,7 +121,8 @@ class Blobs(WestCommand):
 
         return parser
 
-    def get_blobs(self, args):
+    # Returns the list of all wanted blobs
+    def get_wanted_blobs_metadata(self, args):
         blobs = []
         modules = args.modules
         all_modules = zephyr_module.parse_modules(ZEPHYR_BASE, self.manifest)
@@ -140,7 +144,7 @@ class Blobs(WestCommand):
         return blobs
 
     def list(self, args):
-        blobs = self.get_blobs(args)
+        blobs = self.get_wanted_blobs_metadata(args)
         fmt = args.format or self.DEFAULT_LIST_FMT
         for blob in blobs:
             self.inf(fmt.format(**blob))
@@ -161,10 +165,9 @@ class Blobs(WestCommand):
             return cached_blob
         name = Path(blob['path']).name
         sha256 = blob['sha256']
-        self.download_blob(blob, auto_cache_dir / f'{name}.{sha256}')
-        cached_blob = self.get_cached_blob(blob, [auto_cache_dir])
-        assert cached_blob, f'Blob {name} still not cached in auto-cache.'
-        return cached_blob
+        path = auto_cache_dir / f'{name}.{sha256}'
+        self.download_blob(blob, path)  # guarantees blob at path, or it raises
+        return path
 
     def get_cached_blob(self, blob, cache_dirs: list) -> Path | None:
         """
@@ -185,6 +188,7 @@ class Blobs(WestCommand):
                 continue
             for name in candidate_names:
                 candidate_path = cache_dir / name
+                # Checksum verification
                 if (
                     zephyr_module.get_blob_status(candidate_path, sha256)
                     == zephyr_module.BLOB_PRESENT
@@ -192,20 +196,96 @@ class Blobs(WestCommand):
                     return candidate_path
         return None
 
+    def get_mirrors(self):
+        '''Read and validate the 'blobs.mirrors' config option.
+
+        Returns a list of (remote, mirror) URL prefix pairs. Invalid
+        configuration is a fatal error.
+        '''
+        mirrors = self.config.get('blobs.mirrors')
+        if mirrors is None:
+            return []
+
+        expected_format = textwrap.dedent('''
+            expected a JSON object that contains key-value pairs, where each key is a remote URL prefix (a string) and
+            each value is either a single mirror URL prefix (a string) or a list of mirror URL prefixes (an array of strings), e.g.
+              '{"https://github.com/": "https://example.com/github-mirror/"}' or
+              '{"https://github.com/": ["https://example.com/github1-mirror/", "https://example.com/github2-mirror/"]}\'''')  # noqa: E501
+
+        try:
+            parsed_mirrors = json.loads(mirrors)
+        except (TypeError, json.JSONDecodeError) as e:
+            self.die(
+                f"Invalid 'blobs.mirrors' configuration {mirrors!r}: "
+                f"not valid JSON ({e}); {expected_format}"
+            )
+
+        if not isinstance(parsed_mirrors, dict):
+            self.die(f"Invalid 'blobs.mirrors' configuration {mirrors!r}: {expected_format}")
+
+        valid_mirrors = []
+
+        def add_mirror(remote, mirror):
+            if not isinstance(mirror, str):
+                self.die(f"Invalid 'blobs.mirrors' entry {remote!r}: {mirror!r}: {expected_format}")
+            valid_mirrors.append((remote, mirror))
+
+        for remote, mirrors_value in parsed_mirrors.items():
+            if isinstance(mirrors_value, list):
+                for mirror in mirrors_value:
+                    add_mirror(remote, mirror)
+            else:
+                add_mirror(remote, mirrors_value)
+
+        return valid_mirrors
+
+    def get_valid_mirrors(self, url):
+        '''Return the mirror URL(s) for every remote URL prefix in
+        self._mirrors that matches *url*, ordered so that the longest
+        (most specific) remote URL prefix comes first (like git's
+        "insteadOf"). Returns [] if none match.
+        '''
+        if self._mirrors is None:
+            self._mirrors = self.get_mirrors()
+
+        matches = [(remote, mirror) for remote, mirror in self._mirrors if url.startswith(remote)]
+        # sort() is stable, so mirrors for the same remote keep their
+        # self._mirrors (listed) order after being sorted by prefix length.
+        matches.sort(key=lambda match: len(match[0]), reverse=True)
+
+        return [mirror + url[len(remote) :] for remote, mirror in matches]
+
+    # Low-level function called when all caches missed.
     def download_blob(self, blob, path):
-        '''Download a blob from its url to a given path.
+        '''Download a blob from its urls and url mirrors to a given path.
 
         Each URL is tried in order until one provides a download with a
         matching checksum. A download whose checksum does not match is
         treated like a failed download, as a server may respond with a
-        bogus payload and a success status.
+        bogus payload and a success status (e.g. an HTML sign-in page
+        and status 200); so we try the next url.
+
+        Downloads go to a temporary file that is only moved to final path
+        once its checksum has been verified. If no URL gives a valid file,
+        ZephyrBlobException is raised.
+
+        As a result, when this function returns, path always holds a valid blob.
         '''
         urls = blob['url']
         if not isinstance(urls, list):
             urls = (urls,)
 
-        downloaded = False
-        for i, url in enumerate(urls):
+        # Try each mirror before the original URL it was configured for.
+        urls_with_mirrors = []
+        for url in urls:
+            urls_with_mirrors.extend(self.get_valid_mirrors(url))
+            urls_with_mirrors.append(url)
+        urls = urls_with_mirrors
+
+        # As opposed to the top-level "fetch()" function in this file that
+        # try to hit caches first, the lowest-level "fetchers" invoked below
+        # always perform a download.
+        for url in urls:
             scheme = blob.get('fetcher') or urlparse(url).scheme
             self.dbg(f'Fetching blob from url {url} with {scheme} to path: {path}')
             import fetchers
@@ -219,26 +299,32 @@ class Blobs(WestCommand):
             single_url_blob = blob.copy()
             single_url_blob['url'] = url
 
+            # Fetch to a temporary file so a bad download never poisons the path
+            tmp_path = path.with_name(path.name + '.part')
             try:
-                fetcher.fetch(self, single_url_blob, path)
+                fetcher.fetch(self, single_url_blob, tmp_path)
             except ZephyrBlobException as e:
                 self.wrn(e)
+                tmp_path.unlink(missing_ok=True)
                 continue
 
-            downloaded = True
-            if zephyr_module.get_blob_status(path, blob['sha256']) == zephyr_module.BLOB_PRESENT:
-                if i > 0:
-                    self.inf(f'Fallback URL worked: {url}')
-                return
             # Not necessarily an attack: a server can answer a raw file
-            # request with an HTML sign-in page and a 200 status.
-            self.wrn(f'Checksum mismatch for blob downloaded from {url}')
+            # request with an HTML sign-in page and a 200 status, so the
+            # checksum of the downloaded blob must be verified.
+            download_status = zephyr_module.get_blob_status(tmp_path, blob['sha256'])
+            if download_status != zephyr_module.BLOB_PRESENT:
+                self.wrn(f'Checksum mismatch for blob downloaded from {url}')
+                tmp_path.unlink(missing_ok=True)
+                continue
 
-        if not downloaded:
-            raise ZephyrBlobException('No URL worked for this blob')
-        # verify_blob() will report the detailed checksum error later.
+            # The blob is verified so it is finally moved to path
+            self.dbg(f'Successfully fetched blob from: {url}')
+            tmp_path.replace(path)
+            return
 
-    def fetch_blob(self, args, blob):
+        raise ZephyrBlobException('No URL worked for this blob')
+
+    def get_blob(self, args, blob):
         """
         Ensures that the specified blob is available at its path.
         If caching is enabled and the blob exists in the cache, it is copied
@@ -274,11 +360,13 @@ class Blobs(WestCommand):
             self.dbg(f'Copy cached blob: {cached_blob}')
             self.ensure_folder(path)
             shutil.copy(cached_blob, path)
-        else:
+        else:  # Either auto-cache is not in use, or it failed to download.
             self.download_blob(blob, path)
 
     # Compare the checksum of a file we've just downloaded
     # to the digest in blob metadata, warn user if they differ.
+    #
+    # This is just a get_blob_status() wrapper with a detailed error message added.
     def verify_blob(self, blob) -> bool:
         self.dbg(f"Verifying blob {blob['module']}: {blob['abspath']}")
 
@@ -305,10 +393,11 @@ class Blobs(WestCommand):
             return False
         return True
 
+    # Top-level function invoked with getattr(self, args.subcmd[0])
     def fetch(self, args):
         bad_checksum_count = 0
         failed_fetch_count = 0
-        blobs = self.get_blobs(args)
+        blobs = self.get_wanted_blobs_metadata(args)
         for blob in blobs:
             if blob['status'] == zephyr_module.BLOB_PRESENT:
                 self.dbg(f"Blob {blob['module']}: {blob['abspath']} is up to date")
@@ -354,7 +443,7 @@ class Blobs(WestCommand):
                     continue
 
             try:
-                self.fetch_blob(args, blob)
+                self.get_blob(args, blob)
             except ZephyrBlobException as e:
                 self.err(f"Failed to fetch blob: {e}")
                 failed_fetch_count += 1
@@ -370,7 +459,7 @@ class Blobs(WestCommand):
             self.die(f"{failed_fetch_count} blobs failed to be fetched")
 
     def clean(self, args):
-        blobs = self.get_blobs(args)
+        blobs = self.get_wanted_blobs_metadata(args)
         for blob in blobs:
             if blob['status'] == zephyr_module.BLOB_NOT_PRESENT:
                 self.dbg(f"Blob {blob['module']}: {blob['abspath']} not in filesystem")

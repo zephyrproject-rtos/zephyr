@@ -420,7 +420,7 @@ static ALWAYS_INLINE void sam0_thread_handler(const struct device *const dev)
 		while (eps) {
 			ep = udc_pull_ep_from_bmsk(&eps);
 			ep_cfg = udc_get_ep_cfg(dev, ep);
-			LOG_INF("New transfer ep 0x%02x in the queue", ep);
+			LOG_DBG("New transfer ep 0x%02x in the queue", ep);
 
 			if (!udc_ep_is_busy(ep_cfg)) {
 				sam0_handle_xfer_next(dev, ep_cfg);
@@ -1120,16 +1120,16 @@ static void udc_sam0_irq_disable_func_##n(const struct device *dev)		\
 	}									\
 										\
 	static struct udc_ep_config						\
-		ep_cfg_out[DT_INST_PROP(n, num_bidir_endpoints)];		\
+		ep_cfg_out_##n[DT_INST_PROP(n, num_bidir_endpoints)];		\
 	static struct udc_ep_config						\
-		ep_cfg_in[DT_INST_PROP(n, num_bidir_endpoints)];		\
+		ep_cfg_in_##n[DT_INST_PROP(n, num_bidir_endpoints)];		\
 										\
 	static const struct udc_sam0_config udc_sam0_config_##n = {		\
 		.base = (UsbDevice *)DT_INST_REG_ADDR(n),			\
 		.bdt = sam0_bdt_##n,						\
 		.num_of_eps = DT_INST_PROP(n, num_bidir_endpoints),		\
-		.ep_cfg_in = ep_cfg_out,					\
-		.ep_cfg_out = ep_cfg_in,					\
+		.ep_cfg_in = ep_cfg_out_##n,					\
+		.ep_cfg_out = ep_cfg_in_##n,					\
 		.irq_enable_func = udc_sam0_irq_enable_func_##n,		\
 		.irq_disable_func = udc_sam0_irq_disable_func_##n,		\
 		.pcfg = UDC_SAM0_PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\

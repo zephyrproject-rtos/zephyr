@@ -68,7 +68,7 @@ void clear_fault(void)
 	compiler_barrier();
 }
 
-static void set_fault(unsigned int reason)
+void set_fault(unsigned int reason)
 {
 	expect_fault = true;
 	expected_reason = reason;

@@ -52,6 +52,7 @@ CREATE_FLAG(flag_pa_request);
 CREATE_FLAG(flag_bis_sync_requested);
 CREATE_FLAG(flag_big_sync_mic_failure);
 CREATE_FLAG(flag_sink_started);
+CREATE_FLAG(flag_broadcast_code_received);
 
 static struct bt_bap_broadcast_sink *g_sink;
 static size_t stream_sync_cnt;
@@ -454,6 +455,7 @@ static void broadcast_code_cb(struct bt_conn *conn,
 	req_recv_state = recv_state;
 
 	memcpy(recv_state_broadcast_code, broadcast_code, BT_ISO_BROADCAST_CODE_SIZE);
+	SET_FLAG(flag_broadcast_code_received);
 }
 
 static void scanning_state_cb(struct bt_conn *conn, bool is_scanning)
@@ -1259,11 +1261,38 @@ static void broadcast_sink_with_assistant_incorrect_code(void)
 
 	LOG_INF("Waiting for BIG sync request");
 	WAIT_FOR_FLAG(flag_bis_sync_requested);
+	/* Re-arm before syncing, as the assistant requests the BIS sync again as soon as it
+	 * observes the bad code state
+	 */
+	UNSET_FLAG(flag_bis_sync_requested);
+
+	LOG_INF("Waiting for the (incorrect) broadcast code");
+	WAIT_FOR_FLAG(flag_broadcast_code_received);
+	/* Re-arm before the sync fails, as the assistant provides the correct code as soon as
+	 * the broadcast code is requested again
+	 */
+	UNSET_FLAG(flag_broadcast_code_received);
+
 	test_broadcast_sync(recv_state_broadcast_code);
+
 	/* Wait for MIC failure */
 	WAIT_FOR_FLAG(flag_big_sync_mic_failure);
 
+	LOG_INF("Waiting for BIG sync to be requested again");
+	WAIT_FOR_FLAG(flag_bis_sync_requested);
+
+	LOG_INF("Waiting for the (correct) broadcast code");
+	WAIT_FOR_FLAG(flag_broadcast_code_received);
+
+	test_broadcast_sync(recv_state_broadcast_code);
+
+	WAIT_FOR_FLAG(flag_sink_started);
+
 	backchannel_sync_send_all(); /* let other devices know we have received data */
+
+	LOG_INF("Waiting for BIG sync terminate request");
+	WAIT_FOR_UNSET_FLAG(flag_bis_sync_requested);
+	test_broadcast_stop();
 
 	LOG_INF("Waiting for PA sync terminate request");
 	WAIT_FOR_UNSET_FLAG(flag_pa_request);

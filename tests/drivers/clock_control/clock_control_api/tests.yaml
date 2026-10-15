@@ -18,6 +18,7 @@ tests:
       - pic32cm_jh01_cpro
       - pic32cx_sg41_cult
       - pic32cx_sg61_cult
+      - pic32cz_ca80_cult
     integration_platforms:
       - esp32_devkitc/esp32/procpu
   drivers.clock.clock_control_nrf5:

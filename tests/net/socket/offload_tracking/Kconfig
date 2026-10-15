@@ -1,0 +1,11 @@
+# Copyright 2026 Siemens AG
+# SPDX-License-Identifier: Apache-2.0
+
+# Offloaded port tracking has no prompt and is only selected by subsystems that
+# need it, so pull it in here to exercise it in isolation.
+config TEST_NET_SOCKETS_OFFLOAD_PORT_TRACKING
+	bool
+	default y
+	select NET_SOCKETS_OFFLOAD_PORT_TRACKING if NET_SOCKETS_OFFLOAD
+
+source "Kconfig.zephyr"

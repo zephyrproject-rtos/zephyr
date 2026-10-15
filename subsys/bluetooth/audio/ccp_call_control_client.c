@@ -359,9 +359,6 @@ int bt_ccp_call_control_client_read_bearer_provider_name(
 			return err;
 		}
 
-		/* Assert if the return value is -EINVAL as that means we are missing a check */
-		__ASSERT(err != -EINVAL, "err shall not be -EINVAL");
-
 		LOG_DBG("Unexpected error from bt_tbs_client_read_bearer_provider_name: %d", err);
 
 		return -ENOEXEC;
@@ -420,9 +417,6 @@ int bt_ccp_call_control_client_read_bearer_uci(struct bt_ccp_call_control_client
 
 			return err;
 		}
-
-		/* Assert if the return value is -EINVAL as that means we are missing a check */
-		__ASSERT(err != -EINVAL, "err shall not be -EINVAL");
 
 		LOG_DBG("Unexpected error from bt_tbs_client_read_bearer_uci: %d", err);
 
@@ -483,9 +477,6 @@ int bt_ccp_call_control_client_read_bearer_tech(struct bt_ccp_call_control_clien
 			return err;
 		}
 
-		/* Assert if the return value is -EINVAL as that means we are missing a check */
-		__ASSERT(err != -EINVAL, "err shall not be -EINVAL");
-
 		LOG_DBG("Unexpected error from bt_tbs_client_read_technology: %d", err);
 
 		return -ENOEXEC;
@@ -495,11 +486,76 @@ int bt_ccp_call_control_client_read_bearer_tech(struct bt_ccp_call_control_clien
 }
 #endif /* CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY */
 
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST)
+static void tbs_client_read_bearer_uri_schemes_cb(struct bt_conn *conn, int err, uint8_t inst_index,
+						  const char *uri_schemes)
+{
+	struct bt_ccp_call_control_client *client = get_client_by_conn(conn);
+	struct bt_ccp_call_control_client_cb *listener, *next;
+	struct bt_ccp_call_control_client_bearer *bearer;
+
+	atomic_clear_bit(client->flags, CCP_CALL_CONTROL_CLIENT_FLAG_BUSY);
+
+	bearer = get_bearer_by_tbs_index(client, inst_index);
+	if (bearer == NULL) {
+		LOG_DBG("Could not lookup bearer for client %p and index 0x%02X", client,
+			inst_index);
+
+		return;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ccp_call_control_client_cbs, listener, next, _node) {
+		if (listener->bearer_uri_schemes != NULL) {
+			void *user_data =
+				COND_CODE_1(CONFIG_BT_CCP_CALL_CONTROL_CLIENT_CB_USER_DATA,
+					    (listener->user_data), (NULL));
+
+			listener->bearer_uri_schemes(bearer, err, uri_schemes, user_data);
+		}
+	}
+}
+
+int bt_ccp_call_control_client_read_bearer_uri_schemes(
+	struct bt_ccp_call_control_client_bearer *bearer)
+{
+	struct bt_ccp_call_control_client *client;
+	int err;
+
+	err = validate_bearer_and_get_client(bearer, &client);
+	if (err != 0) {
+		return err;
+	}
+
+	err = bt_tbs_client_read_uri_list(client->conn, bearer->tbs_index);
+	if (err != 0) {
+		atomic_clear_bit(client->flags, CCP_CALL_CONTROL_CLIENT_FLAG_BUSY);
+
+		/* Return expected return values directly */
+		if (err == -ENOTCONN || err == -EBUSY) {
+			LOG_DBG("bt_tbs_client_read_uri_list returned %d", err);
+
+			return err;
+		}
+
+		LOG_DBG("Unexpected error from bt_tbs_client_read_uri_list: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST */
+
+
 static void connected_cb(struct bt_conn *conn, uint8_t err)
 {
 	static bool cbs_registered;
 
 	ARG_UNUSED(conn);
+
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		return;
+	}
 
 	/* We register the callbacks in the connected callback. That way we ensure that they are
 	 * registered before any procedures are completed or we receive any notifications, while
@@ -517,6 +573,9 @@ static void connected_cb(struct bt_conn *conn, uint8_t err)
 #if defined(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY)
 			.technology = tbs_client_read_bearer_tech_cb,
 #endif /* CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY */
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST)
+			.uri_list = tbs_client_read_bearer_uri_schemes_cb,
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST */
 		};
 		__maybe_unused int cb_err;
 
@@ -529,9 +588,15 @@ static void connected_cb(struct bt_conn *conn, uint8_t err)
 
 static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 {
-	struct bt_ccp_call_control_client *client = get_client_by_conn(conn);
+	struct bt_ccp_call_control_client *client;
 
 	ARG_UNUSED(reason);
+
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		return;
+	}
+
+	client = get_client_by_conn(conn);
 
 	/* client->conn may be NULL */
 	if (client->conn == conn) {

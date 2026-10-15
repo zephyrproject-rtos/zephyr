@@ -32,7 +32,8 @@ extern "C" {
  * buffers and on packet bytes. They depend on neither the Bluetooth Host nor the HCI driver
  * interface and can be used in any build type: by the Host, by HCI drivers
  * (for example to perform vendor-specific controller initialization over the
- * driver's own transport) and by controller-only applications.
+ * driver's own transport, see hci_lockstep.h) and by controller-only
+ * applications.
  *
  * @note These are not general application APIs, even though the header lives
  *       in the application-visible include directory: the intended users are

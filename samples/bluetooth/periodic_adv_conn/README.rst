@@ -10,10 +10,16 @@ Overview
 A simple application demonstrating the initiator side of the Bluetooth LE
 Periodic Advertising Connection Procedure.
 
-How the initiator decides the address of the synced device to connect to
-is application specific. This sample will connect to any synced device
-responding with its address. Once the connection is established, it will
-wait for disconnect before connecting to another synced device.
+Before starting PAwR advertising, this sample first scans for the responder
+(:zephyr:code-sample:`ble_periodic_adv_sync_conn`) by name, connects to it over
+a regular connection, and stores its address. It then disconnects and starts
+PAwR advertising.
+
+When the responder replies to a subevent, this sample uses the address it
+stored earlier (rather than parsing it out of the response data) to connect
+to the responder using the Periodic Advertising Connection Procedure. Once
+the connection is established, it will wait for disconnect before connecting
+again on a subsequent response.
 
 Requirements
 ************
@@ -32,9 +38,11 @@ Build and flash the sample as follows, replacing ``<board>`` with your target bo
    :goals: build flash
    :compact:
 
-After flashing, the device will start PAwR advertising. Once a synced device responds
-with its address, the initiator will connect to it. After disconnection, it waits for
-the next response to establish a new connection.
+Start the :zephyr:code-sample:`ble_periodic_adv_sync_conn` sample on a second board
+first. After flashing, this device will scan for and connect to the responder to learn
+its address, then disconnect and start PAwR advertising. Once the responder replies to
+a subevent, the initiator will connect to it using the address learned earlier. After
+disconnection, it waits for the next response to establish a new connection.
 
 Use the :zephyr:code-sample:`ble_periodic_adv_sync_conn` sample on a second board to
 synchronize and respond to this device.

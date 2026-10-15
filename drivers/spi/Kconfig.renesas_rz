@@ -19,7 +19,9 @@ config SPI_RENESAS_RZ_RSPI_INTERRUPT
 
 config SPI_RENESAS_RZ_RSPI_DMAC
 	bool "RZ SPI DMA Support"
-	select USE_RZ_FSP_DMAC_B
+	select USE_RZ_FSP_DMAC_B if SOC_SERIES_RZG2L || SOC_SERIES_RZG2UL || SOC_SERIES_RZG3S \
+				|| SOC_SERIES_RZV2L
+	select USE_RZ_FSP_DMAC if SOC_SERIES_RZA3UL
 	help
 	  Enable the SPI DMA mode for SPI instances
 

@@ -100,7 +100,9 @@ int llext_section_shndx(const struct llext_loader *ldr, const struct llext *ext,
  * @param[in] shndx Section index
  * @param[out] hdr Variable storing the pointer to the section header
  * @param[out] region Variable storing the region the section belongs to
- * @param[out] offset Variable storing the offset of the section in the region
+ * @param[out] offset Variable storing the offset of the section in the region,
+ *                    or @c (size_t)-1 for a detached section, which is not
+ *                    part of the region
  *
  * @return 0 on success, -EINVAL if the section index is invalid,
  *         -ENOTSUP if section data is not available.
@@ -130,7 +132,11 @@ static inline int llext_get_section_info(const struct llext_loader *ldr,
 
 	/* offset compensated for alignment prepad */
 	if (offset) {
-		*offset = ldr->sect_map[shndx].offset - ldr->sects[mem_idx].sh_info;
+		if (ldr->sect_map[shndx].detached) {
+			*offset = (size_t)-1;
+		} else {
+			*offset = ldr->sect_map[shndx].offset - ldr->sects[mem_idx].sh_info;
+		}
 	}
 
 	return 0;

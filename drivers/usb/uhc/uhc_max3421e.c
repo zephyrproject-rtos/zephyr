@@ -265,18 +265,18 @@ static ALWAYS_INLINE int max3421e_hxfr_start(const struct device *dev,
 
 static int max3421e_xfer_data(const struct device *dev,
 			      struct net_buf *const buf,
-			      const uint8_t ep)
+			      struct uhc_transfer *const xfer)
 {
-	const uint8_t ep_idx = USB_EP_GET_IDX(ep);
+	const uint8_t ep_idx = USB_EP_GET_IDX(xfer->ep);
 	int ret;
 
-	if (USB_EP_DIR_IS_IN(ep)) {
+	if (USB_EP_DIR_IS_IN(xfer->ep)) {
 		LOG_DBG("bulk in %p %u", buf, net_buf_tailroom(buf));
 		ret = max3421e_hxfr_start(dev, MAX3421E_HXFR_BULKIN(ep_idx));
 	} else {
 		size_t len;
 
-		len = MIN(MAX3421E_MAX_EP_SIZE, buf->len);
+		len = MIN(xfer->mps, buf->len);
 		LOG_DBG("bulk out %p %u", buf, len);
 
 		ret = max3421e_write(dev, MAX3421E_REG_SNDFIFO, buf->data, len);
@@ -332,7 +332,7 @@ static int max3421e_xfer_control(const struct device *dev,
 
 	if (buf != NULL && xfer->stage == UHC_CONTROL_STAGE_DATA) {
 		LOG_DBG("Handle DATA stage");
-		return max3421e_xfer_data(dev, buf, xfer->ep);
+		return max3421e_xfer_data(dev, buf, xfer);
 	}
 
 	if (xfer->stage == UHC_CONTROL_STAGE_STATUS) {
@@ -366,7 +366,7 @@ static int max3421e_xfer_bulk(const struct device *dev,
 		return -ENODATA;
 	}
 
-	return max3421e_xfer_data(dev, buf, xfer->ep);
+	return max3421e_xfer_data(dev, buf, xfer);
 }
 
 static int max3421e_schedule_xfer(const struct device *dev)
@@ -495,7 +495,7 @@ static int max3421e_hrslt_success(const struct device *dev)
 
 		LOG_INF("bc %u tr %u", bc, net_buf_tailroom(buf));
 
-		if (bc < MAX3421E_MAX_EP_SIZE || !net_buf_tailroom(buf)) {
+		if (bc < xfer->mps || !net_buf_tailroom(buf)) {
 			LOG_INF("hrslt bulk in %u, %u", bc, len);
 			if (xfer->ep == USB_CONTROL_EP_IN) {
 				xfer->stage = UHC_CONTROL_STAGE_STATUS;
@@ -647,6 +647,15 @@ static int max3421e_handle_bus_irq(const struct device *dev)
 	return ret;
 }
 
+static bool max3421e_can_schedule(const struct device *dev)
+{
+	struct max3421e_data *priv = uhc_get_private(dev);
+
+	return !HRSLT_IS_BUSY(priv->hrsl) &&
+	       !atomic_test_bit(&priv->state, MAX3421E_STATE_BUS_RESUME) &&
+	       !atomic_test_bit(&priv->state, MAX3421E_STATE_BUS_RESET);
+}
+
 static void uhc_max3421e_thread(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p2);
@@ -684,7 +693,7 @@ static void uhc_max3421e_thread(void *p1, void *p2, void *p3)
 
 		/* Frame Generator Interrupt */
 		if (priv->hirq & MAX3421E_FRAME) {
-			schedule = HRSLT_IS_BUSY(priv->hrsl) ? false : true;
+			schedule = max3421e_can_schedule(dev);
 		}
 
 		/* Shorten the if path a little */

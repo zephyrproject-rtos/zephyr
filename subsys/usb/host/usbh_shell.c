@@ -14,6 +14,7 @@
 
 #include "usbh_device.h"
 #include "usbh_ch9.h"
+#include "usbh_ch11.h"
 #include "usbh_desc.h"
 
 #include <zephyr/logging/log.h>
@@ -220,7 +221,7 @@ static int bulk_req_cb(struct usb_device *const dev, struct uhc_transfer *const 
 	}
 
 	usbh_xfer_buf_free(dev, xfer->buf);
-	usbh_xfer_free(dev, xfer);
+	(void)uhc_xfer_unref(xfer);
 	k_sem_give(&bulk_req_sync);
 
 	return 0;
@@ -261,7 +262,7 @@ static int cmd_bulk(const struct shell *sh, size_t argc, char **argv)
 	buf = usbh_xfer_buf_alloc(udev, len);
 	if (!buf) {
 		shell_error(sh, "host: Failed to allocate buffer");
-		usbh_xfer_free(udev, xfer);
+		(void)uhc_xfer_unref(xfer);
 		return -ENOMEM;
 	}
 
@@ -274,7 +275,7 @@ static int cmd_bulk(const struct shell *sh, size_t argc, char **argv)
 	ret = usbh_xfer_enqueue(udev, xfer);
 	if (ret) {
 		usbh_xfer_buf_free(udev, xfer->buf);
-		usbh_xfer_free(udev, xfer);
+		(void)uhc_xfer_unref(xfer);
 		return ret;
 	}
 
@@ -637,7 +638,7 @@ static int cmd_feature_set_ppwr(const struct shell *sh,
 
 	port = strtol(argv[2], NULL, 10);
 
-	err = usbh_req_set_hcfs_ppwr(udev, port);
+	err = usbh_req_set_hcfs_port_power(udev, port);
 	if (err) {
 		shell_error(sh, "host: Failed to set ppwr feature");
 	} else {
@@ -671,7 +672,7 @@ static int cmd_feature_set_prst(const struct shell *sh,
 
 	port = strtol(argv[2], NULL, 10);
 
-	err = usbh_req_set_hcfs_prst(udev, port);
+	err = usbh_req_set_hcfs_port_reset(udev, port);
 	if (err) {
 		shell_error(sh, "host: Failed to set prst feature");
 	} else {

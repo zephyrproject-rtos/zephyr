@@ -5,7 +5,7 @@
 
 /dts-v1/;
 
-#include <espressif/esp32h2/esp32h2_mini_h4.dtsi>
+#include <espressif/esp32h2/esp32h2.dtsi>
 #include "esp32h2_supermini-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/led/led.h>
@@ -49,6 +49,11 @@
 			label = "Blue LED 0";
 		};
 	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(4)>;
+	ranges = <0x0 0x0 DT_SIZE_M(4)>;
 };
 
 &i2s {

@@ -1110,7 +1110,11 @@ ZTEST(log_buffer, test_sema_lock)
 	struct test_msg_hnd  test_hnd = {};
 	struct test_msg_data  test_data;
 	struct test_msg_data  *item = NULL;
-	struct mpsc_pbuf_buffer_config  cfg;
+	struct mpsc_pbuf_buffer_config  cfg = {
+		.buf = buf32_1,
+		.size = ARRAY_SIZE(buf32_1),
+		.get_wlen = test_mpsc_get_used_len,
+	};
 	uint32_t loop = 0;
 	size_t wlen = 0;
 	bool fist_wait = true;
@@ -1118,10 +1122,6 @@ ZTEST(log_buffer, test_sema_lock)
 	if (CONFIG_SYS_CLOCK_TICKS_PER_SEC < 10000) {
 		ztest_test_skip();
 	}
-
-	cfg.buf = buf32_1;
-	cfg.size = ARRAY_SIZE(buf32_1);
-	cfg.get_wlen = test_mpsc_get_used_len;
 
 	mpsc_pbuf_init(&test_hnd.mpsc_buffer, &cfg);
 	test_hnd.product_max_cnt = 2;
@@ -1433,7 +1433,7 @@ ZTEST(log_buffer, test_alloc_in_spinlock)
 {
 	struct mpsc_pbuf_buffer buffer;
 	struct test_data_var *packet;
-	struct k_spinlock l = {0};
+	struct k_spinlock l = {};
 
 	init(&buffer, 32, false);
 

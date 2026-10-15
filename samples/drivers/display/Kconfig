@@ -13,13 +13,25 @@ config SAMPLE_BUFFER_ADDR_ALIGN
 	default 8 if DISPLAY_MCUX_ELCDIF
 	default 4
 
-config SAMPLE_PITCH_ALIGN
-	int "The update area pitch alignment"
+config SAMPLE_WIDTH_ALIGN
+	int "The update area width alignment"
+	default 24 if ST730X
 	default 8 if UC81XX
+	default 6 if ST7586S
+	default 4 if SSD1322 || SSD1363
+	default 2 if SSD1327_5 || SSD1320 || SH1122
+	default 1
+
+config SAMPLE_HEIGHT_ALIGN
+	int "The update area height alignment"
+	default 8 if ST75256 || ST7567
+	default 2 if ST730X
 	default 1
 
 config HEAP_MEM_POOL_ADD_SIZE_SAMPLE
 	int "Sample maximum heap allocated buffer size"
+	default 16384 if SRAM_SIZE < 48
+	default 32768 if SRAM_SIZE < 80
 	default 196608 if QEMU_RAMFB_DISPLAY
 	default 65536
 	help

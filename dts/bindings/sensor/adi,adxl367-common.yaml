@@ -60,6 +60,14 @@ properties:
       - 2
       - 3
 
+  self-test-enable:
+    type: boolean
+    description: |
+      Run self-test on initialization.
+
+      Note: Enabling this property adds approximately 640ms delay during
+      device initialization.
+
 examples:
   - |
     #include <zephyr/dt-bindings/sensor/adxl367.h>

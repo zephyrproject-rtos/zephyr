@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/pm/pm.h>
-#include <zephyr/arch/arch_interface.h>
+#include <zephyr/kernel.h>
 #include <fsl_cmc.h>
 #include <fsl_spc.h>
 #include <zephyr/platform/hooks.h>
@@ -28,7 +28,8 @@
 static void pm_enter_hook(void)
 {
 	CMC_SetPowerModeProtection(MCXA_CMC_ADDR, kCMC_AllowAllLowPowerModes);
-	CMC_EnableDebugOperation(MCXA_CMC_ADDR, false);
+	CMC_EnableDebugOperation(MCXA_CMC_ADDR,
+				 IS_ENABLED(CONFIG_SOC_FAMILY_MCXA_DEBUG_IN_LOW_POWER));
 	CMC_ConfigFlashMode(MCXA_CMC_ADDR, true, true, false);
 }
 

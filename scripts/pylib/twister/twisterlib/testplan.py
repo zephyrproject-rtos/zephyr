@@ -822,6 +822,12 @@ class TestPlan:
                     elif status == TwisterStatus.NOTRUN and instance.run and self.options.test_only:
                         instance.status = TwisterStatus.NONE
                         instance.reason = None
+                    elif status == TwisterStatus.NONE:
+                        # Not run yet: whatever reason the plan carries
+                        # (older twister versions wrote a placeholder)
+                        # must not survive into this run's results.
+                        instance.status = status
+                        instance.reason = None
                     else:
                         instance.status = status
                         instance.reason = reason
@@ -1412,7 +1418,7 @@ class TestPlan:
         else:
             platform = instance.platform
         pattern = f"{self.options.outdir}/{platform.normalized_name}/**/{required_app.application}"
-        build_dirs = glob.glob(pattern, recursive=True)
+        build_dirs = glob.glob(pattern.replace(os.sep, "/"), recursive=True)
         if not build_dirs:
             return None
         if not os.path.exists(os.path.join(build_dirs[0], "zephyr")):

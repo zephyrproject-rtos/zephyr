@@ -347,7 +347,7 @@ static void *arm_m_switch_to_cpu(void *sp)
 #endif
 
 #ifdef CONFIG_BUILTIN_STACK_GUARD
-	__asm__ volatile("msr psplim, %0" ::"r"(splim));
+	__set_PSPLIM(splim);
 #endif
 
 	/* Mark the callee-saved pointer for the fixup assembly.  Note
@@ -380,20 +380,20 @@ static void *arm_m_cpu_to_switch(struct k_thread *th, void *sp, bool fpu)
 	bool padded = (base->apsr & XPSR_STACK_ALIGN);
 	uint32_t fpscr;
 
-	if (fpu && IS_ENABLED(CONFIG_FPU)) {
-		uint32_t dummy = 0;
-
+#ifdef CONFIG_FPU
+	if (fpu) {
 		/* Lazy FPU stacking is enabled, so before we touch
 		 * the stack frame we have to tickle the FPU to force
 		 * it to spill the caller-save registers.  Then clear
 		 * CONTROL.FPCA which gets set again by that instruction.
 		 */
-		__asm__ volatile("vmov %0, s0;"
-				 "mrs %0, control;"
-				 "bic %0, %0, #4;"
-				 "msr control, %0;"
-				 : "+r"(dummy));
+		(void)__get_FPSCR();
+		CONTROL_Type control = {.w = __get_CONTROL()};
+
+		control.b.FPCA = 0;
+		__set_CONTROL(control.w);
 	}
+#endif
 
 	/* Detects interrupted ICI/IT instructions and rigs up thread
 	 * to trap the next time it runs
@@ -430,7 +430,7 @@ static void *arm_m_cpu_to_switch(struct k_thread *th, void *sp, bool fpu)
 	}
 
 #ifdef CONFIG_BUILTIN_STACK_GUARD
-	__asm__ volatile("mrs %0, psplim" : "=r"(f->z.u.sw.psplim));
+	f->z.u.sw.psplim = __get_PSPLIM();
 #endif
 
 	/* Mark the callee-saved pointer for the fixup assembly */
@@ -515,7 +515,7 @@ bool arm_m_must_switch(void)
 	 */
 	uint32_t pri = _EXC_IRQ_DEFAULT_PRIO;
 
-	__asm__ volatile("msr basepri, %0" ::"r"(pri));
+	__set_BASEPRI(pri);
 
 	/* Secure mode transitions can push a non-thread frame to the
 	 * stack.  If not enabled, we already know by construction
@@ -543,7 +543,7 @@ bool arm_m_do_switch(struct k_thread *last_thread, void *next)
 	void *last;
 	bool fpu = fpu_state_pushed((uint32_t)arm_m_cs_ptrs.lr_save);
 
-	__asm__ volatile("mrs %0, psp" : "=r"(last));
+	last = (void *)__get_PSP();
 
 #ifdef CONFIG_USERSPACE
 	/* Update CONTROL register's nPRIV bit to reflect user/syscall
@@ -551,7 +551,7 @@ bool arm_m_do_switch(struct k_thread *last_thread, void *next)
 	 */
 	extern char z_syscall_exit_race1, z_syscall_exit_race2;
 	struct hw_frame_base *f = last;
-	uint32_t control;
+	CONTROL_Type control;
 
 	/* Note that the privilege state is stored in the CPU *AND* in
 	 * the "mode" field of the thread struct.  This creates an
@@ -568,14 +568,14 @@ bool arm_m_do_switch(struct k_thread *last_thread, void *next)
 		f->pc = (uint32_t) &z_syscall_exit_race2;
 	}
 
-	__asm__ volatile("mrs %0, control" : "=r"(control));
-	control = (control & ~1) | (_current->arch.mode & 1);
-	__asm__ volatile("msr control, %0" ::"r"(control));
+	control.w = __get_CONTROL();
+	control.b.nPRIV = _current->arch.mode & 1;
+	__set_CONTROL(control.w);
 #endif
 
 	last = arm_m_cpu_to_switch(last_thread, last, fpu);
 	next = arm_m_switch_to_cpu(next);
-	__asm__ volatile("msr psp, %0" ::"r"(next));
+	__set_PSP((uint32_t)next);
 
 	/* Undo a UDF fixup applied at interrupt time, no need: we're
 	 * restoring EPSR via interrupt.

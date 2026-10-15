@@ -10,6 +10,8 @@
  * (and be extended to test) real hardware.
  */
 
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
 / {
 	test {
 		#address-cells = <1>;
@@ -19,6 +21,17 @@
 			compatible = "adi,axi-sysid";
 			reg = <0xdeadbeef 0x1000>;
 			status = "okay";
+		};
+
+		test_i2c: i2c@11112222 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,i2c";
+			reg = <0x11112222 0x1000>;
+			status = "okay";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+
+#include "i2c.dtsi"
 		};
 	};
 };

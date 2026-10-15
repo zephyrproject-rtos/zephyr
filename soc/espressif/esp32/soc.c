@@ -12,12 +12,10 @@
 #include <esp_private/cache_utils.h>
 #include <esp_private/system_internal.h>
 #include <esp_timer.h>
-#include <esp_memory_utils.h>
 #include <efuse_virtual.h>
 #include <psram.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/sys/printk.h>
-#include <zephyr/arch/xtensa/xtensa_ptr.h>
 
 extern FUNC_NORETURN void z_prep_c(void);
 extern void esp_reset_reason_init(void);
@@ -35,12 +33,15 @@ void IRAM_ATTR __esp_platform_app_start(void)
 #if CONFIG_ESP_SPIRAM
 	esp_init_psram();
 
+#if CONFIG_SHARED_MULTI_HEAP
 	/* Init Shared Multi Heap for PSRAM */
 	int err = esp_psram_smh_init();
 
 	if (err) {
 		printk("Failed to initialize PSRAM shared multi heap (%d)\n", err);
 	}
+#endif
+
 #endif
 
 	/* Start Zephyr */
@@ -70,14 +71,4 @@ int IRAM_ATTR arch_printk_char_out(int c)
 void sys_arch_reboot(int type)
 {
 	esp_restart();
-}
-
-bool xtensa_soc_ptr_executable(const void *p)
-{
-	return esp_ptr_executable(p);
-}
-
-bool xtensa_soc_stack_ptr_is_sane(uint32_t sp)
-{
-	return esp_stack_ptr_is_sane(sp);
 }

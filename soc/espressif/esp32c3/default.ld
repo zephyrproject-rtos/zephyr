@@ -313,6 +313,8 @@ SECTIONS
 
     *(.iram1 .iram1.*)
     *(.iram0.literal .iram.literal .iram.text.literal .iram0.text .iram.text)
+    /* Input sections named with zephyr_linker_sources(RAMFUNC_SECTION ...) */
+    #include <snippets-ramfunc-section.ld>
     *libzephyr.a:panic.*(.literal .text .literal.* .text.*)
     *libzephyr.a:loader.*(.literal .text .literal.* .text.*)
     *libzephyr.a:flash_init.*(.literal .text .literal.* .text.*)
@@ -963,7 +965,6 @@ SECTIONS
     *(.xt_except_desc_end)
     *(.dynamic)
     *(.gnu.version_d)
-    __rodata_region_end = ABSOLUTE(.);
     _rodata_end = ABSOLUTE(.);
     /* Literals are also RO data. */
     _lit4_start = ABSOLUTE(.);
@@ -1000,6 +1001,11 @@ SECTIONS
     LONG(0);
     _rodata_reserved_end = ABSOLUTE(.);
     _image_rodata_end = ABSOLUTE(.);
+    /* The read-only region must span the linker-collected rom sections too:
+     * device API structures live there, and a pointer into one reaches a
+     * syscall as an argument, where it is checked against this region.
+     */
+    __rodata_region_end = .;
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
   /* --- END OF .rodata --- */
@@ -1009,7 +1015,6 @@ SECTIONS
 #endif
 
   #include <zephyr/linker/debug-sections.ld>
-  /DISCARD/ : { *(.note.GNU-stack) }
 
   SECTION_PROLOGUE(.riscv.attributes, 0,)
     {

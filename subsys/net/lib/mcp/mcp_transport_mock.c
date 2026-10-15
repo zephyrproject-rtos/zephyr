@@ -64,6 +64,9 @@ static int mock_transport_send(struct mcp_transport_message *response)
 	client->last_msg_id = response->msg_id;
 
 	LOG_DBG("Mock: Sent %zu bytes (msg_id: %u)", response->json_len, response->msg_id);
+
+	/* The transport owns the data on success, like the real transports */
+	mcp_free(response->json_data);
 	return 0;
 }
 

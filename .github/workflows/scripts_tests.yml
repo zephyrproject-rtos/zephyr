@@ -10,8 +10,12 @@ on:
       - v*-branch
     paths:
       - 'scripts/build/**'
+      - 'scripts/checkpatch.pl'
+      - 'scripts/checkpatch/**'
       - 'scripts/cmake/**'
       - 'scripts/kconfig/**'
+      - 'scripts/schemas/hardening-schema.yaml'
+      - 'scripts/tests/hardenconfig/**'
       - '.github/workflows/scripts_tests.yml'
   pull_request:
     branches:
@@ -19,8 +23,12 @@ on:
       - v*-branch
     paths:
       - 'scripts/build/**'
+      - 'scripts/checkpatch.pl'
+      - 'scripts/checkpatch/**'
       - 'scripts/cmake/**'
       - 'scripts/kconfig/**'
+      - 'scripts/schemas/hardening-schema.yaml'
+      - 'scripts/tests/hardenconfig/**'
       - '.github/workflows/scripts_tests.yml'
 
 permissions:
@@ -37,7 +45,7 @@ jobs:
     timeout-minutes: 45
     strategy:
       matrix:
-        python-version: ['3.12', '3.13']
+        python-version: ['3.12', '3.13', '3.14']
         os: [ubuntu-24.04]
     steps:
       - name: checkout
@@ -77,4 +85,4 @@ jobs:
           ZEPHYR_BASE: ./
         run: |
           echo "Run script tests"
-          pytest ./scripts/build ./scripts/cmake ./scripts/kconfig
+          pytest ./scripts/build ./scripts/checkpatch ./scripts/cmake ./scripts/kconfig ./scripts/tests/hardenconfig

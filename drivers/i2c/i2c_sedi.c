@@ -117,6 +117,9 @@ static int i2c_sedi_api_full_io(const struct device *dev, struct i2c_msg *msgs, 
 	if (ret != 0) {
 		/* Abort current transfer */
 		sedi_i2c_control(context->sedi_device, SEDI_I2C_ABORT_TRANSFER, 0);
+		/* Discard any completion that raced with the transfer timeout. */
+		k_sem_reset(context->sem);
+		context->err = 0;
 		ret = -EIO;
 	}
 	pm_device_busy_clear(dev);

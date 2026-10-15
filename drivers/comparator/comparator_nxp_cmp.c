@@ -138,7 +138,6 @@ static void nxp_cmp_irq_handler(const struct device *dev)
 	config->base->SCR |= (CMP_SCR_CFF_MASK | CMP_SCR_CFR_MASK);
 
 	if (data->callback == NULL) {
-		LOG_WRN("No callback can be executed.");
 		return;
 	}
 

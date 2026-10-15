@@ -1,0 +1,12 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: Class union test for child bindings
+
+compatible: "class-child-union"
+
+include: class-child-base.yaml
+
+child-binding:
+  description: classed child
+  class: class-child-b

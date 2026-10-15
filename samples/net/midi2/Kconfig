@@ -3,6 +3,12 @@
 
 menu "Networking MIDI2 sample application"
 
+config NET_SAMPLE_MIDI2_ACTIVITY_LED
+	bool "Light up an LED while sending on the serial MIDI1 port"
+	depends on $(dt_nodelabel_enabled,midi_green_led)
+	select GPIO
+	default y
+
 choice NET_SAMPLE_MIDI2_AUTH_TYPE
 	prompt "UMP Endpoint authentication method"
 	default NET_SAMPLE_MIDI2_AUTH_NONE

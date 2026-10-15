@@ -597,7 +597,6 @@ static void otm8009a_get_capabilities(const struct device *dev,
 	const struct otm8009a_config *cfg = dev->config;
 	struct otm8009a_data *data = dev->data;
 
-	memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = cfg->width;
 	capabilities->y_resolution = cfg->height;
 	capabilities->supported_pixel_formats = data->pixel_format;

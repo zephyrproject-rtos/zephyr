@@ -164,6 +164,32 @@ ZTEST_USER(eeprom, test_zero_length_write)
 	zassert_ok(rc, "Unexpected error code (%d)", rc);
 }
 
+ZTEST_USER(eeprom, test_addr_does_not_alias)
+{
+	const uint8_t low_pattern[4] = { 0xAA, 0xAA, 0xAA, 0xAA };
+	const uint8_t high_pattern[4] = { 0x55, 0x55, 0x55, 0x55 };
+	uint8_t rd_buf[4];
+	const off_t low_offset = 0x00;
+	const off_t high_offset = eeprom_get_size(eeprom) >> 2;
+	int rc;
+
+	rc = eeprom_write(eeprom, low_offset, low_pattern, sizeof(low_pattern));
+	zassert_ok(rc, "Unexpected error code (%d)", rc);
+
+	rc = eeprom_write(eeprom, high_offset, high_pattern, sizeof(high_pattern));
+	zassert_ok(rc, "Unexpected error code (%d)", rc);
+
+	rc = eeprom_read(eeprom, low_offset, rd_buf, sizeof(rd_buf));
+	zassert_ok(rc, "Unexpected error code (%d)", rc);
+	zassert_mem_equal(rd_buf, low_pattern, sizeof(low_pattern),
+		"Write to high bank corrupted low bank data");
+
+	rc = eeprom_read(eeprom, high_offset, rd_buf, sizeof(rd_buf));
+	zassert_ok(rc, "Unexpected error code (%d)", rc);
+	zassert_mem_equal(rd_buf, high_pattern, sizeof(high_pattern),
+		"High bank did not retain its own data");
+}
+
 static void *eeprom_setup(void)
 {
 	zassert_true(device_is_ready(eeprom), "EEPROM device not ready");

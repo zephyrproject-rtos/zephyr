@@ -16,10 +16,6 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
-	chosen {
-		zephyr,system-timer = &systick_timer;
-	};
-
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -161,18 +157,57 @@
 		compatible = "ti,omap-mailbox";
 		reg = <0x31f81000 0x200>;
 		/* TODO: Use interrupt router to map this */
+		/* R5FSS0_INTROUTER0_OUTL_0; TRM Table 9-47 */
 		interrupts = <0 256 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&vim>;
-		usr-id = <2>;
 		#mbox-cells = <1>;
-		status = "okay";
+		status = "disabled";
+	};
+
+	mbox2: mailbox@31f82000 {
+		compatible = "ti,omap-mailbox";
+		reg = <0x31f82000 0x200>;
+		/* TODO: Use interrupt router to map this */
+		/* R5FSS1_INTROUTER0_OUTL_0; TRM Table 9-49 */
+		interrupts = <0 256 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&vim>;
+		#mbox-cells = <1>;
+		status = "disabled";
 	};
 
 	systick_timer: timer@24c0000 {
 		compatible = "ti,am654-timer";
 		reg = <0x24c0000 0x70>;
+		/* TIMER12_INTR_PEND_0; TRM Table 9-47 */
 		interrupts = <0 168 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&vim>;
-		status = "okay";
+		status = "disabled";
+	};
+
+	timer13: timer@24d0000 {
+		compatible = "ti,am654-timer";
+		reg = <0x24d0000 0x70>;
+		/* TIMER13_INTR_PEND_0; TRM Table 9-47 */
+		interrupts = <0 169 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&vim>;
+		status = "disabled";
+	};
+
+	timer14: timer@24e0000 {
+		compatible = "ti,am654-timer";
+		reg = <0x24e0000 0x70>;
+		/* TIMER14_INTR_PEND_0; TRM Table 9-47 */
+		interrupts = <0 170 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&vim>;
+		status = "disabled";
+	};
+
+	timer15: timer@24f0000 {
+		compatible = "ti,am654-timer";
+		reg = <0x24f0000 0x70>;
+		/* TIMER15_INTR_PEND_0; TRM Table 9-47 */
+		interrupts = <0 171 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&vim>;
+		status = "disabled";
 	};
 };

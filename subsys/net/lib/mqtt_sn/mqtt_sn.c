@@ -22,6 +22,18 @@ LOG_MODULE_REGISTER(net_mqtt_sn, CONFIG_MQTT_SN_LOG_LEVEL);
 NET_BUF_POOL_FIXED_DEFINE(mqtt_sn_messages, MQTT_SN_NET_BUFS, CONFIG_MQTT_SN_LIB_MAX_PAYLOAD_SIZE,
 			  0, NULL);
 
+/** State machine tracking a pending CONNECT (see struct mqtt_sn_connect_retry). */
+enum mqtt_sn_connect_state {
+	/** No CONNECT pending. */
+	MQTT_SN_CONNECT_IDLE,
+	/** Sending the first CONNECT. */
+	MQTT_SN_CONNECT_STARTING,
+	/** Waiting for CONNACK or retry. */
+	MQTT_SN_CONNECT_WAITING,
+	/** Sending a retry. */
+	MQTT_SN_CONNECT_RETRYING,
+};
+
 /**
  * A struct to track attempts for actions that require acknowledgment,
  * i.e. topic registering, subscribing, or unsubscribing.
@@ -404,19 +416,24 @@ static void mqtt_sn_disconnect_internal(struct mqtt_sn_client *client)
 {
 	struct mqtt_sn_evt evt = {.type = MQTT_SN_EVT_DISCONNECTED};
 
+	/* Clear the state before cancelling, so a connect running at the
+	 * same time won't schedule a retry after we've already cancelled.
+	 */
+	atomic_set(&client->connect.state, MQTT_SN_CONNECT_IDLE);
+
 	mqtt_sn_set_state(client, MQTT_SN_CLIENT_DISCONNECTED);
+
+	/* Finish cleanup before notifying the app. */
+	mqtt_sn_publish_destroy_all(client);
+
 	if (client->evt_cb) {
 		client->evt_cb(client, &evt);
 	}
 
-	/*
-	 * Remove all publishes, but keep topics
-	 * Topics are removed on deinit or when connect is called with
-	 * clean-session = true
-	 */
-	mqtt_sn_publish_destroy_all(client);
-
-	k_work_cancel_delayable(&client->process_work);
+	/* Preserve retry work started directly by the callback. */
+	if (atomic_get(&client->connect.state) == MQTT_SN_CONNECT_IDLE) {
+		k_work_cancel_delayable(&client->process_work);
+	}
 }
 
 static void mqtt_sn_sleep_internal(struct mqtt_sn_client *client)
@@ -594,6 +611,24 @@ static void mqtt_sn_do_searchgw(struct mqtt_sn_client *client)
 }
 
 /**
+ * @brief Internal function to send a CONNECT message.
+ *
+ * @param client
+ */
+static int mqtt_sn_do_connect(struct mqtt_sn_client *client)
+{
+	struct mqtt_sn_param p = {.type = MQTT_SN_MSG_TYPE_CONNECT};
+
+	p.params.connect.clean_session = client->connect.clean_session;
+	p.params.connect.will = client->connect.will;
+	p.params.connect.duration = CONFIG_MQTT_SN_KEEPALIVE;
+	p.params.connect.client_id.data = client->client_id.data;
+	p.params.connect.client_id.size = client->client_id.size;
+
+	return encode_and_send(client, &p, 0);
+}
+
+/**
  * @brief Internal function to send a PINGREQ message.
  *
  * @param client
@@ -742,6 +777,65 @@ static int process_will_message_update(struct mqtt_sn_client *client, int64_t *n
 	LOG_DBG("next_cycle: %lld", *next_cycle);
 
 	return 0;
+}
+
+/**
+ * @brief Housekeeping task for a pending CONNECT.
+ *
+ * @param client
+ * @param next_cycle will be set to the time when the next action is required
+ *
+ * @retval 0 on success
+ * @retval -ETIMEDOUT when the CONNECT ran out of retries
+ * @retval <0 when sending the CONNECT failed; already scheduled for retry
+ */
+static int process_connect(struct mqtt_sn_client *client, int64_t *next_cycle)
+{
+	const int64_t now = k_uptime_get();
+	int64_t next_attempt;
+	int err = 0;
+
+	if (!atomic_cas(&client->connect.state, MQTT_SN_CONNECT_WAITING,
+			MQTT_SN_CONNECT_RETRYING)) {
+		/* Nothing to retry, or mqtt_sn_connect() is still sending the first one. */
+		return 0;
+	}
+
+	if (now == 0) {
+		next_attempt = 1;
+	} else if (client->connect.last_attempt == 0) {
+		next_attempt = 0;
+	} else {
+		next_attempt = client->connect.last_attempt + T_RETRY_MSEC;
+	}
+
+	if (next_attempt <= now) {
+		if (!client->connect.retries--) {
+			LOG_WRN("CONNECT ran out of retries");
+			atomic_set(&client->connect.state, MQTT_SN_CONNECT_IDLE);
+			mqtt_sn_disconnect_internal(client);
+			return -ETIMEDOUT;
+		}
+
+		LOG_DBG("Sending CONNECT");
+		err = mqtt_sn_do_connect(client);
+		client->connect.last_attempt = now;
+		client->last_ping = now;
+		next_attempt = now + T_RETRY_MSEC;
+	}
+
+	if (!atomic_cas(&client->connect.state, MQTT_SN_CONNECT_RETRYING,
+			MQTT_SN_CONNECT_WAITING)) {
+		/* A CONNACK or disconnect already resolved this while we were sending. */
+		return 0;
+	}
+
+	if (*next_cycle == 0 || next_attempt < *next_cycle) {
+		*next_cycle = next_attempt;
+	}
+	LOG_DBG("next_cycle: %lld", *next_cycle);
+
+	return err;
 }
 
 /**
@@ -1005,8 +1099,11 @@ static int process_ping(struct mqtt_sn_client *client, int64_t *next_cycle)
 			LOG_WRN("Ping ran out of retries");
 			mqtt_sn_disconnect_internal(client);
 			gw = SYS_SLIST_PEEK_HEAD_CONTAINER(&client->gateways, gw, next);
-			LOG_DBG("Removing non-responsive GW 0x%02x", gw->gw_id);
-			mqtt_sn_gw_destroy(client, gw);
+			/* Only drop discovered gateways; a pinned one can't be re-learned. */
+			if (gw != NULL && gw->adv_timer != -1) {
+				LOG_DBG("Removing non-responsive GW 0x%02x", gw->gw_id);
+				mqtt_sn_gw_destroy(client, gw);
+			}
 			return -ETIMEDOUT;
 		}
 
@@ -1116,6 +1213,8 @@ static void process_work(struct k_work *wrk)
 	process_search(client, &next_cycle);
 
 	process_pubs_qos_m1(client);
+
+	(void)process_connect(client, &next_cycle);
 
 	if (client->state == MQTT_SN_CLIENT_ACTIVE) {
 		err = process_will_topic_update(client, &next_cycle);
@@ -1235,7 +1334,7 @@ int mqtt_sn_search(struct mqtt_sn_client *client, uint8_t radius)
 
 int mqtt_sn_connect(struct mqtt_sn_client *client, bool will, bool clean_session)
 {
-	struct mqtt_sn_param p = {.type = MQTT_SN_MSG_TYPE_CONNECT};
+	int err;
 
 	if (!client) {
 		return -EINVAL;
@@ -1246,19 +1345,39 @@ int mqtt_sn_connect(struct mqtt_sn_client *client, bool will, bool clean_session
 		return -EINVAL;
 	}
 
+	/* Reject a concurrent caller racing process_connect()'s retry cycle. */
+	if (!atomic_cas(&client->connect.state, MQTT_SN_CONNECT_IDLE, MQTT_SN_CONNECT_STARTING)) {
+		return -EALREADY;
+	}
+
 	if (clean_session) {
 		mqtt_sn_topic_destroy_all(client);
 	}
 
-	p.params.connect.clean_session = clean_session;
-	p.params.connect.will = will;
-	p.params.connect.duration = CONFIG_MQTT_SN_KEEPALIVE;
-	p.params.connect.client_id.data = client->client_id.data;
-	p.params.connect.client_id.size = client->client_id.size;
+	client->connect.retries = N_RETRY - 1;
+	client->connect.will = will;
+	client->connect.clean_session = clean_session;
 
 	client->last_ping = k_uptime_get();
 
-	return encode_and_send(client, &p, 0);
+	err = mqtt_sn_do_connect(client);
+	client->connect.last_attempt = k_uptime_get();
+
+	/* The first CONNECT is sent here. A failed send just gets retried,
+	 * so its result is not returned here. The app is notified via
+	 * EVT_CONNECTED/DISCONNECTED.
+	 */
+	if (err) {
+		LOG_INF("Retrying CONNECT in the background");
+	}
+
+	/* Skip if a concurrent disconnect already forced this to IDLE. */
+	if (atomic_cas(&client->connect.state, MQTT_SN_CONNECT_STARTING, MQTT_SN_CONNECT_WAITING)) {
+		/* Wake process_work() now so it can recompute the next deadline. */
+		(void)k_work_reschedule(&client->process_work, K_NO_WAIT);
+	}
+
+	return 0;
 }
 
 int mqtt_sn_disconnect(struct mqtt_sn_client *client)
@@ -1547,6 +1666,9 @@ static void handle_connack(struct mqtt_sn_client *client, struct mqtt_sn_param_c
 {
 	struct mqtt_sn_evt evt = {.type = MQTT_SN_EVT_CONNECTED};
 
+	/* The CONNECT/CONNACK round trip is over either way - stop retrying it. */
+	atomic_set(&client->connect.state, MQTT_SN_CONNECT_IDLE);
+
 	if (p->ret_code == MQTT_SN_CODE_ACCEPTED) {
 		LOG_INF("MQTT_SN client connected");
 		switch (client->state) {
@@ -1581,6 +1703,8 @@ static void handle_willtopicreq(struct mqtt_sn_client *client)
 	response.params.willtopic.topic.size = client->will_topic.size;
 
 	encode_and_send(client, &response, 0);
+
+	client->connect.last_attempt = k_uptime_get();
 }
 
 static void handle_willmsgreq(struct mqtt_sn_client *client)
@@ -1591,6 +1715,8 @@ static void handle_willmsgreq(struct mqtt_sn_client *client)
 	response.params.willmsg.msg.size = client->will_msg.size;
 
 	encode_and_send(client, &response, 0);
+
+	client->connect.last_attempt = k_uptime_get();
 }
 
 static void handle_register(struct mqtt_sn_client *client, struct mqtt_sn_param_register *p)

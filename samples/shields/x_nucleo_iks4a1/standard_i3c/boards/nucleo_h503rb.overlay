@@ -1,0 +1,12 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c1 {
+	status = "disabled";
+};
+
+&i3c1 {
+	status = "okay";
+};

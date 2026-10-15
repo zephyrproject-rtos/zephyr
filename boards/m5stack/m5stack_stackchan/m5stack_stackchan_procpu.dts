@@ -1,0 +1,67 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi
+ * Copyright (c) 2026 Kenta IDA <fuga@fugafuga.org>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+/* The M-Bus PC_RX / PC_TX pins carry uart2 on this board (see below). */
+#define M5STACK_MBUS_PC_UART uart2
+
+/*
+ * The StackChan Core main unit shares its design with the CoreS3, so reuse
+ * its board definition and override only what the robot body changes. The
+ * M-Bus is passed through to the body, so M-Bus modules can be stacked in
+ * between as long as they do not use the pins taken by the body (see the
+ * board documentation).
+ */
+#include "../m5stack_cores3/m5stack_cores3_procpu.dts"
+
+/ {
+	model = "M5Stack StackChan PROCPU";
+	compatible = "m5stack,stackchan";
+};
+
+/* UART1 drives the two SCS0009 serial servos in the body (GPIO6 TX / GPIO7 RX). */
+&uart1_default {
+	group1 {
+		pinmux = <UART1_TX_GPIO6>;
+	};
+
+	group2 {
+		pinmux = <UART1_RX_GPIO7>;
+	};
+};
+
+&uart1 {
+	current-speed = <1000000>;
+};
+
+/* PORT.C (Grove) of the body is wired to the M-Bus PC pins, GPIO17 (TX) / GPIO18 (RX). */
+&uart2_default {
+	group1 {
+		pinmux = <UART2_TX_GPIO17>;
+	};
+
+	group2 {
+		pinmux = <UART2_RX_GPIO18>;
+	};
+};
+
+&i2c0 {
+	/* Battery monitor in the body (10 mOhm shunt, 550 mAh cell) */
+	ina226: ina226@41 {
+		compatible = "ti,ina226";
+		reg = <0x41>;
+		rshunt-micro-ohms = <10000>;
+		/* max expected current ~3 A / 2^15 */
+		current-lsb-microamps = <100>;
+	};
+};
+
+/* LCD backlight at full brightness */
+&vcc_bl {
+	regulator-init-microvolt = <3300000>;
+};

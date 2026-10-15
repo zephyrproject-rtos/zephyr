@@ -250,7 +250,13 @@ static int handle_receivers_get(const struct bt_mesh_model *mod, struct bt_mesh_
 	net_buf_simple_add_le16(&rsp, srv->target_cnt);
 	net_buf_simple_add_le16(&rsp, first);
 
-	cnt = MIN(cnt, srv->target_cnt - first);
+	/* The spec mandates a response with an omitted list when First Index is out of range. */
+	if (first >= srv->target_cnt) {
+		cnt = 0;
+	} else {
+		cnt = MIN(cnt, (uint16_t)(srv->target_cnt - first));
+	}
+
 	progress = bt_mesh_dfu_cli_progress(&srv->dfu) / 2;
 
 	for (i = 0; i < cnt && net_buf_simple_tailroom(&rsp) >= 5 + BT_MESH_MIC_SHORT; i++) {
@@ -904,6 +910,24 @@ static struct bt_mesh_dfu_srv *self_target_dfu_srv(struct bt_mesh_dfd_srv *srv)
 	return NULL;
 }
 
+/* MshDFUv1.0 Section 7.1.2.9: the self-target applies after the Confirm
+ * procedure, so its outcome is recorded here.
+ */
+static void self_target_phase_set(struct bt_mesh_dfd_srv *srv, enum bt_mesh_dfu_phase phase)
+{
+	struct bt_mesh_dfu_srv *dfu_srv = self_target_dfu_srv(srv);
+	struct bt_mesh_dfu_target *target;
+
+	if (!dfu_srv) {
+		return;
+	}
+
+	target = target_get(srv, bt_mesh_model_elem(dfu_srv->mod)->rt->addr);
+	if (target) {
+		target->phase = phase;
+	}
+}
+
 static void dfd_srv_find_cb(const struct bt_mesh_model *mod,
 			    const struct bt_mesh_elem *elem,
 			    bool vnd, bool primary, void *user_data)
@@ -924,12 +948,14 @@ void bt_mesh_dfd_srv_self_applied(void)
 		return;
 	}
 
+	self_target_phase_set(srv, BT_MESH_DFU_PHASE_APPLY_SUCCESS);
 	dfd_phase_set(srv, BT_MESH_DFD_PHASE_COMPLETED);
 }
 
 static int trigger_self_apply(struct bt_mesh_dfd_srv *srv)
 {
 	struct bt_mesh_dfu_srv *dfu_srv;
+	int err;
 
 	if (!IS_ENABLED(CONFIG_BT_MESH_DFU_SRV)) {
 		return 0;
@@ -944,7 +970,12 @@ static int trigger_self_apply(struct bt_mesh_dfd_srv *srv)
 		return 0;
 	}
 
-	return bt_mesh_dfu_srv_apply_deferred(dfu_srv);
+	err = bt_mesh_dfu_srv_apply_deferred(dfu_srv);
+	if (err) {
+		self_target_phase_set(srv, BT_MESH_DFU_PHASE_APPLY_FAIL);
+	}
+
+	return err;
 }
 
 static void cancel_self_apply(struct bt_mesh_dfd_srv *srv)

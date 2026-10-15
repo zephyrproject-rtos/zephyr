@@ -126,6 +126,73 @@ enum wifi_frequency_bands wifi_utils_chan_to_band(uint16_t chan)
 	return WIFI_FREQ_BAND_UNKNOWN;
 }
 
+uint16_t wifi_utils_chan_to_freq(enum wifi_frequency_bands band, uint16_t chan)
+{
+	switch (band) {
+	case WIFI_FREQ_BAND_2_4_GHZ:
+		if (!wifi_utils_validate_chan_2g(chan)) {
+			return 0;
+		}
+
+		/* Channel 14 is the exception to the 5 MHz spacing, it sits
+		 * 12 MHz above channel 13.
+		 */
+		return (chan == 14) ? 2484 : (2407 + chan * 5);
+	case WIFI_FREQ_BAND_5_GHZ:
+		if (!wifi_utils_validate_chan_5g(chan)) {
+			return 0;
+		}
+
+		return 5000 + chan * 5;
+	case WIFI_FREQ_BAND_6_GHZ:
+		if (!wifi_utils_validate_chan_6g(chan)) {
+			return 0;
+		}
+
+		/* Channel 2 does not follow the 5950 MHz base, it sits at
+		 * 5935 MHz on its own operating class.
+		 */
+		return (chan == 2) ? 5935 : (5950 + chan * 5);
+	default:
+		return 0;
+	}
+}
+
+uint16_t wifi_utils_freq_to_chan(uint16_t freq)
+{
+	static const struct {
+		enum wifi_frequency_bands band;
+		uint16_t base;
+	} bands[] = {
+		{WIFI_FREQ_BAND_2_4_GHZ, 2407},
+		{WIFI_FREQ_BAND_5_GHZ, 5000},
+		{WIFI_FREQ_BAND_6_GHZ, 5950},
+	};
+
+	if (freq == 2484) {
+		return 14;
+	}
+
+	if (freq == 5935) {
+		return 2;
+	}
+
+	for (unsigned int i = 0; i < ARRAY_SIZE(bands); i++) {
+		uint16_t chan;
+
+		if (freq <= bands[i].base) {
+			continue;
+		}
+
+		chan = (freq - bands[i].base) / 5;
+		if (wifi_utils_chan_to_freq(bands[i].band, chan) == freq) {
+			return chan;
+		}
+	}
+
+	return 0;
+}
+
 /**
  * @brief Get the next Wi-Fi 6GHz channel based on the given (valid) channel.
  * The function handles the initial edge cases (1 -> 2, 2 -> 5) and then increments by 4.
@@ -239,16 +306,18 @@ static int wifi_utils_get_all_chans_in_range(uint8_t chan_start,
 }
 
 
-static int wifi_utils_validate_chan_str(char *chan_str)
+static int wifi_utils_validate_chan_str(const char *chan_str)
 {
-	uint8_t i;
+	size_t i;
+	size_t len;
 
-	if ((!chan_str) || (!strlen(chan_str))) {
-		NET_ERR("Null or empty channel string\n");
+	len = strlen(chan_str);
+	if (len == 0) {
+		NET_ERR("Empty channel string\n");
 		return -EINVAL;
 	}
 
-	for (i = 0; i < strlen(chan_str); i++) {
+	for (i = 0; i < len; i++) {
 		if (!isdigit((int)chan_str[i])) {
 			NET_ERR("Invalid character in channel string %c\n", chan_str[i]);
 			return -EINVAL;

@@ -39,7 +39,7 @@ properties:
       - 3
     default: 0
     description: |
-      Compensation capcitor config selection,
+      Compensation capacitor config selection,
       choose different bits to fit different gains.
       The actual meaning of each option:
       0: Fit 2X gains

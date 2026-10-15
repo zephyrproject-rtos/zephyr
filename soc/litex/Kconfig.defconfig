@@ -6,7 +6,8 @@ if SOC_FAMILY_LITEX
 rsource "*/Kconfig.defconfig"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) \
+		if !$(dt_node_has_prop,/cpus/cpu@0,timebase-frequency)
 
 config REBOOT
 	depends on DT_HAS_LITEX_SOC_CONTROLLER_ENABLED

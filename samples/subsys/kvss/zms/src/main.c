@@ -10,12 +10,12 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/reboot.h>
 #include <zephyr/device.h>
+#include <errno.h>
+#include <inttypes.h>
 #include <string.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/kvss/zms.h>
-
-static struct zms_fs fs;
 
 #define ZMS_PARTITION        storage_partition
 #define ZMS_PARTITION_DEVICE PARTITION_DEVICE(ZMS_PARTITION)
@@ -25,6 +25,17 @@ static struct zms_fs fs;
 #define KEY_VALUE_ID  COND_CODE_1(CONFIG_ZMS_ID_64BIT, (0xbeefdead00000002ULL), (0xbeefdeadULL))
 #define CNT_ID        2
 #define LONG_DATA_ID  3
+#define ITER_ARRAY_MAX_ENTRIES 32
+
+struct iter_array_entry {
+	zms_id_t id;
+	size_t len;
+};
+
+static bool filter_out_id_2(zms_id_t id)
+{
+	return id != CNT_ID;
+}
 
 static int delete_and_verify_items(struct zms_fs *fs, zms_id_t id)
 {
@@ -75,17 +86,279 @@ static int delete_basic_items(struct zms_fs *fs)
 	return rc;
 }
 
+static int get_history_depth(struct zms_fs *fs, zms_id_t id, uint32_t *depth)
+{
+	ssize_t len;
+	uint32_t cnt = 0U;
+
+	if (!depth) {
+		return -EINVAL;
+	}
+
+	while (true) {
+		len = zms_read_hist(fs, id, NULL, 0, cnt);
+		if (len == -ENOENT) {
+			break;
+		}
+
+		if (len < 0) {
+			return (int)len;
+		}
+
+		cnt++;
+	}
+
+	*depth = cnt;
+
+	return 0;
+}
+
+static int enumerate_live_entries(struct zms_fs *fs)
+{
+	int rc;
+	uint32_t depth;
+	zms_id_t id;
+	size_t len;
+	struct zms_iter iter;
+	/* Buffer large enough to receive any data that ZMS stores inside the ATE.
+	 * The iterator fills it directly for such entries, avoiding an extra read.
+	 */
+	uint8_t data[ZMS_DATA_IN_ATE_SIZE];
+
+	/* fs->zms_lock is a plain struct k_mutex that zms_write()/zms_delete() take
+	 * internally. Holding it here blocks writes from other threads for the
+	 * whole traversal below, keeping the iterator's snapshot valid. This is
+	 * safe against self-deadlock: k_mutex is recursive for its owning thread,
+	 * and zms_iter_next() takes the same mutex internally on every call.
+	 * It does not protect against a write issued by this same thread between
+	 * zms_iter_next() calls; the caller must simply not do that.
+	 */
+	k_mutex_lock(&fs->zms_lock, K_FOREVER);
+
+	rc = zms_iter_init(fs, &iter);
+	if (rc) {
+		printk("Iterator init failed, rc=%d\n", rc);
+		goto end;
+	}
+
+	printk("Enumerating live entries with zms_iter_next:\n");
+	while (true) {
+		rc = zms_iter_next(fs, &iter, &id, &len, data, sizeof(data));
+		if (rc == 0) {
+			break;
+		}
+
+		if (rc < 0) {
+			printk("Iterator step failed, rc=%d\n", rc);
+			goto end;
+		}
+
+		rc = get_history_depth(fs, id, &depth);
+		if (rc) {
+			printk("History query failed for id=0x%" PRIx64 ", rc=%d\n", (uint64_t)id,
+			      rc);
+			goto end;
+		}
+
+		printk("  id=0x%" PRIx64 ", len=%zu, revisions=%" PRIu32, (uint64_t)id, len, depth);
+		/* Data that fits inside the ATE has been copied into the buffer by
+		 * the iterator, so it can be printed without a separate read.
+		 */
+		if ((len > 0) && (len <= sizeof(data))) {
+			printk(", data=");
+			for (size_t i = 0; i < len; i++) {
+				printk("%02x", data[i]);
+			}
+		}
+		printk("\n");
+	}
+
+	rc = 0;
+
+end:
+	k_mutex_unlock(&fs->zms_lock);
+	return rc;
+}
+
+static int enumerate_live_entries_with_filters(struct zms_fs *fs, zms_id_t mask_id,
+				       zms_id_t min_id, zms_id_t max_id)
+{
+	int rc;
+	uint32_t depth;
+	zms_id_t id;
+	size_t len;
+	struct zms_iter iter;
+	struct zms_iter_config config = {
+		.mask_id = mask_id,
+		.min_id = min_id,
+		.max_id = max_id,
+		.use_mask = true,
+		.use_range = true,
+		.use_predicate = true,
+		.predicate_func = filter_out_id_2,
+	};
+
+	/* See the fs->zms_lock note in enumerate_live_entries() above. */
+	k_mutex_lock(&fs->zms_lock, K_FOREVER);
+
+	rc = zms_iter_init_with_config(fs, &iter, &config);
+	if (rc) {
+		printk("Iterator init with filters failed, rc=%d\n", rc);
+		goto end;
+	}
+
+	printk("Enumerating live entries with zms_iter_next, mask 0x%" PRIx64
+	       ", range [0x%" PRIx64 ", 0x%" PRIx64 "], predicate: id != 0x%" PRIx64
+	       "\n",
+	       (uint64_t)mask_id, (uint64_t)min_id, (uint64_t)max_id,
+	       (uint64_t)CNT_ID);
+	while (true) {
+		rc = zms_iter_next(fs, &iter, &id, &len, NULL, 0);
+		if (rc == 0) {
+			break;
+		}
+
+		if (rc < 0) {
+			printk("Iterator step failed, rc=%d\n", rc);
+			goto end;
+		}
+
+		rc = get_history_depth(fs, id, &depth);
+		if (rc) {
+			printk("History query failed for id=0x%" PRIx64 ", rc=%d\n", (uint64_t)id,
+			      rc);
+			goto end;
+		}
+
+		printk("  id=0x%" PRIx64 ", len=%zu, revisions=%" PRIu32 "\n", (uint64_t)id,
+		       len, depth);
+	}
+
+	rc = 0;
+
+end:
+	k_mutex_unlock(&fs->zms_lock);
+	return rc;
+}
+
+static int enumerate_all_ates(struct zms_fs *fs, zms_id_t mask_id,
+			      zms_id_t min_id, zms_id_t max_id)
+{
+	int rc;
+	zms_id_t id;
+	size_t len;
+	size_t i;
+	size_t used_entries = 0U;
+	size_t live_entries = 0U;
+	struct zms_iter iter;
+	static struct iter_array_entry entries[ITER_ARRAY_MAX_ENTRIES];
+	struct zms_iter_config config = {
+		.mask_id = mask_id,
+		.min_id = min_id,
+		.max_id = max_id,
+		.use_mask = true,
+		.use_range = true,
+		.use_predicate = true,
+		.predicate_func = filter_out_id_2,
+	};
+
+	/* See the fs->zms_lock note in enumerate_live_entries() above. Released
+	 * as soon as the traversal is done, since the rest of this function only
+	 * touches the local entries[] array, not fs.
+	 */
+	k_mutex_lock(&fs->zms_lock, K_FOREVER);
+
+	rc = zms_iter_init_with_config(fs, &iter, &config);
+	if (rc) {
+		printk("All-ATE iterator init with filters failed, rc=%d\n", rc);
+		goto end;
+	}
+
+	printk("Building array from zms_iter_next_all (mask 0x%" PRIx64
+	       ", range [0x%" PRIx64 ", 0x%" PRIx64 "], predicate: id != 0x%" PRIx64
+	       ")\n",
+	       (uint64_t)mask_id, (uint64_t)min_id, (uint64_t)max_id,
+	       (uint64_t)CNT_ID);
+
+	while (true) {
+		bool exists = false;
+
+		rc = zms_iter_next_all(fs, &iter, &id, &len, NULL, 0);
+		if (rc == 0) {
+			break;
+		}
+
+		if (rc < 0) {
+			printk("All-ATE iterator step failed, rc=%d\n", rc);
+			goto end;
+		}
+
+		for (i = 0U; i < used_entries; i++) {
+			if (entries[i].id == id) {
+				exists = true;
+				break;
+			}
+		}
+
+		if (exists) {
+			continue;
+		}
+
+		if (used_entries >= ARRAY_SIZE(entries)) {
+			printk("Array dedupe storage full while processing id=0x%" PRIx64 "\n",
+			       (uint64_t)id);
+			rc = -ENOMEM;
+			goto end;
+		}
+
+		entries[used_entries].id = id;
+		entries[used_entries].len = len;
+		used_entries++;
+
+		printk("  kept id=0x%" PRIx64 " as %s\n", (uint64_t)id,
+		       len == 0U ? "deleted" : "live");
+	}
+
+	rc = 0;
+
+end:
+	k_mutex_unlock(&fs->zms_lock);
+	if (rc) {
+		return rc;
+	}
+
+	/* Remove tombstones from the deduplicated array. */
+	for (i = 0U; i < used_entries; i++) {
+		if (entries[i].len == 0U) {
+			continue;
+		}
+
+		entries[live_entries] = entries[i];
+		live_entries++;
+	}
+
+	printk("Live IDs after tombstone removal (%zu entries):\n", live_entries);
+	for (i = 0U; i < live_entries; i++) {
+		printk("  id=0x%" PRIx64 "\n", (uint64_t)entries[i].id);
+	}
+
+	return 0;
+}
+
 int main(void)
 {
+	struct zms_fs fs = {0};
 	int rc = 0;
-	char buf[16];
-	uint8_t key[8] = {0xDE, 0xAD, 0xBE, 0xEF, 0xDE, 0xAD, 0xBE, 0xEF}, longarray[128];
+	static char buf[16];
+	static uint8_t key[8] = {0xDE, 0xAD, 0xBE, 0xEF, 0xDE, 0xAD, 0xBE, 0xEF};
+	static uint8_t longarray[128];
 	uint32_t i_cnt = 0U;
 	uint32_t i;
 	zms_id_t id = 0;
 	ssize_t free_space = 0;
 	struct flash_pages_info info;
 
+	/* Initialize longarray with pattern */
 	for (int n = 0; n < sizeof(longarray); n++) {
 		longarray[n] = n;
 	}
@@ -204,6 +477,27 @@ int main(void)
 
 	if (i != CONFIG_MAX_ITERATIONS) {
 		printk("Error: Something went wrong at iteration %u rc=%d\n", i, rc);
+		return 0;
+	}
+
+	/* Application-style enumeration of all currently live entries. */
+	rc = enumerate_live_entries(&fs);
+	if (rc) {
+		printk("Error while enumerating entries, rc=%d\n", rc);
+		return 0;
+	}
+
+	/* Application-style enumeration with an ID mask and inclusive range. */
+	rc = enumerate_live_entries_with_filters(&fs, (zms_id_t)0x03, (zms_id_t)0x01,
+						 (zms_id_t)0x03);
+	if (rc) {
+		printk("Error while enumerating filtered entries, rc=%d\n", rc);
+		return 0;
+	}
+
+	rc = enumerate_all_ates(&fs, (zms_id_t)0x03, (zms_id_t)0x01, (zms_id_t)0x03);
+	if (rc) {
+		printk("Error while enumerating all ATEs, rc=%d\n", rc);
 		return 0;
 	}
 

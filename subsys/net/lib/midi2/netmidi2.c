@@ -721,7 +721,7 @@ static void netmidi2_service_handler(struct net_socket_service_event *pev)
 	int ret;
 	struct netmidi2_ep *ep = pev->user_data;
 	struct zsock_pollfd *pfd = &pev->event;
-	struct net_sockaddr_storage peer_addr;
+	struct net_sockaddr_storage peer_addr = { 0 };
 	struct net_sockaddr *peer_sa = net_sad(&peer_addr);
 	net_socklen_t peer_addr_len = sizeof(peer_addr);
 	struct net_buf *rxbuf;

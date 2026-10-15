@@ -123,12 +123,19 @@ static int mcux_rtc_set_alarm(const struct device *dev, uint8_t chan_id,
 	}
 
 	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) == 0) {
+		/*
+		 * A relative alarm cannot be late by definition, so the
+		 * late check below only applies to absolute alarms.
+		 */
 		ticks += current;
-	}
-
-	if (ticks < current) {
-		LOG_ERR("Alarm cannot be earlier than current time");
-		return -EINVAL;
+	} else if (ticks <= current) {
+		/*
+		 * The Kinetis RTC raises TAF when TSR increments to equal
+		 * TAR, so arming TAR == the current TSR never matches until
+		 * the 32-bit wrap. Treat ticks == current as already late.
+		 */
+		LOG_ERR("Absolute alarm was set too late");
+		return -ETIME;
 	}
 
 	data->alarm_callback = alarm_cfg->callback;

@@ -298,6 +298,15 @@ int verify_sent_and_received_msg(struct net_msghdr *msg, bool split_msg)
 	size_t split_len = 0, total_read = 0;
 	int ret;
 
+	/* The handshake tests close their socket when they are done, which
+	 * sends an empty CLOSE frame through here. There is no payload to feed
+	 * back for that one.
+	 */
+	if ((((uint8_t *)msg->msg_iov[0].iov_base)[0] & 0x0f) ==
+	    WEBSOCKET_OPCODE_CLOSE) {
+		return msg->msg_iov[0].iov_len;
+	}
+
 	memset(&ctx, 0, sizeof(ctx));
 
 	ctx.recv_buf.buf = temp_recv_buf;

@@ -21,8 +21,12 @@ procpu_dram0_end = SRAM2_DRAM_END;
 procpu_dram0_org = SRAM2_DRAM_USER_START + CONFIG_ESP32_BT_RESERVE_DRAM;
 procpu_dram0_len = SRAM2_DRAM_USER_SIZE - CONFIG_ESP32_BT_RESERVE_DRAM;
 
-procpu_dram1_org = SRAM1_DRAM_USER_START;
-procpu_dram1_len = SRAM1_DRAM_USER_SIZE;
+/* The APPCPU image loads its DRAM segment at SRAM1_DRAM_USER_START while
+ * its IRAM segment lands in SRAM0, so only APPCPU_DRAM_SIZE is carved out
+ * of this region.
+ */
+procpu_dram1_org = SRAM1_DRAM_USER_START + APPCPU_DRAM_SIZE;
+procpu_dram1_len = SRAM1_DRAM_USER_SIZE - APPCPU_DRAM_SIZE;
 
 procpu_irom_org = ICACHE0_START;
 procpu_irom_len = ICACHE0_SIZE;
@@ -366,6 +370,8 @@ SECTIONS
     _iram_text_start = ABSOLUTE(.);
     *(.iram1 .iram1.*)
     *(.iram0.literal .iram.literal .iram.text.literal .iram0.text .iram.text)
+    /* Input sections named with zephyr_linker_sources(RAMFUNC_SECTION ...) */
+    #include <snippets-ramfunc-section.ld>
     *libarch__xtensa__core.a:(.literal .text .literal.* .text.*)
     *libarch__common.a:(.literal .text .literal.* .text.*)
     *libkernel.a:(.literal .text .literal.* .text.*)
@@ -1009,7 +1015,6 @@ SECTIONS
     *(.dynamic)
     *(.gnu.version_d)
     . = ALIGN(4);
-    __rodata_region_end = ABSOLUTE(.);
     /* Literals are also RO data. */
     _lit4_start = ABSOLUTE(.);
     *(*.lit4)
@@ -1048,6 +1053,11 @@ SECTIONS
 
     _rodata_end = ABSOLUTE(.);
     _rodata_reserved_end = ABSOLUTE(.);
+    /* The read-only region must span the linker-collected rom sections too:
+     * device API structures live there, and a pointer into one reaches a
+     * syscall as an argument, where it is checked against this region.
+     */
+    __rodata_region_end = .;
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
   /* --- RODATA END --- */

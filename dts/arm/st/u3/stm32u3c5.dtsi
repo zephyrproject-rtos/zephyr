@@ -30,5 +30,33 @@
 				};
 			};
 		};
+
+		aes: crypto@420c0000 {
+			compatible = "st,stm32-aes";
+			reg = <0x420c0000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 16)>;
+			resets = <&rctl STM32_RESET(AHB2L, 16)>;
+			interrupts = <93 0>;
+			status = "disabled";
+		};
+
+		hash: crypto@420c0400 {
+			compatible = "st,stm32-hash";
+			reg = <0x420c0400 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 17)>;
+			resets = <&rctl STM32_RESET(AHB2L, 17)>;
+			interrupts = <96 0>;
+			status = "disabled";
+		};
+
+		rng: rng@420c0800 {
+			/* In AN4230 rev 14, no NIST values are listed for STM32U3C5.
+			 * Use Configuration C from RM0487 instead. To be updated if / when
+			 * AN4230 provides values.
+			 */
+			nist-config = <0x8450f00>;
+			health-test-config = <0xaac7>;
+			/delete-property/ noise-source-control;
+		};
 	};
 };

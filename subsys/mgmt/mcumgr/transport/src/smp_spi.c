@@ -310,7 +310,9 @@ static void smp_spi_start(void)
 	k_mutex_init(&tx_lock);
 
 	smp_spi_transport.functions.output = smp_spi_tx_pkt;
+	TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS);
 	smp_spi_transport.functions.get_mtu = smp_spi_get_mtu;
+	TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS);
 
 	rc = smp_transport_init(&smp_spi_transport);
 	if (rc != 0) {

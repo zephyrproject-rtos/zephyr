@@ -14,12 +14,12 @@ def get_hashes(file_path):
 
     Arguments:
         - file_path: path to file to scan.
-    Returns: tuple of (SHA1, SHA256, MD5) hashes for file_path, or
+    Returns: tuple of (SHA1, SHA256, SHA512) hashes for file_path, or
              None if file is not found.
     """
     h_sha1 = hashlib.sha1(usedforsecurity=False)
     h_sha256 = hashlib.sha256()
-    h_md5 = hashlib.md5(usedforsecurity=False)
+    h_sha512 = hashlib.sha512()
 
     _logger.debug("  - getting hashes for %s", file_path)
 
@@ -28,8 +28,8 @@ def get_hashes(file_path):
             buf = f.read()
             h_sha1.update(buf)
             h_sha256.update(buf)
-            h_md5.update(buf)
+            h_sha512.update(buf)
     except OSError:
         return None
 
-    return (h_sha1.hexdigest(), h_sha256.hexdigest(), h_md5.hexdigest())
+    return (h_sha1.hexdigest(), h_sha256.hexdigest(), h_sha512.hexdigest())

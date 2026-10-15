@@ -19,4 +19,17 @@ config NET_SAMPLE_MQTT_SN_BUFFER_SIZE
 	int "Size of the TX and RX buffers"
 	default 255
 
+config NET_SAMPLE_MQTT_SN_RECONNECT_INITIAL_BACKOFF_MSEC
+	int "Delay before the first reconnect attempt, in milliseconds"
+	default 1000
+
+config NET_SAMPLE_MQTT_SN_RECONNECT_MAX_BACKOFF_MSEC
+	int "Cap on the delay between reconnect attempts, in milliseconds"
+	default 60000
+
+config NET_SAMPLE_MQTT_SN_RECONNECT_MAX_ATTEMPTS
+	int "Number of reconnect attempts before giving up"
+	range 1 4294967295
+	default 10
+
 source "Kconfig.zephyr"

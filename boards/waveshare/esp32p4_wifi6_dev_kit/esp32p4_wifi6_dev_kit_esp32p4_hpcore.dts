@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <espressif/esp32p4/esp32p4_n16r32.dtsi>
+#include <espressif/esp32p4/esp32p4_rev3.dtsi>
 #include "esp32p4_wifi6_dev_kit_esp32p4_hpcore-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <espressif/partitions_0x2000_default_16M.dtsi>
@@ -21,6 +21,7 @@
 		zephyr,shell-uart = &usb_serial;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp_hosted_mcu_hci;
 	};
 
 	aliases {
@@ -38,6 +39,15 @@
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(16)>;
+	ranges = <0x0 0x0 DT_SIZE_M(16)>;
+};
+
+&psram0 {
+	size = <DT_SIZE_M(32)>;
 };
 
 /* v3.1 silicon: valid CPU frequencies are 100/200/400 MHz */
@@ -131,19 +141,35 @@ zephyr_udc0: &usb_otg {
 		};
 	};
 
-	/* ESP32-C6 wireless co-processor over SDIO (kept disabled until
-	 * there is a driver binding for it; pins follow the schematic:
-	 * clk=18, cmd=19, d0-d3=14-17, with 51K pull-ups on the C6 side).
-	 */
 	sdhc1: sdhc@1 {
-		status = "disabled";
+		status = "okay";
 		bus-width = <4>;
+		max-bus-freq = <DT_FREQ_M(40)>;
 		clk-pin = <18>;
 		cmd-pin = <19>;
 		d0-pin = <14>;
 		d1-pin = <15>;
 		d2-pin = <16>;
 		d3-pin = <17>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		esp_hosted_mcu: esp-hosted-mcu@0 {
+			compatible = "espressif,esp-hosted-mcu";
+			reg = <0>;
+			reset-gpios = <&gpio1 22 GPIO_ACTIVE_HIGH>;
+			status = "okay";
+
+			esp_hosted_mcu_wifi: wifi {
+				compatible = "espressif,esp-hosted-mcu-wifi";
+				status = "okay";
+			};
+
+			esp_hosted_mcu_hci: bt-hci {
+				compatible = "espressif,esp-hosted-mcu-bt-hci";
+				status = "okay";
+			};
+		};
 	};
 };
 

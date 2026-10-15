@@ -125,5 +125,6 @@ These pages cover other kernel services.
    other/atomic.rst
    other/float.rst
    other/version.rst
+   other/assert.rst
    other/fatal.rst
    other/thread_local_storage.rst

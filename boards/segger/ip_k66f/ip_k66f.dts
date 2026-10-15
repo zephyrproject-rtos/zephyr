@@ -41,6 +41,10 @@
 	};
 };
 
+&{/cpus} {
+	timebase-frequency = <DT_FREQ_M(180)>;
+};
+
 &cpu0 {
 	clock-frequency = <120000000>;
 };

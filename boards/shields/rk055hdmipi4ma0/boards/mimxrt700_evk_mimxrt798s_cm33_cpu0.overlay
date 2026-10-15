@@ -16,6 +16,11 @@
 	ext-ram = <&psram2>;
 };
 
+&psram2 {
+	/* Frame buffer accessed by LCDIF DMA; keep it out of the CPU cache. */
+	zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
+};
+
 &zephyr_mipi_dsi {
 	/* Use lower DPHY clock since RT700 uses AUDIO pll pfd2 as source,
 	 * and its max allowed clock frequency is

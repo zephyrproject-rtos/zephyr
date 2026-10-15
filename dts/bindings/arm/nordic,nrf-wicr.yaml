@@ -11,6 +11,11 @@ properties:
   reg:
     required: true
 
+  data-vtfaddress:
+    type: phandle
+    description: |
+      Phandle to the memory region containing VTF monitoring data.
+
   firmware-lmacinitpc:
     type: phandle
     description: |

@@ -35,7 +35,7 @@
 	status = "disabled";
 };
 
-/* disable to avoid encoder emulater conflict */
+/* disable to avoid encoder emulator conflict */
 &fxos8700 {
 	status = "disabled";
 };

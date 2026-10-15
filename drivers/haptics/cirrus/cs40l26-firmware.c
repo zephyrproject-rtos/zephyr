@@ -29,8 +29,8 @@ static const uint16_t *const cs40l26_firmware[CS40L26_NUM_DEVICES] = {
 #if CONFIG_HAPTICS_CS40L26_A1
 	(uint16_t[]){
 		[CS40L26_REG_PM_TIMER_TIMEOUT_TICKS] = 0x0350U,
-		[CS40L26_REG_PM_ACTIVE_TIMEOUT] = 0x0360U,
-		[CS40L26_REG_PM_STDBY_TIMEOUT] = 0x0378U,
+		[CS40L26_REG_PM_STDBY_TIMEOUT] = 0x0360U,
+		[CS40L26_REG_PM_ACTIVE_TIMEOUT] = 0x0368U,
 		[CS40L26_REG_PM_POWER_ON_SEQUENCE] = 0x03E8U,
 		[CS40L26_REG_DYNAMIC_F0_ENABLED] = 0x0F48U,
 		[CS40L26_REG_HALO_STATE] = 0x0FA8U,
@@ -55,8 +55,8 @@ static const uint16_t *const cs40l26_firmware[CS40L26_NUM_DEVICES] = {
 #if CONFIG_HAPTICS_CS40L27_B2
 	(uint16_t[]){
 		[CS40L26_REG_PM_TIMER_TIMEOUT_TICKS] = 0x1F78U,
-		[CS40L26_REG_PM_ACTIVE_TIMEOUT] = 0x1F88U,
-		[CS40L26_REG_PM_STDBY_TIMEOUT] = 0x1FA0U,
+		[CS40L26_REG_PM_STDBY_TIMEOUT] = 0x1F88U,
+		[CS40L26_REG_PM_ACTIVE_TIMEOUT] = 0x1F90U,
 		[CS40L26_REG_PM_POWER_ON_SEQUENCE] = 0x2018U,
 		[CS40L26_REG_VIBEGEN_F0_OTP_STORED] = 0x2F30U,
 		[CS40L26_REG_VIBEGEN_REDC_OTP_STORED] = 0x2F34U,
@@ -201,4 +201,33 @@ int cs40l26_firmware_multi_write(const struct device *const dev,
 	}
 
 	return 0;
+}
+
+int cs40l26_firmware_poll(const struct device *const dev, const uint32_t firmware_control,
+			  const uint32_t val, const k_timeout_t timeout)
+{
+	const struct cs40l26_config *const config = dev->config;
+	const k_timepoint_t end = sys_timepoint_calc(timeout);
+	uint32_t firmware_address, reg_val;
+	int ret;
+
+	ret = cs40l26_get_firmware_address(dev, firmware_control, &firmware_address);
+	if (ret < 0) {
+		return ret;
+	}
+
+	do {
+		ret = cs40lxx_read(&config->io_bus, firmware_address, &reg_val);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (reg_val == val) {
+			return 0;
+		}
+
+		(void)k_msleep(1);
+	} while (!sys_timepoint_expired(end));
+
+	return -ETIMEDOUT;
 }

@@ -40,14 +40,13 @@ void sys_trace_thread_info(struct k_thread *thread)
 
 	set_thread_name(name, thread);
 
-	SEGGER_SYSVIEW_TASKINFO Info;
-
-	Info.TaskID = (uint32_t)(uintptr_t)thread;
-	Info.sName = name;
-	Info.Prio = thread->base.prio;
-	Info.StackBase = thread->stack_info.size;
-	Info.StackSize = thread->stack_info.start;
-	SEGGER_SYSVIEW_SendTaskInfo(&Info);
+	SEGGER_SYSVIEW_SendTaskInfo(&(SEGGER_SYSVIEW_TASKINFO) {
+		.TaskID = (uint32_t)(uintptr_t)thread,
+		.sName = name,
+		.StackSize = thread->stack_info.size,
+		.StackBase = thread->stack_info.start,
+		.Prio = thread->base.prio,
+	});
 }
 
 
@@ -85,21 +84,11 @@ static void send_task_list_cb(void)
 	struct k_thread *thread;
 
 	for (thread = _kernel.threads; thread; thread = thread->next_thread) {
-		char name[THREAD_NAME_LEN];
-
 		if (z_is_idle_thread_object(thread)) {
 			continue;
 		}
 
-		set_thread_name(name, thread);
-
-		SEGGER_SYSVIEW_SendTaskInfo(&(SEGGER_SYSVIEW_TASKINFO) {
-			.TaskID = (uint32_t)(uintptr_t)thread,
-			.sName = name,
-			.StackSize = thread->stack_info.size,
-			.StackBase = thread->stack_info.start,
-			.Prio = thread->base.prio,
-		});
+		sys_trace_thread_info(thread);
 	}
 }
 

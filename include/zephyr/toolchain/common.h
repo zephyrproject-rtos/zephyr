@@ -102,8 +102,10 @@
      * implemented in the same way across ARC toolchains.
      */
     #define   ALIGN(x)    .align    x
-  #elif defined(CONFIG_SPARC)
+  #elif defined(CONFIG_SPARC) || defined(CONFIG_TRICORE)
     #define   ALIGN(x)    .align    x
+  #elif defined(CONFIG_HEXAGON)
+    #define   ALIGN(x)    .balign   x
   #else
     #error Architecture unsupported
   #endif
@@ -143,9 +145,13 @@
 
   #elif defined(CONFIG_ARCH_POSIX)
 
-  #elif defined(CONFIG_SPARC)
+  #elif defined(CONFIG_SPARC) || defined(CONFIG_TRICORE)
 
     #define PERFOPT_ALIGN .align  4
+
+  #elif defined(CONFIG_HEXAGON)
+
+    #define PERFOPT_ALIGN .balign 4
 
   #else
 
@@ -244,6 +250,20 @@
  * into a single section in the end.
  */
 #define Z_DECL_ALIGN(type) __aligned(__alignof(type)) type
+
+/**
+ * @brief Align an object or type to a data-cache line on cached SMP systems.
+ *
+ * Uses CONFIG_DCACHE_LINE_SIZE when multiple CPUs are configured. Otherwise,
+ * or on uniprocessor and cacheless systems, keeps natural alignment. For arrays,
+ * apply this to the element type to align every element rather than only the
+ * array's start.
+ */
+#if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1) && defined(CONFIG_DCACHE)
+#define Z_DCACHE_ALIGN_SMP __aligned(CONFIG_DCACHE_LINE_SIZE)
+#else
+#define Z_DCACHE_ALIGN_SMP
+#endif
 
 /* Check if a pointer is aligned for against a specific byte boundary  */
 #define IS_PTR_ALIGNED_BYTES(ptr, bytes) ((((uintptr_t)ptr) % bytes) == 0)

@@ -7,6 +7,7 @@ supported:
   - adc
   - arduino_gpio
   - crc
+  - crypto
   - dma
   - entropy
   - gpio
@@ -15,6 +16,7 @@ supported:
   - octospi
   - ptp_clock
   - rtc
+  - sdhc
   - uart
   - usbd
   - watchdog
@@ -37,3 +39,5 @@ variants:
         - kernel
         - posix
         - cmsis-dsp
+        - filesystem
+        - disk

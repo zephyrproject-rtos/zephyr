@@ -31,6 +31,22 @@ user_sram_size = (user_sram_end - user_sram_org);
 #define RAMABLE_REGION     sram0_0_seg
 #define ROMABLE_REGION     FLASH
 
+#ifdef CONFIG_RISCV_PMP
+	#define MPU_MIN_SIZE CONFIG_PMP_GRANULARITY
+	#define MPU_MIN_SIZE_ALIGN . = ALIGN(MPU_MIN_SIZE);
+	#if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
+		#define MPU_ALIGN(region_size) \
+			. = ALIGN(MPU_MIN_SIZE); \
+			. = ALIGN(1 << LOG2CEIL(region_size))
+	#else
+		#define MPU_ALIGN(region_size) \
+			. = ALIGN(MPU_MIN_SIZE)
+	#endif
+#else
+	#define MPU_MIN_SIZE_ALIGN
+	#define MPU_ALIGN(region_size) . = ALIGN(4)
+#endif
+
 #undef GROUP_DATA_LINK_IN
 #define GROUP_DATA_LINK_IN(vregion, lregion) > vregion AT > lregion
 
@@ -318,6 +334,8 @@ SECTIONS
 
     *(.iram1 .iram1.*)
     *(.iram0.literal .iram.literal .iram.text.literal .iram0.text .iram.text)
+    /* Input sections named with zephyr_linker_sources(RAMFUNC_SECTION ...) */
+    #include <snippets-ramfunc-section.ld>
     *libzephyr.a:panic.*(.literal .text .literal.* .text.*)
     *libzephyr.a:loader.*(.literal .text .literal.* .text.*)
     *libzephyr.a:flash_init.*(.literal .text .literal.* .text.*)
@@ -727,6 +745,22 @@ SECTIONS
   #include <zephyr/linker/common-rom/common-rom-logging.ld>
   #pragma pop_macro("GROUP_ROM_LINK_IN")
 
+  /* Userspace sections (app_smem, kobject_data) are placed before .dram0.end
+   * so they are part of the DRAM segment that MCUboot loads to RAM.
+   */
+#if defined(CONFIG_USERSPACE)
+#define APP_SHARED_ALIGN MPU_MIN_SIZE_ALIGN
+#define SMEM_PARTITION_ALIGN MPU_ALIGN
+
+#include <app_smem.ld>
+
+  _app_smem_size = _app_smem_end - _app_smem_start;
+  _app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
+#endif /* CONFIG_USERSPACE */
+
+#include <zephyr/linker/kobject-data.ld>
+#include <zephyr/linker/kobject-priv-stacks.ld>
+
   .dram0.end :
   {
     . = ALIGN(4);
@@ -739,6 +773,11 @@ SECTIONS
     . = ALIGN(4);
     *(.noinit)
     *(.noinit.*)
+#ifdef CONFIG_USERSPACE
+    z_user_stacks_start = .;
+    *(.user_stacks*)
+    z_user_stacks_end = .;
+#endif /* CONFIG_USERSPACE */
 #if defined(CONFIG_LLEXT) && !defined(CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT)
     *(.llext_heap)
     *(.llext_ext_heap)
@@ -750,6 +789,7 @@ SECTIONS
   /* Shared RAM */
   .dram0.bss (NOLOAD) :
   {
+    MPU_MIN_SIZE_ALIGN
     . = ALIGN (8);
     __bss_start = ABSOLUTE(.);
     _bss_start = ABSOLUTE(.);
@@ -787,6 +827,9 @@ SECTIONS
 
   /* Provide total SRAM usage, including IRAM and DRAM */
   _image_ram_start = _iram_start;
+
+#define LAST_RAM_ALIGN MPU_MIN_SIZE_ALIGN
+
   #include <zephyr/linker/ram-end.ld>
 
   ASSERT(((_end - ORIGIN(sram0_0_seg)) <= LENGTH(sram0_0_seg)), "SRAM code/data does not fit.")
@@ -818,6 +861,7 @@ SECTIONS
     *(.literal .text .literal.* .text.*)
     *(.stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
     *(.irom0.text) /* catch stray ICACHE_RODATA_ATTR */
+#include <zephyr/linker/kobject-text.ld>
     *(.adv_fast_execute_code_iram1 .adv_fast_execute_code_iram1.*)
 
     *(.fini.literal)
@@ -839,7 +883,10 @@ SECTIONS
     _text_end = ABSOLUTE(.);
     _instruction_reserved_end = ABSOLUTE(.);
     __text_region_end = ABSOLUTE(.);
+    /* Align for PMP granularity requirements */
+    MPU_MIN_SIZE_ALIGN
     __rom_region_end = ABSOLUTE(.);
+    __rom_region_size = ABSOLUTE(__rom_region_end - __rom_region_start);
     _etext = .;
 
   } GROUP_DATA_LINK_IN(FLASH_CODE_REGION, ROMABLE_REGION)
@@ -904,7 +951,6 @@ SECTIONS
     *(.xt_except_desc_end)
     *(.dynamic)
     *(.gnu.version_d)
-    __rodata_region_end = .;
     _rodata_end = ABSOLUTE(.);
     /* Literals are also RO data. */
     _lit4_start = ABSOLUTE(.);
@@ -919,6 +965,7 @@ SECTIONS
     *(.rodata.*)
     *(.rodata_wlog)
     *(.rodata_wlog*)
+#include <zephyr/linker/kobject-rom.ld>
     . = ALIGN(4);
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
@@ -930,6 +977,7 @@ SECTIONS
   #include <zephyr/linker/common-rom/common-rom-bt.ld>
   #include <zephyr/linker/common-rom/common-rom-debug.ld>
   #include <zephyr/linker/common-rom/common-rom-misc.ld>
+  #include <snippets-rom-sections.ld>
   #include <zephyr/linker/thread-local-storage.ld>
   #include <snippets-sections.ld>
 
@@ -941,6 +989,11 @@ SECTIONS
     LONG(0);
     _rodata_reserved_end = ABSOLUTE(.);
     _image_rodata_end = ABSOLUTE(.);
+    /* The read-only region must span the linker-collected rom sections too:
+     * device API structures live there, and a pointer into one reaches a
+     * syscall as an argument, where it is checked against this region.
+     */
+    __rodata_region_end = .;
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
   /* --- END OF .rodata --- */
@@ -950,7 +1003,6 @@ SECTIONS
 #endif
 
   #include <zephyr/linker/debug-sections.ld>
-  /DISCARD/ : { *(.note.GNU-stack) }
 
   SECTION_PROLOGUE(.riscv.attributes, 0,)
     {

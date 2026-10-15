@@ -100,7 +100,7 @@ For individual files
 
 .. code-block:: bash
 
-   npx --prefix ./scripts/ci dts-linter --format --file board.dts --file board_pinctrl.dtsi --patchFile diff.patch
+   npx --ignore-scripts --prefix ./scripts/ci dts-linter --format --file board.dts --file board_pinctrl.dtsi --patchFile diff.patch
    git apply diff.patch
 
 You can omit ``--file`` and this will format all files under the directory where the command
@@ -111,7 +111,7 @@ You can also fix in place with
 
 .. code-block:: bash
 
-   npx --prefix ./scripts/ci dts-linter --formatFixAll
+   npx --ignore-scripts --prefix ./scripts/ci dts-linter --formatFixAll
 
 
 Editor Integration

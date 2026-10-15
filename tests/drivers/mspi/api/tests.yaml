@@ -35,6 +35,9 @@ tests:
     harness: ztest
     platform_allow:
       - stm32h573i_dk
+      - stm32h5f5j_dk
+      - stm32h7b3i_dk
+      - stm32h735g_disco
   drivers.mspi.api.xec:
     tags:
       - drivers

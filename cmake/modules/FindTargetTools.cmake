@@ -10,13 +10,19 @@
 # | Target C-compiler  | Yes      |                               |
 # | Target Assembler   | Yes      |                               |
 # | Target linker      | Yes      |                               |
+# | gperf              | (1)      |  Kernel object hash tables    |
 # +---------------------------------------------------------------+
+# (1) Required if CONFIG_USERSPACE is enabled.
 #
 # The module defines the following variables:
 #
 # 'CMAKE_C_COMPILER'
 # Path to target C compiler.
 # Set to 'CMAKE_C_COMPILER-NOTFOUND' if no C compiler was found.
+#
+# 'GPERF'
+# Path to gperf.
+# Set to 'GPERF-NOTFOUND' if gperf was not found.
 #
 # 'TargetTools_FOUND', 'TARGETTOOLS_FOUND'
 # True if all required host tools were found.
@@ -31,6 +37,13 @@ find_package(HostTools)
 
 if(TargetTools_FOUND)
   return()
+endif()
+
+# gperf generates the kernel object hash tables of userspace builds.
+if(CONFIG_USERSPACE)
+  find_program(GPERF gperf REQUIRED)
+else()
+  find_program(GPERF gperf)
 endif()
 
 # Prevent CMake from testing the toolchain

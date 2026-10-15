@@ -1477,7 +1477,7 @@ static int cmd_run_suite(const struct shell *sh, size_t argc, char **argv)
 			val = atoi(state->optarg);
 			if (val < 1) {
 				shell_fprintf(sh, SHELL_ERROR,
-					"Invalid number of suite interations\n");
+					"Invalid number of suite iterations\n");
 				return -ENOEXEC;
 			}
 			repeat_iter = val;
@@ -1597,7 +1597,9 @@ int main(void)
 	k_mem_domain_add_partition(&k_mem_domain_default, &ztest_mem_partition);
 #ifdef Z_MALLOC_PARTITION_EXISTS
 	/* Allow access to malloc() memory */
-	k_mem_domain_add_partition(&k_mem_domain_default, &z_malloc_partition);
+	if (z_malloc_partition.size != 0U) {
+		k_mem_domain_add_partition(&k_mem_domain_default, &z_malloc_partition);
+	}
 #endif
 #endif /* CONFIG_USERSPACE */
 

@@ -7,7 +7,7 @@
 
 /dts-v1/;
 
-#include <espressif/esp32c6/esp32c6_mini_n4.dtsi>
+#include <espressif/esp32c6/esp32c6.dtsi>
 #include "adafruit_feather_esp32c6_hpcore-pinctrl.dtsi"
 #include "adafruit_feather_esp32c6_connector.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -77,6 +77,11 @@
 		gpio-map = <0 0 &gpio0 18 0>, /* SCL */
 			   <1 0 &gpio0 19 0>; /* SDA */
 	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(4)>;
+	ranges = <0x0 0x0 DT_SIZE_M(4)>;
 };
 
 &uart0 {

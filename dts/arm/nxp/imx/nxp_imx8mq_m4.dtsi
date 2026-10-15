@@ -6,6 +6,10 @@
 
 #include <nxp/imx/nxp_imx8m_m4.dtsi>
 
+&{/cpus} {
+	timebase-frequency = <DT_FREQ_M(266)>;
+};
+
 &ocram_code {
 	reg = <0x00900000 DT_SIZE_K(128)>;
 };

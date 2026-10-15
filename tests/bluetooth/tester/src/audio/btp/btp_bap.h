@@ -223,6 +223,25 @@ struct btp_bap_broadcast_sink_set_broadcast_code_cmd {
 	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 } __packed;
 
+/* Reconfigures the QoS and codec configuration of an existing stopped broadcast source. */
+#define BTP_BAP_BROADCAST_SOURCE_RECONFIGURE	0x1CU
+struct btp_bap_broadcast_source_reconfigure_cmd {
+	uint8_t broadcast_id[BT_AUDIO_BROADCAST_ID_SIZE];
+	uint8_t streams_per_subgroup;
+	uint8_t subgroups;
+	uint8_t sdu_interval[3];
+	uint8_t framing;
+	uint16_t max_sdu;
+	uint8_t retransmission_num;
+	uint16_t max_transport_latency;
+	uint8_t presentation_delay[3];
+	uint8_t coding_format;
+	uint16_t vid;
+	uint16_t cid;
+	uint8_t cc_ltvs_len;
+	uint8_t cc_ltvs[];
+} __packed;
+
 /* BAP events */
 #define BTP_BAP_EV_DISCOVERY_COMPLETED		0x80U
 struct btp_bap_discovery_completed_ev {

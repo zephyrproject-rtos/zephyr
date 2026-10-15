@@ -22,6 +22,7 @@
 #ifndef ZEPHYR_INCLUDE_INPUT_INPUT_CRSF_H_
 #define ZEPHYR_INCLUDE_INPUT_INPUT_CRSF_H_
 
+#include <zephyr/device.h>
 #include <zephyr/types.h>
 
 #ifdef __cplusplus

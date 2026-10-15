@@ -549,6 +549,8 @@ device.
        set the system time when :kconfig:option:`CONFIG_NET_CONFIG_CLOCK_SNTP_SET_RTC` is enabled)
    * - zephyr,rtk-serial
      - Selects the :ref:`uart_api` device used by the Serial GNSS RTK client.
+   * - zephyr,secure-storage-its-partition
+     - Fixed partition node. This selects the partition used by the Secure Storage ZMS backend.
    * - zephyr,sensor-clock
      - Selects the :ref:`counter_api` device used as sensor time source.
    * - zephyr,settings-partition

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __CH32V10X_CLOCKS_H__
-#define __CH32V10X_CLOCKS_H__
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_CH32V10X_CLOCKS_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_CH32V10X_CLOCKS_H_
 
 /**
  * @file
@@ -83,4 +83,4 @@
 /** @brief Power interface clock (APB1) */
 #define CH32V10X_CLOCK_PWR    CH32V10X_CLOCK_CONFIG(APB1, 28)
 
-#endif
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_CH32V10X_CLOCKS_H_ */

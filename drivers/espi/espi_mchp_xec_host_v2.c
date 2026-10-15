@@ -47,8 +47,11 @@
 #define INIT_EMI2     NULL
 #define INIT_RTC0     NULL
 #define INIT_P80BD0   NULL
-#define INIT_UART0    NULL
-#define INIT_UART1    NULL
+/* Hardware implements several UART logical devices (UART0/1/2) with their own
+ * I/O BARs. This driver exposes one eSPI UART selected by
+ * CONFIG_ESPI_PERIPHERAL_UART_SOC_MAPPING, initialized by INIT_UART.
+ */
+#define INIT_UART     NULL
 
 /* Host I/O space addresses for default set of peripherals mapped by eSPI */
 #define ESPI_XEC_KBC_HOST_ADDR      0x60U
@@ -179,7 +182,7 @@ static const struct xec_mbox_config xec_mbox0_cfg = {
  * EC may choose to enable EC-to-Host Serial-IRQ and/or EC-to-Host SMI delivered
  * by Serial-IRQ.
  * We do not write 0xFF to the Host-to-EC register to clear the interrupt status because
- * the Host may interpret claring of Host-to-EC as the EC has completed the requested
+ * the Host may interpret clearing of Host-to-EC as the EC has completed the requested
  * operation. Instead, we disable the mailbox interrupt. The application can re-enable the
  * interrupt after writing a value to Host-to-EC via our side-band API.
  */
@@ -951,7 +954,7 @@ static int init_acpi_ec1(const struct device *dev)
 				       xec_acpi_ec1_cfg.host_mem_addr, true);
 	}
 
-	if (xec_acpi_ec2_cfg.host_io_addr != UINT16_MAX) {
+	if (xec_acpi_ec1_cfg.host_io_addr != UINT16_MAX) {
 		bar_val = MCHP_ESPI_IO_BAR_HOST_ADDR_SET((uint32_t)xec_acpi_ec1_cfg.host_io_addr);
 	}
 #endif
@@ -1458,7 +1461,7 @@ static void p80bd0_isr(const struct device *dev)
 		temp |= iodata[3U - n];
 	}
 
-	evt.evt_details = ESPI_PERIPHERAL_DEBUG_PORT80 | ((uint32_t)iowidth << 16);
+	evt.evt_details = ESPI_PERIPHERAL_DEBUG_PORT80;
 	evt.evt_details |= ((uint32_t)(ioflags & 0xfU) << 16);
 	evt.evt_details |= ((uint32_t)(iowidth & 0xfU) << 20);
 	evt.evt_data = temp;

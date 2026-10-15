@@ -1705,9 +1705,11 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
     ts1 = mock.Mock(testcases=[ts1tc1])
     ts1.name = 'TestSuite 1'
     ts1.toolchain = 'zephyr'
+    ts1.required_applications = []
     ts2 = mock.Mock(testcases=[])
     ts2.name = 'TestSuite 2'
     ts2.toolchain = 'zephyr'
+    ts2.required_applications = []
     ts3tc1 = mock.Mock()
     ts3tc1.name = 'TS3.tc1'
     ts3tc2 = mock.Mock()
@@ -1715,14 +1717,17 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
     ts3 = mock.Mock(testcases=[ts3tc1, ts3tc2])
     ts3.name = 'TestSuite 3'
     ts3.toolchain = 'zephyr'
+    ts3.required_applications = []
     ts4tc1 = mock.Mock()
     ts4tc1.name = 'TS4.tc1'
     ts4 = mock.Mock(testcases=[ts4tc1])
     ts4.name = 'TestSuite 4'
     ts4.toolchain = 'zephyr'
+    ts4.required_applications = []
     ts5 = mock.Mock(testcases=[])
     ts5.name = 'TestSuite 5'
     ts5.toolchain = 'zephyr'
+    ts5.required_applications = []
 
     env = mock_twister_env()
     env.outdir = os.path.join('out', 'dir')
@@ -1766,7 +1771,9 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
         {
             "name": "TestSuite 2",
             "platform": "Platform 1",
-            "toolchain": "zephyr"
+            "toolchain": "zephyr",
+            "status": null,
+            "reason": "Unknown Instance status"
         },
         {
             "name": "TestSuite 3",
@@ -1863,6 +1870,8 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
                 'available_ram': 0,
                 'available_rom': 0
             },
+            'status': TwisterStatus.NONE,
+            'reason': None,
             'retries': 0,
             'toolchain': 'zephyr',
             'testcases': []
@@ -1916,6 +1925,9 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
     for n, i in testplan.instances.items():
         assert expected_instances[n]['metrics'] == i.metrics
         assert expected_instances[n]['retries'] == i.retries
+        if 'status' in expected_instances[n]:
+            assert expected_instances[n]['status'] == i.status
+            assert expected_instances[n]['reason'] == i.reason
         for t in i.testcases:
             assert expected_instances[n]['testcases'][str(t)]['status'] == t.status
             assert expected_instances[n]['testcases'][str(t)]['reason'] == t.reason

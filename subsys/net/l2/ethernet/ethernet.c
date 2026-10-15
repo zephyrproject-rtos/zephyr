@@ -41,10 +41,6 @@ static const struct net_eth_addr multicast_eth_addr __unused = {
 static const struct net_eth_addr broadcast_eth_addr = {
 	{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff } };
 
-#if defined(NET_ETH_MCAST_FILTER_SUPPORTED) && defined(CONFIG_NET_NATIVE_IP)
-static struct net_if_mcast_monitor mcast_monitor;
-#endif
-
 const struct net_eth_addr *net_eth_broadcast_addr(void)
 {
 	return &broadcast_eth_addr;
@@ -267,10 +263,10 @@ static int ethernet_mcast_filter_set(struct net_if *iface,
 	return api->set_config(dev, iface, ETHERNET_CONFIG_TYPE_FILTER, &cfg);
 }
 
-/* Protects the L2 multicast addresses of every interface. These cannot be
- * protected by the interface lock, as the multicast monitors are called with
- * the monitor lock held while other places take the interface lock before the
- * monitor lock, for example net_if_config_ipv4_get().
+/* Protects the L2 multicast addresses of every interface. The interface lock
+ * is not used for this, as the addresses of a VLAN interface belong to the
+ * Ethernet interface it is attached to, and the lock of that interface would
+ * have to be taken with the lock of the VLAN interface held.
  */
 static K_MUTEX_DEFINE(mcast_lock);
 
@@ -496,13 +492,13 @@ void net_eth_mcast_addr_foreach(struct net_if *iface,
 
 	k_mutex_unlock(&mcast_lock);
 }
-#endif
 
-#if defined(NET_ETH_MCAST_FILTER_SUPPORTED) && defined(CONFIG_NET_NATIVE_IP)
-static void ethernet_mcast_monitor_cb(struct net_if *iface, const struct net_addr *addr,
-				      bool is_joined)
+int net_eth_mcast_ip_addr_update(struct net_if *iface, const struct net_addr *addr, bool add)
 {
 	struct net_eth_addr mac_addr;
+
+	NET_ASSERT(iface != NULL);
+	NET_ASSERT(addr != NULL);
 
 	switch (addr->family) {
 #if defined(CONFIG_NET_IPV4)
@@ -516,20 +512,20 @@ static void ethernet_mcast_monitor_cb(struct net_if *iface, const struct net_add
 		break;
 #endif /* CONFIG_NET_IPV6 */
 	default:
-		return;
+		return -EINVAL;
 	}
 
 	/* Several IP multicast addresses can map to the same link layer
 	 * address, so the group is tracked by the L2 to know when the device
 	 * really has to start or stop listening to it.
 	 */
-	if (is_joined) {
-		(void)net_eth_mcast_addr_add(iface, &mac_addr);
-	} else {
-		(void)net_eth_mcast_addr_rm(iface, &mac_addr);
+	if (add) {
+		return net_eth_mcast_addr_add(iface, &mac_addr);
 	}
+
+	return net_eth_mcast_addr_rm(iface, &mac_addr);
 }
-#endif
+#endif /* NET_ETH_MCAST_FILTER_SUPPORTED */
 
 static enum net_verdict ethernet_recv(struct net_if *iface,
 				      struct net_pkt *pkt)
@@ -983,6 +979,9 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	uint16_t ptype = net_htons(net_pkt_ll_proto_type(pkt));
 	struct net_pkt *orig_pkt = pkt;
+#if defined(CONFIG_NET_ARP) && defined(CONFIG_NET_NATIVE)
+	struct net_in_addr arp_dst = {0};
+#endif
 	int ret;
 
 	NET_ASSERT(dev != NULL);
@@ -1011,12 +1010,17 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 				NET_DBG("Found ARP entry, sending pkt %p to iface %d (%p)",
 					pkt, net_if_get_by_iface(iface), iface);
 			} else if (ret == NET_ARP_PKT_REPLACED) {
-				/* Original pkt got queued and is replaced
-				 * by an ARP request packet.
+				/* pkt is replaced by an ARP request. ARP holds
+				 * its own reference on pkt only if it queued it,
+				 * so the caller's reference is kept until the
+				 * request has been sent.
 				 */
 				NET_DBG("Sending arp pkt %p (orig %p) to iface %d (%p)",
 					arp, pkt, net_if_get_by_iface(iface), iface);
-				net_pkt_unref(pkt);
+#if defined(CONFIG_NET_ARP) && defined(CONFIG_NET_NATIVE)
+				/* Saved before the Ethernet header is added. */
+				memcpy(&arp_dst, NET_ARP_HDR(arp)->dst_ipaddr, sizeof(arp_dst));
+#endif
 				pkt = arp;
 				ptype = net_htons(net_pkt_ll_proto_type(pkt));
 			} else if (ret == NET_ARP_PKT_QUEUED) {
@@ -1081,19 +1085,26 @@ send:
 
 	ret = net_pkt_get_len(pkt);
 
+	if (pkt != orig_pkt) {
+		/* ARP request sent, drop the caller's reference on the
+		 * packet it replaced.
+		 */
+		net_pkt_unref(orig_pkt);
+	}
+
 	net_pkt_unref(pkt);
 error:
 	return ret;
 
 arp_error:
-	if (IS_ENABLED(CONFIG_NET_ARP) && ptype == net_htons(NET_ETH_PTYPE_ARP)) {
-		/* Original packet was added to ARP's pending Q, so, to avoid it
-		 * being freed, take a reference, the reference is dropped when we
-		 * clear the pending Q in ARP and then it will be freed by net_if.
+	if (IS_ENABLED(CONFIG_NET_ARP) && pkt != orig_pkt) {
+		/* The caller's reference on orig_pkt is still held and
+		 * net_if releases it on error. Clearing the pending entry
+		 * releases the reference ARP took when it queued orig_pkt.
+		 * The entry is keyed on the packet's interface, which may
+		 * be a VLAN interface on top of this one.
 		 */
-		net_pkt_ref(orig_pkt);
-		if (net_arp_clear_pending(
-			    iface, (struct net_in_addr *)NET_IPV4_HDR(pkt)->dst)) {
+		if (net_arp_clear_pending(net_pkt_iface(orig_pkt), &arp_dst)) {
 			NET_DBG("Could not find pending ARP entry");
 		}
 		/* Free the ARP request */
@@ -1380,12 +1391,6 @@ void ethernet_init(struct net_if *iface)
 #if defined(CONFIG_NET_DSA)
 	/* DSA port may need to handle flags */
 	dsa_eth_init(iface);
-#endif
-
-#if defined(NET_ETH_MCAST_FILTER_SUPPORTED) && defined(CONFIG_NET_NATIVE_IP)
-	if ((caps & ETHERNET_HW_FILTERING) != 0) {
-		net_if_mcast_mon_register(&mcast_monitor, NULL, ethernet_mcast_monitor_cb);
-	}
 #endif
 
 	if ((caps & ETHERNET_LLDP) != 0) {

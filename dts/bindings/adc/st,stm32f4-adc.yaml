@@ -2,12 +2,33 @@
 
 # SPDX-License-Identifier: Apache-2.0
 
-description: |
-        STM32F4 ADC
+title: STM32F4 ADC
 
+description: |
         This compatible stands for all ADC blocks similar to the one on STM32F4,
         like F2, F7 or L1.
+        It is similar to the STM32 ADC described in st,stm32-adc.yaml except that
+        the clocks are configured in the child nodes.
 
 compatible: "st,stm32f4-adc"
 
-include: st,stm32-adc.yaml
+include:
+  - name: st,stm32-adc.yaml
+    property-blocklist:
+      - clocks
+      - clock-names
+
+child-binding:
+  properties:
+    clocks:
+      required: true
+
+    clock-names:
+      required: true
+      enum:
+        - "adcx"
+        - "adc_ker"
+      description: |
+        Expected name is the following:
+        - "adcx" for the enabling the register clock (mandatory)
+        - "adc_ker" for configuring the kernel clock (if applicable)

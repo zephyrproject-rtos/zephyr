@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig GNSS_RTK
-	bool "GNSS RTK client"
+	bool "GNSS RTK client [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	help
 	  Enable GNSS RTK data-correction clients

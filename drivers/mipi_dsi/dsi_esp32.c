@@ -8,6 +8,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/mipi_dsi.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
 #include <hal/mipi_dsi_hal.h>

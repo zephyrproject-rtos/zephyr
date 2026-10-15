@@ -1,0 +1,44 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm/infineon/psoc4/mpns/cy8c4046lqe_t1.dtsi>
+
+#include "cy8cproto_040t_common.dtsi"
+
+/ {
+	model = "CY8CPROTO-040T-AUTO Prototyping Kit";
+	compatible = "infineon,cy8cproto-040t-auto", "infineon,psoc4000t";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	aliases {
+		led0 = &user_led3;
+		led1 = &user_led1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		status = "okay";
+
+		user_led3: led_3 {
+			label = "LED3";
+			gpios = <&gpio_prt1 0 GPIO_ACTIVE_HIGH>;
+		};
+
+		/* Shares its pin with SW4; see samples/basic/button overlay */
+		user_led1: led_1 {
+			label = "LED1";
+			gpios = <&gpio_prt3 0 GPIO_ACTIVE_LOW>;
+		};
+	};
+};

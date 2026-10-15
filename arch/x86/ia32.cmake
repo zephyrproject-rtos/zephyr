@@ -3,7 +3,7 @@
 
 # Find out if we are optimizing for size
 get_target_property(zephyr_COMPILE_OPTIONS zephyr_interface INTERFACE_COMPILE_OPTIONS)
-#Any -Os is (or may be) wraped in $<COMPILE_LANGUAGE> guards
+#Any -Os is (or may be) wrapped in $<COMPILE_LANGUAGE> guards
 list(FILTER zephyr_COMPILE_OPTIONS INCLUDE REGEX "-Os")
 list(LENGTH zephyr_COMPILE_OPTIONS have_os)
 if(${have_os} GREATER 0)

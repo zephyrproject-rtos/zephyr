@@ -26,7 +26,7 @@
  *     1 - UART
  *
  * The function numbers serve as an enumerator in the pinctrl driver
- * and the defines controling those are listed in `pinctrl-zynqmp.h`.
+ * and the defines controlling those are listed in `pinctrl-zynqmp.h`.
  * Currently, one function for UART is specified and subsequent ones
  * can be added when the need arises.
  */

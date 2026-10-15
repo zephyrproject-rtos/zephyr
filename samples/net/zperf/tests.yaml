@@ -20,6 +20,13 @@ tests:
       - net
     extra_configs:
       - CONFIG_NET_ZPERF_SERVER=n
+  sample.net.zperf.iperf3:
+    harness: net
+    platform_allow: qemu_x86
+    tags:
+      - net
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-iperf3.conf"
   sample.net.zperf.loopback_icount:
     harness: console
     platform_allow:

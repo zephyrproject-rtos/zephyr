@@ -1,8 +1,36 @@
+# Copyright (c) 2026 RASNA
 # Copyright (c) 2026 Łukasz Grabowski
 # SPDX-License-Identifier: Apache-2.0
 
-description: UltraChip UC8253 EPD controller
+description: |
+  UltraChip UC8253 EPD controller with optional four-level grayscale.
 
 compatible: "ultrachip,uc8253"
 
 include: ultrachip,uc81xx-common.yaml
+
+properties:
+  grayscale:
+    type: boolean
+    description: |
+      Enables four-level PIXEL_FORMAT_L_8 output using two buffered planes.
+      Requires a compatible panel OTP waveform, such as the Good Display
+      GDEY037T03, and a ``gray`` child profile.
+
+  gray-level-planes:
+    type: array
+    default: [0, 2, 1, 3]
+    description: |
+      DTM plane code for each grayscale level, darkest first. Each code is
+      (DTM1 << 1) | DTM2. Values must be a permutation of 0 through 3. The
+      default is for the Good Display GDEY037T03 panel.
+
+child-binding:
+  properties:
+    ccset:
+      type: int
+      description: CCSET value for this refresh profile.
+
+    tsset:
+      type: int
+      description: TSSET value for this refresh profile.

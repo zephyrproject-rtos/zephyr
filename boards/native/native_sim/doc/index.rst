@@ -422,6 +422,70 @@ Here are more details on the peripherals that are currently provided with this b
 
 .. _`net-tools`: https://github.com/zephyrproject-rtos/net-tools
 
+.. _nsim_per_wifi:
+
+**Wi-Fi driver**
+  A native_sim Wi-Fi driver is provided which presents a Wi-Fi station
+  interface in Zephyr backed by a Linux host radio. It runs the Zephyr
+  wpa_supplicant and drives a simulated Linux ``mac80211_hwsim`` radio through
+  the host ``nl80211`` interface. The radio is simulated by the Linux kernel,
+  but the ``nl80211``/``mac80211`` stack driving it is the normal Linux one, so
+  the scan / connect (open and WPA2-PSK) / disconnect flow can be exercised
+  entirely on the host.
+
+  .. figure:: native_sim_wifi.svg
+     :align: center
+
+     native_sim Wi-Fi driver: components, control/data paths and threads.
+
+  The driver is built when a node with the ``zephyr,native-sim-wifi`` compatible
+  is present in the devicetree (add one through a devicetree overlay). The
+  ``host-interface`` property selects the Linux interface the driver binds to,
+  and the MAC address is taken from the standard ``local-mac-address`` /
+  ``zephyr,random-mac-address`` properties:
+
+  .. code-block:: devicetree
+
+     / {
+             wifi0: wifi {
+                     compatible = "zephyr,native-sim-wifi";
+                     host-interface = "zwifi";
+                     zephyr,random-mac-address;
+             };
+     };
+
+  Both can also be overridden from the command line with the ``--wifi-if=<name>``
+  and ``--wifi-mac-addr=<mac>`` options.
+
+  64-bit ``native_sim`` (``native_sim/native/64``) is not supported yet, as the
+  hostap sources the driver pulls in do not build cleanly for 64-bit, so the
+  driver can only be built for a 32-bit ``native_sim`` image on a Linux host.
+  The build links the host ``libnl``, which has to match the word size of the
+  image, so it requires the 32-bit ``libnl`` development libraries; on a
+  Debian/Ubuntu host:
+
+  .. code-block:: console
+
+     $ sudo dpkg --add-architecture i386
+     $ sudo apt update
+     $ sudo apt install gcc-multilib pkg-config libnl-3-dev:i386 libnl-genl-3-dev:i386
+     $ export PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig
+
+  The simulated radio and the access points it connects to are created on the
+  host with the ``net-setup.sh`` script and the ``zwifi`` configuration from the
+  `net-tools`_ repository. That setup loads the ``mac80211_hwsim`` kernel
+  module, creates the ``zwifi`` station interface, and starts ``hostapd`` and
+  ``dnsmasq`` access points, so ``iw``, ``hostapd`` and ``dnsmasq`` must also be
+  installed. As the binary opens ``AF_PACKET`` and ``nl80211`` sockets,
+  ``zephyr.exe`` must be granted the ``cap_net_raw`` and ``cap_net_admin``
+  capabilities (e.g. ``sudo setcap cap_net_raw,cap_net_admin+ep zephyr.exe``) or
+  be run as root.
+
+  A complete, runnable example including the host setup (and an optional Docker
+  wrapper) is provided by the :zephyr_file:`tests/net/wifi/interop` test.
+
+  Note that this driver can only be used with Linux hosts.
+
 .. _nsim_per_offloaded_sockets:
 
 **Offloaded sockets driver**
@@ -488,6 +552,89 @@ Here are more details on the peripherals that are currently provided with this b
 .. _SDL2:
    https://www.libsdl.org
 
+.. _nsim_per_video_fifo:
+
+**Video capture driver**
+  A video capture driver is provided that reads raw frames from a named pipe
+  (FIFO) on the host, and presents them through the :ref:`video_api` as an
+  ordinary ``zephyr,camera`` device. This makes it possible to feed an
+  application with frames coming from a real webcam, a video file, or a
+  generated test pattern, without any camera hardware.
+
+  The device can be instantiated using the :ref:`snippet-video-native-fifo`
+  snippet, or by adding a devicetree node with the
+  ``zephyr,native-sim-video-fifo`` compatible. The application selects the
+  pixel format and the frame size, up to 1920x1080, with
+  :c:func:`video_set_format`. The default is 320x240 RGB565. The host writer
+  must produce frames of that format, as the driver does no scaling or
+  conversion. In ``ffmpeg``, RGB565, YUYV and GREY are ``rgb565le``,
+  ``yuyv422`` and ``gray``.
+
+  The FIFO path is taken from the ``fifo-path`` devicetree property, and
+  defaults to ``/tmp/zephyr-<device>-<pid>.fifo``. Each instance exposes its own
+  command line override in the form ``--<device>=<path>``. For a node named
+  ``video-fifo`` this is ``--video-fifo=<path>``. A FIFO created by the driver
+  is removed when the simulator exits.
+
+  The FIFO is created by the driver when the application starts streaming. A
+  writer must therefore either create the FIFO itself, for instance with
+  ``mkfifo``, or be started afterwards. For example:
+
+  .. code-block:: console
+
+     $ mkfifo /tmp/zephyr-cam.fifo
+     $ zephyr.exe --video-fifo=/tmp/zephyr-cam.fifo
+
+  Then, from another terminal, feed it a test pattern in the default format:
+
+  .. code-block:: console
+
+     $ ffmpeg -re -f lavfi -i testsrc2=size=320x240:rate=10 \
+         -pix_fmt rgb565le -f rawvideo -y /tmp/zephyr-cam.fifo
+
+  To capture from a webcam instead:
+
+  .. code-block:: console
+
+     $ ffmpeg -f v4l2 -i /dev/video0 \
+         -vf "scale=320:240:force_original_aspect_ratio=increase,crop=320:240,fps=10" \
+         -pix_fmt rgb565le -f rawvideo -y /tmp/zephyr-cam.fifo
+
+  If the path exists but is not a FIFO, the driver prints an error and refuses
+  to start streaming. The FIFO is opened non-blocking and polled from a
+  dedicated thread, so the simulation is never blocked: while no host writer is
+  attached, no frame is delivered. If a writer disconnects in the middle of a
+  frame, the incomplete frame is discarded so that the next writer resumes on a
+  frame boundary.
+
+  Frames are handed to the application as soon as they arrive, without any
+  pacing of its own: the frame rate is entirely the one the host writer
+  produces. When the host has more data pending and the application still has a
+  free buffer, the driver keeps reading without waiting; ``poll-interval-ms``
+  only applies once the host has nothing more to offer.
+
+  The driver enlarges the host pipe to hold two frames. Unprivileged processes
+  are limited by ``/proc/sys/fs/pipe-max-size`` for each pipe (1 MiB by
+  default), and by ``/proc/sys/fs/pipe-user-pages-soft`` for all their pipes
+  together. When the pipe cannot hold two frames, the driver logs a warning, as
+  the frame rate may be limited: the host writer then waits for the driver to
+  make room, which it does every ``poll-interval-ms``. To avoid this, run
+  ``zephyr.exe`` with root privileges (or the CAP_SYS_RESOURCE POSIX
+  capability, to be exact), or raise the limit beforehand. 16 MiB fits two
+  frames of any supported format:
+
+  .. code-block:: console
+
+     $ sudo sysctl fs.pipe-max-size=16777216
+
+  A shorter ``poll-interval-ms`` also helps, down to one system tick, see
+  :kconfig:option:`CONFIG_SYS_CLOCK_TICKS_PER_SEC`.
+
+  When the application holds every buffer, the driver stops reading and the
+  host writer blocks once the pipe is full, so the driver drops nothing. Use a
+  rate-limited writer such as ``ffmpeg -re``: an unpaced one is read as fast as
+  the application returns buffers.
+
 .. _nsim_per_flash_simu:
 
 **EEPROM simulator**
@@ -498,8 +645,8 @@ Here are more details on the peripherals that are currently provided with this b
   Some more information can be found in :ref:`the emulators page <emul_eeprom_simu_brief>`.
 
 **Flash simulator**
-  The flash simulator can also be used in the native targets. In this you have the option to keep
-  the flash content in a binary file on the host file system or in RAM. The behavior of the flash
+  The flash simulator can also be used in the native targets. In these, you have the option to keep
+  the flash content in a binary file on the host filesystem or in RAM. The behavior of the flash
   device can be configured through the native_sim board devicetree or Kconfig settings under
   :kconfig:option:`CONFIG_FLASH_SIMULATOR`.
 
@@ -507,8 +654,8 @@ Here are more details on the peripherals that are currently provided with this b
   working directory. The location of this file can be changed through the
   command line parameter ``--flash``. The flash data will be stored in raw format
   and the file will be truncated to match the size specified in the devicetree
-  configuration. In case the file does not exists the driver will take care of
-  creating the file, else the existing file is used.
+  configuration. If the file does not exist, the driver creates it; otherwise, the existing file is
+  used.
 
   Some more information can be found in :ref:`the emulators page <emul_flash_simu_brief>`.
 

@@ -6,6 +6,7 @@
 #include <zephyr/kernel/smp.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/spinlock.h>
+#include <zephyr/llext/symbol.h>
 #include <kswap.h>
 #include <kernel_internal.h>
 
@@ -68,6 +69,7 @@ unsigned int z_smp_global_lock(void)
 
 	return key;
 }
+EXPORT_SYMBOL(z_smp_global_lock);
 
 void z_smp_global_unlock(unsigned int key)
 {
@@ -81,6 +83,7 @@ void z_smp_global_unlock(unsigned int key)
 
 	arch_irq_unlock(key);
 }
+EXPORT_SYMBOL(z_smp_global_unlock);
 
 /* Called from within z_swap(), so assumes lock already held */
 void z_smp_release_global_lock(struct k_thread *thread)
@@ -273,12 +276,11 @@ bool z_smp_cpu_mobile(void)
 __attribute_const__ struct k_thread *z_smp_current_get(void)
 {
 	/*
-	 * _current is a field read from _current_cpu, which can race
-	 * with preemption before it is read.  We must lock local
-	 * interrupts when reading it.
+	 * _raw_current can race with preemption before it is read.  We
+	 * must lock local interrupts when reading it.
 	 */
 	unsigned int key = arch_irq_lock();
-	struct k_thread *t = _current_cpu->current;
+	struct k_thread *t = _raw_current;
 
 	arch_irq_unlock(key);
 	return t;

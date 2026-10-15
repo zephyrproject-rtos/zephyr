@@ -56,11 +56,11 @@ LOG_MODULE_REGISTER(clock_control_bl61x, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #define ROOT_CLK_RANGE_DELIM	MHZ(500)
 
 #if CLK_SRC_IS(root, wifipll_top)
-#define CLK_AT_LEAST_MUL (BFLB_MUL_CLK(32,					\
+#define CLK_AT_LEAST_MUL (BFLB_MUL_CLK_XIP(32,					\
 	DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, wifipll_top), top_frequency),	\
 		BL61X_WIFIPLL_TOP_FREQ))
 #elif CLK_SRC_IS(root, aupll_top)
-#define CLK_AT_LEAST_MUL (BFLB_MUL_CLK(32,					\
+#define CLK_AT_LEAST_MUL (BFLB_MUL_CLK_XIP(32,					\
 	DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, aupll_top), top_frequency),	\
 		BL61X_AUPLL_TOP_FREQ))
 #else
@@ -669,20 +669,20 @@ static void clock_control_bl61x_init_wifipll_setup(const bl61x_pll_config *const
 	tmp = (tmp & GLB_WIFIPLL_SDM_BYPASS_UMSK)
 		| (config->pllSdmBypass << GLB_WIFIPLL_SDM_BYPASS_POS);
 	tmp = (tmp & GLB_WIFIPLL_SDMIN_UMSK)
-		| (BFLB_MUL_CLK(config->pllSdmin, top_frequency, BL61X_WIFIPLL_TOP_FREQ)
+		| (BFLB_MUL_CLK_XIP(config->pllSdmin, top_frequency, BL61X_WIFIPLL_TOP_FREQ)
 		<< GLB_WIFIPLL_SDMIN_POS);
 	sys_write32(tmp, GLB_BASE + GLB_WIFI_PLL_CFG6_OFFSET);
 
 	/* We need to overclock those as well for USB to work for some reason */
 	tmp = sys_read32(GLB_BASE + GLB_WIFI_PLL_CFG10_OFFSET);
 	tmp = (tmp & GLB_USBPLL_SDMIN_UMSK)
-		| (BFLB_MUL_CLK(USBPLL_SDMIN, top_frequency, BL61X_WIFIPLL_TOP_FREQ)
+		| (BFLB_MUL_CLK_XIP(USBPLL_SDMIN, top_frequency, BL61X_WIFIPLL_TOP_FREQ)
 		<< GLB_USBPLL_SDMIN_POS);
 	sys_write32(tmp, GLB_BASE + GLB_WIFI_PLL_CFG10_OFFSET);
 
 	tmp = sys_read32(GLB_BASE + GLB_WIFI_PLL_CFG12_OFFSET);
 	tmp = (tmp & GLB_SSCDIV_SDMIN_UMSK)
-		| (BFLB_MUL_CLK(SSCDIV_SDMIN, top_frequency, BL61X_WIFIPLL_TOP_FREQ)
+		| (BFLB_MUL_CLK_XIP(SSCDIV_SDMIN, top_frequency, BL61X_WIFIPLL_TOP_FREQ)
 		<< GLB_SSCDIV_SDMIN_POS);
 	sys_write32(tmp, GLB_BASE + GLB_WIFI_PLL_CFG12_OFFSET);
 
@@ -1055,7 +1055,7 @@ static void clock_control_bl61x_init_aupll_setup(const bl61x_pll_config *const c
 	tmp = (tmp & CCI_AUPLL_SDM_BYPASS_UMSK)
 		| (config->pllSdmBypass << CCI_AUPLL_SDM_BYPASS_POS);
 	tmp = (tmp & CCI_AUPLL_SDMIN_UMSK)
-		| (BFLB_MUL_CLK(config->pllSdmin, top_frequency, BL61X_AUPLL_TOP_FREQ)
+		| (BFLB_MUL_CLK_XIP(config->pllSdmin, top_frequency, BL61X_AUPLL_TOP_FREQ)
 		<< CCI_AUPLL_SDMIN_POS);
 	sys_write32(tmp, CCI_BASE + CCI_AUDIO_PLL_CFG6_OFFSET);
 
@@ -1187,7 +1187,9 @@ static __bflb_critfunc void clock_control_bl61x_init_root_as_crystal(const struc
 	clock_bflb_set_root_clock(BFLB_MAIN_CLOCK_XTAL);
 }
 
-static __ramfunc void clock_control_bl61x_update_flash_clk(const struct device *dev)
+static __ramfunc void clock_control_bl61x_update_flash_clk(const struct device *dev,
+							   const enum bl61x_clkid source,
+							   bool final)
 {
 	struct clock_control_bl61x_data *data = dev->data;
 	volatile uint32_t tmp;
@@ -1201,11 +1203,11 @@ static __ramfunc void clock_control_bl61x_update_flash_clk(const struct device *
 	tmp = *(volatile uint32_t *)(GLB_BASE + GLB_SF_CFG0_OFFSET);
 	tmp &= GLB_SF_CLK_SEL_UMSK;
 	tmp &= GLB_SF_CLK_SEL2_UMSK;
-	if (data->flashclk.source == bl61x_clkid_clk_wifipll) {
+	if (source == bl61x_clkid_clk_wifipll) {
 		clk = clock_control_bl61x_get_hclk(dev);
 		tmp |= 0U << GLB_SF_CLK_SEL_POS;
 		tmp |= 0U << GLB_SF_CLK_SEL2_POS;
-	} else if (data->flashclk.source == bl61x_clkid_clk_crystal) {
+	} else if (source == bl61x_clkid_clk_crystal) {
 		clk = clock_control_bl61x_get_xclk(dev);
 		tmp |= 0U << GLB_SF_CLK_SEL_POS;
 		tmp |= 1U << GLB_SF_CLK_SEL2_POS;
@@ -1218,12 +1220,12 @@ static __ramfunc void clock_control_bl61x_update_flash_clk(const struct device *
 	/* If flash controller will manage flash, set to standard speed
 	 * and let it set the divider.
 	 */
-#if defined(CONFIG_SOC_FLASH_BFLB)
-	clk = DIV_ROUND_CLOSEST(clk, BL61X_TARGET_BASIC_CLOCK);
-	tmp |= clamp(clk - 1, 0x0, 0x7) << GLB_SF_CLK_DIV_POS;
-#else
-	tmp |= (data->flashclk.divider - 1) << GLB_SF_CLK_DIV_POS;
-#endif
+	if (IS_ENABLED(CONFIG_SOC_FLASH_BFLB) || !final) {
+		clk = DIV_ROUND_CLOSEST(clk, BL61X_TARGET_BASIC_CLOCK);
+		tmp |= clamp(clk - 1, 0x0, 0x7) << GLB_SF_CLK_DIV_POS;
+	} else {
+		tmp |= (data->flashclk.divider - 1) << GLB_SF_CLK_DIV_POS;
+	}
 
 	*(volatile uint32_t *)(GLB_BASE + GLB_SF_CFG0_OFFSET) = tmp;
 
@@ -1348,6 +1350,8 @@ static __bflb_critfunc int clock_control_bl61x_update_clocks(const struct device
 		return -EIO;
 	}
 
+	clock_control_bl61x_update_flash_clk(dev, bl61x_clkid_clk_rc32m, false);
+
 	ret = clock_control_bl61x_update_f32k(dev);
 	if (ret < 0) {
 		return ret;
@@ -1408,6 +1412,8 @@ static __bflb_critfunc int clock_control_bl61x_update_clocks(const struct device
 	} else {
 		/* Root clock already setup as RC32M */
 	}
+
+	clock_control_bl61x_update_flash_clk(dev, data->flashclk.source, true);
 
 	ret = clock_control_bl61x_clock_trim_32M();
 	if (ret < 0) {
@@ -1750,8 +1756,6 @@ static int clock_control_bl61x_init(const struct device *dev)
 	clock_control_bl61x_peripheral_clock_init();
 
 	clock_bflb_settle();
-
-	clock_control_bl61x_update_flash_clk(dev);
 
 	irq_unlock(key);
 

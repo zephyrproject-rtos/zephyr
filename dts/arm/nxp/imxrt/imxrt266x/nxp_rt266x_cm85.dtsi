@@ -1,0 +1,81 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * i.MX RT266x, CM85 view: the CPU, its tightly coupled memories and its NVIC
+ * configuration. The shared peripheral tree is nxp_rt266x.dtsi; keeping the core's
+ * own nodes here is what makes adding another cluster additive.
+ *
+ * A composer includes this after declaring the apertures, since the TCM nodes need
+ * the memory aperture's label; it is not usable on its own.
+ *
+ * Not moved: the shared tree's interrupts are this core's vector numbers (IRQn_Type
+ * in MIMXRT2663_COMMON.h, HSP_LPUART0_IRQn = 184). Per-cluster numbering would mean
+ * a second copy of the tree, so it is left to whichever change adds a cluster.
+ */
+
+#include <arm/armv8.1-m.dtsi>
+#include <mem.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m85";
+			reg = <0>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+			d-cache-line-size = <32>;
+
+			/*
+			 * clock-frequency is deliberately not set here. It is
+			 * the frequency the core actually runs at, which
+			 * depends on how the board configures the CPU clock
+			 * root, so boards declare it. It is also not the system
+			 * timer's rate when SysTick counts the external
+			 * reference -- see CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC.
+			 */
+
+			/*
+			 * The ARM private peripherals are banked by execution
+			 * state rather than aliased, so this address is right for
+			 * both the secure and the non-secure view, and they stay
+			 * outside the aliased apertures.
+			 */
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+	};
+};
+
+/*
+ * ITCM 0x0 and DTCM 0x20000000, 256K each: fsl_memory.h's MEM_ITCM_END 0x0003FFFF
+ * and MEM_DTCM_END 0x2003FFFF, matching the data sheet's "512 KB TCM". Offsets from
+ * the memory aperture, so these are the non-secure addresses.
+ */
+&memory {
+	itcm: memory@0 {
+		compatible = "zephyr,memory-region", "nxp,imx-itcm";
+		reg = <0x0 DT_SIZE_K(256)>;
+		zephyr,memory-region = "ITCM";
+	};
+
+	dtcm: memory@20000000 {
+		compatible = "zephyr,memory-region", "nxp,imx-dtcm";
+		reg = <0x20000000 DT_SIZE_K(256)>;
+		zephyr,memory-region = "DTCM";
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

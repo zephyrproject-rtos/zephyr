@@ -1,0 +1,49 @@
+# SPDX-License-Identifier: Apache-2.0
+name: ST STM32L562E-DK Discovery
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 192
+supported:
+  - adc
+  - arduino_gpio
+  - arduino_spi
+  - bluetooth
+  - counter
+  - crc
+  - crypto
+  - dac
+  - dma
+  - gpio
+  - i2c
+  - lptim
+  - mspi
+  - nvs
+  - pwm
+  - spi
+  - uart
+  - usb_device
+  - usbd
+  - watchdog
+vendor: st
+variants:
+  stm32l562e_dk/stm32l562xx:
+    twister: true
+    flash: 512
+  stm32l562e_dk/stm32l562xx/ext_flash_app:
+    sysbuild: true
+    flash: 32767 # size in kB of 1 app slot minus MCUboot header size (1KB)
+    testing:
+      ignore_tags:
+        - arch
+        - arm
+        - clib
+        - cpp
+        - kernel
+        - posix
+        - cmsis-dsp
+  stm32l562e_dk/stm32l562xx/ns:
+    ram: 128
+    flash: 168

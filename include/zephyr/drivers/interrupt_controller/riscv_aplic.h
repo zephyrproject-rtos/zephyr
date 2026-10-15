@@ -261,9 +261,8 @@ static inline const struct device *riscv_aplic_get_dev(void)
  *
  * @param dev APLIC device
  * @param enable true to enable the domain, false to disable
- * @return 0 on success, negative error code on failure
  */
-int riscv_aplic_domain_enable(const struct device *dev, bool enable);
+void riscv_aplic_domain_enable(const struct device *dev, bool enable);
 
 /**
  * @brief Configure an interrupt source mode
@@ -273,9 +272,8 @@ int riscv_aplic_domain_enable(const struct device *dev, bool enable);
  * @param dev APLIC device
  * @param src Interrupt source number
  * @param sm Source mode (APLIC_SM_* values)
- * @return 0 on success, negative error code on failure
  */
-int riscv_aplic_config_src(const struct device *dev, unsigned int src, unsigned int sm);
+void riscv_aplic_config_src(const struct device *dev, unsigned int src, unsigned int sm);
 
 /**
  * @brief Enable or disable an interrupt source
@@ -285,9 +283,8 @@ int riscv_aplic_config_src(const struct device *dev, unsigned int src, unsigned 
  * @param dev APLIC device
  * @param src Interrupt source number
  * @param enable true to enable, false to disable
- * @return 0 on success, negative error code on failure
  */
-int riscv_aplic_enable_src(const struct device *dev, unsigned int src, bool enable);
+void riscv_aplic_enable_src(const struct device *dev, unsigned int src, bool enable);
 
 #if defined(CONFIG_RISCV_APLIC_MSI) || defined(__DOXYGEN__)
 /**
@@ -299,9 +296,9 @@ int riscv_aplic_enable_src(const struct device *dev, unsigned int src, bool enab
  * @param src Interrupt source number
  * @param hart Target hart index
  * @param eiid External Interrupt Identity for the target IMSIC
- * @return 0 on success, negative error code on failure
  */
-int riscv_aplic_msi_route(const struct device *dev, unsigned int src, uint32_t hart, uint32_t eiid);
+void riscv_aplic_msi_route(const struct device *dev, unsigned int src, uint32_t hart,
+			   uint32_t eiid);
 
 /**
  * @brief Inject a software-triggered MSI
@@ -312,10 +309,9 @@ int riscv_aplic_msi_route(const struct device *dev, unsigned int src, uint32_t h
  * @param eiid External Interrupt Identity
  * @param hart_id Target hart index
  * @param context Context field (for DMSI mode)
- * @return 0 on success, negative error code on failure
  */
-int riscv_aplic_msi_inject_software_interrupt(const struct device *dev, uint32_t eiid,
-					      uint32_t hart_id, uint32_t context);
+void riscv_aplic_msi_inject_software_interrupt(const struct device *dev, uint32_t eiid,
+					       uint32_t hart_id, uint32_t context);
 #endif /* CONFIG_RISCV_APLIC_MSI */
 
 /**

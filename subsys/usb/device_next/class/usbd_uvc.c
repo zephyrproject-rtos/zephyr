@@ -124,7 +124,7 @@ struct uvc_data {
 	size_t vbuf_offset;
 	/* Let the different parts of the code know of the current state */
 	atomic_t state;
-	/* Index where newly generated descriptors are appened */
+	/* Index where newly generated descriptors are appended */
 	unsigned int fs_desc_idx;
 	unsigned int hs_desc_idx;
 	unsigned int fmt_desc_idx;
@@ -1087,7 +1087,12 @@ static int uvc_control_to_dev(struct usbd_class_data *const c_data,
 		goto end;
 	}
 
-	if (setup->wLength && (buf == NULL)) {
+	if (setup->wLength == 0) {
+		err = -ENOTSUP;
+		goto end;
+	}
+
+	if (buf == NULL) {
 		/* Data OUT can be received */
 		return 0;
 	}
@@ -1486,7 +1491,7 @@ static int uvc_add_vs_frame_desc(const struct device *dev,
 
 	/* UVC requires the frame intervals to be sorted, but not Zephyr */
 	qsort(dwFrameInterval, *bFrameIntervalType,
-	      sizeof(*dwFrameInterval), uvc_compare_frmival_desc);
+	      sizeof(uint32_t), uvc_compare_frmival_desc);
 
 	sys_put_le32(sys_get_le32(dwFrameInterval), dwDefaultFrameInterval);
 	format_desc->bNumFrameDescriptors += 1;

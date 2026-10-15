@@ -27,9 +27,8 @@
  *
  * @param dev APLIC device
  * @param enable true to enable direct delivery mode, false to disable
- * @return 0 on success, negative error code on failure
  */
-int riscv_aplic_direct_mode_enable(const struct device *dev, bool enable);
+void riscv_aplic_direct_mode_enable(const struct device *dev, bool enable);
 
 /**
  * @brief Check if a riscv APLIC-specific interrupt line is enabled
@@ -47,9 +46,8 @@ int riscv_aplic_is_enabled(uint32_t local_irq);
  * @param dev APLIC device
  * @param local_irq Local IRQ whose target register will be configured
  * @param prio Priority value to set
- * @return 0 on success, negative error code on failure
  */
-int riscv_aplic_set_priority(const struct device *dev, uint32_t local_irq, uint32_t prio);
+void riscv_aplic_set_priority(const struct device *dev, uint32_t local_irq, uint32_t prio);
 
 #if defined(CONFIG_RISCV_APLIC_DIRECT_IRQ_AFFINITY)
 /**
@@ -59,9 +57,8 @@ int riscv_aplic_set_priority(const struct device *dev, uint32_t local_irq, uint3
  * @param dev APLIC device
  * @param irq IRQ number for which to set priority
  * @param hart_id Hart ID
- * @return 0 if success, negative errno value otherwise
  */
-int riscv_aplic_irq_set_affinity(const struct device *dev, uint32_t irq, uint32_t hart_id);
+void riscv_aplic_irq_set_affinity(const struct device *dev, uint32_t irq, uint32_t hart_id);
 #endif
 
 /**

@@ -249,7 +249,9 @@ static int prepare_cb(struct lll_prepare_param *p)
 							     PHY_FLAGS_UNUSED, lll->phy_tx,
 							     lll->phy_flags, end_evt_delay);
 #else /* !CONFIG_BT_CTLR_PHY */
-	radio_switch_complete_with_delay_compensation_and_tx(0, 0, 0, 0, end_evt_delay);
+	radio_switch_complete_with_delay_compensation_and_tx(PHY_LEGACY,
+							     PHY_FLAGS_UNUSED, PHY_LEGACY,
+							     PHY_FLAGS_UNUSED, end_evt_delay);
 #endif /* !CONFIG_BT_CTLR_PHY */
 
 #endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
@@ -264,7 +266,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 		radio_switch_complete_and_tx(lll->phy_rx, PHY_FLAGS_UNUSED, lll->phy_tx,
 					     lll->phy_flags);
 #else /* !CONFIG_BT_CTLR_PHY && !CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
-		radio_switch_complete_and_tx(0, 0, 0, 0);
+		radio_switch_complete_and_tx(PHY_LEGACY, PHY_FLAGS_UNUSED,
+					     PHY_LEGACY, PHY_FLAGS_UNUSED);
 #endif /* !CONFIG_BT_CTLR_PHY */
 	}
 
@@ -296,9 +299,9 @@ static int prepare_cb(struct lll_prepare_param *p)
 	hcto += addr_us_get(lll->phy_rx);
 	hcto += radio_rx_chain_delay_get(lll->phy_rx, PHY_FLAGS_S8);
 #else /* !CONFIG_BT_CTLR_PHY */
-	hcto += radio_rx_ready_delay_get(0, 0);
+	hcto += radio_rx_ready_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED);
 	hcto += addr_us_get(0);
-	hcto += radio_rx_chain_delay_get(0, 0);
+	hcto += radio_rx_chain_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED);
 #endif /* !CONFIG_BT_CTLR_PHY */
 
 	radio_tmr_hcto_configure(hcto);
@@ -312,7 +315,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 				 HAL_RADIO_GPIO_LNA_OFFSET);
 #else /* !CONFIG_BT_CTLR_PHY */
 	radio_gpio_pa_lna_enable(remainder_us +
-				 radio_rx_ready_delay_get(0, 0) -
+				 radio_rx_ready_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED) -
 				 HAL_RADIO_GPIO_LNA_OFFSET);
 #endif /* !CONFIG_BT_CTLR_PHY */
 #endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */

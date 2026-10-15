@@ -386,20 +386,31 @@ int ext2_init_fs(struct ext2_data *fs)
 int ext2_close_fs(struct ext2_data *fs)
 {
 	int ret = 0;
+	int rc;
+	int32_t i = 0;
 
 	/* Close all open inodes */
-	for (int32_t i = 0; i < fs->open_inodes; ++i) {
-		if (fs->inode_pool[i] != NULL) {
-			ext2_inode_drop(fs->inode_pool[i]);
+	while (i < fs->open_inodes) {
+		struct ext2_inode *inode = fs->inode_pool[i];
+
+		rc = ext2_inode_drop(inode);
+		if (rc < 0) {
+			if (ret == 0) {
+				ret = rc;
+			}
+			i++;
+		} else if (fs->inode_pool[i] == inode) {
+			/* The pool entry was not removed, so advance past it. */
+			i++;
 		}
 	}
 
 	/* To save file system as correct it must be writable and without errors */
 	if (!(fs->flags & (EXT2_DATA_FLAGS_RO | EXT2_DATA_FLAGS_ERR))) {
 		fs->sblock.s_state = EXT2_VALID_FS;
-		ret = ext2_commit_superblock(fs);
-		if (ret < 0) {
-			return ret;
+		rc = ext2_commit_superblock(fs);
+		if (rc < 0 && ret == 0) {
+			ret = rc;
 		}
 	}
 
@@ -408,10 +419,11 @@ int ext2_close_fs(struct ext2_data *fs)
 	ext2_drop_block(fs->bgroup.inode_bitmap);
 	ext2_drop_block(fs->bgroup.block_bitmap);
 
-	if (fs->backend_ops->sync(fs) < 0) {
-		return -EIO;
+	rc = fs->backend_ops->sync(fs);
+	if (rc < 0 && ret == 0) {
+		ret = -EIO;
 	}
-	return 0;
+	return ret;
 }
 
 int ext2_close_struct(struct ext2_data *fs)
@@ -709,7 +721,7 @@ ssize_t ext2_inode_read(struct ext2_inode *inode, void *buf, uint32_t offset, si
 	}
 
 	if (rc < 0) {
-		return rc;
+		return read > 0 ? read : rc;
 	}
 	return read;
 }
@@ -748,7 +760,20 @@ ssize_t ext2_inode_write(struct ext2_inode *inode, const void *buf, uint32_t off
 	}
 
 	if (rc < 0) {
-		return rc;
+		if (written == 0) {
+			return rc;
+		}
+
+		/* Preserve the size of data committed before the failed block. */
+		if (offset > inode->i_size) {
+			inode->i_size = offset;
+			rc = ext2_commit_inode(inode);
+			if (rc < 0) {
+				return rc;
+			}
+		}
+
+		return written;
 	}
 
 	if (offset > inode->i_size) {
@@ -971,7 +996,8 @@ static int ext2_create_inode(struct ext2_data *fs, struct ext2_inode *parent,
 
 	/* fill inode with correct data */
 	inode->i_fs = fs;
-	inode->flags = 0;
+	/* Keep the allocation rollback pending until creation is complete. */
+	inode->flags = INODE_REMOVE;
 	inode->i_id = ino;
 	inode->i_size = 0;
 	inode->i_mode = type == FS_DIR_ENTRY_FILE ? EXT2_DEF_FILE_MODE : EXT2_DEF_DIR_MODE;
@@ -990,7 +1016,12 @@ static int ext2_create_inode(struct ext2_data *fs, struct ext2_inode *parent,
 	}
 
 	rc = ext2_commit_inode(inode);
-	return rc;
+	if (rc < 0) {
+		return rc;
+	}
+
+	inode->flags &= ~INODE_REMOVE;
+	return 0;
 }
 
 struct ext2_direntry *ext2_create_direntry(const char *name, uint8_t namelen, uint32_t ino,
@@ -1141,6 +1172,9 @@ int ext2_create_file(struct ext2_inode *parent, struct ext2_inode *new_inode,
 		ret = rc;
 	}
 out:
+	if (ret < 0) {
+		new_inode->flags |= INODE_REMOVE;
+	}
 	k_heap_free(&direntry_heap, entry);
 	return ret;
 }
@@ -1227,6 +1261,9 @@ int ext2_create_dir(struct ext2_inode *parent, struct ext2_inode *new_inode,
 		ret = rc;
 	}
 out:
+	if (ret < 0) {
+		new_inode->flags |= INODE_REMOVE;
+	}
 	k_heap_free(&direntry_heap, entry);
 	return ret;
 }

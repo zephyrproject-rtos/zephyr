@@ -44,7 +44,24 @@ extern "C" {
 /** @cond INTERNAL_HIDDEN */
 #define MIPI_DBI_DT_SPI_DEV(node_id)					\
 	DT_PHANDLE(DT_PARENT(node_id), spi_dev)
+/** @endcond */
 
+/**
+ * @brief Check whether a MIPI DBI SPI device has a chip select line configured
+ *
+ * The MIPI DBI counterpart of DT_SPI_DEV_HAS_CS_GPIOS(): the same per-device
+ * question, but the SPI controller is reached through the parent's spi-dev
+ * phandle rather than DT_BUS().
+ *
+ * @param node_id Devicetree node identifier for a MIPI DBI device
+ * @return 1 if the controller named by the parent's spi-dev property has a
+ *         chip select pin at index DT_REG_ADDR(node_id), 0 otherwise
+ */
+#define MIPI_DBI_SPI_DEV_HAS_CS_GPIOS(node_id)				\
+	DT_PROP_HAS_IDX(MIPI_DBI_DT_SPI_DEV(node_id), cs_gpios,		\
+			DT_REG_ADDR_RAW(node_id))
+
+/** @cond INTERNAL_HIDDEN */
 #define MIPI_DBI_SPI_CS_GPIOS_DT_SPEC_GET(node_id)			\
 	GPIO_DT_SPEC_GET_BY_IDX_OR(MIPI_DBI_DT_SPI_DEV(node_id),	\
 		cs_gpios, DT_REG_ADDR_RAW(node_id), {})
@@ -75,10 +92,10 @@ extern "C" {
 			COND_CODE_1(DT_PROP(node_id, mipi_hold_cs), SPI_HOLD_ON_CS, (0)),	\
 		.peripheral = DT_REG_ADDR(node_id),				\
 		.cs = {									\
-			COND_CODE_1(DT_SPI_HAS_CS_GPIOS(MIPI_DBI_DT_SPI_DEV(node_id)),	\
+			COND_CODE_1(MIPI_DBI_SPI_DEV_HAS_CS_GPIOS(node_id),			\
 			(MIPI_DBI_SPI_CS_CONTROL_INIT_GPIO(node_id, delay_)),		\
 			(SPI_CS_CONTROL_INIT_NATIVE(node_id)))				\
-			.cs_is_gpio = DT_SPI_HAS_CS_GPIOS(MIPI_DBI_DT_SPI_DEV(node_id)),\
+			.cs_is_gpio = MIPI_DBI_SPI_DEV_HAS_CS_GPIOS(node_id),		\
 		},									\
 	}
 

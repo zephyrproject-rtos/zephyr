@@ -19,5 +19,19 @@
 			interrupts = <79 0>;
 			status = "disabled";
 		};
+
+		hash: crypto@50060400 {
+			compatible = "st,stm32-hash";
+			reg = <0x50060400 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 5)>;
+			resets = <&rctl STM32_RESET(AHB2, 5)>;
+			/* Do not provide interrupts property since the interrupt is shared with
+			 * the RNG device and the implementation currently does not well handle
+			 * that.
+			 *
+			 * interrupts = <80 0>;
+			 */
+			status = "disabled";
+		};
 	};
 };

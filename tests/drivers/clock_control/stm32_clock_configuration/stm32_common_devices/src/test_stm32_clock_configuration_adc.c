@@ -54,9 +54,17 @@
 #define ADC_SOURCE_SYSCLK	(-1)
 #endif
 
+#if defined(CONFIG_SOC_SERIES_STM32L4X)
+#define ADC_COMMON_NODE adc123_common
+#elif defined(CONFIG_SOC_SERIES_STM32F3X) || defined(CONFIG_SOC_SERIES_STM32G4X)
+#define ADC_COMMON_NODE adc12_common
+#else
+#define ADC_COMMON_NODE adc1_common
+#endif
+
 ZTEST(stm32_common_devices_clocks, test_adc_clk_config)
 {
-	static const struct stm32_pclken pclken[] = STM32_DT_CLOCKS(DT_NODELABEL(adc1));
+	static const struct stm32_pclken pclken[] = STM32_DT_CLOCKS(DT_NODELABEL(ADC_COMMON_NODE));
 
 	uint32_t dev_dt_clk_freq, dev_actual_clk_freq;
 	uint32_t dev_actual_clk_src;
@@ -81,7 +89,8 @@ ZTEST(stm32_common_devices_clocks, test_adc_clk_config)
 		     "[Zephyr] ADC1 gating clock should be on");
 	TC_PRINT("ADC1 gating clock on\n");
 
-	if (IS_ENABLED(STM32_ADC_DOMAIN_CLOCK_SUPPORT) && DT_NUM_CLOCKS(DT_NODELABEL(adc1)) > 1) {
+	if (IS_ENABLED(STM32_ADC_DOMAIN_CLOCK_SUPPORT) &&
+	    DT_NUM_CLOCKS(DT_NODELABEL(ADC_COMMON_NODE)) > 1) {
 		/* Test clock_on(domain_clk) */
 		r = clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 					    (clock_control_subsys_t) &pclken[1],
@@ -128,7 +137,8 @@ ZTEST(stm32_common_devices_clocks, test_adc_clk_config)
 
 		TC_PRINT("ADC1 clock source rate: %d Hz\n", dev_dt_clk_freq);
 	} else {
-		zassert_true((DT_NUM_CLOCKS(DT_NODELABEL(adc1)) == 1), "test config issue");
+		zassert_true((DT_NUM_CLOCKS(DT_NODELABEL(ADC_COMMON_NODE)) == 1),
+			     "test config issue");
 		/* No domain clock available, don't check gating clock as for adc there is no
 		 * uniform way to verify via hal.
 		 */

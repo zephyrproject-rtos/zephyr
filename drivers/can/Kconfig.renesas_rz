@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config CAN_RENESAS_RZ_CANFD
-	bool "Renesas RZ CANFD"
+	bool "Renesas RZ CANFD driver"
 	default y
 	depends on DT_HAS_RENESAS_RZ_CANFD_ENABLED
 	select USE_RZ_FSP_CANFD

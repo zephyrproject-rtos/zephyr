@@ -170,6 +170,37 @@ bool wifi_utils_validate_chan_6g(uint16_t chan);
 enum wifi_frequency_bands wifi_utils_chan_to_band(uint16_t chan);
 
 /**
+ * @brief Convert a channel number to its center frequency.
+ *
+ * @details The band must be supplied because channel numbers are not unique
+ * across bands: 1-14 are valid in both the 2.4 GHz and the 6 GHz band, and the
+ * 5 GHz and 6 GHz numbering overlaps above 14. Use wifi_utils_chan_to_band()
+ * when the band is not already known.
+ *
+ * @param band Band the channel belongs to.
+ * @param chan Channel to convert.
+ *
+ * @return The center frequency in MHz.
+ * @retval 0 Channel not valid in the band, or the band has no channel to
+ *           frequency mapping, as for WIFI_FREQ_BAND_SUB_1_GHZ.
+ */
+uint16_t wifi_utils_chan_to_freq(enum wifi_frequency_bands band, uint16_t chan);
+
+/**
+ * @brief Convert a center frequency to its channel number.
+ *
+ * @details This is the inverse of wifi_utils_chan_to_freq(). No band is
+ * needed because a center frequency is unique across the bands. Use
+ * wifi_utils_chan_to_band() on the result when the band is also wanted.
+ *
+ * @param freq Center frequency in MHz.
+ *
+ * @return The channel number.
+ * @retval 0 Frequency is not a channel center frequency in any band.
+ */
+uint16_t wifi_utils_freq_to_chan(uint16_t freq);
+
+/**
  * @}
  */
 

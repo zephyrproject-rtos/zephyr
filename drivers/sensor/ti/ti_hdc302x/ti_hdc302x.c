@@ -51,6 +51,7 @@ struct ti_hdc302x_config {
 };
 
 struct ti_hdc302x_data {
+	const struct device *dev;
 	struct gpio_callback cb_int;
 	sensor_trigger_handler_t th_handler;
 	const struct sensor_trigger *th_trigger;
@@ -160,6 +161,15 @@ static const uint8_t
 			[HDC302X_SENSOR_MEAS_INTERVAL_10] = {0x27, 0xFF},
 		},
 };
+
+/* Maximum measurement duration per power mode, in microseconds (datasheet Table 7-3) */
+static const uint16_t meas_duration_us[HDC302X_SENSOR_POWER_MODE_MAX] = {
+	[HDC302X_SENSOR_POWER_MODE_0] = 12500,
+	[HDC302X_SENSOR_POWER_MODE_1] = 7500,
+	[HDC302X_SENSOR_POWER_MODE_2] = 5000,
+	[HDC302X_SENSOR_POWER_MODE_3] = 3700,
+};
+
 /**
  * @brief Verify CRC for a given data buffer.
  */
@@ -214,15 +224,10 @@ static void convert_sensor_value(uint16_t *raw_value, struct sensor_value *senso
 		/* Integer part */
 		sensor_val->val1 = (int32_t)(numerator / UINT16_MAX);
 
-		/* Fractional part in microseconds */
+		/* Fractional part in micro-units, keeping the sign of the result */
 		remainder = (int32_t)(numerator % UINT16_MAX);
-		if (remainder < 0) {
-			/* Handle negative remainders properly */
-			sensor_val->val1 -= 1;
-			remainder += UINT16_MAX;
-		}
 
-		/* Convert remainder to microseconds: remainder * 1000000 / 65535 */
+		/* Convert remainder to micro-units: remainder * 1000000 / 65535 */
 		sensor_val->val2 = ((int64_t)remainder * 1000000LL) / UINT16_MAX;
 	} else {
 		sensor_micro = (int64_t)sensor_val->val1 * 1000000LL + (int64_t)sensor_val->val2;
@@ -296,13 +301,14 @@ static int read_sensor_data(const struct device *dev, uint8_t *buf, size_t len)
 	return i2c_read_dt(&config->bus, buf, len);
 }
 
-static void interrupt_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
+static void interrupt_callback(const struct device *port, struct gpio_callback *cb, uint32_t pins)
 {
+	ARG_UNUSED(port);
 	ARG_UNUSED(pins);
 	struct ti_hdc302x_data *data = CONTAINER_OF(cb, struct ti_hdc302x_data, cb_int);
 
 	if (data->th_handler != NULL) {
-		data->th_handler(dev, data->th_trigger);
+		data->th_handler(data->dev, data->th_trigger);
 	}
 }
 
@@ -327,6 +333,9 @@ static int ti_hdc302x_sample_fetch(const struct device *dev, enum sensor_channel
 			LOG_ERR("Failed to trigger manual measurement: %d", rc);
 			return rc;
 		}
+
+		/* The sensor NACKs the read until the conversion has completed */
+		k_sleep(K_USEC(meas_duration_us[data->power_mode]));
 	} else {
 		rc = write_command(dev, REG_MEAS_AUTO_READ, 2);
 		if (rc < 0) {
@@ -941,6 +950,7 @@ static int ti_hdc302x_init(const struct device *dev)
 	int rc;
 
 	/* Initialize default settings */
+	data->dev = dev;
 	data->power_mode = HDC302X_SENSOR_POWER_MODE_0;
 	data->interval = HDC302X_SENSOR_MEAS_INTERVAL_MANUAL;
 	data->t_offset = 0;
@@ -961,8 +971,12 @@ static int ti_hdc302x_init(const struct device *dev)
 		return rc;
 	}
 
-	if (verify_crc(manufacturer_id_buf, 2, manufacturer_id_buf[2]) != true &&
-	    sys_get_be16(manufacturer_id_buf) != HDC_302X_MANUFACTURER_ID) {
+	if (!verify_crc(manufacturer_id_buf, 2, manufacturer_id_buf[2])) {
+		LOG_ERR("Manufacturer ID CRC verification failed");
+		return -EIO;
+	}
+
+	if (sys_get_be16(manufacturer_id_buf) != HDC_302X_MANUFACTURER_ID) {
 		LOG_ERR("Invalid manufacturer ID: 0x%04X (expected 0x%04X)",
 			sys_get_be16(manufacturer_id_buf), HDC_302X_MANUFACTURER_ID);
 		return -EINVAL;

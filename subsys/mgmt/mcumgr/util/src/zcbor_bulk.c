@@ -12,6 +12,20 @@
 
 #include <mgmt/mcumgr/util/zcbor_bulk.h>
 
+/*
+ * ZCBOR_MAP_DECODE_KEY_DECODER stores each decoder as a zcbor_decoder_t, and
+ * the call below goes through that type while the function behind it declares
+ * its own second parameter, so UBSan's function check reports every request
+ * that matches a key. The parameter is a pointer either way, so the check is
+ * turned off here rather than a wrapper being added for every decoder.
+ */
+#if defined(__clang__)
+#define ZCBOR_BULK_NO_SANITIZE_FUNCTION __attribute__((no_sanitize("function")))
+#else
+#define ZCBOR_BULK_NO_SANITIZE_FUNCTION
+#endif
+
+ZCBOR_BULK_NO_SANITIZE_FUNCTION
 int zcbor_map_decode_bulk(zcbor_state_t *zsd, struct zcbor_map_decode_key_val *map,
 	size_t map_size, size_t *matched)
 {

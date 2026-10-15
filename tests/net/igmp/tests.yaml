@@ -2,12 +2,17 @@ common:
   tags:
     - net
     - igmp
+  timeout: 120
   depends_on: netif
   platform_allow: qemu_x86
 tests:
   net.igmp:
     extra_configs:
       - CONFIG_NET_TC_THREAD_COOPERATIVE=y
+  net.igmp.router_alert_optional:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_COOPERATIVE=y
+      - CONFIG_NET_IPV4_IGMP_REQUIRE_ROUTER_ALERT=n
   net.igmp.preempt:
     extra_configs:
       - CONFIG_NET_TC_THREAD_PREEMPTIVE=y

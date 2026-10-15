@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for random number generation.
+
+rules:
+  TEST_RANDOM_GENERATOR:
+    value: n
+    rationale: |
+      Allows non-random number generators to back the system RNG. Values produced this way are
+      predictable and must never seed security functions.
+    references: [CWE-338]

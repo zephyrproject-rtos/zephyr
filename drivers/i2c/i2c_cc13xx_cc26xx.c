@@ -236,7 +236,7 @@ static void i2c_cc13xx_cc26xx_isr(const struct device *dev)
 	target_status = I2CSlaveStatus(base);
 	I2CSlaveIntClear(base, target_int);
 
-	/* Target R/W requsts
+	/* Target R/W requests
 	 *  - TREQ     → Controller is requesting data (target transmit / read request)
 	 *  - RREQ_FBR → Controller is sending data (target receive / write request)
 	 */

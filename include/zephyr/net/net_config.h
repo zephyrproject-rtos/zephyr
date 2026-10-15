@@ -295,6 +295,58 @@ static inline int net_config_init_sshd(struct net_if *iface,
 #endif /* CONFIG_SSH_SERVER */
 
 /**
+ * @brief Initialize the system clock using SNTP.
+ *
+ * Query the configured SNTP server and set the system realtime clock (and optionally the RTC
+ * device, see @kconfig{CONFIG_NET_CONFIG_CLOCK_SNTP_SET_RTC}) from the response. The call blocks
+ * for at most @kconfig{CONFIG_NET_CONFIG_SNTP_INIT_TIMEOUT} milliseconds.
+ *
+ * The server to query is, in order of precedence:
+ *
+ * 1. the one set with net_config_sntp_set_server() if
+ *    @kconfig{CONFIG_NET_CONFIG_SNTP_INIT_SERVER_RUNTIME} is enabled,
+ * 2. the one received via the DHCPv4 NTP server option if
+ *    @kconfig{CONFIG_NET_CONFIG_SNTP_INIT_SERVER_USE_DHCPV4_OPTION} is enabled,
+ * 3. the one set in @kconfig{CONFIG_NET_CONFIG_SNTP_INIT_SERVER}.
+ *
+ * This function is called by net_config_init_app unless the connection manager is used to drive the
+ * SNTP client (see @kconfig{CONFIG_NET_CONFIG_SNTP_INIT_USE_CONNECTION_MANAGER}).
+ *
+ * @return 0 if the clock was set, <0 on error.
+ */
+#if defined(CONFIG_NET_CONFIG_CLOCK_SNTP_INIT)
+int net_config_init_clock_via_sntp(void);
+#else
+static inline int net_config_init_clock_via_sntp(void)
+{
+	return -ENOTSUP;
+}
+#endif /* CONFIG_NET_CONFIG_CLOCK_SNTP_INIT */
+
+/**
+ * @brief Set the SNTP server to use to initialize the system clock.
+ *
+ * The server set via this function takes precedence over the server obtained via DHCP if
+ * @kconfig{CONFIG_NET_CONFIG_SNTP_INIT_SERVER_USE_DHCPV4_OPTION} is enabled, and over the server
+ * set in @kconfig{CONFIG_NET_CONFIG_SNTP_INIT_SERVER}.
+ *
+ * @param server Hostname or IP address of the server to use. NULL or empty string unsets a
+ * previously set server.
+ *
+ * @return 0 if the SNTP server was set successfully, <0 if there was an error.
+ */
+#if defined(CONFIG_NET_CONFIG_SNTP_INIT_SERVER_RUNTIME)
+int net_config_sntp_set_server(const char *server);
+#else
+static inline int net_config_sntp_set_server(const char *server)
+{
+	ARG_UNUSED(server);
+
+	return -ENOTSUP;
+}
+#endif /* CONFIG_NET_CONFIG_SNTP_INIT_SERVER_RUNTIME */
+
+/**
  * @}
  */
 

@@ -83,6 +83,21 @@
 		};
 	};
 
+	/*
+	 * Deep Power Down gates the entire CORE power domain (CPU, NVIC, and all
+	 * APB/AHB peripheral register blocks), so every peripheral inside it
+	 * comes back from reset. This domain hands the affected drivers a
+	 * TURN_OFF before the transition and a TURN_ON after it, which is what
+	 * lets them reconfigure their hardware on resume. It follows
+	 * &deeppowerdown, so it stays inert until the application enables that
+	 * state.
+	 */
+	core_domain: core-domain {
+		compatible = "power-domain-soc-state-change";
+		#power-domain-cells = <0>;
+		onoff-power-states = <&deeppowerdown>;
+	};
+
 	/* Dummy pinctrl node, filled with pin mux options at board level */
 	pinctrl: pinctrl {
 		compatible = "nxp,port-pinctrl";
@@ -220,36 +235,42 @@
 		compatible = "nxp,port-pinmux";
 		reg = <0xbc000 0x1000>;
 		clocks = <&syscon MCUX_PORT0_CLK>;
+		power-domains = <&core_domain>;
 	};
 
 	portb: pinmux@bd000 {
 		compatible = "nxp,port-pinmux";
 		reg = <0xbd000 0x1000>;
 		clocks = <&syscon MCUX_PORT1_CLK>;
+		power-domains = <&core_domain>;
 	};
 
 	portc: pinmux@be000 {
 		compatible = "nxp,port-pinmux";
 		reg = <0xbe000 0x1000>;
 		clocks = <&syscon MCUX_PORT2_CLK>;
+		power-domains = <&core_domain>;
 	};
 
 	portd: pinmux@bf000 {
 		compatible = "nxp,port-pinmux";
 		reg = <0xbf000 0x1000>;
 		clocks = <&syscon MCUX_PORT3_CLK>;
+		power-domains = <&core_domain>;
 	};
 
 	porte: pinmux@c0000 {
 		compatible = "nxp,port-pinmux";
 		reg = <0xc0000 0x1000>;
 		clocks = <&syscon MCUX_PORT4_CLK>;
+		power-domains = <&core_domain>;
 	};
 
 	portf: pinmux@e3000 {
 		compatible = "nxp,port-pinmux";
 		reg = <0xe3000 0x1000>;
 		clocks = <&syscon MCUX_PORT5_CLK>;
+		power-domains = <&core_domain>;
 	};
 
 	gpio0: gpio@48000 {
@@ -406,28 +427,6 @@
 		status = "disabled";
 	};
 
-	fmu: flash-controller@95000 {
-		compatible = "nxp,msf1";
-		reg = <0x95000 0x1000>;
-		interrupts = <12 0>;
-		status = "disabled";
-
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		flash: flash@0 {
-			compatible = "soc-nv-flash";
-			reg = <0 DT_SIZE_M(2)>;
-			erase-block-size = <DT_SIZE_K(8)>;
-			write-block-size = <16>;
-		};
-
-		uuid: uuid@1100000 {
-			compatible = "nxp,lpc-uid";
-			reg = <0x1100000 0x10>;
-		};
-	};
-
 	os_timer: timers@ad000 {
 		compatible = "nxp,os-timer";
 		reg = <0xad000 0x1000>;
@@ -442,6 +441,12 @@
 		status = "disabled";
 		voltage-reference = <0>;
 		#io-channel-cells = <1>;
+		/* Deep Power Down gates the CORE domain, so the register block
+		 * comes back from reset.
+		 */
+		power-domains = <&core_domain>;
+		/* The analog output does not survive any of these states. */
+		zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 	};
 
 	dac1: dac@b5000 {
@@ -451,6 +456,8 @@
 		status = "disabled";
 		voltage-reference = <0>;
 		#io-channel-cells = <1>;
+		power-domains = <&core_domain>;
+		zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 	};
 
 	wwdt0: watchdog@c000 {
@@ -560,6 +567,14 @@
 		offset-value-b = <0>;
 		#io-channel-cells = <1>;
 		clocks = <&syscon MCUX_LPADC1_CLK>;
+		/* In deep sleep mode, the hardware allows the converter to keep
+		 * running there (CTRL[DOZEN] = 0, bus clock gated, hardware trigger
+		 * and compare wakeup still live): that only holds while ADCK keeps
+		 * running, which depends on the clock configuration. An application
+		 * that arranges a low-power ADCK source can drop &deepsleep from this
+		 * list in its own overlay. See MCX A577 RM Rev. 1 section 30.6.
+		 */
+		zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 	};
 
 	temp0: temp0 {
@@ -579,6 +594,7 @@
 		offset-value-b = <0>;
 		#io-channel-cells = <1>;
 		clocks = <&syscon MCUX_LPADC2_CLK>;
+		zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 	};
 
 	usb0: usbd@2e000 {
@@ -857,6 +873,7 @@
 		reg = <0x1c000 0x1000>;
 		clocks = <&syscon MCUX_ENET_QOS_CLK>, <&syscon MCUX_ENET_QOS_PTP_CLK>;
 		clock-names = "mac", "ptp";
+		resets = <&reset NXP_SYSCON_RESET(2, 10)>;
 		interrupts = <90 0>, <91 0>;
 		interrupt-names = "mac", "power";
 		snps,perfect-filter-entries = <1>;
@@ -880,6 +897,21 @@
 		status = "disabled";
 		interrupts = <93 0>;
 		interrupt-names = "t1s";
+	};
+
+	espi0: espi@1f000 {
+		compatible = "nxp,espi";
+		reg = <0x1f000 0x200>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		interrupts = <89 0>;
+		clocks = <&syscon MCUX_ESPI0_CLK>;
+		status = "disabled";
+
+		espi_taf: espi-taf {
+			compatible = "nxp,espi-taf";
+			status = "disabled";
+		};
 	};
 
 	cmc: system-modules@c6000 {
@@ -956,6 +988,31 @@
 		interrupts = <124 0>, <125 0>;
 		clocks = <&syscon MCUX_TSI_CLK>;
 		status = "disabled";
+	};
+};
+
+&fmu {
+	compatible = "nxp,msf1";
+	interrupts = <12 0>;
+	status = "disabled";
+
+	ranges;
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	flash: flash@0 {
+		compatible = "soc-nv-flash";
+		reg = <0 DT_SIZE_M(2)>;
+		ranges = <0x0 0x0 DT_SIZE_M(2)>;
+		erase-block-size = <DT_SIZE_K(8)>;
+		write-block-size = <16>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+	};
+
+	uuid: uuid@1100000 {
+		compatible = "nxp,lpc-uid";
+		reg = <0x1100000 0x10>;
 	};
 };
 

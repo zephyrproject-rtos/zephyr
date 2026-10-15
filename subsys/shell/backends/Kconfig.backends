@@ -18,7 +18,6 @@ config SHELL_BACKEND_SERIAL
 	bool "Serial backend"
 	default "$(dt_chosen_enabled,$(DT_CHOSEN_Z_SHELL_UART))"
 	select SERIAL
-	select RING_BUFFER
 	help
 	  Enable serial backend.
 
@@ -429,6 +428,11 @@ config SHELL_BACKEND_RPMSG
 	  Enable RPMsg backend.
 
 if SHELL_BACKEND_RPMSG
+
+config SHELL_BACKEND_RPMSG_FORCE_TX_BLOCKING_MODE
+	bool "Force blocking mode for TX"
+	help
+	  Force the RPMsg shell backend to wait for an available TX buffer.
 
 config SHELL_PROMPT_RPMSG
 	string "Displayed prompt name"

@@ -36,6 +36,32 @@ static APP_BMEM uint8_t tx_buf[CONFIG_NET_SAMPLE_MQTT_SN_BUFFER_SIZE];
 static APP_BMEM uint8_t rx_buf[CONFIG_NET_SAMPLE_MQTT_SN_BUFFER_SIZE];
 
 static APP_BMEM bool mqtt_sn_connected;
+static APP_BMEM bool subscribed;
+
+static APP_BMEM uint32_t reconnect_attempts;
+static APP_BMEM int64_t reconnect_at;
+
+/* Keeps a down gateway from getting hammered with reconnect attempts. */
+static void schedule_reconnect(void)
+{
+	uint32_t delay_ms;
+
+	if (reconnect_attempts >= CONFIG_NET_SAMPLE_MQTT_SN_RECONNECT_MAX_ATTEMPTS) {
+		LOG_ERR("Giving up reconnecting after %u attempts", reconnect_attempts);
+		reconnect_at = 0;
+		return;
+	}
+
+	/* Clamp the shift too: reconnect_attempts has no cap, and shifting by 32+ is UB. */
+	delay_ms = MIN((uint32_t)CONFIG_NET_SAMPLE_MQTT_SN_RECONNECT_INITIAL_BACKOFF_MSEC
+			       << MIN(reconnect_attempts, 31),
+		       CONFIG_NET_SAMPLE_MQTT_SN_RECONNECT_MAX_BACKOFF_MSEC);
+	reconnect_attempts++;
+
+	LOG_INF("Reconnecting in %u ms (attempt %u/%u)", delay_ms, reconnect_attempts,
+		CONFIG_NET_SAMPLE_MQTT_SN_RECONNECT_MAX_ATTEMPTS);
+	reconnect_at = k_uptime_get() + delay_ms;
+}
 
 static void evt_cb(struct mqtt_sn_client *client, const struct mqtt_sn_evt *evt)
 {
@@ -43,10 +69,13 @@ static void evt_cb(struct mqtt_sn_client *client, const struct mqtt_sn_evt *evt)
 	case MQTT_SN_EVT_CONNECTED: /* Connected to a gateway */
 		LOG_INF("MQTT-SN event EVT_CONNECTED");
 		mqtt_sn_connected = true;
+		reconnect_attempts = 0;
 		break;
 	case MQTT_SN_EVT_DISCONNECTED: /* Disconnected */
 		LOG_INF("MQTT-SN event EVT_DISCONNECTED");
 		mqtt_sn_connected = false;
+		subscribed = false;
+		schedule_reconnect();
 		break;
 	case MQTT_SN_EVT_ASLEEP: /* Entered ASLEEP state */
 		LOG_INF("MQTT-SN event EVT_ASLEEP");
@@ -78,7 +107,6 @@ static void evt_cb(struct mqtt_sn_client *client, const struct mqtt_sn_evt *evt)
 
 static int do_work(void)
 {
-	static APP_BMEM bool subscribed;
 	static APP_BMEM int64_t ts;
 	static APP_DMEM struct mqtt_sn_data topic_p = MQTT_SN_DATA_STRING_LITERAL("/uptime");
 	static APP_DMEM struct mqtt_sn_data topic_s = MQTT_SN_DATA_STRING_LITERAL("/number");
@@ -91,6 +119,16 @@ static int do_work(void)
 	if (err < 0) {
 		LOG_ERR("failed: input: %d", err);
 		return err;
+	}
+
+	/* Runs after mqtt_sn_input() is done, never from evt_cb() itself. */
+	if (reconnect_at != 0 && now >= reconnect_at) {
+		reconnect_at = 0;
+		LOG_INF("Reconnecting to gateway");
+		err = mqtt_sn_connect(&mqtt_client, false, true);
+		if (err) {
+			LOG_ERR("Reconnect failed: %d", err);
+		}
 	}
 
 	if (mqtt_sn_connected && !subscribed) {

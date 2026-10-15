@@ -18,4 +18,5 @@ tests:
     build_only: true
     platform_allow:
       - native_sim
+      - native_sim/native/64
       - frdm_mcxn947/mcxn947/cpu0

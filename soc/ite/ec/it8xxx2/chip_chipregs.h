@@ -738,7 +738,7 @@ struct it82xx2_usb_ep_fifo_regs {
 #define PULL_DOWN_EN BIT(4)
 
 struct usb_it82xx2_regs {
-	/* 0x00:  Host TX Contrl Register */
+	/* 0x00:  Host TX Control Register */
 	volatile uint8_t host_tx_ctrl;
 	/* 0x01:  Host TX Transaction Type Register */
 	volatile uint8_t host_tx_trans_type;
@@ -1628,7 +1628,7 @@ struct gctrl_it8xxx2_regs {
 	volatile uint8_t reserved_22_2f[14];
 	/* 0x30: Memory Controller Configuration */
 	volatile uint8_t GCTRL_MCCR;
-	/* 0x31: Externel ILM/DLM Size */
+	/* 0x31: External ILM/DLM Size */
 	volatile uint8_t GCTRL_EIDSR;
 	/* 0x32: Reserved_32 */
 	volatile uint8_t reserved_32;

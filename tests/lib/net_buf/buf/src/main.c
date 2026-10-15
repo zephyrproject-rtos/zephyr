@@ -1196,6 +1196,69 @@ ZTEST(net_buf_tests, test_net_buf_linearize)
 	zassert_equal(destroy_called, 4, "Incorrect destroy callback count");
 }
 
+static struct net_buf *skip_frag_alloc(size_t len, uint8_t first)
+{
+	struct net_buf *frag;
+
+	frag = net_buf_alloc_len(&bufs_pool, 10, K_NO_WAIT);
+	zassert_not_null(frag, "Failed to get fragment");
+
+	for (size_t i = 0U; i < len; i++) {
+		net_buf_add_u8(frag, (uint8_t)(first + i));
+	}
+
+	return frag;
+}
+
+ZTEST(net_buf_tests, test_net_buf_skip)
+{
+	struct net_buf *buf, *a, *b, *c;
+
+	destroy_called = 0;
+
+	/* Zero-capacity head, a: 0..9, empty fragment, b: 10..19, c: 20..29 */
+	buf = net_buf_alloc_len(&bufs_pool, 0, K_NO_WAIT);
+	zassert_not_null(buf, "Failed to get buffer");
+	a = skip_frag_alloc(10, 0);
+	net_buf_frag_add(buf, a);
+	net_buf_frag_add(buf, skip_frag_alloc(0, 0));
+	b = skip_frag_alloc(10, 10);
+	net_buf_frag_add(buf, b);
+	c = skip_frag_alloc(10, 20);
+	net_buf_frag_add(buf, c);
+
+	/* Skipping nothing leaves even an empty head in place */
+	zassert_equal(net_buf_skip(buf, 0), buf, "Zero-length skip changed the chain");
+	zassert_equal(destroy_called, 0, "Incorrect destroy callback count");
+
+	/* Crosses the zero-capacity head */
+	buf = net_buf_skip(buf, 3);
+	zassert_equal(buf, a, "Skip did not end in the first data fragment");
+	zassert_equal(buf->len, 7U, "Incorrect remaining length");
+	zassert_equal(buf->data[0], 3U, "Incorrect data after skip");
+	zassert_equal(destroy_called, 1, "Incorrect destroy callback count");
+
+	/* Crosses the end of a and the empty fragment after it */
+	buf = net_buf_skip(buf, 11);
+	zassert_equal(buf, b, "Skip did not end in the second data fragment");
+	zassert_equal(buf->len, 6U, "Incorrect remaining length");
+	zassert_equal(buf->data[0], 14U, "Incorrect data after skip");
+	zassert_equal(net_buf_frags_len(buf), 16U, "Incorrect remaining chain length");
+	zassert_equal(destroy_called, 3, "Incorrect destroy callback count");
+
+	/* Ends exactly on a fragment boundary */
+	buf = net_buf_skip(buf, 6);
+	zassert_equal(buf, c, "Skip did not move to the next fragment");
+	zassert_equal(buf->len, 10U, "Incorrect remaining length");
+	zassert_equal(buf->data[0], 20U, "Incorrect data after skip");
+	zassert_equal(destroy_called, 4, "Incorrect destroy callback count");
+
+	/* Skipping past the end releases the rest of the chain */
+	buf = net_buf_skip(buf, 20);
+	zassert_is_null(buf, "Chain not fully skipped");
+	zassert_equal(destroy_called, 5, "Incorrect destroy callback count");
+}
+
 ZTEST(net_buf_tests, test_net_buf_var_pool_aligned)
 {
 	struct net_buf *buf1, *buf2, *buf3;
@@ -1331,6 +1394,40 @@ ZTEST(net_buf_tests, test_net_buf_is_valid)
 
 	net_buf_unref(buf);
 	zassert_equal(destroy_called, 1, "Incorrect destroy callback count");
+}
+
+ZTEST(net_buf_tests, test_net_buf_double_free)
+{
+	struct net_buf *buf;
+	uint8_t pool_id;
+	uint8_t user_data_size;
+
+	if (IS_ENABLED(CONFIG_ASSERT)) {
+		/* An assertion catches the double free before it returns */
+		ztest_test_skip();
+	}
+
+	destroy_called = 0;
+
+	buf = net_buf_alloc_len(&fixed_pool, 16, K_NO_WAIT);
+	zassert_not_null(buf, "Failed to get buffer");
+
+	pool_id = buf->pool_id;
+	user_data_size = buf->user_data_size;
+
+	net_buf_unref(buf);
+	zassert_equal(destroy_called, 1, "Incorrect destroy callback count");
+	zassert_equal(buf->ref, 0U, "Freed buffer has a reference");
+
+	/* A second unref has to leave the freed buffer as it is */
+	net_buf_unref(buf);
+	zexpect_equal(destroy_called, 1, "Buffer destroyed twice");
+	zexpect_equal(buf->ref, 0U, "Reference count changed to %u", buf->ref);
+	zexpect_equal(buf->flags, 0U, "Flags changed to 0x%02x", buf->flags);
+	zexpect_equal(buf->pool_id, pool_id, "Pool id changed from %u to %u", pool_id,
+		      buf->pool_id);
+	zexpect_equal(buf->user_data_size, user_data_size, "User data size changed from %u to %u",
+		      user_data_size, buf->user_data_size);
 }
 
 ZTEST_SUITE(net_buf_tests, NULL, NULL, NULL, NULL, NULL);

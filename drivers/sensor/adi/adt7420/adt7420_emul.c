@@ -25,9 +25,6 @@ struct adt7420_emul_data {
 	bool resolution_16_bit;
 };
 
-struct adt7420_emul_cfg {
-};
-
 void adt7420_emul_set_reg(const struct emul *target, uint8_t reg,
 			  const uint8_t *val)
 {
@@ -187,10 +184,8 @@ static const struct emul_sensor_driver_api adt7420_emul_backend_api = {
 };
 
 #define ADT7420_EMUL_DEFINE(inst)                                                                  \
-	const struct adt7420_emul_cfg adt7420_emul_cfg_##inst;                                     \
 	struct adt7420_emul_data adt7420_emul_data_##inst;                                         \
-	EMUL_DT_INST_DEFINE(inst, adt7420_emul_init, &adt7420_emul_data_##inst,                    \
-			    &adt7420_emul_cfg_##inst, &adt7420_emul_api_i2c,                       \
-			    &adt7420_emul_backend_api);
+	EMUL_DT_INST_DEFINE(inst, adt7420_emul_init, &adt7420_emul_data_##inst, NULL,              \
+			    &adt7420_emul_api_i2c, &adt7420_emul_backend_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADT7420_EMUL_DEFINE)

@@ -15,12 +15,16 @@
 	ts-cal-resolution = <12>;
 };
 
+&adc3_common {
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
 &adc3 {
 	status = "okay";
 	pinctrl-0 = <>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "SYNC";
-	st,adc-prescaler = <4>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 

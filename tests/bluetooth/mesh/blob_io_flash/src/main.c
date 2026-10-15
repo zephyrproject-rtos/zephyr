@@ -167,7 +167,9 @@ ZTEST(blob_io_flash, test_chunk_write)
 	uint8_t chunk_data[CHUNK_SIZE];
 	/* 3 is maximum length of padding at the end of written chunk */
 	uint8_t chunk_ctrl_data[CHUNK_SIZE + 3];
+#if !defined(CONFIG_BT_MESH_BLOB_IO_FLASH_BLOCK_CACHE)
 	uint8_t end_padding_len;
+#endif
 	uint8_t test_data[SLOT1_PARTITION_SIZE];
 	uint8_t erased_block_data[CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MAX];
 	uint8_t ctrl_data[SLOT1_PARTITION_SIZE];
@@ -222,6 +224,24 @@ ZTEST(blob_io_flash, test_chunk_write)
 			err = blob_flash_stream.io.wr(&blob_flash_stream.io, &xfer, &block, &chunk);
 			zassert_equal(err, 0, "BLOB I/O write failed with err=%d", err);
 
+#if defined(CONFIG_BT_MESH_BLOB_IO_FLASH_BLOCK_CACHE)
+			/* In block-cache mode wr() only accumulates each chunk in
+			 * RAM and programs the whole block when its last chunk
+			 * arrives. A non-final chunk must therefore leave the
+			 * chunk region still reading the erase value; the final
+			 * chunk flushes the block, verified by the whole-image
+			 * comparison after the loop.
+			 */
+			if (i < block.chunk_count - 1) {
+				flash_area_read(blob_flash_stream.area, block.offset + chunk.offset,
+						chunk_ctrl_data, chunk.size);
+				for (j = 0; j < chunk.size; j++) {
+					zassert_equal(chunk_ctrl_data[j],
+						      flash_area_erased_val(blob_flash_stream.area),
+						      "Chunk programmed before block completion");
+				}
+			}
+#else
 			/* To calculate end padding length we must calculate size of whole buffer
 			 * and subtract start offset length and chunk size
 			 */
@@ -243,6 +263,7 @@ ZTEST(blob_io_flash, test_chunk_write)
 				zassert_equal(chunk_ctrl_data[chunk.size + j],
 					      flash_area_erased_val(blob_flash_stream.area));
 			}
+#endif /* CONFIG_BT_MESH_BLOB_IO_FLASH_BLOCK_CACHE */
 			chunk_idx++;
 
 			remaining -= chunk.size;

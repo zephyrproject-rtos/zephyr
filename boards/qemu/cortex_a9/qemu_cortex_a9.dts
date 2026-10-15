@@ -16,6 +16,7 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+		timebase-frequency = <111111111>;
 
 		cpu@0 {
 			device_type = "cpu";
@@ -42,6 +43,11 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,ocm = &ocm_low;
 		zephyr,uart-pipe = &uart1;
+		zephyr,sdhc = &sdhc0;
+	};
+
+	aliases {
+		sdhc0 = &sdhc0;
 	};
 };
 
@@ -70,6 +76,16 @@
 	gem0_phy: phy@0 {
 		compatible = "ethernet-phy";
 		reg = <0>;
+		status = "okay";
+	};
+};
+
+&sdhc0 {
+	status = "okay";
+
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
 		status = "okay";
 	};
 };

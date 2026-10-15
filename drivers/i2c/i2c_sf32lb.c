@@ -307,7 +307,7 @@ static int i2c_sf32lb_controller_send_dma(const struct device *dev, uint16_t add
 
 	if (msg->len == 0) {
 		/* Zero-length message already handled in send_addr */
-		return ret;
+		return 0;
 	}
 
 	if (stop_needed) {

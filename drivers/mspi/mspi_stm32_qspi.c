@@ -150,6 +150,7 @@ static int mspi_stm32_qspi_dma_init(DMA_HandleTypeDef *hdma, struct stm32_stream
 
 	/* Configure Zephyr DMA driver */
 	dma_stream->cfg.user_data = hdma;
+	dma_stream->cfg.channel_direction = PERIPHERAL_TO_MEMORY;
 	/* This field is used to inform driver that it is overridden */
 	dma_stream->cfg.linked_channel = STM32_DMA_HAL_OVERRIDE;
 
@@ -159,27 +160,11 @@ static int mspi_stm32_qspi_dma_init(DMA_HandleTypeDef *hdma, struct stm32_stream
 		return ret;
 	}
 
-	/* Validate data size alignment */
-	if (dma_stream->cfg.source_data_size != dma_stream->cfg.dest_data_size) {
-		LOG_ERR("DMA Source and destination data sizes not aligned");
-		return -EINVAL;
+	ret = dma_stm32_zcfg_to_halcfg(dma_stream->dev, &dma_stream->cfg, &hdma->Init,
+				       DMA_ADDR_ADJ_NO_CHANGE, DMA_ADDR_ADJ_INCREMENT);
+	if (ret < 0) {
+		return ret;
 	}
-
-	/* Configure HAL DMA driver for QSPI */
-	int index = find_lsb_set(dma_stream->cfg.source_data_size) - 1;
-
-	hdma->Init.PeriphDataAlignment = mspi_stm32_table_dest_size[index];
-	hdma->Init.MemDataAlignment = mspi_stm32_table_src_size[index];
-	hdma->Init.PeriphInc = DMA_PINC_DISABLE;
-	hdma->Init.MemInc = DMA_MINC_ENABLE;
-	hdma->Init.Mode = DMA_NORMAL;
-	hdma->Init.Priority = mspi_stm32_table_priority[dma_stream->cfg.channel_priority];
-#ifdef CONFIG_DMA_STM32_V1
-	/* TODO: Not tested in this configuration */
-	hdma->Init.Channel = dma_stream->cfg.dma_slot;
-#else
-	hdma->Init.Request = dma_stream->cfg.dma_slot;
-#endif /* CONFIG_DMA_STM32_V1 */
 
 	/* Get DMA channel instance */
 	hdma->Instance = STM32_DMA_GET_CHANNEL_INSTANCE(dma_stream->reg, dma_stream->channel);
@@ -557,7 +542,7 @@ static int mspi_stm32_qspi_conf_validate(const struct mspi_cfg *config, uint32_t
 		return -ENOTSUP;
 	}
 
-	if (config->num_periph > MSPI_MAX_DEVICE) {
+	if (config->sw_multi_periph && config->num_periph > MSPI_MAX_DEVICE) {
 		LOG_ERR("Invalid MSPI peripheral number.");
 		return -ENOTSUP;
 	}
@@ -620,7 +605,6 @@ static int mspi_stm32_qspi_hal_init(QSPI_HandleTypeDef *hmspi)
 
 	/* Initialize remaining QSPI handle parameters */
 	hmspi->Init.FifoThreshold = MSPI_STM32_FIFO_THRESHOLD;
-	hmspi->Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_1_CYCLE;
 	hmspi->Init.ClockMode = QSPI_CLOCK_MODE_0;
 	hmspi->Init.FlashID = QSPI_FLASH_ID_1;
 	hmspi->Init.DualFlash = QSPI_DUALFLASH_DISABLE;
@@ -1359,8 +1343,9 @@ static DEVICE_API(mspi, mspi_stm32_qspi_driver_api) = {
 				.SampleShifting = (DT_INST_PROP(index, st_ssht_enable)         \
 						  ? QSPI_SAMPLE_SHIFTING_HALFCYCLE             \
 						  : QSPI_SAMPLE_SHIFTING_NONE),                \
-				.FlashSize = 0x19,                                             \
-				.ChipSelectHighTime = QSPI_CS_HIGH_TIME_1_CYCLE,               \
+				.FlashSize = MSPI_STM32_INST_MEM_ADDR_BITS(index, 26) - 1,     \
+				.ChipSelectHighTime =                                          \
+					DT_INST_PROP(index, st_cs_high_time) - 1,              \
 				.ClockMode = QSPI_CLOCK_MODE_0,                                \
 				.FlashID = QSPI_FLASH_ID_1,                                    \
 				.DualFlash = QSPI_DUALFLASH_DISABLE,                           \

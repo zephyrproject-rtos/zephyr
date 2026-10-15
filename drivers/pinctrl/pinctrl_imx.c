@@ -62,6 +62,28 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 		if (input_register) {
 			sys_write32(IOMUXC_PSMI_SSS(input_daisy), (mem_addr_t)input_register);
 		}
+#elif defined(CONFIG_SOC_SERIES_IMXRT266X)
+		/*
+		 * RT266x uses a single combined IOMUXC PIO register per pad: the
+		 * mux-mode (bits [3:0]) and the pad configuration live in the same
+		 * register, so the generated pinctrl tuples always set
+		 * config_register == mux_register and there is a single write per
+		 * pad. The driver-private input-enable flag (bit 31, see
+		 * pinctrl_soc.h) is translated to the hardware IBENA bit (bit 7)
+		 * and stripped from the value written to HW.
+		 */
+		ARG_UNUSED(config_register);
+		{
+			uint32_t pin_cfg = pin_ctrl_flags & ~(0x1U << MCUX_IMX_INPUT_ENABLE_SHIFT);
+
+			pin_cfg |= MCUX_IMX_INPUT_ENABLE(pin_ctrl_flags) << IOMUXC_PIO_IBENA_SHIFT;
+
+			sys_write32((mux_mode & IOMUXC_PIO_MUX_MODE_MASK) | pin_cfg,
+				    (mem_addr_t)mux_register);
+		}
+		if (input_register) {
+			sys_write32(input_daisy, (mem_addr_t)input_register);
+		}
 #else
 		sys_write32(
 			IOMUXC_SW_MUX_CTL_PAD_MUX_MODE(mux_mode) |
@@ -97,6 +119,16 @@ static int imx_pinctrl_init(void)
 	CLOCK_EnableClock(kCLOCK_Iomuxc1);
 	CLOCK_EnableClock(kCLOCK_Iomuxc2);
 #endif /* CONFIG_SOC_SERIES_IMXRT118X */
+#if defined(CONFIG_SOC_SERIES_IMXRT266X)
+	/*
+	 * RT266x has three IOMUXC instances in separate power domains. MAIN and
+	 * WAKE each have a dedicated LPCG function-clock gate that must be
+	 * enabled before their pads can be configured; the VBAT-domain IOMUXC is
+	 * always powered and has no gate.
+	 */
+	CLOCK_EnableClock(kCLOCK_MAIN_iomuxc);
+	CLOCK_EnableClock(kCLOCK_WAKE_iomuxc);
+#endif /* CONFIG_SOC_SERIES_IMXRT266X */
 	return 0;
 }
 

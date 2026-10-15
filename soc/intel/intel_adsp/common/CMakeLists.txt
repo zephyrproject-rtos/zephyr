@@ -25,6 +25,8 @@ zephyr_library_sources(
 
 zephyr_library_sources_ifdef(CONFIG_ADSP_CLOCK clk.c)
 
+zephyr_library_sources_ifdef(CONFIG_XTENSA_FATAL_BREADCRUMB xtensa_breadcrumb.c)
+
 zephyr_library_sources_ifdef(CONFIG_INTEL_ADSP_DEBUG_SLOT_MANAGER
     debug_window.c
     )

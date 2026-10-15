@@ -15,10 +15,12 @@ supported:
   - eeprom
   - entropy
   - gpio
+  - hwinfo
   - i2c
   - led
   - pinctrl
   - pwm
   - rtc
   - uart
+  - usbd
 vendor: microchip

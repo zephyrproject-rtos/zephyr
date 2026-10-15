@@ -5,12 +5,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <freq.h>
 #include <mem.h>
 
 / {
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+		timebase-frequency = <DT_FREQ_M(100)>;
 
 		cpu@0 {
 			device_type = "cpu";
@@ -36,14 +38,6 @@
 			reg = <0x10000000 0x40000>;
 			write-block-size = <512>;
 			erase-block-size = <512>;
-		};
-
-		flash1: flash@14000000 {
-			compatible = "soc-nv-flash";
-			reg = <0x14000000 0x0>;
-			write-block-size = <512>;
-			erase-block-size = <512>;
-			status = "disabled";
 		};
 	};
 

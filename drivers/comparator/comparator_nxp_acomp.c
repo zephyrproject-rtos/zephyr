@@ -153,7 +153,6 @@ static void nxp_acomp_irq_handler(const struct device *dev)
 	}
 
 	if (data->callback == NULL) {
-		LOG_WRN("No callback can be executed.");
 		return;
 	}
 

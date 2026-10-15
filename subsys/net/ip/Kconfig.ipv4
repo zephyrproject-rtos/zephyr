@@ -23,6 +23,7 @@ config NET_IF_MAX_IPV4_COUNT
 
 config NET_IF_UNICAST_IPV4_ADDR_COUNT
 	int "Max number of unicast IPv4 addresses per network interface"
+	default 4 if NET_NATIVE_OFFLOADED_SOCKETS
 	default 2 if NET_IPV4_AUTO
 	default 2 if NET_LOOPBACK
 	default 1
@@ -36,6 +37,7 @@ config NET_IF_MCAST_IPV4_ADDR_COUNT
 config NET_L2_ETHERNET_MCAST_FILTER_ADD_COUNT_IPV4
 	int
 	depends on NET_L2_ETHERNET
+	depends on NET_NATIVE_IPV4
 	default NET_IF_MCAST_IPV4_ADDR_COUNT
 	help
 	  Every joined IPv4 multicast address needs a link layer multicast
@@ -122,6 +124,29 @@ config NET_IPV4_IGMPV3
 	depends on NET_IPV4_IGMP
 	help
 	  Use IGMPv3 for managing the multicast groups.
+
+config NET_IPV4_IGMP_ROBUSTNESS
+	int "IGMP Robustness Variable"
+	depends on NET_IPV4_IGMP
+	range 1 7
+	default 2
+	help
+	  The Robustness Variable of RFC 3376 ch 8.1 allows tuning for the
+	  expected packet loss on a network, it should not be set to one. The
+	  unsolicited report of a join is sent Robustness Variable times in
+	  total, and an older version querier is remembered for Robustness
+	  Variable times the Query Interval plus one Query Response Interval
+	  after its last query.
+
+config NET_IPV4_IGMP_REQUIRE_ROUTER_ALERT
+	bool "Ignore IGMPv2 and IGMPv3 queries without the Router Alert option"
+	depends on NET_IPV4_IGMP
+	help
+	  Queries are sent with the IP Router Alert option, and a query without
+	  it may have been forged from outside the local network, so hosts
+	  should ignore it (RFC 3376 ch 9.1). Some queriers, IGMP snooping
+	  switches among them, leave the option out and their queries would go
+	  unanswered, so the check is off unless enabled here.
 
 config NET_IPV4_ACD
 	bool "Activate IPv4 address conflict detection (RFC 5227)"
@@ -268,7 +293,7 @@ config NET_IPV4_MAX_ROUTES
 
 config NET_IPV4_NAT
 	bool "IPv4 Network Address Translation (EXPERIMENTAL)"
-	depends on NET_IPV4_ROUTE
+	depends on NET_IPV4_FORWARDING
 	select NET_PKT_FILTER
 	select NET_PKT_FILTER_IPV4_HOOK
 	select EXPERIMENTAL

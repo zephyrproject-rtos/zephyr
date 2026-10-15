@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config MSPI_STM32_CONTROLLER
-	bool "STM32 MSPI Controller drivers"
+	bool "STM32 MSPI Controller drivers [EXPERIMENTAL]"
 	depends on DT_HAS_ST_STM32_OSPI_CONTROLLER_ENABLED || \
 	           DT_HAS_ST_STM32_QSPI_CONTROLLER_ENABLED || \
 	           DT_HAS_ST_STM32_XSPI_CONTROLLER_ENABLED
@@ -61,5 +61,14 @@ config MSPI_STM32_XSPI
 	select USE_STM32_HAL_DMA_EX
 	help
 	  Enable XSPI driver for STM32 family of processors.
+
+config HEAP_MEM_POOL_ADD_SIZE_MSPI_STM32_XSPI
+	int "Heap memory pool size for the STM32 XSPI controller"
+	depends on MSPI_STM32_XSPI && MSPI_DMA
+	default 8192
+	help
+	  The XSPI driver receives every DMA packet into a bounce buffer taken
+	  from the system heap for the length of that packet, so the heap has
+	  to hold the largest read the application issues.
 
 endif # MSPI_STM32_CONTROLLER

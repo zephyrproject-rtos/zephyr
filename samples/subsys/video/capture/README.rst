@@ -33,6 +33,9 @@ Supported boards and camera modules include:
 - :zephyr:board:`stm32n6570_dk`
   with the :ref:`st_b_cams_imx_mb1854` camera module.
 
+- :zephyr:board:`xiao_esp32s3` ("sense" variant)
+  with the :ref:`seeed_xiao_round_display` shield.
+
 Also :zephyr:board:`arduino_nicla_vision` can be used in this sample as capture device, in that case
 The user can transfer the captured frames through on board USB.
 
@@ -54,6 +57,9 @@ connector in order to get console output.
 On :zephyr:board:`stm32n6570_dk`, connect the :ref:`st_b_cams_imx_mb1854` camera module
 to the J4 CSI connector. A USB cable should be connected from a host to both USB-C ports for
 power, flashing and console output.
+
+On the :zephyr:board:`xiao_esp32s3`, connect the "sense" camera module and the
+:ref:`seeed_xiao_round_display` to their respective connectors.
 
 For :zephyr:board:`arduino_nicla_vision` there is no extra wiring required.
 
@@ -117,6 +123,16 @@ using the :ref:`st_b_cams_imx_mb1854` camera module:
    :goals: build
    :compact:
 
+For :zephyr:board:`xiao_esp32s3`, build this sample application with the following commands,
+using the :ref:`seeed_xiao_round_display` shield:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/video/capture
+   :board: xiao_esp32s3/esp32s3/procpu/sense
+   :shield: seeed_xiao_round_display
+   :goals: build
+   :compact:
+
 For testing purpose and without the need of any real video capture and/or display hardwares,
 a video software pattern generator is supported by the above build commands without
 specifying the shields, and using :ref:`snippet-video-sw-generator`:
@@ -127,6 +143,37 @@ specifying the shields, and using :ref:`snippet-video-sw-generator`:
    :snippets: video-sw-generator
    :goals: build
    :compact:
+
+Still without any hardware, :ref:`snippet-video-native-fifo` feeds the sample with frames
+produced on the host instead of generated on the device, which allows using a real webcam, a
+video file, or one of the ``ffmpeg`` test sources:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/video/capture
+   :board: native_sim/native/64
+   :snippets: video-native-fifo
+   :goals: build
+   :compact:
+
+The driver defaults to 320x240 RGB565, which is also the geometry and pixel format of
+the :ref:`native_sim SDL display <nsim_per_disp_sdl>`, so the frames are shown in the SDL window
+without any further configuration. Create the FIFO and start the application:
+
+.. code-block:: console
+
+   $ mkfifo /tmp/zephyr-cam.fifo
+   $ build/zephyr/zephyr.exe --video-fifo=/tmp/zephyr-cam.fifo
+
+Then, from another terminal, feed it a test pattern:
+
+.. code-block:: console
+
+   $ ffmpeg -re -f lavfi -i testsrc2=size=320x240:rate=10 \
+       -pix_fmt rgb565le -f rawvideo -y /tmp/zephyr-cam.fifo
+
+Replace the ``ffmpeg`` input with ``-f v4l2 -i /dev/video0`` to capture from a real webcam, or
+with ``-i <file>`` to replay a video file, and scale it to 320x240: see
+:ref:`the driver documentation <nsim_per_video_fifo>` for a webcam example.
 
 For controlling the camera device using shell commands instead of continuously capturing the data,
 append ``-DCONFIG_VIDEO_SHELL=y`` to the build command:

@@ -5,7 +5,9 @@ tests:
     harness: bluetooth
     depends_on:
       - usbd
-      - ble
+      - bluetooth
+    integration_platforms:
+      - nrf52840dk/nrf52840
     tags:
       - usb
       - bluetooth

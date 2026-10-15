@@ -42,6 +42,7 @@ config APP_VERSION_SHELL
 
 config ZYCLICTEST_SHELL
 	bool "Zyclictest shell"
+	depends on TIMER_HAS_64BIT_CYCLE_COUNTER
 	select POSIX_C_LIB_EXT
 	help
 	  This shell command provides latency measurement.
@@ -53,5 +54,18 @@ config ZYCLICTEST_SHELL
 	  can see if for example interrupts or preemption locks are preventing
 	  the application to run.
 	  Inspired by Linux cyclictest tool.
+
+config SCHED_STATS_SHELL
+	bool "Scheduler stats shell (sched cpus/threads/top)"
+	depends on SHELL
+	depends on THREAD_RUNTIME_STATS
+	depends on SCHED_THREAD_USAGE
+	depends on SCHED_THREAD_USAGE_ALL
+	depends on THREAD_MONITOR
+	help
+	  Register shell commands for SMP-aware scheduler statistics:
+	  "sched cpus", "sched threads", and "sched top". These show per-CPU
+	  busy/idle utilization and a compact thread table (CPU % and stack %)
+	  using k_thread_runtime_stats_*().
 
 rsource "kernel_service/Kconfig"

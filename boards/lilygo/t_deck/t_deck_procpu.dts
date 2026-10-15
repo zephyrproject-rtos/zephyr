@@ -5,7 +5,7 @@
 
 /dts-v1/;
 
-#include <espressif/esp32s3/esp32s3_wroom_n16r8.dtsi>
+#include <espressif/esp32s3/esp32s3.dtsi>
 #include "t_deck-pinctrl.dtsi"
 #include <espressif/partitions_0x0_amp_16M.dtsi>
 #include <zephyr/dt-bindings/adc/adc.h>
@@ -138,6 +138,15 @@
 	};
 };
 
+&flash0 {
+	reg = <0x0 DT_SIZE_M(16)>;
+	ranges = <0x0 0x0 DT_SIZE_M(16)>;
+};
+
+&psram0 {
+	size = <DT_SIZE_M(8)>;
+};
+
 &dma {
 	status = "okay";
 };
@@ -200,7 +209,7 @@
 	pinctrl-names = "default";
 	clock-frequency = <DT_FREQ_M(40)>;
 	cs-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>, <&gpio0 9 GPIO_ACTIVE_LOW>,
-		   <&gpio0 39 GPIO_ACTIVE_LOW>;
+		   <&gpio1 7 GPIO_ACTIVE_LOW>;
 
 	lora: lora@1 {
 		compatible = "semtech,sx1262";

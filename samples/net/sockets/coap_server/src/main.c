@@ -29,7 +29,10 @@ COAP_SERVICE_DEFINE(coap_server, NULL, &coap_port, COAP_SERVICE_AUTOSTART);
 #include "certificate.h"
 
 static const sec_tag_t sec_tag_list_verify_none[] = {
+#if defined(CONFIG_MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED) || \
+	defined(CONFIG_MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED)
 		SERVER_CERTIFICATE_TAG,
+#endif
 #if defined(CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED)
 		PSK_TAG,
 #endif
@@ -46,6 +49,8 @@ static int setup_dtls(void)
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 	int err;
 
+#if defined(CONFIG_MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED) || \
+	defined(CONFIG_MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED)
 #if defined(CONFIG_NET_SAMPLE_CERTS_WITH_SC)
 	err = tls_credential_add(SERVER_CERTIFICATE_TAG,
 				 TLS_CREDENTIAL_CA_CERTIFICATE,
@@ -73,6 +78,7 @@ static int setup_dtls(void)
 		LOG_ERR("Failed to register private key: %d", err);
 		return err;
 	}
+#endif /* ECDHE_RSA or ECDHE_ECDSA enabled */
 
 #if defined(CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED)
 	err = tls_credential_add(PSK_TAG,
@@ -125,21 +131,24 @@ static int join_coap_multicast_group(uint16_t port)
 	}
 
 #if defined(CONFIG_NET_CONFIG_SETTINGS)
-	if (net_addr_pton(AF_INET6,
-			  CONFIG_NET_CONFIG_MY_IPV6_ADDR,
-			  &my_addr) < 0) {
-		LOG_ERR("Invalid IPv6 address %s",
-			CONFIG_NET_CONFIG_MY_IPV6_ADDR);
+	if (sizeof(CONFIG_NET_CONFIG_MY_IPV6_ADDR) > 1) {
+		if (net_addr_pton(AF_INET6,
+				  CONFIG_NET_CONFIG_MY_IPV6_ADDR,
+				  &my_addr) < 0) {
+			LOG_ERR("Invalid IPv6 address %s",
+				CONFIG_NET_CONFIG_MY_IPV6_ADDR);
+			return -EINVAL;
+		}
+
+		ifaddr = net_if_ipv6_addr_add(iface, &my_addr, NET_ADDR_MANUAL, 0);
+		if (!ifaddr) {
+			LOG_ERR("Could not add unicast address to interface");
+			return -EINVAL;
+		}
+
+		ifaddr->addr_state = NET_ADDR_PREFERRED;
 	}
 #endif
-
-	ifaddr = net_if_ipv6_addr_add(iface, &my_addr, NET_ADDR_MANUAL, 0);
-	if (!ifaddr) {
-		LOG_ERR("Could not add unicast address to interface");
-		return -EINVAL;
-	}
-
-	ifaddr->addr_state = NET_ADDR_PREFERRED;
 
 	ret = net_ipv6_mld_join(iface, &mcast_addr.sin6_addr);
 	if (ret < 0) {

@@ -2,4 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_MT8188
-	select SOC_MT8188
+	select SOC_MT8188_ADSP

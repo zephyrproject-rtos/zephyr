@@ -147,7 +147,7 @@ static int gppi_init(void)
 	return 0;
 }
 
-#if defined(CONFIG_NRFX_GPPI) && !defined(CONFIG_NRFX_GPPI_V1)
+#if defined(CONFIG_NRFX_GPPI)
 
 /* For SD2PPI GPPI it is required that ironside communication is up so delay the initialization. */
 #define GPPI_INIT_STATE                                                                            \

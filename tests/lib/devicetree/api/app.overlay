@@ -1297,6 +1297,21 @@
 			interrupt-map = <>;
 		};
 	};
+
+	test-class-enum {
+		test_classdev_a: classdev-a {
+			compatible = "vnd,classed-device";
+		};
+
+		test_classdev_b: classdev-b {
+			compatible = "vnd,classed-device";
+		};
+
+		test_classdev_off: classdev-off {
+			compatible = "vnd,classed-device";
+			status = "disabled";
+		};
+	};
 };
 
 test_connector: &test_i2c {};

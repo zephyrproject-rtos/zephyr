@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021 KT-Elektronik, Klaucke und Partner GmbH
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2026 Renesas Electronics Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,7 +9,12 @@
 #include <kswap.h>
 #include <zephyr/tracing/tracing.h>
 #include <zephyr/arch/rx/sw_nmi_table.h>
-#ifndef CONFIG_SOC_SERIES_RX62N
+
+/* RX74N/RX74M place OFS values via devicetree-driven linker sections (see ofsm.ld)
+ * instead of the static SOC_RX_MDE/OFS0/OFS1 macros from ofsm.h.
+ */
+#if !defined(CONFIG_SOC_SERIES_RX62N) && !defined(CONFIG_SOC_SERIES_RX74N) &&                      \
+	!defined(CONFIG_SOC_SERIES_RX74M)
 #include <ofsm.h>
 #endif
 
@@ -135,7 +140,12 @@ static void __ISR__ Dummy(void)
 static ALWAYS_INLINE void handle_interrupt(uint8_t irq)
 {
 	ISR_DIRECT_HEADER();
+#if defined(CONFIG_GEN_SW_ISR_TABLE)
 	_sw_isr_table[irq].isr(_sw_isr_table[irq].arg);
+#else
+	ARG_UNUSED(irq);
+	z_irq_spurious(NULL);
+#endif
 	ISR_DIRECT_FOOTER(1);
 }
 

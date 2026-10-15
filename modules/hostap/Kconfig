@@ -126,7 +126,7 @@ config WIFI_NM_WPA_SUPPLICANT_DEBUG_SHOW_KEYS
 	  systems as it can compromise network security.
 
 config WIFI_NM_WPA_SUPPLICANT_PRINT_PMK
-	bool "Print PMK once per successful handshake"
+	bool "Print PMK once per successful handshake [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	help
 	  Prints the PMK (as a hex string) once per completed 4-way handshake,
@@ -214,7 +214,7 @@ config WIFI_NM_WPA_SUPPLICANT_LEGACY_CRYPTO
 	  unless LEGACY_CRYPTO is set explicitly.
 
 config WIFI_NM_WPA_SUPPLICANT_WEP
-	bool "WEP support (deprecated)"
+	bool "WEP support [DEPRECATED]"
 	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
 	select DEPRECATED
 	select NOT_SECURE
@@ -451,6 +451,15 @@ config WIFI_NM_WPA_SUPPLICANT_P2P_PROV_DISC_REQ_RETRIES
 	help
 	  Maximum number of retries for P2P provision discovery requests
 	  when the peer is not listening.
+
+config WIFI_NM_WPA_SUPPLICANT_P2P_DEVICE_NAME
+	string "Default Wi-Fi P2P device name"
+	default "ZephyrP2PDevice"
+	help
+	  Device name advertised in the P2P Device Info attribute and in WPS
+	  attributes. Applied at supplicant initialization and can be changed
+	  at runtime. Maximum 32 characters (WPS_DEV_NAME_MAX_LEN). If empty,
+	  the wpa_supplicant default device name is kept at initialization.
 
 endif # WIFI_NM_WPA_SUPPLICANT_P2P
 

@@ -2,6 +2,7 @@
 /* Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com> */
 /dts-v1/;
 
+#include <freq.h>
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -16,6 +17,7 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+		timebase-frequency = <DT_FREQ_M(25)>;
 
 		cpu@0 {
 			compatible = "arm,cortex-m7";

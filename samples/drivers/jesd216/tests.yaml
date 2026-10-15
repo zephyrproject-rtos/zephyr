@@ -57,3 +57,9 @@ tests:
       or dt_compat_enabled("st,stm32-ospi-nor")
       or dt_compat_enabled("st,stm32-qspi-nor")
     depends_on: spi
+  sample.drivers.jesd216.ra8_ospi:
+    platform_allow:
+      - ek_ra8m1
+      - ek_ra8p1/r7ka8p1kflcac/cm85
+    extra_args:
+      - DTC_OVERLAY_FILE="./boards/ra8_ospi_b_nor.overlay"

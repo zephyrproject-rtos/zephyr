@@ -92,7 +92,7 @@ static int uart_rpmsg_init(const struct device *dev)
 		return RPMSG_SUCCESS;                                                              \
 	}                                                                                          \
                                                                                                    \
-	static struct uart_rpmsg_config uart_rpmsg_config_##n = {                                  \
+	static const struct uart_rpmsg_config uart_rpmsg_config_##n = {                            \
 		.cb = rpmsg_recv_tty_callback_##n,                                                 \
 	};                                                                                         \
                                                                                                    \

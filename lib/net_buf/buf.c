@@ -362,10 +362,14 @@ success:
 	net_buf_reset(buf);
 
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
-	atomic_dec(&pool->avail_count);
-	__ASSERT_NO_MSG(atomic_get(&pool->avail_count) >= 0);
-	pool->max_used = max(pool->max_used,
-			     pool->buf_count - atomic_get(&pool->avail_count));
+	atomic_val_t avail = atomic_dec(&pool->avail_count) - 1;
+
+	__ASSERT_NO_MSG(avail >= 0);
+
+	/* A concurrent allocation must not overwrite a higher value with its own */
+	key = k_spin_lock(&pool->lock);
+	pool->max_used = max(pool->max_used, pool->buf_count - avail);
+	k_spin_unlock(&pool->lock, key);
 #endif
 	return buf;
 }
@@ -459,12 +463,25 @@ void net_buf_unref(struct net_buf *buf)
 		 * decrement is performed on `ref_word` (the atomic_t view of
 		 * the slot shared with flags/pool_id/user_data_size) and the
 		 * uint8_t narrowing extracts just the ref byte from the
-		 * returned prior word value.
+		 * prior word value.
 		 */
 		struct net_buf *frags = buf->frags;
 		__maybe_unused uint8_t pool_id = buf->pool_id;
 		struct net_buf_pool *pool;
-		uint8_t old_ref = atomic_dec(&buf->ref_word);
+		atomic_val_t old_word;
+		uint8_t old_ref;
+
+		/* A zero count must not be decremented, not even by an unref
+		 * racing with the last one: the borrow would go into the other
+		 * bytes of ref_word of a buffer that has already been freed.
+		 */
+		do {
+			old_word = atomic_get(&buf->ref_word);
+			old_ref = (uint8_t)old_word;
+			if (old_ref == 0U) {
+				break;
+			}
+		} while (!atomic_cas(&buf->ref_word, old_word, old_word - 1));
 
 		NET_BUF_DBG("buf %p ref %u pool_id %u frags %p", buf, old_ref,
 			    pool_id, frags);

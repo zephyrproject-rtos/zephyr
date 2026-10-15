@@ -356,8 +356,8 @@ FileChecksum: SHA1: {file_obj.hashes.get('SHA1', '')}
 
         if 'SHA256' in file_obj.hashes and file_obj.hashes['SHA256']:
             f.write(f"FileChecksum: SHA256: {file_obj.hashes['SHA256']}\n")
-        if 'MD5' in file_obj.hashes and file_obj.hashes['MD5']:
-            f.write(f"FileChecksum: MD5: {file_obj.hashes['MD5']}\n")
+        if 'SHA512' in file_obj.hashes and file_obj.hashes['SHA512']:
+            f.write(f"FileChecksum: SHA512: {file_obj.hashes['SHA512']}\n")
 
         f.write(f"LicenseConcluded: {file_obj.concluded_license}\n")
 

@@ -46,6 +46,11 @@ if(CONFIG_BUILD_WITH_TFM)
 
 endif()
 
+# All image signing and merging logic lives in one place. Keep this after
+# the TF-M cmake-args block above so the TF-M options are set before the
+# signing flow runs.
+include(${CMAKE_CURRENT_LIST_DIR}/pse84_signing.cmake)
+
 if(CONFIG_CPU_CORTEX_M33 AND CONFIG_TRUSTED_EXECUTION_SECURE)
   zephyr_sources(soc_pse84_m33_s.c)
 
@@ -53,11 +58,6 @@ if(CONFIG_CPU_CORTEX_M33 AND CONFIG_TRUSTED_EXECUTION_SECURE)
   zephyr_sources(security_config/pse84_s_protection.c)
   zephyr_sources(security_config/pse84_s_system.c)
   zephyr_sources(security_config/pse84_s_sau.c)
-
-  set(unsigned_hex ${ZEPHYR_BINARY_DIR}/${KERNEL_NAME}.hex)
-  set(signed_hex ${ZEPHYR_BINARY_DIR}/${KERNEL_NAME}.signed.hex)
-
-  pse84_add_metadata_secure_hex(${unsigned_hex} ${signed_hex})
 elseif(CONFIG_CPU_CORTEX_M33)
   zephyr_sources(soc_pse84_m33_ns.c)
 elseif(CONFIG_CPU_CORTEX_M55)
@@ -73,7 +73,7 @@ zephyr_sources_ifdef(CONFIG_PM power.c)
 if(NOT CONFIG_TRUSTED_EXECUTION_NONSECURE)
   zephyr_sources_ifdef(CONFIG_REBOOT reboot.c)
 endif()
-zephyr_sources_ifdef(CONFIG_SOC_PSE84_LPM_TIMER lpm_timer.c)
+zephyr_sources_ifdef(CONFIG_SOC_PSE84_LPM_TIMER ${ZEPHYR_BASE}/soc/infineon/common/lpm_timer.c)
 zephyr_sources_ifdef(CONFIG_POWEROFF poweroff.c)
 
 zephyr_include_directories(.)

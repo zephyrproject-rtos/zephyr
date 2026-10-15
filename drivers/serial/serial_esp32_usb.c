@@ -151,7 +151,7 @@ static void serial_esp32_usb_irq_tx_enable(const struct device *dev)
 	if (data->irq_cb != NULL) {
 		unsigned int key = irq_lock();
 		data->irq_cb(dev, data->irq_cb_data);
-		arch_irq_unlock(key);
+		irq_unlock(key);
 	}
 }
 

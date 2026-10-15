@@ -106,15 +106,15 @@ static uint32_t elapsed(void)
  * tree-wide and live in timeout_q.h.
  */
 #if defined(CONFIG_TIMEOUT_BACKEND_MINHEAP)
-#include "timeout_minheap.h"
+#include "timeout/minheap.h"
 #elif defined(CONFIG_TIMEOUT_BACKEND_WHEEL)
-#include "timeout_wheel.h"
+#include "timeout/wheel.h"
 #elif defined(CONFIG_TIMEOUT_BACKEND_BUCKET)
-#include "timeout_bucket.h"
+#include "timeout/bucket.h"
 #elif defined(CONFIG_TIMEOUT_BACKEND_SKIPLIST)
-#include "timeout_skiplist.h"
+#include "timeout/skiplist.h"
 #else /* CONFIG_TIMEOUT_BACKEND_DLIST */
-#include "timeout_list.h"
+#include "timeout/list.h"
 #endif
 
 /*
@@ -291,7 +291,11 @@ k_ticks_t z_timeout_remaining(const struct _timeout *timeout)
 
 	K_SPINLOCK(&timeout_lock) {
 		if (!z_is_inactive_timeout(timeout)) {
-			ticks = z_timeout_q_remainder(timeout) - elapsed();
+			k_ticks_t rem = z_timeout_q_remainder(timeout);
+			uint32_t el = elapsed();
+
+			/* elapsed() can exceed rem when announce is late. */
+			ticks = (rem > el) ? (rem - el) : 0;
 		}
 	}
 

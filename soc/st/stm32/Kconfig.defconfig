@@ -172,50 +172,50 @@ if STM32_LTDC && LVGL
 config LV_Z_FLUSH_THREAD
 	default y
 
-choice LV_COLOR_DEPTH
-	default LV_COLOR_DEPTH_16 if STM32_LTDC_RGB565
-	default LV_COLOR_DEPTH_24 if STM32_LTDC_RGB888
-	default LV_COLOR_DEPTH_32 if STM32_LTDC_ARGB8888
+choice LV_Z_COLOR_FORMAT
+	default LV_Z_COLOR_FORMAT_RGB565 if STM32_LTDC_RGB565
+	default LV_Z_COLOR_FORMAT_RGB888 if STM32_LTDC_RGB888
+	default LV_Z_COLOR_FORMAT_XRGB8888 if STM32_LTDC_ARGB8888
 endchoice
 
 # Use 32-byte alignment for all buffers as required by DMA2D.
 # This conveniently also matches the data cache line size,
 # ensuring safe D$ flush/invalidate operations.
-if DT_HAS_ST_STM32_DMA2D_ENABLED
+if DT_HAS_ST_STM32_DMA2D_ENABLED && LV_Z_DRAW_DMA2D
 
-config LV_ATTRIBUTE_MEM_ALIGN_SIZE
+configdefault LV_Z_ATTRIBUTE_MEM_ALIGN_SIZE
 	default 32
 
-# Value for 32-byte area width alignment depends on format
+# Area X alignment in pixels, a power of two, for a multiple of 32 bytes:
+# in RGB888, 32 pixels are 96 bytes
 config LV_Z_AREA_X_ALIGNMENT_WIDTH
 	default 16 if STM32_LTDC_RGB565
-	default 96 if STM32_LTDC_RGB888
+	default 32 if STM32_LTDC_RGB888
 	default 8 if STM32_LTDC_ARGB8888
 
 config LV_Z_VDB_ALIGN
 	default 32
 
-config LV_DRAW_BUF_ALIGN
+configdefault LV_Z_DRAW_BUF_ALIGN
 	default 32
 
 # Necessary for the LV_Z_USE_OSAL
-config DYNAMIC_THREAD
+configdefault DYNAMIC_THREAD
 	default y
-config DYNAMIC_THREAD_POOL_SIZE
-	default 1
+configdefault DYNAMIC_THREAD_POOL_SIZE
+	default 1 if !LV_Z_USE_NEMA_GFX
+	default 2 if LV_Z_USE_NEMA_GFX
+
 config DYNAMIC_THREAD_STACK_SIZE
 	default 8192
 
 config LV_Z_USE_OSAL
 	default y
 
-config LV_USE_DRAW_DMA2D
+configdefault LV_Z_DRAW_DMA2D_INTERRUPT
 	default y
 
-config LV_USE_DRAW_DMA2D_INTERRUPT
-	default y
-
-endif # DT_HAS_ST_STM32_DMA2D_ENABLED
+endif # DT_HAS_ST_STM32_DMA2D_ENABLED && LV_Z_DRAW_DMA2D
 
 endif # STM32_LTDC && LVGL
 
@@ -233,5 +233,15 @@ endif # CRYPTO_STM32
 # All STM32 targets in TF-M expect a 1024 bytes header, BL2 being embedded or not.
 configdefault ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT || BUILD_WITH_TFM
+
+# These TF_PSA_CRYPTO_xxx default configuration should be in 'modules/Kconfig.stm32'
+# but the defaults were not picked up properly. Moving these options here solved the
+# issue. To be investigated.
+configdefault TF_PSA_CRYPTO_DRIVER_CONFIG_FILE
+	default "stm32_psa_crypto_drivers_config.h" if USE_STM32_HAL_PSA_CRYPTO_DRIVERS
+
+configdefault TF_PSA_CRYPTO_DISPATCH_DIR
+	default "$(ZEPHYR_HAL_STM32_MODULE_DIR)/lib/stm32_psa_crypto_drivers/dispatch" \
+		if USE_STM32_HAL_PSA_CRYPTO_DRIVERS
 
 endif # SOC_FAMILY_STM32

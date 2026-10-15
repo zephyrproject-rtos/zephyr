@@ -147,6 +147,7 @@ static int nxp_lp_flexcomm_pm_action(const struct device *dev, enum pm_device_ac
 			}
 		}
 		return nxp_lp_flexcomm_select_periph(dev);
+	case PM_DEVICE_ACTION_TURN_OFF:
 	case PM_DEVICE_ACTION_SUSPEND:
 	case PM_DEVICE_ACTION_RESUME:
 		break;

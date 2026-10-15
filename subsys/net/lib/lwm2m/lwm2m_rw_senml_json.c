@@ -1553,6 +1553,13 @@ int do_write_op_senml_json(struct lwm2m_message *msg)
 		}
 
 		msg->path = resource_path;
+
+		/* The record path comes from the payload, check it before any write */
+		ret = lwm2m_check_path_access(msg);
+		if (ret < 0) {
+			goto end_of_operation;
+		}
+
 		ret = lwm2m_senml_write_operation(msg, &fd);
 
 		/*

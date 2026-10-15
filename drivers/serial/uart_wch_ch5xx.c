@@ -379,7 +379,7 @@ static DEVICE_API(uart, uart_wch_driver_api) = {
 		.data_bits = DT_INST_ENUM_IDX(idx, data_bits),                                     \
 		.prescaler_divisor = DT_INST_PROP(idx, prescaler_divisor),                         \
 		UART_WCH_IRQ_HANDLER_FUNC(idx)};                                                   \
-	DEVICE_DT_INST_DEFINE(idx, &uart_wch_init, NULL, &uart_wch_##idx##_data,                   \
+	DEVICE_DT_INST_DEFINE(idx, uart_wch_init, NULL, &uart_wch_##idx##_data,                    \
 			      &uart_wch_##idx##_config, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, \
 			      &uart_wch_driver_api);                                               \
 	UART_WCH_IRQ_HANDLER(idx)

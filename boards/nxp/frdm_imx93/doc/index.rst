@@ -63,6 +63,26 @@ This board configuration uses a system clock frequency of 24 MHz.
 Cortex-A55 Core runs up to 1.7 GHz.
 Cortex-M33 Core runs up to 200MHz in which SYSTICK runs on same frequency.
 
+CPU Frequency Scaling (A55)
+---------------------------
+
+The Cortex-A55 supports :ref:`CPU frequency scaling <cpu_freq>` through the ARM_PLL P-state
+driver, which offers performance states at 1.692 GHz, 1.4 GHz and 900 MHz. Only the core
+clock is reprogrammed, so all of these frequencies have to be usable at the VDD_SOC level
+set by the boot loader.
+
+ARM_PLL is shared by both Cortex-A55 cores, so a transition always moves the whole cluster
+and the feature is only available on the SMP target ``frdm_imx93/mimx9352/a55/smp``, where
+the CPU frequency subsystem drives every core with the same P-state.
+
+Use this configuration to run the :zephyr:code-sample:`cpu_freq_on_demand` sample:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/cpu_freq/on_demand
+   :host-os: unix
+   :board: frdm_imx93/mimx9352/a55/smp
+   :goals: build
+
 Serial Port
 -----------
 

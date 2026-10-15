@@ -32,6 +32,9 @@ config HEAP_MEM_POOL_ADD_SIZE_ESP_WIFI
 	default 25400 if ESP_WIFI_HEAP_SPIRAM
 	help
 	  Make sure there is a minimal heap available for Wi-Fi driver.
+	  This covers the default Wi-Fi buffer numbers. Each static RX buffer
+	  above the default of 10 takes approximately 1.6KB more from the system heap,
+	  so increase CONFIG_HEAP_MEM_POOL_SIZE accordingly.
 
 choice ESP_WIFI_HEAP
 	prompt "Wi-Fi adapter heap memory"
@@ -88,7 +91,8 @@ config ESP32_WIFI_STATIC_RX_BUFFER_NUM
 	help
 	  Set the number of WiFi static RX buffers. Each buffer takes approximately 1.6KB of RAM.
 	  The static rx buffers are allocated when esp_wifi_init is called, they are not freed
-	  until esp_wifi_deinit is called.
+	  until esp_wifi_deinit is called. They are always taken from the system heap, also
+	  when ESP_WIFI_HEAP_SPIRAM is selected.
 
 	  WiFi hardware use these buffers to receive all 802.11 frames.
 	  A higher number may allow higher throughput but increases memory use. If ESP32_WIFI_AMPDU_RX_ENABLED
@@ -107,6 +111,8 @@ config ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM
 	  For each received data frame, the WiFi driver makes a copy to an RX buffer
 	  and then delivers it to the high layer TCP/IP stack. The dynamic RX buffer
 	  is freed after the higher layer has successfully received the data frame.
+	  The buffers come from the Wi-Fi adapter heap selected by ESP_WIFI_HEAP. If
+	  that heap is exhausted, received frames are dropped.
 
 	  For some applications, WiFi data frames may be received faster than the
 	  application can process them. In these cases we may run out of memory if
@@ -411,6 +417,34 @@ config ESP32_WIFI_EVENT_QUEUE_SIZE
 	  layer (see NET_MGMT_EVENT_QUEUE_SIZE and NET_MGMT_EVENT_QUEUE_TIMEOUT).
 	  Raise this depth at the cost of more RAM if drops are ever seen.
 
+choice ESP32_WIFI_STA_POWER_SAVE_MODE
+	prompt "Station power save mode"
+	default ESP32_WIFI_STA_POWER_SAVE_MIN_MODEM
+	help
+	  Power save mode applied to the station interface when the driver
+	  starts. It can still be changed at runtime with the Wi-Fi power
+	  save management request.
+
+config ESP32_WIFI_STA_POWER_SAVE_MIN_MODEM
+	bool "Minimum modem sleep"
+	help
+	  The station wakes up to receive the beacon every DTIM period.
+
+config ESP32_WIFI_STA_POWER_SAVE_MAX_MODEM
+	bool "Maximum modem sleep"
+	help
+	  The station wakes up to receive the beacon every listen interval.
+	  The interval defaults to 3 beacon intervals and can be set with
+	  the Wi-Fi power save management request.
+
+config ESP32_WIFI_STA_POWER_SAVE_NONE
+	bool "None"
+	help
+	  The modem never sleeps. Lowest latency and highest throughput at
+	  the cost of a continuous active current.
+
+endchoice # ESP32_WIFI_STA_POWER_SAVE_MODE
+
 config ESP32_WIFI_SLP_DEFAULT_MIN_ACTIVE_TIME
 	int "Minimum active time"
 	range 8 60
@@ -480,24 +514,32 @@ menuconfig WIFI_ESP32_MESH
 if WIFI_ESP32_MESH
 
 config WIFI_ESP32_MESH_MAX_LAYER
-	int "Maximum mesh layer (tree depth)"
+	int "Maximum mesh layer (tree depth) buffer ceiling"
 	default 25
 	range 1 25
 	help
-	  Maximum number of layers (tree depth) the mesh may grow to. The root
-	  is layer 1, its direct children layer 2, and so on. Nodes that would
-	  attach deeper than this limit are refused, bounding the tree height.
-	  The routing table on the root is sized for the whole sub-network, so
-	  the maximum node count is roughly MAX_LAYER * MAX_CONNECTIONS + 1.
+	  Compile-time ceiling on the mesh tree depth (layers): it sizes the
+	  routing-table buffers at build time and bounds the num_layers field
+	  esp_wifi_mesh_set_config() accepts, which is the value actually
+	  applied at runtime (esp_wifi_mesh_start() defaults num_layers to this
+	  ceiling if the config is never set). The root is layer 1, its direct
+	  children layer 2, and so on; nodes that would attach deeper than the
+	  runtime num_layers are refused. The routing table on the root is sized
+	  for the whole sub-network, so the maximum node count is roughly
+	  MAX_LAYER * MAX_CONNECTIONS + 1.
 
 config WIFI_ESP32_MESH_MAX_CONNECTIONS
-	int "Maximum direct child connections per node"
+	int "Maximum direct child connections per node buffer ceiling"
 	default 6
 	range 1 10
 	help
-	  Maximum number of direct child nodes a single node accepts on its
-	  softAP interface. This is a per-node fan-out limit, not a whole-network
-	  limit: nodes beyond this count attach one layer deeper instead, so the
+	  Compile-time ceiling on the per-node child fan-out: it sizes the
+	  routing-table buffers at build time and bounds the
+	  max_connections field esp_wifi_mesh_set_config() accepts, which
+	  is the value actually applied at runtime (esp_wifi_mesh_start()
+	  defaults max_connections to this ceiling if the config is never
+	  set). This is a per-node fan-out limit, not a whole-network limit:
+	  nodes beyond this count attach one layer deeper instead, so the
 	  network still grows by extending the tree. A larger value makes a
 	  flatter tree (more RAM per node for the extra links); a smaller value
 	  makes a deeper tree. Each direct link consumes Wi-Fi RX/TX buffers from
@@ -523,49 +565,6 @@ config WIFI_ESP32_MESH_START_TIMEOUT
 	  MESH_EVENT_STARTED before it proceeds to re-deliver the initial
 	  station-start event. The wait ends as soon as the event arrives; this
 	  is only the upper bound before it gives up and continues anyway.
-
-config WIFI_ESP32_MESH_CHANNEL
-	int "Mesh channel (0 = auto, 1-13 = fixed)"
-	default 0
-	range 0 13
-	help
-	  Channel the mesh network operates on. 0 lets the mesh select the
-	  channel by scanning, which is required when the router channel is
-	  unknown. A fixed value 1-13 pins the channel; all nodes must then
-	  use the same one.
-
-config WIFI_ESP32_MESH_ROUTER_SSID
-	string "Router SSID"
-	default "myssid"
-	help
-	  SSID of the router the root node connects to for external network
-	  access. The mesh stack requires a router SSID to be set, so this
-	  carries a placeholder rather than an empty default. Set it to the
-	  router in use: a node left on the placeholder finds no such network
-	  and keeps searching for a parent.
-
-config WIFI_ESP32_MESH_ROUTER_PSK
-	string "Router password"
-	default "mypassword"
-	help
-	  Password of the router the root node connects to. Leave empty for an
-	  open router.
-
-config WIFI_ESP32_MESH_AP_PSK
-	string "Mesh softAP password"
-	default "meshpassword"
-	help
-	  Password protecting the inter-node mesh softAP links. Must be at
-	  least 8 characters and identical on every node.
-
-config WIFI_ESP32_MESH_ID
-	string "Mesh network ID (6 bytes, colon-separated hex)"
-	default "12:34:56:78:9a:bc"
-	help
-	  Unique 6-byte identifier of this mesh network, written as six
-	  colon-separated hex octets. Nodes only join a mesh that advertises
-	  the same ID, so every node in one network must use the same value and
-	  different networks sharing a channel must use different IDs.
 
 config WIFI_ESP32_MESH_ASSOC_EXPIRE
 	int "Idle child association expiry (seconds)"
@@ -596,6 +595,14 @@ config WIFI_ESP32_MESH_VOTE_PERCENTAGE
 	  Percentage of votes a candidate needs to be approved as root during
 	  self-organized election, as a whole percent (100 = unanimous). Only
 	  relevant in the auto role.
+
+config WIFI_ESP32_MESH_ALLOW_ROOT_CONFLICTS
+	bool "Allow multiple roots in one mesh network"
+	help
+	  Let more than one root coexist in the same mesh network. When
+	  disabled, a root that detects another root yields and rejoins the
+	  tree as a child, so nodes booting at the same time still converge on
+	  a single root. Only relevant in the auto role.
 
 config WIFI_ESP32_MESH_SEND_BLOCK_TIME_MS
 	int "Mesh send block time (milliseconds)"
@@ -730,6 +737,7 @@ config ESP32_WIFI_MBEDTLS_CRYPTO
 	select PSA_WANT_ALG_ECDH
 	select PSA_WANT_ALG_ECDSA
 	select PSA_WANT_ALG_HMAC
+	select PSA_WANT_ALG_PBKDF2_HMAC
 	select PSA_WANT_ALG_SHA_1
 	select PSA_WANT_ALG_SHA_256
 	select PSA_WANT_ECC_SECP_R1_256
@@ -811,6 +819,167 @@ config ESP32_WIFI_BSS_MAX_IDLE_SUPPORT
 	help
 	  Enable BSS max idle feature capability advertisement in the Espressif
 	  Wi-Fi driver.
+
+config ESP32_WIFI_11KV_SUPPORT
+	bool "802.11k and 802.11v support"
+	depends on !WIFI_NM_WPA_SUPPLICANT
+	help
+	  Build the 802.11k (radio resource measurement) and 802.11v (wireless
+	  network management) code of the Espressif supplicant. This is the
+	  umbrella option; ESP32_WIFI_RRM_SUPPORT and ESP32_WIFI_WNM_SUPPORT
+	  are enabled with it and can be turned off individually.
+
+	  Roaming policy stays with the application: the driver advertises the
+	  capabilities and exposes the 11k/11v operations through the Wi-Fi
+	  management API, but never decides on its own to change AP.
+
+config ESP32_WIFI_RRM_SUPPORT
+	bool "802.11k (radio resource measurement)"
+	depends on ESP32_WIFI_11KV_SUPPORT
+	default y
+	help
+	  Radio measurements let a station observe and report on the radio
+	  environment. Only the measurements useful for network assisted
+	  roaming are implemented: beacon report, link measurement and
+	  neighbor report.
+
+	  Enabling this makes the station advertise RRM capability on
+	  association, which is what an AP looks for before it will answer a
+	  neighbor report request.
+
+config ESP32_WIFI_WNM_SUPPORT
+	bool "802.11v (BSS transition management)"
+	depends on ESP32_WIFI_11KV_SUPPORT
+	default y
+	help
+	  BSS transition management lets an AP ask a station to move to a
+	  specific AP, or tell it which APs are preferred. Only the operations
+	  useful for network assisted roaming are implemented.
+
+	  Enabling this makes the station advertise BTM capability on
+	  association, which is what an AP looks for before it will send a BSS
+	  transition management request.
+
+config ESP32_WIFI_SCAN_CACHE
+	bool "Keep scan results in cache"
+	depends on ESP32_WIFI_RRM_SUPPORT
+	help
+	  Retain scan results so a beacon report can be answered from the
+	  cache. Without this they are flushed as soon as the scan completes,
+	  and every report costs a fresh scan.
+
+	  The cached results are not reachable from the Zephyr port yet, so
+	  this currently only holds them for the supplicant's own use.
+
+config ESP32_WIFI_MBO_SUPPORT
+	bool "Multi Band Operation (MBO)"
+	depends on ESP32_WIFI_RRM_SUPPORT && ESP32_WIFI_WNM_SUPPORT
+	select ESP32_WIFI_SCAN_CACHE
+	help
+	  Enable Wi-Fi Agile Multiband (MBO) support. MBO builds on 802.11k
+	  and 802.11v, so both have to be enabled for this to be available,
+	  and the scan cache is turned on with it.
+
+	  Reporting non-preferred channels is not functional here: the scan
+	  entry points it builds on are stubbed out in the Zephyr port.
+
+config ESP32_WIFI_SKIP_DHCP_ON_ROAMING
+	bool "Keep the IP configuration when roaming to another AP"
+	depends on ESP32_WIFI_WNM_SUPPORT
+	default y
+	help
+	  A BSS transition moves the station between APs of the same network.
+	  With this enabled the interface stays up across the change and the
+	  address is kept, which is correct when both APs are in the same
+	  subnet (L2 roaming).
+
+	  Disable it if the APs are in different subnets, so that the roam is
+	  reported as a disconnect and the address is requested again.
+
+config ESP32_WIFI_ROAM_TIMEOUT_MS
+	int "Time (ms) a BSS transition is given to complete"
+	depends on ESP32_WIFI_WNM_SUPPORT
+	range 1000 60000
+	default 10000
+	help
+	  A BSS transition leaves the station without an access point until it
+	  associates with the one it moved to, and the Wi-Fi library reports
+	  nothing if that never happens. Give up after this long and report the
+	  link as lost, so a transition that stalls does not leave the interface
+	  up with no connection behind it.
+
+config ESP32_WIFI_SIGNAL_CHANGE_EVENT
+	bool "Report a signal change event when the AP signal weakens"
+	depends on ESP32_WIFI_RRM_SUPPORT || ESP32_WIFI_WNM_SUPPORT
+	help
+	  Watch the RSSI of the connected AP and raise
+	  NET_EVENT_WIFI_SIGNAL_CHANGE once it drops below the configured
+	  threshold. The event only reports: no scan, BSS transition query or
+	  reassociation is started because of it. An application can use it to
+	  decide whether to call the 11k and 11v operations.
+
+	  The Wi-Fi shell acts on this event, and registers
+	  NET_REQUEST_WIFI_START_ROAMING, only with
+	  WIFI_NM_WPA_SUPPLICANT_ROAMING. That option belongs to the
+	  wpa_supplicant network manager, which these options exclude, so an
+	  application supplies its own handler for the event. A transition
+	  the access point asks for with a BSS transition request is separate
+	  from this event and is carried out whenever WNM support is enabled.
+
+config ESP32_WIFI_LOW_RSSI_THRESHOLD
+	int "Signal strength (dBm) that raises the signal change event"
+	depends on ESP32_WIFI_SIGNAL_CHANGE_EVENT
+	range -99 -30
+	default -70
+	help
+	  Signal strength of the connected AP, in dBm, below which the signal
+	  change event is raised. A value close to -30 reports on a link that
+	  is still perfectly good and produces a lot of events.
+
+config ESP32_WIFI_LOW_RSSI_THRESHOLD_STEP
+	int "Amount (dB) to lower the threshold after each event"
+	depends on ESP32_WIFI_SIGNAL_CHANGE_EVENT
+	range 1 20
+	default 5
+	help
+	  The Wi-Fi library reports the threshold being crossed once and then
+	  has to be armed again. Arming it at the same value on a link that
+	  stays weak would repeat the same event, so it is armed this much
+	  lower each time. The library only reports a signal getting worse, so
+	  the driver samples the connected access point while the threshold sits
+	  below the configured value and restores it once the signal recovers.
+
+config ESP32_WIFI_RSSI_RECOVER_INTERVAL_MS
+	int "Interval (ms) between signal samples while the link is weak"
+	depends on ESP32_WIFI_SIGNAL_CHANGE_EVENT
+	range 1000 60000
+	default 5000
+	help
+	  How often the connected access point is sampled while the armed
+	  threshold sits below the configured value, waiting for the signal to
+	  recover. The Wi-Fi library only reports a signal getting worse, so
+	  recovery has to be polled.
+
+	  Each sample costs a call into the Wi-Fi library, so a short interval
+	  notices the link recovering sooner at the price of more wakeups on a
+	  station using power save.
+
+config ESP32_WIFI_11R_SUPPORT
+	bool "802.11r (fast BSS transition)"
+	depends on !WIFI_NM_WPA_SUPPLICANT
+	default y if ESP32_WIFI_ENTERPRISE
+	help
+	  Build the fast BSS transition code of the Espressif supplicant.
+	  802.11r shortens reassociation by carrying the key negotiation in
+	  the authentication exchange, so a roam does not need a full
+	  four-way handshake.
+
+	  The station only advertises FT when the connection request sets
+	  ft_used, so enabling this adds the fast BSS transition code to the
+	  image but does not change how the station associates by default.
+
+	  It defaults on with ESP32_WIFI_ENTERPRISE, where ft_used was honoured
+	  before this option existed.
 
 config ESP32_WIFI_ENABLE_WPA3_SAE
 	bool "WPA3-Personal"

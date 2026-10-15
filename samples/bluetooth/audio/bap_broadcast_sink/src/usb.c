@@ -77,7 +77,8 @@ static void uac2_sof_cb(const struct device *dev, void *user_data)
 
 	if (!terminal_enabled) {
 		/* Simply discard the data then */
-		(void)ring_buf_get(&usb_in_ring_buf, NULL, USB_STEREO_FRAME_SIZE);
+		(void)ring_buf_consume(&usb_in_ring_buf,
+			MIN(USB_STEREO_FRAME_SIZE, ring_buf_size_get(&usb_in_ring_buf)));
 		return;
 	}
 

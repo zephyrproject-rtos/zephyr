@@ -26,6 +26,7 @@ static inline void handle_result_on_error(const struct device *dev, int err)
 	struct paa3905_data *data = dev->data;
 	struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
 
+	k_timer_stop(&data->stream.timer);
 	data->stream.iodev_sqe = NULL;
 	rtio_iodev_sqe_err(iodev_sqe, err);
 }
@@ -57,6 +58,15 @@ static void start_drdy_backup_timer(const struct device *dev)
 		      K_NO_WAIT);
 }
 
+static void paa3905_led_work_handler(struct k_work *work)
+{
+	struct paa3905_stream *stream = CONTAINER_OF(work,
+						     struct paa3905_stream,
+						     led_work);
+
+	(void)paa3905_apply_led_config(stream->dev);
+}
+
 static void paa3905_complete_result(struct rtio *ctx,
 				    const struct rtio_sqe *sqe,
 				    int err,
@@ -81,8 +91,9 @@ static void paa3905_complete_result(struct rtio *ctx,
 		edata->header.channels |= paa3905_encode_channel(SENSOR_CHAN_POS_DXYZ);
 	}
 
-	if (data->stream.settings.enabled.drdy) {
-		start_drdy_backup_timer(dev);
+	if (++data->stream.led_reassert_ctr >= 128) {
+		data->stream.led_reassert_ctr = 0;
+		k_work_submit(&data->stream.led_work);
 	}
 
 	/* Flush RTIO bus CQEs */
@@ -97,8 +108,12 @@ static void paa3905_complete_result(struct rtio *ctx,
 	} while (cqe != NULL);
 
 	if (err < 0) {
-		rtio_iodev_sqe_err(iodev_sqe, err);
+		handle_result_on_error(dev, err);
 		return;
+	}
+
+	if (data->stream.settings.enabled.drdy) {
+		start_drdy_backup_timer(dev);
 	}
 
 	/** Attempt chip recovery if erratic behavior is detected  */
@@ -267,7 +282,7 @@ void paa3905_stream_submit(const struct device *dev,
 	struct paa3905_stream stream = {0};
 
 	for (size_t i = 0 ; i < read_config->count ; i++) {
-		switch (read_config->channels[i].chan_type) {
+		switch (read_config->triggers[i].trigger) {
 		case SENSOR_TRIG_DATA_READY:
 			stream.settings.enabled.drdy = true;
 			stream.settings.opt.drdy = read_config->triggers[i].opt;
@@ -363,6 +378,7 @@ int paa3905_stream_init(const struct device *dev)
 	}
 
 	k_timer_init(&data->stream.timer, paa3905_stream_drdy_timeout, NULL);
+	k_work_init(&data->stream.led_work, paa3905_led_work_handler);
 
 	return err;
 }

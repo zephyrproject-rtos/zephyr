@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2026 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <silabs/six301/sibg301.dtsi>
+
+/ {
+	soc {
+		compatible = "silabs,sibg301m104lil", "silabs,sibg301", "silabs,six301",
+			     "silabs,efr32", "simple-bus";
+	};
+};
+
+&flash0 {
+	reg = <0x11000000 DT_SIZE_K(3904)>;
+	ranges = <0x0 0x11000000 DT_SIZE_K(3904)>;
+};
+
+&gpioa {
+	ngpios = <9>;
+};
+
+&gpiob {
+	ngpios = <4>;
+};
+
+&gpioc {
+	ngpios = <8>;
+};
+
+&gpiod {
+	ngpios = <7>;
+};
+
+&sram0 {
+	reg = <0x30000000 DT_SIZE_K(512)>;
+};

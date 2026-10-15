@@ -2,6 +2,28 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+#[=======================================================================[.rst:
+sysbuild_kconfig
+################
+
+Sysbuild's own Kconfig configuration.
+
+Sysbuild has a Kconfig tree of its own, rooted at the application's :file:`Kconfig.sysbuild` file
+and namespaced under ``SB_CONFIG_`` so that it cannot collide with an image's own ``CONFIG_``
+options. See :ref:`sysbuild_kconfig_namespacing`.
+
+This module locates the sysbuild configuration files and runs Kconfig over them. It also defines
+the ``sysbuild_menuconfig`` and ``sysbuild_guiconfig`` build targets, which edit sysbuild's own
+configuration rather than that of any image.
+
+Configuration input files are looked up in :cmake:variable:`SB_APPLICATION_CONFIG_DIR`, falling
+back to :cmake:variable:`APPLICATION_CONFIG_DIR`, and are controlled by:
+
+* :cmake:variable:`SB_CONF_FILE`
+* :cmake:variable:`SB_EXTRA_CONF_FILE`
+
+#]=======================================================================]
+
 set(EXTRA_KCONFIG_TARGET_COMMAND_FOR_sysbuild_menuconfig
   ${ZEPHYR_BASE}/scripts/kconfig/menuconfig.py
 )

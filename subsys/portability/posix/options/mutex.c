@@ -105,6 +105,7 @@ struct k_mutex *to_posix_mutex(pthread_mutex_t *mu)
 
 		/* Record the associated posix_mutex in mu and mark as initialized */
 		*mu = mark_pthread_obj_initialized(bit);
+		posix_mutex_type[bit] = def_attr.type;
 		m = &posix_mutex_pool[bit];
 	}
 
@@ -133,12 +134,13 @@ static int acquire_mutex(pthread_mutex_t *mu, k_timeout_t timeout)
 
 	LOG_DBG("Locking mutex %p with timeout %" PRIx64, m, (int64_t)timeout.ticks);
 
-	bit = posix_mutex_to_offset(m);
-	type = posix_mutex_type[bit];
 	owner = m->owner;
 	lock_count = m->lock_count;
 
-	if (owner == k_current_get()) {
+	if (owner != NULL && owner == k_current_get()) {
+		bit = posix_mutex_to_offset(m);
+		type = posix_mutex_type[bit];
+
 		switch (type) {
 		case PTHREAD_MUTEX_NORMAL:
 			if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
@@ -315,6 +317,7 @@ int pthread_mutex_destroy(pthread_mutex_t *mu)
 	__ASSERT_NO_MSG(err == 0);
 
 	bit = to_posix_mutex_idx(*mu);
+	posix_mutex_type[bit] = def_attr.type;
 	err = sys_bitarray_free(&posix_mutex_bitarray, 1, bit);
 	__ASSERT_NO_MSG(err == 0);
 

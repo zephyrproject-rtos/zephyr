@@ -1,0 +1,9 @@
+# Copyright (c) 2026 MediaTek Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_MT8188
+	bool "MediaTek MT8188 pin controller"
+	default y
+	depends on DT_HAS_MEDIATEK_MT8188_PINCTRL_ENABLED
+	help
+	  Enable the pin controller driver for MediaTek MT8188.

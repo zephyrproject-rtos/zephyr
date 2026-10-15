@@ -1,0 +1,56 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * MIMXRT2662, secure view: aliased addresses are the non-secure ones
+ * plus 0x10000000 (RM Rev.1 DraftN, CM85 system memory map). That is the
+ * view the SDK's <PERIPHERAL>_BASE macros use.
+ *
+ * Using this view requires the SDK headers to be in it too: MIMXRT266x_COMMON.h
+ * selects the secure bases only when __ARM_FEATURE_CMSE has bit 1 set, that is
+ * for a -mcmse build (CONFIG_TRUSTED_EXECUTION_SECURE). Without that the headers
+ * hand out non-secure bases, and SDK code that looks a peripheral up by base
+ * address -- LPUART_GetInstance(), for one -- no longer finds it.
+ *
+ * A board includes this file to pick both the part and the view. The
+ * apertures are declared here because their base is what the view selects;
+ * the shared tree places its nodes inside them by offset.
+ *
+ * MIMXRT2662 has the display block but not the NPU. The NPU axis has no
+ * devicetree delta, so this expands like MIMXRT2663 (family table in
+ * nxp_rt266x.dtsi).
+ */
+
+#include <mem.h>
+
+/ {
+	soc {
+		/* ITCM at 0x0, DTCM at 0x20000000, SRAM0..2 at 0x22000000 */
+		memory: memory@10000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x10000000 0x30000000>;
+		};
+
+		peripheral: peripheral@50000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x40000000 0x50000000 0x10000000>;
+		};
+
+		/* Two apertures per node: control registers and the XIP window. */
+		xspi0: main_xspi_0: spi@50460000 {
+			reg = <0x50460000 0x1000>, <0x70000000 DT_SIZE_M(128)>;
+		};
+
+		xspi1: main_xspi_1: spi@50470000 {
+			reg = <0x50470000 0x1000>, <0x90000000 DT_SIZE_M(128)>;
+		};
+	};
+};
+
+#include "nxp_rt266x_cm85.dtsi"
+#include "nxp_rt266x.dtsi"

@@ -122,6 +122,18 @@ resetwait:
 	/* Mask all exceptions */
 	msr	DAIFSet, #0xf
 
+#ifdef CONFIG_FWARGS_HANDLER_HOOK
+	/*
+	 * Preserve boot firmware arguments before the reset path starts using
+	 * x0-x3 as scratch registers. Store them to memory only after the
+	 * primary CPU path is selected.
+	 */
+	mov	x19, x0
+	mov	x20, x1
+	mov	x21, x2
+	mov	x22, x3
+#endif
+
 #if CONFIG_MP_MAX_NUM_CPUS > 1
 
 	/*
@@ -189,6 +201,35 @@ secondary_core:
 
 primary_core:
 #endif
+#ifdef CONFIG_ARM_MMU
+	/*
+	 * The MMU is off, so nothing written so far went through the data
+	 * cache, but a previous boot stage may have left lines over our RAM.
+	 * Drop them before writing to it, so they are neither written back
+	 * over it nor read back once the MMU and data cache are on.
+	 * Only the primary core may do this: a secondary core started later
+	 * would discard the primary core's live data.
+	 */
+	mrs	x0, ctr_el0
+	ubfx	x0, x0, #16, #4		/* DminLine: log2 of words per line */
+	mov	x1, #4
+	lsl	x0, x1, x0		/* line size in bytes */
+	sub	x3, x0, #1
+	ldr	x1, =_image_ram_start
+	ldr	x2, =_image_ram_end
+	bic	x1, x1, x3
+1:	dc	ivac, x1
+	add	x1, x1, x0
+	cmp	x1, x2
+	b.lo	1b
+	dsb	sy
+#endif
+#ifdef CONFIG_FWARGS_HANDLER_HOOK
+	ldr	x0, =z_arm64_fwargs
+	stp	x19, x20, [x0]
+	stp	x21, x22, [x0, #16]
+#endif
+
 	/* load primary stack and entry point */
 	ldr	x24, =(z_interrupt_stacks + __z_interrupt_stack_SIZEOF)
 	ldr	x25, =z_prep_c
@@ -245,6 +286,10 @@ switch_el:
 
 1:
 	/* EL1 init */
+#ifdef CONFIG_ARCH_HAS_CUSTOM_CURRENT_IMPL
+	/* No current thread exists until the kernel installs its dummy thread. */
+	msr	tpidr_el1, xzr
+#endif
 	bl	z_arm64_el1_init
 
 	/* We want to use SP_ELx from now on */

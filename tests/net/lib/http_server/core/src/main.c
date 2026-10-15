@@ -12,6 +12,7 @@
 
 #include <zephyr/net/http/service.h>
 #include <zephyr/net/socket.h>
+#include <zephyr/sys/fdtable.h>
 #include <zephyr/ztest.h>
 
 #define BUFFER_SIZE                    1024
@@ -27,6 +28,8 @@
 #define TEST_DYNAMIC_GET_PAYLOAD "Test dynamic GET"
 #define TEST_STATIC_PAYLOAD "Hello, World!"
 #define TEST_STATIC_FS_PAYLOAD "Hello, World from static file!"
+#define TEST_LONG_HEADER_NAME "Test-Header-With-A-Name-Longer-Than-The-Response-Format-Buffer"
+#define TEST_LONG_CONTENT_TYPE "application/vnd.zephyr.example-type+json"
 
 /* Random base64 encoded data */
 #define TEST_LONG_PAYLOAD_CHUNK_1                                                                  \
@@ -447,6 +450,15 @@ enum dynamic_response_headers_variant {
 
 	/* Long body data split across multiple callbacks */
 	DYNAMIC_RESPONSE_HEADERS_VARIANT_BODY_LONG,
+
+	/* Send a header with a long name */
+	DYNAMIC_RESPONSE_HEADERS_VARIANT_LONG_HEADER_NAME,
+
+	/* Headers too long for the server to assemble in a single piece */
+	DYNAMIC_RESPONSE_HEADERS_VARIANT_LONG_HEADERS,
+
+	/* Send body data before all request data is received, nothing on final data */
+	DYNAMIC_RESPONSE_HEADERS_VARIANT_BODY_EARLY,
 };
 
 static uint8_t dynamic_response_headers_variant;
@@ -468,6 +480,16 @@ static int dynamic_response_headers_cb(struct http_client_ctx *client,
 		{.name = "Content-Type", .value = "application/json"},
 	};
 
+	static const struct http_header long_name_headers[] = {
+		{.name = TEST_LONG_HEADER_NAME, .value = "test_data"},
+	};
+
+	static const struct http_header long_headers[] = {
+		{.name = "Test-Header", .value = "test_data"},
+		{.name = "Test-Long-Header", .value = TEST_LONG_PAYLOAD_CHUNK_1},
+		{.name = "Test-Header2", .value = "test_data2"},
+	};
+
 	if (status == HTTP_SERVER_TRANSACTION_ABORTED ||
 	    status == HTTP_SERVER_TRANSACTION_COMPLETE) {
 		offset = 0;
@@ -475,9 +497,10 @@ static int dynamic_response_headers_cb(struct http_client_ctx *client,
 	}
 
 	if (status != HTTP_SERVER_REQUEST_DATA_FINAL &&
-	    dynamic_response_headers_variant != DYNAMIC_RESPONSE_HEADERS_VARIANT_BODY_LONG) {
-		/* Long body variant is the only one which needs to take some action before final
-		 * data has been received from server
+	    dynamic_response_headers_variant != DYNAMIC_RESPONSE_HEADERS_VARIANT_BODY_LONG &&
+	    dynamic_response_headers_variant != DYNAMIC_RESPONSE_HEADERS_VARIANT_BODY_EARLY) {
+		/* Long body and early body variants are the only ones which need to take some
+		 * action before final data has been received from server
 		 */
 		return 0;
 	}
@@ -500,6 +523,12 @@ static int dynamic_response_headers_cb(struct http_client_ctx *client,
 	case DYNAMIC_RESPONSE_HEADERS_VARIANT_OVERRIDE_HEADER:
 		response_ctx->headers = override_headers;
 		response_ctx->header_count = ARRAY_SIZE(extra_headers);
+		response_ctx->final_chunk = true;
+		break;
+
+	case DYNAMIC_RESPONSE_HEADERS_VARIANT_LONG_HEADER_NAME:
+		response_ctx->headers = long_name_headers;
+		response_ctx->header_count = ARRAY_SIZE(long_name_headers);
 		response_ctx->final_chunk = true;
 		break;
 
@@ -556,6 +585,21 @@ static int dynamic_response_headers_cb(struct http_client_ctx *client,
 			zassert(false, "unexpected HTTP method");
 		}
 		break;
+
+	case DYNAMIC_RESPONSE_HEADERS_VARIANT_LONG_HEADERS:
+		response_ctx->headers = long_headers;
+		response_ctx->header_count = ARRAY_SIZE(long_headers);
+		response_ctx->body = TEST_DYNAMIC_GET_PAYLOAD;
+		response_ctx->body_len = strlen(response_ctx->body);
+		response_ctx->final_chunk = true;
+		break;
+
+	case DYNAMIC_RESPONSE_HEADERS_VARIANT_BODY_EARLY:
+		if (status == HTTP_SERVER_REQUEST_DATA_MORE) {
+			response_ctx->body = TEST_DYNAMIC_GET_PAYLOAD;
+			response_ctx->body_len = strlen(response_ctx->body);
+		}
+		break;
 	}
 
 	return 0;
@@ -573,6 +617,205 @@ struct http_resource_detail_dynamic dynamic_response_headers_detail = {
 
 HTTP_RESOURCE_DEFINE(dynamic_response_headers_resource, test_http_service, "/response_headers",
 		     &dynamic_response_headers_detail);
+
+struct http_resource_detail_dynamic dynamic_long_content_type_detail = {
+	.common = {
+		.type = HTTP_RESOURCE_TYPE_DYNAMIC,
+		.bitmask_of_supported_http_methods = BIT(HTTP_GET) | BIT(HTTP_POST),
+		.content_type = TEST_LONG_CONTENT_TYPE,
+	},
+	.cb = dynamic_response_headers_cb,
+	.user_data = NULL
+};
+
+HTTP_RESOURCE_DEFINE(dynamic_long_content_type_resource, test_http_service, "/long_content_type",
+		     &dynamic_long_content_type_detail);
+
+/* Fake socket standing in for a client connection, to check how
+ * http_server_sendall_iov() copes with partial writes and with sockets that
+ * do not support sendmsg(), and how many calls a response is sent in.
+ */
+struct fake_socket_ctx {
+	/* Largest number of bytes accepted by one call, 0 for no limit */
+	size_t max_write;
+	/* errno to fail sendmsg() with, 0 to let it succeed */
+	int sendmsg_errno;
+	size_t sendmsg_calls;
+	size_t sendto_calls;
+	bool empty_iov_seen;
+	uint8_t data[128];
+	size_t data_len;
+};
+
+static struct fake_socket_ctx fake_socket;
+
+static size_t fake_socket_store(struct fake_socket_ctx *sock, const void *buf, size_t len)
+{
+	len = MIN(len, sizeof(sock->data) - sock->data_len);
+	memcpy(&sock->data[sock->data_len], buf, len);
+	sock->data_len += len;
+
+	return len;
+}
+
+static ssize_t fake_socket_sendto(void *obj, const void *buf, size_t len, int flags,
+				  const struct net_sockaddr *dest_addr, net_socklen_t addrlen)
+{
+	struct fake_socket_ctx *sock = obj;
+
+	sock->sendto_calls++;
+
+	if (sock->max_write > 0) {
+		len = MIN(len, sock->max_write);
+	}
+
+	return fake_socket_store(sock, buf, len);
+}
+
+static ssize_t fake_socket_sendmsg(void *obj, const struct net_msghdr *msg, int flags)
+{
+	struct fake_socket_ctx *sock = obj;
+	size_t budget = sock->max_write > 0 ? sock->max_write : SIZE_MAX;
+	size_t sent = 0;
+
+	sock->sendmsg_calls++;
+
+	if (sock->sendmsg_errno != 0) {
+		errno = sock->sendmsg_errno;
+		return -1;
+	}
+
+	for (size_t i = 0; i < msg->msg_iovlen && sent < budget; i++) {
+		if (msg->msg_iov[i].iov_len == 0) {
+			sock->empty_iov_seen = true;
+		}
+
+		sent += fake_socket_store(sock, msg->msg_iov[i].iov_base,
+					  MIN(msg->msg_iov[i].iov_len, budget - sent));
+	}
+
+	return sent;
+}
+
+static const struct socket_op_vtable fake_socket_vtable = {
+	.sendto = fake_socket_sendto,
+	.sendmsg = fake_socket_sendmsg,
+};
+
+static const struct socket_op_vtable fake_socket_no_sendmsg_vtable = {
+	.sendto = fake_socket_sendto,
+};
+
+/* Reset the fake socket and return a file descriptor for it */
+static int fake_socket_open(const struct socket_op_vtable *vtable, size_t max_write,
+			    int sendmsg_errno)
+{
+	int fd;
+
+	memset(&fake_socket, 0, sizeof(fake_socket));
+	fake_socket.max_write = max_write;
+	fake_socket.sendmsg_errno = sendmsg_errno;
+
+	fd = zvfs_reserve_fd();
+	zassert_true(fd >= 0, "Failed to reserve fd (%d)", errno);
+	zvfs_finalize_typed_fd(fd, &fake_socket, &vtable->fd_vtable, ZVFS_MODE_IFSOCK);
+
+	return fd;
+}
+
+/* Buffers passed to http_server_sendall_iov(), including empty ones */
+static const char *const sendall_iov_buffers[] = {"", "Hello", ", ", "", "gathered", " world", ""};
+#define SENDALL_IOV_NON_EMPTY_BUFFERS 4
+#define SENDALL_IOV_DATA              "Hello, gathered world"
+
+static int sendall_iov_fd = -1;
+static int sendall_iov_ret;
+
+static int sendall_iov_cb(struct http_client_ctx *client, enum http_transaction_status status,
+			  const struct http_request_ctx *request_ctx,
+			  struct http_response_ctx *response_ctx, void *user_data)
+{
+	struct net_iovec iov[ARRAY_SIZE(sendall_iov_buffers)];
+	int real_fd = client->fd;
+
+	if (status != HTTP_SERVER_REQUEST_DATA_FINAL) {
+		return 0;
+	}
+
+	ARRAY_FOR_EACH(sendall_iov_buffers, i) {
+		iov[i].iov_base = (void *)sendall_iov_buffers[i];
+		iov[i].iov_len = strlen(sendall_iov_buffers[i]);
+	}
+
+	/* Send through the fake socket, then put the real one back to complete
+	 * the HTTP transaction.
+	 */
+	client->fd = sendall_iov_fd;
+	sendall_iov_ret = http_server_sendall_iov(client, iov, ARRAY_SIZE(iov));
+	client->fd = real_fd;
+
+	response_ctx->final_chunk = true;
+
+	return 0;
+}
+
+struct http_resource_detail_dynamic sendall_iov_detail = {
+	.common = {
+		.type = HTTP_RESOURCE_TYPE_DYNAMIC,
+		.bitmask_of_supported_http_methods = BIT(HTTP_GET),
+		.content_type = "text/plain",
+	},
+	.cb = sendall_iov_cb,
+	.user_data = NULL
+};
+
+HTTP_RESOURCE_DEFINE(sendall_iov_resource, test_http_service, "/sendall_iov", &sendall_iov_detail);
+
+static int response_writes_fd = -1;
+static int response_writes_real_fd = -1;
+static K_SEM_DEFINE(response_writes_done, 0, 1);
+
+/* Respond in a single callback, with the response sent through the fake socket
+ * to count the calls it is sent in.
+ */
+static int response_writes_cb(struct http_client_ctx *client, enum http_transaction_status status,
+			      const struct http_request_ctx *request_ctx,
+			      struct http_response_ctx *response_ctx, void *user_data)
+{
+	if (status == HTTP_SERVER_TRANSACTION_ABORTED ||
+	    status == HTTP_SERVER_TRANSACTION_COMPLETE) {
+		/* Put the real socket back for the rest of the connection */
+		client->fd = response_writes_real_fd;
+		k_sem_give(&response_writes_done);
+		return 0;
+	}
+
+	if (status != HTTP_SERVER_REQUEST_DATA_FINAL) {
+		return 0;
+	}
+
+	response_writes_real_fd = client->fd;
+	client->fd = response_writes_fd;
+
+	response_ctx->body = (const uint8_t *)TEST_DYNAMIC_GET_PAYLOAD;
+	response_ctx->body_len = strlen(TEST_DYNAMIC_GET_PAYLOAD);
+	response_ctx->final_chunk = true;
+
+	return 0;
+}
+
+struct http_resource_detail_dynamic response_writes_detail = {
+	.common = {
+		.type = HTTP_RESOURCE_TYPE_DYNAMIC,
+		.bitmask_of_supported_http_methods = BIT(HTTP_GET) | BIT(HTTP_POST),
+		.content_type = "text/plain",
+	},
+	.cb = response_writes_cb,
+	.user_data = NULL
+};
+
+HTTP_RESOURCE_DEFINE(response_writes_resource, test_http_service, "/response_writes",
+		     &response_writes_detail);
 
 static int client_fd = -1;
 static uint8_t buf[BUFFER_SIZE];
@@ -2040,6 +2283,60 @@ ZTEST(server_function_tests, test_http1_dynamic_post_response_header_override)
 	test_http1_dynamic_response_header_override(true);
 }
 
+static void test_http1_dynamic_response_header_long_name(bool post)
+{
+	static const char response[] = "HTTP/1.1 200\r\n"
+				       "Transfer-Encoding: chunked\r\n"
+				       TEST_LONG_HEADER_NAME ": test_data\r\n"
+				       "Content-Type: text/plain\r\n"
+				       "\r\n"
+				       "0\r\n\r\n";
+
+	dynamic_response_headers_variant = DYNAMIC_RESPONSE_HEADERS_VARIANT_LONG_HEADER_NAME;
+
+	test_http1_dynamic_response_headers_default(response, post);
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_get_response_header_long_name)
+{
+	test_http1_dynamic_response_header_long_name(false);
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_post_response_header_long_name)
+{
+	test_http1_dynamic_response_header_long_name(true);
+}
+
+static void test_http1_dynamic_response_long_content_type(bool post)
+{
+	static const char get_request[] = "GET /long_content_type HTTP/1.1\r\n"
+					  "Accept: */*\r\n"
+					  "\r\n";
+	static const char post_request[] = "POST /long_content_type HTTP/1.1\r\n"
+					   "Accept: */*\r\n"
+					   "Content-Length: 17\r\n"
+					   "\r\n" TEST_DYNAMIC_POST_PAYLOAD;
+	static const char response[] = "HTTP/1.1 200\r\n"
+				       "Transfer-Encoding: chunked\r\n"
+				       "Content-Type: " TEST_LONG_CONTENT_TYPE "\r\n"
+				       "\r\n"
+				       "0\r\n\r\n";
+
+	dynamic_response_headers_variant = DYNAMIC_RESPONSE_HEADERS_VARIANT_NONE;
+
+	test_http1_dynamic_response_headers(post ? post_request : get_request, response);
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_get_response_long_content_type)
+{
+	test_http1_dynamic_response_long_content_type(false);
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_post_response_long_content_type)
+{
+	test_http1_dynamic_response_long_content_type(true);
+}
+
 static void test_http2_dynamic_response_header_override(bool post)
 {
 	size_t offset = 0;
@@ -2256,6 +2553,209 @@ ZTEST(server_function_tests, test_http2_dynamic_post_response_header_long)
 	test_http2_dynamic_response_headers(request, req_offset, expected_headers,
 					    ARRAY_SIZE(expected_headers), true, &offset);
 	zassert_mem_equal(dynamic_response_headers_buffer, long_payload, strlen(long_payload));
+}
+
+static void test_http1_dynamic_response_header_long_headers(bool post)
+{
+	static const char response[] = "HTTP/1.1 200\r\n"
+				       "Transfer-Encoding: chunked\r\n"
+				       "Test-Header: test_data\r\n"
+				       "Test-Long-Header: " TEST_LONG_PAYLOAD_CHUNK_1 "\r\n"
+				       "Test-Header2: test_data2\r\n"
+				       "Content-Type: text/plain\r\n"
+				       "\r\n"
+				       "10\r\n" TEST_DYNAMIC_GET_PAYLOAD "\r\n"
+				       "0\r\n\r\n";
+
+	dynamic_response_headers_variant = DYNAMIC_RESPONSE_HEADERS_VARIANT_LONG_HEADERS;
+
+	test_http1_dynamic_response_headers_default(response, post);
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_get_response_header_long_headers)
+{
+	test_http1_dynamic_response_header_long_headers(false);
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_post_response_header_long_headers)
+{
+	test_http1_dynamic_response_header_long_headers(true);
+}
+
+static void test_sendall_iov(const struct socket_op_vtable *vtable, size_t max_write,
+			     int sendmsg_errno)
+{
+	static const char request[] = "GET /sendall_iov HTTP/1.1\r\n"
+				      "Accept: */*\r\n"
+				      "\r\n";
+	static const char response[] = "HTTP/1.1 200\r\n"
+				       "Transfer-Encoding: chunked\r\n"
+				       "Content-Type: text/plain\r\n"
+				       "\r\n"
+				       "0\r\n\r\n";
+	size_t offset = 0;
+	int ret;
+
+	sendall_iov_fd = fake_socket_open(vtable, max_write, sendmsg_errno);
+
+	ret = zsock_send(client_fd, request, strlen(request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	test_read_data(&offset, strlen(response));
+	zassert_mem_equal(buf, response, strlen(response));
+
+	(void)zsock_close(sendall_iov_fd);
+	sendall_iov_fd = -1;
+}
+
+static void test_sendall_iov_check_data(void)
+{
+	zassert_equal(sendall_iov_ret, 0, "Unexpected result (%d)", sendall_iov_ret);
+	zassert_false(fake_socket.empty_iov_seen, "Empty buffer passed to sendmsg()");
+	zassert_equal(fake_socket.data_len, strlen(SENDALL_IOV_DATA));
+	zassert_mem_equal(fake_socket.data, SENDALL_IOV_DATA, strlen(SENDALL_IOV_DATA));
+}
+
+ZTEST(server_function_tests, test_sendall_iov_gather)
+{
+	test_sendall_iov(&fake_socket_vtable, 0, 0);
+
+	test_sendall_iov_check_data();
+	zassert_equal(fake_socket.sendmsg_calls, 1);
+	zassert_equal(fake_socket.sendto_calls, 0);
+}
+
+ZTEST(server_function_tests, test_sendall_iov_partial_writes)
+{
+	const size_t max_write = 4;
+
+	test_sendall_iov(&fake_socket_vtable, max_write, 0);
+
+	test_sendall_iov_check_data();
+	zassert_equal(fake_socket.sendmsg_calls, DIV_ROUND_UP(strlen(SENDALL_IOV_DATA), max_write));
+	zassert_equal(fake_socket.sendto_calls, 0);
+}
+
+ZTEST(server_function_tests, test_sendall_iov_no_sendmsg)
+{
+	test_sendall_iov(&fake_socket_no_sendmsg_vtable, 0, 0);
+
+	test_sendall_iov_check_data();
+	zassert_equal(fake_socket.sendmsg_calls, 0);
+	zassert_equal(fake_socket.sendto_calls, SENDALL_IOV_NON_EMPTY_BUFFERS);
+}
+
+ZTEST(server_function_tests, test_sendall_iov_sendmsg_enotsup)
+{
+	test_sendall_iov(&fake_socket_vtable, 0, ENOTSUP);
+
+	test_sendall_iov_check_data();
+	zassert_equal(fake_socket.sendmsg_calls, 1);
+	zassert_equal(fake_socket.sendto_calls, SENDALL_IOV_NON_EMPTY_BUFFERS);
+}
+
+ZTEST(server_function_tests, test_sendall_iov_sendmsg_error)
+{
+	test_sendall_iov(&fake_socket_vtable, 0, EIO);
+
+	zassert_equal(sendall_iov_ret, -EIO, "Unexpected result (%d)", sendall_iov_ret);
+	zassert_equal(fake_socket.sendmsg_calls, 1);
+	zassert_equal(fake_socket.sendto_calls, 0);
+	zassert_equal(fake_socket.data_len, 0);
+}
+
+static void test_http1_dynamic_response_writes(bool post)
+{
+	static const char get_request[] = "GET /response_writes HTTP/1.1\r\n"
+					  "Accept: */*\r\n"
+					  "\r\n";
+	static const char post_request[] = "POST /response_writes HTTP/1.1\r\n"
+					   "Accept: */*\r\n"
+					   "Content-Length: 17\r\n"
+					   "\r\n" TEST_DYNAMIC_POST_PAYLOAD;
+	static const char response[] = "HTTP/1.1 200\r\n"
+				       "Transfer-Encoding: chunked\r\n"
+				       "Content-Type: text/plain\r\n"
+				       "\r\n"
+				       "10\r\n" TEST_DYNAMIC_GET_PAYLOAD "\r\n"
+				       "0\r\n\r\n";
+	const char *request = post ? post_request : get_request;
+	int ret;
+
+	BUILD_ASSERT(sizeof(response) - 1 <= sizeof(fake_socket.data));
+
+	response_writes_fd = fake_socket_open(&fake_socket_vtable, 0, 0);
+	k_sem_reset(&response_writes_done);
+
+	ret = zsock_send(client_fd, request, strlen(request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	ret = k_sem_take(&response_writes_done, K_SECONDS(TIMEOUT_S));
+	zassert_ok(ret, "Transaction not completed");
+
+	(void)zsock_close(response_writes_fd);
+	response_writes_fd = -1;
+
+	/* Headers, body chunk and terminating chunk go out in one call */
+	zassert_equal(fake_socket.data_len, strlen(response));
+	zassert_mem_equal(fake_socket.data, response, strlen(response));
+	zassert_equal(fake_socket.sendmsg_calls, 1);
+	zassert_equal(fake_socket.sendto_calls, 0);
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_get_response_single_write)
+{
+	test_http1_dynamic_response_writes(false);
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_post_response_single_write)
+{
+	test_http1_dynamic_response_writes(true);
+}
+
+/* The response is started while request data is still arriving and nothing
+ * is added once the request is complete, so the server has to terminate the
+ * response on its own, exactly once.
+ */
+ZTEST(server_function_tests, test_http1_dynamic_post_response_early_body)
+{
+	static const char request_part1[] = "POST /response_headers HTTP/1.1\r\n"
+					    "Accept: */*\r\n"
+					    "Content-Length: 17\r\n"
+					    "\r\n"
+					    "Test dyn";
+	static const char request_part2[] = "amic POST";
+	static const char response_part1[] = "HTTP/1.1 200\r\n"
+					     "Transfer-Encoding: chunked\r\n"
+					     "Content-Type: text/plain\r\n"
+					     "\r\n"
+					     "10\r\n" TEST_DYNAMIC_GET_PAYLOAD "\r\n";
+	static const char response_part2[] = "0\r\n\r\n";
+	size_t offset = 0;
+	int ret;
+
+	dynamic_response_headers_variant = DYNAMIC_RESPONSE_HEADERS_VARIANT_BODY_EARLY;
+
+	ret = zsock_send(client_fd, request_part1, strlen(request_part1), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	test_read_data(&offset, strlen(response_part1));
+	zassert_equal(offset, strlen(response_part1), "Unexpected data before request completed");
+	zassert_mem_equal(buf, response_part1, strlen(response_part1));
+	test_consume_data(&offset, strlen(response_part1));
+
+	ret = zsock_send(client_fd, request_part2, strlen(request_part2), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	test_read_data(&offset, strlen(response_part2));
+	zassert_mem_equal(buf, response_part2, strlen(response_part2));
+	test_consume_data(&offset, strlen(response_part2));
+
+	/* Give a duplicate terminating chunk time to arrive */
+	k_msleep(100);
+
+	ret = zsock_recv(client_fd, buf, sizeof(buf), ZSOCK_MSG_DONTWAIT);
+	zassert_true(offset == 0 && ret < 0 && errno == EAGAIN, "Unexpected trailing data");
 }
 
 ZTEST(server_function_tests, test_http1_409_method_not_allowed)

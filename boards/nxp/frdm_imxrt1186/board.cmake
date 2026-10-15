@@ -9,10 +9,10 @@ if(CONFIG_BOARD_FRDM_IMXRT1186_MIMXRT1186_CM7 OR CONFIG_BOARD_FRDM_IMXRT1186_MIM
   set(is_cm7 TRUE)
 endif()
 
-if(is_cm7)
+if(CONFIG_BOARD_FRDM_IMXRT1186_MIMXRT1186_CM33 OR CONFIG_SECOND_CORE_MCUX)
+  board_runner_args(jlink "--device=MIMXRT1186xxx8_M33" "--reset-after-load" "--tool-opt=-jlinkscriptfile ${jlinkscript}/frdmimxrt1186_cm33.jlinkscript")
+elseif(is_cm7)
   board_runner_args(jlink "--device=MIMXRT1186xxx8_M7" "--no-reset" "--tool-opt=-jlinkscriptfile ${jlinkscript}/frdmimxrt1186_cm7.jlinkscript")
-elseif(CONFIG_BOARD_FRDM_IMXRT1186_MIMXRT1186_CM33)
-  board_runner_args(jlink "--device=MIMXRT1186xxx8_M33" "--tool-opt=-jlinkscriptfile ${jlinkscript}/frdmimxrt1186_cm33.jlinkscript")
 endif()
 
 board_runner_args(linkserver "--device=MIMXRT1186xxxxx:FRDM-IMXRT1186")

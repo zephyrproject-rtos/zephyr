@@ -96,7 +96,7 @@ struct nrfs_backend_bound_info_subs {
  * @brief Register callback function to notify when nrfs is connected.
  * There can be multiple callbacks registered.
  *
- * @param subs Subcription instance.
+ * @param subs Subscription instance.
  * @param cb Callback
  */
 void nrfs_backend_register_bound_subscribe(struct nrfs_backend_bound_info_subs *subs,

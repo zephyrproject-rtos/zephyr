@@ -1,6 +1,8 @@
 # Copyright (c) 2025 Würth Elektronik eiSos GmbH & Co. KG
 # SPDX-License-Identifier: Apache-2.0
 
+include: sensor-device.yaml
+
 properties:
   events-interrupt-gpios:
     type: phandle-array

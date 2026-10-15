@@ -13,13 +13,6 @@
 #include <zephyr/arch/riscv/irq.h>
 #include "asm_macros.inc"
 
-#ifdef CONFIG_RISCV_S_MODE
-/* mcounteren bits */
-#define MCOUNTEREN_CY  BIT(0)  /* cycle counter */
-#define MCOUNTEREN_TM  BIT(1)  /* time counter */
-#define MCOUNTEREN_IR  BIT(2)  /* instret counter */
-#endif
-
 /* exports */
 GTEXT(__initialize)
 GTEXT(__reset)
@@ -185,8 +178,14 @@ aa_loop:
 	csrw mscratch, t0
 
 	/* Allow S-mode to read cycle, time and instret counters */
-	li t0, (MCOUNTEREN_CY | MCOUNTEREN_TM | MCOUNTEREN_IR)
+	li t0, (COUNTEREN_CY | COUNTEREN_TM | COUNTEREN_IR)
 	csrw mcounteren, t0
+
+#ifdef CONFIG_RISCV_ISA_EXT_ZKR
+	/* Allow S-mode to access the Zkr seed CSR */
+	li t0, MSECCFG_SSEED
+	csrs CSR_MSECCFG, t0
+#endif /* CONFIG_RISCV_ISA_EXT_ZKR */
 
 	/* Enable M-mode timer interrupt so MTIP fires and is forwarded to S-mode as STIP */
 	li t0, MIP_MTIP

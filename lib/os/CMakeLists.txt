@@ -90,10 +90,6 @@ if(NOT CONFIG_PICOLIBC)
   zephyr_sources(cbprintf.c)
 endif()
 
-if(CONFIG_ASSERT OR CONFIG_ASSERT_VERBOSE)
-zephyr_sources(assert.c)
-endif()
-
 zephyr_sources_ifdef(CONFIG_MPSC_PBUF mpsc_pbuf.c)
 
 zephyr_sources_ifdef(CONFIG_SPSC_PBUF spsc_pbuf.c)
@@ -116,6 +112,7 @@ zephyr_syscall_header_ifdef(CONFIG_ZVFS_FDTABLE
 )
 
 zephyr_sources_ifdef(CONFIG_BOOTARGS boot_args.c)
+zephyr_sources_ifdef(CONFIG_BOOT_FDT boot_fdt.c)
 
 zephyr_syscall_header_ifdef(
   CONFIG_ATOMIC_OPERATIONS_C

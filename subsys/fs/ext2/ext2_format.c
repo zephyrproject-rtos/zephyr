@@ -314,6 +314,11 @@ int ext2_format(struct ext2_data *fs, struct ext2_cfg *cfg)
 	for (int i = 0; i < itable_blocks; i++) {
 		struct ext2_block *blk = ext2_get_block(fs, itable_block_num + i);
 
+		if (blk == NULL) {
+			ret = -ENOMEM;
+			goto out;
+		}
+
 		memset(blk->data, 0, cfg->block_size);
 		rc = ext2_write_block(fs, blk);
 		ext2_drop_block(blk);
@@ -328,6 +333,10 @@ int ext2_format(struct ext2_data *fs, struct ext2_cfg *cfg)
 
 	/* Set inode 2 ('/' directory) */
 	itable_block1 = ext2_get_block(fs, itable_block_num);
+	if (itable_block1 == NULL) {
+		ret = -ENOMEM;
+		goto out;
+	}
 	in = (struct ext2_disk_inode *)itable_block1->data;
 	inode_offset = EXT2_ROOT_INODE - 1;
 	default_directory_inode(&in[inode_offset], 1, cfg);
@@ -349,6 +358,10 @@ int ext2_format(struct ext2_data *fs, struct ext2_cfg *cfg)
 		uint32_t block_num = itable_block_num + lost_found_inode / inodes_per_block;
 
 		itable_block2 = ext2_get_block(fs, block_num);
+		if (itable_block2 == NULL) {
+			ret = -ENOMEM;
+			goto out;
+		}
 		in = (struct ext2_disk_inode *)itable_block2->data;
 	}
 
@@ -370,7 +383,7 @@ int ext2_format(struct ext2_data *fs, struct ext2_cfg *cfg)
 	LOG_DBG("Root dir blk: %d", root_dir_blk_num);
 	root_dir_blk = ext2_get_block(fs, root_dir_blk_num);
 	if (root_dir_blk == NULL) {
-		ret = ENOMEM;
+		ret = -ENOMEM;
 		goto out;
 	}
 	memset(root_dir_blk->data, 0, cfg->block_size);
@@ -412,7 +425,7 @@ int ext2_format(struct ext2_data *fs, struct ext2_cfg *cfg)
 	LOG_DBG("Lost found dir blk: %d", lost_found_dir_blk_num);
 	lost_found_dir_blk = ext2_get_block(fs, lost_found_dir_blk_num);
 	if (lost_found_dir_blk == NULL) {
-		ret = ENOMEM;
+		ret = -ENOMEM;
 		goto out;
 	}
 	memset(lost_found_dir_blk->data, 0, cfg->block_size);

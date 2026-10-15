@@ -19,17 +19,17 @@ LOG_MODULE_REGISTER(net_midi2_sample, LOG_LEVEL_DBG);
 #define ACT_LED_NODE DT_NODELABEL(midi_green_led)
 #define SERIAL_NODE  DT_NODELABEL(midi_serial)
 
-#if !DT_NODE_EXISTS(ACT_LED_NODE)
+#if !defined(CONFIG_NET_SAMPLE_MIDI2_ACTIVITY_LED)
 #define CONFIGURE_LED()
 #define SET_LED(_state)
-#else /* DT_NODE_EXISTS(ACT_LED_NODE) */
+#else /* CONFIG_NET_SAMPLE_MIDI2_ACTIVITY_LED */
 #include <zephyr/drivers/gpio.h>
 
 static const struct gpio_dt_spec act_led = GPIO_DT_SPEC_GET(ACT_LED_NODE, gpios);
 
 #define CONFIGURE_LED() gpio_pin_configure_dt(&act_led, GPIO_OUTPUT_INACTIVE)
 #define SET_LED(_state) gpio_pin_set_dt(&act_led, (_state))
-#endif  /* DT_NODE_EXISTS(ACT_LED_NODE) */
+#endif  /* CONFIG_NET_SAMPLE_MIDI2_ACTIVITY_LED */
 
 
 #if !DT_NODE_EXISTS(SERIAL_NODE)

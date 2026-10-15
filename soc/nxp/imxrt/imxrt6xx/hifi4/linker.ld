@@ -475,7 +475,6 @@ SECTIONS
   /* stack */
   _end = ALIGN (8);
 
-  /DISCARD/ : { *(.note.GNU-stack) }
   _heap_sentry = DATA_BASE + DATA_SIZE;
   __stack = DATA_BASE + DATA_SIZE;
   .comment  0 :  { *(.comment) }

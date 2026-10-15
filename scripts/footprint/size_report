@@ -18,12 +18,13 @@ import sys
 import re
 from pathlib import Path
 import json
+from bisect import bisect_left, bisect_right
 
 from packaging import version
 
 from colorama import init, Fore, Style
 
-from anytree import RenderTree, NodeMixin, PreOrderIter
+from anytree import RenderTree, NodeMixin
 from anytree.exporter import DictExporter
 
 import elftools
@@ -354,6 +355,17 @@ def get_die_filename(die, lineprog):
     dwarf_v5 = lineprog.header.version >= 5
 
     file_index = die.attributes['DW_AT_decl_file'].value
+
+    # Resolving a path performs multiple filesystem stat calls.  Large ELF
+    # files commonly refer to the same source file from thousands of DIEs, so
+    # cache the resolved Path on the line program shared by the compile unit.
+    filename_cache = getattr(lineprog, '_size_report_filename_cache', None)
+    if filename_cache is None:
+        filename_cache = {}
+        lineprog._size_report_filename_cache = filename_cache
+    elif file_index in filename_cache:
+        return filename_cache[file_index]
+
     file_entry = lineprog['file_entry'][file_index if dwarf_v5 else file_index - 1]
 
     dir_index = file_entry['dir_index']
@@ -381,6 +393,7 @@ def get_die_filename(die, lineprog):
         if '<built-in>' not in str(path):
             raise e
 
+    filename_cache[file_index] = path
     return path
 
 
@@ -559,6 +572,18 @@ def do_address_range_matching(dwarfinfo, symbol_dict, processed):
         for s in symbol_dict[ums]
     )
 
+    # Keep the remaining symbols ordered by address. Scanning every
+    # unmatched symbol for every DIE would be quadratic and very
+    # slow for large binaries.
+    # A binary search limits each DIE to the symbols that can actually
+    # fall within its address range.
+    address_index = sorted((
+        (one_sym['symbol']['st_value'], ums, one_sym)
+        for ums in unmapped_symbols
+        for one_sym in symbol_dict[ums]
+    ), key=lambda entry: entry[0])
+    symbol_addresses = [entry[0] for entry in address_index]
+
     # Group DIEs by compile units
     cu_list = dict()
 
@@ -630,30 +655,25 @@ def do_address_range_matching(dwarfinfo, symbol_dict, processed):
 
                 # Case 1: Match for a function (using a range)
                 if die.tag == 'DW_TAG_subprogram':
-                    for ums in unmapped_symbols:
-                        for one_sym in symbol_dict[ums]:
-                            symbol = one_sym['symbol']
-                            symaddr = symbol['st_value']
-
-                            if symaddr not in mapped_addresses:
-                                if low <= symaddr < high:
-                                    one_sym['mapped_files'].add(path)
-                                    mapped_addresses.add(symaddr)
-                                    newly_mapped_syms.add(ums)
+                    first = bisect_left(symbol_addresses, low)
+                    last = bisect_right(symbol_addresses, high - 1, lo=first)
+                    for index in range(first, last):
+                        symaddr, ums, one_sym = address_index[index]
+                        if symaddr not in mapped_addresses:
+                            one_sym['mapped_files'].add(path)
+                            mapped_addresses.add(symaddr)
+                            newly_mapped_syms.add(ums)
 
                 # Case 2: Match for a variable (using a single address)
                 elif die.tag == 'DW_TAG_variable':
-                    for ums in unmapped_symbols:
-                        for one_sym in symbol_dict[ums]:
-                            symbol = one_sym['symbol']
-                            symaddr = symbol['st_value']
-
-                            if symaddr not in mapped_addresses:
-                                # We expect the 'high' value to be 'low + 1' for a variable
-                                if low == symaddr:
-                                    one_sym['mapped_files'].add(path)
-                                    mapped_addresses.add(symaddr)
-                                    newly_mapped_syms.add(ums)
+                    first = bisect_left(symbol_addresses, low)
+                    last = bisect_right(symbol_addresses, low, lo=first)
+                    for index in range(first, last):
+                        symaddr, ums, one_sym = address_index[index]
+                        if symaddr not in mapped_addresses:
+                            one_sym['mapped_files'].add(path)
+                            mapped_addresses.add(symaddr)
+                            newly_mapped_syms.add(ums)
 
     mapped_symbols = mapped_symbols.union(newly_mapped_syms)
     unmapped_symbols = unmapped_symbols.difference(newly_mapped_syms)
@@ -771,16 +791,13 @@ def generate_any_tree(symbol_dict, total_size, path_prefix):
         else:
             node_workspace = node_others
 
-    # Node finding code using a local cache and optimized iteration to stop
-    # after finding the first match.
+    # Index nodes as they are created. Searching the complete tree for every
+    # new path component makes construction quadratic in the number of nodes.
     node_cache = {}
     def _find_node(root, value):
-        node = node_cache.get(value)
-        if not node:
-            node = next(PreOrderIter(root, filter_=lambda n: n._identifier == value,
-                stop=None, maxlevel=None), None)
-            node_cache[value] = node
-        return node
+        if root._identifier == value:
+            return root
+        return node_cache.get((id(root), value))
 
     # A set of helper function for building a simple tree with a path-like
     # hierarchy.
@@ -809,6 +826,7 @@ def generate_any_tree(symbol_dict, total_size, path_prefix):
                 if node:
                     parent = node
                 node = TreeNode(name=str(part), identifier=cur, size=size, parent=parent)
+                node_cache[(id(root), cur)] = node
         if node:
             # Set memory block address and section name properties only for terminal symbol nodes.
             # Don't do it on file- and directory- level parent nodes.

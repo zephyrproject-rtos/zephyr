@@ -20,6 +20,10 @@
 		zephyr,shell-uart = &scif2;
 	};
 
+	aliases {
+		i2c-0 = &i2c2;
+	};
+
 	ddr: memory@60010000 {
 		compatible = "mmio-sram";
 		reg = <0x60010000 DT_SIZE_M(46)>;
@@ -39,6 +43,12 @@
 
 &i2c2 {
 	pinctrl-0 = <&i2c2_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_pins>;
 	pinctrl-names = "default";
 	status = "okay";
 };

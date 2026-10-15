@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT microchip_nvmctrl_g3
 
 #include <soc.h>
+#include <string.h>
 #include <zephyr/kernel.h>
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
@@ -15,7 +16,7 @@
 #include <zephyr/drivers/clock_control/mchp_clock_control.h>
 #include <zephyr/drivers/flash/mchp_flash.h>
 
-LOG_MODULE_REGISTER(flash_mchp_nvmctrl_g3);
+LOG_MODULE_REGISTER(flash_mchp_nvmctrl_g3, CONFIG_FLASH_LOG_LEVEL);
 
 #define SOC_NV_FLASH_COMPAT(node_id)                                                               \
 	COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, soc_nv_flash), (node_id), ())
@@ -32,6 +33,15 @@ LOG_MODULE_REGISTER(flash_mchp_nvmctrl_g3);
 #define SOC_NV_FLASH_UNIMPLEMENTED_REGION_COUNT(n)                                                 \
 	DT_PROP_LEN(SOC_NV_FLASH_NODE(n), unimplemented_region) / 2
 #define SOC_NV_FLASH_UNIMPLEMENTED_REGIONS(n) DT_PROP(SOC_NV_FLASH_NODE(n), unimplemented_region)
+
+/*
+ * Optional APB clocks: PIC32CK SG/GC and PIC32CZ CA have dedicated FCW and FCR
+ * APB clocks (clock-names entries "mclk-fcw-apb" and "mclk-fcr-apb"), while
+ * PIC32CM SG/GC only has AHB clocks.  Detect at build time via DTS
+ * clock-names presence.
+ */
+#define NVMCTRL_HAS_FCW_APB_CLOCK DT_INST_CLOCKS_HAS_NAME(0, mclk_fcw_apb)
+#define NVMCTRL_HAS_FCR_APB_CLOCK DT_INST_CLOCKS_HAS_NAME(0, mclk_fcr_apb)
 
 #define TIMEOUT_VALUE_US     100000U
 #define TIMEOUT_DONE_WAIT_MS 50U
@@ -119,7 +129,19 @@ static void enable_fcw_interrupts(fcw_registers_t *regs)
 	regs->FCW_INTENSET |=
 		(FCW_INTENSET_KEYERR_Msk | FCW_INTENSET_CFGERR_Msk | FCW_INTENSET_FIFOERR_Msk |
 		 FCW_INTENSET_BUSERR_Msk | FCW_INTENSET_WPERR_Msk | FCW_INTENSET_OPERR_Msk |
-		 FCW_INTENSET_SECERR_Msk | FCW_INTENSET_BORERR_Msk | FCW_INTENSET_WRERR_Msk |
+#ifdef FCW_INTENSET_SECERR_Msk
+		 FCW_INTENSET_SECERR_Msk |
+#endif
+#ifdef FCW_INTENSET_HTDPGM_Msk
+		 FCW_INTENSET_HTDPGM_Msk |
+#endif
+#ifdef FCW_INTENSET_BORERR_Msk
+		 FCW_INTENSET_BORERR_Msk |
+#endif
+#ifdef FCW_INTENSET_RSTERR_Msk
+		 FCW_INTENSET_RSTERR_Msk |
+#endif
+		 FCW_INTENSET_WRERR_Msk |
 		 FCW_INTENSET_DONE_Msk);
 }
 
@@ -144,7 +166,19 @@ static uint32_t get_fcw_interrupt_status_flags(fcw_registers_t *fcw_regs)
 		(fcw_regs->FCW_INTFLAG &
 		 (FCW_INTFLAG_KEYERR_Msk | FCW_INTFLAG_CFGERR_Msk | FCW_INTFLAG_FIFOERR_Msk |
 		  FCW_INTFLAG_BUSERR_Msk | FCW_INTFLAG_WPERR_Msk | FCW_INTFLAG_OPERR_Msk |
-		  FCW_INTFLAG_SECERR_Msk | FCW_INTFLAG_BORERR_Msk | FCW_INTFLAG_WRERR_Msk |
+#ifdef FCW_INTFLAG_SECERR_Msk
+		  FCW_INTFLAG_SECERR_Msk |
+#endif
+#ifdef FCW_INTFLAG_HTDPGM_Msk
+		  FCW_INTFLAG_HTDPGM_Msk |
+#endif
+#ifdef FCW_INTFLAG_BORERR_Msk
+		  FCW_INTFLAG_BORERR_Msk |
+#endif
+#ifdef FCW_INTFLAG_RSTERR_Msk
+		  FCW_INTFLAG_RSTERR_Msk |
+#endif
+		  FCW_INTFLAG_WRERR_Msk |
 		  FCW_INTFLAG_DONE_Msk));
 
 	return fcw_status;
@@ -233,7 +267,13 @@ static int exec_flash_operation(fcw_registers_t *regs, struct nvmctrl_data *nvmc
 
 	regs->FCW_KEY = (uint32_t)FCW_UNLOCK_WRKEY;
 	k_sem_init(&nvmctr_data->done_flag_sem, 0, 1);
+
+#ifdef FCW_CTRLOP_NVMOP_Pos
+	/* PIC32CM SG/GC uses CTRLOP register instead of CTRLA */
+	regs->FCW_CTRLOP = FCW_CTRLOP_PREPG_Msk | FCW_CTRLOP_NVMOP(operation);
+#else
 	regs->FCW_CTRLA = FCW_CTRLA_PREPG_Msk | FCW_CTRLA_NVMOP(operation);
+#endif
 
 	wait_err = k_sem_take(&nvmctr_data->done_flag_sem, K_MSEC(TIMEOUT_DONE_WAIT_MS));
 	if (wait_err != 0) {
@@ -269,13 +309,26 @@ static int exec_flash_operation(fcw_registers_t *regs, struct nvmctrl_data *nvmc
 		LOG_ERR("NVMOP Error Flag Bit is set");
 	}
 
+#ifdef FCW_INTFLAG_SECERR_Msk
 	if ((nvmctr_data->interrupt_status & FCW_INTFLAG_SECERR_Msk) != 0) {
 		LOG_ERR("Security Violation Error Bit is set");
 	}
-
+#endif
+#ifdef FCW_INTFLAG_HTDPGM_Msk
+	if ((nvmctr_data->interrupt_status & FCW_INTFLAG_HTDPGM_Msk) != 0) {
+		LOG_ERR("High Temperature Detect Error Flag Bit is set");
+	}
+#endif
+#ifdef FCW_INTFLAG_BORERR_Msk
 	if ((nvmctr_data->interrupt_status & FCW_INTFLAG_BORERR_Msk) != 0) {
 		LOG_ERR("Reset or Brown Out Detect Error Flag Bit is set");
 	}
+#endif
+#ifdef FCW_INTFLAG_RSTERR_Msk
+	if ((nvmctr_data->interrupt_status & FCW_INTFLAG_RSTERR_Msk) != 0) {
+		LOG_ERR("Reset During Program Error Flag Bit is set");
+	}
+#endif
 
 	if ((nvmctr_data->interrupt_status & FCW_INTFLAG_WRERR_Msk) != 0) {
 		LOG_ERR("Write Error Flag Bit is set");
@@ -316,6 +369,7 @@ static int flash_mchp_write(const struct device *dev, off_t offset, const void *
 	fcw_registers_t *regs = config->fcw.regs;
 	int nvm_error = -EIO;
 	const uint8_t *src_data_buff_read_ptr = (const uint8_t *)data_buff;
+	uint32_t word;
 
 	if (no_of_bytes == 0) {
 		return 0;
@@ -354,11 +408,12 @@ static int flash_mchp_write(const struct device *dev, off_t offset, const void *
 		} else if (no_of_bytes >= config->write_block_size_qdw) {
 			for (uint32_t i = 0; i < (config->write_block_size_qdw / sizeof(uint32_t));
 			     i++) {
-				regs->FCW_DATA[i] =
-					*((uint32_t *)((uint32_t)src_data_buff_read_ptr +
-						       (i * sizeof(uint32_t))));
+				memcpy(&word, src_data_buff_read_ptr + (i * sizeof(uint32_t)),
+				       sizeof(uint32_t));
+				regs->FCW_DATA[i] = word;
 			}
-			LOG_DBG("Writing quad-double-word at address %#08x",
+			LOG_DBG("Writing quad-word (%u B) at address %#08x",
+				config->write_block_size_qdw,
 				(uint32_t)(config->base_addr + offset));
 			nvm_error = exec_flash_operation(regs, data, (config->base_addr + offset),
 							 QUAD_DOUBLE_WORD_PROGRAM_OPERATION);
@@ -373,9 +428,9 @@ static int flash_mchp_write(const struct device *dev, off_t offset, const void *
 		} else if (no_of_bytes >= config->write_block_size) {
 			for (uint32_t i = 0; i < (config->write_block_size / sizeof(uint32_t));
 			     i++) {
-				regs->FCW_DATA[i] =
-					*((uint32_t *)((uint32_t)src_data_buff_read_ptr +
-						       (i * sizeof(uint32_t))));
+				memcpy(&word, src_data_buff_read_ptr + (i * sizeof(uint32_t)),
+				       sizeof(uint32_t));
+				regs->FCW_DATA[i] = word;
 			}
 			LOG_DBG("Writing double-word at address %#08x",
 				(uint32_t)(config->base_addr + offset));
@@ -555,11 +610,14 @@ static int nvmctrl_init(const struct device *nvmctrl_dev)
 		return nvm_err;
 	}
 
+#if NVMCTRL_HAS_FCW_APB_CLOCK
+	/* FCW APB clock exists on PIC32CK SG/GC and PIC32CZ CA but not on PIC32CM SG/GC */
 	nvm_err = clock_control_on(config->clock_dev, config->fcw.clock.mclk_apb);
 	if ((nvm_err != 0) && (nvm_err != -EALREADY)) {
 		LOG_ERR("Failed to enable FCW APB Clock: %d", nvm_err);
 		return nvm_err;
 	}
+#endif
 
 	nvm_err = clock_control_on(config->clock_dev, config->fcr.clock.mclk_ahb);
 	if ((nvm_err != 0) && (nvm_err != -EALREADY)) {
@@ -567,11 +625,14 @@ static int nvmctrl_init(const struct device *nvmctrl_dev)
 		return nvm_err;
 	}
 
+#if NVMCTRL_HAS_FCR_APB_CLOCK
+	/* FCR APB clock exists on PIC32CK SG/GC and PIC32CZ CA but not on PIC32CM SG/GC */
 	nvm_err = clock_control_on(config->clock_dev, config->fcr.clock.mclk_apb);
 	if ((nvm_err != 0) && (nvm_err != -EALREADY)) {
 		LOG_ERR("Failed to enable FCR APB Clock: %d", nvm_err);
 		return nvm_err;
 	}
+#endif
 
 	k_sem_init(&data->fcw_sem_lock, 1, 1);
 	k_sem_init(&data->done_flag_sem, 0, 1);
@@ -651,14 +712,18 @@ static DEVICE_API(flash, flash_mchp_g3_driver_api) = {
 		.fcw.regs = (fcw_registers_t *)DT_INST_REG_ADDR_BY_NAME(n, fcw),                   \
 		.fcw.clock.mclk_ahb =                                                              \
 			(void *)(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk_fcw_ahb, subsystem)),         \
-		.fcw.clock.mclk_apb =                                                              \
-			(void *)(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk_fcw_apb, subsystem)),         \
+		IF_ENABLED(NVMCTRL_HAS_FCW_APB_CLOCK,                                              \
+			(.fcw.clock.mclk_apb =                                                     \
+				(void *)(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk_fcw_apb,              \
+								     subsystem)),))         \
                                                                                                    \
 		.fcr.regs = (fcr_registers_t *)DT_INST_REG_ADDR_BY_NAME(n, fcr),                   \
 		.fcr.clock.mclk_ahb =                                                              \
 			(void *)(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk_fcr_ahb, subsystem)),         \
-		.fcr.clock.mclk_apb =                                                              \
-			(void *)(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk_fcr_apb, subsystem)),         \
+		IF_ENABLED(NVMCTRL_HAS_FCR_APB_CLOCK,                                              \
+			(.fcr.clock.mclk_apb =                                                     \
+				(void *)(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk_fcr_apb,              \
+								     subsystem)),))         \
                                                                                                    \
 		.parameters =                                                                      \
 			{                                                                          \

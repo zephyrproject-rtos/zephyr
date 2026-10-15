@@ -364,7 +364,10 @@ void ptp_msg_pre_send(struct ptp_msg *msg);
  * @param[in] msg  Pointer to the received PTP message.
  * @param[in] cnt  Length of the message in bytes.
  *
- * @return 0 on success, negative otherwise.
+ * @retval 0 Success
+ * @retval -EPROTONOSUPPORT Unsupported PTP version
+ * @retval -EBADMSG Malformed message
+ * @retval -EMSGSIZE Message length does not match the length in the header
  */
 int ptp_msg_post_recv(struct ptp_port *port, struct ptp_msg *msg, int cnt);
 

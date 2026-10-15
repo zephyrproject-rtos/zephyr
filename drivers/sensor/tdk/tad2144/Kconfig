@@ -39,7 +39,6 @@ endchoice
 
 config TAD2144_TRIGGER
 	bool
-	default y
 
 config TAD2144_THREAD_PRIORITY
 	int "Thread priority"

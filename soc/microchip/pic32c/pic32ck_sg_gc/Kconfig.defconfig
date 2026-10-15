@@ -18,4 +18,12 @@ config ROMSTART_REGION_ADDRESS
 config ROMSTART_REGION_SIZE
 	default $(dt_nodelabel_reg_size_hex,flash0,0,k)
 
+config ARM_TRUSTZONE_M
+	default y
+	depends on SOC_SERIES_PIC32CK_SG00 || SOC_SERIES_PIC32CK_SG01
+
+config CPU_HAS_ARM_SAU
+	default y
+	depends on SOC_SERIES_PIC32CK_SG00 || SOC_SERIES_PIC32CK_SG01
+
 endif # SOC_FAMILY_MICROCHIP_PIC32CK_SG_GC

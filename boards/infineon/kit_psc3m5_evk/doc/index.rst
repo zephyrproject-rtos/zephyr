@@ -18,7 +18,6 @@ an onboard `KitProg3`_ programmer/debugger with USB Type-C connectivity.
 The KIT_PSC3M5_EVK supports the following board variants:
 
 - ``kit_psc3m5_evk`` — Secure variant (default, Arm® TrustZone®-M)
-- ``kit_psc3m5_evk/psc3m5fds2afq1/ns`` — Non-secure variant
 - ``kit_psc3m5_evk/psc3m5fds2afq1/norflash`` — NOR Flash variant
   (requires :ref:`board rework <kit_psc3m5_evk_norflash_rework>`)
 
@@ -323,15 +322,14 @@ derived from the Zephyr partition layout and flash the signed image:
      --image  <build>/mcuboot/zephyr/zephyr.hex \
      --output <build>/mcuboot/zephyr/zephyr.signed.hex \
      --key    <oem-private-key>.pem \
-     --hex-addr 0x32000000 \
      --header-size 0x400 --slot-size 0x10000 \
      --align 1 --min-erase-size 0x200 --erased-val 0 --overwrite-only
 
    west flash --hex-file <build>/mcuboot/zephyr/zephyr.signed.hex
 
-``--hex-addr 0x32000000`` is required because the SAHB window is the
-writable data-access path to the flash; the CBUS window
-(``0x12000000``) is read-only and cannot be written.
+``zephyr.hex`` is already addressed at the SAHB window (``0x32000000``), so
+no ``--hex-addr`` override is needed. ``west flash`` writes through the CBUS
+alias, which OpenOCD remaps onto the same SAHB flash banks.
 When using MCUboot, the Zephyr application in ``slot0_partition`` is
 signed by the standard ``imgtool`` sysbuild flow and does not require
 EPT signing.

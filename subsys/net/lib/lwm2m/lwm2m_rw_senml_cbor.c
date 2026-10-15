@@ -763,6 +763,12 @@ static int do_write_op_item(struct lwm2m_message *msg, struct record *rec)
 		return ret;
 	}
 
+	/* The record path comes from the payload, check it before any write */
+	ret = lwm2m_check_path_access(msg);
+	if (ret < 0) {
+		return ret;
+	}
+
 	fd->current = rec;
 
 	ret = lwm2m_get_or_create_engine_obj(msg, &obj_inst, &created);

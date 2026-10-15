@@ -335,6 +335,10 @@ static int api_mspi_mchp_xec_qmspi_cfg(const struct mspi_dt_spec *spec)
 	const struct mspi_cfg *cfg = &spec->config;
 	int rc = 0;
 
+	if (soc_taf_enabled() != 0) {
+		return -EPERM;
+	}
+
 	rc = mspi_xec_validate_config(cfg);
 	if (rc != 0) {
 		xdat->ctrl_cfg_ok = false;
@@ -694,6 +698,10 @@ static int api_mspi_mchp_xec_qmspi_dev_cfg(const struct device *ctrl,
 	int rc = 0;
 	bool locked = false;
 
+	if (soc_taf_enabled() != 0) {
+		return -EPERM;
+	}
+
 	if (xdat->dev_id != dev_id) {
 #ifdef CONFIG_MULTITHREADING
 		rc = k_mutex_lock(&xdat->lock, K_FOREVER);
@@ -780,6 +788,10 @@ static int api_mspi_mchp_xec_qmspi_get_chs(const struct device *ctrl, uint8_t ch
 {
 	struct mspi_xec_xdat *const xdat = ctrl->data;
 
+	if (soc_taf_enabled() != 0) {
+		return -EPERM;
+	}
+
 	if (ch != 0) {
 		return -EINVAL;
 	}
@@ -823,6 +835,10 @@ static int api_mspi_mchp_xec_qmspi_rcb(const struct device *ctrl, const struct m
 				       struct mspi_callback_context *ctx)
 {
 	struct mspi_xec_xdat *const xdat = ctrl->data;
+
+	if (soc_taf_enabled() != 0) {
+		return -EPERM;
+	}
 
 	if (dev_id == NULL) {
 		return -EINVAL;
@@ -1506,6 +1522,10 @@ static int api_mspi_mchp_xec_qmspi_tc(const struct device *ctrl, const struct ms
 	struct mspi_xec_context *ctx = &xdat->ctx;
 	int rc = 0;
 
+	if (soc_taf_enabled() != 0) {
+		return -EPERM;
+	}
+
 	if ((dev_id == NULL) || (req == NULL)) {
 		return -EINVAL;
 	}
@@ -1899,6 +1919,10 @@ static int mspi_mchp_xec_pm_suspend(const struct device *ctrl)
 static int mspi_mchp_xec_pm_action_cb(const struct device *ctrl, enum pm_device_action action)
 {
 	int rc = 0;
+
+	if (soc_taf_enabled() != 0) {
+		return 0;
+	}
 
 	if (action == PM_DEVICE_ACTION_SUSPEND) {
 		rc = mspi_mchp_xec_pm_suspend(ctrl);

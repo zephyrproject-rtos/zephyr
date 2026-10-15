@@ -1030,6 +1030,15 @@ int uart_emul_register(const struct device *dev, struct uart_emul *emul)
 	static struct uart_emul_data uart_emul_data_##inst = {                                     \
 		.emuls = SYS_SLIST_STATIC_INIT(&_CONCAT(uart_emul_data_, inst).emuls),             \
 		.dev = DEVICE_DT_INST_GET(inst),                                                   \
+		.cfg = {                                                                           \
+			.baudrate = DT_INST_PROP_OR(inst, current_speed, 115200),                  \
+			.parity = DT_INST_ENUM_IDX_OR(inst, parity, UART_CFG_PARITY_NONE),         \
+			.stop_bits = DT_INST_ENUM_IDX_OR(inst, stop_bits, UART_CFG_STOP_BITS_1),   \
+			.data_bits = DT_INST_ENUM_IDX_OR(inst, data_bits, UART_CFG_DATA_BITS_8),   \
+			.flow_ctrl = DT_INST_PROP(inst, hw_flow_control)                           \
+					     ? UART_CFG_FLOW_CTRL_RTS_CTS                          \
+					     : UART_CFG_FLOW_CTRL_NONE,                            \
+		},                                                                                 \
 		.rx_rb = &uart_emul_##inst##_rx_rb,                                                \
 		.tx_rb = &uart_emul_##inst##_tx_rb,                                                \
 		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,                                           \

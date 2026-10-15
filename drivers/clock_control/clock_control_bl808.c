@@ -69,19 +69,19 @@ LOG_MODULE_REGISTER(clock_control_bl808, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 /*
  * CLK_AT_LEAST_MUL: minimum CPU cycles per microsecond, used for busy-wait loops.
- * Scales with PLL top_frequency from DTS via BFLB_MUL_CLK.
+ * Scales with PLL top_frequency from DTS via BFLB_MUL_CLK_XIP.
  */
 #if CLK_SRC_IS(root, wifipll_top)
 #define CLK_AT_LEAST_MUL                                                                           \
-	BFLB_MUL_CLK(32, DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, wifipll_top), top_frequency),      \
+	BFLB_MUL_CLK_XIP(32, DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, wifipll_top), top_frequency),  \
 		     BL808_WIFIPLL_TOP_FREQ)
 #elif CLK_SRC_IS(root, aupll_top)
 #define CLK_AT_LEAST_MUL                                                                           \
-	BFLB_MUL_CLK(32, DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, aupll_top), top_frequency),        \
+	BFLB_MUL_CLK_XIP(32, DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, aupll_top), top_frequency),    \
 		     BL808_AUPLL_TOP_FREQ)
 #elif CLK_SRC_IS(root, cpupll_top)
 #define CLK_AT_LEAST_MUL                                                                           \
-	BFLB_MUL_CLK(48, DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, cpupll_top), top_frequency),       \
+	BFLB_MUL_CLK_XIP(48, DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, cpupll_top), top_frequency),   \
 		     BL808_CPUPLL_TOP_FREQ)
 #else
 #define CLK_AT_LEAST_MUL 32
@@ -266,7 +266,7 @@ static const bl808_pll_config *const bl808_pll_configs_500M[CRYSTAL_VALUES_CNT] 
 };
 
 /* AUPLL configs — SDMIN values target 442.368 MHz (48 kHz audio family).
- * BFLB_MUL_CLK scales to other frequencies (e.g. 451.584 MHz for 44.1 kHz).
+ * BFLB_MUL_CLK/_XIP scales to other frequencies (e.g. 451.584 MHz for 44.1 kHz).
  */
 
 static const bl808_pll_config aupll_32M = {
@@ -840,7 +840,7 @@ static void clock_control_bl808_init_cci_pll_setup(uint32_t base, const bl808_pl
 	tmp = sys_read32(CCI_BASE + CCI_PLL_CFG(base, 6));
 	tmp = (tmp & CCI_AUPLL_SDM_BYPASS_UMSK) | (cfg->pllSdmBypass << CCI_AUPLL_SDM_BYPASS_POS);
 	tmp = (tmp & CCI_AUPLL_SDMIN_UMSK) |
-	      (BFLB_MUL_CLK(cfg->pllSdmin, top_frequency, ref_frequency)
+	      (BFLB_MUL_CLK_XIP(cfg->pllSdmin, top_frequency, ref_frequency)
 	       << CCI_AUPLL_SDMIN_POS);
 	sys_write32(tmp, CCI_BASE + CCI_PLL_CFG(base, 6));
 
@@ -1576,7 +1576,9 @@ static int clock_control_bl808_update_f32k(const struct device *dev)
 	return 0;
 }
 
-static __ramfunc void clock_control_bl808_update_flash_clk(const struct device *dev)
+static __ramfunc void clock_control_bl808_update_flash_clk(const struct device *dev,
+							   const enum bl808_clkid source,
+							   bool final)
 {
 	struct clock_control_bl808_data *data = dev->data;
 	volatile uint32_t tmp;
@@ -1590,11 +1592,11 @@ static __ramfunc void clock_control_bl808_update_flash_clk(const struct device *
 	tmp = *(volatile uint32_t *)(GLB_BASE + GLB_SF_CFG0_OFFSET);
 	tmp &= GLB_SF_CLK_SEL_UMSK;
 	tmp &= GLB_SF_CLK_SEL2_UMSK;
-	if (data->flashclk.source == bl808_clkid_clk_wifipll) {
+	if (source == bl808_clkid_clk_wifipll) {
 		clk = clock_control_bl808_get_hclk(dev);
 		tmp |= 0U << GLB_SF_CLK_SEL_POS;
 		tmp |= 0U << GLB_SF_CLK_SEL2_POS;
-	} else if (data->flashclk.source == bl808_clkid_clk_crystal) {
+	} else if (source == bl808_clkid_clk_crystal) {
 		clk = clock_control_bl808_get_xclk(dev);
 		tmp |= 0U << GLB_SF_CLK_SEL_POS;
 		tmp |= 1U << GLB_SF_CLK_SEL2_POS;
@@ -1607,12 +1609,12 @@ static __ramfunc void clock_control_bl808_update_flash_clk(const struct device *
 	/* If flash controller will manage flash, set to standard speed
 	 * and let it set the divider.
 	 */
-#if defined(CONFIG_SOC_FLASH_BFLB)
-	clk = DIV_ROUND_CLOSEST(clk, BL808_TARGET_BASIC_CLOCK);
-	tmp |= clamp(clk - 1, 0x0, 0x7) << GLB_SF_CLK_DIV_POS;
-#else
-	tmp |= (data->flashclk.divider - 1) << GLB_SF_CLK_DIV_POS;
-#endif
+	if (IS_ENABLED(CONFIG_SOC_FLASH_BFLB) || !final) {
+		clk = DIV_ROUND_CLOSEST(clk, BL808_TARGET_BASIC_CLOCK);
+		tmp |= clamp(clk - 1, 0x0, 0x7) << GLB_SF_CLK_DIV_POS;
+	} else {
+		tmp |= (data->flashclk.divider - 1) << GLB_SF_CLK_DIV_POS;
+	}
 
 	*(volatile uint32_t *)(GLB_BASE + GLB_SF_CFG0_OFFSET) = tmp;
 
@@ -1656,8 +1658,8 @@ static __bflb_critfunc int clock_control_bl808_update_clocks(const struct device
 		}
 		cached_pll_cfg = *src;
 		cached_pll_cfg.pllSdmin =
-			BFLB_MUL_CLK(cached_pll_cfg.pllSdmin, data->wifipll.top_frequency,
-				     BL808_WIFIPLL_TOP_FREQ);
+			BFLB_MUL_CLK_XIP(cached_pll_cfg.pllSdmin, data->wifipll.top_frequency,
+					 BL808_WIFIPLL_TOP_FREQ);
 	}
 
 	if (data->aupll.enabled) {
@@ -1690,7 +1692,7 @@ static __bflb_critfunc int clock_control_bl808_update_clocks(const struct device
 	clock_control_bl808_set_emi_clk(0, 1);
 	clock_control_bl808_set_mm_clks(bl808_clkid_clk_rc32m, 1, bl808_clkid_clk_rc32m, 1, 1);
 
-	clock_control_bl808_update_flash_clk(dev);
+	clock_control_bl808_update_flash_clk(dev, bl808_clkid_clk_rc32m, false);
 
 	ret = clock_control_bl808_update_f32k(dev);
 	if (ret < 0) {
@@ -1780,6 +1782,8 @@ static __bflb_critfunc int clock_control_bl808_update_clocks(const struct device
 	} else {
 		/* Root clock already set to RC32M */
 	}
+
+	clock_control_bl808_update_flash_clk(dev, data->flashclk.source, false);
 
 	ret = clock_control_bl808_clock_trim_32M();
 	if (ret < 0) {

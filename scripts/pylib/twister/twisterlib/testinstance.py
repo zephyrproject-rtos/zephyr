@@ -319,7 +319,8 @@ class TestInstance(StatusMixin):
         if testsuite_runnable := self.testsuite.harness in SUPPORTED_HARNESSES:
             if device_testing:
                 testsuite_runnable = HardwareReservationManager(
-                    hardware_map, self.platform.name, self.testsuite.harness_config).is_runnable()
+                    hardware_map, self.platform.name, self.testsuite.harness_config
+                ).is_runnable()
 
             elif fixture := self.testsuite.harness_config.fixture:
                 # if we have a fixture that is also being supplied on the
@@ -504,7 +505,8 @@ class TestInstance(StatusMixin):
 
             pattern = f"{platform_name}/.*/{application_name}"
             for build_dir in self.required_build_dirs:
-                if re.search(pattern, build_dir):
+                # Normalize separators so the '/'-based pattern matches Windows '\' build dirs.
+                if re.search(pattern, build_dir.replace(os.sep, "/")):
                     # found matching build dir
                     break
             else:

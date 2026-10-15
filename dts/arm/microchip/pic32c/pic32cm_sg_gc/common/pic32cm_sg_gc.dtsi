@@ -41,28 +41,34 @@
 			#size-cells = <1>;
 		};
 
-		nvmctrl: nvmctrl@44004000 {
-			reg = <0x44004000 0x2000>;
+		nvmctrl: flash-controller@44002000 {
+			compatible = "microchip,nvmctrl-g3";
+			reg = <0x44002000 0x6c>, <0x44004000 0x80>;
+			reg-names = "fcr", "fcw";
+			clock-parent = <&clock>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_FCW_AHB>,
+				 <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_FCR_AHB>;
+			clock-names = "mclk-fcw-ahb", "mclk-fcr-ahb";
+			interrupts = <0 0>, <1 0>;
+			interrupt-names = "fcr", "fcw";
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges;
+			status = "okay";
 
-			boot_flash: flash@8000000 {
-				compatible = "soc-nv-flash";
-				#address-cells = <1>;
-				#size-cells = <1>;
-			};
-
-			config_flash: flash@a000000 {
-				compatible = "soc-nv-flash";
-				#address-cells = <1>;
-				#size-cells = <1>;
-			};
-
-			program_flash: flash@c000000 {
-				compatible = "soc-nv-flash";
-				#address-cells = <1>;
-				#size-cells = <1>;
+			flash0: flash@8000000 {
+				compatible = "microchip,flash-g3", "soc-nv-flash";
+				/*
+				 * Minimum write granularity is Quad Word (16B):
+				 * - Single Word Write is disabled in ECC Strict mode
+				 *   (default). See datasheet section 33.2.6.1.3.
+				 * - Quad Write programs 16B per operation.
+				 */
+				write-block-size = <16>;
+				write-block-size-quad-dw = <16>;
+				write-block-size-row = <DT_SIZE_K(1)>;
+				erase-block-size = <DT_SIZE_K(4)>;
+				unimplemented-region = <0x08004000 0x0bffffff>;
 			};
 		};
 

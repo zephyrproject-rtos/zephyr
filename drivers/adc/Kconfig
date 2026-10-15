@@ -21,6 +21,14 @@ config ADC_SHELL
 	help
 	  Enable ADC Shell for testing.
 
+config ADC_SHELL_PERIODIC_READ_STACK_SIZE
+	int "ADC shell periodic read thread stack size"
+	depends on ADC_SHELL
+	default 1024
+	help
+	  Stack size of the thread that takes the samples of a periodic
+	  "adc <device> read <channel> <period_ms>" command.
+
 config ADC_EMUL_SHELL
 	bool "ADC emulator shell"
 	depends on SHELL
@@ -105,9 +113,11 @@ source "drivers/adc/Kconfig.ad7124"
 source "drivers/adc/Kconfig.adc124s021"
 source "drivers/adc/Kconfig.adc_emul"
 source "drivers/adc/Kconfig.adcxx1c"
+source "drivers/adc/Kconfig.ade7913"
 source "drivers/adc/Kconfig.ads1112"
 source "drivers/adc/Kconfig.ads1119"
 source "drivers/adc/Kconfig.ads1220"
+source "drivers/adc/Kconfig.ads126x"
 source "drivers/adc/Kconfig.ads131m02"
 source "drivers/adc/Kconfig.ads1x1x"
 source "drivers/adc/Kconfig.ads1x4s0x"
@@ -148,6 +158,7 @@ source "drivers/adc/Kconfig.mspm0"
 source "drivers/adc/Kconfig.npcx"
 source "drivers/adc/Kconfig.nrfx"
 source "drivers/adc/Kconfig.numaker"
+source "drivers/adc/Kconfig.nxp_aon_lpadc"
 source "drivers/adc/Kconfig.nxp_s32"
 source "drivers/adc/Kconfig.renesas_ra"
 source "drivers/adc/Kconfig.renesas_rx"

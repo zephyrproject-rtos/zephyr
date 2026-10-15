@@ -62,6 +62,7 @@ struct btp_bap_broadcast_local_source {
 	struct btp_bap_broadcast_stream streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
 	struct bt_audio_codec_cfg subgroup_codec_cfg[CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT];
 	uint8_t stream_count;
+	uint8_t subgroup_count;
 	struct bt_data per_adv_local;
 	/* Only for BTP BAP commands */
 	struct bt_bap_broadcast_source *bap_broadcast;
@@ -84,6 +85,8 @@ uint8_t btp_bap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 				       void *rsp, uint16_t *rsp_len);
 uint8_t btp_bap_broadcast_source_setup_v2(const void *cmd, uint16_t cmd_len,
 					  void *rsp, uint16_t *rsp_len);
+uint8_t btp_bap_broadcast_source_reconfigure(const void *cmd, uint16_t cmd_len,
+					     void *rsp, uint16_t *rsp_len);
 uint8_t btp_bap_broadcast_source_release(const void *cmd, uint16_t cmd_len,
 					 void *rsp, uint16_t *rsp_len);
 uint8_t btp_bap_broadcast_adv_start(const void *cmd, uint16_t cmd_len,

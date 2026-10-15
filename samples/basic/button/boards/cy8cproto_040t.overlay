@@ -1,0 +1,32 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/* SW4 shares its pin with LED1; see board doc note on header J6 */
+/ {
+	aliases {
+		sw0 = &user_btn;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_btn: button_0 {
+			label = "SW4";
+			gpios = <&gpio_prt3 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+/* led_gpio ignores child status, so the node must be deleted, not disabled */
+/delete-node/ &user_led1;
+
+&{/aliases} {
+	/delete-property/ led1;
+};

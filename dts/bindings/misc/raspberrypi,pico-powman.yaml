@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2026 Gabriel Germano
+# SPDX-License-Identifier: Apache-2.0
+
+description: Raspberry Pi Pico POWMAN (power manager)
+
+compatible: "raspberrypi,pico-powman"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+  interrupts:
+    required: true

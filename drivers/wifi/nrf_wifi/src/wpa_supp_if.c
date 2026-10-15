@@ -1186,17 +1186,8 @@ int nrf_wifi_wpa_set_supp_port(void *if_priv, int authorized, char *bssid)
 out:
 	k_mutex_unlock(&vif_ctx_zep->vif_lock);
 
-	/* Toggle dormant outside vif_lock: bringing the interface operational
-	 * runs net stack callbacks that may queue TX (which takes vif_lock).
-	 * Data TX is withheld until the controlled port is authorized (EAPOL
-	 * uses the control port), avoiding transmits into the closed port.
-	 */
 	if (update_dormant) {
-		if (authorized) {
-			net_if_dormant_off(vif_ctx_zep->zep_net_if_ctx);
-		} else {
-			net_if_dormant_on(vif_ctx_zep->zep_net_if_ctx);
-		}
+		nrf_wifi_refresh_oper_state(vif_ctx_zep);
 	}
 	return ret;
 }
@@ -1214,6 +1205,12 @@ int nrf_wifi_wpa_supp_signal_poll(void *if_priv, struct wpa_signal_info *si, uns
 		LOG_ERR("%s: Invalid params", __func__);
 		return ret;
 	}
+
+	/* Callers pass an uninitialized struct and not every field is filled in
+	 * below, so start from a known state.
+	 */
+	memset(si, 0, sizeof(*si));
+	si->current_noise = WPA_INVALID_NOISE;
 
 	vif_ctx_zep = if_priv;
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;

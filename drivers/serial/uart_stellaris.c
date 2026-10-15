@@ -605,7 +605,7 @@ static void irq_config_func_0(const struct device *dev)
 static void irq_config_func_1(const struct device *port);
 #endif
 
-static struct uart_stellaris_config uart_stellaris_dev_cfg_1 = {
+static const struct uart_stellaris_config uart_stellaris_dev_cfg_1 = {
 	.uart = (volatile struct _uart *)DT_INST_REG_ADDR(1),
 	.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(1, clocks, clock_frequency),
 

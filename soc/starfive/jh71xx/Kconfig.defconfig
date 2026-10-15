@@ -3,9 +3,6 @@
 
 if SOC_SERIES_STARFIVE_JH71XX
 
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 6250000
-
 config RISCV_SOC_INTERRUPT_INIT
 	default y
 

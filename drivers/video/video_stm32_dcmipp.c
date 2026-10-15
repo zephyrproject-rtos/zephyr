@@ -111,6 +111,7 @@ struct stm32_dcmipp_data {
 struct stm32_dcmipp_config {
 	const struct stm32_pclken dcmipp_pclken;
 	const struct stm32_pclken dcmipp_pclken_ker;
+	const bool has_dcmipp_ker;
 	irq_config_func_t irq_config;
 	const struct pinctrl_dev_config *pctrl;
 	const struct device *source_dev;
@@ -1647,14 +1648,17 @@ static int stm32_dcmipp_enable_clock(const struct device *dev)
 	const struct device *cc_node = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	int err;
 
-	/* Turn on DCMIPP peripheral clock */
-	err = clock_control_configure(cc_node, (clock_control_subsys_t)&config->dcmipp_pclken_ker,
-				      NULL);
-	if (err < 0) {
-		LOG_ERR("Failed to configure DCMIPP clock. Error %d", err);
-		return err;
+	if (config->has_dcmipp_ker) {
+		err = clock_control_configure(cc_node,
+					      (clock_control_subsys_t)&config->dcmipp_pclken_ker,
+					      NULL);
+		if (err < 0) {
+			LOG_ERR("Failed to configure DCMIPP clock. Error %d", err);
+			return err;
+		}
 	}
 
+	/* Turn on DCMIPP peripheral clock */
 	err = clock_control_on(cc_node, (clock_control_subsys_t)&config->dcmipp_pclken);
 	if (err < 0) {
 		LOG_ERR("Failed to enable DCMIPP clock. Error %d", err);
@@ -1878,7 +1882,10 @@ static void stm32_dcmipp_csi_isr(const struct device *dev)
 												\
 	static const struct stm32_dcmipp_config stm32_dcmipp_config_##inst = {			\
 		.dcmipp_pclken = STM32_DT_INST_CLOCK_INFO_BY_NAME(inst, dcmipp),		\
-		.dcmipp_pclken_ker = STM32_DT_INST_CLOCK_INFO_BY_NAME(inst, dcmipp_ker),	\
+		.dcmipp_pclken_ker = COND_CODE_1(DT_INST_CLOCKS_HAS_NAME(inst, dcmipp_ker),	\
+				(STM32_DT_INST_CLOCK_INFO_BY_NAME(inst, dcmipp_ker)),	\
+				({0})),							\
+		.has_dcmipp_ker = DT_INST_CLOCKS_HAS_NAME(inst, dcmipp_ker),			\
 		.irq_config = stm32_dcmipp_irq_config_##inst,					\
 		.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),					\
 		.source_dev = SOURCE_DEV(inst),							\

@@ -20,6 +20,9 @@
 #define IMX_CCM_PLATFORM_CLK           0x1UL
 #define IMX_CCM_BUS_CLK                0x2UL
 
+/* Cortex-A55 core clock driven by ARM_PLL */
+#define IMX_CCM_ARM_PLL_CLK 0x10UL
+
 /* LPUART */
 #define IMX_CCM_LPUART_CLK             0x300UL
 #define IMX_CCM_LPUART1_CLK            0x300UL

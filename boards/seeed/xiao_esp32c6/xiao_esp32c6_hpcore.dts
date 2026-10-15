@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <espressif/esp32c6/esp32c6_wroom_n4.dtsi>
+#include <espressif/esp32c6/esp32c6.dtsi>
 #include "xiao_esp32c6-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <espressif/partitions_0x0_default.dtsi>
@@ -44,6 +44,11 @@
 		enable-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
 		select-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
 	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(4)>;
+	ranges = <0x0 0x0 DT_SIZE_M(4)>;
 };
 
 &trng0 {

@@ -54,7 +54,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 
 static int setup_iface(struct net_if *iface, const char *ipaddr)
 {
-	struct net_sockaddr_storage addr;
+	struct net_sockaddr_storage addr = { 0 };
 	struct net_sockaddr *sa = net_sad(&addr);
 	struct net_if_addr *ifaddr;
 

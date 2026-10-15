@@ -47,10 +47,12 @@ static ALWAYS_INLINE bool z_is_sched_spinlock(struct k_spinlock *lock)
 /**
  * @brief Transfer ownership of the scheduler's spinlock
  */
-static ALWAYS_INLINE void z_sched_spinlock_transfer_owner(void)
+static ALWAYS_INLINE void z_sched_spinlock_transfer_owner(struct k_thread *thread)
 {
 #ifdef CONFIG_SPIN_VALIDATE
-	z_spin_lock_transfer_owner(&_sched_spinlock);
+	z_spin_lock_transfer_owner(&_sched_spinlock, thread);
+#else
+	ARG_UNUSED(thread);
 #endif
 }
 

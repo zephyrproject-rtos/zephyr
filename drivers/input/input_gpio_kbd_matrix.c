@@ -52,7 +52,7 @@ static void gpio_kbd_matrix_drive_column(const struct device *dev, int col)
 	if (col == INPUT_KBD_MATRIX_COLUMN_DRIVE_NONE) {
 		state = 0;
 	} else if (col == INPUT_KBD_MATRIX_COLUMN_DRIVE_ALL) {
-		state = BIT_MASK(common->col_size);
+		state = BIT64_MASK(common->col_size);
 	} else {
 		state = BIT(col);
 	}
@@ -62,7 +62,7 @@ static void gpio_kbd_matrix_drive_column(const struct device *dev, int col)
 		gpio_port_pins_t gpio_mask;
 		gpio_port_value_t gpio_val;
 
-		gpio_mask = BIT_MASK(common->col_size) << gpio0->pin;
+		gpio_mask = BIT64_MASK(common->col_size) << gpio0->pin;
 		gpio_val = state << gpio0->pin;
 
 		gpio_port_set_masked(gpio0->port, gpio_mask, gpio_val);

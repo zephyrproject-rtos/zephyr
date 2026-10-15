@@ -365,7 +365,9 @@ uint8_t btp_bap_audio_stream_send(const void *cmd, uint16_t cmd_len, void *rsp, 
 	struct btp_bap_send_rp *rp = rsp;
 	const struct btp_bap_send_cmd *cp = cmd;
 
-	ARG_UNUSED(cmd_len);
+	if ((cmd_len < sizeof(*cp)) || (cmd_len != sizeof(*cp) + cp->data_len)) {
+		return BTP_STATUS_FAILED;
+	}
 
 	/* Always send dummy success for now until the command has be deprecated
 	 * https://github.com/auto-pts/auto-pts/issues/1317
@@ -405,6 +407,11 @@ static const struct btp_handler bap_handlers[] = {
 		.func = btp_bap_broadcast_source_setup_v2,
 	},
 	{
+		.opcode = BTP_BAP_BROADCAST_SOURCE_RECONFIGURE,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = btp_bap_broadcast_source_reconfigure,
+	},
+	{
 		.opcode = BTP_BAP_BROADCAST_SOURCE_RELEASE,
 		.expect_len = sizeof(struct btp_bap_broadcast_source_release_cmd),
 		.func = btp_bap_broadcast_source_release,
@@ -431,7 +438,7 @@ static const struct btp_handler bap_handlers[] = {
 	},
 	{
 		.opcode = BTP_BAP_BROADCAST_SINK_SETUP,
-		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.expect_len = sizeof(struct btp_bap_broadcast_sink_setup_cmd),
 		.func = btp_bap_broadcast_sink_setup,
 	},
 	{

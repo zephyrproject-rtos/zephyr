@@ -18,5 +18,6 @@ tests:
       - frdm_mcxc444
       - frdm_imxrt1186/mimxrt1186/cm33
       - frdm_imxrt1186/mimxrt1186/cm7
+      - pic32cm_sg00_cpro
     integration_platforms:
       - nrf9160dk/nrf9160

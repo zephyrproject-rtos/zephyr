@@ -91,6 +91,7 @@ ITERABLE_SECTION_RAM(scmi_protocol, Z_LINK_ITERABLE_SUBALIGN)
 	ITERABLE_SECTION_RAM_GC_ALLOWED(k_lifo, Z_LINK_ITERABLE_SUBALIGN)
 	ITERABLE_SECTION_RAM_GC_ALLOWED(k_condvar, Z_LINK_ITERABLE_SUBALIGN)
 	ITERABLE_SECTION_RAM_GC_ALLOWED(sys_mem_blocks_ptr, Z_LINK_ITERABLE_SUBALIGN)
+	ITERABLE_SECTION_RAM(k_obj_type, Z_LINK_ITERABLE_SUBALIGN)
 
 	ITERABLE_SECTION_RAM(net_buf_pool, Z_LINK_ITERABLE_SUBALIGN)
 
@@ -155,3 +156,10 @@ ITERABLE_SECTION_RAM(scmi_protocol, Z_LINK_ITERABLE_SUBALIGN)
 #ifdef CONFIG_USERSPACE
 	PLACE_SYMBOL_HERE(_static_kernel_objects_end);
 #endif
+
+	/*
+	 * Discard ELF sections flagging stack executable status
+	 * Place this here to avoid needing to change numerous
+	 * target linker scripts
+	 */
+	/DISCARD/ : { *(.note.GNU-stack) }

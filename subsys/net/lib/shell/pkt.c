@@ -113,8 +113,8 @@ static void net_pkt_buffer_info(const struct shell *sh, struct net_pkt *pkt)
 	}
 
 	while (buf) {
-		PR("%p[%ld/%u (%u/%u)]", buf, atomic_get(&pkt->atomic_ref),
-		   buf->len, net_buf_max_len(buf), buf->size);
+		PR("%p[%ld/%u (%zu/%u)]", buf, atomic_get(&pkt->atomic_ref),
+		   buf->len, net_buf_tailroom(buf), buf->size);
 
 		buf = buf->frags;
 		if (buf) {

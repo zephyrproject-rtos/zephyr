@@ -1,0 +1,28 @@
+/*
+ * Copyright (C) 2026 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pmic_i2c {
+	npm1012: pmic@6a {
+		reg = <0x6a>;
+		compatible = "nordic,npm10xx";
+
+		npm1012_charger: charger {
+			compatible = "nordic,npm10xx-charger";
+			/* UICR programming requires highest VBUS current limit. The VBUS source
+			 * must also be able to deliver UICR programming peak current (40 mA) +
+			 * total system load.
+			 */
+			vbus-limit-microamp = <300000>;
+		};
+
+		npm1012_adc: sensor {
+			compatible = "nordic,npm10xx-adc";
+		};
+
+		npm1012_uicr: otp {
+			compatible = "nordic,npm10xx-uicr";
+		};
+	};
+};

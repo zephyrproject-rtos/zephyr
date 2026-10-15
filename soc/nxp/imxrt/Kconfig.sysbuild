@@ -3,7 +3,7 @@
 
 config SECOND_CORE_MCUX_LAUNCHER
 	bool "Load minimal application to primary core to boot secondary one"
-	default y if (SOC_MIMXRT1176_CM4 || SOC_MIMXRT1166_CM4)
+	default y if (SOC_MIMXRT1176_CM4 || SOC_MIMXRT1166_CM4 || SOC_MIMXRT1175_CM4)
 	depends on SOC_SERIES_IMXRT11XX
 	help
 	  Load a minimal application to the primary core to boot the secondary

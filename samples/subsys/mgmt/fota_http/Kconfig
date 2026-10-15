@@ -1,0 +1,16 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "FOTA HTTP sample"
+
+config SAMPLE_FOTA_HTTP_AUTO_URL
+	string "Image URL to download once the network is up"
+	default ""
+	help
+	  When set, the sample waits for the connection manager to report
+	  the network as connected, then downloads this image on the
+	  library thread and prints the progress on the console. The image
+	  is only stored. 'fota apply' is still needed to boot it. Leave
+	  empty to drive everything from the shell.
+
+source "Kconfig.zephyr"

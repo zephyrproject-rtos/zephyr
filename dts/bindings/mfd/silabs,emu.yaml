@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Nahuel Mesa <nahuel.mesa@focus.uy>
+# SPDX-License-Identifier: Apache-2.0
+
+title: Silicon Labs EMU (Energy Management Unit)
+
+description: |
+  Energy Management Unit (EMU) for Silicon Labs Series 2 SoCs. The EMU
+  controls power and energy mode management and hosts additional
+  functional blocks, such as the internal die temperature sensor. Child
+  nodes are used to represent each functional block.
+
+compatible: "silabs,emu"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

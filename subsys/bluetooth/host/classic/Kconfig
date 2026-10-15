@@ -72,6 +72,16 @@ config BT_L2CAP_CONNLESS
 	help
 	  This option enables Bluetooth L2CAP connectionless data reception
 
+config BT_L2CAP_QOS
+	bool "Bluetooth L2CAP QoS Option [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables negotiation of the Bluetooth L2CAP QoS
+	  configuration option. Only the Best Effort service type is supported,
+	  a peer requesting the Guaranteed service type is counter-proposed
+	  Best Effort. Without this option a QoS option in a Configuration
+	  Request is answered with Unknown Option.
+
 config BT_L2CAP_RET
 	bool "Bluetooth L2CAP retransmission mode [EXPERIMENTAL]"
 	select EXPERIMENTAL
@@ -656,6 +666,12 @@ config BT_HID_DEVICE
 	select BT_DID
 	help
 	  This option enables the HID Device profile.
+
+config BT_HID_HOST
+	bool "Bluetooth HID Host Profile [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables the HID Host profile.
 
 config BT_PAGE_TIMEOUT
 	hex "Bluetooth Page Timeout"

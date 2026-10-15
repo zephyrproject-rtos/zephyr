@@ -167,6 +167,26 @@ bool hl78xx_gnss_is_pending(struct hl78xx_data *data);
  * @brief Get the current GNSS search state
  */
 enum hl78xx_gnss_search_state hl78xx_gnss_get_search_state(struct hl78xx_gnss_data *gnss);
+
+/**
+ * @brief Reset GNSS session state at a modem power boundary.
+ *
+ * Clears every field that describes the state of the GNSS engine inside the
+ * modem (search_state, gnss_start_status, gnss_init_status, RRC check phase,
+ * exit_to_lte_pending). These are maintained from modem URCs and command
+ * acknowledgements, so once the modem powers off or restarts they describe a
+ * session that no longer exists — and several of them are one-shot latches
+ * that only a URC from the (now dead) session could clear.
+ *
+ * gnss_mode_enter_pending is preserved: it records an unserved caller request,
+ * which the boot path is expected to honour in the new session.
+ *
+ * Called from hl78xx_reset_modem_session_state(); safe to call when the GNSS
+ * device is absent.
+ *
+ * @param data Parent modem data structure.
+ */
+void hl78xx_gnss_reset_session_state(struct hl78xx_data *data);
 /**
  * @brief Check if modem is in GNSS mode (state machine)
  */
