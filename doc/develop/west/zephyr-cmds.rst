@@ -272,6 +272,22 @@ Each intermediate target, such as a static library, also gets its own sub-build 
 sources, tools and compile flags that produced its artifact, so any output can be traced back to how
 it was built.
 
+.. _west-spdx-reproducible:
+
+Reproducible output
+-------------------
+
+``west spdx`` honors the `SOURCE_DATE_EPOCH`_ environment variable defined by the Reproducible
+Builds project. When it is set, the documents record that time as their creation time
+(``Created`` in SPDX 2.x, ``CreationInfo.created`` in SPDX 3.0) instead of the current time. A
+value that is not a whole number of seconds since the Unix epoch is rejected.
+
+For example, to date the documents with the last commit of the application:
+
+.. code-block:: console
+
+   SOURCE_DATE_EPOCH=$(git -C <app> log -1 --format=%ct) west spdx -d build
+
 Command-line options
 --------------------
 
@@ -318,6 +334,8 @@ Command-line options
 
 .. _SPDX specification clause 6:
    https://spdx.github.io/spdx-spec/v2.2.2/document-creation-information/
+
+.. _SOURCE_DATE_EPOCH: https://reproducible-builds.org/specs/source-date-epoch/
 
 .. _west-blobs:
 

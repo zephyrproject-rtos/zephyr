@@ -4,6 +4,9 @@
 
 import hashlib
 import logging
+import os
+import re
+from datetime import UTC, datetime
 
 _logger = logging.getLogger(__name__)
 
@@ -33,3 +36,26 @@ def get_hashes(file_path):
         return None
 
     return (h_sha1.hexdigest(), h_sha256.hexdigest(), h_sha512.hexdigest())
+
+
+def source_date_epoch():
+    """
+    Return the time set by the SOURCE_DATE_EPOCH environment variable.
+
+    See https://reproducible-builds.org/specs/source-date-epoch/.
+
+    Returns: timezone-aware UTC datetime, or None if the variable is unset
+             or empty.
+    Raises: ValueError if the value is not a number of seconds since the
+            Unix epoch.
+    """
+    value = os.environ.get("SOURCE_DATE_EPOCH", "")
+    if not value:
+        return None
+
+    if not re.fullmatch(r"[0-9]+", value):
+        raise ValueError(f"SOURCE_DATE_EPOCH is not a number of seconds: '{value}'")
+    try:
+        return datetime.fromtimestamp(int(value), UTC)
+    except (OverflowError, OSError, ValueError) as e:
+        raise ValueError(f"SOURCE_DATE_EPOCH is out of range: '{value}'") from e
