@@ -1104,6 +1104,85 @@ ZTEST(isotp_conformance, test_canfd_rx_dl_validation)
 #endif
 }
 
+static void send_short_cf(uint32_t id, uint8_t len, uint8_t byte0, uint8_t byte1)
+{
+	struct can_frame frame = {
+		.flags = IS_ENABLED(CONFIG_TEST_USE_CAN_FD_MODE) ?
+			 CAN_FRAME_FDF | CAN_FRAME_BRS : 0,
+		.id = id,
+		.dlc = can_bytes_to_dlc(len),
+	};
+	int ret;
+
+	/* Bytes beyond the DLC hold a valid CF header that must not be used */
+	frame.data[0] = byte0;
+	frame.data[1] = byte1;
+
+	ret = can_send(can_dev, &frame, K_MSEC(500), NULL, NULL);
+	zassert_equal(ret, 0, "Sending short CF failed (%d)", ret);
+}
+
+ZTEST(isotp_conformance, test_receive_cf_too_short)
+{
+	/* A CF that does not hold the address extension and PCI bytes must not
+	 * be accepted as part of the message.
+	 */
+	struct frame_desired ff_frame;
+	struct can_frame fc;
+	int filter_id, ret;
+
+	/* Normal addressing, CF without PCI byte */
+	ff_frame.data[0] = FF_PCI_BYTE_1(DATA_SEND_LENGTH);
+	ff_frame.data[1] = FF_PCI_BYTE_2(DATA_SEND_LENGTH);
+	memcpy(&ff_frame.data[2], random_data, DATA_SIZE_FF);
+	ff_frame.length = DATA_SIZE_FF + 2;
+
+	filter_id = add_rx_msgq(tx_addr.std_id, CAN_STD_ID_MASK);
+
+	ret = isotp_bind(&recv_ctx, can_dev, &rx_addr, &tx_addr, &fc_opts_single, K_NO_WAIT);
+	zassert_equal(ret, ISOTP_N_OK, "Binding failed [%d]", ret);
+
+	send_frame_series(&ff_frame, 1, rx_addr.std_id);
+	ret = k_msgq_get(&frame_msgq, &fc, K_MSEC(500));
+	zassert_equal(ret, 0, "No FC frame received");
+
+	send_short_cf(rx_addr.std_id, 0, CF_PCI_BYTE_1 | 1, 0);
+
+	ret = isotp_recv(&recv_ctx, data_buf, sizeof(data_buf), K_MSEC(200));
+	zassert_equal(ret, ISOTP_N_ERROR, "recv returned %d", ret);
+
+	isotp_unbind(&recv_ctx);
+
+	/* Extended addressing: empty CF is ignored, CF without PCI byte is an error */
+	ff_frame.data[0] = rx_addr_ext.ext_addr;
+	ff_frame.data[1] = FF_PCI_BYTE_1(DATA_SEND_LENGTH);
+	ff_frame.data[2] = FF_PCI_BYTE_2(DATA_SEND_LENGTH);
+	memcpy(&ff_frame.data[3], random_data, DATA_SIZE_FF - 1);
+	ff_frame.length = DATA_SIZE_FF + 2;
+
+	ret = isotp_bind(&recv_ctx, can_dev, &rx_addr_ext, &tx_addr_ext, &fc_opts_single,
+			 K_NO_WAIT);
+	zassert_equal(ret, ISOTP_N_OK, "Binding failed [%d]", ret);
+
+	send_frame_series(&ff_frame, 1, rx_addr_ext.std_id);
+	ret = k_msgq_get(&frame_msgq, &fc, K_MSEC(500));
+	zassert_equal(ret, 0, "No FC frame received");
+
+	send_short_cf(rx_addr_ext.std_id, 0, rx_addr_ext.ext_addr, CF_PCI_BYTE_1 | 1);
+
+	ret = isotp_recv(&recv_ctx, data_buf, sizeof(data_buf), K_MSEC(200));
+	zassert_equal(ret, ISOTP_RECV_TIMEOUT, "recv returned %d", ret);
+
+	send_short_cf(rx_addr_ext.std_id, 1, rx_addr_ext.ext_addr, CF_PCI_BYTE_1 | 1);
+
+	ret = isotp_recv(&recv_ctx, data_buf, sizeof(data_buf), K_MSEC(200));
+	zassert_equal(ret, ISOTP_N_ERROR, "recv returned %d", ret);
+
+	k_msgq_cleanup(&frame_msgq);
+	can_remove_rx_filter(can_dev, filter_id);
+	isotp_unbind(&recv_ctx);
+}
+
 static bool canfd_predicate(const void *state)
 {
 	ARG_UNUSED(state);
