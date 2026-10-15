@@ -111,6 +111,7 @@ struct dl_work_ctx {
 struct send_tx_ctx {
 	const struct lwan_send_req *req;
 	bool tx_done;
+	bool ack_in_frame;
 };
 
 struct data_frame_layout {
@@ -762,7 +763,12 @@ static void send_post_tx(struct lwan_ctx *ctx, void *user_data)
 	struct send_tx_ctx *tx_ctx = user_data;
 
 	tx_ctx->tx_done = true;
-	ctx->pending &= ~LWAN_PENDING_ACK;
+	/* Retries reuse the prebuilt frame, so only consume an ACK that the
+	 * transmitted frame actually contained.
+	 */
+	if (tx_ctx->ack_in_frame) {
+		ctx->pending &= ~LWAN_PENDING_ACK;
+	}
 	mac_cmd_commit_ul_fopts(ctx);
 }
 
@@ -819,6 +825,7 @@ static int send_validate_payload_size(struct lwan_ctx *ctx,
 
 static int send_prepare_frame(struct lwan_ctx *ctx, struct send_state *state)
 {
+	bool ack_pending;
 	int ret;
 
 	ret = send_validate_payload_size(ctx, state);
@@ -826,8 +833,14 @@ static int send_prepare_frame(struct lwan_ctx *ctx, struct send_state *state)
 		return ret;
 	}
 
-	return mac_build_data_frame(ctx, state->req, state->frame,
-				    &state->frame_len);
+	ack_pending = (ctx->pending & LWAN_PENDING_ACK) != 0;
+	ret = mac_build_data_frame(ctx, state->req, state->frame,
+				   &state->frame_len);
+	if (ret == 0) {
+		state->tx_ctx.ack_in_frame = ack_pending;
+	}
+
+	return ret;
 }
 
 static struct mac_tx_params send_tx_params(struct send_state *state,
