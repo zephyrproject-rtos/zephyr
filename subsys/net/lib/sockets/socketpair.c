@@ -740,7 +740,7 @@ out:
 	return res;
 }
 
-static int zsock_poll_prepare_ctx(struct spair *const spair,
+static int spair_poll_prepare_ctx(struct spair *const spair,
 				  struct zsock_pollfd *const pfd,
 				  struct k_poll_event **pev,
 				  struct k_poll_event *pev_end)
@@ -814,7 +814,7 @@ out:
 	return res;
 }
 
-static int zsock_poll_update_ctx(struct spair *const spair,
+static int spair_poll_update_ctx(struct spair *const spair,
 				 struct zsock_pollfd *const pfd,
 				 struct k_poll_event **pev)
 {
@@ -970,7 +970,7 @@ static int spair_ioctl(void *obj, unsigned int request, va_list args)
 			pev = va_arg(args, struct k_poll_event **);
 			pev_end = va_arg(args, struct k_poll_event *);
 
-			res = zsock_poll_prepare_ctx(obj, pfd, pev, pev_end);
+			res = spair_poll_prepare_ctx(obj, pfd, pev, pev_end);
 			goto out;
 		}
 
@@ -978,7 +978,7 @@ static int spair_ioctl(void *obj, unsigned int request, va_list args)
 			pfd = va_arg(args, struct zsock_pollfd *);
 			pev = va_arg(args, struct k_poll_event **);
 
-			res = zsock_poll_update_ctx(obj, pfd, pev);
+			res = spair_poll_update_ctx(obj, pfd, pev);
 			goto out;
 		}
 
