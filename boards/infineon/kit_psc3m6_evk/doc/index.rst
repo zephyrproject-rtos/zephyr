@@ -153,6 +153,21 @@ Build and flash the application:
    :west-args: -p always
    :flash-args: --openocd <path/to/openocd>
 
+MCUboot
+*******
+
+The ``kit_psc3m6_evk`` board supports `MCUboot`_ in overwrite-only mode. Use
+``--sysbuild`` with ``-DSB_CONFIG_BOOTLOADER_MCUBOOT=y`` to build the bootloader
+and application together:
+
+.. zephyr-app-commands::
+   :tool: west
+   :zephyr-app: samples/hello_world
+   :board: kit_psc3m6_evk
+   :goals: build
+   :west-args: --sysbuild
+   :gen-args: -DSB_CONFIG_BOOTLOADER_MCUBOOT=y
+
 References
 **********
 
