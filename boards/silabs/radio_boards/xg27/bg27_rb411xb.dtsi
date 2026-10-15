@@ -157,7 +157,7 @@
 &gpiob {
 	status = "okay";
 
-	vcom-enable {
+	vcom_enable: vcom-enable {
 		gpio-hog;
 		gpios = <0 GPIO_ACTIVE_HIGH>;
 		output-high;
