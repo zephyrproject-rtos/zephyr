@@ -209,9 +209,17 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 
 int video_set_signal(const struct device *dev, struct k_poll_signal *sig)
 {
+	struct video_device *vdev;
+
 	if (dev == NULL || sig == NULL) {
 		return -EINVAL;
 	}
 
-	return video_driver_set_signal(dev, sig);
+	vdev = dev->data;
+
+	k_mutex_lock(&vdev->lock, K_FOREVER);
+	vdev->signal = sig;
+	k_mutex_unlock(&vdev->lock);
+
+	return 0;
 }
