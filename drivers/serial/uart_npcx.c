@@ -119,8 +119,10 @@ static const struct uart_baudrate_cfg baudrate_mapping_table[] = {
 	/* Standard baudrate: 115200 */
 	{.baud_rate = 115200, .src_clk = MHZ(15), .UPSR = 0x38, .UBAUD = 0x01},
 	{.baud_rate = 115200, .src_clk = MHZ(20), .UPSR = 0x08, .UBAUD = 0x0a},
+	{.baud_rate = 115200, .src_clk = MHZ(24), .UPSR = 0x60, .UBAUD = 0x01},
 	{.baud_rate = 115200, .src_clk = MHZ(25), .UPSR = 0x10, .UBAUD = 0x08},
 	{.baud_rate = 115200, .src_clk = MHZ(30), .UPSR = 0x10, .UBAUD = 0x0a},
+	{.baud_rate = 115200, .src_clk = MHZ(33), .UPSR = 0x08, .UBAUD = 0x11},
 	{.baud_rate = 115200, .src_clk = MHZ(40), .UPSR = 0x08, .UBAUD = 0x15},
 	{.baud_rate = 115200, .src_clk = MHZ(48), .UPSR = 0x08, .UBAUD = 0x19},
 	{.baud_rate = 115200, .src_clk = MHZ(50), .UPSR = 0x08, .UBAUD = 0x1a},
@@ -174,6 +176,49 @@ static int uart_set_npcx_baud_rate(struct uart_reg *const inst, int baud_rate, i
 }
 
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
+/*
+ * The "No Transmission In Progress" (NXMIP) status bit and its interrupt enable
+ * bit reside in different registers depending on the chip variant:
+ *   - NPCXn: UFTCTL[NXMIP_EN] / UFTSTS[NXMIP]
+ *   - NPCKn: UFCTRL[NXMIP_EN] / UTXFLV[NXMIP]  (CONFIG_UART_NPCX_FIFO_EX)
+ * Wrap the accesses so the callers stay variant-agnostic.
+ */
+static inline void uart_npcx_nxmip_int_enable(struct uart_reg *const inst)
+{
+#if defined(CONFIG_UART_NPCX_FIFO_EX)
+	inst->UFCTRL |= BIT(NPCX_UFCTRL_NXMIP_EN);
+#else
+	inst->UFTCTL |= BIT(NPCX_UFTCTL_NXMIP_EN);
+#endif
+}
+
+static inline void uart_npcx_nxmip_int_disable(struct uart_reg *const inst)
+{
+#if defined(CONFIG_UART_NPCX_FIFO_EX)
+	inst->UFCTRL &= ~BIT(NPCX_UFCTRL_NXMIP_EN);
+#else
+	inst->UFTCTL &= ~BIT(NPCX_UFTCTL_NXMIP_EN);
+#endif
+}
+
+static inline bool uart_npcx_nxmip_int_is_enabled(struct uart_reg *const inst)
+{
+#if defined(CONFIG_UART_NPCX_FIFO_EX)
+	return IS_BIT_SET(inst->UFCTRL, NPCX_UFCTRL_NXMIP_EN);
+#else
+	return IS_BIT_SET(inst->UFTCTL, NPCX_UFTCTL_NXMIP_EN);
+#endif
+}
+
+static inline bool uart_npcx_nxmip_is_set(struct uart_reg *const inst)
+{
+#if defined(CONFIG_UART_NPCX_FIFO_EX)
+	return IS_BIT_SET(inst->UTXFLV, NPCX_UTXFLV_NXMIP);
+#else
+	return IS_BIT_SET(inst->UFTSTS, NPCX_UFTSTS_NXMIP);
+#endif
+}
+
 static int uart_npcx_rx_fifo_available(const struct device *dev)
 {
 	const struct uart_npcx_config *const config = dev->config;
@@ -195,6 +240,7 @@ static void uart_npcx_dis_all_tx_interrupts(const struct device *dev)
 	/* Disable all Tx interrupts */
 #if defined(CONFIG_UART_NPCX_FIFO_EX)
 	inst->UICTRL &= ~BIT(NPCX_UICTRL_ETI);
+	inst->UFCTRL &= ~BIT(NPCX_UFCTRL_NXMIP_EN);
 #else
 	inst->UFTCTL &= ~(BIT(NPCX_UFTCTL_TEMPTY_LVL_EN) | BIT(NPCX_UFTCTL_TEMPTY_EN) |
 			  BIT(NPCX_UFTCTL_NXMIP_EN));
@@ -244,10 +290,8 @@ static int uart_npcx_fifo_fill(const struct device *dev, const uint8_t *tx_data,
 	}
 #ifdef CONFIG_PM
 	uart_npcx_pm_policy_state_lock_get(data, UART_PM_POLICY_STATE_TX_FLAG);
-#if !defined(CONFIG_UART_NPCX_FIFO_EX)
 	/* Enable NXMIP interrupt in case ec enters deep sleep early */
-	inst->UFTCTL |= BIT(NPCX_UFTCTL_NXMIP_EN);
-#endif /* CONFIG_UART_NPCX_FIFO_EX */
+	uart_npcx_nxmip_int_enable(inst);
 #endif /* CONFIG_PM */
 	k_spin_unlock(&data->lock, key);
 
@@ -292,30 +336,13 @@ static void uart_npcx_irq_tx_disable(const struct device *dev)
 	struct uart_npcx_data *data = dev->data;
 	k_spinlock_key_t key;
 
+	key = k_spin_lock(&data->lock);
 #if defined(CONFIG_UART_NPCX_FIFO_EX)
-#if defined(CONFIG_PM)
-	/*
-	 * Since TBE is 1 does not mean that the Tx FIFO is empty, we need to check
-	 * the UTXFLV register to make sure that the Tx FIFO is empty.
-	 */
-	if (IS_BIT_SET(inst->UICTRL, NPCX_UICTRL_ETI) &&
-	    IS_BIT_SET(inst->UICTRL, NPCX_UICTRL_TBE) &&
-	    (inst->UTXFLV == 0)) {
-		/* Wait for transmitting is completed */
-		while (IS_BIT_SET(inst->USTAT, NPCX_USTAT_XMIP)) {
-			;
-		}
-		uart_npcx_pm_policy_state_lock_put(data, UART_PM_POLICY_STATE_TX_FLAG);
-	}
-#endif /* CONFIG_PM */
-	key = k_spin_lock(&data->lock);
 	inst->UICTRL &= ~BIT(NPCX_UICTRL_ETI);
-	k_spin_unlock(&data->lock, key);
 #else
-	key = k_spin_lock(&data->lock);
 	inst->UFTCTL &= ~BIT(NPCX_UFTCTL_TEMPTY_EN);
-	k_spin_unlock(&data->lock, key);
 #endif /* CONFIG_UART_NPCX_FIFO_EX */
+	k_spin_unlock(&data->lock, key);
 }
 
 static bool uart_npcx_irq_tx_is_enabled(const struct device *dev)
@@ -341,11 +368,7 @@ static int uart_npcx_irq_tx_complete(const struct device *dev)
 	struct uart_reg *const inst = config->inst;
 
 	/* Tx FIFO is empty or last byte is sending */
-#if defined(CONFIG_UART_NPCX_FIFO_EX)
-	return (inst->UTXFLV == 0) && !IS_BIT_SET(inst->USTAT, NPCX_USTAT_XMIP);
-#else
-	return IS_BIT_SET(inst->UFTSTS, NPCX_UFTSTS_NXMIP);
-#endif
+	return uart_npcx_nxmip_is_set(inst);
 }
 
 static void uart_npcx_irq_rx_enable(const struct device *dev)
@@ -903,8 +926,7 @@ static void uart_npcx_isr(const struct device *dev)
 	}
 #endif
 
-#if !defined(CONFIG_UART_NPCX_FIFO_EX)
-#ifdef CONFIG_UART_ASYNC_API
+#if defined(CONFIG_UART_ASYNC_API) && !defined(CONFIG_UART_NPCX_FIFO_EX)
 	if (data->async.user_callback) {
 		const struct uart_npcx_config *const config = dev->config;
 		struct uart_reg *const inst = config->inst;
@@ -944,10 +966,10 @@ static void uart_npcx_isr(const struct device *dev)
 			 * MDMA tx is done (i.e. all data in the memory are moved to UART tx FIFO),
 			 * but data in the tx FIFO are not completely sent to the bus.
 			 */
-			if (!IS_BIT_SET(inst->UFTSTS, NPCX_UFTSTS_NXMIP)) {
+			if (!uart_npcx_nxmip_is_set(inst)) {
 				k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-				inst->UFTCTL |= BIT(NPCX_UFTCTL_NXMIP_EN);
+				uart_npcx_nxmip_int_enable(inst);
 				k_spin_unlock(&data->lock, key);
 			} else {
 				data->async.tx_in_progress = false;
@@ -959,23 +981,22 @@ static void uart_npcx_isr(const struct device *dev)
 			}
 		}
 	}
-#endif /* CONFIG_UART_ASYNC_API */
+#endif /* CONFIG_UART_ASYNC_API && !CONFIG_UART_NPCX_FIFO_EX */
 
-#if defined(CONFIG_PM) || defined(CONFIG_UART_ASYNC_API)
+#if defined(CONFIG_PM) || (defined(CONFIG_UART_ASYNC_API) && !defined(CONFIG_UART_NPCX_FIFO_EX))
 	const struct uart_npcx_config *const config = dev->config;
 	struct uart_reg *const inst = config->inst;
 
-	if (IS_BIT_SET(inst->UFTCTL, NPCX_UFTCTL_NXMIP_EN) &&
-	    IS_BIT_SET(inst->UFTSTS, NPCX_UFTSTS_NXMIP)) {
+	if (uart_npcx_nxmip_int_is_enabled(inst) && uart_npcx_nxmip_is_set(inst)) {
 		k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 		/* Disable NXMIP interrupt */
-		inst->UFTCTL &= ~BIT(NPCX_UFTCTL_NXMIP_EN);
+		uart_npcx_nxmip_int_disable(inst);
 		k_spin_unlock(&data->lock, key);
 #ifdef CONFIG_PM
 		uart_npcx_pm_policy_state_lock_put(data, UART_PM_POLICY_STATE_TX_FLAG);
 #endif
-#ifdef CONFIG_UART_ASYNC_API
+#if defined(CONFIG_UART_ASYNC_API) && !defined(CONFIG_UART_NPCX_FIFO_EX)
 		if (data->async.tx_in_progress) {
 			data->async.tx_in_progress = false;
 			async_evt_tx_done(dev);
@@ -983,8 +1004,7 @@ static void uart_npcx_isr(const struct device *dev)
 		}
 #endif
 	}
-#endif /* CONFIG_PM || CONFIG_UART_ASYNC_API */
-#endif /* !CONFIG_UART_NPCX_FIFO_EX */
+#endif /* CONFIG_PM || (CONFIG_UART_ASYNC_API && !CONFIG_UART_NPCX_FIFO_EX) */
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API */
 
