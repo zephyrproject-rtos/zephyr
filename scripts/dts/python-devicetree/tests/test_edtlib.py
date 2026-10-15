@@ -363,6 +363,36 @@ def test_hierarchy():
 
     assert edt.get_node("/parent/child-1").children == {}
 
+def test_status():
+    '''Test Node.status, including inheritance from parent nodes'''
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
+
+    def status(path):
+        return edt.get_node("/status-test" + path).status
+
+    assert status("") == "okay"
+    assert status("/disabled-parent") == "disabled"
+    # An "okay" or missing status is overridden by a non-"okay" parent status.
+    assert status("/disabled-parent/okay-child") == "disabled"
+    assert status("/disabled-parent/okay-child/grandchild") == "disabled"
+    assert status("/disabled-parent/no-status-child") == "disabled"
+    # A non-"okay" status of the node itself takes precedence.
+    assert status("/disabled-parent/reserved-child") == "reserved"
+    # The parent's value is inherited as-is.
+    assert status("/reserved-parent") == "reserved"
+    assert status("/reserved-parent/child") == "reserved"
+    assert status("/okay-parent") == "okay"
+    assert status("/okay-parent/child") == "okay"
+
+    # Only nodes that are effectively "okay" count as okay for their
+    # compatible, and only those are checked for required properties.
+    okay_child = edt.get_node("/status-test/disabled-parent/okay-child")
+    okay_parent_child = edt.get_node("/status-test/okay-parent/child")
+    assert edt.compat2okay["status-test"] == [okay_parent_child]
+    assert edt.compat2notokay["status-test"] == [okay_child]
+    assert edt.compat2nodes["status-test"] == [okay_parent_child, okay_child]
+
 def test_child_index():
     '''Test Node.child_index.'''
     with from_here():

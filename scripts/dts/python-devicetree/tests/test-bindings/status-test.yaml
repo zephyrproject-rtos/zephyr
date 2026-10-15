@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: Status inheritance test
+
+compatible: "status-test"
+
+properties:
+  required-prop:
+    type: int
+    required: true
