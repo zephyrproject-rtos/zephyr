@@ -116,6 +116,27 @@ void sys_trace_gpio_fire_callbacks_enter_user(sys_slist_t *list, const struct de
 					      gpio_pin_t pins);
 void sys_trace_gpio_fire_callback_user(const struct device *port, struct gpio_callback *callback);
 
+void sys_trace_rtio_submit_enter_user(const struct rtio *r, uint32_t wait_count);
+void sys_trace_rtio_submit_exit_user(const struct rtio *r);
+void sys_trace_rtio_sqe_acquire_enter_user(const struct rtio *r);
+void sys_trace_rtio_sqe_acquire_exit_user(const struct rtio *r, const struct rtio_sqe *sqe);
+void sys_trace_rtio_sqe_cancel_user(uint16_t index, uint16_t generation);
+void sys_trace_rtio_cqe_submit_enter_user(const struct rtio *r, int result, uint32_t flags);
+void sys_trace_rtio_cqe_submit_exit_user(const struct rtio *r);
+void sys_trace_rtio_cqe_acquire_enter_user(const struct rtio *r);
+void sys_trace_rtio_cqe_acquire_exit_user(const struct rtio *r, const struct rtio_cqe *cqe);
+void sys_trace_rtio_cqe_release_user(const struct rtio *r, const struct rtio_cqe *cqe);
+void sys_trace_rtio_cqe_consume_enter_user(const struct rtio *r);
+void sys_trace_rtio_cqe_consume_exit_user(const struct rtio *r, const struct rtio_cqe *cqe);
+void sys_trace_rtio_txn_next_enter_user(const struct rtio *r,
+					const struct rtio_iodev_sqe *iodev_sqe);
+void sys_trace_rtio_txn_next_exit_user(const struct rtio *r,
+				       const struct rtio_iodev_sqe *iodev_sqe);
+void sys_trace_rtio_chain_next_enter_user(const struct rtio *r,
+					  const struct rtio_iodev_sqe *iodev_sqe);
+void sys_trace_rtio_chain_next_exit_user(const struct rtio *r,
+					 const struct rtio_iodev_sqe *iodev_sqe);
+
 void sys_trace_rtio_submit_enter(const struct rtio *r, uint32_t wait_count);
 void sys_trace_rtio_submit_exit(const struct rtio *r);
 void sys_trace_rtio_sqe_acquire_enter(const struct rtio *r);
