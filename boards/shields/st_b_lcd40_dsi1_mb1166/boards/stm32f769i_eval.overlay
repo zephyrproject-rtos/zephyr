@@ -1,0 +1,31 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 STMicroelectronics
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&zephyr_lcd_controller {
+	ext-sdram = <&sdram1>;
+	def-back-color-red = <0>;
+	def-back-color-green = <0>;
+	def-back-color-blue = <0>;
+	status = "okay";
+};
+
+&pllsai {
+	div-m = <25>;
+	mul-n = <384>;
+	div-r = <7>;
+	post-div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&zephyr_mipi_dsi {
+	pll-ndiv = <100>;
+	pll-idf = <5>;
+	pll-odf = <0>;
+	vs-active-high;
+	hs-active-high;
+	de-active-high;
+	status = "okay";
+};
