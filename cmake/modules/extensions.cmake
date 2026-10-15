@@ -947,6 +947,114 @@ function(zephyr_library_property)
   endforeach()
 endfunction()
 
+# Compile the sources of the current Zephyr library as one unity build
+# translation unit.
+#
+# Usage:
+#   zephyr_library_unity([UNDEF <macro> ...] [SKIP <source> ...])
+#
+# Each source file sees a unique value of Z_UNITY_ID, which <zephyr/logging/log.h>
+# uses to keep the file local log module data apart.
+# UNDEF: macros a source file defines for its own use; they are undefined after
+#        each file so that they do not leak into the next one.
+# SKIP:  sources that cannot share a translation unit with the others and are
+#        compiled on their own.
+function(zephyr_library_unity)
+  cmake_parse_arguments(UNITY "" "" "UNDEF;SKIP" ${ARGN})
+
+  set(undef_code "")
+  foreach(macro LOG_LEVEL LOG_MODULE_NAME DT_DRV_COMPAT ${UNITY_UNDEF})
+    string(APPEND undef_code "#undef ${macro}\n")
+  endforeach()
+
+  set_target_properties(${ZEPHYR_CURRENT_LIBRARY} PROPERTIES
+    UNITY_BUILD ON
+    UNITY_BUILD_MODE BATCH
+    UNITY_BUILD_BATCH_SIZE 0
+    UNITY_BUILD_UNIQUE_ID Z_UNITY_ID
+    UNITY_BUILD_CODE_AFTER_INCLUDE "${undef_code}"
+  )
+
+  if(UNITY_SKIP)
+    zephyr_library_unity_skip(${UNITY_SKIP})
+  endif()
+endfunction()
+
+# Compile sources of the current Zephyr library on their own instead of as
+# part of its unity build. Can be called from any directory adding sources to
+# the library.
+#
+# Usage:
+#   zephyr_library_unity_skip(<source> ...)
+#   zephyr_library_unity_skip(CURRENT_DIR)
+#
+# CURRENT_DIR: skip every source of the library that is located in the
+#              current source directory or below it.
+function(zephyr_library_unity_skip)
+  if(ARGV0 STREQUAL "CURRENT_DIR")
+    get_property(sources TARGET ${ZEPHYR_CURRENT_LIBRARY} PROPERTY SOURCES)
+    get_property(lib_dir TARGET ${ZEPHYR_CURRENT_LIBRARY} PROPERTY SOURCE_DIR)
+    set(skip "")
+    foreach(src ${sources})
+      cmake_path(ABSOLUTE_PATH src BASE_DIRECTORY ${lib_dir})
+      cmake_path(IS_PREFIX CMAKE_CURRENT_SOURCE_DIR ${src} NORMALIZE in_dir)
+      if(in_dir)
+        list(APPEND skip ${src})
+      endif()
+    endforeach()
+  else()
+    set(skip ${ARGN})
+  endif()
+
+  if(skip)
+    set_source_files_properties(${skip} TARGET_DIRECTORY ${ZEPHYR_CURRENT_LIBRARY}
+                                PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+  endif()
+endfunction()
+
+# Move the sources and build requirements of Zephyr libraries into another
+# Zephyr library, so that a unity build of <target> covers all of them.
+# The emptied libraries are excluded from the build like any library without
+# sources.
+#
+# Usage:
+#   zephyr_library_merge(<target> <library> ...)
+function(zephyr_library_merge target)
+  get_property(target_dir TARGET ${target} PROPERTY SOURCE_DIR)
+
+  foreach(lib ${ARGN})
+    if(NOT TARGET ${lib})
+      continue()
+    endif()
+
+    get_property(lib_dir TARGET ${lib} PROPERTY SOURCE_DIR)
+    get_property(sources TARGET ${lib} PROPERTY SOURCES)
+
+    foreach(src ${sources})
+      cmake_path(ABSOLUTE_PATH src BASE_DIRECTORY ${lib_dir})
+      target_sources(${target} PRIVATE ${src})
+
+      get_source_file_property(skip ${src} DIRECTORY ${lib_dir} SKIP_UNITY_BUILD_INCLUSION)
+      if(skip)
+        set_source_files_properties(${src} TARGET_DIRECTORY ${target}
+                                    PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+      endif()
+    endforeach()
+
+    foreach(prop INCLUDE_DIRECTORIES COMPILE_DEFINITIONS COMPILE_OPTIONS LINK_LIBRARIES)
+      get_property(values TARGET ${lib} PROPERTY ${prop})
+      set_property(TARGET ${target} APPEND PROPERTY ${prop} ${values})
+    endforeach()
+
+    get_property(undef_code TARGET ${lib} PROPERTY UNITY_BUILD_CODE_AFTER_INCLUDE)
+    set_property(TARGET ${target} APPEND_STRING PROPERTY UNITY_BUILD_CODE_AFTER_INCLUDE
+                 "${undef_code}")
+
+    set_property(TARGET ${lib} PROPERTY SOURCES "")
+    set_property(TARGET ${lib} PROPERTY ALLOW_EMPTY TRUE)
+  endforeach()
+endfunction()
+
 #[=======================================================================[.rst:
 ``zephyr_interface_library_*``
 ------------------------------
