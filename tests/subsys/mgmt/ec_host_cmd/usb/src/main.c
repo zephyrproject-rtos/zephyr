@@ -9,6 +9,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/mgmt/ec_host_cmd/backend.h>
 #include <zephyr/mgmt/ec_host_cmd/ec_host_cmd.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/usb/usbd.h>
 #include <zephyr/ztest.h>
@@ -18,6 +19,8 @@
 #define EP_IN_INT_ADDR          0x82
 #define CMD_TEST_ID             0x0020
 #define EC_HOST_REQUEST_VERSION 3
+#define USB_IRQ_TYPE_EVENT      0U
+#define USB_IRQ_TYPE_RESP_READY 1U
 
 struct test_req_payload {
 	uint8_t val;
@@ -32,6 +35,7 @@ static struct net_buf *mock_ep_out_buf;
 static struct net_buf *mock_ep_in_buf;
 static struct net_buf *mock_ep_int_buf;
 static int mock_ep_out_enqueue_count;
+static int mock_ep_int_enqueue_ret;
 static struct k_sem handler_done_sem;
 
 static struct net_buf **get_ep_buf_slot(uint8_t ep)
@@ -54,6 +58,9 @@ int usbd_ep_enqueue(const struct usbd_class_data *const c_data, struct net_buf *
 	struct net_buf **slot = get_ep_buf_slot(bi->ep);
 
 	ARG_UNUSED(c_data);
+	if (bi->ep == EP_IN_INT_ADDR && mock_ep_int_enqueue_ret != 0) {
+		return mock_ep_int_enqueue_ret;
+	}
 	if (slot != NULL) {
 		*slot = buf;
 	}
@@ -158,6 +165,8 @@ static void complete_usb_in_transfers(enum ec_host_cmd_status expected_result,
 	zassert_ok(k_sem_take(&handler_done_sem, K_SECONDS(1)));
 	zassert_not_null(mock_ep_in_buf, "Expected response on Bulk IN endpoint");
 	zassert_not_null(mock_ep_int_buf, "Expected interrupt notification on INT IN endpoint");
+	zassert_equal(mock_ep_int_buf->len, sizeof(uint32_t));
+	zassert_equal(sys_get_le32(mock_ep_int_buf->data), USB_IRQ_TYPE_RESP_READY);
 
 	resp_hdr = (const struct ec_host_cmd_response_header *)mock_ep_in_buf->data;
 	zassert_equal(resp_hdr->result, expected_result);
@@ -185,11 +194,13 @@ static void *usb_test_setup(void)
 static void usb_test_before(void *fixture)
 {
 	ARG_UNUSED(fixture);
-	k_sem_reset(&handler_done_sem);
+	mock_ep_int_enqueue_ret = 0;
+	test_c_data->api->resumed(test_c_data);
 	usbd_ep_dequeue(NULL, EP_OUT_ADDR);
 	usbd_ep_dequeue(NULL, EP_IN_BULK_ADDR);
 	usbd_ep_dequeue(NULL, EP_IN_INT_ADDR);
 	test_c_data->api->disable(test_c_data);
+	k_sem_reset(&handler_done_sem);
 	mock_ep_out_enqueue_count = 0;
 	test_c_data->api->enable(test_c_data);
 	zassert_equal(mock_ep_out_enqueue_count, 1);
@@ -265,6 +276,48 @@ ZTEST(ec_host_cmd_usb, test_usb_out_transfer_while_disabled_ignored)
 	zassert_is_null(mock_ep_in_buf);
 	zassert_is_null(mock_ep_out_buf);
 	zassert_equal(mock_ep_out_enqueue_count, 1);
+}
+
+ZTEST(ec_host_cmd_usb, test_usb_trigger_event_queues_irq_notification)
+{
+	ec_host_cmd_backend_usb_trigger_event();
+	zassert_not_null(mock_ep_int_buf, "Expected event notification on INT IN endpoint");
+	zassert_equal(mock_ep_int_buf->len, sizeof(uint32_t));
+	zassert_equal(sys_get_le32(mock_ep_int_buf->data), USB_IRQ_TYPE_EVENT);
+	zassert_ok(test_c_data->api->request(test_c_data, mock_ep_int_buf, 0));
+	zassert_is_null(mock_ep_int_buf);
+
+	/* Pending event flag was cleared, so resume should not queue another IRQ. */
+	test_c_data->api->resumed(test_c_data);
+	zassert_is_null(mock_ep_int_buf);
+}
+
+ZTEST(ec_host_cmd_usb, test_usb_int_enqueue_failure_retains_pending_event)
+{
+	mock_ep_int_enqueue_ret = -EIO;
+	ec_host_cmd_backend_usb_trigger_event();
+	zassert_is_null(mock_ep_int_buf);
+
+	mock_ep_int_enqueue_ret = 0;
+	test_c_data->api->resumed(test_c_data);
+	zassert_not_null(mock_ep_int_buf, "Pending event should be sent on resume after error");
+	zassert_equal(mock_ep_int_buf->len, sizeof(uint32_t));
+	zassert_equal(sys_get_le32(mock_ep_int_buf->data), USB_IRQ_TYPE_EVENT);
+	zassert_ok(test_c_data->api->request(test_c_data, mock_ep_int_buf, 0));
+}
+
+ZTEST(ec_host_cmd_usb, test_usb_int_enqueue_failure_on_response_triggers_reset)
+{
+	const struct test_req_payload req = { .val = 0x15 };
+
+	mock_ep_int_enqueue_ret = -EIO;
+	send_usb_host_cmd_request(EC_HOST_REQUEST_VERSION, CMD_TEST_ID, &req, sizeof(req));
+
+	/* Wait for reset_work to execute and re-arm the OUT endpoint */
+	zassert_true(WAIT_FOR(mock_ep_out_enqueue_count == 2, 1000 * USEC_PER_MSEC, k_msleep(1)),
+		     "Timeout waiting for reset_work to re-arm EP OUT");
+	zassert_is_null(mock_ep_int_buf);
+	zassert_not_null(mock_ep_out_buf);
 }
 
 ZTEST_SUITE(ec_host_cmd_usb, NULL, usb_test_setup, usb_test_before, NULL, NULL);
