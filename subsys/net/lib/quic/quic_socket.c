@@ -924,6 +924,30 @@ static int quic_stream_ioctl_vmeth(void *obj, unsigned int request, va_list args
 	return 0;
 }
 
+/*
+ * Get the endpoint of a stream for use by a socket call. stream->ep is
+ * cleared under contexts_lock when the connection goes away, which can
+ * happen in another thread at any time, and the endpoint is then released.
+ * The endpoint is returned with a reference held so that it stays valid,
+ * and must be given back with quic_endpoint_unref(). Returns NULL when the
+ * stream has no endpoint any more.
+ */
+static struct quic_endpoint *quic_stream_endpoint_get(struct quic_stream *stream)
+{
+	struct quic_endpoint *ep;
+
+	k_mutex_lock(&contexts_lock, K_FOREVER);
+
+	ep = stream->ep;
+	if (ep != NULL && !quic_endpoint_ref_unless_zero(ep)) {
+		ep = NULL;
+	}
+
+	k_mutex_unlock(&contexts_lock);
+
+	return ep;
+}
+
 static int quic_wait_for_application_send_ready(struct quic_endpoint *ep,
 						enum quic_secret_level level)
 {
@@ -954,19 +978,20 @@ static int quic_wait_for_application_send_ready(struct quic_endpoint *ep,
  * This signals to the peer that we have finished sending on this stream.
  * RFC 9000 Section 19.8: STREAM frame with FIN bit = 1 and Length = 0.
  */
-static int quic_send_stream_fin(struct quic_stream *stream)
+/*
+ * Send the FIN of a stream. The connection can be torn down by another
+ * thread at any time, which clears stream->ep, so the caller passes the
+ * endpoint to use and keeps it valid for the duration of the call: either it
+ * holds a reference from quic_stream_endpoint_get(), or it runs on behalf of
+ * the endpoint.
+ */
+static int quic_send_stream_fin(struct quic_stream *stream, struct quic_endpoint *ep)
 {
 	uint8_t frame[32]; /* 1 type + max 8 stream_id + max 8 offset + max 2 len */
 	enum quic_secret_level level;
 	size_t frame_len = 0;
 	uint64_t sent_pn;
 	int ret;
-
-	if (stream->ep == NULL) {
-		NET_DBG("[ST:%p/%d] Cannot send FIN: no endpoint",
-			stream, quic_get_by_stream(stream));
-		return -ENOTCONN;
-	}
 
 	/*
 	 * STREAM frame type bits:
@@ -997,13 +1022,13 @@ static int quic_send_stream_fin(struct quic_stream *stream)
 	}
 	frame_len += quic_get_varint_size(0ULL);
 
-	level = quic_stream_send_level(stream->ep);
-	ret = quic_wait_for_application_send_ready(stream->ep, level);
+	level = quic_stream_send_level(ep);
+	ret = quic_wait_for_application_send_ready(ep, level);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = quic_send_packet_with_pn(stream->ep, level, frame, frame_len, &sent_pn);
+	ret = quic_send_packet_with_pn(ep, level, frame, frame_len, &sent_pn);
 	if (ret < 0) {
 		NET_DBG("[ST:%p/%d] Failed to send FIN for stream %" PRIu64 " : %d",
 			stream, quic_get_by_stream(stream), stream->id, ret);
@@ -1011,7 +1036,7 @@ static int quic_send_stream_fin(struct quic_stream *stream)
 	}
 
 	/* Annotate the packet for loss recovery / retransmission tracking */
-	quic_annotate_sent_stream(stream->ep, level, sent_pn,
+	quic_annotate_sent_stream(ep, level, sent_pn,
 				  stream->id, stream->bytes_sent,
 				  0 /* data_len */, true /* stream_fin */);
 
@@ -1242,7 +1267,7 @@ int quic_replay_rejected_early_data(struct quic_endpoint *ep)
 			continue;
 		}
 
-		ret = quic_send_stream_fin(stream);
+		ret = quic_send_stream_fin(stream, ep);
 		if (ret == -EAGAIN) {
 			continue;
 		}
@@ -2143,11 +2168,17 @@ static int quic_stream_setsockopt_ctx(void *obj, int level, int optname,
 static int quic_stream_close_vmeth(void *obj)
 {
 	struct quic_stream *stream = obj;
+	struct quic_endpoint *ep;
 	int sock = stream->sock;
 	int state;
 
 	NET_DBG("[ST:%p/%d] Closing stream id %" PRIu64 ", sock %d",
 		stream, quic_get_by_stream(stream), stream->id, sock);
+
+	/* Hold the endpoint while the peer is told, it is NULL when the
+	 * connection is gone already.
+	 */
+	ep = quic_stream_endpoint_get(stream);
 
 	/*
 	 * Send FIN to the peer to cleanly terminate the send side of the stream.
@@ -2156,7 +2187,7 @@ static int quic_stream_close_vmeth(void *obj)
 	 *   - Stream was reset (RESET_STREAM already sent/received)
 	 *   - FIN was already sent (DATA_SENT or DATA_RECVD)
 	 */
-	if (stream->ep != NULL && stream->ep->crypto.application.initialized) {
+	if (ep != NULL && ep->crypto.application.initialized) {
 		state = quic_stream_get_state(stream);
 
 		if (state != STATE_RESET_SENT &&
@@ -2165,8 +2196,12 @@ static int quic_stream_close_vmeth(void *obj)
 		    state != STATE_DATA_SENT &&
 		    state != STATE_DATA_RECVD &&
 		    state != STATE_DATA_READ) {
-			(void)quic_send_stream_fin(stream);
+			(void)quic_send_stream_fin(stream, ep);
 		}
+	}
+
+	if (ep != NULL) {
+		quic_endpoint_unref(ep);
 	}
 
 	/* Clear the socket fd first to prevent recursive close in unref */
@@ -2186,18 +2221,31 @@ static int quic_stream_close_vmeth(void *obj)
 static int quic_stream_shutdown_vmeth(void *obj, int how)
 {
 	struct quic_stream *stream = obj;
+	struct quic_endpoint *ep;
 	int ret = 0;
 
 	if (!PART_OF_ARRAY(streams, stream)) {
 		return -EINVAL;
 	}
 
+	/* One endpoint, held by a reference, is used for everything that is
+	 * sent below. When the connection is gone already, or cannot carry
+	 * application data yet, there is nobody to tell and nothing to do.
+	 */
+	ep = quic_stream_endpoint_get(stream);
+	if (ep == NULL) {
+		return 0;
+	}
+
+	if (!ep->crypto.application.initialized) {
+		goto out;
+	}
+
 	/*
 	 * SHUT_WR (or SHUT_RDWR): send a STREAM+FIN to close our sending half.
 	 * RFC 9000 ch. 2.4.
 	 */
-	if ((how == ZSOCK_SHUT_WR || how == ZSOCK_SHUT_RDWR) &&
-	    stream->ep != NULL && stream->ep->crypto.application.initialized) {
+	if (how == ZSOCK_SHUT_WR || how == ZSOCK_SHUT_RDWR) {
 		int state;
 
 		state = quic_stream_get_state(stream);
@@ -2209,11 +2257,11 @@ static int quic_stream_shutdown_vmeth(void *obj, int how)
 		    state != STATE_RESET_SENT &&
 		    state != STATE_RESET_RECVD &&
 		    state != STATE_RESET_READ) {
-			ret = quic_send_stream_fin(stream);
+			ret = quic_send_stream_fin(stream, ep);
 			if (ret < 0) {
 				NET_DBG("[ST:%p/%d] shutdown(SHUT_WR): FIN send failed (%d)",
 					stream, quic_get_by_stream(stream), ret);
-				return ret;
+				goto out;
 			}
 
 			/* Advance state so quic_stream_close_vmeth won't send a second FIN */
@@ -2235,8 +2283,7 @@ static int quic_stream_shutdown_vmeth(void *obj, int how)
 	 * Skip if the peer already sent FIN (stream is in SIZE_KNOWN or later),
 	 * all data has already arrived so there is nothing left to stop.
 	 */
-	if ((how == ZSOCK_SHUT_RD || how == ZSOCK_SHUT_RDWR) &&
-	    stream->ep != NULL && stream->ep->crypto.application.initialized) {
+	if (how == ZSOCK_SHUT_RD || how == ZSOCK_SHUT_RDWR) {
 		int state;
 
 		state = quic_stream_get_state(stream);
@@ -2251,14 +2298,14 @@ static int quic_stream_shutdown_vmeth(void *obj, int how)
 			 * Callers that want a specific error code should call can set the
 			 * desired error code using setsockopt().
 			 */
-			ret = quic_send_stop_sending(stream->ep, stream->id,
+			ret = quic_send_stop_sending(ep, stream->id,
 						     stream->stop_sending_error_code);
 			if (ret < 0) {
 				NET_DBG("[ST:%p/%d] shutdown with error %" PRIu64
 					" : STOP_SENDING failed (%d)",
 					stream, quic_get_by_stream(stream),
 					stream->stop_sending_error_code, ret);
-				return ret;
+				goto out;
 			}
 
 			NET_DBG("[ST:%p/%d] shutdown(SHUT_RD): STOP_SENDING sent on stream "
@@ -2268,6 +2315,9 @@ static int quic_stream_shutdown_vmeth(void *obj, int how)
 				"skipping STOP_SENDING", stream, quic_get_by_stream(stream), state);
 		}
 	}
+
+out:
+	quic_endpoint_unref(ep);
 
 	return ret;
 }

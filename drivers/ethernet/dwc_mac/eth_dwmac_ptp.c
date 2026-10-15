@@ -253,6 +253,21 @@ static int dwmac_ptp_init(const struct device *dev)
 
 	sys_write32(ctrl, base + DWMAC_PTP_CTRL_REG);
 
+	/*
+	 * From DWC ether_1000 v3.70 on, and in the QoS core, PPSCTRL selects
+	 * bit (30 - PPSCTRL) of the sub-second field as the PPS output. In
+	 * digital rollover that field wraps at 10^9 - 1, so bit 30 never
+	 * toggles and the reset value of 0 leaves the output stuck low.
+	 * Select bit 29 instead, which gives one pulse per second.
+	 */
+	if (IS_ENABLED(CONFIG_PTP_CLOCK_DWC_MAC_DIGITAL_ROLLOVER) &&
+	    (IS_ENABLED(CONFIG_ETH_DWC_ETHER_QOS_CORE) ||
+	     FIELD_GET(DWMAC_VERSION_SNPSVER, sys_read32(base + DWMAC_VERSION_REG)) >=
+		     DWMAC_CORE_3_70)) {
+		sys_write32(FIELD_PREP(DWMAC_PTP_PPSCR_PPSCTRL, 1),
+			base + DWMAC_PTP_PPSCR_REG);
+	}
+
 	return 0;
 }
 

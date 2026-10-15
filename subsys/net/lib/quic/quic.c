@@ -342,6 +342,7 @@ ZTESTABLE_STATIC int quic_stream_receive_data(struct quic_stream *stream,
 					      bool is_fin);
 static struct quic_stream *quic_find_stream_by_id(struct quic_endpoint *ep,
 						  uint64_t stream_id);
+static struct quic_endpoint *quic_stream_endpoint_get(struct quic_stream *stream);
 static void quic_tls_cleanup(struct quic_tls_context *tls);
 static struct quic_tls_context *tls_init(struct quic_endpoint *ep);
 static int quic_handshake_complete(struct quic_endpoint *ep);
@@ -3181,6 +3182,7 @@ static int quic_stream_unref_debug(struct quic_stream *stream, const char *calle
 static int quic_stream_unref(struct quic_stream *stream)
 #endif
 {
+	struct quic_endpoint *ep;
 	atomic_val_t ref;
 
 	do {
@@ -3216,37 +3218,44 @@ static int quic_stream_unref(struct quic_stream *stream)
 	 * Peer-initiated streams on a server endpoint have bit 0 == 0 (client bit).
 	 * Peer-initiated streams on a client endpoint have bit 0 == 1 (server bit).
 	 * Bidi streams have bit 1 == 0; uni streams have bit 1 == 1.
+	 *
+	 * The connection can be torn down by another thread while this runs,
+	 * which clears stream->ep, so one endpoint is taken with a reference
+	 * and used throughout.
 	 */
-	if (stream->ep != NULL && stream->id != QUIC_STREAM_ID_UNASSIGNED) {
-		bool is_server = stream->ep->is_server;
+	ep = stream->id != QUIC_STREAM_ID_UNASSIGNED ? quic_stream_endpoint_get(stream) : NULL;
+	if (ep != NULL) {
+		bool is_server = ep->is_server;
 		bool peer_init = ((stream->id & 1u) == 0u) == is_server;
 		bool is_bidi = (stream->id & 2u) == 0u;
 
 		if (peer_init) {
-			if (is_bidi && stream->ep->rx_sl.open_bidi > 0) {
-				stream->ep->rx_sl.open_bidi--;
+			if (is_bidi && ep->rx_sl.open_bidi > 0) {
+				ep->rx_sl.open_bidi--;
 
 				/*
 				 * Slide the cumulative limit up by 1: the freed slot
 				 * is now available for a future stream.  Notify the
 				 * peer so it can unblock if it was waiting.
 				 */
-				stream->ep->rx_sl.max_bidi++;
-				(void)quic_send_max_streams(stream->ep, true);
+				ep->rx_sl.max_bidi++;
+				(void)quic_send_max_streams(ep, true);
 
 				NET_DBG("[EP:%p/%d] Stream %" PRIu64 " closed, "
 					"open_bidi=%" PRIu64 " max_bidi=%" PRIu64,
-					stream->ep, quic_get_by_ep(stream->ep),
+					ep, quic_get_by_ep(ep),
 					stream->id,
-					stream->ep->rx_sl.open_bidi,
-					stream->ep->rx_sl.max_bidi);
+					ep->rx_sl.open_bidi,
+					ep->rx_sl.max_bidi);
 
-			} else if (!is_bidi && stream->ep->rx_sl.open_uni > 0) {
-				stream->ep->rx_sl.open_uni--;
-				stream->ep->rx_sl.max_uni++;
-				(void)quic_send_max_streams(stream->ep, false);
+			} else if (!is_bidi && ep->rx_sl.open_uni > 0) {
+				ep->rx_sl.open_uni--;
+				ep->rx_sl.max_uni++;
+				(void)quic_send_max_streams(ep, false);
 			}
 		}
+
+		quic_endpoint_unref(ep);
 	}
 
 	if (stream->conn != NULL) {

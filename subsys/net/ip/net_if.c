@@ -1485,11 +1485,13 @@ static void join_mcast_nodes(struct net_if *iface, struct net_in6_addr *addr)
 #define join_mcast_nodes(...)
 #endif /* CONFIG_NET_IPV6_MLD */
 
+static struct net_if_addr *ipv6_addr_find(struct net_if *iface, const struct net_in6_addr *addr);
+
 /* Generate and add the interface's link-local address. This is run on interface
  * bring-up regardless of DAD: with DAD it is the address DAD is started for,
  * without DAD it is the only thing that adds the link-local address. Returns the
- * added address, or NULL on error. May be called with or without the interface
- * lock held (the lock is recursive).
+ * added address, or NULL on error. Must be called without the interface lock
+ * held because adding the address may start DAD and transmit packets.
  */
 static struct net_if_addr *iface_ipv6_lladdr_add(struct net_if *iface)
 {
@@ -1533,14 +1535,28 @@ static struct net_if_addr *iface_ipv6_lladdr_add(struct net_if *iface)
 		goto out;
 	}
 
+	/* Address addition starts DAD and transmits after dropping its own lock. */
+	net_if_unlock(iface);
+
 	ifaddr = net_if_ipv6_addr_add(iface, &addr, NET_ADDR_AUTOCONF, 0);
 	if (ifaddr == NULL) {
 		NET_ERR("Cannot add %s address to interface %p",
 			net_sprint_ipv6_addr(&addr), iface);
-		goto out;
+		return NULL;
 	}
 
-	IF_ENABLED(CONFIG_NET_IPV6_IID_STABLE, (ipv6->iid = ifaddr));
+#if defined(CONFIG_NET_IPV6_IID_STABLE)
+	net_if_lock(iface);
+
+	ipv6 = iface->config.ip.ipv6;
+	if (ipv6 != NULL && ipv6_addr_find(iface, &addr) == ifaddr) {
+		ipv6->iid = ifaddr;
+	}
+
+	net_if_unlock(iface);
+#endif /* CONFIG_NET_IPV6_IID_STABLE */
+
+	return ifaddr;
 
 out:
 	net_if_unlock(iface);
@@ -1745,15 +1761,16 @@ void net_if_start_dad(struct net_if *iface)
 	struct net_if_ipv6 *ipv6;
 	sys_slist_t dad_needed;
 
-	net_if_lock(iface);
-
 	NET_DBG("Starting DAD for iface %d", net_if_get_by_iface(iface));
 
 	/* Add the link-local address. This also configures IPv6 on the
 	 * interface. As the interface is up, the address add starts DAD for it
-	 * directly, so it is skipped in the loop below.
+	 * directly, so it is skipped in the loop below. Do this without holding
+	 * the interface lock because DAD transmits and can lock other interfaces.
 	 */
 	lladdr = iface_ipv6_lladdr_add(iface);
+
+	net_if_lock(iface);
 
 	ipv6 = iface->config.ip.ipv6;
 	if (ipv6 == NULL) {

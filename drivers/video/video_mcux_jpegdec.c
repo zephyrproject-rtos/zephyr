@@ -127,6 +127,17 @@ static int mcux_jpegdec_get_conf(uint32_t pixel_format, bool is_driver)
 	return 0;
 }
 
+static bool mcux_jpegdec_out_fmt_supported(uint32_t pixel_format)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(pixel_map_confs); i++) {
+		if (pixel_map_confs[i].vid_pixel_format == pixel_format) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static void mcux_jpegdec_decode_one_frame(const struct device *dev)
 {
 	const struct mcux_jpegdec_config *config = dev->config;
@@ -182,18 +193,37 @@ static int mcux_jpegdec_get_fmt(const struct device *dev, struct video_format *f
 static int mcux_jpegdec_set_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct mcux_jpegdec_data *data = dev->data;
+	struct video_format *current_format =
+		(fmt->type == VIDEO_BUF_TYPE_INPUT) ? &(data->m2m.in.fmt) : &(data->m2m.out.fmt);
 
 	/*
 	 * The input size and output format is obtained after parsing the first enqueued
-	 * input frame buffer. So only validate the format after queueing the first frame,
+	 * input frame buffer. Until then, report the pitch and size the requested format
+	 * needs so the caller can allocate its buffers, and validate the format only
+	 * after queueing the first frame.
 	 * Note: It is assumed that all the following JPEG frames in the stream have the
 	 * same format as the first one.
 	 */
-	if (data->first_frame_rcv) {
-		struct video_format *current_format =
-			(fmt->type == VIDEO_BUF_TYPE_INPUT) ? &(data->m2m.in.fmt) :
-			&(data->m2m.out.fmt);
+	if (!data->first_frame_rcv) {
+		int ret;
 
+		if (fmt->type == VIDEO_BUF_TYPE_INPUT) {
+			if (fmt->pixelformat != VIDEO_PIX_FMT_JPEG) {
+				LOG_ERR("Only JPEG input is supported");
+				return -ENOTSUP;
+			}
+		} else if (!mcux_jpegdec_out_fmt_supported(fmt->pixelformat)) {
+			LOG_ERR("Unsupported output pixel format 0x%x", fmt->pixelformat);
+			return -ENOTSUP;
+		}
+
+		ret = video_estimate_fmt_size(fmt);
+		if (ret != 0) {
+			return ret;
+		}
+
+		*current_format = *fmt;
+	} else {
 		if ((fmt->pixelformat != current_format->pixelformat) ||
 			(fmt->width != current_format->width) ||
 			(fmt->height != current_format->height) ||

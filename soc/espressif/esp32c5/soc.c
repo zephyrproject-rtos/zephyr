@@ -50,11 +50,14 @@ void IRAM_ATTR __esp_platform_app_start(void)
 #if CONFIG_ESP_SPIRAM
 	esp_init_psram();
 
+#if CONFIG_SHARED_MULTI_HEAP
 	int err = esp_psram_smh_init();
 
 	if (err) {
 		printk("Failed to initialize PSRAM shared multi heap (%d)\n", err);
 	}
+#endif
+
 #endif
 
 	z_cstart();

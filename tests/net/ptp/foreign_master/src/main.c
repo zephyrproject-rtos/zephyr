@@ -555,4 +555,120 @@ ZTEST(ptp_foreign_master, test_best_foreign_cleanup_keeps_scaled_time_window)
 		      "records within the time window should be kept");
 }
 
+/* Messages kept in the records of all foreign timeTransmitters of the port. */
+static int foreign_msgs_kept(struct ptp_port *port_ctx)
+{
+	struct ptp_foreign_tt_clock *foreign;
+	int count = 0;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&port_ctx->foreign_list, foreign, node) {
+		count += foreign->messages_count;
+	}
+
+	return count;
+}
+
+/* Announce messages from as many senders as there are records must not take
+ * more than half of the message pool, whatever their number.
+ */
+ZTEST(ptp_foreign_master, test_many_senders_keep_half_of_the_pool)
+{
+	static struct ptp_msg msgs[CONFIG_PTP_FOREIGN_TIME_TRANSMITTER_RECORD_SIZE *
+				   (FOREIGN_TIME_TRANSMITTER_THRESHOLD + 1)];
+	int idx = 0;
+
+	for (int round = 0; round <= FOREIGN_TIME_TRANSMITTER_THRESHOLD; round++) {
+		for (int sender = 0; sender < CONFIG_PTP_FOREIGN_TIME_TRANSMITTER_RECORD_SIZE;
+		     sender++) {
+			init_announce_msg(&msgs[idx], (uint8_t)(0xA0 + sender), 1, 120);
+			(void)ptp_port_add_foreign_tt(&port, &msgs[idx]);
+			idx++;
+
+			zassert_true(foreign_msgs_kept(&port) <= CONFIG_PTP_MSG_POLL_SIZE / 2,
+				     "%d messages kept, the limit is %d", foreign_msgs_kept(&port),
+				     CONFIG_PTP_MSG_POLL_SIZE / 2);
+		}
+	}
+
+	zassert_equal(foreign_clock_count(&port), CONFIG_PTP_FOREIGN_TIME_TRANSMITTER_RECORD_SIZE,
+		      "every sender should still have a record");
+	zassert_equal(foreign_msgs_kept(&port), CONFIG_PTP_MSG_POLL_SIZE / 2,
+		      "the records should use what they are allowed to");
+}
+
+/* At the limit a record follows the latest Announce message of its sender by
+ * giving up its oldest one.
+ */
+ZTEST(ptp_foreign_master, test_record_at_limit_keeps_latest_announce)
+{
+	static struct ptp_msg msgs[CONFIG_PTP_MSG_POLL_SIZE / 2];
+	static struct ptp_msg latest;
+	struct ptp_foreign_tt_clock *foreign;
+
+	for (int i = 0; i < ARRAY_SIZE(msgs); i++) {
+		init_announce_msg(&msgs[i], (uint8_t)(0xB0 + i), 1, 120);
+		(void)ptp_port_add_foreign_tt(&port, &msgs[i]);
+	}
+	zassert_equal(foreign_msgs_kept(&port), CONFIG_PTP_MSG_POLL_SIZE / 2, "limit not reached");
+
+	init_announce_msg(&latest, 0xB0, 1, 121);
+	zassert_not_equal(ptp_port_add_foreign_tt(&port, &latest), 0,
+			  "a changed Announce message should be reported");
+
+	foreign = find_foreign_clock(&port, 0xB0, 1);
+	zassert_not_null(foreign, "record missing");
+	zassert_equal(foreign->messages_count, 1, "the record should hold one message");
+	zassert_equal(k_fifo_peek_tail(&foreign->messages), &latest,
+		      "the record should hold the latest message");
+	zassert_equal(foreign_msgs_kept(&port), CONFIG_PTP_MSG_POLL_SIZE / 2,
+		      "the limit should still hold");
+}
+
+/* The current timeTransmitter is not locked out by other senders: at the limit
+ * its record takes the place of a message of another record.
+ */
+ZTEST(ptp_foreign_master, test_current_tt_is_kept_at_the_limit)
+{
+	static struct ptp_msg msgs[CONFIG_PTP_MSG_POLL_SIZE / 2];
+	static struct ptp_msg expired;
+	static struct ptp_msg renewed;
+	struct ptp_foreign_tt_clock *foreign;
+	int others = ARRAY_SIZE(msgs) - 1;
+
+	init_announce_msg(&expired, 0xC0, 1, 100);
+	zassert_equal(ptp_port_add_foreign_tt(&port, &expired), 0, "first add failed");
+	foreign = find_foreign_clock(&port, 0xC0, 1);
+	zassert_not_null(foreign, "record missing");
+	port.best = foreign;
+
+	for (int i = 0; i < others; i++) {
+		init_announce_msg(&msgs[i], (uint8_t)(0xC1 + i), 1, 120);
+		(void)ptp_port_add_foreign_tt(&port, &msgs[i]);
+	}
+
+	/* The message of the current timeTransmitter expires and its place is
+	 * taken by another sender. Selecting the best record releases the
+	 * expired message, and forgets the current timeTransmitter, which is
+	 * set again to model a port that has not run the selection since.
+	 */
+	set_local_uptime_expired(&expired);
+	(void)ptp_port_best_foreign(&port);
+	zassert_equal(foreign->messages_count, 0, "the expired message should be released");
+	port.best = foreign;
+
+	init_announce_msg(&msgs[others], 0xC1, 1, 120);
+	(void)ptp_port_add_foreign_tt(&port, &msgs[others]);
+	zassert_equal(foreign_msgs_kept(&port), CONFIG_PTP_MSG_POLL_SIZE / 2, "limit not reached");
+
+	init_announce_msg(&renewed, 0xC0, 1, 100);
+	(void)ptp_port_update_current_time_transmitter(&port, &renewed);
+
+	zassert_equal(foreign->messages_count, 1,
+		      "the current timeTransmitter should keep its message");
+	zassert_equal(k_fifo_peek_tail(&foreign->messages), &renewed,
+		      "the record should hold the new message");
+	zassert_equal(foreign_msgs_kept(&port), CONFIG_PTP_MSG_POLL_SIZE / 2,
+		      "the limit should still hold");
+}
+
 ZTEST_SUITE(ptp_foreign_master, NULL, NULL, foreign_master_before, foreign_master_after, NULL);

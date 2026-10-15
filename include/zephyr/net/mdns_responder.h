@@ -30,10 +30,13 @@ extern "C" {
  * @ref DNS_SD_REGISTER_SERVICE (if any) and then go over external records.
  *
  * @param records A pointer to an array of mDNS records. It is stored internally
- *                without copying the content so it must be kept valid. It can
- *                be set to NULL, e.g. before freeing the memory block.
- * @param count The number of elements
- * @return 0 for OK; -EINVAL for invalid parameters.
+ *                without copying the content so it must be kept valid. Pass
+ *                NULL together with a zero @p count to unregister the records,
+ *                e.g. before freeing the memory block. The call waits for a
+ *                response in progress to stop using the records.
+ * @param count The number of elements, zero only when @p records is NULL.
+ * @return 0 for OK; -EINVAL if @p records is NULL and @p count is not zero,
+ *         or if @p records is not NULL and @p count is zero.
  */
 int mdns_responder_set_ext_records(const struct dns_sd_rec *records, size_t count);
 

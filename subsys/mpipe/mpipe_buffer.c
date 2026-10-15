@@ -25,8 +25,7 @@ void mpipe_buffer_destroy(struct net_buf *buf)
 	net_buf_destroy(buf);
 }
 
-int mpipe_buffer_pool_configure(struct mpipe_buffer_pool *pool,
-				const struct mpipe_structure *config)
+int mpipe_buffer_pool_configure(struct mpipe_buffer_pool *pool, const struct mpipe_structure *caps)
 {
 	__ASSERT_NO_MSG(pool != NULL);
 
@@ -34,7 +33,7 @@ int mpipe_buffer_pool_configure(struct mpipe_buffer_pool *pool,
 		return -ENOSYS;
 	}
 
-	return pool->configure(pool, config);
+	return pool->configure(pool, caps);
 }
 
 int mpipe_buffer_pool_set_req_config(struct mpipe_buffer_pool *pool,

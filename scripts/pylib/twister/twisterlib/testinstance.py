@@ -505,7 +505,8 @@ class TestInstance(StatusMixin):
 
             pattern = f"{platform_name}/.*/{application_name}"
             for build_dir in self.required_build_dirs:
-                if re.search(pattern, build_dir):
+                # Normalize separators so the '/'-based pattern matches Windows '\' build dirs.
+                if re.search(pattern, build_dir.replace(os.sep, "/")):
                     # found matching build dir
                     break
             else:

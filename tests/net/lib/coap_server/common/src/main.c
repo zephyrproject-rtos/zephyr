@@ -83,6 +83,35 @@ COAP_RESOURCE_DEFINE(resource_4, service_C, {
 	.get = coap_method1,
 });
 
+/* Replies to a GET with a piggybacked 2.05 response. */
+static int coap_ping_get(struct coap_resource *resource, struct coap_packet *request,
+			 struct net_sockaddr *addr, net_socklen_t addr_len)
+{
+	uint8_t data[32];
+	uint8_t token[COAP_TOKEN_MAX_LEN];
+	uint8_t tkl = coap_header_get_token(request, token);
+	struct coap_packet response;
+	int ret;
+
+	ret = coap_packet_init(&response, data, sizeof(data), COAP_VERSION_1, COAP_TYPE_ACK,
+			       tkl, token, COAP_RESPONSE_CODE_CONTENT,
+			       coap_header_get_id(request));
+	if (ret < 0) {
+		return ret;
+	}
+
+	return coap_resource_send(resource, &response, addr, addr_len, NULL);
+}
+
+static const uint16_t service_D_port = 5700;
+COAP_SERVICE_DEFINE(service_D, "127.0.0.1", &service_D_port, COAP_SERVICE_AUTOSTART);
+
+static const char * const resource_ping_path[] = { "ping", NULL };
+COAP_RESOURCE_DEFINE(resource_ping, service_D, {
+	.path = resource_ping_path,
+	.get = coap_ping_get,
+});
+
 ZTEST(coap_service, test_COAP_SERVICE_DEFINE)
 {
 	zassert_ok(strcmp(service_A.host, "a.service.com"));
@@ -116,7 +145,7 @@ ZTEST(coap_service, test_COAP_SERVICE_COUNT)
 
 	n_svc = 4273;
 	COAP_SERVICE_COUNT(&n_svc);
-	zassert_equal(n_svc, 3);
+	zassert_equal(n_svc, 4);
 }
 
 ZTEST(coap_service, test_COAP_SERVICE_RESOURCE_COUNT)
@@ -124,6 +153,7 @@ ZTEST(coap_service, test_COAP_SERVICE_RESOURCE_COUNT)
 	zassert_equal(COAP_SERVICE_RESOURCE_COUNT(&service_A), 2);
 	zassert_equal(COAP_SERVICE_RESOURCE_COUNT(&service_B), 2);
 	zassert_equal(COAP_SERVICE_RESOURCE_COUNT(&service_C), 1);
+	zassert_equal(COAP_SERVICE_RESOURCE_COUNT(&service_D), 1);
 }
 
 ZTEST(coap_service, test_COAP_SERVICE_HAS_RESOURCE)
@@ -148,6 +178,7 @@ ZTEST(coap_service, test_COAP_SERVICE_FOREACH)
 	size_t have_service_A = 0;
 	size_t have_service_B = 0;
 	size_t have_service_C = 0;
+	size_t have_service_D = 0;
 
 	COAP_SERVICE_FOREACH(svc) {
 		if (svc == &service_A) {
@@ -159,17 +190,20 @@ ZTEST(coap_service, test_COAP_SERVICE_FOREACH)
 		} else if (svc == &service_C) {
 			have_service_C = 1;
 			zassert_equal(svc->flags & COAP_SERVICE_AUTOSTART, 0);
+		} else if (svc == &service_D) {
+			have_service_D = 1;
+			zassert_equal(svc->flags & COAP_SERVICE_AUTOSTART, COAP_SERVICE_AUTOSTART);
 		} else {
 			zassert_unreachable("svc (%p) not equal to &service_A (%p), &service_B "
-					    "(%p), or &service_C (%p)",
-					    svc, &service_A, &service_B, &service_C);
+					    "(%p), &service_C (%p), or &service_D (%p)",
+					    svc, &service_A, &service_B, &service_C, &service_D);
 		}
 
 		n_svc++;
 	}
 
-	zassert_equal(n_svc, 3);
-	zassert_equal(have_service_A + have_service_B + have_service_C, n_svc);
+	zassert_equal(n_svc, 4);
+	zassert_equal(have_service_A + have_service_B + have_service_C + have_service_D, n_svc);
 }
 
 ZTEST(coap_service, test_COAP_RESOURCE_FOREACH)
@@ -431,6 +465,53 @@ ZTEST(coap_service, test_observe_with_empty_token)
 	zassert_equal(coap_resource_parse_observe(&resource_0, &request,
 						  (struct net_sockaddr *)&peer),
 		      -ENOENT, "a removed observer was found again");
+}
+
+/* A reply to an IPv4 request is sent with an IP_PKTINFO control message, which
+ * is smaller than the control buffer the server reserves for IPV6_PKTINFO.
+ * On 64-bit targets the server thread used to spin forever in the stack on the
+ * unused tail of that buffer and never answered.
+ */
+ZTEST(coap_service, test_ipv4_request_gets_reply)
+{
+	struct net_sockaddr_in dst = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(5700),
+	};
+	struct zsock_pollfd pfd;
+	struct coap_packet request;
+	uint8_t buf[64];
+	uint8_t rsp[64];
+	int sock;
+	ssize_t len;
+
+	zassert_equal(zsock_inet_pton(NET_AF_INET, "127.0.0.1", &dst.sin_addr), 1);
+
+	for (int i = 0; i < 100 && coap_service_is_running(&service_D) != 1; i++) {
+		k_sleep(K_MSEC(10));
+	}
+	zassert_equal(coap_service_is_running(&service_D), 1);
+
+	zassert_ok(coap_packet_init(&request, buf, sizeof(buf), COAP_VERSION_1, COAP_TYPE_CON,
+				    0, NULL, COAP_METHOD_GET, coap_next_id()));
+	zassert_ok(coap_packet_append_option(&request, COAP_OPTION_URI_PATH, "ping", 4));
+
+	sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(sock >= 0);
+
+	len = zsock_sendto(sock, request.data, request.offset, 0,
+			   (struct net_sockaddr *)&dst, sizeof(dst));
+	zassert_equal(len, request.offset);
+
+	pfd.fd = sock;
+	pfd.events = ZSOCK_POLLIN;
+	zassert_equal(zsock_poll(&pfd, 1, 1000), 1, "no reply to an IPv4 request");
+
+	len = zsock_recv(sock, rsp, sizeof(rsp), 0);
+	zassert_true(len >= 4, "short reply");
+	zassert_equal(rsp[1], COAP_RESPONSE_CODE_CONTENT);
+
+	zsock_close(sock);
 }
 
 ZTEST_SUITE(coap_service, NULL, NULL, NULL, NULL, NULL);

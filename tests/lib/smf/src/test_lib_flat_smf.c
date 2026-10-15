@@ -148,8 +148,11 @@ static const struct smf_state test_states[] = {
  * Helper to run the FSM with hooks installed after smf_set_initial().
  * Because smf_set_initial() clears ctx->hooks, hooks must be set
  * afterwards.  Initial entry actions are therefore NOT captured.
+ *
+ * Returns the index of the run that returned the terminate value,
+ * or SMF_RUN if no run did.
  */
-static void run_fsm(enum test_state initial, enum terminate_action term)
+static int run_fsm(enum test_state initial, enum terminate_action term)
 {
 	reset_logs();
 	test_obj.terminate = term;
@@ -158,9 +161,11 @@ static void run_fsm(enum test_state initial, enum terminate_action term)
 
 	for (int i = 0; i < SMF_RUN; i++) {
 		if (smf_run_state(SMF_CTX(&test_obj))) {
-			break;
+			return i;
 		}
 	}
+
+	return SMF_RUN;
 }
 
 /*
@@ -174,7 +179,7 @@ static void run_fsm(enum test_state initial, enum terminate_action term)
  */
 ZTEST(smf_tests, test_smf_flat_instrumented_normal)
 {
-	run_fsm(STATE_A, NONE);
+	zassert_equal(run_fsm(STATE_A, NONE), SMF_RUN, "No run should return a terminate value");
 
 	/* Verify action sequence (initial A_ENTRY not captured) */
 	zassert_equal(action_log_count, 9, "Expected 9 action hooks");
@@ -237,7 +242,7 @@ ZTEST(smf_tests, test_smf_flat_instrumented_normal)
  */
 ZTEST(smf_tests, test_smf_flat_instrumented_entry_terminate)
 {
-	run_fsm(STATE_A, ENTRY);
+	zassert_equal(run_fsm(STATE_A, ENTRY), 0, "Run 0 should return the terminate value");
 
 	zassert_equal(action_log_count, 0, "No actions captured — terminate during init");
 
@@ -251,11 +256,11 @@ ZTEST(smf_tests, test_smf_flat_instrumented_entry_terminate)
  *
  * set_initial(A): A_ENTRY (not captured)
  * Run 0: A_RUN -> [A transitions to B] -> A_EXIT, transition(A,B), B_ENTRY
- * Run 1: B_RUN (terminates)
+ * Run 1: B_RUN (terminates), returns the terminate value
  */
 ZTEST(smf_tests, test_smf_flat_instrumented_run_terminate)
 {
-	run_fsm(STATE_A, RUN);
+	zassert_equal(run_fsm(STATE_A, RUN), 1, "Run 1 should return the terminate value");
 
 	/* A_RUN, A_EXIT, B_ENTRY, B_RUN = 4 actions (initial A_ENTRY not captured) */
 	zassert_equal(action_log_count, 4, "Expected 4 action hooks before termination");
@@ -285,11 +290,11 @@ ZTEST(smf_tests, test_smf_flat_instrumented_run_terminate)
  * set_initial(A): A_ENTRY (not captured)
  * Run 0: A_RUN, A_EXIT, transition(A,B), B_ENTRY
  * Run 1: B_RUN, B_EXIT, transition(B,C), C_ENTRY
- * Run 2: C_RUN, C_EXIT (terminates during exit)
+ * Run 2: C_RUN, C_EXIT (terminates during exit), returns the terminate value
  */
 ZTEST(smf_tests, test_smf_flat_instrumented_exit_terminate)
 {
-	run_fsm(STATE_A, EXIT);
+	zassert_equal(run_fsm(STATE_A, EXIT), 2, "Run 2 should return the terminate value");
 
 	zassert_equal(action_log_count, 8, "Expected 8 action hooks before termination");
 

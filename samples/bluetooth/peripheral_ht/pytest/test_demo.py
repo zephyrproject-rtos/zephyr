@@ -18,5 +18,7 @@ def test_ble_central_peripheral_ht(duts: list[DeviceAdapter]):
     dut_central = duts[1]
 
     logger.info("Waiting for the central and peripheral to connect and exchange data")
-    dut_central.readlines_until(regex="Temperature", timeout=10)
-    dut_peripheral.readlines_until(regex="temperature", timeout=10)
+    # Some controllers download firmware over HCI at bt_enable(), delaying
+    # advertising/scanning by several seconds, so allow a generous timeout.
+    dut_central.readlines_until(regex="Temperature", timeout=60)
+    dut_peripheral.readlines_until(regex="temperature", timeout=60)

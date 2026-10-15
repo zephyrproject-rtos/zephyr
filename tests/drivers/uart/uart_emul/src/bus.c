@@ -143,6 +143,24 @@ ZTEST_F(uart_emul, test_errors)
 	zassert_equal(errors, UART_ERROR_OVERRUN, "UART errors do not match");
 }
 
+ZTEST_F(uart_emul, test_config_get)
+{
+	struct uart_config cfg;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_UART_USE_RUNTIME_CONFIGURE);
+
+	/* Poison the configuration so that every field has to be written */
+	memset(&cfg, 0xff, sizeof(cfg));
+
+	/* Initial configuration comes from the euart0 node in uart_emul.overlay */
+	zassert_ok(uart_config_get(fixture->dev, &cfg));
+	zassert_equal(cfg.baudrate, 115200);
+	zassert_equal(cfg.parity, UART_CFG_PARITY_EVEN);
+	zassert_equal(cfg.stop_bits, UART_CFG_STOP_BITS_2);
+	zassert_equal(cfg.data_bits, UART_CFG_DATA_BITS_7);
+	zassert_equal(cfg.flow_ctrl, UART_CFG_FLOW_CTRL_RTS_CTS);
+}
+
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_emul_isr_handle_tx_ready(struct uart_emul_fixture *fixture)
 {

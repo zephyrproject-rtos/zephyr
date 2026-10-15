@@ -50,7 +50,7 @@ enum mpipe_prop_sink {
 };
 
 /**
- * @brief Sink Element Structure
+ * @brief Sink element structure
  *
  * Represents a sink element in the media pipeline. Sink elements are terminal
  * elements that consume data from upstream elements through their sink pad.
@@ -61,16 +61,20 @@ struct mpipe_sink {
 	/** Input pad for receiving data */
 	struct mpipe_pad sink_pad;
 	/**
-	 * @brief Set a given caps to the element
-	 * @param sink Pointer to the sink element
-	 * @param caps Capability to set
+	 * @brief Apply the negotiated capability
+	 *
+	 * @param self Pointer to the sink element
+	 * @param caps Capability to apply
+	 *
 	 * @return 0 on success, negative errno on failure
 	 */
-	int (*set_caps)(struct mpipe_sink *sink, const struct mpipe_structure *caps);
+	int (*set_caps)(struct mpipe_sink *self, const struct mpipe_structure *caps);
 	/**
 	 * @brief Propose a buffer pool to the upstream peer
+	 *
 	 * @param self Pointer to the sink element
-	 * @param query Allocation query to process
+	 * @param query Buffer pool query to answer
+	 *
 	 * @return 0 on success, negative errno on failure
 	 */
 	int (*propose_buffer_pool)(struct mpipe_sink *self, struct mpipe_dispatch *query);

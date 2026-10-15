@@ -1189,6 +1189,13 @@ static ZTEST_BMEM uint8_t tx_buffer[VAR_LENGTH_TX_BUF_SIZE];
 	zassert_true(ret == 0, "[buff=%zu][tx=%zu]Failed to TX: %d\n", buf_len, tx_len, ret);
 	zassert_equal(k_sem_take(&tx_done, K_MSEC(100)), 0, "TX_DONE timeout");
 
+	/* Some drivers report TX_DONE while the last bytes are still being shifted out,
+	 * so wait for the loopback to deliver them before disabling RX.
+	 */
+	for (uint32_t i = 0U; (var_length_buf_rx_idx < tx_len) && (i < 100U); i++) {
+		k_msleep(1);
+	}
+
 	uart_rx_disable(uart_dev);
 	zassert_equal(k_sem_take(&rx_disabled, K_MSEC(500)), 0,
 		      "[buff=%zu][tx=%zu]RX_DISABLED timeout\n", buf_len, tx_len);

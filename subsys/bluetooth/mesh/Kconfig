@@ -1878,8 +1878,8 @@ config BT_MESH_STORE_TIMEOUT
 config BT_MESH_SEQ_STORE_RATE
 	int "How often the sequence number gets updated in storage"
 	range 0 1000000
+	default 1 if !BT_SETTINGS
 	default 128
-	default 1 if !BT_SETTINGS # To keep compiling the code
 	help
 	  This value defines how often the local sequence number gets
 	  updated in persistent storage (i.e. flash). E.g. a value of 100

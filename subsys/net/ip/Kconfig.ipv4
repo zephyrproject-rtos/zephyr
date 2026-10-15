@@ -293,7 +293,7 @@ config NET_IPV4_MAX_ROUTES
 
 config NET_IPV4_NAT
 	bool "IPv4 Network Address Translation (EXPERIMENTAL)"
-	depends on NET_IPV4_ROUTE
+	depends on NET_IPV4_FORWARDING
 	select NET_PKT_FILTER
 	select NET_PKT_FILTER_IPV4_HOOK
 	select EXPERIMENTAL

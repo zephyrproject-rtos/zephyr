@@ -362,10 +362,14 @@ success:
 	net_buf_reset(buf);
 
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
-	atomic_dec(&pool->avail_count);
-	__ASSERT_NO_MSG(atomic_get(&pool->avail_count) >= 0);
-	pool->max_used = max(pool->max_used,
-			     pool->buf_count - atomic_get(&pool->avail_count));
+	atomic_val_t avail = atomic_dec(&pool->avail_count) - 1;
+
+	__ASSERT_NO_MSG(avail >= 0);
+
+	/* A concurrent allocation must not overwrite a higher value with its own */
+	key = k_spin_lock(&pool->lock);
+	pool->max_used = max(pool->max_used, pool->buf_count - avail);
+	k_spin_unlock(&pool->lock, key);
 #endif
 	return buf;
 }

@@ -158,7 +158,7 @@
 #define ACP_PDM_2_SW_Enable_Reg                  0x1242D9C
 #define ACP_PDM_2_SW_CTRLReg                     0x1242DA0
 #define ACP_PDM_2_WALLCLK_INTR_CNTL              0x1242DA4
-/* Registers from ACP_SW0_SWCLK bloc */
+/* Registers from ACP_SW0_SWCLK block */
 #define ACP_SW0_EN                               0x1245200
 #define ACP_SW0_EN_STATUS                        0x1245204
 #define ACP_SW0_FRAMESIZE_BANK0                  0x1245208

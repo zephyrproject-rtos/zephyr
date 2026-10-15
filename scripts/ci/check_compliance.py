@@ -474,6 +474,11 @@ class ClangFormatCheck(ComplianceTest):
             except subprocess.CalledProcessError as ex:
                 patchset = unidiff.PatchSet.from_string(ex.output, encoding="utf-8")
                 for patch in patchset:
+                    # .clang-format-ignore: clang-format skips the file (exit 0, empty stdout).
+                    # clang-format-diff diffs against that empty output, yielding a spurious
+                    # full-file removal diff; unidiff reports that as is_removed_file.
+                    if patch.is_removed_file:
+                        continue
                     self._process_patch_error(file, patch)
 
 

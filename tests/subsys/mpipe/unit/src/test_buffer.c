@@ -5,13 +5,9 @@
  */
 
 /*
- * Buffers and buffer pools, mpipe_buffer.c.
- *
- * Most of this is the pool negotiation contract: what a pool requires of its
- * own accord is kept apart from what a negotiation settled on, and a pool that
- * stops forgets the latter. Without that, one run's demands become the next
- * run's floor - the JPEG parser adds a buffer for its partial frame on every
- * negotiation, so the count would climb by one per replay.
+ * Buffer pools: what a pool requires stays apart from what a negotiation
+ * settled on, and a stop forgets the latter, so one run's demands are not the
+ * next run's floor.
  */
 
 #include <zephyr/kernel.h>
@@ -166,7 +162,7 @@ ZTEST_F(mpipe_buffer_api, test_the_owner_decides_what_it_accepts)
 
 	fixture->pool.set_config = clamping_set_config;
 	zassert_ok(mpipe_buffer_pool_set_config(&fixture->pool, &negotiated), "set_config failed");
-	zassert_equal(fixture->pool.config.min_buffers, 4, "the pool's clamp was not honoured");
+	zassert_equal(fixture->pool.config.min_buffers, 4, "the pool's clamp was not honored");
 
 	/* Stopping still restores the requirement, whatever the owner accepted */
 	zassert_ok(mpipe_buffer_pool_stop(&fixture->pool), "stop failed");

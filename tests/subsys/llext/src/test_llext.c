@@ -576,8 +576,9 @@ static LLEXT_CONST uint8_t find_section_ext[] LLEXT_SECT ELF_ALIGN = {
 ZTEST(llext, test_find_section)
 {
 	/* This test exploits the fact that in the STORAGE_WRITABLE cases, the
-	 * symbol addresses calculated by llext will be directly inside the ELF
-	 * file buffer, so the two methods can be easily compared.
+	 * symbol addresses calculated by llext are inside the .data region,
+	 * whether it is used in place in the ELF buffer or copied, so the two
+	 * methods can be easily compared.
 	 */
 
 	int res;
@@ -603,7 +604,8 @@ ZTEST(llext, test_find_section)
 		     (uint64_t)shdr.sh_offset);
 
 	uintptr_t symbol_ptr = (uintptr_t)llext_find_sym(&ext->exp_tab, "number");
-	uintptr_t section_ptr = (uintptr_t)find_section_ext + section_ofs;
+	uintptr_t section_ptr = (uintptr_t)ext->mem[LLEXT_MEM_DATA] + section_ofs -
+				loader->sects[LLEXT_MEM_DATA].sh_offset;
 
 	/*
 	 * FIXME on RISC-V, at least for GCC, the symbols aren't always at the beginning
@@ -649,9 +651,13 @@ ZTEST(llext, test_detached)
 	struct llext_buf_loader buf_loader =
 		LLEXT_BUF_LOADER(test_detached_ext, sizeof(test_detached_ext));
 	struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
+	enum llext_mem sect_region = LLEXT_MEM_COUNT;
+	size_t sect_offset = 0;
+	int sect_shndx;
 	int res;
 
 	ldr_parm.section_detached = test_section_detached;
+	ldr_parm.keep_section_info = true;
 	detached_loader = &buf_loader.loader;
 
 	res = llext_load(detached_loader, "test_detached", &detached_llext, &ldr_parm);
@@ -675,8 +681,22 @@ ZTEST(llext, test_detached)
 	test_entry_fn = llext_find_sym(&detached_llext->exp_tab, "detached_entry");
 
 	zassert_not_null(test_entry_fn, "detached_entry should be an exported symbol");
+	zassert_between_inclusive((uintptr_t)test_entry_fn,
+				  (uintptr_t)test_detached_ext + detached_shdr.sh_offset,
+				  (uintptr_t)test_detached_ext + detached_shdr.sh_offset +
+					  detached_shdr.sh_size - 1,
+				  "detached_entry is not in the ELF buffer");
 	test_entry_fn();
 
+	sect_shndx = llext_section_shndx(detached_loader, detached_llext, ".detach");
+	zassert_true(sect_shndx > 0, "section .detach should be found");
+	res = llext_get_section_info(detached_loader, detached_llext, sect_shndx,
+				     NULL, &sect_region, &sect_offset);
+	zassert_ok(res, "get_section_info() should succeed");
+	zassert_equal(sect_region, LLEXT_MEM_TEXT, "detached section should report .text");
+	zassert_equal(sect_offset, (size_t)-1, "detached section should have no region offset");
+
+	llext_free_inspection_data(detached_loader, detached_llext);
 	llext_unload(&detached_llext);
 }
 #endif /* !CONFIG_ARCH_HAS_WORD_GRANULAR_ACCESS_INSTR_MEM */

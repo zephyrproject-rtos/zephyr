@@ -144,7 +144,7 @@
 			compatible = "nxp,pf1550-charger";
 			constant-charge-current-max-microamp = <100000>;
 			constant-charge-voltage-max-microvolt = <4200000>;
-			pf1550,int-gpios = <&gpiok 0 0>;
+			pf1550,int-gpios = <&gpiok 0 GPIO_ACTIVE_LOW>;
 			pf1550,led-behaviour = "manual-off";
 			pf1550,system-voltage-min-threshold-microvolt = <3500000>;
 			pf1550,thermistor-monitoring-mode = "thermistor";

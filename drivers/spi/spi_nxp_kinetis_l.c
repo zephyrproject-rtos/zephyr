@@ -73,24 +73,9 @@ static int spi_nxp_kinetis_l_configure(const struct device *dev, const struct sp
 		return -ENOTSUP;
 	}
 
-	base->C1 &= ~SPI_C1_SPE_MASK;
-
-	base->C1 = SPI_C1_MSTR_MASK;
-
-	if (config->operation & SPI_TRANSFER_LSB) {
-		base->C1 |= SPI_C1_LSBFE_MASK;
-	}
-
-	if (config->operation & SPI_MODE_CPOL) {
-		base->C1 |= SPI_C1_CPOL_MASK;
-	}
-
-	if (config->operation & SPI_MODE_CPHA) {
-		base->C1 |= SPI_C1_CPHA_MASK;
-	}
-
 	uint32_t best_diff = UINT32_MAX;
 	uint8_t best_sppr = 0, best_spr = 0;
+	bool found = false;
 
 	for (int spr = 0; spr <= 8; spr++) {
 		for (int sppr = 0; sppr <= 7; sppr++) {
@@ -105,9 +90,32 @@ static int spi_nxp_kinetis_l_configure(const struct device *dev, const struct sp
 					best_diff = diff;
 					best_sppr = sppr;
 					best_spr = spr;
+					found = true;
 				}
 			}
 		}
+	}
+
+	if (!found) {
+		LOG_ERR("Frequency %u Hz is too low, the slowest supported is %u Hz",
+			config->frequency, clock_frequency / (8U * 512U));
+		return -EINVAL;
+	}
+
+	base->C1 &= ~SPI_C1_SPE_MASK;
+
+	base->C1 = SPI_C1_MSTR_MASK;
+
+	if (config->operation & SPI_TRANSFER_LSB) {
+		base->C1 |= SPI_C1_LSBFE_MASK;
+	}
+
+	if (config->operation & SPI_MODE_CPOL) {
+		base->C1 |= SPI_C1_CPOL_MASK;
+	}
+
+	if (config->operation & SPI_MODE_CPHA) {
+		base->C1 |= SPI_C1_CPHA_MASK;
 	}
 
 	base->BR = SPI_BR_SPPR(best_sppr) | SPI_BR_SPR(best_spr);

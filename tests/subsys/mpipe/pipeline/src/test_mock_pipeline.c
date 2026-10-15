@@ -83,7 +83,7 @@ ZTEST_F(test_mock_pipeline, test_pipeline_fake_src_transform_sink)
 				 (struct mpipe_element *)&fixture->sink, NULL),
 		   "Failed to add elements");
 
-	/* Link: fake_src → transform → sink */
+	/* Link: fake_src -> transform -> sink */
 	zassert_ok(mpipe_element_link((struct mpipe_element *)&fixture->fake_src,
 				      (struct mpipe_element *)&fixture->transform,
 				      (struct mpipe_element *)&fixture->sink, NULL),
@@ -94,13 +94,7 @@ ZTEST_F(test_mock_pipeline, test_pipeline_fake_src_transform_sink)
 	zassert_ok(zbus_chan_add_obs(bus, &test_pipeline_sub, K_FOREVER),
 		   "Failed to add observer to pipeline channel");
 
-	/*
-	 * Run it more than once. A second run is where state left behind by the
-	 * first one shows up - a stale end-of-stream, a buffer pool carrying the
-	 * demands it was negotiated to last time - and each of those has been a
-	 * real defect. One run proves the pipeline streams; the replay proves it
-	 * goes back to where it started.
-	 */
+	/* Replay: state left by one run must not leak into the next */
 	for (int run = 0; run < 3; run++) {
 		zassert_ok(mpipe_element_set_state((struct mpipe_element *)&fixture->pipeline,
 						   MPIPE_STATE_PLAYING),

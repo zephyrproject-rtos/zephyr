@@ -84,28 +84,47 @@ static int p3t1755_sample_fetch(const struct device *dev, enum sensor_channel ch
 	const struct p3t1755_config *config = dev->config;
 	struct p3t1755_data *data = dev->data;
 	uint8_t raw_temp[2] = {0};
+	int ret;
+	int put_ret;
 
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_AMBIENT_TEMP) {
 		LOG_ERR("Invalid channel provided");
 		return -ENOTSUP;
 	}
 
-	config->ops.get(dev);
+	ret = config->ops.get(dev);
+	if (ret != 0) {
+		LOG_ERR("Bus device get failed: %d", ret);
+		return ret;
+	}
 
 	if (config->oneshot_mode) {
 		data->config_reg |= P3T1755_CONFIG_REG_OS;
-		config->ops.write(dev, P3T1755_CONFIG_REG, &data->config_reg, 1);
+		ret = config->ops.write(dev, P3T1755_CONFIG_REG, &data->config_reg, 1);
+		if (ret != 0) {
+			LOG_ERR("One-shot configuration failed: %d", ret);
+			goto put_and_return;
+		}
 		/* Maximum one-shot conversion time per specification is 12ms */
 		k_sleep(K_MSEC(12));
 	}
 
-	int status = config->ops.read(dev, P3T1755_TEMPERATURE_REG, raw_temp, 2);
+	ret = config->ops.read(dev, P3T1755_TEMPERATURE_REG, raw_temp, 2);
+	if (ret != 0) {
+		LOG_ERR("Temperature read failed: %d", ret);
+	}
 
-	config->ops.put(dev);
+put_and_return:
+	put_ret = config->ops.put(dev);
+	if (put_ret != 0) {
+		LOG_ERR("Bus device put failed: %d", put_ret);
+		if (ret == 0) {
+			ret = put_ret;
+		}
+	}
 
-	if (status) {
-		LOG_ERR("read return error %d", status);
-		return -ENOTSUP;
+	if (ret != 0) {
+		return ret;
 	}
 
 	/* Byte 1 contains the MSByte and Byte 2 contains the LSByte, we need to swap the 2 bytes.
@@ -155,11 +174,13 @@ static int p3t1755_pm_resume(const struct device *dev)
 {
 	const struct p3t1755_config *config = dev->config;
 	struct p3t1755_data *data = dev->data;
-	int ret = -ENODEV;
+	int put_ret;
+	int ret;
 
-	if (config->ops.get(dev)) {
-		LOG_ERR("Bus device get failed");
-		goto put_and_ret;
+	ret = config->ops.get(dev);
+	if (ret != 0) {
+		LOG_ERR("Bus device get failed: %d", ret);
+		return ret;
 	}
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
@@ -181,18 +202,33 @@ static int p3t1755_pm_resume(const struct device *dev)
 #endif
 
 	if (config->oneshot_mode) {
-		config->ops.read(dev, P3T1755_CONFIG_REG, &data->config_reg, 1);
+		ret = config->ops.read(dev, P3T1755_CONFIG_REG, &data->config_reg, 1);
+		if (ret != 0) {
+			LOG_ERR("Configuration read failed: %d", ret);
+			goto put_and_ret;
+		}
+
 		/* Operate in shutdown mode. Set the OS bit to start the
 		 * one-shot temperature measurement.
 		 */
 		data->config_reg |= P3T1755_CONFIG_REG_SD;
-		config->ops.write(dev, P3T1755_CONFIG_REG, &data->config_reg, 1);
+		ret = config->ops.write(dev, P3T1755_CONFIG_REG, &data->config_reg, 1);
+		if (ret != 0) {
+			LOG_ERR("Configuration write failed: %d", ret);
+			goto put_and_ret;
+		}
 	}
 
 	ret = 0;
 
 put_and_ret:
-	(void)config->ops.put(dev);
+	put_ret = config->ops.put(dev);
+	if (put_ret != 0) {
+		LOG_ERR("Bus device put failed: %d", put_ret);
+		if (ret == 0) {
+			ret = put_ret;
+		}
+	}
 
 	return ret;
 }

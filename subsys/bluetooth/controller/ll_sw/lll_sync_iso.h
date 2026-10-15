@@ -43,6 +43,7 @@ struct lll_sync_iso {
 #endif /* CONFIG_BT_CTLR_SYNC_ISO_INTERLEAVED */
 	};
 	uint8_t  next_chan_use;
+	uint8_t  ctrl_chan_use;
 
 	uint64_t payload_count:39;
 	uint64_t framing:1;

@@ -43,7 +43,7 @@
 
 dut: &uart21 {
 	status = "okay";
-	current-speed = <115200>;
+	current-speed = <57600>;
 	pinctrl-0 = <&uart21_default_alt>;
 	pinctrl-1 = <&uart21_sleep_alt>;
 	pinctrl-names = "default", "sleep";
@@ -51,7 +51,7 @@ dut: &uart21 {
 
 dut_aux: &uart22 {
 	status = "okay";
-	current-speed = <115200>;
+	current-speed = <57600>;
 	pinctrl-0 = <&uart22_default>;
 	pinctrl-1 = <&uart22_sleep>;
 	pinctrl-names = "default", "sleep";

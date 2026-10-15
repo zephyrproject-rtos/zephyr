@@ -56,11 +56,11 @@ LOG_MODULE_REGISTER(clock_control_bl61x, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #define ROOT_CLK_RANGE_DELIM	MHZ(500)
 
 #if CLK_SRC_IS(root, wifipll_top)
-#define CLK_AT_LEAST_MUL (BFLB_MUL_CLK(32,					\
+#define CLK_AT_LEAST_MUL (BFLB_MUL_CLK_XIP(32,					\
 	DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, wifipll_top), top_frequency),	\
 		BL61X_WIFIPLL_TOP_FREQ))
 #elif CLK_SRC_IS(root, aupll_top)
-#define CLK_AT_LEAST_MUL (BFLB_MUL_CLK(32,					\
+#define CLK_AT_LEAST_MUL (BFLB_MUL_CLK_XIP(32,					\
 	DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, aupll_top), top_frequency),	\
 		BL61X_AUPLL_TOP_FREQ))
 #else
@@ -669,20 +669,20 @@ static void clock_control_bl61x_init_wifipll_setup(const bl61x_pll_config *const
 	tmp = (tmp & GLB_WIFIPLL_SDM_BYPASS_UMSK)
 		| (config->pllSdmBypass << GLB_WIFIPLL_SDM_BYPASS_POS);
 	tmp = (tmp & GLB_WIFIPLL_SDMIN_UMSK)
-		| (BFLB_MUL_CLK(config->pllSdmin, top_frequency, BL61X_WIFIPLL_TOP_FREQ)
+		| (BFLB_MUL_CLK_XIP(config->pllSdmin, top_frequency, BL61X_WIFIPLL_TOP_FREQ)
 		<< GLB_WIFIPLL_SDMIN_POS);
 	sys_write32(tmp, GLB_BASE + GLB_WIFI_PLL_CFG6_OFFSET);
 
 	/* We need to overclock those as well for USB to work for some reason */
 	tmp = sys_read32(GLB_BASE + GLB_WIFI_PLL_CFG10_OFFSET);
 	tmp = (tmp & GLB_USBPLL_SDMIN_UMSK)
-		| (BFLB_MUL_CLK(USBPLL_SDMIN, top_frequency, BL61X_WIFIPLL_TOP_FREQ)
+		| (BFLB_MUL_CLK_XIP(USBPLL_SDMIN, top_frequency, BL61X_WIFIPLL_TOP_FREQ)
 		<< GLB_USBPLL_SDMIN_POS);
 	sys_write32(tmp, GLB_BASE + GLB_WIFI_PLL_CFG10_OFFSET);
 
 	tmp = sys_read32(GLB_BASE + GLB_WIFI_PLL_CFG12_OFFSET);
 	tmp = (tmp & GLB_SSCDIV_SDMIN_UMSK)
-		| (BFLB_MUL_CLK(SSCDIV_SDMIN, top_frequency, BL61X_WIFIPLL_TOP_FREQ)
+		| (BFLB_MUL_CLK_XIP(SSCDIV_SDMIN, top_frequency, BL61X_WIFIPLL_TOP_FREQ)
 		<< GLB_SSCDIV_SDMIN_POS);
 	sys_write32(tmp, GLB_BASE + GLB_WIFI_PLL_CFG12_OFFSET);
 
@@ -1055,7 +1055,7 @@ static void clock_control_bl61x_init_aupll_setup(const bl61x_pll_config *const c
 	tmp = (tmp & CCI_AUPLL_SDM_BYPASS_UMSK)
 		| (config->pllSdmBypass << CCI_AUPLL_SDM_BYPASS_POS);
 	tmp = (tmp & CCI_AUPLL_SDMIN_UMSK)
-		| (BFLB_MUL_CLK(config->pllSdmin, top_frequency, BL61X_AUPLL_TOP_FREQ)
+		| (BFLB_MUL_CLK_XIP(config->pllSdmin, top_frequency, BL61X_AUPLL_TOP_FREQ)
 		<< CCI_AUPLL_SDMIN_POS);
 	sys_write32(tmp, CCI_BASE + CCI_AUDIO_PLL_CFG6_OFFSET);
 

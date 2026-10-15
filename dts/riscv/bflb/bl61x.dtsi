@@ -514,6 +514,17 @@
 			tcap-capcode = <28 29 30 31 32 33 34 35 36 37 38>;
 		};
 
+		ieee802154: ieee802154@2c000000 {
+			compatible = "bflb,ieee802154";
+			reg = <0x2c000000 0x1000>;
+			interrupts = <64 1>, <63 1>, <65 1>;
+			interrupt-names = "m154", "m154-req-ack", "m154-aes";
+			interrupt-parent = <&clic>;
+			pwr-table-zigbee = <13>;
+			pwr-offset-bz = <16 16 16 16 16>;
+			status = "disabled";
+		};
+
 		/* All contiguous fast RAM
 		 * It is kept tightly coupled by the CPU's internal cache
 		 */
@@ -552,16 +563,6 @@
 			#size-cells = <1>;
 			ranges = <0x0 0xa8000000 DT_SIZE_M(128)>;
 			zephyr,memory-region = "PSRAM";
-			status = "disabled";
-		};
-
-		ieee802154: ieee802154 {
-			compatible = "bflb,ieee802154";
-			interrupts = <64 1>, <63 1>, <65 1>;
-			interrupt-names = "m154", "m154-req-ack", "m154-aes";
-			interrupt-parent = <&clic>;
-			pwr-table-zigbee = <13>;
-			pwr-offset-bz = <16 16 16 16 16>;
 			status = "disabled";
 		};
 	};

@@ -12,6 +12,8 @@ simulation:
 arch: tricore
 toolchain:
   - tricore
+env:
+  - TRICORE_TOOLCHAIN_PATH
 preferred_toolchain: tricore
 ram: 240
 flash: 4096

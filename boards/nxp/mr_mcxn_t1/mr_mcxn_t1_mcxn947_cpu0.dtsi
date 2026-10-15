@@ -97,6 +97,28 @@
 
 &flexio0 {
 	status = "okay";
+
+	flexio_spi0: flexio_spi0 {
+		compatible = "nxp,flexio-spi";
+		status = "okay";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		sdo-pin = <0>;
+		sdi-pin = <0>;
+		sck-pin = <1>;
+		pinctrl-0 = <&pinmux_flexio_spi0>;
+		pinctrl-names = "default";
+
+		led_strip: apa102@0 {
+			compatible = "apa,apa102";
+			reg = <0>;
+			spi-max-frequency = <DT_FREQ_M(8)>;
+			chain-length = <1>;
+			color-mapping = <LED_COLOR_ID_BLUE
+					 LED_COLOR_ID_GREEN
+					 LED_COLOR_ID_RED>;
+		};
+	};
 };
 
 &enet {

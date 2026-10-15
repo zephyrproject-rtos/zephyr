@@ -195,6 +195,7 @@ struct dwmac_priv {
 #define DWMAC_PTP_MACSTSUR 0x0b10
 #define DWMAC_PTP_MACSTNUR 0x0b14
 #define DWMAC_PTP_MACTSAR  0x0b18
+#define DWMAC_PTP_MACPPSCR 0x0b70
 
 #define DWMAC_PTP_CTRL_REG        DWMAC_PTP_MACTSCR
 #define DWMAC_PTP_SSINC_REG       DWMAC_PTP_MACSSIR
@@ -203,6 +204,7 @@ struct dwmac_priv {
 #define DWMAC_PTP_SEC_REG         DWMAC_PTP_MACSTSR
 #define DWMAC_PTP_NSEC_REG        DWMAC_PTP_MACSTNR
 #define DWMAC_PTP_ADDEND_REG      DWMAC_PTP_MACTSAR
+#define DWMAC_PTP_PPSCR_REG       DWMAC_PTP_MACPPSCR
 
 #define DWMAC_PTP_SSINC_SHIFT 16
 #else
@@ -213,6 +215,7 @@ struct dwmac_priv {
 #define DWMAC_PTP_PTPTSHUR 0x0710
 #define DWMAC_PTP_PTPTSLUR 0x0714
 #define DWMAC_PTP_PTPTSAR  0x0718
+#define DWMAC_PTP_PTPPPSCR 0x072c
 
 #define DWMAC_PTP_CTRL_REG        DWMAC_PTP_PTPTSCR
 #define DWMAC_PTP_SSINC_REG       DWMAC_PTP_PTPSSIR
@@ -221,9 +224,12 @@ struct dwmac_priv {
 #define DWMAC_PTP_SEC_REG         DWMAC_PTP_PTPTSHR
 #define DWMAC_PTP_NSEC_REG        DWMAC_PTP_PTPTSLR
 #define DWMAC_PTP_ADDEND_REG      DWMAC_PTP_PTPTSAR
+#define DWMAC_PTP_PPSCR_REG       DWMAC_PTP_PTPPPSCR
 
 #define DWMAC_PTP_SSINC_SHIFT 0
 #endif
+
+#define DWMAC_PTP_PPSCR_PPSCTRL   GENMASK(3, 0)
 
 #define DWMAC_PTP_CTRL_ENABLE			BIT(0)
 #define DWMAC_PTP_CTRL_FINE_UPDATE		BIT(1)
@@ -628,6 +634,8 @@ extern const struct ethernet_api dwmac_api;
 
 #define MAC_VERSION_USERVER			GENMASK(15, 8)
 #define MAC_VERSION_SNPSVER			GENMASK(7, 0)
+
+#define DWMAC_VERSION_REG			MAC_VERSION
 
 /* 17.1.52 */
 
@@ -1470,7 +1478,8 @@ extern const struct ethernet_api dwmac_api;
 
 /* MAC version register bits */
 #define DWMAC_MACVERR_SNPSVER GENMASK(7, 0)
-#define DWMAC_CORE_3_70       0x37U
+
+#define DWMAC_VERSION_REG DWMAC_MACVERR
 
 /* MAC address high register bits (entries 1 and up) */
 #define DWMAC_MACAHR_AE  BIT(31)
@@ -1574,6 +1583,10 @@ extern const struct ethernet_api dwmac_api;
 #define MAC_MDIO_DATA_GD GENMASK(15, 0)
 
 #endif /* CONFIG_ETH_DWC_ETHER_1000_CORE */
+
+/* MAC version register bits, the same in both cores */
+#define DWMAC_VERSION_SNPSVER GENMASK(7, 0)
+#define DWMAC_CORE_3_70       0x37U
 
 /*
  * MAC management counters (MMC)
