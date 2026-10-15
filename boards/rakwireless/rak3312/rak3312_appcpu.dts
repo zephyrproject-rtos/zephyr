@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2025 Kenneth Lu
  * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
  */
 
 /dts-v1/;
-#include <espressif/esp32s3/esp32s3.dtsi>
+#include <rakwireless/rak3112.dtsi>
 #include <espressif/partitions_0x0_amp_16M.dtsi>
 
 / {
-	model = "RAK3112 APPCPU";
-	compatible = "rakwireless,rak3112";
+	model = "RAK3312 WisBlock Core Module APPCPU";
+	compatible = "rakwireless,rak3312";
 
 	chosen {
 		zephyr,sram = &sram1;
@@ -20,15 +20,10 @@
 	};
 };
 
-&flash0 {
-	reg = <0x0 DT_SIZE_M(16)>;
-	ranges = <0x0 0x0 DT_SIZE_M(16)>;
-};
-
-&psram0 {
-	size = <DT_SIZE_M(2)>;
-};
-
 &trng0 {
+	status = "okay";
+};
+
+&ipm0 {
 	status = "okay";
 };
