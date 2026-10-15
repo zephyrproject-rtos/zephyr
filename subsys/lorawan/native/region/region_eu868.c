@@ -231,7 +231,7 @@ static int eu868_apply_cflist(const uint8_t cflist[16],
 		freq *= CFLIST_FREQ_STEP_HZ;
 
 		if (freq == 0) {
-			ch[idx].enabled = false;
+			ch[idx] = (struct lwan_channel){ 0 };
 			continue;
 		}
 
@@ -358,7 +358,8 @@ static int eu868_select_data_channel(const struct lwan_channel *ch,
 	uint8_t idx;
 
 	for (size_t i = 0; i < count; i++) {
-		if (!ch[i].enabled || dr < ch[i].min_dr || dr > ch[i].max_dr) {
+		if (!ch[i].enabled || ch[i].frequency == 0 ||
+		    dr < ch[i].min_dr || dr > ch[i].max_dr) {
 			continue;
 		}
 
