@@ -1,0 +1,52 @@
+# Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SFP
+	bool "SFP / pluggable optical module drivers"
+	help
+	  Enable drivers for SFP/SFP+ pluggable transceiver modules and their
+	  management interfaces.
+
+if SFP
+
+module = SFP
+module-str = sfp
+source "subsys/logging/Kconfig.template.log_config"
+
+config SFP_INIT_PRIORITY
+	int "SFP module driver init priority"
+	default 90
+	help
+	  Initialization priority for SFP module drivers. Must be greater than
+	  the I2C controller init priority.
+
+config SFP_SFF8472
+	bool "SFF-8472 (SFP/SFP+) I2C module driver"
+	default y
+	depends on DT_HAS_SFF_SFF8472_ENABLED
+	select I2C
+	select SFF8472
+	help
+	  Enable the I2C driver for SFF-8472 managed SFP/SFP+ modules. It reads
+	  the serial ID (A0h) and digital diagnostic monitoring (A2h) pages and
+	  decodes them through the SFF-8472 library.
+
+config EMUL_SFF8472
+	bool "Emulate an SFF-8472 (SFP/SFP+) module"
+	default y
+	depends on EMUL
+	depends on SFP_SFF8472
+	help
+	  Provide an emulator that serves a canned SFF-8472 module image over
+	  the I2C emulation bus, so the driver can be exercised without
+	  hardware.
+
+config SFP_SHELL
+	bool "SFP module shell"
+	depends on SHELL
+	help
+	  Enable a shell module providing "sfp info" and "sfp ddm" commands to
+	  inspect SFP modules.
+
+endif # SFP
