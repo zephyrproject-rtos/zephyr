@@ -215,7 +215,7 @@ int video_init_button_ctrl(struct video_ctrl *ctrl, const struct device *dev, ui
 	int ret;
 
 	ret = video_init_ctrl(ctrl, dev, id,
-		(struct video_ctrl_range){.min = 0, .max = 0, .step = 0, .def = 0});
+		(struct video_ctrl_range){.min = 0, .max = 0, .step = 1, .def = 0});
 	if (ret) {
 		return ret;
 	}
