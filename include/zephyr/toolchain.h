@@ -151,6 +151,27 @@
 #define TOOLCHAIN_PRAGMA(x)
 #endif
 
+/**
+ * @def CODE_ASSUME(cond)
+ * @brief Tell the optimizer that @p cond holds.
+ *
+ * This is purely an optimization hint: the compiler may use @p cond to
+ * simplify the code that follows it, but nothing is checked at run time, not
+ * even with @kconfig{CONFIG_ASSERT}.
+ *
+ * @warning The behavior is undefined if @p cond is false. Only use this when
+ * @p cond is known to always hold, but the compiler cannot prove it.
+ *
+ * @p cond must not have side effects: depending on the toolchain it may be
+ * evaluated, discarded or ignored. Toolchains without a suitable mechanism
+ * expand this to nothing.
+ *
+ * @param cond Side-effect free boolean expression that is known to be true.
+ */
+#ifndef CODE_ASSUME
+#define CODE_ASSUME(cond) ((void)0)
+#endif
+
 /** @} */
 
 /** @name Compiler warning identifiers

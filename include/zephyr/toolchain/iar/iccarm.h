@@ -96,6 +96,12 @@
 	return_type new_alias() ALIAS_OF(real_func)
 
 #define CODE_UNREACHABLE __builtin_unreachable()
+#define CODE_ASSUME(cond)                                                                          \
+	do {                                                                                       \
+		if (!(cond)) {                                                                     \
+			__builtin_unreachable();                                                   \
+		}                                                                                  \
+	} while (false)
 #define FUNC_NORETURN    __attribute__((__noreturn__))
 
 #define _NODATA_SECTION(segment)  __attribute__((section(#segment)))
