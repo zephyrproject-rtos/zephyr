@@ -70,6 +70,7 @@ struct ina3221_config {
 	enum ina3221_conv_time conv_time_shunt;
 	bool enable_channel[3];
 	uint16_t shunt_r[3];
+	bool continuous_mode;
 };
 
 struct ina3221_data {
