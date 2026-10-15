@@ -9,4 +9,18 @@ config TFM_PS_ROLLBACK_PROTECTION
 	help
 	  Enable rollback protection for the Protected Storage partition.
 
+config TFM_PS_MAX_ASSET_SIZE_OVERRIDE
+	bool "Override maximum Protected Storage asset size"
+	help
+	  Override the platform's default maximum size of a single asset to be
+	  stored in Protected Storage (PS) with TFM_PS_MAX_ASSET_SIZE.
+
+config TFM_PS_MAX_ASSET_SIZE
+	int "Maximum Protected Storage asset size"
+	depends on TFM_PS_MAX_ASSET_SIZE_OVERRIDE
+	default 2048
+	help
+	  Maximum size (in bytes) of a single asset to be stored in Protected
+	  Storage (PS).
+
 endif # TFM_PARTITION_PROTECTED_STORAGE

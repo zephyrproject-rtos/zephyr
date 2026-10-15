@@ -16,4 +16,17 @@ typedef uint8_t secure_storage_packed_create_flags_t;
 	 PSA_STORAGE_FLAG_NO_CONFIDENTIALITY | \
 	 PSA_STORAGE_FLAG_NO_REPLAY_PROTECTION)
 
+/* For logging a `psa_storage_uid_t`, whose used width depends on the configuration. */
+#ifdef CONFIG_SECURE_STORAGE_64_BIT_UID
+/** Format specifier for logging a `psa_storage_uid_t`. */
+#define PSA_UID_FMT           "%#llx"
+/** Argument for logging a `psa_storage_uid_t` with @ref PSA_UID_FMT. */
+#define PSA_UID_ARGS(psa_uid) (unsigned long long)(psa_uid)
+#else
+/** Format specifier for logging a `psa_storage_uid_t`. */
+#define PSA_UID_FMT           "%#lx"
+/** Argument for logging a `psa_storage_uid_t` with @ref PSA_UID_FMT. */
+#define PSA_UID_ARGS(psa_uid) (unsigned long)(psa_uid)
+#endif
+
 #endif

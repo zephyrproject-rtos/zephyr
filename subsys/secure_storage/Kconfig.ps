@@ -1,0 +1,96 @@
+# Copyright (c) 2026 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+choice SECURE_STORAGE_PS_IMPLEMENTATION
+	prompt "Protected Storage (PS) API implementation"
+	default SECURE_STORAGE_PS_IMPLEMENTATION_ITS
+
+config SECURE_STORAGE_PS_IMPLEMENTATION_ZEPHYR
+	bool "Zephyr's PS implementation"
+	select SECURE_STORAGE_PS_TRANSFORM_MODULE
+	select SECURE_STORAGE_PS_STORE_MODULE
+	select SECURE_STORAGE_PS_REPLAY_PROTECTION_MODULE
+	help
+	  Use Zephyr's implementation of the PS API.
+	  It calls into the transform, store and replay protection modules, which
+	  can be configured and have custom implementations.
+	  The replay protection values are stored through the ITS API, so an ITS
+	  implementation (Zephyr's or a custom one) must be available.
+	  Warning: the way entries are stored is not compatible with
+	           SECURE_STORAGE_PS_IMPLEMENTATION_ITS. Do not enable this on
+	           devices that already have PS entries stored with
+	           SECURE_STORAGE_PS_IMPLEMENTATION_ITS: these entries are not
+	           migrated and can no longer be read, and they may not be
+	           overwritten or removed either.
+
+config SECURE_STORAGE_PS_IMPLEMENTATION_ITS
+	bool "PS calls directly into the ITS"
+	help
+	  The PS API doesn't have an implementation of its own, and directly calls into the ITS API.
+	  This means that the implementation of the PS API will be identical to that of the ITS API.
+
+config SECURE_STORAGE_PS_IMPLEMENTATION_CUSTOM
+	bool "Custom PS implementation"
+	help
+	  A custom implementation of the PS API is present.
+	  Implement the functions declared in <zephyr/secure_storage/ps.h>.
+	  The header is made available when this Kconfig option is enabled.
+
+endchoice # SECURE_STORAGE_PS_IMPLEMENTATION
+
+config SECURE_STORAGE_PS_SUPPORTS_SET_EXTENDED
+	bool "PS API implementation supports psa_ps_create() and psa_ps_set_extended()"
+	depends on SECURE_STORAGE_PS_IMPLEMENTATION_CUSTOM
+	help
+	  Whether the psa_ps_create() and psa_ps_set_extended() functions are implemented.
+
+config SECURE_STORAGE_PS_MAX_DATA_SIZE
+	int "Maximum data size of a PS entry in bytes"
+	default 128
+	help
+	  The maximum size, in bytes, that the data of a PS entry can be.
+	  Increasing this value increases the stack usage when serving PSA PS API calls.
+	  With SECURE_STORAGE_PS_IMPLEMENTATION_ZEPHYR, PS API calls also call into the
+	  ITS API to handle the replay protection values, so their stack usage also
+	  depends on SECURE_STORAGE_ITS_MAX_DATA_SIZE.
+
+menuconfig SECURE_STORAGE_PS_TRANSFORM_MODULE
+	bool "PS transform module"
+	depends on SECURE_STORAGE_PS_IMPLEMENTATION_ZEPHYR
+	help
+	  The module that handles the transformation and validation of the
+	  PS data before it's written to and after it's read from NVM.
+	  Zephyr's PS implementation calls into it.
+
+if SECURE_STORAGE_PS_TRANSFORM_MODULE
+
+rsource "Kconfig.ps_transform"
+
+endif
+
+menuconfig SECURE_STORAGE_PS_STORE_MODULE
+	bool "PS store module"
+	depends on SECURE_STORAGE_PS_IMPLEMENTATION_ZEPHYR
+	help
+	  The module that handles the storage/retrieval of the PS data to/from NVM.
+	  Zephyr's PS implementation calls into it.
+
+if SECURE_STORAGE_PS_STORE_MODULE
+
+rsource "Kconfig.ps_store"
+
+endif
+
+menuconfig SECURE_STORAGE_PS_REPLAY_PROTECTION_MODULE
+	bool "PS replay protection module"
+	depends on SECURE_STORAGE_PS_IMPLEMENTATION_ZEPHYR
+	help
+	  The module that computes the replay protection value of the PS data
+	  that is written to and read from ITS. Zephyr's PS implementation calls
+	  into it.
+
+if SECURE_STORAGE_PS_REPLAY_PROTECTION_MODULE
+
+rsource "Kconfig.ps_replay_protection"
+
+endif
