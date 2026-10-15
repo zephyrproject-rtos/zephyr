@@ -2428,7 +2428,8 @@ static int tls_check_credentials(const sec_tag_t *sec_tags, int sec_tag_count)
 				 */
 				break;
 			default:
-				return -EINVAL;
+				err = -EINVAL;
+				goto exit;
 			}
 		}
 
