@@ -22,7 +22,6 @@
 #include "ble_init.h"
 #include "assert.h"
 #include "comdef.h"
-
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
 
@@ -167,18 +166,6 @@ static const enum bt_buf_type bt_buf_type_in[6] = {
 	HCI_TYPE_INVALID /* BT_HCI_H4_ISO  */ /* NOT SUPPORTED */
 };
 
-static const uint8_t bt_buf_type_out[6] = {
-	BT_HCI_H4_CMD, /* BT_BUF_CMD      */
-	HCI_TYPE_INVALID,
-	/* BT_BUF_EVT      */ /* NOT SUPPORTED */
-	BT_HCI_H4_ACL,        /* BT_BUF_ACL_OUT  */
-	HCI_TYPE_INVALID,
-	/* BT_BUF_ISO_OUT  */ /* NOT SUPPORTED */
-	HCI_TYPE_INVALID,
-	/* BT_BUF_ISO_IN   */                  /* NOT SUPPORTED */
-	HCI_TYPE_INVALID /* BT_BUF_H4       */ /* NOT SUPPORTED */
-};
-
 static bool is_hci_event_discardable(uint8 *pHciPkt)
 {
 	bool ret = false;
@@ -197,25 +184,6 @@ static bool is_hci_event_discardable(uint8 *pHciPkt)
 	return ret;
 }
 
-static int hci_driver_add_pkt_type(struct net_buf *buf)
-{
-	/* Read the net_buf buffer packet type */
-	enum bt_buf_type type = bt_buf_get_type(buf);
-
-	/* Translate the net_buf buffer packet type into the HCI Packet type */
-	uint8_t h4_type = bt_buf_type_out[type];
-
-	if (h4_type == HCI_TYPE_INVALID) {
-		LOG_ERR("Received Invalid pkt type from the Host: %u", type);
-		return -EINVAL;
-	}
-
-	/* Add the HCI Packet type to the buffer */
-	net_buf_push_u8(buf, h4_type);
-
-	return 0; /* Assuming 0 indicates success */
-}
-
 static int hci_driver_send(const struct device *dev, struct net_buf *buf)
 {
 	static bool first_entry = true;
@@ -230,15 +198,9 @@ static int hci_driver_send(const struct device *dev, struct net_buf *buf)
 		ICall_registerApp(&icall_entity_dummy, &syncEvent_dummy);
 	}
 
-	/* Add the HCI Packet type to the buffer */
-	err = hci_driver_add_pkt_type(buf);
-	if (err) {
-		net_buf_unref(buf);
-		LOG_ERR("Failed to add HCI packet type");
-		return err;
-	}
-
-	/* Send the buffer to the device */
+	/* H4 type is already prepended by the host (Zephyr 4.4 API contract).
+	 * Pass the full H4-prefixed buffer directly to the controller.
+	 */
 	err = HCI_HostToControllerSend(buf->data, buf->len);
 	if (err) {
 		net_buf_unref(buf);

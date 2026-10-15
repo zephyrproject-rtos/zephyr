@@ -393,6 +393,17 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 	/* Host Number of Completed Packets can ignore the ncmd value
 	 * and does not generate any cmd complete/status events.
 	 */
+	if (opcode == BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS) {
+		int err;
+
+		err = bt_send(buf);
+		if (err) {
+			LOG_ERR("Unable to send to driver (err %d)", err);
+			net_buf_unref(buf);
+		}
+
+		return err;
+	}
 
 	k_fifo_put(&bt_dev.cmd_tx_queue, buf);
 	bt_tx_irq_raise();
@@ -2589,9 +2600,8 @@ static void hci_cmd_complete(struct net_buf *buf)
 
 	/* Allow next command to be sent */
 	if (ncmd) {
-		if (cmd(buf)->opcode != BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS) {
-			k_sem_give(&bt_dev.ncmd_sem);
-		}
+		k_sem_give(&bt_dev.ncmd_sem);
+		bt_tx_irq_raise();
 	}
 }
 
@@ -2611,9 +2621,8 @@ static void hci_cmd_status(struct net_buf *buf)
 
 	/* Allow next command to be sent */
 	if (ncmd) {
-		if (cmd(buf)->opcode != BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS) {
-			k_sem_give(&bt_dev.ncmd_sem);
-		}
+		k_sem_give(&bt_dev.ncmd_sem);
+		bt_tx_irq_raise();
 	}
 }
 
@@ -3232,11 +3241,6 @@ static void hci_core_send_cmd(void)
 	buf = k_fifo_get(&bt_dev.cmd_tx_queue, K_NO_WAIT);
 	BT_ASSERT(buf);
 
-	/* Wait until ncmd > 0 */
-	if (cmd(buf)->opcode != BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS) {
-		LOG_DBG("calling sem_take_wait");
-		k_sem_take(&bt_dev.ncmd_sem, K_FOREVER);
-	}
 	/* Clear out any existing sent command */
 	if (bt_dev.sent_cmd) {
 		LOG_ERR("Uncleared pending sent_cmd");
@@ -3249,11 +3253,8 @@ static void hci_core_send_cmd(void)
 
 	err = bt_send(buf);
 	if (err) {
-		if (cmd(buf)->opcode != BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS) {
-			LOG_ERR("send_cmd: Unable to send 0x%04x to driver (err %d)",
-				cmd(buf)->opcode, err);
-			k_sem_give(&bt_dev.ncmd_sem);
-		}
+		LOG_ERR("Unable to send to driver (err %d)", err);
+		k_sem_give(&bt_dev.ncmd_sem);
 		hci_cmd_done(cmd(buf)->opcode, BT_HCI_ERR_UNSPECIFIED, buf);
 		net_buf_unref(buf);
 		bt_tx_irq_raise();
@@ -3500,7 +3501,6 @@ static int common_init(void)
 		if (err) {
 			return err;
 		}
-
 		hci_reset_complete();
 	}
 

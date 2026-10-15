@@ -17,8 +17,6 @@
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/bluetooth/uuid.h>
 
-#include <host/long_wq.h>
-
 #include "common/bt_str.h"
 
 #include "crypto.h"
@@ -363,7 +361,7 @@ static void prov_dh_key_gen_handler(struct k_work *work)
 	prov_dh_key_gen();
 }
 
-static K_WORK_DELAYABLE_DEFINE(dh_gen_work, prov_dh_key_gen_handler);
+static K_WORK_DEFINE(dh_gen_work, prov_dh_key_gen_handler);
 
 static void prov_pub_key(const uint8_t *data)
 {
@@ -392,7 +390,7 @@ static void prov_pub_key(const uint8_t *data)
 		       PDU_LEN_PUB_KEY);
 	}
 
-	bt_long_wq_schedule(&dh_gen_work, K_MSEC(3000));
+	k_work_submit(&dh_gen_work);
 }
 
 static void notify_input_complete(void)

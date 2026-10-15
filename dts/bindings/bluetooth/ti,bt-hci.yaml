@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+# TI Internal Bluetooth HCI device (integrated SoC controller)
+
+include: bt-hci.yaml
+
+description: Bluetooth HCI provided by internal TI SoC controller
+
+compatible: "ti,bt-hci"
+
+properties:
+  bt-hci-name:
+    default: "TI BT HCI"
+  bt-hci-bus:
+    default: "virtual"
+  bt-hci-quirks:
+    default: ["no-reset"]

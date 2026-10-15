@@ -1190,7 +1190,8 @@ static void write_oacp_cp_write_req_cb(struct bt_conn *conn, uint8_t err,
 	err = bt_gatt_ots_l2cap_send(&inst->l2cap_ctx, inst->l2cap_ctx.tx.data, len);
 	if (err) {
 		LOG_WRN("L2CAP CoC error: %d while trying to execute OACP "
-			"Read procedure", err);
+			"Read procedure",
+			err);
 	}
 
 	inst->busy = false;

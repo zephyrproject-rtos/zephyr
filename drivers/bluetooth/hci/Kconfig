@@ -229,7 +229,6 @@ config BT_HCI_TI_LPF3
 config BT_HCI_TI_CC35XX
 	bool "Texas Instruments CC35xx family Bluetooth Controller"
 	depends on DT_HAS_TI_CC35XX_BT_HCI_ENABLED
-	depends on !BT_HCI_ACL_FLOW_CONTROL
 	select BT_HCI_SETUP
 	select BT_HCI_SET_PUBLIC_ADDR
 	select BT_EXT_ADV

@@ -215,7 +215,7 @@ tests:
   sample.mcumgr.smp_svr.ti_lpf3_bt_dfu_onchip_v1:
     sysbuild: true
     extra_args:
-      - OVERLAY_CONFIG="overlay-bt.conf;boards/ti_lpf3_bt_dfu.conf"
+      - OVERLAY_CONFIG="bt.conf;boards/ti_lpf3_bt_dfu.conf"
       - mcuboot_SNIPPET=ti-max-sectors-onchip-cc27xx
     extra_configs:
       - CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION="1.0.0+0"
@@ -231,7 +231,7 @@ tests:
   sample.mcumgr.smp_svr.ti_lpf3_bt_dfu_onchip_v2:
     sysbuild: true
     extra_args:
-      - OVERLAY_CONFIG="overlay-bt.conf;boards/ti_lpf3_bt_dfu.conf"
+      - OVERLAY_CONFIG="bt.conf;boards/ti_lpf3_bt_dfu.conf"
       - mcuboot_SNIPPET=ti-max-sectors-onchip-cc27xx
     extra_configs:
       - CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION="2.0.0+0"
@@ -247,7 +247,7 @@ tests:
   sample.mcumgr.smp_svr.ti_lpf3_bt_dfu_offchip_v1:
     sysbuild: true
     extra_args:
-      - OVERLAY_CONFIG="overlay-bt.conf;boards/ti_lpf3_bt_dfu.conf"
+      - OVERLAY_CONFIG="bt.conf;boards/ti_lpf3_bt_dfu.conf"
       - SNIPPET="ti-spi-nor-secondary-app"
       - mcuboot_SNIPPET=ti-spi-nor-secondary-bl
     extra_configs:
@@ -264,7 +264,7 @@ tests:
   sample.mcumgr.smp_svr.ti_lpf3_bt_dfu_offchip_v2:
     sysbuild: true
     extra_args:
-      - OVERLAY_CONFIG="overlay-bt.conf;boards/ti_lpf3_bt_dfu.conf"
+      - OVERLAY_CONFIG="bt.conf;boards/ti_lpf3_bt_dfu.conf"
       - SNIPPET="ti-spi-nor-secondary-app"
       - mcuboot_SNIPPET=ti-spi-nor-secondary-bl
     extra_configs:
