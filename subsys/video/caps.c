@@ -44,10 +44,20 @@ int video_transform_cap(const struct device *const dev,
 			struct video_format_cap *const res_cap,
 			enum video_buf_type type, uint16_t ind)
 {
+	int ret;
+
 	if (dev == NULL || cap == NULL || res_cap == NULL ||
 	    (type != VIDEO_BUF_TYPE_INPUT && type != VIDEO_BUF_TYPE_OUTPUT)) {
 		return -EINVAL;
 	}
 
-	return video_driver_transform_cap(dev, cap, res_cap, type, ind);
+	ret = video_driver_transform_cap(dev, cap, res_cap, type, ind);
+	if (ret == -ENOSYS) {
+		*res_cap = *cap;
+	} else if (ret < 0) {
+		LOG_ERR("Failed to query format capabilities: %d", ret);
+		return ret;
+	}
+
+	return 0;
 }
