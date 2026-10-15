@@ -329,10 +329,11 @@ static int pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
 	settings.function = (pin->flags & RCAR_PIN_FLAGS_FUNC_SET) ?
 			     pin->func.func : SCMI_PINCTRL_NO_FUNCTION;
 
-	/* Bias enable/disable */
-	if (pin->flags & RCAR_PIN_FLAGS_PULL_SET) {
+	/* Bias disable, pull-up and pull-down go in PULL_MODE below */
+	if (((pin->flags & RCAR_PIN_FLAGS_PULL_SET) != 0U) &&
+	    ((pin->flags & RCAR_PIN_FLAGS_PUEN) == 0U)) {
 		settings.config[config_cnt++] = SCMI_PINCTRL_BIAS_DISABLE;
-		settings.config[config_cnt++] = (pin->flags & RCAR_PIN_FLAGS_PUEN) ? 0 : 1;
+		settings.config[config_cnt++] = 1;
 	}
 
 	/* Drive strength, in uA */
