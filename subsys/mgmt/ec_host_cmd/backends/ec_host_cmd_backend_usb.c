@@ -116,8 +116,17 @@ struct ec_host_cmd_usb_ctx {
 	struct k_work_delayable reset_work;
 };
 
-static size_t expected_request_len(const struct ec_host_cmd_request_header *header)
+/*
+ * Return the number of request bytes still to be received, or 0 when receiving is done: the
+ * request is complete, its header is invalid or it does not fit in the RX buffer. Invalid
+ * requests are passed to the handler as they are, so that it replies with an error code.
+ */
+static size_t remaining_request_len(const struct ec_host_cmd_rx_ctx *rx_ctx)
 {
+	const struct ec_host_cmd_request_header *header =
+		(const struct ec_host_cmd_request_header *)rx_ctx->buf;
+	size_t expected_len;
+
 	/* Check host request version */
 	if (header->prtcl_ver != EC_HOST_REQUEST_VERSION) {
 		return 0;
@@ -128,7 +137,20 @@ static size_t expected_request_len(const struct ec_host_cmd_request_header *head
 		return 0;
 	}
 
-	return sizeof(*header) + header->data_len;
+	expected_len = sizeof(*header) + header->data_len;
+	if (expected_len > rx_ctx->len_max) {
+		return 0;
+	}
+
+	if (rx_ctx->len >= expected_len) {
+		if (rx_ctx->len > expected_len) {
+			LOG_ERR("Received incorrect number of bytes, got: %zu, expected: %zu",
+				rx_ctx->len, expected_len);
+		}
+		return 0;
+	}
+
+	return expected_len - rx_ctx->len;
 }
 
 static inline uint8_t ec_host_cmd_get_out_ep(struct usbd_class_data *const c_data)
@@ -222,17 +244,11 @@ static int handle_out_transfer(struct usbd_class_data *const c_data)
 {
 	int ret;
 	struct ec_host_cmd_usb_ctx *ctx = usbd_class_get_private(c_data);
-	size_t expected_len =
-		expected_request_len((struct ec_host_cmd_request_header *)ctx->rx_ctx->buf);
+	size_t remaining_len = remaining_request_len(ctx->rx_ctx);
 
 	/* Notify about a new command or response with a proper error code. */
-	if ((ctx->rx_ctx->len >= expected_len) || (expected_len == 0) ||
-	    (expected_len > ctx->rx_ctx->len_max)) {
+	if (remaining_len == 0U) {
 		k_work_cancel_delayable(&ctx->reset_work);
-		if (ctx->rx_ctx->len > expected_len) {
-			LOG_ERR("Received incorrect number of bytes, got: %d, expected: %d",
-				ctx->rx_ctx->len, expected_len);
-		}
 		ctx->state = USB_EC_HOST_CMD_STATE_PROCESSING;
 		ec_host_cmd_rx_notify();
 	}
@@ -244,9 +260,9 @@ static int handle_out_transfer(struct usbd_class_data *const c_data)
 			k_work_reschedule(&ctx->reset_work, K_NO_WAIT);
 			return 0;
 		}
-		ctx->usb_rx_buf = ec_host_cmd_buf_alloc(ec_host_cmd_get_out_ep(c_data),
-							expected_len - ctx->rx_ctx->len,
-							ctx->rx_ctx->buf + ctx->rx_ctx->len);
+		ctx->usb_rx_buf =
+			ec_host_cmd_buf_alloc(ec_host_cmd_get_out_ep(c_data), remaining_len,
+					      ctx->rx_ctx->buf + ctx->rx_ctx->len);
 		if (ctx->usb_rx_buf == NULL) {
 			LOG_ERR("Failed to allocate buf OUT");
 			k_work_reschedule(&ctx->reset_work, K_NO_WAIT);
