@@ -322,19 +322,6 @@ static int video_nsi_fifo_enqueue(const struct device *dev, struct video_buffer 
 	return ret;
 }
 
-static int video_nsi_fifo_dequeue(const struct device *dev, struct video_buffer **vbuf,
-				  k_timeout_t timeout)
-{
-	struct video_nsi_fifo_data *data = dev->data;
-
-	*vbuf = k_fifo_get(&data->vdev.out_buf_completed, timeout);
-	if (*vbuf == NULL) {
-		return -EAGAIN;
-	}
-
-	return 0;
-}
-
 static int video_nsi_fifo_flush(const struct device *dev, bool cancel)
 {
 	struct video_nsi_fifo_data *data = dev->data;
@@ -365,7 +352,6 @@ static DEVICE_API(video, video_nsi_fifo_driver_api) = {
 	.get_caps = video_nsi_fifo_get_caps,
 	.set_stream = video_nsi_fifo_set_stream,
 	.enqueue = video_nsi_fifo_enqueue,
-	.dequeue = video_nsi_fifo_dequeue,
 	.flush = video_nsi_fifo_flush,
 };
 

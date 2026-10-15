@@ -248,19 +248,6 @@ static int video_mcux_csi_enqueue(const struct device *dev, struct video_buffer 
 	return 0;
 }
 
-static int video_mcux_csi_dequeue(const struct device *dev, struct video_buffer **vbuf,
-				  k_timeout_t timeout)
-{
-	struct video_mcux_csi_data *data = dev->data;
-
-	*vbuf = k_fifo_get(&data->vdev.out_buf_completed, timeout);
-	if (*vbuf == NULL) {
-		return -EAGAIN;
-	}
-
-	return 0;
-}
-
 static int video_mcux_csi_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	const struct video_mcux_csi_config *config = dev->config;
@@ -360,7 +347,6 @@ static DEVICE_API(video, video_mcux_csi_driver_api) = {
 	.set_stream = video_mcux_csi_set_stream,
 	.flush = video_mcux_csi_flush,
 	.enqueue = video_mcux_csi_enqueue,
-	.dequeue = video_mcux_csi_dequeue,
 	.get_caps = video_mcux_csi_get_caps,
 	.enum_frmival = video_mcux_csi_enum_frmival,
 };

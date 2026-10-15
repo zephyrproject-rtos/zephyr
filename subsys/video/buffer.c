@@ -197,8 +197,19 @@ int video_dequeue(const struct device *dev, struct video_buffer **vbuf,
 
 	vdev = dev->data;
 
+	switch ((*vbuf)->type) {
+	case VIDEO_BUF_TYPE_INPUT:
+		fifo = vdev->in_fifo_completed;
+		break;
+	case VIDEO_BUF_TYPE_OUTPUT:
+		fifo = vdev->out_fifo_completed;
+		break;
+	default:
+		__ASSERT_NO_MSG(false);
+	}
+
 	k_mutex_lock(&vdev->lock, K_FOREVER);
-	ret = video_driver_dequeue(dev, vbuf, timeout);
+	ret = k_fifo_get(fifo, timeout);
 	k_mutex_unlock(&vdev->lock);
 
 	return ret;

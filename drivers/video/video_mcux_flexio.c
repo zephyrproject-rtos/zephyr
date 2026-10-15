@@ -379,20 +379,6 @@ static int nxp_flexio_camera_enqueue(const struct device *dev,
 	return 0;
 }
 
-static int nxp_flexio_camera_dequeue(const struct device *dev,
-				     struct video_buffer **vbuf,
-				     k_timeout_t timeout)
-{
-	struct nxp_flexio_camera_data *data = dev->data;
-
-	*vbuf = k_fifo_get(&data->vdev.out_buf_completed, timeout);
-	if (*vbuf == NULL) {
-		return -EAGAIN;
-	}
-
-	return 0;
-}
-
 static int nxp_flexio_camera_flush(const struct device *dev, bool cancel)
 {
 	const struct nxp_flexio_camera_config *config = dev->config;
@@ -493,7 +479,6 @@ static DEVICE_API(video, nxp_flexio_camera_api) = {
 	.get_caps   = nxp_flexio_camera_get_caps,
 	.set_stream = nxp_flexio_camera_set_stream,
 	.enqueue    = nxp_flexio_camera_enqueue,
-	.dequeue    = nxp_flexio_camera_dequeue,
 	.flush      = nxp_flexio_camera_flush,
 };
 

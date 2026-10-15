@@ -247,20 +247,6 @@ static int video_esp32_enqueue(const struct device *dev, struct video_buffer *vb
 	return 0;
 }
 
-static int video_esp32_dequeue(const struct device *dev, struct video_buffer **vbuf,
-			       k_timeout_t timeout)
-{
-	struct video_esp32_data *data = dev->data;
-
-	*vbuf = k_fifo_get(&data->vdev.out_buf_completed, timeout);
-	LOG_DBG("Dequeue done, vbuf = %p", *vbuf);
-	if (*vbuf == NULL) {
-		return -EAGAIN;
-	}
-
-	return 0;
-}
-
 static int video_esp32_flush(const struct device *dev, bool cancel)
 {
 	struct video_esp32_data *data = dev->data;
@@ -359,7 +345,6 @@ static DEVICE_API(video, esp32_driver_api) = {
 	.set_stream = video_esp32_set_stream,
 	.get_caps = video_esp32_get_caps,
 	.enqueue = video_esp32_enqueue,
-	.dequeue = video_esp32_dequeue,
 	.flush = video_esp32_flush,
 	.set_selection = video_esp32_set_selection,
 	.get_selection = video_esp32_get_selection,

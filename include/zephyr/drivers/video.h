@@ -189,13 +189,6 @@ typedef int (*video_api_enum_frmival_t)(const struct device *dev, struct video_f
 typedef int (*video_api_enqueue_t)(const struct device *dev, struct video_buffer *buf);
 
 /**
- * @brief Callback API to dequeue a buffer from the driver outgoing queue.
- * See @a video_driver_dequeue() for argument description.
- */
-typedef int (*video_api_dequeue_t)(const struct device *dev, struct video_buffer **buf,
-				   k_timeout_t timeout);
-
-/**
  * @brief Callback API to flush endpoint buffers.
  * See @a video_driver_flush() for argument description.
  */
@@ -255,10 +248,6 @@ __subsystem struct video_driver_api {
 	 * @driver_ops_optional @copybrief video_driver_enqueue
 	 */
 	video_api_enqueue_t enqueue;
-	/**
-	 * @driver_ops_optional @copybrief video_driver_dequeue
-	 */
-	video_api_dequeue_t dequeue;
 	/**
 	 * @driver_ops_optional @copybrief video_driver_flush
 	 */
@@ -419,31 +408,6 @@ static inline int video_driver_enqueue(const struct device *dev, struct video_bu
 	}
 
 	return api->enqueue(dev, vbuf);
-}
-
-/**
- * @brief Dequeue a video buffer from a driver.
- *
- * Dequeue a filled (capturing) or displayed (output) buffer from the driver’s
- * endpoint outgoing queue.
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param vbuf Pointer a video buffer pointer.
- * @param timeout Timeout
- *
- * @retval 0 on success.
- * @retval -ENOSYS API is not implemented.
- */
-static inline int video_driver_dequeue(const struct device *dev, struct video_buffer **vbuf,
-				       k_timeout_t timeout)
-{
-	const struct video_driver_api *api = DEVICE_API_GET(video, dev);
-
-	if (api->dequeue == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->dequeue(dev, vbuf, timeout);
 }
 
 /**

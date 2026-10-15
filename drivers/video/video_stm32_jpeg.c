@@ -402,21 +402,6 @@ static int stm32_jpeg_enqueue(const struct device *dev, struct video_buffer *vbu
 	return 0;
 }
 
-static int stm32_jpeg_dequeue(const struct device *dev, struct video_buffer **vbuf,
-			      k_timeout_t timeout)
-{
-	struct stm32_jpeg_data *data = dev->data;
-	struct video_common_header *common =
-		(*vbuf)->type == VIDEO_BUF_TYPE_INPUT ? &data->vdev.in : &data->vdev.out;
-
-	*vbuf = k_fifo_get(&common->out_buf_completed, timeout);
-	if (*vbuf == NULL) {
-		return -EAGAIN;
-	}
-
-	return 0;
-}
-
 static int stm32_jpeg_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	if (caps->type == VIDEO_BUF_TYPE_OUTPUT) {
@@ -433,7 +418,6 @@ static int stm32_jpeg_get_caps(const struct device *dev, struct video_caps *caps
 static DEVICE_API(video, stm32_jpeg_driver_api) = {
 	.set_stream = stm32_jpeg_set_stream,
 	.enqueue = stm32_jpeg_enqueue,
-	.dequeue = stm32_jpeg_dequeue,
 	.get_caps = stm32_jpeg_get_caps,
 };
 

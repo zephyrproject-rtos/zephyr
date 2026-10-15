@@ -82,20 +82,6 @@ static int emul_rx_enqueue(const struct device *dev, struct video_buffer *vbuf)
 	return 0;
 }
 
-static int emul_rx_dequeue(const struct device *dev, struct video_buffer **vbufp,
-			   k_timeout_t timeout)
-{
-	struct emul_rx_data *data = dev->data;
-
-	/* All the processing is expected to happen in the worker */
-	*vbufp = k_fifo_get(&data->vdev.out_buf_completed, timeout);
-	if (*vbufp == NULL) {
-		return -EAGAIN;
-	}
-
-	return 0;
-}
-
 static int emul_rx_flush(const struct device *dev, bool cancel)
 {
 	struct emul_rx_data *data = dev->data;
@@ -126,7 +112,6 @@ static DEVICE_API(video, emul_rx_driver_api) = {
 	.get_caps = emul_rx_get_caps,
 	.set_stream = emul_rx_set_stream,
 	.enqueue = emul_rx_enqueue,
-	.dequeue = emul_rx_dequeue,
 	.flush = emul_rx_flush,
 };
 

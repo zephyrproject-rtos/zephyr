@@ -254,20 +254,6 @@ static int video_renesas_ra_ceu_enqueue(const struct device *dev, struct video_b
 	return 0;
 }
 
-static int video_renesas_ra_ceu_dequeue(const struct device *dev, struct video_buffer **buf,
-					k_timeout_t timeout)
-{
-	struct video_renesas_ra_ceu_data *data = dev->data;
-
-	*buf = k_fifo_get(&data->vdev.out_buf_completed, timeout);
-	if (*buf == NULL) {
-		LOG_DBG("Dequeue timeout or no completed buffer available");
-		return -EAGAIN;
-	}
-
-	return 0;
-}
-
 static int video_renesas_ra_ceu_flush(const struct device *dev, bool cancel)
 {
 	struct video_renesas_ra_ceu_data *data = dev->data;
@@ -345,7 +331,6 @@ static DEVICE_API(video, video_renesas_ra_ceu_driver_api) = {
 	.get_caps = video_renesas_ra_ceu_get_caps,
 	.set_stream = video_renesas_ra_ceu_set_stream,
 	.enqueue = video_renesas_ra_ceu_enqueue,
-	.dequeue = video_renesas_ra_ceu_dequeue,
 	.flush = video_renesas_ra_ceu_flush,
 };
 

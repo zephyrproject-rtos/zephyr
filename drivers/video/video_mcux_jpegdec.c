@@ -329,21 +329,6 @@ static int mcux_jpegdec_enqueue(const struct device *dev, struct video_buffer *v
 	return ret;
 }
 
-static int mcux_jpegdec_dequeue(const struct device *dev, struct video_buffer **vbuf,
-				k_timeout_t timeout)
-{
-	struct mcux_jpegdec_data *data = dev->data;
-	struct k_fifo *fifo = vbuf->type == VIDEO_BUF_TYPE_INPUT
-		? &data->vdev.in_buf_completed : &data->vdev.out_buf__completed;
-
-	*vbuf = k_fifo_get(fifo, timeout);
-	if (*vbuf == NULL) {
-		return -EAGAIN;
-	}
-
-	return 0;
-}
-
 static int mcux_jpegdec_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	struct mcux_jpegdec_data *data = dev->data;
@@ -397,7 +382,6 @@ static DEVICE_API(video, mcux_jpegdec_driver_api) = {
 	.get_caps = mcux_jpegdec_get_caps,
 	.transform_cap = mcux_jpegdec_transform_cap,
 	.enqueue = mcux_jpegdec_enqueue,
-	.dequeue = mcux_jpegdec_dequeue,
 };
 
 static int mcux_jpegdec_init(const struct device *dev)

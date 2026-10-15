@@ -640,19 +640,6 @@ static int video_sw_generator_enqueue(const struct device *dev, struct video_buf
 	return 0;
 }
 
-static int video_sw_generator_dequeue(const struct device *dev, struct video_buffer **vbuf,
-				      k_timeout_t timeout)
-{
-	struct video_sw_generator_data *data = dev->data;
-
-	*vbuf = k_fifo_get(&data->vdev.out_buf_completed, timeout);
-	if (*vbuf == NULL) {
-		return -EAGAIN;
-	}
-
-	return 0;
-}
-
 static int video_sw_generator_flush(const struct device *dev, bool cancel)
 {
 	struct video_sw_generator_data *data = dev->data;
@@ -722,7 +709,6 @@ static DEVICE_API(video, video_sw_generator_driver_api) = {
 	.set_stream = video_sw_generator_set_stream,
 	.flush = video_sw_generator_flush,
 	.enqueue = video_sw_generator_enqueue,
-	.dequeue = video_sw_generator_dequeue,
 	.get_caps = video_sw_generator_get_caps,
 	.set_frmival = video_sw_generator_set_frmival,
 	.get_frmival = video_sw_generator_get_frmival,

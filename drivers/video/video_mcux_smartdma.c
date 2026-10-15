@@ -163,19 +163,6 @@ static int nxp_video_sdma_enqueue(const struct device *dev, struct video_buffer 
 	return 0;
 }
 
-static int nxp_video_sdma_dequeue(const struct device *dev, struct video_buffer **vbuf,
-				  k_timeout_t timeout)
-{
-	struct nxp_video_sdma_data *data = dev->data;
-
-	*vbuf = k_fifo_get(&data->vdev.out_buf_completed, timeout);
-	if (*vbuf == NULL) {
-		return -EAGAIN;
-	}
-
-	return 0;
-}
-
 static int nxp_video_sdma_flush(const struct device *dev, bool cancel)
 {
 	const struct nxp_video_sdma_config *config = dev->config;
@@ -280,7 +267,6 @@ static DEVICE_API(video, nxp_video_sdma_api) = {
 	.get_caps = nxp_video_sdma_get_caps,
 	.set_stream = nxp_video_sdma_set_stream,
 	.enqueue = nxp_video_sdma_enqueue,
-	.dequeue = nxp_video_sdma_dequeue,
 	.flush = nxp_video_sdma_flush
 };
 

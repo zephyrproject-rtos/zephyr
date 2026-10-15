@@ -1259,19 +1259,6 @@ static int stm32_dcmipp_enqueue(const struct device *dev, struct video_buffer *v
 	return 0;
 }
 
-static int stm32_dcmipp_dequeue(const struct device *dev, struct video_buffer **vbuf,
-				k_timeout_t timeout)
-{
-	struct stm32_dcmipp_pipe_data *pipe = dev->data;
-
-	*vbuf = k_fifo_get(&pipe->out_buf_completed, timeout);
-	if (*vbuf == NULL) {
-		return -EAGAIN;
-	}
-
-	return 0;
-}
-
 /*
  * For MAIN / AUX pipe, it is necessary that the pitch is a multiple of 16 bytes.
  * Give here the multiple in number of pixels, which depends on the format chosen
@@ -1539,7 +1526,6 @@ static DEVICE_API(video, stm32_dcmipp_driver_api) = {
 	.set_format = stm32_dcmipp_set_fmt,
 	.set_stream = stm32_dcmipp_set_stream,
 	.enqueue = stm32_dcmipp_enqueue,
-	.dequeue = stm32_dcmipp_dequeue,
 	.get_caps = stm32_dcmipp_get_caps,
 	.set_selection = stm32_dcmipp_set_selection,
 	.get_selection = stm32_dcmipp_get_selection,
