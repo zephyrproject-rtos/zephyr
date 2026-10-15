@@ -5,6 +5,7 @@
 import logging
 import os
 from dataclasses import dataclass
+from datetime import datetime
 
 from packaging.version import Version
 
@@ -36,6 +37,9 @@ class SBOMConfig:
 
     # should also add an SPDX document for the SDK?
     include_sdk: bool = False
+
+    # creation time to record in the documents; the current time if None
+    created: datetime | None = None
 
 
 # create Cmake file-based API directories and query file
@@ -98,6 +102,8 @@ def make_spdx(cfg):
     if not sbom_graph:
         _logger.error("SPDX walker failed; bailing")
         return False
+    if cfg.created is not None:
+        sbom_graph.created = cfg.created
 
     # set up scanner configuration
     scanner_cfg = ScannerConfig()

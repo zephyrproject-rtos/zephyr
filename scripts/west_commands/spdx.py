@@ -14,6 +14,7 @@ from build_helpers import forward_logging_to_west
 script_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, os.path.join(script_dir, "pylib/"))
 from zspdx.sbom import SBOMConfig, make_spdx, setup_cmake_query  # noqa: E402
+from zspdx.util import source_date_epoch  # noqa: E402
 from zspdx.version import (  # noqa: E402
     SPDX_VERSION_2_3,
     SPDX_VERSION_3_1,
@@ -136,6 +137,10 @@ class ZephyrSpdx(WestCommand):
             cfg.analyze_includes = True
         if args.include_sdk:
             cfg.include_sdk = True
+        try:
+            cfg.created = source_date_epoch()
+        except ValueError as e:
+            self.die(str(e))
 
         # make sure SPDX directory exists, or create it if it doesn't
         if os.path.exists(cfg.spdx_dir):
