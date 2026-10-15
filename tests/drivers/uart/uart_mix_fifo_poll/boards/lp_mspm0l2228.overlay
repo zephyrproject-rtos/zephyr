@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/uart/mspm0_uart.h>
+
+/* TX (PB4) and RX (PB5) must be connected together for loopback */
+
+dut: &uart1 {
+	rx-fifo-threshold = <MSPM0_UART_RX_FIFO_LEVEL_ONE_ENTRY>;
+	pinctrl-0 = <&uart1_tx_pb4 &uart1_rx_pb5>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&timg8 {
+	status = "okay";
+};
+
+counter_dev: &counterg8 {
+	status = "okay";
+};
