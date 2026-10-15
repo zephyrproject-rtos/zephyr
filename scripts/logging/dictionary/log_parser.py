@@ -133,7 +133,12 @@ def main():
         logger.error("ERROR: cannot read log from file: %s, exiting...", args.logfile)
         sys.exit(1)
 
-    parsed_data_offset = parserlib.parser(logdata, log_parser, logger)
+    parsed_data_offset, error = parserlib.parser(logdata, log_parser, logger)
+
+    if error is not None:
+        logger.error("ERROR: Failed to process log data: %s", error)
+        sys.exit(1)
+
     if parsed_data_offset != len(logdata):
         logger.error(
             'ERROR: Not all data was parsed, %d bytes left unparsed',
