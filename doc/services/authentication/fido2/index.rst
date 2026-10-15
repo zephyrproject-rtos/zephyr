@@ -53,6 +53,7 @@ Credential Storage
    Persists discoverable (resident) credentials. Backends are
    selected via :kconfig:option:`CONFIG_FIDO2_STORAGE_BACKEND`:
 
+   - **PSA Protected Storage** — :kconfig:option:`CONFIG_FIDO2_STORAGE_PSA_PROTECTED_STORAGE`
    - **Settings subsystem** — :kconfig:option:`CONFIG_FIDO2_STORAGE_SETTINGS`
    - **None** — :kconfig:option:`CONFIG_FIDO2_STORAGE_NONE` (non-discoverable credentials only)
 
