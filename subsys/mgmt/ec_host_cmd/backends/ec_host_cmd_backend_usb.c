@@ -26,6 +26,9 @@ BUILD_ASSERT((CONFIG_EC_HOST_CMD_HANDLER_BUFFER_ALIGN % UDC_BUF_ALIGN) == 0, "Bu
 #define EP_BULK_SIZE     64U
 #define EP_INT_SIZE      4U
 
+/* Interrupt notifications are written with net_buf_add_le32(). */
+BUILD_ASSERT(EP_INT_SIZE == sizeof(uint32_t), "Interrupt notification size mismatch");
+
 #define INT_POOL_SIZE 4
 
 /* Timeout for receiving entire request. */
@@ -195,8 +198,7 @@ static int ec_host_cmd_signal_event(struct usbd_class_data *const c_data)
 		LOG_WRN("Event has been already signaled but not polled by the host");
 		return 0;
 	}
-	net_buf_add_u8(buf, USB_EC_HOST_CMD_IRQ_TYPE_EVENT);
-	buf->len = EP_INT_SIZE;
+	net_buf_add_le32(buf, USB_EC_HOST_CMD_IRQ_TYPE_EVENT);
 	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
 		LOG_ERR("Failed to enqueue EP IN INT: %d", ret);
@@ -538,8 +540,7 @@ static int ec_host_cmd_backend_send(const struct ec_host_cmd_backend *backend)
 	}
 
 	/* Signal to host that response is ready. */
-	net_buf_add_u8(buf, USB_EC_HOST_CMD_IRQ_TYPE_RESP_READY);
-	buf->len = EP_INT_SIZE;
+	net_buf_add_le32(buf, USB_EC_HOST_CMD_IRQ_TYPE_RESP_READY);
 
 	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
