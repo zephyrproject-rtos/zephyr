@@ -338,6 +338,9 @@ void z_impl_k_pipe_close(struct k_pipe *pipe)
 void z_vrfy_k_pipe_init(struct k_pipe *pipe, uint8_t *buffer, size_t buffer_size)
 {
 	K_OOPS(K_SYSCALL_OBJ_NEVER_INIT(pipe, K_OBJ_PIPE));
+	K_OOPS(K_SYSCALL_VERIFY_MSG(buffer_size <= RING_BUFFER_MAX_SIZE,
+				    "pipe buffer size %zu exceeds %u", buffer_size,
+				    (unsigned int)RING_BUFFER_MAX_SIZE));
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(buffer, buffer_size));
 
 	z_impl_k_pipe_init(pipe, buffer, buffer_size);
