@@ -34,6 +34,7 @@ excluded_sources:
 hook_sources:
   - kernel/include/ipi.h
   - kernel/include/ksmp.h
+  - kernel/include/kuser.h
 
 # Regular expressions that no symbol defined in the final ELF may match.
 excluded_symbols:
