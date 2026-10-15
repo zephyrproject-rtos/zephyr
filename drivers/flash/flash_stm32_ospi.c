@@ -1117,6 +1117,21 @@ static int stm32_ospi_abort(const struct device *dev)
 }
 #endif /* CONFIG_FLASH_STM32_NOR_MEMMAP */
 
+static uint8_t spi_nor_convert_erase_to_4b(const uint8_t opcode)
+{
+	switch (opcode) {
+	case SPI_NOR_CMD_SE:
+		return SPI_NOR_CMD_SE_4B;
+	case SPI_NOR_CMD_BE_32K:
+		return SPI_NOR_CMD_BE_32K_4B;
+	case SPI_NOR_CMD_BE:
+		return SPI_NOR_CMD_BE_4B;
+	default:
+		/* use provided */
+		return opcode;
+	}
+}
+
 /*
  * Function to erase the flash : chip or sector with possible OSPI/SPI and STR/DTR
  * to erase the complete chip (using dedicated command) :
@@ -1258,6 +1273,9 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 				/* In OPI mode, do not use the SFDP SPI opcode (bet->cmd). */
 				if (dev_cfg->data_mode == OSPI_OPI_MODE) {
 					cmd_erase.Instruction = SPI_NOR_OCMD_SE;
+				} else if (IS_ENABLED(DT_INST_PROP(0, four_byte_opcodes))) {
+					cmd_erase.Instruction =
+						spi_nor_convert_erase_to_4b(bet->cmd);
 				} else {
 					cmd_erase.Instruction = bet->cmd;
 				}
