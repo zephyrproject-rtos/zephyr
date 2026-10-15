@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #endif
 
 #include <mbedtls/ssl.h>
+#include <psa/crypto.h>
 
 #include "../../socket_helpers.h"
 
@@ -2174,6 +2175,13 @@ ZTEST(net_socket_tls, test_dtls_bad_cred)
 #define PSK_ONLY_TAG 23
 #define PSK_ID_ONLY_TAG 24
 #define PSK_TOO_LONG_TAG 25
+#define PSK_PSA_PAIR_TAG 26
+#define PSK_PSA_ONLY_TAG 27
+#define PSK_PSA_RAW_DATA_TAG 28
+#define PSK_PSA_NO_DERIVE_TAG 29
+#define PSK_PSA_NULL_KEY_TAG 30
+#define PSK_PSA_BAD_LEN_TAG 31
+#define PSK_AND_PSK_PSA_TAG 32
 
 static void remove_psk_tag_list_cred(void)
 {
@@ -2185,6 +2193,20 @@ static void remove_psk_tag_list_cred(void)
 	(void)tls_credential_delete(PSK_ID_ONLY_TAG, TLS_CREDENTIAL_PSK_ID);
 	(void)tls_credential_delete(PSK_TOO_LONG_TAG, TLS_CREDENTIAL_PSK);
 	(void)tls_credential_delete(PSK_TOO_LONG_TAG, TLS_CREDENTIAL_PSK_ID);
+	(void)tls_credential_delete(PSK_PSA_PAIR_TAG, TLS_CREDENTIAL_PSK_PSA);
+	(void)tls_credential_delete(PSK_PSA_PAIR_TAG, TLS_CREDENTIAL_PSK_ID);
+	(void)tls_credential_delete(PSK_PSA_ONLY_TAG, TLS_CREDENTIAL_PSK_PSA);
+	(void)tls_credential_delete(PSK_PSA_RAW_DATA_TAG, TLS_CREDENTIAL_PSK_PSA);
+	(void)tls_credential_delete(PSK_PSA_RAW_DATA_TAG, TLS_CREDENTIAL_PSK_ID);
+	(void)tls_credential_delete(PSK_PSA_NO_DERIVE_TAG, TLS_CREDENTIAL_PSK_PSA);
+	(void)tls_credential_delete(PSK_PSA_NO_DERIVE_TAG, TLS_CREDENTIAL_PSK_ID);
+	(void)tls_credential_delete(PSK_PSA_NULL_KEY_TAG, TLS_CREDENTIAL_PSK_PSA);
+	(void)tls_credential_delete(PSK_PSA_NULL_KEY_TAG, TLS_CREDENTIAL_PSK_ID);
+	(void)tls_credential_delete(PSK_PSA_BAD_LEN_TAG, TLS_CREDENTIAL_PSK_PSA);
+	(void)tls_credential_delete(PSK_PSA_BAD_LEN_TAG, TLS_CREDENTIAL_PSK_ID);
+	(void)tls_credential_delete(PSK_AND_PSK_PSA_TAG, TLS_CREDENTIAL_PSK);
+	(void)tls_credential_delete(PSK_AND_PSK_PSA_TAG, TLS_CREDENTIAL_PSK_PSA);
+	(void)tls_credential_delete(PSK_AND_PSK_PSA_TAG, TLS_CREDENTIAL_PSK_ID);
 }
 
 static void test_psk_tag_list_check(const sec_tag_t *tags, size_t tags_size,
@@ -2202,8 +2224,30 @@ static void test_psk_tag_list_check(const sec_tag_t *tags, size_t tags_size,
 	}
 }
 
+static psa_key_id_t import_psk_psa_key(psa_key_type_t type, psa_key_usage_t usage)
+{
+	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+	psa_key_id_t key_id = PSA_KEY_ID_NULL;
+	psa_status_t status;
+
+	psa_set_key_type(&attr, type);
+	psa_set_key_usage_flags(&attr, usage);
+	psa_set_key_algorithm(&attr, PSA_ALG_NONE);
+
+	status = psa_import_key(&attr, psk, sizeof(psk), &key_id);
+	psa_reset_key_attributes(&attr);
+	zassert_equal(status, PSA_SUCCESS, "psa_import_key() failed (%d)", status);
+
+	return key_id;
+}
+
 ZTEST(net_socket_tls, test_tls_psk_tag_list)
 {
+	static psa_key_id_t psk_psa_key;
+	static psa_key_id_t psk_psa_raw_data_key;
+	static psa_key_id_t psk_psa_no_derive_key;
+	static const psa_key_id_t psk_psa_null_key_id = PSA_KEY_ID_NULL;
+	static const uint8_t psk_psa_bad_len_key_id[sizeof(psa_key_id_t) - 1];
 	/* PSK exceeding the maximum length supported by Mbed TLS */
 	static uint8_t psk_too_long[CONFIG_MBEDTLS_PSK_MAX_LEN + 1];
 	/* Single PSK/PSK ID pair */
@@ -2239,6 +2283,41 @@ ZTEST(net_socket_tls, test_tls_psk_tag_list)
 		PSK_PAIR_1_TAG,
 		PSK_ID_ONLY_TAG,
 	};
+	/* Single PSK_PSA/PSK ID pair */
+	static const sec_tag_t psk_psa_pair[] = {
+		PSK_PSA_PAIR_TAG,
+	};
+	/* PSK_PSA without PSK ID */
+	static const sec_tag_t psk_psa_no_id[] = {
+		PSK_PSA_ONLY_TAG,
+	};
+	/* PSK ID is valid per se, but the pair is rejected because of the
+	 * invalid PSA key: wrong key type.
+	 */
+	static const sec_tag_t psk_psa_raw_data[] = {
+		PSK_PSA_RAW_DATA_TAG,
+	};
+	/* Same as above: missing derive usage */
+	static const sec_tag_t psk_psa_no_derive[] = {
+		PSK_PSA_NO_DERIVE_TAG,
+	};
+	/* Same as above: key not present in PSA */
+	static const sec_tag_t psk_psa_null_key[] = {
+		PSK_PSA_NULL_KEY_TAG,
+	};
+	/* Same as above: credential too short to hold a PSA key ID */
+	static const sec_tag_t psk_psa_bad_len[] = {
+		PSK_PSA_BAD_LEN_TAG,
+	};
+	/* PSK and PSK_PSA cannot be provided by the same tag */
+	static const sec_tag_t psk_and_psk_psa[] = {
+		PSK_AND_PSK_PSA_TAG,
+	};
+	/* Only one pair allowed in the tag list, whatever the PSK format */
+	static const sec_tag_t psk_pair_and_psk_psa_pair[] = {
+		PSK_PAIR_1_TAG,
+		PSK_PSA_PAIR_TAG,
+	};
 
 	remove_psk_tag_list_cred();
 
@@ -2259,6 +2338,43 @@ ZTEST(net_socket_tls, test_tls_psk_tag_list)
 	zassert_ok(tls_credential_add(PSK_TOO_LONG_TAG, TLS_CREDENTIAL_PSK_ID,
 				      psk_id, strlen(psk_id)), "Failed to add psk id");
 
+	psk_psa_key = import_psk_psa_key(PSA_KEY_TYPE_DERIVE, PSA_KEY_USAGE_DERIVE);
+	psk_psa_raw_data_key = import_psk_psa_key(PSA_KEY_TYPE_RAW_DATA, PSA_KEY_USAGE_DERIVE);
+	psk_psa_no_derive_key = import_psk_psa_key(PSA_KEY_TYPE_DERIVE, PSA_KEY_USAGE_EXPORT);
+
+	zassert_ok(tls_credential_add(PSK_PSA_PAIR_TAG, TLS_CREDENTIAL_PSK_PSA,
+				      &psk_psa_key, sizeof(psk_psa_key)), "Failed to add psk psa");
+	zassert_ok(tls_credential_add(PSK_PSA_PAIR_TAG, TLS_CREDENTIAL_PSK_ID,
+				      psk_id, strlen(psk_id)), "Failed to add psk id");
+	zassert_ok(tls_credential_add(PSK_PSA_ONLY_TAG, TLS_CREDENTIAL_PSK_PSA,
+				      &psk_psa_key, sizeof(psk_psa_key)), "Failed to add psk psa");
+	zassert_ok(tls_credential_add(PSK_PSA_RAW_DATA_TAG, TLS_CREDENTIAL_PSK_PSA,
+				      &psk_psa_raw_data_key, sizeof(psk_psa_raw_data_key)),
+		   "Failed to add psk psa");
+	zassert_ok(tls_credential_add(PSK_PSA_RAW_DATA_TAG, TLS_CREDENTIAL_PSK_ID,
+				      psk_id, strlen(psk_id)), "Failed to add psk id");
+	zassert_ok(tls_credential_add(PSK_PSA_NO_DERIVE_TAG, TLS_CREDENTIAL_PSK_PSA,
+				      &psk_psa_no_derive_key, sizeof(psk_psa_no_derive_key)),
+		   "Failed to add psk psa");
+	zassert_ok(tls_credential_add(PSK_PSA_NO_DERIVE_TAG, TLS_CREDENTIAL_PSK_ID,
+				      psk_id, strlen(psk_id)), "Failed to add psk id");
+	zassert_ok(tls_credential_add(PSK_PSA_NULL_KEY_TAG, TLS_CREDENTIAL_PSK_PSA,
+				      &psk_psa_null_key_id, sizeof(psk_psa_null_key_id)),
+		   "Failed to add psk psa");
+	zassert_ok(tls_credential_add(PSK_PSA_NULL_KEY_TAG, TLS_CREDENTIAL_PSK_ID,
+				      psk_id, strlen(psk_id)), "Failed to add psk id");
+	zassert_ok(tls_credential_add(PSK_PSA_BAD_LEN_TAG, TLS_CREDENTIAL_PSK_PSA,
+				      psk_psa_bad_len_key_id, sizeof(psk_psa_bad_len_key_id)),
+		   "Failed to add psk psa");
+	zassert_ok(tls_credential_add(PSK_PSA_BAD_LEN_TAG, TLS_CREDENTIAL_PSK_ID,
+				      psk_id, strlen(psk_id)), "Failed to add psk id");
+	zassert_ok(tls_credential_add(PSK_AND_PSK_PSA_TAG, TLS_CREDENTIAL_PSK,
+				      psk, sizeof(psk)), "Failed to add psk");
+	zassert_ok(tls_credential_add(PSK_AND_PSK_PSA_TAG, TLS_CREDENTIAL_PSK_PSA,
+				      &psk_psa_key, sizeof(psk_psa_key)), "Failed to add psk psa");
+	zassert_ok(tls_credential_add(PSK_AND_PSK_PSA_TAG, TLS_CREDENTIAL_PSK_ID,
+				      psk_id, strlen(psk_id)), "Failed to add psk id");
+
 	s_sock = zsock_socket(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TLS_1_2);
 	zassert_true(s_sock >= 0, "zsock_socket() failed");
 
@@ -2269,9 +2385,22 @@ ZTEST(net_socket_tls, test_tls_psk_tag_list)
 	test_psk_tag_list_check(two_pairs, sizeof(two_pairs), EINVAL);
 	test_psk_tag_list_check(split_pair, sizeof(split_pair), EINVAL);
 	test_psk_tag_list_check(pair_and_psk_id, sizeof(pair_and_psk_id), EINVAL);
+	test_psk_tag_list_check(psk_psa_pair, sizeof(psk_psa_pair), 0);
+	test_psk_tag_list_check(psk_psa_no_id, sizeof(psk_psa_no_id), EINVAL);
+	test_psk_tag_list_check(psk_psa_raw_data, sizeof(psk_psa_raw_data), EINVAL);
+	test_psk_tag_list_check(psk_psa_no_derive, sizeof(psk_psa_no_derive), EINVAL);
+	test_psk_tag_list_check(psk_psa_null_key, sizeof(psk_psa_null_key), EINVAL);
+	test_psk_tag_list_check(psk_psa_bad_len, sizeof(psk_psa_bad_len), EINVAL);
+	test_psk_tag_list_check(psk_and_psk_psa, sizeof(psk_and_psk_psa), EINVAL);
+	test_psk_tag_list_check(psk_pair_and_psk_psa_pair, sizeof(psk_pair_and_psk_psa_pair),
+				EINVAL);
 
 	test_sockets_close();
 	remove_psk_tag_list_cred();
+
+	(void)psa_destroy_key(psk_psa_key);
+	(void)psa_destroy_key(psk_psa_raw_data_key);
+	(void)psa_destroy_key(psk_psa_no_derive_key);
 }
 
 static void dtls_client_connect_send_no_assert_work_handler(struct k_work *work)

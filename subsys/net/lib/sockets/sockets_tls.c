@@ -1760,7 +1760,7 @@ static int tls_set_private_key(struct tls_context *tls,
 	return -ENOTSUP;
 }
 
-#if defined(CONFIG_MBEDTLS_X509_CRT_PARSE_C)
+#if defined(CONFIG_MBEDTLS_X509_CRT_PARSE_C) || defined(MBEDTLS_SSL_HANDSHAKE_WITH_PSK_ENABLED)
 /* On success "key_id" contains the PSA key ID that has been verified. */
 static int tls_check_psa_key(struct tls_credential *cred, psa_key_id_t *key_id)
 {
@@ -1785,6 +1785,12 @@ static int tls_check_psa_key(struct tls_credential *cred, psa_key_id_t *key_id)
 	    !PSA_KEY_TYPE_IS_KEY_PAIR(psa_get_key_type(&attr))) {
 		NET_ERR("PSA key %x (tag %d) is not a key_pair", *key_id, cred->tag);
 		goto exit;
+	} else if (cred->type == TLS_CREDENTIAL_PSK_PSA) {
+		if ((psa_get_key_type(&attr) != PSA_KEY_TYPE_DERIVE) ||
+		    ((psa_get_key_usage_flags(&attr) & PSA_KEY_USAGE_DERIVE) == 0)) {
+			NET_ERR("PSA key %x (tag %d) cannot derive keys", *key_id, cred->tag);
+			goto exit;
+		}
 	}
 
 	ret = 0;
@@ -1794,7 +1800,7 @@ exit:
 
 	return ret;
 }
-#endif
+#endif /* CONFIG_MBEDTLS_X509_CRT_PARSE_C || MBEDTLS_SSL_HANDSHAKE_WITH_PSK_ENABLED*/
 
 static int tls_set_private_key_psa(struct tls_context *tls,
 				   struct tls_credential *priv_key)
@@ -1838,14 +1844,26 @@ static int tls_set_psk(struct tls_context *tls, struct tls_credential *psk,
 	if ((psk == NULL) || (psk_id == NULL)) {
 		return -EINVAL;
 	}
-	if (mbedtls_ssl_conf_psk(&tls->config, psk->buf, psk->len,
-				 psk_id->buf, psk_id->len) != 0) {
-		return -EINVAL;
+
+	if (psk->type == TLS_CREDENTIAL_PSK_PSA) {
+		psa_key_id_t key_id;
+
+		if (tls_check_psa_key(psk, &key_id) != 0) {
+			return -EINVAL;
+		}
+		if (mbedtls_ssl_conf_psk_opaque(&tls->config, key_id,
+						psk_id->buf, psk_id->len) != 0) {
+			return -EINVAL;
+		}
+	} else {
+		if (mbedtls_ssl_conf_psk(&tls->config, psk->buf, psk->len,
+					 psk_id->buf, psk_id->len) != 0) {
+			return -EINVAL;
+		}
 	}
 
 	return 0;
 #endif
-
 	return -ENOTSUP;
 }
 
@@ -1868,6 +1886,7 @@ static int tls_set_credential(struct tls_context *tls,
 	break;
 
 	case TLS_CREDENTIAL_PSK:
+	case TLS_CREDENTIAL_PSK_PSA:
 	case TLS_CREDENTIAL_PSK_ID:
 		/* Nothing to do here. */
 		break;
@@ -1908,7 +1927,8 @@ static int tls_mbedtls_set_credentials(struct tls_context *tls)
 				ca_cert_present = true;
 			} else if (cred->type == TLS_CREDENTIAL_PUBLIC_CERTIFICATE) {
 				own_cert_present = true;
-			} else if (cred->type == TLS_CREDENTIAL_PSK) {
+			} else if ((cred->type == TLS_CREDENTIAL_PSK) ||
+				   (cred->type == TLS_CREDENTIAL_PSK_PSA)) {
 				psk = cred;
 			} else if (cred->type == TLS_CREDENTIAL_PSK_ID) {
 				psk_id = cred;
@@ -2373,16 +2393,24 @@ static int tls_check_private_key_psa(struct tls_credential *priv_key)
 static int tls_check_psk(struct tls_credential *cred)
 {
 #if defined(MBEDTLS_SSL_HANDSHAKE_WITH_PSK_ENABLED)
-	if (cred->type == TLS_CREDENTIAL_PSK) {
+	switch (cred->type) {
+	case TLS_CREDENTIAL_PSK:
 		if ((cred->len == 0) || (cred->len > CONFIG_MBEDTLS_PSK_MAX_LEN)) {
 			NET_ERR("Invalid PSK length (%zu) on tag %d", cred->len, cred->tag);
 			return -EINVAL;
 		}
-	} else {
+		break;
+	case TLS_CREDENTIAL_PSK_PSA: {
+		psa_key_id_t key_id;
+
+		return tls_check_psa_key(cred, &key_id);
+	}
+	default: /* TLS_CREDENTIAL_PSK_ID */
 		if (cred->len == 0) {
 			NET_ERR("PSK_ID is empty on tag %d", cred->tag);
 			return -EINVAL;
 		}
+		break;
 	}
 
 	return 0;
@@ -2405,8 +2433,7 @@ static int tls_check_credentials(const sec_tag_t *sec_tags, int sec_tag_count)
 		sec_tag_t tag = sec_tags[i];
 		struct tls_credential *cred = NULL;
 		bool tag_found = false;
-		bool psk_found = false;
-		bool psk_id_found = false;
+		bool psk_found = false, psk_psa_found = false, psk_id_found = false;
 
 		while ((cred = credential_next_get(tag, cred)) != NULL) {
 			tag_found = true;
@@ -2436,9 +2463,10 @@ static int tls_check_credentials(const sec_tag_t *sec_tags, int sec_tag_count)
 
 				break;
 			case TLS_CREDENTIAL_PSK:
+			case TLS_CREDENTIAL_PSK_PSA:
 			case TLS_CREDENTIAL_PSK_ID:
 				if (valid_psk_config_found) {
-					NET_ERR("Tag %d tried to override PSK or PSK_ID", tag);
+					NET_ERR("Tag %d tried to override PSK/PSK_PSA/PSK_ID", tag);
 					err = -EINVAL;
 					goto exit;
 				}
@@ -2448,6 +2476,8 @@ static int tls_check_credentials(const sec_tag_t *sec_tags, int sec_tag_count)
 				}
 				if (cred->type == TLS_CREDENTIAL_PSK) {
 					psk_found = true;
+				} else if (cred->type == TLS_CREDENTIAL_PSK_PSA) {
+					psk_psa_found = true;
 				} else {
 					psk_id_found = true;
 				}
@@ -2466,13 +2496,19 @@ static int tls_check_credentials(const sec_tag_t *sec_tags, int sec_tag_count)
 			goto exit;
 		}
 
-		/* PSK and PSK_ID must be provided using the same tag. Also there
-		 * cannot be more than one (PSK, PSK_ID) couple in the provided
-		 * tag list.
+		/* - PSK/PSA_PSK and PSK_ID must be provided using the same tag.
+		 * - Only one between PSK and PSK_PSA can be defined for the same tag.
+		 * - There cannot be more than one (PSK/PSK_PSA, PSK_ID) pair in the
+		 *   provided tag list.
 		 */
-		if (psk_found && psk_id_found) {
+		if (psk_found && psk_psa_found) {
+			NET_ERR("PSK and PSK_PSA both specified at tag %d", tag);
+			err = -EINVAL;
+			goto exit;
+		}
+		if ((psk_found || psk_psa_found) && psk_id_found) {
 			valid_psk_config_found = true;
-		} else if (psk_found || psk_id_found) {
+		} else if (psk_found || psk_psa_found || psk_id_found) {
 			NET_ERR("Missing PSK or PSK_ID on tag %d", tag);
 			err = -EINVAL;
 			goto exit;
