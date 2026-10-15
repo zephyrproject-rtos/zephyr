@@ -20,16 +20,6 @@
 
 LOG_MODULE_REGISTER(mcux_pngdec, CONFIG_VIDEO_LOG_LEVEL);
 
-struct video_common_stream {
-	struct k_fifo fifo_in;
-	struct k_fifo fifo_out;
-};
-
-struct video_m2m_common {
-	struct video_common_stream in;  /* Incoming PNG stream. */
-	struct video_common_stream out; /* Outgoing decoded image data. */
-};
-
 struct mcux_pngdec_data {
 	struct video_device vdev; /* keep first */
 	struct video_m2m_common m2m;
@@ -75,8 +65,6 @@ static void mcux_pngdec_decode_one_frame(const struct device *dev)
 {
 	const struct mcux_pngdec_config *config = dev->config;
 	struct mcux_pngdec_data *data = dev->data;
-	struct k_fifo *in_fifo_in = &data->m2m.in.fifo_in;
-	struct k_fifo *out_fifo_in = &data->m2m.out.fifo_in;
 	struct video_buffer *current_in = NULL;
 	struct video_buffer *current_out = NULL;
 
@@ -188,8 +176,8 @@ static int mcux_pngdec_enqueue(const struct device *dev, struct video_buffer *vb
 {
 	int ret = 0;
 	struct mcux_pngdec_data *data = dev->data;
-	struct video_common_stream *common =
-		vbuf->type == VIDEO_BUF_TYPE_INPUT ? &data->m2m.in : &data->m2m.out;
+	struct k_fifo *fifo = vbuf->type == VIDEO_BUF_TYPE_INPUT
+		? &data->vdev.in_buf_submitted : &data->vdev.out_buf_submitted;
 	bool do_decode = false;
 
 	if (((uint32_t)vbuf->buffer & 0x7U) != 0U) {
@@ -240,7 +228,7 @@ static int mcux_pngdec_enqueue(const struct device *dev, struct video_buffer *vb
 		}
 	}
 
-	k_fifo_put(&common->fifo_in, vbuf);
+	k_fifo_put(fifo, vbuf);
 
 	/*
 	 * If the streaming is on but the decoder is not running due to lack of
@@ -264,15 +252,16 @@ static int mcux_pngdec_dequeue(const struct device *dev, struct video_buffer **v
 			       k_timeout_t timeout)
 {
 	struct mcux_pngdec_data *data = dev->data;
-	struct video_common_stream *common;
+	struct k_fifo *fifo;
 
 	if (vbuf == NULL || *vbuf == NULL) {
 		return -EINVAL;
 	}
 
-	common = (*vbuf)->type == VIDEO_BUF_TYPE_INPUT ? &data->m2m.in : &data->m2m.out;
+	fifo = vbuf->type == VIDEO_BUF_TYPE_INPUT
+		? &data->vdev.in_buf_completed : &data->vdev.out_buf__completed;
 
-	*vbuf = k_fifo_get(&common->fifo_out, timeout);
+	*vbuf = k_fifo_get(fifo, timeout);
 	if (*vbuf == NULL) {
 		return -EAGAIN;
 	}
@@ -336,8 +325,8 @@ static void mcux_pngdec_isr(const struct device *dev)
 {
 	const struct mcux_pngdec_config *config = dev->config;
 	struct mcux_pngdec_data *data = dev->data;
-	struct video_buffer *current_in = k_fifo_get(&data->m2m.in.fifo_in, K_NO_WAIT);
-	struct video_buffer *current_out = k_fifo_get(&data->m2m.out.fifo_in, K_NO_WAIT);
+	struct video_buffer *current_in = k_fifo_get(&data->vdev.in_buf_submitted, K_NO_WAIT);
+	struct video_buffer *current_out = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
 	uint32_t status_flags = PNGDEC_GetStatusFlags(config->base);
 
 	if ((status_flags & kPNGDEC_DecodePixelDoneFlag) != 0U) {
@@ -354,8 +343,8 @@ static void mcux_pngdec_isr(const struct device *dev)
 
 	current_out->size = data->vdev.out_fmt.size;
 
-	k_fifo_put(&data->m2m.in.fifo_out, current_in);
-	k_fifo_put(&data->m2m.out.fifo_out, current_out);
+	k_fifo_put(&data->vdev.in_buf_completed, current_in);
+	k_fifo_put(&data->vdev.out_buf__completed, current_out);
 
 	/* Defer the next decode to a workqueue: decode_one_frame uses k_mutex,
 	 * which cannot be acquired from ISR context.
@@ -372,11 +361,6 @@ static int mcux_pngdec_init(const struct device *dev)
 	k_mutex_init(&data->lock);
 	k_work_init(&data->decode_work, mcux_pngdec_decode_work_handler);
 	k_sem_init(&data->decode_done, 0, 1);
-
-	k_fifo_init(&data->m2m.in.fifo_in);
-	k_fifo_init(&data->m2m.in.fifo_out);
-	k_fifo_init(&data->m2m.out.fifo_in);
-	k_fifo_init(&data->m2m.out.fifo_out);
 
 	/* Initialise default input / output formats */
 	data->vdev.in_fmt.type = VIDEO_BUF_TYPE_INPUT;
