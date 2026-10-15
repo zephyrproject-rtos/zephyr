@@ -105,6 +105,60 @@ config TASK_WDT_COREDUMP
 	  thread. Combined with CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_THREADS,
 	  this allows to find out where the owner thread was stuck.
 
+DT_CHOSEN_TASK_WDT_RESET_INFO := zephyr,task-wdt-reset-info
+
+menuconfig TASK_WDT_RESET_INFO
+	bool "Keep the cause of a task watchdog reset"
+	select CRC
+	help
+	  When a channel times out and its callback does not return (or there
+	  is no callback), store a record with the channel, the name of its
+	  owner thread (if CONFIG_TASK_WDT_THREAD_INFO and CONFIG_THREAD_NAME
+	  are enabled), the uptime and the number of consecutive task watchdog
+	  resets. After the reset, the record can be read with
+	  task_wdt_reset_info_get().
+
+if TASK_WDT_RESET_INFO
+
+choice TASK_WDT_RESET_INFO_BACKEND
+	prompt "Reset information storage"
+	default TASK_WDT_RESET_INFO_NOINIT
+
+config TASK_WDT_RESET_INFO_NOINIT
+	bool "Non-initialized RAM"
+	help
+	  Store the record in RAM which is not cleared at boot. The record
+	  survives a reset as long as the hardware retains the RAM contents.
+
+config TASK_WDT_RESET_INFO_RETENTION
+	bool "Retention area"
+	depends on RETENTION
+	depends on RETENTION_MUTEX_FORCE_DISABLE
+	depends on RETAINED_MEM_MUTEX_FORCE_DISABLE
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_TASK_WDT_RESET_INFO))
+	help
+	  Store the record in the retention area selected with the
+	  zephyr,task-wdt-reset-info chosen node. The record is written from
+	  the task watchdog timer interrupt, so the retention and retained
+	  memory mutexes have to be disabled, and the retained memory driver
+	  must not block, as the RAM based drivers.
+
+endchoice
+
+config TASK_WDT_RESET_INFO_HW_FALLBACK
+	bool "Detect resets by the hardware watchdog fallback"
+	depends on TASK_WDT_HW_FALLBACK
+	depends on HWINFO
+	default y
+	help
+	  If the hardware reset cause is a watchdog reset but no record was
+	  stored by the task watchdog, report that the hardware watchdog
+	  fallback reset the system, which means the whole system was stuck.
+	  The application has to clear the hardware reset cause with
+	  hwinfo_clear_reset_cause() after the task watchdog was initialized.
+
+endif # TASK_WDT_RESET_INFO
+
 config TASK_WDT_SHELL
 	bool "Task watchdog shell utilities"
 	depends on SHELL

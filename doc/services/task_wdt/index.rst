@@ -50,6 +50,35 @@ If :kconfig:option:`CONFIG_TASK_WDT_COREDUMP` is enabled as well, a core dump
 is created with the owner thread as the faulting thread before the system is
 reset, which helps to find out where the thread was stuck.
 
+Reset Information
+*****************
+
+With :kconfig:option:`CONFIG_TASK_WDT_RESET_INFO` enabled, the task watchdog
+stores a record before the system is reset because a channel timed out. The
+record is also stored if the channel callback resets the system. After the
+reset, :c:func:`task_wdt_reset_info_get` returns the channel, the name of its
+owner thread (with :kconfig:option:`CONFIG_TASK_WDT_THREAD_INFO` and
+:kconfig:option:`CONFIG_THREAD_NAME`), the uptime at the time of the reset and
+the number of consecutive task watchdog resets. The count restarts from zero
+after any other reset or a call to :c:func:`task_wdt_reset_info_clear`.
+
+The record is written from the timer interrupt. By default, it is kept in RAM
+which is not cleared at boot (:kconfig:option:`CONFIG_TASK_WDT_RESET_INFO_NOINIT`).
+Alternatively, it can be kept in a :ref:`retention <retention_api>` area which
+is selected with the ``zephyr,task-wdt-reset-info`` chosen node
+(:kconfig:option:`CONFIG_TASK_WDT_RESET_INFO_RETENTION`). As the retention API
+is used from the interrupt, its mutexes have to be disabled with
+:kconfig:option:`CONFIG_RETENTION_MUTEX_FORCE_DISABLE` and
+:kconfig:option:`CONFIG_RETAINED_MEM_MUTEX_FORCE_DISABLE`. The retained memory
+driver must not block or sleep either, which is the case for the RAM based
+drivers but not for the drivers accessing an external device over a bus.
+
+If the hardware watchdog fallback resets the system, the task watchdog cannot
+store a record. With :kconfig:option:`CONFIG_TASK_WDT_RESET_INFO_HW_FALLBACK`,
+a watchdog reset reported by :c:func:`hwinfo_get_reset_cause` without a record
+is returned as :c:enumerator:`TASK_WDT_RESET_HW_FALLBACK`, which means the whole
+system was stuck.
+
 Configuration Options
 *********************
 
@@ -69,6 +98,14 @@ Related configuration options can be found under
 * :kconfig:option:`CONFIG_TASK_WDT_THREAD_INFO`
 
 * :kconfig:option:`CONFIG_TASK_WDT_COREDUMP`
+
+* :kconfig:option:`CONFIG_TASK_WDT_RESET_INFO`
+
+* :kconfig:option:`CONFIG_TASK_WDT_RESET_INFO_NOINIT`
+
+* :kconfig:option:`CONFIG_TASK_WDT_RESET_INFO_RETENTION`
+
+* :kconfig:option:`CONFIG_TASK_WDT_RESET_INFO_HW_FALLBACK`
 
 API Reference
 *************
