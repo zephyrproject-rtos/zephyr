@@ -210,6 +210,21 @@ int video_init_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint
 	return 0;
 }
 
+int video_init_button_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id)
+{
+	int ret;
+
+	ret = video_init_ctrl(ctrl, dev, id,
+		(struct video_ctrl_range){.min = 0, .max = 0, .step = 0, .def = 0});
+	if (ret) {
+		return ret;
+	}
+
+	ctrl->flags |= VIDEO_CTRL_FLAG_VOLATILE;
+
+	return 0;
+}
+
 int video_init_int_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
 			     uint8_t def, const int64_t menu[], size_t menu_len)
 {
