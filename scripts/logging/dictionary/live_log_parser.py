@@ -380,8 +380,9 @@ def main():
             parsed_data_offset, error = parserlib.parser(data, log_parser, logger)
             if error is not None:
                 # The data does not match the database, most likely the target was reflashed
-                # and the databases changed. Look for the synchronization sequence in the data
-                # (and in the data which will follow).
+                # and the databases changed. Print what was already decoded and look for the
+                # synchronization sequence in the data (and in the data which will follow).
+                log_parser.flush()
                 if stdin_mode:
                     logger.error("ERROR: Failed to process log data: %s", error)
                     sys.exit(1)

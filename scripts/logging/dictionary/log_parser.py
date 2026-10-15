@@ -151,12 +151,12 @@ def main():
 
     parsed_data_offset, error = parserlib.parser(logdata, log_parser, logger)
 
+    # All data was read, print messages which are still cached for sorting.
+    log_parser.flush()
+
     if error is not None:
         logger.error("ERROR: Failed to process log data: %s", error)
         sys.exit(1)
-
-    # All data was read, print messages which are still cached for sorting.
-    log_parser.flush()
 
     if parsed_data_offset != len(logdata):
         logger.error(
