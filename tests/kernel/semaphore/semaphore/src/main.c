@@ -986,6 +986,32 @@ ZTEST_USER(semaphore, test_k_sem_correct_count_limit)
 }
 
 /**
+ * @brief Test that k_sem_post() reports a full semaphore
+ *
+ * @details
+ * Give the semaphore up to its maximum count with k_sem_post(), then check
+ * that one more k_sem_post() returns -EOVERFLOW and leaves the count
+ * unchanged.
+ *
+ * @ingroup kernel_semaphore_tests
+ * @see k_sem_post()
+ */
+ZTEST_USER(semaphore, test_k_sem_post_overflow)
+{
+	k_sem_reset(&simple_sem);
+
+	for (unsigned int i = 1U; i <= SEM_MAX_VAL; i++) {
+		zassert_ok(k_sem_post(&simple_sem));
+		expect_k_sem_count_get_nomsg(&simple_sem, i);
+	}
+
+	zassert_equal(k_sem_post(&simple_sem), -EOVERFLOW);
+	expect_k_sem_count_get_nomsg(&simple_sem, SEM_MAX_VAL);
+
+	k_sem_reset(&simple_sem);
+}
+
+/**
  * @brief Verify a semaphore can be given and taken from ISR context.
  *
  * @details
