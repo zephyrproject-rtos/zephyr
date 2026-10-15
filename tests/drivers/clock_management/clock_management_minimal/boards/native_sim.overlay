@@ -92,14 +92,6 @@
 					clocks = <&emul_mux2 1>;
 				};
 
-				/* Expect a clock frequency of 50 MHz */
-				dev1_50mhz: dev1-50mhz {
-					compatible = "clock-state";
-					clocks = <&emul_mux2 0
-						  &emul_mux1 1
-						  &emul_div2 1>;
-				};
-
 				/* Expect a clock frequency of 25 MHz */
 				dev1_25mhz: dev1-25mhz {
 					compatible = "clock-state";

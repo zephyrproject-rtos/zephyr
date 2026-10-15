@@ -9,6 +9,8 @@
 
 /* Clock CPU from FROHF, since we will use the PLLs within our testcases */
 &system_clock {
+	/delete-node/ sys_clk_144mhz;
+
 	sys_clk_96mhz: sys-clk-96mhz {
 		compatible = "clock-state";
 		clocks = <&ahbclkdiv 1 &fro_hf 1 &mainclksela 3 &mainclkselb 0>;

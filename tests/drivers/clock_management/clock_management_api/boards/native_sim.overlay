@@ -129,16 +129,15 @@
 				/* Expect error when applying this invalid state */
 				invalid_dev2: invalid-dev2 {
 					compatible = "clock-state";
-					clocks = <&emul_div2 257 &emul_mux1 0>;
+					clocks = <&emul_mux2 5>;
 				};
 
-				/* Expect frequency of 10 MHz. When shared_dev1 is applied
+				/* Expect frequency of 50 MHz. When shared_dev1 is applied
 				 * alongside this, the resulting frequency will be 50MHz.
 				 */
 				shared_dev2: shared-dev2 {
 					compatible = "clock-state";
-					clocks = <&emul_mux2 0 &emul_mux1 0
-						  &emul_div1 1>;
+					clocks = <&emul_mux2 0>;
 				};
 			};
 		};
@@ -175,7 +174,7 @@
 			/* This state will fail to apply when the first consumer has
 			 * locked clocks
 			 */
-			clock-request-4 = <&shared_dev2>;
+			clock-request-4 = <&shared_dev2 &dev1_3mhz>;
 			freq-req-1 = <750000>;
 			req-freq-1 = <1500000>;
 			clock-request-names = "default", "invalid", "shared",

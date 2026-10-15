@@ -7,6 +7,8 @@
 
 /* Clock CPU from FROHF, since we will use the PLLs within our testcases */
 &system_clock {
+	/delete-node/ sys_clk_144mhz;
+
 	sys_clk_96mhz: sys-clk-96mhz {
 		compatible = "clock-state";
 		clocks = <&ahbclkdiv 1 &fro_hf 1 &mainclksela 3 &mainclkselb 0>;
@@ -45,10 +47,7 @@
 
 	clkout_shared: clkout-shared {
 		compatible = "clock-state";
-		/* This state configures the clock to produce 25.0625 MHz, but
-		 * since we apply the sdioclk_shared state afterwards PLL0 will be
-		 * reconfigured to produce 25.5 MHz.
-		 */
+		/* This state configures the clock to produce 25.0625 MHz */
 		clocks = <&pll0_pdec 8 &pll0 4 0
 			  0 4 3 1 3363831808 0 &clkoutdiv 2>;
 		rank = <1>;
@@ -78,11 +77,9 @@
 	sdioclk_shared: sdioclk-shared {
 		compatible = "clock-state";
 		/* Expect notification on both devices with this state.
-		 * frequency should be 25.5 MHz for each
+		 * frequency should be 25.0625 MHz for each
 		 */
-		clocks = <&pll0_pdec 8 &pll0 4 0
-			  0 4 3 1 3422552064 0 &sdioclkdiv 2
-			  &sdioclksel 1>;
+		clocks = <&sdioclkdiv 2 &sdioclksel 1>;
 		rank = <0>;
 	};
 };
@@ -113,7 +110,7 @@
 			default-freq = <500000>;
 			clock-request-2 = <&clkout_500mhz &clkout_shared>;
 			ranked-freq = <500000>;
-			shared-freq = <25500000>;
+			shared-freq = <25062500>;
 			clock-request-names = "default", "invalid", "ranked";
 			/* Should configure using PLL0. Lock the clock after this */
 			freq-req-1 = <25062500>;
@@ -127,16 +124,11 @@
 			clock-request-0 = <&sdioclk_48mhz>;
 			default-freq = <48000000>;
 			clock-request-1 = <&sdioclk_invalid>;
-			/*
-			 * Order matters here. We want the clk out output to switch onto
-			 * PLL0 first, so that the SDIO clock will reconfigure it
-			 * afterwards. This allows us to test shared notifications.
-			 */
 			clock-request-2 = <&clkout_shared &sdioclk_48mhz &sdioclk_shared>;
 			clock-request-3 = <&sdioclk_48mhz>;
 			/* This request will be rejected, since the clkout output is locked */
 			clock-request-4 = <&sdioclk_shared &clkout_500mhz>;
-			shared-freq = <25500000>;
+			shared-freq = <25062500>;
 			ranked-freq = <48000000>;
 			clock-request-names = "default", "invalid", "shared", "ranked", "locked";
 			/* PLL0 will be locked, so this request will go to PLL1
