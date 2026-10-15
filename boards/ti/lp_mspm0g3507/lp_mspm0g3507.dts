@@ -117,6 +117,10 @@
 	pinctrl-names = "default";
 };
 
+&tima0 {
+	status = "okay";
+};
+
 &pwma0 {
 	status = "okay";
 
