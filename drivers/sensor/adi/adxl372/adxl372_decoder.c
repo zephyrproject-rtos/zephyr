@@ -14,14 +14,6 @@
 
 #define ADXL372_COMPLEMENT         0xf000
 
-static const uint32_t accel_period_ns[] = {
-	[ADXL372_ODR_400HZ] = UINT32_C(1000000000) / 400,
-	[ADXL372_ODR_800HZ] = UINT32_C(1000000000) / 800,
-	[ADXL372_ODR_1600HZ] = UINT32_C(1000000000) / 1600,
-	[ADXL372_ODR_3200HZ] = UINT32_C(1000000000) / 3200,
-	[ADXL372_ODR_6400HZ] = UINT32_C(1000000000) / 6400,
-};
-
 static inline void adxl372_accel_convert_q31(q31_t *out, const uint8_t *buff)
 {
 	int16_t data_in = ((int16_t)*buff << 4) | (((int16_t)*(buff + 1) & 0xF0) >> 4);
@@ -48,8 +40,10 @@ static int adxl372_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 
 	struct sensor_three_axis_data *data = (struct sensor_three_axis_data *)data_out;
 
+	const struct adxl372_chip_info *chip = &adxl372_chip_info[enc_data->chip_id];
+
 	memset(data, 0, sizeof(struct sensor_three_axis_data));
-	data->shift = 11; /* Sensor shift */
+	data->shift = chip->shift;
 
 	buffer += sizeof(struct adxl372_fifo_data);
 
@@ -59,7 +53,7 @@ static int adxl372_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 		return -ENODATA;
 	}
 
-	uint64_t period_ns = accel_period_ns[enc_data->accel_odr];
+	uint64_t period_ns = NSEC_PER_SEC / chip->odr_hz[enc_data->accel_odr];
 	uint16_t total_samples = enc_data->fifo_byte_count / sample_set_size;
 
 	data->header.base_timestamp_ns =

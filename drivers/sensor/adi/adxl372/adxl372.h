@@ -236,6 +236,21 @@ enum adxl372_odr {
 	ADXL372_ODR_6400HZ
 };
 
+/* Parts handled by this driver, used as an index into adxl372_chip_info[] */
+enum adxl372_chip_id {
+	ADXL372_CHIP_ID,
+};
+
+/* What differs between the parts handled by this driver */
+struct adxl372_chip_info {
+	/* Output data rate in Hz, indexed by enum adxl372_odr */
+	uint16_t odr_hz[ADXL372_ODR_6400HZ + 1];
+	/* Decoded q31 sample shift, so that the full scale fits */
+	int8_t shift;
+};
+
+extern const struct adxl372_chip_info adxl372_chip_info[];
+
 enum adxl372_instant_on_th_mode {
 	ADXL372_INSTANT_ON_LOW_TH,
 	ADXL372_INSTANT_ON_HIGH_TH
@@ -355,6 +370,8 @@ struct adxl372_dev_config {
 	struct gpio_dt_spec interrupt;
 #endif
 
+	uint8_t chip_id;
+
 	enum adxl372_bandwidth bw;
 	enum adxl372_hpf_corner hpf;
 	enum adxl372_odr odr;
@@ -387,7 +404,8 @@ struct adxl372_fifo_data {
 	uint8_t has_y: 1;
 	uint8_t has_z: 1;
 	uint8_t int_status;
-	uint16_t accel_odr: 4;
+	uint16_t accel_odr: 3;
+	uint16_t chip_id: 1;
 	uint16_t fifo_byte_count: 12;
 	uint64_t timestamp;
 } __attribute__((__packed__));
