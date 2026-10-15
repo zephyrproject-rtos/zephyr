@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Embeint Inc
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  platform_allow:
+    - native_sim
+  integration_platforms:
+    - native_sim
+  tags:
+    - lorawan
+tests:
+  subsys.lorawan.native.eu868:
+    extra_configs:
+      - CONFIG_TEST_LORAWAN_NATIVE_REGION_EU868=y
