@@ -249,6 +249,7 @@ int usbh_device_interface_set(struct usb_device *const udev,
 	LOG_INF("Set Interfaces %u, alternate %u -> %u", iface, cur_alt, alt);
 	if (alt == cur_alt) {
 		LOG_DBG("Already active interface alternate");
+		err = 0;
 		goto error;
 	}
 
@@ -278,7 +279,7 @@ int usbh_device_interface_set(struct usb_device *const udev,
 error:
 	k_mutex_unlock(&udev->mutex);
 
-	return 0;
+	return err;
 }
 
 static int parse_configuration_descriptor(struct usb_device *const udev)
