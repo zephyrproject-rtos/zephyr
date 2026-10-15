@@ -21,6 +21,7 @@
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/pm/pm.h>
 #include <zephyr/pm/policy.h>
+#include <zephyr/sys/__assert.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_infineon, CONFIG_I2C_LOG_LEVEL);
@@ -787,7 +788,6 @@ static bool ifx_cat1_i2c_read_run_continues(struct i2c_msg *msg, uint8_t num_msg
  *                   emitting neither a START nor an address.
  *
  * @retval 0 Submitted.
- * @retval -EIO A transfer is still in flight.
  * @retval -EIO Neither buffer was supplied.
  */
 static int _i2c_controller_transfer_async(const struct device *dev, uint16_t address,
@@ -797,6 +797,15 @@ static int _i2c_controller_transfer_async(const struct device *dev, uint16_t add
 	struct ifx_cat1_i2c_data *data = dev->data;
 	const struct ifx_cat1_i2c_config *const config = dev->config;
 
+	/*
+	 * Writing the descriptors below during a transfer would corrupt it.
+	 * To prevent this, the caller holds operation_sem and the event
+	 * handler clears the state before giving transfer_sem.  The
+	 * assertion catches a change that breaks either.
+	 */
+	__ASSERT(data->pending == CAT1_I2C_PENDING_NONE,
+		 "I2C transfer started while async state %u was still set", data->pending);
+
 	data->rx_config.slaveAddress = (uint8_t)address;
 	data->tx_config.slaveAddress = (uint8_t)address;
 
@@ -805,10 +814,6 @@ static int _i2c_controller_transfer_async(const struct device *dev, uint16_t add
 
 	data->tx_config.buffer = (void *)tx;
 	data->tx_config.bufferSize = tx_size;
-
-	if (data->pending != CAT1_I2C_PENDING_NONE) {
-		return -EIO;
-	}
 
 	if (tx_size) {
 		data->pending = (rx_size) ? CAT1_I2C_PENDING_TX_RX : CAT1_I2C_PENDING_TX;
