@@ -1,0 +1,15 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# System call verifiers moved out of the kernel sources. Each file is
+# compiled under the same condition as the source it belongs to.
+#
+# This is a Zephyr library, linked with --whole-archive, on purpose: the
+# system call table in userspace.c defines a weak fallback for every
+# handler, and an archive member of libkernel.a that only defines handlers
+# would never be extracted to override them.
+zephyr_library_named(kernel_syscall_handlers)
+zephyr_library_include_directories(${ZEPHYR_BASE}/kernel/include ${ARCH_DIR}/${ARCH}/include)
+zephyr_library_compile_definitions(__ZEPHYR_SUPERVISOR__)
+
+zephyr_library_sources(busy_wait.c)
