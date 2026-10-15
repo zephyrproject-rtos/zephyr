@@ -416,7 +416,7 @@ void sys_clock_announce_locked(uint32_t ticks, k_spinlock_key_t key)
 #endif /* CONFIG_TIMESLICING */
 }
 
-#if defined(CONFIG_SMP) || defined(CONFIG_SPIN_VALIDATE)
+#if defined(CONFIG_SMP) || defined(CONFIG_SPIN_VALIDATE) || defined(CONFIG_LOCKDEP)
 k_spinlock_key_t sys_clock_lock(void)
 {
 	return k_spin_lock(&timeout_lock);
