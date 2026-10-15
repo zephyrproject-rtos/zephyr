@@ -447,20 +447,6 @@ static int video_stm32_dcmi_set_ctrl(const struct device *dev, uint32_t id)
 	return ret;
 }
 
-static int video_stm32_dcmi_set_selection(const struct device *dev, struct video_selection *sel)
-{
-	const struct video_stm32_dcmi_config *config = dev->config;
-
-	return video_set_selection(config->sensor_dev, sel);
-}
-
-static int video_stm32_dcmi_get_selection(const struct device *dev, struct video_selection *sel)
-{
-	const struct video_stm32_dcmi_config *config = dev->config;
-
-	return video_get_selection(config->sensor_dev, sel);
-}
-
 static DEVICE_API(video, video_stm32_dcmi_driver_api) = {
 	.set_stream = video_stm32_dcmi_set_stream,
 	.get_caps = video_stm32_dcmi_get_caps,
@@ -468,8 +454,6 @@ static DEVICE_API(video, video_stm32_dcmi_driver_api) = {
 	.set_frmival = video_stm32_dcmi_set_frmival,
 	.get_frmival = video_stm32_dcmi_get_frmival,
 	.set_ctrl = video_stm32_dcmi_set_ctrl,
-	.set_selection = video_stm32_dcmi_set_selection,
-	.get_selection = video_stm32_dcmi_get_selection,
 };
 
 static int video_stm32_dcmi_init_controls(const struct device *dev)

@@ -936,10 +936,10 @@ static int gc2145_set_resolution(const struct device *dev, uint32_t w, uint32_t 
 	drv_data->format_height = h;
 
 	/* Default to crop rectangle being same size as passed in resolution */
-	drv_data->crop.left = 0;
-	drv_data->crop.top = 0;
-	drv_data->crop.width = w;
-	drv_data->crop.height = h;
+	drv_data->vdev.in_selection.left = 0;
+	drv_data->vdev.in_selection.top = 0;
+	drv_data->vdev.in_selection.width = w;
+	drv_data->vdev.in_selection.height = h;
 
 	/* Calculates the window boundaries to obtain the desired resolution */
 
@@ -1018,9 +1018,10 @@ static int gc2145_set_crop(const struct device *dev, struct video_selection *sel
 	}
 
 	/* if rectangle passed in is same as current, simply return */
-	if ((drv_data->crop.left == sel->rect.left) && (drv_data->crop.top == sel->rect.top) &&
-	    (drv_data->crop.width == sel->rect.width) &&
-	    (drv_data->crop.height == sel->rect.height)) {
+	if ((drv_data->vdev.in_selection.left == sel->rect.left) &&
+	    (drv_data->vdev.in_selection.top == sel->rect.top) &&
+	    (drv_data->vdev.in_selection.width == sel->rect.width) &&
+	    (drv_data->vdev.in_selection.height == sel->rect.height)) {
 		return 0;
 	}
 
@@ -1036,12 +1037,6 @@ static int gc2145_set_crop(const struct device *dev, struct video_selection *sel
 	if (ret < 0) {
 		return ret;
 	}
-
-	drv_data->crop = sel->rect;
-
-	/* enqueue/dequeue depend on this being set as well as the crop */
-	drv_data->vdev.out_fmt.width = drv_data->crop.width;
-	drv_data->vdev.out_fmt.height = drv_data->crop.height;
 
 	return 0;
 }
@@ -1256,9 +1251,8 @@ static int gc2145_get_selection(const struct device *dev, struct video_selection
 
 	switch (sel->target) {
 	case VIDEO_SEL_TGT_CROP:
-		sel->rect = drv_data->crop;
+		sel->rect = data->vdev.in_selection;
 		break;
-
 	case VIDEO_SEL_TGT_NATIVE_SIZE:
 		sel->rect.top = 0;
 		sel->rect.left = 0;

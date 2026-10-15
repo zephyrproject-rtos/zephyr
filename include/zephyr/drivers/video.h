@@ -70,6 +70,14 @@ struct video_device {
 	struct k_fifo *out_buf_submitted;
 	/** Output buffer completion queue */
 	struct k_fifo *out_buf_completed;
+	/** Selection rectangle for cropping at frame output */
+	struct video_rect out_selection;
+	/** Copose rectangle for scaling ans output offset at frame output */
+	struct video_rect out_compose;
+	/** Selection rectangle for cropping at frame input */
+	struct video_rect in_selection;
+	/** Copose rectangle for scaling ans output offset at frame input */
+	struct video_rect in_compose;
 };
 
 /**

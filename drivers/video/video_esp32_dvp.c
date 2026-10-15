@@ -283,38 +283,9 @@ static int video_esp32_init(const struct device *dev)
 	return 0;
 }
 
-int video_esp32_set_selection(const struct device *dev, struct video_selection *sel)
-{
-	struct video_esp32_data *data = dev->data;
-	const struct video_esp32_config *cfg = dev->config;
-	int ret;
-
-	ret = video_set_selection(data->vdev.source_dev, sel);
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_get_format(data->vdev.source_dev, &data->vdev->out_fmt);
-	if (ret < 0) {
-		LOG_ERR("Failed to get format from source device");
-		return ret;
-	}
-
-	return 0;
-}
-
-int video_esp32_get_selection(const struct device *dev, struct video_selection *sel)
-{
-	const struct video_esp32_config *cfg = dev->config;
-
-	return video_get_selection(data->vdev.source_dev, sel);
-}
-
 static DEVICE_API(video, esp32_driver_api) = {
 	.set_stream = video_esp32_set_stream,
 	.get_caps = video_esp32_get_caps,
-	.set_selection = video_esp32_set_selection,
-	.get_selection = video_esp32_get_selection,
 };
 
 #define SOURCE_DEV(n) DEVICE_DT_GET(DT_INST_PHANDLE(n, source))
