@@ -1793,16 +1793,19 @@ static int tls_set_private_key_psa(struct tls_context *tls,
 #endif /* CONFIG_MBEDTLS_X509_CRT_PARSE_C */
 }
 
-static int tls_set_psk(struct tls_context *tls,
-		       struct tls_credential *psk,
+static int tls_set_psk(struct tls_context *tls, struct tls_credential *psk,
 		       struct tls_credential *psk_id)
 {
 #if defined(MBEDTLS_SSL_HANDSHAKE_WITH_PSK_ENABLED)
-	int err = mbedtls_ssl_conf_psk(&tls->config,
-				       psk->buf, psk->len,
-				       (const unsigned char *)psk_id->buf,
-				       psk_id->len);
-	if (err != 0) {
+	/* Full validation is done in tls_check_credentials() when the tag list
+	 * is set. Credentials may change afterwards, so guard against an
+	 * incomplete pair here.
+	 */
+	if ((psk == NULL) || (psk_id == NULL)) {
+		return -EINVAL;
+	}
+	if (mbedtls_ssl_conf_psk(&tls->config, psk->buf, psk->len,
+				 psk_id->buf, psk_id->len) != 0) {
 		return -EINVAL;
 	}
 
@@ -1831,20 +1834,8 @@ static int tls_set_credential(struct tls_context *tls,
 	break;
 
 	case TLS_CREDENTIAL_PSK:
-	{
-		struct tls_credential *psk_id =
-			credential_get(cred->tag, TLS_CREDENTIAL_PSK_ID);
-		if (!psk_id) {
-			return -ENOENT;
-		}
-
-		return tls_set_psk(tls, cred, psk_id);
-	}
-
 	case TLS_CREDENTIAL_PSK_ID:
-		/* Ignore PSK ID - it will be used together
-		 * with PSK
-		 */
+		/* Nothing to do here. */
 		break;
 
 	default:
@@ -1856,10 +1847,11 @@ static int tls_set_credential(struct tls_context *tls,
 
 static int tls_mbedtls_set_credentials(struct tls_context *tls)
 {
-	struct tls_credential *cred;
+	struct tls_credential *cred, *psk, *psk_id;
 	sec_tag_t tag;
 	int i, err = 0;
-	bool tag_found, ca_cert_present = false, own_cert_present = false;
+	bool tag_found, ca_cert_present = false, own_cert_present = false,
+	     psk_set = false;
 
 	credentials_lock();
 
@@ -1867,6 +1859,8 @@ static int tls_mbedtls_set_credentials(struct tls_context *tls)
 		tag = tls->options.sec_tag_list.sec_tags[i];
 		cred = NULL;
 		tag_found = false;
+		psk = NULL;
+		psk_id = NULL;
 
 		while ((cred = credential_next_get(tag, cred)) != NULL) {
 			tag_found = true;
@@ -1880,6 +1874,10 @@ static int tls_mbedtls_set_credentials(struct tls_context *tls)
 				ca_cert_present = true;
 			} else if (cred->type == TLS_CREDENTIAL_PUBLIC_CERTIFICATE) {
 				own_cert_present = true;
+			} else if (cred->type == TLS_CREDENTIAL_PSK) {
+				psk = cred;
+			} else if (cred->type == TLS_CREDENTIAL_PSK_ID) {
+				psk_id = cred;
 			}
 		}
 
@@ -1887,19 +1885,32 @@ static int tls_mbedtls_set_credentials(struct tls_context *tls)
 			err = -ENOENT;
 			goto exit;
 		}
+
+		if ((psk != NULL) || (psk_id != NULL)) {
+			if (psk_set) {
+				err = -EINVAL;
+				goto exit;
+			}
+			err = tls_set_psk(tls, psk, psk_id);
+			if (err != 0) {
+				goto exit;
+			}
+			psk_set = true;
+		}
+	}
+
+	if (ca_cert_present) {
+		tls_set_ca_chain(tls);
+	}
+	if (own_cert_present) {
+		err = tls_set_own_cert(tls);
+		if (err != 0) {
+			goto exit;
+		}
 	}
 
 exit:
 	credentials_unlock();
-
-	if (err == 0) {
-		if (ca_cert_present) {
-			tls_set_ca_chain(tls);
-		}
-		if (own_cert_present) {
-			err = tls_set_own_cert(tls);
-		}
-	}
 
 	return err;
 }
@@ -2346,20 +2357,19 @@ static int tls_check_private_key_psa(struct tls_credential *priv_key)
 #endif /* CONFIG_MBEDTLS_X509_CRT_PARSE_C */
 }
 
-static int tls_check_psk(struct tls_credential *psk)
+static int tls_check_psk(struct tls_credential *cred)
 {
 #if defined(MBEDTLS_SSL_HANDSHAKE_WITH_PSK_ENABLED)
-	struct tls_credential *psk_id;
-
-	psk_id = credential_get(psk->tag, TLS_CREDENTIAL_PSK_ID);
-	if (psk_id == NULL) {
-		NET_ERR("No matching PSK ID found for tag %d", psk->tag);
-		return -EINVAL;
-	}
-
-	if (psk->len == 0 || psk_id->len == 0) {
-		NET_ERR("PSK or PSK ID empty on tag %d", psk->tag);
-		return -EINVAL;
+	if (cred->type == TLS_CREDENTIAL_PSK) {
+		if ((cred->len == 0) || (cred->len > CONFIG_MBEDTLS_PSK_MAX_LEN)) {
+			NET_ERR("Invalid PSK length (%zu) on tag %d", cred->len, cred->tag);
+			return -EINVAL;
+		}
+	} else {
+		if (cred->len == 0) {
+			NET_ERR("PSK_ID is empty on tag %d", cred->tag);
+			return -EINVAL;
+		}
 	}
 
 	return 0;
@@ -2374,6 +2384,7 @@ static int tls_check_psk(struct tls_credential *psk)
 static int tls_check_credentials(const sec_tag_t *sec_tags, int sec_tag_count)
 {
 	int err = 0;
+	bool valid_psk_config_found = false;
 
 	credentials_lock();
 
@@ -2381,6 +2392,8 @@ static int tls_check_credentials(const sec_tag_t *sec_tags, int sec_tag_count)
 		sec_tag_t tag = sec_tags[i];
 		struct tls_credential *cred = NULL;
 		bool tag_found = false;
+		bool psk_found = false;
+		bool psk_id_found = false;
 
 		while ((cred = credential_next_get(tag, cred)) != NULL) {
 			tag_found = true;
@@ -2410,16 +2423,22 @@ static int tls_check_credentials(const sec_tag_t *sec_tags, int sec_tag_count)
 
 				break;
 			case TLS_CREDENTIAL_PSK:
+			case TLS_CREDENTIAL_PSK_ID:
+				if (valid_psk_config_found) {
+					NET_ERR("Tag %d tried to override PSK or PSK_ID", tag);
+					err = -EINVAL;
+					goto exit;
+				}
 				err = tls_check_psk(cred);
 				if (err != 0) {
 					goto exit;
 				}
+				if (cred->type == TLS_CREDENTIAL_PSK) {
+					psk_found = true;
+				} else {
+					psk_id_found = true;
+				}
 
-				break;
-			case TLS_CREDENTIAL_PSK_ID:
-				/* Ignore PSK ID - it will be verified together
-				 * with PSK.
-				 */
 				break;
 			default:
 				err = -EINVAL;
@@ -2431,6 +2450,18 @@ static int tls_check_credentials(const sec_tag_t *sec_tags, int sec_tag_count)
 		if (!tag_found) {
 			NET_ERR("No TLS credential found with tag %d", tag);
 			err = -ENOENT;
+			goto exit;
+		}
+
+		/* PSK and PSK_ID must be provided using the same tag. Also there
+		 * cannot be more than one (PSK, PSK_ID) couple in the provided
+		 * tag list.
+		 */
+		if (psk_found && psk_id_found) {
+			valid_psk_config_found = true;
+		} else if (psk_found || psk_id_found) {
+			NET_ERR("Missing PSK or PSK_ID on tag %d", tag);
+			err = -EINVAL;
 			goto exit;
 		}
 	}
