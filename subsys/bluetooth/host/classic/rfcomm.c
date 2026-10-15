@@ -1881,6 +1881,10 @@ int bt_rfcomm_dlc_connect(struct bt_conn *conn, struct bt_rfcomm_dlc *dlc,
 	return 0;
 
 fail:
+	/* rfcomm_dlc_init() armed the RTX timer; it would otherwise fire long
+	 * after this failure, with dlc->session already cleared below.
+	 */
+	(void)k_work_cancel_delayable(&dlc->rtx_work);
 	rfcomm_dlcs_remove_dlci(session->dlcs, dlc->dlci);
 	dlc->state = BT_RFCOMM_STATE_IDLE;
 	dlc->session = NULL;
