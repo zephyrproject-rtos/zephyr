@@ -242,10 +242,6 @@ static int video_nsi_fifo_set_fmt(const struct device *dev, struct video_format 
 {
 	struct video_nsi_fifo_data *data = dev->data;
 
-	if (fmt->type != VIDEO_BUF_TYPE_OUTPUT) {
-		return -EINVAL;
-	}
-
 	if (data->fd >= 0) {
 		video_nsi_fifo_grow_pipe(data);
 	}
@@ -270,10 +266,6 @@ static int video_nsi_fifo_set_stream(const struct device *dev, bool enable,
 {
 	struct video_nsi_fifo_data *data = dev->data;
 	int ret = 0;
-
-	if (type != VIDEO_BUF_TYPE_OUTPUT) {
-		return -EINVAL;
-	}
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
@@ -306,10 +298,6 @@ static int video_nsi_fifo_enqueue(const struct device *dev, struct video_buffer 
 {
 	struct video_nsi_fifo_data *data = dev->data;
 	int ret = 0;
-
-	if (vbuf->type != VIDEO_BUF_TYPE_OUTPUT) {
-		return -EINVAL;
-	}
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
