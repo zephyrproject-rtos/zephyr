@@ -29,6 +29,12 @@ struct shell_telnet *sh_telnet;
 #define TELNET_LINE_SIZE CONFIG_SHELL_TELNET_LINE_BUF_SIZE
 #define TELNET_TIMEOUT   CONFIG_SHELL_TELNET_SEND_TIMEOUT
 
+/* Pause between retries while the stack is out of buffers, growing like the
+ * socket layer's own retry for blocking sends.
+ */
+#define TELNET_BUFS_WAIT_MS     10
+#define TELNET_BUFS_WAIT_MAX_MS 100
+
 #define TELNET_MIN_COMMAND_LEN 2
 #define TELNET_WILL_DO_COMMAND_LEN 3
 
@@ -46,10 +52,11 @@ NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(telnet_server, telnet_server_cb,
 				      SHELL_TELNET_POLLFD_COUNT);
 
 
-/* Only the socket service thread closes the client socket, and only once no
- * send holds tx_lock, so the descriptor cannot be closed and reused under a
- * send in progress. Every synchronous cancel of send_work also runs under
- * tx_lock, so no two threads ever wait for the same cancel.
+/* Only the socket service thread closes the client socket, and only under
+ * tx_lock: no zsock_send() runs on a closed descriptor, and a send that waits
+ * with the lock released re-checks the session afterwards. Every synchronous
+ * cancel of send_work also runs under tx_lock, so no two threads ever wait
+ * for the same cancel.
  */
 static void telnet_close_client(void)
 {
@@ -63,6 +70,7 @@ static void telnet_close_client(void)
 
 	sh_telnet->fds[SOCK_ID_CLIENT].fd = -1;
 	sh_telnet->output_lock = false;
+	sh_telnet->session++;
 
 	k_mutex_unlock(&sh_telnet->tx_lock);
 }
@@ -84,24 +92,54 @@ static void telnet_end_client_connection(void)
 	}
 }
 
+/* Replies are a few bytes. One that cannot start is dropped rather than
+ * block the socket service thread; one that has partly left must be
+ * completed, with tx_lock held so that no output lands in the middle of
+ * it, within a short bounded wait.
+ */
 static void telnet_command_send_reply(uint8_t *msg, uint16_t len)
 {
-	if (sh_telnet->fds[SOCK_ID_CLIENT].fd < 0) {
-		return;
-	}
+	int64_t deadline = k_uptime_get() + TELNET_TIMEOUT;
+	bool started = false;
+	int ret = 0;
+	int fd;
 
-	while (len > 0) {
-		int ret;
+	k_mutex_lock(&sh_telnet->tx_lock, K_FOREVER);
 
-		ret = zsock_send(sh_telnet->fds[SOCK_ID_CLIENT].fd, msg, len, 0);
-		if (ret < 0) {
-			LOG_ERR("Failed to send command %d, shutting down", ret);
-			telnet_end_client_connection();
+	fd = sh_telnet->fds[SOCK_ID_CLIENT].fd;
+
+	while (fd >= 0 && len > 0) {
+		ret = zsock_send(fd, msg, len, ZSOCK_MSG_DONTWAIT);
+		if (ret >= 0) {
+			started = started || ret > 0;
+			msg += ret;
+			len -= ret;
+			continue;
+		}
+
+		ret = -errno;
+		if (ret != -EAGAIN && ret != -ENOBUFS) {
 			break;
 		}
 
-		msg += ret;
-		len -= ret;
+		if (!started) {
+			ret = 0;
+			break;
+		}
+
+		if (k_uptime_get() >= deadline) {
+			ret = -ETIMEDOUT;
+			break;
+		}
+
+		k_sleep(K_MSEC(TELNET_BUFS_WAIT_MS));
+	}
+
+	k_mutex_unlock(&sh_telnet->tx_lock);
+
+	if (ret < 0) {
+		LOG_ERR("Failed to send command %d, shutting down", ret);
+		telnet_end_client_connection();
 	}
 }
 
@@ -203,17 +241,64 @@ static void telnet_reply_command(struct telnet_simple_command *cmd)
 	}
 }
 
+/* Waits with tx_lock released until a send may succeed again, so a client
+ * that stops reading never holds up a close: for a full window until the
+ * socket is writable, for a buffer shortage a growing pause.
+ */
+static int telnet_send_wait(int fd, int err, int64_t deadline, uint32_t *pause)
+{
+	int64_t remaining = deadline - k_uptime_get();
+	int ret = 0;
+
+	if (remaining <= 0) {
+		return -ETIMEDOUT;
+	}
+
+	k_mutex_unlock(&sh_telnet->tx_lock);
+
+	if (err == -EAGAIN) {
+		struct zsock_pollfd pfd = {
+			.fd = fd,
+			.events = ZSOCK_POLLOUT,
+		};
+
+		ret = zsock_poll(&pfd, 1, (int)remaining);
+		if (ret < 0) {
+			ret = -errno;
+		} else if (ret == 0) {
+			ret = -ETIMEDOUT;
+		} else {
+			ret = 0;
+		}
+	} else {
+		k_sleep(K_MSEC(MIN(*pause, (uint32_t)remaining)));
+		*pause = MIN(*pause * 2, TELNET_BUFS_WAIT_MAX_MS);
+	}
+
+	k_mutex_lock(&sh_telnet->tx_lock, K_FOREVER);
+
+	return ret;
+}
+
+/* Called with tx_lock held. Returns -ECANCELED when the pending output was
+ * dropped on purpose: the session changed or was told to stop while the
+ * lock was released for the wait.
+ */
 static int telnet_send(bool block)
 {
-	int ret;
+	int64_t deadline = k_uptime_get() + CONFIG_NET_SOCKET_MAX_SEND_WAIT;
+	uint32_t pause = TELNET_BUFS_WAIT_MS;
 	uint8_t *msg = sh_telnet->line_out.buf;
 	uint16_t len = sh_telnet->line_out.len;
+	int fd = sh_telnet->fds[SOCK_ID_CLIENT].fd;
+	uint32_t session = sh_telnet->session;
+	int ret;
 
-	if (sh_telnet->line_out.len == 0) {
+	if (len == 0) {
 		return 0;
 	}
 
-	if (sh_telnet->fds[SOCK_ID_CLIENT].fd < 0) {
+	if (fd < 0) {
 		return -ENOTCONN;
 	}
 
@@ -222,31 +307,39 @@ static int telnet_send(bool block)
 	}
 
 	while (len > 0) {
-		ret = zsock_send(sh_telnet->fds[SOCK_ID_CLIENT].fd, msg, len,
-				 block ? 0 : ZSOCK_MSG_DONTWAIT);
-		if (!block && (ret < 0) && (errno == EAGAIN)) {
-			/* Not all data was sent - move the remaining data and
-			 * update length.
-			 */
-			memmove(sh_telnet->line_out.buf, msg, len);
-			sh_telnet->line_out.len = len;
-			return -EAGAIN;
+		ret = zsock_send(fd, msg, len, ZSOCK_MSG_DONTWAIT);
+		if (ret >= 0) {
+			msg += ret;
+			len -= ret;
+			continue;
 		}
 
-		if (ret < 0) {
-			/* Stop the output before anything else: the caller logs
-			 * the error once tx_lock is released, and a log backend
-			 * on this shell must find the output already stopped.
-			 */
-			ret = -errno;
-			sh_telnet->output_lock = true;
-			(void)zsock_shutdown(sh_telnet->fds[SOCK_ID_CLIENT].fd,
-					     ZSOCK_SHUT_RD);
-			return ret;
+		ret = -errno;
+		if (ret == -EAGAIN || ret == -ENOBUFS) {
+			if (!block) {
+				/* Keep the rest for the next attempt. */
+				memmove(sh_telnet->line_out.buf, msg, len);
+				sh_telnet->line_out.len = len;
+				return -EAGAIN;
+			}
+
+			ret = telnet_send_wait(fd, ret, deadline, &pause);
+			if (sh_telnet->session != session || sh_telnet->output_lock) {
+				return -ECANCELED;
+			}
+
+			if (ret == 0) {
+				continue;
+			}
 		}
 
-		msg += ret;
-		len -= ret;
+		/* Stop the output before anything else: the caller logs the
+		 * error once tx_lock is released, and a log backend on this
+		 * shell must find the output already stopped.
+		 */
+		sh_telnet->output_lock = true;
+		(void)zsock_shutdown(fd, ZSOCK_SHUT_RD);
+		return ret;
 	}
 
 	/* We reinitialize the line buffer */
@@ -259,9 +352,12 @@ static void telnet_send_prematurely(struct k_work *work)
 {
 	int ret = -EAGAIN;
 
-	/* Use non-blocking send to prevent system workqueue blocking. */
+	/* While the shell thread writes it owns the line buffer and reschedules
+	 * this work itself if output remains. Use non-blocking send to prevent
+	 * system workqueue blocking.
+	 */
 	if (k_mutex_lock(&sh_telnet->tx_lock, K_NO_WAIT) == 0) {
-		ret = telnet_send(false);
+		ret = sh_telnet->tx_active ? 0 : telnet_send(false);
 		k_mutex_unlock(&sh_telnet->tx_lock);
 	}
 
@@ -464,18 +560,24 @@ static void telnet_accept(struct zsock_pollfd *pollfd)
 		goto error;
 	}
 
+	k_mutex_lock(&sh_telnet->tx_lock, K_FOREVER);
+
 	sh_telnet->fds[SOCK_ID_CLIENT].fd = sock;
 	sh_telnet->fds[SOCK_ID_CLIENT].events = ZSOCK_POLLIN;
 	sh_telnet->rx_len = 0;
 	sh_telnet->cmd_len = 0;
 	sh_telnet->line_out.len = 0;
 	sh_telnet->output_lock = false;
+	sh_telnet->session++;
+
+	k_mutex_unlock(&sh_telnet->tx_lock);
 
 	ret = net_socket_service_register(&telnet_server, sh_telnet->fds,
 					  ARRAY_SIZE(sh_telnet->fds), NULL);
 	if (ret < 0) {
 		LOG_ERR("Failed to register socket service, (%d)", ret);
-		sh_telnet->fds[SOCK_ID_CLIENT].fd = -1;
+		telnet_close_client();
+		sock = -1;
 		goto error;
 	}
 
@@ -738,6 +840,7 @@ static int telnet_write(const struct shell_transport *transport,
 	timeout = k_ticks_to_ms_ceil32(
 			k_work_delayable_remaining_get(&sh_telnet->send_work));
 	was_running = k_work_cancel_delayable_sync(&sh_telnet->send_work, &sync);
+	sh_telnet->tx_active = true;
 
 	do {
 		if (lb->len + length - *cnt > TELNET_LINE_SIZE) {
@@ -757,6 +860,7 @@ static int telnet_write(const struct shell_transport *transport,
 			err = telnet_send(true);
 			if (err != 0) {
 				*cnt = length;
+				sh_telnet->tx_active = false;
 				k_mutex_unlock(&sh_telnet->tx_lock);
 				if ((err == -ENOTCONN) || (err == -ENETDOWN)) {
 					LOG_ERR("Network disconnected, shutting down");
@@ -778,6 +882,7 @@ static int telnet_write(const struct shell_transport *transport,
 		k_work_reschedule(&sh_telnet->send_work, K_MSEC(timeout));
 	}
 
+	sh_telnet->tx_active = false;
 	k_mutex_unlock(&sh_telnet->tx_lock);
 
 	sh_telnet->shell_handler(SHELL_TRANSPORT_EVT_TX_RDY,
