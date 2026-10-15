@@ -63,6 +63,13 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
+* Task Watchdog
+
+  * :c:func:`task_wdt_channel_info_get`
+  * :c:func:`task_wdt_channel_thread_set`
+  * :kconfig:option:`CONFIG_TASK_WDT_COREDUMP`
+  * :kconfig:option:`CONFIG_TASK_WDT_THREAD_INFO`
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:

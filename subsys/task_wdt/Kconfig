@@ -86,6 +86,25 @@ config TASK_WDT_HW_FALLBACK_PAUSE_IN_SLEEP
 	  Note that this feature is supported only by a subset of hardware
 	  watchdogs.
 
+config TASK_WDT_THREAD_INFO
+	bool "Report the thread owning a timed out channel"
+	help
+	  Record the thread owning each channel, which by default is the
+	  thread which fed the channel last. When a channel times out, log
+	  the owner thread's name, state, priority and unused stack space
+	  (if CONFIG_INIT_STACKS and CONFIG_THREAD_STACK_INFO are enabled)
+	  before calling the callback or resetting the system.
+
+config TASK_WDT_COREDUMP
+	bool "Core dump the owner thread before resetting the system"
+	depends on TASK_WDT_THREAD_INFO
+	depends on DEBUG_COREDUMP
+	help
+	  If a channel without a callback times out, create a core dump
+	  before resetting the system, with the owner thread as the faulting
+	  thread. Combined with CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_THREADS,
+	  this allows to find out where the owner thread was stuck.
+
 config TASK_WDT_SHELL
 	bool "Task watchdog shell utilities"
 	depends on SHELL

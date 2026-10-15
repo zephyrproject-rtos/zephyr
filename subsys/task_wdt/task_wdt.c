@@ -6,6 +6,7 @@
 
 #include <zephyr/task_wdt/task_wdt.h>
 
+#include <zephyr/debug/coredump.h>
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/sys/reboot.h>
 #include <zephyr/device.h>
@@ -13,6 +14,7 @@
 
 #define LOG_LEVEL CONFIG_WDT_LOG_LEVEL
 #include <zephyr/logging/log.h>
+#include <zephyr/logging/log_ctrl.h>
 LOG_MODULE_REGISTER(task_wdt);
 
 /*
@@ -35,6 +37,12 @@ struct task_wdt_channel {
 	void *user_data;
 	/* function to be called when watchdog timer expired */
 	task_wdt_callback_t callback;
+#ifdef CONFIG_TASK_WDT_THREAD_INFO
+	/* thread owning the channel, NULL if not known */
+	k_tid_t thread;
+	/* owner set with task_wdt_channel_thread_set(), not updated on feed */
+	bool thread_fixed;
+#endif
 };
 
 /* array of all task watchdog channels */
@@ -92,13 +100,60 @@ enum task_wdt_fault_reason {
 	TASK_WDT_FAULT_TIMEOUT,
 };
 
+#ifdef CONFIG_TASK_WDT_THREAD_INFO
+static void task_wdt_report(int channel_id)
+{
+	struct task_wdt_channel *channel = &channels[channel_id];
+	k_tid_t thread = channel->thread;
+	int64_t last_feed_ticks =
+		channel->timeout_abs_ticks - k_ms_to_ticks_ceil64(channel->reload_period);
+	char state[32];
+	const char *name;
+
+	LOG_ERR("Channel %d timed out, last fed %u ms ago", channel_id,
+		(uint32_t)k_ticks_to_ms_floor64(sys_clock_tick_get() - last_feed_ticks));
+
+	if (thread == NULL) {
+		LOG_ERR("Channel %d has no owner thread", channel_id);
+		return;
+	}
+
+	name = k_thread_name_get(thread);
+	LOG_ERR("Owner thread %p (%s): %s, priority %d", (void *)thread, name != NULL ? name : "",
+		k_thread_state_str(thread, state, sizeof(state)), k_thread_priority_get(thread));
+
+#if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
+	size_t unused;
+
+	/* Some architectures fault when inspecting the stack in use */
+	if ((!IS_ENABLED(CONFIG_NO_UNUSED_STACK_INSPECTION) || thread != k_current_get()) &&
+	    k_thread_stack_space_get(thread, &unused) == 0) {
+		LOG_ERR("Owner thread %p: %zu bytes of stack unused", (void *)thread, unused);
+	}
+#endif
+}
+#endif /* CONFIG_TASK_WDT_THREAD_INFO */
+
 static void task_wdt_fault(int channel_id, enum task_wdt_fault_reason reason)
 {
 	ARG_UNUSED(reason);
 
+#ifdef CONFIG_TASK_WDT_THREAD_INFO
+	task_wdt_report(channel_id);
+#endif
+
 	if (channels[channel_id].callback) {
 		channels[channel_id].callback(channel_id, channels[channel_id].user_data);
 	} else {
+#ifdef CONFIG_TASK_WDT_COREDUMP
+		if (channels[channel_id].thread != NULL) {
+			coredump(K_ERR_KERNEL_PANIC, NULL, channels[channel_id].thread);
+		}
+#endif
+#ifdef CONFIG_TASK_WDT_THREAD_INFO
+		/* flush the report before the reset */
+		LOG_PANIC();
+#endif
 		sys_reboot(SYS_REBOOT_COLD);
 	}
 }
@@ -189,6 +244,10 @@ int task_wdt_add(uint32_t reload_period, task_wdt_callback_t callback,
 			channels[id].user_data = user_data;
 			channels[id].timeout_abs_ticks = K_TICKS_FOREVER;
 			channels[id].callback = callback;
+#ifdef CONFIG_TASK_WDT_THREAD_INFO
+			channels[id].thread = NULL;
+			channels[id].thread_fixed = false;
+#endif
 
 #ifdef CONFIG_TASK_WDT_HW_FALLBACK
 			if (!hw_wdt_started && hw_wdt_dev) {
@@ -258,11 +317,79 @@ int task_wdt_feed(int channel_id)
 	channels[channel_id].timeout_abs_ticks = current_ticks +
 		k_ms_to_ticks_ceil64(channels[channel_id].reload_period);
 
+#ifdef CONFIG_TASK_WDT_THREAD_INFO
+	/* the owner is the thread which fed the channel last */
+	if (!channels[channel_id].thread_fixed && !k_is_in_isr()) {
+		channels[channel_id].thread = k_current_get();
+	}
+#endif
+
 	schedule_next_timeout(current_ticks);
 
 	k_sched_unlock();
 
 	return 0;
+}
+
+int task_wdt_channel_thread_set(int channel_id, k_tid_t thread)
+{
+#ifdef CONFIG_TASK_WDT_THREAD_INFO
+	k_spinlock_key_t key;
+	int ret = 0;
+
+	if (channel_id < 0 || channel_id >= ARRAY_SIZE(channels)) {
+		return -EINVAL;
+	}
+
+	key = k_spin_lock(&channels_lock);
+
+	if (channels[channel_id].reload_period == 0) {
+		ret = -EINVAL;
+	} else {
+		channels[channel_id].thread = thread;
+		channels[channel_id].thread_fixed = (thread != NULL);
+	}
+
+	k_spin_unlock(&channels_lock, key);
+
+	return ret;
+#else
+	ARG_UNUSED(channel_id);
+	ARG_UNUSED(thread);
+
+	return -ENOTSUP;
+#endif
+}
+
+int task_wdt_channel_info_get(int channel_id, struct task_wdt_channel_info *info)
+{
+	k_spinlock_key_t key;
+	int64_t ticks_left;
+	int ret = 0;
+
+	if (channel_id < 0 || channel_id >= ARRAY_SIZE(channels) || info == NULL) {
+		return -EINVAL;
+	}
+
+	key = k_spin_lock(&channels_lock);
+
+	if (channels[channel_id].reload_period == 0) {
+		ret = -EINVAL;
+	} else {
+		ticks_left = channels[channel_id].timeout_abs_ticks - sys_clock_tick_get();
+
+		info->reload_period = channels[channel_id].reload_period;
+		info->time_left = ticks_left > 0 ? (uint32_t)k_ticks_to_ms_floor64(ticks_left) : 0;
+#ifdef CONFIG_TASK_WDT_THREAD_INFO
+		info->thread = channels[channel_id].thread;
+#else
+		info->thread = NULL;
+#endif
+	}
+
+	k_spin_unlock(&channels_lock, key);
+
+	return ret;
 }
 
 void task_wdt_suspend(void)

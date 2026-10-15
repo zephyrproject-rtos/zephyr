@@ -3,6 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
+#include <string.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/task_wdt/task_wdt.h>
 
@@ -37,6 +39,27 @@ int task_wdt_delete(int channel_id)
 int task_wdt_feed(int channel_id)
 {
 	ARG_UNUSED(channel_id);
+
+	return 0;
+}
+
+int task_wdt_channel_thread_set(int channel_id, k_tid_t thread)
+{
+	ARG_UNUSED(channel_id);
+	ARG_UNUSED(thread);
+
+	return 0;
+}
+
+int task_wdt_channel_info_get(int channel_id, struct task_wdt_channel_info *info)
+{
+	ARG_UNUSED(channel_id);
+
+	if (info == NULL) {
+		return -EINVAL;
+	}
+
+	memset(info, 0, sizeof(*info));
 
 	return 0;
 }
