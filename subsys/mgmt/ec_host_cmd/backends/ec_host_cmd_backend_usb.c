@@ -209,6 +209,12 @@ static int ec_host_cmd_signal_event(struct usbd_class_data *const c_data)
 	return 0;
 }
 
+/* Run the reset work as soon as possible, even if it is already scheduled with a timeout. */
+static inline void schedule_reset(struct ec_host_cmd_usb_ctx *ctx)
+{
+	k_work_reschedule(&ctx->reset_work, K_NO_WAIT);
+}
+
 static int handle_out_transfer(struct usbd_class_data *const c_data)
 {
 	int ret;
@@ -234,7 +240,7 @@ static int handle_out_transfer(struct usbd_class_data *const c_data)
 	if (ctx->state == USB_EC_HOST_CMD_STATE_RECEIVING) {
 		if (!IS_UDC_ALIGNED(ctx->rx_ctx->len)) {
 			LOG_ERR("Received unaligned OUT transfer: %zu", ctx->rx_ctx->len);
-			k_work_reschedule(&ctx->reset_work, K_NO_WAIT);
+			schedule_reset(ctx);
 			return 0;
 		}
 		ctx->usb_rx_buf = ec_host_cmd_buf_alloc(ec_host_cmd_get_out_ep(c_data),
@@ -242,13 +248,13 @@ static int handle_out_transfer(struct usbd_class_data *const c_data)
 							ctx->rx_ctx->buf + ctx->rx_ctx->len);
 		if (ctx->usb_rx_buf == NULL) {
 			LOG_ERR("Failed to allocate buf OUT");
-			k_work_reschedule(&ctx->reset_work, K_NO_WAIT);
+			schedule_reset(ctx);
 			return 0;
 		}
 		ret = usbd_ep_enqueue(c_data, ctx->usb_rx_buf);
 		if (ret) {
 			net_buf_drop(&ctx->usb_rx_buf);
-			k_work_reschedule(&ctx->reset_work, K_NO_WAIT);
+			schedule_reset(ctx);
 			LOG_ERR("Failed to enqueue EP OUT: %d", ret);
 			return 0;
 		}
@@ -287,14 +293,14 @@ static int ec_host_cmd_request(struct usbd_class_data *const c_data, struct net_
 		if (ret) {
 			LOG_ERR("Failed to free buf OUT");
 			/* Schedule the reset work even if it hasn't been queued */
-			k_work_reschedule(&ctx->reset_work, K_NO_WAIT);
+			schedule_reset(ctx);
 			return ret;
 		}
 
 		if (ctx->state == USB_EC_HOST_CMD_STATE_READY_TO_RX) {
 			if (buf_len < sizeof(struct ec_host_cmd_request_header)) {
 				LOG_ERR("First transfer less than header: %d", buf_len);
-				k_work_schedule(&ctx->reset_work, K_NO_WAIT);
+				schedule_reset(ctx);
 				return 0;
 			}
 			ctx->state = USB_EC_HOST_CMD_STATE_RECEIVING;
@@ -318,7 +324,7 @@ static int ec_host_cmd_request(struct usbd_class_data *const c_data, struct net_
 							EP_BULK_SIZE, ctx->rx_ctx->buf);
 		if (ctx->usb_rx_buf == NULL) {
 			LOG_ERR("Failed to allocate buf OUT");
-			k_work_schedule(&ctx->reset_work, K_NO_WAIT);
+			schedule_reset(ctx);
 			return 0;
 		}
 
@@ -326,7 +332,7 @@ static int ec_host_cmd_request(struct usbd_class_data *const c_data, struct net_
 		if (ret) {
 			LOG_ERR("Failed to enqueue EP OUT: %d", ret);
 			net_buf_drop(&ctx->usb_rx_buf);
-			k_work_schedule(&ctx->reset_work, K_NO_WAIT);
+			schedule_reset(ctx);
 			return 0;
 		}
 
@@ -533,14 +539,14 @@ static int ec_host_cmd_backend_send(const struct ec_host_cmd_backend *backend)
 	ret = usbd_ep_enqueue(c_data, ctx->usb_tx_buf);
 	if (ret) {
 		LOG_ERR("Failed to enqueue EP IN: %d", ret);
-		k_work_reschedule(&ctx->reset_work, K_NO_WAIT);
+		schedule_reset(ctx);
 		return ret;
 	}
 
 	buf = ec_host_cmd_buf_alloc_int(ec_host_cmd_get_in_int_ep(c_data));
 	if (buf == NULL) {
 		LOG_ERR("Failed to allocate buf INT OUT: %d", ret);
-		k_work_reschedule(&ctx->reset_work, K_NO_WAIT);
+		schedule_reset(ctx);
 		return -ENOMEM;
 	}
 
@@ -552,7 +558,7 @@ static int ec_host_cmd_backend_send(const struct ec_host_cmd_backend *backend)
 	if (ret) {
 		net_buf_unref(buf);
 		LOG_ERR("Failed to enqueue EP INT OUT: %d", ret);
-		k_work_reschedule(&ctx->reset_work, K_NO_WAIT);
+		schedule_reset(ctx);
 		return ret;
 	}
 
