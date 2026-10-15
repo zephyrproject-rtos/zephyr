@@ -73,7 +73,6 @@ struct ifx_cat1_i2c_data {
 	struct k_sem transfer_sem;
 	bool error;
 	bool rx_overrun;
-	uint32_t async_pending;
 	struct ifx_cat1_clock clock;
 	struct i2c_target_config *p_target_config;
 	uint8_t i2c_target_wr_byte;
@@ -260,9 +259,8 @@ static void ifx_cat1_i2c_event_handler(void *callback_arg, uint32_t event)
 		data->pending = CAT1_I2C_PENDING_NONE;
 		data->error = true;
 		k_sem_give(&data->transfer_sem);
-	} else if ((data->async_pending == CAT1_I2C_PENDING_TX_RX) &&
-		   ((CY_SCB_I2C_MASTER_WR_CMPLT_EVENT & event) != 0) &&
-		   (data->pending == CAT1_I2C_PENDING_TX_RX)) {
+	} else if ((data->pending == CAT1_I2C_PENDING_TX_RX) &&
+		   ((CY_SCB_I2C_MASTER_WR_CMPLT_EVENT & event) != 0)) {
 		/*
 		 * Chain the read phase only after the write phase completes. A
 		 * write to an absent target reports its address NACK through the
@@ -271,10 +269,26 @@ static void ifx_cat1_i2c_event_handler(void *callback_arg, uint32_t event)
 		 */
 		data->pending = CAT1_I2C_PENDING_RX;
 		Cy_SCB_I2C_MasterRead(config->base, &data->rx_config, &data->context);
-	} else if (((data->async_pending == CAT1_I2C_PENDING_TX_RX) &&
-		    ((CY_SCB_I2C_MASTER_RD_CMPLT_EVENT & event) != 0)) ||
-		   (data->async_pending != CAT1_I2C_PENDING_TX_RX)) {
+	} else if (((data->pending == CAT1_I2C_PENDING_TX) &&
+		    ((CY_SCB_I2C_MASTER_WR_CMPLT_EVENT & event) != 0)) ||
+		   ((data->pending == CAT1_I2C_PENDING_RX) &&
+		    ((CY_SCB_I2C_MASTER_RD_CMPLT_EVENT & event) != 0))) {
+		/*
+		 * With a target registered, this handler also receives target
+		 * events, which say nothing about the controller transfer.
+		 * Ending the transfer on one of them, or on any event other than
+		 * the completion of the phase in progress, would return to the
+		 * caller before its transfer completes.
+		 *
+		 * When the transfer does end, clear the state before giving
+		 * transfer_sem: the caller can start its next transfer as soon
+		 * as this interrupt handler returns, and that transfer requires
+		 * an idle controller.
+		 */
+		data->pending = CAT1_I2C_PENDING_NONE;
 		k_sem_give(&data->transfer_sem);
+	} else {
+		/* Not a terminal event for the phase in progress. */
 	}
 
 	if (data->p_target_config != NULL) {
@@ -898,7 +912,6 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 		if ((msg[i].flags & I2C_MSG_READ) != 0) {
 			rx_msg = &msg[i];
 			hold_bus = ifx_cat1_i2c_read_run_continues(msg, num_msgs, i);
-			data->async_pending = CAT1_I2C_PENDING_RX;
 		} else {
 			tx_msg = &msg[i];
 
@@ -906,10 +919,8 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 				rx_msg = &msg[i + 1];
 				i++;
 				hold_bus = ifx_cat1_i2c_read_run_continues(msg, num_msgs, i);
-				data->async_pending = CAT1_I2C_PENDING_TX_RX;
 			} else {
 				hold_bus = ifx_cat1_i2c_write_run_continues(msg, num_msgs, i);
-				data->async_pending = CAT1_I2C_PENDING_TX;
 			}
 		}
 
@@ -1247,17 +1258,6 @@ static void i2c_isr_handler(const struct device *dev)
 	}
 
 	Cy_SCB_I2C_Interrupt(config->base, &data->context);
-
-	if (data->pending != CAT1_I2C_PENDING_NONE) {
-		/* The write-read read phase is chained from the controller
-		 * WR_CMPLT event, so only the single TX or RX phase needs to be
-		 * cleared once the controller goes idle.
-		 */
-		if (0 == (Cy_SCB_I2C_MasterGetStatus(config->base, &data->context) &
-			  CY_SCB_I2C_MASTER_BUSY)) {
-			data->pending = CAT1_I2C_PENDING_NONE;
-		}
-	}
 }
 
 void ifx_cat1_i2c_cb_wrapper(const struct device *dev, uint32_t event)
