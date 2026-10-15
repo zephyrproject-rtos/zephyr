@@ -88,6 +88,21 @@ static void schedule_next_timeout(int64_t current_ticks)
 #endif
 }
 
+enum task_wdt_fault_reason {
+	TASK_WDT_FAULT_TIMEOUT,
+};
+
+static void task_wdt_fault(int channel_id, enum task_wdt_fault_reason reason)
+{
+	ARG_UNUSED(reason);
+
+	if (channels[channel_id].callback) {
+		channels[channel_id].callback(channel_id, channels[channel_id].user_data);
+	} else {
+		sys_reboot(SYS_REBOOT_COLD);
+	}
+}
+
 /**
  * @brief Task watchdog timer callback.
  *
@@ -118,12 +133,7 @@ static void task_wdt_trigger(struct k_timer *timer_id)
 		return;
 	}
 
-	if (channels[channel_id].callback) {
-		channels[channel_id].callback(channel_id,
-			channels[channel_id].user_data);
-	} else {
-		sys_reboot(SYS_REBOOT_COLD);
-	}
+	task_wdt_fault(channel_id, TASK_WDT_FAULT_TIMEOUT);
 }
 
 int task_wdt_init(const struct device *hw_wdt)
