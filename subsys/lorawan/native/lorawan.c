@@ -153,8 +153,6 @@ int lorawan_join(const struct lorawan_join_config *config)
 		.dev_nonce = config->otaa.dev_nonce,
 	};
 
-	atomic_clear_bit(lwan_ctx.flags, LWAN_FLAG_JOINED);
-
 	msg = LWAN_REQ(LWAN_REQ_JOIN, &join_req);
 
 	ret = engine_post_req_wait(&msg);
