@@ -4289,9 +4289,12 @@
  * Tests whether a node identifier refers to a node which:
  *
  * - exists in the devicetree, and
- * - has a status property matching the second argument
- *   (except that either a missing status or an `ok` status
- *   in the devicetree is treated as if it were `okay` instead)
+ * - has a status matching the second argument
+ *
+ * A missing status property is treated as if it were `okay`. A node whose
+ * own status is `okay` inherits the status of its parent node when that
+ * is not `okay`, so for example every node below a `disabled` node has
+ * status `disabled`.
  *
  * @param node_id a node identifier
  * @param status a status as one of the tokens okay or disabled, not a string
@@ -4312,10 +4315,10 @@
  * Tests whether a node identifier refers to a node which:
  *
  * - exists in the devicetree, and
- * - has a status property as `okay`
+ * - has status `okay`
  *
- * As usual, both a missing status and an `ok` status are treated as
- * `okay`.
+ * As usual, a missing status property is treated as `okay`, and a node
+ * below a node whose status is not `okay` is not `okay` either.
  *
  * @param node_id a node identifier
  * @return 1 if the node has status as `okay`, 0 otherwise.

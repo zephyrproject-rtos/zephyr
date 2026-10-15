@@ -107,3 +107,6 @@ Other notable changes
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the api/driver/Kconfig/board page above?
+
+* Devicetree nodes inherit the status of their parent node: a node below a node whose status
+  is not ``"okay"`` is not ``"okay"`` either. See :ref:`dt-important-props`.

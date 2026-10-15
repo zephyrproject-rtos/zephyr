@@ -56,10 +56,12 @@ that isn't defined.
 
 To fix it, you need to make sure that:
 
-1. The node is enabled: the node must have ``status = "okay";``.
+1. The node is enabled: the node must have ``status = "okay";``, and so must
+   all of its parent nodes.
 
    (Recall that a missing ``status`` property means the same thing as ``status
-   = "okay";``; see :ref:`dt-important-props` for more information about
+   = "okay";``, and that a node inherits the status of a parent node that is
+   not ``"okay"``; see :ref:`dt-important-props` for more information about
    ``status``).
 
 2. A device driver responsible for allocating the ``struct device`` is enabled.
