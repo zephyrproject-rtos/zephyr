@@ -153,8 +153,6 @@ int lorawan_join(const struct lorawan_join_config *config)
 		.dev_nonce = config->otaa.dev_nonce,
 	};
 
-	atomic_clear_bit(lwan_ctx.flags, LWAN_FLAG_JOINED);
-
 	msg = LWAN_REQ(LWAN_REQ_JOIN, &join_req);
 
 	ret = engine_post_req_wait(&msg);
@@ -165,6 +163,10 @@ int lorawan_join(const struct lorawan_join_config *config)
 			api_state.dr_changed_cb(lwan_ctx.current_dr);
 		}
 	} else {
+		/* Only clear the JOINED flag on failure, as it is possible for
+		 * the request itself to be discarded by `engine_post_req_wait`
+		 */
+		atomic_clear_bit(lwan_ctx.flags, LWAN_FLAG_JOINED);
 		LOG_WRN("Join failed: %d", ret);
 	}
 
