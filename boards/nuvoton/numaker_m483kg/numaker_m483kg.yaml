@@ -1,0 +1,13 @@
+identifier: numaker_m483kg
+name: NuMaker-M483KG
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 128
+flash: 256
+supported:
+  - gpio
+  - watchdog
+vendor: nuvoton
