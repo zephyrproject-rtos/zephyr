@@ -74,6 +74,11 @@ New APIs and options
     * :c:func:`bt_hids_report_get`
     * :c:func:`bt_hids_send_report`
 
+* West
+
+  * ``west spdx`` honors the ``SOURCE_DATE_EPOCH`` environment variable, so that the same build
+    gives the same SBOM. See :ref:`west-spdx-reproducible`.
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
