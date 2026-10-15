@@ -96,6 +96,10 @@ struct gpio_emul_data {
 	gpio_port_pins_t enabled_interrupts;
 	/** Singly-linked list of callbacks associated with the controller */
 	sys_slist_t callbacks;
+	/** Pins currently forced to fail (0 = no faults armed) */
+	gpio_port_pins_t fault_pins;
+	/** Error returned for operations touching a pin in fault_pins */
+	int fault_err;
 };
 
 /**
@@ -411,6 +415,22 @@ int gpio_emul_flags_get(const struct device *port, gpio_pin_t pin, gpio_flags_t 
 	return 0;
 }
 
+/* documented in drivers/gpio/gpio_emul.h */
+void gpio_emul_set_pin_fault(const struct device *port, gpio_port_pins_t pins, int err)
+{
+	struct gpio_emul_data *drv_data = (struct gpio_emul_data *)port->data;
+	const struct gpio_emul_config *config = (const struct gpio_emul_config *)port->config;
+	k_spinlock_key_t key;
+
+	pins &= config->common.port_pin_mask;
+	__ASSERT(pins == 0 || err < 0, "err must be a negative errno when pins is non-zero");
+
+	key = k_spin_lock(&drv_data->lock);
+	drv_data->fault_pins = pins;
+	drv_data->fault_err = (pins != 0) ? err : 0;
+	k_spin_unlock(&drv_data->lock, key);
+}
+
 /*
  * GPIO Driver API
  *
@@ -440,6 +460,11 @@ static int gpio_emul_pin_configure(const struct device *port, gpio_pin_t pin,
 	}
 
 	key = k_spin_lock(&drv_data->lock);
+	if (drv_data->fault_pins & BIT(pin)) {
+		rv = drv_data->fault_err;
+		k_spin_unlock(&drv_data->lock, key);
+		return rv;
+	}
 	drv_data->flags[pin] = flags;
 	if (flags & GPIO_OUTPUT) {
 		if (flags & GPIO_OUTPUT_INIT_LOW) {
@@ -515,17 +540,24 @@ static int gpio_emul_port_get_raw(const struct device *port, gpio_port_value_t *
 {
 	struct gpio_emul_data *drv_data =
 		(struct gpio_emul_data *)port->data;
+	const struct gpio_emul_config *config =
+		(const struct gpio_emul_config *)port->config;
 	k_spinlock_key_t key;
+	int rv = 0;
 
 	if (values == NULL) {
 		return -EINVAL;
 	}
 
 	key = k_spin_lock(&drv_data->lock);
-	*values = drv_data->input_vals & get_input_pins(port);
+	if (drv_data->fault_pins & config->common.port_pin_mask) {
+		rv = drv_data->fault_err;
+	} else {
+		*values = drv_data->input_vals & get_input_pins(port);
+	}
 	k_spin_unlock(&drv_data->lock, key);
 
-	return 0;
+	return rv;
 }
 
 static int gpio_emul_port_set_masked_raw(const struct device *port,
@@ -542,11 +574,16 @@ static int gpio_emul_port_set_masked_raw(const struct device *port,
 	const struct gpio_emul_config *config = (const struct gpio_emul_config *)port->config;
 
 	k_spinlock_key_t key;
-	int rv;
+	int rv = 0;
 
 	mask &= config->common.port_pin_mask;
 
 	key = k_spin_lock(&drv_data->lock);
+	if (mask & drv_data->fault_pins) {
+		rv = drv_data->fault_err;
+		k_spin_unlock(&drv_data->lock, key);
+		return rv;
+	}
 	output_mask = get_output_pins(port);
 	mask &= output_mask;
 	prev_values = drv_data->output_vals;
@@ -569,7 +606,7 @@ static int gpio_emul_port_set_masked_raw(const struct device *port,
 		gpio_fire_callbacks(&drv_data->callbacks, port, mask & ~get_input_pins(port));
 	}
 
-	return 0;
+	return rv;
 }
 
 static int gpio_emul_port_set_bits_raw(const struct device *port,
@@ -583,11 +620,16 @@ static int gpio_emul_port_set_bits_raw(const struct device *port,
 	gpio_port_pins_t prev_input_values;
 	gpio_port_pins_t input_values;
 	gpio_port_pins_t input_mask;
-	int rv;
+	int rv = 0;
 
 	pins &= config->common.port_pin_mask;
 
 	key = k_spin_lock(&drv_data->lock);
+	if (pins & drv_data->fault_pins) {
+		rv = drv_data->fault_err;
+		k_spin_unlock(&drv_data->lock, key);
+		return rv;
+	}
 	pins &= get_output_pins(port);
 	drv_data->output_vals |= pins;
 	prev_input_values = drv_data->input_vals;
@@ -601,7 +643,7 @@ static int gpio_emul_port_set_bits_raw(const struct device *port,
 	/* for output-wiring, so the user can take action based on output */
 	gpio_fire_callbacks(&drv_data->callbacks, port, pins & ~get_input_pins(port));
 
-	return 0;
+	return rv;
 }
 
 static int gpio_emul_port_clear_bits_raw(const struct device *port,
@@ -615,11 +657,16 @@ static int gpio_emul_port_clear_bits_raw(const struct device *port,
 	gpio_port_pins_t prev_input_values;
 	gpio_port_pins_t input_values;
 	gpio_port_pins_t input_mask;
-	int rv;
+	int rv = 0;
 
 	pins &= config->common.port_pin_mask;
 
 	key = k_spin_lock(&drv_data->lock);
+	if (pins & drv_data->fault_pins) {
+		rv = drv_data->fault_err;
+		k_spin_unlock(&drv_data->lock, key);
+		return rv;
+	}
 	pins &= get_output_pins(port);
 	drv_data->output_vals &= ~pins;
 	prev_input_values = drv_data->input_vals;
@@ -632,7 +679,7 @@ static int gpio_emul_port_clear_bits_raw(const struct device *port,
 	/* for output-wiring, so the user can take action based on output */
 	gpio_fire_callbacks(&drv_data->callbacks, port, pins & ~get_input_pins(port));
 
-	return 0;
+	return rv;
 }
 
 static int gpio_emul_port_toggle_bits(const struct device *port, gpio_port_pins_t pins)
@@ -642,11 +689,16 @@ static int gpio_emul_port_toggle_bits(const struct device *port, gpio_port_pins_
 	const struct gpio_emul_config *config = (const struct gpio_emul_config *)port->config;
 
 	k_spinlock_key_t key;
-	int rv;
+	int rv = 0;
 
 	pins &= config->common.port_pin_mask;
 
 	key = k_spin_lock(&drv_data->lock);
+	if (pins & drv_data->fault_pins) {
+		rv = drv_data->fault_err;
+		k_spin_unlock(&drv_data->lock, key);
+		return rv;
+	}
 	drv_data->output_vals ^= (pins & get_output_pins(port));
 	/* in push-pull, set input values but do not fire interrupts (yet) */
 	rv = gpio_emul_input_set_masked_int(port, pins & get_input_pins(port),
@@ -656,7 +708,7 @@ static int gpio_emul_port_toggle_bits(const struct device *port, gpio_port_pins_
 	/* for output-wiring, so the user can take action based on output */
 	gpio_fire_callbacks(&drv_data->callbacks, port, pins);
 
-	return 0;
+	return rv;
 }
 
 static bool gpio_emul_level_trigger_supported(const struct device *port,
@@ -734,6 +786,12 @@ static int gpio_emul_pin_interrupt_configure(const struct device *port, gpio_pin
 	}
 
 	key = k_spin_lock(&drv_data->lock);
+
+	if (drv_data->fault_pins & BIT(pin)) {
+		ret = drv_data->fault_err;
+		k_spin_unlock(&drv_data->lock, key);
+		return ret;
+	}
 
 #ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
 	/* According to the GPIO interrupt configuration flag documentation,
