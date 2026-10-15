@@ -13,3 +13,4 @@ zephyr_library_include_directories(${ZEPHYR_BASE}/kernel/include ${ARCH_DIR}/${A
 zephyr_library_compile_definitions(__ZEPHYR_SUPERVISOR__)
 
 zephyr_library_sources(busy_wait.c)
+zephyr_library_sources_ifdef(CONFIG_MULTITHREADING condvar.c)
