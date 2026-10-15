@@ -138,15 +138,6 @@ static int friend_cred_create(struct bt_mesh_friend *frnd, uint8_t idx)
 					  &frnd->subnet->keys[idx].net);
 }
 
-static void purge_buffers(sys_slist_t *list)
-{
-	struct net_buf *buf;
-
-	while ((buf = (void *)net_buf_slist_get(list))) {
-		net_buf_unref(buf);
-	}
-}
-
 /* Intentionally start a little bit late into the ReceiveWindow when
  * it's large enough. This may improve reliability with some platforms,
  * like the PTS, where the receiver might not have sufficiently compensated
@@ -179,12 +170,12 @@ static void friend_clear(struct bt_mesh_friend *frnd)
 
 	net_buf_drop(&frnd->last);
 
-	purge_buffers(&frnd->queue);
+	net_buf_slist_purge(&frnd->queue);
 
 	for (i = 0; i < ARRAY_SIZE(frnd->seg); i++) {
 		struct bt_mesh_friend_seg *seg = &frnd->seg[i];
 
-		purge_buffers(&seg->queue);
+		net_buf_slist_purge(&seg->queue);
 		seg->seg_count = 0U;
 	}
 
@@ -1858,7 +1849,7 @@ void bt_mesh_friend_clear_incomplete(struct bt_mesh_subnet *sub, uint16_t src,
 
 			LOG_WRN("Clearing incomplete segments for 0x%04x", src);
 
-			purge_buffers(&seg->queue);
+			net_buf_slist_purge(&seg->queue);
 			seg->seg_count = 0U;
 			break;
 		}
