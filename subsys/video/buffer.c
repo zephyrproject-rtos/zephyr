@@ -142,6 +142,7 @@ struct video_buffer *video_import_buffer(uint8_t *mem, size_t sz)
 	video_buf[ind].buffer = mem;
 	video_buf[ind].bytesused = 0;
 	video_buf[ind].timestamp = 0;
+	video_buf[ind].line_offset = 0;
 
 	return &video_buf[ind];
 }
@@ -160,6 +161,8 @@ int video_enqueue(const struct device *dev, struct video_buffer *buf)
 	video_buf[buf->index].type = buf->type;
 
 	buf->bytesused = 0;
+	buf->timestamp = 0;
+	buf->line_offset = 0;
 
 	if (buf->type == VIDEO_BUF_TYPE_OUTPUT && vdev->out_fmt.size > 0) {
 		if (buf->size < vdev->out_fmt.size) {
@@ -223,6 +226,8 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 	}
 
 	buf->type = sink_type;
+	buf->timestamp = 0;
+	buf->bytesused = 0;
 
 	return video_enqueue(sink, buf);
 }
