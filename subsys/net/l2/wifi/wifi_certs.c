@@ -80,15 +80,21 @@ static const char server_key_test[] = {
 #endif /* CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES */
 
 #ifdef CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES
+static void free_cert(uint8_t *cert, size_t len)
+{
+	if (cert == NULL) {
+		return;
+	}
+
+	mbedtls_platform_zeroize(cert, len);
+	k_free(cert);
+}
+
 static void clear_cert_data(struct wifi_cert_data *certs, size_t cert_count)
 {
 	for (size_t i = 0; i < cert_count; i++) {
-		if (certs[i].data != NULL && *certs[i].data != NULL) {
-			if (certs[i].len != NULL) {
-				mbedtls_platform_zeroize(*certs[i].data, *certs[i].len);
-			}
-
-			k_free(*certs[i].data);
+		if (certs[i].data != NULL) {
+			free_cert(*certs[i].data, certs[i].len != NULL ? *certs[i].len : 0);
 			*certs[i].data = NULL;
 		}
 
@@ -239,23 +245,17 @@ cleanup:
 
 void wifi_clear_enterprise_credentials(void)
 {
-	size_t i;
+	struct wifi_enterprise_creds_params *p = &enterprise_creds_params;
 
-	const uint8_t *certs[] = {
-		enterprise_creds_params.ca_cert,
-		enterprise_creds_params.client_cert,
-		enterprise_creds_params.client_key,
-		enterprise_creds_params.server_cert,
-		enterprise_creds_params.server_key,
-		enterprise_creds_params.ca_cert2,
-		enterprise_creds_params.client_cert2,
-		enterprise_creds_params.client_key2,
-	};
-
-	for (i = 0; i < ARRAY_SIZE(certs); i++) {
-		k_free((void *)certs[i]);
-	}
-	memset(&enterprise_creds_params, 0, sizeof(struct wifi_enterprise_creds_params));
+	free_cert(p->ca_cert, p->ca_cert_len);
+	free_cert(p->client_cert, p->client_cert_len);
+	free_cert(p->client_key, p->client_key_len);
+	free_cert(p->server_cert, p->server_cert_len);
+	free_cert(p->server_key, p->server_key_len);
+	free_cert(p->ca_cert2, p->ca_cert2_len);
+	free_cert(p->client_cert2, p->client_cert2_len);
+	free_cert(p->client_key2, p->client_key2_len);
+	memset(p, 0, sizeof(*p));
 }
 #elif defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE)
 int config_process_blob(struct wpa_config *config, char *name, uint8_t *data,
