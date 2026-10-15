@@ -248,27 +248,6 @@ unlock:
 	return ret;
 }
 
-static int mcux_pngdec_dequeue(const struct device *dev, struct video_buffer **vbuf,
-			       k_timeout_t timeout)
-{
-	struct mcux_pngdec_data *data = dev->data;
-	struct k_fifo *fifo;
-
-	if (vbuf == NULL || *vbuf == NULL) {
-		return -EINVAL;
-	}
-
-	fifo = vbuf->type == VIDEO_BUF_TYPE_INPUT
-		? &data->vdev.in_buf_completed : &data->vdev.out_buf__completed;
-
-	*vbuf = k_fifo_get(fifo, timeout);
-	if (*vbuf == NULL) {
-		return -EAGAIN;
-	}
-
-	return 0;
-}
-
 static int mcux_pngdec_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	caps->min_vbuf_count = 1;
@@ -311,7 +290,6 @@ static DEVICE_API(video, mcux_pngdec_driver_api) = {
 	.get_caps = mcux_pngdec_get_caps,
 	.transform_cap = mcux_pngdec_transform_cap,
 	.enqueue = mcux_pngdec_enqueue,
-	.dequeue = mcux_pngdec_dequeue,
 };
 
 static void mcux_pngdec_decode_work_handler(struct k_work *work)

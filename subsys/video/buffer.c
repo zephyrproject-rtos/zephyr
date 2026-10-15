@@ -183,11 +183,31 @@ int video_enqueue(const struct device *dev, struct video_buffer *buf)
 int video_dequeue(const struct device *dev, struct video_buffer **vbuf,
 				       k_timeout_t timeout)
 {
+	struct video_device *vdev;
+	struct k_fifo *fifo;
+
 	if (dev == NULL || vbuf == NULL) {
 		return -EINVAL;
 	}
 
-	return video_driver_dequeue(dev, vbuf, timeout);
+	vdev = dev->data;
+
+	switch ((*vbuf)->type) {
+	case VIDEO_BUF_TYPE_INPUT:
+		fifo = &vdev->in_buf_completed;
+		break;
+	case VIDEO_BUF_TYPE_OUTPUT:
+		fifo = &vdev->out_buf_completed;
+		break;
+	default:
+		LOG_ERR("Invalid buffer type %u", (*vbuf)->type);
+		__ASSERT_NO_MSG(false);
+		return -EINVAL;
+	}
+
+	*vbuf = k_fifo_get(fifo, timeout);
+
+	return 0;
 }
 
 int video_transfer_buffer(const struct device *src, const struct device *sink,
@@ -197,14 +217,14 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 	struct video_buffer *buf = &(struct video_buffer){.type = src_type};
 	int ret;
 
-	ret = video_driver_dequeue(src, &buf, timeout);
+	ret = video_dequeue(src, &buf, timeout);
 	if (ret < 0) {
 		return ret;
 	}
 
 	buf->type = sink_type;
 
-	return video_driver_enqueue(sink, buf);
+	return video_enqueue(sink, buf);
 }
 
 int video_set_signal(const struct device *dev, struct k_poll_signal *sig)

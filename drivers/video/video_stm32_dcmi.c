@@ -316,16 +316,6 @@ static int video_stm32_dcmi_snapshot(const struct device *dev)
 	return 0;
 }
 
-static int video_stm32_dcmi_dequeue(const struct device *dev, struct video_buffer **vbuf,
-				    k_timeout_t timeout)
-{
-	struct video_stm32_dcmi_data *data = dev->data;
-
-	*vbuf = k_fifo_get(&data->vdev.out_buf_completed, timeout);
-
-	return (*vbuf == NULL) ? -EAGAIN : 0;
-}
-
 static int video_stm32_dcmi_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	const struct video_stm32_dcmi_config *config = dev->config;
@@ -482,7 +472,6 @@ static int video_stm32_dcmi_get_selection(const struct device *dev, struct video
 static DEVICE_API(video, video_stm32_dcmi_driver_api) = {
 	.set_stream = video_stm32_dcmi_set_stream,
 	.enqueue = video_stm32_dcmi_enqueue,
-	.dequeue = video_stm32_dcmi_dequeue,
 	.get_caps = video_stm32_dcmi_get_caps,
 	.enum_frmival = video_stm32_dcmi_enum_frmival,
 	.set_frmival = video_stm32_dcmi_set_frmival,
