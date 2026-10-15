@@ -93,15 +93,6 @@ void z_impl_k_queue_init(struct k_queue *queue)
 #endif /* CONFIG_OBJ_CORE_QUEUE */
 }
 
-#ifdef CONFIG_USERSPACE
-static inline void z_vrfy_k_queue_init(struct k_queue *queue)
-{
-	K_OOPS(K_SYSCALL_OBJ_NEVER_INIT(queue, K_OBJ_QUEUE));
-	z_impl_k_queue_init(queue);
-}
-#include <zephyr/syscalls/k_queue_init_mrsh.c>
-#endif /* CONFIG_USERSPACE */
-
 static inline bool queue_handle_poll_events(struct k_queue *queue, uint32_t state)
 {
 #ifdef CONFIG_POLL
@@ -133,15 +124,6 @@ void z_impl_k_queue_cancel_wait(struct k_queue *queue)
 		k_spin_unlock(&queue->lock, key);
 	}
 }
-
-#ifdef CONFIG_USERSPACE
-static inline void z_vrfy_k_queue_cancel_wait(struct k_queue *queue)
-{
-	K_OOPS(K_SYSCALL_OBJ(queue, K_OBJ_QUEUE));
-	z_impl_k_queue_cancel_wait(queue);
-}
-#include <zephyr/syscalls/k_queue_cancel_wait_mrsh.c>
-#endif /* CONFIG_USERSPACE */
 
 /*
  * Common code for inserting a node into the queue.
@@ -239,16 +221,6 @@ int32_t z_impl_k_queue_alloc_append(struct k_queue *queue, void *data)
 	return ret;
 }
 
-#ifdef CONFIG_USERSPACE
-static inline int32_t z_vrfy_k_queue_alloc_append(struct k_queue *queue,
-						  void *data)
-{
-	K_OOPS(K_SYSCALL_OBJ(queue, K_OBJ_QUEUE));
-	return z_impl_k_queue_alloc_append(queue, data);
-}
-#include <zephyr/syscalls/k_queue_alloc_append_mrsh.c>
-#endif /* CONFIG_USERSPACE */
-
 int32_t z_impl_k_queue_alloc_prepend(struct k_queue *queue, void *data)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, alloc_prepend, queue);
@@ -260,16 +232,6 @@ int32_t z_impl_k_queue_alloc_prepend(struct k_queue *queue, void *data)
 
 	return ret;
 }
-
-#ifdef CONFIG_USERSPACE
-static inline int32_t z_vrfy_k_queue_alloc_prepend(struct k_queue *queue,
-						   void *data)
-{
-	K_OOPS(K_SYSCALL_OBJ(queue, K_OBJ_QUEUE));
-	return z_impl_k_queue_alloc_prepend(queue, data);
-}
-#include <zephyr/syscalls/k_queue_alloc_prepend_mrsh.c>
-#endif /* CONFIG_USERSPACE */
 
 int k_queue_append_list(struct k_queue *queue, void *head, void *tail)
 {
@@ -454,38 +416,6 @@ void *z_impl_k_queue_peek_tail(struct k_queue *queue)
 
 	return ret;
 }
-
-#ifdef CONFIG_USERSPACE
-static inline void *z_vrfy_k_queue_get(struct k_queue *queue,
-				       k_timeout_t timeout)
-{
-	K_OOPS(K_SYSCALL_OBJ(queue, K_OBJ_QUEUE));
-	return z_impl_k_queue_get(queue, timeout);
-}
-#include <zephyr/syscalls/k_queue_get_mrsh.c>
-
-static inline int z_vrfy_k_queue_is_empty(struct k_queue *queue)
-{
-	K_OOPS(K_SYSCALL_OBJ(queue, K_OBJ_QUEUE));
-	return z_impl_k_queue_is_empty(queue);
-}
-#include <zephyr/syscalls/k_queue_is_empty_mrsh.c>
-
-static inline void *z_vrfy_k_queue_peek_head(struct k_queue *queue)
-{
-	K_OOPS(K_SYSCALL_OBJ(queue, K_OBJ_QUEUE));
-	return z_impl_k_queue_peek_head(queue);
-}
-#include <zephyr/syscalls/k_queue_peek_head_mrsh.c>
-
-static inline void *z_vrfy_k_queue_peek_tail(struct k_queue *queue)
-{
-	K_OOPS(K_SYSCALL_OBJ(queue, K_OBJ_QUEUE));
-	return z_impl_k_queue_peek_tail(queue);
-}
-#include <zephyr/syscalls/k_queue_peek_tail_mrsh.c>
-
-#endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_OBJ_CORE_FIFO
 /* Referenced by k_fifo_init() in kernel.h, so not file-local */
