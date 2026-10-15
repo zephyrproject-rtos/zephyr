@@ -13,6 +13,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/mipi_dbi.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
+#include <zephyr/pm/policy.h>
 
 #include <hal/gdma_channel.h>
 #include <esp_clk_tree.h>
@@ -20,6 +21,18 @@
 #include <esp_memory_utils.h>
 #include <hal/lcd_hal.h>
 #include <hal/lcd_ll.h>
+
+#if defined(CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP) && \
+	defined(SOC_LCDCAM_LCD_SUPPORT_SLEEP_RETENTION)
+#define MIPI_DBI_ESP32_SLEEP_RETENTION_ENABLED 1
+#else
+#define MIPI_DBI_ESP32_SLEEP_RETENTION_ENABLED 0
+#endif
+
+#if MIPI_DBI_ESP32_SLEEP_RETENTION_ENABLED
+#include <hal/lcd_periph.h>
+#include <esp_private/sleep_retention.h>
+#endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mipi_dbi_esp32_lcd, CONFIG_MIPI_DBI_LOG_LEVEL);
@@ -227,6 +240,8 @@ static int mipi_dbi_esp32_transfer(const struct device *dev, const struct mipi_d
 		memcpy(tmp_buffer, buffer, len);
 	}
 
+	pm_policy_state_all_lock_get();
+
 	lcd_ll_clear_interrupt_status(hal->dev, LCD_LL_EVENT_TRANS_DONE);
 	while (k_sem_take(&data->dma_sem, K_NO_WAIT) == 0) {
 	}
@@ -261,6 +276,7 @@ free:
 	if (ret < 0 && len > 0) {
 		dma_stop(cfg->dma_dev, cfg->tx_dma_channel);
 	}
+	pm_policy_state_all_lock_put();
 	k_free(tmp_buffer);
 
 	return ret;
@@ -340,6 +356,57 @@ static void IRAM_ATTR mipi_dbi_esp32_isr(void *arg)
 		k_sem_give(&data->dma_sem);
 	}
 }
+
+#if MIPI_DBI_ESP32_SLEEP_RETENTION_ENABLED
+static esp_err_t mipi_dbi_esp32_create_sleep_retention_cb(void *arg)
+{
+	ARG_UNUSED(arg);
+
+	return sleep_retention_entries_create(
+		soc_i80_lcd_retention_info[LCD_BUS_ID].regdma_entry_array,
+		soc_i80_lcd_retention_info[LCD_BUS_ID].array_size, REGDMA_LINK_PRI_LCDCAM,
+		soc_i80_lcd_retention_info[LCD_BUS_ID].retention_module);
+}
+
+static int mipi_dbi_esp32_sleep_retention_init(void)
+{
+	const periph_retention_module_t module =
+		soc_i80_lcd_retention_info[LCD_BUS_ID].retention_module;
+	sleep_retention_module_init_param_t init_param = {
+		.cbs = {.create = {.handle = mipi_dbi_esp32_create_sleep_retention_cb,
+				   .arg = NULL}},
+		.depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM),
+		.attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH};
+	esp_err_t err;
+
+	err = sleep_retention_module_init(module, &init_param);
+	if (err != ESP_OK) {
+		goto fail;
+	}
+
+	err = sleep_retention_module_allocate(module);
+	if (err != ESP_OK) {
+		sleep_retention_module_deinit(module);
+		goto fail;
+	}
+
+	/* Allocate leaves the module created. Deinit rejects a created
+	 * module, so free it before deinit.
+	 */
+	err = sleep_retention_module_attach(module);
+	if (err != ESP_OK) {
+		sleep_retention_module_free(module);
+		sleep_retention_module_deinit(module);
+		goto fail;
+	}
+
+	return 0;
+
+fail:
+	LOG_ERR("LCD-CAM sleep retention init failed (%d)", err);
+	return -EIO;
+}
+#endif
 
 static int mipi_dbi_esp32_init(const struct device *dev)
 {
@@ -433,6 +500,13 @@ static int mipi_dbi_esp32_init(const struct device *dev)
 	lcd_ll_enable_rgb_mode(hal->dev, false);
 	lcd_ll_enable_color_convert(hal->dev, false);
 	lcd_ll_enable_output_always_on(hal->dev, true);
+
+#if MIPI_DBI_ESP32_SLEEP_RETENTION_ENABLED
+	ret = mipi_dbi_esp32_sleep_retention_init();
+	if (ret < 0) {
+		return ret;
+	}
+#endif
 
 	return 0;
 }
