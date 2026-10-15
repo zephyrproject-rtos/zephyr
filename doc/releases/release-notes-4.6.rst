@@ -68,6 +68,11 @@ New APIs and options
   * :kconfig:option:`CONFIG_LTO_SELECTED_LIBRARIES` and the ``zephyr_lto_directories()`` CMake
     function apply Link Time Optimization only to the libraries in the given directories.
 
+* Network
+
+  * :kconfig:option:`CONFIG_NET_LTO` compiles the network stack, net_buf and the network drivers
+    with Link Time Optimization and the rest of the image without it.
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:

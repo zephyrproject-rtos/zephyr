@@ -22,6 +22,18 @@ config NET_POWER_MANAGEMENT
 	bool
 	depends on PM_DEVICE
 
+config NET_LTO
+	bool "Link Time Optimization of the network stack and drivers"
+	depends on LTO_SUPPORTED
+	depends on !USERSPACE
+	select LTO_SELECTED_LIBRARIES if !LTO
+	help
+	  Compile the network stack, net_buf and the network drivers with
+	  Link Time Optimization, and the rest of the image without it. This
+	  lets the compiler inline across the files and libraries on the
+	  network data path. The option has no effect when CONFIG_LTO
+	  already applies Link Time Optimization to the whole image.
+
 source "subsys/net/Kconfig.hostname"
 
 source "subsys/net/l2/Kconfig"
