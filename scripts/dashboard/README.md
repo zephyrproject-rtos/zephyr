@@ -39,7 +39,7 @@ browsable report.
 
 6. **Memory reports** — If the output directory does not already contain up-to-date
    `ram_report.json`, `rom_report.json`, and `all_report.json` files, the script
-   invokes `scripts/footprint/size_report` to generate them. This step can be
+   invokes `scripts/footprint/size_report.py` to generate them. This step can be
    skipped with `--skip-memory-report` for faster iteration.
 
 7. **HTML rendering** — Jinja2 templates in the `templates/` directory are rendered

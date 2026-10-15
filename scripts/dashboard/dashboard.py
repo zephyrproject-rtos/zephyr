@@ -27,7 +27,7 @@ are used by this script:
       ELF image of the built kernel. Used by pyelftools to compute the
       memory summary (text/rodata/rwdata/bss section sizes), to check
       sys-init ordering via check_init_priorities, and by the
-      scripts/footprint/size_report script to generate memory reports.
+      scripts/footprint/size_report.py script to generate memory reports.
 
   zephyr/<kernel>.bin
       Binary image.  Only its file size is read, reported as "Bin Size"
@@ -528,7 +528,7 @@ class ZephyrDashboard:
 
         cmd = [
             sys.executable,
-            str(self.zephyr_base / "scripts" / "footprint" / "size_report"),
+            str(self.zephyr_base / "scripts" / "footprint" / "size_report.py"),
             '-k',
             str(self.elf_file),
             '-z',
@@ -566,7 +566,7 @@ class ZephyrDashboard:
 
             region_cmd = [
                 sys.executable,
-                str(self.zephyr_base / "scripts" / "footprint" / "size_report"),
+                str(self.zephyr_base / "scripts" / "footprint" / "size_report.py"),
                 '-k',
                 str(self.elf_file),
                 '-z',
