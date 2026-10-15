@@ -37,6 +37,19 @@ extern "C" {
 /** Task watchdog callback. */
 typedef void (*task_wdt_callback_t)(int channel_id, void *user_data);
 
+/** Task watchdog channel information. */
+struct task_wdt_channel_info {
+	/** Period in milliseconds used to reset the timeout */
+	uint32_t reload_period;
+	/** Time in milliseconds left until the channel times out */
+	uint32_t time_left;
+	/**
+	 * Thread owning the channel, or NULL if not known. Always NULL unless
+	 * @kconfig{CONFIG_TASK_WDT_THREAD_INFO} is enabled.
+	 */
+	k_tid_t thread;
+};
+
 /**
  * @brief Initialize task watchdog.
  *
@@ -101,6 +114,34 @@ int task_wdt_delete(int channel_id);
  * @retval -EINVAL If there is no installed timeout for supplied channel.
  */
 int task_wdt_feed(int channel_id);
+
+/**
+ * @brief Set the thread owning a task watchdog channel.
+ *
+ * By default, the owner of a channel is the thread which fed it last. Use this
+ * function if the channel is fed by a different thread than the supervised
+ * one. The owner is reported when the channel times out.
+ *
+ * @param channel_id Index of the channel as returned by task_wdt_add().
+ * @param thread Thread owning the channel. Pass NULL to go back to using the
+ *               thread which fed the channel last.
+ *
+ * @retval 0 If successful.
+ * @retval -EINVAL If there is no installed timeout for supplied channel.
+ * @retval -ENOTSUP If @kconfig{CONFIG_TASK_WDT_THREAD_INFO} is disabled.
+ */
+int task_wdt_channel_thread_set(int channel_id, k_tid_t thread);
+
+/**
+ * @brief Get information about a task watchdog channel.
+ *
+ * @param channel_id Index of the channel as returned by task_wdt_add().
+ * @param info Filled in with the channel information.
+ *
+ * @retval 0 If successful.
+ * @retval -EINVAL If there is no installed timeout for supplied channel.
+ */
+int task_wdt_channel_info_get(int channel_id, struct task_wdt_channel_info *info);
 
 /**
  * @brief Pause all channels before changing system power mode.

@@ -32,6 +32,24 @@ channels without passing around a context or device pointer in the firmware.
 The maximum number of channels is predefined via Kconfig and should be adjusted
 to match exactly the number of channels required by the application.
 
+Thread Information
+******************
+
+With :kconfig:option:`CONFIG_TASK_WDT_THREAD_INFO` enabled, each channel
+records the thread owning it. By default, this is the thread which fed the
+channel last. If the channel is fed on behalf of another thread, the owner can
+be set explicitly with :c:func:`task_wdt_channel_thread_set`.
+
+When a channel times out, the task watchdog logs the owner thread's name,
+state, priority and unused stack space before calling the channel callback or
+resetting the system. :c:func:`task_wdt_channel_info_get` and the
+``task_wdt list`` shell command show the owner, period and time left of each
+channel.
+
+If :kconfig:option:`CONFIG_TASK_WDT_COREDUMP` is enabled as well, a core dump
+is created with the owner thread as the faulting thread before the system is
+reset, which helps to find out where the thread was stuck.
+
 Configuration Options
 *********************
 
@@ -47,6 +65,10 @@ Related configuration options can be found under
 * :kconfig:option:`CONFIG_TASK_WDT_MIN_TIMEOUT`
 
 * :kconfig:option:`CONFIG_TASK_WDT_HW_FALLBACK_DELAY`
+
+* :kconfig:option:`CONFIG_TASK_WDT_THREAD_INFO`
+
+* :kconfig:option:`CONFIG_TASK_WDT_COREDUMP`
 
 API Reference
 *************
