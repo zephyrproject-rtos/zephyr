@@ -80,7 +80,6 @@ struct video_sw_generator_data {
 	struct k_fifo fifo_out;
 	struct k_work_delayable work;
 	int pattern;
-	struct k_poll_signal *sig;
 #ifdef CONFIG_VIDEO_SW_GENERATOR_H264
 	size_t h264_offset;
 #endif
@@ -625,8 +624,8 @@ static void video_sw_generator_worker(struct k_work *work)
 
 	k_fifo_put(&data->fifo_out, vbuf);
 
-	if (IS_ENABLED(CONFIG_POLL) && data->sig) {
-		k_poll_signal_raise(data->sig, VIDEO_BUF_DONE);
+	if (IS_ENABLED(CONFIG_POLL) && data->vdev.signal) {
+		k_poll_signal_raise(data->vdev.signal, VIDEO_BUF_DONE);
 	}
 
 	k_yield();
@@ -667,8 +666,8 @@ static int video_sw_generator_flush(const struct device *dev, bool cancel)
 	} else {
 		while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT))) {
 			k_fifo_put(&data->fifo_out, vbuf);
-			if (IS_ENABLED(CONFIG_POLL) && data->sig) {
-				k_poll_signal_raise(data->sig, VIDEO_BUF_ABORTED);
+			if (IS_ENABLED(CONFIG_POLL) && data->vdev.signal) {
+				k_poll_signal_raise(data->vdev.signal, VIDEO_BUF_ABORTED);
 			}
 		}
 	}
@@ -683,21 +682,6 @@ static int video_sw_generator_get_caps(const struct device *dev, struct video_ca
 
 	return 0;
 }
-
-#ifdef CONFIG_POLL
-static int video_sw_generator_set_signal(const struct device *dev, struct k_poll_signal *sig)
-{
-	struct video_sw_generator_data *data = dev->data;
-
-	if (data->sig && sig != NULL) {
-		return -EALREADY;
-	}
-
-	data->sig = sig;
-
-	return 0;
-}
-#endif
 
 static int video_sw_generator_set_frmival(const struct device *dev, struct video_frmival *frmival,
 					  size_t idx)
@@ -742,9 +726,6 @@ static DEVICE_API(video, video_sw_generator_driver_api) = {
 	.get_caps = video_sw_generator_get_caps,
 	.set_frmival = video_sw_generator_set_frmival,
 	.enum_frmival = video_sw_generator_enum_frmival,
-#ifdef CONFIG_POLL
-	.set_signal = video_sw_generator_set_signal,
-#endif
 };
 
 static int video_sw_generator_init_controls(const struct device *dev)
