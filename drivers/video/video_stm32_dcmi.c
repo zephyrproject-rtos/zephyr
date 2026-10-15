@@ -109,12 +109,12 @@ void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
 	hal_ret = HAL_DCMI_Suspend(hdcmi);
 	__ASSERT_NO_MSG(hal_ret == HAL_OK);
 
-	vbuf = k_fifo_get(&dev_data->vdev.out_buf_submitted, K_NO_WAIT);
-
+	vbuf = video_buffer_done(dev_data->vdev.dev, vbuf, 0);
 	if (vbuf == NULL) {
 		LOG_DBG("Failed to get buffer from fifo");
 		goto resume;
 	}
+	vbuf->bytesused = dev_data->vdev.out_fmt.size;
 
 	memcpy(vbuf->buffer, dev_data->vbuf->buffer, vbuf->bytesused);
 
@@ -251,11 +251,12 @@ static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable,
 
 	if (!data->ctrls.snapshot.val) {
 		data->vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
-
 		if (data->vbuf == NULL) {
 			LOG_ERR("No buffers");
 			return -ENOMEM;
 		}
+
+		data->vbuf->bytesused = data->vdev.out_fmt.size;
 	}
 
 	/* Set the frame control */
@@ -276,17 +277,6 @@ static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable,
 	return video_stream_start(data->vdev.source_dev, type);
 }
 
-static int video_stm32_dcmi_enqueue(const struct device *dev, struct video_buffer *vbuf)
-{
-	struct video_stm32_dcmi_data *data = dev->data;
-
-	vbuf->bytesused = data->vdev.out_fmt.size;
-
-	k_fifo_put(&data->vdev.out_buf_submitted, vbuf);
-
-	return 0;
-}
-
 static int video_stm32_dcmi_snapshot(const struct device *dev)
 {
 	struct video_stm32_dcmi_data *data = dev->data;
@@ -302,6 +292,7 @@ static int video_stm32_dcmi_snapshot(const struct device *dev)
 		LOG_WRN("Snapshot: No Buffers available!");
 		return -ENOMEM;
 	}
+	data->vbuf->bytesused = data->vdev.out_fmt.size;
 
 	hal_ret = HAL_DCMI_Start_DMA(&data->hdcmi, DCMI_MODE_SNAPSHOT,
 				     (uint32_t)data->vbuf->buffer,
@@ -471,7 +462,6 @@ static int video_stm32_dcmi_get_selection(const struct device *dev, struct video
 
 static DEVICE_API(video, video_stm32_dcmi_driver_api) = {
 	.set_stream = video_stm32_dcmi_set_stream,
-	.enqueue = video_stm32_dcmi_enqueue,
 	.get_caps = video_stm32_dcmi_get_caps,
 	.enum_frmival = video_stm32_dcmi_enum_frmival,
 	.set_frmival = video_stm32_dcmi_set_frmival,

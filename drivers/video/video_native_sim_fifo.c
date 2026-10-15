@@ -294,26 +294,20 @@ unlock:
 	return ret;
 }
 
-static int video_nsi_fifo_enqueue(const struct device *dev, struct video_buffer *vbuf)
+static int video_nsi_fifo_trigger(const struct device *dev, enum video_buf_type type)
 {
 	struct video_nsi_fifo_data *data = dev->data;
-	int ret = 0;
 
-	k_mutex_lock(&data->lock, K_FOREVER);
-
-	k_fifo_put(&data->vdev.out_buf_submitted, vbuf);
 	k_sem_give(&data->wake_sem);
 
-	k_mutex_unlock(&data->lock);
-
-	return ret;
+	return 0;
 }
 
 static DEVICE_API(video, video_nsi_fifo_driver_api) = {
 	.set_format = video_nsi_fifo_set_fmt,
 	.get_caps = video_nsi_fifo_get_caps,
 	.set_stream = video_nsi_fifo_set_stream,
-	.enqueue = video_nsi_fifo_enqueue,
+	.trigger = video_nsi_fifo_trigger,
 };
 
 static int video_nsi_fifo_init(const struct device *dev)
