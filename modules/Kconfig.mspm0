@@ -35,3 +35,6 @@ config USE_MSPM0_DL_DMA
 
 config USE_MSPM0_DL_FLASHCTL
 	bool
+
+config USE_MSPM0_DL_SPI
+	bool
