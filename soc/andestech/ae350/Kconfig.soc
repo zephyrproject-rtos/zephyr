@@ -11,7 +11,7 @@ config SOC_AE350
 	bool
 	select SOC_SERIES_AE350
 	help
-	  Andes AE350 SoC implementation"
+	  Deprecated Kconfig, use SOC_AE350_<core> instead
 
 config SOC_AE350_N22
 	bool
