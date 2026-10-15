@@ -76,6 +76,8 @@ clic: &cpuflpr_clic {};
 };
 
 &cpuflpr_vpr {
+	status = "okay";
+
 	cpuflpr_vevif_tx: mailbox {
 		compatible = "nordic,nrf-vevif-event-tx";
 		#mbox-cells = <1>;
