@@ -253,16 +253,11 @@ static void bt_spp_connected(struct bt_rfcomm_dlc *dlci)
 static void bt_spp_disconnected(struct bt_rfcomm_dlc *dlci)
 {
 	struct bt_spp_endpoint *ep = SPP_EP_FROM_DLC(dlci);
-	struct net_buf *buf;
 
 	atomic_set(&ep->state, SPP_STATE_DISCONNECTED);
 	bt_shell_print("SPP: disconnected (ep=%p)", ep);
 
-	buf = k_fifo_get(&ep->rx_fifo, K_NO_WAIT);
-	while (buf != NULL) {
-		net_buf_unref(buf);
-		buf = k_fifo_get(&ep->rx_fifo, K_NO_WAIT);
-	}
+	net_buf_fifo_purge(&ep->rx_fifo);
 }
 
 static int bt_spp_recv(struct bt_rfcomm_dlc *dlci, struct net_buf *buf)
