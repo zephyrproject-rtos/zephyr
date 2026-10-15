@@ -578,6 +578,8 @@ struct udc_dwc3_data {
 #endif
 	/* Next expected control transfer */
 	atomic_t expected_xfer;
+	/* Serializes udc_dwc3_ctrl_next() between the event worker and ep_enqueue() callers */
+	struct k_mutex ctrl_lock;
 };
 
 /*
@@ -1113,13 +1115,41 @@ static void udc_dwc3_ctrl_next_out(const struct device *const dev,
 }
 
 static bool udc_dwc3_ctrl_try(const struct device *const dev,
-			      struct udc_dwc3_ep_data *ep_data)
+			      struct udc_dwc3_ep_data *ep_data,
+			      const int stage)
 {
 	struct net_buf *buf;
+	struct udc_buf_info *bi;
+	bool match;
 
 	buf = udc_buf_peek(&ep_data->cfg);
 	if (buf == NULL) {
 		LOG_INF("No buffer for ep 0x%02X yet", ep_data->cfg.addr);
+		return false;
+	}
+
+	/*
+	 * The stage that the host is waiting for must match the buffer at the head of the queue.
+	 * Otherwise a stale event could start e.g. the status stage before the host asked for it,
+	 * and the hardware never completes it.
+	 */
+	bi = udc_get_buf_info(buf);
+	switch (stage) {
+	case UDC_DWC3_CTRL_SETUP:
+		match = bi->setup;
+		break;
+	case UDC_DWC3_CTRL_DATA_IN:
+	case UDC_DWC3_CTRL_DATA_OUT:
+		match = bi->data;
+		break;
+	default:
+		match = bi->status;
+		break;
+	}
+
+	if (!match) {
+		LOG_INF("Head buffer of ep 0x%02X does not match stage %d (%u:%u:%u)",
+			ep_data->cfg.addr, stage, bi->setup, bi->data, bi->status);
 		return false;
 	}
 
@@ -1140,33 +1170,43 @@ static void udc_dwc3_ctrl_next(const struct device *const dev)
 	const struct udc_dwc3_config *const cfg = dev->config;
 	bool done = false;
 
+	/*
+	 * This is called both from the event worker (completion and XferNotReady events) and
+	 * from the USBD thread (ep_enqueue). The busy check, buffer peek and TRB start must not
+	 * interleave, or a control stage can be started twice or out of order.
+	 */
+	k_mutex_lock(&priv->ctrl_lock, K_FOREVER);
+
 	if (udc_ep_is_busy(&cfg->ep_data_in[0].cfg) ||
 	    udc_ep_is_busy(&cfg->ep_data_out[0].cfg)) {
 		LOG_INF("Control endpoints still busy, not loading next buffer");
+		k_mutex_unlock(&priv->ctrl_lock);
 		return;
 	}
 
 	if (!done && atomic_test_bit(&priv->expected_xfer, UDC_DWC3_CTRL_SETUP)) {
-		done = udc_dwc3_ctrl_try(dev, &cfg->ep_data_out[0]);
+		done = udc_dwc3_ctrl_try(dev, &cfg->ep_data_out[0], UDC_DWC3_CTRL_SETUP);
 	}
 
 	if (!done && atomic_test_bit(&priv->expected_xfer, UDC_DWC3_CTRL_DATA_IN)) {
-		done = udc_dwc3_ctrl_try(dev, &cfg->ep_data_in[0]);
+		done = udc_dwc3_ctrl_try(dev, &cfg->ep_data_in[0], UDC_DWC3_CTRL_DATA_IN);
 	}
 	if (!done && atomic_test_bit(&priv->expected_xfer, UDC_DWC3_CTRL_STATUS_IN)) {
-		done = udc_dwc3_ctrl_try(dev, &cfg->ep_data_in[0]);
+		done = udc_dwc3_ctrl_try(dev, &cfg->ep_data_in[0], UDC_DWC3_CTRL_STATUS_IN);
 	}
 
 	if (!done && atomic_test_bit(&priv->expected_xfer, UDC_DWC3_CTRL_DATA_OUT)) {
-		done = udc_dwc3_ctrl_try(dev, &cfg->ep_data_out[0]);
+		done = udc_dwc3_ctrl_try(dev, &cfg->ep_data_out[0], UDC_DWC3_CTRL_DATA_OUT);
 	}
 	if (!done && atomic_test_bit(&priv->expected_xfer, UDC_DWC3_CTRL_STATUS_OUT)) {
-		done = udc_dwc3_ctrl_try(dev, &cfg->ep_data_out[0]);
+		done = udc_dwc3_ctrl_try(dev, &cfg->ep_data_out[0], UDC_DWC3_CTRL_STATUS_OUT);
 	}
 
 	if (!done) {
 		LOG_INF("No XferNotReady event yet, waiting");
 	}
+
+	k_mutex_unlock(&priv->ctrl_lock);
 }
 
 /*
@@ -1423,6 +1463,12 @@ static void udc_dwc3_on_ctrl_out(const struct device *const dev)
 		}
 
 		buf->len = 0;
+
+		/* A new request starts: forget XferNotReady events of the previous one */
+		atomic_clear_bit(&priv->expected_xfer, UDC_DWC3_CTRL_DATA_IN);
+		atomic_clear_bit(&priv->expected_xfer, UDC_DWC3_CTRL_STATUS_IN);
+		atomic_clear_bit(&priv->expected_xfer, UDC_DWC3_CTRL_DATA_OUT);
+		atomic_clear_bit(&priv->expected_xfer, UDC_DWC3_CTRL_STATUS_OUT);
 
 		/* Latency optimization: set the address immediately to be able to be able
 		 * to ACK/NAK the first packets from the host with the new address,
@@ -2244,6 +2290,7 @@ static int udc_dwc3_driver_preinit(const struct device *const dev)
 	DEVICE_MMIO_NAMED_MAP(dev, base, K_MEM_CACHE_NONE);
 
 	k_mutex_init(&data->mutex);
+	k_mutex_init(&priv->ctrl_lock);
 	k_work_init(&priv->event_work, udc_dwc3_event_worker);
 
 	data->caps.rwup = false;
