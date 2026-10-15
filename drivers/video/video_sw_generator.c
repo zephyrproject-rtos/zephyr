@@ -620,15 +620,6 @@ static void video_sw_generator_worker(struct k_work *work)
 	video_buffer_done(data->vdev.dev, vbuf, 0);
 }
 
-static int video_sw_generator_enqueue(const struct device *dev, struct video_buffer *vbuf)
-{
-	struct video_sw_generator_data *data = dev->data;
-
-	k_fifo_put(&data->vdev.out_buf_submitted, vbuf);
-
-	return 0;
-}
-
 static int video_sw_generator_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	if (caps->type != VIDEO_BUF_TYPE_OUTPUT) {
@@ -678,7 +669,6 @@ static int video_sw_generator_enum_frmival(const struct device *dev, struct vide
 static DEVICE_API(video, video_sw_generator_driver_api) = {
 	.set_format = video_sw_generator_set_fmt,
 	.set_stream = video_sw_generator_set_stream,
-	.enqueue = video_sw_generator_enqueue,
 	.get_caps = video_sw_generator_get_caps,
 	.set_frmival = video_sw_generator_set_frmival,
 	.enum_frmival = video_sw_generator_enum_frmival,

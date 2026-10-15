@@ -535,8 +535,9 @@ static int encoder_end(struct stm32_venc_data *data)
 	return 0;
 }
 
-static int encode_frame(struct stm32_venc_data *data)
+static int stm32_venc_trigger(const struct device *dev, enum video_buf_type type)
 {
+	struct stm32_venc_data *data = dev->data;
 	int ret = 0;
 	H264EncRet h264ret = H264ENC_FRAME_READY;
 	struct video_buffer *input;
@@ -663,25 +664,6 @@ static int stm32_venc_set_stream(const struct device *dev, bool enable, enum vid
 	return 0;
 }
 
-static int stm32_venc_enqueue(const struct device *dev, struct video_buffer *vbuf)
-{
-	struct stm32_venc_data *data = dev->data;
-	int ret = 0;
-
-	k_mutex_lock(&data->vdev.lock, K_FOREVER);
-
-	if (vbuf->type == VIDEO_BUF_TYPE_INPUT) {
-		k_fifo_put(&data->vdev.in_buf_submitted, vbuf);
-	} else {
-		k_fifo_put(&data->vdev.out_buf_submitted, vbuf);
-	}
-
-	ret = encode_frame(data);
-
-	k_mutex_unlock(&data->vdev.lock);
-	return ret;
-}
-
 ISR_DIRECT_DECLARE(stm32_venc_isr)
 {
 	struct stm32_venc_ewl *inst = &ewl_instance;
@@ -756,7 +738,7 @@ static int stm32_venc_get_caps(const struct device *dev, struct video_caps *caps
 static DEVICE_API(video, stm32_venc_driver_api) = {
 	.set_format = stm32_venc_set_fmt,
 	.set_stream = stm32_venc_set_stream,
-	.enqueue = stm32_venc_enqueue,
+	.trigger = stm32_venc_trigger,
 	.get_caps = stm32_venc_get_caps,
 };
 
