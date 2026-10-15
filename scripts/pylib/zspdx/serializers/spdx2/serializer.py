@@ -5,7 +5,7 @@
 import hashlib
 import logging
 import os
-from datetime import UTC, datetime
+from datetime import UTC
 
 from zspdx.licenses import get_license_ids
 from zspdx.model import (
@@ -39,7 +39,6 @@ class SPDX2Serializer:
         self.file_ids = {}  # file_path -> SPDX ID
         self.document_refs = {}  # document_name -> DocumentRef ID
         self.document_hashes = {}  # document_name -> SHA1 hash
-        self.document_created_timestamps = {}  # document_name -> SPDX Created timestamp
 
     def serialize(self, output_dir):
         """Serialize SBOMGraph to SPDX 2.x format files."""
@@ -153,10 +152,7 @@ class SPDX2Serializer:
         # Use document's namespace if set, otherwise generate from prefix
         namespace = doc.namespace or f"{self.sbom_graph.namespace_prefix}/{doc.name}"
         normalized_name = normalize_spdx_name(doc.title or doc.name)
-        created = self.document_created_timestamps.get(doc.name)
-        if created is None:
-            created = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
-            self.document_created_timestamps[doc.name] = created
+        created = self.sbom_graph.created.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
         creators = "".join(f"Creator: {creator}\n" for creator in self._creators())
 
