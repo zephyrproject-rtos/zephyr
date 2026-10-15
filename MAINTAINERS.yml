@@ -5873,6 +5873,7 @@ SPDX Tooling:
     - pdgendt
   files:
     - scripts/pylib/zspdx/
+    - scripts/tests/zspdx/
     - scripts/west_commands/spdx.py
     - tests/application_development/software_bill_of_materials/
   labels:
