@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-# diffconfig - a tool to compare .config files.
+# diffconfig.py - a tool to compare .config files.
 #
 # originally written in 2006 by Matt Mackall
 #  (at least, this was in his bloatwatch source code)
@@ -14,7 +14,7 @@ import sys
 
 
 def usage():
-    print("""Usage: diffconfig [-h] [-m] [<config1> <config2>]
+    print("""Usage: diffconfig.py [-h] [-m] [<config1> <config2>]
 
 Diffconfig is a simple utility for comparing two .config files.
 Using standard diff to compare .config files often includes extraneous and
@@ -30,7 +30,7 @@ changed and new values in kernel config option format.
 If no config files are specified, .config and .config.old are used.
 
 Example usage:
- $ diffconfig .config config-with-some-changes
+ $ diffconfig.py .config config-with-some-changes
 -EXT2_FS_XATTR  n
 -EXT2_FS_XIP  n
  CRAMFS  n -> y
