@@ -237,6 +237,7 @@ static void mac_finish_join_accept(struct lwan_ctx *ctx,
 	mac_reset_channel_plan(ctx, &frame[MHDR_SIZE], frame_len - MHDR_SIZE);
 
 	atomic_set_bit(ctx->flags, LWAN_FLAG_JOINED);
+	ctx->pending = 0;
 }
 
 static int mac_apply_join_accept(struct lwan_ctx *ctx,
