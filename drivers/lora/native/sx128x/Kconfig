@@ -1,0 +1,46 @@
+# Copyright (c) 2026 Giuseppe Fabiano <gfabiano40@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config LORA_SX128X_NATIVE
+	bool "Semtech SX128x native driver (experimental)"
+	default y
+	depends on LORA_MODULE_BACKEND_NATIVE
+	depends on DT_HAS_SEMTECH_SX1280_ENABLED || DT_HAS_SEMTECH_SX1281_ENABLED
+	select SPI
+	select GPIO
+	select LORA_SX12XX_NATIVE_COMMON
+	help
+	  Driver for the Semtech SX1280 and SX1281 2.4 GHz transceivers,
+	  talking to the chip over SPI directly. LoRa is always available;
+	  the GFSK modem is added by LORA_GFSK.
+
+if LORA_SX128X_NATIVE
+
+config LORA_SX128X_NATIVE_IRQ_THREAD_STACK_SIZE
+	int "IRQ work thread stack size"
+	default 1536
+	help
+	  Stack for the thread that drains radio interrupts: reading a
+	  reception out of the chip and waking blocked send and receive
+	  calls. One thread serves every SX128x instance.
+
+config LORA_SX128X_NATIVE_IRQ_THREAD_PRIO
+	int "IRQ work thread cooperative priority"
+	default 2
+	help
+	  Cooperative priority of the IRQ work thread. In continuous receive a
+	  reception has to be read out before the next packet lands at the same
+	  buffer offset, which with GFSK at 2 Mb/s is a few hundred
+	  microseconds, so this thread should outrank the application threads
+	  that consume the packets.
+
+config LORA_SX128X_NATIVE_AUTO_FS
+	bool "Stay in frequency synthesis between operations"
+	help
+	  After a transmission or reception, leave the radio in FS mode with
+	  the PLL locked instead of returning to standby. The next operation
+	  then starts 27 us after its command rather than 80 us, which is a
+	  visible share of the gap between back-to-back packets at 2 Mb/s, at
+	  the cost of the synthesizer's supply current while idle.
+
+endif # LORA_SX128X_NATIVE

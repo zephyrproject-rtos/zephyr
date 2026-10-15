@@ -1,0 +1,64 @@
+# Copyright (c) 2026 Giuseppe Fabiano <gfabiano40@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+include: spi-device.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the modem's NRESET signal, active-low. If absent,
+      initialization relies on the modem's power-on reset.
+
+  busy-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO connected to the modem's BUSY signal.
+
+  dio1-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to DIO1. The driver routes the radio interrupts to the
+      lowest-numbered DIO wired to the host, and polls the interrupt status
+      over SPI when none is.
+
+  dio2-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to DIO2, used for the radio interrupts when DIO1 is
+      not wired to the host.
+
+  dio3-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to DIO3, used for the radio interrupts when neither
+      DIO1 nor DIO2 is wired to the host.
+
+  tx-enable-gpios:
+    type: phandle-array
+    description: |
+      RF front-end control line asserted for the duration of each
+      transmission and released otherwise.
+
+  rx-enable-gpios:
+    type: phandle-array
+    description: |
+      RF front-end control line asserted while the radio listens (receive
+      and channel activity detection) and released otherwise.
+
+  regulator-ldo:
+    type: boolean
+    description: |
+      Use the internal LDO instead of the DC-DC converter, for designs
+      without the DC-DC inductor.
+
+  tx-power-max-dbm:
+    type: int
+    description: |
+      Highest output power, in dBm, the driver may program into the chip.
+      Requests above it are clamped.
+
+      Needed on designs with an external power amplifier or front-end
+      module between the SX128x and the antenna, where driving the chip's
+      output above the amplifier's rated input can damage it.

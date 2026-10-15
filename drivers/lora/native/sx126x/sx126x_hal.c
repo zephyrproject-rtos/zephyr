@@ -16,7 +16,6 @@ LOG_MODULE_REGISTER(sx126x_hal, CONFIG_LORA_LOG_LEVEL);
 /* Timing constants */
 #define SX126X_RESET_PULSE_MS       5
 #define SX126X_RESET_WAIT_MS        5
-#define SX126X_BUSY_DEFAULT_TIMEOUT 1000
 #define SX126X_FREQ_400MHZ         400000000
 
 static inline struct sx126x_hal_data *get_hal_data(const struct device *dev)
@@ -55,7 +54,7 @@ int sx126x_hal_reset(const struct device *dev)
 	k_msleep(SX126X_RESET_WAIT_MS);
 
 	/* Wait for chip to be ready */
-	ret = sx126x_hal_wait_busy(dev, SX126X_BUSY_DEFAULT_TIMEOUT);
+	ret = sx12xx_hal_wait_busy(dev, SX12XX_BUSY_DEFAULT_TIMEOUT);
 	if (ret < 0) {
 		return ret;
 	}
@@ -116,9 +115,10 @@ int sx126x_hal_init(const struct device *dev)
 	/* Store device reference for callbacks */
 	data->dev = dev;
 	data->dio1_callback = NULL;
+	sx12xx_hal_init(dev);
 
 	/* Check SPI bus */
-	if (!spi_is_ready_dt(&config->spi)) {
+	if (!spi_is_ready_dt(&config->common.spi)) {
 		LOG_ERR("SPI bus not ready");
 		return -ENODEV;
 	}
@@ -165,19 +165,19 @@ int sx126x_hal_init(const struct device *dev)
 	}
 
 	/* Configure optional GPIOs */
-	ret = sx126x_hal_configure_gpio(&config->antenna_enable, GPIO_OUTPUT_INACTIVE,
+	ret = sx12xx_hal_configure_gpio(&config->antenna_enable, GPIO_OUTPUT_INACTIVE,
 					"antenna enable");
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = sx126x_hal_configure_gpio(&config->tx_enable, GPIO_OUTPUT_INACTIVE,
+	ret = sx12xx_hal_configure_gpio(&config->common.tx_enable, GPIO_OUTPUT_INACTIVE,
 					"TX enable");
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = sx126x_hal_configure_gpio(&config->rx_enable, GPIO_OUTPUT_INACTIVE,
+	ret = sx12xx_hal_configure_gpio(&config->common.rx_enable, GPIO_OUTPUT_INACTIVE,
 					"RX enable");
 	if (ret < 0) {
 		return ret;
@@ -192,7 +192,7 @@ static int sx126x_hal_set_pa_config(const struct device *dev, uint8_t pa_duty_cy
 {
 	uint8_t buf[4] = { pa_duty_cycle, hp_max, device_sel, pa_lut };
 
-	return sx126x_hal_write_cmd(dev, SX126X_CMD_SET_PA_CONFIG, buf, 4);
+	return sx12xx_hal_write_cmd(dev, SX126X_CMD_SET_PA_CONFIG, buf, 4);
 }
 
 int sx126x_hal_configure_tx_params(const struct device *dev, int8_t power,
@@ -233,5 +233,5 @@ int sx126x_hal_configure_tx_params(const struct device *dev, int8_t power,
 
 	uint8_t buf[2] = { (uint8_t)tx_power, ramp_time };
 
-	return sx126x_hal_write_cmd(dev, SX126X_CMD_SET_TX_PARAMS, buf, 2);
+	return sx12xx_hal_write_cmd(dev, SX126X_CMD_SET_TX_PARAMS, buf, 2);
 }

@@ -47,6 +47,23 @@ tests:
     platform_allow:
       - native_sim
       - native_sim/native/64
+  sample.drivers.lora.build.sx1280.native:
+    build_only: true
+    extra_args: DTC_OVERLAY_FILE="sx1280.overlay"
+    extra_configs:
+      - CONFIG_SPI=y
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+  sample.drivers.lora.build.sx1280.native.gfsk:
+    build_only: true
+    extra_args: DTC_OVERLAY_FILE="sx1280.overlay"
+    extra_configs:
+      - CONFIG_SPI=y
+      - CONFIG_LORA_GFSK=y
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
   sample.drivers.lora.build.sx1272:
     build_only: true
     extra_args: DTC_OVERLAY_FILE="sx1272.overlay"
