@@ -104,7 +104,6 @@ family:
     - name: cy8c6244lqi_s4d62
     - name: cy8c6244azi_s4d12
     - name: cy8c6244lqi_s4d12
-    - name: cy8c6245lqi_s3d72
     - name: cy8c6144azi_s4f92
     - name: cy8c6144lqi_s4f92
     - name: cy8c6144azi_s4f93
@@ -136,6 +135,33 @@ family:
     - name: cy8c6244fmi_s4d73
     - name: cy8c6244fmi_s4d93
     - name: cy8c6244fmq_s4d93
+    - name: cy8c6145azi_s3f02
+    - name: cy8c6145azi_s3f12
+    - name: cy8c6145azi_s3f42
+    - name: cy8c6145azi_s3f62
+    - name: cy8c6145azi_s3f72
+    - name: cy8c6145fni_s3f11
+    - name: cy8c6145fni_s3f41
+    - name: cy8c6145fni_s3f71
+    - name: cy8c6145lqi_s3f02
+    - name: cy8c6145lqi_s3f12
+    - name: cy8c6145lqi_s3f42
+    - name: cy8c6145lqi_s3f62
+    - name: cy8c6145lqi_s3f72
+    - name: cy8c6245azi_s3d02
+    - name: cy8c6245azi_s3d12
+    - name: cy8c6245azi_s3d42
+    - name: cy8c6245azi_s3d62
+    - name: cy8c6245azi_s3d72
+    - name: cy8c6245fni_s3d11
+    - name: cy8c6245fni_s3d41
+    - name: cy8c6245fni_s3d71
+    - name: cy8c6245lqi_s3d02
+    - name: cy8c6245lqi_s3d12
+    - name: cy8c6245lqi_s3d42
+    - name: cy8c6245lqi_s3d62
+    - name: cy8c6245lqi_s3d72
+    - name: cyb06445lqi_s3d42
     - name: cyble_416045_02
     - name: cy8c6247
       cpuclusters:
