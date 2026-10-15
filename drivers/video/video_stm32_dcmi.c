@@ -97,8 +97,7 @@ void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
 		/* we remove the buffer from the camera and add it to fifo_out */
 		vbuf = dev_data->vbuf;
 		dev_data->vbuf = NULL;
-		vbuf->timestamp = k_uptime_get_32();
-		k_fifo_put(&dev_data->vdev.out_buf_completed, vbuf);
+		video_buffer_done(dev_data->vdev.dev, vbuf, 0);
 
 		if (HAL_DCMI_Stop(&dev_data->hdcmi) != HAL_OK) {
 			LOG_ERR("failed to stop DCMI after a snapshot");
@@ -117,10 +116,9 @@ void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
 		goto resume;
 	}
 
-	vbuf->timestamp = k_uptime_get_32();
 	memcpy(vbuf->buffer, dev_data->vbuf->buffer, vbuf->bytesused);
 
-	k_fifo_put(&dev_data->vdev.out_buf_completed, vbuf);
+	video_buffer_done(dev_data->vdev.dev, vbuf, 0);
 
 resume:
 	hal_ret = HAL_DCMI_Resume(hdcmi);

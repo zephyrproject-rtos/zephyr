@@ -442,7 +442,6 @@ static int video_sw_generator_fill_h264(struct video_sw_generator_data *data,
 
 	memcpy(vbuf->buffer, &h264_frame_buffer[start], frame_size);
 	vbuf->bytesused = frame_size;
-	vbuf->timestamp = k_uptime_get_32();
 	vbuf->line_offset = 0;
 	data->h264_offset = end < sizeof(h264_frame_buffer) ? end : 0;
 
@@ -490,7 +489,6 @@ static int video_sw_generator_fill_compressed(struct video_buffer *vbuf, bool hf
 	/* Copy the compressed frame data to the video buffer */
 	memcpy(vbuf->buffer, frame, frame_size);
 	vbuf->bytesused = frame_size;
-	vbuf->timestamp = k_uptime_get_32();
 	vbuf->line_offset = 0;
 
 	return 0;
@@ -593,7 +591,6 @@ static int video_sw_generator_fill(const struct device *const dev, struct video_
 		vbuf->bytesused += pitch * lines;
 	}
 
-	vbuf->timestamp = k_uptime_get_32();
 	vbuf->line_offset = 0;
 
 	return 0;
@@ -620,13 +617,7 @@ static void video_sw_generator_worker(struct k_work *work)
 		break;
 	}
 
-	k_fifo_put(&data->vdev.out_buf_completed, vbuf);
-
-	if (IS_ENABLED(CONFIG_POLL) && data->vdev.signal) {
-		k_poll_signal_raise(data->vdev.signal, VIDEO_BUF_DONE);
-	}
-
-	k_yield();
+	video_buffer_done(data->vdev.dev, vbuf, 0);
 }
 
 static int video_sw_generator_enqueue(const struct device *dev, struct video_buffer *vbuf)
@@ -634,28 +625,6 @@ static int video_sw_generator_enqueue(const struct device *dev, struct video_buf
 	struct video_sw_generator_data *data = dev->data;
 
 	k_fifo_put(&data->vdev.out_buf_submitted, vbuf);
-
-	return 0;
-}
-
-static int video_sw_generator_flush(const struct device *dev, bool cancel)
-{
-	struct video_sw_generator_data *data = dev->data;
-	struct video_buffer *vbuf;
-
-	if (!cancel) {
-		/* wait for all buffer to be processed */
-		do {
-			k_sleep(K_MSEC(1));
-		} while (!k_fifo_is_empty(&data->vdev.out_buf_submitted));
-	} else {
-		while ((vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT))) {
-			k_fifo_put(&data->vdev.out_buf_completed, vbuf);
-			if (IS_ENABLED(CONFIG_POLL) && data->vdev.signal) {
-				k_poll_signal_raise(data->vdev.signal, VIDEO_BUF_ABORTED);
-			}
-		}
-	}
 
 	return 0;
 }
@@ -705,7 +674,6 @@ static int video_sw_generator_enum_frmival(const struct device *dev, struct vide
 static DEVICE_API(video, video_sw_generator_driver_api) = {
 	.set_format = video_sw_generator_set_fmt,
 	.set_stream = video_sw_generator_set_stream,
-	.flush = video_sw_generator_flush,
 	.enqueue = video_sw_generator_enqueue,
 	.get_caps = video_sw_generator_get_caps,
 	.set_frmival = video_sw_generator_set_frmival,
