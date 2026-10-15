@@ -36,30 +36,30 @@
 #include <zephyr/kernel/thread.h>
 #include <zephyr/sys/atomic.h>
 
-/**
- * @brief Thread state
- */
+/** @cond INTERNAL_HIDDEN */
+/* Thread state: paused and resumable, running, or terminated */
 enum mpipe_thread_state {
-	/** Thread is paused and can be resumed */
 	MPIPE_THREAD_PAUSED = 0,
-	/** Thread is running */
 	MPIPE_THREAD_RUNNING,
-	/** Thread is terminated */
 	MPIPE_THREAD_TERMINATED,
 };
+/** @endcond */
 
 /**
  * @brief Simple wrapper around k_thread
+ *
+ * An element embeds one and sets @c priority; every other member belongs to
+ * the implementation.
  */
 struct mpipe_thread {
-	/** k_thread struct */
+	/** @cond INTERNAL_HIDDEN */
 	struct k_thread thread;
-	/** Semaphore used to gate run / pause transitions */
+	/* Gates run / pause transitions */
 	struct k_sem sem;
-	/** Thread stack ID */
 	uint8_t stack_id;
-	/** Current thread state */
+	/* enum mpipe_thread_state */
 	atomic_t state;
+	/** @endcond */
 	/** Priority of the thread */
 	int priority;
 };
