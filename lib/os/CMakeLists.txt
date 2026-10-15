@@ -12,6 +12,8 @@ zephyr_sources(
   printk.c
   )
 
+add_subdirectory_ifdef(CONFIG_USERSPACE handlers)
+
 if(CONFIG_ZVFS)
   if(CONFIG_ZVFS_EVENTFD)
     if(CONFIG_ZVFS_EVENTFD_IGNORE_MIN)

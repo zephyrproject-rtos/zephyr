@@ -26,6 +26,7 @@ excluded_sources:
   - kernel/userspace/
   - kernel/mmu.c
   - kernel/paging/
+  - lib/os/handlers/
 
 # Sources holding the hooks through which the common code reaches the
 # excluded features, each with a variant that compiles to nothing outside
