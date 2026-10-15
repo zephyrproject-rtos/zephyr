@@ -24,7 +24,7 @@ extern "C" {
  * @brief Network buffer library
  * @defgroup net_buf Network Buffer Library
  * @since 1.0
- * @version 1.1.0
+ * @version 1.2.0
  * @ingroup os_services
  *
  * The functions that add, push, pull or remove data check with an assertion
@@ -1669,9 +1669,10 @@ void net_buf_simple_reserve(struct net_buf_simple *buf, size_t reserve);
 /**
  * @brief Put a buffer into a list
  *
- * The list is modified under a spinlock that net_buf_slist_put() and
- * net_buf_slist_get() share, so a list that is only accessed through these
- * two functions can be used from several threads and from interrupt handlers.
+ * The list is modified under a spinlock that net_buf_slist_put(),
+ * net_buf_slist_get() and net_buf_slist_purge() share, so a list that is only
+ * accessed through these functions can be used from several threads and from
+ * interrupt handlers.
  *
  * @param list Which list to append the buffer to.
  * @param buf Buffer.
@@ -1688,6 +1689,37 @@ void net_buf_slist_put(sys_slist_t *list, struct net_buf *buf);
  * @return Buffer, or NULL if the list is empty.
  */
 struct net_buf * __must_check net_buf_slist_get(sys_slist_t *list);
+
+/**
+ * @brief Unreference all buffers in a list.
+ *
+ * The list is emptied in one step under the same spinlock as in
+ * net_buf_slist_put(), and the buffers are unreferenced after the spinlock has
+ * been released, so buffers put into the list meanwhile stay in it.
+ *
+ * @param list Which list to purge.
+ */
+#if defined(CONFIG_NET_BUF_LOG)
+void net_buf_slist_purge_debug(sys_slist_t *list, const char *func, int line);
+#define net_buf_slist_purge(_list) net_buf_slist_purge_debug(_list, __func__, __LINE__)
+#else
+void net_buf_slist_purge(sys_slist_t *list);
+#endif
+
+/**
+ * @brief Unreference all buffers in a FIFO.
+ *
+ * Buffers are taken from the FIFO until it is empty, so buffers put into it
+ * meanwhile are unreferenced as well.
+ *
+ * @param fifo Which FIFO to purge.
+ */
+#if defined(CONFIG_NET_BUF_LOG)
+void net_buf_fifo_purge_debug(struct k_fifo *fifo, const char *func, int line);
+#define net_buf_fifo_purge(_fifo) net_buf_fifo_purge_debug(_fifo, __func__, __LINE__)
+#else
+void net_buf_fifo_purge(struct k_fifo *fifo);
+#endif
 
 /**
  * @brief Decrements the reference count of a buffer.
