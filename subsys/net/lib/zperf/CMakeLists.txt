@@ -28,3 +28,8 @@ zephyr_library_sources_ifdef(CONFIG_NET_SHELL
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/subsys/net/ip
 )
+
+if(CONFIG_NET_UNITY_BUILD)
+  # The shell redefines the session callbacks and local addresses
+  zephyr_library_unity(SKIP zperf_shell.c)
+endif()

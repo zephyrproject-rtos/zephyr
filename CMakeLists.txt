@@ -1067,6 +1067,15 @@ get_property(
 file(CONFIGURE OUTPUT ${syscalls_file_list_output}
      CONTENT "@syscalls_file_list@" @ONLY)
 
+if(CONFIG_NET_UNITY_BUILD_MERGED)
+  zephyr_library_merge(subsys__net__ip
+    subsys__net
+    subsys__net__l2__dummy
+    lib__net_buf
+    drivers__net
+  )
+endif()
+
 # Read list content
 get_property(ZEPHYR_LIBS_PROPERTY GLOBAL PROPERTY ZEPHYR_LIBS)
 

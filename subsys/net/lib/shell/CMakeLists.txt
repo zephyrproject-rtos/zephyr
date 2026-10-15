@@ -70,3 +70,8 @@ zephyr_library_sources_ifdef(CONFIG_NET_SHELL_SSH_SUPPORTED ssh_shell.c)
 if(CONFIG_SSH_SERVER OR CONFIG_SSH_CLIENT)
   zephyr_library_sources(ssh_keygen_shell.c)
 endif()
+
+if(CONFIG_NET_UNITY_BUILD)
+  # The shell commands reuse names of the network stack internals
+  zephyr_library_unity_skip(CURRENT_DIR)
+endif()
