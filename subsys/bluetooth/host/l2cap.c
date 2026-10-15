@@ -31,6 +31,7 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/clock.h>
+#include <zephyr/sys/zassert.h>
 #include <zephyr/toolchain.h>
 
 #include "buf_view.h"
@@ -40,6 +41,8 @@
 
 #define LOG_DBG_ENABLED IS_ENABLED(CONFIG_BT_L2CAP_LOG_LEVEL_DBG)
 LOG_MODULE_REGISTER(bt_l2cap, CONFIG_BT_L2CAP_LOG_LEVEL);
+
+ZASSERT_MODULE(DEFAULT);
 
 #define LE_CHAN_RTX(_w) CONTAINER_OF(k_work_delayable_from_work(_w), \
 				     struct bt_l2cap_le_chan, rtx_work)
@@ -273,6 +276,13 @@ static void l2cap_chan_set_state(struct bt_l2cap_chan *chan, bt_l2cap_chan_state
 	BT_L2CAP_LE_CHAN(chan)->state = state;
 }
 #endif /* CONFIG_BT_L2CAP_LOG_LEVEL_DBG */
+
+static void l2cap_server_release(struct bt_l2cap_server *server)
+{
+	__maybe_unused atomic_val_t prev = atomic_dec(&server->_refs);
+
+	ZASSERT(prev > 0, "server %p reference underflow", server);
+}
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
 static void cancel_data_ready(struct bt_l2cap_le_chan *lechan);
@@ -284,6 +294,16 @@ static void l2cap_chan_del(struct bt_l2cap_chan *chan)
 	struct net_buf *buf;
 
 	LOG_DBG("conn %p chan %p", chan->conn, chan);
+
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+	/* Release the channel from its server before the disconnected callback,
+	 * so that an application may unregister the server from there.
+	 */
+	if (le_chan->_server != NULL) {
+		l2cap_server_release(le_chan->_server);
+		le_chan->_server = NULL;
+	}
+#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
 	if (!chan->conn) {
 		goto destroy;
@@ -382,6 +402,7 @@ static void init_le_chan_private(struct bt_l2cap_le_chan *le_chan)
 #if defined(CONFIG_BT_L2CAP_SEG_RECV)
 	le_chan->_sdu_len_done = 0;
 #endif /* CONFIG_BT_L2CAP_SEG_RECV */
+	le_chan->_server = NULL;
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 	memset(&le_chan->_pdu_ready, 0, sizeof(le_chan->_pdu_ready));
 	le_chan->_pdu_remaining = 0;
@@ -1237,9 +1258,12 @@ struct bt_l2cap_chan *bt_l2cap_le_lookup_rx_cid(struct bt_conn *conn,
 }
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
-struct bt_l2cap_server *bt_l2cap_server_lookup_psm(uint16_t psm)
+/* Caller must hold the host lock. */
+static struct bt_l2cap_server *l2cap_server_lookup_psm(uint16_t psm)
 {
 	struct bt_l2cap_server *server;
+
+	BT_DEV_LOCK_ASSERT();
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&servers, server, node) {
 		if (server->psm == psm) {
@@ -1250,36 +1274,85 @@ struct bt_l2cap_server *bt_l2cap_server_lookup_psm(uint16_t psm)
 	return NULL;
 }
 
+/* Caller must hold the host lock. */
+static bool l2cap_server_is_registered(const struct bt_l2cap_server *server)
+{
+	struct bt_l2cap_server *registered;
+
+	BT_DEV_LOCK_ASSERT();
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&servers, registered, node) {
+		if (registered == server) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/* Take a reference to the server registered for @p psm, so that it cannot be
+ * unregistered while a connection request for it is being handled. The host
+ * lock is only held for the lookup, since accept() must not run under it.
+ */
+static struct bt_l2cap_server *l2cap_server_acquire(uint16_t psm)
+{
+	struct bt_l2cap_server *server;
+
+	bt_dev_lock();
+
+	server = l2cap_server_lookup_psm(psm);
+	if (server != NULL) {
+		(void)atomic_inc(&server->_refs);
+	}
+
+	bt_dev_unlock();
+
+	return server;
+}
+
 int bt_l2cap_server_register(struct bt_l2cap_server *server)
 {
+	int err = 0;
+
 	if (!server->accept) {
 		return -EINVAL;
+	}
+
+	bt_dev_lock();
+
+	if (l2cap_server_is_registered(server)) {
+		LOG_DBG("Server already registered");
+		err = -EALREADY;
+		goto unlock;
 	}
 
 	if (server->psm) {
 		if (server->psm < L2CAP_LE_PSM_FIXED_START ||
 		    server->psm > L2CAP_LE_PSM_DYN_END) {
-			return -EINVAL;
+			err = -EINVAL;
+			goto unlock;
 		}
 
 		/* Check if given PSM is already in use */
-		if (bt_l2cap_server_lookup_psm(server->psm)) {
+		if (l2cap_server_lookup_psm(server->psm) != NULL) {
 			LOG_DBG("PSM already registered");
-			return -EADDRINUSE;
+			err = -EADDRINUSE;
+			goto unlock;
 		}
 	} else {
 		uint16_t psm;
 
 		for (psm = L2CAP_LE_PSM_DYN_START;
 		     psm <= L2CAP_LE_PSM_DYN_END; psm++) {
-			if (!bt_l2cap_server_lookup_psm(psm)) {
+			if (l2cap_server_lookup_psm(psm) == NULL) {
 				break;
 			}
 		}
 
 		if (psm > L2CAP_LE_PSM_DYN_END) {
 			LOG_WRN("No free dynamic PSMs available");
-			return -EADDRNOTAVAIL;
+			err = -EADDRNOTAVAIL;
+			goto unlock;
 		}
 
 		LOG_DBG("Allocated PSM 0x%04x for new server", psm);
@@ -1287,7 +1360,8 @@ int bt_l2cap_server_register(struct bt_l2cap_server *server)
 	}
 
 	if (server->sec_level > BT_SECURITY_L4) {
-		return -EINVAL;
+		err = -EINVAL;
+		goto unlock;
 	} else if (server->sec_level < BT_SECURITY_L1) {
 		/* Level 0 is only applicable for BR/EDR */
 		server->sec_level = BT_SECURITY_L1;
@@ -1295,9 +1369,57 @@ int bt_l2cap_server_register(struct bt_l2cap_server *server)
 
 	LOG_DBG("PSM 0x%04x", server->psm);
 
+	/* The host owns the reference count while the server is registered:
+	 * initialize it here, since the application may reuse a struct that
+	 * it has previously unregistered, and is not required to
+	 * zero-initialize it.
+	 */
+	atomic_set(&server->_refs, 0);
+
 	sys_slist_append(&servers, &server->node);
 
-	return 0;
+unlock:
+	bt_dev_unlock();
+
+	return err;
+}
+
+int bt_l2cap_server_unregister(struct bt_l2cap_server *server)
+{
+	__maybe_unused bool removed;
+	atomic_val_t active;
+	int err = 0;
+
+	if (server == NULL) {
+		return -EINVAL;
+	}
+
+	bt_dev_lock();
+
+	if (!l2cap_server_is_registered(server)) {
+		err = -ENOENT;
+		goto unlock;
+	}
+
+	/* Non-zero while a connection request for this server is being
+	 * handled, or while channels it accepted are still connected.
+	 */
+	active = atomic_get(&server->_refs);
+	if (active != 0) {
+		LOG_DBG("PSM 0x%04x still in use (%ld)", server->psm, active);
+		err = -EBUSY;
+		goto unlock;
+	}
+
+	removed = sys_slist_find_and_remove(&servers, &server->node);
+	ZASSERT(removed, "server %p is registered but not on the list", server);
+
+	LOG_DBG("PSM 0x%04x unregistered", server->psm);
+
+unlock:
+	bt_dev_unlock();
+
+	return err;
 }
 
 #if defined(CONFIG_BT_L2CAP_SEG_RECV)
@@ -1519,10 +1641,13 @@ static uint16_t l2cap_chan_accept(struct bt_conn *conn,
 		return BT_L2CAP_LE_ERR_NO_RESOURCES;
 	}
 
-	l2cap_chan_tx_give_credits(le_chan, credits);
-
 	/* Set channel PSM */
 	le_chan->psm = server->psm;
+
+	le_chan->_server = server;
+	(void)atomic_inc(&server->_refs);
+
+	l2cap_chan_tx_give_credits(le_chan, credits);
 
 	/* Update state */
 	l2cap_chan_set_state(*chan, BT_L2CAP_CONNECTED);
@@ -1557,13 +1682,39 @@ static uint16_t l2cap_check_security(struct bt_conn *conn,
 	return BT_L2CAP_LE_ERR_AUTHENTICATION;
 }
 
+/* Look up the server for @p psm and let it accept the channel. The reference
+ * taken by the lookup keeps the server from being unregistered until this
+ * request is done, without holding a lock across accept().
+ */
+static uint16_t l2cap_le_accept(struct bt_conn *conn, uint16_t psm, uint16_t scid, uint16_t mtu,
+				uint16_t mps, uint16_t credits, struct bt_l2cap_chan **chan)
+{
+	struct bt_l2cap_server *server;
+	uint16_t result;
+
+	/* Check if there is a server registered */
+	server = l2cap_server_acquire(psm);
+	if (server == NULL) {
+		return BT_L2CAP_LE_ERR_PSM_NOT_SUPP;
+	}
+
+	/* Check if connection has minimum required security level */
+	result = l2cap_check_security(conn, server);
+	if (result == BT_L2CAP_LE_SUCCESS) {
+		result = l2cap_chan_accept(conn, server, scid, mtu, mps, credits, chan);
+	}
+
+	l2cap_server_release(server);
+
+	return result;
+}
+
 static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 			struct net_buf *buf)
 {
 	struct bt_conn *conn = l2cap->chan.chan.conn;
 	struct bt_l2cap_chan *chan;
 	struct bt_l2cap_le_chan *le_chan;
-	struct bt_l2cap_server *server;
 	struct bt_l2cap_le_conn_req *req = (void *)buf->data;
 	struct bt_l2cap_le_conn_rsp *rsp;
 	uint16_t psm, scid, mtu, mps, credits;
@@ -1602,21 +1753,7 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 		goto rsp;
 	}
 
-	/* Check if there is a server registered */
-	server = bt_l2cap_server_lookup_psm(psm);
-	if (!server) {
-		result = BT_L2CAP_LE_ERR_PSM_NOT_SUPP;
-		goto rsp;
-	}
-
-	/* Check if connection has minimum required security level */
-	result = l2cap_check_security(conn, server);
-	if (result != BT_L2CAP_LE_SUCCESS) {
-		goto rsp;
-	}
-
-	result = l2cap_chan_accept(conn, server, scid, mtu, mps, credits,
-				   &chan);
+	result = l2cap_le_accept(conn, psm, scid, mtu, mps, credits, &chan);
 	if (result != BT_L2CAP_LE_SUCCESS) {
 		goto rsp;
 	}
@@ -1697,9 +1834,11 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 		goto response;
 	}
 
-	/* Check if there is a server registered */
-	server = bt_l2cap_server_lookup_psm(psm);
-	if (!server) {
+	/* Referenced until the last accept() has returned, as in
+	 * l2cap_le_accept().
+	 */
+	server = l2cap_server_acquire(psm);
+	if (server == NULL) {
 		result = BT_L2CAP_LE_ERR_PSM_NOT_SUPP;
 		goto response;
 	}
@@ -1707,6 +1846,7 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	/* Check if connection has minimum required security level */
 	result = l2cap_check_security(conn, server);
 	if (result != BT_L2CAP_LE_SUCCESS) {
+		l2cap_server_release(server);
 		goto response;
 	}
 
@@ -1737,6 +1877,8 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 			continue;
 		}
 	}
+
+	l2cap_server_release(server);
 
 response:
 	buf = l2cap_create_le_sig_pdu(BT_L2CAP_ECRED_CONN_RSP, ident,

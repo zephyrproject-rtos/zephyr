@@ -3970,17 +3970,12 @@ static void bt_eatt_init(void)
 		.sec_level = BT_SECURITY_L2,
 		.accept = bt_eatt_accept,
 	};
-	struct bt_l2cap_server *registered_server;
 
 	LOG_DBG("");
 
-	/* Check if eatt_l2cap server has already been registered. */
-	registered_server = bt_l2cap_server_lookup_psm(eatt_l2cap.psm);
-	if (registered_server != &eatt_l2cap) {
-		err = bt_l2cap_server_register(&eatt_l2cap);
-		if (err < 0) {
-			LOG_ERR("EATT Server registration failed %d", err);
-		}
+	err = bt_l2cap_server_register(&eatt_l2cap);
+	if (err < 0 && err != -EALREADY) {
+		LOG_ERR("EATT Server registration failed %d", err);
 	}
 
 #if defined(CONFIG_BT_EATT)
