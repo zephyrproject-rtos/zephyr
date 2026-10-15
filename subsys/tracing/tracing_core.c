@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2019 Intel corporation
+ * Copyright (c) 2026 Antmicro
+ * Copyright (c) 2026 Analog Devices
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +22,12 @@
 #include <tracing_backend.h>
 #ifdef CONFIG_TRACING_CTF_TIMESTAMP
 #include <zephyr/timing/timing.h>
+#endif
+
+#ifdef CONFIG_INSTRUMENTATION
+#include <zephyr/instrumentation/instrumentation.h>
+
+#define TRACING_CMD_INSTR_PREFIX "instr_"
 #endif
 
 #define TRACING_CMD_ENABLE  "enable"
@@ -183,6 +191,15 @@ bool is_tracing_enabled(void)
 
 void tracing_cmd_handle(uint8_t *buf, uint32_t length)
 {
+#ifdef CONFIG_INSTRUMENTATION
+	const char *instr_prefix = TRACING_CMD_INSTR_PREFIX;
+	const int instr_prefix_len = strlen(instr_prefix);
+
+	if (strncmp(buf, instr_prefix, MIN(length, instr_prefix_len)) == 0) {
+		instr_cmd_handle(buf + instr_prefix_len, length - instr_prefix_len);
+	}
+#endif
+
 	if (strncmp(buf, TRACING_CMD_ENABLE, length) == 0) {
 		tracing_set_state(TRACING_ENABLE);
 	} else if (strncmp(buf, TRACING_CMD_DISABLE, length) == 0) {
@@ -192,17 +209,28 @@ void tracing_cmd_handle(uint8_t *buf, uint32_t length)
 
 void tracing_buffer_handle(uint8_t *data, uint32_t length)
 {
+#ifdef CONFIG_INSTRUMENTATION
+	bool instr_state = instr_enabled();
+
+	instr_disable();
+#endif
+
 	tracing_backend_output(primary_backend, data, length);
 
-	if (!multiple_backends) {
-		return;
-	}
-
-	STRUCT_SECTION_FOREACH(tracing_backend, backend) {
-		if (strcmp(backend->name, CONFIG_TRACING_BACKEND_NAME) != 0) {
-			tracing_backend_output(backend, data, length);
+	if (multiple_backends) {
+		STRUCT_SECTION_FOREACH(tracing_backend, backend) {
+			if (strcmp(backend->name, CONFIG_TRACING_BACKEND_NAME) != 0) {
+				tracing_backend_output(backend, data, length);
+			}
 		}
 	}
+
+
+#ifdef CONFIG_INSTRUMENTATION
+	if (instr_state) {
+		instr_enable();
+	}
+#endif
 }
 
 void tracing_packet_drop_handle(void)
