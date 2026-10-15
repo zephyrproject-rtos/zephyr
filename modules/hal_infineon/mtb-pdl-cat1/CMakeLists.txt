@@ -56,6 +56,13 @@ if(CONFIG_USE_INFINEON_FLASH)
   zephyr_library_sources(${pdl_drv_dir}/source/cy_flash_srom.c)
 endif()
 
+# PSoC 64 routes protected register writes through the secure core, so cy_flash.c,
+# cy_syspm.c and system_psoc6_cm4.c call Cy_PRA_* unconditionally on these parts.
+if(CONFIG_SOC_SERIES_PSOC6_64)
+  zephyr_library_sources(${pdl_drv_dir}/source/cy_pra.c)
+  zephyr_library_sources(${pdl_drv_dir}/source/cy_pra_cfg.c)
+endif()
+
 if(CONFIG_SOC_FAMILY_INFINEON_CAT1B)
   zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_ADC      ${pdl_drv_dir}/source/cy_adcmic.c)
 else()
