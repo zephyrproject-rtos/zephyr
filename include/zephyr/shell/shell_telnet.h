@@ -60,6 +60,16 @@ struct shell_telnet {
 
 	/** Mutex serializing sends, cancels of send_work and the client close. */
 	struct k_mutex tx_lock;
+
+	/** Bumped on every accept and close; a send resumes only within the
+	 *  session it started in.
+	 */
+	uint32_t session;
+
+	/** Set while the shell thread writes, so send_work leaves the line
+	 *  buffer alone.
+	 */
+	bool tx_active;
 	uint8_t cmd_buf[SHELL_TELNET_MAX_CMD_SIZE];
 	uint8_t cmd_len;
 
