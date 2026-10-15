@@ -600,3 +600,10 @@ test_spi_adis16607_3: adis16607@46 {
 	reset-gpios = <&test_gpio 0 0>;
 	odr = <1000>;
 };
+
+test_spi_adxl373: adxl373@47 {
+	compatible = "adi,adxl373";
+	reg = <0x47>;
+	spi-max-frequency = <0>;
+	int1-gpios = <&test_gpio 0 0>;
+};
