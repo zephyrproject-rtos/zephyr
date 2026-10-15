@@ -116,6 +116,20 @@
 #else
 #define CODE_UNREACHABLE __builtin_unreachable()
 #endif
+
+/*
+ * The "if (!cond) __builtin_unreachable()" idiom is the only form GCC folds
+ * pointer comparisons with (the GCC 13+ assume attribute does not).
+ * __builtin_unreachable() is used directly rather than CODE_UNREACHABLE so
+ * that this stays a pure hint on CONFIG_ARCH_POSIX as well.
+ */
+#define CODE_ASSUME(cond)                                                                          \
+	do {                                                                                       \
+		if (!(cond)) {                                                                     \
+			__builtin_unreachable();                                                   \
+		}                                                                                  \
+	} while (false)
+
 #define FUNC_NORETURN    __attribute__((__noreturn__))
 
 /* The GNU assembler for Cortex-M3 uses # for immediate values, not
