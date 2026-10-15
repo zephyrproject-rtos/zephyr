@@ -10,6 +10,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ZEPHYR_SUBSYS_NET_IP_NET_PRIVATE_H_
+#define ZEPHYR_SUBSYS_NET_IP_NET_PRIVATE_H_
+
 #include <errno.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/net/ethernet.h>
@@ -490,3 +493,5 @@ static inline void net_ipv6_mld_send_leave(struct net_if *iface __unused,
 {
 }
 #endif /* CONFIG_NET_IPV6_MLD */
+
+#endif /* ZEPHYR_SUBSYS_NET_IP_NET_PRIVATE_H_ */
