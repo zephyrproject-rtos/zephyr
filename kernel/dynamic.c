@@ -5,6 +5,7 @@
  */
 
 #include "kernel_internal.h"
+#include <kuser.h>
 
 #include <zephyr/kernel.h>
 #include <ksched.h>
@@ -146,15 +147,9 @@ int z_impl_k_thread_stack_free(k_thread_stack_t *stack)
 	}
 
 	if (IS_ENABLED(CONFIG_DYNAMIC_THREAD_ALLOC)) {
-#ifdef CONFIG_USERSPACE
-		if (k_object_find(stack)) {
-			k_object_free(stack);
-		} else {
+		if (!z_stack_user_free(stack)) {
 			k_free(stack);
 		}
-#else
-		k_free(stack);
-#endif /* CONFIG_USERSPACE */
 	} else {
 		LOG_DBG("Invalid stack %p", stack);
 		return -EINVAL;
