@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if(CONFIG_SOC_SERIES_CYT2BX)
-  add_subdirectory(${SOC_SERIES})
+  add_subdirectory(${CONFIG_SOC_SERIES})
   zephyr_include_directories(common)
 endif()
 
