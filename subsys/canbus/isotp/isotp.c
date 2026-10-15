@@ -669,8 +669,6 @@ int isotp_bind(struct isotp_recv_ctx *rctx, const struct device *can_dev,
 
 void isotp_unbind(struct isotp_recv_ctx *rctx)
 {
-	struct net_buf *buf;
-
 	if (rctx->filter_id >= 0 && rctx->can_dev) {
 		can_remove_rx_filter(rctx->can_dev, rctx->filter_id);
 	}
@@ -682,9 +680,7 @@ void isotp_unbind(struct isotp_recv_ctx *rctx)
 
 	rctx->state = ISOTP_RX_STATE_UNBOUND;
 
-	while ((buf = k_fifo_get(&rctx->fifo, K_NO_WAIT))) {
-		net_buf_unref(buf);
-	}
+	net_buf_fifo_purge(&rctx->fifo);
 
 	k_fifo_cancel_wait(&rctx->fifo);
 
