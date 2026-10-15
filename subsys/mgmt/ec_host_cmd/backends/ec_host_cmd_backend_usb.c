@@ -230,7 +230,7 @@ static int handle_out_transfer(struct usbd_class_data *const c_data)
 	    (expected_len > ctx->rx_ctx->len_max)) {
 		k_work_cancel_delayable(&ctx->reset_work);
 		if (ctx->rx_ctx->len > expected_len) {
-			LOG_ERR("Received incorrect number of bytes, got: %d, expected: %d",
+			LOG_ERR("Received incorrect number of bytes, got: %zu, expected: %zu",
 				ctx->rx_ctx->len, expected_len);
 		}
 		ctx->state = USB_EC_HOST_CMD_STATE_PROCESSING;
@@ -240,7 +240,7 @@ static int handle_out_transfer(struct usbd_class_data *const c_data)
 	/* Enqueue OUT transfer if we are still receiving. */
 	if (ctx->state == USB_EC_HOST_CMD_STATE_RECEIVING) {
 		if (!IS_UDC_ALIGNED(ctx->rx_ctx->len)) {
-			LOG_ERR("Received unaligned OUT transfer: %d", ctx->rx_ctx->len);
+			LOG_ERR("Received unaligned OUT transfer: %zu", ctx->rx_ctx->len);
 			k_work_reschedule(&ctx->reset_work, K_NO_WAIT);
 			return 0;
 		}
