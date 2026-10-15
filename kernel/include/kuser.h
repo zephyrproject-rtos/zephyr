@@ -67,6 +67,25 @@ FUNC_NORETURN void z_thread_user_mode_enter(k_thread_entry_t entry, void *p1, vo
  */
 bool z_stack_user_free(k_thread_stack_t *stack);
 
+/* Reserve the thread's user mode local data at the top of its stack buffer,
+ * below the @p delta bytes already reserved there, and return the new
+ * reservation.
+ */
+static inline size_t z_thread_user_local_data_reserve(struct k_thread *thread, char *stack_ptr,
+						      size_t delta)
+{
+#ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
+	delta += sizeof(struct _thread_userspace_local_data);
+	thread->userspace_local_data =
+		(struct _thread_userspace_local_data *)(stack_ptr - delta);
+#else
+	ARG_UNUSED(thread);
+	ARG_UNUSED(stack_ptr);
+#endif /* CONFIG_THREAD_USERSPACE_LOCAL_DATA */
+
+	return delta;
+}
+
 #else /* !CONFIG_USERSPACE */
 
 static inline bool z_stack_is_user_capable(k_thread_stack_t *stack)
@@ -118,6 +137,15 @@ static inline bool z_stack_user_free(k_thread_stack_t *stack)
 	ARG_UNUSED(stack);
 
 	return false;
+}
+
+static inline size_t z_thread_user_local_data_reserve(struct k_thread *thread, char *stack_ptr,
+						      size_t delta)
+{
+	ARG_UNUSED(thread);
+	ARG_UNUSED(stack_ptr);
+
+	return delta;
 }
 
 #endif /* CONFIG_USERSPACE */
