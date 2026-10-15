@@ -238,7 +238,8 @@ class SBOMDocument:
               filename, namespace, and cross-document reference ID.
         title: Human-readable document name emitted as the SPDX ``DocumentName``. Falls back to
                ``name`` when empty, allowing the displayed name to differ from the identifier.
-        namespace: Document namespace URI.
+        namespace: Document namespace URI. When empty, ``SBOMGraph.document_namespace()``
+                   derives it from the graph's namespace prefix.
         components: Components contained in this document, keyed by component name.
         described_components: Names of the components that are the primary subject(s) of this
             document, emitted as SPDX ``DESCRIBES`` relationships. When empty, the document
@@ -415,6 +416,18 @@ class SBOMGraph:
             Matching document, or ``None`` if the graph does not contain it.
         """
         return self.documents.get(name)
+
+    def document_namespace(self, document: SBOMDocument) -> str:
+        """Get the namespace URI of a document.
+
+        Args:
+            document: Document of this graph.
+
+        Returns:
+            The document's own namespace, or ``<namespace_prefix>/<document name>`` if it has
+            none.
+        """
+        return document.namespace or f"{self.namespace_prefix}/{document.name}"
 
     def add_component(self, component: SBOMComponent, document_name: str) -> None:
         """Add a component to the graph and to an existing document.

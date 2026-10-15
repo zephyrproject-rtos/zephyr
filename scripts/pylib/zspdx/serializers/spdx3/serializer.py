@@ -876,12 +876,7 @@ class SPDX3Serializer:
         """Build the SpdxDocument shell: identity, name and licensing."""
         document = spdx.SpdxDocument()
 
-        # Use the document's own namespace when set, otherwise the global prefix.
-        namespace = (
-            sbom_doc.namespace.rstrip("/")
-            if sbom_doc.namespace
-            else self.sbom_data.namespace_prefix.rstrip("/")
-        )
+        namespace = self.sbom_data.document_namespace(sbom_doc).rstrip("/")
         document._id = f"{namespace}/documents/{sbom_doc.name}"
 
         document.name = self._DOCUMENT_NAMES.get(
