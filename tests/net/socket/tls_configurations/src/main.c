@@ -30,29 +30,20 @@ int ztls_get_cached_session(int fd, mbedtls_ssl_session *session);
 #if defined(USE_PSK_KEY_EXCHANGE)
 static const unsigned char psk[] = { 0x01, 0x02, 0x03, 0x04, 0x05 };
 static const char psk_id[] = "PSK_identity";
-#endif /* USE_PSK_KEY_EXCHANGE */
-
+#else /* USE_PSK_KEY_EXCHANGE */
 /* Server certificate is only used when not using PSK key exchanges for simplicity. */
-#if !defined(USE_PSK_KEY_EXCHANGE)
 #define USE_CERTIFICATE
 static const unsigned char certificate[] = {
 #include "ec.crt.inc"
 };
-#endif
+#endif /* USE_PSK_KEY_EXCHANGE */
 
 #define APP_BANNER "TLS socket configuration sample"
 
 #define INVALID_SOCKET (-1)
 
-enum {
-	_PLACEHOLDER_TAG_ = 0,
-#if defined(USE_CERTIFICATE)
-	CA_CERTIFICATE_TAG,
-#endif
-#if defined(USE_PSK_KEY_EXCHANGE)
-	PSK_TAG,
-#endif
-};
+/* Credentials have different types, so they can all share the same tag. */
+#define CREDENTIALS_TAG 1
 
 static int socket_fd = INVALID_SOCKET;
 static struct zsock_pollfd fds[1];
@@ -116,12 +107,7 @@ static int create_socket(void)
 	}
 
 	sec_tag_t sec_tag_list[] = {
-#if defined(USE_CERTIFICATE)
-		CA_CERTIFICATE_TAG,
-#endif
-#if defined(USE_PSK_KEY_EXCHANGE)
-		PSK_TAG,
-#endif
+		CREDENTIALS_TAG,
 	};
 
 	ret = zsock_setsockopt(socket_fd, ZSOCK_SOL_TLS, ZSOCK_TLS_SEC_TAG_LIST, sec_tag_list,
@@ -177,7 +163,7 @@ static int setup_credentials(void)
 	__maybe_unused int err;
 
 #if defined(USE_CERTIFICATE)
-	err = tls_credential_add(CA_CERTIFICATE_TAG,
+	err = tls_credential_add(CREDENTIALS_TAG,
 				TLS_CREDENTIAL_CA_CERTIFICATE,
 				certificate,
 				sizeof(certificate));
@@ -188,14 +174,14 @@ static int setup_credentials(void)
 #endif
 
 #if defined(USE_PSK_KEY_EXCHANGE)
-	err = tls_credential_add(PSK_TAG,
+	err = tls_credential_add(CREDENTIALS_TAG,
 				TLS_CREDENTIAL_PSK,
 				psk,
 				sizeof(psk));
 	if (err < 0) {
 		LOG_ERR("Failed to register PSK: %d", err);
 	}
-	err = tls_credential_add(PSK_TAG,
+	err = tls_credential_add(CREDENTIALS_TAG,
 				TLS_CREDENTIAL_PSK_ID,
 				psk_id,
 				sizeof(psk_id) - 1);
