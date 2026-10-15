@@ -924,6 +924,13 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 			}
 		}
 
+		/*
+		 * A count left on transfer_sem by an earlier event would end the
+		 * wait below before this transfer completes.  Resetting here is
+		 * safe: no transfer is running, so no real completion is lost.
+		 */
+		k_sem_reset(&data->transfer_sem);
+
 		/* Initiate controller write and read transfer using tx_buff and rx_buff
 		 * respectively
 		 */
