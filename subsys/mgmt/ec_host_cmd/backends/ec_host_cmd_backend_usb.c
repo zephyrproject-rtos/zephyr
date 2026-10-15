@@ -310,7 +310,7 @@ static int ec_host_cmd_request(struct usbd_class_data *const c_data, struct net_
 			return 0;
 		}
 
-		ctx->rx_ctx->len = ctx->rx_ctx->len + buf_len;
+		ctx->rx_ctx->len += buf_len;
 
 		return handle_out_transfer(c_data);
 	}
