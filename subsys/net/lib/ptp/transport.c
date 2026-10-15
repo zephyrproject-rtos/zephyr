@@ -336,7 +336,7 @@ static int transport_l2_open(struct net_if *iface)
 static int transport_send_udp(int socket, int port, void *buf, int length,
 			      struct net_sockaddr *addr)
 {
-	struct net_sockaddr_storage m_addr_storage;
+	struct net_sockaddr_storage m_addr_storage = { 0 };
 	struct net_sockaddr *m_addr = net_sad(&m_addr_storage);
 	net_socklen_t addrlen;
 	int cnt;
