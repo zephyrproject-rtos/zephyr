@@ -2098,7 +2098,6 @@ ZTEST(net_socket_tls, test_poll_dtls_pollerr)
 #define BAD_CA_CERT_TAG 11
 #define BAD_OWN_CERT_TAG 12
 #define BAD_PRIV_KEY_TAG 13
-#define BAD_PSK_TAG 14
 #define BAD_NO_CRED_TAG 15
 
 static void remove_bad_cred(void)
@@ -2106,8 +2105,6 @@ static void remove_bad_cred(void)
 	(void)tls_credential_delete(BAD_CA_CERT_TAG, TLS_CREDENTIAL_CA_CERTIFICATE);
 	(void)tls_credential_delete(BAD_OWN_CERT_TAG, TLS_CREDENTIAL_PUBLIC_CERTIFICATE);
 	(void)tls_credential_delete(BAD_PRIV_KEY_TAG, TLS_CREDENTIAL_PRIVATE_KEY);
-	(void)tls_credential_delete(BAD_PSK_TAG, TLS_CREDENTIAL_PSK);
-	(void)tls_credential_delete(BAD_PSK_TAG, TLS_CREDENTIAL_PSK_ID);
 }
 
 static void test_bad_cred_common(bool test_dtls)
@@ -2115,14 +2112,10 @@ static void test_bad_cred_common(bool test_dtls)
 	static uint8_t bad_ca_cert[] = "bad ca cert";
 	static uint8_t bad_own_cert[] = "bad own cert";
 	static uint8_t bad_priv_key[] = "bad priv key";
-	static uint8_t bad_psk[] = "bad psk"; /* PSK is not bad per se, but will
-					       * try to use it without matching PSK ID.
-					       */
 	sec_tag_t bad_tags[] = {
 		BAD_CA_CERT_TAG,
 		BAD_OWN_CERT_TAG,
 		BAD_PRIV_KEY_TAG,
-		BAD_PSK_TAG,
 		BAD_NO_CRED_TAG,
 	};
 
@@ -2138,8 +2131,6 @@ static void test_bad_cred_common(bool test_dtls)
 	zassert_ok(tls_credential_add(BAD_PRIV_KEY_TAG, TLS_CREDENTIAL_PRIVATE_KEY,
 				      bad_priv_key, sizeof(bad_priv_key)),
 				      "Failed to add priv key");
-	zassert_ok(tls_credential_add(BAD_PSK_TAG, TLS_CREDENTIAL_PSK, bad_psk,
-				      sizeof(bad_psk)), "Failed to add psk");
 
 	if (test_dtls) {
 		s_sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_DTLS_1_2);
@@ -2176,6 +2167,111 @@ ZTEST(net_socket_tls, test_tls_bad_cred)
 ZTEST(net_socket_tls, test_dtls_bad_cred)
 {
 	test_bad_cred_common(true);
+}
+
+#define PSK_PAIR_1_TAG 21
+#define PSK_PAIR_2_TAG 22
+#define PSK_ONLY_TAG 23
+#define PSK_ID_ONLY_TAG 24
+#define PSK_TOO_LONG_TAG 25
+
+static void remove_psk_tag_list_cred(void)
+{
+	(void)tls_credential_delete(PSK_PAIR_1_TAG, TLS_CREDENTIAL_PSK);
+	(void)tls_credential_delete(PSK_PAIR_1_TAG, TLS_CREDENTIAL_PSK_ID);
+	(void)tls_credential_delete(PSK_PAIR_2_TAG, TLS_CREDENTIAL_PSK);
+	(void)tls_credential_delete(PSK_PAIR_2_TAG, TLS_CREDENTIAL_PSK_ID);
+	(void)tls_credential_delete(PSK_ONLY_TAG, TLS_CREDENTIAL_PSK);
+	(void)tls_credential_delete(PSK_ID_ONLY_TAG, TLS_CREDENTIAL_PSK_ID);
+	(void)tls_credential_delete(PSK_TOO_LONG_TAG, TLS_CREDENTIAL_PSK);
+	(void)tls_credential_delete(PSK_TOO_LONG_TAG, TLS_CREDENTIAL_PSK_ID);
+}
+
+static void test_psk_tag_list_check(const sec_tag_t *tags, size_t tags_size,
+				    int expected_errno)
+{
+	int ret;
+
+	ret = zsock_setsockopt(s_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_SEC_TAG_LIST,
+			       tags, tags_size);
+	if (expected_errno == 0) {
+		zassert_ok(ret, "zsock_setsockopt() failed (%d)", errno);
+	} else {
+		zassert_equal(ret, -1, "zsock_setsockopt() should've failed");
+		zassert_equal(errno, expected_errno, "Unexpected errno %d", errno);
+	}
+}
+
+ZTEST(net_socket_tls, test_tls_psk_tag_list)
+{
+	/* PSK exceeding the maximum length supported by Mbed TLS */
+	static uint8_t psk_too_long[CONFIG_MBEDTLS_PSK_MAX_LEN + 1];
+	/* Single PSK/PSK ID pair */
+	static const sec_tag_t one_pair[] = {
+		PSK_PAIR_1_TAG,
+	};
+	/* PSK ID is valid per se, but the pair is rejected because of the
+	 * invalid PSK.
+	 */
+	static const sec_tag_t bad_psk_len[] = {
+		PSK_TOO_LONG_TAG,
+	};
+	/* PSK without PSK ID */
+	static const sec_tag_t psk_no_id[] = {
+		PSK_ONLY_TAG,
+	};
+	/* PSK ID without PSK */
+	static const sec_tag_t psk_id_no_psk[] = {
+		PSK_ID_ONLY_TAG,
+	};
+	/* Only one PSK/PSK ID pair allowed in the tag list */
+	static const sec_tag_t two_pairs[] = {
+		PSK_PAIR_1_TAG,
+		PSK_PAIR_2_TAG,
+	};
+	/* PSK and PSK ID must be provided by the same tag */
+	static const sec_tag_t split_pair[] = {
+		PSK_ONLY_TAG,
+		PSK_ID_ONLY_TAG,
+	};
+	/* No additional PSK ID allowed once a pair has been found */
+	static const sec_tag_t pair_and_psk_id[] = {
+		PSK_PAIR_1_TAG,
+		PSK_ID_ONLY_TAG,
+	};
+
+	remove_psk_tag_list_cred();
+
+	zassert_ok(tls_credential_add(PSK_PAIR_1_TAG, TLS_CREDENTIAL_PSK,
+				      psk, sizeof(psk)), "Failed to add psk");
+	zassert_ok(tls_credential_add(PSK_PAIR_1_TAG, TLS_CREDENTIAL_PSK_ID,
+				      psk_id, strlen(psk_id)), "Failed to add psk id");
+	zassert_ok(tls_credential_add(PSK_PAIR_2_TAG, TLS_CREDENTIAL_PSK,
+				      psk, sizeof(psk)), "Failed to add psk");
+	zassert_ok(tls_credential_add(PSK_PAIR_2_TAG, TLS_CREDENTIAL_PSK_ID,
+				      psk_id, strlen(psk_id)), "Failed to add psk id");
+	zassert_ok(tls_credential_add(PSK_ONLY_TAG, TLS_CREDENTIAL_PSK,
+				      psk, sizeof(psk)), "Failed to add psk");
+	zassert_ok(tls_credential_add(PSK_ID_ONLY_TAG, TLS_CREDENTIAL_PSK_ID,
+				      psk_id, strlen(psk_id)), "Failed to add psk id");
+	zassert_ok(tls_credential_add(PSK_TOO_LONG_TAG, TLS_CREDENTIAL_PSK,
+				      psk_too_long, sizeof(psk_too_long)), "Failed to add psk");
+	zassert_ok(tls_credential_add(PSK_TOO_LONG_TAG, TLS_CREDENTIAL_PSK_ID,
+				      psk_id, strlen(psk_id)), "Failed to add psk id");
+
+	s_sock = zsock_socket(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TLS_1_2);
+	zassert_true(s_sock >= 0, "zsock_socket() failed");
+
+	test_psk_tag_list_check(one_pair, sizeof(one_pair), 0);
+	test_psk_tag_list_check(bad_psk_len, sizeof(bad_psk_len), EINVAL);
+	test_psk_tag_list_check(psk_no_id, sizeof(psk_no_id), EINVAL);
+	test_psk_tag_list_check(psk_id_no_psk, sizeof(psk_id_no_psk), EINVAL);
+	test_psk_tag_list_check(two_pairs, sizeof(two_pairs), EINVAL);
+	test_psk_tag_list_check(split_pair, sizeof(split_pair), EINVAL);
+	test_psk_tag_list_check(pair_and_psk_id, sizeof(pair_and_psk_id), EINVAL);
+
+	test_sockets_close();
+	remove_psk_tag_list_cred();
 }
 
 static void dtls_client_connect_send_no_assert_work_handler(struct k_work *work)
