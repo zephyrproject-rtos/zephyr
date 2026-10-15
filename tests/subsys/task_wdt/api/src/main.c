@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 The Zephyr Project Contributors
+ * Copyright (c) 2026 Dhruv Menon <dhruvmenon1104@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
