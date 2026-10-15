@@ -1365,6 +1365,10 @@ static int stm32_dcmipp_get_caps(const struct device *dev, struct video_caps *ca
 {
 	struct stm32_dcmipp_pipe_data *pipe = dev->data;
 
+	if (caps->type != VIDEO_BUF_TYPE_OUTPUT) {
+		return -ENOTSUP;
+	}
+
 	switch (pipe->id) {
 	case DCMIPP_PIPE0:
 		caps->format_caps = stm32_dcmipp_dump_fmt;
@@ -1418,10 +1422,6 @@ static int stm32_dcmipp_set_selection(const struct device *dev, struct video_sel
 	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
 	uint32_t frame_width = dcmipp->source_fmt.width;
 	uint32_t frame_height = dcmipp->source_fmt.height;
-
-	if (sel->type != VIDEO_BUF_TYPE_OUTPUT) {
-		return -EINVAL;
-	}
 
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 	if (pipe->id == DCMIPP_PIPE1 || pipe->id == DCMIPP_PIPE2) {
@@ -1514,10 +1514,6 @@ static int stm32_dcmipp_get_selection(const struct device *dev, struct video_sel
 {
 	struct stm32_dcmipp_pipe_data *pipe = dev->data;
 	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
-
-	if (sel->type != VIDEO_BUF_TYPE_OUTPUT) {
-		return -EINVAL;
-	}
 
 	switch (sel->target) {
 	case VIDEO_SEL_TGT_CROP:
