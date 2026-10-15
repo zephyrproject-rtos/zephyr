@@ -705,6 +705,18 @@ ZTEST(devicetree_api, test_has_status)
 		      0, "");
 	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(reserved_gpio), okay),
 		      0, "");
+
+	/* Inherited from the parent, the node's own status is "okay" */
+	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(test_child_of_disabled), disabled), 1, "");
+	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(test_child_of_disabled), okay), 0, "");
+	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(test_child_of_disabled), reserved), 0, "");
+	zassert_str_equal(DT_PROP(DT_NODELABEL(test_child_of_disabled), status), "okay");
+
+	/* Inherited from the parent, the node has no status property */
+	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(test_child_of_reserved), reserved), 1, "");
+	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(test_child_of_reserved), disabled), 0, "");
+	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(test_child_of_reserved), okay), 0, "");
+	zassert_false(DT_NODE_HAS_PROP(DT_NODELABEL(test_child_of_reserved), status), "");
 }
 
 ZTEST(devicetree_api, test_has_status_okay)
@@ -716,6 +728,15 @@ ZTEST(devicetree_api, test_has_status_okay)
 	zassert_equal(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(disabled_gpio)), 0);
 
 	zassert_equal(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(reserved_gpio)), 0);
+
+	zassert_equal(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(test_child_of_disabled)), 0);
+
+	zassert_equal(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(test_child_of_reserved)), 0);
+
+	zassert_equal(DT_CHILD_NUM(DT_NODELABEL(test_disabled_parent)), 1);
+	zassert_equal(DT_CHILD_NUM_STATUS_OKAY(DT_NODELABEL(test_disabled_parent)), 0);
+	zassert_equal(DT_CHILD_NUM(DT_NODELABEL(test_reserved_parent)), 1);
+	zassert_equal(DT_CHILD_NUM_STATUS_OKAY(DT_NODELABEL(test_reserved_parent)), 0);
 }
 
 ZTEST(devicetree_api, test_bus)
