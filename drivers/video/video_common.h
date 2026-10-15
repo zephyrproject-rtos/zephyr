@@ -70,6 +70,18 @@ int video_init_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint
 			 uint8_t def, const char *const menu[]);
 
 /**
+ * @brief Initialize a button control
+ *
+ * @param ctrl Video control to initialize
+ * @param dev Device to which associate this control
+ * @param id Control ID to initialize
+ *
+ * @retval 0 on success
+ * @return Negative error code on failure
+ */
+int video_init_button_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id);
+
+/**
  * @brief Initialize an integer menu control
  *
  * @param ctrl Video control to initialize
