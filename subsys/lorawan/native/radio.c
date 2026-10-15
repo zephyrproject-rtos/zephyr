@@ -23,6 +23,7 @@ static struct lora_modem_config tx_config = {
 	.iq_inverted = false,
 	.packet_crc_disable = false,
 };
+static struct k_poll_signal tx_completion;
 
 static struct lora_modem_config rx_config = {
 	.coding_rate = CR_4_5,
@@ -41,6 +42,7 @@ int radio_init(const struct device *lora_dev)
 	}
 
 	radio_dev = lora_dev;
+	k_poll_signal_init(&tx_completion);
 
 	return 0;
 }
@@ -49,14 +51,14 @@ int radio_tx(const uint8_t *data, size_t len,
 	     uint32_t freq, const struct lwan_dr_params *dr,
 	     int8_t power)
 {
-	struct k_poll_signal tx_done = K_POLL_SIGNAL_INITIALIZER(tx_done);
 	struct k_poll_event events[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
 					 K_POLL_MODE_NOTIFY_ONLY,
-					 &tx_done),
+					 &tx_completion),
 	};
 	int ret;
 
+	k_poll_signal_reset(&tx_completion);
 	tx_config.frequency = freq;
 	tx_config.bandwidth = dr->bw;
 	tx_config.datarate = dr->sf;
@@ -68,7 +70,7 @@ int radio_tx(const uint8_t *data, size_t len,
 		return -EIO;
 	}
 
-	ret = lora_send_async(radio_dev, (uint8_t *)data, len, &tx_done);
+	ret = lora_send_async(radio_dev, (uint8_t *)data, len, &tx_completion);
 	if (ret != 0) {
 		LOG_ERR("lora_send_async failed: %d", ret);
 		return -EIO;
@@ -81,8 +83,8 @@ int radio_tx(const uint8_t *data, size_t len,
 		return -EIO;
 	}
 
-	if (tx_done.result != 0) {
-		LOG_ERR("TX failed: %d", tx_done.result);
+	if (tx_completion.result != 0) {
+		LOG_ERR("TX failed: %d", tx_completion.result);
 		return -EIO;
 	}
 
