@@ -1,4 +1,5 @@
 # Copyright 2024 NXP
+# Copyright (c) 2026 Analog Devices
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_include_directories(.)
@@ -18,3 +19,10 @@ add_subdirectory(nxp_syscon)
 
 # Include headers for all clock management drivers, registered with add_clock_management_header
 zephyr_library_compile_options("-include$<JOIN:$<TARGET_PROPERTY:clock_management_header_target,INTERFACE_SOURCES>,;-include>")
+
+# Check clock ownership after the build completes, to make sure clock settings
+# Don't conflict between clock-output nodes
+set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/dts/check_clock_ownership.py
+    ${EDT_PICKLE}
+)
