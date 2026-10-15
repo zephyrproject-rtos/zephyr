@@ -318,6 +318,10 @@ static int video_stm32_dcmi_get_caps(const struct device *dev, struct video_caps
 {
 	struct video_stm32_dcmi_data *data = dev->data;
 
+	if (caps->type != VIDEO_BUF_TYPE_OUTPUT) {
+		return -ENOTSUP;
+	}
+
 	/* 2 buffers are needed for DCMI_MODE_CONTINUOUS, one 1 for DCMI_MODE_SNAPSHOT */
 	caps->min_vbuf_count = 1;
 
