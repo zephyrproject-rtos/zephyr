@@ -441,20 +441,19 @@ static void ec_host_cmd_reset(struct k_work *work)
 	}
 
 	ctx->state = USB_EC_HOST_CMD_STATE_DISABLED;
-	ret = usbd_ep_dequeue(uds_ctx, ec_host_cmd_get_out_ep(c_data));
-	if (ret) {
-		LOG_ERR("Failed to dequeue EP OUT: %d", ret);
-		return;
-	}
-	ret = usbd_ep_dequeue(uds_ctx, ec_host_cmd_get_in_bulk_ep(c_data));
-	if (ret) {
-		LOG_ERR("Failed to dequeue EP IN: %d", ret);
-		return;
-	}
-	ret = usbd_ep_dequeue(uds_ctx, ec_host_cmd_get_in_int_ep(c_data));
-	if (ret) {
-		LOG_ERR("Failed to dequeue EP IN INT: %d", ret);
-		return;
+
+	const uint8_t eps[] = {
+		ec_host_cmd_get_out_ep(c_data),
+		ec_host_cmd_get_in_bulk_ep(c_data),
+		ec_host_cmd_get_in_int_ep(c_data),
+	};
+
+	ARRAY_FOR_EACH(eps, i) {
+		ret = usbd_ep_dequeue(uds_ctx, eps[i]);
+		if (ret) {
+			LOG_ERR("Failed to dequeue EP 0x%02x: %d", eps[i], ret);
+			return;
+		}
 	}
 
 	ec_host_cmd_enable(ctx->c_data);
