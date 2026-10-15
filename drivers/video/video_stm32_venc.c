@@ -97,7 +97,6 @@ static struct stm32_venc_ewl ewl_instance;
 
 struct stm32_venc_data {
 	struct video_device vdev; /* keep first */
-	struct k_mutex lock;
 	struct k_fifo in_fifo_in;
 	struct k_fifo in_fifo_out;
 	struct k_fifo out_fifo_in;
@@ -671,9 +670,6 @@ static int stm32_venc_set_stream(const struct device *dev, bool enable, enum vid
 static int stm32_venc_enqueue(const struct device *dev, struct video_buffer *vbuf)
 {
 	struct stm32_venc_data *data = dev->data;
-	int ret = 0;
-
-	k_mutex_lock(&data->lock, K_FOREVER);
 
 	if (vbuf->type == VIDEO_BUF_TYPE_INPUT) {
 		k_fifo_put(&data->in_fifo_in, vbuf);
@@ -681,19 +677,13 @@ static int stm32_venc_enqueue(const struct device *dev, struct video_buffer *vbu
 		k_fifo_put(&data->out_fifo_in, vbuf);
 	}
 
-	ret = encode_frame(data);
-
-	k_mutex_unlock(&data->lock);
-	return ret;
+	return encode_frame(data);
 }
 
 static int stm32_venc_dequeue(const struct device *dev, struct video_buffer **vbuf,
 			      k_timeout_t timeout)
 {
 	struct stm32_venc_data *data = dev->data;
-	int ret = 0;
-
-	k_mutex_lock(&data->lock, K_FOREVER);
 
 	if ((*vbuf)->type == VIDEO_BUF_TYPE_INPUT) {
 		*vbuf = k_fifo_get(&data->in_fifo_out, timeout);
@@ -702,13 +692,10 @@ static int stm32_venc_dequeue(const struct device *dev, struct video_buffer **vb
 	}
 
 	if (*vbuf == NULL) {
-		ret = -EAGAIN;
-		goto out;
+		return -EAGAIN;
 	}
 
-out:
-	k_mutex_unlock(&data->lock);
-	return ret;
+	return 0;
 }
 
 ISR_DIRECT_DECLARE(stm32_venc_isr)
@@ -831,7 +818,6 @@ static int stm32_venc_init(const struct device *dev)
 	}
 	reset_line_toggle_dt(&config->reset);
 
-	k_mutex_init(&data->lock);
 	k_fifo_init(&data->in_fifo_in);
 	k_fifo_init(&data->in_fifo_out);
 	k_fifo_init(&data->out_fifo_in);

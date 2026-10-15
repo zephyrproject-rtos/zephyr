@@ -29,7 +29,6 @@ struct video_m2m_common {
 struct mcux_pngdec_data {
 	struct video_device vdev; /* keep first */
 	struct video_m2m_common m2m;
-	struct k_mutex lock;
 	struct k_work decode_work;
 	struct k_sem decode_done;    /* Signaled when the decoder goes idle. */
 	bool running;         /* Decoder is actively decoding. */
@@ -76,13 +75,11 @@ static void mcux_pngdec_decode_one_frame(const struct device *dev)
 	struct video_buffer *current_in = NULL;
 	struct video_buffer *current_out = NULL;
 
-	k_mutex_lock(&data->lock, K_FOREVER);
 
 	if (!video_stream_busy(&data->vdev) ||
 	    k_fifo_is_empty(in_fifo_in) || k_fifo_is_empty(out_fifo_in)) {
 		/* Nothing can be done if streaming is off or either queue is empty */
 		data->running = false;
-		k_mutex_unlock(&data->lock);
 		k_sem_give(&data->decode_done);
 		return;
 	}
@@ -92,7 +89,6 @@ static void mcux_pngdec_decode_one_frame(const struct device *dev)
 	current_out = k_fifo_peek_head(out_fifo_in);
 
 	if (current_in == NULL || current_out == NULL) {
-		k_mutex_unlock(&data->lock);
 		return;
 	}
 
@@ -117,8 +113,6 @@ static void mcux_pngdec_decode_one_frame(const struct device *dev)
 	PNGDEC_StartDecode(config->base);
 
 	data->running = true;
-
-	k_mutex_unlock(&data->lock);
 }
 
 static int mcux_pngdec_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
@@ -155,26 +149,17 @@ static int mcux_pngdec_set_fmt(const struct device *dev, struct video_format *fm
 static int mcux_pngdec_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
 	struct mcux_pngdec_data *data = dev->data;
-	bool wait_for_decode = false;
 
 	ARG_UNUSED(type);
 
-	k_mutex_lock(&data->lock, K_FOREVER);
-
-	if (!enable) {
-		data->first_frame_rcv = false;
-		wait_for_decode = data->running;
-	}
-
-	k_mutex_unlock(&data->lock);
-
 	if (enable) {
 		mcux_pngdec_decode_one_frame(dev);
-	}
-
-	if (wait_for_decode) {
-		/* Let the frame currently being decoded finish, then stop decoding. */
-		k_sem_take(&data->decode_done, K_FOREVER);
+	} else {
+		data->first_frame_rcv = false;
+		if (data->running) {
+			/* Let the frame currently being decoded finish, then stop decoding. */
+			k_sem_take(&data->decode_done, K_FOREVER);
+		}
 	}
 
 	return 0;
@@ -193,8 +178,6 @@ static int mcux_pngdec_enqueue(const struct device *dev, struct video_buffer *vb
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&data->lock, K_FOREVER);
-
 	/*
 	 * The PNG decoder outputs VIDEO_PIX_FMT_RGBA32 format only.
 	 * The output size is obtained after parsing the first enqueued input frame buffer,
@@ -210,8 +193,7 @@ static int mcux_pngdec_enqueue(const struct device *dev, struct video_buffer *vb
 			if (PNGDEC_ParseHeader(&(data->image_info), vbuf->buffer) !=
 			    kStatus_Success) {
 				LOG_ERR("PNG header parsing failed");
-				ret = -ENOTSUP;
-				goto unlock;
+				return -ENOTSUP;
 			}
 
 			/*
@@ -243,13 +225,6 @@ static int mcux_pngdec_enqueue(const struct device *dev, struct video_buffer *vb
 	 * in/out buffer, start to decode new frame.
 	 */
 	if (!data->running && video_stream_busy(dev)) {
-		do_decode = true;
-	}
-
-unlock:
-	k_mutex_unlock(&data->lock);
-
-	if (do_decode) {
 		mcux_pngdec_decode_one_frame(dev);
 	}
 
@@ -325,7 +300,9 @@ static void mcux_pngdec_decode_work_handler(struct k_work *work)
 {
 	struct mcux_pngdec_data *data = CONTAINER_OF(work, struct mcux_pngdec_data, decode_work);
 
+	k_mutex_lock(data->vdev.lock);
 	mcux_pngdec_decode_one_frame(data->vdev.dev);
+	k_mutex_unlock(&data->vdev.lock);
 }
 
 static void mcux_pngdec_isr(const struct device *dev)
@@ -353,8 +330,8 @@ static void mcux_pngdec_isr(const struct device *dev)
 	k_fifo_put(&data->m2m.in.fifo_out, current_in);
 	k_fifo_put(&data->m2m.out.fifo_out, current_out);
 
-	/* Defer the next decode to a workqueue: decode_one_frame uses k_mutex,
-	 * which cannot be acquired from ISR context.
+	/* Defer the next decode to a workqueue: decode_one_frame needs to be called from a
+	 * locked state, which cannot be done from ISR context.
 	 */
 	k_work_submit(&data->decode_work);
 }
@@ -365,7 +342,6 @@ static int mcux_pngdec_init(const struct device *dev)
 	struct mcux_pngdec_data *data = dev->data;
 	pngdec_config_t init_config;
 
-	k_mutex_init(&data->lock);
 	k_work_init(&data->decode_work, mcux_pngdec_decode_work_handler);
 	k_sem_init(&data->decode_done, 0, 1);
 

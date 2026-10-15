@@ -148,6 +148,9 @@ struct video_buffer *video_import_buffer(uint8_t *mem, size_t sz)
 
 int video_enqueue(const struct device *dev, struct video_buffer *buf)
 {
+	struct video_device *vdev;
+	int ret;
+
 	if (dev == NULL || buf == NULL || buf->index >= CONFIG_VIDEO_BUFFER_POOL_NUM_MAX ||
 	    (buf->type != VIDEO_BUF_TYPE_INPUT && buf->type != VIDEO_BUF_TYPE_OUTPUT)) {
 		return -EINVAL;
@@ -173,17 +176,32 @@ int video_enqueue(const struct device *dev, struct video_buffer *buf)
 		}
 	}
 
-	return video_driver_enqueue(dev, &video_buf[buf->index]);
+	vdev = dev->data;
+
+	k_mutex_lock(&vdev->lock, K_FOREVER);
+	ret = video_driver_enqueue(dev, &video_buf[buf->index]);
+	k_mutex_unlock(&vdev->lock);
+
+	return ret;
 }
 
 int video_dequeue(const struct device *dev, struct video_buffer **vbuf,
 				       k_timeout_t timeout)
 {
+	struct video_device *vdev;
+	int ret;
+
 	if (dev == NULL || vbuf == NULL) {
 		return -EINVAL;
 	}
 
-	return video_driver_dequeue(dev, vbuf, timeout);
+	vdev = dev->data;
+
+	k_mutex_lock(&vdev->lock, K_FOREVER);
+	ret = video_driver_dequeue(dev, vbuf, timeout);
+	k_mutex_unlock(&vdev->lock);
+
+	return ret;
 }
 
 int video_transfer_buffer(const struct device *src, const struct device *sink,
@@ -193,21 +211,30 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 	struct video_buffer *buf = &(struct video_buffer){.type = src_type};
 	int ret;
 
-	ret = video_driver_dequeue(src, &buf, timeout);
+	ret = video_dequeue(src, &buf, timeout);
 	if (ret < 0) {
 		return ret;
 	}
 
 	buf->type = sink_type;
 
-	return video_driver_enqueue(sink, buf);
+	return video_enqueue(sink, buf);
 }
 
 int video_set_signal(const struct device *dev, struct k_poll_signal *sig)
 {
+	struct video_device *vdev;
+	int ret;
+
 	if (dev == NULL || sig == NULL) {
 		return -EINVAL;
 	}
 
-	return video_driver_set_signal(dev, sig);
+	vdev = dev->data;
+
+	k_mutex_lock(&vdev->lock, K_FOREVER);
+	ret = video_driver_set_signal(dev, sig);
+	k_mutex_unlock(&vdev->lock);
+
+	return ret;
 }

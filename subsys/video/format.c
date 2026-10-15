@@ -11,20 +11,42 @@ LOG_MODULE_REGISTER(video_format, CONFIG_VIDEO_LOG_LEVEL);
 
 int video_set_selection(const struct device *dev, struct video_selection *sel)
 {
+	struct video_device *vdev;
+	int ret;
+
 	if (dev == NULL || sel == NULL) {
 		return -EINVAL;
 	}
 
-	return video_driver_set_selection(dev, sel);
+	vdev = dev->data;
+
+	k_mutex_lock(&vdev->lock, K_FOREVER);
+
+	ret = video_driver_set_selection(dev, sel);
+end:
+	k_mutex_unlock(&vdev->lock);
+
+	return ret;
 }
 
 int video_get_selection(const struct device *dev, struct video_selection *sel)
 {
+	struct video_device *vdev;
+	int ret;
+
 	if (dev == NULL || sel == NULL) {
 		return -EINVAL;
 	}
 
-	return video_driver_get_selection(dev, sel);
+	vdev = dev->data;
+
+	k_mutex_lock(&vdev->lock, K_FOREVER);
+
+	ret = video_driver_get_selection(dev, sel);
+end:
+	k_mutex_unlock(&vdev->lock);
+
+	return ret;
 }
 
 int video_set_format(const struct device *dev, struct video_format *fmt)
@@ -37,6 +59,10 @@ int video_set_format(const struct device *dev, struct video_format *fmt)
 	if (dev == NULL || fmt == NULL) {
 		return -EINVAL;
 	}
+
+	vdev = dev->data;
+
+	k_mutex_lock(&vdev->lock, K_FOREVER);
 
 	switch (fmt->type) {
 	case VIDEO_BUF_TYPE_INPUT:
@@ -58,16 +84,15 @@ int video_set_format(const struct device *dev, struct video_format *fmt)
 
 	if (vdev->is_streaming & BIT(fmt->type)) {
 		LOG_DBG("%s device is currently streaming");
-		return -EBUSY;
+		ret = -EBUSY;
+		goto end;
 	}
-
-	vdev = dev->data;
 
 	ret = video_get_caps(dev, &caps);
 	if (ret < 0) {
 		LOG_ERR("Failed to query %s supported formats (type %u): %u",
 			dev->name, fmt->type, ret);
-		return ret;
+		goto end;
 	}
 
 	ret = video_format_caps_index(fmt, &caps->format_caps, &idx);
@@ -75,7 +100,7 @@ int video_set_format(const struct device *dev, struct video_format *fmt)
 		LOG_ERR("Format %s %ux%u not supported by %s (type %u): %u",
 			VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height,
 			dev->name, fmt->type, ret);
-		return ret;
+		goto end;
 	}
 
 	/* Capable of exchanging buffers: set a default format size which the driver may modify. */
@@ -84,12 +109,14 @@ int video_set_format(const struct device *dev, struct video_format *fmt)
 		if (ret < 0) {
 			LOG_ERR("Failed to estimate the video %s %ux%u default size for %s",
 				VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height, dev->name);
-			return ret;
+			goto end;
 		}
 	}
 
 	/* Fallback implementation: set the format of the source device */
 	while (true) {
+		k_mutex_lock(&vdev->lock, K_FOREVER);
+
 		ret = video_driver_set_format(dev, fmt, idx);
 		if (ret = 0) {
 			break;
@@ -98,27 +125,37 @@ int video_set_format(const struct device *dev, struct video_format *fmt)
 			LOG_ERR("Failed to apply format %s %ux%u to %s: %u",
 				VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height, dev->name,
 				ret);
-			return ret;
+			goto end;
 		}
 
 		if (vdev->source_dev == NULL) {
-			return -ENOSYS;
+			ret = -ENOSYS;
+			goto end;
 		}
 
 		vdev = vdev->source_dev->data;
+
+		k_mutex_unlock(&vdev->lock);
 	}
 
 	/* Store the format for all the video devices from the chain skipped through above */
 	for (struct video_device *tmp = device->data; tmp != vdev; vdev->source_dev->data) {
+		k_mutex_lock(&vdev->lock, K_FOREVER);
+
 		*(fmt->type == VIDEO_BUF_TYPE_INPUT ? vdev->in_fmt : vdev->out_fmt) = *fmt;
 
 		if (tmp->source_dev == NULL) {
 			break;
 		}
 		tmp = tmp->source_vdev->data;
+
+		k_mutex_unlock(&vdev->lock);
 	}
 
-	return 0;
+end:
+	k_mutex_unlock(&vdev->lock);
+
+	return ret;
 }
 
 int video_get_format(const struct device *dev, struct video_format *fmt)
@@ -131,6 +168,8 @@ int video_get_format(const struct device *dev, struct video_format *fmt)
 
 	vdev = dev->data;
 
+	k_mutex_lock(&vdev->lock, K_FOREVER);
+
 	switch (fmt->type) {
 	case VIDEO_BUF_TYPE_INPUT:
 		*fmt = vdev->in_fmt;
@@ -140,10 +179,14 @@ int video_get_format(const struct device *dev, struct video_format *fmt)
 		break;
 	default:
 		LOG_ERR("Invlid buffer type %u requested", fmt->type);
-		return -EINVAL;
+		ret =  -EINVAL;
+		goto end;
 	}
 
-	return 0;
+end:
+	k_mutex_unlock(&vdev->lock);
+
+	return ret;
 }
 
 int video_estimate_fmt_size(struct video_format *fmt)
@@ -180,6 +223,7 @@ int video_estimate_fmt_size(struct video_format *fmt)
 
 int video_set_compose_format(const struct device *dev, struct video_format *fmt)
 {
+	struct video_device *vdev;
 	struct video_selection sel = {
 		.type = fmt->type,
 		.target = VIDEO_SEL_TGT_COMPOSE,
@@ -190,11 +234,19 @@ int video_set_compose_format(const struct device *dev, struct video_format *fmt)
 	};
 	int ret;
 
+	vdev = dev->data;
+
+	k_mutex_lock(&vdev->lock, K_FOREVER);
+
 	ret = video_set_selection(dev, &sel);
 	if (ret < 0 && ret != -ENOSYS) {
 		LOG_ERR("Unable to set selection compose");
 		return ret;
 	}
 
-	return video_set_format(dev, fmt);
+	ret = video_set_format(dev, fmt);
+end:
+	k_mutex_unlock(&vdev->lock);
+
+	return ret;
 }

@@ -58,6 +58,8 @@ struct video_device {
 	struct video_format out_fmt;
 	/** Bitmask mapping each @ref video_buf_type to a streaming state */
 	atomic_t is_streaming;
+	/** Mutex used by video APIs to access the driver */
+	struct k_mutex lock;
 };
 
 /**

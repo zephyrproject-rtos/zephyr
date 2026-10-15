@@ -11,13 +11,17 @@ LOG_MODULE_REGISTER(video_frmival, CONFIG_VIDEO_LOG_LEVEL);
 
 int video_set_frmival(const struct device *dev, struct video_frmival *frmival)
 {
-	struct video_device *vdev = dev->data;
-	int ret;
+	struct video_device *vdev;
+	int ret = 0;
 
 	if (dev == NULL || frmival == NULL ||
 	    frmival->numerator == 0 || frmival->denominator == 0) {
 		return -EINVAL;
 	}
+
+	vdev = dev->data;
+
+	k_mutex_lock(&vdev->lock);
 
 	while (true) {
 		ret = video_driver_set_frmival(vdev->dev, frmival);
@@ -25,11 +29,12 @@ int video_set_frmival(const struct device *dev, struct video_frmival *frmival)
 			break;
 		}
 		if (ret != -ENOSYS) {
-			return ret;
+			goto end;
 		}
 
 		if (vdev->source_dev == NULL) {
-			return -ENOSYS;
+			ret = -ENOSYS;
+			goto end;
 		}
 		vdev = vdev->source_dev->data;
 	}
@@ -38,17 +43,24 @@ int video_set_frmival(const struct device *dev, struct video_frmival *frmival)
 	vdev = dev->data;
 	vdev->frmival = *frmival;
 
-	return 0;
+end:
+	k_mutex_unlock(&vdev->lock);
+
+	return ret;
 }
 
 int video_get_frmival(const struct device *dev, struct video_frmival *frmival)
 {
-	struct video_device *vdev = dev->data;
-	int ret;
+	struct video_device *vdev;
+	int ret = 0;
 
 	if (dev == NULL || frmival == NULL) {
 		return -EINVAL;
 	}
+
+	vdev = dev->data;
+
+	k_mutex_lock(&vdev->lock);
 
 	while (true) {
 		ret = video_driver_get_frmival(vdev->dev, frmival);
@@ -57,10 +69,10 @@ int video_get_frmival(const struct device *dev, struct video_frmival *frmival)
 				LOG_ERR("Invalid frame interval returned by %s", dev->name);
 				return -ERANGE;
 			}
-			return 0;
+			goto end;
 		}
 		if (ret != -ENOSYS) {
-			return ret;
+			goto end;
 		}
 
 		if (vdev->source_dev == NULL) {
@@ -73,17 +85,24 @@ int video_get_frmival(const struct device *dev, struct video_frmival *frmival)
 	vdev = dev->data;
 	*frmival = vdev->frmival;
 
+end:
+	k_mutex_unlock(&vdev->lock);
+
 	return 0;
 }
 
 int video_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
-	struct video_device *vdev = dev->data;
+	struct video_device *vdev;
 	int ret;
 
 	if (dev == NULL || fie == NULL) {
 		return -EINVAL;
 	}
+
+	vdev = dev->data;
+
+	k_mutex_lock(&vdev->lock);
 
 	while (true) {
 		ret = video_driver_enum_frmival(vdev->dev, fie);
@@ -91,11 +110,12 @@ int video_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 			break;
 		}
 		if (ret != -ENOSYS) {
-			return ret;
+			goto end;
 		}
 
 		if (vdev->source_dev == NULL) {
-			return -ENOSYS;
+			ret = -ENOSYS;
+			goto end;
 		}
 		vdev = vdev->source_dev->data;
 	}
@@ -107,21 +127,27 @@ int video_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 		    fie.step.denominator == 0 || fie.step.numerator == 0) {
 			LOG_ERR("Invalid stepwise frame interval returned by %s at index %u",
 				dev->name, fie->index);
-			return -ERANGE;
+			ret = -ERANGE;
+			goto end;
 		}
 		break;
 	case VIDEO_FRMIVAL_TYPE_DISCRETE:
 		if (fie.denominator == 0 || fie.numerator == 0) {
 			LOG_ERR("Invalid discrete frame interval returned by %s",
 				dev->name, fie->index);
-			return -ERANGE;
+			ret = -ERANGE;
+			goto end;
 		}
 		break;
 	default:
 		LOG_ERR("Invalid frame interval type %u returned by %s at index %u",
 			fie->type, dev->name, fie->index);
-		return -INVAL;
+		ret = -INVAL;
+		goto end;
 	}
+
+end:
+	k_mutex_unlock(&vdev->lock);
 
 	return 0;
 }

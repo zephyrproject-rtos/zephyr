@@ -31,7 +31,6 @@ struct video_m2m_common {
 struct mcux_jpegdec_data {
 	struct video_device vdev; /* keep first */
 	struct video_m2m_common m2m;
-	struct k_mutex lock;
 	struct k_sem decode_done;
 	jpegdec_descpt_t decoder_despt;
 	bool running;      /* Decoder is actively decoding. */
@@ -208,10 +207,8 @@ static int mcux_jpegdec_set_stream(const struct device *dev, bool enable, enum v
 
 	ARG_UNUSED(type);
 
-	k_mutex_lock(&data->lock, K_FOREVER);
-
 	if (enable) {
-		do_decode = true;
+		mcux_jpegdec_decode_one_frame(dev);
 	} else {
 		/*
 		 * Re-parse the header of the first frame fed after the
@@ -219,21 +216,13 @@ static int mcux_jpegdec_set_stream(const struct device *dev, bool enable, enum v
 		 * matches the format of the previous stream.
 		 */
 		data->first_frame_rcv = false;
-	}
 
-	k_mutex_unlock(&data->lock);
-
-	if (do_decode) {
-		mcux_jpegdec_decode_one_frame(dev);
-	}
-
-	/*
-	 * Let a frame that is already being decoded by the hardware finish
-	 * before stopping, instead of tearing down the stream underneath it.
-	 * mcux_jpegdec_decode_one_frame() will not start another frame once
-	 * video_stream_busy() is false.
-	 */
-	if (!enable) {
+		/*
+		 * Let a frame that is already being decoded by the hardware finish
+		 * before stopping, instead of tearing down the stream underneath it.
+		 * mcux_jpegdec_decode_one_frame() will not start another frame once
+		 * video_stream_busy() is false.
+		 */
 		while (data->running) {
 			k_sem_take(&data->decode_done, K_FOREVER);
 		}
@@ -254,8 +243,6 @@ static int mcux_jpegdec_enqueue(const struct device *dev, struct video_buffer *v
 		LOG_ERR("Buffer address must be 16-byte aligned");
 		return -EINVAL;
 	}
-
-	k_mutex_lock(&data->lock, K_FOREVER);
 
 	/*
 	 * The decoder cannot perform CSC, which means if the JPEG file is encoded in
@@ -281,8 +268,7 @@ static int mcux_jpegdec_enqueue(const struct device *dev, struct video_buffer *v
 			if (JPEGDEC_ParseHeader(&data->decoder_despt.config) ==
 				kStatus_JPEGDEC_NotSupported) {
 				LOG_ERR("JPEG format not supported");
-				ret = -ENOTSUP;
-				goto unlock;
+				return -ENOTSUP;
 			}
 
 			/* Set output pixel format based on parsed JPEG header */
@@ -350,13 +336,6 @@ static int mcux_jpegdec_enqueue(const struct device *dev, struct video_buffer *v
 	 * lack of in/out buffer, start to decode new frame.
 	 */
 	if (!data->running && video_stream_busy(&data->vdev)) {
-		do_decode = true;
-	}
-
-unlock:
-	k_mutex_unlock(&data->lock);
-
-	if (do_decode) {
 		mcux_jpegdec_decode_one_frame(dev);
 	}
 
@@ -440,7 +419,6 @@ static int mcux_jpegdec_init(const struct device *dev)
 	struct mcux_jpegdec_data *data = dev->data;
 	jpegdec_config_t init_config;
 
-	k_mutex_init(&data->lock);
 	k_sem_init(&data->decode_done, 0, 1);
 
 	k_fifo_init(&data->m2m.in.fifo_in);

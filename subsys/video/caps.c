@@ -11,12 +11,23 @@ LOG_MODULE_REGISTER(video_caps, CONFIG_VIDEO_LOG_LEVEL);
 
 int video_get_caps(const struct device *dev, struct video_caps *caps)
 {
+	struct video_device *vdev;
+	int ret;
+
 	if (dev == NULL || caps == NULL ||
 	    (caps->type != VIDEO_BUF_TYPE_INPUT && caps->type != VIDEO_BUF_TYPE_OUTPUT)) {
 		return -EINVAL;
 	}
 
-	return video_driver_get_caps(dev, caps);
+	vdev = dev->data;
+
+	k_mutex_lock(&ctrl->vdev->lock, K_FOREVER);
+
+	ret = video_driver_get_caps(dev, caps);
+
+	k_mutex_unlock(&ctrl->vdev->lock);
+
+	return ret;
 }
 
 int video_format_caps_index(const struct video_format_cap *fmts, const struct video_format *fmt,
@@ -44,10 +55,21 @@ int video_transform_cap(const struct device *const dev,
 			struct video_format_cap *const res_cap,
 			enum video_buf_type type, uint16_t ind)
 {
+	struct video_device *vdev;
+	int ret;
+
 	if (dev == NULL || cap == NULL || res_cap == NULL ||
 	    (type != VIDEO_BUF_TYPE_INPUT && type != VIDEO_BUF_TYPE_OUTPUT)) {
 		return -EINVAL;
 	}
 
-	return video_driver_transform_cap(dev, cap, res_cap, type, ind);
+	vdev = dev->data;
+
+	k_mutex_lock(&ctrl->vdev->lock, K_FOREVER);
+
+	ret = video_driver_transform_cap(dev, cap, res_cap, type, ind);
+
+	k_mutex_unlock(&ctrl->vdev->lock);
+end:
+	return ret;
 }

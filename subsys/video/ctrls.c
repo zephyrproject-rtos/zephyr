@@ -100,6 +100,8 @@ int video_get_ctrl(const struct device *dev, struct video_control *control)
 		return ret;
 	}
 
+	k_mutex_lock(&ctrl->vdev->lock, K_FOREVER);
+
 	if (ctrl->flags & VIDEO_CTRL_FLAG_WRITE_ONLY) {
 		LOG_ERR("Control id 0x%x is write-only\n", control->id);
 		return -EACCES;
@@ -110,7 +112,7 @@ int video_get_ctrl(const struct device *dev, struct video_control *control)
 		ret = video_driver_get_volatile_ctrl(ctrl->vdev->dev,
 				ctrl->cluster ? ctrl->cluster->id : ctrl->id);
 		if (ret) {
-			return ret;
+			goto end;
 		}
 	}
 
@@ -121,13 +123,16 @@ int video_get_ctrl(const struct device *dev, struct video_control *control)
 		control->val = ctrl->val;
 	}
 
-	return 0;
+end:
+	k_mutex_unlock(&ctrl->vdev->lock);
+
+	return ret;
 }
 
 int video_set_ctrl(const struct device *dev, struct video_control *control)
 {
 	struct video_ctrl *ctrl = NULL;
-	int ret;
+	int ret = 0;
 	uint8_t i = 0;
 	int32_t val = 0;
 	int64_t val64 = 0;
@@ -141,27 +146,33 @@ int video_set_ctrl(const struct device *dev, struct video_control *control)
 		return ret;
 	}
 
+	k_mutex_lock(&ctrl->vdev->lock, K_FOREVER);
+
 	if (ctrl->flags & VIDEO_CTRL_FLAG_READ_ONLY) {
 		LOG_ERR("Control id 0x%x is read-only\n", control->id);
-		return -EACCES;
+		ret = -EACCES;
+		goto end;
 	}
 
 	if (ctrl->flags & VIDEO_CTRL_FLAG_INACTIVE) {
 		LOG_ERR("Control id 0x%x is inactive\n", control->id);
-		return -EACCES;
+		ret = -EACCES;
+		goto end;
 	}
 
 	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64
 		    ? !IN_RANGE(control->val64, ctrl->range.min64, ctrl->range.max64)
 		    : !IN_RANGE(control->val, ctrl->range.min, ctrl->range.max)) {
 		LOG_ERR("Control value is invalid\n");
-		return -EINVAL;
+		ret = -EINVAL;
+		goto end;
 	}
 
 	/* No new value */
 	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64 ? ctrl->val64 == control->val64
 						    : ctrl->val == control->val) {
-		return 0;
+		ret = 0;
+		goto end;
 	}
 
 	/* Backup the control's value then set it to the new value */
@@ -213,7 +224,10 @@ int video_set_ctrl(const struct device *dev, struct video_control *control)
 		}
 	}
 
-	return 0;
+end:
+	k_mutex_unlock(&ctrl->vdev->lock);
+
+	return ret;
 
 restore:
 	/* Restore the old control's value */
@@ -223,7 +237,7 @@ restore:
 		ctrl->val = val;
 	}
 
-	return ret;
+	goto end;
 }
 
 static inline const char *video_get_ctrl_name(uint32_t id)
@@ -349,6 +363,7 @@ int video_query_ctrl(struct video_ctrl_query *cq)
 		return -EINVAL;
 	}
 
+	/* Control IDs are not expected to change at runtime, not locking yet */
 	if (cq->id & VIDEO_CTRL_FLAG_NEXT_CTRL) {
 		cq->id &= ~VIDEO_CTRL_FLAG_NEXT_CTRL;
 		while (cq->dev != NULL) {
@@ -370,6 +385,8 @@ int video_query_ctrl(struct video_ctrl_query *cq)
 	}
 
 fill_query:
+	k_mutex_lock(&ctrl->vdev->lock, K_FOREVER);
+
 	cq->id = ctrl->id;
 	cq->type = ctrl->type;
 	cq->flags = ctrl->flags;
@@ -380,6 +397,8 @@ fill_query:
 		cq->int_menu = ctrl->int_menu;
 	}
 	cq->name = video_get_ctrl_name(cq->id);
+
+	k_mutex_unlock(&ctrl->vdev->lock);
 
 	return 0;
 }

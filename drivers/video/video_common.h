@@ -33,6 +33,7 @@
 		.dev = device,                                                                     \
 		.src_dev = source,                                                                 \
 		.ctrls = SYS_DLIST_STATIC_INIT(&name.ctrls),                                       \
+		.lock = Z_MUTEX_INITIALIZER(name),                                                 \
 	}
 
 /**

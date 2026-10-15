@@ -17,6 +17,7 @@ bool video_streaming_busy(const struct device *dev)
 int video_stream_start(const struct device *dev, enum video_buf_type type)
 {
 	struct video_device *vdev;
+	int ret;
 
 	if (dev == NULL || (type != VIDEO_BUF_TYPE_INPUT && type != VIDEO_BUF_TYPE_OUTPUT)) {
 		return -EINVAL;
@@ -24,10 +25,13 @@ int video_stream_start(const struct device *dev, enum video_buf_type type)
 
 	vdev = dev->data;
 
+	k_mutex_lock(&vdev->lock);
+
 	while (true) {
 		if (!device_is_ready(vdev->dev) {
 			LOG_ERR("%s is not ready", vdev->dev->name);
-			return -ENODEV;
+			ret = -ENODEV;
+			goto end;
 		}
 
 		if (vdev->source_dev == NULL) {
@@ -39,32 +43,49 @@ int video_stream_start(const struct device *dev, enum video_buf_type type)
 
 	vdev = dev->data;
 
+	k_mutex_lock(&vdev->lock, K_FOREVER);
+
 	if (vdev->is_streaming & BIT(type) != 0) {
 		LOG_DBG("%s already started", dev->name);
-		return 0;
+		ret = 0;
+		goto end;
 	}
 	vdev->is_streaming |= BIT(type);
 
-	return video_driver_set_stream(dev, true, type);
+	ret = video_driver_set_stream(dev, true, type);
+
+end:
+	k_mutex_unlock(&vdev->lock);
+
+	return ret;
 }
 
 int video_stream_stop(const struct device *dev, enum video_buf_type type)
 {
+	struct video_device *vdev;
 	int ret;
 
 	if (dev == NULL || (type != VIDEO_BUF_TYPE_INPUT && type != VIDEO_BUF_TYPE_OUTPUT)) {
 		return -EINVAL;
 	}
 
+	vdev = dev->data;
+
+	k_mutex_lock(&vdev->lock, K_FOREVER);
+
 	if (vdev->is_streaming & BIT(type) == 0) {
 		LOG_DBG("%s already stoped", dev->name);
-		return 0;
+		ret = 0;
+		goto end;
 	}
 	vdev->is_streaming &= ~BIT(type);
 
 	ret = video_driver_set_stream(dev, false, type);
 
 	video_driver_flush(dev, true);
+
+end:
+	k_mutex_unlock(&vdev->lock);
 
 	return ret;
 }

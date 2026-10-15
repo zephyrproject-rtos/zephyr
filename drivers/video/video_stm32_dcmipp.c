@@ -79,7 +79,6 @@ struct stm32_dcmipp_pipe_data {
 	struct video_device vdev; /* keep first */
 	uint32_t id;
 	struct stm32_dcmipp_data *dcmipp;
-	struct k_mutex lock;
 	struct video_rect crop;
 	struct video_rect compose;
 	struct k_fifo fifo_in;
@@ -580,11 +579,8 @@ static int stm32_dcmipp_set_fmt(const struct device *dev, struct video_format *f
 
 	stm32_dcmipp_compute_fmt_pitch(pipe->id, fmt);
 
-	k_mutex_lock(&pipe->lock, K_FOREVER);
-
 	if (video_stream_busy(pipe)) {
-		ret = -EBUSY;
-		goto out;
+		return -EBUSY;
 	}
 
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
@@ -601,16 +597,12 @@ static int stm32_dcmipp_set_fmt(const struct device *dev, struct video_format *f
 			      post_isp_decimate_height / STM32_DCMIPP_MAX_PIPE_SCALE_FACTOR,
 			      post_isp_decimate_height)) {
 			LOG_ERR("Requested resolution cannot be achieved");
-			ret = -EINVAL;
-			goto out;
+			return -EINVAL;
 		}
 	}
 #endif
 
-out:
-	k_mutex_unlock(&pipe->lock);
-
-	return ret;
+	return 0;
 }
 
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
@@ -963,20 +955,17 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 	HAL_StatusTypeDef hal_ret;
 	int ret;
 
-	k_mutex_lock(&pipe->lock, K_FOREVER);
-
 	input_fmt = stm32_dcmipp_get_input_info(dcmipp->source_fmt.pixelformat);
 	if (input_fmt == NULL) {
 		LOG_ERR("Unsupported input format");
-		ret = -EINVAL;
-		goto out;
+		return -EINVAL;
 	}
 
 	/* Configure the source if nothing is already running */
 	if (dcmipp->enabled_pipe == 0) {
 		ret = video_set_format(data->vdev.source_dev, &dcmipp->source_fmt);
 		if (ret < 0) {
-			goto out;
+			return ret;
 		}
 
 		if (config->bus_type == VIDEO_BUS_TYPE_PARALLEL) {
@@ -989,12 +978,11 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 #endif
 		else {
 			LOG_ERR("Invalid bus_type");
-			ret = -EINVAL;
-			goto out;
+			return -EINVAL;
 		}
 		if (ret < 0) {
 			LOG_ERR("Failed to configure input stage");
-			goto out;
+			return ret;
 		}
 	}
 
@@ -1002,8 +990,7 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 	pipe->next = k_fifo_get(&pipe->fifo_in, K_NO_WAIT);
 	if (pipe->next == NULL) {
 		LOG_ERR("No buffer available to start streaming");
-		ret = -ENOMEM;
-		goto out;
+		return -ENOMEM;
 	}
 
 #if defined(STM32_DCMIPP_HAS_CSI)
@@ -1015,8 +1002,7 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 						&csi_pipe_cfg);
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("Failed to configure pipe #%d input", pipe->id);
-		ret = -EIO;
-		goto out;
+		return -EIO;
 	}
 #endif
 
@@ -1024,8 +1010,7 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 	mapping = stm32_dcmipp_get_mapping(fmt->pixelformat, pipe->id);
 	if (mapping == NULL) {
 		LOG_ERR("Failed to find pipe format mapping");
-		ret = -EIO;
-		goto out;
+		return -EIO;
 	}
 
 	pipe_cfg.FrameRate  = DCMIPP_FRAME_RATE_ALL;
@@ -1038,15 +1023,14 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 	hal_ret = HAL_DCMIPP_PIPE_SetConfig(&dcmipp->hdcmipp, pipe->id, &pipe_cfg);
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("Failed to configure pipe #%d", pipe->id);
-		ret = -EIO;
-		goto out;
+		return -EIO;
 	}
 
 	if (pipe->id == DCMIPP_PIPE0) {
 		/* Configure the Pipe crop */
 		ret = stm32_dcmipp_set_crop(pipe);
 		if (ret < 0) {
-			goto out;
+			return ret;
 		}
 
 		/* Only the PIPE0 has a limiter */
@@ -1055,8 +1039,7 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 							   (fmt->pitch * fmt->height) / 4);
 		if (hal_ret != HAL_OK) {
 			LOG_ERR("Failed to set limiter");
-			ret = -EIO;
-			goto out;
+			return -EIO;
 		}
 	}
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
@@ -1066,15 +1049,13 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 			hal_ret = HAL_DCMIPP_PIPE_EnableRedBlueSwap(&dcmipp->hdcmipp, pipe->id);
 			if (hal_ret != HAL_OK) {
 				LOG_ERR("Failed to enable Red-Blue swap");
-				ret = -EIO;
-				goto out;
+				return -EIO;
 			}
 		} else {
 			hal_ret = HAL_DCMIPP_PIPE_DisableRedBlueSwap(&dcmipp->hdcmipp, pipe->id);
 			if (hal_ret != HAL_OK) {
 				LOG_ERR("Failed to disable Red-Blue swap");
-				ret = -EIO;
-				goto out;
+				return -EIO;
 			}
 		}
 
@@ -1084,8 +1065,7 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 									DCMIPP_PIPE1);
 			if (hal_ret != HAL_OK) {
 				LOG_ERR("Failed to enable demosaicing");
-				ret = -EIO;
-				goto out;
+				return -EIO;
 			}
 		} else {
 			/* Disable demosaicing */
@@ -1093,21 +1073,20 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 									 DCMIPP_PIPE1);
 			if (hal_ret != HAL_OK) {
 				LOG_ERR("Failed to disable demosaicing");
-				ret = -EIO;
-				goto out;
+				return -EIO;
 			}
 		}
 
 		/* Configure the Pipe crop */
 		ret = stm32_dcmipp_set_crop(pipe);
 		if (ret < 0) {
-			goto out;
+			returnr ret;
 		}
 
 		/* Configure the Pipe decimation / downsize */
 		ret = stm32_dcmipp_set_downscale(pipe);
 		if (ret < 0) {
-			goto out;
+			return ret;
 		}
 
 		/* Configure YUV conversion */
@@ -1115,7 +1094,7 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 						      dcmipp->source_fmt.pixelformat,
 						      fmt->pixelformat);
 		if (ret < 0) {
-			goto out;
+			return ret;
 		}
 
 		/* Limit the amount of hardware handshake interrupts received by slave IP */
@@ -1135,7 +1114,7 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 	ret = stm32_dcmipp_start_pipeline(dev, pipe);
 	if (ret < 0) {
 		LOG_ERR("Failed to start the pipeline");
-		goto out;
+		return ret;
 	}
 
 	/* It is necessary to start the source as well if nothing else is running */
@@ -1146,23 +1125,21 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 			if (config->bus_type == VIDEO_BUS_TYPE_PARALLEL) {
 				if (HAL_DCMIPP_PIPE_Stop(&dcmipp->hdcmipp, pipe->id) != HAL_OK) {
 					ret = -EIO;
-					goto out;
+					return ret;
 				}
 			}
 #if defined(STM32_DCMIPP_HAS_CSI)
 			else if (config->bus_type == VIDEO_BUS_TYPE_CSI2_DPHY) {
 				if (HAL_DCMIPP_CSI_PIPE_Stop(&dcmipp->hdcmipp, pipe->id,
 							     DCMIPP_VIRTUAL_CHANNEL0) != HAL_OK) {
-					ret = -EIO;
-					goto out;
+					return -EIO;
 				}
 			}
 #endif
 			else {
 				LOG_ERR("Invalid bus_type");
 			}
-			ret = -EIO;
-			goto out;
+			return -EIO;
 		}
 	}
 
@@ -1170,17 +1147,14 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 	/* Start the external ISP handling */
 	ret = stm32_dcmipp_isp_start();
 	if (ret < 0) {
-		goto out;
+		return ret;
 	}
 #endif
 
 	pipe->state = STM32_DCMIPP_RUNNING;
 	dcmipp->enabled_pipe++;
 
-out:
-	k_mutex_unlock(&pipe->lock);
-
-	return ret;
+	return 0;
 }
 
 static int stm32_dcmipp_stream_disable(const struct device *dev)
@@ -1191,13 +1165,11 @@ static int stm32_dcmipp_stream_disable(const struct device *dev)
 	struct video_buffer *vbuf;
 	int ret;
 
-	k_mutex_lock(&pipe->lock, K_FOREVER);
-
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 	/* Stop the external ISP handling */
 	ret = stm32_dcmipp_isp_stop();
 	if (ret < 0) {
-		goto out;
+		return ret;
 	}
 #endif
 
@@ -1218,12 +1190,11 @@ static int stm32_dcmipp_stream_disable(const struct device *dev)
 #endif
 	else {
 		LOG_ERR("Invalid bus_type");
-		ret = -EIO;
-		goto out;
+		return -EIO;
 	}
 	if (ret < 0) {
 		LOG_ERR("Failed to stop the pipeline");
-		goto out;
+		return ret;
 	}
 
 	/* Turn off the source nobody else is using the DCMIPP */
@@ -1231,8 +1202,7 @@ static int stm32_dcmipp_stream_disable(const struct device *dev)
 		ret = video_stream_stop(data->vdev.source_dev, VIDEO_BUF_TYPE_OUTPUT);
 		if (ret < 0) {
 			LOG_ERR("Failed to stop the source");
-			ret = -EIO;
-			goto out;
+			return-EIO;
 		}
 	}
 
@@ -1253,10 +1223,7 @@ static int stm32_dcmipp_stream_disable(const struct device *dev)
 	pipe->state = STM32_DCMIPP_STOPPED;
 	dcmipp->enabled_pipe--;
 
-out:
-	k_mutex_unlock(&pipe->lock);
-
-	return ret;
+	return 0;
 }
 
 static int stm32_dcmipp_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
@@ -1268,8 +1235,6 @@ static int stm32_dcmipp_enqueue(const struct device *dev, struct video_buffer *v
 {
 	struct stm32_dcmipp_pipe_data *pipe = dev->data;
 	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
-
-	k_mutex_lock(&pipe->lock, K_FOREVER);
 
 	if (pipe->state == STM32_DCMIPP_WAIT_FOR_BUFFER) {
 		LOG_DBG("Restart CPTREQ after wait for buffer");
@@ -1292,8 +1257,6 @@ static int stm32_dcmipp_enqueue(const struct device *dev, struct video_buffer *v
 	} else {
 		k_fifo_put(&pipe->fifo_in, vbuf);
 	}
-
-	k_mutex_unlock(&pipe->lock);
 
 	return 0;
 }
@@ -1480,20 +1443,20 @@ static int stm32_dcmipp_set_selection(const struct device *dev, struct video_sel
 			sel->rect.width = ROUND_DOWN(sel->rect.width, h_pixel_align);
 		}
 
-		k_mutex_lock(&pipe->lock, K_FOREVER);
+		k_mutex_lock(&pipe->vdev.lock, K_FOREVER);
 		pipe->crop = sel->rect;
 		pipe->compose.width = sel->rect.width;
 		pipe->compose.height = sel->rect.height;
 		pipe->vdev.out_fmt.width = sel->rect.width;
 		pipe->vdev.out_fmt.height = sel->rect.height;
 		stm32_dcmipp_compute_fmt_pitch(pipe->id, &pipe->vdev.out_fmt);
-		k_mutex_unlock(&pipe->lock);
+		k_mutex_unlock(&pipe->vdev.lock);
 		break;
 	case VIDEO_SEL_TGT_COMPOSE:
 		/* Compose not available on Pipe0 */
 		if (pipe->id == DCMIPP_PIPE0) {
 			sel->rect = pipe->crop;
-			goto out;
+			return 0;
 		}
 
 		if (sel->rect.left != 0) {
@@ -1515,12 +1478,12 @@ static int stm32_dcmipp_set_selection(const struct device *dev, struct video_sel
 			sel->rect.height = pipe->crop.height / STM32_DCMIPP_MAX_PIPE_SCALE_FACTOR;
 		}
 
-		k_mutex_lock(&pipe->lock, K_FOREVER);
+		k_mutex_lock(&pipe->vdev.lock, K_FOREVER);
 		pipe->compose = sel->rect;
 		pipe->vdev.out_fmt.width = sel->rect.width;
 		pipe->vdev.out_fmt.height = sel->rect.height;
 		stm32_dcmipp_compute_fmt_pitch(pipe->id, &pipe->vdev.out_fmt);
-		k_mutex_unlock(&pipe->lock);
+		k_mutex_unlock(&pipe->vdev.lock);
 		break;
 	default:
 		return -EINVAL;
@@ -1708,7 +1671,6 @@ static int stm32_dcmipp_pipe_init(const struct device *dev)
 	struct stm32_dcmipp_pipe_data *pipe = dev->data;
 	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
 
-	k_mutex_init(&pipe->lock);
 	k_fifo_init(&pipe->fifo_in);
 	k_fifo_init(&pipe->fifo_out);
 

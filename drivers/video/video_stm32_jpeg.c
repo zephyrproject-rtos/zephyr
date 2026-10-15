@@ -40,7 +40,6 @@ struct stm32_jpeg_data {
 	struct video_device vdev; /* keep first */
 	struct video_m2m_common m2m;
 	JPEG_HandleTypeDef hjpeg;
-	struct k_mutex lock;
 	bool codec_is_running;
 	struct video_buffer *current_in;
 	struct video_buffer *current_out;
@@ -311,13 +310,13 @@ void HAL_JPEG_DataReadyCallback(JPEG_HandleTypeDef *hjpeg, uint8_t *data_out, ui
 
 	ARG_UNUSED(data_out);
 
-	k_mutex_lock(&data->lock, K_FOREVER);
+	k_mutex_lock(&data->vdev.lock, K_FOREVER);
 
 	/* Store the output data size and timestamp */
 	data->current_out->bytesused = data_length;
 	data->current_out->timestamp = k_uptime_get_32();
 
-	k_mutex_unlock(&data->lock);
+	k_mutex_unlock(&data->vdev.lock);
 }
 
 /*
@@ -329,7 +328,7 @@ void HAL_JPEG_EncodeCpltCallback(JPEG_HandleTypeDef *hjpeg)
 	struct stm32_jpeg_data *data = CONTAINER_OF(hjpeg, struct stm32_jpeg_data, hjpeg);
 	int ret = 0;
 
-	k_mutex_lock(&data->lock, K_FOREVER);
+	k_mutex_lock(&data->vdev.lock, K_FOREVER);
 
 	/* Give back the buffers to the application */
 	k_fifo_put(&data->m2m.in.fifo_out, data->current_in);
@@ -339,11 +338,9 @@ void HAL_JPEG_EncodeCpltCallback(JPEG_HandleTypeDef *hjpeg)
 	ret = stm32_jpeg_start_codec(data->vdev.dev);
 	if (ret) {
 		LOG_ERR("Failed to start codec, err: %d", ret);
-		goto out;
 	}
 
-out:
-	k_mutex_unlock(&data->lock);
+	k_mutex_unlock(&data->vdev.lock);
 }
 
 void HAL_JPEG_ErrorCallback(JPEG_HandleTypeDef *hjpeg)
@@ -378,9 +375,6 @@ static int stm32_jpeg_set_stream(const struct device *dev, bool enable, enum vid
 	struct stm32_jpeg_data *data = dev->data;
 	struct video_common_header *common =
 		type == VIDEO_BUF_TYPE_INPUT ? &data->m2m.in : &data->m2m.out;
-	int ret = 0;
-
-	k_mutex_lock(&data->lock, K_FOREVER);
 
 	/* Input & Output resolutions are always same so ensure this here */
 	if (data->vdev.in_fmt.width != data->vdev.out_fmt.width ||
@@ -390,15 +384,12 @@ static int stm32_jpeg_set_stream(const struct device *dev, bool enable, enum vid
 	}
 
 	if (enable) {
-		ret = stm32_jpeg_start_codec(dev);
+		return stm32_jpeg_start_codec(dev);
 	} else {
 		data->codec_is_running = false;
 	}
 
-out:
-	k_mutex_unlock(&data->lock);
-
-	return ret;
+	return 0;
 }
 
 static int stm32_jpeg_enqueue(const struct device *dev, struct video_buffer *vbuf)
@@ -406,11 +397,9 @@ static int stm32_jpeg_enqueue(const struct device *dev, struct video_buffer *vbu
 	struct stm32_jpeg_data *data = dev->data;
 	struct video_common_header *common =
 		vbuf->type == VIDEO_BUF_TYPE_INPUT ? &data->m2m.in : &data->m2m.out;
-	int ret = 0;
+	int ret;
 
 	/* TODO - need to check for buffer size here */
-
-	k_mutex_lock(&data->lock, K_FOREVER);
 
 	k_fifo_put(&common->fifo_in, vbuf);
 
@@ -419,14 +408,11 @@ static int stm32_jpeg_enqueue(const struct device *dev, struct video_buffer *vbu
 		ret = stm32_jpeg_start_codec(dev);
 		if (ret) {
 			LOG_ERR("Failed to start codec, err: %d", ret);
-			goto out;
+			return ret;
 		}
 	}
 
-out:
-	k_mutex_unlock(&data->lock);
-
-	return ret;
+	return 0;
 }
 
 static int stm32_jpeg_dequeue(const struct device *dev, struct video_buffer **vbuf,
@@ -501,7 +487,6 @@ static int stm32_jpeg_init(const struct device *dev)
 	cfg->irq_config(dev);
 
 	/* Initialise default input / output formats */
-	k_mutex_init(&data->lock);
 	k_fifo_init(&data->m2m.in.fifo_in);
 	k_fifo_init(&data->m2m.in.fifo_out);
 	k_fifo_init(&data->m2m.out.fifo_in);
