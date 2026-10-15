@@ -83,8 +83,6 @@ struct stm32_dcmipp_pipe_data {
 	struct k_mutex lock;
 	struct video_rect crop;
 	struct video_rect compose;
-	struct k_fifo fifo_in;
-	struct k_fifo fifo_out;
 	struct video_buffer *next;
 	struct video_buffer *active;
 	enum stm32_dcmipp_state state;
@@ -210,7 +208,7 @@ void HAL_DCMIPP_PIPE_FrameEventCallback(DCMIPP_HandleTypeDef *hdcmipp, uint32_t 
 	pipe->active->timestamp = k_uptime_get_32();
 	pipe->active->line_offset = 0;
 
-	k_fifo_put(&pipe->fifo_out, pipe->active);
+	k_fifo_put(&pipe->out_buf_completed, pipe->active);
 	pipe->active = NULL;
 }
 
@@ -235,7 +233,7 @@ void HAL_DCMIPP_PIPE_VsyncEventCallback(DCMIPP_HandleTypeDef *hdcmipp, uint32_t 
 
 	pipe->active = pipe->next;
 
-	pipe->next = k_fifo_get(&pipe->fifo_in, K_NO_WAIT);
+	pipe->next = k_fifo_get(&pipe->out_buf_submitted, K_NO_WAIT);
 	if (pipe->next == NULL) {
 		LOG_DBG("No buffer available, pause streaming");
 		/*
@@ -1000,7 +998,7 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 	}
 
 	pipe->active = NULL;
-	pipe->next = k_fifo_get(&pipe->fifo_in, K_NO_WAIT);
+	pipe->next = k_fifo_get(&pipe->out_buf_submitted, K_NO_WAIT);
 	if (pipe->next == NULL) {
 		LOG_ERR("No buffer available to start streaming");
 		ret = -ENOMEM;
@@ -1239,16 +1237,16 @@ static int stm32_dcmipp_stream_disable(const struct device *dev)
 
 	/* Release the video buffer allocated when start streaming */
 	if (pipe->next != NULL) {
-		k_fifo_put(&pipe->fifo_in, pipe->next);
+		k_fifo_put(&pipe->out_buf_submitted, pipe->next);
 	}
 	if (pipe->active != NULL) {
-		k_fifo_put(&pipe->fifo_in, pipe->active);
+		k_fifo_put(&pipe->out_buf_submitted, pipe->active);
 	}
 
-	/* Forward all buffers in fifo_in to fifo_out */
-	while ((vbuf = k_fifo_get(&pipe->fifo_in, K_NO_WAIT)) != NULL) {
+	/* Forward all buffers in submission FIFO to completion FIFO */
+	while ((vbuf = k_fifo_get(&pipe->out_buf_submitted, K_NO_WAIT)) != NULL) {
 		vbuf->bytesused = 0;
-		k_fifo_put(&pipe->fifo_out, vbuf);
+		k_fifo_put(&pipe->out_buf_completed, vbuf);
 	}
 
 	pipe->state = STM32_DCMIPP_STOPPED;
@@ -1291,7 +1289,7 @@ static int stm32_dcmipp_enqueue(const struct device *dev, struct video_buffer *v
 #endif
 		pipe->state = STM32_DCMIPP_RUNNING;
 	} else {
-		k_fifo_put(&pipe->fifo_in, vbuf);
+		k_fifo_put(&pipe->out_buf_submitted, vbuf);
 	}
 
 	k_mutex_unlock(&pipe->lock);
@@ -1304,7 +1302,7 @@ static int stm32_dcmipp_dequeue(const struct device *dev, struct video_buffer **
 {
 	struct stm32_dcmipp_pipe_data *pipe = dev->data;
 
-	*vbuf = k_fifo_get(&pipe->fifo_out, timeout);
+	*vbuf = k_fifo_get(&pipe->out_buf_completed, timeout);
 	if (*vbuf == NULL) {
 		return -EAGAIN;
 	}
@@ -1710,8 +1708,6 @@ static int stm32_dcmipp_pipe_init(const struct device *dev)
 	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
 
 	k_mutex_init(&pipe->lock);
-	k_fifo_init(&pipe->fifo_in);
-	k_fifo_init(&pipe->fifo_out);
 
 	/* Initialize format/crop/compose */
 	pipe->vdev.out_fmt.type = VIDEO_BUF_TYPE_OUTPUT;
