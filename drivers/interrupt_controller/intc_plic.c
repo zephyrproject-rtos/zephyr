@@ -118,6 +118,15 @@ struct plic_data {
 static uint32_t save_irq[CONFIG_MP_MAX_NUM_CPUS];
 static const struct device *save_dev[CONFIG_MP_MAX_NUM_CPUS];
 
+#ifdef CONFIG_PLIC_SUPPORTS_VECTORED_MODE
+/*
+ * Software equivalent of the PLIC claim register for Andes vectored mode:
+ * hardware already claims the source and leaves its ID here instead of
+ * the normal claim register.
+ */
+volatile uint32_t plic_mcause;
+#endif /* CONFIG_PLIC_SUPPORTS_VECTORED_MODE */
+
 INTC_PLIC_STATIC_INLINE uint32_t local_irq_to_reg_index(uint32_t local_irq)
 {
 	return local_irq >> LOG2(PLIC_REG_SIZE);
@@ -180,6 +189,16 @@ static inline mem_addr_t get_claim_complete_addr(const struct device *dev)
 	 */
 
 	return config->reg + get_hart_context(dev, arch_proc_id()) * CONTEXT_SIZE + CONTEXT_CLAIM;
+}
+
+static inline void plic_irq_complete(mem_addr_t claim_complete_addr, uint32_t local_irq)
+{
+	sys_write32(local_irq, claim_complete_addr);
+
+#ifdef CONFIG_PLIC_SUPPORTS_VECTORED_MODE
+	/* The completion must reach the PLIC before interrupts are enabled */
+	__asm__ volatile("fence o, o" ::: "memory");
+#endif /* CONFIG_PLIC_SUPPORTS_VECTORED_MODE */
 }
 
 static inline mem_addr_t get_threshold_priority_addr(const struct device *dev, uint32_t cpu_num)
@@ -275,7 +294,7 @@ void riscv_plic_irq_complete(uint32_t irq)
 	const uint32_t local_irq = irq_from_level_2(irq);
 	mem_addr_t claim_complete_addr = get_claim_complete_addr(dev);
 
-	sys_write32(local_irq, claim_complete_addr);
+	plic_irq_complete(claim_complete_addr, local_irq);
 }
 
 /**
@@ -372,13 +391,21 @@ int riscv_plic_irq_is_enabled(uint32_t irq)
  *
  * @param irq IRQ number for which to set priority
  * @param priority Priority of IRQ to set to
+ * @param flags Architecture specific flags, defined in <zephyr/arch/riscv/irq.h>
  */
-void riscv_plic_set_priority(uint32_t irq, uint32_t priority)
+void riscv_plic_set_priority(uint32_t irq, uint32_t priority, uint32_t flags)
 {
 	const struct device *dev = get_plic_dev_from_irq(irq);
 	const struct plic_config *config = dev->config;
 	const uint32_t local_irq = irq_from_level_2(irq);
 	mem_addr_t prio_addr = config->prio + (local_irq * sizeof(uint32_t));
+
+#ifdef CONFIG_ZERO_LATENCY_IRQS
+	if (flags & IRQ_ZERO_LATENCY) {
+		/* Boost priority for zero-latency interrupts */
+		priority += (config->max_prio - CONFIG_ZERO_LATENCY_LEVELS);
+	}
+#endif
 
 	if (priority > config->max_prio) {
 		priority = config->max_prio;
@@ -510,7 +537,23 @@ static void plic_irq_handler(const struct device *dev)
 	const struct _isr_table_entry *ite;
 	uint32_t cpu_id = arch_curr_cpu()->id;
 	/* Get the IRQ number generating the interrupt */
+#ifdef CONFIG_PLIC_SUPPORTS_VECTORED_MODE
+	uint32_t local_irq;
+
+	if (config->irq == RISCV_IRQ_MEXT) {
+		/*
+		 * Hardware already claimed this in vectored mode; read the
+		 * recorded source ID and clear it, mimicking the claim
+		 * register's read-clears behavior.
+		 */
+		local_irq = plic_mcause;
+		plic_mcause = 0;
+	} else {
+		local_irq = sys_read32(claim_complete_addr);
+	}
+#else
 	const uint32_t local_irq = sys_read32(claim_complete_addr);
+#endif /* CONFIG_PLIC_SUPPORTS_VECTORED_MODE */
 
 #ifdef CONFIG_PLIC_SHELL_IRQ_COUNT
 	uint16_t *cpu_count = get_irq_hit_count_cpu(dev, cpu_id, local_irq);
@@ -561,7 +604,7 @@ static void plic_irq_handler(const struct device *dev)
 	 * getting handled so that we don't miss on the next edge-triggered interrupt.
 	 */
 	if (trig_val == PLIC_TRIG_EDGE) {
-		sys_write32(local_irq, claim_complete_addr);
+		plic_irq_complete(claim_complete_addr, local_irq);
 	}
 #endif /* CONFIG_PLIC_SUPPORTS_TRIG_EDGE */
 
@@ -577,10 +620,10 @@ static void plic_irq_handler(const struct device *dev)
 #ifdef CONFIG_PLIC_SUPPORTS_TRIG_EDGE
 	/* Handle only if level-triggered */
 	if (trig_val == PLIC_TRIG_LEVEL) {
-		sys_write32(local_irq, claim_complete_addr);
+		plic_irq_complete(claim_complete_addr, local_irq);
 	}
 #else
-	sys_write32(local_irq, claim_complete_addr);
+	plic_irq_complete(claim_complete_addr, local_irq);
 #endif /* #ifdef CONFIG_PLIC_SUPPORTS_TRIG_EDGE */
 }
 
@@ -619,6 +662,20 @@ static int plic_init(const struct device *dev)
 		sys_write32(0U, prio_addr + (i * sizeof(uint32_t)));
 	}
 #endif
+
+#ifdef CONFIG_PLIC_SUPPORTS_VECTORED_MODE
+	/*
+	 * Vectored mode is only supported by the PLIC connected to the
+	 * machine external interrupt.
+	 */
+	if (config->irq == RISCV_IRQ_MEXT) {
+		/*
+		 * Enable vectored mode in the Andes PLIC Feature Enable
+		 * Register (PLIC base address + offset 0x0).
+		 */
+		sys_write32(BIT(1), config->prio);
+	}
+#endif /* CONFIG_PLIC_SUPPORTS_VECTORED_MODE */
 
 	/* Configure IRQ for PLIC driver */
 	config->irq_config_func();
@@ -876,6 +933,44 @@ SHELL_STATIC_SUBCMD_SET_CREATE(plic_cmds,
 
 SHELL_CMD_REGISTER(plic, &plic_cmds, "PLIC shell commands", NULL);
 #endif /* CONFIG_PLIC_SHELL */
+
+#ifdef CONFIG_PLIC_SUPPORTS_VECTORED_MODE
+unsigned long __soc_handle_irq(unsigned long cause)
+{
+	unsigned long mcause;
+
+	/*
+	 * This distinguishes a direct Andes PLIC vectored claim from the
+	 * indirect dispatch path by reading the live mcause CSR, so mcause
+	 * must not be updated by a nested interrupt before this read.
+	 */
+	__asm__ volatile("csrr %0, mcause" : "=r"(mcause));
+
+	/*
+	 * Vectored PLIC hardware claims interrupts without setting the
+	 * INTERRUPT bit. A set bit here means this is the indirect dispatch
+	 * path (mcause faked as a machine external interrupt), which already
+	 * completes the interrupt on its own - skip to avoid completing twice.
+	 */
+	if ((mcause & RISCV_MCAUSE_IRQ_BIT) == 0) {
+		uint32_t irq = irq_to_level_2(cause) | RISCV_IRQ_MEXT;
+		const struct device *dev = get_plic_dev_from_irq(irq);
+		mem_addr_t claim_complete_addr = get_claim_complete_addr(dev);
+
+		/*
+		 * Complete the source the hardware claimed, so that the
+		 * completion reaches the PLIC before mret re-enables
+		 * interrupts.
+		 */
+		plic_irq_complete(claim_complete_addr, cause);
+	} else {
+		/* Clear the pending bit, as the default __soc_handle_irq() does */
+		csr_clear(mip, BIT(cause));
+	}
+
+	return cause;
+}
+#endif /* CONFIG_PLIC_SUPPORTS_VECTORED_MODE */
 
 #define PLIC_MIN_IRQ_NUM(n) MIN(DT_INST_PROP(n, riscv_ndev), CONFIG_MAX_IRQ_PER_AGGREGATOR)
 

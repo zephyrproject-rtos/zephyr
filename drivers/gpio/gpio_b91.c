@@ -214,7 +214,7 @@ void gpio_b91_irq_set(const struct device *dev, gpio_pin_t pin,
 
 	/* Enable PLIC interrupt */
 	riscv_plic_irq_enable(irq_num);
-	riscv_plic_set_priority(irq_num, irq_prioriy);
+	riscv_plic_set_priority(irq_num, irq_prioriy, 0);
 }
 
 /* Set pin's pull-up/down resistor */

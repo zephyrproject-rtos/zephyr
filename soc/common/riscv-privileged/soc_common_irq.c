@@ -184,7 +184,7 @@ void z_riscv_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flag
 	unsigned int level = irq_get_level(irq);
 
 	if (level == 2) {
-		riscv_plic_set_priority(irq, prio);
+		riscv_plic_set_priority(irq, prio, flags);
 	}
 }
 #elif defined(CONFIG_RISCV_HAS_AIA)
