@@ -691,7 +691,13 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 			NET_DBG("Unknown hdr type 0x%04x iface %d (%p)", type,
 				net_if_get_by_iface(iface), iface);
 			eth_stats_update_unknown_protocol(iface_eth);
-			return NET_DROP;
+
+			/* The frame is valid, there is only no handler for its
+			 * type, and unknown_protocol counts it. Consume it here,
+			 * as NET_DROP would also count it as a processing error.
+			 */
+			net_pkt_unref(pkt);
+			return NET_OK;
 		}
 	}
 
