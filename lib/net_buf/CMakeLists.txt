@@ -6,3 +6,7 @@ zephyr_library_sources_ifdef(
   buf.c
   buf_simple.c
   )
+
+if(CONFIG_NET_UNITY_BUILD)
+  zephyr_library_unity()
+endif()
