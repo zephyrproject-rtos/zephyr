@@ -16,17 +16,9 @@ if GPIO_NCT38XX
 
 config GPIO_NCT38XX_INIT_PRIORITY
 	int "NCT38XX GPIO init priority"
-	default 82
+	default MFD_INIT_PRIORITY
 	help
-	  NCT38xx GPIO driver initialization priority. The priority must be lower
-	  than MFD_INIT_PRIORITY.
-
-config GPIO_NCT38XX_PORT_INIT_PRIORITY
-	int "NCT38XX GPIO port init priority"
-	default 84
-	help
-	  NCT38xx GPIO port device driver initialization priority. The priority
-	  must be lower than GPIO_NCT38XX_INIT_PRIORITY device.
+	  NCT38xx GPIO driver initialization priority.
 
 config GPIO_NCT38XX_ALERT
 	bool "NCT38XX GPIO interrupt"
