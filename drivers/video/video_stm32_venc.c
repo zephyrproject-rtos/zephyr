@@ -104,6 +104,52 @@ struct stm32_venc_data {
 	bool resync;
 };
 
+static int stm32_venc_transform_cap(const struct device *const dev,
+				    const struct video_format_cap *const cap,
+				    struct video_format_cap *const res_cap,
+				    enum video_buf_type type, uint16_t ind)
+{
+	static const struct {
+		uint32_t src;
+		uint32_t dst;
+	} pixfmt_conversions[] = {
+		{.src = VIDEO_PIX_FMT_NV12, .dst = VIDEO_PIX_FMT_H264},
+		{.src = VIDEO_PIX_FMT_RGB565, .dst = VIDEO_PIX_FMT_H264},
+	};
+
+	*res_cap = *cap;
+
+	switch (type) {
+	case VIDEO_BUF_TYPE_OUTPUT:
+		for (size_t i = 0; i < ARRAY_SIZE(pixfmt_conversions); i++) {
+			if (pixfmt_conversions[i].src == cap->pixelformat) {
+				if (ind == 0) {
+					res_cap->pixelformat = pixfmt_conversions[i].dst;
+					break;
+				}
+				ind--;
+			}
+		}
+		break;
+	case VIDEO_BUF_TYPE_INPUT:
+		for (size_t i = 0; i < ARRAY_SIZE(pixfmt_conversions); i++) {
+			if (pixfmt_conversions[i].dst == cap->pixelformat) {
+				if (ind == 0) {
+					res_cap->pixelformat = pixfmt_conversions[i].src;
+					break;
+				}
+				ind--;
+			}
+		}
+		break;
+	default:
+		LOG_ERR("Invalid buffer type %d", type);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static H264EncPictureType to_h264pixfmt(uint32_t pixelformat)
 {
 	switch (pixelformat) {
@@ -740,6 +786,7 @@ static DEVICE_API(video, stm32_venc_driver_api) = {
 	.set_stream = stm32_venc_set_stream,
 	.trigger = stm32_venc_trigger,
 	.get_caps = stm32_venc_get_caps,
+	.transform_cap = stm32_venc_transform_cap,
 };
 
 static void stm32_venc_irq_config_func(const struct device *dev)

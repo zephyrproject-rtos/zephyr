@@ -130,12 +130,6 @@ static int video_renesas_ra_ceu_set_format(const struct device *dev, struct vide
 		return -ENOTSUP;
 	}
 
-	ret = video_set_format(data->vdev.source_dev, fmt);
-	if (ret < 0) {
-		LOG_DBG("Failed to set format on source device");
-		return ret;
-	}
-
 	if (data->fsp_ctrl->open) {
 		R_CEU_Close(data->fsp_ctrl);
 	}
