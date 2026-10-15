@@ -146,12 +146,20 @@ int sem_init(sem_t *semaphore, int pshared, unsigned int value)
  */
 int sem_post(sem_t *semaphore)
 {
+	int ret;
+
 	if (semaphore == NULL) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	k_sem_give(semaphore);
+	ret = k_sem_post(semaphore);
+	if (ret < 0) {
+		/* the value would exceed SEM_VALUE_MAX */
+		errno = -ret;
+		return -1;
+	}
+
 	return 0;
 }
 
