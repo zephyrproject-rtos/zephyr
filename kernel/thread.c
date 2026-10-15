@@ -345,47 +345,23 @@ static char *map_thread_stack(struct k_thread *new_thread,
 			      k_thread_stack_t *stack,
 			      struct stack_geometry *geo)
 {
-	char *stack_ptr;
-
-#ifdef CONFIG_THREAD_STACK_MEM_MAPPED
-	/* Map the stack into virtual memory and use that as the base to
-	 * calculate the initial stack pointer at the high end of the stack
-	 * object. The stack pointer may be reduced later by TLS or random
-	 * offset.
-	 *
-	 * K_MEM_MAP_UNINIT is used to mimic the behavior of non-mapped
-	 * stack. If CONFIG_INIT_STACKS is enabled, the stack will be
-	 * cleared later.
+	/* A memory mapped stack lives at a different virtual address than
+	 * the stack object; rebase the buffer onto it.
 	 */
-	void *stack_mapped = k_mem_map_phys_guard((uintptr_t)stack, geo->obj_size,
-				K_MEM_PERM_RW | K_MEM_CACHE_WB | K_MEM_MAP_UNINIT,
-				false);
+	void *base = z_thread_stack_map(new_thread, stack, geo->obj_size);
 
-	__ASSERT_NO_MSG((uintptr_t)stack_mapped != 0);
-
-	if (z_stack_is_user_capable(stack)) {
-		geo->buf_start = K_THREAD_STACK_BUFFER(stack_mapped);
-	} else {
-		geo->buf_start = K_KERNEL_STACK_BUFFER(stack_mapped);
+	if (base != (void *)stack) {
+		if (z_stack_is_user_capable(stack)) {
+			geo->buf_start = K_THREAD_STACK_BUFFER(base);
+		} else {
+			geo->buf_start = K_KERNEL_STACK_BUFFER(base);
+		}
 	}
-
-	stack_ptr = (char *)stack_mapped + geo->obj_size;
-
-	/* Need to store the info on mapped stack so we can remove the mappings
-	 * when the thread ends.
-	 */
-	new_thread->stack_info.mapped.addr = stack_mapped;
-	new_thread->stack_info.mapped.sz = geo->obj_size;
-#else /* CONFIG_THREAD_STACK_MEM_MAPPED */
-	ARG_UNUSED(new_thread);
 
 	/* Initial stack pointer at the high end of the stack object, may
 	 * be reduced later by TLS or random offset
 	 */
-	stack_ptr = (char *)stack + geo->obj_size;
-#endif /* CONFIG_THREAD_STACK_MEM_MAPPED */
-
-	return stack_ptr;
+	return (char *)base + geo->obj_size;
 }
 
 /* Pre-fill the stack buffer with a known pattern for usage measurement. */
@@ -1037,11 +1013,9 @@ int k_thread_runtime_stack_safety_threshold_check(const struct k_thread *thread,
 int z_impl_k_thread_stack_space_get(const struct k_thread *thread,
 				    size_t *unused_ptr)
 {
-#ifdef CONFIG_THREAD_STACK_MEM_MAPPED
-	if (thread->stack_info.mapped.addr == NULL) {
+	if (z_thread_stack_is_unmapped(thread)) {
 		return -EINVAL;
 	}
-#endif /* CONFIG_THREAD_STACK_MEM_MAPPED */
 
 	return z_stack_space_get((const uint8_t *)thread->stack_info.start,
 				 thread->stack_info.size, unused_ptr);
@@ -1158,18 +1132,6 @@ static struct k_thread *thread_to_cleanup;
 /** Spinlock for thread abort cleanup. */
 static struct k_spinlock thread_cleanup_lock;
 
-#ifdef CONFIG_THREAD_STACK_MEM_MAPPED
-static void *thread_cleanup_stack_addr;
-static size_t thread_cleanup_stack_sz;
-
-static void unmap_thread_stack(void *addr, size_t sz)
-{
-	if (addr != NULL) {
-		k_mem_unmap_phys_guard(addr, sz, false);
-	}
-}
-#endif /* CONFIG_THREAD_STACK_MEM_MAPPED */
-
 void defer_thread_cleanup(struct k_thread *thread)
 {
 	/* Note when adding new deferred cleanup steps:
@@ -1179,27 +1141,7 @@ void defer_thread_cleanup(struct k_thread *thread)
 	 *   that will be used in the actual cleanup steps.
 	 */
 	thread_to_cleanup = thread;
-
-#ifdef CONFIG_THREAD_STACK_MEM_MAPPED
-	/* Note that the permission of the stack should have been
-	 * stripped of user thread access due to the thread having
-	 * already exited from a memory domain. That is done via
-	 * k_thread_abort().
-	 */
-
-	/* Stash the address and size so the region can be unmapped
-	 * later.
-	 */
-	thread_cleanup_stack_addr = thread->stack_info.mapped.addr;
-	thread_cleanup_stack_sz = thread->stack_info.mapped.sz;
-
-	/* The stack is now considered un-usable. This should prevent any functions
-	 * from looking directly into the mapped stack if they are made to be aware
-	 * of memory mapped stacks, e.g., z_stack_space_get().
-	 */
-	thread->stack_info.mapped.addr = NULL;
-	thread->stack_info.mapped.sz = 0;
-#endif /* CONFIG_THREAD_STACK_MEM_MAPPED */
+	z_thread_stack_cleanup_stash(thread);
 }
 
 void do_deferred_thread_cleanup(void)
@@ -1210,12 +1152,7 @@ void do_deferred_thread_cleanup(void)
 	 *   be used here, never anything from the thread object.
 	 */
 
-#ifdef CONFIG_THREAD_STACK_MEM_MAPPED
-	unmap_thread_stack(thread_cleanup_stack_addr, thread_cleanup_stack_sz);
-
-	thread_cleanup_stack_addr = NULL;
-	thread_cleanup_stack_sz = 0;
-#endif /* CONFIG_THREAD_STACK_MEM_MAPPED */
+	z_thread_stack_cleanup_stashed();
 }
 
 void do_thread_cleanup(struct k_thread *thread)
@@ -1225,20 +1162,7 @@ void do_thread_cleanup(struct k_thread *thread)
 	 * the cleanup can be driven from it directly.
 	 */
 
-#ifdef CONFIG_THREAD_STACK_MEM_MAPPED
-	unmap_thread_stack(thread->stack_info.mapped.addr,
-			   thread->stack_info.mapped.sz);
-
-	/* The stack is now unmapped and thus un-usable. Clear the mapping
-	 * info so nothing looks into the stack afterwards, and so that
-	 * a repeated cleanup of the same thread object is a no-op,
-	 * e.g., z_stack_space_get().
-	 */
-	thread->stack_info.mapped.addr = NULL;
-	thread->stack_info.mapped.sz = 0;
-#else /* CONFIG_THREAD_STACK_MEM_MAPPED */
-	ARG_UNUSED(thread);
-#endif /* CONFIG_THREAD_STACK_MEM_MAPPED */
+	z_thread_stack_unmap(thread);
 }
 
 void k_thread_abort_cleanup(struct k_thread *thread)

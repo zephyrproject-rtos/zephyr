@@ -278,5 +278,60 @@ static inline bool z_is_idle_thread_object(const struct k_thread *thread)
 #endif /* CONFIG_MULTITHREADING */
 }
 
+/* Hooks through which the common thread code reaches the memory mapped
+ * stacks in kernel/thread_stack_map.c. Without
+ * CONFIG_THREAD_STACK_MEM_MAPPED they compile to nothing.
+ */
+#ifdef CONFIG_THREAD_STACK_MEM_MAPPED
+/* Map a new thread's stack object into virtual memory, record the mapping
+ * in the thread and return the mapped base.
+ */
+void *z_thread_stack_map(struct k_thread *thread, k_thread_stack_t *stack, size_t obj_size);
+
+/* True once the thread's stack mapping has been torn down. */
+bool z_thread_stack_is_unmapped(const struct k_thread *thread);
+
+/* Keep the mapping of a thread whose cleanup is deferred, since the thread
+ * object may be reused before the cleanup runs, and drop it from the
+ * thread.
+ */
+void z_thread_stack_cleanup_stash(struct k_thread *thread);
+
+/* Unmap the stack kept by z_thread_stack_cleanup_stash(). */
+void z_thread_stack_cleanup_stashed(void);
+
+/* Unmap a thread's stack and clear the mapping. */
+void z_thread_stack_unmap(struct k_thread *thread);
+#else
+static inline void *z_thread_stack_map(struct k_thread *thread, k_thread_stack_t *stack,
+				       size_t obj_size)
+{
+	ARG_UNUSED(thread);
+	ARG_UNUSED(obj_size);
+
+	return stack;
+}
+
+static inline bool z_thread_stack_is_unmapped(const struct k_thread *thread)
+{
+	ARG_UNUSED(thread);
+
+	return false;
+}
+
+static inline void z_thread_stack_cleanup_stash(struct k_thread *thread)
+{
+	ARG_UNUSED(thread);
+}
+
+static inline void z_thread_stack_cleanup_stashed(void)
+{
+}
+
+static inline void z_thread_stack_unmap(struct k_thread *thread)
+{
+	ARG_UNUSED(thread);
+}
+#endif /* CONFIG_THREAD_STACK_MEM_MAPPED */
 
 #endif /* ZEPHYR_KERNEL_INCLUDE_THREAD_H_ */
