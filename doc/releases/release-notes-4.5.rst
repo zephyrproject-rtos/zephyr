@@ -2568,6 +2568,9 @@ Libraries / Subsystems
     both native and offloaded ports. mDNS probe port selection and DNS-SD
     service checks use this new function.
 
+  * Added IEEE 802.3 transport support to PTP, packet-socket receive timestamping,
+    and PTP shell diagnostics (:github:`106464`).
+
 * Management
 
   * MCUmgr
