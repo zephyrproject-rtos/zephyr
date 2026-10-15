@@ -208,15 +208,56 @@ config OPENTHREAD_CLI_LINK_METRICS_ENH_ACK_VERBOSE
 	  MAC transmit-done path, which on platforms with synchronous/blocking
 	  CLI transport may break SED fast-poll timing.
 
+config OPENTHREAD_IP6_INIT_EXT_ADDR_POOL_ENABLE
+	bool "Initialize external IPv6 address pools at runtime"
+	depends on !OPENTHREAD_COPROCESSOR
+	help
+	  Initialize the external unicast and multicast IPv6 address pools at
+	  runtime with otIp6Init(). By default this is done during OpenThread
+	  initialization, with pool sizes set by
+	  OPENTHREAD_IP6_MAX_EXT_UCAST_ADDRS and
+	  OPENTHREAD_IP6_MAX_EXT_MCAST_ADDRS. With
+	  OPENTHREAD_CLI_IFCONFIG_INIT_ENABLE, "ifconfig init" allocates the
+	  pools and its arguments set the sizes instead.
+
+config OPENTHREAD_CLI_IFCONFIG_INIT_ENABLE
+	bool "OpenThread CLI ifconfig init command"
+	depends on OPENTHREAD_IP6_INIT_EXT_ADDR_POOL_ENABLE
+	depends on OPENTHREAD_SHELL
+	depends on OPENTHREAD_MANUAL_START
+	select OPENTHREAD_EXTERNAL_HEAP
+	help
+	  Enable the OpenThread CLI "ifconfig init <ucast> <mcast>" command
+	  for testing. The arguments set the external unicast and multicast
+	  address pool sizes, which are allocated with otPlatCAlloc() (libc
+	  heap, or the shared multi-heap with
+	  OPENTHREAD_EXTERNAL_HEAP_SHARED_MULTI_HEAP).
+
+	  Run the command before "ifconfig up" or openthread_run(); until
+	  then the IPv6 interface can't be enabled and adding addresses
+	  fails.
+
 config OPENTHREAD_IP6_MAX_EXT_UCAST_ADDRS
 	int "The maximum number of supported IPv6 addresses allows to be externally added"
 	range 0 32
 	default 4
+	help
+	  When OPENTHREAD_IP6_INIT_EXT_ADDR_POOL_ENABLE is set, OpenThread
+	  does not use this value. Zephyr still uses it to size the external
+	  unicast address pool passed to otIp6Init(). With
+	  OPENTHREAD_CLI_IFCONFIG_INIT_ENABLE, the "ifconfig init" arguments
+	  set the pool sizes instead.
 
 config OPENTHREAD_IP6_MAX_EXT_MCAST_ADDRS
 	int "The maximum number of supported IPv6 multicast addresses allows to be externally added"
 	range 0 32
 	default 2
+	help
+	  When OPENTHREAD_IP6_INIT_EXT_ADDR_POOL_ENABLE is set, OpenThread
+	  does not use this value. Zephyr still uses it to size the external
+	  multicast address pool passed to otIp6Init(). With
+	  OPENTHREAD_CLI_IFCONFIG_INIT_ENABLE, the "ifconfig init" arguments
+	  set the pool sizes instead.
 
 config OPENTHREAD_TCP_ENABLE
 	bool "TCP support"
