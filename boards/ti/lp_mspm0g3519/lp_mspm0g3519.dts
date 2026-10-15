@@ -241,3 +241,7 @@
 	#size-cells = <0>;
 	clocks = <&ckm MSPM0_CLOCK_MCLK>;
 };
+
+&aes {
+	status = "okay";
+};
