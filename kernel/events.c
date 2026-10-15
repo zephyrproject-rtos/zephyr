@@ -72,15 +72,6 @@ void z_impl_k_event_init(struct k_event *event)
 #endif /* CONFIG_OBJ_CORE_EVENT */
 }
 
-#ifdef CONFIG_USERSPACE
-void z_vrfy_k_event_init(struct k_event *event)
-{
-	K_OOPS(K_SYSCALL_OBJ_NEVER_INIT(event, K_OBJ_EVENT));
-	z_impl_k_event_init(event);
-}
-#include <zephyr/syscalls/k_event_init_mrsh.c>
-#endif /* CONFIG_USERSPACE */
-
 /**
  * @brief determine the set of events that have been satisfied
  *
@@ -226,28 +217,10 @@ uint32_t z_impl_k_event_post(struct k_event *event, uint32_t events)
 	return k_event_post_internal(event, events, events);
 }
 
-#ifdef CONFIG_USERSPACE
-uint32_t z_vrfy_k_event_post(struct k_event *event, uint32_t events)
-{
-	K_OOPS(K_SYSCALL_OBJ(event, K_OBJ_EVENT));
-	return z_impl_k_event_post(event, events);
-}
-#include <zephyr/syscalls/k_event_post_mrsh.c>
-#endif /* CONFIG_USERSPACE */
-
 uint32_t z_impl_k_event_set(struct k_event *event, uint32_t events)
 {
 	return k_event_post_internal(event, events, ~0);
 }
-
-#ifdef CONFIG_USERSPACE
-uint32_t z_vrfy_k_event_set(struct k_event *event, uint32_t events)
-{
-	K_OOPS(K_SYSCALL_OBJ(event, K_OBJ_EVENT));
-	return z_impl_k_event_set(event, events);
-}
-#include <zephyr/syscalls/k_event_set_mrsh.c>
-#endif /* CONFIG_USERSPACE */
 
 uint32_t z_impl_k_event_set_masked(struct k_event *event, uint32_t events,
 			       uint32_t events_mask)
@@ -255,29 +228,10 @@ uint32_t z_impl_k_event_set_masked(struct k_event *event, uint32_t events,
 	return k_event_post_internal(event, events, events_mask);
 }
 
-#ifdef CONFIG_USERSPACE
-uint32_t z_vrfy_k_event_set_masked(struct k_event *event, uint32_t events,
-			       uint32_t events_mask)
-{
-	K_OOPS(K_SYSCALL_OBJ(event, K_OBJ_EVENT));
-	return z_impl_k_event_set_masked(event, events, events_mask);
-}
-#include <zephyr/syscalls/k_event_set_masked_mrsh.c>
-#endif /* CONFIG_USERSPACE */
-
 uint32_t z_impl_k_event_clear(struct k_event *event, uint32_t events)
 {
 	return k_event_post_internal(event, 0, events);
 }
-
-#ifdef CONFIG_USERSPACE
-uint32_t z_vrfy_k_event_clear(struct k_event *event, uint32_t events)
-{
-	K_OOPS(K_SYSCALL_OBJ(event, K_OBJ_EVENT));
-	return z_impl_k_event_clear(event, events);
-}
-#include <zephyr/syscalls/k_event_clear_mrsh.c>
-#endif /* CONFIG_USERSPACE */
 
 static uint32_t k_event_wait_internal(struct k_event *event, uint32_t events,
 				      unsigned int options, k_timeout_t timeout)
@@ -359,15 +313,6 @@ uint32_t z_impl_k_event_wait(struct k_event *event, uint32_t events,
 
 	return k_event_wait_internal(event, events, options, timeout);
 }
-#ifdef CONFIG_USERSPACE
-uint32_t z_vrfy_k_event_wait(struct k_event *event, uint32_t events,
-				    bool reset, k_timeout_t timeout)
-{
-	K_OOPS(K_SYSCALL_OBJ(event, K_OBJ_EVENT));
-	return z_impl_k_event_wait(event, events, reset, timeout);
-}
-#include <zephyr/syscalls/k_event_wait_mrsh.c>
-#endif /* CONFIG_USERSPACE */
 
 /**
  * Wait for all of the specified events
@@ -381,16 +326,6 @@ uint32_t z_impl_k_event_wait_all(struct k_event *event, uint32_t events,
 	return k_event_wait_internal(event, events, options, timeout);
 }
 
-#ifdef CONFIG_USERSPACE
-uint32_t z_vrfy_k_event_wait_all(struct k_event *event, uint32_t events,
-					bool reset, k_timeout_t timeout)
-{
-	K_OOPS(K_SYSCALL_OBJ(event, K_OBJ_EVENT));
-	return z_impl_k_event_wait_all(event, events, reset, timeout);
-}
-#include <zephyr/syscalls/k_event_wait_all_mrsh.c>
-#endif /* CONFIG_USERSPACE */
-
 uint32_t z_impl_k_event_wait_safe(struct k_event *event, uint32_t events,
 				  bool reset, k_timeout_t timeout)
 {
@@ -399,16 +334,6 @@ uint32_t z_impl_k_event_wait_safe(struct k_event *event, uint32_t events,
 
 	return k_event_wait_internal(event, events, options, timeout);
 }
-
-#ifdef CONFIG_USERSPACE
-uint32_t z_vrfy_k_event_wait_safe(struct k_event *event, uint32_t events,
-				  bool reset, k_timeout_t timeout)
-{
-	K_OOPS(K_SYSCALL_OBJ(event, K_OBJ_EVENT));
-	return z_impl_k_event_wait_safe(event, events, reset, timeout);
-}
-#include <zephyr/syscalls/k_event_wait_safe_mrsh.c>
-#endif /* CONFIG_USERSPACE */
 
 uint32_t z_impl_k_event_wait_all_safe(struct k_event *event, uint32_t events,
 				      bool reset, k_timeout_t timeout)
@@ -419,13 +344,3 @@ uint32_t z_impl_k_event_wait_all_safe(struct k_event *event, uint32_t events,
 
 	return k_event_wait_internal(event, events, options, timeout);
 }
-
-#ifdef CONFIG_USERSPACE
-uint32_t z_vrfy_k_event_wait_all_safe(struct k_event *event, uint32_t events,
-				      bool reset, k_timeout_t timeout)
-{
-	K_OOPS(K_SYSCALL_OBJ(event, K_OBJ_EVENT));
-	return z_impl_k_event_wait_all_safe(event, events, reset, timeout);
-}
-#include <zephyr/syscalls/k_event_wait_all_safe_mrsh.c>
-#endif /* CONFIG_USERSPACE */
