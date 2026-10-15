@@ -1022,21 +1022,6 @@ static int arducam_mega_enqueue(const struct device *dev, struct video_buffer *v
 	return 0;
 }
 
-static int arducam_mega_dequeue(const struct device *dev, struct video_buffer **vbuf,
-				k_timeout_t timeout)
-{
-	struct arducam_mega_data *data = dev->data;
-
-	*vbuf = k_fifo_get(&data->vdev.out_buf_completed, timeout);
-	if (*vbuf == NULL) {
-		return -EAGAIN;
-	}
-
-	LOG_DBG("dequeue buffer %p", (*vbuf)->buffer);
-
-	return 0;
-}
-
 static int arducam_mega_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	/* Arducam in capture mode needs only one buffer allocated before starting */
@@ -1101,7 +1086,6 @@ static DEVICE_API(video, arducam_mega_driver_api) = {
 	.set_stream = arducam_mega_stream_start,
 	.flush = arducam_mega_flush,
 	.enqueue = arducam_mega_enqueue,
-	.dequeue = arducam_mega_dequeue,
 };
 
 #define ARDUCAM_MEGA_640_480_LINK_FREQ      120000000

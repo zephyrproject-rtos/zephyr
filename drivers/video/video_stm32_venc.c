@@ -682,30 +682,6 @@ static int stm32_venc_enqueue(const struct device *dev, struct video_buffer *vbu
 	return ret;
 }
 
-static int stm32_venc_dequeue(const struct device *dev, struct video_buffer **vbuf,
-			      k_timeout_t timeout)
-{
-	struct stm32_venc_data *data = dev->data;
-	int ret = 0;
-
-	k_mutex_lock(&data->vdev.lock, K_FOREVER);
-
-	if ((*vbuf)->type == VIDEO_BUF_TYPE_INPUT) {
-		*vbuf = k_fifo_get(&data->vdev.in_buf_completed, timeout);
-	} else {
-		*vbuf = k_fifo_get(&data->vdev.out_buf_completed, timeout);
-	}
-
-	if (*vbuf == NULL) {
-		ret = -EAGAIN;
-		goto out;
-	}
-
-out:
-	k_mutex_unlock(&data->vdev.lock);
-	return ret;
-}
-
 ISR_DIRECT_DECLARE(stm32_venc_isr)
 {
 	struct stm32_venc_ewl *inst = &ewl_instance;
@@ -779,7 +755,6 @@ static DEVICE_API(video, stm32_venc_driver_api) = {
 	.set_format = stm32_venc_set_fmt,
 	.set_stream = stm32_venc_set_stream,
 	.enqueue = stm32_venc_enqueue,
-	.dequeue = stm32_venc_dequeue,
 	.get_caps = stm32_venc_get_caps,
 };
 
