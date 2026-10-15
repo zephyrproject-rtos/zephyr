@@ -364,7 +364,7 @@ static void ec_host_cmd_enable(struct usbd_class_data *const c_data)
 
 	atomic_set_bit(&ctx->class_state, EC_HOST_CMD_CLASS_ENABLED);
 	if (!ctx->usb_tx_buf) {
-		LOG_ERR("Host Commands not initaliazed");
+		LOG_ERR("Host Commands not initialized");
 		return;
 	}
 
@@ -444,7 +444,7 @@ static void ec_host_cmd_reset(struct k_work *work)
 	LOG_INF("Resetting backend in state %s", state_name[ctx->state]);
 
 	if (!ctx->usb_tx_buf) {
-		LOG_ERR("Host Commands not initaliazed");
+		LOG_ERR("Host Commands not initialized");
 		return;
 	}
 
