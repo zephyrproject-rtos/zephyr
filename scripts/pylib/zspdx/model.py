@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any, TypedDict
 
@@ -376,6 +377,7 @@ class SBOMGraph:
         relationships: Relationships in the graph.
         custom_license_ids: Custom license IDs that need to be declared by serializers.
         build: Build that produced the graph's artifacts, or ``None`` if it carries no build.
+        created: Creation time recorded in every document serialized from the graph.
         metadata: Additional data not represented by the common model fields.
     """
 
@@ -387,6 +389,7 @@ class SBOMGraph:
     relationships: list[SBOMRelationship] = field(default_factory=list)
     custom_license_ids: set[str] = field(default_factory=set)
     build: SBOMBuild | None = None
+    created: datetime = field(default_factory=lambda: datetime.now(UTC))
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def add_document(self, document: SBOMDocument) -> None:
