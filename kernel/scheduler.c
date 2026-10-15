@@ -59,26 +59,10 @@ void z_impl_k_reschedule(void)
 	z_sched_lock_reschedule(key);
 }
 
-#ifdef CONFIG_USERSPACE
-static inline void z_vrfy_k_reschedule(void)
-{
-	z_impl_k_reschedule();
-}
-#include <zephyr/syscalls/k_reschedule_mrsh.c>
-#endif /* CONFIG_USERSPACE */
-
 k_tid_t z_impl_k_sched_current_thread_query(void)
 {
 	return _current;
 }
-
-#ifdef CONFIG_USERSPACE
-static inline k_tid_t z_vrfy_k_sched_current_thread_query(void)
-{
-	return z_impl_k_sched_current_thread_query();
-}
-#include <zephyr/syscalls/k_sched_current_thread_query_mrsh.c>
-#endif /* CONFIG_USERSPACE */
 
 
 int z_sched_waitq_walk(_wait_q_t *wait_q, _waitq_walk_cb_t walk_func,
