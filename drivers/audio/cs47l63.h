@@ -288,8 +288,10 @@ extern "C" {
 #define CS47L63_IRQ1_EINT_2 0x00018014U
 #define CS47L63_IRQ1_EINT_6 0x00018024U
 #define CS47L63_IRQ1_STS_6  0x000180A4U
-/* Interrupt-1 mask for the flags in IRQ1_EINT_1; a set bit masks. */
+/* Interrupt-1 masks, one per EINT register above; a set bit masks the flag of the same bit. */
 #define CS47L63_IRQ1_MASK_1 0x00018110U
+#define CS47L63_IRQ1_MASK_2 0x00018114U
+#define CS47L63_IRQ1_MASK_6 0x00018124U
 
 #define CS47L63_OUT1L_SC_EINT1       0x00020000U /* OUT1L short circuit */
 #define CS47L63_SYSCLK_ERR_EINT1     0x00000400U
@@ -351,6 +353,10 @@ struct cs47l63_chip {
 	/* Sticky: OR'd by cs47l63_fault_raise(), zeroed only by cs47l63_fault_clear(). */
 	uint32_t fault_errors;
 	struct k_work_delayable start_check;
+	struct gpio_callback irq_cb;
+	struct k_work irq_work;
+	/** The IRQ line is unmasked and its interrupt enabled; cleared with the interrupt. */
+	bool irq_armed;
 	struct k_mutex lock;
 };
 
@@ -361,6 +367,8 @@ struct cs47l63_config {
 	/** cirrus,gpio-defaults: GPIOn_CTRL1 per GPIO from GPIO1; a reserved bit skips it. */
 	const uint32_t *gpio_defaults;
 	uint8_t gpio_defaults_len;
+	/** irq-gpios; port is NULL when the node has none. */
+	struct gpio_dt_spec irq_gpio;
 	struct cs47l63_chip *chip;
 	struct cs47l63_port *port;
 };
@@ -389,6 +397,9 @@ int cs47l63_clock_solve(uint32_t fref_hz, struct cs47l63_fll_solution *out);
 
 /** Covers the FLL lock time and the gap before the caller starts the I2S transfer. */
 #define CS47L63_FLL_LOCK_SETTLE_MS 500U
+
+/** Fault checks one interrupt service runs while the line stays asserted. */
+#define CS47L63_IRQ_PASSES_MAX 4U
 
 struct cs47l63_dai_solution {
 	/** SAMPLE_RATEn code for the requested frame rate. */

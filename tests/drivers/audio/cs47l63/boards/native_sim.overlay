@@ -13,7 +13,7 @@
 		reg = <0>;
 		spi-max-frequency = <8000000>;
 		reset-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
-		irq-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 1 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		status = "okay";
 	};
 
@@ -22,7 +22,7 @@
 		reg = <1>;
 		spi-max-frequency = <8000000>;
 		reset-gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
-		irq-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		status = "okay";
 	};
 
@@ -31,7 +31,7 @@
 		reg = <2>;
 		spi-max-frequency = <8000000>;
 		reset-gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
-		irq-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		status = "okay";
 	};
 
@@ -40,7 +40,7 @@
 		reg = <3>;
 		spi-max-frequency = <8000000>;
 		reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
-		irq-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 7 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		status = "okay";
 	};
 
@@ -49,7 +49,7 @@
 		reg = <4>;
 		spi-max-frequency = <8000000>;
 		reset-gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
-		irq-gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 9 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		status = "okay";
 	};
 
@@ -58,7 +58,7 @@
 		reg = <5>;
 		spi-max-frequency = <8000000>;
 		reset-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
-		irq-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 11 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		status = "okay";
 	};
 
@@ -68,7 +68,7 @@
 		reg = <6>;
 		spi-max-frequency = <8000000>;
 		reset-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
-		irq-gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		cirrus,asp = <2>;
 		status = "okay";
 	};
@@ -88,7 +88,7 @@
 		reg = <8>;
 		spi-max-frequency = <8000000>;
 		reset-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
-		irq-gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 16 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		status = "okay";
 
 		cs47l63_dual_asp2: asp2 {
@@ -102,7 +102,7 @@
 		reg = <9>;
 		spi-max-frequency = <8000000>;
 		reset-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
-		irq-gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 18 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		cirrus,asp = <2>;
 		status = "okay";
 
@@ -117,9 +117,44 @@
 		reg = <10>;
 		spi-max-frequency = <8000000>;
 		reset-gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;
-		irq-gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 20 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		cirrus,gpio-defaults = <0xffffffff 0xffffffff 0xffffffff 0xffffffff 0x61000001 0
 					0xffffffff 0x00800000 0x00000800 0x410001fa>;
+		status = "okay";
+	};
+
+	cs47l63_irq: cs47l63@b {
+		compatible = "cirrus,cs47l63";
+		reg = <11>;
+		spi-max-frequency = <8000000>;
+		reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 22 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		status = "okay";
+	};
+
+	cs47l63_noirq: cs47l63@c {
+		compatible = "cirrus,cs47l63";
+		reg = <12>;
+		spi-max-frequency = <8000000>;
+		reset-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+
+	cs47l63_noint: cs47l63@d {
+		compatible = "cirrus,cs47l63";
+		reg = <13>;
+		spi-max-frequency = <8000000>;
+		reset-gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio_noint 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		status = "okay";
+	};
+};
+
+/ {
+	gpio_noint: gpio_noint {
+		compatible = "zephyr,gpio-emul";
+		gpio-controller;
+		#gpio-cells = <2>;
 		status = "okay";
 	};
 };

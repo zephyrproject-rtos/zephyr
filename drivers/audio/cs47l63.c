@@ -845,7 +845,7 @@ static void cs47l63_fault_raise(const struct device *dev, uint32_t errors)
 	}
 }
 
-/* Polled from start_output and output volume or mute sets, not the interrupt line. */
+/* Polled from start_output and output volume or mute sets, and run by the IRQ work. */
 static int cs47l63_fault_check(const struct device *dev)
 {
 	uint32_t eint1;
@@ -906,6 +906,119 @@ static int cs47l63_fault_clear(const struct device *dev)
 	chip_unlock(chip);
 
 	return ret;
+}
+
+static void cs47l63_irq_disarm(struct cs47l63_chip *chip)
+{
+	const struct cs47l63_config *cfg = chip->dev->config;
+	int ret;
+
+	if (cfg->irq_gpio.port == NULL) {
+		return;
+	}
+
+	ret = gpio_pin_interrupt_configure_dt(&cfg->irq_gpio, GPIO_INT_DISABLE);
+	if (ret < 0) {
+		LOG_ERR("Failed to disable the IRQ interrupt: %d", ret);
+	}
+	chip->irq_armed = false;
+	(void)k_work_cancel(&chip->irq_work);
+}
+
+static int cs47l63_irq_arm(const struct device *dev)
+{
+	const struct cs47l63_config *cfg = dev->config;
+	struct cs47l63_chip *chip = cfg->chip;
+	int ret;
+
+	if (cfg->irq_gpio.port == NULL) {
+		return 0;
+	}
+
+	ret = gpio_pin_interrupt_configure_dt(&cfg->irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+	if (ret == -ENOTSUP) {
+		LOG_WRN_ONCE("IRQ line has no edge interrupt, faults are polled only");
+		return 0;
+	}
+	if (ret < 0) {
+		LOG_ERR("Failed to enable the IRQ interrupt: %d", ret);
+		return ret;
+	}
+
+	ret = cs47l63_bus_update_reg(dev, CS47L63_IRQ1_MASK_2, CS47L63_BOOT_DONE_EINT1,
+				     CS47L63_BOOT_DONE_EINT1);
+	if (ret == 0) {
+		ret = cs47l63_bus_update_reg(dev, CS47L63_IRQ1_MASK_1, CS47L63_EINT_1_WATCHED,
+					     0U);
+	}
+	if (ret == 0) {
+		ret = cs47l63_bus_update_reg(dev, CS47L63_IRQ1_MASK_6, CS47L63_EINT_6_WATCHED,
+					     0U);
+	}
+	if (ret == 0) {
+		chip->irq_armed = true;
+		ret = gpio_pin_get_dt(&cfg->irq_gpio);
+		if (ret > 0) {
+			ret = k_work_submit(&chip->irq_work);
+		}
+	}
+	if (ret < 0) {
+		LOG_ERR("Failed to arm the IRQ line: %d", ret);
+		cs47l63_irq_disarm(chip);
+		return ret;
+	}
+
+	return 0;
+}
+
+static void cs47l63_irq_isr(const struct device *port, struct gpio_callback *cb,
+			    gpio_port_pins_t pins)
+{
+	struct cs47l63_chip *chip = CONTAINER_OF(cb, struct cs47l63_chip, irq_cb);
+	int ret;
+
+	ARG_UNUSED(port);
+	ARG_UNUSED(pins);
+
+	ret = k_work_submit(&chip->irq_work);
+	if (ret < 0) {
+		LOG_ERR("Failed to queue the IRQ service: %d", ret);
+	}
+}
+
+static void cs47l63_irq_work(struct k_work *work)
+{
+	struct cs47l63_chip *chip = CONTAINER_OF(work, struct cs47l63_chip, irq_work);
+	const struct cs47l63_config *cfg = chip->dev->config;
+	bool released = false;
+	int ret = 0;
+
+	chip_lock(chip);
+	if (!chip->irq_armed) {
+		chip_unlock(chip);
+		return;
+	}
+
+	for (uint32_t pass = 0U; (pass < CS47L63_IRQ_PASSES_MAX) && !released; pass++) {
+		ret = cs47l63_fault_check(chip->dev);
+		if (ret < 0) {
+			LOG_ERR("Failed to service the IRQ line: %d", ret);
+			break;
+		}
+
+		ret = gpio_pin_get_dt(&cfg->irq_gpio);
+		if (ret < 0) {
+			LOG_ERR("Failed to read the IRQ line: %d", ret);
+			break;
+		}
+		released = (ret == 0);
+	}
+
+	if (ret > 0) {
+		LOG_WRN("IRQ line stays asserted, faults are polled only until the next configure");
+		cs47l63_irq_disarm(chip);
+	}
+	chip_unlock(chip);
 }
 
 #define CS47L63_IN2_EN_BOTH (CS47L63_IN2L_EN | CS47L63_IN2R_EN)
@@ -1679,6 +1792,25 @@ static int codec_initialize(const struct device *dev)
 	}
 	cfg->chip->ports[cfg->port->asp - 1U] = cfg->port;
 	k_work_init_delayable(&cfg->chip->start_check, start_check_work);
+	k_work_init(&cfg->chip->irq_work, cs47l63_irq_work);
+
+	if (cfg->irq_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&cfg->irq_gpio)) {
+			LOG_ERR("IRQ GPIO not ready");
+			return -ENODEV;
+		}
+
+		ret = gpio_pin_configure_dt(&cfg->irq_gpio, GPIO_INPUT);
+		if (ret < 0) {
+			return ret;
+		}
+
+		gpio_init_callback(&cfg->chip->irq_cb, cs47l63_irq_isr, BIT(cfg->irq_gpio.pin));
+		ret = gpio_add_callback_dt(&cfg->irq_gpio, &cfg->chip->irq_cb);
+		if (ret < 0) {
+			return ret;
+		}
+	}
 
 	return 0;
 }
@@ -1826,6 +1958,8 @@ static int port_configure(struct cs47l63_chip *chip, struct cs47l63_port *port,
 	 */
 	(void)k_work_cancel_delayable(&chip->start_check);
 
+	cs47l63_irq_disarm(chip);
+
 	ret = cs47l63_boot_bringup(dev);
 	if (ret < 0) {
 		return ret;
@@ -1859,6 +1993,9 @@ static int port_configure(struct cs47l63_chip *chip, struct cs47l63_port *port,
 	}
 
 	ret = cs47l63_fault_clear(dev);
+	if (ret == 0) {
+		ret = cs47l63_irq_arm(dev);
+	}
 	if (ret == 0) {
 		port->route = cfg->dai_route;
 		port->tx_enables = dai_sol.tx_enables;
@@ -2197,6 +2334,7 @@ static DEVICE_API(audio_codec, child_driver_api) = {
 		.reset_gpio = GPIO_DT_SPEC_INST_GET(inst, reset_gpios),                            \
 		.gpio_defaults = cs47l63_gpio_defaults_##inst,                                     \
 		.gpio_defaults_len = DT_INST_PROP_LEN_OR(inst, cirrus_gpio_defaults, 0),           \
+		.irq_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, irq_gpios, {0}),                        \
 		.chip = &cs47l63_chip_##inst,                                                      \
 		.port = &cs47l63_port_##inst,                                                      \
 	};                                                                                         \

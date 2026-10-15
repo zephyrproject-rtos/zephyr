@@ -14,6 +14,9 @@ target_sources(app PRIVATE
   src/test_output_path.c
   src/test_input_path.c
   src/test_fault.c
+  src/test_irq.c
+  src/test_irq_absent.c
+  src/test_irq_unsupported.c
   src/test_asp2.c
   src/test_dual_asp.c
   src/test_gpio_defaults.c

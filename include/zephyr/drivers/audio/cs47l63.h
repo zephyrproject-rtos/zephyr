@@ -44,8 +44,11 @@ enum cs47l63_output {
  * Bits this driver sets in the error callback's mask besides
  * @ref audio_codec_error_type, which uses BIT(0) to BIT(4).
  *
- * Faults are polled when the output starts and when its volume or mute is set; the
- * irq-gpios line is not serviced.
+ * Faults are polled when the output starts and when its volume or mute is set. With
+ * irq-gpios they are also reported when the part raises them, unless the controller has
+ * no edge interrupts or the line stays asserted. Stop the output before
+ * stopping its clock: a clock lost under a running output is reported as
+ * CS47L63_ERROR_CLOCK.
  *
  * The callback runs with the codec locked, in the calling thread or on the
  * system workqueue. It may call this codec, but must not wait on another
