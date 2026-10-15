@@ -32,7 +32,6 @@ struct video_mcux_csi_data {
 	csi_handle_t csi_handle;
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
-	struct k_poll_signal *sig;
 };
 
 static void __frame_done_cb(CSI_Type *base, csi_handle_t *handle, status_t status, void *user_data)
@@ -92,8 +91,8 @@ static void __frame_done_cb(CSI_Type *base, csi_handle_t *handle, status_t statu
 
 done:
 	/* Trigger Event */
-	if (IS_ENABLED(CONFIG_POLL) && data->sig) {
-		k_poll_signal_raise(data->sig, result);
+	if (IS_ENABLED(CONFIG_POLL) && data->vdev.signal) {
+		k_poll_signal_raise(data->vdev.signal, result);
 	}
 
 	return;
@@ -220,8 +219,8 @@ static int video_mcux_csi_flush(const struct device *dev, bool cancel)
 
 		while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT))) {
 			k_fifo_put(&data->fifo_out, vbuf);
-			if (IS_ENABLED(CONFIG_POLL) && data->sig) {
-				k_poll_signal_raise(data->sig, VIDEO_BUF_ABORTED);
+			if (IS_ENABLED(CONFIG_POLL) && data->vdev.signal) {
+				k_poll_signal_raise(data->vdev.signal, VIDEO_BUF_ABORTED);
 			}
 		}
 	}
@@ -342,21 +341,6 @@ static int video_mcux_csi_init(const struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_POLL
-static int video_mcux_csi_set_signal(const struct device *dev, struct k_poll_signal *sig)
-{
-	struct video_mcux_csi_data *data = dev->data;
-
-	if (data->sig && sig != NULL) {
-		return -EALREADY;
-	}
-
-	data->sig = sig;
-
-	return 0;
-}
-#endif
-
 static int video_mcux_csi_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
 	const struct video_mcux_csi_config *config = dev->config;
@@ -384,9 +368,6 @@ static DEVICE_API(video, video_mcux_csi_driver_api) = {
 	.dequeue = video_mcux_csi_dequeue,
 	.get_caps = video_mcux_csi_get_caps,
 	.enum_frmival = video_mcux_csi_enum_frmival,
-#ifdef CONFIG_POLL
-	.set_signal = video_mcux_csi_set_signal,
-#endif
 };
 
 PINCTRL_DT_INST_DEFINE(0);

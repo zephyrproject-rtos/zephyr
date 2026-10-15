@@ -85,7 +85,6 @@ struct video_nsi_fifo_data {
 	struct k_thread thread;
 	/** Wakes the thread up when a buffer is queued or the stream is started */
 	struct k_sem wake_sem;
-	struct k_poll_signal *sig;
 	/** FIFO path given on the command line, NULL when the option was not used */
 	const char *fifo_path_arg;
 	/** FIFO path in use, resolved at init */
@@ -171,8 +170,8 @@ static void video_nsi_fifo_deliver(struct video_nsi_fifo_data *data, struct vide
 
 	k_fifo_put(&data->fifo_out, vbuf);
 
-	if (IS_ENABLED(CONFIG_POLL) && (data->sig != NULL)) {
-		k_poll_signal_raise(data->sig, VIDEO_BUF_DONE);
+	if (IS_ENABLED(CONFIG_POLL) && (data->vdev.signal != NULL)) {
+		k_poll_signal_raise(data->vdev.signal, VIDEO_BUF_DONE);
 	}
 }
 
@@ -355,28 +354,13 @@ static int video_nsi_fifo_flush(const struct device *dev, bool cancel)
 
 	while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT)) != NULL) {
 		k_fifo_put(&data->fifo_out, vbuf);
-		if (IS_ENABLED(CONFIG_POLL) && (data->sig != NULL)) {
-			k_poll_signal_raise(data->sig, VIDEO_BUF_ABORTED);
+		if (IS_ENABLED(CONFIG_POLL) && (data->vdev.signal != NULL)) {
+			k_poll_signal_raise(data->vdev.signal, VIDEO_BUF_ABORTED);
 		}
 	}
 
 	return 0;
 }
-
-#ifdef CONFIG_POLL
-static int video_nsi_fifo_set_signal(const struct device *dev, struct k_poll_signal *sig)
-{
-	struct video_nsi_fifo_data *data = dev->data;
-
-	if ((data->sig != NULL) && (sig != NULL)) {
-		return -EALREADY;
-	}
-
-	data->sig = sig;
-
-	return 0;
-}
-#endif
 
 static DEVICE_API(video, video_nsi_fifo_driver_api) = {
 	.set_format = video_nsi_fifo_set_fmt,
@@ -385,9 +369,6 @@ static DEVICE_API(video, video_nsi_fifo_driver_api) = {
 	.enqueue = video_nsi_fifo_enqueue,
 	.dequeue = video_nsi_fifo_dequeue,
 	.flush = video_nsi_fifo_flush,
-#ifdef CONFIG_POLL
-	.set_signal = video_nsi_fifo_set_signal,
-#endif
 };
 
 static int video_nsi_fifo_init(const struct device *dev)

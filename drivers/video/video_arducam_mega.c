@@ -240,7 +240,6 @@ struct arducam_mega_data {
 	struct k_fifo fifo_out;
 	struct k_work buf_work;
 	struct k_timer stream_schedule_timer;
-	struct k_poll_signal *signal;
 	uint8_t fifo_first_read;
 	uint32_t fifo_length;
 	uint8_t stream_on;

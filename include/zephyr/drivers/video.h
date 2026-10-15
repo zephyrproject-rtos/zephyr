@@ -60,6 +60,8 @@ struct video_device {
 	atomic_t is_streaming;
 	/** Mutex used by video APIs to access the driver */
 	struct k_mutex lock;
+	/** Signal used by the poll API and @ref video_set_signal() */
+	struct k_poll_signal *signal;
 };
 
 /**
@@ -218,12 +220,6 @@ typedef int (*video_api_transform_cap_t)(const struct device *const dev,
 					 enum video_buf_type type, uint16_t ind);
 
 /**
- * @brief Callback API to register or unregister poll signal for buffer events.
- * See @a video_set_signal() for argument description.
- */
-typedef int (*video_api_set_signal_t)(const struct device *dev, struct k_poll_signal *sig);
-
-/**
  * @brief Callback API to set or get video selection (crop/compose).
  * See @a video_driver_set_selection() and @a video_driver_get_selection() for argument description.
  */
@@ -265,10 +261,6 @@ __subsystem struct video_driver_api {
 	 * @driver_ops_optional @copybrief video_driver_get_volatile_ctrl
 	 */
 	video_api_ctrl_t get_volatile_ctrl;
-	/**
-	 * @driver_ops_optional @copybrief video_driver_set_signal
-	 */
-	video_api_set_signal_t set_signal;
 	/**
 	 * @driver_ops_optional @copybrief video_driver_set_frmival
 	 */
@@ -586,30 +578,6 @@ static inline int video_driver_transform_cap(const struct device *const dev,
 	}
 
 	return api->transform_cap(dev, cap, res_cap, type, ind);
-}
-
-/**
- * @brief Register/Unregister k_poll signal for a video endpoint.
- *
- * Register a poll signal to the endpoint, which will be signaled on frame
- * completion (done, aborted, error). Registering a NULL poll signal
- * unregisters any previously registered signal.
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param sig Pointer to k_poll_signal
- *
- * @retval 0 on success
- * @retval -ENOSYS API is not implemented.
- */
-static inline int video_driver_set_signal(const struct device *dev, struct k_poll_signal *sig)
-{
-	const struct video_driver_api *api = DEVICE_API_GET(video, dev);
-
-	if (api->set_signal == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->set_signal(dev, sig);
 }
 
 /**

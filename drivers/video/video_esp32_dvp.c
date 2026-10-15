@@ -29,8 +29,8 @@ LOG_MODULE_REGISTER(video_esp32_lcd_cam, CONFIG_VIDEO_LOG_LEVEL);
 
 #ifdef CONFIG_POLL
 #define VIDEO_ESP32_RAISE_OUT_SIG_IF_ENABLED(result)                                               \
-	if (data->signal_out) {                                                                    \
-		k_poll_signal_raise(data->signal_out, result);                                     \
+	if (data->vdev.signal) {                                                                    \
+		k_poll_signal_raise(data->vdev.signal, result);                                     \
 	}
 #else
 #define VIDEO_ESP32_RAISE_OUT_SIG_IF_ENABLED(result)
@@ -64,9 +64,6 @@ struct video_esp32_data {
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
 	struct dma_block_config dma_blocks[CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM];
-#ifdef CONFIG_POLL
-	struct k_poll_signal *signal_out;
-#endif
 };
 
 static int video_esp32_reload_dma(struct video_esp32_data *data)
@@ -279,8 +276,8 @@ static int video_esp32_flush(const struct device *dev, bool cancel)
 		while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT)) != NULL) {
 			k_fifo_put(&data->fifo_out, vbuf);
 #ifdef CONFIG_POLL
-			if (data->signal_out) {
-				k_poll_signal_raise(data->signal_out, VIDEO_BUF_ABORTED);
+			if (data->vdev.signal) {
+				k_poll_signal_raise(data->vdev.signal, VIDEO_BUF_ABORTED);
 			}
 #endif
 		}
@@ -292,16 +289,6 @@ static int video_esp32_flush(const struct device *dev, bool cancel)
 
 	return 0;
 }
-
-#ifdef CONFIG_POLL
-int video_esp32_set_signal(const struct device *dev, struct k_poll_signal *sig)
-{
-	struct video_esp32_data *data = dev->data;
-
-	data->signal_out = sig;
-	return 0;
-}
-#endif
 
 static void video_esp32_cam_ctrl_init(const struct device *dev)
 {
@@ -380,9 +367,6 @@ static DEVICE_API(video, esp32_driver_api) = {
 	.flush = video_esp32_flush,
 	.set_selection = video_esp32_set_selection,
 	.get_selection = video_esp32_get_selection,
-#ifdef CONFIG_POLL
-	.set_signal = video_esp32_set_signal,
-#endif
 };
 
 #define SOURCE_DEV(n) DEVICE_DT_GET(DT_INST_PHANDLE(n, source))

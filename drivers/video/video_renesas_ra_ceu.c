@@ -59,9 +59,6 @@ struct video_renesas_ra_ceu_data {
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
 	atomic_ptr_t vbuf;
-#ifdef CONFIG_POLL
-	struct k_poll_signal *signal;
-#endif
 };
 
 extern void ceu_isr(void);
@@ -293,8 +290,8 @@ static int video_renesas_ra_ceu_flush(const struct device *dev, bool cancel)
 		}
 
 #ifdef CONFIG_POLL
-		if (data->signal) {
-			k_poll_signal_raise(data->signal, VIDEO_BUF_ABORTED);
+		if (data->vdev.signal) {
+			k_poll_signal_raise(data->vdev.signal, VIDEO_BUF_ABORTED);
 		}
 #endif
 
@@ -306,16 +303,6 @@ static int video_renesas_ra_ceu_flush(const struct device *dev, bool cancel)
 
 	return 0;
 }
-
-#ifdef CONFIG_POLL
-static int video_renesas_ra_ceu_set_signal(const struct device *dev, struct k_poll_signal *sig)
-{
-	struct video_renesas_ra_ceu_data *data = dev->data;
-
-	data->signal = sig;
-	return 0;
-}
-#endif
 
 static int video_renesas_ra_ceu_init(const struct device *dev)
 {
@@ -364,9 +351,6 @@ static DEVICE_API(video, video_renesas_ra_ceu_driver_api) = {
 	.enqueue = video_renesas_ra_ceu_enqueue,
 	.dequeue = video_renesas_ra_ceu_dequeue,
 	.flush = video_renesas_ra_ceu_flush,
-#ifdef CONFIG_POLL
-	.set_signal = video_renesas_ra_ceu_set_signal,
-#endif
 };
 
 #define EVENT_CEU_INT(inst) BSP_PRV_IELS_ENUM(CONCAT(EVENT_CEU, _CEUI))

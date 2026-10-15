@@ -233,7 +233,7 @@ int video_set_signal(const struct device *dev, struct k_poll_signal *sig)
 	vdev = dev->data;
 
 	k_mutex_lock(&vdev->lock, K_FOREVER);
-	ret = video_driver_set_signal(dev, sig);
+	vdev->signal = sig;
 	k_mutex_unlock(&vdev->lock);
 
 	return ret;
