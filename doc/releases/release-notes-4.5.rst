@@ -761,6 +761,12 @@ New APIs and options
   * :c:enumerator:`CRYPTO_CIPHER_MODE_OFB`
   * :c:func:`cipher_cfb_op`
   * :c:func:`cipher_ofb_op`
+  * :c:enumerator:`CRYPTO_HASH_ALGO_SHA3_224`, :c:enumerator:`CRYPTO_HASH_ALGO_SHA3_256`,
+    :c:enumerator:`CRYPTO_HASH_ALGO_SHA3_384` and :c:enumerator:`CRYPTO_HASH_ALGO_SHA3_512`
+    (:github:`118321`).
+  * :kconfig:option:`CONFIG_USE_STM32_HAL_PSA_CRYPTO_DRIVERS` for experimental
+    hardware-accelerated PSA Crypto using STM32 AES, CRYP, SAES and HASH peripherals
+    (:github:`119888`).
 
 * Debug
 
