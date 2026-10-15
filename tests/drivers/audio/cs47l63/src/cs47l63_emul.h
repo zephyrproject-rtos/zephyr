@@ -17,11 +17,17 @@
 #include <zephyr/audio/codec.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/emul.h>
+#include <zephyr/drivers/gpio.h>
 
 #define CS47L63_EMUL_MCLK_HZ   6144000U
 #define CS47L63_EMUL_WORD_BITS 16U
 #define CS47L63_EMUL_CHANNELS  2U
 #define CS47L63_EMUL_RATE_HZ   48000U
+
+/** IRQ1_MASK_1, _2 and _6 at reset (DS1249F2 table 6-1). */
+#define CS47L63_EMUL_MASK_1_DEFAULT 0x00021F10U
+#define CS47L63_EMUL_MASK_2_DEFAULT 0x00000004U
+#define CS47L63_EMUL_MASK_6_DEFAULT 0x0000030FU
 
 struct cs47l63_emul_xfer {
 	uint32_t addr;
@@ -64,6 +70,24 @@ void cs47l63_emul_write_returns(const struct emul *target, int ret);
 /** Runs @p fn once, from inside the next accepted write to @p addr, until the next reset. */
 void cs47l63_emul_once_on_write(const struct emul *target, uint32_t addr, void (*fn)(void *arg),
 				void *arg);
+
+/**
+ * From now on, after every register change, drives @p irq to the OR of the flags the masks leave
+ * enabled, as the part's IRQ pin does. Dropped by cs47l63_emul_reset().
+ */
+void cs47l63_emul_irq_attach(const struct emul *target, const struct gpio_dt_spec *irq);
+
+/** Holds the pin asserted whatever the flags say, until the next reset. */
+void cs47l63_emul_irq_force(const struct emul *target, bool forced);
+
+bool cs47l63_emul_get_irq_asserted(const struct emul *target);
+
+/**
+ * ORs @p val into @p inject_addr once, right after the @p nth read of @p read_addr returns
+ * (counted from this call, 0 for the next one). Dropped by cs47l63_emul_reset().
+ */
+void cs47l63_emul_inject_on_read(const struct emul *target, uint32_t read_addr, uint32_t nth,
+				 uint32_t inject_addr, uint32_t val);
 
 /** Transfers the armed failure refused since the last reset. */
 uint32_t cs47l63_emul_fail_hits(const struct emul *target);

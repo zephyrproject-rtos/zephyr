@@ -52,7 +52,6 @@
 /** Reset values the PDM tests start from (DS1249F2 register map). */
 #define INPUT1_CONTROL1_RESET 0x00050020U
 #define IN1_CONTROL2_RESET    0x10800080U
-#define IRQ1_MASK_1_RESET     0x00021F10U
 
 /** INPUT1_CONTROL1 bit 5, which must stay set (DS1249F2 section 4.2.6). */
 #define INPUT1_CONTROL1_BIT5 0x00000020U
@@ -109,7 +108,7 @@ static void input_setup(const struct device *dev, const struct emul *target)
 	cs47l63_emul_set_reg(emu, CS47L63_INPUT1_CONTROL1, INPUT1_CONTROL1_RESET);
 	cs47l63_emul_set_reg(emu, CS47L63_IN1L_CONTROL2, IN1_CONTROL2_RESET);
 	cs47l63_emul_set_reg(emu, CS47L63_IN1R_CONTROL2, IN1_CONTROL2_RESET);
-	cs47l63_emul_set_reg(emu, CS47L63_IRQ1_MASK_1, IRQ1_MASK_1_RESET);
+	cs47l63_emul_set_reg(emu, CS47L63_IRQ1_MASK_1, CS47L63_EMUL_MASK_1_DEFAULT);
 	zassert_ok(cs47l63_test_configure(codec, AUDIO_ROUTE_PLAYBACK_CAPTURE));
 }
 
@@ -547,7 +546,7 @@ static ZTEST(cs47l63_pdm, test_pdm_route_within_the_terminal_only_rewrites_the_m
 
 static ZTEST(cs47l63_pdm, test_pdm_stop_masks_the_short_circuit_flag_around_micbias_off)
 {
-	uint32_t unmasked = IRQ1_MASK_1_RESET & ~CS47L63_MICB_SC_MASK1;
+	uint32_t unmasked = CS47L63_EMUL_MASK_1_DEFAULT & ~CS47L63_MICB_SC_MASK1;
 	uint32_t mask_writes;
 	uint32_t micbias_writes;
 	uint32_t eint_writes;
@@ -612,8 +611,8 @@ static ZTEST(cs47l63_pdm, test_pdm_stop_returns_the_stage_to_its_boot_state)
 	zassert_not_equal(cs47l63_emul_get_reg(emu, CS47L63_IN1L_CONTROL2) & CS47L63_IN1_MUTE, 0U);
 	zassert_not_equal(cs47l63_emul_get_reg(emu, CS47L63_IN1R_CONTROL2) & CS47L63_IN1_MUTE, 0U);
 	zassert_equal(cs47l63_emul_get_reg(emu, CS47L63_MICBIAS_CTRL5) & MICB1B_ON, 0U);
-	zassert_equal(cs47l63_emul_get_reg(emu, CS47L63_IRQ1_MASK_1), IRQ1_MASK_1_RESET,
-		      "MICB_SC left masked, as the part resets");
+	zassert_not_equal(cs47l63_emul_get_reg(emu, CS47L63_IRQ1_MASK_1) & CS47L63_MICB_SC_MASK1,
+			  0U, "MICB_SC left masked, as the part resets");
 	zassert_equal(cs47l63_emul_get_reg(emu, CS47L63_ASP1TX1_INPUT1),
 		      MIX_SLOT(CS47L63_MIXER_SRC_NONE));
 	zassert_equal(cs47l63_emul_get_reg(emu, CS47L63_ASP1TX2_INPUT1),

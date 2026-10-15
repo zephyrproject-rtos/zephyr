@@ -295,8 +295,10 @@ extern "C" {
 #define CS47L63_IRQ1_EINT_2 0x00018014U
 #define CS47L63_IRQ1_EINT_6 0x00018024U
 #define CS47L63_IRQ1_STS_6  0x000180A4U
-/* Interrupt-1 mask for the flags in IRQ1_EINT_1; a set bit masks. */
+/* Interrupt-1 masks, one per EINT register above; a set bit masks the flag of the same bit. */
 #define CS47L63_IRQ1_MASK_1 0x00018110U
+#define CS47L63_IRQ1_MASK_2 0x00018114U
+#define CS47L63_IRQ1_MASK_6 0x00018124U
 
 #define CS47L63_OUT1L_SC_EINT1       0x00020000U /* OUT1L short circuit */
 #define CS47L63_SYSCLK_ERR_EINT1     0x00000400U
@@ -371,6 +373,10 @@ struct cs47l63_chip {
 	struct k_work_delayable start_check;
 	/** When the start check stops waiting for FLL1 lock and the output stage. */
 	k_timepoint_t start_deadline;
+	struct gpio_callback irq_cb;
+	struct k_work irq_work;
+	/** The IRQ line is unmasked and its interrupt enabled; cleared with the interrupt. */
+	bool irq_armed;
 	struct k_mutex lock;
 };
 
@@ -378,6 +384,8 @@ struct cs47l63_chip {
 struct cs47l63_config {
 	struct spi_dt_spec bus;
 	struct gpio_dt_spec reset_gpio;
+	/** irq-gpios; port is NULL when the node has none. */
+	struct gpio_dt_spec irq_gpio;
 	struct cs47l63_chip *chip;
 	struct cs47l63_port *port;
 	uint8_t fll_ref;
@@ -388,6 +396,9 @@ struct cs47l63_config {
 
 /** Bounds the start check: the caller starting I2S, FLL1 lock and the output enable. */
 #define CS47L63_START_TIMEOUT_MS 500U
+
+/** Fault checks one interrupt service runs while the line stays asserted. */
+#define CS47L63_IRQ_PASSES_MAX 4U
 
 /** OUT1L_VOL and INnx_VOL share the encoding: 0x80 is 0 dB, 0.5 dB per step. */
 #define CS47L63_VOL_CODES_PER_DB 2
