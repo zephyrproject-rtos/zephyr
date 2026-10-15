@@ -276,15 +276,22 @@ add_link_options(${LINKER_OPTIMIZATION_FLAG})
 compiler_simple_options(simple_options)
 toolchain_linker_add_compiler_options(${simple_options})
 
-if(CONFIG_LTO)
+if(CONFIG_LTO OR CONFIG_LTO_SELECTED_LIBRARIES)
   if(CONFIG_LTO_SINGLE_THREADED)
-    zephyr_compile_options($<TARGET_PROPERTY:compiler,optimization_lto_st>)
+    set(genex_lto "$<TARGET_PROPERTY:compiler,optimization_lto_st>")
     add_link_options($<TARGET_PROPERTY:linker,lto_arguments_st>)
   else()
-    set(genex_tgt_lto "$<TARGET_PROPERTY:LTO>")
     set(genex_lto "$<TARGET_PROPERTY:compiler,optimization_lto>")
-    zephyr_compile_options("$<$<OR:$<STREQUAL:${genex_tgt_lto},>,${genex_tgt_lto}>:${genex_lto}>")
     add_link_options($<TARGET_PROPERTY:linker,lto_arguments>)
+  endif()
+
+  # A target opts out with the LTO property set to a false value. With
+  # CONFIG_LTO_SELECTED_LIBRARIES a target must opt in instead.
+  set(genex_tgt_lto "$<TARGET_PROPERTY:LTO>")
+  if(CONFIG_LTO)
+    zephyr_compile_options("$<$<OR:$<STREQUAL:${genex_tgt_lto},>,${genex_tgt_lto}>:${genex_lto}>")
+  else()
+    zephyr_compile_options("$<$<BOOL:${genex_tgt_lto}>:${genex_lto}>")
   endif()
 endif()
 
@@ -1066,6 +1073,20 @@ file(CONFIGURE OUTPUT ${syscalls_file_list_output}
 
 # Read list content
 get_property(ZEPHYR_LIBS_PROPERTY GLOBAL PROPERTY ZEPHYR_LIBS)
+
+if(CONFIG_LTO_SELECTED_LIBRARIES)
+  get_property(lto_dirs GLOBAL PROPERTY ZEPHYR_LTO_DIRECTORIES)
+  foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
+    get_property(lib_dir TARGET ${zephyr_lib} PROPERTY SOURCE_DIR)
+    foreach(lto_dir ${lto_dirs})
+      cmake_path(IS_PREFIX lto_dir ${lib_dir} NORMALIZE in_lto_dir)
+      if(in_lto_dir)
+        set_property(TARGET ${zephyr_lib} PROPERTY LTO ON)
+        break()
+      endif()
+    endforeach()
+  endforeach()
+endif()
 
 foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
   get_property(lib_type     TARGET ${zephyr_lib} PROPERTY TYPE)

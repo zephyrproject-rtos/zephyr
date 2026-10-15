@@ -500,17 +500,36 @@ config NO_OPTIMIZATIONS
 	  default stack sizes in order to avoid stack overflows.
 endchoice
 
-config LTO
-	bool "Link Time Optimization"
+config LTO_SUPPORTED
+	def_bool y
 	depends on !(GEN_ISR_TABLES || GEN_IRQ_VECTOR_TABLE) || ISR_TABLES_LOCAL_DECLARATION
 	depends on !NATIVE_LIBRARY
 	depends on !CODE_DATA_RELOCATION
 	help
+	  Link Time Optimization can be used with this configuration.
+
+config LTO
+	bool "Link Time Optimization"
+	depends on LTO_SUPPORTED
+	help
 	  This option enables Link Time Optimization.
+
+config LTO_SELECTED_LIBRARIES
+	bool "Link Time Optimization of selected libraries"
+	depends on LTO_SUPPORTED
+	depends on !LTO
+	# The kernel object and memory partition scripts cannot see objects
+	# defined in LTO compiled code.
+	depends on !USERSPACE
+	help
+	  Compile only the libraries whose LTO target property is set to a
+	  true value with Link Time Optimization, and the rest of the image
+	  without it. Subsystems select this option and register their source
+	  directories with zephyr_lto_directories().
 
 config LTO_SINGLE_THREADED
 	bool "Single-threaded LTO"
-	depends on LTO
+	depends on LTO || LTO_SELECTED_LIBRARIES
 	help
 	  This option instructs the linker to use a single thread to process
 	  LTO. See the following issue for more info:

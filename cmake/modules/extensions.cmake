@@ -947,6 +947,19 @@ function(zephyr_library_property)
   endforeach()
 endfunction()
 
+# Compile the Zephyr libraries located in the given directories, or below
+# them, with Link Time Optimization when CONFIG_LTO_SELECTED_LIBRARIES is
+# enabled. Sources added to the zephyr library itself are not affected.
+#
+# Usage:
+#   zephyr_lto_directories(<dir> ...)
+function(zephyr_lto_directories)
+  foreach(dir ${ARGN})
+    cmake_path(ABSOLUTE_PATH dir BASE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} NORMALIZE)
+    set_property(GLOBAL APPEND PROPERTY ZEPHYR_LTO_DIRECTORIES ${dir})
+  endforeach()
+endfunction()
+
 #[=======================================================================[.rst:
 ``zephyr_interface_library_*``
 ------------------------------

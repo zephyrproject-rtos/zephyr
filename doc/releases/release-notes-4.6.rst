@@ -63,6 +63,11 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
+* Build system
+
+  * :kconfig:option:`CONFIG_LTO_SELECTED_LIBRARIES` and the ``zephyr_lto_directories()`` CMake
+    function apply Link Time Optimization only to the libraries in the given directories.
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
