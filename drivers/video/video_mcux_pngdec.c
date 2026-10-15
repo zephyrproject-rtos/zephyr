@@ -250,14 +250,15 @@ unlock:
 
 static int mcux_pngdec_get_caps(const struct device *dev, struct video_caps *caps)
 {
-	caps->min_vbuf_count = 1;
-
 	if (caps->type == VIDEO_BUF_TYPE_OUTPUT) {
 		caps->format_caps = mcux_pngdec_out_fmts;
-	} else {
+	} else if (caps->type == VIDEO_BUF_TYPE_INPUT) {
 		caps->format_caps = mcux_pngdec_in_fmts;
+	} else {
+		return -ENOTSUP;
 	}
 
+	caps->min_vbuf_count = 1;
 	caps->buf_align = 8U;
 
 	return 0;
