@@ -17,6 +17,8 @@
 
 #include <zephyr/audio/codec.h>
 #include <zephyr/drivers/emul.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/gpio/gpio_emul.h>
 #include <zephyr/drivers/i2s.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/spi_emul.h>
@@ -63,6 +65,14 @@ struct cs47l63_emul_data {
 	uint32_t hook_addr;
 	void (*hook)(void *arg);
 	void *hook_arg;
+	struct gpio_dt_spec irq;
+	bool irq_attached;
+	bool irq_forced;
+	bool inject_armed;
+	uint32_t inject_read_addr;
+	uint32_t inject_reads_left;
+	uint32_t inject_addr;
+	uint32_t inject_val;
 };
 
 static bool is_write_one_to_clear(uint32_t addr)
@@ -104,6 +114,44 @@ static uint32_t load_reg(struct cs47l63_emul_data *data, uint32_t addr)
 	return (reg != NULL) ? reg->val : 0U;
 }
 
+static bool irq_asserted(struct cs47l63_emul_data *data)
+{
+	const uint32_t pending = (load_reg(data, CS47L63_IRQ1_EINT_1) &
+				  ~load_reg(data, CS47L63_IRQ1_MASK_1)) |
+				 (load_reg(data, CS47L63_IRQ1_EINT_2) &
+				  ~load_reg(data, CS47L63_IRQ1_MASK_2)) |
+				 (load_reg(data, CS47L63_IRQ1_EINT_6) &
+				  ~load_reg(data, CS47L63_IRQ1_MASK_6));
+
+	return data->irq_forced || (pending != 0U);
+}
+
+/** Drives the pin the driver's irq-gpios names to the OR of the unmasked flags. */
+static void update_irq(struct cs47l63_emul_data *data)
+{
+	const bool active_low = (data->irq.dt_flags & GPIO_ACTIVE_LOW) != 0U;
+	gpio_flags_t flags;
+	int level = 0;
+	int ret;
+
+	if (!data->irq_attached) {
+		return;
+	}
+
+	ret = gpio_emul_flags_get_dt(&data->irq, &flags);
+	ZASSERT(ret == 0, "CS47L63 emulator could not read the IRQ pin: %d", ret);
+	if ((flags & GPIO_INPUT) == 0U) {
+		return;
+	}
+
+	if (irq_asserted(data) != active_low) {
+		level = 1;
+	}
+
+	ret = gpio_emul_input_set(data->irq.port, data->irq.pin, level);
+	ZASSERT(ret == 0, "CS47L63 emulator could not drive the IRQ pin: %d", ret);
+}
+
 static void record(struct cs47l63_emul_data *data, uint32_t addr, uint32_t val, bool write)
 {
 	ZASSERT(data->num_xfers < CS47L63_EMUL_MAX_XFERS, "CS47L63 emulator log full");
@@ -123,11 +171,49 @@ void cs47l63_emul_reset(const struct emul *target)
 	store_reg(data, CS47L63_REVID, CS47L63_EMUL_REVID);
 	store_reg(data, CS47L63_OTPID, CS47L63_EMUL_OTPID);
 	store_reg(data, CS47L63_IRQ1_EINT_2, CS47L63_BOOT_DONE_EINT1);
+	store_reg(data, CS47L63_IRQ1_MASK_1, CS47L63_EMUL_MASK_1_DEFAULT);
+	store_reg(data, CS47L63_IRQ1_MASK_2, CS47L63_EMUL_MASK_2_DEFAULT);
+	store_reg(data, CS47L63_IRQ1_MASK_6, CS47L63_EMUL_MASK_6_DEFAULT);
 }
 
 void cs47l63_emul_set_reg(const struct emul *target, uint32_t addr, uint32_t val)
 {
 	store_reg(target->data, addr, val);
+	update_irq(target->data);
+}
+
+void cs47l63_emul_irq_attach(const struct emul *target, const struct gpio_dt_spec *irq)
+{
+	struct cs47l63_emul_data *data = target->data;
+
+	data->irq = *irq;
+	data->irq_attached = true;
+	update_irq(data);
+}
+
+void cs47l63_emul_irq_force(const struct emul *target, bool forced)
+{
+	struct cs47l63_emul_data *data = target->data;
+
+	data->irq_forced = forced;
+	update_irq(data);
+}
+
+bool cs47l63_emul_get_irq_asserted(const struct emul *target)
+{
+	return irq_asserted(target->data);
+}
+
+void cs47l63_emul_inject_on_read(const struct emul *target, uint32_t read_addr, uint32_t nth,
+				 uint32_t inject_addr, uint32_t val)
+{
+	struct cs47l63_emul_data *data = target->data;
+
+	data->inject_read_addr = read_addr;
+	data->inject_reads_left = nth;
+	data->inject_addr = inject_addr;
+	data->inject_val = val;
+	data->inject_armed = true;
 }
 
 uint32_t cs47l63_emul_get_reg(const struct emul *target, uint32_t addr)
@@ -320,6 +406,19 @@ static int handle_read(struct cs47l63_emul_data *data, const struct spi_buf_set 
 	sys_put_be32(val, rx_bufs->buffers[1].buf);
 	record(data, addr, val, false);
 
+	if (data->inject_armed && (data->inject_read_addr == addr)) {
+		if (data->inject_reads_left == 0U) {
+			const uint32_t injected =
+				load_reg(data, data->inject_addr) | data->inject_val;
+
+			data->inject_armed = false;
+			store_reg(data, data->inject_addr, injected);
+			update_irq(data);
+		} else {
+			data->inject_reads_left--;
+		}
+	}
+
 	return 0;
 }
 
@@ -358,6 +457,7 @@ static int handle_write(struct cs47l63_emul_data *data, const struct spi_buf_set
 	} else {
 		store_reg(data, addr, val);
 	}
+	update_irq(data);
 
 	if ((data->hook != NULL) && (data->hook_addr == addr)) {
 		void (*hook)(void *arg) = data->hook;
