@@ -641,8 +641,8 @@ static int encode_frame(struct stm32_venc_data *data)
 	data->frame_nb++;
 
 out:
-	k_fifo_put(&data->vdev.in_buf_completed, input);
-	k_fifo_put(&data->vdev.out_buf_completed, output);
+	video_buffer_done(dev, input, 0);
+	video_buffer_done(dev, output, 0);
 
 	return ret;
 }

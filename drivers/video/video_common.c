@@ -247,6 +247,35 @@ int video_init_int_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, 
 	return 0;
 }
 
+void video_buffer_done(const struct device *dev, struct video_buffer *buf, int err)
+{
+	struct video_device *vdev = dev->data;
+
+	if (err == 0) {
+		if (vbuf->bytesused == 0) {
+			vbuf->bytesused = (buf->type == VIDEO_BUF_TYPE_INPUT)
+				? vdev.in_fmt.size : vdev.out_fmt.size;
+		}
+		vbuf->timestamp = k_uptime_get_32();
+	}
+
+	switch (buf->type) {
+	case VIDEO_BUF_TYPE_INPUT:
+		k_fifo_put(vdev->in_fifo_completed);
+		break;
+	case VIDEO_BUF_TYPE_OUTPUT:
+		k_fifo_put(vdev->out_fifo_completed);
+		break;
+	default:
+		LOG_ERR("Unexpected buffer type %u", buf->type);
+		__ASSERT_NO_MSG(false);
+	}
+
+	if (IS_ENABLED(CONFIG_POLL) && data->vdev.signal) {
+		k_poll_signal_raise(vdev->signal, err == 0 ? VIDEO_BUF_DONE : VIDEO_BUF_ERROR);
+	}
+}
+
 static int video_read_reg_retry(const struct i2c_dt_spec *i2c, uint8_t *buf_w, size_t size_w,
 				uint8_t *buf_r, size_t size_r)
 {

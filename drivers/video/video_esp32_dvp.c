@@ -29,8 +29,8 @@ LOG_MODULE_REGISTER(video_esp32_lcd_cam, CONFIG_VIDEO_LOG_LEVEL);
 
 #ifdef CONFIG_POLL
 #define VIDEO_ESP32_RAISE_OUT_SIG_IF_ENABLED(result)                                               \
-	if (data->vdev.signal) {                                                                    \
-		k_poll_signal_raise(data->vdev.signal, result);                                     \
+	if (data->vdev.signal) {                                                                   \
+		k_poll_signal_raise(data->vdev.signal, result);                                    \
 	}
 #else
 #define VIDEO_ESP32_RAISE_OUT_SIG_IF_ENABLED(result)
@@ -113,8 +113,7 @@ void video_esp32_dma_rx_done(const struct device *dev, void *user_data, uint32_t
 	}
 
 	data->active_vbuf->timestamp = k_uptime_get_32();
-	k_fifo_put(&data->vdev.out_buf_completed, data->active_vbuf);
-	VIDEO_ESP32_RAISE_OUT_SIG_IF_ENABLED(VIDEO_BUF_DONE)
+	video_buffer_done(dev, data->active_vbuf, 0);
 	data->active_vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
 
 	if (data->active_vbuf == NULL) {
@@ -149,6 +148,11 @@ static int video_esp32_set_stream(const struct device *dev, bool enable, enum vi
 		}
 
 		cam_hal_stop_streaming(&data->hal);
+
+		if (data->active_vbuf) {
+			video_buffer_done(dev, data->active_vbuf, -ECANCELED);
+			data->active_vbuf = NULL;
+		}
 
 		return 0;
 	}
@@ -247,33 +251,6 @@ static int video_esp32_enqueue(const struct device *dev, struct video_buffer *vb
 	return 0;
 }
 
-static int video_esp32_flush(const struct device *dev, bool cancel)
-{
-	struct video_esp32_data *data = dev->data;
-	struct video_buffer *vbuf = NULL;
-
-	if (cancel) {
-		if (data->active_vbuf) {
-			k_fifo_put(&data->vdev.out_buf_completed, data->active_vbuf);
-			data->active_vbuf = NULL;
-		}
-		while ((vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT)) != NULL) {
-			k_fifo_put(&data->vdev.out_buf_completed, vbuf);
-#ifdef CONFIG_POLL
-			if (data->vdev.signal) {
-				k_poll_signal_raise(data->vdev.signal, VIDEO_BUF_ABORTED);
-			}
-#endif
-		}
-	} else {
-		while (!k_fifo_is_empty(&data->vdev.out_buf_submitted)) {
-			k_sleep(K_MSEC(1));
-		}
-	}
-
-	return 0;
-}
-
 static void video_esp32_cam_ctrl_init(const struct device *dev)
 {
 	const struct video_esp32_config *cfg = dev->config;
@@ -345,7 +322,6 @@ static DEVICE_API(video, esp32_driver_api) = {
 	.set_stream = video_esp32_set_stream,
 	.get_caps = video_esp32_get_caps,
 	.enqueue = video_esp32_enqueue,
-	.flush = video_esp32_flush,
 	.set_selection = video_esp32_set_selection,
 	.get_selection = video_esp32_get_selection,
 };

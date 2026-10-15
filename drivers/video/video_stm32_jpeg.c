@@ -318,8 +318,8 @@ void HAL_JPEG_EncodeCpltCallback(JPEG_HandleTypeDef *hjpeg)
 	k_mutex_lock(&data->vdev.lock, K_FOREVER);
 
 	/* Give back the buffers to the application */
-	k_fifo_put(&data->vdev.in_buf_completed, data->current_in);
-	k_fifo_put(&data->vdev.out_buf__completed, data->current_out);
+	video_buffer_done(dev, data->current_in, 0);
+	video_buffer_done(dev, data->current_out, 0);
 
 	/* Try to restart the next processing if needed */
 	ret = stm32_jpeg_start_codec(data->vdev.dev);

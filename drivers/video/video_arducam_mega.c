@@ -867,21 +867,6 @@ static int arducam_mega_stream_stop(const struct device *dev)
 	return 0;
 }
 
-static int arducam_mega_flush(const struct device *dev, bool cancel)
-{
-	struct arducam_mega_data *drv_data = dev->data;
-	struct video_buffer *vbuf;
-
-	/* Clear fifo cache */
-	while (!k_fifo_is_empty(&drv_data->vdev.out_buf_completed)) {
-		vbuf = k_fifo_get(&drv_data->vdev.out_buf_completed, K_USEC(10));
-		if (vbuf != NULL) {
-			k_fifo_put(&drv_data->vdev.out_buf_submitted, vbuf);
-		}
-	}
-	return 0;
-}
-
 static int arducam_mega_soft_reset(const struct device *dev)
 {
 	const struct arducam_mega_config *cfg = dev->config;
@@ -982,7 +967,7 @@ static void arducam_mega_buffer_work(struct k_work *work)
 	struct k_work *dwork = work;
 	struct arducam_mega_data *drv_data =
 		CONTAINER_OF(dwork, struct arducam_mega_data, buf_work);
-	static uint32_t f_timestamp, f_length;
+	static uint32_t f_length;
 	struct video_buffer *vbuf;
 	int ret = 0;
 
@@ -994,7 +979,6 @@ static void arducam_mega_buffer_work(struct k_work *work)
 
 	if (drv_data->fifo_length == 0) {
 		arducam_mega_capture(drv_data->vdev.dev, &f_length);
-		f_timestamp = k_uptime_get_32();
 	}
 
 	ret = arducam_mega_fifo_read(drv_data->vdev.dev, vbuf);
@@ -1007,8 +991,8 @@ static void arducam_mega_buffer_work(struct k_work *work)
 		k_work_submit_to_queue(&ac_work_q, &drv_data->buf_work);
 	}
 
-	vbuf->timestamp = f_timestamp;
-	k_fifo_put(&drv_data->vdev.out_buf_completed, vbuf);
+	vbuf->bytesused = f_length;
+	video_buffer_done(dev, vbuf, 0);
 }
 
 static int arducam_mega_enqueue(const struct device *dev, struct video_buffer *vbuf)
@@ -1084,7 +1068,6 @@ static DEVICE_API(video, arducam_mega_driver_api) = {
 	.set_ctrl = arducam_mega_set_ctrl,
 	.get_caps = arducam_mega_get_caps,
 	.set_stream = arducam_mega_stream_start,
-	.flush = arducam_mega_flush,
 	.enqueue = arducam_mega_enqueue,
 };
 

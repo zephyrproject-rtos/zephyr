@@ -189,12 +189,6 @@ typedef int (*video_api_enum_frmival_t)(const struct device *dev, struct video_f
 typedef int (*video_api_enqueue_t)(const struct device *dev, struct video_buffer *buf);
 
 /**
- * @brief Callback API to flush endpoint buffers.
- * See @a video_driver_flush() for argument description.
- */
-typedef int (*video_api_flush_t)(const struct device *dev, bool cancel);
-
-/**
  * @brief Callback API to control stream status.
  * See @a video_driver_set_stream() for argument description.
  */
@@ -248,10 +242,6 @@ __subsystem struct video_driver_api {
 	 * @driver_ops_optional @copybrief video_driver_enqueue
 	 */
 	video_api_enqueue_t enqueue;
-	/**
-	 * @driver_ops_optional @copybrief video_driver_flush
-	 */
-	video_api_flush_t flush;
 	/**
 	 * @driver_ops_optional @copybrief video_driver_set_ctrl
 	 */
@@ -408,31 +398,6 @@ static inline int video_driver_enqueue(const struct device *dev, struct video_bu
 	}
 
 	return api->enqueue(dev, vbuf);
-}
-
-/**
- * @brief Flush endpoint buffers from a driver.
- *
- * A call to flush finishes when all endpoint buffers have been moved from
- * incoming queue to outgoing queue. Either because canceled or fully processed
- * through the video function.
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param cancel If true, cancel buffer processing instead of waiting for
- *        completion.
- *
- * @retval 0 on success.
- * @retval -ENOSYS API is not implemented.
- */
-static inline int video_driver_flush(const struct device *dev, bool cancel)
-{
-	const struct video_driver_api *api = DEVICE_API_GET(video, dev);
-
-	if (api->flush == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->flush(dev, cancel);
 }
 
 /**

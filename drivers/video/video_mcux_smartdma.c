@@ -85,8 +85,7 @@ static void nxp_video_sdma_callback(const struct device *dev, void *user_data,
 			k_sem_give(&data->stream_empty);
 		}
 		data->active_buf->line_offset = (data->frame_idx / 2) * SDMA_LINE_COUNT;
-		data->active_buf->timestamp = k_uptime_get_32();
-		k_fifo_put(&data->vdev.out_buf_completed, data->active_buf);
+		video_buffer_done(dev, data->active_buf, 0);
 
 	}
 	/* Toggle buffer reload flag*/
@@ -159,26 +158,6 @@ static int nxp_video_sdma_enqueue(const struct device *dev, struct video_buffer 
 	if (data->stream_starved) {
 		/* Kick SmartDMA off */
 		nxp_video_sdma_set_stream(dev, true, vbuf->type);
-	}
-	return 0;
-}
-
-static int nxp_video_sdma_flush(const struct device *dev, bool cancel)
-{
-	const struct nxp_video_sdma_config *config = dev->config;
-	struct nxp_video_sdma_data *data = dev->data;
-	struct video_buf *vbuf;
-
-	if (!cancel) {
-		/* Wait for DMA to signal it is empty */
-		k_sem_take(&data->stream_empty, K_FOREVER);
-	} else {
-		/* Stop DMA engine */
-		dma_stop(config->dma_dev, 0);
-		/* Forward all buffers in fifo_in to fifo_out */
-		while ((vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT))) {
-			k_fifo_put(&data->vdev.out_buf_completed, vbuf);
-		}
 	}
 	return 0;
 }
@@ -267,7 +246,6 @@ static DEVICE_API(video, nxp_video_sdma_api) = {
 	.get_caps = nxp_video_sdma_get_caps,
 	.set_stream = nxp_video_sdma_set_stream,
 	.enqueue = nxp_video_sdma_enqueue,
-	.flush = nxp_video_sdma_flush
 };
 
 #define SOURCE_DEV(inst) DEVICE_DT_GET(DT_NODE_REMOTE_DEVICE(DT_INST_ENDPOINT_BY_ID(inst, 0, 0)))

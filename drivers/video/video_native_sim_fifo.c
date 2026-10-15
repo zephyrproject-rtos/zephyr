@@ -162,15 +162,9 @@ static void video_nsi_fifo_deliver(struct video_nsi_fifo_data *data, struct vide
 	__ASSERT_NO_MSG(popped == vbuf);
 	ARG_UNUSED(popped);
 
-	vbuf->bytesused = data->vdev.out_fmt.size;
-	vbuf->timestamp = k_uptime_get_32();
 	vbuf->line_offset = 0;
 
-	k_fifo_put(&data->vdev.out_buf_completed, vbuf);
-
-	if (IS_ENABLED(CONFIG_POLL) && (data->vdev.signal != NULL)) {
-		k_poll_signal_raise(data->vdev.signal, VIDEO_BUF_DONE);
-	}
+	video_buffer_done(dev, vbuf, 0);
 }
 
 static void video_nsi_fifo_thread(void *p1, void *p2, void *p3)
@@ -292,6 +286,10 @@ static int video_nsi_fifo_set_stream(const struct device *dev, bool enable,
 	if (!enable) {
 		video_nsi_fifo_close(data);
 		LOG_INF("Stream stopped");
+
+		/* Resetting frame_offset would misalign every later frame, so skip the rest instead */
+		data->discard = (data->frame_offset > 0);
+
 		goto unlock;
 	}
 
@@ -322,37 +320,11 @@ static int video_nsi_fifo_enqueue(const struct device *dev, struct video_buffer 
 	return ret;
 }
 
-static int video_nsi_fifo_flush(const struct device *dev, bool cancel)
-{
-	struct video_nsi_fifo_data *data = dev->data;
-	struct video_buffer *vbuf;
-
-	if (!cancel) {
-		while (!k_fifo_is_empty(&data->out_fifo_submit)) {
-			k_sleep(K_MSEC(1));
-		}
-		return 0;
-	}
-
-	/* Resetting frame_offset would misalign every later frame, so skip the rest instead */
-	data->discard = (data->frame_offset > 0);
-
-	while ((vbuf = k_fifo_get(&data->out_fifo_submit, K_NO_WAIT)) != NULL) {
-		k_fifo_put(&data->vdev.out_buf_completed, vbuf);
-		if (IS_ENABLED(CONFIG_POLL) && (data->vdev.signal != NULL)) {
-			k_poll_signal_raise(data->vdev.signal, VIDEO_BUF_ABORTED);
-		}
-	}
-
-	return 0;
-}
-
 static DEVICE_API(video, video_nsi_fifo_driver_api) = {
 	.set_format = video_nsi_fifo_set_fmt,
 	.get_caps = video_nsi_fifo_get_caps,
 	.set_stream = video_nsi_fifo_set_stream,
 	.enqueue = video_nsi_fifo_enqueue,
-	.flush = video_nsi_fifo_flush,
 };
 
 static int video_nsi_fifo_init(const struct device *dev)

@@ -70,18 +70,6 @@ int video_init_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint
 			 uint8_t def, const char *const menu[]);
 
 /**
- * @brief Initialize a button control
- *
- * @param ctrl Video control to initialize
- * @param dev Device to which associate this control
- * @param id Control ID to initialize
- *
- * @retval 0 on success
- * @return Negative error code on failure
- */
-int video_init_button_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id);
-
-/**
  * @brief Initialize an integer menu control
  *
  * @param ctrl Video control to initialize
@@ -119,6 +107,35 @@ int video_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz);
  * @return Negative error code on failure
  */
 int video_auto_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz, bool set_volatile);
+
+/**
+ * @}
+ */
+
+/**
+ * @brief Video buffer management
+ * @{
+ */
+
+/**
+ * @brief Submit a buffer back to the application
+ *
+ * On zero error code, the buffer will be moved to the compmletion queue, making it available to
+ * the driver user.
+ *
+ * This can be called from ISR, and needs to be called for every buffer received.
+ *
+ * This will set the @p vbuf->bytesused field to @c vbuf->size if not already a non-zero value.
+ * This will set the @p vbuf->timestamp field to the current time.
+ *
+ * This will make use of struct @ref video_device queue structures which the driver user (such as
+ * the video subsystem) can use to move buffers in.
+ *
+ * @param dev Video device
+ * @param buf Video buffer
+ * @param err Negative error code or zero to signal success
+ */
+void video_complete_buffer(const struct device *dev, struct video_buffer *buf, int err);
 
 /**
  * @}

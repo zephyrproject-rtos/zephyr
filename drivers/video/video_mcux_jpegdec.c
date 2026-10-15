@@ -464,8 +464,8 @@ static void mcux_jpegdec_isr(const struct device *dev)
 
 	current_out->size = data->vdev.out_fmt.size;
 
-	k_fifo_put(&data->vdev.in_buf_completed, current_in);
-	k_fifo_put(&data->vdev.out_buf_completed, current_out);
+	video_buffer_done(dev, current_in, 0);
+	video_buffer_done(dev, current_out, 0);
 
 	k_sem_give(&data->decode_done);
 

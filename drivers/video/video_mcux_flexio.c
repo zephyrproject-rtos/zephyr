@@ -65,8 +65,6 @@ struct nxp_flexio_camera_data {
 	/* Buffer queues. Head of fifo_in is the buffer currently being filled
 	 * by DMA; it is removed and pushed to fifo_out once the last line completes.
 	 */
-	/* Semaphore given when stream runs out of buffers */
-	struct k_sem stream_empty;
 	/* Current line index within the active buffer (0..fmt.height-1) */
 	uint32_t current_line;
 	/* Pre-built DMA config — dest_address and block_size are updated per line */
@@ -203,11 +201,9 @@ static void nxp_flexio_camera_dma_callback(const struct device *dma_dev,
 	if (vbuf == NULL) {
 		return;
 	}
-	vbuf->timestamp   = k_uptime_get_32();
-	vbuf->bytesused   = data->vdev.out_fmt.size;
 	vbuf->line_offset = 0U;
 
-	k_fifo_put(&data->vdev.out_buf_completed, vbuf);
+	video_buffer_done(dev, vbuf, 0);
 }
 
 /* VSYNC GPIO interrupt — signals the application that a new frame began. */
@@ -228,7 +224,6 @@ static void nxp_flexio_camera_vsync_isr(const struct device *port,
 
 	vbuf = k_fifo_peek_head(&data->vdev.out_buf_submitted);
 	if (vbuf == NULL) {
-		k_sem_give(&data->stream_empty);
 		return;
 	}
 
@@ -344,7 +339,6 @@ static int nxp_flexio_camera_set_stream(const struct device *dev, bool enable,
 			return ret;
 		}
 
-		k_sem_reset(&data->stream_empty);
 		data->streaming = true;
 	} else {
 		data->streaming = false;
@@ -368,33 +362,7 @@ static int nxp_flexio_camera_enqueue(const struct device *dev,
 {
 	struct nxp_flexio_camera_data *data = dev->data;
 
-	/* Clear any stale "stream drained" signal so a subsequent flush(cancel=false)
-	 * properly waits for this new buffer to be filled instead of returning
-	 * immediately on the leftover give() from a previous starvation.
-	 */
-	k_sem_reset(&data->stream_empty);
-
 	k_fifo_put(&data->vdev.out_buf_submitted, vbuf);
-
-	return 0;
-}
-
-static int nxp_flexio_camera_flush(const struct device *dev, bool cancel)
-{
-	const struct nxp_flexio_camera_config *config = dev->config;
-	struct nxp_flexio_camera_data *data = dev->data;
-	struct video_buffer *vbuf;
-
-	if (!cancel) {
-		/* Wait until the DMA engine drains the last queued buffer */
-		k_sem_take(&data->stream_empty, K_FOREVER);
-	} else {
-		dma_stop(config->dma_dev, config->dma_channel);
-		/* Forward all pending input buffers to the output queue */
-		while ((vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT)) != NULL) {
-			k_fifo_put(&data->vdev.out_buf_completed, vbuf);
-		}
-	}
 
 	return 0;
 }
@@ -469,8 +437,6 @@ static int nxp_flexio_camera_init(const struct device *dev)
 		return ret;
 	}
 
-	k_sem_init(&data->stream_empty, 0, 1);
-
 	return 0;
 }
 
@@ -479,7 +445,6 @@ static DEVICE_API(video, nxp_flexio_camera_api) = {
 	.get_caps   = nxp_flexio_camera_get_caps,
 	.set_stream = nxp_flexio_camera_set_stream,
 	.enqueue    = nxp_flexio_camera_enqueue,
-	.flush      = nxp_flexio_camera_flush,
 };
 
 #define SOURCE_DEV(inst) \

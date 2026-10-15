@@ -49,8 +49,7 @@ static void __frame_done_cb(CSI_Type *base, csi_handle_t *handle, status_t statu
 
 	status = CSI_TransferGetFullBuffer(config->base, &(data->csi_handle), &buffer_addr);
 	if (status != kStatus_Success) {
-		result = VIDEO_BUF_ERROR;
-		goto done;
+		goto error;
 	}
 
 	/* Get matching vbuf by addr */
@@ -75,24 +74,21 @@ static void __frame_done_cb(CSI_Type *base, csi_handle_t *handle, status_t statu
 	}
 
 	if (vbuf == NULL) {
-		result = VIDEO_BUF_ERROR;
-		goto done;
+		goto error;
 	}
-
-	vbuf->timestamp = k_uptime_get_32();
 
 #ifdef CONFIG_HAS_MCUX_CACHE
 	DCACHE_InvalidateByRange(buffer_addr, vbuf->bytesused);
 #endif
 
-	k_fifo_put(&data->vdev.out_buf_completed, vbuf);
+	video_buffer_done(dev, vbuf, 0);
+	return;
 
-done:
+error:
 	/* Trigger Event */
 	if (IS_ENABLED(CONFIG_POLL) && data->vdev.signal) {
-		k_poll_signal_raise(data->vdev.signal, result);
+		k_poll_signal_raise(data->vdev.signal, VIDEO_BUF_ERROR);
 	}
-
 	return;
 }
 
@@ -190,37 +186,12 @@ static int video_mcux_csi_set_stream(const struct device *dev, bool enable,
 		if (ret != kStatus_Success) {
 			return -EIO;
 		}
-	}
 
-	return 0;
-}
-
-static int video_mcux_csi_flush(const struct device *dev, bool cancel)
-{
-	const struct video_mcux_csi_config *config = dev->config;
-	struct video_mcux_csi_data *data = dev->data;
-	struct video_buf *vbuf;
-	uint32_t buffer_addr;
-	status_t ret;
-
-	if (!cancel) {
-		/* wait for all buffer to be processed */
-		do {
-			k_sleep(K_MSEC(1));
-		} while (!k_fifo_is_empty(&data->vdev.out_buf_submitted));
-	} else {
 		/* Flush driver output queue */
 		do {
 			ret = CSI_TransferGetFullBuffer(config->base, &(data->csi_handle),
 							&buffer_addr);
 		} while (ret == kStatus_Success);
-
-		while ((vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT))) {
-			k_fifo_put(&data->vdev.out_buf_completed, vbuf);
-			if (IS_ENABLED(CONFIG_POLL) && data->vdev.signal) {
-				k_poll_signal_raise(data->vdev.signal, VIDEO_BUF_ABORTED);
-			}
-		}
 	}
 
 	return 0;
@@ -345,7 +316,6 @@ static int video_mcux_csi_enum_frmival(const struct device *dev, struct video_fr
 static DEVICE_API(video, video_mcux_csi_driver_api) = {
 	.set_format = video_mcux_csi_set_fmt,
 	.set_stream = video_mcux_csi_set_stream,
-	.flush = video_mcux_csi_flush,
 	.enqueue = video_mcux_csi_enqueue,
 	.get_caps = video_mcux_csi_get_caps,
 	.enum_frmival = video_mcux_csi_enum_frmival,

@@ -72,8 +72,7 @@ static void video_renesas_ra_ceu_callback(capture_callback_args_t *p_args)
 	if (p_args->event & CEU_EVENT_FRAME_END) {
 		curr_vbuf = atomic_ptr_get(&data->vbuf);
 		if (curr_vbuf && atomic_ptr_cas(&data->vbuf, curr_vbuf, NULL)) {
-			curr_vbuf->timestamp = k_uptime_get_32();
-			k_fifo_put(&data->vdev.out_buf_completed, curr_vbuf);
+			video_buffer_done(dev, curr_vbuf, 0);
 		}
 
 		next_vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
@@ -82,14 +81,14 @@ static void video_renesas_ra_ceu_callback(capture_callback_args_t *p_args)
 		}
 
 		if (!atomic_ptr_cas(&data->vbuf, NULL, next_vbuf)) {
-			k_fifo_put(&data->vdev.out_buf_submitted, next_vbuf);
+			video_buffer_done(dev, next_vbuf, 0);
 			return;
 		}
 
 		err = R_CEU_CaptureStart(data->fsp_ctrl, next_vbuf->buffer);
 		if (err != FSP_SUCCESS) {
 			atomic_ptr_clear(&data->vbuf);
-			k_fifo_put(&data->vdev.out_buf_completed, next_vbuf);
+			video_buffer_done(dev, next_vbuf, -EIO);
 			return;
 		}
 	}
@@ -198,7 +197,7 @@ static int video_renesas_ra_ceu_set_stream(const struct device *dev, bool enable
 	if (err != FSP_SUCCESS) {
 		LOG_DBG("Failed to start CEU capture");
 		atomic_ptr_clear(&data->vbuf);
-		k_fifo_put(&data->vdev.out_buf_completed, next_vbuf);
+		video_buffer_done(dev, next_vbuf, -EIO);
 		return -EIO;
 	}
 
@@ -247,42 +246,25 @@ static int video_renesas_ra_ceu_enqueue(const struct device *dev, struct video_b
 	if (err != FSP_SUCCESS) {
 		LOG_DBG("Failed to start CEU capture");
 		atomic_ptr_clear(&data->vbuf);
-		k_fifo_put(&data->vdev.out_buf_completed, next_vbuf);
+		video_buffer_done(dev, next_vbuf, -EIO);
 		return -EIO;
 	}
 
 	return 0;
 }
 
-static int video_renesas_ra_ceu_flush(const struct device *dev, bool cancel)
+static int video_renesas_ra_ceu_cancel(const struct device *dev, enum video_buf_type type)
 {
 	struct video_renesas_ra_ceu_data *data = dev->data;
 	struct video_buffer *vbuf;
 
-	if (cancel) {
-		if (atomic_cas(&data->streaming, 1, 0)) {
-			video_renesas_ra_ceu_set_stream(dev, false, VIDEO_BUF_TYPE_OUTPUT);
-		}
+	if (atomic_cas(&data->streaming, 1, 0)) {
+		video_renesas_ra_ceu_set_stream(dev, false, type);
+	}
 
-		vbuf = atomic_ptr_get(&data->vbuf);
-		if (vbuf && atomic_ptr_cas(&data->vbuf, vbuf, NULL)) {
-			k_fifo_put(&data->vdev.out_buf_completed, vbuf);
-		}
-
-		while ((vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT)) != NULL) {
-			k_fifo_put(&data->vdev.out_buf_completed, vbuf);
-		}
-
-#ifdef CONFIG_POLL
-		if (data->vdev.signal) {
-			k_poll_signal_raise(data->vdev.signal, VIDEO_BUF_ABORTED);
-		}
-#endif
-
-	} else {
-		while (!k_fifo_is_empty(&data->vdev.out_buf_submitted)) {
-			k_sleep(K_MSEC(1));
-		}
+	vbuf = atomic_ptr_get(&data->vbuf);
+	if (vbuf && atomic_ptr_cas(&data->vbuf, vbuf, NULL)) {
+		video_buffer_done(dev, vbuf, -ECANCELED);
 	}
 
 	return 0;
@@ -331,7 +313,6 @@ static DEVICE_API(video, video_renesas_ra_ceu_driver_api) = {
 	.get_caps = video_renesas_ra_ceu_get_caps,
 	.set_stream = video_renesas_ra_ceu_set_stream,
 	.enqueue = video_renesas_ra_ceu_enqueue,
-	.flush = video_renesas_ra_ceu_flush,
 };
 
 #define EVENT_CEU_INT(inst) BSP_PRV_IELS_ENUM(CONCAT(EVENT_CEU, _CEUI))
