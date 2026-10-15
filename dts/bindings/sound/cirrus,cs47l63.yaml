@@ -14,7 +14,8 @@ properties:
   irq-gpios:
     type: phandle-array
     description:
-      Interrupt request (IRQ) output.
+      IRQ output pin of the part. It defaults to open-drain, active low (IRQ_OP_CFG,
+      IRQ_POL), so declare GPIO_ACTIVE_LOW and a pull-up (external or GPIO_PULL_UP).
 
   reset-gpios:
     type: phandle-array
