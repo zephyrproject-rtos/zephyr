@@ -179,8 +179,9 @@ static void rf2xx_trx_rx(const struct device *dev)
 		pkt_len = rx_buf[RX2XX_FRAME_PHR_INDEX];
 	}
 
-	if (!ctx->promiscuous && pkt_len < RX2XX_FRAME_MIN_PHR_SIZE) {
-		LOG_ERR("Invalid RX frame length");
+	if (pkt_len > RF2XX_MAX_PSDU_LENGTH ||
+	    (!ctx->promiscuous && pkt_len < RX2XX_FRAME_MIN_PHR_SIZE)) {
+		LOG_ERR("Invalid RX frame length %u", pkt_len);
 		return;
 	}
 
