@@ -180,8 +180,7 @@
 &gpiob {
 	status = "okay";
 
-	/* VCOM Isolation. Set PB1 to HIGH to enable VCOM_{RX,TX}. */
-	board-controller-enable {
+	vcom_enable: vcom-enable {
 		gpio-hog;
 		gpios = <1 GPIO_ACTIVE_HIGH>;
 		output-high;
