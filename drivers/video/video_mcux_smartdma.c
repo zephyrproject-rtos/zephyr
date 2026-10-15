@@ -199,6 +199,10 @@ static int nxp_video_sdma_set_format(const struct device *dev, struct video_form
 
 static int nxp_video_sdma_get_caps(const struct device *dev, struct video_caps *caps)
 {
+	if (caps->type != VIDEO_BUF_TYPE_OUTPUT) {
+		return -ENOTSUP;
+	}
+
 	/* SmartDMA needs at least two buffers allocated before starting */
 	caps->min_vbuf_count = 2;
 	caps->format_caps = fmts;

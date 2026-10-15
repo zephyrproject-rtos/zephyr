@@ -1008,9 +1008,14 @@ static int arducam_mega_enqueue(const struct device *dev, struct video_buffer *v
 
 static int arducam_mega_get_caps(const struct device *dev, struct video_caps *caps)
 {
+	if (caps->type != VIDEO_BUF_TYPE_OUTPUT) {
+		return -ENOTSUP;
+	}
+
 	/* Arducam in capture mode needs only one buffer allocated before starting */
 	caps->min_vbuf_count = 1;
 	caps->format_caps = fmts;
+
 	return 0;
 }
 

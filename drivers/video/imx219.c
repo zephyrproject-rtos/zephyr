@@ -246,13 +246,7 @@ static int imx219_set_fmt(const struct device *dev, struct video_format *fmt, si
 
 static int imx219_get_caps(const struct device *dev, struct video_caps *caps)
 {
-	if (caps->type != VIDEO_BUF_TYPE_OUTPUT) {
-		LOG_ERR("Only output buffers supported");
-		return -EINVAL;
-	}
-
 	caps->format_caps = imx219_fmts;
-
 	return 0;
 }
 

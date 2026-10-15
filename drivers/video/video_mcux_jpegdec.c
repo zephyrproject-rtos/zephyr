@@ -333,8 +333,6 @@ static int mcux_jpegdec_get_caps(const struct device *dev, struct video_caps *ca
 {
 	struct mcux_jpegdec_data *data = dev->data;
 
-	caps->min_vbuf_count = 1;
-
 	if (caps->type == VIDEO_BUF_TYPE_OUTPUT) {
 		if (data->first_frame_rcv) {
 			/* Assign the format capability based on parsed JPEG header. */
@@ -346,9 +344,13 @@ static int mcux_jpegdec_get_caps(const struct device *dev, struct video_caps *ca
 			mcux_jpegdec_out_fmts[0] = mcux_jpegdec_out_all_fmts[0];
 		}
 		caps->format_caps = mcux_jpegdec_out_fmts;
-	} else {
+	} else if (caps->type == VIDEO_BUF_TYPE_OUTPUT) {
 		caps->format_caps = mcux_jpegdec_in_fmts;
+	} else {
+		return -ENOTSUP;
 	}
+
+	caps->min_vbuf_count = 1;
 	caps->buf_align = 16U;
 
 	return 0;

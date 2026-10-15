@@ -184,8 +184,7 @@ static void nxp_flexio_camera_dma_callback(const struct device *dma_dev,
 		return;
 	}
 
-	if (data->vdev.is_streaming &
-	    (BIT(VIDEO_BUF_TYPE_INPUT) | BIT(VIDEO_BUF_TYPE_OUTPUT)) == 0) {
+	if ((data->vdev.is_streaming & BIT(VIDEO_BUF_TYPE_OUTPUT)) == 0) {
 		return;
 	}
 
@@ -299,6 +298,10 @@ static int nxp_flexio_camera_get_caps(const struct device *dev,
 				      struct video_caps *caps)
 {
 	const struct nxp_flexio_camera_config *config = dev->config;
+
+	if (caps->type != VIDEO_BUF_TYPE_OUTPUT) {
+		return -ENOTSUP;
+	}
 
 	/* Need at least two buffers: one active in DMA, one queued for next frame */
 	caps->min_vbuf_count = 2U;

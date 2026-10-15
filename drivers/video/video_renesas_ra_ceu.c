@@ -156,6 +156,10 @@ static int video_renesas_ra_ceu_get_caps(const struct device *dev, struct video_
 {
 	const struct video_renesas_ra_ceu_config *config = dev->config;
 
+	if (caps->type != VIDEO_BUF_TYPE_OUTPUT) {
+		return -ENOTSUP;
+	}
+
 	caps->min_vbuf_count = 1;
 
 	return video_get_caps(data->vdev.source_dev, caps);

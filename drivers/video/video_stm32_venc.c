@@ -734,8 +734,10 @@ static int stm32_venc_get_caps(const struct device *dev, struct video_caps *caps
 {
 	if (caps->type == VIDEO_BUF_TYPE_INPUT) {
 		caps->format_caps = in_fmts;
-	} else {
+	} else if (caps->type == VIDEO_BUF_TYPE_OUTPUT) {
 		caps->format_caps = out_fmts;
+	} else {
+		return -ENOTSUP;
 	}
 
 	/* VENC produces full frames */

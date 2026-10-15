@@ -224,6 +224,10 @@ static int video_mcux_csi_get_caps(const struct device *dev, struct video_caps *
 	const struct video_mcux_csi_config *config = dev->config;
 	int err = -ENODEV;
 
+	if (caps->type != VIDEO_BUF_TYPE_OUTPUT) {
+		return -ENOTSUP;
+	}
+
 	/* Just forward to source dev for now */
 	if (data->vdev.source_dev) {
 		err = video_get_caps(data->vdev.source_dev, caps);

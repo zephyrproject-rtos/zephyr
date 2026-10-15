@@ -636,6 +636,10 @@ static int video_sw_generator_enqueue(const struct device *dev, struct video_buf
 
 static int video_sw_generator_get_caps(const struct device *dev, struct video_caps *caps)
 {
+	if (caps->type != VIDEO_BUF_TYPE_OUTPUT) {
+		return -ENOTSUP;
+	}
+
 	caps->format_caps = fmts;
 	caps->min_vbuf_count = 1;
 

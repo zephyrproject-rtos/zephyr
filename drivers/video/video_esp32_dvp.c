@@ -232,6 +232,10 @@ static int video_esp32_get_caps(const struct device *dev, struct video_caps *cap
 {
 	const struct video_esp32_config *config = dev->config;
 
+	if (caps->type != VIDEO_BUF_TYPE_OUTPUT) {
+		return -ENOTSUP;
+	}
+
 	/* Two buffers are needed to perform transfers */
 	caps->min_vbuf_count = 2;
 

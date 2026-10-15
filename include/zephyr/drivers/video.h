@@ -478,6 +478,7 @@ static inline int video_driver_set_ctrl(const struct device *dev, uint32_t cid)
  *
  * @retval 0 on success
  * @retval -ENOSYS API is not implemented.
+ * @retval -ENOTSUP The device does not support this buffer type.
  */
 static inline int video_driver_get_caps(const struct device *dev, struct video_caps *caps)
 {

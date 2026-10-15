@@ -406,8 +406,10 @@ static int stm32_jpeg_get_caps(const struct device *dev, struct video_caps *caps
 {
 	if (caps->type == VIDEO_BUF_TYPE_OUTPUT) {
 		caps->format_caps = stm32_jpeg_out_fmts;
-	} else {
+	} else if (caps->type == VIDEO_BUF_TYPE_INPUT) {
 		caps->format_caps = stm32_jpeg_in_fmts;
+	} else {
+		return -ENOTSUP;
 	}
 
 	caps->min_vbuf_count = 1;

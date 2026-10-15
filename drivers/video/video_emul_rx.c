@@ -29,6 +29,10 @@ static int emul_rx_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	struct emul_rx_data *data = dev->data;
 
+	if (caps->type != VIDEO_BUF_TYPE_OUTPUT) {
+		return -ENOTSUP;
+	}
+
 	return video_get_caps(data->source_dev, caps);
 }
 
