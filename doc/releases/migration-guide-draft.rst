@@ -23,6 +23,11 @@ the :ref:`release notes<zephyr_4.6>`.
 Common
 ******
 
+* The :file:`scripts/footprint/size_report`, :file:`scripts/footprint/compare_footprint`, and
+  :file:`scripts/kconfig/diffconfig` scripts have been renamed to
+  :file:`scripts/footprint/size_report.py`, :file:`scripts/footprint/compare_footprint.py`, and
+  :file:`scripts/kconfig/diffconfig.py`, respectively. Users must update their invocations.
+
 Build System
 ************
 
