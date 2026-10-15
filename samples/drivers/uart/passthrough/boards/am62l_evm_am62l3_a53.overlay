@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2026 Texas Instruments
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		uart,passthrough = &main_uart0;
+	};
+};
+
+&main_uart0 {
+	status = "okay";
+};
