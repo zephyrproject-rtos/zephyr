@@ -24,7 +24,7 @@ BUILD_ASSERT((CONFIG_EC_HOST_CMD_HANDLER_BUFFER_ALIGN % UDC_BUF_ALIGN) == 0, "Bu
 #define EC_HOST_REQUEST_VERSION 3
 
 #define EP_BULK_SIZE     64U
-#define EP_INT_SIZE_SIZE 4U
+#define EP_INT_SIZE      4U
 
 #define INT_POOL_SIZE 4
 
@@ -39,8 +39,7 @@ enum ec_host_cmd_usb_irq_type {
 };
 
 NET_BUF_POOL_DEFINE(ec_host_cmd_ep_pool, 2, 0, sizeof(struct udc_buf_info), NULL);
-UDC_BUF_POOL_DEFINE(int_ep_pool, INT_POOL_SIZE, EP_INT_SIZE_SIZE, sizeof(struct udc_buf_info),
-		    NULL);
+UDC_BUF_POOL_DEFINE(int_ep_pool, INT_POOL_SIZE, EP_INT_SIZE, sizeof(struct udc_buf_info), NULL);
 
 enum ec_host_cmd_usb_state {
 	/*
@@ -198,7 +197,7 @@ static int ec_host_cmd_signal_event(struct usbd_class_data *const c_data)
 		return 0;
 	}
 	net_buf_add_u8(buf, USB_EC_HOST_CMD_IRQ_TYPE_EVENT);
-	buf->len = EP_INT_SIZE_SIZE;
+	buf->len = EP_INT_SIZE;
 	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
 		LOG_ERR("Failed to enqueue EP IN INT: %d", ret);
@@ -547,7 +546,7 @@ static int ec_host_cmd_backend_send(const struct ec_host_cmd_backend *backend)
 
 	/* Signal to host that response is ready. */
 	net_buf_add_u8(buf, USB_EC_HOST_CMD_IRQ_TYPE_RESP_READY);
-	buf->len = EP_INT_SIZE_SIZE;
+	buf->len = EP_INT_SIZE;
 
 	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
@@ -600,7 +599,7 @@ static struct ec_host_cmd_desc ec_host_cmd_desc = {
 			.bDescriptorType = USB_DESC_ENDPOINT,
 			.bEndpointAddress = 0x82,
 			.bmAttributes = USB_EP_TYPE_INTERRUPT,
-			.wMaxPacketSize = sys_cpu_to_le16(EP_INT_SIZE_SIZE),
+			.wMaxPacketSize = sys_cpu_to_le16(EP_INT_SIZE),
 			.bInterval = USB_FS_INT_EP_INTERVAL(1000),
 		},
 	.nil_desc = {
