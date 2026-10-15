@@ -9,6 +9,7 @@ menuconfig ETH_NXP_ENET_QOS
 	depends on NET_BUF_FIXED_DATA_SIZE
 	select ETH_PHY_DRIVER
 	select PINCTRL
+	imply NET_POWER_MANAGEMENT
 	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
 	help
 	  Enable NXP ENET QOS Ethernet Driver.
