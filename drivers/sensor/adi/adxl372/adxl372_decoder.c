@@ -6,9 +6,15 @@
 
 #include "adxl372.h"
 
+#define DT_DRV_COMPAT adi_adxl372
+
 #ifdef CONFIG_ADXL372_STREAM
 
-/* (1.0 / 10 (sensor sensitivity)) * (2^31 / 2^11 (sensor shift) ) * SENSOR_G */
+/*
+ * (1.0 / 10 (sensor sensitivity)) * (2^31 / 2^11 (sensor shift) ) * SENSOR_G
+ * A part with twice the sensitivity per LSB uses a shift one larger, so the
+ * factor holds for every part in adxl372_chip_info[].
+ */
 #define SENSOR_QSCALE_FACTOR UINT32_C(1027604)
 
 #define ADXL372_COMPLEMENT         0xf000
@@ -233,18 +239,18 @@ static int adxl372_decode_sample(const struct adxl372_xyz_accel_data *data,
 
 	switch (chan_spec.chan_type) {
 	case SENSOR_CHAN_ACCEL_X:
-		adxl372_accel_convert(out, data->x);
+		adxl372_accel_convert(out, data->x, data->chip_id);
 		break;
 	case SENSOR_CHAN_ACCEL_Y:
-		adxl372_accel_convert(out, data->y);
+		adxl372_accel_convert(out, data->y, data->chip_id);
 		break;
 	case SENSOR_CHAN_ACCEL_Z:
-		adxl372_accel_convert(out, data->z);
+		adxl372_accel_convert(out, data->z, data->chip_id);
 		break;
 	case SENSOR_CHAN_ACCEL_XYZ:
-		adxl372_accel_convert(out++, data->x);
-		adxl372_accel_convert(out++, data->y);
-		adxl372_accel_convert(out, data->z);
+		adxl372_accel_convert(out++, data->x, data->chip_id);
+		adxl372_accel_convert(out++, data->y, data->chip_id);
+		adxl372_accel_convert(out, data->z, data->chip_id);
 		break;
 	default:
 		return -ENOTSUP;
@@ -294,6 +300,7 @@ SENSOR_DECODER_API_DT_DEFINE() = {
 	.has_trigger = adxl372_decoder_has_trigger,
 };
 
+/* Both compatibles share the decoder ops: the encoded data names the part */
 int adxl372_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder)
 {
 	ARG_UNUSED(dev);
@@ -301,3 +308,12 @@ int adxl372_get_decoder(const struct device *dev, const struct sensor_decoder_ap
 
 	return 0;
 }
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT adi_adxl373
+SENSOR_DECODER_API_DT_DEFINE() = {
+	.get_frame_count = adxl372_decoder_get_frame_count,
+	.decode = adxl372_decoder_decode,
+	.has_trigger = adxl372_decoder_has_trigger,
+};
+#undef DT_DRV_COMPAT

@@ -19,15 +19,23 @@
 #include <zephyr/rtio/rtio.h>
 #endif /* CONFIG_ADXL372_STREAM */
 
-#define DT_DRV_COMPAT adi_adxl372
+#if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(adi_adxl372, spi) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(adi_adxl373, spi)
+#define ADXL372_BUS_SPI
+#endif
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(adi_adxl372, i2c) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(adi_adxl373, i2c)
+#define ADXL372_BUS_I2C
+#endif
+
+#ifdef ADXL372_BUS_SPI
 #include <zephyr/drivers/spi.h>
-#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
+#endif /* ADXL372_BUS_SPI */
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+#ifdef ADXL372_BUS_I2C
 #include <zephyr/drivers/i2c.h>
-#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
+#endif /* ADXL372_BUS_I2C */
 
 /*
  * ADXL372 registers definition
@@ -239,13 +247,20 @@ enum adxl372_odr {
 /* Parts handled by this driver, used as an index into adxl372_chip_info[] */
 enum adxl372_chip_id {
 	ADXL372_CHIP_ID,
+	ADXL373_CHIP_ID,
 	ADXL372_CHIP_COUNT,
 };
+
+/* Acceleration and activity threshold scale factor, in mg/LSB */
+#define ADXL372_SCALE_MG	100
+#define ADXL373_SCALE_MG	200
 
 /* What differs between the parts handled by this driver */
 struct adxl372_chip_info {
 	/* Output data rate in Hz, indexed by enum adxl372_odr */
 	uint16_t odr_hz[ADXL372_ODR_6400HZ + 1];
+	/* Acceleration and activity threshold scale factor, in mg/LSB */
+	uint16_t scale_mg;
 	/* Decoded q31 sample shift, so that the full scale fits */
 	int8_t shift;
 };
@@ -308,6 +323,7 @@ struct adxl372_xyz_accel_data {
 	uint8_t is_fifo: 1;
 	uint8_t res: 7;
 #endif /* CONFIG_ADXL372_STREAM */
+	uint8_t chip_id;
 	int16_t x;
 	int16_t y;
 	int16_t z;
@@ -360,10 +376,10 @@ struct adxl372_data {
 };
 
 struct adxl372_dev_config {
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+#ifdef ADXL372_BUS_I2C
 	struct i2c_dt_spec i2c;
 #endif
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#ifdef ADXL372_BUS_SPI
 	struct spi_dt_spec spi;
 #endif
 	int (*bus_init)(const struct device *dev);
@@ -438,7 +454,7 @@ int adxl372_get_accel_data(const struct device *dev, bool maxpeak,
 			   struct adxl372_xyz_accel_data *accel_data);
 void adxl372_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
 int adxl372_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder);
-void adxl372_accel_convert(struct sensor_value *val, int16_t sample);
+void adxl372_accel_convert(struct sensor_value *val, int16_t sample, uint8_t chip_id);
 #endif /* CONFIG_SENSOR_ASYNC_API */
 
 #ifdef CONFIG_ADXL372_STREAM
