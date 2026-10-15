@@ -14,3 +14,4 @@ zephyr_library_compile_definitions(__ZEPHYR_SUPERVISOR__)
 
 zephyr_library_sources(busy_wait.c)
 zephyr_library_sources_ifdef(CONFIG_MULTITHREADING condvar.c)
+zephyr_library_sources_ifdef(CONFIG_SCHED_DEADLINE deadline.c)
