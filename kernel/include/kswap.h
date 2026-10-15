@@ -99,8 +99,8 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 	if (is_spinlock && (lock != NULL) && !z_is_sched_spinlock(lock)) {
 		k_spin_release(lock);
 	}
-	if (IS_ENABLED(CONFIG_SMP) || IS_ENABLED(CONFIG_SPIN_VALIDATE)) {
-		/* Taking a nested uniprocessor lock in void context is a noop */
+	if (IS_ENABLED(CONFIG_SMP) || IS_ENABLED(CONFIG_SPIN_VALIDATE) || IS_ENABLED(CONFIG_LOCKDEP)) {
+		/* UP still needs acquisition bookkeeping when lock validation is enabled. */
 		if (!is_spinlock || !z_is_sched_spinlock(lock)) {
 			(void)z_sched_spinlock_lock();
 		}

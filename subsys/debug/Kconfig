@@ -199,6 +199,61 @@ config SPIN_LOCK_TIME_LIMIT
 	  the lock has been held is less than the configured value. Requires
 	  the timer driver sys_clock_get_cycles_32() be lock free.
 
+config LOCKDEP
+	bool "Runtime lock dependency validator"
+	depends on MULTITHREADING
+	select NONZERO_SPINLOCK_SIZE
+	help
+	  Build a runtime validator for mutex and spinlock ordering. The validator
+	  learns dependencies between lock instances and reports recursive
+	  spin locking and dependency cycles before they can become deadlocks.
+
+	  This is a debugging feature with significant RAM, code size, and runtime
+	  overhead. It should not normally be enabled in production builds.
+
+if LOCKDEP
+
+config LOCKDEP_MAX_LOCKS
+	int "Maximum tracked lock instances"
+	default 128
+	range 8 1024
+	help
+	  Maximum number of mutex and spinlock instances known to the validator.
+
+config LOCKDEP_MAX_DEPENDENCIES
+	int "Maximum lock dependency edges"
+	default 128
+	range 8 2048
+	help
+	  Maximum number of unique observed lock-order edges between lock
+	  instances. Each distinct pair requires its own entry.
+
+config LOCKDEP_MAX_HELD_LOCKS
+	int "Maximum locks held by one context"
+	default 8
+	range 2 32
+	help
+	  Maximum number of simultaneously held mutexes per thread and spinlocks
+	  per CPU.
+
+config LOCKDEP_REPORT_BUFFER_SIZE
+	int "Per-CPU lockdep report buffer size"
+	default 512
+	range 128 2048
+	help
+	  Size in bytes of the per-CPU diagnostic buffer. Reports are formatted
+	  while the dependency graph is stable and emitted after releasing the
+	  validator's internal raw lock.
+
+config LOCKDEP_PANIC_ON_ERROR
+	bool "Panic when lockdep finds an error"
+	help
+	  Panic immediately after reporting a circular dependency or validator
+	  bookkeeping error. Potential circular dependencies are report-only when
+	  this option is disabled. Recursive spin locking always panics because
+	  continuing would hang the CPU.
+
+endif # LOCKDEP
 
 config OVERRIDE_FRAME_POINTER_DEFAULT
 	bool "Override compiler defaults for -fomit-frame-pointer"

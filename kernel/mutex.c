@@ -82,6 +82,9 @@ int z_impl_k_mutex_init(struct k_mutex *mutex)
 {
 	mutex->owner = NULL;
 	mutex->lock_count = 0U;
+#ifdef CONFIG_LOCKDEP
+	z_lockdep_init_lock(mutex);
+#endif
 
 	z_waitq_init(&mutex->wait_q);
 
@@ -172,6 +175,10 @@ static int32_t held_mutexes_highest_waiter_prio(struct k_thread *thread,
 int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 {
 	k_spinlock_key_t key;
+#ifdef CONFIG_LOCKDEP
+	bool lockdep_trylock = K_TIMEOUT_EQ(timeout, K_NO_WAIT);
+	uintptr_t lockdep_ip = Z_LOCKDEP_CALLER_ADDR;
+#endif
 #if Z_MUTEX_PI_ENABLED
 	bool resched = false;
 #endif
@@ -179,6 +186,10 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 	__ASSERT(!arch_is_in_isr(), "mutexes cannot be used inside ISRs");
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mutex, lock, mutex, timeout);
+
+#ifdef CONFIG_LOCKDEP
+	z_lockdep_before_acquire(mutex, Z_LOCKDEP_MUTEX, lockdep_trylock, lockdep_ip);
+#endif
 
 	key = k_spin_lock(&mutex_lock);
 
@@ -209,6 +220,9 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 
 		k_spin_unlock(&mutex_lock, key);
 
+#ifdef CONFIG_LOCKDEP
+		z_lockdep_after_acquire(mutex, Z_LOCKDEP_MUTEX, lockdep_trylock, lockdep_ip);
+#endif
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mutex, lock, mutex, timeout, 0);
 
 		return 0;
@@ -308,6 +322,12 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 #endif
 
 	int got_mutex = z_pend_curr(&mutex_lock, key, &mutex->wait_q, timeout);
+
+#ifdef CONFIG_LOCKDEP
+	if (got_mutex == 0) {
+		z_lockdep_after_acquire(mutex, Z_LOCKDEP_MUTEX, false, lockdep_ip);
+	}
+#endif
 
 	LOG_DBG("on mutex %p got_mutex value: %d", mutex, got_mutex);
 
@@ -477,6 +497,9 @@ int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 
 
 k_mutex_unlock_return:
+#ifdef CONFIG_LOCKDEP
+	z_lockdep_release(mutex, Z_LOCKDEP_MUTEX);
+#endif
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mutex, unlock, mutex, 0);
 
 	return 0;
