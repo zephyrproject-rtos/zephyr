@@ -564,7 +564,6 @@ static void h4_stop(const struct device *dev)
 {
 	const struct h4_config *cfg = dev->config;
 	struct h4_data *h4 = dev->data;
-	struct net_buf *buf;
 
 	uart_irq_rx_disable(cfg->uart);
 	uart_irq_tx_disable(cfg->uart);
@@ -573,16 +572,12 @@ static void h4_stop(const struct device *dev)
 
 	reset_rx(h4);
 	h4->rx.discard = 0U;
-	while ((buf = k_fifo_get(&h4->rx.fifo, K_NO_WAIT)) != NULL) {
-		net_buf_unref(buf);
-	}
+	net_buf_fifo_purge(&h4->rx.fifo);
 	k_sem_reset(&h4->rx.ready);
 
 	net_buf_drop(&h4->tx.buf);
 	h4->tx.type = BT_HCI_H4_NONE;
-	while ((buf = k_fifo_get(&h4->tx.fifo, K_NO_WAIT)) != NULL) {
-		net_buf_unref(buf);
-	}
+	net_buf_fifo_purge(&h4->tx.fifo);
 }
 
 /** Setup the HCI transport, which usually means to reset the Bluetooth IC
