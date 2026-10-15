@@ -63,6 +63,11 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
+* FIDO2
+
+  * Added PSA Protected Storage backend, enable with
+    :kconfig:option:`CONFIG_FIDO2_STORAGE_PSA_PROTECTED_STORAGE`
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
