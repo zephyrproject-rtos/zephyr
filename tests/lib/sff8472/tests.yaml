@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags: sff8472
+
+tests:
+  libraries.sff8472:
+    integration_platforms:
+      - native_sim
