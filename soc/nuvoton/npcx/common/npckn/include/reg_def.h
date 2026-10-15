@@ -240,7 +240,7 @@ struct glue_reg {
 	/* 0x02d: Voltage Detection Control and Status */
 	volatile uint8_t VD_CTS;
 	volatile uint8_t reserved7[2];
-	/* 0x030: Exteral Power-Up Reset Control */
+	/* 0x030: External Power-Up Reset Control */
 	volatile uint8_t EPURST_CTL;
 	volatile uint8_t reserved8[7];
 	/* 0x038: PSL Control and Status 3 */
@@ -1574,7 +1574,7 @@ struct fiu_reg {
 	volatile uint8_t reserved9[3];
 	/* 0x041: Master Inactive Counter Threshold */
 	volatile uint8_t MI_CNT_THRSH;
-	/* 0x042: FIU Matser Status */
+	/* 0x042: FIU Master Status */
 	volatile uint8_t FIU_MSR_STS;
 	/* 0x043: FIU Master Interrupt Enable and Configuration */
 	volatile uint8_t FIU_MSR_IE_CFG;

@@ -574,11 +574,12 @@ static void clock_control_bl60x_setup_pll(const struct device *dev)
 
 	if (data->pll.source == BL60X_CLKID_CLK_CRYSTAL) {
 		clock_control_bl60x_init_pll(data->pll.source, config->crystal_id,
-			BFLB_MUL_CLK(clock_control_bl60x_crystal_SDMIN_table[config->crystal_id],
-				     data->pll.top_frequency, BL60X_PLL_TOP_FREQ));
+			BFLB_MUL_CLK_XIP(
+				clock_control_bl60x_crystal_SDMIN_table[config->crystal_id],
+				data->pll.top_frequency, BL60X_PLL_TOP_FREQ));
 	} else {
 		clock_control_bl60x_init_pll(data->pll.source, CRYSTAL_ID_FREQ_32000000,
-			BFLB_MUL_CLK(
+			BFLB_MUL_CLK_XIP(
 				clock_control_bl60x_crystal_SDMIN_table[CRYSTAL_ID_FREQ_32000000],
 				data->pll.top_frequency, BL60X_PLL_TOP_FREQ));
 	}

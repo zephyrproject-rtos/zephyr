@@ -32,8 +32,8 @@ static void mpipe_app_sink_deliver(struct mpipe_app_sink *app_sink, struct net_b
 	}
 }
 
-static int mpipe_app_sink_chain_fn(struct mpipe_pad *pad, struct net_buf *in_buf,
-				   struct net_buf **out_buf)
+static int mpipe_app_sink_process_fn(struct mpipe_pad *pad, struct net_buf *in_buf,
+				     struct net_buf **out_buf)
 {
 	struct mpipe_app_sink *app_sink = (struct mpipe_app_sink *)pad->object.container;
 	struct net_buf *cur = in_buf;
@@ -54,9 +54,8 @@ static int mpipe_app_sink_chain_fn(struct mpipe_pad *pad, struct net_buf *in_buf
 
 int mpipe_app_sink_pull(struct mpipe_app_sink *app_sink, struct net_buf **buf, k_timeout_t timeout)
 {
-	if (app_sink == NULL || buf == NULL) {
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(app_sink != NULL);
+	__ASSERT_NO_MSG(buf != NULL);
 
 	if (k_msgq_get(&app_sink->msgq, buf, timeout) != 0) {
 		return -EAGAIN;
@@ -164,7 +163,7 @@ int mpipe_app_sink_init(struct mpipe_app_sink *app_sink, uint8_t id)
 	}
 
 	app_sink->sink.sink_pad.enum_caps_fn = mpipe_app_sink_enum_caps;
-	app_sink->sink.sink_pad.chain_fn = mpipe_app_sink_chain_fn;
+	app_sink->sink.sink_pad.process_fn = mpipe_app_sink_process_fn;
 
 	app_sink->cb.fn = NULL;
 	app_sink->cb.user_data = NULL;

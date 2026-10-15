@@ -857,7 +857,8 @@ class ZephyrBinaryRunner(abc.ABC):
                              no chip could be identified. It is responsible
                              for opening and closing the port.
         :param target:      normalized chip name to match against.
-        :param logger:      logger for progress and diagnostics.
+        :param logger:      Python logger for progress and diagnostics, see
+                            ZephyrBinaryRunner class.
         :param priority_vids: optional list of USB VIDs whose ports are
                              probed first, to avoid resetting unrelated
                              serial adapters.
@@ -867,7 +868,7 @@ class ZephyrBinaryRunner(abc.ABC):
         try:
             import serial.tools.list_ports
         except ImportError as err:
-            logger.debug(f'port matching unavailable: {err}')
+            logger.error(f'serial port matching unavailable: {err}')
             return None
 
         priority_vids = priority_vids or []

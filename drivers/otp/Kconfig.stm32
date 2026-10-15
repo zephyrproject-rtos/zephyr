@@ -32,8 +32,10 @@ config OTP_STM32_NVM_PROGRAMMING_SUPPORT
 	default y
 	depends on OTP_PROGRAM
 	depends on SOC_FLASH_STM32
+	depends on !SOC_SERIES_STM32WBAX
 	help
 	  Enable programming of the OTP area of STM32 NVM.
+	  This option is not yet available on STM32WBA series.
 
 	  Note that the OTP programming logic is implemented in series-specific
 	  flash drivers; this driver merely implements otp_program() as a shim

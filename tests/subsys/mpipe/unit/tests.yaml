@@ -1,10 +1,7 @@
 tests:
   mpipe.unit:
+    tags:
+      - subsys
+      - mpipe
     platform_allow:
       - native_sim/native/64
-    tags:
-      - mpipe
-      - unit
-    integration_platforms:
-      - native_sim/native/64
-    timeout: 60

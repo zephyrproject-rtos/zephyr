@@ -1078,6 +1078,48 @@ static DEVICE_API(sensor, bmm350_api_funcs) = {
 #endif
 };
 
+#if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(bosch_bmm350, i3c)
+/* The BMM350 defaults to I2C mode after a reset, and swaps to I3C mode when
+ * addressed via a CCC.
+ *
+ * During standard start-up of an I3C controller using this sensor, the
+ * controller will issue a SETDASA to the sensor, which tells it to go into I3C
+ * mode.  Several INIT_PRIORITYs later, the sensor itself will initialize
+ * through bmm350_init_chip, performing the soft reset and swapping it to I2C
+ * mode.  Redo the address assignment here so the sensor stays I3C.
+ */
+static int bmm350_i3c_restore_dynamic_addr(const struct device *dev)
+{
+	const struct bmm350_config *config = dev->config;
+	const struct i3c_iodev_data *iodev_data = config->bus.rtio.iodev->data;
+	struct i3c_device_desc *desc;
+	uint8_t dynamic_addr;
+	int ret;
+
+	desc = i3c_device_find(iodev_data->bus, &config->bus.rtio.i3c.id);
+	if (desc == NULL) {
+		return -ENODEV;
+	}
+
+	/* Detach original DA first so we don't have a stray slot */
+	dynamic_addr = desc->dynamic_addr;
+	ret = i3c_detach_i3c_device(desc);
+	if ((ret != 0) && (ret != -EALREADY)) {
+		return ret;
+	}
+
+	/* Both ENTDAA and SETDASA reject a descriptor that still carries a DA */
+	desc->dynamic_addr = 0U;
+
+	/* Use ENTDAA if we have no static address, else SETDASA */
+	if (desc->static_addr == 0U) {
+		return i3c_do_daa(iodev_data->bus);
+	}
+
+	return i3c_bus_setdasa(desc, dynamic_addr);
+}
+#endif
+
 static int bmm350_init_chip(const struct device *dev)
 {
 	const struct bmm350_config *config = dev->config;
@@ -1106,6 +1148,19 @@ static int bmm350_init_chip(const struct device *dev)
 		goto err_poweroff;
 	}
 	k_usleep(BMM350_SOFT_RESET_DELAY);
+
+#if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(bosch_bmm350, i3c)
+	if (config->bus.rtio.type == BMM350_BUS_TYPE_I3C) {
+		ret = bmm350_i3c_restore_dynamic_addr(dev);
+		if (ret != 0) {
+			LOG_ERR("failed to restore I3C mode after soft reset (%d)", ret);
+			/* We're still in a SUSPEND state from the soft reset above -
+			 * no need to set SUSPEND again in err_poweroff
+			 */
+			return ret;
+		}
+	}
+#endif
 	/* Read chip ID (can only be read in sleep mode)*/
 	if (bmm350_reg_read(dev, BMM350_REG_CHIP_ID, &chip_id[0], sizeof(chip_id)) < 0) {
 		LOG_ERR("failed reading chip id");

@@ -184,6 +184,20 @@ static void blob_cli_end(struct bt_mesh_blob_cli *b, const struct bt_mesh_blob_x
 	k_sem_give(&blob_cli_end_sem);
 }
 
+static struct k_sem blob_cli_progress_sem;
+static atomic_t xfer_progress_cnt;
+
+static void blob_cli_xfer_progress(struct bt_mesh_blob_cli *b, struct bt_mesh_blob_target *target,
+				   const struct bt_mesh_blob_xfer_info *info)
+{
+	(void)atomic_inc(&xfer_progress_cnt);
+}
+
+static void blob_cli_xfer_progress_complete(struct bt_mesh_blob_cli *b)
+{
+	k_sem_give(&blob_cli_progress_sem);
+}
+
 static struct k_sem blob_srv_suspend_sem;
 
 static void blob_srv_suspended(struct bt_mesh_blob_srv *b)
@@ -225,6 +239,8 @@ static const struct bt_mesh_blob_cli_cb blob_cli_handlers = {
 	.lost_target = blob_cli_lost_target,
 	.suspended = blob_cli_suspended,
 	.end = blob_cli_end,
+	.xfer_progress = blob_cli_xfer_progress,
+	.xfer_progress_complete = blob_cli_xfer_progress_complete,
 };
 static struct bt_mesh_blob_srv blob_srv = { .cb = &blob_srv_cb };
 static struct bt_mesh_blob_cli blob_cli = { .cb = &blob_cli_handlers };
@@ -648,6 +664,53 @@ static void test_cli_broadcast_basic(void)
 	k_sleep(K_SECONDS(80));
 
 	ASSERT_EQUAL(k_sem_count_get(&blob_broad_send_sem), 1);
+
+	PASS();
+}
+
+static void test_cli_broadcast_skip(void)
+{
+	struct bt_mesh_blob_target *skipped;
+	struct bt_mesh_blob_target *active;
+	int err;
+
+	bt_mesh_test_cfg_set(NULL, 60);
+	bt_mesh_device_setup(&prov, &cli_comp);
+	blob_cli_prov_and_conf(BLOB_CLI_ADDR);
+
+	skipped = target_srv_add(BLOB_CLI_ADDR + 1, false);
+	/* No device has this address; its response is injected below. */
+	active = target_srv_add(BLOB_CLI_ADDR + 2, false);
+
+	k_sem_init(&blob_cli_progress_sem, 0, 1);
+
+	blob_cli_inputs_prepare(BLOB_GROUP_ADDR);
+	skipped->skip = 1U;
+
+	err = bt_mesh_blob_cli_xfer_progress_get(&blob_cli, &blob_cli_xfer.inputs);
+	if (err) {
+		FAIL("BLOB Transfer Get failed (err: %d)", err);
+	}
+
+	ASSERT_EQUAL(1, blob_cli.tx.pending);
+
+	/* Long enough for the skipped server to answer, shorter than the retry interval. */
+	k_sleep(K_SECONDS(2));
+
+	ASSERT_EQUAL(1, blob_cli.tx.pending);
+	ASSERT_FALSE(skipped->acked);
+	ASSERT_EQUAL(0, atomic_get(&xfer_progress_cnt));
+
+	blob_cli_broadcast_rsp(&blob_cli, active);
+	if (k_sem_take(&blob_cli_progress_sem, K_NO_WAIT)) {
+		FAIL("Broadcast did not complete on the active target's response");
+	}
+
+	ASSERT_TRUE(active->acked);
+	ASSERT_FALSE(skipped->acked);
+	ASSERT_FALSE(skipped->timedout);
+	ASSERT_EQUAL(BT_MESH_BLOB_SUCCESS, skipped->status);
+	ASSERT_EQUAL(0, atomic_get(&xfer_progress_cnt));
 
 	PASS();
 }
@@ -1680,6 +1743,7 @@ static const struct bst_test_instance test_blob[] = {
 	TEST_CASE(cli, caps_no_rsp, "Caps procedure: No response from targets"),
 	TEST_CASE(cli, caps_cancelled, "Caps procedure: Cancel caps"),
 	TEST_CASE(cli, broadcast_basic, "Test basic broadcast API and CBs "),
+	TEST_CASE(cli, broadcast_skip, "Test broadcast with a skipped target"),
 	TEST_CASE(cli, broadcast_trans, "Test all broadcast transmission types"),
 	TEST_CASE(cli, broadcast_unicast_seq, "Test broadcast with unicast addr (Sequential)"),
 	TEST_CASE(cli, broadcast_unicast, "Test broadcast with unicast addr"),

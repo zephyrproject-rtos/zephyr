@@ -723,7 +723,7 @@ static void spi_pico_pio_txrx_4_wire(const struct device *dev)
 			} break;
 
 			default:
-				LOG_ERR("Support fot %d bits not enabled", (data->dfs * 8));
+				LOG_ERR("Support for %d bits not enabled", (data->dfs * 8));
 				break;
 			}
 			data->tx_count++;
@@ -761,7 +761,7 @@ static void spi_pico_pio_txrx_4_wire(const struct device *dev)
 			} break;
 
 			default:
-				LOG_ERR("Support fot %d bits not enabled", (data->dfs * 8));
+				LOG_ERR("Support for %d bits not enabled", (data->dfs * 8));
 				break;
 			}
 			data->rx_count++;
@@ -819,7 +819,7 @@ static void spi_pico_pio_txrx_3_wire(const struct device *dev)
 				} break;
 
 				default:
-					LOG_ERR("Support fot %d bits not enabled", (data->dfs * 8));
+					LOG_ERR("Support for %d bits not enabled", (data->dfs * 8));
 					break;
 				}
 				data->tx_count++;
@@ -866,7 +866,7 @@ static void spi_pico_pio_txrx_3_wire(const struct device *dev)
 				} break;
 
 				default:
-					LOG_ERR("Support fot %d bits not enabled", (data->dfs * 8));
+					LOG_ERR("Support for %d bits not enabled", (data->dfs * 8));
 					break;
 				}
 				data->rx_count++;

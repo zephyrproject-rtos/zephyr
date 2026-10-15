@@ -258,7 +258,7 @@ int net_ipv4_parse_hdr_options(struct net_pkt *pkt,
 }
 #endif
 
-#if defined(CONFIG_NET_IPV4_ROUTE)
+#if defined(CONFIG_NET_IPV4_FORWARDING)
 static enum net_verdict ipv4_route_packet(struct net_pkt *pkt,
 					  struct net_ipv4_hdr *hdr)
 {
@@ -266,31 +266,28 @@ static enum net_verdict ipv4_route_packet(struct net_pkt *pkt,
 	struct net_in_addr *nexthop;
 	struct net_if *iface = NULL;
 	struct net_in_addr dst_ip;
-	bool found;
 	int ret;
+
+	/* Broadcasts stay on the link they were sent to, RFC 1812 ch. 5.3.5 */
+	if (net_ipv4_is_addr_bcast_raw(NULL, hdr->dst) ||
+	    net_ipv4_is_addr_unspecified_raw(hdr->dst)) {
+		return NET_DROP;
+	}
 
 	net_ipv4_addr_copy_raw(dst_ip.s4_addr, hdr->dst);
 
-	if (IS_ENABLED(CONFIG_NET_IPV4_FORWARDING)) {
-		found = net_route_ipv4_get_info(NULL, &dst_ip, &route, &nexthop);
-	} else {
-		found = net_route_ipv4_get_info(net_pkt_iface(pkt), &dst_ip,
-						&route, &nexthop);
-	}
-
-	if (found) {
+	if (net_route_ipv4_get_info(NULL, &dst_ip, &route, &nexthop)) {
 		net_pkt_set_orig_iface(pkt, net_pkt_iface(pkt));
 
 		if (route != NULL) {
 			net_pkt_set_iface(pkt, route->iface);
 		}
 
-		if (IS_ENABLED(CONFIG_NET_IPV4_FORWARDING) &&
-		    net_pkt_orig_iface(pkt) != net_pkt_iface(pkt)) {
-			net_pkt_set_forwarding(pkt, true);
-		} else {
-			net_pkt_set_forwarding(pkt, false);
-		}
+		/* Re-sending a packet received for another host is forwarding
+		 * even when it leaves through the interface it arrived on. The
+		 * flag makes the send path decrement the TTL.
+		 */
+		net_pkt_set_forwarding(pkt, true);
 
 		ret = net_route_ipv4_packet(pkt, nexthop);
 		if (ret < 0) {
@@ -329,7 +326,7 @@ static inline enum net_verdict ipv4_route_packet(struct net_pkt *pkt,
 
 	return NET_DROP;
 }
-#endif /* CONFIG_NET_IPV4_ROUTE */
+#endif /* CONFIG_NET_IPV4_FORWARDING */
 
 enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 {
@@ -454,6 +451,7 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 		net_dhcpv4_accept_unicast(pkt)))) ||
 	    (hdr->proto == NET_IPPROTO_TCP &&
 	     net_ipv4_is_addr_bcast_raw(net_pkt_iface(pkt), hdr->dst))) {
+		/* Only a forwarder may keep a packet that is not for us */
 		if (ipv4_route_packet(pkt, hdr) == NET_OK) {
 			return NET_OK;
 		}

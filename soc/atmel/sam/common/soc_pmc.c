@@ -28,7 +28,7 @@ void soc_pmc_peripheral_enable(uint32_t id)
 #endif
 #if ID_PERIPH_COUNT > 64
 	} else {
-		/* Nothing to do, thes peripherals can't be enabled */
+		/* Nothing to do, these peripherals can't be enabled */
 #endif
 	}
 }

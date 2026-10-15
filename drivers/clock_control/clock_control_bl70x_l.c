@@ -462,9 +462,9 @@ static __ramfunc uint32_t clock_control_bl70x_l_get_clk(const struct device *dev
 	} else if (tmp == 2) {
 		return MHZ(64) / (hclk_div + 1);
 	} else if (tmp == 1) {
-		return MHZ(42.67) / (hclk_div + 1);
+		return 42666667U / (hclk_div + 1);
 	} else if (tmp == 0) {
-		return MHZ(25.6) / (hclk_div + 1);
+		return 25600000U / (hclk_div + 1);
 	}
 #else
 	if (tmp == 3) {
@@ -474,7 +474,7 @@ static __ramfunc uint32_t clock_control_bl70x_l_get_clk(const struct device *dev
 	} else if (tmp == 1) {
 		return MHZ(96) / (hclk_div + 1);
 	} else if (tmp == 0) {
-		return MHZ(57.6) / (hclk_div + 1);
+		return 57600000U / (hclk_div + 1);
 	}
 #endif
 	return 0;

@@ -112,7 +112,7 @@ struct smp_transport *transport_mgmt_get_other_transport(struct smp_transport *t
 		while (i < CONFIG_MCUMGR_GRP_TRANSPORT_MAX_BRIDGES) {
 			if (bridges[i].status == 1) {
 				if (bridges[i].incoming_transport == transport &&
-				    direction == TRANSPORT_MGMT_DIRECTION_OUTGOING) {
+				    direction == TRANSPORT_MGMT_DIRECTION_INCOMING) {
 					other_transport = bridges[i].outgoing_transport;
 					break;
 				} else if (bridges[i].outgoing_transport == transport &&
@@ -176,6 +176,7 @@ int transport_mgmt_disconnect_bridge(struct smp_transport_bridge *bridge)
 	transport_mgmt_lock();
 
 	if (!bridge_active || bridge->status == 0) {
+		transport_mgmt_unlock();
 		return -ENOTCONN;
 	}
 

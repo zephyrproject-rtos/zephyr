@@ -309,9 +309,9 @@ static inline bool
 os_mgmt_taskstat_encode_priority(zcbor_state_t *zse, const struct k_thread *thread)
 {
 	return (zcbor_tstr_put_lit(zse, "prio")					&&
-		IS_ENABLED(CONFIG_MCUMGR_GRP_OS_TASKSTAT_SIGNED_PRIORITY) ?
+		(IS_ENABLED(CONFIG_MCUMGR_GRP_OS_TASKSTAT_SIGNED_PRIORITY) ?
 		zcbor_int32_put(zse, (int)thread->base.prio) :
-		zcbor_uint32_put(zse, (unsigned int)thread->base.prio) & 0xff);
+		zcbor_uint32_put(zse, (unsigned int)thread->base.prio & 0xff)));
 }
 
 /**

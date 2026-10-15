@@ -927,7 +927,7 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 #ifdef CONFIG_ETH_NXP_ENET
 	case MCUX_ENET_CLK:
 #ifdef CONFIG_SOC_SERIES_RW6XX
-		*rate = CLOCK_GetTddrMciEnetClkFreq();
+		*rate = CLOCK_GetMainClkFreq();
 #endif
 		break;
 #endif

@@ -190,7 +190,9 @@ int lll_conn_central_is_abort_cb(void *next, void *curr,
 		return -EBUSY;
 	}
 
-	LL_ASSERT_DBG(trx_busy_iteration < CENTRAL_TRX_BUSY_ITERATION_MAX);
+	/* Without deferral support (EVENT_DEFER_MAX is 0) the event is always cancelled */
+	LL_ASSERT_DBG((CENTRAL_TRX_BUSY_ITERATION_MAX == 0U) ||
+		      (trx_busy_iteration < CENTRAL_TRX_BUSY_ITERATION_MAX));
 
 	return -ECANCELED;
 }
@@ -224,7 +226,9 @@ int lll_conn_peripheral_is_abort_cb(void *next, void *curr,
 		return -EBUSY;
 	}
 
-	LL_ASSERT_DBG(trx_busy_iteration < PERIPHERAL_TRX_BUSY_ITERATION_MAX);
+	/* Without deferral support (EVENT_DEFER_MAX is 0) the event is always cancelled */
+	LL_ASSERT_DBG((PERIPHERAL_TRX_BUSY_ITERATION_MAX == 0U) ||
+		      (trx_busy_iteration < PERIPHERAL_TRX_BUSY_ITERATION_MAX));
 
 	return -ECANCELED;
 }

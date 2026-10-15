@@ -1353,6 +1353,16 @@ static void handle_h3_uni_stream(struct http_server_ctx *ctx, int i,
 		}
 
 		if (ret < 0) {
+			if (h3_ctx != NULL &&
+			    (stream_fd == h3_ctx->peer_control_stream ||
+			     stream_fd == h3_ctx->peer_qpack_encoder_stream ||
+			     stream_fd == h3_ctx->peer_qpack_decoder_stream)) {
+				/* The stream was taken into use before it
+				 * failed, handle it like a failure later on.
+				 */
+				goto critical_stream_failed;
+			}
+
 			zsock_close(stream_fd);
 			invalidate_poll_fd(&ctx->fds[i]);
 			return;
@@ -1362,10 +1372,23 @@ static void handle_h3_uni_stream(struct http_server_ctx *ctx, int i,
 	/* Identified: pass to the appropriate stream data handler */
 	ret = h3_handle_uni_stream_data(client, stream_fd);
 	if (ret < 0) {
-		/* Stream ended or errored */
-		zsock_close(stream_fd);
-		invalidate_poll_fd(&ctx->fds[i]);
+		goto critical_stream_failed;
 	}
+
+	return;
+
+critical_stream_failed:
+	/*
+	 * The control stream and the QPACK streams are critical: when one of
+	 * them is closed or carries invalid data, the connection cannot go on
+	 * (RFC 9114 ch. 6.2.1 and ch. 7.2.4, RFC 9204 ch. 4.2). Close the
+	 * whole connection. Closing only the stream here would leave its fd
+	 * number recorded in the connection context, and the connection
+	 * teardown would later close whatever socket has that number by then.
+	 */
+	LOG_DBG("[%p] H3: critical stream fd %d failed (%d), closing connection",
+		client, stream_fd, ret);
+	close_h3_or_plain_client(client, ctx->fds, ARRAY_SIZE(ctx->fds));
 }
 
 /*

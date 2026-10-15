@@ -70,6 +70,10 @@ static struct net_in6_addr forward_dest_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 
 						     0, 0, 0, 0, 0xd, 0xe, 0x5, 0x9 } } };
 static struct net_in6_addr onlink_dest_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 						    0, 0, 0, 0, 0, 0, 0, 0x77 } } };
+static struct net_in6_addr input_dest_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+						   0, 0, 0, 0, 0xd, 0xe, 0x5, 0xa } } };
+static struct net_in6_addr input_offlink_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+						      0, 0, 0, 0, 0xde, 0xad, 0, 0x1 } } };
 
 /* Extra address is assigned to ll_addr */
 static struct net_in6_addr ll_addr = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
@@ -715,6 +719,105 @@ static void test_route_ipv6_packet_without_iface(void)
 	net_pkt_unref(pkt);
 }
 
+/* Inject a packet as if received on my_iface. */
+static void recv_ipv6_packet(const struct net_in6_addr *dst, uint8_t hop_limit)
+{
+	struct net_ipv6_hdr *hdr;
+	struct net_pkt *pkt;
+
+	reset_send_state();
+	drain_wait_data();
+	expected_ipv6_dst = dst;
+
+	pkt = net_pkt_alloc_with_buffer(my_iface, sizeof(struct net_ipv6_hdr),
+					NET_AF_INET6, NET_IPV6_NEXTHDR_NONE,
+					K_NO_WAIT);
+	zassert_not_null(pkt, "Input packet alloc failed");
+
+	hdr = (struct net_ipv6_hdr *)net_buf_add(pkt->buffer,
+						 sizeof(struct net_ipv6_hdr));
+	zassert_not_null(hdr, "Cannot reserve IPv6 header");
+
+	memset(hdr, 0, sizeof(*hdr));
+	hdr->vtc = 0x60;
+	hdr->len = 0U;
+	hdr->nexthdr = NET_IPV6_NEXTHDR_NONE;
+	hdr->hop_limit = hop_limit;
+	net_ipv6_addr_copy_raw(hdr->src, forward_src_addr.s6_addr);
+	net_ipv6_addr_copy_raw(hdr->dst, dst->s6_addr);
+
+	zassert_ok(net_recv_data(my_iface, pkt), "Input receive failed");
+}
+
+static void test_route_ipv6_input_route_same_iface(void)
+{
+	struct net_route_entry *route;
+	struct net_nbr *nbr;
+	bool sent;
+
+	/* The next hop is on the ingress interface. A forwarder sends the
+	 * packet back out my_iface with the hop limit decremented, a host
+	 * drops it.
+	 */
+	nbr = net_ipv6_nbr_add(my_iface, &peer_addr, &net_route_data_peer.ll_addr,
+			       false, NET_IPV6_NBR_STATE_REACHABLE);
+	zassert_not_null(nbr, "Input nexthop add failed");
+
+	route = net_route_ipv6_add(my_iface, &input_dest_addr, 128, &peer_addr,
+				   NET_IPV6_ND_INFINITE_LIFETIME,
+				   NET_ROUTE_PREFERENCE_HIGH);
+	zassert_not_null(route, "Input route add failed");
+
+	recv_ipv6_packet(&input_dest_addr, 2U);
+	sent = k_sem_take(&wait_data, WAIT_TIME) == 0;
+
+	if (!IS_ENABLED(CONFIG_NET_IPV6_FORWARDING)) {
+		zassert_false(sent, "Host must not relay a packet for another host");
+	} else {
+		zassert_true(sent, "Routed packet was not sent");
+		zassert_equal_ptr(sent_iface, my_iface,
+				  "Routed packet used wrong egress interface");
+		zassert_true(sent_forwarding, "Routed packet should be marked forwarded");
+		zassert_equal(sent_ipv6_hop_limit, 1U,
+			      "Routed packet should decrement hop limit");
+	}
+
+	expected_ipv6_dst = NULL;
+	zassert_ok(net_route_ipv6_del(route), "Input route del failed");
+}
+
+static void test_route_ipv6_input_default_router(void)
+{
+	struct net_if_router *router;
+	struct net_nbr *nbr;
+	bool sent;
+
+	/* Off-link destination with a default router on the ingress link. */
+	nbr = net_ipv6_nbr_add(my_iface, &peer_addr, &net_route_data_peer.ll_addr,
+			       false, NET_IPV6_NBR_STATE_REACHABLE);
+	zassert_not_null(nbr, "Default router neighbor add failed");
+
+	router = net_if_ipv6_router_add(my_iface, &peer_addr, true, 0);
+	zassert_not_null(router, "Default router add failed");
+
+	recv_ipv6_packet(&input_offlink_addr, 2U);
+	sent = k_sem_take(&wait_data, WAIT_TIME) == 0;
+
+	if (!IS_ENABLED(CONFIG_NET_IPV6_FORWARDING)) {
+		zassert_false(sent, "Host must not relay a packet to its default router");
+	} else {
+		zassert_true(sent, "Routed packet was not sent");
+		zassert_equal_ptr(sent_iface, my_iface,
+				  "Routed packet used wrong egress interface");
+		zassert_true(sent_forwarding, "Routed packet should be marked forwarded");
+		zassert_equal(sent_ipv6_hop_limit, 1U,
+			      "Routed packet should decrement hop limit");
+	}
+
+	expected_ipv6_dst = NULL;
+	zassert_true(net_if_ipv6_router_rm(router), "Default router remove failed");
+}
+
 static void test_route_ipv6_forward_hop_limit_expired_is_dropped(void)
 {
 	struct net_nbr *nbr;
@@ -937,6 +1040,8 @@ ZTEST(route_test_suite, test_route)
 	test_route_ipv6_select_src_iface_uses_explicit_route();
 	test_route_ipv6_packet_without_neighbor_ll();
 	test_route_ipv6_packet_without_iface();
+	test_route_ipv6_input_route_same_iface();
+	test_route_ipv6_input_default_router();
 	test_route_ipv6_forward_hop_limit_expired_is_dropped();
 	test_route_ipv6_forward_packet_between_ifaces();
 	test_route_ipv6_forward_onlink_packet_between_ifaces();

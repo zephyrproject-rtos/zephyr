@@ -322,16 +322,16 @@ static enum ptp_port_state disabled_state_machine(enum ptp_port_state state,
 	return PTP_PS_DISABLED;
 }
 
-int ptp_tlv_post_recv(struct ptp_tlv *tlv)
+int ptp_tlv_post_recv(struct ptp_tlv **p_tlv)
 {
-	ARG_UNUSED(tlv);
+	ARG_UNUSED(p_tlv);
 
 	return 0;
 }
 
-void ptp_tlv_pre_send(struct ptp_tlv *tlv)
+void ptp_tlv_pre_send(struct ptp_tlv **p_tlv)
 {
-	ARG_UNUSED(tlv);
+	ARG_UNUSED(p_tlv);
 }
 
 enum ptp_mgmt_op ptp_mgmt_action(struct ptp_msg *msg)

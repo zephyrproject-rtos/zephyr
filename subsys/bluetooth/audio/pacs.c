@@ -650,7 +650,7 @@ static sys_slist_t *pacs_get_pac(enum bt_audio_dir dir)
 #if defined(CONFIG_BT_PAC_SNK)
 #define BT_PACS_SNK_PROP \
 	BT_GATT_CHRC_READ \
-	IF_ENABLED(CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE, (|BT_GATT_CHRC_NOTIFY))
+	IF_ENABLED(CONFIG_BT_PAC_SNK_NOTIFIABLE, (|BT_GATT_CHRC_NOTIFY))
 #define BT_PAC_SNK                                                                                 \
 	BT_AUDIO_CHRC(BT_UUID_PACS_SNK, BT_PACS_SNK_PROP, BT_GATT_PERM_READ_ENCRYPT, snk_read,     \
 		      NULL, NULL),                                                                 \
@@ -690,7 +690,7 @@ static sys_slist_t *pacs_get_pac(enum bt_audio_dir dir)
 #if defined(CONFIG_BT_PAC_SRC)
 #define BT_PACS_SRC_PROP \
 	BT_GATT_CHRC_READ \
-	IF_ENABLED(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE, (|BT_GATT_CHRC_NOTIFY))
+	IF_ENABLED(CONFIG_BT_PAC_SRC_NOTIFIABLE, (|BT_GATT_CHRC_NOTIFY))
 #define BT_PAC_SRC                                                                                 \
 	BT_AUDIO_CHRC(BT_UUID_PACS_SRC, BT_PACS_SRC_PROP, BT_GATT_PERM_READ_ENCRYPT, src_read,     \
 		      NULL, NULL),                                                                 \

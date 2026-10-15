@@ -1734,6 +1734,8 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - nordic-krch
+  collaborators:
+    - danieldegrasse
   files:
     - drivers/clock_control/
     - dts/bindings/clock/
@@ -2011,13 +2013,22 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - ceolin
-  collaborators:
-    - tomi-font
   files:
     - drivers/entropy/
     - include/zephyr/drivers/entropy.h
     - tests/drivers/entropy/
     - doc/hardware/peripherals/entropy.rst
+  file-groups:
+    - name: PSA Crypto entropy driver
+      collaborators:
+        - tomi-font
+        - etienne-lms
+      files:
+        - drivers/entropy/entropy_psa_crypto.c
+        - drivers/entropy/Kconfig.psa_crypto
+        - include/zephyr/drivers/entropy.h
+        - tests/drivers/entropy/
+        - doc/hardware/peripherals/entropy.rst
   labels:
     - "area: Crypto / RNG"
   tests:
@@ -2052,6 +2063,7 @@ Documentation Infrastructure:
     - net.ethernet
     - sample.drivers.ethernet
     - net.ethernet.build
+    - sample.net.ptp
 
 "Drivers: FPGA":
   status: maintained
@@ -4108,6 +4120,7 @@ MIPS arch:
     - boards/qemu/malta/
   labels:
     - "area: MIPS"
+  tests:
     - arch
     - kernel
 
@@ -4762,6 +4775,7 @@ Networking:
   collaborators:
     - pdgendt
   files:
+    - .github/workflows/net-perf*
     - scripts/net/
     - drivers/net/
     - include/zephyr/net/

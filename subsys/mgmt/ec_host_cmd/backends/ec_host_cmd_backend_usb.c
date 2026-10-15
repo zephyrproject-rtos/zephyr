@@ -4,12 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <assert.h>
-#include <stdarg.h>
-#include <string.h>
-
-#include <zephyr/device.h>
-#include <zephyr/devicetree.h>
 #include <zephyr/drivers/usb/udc.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
@@ -29,10 +23,8 @@ BUILD_ASSERT((CONFIG_EC_HOST_CMD_HANDLER_BUFFER_ALIGN % UDC_BUF_ALIGN) == 0, "Bu
 /* Supported version of host commands protocol. */
 #define EC_HOST_REQUEST_VERSION 3
 
-#define EC_HOST_CMD_SEND_TIMEOUT_MS 100
-
 #define EP_BULK_SIZE     64U
-#define EP_INT_SIZE_SIZE 4U
+#define EP_INT_SIZE      4U
 
 #define INT_POOL_SIZE 4
 
@@ -47,8 +39,7 @@ enum ec_host_cmd_usb_irq_type {
 };
 
 NET_BUF_POOL_DEFINE(ec_host_cmd_ep_pool, 2, 0, sizeof(struct udc_buf_info), NULL);
-UDC_BUF_POOL_DEFINE(int_ep_pool, INT_POOL_SIZE, EP_INT_SIZE_SIZE, sizeof(struct udc_buf_info),
-		    NULL);
+UDC_BUF_POOL_DEFINE(int_ep_pool, INT_POOL_SIZE, EP_INT_SIZE, sizeof(struct udc_buf_info), NULL);
 
 enum ec_host_cmd_usb_state {
 	/*
@@ -157,7 +148,7 @@ static inline uint8_t ec_host_cmd_get_in_int_ep(struct usbd_class_data *const c_
 
 static struct net_buf *ec_host_cmd_buf_alloc(const uint8_t ep, const size_t size, void *const data)
 {
-	struct net_buf *buf = NULL;
+	struct net_buf *buf;
 	struct udc_buf_info *bi;
 
 	__ASSERT(IS_UDC_ALIGNED(data), "Application provided unaligned buffer");
@@ -179,7 +170,7 @@ static struct net_buf *ec_host_cmd_buf_alloc(const uint8_t ep, const size_t size
 
 static struct net_buf *ec_host_cmd_buf_alloc_int(const uint8_t ep)
 {
-	struct net_buf *buf = NULL;
+	struct net_buf *buf;
 	struct udc_buf_info *bi;
 
 	buf = net_buf_alloc(&int_ep_pool, K_NO_WAIT);
@@ -206,7 +197,7 @@ static int ec_host_cmd_signal_event(struct usbd_class_data *const c_data)
 		return 0;
 	}
 	net_buf_add_u8(buf, USB_EC_HOST_CMD_IRQ_TYPE_EVENT);
-	buf->len = EP_INT_SIZE_SIZE;
+	buf->len = EP_INT_SIZE;
 	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
 		LOG_ERR("Failed to enqueue EP IN INT: %d", ret);
@@ -225,12 +216,14 @@ static int handle_out_transfer(struct usbd_class_data *const c_data)
 	size_t expected_len =
 		expected_request_len((struct ec_host_cmd_request_header *)ctx->rx_ctx->buf);
 
-	/* Notify about a new command or response with a proper error code. */
-	if ((ctx->rx_ctx->len >= expected_len) || (expected_len == 0) ||
-	    (expected_len > ctx->rx_ctx->len_max)) {
+	/*
+	 * Notify about a new command or response with a proper error code. An invalid header
+	 * gives expected_len == 0, which the first check covers.
+	 */
+	if ((ctx->rx_ctx->len >= expected_len) || (expected_len > ctx->rx_ctx->len_max)) {
 		k_work_cancel_delayable(&ctx->reset_work);
 		if (ctx->rx_ctx->len > expected_len) {
-			LOG_ERR("Received incorrect number of bytes, got: %d, expected: %d",
+			LOG_ERR("Received incorrect number of bytes, got: %zu, expected: %zu",
 				ctx->rx_ctx->len, expected_len);
 		}
 		ctx->state = USB_EC_HOST_CMD_STATE_PROCESSING;
@@ -240,7 +233,7 @@ static int handle_out_transfer(struct usbd_class_data *const c_data)
 	/* Enqueue OUT transfer if we are still receiving. */
 	if (ctx->state == USB_EC_HOST_CMD_STATE_RECEIVING) {
 		if (!IS_UDC_ALIGNED(ctx->rx_ctx->len)) {
-			LOG_ERR("Received unaligned OUT transfer: %d", ctx->rx_ctx->len);
+			LOG_ERR("Received unaligned OUT transfer: %zu", ctx->rx_ctx->len);
 			k_work_reschedule(&ctx->reset_work, K_NO_WAIT);
 			return 0;
 		}
@@ -269,10 +262,8 @@ static int ec_host_cmd_request(struct usbd_class_data *const c_data, struct net_
 {
 	struct ec_host_cmd_usb_ctx *ctx = usbd_class_get_private(c_data);
 	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
-	struct udc_buf_info *bi = NULL;
+	struct udc_buf_info *bi = udc_get_buf_info(buf);
 	int ret;
-
-	bi = udc_get_buf_info(buf);
 
 	if (err) {
 		if (err == -ECONNABORTED) {
@@ -316,7 +307,7 @@ static int ec_host_cmd_request(struct usbd_class_data *const c_data, struct net_
 			return 0;
 		}
 
-		ctx->rx_ctx->len = ctx->rx_ctx->len + buf_len;
+		ctx->rx_ctx->len += buf_len;
 
 		return handle_out_transfer(c_data);
 	}
@@ -370,7 +361,7 @@ static void ec_host_cmd_enable(struct usbd_class_data *const c_data)
 
 	atomic_set_bit(&ctx->class_state, EC_HOST_CMD_CLASS_ENABLED);
 	if (!ctx->usb_tx_buf) {
-		LOG_ERR("Host Commands not initaliazed");
+		LOG_ERR("Host Commands not initialized");
 		return;
 	}
 
@@ -450,7 +441,7 @@ static void ec_host_cmd_reset(struct k_work *work)
 	LOG_INF("Resetting backend in state %s", state_name[ctx->state]);
 
 	if (!ctx->usb_tx_buf) {
-		LOG_ERR("Host Commands not initaliazed");
+		LOG_ERR("Host Commands not initialized");
 		return;
 	}
 
@@ -520,7 +511,7 @@ static int ec_host_cmd_backend_send(const struct ec_host_cmd_backend *backend)
 {
 	struct ec_host_cmd_usb_ctx *ctx = backend->ctx;
 	struct usbd_class_data *const c_data = ctx->c_data;
-	struct net_buf *buf = NULL;
+	struct net_buf *buf;
 	int ret;
 
 	if (!atomic_test_bit(&ctx->class_state, EC_HOST_CMD_CLASS_ENABLED)) {
@@ -555,7 +546,7 @@ static int ec_host_cmd_backend_send(const struct ec_host_cmd_backend *backend)
 
 	/* Signal to host that response is ready. */
 	net_buf_add_u8(buf, USB_EC_HOST_CMD_IRQ_TYPE_RESP_READY);
-	buf->len = EP_INT_SIZE_SIZE;
+	buf->len = EP_INT_SIZE;
 
 	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
@@ -608,7 +599,7 @@ static struct ec_host_cmd_desc ec_host_cmd_desc = {
 			.bDescriptorType = USB_DESC_ENDPOINT,
 			.bEndpointAddress = 0x82,
 			.bmAttributes = USB_EP_TYPE_INTERRUPT,
-			.wMaxPacketSize = sys_cpu_to_le16(EP_INT_SIZE_SIZE),
+			.wMaxPacketSize = sys_cpu_to_le16(EP_INT_SIZE),
 			.bInterval = USB_FS_INT_EP_INTERVAL(1000),
 		},
 	.nil_desc = {

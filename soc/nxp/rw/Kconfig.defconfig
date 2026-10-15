@@ -50,6 +50,13 @@ config SHELL_STACK_SIZE
 
 endif # SHELL
 
+if MBEDTLS_PSA_CRYPTO_C
+
+config BT_RX_STACK_SIZE
+	default 2800 if BT_SMP && !BT_MESH_GATT_CLIENT
+
+endif # MBEDTLS_PSA_CRYPTO_C
+
 endif # BT
 
 config NXP_MONOLITHIC_WIFI

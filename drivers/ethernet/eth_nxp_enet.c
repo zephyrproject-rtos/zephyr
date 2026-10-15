@@ -103,6 +103,7 @@ struct nxp_enet_mac_data {
 	enet_handle_t enet_handle;
 	struct k_sem tx_buf_sem;
 	struct k_work rx_work;
+	struct k_work_delayable rx_resume_work;
 	const struct device *dev;
 	struct k_sem rx_thread_sem;
 	struct k_mutex rx_frame_buf_mutex;
@@ -327,6 +328,7 @@ static int eth_nxp_enet_rx(const struct device *dev)
 	struct net_pkt *pkt = NULL;
 	status_t status;
 	uint32_t ts;
+	int err = -EIO;
 
 	status = ENET_GetRxFrameSize(&data->enet_handle,
 				     (uint32_t *)&frame_length, RING_ID);
@@ -335,7 +337,7 @@ static int eth_nxp_enet_rx(const struct device *dev)
 	} else if (status == kStatus_ENET_RxFrameError) {
 		enet_data_error_stats_t error_stats;
 
-		LOG_ERR("ENET_GetRxFrameSize return: %d", (int)status);
+		LOG_ERR_RATELIMIT("ENET_GetRxFrameSize return: %d", (int)status);
 
 		ENET_GetRxErrBeforeReadFrame(&data->enet_handle,
 					     &error_stats, RING_ID);
@@ -343,7 +345,7 @@ static int eth_nxp_enet_rx(const struct device *dev)
 	}
 
 	if (frame_length > NET_ETH_MAX_FRAME_SIZE) {
-		LOG_ERR("Frame too large (%d)", frame_length);
+		LOG_ERR_RATELIMIT("Frame too large (%d)", frame_length);
 		goto flush;
 	}
 
@@ -351,6 +353,7 @@ static int eth_nxp_enet_rx(const struct device *dev)
 	pkt = net_pkt_rx_alloc_with_buffer(data->iface, frame_length,
 					   NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
+		err = -ENOMEM;
 		goto flush;
 	}
 
@@ -360,12 +363,12 @@ static int eth_nxp_enet_rx(const struct device *dev)
 	k_mutex_unlock(&data->rx_frame_buf_mutex);
 
 	if (status) {
-		LOG_ERR("ENET_ReadFrame failed: %d", (int)status);
+		LOG_ERR_RATELIMIT("ENET_ReadFrame failed: %d", (int)status);
 		goto error;
 	}
 
 	if (net_pkt_write(pkt, data->rx_frame_buf, frame_length)) {
-		LOG_ERR("Unable to write frame into the packet");
+		LOG_ERR_RATELIMIT("Unable to write frame into the packet");
 		goto error;
 	}
 
@@ -409,7 +412,18 @@ error:
 		net_pkt_unref(pkt);
 	}
 	eth_stats_update_errors_rx(get_iface(data));
-	return -EIO;
+	return err;
+}
+
+static void eth_nxp_enet_rx_resume(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct nxp_enet_mac_data *data =
+		CONTAINER_OF(dwork, struct nxp_enet_mac_data, rx_resume_work);
+
+	/* Stands in for the RX interrupt, which is still masked */
+	k_sem_give(&data->rx_thread_sem);
+	k_work_submit_to_queue(&rx_work_queue, &data->rx_work);
 }
 
 static void eth_nxp_enet_rx_thread(struct k_work *work)
@@ -423,11 +437,28 @@ static void eth_nxp_enet_rx_thread(struct k_work *work)
 		return;
 	}
 
+	/*
+	 * Keep reading after a dropped frame (-EIO) too. It has been consumed,
+	 * and the ISR already cleared the RX flags, so the frames still in the
+	 * ring would not raise another interrupt.
+	 */
 	do {
 		ret = eth_nxp_enet_rx(dev);
-	} while (ret == 1);
+	} while ((ret != 0) && (ret != -ENOMEM));
 
-	ENET_EnableInterrupts(data->base, kENET_RxFrameInterrupt | kENET_RxBufferInterrupt);
+	if (ret == 0) {
+		ENET_EnableInterrupts(data->base, kENET_RxFrameInterrupt | kENET_RxBufferInterrupt);
+		return;
+	}
+
+	/*
+	 * No packet buffer is free. This work queue is cooperative, so the network
+	 * stack, which frees the buffers, only runs once it blocks: keep the RX
+	 * interrupt masked and come back one tick later, which also picks up the
+	 * frames left in the ring. Meanwhile the MAC drops what does not fit in
+	 * the ring, at no CPU cost.
+	 */
+	k_work_schedule_for_queue(&rx_work_queue, &data->rx_resume_work, K_TICKS(1));
 }
 
 static void nxp_enet_phy_cb(const struct device *phy,
@@ -660,6 +691,7 @@ static int eth_nxp_enet_init(const struct device *dev)
 	k_sem_init(&data->ptp.ptp_ts_sem, 0, 1);
 #endif
 	k_work_init(&data->rx_work, eth_nxp_enet_rx_thread);
+	k_work_init_delayable(&data->rx_resume_work, eth_nxp_enet_rx_resume);
 
 	err = net_eth_mac_load(&config->mac_cfg, data->mac_addr);
 	if (err == -ENODATA) {

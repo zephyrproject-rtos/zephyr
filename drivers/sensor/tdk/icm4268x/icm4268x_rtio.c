@@ -77,7 +77,9 @@ void icm4268x_submit_one_shot_sync(struct rtio_iodev_sqe *iodev_sqe)
 	rc = icm4268x_rtio_sample_fetch(dev, edata->readings);
 	/* Check that the fetch succeeded */
 	if (rc != 0) {
-		LOG_ERR("Failed to fetch samples");
+		if (rc != -EBUSY) {
+			LOG_ERR("Failed to fetch samples");
+		}
 		rtio_iodev_sqe_err(iodev_sqe, rc);
 		return;
 	}

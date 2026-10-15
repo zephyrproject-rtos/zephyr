@@ -7,12 +7,44 @@
 #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-r8a78000.h>
 
 &pfc {
+	hscif0_data_tx_default: hscif0_data_tx_default {
+		pin = <PIN_HTX0 FUNC_HTX0>;
+	};
+
+	hscif0_data_rx_default: hscif0_data_rx_default {
+		pin = <PIN_HRX0 FUNC_HRX0>;
+	};
+
 	hscif1_data_tx_default: hscif1_data_tx_default {
 		pin = <PIN_HTX1 FUNC_HTX1>;
 	};
 
 	hscif1_data_rx_default: hscif1_data_rx_default {
 		pin = <PIN_HRX1 FUNC_HRX1>;
+	};
+
+	hscif2_a_data_tx_default: hscif2_a_data_tx_default {
+		pin = <PIN_SCL3 FUNC_HTX2_A>;
+	};
+
+	hscif2_a_data_rx_default: hscif2_a_data_rx_default {
+		pin = <PIN_SDA3 FUNC_HRX2_A>;
+	};
+
+	hscif2_b_data_tx_default: hscif2_b_data_tx_default {
+		pin = <PIN_MSIOF6_TXD FUNC_HTX2_B>;
+	};
+
+	hscif2_b_data_rx_default: hscif2_b_data_rx_default {
+		pin = <PIN_MSIOF5_SS2 FUNC_HRX2_B>;
+	};
+
+	hscif3_data_tx_default: hscif3_data_tx_default {
+		pin = <PIN_SSI0_WS FUNC_HTX3>;
+	};
+
+	hscif3_data_rx_default: hscif3_data_rx_default {
+		pin = <PIN_SSI0_SD FUNC_HRX3>;
 	};
 
 	gpio0_3_default: gpio0_3_default {

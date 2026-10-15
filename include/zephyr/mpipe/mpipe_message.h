@@ -34,10 +34,17 @@
  * string; the sentence describing a failure belongs in the log at the site that
  * detected it, while an application branches on the domain and the errno.
  *
- * Message types are single bits so that a type doubles as a filter mask and a
- * consumer can select several by OR-ing them. Note that MPIPE_MESSAGE_UNKNOWN
- * is zero and matches nothing - it is an uninitialized message, not a
- * selectable type.
+ * A message is published on the bus of the bin holding its origin, a zbus
+ * channel reached with @ref mpipe_element_get_bus_chan. Any zbus observer can
+ * watch it: a listener runs inline in the posting thread and must neither block
+ * nor change pipeline state; a message subscriber
+ * (@kconfig{CONFIG_ZBUS_MSG_SUBSCRIBER}) reads from its own thread with
+ * zbus_sub_wait_msg() and loses nothing. Detach the observer before the bin
+ * goes away.
+ *
+ * Message types are single bits, so a consumer can select several by OR-ing
+ * them into a mask. MPIPE_MESSAGE_UNKNOWN is zero and matches nothing: it is an
+ * uninitialized message, not a selectable type.
  *
  * @{
  */
@@ -92,7 +99,7 @@ enum mpipe_error_domain {
 	MPIPE_ERROR_CAPS,
 	/** Buffer negotiation: a pool would not configure or start; reduce counts or sizes */
 	MPIPE_ERROR_BUFFER_POOL,
-	/** Buffer flow: a chain, acquire or push failed while streaming; stop or restart */
+	/** Buffer flow: processing, an acquire or a push failed while streaming; stop or restart */
 	MPIPE_ERROR_FLOW,
 	/** A device, file or driver refused; check the media or the hardware */
 	MPIPE_ERROR_RESOURCE,
@@ -130,6 +137,9 @@ struct mpipe_message {
  * returning an errno stays an errno; an error message is not for every
  * failed call.
  *
+ * Outside an ISR the call waits for the bus, so it must not be made from a
+ * listener of that same bus.
+ *
  * @code{.c}
  * struct mpipe_message msg = {
  *	.origin = &sink->element,
@@ -146,6 +156,8 @@ struct mpipe_message {
  * @retval -ENODEV The origin has no bus
  * @retval -ENOMSG The bus validator dropped the message, which the pipeline
  *                 does to every end-of-stream but the last
+ * @retval -EBUSY Posted from an ISR while the bus was in use
+ * @return Any other negative errno of zbus_chan_pub()
  */
 int mpipe_message_post(const struct mpipe_message *message);
 

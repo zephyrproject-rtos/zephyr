@@ -68,8 +68,8 @@ Stop-bit suite (uart_errors_stop_bit)
 
 Receiver configuration: no parity, 1 or 2 stop bits depending on the case.
 
-Error injection: dut_aux TX is released to GPIO. One frame is bit-banged with
-a bad stop-bit level, then normal UART TX continues for the rest of the buffer.
+Error injection: dut_aux TX is released to GPIO. The whole buffer is bit-banged
+back-to-back, with a bad stop-bit level in the selected frame.
 dut_aux is suspended/resumed through PM around GPIO takeover.
 
 Case names encode the pattern:

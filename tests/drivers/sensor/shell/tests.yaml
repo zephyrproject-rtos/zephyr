@@ -1,0 +1,10 @@
+tests:
+  drivers.sensor.shell:
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
+    tags:
+      - drivers
+      - sensor
+      - shell
+    timeout: 10

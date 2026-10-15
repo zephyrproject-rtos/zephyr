@@ -32,3 +32,20 @@ tests:
       - websocket
     extra_configs:
       - CONFIG_WEBSOCKET_DEDICATED_HEAP=y
+  net.socket.websocket.loopback:
+    min_ram: 32
+    tags:
+      - net
+      - websocket
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - qemu_x86
+    integration_platforms:
+      - native_sim
+    extra_configs:
+      - CONFIG_NET_TEST=n
+      - CONFIG_NET_SLIP_TAP=n
+      - CONFIG_WEBSOCKET_MAX_CONTEXTS=2
+      - CONFIG_NET_TCP_MAX_RECV_WINDOW_SIZE=1024
+      - CONFIG_ZTEST_STACK_SIZE=4096
