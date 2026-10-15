@@ -2115,9 +2115,12 @@ static void test_bad_cred_common(bool test_dtls)
 	static uint8_t bad_ca_cert[] = "bad ca cert";
 	static uint8_t bad_own_cert[] = "bad own cert";
 	static uint8_t bad_priv_key[] = "bad priv key";
-	static uint8_t bad_psk[] = "bad psk"; /* PSK is not bad per se, but will
-					       * try to use it without matching PSK ID.
-					       */
+	/* PSK exceeding the maximum length supported by Mbed TLS */
+	static uint8_t bad_psk[CONFIG_MBEDTLS_PSK_MAX_LEN + 1];
+	/* PSK ID is valid per se, but the combination is rejected because of
+	 * the invalid PSK.
+	 */
+	static const char bad_psk_id[] = "bad_psk_identity";
 	sec_tag_t bad_tags[] = {
 		BAD_CA_CERT_TAG,
 		BAD_OWN_CERT_TAG,
@@ -2140,6 +2143,8 @@ static void test_bad_cred_common(bool test_dtls)
 				      "Failed to add priv key");
 	zassert_ok(tls_credential_add(BAD_PSK_TAG, TLS_CREDENTIAL_PSK, bad_psk,
 				      sizeof(bad_psk)), "Failed to add psk");
+	zassert_ok(tls_credential_add(BAD_PSK_TAG, TLS_CREDENTIAL_PSK_ID, bad_psk_id,
+				      strlen(bad_psk_id)), "Failed to add psk id");
 
 	if (test_dtls) {
 		s_sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_DTLS_1_2);
