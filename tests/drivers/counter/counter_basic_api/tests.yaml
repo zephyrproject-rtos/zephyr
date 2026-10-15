@@ -129,6 +129,7 @@ tests:
       - counter
     depends_on: counter
     platform_allow:
+      - sam_e54_xpro
       - pic32cx_sg41_cult
     timeout: 600
     extra_args:

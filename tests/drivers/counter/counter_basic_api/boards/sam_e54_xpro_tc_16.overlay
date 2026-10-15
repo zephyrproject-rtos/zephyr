@@ -1,0 +1,69 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* tc@40003800 */
+&tc0 {
+	compatible = "microchip,tc-g1-counter";
+	max-bit-width = <16>;
+	prescaler = <64>;
+	status = "okay";
+};
+
+/* tc@40003c00 */
+&tc1 {
+	compatible = "microchip,tc-g1-counter";
+	max-bit-width = <16>;
+	prescaler = <64>;
+	status = "okay";
+};
+
+/* tc@4101a000 */
+&tc2 {
+	compatible = "microchip,tc-g1-counter";
+	max-bit-width = <16>;
+	prescaler = <64>;
+	status = "okay";
+};
+
+/* tc@4101c000 */
+&tc3 {
+	compatible = "microchip,tc-g1-counter";
+	max-bit-width = <16>;
+	prescaler = <64>;
+	status = "okay";
+};
+
+/* tc@42001400 */
+&tc4 {
+	compatible = "microchip,tc-g1-counter";
+	max-bit-width = <16>;
+	prescaler = <64>;
+	status = "okay";
+};
+
+/* tc@42001800 */
+&tc5 {
+	compatible = "microchip,tc-g1-counter";
+	max-bit-width = <16>;
+	prescaler = <64>;
+	status = "okay";
+};
+
+/* tc@43001400 */
+&tc6 {
+	compatible = "microchip,tc-g1-counter";
+	max-bit-width = <16>;
+	prescaler = <64>;
+	status = "okay";
+};
+
+/* tc@43001800 */
+&tc7 {
+	compatible = "microchip,tc-g1-counter";
+	max-bit-width = <16>;
+	prescaler = <64>;
+	status = "okay";
+};
