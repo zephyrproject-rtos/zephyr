@@ -80,8 +80,6 @@ struct video_nsi_fifo_config {
 
 struct video_nsi_fifo_data {
 	struct video_device vdev; /* keep first */
-	struct k_fifo fifo_in;
-	struct k_fifo fifo_out;
 	struct k_thread thread;
 	/** Wakes the thread up when a buffer is queued or the stream is started */
 	struct k_sem wake_sem;
@@ -158,7 +156,7 @@ static int video_nsi_fifo_open(struct video_nsi_fifo_data *data)
 
 static void video_nsi_fifo_deliver(struct video_nsi_fifo_data *data, struct video_buffer *vbuf)
 {
-	struct video_buffer *popped = k_fifo_get(&data->fifo_in, K_NO_WAIT);
+	struct video_buffer *popped = k_fifo_get(&data->out_fifo_submit, K_NO_WAIT);
 
 	/* Only flush(true) takes buffers out of fifo_in, and it holds the lock */
 	__ASSERT_NO_MSG(popped == vbuf);
@@ -168,7 +166,7 @@ static void video_nsi_fifo_deliver(struct video_nsi_fifo_data *data, struct vide
 	vbuf->timestamp = k_uptime_get_32();
 	vbuf->line_offset = 0;
 
-	k_fifo_put(&data->fifo_out, vbuf);
+	k_fifo_put(&data->vdev.out_buf_completed, vbuf);
 
 	if (IS_ENABLED(CONFIG_POLL) && (data->vdev.signal != NULL)) {
 		k_poll_signal_raise(data->vdev.signal, VIDEO_BUF_DONE);
@@ -191,7 +189,7 @@ static void video_nsi_fifo_thread(void *p1, void *p2, void *p3)
 		k_mutex_lock(&data->vdev.lock, K_FOREVER);
 
 		/* The buffer stays queued until it is filled, so stop and flush never lose it */
-		vbuf = k_fifo_peek_head(&data->fifo_in);
+		vbuf = k_fifo_peek_head(&data->out_fifo_submit);
 		if ((data->vdev.is_streaming & BIT(VIDEO_BUF_TYPE_OUTPUT) == 0) ||
 		    (vbuf == NULL)) {
 			k_mutex_unlock(&data->vdev.lock);
@@ -318,7 +316,7 @@ static int video_nsi_fifo_enqueue(const struct device *dev, struct video_buffer 
 		return -EINVAL;
 	}
 
-	k_fifo_put(&data->fifo_in, vbuf);
+	k_fifo_put(&data->out_fifo_submit, vbuf);
 	k_sem_give(&data->wake_sem);
 
 	return ret;
@@ -329,7 +327,7 @@ static int video_nsi_fifo_dequeue(const struct device *dev, struct video_buffer 
 {
 	struct video_nsi_fifo_data *data = dev->data;
 
-	*vbuf = k_fifo_get(&data->fifo_out, timeout);
+	*vbuf = k_fifo_get(&data->vdev.out_buf_completed, timeout);
 	if (*vbuf == NULL) {
 		return -EAGAIN;
 	}
@@ -343,7 +341,7 @@ static int video_nsi_fifo_flush(const struct device *dev, bool cancel)
 	struct video_buffer *vbuf;
 
 	if (!cancel) {
-		while (!k_fifo_is_empty(&data->fifo_in)) {
+		while (!k_fifo_is_empty(&data->out_fifo_submit)) {
 			k_sleep(K_MSEC(1));
 		}
 		return 0;
@@ -352,8 +350,8 @@ static int video_nsi_fifo_flush(const struct device *dev, bool cancel)
 	/* Resetting frame_offset would misalign every later frame, so skip the rest instead */
 	data->discard = (data->frame_offset > 0);
 
-	while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT)) != NULL) {
-		k_fifo_put(&data->fifo_out, vbuf);
+	while ((vbuf = k_fifo_get(&data->out_fifo_submit, K_NO_WAIT)) != NULL) {
+		k_fifo_put(&data->vdev.out_buf_completed, vbuf);
 		if (IS_ENABLED(CONFIG_POLL) && (data->vdev.signal != NULL)) {
 			k_poll_signal_raise(data->vdev.signal, VIDEO_BUF_ABORTED);
 		}
@@ -398,8 +396,6 @@ static int video_nsi_fifo_init(const struct device *dev)
 
 	data->fd = -1;
 
-	k_fifo_init(&data->fifo_in);
-	k_fifo_init(&data->fifo_out);
 	k_sem_init(&data->wake_sem, 0, 1);
 
 	k_thread_create(&data->thread, cfg->stack, cfg->stack_size, video_nsi_fifo_thread,

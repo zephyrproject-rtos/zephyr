@@ -23,22 +23,11 @@ LOG_MODULE_REGISTER(stm32_jpeg, CONFIG_VIDEO_LOG_LEVEL);
 
 typedef void (*irq_config_func_t)(const struct device *dev);
 
-struct video_common_header {
-	struct k_fifo fifo_in;
-	struct k_fifo fifo_out;
-};
-
-struct video_m2m_common {
-	struct video_common_header in;
-	struct video_common_header out;
-};
-
 #define YCBCR_420_MCU_BLOCK_SIZE 384 /* 4 8x8 Y, 1 8x8 Cb, 1 8x8 Cr */
 #define GRAYSCALE_MCU_BLOCK_SIZE 64  /* 1 byte per pixel (8x8) */
 
 struct stm32_jpeg_data {
 	struct video_device vdev; /* keep first */
-	struct video_m2m_common m2m;
 	JPEG_HandleTypeDef hjpeg;
 	bool codec_is_running;
 	struct video_buffer *current_in;
@@ -229,8 +218,6 @@ static void stm32_jpeg_convert_next_mcu(struct stm32_jpeg_data *data)
 static int stm32_jpeg_start_codec(const struct device *dev)
 {
 	struct stm32_jpeg_data *data = dev->data;
-	struct k_fifo *in_fifo_in = &data->m2m.in.fifo_in;
-	struct k_fifo *out_fifo_in = &data->m2m.out.fifo_in;
 	int ret;
 
 	if (k_fifo_is_empty(in_fifo_in) || k_fifo_is_empty(out_fifo_in)) {
@@ -331,8 +318,8 @@ void HAL_JPEG_EncodeCpltCallback(JPEG_HandleTypeDef *hjpeg)
 	k_mutex_lock(&data->vdev.lock, K_FOREVER);
 
 	/* Give back the buffers to the application */
-	k_fifo_put(&data->m2m.in.fifo_out, data->current_in);
-	k_fifo_put(&data->m2m.out.fifo_out, data->current_out);
+	k_fifo_put(&data->vdev.in_buf_completed, data->current_in);
+	k_fifo_put(&data->vdev.out_buf__completed, data->current_out);
 
 	/* Try to restart the next processing if needed */
 	ret = stm32_jpeg_start_codec(data->vdev.dev);
@@ -374,7 +361,7 @@ static int stm32_jpeg_set_stream(const struct device *dev, bool enable, enum vid
 {
 	struct stm32_jpeg_data *data = dev->data;
 	struct video_common_header *common =
-		type == VIDEO_BUF_TYPE_INPUT ? &data->m2m.in : &data->m2m.out;
+		type == VIDEO_BUF_TYPE_INPUT ? &data->vdev.in : &data->vdev.out;
 
 	/* Input & Output resolutions are always same so ensure this here */
 	if (data->vdev.in_fmt.width != data->vdev.out_fmt.width ||
@@ -396,12 +383,12 @@ static int stm32_jpeg_enqueue(const struct device *dev, struct video_buffer *vbu
 {
 	struct stm32_jpeg_data *data = dev->data;
 	struct video_common_header *common =
-		vbuf->type == VIDEO_BUF_TYPE_INPUT ? &data->m2m.in : &data->m2m.out;
+		vbuf->type == VIDEO_BUF_TYPE_INPUT ? &data->vdev.in : &data->vdev.out;
 	int ret;
 
 	/* TODO - need to check for buffer size here */
 
-	k_fifo_put(&common->fifo_in, vbuf);
+	k_fifo_put(&common->out_buf_submitted, vbuf);
 
 	/* Try to start codec if necessary */
 	if (!data->codec_is_running) {
@@ -420,9 +407,9 @@ static int stm32_jpeg_dequeue(const struct device *dev, struct video_buffer **vb
 {
 	struct stm32_jpeg_data *data = dev->data;
 	struct video_common_header *common =
-		(*vbuf)->type == VIDEO_BUF_TYPE_INPUT ? &data->m2m.in : &data->m2m.out;
+		(*vbuf)->type == VIDEO_BUF_TYPE_INPUT ? &data->vdev.in : &data->vdev.out;
 
-	*vbuf = k_fifo_get(&common->fifo_out, timeout);
+	*vbuf = k_fifo_get(&common->out_buf_completed, timeout);
 	if (*vbuf == NULL) {
 		return -EAGAIN;
 	}
@@ -485,12 +472,6 @@ static int stm32_jpeg_init(const struct device *dev)
 
 	/* Run IRQ init */
 	cfg->irq_config(dev);
-
-	/* Initialise default input / output formats */
-	k_fifo_init(&data->m2m.in.fifo_in);
-	k_fifo_init(&data->m2m.in.fifo_out);
-	k_fifo_init(&data->m2m.out.fifo_in);
-	k_fifo_init(&data->m2m.out.fifo_out);
 
 	/* Initialize default formats */
 	data->vdev.in_fmt.type = VIDEO_BUF_TYPE_INPUT;

@@ -61,8 +61,6 @@ struct video_esp32_data {
 	cam_hal_context_t hal;
 	const struct video_esp32_config *config;
 	struct video_buffer *active_vbuf;
-	struct k_fifo fifo_in;
-	struct k_fifo fifo_out;
 	struct dma_block_config dma_blocks[CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM];
 };
 
@@ -115,9 +113,9 @@ void video_esp32_dma_rx_done(const struct device *dev, void *user_data, uint32_t
 	}
 
 	data->active_vbuf->timestamp = k_uptime_get_32();
-	k_fifo_put(&data->fifo_out, data->active_vbuf);
+	k_fifo_put(&data->vdev.out_buf_completed, data->active_vbuf);
 	VIDEO_ESP32_RAISE_OUT_SIG_IF_ENABLED(VIDEO_BUF_DONE)
-	data->active_vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
+	data->active_vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
 
 	if (data->active_vbuf == NULL) {
 		LOG_WRN("Frame dropped. No buffer available");
@@ -169,7 +167,7 @@ static int video_esp32_set_stream(const struct device *dev, bool enable, enum vi
 		return -EBUSY;
 	}
 
-	data->active_vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
+	data->active_vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
 	if (!data->active_vbuf) {
 		LOG_ERR("No enqueued video buffers available.");
 		return -EAGAIN;
@@ -244,7 +242,7 @@ static int video_esp32_enqueue(const struct device *dev, struct video_buffer *vb
 	vbuf->bytesused = data->vdev->out_fmt.pitch * data->vdev->out_fmt.height;
 	vbuf->line_offset = 0;
 
-	k_fifo_put(&data->fifo_in, vbuf);
+	k_fifo_put(&data->vdev.out_buf_submitted, vbuf);
 
 	return 0;
 }
@@ -254,7 +252,7 @@ static int video_esp32_dequeue(const struct device *dev, struct video_buffer **v
 {
 	struct video_esp32_data *data = dev->data;
 
-	*vbuf = k_fifo_get(&data->fifo_out, timeout);
+	*vbuf = k_fifo_get(&data->vdev.out_buf_completed, timeout);
 	LOG_DBG("Dequeue done, vbuf = %p", *vbuf);
 	if (*vbuf == NULL) {
 		return -EAGAIN;
@@ -270,11 +268,11 @@ static int video_esp32_flush(const struct device *dev, bool cancel)
 
 	if (cancel) {
 		if (data->active_vbuf) {
-			k_fifo_put(&data->fifo_out, data->active_vbuf);
+			k_fifo_put(&data->vdev.out_buf_completed, data->active_vbuf);
 			data->active_vbuf = NULL;
 		}
-		while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT)) != NULL) {
-			k_fifo_put(&data->fifo_out, vbuf);
+		while ((vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT)) != NULL) {
+			k_fifo_put(&data->vdev.out_buf_completed, vbuf);
 #ifdef CONFIG_POLL
 			if (data->vdev.signal) {
 				k_poll_signal_raise(data->vdev.signal, VIDEO_BUF_ABORTED);
@@ -282,7 +280,7 @@ static int video_esp32_flush(const struct device *dev, bool cancel)
 #endif
 		}
 	} else {
-		while (!k_fifo_is_empty(&data->fifo_in)) {
+		while (!k_fifo_is_empty(&data->vdev.out_buf_submitted)) {
 			k_sleep(K_MSEC(1));
 		}
 	}
@@ -319,8 +317,6 @@ static int video_esp32_init(const struct device *dev)
 	 * to ensure the image sensor receives clock before its I2C init.
 	 */
 
-	k_fifo_init(&data->fifo_in);
-	k_fifo_init(&data->fifo_out);
 	data->config = cfg;
 	video_esp32_cam_ctrl_init(dev);
 

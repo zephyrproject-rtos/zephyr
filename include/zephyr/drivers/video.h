@@ -62,6 +62,14 @@ struct video_device {
 	struct k_mutex lock;
 	/** Signal used by the poll API and @ref video_set_signal() */
 	struct k_poll_signal *signal;
+	/** Input buffer submission queue */
+	struct k_fifo *in_buf_submitted;
+	/** Input buffer completion queue */
+	struct k_fifo *in_buf_completed;
+	/** Output buffer submission queue */
+	struct k_fifo *out_buf_submitted;
+	/** Output buffer completion queue */
+	struct k_fifo *out_buf_completed;
 };
 
 /**

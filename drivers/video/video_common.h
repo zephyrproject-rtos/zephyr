@@ -34,6 +34,10 @@
 		.src_dev = source,                                                                 \
 		.ctrls = SYS_DLIST_STATIC_INIT(&name.ctrls),                                       \
 		.lock = Z_MUTEX_INITIALIZER(name),                                                 \
+		.in_fifo_submitted = Z_FIFO_INITIALIZER(name),                                     \
+		.in_fifo_completed = Z_FIFO_INITIALIZER(name),                                     \
+		.out_fifo_submitted = Z_FIFO_INITIALIZER(name),                                    \
+		.out_fifo_completed = Z_FIFO_INITIALIZER(name),                                    \
 	}
 
 /**

@@ -41,8 +41,6 @@ struct nxp_video_sdma_data {
 	 */
 	smartdma_camera_param_t params __aligned(4);
 	uint32_t smartdma_stack[64] __aligned(32);
-	struct k_fifo fifo_in;
-	struct k_fifo fifo_out;
 	struct k_sem stream_empty; /* Signals stream has run out of buffers */
 	bool stream_starved;
 	bool buf_reload_flag;
@@ -75,7 +73,7 @@ static void nxp_video_sdma_callback(const struct device *dev, void *user_data,
 		/* Save old framebuffer, we will dequeue it next interrupt */
 		data->active_buf = data->queued_buf;
 		/* Load new framebuffer */
-		data->queued_buf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
+		data->queued_buf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
 		if (data->queued_buf == NULL) {
 			data->stream_starved = true;
 		} else {
@@ -88,7 +86,7 @@ static void nxp_video_sdma_callback(const struct device *dev, void *user_data,
 		}
 		data->active_buf->line_offset = (data->frame_idx / 2) * SDMA_LINE_COUNT;
 		data->active_buf->timestamp = k_uptime_get_32();
-		k_fifo_put(&data->fifo_out, data->active_buf);
+		k_fifo_put(&data->vdev.out_buf_completed, data->active_buf);
 
 	}
 	/* Toggle buffer reload flag*/
@@ -121,7 +119,7 @@ static int nxp_video_sdma_set_stream(const struct device *dev, bool enable,
 	/* SmartDMA continuously streams data once started. If user
 	 * has not provided a framebuffer, we can't start DMA.
 	 */
-	data->queued_buf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
+	data->queued_buf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
 	if (data->queued_buf == NULL) {
 		return -EIO;
 	}
@@ -157,7 +155,7 @@ static int nxp_video_sdma_enqueue(const struct device *dev, struct video_buffer 
 	vbuf->bytesused = SDMA_VBUF_WIDTH * SDMA_LINE_COUNT * sizeof(uint16_t);
 
 	/* Put buffer into FIFO */
-	k_fifo_put(&data->fifo_in, vbuf);
+	k_fifo_put(&data->vdev.out_buf_submitted, vbuf);
 	if (data->stream_starved) {
 		/* Kick SmartDMA off */
 		nxp_video_sdma_set_stream(dev, true, vbuf->type);
@@ -170,7 +168,7 @@ static int nxp_video_sdma_dequeue(const struct device *dev, struct video_buffer 
 {
 	struct nxp_video_sdma_data *data = dev->data;
 
-	*vbuf = k_fifo_get(&data->fifo_out, timeout);
+	*vbuf = k_fifo_get(&data->vdev.out_buf_completed, timeout);
 	if (*vbuf == NULL) {
 		return -EAGAIN;
 	}
@@ -191,8 +189,8 @@ static int nxp_video_sdma_flush(const struct device *dev, bool cancel)
 		/* Stop DMA engine */
 		dma_stop(config->dma_dev, 0);
 		/* Forward all buffers in fifo_in to fifo_out */
-		while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT))) {
-			k_fifo_put(&data->fifo_out, vbuf);
+		while ((vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT))) {
+			k_fifo_put(&data->vdev.out_buf_completed, vbuf);
 		}
 	}
 	return 0;
@@ -263,8 +261,6 @@ static int nxp_video_sdma_init(const struct device *dev)
 	/* Turnoff clock to inputmux to save power. Clock is only needed to make changes */
 	INPUTMUX_Deinit(INPUTMUX0);
 
-	k_fifo_init(&data->fifo_in);
-	k_fifo_init(&data->fifo_out);
 	/* Given to when the DMA engine runs out of buffers */
 	k_sem_init(&data->stream_empty, 0, 1);
 

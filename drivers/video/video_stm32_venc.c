@@ -97,10 +97,6 @@ static struct stm32_venc_ewl ewl_instance;
 
 struct stm32_venc_data {
 	struct video_device vdev; /* keep first */
-	struct k_fifo in_fifo_in;
-	struct k_fifo in_fifo_out;
-	struct k_fifo out_fifo_in;
-	struct k_fifo out_fifo_out;
 	struct video_buffer *vbuf;
 	H264EncInst encoder;
 	uint32_t frame_nb;
@@ -550,13 +546,14 @@ static int encode_frame(struct stm32_venc_data *data)
 	H264EncOut enc_out = {0};
 	struct stm32_venc_ewl *inst = &ewl_instance;
 
-	if (k_fifo_is_empty(&data->in_fifo_in) || k_fifo_is_empty(&data->out_fifo_in)) {
+	if (k_fifo_is_empty(&data->vdev.in_buf_submitted) ||
+	    k_fifo_is_empty(&data->vdev.out_buf_submitted)) {
 		/* Encoding deferred to next buffer queueing */
 		return 0;
 	}
 
-	input = k_fifo_get(&data->in_fifo_in, K_NO_WAIT);
-	output = k_fifo_get(&data->out_fifo_in, K_NO_WAIT);
+	input = k_fifo_get(&data->vdev.in_buf_submitted, K_NO_WAIT);
+	output = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
 
 	if (data->encoder == NULL) {
 		ret = encoder_prepare(data);
@@ -644,8 +641,8 @@ static int encode_frame(struct stm32_venc_data *data)
 	data->frame_nb++;
 
 out:
-	k_fifo_put(&data->in_fifo_out, input);
-	k_fifo_put(&data->out_fifo_out, output);
+	k_fifo_put(&data->vdev.in_buf_completed, input);
+	k_fifo_put(&data->vdev.out_buf_completed, output);
 
 	return ret;
 }
@@ -672,9 +669,9 @@ static int stm32_venc_enqueue(const struct device *dev, struct video_buffer *vbu
 	struct stm32_venc_data *data = dev->data;
 
 	if (vbuf->type == VIDEO_BUF_TYPE_INPUT) {
-		k_fifo_put(&data->in_fifo_in, vbuf);
+		k_fifo_put(&data->vdev.in_buf_submitted, vbuf);
 	} else {
-		k_fifo_put(&data->out_fifo_in, vbuf);
+		k_fifo_put(&data->vdev.out_buf_submitted, vbuf);
 	}
 
 	return encode_frame(data);
@@ -686,9 +683,9 @@ static int stm32_venc_dequeue(const struct device *dev, struct video_buffer **vb
 	struct stm32_venc_data *data = dev->data;
 
 	if ((*vbuf)->type == VIDEO_BUF_TYPE_INPUT) {
-		*vbuf = k_fifo_get(&data->in_fifo_out, timeout);
+		*vbuf = k_fifo_get(&data->vdev.in_buf_completed, timeout);
 	} else {
-		*vbuf = k_fifo_get(&data->out_fifo_out, timeout);
+		*vbuf = k_fifo_get(&data->vdev.out_buf_completed, timeout);
 	}
 
 	if (*vbuf == NULL) {
@@ -817,11 +814,6 @@ static int stm32_venc_init(const struct device *dev)
 		return -ENODEV;
 	}
 	reset_line_toggle_dt(&config->reset);
-
-	k_fifo_init(&data->in_fifo_in);
-	k_fifo_init(&data->in_fifo_out);
-	k_fifo_init(&data->out_fifo_in);
-	k_fifo_init(&data->out_fifo_out);
 
 	/* Run IRQ init */
 	config->irq_config(dev);

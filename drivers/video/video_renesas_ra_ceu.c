@@ -56,8 +56,6 @@ struct video_renesas_ra_ceu_data {
 	struct st_ceu_instance_ctrl *fsp_ctrl;
 	struct st_capture_cfg *fsp_cfg;
 	struct st_ceu_extended_cfg *fsp_extend_cfg;
-	struct k_fifo fifo_in;
-	struct k_fifo fifo_out;
 	atomic_ptr_t vbuf;
 };
 
@@ -75,23 +73,23 @@ static void video_renesas_ra_ceu_callback(capture_callback_args_t *p_args)
 		curr_vbuf = atomic_ptr_get(&data->vbuf);
 		if (curr_vbuf && atomic_ptr_cas(&data->vbuf, curr_vbuf, NULL)) {
 			curr_vbuf->timestamp = k_uptime_get_32();
-			k_fifo_put(&data->fifo_out, curr_vbuf);
+			k_fifo_put(&data->vdev.out_buf_completed, curr_vbuf);
 		}
 
-		next_vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
+		next_vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
 		if (next_vbuf == NULL) {
 			return;
 		}
 
 		if (!atomic_ptr_cas(&data->vbuf, NULL, next_vbuf)) {
-			k_fifo_put(&data->fifo_in, next_vbuf);
+			k_fifo_put(&data->vdev.out_buf_submitted, next_vbuf);
 			return;
 		}
 
 		err = R_CEU_CaptureStart(data->fsp_ctrl, next_vbuf->buffer);
 		if (err != FSP_SUCCESS) {
 			atomic_ptr_clear(&data->vbuf);
-			k_fifo_put(&data->fifo_out, next_vbuf);
+			k_fifo_put(&data->vdev.out_buf_completed, next_vbuf);
 			return;
 		}
 	}
@@ -185,14 +183,14 @@ static int video_renesas_ra_ceu_set_stream(const struct device *dev, bool enable
 		return 0;
 	}
 
-	next_vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
+	next_vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
 	if (next_vbuf == NULL) {
 		LOG_DBG("No enqueued video buffers available to start streaming");
 		return -EAGAIN;
 	}
 
 	if (!atomic_ptr_cas(&data->vbuf, NULL, next_vbuf)) {
-		k_fifo_put(&data->fifo_in, next_vbuf);
+		k_fifo_put(&data->vdev.out_buf_submitted, next_vbuf);
 		return 0;
 	}
 
@@ -200,7 +198,7 @@ static int video_renesas_ra_ceu_set_stream(const struct device *dev, bool enable
 	if (err != FSP_SUCCESS) {
 		LOG_DBG("Failed to start CEU capture");
 		atomic_ptr_clear(&data->vbuf);
-		k_fifo_put(&data->fifo_out, next_vbuf);
+		k_fifo_put(&data->vdev.out_buf_completed, next_vbuf);
 		return -EIO;
 	}
 
@@ -224,7 +222,7 @@ static int video_renesas_ra_ceu_enqueue(const struct device *dev, struct video_b
 	vbuf->bytesused = buffer_size;
 	vbuf->line_offset = 0;
 
-	k_fifo_put(&data->fifo_in, vbuf);
+	k_fifo_put(&data->vdev.out_buf_submitted, vbuf);
 
 	if (!video_stream_busy(dev)) {
 		return 0;
@@ -234,14 +232,14 @@ static int video_renesas_ra_ceu_enqueue(const struct device *dev, struct video_b
 		return 0;
 	}
 
-	next_vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
+	next_vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
 	if (!next_vbuf) {
 		LOG_DBG("No enqueued video buffers available to restart streaming");
 		return -EAGAIN;
 	}
 
 	if (!atomic_ptr_cas(&data->vbuf, NULL, next_vbuf)) {
-		k_fifo_put(&data->fifo_in, next_vbuf);
+		k_fifo_put(&data->vdev.out_buf_submitted, next_vbuf);
 		return 0;
 	}
 
@@ -249,7 +247,7 @@ static int video_renesas_ra_ceu_enqueue(const struct device *dev, struct video_b
 	if (err != FSP_SUCCESS) {
 		LOG_DBG("Failed to start CEU capture");
 		atomic_ptr_clear(&data->vbuf);
-		k_fifo_put(&data->fifo_out, next_vbuf);
+		k_fifo_put(&data->vdev.out_buf_completed, next_vbuf);
 		return -EIO;
 	}
 
@@ -261,7 +259,7 @@ static int video_renesas_ra_ceu_dequeue(const struct device *dev, struct video_b
 {
 	struct video_renesas_ra_ceu_data *data = dev->data;
 
-	*buf = k_fifo_get(&data->fifo_out, timeout);
+	*buf = k_fifo_get(&data->vdev.out_buf_completed, timeout);
 	if (*buf == NULL) {
 		LOG_DBG("Dequeue timeout or no completed buffer available");
 		return -EAGAIN;
@@ -282,11 +280,11 @@ static int video_renesas_ra_ceu_flush(const struct device *dev, bool cancel)
 
 		vbuf = atomic_ptr_get(&data->vbuf);
 		if (vbuf && atomic_ptr_cas(&data->vbuf, vbuf, NULL)) {
-			k_fifo_put(&data->fifo_out, vbuf);
+			k_fifo_put(&data->vdev.out_buf_completed, vbuf);
 		}
 
-		while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT)) != NULL) {
-			k_fifo_put(&data->fifo_out, vbuf);
+		while ((vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT)) != NULL) {
+			k_fifo_put(&data->vdev.out_buf_completed, vbuf);
 		}
 
 #ifdef CONFIG_POLL
@@ -296,7 +294,7 @@ static int video_renesas_ra_ceu_flush(const struct device *dev, bool cancel)
 #endif
 
 	} else {
-		while (!k_fifo_is_empty(&data->fifo_in)) {
+		while (!k_fifo_is_empty(&data->vdev.out_buf_submitted)) {
 			k_sleep(K_MSEC(1));
 		}
 	}
@@ -338,8 +336,6 @@ static int video_renesas_ra_ceu_init(const struct device *dev)
 
 	atomic_clear(&data->streaming);
 	atomic_ptr_clear(&data->vbuf);
-	k_fifo_init(&data->fifo_in);
-	k_fifo_init(&data->fifo_out);
 
 	return 0;
 }

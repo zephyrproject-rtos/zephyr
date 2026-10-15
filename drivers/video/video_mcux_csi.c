@@ -30,8 +30,6 @@ struct video_mcux_csi_data {
 	struct video_device vdev; /* keep first */
 	csi_config_t csi_config;
 	csi_handle_t csi_handle;
-	struct k_fifo fifo_in;
-	struct k_fifo fifo_out;
 };
 
 static void __frame_done_cb(CSI_Type *base, csi_handle_t *handle, status_t status, void *user_data)
@@ -56,7 +54,7 @@ static void __frame_done_cb(CSI_Type *base, csi_handle_t *handle, status_t statu
 	}
 
 	/* Get matching vbuf by addr */
-	while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT))) {
+	while ((vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT))) {
 		if ((uint32_t)vbuf->buffer == buffer_addr) {
 			break;
 		}
@@ -65,7 +63,7 @@ static void __frame_done_cb(CSI_Type *base, csi_handle_t *handle, status_t statu
 		 * start/restart, requeue the frame and continue looking for
 		 * the right buffer.
 		 */
-		k_fifo_put(&data->fifo_in, vbuf);
+		k_fifo_put(&data->vdev.out_buf_submitted, vbuf);
 
 		/* prevent infinite loop */
 		if (vbuf_first == NULL) {
@@ -87,7 +85,7 @@ static void __frame_done_cb(CSI_Type *base, csi_handle_t *handle, status_t statu
 	DCACHE_InvalidateByRange(buffer_addr, vbuf->bytesused);
 #endif
 
-	k_fifo_put(&data->fifo_out, vbuf);
+	k_fifo_put(&data->vdev.out_buf_completed, vbuf);
 
 done:
 	/* Trigger Event */
@@ -209,7 +207,7 @@ static int video_mcux_csi_flush(const struct device *dev, bool cancel)
 		/* wait for all buffer to be processed */
 		do {
 			k_sleep(K_MSEC(1));
-		} while (!k_fifo_is_empty(&data->fifo_in));
+		} while (!k_fifo_is_empty(&data->vdev.out_buf_submitted));
 	} else {
 		/* Flush driver output queue */
 		do {
@@ -217,8 +215,8 @@ static int video_mcux_csi_flush(const struct device *dev, bool cancel)
 							&buffer_addr);
 		} while (ret == kStatus_Success);
 
-		while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT))) {
-			k_fifo_put(&data->fifo_out, vbuf);
+		while ((vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT))) {
+			k_fifo_put(&data->vdev.out_buf_completed, vbuf);
 			if (IS_ENABLED(CONFIG_POLL) && data->vdev.signal) {
 				k_poll_signal_raise(data->vdev.signal, VIDEO_BUF_ABORTED);
 			}
@@ -245,7 +243,7 @@ static int video_mcux_csi_enqueue(const struct device *dev, struct video_buffer 
 		return -EIO;
 	}
 
-	k_fifo_put(&data->fifo_in, vbuf);
+	k_fifo_put(&data->vdev.out_buf_submitted, vbuf);
 
 	return 0;
 }
@@ -255,7 +253,7 @@ static int video_mcux_csi_dequeue(const struct device *dev, struct video_buffer 
 {
 	struct video_mcux_csi_data *data = dev->data;
 
-	*vbuf = k_fifo_get(&data->fifo_out, timeout);
+	*vbuf = k_fifo_get(&data->vdev.out_buf_completed, timeout);
 	if (*vbuf == NULL) {
 		return -EAGAIN;
 	}
@@ -320,9 +318,6 @@ static int video_mcux_csi_init(const struct device *dev)
 	const struct video_mcux_csi_config *config = dev->config;
 	struct video_mcux_csi_data *data = dev->data;
 	int err;
-
-	k_fifo_init(&data->fifo_in);
-	k_fifo_init(&data->fifo_out);
 
 	CSI_GetDefaultConfig(&data->csi_config);
 

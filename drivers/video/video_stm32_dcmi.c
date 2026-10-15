@@ -44,8 +44,6 @@ struct video_stm32_dcmi_data {
 	DCMI_HandleTypeDef hdcmi;
 	struct video_stm32_dcmi_ctrls ctrls;
 	int capture_rate;
-	struct k_fifo fifo_in;
-	struct k_fifo fifo_out;
 	struct video_buffer *vbuf;
 	struct stream dma;
 	uint32_t snapshot_start_time;
@@ -99,7 +97,7 @@ void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
 		vbuf = dev_data->vbuf;
 		dev_data->vbuf = NULL;
 		vbuf->timestamp = k_uptime_get_32();
-		k_fifo_put(&dev_data->fifo_out, vbuf);
+		k_fifo_put(&dev_data->vdev.out_buf_completed, vbuf);
 		return;
 	}
 
@@ -107,7 +105,7 @@ void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
 	hal_ret = HAL_DCMI_Suspend(hdcmi);
 	__ASSERT_NO_MSG(hal_ret == HAL_OK);
 
-	vbuf = k_fifo_get(&dev_data->fifo_in, K_NO_WAIT);
+	vbuf = k_fifo_get(&dev_data->vdev.out_buf_submitted, K_NO_WAIT);
 
 	if (vbuf == NULL) {
 		LOG_DBG("Failed to get buffer from fifo");
@@ -117,7 +115,7 @@ void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
 	vbuf->timestamp = k_uptime_get_32();
 	memcpy(vbuf->buffer, dev_data->vbuf->buffer, vbuf->bytesused);
 
-	k_fifo_put(&dev_data->fifo_out, vbuf);
+	k_fifo_put(&dev_data->vdev.out_buf_completed, vbuf);
 
 resume:
 	hal_ret = HAL_DCMI_Resume(hdcmi);
@@ -242,7 +240,7 @@ static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable,
 
 		/* Release the video buffer allocated when start streaming */
 		if (data->vbuf) {
-			k_fifo_put(&data->fifo_in, data->vbuf);
+			k_fifo_put(&data->vdev.out_buf_submitted, data->vbuf);
 			data->vbuf = NULL;
 		}
 
@@ -250,7 +248,7 @@ static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable,
 	}
 
 	if (!data->ctrls.snapshot.val) {
-		data->vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
+		data->vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
 
 		if (data->vbuf == NULL) {
 			LOG_ERR("No buffers");
@@ -282,7 +280,7 @@ static int video_stm32_dcmi_enqueue(const struct device *dev, struct video_buffe
 
 	vbuf->bytesused = data->vdev.out_fmt.size;
 
-	k_fifo_put(&data->fifo_in, vbuf);
+	k_fifo_put(&data->vdev.out_buf_submitted, vbuf);
 
 	return 0;
 }
@@ -299,7 +297,7 @@ static int video_stm32_dcmi_snapshot(const struct device *dev, struct video_buff
 	/* See if we were already called and have an active buffer */
 	if (data->vbuf == NULL) {
 		/* check first to see if we already have a buffer returned */
-		*vbuf = k_fifo_get(&data->fifo_out, K_NO_WAIT);
+		*vbuf = k_fifo_get(&data->vdev.out_buf_completed, K_NO_WAIT);
 		if (*vbuf != NULL) {
 			if (HAL_DCMI_Stop(&data->hdcmi) != HAL_OK) {
 				LOG_DBG("HAL_DCMI_Stop FAILED!");
@@ -308,7 +306,7 @@ static int video_stm32_dcmi_snapshot(const struct device *dev, struct video_buff
 			/* return the retrieved buffer */
 			return 0;
 		}
-		data->vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
+		data->vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
 		if (data->vbuf == NULL) {
 			LOG_WRN("Snapshot: No Buffers available!");
 			return -ENOMEM;
@@ -326,7 +324,7 @@ static int video_stm32_dcmi_snapshot(const struct device *dev, struct video_buff
 		data->snapshot_start_time = k_uptime_get_32();
 	}
 
-	*vbuf = k_fifo_get(&data->fifo_out, timeout);
+	*vbuf = k_fifo_get(&data->vdev.out_buf_completed, timeout);
 	if (*vbuf == NULL) {
 		uint32_t time_since_start_time =
 			(uint32_t)(k_uptime_get_32() - data->snapshot_start_time);
@@ -338,13 +336,13 @@ static int video_stm32_dcmi_snapshot(const struct device *dev, struct video_buff
 			}
 
 			/* verify it did not come in during this processing */
-			*vbuf = k_fifo_get(&data->fifo_out, K_NO_WAIT);
+			*vbuf = k_fifo_get(&data->vdev.out_buf_completed, K_NO_WAIT);
 			if (*vbuf != NULL) {
 				return 0;
 			}
 
 			if (data->vbuf != NULL) {
-				k_fifo_put(&data->fifo_in, data->vbuf);
+				k_fifo_put(&data->vdev.out_buf_submitted, data->vbuf);
 				data->vbuf = NULL;
 			}
 		}
@@ -368,7 +366,7 @@ static int video_stm32_dcmi_dequeue(const struct device *dev, struct video_buffe
 		return video_stm32_dcmi_snapshot(dev, vbuf, timeout);
 	}
 
-	*vbuf = k_fifo_get(&data->fifo_out, timeout);
+	*vbuf = k_fifo_get(&data->vdev.out_buf_completed, timeout);
 
 	return (*vbuf == NULL) ? -EAGAIN : 0;
 }
@@ -645,8 +643,6 @@ static int video_stm32_dcmi_init(const struct device *dev)
 		return err;
 	}
 
-	k_fifo_init(&data->fifo_in);
-	k_fifo_init(&data->fifo_out);
 	data->capture_rate = 1;
 
 	/* Run IRQ init */

@@ -65,8 +65,6 @@ struct nxp_flexio_camera_data {
 	/* Buffer queues. Head of fifo_in is the buffer currently being filled
 	 * by DMA; it is removed and pushed to fifo_out once the last line completes.
 	 */
-	struct k_fifo fifo_in;
-	struct k_fifo fifo_out;
 	/* Semaphore given when stream runs out of buffers */
 	struct k_sem stream_empty;
 	/* Current line index within the active buffer (0..fmt.height-1) */
@@ -145,7 +143,7 @@ static int nxp_flexio_camera_configure_xclk(const struct device *dev)
 static void nxp_flexio_camera_start_line_dma(struct nxp_flexio_camera_data *data)
 {
 	const struct nxp_flexio_camera_config *config = data->vdev.dev->config;
-	struct video_buffer *vbuf = k_fifo_peek_head(&data->fifo_in);
+	struct video_buffer *vbuf = k_fifo_peek_head(&data->vdev.out_buf_submitted);
 
 	if (vbuf == NULL) {
 		return;
@@ -201,7 +199,7 @@ static void nxp_flexio_camera_dma_callback(const struct device *dma_dev,
 	}
 
 	/* Last line completed — pop the active buffer and publish the frame */
-	vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
+	vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
 	if (vbuf == NULL) {
 		return;
 	}
@@ -209,7 +207,7 @@ static void nxp_flexio_camera_dma_callback(const struct device *dma_dev,
 	vbuf->bytesused   = data->vdev.out_fmt.size;
 	vbuf->line_offset = 0U;
 
-	k_fifo_put(&data->fifo_out, vbuf);
+	k_fifo_put(&data->vdev.out_buf_completed, vbuf);
 }
 
 /* VSYNC GPIO interrupt — signals the application that a new frame began. */
@@ -228,7 +226,7 @@ static void nxp_flexio_camera_vsync_isr(const struct device *port,
 		return;
 	}
 
-	vbuf = k_fifo_peek_head(&data->fifo_in);
+	vbuf = k_fifo_peek_head(&data->vdev.out_buf_submitted);
 	if (vbuf == NULL) {
 		k_sem_give(&data->stream_empty);
 		return;
@@ -376,7 +374,7 @@ static int nxp_flexio_camera_enqueue(const struct device *dev,
 	 */
 	k_sem_reset(&data->stream_empty);
 
-	k_fifo_put(&data->fifo_in, vbuf);
+	k_fifo_put(&data->vdev.out_buf_submitted, vbuf);
 
 	return 0;
 }
@@ -387,7 +385,7 @@ static int nxp_flexio_camera_dequeue(const struct device *dev,
 {
 	struct nxp_flexio_camera_data *data = dev->data;
 
-	*vbuf = k_fifo_get(&data->fifo_out, timeout);
+	*vbuf = k_fifo_get(&data->vdev.out_buf_completed, timeout);
 	if (*vbuf == NULL) {
 		return -EAGAIN;
 	}
@@ -407,8 +405,8 @@ static int nxp_flexio_camera_flush(const struct device *dev, bool cancel)
 	} else {
 		dma_stop(config->dma_dev, config->dma_channel);
 		/* Forward all pending input buffers to the output queue */
-		while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT)) != NULL) {
-			k_fifo_put(&data->fifo_out, vbuf);
+		while ((vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT)) != NULL) {
+			k_fifo_put(&data->vdev.out_buf_completed, vbuf);
 		}
 	}
 
@@ -485,8 +483,6 @@ static int nxp_flexio_camera_init(const struct device *dev)
 		return ret;
 	}
 
-	k_fifo_init(&data->fifo_in);
-	k_fifo_init(&data->fifo_out);
 	k_sem_init(&data->stream_empty, 0, 1);
 
 	return 0;

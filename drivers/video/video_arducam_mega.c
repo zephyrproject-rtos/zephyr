@@ -236,8 +236,6 @@ struct arducam_mega_ctrls {
 struct arducam_mega_data {
 	struct video_device vdev; /* keep first */
 	struct arducam_mega_ctrls ctrls;
-	struct k_fifo fifo_in;
-	struct k_fifo fifo_out;
 	struct k_work buf_work;
 	struct k_timer stream_schedule_timer;
 	uint8_t fifo_first_read;
@@ -875,10 +873,10 @@ static int arducam_mega_flush(const struct device *dev, bool cancel)
 	struct video_buffer *vbuf;
 
 	/* Clear fifo cache */
-	while (!k_fifo_is_empty(&drv_data->fifo_out)) {
-		vbuf = k_fifo_get(&drv_data->fifo_out, K_USEC(10));
+	while (!k_fifo_is_empty(&drv_data->vdev.out_buf_completed)) {
+		vbuf = k_fifo_get(&drv_data->vdev.out_buf_completed, K_USEC(10));
 		if (vbuf != NULL) {
-			k_fifo_put(&drv_data->fifo_in, vbuf);
+			k_fifo_put(&drv_data->vdev.out_buf_submitted, vbuf);
 		}
 	}
 	return 0;
@@ -988,7 +986,7 @@ static void arducam_mega_buffer_work(struct k_work *work)
 	struct video_buffer *vbuf;
 	int ret = 0;
 
-	vbuf = k_fifo_get(&drv_data->fifo_in, K_NO_WAIT);
+	vbuf = k_fifo_get(&drv_data->vdev.out_buf_submitted, K_NO_WAIT);
 	if (vbuf == NULL) {
 		k_work_submit_to_queue(&ac_work_q, &drv_data->buf_work);
 		return;
@@ -1010,14 +1008,14 @@ static void arducam_mega_buffer_work(struct k_work *work)
 	}
 
 	vbuf->timestamp = f_timestamp;
-	k_fifo_put(&drv_data->fifo_out, vbuf);
+	k_fifo_put(&drv_data->vdev.out_buf_completed, vbuf);
 }
 
 static int arducam_mega_enqueue(const struct device *dev, struct video_buffer *vbuf)
 {
 	struct arducam_mega_data *data = dev->data;
 
-	k_fifo_put(&data->fifo_in, vbuf);
+	k_fifo_put(&data->vdev.out_buf_submitted, vbuf);
 
 	LOG_DBG("enqueue buffer %p", vbuf->buffer);
 
@@ -1029,7 +1027,7 @@ static int arducam_mega_dequeue(const struct device *dev, struct video_buffer **
 {
 	struct arducam_mega_data *data = dev->data;
 
-	*vbuf = k_fifo_get(&data->fifo_out, timeout);
+	*vbuf = k_fifo_get(&data->vdev.out_buf_completed, timeout);
 	if (*vbuf == NULL) {
 		return -EAGAIN;
 	}
@@ -1238,8 +1236,6 @@ static int arducam_mega_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	k_fifo_init(&drv_data->fifo_in);
-	k_fifo_init(&drv_data->fifo_out);
 	k_work_queue_init(&ac_work_q);
 	k_work_queue_start(&ac_work_q, ac_stack_area, K_THREAD_STACK_SIZEOF(ac_stack_area),
 			   AC_PRIORITY, NULL);

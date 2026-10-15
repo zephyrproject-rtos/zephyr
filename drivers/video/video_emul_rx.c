@@ -23,8 +23,6 @@ LOG_MODULE_REGISTER(video_emul_rx, CONFIG_VIDEO_LOG_LEVEL);
 struct emul_rx_data {
 	struct video_device vdev; /* keep first */
 	struct k_work work;
-	struct k_fifo fifo_in;
-	struct k_fifo fifo_out;
 };
 
 static int emul_rx_get_caps(const struct device *dev, struct video_caps *caps)
@@ -53,7 +51,7 @@ static void emul_rx_worker(struct k_work *work)
 	LOG_DBG("Queueing a frame of %u bytes in format %x %ux%u", fmt->pitch * fmt->height,
 		fmt->pixelformat, fmt->width, fmt->height);
 
-	while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT)) != NULL) {
+	while ((vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT)) != NULL) {
 		vbuf->bytesused = fmt->pitch * fmt->height;
 		vbuf->line_offset = 0;
 
@@ -68,7 +66,7 @@ static void emul_rx_worker(struct k_work *work)
 		}
 
 		/* Once the buffer is completed, submit it to the video buffer */
-		k_fifo_put(&data->fifo_out, vbuf);
+		k_fifo_put(&data->vdev.out_buf_completed, vbuf);
 	}
 }
 
@@ -78,7 +76,7 @@ static int emul_rx_enqueue(const struct device *dev, struct video_buffer *vbuf)
 	struct video_format *fmt = &data->vdev.out_fmt;
 
 	/* Submit the buffer for processing in the worker, where everything happens */
-	k_fifo_put(&data->fifo_in, vbuf);
+	k_fifo_put(&data->vdev.out_buf_submitted, vbuf);
 	k_work_submit(&data->work);
 
 	return 0;
@@ -90,7 +88,7 @@ static int emul_rx_dequeue(const struct device *dev, struct video_buffer **vbufp
 	struct emul_rx_data *data = dev->data;
 
 	/* All the processing is expected to happen in the worker */
-	*vbufp = k_fifo_get(&data->fifo_out, timeout);
+	*vbufp = k_fifo_get(&data->vdev.out_buf_completed, timeout);
 	if (*vbufp == NULL) {
 		return -EAGAIN;
 	}
@@ -113,8 +111,8 @@ static int emul_rx_flush(const struct device *dev, bool cancel)
 		k_work_flush(&data->work, &sync);
 
 		/* Empty all the cancelled items */
-		while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT))) {
-			k_fifo_put(&data->fifo_out, vbuf);
+		while ((vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT))) {
+			k_fifo_put(&data->vdev.out_buf_completed, vbuf);
 		}
 	} else {
 		/* Process all the remaining items from the queue */
@@ -152,8 +150,6 @@ int emul_rx_init(const struct device *dev)
 		return ret;
 	}
 
-	k_fifo_init(&data->fifo_in);
-	k_fifo_init(&data->fifo_out);
 	k_work_init(&data->work, &emul_rx_worker);
 
 	return 0;

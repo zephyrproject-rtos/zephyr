@@ -75,8 +75,6 @@ static const uint8_t h264_start_code_4[] = {0x00, 0x00, 0x00, 0x01};
 struct video_sw_generator_data {
 	struct video_device vdev; /* keep first */
 	struct sw_ctrls ctrls;
-	struct k_fifo fifo_in;
-	struct k_fifo fifo_out;
 	struct k_work_delayable work;
 	int pattern;
 #ifdef CONFIG_VIDEO_SW_GENERATOR_H264
@@ -613,7 +611,7 @@ static void video_sw_generator_worker(struct k_work *work)
 
 	k_work_reschedule(&data->work, K_NSEC(video_frmival_nsec(&data->vdev.frmival))));
 
-	vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
+	vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
 	if (vbuf == NULL) {
 		return;
 	}
@@ -624,7 +622,7 @@ static void video_sw_generator_worker(struct k_work *work)
 		break;
 	}
 
-	k_fifo_put(&data->fifo_out, vbuf);
+	k_fifo_put(&data->vdev.out_buf_completed, vbuf);
 
 	if (IS_ENABLED(CONFIG_POLL) && data->vdev.signal) {
 		k_poll_signal_raise(data->vdev.signal, VIDEO_BUF_DONE);
@@ -637,7 +635,7 @@ static int video_sw_generator_enqueue(const struct device *dev, struct video_buf
 {
 	struct video_sw_generator_data *data = dev->data;
 
-	k_fifo_put(&data->fifo_in, vbuf);
+	k_fifo_put(&data->vdev.out_buf_submitted, vbuf);
 
 	return 0;
 }
@@ -647,7 +645,7 @@ static int video_sw_generator_dequeue(const struct device *dev, struct video_buf
 {
 	struct video_sw_generator_data *data = dev->data;
 
-	*vbuf = k_fifo_get(&data->fifo_out, timeout);
+	*vbuf = k_fifo_get(&data->vdev.out_buf_completed, timeout);
 	if (*vbuf == NULL) {
 		return -EAGAIN;
 	}
@@ -664,10 +662,10 @@ static int video_sw_generator_flush(const struct device *dev, bool cancel)
 		/* wait for all buffer to be processed */
 		do {
 			k_sleep(K_MSEC(1));
-		} while (!k_fifo_is_empty(&data->fifo_in));
+		} while (!k_fifo_is_empty(&data->vdev.out_buf_submitted));
 	} else {
-		while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT))) {
-			k_fifo_put(&data->fifo_out, vbuf);
+		while ((vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT))) {
+			k_fifo_put(&data->vdev.out_buf_completed, vbuf);
 			if (IS_ENABLED(CONFIG_POLL) && data->vdev.signal) {
 				k_poll_signal_raise(data->vdev.signal, VIDEO_BUF_ABORTED);
 			}
@@ -750,8 +748,6 @@ static int video_sw_generator_init(const struct device *dev)
 {
 	struct video_sw_generator_data *data = dev->data;
 
-	k_fifo_init(&data->fifo_in);
-	k_fifo_init(&data->fifo_out);
 	k_work_init_delayable(&data->work, video_sw_generator_worker);
 
 	data->vdev.frmival.numerator = 1;

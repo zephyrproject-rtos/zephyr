@@ -18,19 +18,8 @@ LOG_MODULE_REGISTER(mcux_jpegdec, CONFIG_VIDEO_LOG_LEVEL);
 
 #define MCUX_JPEGDEC_BUF_ALIGN 1024U
 
-struct video_common_header {
-	struct k_fifo fifo_in;
-	struct k_fifo fifo_out;
-};
-
-struct video_m2m_common {
-	struct video_common_header in;  /* Incoming JPEG stream. */
-	struct video_common_header out; /* Outgoing decoded image data. */
-};
-
 struct mcux_jpegdec_data {
 	struct video_device vdev; /* keep first */
-	struct video_m2m_common m2m;
 	struct k_sem decode_done;
 	jpegdec_descpt_t decoder_despt;
 	bool running;      /* Decoder is actively decoding. */
@@ -129,8 +118,6 @@ static void mcux_jpegdec_decode_one_frame(const struct device *dev)
 {
 	const struct mcux_jpegdec_config *config = dev->config;
 	struct mcux_jpegdec_data *data = dev->data;
-	struct k_fifo *in_fifo_in = &data->m2m.in.fifo_in;
-	struct k_fifo *out_fifo_in = &data->m2m.out.fifo_in;
 	struct video_buffer *current_in = NULL;
 	struct video_buffer *current_out = NULL;
 
@@ -235,8 +222,8 @@ static int mcux_jpegdec_enqueue(const struct device *dev, struct video_buffer *v
 {
 	int ret = 0;
 	struct mcux_jpegdec_data *data = dev->data;
-	struct video_common_header *common =
-		vbuf->type == VIDEO_BUF_TYPE_INPUT ? &data->m2m.in : &data->m2m.out;
+	struct k_fifo *fifo = vbuf->type == VIDEO_BUF_TYPE_INPUT
+		? &data->vdev.in_buf_submitted : &data->vdev.out_buf_submitted;
 	bool do_decode = false;
 
 	if (((uint32_t)vbuf->buffer & 0xFU) != 0U) {
@@ -329,7 +316,7 @@ static int mcux_jpegdec_enqueue(const struct device *dev, struct video_buffer *v
 		}
 	}
 
-	k_fifo_put(&common->fifo_in, vbuf);
+	k_fifo_put(fifo, vbuf);
 
 	/*
 	 * If the streaming is on but the decoder is not running due to
@@ -346,10 +333,10 @@ static int mcux_jpegdec_dequeue(const struct device *dev, struct video_buffer **
 				k_timeout_t timeout)
 {
 	struct mcux_jpegdec_data *data = dev->data;
-	struct video_common_header *common =
-		(*vbuf)->type == VIDEO_BUF_TYPE_INPUT ? &data->m2m.in : &data->m2m.out;
+	struct k_fifo *fifo = vbuf->type == VIDEO_BUF_TYPE_INPUT
+		? &data->vdev.in_buf_completed : &data->vdev.out_buf__completed;
 
-	*vbuf = k_fifo_get(&common->fifo_out, timeout);
+	*vbuf = k_fifo_get(fifo, timeout);
 	if (*vbuf == NULL) {
 		return -EAGAIN;
 	}
@@ -421,11 +408,6 @@ static int mcux_jpegdec_init(const struct device *dev)
 
 	k_sem_init(&data->decode_done, 0, 1);
 
-	k_fifo_init(&data->m2m.in.fifo_in);
-	k_fifo_init(&data->m2m.in.fifo_out);
-	k_fifo_init(&data->m2m.out.fifo_in);
-	k_fifo_init(&data->m2m.out.fifo_out);
-
 	/* Initialise default input / output formats */
 	data->vdev.in_fmt.type = VIDEO_BUF_TYPE_INPUT;
 	data->vdev.in_fmt.pixelformat = VIDEO_PIX_FMT_JPEG; /* Can only be JPEG format for input */
@@ -468,8 +450,8 @@ static void mcux_jpegdec_isr(const struct device *dev)
 {
 	const struct mcux_jpegdec_config *config = dev->config;
 	struct mcux_jpegdec_data *data = dev->data;
-	struct video_buffer *current_in = k_fifo_get(&data->m2m.in.fifo_in, K_NO_WAIT);
-	struct video_buffer *current_out = k_fifo_get(&data->m2m.out.fifo_in, K_NO_WAIT);
+	struct video_buffer *current_in = k_fifo_get(&data->vdev.in_buf_submitted, K_NO_WAIT);
+	struct video_buffer *current_out = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
 	uint32_t flag = JPEGDEC_GetStatusFlags((JPEG_DECODER_Type *)&config->base, 0);
 
 	/* Decode complete. */
@@ -498,8 +480,8 @@ static void mcux_jpegdec_isr(const struct device *dev)
 
 	current_out->size = data->vdev.out_fmt.size;
 
-	k_fifo_put(&data->m2m.in.fifo_out, current_in);
-	k_fifo_put(&data->m2m.out.fifo_out, current_out);
+	k_fifo_put(&data->vdev.in_buf_completed, current_in);
+	k_fifo_put(&data->vdev.out_buf_completed, current_out);
 
 	k_sem_give(&data->decode_done);
 
