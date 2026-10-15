@@ -479,6 +479,9 @@ void mac_do_join(struct lwan_ctx *ctx, const struct lwan_req *req)
 	struct join_state state;
 	int ret;
 
+	/* Clear the JOINED flag as we are now clearing session state */
+	atomic_clear_bit(ctx->flags, LWAN_FLAG_JOINED);
+
 	join_state_init(&state, join_req);
 
 	/* Import NwkKey into PSA — plaintext is not stored */
