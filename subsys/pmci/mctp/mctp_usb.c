@@ -465,14 +465,7 @@ static void mctp_usb_class_disable(struct usbd_class_data *const c_data)
 	(void)k_work_cancel_sync(&ctx->out_work, &ctx->out_work_sync);
 
 	/* Drain and free any queued OUT buffers */
-	while (1) {
-		struct net_buf *rx = k_fifo_get(&ctx->rx_fifo, K_NO_WAIT);
-
-		if (!rx) {
-			break;
-		}
-		net_buf_unref(rx);
-	}
+	net_buf_fifo_purge(&ctx->rx_fifo);
 
 	/* Reset RX parser state */
 	mctp_usb_reset_rx_state(usb);
