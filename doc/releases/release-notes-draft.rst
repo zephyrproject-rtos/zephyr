@@ -110,6 +110,12 @@ New APIs and options
   * Added PSA Protected Storage backend, enable with
     :kconfig:option:`CONFIG_FIDO2_STORAGE_PSA_PROTECTED_STORAGE`
 
+* GPIO
+
+  * :c:func:`gpio_emul_set_pin_fault` to force operations touching specific
+    pins of a :ref:`gpio_emul` controller to fail with a caller-provided
+    ``-errno``, for testing GPIO error-handling paths.
+
 * Networking
 
   * Add :kconfig:option:`CONFIG_NET_DHCPV6_START_ON_RA` to start the DHCPv6
