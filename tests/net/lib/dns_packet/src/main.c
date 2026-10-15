@@ -34,6 +34,7 @@ static uint8_t query_ipv4[] = { 0xda, 0x0f, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00,
 				0x72, 0x67, 0x00, 0x00, 0x01, 0x00, 0x01 };
 
 #define DNAME1 "www.zephyrproject.org"
+#define DNAME1_FQDN DNAME1 "."
 
 /* Domain: zephyr.local
  * Type: standard query (IPv6)
@@ -421,6 +422,10 @@ ZTEST(dns_packet, test_dns_query)
 	rc = eval_query(DNAME1, tid1, DNS_RR_TYPE_A,
 			query_ipv4, sizeof(query_ipv4));
 	zassert_equal(rc, 0, "Query test failed for domain: "DNAME1);
+
+	rc = eval_query(DNAME1_FQDN, tid1, DNS_RR_TYPE_A,
+			query_ipv4, sizeof(query_ipv4));
+	zassert_equal(rc, 0, "Query test failed for domain: "DNAME1_FQDN);
 
 	rc = eval_query(NULL, tid1, DNS_RR_TYPE_A,
 			query_ipv4, sizeof(query_ipv4));
