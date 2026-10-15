@@ -1,0 +1,27 @@
+tests:
+  kernel.lockdep:
+    tags:
+      - kernel
+      - debug
+      - lockdep
+    integration_platforms:
+      - qemu_riscv32/qemu_virt_riscv32
+      - qemu_cortex_m3
+      - qemu_x86
+      - qemu_cortex_a53
+      - native_sim
+  kernel.lockdep.userspace:
+    tags:
+      - kernel
+      - debug
+      - lockdep
+      - userspace
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    integration_platforms:
+      - qemu_riscv32/qemu_virt_riscv32
+      - qemu_cortex_m3
+      - qemu_x86
+      - qemu_cortex_a53
+      - native_sim
