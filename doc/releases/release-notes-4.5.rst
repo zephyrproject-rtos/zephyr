@@ -744,6 +744,13 @@ New APIs and options
     * :c:func:`clock_control_release`
     * :c:func:`clock_control_cancel_or_release`
 
+* Counter
+
+  * :kconfig:option:`CONFIG_COUNTER_CAPTURE`, :c:struct:`counter_capture_dt_spec`,
+    :c:func:`counter_capture_configure`, :c:func:`counter_capture_configure_64`,
+    :c:func:`counter_enable_capture` and :c:func:`counter_disable_capture`, with
+    devicetree helpers for configuring input capture (:github:`89127`, :github:`108713`).
+
 * CPUFreq
 
   * :kconfig:option:`CONFIG_CPU_FREQ_POLICY_TIMING_NOISE`
