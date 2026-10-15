@@ -111,6 +111,7 @@ struct dl_work_ctx {
 struct send_tx_ctx {
 	const struct lwan_send_req *req;
 	bool tx_done;
+	bool ack_in_frame;
 };
 
 struct data_frame_layout {
@@ -740,7 +741,12 @@ static void send_post_tx(struct lwan_ctx *ctx, void *user_data)
 	struct send_tx_ctx *tx_ctx = user_data;
 
 	tx_ctx->tx_done = true;
-	ctx->pending &= ~LWAN_PENDING_ACK;
+	/* Retries reuse the prebuilt frame, so only consume an ACK that the
+	 * transmitted frame actually contained.
+	 */
+	if (tx_ctx->ack_in_frame) {
+		ctx->pending &= ~LWAN_PENDING_ACK;
+	}
 	mac_cmd_commit_ul_fopts(ctx);
 }
 
