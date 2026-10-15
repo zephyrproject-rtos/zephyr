@@ -1,0 +1,11 @@
+tests:
+  subsys.task_wdt:
+    tags:
+      - task_wdt
+    harness: ztest
+    platform_allow:
+      - native_sim
+      - qemu_cortex_m3
+    integration_platforms:
+      - native_sim
+      - qemu_cortex_m3
