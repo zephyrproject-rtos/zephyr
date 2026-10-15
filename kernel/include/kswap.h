@@ -8,6 +8,7 @@
 
 #include <kspinlock.h>
 #include <ksched.h>
+#include <ksmp.h>
 #include <run_q.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/barrier.h>
@@ -21,52 +22,8 @@ extern void z_check_stack_sentinel(void);
 #define z_check_stack_sentinel() /**/
 #endif /* CONFIG_STACK_SENTINEL */
 
-/* In SMP, the irq_lock() is a spinlock which is implicitly released
- * and reacquired on context switch to preserve the existing
- * semantics.  This means that whenever we are about to return to a
- * thread (via either z_swap() or interrupt/exception return!) we need
- * to restore the lock state to whatever the thread's counter
- * expects.
- */
-void z_smp_release_global_lock(struct k_thread *thread);
-
 /* context switching and scheduling-related routines */
 #ifdef CONFIG_USE_SWITCH
-
-/* Spin, with the scheduler lock held (!), on a thread that is known
- * (!!) to have released the lock and be on a path where it will
- * deterministically (!!!) reach arch_switch() in very small constant
- * time.
- *
- * This exists to treat an unavoidable SMP race when threads swap --
- * their thread record is in the queue (and visible to other CPUs)
- * before arch_switch() finishes saving state.  We must spin for the
- * switch handle before entering a new thread.  See docs on
- * arch_switch().
- *
- * Stated differently: there's a chicken and egg bug with the question
- * of "is a thread running or not?".  The thread needs to mark itself
- * "not running" from its own context, but at that moment it obviously
- * is still running until it reaches arch_switch()!  Locking can't
- * treat this because the scheduler lock can't be released by the
- * switched-to thread, which is going to (obviously) be running its
- * own code and doesn't know it was switched out.
- */
-static inline void z_sched_switch_spin(struct k_thread *thread)
-{
-#ifdef CONFIG_SMP
-	volatile void **shp = (void *)&thread->switch_handle;
-
-	while (*shp == NULL) {
-		arch_spin_relax();
-	}
-	/* Read barrier: don't allow any subsequent loads in the
-	 * calling code to reorder before we saw switch_handle go
-	 * non-null.
-	 */
-	barrier_dmem_fence_full();
-#endif /* CONFIG_SMP */
-}
 
 /* New style context switching.  arch_switch() is a lower level
  * primitive that doesn't know about the scheduler or return value.
@@ -114,14 +71,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 
 	if (new_thread != old_thread) {
 		z_sched_usage_switch(new_thread);
-
-#ifdef CONFIG_SMP
-		new_thread->base.cpu = arch_curr_cpu()->id;
-
-		if (!is_spinlock) {
-			z_smp_release_global_lock(new_thread);
-		}
-#endif /* CONFIG_SMP */
+		z_smp_swap_prepare(new_thread, !is_spinlock);
 		z_thread_mark_switched_out();
 		z_sched_switch_spin(new_thread);
 		z_current_thread_set(new_thread);
@@ -133,31 +83,11 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 		z_sched_spinlock_transfer_owner(new_thread);
 
 		arch_cohere_stacks(old_thread, NULL, new_thread);
+		z_smp_switch_requeue(old_thread);
 
-#ifdef CONFIG_SMP
-		/* Now add _current back to the run queue, once we are
-		 * guaranteed to reach the context switch in finite time.  See
-		 * z_sched_switch_spin().  The current thread can never live in
-		 * the run queue until we are inexorably on the context switch
-		 * path on SMP, otherwise there is a deadlock condition where a
-		 * set of CPUs pick a cycle of threads to run and wait for them
-		 * all to context switch forever.
-		 */
-		if (z_is_thread_queued(old_thread)) {
-			runq_add(old_thread);
-		}
-		signal_pending_ipi();
-#endif /* CONFIG_SMP */
 		void *newsh = new_thread->switch_handle;
 
-		if (IS_ENABLED(CONFIG_SMP)) {
-			/* Active threads must have a null here.  And
-			 * it must be seen before the scheduler lock
-			 * is released!
-			 */
-			new_thread->switch_handle = NULL;
-			barrier_dmem_fence_full(); /* write barrier */
-		}
+		z_smp_switch_handle_clear(new_thread);
 		z_sched_spinlock_release();
 		arch_switch(newsh, &old_thread->switch_handle);
 	} else {
@@ -189,12 +119,6 @@ static inline void z_swap_unlocked(void)
 }
 
 #else /* !CONFIG_USE_SWITCH */
-
-
-static inline void z_sched_switch_spin(struct k_thread *thread)
-{
-	ARG_UNUSED(thread);
-}
 
 static inline int z_swap_irqlock(unsigned int key)
 {
