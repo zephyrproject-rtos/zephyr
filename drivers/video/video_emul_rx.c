@@ -36,15 +36,30 @@ static int emul_rx_get_caps(const struct device *dev, struct video_caps *caps)
 static int emul_rx_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
 	struct emul_rx_data *data = dev->data;
+	int ret;
 
 	/* A real hardware driver would first start / stop its own peripheral */
-	return enable ? video_stream_start(data->vdev.source_dev, type)
-		      : video_stream_stop(data->vdev.source_dev, type);
+	if (enable) {
+		return video_stream_start(data->vdev.source_dev, type);
+	} else {
+		struct k_work_sync sync;
+
+		ret = video_stream_stop(data->vdev.source_dev, type);
+
+		/* Cancel the jobs that were not running */
+		k_work_cancel(&data->work);
+
+		/* Flush the jobs that were still running */
+		k_work_flush(&data->work, &sync);
+
+		return ret;
+	}
 }
 
 static void emul_rx_worker(struct k_work *work)
 {
 	struct emul_rx_data *data = CONTAINER_OF(work, struct emul_rx_data, work);
+	const struct device *dev = data->vdev.dev;
 	struct video_format *fmt = &data->vdev.out_fmt;
 	struct video_buffer *vbuf = vbuf;
 
@@ -66,7 +81,7 @@ static void emul_rx_worker(struct k_work *work)
 		}
 
 		/* Once the buffer is completed, submit it to the video buffer */
-		k_fifo_put(&data->vdev.out_buf_completed, vbuf);
+		video_buffer_done(dev, vbuf, 0);
 	}
 }
 
@@ -81,37 +96,10 @@ static int emul_rx_enqueue(const struct device *dev, struct video_buffer *vbuf)
 	return 0;
 }
 
-static int emul_rx_flush(const struct device *dev, bool cancel)
-{
-	struct emul_rx_data *data = dev->data;
-	struct k_work_sync sync;
-
-	if (cancel) {
-		struct video_buffer *vbuf;
-
-		/* Cancel the jobs that were not running */
-		k_work_cancel(&data->work);
-
-		/* Flush the jobs that were still running */
-		k_work_flush(&data->work, &sync);
-
-		/* Empty all the cancelled items */
-		while ((vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT))) {
-			k_fifo_put(&data->vdev.out_buf_completed, vbuf);
-		}
-	} else {
-		/* Process all the remaining items from the queue */
-		k_work_flush(&data->work, &sync);
-	}
-
-	return 0;
-}
-
 static DEVICE_API(video, emul_rx_driver_api) = {
 	.get_caps = emul_rx_get_caps,
 	.set_stream = emul_rx_set_stream,
 	.enqueue = emul_rx_enqueue,
-	.flush = emul_rx_flush,
 };
 
 int emul_rx_init(const struct device *dev)

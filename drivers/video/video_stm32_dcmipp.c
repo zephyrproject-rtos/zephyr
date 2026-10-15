@@ -208,7 +208,7 @@ void HAL_DCMIPP_PIPE_FrameEventCallback(DCMIPP_HandleTypeDef *hdcmipp, uint32_t 
 	pipe->active->timestamp = k_uptime_get_32();
 	pipe->active->line_offset = 0;
 
-	k_fifo_put(&pipe->out_buf_completed, pipe->active);
+	video_buffer_done(pipe->vdev.dev, pipe->active, 0);
 	pipe->active = NULL;
 }
 
@@ -1241,12 +1241,6 @@ static int stm32_dcmipp_stream_disable(const struct device *dev)
 	}
 	if (pipe->active != NULL) {
 		k_fifo_put(&pipe->out_buf_submitted, pipe->active);
-	}
-
-	/* Forward all buffers in submission FIFO to completion FIFO */
-	while ((vbuf = k_fifo_get(&pipe->out_buf_submitted, K_NO_WAIT)) != NULL) {
-		vbuf->bytesused = 0;
-		k_fifo_put(&pipe->out_buf_completed, vbuf);
 	}
 
 	pipe->state = STM32_DCMIPP_STOPPED;
