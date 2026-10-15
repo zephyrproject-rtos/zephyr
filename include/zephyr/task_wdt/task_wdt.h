@@ -50,6 +50,31 @@ struct task_wdt_channel_info {
 	k_tid_t thread;
 };
 
+/** Cause of a reset triggered by the task watchdog. */
+enum task_wdt_reset_reason {
+	/** A task watchdog channel timed out */
+	TASK_WDT_RESET_TIMEOUT,
+	/** The hardware watchdog fallback reset the system */
+	TASK_WDT_RESET_HW_FALLBACK,
+};
+
+/** Size of the thread name kept in @ref task_wdt_reset_info, including the terminator */
+#define TASK_WDT_RESET_INFO_THREAD_NAME_SIZE 16
+
+/** Information about the last reset triggered by the task watchdog. */
+struct task_wdt_reset_info {
+	/** Cause of the reset */
+	enum task_wdt_reset_reason reason;
+	/** Channel which timed out, or -1 if not known */
+	int channel_id;
+	/** Number of consecutive resets triggered by the task watchdog */
+	uint32_t fault_count;
+	/** System uptime in milliseconds when the reset was triggered, 0 if not known */
+	uint64_t uptime_ms;
+	/** Name of the thread owning the channel (truncated), empty if not known */
+	char thread_name[TASK_WDT_RESET_INFO_THREAD_NAME_SIZE];
+};
+
 /**
  * @brief Initialize task watchdog.
  *
@@ -142,6 +167,37 @@ int task_wdt_channel_thread_set(int channel_id, k_tid_t thread);
  * @retval -EINVAL If there is no installed timeout for supplied channel.
  */
 int task_wdt_channel_info_get(int channel_id, struct task_wdt_channel_info *info);
+
+/**
+ * @brief Get the cause of the last reset if it was triggered by the task watchdog.
+ *
+ * A record is kept if a channel without a callback times out, or if the
+ * channel callback does not return (e.g. because it resets the system). If the
+ * hardware watchdog fallback reset the system before the task watchdog could
+ * write a record, this is reported as @ref TASK_WDT_RESET_HW_FALLBACK (requires
+ * @kconfig{CONFIG_TASK_WDT_RESET_INFO_HW_FALLBACK}).
+ *
+ * @param info Filled in with the reset information.
+ *
+ * @retval 0 If the last reset was triggered by the task watchdog.
+ * @retval -ENOENT If the last reset was not triggered by the task watchdog.
+ * @retval -EINVAL If @p info is NULL.
+ * @retval -ENOTSUP If @kconfig{CONFIG_TASK_WDT_RESET_INFO} is disabled.
+ */
+int task_wdt_reset_info_get(struct task_wdt_reset_info *info);
+
+/**
+ * @brief Clear the task watchdog reset information.
+ *
+ * Forget the cause of the last reset and restart counting consecutive task
+ * watchdog resets from zero. The counter is also restarted after any reset
+ * which was not triggered by the task watchdog.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOTSUP If @kconfig{CONFIG_TASK_WDT_RESET_INFO} is disabled.
+ * @retval -Errno Negative errno if the retention backend failed.
+ */
+int task_wdt_reset_info_clear(void);
 
 /**
  * @brief Pause all channels before changing system power mode.

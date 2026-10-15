@@ -64,6 +64,20 @@ int task_wdt_channel_info_get(int channel_id, struct task_wdt_channel_info *info
 	return 0;
 }
 
+int task_wdt_reset_info_get(struct task_wdt_reset_info *info)
+{
+	if (info == NULL) {
+		return -EINVAL;
+	}
+
+	return -ENOENT;
+}
+
+int task_wdt_reset_info_clear(void)
+{
+	return 0;
+}
+
 void task_wdt_suspend(void)
 {
 }

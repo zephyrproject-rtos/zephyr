@@ -17,6 +17,8 @@
 #include <zephyr/logging/log_ctrl.h>
 LOG_MODULE_REGISTER(task_wdt);
 
+#include "task_wdt_reset_info.h"
+
 /*
  * This dummy channel is used to continue feeding the hardware watchdog if the
  * task watchdog timeouts are too long for regular updates
@@ -142,8 +144,21 @@ static void task_wdt_fault(int channel_id, enum task_wdt_fault_reason reason)
 	task_wdt_report(channel_id);
 #endif
 
+#ifdef CONFIG_TASK_WDT_RESET_INFO
+	/* the callback may reset the system, so store the record beforehand */
+#ifdef CONFIG_TASK_WDT_THREAD_INFO
+	task_wdt_reset_info_save(channel_id, channels[channel_id].thread);
+#else
+	task_wdt_reset_info_save(channel_id, NULL);
+#endif
+#endif
+
 	if (channels[channel_id].callback) {
 		channels[channel_id].callback(channel_id, channels[channel_id].user_data);
+#ifdef CONFIG_TASK_WDT_RESET_INFO
+		/* the callback handled the timeout without a reset */
+		task_wdt_reset_info_cancel();
+#endif
 	} else {
 #ifdef CONFIG_TASK_WDT_COREDUMP
 		if (channels[channel_id].thread != NULL) {
@@ -391,6 +406,20 @@ int task_wdt_channel_info_get(int channel_id, struct task_wdt_channel_info *info
 
 	return ret;
 }
+
+#ifndef CONFIG_TASK_WDT_RESET_INFO
+int task_wdt_reset_info_get(struct task_wdt_reset_info *info)
+{
+	ARG_UNUSED(info);
+
+	return -ENOTSUP;
+}
+
+int task_wdt_reset_info_clear(void)
+{
+	return -ENOTSUP;
+}
+#endif
 
 void task_wdt_suspend(void)
 {
