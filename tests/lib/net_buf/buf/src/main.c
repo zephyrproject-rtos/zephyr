@@ -1367,6 +1367,124 @@ ZTEST(net_buf_tests, test_net_buf_drop)
 	zassert_equal(destroy_called, 1, "Incorrect destroy callback count");
 }
 
+static struct net_buf *requeue_buf;
+static struct k_fifo *requeue_fifo;
+static sys_slist_t *requeue_list;
+
+/* Puts requeue_buf into the list or FIFO that is being purged. Holding a spinlock
+ * would lock interrupts, so they must be unlocked here.
+ */
+static void requeue_destroy(struct net_buf *buf)
+{
+	unsigned int key = irq_lock();
+	bool unlocked = arch_irq_unlocked(key);
+
+	irq_unlock(key);
+	zassert_true(unlocked, "Destroy callback called under a spinlock");
+
+	destroy_called++;
+
+	if (requeue_list != NULL) {
+		net_buf_slist_put(requeue_list, net_buf_take(&requeue_buf));
+	}
+
+	if (requeue_fifo != NULL) {
+		k_fifo_put(requeue_fifo, net_buf_take(&requeue_buf));
+	}
+
+	net_buf_destroy(buf);
+}
+
+NET_BUF_POOL_FIXED_DEFINE(requeue_pool, 1, 4, 0, requeue_destroy);
+
+static ZTEST(net_buf_tests, test_net_buf_slist_purge)
+{
+	struct net_buf *bufs[3], *ref;
+	sys_slist_t list;
+
+	destroy_called = 0;
+	sys_slist_init(&list);
+
+	net_buf_slist_purge(&list);
+	zassert_true(sys_slist_is_empty(&list), "Empty list changed by purge");
+
+	ARRAY_FOR_EACH(bufs, i) {
+		bufs[i] = net_buf_alloc_len(&bufs_pool, 74, K_NO_WAIT);
+		zassert_not_null(bufs[i], "Failed to get buffer");
+	}
+
+	/* A buffer with another reference outlives the purge */
+	ref = net_buf_ref(bufs[1]);
+
+	ARRAY_FOR_EACH(bufs, i) {
+		net_buf_slist_put(&list, net_buf_take(&bufs[i]));
+	}
+
+	net_buf_slist_purge(&list);
+	zassert_true(sys_slist_is_empty(&list), "List not empty after purge");
+	zassert_equal(destroy_called, 2, "Incorrect destroy callback count");
+	zassert_equal(ref->ref, 1, "Unexpected ref count");
+
+	/* A buffer put into the list by a destroy callback stays in it */
+	bufs[0] = net_buf_alloc_fixed(&requeue_pool, K_NO_WAIT);
+	zassert_not_null(bufs[0], "Failed to get buffer");
+	net_buf_slist_put(&list, net_buf_take(&bufs[0]));
+	requeue_buf = net_buf_take(&ref);
+	requeue_list = &list;
+
+	net_buf_slist_purge(&list);
+	requeue_list = NULL;
+	zassert_is_null(requeue_buf, "Destroy callback did not put the buffer");
+	ref = net_buf_slist_get(&list);
+	zassert_not_null(ref, "Buffer put by the destroy callback was purged");
+	zassert_true(sys_slist_is_empty(&list), "List not empty");
+
+	net_buf_unref(ref);
+	zassert_equal(destroy_called, 4, "Incorrect destroy callback count");
+}
+
+static ZTEST(net_buf_tests, test_net_buf_fifo_purge)
+{
+	struct net_buf *bufs[3], *ref;
+	struct k_fifo fifo;
+
+	destroy_called = 0;
+	k_fifo_init(&fifo);
+
+	net_buf_fifo_purge(&fifo);
+	zassert_true(k_fifo_is_empty(&fifo), "Empty FIFO changed by purge");
+
+	ARRAY_FOR_EACH(bufs, i) {
+		bufs[i] = net_buf_alloc_len(&bufs_pool, 74, K_NO_WAIT);
+		zassert_not_null(bufs[i], "Failed to get buffer");
+	}
+
+	/* A buffer with another reference outlives the purge */
+	ref = net_buf_ref(bufs[1]);
+
+	ARRAY_FOR_EACH(bufs, i) {
+		k_fifo_put(&fifo, net_buf_take(&bufs[i]));
+	}
+
+	net_buf_fifo_purge(&fifo);
+	zassert_true(k_fifo_is_empty(&fifo), "FIFO not empty after purge");
+	zassert_equal(destroy_called, 2, "Incorrect destroy callback count");
+	zassert_equal(ref->ref, 1, "Unexpected ref count");
+
+	/* A buffer put into the FIFO by a destroy callback is purged as well */
+	bufs[0] = net_buf_alloc_fixed(&requeue_pool, K_NO_WAIT);
+	zassert_not_null(bufs[0], "Failed to get buffer");
+	k_fifo_put(&fifo, net_buf_take(&bufs[0]));
+	requeue_buf = net_buf_take(&ref);
+	requeue_fifo = &fifo;
+
+	net_buf_fifo_purge(&fifo);
+	requeue_fifo = NULL;
+	zassert_is_null(requeue_buf, "Destroy callback did not put the buffer");
+	zassert_true(k_fifo_is_empty(&fifo), "FIFO not empty after purge");
+	zassert_equal(destroy_called, 4, "Incorrect destroy callback count");
+}
+
 ZTEST(net_buf_tests, test_net_buf_is_valid)
 {
 	struct net_buf *buf;

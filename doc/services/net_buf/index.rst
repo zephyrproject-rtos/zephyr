@@ -108,13 +108,15 @@ eventually call :c:func:`net_buf_destroy` to return it.
 
 The buffers have native support for being passed through k_fifo kernel
 objects. Use :c:func:`k_fifo_put` and :c:func:`k_fifo_get` to pass buffer
-from one thread to another.
+from one thread to another, and :c:func:`net_buf_fifo_purge` to unreference
+all buffers in a FIFO.
 
 Buffers can also be kept in a :c:type:`sys_slist_t` through their
 ``node`` field. :c:func:`net_buf_slist_put` and :c:func:`net_buf_slist_get`
-append and remove a buffer under a spinlock, so that a list can be shared
-between threads and interrupt handlers as long as every access to it goes
-through these two functions. Use them instead of
+append and remove a buffer, and :c:func:`net_buf_slist_purge` unreferences
+all buffers in a list. They modify the list under a spinlock, so that a list
+can be shared between threads and interrupt handlers as long as every
+access to it goes through these functions. Use them instead of
 :c:func:`sys_slist_append` and :c:func:`sys_slist_get` for such a list.
 A buffer has a single ``node`` field, so it can be in only one FIFO or
 list at a time, however many references to it exist.
