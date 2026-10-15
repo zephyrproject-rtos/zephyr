@@ -105,6 +105,10 @@ static int ina3221_init(const struct device *dev)
 		   (INA3221_CONFIG_CH2 * cfg->enable_channel[1]) |
 		   (INA3221_CONFIG_CH3 * cfg->enable_channel[2]);
 
+	if (cfg->continuous_mode) {
+		reg_data |= INA3221_CONFIG_CONTINUOUS | INA3221_CONFIG_BUS | INA3221_CONFIG_SHUNT;
+	}
+
 	ret = reg_write(dev, INA3221_CONFIG, reg_data);
 	if (ret) {
 		return ret;
@@ -145,9 +149,8 @@ static bool measurement_ready(const struct device *dev)
 	return reg_data & INA3221_MASK_ENABLE_CONVERSION_READY;
 }
 
-static int ina3221_sample_fetch(const struct device *dev, enum sensor_channel chan)
+static int ina3221_trigger_measurement(const struct device *dev, enum sensor_channel chan)
 {
-	struct ina3221_data *data = dev->data;
 	const struct ina3221_config *cfg = dev->config;
 	bool measurement_successful = false;
 	k_timeout_t measurement_time = K_NO_WAIT;
@@ -201,6 +204,28 @@ static int ina3221_sample_fetch(const struct device *dev, enum sensor_channel ch
 	if (!measurement_successful) {
 		LOG_ERR("Measurement timed out.");
 		return -EFAULT;
+	}
+
+	return 0;
+}
+
+static int ina3221_sample_fetch(const struct device *dev, enum sensor_channel chan)
+{
+	struct ina3221_data *data = dev->data;
+	const struct ina3221_config *cfg = dev->config;
+	int ret = 0;
+
+	if (chan != SENSOR_CHAN_VOLTAGE && chan != SENSOR_CHAN_CURRENT &&
+	    chan != SENSOR_CHAN_POWER && chan != SENSOR_CHAN_ALL) {
+		return -ENOTSUP;
+	}
+
+	/* In continuous mode, the registers hold the last conversions */
+	if (!cfg->continuous_mode) {
+		ret = ina3221_trigger_measurement(dev, chan);
+		if (ret) {
+			return ret;
+		}
 	}
 
 	for (size_t i = 0; i < 3; ++i) {
@@ -289,6 +314,7 @@ static DEVICE_API(sensor, ina3221_api) = {
 		.conv_time_shunt = DT_INST_PROP(index, conv_time_shunt),                           \
 		.enable_channel = DT_INST_PROP(index, enable_channel),                             \
 		.shunt_r = DT_INST_PROP(index, shunt_resistors),                                   \
+		.continuous_mode = DT_INST_PROP(index, continuous_mode),                           \
 	};                                                                                         \
 	static struct ina3221_data ina3221_data_##index;                                           \
                                                                                                    \
