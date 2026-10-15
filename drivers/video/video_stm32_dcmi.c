@@ -109,7 +109,7 @@ void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
 	hal_ret = HAL_DCMI_Suspend(hdcmi);
 	__ASSERT_NO_MSG(hal_ret == HAL_OK);
 
-	vbuf = video_buffer_done(dev_data->vdev.dev, vbuf, 0);
+	vbuf = k_fifo_get(&dev_data->vdev.out_buf_submitted, K_NO_WAIT);
 	if (vbuf == NULL) {
 		LOG_DBG("Failed to get buffer from fifo");
 		goto resume;
@@ -446,20 +446,6 @@ static int video_stm32_dcmi_set_ctrl(const struct device *dev, uint32_t id)
 	return ret;
 }
 
-static int video_stm32_dcmi_set_selection(const struct device *dev, struct video_selection *sel)
-{
-	struct video_stm32_dcmi_data *data = dev->data;
-
-	return video_set_selection(data->vdev.source_dev, sel);
-}
-
-static int video_stm32_dcmi_get_selection(const struct device *dev, struct video_selection *sel)
-{
-	struct video_stm32_dcmi_data *data = dev->data;
-
-	return video_get_selection(data->vdev.source_dev, sel);
-}
-
 static DEVICE_API(video, video_stm32_dcmi_driver_api) = {
 	.set_stream = video_stm32_dcmi_set_stream,
 	.get_caps = video_stm32_dcmi_get_caps,
@@ -467,8 +453,6 @@ static DEVICE_API(video, video_stm32_dcmi_driver_api) = {
 	.set_frmival = video_stm32_dcmi_set_frmival,
 	.get_frmival = video_stm32_dcmi_get_frmival,
 	.set_ctrl = video_stm32_dcmi_set_ctrl,
-	.set_selection = video_stm32_dcmi_set_selection,
-	.get_selection = video_stm32_dcmi_get_selection,
 };
 
 static int video_stm32_dcmi_init_controls(const struct device *dev)

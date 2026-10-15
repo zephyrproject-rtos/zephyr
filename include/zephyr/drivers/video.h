@@ -70,6 +70,14 @@ struct video_device {
 	struct k_fifo out_buf_submitted;
 	/** Output buffer completion queue */
 	struct k_fifo out_buf_completed;
+	/** Selection rectangle for cropping at frame output */
+	struct video_rect out_selection;
+	/** Copose rectangle for scaling ans output offset at frame output */
+	struct video_rect out_compose;
+	/** Selection rectangle for cropping at frame input */
+	struct video_rect in_selection;
+	/** Copose rectangle for scaling ans output offset at frame input */
+	struct video_rect in_compose;
 };
 
 /**
@@ -513,7 +521,7 @@ static inline int video_driver_get_caps(const struct device *dev, struct video_c
 }
 
 /**
- * @brief Transform a video format capability from one end to the other end of a m2m video device.
+ * @brief Transform a video format capability from one end to the other end of a video device.
  *
  * See @ref video_transform_cap for detailed description and usage.
  *

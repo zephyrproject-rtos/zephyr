@@ -117,12 +117,6 @@ static int mipi_csi2rx_update_settings(const struct device *dev)
 
 static int mipi_csi2rx_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
-	struct mipi_csi2rx_data *drv_data = dev->data;
-
-	if (video_set_format(drv_data->vdev.source_dev, fmt)) {
-		return -EIO;
-	}
-
 	return mipi_csi2rx_update_settings(dev);
 }
 

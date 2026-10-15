@@ -163,11 +163,6 @@ static int mipid02_set_fmt(const struct device *dev, struct video_format *fmt, s
 	/* Call video_set_format to the sensor */
 	sensor_fmt.pixelformat = desc->csi_pixelformat;
 
-	ret = video_set_format(drv_data->vdev.source_dev, &sensor_fmt);
-	if (ret < 0) {
-		return ret;
-	}
-
 	drv_data->desc = desc;
 
 	return 0;
