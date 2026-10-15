@@ -20,6 +20,16 @@
 
 LOG_MODULE_REGISTER(ADXL372, CONFIG_SENSOR_LOG_LEVEL);
 
+const struct adxl372_chip_info adxl372_chip_info[] = {
+	[ADXL372_CHIP_ID] = {
+		.odr_hz = {400, 800, 1600, 3200, 6400},
+		.shift = 11,
+	},
+};
+
+BUILD_ASSERT(ARRAY_SIZE(adxl372_chip_info) == ADXL372_CHIP_COUNT,
+	     "adxl372_chip_info needs an entry for every chip id");
+
 /**
  * Set the threshold for activity detection for a single axis
  * @param dev - The device structure.
@@ -549,28 +559,23 @@ static int adxl372_attr_set_odr(const struct device *dev,
 				enum sensor_attribute attr,
 				const struct sensor_value *val)
 {
-	enum adxl372_odr odr;
+	const struct adxl372_dev_config *cfg = dev->config;
+	const struct adxl372_chip_info *chip = &adxl372_chip_info[cfg->chip_id];
 	struct adxl372_data *data = dev->data;
+	enum adxl372_odr odr;
+	size_t i;
 
-	switch (val->val1) {
-	case 400:
-		odr = ADXL372_ODR_400HZ;
-		break;
-	case 800:
-		odr = ADXL372_ODR_800HZ;
-		break;
-	case 1600:
-		odr = ADXL372_ODR_1600HZ;
-		break;
-	case 3200:
-		odr = ADXL372_ODR_3200HZ;
-		break;
-	case 6400:
-		odr = ADXL372_ODR_6400HZ;
-		break;
-	default:
+	for (i = 0; i < ARRAY_SIZE(chip->odr_hz); i++) {
+		if (val->val1 == chip->odr_hz[i]) {
+			break;
+		}
+	}
+
+	if (i == ARRAY_SIZE(chip->odr_hz)) {
 		return -EINVAL;
 	}
+
+	odr = (enum adxl372_odr)i;
 
 	int ret = adxl372_set_odr(dev, odr);
 
@@ -885,6 +890,7 @@ static int adxl372_init(const struct device *dev)
 		.bw = DT_INST_PROP(inst, bw),						\
 		.hpf = DT_INST_PROP(inst, hpf),						\
 		.odr = DT_INST_PROP(inst, odr),						\
+		.chip_id = ADXL372_CHIP_ID,						\
 		.max_peak_detect_mode = IS_ENABLED(CONFIG_ADXL372_PEAK_DETECT_MODE),	\
 		.th_mode = ADXL372_INSTANT_ON_LOW_TH,					\
 		.autosleep = false,							\

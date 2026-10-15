@@ -221,6 +221,7 @@ static void adxl372_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 	hdr->timestamp = data->timestamp;
 	hdr->int_status = data->status1;
 	hdr->accel_odr = data->odr;
+	hdr->chip_id = cfg->chip_id;
 	hdr->sample_set_size = sample_set_size;
 
 	if ((cfg->fifo_config.fifo_format == ADXL372_X_FIFO) ||
@@ -390,6 +391,7 @@ static void adxl372_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 
 		memset(buf, 0, buf_len);
 		rx_data->is_fifo = 1;
+		rx_data->chip_id = cfg->chip_id;
 		rx_data->timestamp = data->timestamp;
 		rx_data->int_status = status1;
 		rx_data->fifo_byte_count = 0;
