@@ -223,6 +223,10 @@ auxdisplay_0: &lcd0 {
 	};
 };
 
+&aes {
+	status = "okay";
+};
+
 &crc {
 	status = "okay";
 };
