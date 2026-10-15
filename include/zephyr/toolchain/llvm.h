@@ -32,6 +32,10 @@
 
 #include <zephyr/toolchain/gcc.h>
 
+/* Replace the GCC CODE_ASSUME() idiom from gcc.h with the clang builtin */
+#undef CODE_ASSUME
+#define CODE_ASSUME(cond) __builtin_assume(cond)
+
 /* clear out common version. The build assert assert from gcc.h is defined to be empty */
 #undef BUILD_ASSERT
 
