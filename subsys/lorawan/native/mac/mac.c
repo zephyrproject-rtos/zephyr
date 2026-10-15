@@ -38,7 +38,6 @@
 LOG_MODULE_REGISTER(lorawan_native_mac, CONFIG_LORAWAN_LOG_LEVEL);
 
 #define RX_SETUP_MARGIN_MS	50
-#define RX2_DELAY_OFFSET_MS	1000
 #define RX_TIMEOUT_MARGIN_MS	100
 
 /* PHY frame overhead: MHDR(1) + FHDR(7) + FPort(1) + MIC(4) */

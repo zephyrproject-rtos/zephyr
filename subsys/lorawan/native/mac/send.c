@@ -110,8 +110,10 @@ struct dl_work_ctx {
 
 struct send_tx_ctx {
 	const struct lwan_send_req *req;
+	int64_t tx_done_ms;
 	bool tx_done;
 	bool ack_in_frame;
+	bool ack_received;
 };
 
 struct data_frame_layout {
@@ -698,7 +700,7 @@ static enum mac_rx_result send_rx_handler(struct lwan_ctx *ctx,
 					   int16_t rssi, int8_t snr,
 					   void *user_data)
 {
-	const struct send_tx_ctx *tx_ctx = user_data;
+	struct send_tx_ctx *tx_ctx = user_data;
 	const struct lwan_send_req *req = tx_ctx->req;
 	bool ack_received;
 	int ret;
@@ -708,11 +710,15 @@ static enum mac_rx_result send_rx_handler(struct lwan_ctx *ctx,
 		return MAC_RX_CONTINUE;
 	}
 
-	if (req->type == LORAWAN_MSG_CONFIRMED && !ack_received) {
+	tx_ctx->ack_received = ack_received;
+
+	if (req->type == LORAWAN_MSG_CONFIRMED && !tx_ctx->ack_received) {
 		LOG_DBG("Downlink without ACK for confirmed uplink");
-		return MAC_RX_CONTINUE;
 	}
 
+	/* Any authenticated downlink closes RX1/RX2.  ACK receipt is tracked
+	 * separately so a confirmed uplink can still be retried.
+	 */
 	return MAC_RX_DONE;
 }
 
@@ -763,6 +769,7 @@ static void send_post_tx(struct lwan_ctx *ctx, void *user_data)
 	struct send_tx_ctx *tx_ctx = user_data;
 
 	tx_ctx->tx_done = true;
+	tx_ctx->tx_done_ms = k_uptime_get();
 	/* Retries reuse the prebuilt frame, so only consume an ACK that the
 	 * transmitted frame actually contained.
 	 */
@@ -825,6 +832,7 @@ static int send_validate_payload_size(struct lwan_ctx *ctx,
 
 static int send_prepare_frame(struct lwan_ctx *ctx, struct send_state *state)
 {
+	bool ack_pending;
 	int ret;
 
 	ret = send_validate_payload_size(ctx, state);
@@ -832,8 +840,14 @@ static int send_prepare_frame(struct lwan_ctx *ctx, struct send_state *state)
 		return ret;
 	}
 
-	return mac_build_data_frame(ctx, state->req, state->frame,
-				    &state->frame_len);
+	ack_pending = (ctx->pending & LWAN_PENDING_ACK) != 0;
+	ret = mac_build_data_frame(ctx, state->req, state->frame,
+				   &state->frame_len);
+	if (ret == 0) {
+		state->tx_ctx.ack_in_frame = ack_pending;
+	}
+
+	return ret;
 }
 
 static struct mac_tx_params send_tx_params(struct send_state *state,
@@ -851,12 +865,17 @@ static struct mac_tx_params send_tx_params(struct send_state *state,
 	};
 }
 
-static void send_retry_backoff(void)
+static void send_retry_backoff(const struct send_state *state)
 {
 	uint32_t backoff_ms = 1000 + (sys_rand32_get() % 2001);
+	int64_t rx2_at = state->tx_ctx.tx_done_ms + state->rx1_delay_ms +
+			 RX2_DELAY_OFFSET_MS;
 
+	/* The backoff counts from RX2, even if a downlink in RX1 meant
+	 * the RX2 window was never opened.
+	 */
 	LOG_DBG("Retry backoff: %u ms", backoff_ms);
-	k_msleep(backoff_ms);
+	k_sleep(K_TIMEOUT_ABS_MS(MAX(k_uptime_get(), rx2_at) + backoff_ms));
 }
 
 /*
@@ -868,11 +887,7 @@ static void send_retry_backoff(void)
 static int send_handle_attempt_result(const struct send_state *state,
 				      uint8_t attempt, int ret)
 {
-	if (ret == 0) {
-		return 0;
-	}
-
-	if (ret != -ETIMEDOUT) {
+	if (ret != 0 && ret != -ETIMEDOUT) {
 		LOG_ERR("TX/RX transaction failed: %d", ret);
 		return ret;
 	}
@@ -882,12 +897,17 @@ static int send_handle_attempt_result(const struct send_state *state,
 		return 0;
 	}
 
+	if (state->tx_ctx.ack_received) {
+		return 0;
+	}
+
 	LOG_WRN("Confirmed uplink: no ACK (attempt %u/%u)",
 		attempt + 1, state->tries);
 
-	if (attempt < state->tries - 1) {
-		send_retry_backoff();
-	}
+	/* RETRANSMIT_TIMEOUT applies before any following uplink,
+	 * repetition or new frame, so also wait after the final attempt.
+	 */
+	send_retry_backoff(state);
 
 	return SEND_ATTEMPT_RETRY;
 }
