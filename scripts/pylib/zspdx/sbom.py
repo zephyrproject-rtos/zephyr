@@ -2,8 +2,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import hashlib
 import logging
 import os
+import tempfile
+import uuid
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -15,12 +18,17 @@ from zspdx.walker import Walker, WalkerConfig
 
 _logger = logging.getLogger(__name__)
 
+# Base of the default document namespaces. It is intentionally _not_ an actual
+# URL where the documents will be stored.
+DEFAULT_NAMESPACE_BASE = "http://spdx.org/spdxdocs/zephyr"
+
 
 # SBOMConfig contains settings that will be passed along to the various
 # SBOM maker subcomponents.
 @dataclass(eq=True)
 class SBOMConfig:
-    # prefix for Document namespaces; should not end with "/"
+    # prefix for Document namespaces; should not end with "/"; a default one
+    # is generated if empty
     namespace_prefix: str = ""
 
     # location of build directory
@@ -76,6 +84,68 @@ def setup_cmake_query(build_dir):
     return True
 
 
+def serialize(sbom_graph, spdx_version, output_dir):
+    """
+    Write the documents of an SBOM graph.
+
+    Arguments:
+        - sbom_graph: scanned SBOMGraph to serialize.
+        - spdx_version: SPDX specification version to write.
+        - output_dir: existing directory the documents are written to.
+    Returns: True on success, False otherwise.
+    """
+    if spdx_version.major == 2:
+        from zspdx.serializers.spdx2 import SPDX2Serializer
+
+        serializer = SPDX2Serializer(sbom_graph, spdx_version)
+    elif spdx_version.major == 3:
+        from zspdx.serializers.spdx3 import SPDX3Serializer
+
+        serializer = SPDX3Serializer(sbom_graph, spdx_version)
+    else:
+        _logger.error("Unsupported SPDX version: %s", spdx_version)
+        return False
+
+    return serializer.serialize(output_dir)
+
+
+def default_namespace_prefix(sbom_graph, spdx_version, reproducible=False):
+    """
+    Return a namespace prefix for documents that were given none.
+
+    Arguments:
+        - sbom_graph: scanned SBOMGraph the documents are serialized from.
+        - spdx_version: SPDX specification version of the documents.
+        - reproducible: derive the prefix from the documents instead of
+          picking a random one.
+    Returns: prefix with a random UUID when reproducible is False. Otherwise,
+             the UUID is derived from the documents serialized with a fixed
+             placeholder prefix, so identical documents always get the same
+             prefix and documents that differ in any way do not share one.
+             None if the documents cannot be serialized.
+    """
+    if not reproducible:
+        return f"{DEFAULT_NAMESPACE_BASE}-{uuid.uuid4()}"
+
+    digest = hashlib.sha256()
+    saved_prefix = sbom_graph.namespace_prefix
+    sbom_graph.namespace_prefix = DEFAULT_NAMESPACE_BASE
+    try:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            if not serialize(sbom_graph, spdx_version, tmp_dir):
+                return None
+            for name in sorted(os.listdir(tmp_dir)):
+                with open(os.path.join(tmp_dir, name), "rb") as f:
+                    data = f.read()
+                digest.update(f"{name}\0{len(data)}\0".encode())
+                digest.update(data)
+    finally:
+        sbom_graph.namespace_prefix = saved_prefix
+
+    namespace = uuid.uuid5(uuid.NAMESPACE_URL, DEFAULT_NAMESPACE_BASE)
+    return f"{DEFAULT_NAMESPACE_BASE}-{uuid.uuid5(namespace, digest.hexdigest())}"
+
+
 # main entry point for SBOM maker
 # Arguments:
 #   1) cfg: SBOMConfig
@@ -111,19 +181,12 @@ def make_spdx(cfg):
     # scan SBOM graph
     scan_sbom_graph(scanner_cfg, sbom_graph)
 
-    # route to appropriate serializer based on version
-    if cfg.spdx_version.major == 2:
-        # Use SPDX 2.x serializer
-        from zspdx.serializers.spdx2 import SPDX2Serializer
+    if not sbom_graph.namespace_prefix:
+        sbom_graph.namespace_prefix = default_namespace_prefix(
+            sbom_graph, cfg.spdx_version, cfg.created is not None
+        )
+        if not sbom_graph.namespace_prefix:
+            _logger.error("unable to derive the namespace prefix; bailing")
+            return False
 
-        serializer = SPDX2Serializer(sbom_graph, cfg.spdx_version)
-        return serializer.serialize(cfg.spdx_dir)
-    elif cfg.spdx_version.major == 3:
-        # Use SPDX 3.0 serializer
-        from zspdx.serializers.spdx3 import SPDX3Serializer
-
-        serializer = SPDX3Serializer(sbom_graph, cfg.spdx_version)
-        return serializer.serialize(cfg.spdx_dir)
-    else:
-        _logger.error("Unsupported SPDX version: %s", cfg.spdx_version)
-        return False
+    return serialize(sbom_graph, cfg.spdx_version, cfg.spdx_dir)
