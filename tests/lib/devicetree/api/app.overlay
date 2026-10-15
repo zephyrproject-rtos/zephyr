@@ -172,6 +172,24 @@
 			#interrupt-cells = <2>;
 		};
 
+		/* Children inherit a non-okay status from their parent. */
+		test_disabled_parent: disabled-parent {
+			status = "disabled";
+
+			test_child_of_disabled: child {
+				compatible = "vnd,disabled-compat";
+				status = "okay";
+			};
+		};
+
+		test_reserved_parent: reserved-parent {
+			status = "reserved";
+
+			test_child_of_reserved: child {
+				compatible = "vnd,reserved-compat";
+			};
+		};
+
 		test_i2c_no_reg: i2c {
 			compatible = "vnd,i2c";
 			#address-cells = <1>;
