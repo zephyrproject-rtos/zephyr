@@ -25,6 +25,10 @@
  * set by an application or MCUmgr to ask the firmware-loader bootloader to
  * run the slot1 USB updater on the next reset).
  */
+&power {
+	status = "okay";
+};
+
 &gpregret1 {
 	status = "okay";
 
@@ -52,6 +56,10 @@
 &hfxo {
 	load-capacitors = "internal";
 	load-capacitance-femtofarad = <15000>;
+	status = "okay";
+};
+
+&regulators {
 	status = "okay";
 };
 
