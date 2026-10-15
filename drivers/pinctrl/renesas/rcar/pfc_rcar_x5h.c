@@ -313,9 +313,12 @@ static int pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
 {
 	struct scmi_pinctrl_settings settings;
 	uint8_t config_cnt = 0;
+	int ret;
 
-	/* Pin ID */
-	settings.id = pin->pin;
+	ret = pfc_rcar_get_scmi_pin_id(pin->pin, &settings.id);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/*
 	 * Peripheral function or GPIO mode.
