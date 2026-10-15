@@ -37,3 +37,4 @@ if(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME OR CONFIG_SYSTEM_CLOCK_HW_CYCLES_
 endif()
 zephyr_library_sources_ifdef(CONFIG_MULTITHREADING thread.c)
 zephyr_library_sources_ifdef(CONFIG_SYS_CLOCK_EXISTS timeout.c)
+zephyr_library_sources_ifdef(CONFIG_SYS_CLOCK_EXISTS timer.c)
