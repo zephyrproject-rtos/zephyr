@@ -359,9 +359,12 @@ the build results, the following details are included:
 * Init-levels with function names, and report on any priority issues with sys-init
   against devicetree (as per the ``initlevels`` build target).
 * Navigable devicetree view with property values and details from any bindings.
+* Security :ref:`hardening <hardening>` report with the rationale and CWE references for each
+  recommendation (as per the ``hardenconfig`` build target).
 
 Use the ``dashboard`` target with your board, as in the following example.
-If you are using :ref:`sysbuild`, see :ref:`sysbuild_dedicated_image_build_targets` instead.
+With :ref:`sysbuild`, the ``dashboard`` target generates the dashboard for the main
+image, and each other image gets a dedicated ``<image>_dashboard`` target.
 
 .. zephyr-app-commands::
     :tool: all
