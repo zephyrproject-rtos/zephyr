@@ -788,6 +788,16 @@ extern struct k_mem_partition k_log_partition;
 		GET_ARG_N(1, __VA_ARGS__));                                                        \
 	extern struct log_source_dynamic_data LOG_ITEM_DYNAMIC_DATA(GET_ARG_N(1, __VA_ARGS__))
 
+/* A unity build compiles several source files as one translation unit and
+ * defines Z_UNITY_ID to a different identifier for each of them, so give the
+ * file local log module data a name unique to the source file.
+ */
+#ifdef Z_UNITY_ID
+#define __log_current_const_data   _CONCAT(__log_current_const_data_, Z_UNITY_ID)
+#define __log_current_dynamic_data _CONCAT(__log_current_dynamic_data_, Z_UNITY_ID)
+#define __log_level                _CONCAT(__log_level_, Z_UNITY_ID)
+#endif
+
 /* Create the file local pointers to the data of the log module. */
 #define Z_LOG_MODULE_DECLARE_LOCAL(...)                                                            \
 	Z_LOG_MODULE_PARTITION(K_APP_DMEM)                                                         \
