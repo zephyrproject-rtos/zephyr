@@ -5,7 +5,6 @@
 import logging
 import os
 import sys
-import uuid
 
 from west.commands import WestCommand
 
@@ -124,11 +123,6 @@ class ZephyrSpdx(WestCommand):
             self.wrn("SPDX 3.1 support is experimental; the 3.1 spec is still in development.")
         if args.namespace_prefix:
             cfg.namespace_prefix = args.namespace_prefix
-        else:
-            # create default namespace according to SPDX spec
-            # note that this is intentionally _not_ an actual URL where
-            # this document will be stored
-            cfg.namespace_prefix = f"http://spdx.org/spdxdocs/zephyr-{str(uuid.uuid4())}"
         if args.spdx_dir:
             cfg.spdx_dir = args.spdx_dir
         else:
