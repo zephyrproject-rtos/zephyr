@@ -248,11 +248,14 @@ int z_try_abort_timeout(struct _timeout *to)
 			if (was_first) {
 				reprogram_next(elapsed());
 			}
-		} else if (IS_ENABLED(CONFIG_SMP) && inflight_ptr() == to &&
-			   !this_cpu_announcing()) {
-			/* Handler in flight on another CPU. Free-safety
-			 * callers retry on -EAGAIN to wait it out; others
-			 * rely on the superseded mark below and don't.
+		}
+
+		if (IS_ENABLED(CONFIG_SMP) && inflight_ptr() == to &&
+		    !this_cpu_announcing()) {
+			/* Handler in flight on another CPU, even if we just
+			 * removed a copy it re-queued (periodic timer).
+			 * Free-safety callers retry on -EAGAIN to wait it
+			 * out; others rely on the superseded mark below.
 			 */
 			ret = -EAGAIN;
 		}
