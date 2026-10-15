@@ -35,6 +35,11 @@
 		.ctrls = SYS_DLIST_STATIC_INIT(&name.vdev.ctrls),                                  \
 		.in_fmt = {.type = VIDEO_BUF_TYPE_INPUT},                                          \
 		.out_fmt = {.type = VIDEO_BUF_TYPE_OUTPUT},                                        \
+		.lock = Z_MUTEX_INITIALIZER(name.vdev.lock),                                                 \
+		.in_buf_submitted = Z_FIFO_INITIALIZER(name.vdev.in_buf_submitted),                \
+		.in_buf_completed = Z_FIFO_INITIALIZER(name.vdev.in_buf_completed),                \
+		.out_buf_submitted = Z_FIFO_INITIALIZER(name.vdev.out_buf_submitted),              \
+		.out_buf_completed = Z_FIFO_INITIALIZER(name.vdev.out_buf_completed),              \
 	}
 
 /**
