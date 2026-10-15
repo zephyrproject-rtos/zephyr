@@ -241,17 +241,6 @@ static int nxp_flexio_camera_set_format(const struct device *dev, struct video_f
 	flexio_camera_config_t cam_cfg;
 	int ret;
 
-	if (!device_is_ready(data->vdev.source_dev)) {
-		LOG_ERR("Source device not ready");
-		return -ENODEV;
-	}
-
-	/* Propagate format to sensor */
-	ret = video_set_format(data->vdev.source_dev, fmt);
-	if (ret < 0) {
-		return ret;
-	}
-
 	/* Build FLEXIO_CAMERA_Type using dynamically allocated indices */
 	data->flexio_cam.flexioBase      = config->flexio_base;
 	data->flexio_cam.datPinStartIdx  = config->data_pin_start;

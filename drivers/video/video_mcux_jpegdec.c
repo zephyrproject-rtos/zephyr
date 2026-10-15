@@ -416,9 +416,9 @@ static int mcux_jpegdec_get_caps(const struct device *dev, struct video_caps *ca
 }
 
 static int mcux_jpegdec_transform_cap(const struct device *const dev,
-				const struct video_format_cap *const cap,
-				struct video_format_cap *const res_cap,
-				enum video_buf_type direction, uint16_t ind)
+				      const struct video_format_cap *const cap,
+				      struct video_format_cap *const res_cap,
+				      enum video_buf_type direction, uint16_t ind)
 {
 	struct mcux_jpegdec_data *data = dev->data;
 

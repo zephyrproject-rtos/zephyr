@@ -555,28 +555,6 @@ static int stm32_dcmipp_set_fmt(const struct device *dev, struct video_format *f
 		return -EINVAL;
 	}
 
-	/* In case of DUMP pipe, verify that requested format matched with input format */
-	if (pipe->id == DCMIPP_PIPE0 &&
-	    mapping->dump.input_pixelformat != dcmipp->source_fmt.pixelformat) {
-		LOG_ERR("Dump pipe output format (%s) incompatible with source format (%s)",
-			 VIDEO_FOURCC_TO_STR(fmt->pixelformat),
-			 VIDEO_FOURCC_TO_STR(dcmipp->source_fmt.pixelformat));
-		return -EINVAL;
-	}
-
-	if (!IN_RANGE(fmt->width, STM32_DCMIPP_WIDTH_MIN, STM32_DCMIPP_WIDTH_MAX) ||
-	    !IN_RANGE(fmt->height, STM32_DCMIPP_HEIGHT_MIN, STM32_DCMIPP_HEIGHT_MAX)) {
-		LOG_ERR("Format width/height (%d x %d) does not match caps",
-			fmt->width, fmt->height);
-		return -EINVAL;
-	}
-
-	if (fmt->width != pipe->compose.width || fmt->height != pipe->compose.height) {
-		LOG_ERR("Format width/height (%d x %d) do not match compose width/height (%d x %d)",
-			fmt->width, fmt->height, pipe->compose.width, pipe->compose.height);
-		return -EINVAL;
-	}
-
 	stm32_dcmipp_compute_fmt_pitch(pipe->id, fmt);
 
 	k_mutex_lock(&pipe->lock, K_FOREVER);
@@ -630,6 +608,115 @@ static void stm32_dcmipp_get_isp_decimation(struct stm32_dcmipp_data *dcmipp)
 }
 #endif
 
+static int stm32_venc_transform_cap(const struct device *const dev,
+				    const struct video_format_cap *const cap,
+				    struct video_format_cap *const res_cap,
+				    enum video_buf_type type, uint16_t ind)
+{
+	const struct stm32_dcmipp_mapping *mapping;
+	struct stm32_dcmipp_pipe_data *pipe = dev->data;
+	struct video_format min_fmt = {
+		.type = type,
+		.width = cap->min_width,
+		.height = cap->min_height,
+	};
+	struct video_format max_fmt = {
+		.type = type,
+		.width = cap->max_width,
+		.height = cap->max_height,
+	};
+	struct video_format_cap cap {
+		.type = type,
+	};
+	size_t min_idx;
+	size_t max_idx;
+
+	*res_cap = *cap;
+
+	switch (type) {
+	case VIDEO_BUF_TYPE_INPUT:
+		if (ind > 0) {
+			return -EINVAL;
+		}
+
+		for (size_t i = 0; i < ARRAY_SIZE(stm32_dcmipp_format_support); i++) {
+			if (BIT(pipe->id) & stm32_dcmipp_format_support[i].pipe != 0) {
+				res_cap->pixelformat =
+					CONFIG_VIDEO_STM32_DCMIPP_SENSOR_PIXEL_FORMAT;
+				return 0;
+			}
+		}
+
+		LOG_ERR("Unsupported output pixel format query, cannot provide input");
+		return -ENOTSUP;
+
+	case VIDEO_BUF_TYPE_OUTPUT:
+		if (cap->pixelformat != CONFIG_VIDEO_STM32_DCMIPP_SENSOR_PIXEL_FORMAT ||
+		    cap->min_width != CONFIG_VIDEO_STM32_DCMIPP_SENSOR_WIDTH ||
+		    cap->min_height != CONFIG_VIDEO_STM32_DCMIPP_SENSOR_HEIGHT) {
+			LOG_ERR("Unsupported output pixel format query, cannot provide output");
+			return -ENOTSUP;
+		}
+
+		/* Because DCMIPP currently only supports a single source format (Kconfig), it is
+		 * possible to simply query the input format to generate the matching conversion
+		 * range.
+		 *
+		 * TODO: change this once supporting multiple input formats.
+		 */
+
+		for (size_t i = 0; i < ARRAY_SIZE(stm32_dcmipp_format_support); i++) {
+			if (BIT(pipe->id) & stm32_dcmipp_format_support[i].pipe != 0) {
+				if (ind == 0) {
+					res_cap->pixelformat =
+						stm32_dcmipp_format_support[i].pixelformat;
+					break;
+				}
+				ind--;
+			}
+		}
+		if (ind != 0) {
+			return -EINVAL;
+		}
+
+		min_fmt.pixelformat = res_cap->pixelformat;
+		max_fmt.pixelformat = res_cap->pixelformat;
+
+		ret = video_get_format_cap(dev, &cap);
+		if (ret < 0) {
+			LOG_ERR("Failed to query the format cap");
+			return ret;
+		}
+
+		ret = video_get_format_cap_index(dev, min_fmt, &min_idx);
+		if (ret < 0) {
+			LOG_ERR("Failed to query the min format");
+			return ret
+		}
+
+		ret = video_get_format_cap_index(dev, max_fmt, &max_idx);
+		if (ret < 0) {
+			LOG_ERR("Failed to query the max format");
+			return ret
+		}
+
+		if (min_idx != max_idx) {
+			LOG_ERR("min_id (%u) and max_id (%u) are different, should not happen",
+				min_idx, max_idx);
+			return -ENOTSUP;
+		}
+
+		*res_cap = cap.format_caps[min_idx];
+		break;
+
+	default:
+		LOG_ERR("Invalid pixel type %d", type);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int stm32_dcmipp_set_crop(struct stm32_dcmipp_pipe_data *pipe)
 {
 	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
@@ -646,7 +733,8 @@ static int stm32_dcmipp_set_crop(struct stm32_dcmipp_pipe_data *pipe)
 #endif
 
 	/* If crop area is equal to frame size, disable the crop */
-	if (pipe->crop.width == frame_width && pipe->crop.height == frame_height) {
+	if (pipe->vdev.in_selection.rect.width == frame_width &&
+	    pipe->vdev.in_selection.rect.height == frame_height) {
 		hal_ret = HAL_DCMIPP_PIPE_DisableCrop(&dcmipp->hdcmipp, pipe->id);
 		if (hal_ret != HAL_OK) {
 			LOG_ERR("Failed to disable pipe crop");
@@ -656,8 +744,8 @@ static int stm32_dcmipp_set_crop(struct stm32_dcmipp_pipe_data *pipe)
 		return 0;
 	}
 
-	crop_cfg.VStart = pipe->crop.top;
-	crop_cfg.VSize = pipe->crop.height;
+	crop_cfg.VStart = pipe->vdev.in_selection.rect.top;
+	crop_cfg.VSize = pipe->vdev.in_selection.rect.height;
 
 	/*
 	 * In case of Pipe0, left & width are expressed in word (32bit).
@@ -666,13 +754,13 @@ static int stm32_dcmipp_set_crop(struct stm32_dcmipp_pipe_data *pipe)
 	if (pipe->id == DCMIPP_PIPE0) {
 		unsigned int bpp = video_bits_per_pixel(pipe->vdev.out_fmt.pixelformat);
 
-		crop_cfg.HStart = pipe->crop.left * bpp / 32;
-		crop_cfg.HSize = pipe->crop.width * bpp / 32;
+		crop_cfg.HStart = pipe->vdev.in_selection.rect.left * bpp / 32;
+		crop_cfg.HSize = pipe->vdev.in_selection.rect.width * bpp / 32;
 	}
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 	else {
-		crop_cfg.HStart = pipe->crop.left;
-		crop_cfg.HSize = pipe->crop.width;
+		crop_cfg.HStart = pipe->vdev.in_selection.rect.left;
+		crop_cfg.HSize = pipe->vdev.in_selection.rect.width;
 	}
 #endif
 
@@ -699,15 +787,16 @@ static int stm32_dcmipp_set_crop(struct stm32_dcmipp_pipe_data *pipe)
 static int stm32_dcmipp_set_downscale(struct stm32_dcmipp_pipe_data *pipe)
 {
 	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
-	uint32_t post_decimate_width = pipe->crop.width;
-	uint32_t post_decimate_height = pipe->crop.height;
+	uint32_t post_decimate_width = pipe->vdev.in_selection.rect.width;
+	uint32_t post_decimate_height = pipe->vdev.in_selection.rect.height;
 	DCMIPP_DecimationConfTypeDef dec_cfg;
 	DCMIPP_DownsizeTypeDef downsize_cfg;
 	struct video_rect *compose = &pipe->compose;
 	uint32_t hdec = 1, vdec = 1;
 	HAL_StatusTypeDef hal_ret;
 
-	if (compose->width == pipe->crop.width && compose->height == pipe->crop.height) {
+	if (compose->width == pipe->vdev.in_selection.rect.width &&
+	    compose->height == pipe->vdev.in_selection.rect.height) {
 		hal_ret = HAL_DCMIPP_PIPE_DisableDecimation(&dcmipp->hdcmipp, pipe->id);
 		if (hal_ret != HAL_OK) {
 			LOG_ERR("Failed to disable the pipe decimation");
@@ -1447,7 +1536,8 @@ static int stm32_dcmipp_set_selection(const struct device *dev, struct video_sel
 		 */
 		if (pipe->id == DCMIPP_PIPE0 &&
 		    !(sel->rect.left == 0 || sel->rect.width == frame_width)) {
-			int h_pixel_align = stm32_dcmipp_pipe0_pixel_align(pipe->vdev.out_fmt.pixelformat);
+			int h_pixel_align =
+				stm32_dcmipp_pipe0_pixel_align(pipe->vdev.out_fmt.pixelformat);
 
 			if (h_pixel_align == 0) {
 				LOG_ERR("Cannot figure out required pixel alignment");
@@ -1458,20 +1548,14 @@ static int stm32_dcmipp_set_selection(const struct device *dev, struct video_sel
 			sel->rect.width = ROUND_DOWN(sel->rect.width, h_pixel_align);
 		}
 
-		k_mutex_lock(&pipe->lock, K_FOREVER);
-		pipe->crop = sel->rect;
-		pipe->compose.width = sel->rect.width;
-		pipe->compose.height = sel->rect.height;
-		pipe->vdev.out_fmt.width = sel->rect.width;
-		pipe->vdev.out_fmt.height = sel->rect.height;
 		stm32_dcmipp_compute_fmt_pitch(pipe->id, &pipe->vdev.out_fmt);
 		k_mutex_unlock(&pipe->lock);
 		break;
 	case VIDEO_SEL_TGT_COMPOSE:
 		/* Compose not available on Pipe0 */
 		if (pipe->id == DCMIPP_PIPE0) {
-			sel->rect = pipe->crop;
-			goto out;
+			sel->rect = pipe->vdev.in_selection.rect;
+			return 0;
 		}
 
 		if (sel->rect.left != 0) {
@@ -1482,15 +1566,20 @@ static int stm32_dcmipp_set_selection(const struct device *dev, struct video_sel
 		}
 
 		if (!IN_RANGE(sel->rect.width,
-			      pipe->crop.width / STM32_DCMIPP_MAX_PIPE_SCALE_FACTOR,
-			      pipe->crop.width)) {
-			sel->rect.width = pipe->crop.width / STM32_DCMIPP_MAX_PIPE_SCALE_FACTOR;
+			      pipe->vdev.in_selection.rect.width /
+			      STM32_DCMIPP_MAX_PIPE_SCALE_FACTOR,
+			      pipe->vdev.in_selection.rect.width)) {
+			sel->rect.width = pipe->vdev.in_selection.rect.width /
+				STM32_DCMIPP_MAX_PIPE_SCALE_FACTOR;
 		}
 
 		if (!IN_RANGE(sel->rect.height,
-			      pipe->crop.height / STM32_DCMIPP_MAX_PIPE_SCALE_FACTOR,
-			      pipe->crop.height)) {
-			sel->rect.height = pipe->crop.height / STM32_DCMIPP_MAX_PIPE_SCALE_FACTOR;
+			      pipe->vdev.in_selection.rect.height /
+			      STM32_DCMIPP_MAX_PIPE_SCALE_FACTOR,
+			      pipe->vdev.in_selection.rect.height)) {
+			sel->rect.height =
+				pipe->vdev.in_selection.rect.height /
+				STM32_DCMIPP_MAX_PIPE_SCALE_FACTOR;
 		}
 
 		k_mutex_lock(&pipe->lock, K_FOREVER);
@@ -1515,7 +1604,7 @@ static int stm32_dcmipp_get_selection(const struct device *dev, struct video_sel
 
 	switch (sel->target) {
 	case VIDEO_SEL_TGT_CROP:
-		sel->rect = pipe->crop;
+		sel->rect = pipe->vdev.in_selection.rect;
 		break;
 	case VIDEO_SEL_TGT_COMPOSE:
 		sel->rect = pipe->compose;
@@ -1555,6 +1644,7 @@ static DEVICE_API(video, stm32_dcmipp_driver_api) = {
 	.get_caps = stm32_dcmipp_get_caps,
 	.set_selection = stm32_dcmipp_set_selection,
 	.get_selection = stm32_dcmipp_get_selection,
+	.transform_cap = stm32_dcmipp_transform_cap,
 };
 
 static int stm32_dcmipp_enable_clock(const struct device *dev)
@@ -1688,11 +1778,11 @@ static int stm32_dcmipp_pipe_init(const struct device *dev)
 	pipe->vdev.out_fmt.width = dcmipp->source_fmt.width;
 	pipe->vdev.out_fmt.height = dcmipp->source_fmt.height;
 	pipe->vdev.out_fmt.pixelformat = dcmipp->source_fmt.pixelformat;
-	pipe->crop.top = 0;
-	pipe->crop.left = 0;
-	pipe->crop.width = pipe->vdev.out_fmt.width;
-	pipe->crop.height = pipe->vdev.out_fmt.height;
-	pipe->compose = pipe->crop;
+	pipe->vdev.in_selection.rect.top = 0;
+	pipe->vdev.in_selection.rect.left = 0;
+	pipe->vdev.in_selection.rect.width = pipe->vdev.out_fmt.width;
+	pipe->vdev.in_selection.rect.height = pipe->vdev.out_fmt.height;
+	pipe->compose = pipe->vdev.in_selection.rect;
 
 	/* Store the pipe data pointer into dcmipp data structure */
 	dcmipp->pipe[pipe->id] = pipe;
@@ -1802,7 +1892,6 @@ static void stm32_dcmipp_csi_isr(const struct device *dev)
 		.has_dcmipp_ker = DT_INST_CLOCKS_HAS_NAME(inst, dcmipp_ker),			\
 		.irq_config = stm32_dcmipp_irq_config_##inst,					\
 		.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),					\
-		.source_dev = SOURCE_DEV(inst),							\
 		.reset_dcmipp = RESET_DT_SPEC_INST_GET_BY_IDX(inst, 0),				\
 		.bus_type = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(inst, 0, 0), bus_type,		\
 				       VIDEO_BUS_TYPE_PARALLEL),				\

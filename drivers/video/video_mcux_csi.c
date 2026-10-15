@@ -124,6 +124,58 @@ static inline void video_pix_fmt_convert(uint32_t *pixelformat, bool isGetFmt)
 }
 #endif
 
+static int video_mcux_csi_transform_cap(const struct device *const dev,
+					const struct video_format_cap *const cap,
+					struct video_format_cap *const res_cap,
+					enum video_buf_type type, uint16_t ind)
+{
+	static const struct {
+		uint32_t src;
+		uint32_t dst;
+	} pixfmt_conversions[] = {
+		{.src = VIDEO_PIX_FMT_BGRX32, .dst = VIDEO_PIX_FMT_BGRX32},
+		{.src = VIDEO_PIX_FMT_BGRX32, .dst = VIDEO_PIX_FMT_RGB565},
+		{.src = VIDEO_PIX_FMT_RGB565, .dst = VIDEO_PIX_FMT_BGRX32},
+		{.src = VIDEO_PIX_FMT_RGB565, .dst = VIDEO_PIX_FMT_RGB565},
+		{.src = VIDEO_PIX_FMT_XYUV32, .dst = VIDEO_PIX_FMT_XYUV32},
+		{.src = VIDEO_PIX_FMT_XYUV32, .dst = VIDEO_PIX_FMT_YUYV},
+		{.src = VIDEO_PIX_FMT_YUYV, .dst = VIDEO_PIX_FMT_XYUV32},
+		{.src = VIDEO_PIX_FMT_YUYV, .dst = VIDEO_PIX_FMT_YUYV},
+	};
+
+	*res_cap = *cap;
+
+	switch (type) {
+	case VIDEO_BUF_TYPE_OUTPUT:
+		for (size_t i = 0; i < ARRAY_SIZE(pixfmt_conversions); i++) {
+			if (pixfmt_conversions[i].src == cap->pixelformat) {
+				if (ind == 0) {
+					res_cap->pixelformat = pixfmt_conversions[i].dst;
+					break;
+				}
+				ind--;
+			}
+		}
+		break;
+	case VIDEO_BUF_TYPE_INPUT:
+		for (size_t i = 0; i < ARRAY_SIZE(pixfmt_conversions); i++) {
+			if (pixfmt_conversions[i].dst == cap->pixelformat) {
+				if (ind == 0) {
+					res_cap->pixelformat = pixfmt_conversions[i].src;
+					break;
+				}
+				ind--;
+			}
+		}
+		break;
+	default:
+		LOG_ERR("Invalid buffer type %d", type);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int video_mcux_csi_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	const struct video_mcux_csi_config *config = dev->config;
@@ -155,10 +207,6 @@ static int video_mcux_csi_set_fmt(const struct device *dev, struct video_format 
 
 	ret = CSI_TransferCreateHandle(config->base, &data->csi_handle, __frame_done_cb, data);
 	if (ret != kStatus_Success) {
-		return -EIO;
-	}
-
-	if (data->vdev.source_dev && video_set_format(data->vdev.source_dev, &format)) {
 		return -EIO;
 	}
 
@@ -322,6 +370,7 @@ static DEVICE_API(video, video_mcux_csi_driver_api) = {
 	.trigger = video_mcux_csi_trigger,
 	.get_caps = video_mcux_csi_get_caps,
 	.enum_frmival = video_mcux_csi_enum_frmival,
+	.transform_cap = video_mcux_csi_transform_cap,
 };
 
 PINCTRL_DT_INST_DEFINE(0);
