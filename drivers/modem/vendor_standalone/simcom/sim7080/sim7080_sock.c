@@ -531,31 +531,39 @@ static int offload_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 	return modem_socket_poll(&mdata.socket_config, fds, nfds, msecs);
 }
 
+static int offload_poll_prepare(void *obj, struct zvfs_pollfd *pfd,
+			struct k_poll_event **pev, struct k_poll_event *pev_end)
+{
+	ARG_UNUSED(obj);
+	ARG_UNUSED(pfd);
+	ARG_UNUSED(pev);
+	ARG_UNUSED(pev_end);
+
+	return -EXDEV;
+}
+
+static int offload_poll_update(void *obj, struct zvfs_pollfd *pfd,
+			struct k_poll_event **pev)
+{
+	ARG_UNUSED(obj);
+	ARG_UNUSED(pfd);
+	ARG_UNUSED(pev);
+
+	return -EOPNOTSUPP;
+}
+
+static int offload_poll_offload(void *obj, struct zvfs_pollfd *fds, int nfds, int timeout)
+{
+	ARG_UNUSED(obj);
+	return offload_poll(fds, nfds, timeout);
+}
+
 /*
- * Offloads ioctl. Supports the poll offload requests and the
- * F_GETFL/F_SETFL fcntl requests.
+ * Offloads ioctl. Supports the F_GETFL/F_SETFL fcntl requests.
  */
 static int offload_ioctl(void *obj, unsigned int request, va_list args)
 {
 	switch (request) {
-	case ZFD_IOCTL_POLL_PREPARE:
-		return -EXDEV;
-
-	case ZFD_IOCTL_POLL_UPDATE:
-		return -EOPNOTSUPP;
-
-	case ZFD_IOCTL_POLL_OFFLOAD: {
-		/* Poll on the given socket. */
-		struct zsock_pollfd *fds;
-		int nfds, timeout;
-
-		fds = va_arg(args, struct zsock_pollfd *);
-		nfds = va_arg(args, int);
-		timeout = va_arg(args, int);
-
-		return offload_poll(fds, nfds, timeout);
-	}
-
 	case ZVFS_F_GETFL:
 		/* The socket is always blocking, no flags are set. */
 		return 0;
@@ -587,10 +595,13 @@ static int offload_setsockopt(void *obj, int level, int optname,
 
 const struct socket_op_vtable offload_socket_fd_op_vtable = {
 	.fd_vtable = {
-		.read	= offload_read,
-		.write	= offload_write,
-		.close	= offload_close,
-		.ioctl	= offload_ioctl,
+		.read		= offload_read,
+		.write		= offload_write,
+		.close		= offload_close,
+		.ioctl		= offload_ioctl,
+		.poll_prepare	= offload_poll_prepare,
+		.poll_update	= offload_poll_update,
+		.poll_offload	= offload_poll_offload,
 	},
 	.bind		= NULL,
 	.connect	= offload_connect,

@@ -554,8 +554,7 @@ static inline int websocket_poll_offload(struct zsock_pollfd *fds, int nfds,
 		goto exit;
 	}
 
-	ret = zvfs_fdtable_call_ioctl(vtable, ctx, ZFD_IOCTL_POLL_OFFLOAD,
-				   fds, nfds, timeout);
+	ret = zvfs_fdtable_call_poll_offload(vtable, ctx, fds, nfds, timeout);
 
 exit:
 	/* Restore original fds. */
@@ -566,23 +565,17 @@ exit:
 	return ret;
 }
 
+static int websocket_poll_offload_vmeth(void *obj, struct zvfs_pollfd *fds, int nfds, int timeout)
+{
+	ARG_UNUSED(obj);
+	return websocket_poll_offload(fds, nfds, timeout);
+}
+
 static int websocket_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 {
 	struct websocket_context *ctx = obj;
 
 	switch (request) {
-	case ZFD_IOCTL_POLL_OFFLOAD: {
-		struct zsock_pollfd *fds;
-		int nfds;
-		int timeout;
-
-		fds = va_arg(args, struct zsock_pollfd *);
-		nfds = va_arg(args, int);
-		timeout = va_arg(args, int);
-
-		return websocket_poll_offload(fds, nfds, timeout);
-	}
-
 	case ZFD_IOCTL_SET_LOCK:
 		/* Ignore, don't want to overwrite underlying socket lock. */
 		return 0;
@@ -1340,6 +1333,7 @@ static const struct socket_op_vtable websocket_fd_op_vtable = {
 		.write = websocket_write_vmeth,
 		.close = websocket_close_vmeth,
 		.ioctl = websocket_ioctl_vmeth,
+		.poll_offload = websocket_poll_offload_vmeth,
 	},
 	.sendto = websocket_sendto_ctx,
 	.recvfrom = websocket_recvfrom_ctx,
