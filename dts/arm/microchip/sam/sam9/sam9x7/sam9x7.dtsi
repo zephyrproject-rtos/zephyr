@@ -38,9 +38,22 @@
 	};
 
 	soc {
-		sram: memory@100000 {
+		sram0_remapped: sram0_remapped@0 {
 			compatible = "mmio-sram";
-			reg = <0x00100000 DT_SIZE_K(128)>;
+			reg = <0 DT_SIZE_K(64)>;
+			device_type = "memory";
+		};
+
+		sram0: sram0@300000 {
+			compatible = "mmio-sram";
+			reg = <0x00300000 DT_SIZE_K(64)>;
+			device_type = "memory";
+		};
+
+		sram1: sram1@400000 {
+			compatible = "mmio-sram";
+			reg = <0x00400000 DT_SIZE_K(4)>;
+			device_type = "memory";
 		};
 
 		pmc: clock-controller@e0018000 {
