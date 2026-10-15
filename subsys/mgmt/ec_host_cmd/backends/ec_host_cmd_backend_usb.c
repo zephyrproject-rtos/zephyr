@@ -77,6 +77,7 @@ enum ec_host_cmd_usb_state {
 
 enum {
 	EC_HOST_CMD_CLASS_ENABLED,
+	EC_HOST_CMD_EVENT_PENDING,
 };
 
 static const char *const state_name[] = {
@@ -104,8 +105,7 @@ struct ec_host_cmd_usb_ctx {
 	struct net_buf *usb_rx_buf;
 	struct net_buf *usb_tx_buf;
 	enum ec_host_cmd_usb_state state;
-	atomic_t class_state;
-	bool pending_event;
+	atomic_t flags;
 	struct k_work_delayable reset_work;
 };
 
@@ -205,7 +205,7 @@ static int ec_host_cmd_signal_event(struct usbd_class_data *const c_data)
 		(void)usbd_ep_buf_free(uds_ctx, buf);
 		return ret;
 	}
-	ctx->pending_event = false;
+	atomic_clear_bit(&ctx->flags, EC_HOST_CMD_EVENT_PENDING);
 
 	return 0;
 }
@@ -354,7 +354,7 @@ static void ec_host_cmd_enable(struct usbd_class_data *const c_data)
 	struct udc_buf_info *bi;
 	struct net_buf *buf;
 
-	atomic_set_bit(&ctx->class_state, EC_HOST_CMD_CLASS_ENABLED);
+	atomic_set_bit(&ctx->flags, EC_HOST_CMD_CLASS_ENABLED);
 	if (!ctx->usb_tx_buf) {
 		LOG_ERR("Host Commands not initialized");
 		return;
@@ -382,7 +382,7 @@ static void ec_host_cmd_enable(struct usbd_class_data *const c_data)
 	}
 	ctx->state = USB_EC_HOST_CMD_STATE_READY_TO_RX;
 
-	if (ctx->pending_event) {
+	if (atomic_test_bit(&ctx->flags, EC_HOST_CMD_EVENT_PENDING)) {
 		ec_host_cmd_signal_event(c_data);
 	}
 
@@ -394,7 +394,7 @@ static void ec_host_cmd_resumed(struct usbd_class_data *const c_data)
 	LOG_DBG("Configuration resumed");
 	struct ec_host_cmd_usb_ctx *ctx = usbd_class_get_private(c_data);
 
-	if (ctx->pending_event) {
+	if (atomic_test_bit(&ctx->flags, EC_HOST_CMD_EVENT_PENDING)) {
 		ec_host_cmd_signal_event(c_data);
 	}
 }
@@ -408,7 +408,7 @@ static void ec_host_cmd_disable(struct usbd_class_data *const c_data)
 {
 	struct ec_host_cmd_usb_ctx *ctx = usbd_class_get_private(c_data);
 
-	atomic_clear_bit(&ctx->class_state, EC_HOST_CMD_CLASS_ENABLED);
+	atomic_clear_bit(&ctx->flags, EC_HOST_CMD_CLASS_ENABLED);
 
 	k_work_cancel_delayable(&ctx->reset_work);
 	if (ctx->state != USB_EC_HOST_CMD_STATE_READY_TO_RX) {
@@ -508,7 +508,7 @@ static int ec_host_cmd_backend_send(const struct ec_host_cmd_backend *backend)
 	struct net_buf *buf;
 	int ret;
 
-	if (!atomic_test_bit(&ctx->class_state, EC_HOST_CMD_CLASS_ENABLED)) {
+	if (!atomic_test_bit(&ctx->flags, EC_HOST_CMD_CLASS_ENABLED)) {
 		LOG_ERR("Class not enabled");
 		return -EACCES;
 	}
@@ -645,8 +645,8 @@ void ec_host_cmd_backend_usb_trigger_event(void)
 	struct usbd_class_data *const c_data = ctx->c_data;
 	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 
-	ctx->pending_event = true;
-	if (!atomic_test_bit(&ctx->class_state, EC_HOST_CMD_CLASS_ENABLED)) {
+	atomic_set_bit(&ctx->flags, EC_HOST_CMD_EVENT_PENDING);
+	if (!atomic_test_bit(&ctx->flags, EC_HOST_CMD_CLASS_ENABLED)) {
 		return;
 	}
 
