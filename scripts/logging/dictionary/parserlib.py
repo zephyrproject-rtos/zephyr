@@ -71,7 +71,15 @@ def get_log_parser(dbfile, logger):
 
 
 def parser(logdata, log_parser, logger):
-    """function of serial parser"""
+    """Parse binary log data with the given log parser.
+
+    Returns a tuple ``(offset, error)``. ``offset`` is the number of bytes which were consumed
+    (data after it is an incomplete message and should be provided again together with more
+    data). ``error`` is None on success. If the data could not be decoded (e.g. because it does
+    not match the database), ``error`` is the exception which was raised by the parser (it is
+    not raised to the caller) and ``offset`` is 0, which means that the state of the stream is
+    unknown and the caller should not rely on the data any more.
+    """
 
     if not isinstance(logger, logging.Logger):
         raise ValueError("Invalid logger instance. Please configure the logger!")
@@ -80,5 +88,9 @@ def parser(logdata, log_parser, logger):
         logger.error("ERROR: cannot read log from file:  exiting...")
         raise ValueError("Cannot read log data.")
 
-    ret = log_parser.parse_log_data(logdata)
-    return ret
+    logger.debug("parser: logdata: %d", len(logdata))
+    try:
+        return log_parser.parse_log_data(logdata), None
+    except Exception as e:  # noqa: BLE001 - any decoding failure means a database mismatch
+        logger.debug("parser: failed to process log data: %r", e)
+        return 0, e
