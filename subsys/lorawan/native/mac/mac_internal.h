@@ -14,6 +14,9 @@ extern "C" {
 
 #define MAX_RX_BUF_SIZE		255
 
+/* RX2 opens this long after RX1 (RECEIVE_DELAY2 - RECEIVE_DELAY1) */
+#define RX2_DELAY_OFFSET_MS	1000
+
 /* LoRaWAN field sizes in bytes */
 #define LWAN_MIC_SIZE		4
 #define MHDR_SIZE		1
