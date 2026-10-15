@@ -143,6 +143,15 @@ config USE_INFINEON_MXCRYPTOLITE_SHA256
 	help
 	  Enable Infineon MXCRYPTOLITE PDL SHA-256 hardware accelerator sources
 
+config USE_INFINEON_MXCRYPTOLITE_SHA
+	bool
+	help
+	  Enable Infineon MXCRYPTOLITE PDL unified SHA hardware accelerator sources
+	  (cy_cryptolite_sha). Supports SHA-256, SHA-384 and SHA-512, unlike the
+	  legacy cy_cryptolite_sha256 driver (USE_INFINEON_MXCRYPTOLITE_SHA256)
+	  which only supports SHA-256. Available on devices with
+	  CY_IP_MXCRYPTOLITE_VERSION_MINOR >= 2.
+
 config USE_INFINEON_UART
 	bool
 	help
