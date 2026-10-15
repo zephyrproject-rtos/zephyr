@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+include: sensor-device.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the RSTN pin. RSTN is active low, so the flags should
+      include GPIO_ACTIVE_LOW. The sensor is reset through this pin at
+      initialization, and through its soft reset register when the property
+      is absent.
+
+  sensor-drive:
+    type: string
+    default: "low-power-1"
+    enum:
+      - "low-power-1"
+      - "low-power-2"
+      - "low-noise-1"
+      - "low-noise-2"
+      - "ultra-low-power"
+    description: |
+      Sensor drive, trading current consumption for noise. It also bounds the
+      sampling frequency available in continuous measurement mode:
+      - low-power-1: up to 1000 Hz
+      - low-power-2: up to 400 Hz
+      - low-noise-1 and low-noise-2: up to 200 Hz
+      - ultra-low-power: up to 2500 Hz
+      The default is the power-on setting of the sensor.

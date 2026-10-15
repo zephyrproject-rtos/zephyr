@@ -55,7 +55,7 @@ static void test_fetch_magnetic_field(const struct akm09918c_fixture *fixture,
 	uint8_t register_buffer[6];
 
 	/* Set the ST1 register to show we have data */
-	register_buffer[0] = AKM09918C_ST1_DRDY;
+	register_buffer[0] = AK099XX_ST1_DRDY;
 	akm09918c_emul_set_reg(fixture->target, AKM09918C_REG_ST1, register_buffer, 1);
 
 	/* Set the data magn_percent * range */
