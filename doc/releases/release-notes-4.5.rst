@@ -2710,6 +2710,11 @@ Other notable changes
     ``-DHARDENCONFIG_EXTRA_SOURCES=``. The database is validated in CI against the actual Kconfig
     tree so entries can no longer go stale.
 
+* CRC
+
+  * Added CRC-32/MPEG-2 support (:c:func:`crc32_mpeg2` / ``crc32_mpeg2_update``) to the
+    software CRC subsystem, the CRC driver API and the NXP CRC drivers.
+
 * Kernel
 
   * The :ref:`object core framework <object_cores_api>` no longer keeps registry state inside
@@ -2836,6 +2841,10 @@ Other notable changes
     ``imxrt7xx/``, ``imxrt118x/``).
     See the :ref:`migration guide <migration_4.5>` for how to update
     out-of-tree board includes.
+
+  * Added counter reset API support to the NXP MCUX CTimer, GPT and LPTimer drivers.
+
+  * Added a HWInfo reset-cause driver for the NXP LPC55xx Power Management Controller (PMC).
 
 * Arm
 
