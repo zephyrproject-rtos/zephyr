@@ -243,18 +243,6 @@ static int video_esp32_get_caps(const struct device *dev, struct video_caps *cap
 	return video_get_caps(data->vdev.source_dev, caps);
 }
 
-static int video_esp32_enqueue(const struct device *dev, struct video_buffer *vbuf)
-{
-	struct video_esp32_data *data = dev->data;
-
-	vbuf->bytesused = data->vdev->out_fmt.pitch * data->vdev->out_fmt.height;
-	vbuf->line_offset = 0;
-
-	k_fifo_put(&data->vdev.out_buf_submitted, vbuf);
-
-	return 0;
-}
-
 static void video_esp32_cam_ctrl_init(const struct device *dev)
 {
 	const struct video_esp32_config *cfg = dev->config;
@@ -325,7 +313,6 @@ int video_esp32_get_selection(const struct device *dev, struct video_selection *
 static DEVICE_API(video, esp32_driver_api) = {
 	.set_stream = video_esp32_set_stream,
 	.get_caps = video_esp32_get_caps,
-	.enqueue = video_esp32_enqueue,
 	.set_selection = video_esp32_set_selection,
 	.get_selection = video_esp32_get_selection,
 };

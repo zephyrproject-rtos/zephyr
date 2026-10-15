@@ -360,16 +360,6 @@ static int nxp_flexio_camera_set_stream(const struct device *dev, bool enable,
 	return 0;
 }
 
-static int nxp_flexio_camera_enqueue(const struct device *dev,
-				     struct video_buffer *vbuf)
-{
-	struct nxp_flexio_camera_data *data = dev->data;
-
-	k_fifo_put(&data->vdev.out_buf_submitted, vbuf);
-
-	return 0;
-}
-
 static int nxp_flexio_camera_init(const struct device *dev)
 {
 	const struct nxp_flexio_camera_config *config = dev->config;
@@ -447,7 +437,6 @@ static DEVICE_API(video, nxp_flexio_camera_api) = {
 	.set_format = nxp_flexio_camera_set_format,
 	.get_caps   = nxp_flexio_camera_get_caps,
 	.set_stream = nxp_flexio_camera_set_stream,
-	.enqueue    = nxp_flexio_camera_enqueue,
 };
 
 #define SOURCE_DEV(inst) \

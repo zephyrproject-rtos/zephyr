@@ -152,18 +152,11 @@ static int mcux_pngdec_set_stream(const struct device *dev, bool enable, enum vi
 	return 0;
 }
 
-static int mcux_pngdec_enqueue(const struct device *dev, struct video_buffer *vbuf)
+static int mcux_pngdec_trigger(const struct device *dev, enum video_buf_type type)
 {
 	int ret = 0;
 	struct mcux_pngdec_data *data = dev->data;
-	struct k_fifo *fifo = vbuf->type == VIDEO_BUF_TYPE_INPUT
-		? &data->vdev.in_buf_submitted : &data->vdev.out_buf_submitted;
 	bool do_decode = false;
-
-	if (((uint32_t)vbuf->buffer & 0x7U) != 0U) {
-		LOG_ERR("Buffer address must be 8-byte aligned");
-		return -EINVAL;
-	}
 
 	/*
 	 * The PNG decoder outputs VIDEO_PIX_FMT_RGBA32 format only.
@@ -171,13 +164,15 @@ static int mcux_pngdec_enqueue(const struct device *dev, struct video_buffer *vb
 	 * and it is assumed that all the following PNG frames in the stream have the same
 	 * format as the first one, so the parsing is done only once.
 	 */
-	if (vbuf->type == VIDEO_BUF_TYPE_INPUT) {
+	if (type == VIDEO_BUF_TYPE_INPUT) {
+		struct video_buffer *vbuf = k_fifo_get(&data->vdev.in_buf_submitted, K_FOREVER);
+
 		/*
 		 * Check if it is the first frame, if so parse the PNG header
 		 * and obtain the frame info.
 		 */
 		if (!data->first_frame_rcv) {
-			if (PNGDEC_ParseHeader(&(data->image_info), vbuf->buffer) !=
+			if (PNGDEC_ParseHeader(&(data->image_info), buffer) !=
 			    kStatus_Success) {
 				LOG_ERR("PNG header parsing failed");
 				return -ENOTSUP;
@@ -204,8 +199,6 @@ static int mcux_pngdec_enqueue(const struct device *dev, struct video_buffer *vb
 			data->first_frame_rcv = true;
 		}
 	}
-
-	k_fifo_put(fifo, vbuf);
 
 	/*
 	 * If the streaming is on but the decoder is not running due to lack of
@@ -260,7 +253,7 @@ static DEVICE_API(video, mcux_pngdec_driver_api) = {
 	.set_stream = mcux_pngdec_set_stream,
 	.get_caps = mcux_pngdec_get_caps,
 	.transform_cap = mcux_pngdec_transform_cap,
-	.enqueue = mcux_pngdec_enqueue,
+	.trigger = mcux_pngdec_trigger,
 };
 
 static void mcux_pngdec_decode_work_handler(struct k_work *work)

@@ -146,15 +146,11 @@ static int nxp_video_sdma_set_stream(const struct device *dev, bool enable,
 	return 0;
 }
 
-static int nxp_video_sdma_enqueue(const struct device *dev, struct video_buffer *vbuf)
+static int nxp_video_sdma_trigger(const struct device *dev, enum video_buf_type type)
 {
 	struct nxp_video_sdma_data *data = dev->data;
 
-	/* SmartDMA will read 30 lines of RGB565 video data into framebuffer */
-	vbuf->bytesused = SDMA_VBUF_WIDTH * SDMA_LINE_COUNT * sizeof(uint16_t);
-
 	/* Put buffer into FIFO */
-	k_fifo_put(&data->vdev.out_buf_submitted, vbuf);
 	if (data->stream_starved) {
 		/* Kick SmartDMA off */
 		nxp_video_sdma_set_stream(dev, true, vbuf->type);
@@ -249,7 +245,7 @@ static DEVICE_API(video, nxp_video_sdma_api) = {
 	.set_format = nxp_video_sdma_set_format,
 	.get_caps = nxp_video_sdma_get_caps,
 	.set_stream = nxp_video_sdma_set_stream,
-	.enqueue = nxp_video_sdma_enqueue,
+	.trigger = nxp_video_sdma_trigger,
 };
 
 #define SOURCE_DEV(inst) DEVICE_DT_GET(DT_NODE_REMOTE_DEVICE(DT_INST_ENDPOINT_BY_ID(inst, 0, 0)))

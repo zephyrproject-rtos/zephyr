@@ -76,7 +76,7 @@ static void emul_rx_worker(struct k_work *work)
 
 		/* Simulate the MIPI/DVP hardware transferring image data line-by-line from the
 		 * imager to the video buffer memory using DMA copying the data line-by-line over
-		 * the whole frame. vbuf->size is already checked in emul_rx_enqueue().
+		 * the whole frame. vbuf->size is already checked in emul_rx_trigger().
 		 */
 		for (size_t i = 0; i + fmt->pitch <= vbuf->bytesused; i += fmt->pitch) {
 			memcpy(vbuf->buffer + i, data->vdev.source_dev->data, fmt->pitch);
@@ -87,13 +87,10 @@ static void emul_rx_worker(struct k_work *work)
 	}
 }
 
-static int emul_rx_enqueue(const struct device *dev, struct video_buffer *vbuf)
+static int emul_rx_trigger(const struct device *dev, enum video_buf_type type)
 {
 	struct emul_rx_data *data = dev->data;
-	struct video_format *fmt = &data->vdev.out_fmt;
 
-	/* Submit the buffer for processing in the worker, where everything happens */
-	k_fifo_put(&data->vdev.out_buf_submitted, vbuf);
 	k_work_submit(&data->work);
 
 	return 0;
@@ -102,7 +99,7 @@ static int emul_rx_enqueue(const struct device *dev, struct video_buffer *vbuf)
 static DEVICE_API(video, emul_rx_driver_api) = {
 	.get_caps = emul_rx_get_caps,
 	.set_stream = emul_rx_set_stream,
-	.enqueue = emul_rx_enqueue,
+	.trigger = emul_rx_trigger,
 };
 
 int emul_rx_init(const struct device *dev)

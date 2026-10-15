@@ -197,24 +197,18 @@ static int video_mcux_csi_set_stream(const struct device *dev, bool enable,
 	return 0;
 }
 
-static int video_mcux_csi_enqueue(const struct device *dev, struct video_buffer *vbuf)
+static int video_mcux_csi_trigger(const struct device *dev, enum video_buf_type type)
 {
 	const struct video_mcux_csi_config *config = dev->config;
 	struct video_mcux_csi_data *data = dev->data;
-	unsigned int to_read;
+	struct video_buffer *vbuf = k_fifo_peek(&data->vdev.out_buf_submitted);
 	status_t ret;
-
-	to_read = data->csi_config.linePitch_Bytes * data->csi_config.height;
-	vbuf->bytesused = to_read;
-	vbuf->line_offset = 0;
 
 	ret = CSI_TransferSubmitEmptyBuffer(config->base, &data->csi_handle,
 					    (uint32_t)vbuf->buffer);
 	if (ret != kStatus_Success) {
 		return -EIO;
 	}
-
-	k_fifo_put(&data->vdev.out_buf_submitted, vbuf);
 
 	return 0;
 }
@@ -320,7 +314,7 @@ static int video_mcux_csi_enum_frmival(const struct device *dev, struct video_fr
 static DEVICE_API(video, video_mcux_csi_driver_api) = {
 	.set_format = video_mcux_csi_set_fmt,
 	.set_stream = video_mcux_csi_set_stream,
-	.enqueue = video_mcux_csi_enqueue,
+	.trigger = video_mcux_csi_trigger,
 	.get_caps = video_mcux_csi_get_caps,
 	.enum_frmival = video_mcux_csi_enum_frmival,
 };

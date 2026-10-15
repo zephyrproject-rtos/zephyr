@@ -160,12 +160,15 @@ int video_enqueue(const struct device *dev, struct video_buffer *buf)
 
 	buf->bytesused = 0;
 
+	vdev = dev->data;
+
 	if (buf->type == VIDEO_BUF_TYPE_OUTPUT && data->vdev.out_fmt.size > 0) {
 		if (vbuf->size < data->vdev.out_fmt.size) {
 			LOG_ERR("Buffer size %u too small for output format size %u",
 				vbuf->size, data->vdev.out_fmt.size);
 			return -ENOBUFS;
 		}
+		k_fifo_put(&vdev->out_fifo_submitted, buf);
 	}
 
 	if (buf->type == VIDEO_BUF_TYPE_INPUT && data->vdev.in_fmt.size > 0) {
@@ -174,15 +177,14 @@ int video_enqueue(const struct device *dev, struct video_buffer *buf)
 				vbuf->size, data->vdev.in_fmt.size);
 			return -ENOBUFS;
 		}
+		k_fifo_put(&vdev->in_fifo_submitted, buf);
 	}
 
-	vdev = dev->data;
-
 	k_mutex_lock(&vdev->lock, K_FOREVER);
-	ret = video_driver_enqueue(dev, &video_buf[buf->index]);
+	ret = video_driver_trigger(dev, &video_buf[buf->index]);
 	k_mutex_unlock(&vdev->lock);
 
-	return ret;
+	return (ret == -ENOSYS) ? 0 : ret;
 }
 
 int video_dequeue(const struct device *dev, struct video_buffer **vbuf,

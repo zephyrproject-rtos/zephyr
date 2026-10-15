@@ -360,8 +360,6 @@ void HAL_JPEG_GetDataCallback(JPEG_HandleTypeDef *hjpeg, uint32_t nb_encoded_dat
 static int stm32_jpeg_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
 	struct stm32_jpeg_data *data = dev->data;
-	struct video_common_header *common =
-		type == VIDEO_BUF_TYPE_INPUT ? &data->vdev.in : &data->vdev.out;
 
 	/* Input & Output resolutions are always same so ensure this here */
 	if (data->vdev.in_fmt.width != data->vdev.out_fmt.width ||
@@ -379,16 +377,10 @@ static int stm32_jpeg_set_stream(const struct device *dev, bool enable, enum vid
 	return 0;
 }
 
-static int stm32_jpeg_enqueue(const struct device *dev, struct video_buffer *vbuf)
+static int stm32_jpeg_trigger(const struct device *dev, enum video_buf_type type)
 {
 	struct stm32_jpeg_data *data = dev->data;
-	struct video_common_header *common =
-		vbuf->type == VIDEO_BUF_TYPE_INPUT ? &data->vdev.in : &data->vdev.out;
 	int ret;
-
-	/* TODO - need to check for buffer size here */
-
-	k_fifo_put(&common->out_buf_submitted, vbuf);
 
 	/* Try to start codec if necessary */
 	if (!data->codec_is_running) {
@@ -419,7 +411,7 @@ static int stm32_jpeg_get_caps(const struct device *dev, struct video_caps *caps
 
 static DEVICE_API(video, stm32_jpeg_driver_api) = {
 	.set_stream = stm32_jpeg_set_stream,
-	.enqueue = stm32_jpeg_enqueue,
+	.trigger = stm32_jpeg_trigger,
 	.get_caps = stm32_jpeg_get_caps,
 };
 

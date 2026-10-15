@@ -216,7 +216,7 @@ static int video_renesas_ra_ceu_set_stream(const struct device *dev, bool enable
 	return 0;
 }
 
-static int video_renesas_ra_ceu_enqueue(const struct device *dev, struct video_buffer *vbuf)
+static int video_renesas_ra_ceu_trigger(const struct device *dev, enum video_buf_type type)
 {
 	struct video_renesas_ra_ceu_data *data = dev->data;
 	struct video_buffer *next_vbuf;
@@ -224,8 +224,6 @@ static int video_renesas_ra_ceu_enqueue(const struct device *dev, struct video_b
 
 	vbuf->bytesused = buffer_size;
 	vbuf->line_offset = 0;
-
-	k_fifo_put(&data->vdev.out_buf_submitted, vbuf);
 
 	if (!video_stream_busy(dev)) {
 		return 0;
@@ -316,7 +314,7 @@ static DEVICE_API(video, video_renesas_ra_ceu_driver_api) = {
 	.set_format = video_renesas_ra_ceu_set_format,
 	.get_caps = video_renesas_ra_ceu_get_caps,
 	.set_stream = video_renesas_ra_ceu_set_stream,
-	.enqueue = video_renesas_ra_ceu_enqueue,
+	.trigger = video_renesas_ra_ceu_trigger,
 };
 
 #define EVENT_CEU_INT(inst) BSP_PRV_IELS_ENUM(CONCAT(EVENT_CEU, _CEUI))

@@ -1223,14 +1223,14 @@ static int stm32_dcmipp_set_stream(const struct device *dev, bool enable, enum v
 	return enable ? stm32_dcmipp_stream_enable(dev) : stm32_dcmipp_stream_disable(dev);
 }
 
-static int stm32_dcmipp_enqueue(const struct device *dev, struct video_buffer *vbuf)
+static int stm32_dcmipp_trigger(const struct device *dev, enum video_buf_type type)
 {
 	struct stm32_dcmipp_pipe_data *pipe = dev->data;
 	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
 
 	if (pipe->state == STM32_DCMIPP_WAIT_FOR_BUFFER) {
 		LOG_DBG("Restart CPTREQ after wait for buffer");
-		pipe->next = vbuf;
+		pipe->next = k_fifo_get(pipe->vdev.out_buf_submitted, k_forever);
 		stm32_dcmipp_set_next_buffer_addr(pipe);
 		if (pipe->id == DCMIPP_PIPE0) {
 			stm32_reg_set_bits(&dcmipp->hdcmipp.Instance->P0FCTCR,
@@ -1246,8 +1246,6 @@ static int stm32_dcmipp_enqueue(const struct device *dev, struct video_buffer *v
 		}
 #endif
 		pipe->state = STM32_DCMIPP_RUNNING;
-	} else {
-		k_fifo_put(&pipe->out_buf_submitted, vbuf);
 	}
 
 	return 0;
@@ -1515,7 +1513,7 @@ static int stm32_dcmipp_get_selection(const struct device *dev, struct video_sel
 static DEVICE_API(video, stm32_dcmipp_driver_api) = {
 	.set_format = stm32_dcmipp_set_fmt,
 	.set_stream = stm32_dcmipp_set_stream,
-	.enqueue = stm32_dcmipp_enqueue,
+	.trigger = stm32_dcmipp_trigger,
 	.get_caps = stm32_dcmipp_get_caps,
 	.set_selection = stm32_dcmipp_set_selection,
 	.get_selection = stm32_dcmipp_get_selection,

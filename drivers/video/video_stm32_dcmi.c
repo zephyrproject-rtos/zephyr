@@ -276,17 +276,6 @@ static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable,
 	return video_stream_start(config->sensor_dev, type);
 }
 
-static int video_stm32_dcmi_enqueue(const struct device *dev, struct video_buffer *vbuf)
-{
-	struct video_stm32_dcmi_data *data = dev->data;
-
-	vbuf->bytesused = data->vdev.out_fmt.size;
-
-	k_fifo_put(&data->vdev.out_buf_submitted, vbuf);
-
-	return 0;
-}
-
 static int video_stm32_dcmi_snapshot(const struct device *dev)
 {
 	struct video_stm32_dcmi_data *data = dev->data;
@@ -474,7 +463,6 @@ static int video_stm32_dcmi_get_selection(const struct device *dev, struct video
 
 static DEVICE_API(video, video_stm32_dcmi_driver_api) = {
 	.set_stream = video_stm32_dcmi_set_stream,
-	.enqueue = video_stm32_dcmi_enqueue,
 	.get_caps = video_stm32_dcmi_get_caps,
 	.enum_frmival = video_stm32_dcmi_enum_frmival,
 	.set_frmival = video_stm32_dcmi_set_frmival,

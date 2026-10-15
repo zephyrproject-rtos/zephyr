@@ -183,10 +183,10 @@ typedef int (*video_api_frmival_t)(const struct device *dev, struct video_frmiva
 typedef int (*video_api_enum_frmival_t)(const struct device *dev, struct video_frmival_enum *fie);
 
 /**
- * @brief Callback API to enqueue a buffer in the driver incoming queue.
- * See @a video_driver_enqueue() for argument description.
+ * @brief Callback API to notify of new buffers being available in the driver incoming queue.
+ * See @a video_driver_trigger() for argument description.
  */
-typedef int (*video_api_enqueue_t)(const struct device *dev, struct video_buffer *buf);
+typedef int (*video_api_trigger_t)(const struct device *dev, struct video_buffer *buf);
 
 /**
  * @brief Callback API to control stream status.
@@ -239,9 +239,9 @@ __subsystem struct video_driver_api {
 	 */
 	video_api_get_caps_t get_caps;
 	/**
-	 * @driver_ops_optional @copybrief video_driver_enqueue
+	 * @driver_ops_optional @copybrief video_driver_trigger
 	 */
-	video_api_enqueue_t enqueue;
+	video_api_trigger_t trigger;
 	/**
 	 * @driver_ops_optional @copybrief video_driver_set_ctrl
 	 */
@@ -378,26 +378,27 @@ static inline int video_driver_enum_frmival(const struct device *dev,
 }
 
 /**
- * @brief Pass a video buffer to a driver.
+ * @brief Trigger a driver after a frame got submitted.
  *
- * Enqueue an empty (capturing) or filled (output) video buffer in the driver’s
- * endpoint incoming queue.
+ * The driver may expect one buffer for every trigger invocation in the matching buffer queue.
+ *
+ * Buffer queues reside in struct @ref video_device part of @c dev->data.
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @param vbuf Pointer to the video buffer.
+ * @param type Buffer type to trigger.
  *
  * @retval 0 on success.
  * @retval -ENOSYS API is not implemented.
  */
-static inline int video_driver_enqueue(const struct device *dev, struct video_buffer *vbuf)
+static inline int video_driver_trigger(const struct device *dev, struct video_buffer *vbuf)
 {
 	const struct video_driver_api *api = DEVICE_API_GET(video, dev);
 
-	if (api->enqueue == NULL) {
+	if (api->trigger == NULL) {
 		return -ENOSYS;
 	}
 
-	return api->enqueue(dev, vbuf);
+	return api->trigger(dev, vbuf);
 }
 
 /**

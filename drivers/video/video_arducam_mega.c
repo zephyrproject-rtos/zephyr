@@ -995,17 +995,6 @@ static void arducam_mega_buffer_work(struct k_work *work)
 	video_buffer_done(dev, vbuf, 0);
 }
 
-static int arducam_mega_enqueue(const struct device *dev, struct video_buffer *vbuf)
-{
-	struct arducam_mega_data *data = dev->data;
-
-	k_fifo_put(&data->vdev.out_buf_submitted, vbuf);
-
-	LOG_DBG("enqueue buffer %p", vbuf->buffer);
-
-	return 0;
-}
-
 static int arducam_mega_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	if (caps->type != VIDEO_BUF_TYPE_OUTPUT) {
@@ -1073,7 +1062,7 @@ static DEVICE_API(video, arducam_mega_driver_api) = {
 	.set_ctrl = arducam_mega_set_ctrl,
 	.get_caps = arducam_mega_get_caps,
 	.set_stream = arducam_mega_stream_start,
-	.enqueue = arducam_mega_enqueue,
+	.trigger = arducam_mega_trigger,
 };
 
 #define ARDUCAM_MEGA_640_480_LINK_FREQ      120000000

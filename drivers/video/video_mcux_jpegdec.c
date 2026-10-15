@@ -218,18 +218,11 @@ static int mcux_jpegdec_set_stream(const struct device *dev, bool enable, enum v
 	return 0;
 }
 
-static int mcux_jpegdec_enqueue(const struct device *dev, struct video_buffer *vbuf)
+static int mcux_jpegdec_trigger(const struct device *dev, enum video_buf_type type)
 {
 	int ret = 0;
 	struct mcux_jpegdec_data *data = dev->data;
-	struct k_fifo *fifo = vbuf->type == VIDEO_BUF_TYPE_INPUT
-		? &data->vdev.in_buf_submitted : &data->vdev.out_buf_submitted;
 	bool do_decode = false;
-
-	if (((uint32_t)vbuf->buffer & 0xFU) != 0U) {
-		LOG_ERR("Buffer address must be 16-byte aligned");
-		return -EINVAL;
-	}
 
 	/*
 	 * The decoder cannot perform CSC, which means if the JPEG file is encoded in
@@ -239,7 +232,9 @@ static int mcux_jpegdec_enqueue(const struct device *dev, struct video_buffer *v
 	 * JPEG frames in the stream have the same format as the first one, so the
 	 * parsing is done only once.
 	 */
-	if (vbuf->type == VIDEO_BUF_TYPE_INPUT) {
+	if (type == VIDEO_BUF_TYPE_INPUT) {
+		struct video_buffer *vbuf = k_fifo_get(&data->vdev.in_buf_submitted, K_FOREVER);
+
 		/*
 		 * Check if it is the first frame, if so parse the JPEG header
 		 * and obtain the frame info.
@@ -316,8 +311,6 @@ static int mcux_jpegdec_enqueue(const struct device *dev, struct video_buffer *v
 		}
 	}
 
-	k_fifo_put(fifo, vbuf);
-
 	/*
 	 * If the streaming is on but the decoder is not running due to
 	 * lack of in/out buffer, start to decode new frame.
@@ -383,7 +376,7 @@ static DEVICE_API(video, mcux_jpegdec_driver_api) = {
 	.set_stream = mcux_jpegdec_set_stream,
 	.get_caps = mcux_jpegdec_get_caps,
 	.transform_cap = mcux_jpegdec_transform_cap,
-	.enqueue = mcux_jpegdec_enqueue,
+	.trigger = mcux_jpegdec_trigger,
 };
 
 static int mcux_jpegdec_init(const struct device *dev)
