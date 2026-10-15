@@ -459,25 +459,27 @@ static void process_ff_sf(struct isotp_recv_ctx *rctx, struct can_frame *frame)
 	net_buf_add_mem(rctx->buf, &frame->data[index], payload_len - index);
 }
 
-static inline void receive_add_mem(struct isotp_recv_ctx *rctx, uint8_t *data, size_t len)
+static inline int receive_add_mem(struct isotp_recv_ctx *rctx, uint8_t *data, size_t len)
 {
 	size_t tailroom = net_buf_tailroom(rctx->act_frag);
 
 	if (tailroom >= len) {
 		net_buf_add_mem(rctx->act_frag, data, len);
-		return;
+		return 0;
 	}
 
 	/* Use next fragment that is already allocated*/
 	net_buf_add_mem(rctx->act_frag, data, tailroom);
 	rctx->act_frag = rctx->act_frag->frags;
-	if (!rctx->act_frag) {
+	if (rctx->act_frag == NULL || net_buf_tailroom(rctx->act_frag) < (len - tailroom)) {
 		LOG_ERR("No fragment left to append data");
 		receive_report_error(rctx, ISOTP_N_BUFFER_OVERFLW);
-		return;
+		return -ENOBUFS;
 	}
 
 	net_buf_add_mem(rctx->act_frag, data + tailroom, len - tailroom);
+
+	return 0;
 }
 
 static void process_cf(struct isotp_recv_ctx *rctx, struct can_frame *frame)
@@ -539,7 +541,10 @@ static void process_cf(struct isotp_recv_ctx *rctx, struct can_frame *frame)
 
 	LOG_DBG("Got CF irq. Appending data");
 	data_len = MIN(rctx->length, can_dl - index);
-	receive_add_mem(rctx, &frame->data[index], data_len);
+	if (receive_add_mem(rctx, &frame->data[index], data_len) != 0) {
+		return;
+	}
+
 	rctx->length -= data_len;
 	LOG_DBG("%d bytes remaining", rctx->length);
 
