@@ -102,10 +102,6 @@
 	cs-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 };
 
-&radio {
-	status = "okay";
-};
-
 &ieee802154 {
 	status = "okay";
 };

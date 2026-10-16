@@ -207,7 +207,6 @@
 
 		radio: radio@40040000 {
 			compatible = "ti,cc13xx-cc26xx-radio";
-			status = "disabled";
 
 			reg = <0x40040000 0x1000
 			       0x40041000 0x2000

@@ -110,7 +110,6 @@
 			reg = <0x40008000 0x20>;
 			interrupts = <14 0>;
 			clk-source = "CLK_SELECT_HFRC_3MHZ";
-			status = "disabled";
 
 			counter {
 				compatible = "ambiq,counter";
@@ -129,7 +128,6 @@
 			reg = <0x40008020 0x20>;
 			interrupts = <14 0>;
 			clk-source = "CLK_SELECT_HFRC_3MHZ";
-			status = "disabled";
 
 			counter {
 				compatible = "ambiq,counter";
@@ -148,7 +146,6 @@
 			reg = <0x40008040 0x20>;
 			interrupts = <14 0>;
 			clk-source = "CLK_SELECT_HFRC_187_5KHZ";
-			status = "disabled";
 
 			counter {
 				compatible = "ambiq,counter";
@@ -167,7 +164,6 @@
 			reg = <0x40008060 0x20>;
 			interrupts = <14 0>;
 			clk-source = "CLK_SELECT_HFRC_3MHZ";
-			status = "disabled";
 
 			counter {
 				compatible = "ambiq,counter";
@@ -186,7 +182,6 @@
 			reg = <0x40008080 0x20>;
 			interrupts = <14 0>;
 			clk-source = "CLK_SELECT_HFRC_3MHZ";
-			status = "disabled";
 
 			counter {
 				compatible = "ambiq,counter";
@@ -205,7 +200,6 @@
 			reg = <0x400080a0 0x20>;
 			interrupts = <14 0>;
 			clk-source = "CLK_SELECT_HFRC_3MHZ";
-			status = "disabled";
 
 			counter {
 				compatible = "ambiq,counter";
@@ -224,7 +218,6 @@
 			reg = <0x400080c0 0x20>;
 			interrupts = <14 0>;
 			clk-source = "CLK_SELECT_HFRC_3MHZ";
-			status = "disabled";
 
 			counter {
 				compatible = "ambiq,counter";
@@ -243,7 +236,6 @@
 			reg = <0x400080e0 0x20>;
 			interrupts = <14 0>;
 			clk-source = "CLK_SELECT_HFRC_3MHZ";
-			status = "disabled";
 
 			counter {
 				compatible = "ambiq,counter";
