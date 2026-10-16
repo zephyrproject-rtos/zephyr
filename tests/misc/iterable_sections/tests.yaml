@@ -5,6 +5,15 @@ tests:
   linker.iterable_sections:
     arch_exclude: xtensa
 
+  linker.iterable_sections.large_rom:
+    platform_allow:
+      - qemu_x86
+      - qemu_x86_64
+    integration_platforms:
+      - qemu_x86
+    extra_configs:
+      - CONFIG_TEST_LARGE_ROM_SECTION=y
+
   linker.iterable_sections.linker_generator:
     platform_allow: qemu_cortex_m3
     tags: linker_generator
