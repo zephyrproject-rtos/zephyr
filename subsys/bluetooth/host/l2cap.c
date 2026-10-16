@@ -997,6 +997,11 @@ struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 		 */
 		LOG_DBG("no credits for new K-frame on %p", lechan);
 		lower_data_ready(lechan);
+
+		/* Another channel of this connection may have data to send:
+		 * re-trigger the TX processor to pull from it.
+		 */
+		bt_tx_irq_raise();
 		return NULL;
 	}
 
