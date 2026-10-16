@@ -126,6 +126,9 @@ extern "C" {
 
 /**
  * @brief The SQE does not produce a CQE.
+ *
+ * This covers every way the submission can finish, including being canceled,
+ * which otherwise completes like any other failure.
  */
 #define RTIO_SQE_NO_RESPONSE BIT(5)
 
