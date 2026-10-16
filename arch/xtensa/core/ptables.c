@@ -1913,6 +1913,11 @@ static int mem_buffer_validate(const void *addr, size_t size, int write, uint8_t
 	k_mem_region_align((uintptr_t *)&virt, &aligned_size,
 			   (uintptr_t)addr, size, CONFIG_MMU_PAGE_SIZE);
 
+	/* Reject if the buffer end or its page-aligned size wraps */
+	if ((size > (UINTPTR_MAX - (uintptr_t)addr)) || (aligned_size < size)) {
+		return -1;
+	}
+
 	for (size_t offset = 0; offset < aligned_size;
 	     offset += CONFIG_MMU_PAGE_SIZE) {
 		if (!page_validate(ptables, (uint32_t)(virt + offset), ring, write)) {
