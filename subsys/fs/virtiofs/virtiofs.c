@@ -29,8 +29,12 @@ LOG_MODULE_REGISTER(virtiofs, CONFIG_VIRTIOFS_LOG_LEVEL);
  */
 #ifdef CONFIG_VIRTIOFS_NO_NOTIFICATION_QUEUE_SLOT
 #define REQUEST_QUEUE 1
+#define VIRTIOFS_NOTIFICATION_VIRTQ_STORAGE(i)
+#define VIRTIOFS_NOTIFICATION_VIRTQ_INIT(i)
 #else
 #define REQUEST_QUEUE 2
+#define VIRTIOFS_NOTIFICATION_VIRTQ_STORAGE(i) VIRTQ_STORAGE_DEFINE(virtiofs_notificationq_##i, 0);
+#define VIRTIOFS_NOTIFICATION_VIRTQ_INIT(i)    VIRTQ_INITIALIZER(virtiofs_notificationq_##i, 0),
 #endif
 
 /*
@@ -39,6 +43,39 @@ LOG_MODULE_REGISTER(virtiofs, CONFIG_VIRTIOFS_LOG_LEVEL);
  */
 #define QUEUE_COUNT (REQUEST_QUEUE + 1)
 
+#define VIRTIOFS_VIRTQS_STORAGE(i, _)                                                              \
+	VIRTQ_STORAGE_DEFINE(virtiofs_hiprioq_##i, 0);                                             \
+	VIRTIOFS_NOTIFICATION_VIRTQ_STORAGE(i)                                                     \
+	VIRTQ_STORAGE_DEFINE(virtiofs_requestq_##i, CONFIG_VIRTIOFS_MAX_VQUEUE_SIZE)
+
+#define VIRTIOFS_VIRTQS_INIT(i, _)                                                                 \
+	{                                                                                          \
+		VIRTQ_INITIALIZER(virtiofs_hiprioq_##i, 0),                                        \
+		VIRTIOFS_NOTIFICATION_VIRTQ_INIT(i)                                                \
+		VIRTQ_INITIALIZER(virtiofs_requestq_##i, CONFIG_VIRTIOFS_MAX_VQUEUE_SIZE),         \
+	}
+
+LISTIFY(CONFIG_VIRTIOFS_MAX_INSTANCES, VIRTIOFS_VIRTQS_STORAGE, (;));
+
+static struct virtq virtiofs_virtqs[CONFIG_VIRTIOFS_MAX_INSTANCES][QUEUE_COUNT] = {
+	LISTIFY(CONFIG_VIRTIOFS_MAX_INSTANCES, VIRTIOFS_VIRTQS_INIT, (,))
+};
+
+/* virtio device each set of virtqueues is used by */
+static const struct device *virtiofs_virtq_devs[CONFIG_VIRTIOFS_MAX_INSTANCES];
+
+static struct virtq *virtiofs_get_virtqs(const struct device *dev)
+{
+	/* sets are never released, so the one of a known device precedes all unused ones */
+	for (size_t i = 0; i < ARRAY_SIZE(virtiofs_virtq_devs); i++) {
+		if (virtiofs_virtq_devs[i] == NULL || virtiofs_virtq_devs[i] == dev) {
+			virtiofs_virtq_devs[i] = dev;
+			return virtiofs_virtqs[i];
+		}
+	}
+
+	return NULL;
+}
 
 struct virtio_fs_config {
 	char tag[36];
@@ -97,7 +134,7 @@ static uint32_t virtiofs_send_receive(
 	const struct device *dev, uint16_t virtq, struct virtq_buf *bufs,
 	uint16_t bufs_size, uint16_t device_readable)
 {
-	struct virtq *virtqueue = virtio_get_virtqueue(dev, virtq);
+	struct virtq *virtqueue = &virtiofs_get_virtqs(dev)[virtq];
 	struct recv_cb_param cb_arg;
 	struct virtq_buf bounce_bufs[VIRTIOFS_MAX_CHAIN_BUFS];
 	size_t total_len = 0;
@@ -115,8 +152,7 @@ static uint32_t virtiofs_send_receive(
 	 * which the device cannot reach: the virtqueue programs descriptors with
 	 * k_mem_phys_addr(), which is only valid for the kernel's permanent RAM
 	 * mapping. Bounce every buffer through a heap allocation (part of that
-	 * mapping, and what the virtqueue itself uses) so requests issued from
-	 * any thread work.
+	 * mapping) so requests issued from any thread work.
 	 */
 	uint8_t *bounce = k_malloc(total_len);
 
@@ -161,15 +197,6 @@ static uint32_t virtiofs_send_receive(
 	return used_len;
 }
 
-static uint16_t virtiofs_queue_enum_cb(uint16_t queue_idx, uint16_t max_size, void *unused)
-{
-	if (queue_idx == REQUEST_QUEUE) {
-		return MIN(CONFIG_VIRTIOFS_MAX_VQUEUE_SIZE, max_size);
-	} else {
-		return 0;
-	}
-}
-
 int virtiofs_init(const struct device *dev, struct fuse_init_out *response)
 {
 	struct virtio_fs_config *fs_config = virtio_get_device_specific_config(dev);
@@ -191,7 +218,14 @@ int virtiofs_init(const struct device *dev, struct fuse_init_out *response)
 		return ret;
 	}
 
-	ret = virtio_init_virtqueues(dev, QUEUE_COUNT, virtiofs_queue_enum_cb, NULL);
+	struct virtq *virtqs = virtiofs_get_virtqs(dev);
+
+	if (virtqs == NULL) {
+		LOG_ERR("no virtqueues left, increase CONFIG_VIRTIOFS_MAX_INSTANCES");
+		return -ENOMEM;
+	}
+
+	ret = virtio_init_virtqueues(dev, virtqs, QUEUE_COUNT);
 	if (ret != 0) {
 		LOG_ERR("failed to initialize fs virtqueues");
 		return ret;

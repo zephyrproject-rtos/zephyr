@@ -64,7 +64,7 @@ struct input_virtio_config {
 };
 
 struct input_virtio_data {
-	struct virtq *vq;
+	struct virtq vq;
 	struct input_virtio_buf bufs[CONFIG_INPUT_VIRTIO_EVENT_BUF_COUNT];
 	/*
 	 * The device signals the end of an event packet with a separate
@@ -151,24 +151,13 @@ static int input_virtio_queue_buf(const struct device *dev, struct input_virtio_
 	struct virtq_buf vbuf[] = {{.addr = &buf->evt, .len = sizeof(buf->evt)}};
 	int ret;
 
-	ret = virtq_add_buffer_chain(data->vq, vbuf, 1, 0, input_virtio_recv_cb, buf,
+	ret = virtq_add_buffer_chain(&data->vq, vbuf, 1, 0, input_virtio_recv_cb, buf,
 				     K_NO_WAIT);
 	if (ret != 0) {
 		return ret;
 	}
 
 	virtio_notify_virtqueue(cfg->vdev, VIRTIO_INPUT_EVENTQ_IDX);
-
-	return 0;
-}
-
-static uint16_t input_virtio_enum_queues_cb(uint16_t q_index, uint16_t q_size_max, void *unused)
-{
-	ARG_UNUSED(unused);
-
-	if (q_index == VIRTIO_INPUT_EVENTQ_IDX) {
-		return min(CONFIG_INPUT_VIRTIO_EVENT_BUF_COUNT, q_size_max);
-	}
 
 	return 0;
 }
@@ -227,16 +216,10 @@ static int input_virtio_init(const struct device *dev)
 
 	input_virtio_setup_abs_scaling(dev);
 
-	ret = virtio_init_virtqueues(cfg->vdev, 1, input_virtio_enum_queues_cb, NULL);
+	ret = virtio_init_virtqueues(cfg->vdev, &data->vq, 1);
 	if (ret != 0) {
 		LOG_ERR("virtio_init_virtqueues failed: %d", ret);
 		return ret;
-	}
-
-	data->vq = virtio_get_virtqueue(cfg->vdev, VIRTIO_INPUT_EVENTQ_IDX);
-	if (data->vq == NULL) {
-		LOG_ERR("failed to get virtqueue %d", VIRTIO_INPUT_EVENTQ_IDX);
-		return -ENODEV;
 	}
 
 	virtio_finalize_init(cfg->vdev);
@@ -255,7 +238,11 @@ static int input_virtio_init(const struct device *dev)
 }
 
 #define INPUT_VIRTIO_DEFINE(inst)                                                                  \
-	static struct input_virtio_data input_virtio_data_##inst;                                  \
+	VIRTQ_STORAGE_DEFINE(input_virtio_vq_##inst, CONFIG_INPUT_VIRTIO_EVENT_BUF_COUNT);         \
+	static struct input_virtio_data input_virtio_data_##inst = {                               \
+		.vq = VIRTQ_INITIALIZER(input_virtio_vq_##inst,                                    \
+					CONFIG_INPUT_VIRTIO_EVENT_BUF_COUNT),                      \
+	};                                                                                         \
 	static const struct input_virtio_config input_virtio_config_##inst = {                     \
 		.vdev = DEVICE_DT_GET(DT_PARENT(DT_DRV_INST(inst))),                               \
 		.display = COND_CODE_1(CONFIG_DISPLAY,                                             \

@@ -29,27 +29,9 @@ extern "C" {
  */
 
 /**
- * Callback used during virtqueue enumeration
- *
- * @param queue_idx index of currently inspected queue
- * @param max_queue_size maximum permitted size of currently inspected queue
- * @param opaque pointer to user provided data
- * @return the size of currently inspected virtqueue we want to set
- */
-typedef uint16_t (*virtio_enumerate_queues)(
-	uint16_t queue_idx, uint16_t max_queue_size, void *opaque
-);
-
-/**
  * @def_driverbackendgroup{VIRTIO,virtio_interface}
  * @{
  */
-
-/**
- * @brief Type definition of VIRTIO API function for getting a virtqueue.
- * See virtio_get_virtqueue() for argument descriptions.
- */
-typedef struct virtq *(*virtio_api_get_virtqueue)(const struct device *dev, uint16_t queue_idx);
 
 /**
  * @brief Type definition of VIRTIO API function for notifying a virtqueue.
@@ -86,7 +68,7 @@ typedef int (*virtio_api_commit_feature_bits)(const struct device *dev);
  * See virtio_init_virtqueues() for argument descriptions.
  */
 typedef int (*virtio_api_init_virtqueues)(
-	const struct device *dev, uint16_t num_queues, virtio_enumerate_queues cb, void *opaque
+	const struct device *dev, struct virtq *virtqueues, uint16_t num_queues
 );
 
 /**
@@ -99,8 +81,6 @@ typedef void (*virtio_api_finalize_init)(const struct device *dev);
  * @driver_ops{VIRTIO}
  */
 __subsystem struct virtio_driver_api {
-	/** @driver_ops_mandatory @copybrief virtio_get_virtqueue */
-	virtio_api_get_virtqueue get_virtqueue;
 	/** @driver_ops_mandatory @copybrief virtio_notify_virtqueue */
 	virtio_api_notify_virtqueue notify_virtqueue;
 	/** @driver_ops_mandatory @copybrief virtio_get_device_specific_config */
@@ -118,18 +98,6 @@ __subsystem struct virtio_driver_api {
 };
 
 /** @} */
-
-/**
- * Returns virtqueue at given idx
- *
- * @param dev virtio device it operates on
- * @param queue_idx index of virtqueue to get
- * @return pointer to virtqueue or NULL if not present
- */
-static inline struct virtq *virtio_get_virtqueue(const struct device *dev, uint16_t queue_idx)
-{
-	return DEVICE_API_GET(virtio, dev)->get_virtqueue(dev, queue_idx);
-}
 
 /**
  * Notifies virtqueue
@@ -196,16 +164,20 @@ static inline int virtio_commit_feature_bits(const struct device *dev)
 /**
  * Initializes virtqueues
  *
+ * The virtqueues are provided by the caller, initialized with VIRTQ_INITIALIZER(), and
+ * have to stay valid for as long as the virtio device is used.
+ * Each virtqueue is set up with the size it was defined with, limited to the maximum
+ * size the device supports for it. The resulting size is found in virtq::num.
+ *
  * @param dev virtio device it operates on
+ * @param virtqueues array of virtqueues to initialize, indexed by the virtqueue index
  * @param num_queues number of queues to initialize
- * @param cb callback called for each available virtqueue
- * @param opaque pointer to user provided data that will be passed to the callback
  * @return 0 on success or negative error code on failure
  */
 static inline int virtio_init_virtqueues(
-	const struct device *dev, uint16_t num_queues, virtio_enumerate_queues cb, void *opaque)
+	const struct device *dev, struct virtq *virtqueues, uint16_t num_queues)
 {
-	return DEVICE_API_GET(virtio, dev)->init_virtqueues(dev, num_queues, cb, opaque);
+	return DEVICE_API_GET(virtio, dev)->init_virtqueues(dev, virtqueues, num_queues);
 }
 
 /**
