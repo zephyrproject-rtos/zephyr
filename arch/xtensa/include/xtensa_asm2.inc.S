@@ -17,8 +17,8 @@
  * only by the assembler.
  */
 
-#if defined(CONFIG_XTENSA_EAGER_HIFI_SHARING)
-.extern _xtensa_hifi_save
+#if defined(CONFIG_XTENSA_EAGER_CP_SHARING)
+.extern _xtensa_cp_save
 #endif
 
 /*
@@ -461,8 +461,8 @@ _excint_skip_ps_save_to_thread:
 	FPU_REG_SAVE
 #endif
 
-#if defined(CONFIG_XTENSA_EAGER_HIFI_SHARING)
-	call0 _xtensa_hifi_save    /* Save HiFi registers */
+#if defined(CONFIG_XTENSA_EAGER_CP_SHARING)
+	call0 _xtensa_cp_save    /* Save coprocessor registers */
 #endif
 
 	call0 xtensa_save_high_regs
