@@ -21,6 +21,7 @@ config VL53L1X_INTERRUPT_MODE
 	bool "Use interrupt mode for VL53L1X time of flight sensor"
 	default y
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_VL53L1X),int-gpios)
 	help
 	  Enable interrupt mode for VL53L1X time of flight sensor. Otherwise,
 	  the driver will use the polling method.
