@@ -16,7 +16,7 @@ flash: 64
 vendor: arm
 supported:
   - uart
+  - netif:eth
 testing:
   ignore_tags:
-    - net
     - bluetooth
