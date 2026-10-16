@@ -1,0 +1,17 @@
+common:
+  # libFuzzer instrumentation is clang-only, and CONFIG_ARCH_POSIX_LIBFUZZER is
+  # only wired up for native_sim. Twister names this toolchain "<variant>/
+  # <compiler>", so a bare "llvm" never matches and silently drops the target.
+  toolchain_allow:
+    - host/llvm
+    - llvm
+  platform_allow: native_sim/native/64
+  tags:
+    - coap
+    - net
+    - fuzz
+tests:
+  net.coap.fuzz:
+    # Built, not run: a libFuzzer binary with no time bound never returns.
+    # Running it belongs in a job with its own time budget.
+    build_only: true
