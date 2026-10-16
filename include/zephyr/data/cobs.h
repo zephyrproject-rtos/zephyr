@@ -60,7 +60,7 @@ extern "C" {
  * @brief Flag indicating that encode or decode should include a trailing delimiter
  *
  * When set, the encoder will append a delimiter byte after the encoded data,
- * and the decoder will accept a delimiter byte at the end of the encoded data.
+ * and the decoder will require a delimiter byte at the end of each frame.
  */
 #define COBS_FLAG_TRAILING_DELIMITER BIT(8)
 
@@ -274,12 +274,16 @@ int cobs_decoder_init(struct cobs_decoder *dec, cobs_stream_cb cb, void *user_da
  * Completes the decoding process and verifies that the stream ended properly.
  * Should be called after all data has been written to the decoder.
  *
+ * Without @ref COBS_FLAG_TRAILING_DELIMITER the stream must hold exactly one
+ * complete frame. With @ref COBS_FLAG_TRAILING_DELIMITER the stream must end
+ * with a delimiter, or hold no frame at all.
+ *
  * The decoder state will be reset.
  *
  * @param dec Pointer to decoder structure
  *
  * @retval 0        Success
- * @retval -EINVAL  More data was expected before closing
+ * @retval -EINVAL  Missing, incomplete or unterminated frame
  */
 int cobs_decoder_close(struct cobs_decoder *dec);
 
