@@ -1,0 +1,12 @@
+# AFE to interface with resistive bridge-based pressure sensors
+
+# Copyright (c) 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config MAX40109
+	bool "MAX40109 Precision Signal Conditioning AFE"
+	default y
+	depends on DT_HAS_ADI_MAX40109_ENABLED
+	select I2C
+	help
+	  Enable support for the MAX40109 Precision Signal Conditioning AFE.
