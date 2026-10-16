@@ -37,6 +37,18 @@ tests:
     integration_platforms:
       - native_sim
     extra_args: CONFIG_FCB_ALLOW_FIXED_ENDMARKER=y
+  filesystem.fcb.endmarker_never_erased:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+    extra_args: CONFIG_FCB_ENDMARKER_NEVER_ERASED=y
+  filesystem.fcb.native_sim.endmarker_never_erased.fcb_0x00:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_ev_0x00.overlay
+      - CONFIG_FCB_ENDMARKER_NEVER_ERASED=y
+    platform_allow: native_sim
   filesystem.fcb.native_sim.fcb_0x00:
     extra_args: DTC_OVERLAY_FILE=boards/native_sim_ev_0x00.overlay
     platform_allow: native_sim
