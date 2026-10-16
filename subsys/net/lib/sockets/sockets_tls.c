@@ -43,13 +43,7 @@ LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <mbedtls/platform.h>
 #include <mbedtls/ssl_cache.h>
 #include <mbedtls/pk.h>
-#if defined(MBEDTLS_PSA_CRYPTO_C) || defined(MBEDTLS_PSA_CRYPTO_CLIENT)
 #include <psa/crypto.h>
-/* Support for referencing a private key resident in PSA (TLS_CREDENTIAL_PRIVATE_KEY_PSA),
- * so that the key material never has to be exported into the credential store.
- */
-#define TLS_PRIV_KEY_PSA_ENABLED 1
-#endif
 #endif /* CONFIG_MBEDTLS */
 
 #include "sockets_internal.h"
@@ -1769,7 +1763,7 @@ static int tls_set_private_key(struct tls_context *tls,
 static int tls_set_private_key_psa(struct tls_context *tls,
 				   struct tls_credential *priv_key)
 {
-#if defined(CONFIG_MBEDTLS_X509_CRT_PARSE_C) && defined(TLS_PRIV_KEY_PSA_ENABLED)
+#if defined(CONFIG_MBEDTLS_X509_CRT_PARSE_C)
 	psa_key_id_t key_id;
 	mbedtls_svc_key_id_t svc_key_id;
 	int err;
@@ -1796,7 +1790,7 @@ static int tls_set_private_key_psa(struct tls_context *tls,
 	return 0;
 #else
 	return -ENOTSUP;
-#endif /* CONFIG_MBEDTLS_X509_CRT_PARSE_C && TLS_PRIV_KEY_PSA_ENABLED */
+#endif /* CONFIG_MBEDTLS_X509_CRT_PARSE_C */
 }
 
 static int tls_set_psk(struct tls_context *tls,
@@ -2319,7 +2313,7 @@ static int tls_check_priv_key(struct tls_credential *priv_key)
 
 static int tls_check_private_key_psa(struct tls_credential *priv_key)
 {
-#if defined(CONFIG_MBEDTLS_X509_CRT_PARSE_C) && defined(TLS_PRIV_KEY_PSA_ENABLED)
+#if defined(CONFIG_MBEDTLS_X509_CRT_PARSE_C)
 	psa_key_id_t key_id;
 	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
 	psa_status_t status;
@@ -2345,11 +2339,11 @@ static int tls_check_private_key_psa(struct tls_credential *priv_key)
 
 	return 0;
 #else
-	NET_ERR("TLS with PSA-resident private keys disabled. "
-		"Reconfigure mbed TLS to support PSA crypto.");
+	NET_ERR("TLS with certificates disabled. "
+		"Reconfigure mbed TLS to support certificate based key exchange.");
 
 	return -ENOTSUP;
-#endif /* CONFIG_MBEDTLS_X509_CRT_PARSE_C && TLS_PRIV_KEY_PSA_ENABLED */
+#endif /* CONFIG_MBEDTLS_X509_CRT_PARSE_C */
 }
 
 static int tls_check_psk(struct tls_credential *psk)
