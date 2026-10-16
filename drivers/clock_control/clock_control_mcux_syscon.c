@@ -147,10 +147,12 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 #endif /* FSL_FEATURE_SOC_EQDC_COUNT > 1 */
 #endif /* CONFIG_EQDC_MCUX */
 
-#if defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXN) ||                          \
-	defined(CONFIG_SOC_FAMILY_MCXL) || defined(CONFIG_SOC_SERIES_IMXRT7XX)
+#if defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXN) ||                         \
+	(defined(CONFIG_SOC_FAMILY_MCXL) && defined(CONFIG_CPU_CORTEX_M33)) ||                     \
+	defined(CONFIG_SOC_SERIES_IMXRT7XX)
 	if ((uint32_t)sub_system == MCUX_FREQME_CLK) {
-#if defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXL)
+#if defined(CONFIG_SOC_FAMILY_MCXA) ||                                                             \
+	(defined(CONFIG_SOC_FAMILY_MCXL) && defined(CONFIG_CPU_CORTEX_M33))
 		CLOCK_EnableClock(kCLOCK_GateFREQME);
 #elif defined(CONFIG_SOC_FAMILY_MCXN)
 		CLOCK_EnableClock(kCLOCK_Freqme);
@@ -185,7 +187,8 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 
 #if defined(CONFIG_PINCTRL_NXP_PORT)
 	switch ((uint32_t)sub_system) {
-#if defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXL)
+#if defined(CONFIG_SOC_FAMILY_MCXA) ||                                                            \
+	(defined(CONFIG_SOC_FAMILY_MCXL) && defined(CONFIG_CPU_CORTEX_M33))
 /* PORT0 clock is not controlled by syscon for MCXL family */
 #if defined(CONFIG_SOC_FAMILY_MCXA)
 	case MCUX_PORT0_CLK:
@@ -206,7 +209,7 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 		CLOCK_EnableClock(kCLOCK_GatePORT4);
 		break;
 #endif /* defined(FSL_FEATURE_SOC_PORT_COUNT) */
-#else
+#elif !defined(CONFIG_SOC_FAMILY_MCXL)
 	case MCUX_PORT0_CLK:
 		CLOCK_EnableClock(kCLOCK_Port0);
 		break;
@@ -222,7 +225,7 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	case MCUX_PORT4_CLK:
 		CLOCK_EnableClock(kCLOCK_Port4);
 		break;
-#endif /* defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXL) */
+#endif /* CONFIG_SOC_FAMILY_MCXA or MCXL main domain */
 	default:
 		break;
 	}
@@ -525,7 +528,7 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 	switch (clock_name) {
 
 #if defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXN) ||                          \
-	defined(CONFIG_SOC_FAMILY_MCXL)
+	(defined(CONFIG_SOC_FAMILY_MCXL) && defined(CONFIG_CPU_CORTEX_M33))
 	case MCUX_FRO_HF_CLK:
 		*rate = CLOCK_GetFreq(kCLOCK_FroHf);
 		break;
@@ -533,7 +536,8 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 		*rate = CLOCK_GetFreq(kCLOCK_Fro12M);
 		break;
 #endif
-#if defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXL)
+#if defined(CONFIG_SOC_FAMILY_MCXA) ||                                                             \
+	(defined(CONFIG_SOC_FAMILY_MCXL) && defined(CONFIG_CPU_CORTEX_M33))
 	case MCUX_FRO_HF_DIV_CLK:
 		*rate = CLOCK_GetFreq(kCLOCK_FroHfDiv);
 		break;
@@ -796,15 +800,18 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 	#endif
 		break;
 #endif
-#ifndef CONFIG_SOC_SERIES_RW6XX
+#if !defined(CONFIG_SOC_SERIES_RW6XX) &&                                                          \
+	(!defined(CONFIG_SOC_FAMILY_MCXL) || defined(CONFIG_CPU_CORTEX_M33))
 	case MCUX_BUS_CLK:
 		*rate = CLOCK_GetFreq(kCLOCK_BusClk);
 		break;
 #endif
 
+#if !defined(CONFIG_SOC_FAMILY_MCXL) || defined(CONFIG_CPU_CORTEX_M33)
 	case MCUX_SYSTEM_CLK:
 		*rate = CLOCK_GetFreq(kCLOCK_CoreSysClk);
 		break;
+#endif
 
 #if defined(CONFIG_I3C_MCUX)
 	case MCUX_I3C_CLK:
