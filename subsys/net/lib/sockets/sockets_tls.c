@@ -305,6 +305,12 @@ __net_socket struct tls_context {
 	/** Mbed TLS structure for own private key. */
 	mbedtls_pk_context priv_key;
 #endif /* CONFIG_MBEDTLS_X509_CRT_PARSE_C */
+
+#if defined(MBEDTLS_SSL_HANDSHAKE_WITH_PSK_ENABLED)
+	struct tls_credential *psk_id;
+	struct tls_credential *psk;
+	struct tls_credential *psk_opaque;
+#endif /* MBEDTLS_SSL_HANDSHAKE_WITH_PSK_ENABLED */
 #endif /* CONFIG_MBEDTLS */
 };
 
@@ -1799,23 +1805,60 @@ static int tls_set_private_key_psa(struct tls_context *tls,
 #endif /* CONFIG_MBEDTLS_X509_CRT_PARSE_C && TLS_PRIV_KEY_PSA_ENABLED */
 }
 
-static int tls_set_psk(struct tls_context *tls,
-		       struct tls_credential *psk,
-		       struct tls_credential *psk_id)
+static int tls_add_psk(struct tls_context *tls, struct tls_credential *psk,
+		       struct tls_credential *psk_id, bool is_opaque)
 {
 #if defined(MBEDTLS_SSL_HANDSHAKE_WITH_PSK_ENABLED)
-	int err = mbedtls_ssl_conf_psk(&tls->config,
-				       psk->buf, psk->len,
-				       (const unsigned char *)psk_id->buf,
-				       psk_id->len);
-	if (err != 0) {
-		return -EINVAL;
+	if (psk != NULL) {
+		if (is_opaque) {
+			tls->psk_opaque = psk;
+		} else {
+			tls->psk = psk;
+		}
+	}
+
+	if (psk_id != NULL) {
+		tls->psk_id = psk_id;
 	}
 
 	return 0;
 #endif
 
 	return -ENOTSUP;
+}
+
+static int tls_set_psk(struct tls_context *tls)
+{
+	int ret = -ENOTSUP;
+
+#if defined(MBEDTLS_SSL_HANDSHAKE_WITH_PSK_ENABLED)
+	/* Only one between "psk" and "psk_opaque" can be set, not both. */
+	if ((tls->psk_id == NULL) ||
+	    ((tls->psk != NULL) && (tls->psk_opaque != NULL))) {
+		return -EINVAL;
+	}
+
+	if (tls->psk_opaque != NULL) {
+		psa_key_id_t key_id;
+
+		if (tls->psk_opaque->len != sizeof(psa_key_id_t)) {
+			return -EINVAL;
+		}
+
+		memcpy(&key_id, tls->psk_opaque->buf, sizeof(key_id));
+		ret = mbedtls_ssl_conf_psk_opaque(&tls->config,
+						  key_id,
+						  tls->psk_id->buf, tls->psk_id->len);
+	} else if (tls->psk != NULL) {
+		ret = mbedtls_ssl_conf_psk(&tls->config,
+					   tls->psk->buf, tls->psk->len,
+					   tls->psk_id->buf, tls->psk_id->len);
+	}
+
+	ret = (ret != 0) ? -EINVAL : 0;
+#endif
+
+	return ret;
 }
 
 static int tls_set_credential(struct tls_context *tls,
@@ -1837,21 +1880,13 @@ static int tls_set_credential(struct tls_context *tls,
 	break;
 
 	case TLS_CREDENTIAL_PSK:
-	{
-		struct tls_credential *psk_id =
-			credential_get(cred->tag, TLS_CREDENTIAL_PSK_ID);
-		if (!psk_id) {
-			return -ENOENT;
-		}
+		return tls_add_psk(tls, cred, NULL, false);
 
-		return tls_set_psk(tls, cred, psk_id);
-	}
+	case TLS_CREDENTIAL_PSK_OPAQUE:
+		return tls_add_psk(tls, cred, NULL, true);
 
 	case TLS_CREDENTIAL_PSK_ID:
-		/* Ignore PSK ID - it will be used together
-		 * with PSK
-		 */
-		break;
+		return tls_add_psk(tls, NULL, cred, false);
 
 	default:
 		return -EINVAL;
@@ -1865,7 +1900,8 @@ static int tls_mbedtls_set_credentials(struct tls_context *tls)
 	struct tls_credential *cred;
 	sec_tag_t tag;
 	int i, err = 0;
-	bool tag_found, ca_cert_present = false, own_cert_present = false;
+	bool tag_found, ca_cert_present = false, own_cert_present = false,
+	     psk_found = false;
 
 	credentials_lock();
 
@@ -1886,6 +1922,9 @@ static int tls_mbedtls_set_credentials(struct tls_context *tls)
 				ca_cert_present = true;
 			} else if (cred->type == TLS_CREDENTIAL_PUBLIC_CERTIFICATE) {
 				own_cert_present = true;
+			} else if ((cred->type == TLS_CREDENTIAL_PSK) ||
+				   (cred->type == TLS_CREDENTIAL_PSK_OPAQUE)) {
+				psk_found = true;
 			}
 		}
 
@@ -1895,17 +1934,24 @@ static int tls_mbedtls_set_credentials(struct tls_context *tls)
 		}
 	}
 
-exit:
-	credentials_unlock();
-
-	if (err == 0) {
-		if (ca_cert_present) {
-			tls_set_ca_chain(tls);
-		}
-		if (own_cert_present) {
-			err = tls_set_own_cert(tls);
+	if (ca_cert_present) {
+		tls_set_ca_chain(tls);
+	}
+	if (own_cert_present) {
+		err = tls_set_own_cert(tls);
+		if (err != 0) {
+			goto exit;
 		}
 	}
+	if (psk_found) {
+		err = tls_set_psk(tls);
+		if (err != 0) {
+			goto exit;
+		}
+	}
+
+exit:
+	credentials_unlock();
 
 	return err;
 }
@@ -2355,19 +2401,42 @@ static int tls_check_private_key_psa(struct tls_credential *priv_key)
 static int tls_check_psk(struct tls_credential *psk)
 {
 #if defined(MBEDTLS_SSL_HANDSHAKE_WITH_PSK_ENABLED)
-	struct tls_credential *psk_id;
-
-	psk_id = credential_get(psk->tag, TLS_CREDENTIAL_PSK_ID);
-	if (psk_id == NULL) {
-		NET_ERR("No matching PSK ID found for tag %d", psk->tag);
+	if ((psk->len == 0) || (psk->len > CONFIG_MBEDTLS_PSK_MAX_LEN)) {
+		NET_ERR("Invalid PSK length (%zu) on tag %d", psk->len, psk->tag);
 		return -EINVAL;
 	}
+	return 0;
+#else
+	NET_ERR("TLS with PSK disabled. "
+		"Reconfigure mbed TLS to support PSK based key exchange.");
 
-	if (psk->len == 0 || psk_id->len == 0) {
-		NET_ERR("PSK or PSK ID empty on tag %d", psk->tag);
+	return -ENOTSUP;
+#endif
+}
+
+static int tls_check_psk_opaque(struct tls_credential *psk)
+{
+#if defined(MBEDTLS_SSL_HANDSHAKE_WITH_PSK_ENABLED)
+	if (psk->len != sizeof(psa_key_id_t)) {
+		NET_ERR("Invalid length of opaque PSK on tag %d", psk->tag);
 		return -EINVAL;
 	}
+	return 0;
+#else
+	NET_ERR("TLS with PSK disabled. "
+		"Reconfigure mbed TLS to support PSK based key exchange.");
 
+	return -ENOTSUP;
+#endif
+}
+
+static int tls_check_psk_id(struct tls_credential *psk_id)
+{
+#if defined(MBEDTLS_SSL_HANDSHAKE_WITH_PSK_ENABLED)
+	if (psk_id->len == 0) {
+		NET_ERR("PSK ID empty on tag %d", psk_id->tag);
+		return -EINVAL;
+	}
 	return 0;
 #else
 	NET_ERR("TLS with PSK disabled. "
@@ -2422,13 +2491,23 @@ static int tls_check_credentials(const sec_tag_t *sec_tags, int sec_tag_count)
 				}
 
 				break;
+			case TLS_CREDENTIAL_PSK_OPAQUE:
+				err = tls_check_psk_opaque(cred);
+				if (err != 0) {
+					goto exit;
+				}
+
+				break;
 			case TLS_CREDENTIAL_PSK_ID:
-				/* Ignore PSK ID - it will be verified together
-				 * with PSK.
-				 */
+				err = tls_check_psk_id(cred);
+				if (err != 0) {
+					goto exit;
+				}
+
 				break;
 			default:
-				return -EINVAL;
+				err = -EINVAL;
+				goto exit;
 			}
 		}
 

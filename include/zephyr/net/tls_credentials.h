@@ -69,7 +69,14 @@ enum tls_credential_type {
 	 *  with a corresponding public certificate, in place of
 	 *  @ref TLS_CREDENTIAL_PRIVATE_KEY.
 	 */
-	TLS_CREDENTIAL_PRIVATE_KEY_PSA
+	TLS_CREDENTIAL_PRIVATE_KEY_PSA,
+
+	/** Opaque pre-shared key. Should be registered together with a
+	 *  corresponding PSK identity. Used with PSK-based ciphersuites.
+	 *  The credential buffer holds a @c psa_key_id_t referencing a key
+	 *  already present in PSA. Key material never leaves PSA.
+	 */
+	TLS_CREDENTIAL_PSK_OPAQUE,
 };
 
 /** Secure tag, a reference to TLS credential
