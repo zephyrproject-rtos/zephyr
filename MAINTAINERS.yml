@@ -767,6 +767,7 @@ Bluetooth Host:
     - subsys/bluetooth/services/
     - subsys/bluetooth/CMakeLists.txt
     - subsys/bluetooth/Kconfig*
+    - subsys/bluetooth/hardening.yaml
     - tests/bluetooth/
     - tests/bsim/bluetooth/
   files-exclude:
