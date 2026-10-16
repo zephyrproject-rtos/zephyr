@@ -754,6 +754,7 @@ static int lsm6dsl_init_chip(const struct device *dev)
 		LOG_DBG("failed to set accelerometer sampling rate");
 		return -EIO;
 	}
+	data->accel_freq = lsm6dsl_odr_to_freq_val(CONFIG_LSM6DSL_ACCEL_ODR);
 
 	if (lsm6dsl_gyro_set_fs_raw(dev, LSM6DSL_DEFAULT_GYRO_FULLSCALE) < 0) {
 		LOG_DBG("failed to set gyroscope full-scale");
@@ -765,6 +766,7 @@ static int lsm6dsl_init_chip(const struct device *dev)
 		LOG_DBG("failed to set gyroscope sampling rate");
 		return -EIO;
 	}
+	data->gyro_freq = lsm6dsl_odr_to_freq_val(CONFIG_LSM6DSL_GYRO_ODR);
 
 	if (data->hw_tf->update_reg(dev,
 				LSM6DSL_REG_FIFO_CTRL5,
