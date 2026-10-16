@@ -154,6 +154,27 @@ static int flash_sam0_check_status(off_t offset)
 }
 
 /*
+ * On SAM D5x/E5x, the Cortex M Cache Controller (CMCC) caches CPU reads of
+ * the flash, and NVM commands do not update it: drop its lines once the
+ * array has changed, disabling it first as the data sheet requires.
+ */
+static void flash_sam0_cache_invalidate(void)
+{
+#ifdef CMCC
+	bool enabled = (CMCC->SR.bit.CSTS != 0);
+
+	CMCC->CTRL.reg = 0U;
+	while (CMCC->SR.bit.CSTS != 0) {
+	}
+	CMCC->MAINT0.reg = CMCC_MAINT0_INVALL;
+
+	if (enabled) {
+		CMCC->CTRL.reg = CMCC_CTRL_CEN;
+	}
+#endif
+}
+
+/*
  * Data to be written to the NVM block are first written to and stored
  * in an internal buffer called the page buffer. The page buffer contains
  * the same number of bytes as an NVM page. Writes to the page buffer must
@@ -187,6 +208,7 @@ static int flash_sam0_write_page(const struct device *dev, off_t offset,
 #endif
 
 	err = flash_sam0_check_status(offset);
+	flash_sam0_cache_invalidate();
 	if (err != 0) {
 		return err;
 	}
@@ -201,13 +223,18 @@ static int flash_sam0_write_page(const struct device *dev, off_t offset,
 
 static int flash_sam0_erase_row(const struct device *dev, off_t offset)
 {
+	int err;
+
 	*FLASH_MEM(offset) = 0U;
 #ifdef NVMCTRL_CTRLA_CMD_ER
 	NVMCTRL->CTRLA.reg = NVMCTRL_CTRLA_CMD_ER | NVMCTRL_CTRLA_CMDEX_KEY;
 #else
 	NVMCTRL->CTRLB.reg = NVMCTRL_CTRLB_CMD_EB | NVMCTRL_CTRLB_CMDEX_KEY;
 #endif
-	return flash_sam0_check_status(offset);
+	err = flash_sam0_check_status(offset);
+	flash_sam0_cache_invalidate();
+
+	return err;
 }
 
 #if CONFIG_SOC_FLASH_SAM0_EMULATE_BYTE_PAGES
