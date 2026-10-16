@@ -887,6 +887,7 @@ static void recv_data_dst(int idx, struct net_eth_addr *mac)
 
 struct fdb_count_data {
 	struct net_if *iface;
+	uint8_t flags;
 	int count;
 };
 
@@ -894,14 +895,18 @@ static void fdb_count_cb(struct eth_bridge_fdb_entry *entry, void *user_data)
 {
 	struct fdb_count_data *data = user_data;
 
-	if (entry->iface == data->iface) {
+	if (entry->iface == data->iface && (entry->flags & data->flags) != 0U) {
 		data->count++;
 	}
 }
 
+/* Count the static FDB entries of a port; learning adds dynamic ones */
 static int fdb_count(struct net_if *iface)
 {
-	struct fdb_count_data data = {.iface = iface};
+	struct fdb_count_data data = {
+		.iface = iface,
+		.flags = ETHERNET_BRIDGE_FDB_FLAG_STATIC,
+	};
 
 	eth_bridge_fdb_foreach(fdb_count_cb, &data);
 
@@ -1006,6 +1011,151 @@ static void test_fdb_del_any_iface(void)
 	}
 }
 
+#if defined(CONFIG_NET_ETHERNET_BRIDGE_FDB_LEARNING)
+static int fdb_count_all(void)
+{
+	int count = 0;
+
+	for (int i = 0; i < 3; i++) {
+		struct fdb_count_data data = {
+			.iface = fake_iface[i],
+			.flags = ETHERNET_BRIDGE_FDB_FLAG_STATIC | ETHERNET_BRIDGE_FDB_FLAG_DYNAMIC,
+		};
+
+		eth_bridge_fdb_foreach(fdb_count_cb, &data);
+		count += data.count;
+	}
+
+	return count;
+}
+
+/* The source of a received frame is learned, so that frames to it go out
+ * of its port only, and follow it when it moves to another port.
+ */
+static void test_fdb_learning(void)
+{
+	static const struct net_eth_addr station = {{0x02, 0x00, 0x5e, 0x20, 0x00, 0x01}};
+	static const struct net_eth_addr peer = {{0x02, 0x00, 0x5e, 0x20, 0x00, 0x02}};
+	int ret;
+
+	(void)collect_sent();
+
+	/* Unknown yet: flooded, and learned on fake_iface[0] */
+	zexpect_equal(recv_frame_and_collect(0, &station, &peer), BIT(1) | BIT(2),
+		      "Frame to an unknown destination not flooded");
+	zexpect_equal(recv_frame_and_collect(1, &peer, &station), BIT(0),
+		      "Frame to a learned station not sent to its port only");
+
+	/* The station moves to fake_iface[2]; the peer was learned meanwhile */
+	zexpect_equal(recv_frame_and_collect(2, &station, &peer), BIT(1),
+		      "Frame to a learned station not sent to its port only");
+	zexpect_equal(recv_frame_and_collect(1, &peer, &station), BIT(2),
+		      "Learned entry did not follow the station");
+
+	ret = eth_bridge_fdb_del((struct net_eth_addr *)&station, fake_iface[2]);
+	zexpect_equal(ret, 0, "Cannot delete the learned entry (%d)", ret);
+	ret = eth_bridge_fdb_del((struct net_eth_addr *)&peer, fake_iface[1]);
+	zexpect_equal(ret, 0, "Cannot delete the learned entry (%d)", ret);
+
+	check_free_packet_count();
+}
+
+/* A frame with the bridge's own address as source is not learned, and a
+ * frame for the bridge is delivered to it, not sent to a port.
+ */
+static void test_fdb_learning_own_address(void)
+{
+	static const struct net_eth_addr peer = {{0x02, 0x00, 0x5e, 0x23, 0x00, 0x02}};
+	struct net_eth_addr own;
+	int entries;
+
+	memcpy(own.addr, net_if_get_link_addr(bridge)->addr, sizeof(own.addr));
+	(void)collect_sent();
+	entries = fdb_count_all();
+
+	(void)recv_frame_and_collect(0, &own, &peer);
+	zexpect_equal(fdb_count_all(), entries, "The bridge address was learned");
+
+	zassert_equal(eth_bridge_fdb_add(&own, fake_iface[0]), 0, "");
+	zexpect_equal(recv_frame_and_collect(1, &peer, &own), 0U,
+		      "Frame to the bridge address sent to a port");
+	zassert_equal(eth_bridge_fdb_del(&own, fake_iface[0]), 0, "");
+	zassert_equal(eth_bridge_fdb_del((struct net_eth_addr *)&peer, fake_iface[1]), 0, "");
+
+	check_free_packet_count();
+}
+
+/* Learning never changes a static entry */
+static void test_fdb_learning_keeps_static(void)
+{
+	static const struct net_eth_addr station = {{0x02, 0x00, 0x5e, 0x21, 0x00, 0x01}};
+	static const struct net_eth_addr peer = {{0x02, 0x00, 0x5e, 0x21, 0x00, 0x02}};
+	int ret;
+
+	(void)collect_sent();
+
+	ret = eth_bridge_fdb_add((struct net_eth_addr *)&station, fake_iface[0]);
+	zassert_equal(ret, 0, "Cannot add FDB entry (%d)", ret);
+
+	/* The station shows up behind another port */
+	(void)recv_frame_and_collect(2, &station, &peer);
+
+	zexpect_equal(recv_frame_and_collect(1, &peer, &station), BIT(0),
+		      "Static entry changed by learning");
+	zexpect_equal(fdb_count(fake_iface[0]), 1, "Static entry lost");
+
+	ret = eth_bridge_fdb_del((struct net_eth_addr *)&station, fake_iface[0]);
+	zexpect_equal(ret, 0, "Cannot delete FDB entry (%d)", ret);
+	(void)eth_bridge_fdb_del((struct net_eth_addr *)&peer, fake_iface[1]);
+
+	check_free_packet_count();
+}
+
+/* With a full table nothing more is learned, so frames are flooded */
+static void test_fdb_learning_table_full(void)
+{
+	struct net_eth_addr src = {{0x02, 0x00, 0x5e, 0x22, 0x00, 0x00}};
+	static const struct net_eth_addr peer = {{0x02, 0x00, 0x5e, 0x22, 0x01, 0x00}};
+	int free_entries;
+
+	(void)collect_sent();
+
+	free_entries = CONFIG_NET_ETHERNET_BRIDGE_FDB_MAX_ENTRIES - fdb_count_all();
+	zassert_true(free_entries > 0, "FDB already full");
+
+	for (int i = 0; i < free_entries; i++) {
+		src.addr[5] = (uint8_t)i;
+		(void)recv_frame_and_collect(0, &src, &peer);
+	}
+
+	zexpect_equal(fdb_count_all(), CONFIG_NET_ETHERNET_BRIDGE_FDB_MAX_ENTRIES,
+		      "Table not full");
+
+	/* One more station: not learned */
+	src.addr[5] = (uint8_t)free_entries;
+	(void)recv_frame_and_collect(0, &src, &peer);
+
+	zexpect_equal(recv_frame_and_collect(1, &peer, &src), BIT(0) | BIT(2),
+		      "Frame to a station not learned is not flooded");
+
+	/* A static entry still fits, in place of a learned one */
+	zexpect_equal(eth_bridge_fdb_add((struct net_eth_addr *)&peer, fake_iface[1]), 0,
+		      "Learned entries keep a static one out");
+	zexpect_equal(fdb_count(fake_iface[1]), 1, "Static entry not added");
+	zexpect_equal(fdb_count_all(), CONFIG_NET_ETHERNET_BRIDGE_FDB_MAX_ENTRIES,
+		      "Table not full");
+
+	for (int i = 0; i < 3; i++) {
+		zexpect_equal(eth_bridge_fdb_del_iface(fake_iface[i]), 0,
+			      "Cannot flush fake_iface[%d]", i);
+	}
+
+	zexpect_equal(fdb_count_all(), 0, "Entries left");
+
+	check_free_packet_count();
+}
+#endif /* CONFIG_NET_ETHERNET_BRIDGE_FDB_LEARNING */
+
 static void test_recv_after_bridging(void)
 {
 	int ret;
@@ -1062,6 +1212,12 @@ ZTEST(net_eth_bridge, test_net_eth_bridge)
 	test_recv_with_bridge_fdb_ingress();
 	test_fdb_del_iface();
 	test_fdb_del_any_iface();
+#if defined(CONFIG_NET_ETHERNET_BRIDGE_FDB_LEARNING)
+	test_fdb_learning();
+	test_fdb_learning_own_address();
+	test_fdb_learning_keeps_static();
+	test_fdb_learning_table_full();
+#endif
 	DBG("After bridging\n");
 	test_recv_after_bridging();
 }

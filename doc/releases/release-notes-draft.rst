@@ -117,6 +117,14 @@ Libraries / Subsystems
   * Added a HID Service server (:kconfig:option:`CONFIG_BT_HIDS`), the service
     the HID Device role of the HID over GATT Profile is built on.
 
+* Networking
+
+  * Ethernet bridge
+
+    * The bridge learns the port of each source MAC address into its FDB
+      (:kconfig:option:`CONFIG_NET_ETHERNET_BRIDGE_FDB_LEARNING`), so that a frame to a known
+      destination is sent out of one port instead of being flooded.
+
 Other notable changes
 *********************
 
