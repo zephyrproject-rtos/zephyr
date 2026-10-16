@@ -138,10 +138,15 @@ static uint32_t virtiofs_send_receive(
 
 	k_sem_init(&cb_arg.sem, 0, 1);
 
-	virtq_add_buffer_chain(
-		virtqueue, bounce_bufs, bufs_size, device_readable, virtiofs_recv_cb, &cb_arg,
-		K_FOREVER
-	);
+	int ret = virtq_add_buffer_chain(virtqueue, bounce_bufs, bufs_size, device_readable,
+					 virtiofs_recv_cb, &cb_arg, K_FOREVER);
+
+	if (ret != 0) {
+		LOG_ERR("failed to enqueue request to virtqueue %u (err %d)", virtq, ret);
+		k_free(bounce);
+		return 0;
+	}
+
 	virtio_notify_virtqueue(dev, virtq);
 
 	k_sem_take(&cb_arg.sem, K_FOREVER);
