@@ -29,9 +29,15 @@ extern "C" {
  *   - 7: Input select (0=normal, 1=schmitt trigger)
  *   - 8: Slew rate on most pads (0=fast, 1=slow); PA39-PA42 repurpose this as
  *        MODE (0=GPIO, 1=I2C)
- *   - 9-10: Drive strength {DS0, DS1} (0-3), DS0 is high bit, default=2 (4mA)
- * - 11-13: Drive strength enum index (0-4 for 2/4/8/12/20 mA)
- * - 14-31: Location, port, pad, PINR register field and offset.
+ *   - 9-10: Drive strength {DS0, DS1} (0-3), DS0 is high bit, default=2 (4mA).
+ *        In the devicetree token, bits 11:9 carry the drive strength enum
+ *        index instead (see SF32LB_DS_IDX_MSK); the driver extracts it and
+ *        only then writes the hardware DS bits.
+ * - 11: Drive strength enum index MSB (devicetree token only)
+ * - 12-13: Port (SA=0, PA=1)
+ * - 14-21: Pad number within the port
+ * - 22-23: PINR register field index
+ * - 24-31: PINR register offset
  */
 typedef uint32_t pinctrl_soc_pin_t;
 
@@ -41,9 +47,15 @@ typedef uint32_t pinctrl_soc_pin_t;
 #define SF32LB_SR_MSK BIT(8U)
 #define SF32LB_DS_MSK GENMASK(10U, 9U)
 
-/* Drive strength enum index position and mask (stored in bits 11-13) */
-#define SF32LB_DS_IDX_POS 11U
-#define SF32LB_DS_IDX_MSK GENMASK(13U, 11U)
+/*
+ * Drive strength enum index position and mask. Stored in bits 11-9, which
+ * are free in the devicetree token: the hardware DS bits (9-10) are only
+ * filled in by the driver after the index has been extracted. Bits 11-13
+ * must not be used: the port field (bits 13-12) shares bit 12, which would
+ * corrupt the port decoding for the default 4 mA setting (index 2).
+ */
+#define SF32LB_DS_IDX_POS 9U
+#define SF32LB_DS_IDX_MSK GENMASK(11U, 9U)
 
 /*
  * Pin configuration mask for bits that should be modified.
