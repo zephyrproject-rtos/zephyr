@@ -66,6 +66,15 @@ tests:
     extra_args: EXTRA_CONF_FILE=boards/nrf52840dk_nrf52840_soc.conf
     integration_platforms:
       - nrf52840dk/nrf52840
+  drivers.flash.common.soc_flash_nrf.preempt:
+    platform_allow:
+      - nrf52_bsim
+      - nrf5340bsim/nrf5340/cpuapp
+    extra_configs:
+      - CONFIG_TEST_SOC_FLASH_NRF_PREEMPT=y
+      - CONFIG_ZTEST_THREAD_PRIORITY=5
+    integration_platforms:
+      - nrf52_bsim
   drivers.flash.common.default:
     filter: ((CONFIG_FLASH_HAS_DRIVER_ENABLED and not CONFIG_TRUSTED_EXECUTION_NONSECURE)
       and (dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
