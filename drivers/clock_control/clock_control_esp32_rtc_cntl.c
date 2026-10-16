@@ -154,6 +154,7 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 		clock_init_done = true;
 	}
 
+#if CONFIG_ESP_CONSOLE_UART_NUM >= 0
 	esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
 
 #if defined(CONFIG_SOC_SERIES_ESP32C2)
@@ -163,6 +164,9 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 				     CONFIG_ESP_CONSOLE_UART_BAUDRATE, cpu_cfg->xtal_freq * MHZ(1));
 		esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
 	}
+#endif
+#else
+	esp_rom_output_tx_wait_idle(0);
 #endif
 
 	rtc_clk_cpu_freq_get_config(&old_config);
