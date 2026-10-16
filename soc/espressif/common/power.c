@@ -13,6 +13,7 @@
 #include <esp_attr.h>
 #include <esp_cpu.h>
 #include <esp_sleep.h>
+#include <esp_timer.h>
 #include <esp_timer_impl.h>
 #include <esp_private/esp_clk.h>
 #include <esp_private/systimer.h>
@@ -36,7 +37,6 @@ extern esp_err_t sleep_clock_icg_startup_init(void);
 #endif
 
 #if defined(CONFIG_SOC_ESP32_PM_SLEEP_STATS)
-#include <esp_timer.h>
 #include <pmstats.h>
 #endif
 
@@ -64,6 +64,7 @@ static uint64_t sleep_time_us;
 static uint64_t lpm_entry_counter;
 #if defined(CONFIG_SOC_ESP32_PM_SLEEP_STATS)
 static uint64_t lpm_deadline_us;
+static uint64_t lpm_kernel_us;
 #endif
 static uint64_t gpio_sleep_hold;
 #if defined(SOC_RTC_SLOW_MEM_SUPPORTED) || defined(SOC_RTC_FAST_MEM_SUPPORTED)
@@ -242,7 +243,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		if (sleep_enabled) {
 			esp32_sleep_gpio_prepare();
 #if defined(CONFIG_SOC_ESP32_PM_SLEEP_STATS)
-			esp32_sleep_stats_before(sleep_time_us,
+			esp32_sleep_stats_before(lpm_kernel_us, sleep_time_us,
 						 MIN_RESIDENCY_SLEEP_US +
 							 CONFIG_SOC_ESP32_PM_WAKEUP_MARGIN_US,
 						 lpm_deadline_us);
@@ -324,8 +325,23 @@ uint64_t esp32_lptim_hook_on_lpm_entry(uint64_t max_lpm_time_us)
 	 * discounted from the sleep period.
 	 */
 	uint64_t counter = esp_timer_impl_get_counter_reg();
+	int64_t next_alarm = esp_timer_get_next_alarm_for_wake_up();
 
 	sleep_time_us = max_lpm_time_us;
+
+	/* An esp_timer alarm is not covered by the kernel timeout. Use the next
+	 * one that should wake the CPU as an earlier deadline. Idle enters sleep
+	 * again after the callback has run.
+	 */
+	if (next_alarm != INT64_MAX) {
+		int64_t now_us = esp_timer_get_time();
+
+		if (next_alarm <= now_us) {
+			sleep_time_us = 0;
+		} else if ((uint64_t)(next_alarm - now_us) < sleep_time_us) {
+			sleep_time_us = (uint64_t)(next_alarm - now_us);
+		}
+	}
 	lpm_entry_counter = counter;
 
 #if defined(CONFIG_SOC_ESP32_PM_SLEEP_STATS)
@@ -333,6 +349,7 @@ uint64_t esp32_lptim_hook_on_lpm_entry(uint64_t max_lpm_time_us)
 	 * to the deadline can be measured on wake in the same esp_timer frame without
 	 * the software-latency bias of anchoring later at sleep-start.
 	 */
+	lpm_kernel_us = max_lpm_time_us;
 	lpm_deadline_us = (uint64_t)esp_timer_get_time() + max_lpm_time_us;
 #endif
 
