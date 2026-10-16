@@ -8,7 +8,6 @@
 #include <zephyr/pmci/mctp/mctp_i3c_common.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/kernel.h>
-#include <zephyr/drivers/uart.h>
 #include <zephyr/pmci/mctp/mctp_i3c_target.h>
 #include <zephyr/pmci/mctp/mctp_i3c_pec.h>
 #include <zephyr/logging/log.h>
@@ -57,6 +56,51 @@ void mctp_i3c_target_buf_write(struct i3c_target_config *config, uint8_t *val, u
 	memcpy(b->rx_pkt->data, val, payload_len);
 }
 
+/*
+ * mctp_bus_rx() can synchronously call the binding tx (e.g. a control-message
+ * response), which blocks on a semaphore. stop_cb runs in the driver ISR, so
+ * deliver received packets from thread context here instead.
+ *
+ * Packets are pulled from rx_msgq, which stop_cb fills: draining the whole
+ * queue keeps every fragment of a multi-packet message in order.
+ */
+static void mctp_i3c_target_rx_work(struct k_work *work)
+{
+	struct mctp_binding_i3c_target *b =
+		CONTAINER_OF(work, struct mctp_binding_i3c_target, rx_work);
+	struct mctp_pktbuf *pkt;
+
+	while (k_msgq_get(&b->rx_msgq, &pkt, K_NO_WAIT) == 0) {
+		struct i3c_config_target cfg;
+		size_t len = pkt->end - pkt->start;
+		uint8_t addr_byte;
+
+		/* Get dynamic address if not yet retrieved */
+		if (b->dynamic_addr == 0) {
+			if (i3c_config_get_target(b->i3c, &cfg) == 0) {
+				b->dynamic_addr = cfg.dynamic_addr;
+			}
+		}
+
+		/* PEC as per DSP0233 1.0.0: seeded with the address byte (dynamic_addr
+		 * << 1 | W), computed over all received bytes except the trailing PEC.
+		 */
+		addr_byte = b->dynamic_addr << 1U;
+
+		if (len < I3C_PROTOCOL_PEC_SZ) {
+			LOG_WRN("I3C RX packet too short to contain a PEC (%zu bytes)", len);
+		} else if (mctp_i3c_verify_pec(&pkt->data[pkt->start], len, addr_byte) != 0) {
+			LOG_WRN("PEC verification failed (addr: 0x%02x)", addr_byte);
+		} else {
+			/* Strip the trailing PEC before handing up to libmctp */
+			pkt->end -= I3C_PROTOCOL_PEC_SZ;
+			mctp_bus_rx(&b->binding, pkt);
+		}
+
+		mctp_pktbuf_free(pkt);
+	}
+}
+
 int mctp_i3c_target_stop(struct i3c_target_config *config)
 {
 	struct mctp_binding_i3c_target *b =
@@ -68,9 +112,17 @@ int mctp_i3c_target_stop(struct i3c_target_config *config)
 	}
 
 	if (b->rx_pkt != NULL) {
-		mctp_bus_rx(&b->binding, b->rx_pkt);
-		mctp_pktbuf_free(b->rx_pkt);
+		/*
+		 * PEC verification uses the hardware CRC (which takes a mutex) and
+		 * mctp_bus_rx() may block, but stop_cb runs in the driver ISR. Queue
+		 * the packet and handle it from thread context.
+		 */
+		if (k_msgq_put(&b->rx_msgq, &b->rx_pkt, K_NO_WAIT) != 0) {
+			LOG_WRN("I3C RX queue full, dropping packet");
+			mctp_pktbuf_free(b->rx_pkt);
+		}
 		b->rx_pkt = NULL;
+		k_work_submit(&b->rx_work);
 	}
 
 	return 0;
@@ -109,17 +161,23 @@ int mctp_i3c_target_read_processed(struct i3c_target_config *config, uint8_t *va
 {
 	struct mctp_binding_i3c_target *b =
 		CONTAINER_OF(config, struct mctp_binding_i3c_target, i3c_target_cfg);
-	uint8_t pkt_len;
+	uint16_t pkt_len;
 
 	if (b->tx_pkt == NULL) {
+		LOG_ERR("I3C read with no TX packet staged");
 		return -EIO;
 	}
 
+	/* pkt_len includes the PEC appended by mctp_i3c_target_tx() */
 	pkt_len = b->tx_pkt->end - b->tx_pkt->start;
+
 	if (b->tx_ptr >= pkt_len) {
+		/* Controller read past the payload and PEC */
+		LOG_WRN("I3C read past TX packet end: tx_ptr=%u, len=%u", b->tx_ptr, pkt_len);
 		return -EIO;
 	}
 
+	/* Serve the next byte (payload, then the trailing PEC) */
 	*val = b->tx_pkt->data[b->tx_pkt->start + b->tx_ptr++];
 
 	return 0;
@@ -152,24 +210,33 @@ int mctp_i3c_target_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt)
 	b->tx_pkt = pkt;
 	b->tx_ptr = 0U;
 
-	/* Calculate packet size and prepare TX buffer with PEC */
 	size_t pktsize = pkt->end - pkt->start;
-	uint8_t tx_buf[MCTP_PACKET_SIZE(MCTP_I3C_MAX_PKT_SIZE) + I3C_PROTOCOL_PEC_SZ];
 
 	if (pktsize > MCTP_PACKET_SIZE(MCTP_I3C_MAX_PKT_SIZE)) {
-		LOG_ERR("Packet too large to send: %zu bytes", pktsize);
+		LOG_ERR("I3C TX packet too large to send: %zu bytes", pktsize);
 		ret = -EINVAL;
 		goto out;
 	}
 
-	/* Copy data and calculate PEC (Packet Error Code) */
-	memcpy(tx_buf, pkt->data + pkt->start, pktsize);
-	uint8_t addr_byte = b->dynamic_addr << 1U | 1U;
+	/*
+	 * Append the PEC to the packet so it is sent as the trailing byte. The
+	 * tx_storage buffer reserves pkt_trailer (I3C_PROTOCOL_PEC_SZ) bytes for
+	 * this. read_processed() then serves it from tx_pkt on byte-by-byte
+	 * drivers, and the buffer passed below carries it for buffer-mode drivers.
+	 * PEC per DSP0233 1.0.0: CRC-8 seeded with the address byte
+	 * (dynamic_addr << 1 | R), computed over the payload.
+	 */
+	uint8_t addr_byte = (b->dynamic_addr << 1U) | 1U;
+	uint8_t pec = mctp_i3c_calculate_pec(&pkt->data[pkt->start], pktsize, addr_byte);
 
-	tx_buf[pktsize] = mctp_i3c_calculate_pec(tx_buf, pktsize, addr_byte);
+	if (mctp_pktbuf_push(pkt, &pec, I3C_PROTOCOL_PEC_SZ) < 0) {
+		LOG_ERR("No room to append PEC to I3C TX packet");
+		ret = -ENOMEM;
+		goto out;
+	}
 
-	/* Some I3C IP need to have data at TX fifo before raising IBI */
-	ret = i3c_target_tx_write(b->i3c, tx_buf, pktsize + I3C_PROTOCOL_PEC_SZ, 0);
+	/* Some I3C IP need the data in the TX FIFO before the IBI is raised */
+	ret = i3c_target_tx_write(b->i3c, &pkt->data[pkt->start], pktsize + I3C_PROTOCOL_PEC_SZ, 0);
 	if (ret < 0) {
 		LOG_ERR("i3c_target_tx_write failed: %d", ret);
 		goto out;
@@ -202,6 +269,10 @@ int mctp_i3c_target_start(struct mctp_binding *binding)
 		CONTAINER_OF(binding, struct mctp_binding_i3c_target, binding);
 	struct i3c_config_target config;
 	int rc;
+
+	k_msgq_init(&b->rx_msgq, (char *)b->rx_msgq_slots, sizeof(struct mctp_pktbuf *),
+		    MCTP_I3C_RX_QUEUE_DEPTH);
+	k_work_init(&b->rx_work, mctp_i3c_target_rx_work);
 
 	/* Get target device configuration to retrieve dynamic address */
 	rc = i3c_config_get_target(b->i3c, &config);
