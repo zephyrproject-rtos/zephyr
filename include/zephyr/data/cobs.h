@@ -29,6 +29,8 @@ extern "C" {
 
 /**
  * @defgroup cobs COBS (Consistent Overhead Byte Stuffing)
+ * @since 4.2
+ * @version 0.1.0
  * @ingroup utilities
  * @{
  *
