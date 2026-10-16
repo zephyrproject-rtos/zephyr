@@ -38,7 +38,7 @@ struct wifi_cert_data {
 	enum tls_credential_type type;
 	uint32_t sec_tag;
 	uint8_t **data;
-	size_t *len;
+	uint32_t *len;
 };
 #else
 static const char ca_cert_test[] = {
