@@ -211,6 +211,11 @@ static int i2s_mcux_configure(const struct device *dev, enum i2s_dir dir,
 		return 0;
 	}
 
+	if (i2s_cfg->tdm.channel_disable_mask != 0U) {
+		LOG_ERR("TDM channel masking is not supported");
+		return -EINVAL;
+	}
+
 	/*
 	 * The memory block passed by the user to the i2s_write function is
 	 * tightly packed next to each other.

@@ -547,6 +547,11 @@ static int stm32_sai_sub_conf(const struct device *dev, enum i2s_dir dir,
 		return -EINVAL;
 	}
 
+	if (i2s_cfg->tdm.channel_disable_mask != 0U) {
+		LOG_ERR("TDM channel masking is not supported");
+		return -EINVAL;
+	}
+
 	/* MckOutput is not supported by all MCU series */
 #if defined(SAI_MCK_OUTPUT_ENABLE)
 	if (sub_cfg->mclk_enable && stream->master) {

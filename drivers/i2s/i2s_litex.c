@@ -348,6 +348,12 @@ static int i2s_litex_configure(const struct device *dev, enum i2s_dir dir,
 		LOG_ERR("invalid channels number");
 		return -EINVAL;
 	}
+
+	if (i2s_cfg->tdm.channel_disable_mask != 0U) {
+		LOG_ERR("TDM channel masking is not supported");
+		return -EINVAL;
+	}
+
 	int req_buf_s =
 		(cfg->fifo_depth * (i2s_cfg->word_size / 8)) / channel_div;
 
