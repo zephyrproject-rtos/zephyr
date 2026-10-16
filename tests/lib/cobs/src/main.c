@@ -607,8 +607,7 @@ ZTEST_P(cobs_tests, test_decode_trailing_delimiter)
 	uint8_t delimiter = COBS_FLAG_CUSTOM_DELIMITER(item->flags);
 	int ret;
 
-	net_buf_add_mem(fixture->test_data, item->decoded, item->decoded_len);
-
+	net_buf_add_mem(fixture->encoded, item->encoded, item->encoded_len);
 	net_buf_add_u8(fixture->encoded, delimiter);
 
 	ret = cobs_decode(fixture->encoded, fixture->test_data,
