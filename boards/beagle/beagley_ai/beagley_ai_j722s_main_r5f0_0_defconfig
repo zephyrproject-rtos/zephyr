@@ -14,5 +14,10 @@ CONFIG_UART_INTERRUPT_DRIVEN=y
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 
+# HAT peripherals enabled in board DTS (I2C1 / MCU SPI0 / GPIO LEDs)
+CONFIG_GPIO=y
+CONFIG_I2C=y
+CONFIG_SPI=y
+
 # Enable OpenAMP resource table needed for remoteproc booting
 CONFIG_OPENAMP_RSC_TABLE=y
