@@ -1,0 +1,20 @@
+tests:
+  kernel.thread_safety:
+    tags:
+      - kernel
+    build_only: true
+    platform_allow:
+      - mps2/an385
+      - qemu_riscv32e
+    integration_toolchains:
+      - zephyr/gnu
+  kernel.thread_safety.llvm:
+    tags:
+      - kernel
+    build_only: true
+    platform_allow:
+      - mps2/an385
+      - qemu_riscv32e
+    extra_args: EXTRA_CONF_FILE=prj_llvm.conf
+    integration_toolchains:
+      - zephyr/llvm
