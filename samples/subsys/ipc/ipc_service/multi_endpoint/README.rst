@@ -5,8 +5,7 @@
    Use the IPC Service with multiple endpoints.
 
 This application demonstrates how to use IPC Service with multiple endpoints.
-By default, it uses the ``icmsg_me`` backend.
-You can also configure it to use the ``icbmsg`` backend.
+It uses the ``icbmsg`` backend.
 
 Building the application for nrf5340dk/nrf5340/cpuapp
 *****************************************************
@@ -59,16 +58,3 @@ serial port:
    IPC-service REMOTE [INST 0 - ENDP B] demo ended.
    REMOTE [1]: 98
    IPC-service REMOTE [INST 1] demo ended.
-
-
-Changing the backend
-********************
-
-To change the backend to ``icbmsg``, switch the devicetree
-overlay files as follows:
-
-.. code-block:: console
-
-   west build -b nrf5340dk/nrf5340/cpuapp --sysbuild -- \
-   -DDTC_OVERLAY_FILE=boards/nrf5340dk_nrf5340_cpuapp_icbmsg.overlay \
-   -Dremote_DTC_OVERLAY_FILE=boards/nrf5340dk_nrf5340_cpunet_icbmsg.overlay
