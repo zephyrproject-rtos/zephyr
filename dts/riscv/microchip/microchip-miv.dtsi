@@ -47,7 +47,7 @@
 
 		clint: clint@44000000 {
 			compatible = "sifive,clint0";
-			interrupts-extended = <&hlic 3>, <&hlic 7>;
+			interrupts-extended = <&hlic 3>;
 			reg = <0x44000000 0x10000>;
 		};
 

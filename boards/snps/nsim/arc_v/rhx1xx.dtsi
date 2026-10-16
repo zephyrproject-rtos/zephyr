@@ -35,13 +35,14 @@
 		clint: clint@a0010000 {
 			compatible = "sifive,clint0";
 			reg = <0xa0010000 0x1000>;
-			interrupts-extended = <&cpu0_intc 3 &cpu0_intc 7>;
-			interrupt-names = "soft0", "timer0";
+			interrupts-extended = <&cpu0_intc 3>;
+			interrupt-names = "soft0";
 		};
 
 		mtimer: timer@a001bff8 {
 			compatible = "riscv,machine-timer";
 			interrupts-extended = <&cpu0_intc 7>;
+			interrupt-names = "timer0";
 			reg = <0xa001bff8 0x8 0xa0014000 0x8>;
 			reg-names = "mtime", "mtimecmp";
 		};
