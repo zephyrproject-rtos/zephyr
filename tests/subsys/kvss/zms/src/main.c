@@ -11,6 +11,7 @@
 #include <zephyr/ztest.h>
 
 #include <zephyr/drivers/flash.h>
+#include <zephyr/drivers/flash/flash_simulator.h>
 #include <zephyr/kvss/zms.h>
 #include <zephyr/stats/stats.h>
 #include <zephyr/storage/flash_map.h>
@@ -706,6 +707,217 @@ ZTEST_F(zms, test_zms_corrupted_sector_close_operation)
 	/* Ensure that the ZMS is able to store new content. */
 	execute_long_pattern_write(max_id, &fixture->fs);
 }
+
+#ifdef CONFIG_FLASH_SIMULATOR_CALLBACKS
+/*
+ * Tests for a reset while ZMS changes the write sector, on flash without
+ * explicit erase.
+ *
+ * When the write sector is full, ZMS changes the write sector. It does these
+ * steps:
+ * 1. It closes the write sector with a close ATE.
+ * 2. It copies the valid entries of the oldest sector to the next sector
+ *    (garbage collection). The next sector becomes the write sector.
+ * 3. It writes a gc_done ATE in the write sector.
+ * 4. It erases the oldest sector. Without explicit erase, ZMS only writes a
+ *    new empty ATE in the sector.
+ *
+ * A reset can interrupt these steps, for example a power loss, a watchdog reset
+ * or a software reset. Each test simulates a reset at one of these steps: the
+ * flash writes stop and ZMS is mounted again with a cleared state. Then the test
+ * makes sure that ZMS gives the correct data.
+ */
+
+static struct {
+	/* The reset occurs at the first write to this sector */
+	int sector;
+	uint32_t sector_size;
+	bool occurred;
+} reset = {.sector = -1};
+
+static int reset_write_byte(const struct device *dev, off_t offset, uint8_t data)
+{
+	ARG_UNUSED(dev);
+
+	if (reset.sector >= 0 &&
+	    (offset - TEST_ZMS_AREA_OFFSET) / reset.sector_size == reset.sector) {
+		reset.occurred = true;
+	}
+
+	/* After the reset, the flash content does not change */
+	return reset.occurred ? -EIO : data;
+}
+
+static const struct flash_simulator_cb reset_callbacks = {
+	.write_byte = reset_write_byte,
+};
+
+/* Prepare a reset at the first write to `sector` */
+static void reset_at_write_to(struct zms_fixture *fixture, uint32_t sector)
+{
+	reset.sector = sector;
+	reset.sector_size = fixture->fs.sector_size;
+	reset.occurred = false;
+	flash_simulator_set_callbacks(flash_dev, &reset_callbacks);
+}
+
+/* Start again after a reset: let the flash writes continue and mount ZMS with a cleared state */
+static void restart(struct zms_fixture *fixture)
+{
+	int err;
+
+	flash_simulator_set_callbacks(flash_dev, NULL);
+	reset.sector = -1;
+	reset.occurred = false;
+
+	memset(&fixture->fs, 0, sizeof(fixture->fs));
+	(void)setup();
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+}
+
+/* Erase the ZMS area. ZMS did not use any of its sectors before. */
+static void erase_zms_area(struct zms_fixture *fixture)
+{
+	size_t mem_size;
+	uint8_t *mem = flash_simulator_get_memory(flash_dev, &mem_size);
+
+	memset(mem + fixture->fs.offset, flash_get_parameters(flash_dev)->erase_value,
+	       fixture->fs.sector_size * fixture->fs.sector_count);
+}
+
+static uint32_t write_sector(struct zms_fixture *fixture)
+{
+	return fixture->fs.ate_wra >> ADDR_SECT_SHIFT;
+}
+
+static uint32_t sector_after(struct zms_fixture *fixture, uint32_t sector)
+{
+	return (sector + 1) % fixture->fs.sector_count;
+}
+
+static void change_write_sector(struct zms_fixture *fixture, uint32_t count)
+{
+	for (uint32_t i = 0; i < count; i++) {
+		int err = zms_sector_use_next(&fixture->fs);
+
+		zassert_true(err == 0, "zms_sector_use_next call failure: %d", err);
+	}
+}
+
+static void write_value(struct zms_fixture *fixture, zms_id_t id, uint32_t value)
+{
+	ssize_t len = zms_write(&fixture->fs, id, &value, sizeof(value));
+
+	zassert_true(len == sizeof(value), "zms_write failed: %d", len);
+}
+
+static void check_value(struct zms_fixture *fixture, zms_id_t id, uint32_t expected)
+{
+	uint32_t value = 0;
+	ssize_t len = zms_read(&fixture->fs, id, &value, sizeof(value));
+
+	zassert_true(len == sizeof(value), "zms_read failed: %d", len);
+	zassert_equal(value, expected, "read 0x%x, expected 0x%x", value, expected);
+}
+
+static void skip_if_explicit_erase(struct zms_fixture *fixture)
+{
+	if (flash_params_get_erase_cap(flash_get_parameters(fixture->fs.flash_device)) &
+	    FLASH_ERASE_C_EXPLICIT) {
+		ztest_test_skip();
+	}
+}
+
+/**
+ * @brief Test a reset before the garbage collection, on a used sector.
+ *
+ * A sector that ZMS used before still has the gc_done ATE of that use. The
+ * reset occurs after step 1, before steps 2 and 3. Thus the gc_done ATE of the
+ * write sector is an old one. The oldest sector contains the only copy of an
+ * entry. After the reset, ZMS must still read this entry.
+ */
+ZTEST_F(zms, test_zms_reset_before_gc_on_used_sector)
+{
+	const uint32_t sectors = TEST_SECTOR_COUNT;
+
+	skip_if_explicit_erase(fixture);
+	erase_zms_area(fixture);
+	restart(fixture);
+
+	/* Use all sectors one time while ZMS contains no entries. Each garbage
+	 * collection copies no entries, thus each sector gets a gc_done ATE in its
+	 * first ATE position. At mount, ZMS looks for a gc_done ATE there when the
+	 * write sector is empty.
+	 */
+	change_write_sector(fixture, sectors);
+
+	/* Write the entry. Then make its sector the oldest sector. */
+	write_value(fixture, 1, 0x11111111);
+	change_write_sector(fixture, sectors - 2);
+
+	reset_at_write_to(fixture, sector_after(fixture, write_sector(fixture)));
+	(void)zms_sector_use_next(&fixture->fs);
+	zassert_true(reset.occurred, "no reset");
+	restart(fixture);
+
+	check_value(fixture, 1, 0x11111111);
+}
+
+/**
+ * @brief Test a reset before ZMS uses a new sector for the first time.
+ *
+ * The next sector was never used, so it has no empty ATE. The reset occurs
+ * after step 1, before ZMS writes the empty ATE of the next sector. After the
+ * reset, ZMS must read the value of a write.
+ */
+ZTEST_F(zms, test_zms_reset_before_first_use_of_sector)
+{
+	skip_if_explicit_erase(fixture);
+	erase_zms_area(fixture);
+	restart(fixture);
+
+	write_value(fixture, 1, 0x11111111);
+
+	reset_at_write_to(fixture, sector_after(fixture, write_sector(fixture)));
+	(void)zms_sector_use_next(&fixture->fs);
+	zassert_true(reset.occurred, "no reset");
+	restart(fixture);
+
+	write_value(fixture, 1, 0x22222222);
+	check_value(fixture, 1, 0x22222222);
+}
+
+/**
+ * @brief Test a reset before the erase of the oldest sector.
+ *
+ * The reset occurs after step 3, before step 4. Thus the gc_done ATE of the
+ * write sector is correct. After the reset, ZMS must read the value of a
+ * write.
+ */
+ZTEST_F(zms, test_zms_reset_before_erase_of_oldest_sector)
+{
+	const uint32_t sectors = TEST_SECTOR_COUNT;
+
+	skip_if_explicit_erase(fixture);
+	erase_zms_area(fixture);
+	restart(fixture);
+
+	/* Use all sectors one time. Thus the sectors have different cycle counts. */
+	change_write_sector(fixture, sectors);
+	write_value(fixture, 1, 0x11111111);
+
+	/* The oldest sector is the sector after the next sector */
+	reset_at_write_to(fixture,
+			  sector_after(fixture, sector_after(fixture, write_sector(fixture))));
+	(void)zms_sector_use_next(&fixture->fs);
+	zassert_true(reset.occurred, "no reset");
+	restart(fixture);
+
+	write_value(fixture, 1, 0x22222222);
+	check_value(fixture, 1, 0x22222222);
+}
+#endif /* CONFIG_FLASH_SIMULATOR_CALLBACKS */
 #endif /* CONFIG_TEST_ZMS_SIMULATOR */
 
 /**
