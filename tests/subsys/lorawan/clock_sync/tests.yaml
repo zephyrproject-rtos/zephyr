@@ -9,7 +9,7 @@ tests:
       - native_sim
   lorawan.clock_sync.phy:
     depends_on: lora
-    filter: CONFIG_ENTROPY_HAS_DRIVER
+    filter: CONFIG_ENTROPY_HAS_DRIVER and CONFIG_LORAWAN_EMUL
     timeout: 500
     integration_platforms:
       - nucleo_wl55jc
