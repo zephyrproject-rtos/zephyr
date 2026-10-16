@@ -51,8 +51,7 @@ extern "C" {
  * calls the callbacks without holding any lock of its own, so a callback can
  * call the API.
  *
- * Not supported yet: Boot Protocol Mode, that is the Protocol Mode
- * characteristic and the Boot Keyboard and Boot Mouse Report characteristics,
+ * Not supported yet: the Boot Keyboard and Boot Mouse Report characteristics,
  * which the HID Service makes mandatory for a keyboard and for a mouse;
  * multiple HID Service instances; and the "Include" of external services whose
  * characteristics are described in the Report Map together with the External
@@ -81,6 +80,19 @@ enum bt_hids_report_type {
 
 	/** Feature Report */
 	BT_HIDS_REPORT_TYPE_FEATURE = 0x03U,
+};
+
+/**
+ * @brief HID Protocol Mode values.
+ *
+ * Defined by the HID Service, Protocol Mode characteristic.
+ */
+enum bt_hids_protocol_mode {
+	/** Boot Protocol Mode */
+	BT_HIDS_PROTOCOL_BOOT = 0x00U,
+
+	/** Report Protocol Mode */
+	BT_HIDS_PROTOCOL_REPORT = 0x01U,
 };
 
 /**
@@ -137,10 +149,25 @@ struct bt_hids_cb {
 			   uint8_t report_id, const uint8_t *data, uint16_t len);
 
 	/**
+	 * @brief Called when a Host writes the Protocol Mode characteristic.
+	 *
+	 * Only called when the Protocol Mode characteristic is part of the
+	 * service, see @kconfig{CONFIG_BT_HIDS_PROTOCOL_MODE}. The service has
+	 * already updated its internal state, so bt_hids_protocol_mode_get()
+	 * returns @p protocol for @p conn.
+	 *
+	 * @param conn     Connection of the Host that wrote the characteristic.
+	 * @param protocol Protocol Mode the Host selected.
+	 */
+	void (*protocol_mode_changed)(struct bt_conn *conn, enum bt_hids_protocol_mode protocol);
+
+	/**
 	 * @brief Called when a Host writes the HID Control Point.
 	 *
-	 * The Suspend state is per Host, and the service does not keep it, so
-	 * an application that acts on it tracks it per @p conn.
+	 * The service has already applied what the command implies, so the
+	 * Suspend state of @ref BT_HIDS_CTRL_SUSPEND and
+	 * @ref BT_HIDS_CTRL_EXIT_SUSPEND is already visible through
+	 * bt_hids_suspend_state_get().
 	 *
 	 * @param conn Connection of the Host that wrote the characteristic.
 	 * @param cmd  Command the Host wrote. The commands the service does not
@@ -372,6 +399,53 @@ int bt_hids_report_get(enum bt_hids_report_type report_type, uint8_t report_id, 
  */
 int bt_hids_send_report(struct bt_conn *conn, uint8_t report_id, const uint8_t *data, uint16_t len,
 			bt_gatt_complete_func_t func, void *user_data);
+
+/**
+ * @brief Get the Protocol Mode of a Host.
+ *
+ * The Protocol Mode is tracked per connection and reset to
+ * @ref BT_HIDS_PROTOCOL_REPORT every time the service starts tracking a Host. It stays at its
+ * default value when the Protocol Mode characteristic is not present, see
+ * @kconfig{CONFIG_BT_HIDS_PROTOCOL_MODE}.
+ *
+ * @param[in]  conn Connection to the Host.
+ * @param[out] mode Protocol Mode.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL Invalid parameters.
+ * @retval -ESRCH Service not registered.
+ * @retval -ENOTCONN The Host is not connected, or the service does not track
+ *                   it. A Host is tracked from the moment its link has the
+ *                   security level the characteristics require, if one of the
+ *                   tracking slots described for @kconfig{CONFIG_BT_HIDS} is
+ *                   free. A Host whose link had that level before
+ *                   bt_hids_register() is tracked from its first access to
+ *                   the Protocol Mode or the HID Control Point.
+ */
+int bt_hids_protocol_mode_get(struct bt_conn *conn, enum bt_hids_protocol_mode *mode);
+
+/**
+ * @brief Get the Suspend state of a Host.
+ *
+ * The Suspend state is tracked per connection and reset every time the service
+ * starts tracking a Host. It is set when the Host writes Suspend to the HID Control Point,
+ * and cleared when the Host writes Exit Suspend.
+ *
+ * @param[in]  conn      Connection to the Host.
+ * @param[out] suspended true if the Host suspended the Device.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL Invalid parameters.
+ * @retval -ESRCH Service not registered.
+ * @retval -ENOTCONN The Host is not connected, or the service does not track
+ *                   it. A Host is tracked from the moment its link has the
+ *                   security level the characteristics require, if one of the
+ *                   tracking slots described for @kconfig{CONFIG_BT_HIDS} is
+ *                   free. A Host whose link had that level before
+ *                   bt_hids_register() is tracked from its first access to
+ *                   the Protocol Mode or the HID Control Point.
+ */
+int bt_hids_suspend_state_get(struct bt_conn *conn, bool *suspended);
 
 /**
  * @}

@@ -27,26 +27,42 @@ LOG_MODULE_REGISTER(bt_hids, CONFIG_BT_HIDS_LOG_LEVEL);
 BUILD_ASSERT(HIDS_REPORT_COUNT > 0, "The HID Service needs at least one Report characteristic");
 
 /* The HID Service sets no security requirements of its own; a profile built
- * on it picks them, see CONFIG_BT_HIDS_SECURITY.
+ * on it picks them, see CONFIG_BT_HIDS_SECURITY. HIDS_SEC_LEVEL is the
+ * security level a link needs for the permissions to be met.
  */
 #if defined(CONFIG_BT_HIDS_SECURITY_AUTHEN)
 #define HIDS_PERM_READ  BT_GATT_PERM_READ_AUTHEN
 #define HIDS_PERM_WRITE BT_GATT_PERM_WRITE_AUTHEN
+#define HIDS_SEC_LEVEL  BT_SECURITY_L3
 #elif defined(CONFIG_BT_HIDS_SECURITY_ENCRYPT)
 #define HIDS_PERM_READ  BT_GATT_PERM_READ_ENCRYPT
 #define HIDS_PERM_WRITE BT_GATT_PERM_WRITE_ENCRYPT
+#define HIDS_SEC_LEVEL  BT_SECURITY_L2
 #else
 #define HIDS_PERM_READ  BT_GATT_PERM_READ
 #define HIDS_PERM_WRITE BT_GATT_PERM_WRITE
+#define HIDS_SEC_LEVEL  BT_SECURITY_L1
 #endif
 #define HIDS_PERM_RW (HIDS_PERM_READ | HIDS_PERM_WRITE)
+
+/* Encrypting an LE link takes an entry of the key pool, bonded or not, and
+ * the entry is held until the link is gone, so no more than
+ * CONFIG_BT_MAX_PAIRED links reach a security level above L1 at once.
+ */
+#if defined(CONFIG_BT_HIDS_SECURITY_NONE)
+#define HIDS_MAX_INSTS CONFIG_BT_MAX_CONN
+#else
+#define HIDS_MAX_INSTS MIN(CONFIG_BT_MAX_CONN, CONFIG_BT_MAX_PAIRED)
+#endif
 
 /* Module context.
  *
  * The GATT handlers run on the thread the Bluetooth stack processes ATT
  * requests on, and the API on application threads. hids_mutex protects every
  * field below: the registration state, the callbacks, the Report Map, the HID
- * Information and the Report contexts. It is never held while an application
+ * Information, the Report contexts and the per-connection slots. The slots are
+ * claimed and released on the Bluetooth thread, and read from application
+ * threads. It is never held while an application
  * callback runs or while a notification is sent, so that a callback can call
  * the API and a notification waiting for a buffer does not hold up the
  * handlers.
@@ -54,6 +70,7 @@ BUILD_ASSERT(HIDS_REPORT_COUNT > 0, "The HID Service needs at least one Report c
 static K_MUTEX_DEFINE(hids_mutex);
 static const struct bt_hids_cb *callbacks;
 static struct hids_state hids;
+static struct hids_conn connections[HIDS_MAX_INSTS];
 
 /* Report characteristic contexts, laid out Input, then Output, then Feature, in
  * the same order as the Report characteristics appear in the service. The
@@ -89,6 +106,9 @@ static void hids_reset(void)
 	callbacks = NULL;
 	(void)memset(&hids, 0, sizeof(hids));
 	(void)memset(reports, 0, sizeof(reports));
+
+	/* The GATT service is gone, so the per-Host HID state goes with it */
+	(void)memset(connections, 0, sizeof(connections));
 }
 
 /* Only Input Reports are looked up by Report ID, to notify them. Reads and
@@ -126,6 +146,64 @@ static int report_resolve(enum bt_hids_report_type report_type, uint8_t report_i
 	return 0;
 }
 
+/* The per-connection state of a Host lives in a slot claimed when its link
+ * reaches HIDS_SEC_LEVEL and freed on disconnect. The pool holds one slot per
+ * Host that can reach that level, rather than one per bt_conn_index(). A slot
+ * is found by its conn, so a Host that has no slot (the pool was full) is
+ * simply not tracked.
+ */
+
+/* Slot currently tracking conn, or NULL if none is */
+static struct hids_conn *conn_find(const struct bt_conn *conn)
+{
+	HIDS_LOCK_ASSERT();
+
+	ARRAY_FOR_EACH_PTR(connections, dc) {
+		if (dc->conn == conn) {
+			return dc;
+		}
+	}
+
+	return NULL;
+}
+
+/* Claim a per-connection slot for conn, or return the existing slot if one
+ * is already held. Called with hids_mutex held, so that the lookup and the
+ * claim are one step and a slot is never claimed after bt_hids_unregister()
+ * released the pool.
+ *
+ * A Host whose link reached HIDS_SEC_LEVEL before bt_hids_register() gets its
+ * slot claimed on its first GATT access. Until then,
+ * bt_hids_protocol_mode_get() and bt_hids_suspend_state_get() return -ENOTCONN
+ * for that Host.
+ */
+static struct hids_conn *conn_claim(struct bt_conn *conn)
+{
+	struct hids_conn *dc;
+
+	HIDS_LOCK_ASSERT();
+
+	if (!hids.registered) {
+		return NULL;
+	}
+
+	dc = conn_find(conn);
+	if (dc != NULL) {
+		return dc;
+	}
+
+	dc = conn_find(NULL);
+	if (dc == NULL) {
+		return NULL;
+	}
+
+	dc->conn = conn;
+	dc->protocol_mode = BT_HIDS_PROTOCOL_REPORT;
+	dc->suspended = false;
+
+	return dc;
+}
+
 /* GATT callbacks
  *
  * The stack resolves the attribute before it calls a handler, and
@@ -135,6 +213,86 @@ static int report_resolve(enum bt_hids_report_type report_type, uint8_t report_i
  * longer has.
  */
 #define HIDS_ERR_UNREGISTERED BT_GATT_ERR(BT_ATT_ERR_INVALID_HANDLE)
+
+#if defined(CONFIG_BT_HIDS_PROTOCOL_MODE)
+static ssize_t read_protocol_mode(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
+				  uint16_t len, uint16_t offset)
+{
+	struct hids_conn *dc;
+	uint8_t mode = 0U;
+
+	hids_lock();
+
+	if (!hids.registered) {
+		hids_unlock();
+		return HIDS_ERR_UNREGISTERED;
+	}
+
+	dc = conn_claim(conn);
+	if (dc == NULL) {
+		hids_unlock();
+		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+	}
+
+	mode = (uint8_t)dc->protocol_mode;
+
+	hids_unlock();
+
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &mode, sizeof(mode));
+}
+
+static ssize_t write_protocol_mode(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+				   const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
+{
+	void (*protocol_mode_cb)(struct bt_conn *conn, enum bt_hids_protocol_mode protocol) = NULL;
+	const uint8_t *val = buf;
+	enum bt_hids_protocol_mode mode;
+	struct hids_conn *dc;
+
+	ARG_UNUSED(attr);
+	ARG_UNUSED(flags);
+
+	if (offset != 0) {
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+	}
+
+	if (len != sizeof(uint8_t)) {
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	}
+
+	if (*val > BT_HIDS_PROTOCOL_REPORT) {
+		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+	}
+
+	mode = (enum bt_hids_protocol_mode)(*val);
+
+	hids_lock();
+
+	if (!hids.registered) {
+		hids_unlock();
+		return HIDS_ERR_UNREGISTERED;
+	}
+
+	dc = conn_claim(conn);
+	if (dc == NULL) {
+		hids_unlock();
+		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+	}
+
+	dc->protocol_mode = mode;
+	if (callbacks != NULL) {
+		protocol_mode_cb = callbacks->protocol_mode_changed;
+	}
+
+	hids_unlock();
+
+	if (protocol_mode_cb != NULL) {
+		protocol_mode_cb(conn, mode);
+	}
+
+	return len;
+}
+#endif /* CONFIG_BT_HIDS_PROTOCOL_MODE */
 
 static ssize_t read_report_map(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
 			       uint16_t len, uint16_t offset)
@@ -179,6 +337,7 @@ static ssize_t write_ctrl_point(struct bt_conn *conn, const struct bt_gatt_attr 
 {
 	void (*ctrl_point_cb)(struct bt_conn *conn, enum bt_hids_ctrl_point cmd) = NULL;
 	const uint8_t *val = buf;
+	struct hids_conn *dc;
 
 	ARG_UNUSED(attr);
 	ARG_UNUSED(flags);
@@ -213,9 +372,17 @@ static ssize_t write_ctrl_point(struct bt_conn *conn, const struct bt_gatt_attr 
 		return HIDS_ERR_UNREGISTERED;
 	}
 
+	dc = conn_claim(conn);
+	if (dc == NULL) {
+		hids_unlock();
+		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+	}
+
+	dc->suspended = (*val == BT_HIDS_CTRL_SUSPEND);
 	if (callbacks != NULL) {
 		ctrl_point_cb = callbacks->ctrl_point;
 	}
+
 	hids_unlock();
 
 	if (ctrl_point_cb != NULL) {
@@ -327,6 +494,15 @@ static ssize_t write_report(struct bt_conn *conn, const struct bt_gatt_attr *att
  * assigned at registration time.
  */
 
+#if defined(CONFIG_BT_HIDS_PROTOCOL_MODE)
+#define HIDS_PROTOCOL_MODE_ATTRS                                                                   \
+	BT_GATT_CHARACTERISTIC(BT_UUID_HIDS_PROTOCOL_MODE,                                         \
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE_WITHOUT_RESP, HIDS_PERM_RW,  \
+			       read_protocol_mode, write_protocol_mode, NULL),
+#else
+#define HIDS_PROTOCOL_MODE_ATTRS
+#endif
+
 #define HIDS_INPUT_REPORT_ATTRS(_n, _)                                                             \
 	BT_GATT_CHARACTERISTIC(BT_UUID_HIDS_REPORT, BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,       \
 			       HIDS_PERM_READ, read_report, NULL,                                  \
@@ -354,6 +530,7 @@ static ssize_t write_report(struct bt_conn *conn, const struct bt_gatt_attr *att
 #define BT_HIDS_SERVICE_DEFINITION() \
 { \
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_HIDS), \
+	HIDS_PROTOCOL_MODE_ATTRS \
 	BT_GATT_CHARACTERISTIC(BT_UUID_HIDS_REPORT_MAP, BT_GATT_CHRC_READ, \
 			       HIDS_PERM_READ, read_report_map, NULL, NULL), \
 	LISTIFY(CONFIG_BT_HIDS_INPUT_REPORT_COUNT, HIDS_INPUT_REPORT_ATTRS, ()) \
@@ -369,6 +546,67 @@ static ssize_t write_report(struct bt_conn *conn, const struct bt_gatt_attr *att
 /* clang-format on */
 static struct bt_gatt_attr hids_attrs[] = BT_HIDS_SERVICE_DEFINITION();
 static struct bt_gatt_service hids_gatt_svc = BT_GATT_SERVICE(hids_attrs);
+
+/* Connection management */
+
+/* A Host is tracked from the moment its link has the security level the
+ * characteristics require, so a Host that never reaches it does not hold a
+ * slot another Host could use. HIDS is LE only (HIDS v1.1 section 1.5) and LE
+ * and BR/EDR share the connection pool, so a BR/EDR link must not claim one.
+ */
+static void conn_claim_if_secure(struct bt_conn *conn, bt_security_t level)
+{
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE) || level < HIDS_SEC_LEVEL) {
+		return;
+	}
+
+	hids_lock();
+	(void)conn_claim(conn);
+	hids_unlock();
+}
+
+static void hids_connected(struct bt_conn *conn, uint8_t err)
+{
+	if (err != 0U) {
+		return;
+	}
+
+	conn_claim_if_secure(conn, bt_conn_get_security(conn));
+}
+
+#if defined(CONFIG_BT_SMP)
+static void hids_security_changed(struct bt_conn *conn, bt_security_t level,
+				  enum bt_security_err err)
+{
+	if (err != BT_SECURITY_ERR_SUCCESS) {
+		return;
+	}
+
+	conn_claim_if_secure(conn, level);
+}
+#endif /* CONFIG_BT_SMP */
+
+static void hids_disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	struct hids_conn *dc;
+
+	ARG_UNUSED(reason);
+
+	hids_lock();
+	dc = conn_find(conn);
+	if (dc != NULL) {
+		dc->conn = NULL;
+	}
+	hids_unlock();
+}
+
+BT_CONN_CB_DEFINE(hids_conn_cb) = {
+	.connected = hids_connected,
+	.disconnected = hids_disconnected,
+#if defined(CONFIG_BT_SMP)
+	.security_changed = hids_security_changed,
+#endif
+};
 
 /* Registration */
 
@@ -579,7 +817,13 @@ int bt_hids_unregister(void)
 		return err;
 	}
 
-	/* The values go with the service */
+	/* The values and the per-Host HID state go with the service. Hosts
+	 * stay connected and are notified through the Service Changed
+	 * characteristic, like for any other GATT service that is unregistered
+	 * at runtime. Clearing the flag and the pool in one step keeps a Host
+	 * that connects meanwhile from claiming a slot that would outlive the
+	 * registration.
+	 */
 	hids_reset();
 
 	hids_unlock();
@@ -680,4 +924,74 @@ int bt_hids_send_report(struct bt_conn *conn, uint8_t report_id, const uint8_t *
 	};
 
 	return bt_gatt_notify_cb(conn, &params);
+}
+
+static int conn_state_get(struct bt_conn *conn, const struct hids_conn **dc)
+{
+	struct bt_conn_info info;
+
+	HIDS_LOCK_ASSERT();
+
+	if (!hids.registered) {
+		return -ESRCH;
+	}
+
+	if (bt_conn_get_info(conn, &info) < 0 || info.state != BT_CONN_STATE_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	/* Look the slot up without claiming one: only the Bluetooth thread
+	 * claims slots.
+	 */
+	*dc = conn_find(conn);
+
+	return (*dc != NULL) ? 0 : -ENOTCONN;
+}
+
+int bt_hids_protocol_mode_get(struct bt_conn *conn, enum bt_hids_protocol_mode *mode)
+{
+	const struct hids_conn *dc;
+	int err;
+
+	if (conn == NULL || mode == NULL) {
+		return -EINVAL;
+	}
+
+	hids_lock();
+
+	err = conn_state_get(conn, &dc);
+	if (err != 0) {
+		hids_unlock();
+		return err;
+	}
+
+	*mode = dc->protocol_mode;
+
+	hids_unlock();
+
+	return 0;
+}
+
+int bt_hids_suspend_state_get(struct bt_conn *conn, bool *suspended)
+{
+	const struct hids_conn *dc;
+	int err;
+
+	if (conn == NULL || suspended == NULL) {
+		return -EINVAL;
+	}
+
+	hids_lock();
+
+	err = conn_state_get(conn, &dc);
+	if (err != 0) {
+		hids_unlock();
+		return err;
+	}
+
+	*suspended = dc->suspended;
+
+	hids_unlock();
+
+	return 0;
 }
