@@ -72,6 +72,12 @@ struct k_kernel_init_post_entry {
 		.init_fn = (_fn),                                              \
 	}
 
+/* Reset a mutex; with refuse_if_owned a mutex that has an owner is left
+ * untouched and -EBUSY is returned. Backs k_mutex_init() and its user mode
+ * verifier.
+ */
+int z_mutex_init(struct k_mutex *mutex, bool refuse_if_owned);
+
 extern FUNC_NORETURN void z_thread_entry(k_thread_entry_t entry,
 			  void *p1, void *p2, void *p3);
 
