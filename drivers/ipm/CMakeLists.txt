@@ -17,5 +17,6 @@ zephyr_library_sources_ifdef(CONFIG_IPM_NRFX ipm_nrfx_ipc.c)
 zephyr_library_sources_ifdef(CONFIG_IPM_SEDI ipm_sedi.c)
 zephyr_library_sources_ifdef(CONFIG_IPM_STM32_HSEM ipm_stm32_hsem.c)
 zephyr_library_sources_ifdef(CONFIG_IPM_STM32_IPCC ipm_stm32_ipcc.c)
+zephyr_library_sources_ifdef(CONFIG_IPM_TI_K3_RPROC ipm_ti_k3_rproc.c)
 zephyr_library_sources_ifdef(CONFIG_XLNX_IPI ipm_xlnx_ipi.c)
 # zephyr-keep-sorted-stop
