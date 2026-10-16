@@ -864,3 +864,125 @@ ZTEST_F(cobs_tests, test_cobs_encode_insufficient_space)
 	zassert_equal(fixture->test_data->len, 0, "Encode input not consumed");
 	zassert_equal(net_buf_tailroom(fixture->encoded), 0);
 }
+
+ZTEST_P(cobs_tests, test_stream_chunked)
+{
+	struct cobs_tests_fixture *fixture = data;
+	const struct cobs_test_item *test = ZTEST_GET_PARAM_PTR(struct cobs_test_item);
+	struct cobs_encoder enc;
+	struct cobs_decoder dec;
+	size_t chunk;
+	int ret;
+
+	ret = cobs_encoder_init(&enc, cobs_net_buf_cb, fixture->encoded, test->flags);
+	zassert_ok(ret, "encoder init failed for %s (%d)", test->name, ret);
+
+	/* Write chunks of 3 bytes to cross group boundaries at varying offsets */
+	for (size_t i = 0; i < test->decoded_len; i += chunk) {
+		chunk = MIN(3, test->decoded_len - i);
+		ret = cobs_encoder_write(&enc, &test->decoded[i], chunk);
+		zassert_equal(ret, chunk, "encoder write failed (%d) for %s", ret, test->name);
+	}
+
+	ret = cobs_encoder_close(&enc);
+	zassert_ok(ret, "encoder close failed for %s (%d)", test->name, ret);
+
+	zassert_equal(test->encoded_len, fixture->encoded->len);
+	zassert_mem_equal(test->encoded, fixture->encoded->data, test->encoded_len);
+
+	ret = cobs_decoder_init(&dec, cobs_net_buf_cb, fixture->decoded, test->flags);
+	zassert_ok(ret, "decoder init failed for %s (%d)", test->name, ret);
+
+	for (size_t i = 0; i < test->encoded_len; i += chunk) {
+		chunk = MIN(7, test->encoded_len - i);
+		ret = cobs_decoder_write(&dec, &test->encoded[i], chunk);
+		zassert_equal(ret, chunk, "decoder write failed (%d) for %s", ret, test->name);
+	}
+
+	ret = cobs_decoder_close(&dec);
+	zassert_ok(ret, "decoder close failed for %s (%d)", test->name, ret);
+
+	zassert_equal(test->decoded_len, fixture->decoded->len);
+	zassert_mem_equal(test->decoded, fixture->decoded->data, test->decoded_len);
+}
+ZTEST_INSTANTIATE_TEST_SUITE_P(dataset, cobs_tests, test_stream_chunked, cobs_vals);
+
+ZTEST(cobs_tests, test_max_encoded_len)
+{
+	ARRAY_FOR_EACH(cobs_dataset, idx) {
+		const struct cobs_test_item *item = &cobs_dataset[idx];
+
+		zassert_true(item->encoded_len <= cobs_max_encoded_len(item->decoded_len, 0),
+			     "Maximum length too small for %s", item->name);
+		zassert_equal(cobs_max_encoded_len(item->decoded_len, COBS_FLAG_TRAILING_DELIMITER),
+			      cobs_max_encoded_len(item->decoded_len, 0) + 1);
+	}
+
+	zassert_equal(cobs_max_encoded_len(0, 0), 1);
+	zassert_equal(cobs_max_encoded_len(253, 0), 254);
+	zassert_equal(cobs_max_encoded_len(254, 0), 256);
+}
+
+ZTEST(cobs_tests, test_stream_init_invalid)
+{
+	struct cobs_encoder enc;
+	struct cobs_decoder dec;
+
+	zassert_equal(cobs_encoder_init(&enc, NULL, NULL, 0), -EINVAL);
+	zassert_equal(cobs_decoder_init(&dec, NULL, NULL, 0), -EINVAL);
+}
+
+static int cobs_fail_cb(const uint8_t *buf, size_t len, void *user_data)
+{
+	int *calls = user_data;
+
+	(*calls)++;
+
+	return -EIO;
+}
+
+ZTEST(cobs_tests, test_stream_callback_error)
+{
+	const uint8_t data[] = {'A', 0x00, 'B'};
+	const uint8_t data_enc[] = {0x02, 'A', 0x02, 'B'};
+	struct cobs_encoder enc;
+	struct cobs_decoder dec;
+	int calls = 0;
+	int ret;
+
+	ret = cobs_encoder_init(&enc, cobs_fail_cb, &calls, COBS_FLAG_TRAILING_DELIMITER);
+	zassert_ok(ret, "encoder init failed (%d)", ret);
+
+	/* The group ended by the zero byte is passed to the callback */
+	zassert_equal(cobs_encoder_write(&enc, data, sizeof(data)), -EIO);
+	zassert_equal(calls, 1);
+
+	/* The pending group is passed to the callback on close */
+	zassert_equal(cobs_encoder_close(&enc), -EIO);
+	zassert_equal(calls, 2);
+
+	ret = cobs_decoder_init(&dec, cobs_fail_cb, &calls, 0);
+	zassert_ok(ret, "decoder init failed (%d)", ret);
+
+	/* The first data byte is passed to the callback */
+	zassert_equal(cobs_decoder_write(&dec, data_enc, sizeof(data_enc)), -EIO);
+	zassert_equal(calls, 3);
+
+	/* The decoder was reset, so closing reports a missing frame */
+	zassert_equal(cobs_decoder_close(&dec), -EINVAL);
+}
+
+ZTEST_F(cobs_tests, test_decode_stream_invalid_delim_pos)
+{
+	const uint8_t delimiter = 0x7f;
+	const uint8_t data_enc[] = {0x03 ^ delimiter, 'A' ^ delimiter, delimiter};
+	uint32_t flags = COBS_FLAG_TRAILING_DELIMITER | COBS_FLAG_CUSTOM_DELIMITER(delimiter);
+	struct cobs_decoder dec;
+	int ret;
+
+	ret = cobs_decoder_init(&dec, cobs_net_buf_cb, fixture->decoded, flags);
+	zassert_ok(ret, "decoder init failed (%d)", ret);
+
+	ret = cobs_decoder_write(&dec, data_enc, sizeof(data_enc));
+	zassert_equal(ret, -EINVAL, "Decoding delimiter inside a group not caught");
+}
