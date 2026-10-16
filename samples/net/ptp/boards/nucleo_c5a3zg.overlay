@@ -1,0 +1,15 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* SPI1 chip select shares PB5. */
+&spi1 {
+	status = "disabled";
+};
+
+&ptp_clock {
+	pinctrl-0 = <&eth1_pps_out_pb5>;
+	pinctrl-names = "default";
+};

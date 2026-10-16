@@ -1,0 +1,15 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* CAN2 RX shares PB5. */
+&can2 {
+	status = "disabled";
+};
+
+&ptp_clock {
+	pinctrl-0 = <&eth_pps_out_pb5>;
+	pinctrl-names = "default";
+};
