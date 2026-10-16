@@ -257,7 +257,7 @@ static void pmw3610_motion_handler(const struct device *gpio_dev,
 	struct pmw3610_data *data = CONTAINER_OF(
 			cb, struct pmw3610_data, motion_cb);
 
-	k_work_submit(&data->motion_work);
+	input_work_submit(&data->motion_work);
 }
 
 int pmw3610_set_resolution(const struct device *dev, uint16_t res_cpi)
