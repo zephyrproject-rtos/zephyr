@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+shield:
+  name: adafruit_max98357a
+  full_name: Adafruit MAX98357A I2S Class-D Mono Amplifier
+  vendor: adafruit
+  supported_features:
+    - audio
