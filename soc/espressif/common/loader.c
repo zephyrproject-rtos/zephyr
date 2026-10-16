@@ -223,7 +223,9 @@ void map_rom_segments(int core, struct rom_segments *map)
 		map->drom_flash_offset, map->drom_map_addr, map->drom_size, map->drom_size);
 #endif /* !CONFIG_BOOTLOADER_MCUBOOT */
 
+#if CONFIG_ESP_CONSOLE_UART_NUM >= 0
 	esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+#endif
 
 #if CONFIG_SOC_SERIES_ESP32
 	Cache_Read_Disable(core);
