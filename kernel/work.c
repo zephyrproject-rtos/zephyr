@@ -15,6 +15,7 @@
 #include <zephyr/spinlock.h>
 #include <errno.h>
 #include <ksched.h>
+#include <kthread.h>
 #include <scheduler.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/logging/log.h>
@@ -599,6 +600,17 @@ bool k_work_cancel_sync(struct k_work *work,
 }
 
 #if defined(CONFIG_WORKQUEUE_WORK_TIMEOUT)
+#if defined(CONFIG_ARCH_STACKWALK)
+static bool work_timeout_trace_cb(void *cookie, unsigned long addr)
+{
+	ARG_UNUSED(cookie);
+
+	LOG_ERR("  ra: %p", (void *)addr);
+
+	return true;
+}
+#endif /* CONFIG_ARCH_STACKWALK */
+
 static void work_timeout_handler(struct _timeout *record)
 {
 	struct k_work_q *queue = CONTAINER_OF(record, struct k_work_q, work_timeout_record);
@@ -606,6 +618,7 @@ static void work_timeout_handler(struct _timeout *record)
 	k_work_handler_t handler = NULL;
 	const char *name;
 	const char *space = " ";
+	bool essential;
 	k_spinlock_key_t key = k_spin_lock(&work_lock);
 
 	work = queue->work;
@@ -639,7 +652,32 @@ static void work_timeout_handler(struct _timeout *record)
 	LOG_ERR("queue %p%s%s blocked by work %p with handler %p",
 		queue, space, name, work, handler);
 
+#if defined(CONFIG_ARCH_STACKWALK)
+	/*
+	 * Walk the queue thread's own saved context here to report it
+	 * correctly. Only valid if queue->thread_id isn't the thread that
+	 * got interrupted: if it is (it was still running when the timeout
+	 * fired), this reports the interrupted context's position instead.
+	 */
+	LOG_ERR("queue %p thread %p backtrace:", queue, queue->thread_id);
+	arch_stack_walk(work_timeout_trace_cb, NULL, queue->thread_id, NULL);
+#endif /* CONFIG_ARCH_STACKWALK */
+
+	/*
+	 * k_thread_abort() on an essential thread panics with
+	 * K_ERR_KERNEL_PANIC before returning control here, so the
+	 * essential flag is cleared first and the queue thread is
+	 * aborted the same way a non-essential one would be; the
+	 * fatal error with the specific reason is then raised
+	 * separately, if it applies.
+	 */
+	essential = z_is_thread_essential(queue->thread_id);
+	z_thread_essential_clear(queue->thread_id);
 	k_thread_abort(queue->thread_id);
+
+	if (essential) {
+		z_except_reason(K_ERR_WORK_TIMEOUT);
+	}
 }
 
 static void work_timeout_start_locked(struct k_work_q *queue, struct k_work *work)
