@@ -942,6 +942,21 @@ static int modem_cellular_on_idle_state_enter(struct modem_cellular_data *data)
 	return 0;
 }
 
+/* The set baudrate script only earns its startup cost while the modem and the UART can
+ * disagree about the settings. A modem that keeps them is configured once; running the
+ * script again would spend a script timeout on every startup to no effect.
+ */
+static bool modem_cellular_needs_set_baudrate(const struct modem_cellular_data *data)
+{
+	const struct modem_cellular_config *config = data->dev->config;
+
+	if (config->vendor->scripts.set_baudrate == NULL) {
+		return false;
+	}
+
+	return !(config->vendor->uart_settings_permanent && data->uart_settings_applied);
+}
+
 static void modem_cellular_idle_event_handler(struct modem_cellular_data *data,
 					      enum modem_cellular_event evt)
 {
@@ -976,7 +991,7 @@ static void modem_cellular_idle_event_handler(struct modem_cellular_data *data,
 			data->power_on_skipped = true;
 		}
 
-		if (config->vendor->scripts.set_baudrate != NULL) {
+		if (modem_cellular_needs_set_baudrate(data)) {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_SET_BAUDRATE);
 		} else {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_INIT_SCRIPT);
@@ -1032,6 +1047,21 @@ static uint32_t modem_cellular_baudrate_update(struct modem_cellular_data *data,
 	return original_baudrate;
 }
 
+/* Meet the modem at the settings it comes back with. A modem that forgets them over a reset
+ * or power cycle returns to the original settings, so the UART has to follow. A modem that
+ * keeps them stays where it is, so changing the UART back would lose contact instead.
+ */
+static void modem_cellular_baudrate_restore(struct modem_cellular_data *data)
+{
+	const struct modem_cellular_config *config = data->dev->config;
+
+	if (config->vendor->uart_settings_permanent || data->original_baudrate == 0) {
+		return;
+	}
+
+	modem_cellular_baudrate_update(data, data->original_baudrate);
+}
+
 static int modem_cellular_on_reset_pulse_state_enter(struct modem_cellular_data *data)
 {
 	const struct modem_cellular_config *config = data->dev->config;
@@ -1040,10 +1070,7 @@ static int modem_cellular_on_reset_pulse_state_enter(struct modem_cellular_data 
 		gpio_pin_set_dt(&config->wake_gpio, 0);
 	}
 
-	/* Revert to original baudrate if we have changed it */
-	if (data->original_baudrate) {
-		modem_cellular_baudrate_update(data, data->original_baudrate);
-	}
+	modem_cellular_baudrate_restore(data);
 
 	gpio_pin_set_dt(&config->reset_gpio, 1);
 	modem_cellular_start_timer(data, K_MSEC(config->vendor->reset_pulse_duration_ms));
@@ -1125,10 +1152,7 @@ static int modem_cellular_on_power_on_pulse_state_enter(struct modem_cellular_da
 {
 	const struct modem_cellular_config *config = data->dev->config;
 
-	/* Revert to original baudrate if we have changed it */
-	if (data->original_baudrate) {
-		modem_cellular_baudrate_update(data, data->original_baudrate);
-	}
+	modem_cellular_baudrate_restore(data);
 
 	gpio_pin_set_dt(&config->power_gpio, 1);
 	modem_cellular_start_timer(data, K_MSEC(config->vendor->power_pulse_duration_ms));
@@ -1173,8 +1197,6 @@ static int modem_cellular_on_await_power_on_state_enter(struct modem_cellular_da
 static void modem_cellular_await_power_on_event_handler(struct modem_cellular_data *data,
 							enum modem_cellular_event evt)
 {
-	const struct modem_cellular_config *config = data->dev->config;
-
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_BUS_OPENED:
 		modem_chat_attach(&data->chat, data->uart_pipe);
@@ -1184,7 +1206,7 @@ static void modem_cellular_await_power_on_event_handler(struct modem_cellular_da
 		modem_cellular_stop_timer(data);
 		__fallthrough;
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
-		if (config->vendor->scripts.set_baudrate != NULL) {
+		if (modem_cellular_needs_set_baudrate(data)) {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_SET_BAUDRATE);
 		} else {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_INIT_SCRIPT);
@@ -1236,6 +1258,10 @@ static void modem_cellular_set_baudrate_event_handler(struct modem_cellular_data
 		/* Update UART port baudrate and preserve the original value */
 		data->original_baudrate = modem_cellular_baudrate_update(
 			data, CONFIG_MODEM_CELLULAR_NEW_BAUDRATE);
+		/* A failed reconfiguration leaves the UART on the old settings, so the script
+		 * has to run again on the next startup.
+		 */
+		data->uart_settings_applied = (data->original_baudrate != 0);
 		break;
 
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
@@ -1330,6 +1356,15 @@ static void modem_cellular_enter_recovery_state(struct modem_cellular_data *data
 		data->recovery_count++;
 	}
 
+	/* The modem stopped answering, so it may have lost settings it was supposed to keep,
+	 * for example over a factory reset or a firmware update. Run the set baudrate script
+	 * again; a modem that kept them answers it at the rate already in use.
+	 */
+	data->uart_settings_applied = false;
+	if (data->original_baudrate) {
+		modem_cellular_baudrate_update(data, data->original_baudrate);
+	}
+
 	modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RECOVERY);
 }
 
@@ -1380,8 +1415,11 @@ static void modem_cellular_run_init_script_event_handler(struct modem_cellular_d
 		if (data->power_on_skipped) {
 			/* Skipped the power-on pulse assuming the modem was already up, but
 			 * it did not respond. Power it on now rather than entering recovery.
+			 * The set baudrate script ran against that same assumption, so it
+			 * proved nothing either and has to run again afterwards.
 			 */
 			data->power_on_skipped = false;
+			data->uart_settings_applied = false;
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_POWER_ON_PULSE);
 			break;
 		}
