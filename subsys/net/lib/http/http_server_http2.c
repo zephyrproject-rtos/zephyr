@@ -1220,7 +1220,10 @@ static int parse_http_frame_padded_field(struct http_client_ctx *client)
 	client->data_len--;
 	frame->length--;
 
-	if (frame->length <= frame->padding_len) {
+	/* The padding may take the whole payload, but not more (RFC 9113,
+	 * Section 6.1).
+	 */
+	if (frame->length < frame->padding_len) {
 		return -EBADMSG;
 	}
 
