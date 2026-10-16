@@ -74,6 +74,13 @@ New APIs and options
     * :c:func:`bt_hids_report_get`
     * :c:func:`bt_hids_send_report`
 
+* Networking
+
+  * Ethernet bridge
+
+    * :c:group:`eth_bridge_stp`
+    * :kconfig:option:`CONFIG_NET_ETHERNET_BRIDGE_STP`
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
@@ -128,6 +135,10 @@ Libraries / Subsystems
       :kconfig:option:`CONFIG_NET_ETHERNET_BRIDGE_FDB_AGEING_TIME` seconds without a frame from
       their address, and :c:struct:`eth_bridge_fdb_entry` records when that frame was last seen
       (FDB API version 0.2.0).
+    * Experimental support for the Rapid Spanning Tree Protocol of IEEE Std 802.1Q-2014
+      (:kconfig:option:`CONFIG_NET_ETHERNET_BRIDGE_STP`). Once started on a bridge with
+      :c:func:`eth_bridge_stp_enable`, it blocks the bridge ports that would make a loop and
+      falls back to STP BPDUs on a port where an STP bridge is attached.
 
 Other notable changes
 *********************

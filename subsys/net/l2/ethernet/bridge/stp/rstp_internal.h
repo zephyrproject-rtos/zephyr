@@ -319,6 +319,15 @@ void eth_rstp_port_init(struct eth_rstp_port *port, struct eth_rstp_bridge *br,
 void eth_rstp_start(struct eth_rstp_bridge *br);
 
 /**
+ * @brief Stop running the state machines of a bridge
+ *
+ * The setters only store values until eth_rstp_start() is called again.
+ *
+ * @param br Bridge
+ */
+void eth_rstp_stop(struct eth_rstp_bridge *br);
+
+/**
  * @brief Put the state machines of one port to their initial states
  *
  * Used for a port added to a running bridge.
@@ -406,6 +415,14 @@ void eth_rstp_port_mcheck(struct eth_rstp_port *port);
  * @retval -EINVAL The priority is not a valid value.
  */
 int eth_rstp_set_bridge_priority(struct eth_rstp_bridge *br, uint16_t priority);
+
+/**
+ * @brief Set the Bridge Address, the MAC address part of the Bridge Identifier
+ *
+ * @param br Bridge
+ * @param mac Bridge Address
+ */
+void eth_rstp_set_bridge_address(struct eth_rstp_bridge *br, const uint8_t mac[6]);
 
 /**
  * @brief Set the Bridge Max Age and Bridge Forward Delay (13.25)

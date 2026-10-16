@@ -106,6 +106,8 @@ int eth_bridge_iface_add(struct net_if *br, struct net_if *iface)
 	const struct device *dev = net_if_get_device(br);
 	struct eth_bridge_iface_context *ctx;
 	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
+	enum eth_bridge_port_state state = ETH_BRIDGE_PORT_STATE_FORWARDING;
+	size_t added = SIZE_MAX;
 	bool found = false;
 	int count = 0;
 	int ret;
@@ -139,12 +141,20 @@ int eth_bridge_iface_add(struct net_if *br, struct net_if *iface)
 		found = true;
 	}
 
+	/* With the spanning tree running, a new port forwards only once the
+	 * protocol has given it a role.
+	 */
+	if (IS_ENABLED(CONFIG_NET_ETHERNET_BRIDGE_STP) && eth_bridge_stp_is_running(ctx)) {
+		state = ETH_BRIDGE_PORT_STATE_DISCARDING;
+	}
+
 	ARRAY_FOR_EACH(ctx->ports, i) {
 		if (!found && ctx->ports[i].iface == NULL) {
 			ctx->ports[i].iface = iface;
-			(void)atomic_set(&ctx->ports[i].state, ETH_BRIDGE_PORT_STATE_FORWARDING);
+			(void)atomic_set(&ctx->ports[i].state, state);
 			eth_ctx->bridge = br;
 			eth_ctx->bridge_port = (uint8_t)i;
+			added = i;
 			found = true;
 		}
 
@@ -158,6 +168,10 @@ int eth_bridge_iface_add(struct net_if *br, struct net_if *iface)
 				count++;
 			}
 		}
+	}
+
+	if (IS_ENABLED(CONFIG_NET_ETHERNET_BRIDGE_STP) && added != SIZE_MAX) {
+		eth_bridge_stp_port_added(ctx, added);
 	}
 
 	unlock_bridge(ctx);
@@ -239,6 +253,10 @@ int eth_bridge_iface_remove(struct net_if *br, struct net_if *iface)
 
 	ARRAY_FOR_EACH(ctx->ports, i) {
 		if (!found && ctx->ports[i].iface == iface) {
+			if (IS_ENABLED(CONFIG_NET_ETHERNET_BRIDGE_STP)) {
+				eth_bridge_stp_port_removed(ctx, i);
+			}
+
 			ctx->ports[i].iface = NULL;
 			(void)atomic_set(&ctx->ports[i].state, ETH_BRIDGE_PORT_STATE_DISCARDING);
 			eth_ctx->bridge = NULL;
@@ -474,6 +492,10 @@ static void bridge_iface_init(struct net_if *iface)
 			     vctx->lladdr.len, vctx->lladdr.type);
 
 	ctx->is_setup = false;
+
+	if (IS_ENABLED(CONFIG_NET_ETHERNET_BRIDGE_STP)) {
+		eth_bridge_stp_init(ctx);
+	}
 }
 
 static enum virtual_interface_caps bridge_get_capabilities(struct net_if *iface)

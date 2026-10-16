@@ -137,6 +137,14 @@ enum net_verdict eth_bridge_input_process(struct net_if *iface, struct net_pkt *
 
 	bridge_addr = (struct net_eth_addr *)bridge_lladdr->addr;
 
+	/* BPDUs are for the spanning tree protocol of the bridge, on every
+	 * port whatever its state, and are neither learned from nor forwarded.
+	 */
+	if (IS_ENABLED(CONFIG_NET_ETHERNET_BRIDGE_STP) &&
+	    eth_bridge_stp_input(bridge, iface, pkt)) {
+		return NET_DROP;
+	}
+
 	/* A frame to a reserved address is for a protocol of the port it was
 	 * received on, such as gPTP, LLDP or 802.1X, and is never forwarded,
 	 * whatever the FDB has for the address.
