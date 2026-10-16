@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_WAVESHARE_3_5_RPI_LCD_F
+
+if DISPLAY
+
+if LVGL
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_16
+endchoice
+
+config LV_Z_VDB_SIZE
+	default 16
+
+config INPUT
+	default y
+
+config LV_Z_POINTER_INPUT
+	default y
+
+endif # LVGL
+
+endif # DISPLAY
+
+endif # SHIELD_WAVESHARE_3_5_RPI_LCD_F

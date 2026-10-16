@@ -1,0 +1,7 @@
+shield:
+  name: waveshare_3_5_rpi_lcd_f
+  full_name: Waveshare 3.5" RPi LCD (F)
+  vendor: waveshare
+  supported_features:
+    - input
+    - display
