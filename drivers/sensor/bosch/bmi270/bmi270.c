@@ -786,6 +786,8 @@ static int bmi270_init(const struct device *dev)
 		return ret;
 	}
 
+	k_usleep(BMI270_INTER_WRITE_DELAY_US);
+
 	adv_pwr_save = BMI270_SET_BITS_POS_0(adv_pwr_save,
 					     BMI270_PWR_CONF_ADV_PWR_SAVE,
 					     BMI270_PWR_CONF_ADV_PWR_SAVE_DIS);
