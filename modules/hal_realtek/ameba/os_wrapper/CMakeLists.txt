@@ -10,4 +10,5 @@ zephyr_library_sources(
   os_wrapper_time.c
   os_wrapper_critical.c
   os_wrapper_timer.c
+  ameba_timer_core.c
 )
