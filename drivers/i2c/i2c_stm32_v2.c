@@ -458,6 +458,7 @@ static void i2c_stm32_target_event(const struct device *dev)
 
 static bool i2c_stm32_target_preempt_controller_event(const struct device *dev, uint32_t isr)
 {
+	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
 	struct i2c_target_config *target_cfg;
 
@@ -471,7 +472,14 @@ static bool i2c_stm32_target_preempt_controller_event(const struct device *dev, 
 			return true;
 		}
 
-		data->current.is_arlo = 1U;
+		/* A completed controller transfer and the next target ADDR can coexist. */
+		data->current.is_arlo |= ((isr & I2C_ISR_STOPF) == 0U) ||
+					((isr & I2C_ISR_ARLO) != 0U);
+		data->current.is_nack |= (isr & I2C_ISR_NACKF) != 0U;
+		if ((isr & I2C_ISR_STOPF) != 0U) {
+			LL_I2C_ClearFlag_STOP(cfg->i2c);
+			LL_I2C_ClearFlag_NACK(cfg->i2c);
+		}
 		i2c_stm32_controller_abort_to_target(dev, true);
 		i2c_stm32_target_addr_setup(dev, target_cfg, false);
 		return true;
@@ -661,6 +669,9 @@ void i2c_stm32_event(const struct device *dev)
 		LL_I2C_ClearFlag_STOP(regs);
 		/* Flush I2C controller TX buffer */
 		LL_I2C_ClearFlag_TXE(regs);
+#if defined(CONFIG_I2C_TARGET)
+		data->controller_active = false;
+#endif
 		goto irq_xfer_completed;
 
 	} else if ((isr & I2C_ISR_RXNE) != 0U) {
@@ -747,6 +758,10 @@ void i2c_stm32_event(const struct device *dev)
 irq_xfer_completed:
 	/* Disable IRQ:s involved in data transfer */
 	i2c_stm32_disable_transfer_interrupts(dev);
+#ifdef CONFIG_I2C_STM32_V2_DMA
+	LL_I2C_DisableDMAReq_RX(regs);
+	LL_I2C_DisableDMAReq_TX(regs);
+#endif
 	/* Wakeup thread */
 	i2c_stm32_signal_xfer_done(dev);
 }
@@ -816,6 +831,11 @@ end:
 	}
 #endif
 	i2c_stm32_disable_transfer_interrupts(dev);
+	/* An address match can arrive before the waiting thread stops DMA. */
+#ifdef CONFIG_I2C_STM32_V2_DMA
+	LL_I2C_DisableDMAReq_RX(i2c);
+	LL_I2C_DisableDMAReq_TX(i2c);
+#endif
 	/* Wakeup thread */
 	i2c_stm32_signal_xfer_done(dev);
 	return -EIO;
