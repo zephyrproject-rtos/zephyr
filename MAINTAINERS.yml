@@ -7758,6 +7758,15 @@ West:
   labels:
     - "area: ReqMgmt"
 
+"West project: rpmsg-lite":
+  status: maintained
+  maintainers:
+    - TomasGalbickaNXP
+  files:
+    - modules/Kconfig.rpmsg-lite
+  labels:
+    - "area: IPC"
+
 "West project: segger":
   status: odd fixes
   collaborators:
