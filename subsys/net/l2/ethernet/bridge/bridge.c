@@ -28,6 +28,7 @@ LOG_MODULE_REGISTER(net_eth_bridge, CONFIG_NET_ETHERNET_BRIDGE_LOG_LEVEL);
 
 #include "net_private.h"
 #include "arp.h"
+#include "bridge_internal.h"
 
 #if defined(CONFIG_NET_ETHERNET_BRIDGE_TXRX_DEBUG)
 #define DEBUG_TX 1
@@ -273,6 +274,57 @@ int eth_bridge_iface_remove(struct net_if *br, struct net_if *iface)
 	ctx->count = count;
 
 	return 0;
+}
+
+enum eth_bridge_port_state eth_bridge_port_get_state(struct net_if *iface)
+{
+	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
+	struct eth_bridge_iface_context *ctx;
+	const struct device *dev;
+
+	if (eth_ctx == NULL || eth_ctx->bridge == NULL) {
+		return ETH_BRIDGE_PORT_STATE_DISCARDING;
+	}
+
+	dev = net_if_get_device(eth_ctx->bridge);
+
+	NET_ASSERT(dev != NULL);
+
+	ctx = dev->data;
+
+	return (enum eth_bridge_port_state)atomic_get(&ctx->ports[eth_ctx->bridge_port].state);
+}
+
+int eth_bridge_port_set_state(struct net_if *br, struct net_if *iface,
+			      enum eth_bridge_port_state state)
+{
+	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
+	struct eth_bridge_iface_context *ctx;
+	const struct device *dev;
+	int ret = -ENOENT;
+
+	if (state != ETH_BRIDGE_PORT_STATE_DISCARDING && state != ETH_BRIDGE_PORT_STATE_LEARNING &&
+	    state != ETH_BRIDGE_PORT_STATE_FORWARDING) {
+		return -EINVAL;
+	}
+
+	dev = net_if_get_device(br);
+
+	NET_ASSERT(dev != NULL);
+
+	ctx = dev->data;
+
+	lock_bridge(ctx);
+
+	if (eth_ctx != NULL && eth_ctx->bridge == br &&
+	    ctx->ports[eth_ctx->bridge_port].iface == iface) {
+		(void)atomic_set(&ctx->ports[eth_ctx->bridge_port].state, state);
+		ret = 0;
+	}
+
+	unlock_bridge(ctx);
+
+	return ret;
 }
 
 static void set_laa_unicast(uint8_t *linkaddr)
@@ -585,15 +637,16 @@ static enum net_verdict bridge_iface_send_process(struct net_if *iface,
 
 	orig_iface = net_pkt_orig_iface(pkt);
 
-	/* Pick the ports to forward to once, so that a port going down
-	 * meanwhile cannot make the count below wrong.
+	/* Pick the ports to forward to once, so that a port going down or
+	 * changing its state meanwhile cannot make the count below wrong.
 	 */
 	ARRAY_FOR_EACH(ctx->ports, i) {
 		struct net_if *port_iface = ctx->ports[i].iface;
 
 		if (port_iface != NULL && port_iface != orig_iface) {
-			/* Skip it if not up */
-			if (!net_if_flag_is_set(port_iface, NET_IF_UP)) {
+			/* Skip it if not up or not forwarding */
+			if (!net_if_flag_is_set(port_iface, NET_IF_UP) ||
+			    atomic_get(&ctx->ports[i].state) != ETH_BRIDGE_PORT_STATE_FORWARDING) {
 				continue;
 			}
 
