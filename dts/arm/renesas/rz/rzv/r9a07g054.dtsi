@@ -57,7 +57,6 @@
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
 			prescaler = <1>;
-			status = "disabled";
 
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
@@ -75,7 +74,6 @@
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
 			prescaler = <1>;
-			status = "disabled";
 
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
@@ -93,7 +91,6 @@
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
 			prescaler = <1>;
-			status = "disabled";
 
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
@@ -111,7 +108,6 @@
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
 			prescaler = <1>;
-			status = "disabled";
 
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
@@ -129,7 +125,6 @@
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
 			prescaler = <1>;
-			status = "disabled";
 
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
@@ -147,7 +142,6 @@
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
 			prescaler = <1>;
-			status = "disabled";
 
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
@@ -165,7 +159,6 @@
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
 			prescaler = <1>;
-			status = "disabled";
 
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
@@ -183,7 +176,6 @@
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
 			prescaler = <1>;
-			status = "disabled";
 
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
@@ -1378,7 +1370,6 @@
 			channel = <0>;
 			interrupts = <46 1>;
 			interrupt-names = "overflow";
-			status = "disabled";
 
 			os_timer {
 				compatible = "renesas,rz-gtm-os-timer";
@@ -1397,7 +1388,6 @@
 			channel = <1>;
 			interrupts = <47 1>;
 			interrupt-names = "overflow";
-			status = "disabled";
 
 			os_timer {
 				compatible = "renesas,rz-gtm-os-timer";
@@ -1416,7 +1406,6 @@
 			channel = <2>;
 			interrupts = <48 1>;
 			interrupt-names = "overflow";
-			status = "disabled";
 
 			os_timer {
 				compatible = "renesas,rz-gtm-os-timer";
