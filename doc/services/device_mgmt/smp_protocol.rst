@@ -25,21 +25,28 @@ one byte long, and takes the following form:
 
 .. _mcumgr_smp_protocol_frame:
 
-.. table::
-    :align: center
+.. mermaid::
+   :caption: SMP frame layout, most significant bit first
+   :alt: SMP frame: a first 32-bit word with a 3-bit reserved field, a 2-bit
+         version, a 3-bit operation, an 8-bit flags field and a 16-bit data
+         length; a second 32-bit word with a 16-bit group ID, an 8-bit sequence
+         number and an 8-bit command ID; followed by the optional data.
 
-    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    |3              |2              |1              |0              |
-    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    |7|6|5|4|3|2|1|0|7|6|5|4|3|2|1|0|7|6|5|4|3|2|1|0|7|6|5|4|3|2|1|0|
-    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    | Res |Ver| OP  |      Flags    |          Data Length          |
-    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    |            Group ID           | Sequence Num  |   Command ID  |
-    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    |                             Data                              |
-    |                             ...                               |
-    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   ---
+   config:
+     packet:
+       bitOrder: descending
+   ---
+   packet
+     0-15: "Data Length"
+     16-23: "Flags"
+     24-26: "OP"
+     27-28: "Ver"
+     29-31: "Res"
+     32-39: "Command ID"
+     40-47: "Sequence Num"
+     48-63: "Group ID"
+     64-95: "Data ..."
 
 .. note::
     The original specification states that SMP should support receiving
