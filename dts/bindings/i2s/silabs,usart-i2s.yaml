@@ -1,0 +1,52 @@
+# Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Silicon Labs Series 2 I2S (Inter-Integrated Circuit Sound)
+
+description: |
+  Silicon Labs Series 2 USART in I2S mode. Pins are TX, RX, CLK (bit clock),
+  and CS (word select / LRCLK). Enable this compatible on a USART instance only
+  in a board or application overlay (not the shared SoC DTSI), since SPI and
+  I2S cannot share the same USART.
+
+compatible: "silabs,usart-i2s"
+
+include: [i2s-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  silabs,mclk-out:
+    type: phandle
+    description: |
+      Optional phandle to a ``clock-output@N`` child under
+      ``silabs,series-clock-output`` that supplies codec MCLK.
+
+  dmas:
+    required: true
+    description: |
+      DMA channels for ``txbl`` (USARTnTXBL), optional ``txblright``
+      (USARTnTXBLRIGHT, mono TX), and ``rx`` (USARTnRXDATAV).
+
+  dma-names:
+    required: true
+    description: |
+      Must include ``txbl`` and ``rx``. Add ``txblright`` for mono TX
+      (``channels = 1``). Legacy names ``tx`` / ``tx-right`` are accepted.
+
+  silabs,mono-tx-slot:
+    type: string
+    enum:
+      - left
+      - right
+    default: right
+    description: |
+      Which mono TX slot carries audio when ``channels = 1`` (the other is
+      silence).
