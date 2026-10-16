@@ -134,7 +134,7 @@ int wiznet_tx(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-void wiznet_rx(const struct device *dev)
+int wiznet_rx(const struct device *dev)
 {
 	const struct wiznet_config *cfg = dev->config;
 	struct wiznet_runtime *ctx = dev->data;
@@ -147,27 +147,31 @@ void wiznet_rx(const struct device *dev)
 	uint16_t rx_buf_len;
 	uint16_t read_len;
 	uint16_t reader;
+	int ret;
 
-	if (wiznet_read(dev, cfg->regs->s0_rx_rsr, tmp, 2) < 0) {
-		return;
+	ret = wiznet_read(dev, cfg->regs->s0_rx_rsr, tmp, 2);
+	if (ret < 0) {
+		return ret;
 	}
 	rx_buf_len = sys_get_be16(tmp);
 
 	if (rx_buf_len == 0) {
-		return;
+		return -ENODATA;
 	}
 
-	if (wiznet_read(dev, cfg->regs->s0_rx_rd, tmp, 2) < 0) {
-		return;
+	ret = wiznet_read(dev, cfg->regs->s0_rx_rd, tmp, 2);
+	if (ret < 0) {
+		return ret;
 	}
 	off = sys_get_be16(tmp);
 
-	if (wiznet_readbuf(dev, off, header, 2) < 0) {
-		return;
+	ret = wiznet_readbuf(dev, off, header, 2);
+	if (ret < 0) {
+		return ret;
 	}
 	if (sys_get_be16(header) <= 2U) {
 		LOG_ERR("%s: invalid header size %u", dev->name, sys_get_be16(header));
-		return;
+		return -EINVAL;
 	}
 	rx_len = sys_get_be16(header) - 2;
 
@@ -175,7 +179,7 @@ void wiznet_rx(const struct device *dev)
 					   K_MSEC(CONFIG_ETH_WIZNET_TIMEOUT));
 	if (!pkt) {
 		eth_stats_update_errors_rx(ctx->iface);
-		return;
+		return -ENOMEM;
 	}
 
 	pkt_buf = pkt->buffer;
@@ -187,6 +191,16 @@ void wiznet_rx(const struct device *dev)
 		size_t frag_len;
 		uint8_t *data_ptr;
 		size_t frame_len;
+
+		if (!pkt_buf) {
+			net_pkt_unref(pkt);
+			eth_stats_update_errors_rx(ctx->iface);
+
+			LOG_ERR("%s: no more fragments for %u remaining bytes",
+				dev->name, read_len);
+
+			return -ENOMEM;
+		}
 
 		data_ptr = pkt_buf->data;
 
@@ -201,7 +215,7 @@ void wiznet_rx(const struct device *dev)
 		if (wiznet_readbuf(dev, reader, data_ptr, frame_len) < 0) {
 			eth_stats_update_errors_rx(ctx->iface);
 			net_pkt_unref(pkt);
-			return;
+			return -EIO;
 		}
 		net_buf_add(pkt_buf, frame_len);
 		reader += (uint16_t)frame_len;
@@ -217,6 +231,8 @@ void wiznet_rx(const struct device *dev)
 	sys_put_be16(off + 2 + rx_len, tmp);
 	wiznet_write(dev, cfg->regs->s0_rx_rd, tmp, 2);
 	wiznet_command(dev, WIZNET_S0_CR_RECV);
+
+	return 0;
 }
 
 static uint8_t wiznet_check_for_ir(const struct device *dev)
@@ -243,7 +259,10 @@ static uint8_t wiznet_check_for_ir(const struct device *dev)
 		}
 
 		if ((ir & WIZNET_S0_IR_RECV) != 0U) {
-			wiznet_rx(dev);
+			if (wiznet_rx(dev) != 0U) {
+				return 0U;
+			}
+
 			LOG_DBG("RX Done");
 		}
 	}

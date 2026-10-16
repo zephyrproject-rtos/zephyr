@@ -90,6 +90,49 @@ static void w5500_set_macaddr(const struct device *dev)
 	w5500_spi_write(dev, W5500_SHAR, ctx->mac_addr, sizeof(ctx->mac_addr));
 }
 
+static void w5500_memory_configure(const struct device *dev)
+{
+	uint8_t mem = 0x10;
+	int i;
+
+	/* Configure RX & TX memory to 16K */
+	w5500_spi_write(dev, W5500_Sn_RXMEM_SIZE(0), &mem, 1);
+	w5500_spi_write(dev, W5500_Sn_TXMEM_SIZE(0), &mem, 1);
+
+	mem = 0;
+	for (i = 1; i < 8; i++) {
+		w5500_spi_write(dev, W5500_Sn_RXMEM_SIZE(i), &mem, 1);
+		w5500_spi_write(dev, W5500_Sn_TXMEM_SIZE(i), &mem, 1);
+	}
+}
+
+void w5500_reset(const struct device *dev)
+{
+	const struct wiznet_config *cfg = dev->config;
+	struct wiznet_runtime *ctx = dev->data;
+	uint8_t mode = S0_MR_MACRAW | BIT(W5500_S0_MR_MF);
+
+	wiznet_hw_stop(dev, NULL);
+
+	if (!ctx->state.is_up && cfg->reset.port != NULL) {
+		gpio_pin_set_dt(&cfg->reset, 1);
+		k_usleep(cfg->reset_pulse_us);
+		gpio_pin_set_dt(&cfg->reset, 0);
+		k_msleep(cfg->reset_delay_ms);
+	}
+
+	w5500_soft_reset(dev);
+
+	(void)net_eth_mac_load(&cfg->mac_cfg, ctx->mac_addr);
+	w5500_set_macaddr(dev);
+	w5500_memory_configure(dev);
+
+	/* configure Socket 0 with MACRAW mode and MAC filtering enabled */
+	w5500_spi_write(dev, W5500_S0_MR, &mode, 1);
+
+	wiznet_hw_start(dev, NULL);
+}
+
 static void w5500_update_link_status(const struct device *dev)
 {
 	struct wiznet_runtime *ctx = dev->data;
@@ -103,6 +146,7 @@ static void w5500_update_link_status(const struct device *dev)
 	if (IS_BIT_SET(phycfgr, W5500_PHYCFGR_LNK_BIT)) {
 		if (ctx->state.is_up != true) {
 			ctx->state.is_up = true;
+			w5500_reset(dev);
 			net_eth_carrier_on(ctx->iface);
 		}
 
@@ -127,23 +171,8 @@ static void w5500_update_link_status(const struct device *dev)
 	if (ctx->state.is_up) {
 		ctx->state.is_up = false;
 		ctx->state.speed = 0;
+		w5500_reset(dev);
 		net_eth_carrier_off(ctx->iface);
-	}
-}
-
-static void w5500_memory_configure(const struct device *dev)
-{
-	uint8_t mem = 0x10;
-	int i;
-
-	/* Configure RX & TX memory to 16K */
-	w5500_spi_write(dev, W5500_Sn_RXMEM_SIZE(0), &mem, 1);
-	w5500_spi_write(dev, W5500_Sn_TXMEM_SIZE(0), &mem, 1);
-
-	mem = 0;
-	for (i = 1; i < 8; i++) {
-		w5500_spi_write(dev, W5500_Sn_RXMEM_SIZE(i), &mem, 1);
-		w5500_spi_write(dev, W5500_Sn_TXMEM_SIZE(i), &mem, 1);
 	}
 }
 
