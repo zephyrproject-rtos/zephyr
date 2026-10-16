@@ -5,18 +5,40 @@ title: Analog Devices ADV7535 MIPI DSI to HDMI bridge
 
 description: |
   The ADV7535 is an I2C-controlled bridge that converts MIPI DSI video to HDMI.
-  Its CEC/DSI register map uses a secondary I2C address. The MIPI DSI endpoint
-  is represented separately as a child of the MIPI DSI host.
+  The MIPI DSI endpoint is represented separately as a child of the MIPI DSI host.
 
 compatible: "adi,adv7535"
 
 include: i2c-device.yaml
 
 properties:
-  adi,addr-cec:
+  reg:
+    enum:
+      - 0x39
+      - 0x3d
+    description: |
+      Main register map I2C address. The address is 0x39 when PD/AD is pulled
+      low and 0x3d when PD/AD is pulled high as power is applied.
+
+  adi,edid-addr:
     type: int
-    required: true
-    description: Seven-bit address of the CEC/DSI register map.
+    default: 0x3f
+    description: Optional EDID I2C address. Default is the power-on reset value of the register.
+  adi,packet-addr:
+    type: int
+    default: 0x38
+    description: Optional packet I2C address. Default is the power-on reset value of the register.
+  adi,cec-addr:
+    type: int
+    default: 0x3c
+    description: Optional CEC I2C address. Default is the power-on reset value of the register.
+
+  adi,fixed-addr:
+    type: int
+    default: 0x00
+    description: |
+      This should be set to a non-conflicting I2C address.
+      Default is the power-on reset value of the register.
 
   dsi-device:
     type: phandle
@@ -25,13 +47,25 @@ properties:
       Auxiliary adi,adv7535-dsi node describing the DSI link of this
       bridge. It is a child of the MIPI DSI host the bridge is wired to.
 
-  display-timing:
-    type: phandle
+  pd-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the PD/AD power-down pin. The pin level when the
+      ADV7535 power supplies are applied selects both the main I2C address and
+      the power-down polarity. A low level selects address 0x39 and active-high
+      power-down, while a high level selects address 0x3d and active-low
+      power-down. The GPIO flags must match the selected power-down polarity.
+      Although this GPIO is optional, connecting it is strongly recommended
+      because toggling the PD/AD pin resets more registers than a
+      register-based reset. The I2C address and power-down polarity are sampled
+      when power is applied. To change either setting, set the pin to the
+      desired level and power-cycle the board.
+
+  int-gpios:
+    type: phandle-array
     required: true
     description: |
-      zephyr,panel-timing node describing the porches, sync lengths and pixel
-      clock of the HDMI output. Its parent is the display controller node
-      that owns the timing and carries the active area.
+      Interrupt pin of ADV7535. Must be configured as active-low and pulled up.
 
 examples:
   - |
@@ -41,12 +75,18 @@ examples:
       #address-cells = <1>;
       #size-cells = <0>;
 
-      display-bridge@3d {
+      display-bridge@39 {
         compatible = "adi,adv7535";
-        reg = <0x3d>;
-        adi,addr-cec = <0x3b>;
+        reg = <0x39>;
+        pd-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+        int-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
         dsi-device = <&adv7535_dsi>;
-        display-timing = <&hdmi_timing>;
+
+        /* Optional I2C addresses, if omitted defaults are used */
+        adi,edid-addr = <0x3f>;
+        adi,packet-addr = <0x38>;
+        adi,cec-addr = <0x3c>;
+        adi,fixed-addr = <0x00>;
       };
     };
 
@@ -61,6 +101,8 @@ examples:
         reg = <0>;
         data-lanes = <4>;
         pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
+        display-timing = <&hdmi_timing>;
+        /* test-pattern = <0>; */
       };
     };
 
