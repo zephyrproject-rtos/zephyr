@@ -26,6 +26,7 @@ config SOC_SERIES_STM32N6X
 	select SOC_RESET_HOOK
 	# STM32-specific options
 	select HAS_STM32CUBE
+	select HAS_CPU_FREQ
 	select USE_STM32_HAL_RIF if STM32N6_RIF_OPEN
 
 if SOC_SERIES_STM32N6X
