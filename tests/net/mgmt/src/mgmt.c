@@ -193,6 +193,18 @@ static void receiver_cb(struct net_mgmt_event_callback *cb,
 	rx_calls++;
 }
 
+/* Wait (bounded) for the async net_mgmt worker to deliver `target` events.
+ * A single fixed sleep races on platforms where the worker drains its queue
+ * slower than THREAD_SLEEP (e.g. mps2/an385 under QEMU deterministic icount),
+ * so poll rx_calls and return as soon as delivery has completed.
+ */
+static void wait_for_rx_calls(uint32_t target)
+{
+	for (int i = 0; i < 200 && rx_calls < target; i++) {
+		k_msleep(10);
+	}
+}
+
 static int sending_event(uint32_t times, bool receiver, bool info)
 {
 	TC_PRINT("- Sending event %u times, %s a receiver, %s info\n",
@@ -210,7 +222,7 @@ static int sending_event(uint32_t times, bool receiver, bool info)
 	k_sem_give(&thrower_lock);
 
 	/* Let the network stack to proceed */
-	k_msleep(THREAD_SLEEP);
+	wait_for_rx_calls(receiver ? times : 0);
 
 	if (receiver) {
 		TC_PRINT("\tReceived 0x%" PRIx64 " %u times\n",
@@ -287,7 +299,7 @@ static int test_static_event_listener(uint32_t times, bool info)
 	k_sem_give(&thrower_lock);
 
 	/* Let the network stack to proceed */
-	k_msleep(THREAD_SLEEP);
+	wait_for_rx_calls(times);
 
 	TC_PRINT("\tReceived 0x%" PRIx64 " %u times\n",
 			rx_event, rx_calls);
@@ -339,7 +351,7 @@ static int test_core_event(uint64_t event, bool (*func)(void))
 	zassert_true(func(), "func() check failed");
 
 	/* Let the network stack to proceed */
-	k_msleep(THREAD_SLEEP);
+	wait_for_rx_calls(1);
 
 	zassert_true(rx_calls > 0 && rx_calls != -1, "rx_calls empty");
 	zassert_equal(rx_event, event, "rx_event check failed, "
