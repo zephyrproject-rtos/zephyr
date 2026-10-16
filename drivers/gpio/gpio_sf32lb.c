@@ -119,9 +119,9 @@ static inline int gpio_sf32lb_configure(const struct device *port, gpio_pin_t pi
 
 			/* set initial state (OE) */
 			if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0U) {
-				sys_write32(BIT(pin), config->gpio + GPIO1_DOESRX);
-			} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0U) {
 				sys_write32(BIT(pin), config->gpio + GPIO1_DOECRX);
+			} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0U) {
+				sys_write32(BIT(pin), config->gpio + GPIO1_DOESRX);
 			}
 		} else {
 			data->od &= ~BIT(pin);
@@ -194,7 +194,7 @@ static int gpio_sf32lb_port_set_masked_raw(const struct device *port, gpio_port_
 	od_mask = mask & data->od;
 	if (od_mask != 0U) {
 		val = sys_read32(config->gpio + GPIO1_DOERX);
-		val = (val & ~od_mask) | (value & od_mask);
+		val = (val & ~od_mask) | (~value & od_mask);
 		sys_write32(val, config->gpio + GPIO1_DOERX);
 	}
 
@@ -211,7 +211,7 @@ static int gpio_sf32lb_port_set_bits_raw(const struct device *port, gpio_port_pi
 	sys_write32(pp_pins, config->gpio + GPIO1_DOSRX);
 
 	od_pins = pins & data->od;
-	sys_write32(od_pins, config->gpio + GPIO1_DOESRX);
+	sys_write32(od_pins, config->gpio + GPIO1_DOECRX);
 
 	return 0;
 }
@@ -226,7 +226,7 @@ static int gpio_sf32lb_port_clear_bits_raw(const struct device *port, gpio_port_
 	sys_write32(pp_pins, config->gpio + GPIO1_DOCRX);
 
 	od_pins = pins & data->od;
-	sys_write32(od_pins, config->gpio + GPIO1_DOECRX);
+	sys_write32(od_pins, config->gpio + GPIO1_DOESRX);
 
 	return 0;
 }
