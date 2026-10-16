@@ -1801,17 +1801,19 @@ send_i_frame:
 			 */
 			actual_pdu_len -= BT_L2CAP_RT_FC_SDU_LEN_SIZE;
 
-			tx_win->transmit_counter++;
 			tx_win->srej = false;
 			tx_win->retransmit = false;
 
+			/* Compared before counting this transmission, which would wrap the counter
+			 * for a MaxTransmit of 255
+			 */
 			if (br_chan->tx.mode == BT_L2CAP_BR_LINK_MODE_ERET) {
-				if (br_chan->tx.max_transmit &&
-				    (tx_win->transmit_counter > br_chan->tx.max_transmit)) {
+				if ((br_chan->tx.max_transmit != 0U) &&
+				    (tx_win->transmit_counter >= br_chan->tx.max_transmit)) {
 					disconnect = true;
 				}
 			} else {
-				if (tx_win->transmit_counter > br_chan->tx.max_transmit) {
+				if (tx_win->transmit_counter >= br_chan->tx.max_transmit) {
 					disconnect = true;
 				}
 			}
@@ -1827,6 +1829,8 @@ send_i_frame:
 				net_buf_unref(send_buf);
 				return NULL;
 			}
+
+			tx_win->transmit_counter++;
 
 			LOG_WRN("Retransmission I-frame %u: buf %p chan %p len %zu", tx_win->tx_seq,
 				pdu, br_chan, pdu_len);
