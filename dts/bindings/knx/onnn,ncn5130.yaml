@@ -1,0 +1,25 @@
+# Copyright (c) 2026 Fabien Proriol
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ON Semiconductor NCN5130 KNX TP1 transceiver.
+
+  The NCN5130 is attached to a UART controller (38400 bps, 9 data bits, no
+  hardware parity) and is represented as a child node of that controller,
+  not as a sibling referencing it by phandle.
+
+compatible: "onnn,ncn5130"
+
+include: uart-device.yaml
+
+examples:
+  - |
+    &lpuart1 {
+        current-speed = <38400>;
+        status = "okay";
+
+        ncn5130: ncn5130 {
+            compatible = "onnn,ncn5130";
+            status = "okay";
+        };
+    };
