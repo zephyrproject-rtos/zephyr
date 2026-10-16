@@ -379,14 +379,15 @@ int pm_device_runtime_get(const struct device *dev)
 	}
 #endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
 
-	if (pm->base.usage > 1U) {
+	if ((pm->base.usage > 1U) &&
+	    (pm->base.state == PM_DEVICE_STATE_ACTIVE)) {
 		goto unlock;
 	}
 
 	ret = pm->base.action_cb(pm->dev, PM_DEVICE_ACTION_RESUME);
 	if (ret < 0) {
 		runtime_usecount_dec(pm);
-		if (domain != NULL) {
+		if ((pm->base.usage == 0U) && (domain != NULL)) {
 			(void)pm_device_runtime_put(domain);
 			atomic_clear_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_PD_CLAIMED);
 		}
