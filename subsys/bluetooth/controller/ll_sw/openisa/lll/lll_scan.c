@@ -745,9 +745,9 @@ static inline uint32_t isr_rx_pdu(struct lll_scan *lll, uint8_t devmatch_ok,
 		memcpy(&pdu_tx->connect_ind.adv_addr[0],
 		       &pdu_adv_rx->adv_ind.addr[0], BDADDR_SIZE);
 		memcpy(&pdu_tx->connect_ind.access_addr[0],
-		       &lll_conn->access_addr[0], 4);
+		       &lll_conn->access_addr[0], PDU_ACCESS_ADDR_SIZE);
 		memcpy(&pdu_tx->connect_ind.crc_init[0],
-		       &lll_conn->crc_init[0], 3);
+		       &lll_conn->crc_init[0], PDU_CRC_SIZE);
 		pdu_tx->connect_ind.win_size = 1;
 
 		conn_interval_us = (uint32_t)lll_conn->interval *
