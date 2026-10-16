@@ -100,3 +100,39 @@ if(NOT "${ARCH}" STREQUAL "posix")
   string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
 
 endif()
+
+# Override the default implementation in target_template.cmake.
+function(compiler_set_linker_properties)
+
+  compiler_simple_options(simple_options)
+
+  if(NOT CONFIG_CPP_EXCEPTIONS)
+    get_property(no_exceptions TARGET compiler-cpp PROPERTY no_exceptions)
+    list(APPEND simple_options ${no_exceptions})
+  endif()
+
+  if(NOT CONFIG_CPP_RTTI)
+    get_property(no_rtti TARGET compiler-cpp PROPERTY no_rtti)
+    list(APPEND simple_options ${no_rtti})
+  endif()
+
+  if(DEFINED CMAKE_C_COMPILER_TARGET)
+    set(target_flag "--target=${CMAKE_C_COMPILER_TARGET}")
+  endif()
+
+  execute_process(
+    COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS} ${COMPILER_OPTIMIZATION_FLAG} ${simple_options}
+    ${target_flag}
+    --print-libgcc-file-name
+    OUTPUT_VARIABLE library_path
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+
+  get_filename_component(library_dir ${library_path} DIRECTORY)
+  set_linker_property(PROPERTY lib_include_dir "-L\"${library_dir}\"")
+
+  get_filename_component(library_basename ${library_path} NAME_WLE)
+  string(REPLACE lib "" library_name ${library_basename})
+
+  set_linker_property(PROPERTY rt_library "-l${library_name}")
+endfunction()
