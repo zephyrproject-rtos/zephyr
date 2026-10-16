@@ -1964,6 +1964,12 @@
 		};
 	};
 
+	audio_modcon: modcon@48000000 {
+		compatible = "nxp,imx-modcon";
+		reg = <0x48000000 0x9000>;
+		#pinmux-cells = <2>;
+	};
+
 	trdc_audio: trdc@48040000 {
 		compatible = "nxp,trdc";
 		reg = <0x48040000 0x1000>;
