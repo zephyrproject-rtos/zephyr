@@ -1311,5 +1311,37 @@ static void *smp_tests_setup(void)
 	return NULL;
 }
 
-ZTEST_SUITE(smp, NULL, smp_tests_setup, NULL, NULL, NULL);
-ZTEST_SUITE(smp_stress, NULL, smp_tests_setup, NULL, NULL, NULL);
+struct leftovers {
+	k_tid_t tid[MAX_NUM_THREADS + 1];
+	size_t count;
+};
+
+static void find_leftover(const struct k_thread *thread, void *data)
+{
+	struct leftovers *left = data;
+
+	if ((thread == &t2 ||
+	     (thread >= &tthread[0] && thread < &tthread[MAX_NUM_THREADS])) &&
+	    left->count < ARRAY_SIZE(left->tid)) {
+		left->tid[left->count++] = (k_tid_t)thread;
+	}
+}
+
+/* A failed assertion ends the test before it aborts its threads. Abort
+ * them here: the next test reuses their stacks and thread objects.
+ */
+static void smp_tests_after(void *data)
+{
+	struct leftovers left = { .count = 0 };
+
+	ARG_UNUSED(data);
+
+	k_thread_foreach(find_leftover, &left);
+	for (size_t i = 0; i < left.count; i++) {
+		k_thread_abort(left.tid[i]);
+		k_thread_join(left.tid[i], K_FOREVER);
+	}
+}
+
+ZTEST_SUITE(smp, NULL, smp_tests_setup, NULL, smp_tests_after, NULL);
+ZTEST_SUITE(smp_stress, NULL, smp_tests_setup, NULL, smp_tests_after, NULL);
