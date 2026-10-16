@@ -752,6 +752,9 @@ static int stm32_ltdc_suspend(const struct device *dev)
 	/* Turn off LTDC peripheral clock */
 	err = clock_control_off(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 				(clock_control_subsys_t) &config->pclken[0]);
+	if (err == -ENOTSUP) {
+		err = 0;
+	}
 
 	return err;
 }
