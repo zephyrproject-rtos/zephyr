@@ -490,13 +490,17 @@ static void gptp_mi_pss_send_md_sync_send(int port)
 	struct gptp_pss_send_state *state;
 	struct gptp_mi_port_sync_sync *pss_ptr;
 	struct gptp_sync_send_state *sync_send;
+	struct gptp_port_ds *port_ds;
 
 	state = &GPTP_PORT_STATE(port)->pss_send;
 	pss_ptr = state->pss_sync_ptr;
 	sync_send = &GPTP_PORT_STATE(port)->sync_send;
+	port_ds = GPTP_PORT_DS(port);
 
 	memcpy(&state->sync_send, &pss_ptr->sync_info,
 	       sizeof(struct gptp_md_sync_info));
+
+	state->sync_send.log_msg_interval = port_ds->cur_log_half_sync_itv + 1;
 
 	sync_send->sync_send_ptr = &state->sync_send;
 	sync_send->rcvd_md_sync = true;
@@ -948,26 +952,27 @@ static void gptp_mi_clk_master_sync_offset_state_machine(void)
 
 #if defined(CONFIG_NET_GPTP_GM_CAPABLE) && \
 	!defined(CONFIG_NET_GPTP_STATIC_TIME_RECEIVER)
-static inline void gptp_mi_setup_sync_send_time(void)
+static inline void gptp_mi_setup_sync_send_time(uint64_t current_time)
 {
 	struct gptp_clk_master_sync_snd_state *state;
 	struct gptp_global_ds *global_ds;
-	uint64_t time_helper;
+	int8_t min_itv = INT8_MAX;
+	int8_t sync_itv;
+	int port;
 
 	state = &GPTP_STATE()->clk_master_sync_send;
 	global_ds = GPTP_GLOBAL_DS();
 
-	time_helper = state->sync_send_time.low;
-
-	state->sync_send_time.low +=
-		global_ds->clk_master_sync_itv;
-
-	/* Check for overflow */
-	if (state->sync_send_time.low < time_helper) {
-		state->sync_send_time.high += 1U;
-		state->sync_send_time.low =
-			UINT64_MAX - state->sync_send_time.low;
+	for (port = GPTP_PORT_START; port <= GPTP_PORT_END; port++) {
+		sync_itv = GPTP_PORT_DS(port)->cur_log_half_sync_itv + 1;
+		if (sync_itv < min_itv) {
+			min_itv = sync_itv;
+		}
 	}
+
+	global_ds->clk_master_sync_itv = NSEC_PER_SEC * GPTP_POW2(min_itv);
+
+	state->sync_send_time.low = current_time + global_ds->clk_master_sync_itv;
 }
 
 static void gptp_mi_set_ps_sync_cmss(void)
@@ -1041,24 +1046,31 @@ static void gptp_mi_clk_master_sync_snd_state_machine(void)
 {
 	struct gptp_clk_master_sync_snd_state *state;
 	uint64_t current_time;
+	uint64_t sync_send_time;
 
 	state = &GPTP_STATE()->clk_master_sync_send;
+	current_time = gptp_get_current_master_time_nanosecond();
 
 	switch (state->state) {
 	case GPTP_CMS_SND_INITIALIZING:
-		gptp_mi_setup_sync_send_time();
+		gptp_mi_setup_sync_send_time(current_time);
 
 		state->state = GPTP_CMS_SND_INDICATION;
 		break;
 
 	case GPTP_CMS_SND_INDICATION:
-		current_time = gptp_get_current_master_time_nanosecond();
+		sync_send_time = state->sync_send_time.low;
 
-		if (current_time >= state->sync_send_time.low) {
+		/* A backward step of the clock leaves syncSendTime more than one
+		 * interval ahead. Send right away instead of waiting for the
+		 * clock to catch up with it.
+		 */
+		if ((current_time >= sync_send_time) ||
+		    ((sync_send_time - current_time) > GPTP_GLOBAL_DS()->clk_master_sync_itv)) {
 			gptp_mi_set_ps_sync_cmss();
 			gptp_mi_tx_ps_sync_cmss();
 
-			gptp_mi_setup_sync_send_time();
+			gptp_mi_setup_sync_send_time(current_time);
 		}
 
 		break;
@@ -1969,12 +1981,41 @@ static void gptp_mi_port_role_static_time_receiver(void)
 }
 #endif
 
+#if defined(CONFIG_NET_GPTP_STATIC_TIME_TRANSMITTER)
+static void gptp_mi_port_role_static_time_transmitter(void)
+{
+	struct gptp_global_ds *global_ds = GPTP_GLOBAL_DS();
+	int port;
+
+	/* Static port roles, no BMCA: this system is the grandmaster and
+	 * every port is a time transmitter.
+	 */
+	for (port = GPTP_PORT_START; port <= GPTP_PORT_END; port++) {
+		gptp_change_port_state(port, GPTP_PORT_MASTER);
+	}
+
+	/* Port 0 is the time receiver of the local ClockMaster. */
+	gptp_change_port_state(0, GPTP_PORT_SLAVE);
+
+	/* ClockMasterSyncSend and the Follow_Up preciseOriginTimestamp
+	 * recognize the grandmaster role through gmPriority, which no
+	 * Announce ever fills in here.
+	 */
+	memcpy(global_ds->gm_priority.root_system_id.grand_master_id,
+	       GPTP_DEFAULT_DS()->clk_id, GPTP_CLOCK_ID_LEN);
+	global_ds->gm_present = true;
+}
+#endif
+
 static void gptp_mi_port_role_selection_state_machine(void)
 {
 	struct gptp_port_role_selection_state *state;
 
 #if defined(CONFIG_NET_GPTP_STATIC_TIME_RECEIVER)
 	gptp_mi_port_role_static_time_receiver();
+	return;
+#elif defined(CONFIG_NET_GPTP_STATIC_TIME_TRANSMITTER)
+	gptp_mi_port_role_static_time_transmitter();
 	return;
 #endif
 
@@ -2084,7 +2125,8 @@ void gptp_mi_port_sync_state_machines(int port)
 
 void gptp_mi_port_bmca_state_machines(int port)
 {
-#if defined(CONFIG_NET_GPTP_STATIC_TIME_RECEIVER)
+#if defined(CONFIG_NET_GPTP_STATIC_TIME_RECEIVER) || \
+	defined(CONFIG_NET_GPTP_STATIC_TIME_TRANSMITTER)
 	struct gptp_port_announce_receive_state *pa_rcv;
 	struct gptp_port_bmca_data *bmca_data;
 
