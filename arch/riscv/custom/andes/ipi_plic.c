@@ -68,16 +68,17 @@ static void sched_ipi_handler(const void *unused)
 #endif /* CONFIG_FPU_SHARING */
 }
 
-#ifdef CONFIG_FPU_SHARING
-/*
- * Make sure there is no pending FPU flush request for this CPU while
- * waiting for a contended spinlock to become available. This prevents
- * a deadlock when the lock we need is already taken by another CPU
- * that also wants its FPU content to be reinstated while such content
- * is still live in this CPU's FPU.
- */
+#if defined(CONFIG_FPU_SHARING) || defined(CONFIG_RISCV_CUSTOM_ANDES_MORE_SPIN_RELAX_NOPS)
 void arch_spin_relax(void)
 {
+#ifdef CONFIG_FPU_SHARING
+	/*
+	 * Make sure there is no pending FPU flush request for this CPU while
+	 * waiting for a contended spinlock to become available. This prevents
+	 * a deadlock when the lock we need is already taken by another CPU
+	 * that also wants its FPU content to be reinstated while such content
+	 * is still live in this CPU's FPU.
+	 */
 	atomic_val_t *pending_ipi = &cpu_pending_ipi[_current_cpu->id];
 
 	if (atomic_test_and_clear_bit(pending_ipi, IPI_FPU_FLUSH)) {
@@ -88,8 +89,25 @@ void arch_spin_relax(void)
 		 */
 		z_riscv_fpu_flush_thread(_current_cpu->arch.fpu_owner);
 	}
-}
 #endif /* CONFIG_FPU_SHARING */
+
+#ifdef CONFIG_RISCV_CUSTOM_ANDES_MORE_SPIN_RELAX_NOPS
+	uint32_t remaining = CONFIG_RISCV_CUSTOM_ANDES_NUM_SPIN_RELAX_NOPS;
+
+#ifdef CONFIG_RISCV_CUSTOM_ANDES_SPIN_RELAX_NOPS_JITTER
+	const uint32_t jitter_step = 64U / CONFIG_MP_MAX_NUM_CPUS;
+
+	/* Add bounded jitter to prevent CPUs from retrying RCW at the same time. */
+	remaining += jitter_step * (csr_read(mcycle) % CONFIG_MP_MAX_NUM_CPUS);
+#endif /* CONFIG_RISCV_CUSTOM_ANDES_SPIN_RELAX_NOPS_JITTER */
+
+	while (remaining > 0U) {
+		arch_nop();
+		remaining--;
+	}
+#endif /* CONFIG_RISCV_CUSTOM_ANDES_MORE_SPIN_RELAX_NOPS */
+}
+#endif /* CONFIG_FPU_SHARING || CONFIG_RISCV_CUSTOM_ANDES_MORE_SPIN_RELAX_NOPS */
 
 #define PER_CPU_IRQ_CONNECT(idx, _) IRQ_CONNECT(IPI_IRQN(idx), 1, sched_ipi_handler, NULL, 0)
 
