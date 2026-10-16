@@ -4,6 +4,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/kernel/smp.h>
+#include <zephyr/kernel/internal/critical_section_monitor.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/llext/symbol.h>
@@ -55,10 +56,16 @@ static struct cpu_start_cb {
 
 static struct k_spinlock cpu_start_lock;
 
-unsigned int z_smp_global_lock(void)
+#ifdef CONFIG_CRITICAL_SECTION_MONITOR
+#define Z_SMP_GLOBAL_LOCK_ATTR __noinline
+#else
+#define Z_SMP_GLOBAL_LOCK_ATTR
+#endif
+Z_SMP_GLOBAL_LOCK_ATTR unsigned int z_smp_global_lock(void)
 {
 	unsigned int key = arch_irq_lock();
 
+	z_irq_timing_begin(key, Z_CRITICAL_SECTION_MONITOR_CALLER());
 	if (!_current->base.global_lock_count) {
 		while (!atomic_cas(&global_lock, 0, 1)) {
 			arch_spin_relax();
@@ -81,6 +88,7 @@ void z_smp_global_unlock(unsigned int key)
 		}
 	}
 
+	z_irq_timing_end(key);
 	arch_irq_unlock(key);
 }
 EXPORT_SYMBOL(z_smp_global_unlock);
