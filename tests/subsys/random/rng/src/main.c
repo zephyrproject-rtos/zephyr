@@ -121,4 +121,21 @@ ZTEST(rng_common, test_rand32)
 #endif /* CONFIG_CSPRNG_ENABLED */
 }
 
+ZTEST_USER(rng_common, test_rand_user)
+{
+	uint32_t buf[N_VALUES];
+	const uint32_t zero[N_VALUES] = {0};
+	int err;
+
+	memset(buf, 0, sizeof(buf));
+	sys_rand_get(buf, sizeof(buf));
+	zassert_true(memcmp(buf, zero, sizeof(buf)) != 0, "sys_rand_get left the buffer untouched");
+
+	memset(buf, 0, sizeof(buf));
+	err = sys_csrand_get(buf, sizeof(buf));
+	zassert_equal(err, 0, "sys_csrand_get returned %d", err);
+	zassert_true(memcmp(buf, zero, sizeof(buf)) != 0,
+		     "sys_csrand_get left the buffer untouched");
+}
+
 ZTEST_SUITE(rng_common, NULL, NULL, NULL, NULL, NULL);
