@@ -69,10 +69,13 @@ Major enhancements with this release include:
 
   - :ref:`LIN <lin>` for the Local Interconnect Network automotive serial bus,
 
-  - :ref:`MUX <mux_api>` for hardware signal multiplexers, and
+  - :ref:`MUX <mux_api>` for hardware signal multiplexers,
 
   - :ref:`Pulse IO <pulse_io_api>` for hardware that generates and captures timed digital edges,
-    as needed by addressable LED strips and infrared transceivers.
+    as needed by addressable LED strips and infrared transceivers, and
+
+  - :ref:`SCSI mid-layer <scsi_midlayer>` for transport-neutral initiator command
+    execution and shared CDB helpers (USB device MSC uses opcodes only).
 
 **Security and SBOM improvements**
   This release improves SBOM generation, hardening checks and cryptographic acceleration:
@@ -582,6 +585,9 @@ Deprecated APIs and options
 
   * Deprecated property ``clock-reference`` of :dtcompatible:`st,stm32u5-otghs-phy`.
     Do not specify the property; it is no longer required by the underlying driver.
+  * :ref:`uhc_api` optional HCD lifecycle hooks (enumeration, endpoint programming, and
+    disconnect cleanup) with public wrappers; see the migration guide for
+    :c:struct:`usb_device` field renames.
 
 * Video
 
@@ -817,6 +823,10 @@ New APIs and options
   * :kconfig:option:`CONFIG_FIDO2_BLE_KEEPALIVE_INTERVAL_MS`
   * :kconfig:option:`CONFIG_FIDO2_BLE_RX_TIMEOUT_MS`
 
+* File system
+
+  * :c:func:`fs_unmount_path` to unmount a volume by mount-point path
+
 * Fuel Gauge
 
   * :c:func:`fuel_gauge_set_buffer_prop` and the optional
@@ -1051,6 +1061,17 @@ New APIs and options
   * :c:func:`ring_buf_commit`
   * :c:func:`ring_buf_consume`
 
+* SCSI
+
+  * :ref:`SCSI mid-layer <scsi_midlayer>` (:c:func:`scsi_exec`, :c:func:`scsi_device_probe`,
+    CDB builders in :zephyr_file:`include/zephyr/scsi/scsi_cmd.h`)
+  * :c:func:`scsi_disk_register`, :c:func:`scsi_partition_walk`, and
+    :c:func:`scsi_partition_find_fat_volume` when
+    :kconfig:option:`CONFIG_DISK_DRIVER_SCSI` is enabled
+  * :c:func:`disk_partition_walk`, :c:func:`disk_partition_find_fat_volume`, and
+    :c:func:`disk_partition_find_ext2_volume` when :kconfig:option:`CONFIG_DISK_PARTITION`
+    is enabled
+
 * Secure Storage
 
   * :kconfig:option:`CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_CRYPT_CUSTOM` to allow
@@ -1062,6 +1083,20 @@ New APIs and options
 * Timer
 
   * :c:func:`z_sys_clock_lpm_enter`
+
+* USB
+
+  * :c:enumerator:`UHC_EVT_DEV_CONNECTED_SS` in :c:enum:`uhc_event_type`
+  * :c:func:`uhc_add_endpoints`
+  * :c:func:`uhc_assign_address`
+  * :c:func:`uhc_attach_device`
+  * :c:func:`uhc_ep_sync_after_clear_feature`
+  * :c:func:`uhc_eps_verify_steady`
+  * :c:func:`uhc_free_dev`
+  * :c:func:`uhc_post_configure_steady`
+  * :c:func:`uhc_prepare_enum`
+  * :c:func:`uhc_release_device`
+  * Optional :c:struct:`uhc_driver_api` callbacks for the above helpers
 
 * USB Type-C
 

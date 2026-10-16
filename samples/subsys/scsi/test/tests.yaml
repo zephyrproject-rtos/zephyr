@@ -1,0 +1,22 @@
+sample:
+  description: SCSI mid-layer initiator flow with an in-tree mock transport
+  name: SCSI mid-layer (mock)
+common:
+  tags:
+    - scsi
+    - disk
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      - "SCSI mid-layer sample"
+      - "CDB builders OK"
+      - "FAT volume LBA 4096 sectors 8192"
+tests:
+  sample.subsys.scsi.test:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
