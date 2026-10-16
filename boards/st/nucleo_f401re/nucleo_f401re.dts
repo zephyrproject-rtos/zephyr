@@ -137,6 +137,10 @@
 };
 
 &flash0 {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	ranges = <0x0 0x08000000 0x80000>;
+
 	partitions {
 		#address-cells = <1>;
 		#size-cells = <1>;
