@@ -30,6 +30,12 @@ enum uaol_direction {
 	UAOL_DIR_CAPTURE  = 1, /**< Device-to-host USB endpoint */
 };
 
+/** @brief UAOL device speed. */
+enum uaol_device_speed {
+	UAOL_DEVICE_SPEED_FULL = 0, /**< Full-speed USB device */
+	UAOL_DEVICE_SPEED_HIGH = 1, /**< High-speed USB device */
+};
+
 /** @brief UAOL stream configuration data. */
 struct uaol_config {
 	uint8_t xhci_bus;                /**< xHCI controller bus */
@@ -43,8 +49,13 @@ struct uaol_config {
 	uint32_t service_interval;       /**< Service interval for PCM stream operation in us */
 	uint32_t sio_credit_size;        /**< SIO credit packet size in bytes */
 	uint16_t fifo_start_offset;      /**< UAOL FIFO start address offset */
-	uint16_t channel_map;            /**< HDA link stream and channels mapping for UAOL FIFO */
+	uint16_t hda_link_map;           /**< HDA link stream and channels bound to the stream */
 	enum uaol_direction direction;   /**< USB stream/endpoint direction */
+	uint32_t feedback_stream;        /**< UAOL feedback stream index */
+	uint32_t feedback_service_interval; /**< Feedback service interval in us */
+	uint32_t feedback_packet_size;   /**< Feedback endpoint packet size in bytes */
+	uint16_t feedback_hda_link_map;  /**< HDA link stream bound to the feedback stream */
+	enum uaol_device_speed device_speed; /**< Full- or High-speed device */
 };
 
 /** @brief UAOL stream endpoint table entry. */
@@ -70,12 +81,19 @@ typedef int (*uaol_api_program_ep_table)(const struct device *dev, int stream,
 
 typedef int (*uaol_api_get_capabilities)(const struct device *dev, struct uaol_capabilities *caps);
 
+typedef int (*uaol_api_adjust_rate)(const struct device *dev, int stream, bool increase);
+
+typedef int (*uaol_api_interpret_feedback_value)(const struct device *dev, int stream,
+						 uint32_t feedback_value);
+
 __subsystem struct uaol_driver_api {
 	uaol_api_config config;
 	uaol_api_start start;
 	uaol_api_stop stop;
 	uaol_api_program_ep_table program_ep_table;
 	uaol_api_get_capabilities get_capabilities;
+	uaol_api_adjust_rate adjust_rate;
+	uaol_api_interpret_feedback_value interpret_feedback_value;
 };
 /**
  * @endcond
@@ -148,6 +166,40 @@ static inline int uaol_program_ep_table(const struct device *dev, int stream,
 static inline int uaol_get_capabilities(const struct device *dev, struct uaol_capabilities *caps)
 {
 	return DEVICE_API_GET(uaol, dev)->get_capabilities(dev, caps);
+}
+
+/**
+ * @brief Perform a one-time rate adjustment for UAOL stream.
+ *
+ * In the next service interval, the stream transfers one audio frame more or one
+ * audio frame less than its nominal rate gives.
+ *
+ * @param dev UAOL device instance.
+ * @param stream UAOL stream index.
+ * @param increase true to add one frame, false to drop one frame.
+ *
+ * @return 0 on success, all other values should be treated as error.
+ */
+static inline int uaol_adjust_rate(const struct device *dev, int stream, bool increase)
+{
+	return DEVICE_API_GET(uaol, dev)->adjust_rate(dev, stream, increase);
+}
+
+/**
+ * @brief Convert a raw feedback endpoint value to a frequency.
+ *
+ * The value format depends on the USB device speed set with uaol_config().
+ *
+ * @param dev UAOL device instance.
+ * @param stream UAOL stream index.
+ * @param feedback_value Raw value read from the USB feedback endpoint.
+ *
+ * @return the frequency in Hz on success, a negative error code otherwise.
+ */
+static inline int uaol_interpret_feedback_value(const struct device *dev, int stream,
+						 uint32_t feedback_value)
+{
+	return DEVICE_API_GET(uaol, dev)->interpret_feedback_value(dev, stream, feedback_value);
 }
 
 /**
