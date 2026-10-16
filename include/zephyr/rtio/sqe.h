@@ -53,12 +53,12 @@ extern "C" {
 /**
  * @brief Normal priority
  */
-#define RTIO_PRIO_NORM 127U
+#define RTIO_PRIO_NORM 1U
 
 /**
  * @brief High priority
  */
-#define RTIO_PRIO_HIGH 255U
+#define RTIO_PRIO_HIGH 2U
 
 /**
  * @}
