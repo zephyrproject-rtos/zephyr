@@ -1,5 +1,8 @@
 description: |
-    Atmel SAM0 USB in device mode
+    Atmel SAM0 USB in device mode.
+
+    This binding also covers SAM0-compatible USB controllers used by
+    Microchip devices.
 
 compatible: "atmel,sam0-usb"
 
@@ -13,3 +16,60 @@ properties:
 
   interrupts:
     required: true
+
+  clocks:
+    description: |
+      Clock phandles used to drive the USB controller.
+
+  clock-names:
+    description: |
+      Clock names corresponding to the clocks property.
+
+  nvm-calib:
+    type: phandle
+    description: |
+      Phandle to the NVM software calibration area.
+
+      This property provides the base address for the NVM software calibration
+      region. The USB driver reads a calibration word from this memory area
+      and extracts individual calibration fields based on the definitions
+      provided in the calib-mapping property.
+
+  calib-mapping:
+    type: array
+    description: |
+      Configuration for NVM to USB_PADCAL field extraction.
+
+      An array of <dst_bit nvm_bit mask default> tuples defining how to
+      extract and write calibration values. The 'default' value is applied
+      if the NVM entry is unprogrammed (equals the mask).
+
+      Each entry consists of four cells:
+
+        <dst_bit nvm_bit mask default>
+
+      where:
+
+        dst_bit
+          Bit offset of the calibration field in the USB_PADCAL register.
+
+        nvm_bit
+          Bit offset of the calibration value in the NVM calibration word.
+
+        mask
+          Bit mask defining the width of the calibration field.
+
+        default
+          Default value used when the extracted OTP value equals the mask,
+          indicating an invalid or unprogrammed calibration entry.
+
+      Multiple entries may be provided to configure all required USB pad
+      calibration fields.
+
+  calib-mapping-names:
+    type: string-array
+    description: |
+      Descriptive names for calibration entries.
+
+      Optional string array corresponding to calib-mapping entries,
+      intended solely for debugging and documentation.
