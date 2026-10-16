@@ -190,6 +190,14 @@ config RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING
 	  function __soc_handle_all_irqs has to be implemented. It shall service
 	  and clear all pending interrupts.
 
+config RISCV_SOC_HAS_SPURIOUS_IRQ_HOOK
+	bool
+	help
+	  Hidden option for SoCs that need to run custom code on a spurious
+	  interrupt. When selected, the SoC must provide z_riscv_spurious_irq_hook();
+	  to be called from z_irq_spurious() after the LOG_ERR and before
+	  z_riscv_fatal_error() raises K_ERR_SPURIOUS_IRQ.
+
 config RISCV_SOC_HAS_CUSTOM_IRQ_LOCK_OPS
 	bool
 	help
