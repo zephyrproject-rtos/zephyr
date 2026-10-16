@@ -192,7 +192,7 @@ int dwmac_bus_init(const struct device *dev)
 	 */
 	for (size_t n = 0; n < ARRAY_SIZE(eth0_clocks); n++) {
 		ret = clock_control_off(cfg->clock, eth0_clocks[n]);
-		if (ret != 0) {
+		if (ret != 0 && ret != -ENOTSUP) {
 			LOG_ERR("Failed to disable ethernet clock #%zu (%d)", n, ret);
 			return ret;
 		}
