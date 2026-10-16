@@ -19,3 +19,5 @@ zephyr_library_sources_ifdef(CONFIG_WHISPER_CONSOLE whisper_console.c)
 zephyr_library_sources_ifdef(CONFIG_WINSTREAM_CONSOLE winstream_console.c)
 zephyr_library_sources_ifdef(CONFIG_XTENSA_SIM_CONSOLE xtensa_sim_console.c)
 # zephyr-keep-sorted-stop
+
+zephyr_library_sources_ifdef(CONFIG_BK7258_MBOX_CONSOLE console_mbox_bk7258.c)

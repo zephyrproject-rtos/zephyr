@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Beken Corporation
+# SPDX-License-Identifier: Apache-2.0
+#
+# twister test metadata
+#
+# This board has no usable west flash runner (flashing goes through bk_loader on
+# the Windows side), so do NOT add "flash" to supported: CI would then try to
+# flash and fail.
+
+identifier: bk7258_evb
+name: BK7258 EVB
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 256
+flash: 1156
+supported:
+  - uart

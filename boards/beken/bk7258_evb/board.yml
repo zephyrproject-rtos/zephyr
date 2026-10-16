@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Beken Corporation
+# SPDX-License-Identifier: Apache-2.0
+#
+# HWMv2 board metadata
+
+board:
+  name: bk7258_evb
+  full_name: Beken BK7258 Evaluation Board
+  vendor: beken
+  socs:
+    - name: bk7258

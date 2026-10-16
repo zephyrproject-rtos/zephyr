@@ -1,0 +1,68 @@
+# Copyright (c) 2026 Beken Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_BK7258
+	bool "Beken BK7258 flash driver"
+	default y
+	depends on DT_HAS_BEKEN_BK7258_FLASH_ENABLED
+	select FLASH
+	# Setting CONFIG_FLASH_PAGE_LAYOUT=y in prj.conf alone is not enough:
+	# it lives under 'if FLASH_HAS_PAGE_LAYOUT', and that HAS_ symbol has to
+	# be selected by the driver itself. Without this select Kconfig drops the
+	# assignment and only prints a warning that is easy to miss in the build
+	# log.
+	select FLASH_HAS_PAGE_LAYOUT
+	# Same story: FLASH_HAS_DRIVER_ENABLED gates FLASH_MAP, which MCUboot
+	# selects, and a warning there is a build failure.
+	select FLASH_HAS_DRIVER_ENABLED
+	# Erase really does erase: the service calls through to a sector erase,
+	# it is not implied by a write.
+	select FLASH_HAS_EXPLICIT_ERASE
+	help
+	  Flash driver for the Beken BK7258.
+
+	  The defining constraint of this driver is that this core
+	  must not issue flash controller commands on its own. Sending a single
+	  RDID, a read-only command, resets the whole chip: the device runs in
+	  quad / continuous-read mode, and as soon as a command is pushed it
+	  leaves that mode while the peer is still fetching address-only from the
+	  same device. The peer then executes garbage.
+
+	  Therefore read, write and erase are all proxied to the flash service on
+	  the other core over the mailbox, which is what the vendor's own flash
+	  client does.
+
+	  Not even a read goes through the XIP window. That window only serves
+	  the packed image area, in which every 32 bytes of data are followed
+	  by 2 bytes of CRC that the hardware consumes as it fetches, and
+	  reading a region that was not written that way resets the chip:
+	  measured, physical 0x165000 reads fine through the window while
+	  physical 0x290000 and 0x7FA000 reset the board. Whether
+	  an offset is safe depends on how the bytes behind it were written,
+	  which the driver cannot know, so it never uses the window.
+
+	  Offsets are physical, matching the partition table, which is also what
+	  the service expects.
+
+if FLASH_BK7258
+
+config FLASH_BK7258_ERASE_BLOCK_SIZE
+	int "Erase block size in physical bytes"
+	default 4096
+	help
+	  Sector granularity of the flash device, used to compute the page
+	  layout. This is a count of physical bytes, not payload bytes.
+	  The service on the other core erases exactly one of these per
+	  request, so an erase spanning several of them is sent as several
+	  requests.
+
+config FLASH_BK7258_IPC_TIMEOUT_MS
+	int "How long to wait for the flash service, in milliseconds"
+	default 3000
+	help
+	  A programme or erase request is answered by the service only after
+	  the flash has been written. Its own wait for a response from this
+	  core is 3000 ms, so anything shorter would give up on an operation
+	  that is still in flight.
+
+endif # FLASH_BK7258

@@ -1,0 +1,25 @@
+# Copyright (c) 2026 Beken Corporation
+# SPDX-License-Identifier: Apache-2.0
+#
+# Kconfig entry point for the Beken SoC family.
+#
+# HWMv2 sources only the four files at the vendor root (Kconfig,
+# Kconfig.defconfig, Kconfig.soc, Kconfig.sysbuild); anything in a series
+# or SoC sub-directory has to be pulled in from one of them with
+# rsource, and nothing is reported when it is not. rsource accepts a
+# glob, so "*/Kconfig" picks up the same-named file in every series
+# sub-directory.
+
+# Selected by the series (bk7258).
+config SOC_FAMILY_BEKEN_ARM
+	bool
+	help
+	  Beken SoC family based on ARM Cortex-M (BK7258 and others).
+
+# Dependency declarations from each series (select only, no type or prompt)
+rsource "*/Kconfig"
+
+# Log level of this module (soc.c)
+module = SOC_BK7258
+module-str = SOC BK7258
+source "subsys/logging/Kconfig.template.log_config"

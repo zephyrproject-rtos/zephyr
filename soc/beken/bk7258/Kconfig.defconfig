@@ -1,0 +1,53 @@
+# Copyright (c) 2026 Beken Corporation
+# SPDX-License-Identifier: Apache-2.0
+#
+# BK7258 SoC defaults
+#
+# Only SoC-level defaults belong here; board differences go in the board
+# files.
+
+if SOC_BK7258
+
+# Interrupts go straight to the NVIC, 64 lines in all
+# (icu_map.h::ICU_DEV_MAP has 64 entries, 0..63).
+config NUM_IRQS
+	default 64
+
+# Code executes in place from flash (XIP) and is not copied to SRAM. XIP is
+# handled by hardware, so no flash controller driver is needed to run code.
+config XIP
+	default y
+
+# The linker script starts at the beginning of the zephyr,flash region, with no
+# offset
+config FLASH_LOAD_OFFSET
+	default 0x0
+
+# The core runs at 120 MHz in the configuration the device ships with.
+# soc.c prints the clock register at boot.
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 120000000
+
+# No MPU: isolation on this SoC is done with TrustZone (SAU), not a bare
+# MPU.
+config ARM_MPU
+	default n
+
+# This core has no peripheral clock-gating registers of its own (the
+# vendor's power_ll_pwr_up_uart() and friends have empty bodies), so no
+# clock control driver is used.
+config CLOCK_CONTROL
+	default n
+
+# ---------------------------------------------------------------------------
+# Report "powered up" and a heartbeat (soc_ipc.c)
+#
+# This must stay on with the firmware the device ships with: that
+# firmware waits 2 s for the power-up indication after releasing this
+# core and 6 s between heartbeats, and resets the whole chip when either
+# is missed, which shows up as endless reboots and no output from this
+# core.
+config SOC_BK7258_IPC_HEARTBEAT
+	default y
+
+endif # SOC_BK7258

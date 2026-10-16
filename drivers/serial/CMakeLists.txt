@@ -134,3 +134,7 @@ if(CONFIG_UART_NATIVE_TTY)
   zephyr_library_sources(uart_native_tty.c)
   target_sources(native_simulator INTERFACE uart_native_tty_bottom.c)
 endif()
+
+zephyr_library_sources_ifdef(CONFIG_SERIAL_BK7258 uart_bk7258.c)
+
+zephyr_library_sources_ifdef(CONFIG_SERIAL_BK7258_MBOX uart_mbox_bk7258.c)

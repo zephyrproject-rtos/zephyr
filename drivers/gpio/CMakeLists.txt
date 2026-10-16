@@ -167,3 +167,5 @@ if(CONFIG_GPIO_SC18IS606)
   zephyr_library_include_directories(${ZEPHYR_BASE}/drivers/mfd)
   zephyr_library_sources(gpio_sc18is606.c)
 endif()
+
+zephyr_library_sources_ifdef(CONFIG_GPIO_BK7258 gpio_bk7258.c)
