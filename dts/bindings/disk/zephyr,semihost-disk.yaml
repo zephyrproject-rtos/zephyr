@@ -1,0 +1,25 @@
+# Copyright (c) 2026 RBR Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Semihost file-backed disk
+
+compatible: "zephyr,semihost-disk"
+
+include:
+  - base.yaml
+  - name: zephyr,ram-disk.yaml
+    property-allowlist:
+      - disk-name
+      - sector-size
+      - sector-count
+
+properties:
+  filename:
+    type: string
+    default: "disk.bin"
+    description: |
+      Host-side file path for the disk backing store. Defaults to "disk.bin"
+      in the working directory of the application providing semihosting
+      services (typically the build folder). The file is created upon device
+      initialization if it does not already exist, and extended with zeros
+      to the disk size.
