@@ -313,14 +313,30 @@ static inline int uart_stm32_set_baudrate(const struct device *dev, uint32_t bau
 #endif
 							       baud_rate);
 		/* BRR holds USARTDIV in 16 bits */
-		if (usartdiv < 16 || usartdiv > UINT16_MAX) {
+		bool valid = (usartdiv >= 16) && (usartdiv <= UINT16_MAX);
+
+#ifdef USART_CR1_OVER8
+		uint32_t oversampling = LL_USART_OVERSAMPLING_16;
+
+		/*
+		 * Oversampling by 8 doubles the maximum baud rate to fCK / 8, at the cost of a
+		 * lower tolerance to clock deviations. Only use it if oversampling by 16 can not
+		 * reach the baud rate. usartdiv is rounded on some series, so the limit of
+		 * oversampling by 8 is checked against the exact ratio.
+		 */
+		if ((usartdiv < 16) && ((uint64_t)clock_rate >= ((uint64_t)baud_rate * 8U))) {
+			oversampling = LL_USART_OVERSAMPLING_8;
+			valid = true;
+		}
+#endif
+
+		if (!valid) {
 			LOG_ERR("Unable to set %s to %d", dev->name, baud_rate);
 			return -EINVAL;
 		}
 
 #ifdef USART_CR1_OVER8
-		LL_USART_SetOverSampling(usart,
-					 LL_USART_OVERSAMPLING_16);
+		LL_USART_SetOverSampling(usart, oversampling);
 #endif
 
 		LL_USART_SetBaudRate(usart,
@@ -329,7 +345,7 @@ static inline int uart_stm32_set_baudrate(const struct device *dev, uint32_t bau
 				     LL_USART_PRESCALER_DIV1,
 #endif
 #ifdef USART_CR1_OVER8
-				     LL_USART_OVERSAMPLING_16,
+				     oversampling,
 #endif
 				     baud_rate);
 		/* Check BRR is greater than or equal to 16d */
