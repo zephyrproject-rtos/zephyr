@@ -194,11 +194,13 @@ int cobs_decoder_close(struct cobs_decoder *dec)
 
 int cobs_decoder_write(struct cobs_decoder *dec, const uint8_t *buf, size_t len)
 {
-	uint8_t sentinel = COBS_FLAG_CUSTOM_DELIMITER(dec->flags);
+	uint8_t sentinel;
 	int ret;
 
 	__ASSERT_NO_MSG(dec != NULL);
 	__ASSERT_NO_MSG(len <= INT_MAX);
+
+	sentinel = COBS_FLAG_CUSTOM_DELIMITER(dec->flags);
 
 	for (size_t i = 0; i < len; ++i) {
 		uint8_t data = buf[i] ^ sentinel;
