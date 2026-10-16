@@ -750,15 +750,16 @@ static inline void test_rtio_simple_multishot_(struct rtio *r, int idx)
 	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER));
 	zassert_ok(cqe.result, "Result should be ok but got %d", cqe.result);
 	zassert_equal_ptr(cqe.userdata, mempool_data, "Expected userdata back");
-	rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len);
+	zassert_ok(rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len));
 	rtio_release_buffer(r, buffer, buffer_len);
 
 	TC_PRINT("Canceling 0x%08x\n", handle);
 	rtio_sqe_cancel(r, handle);
-	/* Flush any pending CQEs */
+	/* Flush pending CQEs, releasing only the ones that carry a buffer */
 	while (rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(15)) != 0) {
-		rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len);
-		rtio_release_buffer(r, buffer, buffer_len);
+		if (rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len) == 0) {
+			rtio_release_buffer(r, buffer, buffer_len);
+		}
 	}
 }
 
@@ -796,6 +797,11 @@ ZTEST(rtio_api, test_rtio_multishot_are_not_resubmitted_when_failed)
 	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(100)));
 	zassert_equal(cqe.result, -EIO, "Result should be %d but got %d", -EIO, cqe.result);
 
+	/* The executor released the blocks, so the error CQE must not offer them */
+	zassert_equal(-EINVAL, rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len),
+		      "Error CQE should not report a mempool buffer");
+	zassert_is_null(buffer, "Error CQE should not report a mempool buffer");
+
 	/* No more CQE's coming as it should be aborted */
 	zassert_equal(0, rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(100)),
 		      "Should not get more CQEs after the error CQE");
@@ -804,8 +810,9 @@ ZTEST(rtio_api, test_rtio_multishot_are_not_resubmitted_when_failed)
 
 	/* Flush any pending CQEs */
 	while (rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(1000)) != 0) {
-		rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len);
-		rtio_release_buffer(r, buffer, buffer_len);
+		if (rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len) == 0) {
+			rtio_release_buffer(r, buffer, buffer_len);
+		}
 	}
 }
 
