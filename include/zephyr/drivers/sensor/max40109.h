@@ -215,12 +215,54 @@ enum max40109_sensor_attr {
 /**
  * @brief MAX40109-specific sensor channels
  *
- * These channels extend the standard sensor_channel enum to expose the
- * uncompensated ADC codes.
+ * These channels extend the standard sensor_channel enum to expose the raw
+ * ADC codes and the MTP calibration coefficients. The coefficient channels
+ * are used with SENSOR_ATTR_CALIB_TARGET and require
+ * @kconfig{CONFIG_MAX40109_CALIBRATION}.
  */
 enum max40109_sensor_channel {
+	/** Ambient temperature calibration coefficient K0. */
+	SENSOR_CHAN_MAX40109_AMBIENT_TEMP_CALIB_COEFF_K0 = SENSOR_CHAN_PRIV_START,
+	/** Ambient temperature calibration coefficient K1. */
+	SENSOR_CHAN_MAX40109_AMBIENT_TEMP_CALIB_COEFF_K1,
+	/** Ambient temperature calibration coefficient K2. */
+	SENSOR_CHAN_MAX40109_AMBIENT_TEMP_CALIB_COEFF_K2,
+	/** Ambient temperature calibration coefficient K3. */
+	SENSOR_CHAN_MAX40109_AMBIENT_TEMP_CALIB_COEFF_K3,
+	/** Pressure calibration coefficient H0. */
+	SENSOR_CHAN_MAX40109_PRESSURE_CALIB_COEFF_H0,
+	/** Pressure calibration coefficient H1. */
+	SENSOR_CHAN_MAX40109_PRESSURE_CALIB_COEFF_H1,
+	/** Pressure calibration coefficient H2. */
+	SENSOR_CHAN_MAX40109_PRESSURE_CALIB_COEFF_H2,
+	/** Pressure calibration coefficient H3. */
+	SENSOR_CHAN_MAX40109_PRESSURE_CALIB_COEFF_H3,
+	/** Pressure calibration coefficient G0. */
+	SENSOR_CHAN_MAX40109_PRESSURE_CALIB_COEFF_G0,
+	/** Pressure calibration coefficient G1. */
+	SENSOR_CHAN_MAX40109_PRESSURE_CALIB_COEFF_G1,
+	/** Pressure calibration coefficient G2. */
+	SENSOR_CHAN_MAX40109_PRESSURE_CALIB_COEFF_G2,
+	/** Pressure calibration coefficient G3. */
+	SENSOR_CHAN_MAX40109_PRESSURE_CALIB_COEFF_G3,
+	/** Pressure calibration coefficient N0. */
+	SENSOR_CHAN_MAX40109_PRESSURE_CALIB_COEFF_N0,
+	/** Pressure calibration coefficient N1. */
+	SENSOR_CHAN_MAX40109_PRESSURE_CALIB_COEFF_N1,
+	/** Pressure calibration coefficient N2. */
+	SENSOR_CHAN_MAX40109_PRESSURE_CALIB_COEFF_N2,
+	/** Pressure calibration coefficient N3. */
+	SENSOR_CHAN_MAX40109_PRESSURE_CALIB_COEFF_N3,
+	/** Pressure calibration coefficient M0. */
+	SENSOR_CHAN_MAX40109_PRESSURE_CALIB_COEFF_M0,
+	/** Pressure calibration coefficient M1. */
+	SENSOR_CHAN_MAX40109_PRESSURE_CALIB_COEFF_M1,
+	/** Pressure calibration coefficient M2. */
+	SENSOR_CHAN_MAX40109_PRESSURE_CALIB_COEFF_M2,
+	/** Pressure calibration coefficient M3. */
+	SENSOR_CHAN_MAX40109_PRESSURE_CALIB_COEFF_M3,
 	/** Uncompensated ambient temperature ADC code. */
-	SENSOR_CHAN_MAX40109_AMBIENT_TEMP_RAW = SENSOR_CHAN_PRIV_START,
+	SENSOR_CHAN_MAX40109_AMBIENT_TEMP_RAW,
 	/** Uncompensated pressure ADC code. */
 	SENSOR_CHAN_MAX40109_PRESS_RAW,
 };
@@ -486,6 +528,83 @@ enum max40109_drv_scale {
 	MAX40109_DRV_SCALE_0_25 = MAX40109_DT_DRV_SCALE_0_25,
 };
 
+/**
+ * @brief MTP calibration coefficients
+ *
+ * Selector for max40109_mtp_calibration() and
+ * max40109_mtp_calibration_read(). K0-K3 compensate ambient temperature;
+ * H0-H3, G0-G3, N0-N3 and M0-M3 compensate pressure.
+ */
+enum max40109_calibration_coefficients {
+	/** Ambient temperature calibration coefficient K0. */
+	MAX40109_CALIBRATION_K0,
+	/** Ambient temperature calibration coefficient K1. */
+	MAX40109_CALIBRATION_K1,
+	/** Ambient temperature calibration coefficient K2. */
+	MAX40109_CALIBRATION_K2,
+	/** Ambient temperature calibration coefficient K3. */
+	MAX40109_CALIBRATION_K3,
+	/** Pressure calibration coefficient H0. */
+	MAX40109_CALIBRATION_H0,
+	/** Pressure calibration coefficient H1. */
+	MAX40109_CALIBRATION_H1,
+	/** Pressure calibration coefficient H2. */
+	MAX40109_CALIBRATION_H2,
+	/** Pressure calibration coefficient H3. */
+	MAX40109_CALIBRATION_H3,
+	/** Pressure calibration coefficient G0. */
+	MAX40109_CALIBRATION_G0,
+	/** Pressure calibration coefficient G1. */
+	MAX40109_CALIBRATION_G1,
+	/** Pressure calibration coefficient G2. */
+	MAX40109_CALIBRATION_G2,
+	/** Pressure calibration coefficient G3. */
+	MAX40109_CALIBRATION_G3,
+	/** Pressure calibration coefficient N0. */
+	MAX40109_CALIBRATION_N0,
+	/** Pressure calibration coefficient N1. */
+	MAX40109_CALIBRATION_N1,
+	/** Pressure calibration coefficient N2. */
+	MAX40109_CALIBRATION_N2,
+	/** Pressure calibration coefficient N3. */
+	MAX40109_CALIBRATION_N3,
+	/** Pressure calibration coefficient M0. */
+	MAX40109_CALIBRATION_M0,
+	/** Pressure calibration coefficient M1. */
+	MAX40109_CALIBRATION_M1,
+	/** Pressure calibration coefficient M2. */
+	MAX40109_CALIBRATION_M2,
+	/** Pressure calibration coefficient M3. */
+	MAX40109_CALIBRATION_M3,
+};
+
+#if defined(CONFIG_MAX40109_CALIBRATION)
+/**
+ * @brief Apply MTP calibration (K0-M3) for MAX40109
+ *
+ * @note Only available when @kconfig{CONFIG_MAX40109_CALIBRATION} is enabled.
+ *
+ * @param dev Device Structure
+ * @param coeff Calibration Coefficient
+ * @param value Calibration Value
+ * @param burn Burn flag (true to burn, false to write only)
+ * @return int 0 on success, negative error code on failure
+ */
+int max40109_mtp_calibration(const struct device *dev, enum max40109_calibration_coefficients coeff,
+			     float value, bool burn);
+/**
+ * @brief Read calibration coefficient from MAX40109 MTP
+ *
+ * @note Only available when @kconfig{CONFIG_MAX40109_CALIBRATION} is enabled.
+ *
+ * @param dev Device Structure
+ * @param coeff Calibration Coefficient
+ * @param value Pointer to store read value
+ * @return int 0 on success, negative error code on failure
+ */
+int max40109_mtp_calibration_read(const struct device *dev,
+				  enum max40109_calibration_coefficients coeff, float *value);
+#endif /* CONFIG_MAX40109_CALIBRATION */
 /**
  * @brief Read MTP data from MAX40109
  *

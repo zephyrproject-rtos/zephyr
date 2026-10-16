@@ -154,6 +154,10 @@ struct max40109_config {
 	uint8_t drv_scale;
 	uint8_t analog_filter_bw;
 	uint8_t analog_output_stage;
+#if defined(CONFIG_MAX40109_CALIBRATION)
+	/** Calibration coefficients, NAN for the ones left out of devicetree */
+	float calib_coeff[20];
+#endif
 };
 
 struct temp_gain_map {
@@ -188,6 +192,20 @@ struct digital_filter_map {
 	int setup;
 	uint8_t reg_val;
 };
+
+#if defined(CONFIG_MAX40109_CALIBRATION)
+struct calib_map {
+	/** Channel from @ref max40109_sensor_channel. */
+	uint16_t chan;
+	/** Coefficient that channel carries. */
+	enum max40109_calibration_coefficients coeff;
+};
+
+struct calibration_coeff_map {
+	uint8_t cal_coeff;
+	uint8_t cal_start_addr;
+};
+#endif /* CONFIG_MAX40109_CALIBRATION */
 
 /**
  * @brief Describes one MTP-backed threshold attribute.

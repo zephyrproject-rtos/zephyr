@@ -14,8 +14,37 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/sensor/max40109.h>
 #include <zephyr/logging/log.h>
+#ifdef CONFIG_MAX40109_CALIBRATION
+#include <math.h>
+#endif
 
 LOG_MODULE_REGISTER(max40109, CONFIG_SENSOR_LOG_LEVEL);
+
+#ifdef CONFIG_MAX40109_CALIBRATION
+
+/** Coefficients are stored in MTP as the raw IEEE-754 encoding of a float. */
+union max40109_float_bits {
+	float f;
+	uint32_t u;
+};
+
+/** Reinterpret the IEEE-754 encoding of @p f as a raw 32-bit word. */
+static inline uint32_t max40109_float_to_hex(float f)
+{
+	union max40109_float_bits bits = {.f = f};
+
+	return bits.u;
+}
+
+/** Reinterpret the raw 32-bit word @p u as an IEEE-754 single-precision float. */
+static inline float max40109_hex_to_float(uint32_t u)
+{
+	union max40109_float_bits bits = {.u = u};
+
+	return bits.f;
+}
+
+#endif /* CONFIG_MAX40109_CALIBRATION */
 
 static int max40109_reg_access(const struct device *dev, uint8_t addr_reg, uint8_t *data, bool read,
 			       uint8_t length)
@@ -120,6 +149,24 @@ int max40109_mtp_update(const struct device *dev, uint8_t mtp_addr, uint16_t mas
 	return max40109_mtp_write(dev, mtp_addr, reg_val);
 }
 
+#ifdef CONFIG_MAX40109_CALIBRATION
+/**
+ * @brief Convert float coefficient to byte representation
+ *
+ * @param hex Float coefficient in hex format
+ * @param buf_msb MSB byte buffer
+ * @param buf_lsb LSB byte buffer
+ */
+static void coeff_hex_to_bytes(const uint32_t hex, uint8_t *buf_msb, uint8_t *buf_lsb)
+{
+
+	buf_msb[0] = (hex >> 24) & 0xFF;
+	buf_msb[1] = (hex >> 16) & 0xFF;
+	buf_lsb[0] = (hex >> 8) & 0xFF;
+	buf_lsb[1] = hex & 0xFF;
+}
+#endif /* CONFIG_MAX40109_CALIBRATION */
+
 /**
  * @brief Initialize MTP charge pump for burning operations
  *
@@ -212,6 +259,104 @@ static int max40109_is_burn_successful(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_MAX40109_CALIBRATION
+
+static const struct calibration_coeff_map cal_table[] = {
+	{MAX40109_CALIBRATION_K0, MAX40109_MTP_REG_CAL_DATA0},
+	{MAX40109_CALIBRATION_K1, MAX40109_MTP_REG_CAL_DATA2},
+	{MAX40109_CALIBRATION_K2, MAX40109_MTP_REG_CAL_DATA4},
+	{MAX40109_CALIBRATION_K3, MAX40109_MTP_REG_CAL_DATA6},
+	{MAX40109_CALIBRATION_H0, MAX40109_MTP_REG_CAL_DATA8},
+	{MAX40109_CALIBRATION_H1, MAX40109_MTP_REG_CAL_DATA10},
+	{MAX40109_CALIBRATION_H2, MAX40109_MTP_REG_CAL_DATA12},
+	{MAX40109_CALIBRATION_H3, MAX40109_MTP_REG_CAL_DATA14},
+	{MAX40109_CALIBRATION_G0, MAX40109_MTP_REG_CAL_DATA16},
+	{MAX40109_CALIBRATION_G1, MAX40109_MTP_REG_CAL_DATA18},
+	{MAX40109_CALIBRATION_G2, MAX40109_MTP_REG_CAL_DATA20},
+	{MAX40109_CALIBRATION_G3, MAX40109_MTP_REG_CAL_DATA22},
+	{MAX40109_CALIBRATION_N0, MAX40109_MTP_REG_CAL_DATA24},
+	{MAX40109_CALIBRATION_N1, MAX40109_MTP_REG_CAL_DATA26},
+	{MAX40109_CALIBRATION_N2, MAX40109_MTP_REG_CAL_DATA28},
+	{MAX40109_CALIBRATION_N3, MAX40109_MTP_REG_CAL_DATA30},
+	{MAX40109_CALIBRATION_M0, MAX40109_MTP_REG_CAL_DATA32},
+	{MAX40109_CALIBRATION_M1, MAX40109_MTP_REG_CAL_DATA34},
+	{MAX40109_CALIBRATION_M2, MAX40109_MTP_REG_CAL_DATA36},
+	{MAX40109_CALIBRATION_M3, MAX40109_MTP_REG_CAL_DATA38},
+};
+
+static int get_calibration_address(uint8_t cal_coeff, uint8_t *mtp_addr)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(cal_table); i++) {
+		if (cal_table[i].cal_coeff == cal_coeff) {
+			*mtp_addr = cal_table[i].cal_start_addr;
+			return 0;
+		}
+	}
+	return -EINVAL;
+}
+
+int max40109_mtp_calibration(const struct device *dev, enum max40109_calibration_coefficients coeff,
+			     float value, bool burn)
+{
+	uint8_t mtp_addr = 0;
+	uint32_t hex = max40109_float_to_hex(value);
+	uint8_t buf_msb[2] = {0, 0};
+	uint8_t buf_lsb[2] = {0, 0};
+	int ret = 0;
+
+	if (coeff < MAX40109_CALIBRATION_K0 || coeff > MAX40109_CALIBRATION_M3) {
+		LOG_ERR("Invalid calibration coefficient");
+		return -EINVAL;
+	}
+	coeff_hex_to_bytes(hex, buf_msb, buf_lsb);
+
+	ret = get_calibration_address(coeff, &mtp_addr);
+	if (ret < 0) {
+		LOG_ERR("Failed to get MTP address for coefficient %d", coeff);
+		return ret;
+	}
+
+	if (burn) {
+		/* Charge pump setup is a burn-session prerequisite, so it is done
+		 * once here and covers both words of the coefficient. The volatile
+		 * write path below does not need it.
+		 */
+		ret = max40109_mtp_initialize(dev);
+		if (ret < 0) {
+			return ret;
+		}
+
+		LOG_INF("Burning MTP data for coefficient %d", coeff);
+		ret = max40109_mtp_burn(dev, mtp_addr, buf_lsb);
+		if (ret < 0) {
+			LOG_ERR("Failed to burn MTP data for coefficient %d", coeff);
+			return ret;
+		}
+		ret = max40109_mtp_burn(dev, mtp_addr + 1, buf_msb);
+		if (ret < 0) {
+			LOG_ERR("Failed to burn MTP data for coefficient %d", coeff);
+			return ret;
+		}
+	} else {
+		LOG_INF("Writing MTP data for coefficient %d without burning", coeff);
+		ret = max40109_mtp_write(dev, mtp_addr, buf_lsb);
+		if (ret < 0) {
+			LOG_ERR("Failed to write MTP data for coefficient %d", coeff);
+			return ret;
+		}
+		ret = max40109_mtp_write(dev, mtp_addr + 1, buf_msb);
+		if (ret < 0) {
+			LOG_ERR("Failed to write MTP data for coefficient %d", coeff);
+			return ret;
+		}
+		LOG_INF("MTP data for coefficient %d written successfully", coeff);
+	}
+
+	return 0;
+}
+
+#endif /* CONFIG_MAX40109_CALIBRATION */
+
 static const struct temp_gain_map temp_gain_table[] = {
 	{1, 500000, SENSOR_MAX40109_PGA_TEMPERATURE_GAIN_1_5},
 	{2, 0, SENSOR_MAX40109_PGA_TEMPERATURE_GAIN_2},
@@ -273,6 +418,31 @@ static const struct drv_scale_entry drv_scale_table[] = {
 	{0, 375000, MAX40109_DRV_SCALE_0_375},
 	{0, 250000, MAX40109_DRV_SCALE_0_25},
 };
+
+#ifdef CONFIG_MAX40109_CALIBRATION
+static const struct calib_map calib_map_table[] = {
+	{SENSOR_CHAN_MAX40109_AMBIENT_TEMP_CALIB_COEFF_K0, MAX40109_CALIBRATION_K0},
+	{SENSOR_CHAN_MAX40109_AMBIENT_TEMP_CALIB_COEFF_K1, MAX40109_CALIBRATION_K1},
+	{SENSOR_CHAN_MAX40109_AMBIENT_TEMP_CALIB_COEFF_K2, MAX40109_CALIBRATION_K2},
+	{SENSOR_CHAN_MAX40109_AMBIENT_TEMP_CALIB_COEFF_K3, MAX40109_CALIBRATION_K3},
+	{SENSOR_CHAN_MAX40109_PRESSURE_CALIB_COEFF_H0, MAX40109_CALIBRATION_H0},
+	{SENSOR_CHAN_MAX40109_PRESSURE_CALIB_COEFF_H1, MAX40109_CALIBRATION_H1},
+	{SENSOR_CHAN_MAX40109_PRESSURE_CALIB_COEFF_H2, MAX40109_CALIBRATION_H2},
+	{SENSOR_CHAN_MAX40109_PRESSURE_CALIB_COEFF_H3, MAX40109_CALIBRATION_H3},
+	{SENSOR_CHAN_MAX40109_PRESSURE_CALIB_COEFF_G0, MAX40109_CALIBRATION_G0},
+	{SENSOR_CHAN_MAX40109_PRESSURE_CALIB_COEFF_G1, MAX40109_CALIBRATION_G1},
+	{SENSOR_CHAN_MAX40109_PRESSURE_CALIB_COEFF_G2, MAX40109_CALIBRATION_G2},
+	{SENSOR_CHAN_MAX40109_PRESSURE_CALIB_COEFF_G3, MAX40109_CALIBRATION_G3},
+	{SENSOR_CHAN_MAX40109_PRESSURE_CALIB_COEFF_N0, MAX40109_CALIBRATION_N0},
+	{SENSOR_CHAN_MAX40109_PRESSURE_CALIB_COEFF_N1, MAX40109_CALIBRATION_N1},
+	{SENSOR_CHAN_MAX40109_PRESSURE_CALIB_COEFF_N2, MAX40109_CALIBRATION_N2},
+	{SENSOR_CHAN_MAX40109_PRESSURE_CALIB_COEFF_N3, MAX40109_CALIBRATION_N3},
+	{SENSOR_CHAN_MAX40109_PRESSURE_CALIB_COEFF_M0, MAX40109_CALIBRATION_M0},
+	{SENSOR_CHAN_MAX40109_PRESSURE_CALIB_COEFF_M1, MAX40109_CALIBRATION_M1},
+	{SENSOR_CHAN_MAX40109_PRESSURE_CALIB_COEFF_M2, MAX40109_CALIBRATION_M2},
+	{SENSOR_CHAN_MAX40109_PRESSURE_CALIB_COEFF_M3, MAX40109_CALIBRATION_M3},
+};
+#endif /* CONFIG_MAX40109_CALIBRATION */
 
 static const struct analog_bw_map bw_table[] = {
 	{1200, MAX40109_ANALOG_FILTER_BW_1200HZ},
@@ -388,6 +558,73 @@ static int set_digital_filter_setup(const struct device *dev, int digital_filter
 	}
 	return -EINVAL;
 }
+
+#ifdef CONFIG_MAX40109_CALIBRATION
+
+int max40109_set_calibration_coeff(const struct device *dev, enum sensor_channel chan,
+				   const struct sensor_value *val)
+{
+	uint8_t coeff = 0;
+	bool found = false;
+	float calibration_value;
+	int ret;
+
+	for (size_t i = 0; i < ARRAY_SIZE(calib_map_table); i++) {
+		if (calib_map_table[i].chan == chan) {
+			coeff = calib_map_table[i].coeff;
+			found = true;
+			break;
+		}
+	}
+	if (!found) {
+		return -ENOTSUP;
+	}
+	calibration_value = val->val1 + (val->val2 / 1000000.0f);
+	ret = max40109_mtp_calibration(dev, coeff, calibration_value, false);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
+}
+
+int max40109_mtp_calibration_read(const struct device *dev,
+				  enum max40109_calibration_coefficients coeff, float *value)
+{
+	uint8_t mtp_addr = 0;
+	uint8_t buf_msb[2] = {0, 0};
+	uint8_t buf_lsb[2] = {0, 0};
+	int ret = 0;
+
+	if (coeff < MAX40109_CALIBRATION_K0 || coeff > MAX40109_CALIBRATION_M3) {
+		LOG_ERR("Invalid calibration coefficient");
+		return -EINVAL;
+	}
+
+	ret = get_calibration_address(coeff, &mtp_addr);
+	if (ret < 0) {
+		LOG_ERR("Failed to get MTP address for coefficient %d", coeff);
+		return ret;
+	}
+
+	ret = max40109_mtp_read(dev, mtp_addr, buf_lsb);
+	if (ret < 0) {
+		LOG_ERR("Failed to read MTP data for coefficient %d", coeff);
+		return ret;
+	}
+	ret = max40109_mtp_read(dev, mtp_addr + 1, buf_msb);
+	if (ret < 0) {
+		LOG_ERR("Failed to read MTP data for coefficient %d", coeff);
+		return ret;
+	}
+	uint32_t hex = ((uint32_t)buf_msb[0] << 24) | ((uint32_t)buf_msb[1] << 16) |
+		       ((uint32_t)buf_lsb[0] << 8) | buf_lsb[1];
+
+	*value = max40109_hex_to_float(hex);
+	return 0;
+}
+
+#endif /* CONFIG_MAX40109_CALIBRATION */
 
 int max40109_mtp_burn(const struct device *dev, uint8_t mtp_addr, uint8_t *val)
 {
@@ -543,6 +780,18 @@ static int max40109_probe(const struct device *dev)
 			return ret;
 		}
 	}
+#ifdef CONFIG_MAX40109_CALIBRATION
+	/** Set Calibration Coefficients */
+	for (int i = 0; i < ARRAY_SIZE(config->calib_coeff); i++) {
+		if (!isnan(config->calib_coeff[i])) {
+			ret = max40109_mtp_calibration(dev, i, config->calib_coeff[i], false);
+			if (ret < 0) {
+				LOG_ERR("Failed to set calibration coefficient %d", i);
+				return ret;
+			}
+		}
+	}
+#endif /* CONFIG_MAX40109_CALIBRATION */
 	return 0;
 }
 
@@ -777,6 +1026,10 @@ static int max40109_attr_set(const struct device *dev, enum sensor_channel chan,
 		 * For SENSOR_CHAN_AMBIENT_TEMP: val->val1 = integer part, val->val2 = decimal part
 		 */
 		return attr_set_gain(dev, chan, val);
+#ifdef CONFIG_MAX40109_CALIBRATION
+	case SENSOR_ATTR_CALIB_TARGET:
+		return max40109_set_calibration_coeff(dev, chan, val);
+#endif /* CONFIG_MAX40109_CALIBRATION */
 
 	/* MAX40109-specific attributes */
 	case SENSOR_ATTR_MAX40109_ANALOG_FILTER_BW_SETUP:
@@ -892,6 +1145,30 @@ static int attr_get_gain(const struct device *dev, enum sensor_channel chan,
 	return -ENOTSUP;
 }
 
+#ifdef CONFIG_MAX40109_CALIBRATION
+static int attr_get_calib_target(const struct device *dev, enum sensor_channel chan,
+				 struct sensor_value *val)
+{
+	float coeff_value = 0.0f;
+	int ret;
+
+	for (size_t i = 0; i < ARRAY_SIZE(calib_map_table); i++) {
+		if (calib_map_table[i].chan != chan) {
+			continue;
+		}
+
+		ret = max40109_mtp_calibration_read(dev, calib_map_table[i].coeff, &coeff_value);
+		if (ret < 0) {
+			return ret;
+		}
+
+		return sensor_value_from_float(val, coeff_value);
+	}
+
+	return -ENOTSUP;
+}
+#endif /* CONFIG_MAX40109_CALIBRATION */
+
 static int attr_get_analog_filter_bw(const struct device *dev, struct sensor_value *val)
 {
 	uint8_t reg = 0;
@@ -999,6 +1276,10 @@ static int max40109_attr_get(const struct device *dev, enum sensor_channel chan,
 		return attr_get_sampling_freq(dev, val);
 	case SENSOR_ATTR_GAIN:
 		return attr_get_gain(dev, chan, val);
+#ifdef CONFIG_MAX40109_CALIBRATION
+	case SENSOR_ATTR_CALIB_TARGET:
+		return attr_get_calib_target(dev, chan, val);
+#endif /* CONFIG_MAX40109_CALIBRATION */
 
 	/* MAX40109-specific attributes */
 	case SENSOR_ATTR_MAX40109_ANALOG_FILTER_BW_SETUP:
@@ -1154,6 +1435,32 @@ static DEVICE_API(sensor, max40109_driver_api) = {
 	.channel_get = max40109_channel_get,
 };
 
+#ifdef CONFIG_MAX40109_CALIBRATION
+
+#define DT_INST_CALIB_COEFF_OR_NAN(inst, prop)                                                     \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, prop),                                             \
+		    ((float)DT_INST_PROP(inst, prop) / 1000.0f), (NAN))
+
+/** Coefficients left out of devicetree stay NAN and are skipped at init. */
+#define MAX40109_CALIB_COEFF_CONFIG(inst)                                                          \
+	.calib_coeff = {                                                                           \
+		DT_INST_CALIB_COEFF_OR_NAN(inst, k0), DT_INST_CALIB_COEFF_OR_NAN(inst, k1),        \
+		DT_INST_CALIB_COEFF_OR_NAN(inst, k2), DT_INST_CALIB_COEFF_OR_NAN(inst, k3),        \
+		DT_INST_CALIB_COEFF_OR_NAN(inst, h0), DT_INST_CALIB_COEFF_OR_NAN(inst, h1),        \
+		DT_INST_CALIB_COEFF_OR_NAN(inst, h2), DT_INST_CALIB_COEFF_OR_NAN(inst, h3),        \
+		DT_INST_CALIB_COEFF_OR_NAN(inst, g0), DT_INST_CALIB_COEFF_OR_NAN(inst, g1),        \
+		DT_INST_CALIB_COEFF_OR_NAN(inst, g2), DT_INST_CALIB_COEFF_OR_NAN(inst, g3),        \
+		DT_INST_CALIB_COEFF_OR_NAN(inst, n0), DT_INST_CALIB_COEFF_OR_NAN(inst, n1),        \
+		DT_INST_CALIB_COEFF_OR_NAN(inst, n2), DT_INST_CALIB_COEFF_OR_NAN(inst, n3),        \
+		DT_INST_CALIB_COEFF_OR_NAN(inst, m0), DT_INST_CALIB_COEFF_OR_NAN(inst, m1),        \
+		DT_INST_CALIB_COEFF_OR_NAN(inst, m2), DT_INST_CALIB_COEFF_OR_NAN(inst, m3)},
+
+#else
+
+#define MAX40109_CALIB_COEFF_CONFIG(inst)
+
+#endif /* CONFIG_MAX40109_CALIBRATION */
+
 #define MAX40109_CONFIG(inst)                                                                      \
 	.digital_filter_setup = DT_INST_PROP_OR(inst, digital_filter, UINT8_MAX),                  \
 	.alert_mode = DT_INST_PROP_OR(inst, alert_mode, UINT8_MAX),                                \
@@ -1166,8 +1473,12 @@ static DEVICE_API(sensor, max40109_driver_api) = {
 	.temp_mode = DT_INST_PROP_OR(inst, temp_mode, UINT8_MAX),                                  \
 	.drv_scale = DT_INST_PROP_OR(inst, drv_scale, UINT8_MAX),                                  \
 	.analog_filter_bw = DT_INST_PROP_OR(inst, analog_filter_bw, UINT8_MAX),                    \
-	.analog_output_stage = DT_INST_PROP_OR(inst, analog_output_stage, UINT8_MAX),
+	.analog_output_stage = DT_INST_PROP_OR(inst, analog_output_stage, UINT8_MAX),              \
+	MAX40109_CALIB_COEFF_CONFIG(inst)
 
+/* The initializer is assembled from macros that expand to nothing when their feature is
+ * disabled, so the element separators live inside those macros rather than between them.
+ */
 #define MAX40109_DEFINE(inst)                                                                      \
 	static struct max40109_data max40109_prv_data_##inst;                                      \
 	static const struct max40109_config max40109_config_##inst = {                             \

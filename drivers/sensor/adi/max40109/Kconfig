@@ -3,10 +3,29 @@
 # Copyright (c) 2026 Analog Devices Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-config MAX40109
+menuconfig MAX40109
 	bool "MAX40109 Precision Signal Conditioning AFE"
 	default y
 	depends on DT_HAS_ADI_MAX40109_ENABLED
 	select I2C
 	help
 	  Enable support for the MAX40109 Precision Signal Conditioning AFE.
+
+if MAX40109
+
+config MAX40109_CALIBRATION
+	bool "MTP calibration coefficient support"
+	default y
+	select FPU if CPU_HAS_FPU
+	help
+	  Enable access to the 20 MTP calibration coefficients (K0-K3, H0-H3,
+	  G0-G3, N0-N3 and M0-M3) through SENSOR_ATTR_CALIB_TARGET and the
+	  matching devicetree properties, which are applied to the volatile MTP
+	  shadow at init.
+
+	  Disable this when the coefficients are already burned into MTP, to
+	  drop the floating-point conversion code from the build. The
+	  devicetree coefficient properties are then ignored and
+	  SENSOR_ATTR_CALIB_TARGET returns -ENOTSUP.
+
+endif # MAX40109

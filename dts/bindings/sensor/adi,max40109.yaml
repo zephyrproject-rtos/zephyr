@@ -187,3 +187,64 @@ properties:
       - 0x0D # MAX40109_DT_AOS_RATIO_VDD5V_1X_ALT1
       - 0x0E # MAX40109_DT_AOS_RATIO_VDD5V_1X_ALT2
       - 0x0F # MAX40109_DT_AOS_RATIO_VDD5V_1X_ALT3
+
+  k0:
+    type: int
+    description: K0 calibration coefficient in thousandths
+  k1:
+    type: int
+    description: K1 calibration coefficient in thousandths
+  k2:
+    type: int
+    description: K2 calibration coefficient in thousandths
+  k3:
+    type: int
+    description: K3 calibration coefficient in thousandths
+  h0:
+    type: int
+    description: H0 calibration coefficient in thousandths
+  h1:
+    type: int
+    description: H1 calibration coefficient in thousandths
+  h2:
+    type: int
+    description: H2 calibration coefficient in thousandths
+  h3:
+    type: int
+    description: H3 calibration coefficient in thousandths
+  g0:
+    type: int
+    description: G0 calibration coefficient in thousandths
+  g1:
+    type: int
+    description: G1 calibration coefficient in thousandths
+  g2:
+    type: int
+    description: G2 calibration coefficient in thousandths
+  g3:
+    type: int
+    description: G3 calibration coefficient in thousandths
+  n0:
+    type: int
+    description: N0 calibration coefficient in thousandths
+  n1:
+    type: int
+    description: N1 calibration coefficient in thousandths
+  n2:
+    type: int
+    description: N2 calibration coefficient in thousandths
+  n3:
+    type: int
+    description: N3 calibration coefficient in thousandths
+  m0:
+    type: int
+    description: M0 calibration coefficient in thousandths
+  m1:
+    type: int
+    description: M1 calibration coefficient in thousandths
+  m2:
+    type: int
+    description: M2 calibration coefficient in thousandths
+  m3:
+    type: int
+    description: M3 calibration coefficient in thousandths
