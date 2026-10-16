@@ -25,6 +25,8 @@
 			compatible = "arm,cortex-a55";
 			enable-method = "psci";
 			reg = <0x0>;
+			i-cache-line-size = <64>;
+			d-cache-line-size = <64>;
 		};
 
 		cpu@100 {
@@ -32,6 +34,8 @@
 			compatible = "arm,cortex-a55";
 			enable-method = "psci";
 			reg = <0x100>;
+			i-cache-line-size = <64>;
+			d-cache-line-size = <64>;
 		};
 
 		cpu@200 {
@@ -39,6 +43,8 @@
 			compatible = "arm,cortex-a76";
 			enable-method = "psci";
 			reg = <0x200>;
+			i-cache-line-size = <64>;
+			d-cache-line-size = <64>;
 		};
 
 		cpu@300 {
@@ -46,6 +52,8 @@
 			compatible = "arm,cortex-a76";
 			enable-method = "psci";
 			reg = <0x300>;
+			i-cache-line-size = <64>;
+			d-cache-line-size = <64>;
 		};
 	};
 
@@ -150,19 +158,6 @@
 		status = "okay";
 	};
 
-	sdmmc: sdmmc@10808000 {
-		compatible = "cdns,sdhc";
-		reg = <0x10808000 0x1000>,
-		      <0x10b92000 0x1000>;
-		reg-names = "reg_base", "combo_phy";
-		clock-frequency = <200000000>;
-		power-delay-ms = <1000>;
-		resets = <&reset RSTMGR_SDMMC_RSTLINE>,
-			 <&reset RSTMGR_SDMMCECC_RSTLINE>,
-			 <&reset RSTMGR_SOFTPHY_RSTLINE>;
-		status = "disabled";
-	};
-
 	timer0: timer@10c03000 {
 		compatible = "snps,dw-timers";
 		interrupt-parent = <&gic>;
@@ -251,6 +246,26 @@
 		method = "smc";
 		status = "disabled";
 		zephyr,num-clients = <2>;
+	};
+
+	sdmmc: mmc@10808000 {
+		compatible = "cdns,sd6hc", "cdns,sdhc";
+		reg = <0x10808000 0x100>, <0x10808200 0x80>;
+		reg-names = "host", "slot";
+		clocks = <&clock INTEL_SOCFPGA_CLOCK_MMC>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 96 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		power-delay-ms = <500>;
+		has-host;
+
+		cdns,phy-cfg-sd-ds = <0x00780000 0x81a40040 0x00a000fe 0x28000001 0x00800004>;
+		cdns,phy-cfg-sd-hs = <0x00780001 0x81a40040 0x00000000 0x10000001 0x00800004>;
+		cdns,ctrl-cfg-sd-hs = <0x0001800c 0x00030000 0x00000101 0x000a0001>;
+		cdns,phy-cfg-emmc-sdr = <0x00780004 0x80a40040 0x04000004 0x38000001 0x00800004>;
+		cdns,ctrl-cfg-emmc-sdr = <0xf1c1800c 0x00020000 0x00000101 0x00090005>;
+		cdns,phy-cfg-emmc-hs200 = <0x00780004 0x81a40040 0x004d4d00 0x11000001 0x00000004>;
+		cdns,ctrl-cfg-emmc-hs200 = <0xf1c18000 0x00090000 0x00000101 0x000a0001>;
+		status = "disabled";
 	};
 
 	/* cadence Nand Flash controller*/
