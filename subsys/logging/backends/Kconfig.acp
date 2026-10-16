@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG_BACKEND_ACP
+	bool "AMD ACP buffer backend"
+	depends on SOC_ACP_7_X
+	select LOG_BACKEND_SUPPORTS_FORMAT_TIMESTAMP
+	help
+	  Enable backend for the AMD ACP family of audio processors.
+	  Logs are written to a shared memory buffer that can be read
+	  by the host driver.
+
+if LOG_BACKEND_ACP
+
+backend = ACP
+backend-str = acp
+source "subsys/logging/Kconfig.template.log_format_config"
+
+endif # LOG_BACKEND_ACP
