@@ -165,7 +165,7 @@ struct esp_hosted_mcu_tlv {
 } __packed;
 
 /* RPC request/response round-trip and scan completion timeouts (ms). */
-#define ESP_HOSTED_MCU_RPC_TIMEOUT  (5000)
+#define ESP_HOSTED_MCU_RPC_TIMEOUT  (10000)
 #define ESP_HOSTED_MCU_SCAN_TIMEOUT (10000)
 
 /* How long to wait for the coprocessor's boot event before asking over RPC (ms). */
