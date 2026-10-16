@@ -56,6 +56,10 @@ foreach(file_name include/stddef.h include-fixed/limits.h)
   endif()
 endforeach()
 
+if(CONFIG_XTENSA_CALL0_ABI)
+  list(APPEND TOOLCHAIN_C_FLAGS -mabi=call0)
+endif()
+
 # For CMake to be able to test if a compiler flag is supported by the
 # toolchain we need to give CMake the necessary flags to compile and
 # link a dummy C file.
