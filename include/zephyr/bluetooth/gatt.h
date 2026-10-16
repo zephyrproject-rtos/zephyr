@@ -249,6 +249,206 @@ typedef ssize_t (*bt_gatt_attr_write_func_t)(struct bt_conn *conn,
 					     const void *buf, uint16_t len,
 					     uint16_t offset, uint8_t flags);
 
+/** @brief An ATT request that has not been responded to yet
+ *
+ *  Handed to the asynchronous attribute callbacks to identify the request
+ *  they are serving. The object is only valid for the duration of the
+ *  callback, copy it by value to respond later.
+ *
+ *  The copy holds @ref bt_gatt_req.conn without a reference of its own, so
+ *  take one with @ref bt_conn_ref while it is kept, and drop it with
+ *  @ref bt_conn_drop once the request has been answered or given up on.
+ *
+ *  A response is only accepted for the request it was issued for. Responding
+ *  to a request that has been answered already, or whose bearer is gone, fails
+ *  instead of answering an unrelated request.
+ */
+struct bt_gatt_req {
+	/** The connection the request arrived on, held without a reference. */
+	struct bt_conn *conn;
+	/** @cond INTERNAL_HIDDEN */
+	/** Identifies the bearer and the request on it. */
+	uint32_t id;
+	/** @endcond */
+};
+
+/** @typedef bt_gatt_attr_read_async_func_t
+ *  @brief Asynchronous attribute read callback
+ *
+ *  Serves a remote read of @p attr. Unlike @ref bt_gatt_attr_read_func_t, the
+ *  value does not have to be available when the callback runs: return 0 and
+ *  respond later with @ref bt_gatt_rsp_read or @ref bt_gatt_rsp_error.
+ *
+ *  Only used for remote reads. Set @ref bt_gatt_attr.read as well if the
+ *  attribute also has to serve local reads.
+ *
+ *  The host serves at most one request per bearer at a time and disconnects
+ *  the connection when the peer sends another request before this one is
+ *  answered. That takes down the ACL link, so every bearer on it, not only the
+ *  one the request arrived on. The response must be sent before the ATT
+ *  transaction times out (30 seconds), or the remote will drop the connection.
+ *  Until it is answered, the response buffer allocated when the request
+ *  arrived is held.
+ *
+ *  A Read Multiple [Variable Length] Response holds several values, so this
+ *  callback may run from the context that answers the previous value of the
+ *  same request, before @ref bt_gatt_rsp_read has returned.
+ *
+ *  @note This callback runs from a thread context chosen by the stack, never
+ *  from an ISR, and must not block.
+ *
+ *  @param req     The request to respond to.
+ *  @param attr    The attribute that is being read.
+ *  @param offset  Offset to start reading from.
+ *  @param max_len Largest value the response can carry. A longer value is
+ *                 truncated by the host.
+ *
+ *  @retval 0 The request will be answered by the callback.
+ *  @return ``BT_GATT_ERR()`` with a specific ``BT_ATT_ERR_*`` error code to
+ *          answer with an error right away.
+ */
+typedef int (*bt_gatt_attr_read_async_func_t)(const struct bt_gatt_req *req,
+					      const struct bt_gatt_attr *attr,
+					      uint16_t offset, uint16_t max_len);
+
+/** @typedef bt_gatt_attr_write_async_func_t
+ *  @brief Asynchronous attribute write callback
+ *
+ *  Serves a remote write of @p attr. Unlike @ref bt_gatt_attr_write_func_t,
+ *  the write does not have to complete while the callback runs: return 0 and
+ *  respond later with @ref bt_gatt_rsp_write or @ref bt_gatt_rsp_error.
+ *
+ *  Write Command and Signed Write Command have no response and therefore
+ *  cannot be deferred: ``BT_GATT_WRITE_FLAG_CMD`` is set in @p flags, the
+ *  write has to be done before the callback returns, and returning 0 means it
+ *  succeeded. Only @ref bt_gatt_req.conn is of use for that one, so that an
+ *  application serving several clients can still tell them apart.
+ *
+ *  Execute Write does have a response (ATT_EXECUTE_WRITE_RSP, which the server
+ *  sends after the attributes are written) but is not deferred either:
+ *  ``BT_GATT_WRITE_FLAG_EXECUTE`` is set in @p flags and the writes have to be
+ *  done before the callback returns. A write longer than one ATT PDU
+ *  (ATT_MTU - 3, 20 octets with the default MTU) is applied that way, so such
+ *  a write cannot complete asynchronously.
+ *
+ *  Prepare Write does have a response (ATT_PREPARE_WRITE_RSP) and is deferred
+ *  like any other write. The attribute needs @ref BT_GATT_PERM_PREPARE_WRITE
+ *  for this callback to be asked for one: without it the host queues the value
+ *  and answers the request on its own.
+ *
+ *  The host serves at most one request per bearer at a time and disconnects
+ *  the connection when the peer sends another request before this one is
+ *  answered. That takes down the ACL link, so every bearer on it, not only the
+ *  one the request arrived on. The response must be sent before the ATT
+ *  transaction times out (30 seconds), or the remote will drop the connection.
+ *  Until it is answered, the response buffer allocated when the request
+ *  arrived is held.
+ *
+ *  Only used for remote writes. Set @ref bt_gatt_attr.write as well if the
+ *  attribute also has to serve local writes.
+ *
+ *  @note This callback runs from a thread context chosen by the stack, never
+ *  from an ISR, and must not block.
+ *
+ *  @param req    The request to respond to.
+ *  @param attr   The attribute that is being written.
+ *  @param buf    Buffer with the data to write. Only valid during the call.
+ *  @param len    Number of bytes in the buffer.
+ *  @param offset Offset to start writing from.
+ *  @param flags  Flags of type @ref bt_gatt_attr_write_flag.
+ *
+ *  @retval 0 Success. A write that can be deferred is answered later with
+ *            @ref bt_gatt_rsp_write or @ref bt_gatt_rsp_error; Write Command
+ *            and Execute Write are complete when the callback returns.
+ *  @return ``BT_GATT_ERR()`` with a specific ``BT_ATT_ERR_*`` error code to
+ *          answer with an error right away.
+ */
+typedef int (*bt_gatt_attr_write_async_func_t)(const struct bt_gatt_req *req,
+					       const struct bt_gatt_attr *attr,
+					       const void *buf, uint16_t len,
+					       uint16_t offset, uint8_t flags);
+
+/** @brief Asynchronous Attribute Value methods
+ *
+ *  One object of this type serves the remote requests of every attribute that
+ *  points at it, so an attribute that answers asynchronously costs one pointer
+ *  and the rest of the database nothing.
+ */
+struct bt_gatt_attr_async {
+	/** Asynchronous read method, or NULL. Takes precedence over the
+	 *  synchronous one for remote reads. See
+	 *  @ref bt_gatt_attr_read_async_func_t.
+	 */
+	bt_gatt_attr_read_async_func_t read;
+
+	/** Asynchronous write method, or NULL. Takes precedence over the
+	 *  synchronous one for remote writes. See
+	 *  @ref bt_gatt_attr_write_async_func_t.
+	 */
+	bt_gatt_attr_write_async_func_t write;
+};
+
+#if defined(CONFIG_BT_GATT_ASYNC_ATTR) || defined(__DOXYGEN__)
+/** @brief Respond to a deferred read
+ *
+ *  For a Read Multiple [Variable Length] Request this adds one value to a
+ *  response that is still being assembled, and may ask the next attribute of
+ *  that request for its value before returning.
+ *
+ *  @param req  The request to respond to.
+ *  @param data Value of the attribute from the offset the callback was given.
+ *              Truncated to what the response can carry.
+ *  @param len  Length of @p data.
+ *
+ *  @retval 0 Success.
+ *  @retval -EINVAL The request cannot be answered: it has been answered
+ *                  already, it is not a read, @p data is NULL with @p len
+ *                  nonzero, or the bearer it arrived on is gone.
+ *  @retval -ENOTCONN The connection is gone.
+ *
+ *  @note This takes a mutex and cannot be called from an ISR. Hand the answer
+ *        to a work item from there instead. The response buffer is allocated
+ *        when the request arrives, so this cannot fail for want of one.
+ */
+int bt_gatt_rsp_read(const struct bt_gatt_req *req, const void *data, uint16_t len);
+
+/** @brief Respond to a deferred write
+ *
+ *  @param req The request to respond to.
+ *
+ *  @retval 0 Success.
+ *  @retval -EINVAL The request cannot be answered: it has been answered
+ *                  already, it is not a write, it is one that cannot be
+ *                  deferred, or the bearer it arrived on is gone.
+ *  @retval -ENOTCONN The connection is gone.
+ *
+ *  @note This takes a mutex and cannot be called from an ISR. Hand the answer
+ *        to a work item from there instead. The response buffer is allocated
+ *        when the request arrives, so this cannot fail for want of one.
+ */
+int bt_gatt_rsp_write(const struct bt_gatt_req *req);
+
+/** @brief Respond to a deferred read or write with an error
+ *
+ *  For a Read Multiple [Variable Length] Request this fails the whole request,
+ *  the values collected before it are dropped.
+ *
+ *  @param req     The request to respond to.
+ *  @param att_err ATT error code, a ``BT_ATT_ERR_*`` value.
+ *
+ *  @retval 0 Success.
+ *  @retval -EINVAL The request cannot be answered: it has been answered
+ *                  already, @p att_err is 0, or the bearer it arrived on is
+ *                  gone.
+ *  @retval -ENOTCONN The connection is gone.
+ *
+ *  @note This takes a mutex and cannot be called from an ISR. Hand the answer
+ *        to a work item from there instead. The response buffer is allocated
+ *        when the request arrives, so this cannot fail for want of one.
+ */
+int bt_gatt_rsp_error(const struct bt_gatt_req *req, uint8_t att_err);
+#endif /* CONFIG_BT_GATT_ASYNC_ATTR */
+
 /** @brief GATT Attribute
  *
  *  This type primarily represents an ATT Attribute that may be
@@ -301,6 +501,17 @@ struct bt_gatt_attr {
 	 */
 	bt_gatt_attr_write_func_t write;
 
+#if defined(CONFIG_BT_GATT_ASYNC_ATTR) || defined(__DOXYGEN__)
+	/** @brief Asynchronous Attribute Value methods
+	 *
+	 *  Takes precedence over read() and write() for remote requests. NULL
+	 *  to serve them synchronously.
+	 *
+	 *  See @ref bt_gatt_attr_async.
+	 */
+	const struct bt_gatt_attr_async *async;
+#endif /* CONFIG_BT_GATT_ASYNC_ATTR */
+
 	/** @brief Private data for read() and write() implementation
 	 *
 	 *  The meaning of this field varies and is not specified here.
@@ -344,6 +555,42 @@ struct bt_gatt_attr {
 	bool _auto_assigned_handle: 1;
 	/** @endcond */
 };
+
+/** @brief Asynchronous read method of an attribute
+ *
+ *  The method that serves remote reads of @p attr asynchronously. NULL when
+ *  there is none, in which case @ref bt_gatt_attr.read serves them, and NULL
+ *  as well when @kconfig{CONFIG_BT_GATT_ASYNC_ATTR} is off.
+ */
+static inline bt_gatt_attr_read_async_func_t
+bt_gatt_attr_async_read(const struct bt_gatt_attr *attr)
+{
+#if defined(CONFIG_BT_GATT_ASYNC_ATTR)
+	if ((attr->async != NULL) && (attr->async->read != NULL)) {
+		return attr->async->read;
+	}
+#endif /* CONFIG_BT_GATT_ASYNC_ATTR */
+
+	return NULL;
+}
+
+/** @brief Asynchronous write method of an attribute
+ *
+ *  The method that serves remote writes of @p attr asynchronously. NULL when
+ *  there is none, in which case @ref bt_gatt_attr.write serves them, and NULL
+ *  as well when @kconfig{CONFIG_BT_GATT_ASYNC_ATTR} is off.
+ */
+static inline bt_gatt_attr_write_async_func_t
+bt_gatt_attr_async_write(const struct bt_gatt_attr *attr)
+{
+#if defined(CONFIG_BT_GATT_ASYNC_ATTR)
+	if ((attr->async != NULL) && (attr->async->write != NULL)) {
+		return attr->async->write;
+	}
+#endif /* CONFIG_BT_GATT_ASYNC_ATTR */
+
+	return NULL;
+}
 
 /** @brief Static GATT Service structure
  *
@@ -1072,6 +1319,32 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 	BT_GATT_ATTRIBUTE(_uuid, _perm, _read, _write, _user_data)
 
 /**
+ *  @brief Characteristic and Value Declaration Macro with asynchronous
+ *  callbacks.
+ *
+ *  Like @ref BT_GATT_CHARACTERISTIC, but the value callbacks may answer a
+ *  remote read or write later. Requires @kconfig{CONFIG_BT_GATT_ASYNC_ATTR}.
+ *
+ *  @param _uuid Characteristic attribute uuid.
+ *  @param _props Characteristic attribute properties,
+ *                a bitmap of ``BT_GATT_CHRC_*`` macros.
+ *  @param _perm Characteristic Attribute access permissions,
+ *               a bitmap of @ref bt_gatt_perm values.
+ *  @param _read Characteristic Attribute read callback
+ *               (@ref bt_gatt_attr_read_async_func_t).
+ *  @param _write Characteristic Attribute write callback
+ *                (@ref bt_gatt_attr_write_async_func_t).
+ *  @param _user_data Characteristic Attribute user data.
+ */
+#define BT_GATT_CHARACTERISTIC_ASYNC(_uuid, _props, _perm, _read, _write, _user_data) \
+	BT_GATT_ATTRIBUTE(BT_UUID_GATT_CHRC, BT_GATT_PERM_READ,                 \
+			  bt_gatt_attr_read_chrc, NULL,                         \
+			  ((struct bt_gatt_chrc[]) {                            \
+				BT_GATT_CHRC_INIT(_uuid, 0U, _props),           \
+						   })),                         \
+	BT_GATT_ATTRIBUTE_ASYNC(_uuid, _perm, _read, _write, _user_data)
+
+/**
  *  @brief BT_GATT_CCC_MAX is defined depending on whether
  *  @kconfig{CONFIG_BT_SETTINGS_CCC_LAZY_LOADING} or @kconfig{CONFIG_BT_CONN} is set.
  *
@@ -1397,6 +1670,32 @@ ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
 	.uuid = _uuid,							\
 	.read = _read,							\
 	.write = _write,						\
+	.user_data = _user_data,					\
+	.handle = 0,							\
+	.perm = _perm,							\
+}
+
+/**
+ *  @brief Attribute Declaration Macro with asynchronous callbacks.
+ *
+ *  Like @ref BT_GATT_ATTRIBUTE, but the callbacks may answer a remote read or
+ *  write later. Requires @kconfig{CONFIG_BT_GATT_ASYNC_ATTR}.
+ *
+ *  @param _uuid Attribute uuid.
+ *  @param _perm Attribute access permissions,
+ *               a bitmap of @ref bt_gatt_perm values.
+ *  @param _read Attribute read callback
+ *               (@ref bt_gatt_attr_read_async_func_t).
+ *  @param _write Attribute write callback
+ *                (@ref bt_gatt_attr_write_async_func_t).
+ *  @param _user_data Attribute user data.
+ */
+#define BT_GATT_ATTRIBUTE_ASYNC(_uuid, _perm, _read, _write, _user_data)	\
+{									\
+	.uuid = _uuid,							\
+	.async = ((const struct bt_gatt_attr_async[]) {			\
+		{ .read = (_read), .write = (_write) },			\
+	}),								\
 	.user_data = _user_data,					\
 	.handle = 0,							\
 	.perm = _perm,							\

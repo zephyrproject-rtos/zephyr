@@ -323,6 +323,13 @@ int bt_att_req_send(struct bt_conn *conn, struct bt_att_req *req);
 /* Cancel ATT request */
 void bt_att_req_cancel(struct bt_conn *conn, struct bt_att_req *req);
 
+/* Backs bt_gatt_rsp_read(), bt_gatt_rsp_write() and bt_gatt_rsp_error(). */
+int bt_att_rsp_read(struct bt_conn *conn, uint32_t id, const void *data, uint16_t len);
+
+int bt_att_rsp_write(struct bt_conn *conn, uint32_t id);
+
+int bt_att_rsp_error(struct bt_conn *conn, uint32_t id, uint8_t att_err);
+
 /* Disconnect EATT channels */
 int bt_eatt_disconnect(struct bt_conn *conn);
 

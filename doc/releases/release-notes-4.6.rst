@@ -63,6 +63,24 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
+* Bluetooth
+
+  * Host
+
+    * :kconfig:option:`CONFIG_BT_GATT_ASYNC_ATTR`
+    * :c:macro:`BT_GATT_ATTRIBUTE_ASYNC`
+    * :c:macro:`BT_GATT_CHARACTERISTIC_ASYNC`
+    * :c:member:`bt_gatt_attr.async`
+    * :c:struct:`bt_gatt_attr_async`
+    * :c:func:`bt_gatt_attr_async_read`
+    * :c:func:`bt_gatt_attr_async_write`
+    * :c:type:`bt_gatt_attr_read_async_func_t`
+    * :c:type:`bt_gatt_attr_write_async_func_t`
+    * :c:struct:`bt_gatt_req`
+    * :c:func:`bt_gatt_rsp_error`
+    * :c:func:`bt_gatt_rsp_read`
+    * :c:func:`bt_gatt_rsp_write`
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
