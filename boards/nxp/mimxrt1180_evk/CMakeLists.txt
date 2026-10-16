@@ -8,7 +8,12 @@ zephyr_library()
 zephyr_library_sources(board.c)
 
 if(CONFIG_SOC_MIMXRT1189_CM33)
-zephyr_linker_sources(DTCM_SECTION cm33/dtcm.ld)
+  # The DTCM_SECTION snippet only applies when a dedicated DTCM region is
+  # chosen.
+  dt_chosen(dtcm_chosen PROPERTY "zephyr,dtcm")
+  if(dtcm_chosen)
+    zephyr_linker_sources(DTCM_SECTION cm33/dtcm.ld)
+  endif()
 endif()
 
 if(CONFIG_BOARD_NXP_SPECIFIC_MPU_SETTINGS)
