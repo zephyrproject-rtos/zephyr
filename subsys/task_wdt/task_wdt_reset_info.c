@@ -22,6 +22,10 @@
 #include <zephyr/drivers/hwinfo.h>
 #endif
 
+#ifdef CONFIG_TASK_WDT_SAFE_MODE
+#include <zephyr/retention/bootmode.h>
+#endif
+
 #include "task_wdt_reset_info.h"
 
 #define RESET_RECORD_MAGIC   0x54574452U /* "TWDR" */
@@ -58,6 +62,10 @@ static bool loaded;
 static uint32_t fault_count;
 static bool last_info_valid;
 static struct task_wdt_reset_info last_info;
+#ifdef CONFIG_TASK_WDT_SAFE_MODE
+/* fault count of the record stored by task_wdt_reset_info_save(), 0 if none */
+static uint32_t armed_fault_count;
+#endif
 
 static uint32_t record_crc(const struct reset_record *rec)
 {
@@ -210,6 +218,9 @@ void task_wdt_reset_info_save(const struct task_wdt_fault *fault)
 	load_locked();
 	rec.fault_count = fault_count < UINT32_MAX ? fault_count + 1U : UINT32_MAX;
 	(void)record_write(&rec);
+#ifdef CONFIG_TASK_WDT_SAFE_MODE
+	armed_fault_count = rec.fault_count;
+#endif
 
 	k_spin_unlock(&lock, key);
 }
@@ -219,9 +230,25 @@ void task_wdt_reset_info_cancel(void)
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	(void)record_write_idle();
+#ifdef CONFIG_TASK_WDT_SAFE_MODE
+	armed_fault_count = 0U;
+#endif
 
 	k_spin_unlock(&lock, key);
 }
+
+#ifdef CONFIG_TASK_WDT_SAFE_MODE
+void task_wdt_reset_info_safe_mode(void)
+{
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
+	if (armed_fault_count >= CONFIG_TASK_WDT_SAFE_MODE_RESETS) {
+		(void)bootmode_set(CONFIG_TASK_WDT_SAFE_MODE_BOOT_MODE);
+	}
+
+	k_spin_unlock(&lock, key);
+}
+#endif
 
 int task_wdt_reset_info_get(struct task_wdt_reset_info *info)
 {

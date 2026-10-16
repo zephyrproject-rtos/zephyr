@@ -15,4 +15,7 @@ void task_wdt_reset_info_save(const struct task_wdt_fault *fault);
 /* Drop the record stored by task_wdt_reset_info_save() if no reset happened */
 void task_wdt_reset_info_cancel(void);
 
+/* Set the safe boot mode if the system is about to reset too many times in a row */
+void task_wdt_reset_info_safe_mode(void);
+
 #endif /* ZEPHYR_SUBSYS_TASK_WDT_TASK_WDT_RESET_INFO_H_ */

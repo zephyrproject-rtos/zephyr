@@ -20,6 +20,10 @@ LOG_MODULE_REGISTER(task_wdt);
 #include "task_wdt_internal.h"
 #include "task_wdt_reset_info.h"
 
+#if defined(CONFIG_TASK_WDT_SUPERVISION) || defined(CONFIG_TASK_WDT_GROUPS)
+#define TASK_WDT_INTERNAL_LOCK 1
+#endif
+
 /*
  * This dummy channel is used to continue feeding the hardware watchdog if the
  * task watchdog timeouts are too long for regular updates
@@ -53,6 +57,14 @@ struct task_wdt_channel {
 	struct task_wdt_supervision *sup;
 	/* abs. ticks when the running deadline of sup expires, INT64_MAX if none */
 	int64_t deadline_abs_ticks;
+#endif
+#ifdef CONFIG_TASK_WDT_GROUPS
+	/* group whose policy handles the faults of the channel, NULL if none */
+	struct task_wdt_group *group;
+	/* set while the recovery has not fed the channel again */
+	bool recovering;
+	/* enum task_wdt_fault_reason of the fault being recovered */
+	uint8_t recovery_reason;
 #endif
 #ifdef CONFIG_TASK_WDT_THREAD_INFO
 	/* thread owning the channel, NULL if not known */
@@ -170,6 +182,57 @@ static void task_wdt_report(int channel_id, enum task_wdt_fault_reason reason)
 }
 #endif /* CONFIG_TASK_WDT_THREAD_INFO */
 
+#ifdef CONFIG_TASK_WDT_GROUPS
+/* Decide how to handle a fault according to the group of the channel */
+static enum task_wdt_action channel_action(int channel_id, enum task_wdt_fault_reason reason)
+{
+	struct task_wdt_channel *channel = &channels[channel_id];
+	enum task_wdt_action action = TASK_WDT_ACTION_CALLBACK;
+	k_spinlock_key_t key = k_spin_lock(&channels_lock);
+	int64_t current_ticks = sys_clock_tick_get();
+	struct task_wdt_group *group = channel->group;
+
+	if (group == NULL) {
+		/* no policy */
+	} else if (channel->recovering) {
+		/* the recovery did not feed the channel again in time */
+		channel->recovering = false;
+		action = TASK_WDT_ACTION_RESET_SYSTEM;
+	} else {
+		action = task_wdt_group_escalate(group, current_ticks);
+		if (action == TASK_WDT_ACTION_RECOVER && group->recovery_fn == NULL) {
+			action = TASK_WDT_ACTION_RESET_SYSTEM;
+		}
+	}
+
+	if (action == TASK_WDT_ACTION_RECOVER) {
+		uint32_t recovery_ms = channel->reload_period;
+
+		if (group->escalation != NULL && group->escalation->recovery_ms != 0U) {
+			recovery_ms = group->escalation->recovery_ms;
+		}
+
+		/* the recovery has to feed the channel again before it times out */
+		channel->recovering = true;
+		channel->recovery_reason = reason;
+		channel->timeout_abs_ticks = current_ticks + k_ms_to_ticks_ceil64(recovery_ms);
+#ifdef CONFIG_TASK_WDT_SUPERVISION
+		/* the supervised entity starts over after the recovery */
+		if (channel->sup != NULL) {
+			channel->sup->last = channel->sup->num_checkpoints;
+			channel->sup->active = channel->sup->num_deadlines;
+			channel->deadline_abs_ticks = INT64_MAX;
+		}
+#endif
+		schedule_next_timeout(current_ticks);
+	}
+
+	k_spin_unlock(&channels_lock, key);
+
+	return action;
+}
+#endif /* CONFIG_TASK_WDT_GROUPS */
+
 static void task_wdt_fault(int channel_id, enum task_wdt_fault_reason reason)
 {
 	struct task_wdt_fault fault = {
@@ -180,6 +243,7 @@ static void task_wdt_fault(int channel_id, enum task_wdt_fault_reason reason)
 #endif
 	};
 	bool handled = false;
+	bool reset = false;
 
 	/* only used with the reset information or fault reasons */
 	ARG_UNUSED(fault);
@@ -188,18 +252,31 @@ static void task_wdt_fault(int channel_id, enum task_wdt_fault_reason reason)
 	task_wdt_report(channel_id, reason);
 #endif
 
+#ifdef CONFIG_TASK_WDT_GROUPS
+	switch (channel_action(channel_id, reason)) {
+	case TASK_WDT_ACTION_RECOVER:
+		task_wdt_group_recovery_submit(channel_id);
+		return;
+	case TASK_WDT_ACTION_RESET_SYSTEM:
+		reset = true;
+		break;
+	default:
+		break;
+	}
+#endif
+
 #ifdef CONFIG_TASK_WDT_RESET_INFO
 	/* the callback may reset the system, so store the record beforehand */
 	task_wdt_reset_info_save(&fault);
 #endif
 
 #ifdef CONFIG_TASK_WDT_FAULT_REASONS
-	if (channels[channel_id].fault_callback) {
+	if (!reset && channels[channel_id].fault_callback) {
 		channels[channel_id].fault_callback(&fault, channels[channel_id].user_data);
 		handled = true;
 	}
 #endif
-	if (!handled && channels[channel_id].callback) {
+	if (!reset && !handled && channels[channel_id].callback) {
 		channels[channel_id].callback(channel_id, channels[channel_id].user_data);
 		handled = true;
 	}
@@ -218,6 +295,9 @@ static void task_wdt_fault(int channel_id, enum task_wdt_fault_reason reason)
 #ifdef CONFIG_TASK_WDT_THREAD_INFO
 		/* flush the report before the reset */
 		LOG_PANIC();
+#endif
+#ifdef CONFIG_TASK_WDT_SAFE_MODE
+		task_wdt_reset_info_safe_mode();
 #endif
 		sys_reboot(SYS_REBOOT_COLD);
 	}
@@ -346,6 +426,10 @@ static int channel_add(uint32_t reload_period, task_wdt_callback_t callback,
 			channels[id].sup = NULL;
 			channels[id].deadline_abs_ticks = INT64_MAX;
 #endif
+#ifdef CONFIG_TASK_WDT_GROUPS
+			channels[id].group = NULL;
+			channels[id].recovering = false;
+#endif
 #ifdef CONFIG_TASK_WDT_THREAD_INFO
 			channels[id].thread = NULL;
 			channels[id].thread_fixed = false;
@@ -414,6 +498,10 @@ int task_wdt_delete(int channel_id)
 		task_wdt_channel_sup_detach(channel_id);
 	}
 #endif
+#ifdef CONFIG_TASK_WDT_GROUPS
+	channels[channel_id].group = NULL;
+	channels[channel_id].recovering = false;
+#endif
 
 	k_spin_unlock(&channels_lock, key);
 
@@ -450,6 +538,11 @@ int task_wdt_feed(int channel_id)
 	/* feed the specified channel */
 	channels[channel_id].timeout_abs_ticks = current_ticks +
 		k_ms_to_ticks_ceil64(channels[channel_id].reload_period);
+
+#ifdef CONFIG_TASK_WDT_GROUPS
+	/* feeding the channel again ends its recovery */
+	channels[channel_id].recovering = false;
+#endif
 
 #ifdef CONFIG_TASK_WDT_THREAD_INFO
 	/* the owner is the thread which fed the channel last */
@@ -646,7 +739,7 @@ void task_wdt_resume(void)
 	k_spin_unlock(&channels_lock, key);
 }
 
-#ifdef CONFIG_TASK_WDT_SUPERVISION
+#ifdef TASK_WDT_INTERNAL_LOCK
 k_spinlock_key_t task_wdt_lock(void)
 {
 	return k_spin_lock(&channels_lock);
@@ -656,7 +749,9 @@ void task_wdt_unlock(k_spinlock_key_t key)
 {
 	k_spin_unlock(&channels_lock, key);
 }
+#endif
 
+#ifdef CONFIG_TASK_WDT_SUPERVISION
 void task_wdt_channel_fault(struct task_wdt_supervision *sup, int channel_id,
 			    enum task_wdt_fault_reason reason)
 {
@@ -728,3 +823,113 @@ int task_wdt_checkpoint(struct task_wdt_supervision *sup, uint32_t checkpoint)
 	return -ENOTSUP;
 }
 #endif /* CONFIG_TASK_WDT_SUPERVISION */
+
+#ifdef CONFIG_TASK_WDT_GROUPS
+/* End the recovery of a channel, giving it a full reload period again */
+static bool channel_recovery_end(struct task_wdt_channel *channel, int64_t current_ticks)
+{
+	if (!channel->recovering) {
+		return false;
+	}
+
+	channel->recovering = false;
+	channel->timeout_abs_ticks = current_ticks + k_ms_to_ticks_ceil64(channel->reload_period);
+
+	return true;
+}
+
+void task_wdt_group_channels_reset(struct task_wdt_group *group)
+{
+	int64_t current_ticks = sys_clock_tick_get();
+	bool changed = false;
+
+	for (int id = 0; id < ARRAY_SIZE(channels); id++) {
+		if (channels[id].reload_period != 0 && channels[id].group == group) {
+			changed |= channel_recovery_end(&channels[id], current_ticks);
+		}
+	}
+
+	if (changed) {
+		schedule_next_timeout(current_ticks);
+	}
+}
+
+int task_wdt_channel_group_set(int channel_id, struct task_wdt_group *group)
+{
+	k_spinlock_key_t key;
+	int ret = 0;
+
+	if (channel_id < 0 || channel_id >= ARRAY_SIZE(channels)) {
+		return -EINVAL;
+	}
+
+	key = k_spin_lock(&channels_lock);
+
+	if (channels[channel_id].reload_period == 0) {
+		ret = -EINVAL;
+	} else {
+		int64_t current_ticks = sys_clock_tick_get();
+
+		channels[channel_id].group = group;
+		/* the recovery of the previous group does not apply anymore */
+		if (channel_recovery_end(&channels[channel_id], current_ticks)) {
+			schedule_next_timeout(current_ticks);
+		}
+	}
+
+	k_spin_unlock(&channels_lock, key);
+
+	return ret;
+}
+
+void task_wdt_channel_recover(int channel_id)
+{
+	struct task_wdt_channel *channel = &channels[channel_id];
+	k_spinlock_key_t key = k_spin_lock(&channels_lock);
+	task_wdt_fault_callback_t recovery_fn;
+	struct task_wdt_fault fault;
+	void *user_data;
+
+	/* the channel may have been fed, deleted or moved meanwhile */
+	if (channel->reload_period == 0 || !channel->recovering || channel->group == NULL) {
+		k_spin_unlock(&channels_lock, key);
+		return;
+	}
+
+	recovery_fn = channel->group->recovery_fn;
+	user_data = channel->user_data;
+	fault = (struct task_wdt_fault){
+		.channel_id = channel_id,
+		.reason = channel->recovery_reason,
+#ifdef CONFIG_TASK_WDT_THREAD_INFO
+		.thread = channel->thread,
+#endif
+	};
+
+	k_spin_unlock(&channels_lock, key);
+
+	recovery_fn(&fault, user_data);
+}
+#else
+int task_wdt_channel_group_set(int channel_id, struct task_wdt_group *group)
+{
+	ARG_UNUSED(channel_id);
+	ARG_UNUSED(group);
+
+	return -ENOTSUP;
+}
+
+int task_wdt_group_action_get(const struct task_wdt_group *group)
+{
+	ARG_UNUSED(group);
+
+	return -ENOTSUP;
+}
+
+int task_wdt_group_reset(struct task_wdt_group *group)
+{
+	ARG_UNUSED(group);
+
+	return -ENOTSUP;
+}
+#endif /* CONFIG_TASK_WDT_GROUPS */

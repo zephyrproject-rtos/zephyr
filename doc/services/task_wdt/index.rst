@@ -147,6 +147,52 @@ a watchdog reset reported by :c:func:`hwinfo_get_reset_cause` without a record
 is returned as :c:enumerator:`TASK_WDT_RESET_HW_FALLBACK`, which means the whole
 system was stuck.
 
+With :kconfig:option:`CONFIG_TASK_WDT_SAFE_MODE` enabled, the task watchdog
+sets the boot mode :kconfig:option:`CONFIG_TASK_WDT_SAFE_MODE_BOOT_MODE` with
+:c:func:`bootmode_set` before the system is reset for the
+:kconfig:option:`CONFIG_TASK_WDT_SAFE_MODE_RESETS` th consecutive time. The
+application or the bootloader can check it with :c:func:`bootmode_check` and
+start a minimal configuration instead of resetting forever.
+
+Groups and Recovery
+*******************
+
+With :kconfig:option:`CONFIG_TASK_WDT_GROUPS` enabled, channels can be assigned
+to a group with :c:func:`task_wdt_channel_group_set`. The group defines what
+happens when one of its channels has a fault:
+
+* :c:enumerator:`TASK_WDT_ACTION_CALLBACK` calls the channel callback, or
+  resets the system if there is none, as for channels without a group.
+* :c:enumerator:`TASK_WDT_ACTION_RECOVER` calls the recovery function of the
+  group from a dedicated work queue, so it runs in thread context and can, for
+  example, restart the faulty thread. The channel has to be fed within the
+  recovery time, otherwise the system is reset. A supervised entity attached
+  to the channel starts over.
+* :c:enumerator:`TASK_WDT_ACTION_RESET_SYSTEM` resets the system without
+  calling the channel callback.
+
+.. code-block:: c
+
+   static void restart(const struct task_wdt_fault *fault, void *user_data)
+   {
+           /* restart the thread owning fault->channel_id */
+   }
+
+   static const struct task_wdt_escalation escalation = {
+           .faults = 3,
+           .period_ms = 60000,
+   };
+
+   TASK_WDT_GROUP_DEFINE(workers, TASK_WDT_ACTION_RECOVER, restart, &escalation);
+
+   task_wdt_channel_group_set(channel_id, &workers);
+
+With an escalation, the faults of all channels of the group are counted. After
+the given number of faults within the period, the group moves to the next,
+more severe action, up to a system reset. :c:func:`task_wdt_group_action_get`
+returns the current action and :c:func:`task_wdt_group_reset` restores the
+initial one and ends the recovery of the channels of the group.
+
 Configuration Options
 *********************
 
@@ -178,6 +224,18 @@ Related configuration options can be found under
 * :kconfig:option:`CONFIG_TASK_WDT_RESET_INFO_RETENTION`
 
 * :kconfig:option:`CONFIG_TASK_WDT_RESET_INFO_HW_FALLBACK`
+
+* :kconfig:option:`CONFIG_TASK_WDT_SAFE_MODE`
+
+* :kconfig:option:`CONFIG_TASK_WDT_SAFE_MODE_RESETS`
+
+* :kconfig:option:`CONFIG_TASK_WDT_SAFE_MODE_BOOT_MODE`
+
+* :kconfig:option:`CONFIG_TASK_WDT_GROUPS`
+
+* :kconfig:option:`CONFIG_TASK_WDT_RECOVERY_STACK_SIZE`
+
+* :kconfig:option:`CONFIG_TASK_WDT_RECOVERY_PRIORITY`
 
 API Reference
 *************

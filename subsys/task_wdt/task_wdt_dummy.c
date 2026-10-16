@@ -118,6 +118,28 @@ int task_wdt_checkpoint(struct task_wdt_supervision *sup, uint32_t checkpoint)
 	return 0;
 }
 
+int task_wdt_channel_group_set(int channel_id, struct task_wdt_group *group)
+{
+	ARG_UNUSED(channel_id);
+	ARG_UNUSED(group);
+
+	return 0;
+}
+
+int task_wdt_group_action_get(const struct task_wdt_group *group)
+{
+	ARG_UNUSED(group);
+
+	return TASK_WDT_ACTION_CALLBACK;
+}
+
+int task_wdt_group_reset(struct task_wdt_group *group)
+{
+	ARG_UNUSED(group);
+
+	return 0;
+}
+
 void task_wdt_suspend(void)
 {
 }

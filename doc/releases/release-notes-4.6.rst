@@ -66,9 +66,12 @@ New APIs and options
 * Task Watchdog
 
   * :c:func:`task_wdt_add_ext`
+  * :c:func:`task_wdt_channel_group_set`
   * :c:func:`task_wdt_channel_info_get`
   * :c:func:`task_wdt_channel_thread_set`
   * :c:func:`task_wdt_checkpoint`
+  * :c:func:`task_wdt_group_action_get`
+  * :c:func:`task_wdt_group_reset`
   * :c:func:`task_wdt_reset_info_clear`
   * :c:func:`task_wdt_reset_info_get`
   * :c:func:`task_wdt_supervision_start`

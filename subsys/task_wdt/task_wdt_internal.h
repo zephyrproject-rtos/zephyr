@@ -33,4 +33,20 @@ void task_wdt_channel_sup_detach(int channel_id);
 /* Set the deadline of a channel in absolute ticks, INT64_MAX to cancel it */
 void task_wdt_channel_deadline_set(int channel_id, int64_t deadline_abs_ticks);
 
+/* Count a fault of the group and return the action to take */
+enum task_wdt_action task_wdt_group_escalate(struct task_wdt_group *group, int64_t current_ticks);
+
+/* End the recovery of all channels of the group */
+void task_wdt_group_channels_reset(struct task_wdt_group *group);
+
+/*
+ * The functions below must be called without holding the lock.
+ */
+
+/* Run the recovery of a channel from the recovery work queue, callable from an ISR */
+void task_wdt_group_recovery_submit(int channel_id);
+
+/* Run the recovery of a channel, called from the recovery work queue */
+void task_wdt_channel_recover(int channel_id);
+
 #endif /* ZEPHYR_SUBSYS_TASK_WDT_TASK_WDT_INTERNAL_H_ */
