@@ -83,6 +83,7 @@ static uart_register_state_t sRegState[AM_REG_UART_NUM_MODULES];
 
 static int uart_ambiq_pm_action(const struct device *dev, enum pm_device_action action)
 {
+	const struct pl011_config *config = dev->config;
 	int key;
 
 	/*Uart module number*/
@@ -113,6 +114,9 @@ static int uart_ambiq_pm_action(const struct device *dev, enum pm_device_action 
 
 		/* Enable power control.*/
 		am_hal_pwrctrl_periph_enable(eUARTPowerModule);
+
+		/* Set pins to active state */
+		(void)pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 
 		/* Restore UART registers*/
 		key = irq_lock();
@@ -160,6 +164,9 @@ static int uart_ambiq_pm_action(const struct device *dev, enum pm_device_action 
 		 * to set the entire CR register to 0.
 		 */
 		UARTn(ui32Module)->CR = 0;
+
+		/* Move pins to sleep state, if the board defines one */
+		(void)pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
 
 		/* Disable power control.*/
 		am_hal_pwrctrl_periph_disable(eUARTPowerModule);
