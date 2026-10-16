@@ -846,6 +846,79 @@ CM33-NS image boots the CM55 on reset):
    west flash -d build_multicore_55
    west flash -d build_multicore_33
 
+Multi-image DFU over BLE
+========================
+
+The board supports Device Firmware Upgrade (DFU) over Bluetooth Low Energy (BLE)
+for the multicore configuration, allowing both the CM33 and CM55 images to be
+updated remotely.
+
+The ``smp_svr`` sample serves as the primary CM33-NS application which advertises
+over BLE and routes incoming updates to the appropriate flash partitions.
+
+Step 1 — MCUBoot bootloader
+---------------------------
+
+.. code-block:: shell
+
+   west build -b kit_pse84_eval/pse846gps2dbzc4a/m33 \
+       bootloader/mcuboot/boot/zephyr -d build_mcuboot3 \
+       -- -DCONFIG_UPDATEABLE_IMAGE_NUMBER=3
+
+Step 2 — CM33-NS smp_svr application
+------------------------------------
+
+Build the ``smp_svr`` sample with BLE, slot, and multicore DFU configurations.
+The CM33-NS image must be built first.
+
+.. code-block:: shell
+
+   west build -b kit_pse84_eval/pse846gps2dbzc4a/m33/ns \
+       -d build_multicore_33 samples/subsys/mgmt/mcumgr/smp_svr \
+       -- -DCONFIG_PSOC_EDGE_M55_SRF_SUPPORT=y \
+          -DEXTRA_CONF_FILE="${ZEPHYR_BASE}/boards/infineon/kit_pse84_eval/kit_pse84_eval_slot.conf;${ZEPHYR_BASE}/samples/subsys/mgmt/mcumgr/smp_svr/bt.conf;${ZEPHYR_BASE}/boards/infineon/kit_pse84_eval/kit_pse84_eval_dfu_multi.conf" \
+          -DEXTRA_DTC_OVERLAY_FILE="${ZEPHYR_BASE}/boards/infineon/kit_pse84_eval/kit_pse84_eval_scb2_disable.overlay;${ZEPHYR_BASE}/boards/infineon/kit_pse84_eval/kit_pse84_eval_dfu_multi.overlay"
+
+Step 3 — CM55 application
+-------------------------
+
+Point the CM55 build at the CM33-NS build directory. Any application can be used (e.g., blinky).
+
+.. code-block:: shell
+
+   west build -b kit_pse84_eval/pse846gps2dbzc4a/m55 \
+       -d build_multicore_55 samples/basic/blinky \
+       -- -DCONFIG_PSOC_EDGE_M55_SRF_SUPPORT=y \
+          -DPSE84_CM33_BUILD_DIR=build_multicore_33 \
+          -DEXTRA_CONF_FILE="${ZEPHYR_BASE}/boards/infineon/kit_pse84_eval/kit_pse84_eval_slot.conf" \
+          -DEXTRA_DTC_OVERLAY_FILE="${ZEPHYR_BASE}/boards/infineon/kit_pse84_eval/kit_pse84_eval_scb4_disable.overlay"
+
+Step 4 — Flashing and Uploading
+-------------------------------
+
+Flash the baseline images:
+
+.. code-block:: shell
+
+   west flash -d build_mcuboot3 --erase
+   west flash -d build_multicore_55
+   west flash -d build_multicore_33
+
+Upload a new CM55 image over BLE using ``mcumgr``. Use ``-n 1`` to target the
+CM55 slot and ``-w 1`` to improve BLE reliability:
+
+.. code-block:: shell
+
+   mcumgr -c ble-board image upload -n 1 -w 1 build_multicore_55/zephyr/zephyr.signed.bin
+   mcumgr -c ble-board image test <hash>
+   mcumgr -c ble-board reset
+
+After reboot, confirm the new CM55 image so it doesn't revert:
+
+.. code-block:: shell
+
+   mcumgr -c ble-board image confirm <hash>
+
 References
 **********
 
