@@ -1893,6 +1893,16 @@
 		status = "disabled";
 	};
 
+	jpegdec: jpegdec@4c0c0000 {
+		compatible = "nxp,jpegdec";
+		reg = <0x4c0c0000 0x100>, <0x4c0c0100 0x100>;
+		interrupts = <330 0>;
+		clock-names = "gate";
+		clocks = <&media_ccm
+			  IMX_CCM_CLK(IMX_CCM_LPCG_MEDIA_JPEG_DECODER, IMX_CCM_ROOT_NONE)>;
+		status = "disabled";
+	};
+
 	/*
 	 * XSPI controllers. Each instance has two AHB-mapped windows: the
 	 * direct window at XSPI<n>_AMBA_BASE_NS and an LLC-cached alias
