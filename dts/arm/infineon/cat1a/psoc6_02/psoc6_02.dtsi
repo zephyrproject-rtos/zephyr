@@ -35,6 +35,20 @@
 			status = "disabled";
 		};
 
+		mcwdt0: mcwdt@40260200 {
+			compatible = "infineon,lp-timer";
+			reg = <0x40260200 0x40>;
+			interrupts = <19 6>;
+			status = "disabled";
+		};
+
+		mcwdt1: mcwdt@40260240 {
+			compatible = "infineon,lp-timer";
+			reg = <0x40260240 0x40>;
+			interrupts = <20 6>;
+			status = "disabled";
+		};
+
 		dma0: dw@40280000 {
 			compatible = "infineon,dma";
 			reg = <0x40280000 0x8700>;

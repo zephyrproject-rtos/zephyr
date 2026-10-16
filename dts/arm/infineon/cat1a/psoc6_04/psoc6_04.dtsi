@@ -34,6 +34,20 @@
 			status = "disabled";
 		};
 
+		mcwdt0: mcwdt@40260200 {
+			compatible = "infineon,lp-timer";
+			reg = <0x40260200 0x40>;
+			interrupts = <19 6>;
+			status = "disabled";
+		};
+
+		mcwdt1: mcwdt@40260240 {
+			compatible = "infineon,lp-timer";
+			reg = <0x40260240 0x40>;
+			interrupts = <20 6>;
+			status = "disabled";
+		};
+
 		pinctrl: pinctrl@40300000 {
 			compatible = "infineon,pinctrl";
 			reg = <0x40300000 0x20000>;
