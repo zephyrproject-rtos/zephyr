@@ -67,7 +67,7 @@ static bool thread2_ready;
 static int cpu_t1;
 static int cpu_t2;
 static int cpu_t3;
-static int cpu_t4;
+static volatile int cpu_t4 = -1;
 
 static struct k_timer my_timer;
 
@@ -233,18 +233,28 @@ ZTEST(ipi_cascade, test_ipi_cascade)
 
 	thread1_ready = true;
 
-	k_busy_wait(1000);   /* Busy wait for 1 ms */
+	/*
+	 * Wait for T4 to run: T2 has then woken T3 and T4, and an IPI is
+	 * pending for this CPU. Don't assume this takes less than a few
+	 * ms: QEMU without icount follows the host clock, which may stall
+	 * the other vCPU.
+	 */
+	for (int i = 0; i < 10000 && cpu_t4 < 0; i++) {
+		k_busy_wait(100);
+	}
 
 	/*
 	 * 9. Unlocking interrupts allows the IPI from to be processed.
 	 * This will cause the current thread (T1) to be switched out for T3.
 	 * An IPI cascade is expected to occur resulting in switching
-	 * out T4 for T1. Busy wait again to ensure that the IPI is detected
-	 * and processed.
+	 * out T4 for T1. Wait until T1 runs on the other CPU, or until the
+	 * monitoring timer gives up.
 	 */
 
 	arch_irq_unlock(key);
-	k_busy_wait(1000);   /* Busy wait for 1 ms */
+	while (!timer_expired && _current->base.cpu == cpu_t1) {
+		k_busy_wait(100);
+	}
 
 	zassert_false(timer_expired, "Test terminated by timer");
 
