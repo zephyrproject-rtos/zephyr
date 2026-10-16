@@ -5,8 +5,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-.section .text,"ax"
-.text
+/*
+ * Each routine in this file must execute from RAM, so emit every function into
+ * its own .text.<symbol> input section. This module's CMakeLists relocates them
+ * into the SRAM code region with zephyr_code_relocate().
+ */
+.syntax unified
+.thumb
+
+.section .text.Cy_SysLib_DelayCycles,"ax",%progbits
 
 
 /*******************************************************************************
@@ -22,6 +29,7 @@
 .align 3                    /* Align to 8 byte boundary (2^n) */
 .global Cy_SysLib_DelayCycles
 .type Cy_SysLib_DelayCycles, %function
+.thumb_func
 Cy_SysLib_DelayCycles:      /* cycles bytes */
 
     ADDS r0, r0, #2         /*    1    2    Round to nearest multiple of 4 */
@@ -54,9 +62,10 @@ Cy_DelayCycles_done:
 *
 *******************************************************************************/
 /* uint8_t Cy_SysLib_EnterCriticalSection(void) */
+.section .text.Cy_SysLib_EnterCriticalSection,"ax",%progbits
 .global Cy_SysLib_EnterCriticalSection
 .type Cy_SysLib_EnterCriticalSection, %function
-
+.thumb_func
 Cy_SysLib_EnterCriticalSection:
     MRS r0, PRIMASK         /* Save and return interrupt state */
     cpsid i                 /* Disable interrupts */
@@ -77,9 +86,10 @@ Cy_SysLib_EnterCriticalSection:
 *
 *******************************************************************************/
 /* void Cy_SysLib_ExitCriticalSection(uint8_t savedIntrStatus) */
+.section .text.Cy_SysLib_ExitCriticalSection,"ax",%progbits
 .global Cy_SysLib_ExitCriticalSection
 .type Cy_SysLib_ExitCriticalSection, %function
-
+.thumb_func
 Cy_SysLib_ExitCriticalSection:
     MSR PRIMASK, r0         /* Restore interrupt state */
     BX lr
