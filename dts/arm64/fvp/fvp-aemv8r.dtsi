@@ -66,18 +66,15 @@
 			reg = <0x9a000000 0x1000>;
 			interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			phy-handle = <&phy>;
-			status = "disabled";
 
 			mdio: mdio {
 				compatible = "smsc,lan91c111-mdio";
 				#address-cells = <1>;
 				#size-cells = <0>;
-				status = "disabled";
 
 				phy: ethernet-phy@0 {
 					compatible = "ethernet-phy";
 					reg = <0>;
-					status = "disabled";
 				};
 			};
 		};
