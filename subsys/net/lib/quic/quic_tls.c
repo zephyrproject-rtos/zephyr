@@ -1009,6 +1009,13 @@ static int compute_shared_secret(struct quic_tls_context *ctx)
 		return -EIO;
 	}
 
+	/* The ephemeral private key has no use after the key agreement.
+	 * Release it now instead of holding its key slot for the lifetime
+	 * of the connection.
+	 */
+	(void)psa_destroy_key(ctx->ecdh_key_id);
+	ctx->ecdh_key_id = 0;
+
 	if (IS_ENABLED(CONFIG_QUIC_TXRX_DEBUG)) {
 		NET_HEXDUMP_DBG(ctx->shared_secret, secret_len, "ECDH shared secret:");
 	}
@@ -2231,14 +2238,19 @@ static int derive_handshake_secrets(struct quic_tls_context *ctx)
 		return ret;
 	}
 
-	/* Notify QUIC layer of new secrets */
+	/* Notify QUIC layer of new secrets. Without the keys the handshake
+	 * cannot continue, so a failure here must end it.
+	 */
 	if (ctx->secret_cb != NULL) {
-		ctx->secret_cb(ctx->user_data, QUIC_SECRET_LEVEL_HANDSHAKE,
-			       ctx->ep->is_server ? ctx->ks.client_hs_traffic_secret :
-						    ctx->ks.server_hs_traffic_secret,
-			       ctx->ep->is_server ? ctx->ks.server_hs_traffic_secret :
-						    ctx->ks.client_hs_traffic_secret,
-			       ctx->ks.hash_len);
+		ret = ctx->secret_cb(ctx->user_data, QUIC_SECRET_LEVEL_HANDSHAKE,
+				     ctx->ep->is_server ? ctx->ks.client_hs_traffic_secret :
+							  ctx->ks.server_hs_traffic_secret,
+				     ctx->ep->is_server ? ctx->ks.server_hs_traffic_secret :
+							  ctx->ks.client_hs_traffic_secret,
+				     ctx->ks.hash_len);
+		if (ret != 0) {
+			return ret;
+		}
 	}
 
 	return 0;
@@ -5775,10 +5787,10 @@ static int quic_apply_header_protection_split(uint8_t *header, size_t header_len
 	return 0;
 }
 
-static int quic_send_packet(struct quic_endpoint *ep,
-			    enum quic_secret_level level,
-			    const uint8_t *payload,
-			    size_t payload_len);
+ZTESTABLE_STATIC int quic_send_packet(struct quic_endpoint *ep,
+				      enum quic_secret_level level,
+				      const uint8_t *payload,
+				      size_t payload_len);
 static int quic_send_packet_with_pn(struct quic_endpoint *ep,
 				    enum quic_secret_level level,
 				    const uint8_t *payload,
@@ -5970,6 +5982,18 @@ static int quic_send_packet_from_txbuf_ex(struct quic_endpoint *ep,
 
 			/* TODO: Check if there are other frames after ACK */
 		}
+	}
+
+	/* Nothing is sent at a level whose keys were discarded (RFC 9001
+	 * ch. 4.9), and nothing sent there could still matter to the peer.
+	 * This has to be checked on the context itself: the lookup below
+	 * does not return a context without keys.
+	 */
+	if ((level == QUIC_SECRET_LEVEL_INITIAL && ep->crypto.initial.discarded) ||
+	    (level == QUIC_SECRET_LEVEL_HANDSHAKE && ep->crypto.handshake.discarded)) {
+		NET_DBG("[EP:%p/%d] Not sending at discarded level %d",
+			ep, quic_get_by_ep(ep), level);
+		return 0;
 	}
 
 	/* Get crypto context */
@@ -6188,6 +6212,14 @@ static int quic_send_packet_from_txbuf_ex(struct quic_endpoint *ep,
 	NET_DBG("[EP:%p/%d] Sent %zd bytes at level %d, pn=%" PRIu64 ", ack-eliciting=%d",
 		ep, quic_get_by_ep(ep), sent, level, packet_number, ack_eliciting);
 
+	if (level == QUIC_SECRET_LEVEL_HANDSHAKE && !ep->is_server &&
+	    !ep->crypto.initial.discarded) {
+		/* RFC 9001 ch. 4.9.1: a client discards the Initial keys when
+		 * it first sends a Handshake packet.
+		 */
+		quic_endpoint_discard_keys(ep, QUIC_SECRET_LEVEL_INITIAL);
+	}
+
 	ret = 0;
 
 out:
@@ -6212,10 +6244,10 @@ static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
 					      dplpmtud_probe, NULL);
 }
 
-static int quic_send_packet(struct quic_endpoint *ep,
-			    enum quic_secret_level level,
-			    const uint8_t *payload,
-			    size_t payload_len)
+ZTESTABLE_STATIC int quic_send_packet(struct quic_endpoint *ep,
+				      enum quic_secret_level level,
+				      const uint8_t *payload,
+				      size_t payload_len)
 {
 	return quic_send_packet_with_pn(ep, level, payload, payload_len, NULL);
 }

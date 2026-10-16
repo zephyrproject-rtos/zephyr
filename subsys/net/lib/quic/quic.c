@@ -388,10 +388,10 @@ static int quic_send_packet_with_pn(struct quic_endpoint *ep,
 				    const uint8_t *payload,
 				    size_t payload_len,
 				    uint64_t *sent_pn_out);
-static int quic_send_packet(struct quic_endpoint *ep,
-			    enum quic_secret_level level,
-			    const uint8_t *payload,
-			    size_t payload_len);
+ZTESTABLE_STATIC int quic_send_packet(struct quic_endpoint *ep,
+				      enum quic_secret_level level,
+				      const uint8_t *payload,
+				      size_t payload_len);
 static int quic_send_stop_sending(struct quic_endpoint *ep,
 				  uint64_t stream_id,
 				  uint64_t error_code);
@@ -971,6 +971,21 @@ static int pollfd_try_add(net_sa_family_t family, int sock)
 }
 
 /*
+ * Report a failed key import. Running out of PSA key slots is a
+ * configuration problem that is otherwise hard to tell from the log, so
+ * name it.
+ */
+static void quic_log_key_import_failure(const char *what, psa_status_t status)
+{
+	if (status == PSA_ERROR_INSUFFICIENT_MEMORY) {
+		NET_ERR("Failed to import %s key: no free PSA key slot, "
+			"see CONFIG_MBEDTLS_PSA_KEY_SLOT_COUNT", what);
+	} else {
+		NET_ERR("Failed to import %s key: %d", what, status);
+	}
+}
+
+/*
  * Cleanup helper to call when destroying context or switching keys.
  * Destroys all PSA keys and clears sensitive data.
  */
@@ -1006,6 +1021,17 @@ ZTESTABLE_STATIC void quic_crypto_context_destroy(struct quic_crypto_context *ct
 	}
 
 	ctx->initialized = false;
+}
+
+/*
+ * Discard the keys of one encryption level for the rest of the connection
+ * (RFC 9001 ch. 4.9). Unlike a plain destroy this is remembered, so the
+ * level is not set up again and late packets for it are dropped.
+ */
+static void quic_crypto_context_discard(struct quic_crypto_context *ctx)
+{
+	quic_crypto_context_destroy(ctx);
+	ctx->discarded = true;
 }
 
 /*
@@ -1591,8 +1617,7 @@ static int quic_hkdf_expand_label_ex(psa_algorithm_t hash_alg,
 
 	status = psa_import_key(&attributes, secret, secret_len, &key_id);
 	if (status != PSA_SUCCESS) {
-		NET_DBG("psa_import_key failed: status=%d, hash_alg=0x%x, secret_len=%zu",
-			status, hash_alg, secret_len);
+		quic_log_key_import_failure("HKDF", status);
 		return -EIO;
 	}
 
@@ -1762,6 +1787,7 @@ static bool quic_hp_setup(struct quic_hp_cipher *hp_cipher, int hash_algo,
 	crypto_zero(hp_key, sizeof(hp_key));
 
 	if (status != PSA_SUCCESS) {
+		quic_log_key_import_failure("HP", status);
 		return false;
 	}
 
@@ -1848,6 +1874,7 @@ static bool quic_pp_setup(struct quic_pp_cipher *pp_cipher, int hash_algo,
 	crypto_zero(pp_key, sizeof(pp_key));
 
 	if (status != PSA_SUCCESS) {
+		quic_log_key_import_failure("PP", status);
 		memset(pp_cipher->iv, 0, sizeof(pp_cipher->iv));
 		return false;
 	}
@@ -1959,7 +1986,7 @@ static bool quic_hp_setup_ex(struct quic_hp_cipher *hp_cipher,
 	crypto_zero(hp_key, sizeof(hp_key));
 
 	if (status != PSA_SUCCESS) {
-		NET_ERR("Failed to import HP key:  %d", status);
+		quic_log_key_import_failure("HP", status);
 		return false;
 	}
 
@@ -2051,7 +2078,7 @@ static bool quic_pp_setup_ex(struct quic_pp_cipher *pp_cipher,
 	crypto_zero(pp_key, sizeof(pp_key));
 
 	if (status != PSA_SUCCESS) {
-		NET_ERR("Failed to import PP key:  %d", status);
+		quic_log_key_import_failure("PP", status);
 		memset(pp_cipher->iv, 0, sizeof(pp_cipher->iv));
 		return false;
 	}
@@ -4038,6 +4065,24 @@ static void quic_recovery_discard_pn_space(struct quic_endpoint *ep, int pn_spac
 	 */
 	quic_reset_pto_timer_locked(ep);
 	k_mutex_unlock(&ep->recovery.lock);
+}
+
+/*
+ * Discard the keys of the Initial or the Handshake level for the rest of
+ * the connection (RFC 9001 ch. 4.9), together with the loss recovery state
+ * of the packets sent with them. Those packets can no longer be
+ * acknowledged, so they must not stay counted as in flight or keep the probe
+ * timer armed (RFC 9002 ch. 6.4).
+ */
+ZTESTABLE_STATIC void quic_endpoint_discard_keys(struct quic_endpoint *ep,
+						 enum quic_secret_level level)
+{
+	__ASSERT_NO_MSG(level == QUIC_SECRET_LEVEL_INITIAL ||
+			level == QUIC_SECRET_LEVEL_HANDSHAKE);
+
+	quic_crypto_context_discard(level == QUIC_SECRET_LEVEL_INITIAL ?
+				    &ep->crypto.initial : &ep->crypto.handshake);
+	quic_recovery_discard_pn_space(ep, level_to_pn_space(level));
 }
 
 ZTESTABLE_STATIC void quic_recovery_init(struct quic_endpoint *ep)
@@ -6612,18 +6657,24 @@ static int derive_application_secrets(struct quic_tls_context *ctx)
 				"Server app traffic secret:");
 	}
 
-	/* Notify QUIC layer of new secrets */
+	/* Notify QUIC layer of new secrets. Without the keys the connection
+	 * cannot be used, so a failure here must end the handshake.
+	 */
 	if (ctx->secret_cb != NULL) {
 		if (ctx->ep->is_server) {
-			ctx->secret_cb(ctx->user_data, QUIC_SECRET_LEVEL_APPLICATION,
-				       ctx->ks.client_ap_traffic_secret,
-				       ctx->ks.server_ap_traffic_secret,
-				       ctx->ks.hash_len);
+			ret = ctx->secret_cb(ctx->user_data, QUIC_SECRET_LEVEL_APPLICATION,
+					     ctx->ks.client_ap_traffic_secret,
+					     ctx->ks.server_ap_traffic_secret,
+					     ctx->ks.hash_len);
 		} else {
-			ctx->secret_cb(ctx->user_data, QUIC_SECRET_LEVEL_APPLICATION,
-				       ctx->ks.server_ap_traffic_secret,
-				       ctx->ks.client_ap_traffic_secret,
-				       ctx->ks.hash_len);
+			ret = ctx->secret_cb(ctx->user_data, QUIC_SECRET_LEVEL_APPLICATION,
+					     ctx->ks.server_ap_traffic_secret,
+					     ctx->ks.client_ap_traffic_secret,
+					     ctx->ks.hash_len);
+		}
+
+		if (ret != 0) {
+			return ret;
 		}
 	}
 
@@ -7144,6 +7195,14 @@ static int quic_handshake_complete(struct quic_endpoint *ep)
 
 	quic_recovery_discard_pn_space(ep, level_to_pn_space(QUIC_SECRET_LEVEL_INITIAL));
 	quic_recovery_discard_pn_space(ep, level_to_pn_space(QUIC_SECRET_LEVEL_HANDSHAKE));
+
+	if (ep->handshake_confirmed) {
+		/* RFC 9001 ch. 4.9.2: the server has confirmed the handshake
+		 * and has no further use for the Handshake keys. The client
+		 * does the same when it receives HANDSHAKE_DONE.
+		 */
+		quic_endpoint_discard_keys(ep, QUIC_SECRET_LEVEL_HANDSHAKE);
+	}
 
 	quic_endpoint_handshake_complete(ep);
 
@@ -7958,6 +8017,21 @@ static void process_pkt(struct quic_pkt *pkt)
 /* This is called by Quic handler thread and it will decrypt the header and process
  * the packet further.
  */
+/*
+ * Restart the idle timer of an endpoint for a packet that was received and
+ * authenticated (RFC 9000 ch. 10.1). It must be the endpoint the packet is
+ * for, not the one that owns the UDP socket, which a server shares between
+ * all of its connections. And it must not be done for a packet that failed
+ * to decrypt, or anyone who knows the addresses and the connection ID could
+ * keep the connection from ever timing out.
+ */
+static void quic_endpoint_restart_idle_timer(struct quic_endpoint *ep)
+{
+	if (!ep->idle.idle_timeout_disabled) {
+		ep->idle.last_rx_time = k_uptime_get();
+	}
+}
+
 static bool process_long_header_msg(struct quic_pkt *pkt)
 {
 	enum quic_packet_type ptype = pkt->ptype;
@@ -7979,6 +8053,18 @@ static bool process_long_header_msg(struct quic_pkt *pkt)
 
 	if (IS_ENABLED(CONFIG_QUIC_TXRX_DEBUG)) {
 		NET_HEXDUMP_DBG(buf, pkt->total_len, "Msg:");
+	}
+
+	if ((ptype == QUIC_PACKET_TYPE_INITIAL && ep->crypto.initial.discarded) ||
+	    (ptype == QUIC_PACKET_TYPE_HANDSHAKE && ep->crypto.handshake.discarded)) {
+		/* The keys of this level are gone (RFC 9001 ch. 4.9). A late
+		 * or retransmitted packet cannot be read any more and is of
+		 * no use, drop it and leave the connection alone.
+		 */
+		NET_DBG("[EP:%p/%d] Dropping packet for a discarded key level",
+			ep, quic_get_by_ep(ep));
+		QUIC_EP_STAT_INC(ep, drop_rx);
+		goto fail;
 	}
 
 	if (ptype == QUIC_PACKET_TYPE_INITIAL) {
@@ -8069,13 +8155,32 @@ static bool process_long_header_msg(struct quic_pkt *pkt)
 	if (ret != 0) {
 		NET_DBG("[EP:%p/%d] Packet decryption failed (%d)", ep,
 			quic_get_by_ep(ep), ret);
+
+		if ((ptype == QUIC_PACKET_TYPE_INITIAL && ep->crypto.initial.discarded) ||
+		    (ptype == QUIC_PACKET_TYPE_HANDSHAKE && ep->crypto.handshake.discarded)) {
+			/* The keys were discarded while this packet was being
+			 * handled, which is not an error of the connection.
+			 */
+			goto fail;
+		}
+
 		goto free_ep;
 	}
+
+	quic_endpoint_restart_idle_timer(ep);
 
 	pkt->pkt_num = decrypted.packet_number;
 
 	if (ptype == QUIC_PACKET_TYPE_HANDSHAKE) {
 		quic_endpoint_validate_address(ep);
+
+		if (ep->is_server && !ep->crypto.initial.discarded) {
+			/* RFC 9001 ch. 4.9.1: a server discards the Initial
+			 * keys when it first successfully processes a
+			 * Handshake packet.
+			 */
+			quic_endpoint_discard_keys(ep, QUIC_SECRET_LEVEL_INITIAL);
+		}
 	}
 
 	NET_DBG("[EP:%p/%d] Decrypted packet %" PRIu64 ", payload %zu bytes", ep,
@@ -8086,7 +8191,7 @@ static bool process_long_header_msg(struct quic_pkt *pkt)
 				"Decrypted payload:");
 	}
 
-	if (!ep->crypto.initial.initialized) {
+	if (!ep->crypto.initial.initialized && !ep->crypto.initial.discarded) {
 		if (!quic_conn_init_setup(ep, ep->peer_orig_dcid,
 					  ep->peer_orig_dcid_len)) {
 			NET_ERR("[EP:%p/%d] Failed to setup Initial crypto for new endpoint",
@@ -8174,6 +8279,8 @@ static bool process_short_header_msg(struct quic_pkt *pkt)
 		NET_ERR("Failed to decrypt short header packet: %d", ret);
 		return false;
 	}
+
+	quic_endpoint_restart_idle_timer(ep);
 
 	NET_DBG("[EP:%p/%d] Decrypted short header packet %" PRIu64 ", payload %zu bytes",
 		ep, quic_get_by_ep(ep), decrypted.packet_number, decrypted.payload_len);
@@ -8735,11 +8842,6 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 		goto out;
 	}
 
-	/* Update idle timer on ANY received packet */
-	if (!existing_ep->idle.idle_timeout_disabled) {
-		existing_ep->idle.last_rx_time = k_uptime_get();
-	}
-
 	/*
 	 * Queue packet for processing
 	 */
@@ -8879,11 +8981,6 @@ static int process_short_header(struct quic_endpoint *ep,
 
 	quic_endpoint_note_unvalidated_rx(target_ep, len);
 
-	/* Update idle timer on ANY received packet */
-	if (!ep->idle.idle_timeout_disabled) {
-		ep->idle.last_rx_time = k_uptime_get();
-	}
-
 	pn_offset = 1 + target_ep->my_cid_len;
 
 	/* Get crypto context for APPLICATION level (1-RTT) */
@@ -8955,6 +9052,8 @@ static int process_short_header(struct quic_endpoint *ep,
 			target_ep, quic_get_by_ep(target_ep), ret);
 		goto out;
 	}
+
+	quic_endpoint_restart_idle_timer(target_ep);
 
 	NET_DBG("[EP:%p/%d] Short header packet %" PRIu64 ", payload %zu bytes",
 		target_ep, quic_get_by_ep(target_ep), decrypted.packet_number,

@@ -332,6 +332,27 @@ On a server, query whether a given stream carried accepted 0-RTT data with
 socket. This lets a protocol layer apply replay protection (for example, HTTP/3
 answers a non-idempotent early request with ``425 Too Early``).
 
+PSA Key Slots
+-------------
+
+The packet protection keys of every endpoint live in PSA key slots, and the number of slots is
+fixed at build time by :kconfig:option:`CONFIG_MBEDTLS_PSA_KEY_SLOT_COUNT`. The default of that
+option is too small for more than one connection, and QUIC does not adjust it. When no slot is
+free, the handshake of a new connection fails and the log says so.
+
+As a guide for sizing:
+
+* An established connection keeps about 5 slots per endpoint.
+* A handshake in progress needs up to about 14 slots per endpoint for a short time. Most of them
+  are released while the handshake proceeds: the Initial keys when Handshake packets are in use,
+  the Handshake keys when the handshake is confirmed.
+* A listening socket keeps about 2 slots.
+* A key update needs up to 3 more slots per endpoint for a moment.
+
+An endpoint is one end of a connection. A device that is only a client or only a server has one
+endpoint per connection; when both ends run on the same device, as in a loopback test, each
+connection counts twice. Slots used by other parts of the application come on top.
+
 
 .. _quic_dplpmtud:
 
