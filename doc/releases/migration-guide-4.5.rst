@@ -3060,6 +3060,16 @@ RTIO
   ``MODE=report`` flags the remaining ``rtio_sqe_cancel()`` call sites and any leftover
   ``RTIO_SQE_CANCELED`` uses, including writes, which have no mechanical rewrite.
 
+* A canceled submission now produces a completion queue event carrying ``-ECANCELED`` and the
+  submission's userdata, where cancellation used to be silent. This matches what
+  :c:func:`rtio_sqe_cancel` always documented, and it means a thread waiting in
+  :c:func:`rtio_submit` for a submission that is then canceled is released instead of waiting
+  forever. :c:macro:`RTIO_SQE_NO_RESPONSE` is the only thing that suppresses the completion, for
+  a canceled submission as for one that runs. Cancellation cascades along a chain the way a
+  failure does, so each submission behind a canceled one also reports ``-ECANCELED``. Consumers
+  that drain a fixed number of completions, or that treat any completion as data, need to expect
+  the extra events and check ``cqe->result``.
+
 Secure Storage
 ==============
 
