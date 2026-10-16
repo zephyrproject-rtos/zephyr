@@ -42,6 +42,7 @@ struct pipe_buf_spec {
 	size_t used;
 };
 
+Z_NO_THREAD_SAFETY_ANALYSIS
 static int wait_for(_wait_q_t *waitq, struct k_pipe *pipe, k_spinlock_key_t *key,
 		    k_timepoint_t time_limit, bool *need_resched,
 		    struct pipe_buf_spec *buf_spec)

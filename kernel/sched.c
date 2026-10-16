@@ -401,6 +401,7 @@ static inline bool need_swap(void)
 }
 
 static void reschedule(struct k_spinlock *lock, k_spinlock_key_t key)
+	Z_RELEASES(lock)
 {
 	if (resched(key.key) && need_swap()) {
 		z_swap(lock, key);
@@ -413,6 +414,7 @@ static void reschedule(struct k_spinlock *lock, k_spinlock_key_t key)
 /**
  * Like reschedule(), but the scheduler's spinlock is known to be the lock.
  */
+Z_NO_THREAD_SAFETY_ANALYSIS
 static void reschedule_locked(k_spinlock_key_t key)
 {
 	return reschedule(&_sched_spinlock, key);
