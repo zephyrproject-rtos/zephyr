@@ -15,18 +15,21 @@ timer0: timer@0 {
 	compatible = "arm,cmsdk-timer";
 	reg = <0x0 0x1000>;
 	interrupts = <3 3>;
+	clocks = <&sysclk>;
 };
 
 timer1: timer@1000 {
 	compatible = "arm,cmsdk-timer";
 	reg = <0x1000 0x1000>;
 	interrupts = <4 3>;
+	clocks = <&sysclk>;
 };
 
 dtimer0: dtimer@2000 {
 	compatible = "arm,cmsdk-dtimer";
 	reg = <0x2000 0x1000>;
 	interrupts = <5 3>;
+	clocks = <&sysclk>;
 };
 
 mhu0: mhu@3000 {
