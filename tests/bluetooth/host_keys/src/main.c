@@ -351,7 +351,10 @@ static void store_bond(size_t idx)
 
 static void *keys_setup(void)
 {
-	zassert_ok(bt_enable(NULL), "Bluetooth init failed");
+	int err;
+
+	err = bt_enable(NULL);
+	zassert_true(err == 0 || err == -EALREADY, "bt_enable failed (%d)", err);
 
 	store_bond(0U);
 	/* Drop the in-RAM copy so that the first settings_load() has to restore it. */
@@ -431,6 +434,14 @@ static ZTEST(bt_keys_pool, test_get_addr_returns_existing_when_full)
 {
 	const struct bt_keys *keys;
 
+	if (IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)) {
+		/* Under CONFIG_BT_KEYS_OVERWRITE_OLDEST a full pool evicts the
+		 * least recently used entry instead of rejecting; that behavior
+		 * is covered by the bt_keys_oldest suite.
+		 */
+		ztest_test_skip();
+	}
+
 	zassert_not_null(bt_keys_get_addr(BT_ID_DEFAULT, &peers[0]));
 	zassert_not_null(bt_keys_get_addr(BT_ID_DEFAULT, &peers[1]));
 
@@ -448,6 +459,14 @@ static ZTEST(bt_keys_pool, test_get_addr_returns_existing_when_full)
 static ZTEST(bt_keys_pool, test_get_type_existing_and_full)
 {
 	const struct bt_keys *keys;
+
+	if (IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)) {
+		/* Under CONFIG_BT_KEYS_OVERWRITE_OLDEST a full pool evicts the
+		 * least recently used entry instead of rejecting; that behavior
+		 * is covered by the bt_keys_oldest suite.
+		 */
+		ztest_test_skip();
+	}
 
 	zassert_not_null(bt_keys_get_addr(BT_ID_DEFAULT, &peers[0]));
 	zassert_not_null(bt_keys_get_addr(BT_ID_DEFAULT, &peers[1]));
@@ -734,3 +753,238 @@ static ZTEST(bt_keys_settings, test_load_downgrades_unprovable_authentication)
 	zassert_not_equal(keys->flags & BT_KEYS_AUTHENTICATED, 0U,
 			  "AUTHENTICATED with SC must be retained");
 }
+
+#if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
+/* Deliver an HCI event to the host. Takes ownership of buf. */
+static void drv_recv(struct net_buf *buf)
+{
+	bt_hci_recv(DEVICE_DT_GET(DT_DRV_INST(0)), buf);
+}
+
+/* ------------------------------------------------------------------------
+ * CONFIG_BT_KEYS_OVERWRITE_OLDEST pool eviction coverage.
+ *
+ * In-use entries are simulated with fake incoming connections: the host
+ * advertises, then an LE Connection Complete event with the peripheral
+ * role is injected through the test HCI driver.
+ * ---------------------------------------------------------------------
+ */
+
+static K_SEM_DEFINE(connected_sem, 0, 1);
+static K_SEM_DEFINE(disconnected_sem, 0, 1);
+
+static struct bt_conn *connected_peers[2];
+static size_t connected_count;
+
+static void connected_cb(struct bt_conn *conn, uint8_t err)
+{
+	zassert_equal(err, 0U, "Connection failed (%u)", err);
+	if (connected_count < ARRAY_SIZE(connected_peers)) {
+		connected_peers[connected_count++] = bt_conn_ref(conn);
+	}
+	k_sem_give(&connected_sem);
+}
+
+static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
+{
+	ARG_UNUSED(conn);
+	ARG_UNUSED(reason);
+	k_sem_give(&disconnected_sem);
+}
+
+BT_CONN_CB_DEFINE(test_conn_cb) = {
+	.connected = connected_cb,
+	.disconnected = disconnected_cb,
+};
+
+static void inject_conn_complete(const bt_addr_le_t *peer, uint16_t handle)
+{
+	struct net_buf *buf = bt_buf_get_evt(BT_HCI_EVT_LE_META_EVENT, false, K_FOREVER);
+	struct bt_hci_evt_le_meta_event *mev;
+	struct bt_hci_evt_le_conn_complete *cc;
+
+	evt_create(buf, BT_HCI_EVT_LE_META_EVENT,
+		   sizeof(struct bt_hci_evt_le_meta_event) +
+			   sizeof(struct bt_hci_evt_le_conn_complete));
+	mev = net_buf_add(buf, sizeof(*mev));
+	cc = net_buf_add(buf, sizeof(*cc));
+
+	mev->subevent = BT_HCI_EVT_LE_CONN_COMPLETE;
+	cc->status = BT_HCI_ERR_SUCCESS;
+	cc->handle = sys_cpu_to_le16(handle);
+	cc->role = BT_HCI_ROLE_PERIPHERAL;
+	bt_addr_le_copy(&cc->peer_addr, peer);
+	cc->interval = sys_cpu_to_le16(24U);
+	cc->latency = 0U;
+	cc->supv_timeout = sys_cpu_to_le16(400U);
+	cc->clock_accuracy = 0U;
+
+	drv_recv(buf);
+}
+
+static void inject_disconn_complete(uint16_t handle)
+{
+	struct net_buf *buf = bt_buf_get_evt(BT_HCI_EVT_DISCONN_COMPLETE, false, K_FOREVER);
+	struct bt_hci_evt_disconn_complete *dc;
+
+	evt_create(buf, BT_HCI_EVT_DISCONN_COMPLETE, sizeof(struct bt_hci_evt_disconn_complete));
+	dc = net_buf_add(buf, sizeof(*dc));
+
+	dc->status = BT_HCI_ERR_SUCCESS;
+	dc->handle = sys_cpu_to_le16(handle);
+	dc->reason = BT_HCI_ERR_REMOTE_USER_TERM_CONN;
+
+	drv_recv(buf);
+}
+
+static void connect_peer(const bt_addr_le_t *peer, uint16_t handle)
+{
+	zassert_ok(bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, NULL, 0, NULL, 0));
+	inject_conn_complete(peer, handle);
+	zassert_ok(k_sem_take(&connected_sem, K_SECONDS(1)), "No connected callback");
+	zassert_ok(bt_le_adv_stop());
+}
+
+static void disconnect_peer(struct bt_conn *conn, uint16_t handle)
+{
+	zassert_ok(bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN));
+	inject_disconn_complete(handle);
+	zassert_ok(k_sem_take(&disconnected_sem, K_SECONDS(1)), "No disconnected callback");
+	bt_conn_unref(conn);
+}
+
+static void oldest_before(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	connected_count = 0;
+	bt_keys_reset();
+}
+
+/* The suite must also pass when run without the other suites, so it
+ * enables Bluetooth itself. settings_load() is needed for the "bt" tree
+ * to be applied before the stack is ready.
+ */
+static void *oldest_setup(void)
+{
+	int err;
+
+	err = bt_enable(NULL);
+	zassert_true(err == 0 || err == -EALREADY, "bt_enable failed (%d)", err);
+	zassert_ok(settings_load());
+
+	return NULL;
+}
+
+ZTEST_SUITE(bt_keys_oldest, NULL, oldest_setup, oldest_before, NULL, NULL);
+
+/* A full pool evicts the oldest entry and hands out its slot. */
+static ZTEST(bt_keys_oldest, test_evict_oldest_not_in_use)
+{
+	const struct bt_keys *k1 = bt_keys_get_addr(BT_ID_DEFAULT, &peers[0]);
+	const struct bt_keys *k2 = bt_keys_get_addr(BT_ID_DEFAULT, &peers[1]);
+	const struct bt_keys *k3;
+
+	zassert_not_null(k1);
+	zassert_not_null(k2);
+
+	k3 = bt_keys_get_addr(BT_ID_DEFAULT, &peer_extra);
+	zassert_not_null(k3, "Full pool must evict the oldest entry");
+	zassert_is_null(bt_keys_find_addr(BT_ID_DEFAULT, &peers[0]),
+			"Oldest peer still in the pool");
+	zassert_equal_ptr(k3, k1, "Eviction must reuse the oldest slot");
+}
+
+/* bt_keys_update_usage() makes an entry the most recently used one, so the
+ * other entry becomes the eviction candidate.
+ */
+static ZTEST(bt_keys_oldest, test_least_recently_used_is_evicted)
+{
+	const struct bt_keys *k3;
+
+	zassert_not_null(bt_keys_get_addr(BT_ID_DEFAULT, &peers[0]));
+	zassert_not_null(bt_keys_get_addr(BT_ID_DEFAULT, &peers[1]));
+
+	bt_keys_update_usage(BT_ID_DEFAULT, &peers[0]);
+
+	k3 = bt_keys_get_addr(BT_ID_DEFAULT, &peer_extra);
+	zassert_not_null(k3, "Full pool must evict an entry");
+	zassert_is_null(bt_keys_find_addr(BT_ID_DEFAULT, &peers[1]),
+			"Least recently used peer must be evicted");
+	zassert_not_null(bt_keys_find_addr(BT_ID_DEFAULT, &peers[0]),
+			 "Most recently used peer must survive");
+}
+
+/* An entry in use by a connected peer must not be evicted. */
+static ZTEST(bt_keys_oldest, test_in_use_entry_is_not_evicted)
+{
+	zassert_not_null(bt_keys_get_addr(BT_ID_DEFAULT, &peers[0]));
+	zassert_not_null(bt_keys_get_addr(BT_ID_DEFAULT, &peers[1]));
+
+	connect_peer(&peers[0], 0x0001);
+
+	zassert_not_null(bt_keys_get_addr(BT_ID_DEFAULT, &peer_extra));
+	zassert_is_null(bt_keys_find_addr(BT_ID_DEFAULT, &peers[1]),
+			"The unused peer must be evicted");
+	zassert_not_null(bt_keys_find_addr(BT_ID_DEFAULT, &peers[0]),
+			 "The in-use peer must survive");
+
+	disconnect_peer(connected_peers[0], 0x0001);
+}
+
+/* When every entry is in use no slot can be handed out. */
+static ZTEST(bt_keys_oldest, test_all_in_use_returns_null)
+{
+	zassert_not_null(bt_keys_get_addr(BT_ID_DEFAULT, &peers[0]));
+	zassert_not_null(bt_keys_get_addr(BT_ID_DEFAULT, &peers[1]));
+
+	connect_peer(&peers[0], 0x0001);
+	connect_peer(&peers[1], 0x0002);
+
+	zassert_is_null(bt_keys_get_addr(BT_ID_DEFAULT, &peer_extra),
+			"All entries in use, but a slot was still handed out");
+
+	disconnect_peer(connected_peers[0], 0x0001);
+	disconnect_peer(connected_peers[1], 0x0002);
+}
+
+/* CONFIG_BT_KEYS_SAVE_AGING_COUNTER_ON_PAIRING: bt_keys_update_usage()
+ * writes the aging counter back to settings.
+ */
+static ZTEST(bt_keys_oldest, test_aging_counter_is_stored)
+{
+	static const bt_addr_le_t peer_aging = {
+		.type = BT_ADDR_LE_PUBLIC,
+		.a.val = {0x90, 0x91, 0x92, 0x93, 0x94, 0x95},
+	};
+	struct bt_keys *keys;
+	uint32_t counter;
+	char name[BT_SETTINGS_KEY_MAX];
+
+	zassert_not_null(bt_keys_get_type(BT_KEYS_IRK, BT_ID_DEFAULT, &peer_aging));
+	zassert_ok(bt_settings_encode_key(name, sizeof(name), "keys", &peer_aging, NULL));
+
+	/* A new key is already the most recently used one, so another key
+	 * must be touched first for bt_keys_update_usage() to take effect.
+	 */
+	zassert_not_null(bt_keys_get_addr(BT_ID_DEFAULT, &peers[0]));
+	bt_keys_update_usage(BT_ID_DEFAULT, &peer_aging);
+
+	keys = bt_keys_find_addr(BT_ID_DEFAULT, &peer_aging);
+	zassert_not_null(keys);
+	counter = keys->aging_counter;
+
+	/* A reload must restore the counter written by bt_keys_update_usage(). */
+	bt_keys_reset();
+	zassert_ok(settings_load_subtree(name));
+
+	keys = bt_keys_find_addr(BT_ID_DEFAULT, &peer_aging);
+	zassert_not_null(keys, "Aging counter was not stored");
+	zassert_equal(keys->aging_counter, counter, "Aging counter mismatch after reload");
+
+	/* Drop the entry again: a leftover stored bond changes what the other
+	 * suites restore from settings (e.g. bt_keys_commit's rl_entries count).
+	 */
+	zassert_ok(settings_delete(name));
+}
+#endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
