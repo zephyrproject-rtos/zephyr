@@ -71,7 +71,7 @@ _not_checking_user_context:
 	rsr a2, ZSR_A0SAVE
 	s32i a2, a0, ___xtensa_irq_bsa_t_a0_OFFSET
 	rsr.ps a2
-	movi a3, ~PS_OWB_MASK & ~PS_EXCM_MASK
+	movi a3, ~(PS_OWB_MASK | PS_EXCM_MASK | PS_INTLEVEL_MASK)
 	and a2, a2, a3
 	s32i a2, a0, ___xtensa_irq_bsa_t_ps_OFFSET
 
