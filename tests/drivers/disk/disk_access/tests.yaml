@@ -59,6 +59,14 @@ tests:
     platform_allow:
       - native_sim/native/64
       - native_sim
+  drivers.disk.semihost:
+    extra_args: FILE_SUFFIX=semihost
+    platform_allow:
+      - mps2/an385
+      - qemu_riscv64
+    integration_platforms:
+      - mps2/an385
+      - qemu_riscv64
   drivers.disk.stm32_sdhc:
     platform_type:
       - mcu
