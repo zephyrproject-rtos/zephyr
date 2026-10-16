@@ -216,10 +216,10 @@ static int uart_sifive_irq_tx_complete(const struct device *dev)
 	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 
 	/*
-	 * No TX EMPTY flag for this controller,
-	 * just check if TX FIFO is not full
+	 * No TX EMPTY flag for this controller, but with TXCTRL_TXCNT
+	 * the TX watermark is pending exactly while the TX FIFO is empty.
 	 */
-	return !(uart->tx & TXDATA_FULL);
+	return (uart->ip & IE_TXWM) != 0U;
 }
 
 /**
