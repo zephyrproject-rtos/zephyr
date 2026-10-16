@@ -23,12 +23,16 @@ K_SEM_DEFINE(callback_sem, 0, 1);
 static atomic_t callback_count;
 static atomic_t callback_channel;
 static atomic_ptr_t callback_user_data;
+static atomic_t callback_reason;
+static atomic_ptr_t callback_thread;
 
 static void task_wdt_callback(const struct task_wdt_fault *fault, void *user_data)
 {
 	atomic_inc(&callback_count);
 	atomic_set(&callback_channel, fault->channel_id);
 	atomic_ptr_set(&callback_user_data, user_data);
+	atomic_set(&callback_reason, fault->reason);
+	atomic_ptr_set(&callback_thread, fault->thread);
 	k_sem_give(&callback_sem);
 }
 
@@ -49,6 +53,8 @@ static void task_wdt_before(void *arg)
 	atomic_set(&callback_count, 0);
 	atomic_set(&callback_channel, -1);
 	atomic_ptr_set(&callback_user_data, NULL);
+	atomic_set(&callback_reason, -1);
+	atomic_ptr_set(&callback_thread, NULL);
 }
 
 static void task_wdt_after(void *arg)
@@ -158,6 +164,94 @@ ZTEST(task_wdt, test_suspend_resume)
 	zassert_equal(atomic_get(&callback_count), 1);
 	zassert_equal(atomic_get(&callback_channel), channel_id);
 }
+
+#ifdef CONFIG_TASK_WDT_FAULT_REASONS
+
+ZTEST(task_wdt, test_fault_timeout)
+{
+	static int user_data;
+	int channel_id;
+	int ret;
+
+	channel_id = task_wdt_add(TASK_WDT_PERIOD_MS, task_wdt_callback, &user_data);
+	zassert_true(channel_id >= 0, "task_wdt_add() failed: %d", channel_id);
+
+	ret = k_sem_take(&callback_sem, K_MSEC(TASK_WDT_WAIT_MS));
+	zassert_equal(ret, 0, "watchdog callback did not run");
+	zassert_equal(atomic_get(&callback_count), 1);
+	zassert_equal(atomic_ptr_get(&callback_user_data), &user_data);
+	zassert_equal(atomic_get(&callback_channel), channel_id);
+	zassert_equal(atomic_get(&callback_reason), TASK_WDT_FAULT_TIMEOUT);
+#ifdef CONFIG_TASK_WDT_THREAD_INFO
+	zassert_equal(atomic_ptr_get(&callback_thread), k_current_get());
+#else
+	zassert_is_null(atomic_ptr_get(&callback_thread));
+#endif
+}
+
+ZTEST(task_wdt, test_window_set)
+{
+	int channel_id;
+
+	zassert_equal(task_wdt_window_set(-1, 10U), -EINVAL);
+	zassert_equal(task_wdt_window_set(0, 10U), -EINVAL, "unused channel accepted");
+
+	channel_id = task_wdt_add(TASK_WDT_PERIOD_MS, task_wdt_callback, NULL);
+	zassert_true(channel_id >= 0, "task_wdt_add() failed: %d", channel_id);
+
+	zassert_equal(task_wdt_window_set(channel_id, TASK_WDT_PERIOD_MS), -EINVAL);
+	zassert_ok(task_wdt_window_set(channel_id, TASK_WDT_PERIOD_MS / 2U));
+	zassert_ok(task_wdt_window_set(channel_id, 0U));
+}
+
+ZTEST(task_wdt, test_feed_deleted)
+{
+	int channel_id;
+
+	channel_id = task_wdt_add(1000U, task_wdt_callback, NULL);
+	zassert_true(channel_id >= 0, "task_wdt_add() failed: %d", channel_id);
+	zassert_ok(task_wdt_window_set(channel_id, 100U));
+	zassert_ok(task_wdt_delete(channel_id));
+
+	/* a deleted channel cannot be fed, so it does not report a fault either */
+	zassert_equal(task_wdt_feed(channel_id), -EINVAL);
+	zassert_equal(task_wdt_feed(channel_id), -EINVAL);
+	zassert_equal(atomic_get(&callback_count), 0);
+}
+
+ZTEST(task_wdt, test_fault_too_early)
+{
+	int channel_id;
+
+	channel_id = task_wdt_add(1000U, task_wdt_callback, NULL);
+	zassert_true(channel_id >= 0, "task_wdt_add() failed: %d", channel_id);
+	zassert_ok(task_wdt_window_set(channel_id, 100U));
+
+	/* feeding after the minimum interval is fine */
+	k_sleep(K_MSEC(150));
+	zassert_ok(task_wdt_feed(channel_id));
+	zassert_equal(atomic_get(&callback_count), 0);
+
+	/* feeding again right away is a fault, reported before task_wdt_feed() returns */
+	zassert_ok(task_wdt_feed(channel_id));
+	zassert_equal(atomic_get(&callback_count), 1);
+	zassert_equal(atomic_get(&callback_channel), channel_id);
+	zassert_equal(atomic_get(&callback_reason), TASK_WDT_FAULT_TOO_EARLY);
+
+	/* the channel was fed anyway */
+	k_sleep(K_MSEC(150));
+	zassert_ok(task_wdt_feed(channel_id));
+	zassert_equal(atomic_get(&callback_count), 1);
+}
+
+#else
+
+ZTEST(task_wdt, test_fault_reasons_disabled)
+{
+	zassert_equal(task_wdt_window_set(0, 10U), -ENOTSUP);
+}
+
+#endif /* CONFIG_TASK_WDT_FAULT_REASONS */
 
 #ifdef CONFIG_TASK_WDT_THREAD_INFO
 

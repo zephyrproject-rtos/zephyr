@@ -21,6 +21,7 @@ enum stage {
 	STAGE_CALLBACK,
 	STAGE_SOFTWARE_RESET,
 	STAGE_CALLBACK_RESET,
+	STAGE_TOO_EARLY,
 	STAGE_DONE,
 };
 
@@ -67,17 +68,38 @@ static void time_out(task_wdt_callback_t callback)
 	zassert_unreachable("no reset after the channel timed out");
 }
 
-static void check_timeout_info(uint32_t fault_count)
+/* Feed a channel owned by a thread named "victim" too early */
+static void feed_too_early(void)
+{
+	int channel_id;
+
+	k_thread_name_set(k_current_get(), "victim");
+
+	channel_id = task_wdt_add(TASK_WDT_WAIT_MS, NULL, NULL);
+	zassert_true(channel_id >= 0, "task_wdt_add() failed: %d", channel_id);
+	zassert_ok(task_wdt_window_set(channel_id, TASK_WDT_PERIOD_MS));
+
+	task_wdt_feed(channel_id);
+	zassert_unreachable("no reset after the channel was fed too early");
+}
+
+static void check_info(enum task_wdt_reset_reason reason, uint32_t fault_count,
+		       uint64_t min_uptime_ms)
 {
 	struct task_wdt_reset_info info;
 
 	zassert_ok(task_wdt_reset_info_get(&info));
-	zassert_equal(info.reason, TASK_WDT_RESET_TIMEOUT);
+	zassert_equal(info.reason, reason);
 	zassert_equal(info.channel_id, 0);
 	zassert_equal(info.fault_count, fault_count);
-	zassert_true(info.uptime_ms >= TASK_WDT_PERIOD_MS, "uptime %llu ms",
+	zassert_true(info.uptime_ms >= min_uptime_ms, "uptime %llu ms",
 		     (unsigned long long)info.uptime_ms);
 	zassert_str_equal(info.thread_name, "victim");
+}
+
+static void check_timeout_info(uint32_t fault_count)
+{
+	check_info(TASK_WDT_RESET_TIMEOUT, fault_count, TASK_WDT_PERIOD_MS);
 }
 
 ZTEST(task_wdt_reset_info, test_reset_info)
@@ -136,6 +158,16 @@ ZTEST(task_wdt_reset_info, test_reset_info)
 
 		zassert_ok(task_wdt_reset_info_clear());
 		zassert_equal(task_wdt_reset_info_get(&info), -ENOENT);
+
+		next_stage(STAGE_TOO_EARLY);
+		feed_too_early();
+		break;
+
+	case STAGE_TOO_EARLY:
+		/* feeding too early is reported as its own reset reason */
+		check_info(TASK_WDT_RESET_TOO_EARLY, 1U, 0U);
+
+		zassert_ok(task_wdt_reset_info_clear());
 
 		next_stage(STAGE_DONE);
 		break;

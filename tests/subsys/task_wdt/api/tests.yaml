@@ -13,6 +13,7 @@ tests:
   subsys.task_wdt.thread_info:
     extra_configs:
       - CONFIG_TASK_WDT_THREAD_INFO=y
+      - CONFIG_TASK_WDT_FAULT_REASONS=y
       - CONFIG_TASK_WDT_SHELL=y
       - CONFIG_THREAD_NAME=y
       - CONFIG_INIT_STACKS=y
@@ -24,3 +25,6 @@ tests:
       - CONFIG_SHELL=y
       - CONFIG_SHELL_BACKEND_DUMMY=y
       - CONFIG_SHELL_BACKEND_SERIAL=n
+  subsys.task_wdt.fault_reasons:
+    extra_configs:
+      - CONFIG_TASK_WDT_FAULT_REASONS=y
