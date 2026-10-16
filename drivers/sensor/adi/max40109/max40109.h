@@ -11,6 +11,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/sensor/max40109.h>
@@ -142,6 +143,10 @@
 
 struct max40109_config {
 	struct i2c_dt_spec i2c;
+
+#if defined(CONFIG_MAX40109_TRIGGER)
+	struct gpio_dt_spec interrupt_gpio;
+#endif
 	uint8_t digital_filter_setup;
 	uint8_t alert_mode;
 	uint8_t temp_current;
@@ -230,6 +235,44 @@ struct max40109_data {
 	int16_t uncalibrated_temperature;
 	int16_t calibrated_pressure;
 	int16_t calibrated_temperature;
+#ifdef CONFIG_MAX40109_TRIGGER
+	const struct device *dev;
+	struct gpio_callback gpio_cb;
+	struct k_sem gpio_sem;
+	/* Last reported DRV/INT fault bits, so a stuck fault is logged once. */
+	uint8_t fault_state;
+	sensor_trigger_handler_t drv_fault_handler;
+	sensor_trigger_handler_t int_fault_handler;
+	sensor_trigger_handler_t temp_data_rdy_handler;
+	sensor_trigger_handler_t pressure_data_rdy_handler;
+	sensor_trigger_handler_t uv_drv_handler;
+	sensor_trigger_handler_t ov_drv_handler;
+	sensor_trigger_handler_t uv_int_handler;
+	sensor_trigger_handler_t ov_int_handler;
+	sensor_trigger_handler_t uv_inp_negative_handler;
+	sensor_trigger_handler_t ov_inp_negative_handler;
+	sensor_trigger_handler_t uv_inp_positive_handler;
+	sensor_trigger_handler_t ov_inp_positive_handler;
+	const struct sensor_trigger *drv_fault_trigger;
+	const struct sensor_trigger *int_fault_trigger;
+	const struct sensor_trigger *temp_data_rdy_trigger;
+	const struct sensor_trigger *pressure_data_rdy_trigger;
+	const struct sensor_trigger *uv_drv_trigger;
+	const struct sensor_trigger *ov_drv_trigger;
+	const struct sensor_trigger *uv_int_trigger;
+	const struct sensor_trigger *ov_int_trigger;
+	const struct sensor_trigger *uv_inp_negative_trigger;
+	const struct sensor_trigger *ov_inp_negative_trigger;
+	const struct sensor_trigger *uv_inp_positive_trigger;
+	const struct sensor_trigger *ov_inp_positive_trigger;
+#if defined(CONFIG_MAX40109_TRIGGER_OWN_THREAD)
+	struct k_thread thread;
+
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_MAX40109_THREAD_STACK_SIZE);
+#elif defined(CONFIG_MAX40109_TRIGGER_GLOBAL_THREAD)
+	struct k_work work;
+#endif
+#endif
 };
 
 int max40109_reg_read(const struct device *dev, uint8_t reg_addr, uint8_t *val, uint8_t length);
@@ -237,5 +280,8 @@ int max40109_reg_write(const struct device *dev, uint8_t reg_addr, uint8_t val);
 int max40109_reg_write_multiple(const struct device *dev, uint8_t reg_addr, uint8_t *val,
 				uint8_t length);
 int max40109_reg_update(const struct device *dev, uint8_t reg_addr, uint8_t mask, uint8_t val);
+int max40109_init_interrupt(const struct device *dev);
+int max40109_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
+			 sensor_trigger_handler_t handler);
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_ADI_MAX40109_MAX40109_H_ */

@@ -21,6 +21,16 @@ properties:
   reg:
     required: true
 
+  interrupt-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the ALERT pin of the MAX40109. ALERT is an
+      active-low output, so this should normally be flagged
+      GPIO_ACTIVE_LOW unless the board inverts the signal.
+
+      Note this is the ALERT pin, not the INT pin: INT is the analog
+      temperature input that a diode or thermistor connects to.
+
   digital-filter:
     type: int
     description: Digital filter setting. Average among Samples = 2^(N+1).

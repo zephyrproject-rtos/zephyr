@@ -14,8 +14,8 @@
  * @file
  * @brief Extended public API for the Analog Devices MAX40109 pressure sensor AFE.
  *
- * Defines the MTP address map, the MAX40109-specific sensor channels
- * and attributes, and the MTP access helpers.
+ * Defines the MTP address map, the MAX40109-specific sensor channels,
+ * attributes and trigger types, and the MTP access helpers.
  * @ingroup max40109_interface
  */
 
@@ -265,6 +265,36 @@ enum max40109_sensor_channel {
 	SENSOR_CHAN_MAX40109_AMBIENT_TEMP_RAW,
 	/** Uncompensated pressure ADC code. */
 	SENSOR_CHAN_MAX40109_PRESS_RAW,
+};
+
+/**
+ * @brief MAX40109-specific sensor trigger types
+ *
+ * These triggers extend the standard sensor_trigger_type enum and are
+ * reported through the ALERT pin. They require
+ * @kconfig{CONFIG_MAX40109_TRIGGER}.
+ */
+enum max40109_sensor_trigger_type {
+	/** New pressure conversion available. */
+	SENSOR_TRIG_MAX40109_PRESSURE_DATA_READY = SENSOR_TRIG_PRIV_START,
+	/** New temperature conversion available. */
+	SENSOR_TRIG_MAX40109_TEMP_DATA_READY,
+	/** DRV pin under-voltage. */
+	SENSOR_TRIG_MAX40109_DRIVE_VOLTAGE_UV,
+	/** DRV pin over-voltage. */
+	SENSOR_TRIG_MAX40109_DRIVE_VOLTAGE_OV,
+	/** Temperature input under-voltage. */
+	SENSOR_TRIG_MAX40109_INPUT_TEMPERATURE_VOLTAGE_UV,
+	/** Temperature input over-voltage. */
+	SENSOR_TRIG_MAX40109_INPUT_TEMPERATURE_VOLTAGE_OV,
+	/** Negative pressure input under-range. */
+	SENSOR_TRIG_MAX40109_INPUT_PRESSURE_NEGATIVE_UV,
+	/** Negative pressure input over-range. */
+	SENSOR_TRIG_MAX40109_INPUT_PRESSURE_NEGATIVE_OV,
+	/** Positive pressure input under-range. */
+	SENSOR_TRIG_MAX40109_INPUT_PRESSURE_POSITIVE_UV,
+	/** Positive pressure input over-range. */
+	SENSOR_TRIG_MAX40109_INPUT_PRESSURE_POSITIVE_OV,
 };
 
 /**

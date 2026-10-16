@@ -1424,6 +1424,15 @@ static int max40109_init(const struct device *dev)
 		return ret;
 	}
 
+#ifdef CONFIG_MAX40109_TRIGGER
+	if (config->interrupt_gpio.port) {
+		if (max40109_init_interrupt(dev) < 0) {
+			LOG_ERR("Failed to initialize interrupts");
+			return -EIO;
+		}
+	}
+#endif
+
 	LOG_INF("MAX40109 sensor initialized successfully");
 	return 0;
 }
@@ -1433,6 +1442,9 @@ static DEVICE_API(sensor, max40109_driver_api) = {
 	.attr_get = max40109_attr_get,
 	.sample_fetch = max40109_sample_fetch,
 	.channel_get = max40109_channel_get,
+#ifdef CONFIG_MAX40109_TRIGGER
+	.trigger_set = max40109_trigger_set,
+#endif
 };
 
 #ifdef CONFIG_MAX40109_CALIBRATION
@@ -1479,13 +1491,17 @@ static DEVICE_API(sensor, max40109_driver_api) = {
 /* The initializer is assembled from macros that expand to nothing when their feature is
  * disabled, so the element separators live inside those macros rather than between them.
  */
+/* clang-format off */
 #define MAX40109_DEFINE(inst)                                                                      \
 	static struct max40109_data max40109_prv_data_##inst;                                      \
 	static const struct max40109_config max40109_config_##inst = {                             \
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		MAX40109_CONFIG(inst)};                                                            \
+		MAX40109_CONFIG(inst)                                                              \
+		IF_ENABLED(CONFIG_MAX40109_TRIGGER, (.interrupt_gpio = GPIO_DT_SPEC_INST_GET_OR(   \
+			inst, interrupt_gpios, {0}))) };                                           \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, &max40109_init, NULL, &max40109_prv_data_##inst,        \
 				     &max40109_config_##inst, POST_KERNEL,                         \
 				     CONFIG_SENSOR_INIT_PRIORITY, &max40109_driver_api);
+/* clang-format on */
 
 DT_INST_FOREACH_STATUS_OKAY(MAX40109_DEFINE)
