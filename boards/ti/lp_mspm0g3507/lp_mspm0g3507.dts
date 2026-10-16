@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/clock/mspm0_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "TI LP_MSPM0G3507/MSPM0G3507";
@@ -20,6 +21,7 @@
 	aliases {
 		led0 = &led0;
 		pwm-led0 = &pwm_led0;
+		sw0 = &btn0;
 	};
 
 	chosen {
@@ -45,6 +47,24 @@
 
 		pwm_led0: pwm_led0 {
 			pwms = <&pwma0 0 PWM_MSEC(100) PWM_POLARITY_NORMAL>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		/* S3 onboard switch */
+		btn0: btn_0 {
+			gpios = <&gpiob 21 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			label = "S3 User Switch";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		/* S2 onboard switch */
+		btn1: btn_1 {
+			gpios = <&gpioa 18 GPIO_ACTIVE_HIGH>;
+			label = "S2 User Switch";
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 };
