@@ -260,6 +260,7 @@
 
 			cpuapp_resetinfo: resetinfo@1e000 {
 				compatible = "nordic,nrf-resetinfo";
+				reset-reason-available;
 				reg = <0x1e000 0x1000>;
 			};
 		};
@@ -297,6 +298,7 @@
 
 			cpurad_resetinfo: resetinfo@1e000 {
 				compatible = "nordic,nrf-resetinfo";
+				reset-reason-available;
 				reg = <0x1e000 0x1000>;
 			};
 

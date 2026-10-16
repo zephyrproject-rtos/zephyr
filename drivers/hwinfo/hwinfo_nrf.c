@@ -8,13 +8,15 @@
 #include <zephyr/drivers/hwinfo.h>
 #include <string.h>
 #include <zephyr/sys/byteorder.h>
-#if defined(CONFIG_BOARD_QEMU_CORTEX_M0) || \
-	((defined(CONFIG_SOC_SERIES_NRF54H) || defined(CONFIG_SOC_SERIES_NRF92)) && \
-	 defined(CONFIG_RISCV_CORE_NORDIC_VPR))
-#define RESET_CAUSE_AVAILABLE 0
-#else
+
+#define _RESET_REASON_ON_NODE(node_id) \
+	IF_ENABLED(UTIL_AND(DT_NODE_HAS_PROP(node_id, reset_reason_available), \
+			    DT_PROP(node_id, reset_reason_available)), (1,))
+#define RESET_REASON_AVAILABLE \
+	UTIL_NOT(IS_EMPTY(DT_FOREACH_STATUS_OKAY_NODE(_RESET_REASON_ON_NODE)))
+
+#if RESET_REASON_AVAILABLE
 #include <helpers/nrfx_reset_reason.h>
-#define RESET_CAUSE_AVAILABLE 1
 #endif
 
 #if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) && defined(NRF_FICR_S)
@@ -75,7 +77,7 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 	return length;
 }
 
-#if RESET_CAUSE_AVAILABLE
+#if RESET_REASON_AVAILABLE
 
 #if defined(NRF_RESETINFO)
 
@@ -237,4 +239,4 @@ int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
 
 	return 0;
 }
-#endif /* RESET_CAUSE_AVAILABLE */
+#endif /* RESET_REASON_AVAILABLE */
