@@ -177,6 +177,11 @@
 	timg-prescaler = <2>;
 };
 
+&pwr {
+	power-supply = "external-source";
+	st,external-control-gpios = <&gpiob 12 GPIO_ACTIVE_HIGH>;
+};
+
 &adc12_common {
 	clocks = <&rcc STM32_CLOCK(AHB1, 5)>,
 		 <&rcc STM32_SRC_CKPER ADC12_SEL(1)>;

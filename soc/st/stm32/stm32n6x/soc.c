@@ -15,13 +15,34 @@
 #include <zephyr/logging/log.h>
 
 #include <stm32_ll_bus.h>
+#include <stm32_ll_gpio.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_icache.h>
 
 #include <cmsis_core.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
+
+#define PWR_NODE                 DT_INST(0, st_stm32n6_pwr)
+#define PWR_EXT_REG_CONTROL_GPIO DT_PROP_HAS_IDX(PWR_NODE, st_external_control_gpios, 0)
+#define PWR_EXT_REGULATOR        DT_ENUM_HAS_VALUE(PWR_NODE, power_supply, external_source)
+#define PWR_EXT_REG_CONTROL      (PWR_EXT_REGULATOR && PWR_EXT_REG_CONTROL_GPIO)
+#define USE_VOLTAGE_SCALE0       (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC > MHZ(600))
+
+#if PWR_EXT_REG_CONTROL
+#define PWR_EXT_PIN_GPIO_HANDLE  DT_GPIO_CTLR_BY_IDX(PWR_NODE, st_external_control_gpios, 0)
+#define PWR_EXT_PIN_NUMBER       DT_GPIO_PIN_BY_IDX(PWR_NODE, st_external_control_gpios, 0)
+#define PWR_EXT_PIN_FLAGS        DT_GPIO_FLAGS_BY_IDX(PWR_NODE, st_external_control_gpios, 0)
+#define PWR_EXT_PIN_GPIO_ADDRESS DT_REG_ADDR_BY_IDX_RAW(PWR_EXT_PIN_GPIO_HANDLE, 0)
+#define PWR_EXT_PIN_CLOCK_ENABLE DT_PHA_BY_IDX(PWR_EXT_PIN_GPIO_HANDLE, clocks, 0, bits)
+
+/* Check that st,external-control-gpios points to internal GPIO */
+BUILD_ASSERT(IN_RANGE(PWR_EXT_PIN_GPIO_ADDRESS, DT_REG_ADDR(DT_NODELABEL(pinctrl)),
+		      DT_REG_ADDR(DT_NODELABEL(pinctrl)) + DT_REG_SIZE(DT_NODELABEL(pinctrl))),
+	     "Only internal GPIOx is supported by st,external-control-gpios property");
+#endif /* PWR_EXT_REG_CONTROL */
 
 extern char _vector_start[];
 void *g_pfnVectors = (void *)_vector_start;
@@ -83,6 +104,41 @@ static void soc_rif_config(void)
 #endif /* CONFIG_TRUSTED_EXECUTION_SECURE */
 }
 
+/* Voltage scale 0 (VOS0) needs to be configured
+ * for CPU frequency above 600 MHz
+ */
+__maybe_unused static void soc_configure_voltage_scale_0(void)
+{
+#if PWR_EXT_REG_CONTROL
+	/* We are in early stage of initialization so we can't rely on
+	 * Zephyr GPIO driver
+	 */
+	uint32_t pin = BIT(PWR_EXT_PIN_NUMBER);
+	GPIO_TypeDef *gpiox = (GPIO_TypeDef *)PWR_EXT_PIN_GPIO_ADDRESS;
+
+	LL_AHB4_GRP1_EnableClock(PWR_EXT_PIN_CLOCK_ENABLE);
+
+	LL_GPIO_SetPinMode(gpiox, pin, LL_GPIO_MODE_OUTPUT);
+	LL_GPIO_SetPinOutputType(gpiox, pin, LL_GPIO_OUTPUT_PUSHPULL);
+
+#if (PWR_EXT_PIN_FLAGS & GPIO_ACTIVE_LOW)
+	LL_GPIO_ResetOutputPin(gpiox, pin);
+#else
+	LL_GPIO_SetOutputPin(gpiox, pin);
+#endif /* (PWR_EXT_PIN_FLAGS & GPIO_ACTIVE_LOW) == GPIO_ACTIVE_LOW */
+#endif /* PWR_EXT_REG_CONTROL */
+	/* Select VOS0 scale ("VOS high") for best performance.
+	 * When an external source is used, setting this bit has no effect
+	 * but do it anyways to keep track of the fact we want to be in VOS0.
+	 */
+	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE0);
+#if !PWR_EXT_REG_CONTROL
+	/* Wait for internal SMPS to be ready */
+	while (!LL_PWR_IsActiveFlag_ACTVOSRDY()) {
+	}
+#endif
+}
+
 /**
  * @brief Perform basic hardware initialization at boot.
  *
@@ -103,8 +159,13 @@ void soc_early_init_hook(void)
 	/* Enable PWR */
 	LL_AHB4_GRP1_EnableClock(LL_AHB4_GRP1_PERIPH_PWR);
 
-	/* Set the main internal Regulator output voltage for best performance */
-	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE0);
+#if PWR_EXT_REGULATOR
+	/* Disable internal SMPS */
+	LL_PWR_ConfigSupply(LL_PWR_EXTERNAL_SOURCE_SUPPLY);
+#endif /* PWR_EXT_REGULATOR */
+#if USE_VOLTAGE_SCALE0
+	soc_configure_voltage_scale_0();
+#endif
 
 	/* Enable IOs */
 	LL_PWR_EnableVddIO2();
