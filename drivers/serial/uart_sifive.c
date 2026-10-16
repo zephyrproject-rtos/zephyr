@@ -51,7 +51,6 @@ typedef void (*irq_cfg_func_t)(void);
 
 struct uart_sifive_device_config {
 	uintptr_t	port;
-	uint32_t	sys_clk_freq;
 	uint32_t	baud_rate;
 	const struct	pinctrl_dev_config *pcfg;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -328,7 +327,7 @@ static int uart_sifive_init(const struct device *dev)
 	uart->rxctrl = RXCTRL_RXEN | RXCTRL_RXCNT;
 
 	/* Set baud rate */
-	uart->div = cfg->sys_clk_freq / cfg->baud_rate - 1;
+	uart->div = SIFIVE_PERIPHERAL_CLOCK_FREQUENCY / cfg->baud_rate - 1;
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	/* Ensure that uart IRQ is disabled initially */
@@ -391,7 +390,6 @@ static DEVICE_API(uart, uart_sifive_driver_api) = {
                                                                                                    \
 	static const struct uart_sifive_device_config uart_sifive_dev_cfg_##n = {                  \
 		.port = DT_INST_REG_ADDR(n),                                                       \
-		.sys_clk_freq = SIFIVE_PERIPHERAL_CLOCK_FREQUENCY,                                 \
 		.baud_rate = DT_INST_PROP(n, current_speed),                                       \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,                                           \
