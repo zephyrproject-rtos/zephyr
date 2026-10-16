@@ -70,6 +70,34 @@ tests:
       - cyw920829m2evk_02/cyw20829b0lkml
       - kit_pse84_eval/pse846gps2dbzc4a/m33
       - kit_pse84_eval/pse846gps2dbzc4a/m55
+
+  drivers.pwm.gpio_loopback_tcc0.mchp:
+    platform_allow:
+      - pic32cx_sg61_cult
+      - sam_e54_xpro
+    extra_args:
+      - FILE_SUFFIX=tcc0
+
+  drivers.pwm.gpio_loopback_tcc1.mchp:
+    platform_allow:
+      - pic32cx_sg61_cult
+      - sam_e54_xpro
+    extra_args:
+      - FILE_SUFFIX=tcc1
+
+  drivers.pwm.gpio_loopback_tcc3.mchp:
+    platform_allow:
+      - sam_e54_xpro
+    extra_args:
+      - FILE_SUFFIX=tcc3
+
+  drivers.pwm.gpio_loopback_tcc4.mchp:
+    platform_allow:
+      - pic32cx_sg61_cult
+      - sam_e54_xpro
+    extra_args:
+      - FILE_SUFFIX=tcc4
+
   drivers.pwm.gpio_loopback_tc0.mchp:
     extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc0.overlay"
     platform_allow:
