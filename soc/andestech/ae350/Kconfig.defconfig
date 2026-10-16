@@ -3,7 +3,23 @@
 
 if SOC_SERIES_AE350
 
-rsource "Kconfig.defconfig.ae*"
+configdefault SYS_CLOCK_TICKS_PER_SEC
+	default 100 if (!ICACHE || XIP)
+
+configdefault MAIN_STACK_SIZE
+	default 2048
+
+configdefault IDLE_STACK_SIZE
+	default 1536
+
+configdefault PRIVILEGED_STACK_SIZE
+	default 2048 if 64BIT
+
+configdefault TEST_EXTRA_STACK_SIZE
+	default 2048 if 64BIT
+
+config MP_MAX_NUM_CPUS
+	range 1 8
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/clocks/clk_sys,clock-frequency)
@@ -49,10 +65,16 @@ config ARCH_IRQ_VECTOR_TABLE_ALIGN
 	default 512 if RISCV_ISA_RV64I
 	default 256
 
+configdefault CLIC_PARAMETER_INTCTLBITS
+	default 2 if CPU_ANDES_225
+
 endif # RISCV_HAS_CLIC
 
 choice CACHE_TYPE
 	default EXTERNAL_CACHE
 endchoice
+
+configdefault L2C_INCLUSIVE_POLICY
+	default y if CPU_ANDES_45 || CPU_ANDES_65
 
 endif # SOC_SERIES_AE350

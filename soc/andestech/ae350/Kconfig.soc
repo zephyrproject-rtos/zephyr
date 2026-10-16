@@ -11,10 +11,94 @@ config SOC_AE350
 	bool
 	select SOC_SERIES_AE350
 	help
-	  Andes AE350 SoC implementation"
+	  Deprecated Kconfig, use SOC_AE350_<core series> instead
+
+config SOC_AE350_22
+	bool
+	select SOC_SERIES_AE350
+	help
+	  Andes AE350 SoC with 32-bit Andes 22-Series core (N22)
+
+config SOC_AE350_225
+	bool
+	select SOC_SERIES_AE350
+	help
+	  Andes AE350 SoC with 32-bit Andes 225-Series core (N225)
+
+config SOC_AE350_23
+	bool
+	select SOC_SERIES_AE350
+	help
+	  Andes AE350 SoC with 32-bit Andes 23-Series core (D23)
+
+config SOC_AE350_25
+	bool
+	select SOC_SERIES_AE350
+	help
+	  Andes AE350 SoC with 32-bit Andes 25-Series core (N25F, D25F, A25, A25MP)
+
+config SOC_AE350_X25
+	bool
+	select SOC_SERIES_AE350
+	help
+	  Andes AE350 SoC with 64-bit Andes 25-Series core (NX25F, AX25, AX25MP)
+
+config SOC_AE350_27
+	bool
+	select SOC_SERIES_AE350
+	help
+	  Andes AE350 SoC with 32-bit Andes 27-Series core (A27, A27L2)
+
+config SOC_AE350_X27
+	bool
+	select SOC_SERIES_AE350
+	help
+	  Andes AE350 SoC with 64-bit Andes 27-Series core (AX27, AX27L2, NX27V)
+
+config SOC_AE350_45
+	bool
+	select SOC_SERIES_AE350
+	help
+	  Andes AE350 SoC with 32-bit Andes 45-Series core (N45, D45, A45, A45MP)
+
+config SOC_AE350_X45
+	bool
+	select SOC_SERIES_AE350
+	help
+	  Andes AE350 SoC with 64-bit Andes 45-Series core (NX45, AX45, AX45MP, AX45MPV)
+
+config SOC_AE350_46
+	bool
+	select SOC_SERIES_AE350
+	help
+	  Andes AE350 SoC with 32-bit Andes 46-Series core (A46MP, A46MPV)
+
+config SOC_AE350_X46
+	bool
+	select SOC_SERIES_AE350
+	help
+	  Andes AE350 SoC with 64-bit Andes 46-Series core (AX46MP, AX46MPV)
+
+config SOC_AE350_X65
+	bool
+	select SOC_SERIES_AE350
+	help
+	  Andes AE350 SoC with 64-bit Andes 65-Series core (AX65)
 
 config SOC_SERIES
 	default "ae350" if SOC_SERIES_AE350
 
 config SOC
 	default "ae350" if SOC_AE350
+	default "ae350_22" if SOC_AE350_22
+	default "ae350_225" if SOC_AE350_225
+	default "ae350_23" if SOC_AE350_23
+	default "ae350_25" if SOC_AE350_25
+	default "ae350_x25" if SOC_AE350_X25
+	default "ae350_27" if SOC_AE350_27
+	default "ae350_x27" if SOC_AE350_X27
+	default "ae350_45" if SOC_AE350_45
+	default "ae350_x45" if SOC_AE350_X45
+	default "ae350_46" if SOC_AE350_46
+	default "ae350_x46" if SOC_AE350_X46
+	default "ae350_x65" if SOC_AE350_X65
