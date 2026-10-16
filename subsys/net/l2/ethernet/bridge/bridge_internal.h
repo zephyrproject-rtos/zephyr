@@ -86,6 +86,18 @@ void eth_bridge_fdb_learn(struct net_if *bridge, struct net_eth_addr *mac, struc
 size_t eth_bridge_fdb_lookup(struct net_if *bridge, const struct net_eth_addr *mac,
 			     struct net_if *ports[], size_t max_ports);
 
+/**
+ * @brief Remove FDB entries of a bridge
+ *
+ * Used when the topology changes, so that frames are flooded until the
+ * stations are learned again.
+ *
+ * @param bridge Bridge interface
+ * @param iface Remove only the entries of this port, or NULL for all ports
+ * @param dynamic_only Keep the static entries
+ */
+void eth_bridge_fdb_flush(struct net_if *bridge, struct net_if *iface, bool dynamic_only);
+
 #ifdef __cplusplus
 }
 #endif

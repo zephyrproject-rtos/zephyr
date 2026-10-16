@@ -22,8 +22,20 @@ static size_t fdb_count;
 K_MEM_SLAB_DEFINE_STATIC_TYPE(fdb_slab, struct eth_bridge_fdb_entry,
 			      CONFIG_NET_ETHERNET_BRIDGE_FDB_MAX_ENTRIES);
 
-/* Remove the learned entry that was learned first, the last in the list.
- * Called with fdb_lock held.
+static void fdb_remove(sys_snode_t *prev, struct eth_bridge_fdb_entry *entry)
+{
+	NET_DBG("FDB entry removed: %02x:%02x:%02x:%02x:%02x:%02x -> iface %d", entry->mac.addr[0],
+		entry->mac.addr[1], entry->mac.addr[2], entry->mac.addr[3], entry->mac.addr[4],
+		entry->mac.addr[5], net_if_get_by_iface(entry->iface));
+
+	sys_slist_remove(&fdb_entries, prev, &entry->node);
+	fdb_count--;
+
+	k_mem_slab_free(&fdb_slab, (void *)entry);
+}
+
+/* Remove the learned entry seen longest ago, the first learned of those seen
+ * at the same time. Called with fdb_lock held.
  */
 static bool fdb_remove_oldest_learned(void)
 {
@@ -31,7 +43,8 @@ static bool fdb_remove_oldest_learned(void)
 	sys_snode_t *prev = NULL, *oldest_prev = NULL;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&fdb_entries, entry, node) {
-		if ((entry->flags & ETHERNET_BRIDGE_FDB_FLAG_DYNAMIC) != 0U) {
+		if ((entry->flags & ETHERNET_BRIDGE_FDB_FLAG_DYNAMIC) != 0U &&
+		    (oldest == NULL || entry->last_seen <= oldest->last_seen)) {
 			oldest = entry;
 			oldest_prev = prev;
 		}
@@ -43,14 +56,7 @@ static bool fdb_remove_oldest_learned(void)
 		return false;
 	}
 
-	NET_DBG("FDB entry replaced: %02x:%02x:%02x:%02x:%02x:%02x -> iface %d",
-		oldest->mac.addr[0], oldest->mac.addr[1], oldest->mac.addr[2],
-		oldest->mac.addr[3], oldest->mac.addr[4], oldest->mac.addr[5],
-		net_if_get_by_iface(oldest->iface));
-
-	sys_slist_remove(&fdb_entries, oldest_prev, &oldest->node);
-	fdb_count--;
-	k_mem_slab_free(&fdb_slab, (void *)oldest);
+	fdb_remove(oldest_prev, oldest);
 
 	return true;
 }
@@ -232,6 +238,48 @@ void eth_bridge_fdb_foreach(eth_bridge_fdb_entry_cb_t cb, void *user_data)
 }
 
 #if defined(CONFIG_NET_ETHERNET_BRIDGE_FDB_LEARNING)
+static void fdb_ageing_handler(struct k_work *work);
+static K_WORK_DELAYABLE_DEFINE(fdb_ageing_work, fdb_ageing_handler);
+
+/* Remove the learned entries not refreshed within the ageing time, once a
+ * second while there are learned entries.
+ */
+static void fdb_ageing_handler(struct k_work *work)
+{
+	struct eth_bridge_fdb_entry *entry;
+	sys_snode_t *node, *next, *prev = NULL;
+	uint32_t now = k_uptime_seconds();
+	bool dynamic_left = false;
+
+	ARG_UNUSED(work);
+
+	k_mutex_lock(&fdb_lock, K_FOREVER);
+
+	SYS_SLIST_FOR_EACH_NODE_SAFE(&fdb_entries, node, next) {
+		entry = CONTAINER_OF(node, struct eth_bridge_fdb_entry, node);
+
+		if ((entry->flags & ETHERNET_BRIDGE_FDB_FLAG_DYNAMIC) == 0U) {
+			prev = node;
+			continue;
+		}
+
+		if (now - entry->last_seen >= CONFIG_NET_ETHERNET_BRIDGE_FDB_AGEING_TIME) {
+			/* prev stays the last kept node */
+			fdb_remove(prev, entry);
+			continue;
+		}
+
+		dynamic_left = true;
+		prev = node;
+	}
+
+	k_mutex_unlock(&fdb_lock);
+
+	if (dynamic_left) {
+		(void)k_work_schedule(&fdb_ageing_work, K_SECONDS(1));
+	}
+}
+
 void eth_bridge_fdb_learn(struct net_if *bridge, struct net_eth_addr *mac, struct net_if *iface)
 {
 	struct eth_bridge_fdb_entry *entry;
@@ -254,12 +302,15 @@ void eth_bridge_fdb_learn(struct net_if *bridge, struct net_eth_addr *mac, struc
 		}
 
 		/* A static entry is never changed by what is received */
-		if ((entry->flags & ETHERNET_BRIDGE_FDB_FLAG_DYNAMIC) != 0U &&
-		    entry->iface != iface) {
-			NET_DBG("FDB entry moved: %02x:%02x:%02x:%02x:%02x:%02x -> iface %d",
-				mac->addr[0], mac->addr[1], mac->addr[2], mac->addr[3],
-				mac->addr[4], mac->addr[5], net_if_get_by_iface(iface));
-			entry->iface = iface;
+		if ((entry->flags & ETHERNET_BRIDGE_FDB_FLAG_DYNAMIC) != 0U) {
+			if (entry->iface != iface) {
+				NET_DBG("FDB move %02x:%02x:%02x:%02x:%02x:%02x -> iface %d",
+					mac->addr[0], mac->addr[1], mac->addr[2], mac->addr[3],
+					mac->addr[4], mac->addr[5], net_if_get_by_iface(iface));
+				entry->iface = iface;
+			}
+
+			entry->last_seen = k_uptime_seconds();
 		}
 
 		goto out;
@@ -274,9 +325,13 @@ void eth_bridge_fdb_learn(struct net_if *bridge, struct net_eth_addr *mac, struc
 	memcpy(&entry->mac, mac, sizeof(struct net_eth_addr));
 	entry->iface = iface;
 	entry->flags = ETHERNET_BRIDGE_FDB_FLAG_DYNAMIC;
+	entry->last_seen = k_uptime_seconds();
 
 	sys_slist_prepend(&fdb_entries, &entry->node);
 	fdb_count++;
+
+	/* Does nothing when the ageing work is already scheduled */
+	(void)k_work_schedule(&fdb_ageing_work, K_SECONDS(1));
 
 	NET_DBG("FDB entry learned: %02x:%02x:%02x:%02x:%02x:%02x -> iface %d", mac->addr[0],
 		mac->addr[1], mac->addr[2], mac->addr[3], mac->addr[4], mac->addr[5],
@@ -310,4 +365,28 @@ size_t eth_bridge_fdb_lookup(struct net_if *bridge, const struct net_eth_addr *m
 	k_mutex_unlock(&fdb_lock);
 
 	return count;
+}
+
+void eth_bridge_fdb_flush(struct net_if *bridge, struct net_if *iface, bool dynamic_only)
+{
+	struct eth_bridge_fdb_entry *entry;
+	sys_snode_t *node, *next, *prev = NULL;
+
+	k_mutex_lock(&fdb_lock, K_FOREVER);
+
+	SYS_SLIST_FOR_EACH_NODE_SAFE(&fdb_entries, node, next) {
+		entry = CONTAINER_OF(node, struct eth_bridge_fdb_entry, node);
+
+		if (net_eth_get_bridge(net_if_l2_data(entry->iface)) != bridge ||
+		    (iface != NULL && entry->iface != iface) ||
+		    (dynamic_only && (entry->flags & ETHERNET_BRIDGE_FDB_FLAG_DYNAMIC) == 0U)) {
+			prev = node;
+			continue;
+		}
+
+		/* prev stays the last kept node */
+		fdb_remove(prev, entry);
+	}
+
+	k_mutex_unlock(&fdb_lock);
 }

@@ -112,6 +112,15 @@ config NET_ETHERNET_BRIDGE_FDB_LEARNING
 	  replace static ones. When the table is full nothing more is
 	  learned, and frames to unknown destinations are flooded.
 
+config NET_ETHERNET_BRIDGE_FDB_AGEING_TIME
+	int "Ageing time of learned FDB entries in seconds"
+	depends on NET_ETHERNET_BRIDGE_FDB_LEARNING
+	default 300
+	range 1 1000000
+	help
+	  A learned entry is removed when no frame from its address has been
+	  received for this long. Static entries do not age.
+
 module = NET_ETHERNET_BRIDGE
 module-dep = NET_LOG
 module-str = Log level for Ethernet Bridging
