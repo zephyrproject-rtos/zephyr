@@ -239,6 +239,13 @@
 				      "gpin0", "gpin1";
 		};
 
+		rosc_rng: rng@40060000 {
+			compatible = "raspberrypi,rp2040-rosc-rng";
+			reg = <0x40060000 0x24>;
+			raspberrypi,clock-controller = <&clocks>;
+			status = "disabled";
+		};
+
 		gpio0_map: gpio@40014000 {
 			compatible = "raspberrypi,pico-gpio";
 			reg = <0x40014000 DT_SIZE_K(4)>;

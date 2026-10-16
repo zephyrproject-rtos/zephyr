@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  RP2040 ring-oscillator random-bit source. This source is unsuitable for
+  cryptographic use. The system clock must be independent of the ring oscillator.
+  Oscillator configuration remains under the clock controller's ownership.
+
+compatible: "raspberrypi,rp2040-rosc-rng"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  raspberrypi,clock-controller:
+    type: phandle
+    required: true
+    description: |
+      RP2040 clock controller containing the "clocks" register bank. The driver
+      reads clock selection registers to reject sampling from a ROSC-based
+      system clock. It does not change the clock configuration.

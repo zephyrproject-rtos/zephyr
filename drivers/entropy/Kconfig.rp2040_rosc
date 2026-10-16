@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_RP2040_ROSC
+	bool "RP2040 ring-oscillator entropy driver"
+	depends on SOC_SERIES_RP2040
+	depends on SYS_CLOCK_EXISTS
+	depends on DT_HAS_RASPBERRYPI_RP2040_ROSC_RNG_ENABLED
+	help
+	  Read the RP2040 ring oscillator's random-bit register directly, without
+	  the Pico SDK random generator. This source is not cryptographically
+	  secure and must not be used for keys, cryptographic seeds, or other
+	  security-sensitive values. This driver does not select
+	  ENTROPY_HAS_DRIVER; access it directly through the entropy API.
+	  The oscillator must be enabled and stable, and the system clock must
+	  use XOSC or a PLL. Clock configuration must remain unchanged during
+	  a request. This driver does not reconfigure or enable the oscillator.
