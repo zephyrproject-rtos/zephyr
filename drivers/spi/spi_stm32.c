@@ -1928,7 +1928,8 @@ static void dma_callback_sync(const struct device *spi_dev, uint32_t channel, in
 }
 #endif /* !CONFIG_SPI_RTIO */
 
-static void dma_callback(const struct device *dma_dev, void *arg, uint32_t channel, int status)
+static void __maybe_unused dma_callback(const struct device *dma_dev, void *arg, uint32_t channel,
+					int status)
 {
 	/* arg holds the SPI device
 	 * Passed in spi_stm32_dma_tx/rx_load()
