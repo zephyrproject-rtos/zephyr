@@ -77,6 +77,33 @@ static inline void uart_sifive_write(const struct device *dev, uint32_t reg, uin
 	sys_write32(val, DEVICE_MMIO_GET(dev) + reg);
 }
 
+/*
+ * Writes to txdata are ignored while the TX FIFO is full, so a single AMO
+ * reads the full flag and enqueues the character in one bus access.
+ */
+static inline bool uart_sifive_tx_try(const struct device *dev, uint8_t c)
+{
+#ifdef CONFIG_RISCV_ISA_EXT_ZAAMO
+	mm_reg_t reg = DEVICE_MMIO_GET(dev) + UART_SIFIVE_TXDATA;
+	uint32_t val;
+
+	__asm__ volatile("amoor.w %0, %1, %2"
+			 : "=r"(val)
+			 : "r"((uint32_t)c), "A"(*(volatile uint32_t *)reg)
+			 : "memory");
+
+	return (val & TXDATA_FULL) == 0U;
+#else
+	if ((uart_sifive_read(dev, UART_SIFIVE_TXDATA) & TXDATA_FULL) != 0U) {
+		return false;
+	}
+
+	uart_sifive_write(dev, UART_SIFIVE_TXDATA, c);
+
+	return true;
+#endif
+}
+
 /**
  * @brief Output a character in polled mode.
  *
@@ -88,11 +115,9 @@ static inline void uart_sifive_write(const struct device *dev, uint32_t reg, uin
 static void uart_sifive_poll_out(const struct device *dev,
 					 unsigned char c)
 {
-	/* Wait while TX FIFO is full */
-	while ((uart_sifive_read(dev, UART_SIFIVE_TXDATA) & TXDATA_FULL) != 0U) {
+	/* Retry while TX FIFO is full */
+	while (!uart_sifive_tx_try(dev, c)) {
 	}
-
-	uart_sifive_write(dev, UART_SIFIVE_TXDATA, c);
 }
 
 /**
@@ -133,9 +158,10 @@ static int uart_sifive_fifo_fill(const struct device *dev,
 {
 	int i;
 
-	for (i = 0; i < size &&
-		    (uart_sifive_read(dev, UART_SIFIVE_TXDATA) & TXDATA_FULL) == 0U; i++) {
-		uart_sifive_write(dev, UART_SIFIVE_TXDATA, tx_data[i]);
+	for (i = 0; i < size; i++) {
+		if (!uart_sifive_tx_try(dev, tx_data[i])) {
+			break;
+		}
 	}
 
 	return i;
