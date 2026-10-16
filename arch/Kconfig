@@ -626,6 +626,7 @@ config DYNAMIC_INTERRUPTS
 
 config SHARED_INTERRUPTS
 	bool "Set this to enable support for shared interrupts [EXPERIMENTAL]"
+	default y if $(dt_max_shared_irqs) > 1
 	depends on GEN_SW_ISR_TABLE
 	select EXPERIMENTAL
 	help
@@ -635,7 +636,7 @@ config SHARED_INTERRUPTS
 
 config SHARED_IRQ_MAX_NUM_CLIENTS
 	int "Maximum number of clients allowed per shared interrupt"
-	default 2
+	default $(max,$(dt_max_shared_irqs),2)
 	depends on SHARED_INTERRUPTS
 	help
 	  This option controls the maximum number of clients allowed
