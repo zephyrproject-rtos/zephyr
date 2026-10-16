@@ -23,7 +23,8 @@ config CAN_RCAR_MAX_FILTERS
 config CAN_RCAR_RSCANFD
 	bool "Renesas R-Car RS-CANFD driver"
 	default y
-	depends on DT_HAS_RENESAS_RCAR_RSCANFD_GLOBAL_ENABLED
+	depends on DT_HAS_RENESAS_RCAR_RSCANFD_GLOBAL_ENABLED || \
+		DT_HAS_RENESAS_RCAR_V4H_RSCANFD_GLOBAL_ENABLED
 	select PINCTRL
 	help
 	  Enable Renesas R-Car CAN Driver for the RS-CANFD controller,
