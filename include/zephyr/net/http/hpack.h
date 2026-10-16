@@ -117,10 +117,10 @@ enum http_hpack_static_key {
 #define HTTP_HPACK_DYNAMIC_TABLE_COUNT 0
 #endif
 
-#if defined(CONFIG_HTTP_SERVER)
-#define HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE CONFIG_HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE
+#if defined(CONFIG_HTTP_HUFFMAN_DECODE_BUFFER_SIZE)
+#define HTTP_HUFFMAN_DECODE_BUFFER_SIZE CONFIG_HTTP_HUFFMAN_DECODE_BUFFER_SIZE
 #else
-#define HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE 0
+#define HTTP_HUFFMAN_DECODE_BUFFER_SIZE 0
 #endif
 
 /** @endcond */
@@ -165,7 +165,7 @@ struct http_hpack_header_buf {
 	size_t value_len;
 
 	/** Encoding/Decoding buffer. Used with Huffman encoding/decoding. */
-	uint8_t buf[HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE];
+	uint8_t buf[HTTP_HUFFMAN_DECODE_BUFFER_SIZE];
 
 	/** Length of the data in the decoding buffer. */
 	size_t datalen;
