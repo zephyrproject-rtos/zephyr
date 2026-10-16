@@ -203,3 +203,11 @@ nxp_mipi_i2c: &lpi2c0 {};
 &usdhc0 {
 	status = "okay";
 };
+
+&edma3 {
+	status = "okay";
+};
+
+&sai0 {
+	status = "okay";
+};
