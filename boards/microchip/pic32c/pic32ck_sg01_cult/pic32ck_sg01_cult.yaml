@@ -1,4 +1,4 @@
-# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 identifier: pic32ck_sg01_cult
@@ -11,6 +11,8 @@ flash: 2032
 ram: 512
 supported:
   - clock_control
+  - eeprom
   - gpio
+  - i2c
   - pinctrl
 vendor: microchip
