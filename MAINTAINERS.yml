@@ -5339,6 +5339,27 @@ PHYTEC Platforms:
   labels:
     - "platform: PHYTEC"
 
+PMBus:
+  status: maintained
+  maintainers:
+    - ssekar15
+    - parthitce
+  files:
+    - doc/services/connectivity/pmbus/
+    - drivers/sensor/pmbus/
+    - dts/bindings/sensor/zephyr,pmbus.yaml
+    - include/zephyr/pmbus/
+    - samples/sensor/pmbus/
+    - subsys/pmbus/
+    - tests/drivers/sensor/pmbus/
+    - tests/subsys/pmbus/
+  labels:
+    - "area: PMBus"
+  tests:
+    - pmbus
+    - drivers.sensor.pmbus
+    - sample.sensor.pmbus
+
 PMCI:
   status: maintained
   maintainers:
