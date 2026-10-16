@@ -135,31 +135,47 @@ static ALWAYS_INLINE void z_priq_simple_remove(sys_dlist_t *pq, struct k_thread 
 static ALWAYS_INLINE void z_priq_simple_yield(sys_dlist_t *pq)
 {
 #ifndef CONFIG_SMP
+	struct k_thread *cur = _current;
+	struct k_thread *t;
 	sys_dnode_t *n;
 
-	n = sys_dlist_peek_next_no_check(pq, &_current->base.qnode_dlist);
-
-	sys_dlist_dequeue(&_current->base.qnode_dlist);
-
-	struct k_thread *t;
-
-	/*
-	 * As it is possible that the current thread was not at the head of
-	 * the run queue, start searching from the present position for where
-	 * to re-insert it.
-	 */
-
-	while (n != NULL) {
-		t = CONTAINER_OF(n, struct k_thread, base.qnode_dlist);
-		if (z_sched_prio_cmp(_current, t) > 0) {
-			sys_dlist_insert(&t->base.qnode_dlist,
-					 &_current->base.qnode_dlist);
-			return;
-		}
-		n = sys_dlist_peek_next_no_check(pq, n);
+	/* Already last in the queue, so it cannot move. */
+	if (sys_dlist_is_tail(pq, &cur->base.qnode_dlist)) {
+		return;
 	}
 
-	sys_dlist_append(pq, &_current->base.qnode_dlist);
+	/*
+	 * The queue is sorted, so unless the tail ranks below the current
+	 * thread nothing does and this is a plain append.
+	 */
+	t = CONTAINER_OF(sys_dlist_peek_tail_not_empty(pq), struct k_thread,
+			 base.qnode_dlist);
+
+	if (unlikely(z_sched_prio_cmp(cur, t) > 0)) {
+		n = sys_dlist_peek_next_no_check(pq, &cur->base.qnode_dlist);
+		t = CONTAINER_OF(n, struct k_thread, base.qnode_dlist);
+
+		/* A successor that already ranks below leaves it in place. */
+		if (z_sched_prio_cmp(cur, t) > 0) {
+			return;
+		}
+
+		sys_dlist_dequeue(&cur->base.qnode_dlist);
+
+		/* The tail ranks below, so this walk always stops on it or
+		 * earlier and never runs off the end.
+		 */
+		do {
+			n = sys_dlist_peek_next_not_tail(n);
+			t = CONTAINER_OF(n, struct k_thread, base.qnode_dlist);
+		} while (z_sched_prio_cmp(cur, t) <= 0);
+
+		sys_dlist_insert(n, &cur->base.qnode_dlist);
+		return;
+	}
+
+	sys_dlist_dequeue(&cur->base.qnode_dlist);
+	sys_dlist_append(pq, &cur->base.qnode_dlist);
 #endif
 }
 
