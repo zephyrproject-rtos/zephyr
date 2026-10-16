@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config PTP_CLOCK_CDNS_MACB
+	bool "Cadence MACB/GEM PTP clock driver support"
+	default y
+	depends on PTP_CLOCK
+	depends on DT_HAS_CDNS_MACB_PTP_CLOCK_ENABLED
+	depends on ETH_CDNS_MACB_CORE
+	select NET_L2_PTP_TIMESTAMPING
+	help
+	  Enable the 1588 time stamp unit of the Cadence GEM as PTP clock and
+	  the hardware timestamps of received and transmitted frames. The
+	  descriptors grow by the two timestamp words, and receive buffers
+	  need an 8-byte alignment.

@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: hifive_unleashed/fu540/e51/qemu
+name: SiFive HiFive Unleashed (E51, QEMU)
+type: qemu
+arch: riscv
+toolchain:
+  - zephyr
+ram: 32768
+simulation:
+  - name: qemu
+testing:
+  ignore_tags:
+    - bluetooth
+    - flash
+    - crypto
+supported:
+  - gpio
+  - netif:eth
+vendor: sifive

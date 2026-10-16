@@ -50,6 +50,12 @@ API Changes
 Removed APIs and options
 ========================
 
+* Ethernet
+
+  * The Xilinx GEM Ethernet driver with ``CONFIG_ETH_XLNX_GEM`` and the devicetree
+    compatibles ``xlnx,gem`` and ``xlnx,gem-mdio`` are superseded by the Cadence MACB/GEM
+    driver with :kconfig:option:`CONFIG_ETH_XLNX_CDNS_MACB`. See the migration guide.
+
 Deprecated APIs and options
 ===========================
 
@@ -90,6 +96,23 @@ New Drivers
 ..
   Same as above, this will also be recomputed at the time of the release.
   Just link the driver, further details go in the binding description
+
+* Clock control
+
+  * :dtcompatible:`sifive,fu540-c000-prci`
+  * :dtcompatible:`xlnx,ps7-clkc`
+  * :dtcompatible:`xlnx,zynqmp-clk`
+
+* Ethernet
+
+  * :dtcompatible:`cdns,gem`
+  * :dtcompatible:`cdns,macb-mdio`
+  * :dtcompatible:`cdns,macb-ptp-clock`
+  * :dtcompatible:`infineon,cat1c-gem`
+  * :dtcompatible:`microchip,mpfs-gem`
+  * :dtcompatible:`sifive,fu540-c000-gem`
+  * :dtcompatible:`xlnx,zynq-gem`
+  * :dtcompatible:`xlnx,zynqmp-gem`
 
 New Samples
 ***********
