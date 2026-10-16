@@ -611,6 +611,20 @@ static int map_anon_page(void *addr, uint32_t flags, bool *recovered)
 	return 0;
 }
 
+#ifdef CONFIG_DEMAND_PAGING
+/* Location of a demand-mapped page that was never paged in */
+static inline bool is_unpaged_anon_location(uintptr_t location)
+{
+#ifdef CONFIG_DEMAND_MAPPING
+	return (location == ARCH_UNPAGED_ANON_ZERO) || (location == ARCH_UNPAGED_ANON_UNINIT);
+#else
+	ARG_UNUSED(location);
+
+	return false;
+#endif /* CONFIG_DEMAND_MAPPING */
+}
+#endif /* CONFIG_DEMAND_PAGING */
+
 /**
  * Undo pages previously established by map_anon_page().
  *
@@ -642,13 +656,16 @@ static int unmap_anon_pages(void *virt, size_t sz)
 			/*
 			 * No pf is associated with this mapping.
 			 * Simply get rid of the MMU entry and free
-			 * corresponding backing store.
+			 * corresponding backing store. A demand-mapped
+			 * page that was never paged in has none.
 			 */
 			ret = arch_mem_unmap(pos, CONFIG_MMU_PAGE_SIZE);
 			__ASSERT(ret == 0, "%s: arch_mem_unmap() returned %d", __func__,
 				 ret);
 
-			k_mem_paging_backing_store_location_free(location);
+			if (!is_unpaged_anon_location(location)) {
+				k_mem_paging_backing_store_location_free(location);
+			}
 
 			if (ret != 0) {
 				goto unmap_anon_out;
