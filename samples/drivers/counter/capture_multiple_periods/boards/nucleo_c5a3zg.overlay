@@ -1,0 +1,53 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		capture-counter = &capture_counter;
+		pwm-generator-a = &pwm_generator_a;
+		pwm-generator-b = &pwm_generator_b;
+	};
+};
+
+/* PB10 is used as TIM2_CH3 instead of the board's default I2C2 SCL. */
+&i2c2 {
+	status = "disabled";
+};
+
+&timers1 {
+	st,prescaler = <143>;
+	status = "okay";
+
+	capture_counter: counter {
+		status = "okay";
+		pinctrl-0 = <&tim1_ch1_pa8 &tim1_ch2_pa9>;
+		pinctrl-names = "default";
+		dmas = <&lpdma1 0 24 0>,
+		       <&lpdma1 1 25 0>;
+		dma-names = "cc1", "cc2";
+	};
+};
+
+&timers2 {
+	st,prescaler = <143>;
+	status = "okay";
+
+	pwm_generator_a: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim2_ch3_pb10>;
+		pinctrl-names = "default";
+	};
+};
+
+&timers8 {
+	st,prescaler = <143>;
+	status = "okay";
+
+	pwm_generator_b: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim8_ch1_pc6>;
+		pinctrl-names = "default";
+	};
+};
