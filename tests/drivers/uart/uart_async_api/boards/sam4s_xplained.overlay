@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2026 Basalte bv
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Connect PA21 (RXD1) and PA22 (TXD1) for the loopback */
+dut: &usart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
+};
