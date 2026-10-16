@@ -234,6 +234,77 @@ ZTEST(uart_elementary, test_uart_basic_transmission)
 	}
 }
 
+static int reconfigure_tx_offset;
+static int reconfigure_rx_offset;
+
+/*
+ * Callback function for the UART reconfiguration test
+ */
+static void uart_reconfigure_callback(const struct device *dev, void *user_data)
+{
+	int err;
+
+	uart_irq_update(dev);
+	err = uart_err_check(dev);
+	if (err != 0) {
+		uart_error_counter++;
+	}
+	while (uart_irq_is_pending(dev)) {
+		if (uart_irq_rx_ready(dev)) {
+			uart_rx_interrupt_service(dev, (uint8_t *)user_data,
+						  &reconfigure_rx_offset);
+		}
+		if (uart_irq_tx_ready(dev)) {
+			uart_tx_interrupt_service(dev, &reconfigure_tx_offset);
+		}
+		uart_irq_update(dev);
+	}
+}
+
+/*
+ * Test UART interrupt based transmission after configuring the UART with its interrupts enabled
+ */
+ZTEST(uart_elementary, test_uart_configure_with_irq_enabled)
+{
+	int err;
+	struct uart_config test_uart_config = { .baudrate = UART_BAUDRATE,
+						.parity = UART_CFG_PARITY_ODD,
+						.stop_bits = UART_CFG_STOP_BITS_1,
+						.data_bits = UART_CFG_DATA_BITS_8,
+						.flow_ctrl = UART_CFG_FLOW_CTRL_NONE };
+
+	reconfigure_tx_offset = 0;
+	reconfigure_rx_offset = 0;
+	uart_error_counter = 0;
+	memset(test_buffer, 0, sizeof(test_buffer));
+
+	err = uart_irq_callback_user_data_set(uart_dev, uart_reconfigure_callback,
+					      (void *)test_buffer);
+	zassert_equal(err, 0, "Unexpected error when setting callback %d", err);
+	uart_irq_err_enable(uart_dev);
+	uart_irq_rx_enable(uart_dev);
+
+	/* the interrupts enabled before the configuration stay enabled */
+	err = uart_configure(uart_dev, &test_uart_config);
+	zassert_equal(err, 0, "Unexpected error when configuring UART0: %d", err);
+
+	uart_irq_tx_enable(uart_dev);
+
+	/* wait for the transmission to finish (no polling is intentional) */
+	k_sleep(K_USEC(100 * SLEEP_TIME_US));
+
+	uart_irq_tx_disable(uart_dev);
+	uart_irq_rx_disable(uart_dev);
+	uart_irq_err_disable(uart_dev);
+
+	zassert_equal(uart_error_counter, 0, "UART errors reported: %d", uart_error_counter);
+	for (int index = 0; index < TEST_BUFFER_LEN; index++) {
+		zassert_equal(test_buffer[index], test_pattern[index],
+			      "Received data byte %d does not match pattern 0x%x != 0x%x", index,
+			      test_buffer[index], test_pattern[index]);
+	}
+}
+
 #if defined(CONFIG_PM)
 static int pm_tx_offset;
 static int pm_rx_offset;
