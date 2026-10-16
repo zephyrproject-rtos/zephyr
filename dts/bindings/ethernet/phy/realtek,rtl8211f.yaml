@@ -35,3 +35,21 @@ properties:
   default-speeds:
     default: ["10BASE Half-Duplex", "10BASE Full-Duplex", "100BASE Half-Duplex",
               "100BASE Full-Duplex", "1000BASE Half-Duplex", "1000BASE Full-Duplex"]
+  timing-role:
+    type: string
+    description: |
+      1000BASE-T master/slave role. Omit for IEEE auto resolution (default).
+
+      - "forced-master"    - manual MS enable, MS=1
+      - "forced-slave"     - manual MS enable, MS=0
+      - "preferred-master" - auto resolution, prefer MS=1
+      - "preferred-slave"  - auto resolution, prefer MS=0
+
+      Use "forced-master" on a direct point-to-point link to a PC/RPi NIC
+      if the link flaps or caps at 100 Mb (auto master/slave never agrees
+      with some NICs). Never force the same role on both ends.
+    enum:
+      - "forced-master"
+      - "forced-slave"
+      - "preferred-master"
+      - "preferred-slave"
