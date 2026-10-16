@@ -750,15 +750,16 @@ static inline void test_rtio_simple_multishot_(struct rtio *r, int idx)
 	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER));
 	zassert_ok(cqe.result, "Result should be ok but got %d", cqe.result);
 	zassert_equal_ptr(cqe.userdata, mempool_data, "Expected userdata back");
-	rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len);
+	zassert_ok(rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len));
 	rtio_release_buffer(r, buffer, buffer_len);
 
 	TC_PRINT("Canceling 0x%08x\n", handle);
 	rtio_sqe_cancel(r, handle);
-	/* Flush any pending CQEs */
+	/* Flush pending CQEs, releasing only the ones that carry a buffer */
 	while (rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(15)) != 0) {
-		rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len);
-		rtio_release_buffer(r, buffer, buffer_len);
+		if (rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len) == 0) {
+			rtio_release_buffer(r, buffer, buffer_len);
+		}
 	}
 }
 
@@ -796,6 +797,11 @@ ZTEST(rtio_api, test_rtio_multishot_are_not_resubmitted_when_failed)
 	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(100)));
 	zassert_equal(cqe.result, -EIO, "Result should be %d but got %d", -EIO, cqe.result);
 
+	/* The executor released the blocks, so the error CQE must not offer them */
+	zassert_equal(-EINVAL, rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len),
+		      "Error CQE should not report a mempool buffer");
+	zassert_is_null(buffer, "Error CQE should not report a mempool buffer");
+
 	/* No more CQE's coming as it should be aborted */
 	zassert_equal(0, rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(100)),
 		      "Should not get more CQEs after the error CQE");
@@ -804,8 +810,9 @@ ZTEST(rtio_api, test_rtio_multishot_are_not_resubmitted_when_failed)
 
 	/* Flush any pending CQEs */
 	while (rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(1000)) != 0) {
-		rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len);
-		rtio_release_buffer(r, buffer, buffer_len);
+		if (rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len) == 0) {
+			rtio_release_buffer(r, buffer, buffer_len);
+		}
 	}
 }
 
@@ -877,6 +884,139 @@ void test_rtio_transaction_(struct rtio *r)
 
 	zassert_true(seen[0], "Should have seen transaction 0");
 	zassert_true(seen[1], "Should have seen transaction 1");
+}
+
+#define TXN_MEMPOOL_ELEMS 4
+
+RTIO_DEFINE_WITH_MEMPOOL(r_txn_mempool, TXN_MEMPOOL_ELEMS, TXN_MEMPOOL_ELEMS,
+			 MEM_BLK_COUNT * 2, MEM_BLK_SIZE / 2, MEM_BLK_ALIGN);
+
+RTIO_IODEV_TEST_DEFINE(iodev_test_txn_mempool);
+
+/**
+ * @brief A transaction's mempool buffer belongs to the member that read into it
+ *
+ * Each completion has to describe its own member, or a consumer either loses
+ * the data or releases the same blocks once per member.
+ */
+ZTEST(rtio_api, test_rtio_transaction_mempool)
+{
+	struct rtio *r = &r_txn_mempool;
+	struct rtio_iodev *iodev = (struct rtio_iodev *)&iodev_test_txn_mempool;
+	struct rtio_sqe *sqe;
+	struct rtio_cqe cqe;
+	uint8_t *buffer = NULL;
+	uint32_t buffer_len = 0;
+
+	rtio_iodev_test_init(&iodev_test_txn_mempool);
+
+	for (int i = 0; i < MEM_BLK_SIZE; i++) {
+		mempool_data[i] = i + 1;
+	}
+
+	/* The head holds the iodev and reads nothing, the member behind it reads */
+	sqe = rtio_sqe_acquire(r);
+	zassert_not_null(sqe, "Expected a valid sqe");
+	rtio_sqe_prep_nop(sqe, iodev, NULL);
+	sqe->flags |= RTIO_SQE_TRANSACTION;
+
+	sqe = rtio_sqe_acquire(r);
+	zassert_not_null(sqe, "Expected a valid sqe");
+	rtio_sqe_prep_read_with_pool(sqe, iodev, 0, mempool_data);
+
+	zassert_ok(rtio_submit(r, 2));
+
+	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER));
+	zassert_ok(cqe.result, "Transaction head should complete ok");
+	zassert_is_null(cqe.userdata, "First completion should be the head");
+	zassert_equal(-EINVAL, rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len),
+		      "A member that read nothing must not carry a mempool buffer");
+
+	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER));
+	zassert_ok(cqe.result, "Transaction read should complete ok");
+	zassert_equal_ptr(mempool_data, cqe.userdata, "Second completion should be the read");
+	zassert_ok(rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len),
+		   "The member that read must carry the buffer it bound");
+	zassert_not_null(buffer, "Expected an allocated mempool buffer");
+	zassert_equal(MEM_BLK_SIZE, buffer_len);
+	zassert_mem_equal(buffer, mempool_data, MEM_BLK_SIZE, "Expected the data that was read");
+	rtio_release_buffer(r, buffer, buffer_len);
+
+	/* The other way round, so only the head may claim the buffer */
+	sqe = rtio_sqe_acquire(r);
+	zassert_not_null(sqe, "Expected a valid sqe");
+	rtio_sqe_prep_read_with_pool(sqe, iodev, 0, mempool_data);
+	sqe->flags |= RTIO_SQE_TRANSACTION;
+
+	sqe = rtio_sqe_acquire(r);
+	zassert_not_null(sqe, "Expected a valid sqe");
+	rtio_sqe_prep_nop(sqe, iodev, NULL);
+
+	zassert_ok(rtio_submit(r, 2));
+
+	buffer = NULL;
+	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER));
+	zassert_equal_ptr(mempool_data, cqe.userdata, "First completion should be the read");
+	zassert_ok(rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len),
+		   "The member that read must carry the buffer it bound");
+	zassert_mem_equal(buffer, mempool_data, MEM_BLK_SIZE, "Expected the data that was read");
+	rtio_release_buffer(r, buffer, buffer_len);
+
+	buffer = NULL;
+	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER));
+	zassert_is_null(cqe.userdata, "Second completion should be the nop");
+	zassert_equal(-EINVAL, rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len),
+		      "A member that read nothing must not claim the buffer the head read into");
+	zassert_is_null(buffer, "Expected no buffer for the member that read nothing");
+}
+
+#define RELEASE_BLK_COUNT 8
+#define RELEASE_BLK_SIZE  8
+
+RTIO_DEFINE_WITH_MEMPOOL(r_release, 4, 4, RELEASE_BLK_COUNT, RELEASE_BLK_SIZE, MEM_BLK_ALIGN);
+
+RTIO_IODEV_TEST_DEFINE(iodev_test_release);
+
+/**
+ * @brief Releasing a partial length returns every block the buffer spans
+ *
+ * rtio_release_buffer() rounds its byte count up to whole blocks, so a consumer
+ * may hand back what it used rather than what it got. Rounding down strands the
+ * tail block of every buffer and the pool runs dry a few reads later.
+ */
+ZTEST(rtio_api, test_rtio_release_buffer_rounds_up)
+{
+	struct rtio *r = &r_release;
+	struct rtio_sqe *sqe;
+	struct rtio_cqe cqe;
+	uint8_t *buf;
+	uint32_t buf_len;
+
+	rtio_iodev_test_init(&iodev_test_release);
+	for (int i = 0; i < MEM_BLK_SIZE; i++) {
+		mempool_data[i] = i;
+	}
+
+	/* Each read binds more than one block, and each release names one byte
+	 * less than it got, so a pool that rounds down never recovers.
+	 */
+	for (int i = 0; i < RELEASE_BLK_COUNT; i++) {
+		sqe = rtio_sqe_acquire(r);
+		zassert_not_null(sqe, "Expected a valid sqe");
+		rtio_sqe_prep_read_with_pool(sqe, (struct rtio_iodev *)&iodev_test_release, 0,
+					     mempool_data);
+
+		zassert_ok(rtio_submit(r, 1));
+		zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER));
+		zassert_ok(cqe.result, "Read %d failed, blocks not returned?", i);
+
+		buf = NULL;
+		buf_len = 0;
+		zassert_ok(rtio_cqe_get_mempool_buffer(r, &cqe, &buf, &buf_len));
+		zassert_equal(MEM_BLK_SIZE, buf_len);
+
+		rtio_release_buffer(r, buf, buf_len - 1);
+	}
 }
 
 ZTEST(rtio_api, test_rtio_transaction)

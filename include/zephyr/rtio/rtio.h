@@ -259,7 +259,8 @@ static inline void rtio_block_pool_free(struct rtio *r, void *buf, uint32_t buf_
 	ARG_UNUSED(buf);
 	ARG_UNUSED(buf_len);
 #else
-	size_t num_blks = buf_len >> r->block_pool->info.blk_sz_shift;
+	/* Round up, a caller may name the bytes it used rather than the whole buffer */
+	size_t num_blks = DIV_ROUND_UP(buf_len, BIT(r->block_pool->info.blk_sz_shift));
 
 	sys_mem_blocks_free_contiguous(r->block_pool, buf, num_blks);
 #endif
