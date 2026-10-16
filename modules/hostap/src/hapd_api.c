@@ -345,10 +345,36 @@ out:
 	return -1;
 }
 
-int hostapd_add_enterprise_creds(const struct device *dev __unused,
-				 struct net_if *net_iface __unused,
+static void hapd_clear_enterprise_creds(void)
+{
+	bin_clear_free(hapd_enterprise_creds.ca_cert, hapd_enterprise_creds.ca_cert_len);
+	bin_clear_free(hapd_enterprise_creds.server_cert, hapd_enterprise_creds.server_cert_len);
+	bin_clear_free(hapd_enterprise_creds.server_key, hapd_enterprise_creds.server_key_len);
+	bin_clear_free(hapd_enterprise_creds.dh_param, hapd_enterprise_creds.dh_param_len);
+	os_memset(&hapd_enterprise_creds, 0, sizeof(hapd_enterprise_creds));
+}
+
+static int hapd_copy_enterprise_cred(uint8_t **dst, uint32_t *dst_len, const uint8_t *src,
+				     uint32_t src_len)
+{
+	if (src == NULL || src_len == 0) {
+		return 0;
+	}
+
+	*dst = os_memdup(src, src_len);
+	if (*dst == NULL) {
+		return -ENOMEM;
+	}
+
+	*dst_len = src_len;
+
+	return 0;
+}
+
+int hostapd_add_enterprise_creds(const struct device *dev __unused, struct net_if *net_iface,
 				 struct wifi_enterprise_creds_params *creds)
 {
+	struct hostapd_iface *iface;
 	int ret = 0;
 
 	if (!creds) {
@@ -357,9 +383,50 @@ int hostapd_add_enterprise_creds(const struct device *dev __unused,
 		goto out;
 	}
 
-	memcpy((void *)&hapd_enterprise_creds, (void *)creds,
-	       sizeof(struct wifi_enterprise_creds_params));
+	k_mutex_lock(&hostapd_mutex, K_FOREVER);
 
+	iface = get_hostapd_handle(net_iface);
+	if (iface != NULL && iface->state > HAPD_IFACE_DISABLED) {
+		wpa_printf(MSG_ERROR, "Interface is operational, cannot replace enterprise creds");
+		ret = -EBUSY;
+		goto unlock;
+	}
+
+	if (iface != NULL) {
+		(void)hapd_process_cert_data(iface->bss[0]->conf, "ca_cert_blob", NULL, 0);
+		(void)hapd_process_cert_data(iface->bss[0]->conf, "server_cert_blob", NULL, 0);
+		(void)hapd_process_cert_data(iface->bss[0]->conf, "private_key_blob", NULL, 0);
+		(void)hapd_process_cert_data(iface->bss[0]->conf, "dh_blob", NULL, 0);
+	}
+
+	hapd_clear_enterprise_creds();
+
+	ret = hapd_copy_enterprise_cred(&hapd_enterprise_creds.ca_cert,
+					&hapd_enterprise_creds.ca_cert_len, creds->ca_cert,
+					creds->ca_cert_len);
+	if (ret == 0) {
+		ret = hapd_copy_enterprise_cred(&hapd_enterprise_creds.server_cert,
+						&hapd_enterprise_creds.server_cert_len,
+						creds->server_cert, creds->server_cert_len);
+	}
+	if (ret == 0) {
+		ret = hapd_copy_enterprise_cred(&hapd_enterprise_creds.server_key,
+						&hapd_enterprise_creds.server_key_len,
+						creds->server_key, creds->server_key_len);
+	}
+	if (ret == 0) {
+		ret = hapd_copy_enterprise_cred(&hapd_enterprise_creds.dh_param,
+						&hapd_enterprise_creds.dh_param_len,
+						creds->dh_param, creds->dh_param_len);
+	}
+
+	if (ret != 0) {
+		wpa_printf(MSG_ERROR, "failed to copy enterprise creds");
+		hapd_clear_enterprise_creds();
+	}
+
+unlock:
+	k_mutex_unlock(&hostapd_mutex);
 out:
 	return ret;
 }
