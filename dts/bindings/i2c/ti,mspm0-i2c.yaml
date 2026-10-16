@@ -1,0 +1,54 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI MSPM0 I2C
+
+compatible: "ti,mspm0-i2c"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  merge-buf-size:
+    type: int
+    default: 32
+    description: |
+        Size of a buffer that the driver will allocate in RAM to merge
+        multiple same direction I2C messages that have no RESTART or STOP
+        flag between them (see e.g. the i2c_burst_write() function) into one
+        transfer on the bus.
+
+  controller-tx-fifo-threshold:
+    type: int
+    default: 1
+    min: 1
+    max: 7
+    description: |
+        Controller TX FIFO trigger threshold. The controller TXFIFO interrupt
+        fires when the TX FIFO contains this many or fewer bytes, prompting
+        the driver to refill it during a multi-byte transfer.
+        Valid range: 1–7 (must not exceed FIFO depth minus one).
+
+  controller-rx-fifo-threshold:
+    type: int
+    default: 1
+    min: 1
+    max: 8
+    description: |
+        Controller RX FIFO trigger threshold. The controller RXFIFO interrupt
+        fires when the RX FIFO contains this many or more bytes, prompting
+        the driver to drain it during a multi-byte receive.
+        Valid range: 1–8 (must not exceed FIFO depth).
+        Note: the target-mode RX FIFO threshold is always 1 regardless of
+        this setting, since the Zephyr target callback API delivers one byte
+        at a time.
