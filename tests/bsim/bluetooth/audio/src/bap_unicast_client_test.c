@@ -1144,6 +1144,7 @@ static size_t create_unicast_group(struct bt_bap_unicast_group **unicast_group)
 	param.params = pair_params;
 	param.params_count = pair_cnt;
 	param.packing = CIG_PACKING;
+	param.sca = BT_GAP_SCA_UNKNOWN;
 
 	/* Require controller support for CIGs */
 	err = bt_bap_unicast_group_create(&param, unicast_group);

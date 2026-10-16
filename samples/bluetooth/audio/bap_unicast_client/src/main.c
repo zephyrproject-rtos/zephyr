@@ -736,6 +736,7 @@ static int create_group(void)
 	param.params = pair_params;
 	param.params_count = params_count;
 	param.packing = BT_ISO_PACKING_SEQUENTIAL;
+	param.sca = BT_GAP_SCA_UNKNOWN;
 
 	err = bt_bap_unicast_group_create(&param, &unicast_group);
 	if (err != 0) {
