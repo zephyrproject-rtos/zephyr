@@ -56,7 +56,9 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 				NET_EVENT_WIFI_AP_STA_DISCONNECTED|\
 				NET_EVENT_WIFI_SIGNAL_CHANGE      |\
 				NET_EVENT_WIFI_NEIGHBOR_REP_COMP  |\
-				NET_EVENT_WIFI_P2P_DEVICE_FOUND)
+				NET_EVENT_WIFI_P2P_DEVICE_FOUND   |\
+				NET_EVENT_WIFI_ROAMING_DHCP)
+
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
 #define WIFI_SHELL_NAN_EVENTS (                        \
@@ -835,6 +837,20 @@ static void handle_wifi_nan_receive(struct net_mgmt_event_callback *cb)
 }
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
 
+static void handle_wifi_roaming_dhcp(struct net_mgmt_event_callback *cb, struct net_if *iface)
+{
+	const struct shell *sh = context.sh;
+	int ret;
+
+	ret = net_mgmt(NET_REQUEST_WIFI_ROAMING_DHCP, iface, NULL, 0);
+	if (ret) {
+		PR_WARNING("Start roaming DHCP failed\n");
+		return;
+	}
+
+	PR("Start roaming DHCP requested\n");
+}
+
 static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 				    uint64_t mgmt_event, struct net_if *iface)
 {
@@ -890,6 +906,9 @@ static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 		handle_wifi_nan_receive(cb);
 		break;
 #endif
+	case NET_EVENT_WIFI_ROAMING_DHCP:
+		handle_wifi_roaming_dhcp(cb, iface);
+		break;
 	default:
 		break;
 	}

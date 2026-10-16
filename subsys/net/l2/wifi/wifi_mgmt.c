@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(net_wifi_mgmt, CONFIG_NET_L2_WIFI_MGMT_LOG_LEVEL);
 #include <zephyr/net/net_log.h>
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/wifi_utils.h>
+#include "ethernet/arp.h"
 #ifdef CONFIG_WIFI_NM
 #include <zephyr/net/wifi_nm.h>
 #endif /* CONFIG_WIFI_NM */
@@ -50,6 +51,47 @@ struct wifi_roaming_params {
 
 static struct wifi_roaming_params roaming_params;
 #endif
+
+
+typedef int (*gw_probe_cb_t)(const struct device *dev,
+		struct net_if *iface,
+		bool same_gw);
+
+typedef struct {
+	struct net_if *iface;
+	struct in_addr gw;
+	struct net_eth_addr old_gw_mac;
+	bool had_old_mac;
+	uint16_t elapsed_ms;
+	uint16_t timeout_ms;
+	uint16_t interval_ms;
+	bool in_progress;
+	gw_probe_cb_t gw_probe_cb;
+} gw_probe_ctx_t;
+
+struct net_arp_lookup_ctx {
+	struct net_if *iface;
+	struct in_addr target_ip;
+	struct net_eth_addr result_mac;
+	bool found;
+};
+
+#define ARP_HTYPE_ETH      1
+#define ARP_PTYPE_IPV4     0x0800
+#define ARP_OPCODE_REQUEST 1
+
+/* ARP payload only, no eth header */
+struct {
+	uint16_t hw_type;
+	uint16_t proto_type;
+	uint8_t hw_len;
+	uint8_t proto_len;
+	uint16_t opcode;
+	uint8_t src_mac[6];
+	uint8_t src_ip[4];
+	uint8_t dst_mac[6];
+	uint8_t dst_ip[4];
+} __packed arp_payload;
 
 const char *wifi_security_txt(enum wifi_security_type security)
 {
@@ -803,6 +845,251 @@ void wifi_mgmt_raise_neighbor_rep_recv_event(struct net_if *iface, char *inbuf, 
 	}
 }
 #endif
+
+static gw_probe_ctx_t wifi_gw_probe_ctx;
+
+gw_probe_ctx_t *net_get_gw_probe_ctx(void)
+{
+	return &wifi_gw_probe_ctx;
+}
+
+static void net_arp_lookup_cb(struct arp_entry *entry, void *user_data)
+{
+	struct net_arp_lookup_ctx *ctx = (struct net_arp_lookup_ctx *)user_data;
+	if (entry->iface == ctx->iface &&
+		entry->ip.s_addr == ctx->target_ip.s_addr)
+	{
+		memcpy(&ctx->result_mac, &entry->eth, sizeof(struct net_eth_addr));
+		ctx->found = true;
+
+		LOG_DBG("entry: iface=%p ip=%u.%u.%u.%u "
+		   "mac=%02x:%02x:%02x:%02x:%02x:%02x\n",
+		   entry->iface,
+		   ((uint8_t *)&entry->ip.s_addr)[0],
+		   ((uint8_t *)&entry->ip.s_addr)[1],
+		   ((uint8_t *)&entry->ip.s_addr)[2],
+		   ((uint8_t *)&entry->ip.s_addr)[3],
+		   entry->eth.addr[0],
+		   entry->eth.addr[1],
+		   entry->eth.addr[2],
+		   entry->eth.addr[3],
+		   entry->eth.addr[4],
+		   entry->eth.addr[5]);
+
+		LOG_DBG("ctx: iface=%p ip=%u.%u.%u.%u "
+		   "result_mac=%02x:%02x:%02x:%02x:%02x:%02x found=%d\n",
+		   ctx->iface,
+		   ((uint8_t *)&ctx->target_ip.s_addr)[0],
+		   ((uint8_t *)&ctx->target_ip.s_addr)[1],
+		   ((uint8_t *)&ctx->target_ip.s_addr)[2],
+		   ((uint8_t *)&ctx->target_ip.s_addr)[3],
+		   ctx->result_mac.addr[0],
+		   ctx->result_mac.addr[1],
+		   ctx->result_mac.addr[2],
+		   ctx->result_mac.addr[3],
+		   ctx->result_mac.addr[4],
+		   ctx->result_mac.addr[5],
+		   ctx->found);
+	}
+}
+
+static bool net_etharp_find_addr(struct net_if *iface,
+                          const struct in_addr *ip,
+                          struct net_eth_addr *out_mac)
+{
+	struct net_arp_lookup_ctx ctx = {
+		.iface     = iface,
+		.target_ip = *ip,
+		.found     = false,
+	};
+
+	net_arp_foreach(net_arp_lookup_cb, &ctx);
+	if (ctx.found)
+		memcpy(out_mac, &ctx.result_mac, sizeof(struct net_eth_addr));
+
+	return ctx.found;
+}
+
+static void net_etharp_cleanup_netif(struct net_if *iface)
+{
+	net_arp_clear_cache(iface);
+}
+
+static void net_etharp_request(struct net_if *iface,
+                               const struct in_addr *target_ip)
+{
+	struct net_pkt *probe   = NULL;
+	struct net_pkt *arp_pkt = NULL;
+	struct in_addr  *local_ip;
+	int ret;
+
+	local_ip = net_if_ipv4_get_global_addr(iface, NET_ADDR_PREFERRED);
+	if (!local_ip) {
+		LOG_ERR("no IPv4 addr on iface");
+		return;
+	}
+
+	probe = net_pkt_alloc_with_buffer(iface,
+					sizeof(struct net_arp_hdr),
+					AF_UNSPEC, 0,
+					K_SECONDS(1));
+	if (!probe) {
+		LOG_ERR("alloc probe pkt fail");
+		return;
+	}
+
+	net_pkt_set_family(probe, AF_INET);
+	net_pkt_set_ll_proto_type(probe, NET_ETH_PTYPE_ARP);
+
+	ret = net_arp_prepare(probe,
+				(struct net_in_addr *)target_ip,
+				(struct net_in_addr *)local_ip,
+				&arp_pkt);
+	switch (ret) {
+	case NET_ARP_COMPLETE:
+		/*
+		* ARP cache hit: target MAC already known and injected into probe.
+		* No ARP request needed. We only wanted to trigger ARP resolution,
+		* so discard probe here.
+		*/
+		LOG_DBG("NET_ARP_COMPLETE ARP already resolved for %u.%u.%u.%u\r\n",
+			target_ip->s4_addr[0], target_ip->s4_addr[1],
+			target_ip->s4_addr[2], target_ip->s4_addr[3]);
+		net_pkt_unref(probe);   /* probe ownership stays with us */
+		break;
+
+	case NET_ARP_PKT_REPLACED:
+		/*
+		* MAC unknown: probe was consumed internally, arp_pkt holds the
+		* ARP request frame to send. Sending it will trigger ARP reply
+		* which will update the ARP cache via net_arp_update().
+		*/
+		LOG_DBG("NET_ARP_PKT_REPLACED Send ARP request to %u.%u.%u.%u\r\n",
+				target_ip->s4_addr[0], target_ip->s4_addr[1],
+				target_ip->s4_addr[2], target_ip->s4_addr[3]);
+		net_if_queue_tx(iface, arp_pkt);
+		break;
+
+	case NET_ARP_PKT_QUEUED:
+		/*
+		* Another ARP request for the same IP is already in flight.
+		* probe has been queued; it will be sent once the pending
+		* ARP reply arrives.
+		*/
+		LOG_DBG("NET_ARP_PKT_QUEUED ARP request already pending for %u.%u.%u.%u\r\n",
+				target_ip->s4_addr[0], target_ip->s4_addr[1],
+				target_ip->s4_addr[2], target_ip->s4_addr[3]);
+		net_pkt_unref(probe);
+		break;
+
+	default:
+		LOG_DBG("net_arp_prepare unexpected ret=%d", ret);
+		net_pkt_unref(probe);
+		break;
+	}
+}
+
+struct in_addr net_netif_ip4_gw(struct net_if *iface)
+{
+	return net_if_ipv4_get_gw(iface);
+}
+
+static void wifi_gw_probe_handler(struct k_work *work);
+K_WORK_DELAYABLE_DEFINE(wifi_gw_probe_dwork, wifi_gw_probe_handler);
+
+/*
+ * Gateway still keep old without update, there are below cases need deal:
+ * case#1: AC with AP's gateway mac are same ----> mac same, skip dhcp
+ * case#2: Different gateway----> no arp response, do dhcp again
+ * case#3: Same AP setting, but independent APs --->mac diff, do dhcp again
+*/
+static void wifi_gw_probe_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	gw_probe_ctx_t  *ctx     = net_get_gw_probe_ctx();
+	struct net_eth_addr cur_mac_buf;
+	struct net_eth_addr *cur_mac = &cur_mac_buf;
+	const struct device *dev = net_if_get_device(ctx->iface);
+	bool same_gw = false;
+	bool find_result = false;
+
+	find_result = net_etharp_find_addr(ctx->iface, &ctx->gw, cur_mac);
+	if (find_result)
+	{
+		same_gw = ctx->had_old_mac && (memcmp(cur_mac->addr, ctx->old_gw_mac.addr, NET_ETH_ADDR_LEN) == 0);
+		/* Process case#1 and case#3*/
+		ctx->in_progress = false;
+		net_get_gw_probe_ctx()->gw_probe_cb(dev, ctx->iface, same_gw);
+
+		return;
+	}
+
+	ctx->elapsed_ms += ctx->interval_ms;
+	if (ctx->elapsed_ms >= ctx->timeout_ms)
+	{
+		/* Process case#2*/
+		ctx->in_progress = false;
+		net_get_gw_probe_ctx()->gw_probe_cb(dev, ctx->iface, false);
+
+		return;
+	}
+
+	(void)net_etharp_request(ctx->iface, &ctx->gw);
+	k_work_reschedule(&wifi_gw_probe_dwork, K_MSEC(ctx->interval_ms));
+}
+
+void net_gw_probe_start(void)
+{
+	gw_probe_ctx_t *ctx = net_get_gw_probe_ctx();
+
+	ctx->gw = net_netif_ip4_gw(ctx->iface);
+	ctx->timeout_ms  = 100;
+	ctx->interval_ms = 20;
+	ctx->elapsed_ms  = 0;
+	ctx->had_old_mac = false;
+
+	if (net_etharp_find_addr(ctx->iface, &ctx->gw, &ctx->old_gw_mac))
+	{
+		ctx->had_old_mac = true;
+	}
+
+	net_etharp_cleanup_netif(ctx->iface);
+	(void)net_etharp_request(ctx->iface, &ctx->gw);
+
+	k_work_reschedule(&wifi_gw_probe_dwork, K_MSEC(ctx->interval_ms));
+}
+
+static int wifi_roaming_dhcp(uint64_t mgmt_request, struct net_if *iface,
+			      void *data, size_t len)
+{
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+
+	if (wifi_mgmt_api == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
+	if (net_get_gw_probe_ctx()->in_progress) {
+		return 0;
+	}
+
+	if (wifi_mgmt_api->gw_probe_done) {
+        net_get_gw_probe_ctx()->in_progress = true;
+        net_get_gw_probe_ctx()->iface = iface;
+		net_get_gw_probe_ctx()->gw_probe_cb = wifi_mgmt_api->gw_probe_done;
+	}
+
+	LOG_DBG("Start legacy roaming ret");
+	net_gw_probe_start();
+
+	return 0;
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_ROAMING_DHCP, wifi_roaming_dhcp);
 
 static int wifi_ap_enable(uint64_t mgmt_request, struct net_if *iface,
 			  void *data, size_t len)

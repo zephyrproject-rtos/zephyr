@@ -3811,3 +3811,15 @@ int supplicant_p2p_oper(const struct device *dev __unused, struct net_if *iface,
 	return ret;
 }
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
+
+int supplicant_gw_probe_done(const struct device *dev __unused,
+				    struct net_if *iface,
+				    bool same_gw)
+{
+	if (same_gw)
+		return 0;
+
+	net_dhcpv4_restart(iface);
+
+	return 0;
+}
