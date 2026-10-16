@@ -247,6 +247,11 @@ ZTEST_USER(userspace, test_userspace_write_control)
 	set_fault(K_ERR_CPU_EXCEPTION);
 
 	__asm__ volatile("rsr.ps %0" : "=r" (ps));
+#elif defined(CONFIG_HEXAGON)
+	set_fault(K_ERR_CPU_EXCEPTION);
+
+	/* GSR is a guest-supervisor-only register */
+	__asm__ volatile("gsr = %0" : : "r" (0));
 #else
 #error "Not implemented for this architecture"
 	zassert_unreachable("Write to control register did not fault");
@@ -362,6 +367,11 @@ ZTEST_USER(userspace, test_userspace_disable_mmu_mpu)
 	}
 #endif
 
+#elif defined(CONFIG_HEXAGON)
+	set_fault(K_ERR_CPU_EXCEPTION);
+
+	/* GPTR (G3) holds the guest page table base */
+	__asm__ volatile("g3 = %0" : : "r" (0));
 #else
 #error "Not implemented for this architecture"
 #endif
@@ -588,6 +598,8 @@ ZTEST_USER(userspace, test_userspace_read_priv_stack)
 #elif defined(CONFIG_ARM) || defined(CONFIG_X86) || defined(CONFIG_RISCV) || \
 	defined(CONFIG_ARM64) || defined(CONFIG_XTENSA)
 	/* priv_stack_ptr set by test_main() */
+#elif defined(CONFIG_HEXAGON)
+	priv_stack_ptr = (char *)k_current_get()->arch.priv_stack;
 #else
 #error "Not implemented for this architecture"
 #endif
@@ -628,6 +640,8 @@ ZTEST_USER(userspace, test_userspace_write_priv_stack)
 #elif defined(CONFIG_ARM) || defined(CONFIG_X86) || defined(CONFIG_RISCV) || \
 	defined(CONFIG_ARM64) || defined(CONFIG_XTENSA)
 	/* priv_stack_ptr set by test_main() */
+#elif defined(CONFIG_HEXAGON)
+	priv_stack_ptr = (char *)k_current_get()->arch.priv_stack;
 #else
 #error "Not implemented for this architecture"
 #endif

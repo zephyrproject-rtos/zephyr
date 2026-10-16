@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(gdbstub);
 #include <sys/types.h>
 
 #include <zephyr/debug/gdbstub.h>
+#include <zephyr/arch/cpu.h>
 #include "gdbstub_backend.h"
 
 /* +1 is for the NULL character added during receive */
@@ -181,6 +182,24 @@ void arch_gdb_post_memory_write(uintptr_t addr, size_t len, uint8_t align)
 	ARG_UNUSED(addr);
 	ARG_UNUSED(len);
 	ARG_UNUSED(align);
+}
+
+/**
+ * @brief Provide register information for an architecture register.
+ *
+ * @param reg_num Register number requested by the debugger.
+ * @param buf Output buffer for the register description.
+ * @param buflen Size of @p buf.
+ *
+ * @return Length of the register description, or zero when unsupported.
+ */
+__weak
+size_t arch_gdb_register_info(uint32_t reg_num, uint8_t *buf, size_t buflen)
+{
+	ARG_UNUSED(reg_num);
+	ARG_UNUSED(buf);
+	ARG_UNUSED(buflen);
+	return 0;
 }
 
 /**
@@ -612,7 +631,36 @@ static bool gdb_qsupported(uint8_t *buf, size_t len, enum gdb_loop_state *next_s
 
 static void gdb_q_packet(uint8_t *buf, size_t len, enum gdb_loop_state *next_state)
 {
+	const char *packet = (const char *)buf;
+
 	if (gdb_qsupported(buf, len, next_state)) {
+		return;
+	}
+
+	if (strncmp(packet, "qRegisterInfo", 13) == 0) {
+		uint32_t reg_num = strtoul(packet + 13, NULL, 16);
+		size_t info_len = arch_gdb_register_info(reg_num, buf, len);
+
+		if (info_len > 0U) {
+			gdb_send_packet(buf, info_len);
+		} else {
+			gdb_send_packet("E45", 3);
+		}
+		return;
+	}
+
+	if (strncmp(packet, "qfThreadInfo", 12) == 0) {
+		gdb_send_packet("m1", 2);
+		return;
+	}
+
+	if (strncmp(packet, "qsThreadInfo", 12) == 0) {
+		gdb_send_packet("l", 1);
+		return;
+	}
+
+	if ((strncmp(packet, "qC", 2) == 0) && (packet[2] == '\0')) {
+		gdb_send_packet("QC1", 3);
 		return;
 	}
 
@@ -858,6 +906,16 @@ int z_gdb_main_loop(struct gdb_ctx *ctx)
 		/* v packets */
 		case 'v':
 			gdb_v_packet(buf, sizeof(buf), &state);
+			break;
+
+		/* LLDB thread selection; this stub exposes one thread. */
+		case 'H':
+			gdb_send_packet("OK", 2);
+			break;
+
+		/* LLDB may terminate a debugging session with a kill packet. */
+		case 'k':
+			gdb_send_packet(NULL, 0);
 			break;
 
 		/*

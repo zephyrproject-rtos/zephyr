@@ -1328,6 +1328,17 @@ int arch_gdb_remove_breakpoint(struct gdb_ctx *ctx, uint8_t type,
  */
 void arch_gdb_post_memory_write(uintptr_t addr, size_t len, uint8_t align);
 
+/**
+ * @brief Return debugger register metadata for LLDB-compatible clients.
+ *
+ * @param reg_num Register number requested by the client.
+ * @param buf Output buffer for the metadata string.
+ * @param buflen Size of @p buf.
+ *
+ * @return Metadata length, or zero when no register exists at @p reg_num.
+ */
+size_t arch_gdb_register_info(uint32_t reg_num, uint8_t *buf, size_t buflen);
+
 #endif
 /** @} */
 
