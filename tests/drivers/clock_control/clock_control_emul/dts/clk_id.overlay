@@ -1,0 +1,17 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 TOKITA Hiroshi
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Single entry on purpose: covers a controller whose clock table holds
+ * exactly one identifier.
+ */
+/ {
+	test_clk: clock-controller {
+		compatible = "zephyr,clock-controller-emul-clk-id";
+		#clock-cells = <1>;
+		clock-ids = <21>;
+		clock-initial-values = <32768>;
+	};
+};
