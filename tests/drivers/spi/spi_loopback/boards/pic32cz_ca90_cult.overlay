@@ -1,0 +1,19 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Needs a jumper from EXT1 pin 16 (MOSI) to EXT1 pin 17 (MISO) */
+&sercom2 {
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <24000000>;
+	};
+};
