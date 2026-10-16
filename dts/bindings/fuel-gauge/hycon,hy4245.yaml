@@ -8,3 +8,13 @@ description: |
 compatible: "hycon,hy4245"
 
 include: [i2c-device.yaml, fuel-gauge.yaml]
+
+properties:
+  unseal-keys:
+    type: array
+    default: [0x28804288, 0xffffffff]
+    description: |
+      Unseal Key 0 and Unseal Key 1 of the gauge, stored in data flash subclass
+      Security. The driver writes them to Control() to unseal the gauge before
+      it accesses the data flash. The default values are the factory keys; a
+      battery vendor may program other keys with the configuration image.
