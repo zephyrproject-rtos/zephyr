@@ -38,4 +38,15 @@ config UDC_DWC3_SHELL
 	  Enable debug shell commands for debugging DWC3 and USB low-level access, such as
 	  inspecting the list of ongoing transactions.
 
+config UDC_DWC3_TI_AM62
+	bool "TI's AM62 quirk module for the Synopsys DWC3 controller"
+	default y
+	select UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT
+	select SYSCON
+	depends on DT_HAS_TI_DWC3_AM62_ENABLED
+	depends on CLOCK_CONTROL
+	help
+	  Wrapper for configuring TI's vendor specific registers when using
+	  Synopsys DWC3 contorller on TI AM62x SK EVM.
+
 endif # UDC_DWC3
