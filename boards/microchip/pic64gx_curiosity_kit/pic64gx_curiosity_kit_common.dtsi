@@ -116,3 +116,28 @@
 &i2c1 {
 	status = "okay";
 };
+
+&reset {
+	status = "okay";
+};
+
+&mac0 {
+	status = "okay";
+	phy-handle = <&phy0>;
+	phy-connection-type = "sgmii";
+	zephyr,random-mac-address;
+};
+
+&mac0_ptp {
+	status = "okay";
+};
+
+&mac0_mdio {
+	status = "okay";
+
+	/* VSC8221 */
+	phy0: ethernet-phy@b {
+		compatible = "ethernet-phy";
+		reg = <0xb>;
+	};
+};

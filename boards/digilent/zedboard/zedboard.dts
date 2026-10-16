@@ -90,6 +90,11 @@
 	clock-frequency = <333333333>;
 };
 
+/* PS_CLK oscillator */
+&clkc {
+	ps-clk-frequency = <33333333>;
+};
+
 &uart1 {
 	status = "okay";
 	current-speed = <115200>;
@@ -105,7 +110,7 @@
 &gem0 {
 	status = "okay";
 	phy-handle = <&gem0_phy>;
-	clock-frequency = <1000000000>;
+	phy-connection-type = "rgmii";
 	local-mac-address = [00 00 00 01 02 03];
 };
 

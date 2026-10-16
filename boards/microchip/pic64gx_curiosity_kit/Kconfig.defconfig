@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_PIC64GX_CURIOSITY_KIT
+
+configdefault ETH_DRIVER
+	default y
+
+configdefault NET_TX_STACK_SIZE
+	default 8192
+
+configdefault NET_RX_STACK_SIZE
+	default 8192
+
+configdefault NET_TCP_WORKQ_STACK_SIZE
+	default 8192
+
+configdefault NET_MGMT_EVENT_STACK_SIZE
+	default 8192
+
+configdefault NET_SOCKETS_SERVICE_STACK_SIZE
+	default 8192
+
+endif # BOARD_PIC64GX_CURIOSITY_KIT

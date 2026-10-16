@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Cadence GEM in the Xilinx ZynqMP processing system.
+
+  The clocks come from the clock controller (xlnx,zynqmp-clk), as in the
+  Linux devicetree: the low power domain bus clock as "pclk", the GEM
+  reference clock as "hclk", the GEM transmit clock as "tx_clk", which the
+  driver retunes to the link speed through the dividers of the reference
+  clock, the GEM receive clock as "rx_clk" and the clock of the 1588 time
+  stamp unit as "tsu_clk". Retuning the transmit clock lifts the CRL_APB
+  write protection, which needs the CRL_APB registers to be accessible at
+  their physical address.
+
+compatible: "xlnx,zynqmp-gem"
+
+include: cdns,gem.yaml

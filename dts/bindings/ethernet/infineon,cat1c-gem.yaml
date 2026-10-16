@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Cadence GEM in the Infineon CAT1C (TRAVEO T2G) MCUs.
+
+  The GEM sits behind a wrapper whose control register, the second register
+  range, selects the PHY interface and derives the transmit clock of the
+  RGMII, GMII and RMII interfaces from a reference clock through an integer
+  divider. The driver provides the transmit clock of the MAC itself from that
+  register and retunes the divider to the link speed.
+
+  The clocks are:
+
+  - "pclk": the clock of the peripheral bus, the clk_peri node of the SoC.
+  - "ref_clk": the source of the reference clock divider, either a
+    fixed-clock node describing the oscillator on the REF_CLK pin of the
+    MAC, or a clk_hf root clock for the internal source. The internal
+    source is only available for RMII.
+  - "tsu_clk": the clk_hf root clock of the 1588 time stamp unit, clk_hf5
+    on the CYT4DN.
+
+  Example:
+
+    eth0: ethernet@40481000 {
+      compatible = "infineon,cat1c-gem", "cdns,gem";
+      reg = <0x40481000 0x800>, <0x40480000 0x8>;
+      reg-names = "mac", "ctl";
+      interrupt-parent = <&intmux_ch1>;
+      interrupts = <83 0>;
+      clocks = <&clk_peri>, <&eth0_refclk>, <&clk_hf5>;
+      clock-names = "pclk", "ref_clk", "tsu_clk";
+      phy-handle = <&eth0_phy>;
+      phy-connection-type = "rgmii-id";
+    };
+
+compatible: "infineon,cat1c-gem"
+
+include: "cdns,gem.yaml"
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  reg-names:
+    required: true
+    description: |
+      Names of the register ranges: "mac" for the GEM itself and "ctl" for
+      the control register of the wrapper.
