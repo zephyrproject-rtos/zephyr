@@ -154,7 +154,7 @@ static int mcux_lpsci_irq_tx_ready(const struct device *dev)
 static void mcux_lpsci_irq_rx_enable(const struct device *dev)
 {
 	const struct mcux_lpsci_config *config = dev->config;
-	uint32_t mask = kLPSCI_RxDataRegFullInterruptEnable;
+	uint32_t mask = kLPSCI_RxDataRegFullInterruptEnable | kLPSCI_RxOverrunInterruptEnable;
 
 	LPSCI_EnableInterrupts(config->base, mask);
 }
@@ -162,7 +162,7 @@ static void mcux_lpsci_irq_rx_enable(const struct device *dev)
 static void mcux_lpsci_irq_rx_disable(const struct device *dev)
 {
 	const struct mcux_lpsci_config *config = dev->config;
-	uint32_t mask = kLPSCI_RxDataRegFullInterruptEnable;
+	uint32_t mask = kLPSCI_RxDataRegFullInterruptEnable | kLPSCI_RxOverrunInterruptEnable;
 
 	LPSCI_DisableInterrupts(config->base, mask);
 }
@@ -222,10 +222,19 @@ static void mcux_lpsci_irq_callback_set(const struct device *dev,
 
 static void mcux_lpsci_isr(const struct device *dev)
 {
+	const struct mcux_lpsci_config *config = dev->config;
 	struct mcux_lpsci_data *data = dev->data;
+	uint32_t flags = LPSCI_GetStatusFlags(config->base);
 
 	if (data->callback) {
 		data->callback(dev, data->cb_data);
+	}
+
+	/* The receiver stores no data while OR is set. Clear it after the
+	 * callback so that uart_err_check() can still report the overrun.
+	 */
+	if ((flags & kLPSCI_RxOverrunFlag) != 0U) {
+		LPSCI_ClearStatusFlags(config->base, kLPSCI_RxOverrunFlag);
 	}
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
