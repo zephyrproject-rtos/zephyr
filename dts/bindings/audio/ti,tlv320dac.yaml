@@ -19,6 +19,11 @@ properties:
       shared with the microphone detection function, so it will not work if
       the microphone detection function is enabled.
 
+  use-internal-pll:
+    type: boolean
+    description: |
+      Use the internal PLL to generate the required clocks from BLCK.
+
   speaker-gain:
     type: int
     default: 6
