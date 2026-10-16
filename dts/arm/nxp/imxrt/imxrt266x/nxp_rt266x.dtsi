@@ -517,6 +517,12 @@
 		ranges = <0x0 0x46060000 0x4000>;
 	};
 
+	audio_modcon: modcon@48000000 {
+		compatible = "nxp,imx-modcon";
+		reg = <0x48000000 0x9000>;
+		#pinmux-cells = <2>;
+	};
+
 	audio_ccm: clock-controller@48060000 {
 		compatible = "nxp,imx-ccm-rev3";
 		reg = <0x48060000 0x4000>;
