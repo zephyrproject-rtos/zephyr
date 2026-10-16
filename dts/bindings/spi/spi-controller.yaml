@@ -5,6 +5,8 @@
 
 include: base.yaml
 
+class: spi
+
 bus: spi
 
 properties:
