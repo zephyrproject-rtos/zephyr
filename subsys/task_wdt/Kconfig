@@ -215,12 +215,13 @@ config TASK_WDT_SAFE_MODE
 	depends on RETENTION_BOOT_MODE
 	depends on $(dt_chosen_enabled,$(DT_CHOSEN_BOOT_MODE))
 	depends on RETENTION_MUTEX_FORCE_DISABLE
+	depends on RETAINED_MEM_MUTEX_FORCE_DISABLE
 	help
 	  Set the boot mode to TASK_WDT_SAFE_MODE_BOOT_MODE with
 	  bootmode_set() before the task watchdog resets the system for the
 	  TASK_WDT_SAFE_MODE_RESETS-th consecutive time. The boot mode is set
-	  from the task watchdog timer interrupt, so the retention mutex has
-	  to be disabled.
+	  from the task watchdog timer interrupt, so the retention and
+	  retained memory mutexes have to be disabled.
 
 if TASK_WDT_SAFE_MODE
 
