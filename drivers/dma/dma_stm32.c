@@ -309,13 +309,22 @@ int dma_stm32_zcfg_to_halcfg(const struct device *dma, const struct dma_config *
 	hal_config->Request = zephyr_config->dma_slot;
 #endif /* CONFIG_DMA_STM32_V1 */
 
-#ifdef DMA_FIFOMODE_DISABLE
-	hal_config->FIFOMode = DMA_FIFOMODE_DISABLE;
-#endif
+#ifdef CONFIG_DMA_STM32_V1
+	if (zephyr_config->head_block != NULL) {
+		hal_config->FIFOThreshold = stm32_dma_get_fifo_threshold(
+				zephyr_config->head_block->fifo_mode_control);
 
-#ifdef DMA_FIFO_THRESHOLD_FULL
-	hal_config->FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
-#endif
+		if (stm32_dma_check_fifo_mburst(hal_config->MemDataAlignment,
+						hal_config->MemBurst,
+						hal_config->FIFOThreshold)) {
+			hal_config->FIFOMode = DMA_FIFOMODE_ENABLE;
+		}
+	} else {
+		/* Use default config for callers that don't set dma_block_config. */
+		hal_config->FIFOMode = DMA_FIFOMODE_DISABLE;
+		hal_config->FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+	}
+#endif /* CONFIG_DMA_STM32_V1 */
 
 	return 0;
 }
@@ -806,7 +815,9 @@ static int dma_stm32_configure(const struct device *dev,
 	DMA_InitStruct.FIFOThreshold = stm32_dma_get_fifo_threshold(
 					config->head_block->fifo_mode_control);
 
-	if (stm32_dma_check_fifo_mburst(&DMA_InitStruct)) {
+	if (stm32_dma_check_fifo_mburst(DMA_InitStruct.MemoryOrM2MDstDataSize,
+					DMA_InitStruct.MemBurst,
+					DMA_InitStruct.FIFOThreshold)) {
 		DMA_InitStruct.FIFOMode = LL_DMA_FIFOMODE_ENABLE;
 	} else {
 		DMA_InitStruct.FIFOMode = LL_DMA_FIFOMODE_DISABLE;
