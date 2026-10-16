@@ -72,6 +72,26 @@ int lorawan_set_class(enum lorawan_class dev_class)
 	return 0;
 }
 
+int lorawan_get_class(enum lorawan_class *dev_class)
+{
+	if (dev_class == NULL) {
+		return -EINVAL;
+	}
+
+	switch (current_class) {
+	case CLASS_A:
+		*dev_class = LORAWAN_CLASS_A;
+		break;
+	case CLASS_C:
+		*dev_class = LORAWAN_CLASS_C;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 int lorawan_set_datarate(enum lorawan_datarate dr)
 {
 	ARG_UNUSED(dr);
