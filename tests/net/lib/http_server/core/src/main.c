@@ -202,6 +202,9 @@ BUILD_ASSERT(sizeof(long_payload) - 1 > CONFIG_HTTP_SERVER_CLIENT_BUFFER_SIZE,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+#define TEST_HTTP2_DATA_PADDING_ONLY_STREAM_1 \
+	0x00, 0x00, 0x05, 0x00, 0x08, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, 0x04, \
+	0x00, 0x00, 0x00, 0x00
 #define TEST_HTTP2_DATA_POST_DYNAMIC_STREAM_1_NO_END_STREAM \
 	0x00, 0x00, 0x11, 0x00, 0x00, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, \
 	0x54, 0x65, 0x73, 0x74, 0x20, 0x64, 0x79, 0x6e, 0x61, 0x6d, 0x69, 0x63, \
@@ -1537,6 +1540,41 @@ ZTEST(server_function_tests, test_http2_post_data_with_padding)
 
 	common_verify_http2_dynamic_post_request(request_post_dynamic,
 						 sizeof(request_post_dynamic));
+}
+
+ZTEST(server_function_tests, test_http2_post_data_padding_only)
+{
+	/* A DATA frame of nothing but padding carries no body. */
+	static const uint8_t request_post_dynamic[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_POST_DYNAMIC_STREAM_1,
+		TEST_HTTP2_DATA_PADDING_ONLY_STREAM_1,
+		TEST_HTTP2_DATA_POST_DYNAMIC_STREAM_1_PADDED,
+		TEST_HTTP2_GOAWAY,
+	};
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, request_post_dynamic, sizeof(request_post_dynamic), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	/* The empty chunk is acknowledged with WINDOW_UPDATEs. */
+	expect_http2_window_update_frame(&offset, TEST_STREAM_ID_1);
+	expect_http2_window_update_frame(&offset, 0);
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1,
+				   HTTP2_FLAG_END_HEADERS | HTTP2_FLAG_END_STREAM, NULL, 0);
+
+	zassert_equal(dynamic_payload_len, strlen(TEST_DYNAMIC_POST_PAYLOAD),
+		      "Wrong dynamic resource length");
+	zassert_mem_equal(dynamic_payload, TEST_DYNAMIC_POST_PAYLOAD,
+			  dynamic_payload_len, "Wrong dynamic resource data");
+	zassert_true(dynamic_complete, "Callback not called with transaction complete status");
 }
 
 ZTEST(server_function_tests, test_http2_post_headers_with_priority)
