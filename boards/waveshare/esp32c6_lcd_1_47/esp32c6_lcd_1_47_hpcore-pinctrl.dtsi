@@ -17,4 +17,11 @@
 			bias-pull-up;
 		};
 	};
+
+	i2s_ws2812: i2s_ws2812 {
+		group1 {
+			pinmux = <I2S_O_SD_GPIO8>;
+			output-high;
+		};
+	};
 };
