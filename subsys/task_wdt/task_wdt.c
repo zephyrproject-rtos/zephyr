@@ -39,6 +39,14 @@ struct task_wdt_channel {
 	void *user_data;
 	/* function to be called when watchdog timer expired */
 	task_wdt_callback_t callback;
+#ifdef CONFIG_TASK_WDT_FAULT_REASONS
+	/* function to be called with the fault reason, takes precedence over callback */
+	task_wdt_fault_callback_t fault_callback;
+	/* minimum interval in milliseconds between two feeds, 0 if not checked */
+	uint32_t min_period;
+	/* abs. ticks of the last task_wdt_feed() call */
+	int64_t last_feed_ticks;
+#endif
 #ifdef CONFIG_TASK_WDT_THREAD_INFO
 	/* thread owning the channel, NULL if not known */
 	k_tid_t thread;
@@ -98,12 +106,8 @@ static void schedule_next_timeout(int64_t current_ticks)
 #endif
 }
 
-enum task_wdt_fault_reason {
-	TASK_WDT_FAULT_TIMEOUT,
-};
-
 #ifdef CONFIG_TASK_WDT_THREAD_INFO
-static void task_wdt_report(int channel_id)
+static void task_wdt_report(int channel_id, enum task_wdt_fault_reason reason)
 {
 	struct task_wdt_channel *channel = &channels[channel_id];
 	k_tid_t thread = channel->thread;
@@ -112,8 +116,12 @@ static void task_wdt_report(int channel_id)
 	char state[32];
 	const char *name;
 
-	LOG_ERR("Channel %d timed out, last fed %u ms ago", channel_id,
-		(uint32_t)k_ticks_to_ms_floor64(sys_clock_tick_get() - last_feed_ticks));
+	if (reason == TASK_WDT_FAULT_TOO_EARLY) {
+		LOG_ERR("Channel %d fed too early", channel_id);
+	} else {
+		LOG_ERR("Channel %d timed out, last fed %u ms ago", channel_id,
+			(uint32_t)k_ticks_to_ms_floor64(sys_clock_tick_get() - last_feed_ticks));
+	}
 
 	if (thread == NULL) {
 		LOG_ERR("Channel %d has no owner thread", channel_id);
@@ -138,25 +146,41 @@ static void task_wdt_report(int channel_id)
 
 static void task_wdt_fault(int channel_id, enum task_wdt_fault_reason reason)
 {
-	ARG_UNUSED(reason);
+	struct task_wdt_fault fault = {
+		.channel_id = channel_id,
+		.reason = reason,
+#ifdef CONFIG_TASK_WDT_THREAD_INFO
+		.thread = channels[channel_id].thread,
+#endif
+	};
+	bool handled = false;
+
+	/* only used with the reset information or fault reasons */
+	ARG_UNUSED(fault);
 
 #ifdef CONFIG_TASK_WDT_THREAD_INFO
-	task_wdt_report(channel_id);
+	task_wdt_report(channel_id, reason);
 #endif
 
 #ifdef CONFIG_TASK_WDT_RESET_INFO
 	/* the callback may reset the system, so store the record beforehand */
-#ifdef CONFIG_TASK_WDT_THREAD_INFO
-	task_wdt_reset_info_save(channel_id, channels[channel_id].thread);
-#else
-	task_wdt_reset_info_save(channel_id, NULL);
-#endif
+	task_wdt_reset_info_save(&fault);
 #endif
 
-	if (channels[channel_id].callback) {
+#ifdef CONFIG_TASK_WDT_FAULT_REASONS
+	if (channels[channel_id].fault_callback) {
+		channels[channel_id].fault_callback(&fault, channels[channel_id].user_data);
+		handled = true;
+	}
+#endif
+	if (!handled && channels[channel_id].callback) {
 		channels[channel_id].callback(channel_id, channels[channel_id].user_data);
+		handled = true;
+	}
+
+	if (handled) {
 #ifdef CONFIG_TASK_WDT_RESET_INFO
-		/* the callback handled the timeout without a reset */
+		/* the callback handled the fault without a reset */
 		task_wdt_reset_info_cancel();
 #endif
 	} else {
@@ -237,8 +261,8 @@ int task_wdt_init(const struct device *hw_wdt)
 	return 0;
 }
 
-int task_wdt_add(uint32_t reload_period, task_wdt_callback_t callback,
-		 void *user_data)
+static int channel_add(uint32_t reload_period, task_wdt_callback_t callback,
+		       task_wdt_fault_callback_t fault_callback, void *user_data)
 {
 	k_spinlock_key_t key;
 
@@ -259,6 +283,12 @@ int task_wdt_add(uint32_t reload_period, task_wdt_callback_t callback,
 			channels[id].user_data = user_data;
 			channels[id].timeout_abs_ticks = K_TICKS_FOREVER;
 			channels[id].callback = callback;
+#ifdef CONFIG_TASK_WDT_FAULT_REASONS
+			channels[id].fault_callback = fault_callback;
+			channels[id].min_period = 0U;
+#else
+			ARG_UNUSED(fault_callback);
+#endif
 #ifdef CONFIG_TASK_WDT_THREAD_INFO
 			channels[id].thread = NULL;
 			channels[id].thread_fixed = false;
@@ -293,6 +323,24 @@ int task_wdt_add(uint32_t reload_period, task_wdt_callback_t callback,
 	return -ENOMEM;
 }
 
+int task_wdt_add(uint32_t reload_period, task_wdt_callback_t callback, void *user_data)
+{
+	return channel_add(reload_period, callback, NULL, user_data);
+}
+
+int task_wdt_add_ext(uint32_t reload_period, task_wdt_fault_callback_t callback, void *user_data)
+{
+#ifdef CONFIG_TASK_WDT_FAULT_REASONS
+	return channel_add(reload_period, NULL, callback, user_data);
+#else
+	ARG_UNUSED(reload_period);
+	ARG_UNUSED(callback);
+	ARG_UNUSED(user_data);
+
+	return -ENOTSUP;
+#endif
+}
+
 int task_wdt_delete(int channel_id)
 {
 	k_spinlock_key_t key;
@@ -313,8 +361,10 @@ int task_wdt_delete(int channel_id)
 int task_wdt_feed(int channel_id)
 {
 	int64_t current_ticks;
+	bool too_early = false;
 
-	if (channel_id < 0 || channel_id >= ARRAY_SIZE(channels)) {
+	if (channel_id < 0 || channel_id >= ARRAY_SIZE(channels) ||
+	    channels[channel_id].reload_period == 0) {
 		return -EINVAL;
 	}
 
@@ -327,6 +377,13 @@ int task_wdt_feed(int channel_id)
 	k_sched_lock();
 
 	current_ticks = sys_clock_tick_get();
+
+#ifdef CONFIG_TASK_WDT_FAULT_REASONS
+	too_early = channels[channel_id].min_period != 0U &&
+		    current_ticks - channels[channel_id].last_feed_ticks <
+			    k_ms_to_ticks_ceil64(channels[channel_id].min_period);
+	channels[channel_id].last_feed_ticks = current_ticks;
+#endif
 
 	/* feed the specified channel */
 	channels[channel_id].timeout_abs_ticks = current_ticks +
@@ -343,7 +400,41 @@ int task_wdt_feed(int channel_id)
 
 	k_sched_unlock();
 
+	if (too_early) {
+		task_wdt_fault(channel_id, TASK_WDT_FAULT_TOO_EARLY);
+	}
+
 	return 0;
+}
+
+int task_wdt_window_set(int channel_id, uint32_t min_period)
+{
+#ifdef CONFIG_TASK_WDT_FAULT_REASONS
+	k_spinlock_key_t key;
+	int ret = 0;
+
+	if (channel_id < 0 || channel_id >= ARRAY_SIZE(channels)) {
+		return -EINVAL;
+	}
+
+	key = k_spin_lock(&channels_lock);
+
+	if (channels[channel_id].reload_period == 0 ||
+	    min_period >= channels[channel_id].reload_period) {
+		ret = -EINVAL;
+	} else {
+		channels[channel_id].min_period = min_period;
+	}
+
+	k_spin_unlock(&channels_lock, key);
+
+	return ret;
+#else
+	ARG_UNUSED(channel_id);
+	ARG_UNUSED(min_period);
+
+	return -ENOTSUP;
+#endif
 }
 
 int task_wdt_channel_thread_set(int channel_id, k_tid_t thread)

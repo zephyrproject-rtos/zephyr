@@ -65,11 +65,14 @@ New APIs and options
 
 * Task Watchdog
 
+  * :c:func:`task_wdt_add_ext`
   * :c:func:`task_wdt_channel_info_get`
   * :c:func:`task_wdt_channel_thread_set`
   * :c:func:`task_wdt_reset_info_clear`
   * :c:func:`task_wdt_reset_info_get`
+  * :c:func:`task_wdt_window_set`
   * :kconfig:option:`CONFIG_TASK_WDT_COREDUMP`
+  * :kconfig:option:`CONFIG_TASK_WDT_FAULT_REASONS`
   * :kconfig:option:`CONFIG_TASK_WDT_RESET_INFO`
   * :kconfig:option:`CONFIG_TASK_WDT_THREAD_INFO`
 

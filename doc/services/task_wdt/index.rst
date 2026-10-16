@@ -50,6 +50,22 @@ If :kconfig:option:`CONFIG_TASK_WDT_COREDUMP` is enabled as well, a core dump
 is created with the owner thread as the faulting thread before the system is
 reset, which helps to find out where the thread was stuck.
 
+Fault Reasons
+*************
+
+With :kconfig:option:`CONFIG_TASK_WDT_FAULT_REASONS` enabled, a channel added
+with :c:func:`task_wdt_add_ext` has a callback which is told the reason of the
+fault (:c:enum:`task_wdt_fault_reason`) and the thread owning the channel.
+
+A channel can also check that it is not fed too often. After
+:c:func:`task_wdt_window_set`, feeding the channel again sooner than the given
+minimum interval after the previous feed is reported as
+:c:enumerator:`TASK_WDT_FAULT_TOO_EARLY`. This detects a thread stuck in a loop
+which keeps feeding its channel. The fault is reported from
+:c:func:`task_wdt_feed`, in the context of the feeding thread, while timeouts
+are reported from the timer interrupt. Channels added with
+:c:func:`task_wdt_add` handle this fault like a timeout.
+
 Reset Information
 *****************
 
@@ -59,7 +75,8 @@ record is also stored if the channel callback resets the system. After the
 reset, :c:func:`task_wdt_reset_info_get` returns the channel, the name of its
 owner thread (with :kconfig:option:`CONFIG_TASK_WDT_THREAD_INFO` and
 :kconfig:option:`CONFIG_THREAD_NAME`), the uptime at the time of the reset and
-the number of consecutive task watchdog resets. The count restarts from zero
+the number of consecutive task watchdog resets. A reset caused by feeding a
+channel too early is reported as :c:enumerator:`TASK_WDT_RESET_TOO_EARLY`. The count restarts from zero
 after any other reset or a call to :c:func:`task_wdt_reset_info_clear`.
 
 The record is written from the timer interrupt. By default, it is kept in RAM
@@ -98,6 +115,8 @@ Related configuration options can be found under
 * :kconfig:option:`CONFIG_TASK_WDT_THREAD_INFO`
 
 * :kconfig:option:`CONFIG_TASK_WDT_COREDUMP`
+
+* :kconfig:option:`CONFIG_TASK_WDT_FAULT_REASONS`
 
 * :kconfig:option:`CONFIG_TASK_WDT_RESET_INFO`
 

@@ -29,6 +29,15 @@ int task_wdt_add(uint32_t reload_period, task_wdt_callback_t callback,
 	return 0;
 }
 
+int task_wdt_add_ext(uint32_t reload_period, task_wdt_fault_callback_t callback, void *user_data)
+{
+	ARG_UNUSED(reload_period);
+	ARG_UNUSED(callback);
+	ARG_UNUSED(user_data);
+
+	return 0;
+}
+
 int task_wdt_delete(int channel_id)
 {
 	ARG_UNUSED(channel_id);
@@ -39,6 +48,14 @@ int task_wdt_delete(int channel_id)
 int task_wdt_feed(int channel_id)
 {
 	ARG_UNUSED(channel_id);
+
+	return 0;
+}
+
+int task_wdt_window_set(int channel_id, uint32_t min_period)
+{
+	ARG_UNUSED(channel_id);
+	ARG_UNUSED(min_period);
 
 	return 0;
 }
