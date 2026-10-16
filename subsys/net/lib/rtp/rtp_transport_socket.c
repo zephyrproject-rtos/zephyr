@@ -205,7 +205,18 @@ static void rtp_socket_svc_handler(struct net_socket_service_event *pev)
 
 	len = zsock_recvmsg(pev->event.fd, &msg, 0);
 	if (len < 0) {
-		NET_DBG("Failed to receive from socket (%d)", errno);
+		ret = errno;
+		if (ret == EAGAIN || ret == EWOULDBLOCK) {
+			goto unlock;
+		}
+
+		NET_WARN_RATELIMIT("Failed to receive from socket (%d), dropping packet", ret);
+
+		/* The datagram may still be queued (e.g. recvmsg() is not supported),
+		 * discard it or the socket stays readable and the service keeps
+		 * calling this handler.
+		 */
+		(void)zsock_recv(pev->event.fd, data, sizeof(data), ZSOCK_MSG_DONTWAIT);
 		goto unlock;
 	}
 
