@@ -400,7 +400,11 @@ ZTEST(lifo_usage_1cpu, test_timeout_lifo_thread)
 					&timeout, NULL,
 					LIFO_THREAD_PRIO, K_INHERIT_PERMS, K_NO_WAIT);
 
-	packet = k_lifo_get(&lifo_timeout[0], K_MSEC(timeout + 10));
+	/* Leave a wide margin: if guest time jumps past both deadlines at
+	 * once (QEMU without icount on a loaded host), this get would time
+	 * out before the child gets to run.
+	 */
+	packet = k_lifo_get(&lifo_timeout[0], K_MSEC(timeout + 1000));
 	zassert_true(packet != NULL);
 	zassert_true(is_timeout_in_range(start_time, timeout));
 	put_scratch_packet(packet);
