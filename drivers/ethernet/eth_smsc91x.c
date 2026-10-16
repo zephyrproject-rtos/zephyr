@@ -824,7 +824,7 @@ int eth_init(const struct device *dev)
 static struct eth_context eth_0_context;
 
 static struct eth_config eth_0_config = {
-	DEVICE_MMIO_ROM_INIT(DT_PARENT(DT_DRV_INST(0))),
+	DEVICE_MMIO_ROM_INIT(DT_DRV_INST(0)),
 	.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle)),
 };
 
@@ -870,7 +870,7 @@ static DEVICE_API(mdio, mdio_smsc_api) = {
 };
 
 const struct mdio_smsc_config mdio_smsc_config_0 = {
-	.eth_dev = DEVICE_DT_GET(DT_CHILD(DT_INST_PARENT(0), ethernet)),
+	.eth_dev = DEVICE_DT_GET(DT_INST_PARENT(0)),
 };
 
 DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, &mdio_smsc_config_0, POST_KERNEL,

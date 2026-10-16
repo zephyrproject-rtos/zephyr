@@ -8,6 +8,9 @@ compatible: "smsc,lan91c111"
 include: [ethernet-controller.yaml, base.yaml]
 
 properties:
+  reg:
+    required: true
+
   phy-handle:
     required: true
 
