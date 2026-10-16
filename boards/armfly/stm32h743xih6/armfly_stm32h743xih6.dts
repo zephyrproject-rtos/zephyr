@@ -132,6 +132,7 @@
 		sw7 = &joy_left;
 		backlight-pwm = &lcd_bl_pwm;
 		eeprom-0 = &eeprom0;
+		ext-nor0 = &ext_flash_ctrl;
 	};
 
 	backlight_pwm: backlight {
@@ -264,23 +265,31 @@
 };
 
 &quadspi {
+	compatible = "st,stm32-qspi-controller";
+	clock-names = "qspix";
+	clock-frequency = <DT_FREQ_M(100)>;
+	op-mode = "MSPI_OP_MODE_CONTROLLER";
+	st,cs-high-time = <5>; /* >= 50 ns */
 	pinctrl-names = "default";
 	pinctrl-0 = <&quadspi_clk_pf10 &quadspi_bk1_ncs_pg6
 		     &quadspi_bk1_io0_pf8 &quadspi_bk1_io1_pf9
 		     &quadspi_bk1_io2_pf7 &quadspi_bk1_io3_pf6>;
-
-	flash-id = <1>;
 	status = "okay";
 
-	w25q256_qspi: qspi-nor-flash@0 {
-		compatible = "st,stm32-qspi-nor";
+	ext_flash_ctrl: nor-flash-controller@0 {
+		compatible = "jedec,nor";
 		reg = <0>;
-		size = <DT_SIZE_M(256)>; /* 256 Mbits */
-		qspi-max-frequency = <100000000>;
-		cs-high-time = <1>;
+		size = <DT_SIZE_M(256)>; /* 256 Mbits, W25Q256JV */
+		mspi-max-frequency = <DT_FREQ_M(100)>;
+		mspi-io-mode = "MSPI_IO_MODE_QUAD_1_1_4";
+		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+		mspi-hardware-ce-num = <0>;
+		use-4byte-addressing;
+		read-command = <0x6c>; /* Fast Read Quad Output, 4-byte address */
+		write-command = <0x34>; /* Quad Input Page Program, 4-byte address */
+		rx-dummy = <8>;
+		quad-enable-requirements = "S2B1v6";
 		status = "okay";
-		spi-bus-width = <4>;
-		writeoc = "PP_1_1_4";
 	};
 };
 
