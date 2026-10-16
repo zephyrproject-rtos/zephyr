@@ -43,6 +43,7 @@ LOG_MODULE_REGISTER(ed2208_gca, CONFIG_DISPLAY_LOG_LEVEL);
 #define ED2208_GCA_CMD_TCON         0x60
 #define ED2208_GCA_CMD_TRES         0x61
 #define ED2208_GCA_CMD_VDCS         0x82
+#define ED2208_GCA_CMD_PTL          0x83
 #define ED2208_GCA_CMD_T_VDCS       0x84
 #define ED2208_GCA_CMD_AGID         0x86
 #define ED2208_GCA_CMD_DRF          0x12
@@ -197,6 +198,26 @@ out:
 	return ret;
 }
 
+/*
+ * Sets the controller's RAM window, which is also the area the next refresh
+ * drives -- pixels outside it are left alone on the glass.
+ *
+ * Note that ye is one past the last row while xe is inclusive. The asymmetry
+ * is the controller's own; making it symmetric loses the bottom row of every
+ * window.
+ */
+static int ed2208_gca_set_window(const struct device *dev, uint16_t x, uint16_t y, uint16_t w,
+				 uint16_t h)
+{
+	uint16_t xe = x + w - 1U;
+	uint16_t ye = y + h;
+	uint8_t data[9] = {
+		x >> 8, x & 0xFF, xe >> 8, xe & 0xFF, y >> 8, y & 0xFF, ye >> 8, ye & 0xFF, 0x01,
+	};
+
+	return ed2208_gca_write_cmd(dev, ED2208_GCA_CMD_PTL, data, sizeof(data));
+}
+
 static int ed2208_gca_deep_sleep(const struct device *dev)
 {
 	return ed2208_gca_write_cmd_uint8(dev, ED2208_GCA_CMD_DSLP, ED2208_GCA_DEEP_SLEEP_CHECK);
@@ -214,7 +235,7 @@ static int ed2208_gca_write(const struct device *dev, const uint16_t x, const ui
 		.height = 1,
 		.pitch = ED2208_GCA_TX_CHUNK_SIZE,
 	};
-	size_t buf_len = DIV_ROUND_UP(config->width, 2U) * config->height;
+	size_t buf_len;
 	size_t offset = 0U;
 	int ret;
 
@@ -224,15 +245,77 @@ static int ed2208_gca_write(const struct device *dev, const uint16_t x, const ui
 	}
 	src = buf;
 
-	if (x != 0U || y != 0U || desc->width != config->width || desc->height != config->height) {
-		LOG_ERR("Partial updates not supported");
-		return -ENOTSUP;
+	/*
+	 * A partial update costs exactly as much time as a full one: the refresh
+	 * measures ~34.9 s on an ED2208-GCA whether it is driving the whole panel
+	 * or a sixteenth of it, because the colour waveform runs to the end
+	 * regardless. What it buys is that the rest of the screen is left alone --
+	 * it neither flickers nor is redrawn, and it survives both the update and
+	 * the reset at the start of the next one. On a panel this slow that is the
+	 * difference between an update the user can read through and one they
+	 * cannot.
+	 *
+	 * The area left alone does degrade, and by more than a first look
+	 * suggests. Two or three windowed updates leave it barely changed, but
+	 * after a dozen the untouched cells are visibly mottled and grey -- the
+	 * shapes are still there, yet nobody would call the screen clean. A
+	 * windowed update is therefore not a cheap operation with a small cost
+	 * attached but a borrowing against the rest of the glass, to be repaid by
+	 * a full refresh reasonably soon. Treat full refreshes as the normal case
+	 * and windows as the exception; a screen planned around windows alone will
+	 * not stay legible.
+	 *
+	 * Nothing here schedules that refresh. How often it is owed is the
+	 * caller's policy, not the driver's.
+	 */
+	if (x + desc->width > config->width || y + desc->height > config->height) {
+		LOG_ERR("Window %ux%u at (%u,%u) does not fit %ux%u", desc->width, desc->height, x,
+			y, config->width, config->height);
+		return -EINVAL;
+	}
+
+	/*
+	 * Two pixels share a byte, so x and width must be even -- and the width
+	 * must be a multiple of four on top of that, because the controller reads
+	 * an even number of bytes per row whatever window it is given.
+	 *
+	 * Measured on an ED2208-GCA by pushing vertical stripes, which cannot
+	 * hide a stride error: a 386-px window (193 bytes a row) comes out
+	 * sheared, drifting one byte per row over the window's full height, while
+	 * 388 (194 bytes) and 392 (196 bytes) are clean. Nothing in the earlier
+	 * testing had caught it, because every window tried until then happened
+	 * to be 400 or 200 px wide.
+	 *
+	 * Rejected rather than quietly rounded up: widening a caller's window
+	 * would drive pixels it never drew, and on a panel with no fast update
+	 * that is 35 seconds of someone else's content being replaced by
+	 * whatever was left in the buffer.
+	 *
+	 * The same multiple of four is required of x, conservatively. Byte
+	 * packing alone would be satisfied by an even x, but every window
+	 * measured here happened to start on a multiple of four, so an even-only
+	 * start is untested -- and the failure mode, were the controller to want
+	 * even bytes at the start as it does across a row, is the silent shear
+	 * above rather than an error. Relaxing this needs a measurement, not an
+	 * argument.
+	 */
+	if ((x % 4U) != 0U || (desc->width % 4U) != 0U) {
+		LOG_ERR("x and width must be multiples of 4, got %u and %u", x, desc->width);
+		return -EINVAL;
 	}
 
 	if (desc->pitch != desc->width) {
 		LOG_ERR("Pitch must match width");
 		return -EINVAL;
 	}
+
+	/*
+	 * With CONFIG_DISPLAY_COLOR_DITHER the helper's scratch buffer is sized
+	 * for the whole panel whatever window is written, so a partial write buys
+	 * time on the glass but no memory. Its converted descriptor keeps the
+	 * window's own width and height, so the length below is right either way.
+	 */
+	buf_len = DIV_ROUND_UP(desc->width, 2U) * desc->height;
 
 	if (buf == NULL || desc->buf_size < buf_len) {
 		LOG_ERR("Invalid buffer: %p (%zu < %zu)", buf, (size_t)desc->buf_size, buf_len);
@@ -242,6 +325,16 @@ static int ed2208_gca_write(const struct device *dev, const uint16_t x, const ui
 	ret = ed2208_gca_hw_init(dev);
 	if (ret < 0) {
 		return ret;
+	}
+
+	/*
+	 * Set unconditionally rather than only for partial writes: hw_init resets
+	 * the controller, so this does not depend on what the previous write
+	 * happened to leave configured.
+	 */
+	ret = ed2208_gca_set_window(dev, x, y, desc->width, desc->height);
+	if (ret < 0) {
+		goto out;
 	}
 
 	ret = ed2208_gca_write_cmd(dev, ED2208_GCA_CMD_DTM, NULL, 0);
