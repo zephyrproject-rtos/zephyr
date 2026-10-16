@@ -76,14 +76,6 @@
 			reg-names = "mtime", "mtimecmp";
 		};
 
-		timer0: timer@e0002800 {
-			compatible = "efinix,sapphire-timer0";
-			reg = <0xe0002800 0x40>;
-			interrupt-parent = <&plic0>;
-			interrupts = <19 0>;
-			status = "disabled";
-		};
-
 		gpio0: gpio@f8015000 {
 			compatible = "efinix,sapphire-gpio";
 			reg = <0xf8015000 0x100>;
