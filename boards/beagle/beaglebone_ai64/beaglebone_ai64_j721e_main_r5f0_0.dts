@@ -18,8 +18,8 @@
 
 	chosen {
 		zephyr,sram = &ddr1;
-		zephyr,console = &uart2;
-		zephyr,shell-uart = &uart2;
+		zephyr,console = &rpmsg0;
+		zephyr,shell-uart = &rpmsg0;
 		zephyr,ipc = &ipc0;
 		zephyr,ipc_shm = &ddr0;
 	};
@@ -61,6 +61,7 @@
 
 	rpmsg0: rpmsg0 {
 		compatible = "rpmsg-uart";
+		status = "okay";
 	};
 };
 
