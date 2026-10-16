@@ -17,6 +17,7 @@ config BT_BFLB_BL60X
 	select DYNAMIC_INTERRUPTS
 	select FPU_SHARING
 	select BFLB_FREERTOS_SHIM
+	select BFLB_PHYRF
 	help
 	  Bouffalo Lab BL60X (BL602) on-chip BLE controller HCI driver.
 	  Uses precompiled binary blobs from the hal_bouffalolab module.
@@ -396,6 +397,7 @@ config BT_BFLB_BL808
 	select DYNAMIC_INTERRUPTS
 	select FPU_SHARING
 	select BFLB_AOS_SHIM
+	select BFLB_PHYRF
 	help
 	  Bouffalo Lab BL808 on-chip BLE controller HCI driver.
 	  Uses precompiled binary blobs from the hal_bouffalolab module.
