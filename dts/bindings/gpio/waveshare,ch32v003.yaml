@@ -1,0 +1,15 @@
+# Copyright 2026, Kim Bøndergaard <kim@fam-boendergaard.dk>
+# SPDX-License-Identifier: Apache-2.0
+description: Waveshare CH32V003 I2C GPIO expander
+
+compatible: "waveshare,ch32v003"
+
+include: [gpio-controller.yaml, i2c-device.yaml]
+
+properties:
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

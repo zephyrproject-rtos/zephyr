@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Kim Bøndergaard
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_CH32V003
+	bool "Waveshare CH32V003 I2C IO-Expander"
+	default y
+	depends on DT_HAS_WAVESHARE_CH32V003_ENABLED
+	depends on I2C
+	help
+	  Enable the driver for the Waveshare CH32V003 I2C GPIO expander.
+
+if GPIO_CH32V003
+
+config GPIO_CH32V003_INIT_PRIORITY
+	int "Init priority"
+	default 70
+	help
+	  Device driver initialization priority.
+
+endif # GPIO_CH32V003

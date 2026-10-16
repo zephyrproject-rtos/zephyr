@@ -1,0 +1,242 @@
+/*
+ * Copyright (c) 2026 Kim Bøndergaard
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <espressif/esp32s3/esp32s3.dtsi>
+#include "esp32s3_touch_lcd_4_v4-pinctrl.dtsi"
+#include <zephyr/dt-bindings/display/panel.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <espressif/partitions_0x0_amp_16M.dtsi>
+
+/ {
+	model = "ESP32-S3-Touch-LCD-4-V4 PROCPU";
+	compatible = "waveshare,esp32-s3-touch-lcd-4-v4";
+
+	aliases {
+		i2c-0 = &i2c0;
+		backlight = &backlight_led;
+		buzzer-0 = &buzzer0;
+		sw0 = &boot_btn;
+		uart-0 = &uart0;
+		watchdog0 = &wdt0;
+		display = &lcd_cam_rgb;
+	};
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,console = &usb_serial;
+		zephyr,shell-uart = &usb_serial;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,display = &lcd_cam_rgb;
+		zephyr,bt-hci = &esp32_bt_hci;
+		zephyr,touch = &gt911;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		boot_btn: button_0 {
+			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "BOOT Button";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		pwrkey_btn: button_1 {
+			gpios = <&gpio0 16 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "PWRKEY Button";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	buzzer0: buzzer {
+		compatible = "gpio-buzzer";
+		gpios = <&ioexp 6 GPIO_ACTIVE_HIGH>;
+	};
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&lcd_cmd_spi>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		st7701: st7701@0 {
+			status = "okay";
+			compatible = "sitronix,st7701-rgb";
+			reg = <0>;
+			mipi-max-frequency = <DT_FREQ_M(10)>;
+			mipi-mode = "MIPI_DBI_MODE_SPI_3WIRE";
+			reset-gpios = <&ioexp 3 GPIO_ACTIVE_LOW>;
+			reset-delay-ms = <20>;
+
+			pvgamctrl = [b0 00 11 18 0e 11 06 07 08 07 22 04 12 0f aa 31 18];
+			nvgamctrl = [b1 00 11 19 0e 12 07 08 08 08 22 04 11 11 a9 32 18];
+
+			gip-e0 = [e0 00 1b 02];
+			gip-e1 = [e1 08 a0 00 00 07 a0 00 00 00 44 44];
+			gip-e2 = [e2 11 11 44 44 ed a0 00 00 ec a0 00 00];
+			gip-e3 = [e3 00 00 11 11];
+			gip-e4 = [e4 44 44];
+			gip-e5 = [e5 0a e9 d8 a0 0c eb d8 a0 0e ed d8 a0 10 ef d8 a0];
+			gip-e6 = [e6 00 00 11 11];
+			gip-e7 = [e7 44 44];
+			gip-e8 = [e8 09 e8 d8 a0 0b ea d8 a0 0d ec d8 a0 0f ee d8 a0];
+			gip-eb = [eb 02 00 e4 e4 88 00 40];
+			gip-ec = [ec 3c 00];
+			gip-ed = [ed ab 89 76 54 02 ff ff ff ff ff ff 20 45 67 98 ba];
+			inversion-on;
+			width = <480>;
+			height = <480>;
+		};
+	};
+
+	lcd_cmd_spi: spi-bitbang {
+		compatible = "zephyr,spi-bitbang";
+		status = "okay";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		clk-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+		mosi-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+		cs-gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		backlight_led: ioexp_pwm_led {
+			label = "IOEXP PWM LED";
+			pwms = <&ioexp_pwm 0 PWM_USEC(500) PWM_POLARITY_INVERTED>;
+		};
+	};
+};
+
+&flash0 {
+	/delete-node/ partitions;
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(16)>;
+	ranges = <0x0 0x0 DT_SIZE_M(16)>;
+};
+
+#include <espressif/partitions_0x0_amp_16M.dtsi>
+
+&psram0 {
+	size = <DT_SIZE_M(8)>;
+};
+
+&usb_serial {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&dma {
+	status = "okay";
+};
+
+&lcd_cam {
+	status = "okay";
+	pinctrl-0 = <&lcd_cam_default>;
+	pinctrl-names = "default";
+};
+
+&lcd_cam_rgb {
+	status = "okay";
+	width = <480>;
+	height = <480>;
+	data-bus-width = <16>;
+	display-controller = <&st7701>;
+
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		clock-frequency = <DT_FREQ_M(16)>;
+		hsync-len = <10>;
+		hback-porch = <10>;
+		hfront-porch = <20>;
+		vsync-len = <10>;
+		vback-porch = <10>;
+		vfront-porch = <10>;
+		hsync-active = <0>;
+		vsync-active = <0>;
+		de-active = <1>;
+		pixelclk-active = <1>;
+	};
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	recover-bus-on-init;
+
+	gt911: gt911@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		reset-gpios = <&ioexp 1 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&ioexp 2 GPIO_ACTIVE_HIGH>;
+		screen-width = <480>;
+		screen-height = <480>;
+	};
+
+	/* To come RTC on address <0x51> */
+
+	ioexp: ioexp@24 {
+		status = "okay";
+		compatible = "waveshare,ch32v003";
+		reg = <0x24>;
+
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+
+		ioexp_pwm: pwm {
+			status = "okay";
+			compatible = "waveshare,ch32v003-pwm";
+			pwm-controller;
+			#pwm-cells = <3>;
+		};
+
+		ioexp_adc: adc {
+			status = "okay";
+			compatible = "waveshare,ch32v003-adc";
+			#io-channel-cells = <1>;
+		};
+
+		sys_en_hog: sys-en-hog {
+			gpio-hog;
+			gpios = <5 GPIO_ACTIVE_HIGH>;
+			output-high;
+		};
+	};
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&uart0 { /* rs485 */
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};
