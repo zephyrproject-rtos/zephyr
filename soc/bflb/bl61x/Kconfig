@@ -16,7 +16,9 @@ config SOC_SERIES_BL61X
 	imply CODE_DATA_RELOCATION
 	imply FLASH
 	imply FPU
+	imply REBOOT
 	imply REGULATOR
+	imply RETAINED_MEM
 	imply XIP
 
 config BFLB_BL61X_WL_RMEM_SIZE
