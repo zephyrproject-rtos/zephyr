@@ -313,7 +313,7 @@ FUNC_NORETURN void z_riscv_switch_to_main_no_multithreading(k_thread_entry_t mai
 	__asm__ volatile (
 	"mv sp, %0\n"
 	"call z_riscv_custom_stack_guard_enable\n"
-	"csrs " RV_STATUS_CSR ", %2\n"
+	"csrs " STRINGIFY(RV_STATUS_CSR) ", %2\n"
 	"jalr ra, %1, 0\n"
 	:
 	: "r" (main_stack), "r" (s1), "K" (RV_STATUS_IE), "r" (a0)
@@ -321,7 +321,7 @@ FUNC_NORETURN void z_riscv_switch_to_main_no_multithreading(k_thread_entry_t mai
 #else
 	__asm__ volatile (
 	"mv sp, %0\n"
-	"csrs " RV_STATUS_CSR ", %2\n"
+	"csrs " STRINGIFY(RV_STATUS_CSR) ", %2\n"
 	"jalr ra, %1, 0\n"
 	:
 	: "r" (main_stack), "r" (main_entry), "K" (RV_STATUS_IE)
