@@ -252,8 +252,6 @@ static inline const char *video_get_ctrl_name(uint32_t id)
 		return "Gain, Automatic";
 	case VIDEO_CID_GAIN:
 		return "Gain";
-	case VIDEO_CID_ANALOGUE_GAIN:
-		return "Analogue Gain";
 	case VIDEO_CID_HFLIP:
 		return "Horizontal Flip";
 	case VIDEO_CID_VFLIP:
@@ -324,6 +322,14 @@ static inline const char *video_get_ctrl_name(uint32_t id)
 	/* JPEG encoder controls */
 	case VIDEO_CID_JPEG_COMPRESSION_QUALITY:
 		return "Compression Quality";
+
+	/* Image source controls */
+	case VIDEO_CID_VBLANK:
+		return "Vertical Blanking";
+	case VIDEO_CID_HBLANK:
+		return "Horizontal Blanking";
+	case VIDEO_CID_ANALOGUE_GAIN:
+		return "Analogue Gain";
 
 	/* Image processing controls */
 	case VIDEO_CID_PIXEL_RATE:
