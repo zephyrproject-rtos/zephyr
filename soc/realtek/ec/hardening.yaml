@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for Realtek EC SoCs.
+
+rules:
+  RTS5912_DEBUG_SWJ:
+    value: n
+    rationale: |
+      Initializes the RTS5912 serial wire/JTAG connector at early boot, so a probe on the SWJ pins
+      can halt the embedded controller, read its memory and alter the running firmware.
+    references: [CWE-1244]
