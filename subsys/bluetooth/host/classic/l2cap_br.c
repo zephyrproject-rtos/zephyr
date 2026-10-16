@@ -5276,10 +5276,15 @@ static void l2cap_br_echo_req(struct bt_l2cap_br *l2cap, uint8_t ident, struct n
 {
 	struct bt_conn *conn = l2cap->chan.chan.conn;
 	struct bt_l2cap_br_echo_cb *callback;
+	struct net_buf_simple_state state;
+
+	net_buf_simple_save(&buf->b, &state);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&bt_l2cap_br_echo_cbs, callback, _node) {
 		if (callback->req) {
 			callback->req(conn, ident, buf);
+			/* The next callback gets the data whatever this one pulled */
+			net_buf_simple_restore(&buf->b, &state);
 		}
 	}
 }
@@ -5288,15 +5293,20 @@ static void l2cap_br_echo_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, struct n
 {
 	struct bt_conn *conn = l2cap->chan.chan.conn;
 	struct bt_l2cap_br_echo_cb *callback;
+	struct net_buf_simple_state state;
 
 	if (ident != l2cap->chan.ident) {
 		LOG_WRN("ident mismatch (%u != %u)!", l2cap->chan.ident, ident);
 		goto failed;
 	}
 
+	net_buf_simple_save(&buf->b, &state);
+
 	SYS_SLIST_FOR_EACH_CONTAINER(&bt_l2cap_br_echo_cbs, callback, _node) {
 		if (callback->rsp) {
 			callback->rsp(conn, buf);
+			/* The next callback gets the data whatever this one pulled */
+			net_buf_simple_restore(&buf->b, &state);
 		}
 	}
 
@@ -5315,6 +5325,9 @@ static void l2cap_br_sig_handle(struct bt_l2cap_br *l2cap, struct bt_l2cap_sig_h
 	len = sys_le16_to_cpu(hdr->len);
 
 	net_buf_simple_save(&buf->b, &state);
+
+	/* Leave out any commands that follow in the same signaling packet */
+	buf->len = len;
 
 	switch (hdr->code) {
 	case BT_L2CAP_INFO_RSP:
@@ -6812,6 +6825,7 @@ static int l2cap_br_conless_recv(struct bt_l2cap_chan *chan, struct net_buf *buf
 	struct bt_conn *conn;
 	uint16_t psm;
 	struct bt_l2cap_br_connless_cb *cb;
+	struct net_buf_simple_state state;
 
 	if (buf->len < sizeof(psm)) {
 		LOG_ERR("Invalid buffer length for connless receive");
@@ -6820,6 +6834,7 @@ static int l2cap_br_conless_recv(struct bt_l2cap_chan *chan, struct net_buf *buf
 
 	conn = chan->conn;
 	psm = net_buf_pull_le16(buf);
+	net_buf_simple_save(&buf->b, &state);
 
 	/* Iterate through registered connless callbacks to find matching PSM */
 	SYS_SLIST_FOR_EACH_CONTAINER(&br_connless_cbs, cb, _node) {
@@ -6827,6 +6842,8 @@ static int l2cap_br_conless_recv(struct bt_l2cap_chan *chan, struct net_buf *buf
 			/* Found matching PSM, call registered callback */
 			if ((conn->sec_level >= cb->sec_level) && (cb->recv != NULL)) {
 				cb->recv(conn, psm, buf);
+				/* The next callback gets the data whatever this one pulled */
+				net_buf_simple_restore(&buf->b, &state);
 			} else {
 				LOG_WRN("No matching sec level (%u < %u)", conn->sec_level,
 					cb->sec_level);
