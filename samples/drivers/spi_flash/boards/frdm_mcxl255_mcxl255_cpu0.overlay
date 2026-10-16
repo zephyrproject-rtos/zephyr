@@ -1,0 +1,37 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	pinmux_lpspi1_grpB: pinmux_lpspi1_grpB {
+		group0 {
+			pinmux = <LPSPI1_SDO_P1_8>,
+				 <LPSPI1_SCK_P1_9>,
+				 <LPSPI1_SDI_P1_6>,
+				 <LPSPI1_PCS0_P1_7>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+};
+
+&lpspi1 {
+	pinctrl-0 = <&pinmux_lpspi1_grpB>;
+	pinctrl-names = "default";
+
+	mx25r4035f: flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		jedec-id = [c2 28 13];
+		size = <DT_SIZE_M(4)>;
+		has-dpd;
+		t-enter-dpd = <10000>;
+		dpd-wakeup-sequence = <30000 20 35000>;
+		mxicy,mx25r-power-mode = "low-power";
+		spi-max-frequency = <DT_FREQ_M(33)>;
+		status = "okay";
+	};
+};

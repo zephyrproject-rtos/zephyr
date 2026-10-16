@@ -21,6 +21,9 @@
 #elif defined(CONFIG_BOARD_NPCX9M6F_EVB) || \
 	defined(CONFIG_BOARD_NPCX7M6FB_EVB)
 #define SPI_FLASH_TEST_REGION_OFFSET 0x7F000
+#elif defined(CONFIG_BOARD_FRDM_MCXL255)
+/* MX25R4035F is 4 Mbit (512 KB); use last 4 KB sector within range */
+#define SPI_FLASH_TEST_REGION_OFFSET 0x7F000
 #elif defined(CONFIG_BOARD_EK_RA8M1) || defined(CONFIG_BOARD_EK_RA8D1)
 #define SPI_FLASH_TEST_REGION_OFFSET 0x40000
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_qspi_nor) && DT_PROP(DT_NODELABEL(quadspi), dual_flash)
