@@ -74,6 +74,7 @@ enum ec_host_cmd_usb_state {
 
 enum {
 	EC_HOST_CMD_CLASS_ENABLED,
+	EC_HOST_CMD_EVENT_PENDING,
 };
 
 static const char *const state_name[] = {
@@ -103,7 +104,6 @@ struct ec_host_cmd_usb_ctx {
 	struct net_buf *usb_tx_buf;
 	enum ec_host_cmd_usb_state state;
 	atomic_t class_state;
-	bool pending_event;
 	struct k_work_delayable reset_work;
 };
 
@@ -204,7 +204,7 @@ static int ec_host_cmd_signal_event(struct usbd_class_data *const c_data)
 		usbd_ep_buf_free(uds_ctx, buf);
 		return ret;
 	}
-	ctx->pending_event = false;
+	atomic_clear_bit(&ctx->class_state, EC_HOST_CMD_EVENT_PENDING);
 
 	return 0;
 }
@@ -387,7 +387,7 @@ static void ec_host_cmd_enable(struct usbd_class_data *const c_data)
 	}
 	ctx->state = USB_EC_HOST_CMD_STATE_READY_TO_RX;
 
-	if (ctx->pending_event) {
+	if (atomic_test_bit(&ctx->class_state, EC_HOST_CMD_EVENT_PENDING)) {
 		ec_host_cmd_signal_event(c_data);
 	}
 
@@ -399,7 +399,7 @@ static void ec_host_cmd_resumed(struct usbd_class_data *const c_data)
 	LOG_DBG("Configuration resumed");
 	struct ec_host_cmd_usb_ctx *ctx = usbd_class_get_private(c_data);
 
-	if (ctx->pending_event) {
+	if (atomic_test_bit(&ctx->class_state, EC_HOST_CMD_EVENT_PENDING)) {
 		ec_host_cmd_signal_event(c_data);
 	}
 }
@@ -654,7 +654,7 @@ void ec_host_cmd_backend_usb_trigger_event(void)
 	struct usbd_class_data *const c_data = ctx->c_data;
 	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 
-	ctx->pending_event = true;
+	atomic_set_bit(&ctx->class_state, EC_HOST_CMD_EVENT_PENDING);
 	if (!atomic_test_bit(&ctx->class_state, EC_HOST_CMD_CLASS_ENABLED)) {
 		return;
 	}
