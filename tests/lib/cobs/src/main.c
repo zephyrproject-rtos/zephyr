@@ -737,3 +737,39 @@ ZTEST_F(cobs_tests, test_decode_stream_close)
 	zassert_equal(cobs_decoder_write(&dec, &data_enc[3], 2), 2);
 	zassert_equal(cobs_decoder_close(&dec), -EINVAL);
 }
+
+static int cobs_stop_at_frame_end(const uint8_t *buf, size_t len, void *user_data)
+{
+	if (buf == NULL) {
+		return 1;
+	}
+
+	return cobs_net_buf_cb(buf, len, user_data);
+}
+
+ZTEST_F(cobs_tests, test_decode_stream_stop_at_frame_end)
+{
+	const uint8_t data_enc[] = {0x00, 0x02, 'A', 0x00, 0x03, 'B', 'C', 0x00, 0x02};
+	struct cobs_decoder dec;
+	int ret;
+
+	ret = cobs_decoder_init(&dec, cobs_stop_at_frame_end, fixture->decoded,
+				COBS_FLAG_TRAILING_DELIMITER);
+	zassert_ok(ret, "decoder init failed (%d)", ret);
+
+	/* Leading delimiter is skipped, decoding stops after the first frame */
+	ret = cobs_decoder_write(&dec, data_enc, sizeof(data_enc));
+	zassert_equal(ret, 4, "decoder write used %d bytes", ret);
+	zassert_equal(fixture->decoded->len, 1);
+	zassert_equal(fixture->decoded->data[0], 'A');
+
+	ret = cobs_decoder_write(&dec, &data_enc[4], sizeof(data_enc) - 4);
+	zassert_equal(ret, 4, "decoder write used %d bytes", ret);
+	zassert_equal(fixture->decoded->len, 3);
+	zassert_mem_equal(&fixture->decoded->data[1], "BC", 2);
+
+	/* No frame end in the remaining data */
+	ret = cobs_decoder_write(&dec, &data_enc[8], 1);
+	zassert_equal(ret, 1, "decoder write used %d bytes", ret);
+	zassert_equal(cobs_decoder_close(&dec), -EINVAL);
+}

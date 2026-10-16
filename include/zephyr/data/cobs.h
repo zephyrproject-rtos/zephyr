@@ -155,11 +155,16 @@ int cobs_decode(struct net_buf *src, struct net_buf *dst, uint32_t flags);
  * When this callback function returns a negative error value, the encoder or decoder
  * stream is aborted and the error will be propagated.
  *
+ * When this callback function returns a positive value for a completed frame, the
+ * decoder stops after the frame's delimiter, see cobs_decoder_write(). Positive
+ * values returned for data chunks, or by an encoder callback, are ignored.
+ *
  * @param buf        Buffer containing processed data
  * @param len        Length of data in buffer
  * @param user_data  User-provided context pointer
  *
- * @return 0 on success, negative errno code on failure
+ * @return 0 on success, positive value to stop decoding at a frame end,
+ *         negative errno code on failure
  */
 typedef int (*cobs_stream_cb)(const uint8_t *buf, size_t len, void *user_data);
 
@@ -299,7 +304,8 @@ int cobs_decoder_close(struct cobs_decoder *dec);
  * @note If a delimiter is encountered, and the @ref COBS_FLAG_TRAILING_DELIMITER flag
  *       is set, the registered callback function will be called with a NULL pointer
  *       indicating a frame end. Delimiters received before the first code byte of a
- *       frame are ignored.
+ *       frame are ignored. If the callback returns a positive value, decoding stops
+ *       after the delimiter and the remaining data in @p buf is not used.
  *
  * @param dec Pointer to decoder structure
  * @param buf Buffer containing encoded data

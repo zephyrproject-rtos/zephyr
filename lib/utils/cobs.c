@@ -234,6 +234,12 @@ int cobs_decoder_write(struct cobs_decoder *dec, const uint8_t *buf, size_t len)
 
 			/* Reset state */
 			cobs_decoder_reset(dec);
+
+			if (ret > 0) {
+				/* Callback requested to stop at the frame end */
+				return i + 1;
+			}
+
 			continue;
 		}
 
