@@ -2296,6 +2296,7 @@ void bt_l2cap_br_disconnected(struct bt_conn *conn)
 	struct bt_l2cap_chan *chan, *next;
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&conn->channels, chan, next, node) {
+		bt_l2cap_chan_remove(conn, chan);
 		bt_l2cap_br_chan_del(chan);
 	}
 }
