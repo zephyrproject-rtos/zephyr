@@ -4,9 +4,38 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	soc {
+		fmu: memory-controller@50020000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "nxp,msf1";
+			reg = <0x50020000 0x30>;
+			interrupts = <27 0>;
+			status = "disabled";
+		};
+
+		ctcm: sram@14000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		stcm: sram@30000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		peripheral: peripheral@50000000 {
+			ranges = <0x0 0x50000000 0x10000000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+	};
+};
+
 #include "nxp_mcxw7x_common.dtsi"
 
-/* TSTMR is removed from MCXW72 due to SIRC clock source instability. */
+/* TSTMR is removed from MCXW727C due to SIRC clock source instability. */
 /delete-node/ &tstmr0;
 
 &fast_peripheral1 {
