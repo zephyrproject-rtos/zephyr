@@ -110,7 +110,8 @@ int bt_l2cap_br_echo_cb_unregister(struct bt_l2cap_br_echo_cb *cb);
  * @brief Send ECHO data through ECHO request
  *
  * Send ECHO data through ECHO request. The application is required to have reserved
- * @ref BT_L2CAP_BR_ECHO_REQ_RESERVE bytes in the buffer before sending.
+ * @ref BT_L2CAP_BR_ECHO_REQ_RESERVE bytes in the buffer before sending. On error, the
+ * application still owns @p buf and gets it back unchanged.
  *
  * @param conn The ACL connection object.
  * @param buf Sending ECHO data.
@@ -123,7 +124,8 @@ int bt_l2cap_br_echo_req(struct bt_conn *conn, struct net_buf *buf);
  * @brief Send ECHO data through ECHO response
  *
  * Send ECHO data through ECHO response. The application is required to have reserved
- * @ref BT_L2CAP_BR_ECHO_RSP_RESERVE bytes in the buffer before sending.
+ * @ref BT_L2CAP_BR_ECHO_RSP_RESERVE bytes in the buffer before sending. On error, the
+ * application still owns @p buf and gets it back unchanged.
  *
  * @param conn The ACL connection object.
  * @param identifier The identifier of the ECHO request.
