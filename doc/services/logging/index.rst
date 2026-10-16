@@ -560,6 +560,29 @@ A log message has the following format:
 | Alignment padding (optional)                                          |
 +------------------+----------------------------------------------------+
 
+On little-endian targets, the first 32 bits of the message header are laid out as follows:
+
+.. mermaid::
+   :caption: Log message descriptor, most significant bit first
+   :alt: Log message descriptor word: bit 0 valid and bit 1 busy (MPSC packet
+         buffer header), bit 2 trace/log message flag, bits 3 to 5 domain ID,
+         bits 6 to 8 level, bits 9 to 19 cbprintf package length and bits 20 to
+         31 data length.
+
+   ---
+   config:
+     packet:
+       bitOrder: descending
+   ---
+   packet
+     0: "Valid"
+     1: "Busy"
+     2: "Type"
+     3-5: "Domain ID"
+     6-8: "Level"
+     9-19: "Package length"
+     20-31: "Data length"
+
 .. rubric:: Footnotes
 
 .. [#l0] Depending on their size, the source descriptor and timestamp fields may be swapped,
@@ -601,11 +624,29 @@ In the example below, backend 1 is set to receive errors (*slot 1*) and backend
 (*slot 0*) is set to info level, meaning that up to this level, message from that
 particular source will be buffered.
 
-+------+------+------+------+-----+------+
-|slot 0|slot 1|slot 2|slot 3| ... |slot 9|
-+------+------+------+------+-----+------+
-| INF  | ERR  | INF  | OFF  | ... | OFF  |
-+------+------+------+------+-----+------+
+.. mermaid::
+   :caption: Runtime filter example, most significant bit first
+   :alt: 32-bit runtime filter word divided into ten 3-bit slots starting at
+         bit 0, with bits 30 and 31 unused. Slot 0 holds info level, slot 1
+         error level, slot 2 info level and slots 3 to 9 are off.
+
+   ---
+   config:
+     packet:
+       bitOrder: descending
+   ---
+   packet
+     0-2: "0: INF"
+     3-5: "1: ERR"
+     6-8: "2: INF"
+     9-11: "3: OFF"
+     12-14: "4: OFF"
+     15-17: "5: OFF"
+     18-20: "6: OFF"
+     21-23: "7: OFF"
+     24-26: "8: OFF"
+     27-29: "9: OFF"
+     30-31: "-"
 
 .. _log_frontend:
 
