@@ -9,7 +9,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/pm.h>
-#include <zephyr/irq.h>
 
 #include <esp_attr.h>
 #include <esp_cpu.h>
@@ -304,15 +303,8 @@ void ESP32_PM_SLEEP_FN_ATTR pm_state_exit_post_ops(enum pm_state state, uint8_t 
 		nocache_region_init();
 #endif
 
-#if defined(CONFIG_RISCV)
-		rv_utils_intr_global_enable();
-		irq_unlock(0);
-#elif defined(CONFIG_XTENSA)
+#if defined(CONFIG_XTENSA)
 		z_xt_ints_on(intenable);
-		/* We don't have the key used to lock interruptions here.
-		 * Just set PS.INTLEVEL to 0.
-		 */
-		__asm__ volatile("rsil a2, 0");
 #endif
 		break;
 
