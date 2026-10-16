@@ -87,9 +87,10 @@ SECTION_FUNC(TEXT, __initialize)
 
 boot_first_core:
 
-#ifdef CONFIG_FPU
+#if defined(CONFIG_FPU) && defined(CONFIG_RISCV_ISA_EXT_F)
 	/*
-	 * Enable floating-point.
+	 * Enable floating-point. Not needed for Zfinx, where mstatus.FS is
+	 * hardwired to zero and does not gate floating-point instructions.
 	 */
 	li t0, MSTATUS_FS_INIT
 #ifdef CONFIG_RISCV_S_MODE_EXTERNAL_SBI
@@ -103,7 +104,7 @@ boot_first_core:
 	 * all exception flags.
 	 */
 	fscsr zero
-#endif
+#endif /* CONFIG_FPU && CONFIG_RISCV_ISA_EXT_F */
 
 #ifdef CONFIG_INIT_STACKS
 	/* Pre-populate all bytes in z_interrupt_stacks with 0xAA */

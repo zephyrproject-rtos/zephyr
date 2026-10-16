@@ -85,6 +85,11 @@ struct arch_esf {
 	unsigned long mepc;		/* machine exception program counter */
 	unsigned long mstatus;	/* machine status register */
 
+#if defined(CONFIG_FPU_SHARING) && defined(CONFIG_RISCV_ISA_EXT_ZFINX)
+	/* Zfinx floating-point control/status; fcsr is a 32-bit CSR on any XLEN */
+	uint32_t zfinx_fcsr;
+#endif
+
 	unsigned long s0;		/* callee-saved s0 */
 
 #ifdef CONFIG_USERSPACE
