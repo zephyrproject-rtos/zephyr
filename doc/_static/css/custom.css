@@ -69,6 +69,16 @@ pre.mermaid > svg,
     width: auto !important;
 }
 
+/* Mermaid draws packet diagram labels at 12px and bit numbers at 10px, too small next to the
+   body text. */
+.mermaid svg .packetLabel {
+    font-size: 14px !important;
+}
+
+.mermaid svg .packetByte {
+    font-size: 12px !important;
+}
+
 p,
 article ul,
 article ol,
