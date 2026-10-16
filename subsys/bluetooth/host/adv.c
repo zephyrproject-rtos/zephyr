@@ -2385,7 +2385,8 @@ void bt_hci_le_adv_set_terminated(struct net_buf *buf)
 		bt_id_pending_keys_update();
 #endif
 
-		if (adv->cb && adv->cb->sent) {
+		/* Status success means a connection, not the limit, ended advertising */
+		if (evt->status != BT_HCI_ERR_SUCCESS && adv->cb != NULL && adv->cb->sent != NULL) {
 			struct bt_le_ext_adv_sent_info info = {
 				.num_sent = evt->num_completed_ext_adv_evts,
 			};
