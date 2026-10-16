@@ -614,10 +614,28 @@ static int nxp_micfil_init(const struct device *dev)
 	return 0;
 }
 
+static int nxp_micfil_get_caps(const struct device *dev, struct audio_caps *caps)
+{
+	memset(caps, 0, sizeof(struct audio_caps));
+
+	caps->min_total_channels = 1;
+	caps->max_total_channels = 8;
+	caps->supported_sample_rates = AUDIO_SAMPLE_RATE_16000;
+	/* Currently, driver supports only 32-bit samples */
+	caps->supported_bit_widths = AUDIO_BIT_WIDTH_32;
+	caps->min_num_buffers = 4;
+	caps->min_frame_interval = 1000;   /* 1ms minimum */
+	caps->max_frame_interval = 100000; /* 100ms maximum */
+	caps->interleaved = true;
+
+	return 0;
+}
+
 static DEVICE_API(dmic, dmic_ops) = {
 	.configure = nxp_micfil_configure,
 	.trigger = nxp_micfil_trigger,
 	.read = nxp_micfil_read,
+	.get_caps = nxp_micfil_get_caps,
 };
 
 #define NXP_MICFIL_IRQ_CONFIG(inst)							\
