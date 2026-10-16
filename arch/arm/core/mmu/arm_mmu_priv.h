@@ -126,11 +126,18 @@ union arm_mmu_l2_page_table_entry {
 		uint32_t id			: 2;  /* [00] */
 		uint32_t bufferable		: 1;
 		uint32_t cacheable		: 1;
+#if defined(CONFIG_ARM_AARCH32_MMU_VMSA_V5)
+		uint32_t acc_perms_subpage0	: 2;
+		uint32_t acc_perms_subpage1	: 2;
+		uint32_t acc_perms_subpage2	: 2;
+		uint32_t acc_perms_subpage3	: 2;
+#else
 		uint32_t acc_perms10		: 2;
 		uint32_t tex			: 3;
 		uint32_t acc_perms2		: 1;
 		uint32_t shared			: 1;
 		uint32_t not_global		: 1;
+#endif /* CONFIG_ARM_AARCH32_MMU_VMSA_V5 */
 		uint32_t pa_base		: 20; /* [31] */
 	} l2_page_4k;
 	struct {
