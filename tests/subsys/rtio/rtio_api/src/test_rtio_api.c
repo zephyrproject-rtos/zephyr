@@ -336,8 +336,10 @@ static void test_rtio_simple_cancel_(struct rtio *r)
 	TC_PRINT("Submitting 1 to RTIO\n");
 	rtio_submit(r, 0);
 
-	/* Check that we don't get a CQE */
-	zassert_equal(0, rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(15)));
+	/* A cancelled submission still completes, reporting -ECANCELED */
+	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(15)));
+	zassert_equal(-ECANCELED, cqe.result, "Cancelled sqe should complete with -ECANCELED");
+	zassert_equal(0, rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(15)), "Expected just the one");
 
 	/* Check that the SQE pool is empty by filling it all the way */
 	for (int i = 0; i < SQE_POOL_SIZE; ++i) {
@@ -495,8 +497,13 @@ static void test_rtio_chain_cancel_(struct rtio *r)
 	k_msleep(20);
 	rtio_submit(r, 0);
 
-	/* Check that we don't get cancelled completion notifications */
-	zassert_equal(0, rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(15)));
+	/* Every cancelled link reports its own -ECANCELED completion */
+	for (int i = 0; i < 2; i++) {
+		zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(15)));
+		zassert_equal(-ECANCELED, cqe.result,
+			      "Cancelled chain link should complete with -ECANCELED");
+	}
+	zassert_equal(0, rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(15)), "Expected just the two");
 
 	/* Check that the SQE pool is empty by filling it all the way */
 	for (int i = 0; i < SQE_POOL_SIZE; ++i) {
@@ -528,11 +535,17 @@ static void test_rtio_chain_cancel_(struct rtio *r)
 	rtio_sqe_cancel(r, handle[1]);
 	rtio_submit(r, 1);
 
-	/* Check that we get one completion no cancellation notifications */
+	/* The head still runs and completes ok */
 	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(15)));
+	zassert_ok(cqe.result, "Head of the chain should complete ok");
 
-	/* Check that we get no more completions for the cancelled submissions */
-	zassert_equal(0, rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(15)));
+	/* The cancelled middle and the tail behind it each report -ECANCELED */
+	for (int i = 0; i < 2; i++) {
+		zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(15)));
+		zassert_equal(-ECANCELED, cqe.result,
+			      "Cancelled chain member should complete with -ECANCELED");
+	}
+	zassert_equal(0, rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(15)), "Expected just the three");
 
 	/* Check that the SQE pool is empty by filling it all the way */
 	for (int i = 0; i < SQE_POOL_SIZE; ++i) {
@@ -574,8 +587,13 @@ static void test_rtio_transaction_cancel_(struct rtio *r)
 	TC_PRINT("Submitting 2 to RTIO\n");
 	rtio_submit(r, 0);
 
-	/* Check that we don't get a CQE */
-	zassert_equal(0, rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(15)));
+	/* Every cancelled member reports its own -ECANCELED completion */
+	for (int i = 0; i < 2; i++) {
+		zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(15)));
+		zassert_equal(-ECANCELED, cqe.result,
+			      "Cancelled transaction member should complete with -ECANCELED");
+	}
+	zassert_equal(0, rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(15)), "Expected just the two");
 
 	/* Check that the SQE pool is empty by filling it all the way */
 	for (int i = 0; i < SQE_POOL_SIZE; ++i) {
@@ -647,8 +665,11 @@ ZTEST(rtio_api, test_rtio_chain_cancel_member)
 	 */
 	zassert_equal(rtio_sqe_acquirable(r), RTIO_CHAIN_MEMBER_ELEMS,
 		      "Both slots should be back in the pool");
-	zassert_equal(0, rtio_cqe_copy_out(r, &cqe, 1, K_NO_WAIT),
-		      "Canceled tail should not complete");
+
+	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_NO_WAIT),
+		      "Canceled tail should still complete");
+	zassert_equal_ptr((void *)1, cqe.userdata, "Completion should carry tail userdata");
+	zassert_equal(-ECANCELED, cqe.result, "Canceled tail should complete with -ECANCELED");
 }
 
 #define RTIO_CHAIN_CASCADE_ELEMS 3
@@ -702,9 +723,63 @@ ZTEST(rtio_api, test_rtio_chain_cancel_cascade)
 	zassert_equal(rtio_sqe_acquirable(r), RTIO_CHAIN_CASCADE_ELEMS,
 		      "All slots should be back in the pool");
 
-	/* Neither the canceled middle nor the tail behind it may complete. */
-	zassert_equal(0, rtio_cqe_copy_out(r, &cqe, 1, K_NO_WAIT),
-		      "Cancelling a chain member must cascade to the rest of the chain");
+	/* Neither runs, and both say so: cancellation cascades down the chain */
+	for (uintptr_t expected = 1; expected <= 2; expected++) {
+		zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_NO_WAIT),
+			      "Canceled chain member should complete");
+		zassert_equal_ptr((void *)expected, cqe.userdata, "Chain should complete in order");
+		zassert_equal(-ECANCELED, cqe.result,
+			      "Cancelling a chain member must cascade to the rest of the chain");
+	}
+}
+
+#define RTIO_CANCEL_RESPONSE_ELEMS 2
+
+RTIO_DEFINE(r_cancel_response, RTIO_CANCEL_RESPONSE_ELEMS, RTIO_CANCEL_RESPONSE_ELEMS);
+
+/**
+ * @brief A canceled submission completes unless it asked for no completion
+ *
+ * Cancellation produces a completion carrying -ECANCELED, and only
+ * RTIO_SQE_NO_RESPONSE suppresses it. Suppressing it always would strand a
+ * thread waiting in rtio_submit(), which the wait below catches.
+ */
+ZTEST(rtio_api, test_rtio_cancel_completion)
+{
+	struct rtio *r = &r_cancel_response;
+	struct rtio_sqe sqe;
+	struct rtio_cqe cqe;
+	rtio_sqe_handle_t handle;
+
+	/* Canceled before dispatch, so waiting on it has to return, not block */
+	rtio_sqe_prep_nop(&sqe, (struct rtio_iodev *)&iodev_test_simple, (void *)1);
+	zassert_ok(rtio_sqe_copy_in_get_handles(r, &sqe, &handle, 1));
+	zassert_ok(rtio_sqe_cancel(r, handle), "Cancel should succeed");
+
+	zassert_ok(rtio_submit(r, 1), "Waiting on a canceled submission should return");
+
+	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_NO_WAIT),
+		      "Canceled submission should complete");
+	zassert_equal_ptr((void *)1, cqe.userdata, "Completion should carry the sqe userdata");
+	zassert_equal(-ECANCELED, cqe.result, "Canceled submission should report -ECANCELED");
+
+	/* The same submission asking for no completion stays silent. */
+	rtio_sqe_prep_nop(&sqe, (struct rtio_iodev *)&iodev_test_simple, (void *)2);
+	sqe.flags |= RTIO_SQE_NO_RESPONSE;
+	zassert_ok(rtio_sqe_copy_in_get_handles(r, &sqe, &handle, 1));
+	zassert_ok(rtio_sqe_cancel(r, handle), "Cancel should succeed");
+
+	zassert_ok(rtio_submit(r, 0));
+
+	zassert_equal(0, rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(15)),
+		      "RTIO_SQE_NO_RESPONSE should suppress the cancellation completion");
+
+	/* Either way the entries came back to the pool. */
+	struct rtio_sqe *slots[RTIO_CANCEL_RESPONSE_ELEMS];
+
+	zassert_ok(rtio_sqe_acquire_array(r, RTIO_CANCEL_RESPONSE_ELEMS, slots),
+		   "Both slots should be back in the pool");
+	rtio_sqe_drop_all(r);
 }
 
 static inline void test_rtio_simple_multishot_(struct rtio *r, int idx)
@@ -1237,18 +1312,26 @@ ZTEST(rtio_api, test_rtio_delay_cancel)
 	k_sleep(K_MSEC(delay_ms[RTIO_DELAY_CANCEL_ELEMS - 1] + 20));
 
 	size_t completions = 0;
+	size_t cancellations = 0;
 
 	while (rtio_cqe_copy_out(r, &cqe, 1, K_NO_WAIT) == 1) {
 		size_t id = (size_t)(cqe.userdata);
 
-		zassert_false(canceled[id],
-			      "Canceled delay id %zu should not produce a completion", id);
-		zassert_ok(cqe.result, "Non-canceled delay should complete ok");
-		completions++;
+		if (canceled[id]) {
+			zassert_equal(-ECANCELED, cqe.result,
+				      "Canceled delay id %zu should report -ECANCELED", id);
+			cancellations++;
+		} else {
+			zassert_ok(cqe.result, "Non-canceled delay should complete ok");
+			completions++;
+		}
 	}
 
 	zassert_equal(expected_completions, completions,
 		      "Expected %zu completions, got %zu", expected_completions, completions);
+	zassert_equal(RTIO_DELAY_CANCEL_ELEMS - expected_completions, cancellations,
+		      "Expected %zu cancellations, got %zu",
+		      RTIO_DELAY_CANCEL_ELEMS - expected_completions, cancellations);
 }
 
 RTIO_DEFINE(r_partial_chain, 2, 2);
