@@ -272,3 +272,34 @@ tps62873@d {
 	regulator-max-microvolt = <3350000>;
 	regulator-boot-on;
 };
+
+max20356@e {
+	compatible = "adi,max20356";
+	reg = <0xe>;
+
+	regulators {
+		compatible = "adi,max20356-regulator";
+
+		buck1 {};
+
+		buck2 {};
+
+		buck3 {};
+
+		buckboost {};
+
+		ldo1 {};
+
+		ldo2 {};
+
+		ldo3 {};
+
+		ldo4 {};
+
+		lsw1 {};
+
+		lsw2 {};
+
+		lsw3 {};
+	};
+};

@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_MAX20356
+	bool "MAX20356/MAX20358 PMIC GPIO driver"
+	default y
+	depends on DT_HAS_ADI_MAX20356_GPIO_ENABLED
+	select MFD
+	help
+	  Enable the GPIO driver for the MAX20356/MAX20358 PMIC multi-purpose
+	  control (MPC0..MPC7) pins. Register access goes through the MAX20356 MFD
+	  parent driver.
+
+config GPIO_MAX20356_INIT_PRIORITY
+	int "MAX20356 GPIO driver initialization priority"
+	depends on GPIO_MAX20356
+	default 85
+	help
+	  Initialization priority for the MAX20356 GPIO driver. It must be greater
+	  than the MFD parent (CONFIG_MFD_INIT_PRIORITY).
