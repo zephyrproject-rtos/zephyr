@@ -178,4 +178,8 @@ i2c0: &scb0 {
 	status = "okay";
 };
 
+&mcwdt0 {
+	status = "okay";
+};
+
 #include "arduino_r3_connector.dtsi"
