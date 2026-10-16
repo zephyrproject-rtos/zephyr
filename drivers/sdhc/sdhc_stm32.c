@@ -39,6 +39,12 @@ BUILD_ASSERT((CONFIG_SDHC_BUFFER_ALIGNMENT % sizeof(uint32_t)) == 0U);
 #endif
 
 /* SDMMC data error flags */
+#if defined(SDMMC_FLAG_IDMATE)
+#define SDMMC_DMA_ERROR_FLAGS SDMMC_FLAG_IDMATE
+#else
+#define SDMMC_DMA_ERROR_FLAGS 0U
+#endif
+
 #define SDMMC_DATA_ERROR_FLAGS                                                                     \
 	(SDMMC_FLAG_DTIMEOUT | SDMMC_FLAG_DCRCFAIL | SDMMC_FLAG_RXOVERR | SDMMC_FLAG_TXUNDERR)
 
@@ -170,8 +176,7 @@ static const struct {
  *
  * This helper function queries the error status of an SDIO operation
  * and reports specific error types using `LOG_ERR()`.
- * In addition to logging, it also resets the `error_code` field
- * of the `SDIO_HandleTypeDef` to `HAL_SDIO_ERROR_NONE`.
+ * The caller owns the error status; logging must not consume it.
  *
  * @param dev_data Pointer to the STM32 SDHC data structure.
  */
@@ -196,7 +201,6 @@ static void sdhc_stm32_log_err_type(struct sdhc_stm32_data *dev_data)
 	}
 #endif /* CONFIG_SDHC_LOG_LEVEL  >= LOG_LEVEL_ERR */
 
-	dev_data->error_code = SDMMC_ERROR_NONE;
 }
 
 /**
@@ -307,6 +311,9 @@ static int sdhc_stm32_activate(const struct device *dev)
 
 static void sdhc_stm32_disable_data_interrupts(SDMMC_TypeDef *instance)
 {
+#if defined(SDMMC_IT_IDMATE)
+	__SDMMC_DISABLE_IT(instance, SDMMC_IT_IDMATE);
+#endif
 	__SDMMC_DISABLE_IT(instance, SDMMC_IT_DATAEND | SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT |
 					     SDMMC_IT_TXUNDERR | SDMMC_IT_RXOVERR |
 					     SDMMC_IT_IDMABTC | SDMMC_IT_TXFIFOHE |
@@ -1152,7 +1159,8 @@ static int sdhc_stm32_find_scr(struct sdhc_command *cmd, SDMMC_TypeDef *instance
 
 void sdhc_stm32_irq_handler(SDMMC_TypeDef *instance, struct sdhc_stm32_data *dev_data)
 {
-	uint32_t errorcode = __SDMMC_GET_FLAG(instance, SDMMC_DATA_ERROR_FLAGS);
+	uint32_t errorcode = __SDMMC_GET_FLAG(instance,
+					    SDMMC_DATA_ERROR_FLAGS | SDMMC_DMA_ERROR_FLAGS);
 	bool data_end = __SDMMC_GET_FLAG(instance, SDMMC_FLAG_DATAEND) != 0U;
 
 	if ((errorcode == 0U) && !data_end) {
@@ -1360,6 +1368,9 @@ static int sdhc_stm32_sdio_rw_extended_dma(struct sdhc_command *cmd, SDMMC_TypeD
 	}
 
 	/* Enable interrupts for DMA transfer */
+#if defined(SDMMC_IT_IDMATE)
+	__SDMMC_ENABLE_IT(instance, SDMMC_IT_IDMATE);
+#endif
 	__SDMMC_ENABLE_IT(instance,
 			  (SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT |
 			   (is_write ? SDMMC_IT_TXUNDERR : SDMMC_IT_RXOVERR) | SDMMC_IT_DATAEND));
@@ -1490,6 +1501,13 @@ static int sdhc_stm32_rw_extended(const struct device *dev, struct sdhc_command 
 			sdhc_stm32_abort_dma_transfer(instance, dev_data);
 			k_free(dev_data->sdio_dma_buf);
 			return -ETIMEDOUT;
+		}
+
+		if (dev_data->error_code != SDMMC_ERROR_NONE) {
+			res = (dev_data->error_code == SDMMC_FLAG_DTIMEOUT) ? -ETIMEDOUT : -EIO;
+			/* The ISR stopped SDIO DMA. A second abort would issue an SD CMD12. */
+			k_free(dev_data->sdio_dma_buf);
+			return res;
 		}
 
 		if (direction == SDIO_IO_READ) {
@@ -1852,15 +1870,16 @@ void sdhc_stm32_event_isr(const struct device *dev)
 	struct sdhc_stm32_data *data = dev->data;
 	SDMMC_TypeDef *instance = sdhc_stm32_get_instance(dev);
 
-	if (__SDMMC_GET_FLAG(instance, SDMMC_FLAG_DATAEND | SDMMC_FLAG_DCRCFAIL |
-						       SDMMC_FLAG_DTIMEOUT | SDMMC_FLAG_RXOVERR |
-						       SDMMC_FLAG_TXUNDERR)) {
-		k_sem_give(&data->device_sync_sem);
-	}
+	bool transfer_done = __SDMMC_GET_FLAG(instance, SDMMC_FLAG_DATAEND |
+					    SDMMC_DATA_ERROR_FLAGS | SDMMC_DMA_ERROR_FLAGS) != 0U;
 
+	/* Capture errors and stop DMA before clearing flags or waking the caller. */
+	sdhc_stm32_irq_handler(instance, data);
 	sdhc_stm32_clear_icr_flags(instance);
 
-	sdhc_stm32_irq_handler(instance, data);
+	if (transfer_done) {
+		k_sem_give(&data->device_sync_sem);
+	}
 
 	if (data->error_code != SDMMC_ERROR_NONE) {
 		LOG_ERR("Error Interrupt");
