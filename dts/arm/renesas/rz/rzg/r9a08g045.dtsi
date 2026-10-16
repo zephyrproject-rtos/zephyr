@@ -579,7 +579,6 @@
 			channel = <0>;
 			interrupts = <44 1>;
 			interrupt-names = "overflow";
-			status = "disabled";
 
 			counter {
 				compatible = "renesas,rz-gtm-counter";
@@ -598,7 +597,6 @@
 			channel = <1>;
 			interrupts = <45 1>;
 			interrupt-names = "overflow";
-			status = "disabled";
 
 			counter {
 				compatible = "renesas,rz-gtm-counter";
@@ -617,7 +615,6 @@
 			channel = <2>;
 			interrupts = <46 1>;
 			interrupt-names = "overflow";
-			status = "disabled";
 
 			counter {
 				compatible = "renesas,rz-gtm-counter";
@@ -636,7 +633,6 @@
 			channel = <3>;
 			interrupts = <47 1>;
 			interrupt-names = "overflow";
-			status = "disabled";
 
 			counter {
 				compatible = "renesas,rz-gtm-counter";
@@ -655,7 +651,6 @@
 			channel = <4>;
 			interrupts = <48 1>;
 			interrupt-names = "overflow";
-			status = "disabled";
 
 			counter {
 				compatible = "renesas,rz-gtm-counter";
@@ -674,7 +669,6 @@
 			channel = <5>;
 			interrupts = <49 1>;
 			interrupt-names = "overflow";
-			status = "disabled";
 
 			counter {
 				compatible = "renesas,rz-gtm-counter";
@@ -693,7 +687,6 @@
 			channel = <6>;
 			interrupts = <50 1>;
 			interrupt-names = "overflow";
-			status = "disabled";
 
 			counter {
 				compatible = "renesas,rz-gtm-counter";
@@ -712,7 +705,6 @@
 			channel = <7>;
 			interrupts = <51 1>;
 			interrupt-names = "overflow";
-			status = "disabled";
 
 			counter {
 				compatible = "renesas,rz-gtm-counter";
@@ -734,7 +726,6 @@
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
 			prescaler = <1>;
-			status = "disabled";
 
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
@@ -752,7 +743,6 @@
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
 			prescaler = <1>;
-			status = "disabled";
 
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
@@ -770,7 +760,6 @@
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
 			prescaler = <1>;
-			status = "disabled";
 
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
@@ -788,7 +777,6 @@
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
 			prescaler = <1>;
-			status = "disabled";
 
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
@@ -806,7 +794,6 @@
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
 			prescaler = <1>;
-			status = "disabled";
 
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
@@ -824,7 +811,6 @@
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
 			prescaler = <1>;
-			status = "disabled";
 
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
@@ -842,7 +828,6 @@
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
 			prescaler = <1>;
-			status = "disabled";
 
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
@@ -860,7 +845,6 @@
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
 			prescaler = <1>;
-			status = "disabled";
 
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
