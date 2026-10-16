@@ -216,9 +216,11 @@ endchoice
 
 config NRF_SKIP_CLOCK_CONFIG
 	bool
-	prompt "Skip clock frequency configuration" if TRUSTED_EXECUTION_SECURE
+	prompt "Skip clock frequency configuration" if TRUSTED_EXECUTION_SECURE && \
+						!(SOC_SERIES_NRF71 && BOOTLOADER_MCUBOOT)
 	depends on SOC_SERIES_NRF54L || SOC_SERIES_NRF71
 	default y if TRUSTED_EXECUTION_NONSECURE
+	default y if SOC_SERIES_NRF71 && BOOTLOADER_MCUBOOT
 	help
 	  With this option, the CPU clock frequency is not set during system initialization.
 	  The CPU runs with the default, hardware-selected frequency.

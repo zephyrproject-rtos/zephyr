@@ -45,7 +45,8 @@ if SOC_SERIES_NRF71
 
 config SOC_NRF7120_APPROTECT_BOOT_WORKAROUND
 	bool
-	default y if (SOC_NRF7120_ENGA_CPUAPP || SOC_NRF7120E_ENGA_CPUAPP)
+	default y if (SOC_NRF7120_ENGA_CPUAPP || SOC_NRF7120E_ENGA_CPUAPP) && \
+		!BOOTLOADER_MCUBOOT
 	help
 	  Enable the APPROTECT boot workaround when using
 	  either nRF7120 or nRF7120E application core.
@@ -53,12 +54,25 @@ config SOC_NRF7120_APPROTECT_BOOT_WORKAROUND
 
 config SOC_NRF7120_WICR_SETUP
 	bool
-	default y if DT_HAS_NORDIC_NRF_WICR_ENABLED
+	default y if DT_HAS_NORDIC_NRF_WICR_ENABLED && !MCUBOOT
 	select NRFX_MRAMC if !BUILD_WITH_TFM
 	help
 	  Program the Wi-Fi Information Configuration Registers (WICR) at boot.
 	  WICR is an NVM region for configuring Wi-Fi related settings and
 	  values.
+
+config SOC_NRF71_SKIP_TAMPC_SETUP
+	bool
+	default y if BOOTLOADER_MCUBOOT
+	help
+	  Skip tamper controller setup when MCUboot has already configured it.
+
+config SOC_NRF71_DISABLE_FICR_TRIMCNF
+	bool
+	default y if BOOTLOADER_MCUBOOT
+	help
+	  Skip applying FICR trim values when MCUboot has already configured
+	  the hardware.
 
 config SOC_NRF71_WIFI_DAP
 	bool "nRF71 Wi-Fi Debug access port for debugging"
