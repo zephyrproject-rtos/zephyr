@@ -107,3 +107,30 @@ config RISCV_CUSTOM_CSR_ANDES_NMI
 	  overriding the weak one, and to set up what that handler needs, such
 	  as an NMI stack in mscratch, before enabling any NMI source. The weak
 	  default only parks the core.
+
+DT_CHOSEN_ANDESTECH_IPI_PLIC := andestech,ipi-plic
+
+config RISCV_CUSTOM_ANDES_PLIC_IPI
+	bool "Andes PLIC-SWINT based IPI"
+	depends on RISCV_SMP_IPI_CUSTOM
+	depends on $(dt_chosen_has_compat,$(DT_CHOSEN_ANDESTECH_IPI_PLIC),$(DT_COMPAT_ANDESTECH_NCEPLIC100))
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_ANDESTECH_IPI_PLIC))
+	depends on PLIC_SUPPORTS_SOFT_INTERRUPT
+	select PLIC_IRQ_AFFINITY if MP_MAX_NUM_CPUS > 1
+	select DYNAMIC_INTERRUPTS
+	help
+	  Use PLIC-SWINT (PLIC-based software interrupts) for the custom
+	  Inter-Processor Interrupt implementation on Andes cores.
+
+	  The IPIs use the PLIC that the "andestech,ipi-plic" chosen node
+	  points to, which must be an enabled "andestech,nceplic100"
+	  compatible node.
+
+config RISCV_CUSTOM_ANDES_PLIC_IPI_IRQ_OFFSET
+	int "First PLIC interrupt source used for IPIs"
+	depends on RISCV_CUSTOM_ANDES_PLIC_IPI
+	default 1
+	range 1 1023
+	help
+	  PLIC interrupt source used for the IPI of CPU 0. CPU n uses this
+	  source plus n. Source 0 is reserved by the PLIC.
