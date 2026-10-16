@@ -1,0 +1,33 @@
+/*
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* littlefs uses the 64 KB erase block as its block size, so each partition
+ * needs enough blocks for the directory tests. Place them in unused external
+ * flash above the m55_xip partition.
+ */
+
+&flash0 {
+	partitions {
+		small_partition: small@800000 {
+			compatible = "zephyr,mapped-partition";
+			label = "small";
+			reg = <0x800000 DT_SIZE_M(1)>;
+		};
+
+		medium_partition: medium@900000 {
+			compatible = "zephyr,mapped-partition";
+			label = "medium";
+			reg = <0x900000 DT_SIZE_M(1)>;
+		};
+
+		large_partition: large@a00000 {
+			compatible = "zephyr,mapped-partition";
+			label = "large";
+			reg = <0xa00000 DT_SIZE_M(2)>;
+		};
+	};
+};

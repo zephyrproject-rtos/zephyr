@@ -6,6 +6,7 @@ common:
     - nrf52840dk/nrf52840
     - native_sim
     - native_sim/native/64
+    - kit_pse84_eval/pse846gps2dbzc4a/m55
     - mr_canhubk3
     - frdm_mcxn947/mcxn947/cpu0
     - frdm_rw612
