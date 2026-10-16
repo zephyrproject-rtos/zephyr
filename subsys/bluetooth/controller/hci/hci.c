@@ -40,9 +40,9 @@
 
 #include "ll_sw/lll.h"
 #include "lll/lll_vendor.h"
-#include "lll/lll_adv_types.h"
+#include "ll_sw/lll_adv_types.h"
 #include "ll_sw/lll_adv.h"
-#include "lll/lll_adv_pdu.h"
+#include "ll_sw/lll_adv_pdu.h"
 #include "ll_sw/lll_scan.h"
 #include "lll/lll_df_types.h"
 #include "ll_sw/lll_sync.h"
@@ -7211,6 +7211,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 	uint8_t *adv_addr = NULL;
 	uint8_t data_status = 0U;
 	struct net_buf *evt_buf;
+	bool anon_allow = false;
 	bool devmatch = false;
 	uint8_t data_len = 0U;
 	uint8_t evt_type = 0U;
@@ -7493,6 +7494,7 @@ no_ext_hdr:
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC) && \
 	defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
 			devmatch = devmatch_curr;
+			anon_allow = node_rx_curr->rx_ftr.anon_allow;
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC && CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 
 		} else {
@@ -7568,9 +7570,14 @@ no_ext_hdr:
 		adv = (void *)node_rx_curr->pdu;
 	} while (1);
 
+	/* A PDU received for a periodic sync that is being created is not
+	 * reported unless the scanner filter policy allows its AdvA. Anonymous
+	 * advertising has no AdvA to allow: the ULL recorded with the
+	 * ADV_EXT_IND whether the policy lets it through.
+	 */
 	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) &&
 	    IS_ENABLED(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST) &&
-	    !devmatch) {
+	    !devmatch && ((adv_addr != NULL) || !anon_allow)) {
 		node_rx_extra_list_release(node_rx->rx_ftr.extra);
 		return;
 	}

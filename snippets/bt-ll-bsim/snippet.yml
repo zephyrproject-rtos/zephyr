@@ -1,0 +1,9 @@
+name: bt-ll-bsim
+description: |
+  Selects the Zephyr Bluetooth LE software-split Controller with the BabbleSim
+  LLL, running on the generic packet level 2.4GHz radio model instead of a
+  vendor radio model.
+boards:
+  /nrf52_bsim(/.*)?/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/nrf52_bsim.overlay

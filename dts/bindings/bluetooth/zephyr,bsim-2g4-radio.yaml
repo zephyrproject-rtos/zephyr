@@ -1,0 +1,27 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Packet level 2.4GHz radio model of BabbleSim based boards.
+
+  The BabbleSim boards only have vendor radio models, so Bluetooth LE Link
+  Layer code written for one of them does not run on another. This model does
+  not depend on any vendor radio: it talks to the BabbleSim 2G4 Phy, and
+  signals the end of each packet Tx or Rx, and the matches of its free running
+  1MHz counter, through the interrupts given here.
+
+compatible: "zephyr,bsim-2g4-radio"
+
+include: base.yaml
+
+properties:
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+    description: |
+      Must contain "radio" (end of a radio operation), "cntr" (counter
+      compare), "swi-lll" and "swi-ull-low". The last two are software
+      interrupts of the Bluetooth LE Controller, given here so that it takes
+      all its interrupt lines from this node.
