@@ -63,6 +63,15 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
+* Bluetooth
+
+  * Audio
+
+    * :c:func:`bt_pacs_get_location`
+    * :c:struct:`bt_pacs_cb`
+    * :c:func:`bt_pacs_register_cb`
+    * :c:func:`bt_pacs_unregister_cb`
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
