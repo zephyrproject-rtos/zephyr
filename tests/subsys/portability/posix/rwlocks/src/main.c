@@ -7,6 +7,7 @@
 #include <pthread.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
 
@@ -144,6 +145,128 @@ ZTEST(posix_rw_locks, test_pthread_rwlockattr_setpshared)
 {
 	test_pthread_rwlockattr_pshared_common(true, PTHREAD_PROCESS_PRIVATE);
 	test_pthread_rwlockattr_pshared_common(true, PTHREAD_PROCESS_SHARED);
+}
+
+ZTEST(posix_rw_locks, test_rwlock_static_initializer)
+{
+	static pthread_rwlock_t static_rw = PTHREAD_RWLOCK_INITIALIZER;
+	struct timespec time;
+
+	time.tv_sec = 1;
+	time.tv_nsec = 0;
+
+	zassert_ok(pthread_rwlock_rdlock(&static_rw));
+	zassert_ok(pthread_rwlock_unlock(&static_rw));
+
+	zassert_ok(pthread_rwlock_tryrdlock(&static_rw));
+	zassert_ok(pthread_rwlock_unlock(&static_rw));
+
+	zassert_ok(pthread_rwlock_timedrdlock(&static_rw, &time));
+	zassert_ok(pthread_rwlock_unlock(&static_rw));
+
+	zassert_ok(pthread_rwlock_wrlock(&static_rw));
+	zassert_ok(pthread_rwlock_unlock(&static_rw));
+
+	zassert_ok(pthread_rwlock_trywrlock(&static_rw));
+	zassert_ok(pthread_rwlock_unlock(&static_rw));
+
+	zassert_ok(pthread_rwlock_timedwrlock(&static_rw, &time));
+	zassert_ok(pthread_rwlock_unlock(&static_rw));
+
+	zassert_ok(pthread_rwlock_destroy(&static_rw));
+}
+
+struct static_rwlock_sync {
+	pthread_rwlock_t *rw;
+	atomic_t reader1_has_lock;
+	atomic_t reader2_got_lock;
+	atomic_t writer_verified_busy;
+	atomic_t release_readers;
+};
+
+static void *static_rwlock_reader1(void *arg)
+{
+	struct static_rwlock_sync *sync = (struct static_rwlock_sync *)arg;
+
+	zassert_ok(pthread_rwlock_rdlock(sync->rw));
+	atomic_set(&sync->reader1_has_lock, 1);
+
+	while (!atomic_get(&sync->release_readers)) {
+		usleep(USEC_PER_MSEC);
+	}
+
+	zassert_ok(pthread_rwlock_unlock(sync->rw));
+
+	return NULL;
+}
+
+static void *static_rwlock_reader2(void *arg)
+{
+	struct static_rwlock_sync *sync = (struct static_rwlock_sync *)arg;
+
+	while (!atomic_get(&sync->reader1_has_lock)) {
+		usleep(USEC_PER_MSEC);
+	}
+
+	/* Multiple readers should concurrently acquire shared read lock */
+	zassert_ok(pthread_rwlock_tryrdlock(sync->rw));
+	atomic_set(&sync->reader2_got_lock, 1);
+
+	while (!atomic_get(&sync->release_readers)) {
+		usleep(USEC_PER_MSEC);
+	}
+
+	zassert_ok(pthread_rwlock_unlock(sync->rw));
+
+	return NULL;
+}
+
+static void *static_rwlock_writer(void *arg)
+{
+	struct static_rwlock_sync *sync = (struct static_rwlock_sync *)arg;
+
+	while (!atomic_get(&sync->reader1_has_lock) ||
+	       !atomic_get(&sync->reader2_got_lock)) {
+		usleep(USEC_PER_MSEC);
+	}
+
+	/* Verify mutual exclusion: trywrlock must fail with EBUSY */
+	zassert_equal(pthread_rwlock_trywrlock(sync->rw), EBUSY,
+		      "trywrlock should return EBUSY while readers hold lock");
+	atomic_set(&sync->writer_verified_busy, 1);
+
+	/* Signal readers to release their locks */
+	atomic_set(&sync->release_readers, 1);
+
+	/* Writer blocks on wrlock until readers release, then acquires */
+	zassert_ok(pthread_rwlock_wrlock(sync->rw));
+	zassert_ok(pthread_rwlock_unlock(sync->rw));
+
+	return NULL;
+}
+
+ZTEST(posix_rw_locks, test_rwlock_static_initializer_multithread)
+{
+	static pthread_rwlock_t static_rw_mt = PTHREAD_RWLOCK_INITIALIZER;
+	pthread_t r1, r2, w;
+	struct static_rwlock_sync sync = {
+		.rw = &static_rw_mt,
+	};
+
+	zassert_ok(pthread_create(&r1, NULL, static_rwlock_reader1, &sync));
+	zassert_ok(pthread_create(&r2, NULL, static_rwlock_reader2, &sync));
+	zassert_ok(pthread_create(&w, NULL, static_rwlock_writer, &sync));
+
+	zassert_ok(pthread_join(r1, NULL));
+	zassert_ok(pthread_join(r2, NULL));
+	zassert_ok(pthread_join(w, NULL));
+
+	zassert_equal(atomic_get(&sync.reader2_got_lock), 1,
+		      "reader 2 should have acquired shared read lock");
+	zassert_equal(atomic_get(&sync.writer_verified_busy), 1,
+		      "writer should have verified mutual exclusion with EBUSY");
+
+	zassert_ok(pthread_rwlock_destroy(&static_rw_mt));
 }
 
 ZTEST_SUITE(posix_rw_locks, NULL, NULL, NULL, NULL, NULL);
