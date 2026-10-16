@@ -1147,12 +1147,15 @@ void bt_conn_tx_processor(void)
 	 */
 	buf = conn->tx_data_pull(conn, conn_mtu(conn), &buf_len);
 	if (!buf) {
-		/* Either there is no more data, or the buffer is already in-use
-		 * by a view on it. In both cases, the TX processor will be
-		 * triggered again, either by the view's destroy callback, or by
-		 * the upper layer when it has more data.
-		 */
 		LOG_DBG("no buf returned");
+
+		/* A connection without data left leaves the list on the next pass:
+		 * run it now, so that the connections behind it are served without
+		 * waiting for a completion or new data.
+		 */
+		if (!conn->has_data(conn)) {
+			goto raise_and_exit;
+		}
 
 		goto exit;
 	}
