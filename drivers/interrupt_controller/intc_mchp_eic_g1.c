@@ -158,6 +158,7 @@ uint8_t find_eic_line_from_pin(int port, int pin)
 		break;
 	default:
 		LOG_ERR("Unsupported port id provided");
+		eic_line = INTC_LINE_FREE;
 		break;
 	}
 
@@ -204,6 +205,7 @@ uint8_t find_eic_line_from_pin(int port, int pin)
 		break;
 	default:
 		LOG_ERR("Unsupported port id provided");
+		eic_line = INTC_LINE_FREE;
 		break;
 	}
 
@@ -251,7 +253,7 @@ int eic_mchp_disable_interrupt(struct eic_config_params *eic_pin_config)
 	/*Check whether the pin was assigned to an eic line.*/
 	uint8_t eic_line = find_eic_line_from_pin(eic_pin_config->port_id, eic_pin_config->pin_num);
 
-	if ((eic_data->line_busy & BIT(eic_line)) != 0) {
+	if ((eic_line != INTC_LINE_FREE) && ((eic_data->line_busy & BIT(eic_line)) != 0)) {
 		disable_interrupt_line(eic_cfg->regs, eic_line);
 	} else {
 		LOG_ERR("EIC Line is already free");
@@ -366,7 +368,8 @@ int eic_mchp_config_interrupt(struct eic_config_params *eic_pin_config)
 	 */
 
 #if defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG) ||                                             \
-	defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH)
+	defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH) ||                                         \
+	defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CZ_CA)
 	if (EIC_CONFIG_REG_IDX(eic_line) == 0) {
 		eic_cfg->regs->EIC_CONFIG0 &=
 			~(EIC_CONFIG_EIC_LINE_MSK << EIC_TRIG_TYPE_BIT_POS(eic_line));
@@ -387,7 +390,7 @@ int eic_mchp_config_interrupt(struct eic_config_params *eic_pin_config)
 	eic_cfg->regs->EIC_CONFIG[EIC_CONFIG_REG_IDX(eic_line)] |=
 		((eic_pin_config->trig_type) << EIC_TRIG_TYPE_BIT_POS(eic_line));
 
-#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG || CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
+#endif /* PIC32CX_SG || PIC32CM_JH || PIC32CZ_CA */
 
 	/* Set the debouncing feature of the eic line if required */
 	if (eic_pin_config->debounce != 0) {
