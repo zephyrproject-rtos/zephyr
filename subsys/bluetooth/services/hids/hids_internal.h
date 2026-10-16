@@ -7,6 +7,7 @@
 #ifndef BT_HIDS_INTERNAL_H_
 #define BT_HIDS_INTERNAL_H_
 
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/services/hids.h>
 
@@ -66,6 +67,24 @@ struct hids_report_ctx {
 
 	/* Report value attribute, resolved when the service is registered */
 	const struct bt_gatt_attr *attr;
+};
+
+/* Per-connection HID state, protected by hids_mutex in hids.c. The Protocol
+ * Mode and the Suspend state are tracked per Host, and reset to their default
+ * values when the client is claimed and when the service is unregistered, so
+ * they start at defaults on each new connection and on each registration.
+ *
+ * A client is claimed for a Host when its link has the security level the
+ * characteristics require, and released on disconnect, so the pool holds one
+ * client per trackable Host rather than one per bt_conn_index(). conn holds a
+ * reference to the connection of the Host and is NULL when the client is free.
+ */
+struct hids_client {
+	struct bt_conn *conn;
+	enum bt_hids_protocol_mode protocol_mode;
+
+	/* Not readable over GATT; the HID Control Point is write only */
+	bool suspended;
 };
 
 /* Registration state, protected by hids_mutex in hids.c */
