@@ -884,7 +884,7 @@ static int shi_npcx_disable(const struct device *dev)
 	}
 
 	ret = clock_control_off(clk_dev, (clock_control_subsys_t)&config->clk_cfg);
-	if (ret < 0) {
+	if (ret != 0 && ret != -ENOTSUP) {
 		LOG_ERR("Turn off SHI clock fail %d", ret);
 		return ret;
 	}
