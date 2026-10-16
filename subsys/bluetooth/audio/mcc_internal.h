@@ -22,6 +22,8 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/types.h>
 
+#define MCC_OTS_LIST_FILTER_COUNT 3U
+
 struct mcs_instance_t *lookup_inst_by_conn(struct bt_conn *conn);
 
 enum mcc_flag {
@@ -81,6 +83,8 @@ struct mcs_instance_t {
 #ifdef CONFIG_BT_MCC_OTS
 	uint16_t scp_handle;
 	uint16_t search_results_obj_id_handle;
+	uint16_t ots_obj_changed_handle;
+	uint16_t ots_list_filter_handles[MCC_OTS_LIST_FILTER_COUNT];
 #endif /* CONFIG_BT_MCC_OTS */
 #if defined(CONFIG_BT_MCC_READ_CONTENT_CONTROL_ID)
 	uint16_t content_control_id_handle;

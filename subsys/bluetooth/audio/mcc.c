@@ -1430,6 +1430,24 @@ static uint8_t discover_otc_char_func(struct bt_conn *conn,
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_OTS_PROPERTIES)) {
 			LOG_DBG("Object properties %d", chrc->value_handle);
 			mcs_inst->otc.obj_properties_handle = chrc->value_handle;
+		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_OTS_FIRST_CREATED)) {
+			LOG_DBG("Object First-Created");
+			mcs_inst->otc.obj_created_handle = chrc->value_handle;
+		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_OTS_LAST_MODIFIED)) {
+			LOG_DBG("Object Last-Modified");
+			mcs_inst->otc.obj_modified_handle = chrc->value_handle;
+		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_OTS_CHANGED)) {
+			LOG_DBG("Object Changed");
+			mcs_inst->ots_obj_changed_handle = chrc->value_handle;
+		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_OTS_LIST_FILTER)) {
+			LOG_DBG("Object List Filter");
+			/* The service may contain several instances of this characteristic */
+			for (size_t i = 0U; i < MCC_OTS_LIST_FILTER_COUNT; i++) {
+				if (mcs_inst->ots_list_filter_handles[i] == 0U) {
+					mcs_inst->ots_list_filter_handles[i] = chrc->value_handle;
+					break;
+				}
+			}
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_OTS_ACTION_CP)) {
 			LOG_DBG("Object Action Control Point");
 			mcs_inst->otc.oacp_handle = chrc->value_handle;

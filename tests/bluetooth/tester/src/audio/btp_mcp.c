@@ -78,6 +78,8 @@ struct service_handles {
 		uint16_t obj_id;
 		uint16_t oacp;
 		uint16_t olcp;
+		uint16_t obj_changed;
+		uint16_t obj_list_filter[BTP_MCP_OTS_LIST_FILTER_COUNT];
 	} ots_handles;
 };
 
@@ -143,6 +145,11 @@ static void btp_send_mcp_found_ev(struct bt_conn *conn, uint8_t status,
 	ev.ots_handles.obj_id = sys_cpu_to_le16(svc_chrc_handles.ots_handles.obj_id);
 	ev.ots_handles.oacp = sys_cpu_to_le16(svc_chrc_handles.ots_handles.oacp);
 	ev.ots_handles.olcp = sys_cpu_to_le16(svc_chrc_handles.ots_handles.olcp);
+	ev.ots_handles.obj_changed = sys_cpu_to_le16(svc_chrc_handles.ots_handles.obj_changed);
+	for (size_t i = 0U; i < ARRAY_SIZE(ev.ots_handles.obj_list_filter); i++) {
+		ev.ots_handles.obj_list_filter[i] =
+			sys_cpu_to_le16(svc_chrc_handles.ots_handles.obj_list_filter[i]);
+	}
 
 	tester_event(BTP_SERVICE_ID_MCP, BTP_MCP_DISCOVERED_EV, &ev, sizeof(ev));
 }
@@ -443,6 +450,11 @@ static void mcc_discover_cb(struct bt_conn *conn, int err)
 	svc_chrc_handles.ots_handles.obj_modified = mcc_inst->otc.obj_modified_handle;
 	svc_chrc_handles.ots_handles.oacp = mcc_inst->otc.oacp_handle;
 	svc_chrc_handles.ots_handles.olcp = mcc_inst->otc.olcp_handle;
+	svc_chrc_handles.ots_handles.obj_changed = mcc_inst->ots_obj_changed_handle;
+	for (size_t i = 0U; i < ARRAY_SIZE(svc_chrc_handles.ots_handles.obj_list_filter); i++) {
+		svc_chrc_handles.ots_handles.obj_list_filter[i] =
+			mcc_inst->ots_list_filter_handles[i];
+	}
 
 	btp_send_mcp_found_ev(conn, err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS, svc_chrc_handles);
 }
